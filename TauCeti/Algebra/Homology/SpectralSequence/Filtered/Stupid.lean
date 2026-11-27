@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Indexing
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Edge
 import TauCeti.Algebra.Homology.HomologicalComplex.Subobject
 
 /-!
@@ -32,7 +33,12 @@ degree `p`, so the homological spectral sequence of the filtration
   degenerates there: the differentials of the pages `r ≥ 2` leave the row `q = 0`, so they vanish
   (`CochainComplex.stupidFiltrationSpectralSequence_page_d_eq_zero`) and
   `E^r_{p,0} = H_p(C)` for every `r ≥ 2`
-  (`CochainComplex.stupidFiltrationSpectralSequencePageXIso`).
+  (`CochainComplex.stupidFiltrationSpectralSequencePageXIso`);
+* this identification is the one given by the abutment: the limit object `E^∞_{p,0}` is the piece
+  `F_p H_p(C)` of the filtration of `H_p(C)`, which is all of `H_p(C)` since `F_{p-1}` vanishes in
+  the degree `p` (`CochainComplex.isIso_stupidFiltration_EInftyToAbutment`), and the passage from
+  `E^r_{p,0}` to `E^∞_{p,0} = H_p(C)` is `CochainComplex.stupidFiltrationSpectralSequencePageXIso`
+  (`CochainComplex.stupidFiltrationSpectralSequencePageXIso_hom_eq`).
 
 These are the values that the classical indexing of the spectral sequence of a filtered complex
 must produce on the skeletal filtration, the filtration of the cellular and Morse chain complexes
@@ -42,6 +48,12 @@ change the bidegree of `d¹`.
 
 The connecting map is computed with `ShortComplex.ShortExact.δ_eq`: an element `x` of `C_p` lifts
 to `F_p/F_{p-2}`, its differential there is the image of `∂x ∈ C_{p-1} = F_{p-1}/F_{p-2}`.
+
+The comparison with the abutment is checked on the classes of the cycles of `F_p` in the degree
+`-p`, which are the cycles of `K` there: on the second page, both identifications send them to
+their classes in `H^{-p}(K)`
+(`CochainComplex.liftCycles_homologyMap_homologyπ_iso_hom_EInftyToAbutment`), and they generate
+the second page.
 
 ## References
 
@@ -429,5 +441,272 @@ lemma stupidFiltrationSpectralSequencePageXIso_add_one (r : ℤ) (hr : 2 ≤ r) 
         K.stupidFiltrationSpectralSequencePageXIso r hr p q hq := by
   simp only [stupidFiltrationSpectralSequencePageXIso,
     SpectralSequence.pageXIsoOfLEOfIsZero_add_one _ _ _ r hr, Iso.trans_assoc]
+
+/-! ### The abutment -/
+
+/-- In the degree `-p`, the piece `F_{p-1} H^{-p}` of the filtration of `H^{-p}(K)` induced by the
+brutal filtration vanishes, since `F_{p-1}` vanishes in that degree. -/
+lemma isZero_stupidFiltration_abutmentFiltration (p q : ℤ) (hq : q = 0) :
+    IsZero ((spectralObject (filtrationFunctor K.stupidFiltration
+      K.monotone_stupidFiltration)).abutmentFiltration (p - 1) (-(p + q))) :=
+  isZero_filtrationAbutmentFiltration_of_isZero_X _ _ (isZero_stupidFiltration_X (by omega))
+
+/-- The identifications of the terms of `F_p` with those of `K` invert the inclusion. -/
+@[reassoc (attr := simp)]
+private lemma stupidFiltration_arrow_f_stupidFiltrationXIso_hom {p n : ℤ} (hn : -p ≤ n) :
+    (K.stupidFiltration p).arrow.f n ≫ (stupidFiltrationXIso hn).hom = 𝟙 _ := by
+  simp [stupidFiltrationXIso]
+
+/-- In the degree `-p`, the inclusion `F_p ⟶ K` induces an epimorphism on cohomology: every cycle
+of `K` in that degree is a cycle of `F_p`. -/
+private lemma epi_homologyMap_stupidFiltration_arrow {p n : ℤ} (hn : n = -p) :
+    Epi (HomologicalComplex.homologyMap (K.stupidFiltration p).arrow n) := by
+  -- the cycles of `K` in the degree `n` lift to the cycles of `F_p`
+  let s : K.cycles n ⟶ (K.stupidFiltration p : CochainComplex C ℤ).cycles n :=
+    (K.stupidFiltration p : CochainComplex C ℤ).liftCycles
+      (K.iCycles n ≫ (stupidFiltrationXIso (K := K) (p := p) (n := n) (by omega)).hom) (n + 1)
+      (by simp) (by
+        rw [Category.assoc, stupidFiltrationXIso_hom_d (K := K) (by omega) (by omega),
+          HomologicalComplex.iCycles_d_assoc, zero_comp])
+  have hs : s ≫ HomologicalComplex.cyclesMap (K.stupidFiltration p).arrow n = 𝟙 _ := by
+    rw [← cancel_mono (K.iCycles n)]
+    simp [s]
+  have : Epi (HomologicalComplex.cyclesMap (K.stupidFiltration p).arrow n ≫ K.homologyπ n) :=
+    epi_of_epi_fac (f := s) (by rw [reassoc_of% hs])
+  exact epi_of_epi_fac (HomologicalComplex.homologyπ_naturality _ n)
+
+/-- The class of a cycle `x` of `F_p` in the degree `-p`, sent to the homology of the graded piece
+`F_p/F_{p-1}` and to `E¹_{p,0}` through the first page of `CochainComplex.spectralSequence`, is the
+element `x` of `K^{-p}` under `CochainComplex.stupidFiltrationSpectralSequenceFirstPageXIso`. -/
+private lemma homologyπ_homologyMap_stupidFiltrationSpectralSequenceFirstPageXIso_hom (p q : ℤ)
+    (hq : q = 0) :
+    (K.stupidFiltration p : CochainComplex C ℤ).homologyπ (-(p + q)) ≫
+      HomologicalComplex.homologyMap (eqToHom (filtrationFunctor_obj_coe _
+          K.monotone_stupidFiltration p).symm ≫
+        cokernel.π ((filtrationFunctor _ K.monotone_stupidFiltration).map
+          (homOfLE (coe_le_coe_of_eq_add_one (i₁ := p - 1) (i₂ := p) (q := p - 1) rfl
+            (by lia))))) (-(p + q)) ≫
+      (spectralSequenceFirstPageXIsoCokernel _ (1 - 2 * p - q, p - 1) (p - 1) p rfl
+        (by lia) (-(p + q)) (by lia)).inv ≫
+      (homologicalFiltrationSpectralSequencePageXIso _ K.monotone_stupidFiltration 1 2 le_rfl rfl
+        p q _ _ rfl rfl).inv ≫
+      (K.stupidFiltrationSpectralSequenceFirstPageXIso p q hq).hom =
+    (K.stupidFiltration p : CochainComplex C ℤ).iCycles (-(p + q)) ≫
+      (K.stupidFiltration p).arrow.f (-(p + q)) := by
+  -- The projection onto the graded piece, read through the functor of the filtration.
+  have hg : eqToHom (filtrationFunctor_obj_coe _ K.monotone_stupidFiltration p).symm ≫
+      cokernel.π ((filtrationFunctor _ K.monotone_stupidFiltration).map
+        (homOfLE (coe_le_coe_of_eq_add_one (i₁ := p - 1) (i₂ := p) (q := p - 1) rfl
+          (by lia)))) ≫
+      (cokernelFiltrationFunctorMapIso _ _ _ ≪≫
+        Subobject.cokernelOfLEIsoOfEq (filtrationEInt_coe K.stupidFiltration (p - 1))
+          (filtrationEInt_coe K.stupidFiltration p) _ _).hom = K.stupidGrπ p := by
+    have h : eqToHom (filtrationFunctor_obj_coe _ K.monotone_stupidFiltration p).symm ≫
+        (filtrationFunctorObjIso _ K.monotone_stupidFiltration p).hom ≫
+        (filtrationEInt K.stupidFiltration p).ofLE (K.stupidFiltration p)
+          (filtrationEInt_coe K.stupidFiltration p).le = 𝟙 _ := by
+      rw [← cancel_mono (K.stupidFiltration p).arrow]
+      simp
+    simp [reassoc_of% h]
+  rw [stupidFiltrationSpectralSequenceFirstPageXIso, Iso.trans_hom, Iso.symm_hom,
+    homologicalFiltrationSpectralSequenceFirstPageXIso_hom]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
+  rw [← HomologicalComplex.homologyMap_comp_assoc, Category.assoc, hg, ← Category.assoc,
+    Iso.comp_inv_eq, HomologicalComplex.homologyπ_naturality, stupidGrHomologyIso_hom,
+    ← Category.assoc]
+  congr 1
+  rw [← cancel_mono ((K.stupidGr p).iCycles _)]
+  simp [stupidGrXIso_hom]
+
+/-- The classes of the cycles of `F_p` in the degree `-p` on the first page: the map
+`H^{-p}(F_p) ⟶ H^{-p}(F_p/F_{p-1}) = E¹_{p,0}`. -/
+private noncomputable def stupidFirstPageCycle (p : ℤ) :
+    (K.stupidFiltration p : CochainComplex C ℤ).homology (-(p + 0)) ⟶
+      (K.stupidFiltrationSpectralSequence.page 1).X (p, 0) :=
+  HomologicalComplex.homologyMap (eqToHom (filtrationFunctor_obj_coe _
+        K.monotone_stupidFiltration p).symm ≫
+      cokernel.π ((filtrationFunctor _ K.monotone_stupidFiltration).map
+        (homOfLE (coe_le_coe_of_eq_add_one (i₁ := p - 1) (i₂ := p) (q := p - 1) rfl
+          (by lia))))) (-(p + 0)) ≫
+    (spectralSequenceFirstPageXIsoCokernel _ (1 - 2 * p - 0, p - 1) (p - 1) p rfl
+      (by lia) (-(p + 0)) (by lia)).inv ≫
+    (homologicalFiltrationSpectralSequencePageXIso _ K.monotone_stupidFiltration 1 2 le_rfl rfl
+      p 0 _ _ rfl rfl).inv
+
+/-- The classes of the cycles of `F_p` are cycles of the first page. -/
+private lemma stupidFirstPageCycle_d (p : ℤ) :
+    K.stupidFirstPageCycle p ≫
+      (K.stupidFiltrationSpectralSequence.page 1).d (p, 0) (p - 1, 0 + 1 - 1) = 0 := by
+  rw [← cancel_mono (homologicalFiltrationSpectralSequencePageXIso _ K.monotone_stupidFiltration
+    1 2 le_rfl rfl (p - 1) (0 + 1 - 1) _ _ rfl rfl).hom, Category.assoc,
+    ← homologicalFiltrationSpectralSequencePageXIso_hom_d _ _ 1 2 le_rfl rfl, zero_comp]
+  simp only [stupidFirstPageCycle, Category.assoc, Iso.inv_hom_id_assoc]
+  exact homologyMap_comp_spectralSequenceFirstPageXIsoCokernel_inv_d _ _ _ _ _ _ _ _ _ _
+
+/-- The classes of the cycles of `F_p` in the degree `-p` on the second page. -/
+private noncomputable def stupidSecondPageClass (p : ℤ) :
+    (K.stupidFiltration p : CochainComplex C ℤ).homology (-(p + 0)) ⟶
+      (K.stupidFiltrationSpectralSequence.page 2).X (p, 0) :=
+  (K.stupidFiltrationSpectralSequence.page 1).liftCycles (K.stupidFirstPageCycle p)
+      (p - 1, 0 + 1 - 1) ((ComplexShape.up' _).next_eq' (by simp; lia))
+      (K.stupidFirstPageCycle_d p) ≫
+    (K.stupidFiltrationSpectralSequence.page 1).homologyπ (p, 0) ≫
+    (K.stupidFiltrationSpectralSequence.iso 1 2 (p, 0) rfl le_rfl).hom
+
+/-- On the classes of the cycles of `F_p`, the identification `E²_{p,0} ≅ H^{-p}(K)` is the map
+induced by the inclusion `F_p ⟶ K`. -/
+private lemma stupidSecondPageClass_stupidFiltrationSpectralSequencePageXIso_hom (p : ℤ) :
+    K.stupidSecondPageClass p ≫ (K.stupidFiltrationSpectralSequencePageXIso 2 le_rfl p 0 rfl).hom =
+      HomologicalComplex.homologyMap (K.stupidFiltration p).arrow (-(p + 0)) := by
+  simp only [stupidSecondPageClass, Category.assoc, stupidFiltrationSpectralSequencePageXIso_two,
+    homologyπ_stupidFiltrationSpectralSequenceSecondPageXIso_hom,
+    HomologicalComplex.comp_liftCycles_assoc, HomologicalComplex.liftCycles_i_assoc]
+  rw [← cancel_epi ((K.stupidFiltration p : CochainComplex C ℤ).homologyπ _),
+    HomologicalComplex.comp_liftCycles_assoc, HomologicalComplex.homologyπ_naturality]
+  simp only [stupidFirstPageCycle, Category.assoc,
+    homologyπ_homologyMap_stupidFiltrationSpectralSequenceFirstPageXIso_hom]
+  -- both sides are the lift of `F_p^{-p} ⟶ K^{-p}` to the cycles of `K`
+  congr 1
+
+/-- On the classes of the cycles of `F_p`, the passage from `E²_{p,0}` to `E^∞_{p,0}`, followed by
+the identification with `H^{-p}(K)` through the abutment, is the map induced by the inclusion
+`F_p ⟶ K`. -/
+private lemma stupidSecondPageClass_spectralSequencePageXToEInfty_EInftyToAbutment (p : ℤ) :
+    K.stupidSecondPageClass p ≫
+      (homologicalFiltrationSpectralSequencePageXIso _ K.monotone_stupidFiltration 2 3
+        (by norm_num) rfl p 0 _ _ rfl rfl).hom ≫
+      (spectralObject (filtrationFunctor K.stupidFiltration
+        K.monotone_stupidFiltration)).spectralSequencePageXToEInfty 3 (by norm_num)
+        (1 - 2 * p - 0, p - 1) (-(p + 0)) (by dsimp; lia)
+        (isZero_spectralObject_H_bot_of_isZero_X _ _
+          (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + 0) + 1) (by lia))
+          (by dsimp; lia)) ≫
+      (spectralObject _).EInftyToAbutment (p - 1) (-(p + 0))
+        (K.isZero_stupidFiltration_abutmentFiltration p 0 rfl) ≫
+      (filtrationAbutmentIso _ _ (-(p + 0))).hom =
+    HomologicalComplex.homologyMap (K.stupidFiltration p).arrow (-(p + 0)) := by
+  simp only [stupidSecondPageClass, Category.assoc]
+  rw [homologicalFiltrationSpectralSequence_liftCycles_homologyπ_iso_hom_assoc _
+    K.monotone_stupidFiltration 1 2 2 3 le_rfl rfl rfl rfl p 0 (K.stupidFirstPageCycle p)
+    (K.stupidFirstPageCycle_d p)]
+  simp only [stupidFirstPageCycle, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  exact liftCycles_homologyMap_homologyπ_iso_hom_EInftyToAbutment _ _ _ _ _ (p - 1) p rfl
+    (by lia) _ _ (ShortComplex.isZero_homology_of_isZero_X₂ _
+      (isZero_stupidFiltration_X (K := K) (by dsimp; lia))) _
+
+/-- The case `r = 2` of `CochainComplex.stupidFiltrationSpectralSequencePageXIso_hom_eq`. The
+classes of the cycles of `F_p` in the degree `-p` give an epimorphism onto `E²_{p,0}`, on which
+both sides are the map `H^{-p}(F_p) ⟶ H^{-p}(K)` induced by the inclusion. -/
+private lemma stupidFiltrationSpectralSequencePageXIso_two_hom_eq (p q : ℤ) (hq : q = 0) :
+    (K.stupidFiltrationSpectralSequencePageXIso 2 le_rfl p q hq).hom =
+      (homologicalFiltrationSpectralSequencePageXIso _ K.monotone_stupidFiltration 2 3
+        (by norm_num) rfl p q _ _ rfl rfl).hom ≫
+        (spectralObject (filtrationFunctor K.stupidFiltration
+          K.monotone_stupidFiltration)).spectralSequencePageXToEInfty 3 (by norm_num)
+          (1 - 2 * p - q, p - 1) (-(p + q)) (by dsimp; lia)
+          (isZero_spectralObject_H_bot_of_isZero_X _ _
+            (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
+            (by dsimp; lia)) ≫
+        (spectralObject _).EInftyToAbutment (p - 1) (-(p + q))
+          (K.isZero_stupidFiltration_abutmentFiltration p q hq) ≫
+        (filtrationAbutmentIso _ _ (-(p + q))).hom := by
+  subst hq
+  have : Epi (K.stupidSecondPageClass p) := by
+    have : Epi (K.stupidSecondPageClass p ≫
+        (K.stupidFiltrationSpectralSequencePageXIso 2 le_rfl p 0 rfl).hom) := by
+      rw [stupidSecondPageClass_stupidFiltrationSpectralSequencePageXIso_hom]
+      exact K.epi_homologyMap_stupidFiltration_arrow (by lia)
+    simpa using (inferInstance : Epi ((K.stupidSecondPageClass p ≫
+      (K.stupidFiltrationSpectralSequencePageXIso 2 le_rfl p 0 rfl).hom) ≫
+      (K.stupidFiltrationSpectralSequencePageXIso 2 le_rfl p 0 rfl).inv))
+  rw [← cancel_epi (K.stupidSecondPageClass p),
+    stupidSecondPageClass_stupidFiltrationSpectralSequencePageXIso_hom,
+    stupidSecondPageClass_spectralSequencePageXToEInfty_EInftyToAbutment]
+
+/-- **The identification `E^∞_{p,0} = H_p(C)` of the brutal filtration is the identity.** For the
+filtration `F_p = σ^{≥ -p} K` of `K`, read as a chain complex with `C_n = K^{-n}`, and every page
+`r ≥ 2`, the identification `E^r_{p,0} ≅ H_p(C) = H^{-p}(K)` of
+`CochainComplex.stupidFiltrationSpectralSequencePageXIso` is the passage from the page `r` to the
+limit object `E^∞_{p,0}` (`spectralSequencePageXToEInfty`), followed by the identification of
+`E^∞_{p,0}` with the piece `F_p H_p(C)` of the abutment, which is all of `H_p(C)` since
+`F_{p-1} H_p(C) = 0` (`EInftyToAbutment`), and by the identification of the abutment with
+`H^{-p}(K)` (`CochainComplex.filtrationAbutmentIso`). -/
+theorem stupidFiltrationSpectralSequencePageXIso_hom_eq (r : ℤ) (hr : 2 ≤ r) (p q : ℤ)
+    (hq : q = 0) :
+    (K.stupidFiltrationSpectralSequencePageXIso r hr p q hq).hom =
+      (homologicalFiltrationSpectralSequencePageXIso _ K.monotone_stupidFiltration r (r + 1)
+        (by lia) rfl p q _ _ rfl rfl).hom ≫
+        (spectralObject (filtrationFunctor K.stupidFiltration
+          K.monotone_stupidFiltration)).spectralSequencePageXToEInfty (r + 1) (by lia)
+          (1 - 2 * p - q, p - 1) (-(p + q)) (by dsimp; lia)
+          (isZero_spectralObject_H_bot_of_isZero_X _ _
+            (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
+            (by dsimp; lia)) ≫
+        (spectralObject _).EInftyToAbutment (p - 1) (-(p + q))
+          (K.isZero_stupidFiltration_abutmentFiltration p q hq) ≫
+        (filtrationAbutmentIso _ _ (-(p + q))).hom := by
+  obtain ⟨m, hm⟩ : ∃ m : ℕ, r = 2 + m := ⟨(r - 2).toNat, by lia⟩
+  induction m generalizing r with
+  | zero =>
+    obtain rfl : r = 2 := by lia
+    exact K.stupidFiltrationSpectralSequencePageXIso_two_hom_eq p q hq
+  | succ m ih =>
+    obtain ⟨r, rfl⟩ : ∃ r' : ℤ, r = r' + 1 := ⟨r - 1, by lia⟩
+    have hr : 2 ≤ r := by lia
+    have ih := ih r hr (by lia)
+    have hPP := (spectralObject (filtrationFunctor K.stupidFiltration
+      K.monotone_stupidFiltration)).iCycles_spectralSequencePageXToPageX (r + 1) (r + 1 + 1) rfl
+      (by lia) (1 - 2 * p - q, p - 1) (-(p + q)) (by dsimp; lia)
+      (isZero_spectralObject_H_bot_of_isZero_X _ _
+        (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
+        (by dsimp; lia))
+      (isZero_spectralObject_H_bot_of_isZero_X _ _
+        (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
+        (by dsimp; lia))
+    have hL := homologicalFiltrationSpectralSequence_liftCycles_homologyπ_iso_hom _
+      K.monotone_stupidFiltration r (r + 1) (r + 1) (r + 1 + 1) (by lia) rfl rfl (by lia) p q
+      ((K.stupidFiltrationSpectralSequence.page r).iCycles (p, q))
+      (HomologicalComplex.iCycles_d _ _ _)
+    have h₁ : (K.stupidFiltrationSpectralSequence.page r).liftCycles
+        ((K.stupidFiltrationSpectralSequence.page r).iCycles (p, q)) (p - r, q + r - 1)
+        ((ComplexShape.up' _).next_eq' (by simp; lia)) (HomologicalComplex.iCycles_d _ _ _) =
+          𝟙 _ := by
+      rw [← cancel_mono (HomologicalComplex.iCycles _ _)]
+      simp
+    -- the passage to the homology of the page `r`, on cycles
+    rw [h₁, Category.id_comp, ← hPP, HomologicalComplex.liftCycles_i_assoc] at hL
+    have key := hL.symm
+    rw [K.stupidFiltrationSpectralSequencePageXIso_add_one r hr p q hq, Iso.trans_hom,
+      Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, Iso.symm_hom, ih,
+      HomologicalComplex.iCyclesIso_hom,
+      ← (spectralObject _).spectralSequencePageXToPageX_spectralSequencePageXToEInfty (r + 1)
+        (r + 1 + 1) (by lia) (by lia) _ _ _ _
+        (isZero_spectralObject_H_bot_of_isZero_X _ _
+          (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
+          (by dsimp; lia))]
+    simp only [Category.assoc]
+    rw [reassoc_of% key]
+    simp
+
+/-- For the filtration of `K` by its brutal truncations, the identification of the limit object
+`E^∞_{p,0}` with the piece `F_p H_p(C)` of the abutment is an isomorphism onto `H_p(C)`, since
+`F_{p-1} H_p(C) = 0` and `F_p H_p(C) = H_p(C)`. Through it,
+`CochainComplex.stupidFiltrationSpectralSequencePageXIso_hom_eq` identifies `E^∞_{p,0}` with
+`H_p(C)`. -/
+lemma isIso_stupidFiltration_EInftyToAbutment (p q : ℤ) (hq : q = 0) :
+    IsIso ((spectralObject (filtrationFunctor K.stupidFiltration
+      K.monotone_stupidFiltration)).EInftyToAbutment (p - 1) (-(p + q))
+        (K.isZero_stupidFiltration_abutmentFiltration p q hq)) := by
+  -- `K / F_p` vanishes in the degree `-p`, so `F_p H^{-p}(K)` is all of `H^{-p}(K)`.
+  have hX : IsZero ((cokernel (K.stupidFiltration (p - 1 + 1)).arrow).X (-(p + q))) := by
+    have := isIso_stupidFiltration_arrow_f (K := K) (p := p - 1 + 1) (i := -(p + q)) (by lia)
+    refine IsZero.of_epi_eq_zero ((cokernel.π (K.stupidFiltration (p - 1 + 1)).arrow).f _) ?_
+    rw [← cancel_epi ((K.stupidFiltration (p - 1 + 1)).arrow.f _), ← HomologicalComplex.comp_f,
+      cokernel.condition, HomologicalComplex.zero_f, comp_zero]
+  have : IsIso ((spectralObject (filtrationFunctor K.stupidFiltration
+      K.monotone_stupidFiltration)).abutmentFiltrationι (p - 1 + 1) (-(p + q))) :=
+    Abelian.SpectralObject.isIso_abutmentFiltrationι _ (isZero_spectralObject_H_top _ _ _ _
+      (ShortComplex.isZero_homology_of_isZero_X₂ _ hX))
+  exact Abelian.SpectralObject.isIso_EInftyToAbutment _ _ _ _
 
 end CochainComplex
