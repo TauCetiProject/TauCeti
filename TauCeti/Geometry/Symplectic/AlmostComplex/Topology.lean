@@ -40,6 +40,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
   `(a + b J) (a - b J) = a² + b²`.
 * `TauCeti.AlmostComplexStructure.mul_opNorm_le_opNorm_comp_smul_add_smul`: the same inversion on
   covectors, `r ‖θ‖ ≤ (1 + ‖J‖) ‖θ ∘ (a + b J)‖`.
+* `TauCeti.AlmostComplexStructure.norm_smul_add_smul_le`: the bound from above,
+  `‖a + b J‖ ≤ r (1 + ‖J‖)` for `|a|, |b| ≤ r`.
 * `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`: `a + b J` is invertible
   whenever `a² + b² ≠ 0`, with inverse `(a² + b²)⁻¹ (a - b J)`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
@@ -173,6 +175,22 @@ theorem mul_opNorm_le_opNorm_comp_smul_add_smul {F : Type*} [NormedAddCommGroup 
     _ ≤ ‖θ'‖ * (r * ((1 + NJ) * ‖v‖)) := by
         gcongr; exact J.norm_smul_add_norm_smul_apply_le hab hr.le v
     _ = r * ((1 + NJ) * ‖θ'‖ * ‖v‖) := by ring
+
+/-- **Bounding `a + b J` from above.** For an almost complex structure `J` and `|a|, |b| ≤ r`, the
+operator norm of `a + b J` is at most `r (1 + ‖J‖)`. This is the upper-bound counterpart of
+`mul_opNorm_le_opNorm_comp_smul_add_smul`. -/
+theorem norm_smul_add_smul_le (J : AlmostComplexStructure V) {a b r : ℝ} (ha : |a| ≤ r)
+    (hb : |b| ≤ r) :
+    ‖a • (1 : V →L[ℝ] V) + b • J.toLinearMap.toContinuousLinearMap‖ ≤
+      r * (1 + ‖J.toLinearMap.toContinuousLinearMap‖) := by
+  have hr : 0 ≤ r := (abs_nonneg a).trans ha
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+  calc |a| * ‖(1 : V →L[ℝ] V)‖ + |b| * ‖J.toLinearMap.toContinuousLinearMap‖ ≤
+        r * 1 + r * ‖J.toLinearMap.toContinuousLinearMap‖ := by
+        gcongr
+        exact ContinuousLinearMap.norm_id_le
+    _ = _ := by ring
 
 /-- For an almost complex structure `J`, `a + b J` is invertible whenever `a² + b² ≠ 0`, with
 inverse `(a² + b²)⁻¹ (a - b J)`, since `(a + b J) (a - b J) = (a - b J) (a + b J) = a² + b²`. -/

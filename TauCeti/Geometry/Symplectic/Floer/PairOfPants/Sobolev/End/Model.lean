@@ -432,11 +432,7 @@ theorem norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_le (ω : Symplecti
     refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
   · -- The rotation `r⁻¹ (a + b L)` has norm at most `1 + ‖L‖`, since `|a|, |b| ≤ r`.
     rw [norm_smul, norm_inv, Real.norm_of_nonneg hr.le, inv_mul_le_iff₀ hr]
-    calc ‖a • ContinuousLinearMap.id ℝ V + b • Lu‖
-        ≤ |a| * ‖ContinuousLinearMap.id ℝ V‖ + |b| * ‖Lu‖ :=
-          (norm_add_le _ _).trans (by rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs])
-      _ ≤ r * 1 + r * ‖Lu‖ := by gcongr; exact ContinuousLinearMap.norm_id_le
-      _ = r * (1 + ‖Lu‖) := by ring
+    exact (Jq ζ.2 (u (positiveEndChart q ζ))).norm_smul_add_smul_le ha hb
   · rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hr]
     refine mul_le_of_le_one_left (norm_nonneg _) ?_
     rwa [inv_mul_le_iff₀ hr, mul_one]

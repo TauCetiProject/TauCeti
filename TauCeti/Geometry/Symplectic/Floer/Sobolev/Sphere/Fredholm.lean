@@ -134,16 +134,10 @@ private theorem norm_covectorPullback_realChart_inv_le {J : ℝ × ℝ → V →
   have hb : |b| ≤ r := by
     rw [← abs_of_nonneg hr]
     exact sq_le_sq.1 (by nlinarith [sq_nonneg a])
-  have hM : ‖a • (1 : V →L[ℝ] V) + b • J₀.toLinearMap.toContinuousLinearMap‖ ≤ (1 + N) * r := by
-    refine (norm_add_le _ _).trans ?_
-    rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-    have h1 : ‖(1 : V →L[ℝ] V)‖ ≤ 1 := ContinuousLinearMap.norm_id_le
-    have := norm_nonneg (1 : V →L[ℝ] V)
-    nlinarith [abs_nonneg a, abs_nonneg b, norm_nonneg (J₀.toLinearMap.toContinuousLinearMap)]
   rw [covectorPullback_apply, hJ]
   refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-  calc _ ≤ ‖η (TauCeti.Complex.realChart (·⁻¹) ζ)‖ * ((1 + N) * r) :=
-        mul_le_mul_of_nonneg_left hM (norm_nonneg _)
+  calc _ ≤ ‖η (TauCeti.Complex.realChart (·⁻¹) ζ)‖ * (r * (1 + N)) :=
+        mul_le_mul_of_nonneg_left (J₀.norm_smul_add_smul_le ha hb) (norm_nonneg _)
     _ = _ := by ring
 
 end Inversion
@@ -218,13 +212,12 @@ private theorem norm_floerLinearizationAdjoint_smul_sq_le_indicator {a r M : ℝ
       floerLinearizationAdjoint_zero, norm_zero, zero_pow two_ne_zero]
     exact hRHS
   have hζO : ‖Complex.equivRealProdCLM.symm ζ‖ < a⁻¹ := lt_of_le_of_lt (not_lt.1 hζfar) hra
-  have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le
+  have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero
     (J := fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
     (Kt := fun _ _ ↦ 0) (u := 0) (hψ.differentiable one_ne_zero ζ)
     ((hη₀.contDiffAt ((isOpen_lt Complex.equivRealProdCLM.symm.continuous.norm
       continuous_const).mem_nhds hζO)).differentiableAt (by norm_num))
-    (differentiableAt_const _)
-  rw [hD ζ hζO hζ, norm_zero, mul_zero, zero_add] at hle
+    (differentiableAt_const _) (hD ζ hζO hζ) (B := ‖J₀.toLinearMap.toContinuousLinearMap‖) le_rfl
   by_cases hnear : ‖Complex.equivRealProdCLM.symm ζ‖ < r
   · rw [hψd0 ζ hnear, norm_zero, zero_mul, zero_mul, norm_le_zero_iff] at hle
     rw [hle, norm_zero, zero_pow two_ne_zero]
@@ -524,42 +517,14 @@ private theorem exists_forall_norm_le_of_eq_base (hJ₀ : ∀ z : ℝ × ℝ, T 
   · rw [hJ₀ z (not_le.1 hz).le]
     exact le_max_right _ _
 
-omit [FiniteDimensional ℝ V] in
-/-- The structure `J₀` near infinity is compatible when the structures `J(w, u w)` are, since it is
-`J(w, u w)` for large `w`. -/
-private theorem compatible_of_eq_base {ω : SymplecticForm V}
-    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀) (hc : ∀ z, ω.Compatible (J z (u z))) :
-    ω.Compatible J₀ := by
-  have hT : T ≤ ‖((max T 0 : ℝ), (0 : ℝ))‖ := (le_max_left T 0).trans
-    ((le_abs_self _).trans (by simp))
-  have h := hc ((max T 0 : ℝ), (0 : ℝ))
-  rwa [hJ₀ _ hT] at h
-
-/-- **The adjoint of a cut-off solution, pointwise.** If `D_u^* η = 0`, `‖J(z, u z)‖ ≤ B` and
-`‖dχ‖ ≤ M`, then `‖D_u^* (χ η)‖ ≤ M (1 + B) ‖η‖`. -/
-private theorem norm_floerLinearizationAdjoint_smul_le_of_eq_zero (ω : SymplecticForm V)
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ContDiff ℝ 1 u) {B : ℝ}
-    (hB : ∀ z, ‖(J z (u z)).toLinearMap.toContinuousLinearMap‖ ≤ B)
-    {χ : ℝ × ℝ → ℝ} (hχ : Differentiable ℝ χ) {M : ℝ} (hχM : ∀ z, ‖fderiv ℝ χ z‖ ≤ M)
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : Differentiable ℝ η)
-    (hD : ∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      Ks Kt u η z = 0) (z : ℝ × ℝ) :
-    ‖ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
-      (fun z ↦ χ z • η z) z‖ ≤ M * (1 + B) * ‖η z‖ := by
-  have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le (Ks := Ks) (Kt := Kt)
-    (J := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) (u := u) (hχ z) (hη z)
-    (((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero)
-  rw [hD z, norm_zero, mul_zero, zero_add] at hle
-  exact hle.trans (mul_le_mul_of_nonneg_right (mul_le_mul (hχM z) (by linarith [hB z])
-    (by positivity) ((norm_nonneg _).trans (hχM z))) (norm_nonneg _))
-
 /-- **The weighted energy of a cut-off cokernel element.** Let `J` be compatible along `u` with
 `‖J(z, u z)‖ ≤ B`, and let `χ` be a `C²` cutoff with values in `[0, 1]`, vanishing on `|w| ≥ b`,
 with `‖dχ‖ ≤ M`. Then there is `K` such that for every square-integrable `C²` covector field `η`
 with `D_u^* η = 0` the `W^{1,2}` energy of `χ η` for the weight of the sphere is at most
-`K ∫ ‖η‖²`. -/
+`K ∫ ‖η‖²`: this is
+`exists_forall_integral_weighted_smul_le_of_integral_floerLinearizationAdjoint_le` for the weight
+`1`, with the adjoint term bounded pointwise by
+`norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero`. -/
 private theorem exists_integral_sphereWeight_smul_le (ω : SymplecticForm V)
     (hJ : ∀ z, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
@@ -575,49 +540,24 @@ private theorem exists_integral_sphereWeight_smul_le (ω : SymplecticForm V)
         Ks Kt u η z = 0) → Integrable (fun z ↦ ‖η z‖ ^ 2) →
       ∫ z, (sphereWeight z * ‖χ z • η z‖ ^ 2 + ‖fderiv ℝ (fun z ↦ χ z • η z) z (1, 0)‖ ^ 2 +
           ‖fderiv ℝ (fun z ↦ χ z • η z) z (0, 1)‖ ^ 2) ≤ K * ∫ z, ‖η z‖ ^ 2 := by
-  obtain ⟨C, hC, hdisc⟩ :=
-    ω.exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_add_of_lt
-      hJ hKs hKt hu (w := fun _ ↦ 1) (fun _ ↦ zero_le_one) continuous_const
-      (fun _ _ ↦ one_pos) (fun z _ ↦ hc z) (show b < b + 1 by linarith)
-  refine ⟨C * ((M * (1 + B)) ^ 2 + 1), fun η hη hD hηi ↦ ?_⟩
-  set g : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ χ z • η z
-  have hg : ContDiff ℝ 2 g := hχ.smul hη
-  have hg0 (z : ℝ × ℝ) (hz : b < ‖Complex.equivRealProdCLM.symm z‖) : g =ᶠ[𝓝 z] 0 := by
-    filter_upwards [(isOpen_lt continuous_const
-      Complex.equivRealProdCLM.symm.continuous.norm).mem_nhds hz] with w hw
-    simp [g, hχb w hw.le]
-  have hgc : HasCompactSupport g :=
-    HasCompactSupport.intro (isCompact_setOf_norm_equivRealProdCLM_symm_le b) fun z hz ↦
-      (hg0 z (not_le.1 hz)).self_of_nhds
+  obtain ⟨C, -, hE⟩ :=
+    ω.exists_forall_integral_weighted_smul_le_of_integral_floerLinearizationAdjoint_le hJ hKs hKt hu
+      (fun _ ↦ zero_le_one) continuous_const (lt_add_one b) (fun _ _ ↦ one_pos) (fun z _ ↦ hc z)
+      continuous_sphereWeight sphereWeight_le_one hχ hχ01 hχb
+  refine ⟨C * ((M * (1 + B)) ^ 2 + 1), fun η hη hD hηi ↦ hE hη hηi ?_⟩
   -- The adjoint of `χ η` is `dχ`-times `η`, of norm at most `M (1 + B) ‖η‖`.
-  have hDg : ∫ z, 1 * ‖ω.floerLinearizationAdjoint
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u g z‖ ^ 2 ≤
-      (M * (1 + B)) ^ 2 * ∫ z, ‖η z‖ ^ 2 := by
-    rw [← integral_const_mul]
-    refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity) (hηi.const_mul _)
-      (ae_of_all _ fun z ↦ ?_)
-    dsimp only
-    calc _ ≤ (M * (1 + B) * ‖η z‖) ^ 2 := by
-          rw [one_mul]
-          exact pow_le_pow_left₀ (norm_nonneg _) (norm_floerLinearizationAdjoint_smul_le_of_eq_zero
-            ω hJ hu hB (hχ.differentiable two_ne_zero) hχM (hη.differentiable two_ne_zero) hD z) 2
-      _ = _ := by ring
-  have hL : ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b + 1}, ‖g z‖ ^ 2 ≤
-      ∫ z, ‖η z‖ ^ 2 := by
-    refine (setIntegral_le_integral (hg.continuous.integrable_norm_sq_of_hasCompactSupport hgc)
-      (ae_of_all _ fun _ ↦ by positivity)).trans (integral_mono
-        (hg.continuous.integrable_norm_sq_of_hasCompactSupport hgc) hηi fun z ↦ ?_)
-    have h01 := hχ01 z
-    simp only [g, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-    exact mul_le_of_le_one_left (sq_nonneg _) (by nlinarith [h01.1, h01.2])
-  calc _ ≤ ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}, sobolevDensity g z :=
-        integral_weighted_le_setIntegral_sobolevDensity continuous_sphereWeight sphereWeight_le_one
-          (hg.of_le one_le_two) (isCompact_setOf_norm_equivRealProdCLM_symm_le b)
-          fun z hz ↦ hg0 z (not_le.1 hz)
-    _ ≤ C * ((∫ z, 1 * ‖ω.floerLinearizationAdjoint
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u g z‖ ^ 2) +
-        ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b + 1}, ‖g z‖ ^ 2) := hdisc hg hgc
-    _ ≤ C * ((M * (1 + B)) ^ 2 * (∫ z, ‖η z‖ ^ 2) + ∫ z, ‖η z‖ ^ 2) := by gcongr
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity) (hηi.const_mul _)
+    (ae_of_all _ fun z ↦ ?_)
+  have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero
+    (hχ.differentiable two_ne_zero z) (hη.differentiable two_ne_zero z)
+    (((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero) (hD z) (hB z)
+  dsimp only
+  calc _ ≤ (M * (1 + B) * ‖η z‖) ^ 2 := by
+        rw [one_mul]
+        exact pow_le_pow_left₀ (norm_nonneg _) (hle.trans (mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_right (hχM z) (by linarith [(norm_nonneg _).trans (hB z)]))
+          (norm_nonneg _))) 2
     _ = _ := by ring
 
 /-- **Cokernel elements on the sphere are regular.** Under the hypotheses of
@@ -675,7 +615,7 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereW
   -- elements, and the compact restriction to the disc `|w| ≤ b`.
   obtain ⟨b, A, hb, hA0, hglob⟩ :=
     exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero (ω := ω) (u := u) hJ₀ hKs₀
-      hKt₀ (compatible_of_eq_base hJ₀ hc)
+      hKt₀ (hJ₀ (|T|, 0) (by simp [Prod.norm_def, le_abs_self]) (u (|T|, 0)) ▸ hc (|T|, 0))
   obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eq_base hJ₀ hJ1 hu.continuous
   obtain ⟨χ, hχs, hχ01, hχ1, hχ0, -, -, hχM⟩ := exists_contDiff_cutoff_comp_continuousLinearMap
     (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ) hb

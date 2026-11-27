@@ -232,12 +232,9 @@ private theorem inv_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : Symplect
     ((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero
   -- `‖D^* (χ η)‖ ≤ ‖dχ‖ (1 + B) ‖η‖`, since `D^* η = 0`.
   have hle : ‖ω.floerLinearizationAdjoint J' Ks Kt u (fun z ↦ χ z • η z) z‖ ≤
-      ‖fderiv ℝ χ z‖ * (1 + B) * ‖η z‖ := by
-    refine (ω.norm_floerLinearizationAdjoint_fun_smul_le (Ks := Ks) (Kt := Kt)
-      ((hχ.differentiable one_ne_zero) z) ((hη.differentiable one_ne_zero) z) hJu).trans ?_
-    rw [hD z, norm_zero, mul_zero, zero_add]
-    gcongr
-    exact hB z
+      ‖fderiv ℝ χ z‖ * (1 + B) * ‖η z‖ :=
+    ω.norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero ((hχ.differentiable one_ne_zero) z)
+      ((hη.differentiable one_ne_zero) z) hJu (hD z) (hB z)
   have hρ : (PSSPlane.cylindricalWeight z)⁻¹ = 1 + ν ^ 2 := inv_cylindricalWeight z
   by_cases hz : n ≤ ν ∧ ν ≤ 2 * n
   · rw [indicator_of_mem (show z ∈ {z : ℝ × ℝ | n ≤ ‖Complex.equivRealProdCLM.symm z‖} from hz.1)]
@@ -453,7 +450,9 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
 `D_u^*` on discs, with `J` compatible along `u` and `‖J(z, u z)‖ ≤ B`, let `χ` be a cutoff vanishing
 off the disc `‖w‖ < 2n`, `n ≥ 1`, whose derivative vanishes off the annulus `n ≤ ‖w‖ ≤ 2n` and has
 norm at most `M / n`. Then there is `K` such that for every square-integrable `C²` covector field
-`η` with `D_u^* η = 0` the weighted `W^{1,2}` energy of `χ η` is at most `K ∫ ‖η‖²`. -/
+`η` with `D_u^* η = 0` the weighted `W^{1,2}` energy of `χ η` is at most `K ∫ ‖η‖²`: this is
+`exists_forall_integral_weighted_smul_le_of_integral_floerLinearizationAdjoint_le`, with the adjoint
+term bounded by `integral_inv_mul_norm_floerLinearizationAdjoint_smul_sq_le`. -/
 private theorem exists_integral_weighted_smul_le (ω : SymplecticForm V)
     (hJ : ∀ z, ContDiffAt ℝ 1
       (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
@@ -472,55 +471,22 @@ private theorem exists_integral_weighted_smul_le (ω : SymplecticForm V)
       ∫ z, (PSSPlane.cylindricalWeight z * ‖χ z • η z‖ ^ 2 +
           ‖fderiv ℝ (fun z ↦ χ z • η z) z (1, 0)‖ ^ 2 +
           ‖fderiv ℝ (fun z ↦ χ z • η z) z (0, 1)‖ ^ 2) ≤ K * ∫ z, ‖η z‖ ^ 2 := by
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap
-  set ν : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖
-  have hwc : Continuous fun z ↦ (PSSPlane.cylindricalWeight z)⁻¹ :=
-    PSSPlane.continuous_inv_cylindricalWeight
   have hw0 (z : ℝ × ℝ) : 0 < (PSSPlane.cylindricalWeight z)⁻¹ := by
     rw [inv_cylindricalWeight]
     positivity
-  obtain ⟨C', hC', hdisc⟩ :=
-    ω.exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_add_of_lt
-      hJ hKs hKt hu (fun z ↦ (hw0 z).le) hwc (fun z _ ↦ hw0 z) (fun z _ ↦ hc z)
-      (show 2 * n < 2 * n + 1 by linarith)
-  set c := 5 * (M * (1 + B)) ^ 2
-  refine ⟨C' * (c + 1), fun η hη hD hηi ↦ ?_⟩
-  set g : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ χ z • η z
-  have hg : ContDiff ℝ 2 g := hχ.smul hη
-  have hg0 (z : ℝ × ℝ) (hz : 2 * n < ν z) : g =ᶠ[𝓝 z] 0 := by
-    filter_upwards [(isOpen_lt continuous_const
-      Complex.equivRealProdCLM.symm.continuous.norm).mem_nhds hz] with w hw
-    simp [g, hχ2n w (le_of_lt hw)]
-  have hgc : HasCompactSupport g :=
-    HasCompactSupport.intro (isCompact_setOf_norm_equivRealProdCLM_symm_le (2 * n)) fun z hz ↦
-      (hg0 z (not_le.1 hz)).self_of_nhds
-  have hW := integral_weighted_le_setIntegral_sobolevDensity PSSPlane.continuous_cylindricalWeight
-    (fun z ↦ by
-      rw [PSSPlane.cylindricalWeight_apply]
-      exact inv_le_one_of_one_le₀ (le_add_of_nonneg_right (sq_nonneg _)))
-    (hg.of_le one_le_two) (isCompact_setOf_norm_equivRealProdCLM_symm_le (2 * n))
-    fun z hz ↦ hg0 z (not_le.1 hz)
-  -- The adjoint term and the `L²` term are controlled by `∫ ‖η‖²`.
-  have hT : ∫ z, (PSSPlane.cylindricalWeight z)⁻¹ *
-      ‖ω.floerLinearizationAdjoint J' Ks Kt u g z‖ ^ 2 ≤ c * ∫ z, ‖η z‖ ^ 2 :=
-    (integral_inv_mul_norm_floerLinearizationAdjoint_smul_sq_le ω hJ hu hB (hη.of_le one_le_two)
-      hD hηi (hχ.of_le one_le_two) hn hχ0 hχ2 hχM).trans (mul_le_mul_of_nonneg_left
-        (setIntegral_le_integral hηi (ae_of_all _ fun z ↦ by positivity)) (by positivity))
-  have hL : ∫ z in {z | ν z ≤ 2 * n + 1}, ‖g z‖ ^ 2 ≤ ∫ z, ‖η z‖ ^ 2 := by
-    refine (setIntegral_mono_on ((hg.continuous.norm.pow 2).continuousOn.integrableOn_compact
-      (isCompact_setOf_norm_equivRealProdCLM_symm_le _)) hηi.integrableOn
-      (isCompact_setOf_norm_equivRealProdCLM_symm_le _).measurableSet fun z _ ↦ ?_).trans
-      (setIntegral_le_integral hηi (ae_of_all _ fun z ↦ by positivity))
-    have h01 := hχ01 z
-    simp only [g, Pi.pow_apply, norm_smul, Real.norm_eq_abs]
-    rw [mul_pow, sq_abs]
-    exact mul_le_of_le_one_left (sq_nonneg _) (by nlinarith [h01.1, h01.2])
-  calc _ ≤ ∫ z in {z | ν z ≤ 2 * n}, sobolevDensity g z := hW
-    _ ≤ C' * ((∫ z, (PSSPlane.cylindricalWeight z)⁻¹ *
-          ‖ω.floerLinearizationAdjoint J' Ks Kt u g z‖ ^ 2) +
-        ∫ z in {z | ν z ≤ 2 * n + 1}, ‖g z‖ ^ 2) := hdisc hg hgc
-    _ ≤ C' * (c * (∫ z, ‖η z‖ ^ 2) + ∫ z, ‖η z‖ ^ 2) := by gcongr
-    _ = C' * (c + 1) * ∫ z, ‖η z‖ ^ 2 := by ring
+  obtain ⟨C', -, hE⟩ :=
+    ω.exists_forall_integral_weighted_smul_le_of_integral_floerLinearizationAdjoint_le hJ hKs hKt hu
+      (fun z ↦ (hw0 z).le) PSSPlane.continuous_inv_cylindricalWeight (lt_add_one (2 * n))
+      (fun z _ ↦ hw0 z) (fun z _ ↦ hc z) PSSPlane.continuous_cylindricalWeight
+      (fun z ↦ by
+        rw [PSSPlane.cylindricalWeight_apply]
+        exact inv_le_one_of_one_le₀ (le_add_of_nonneg_right (sq_nonneg _)))
+      hχ hχ01 hχ2n
+  -- The adjoint term is controlled by `∫ ‖η‖²`.
+  refine ⟨C' * (5 * (M * (1 + B)) ^ 2 + 1), fun η hη hD hηi ↦ hE hη hηi ?_⟩
+  exact (integral_inv_mul_norm_floerLinearizationAdjoint_smul_sq_le ω hJ hu hB (hη.of_le one_le_two)
+    hD hηi (hχ.of_le one_le_two) hn hχ0 hχ2 hχM).trans (mul_le_mul_of_nonneg_left
+      (setIntegral_le_integral hηi (ae_of_all _ fun z ↦ by positivity)) (by positivity))
 
 end Estimate
 

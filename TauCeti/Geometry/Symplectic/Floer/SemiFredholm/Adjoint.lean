@@ -98,6 +98,10 @@ In the namespace `TauCeti.SymplecticForm`:
   `∫_{‖z‖ ≤ a} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C ∫_{‖z‖ ≤ b} (‖D_u^* η‖² + ‖η‖²)` on a disc, for
   covector fields of arbitrary support, with hypotheses only on the larger disc `‖z‖ ≤ b`, through
   a cutoff between the two discs.
+* `exists_forall_integral_weighted_smul_le_of_integral_floerLinearizationAdjoint_le`: for a cutoff
+  `χ` supported in a disc, the weighted `W^{1,2}` energy of `χ η` is at most `C (c + 1) ∫ ‖η‖²`
+  whenever `∫ w ‖D_u^* (χ η)‖² ≤ c ∫ ‖η‖²`, the step of Peetre's argument for the finiteness of
+  the cokernel on the plane and on the sphere.
 
 The Sobolev completion of `D_u^*`, the regularity of weak `L²` cokernel elements and the Fredholm
 property are not treated here.
@@ -1314,6 +1318,67 @@ theorem
           (hη₀.continuous.norm.pow 2).continuousOn)) (hI (continuousOn_const.mul hF))
           hK.measurableSet hpt) hC₀
     _ = _ := by rw [integral_const_mul, mul_assoc]
+
+/-- **The weighted energy of a cut-off covector field.** Let `b < b'`, and suppose that on the
+disc `‖w‖ ≤ b'` the structure `J(z, u z)` is `ω`-compatible and the continuous weight `w ≥ 0` is
+positive, with `J` `C¹` and `K_s`, `K_t` `C²` along the `C¹` map `u`. Let `ρ ≤ 1` be a continuous
+weight and `χ` a `C²` cutoff with values in `[0, 1]` vanishing on `‖w‖ ≥ b`. Then there is `C ≥ 0`
+such that every square-integrable `C²` covector field `η` with
+`∫ w ‖D_u^* (χ η)‖² ≤ c ∫ ‖η‖²` satisfies
+`∫ (ρ ‖χ η‖² + ‖∂s (χ η)‖² + ‖∂t (χ η)‖²) ≤ C (c + 1) ∫ ‖η‖²`, by the estimate of `D_u^*` on the
+disc `‖w‖ ≤ b`. Peetre's argument applies this to cut-offs of solutions of `D_u^* η = 0`, whose
+adjoint only involves `dχ`. -/
+theorem exists_forall_integral_weighted_smul_le_of_integral_floerLinearizationAdjoint_le
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1
+      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) (hwc : Continuous w) {b b' : ℝ} (hbb' : b < b')
+    (hwb : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ b' → 0 < w z)
+    (hc : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ b' → ω.Compatible (J z (u z)))
+    {ρ : ℝ × ℝ → ℝ} (hρ : Continuous ρ) (hρ1 : ∀ z, ρ z ≤ 1)
+    {χ : ℝ × ℝ → ℝ} (hχ : ContDiff ℝ 2 χ) (hχ01 : ∀ z, χ z ∈ Icc 0 1)
+    (hχb : ∀ z, b ≤ ‖Complex.equivRealProdCLM.symm z‖ → χ z = 0) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → Integrable (fun z ↦ ‖η z‖ ^ 2) →
+      ∀ ⦃c : ℝ⦄, ∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (fun z ↦ χ z • η z) z‖ ^ 2 ≤
+        c * ∫ z, ‖η z‖ ^ 2 →
+      ∫ z, (ρ z * ‖χ z • η z‖ ^ 2 + ‖fderiv ℝ (fun z ↦ χ z • η z) z (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ (fun z ↦ χ z • η z) z (0, 1)‖ ^ 2) ≤ C * (c + 1) * ∫ z, ‖η z‖ ^ 2 := by
+  obtain ⟨C, hC, hdisc⟩ :=
+    ω.exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_add_of_lt
+      hJ hKs hKt hu hw hwc hwb hc hbb'
+  refine ⟨C, hC, fun η hη hηi c hT ↦ ?_⟩
+  set g : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ χ z • η z
+  have hg : ContDiff ℝ 2 g := hχ.smul hη
+  have hg0 (z : ℝ × ℝ) (hz : b < ‖Complex.equivRealProdCLM.symm z‖) : g =ᶠ[𝓝 z] 0 := by
+    filter_upwards [(isOpen_lt continuous_const
+      Complex.equivRealProdCLM.symm.continuous.norm).mem_nhds hz] with x hx
+    simp [g, hχb x hx.le]
+  have hgc : HasCompactSupport g :=
+    HasCompactSupport.intro (isCompact_setOf_norm_equivRealProdCLM_symm_le b) fun z hz ↦
+      (hg0 z (not_le.1 hz)).self_of_nhds
+  -- The cutoff does not increase the `L²` norm.
+  have hL : ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b'}, ‖g z‖ ^ 2 ≤
+      ∫ z, ‖η z‖ ^ 2 := by
+    refine (setIntegral_mono_on ((hg.continuous.norm.pow 2).continuousOn.integrableOn_compact
+      (isCompact_setOf_norm_equivRealProdCLM_symm_le _)) hηi.integrableOn
+      (isCompact_setOf_norm_equivRealProdCLM_symm_le _).measurableSet fun z _ ↦ ?_).trans
+      (setIntegral_le_integral hηi (ae_of_all _ fun z ↦ by positivity))
+    have h01 := hχ01 z
+    simp only [g, Pi.pow_apply, norm_smul, Real.norm_eq_abs]
+    rw [mul_pow, sq_abs]
+    exact mul_le_of_le_one_left (sq_nonneg _) (by nlinarith [h01.1, h01.2])
+  calc _ ≤ ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}, sobolevDensity g z :=
+        integral_weighted_le_setIntegral_sobolevDensity hρ hρ1 (hg.of_le one_le_two)
+          (isCompact_setOf_norm_equivRealProdCLM_symm_le b) fun z hz ↦ hg0 z (not_le.1 hz)
+    _ ≤ C * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u g z‖ ^ 2) +
+        ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b'}, ‖g z‖ ^ 2) := hdisc hg hgc
+    _ ≤ C * (c * (∫ z, ‖η z‖ ^ 2) + ∫ z, ‖η z‖ ^ 2) := by gcongr
+    _ = _ := by ring
 
 end Disc
 
