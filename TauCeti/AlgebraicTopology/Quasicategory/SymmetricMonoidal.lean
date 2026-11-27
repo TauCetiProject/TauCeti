@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import TauCeti.AlgebraicTopology.Quasicategory.CategoricalEquivalence
-public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian
+public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad
 public import TauCeti.AlgebraicTopology.Quasicategory.Product
-public import TauCeti.CategoryTheory.Category.Pointed.Fin
 
 /-!
 # Symmetric monoidal quasicategories
@@ -30,7 +28,8 @@ choice of transports, but that comparison is not proved here.
 
 A symmetric monoidal functor between symmetric monoidal quasicategories `p` and `q` is a map
 `C^⊗ ⟶ D^⊗` over `N(Fin_*)` preserving coCartesian edges; a lax symmetric monoidal functor is only
-required to preserve the coCartesian edges lying over inert maps.
+required to preserve the coCartesian edges lying over inert maps, that is, it is a map of
+`∞`-operads `SSet.InfinityOperad.Hom p q`.
 
 ## Main definitions
 
@@ -39,9 +38,10 @@ required to preserve the coCartesian edges lying over inert maps.
 * `SSet.IsSegal p`: the Segal condition.
 * `SSet.SymmetricMonoidal p`: the coCartesian fibration `p` over `N(Fin_*)` satisfies the Segal
   condition.
-* `SSet.SymmetricMonoidalFunctor p q`, `SSet.LaxSymmetricMonoidalFunctor p q`: maps over
-  `N(Fin_*)` preserving all coCartesian edges, respectively those over inert maps, with their
-  identities, composites and underlying functors on the fibers over `⟨1⟩`.
+* `SSet.SymmetricMonoidalFunctor p q`: maps over `N(Fin_*)` preserving all coCartesian edges,
+  with their identities, composites and underlying functors on the fibers over `⟨1⟩`.
+* `SSet.SymmetricMonoidalFunctor.toOperadHom`: the underlying lax symmetric monoidal functor, a
+  map of `∞`-operads.
 
 ## Main results
 
@@ -60,10 +60,6 @@ public section
 universe u
 
 open CategoryTheory Limits Simplicial TauCeti
-
-/-- The vertex `⟨n⟩` of the nerve `N(Fin_*)` of `FinPointed`. -/
-abbrev TauCeti.FinPointed.vertex (n : FinPointed.{u}) : (nerve FinPointed.{u}) _⦋0⦌ :=
-  nerveEquiv.symm n
 
 namespace SSet
 
@@ -149,19 +145,7 @@ structure SymmetricMonoidalFunctor where
   isCoCartesian_map {x y : X _⦋0⦌} (f : Edge x y) (hf : f.IsCoCartesian p) :
     (f.map hom).IsCoCartesian q
 
-/-- A lax symmetric monoidal functor from `p : C^⊗ ⟶ N(Fin_*)` to `q : D^⊗ ⟶ N(Fin_*)`: a map
-`C^⊗ ⟶ D^⊗` over `N(Fin_*)` sending the `p`-coCartesian edges lying over inert maps to
-`q`-coCartesian edges. -/
-@[ext]
-structure LaxSymmetricMonoidalFunctor where
-  /-- The underlying map `C^⊗ ⟶ D^⊗`. -/
-  hom : X ⟶ Y
-  hom_comp : hom ≫ q = p
-  isCoCartesian_map {x y : X _⦋0⦌} (f : Edge x y) (hf : f.IsCoCartesian p)
-    (hinert : FinPointed.inert (f.map p).edge.hom) : (f.map hom).IsCoCartesian q
-
 attribute [reassoc (attr := simp)] SymmetricMonoidalFunctor.hom_comp
-  LaxSymmetricMonoidalFunctor.hom_comp
 
 namespace SymmetricMonoidalFunctor
 
@@ -190,14 +174,14 @@ lemma comp_hom (F : SymmetricMonoidalFunctor p q) (G : SymmetricMonoidalFunctor 
     (F.comp G).hom = F.hom ≫ G.hom :=
   (rfl)
 
-/-- A symmetric monoidal functor is lax symmetric monoidal. -/
-def toLax (F : SymmetricMonoidalFunctor p q) : LaxSymmetricMonoidalFunctor p q where
+/-- A symmetric monoidal functor is lax symmetric monoidal: it is a map of `∞`-operads. -/
+def toOperadHom (F : SymmetricMonoidalFunctor p q) : InfinityOperad.Hom p q where
   hom := F.hom
   hom_comp := F.hom_comp
   isCoCartesian_map f hf _ := F.isCoCartesian_map f hf
 
 @[simp]
-lemma toLax_hom (F : SymmetricMonoidalFunctor p q) : F.toLax.hom = F.hom :=
+lemma toOperadHom_hom (F : SymmetricMonoidalFunctor p q) : F.toOperadHom.hom = F.hom :=
   (rfl)
 
 /-- The underlying functor `C_⟨1⟩ ⟶ D_⟨1⟩` of a symmetric monoidal functor. -/
@@ -212,47 +196,5 @@ lemma comp_underlying (F : SymmetricMonoidalFunctor p q) (G : SymmetricMonoidalF
   fiber.map_comp _ _ _ _ _
 
 end SymmetricMonoidalFunctor
-
-namespace LaxSymmetricMonoidalFunctor
-
-/-- The identity lax symmetric monoidal functor. -/
-def id : LaxSymmetricMonoidalFunctor p p where
-  hom := 𝟙 X
-  hom_comp := Category.id_comp p
-  isCoCartesian_map f hf _ := hf.of_edge_eq (by simp)
-
-@[simp]
-lemma id_hom : (id p).hom = 𝟙 X :=
-  (rfl)
-
-variable {p q r}
-
-/-- The composite of two lax symmetric monoidal functors. -/
-def comp (F : LaxSymmetricMonoidalFunctor p q) (G : LaxSymmetricMonoidalFunctor q r) :
-    LaxSymmetricMonoidalFunctor p r where
-  hom := F.hom ≫ G.hom
-  hom_comp := by simp
-  isCoCartesian_map f hf hinert := by
-    refine (G.isCoCartesian_map _ (F.isCoCartesian_map f hf hinert) ?_).of_edge_eq (by simp)
-    rwa [Edge.map_edge, Edge.map_edge, ← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
-      F.hom_comp]
-
-@[simp]
-lemma comp_hom (F : LaxSymmetricMonoidalFunctor p q) (G : LaxSymmetricMonoidalFunctor q r) :
-    (F.comp G).hom = F.hom ≫ G.hom :=
-  (rfl)
-
-/-- The underlying functor `C_⟨1⟩ ⟶ D_⟨1⟩` of a lax symmetric monoidal functor. -/
-abbrev underlying (F : LaxSymmetricMonoidalFunctor p q) :
-    (fiber p (FinPointed.mk 1).vertex : SSet) ⟶ (fiber q (FinPointed.mk 1).vertex : SSet) :=
-  fiber.map F.hom F.hom_comp _
-
-/-- The underlying functor of a composite is the composite of the underlying functors. -/
-@[simp]
-lemma comp_underlying (F : LaxSymmetricMonoidalFunctor p q) (G : LaxSymmetricMonoidalFunctor q r) :
-    (F.comp G).underlying = F.underlying ≫ G.underlying :=
-  fiber.map_comp _ _ _ _ _
-
-end LaxSymmetricMonoidalFunctor
 
 end SSet

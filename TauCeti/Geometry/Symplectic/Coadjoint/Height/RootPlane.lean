@@ -35,7 +35,8 @@ namespace `TauCeti.IsRootPlaneDecomposition`:
 
 For a **regular** `X ∈ t`, with `α_i(X) ≠ 0` for every root, the critical points of `f_X` are the
 points of the orbit lying over `t`, those with `q ∈ t`
-(`mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_mem`), and every one of them is
+(`mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_mem`,
+`criticalPoints_eq_preimage_orbitMap_coadjointRepresentation`), and every one of them is
 nondegenerate, so `f_X` is a Morse function on every coadjoint orbit when `B` is separating
 (`isManifoldNondegenerateCriticalPoint_orbitMap_coadjointRepresentation_apply`). This is the index
 formula behind Bott's computation of the homology of flag manifolds and, more generally, of the
@@ -46,6 +47,9 @@ coadjoint orbits of compact Lie groups.
 * `manifoldMorseIndex_orbitMap_coadjointRepresentation_apply_eq_two_mul_card`, in the namespace
   `TauCeti.IsRootPlaneDecomposition`: the Morse index at a torus point counts the root planes
   with `α_i(q) α_i(X) > 0`.
+* `criticalPoints_eq_preimage_orbitMap_coadjointRepresentation`, in the namespace
+  `TauCeti.IsRootPlaneDecomposition`: the critical set of the height of a regular element of `t`
+  is the part of the orbit lying over `t`.
 * `isManifoldNondegenerateCriticalPoint_orbitMap_coadjointRepresentation_apply`, in the namespace
   `TauCeti.IsRootPlaneDecomposition`: the height of a regular element of `t` is a Morse function
   on every coadjoint orbit.
@@ -145,6 +149,28 @@ theorem mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_mem [Finit
   rw [Module.Dual.mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_lie_eq_zero hB
     hsep hq]
   exact ⟨hD.mem_of_lie_eq_zero hB hsep hX, hD.lie_eq_zero X.property⟩
+
+/-- **The critical set of a regular height.** In a root-plane decomposition of `𝔤` for a
+separating invariant form `B`, let `X ∈ t` be regular, `α_i(X) ≠ 0` for every root. Then the
+critical points of the height `f_X` on the coadjoint orbit of `ν` are the points `x` with
+`μ x ∈ B t`. In particular the critical set is the same for every regular `X`. -/
+theorem criticalPoints_eq_preimage_orbitMap_coadjointRepresentation [Finite ι]
+    (hD : IsRootPlaneDecomposition B t α F J) (hB : B.lieInvariant (GroupLieAlgebra I G))
+    (hsep : B.SeparatingLeft) (hX : ∀ i, α i X ≠ 0) :
+    criticalPoints
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+        (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) =
+      (coadjointRepresentation ℝ I G).orbitMap ν ⁻¹' (B '' (t : Set (GroupLieAlgebra I G))) := by
+  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
+  have hinj : Function.Injective B :=
+    LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hsep)
+  -- In finite dimensions the injective map `q ↦ B q` to the dual is onto.
+  have hsurj := (B.linearEquivOfInjective hinj Subspace.dual_finrank_eq.symm).surjective
+  ext x
+  obtain ⟨q, hq⟩ := hsurj ((coadjointRepresentation ℝ I G).orbitMap ν x)
+  rw [LinearMap.linearEquivOfInjective_apply] at hq
+  rw [hD.mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_mem hB hsep hX hq.symm,
+    Set.mem_preimage, ← hq, hinj.mem_set_image, SetLike.mem_coe]
 
 /-- **The height of a regular torus element is a Morse function.** In a root-plane decomposition of
 `𝔤` for a separating invariant form `B`, let `X ∈ t` be regular, `α_i(X) ≠ 0` for every root.

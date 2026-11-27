@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Topology.Instances.Matrix
+import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Topology.UniformSpace.Matrix
 import TauCeti.Topology.Instances.Matrix
 
@@ -31,6 +33,9 @@ Over a seminormed ring, a family of matrices whose entries are bounded along a f
 on either side by a family tending to `0`, tends to `0`. This is entrywise the corresponding
 fact for the ring of entries, so it needs no matrix norm.
 
+Over a normed field, square matrices `g` tending to the identity along a filter have inverses with
+bounded entries, and if `g - 1 = O(a)` entrywise, then so is `g⁻¹ - 1 = -g⁻¹ (g - 1)`.
+
 ## Main declarations
 
 * `Matrix.linftyOpTopologicalSpace`: the topology induced by the `L∞` operator norm.
@@ -42,6 +47,8 @@ fact for the ring of entries, so it needs no matrix norm.
 * `Matrix.properSpace`: properness for the entrywise sup norm, scoped with the norm.
 * `Matrix.isBoundedUnder_le_mul_tendsto_zero`, `Matrix.tendsto_zero_mul_isBoundedUnder_le`: an
   entrywise bounded family times a family tending to `0`, in either order, tends to `0`.
+* `Matrix.isBigO_inv_apply_of_tendsto_one`, `Matrix.isBigO_inv_sub_one_apply_of_tendsto_one`:
+  entrywise control of the inverses of matrices tending to the identity.
 -/
 
 public section
@@ -155,5 +162,38 @@ theorem tendsto_zero_mul_isBoundedUnder_le {H : ι → Matrix l m R} {F : ι →
     tendsto_finsetSum _ fun k _ ↦ (hH i k).zero_mul_isBoundedUnder_le (hF k j)
 
 end
+
+section Inverse
+
+open Asymptotics Filter Topology
+
+variable {α n 𝕜 : Type*} [Fintype n] [DecidableEq n] [NormedField 𝕜] {L : Filter α}
+  {g : α → Matrix n n 𝕜}
+
+/-- Square matrices tending to the identity along a filter have inverses with entries bounded
+along it. -/
+theorem isBigO_inv_apply_of_tendsto_one (hg : Tendsto g L (𝓝 1)) (k l : n) :
+    (fun x ↦ (g x)⁻¹ k l) =O[L] fun _ ↦ (1 : ℝ) := by
+  have hinv : Tendsto (fun x ↦ (g x)⁻¹) L (𝓝 1) := by
+    simpa [Function.comp_def] using
+      ((continuousAt_id (x := (1 : Matrix n n 𝕜))).matrix_inv (by simp)).tendsto.comp hg
+  exact (((continuous_apply_apply k l).tendsto _).comp hinv).isBigO_one ℝ
+
+/-- If square matrices `g` tend to the identity along a filter and `g - 1 = O(a)` entrywise, then
+`g⁻¹ - 1 = -g⁻¹ (g - 1) = O(a)` entrywise. -/
+theorem isBigO_inv_sub_one_apply_of_tendsto_one {F : Type*} [SeminormedAddCommGroup F]
+    {a : α → F} (hg : Tendsto g L (𝓝 1)) (hga : ∀ i j, (fun x ↦ (g x - 1) i j) =O[L] a) (k l : n) :
+    (fun x ↦ ((g x)⁻¹ - 1) k l) =O[L] a := by
+  have hsum : (fun x ↦ -∑ m, (g x)⁻¹ k m * (g x - 1) m l) =O[L] a :=
+    (IsBigO.fun_sum fun m _ ↦ ((isBigO_inv_apply_of_tendsto_one hg k m).mul
+      (hga m l).norm_right).trans_le fun x ↦ by simp).neg_left
+  refine hsum.congr' ?_ .rfl
+  filter_upwards [eventually_det_ne_zero_of_tendsto_one hg] with x hx
+  have h : (g x)⁻¹ * (g x - 1) = 1 - (g x)⁻¹ := by
+    simp [Matrix.mul_sub, Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.2 hx)]
+  rw [← Matrix.mul_apply, h]
+  simp
+
+end Inverse
 
 end Matrix

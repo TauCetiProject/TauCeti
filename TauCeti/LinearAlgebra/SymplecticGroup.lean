@@ -52,6 +52,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.J_mul_fromBlocks_zero₁₂_zero₂₁`: left multiplication by `J` turns a block diagonal
+  matrix `[[A, 0], [0, D]]` into the antidiagonal matrix `[[0, -D], [A, 0]]`.
 * `Matrix.det_J`: its determinant is `1`.
 * `Matrix.star_J` and `Matrix.J_mem_unitaryGroup`: over any star ring its adjoint is `-J`, so
   it is unitary (orthogonal over `ℝ`).
@@ -79,8 +81,9 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   `2 • S`. For symplectic `Ψ` it factors as `(Ψ + 1)ᵀ * -(J * (Ψ - 1))`
   (`Matrix.transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul`), so away from the eigenvalue
   `-1` its kernel is the space of fixed vectors of `Ψ`
-  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`). On every vector its quadratic form is twice
-  that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
+  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`), and it is singular exactly when `Ψ` has the
+  eigenvalue `1` (`Matrix.det_transpose_mul_J_sub_J_mul_eq_zero_iff`). On every vector its
+  quadratic form is twice that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
 * `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: if `S` is symmetric and
   `G'ᵀ * J * G + Gᵀ * J * G' = 0`, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
@@ -93,6 +96,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.one_add_mul_mem_symplecticGroup`: over a square-zero ideal `I`, correcting `M` by
   `1 + X`, where `X` has entries in `I` and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix
   when `M * J * Mᵀ - J = E`.
+* `SymplecticGroup.nonsing_inv_mem` and `SymplecticGroup.transpose_nonsing_inv_mem`: the inverse
+  `A⁻¹` and the inverse transpose `A⁻ᵀ` of a symplectic matrix `A` are symplectic.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
   matrix whose `J`-conjugate is its inverse transpose is symplectic.
@@ -103,9 +108,14 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   symplectic ones are exactly the orthogonal ones, and an orthogonal symplectic matrix commutes
   with `J`. Any two of the three conditions symplectic, orthogonal and commuting with `J` imply the
   third.
+* `SymplecticGroup.mem_iff_toBlocks`: a matrix is symplectic exactly when its blocks satisfy the
+  relations `Aᵀ C = Cᵀ A`, `Bᵀ D = Dᵀ B` and `Aᵀ D - Cᵀ B = 1`.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
+* `SymplecticGroup.fromBlocks_zero₁₂_mem_iff`: a block lower triangular matrix `[[A, 0], [C, D]]`
+  is symplectic exactly when `Aᵀ C = Cᵀ A` and `Aᵀ D = 1`; so scaling `C` keeps it symplectic
+  (`SymplecticGroup.fromBlocks_zero₁₂_smul_mem`).
 * `SymplecticGroup.isUnit_det_mul_J_add_J_mul`: for a real symplectic matrix `A`, the matrix
   `A J + J A` is invertible.
 -/
@@ -161,6 +171,12 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 /-- The canonical skew-symmetric matrix is a unit, with inverse `-J`, because `J * J = -1`. -/
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
+
+/-- Left multiplication by `J` turns a block diagonal matrix into an antidiagonal one:
+`J * [[A, 0], [0, D]] = [[0, -D], [A, 0]]`. -/
+theorem J_mul_fromBlocks_zero₁₂_zero₂₁ (A D : Matrix l l R) :
+    J l R * fromBlocks A 0 0 D = fromBlocks 0 (-D) A 0 := by
+  simp [J, fromBlocks_multiply]
 
 /-- The canonical skew-symmetric matrix has determinant one. Mathlib records only
 `det J * det J = 1` (`Matrix.J_det_mul_J_det`), which leaves the sign open. -/
@@ -344,6 +360,16 @@ theorem ker_mulVecLin_transpose_mul_J_sub_J_mul {Ψ : Matrix (l ⊕ l) (l ⊕ l)
   rw [← mulVec_mulVec]
   exact ⟨fun hv ↦ hinj (hv.trans (mulVec_zero _).symm), fun hv ↦ by rw [hv, mulVec_zero]⟩
 
+/-- For a symplectic matrix `Ψ` without the eigenvalue `-1`, the symmetric matrix
+`Ψᵀ * J - J * Ψ` is singular exactly when `Ψ` has the eigenvalue `1`: its determinant is that of
+`Ψ - 1` up to a unit. -/
+theorem det_transpose_mul_J_sub_J_mul_eq_zero_iff {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hΨ : Ψ ∈ symplecticGroup l R) (h : IsUnit (Ψ + 1).det) :
+    (Ψᵀ * J l R - J l R * Ψ).det = 0 ↔ (Ψ - 1).det = 0 := by
+  rw [transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ, ← Matrix.mul_neg,
+    ← Matrix.mul_assoc, det_mul, det_mul, det_transpose, det_neg, ← mul_assoc,
+    ((h.mul (isUnit_det_J l R)).mul (isUnit_neg_one.pow _)).mul_right_eq_zero]
+
 /-- On every vector, the quadratic form of `Bᵀ * J - J * B` is twice the quadratic form of
 `-(J * B)`. -/
 theorem dotProduct_transpose_mul_J_sub_J_mul_mulVec (B : Matrix (l ⊕ l) (l ⊕ l) R)
@@ -480,6 +506,19 @@ namespace SymplecticGroup
 
 variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
 
+/-- **The inverse of a symplectic matrix is symplectic**, for the inverse `Matrix.nonsing_inv`
+of the underlying matrix: Mathlib's `SymplecticGroup.coe_inv'` identifies it with the group
+inverse in `symplecticGroup l R`. -/
+theorem nonsing_inv_mem {A : Matrix (l ⊕ l) (l ⊕ l) R} (hA : A ∈ symplecticGroup l R) :
+    A⁻¹ ∈ symplecticGroup l R := by
+  rw [← coe_inv' ⟨A, hA⟩]
+  exact (⟨A, hA⟩⁻¹ : symplecticGroup l R).property
+
+/-- **The inverse transpose of a symplectic matrix is symplectic.** -/
+theorem transpose_nonsing_inv_mem {A : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hA : A ∈ symplecticGroup l R) : A⁻¹ᵀ ∈ symplecticGroup l R :=
+  transpose_mem (nonsing_inv_mem hA)
+
 /-- **The transpose of a symplectic matrix is the `J`-conjugate of its inverse.** Mathlib's
 `SymplecticGroup.inv_eq_symplectic_inv` computes the inverse as `-J * Aᵀ * J`; cancelling the
 conjugation by `J` solves that identity for `Aᵀ` instead. -/
@@ -524,6 +563,17 @@ theorem commute_J_of_mem_orthogonalGroup {A : Matrix (l ⊕ l) (l ⊕ l) R}
   calc J l R * A = A * J l R * Aᵀ * A := by rw [hS]
     _ = A * J l R := by rw [Matrix.mul_assoc, hO, Matrix.mul_one]
 
+/-- **The block relations of a symplectic matrix.** A matrix `M = [[A, B], [C, D]]` is symplectic
+exactly when `Aᵀ C = Cᵀ A`, `Bᵀ D = Dᵀ B` and `Aᵀ D - Cᵀ B = 1`; this is
+`SymplecticGroup.fromBlocks_mem_iff` stated for the blocks `M.toBlocksᵢⱼ` of an arbitrary `M`. -/
+theorem mem_iff_toBlocks {M : Matrix (l ⊕ l) (l ⊕ l) R} :
+    M ∈ symplecticGroup l R ↔
+      M.toBlocks₁₁ᵀ * M.toBlocks₂₁ = M.toBlocks₂₁ᵀ * M.toBlocks₁₁ ∧
+        M.toBlocks₁₂ᵀ * M.toBlocks₂₂ = M.toBlocks₂₂ᵀ * M.toBlocks₁₂ ∧
+        M.toBlocks₁₁ᵀ * M.toBlocks₂₂ - M.toBlocks₂₁ᵀ * M.toBlocks₁₂ = 1 := by
+  conv_lhs => rw [← M.fromBlocks_toBlocks]
+  exact fromBlocks_mem_iff
+
 /-- An upper unitriangular block matrix is symplectic when its upper-right block is symmetric. -/
 theorem fromBlocks_upper_mem {B : Matrix l l R} (hB : Bᵀ = B) :
     fromBlocks 1 B 0 1 ∈ symplecticGroup l R := by
@@ -542,6 +592,20 @@ theorem fromBlocks_diagonal_mem {A D : Matrix l l R} (hAD : Aᵀ * D = 1) :
     fromBlocks A 0 0 D ∈ symplecticGroup l R := by
   rw [fromBlocks_mem_iff]
   simp [hAD]
+
+/-- **Block lower triangular symplectic matrices.** A matrix `[[A, 0], [C, D]]` is symplectic
+exactly when `Aᵀ C = Cᵀ A` and `Aᵀ D = 1`. -/
+theorem fromBlocks_zero₁₂_mem_iff {A C D : Matrix l l R} :
+    fromBlocks A 0 C D ∈ symplecticGroup l R ↔ Aᵀ * C = Cᵀ * A ∧ Aᵀ * D = 1 := by
+  simp [fromBlocks_mem_iff]
+
+/-- Scaling the lower left block of a symplectic matrix `[[A, 0], [C, D]]` keeps it symplectic. -/
+theorem fromBlocks_zero₁₂_smul_mem {A C D : Matrix l l R}
+    (h : fromBlocks A 0 C D ∈ symplecticGroup l R) (c : R) :
+    fromBlocks A 0 (c • C) D ∈ symplecticGroup l R := by
+  rw [fromBlocks_zero₁₂_mem_iff] at h ⊢
+  rw [transpose_smul, Matrix.mul_smul, Matrix.smul_mul, h.1]
+  exact ⟨rfl, h.2⟩
 
 /-- **For a real symplectic matrix `A`, the matrix `A J + J A` is invertible**:
 `(A J + J A) Aᵀ = J (1 + A Aᵀ)` and `1 + A Aᵀ` is positive definite. -/

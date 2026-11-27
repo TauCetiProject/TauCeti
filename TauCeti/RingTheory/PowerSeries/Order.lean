@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Order
+-- Proof-only: the multivariate order-Cauchy limit.
+import TauCeti.RingTheory.MvPowerSeries.Order
 
 /-!
 # Self-multiplication cancellation and orders of power series
@@ -42,6 +44,8 @@ of `X ^ n` in `f`.
   nonzero constant coefficient.
 * `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
   `(coeff n f) ^ k` when `f` has order at least `n`.
+* `PowerSeries.order_eq_zero_iff_constantCoeff_ne_zero`: `f` has order `0` exactly when its
+  constant coefficient is nonzero.
 * `PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero`: when `constantCoeff f = 0`, `f` has
   order `1` exactly when `coeff 1 f ≠ 0`.
 
@@ -112,20 +116,8 @@ for every `n`. -/
 theorem exists_forall_le_order_sub {f : ℕ → R⟦X⟧}
     (hf : ∀ n : ℕ, (n : ℕ∞) ≤ (f (n + 1) - f n).order) :
     ∃ g : R⟦X⟧, ∀ n : ℕ, (n : ℕ∞) ≤ (g - f n).order := by
-  -- later terms agree with the `n`-th one below degree `n`
-  have hstab (n k : ℕ) : (n : ℕ∞) ≤ (f (n + k) - f n).order := by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [show f (n + (k + 1)) - f n = (f (n + k + 1) - f (n + k)) + (f (n + k) - f n) by
-        rw [← add_assoc]; abel]
-      exact (le_min ((hf (n + k)).trans' (by exact_mod_cast Nat.le_add_right n k)) ih).trans
-        (min_order_le_order_add _ _)
-  refine ⟨mk fun m ↦ coeff m (f (m + 1)), fun n ↦ nat_le_order _ _ fun i hi ↦ ?_⟩
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hi
-  have h := coeff_of_lt_order i ((hstab (i + 1) k).trans_lt' (by exact_mod_cast i.lt_succ_self))
-  rw [map_sub, sub_eq_zero] at h
-  rw [map_sub, coeff_mk, show i + k + 1 = i + 1 + k by omega, h, sub_self]
+  simpa only [order_eq_order] using MvPowerSeries.exists_forall_le_order_sub (σ := Unit) (f := f)
+    (by simpa only [order_eq_order] using hf)
 
 end Ring
 
@@ -145,6 +137,11 @@ theorem order_X_pow_mul_of_constantCoeff_ne_zero {f : R⟦X⟧} (hf : constantCo
   refine order_eq_nat.2 ⟨?_, fun i hi ↦ ?_⟩
   · rwa [coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self, coeff_zero_eq_constantCoeff_apply]
   · rw [coeff_X_pow_mul', ite_eq_right (not_le.2 hi)]
+
+/-- A power series has order `0` if and only if its constant coefficient is nonzero. -/
+theorem order_eq_zero_iff_constantCoeff_ne_zero {f : R⟦X⟧} :
+    f.order = 0 ↔ constantCoeff f ≠ 0 := by
+  simpa only [ne_eq, not_not] using order_ne_zero_iff_constCoeff_eq_zero.not
 
 /-- For a power series with zero constant coefficient, the order is one if and only if the linear
 coefficient is nonzero. -/

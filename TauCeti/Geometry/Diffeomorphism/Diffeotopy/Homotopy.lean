@@ -82,6 +82,16 @@ def IsHomotopy (Φ Ψ : Diffeotopy J n M) (G G' : (M × I) × I → M) : Prop :=
     ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G' ∧
     (∀ x t s, G' ((G ((x, t), s), t), s) = x) ∧ ∀ x t s, G ((G' ((x, t), s), t), s) = x
 
+/-- Unfold the homotopy predicate: `G` is a `C^n` map joining the two motions and fixing both time
+ends, and `G'` is a `C^n` inverse of `G` in the space variable. -/
+theorem isHomotopy_iff {G G' : (M × I) × I → M} : IsHomotopy Φ Ψ G G' ↔
+    ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G ∧
+      (∀ p, G (p, 0) = Φ.cylinderMap p) ∧ (∀ p, G (p, 1) = Ψ.cylinderMap p) ∧
+      (∀ x s, G ((x, 0), s) = x) ∧ (∀ x s, G ((x, 1), s) = Φ.final x) ∧
+      ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G' ∧
+      (∀ x t s, G' ((G ((x, t), s), t), s) = x) ∧ ∀ x t s, G ((G' ((x, t), s), t), s) = x :=
+  Iff.rfl
+
 /-- Two diffeotopies are **homotopic** when they are joined by a smooth family of diffeotopies
 fixing both time ends. That is, a `C^n` map `G : (M × [0, 1]) × [0, 1] → M` joins the motion
 `(x, t) ↦ φ_t x` of `Φ` at `s = 0` to the motion of `Ψ` at `s = 1` while fixing both time ends,

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.Differen
 public import TauCeti.Analysis.Complex.EquivRealProd
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.StdComplexLine
 import TauCeti.Topology.Codiscrete
 
 /-!
@@ -90,7 +91,11 @@ graph of the first solution.
 For the cylindrical datum `K = H_t dt` and `s`-independent `J_t`, the translate
 `(s, t) ↦ u(s + c, t)` of a Floer trajectory is again one. So a trajectory on `ℝ × ℝ` that agrees
 with such a translate on a nonempty open set is `(c, 0)`-periodic everywhere
-(`TauCeti.SymplecticForm.periodic_of_floerOperator_eq_zero_of_eqOn`). For `c ≠ 0` a periodic
+(`TauCeti.SymplecticForm.periodic_of_floerOperator_eq_zero_of_eqOn`). Likewise, on a band
+`ℝ × T` over an open interval `T`, such as the strip `ℝ × (0, 1)` of Floer trajectories between two
+Lagrangians, a solution of the equation on the band agreeing with its translate on a nonempty open
+subset agrees with it on the whole band
+(`TauCeti.SymplecticForm.eqOn_comp_add_of_floerOperator_eq_zero_of_eqOn`). For `c ≠ 0` a periodic
 trajectory is stationary, either because it converges at an end
 (`Function.Periodic.eq_of_tendsto_of_tendsto_add_nsmul`) or because it has finite energy
 (`TauCeti.SymplecticForm.eq_zero_of_lintegral_floerEnergyDensity_ne_top_of_periodic`). In the
@@ -447,14 +452,12 @@ theorem eqOn_of_floerOperator_eq_zero_of_eqOn (hΩ : IsOpen Ω) (hΩc : IsPrecon
     (hv : ContDiffOn ℝ 1 v Ω) (hFu : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0)
     (hFv : ∀ z ∈ Ω, ω.floerOperator J Ks Kt v z = 0) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn u v U) : EqOn u v Ω := by
-  obtain ⟨hΩ', hΩc', hJ', hξ', hb⟩ :=
-    floerOperator_eq_zero_complexCoordinate hΩ hΩc hJ hKs hKt hu hv hFu hFv
-  set e := Complex.equivRealProdCLM
-  obtain ⟨z₁, hz₁⟩ := hUne
   have h : EqOn (u - v) 0 Ω :=
-    (eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le hΩ' hΩc' hJ' (fun w hw ↦ hJJ (e w) hw) hξ' hb
-      (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
-      fun w hw ↦ sub_eq_zero.2 (h₀ hw)).cancel_right e.surjective.surjOn_preimage
+    eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_fderiv_le hΩ hΩc (contDiffOn_comp_graph hJ hu)
+      hJJ (hu.sub hv)
+      (fun z hz h ↦ exists_eventually_norm_le_of_floerOperator_eq_zero hΩ hz (hJ z hz) (hKs z hz)
+        (hKt z hz) hu hv hFu hFv (sub_eq_zero.1 h)) hU hUne hUΩ
+      fun z hz ↦ sub_eq_zero.2 (h₀ hz)
   exact fun z hz ↦ sub_eq_zero.1 (h hz)
 
 /-- **Unique continuation from a coincidence of infinite order for Floer solutions.** Let `J` be
@@ -492,19 +495,52 @@ theorem setOf_ne_mem_codiscreteWithin_of_floerOperator_eq_zero (hΩ : IsOpen Ω)
     (hv : ContDiffOn ℝ 1 v Ω) (hFu : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0)
     (hFv : ∀ z ∈ Ω, ω.floerOperator J Ks Kt v z = 0) (hne : ∃ z ∈ Ω, u z ≠ v z) :
     {z | u z ≠ v z} ∈ codiscreteWithin Ω := by
-  obtain ⟨hΩ', hΩc', hJ', hξ', hb⟩ :=
-    floerOperator_eq_zero_complexCoordinate hΩ hΩc hJ hKs hKt hu hv hFu hFv
-  set e := Complex.equivRealProdCLM
-  obtain ⟨z₁, hz₁, hne₁⟩ := hne
-  have h := setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_le hΩ' hΩc' hJ'
-    (fun w hw ↦ hJJ (e w) hw) hξ' hb
-    ⟨e.symm z₁, by simpa using hz₁, by simpa [sub_eq_zero] using hne₁⟩
   simpa only [Pi.sub_apply, ne_eq, sub_eq_zero] using
-    (e.toHomeomorph.preimage_mem_codiscreteWithin (s := {z | (u - v) z ≠ 0})).1 h
+    setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_fderiv_le hΩ hΩc
+      (contDiffOn_comp_graph hJ hu) hJJ (hu.sub hv)
+      (fun z hz h ↦ exists_eventually_norm_le_of_floerOperator_eq_zero hΩ hz (hJ z hz) (hKs z hz)
+        (hKt z hz) hu hv hFu hFv (sub_eq_zero.1 h))
+      (by simpa only [Pi.sub_apply, ne_eq, sub_eq_zero] using hne)
 
 end Solutions
 
 /-! ### Translates of Floer trajectories -/
+
+/-- **A Floer solution on a band agreeing with a translate on an open set agrees with it on the
+band.** Let `T ⊆ ℝ` be open and preconnected, and let `u` be a map, `C¹` on the band `ℝ × T`,
+solving the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` there, for a `C¹` family `J_t` with
+`J_t(u)² = -1` along `u` on the band and a `C²` Hamiltonian `H`. If `u(s + c, t) = u(s, t)` on a
+nonempty open subset of the band, then `u(s + c, t) = u(s, t)` on the whole band. For `T = (0, 1)`
+the band is the strip of Floer trajectories between two Lagrangians. -/
+theorem eqOn_comp_add_of_floerOperator_eq_zero_of_eqOn {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ}
+    {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
+    (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
+    (hJJ : ∀ z ∈ univ ×ˢ T, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
+    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiffOn ℝ 1 u (univ ×ˢ T))
+    (hF : ∀ z ∈ univ ×ˢ T, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
+    {c : ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hUne : U.Nonempty) (hUT : U ⊆ univ ×ˢ T)
+    (hUc : EqOn u (fun z ↦ u (z + (c, 0))) U) : EqOn u (fun z ↦ u (z + (c, 0))) (univ ×ˢ T) := by
+  -- The translate solves the same equation on the band, because the data do not depend on `s`.
+  have hFc (z) (hz : z ∈ univ ×ˢ T) : ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0)
+      (fun p ↦ H p.2) (fun z ↦ u (z + (c, 0))) z = 0 := by
+    have h := ω.floerOperator_comp_sub J H u (-c) z
+    have he : (fun w ↦ u (w - (-c, 0))) = fun w ↦ u (w + (c, 0)) := by
+      ext w
+      rw [sub_eq_add_neg, Prod.neg_mk, neg_neg, neg_zero]
+    rw [he] at h
+    rw [h]
+    exact hF _ ⟨mem_univ _, by simpa using hz.2⟩
+  have hJ' : ContDiff ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1.2 p.2) :=
+    hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  have hKs : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
+  have hKt : ContDiff ℝ 2 (uncurry fun (p : ℝ × ℝ) ↦ H p.2) :=
+    hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  exact eqOn_of_floerOperator_eq_zero_of_eqOn (isOpen_univ.prod hT)
+    (isPreconnected_univ.prod hTc) (fun _ _ ↦ hJ'.contDiffAt) hJJ (fun _ _ ↦ hKs.contDiffAt)
+    (fun _ _ ↦ hKt.contDiffAt) hu
+    (hu.comp (contDiff_id.add contDiff_const).contDiffOn fun z hz ↦
+      ⟨mem_univ _, by simpa using hz.2⟩)
+    hF hFc hU hUne hUT hUc
 
 /-- **A Floer trajectory agreeing with a translate on an open set is periodic.** Let `u` be a
 `C¹` solution on `ℝ × ℝ` of the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0`, for a `C¹`
@@ -516,25 +552,8 @@ theorem periodic_of_floerOperator_eq_zero_of_eqOn {J : ℝ → V → V →L[ℝ]
     (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 1 u)
     (hF : ∀ z, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
     {c : ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hUne : U.Nonempty)
-    (hUc : EqOn u (fun z ↦ u (z + (c, 0))) U) : Periodic u (c, 0) := by
-  -- The translate solves the same equation, because the data do not depend on `s`.
-  have hFc (z) : ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
-      (fun z ↦ u (z + (c, 0))) z = 0 := by
-    have h := ω.floerOperator_comp_sub J H u (-c) z
-    have he : (fun w ↦ u (w - (-c, 0))) = fun w ↦ u (w + (c, 0)) := by
-      ext w
-      rw [sub_eq_add_neg, Prod.neg_mk, neg_neg, neg_zero]
-    rw [he] at h
-    rw [h, hF]
-  have hJ' : ContDiff ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1.2 p.2) :=
-    hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
-  have hKs : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
-  have hKt : ContDiff ℝ 2 (uncurry fun (p : ℝ × ℝ) ↦ H p.2) :=
-    hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
-  intro z
-  exact (eqOn_of_floerOperator_eq_zero_of_eqOn isOpen_univ isPreconnected_univ
-    (fun _ _ ↦ hJ'.contDiffAt) (fun z _ ↦ hJJ z) (fun _ _ ↦ hKs.contDiffAt)
-    (fun _ _ ↦ hKt.contDiffAt) hu.contDiffOn (hu.comp (contDiff_id.add contDiff_const)).contDiffOn
-    (fun z _ ↦ hF z) (fun z _ ↦ hFc z) hU hUne (subset_univ U) hUc (mem_univ z)).symm
+    (hUc : EqOn u (fun z ↦ u (z + (c, 0))) U) : Periodic u (c, 0) := fun z ↦
+  (eqOn_comp_add_of_floerOperator_eq_zero_of_eqOn isOpen_univ isPreconnected_univ hJ
+    (fun z _ ↦ hJJ z) hH hu.contDiffOn (fun z _ ↦ hF z) hU hUne (by simp) hUc (by simp)).symm
 
 end TauCeti.SymplecticForm
