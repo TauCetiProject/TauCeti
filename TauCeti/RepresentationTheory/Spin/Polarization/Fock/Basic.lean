@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.ComplexStructure
-public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.DegreeScaling
 -- Private: the parity of the real dimension and the structure theorem are used only in the proof
 -- of bijectivity.

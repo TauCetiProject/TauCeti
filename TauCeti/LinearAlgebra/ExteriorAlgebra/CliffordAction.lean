@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.ExteriorAlgebra.BaseChange
 -- Private: the transport of the involution and the grading along `equivExterior`, the
 -- comparison of the base-change maps and exterior contractions, and the computation of
 -- `LinearMap.tensorProductEnd` are used only inside proofs.
-import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
+import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorAlgebra.BaseChange
 import TauCeti.RingTheory.TensorProduct.Maps
