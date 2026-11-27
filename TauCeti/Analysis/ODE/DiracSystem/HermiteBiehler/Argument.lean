@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationTh
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Argument.Variation
 import TauCeti.Analysis.ODE.DiracSystem.RealPotential
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
@@ -23,9 +24,11 @@ Let `q` be a potential, locally integrable on `[0, ∞)`, with `f = Re q` and `g
 (`TauCeti.diracHermiteBiehler_ne_zero`, `TauCeti.diracHermiteBiehlerDirichlet_ne_zero`), so for a
 real `x` the curve `t ↦ E(t, x)` has a continuous argument `φ` on `[0, T]` with `φ(0) = 0`
 (`TauCeti.exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp`).
-Since `E#(t, x) = conj E(t, x)` on the real axis, the equation
-`∂ₜ E = -ix E + q E#` reads `∂ₜ E / E = -ix + q e^{-2iφ}`, whose real and imaginary parts are the
-modulus and argument equations
+On the real axis `t ↦ E(t, x)` is absolutely continuous on `[0, T]`
+(`TauCeti.absolutelyContinuousOnInterval_diracHermiteBiehler`) and, since `E#(t, x) = conj E(t, x)`
+there, satisfies `∂ₜ E = -ix E + q conj E` at almost every `t`
+(`TauCeti.ae_hasDerivAt_diracHermiteBiehler`), which reads `∂ₜ E / E = -ix + q e^{-2iφ}`.
+The real and imaginary parts of this are the modulus and argument equations
 
 * `log |E(t, x)| = ∫₀ᵗ (f cos 2φ + g sin 2φ)`
   (`TauCeti.log_norm_diracHermiteBiehler_eq_integral`), and
@@ -118,29 +121,33 @@ private theorem intervalIntegrable_rhs (ht : 0 ≤ t) :
   exact ((continuousOn_const.mul hc).integrableOn_compact isCompact_Icc).add
     (hqt.mul_continuousOn (continuous_conj.comp_continuousOn hc) isCompact_Icc)
 
-/-- The equation of `E` on the real axis: `E(t, x) = 1 + ∫₀ᵗ (-ix E + q conj E)`. -/
-private theorem eq_one_add_integral (ht : 0 ≤ t) :
-    diracHermiteBiehler q t x = 1 + ∫ s in (0 : ℝ)..t,
-      (-I * x * diracHermiteBiehler q s x + q s * conj (diracHermiteBiehler q s x)) := by
-  simpa only [conj_ofReal] using diracHermiteBiehler_eq_one_add_integral_conj hq ht x
-
-/-- `t ↦ E(t, x)` is absolutely continuous on `[0, T]`, with derivative `-ix E + q conj E` at
-almost every `t ∈ (0, T)`. -/
-private theorem absolutelyContinuousOnInterval_and_ae_deriv (hT : 0 ≤ T) :
-    AbsolutelyContinuousOnInterval (fun s ↦ diracHermiteBiehler q s x) 0 T ∧
-      ∀ᵐ s, s ∈ Ioo 0 T → deriv (fun s ↦ diracHermiteBiehler q s x) s =
-        -I * x * diracHermiteBiehler q s x + q s * conj (diracHermiteBiehler q s x) := by
-  have hI := intervalIntegrable_rhs hq x hT
-  have heq : EqOn (fun s ↦ diracHermiteBiehler q s x) (fun s ↦ 1 + ∫ r in (0 : ℝ)..s,
+/-- The equation of `E` on the real axis: `E(s, x) = 1 + ∫₀ˢ (-ix E + q conj E)` for
+`s ∈ [0, T]`. -/
+private theorem eqOn_one_add_integral (hT : 0 ≤ T) :
+    EqOn (fun s ↦ diracHermiteBiehler q s x) (fun s ↦ 1 + ∫ r in (0 : ℝ)..s,
       (-I * x * diracHermiteBiehler q r x + q r * conj (diracHermiteBiehler q r x)))
-      (uIcc 0 T) := fun s hs ↦ eq_one_add_integral hq x (uIcc_of_le hT ▸ hs).1
-  refine ⟨(((LipschitzWith.const (1 : ℂ)).lipschitzOnWith).absolutelyContinuousOnInterval.add
-    (hI.absolutelyContinuousOnInterval_intervalIntegral' left_mem_uIcc)).congr heq.symm, ?_⟩
-  filter_upwards [hI.ae_hasDerivAt_integral] with s hs hsT
+      (uIcc 0 T) := fun s hs ↦ by
+  simpa only [conj_ofReal] using
+    diracHermiteBiehler_eq_one_add_integral_conj hq (uIcc_of_le hT ▸ hs).1 x
+
+/-- **Absolute continuity of `E` on the real axis.** For real `x`, `t ↦ E(t, x)` is absolutely
+continuous on `[0, T]`. -/
+theorem absolutelyContinuousOnInterval_diracHermiteBiehler (hT : 0 ≤ T) :
+    AbsolutelyContinuousOnInterval (fun s ↦ diracHermiteBiehler q s x) 0 T :=
+  (((LipschitzWith.const (1 : ℂ)).lipschitzOnWith).absolutelyContinuousOnInterval.add
+    ((intervalIntegrable_rhs hq x hT).absolutelyContinuousOnInterval_intervalIntegral'
+      left_mem_uIcc)).congr (eqOn_one_add_integral hq x hT).symm
+
+/-- **The equation of `E` on the real axis, almost everywhere.** For real `x`, at almost every
+`t ∈ (0, T)`, `∂ₜ E(t, x) = -ix E(t, x) + q(t) conj E(t, x)`. -/
+theorem ae_hasDerivAt_diracHermiteBiehler (hT : 0 ≤ T) :
+    ∀ᵐ s, s ∈ Ioo 0 T → HasDerivAt (fun s ↦ diracHermiteBiehler q s x)
+      (-I * x * diracHermiteBiehler q s x + q s * conj (diracHermiteBiehler q s x)) s := by
+  filter_upwards [(intervalIntegrable_rhs hq x hT).ae_hasDerivAt_integral] with s hs hsT
   have hmem : s ∈ uIcc 0 T := uIcc_of_le hT ▸ Ioo_subset_Icc_self hsT
-  refine (((hs hmem 0 left_mem_uIcc).const_add 1).congr_of_eventuallyEq ?_).deriv
+  refine ((hs hmem 0 left_mem_uIcc).const_add 1).congr_of_eventuallyEq ?_
   filter_upwards [Ioo_mem_nhds hsT.1 hsT.2] with r hr
-  exact heq (uIcc_of_le hT ▸ Ioo_subset_Icc_self hr)
+  exact eqOn_one_add_integral hq x hT (uIcc_of_le hT ▸ Ioo_subset_Icc_self hr)
 
 variable {x} {φ : ℝ → ℝ}
 
@@ -151,7 +158,7 @@ private theorem integral_eq_log_norm_add_I_mul_sub (ht : 0 ≤ t) (hφ : Continu
       diracHermiteBiehler q s x = ‖diracHermiteBiehler q s x‖ * exp (I * φ s)) :
     ∫ s in (0 : ℝ)..t, (-I * x + q s * exp (-2 * I * φ s)) =
       (Real.log ‖diracHermiteBiehler q t x‖ : ℂ) + I * (φ t - φ 0 : ℝ) := by
-  obtain ⟨hac, hd⟩ := absolutelyContinuousOnInterval_and_ae_deriv hq x ht
+  have hac := absolutelyContinuousOnInterval_diracHermiteBiehler hq x ht
   have hne (s) (hs : s ∈ Icc 0 t) : diracHermiteBiehler q s x ≠ 0 :=
     diracHermiteBiehler_ne_zero hq hs.1 (by simp)
   have h := hac.integral_deriv_div_eq_log_norm_add_I_mul_sub (θ := φ)
@@ -160,12 +167,13 @@ private theorem integral_eq_log_norm_add_I_mul_sub (ht : 0 ≤ t) (hφ : Continu
   rw [diracHermiteBiehler_zero, norm_one, Real.log_one, sub_zero] at h
   rw [← h]
   refine intervalIntegral.integral_congr_ae ?_
-  filter_upwards [hd, Measure.ae_ne volume t] with s hs hst hsI
+  filter_upwards [ae_hasDerivAt_diracHermiteBiehler hq x ht, Measure.ae_ne volume t]
+    with s hs hst hsI
   rw [uIoc_of_le ht] at hsI
   have hsI' : s ∈ Ioo 0 t := ⟨hsI.1, hsI.2.lt_of_ne hst⟩
   have hsc : s ∈ Icc 0 t := Ioo_subset_Icc_self hsI'
   have h0 := hne s hsc
-  rw [hs hsI', ← TauCeti.Contour.conj_div_eq_exp_of_eq_norm_mul_exp h0 (hlift s hsc)]
+  rw [(hs hsI').deriv, ← conj_div_eq_exp_of_eq_norm_mul_exp h0 (hlift s hsc)]
   field_simp
 
 /-- The integrand `-ix + q e^{-2iφ}` is interval integrable on `[0, t]`. -/

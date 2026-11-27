@@ -108,22 +108,16 @@ theorem differentiable_diracHermiteBiehlerDirichlet (hq : IntegrableOn q (uIcc 0
 /-- `t ↦ E(t, z)` is continuous on `[0, T]` when `q` is integrable there. -/
 theorem continuousOn_diracHermiteBiehler {T : ℝ} (hq : IntegrableOn q (Icc 0 T)) (z : ℂ) :
     ContinuousOn (fun s ↦ diracHermiteBiehler q s z) (Icc 0 T) := by
-  have hc (i : Fin 2) : ContinuousOn (fun s ↦ diracFundamentalMatrix q s z i 0) (Icc 0 T) := by
-    have := (continuous_apply i).comp_continuousOn
-      (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single 0 1))
-    simpa [Function.comp_def, mulVec_single] using this
   simp_rw [diracHermiteBiehler_def]
-  exact (hc 0).sub (continuousOn_const.mul (hc 1))
+  exact (continuousOn_diracFundamentalMatrix_apply hq z 0 _).sub
+    (continuousOn_const.mul (continuousOn_diracFundamentalMatrix_apply hq z 1 _))
 
 /-- `t ↦ E~(t, z)` is continuous on `[0, T]` when `q` is integrable there. -/
 theorem continuousOn_diracHermiteBiehlerDirichlet {T : ℝ} (hq : IntegrableOn q (Icc 0 T))
     (z : ℂ) : ContinuousOn (fun s ↦ diracHermiteBiehlerDirichlet q s z) (Icc 0 T) := by
-  have hc (i : Fin 2) : ContinuousOn (fun s ↦ diracFundamentalMatrix q s z i 1) (Icc 0 T) := by
-    have := (continuous_apply i).comp_continuousOn
-      (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single 1 1))
-    simpa [Function.comp_def, mulVec_single] using this
   simp_rw [diracHermiteBiehlerDirichlet_def]
-  exact (hc 0).sub (continuousOn_const.mul (hc 1))
+  exact (continuousOn_diracFundamentalMatrix_apply hq z 0 _).sub
+    (continuousOn_const.mul (continuousOn_diracFundamentalMatrix_apply hq z 1 _))
 
 /-- **Growth of `E`.** If `q` is integrable on `[0, t]` and `t ≥ 0`, then
 `|E(t, z)| ≤ 2 exp(t|z| + ∫₀ᵗ |q|)`. -/

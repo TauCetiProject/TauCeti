@@ -59,6 +59,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
+* `Complex.conj_div_eq_exp_of_eq_norm_mul_exp`: `conj w / w = exp (-2 i θ)` for
+  `w = ‖w‖ · exp (i θ) ≠ 0`.
 * `Complex.contDiffOn_div_norm_pow`: `(z / |z|)^m` is smooth away from the origin.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}` is the image of an open rectangle.
@@ -230,6 +232,20 @@ theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
 theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ : ℂ) := by
   rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)), mul_comm]
   exact norm_mul_exp_arg_mul_I z
+
+open ComplexConjugate in
+/-- **The phase of `conj w / w`.** If `w = ‖w‖ · exp (i θ)` is nonzero, then
+`conj w / w = exp (-2 i θ)`. -/
+theorem conj_div_eq_exp_of_eq_norm_mul_exp {w : ℂ} (hw : w ≠ 0) {θ : ℝ}
+    (h : w = ‖w‖ * exp (I * θ)) : conj w / w = exp (-2 * I * θ) := by
+  have he : conj (exp (I * θ)) = exp (-2 * I * θ) * exp (I * θ) := by
+    rw [← exp_conj, map_mul, conj_I, conj_ofReal, ← exp_add]
+    ring_nf
+  rw [div_eq_iff hw]
+  conv_lhs => rw [h]
+  conv_rhs => rw [h]
+  rw [map_mul, conj_ofReal, he]
+  ring
 
 /-- The unit direction `z / |z|` is homogeneous of degree `0` under positive dilations. -/
 theorem smul_div_norm_smul {t : ℝ} (ht : 0 < t) (z : ℂ) :
