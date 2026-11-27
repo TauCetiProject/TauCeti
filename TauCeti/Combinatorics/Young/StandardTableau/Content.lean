@@ -41,6 +41,13 @@ the simple transposition of `k` and `k + 1` acts through the *axial distance*
   (`TauCeti.StandardYoungTableau.swap_ne_self`) and negates the axial distance
   (`TauCeti.YoungTableau.axialDistance_relabel_swap`); otherwise the exchange is not standard
   (`TauCeti.StandardYoungTableau.exists_toTableau_eq_relabel_swap_iff`);
+* restoring a deleted corner with the largest label (`TauCeti.StandardYoungTableau.extend`) keeps
+  the contents and axial distances of the other labels
+  (`TauCeti.StandardYoungTableau.labelContent_extend`,
+  `TauCeti.StandardYoungTableau.axialDistance_extend`) and commutes with exchanging labels
+  (`TauCeti.StandardYoungTableau.extend_swap`), so exchanging two labels other than the largest
+  does not change whether a tableau is obtained by restoring a given corner
+  (`TauCeti.StandardYoungTableau.swap_mem_range_extend_iff`);
 * a standard tableau is determined by the contents of all its labels
   (`TauCeti.StandardYoungTableau.labelContent_injective`), so the Jucys–Murphy eigenvalues of
   Young's seminormal basis vectors tell the tableaux apart.
