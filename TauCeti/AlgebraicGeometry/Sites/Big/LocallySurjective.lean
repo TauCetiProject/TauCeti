@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
+public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.CategoryTheory.Sites.LocallySurjective
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
 public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
 
@@ -21,8 +24,8 @@ finer topology, such as the étale, fppf and fpqc topologies
 (`AlgebraicGeometry.Scheme.Modules.isLocallySurjective_bigPresheafFunctor_map_of_le`). For
 quasi-coherent modules the map of big fpqc sheaves `bigSheaf F ⟶ bigSheaf G` is therefore
 locally surjective (`AlgebraicGeometry.Scheme.isLocallySurjective_bigSheafFunctor_map`). This is
-the surjectivity half of *bigSheaf_rightExact* (SchemeAndStackFoundations §2.9): right exact
-sequences of modules end in a locally surjective map of big-site modules.
+the surjectivity half of the right exactness of `F ↦ F^a`: right exact sequences of modules end
+in a locally surjective map of big-site modules.
 
 The proof uses no quasi-coherence. For an `S`-scheme `(T, h)`, the pullback `h^* φ` is again an
 epimorphism, as `h^*` is a left adjoint, so it is locally surjective on the opens of `T`. The
@@ -52,23 +55,6 @@ namespace AlgebraicGeometry.Scheme
 namespace Modules
 
 variable {S : Scheme.{u}} {F G : S.Modules}
-
-/-- Local restriction on the big site commutes with the maps induced by a morphism of modules. -/
-lemma bigSectionsRestrictLE_naturality (φ : F ⟶ G) {X X' : Scheme.{u}} {h : X ⟶ S}
-    {h' : X' ⟶ S} (b : X' ⟶ X) (w : b ≫ h = h') (U : X.Opens) (U' : X'.Opens)
-    (hU : U' ≤ b ⁻¹ᵁ U) (s : Γ((pullback h).obj F, U)) :
-    bigSectionsRestrictLE G b w U U' hU (((pullback h).map φ).app U s) =
-      ((pullback h').map φ).app U' (bigSectionsRestrictLE F b w U U' hU s) := by
-  have h₁ := (pullbackComp b h).hom.naturality φ
-  have h₂ := (pullbackCongr w).hom.naturality φ
-  dsimp only [Functor.comp_map] at h₁ h₂
-  have key : (pullback b).map ((pullback h).map φ) ≫
-      (pullbackComp b h).hom.app G ≫ (pullbackCongr w).hom.app G =
-      ((pullbackComp b h).hom.app F ≫ (pullbackCongr w).hom.app F) ≫ (pullback h').map φ := by
-    rw [reassoc_of% h₁, h₂, Category.assoc]
-  rw [bigSectionsRestrictLE_apply, bigSectionsRestrictLE_apply,
-    ← Hom.pullbackSectionsLE_naturality]
-  exact congr($(key).app U' (b.pullbackSectionsLE _ U U' hU s))
 
 /-- **Epimorphisms give locally surjective maps of big-site modules.** For an epimorphism
 `φ : F ⟶ G` of `𝒪_S`-modules, the induced map `bigPresheaf F ⟶ bigPresheaf G` of presheaves of
@@ -115,12 +101,16 @@ end Modules
 open TauCeti.AlgebraicGeometry in
 /-- **The big-site module functor sends epimorphisms to locally surjective maps.** For an
 epimorphism `φ` of quasi-coherent `𝒪_S`-modules, the map of big fpqc sheaves
-`bigSheaf F ⟶ bigSheaf G` is locally surjective (SchemeAndStackFoundations §2.9,
-*bigSheaf_rightExact*). -/
+`bigSheaf F ⟶ bigSheaf G` is locally surjective. -/
 theorem isLocallySurjective_bigSheafFunctor_map {S : Scheme.{u}} {F G : QuasicoherentSheaf S}
-    (φ : F ⟶ G) [hφ : Epi φ.hom] :
-    PresheafOfModules.IsLocallySurjective (fpqcTopology.over S) ((bigSheafFunctor S).map φ).val :=
-  @Modules.isLocallySurjective_bigPresheafFunctor_map_of_le S F.obj G.obj fpqcTopology
-    zariskiTopology_le_fpqcTopology φ.hom hφ
+    (φ : F ⟶ G) [Epi φ] :
+    PresheafOfModules.IsLocallySurjective (fpqcTopology.over S)
+      ((bigSheafFunctor S).map φ).val := by
+  have := ObjectProperty.preservesEpimorphisms_ι_of_isNormalMonoCategory
+    (SheafOfModules.isQuasicoherent S.ringCatSheaf)
+  have : Epi (C := S.Modules) φ.hom := (ObjectProperty.ι _).map_epi φ
+  rw [bigSheafFunctor_map_val]
+  exact Modules.isLocallySurjective_bigPresheafFunctor_map_of_le zariskiTopology_le_fpqcTopology
+    φ.hom
 
 end AlgebraicGeometry.Scheme
