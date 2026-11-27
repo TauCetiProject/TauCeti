@@ -142,16 +142,20 @@ theorem mapOfEpiTwistingSheafHom_def (m : ℤ) :
           CommMon.relativeProjTwistingSheafMap
             ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom
             (irrelevant_le_map_of_epi q) m := by
-  -- The defining equalities identify definitionally equal objects and morphisms.
-  have hF : eqToHom (twistingSheaf_obj S F.obj m) = 𝟙 (twistingSheaf S F.obj m).obj := rfl
-  have hG : eqToHom (twistingSheaf_obj S G.obj m) = 𝟙 (twistingSheaf S G.obj m).obj := rfl
+  have hF : eqToHom (twistingSheaf_obj S F.obj m) = 𝟙 (twistingSheaf S F.obj m).obj :=
+    eqToHom_refl _ _
+  have hG : eqToHom (twistingSheaf_obj S G.obj m) = 𝟙 (twistingSheaf S G.obj m).obj :=
+    eqToHom_refl _ _
   have hq : (Scheme.Modules.pullbackCongr (mapOfEpi_def q)).hom.app
       (twistingSheaf S F.obj m).obj =
-        𝟙 ((Scheme.Modules.pullback (mapOfEpi q)).obj (twistingSheaf S F.obj m).obj) := rfl
+        𝟙 ((Scheme.Modules.pullback (mapOfEpi q)).obj (twistingSheaf S F.obj m).obj) := by
+    simp only [Scheme.Modules.pullbackCongr, eqToIso.hom, eqToHom_app]
+    exact eqToHom_refl _ _
   simp only [hF, hG, hq]
-  erw [(Scheme.Modules.pullback (mapOfEpi q)).map_id _, Category.id_comp,
-    Category.id_comp, Category.comp_id]
-  rfl
+  -- Apply the category laws as terms so their object arguments can use definitional equality.
+  refine (Category.comp_id _).trans ((Category.id_comp _).trans ?_).symm
+  exact (congrArg (· ≫ _) ((Scheme.Modules.pullback (mapOfEpi q)).map_id _)).trans
+    (Category.id_comp _)
 
 /-- On an affine chart, the twist comparison is the relative Proj chart component. -/
 theorem mapOfEpiTwistingSheafHom_comp_π (m : ℤ) (U : S.AffineZariskiSite) :
@@ -162,9 +166,10 @@ theorem mapOfEpiTwistingSheafHom_comp_π (m : ℤ) (U : S.AffineZariskiSite) :
         CommMon.relativeProjTwistingSheafMapComponent
           ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom (irrelevant_le_map_of_epi q)
           m U := by
-  -- The rewrites need to identify `Scheme.Modules` with its category of sheaves of modules.
-  erw [← Category.assoc (mapOfEpiTwistingSheafHom q m), mapOfEpiTwistingSheafHom_def]
-  erw [Category.assoc, Category.assoc, CommMon.relativeProjTwistingSheafMap_comp_π]
+  have h := (reassoc_of% (mapOfEpiTwistingSheafHom_def q m))
+    ((((gradedSymmetricAlgebra S).obj G).obj.relativeProjTwistingSheafGlueData m).π U)
+  exact h.trans (congrArg (_ ≫ ·) (congrArg (_ ≫ ·)
+    (CommMon.relativeProjTwistingSheafMap_comp_π _ (irrelevant_le_map_of_epi q) m U)))
 
 /-- Pullback along the map induced by an epimorphism identifies the integer twists. -/
 instance isIso_mapOfEpiTwistingSheafHom (m : ℤ) : IsIso (mapOfEpiTwistingSheafHom q m) :=
