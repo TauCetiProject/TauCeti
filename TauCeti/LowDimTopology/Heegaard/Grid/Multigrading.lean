@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Grading.Component
 public import TauCeti.LowDimTopology.Heegaard.Grid.Grading
 public import TauCeti.LowDimTopology.Heegaard.Knot.Multigrading
 
@@ -16,27 +15,18 @@ Let `G` be an `n × n` grid diagram of a link, viewed as a multi-pointed genus-o
 (`TauCeti.GridDiagram.heegaardRegionSystem`) with the `O`-markings as `w`-basepoints and the
 `X`-markings as `z`-basepoints. A link component `q` of `G` carries the basepoints of the markings
 in its columns: the `w`'s `TauCeti.GridDiagram.componentOBasepoints q` and the `z`'s
-`TauCeti.GridDiagram.componentXBasepoints q`. This file shows that, with these basepoints, the
-relative Alexander multigrading of the Heegaard diagram
-(`TauCeti.HeegaardRegionSystem.relativeComponentAlexanderGrading`) is the difference of the
-Alexander gradings `A_q` of the components in grid homology
-(`TauCeti.GridDiagram.componentAlexander`): for every domain `D` from (the generator of) a grid
-state `x` to (that of) `y`,
+`TauCeti.GridDiagram.componentXBasepoints q`. `TauCeti.LowDimTopology.Heegaard.Grid.Grading` shows
+that for every domain `D` from (the generator of) a grid state `x` to (that of) `y`,
 
 `∑_{c ∈ q} n_{X_c}(D) - ∑_{c ∈ q} n_{O_c}(D) = A_q(x) - A_q(y)`
 
-(`TauCeti.GridDiagram.componentAlexanderMultiplicity_apply_of_isDomainBetween`). This is the
-link version of `TauCeti.GridDiagram.sum_basepoint_inr_sub_sum_basepoint_inl_of_isDomainBetween`,
-to which it sums over the components.
-
-The proof follows the knot case. Across a rectangle both sides count the markings of `q` that the
-rectangle covers (`TauCeti.GridDiagram.componentAlexander_sub_componentAlexander_eq_card_sub_card`).
-A domain from a generator to itself is a sum `E(c, r) = a(r) + b(c)` of horizontal and vertical
-annuli (`TauCeti.GridDiagram.exists_eq_add_of_isDomainBetween_self`). Its multiplicity at the
-markings of `q` is `∑_{c ∈ q} a(X c) - ∑_{c ∈ q} a(O c)`, which vanishes because the `X`- and the
-`O`-markings of a component occupy the same rows
-(`TauCeti.GridDiagram.sum_componentColumns_O_eq_sum_componentColumns_X`). Rectangle moves join any
-two grid states, so the rectangle case extends to all domains.
+(`TauCeti.GridDiagram.componentAlexanderMultiplicity_apply_of_isDomainBetween`), where `A_q` is
+the Alexander grading of the component `q` in grid homology
+(`TauCeti.GridDiagram.componentAlexander`), and that a domain from a generator to itself has
+vanishing multiplicity at every component
+(`TauCeti.GridDiagram.componentAlexanderMultiplicity_eq_zero_of_isDomainBetween_self`). This file
+identifies, with these basepoints, the relative Alexander multigrading of the Heegaard diagram
+(`TauCeti.HeegaardRegionSystem.relativeComponentAlexanderGrading`) with the component gradings.
 
 Consequently:
 
@@ -55,15 +45,8 @@ Consequently:
   component grading
   (`TauCeti.GridDiagram.componentAlexander_eq_of_hatCoefficient_ne_zero`).
 
-## Main definitions
-
-* `TauCeti.GridDiagram.componentOBasepoints`, `TauCeti.GridDiagram.componentXBasepoints`: the
-  `w`- and `z`-basepoints of a link component.
-
 ## Main results
 
-* `TauCeti.GridDiagram.componentAlexanderMultiplicity_apply_of_isDomainBetween`: the component
-  gradings are the Alexander multigrading of every domain.
 * `TauCeti.GridDiagram.periodicComponentAlexanderValues_eq_bot`: the multigrading has no periodic
   values.
 * `TauCeti.GridDiagram.intCast_relativeComponentAlexanderGrading_gridStateEquivGenerator`: the
@@ -93,123 +76,9 @@ namespace GridDiagram
 
 variable (G : GridDiagram n)
 
-section Basepoints
-
-/-- The `w`-basepoints of the link component `q` in the Heegaard diagram of a grid diagram: the
-basepoints `Sum.inl c` of the `O`-markings in the columns `c` of `q`. -/
-def componentOBasepoints (q : G.Components) : Finset (Fin n ⊕ Fin n) :=
-  (G.componentColumns q).map .inl
-
-/-- The `w`-basepoints of a component as the image of its columns under `Sum.inl`. -/
-theorem componentOBasepoints_def (q : G.Components) :
-    G.componentOBasepoints q = (G.componentColumns q).map .inl :=
-  (rfl)
-
-/-- The `z`-basepoints of the link component `q` in the Heegaard diagram of a grid diagram: the
-basepoints `Sum.inr c` of the `X`-markings in the columns `c` of `q`. -/
-def componentXBasepoints (q : G.Components) : Finset (Fin n ⊕ Fin n) :=
-  (G.componentColumns q).map .inr
-
-/-- The `z`-basepoints of a component as the image of its columns under `Sum.inr`. -/
-theorem componentXBasepoints_def (q : G.Components) :
-    G.componentXBasepoints q = (G.componentColumns q).map .inr :=
-  (rfl)
-
-variable {G}
-
-/-- The `O`-marking of a column is a `w`-basepoint of the component of that column. -/
-@[simp]
-theorem inl_mem_componentOBasepoints {q : G.Components} {c : Fin n} :
-    Sum.inl c ∈ G.componentOBasepoints q ↔ G.componentOfColumn c = q := by
-  simp [componentOBasepoints]
-
-/-- No `X`-marking is a `w`-basepoint. -/
-@[simp]
-theorem inr_notMem_componentOBasepoints (q : G.Components) (c : Fin n) :
-    Sum.inr c ∉ G.componentOBasepoints q := by
-  simp [componentOBasepoints]
-
-/-- The `X`-marking of a column is a `z`-basepoint of the component of that column. -/
-@[simp]
-theorem inr_mem_componentXBasepoints {q : G.Components} {c : Fin n} :
-    Sum.inr c ∈ G.componentXBasepoints q ↔ G.componentOfColumn c = q := by
-  simp [componentXBasepoints]
-
-/-- No `O`-marking is a `z`-basepoint. -/
-@[simp]
-theorem inl_notMem_componentXBasepoints (q : G.Components) (c : Fin n) :
-    Sum.inl c ∉ G.componentXBasepoints q := by
-  simp [componentXBasepoints]
-
-variable (G)
-
-/-- A sum over the `w`-basepoints of a component is a sum over its columns. -/
-theorem sum_componentOBasepoints {M : Type*} [AddCommMonoid M] (q : G.Components)
-    (f : Fin n ⊕ Fin n → M) :
-    ∑ b ∈ G.componentOBasepoints q, f b = ∑ c ∈ G.componentColumns q, f (Sum.inl c) :=
-  sum_map _ _ _
-
-/-- A sum over the `z`-basepoints of a component is a sum over its columns. -/
-theorem sum_componentXBasepoints {M : Type*} [AddCommMonoid M] (q : G.Components)
-    (f : Fin n ⊕ Fin n → M) :
-    ∑ b ∈ G.componentXBasepoints q, f b = ∑ c ∈ G.componentColumns q, f (Sum.inr c) :=
-  sum_map _ _ _
-
-end Basepoints
-
 section Domains
 
 variable [NeZero n]
-
-/-- **The multiplicity of a rectangle at the markings of a component.** The Alexander multiplicity
-of the domain of a rectangle from `x` to `y` at the component `q` is the difference
-`A_q(x) - A_q(y)` of the component gradings. -/
-theorem componentAlexanderMultiplicity_domain {x y : GridState n} (R : GridRectangleBetween x y)
-    (q : G.Components) :
-    (G.heegaardRegionSystem.componentAlexanderMultiplicity G.componentOBasepoints
-        G.componentXBasepoints R.toGridRectangle.domain q : ℚ) =
-      G.componentAlexander q x - G.componentAlexander q y := by
-  rw [G.componentAlexander_sub_componentAlexander_eq_card_sub_card q R,
-    componentAlexanderMultiplicity_apply, sum_componentXBasepoints, sum_componentOBasepoints]
-  simp only [heegaardRegionSystem_basepoint_inl, heegaardRegionSystem_basepoint_inr]
-  rw [← G.sum_componentXSet q R.toGridRectangle.domain,
-    ← G.sum_componentOSet q R.toGridRectangle.domain]
-  simp only [GridRectangle.domain_apply, sum_boole, filter_mem_eq_inter]
-  norm_cast
-
-/-- **Domains from a generator to itself have vanishing Alexander multiplicities.** A domain from
-a generator of the Heegaard diagram of a grid diagram to itself has the same multiplicity at the
-`X`-markings of each component as at its `O`-markings. -/
-theorem componentAlexanderMultiplicity_eq_zero_of_isDomainBetween_self
-    {g : G.heegaardRegionSystem.Generator} {E : Fin n × Fin n → ℤ}
-    (hE : G.heegaardRegionSystem.IsDomainBetween g g E) :
-    G.heegaardRegionSystem.componentAlexanderMultiplicity G.componentOBasepoints
-      G.componentXBasepoints E = 0 := by
-  obtain ⟨a, b, h⟩ := G.exists_eq_add_of_isDomainBetween_self hE
-  ext q
-  simp only [componentAlexanderMultiplicity_apply, sum_componentXBasepoints,
-    sum_componentOBasepoints, heegaardRegionSystem_basepoint_inl,
-    heegaardRegionSystem_basepoint_inr, h, sum_add_distrib,
-    G.sum_componentColumns_O_eq_sum_componentColumns_X q a, sub_self, Pi.zero_apply]
-
-/-- **The component gradings of every domain.** For every domain `D` from the generator of a grid
-state `x` to the generator of a grid state `y` and every link component `q`, the Alexander
-multiplicity `∑_{c ∈ q} n_{X_c}(D) - ∑_{c ∈ q} n_{O_c}(D)` is the difference `A_q(x) - A_q(y)` of
-the component gradings of grid homology. -/
-theorem componentAlexanderMultiplicity_apply_of_isDomainBetween {x y : GridState n}
-    {D : Fin n × Fin n → ℤ}
-    (hD : G.heegaardRegionSystem.IsDomainBetween (G.gridStateEquivGenerator x)
-      (G.gridStateEquivGenerator y) D) (q : G.Components) :
-    (G.heegaardRegionSystem.componentAlexanderMultiplicity G.componentOBasepoints
-        G.componentXBasepoints D q : ℚ) =
-      G.componentAlexander q x - G.componentAlexander q y :=
-  eq_sub_of_isDomainBetween (fun _ _ D => (G.heegaardRegionSystem.componentAlexanderMultiplicity
-      G.componentOBasepoints G.componentXBasepoints D q : ℚ)) (G.componentAlexander q)
-    (fun _ _ => by rw [map_add, Pi.add_apply, Int.cast_add])
-    (fun hE => by
-      rw [G.componentAlexanderMultiplicity_eq_zero_of_isDomainBetween_self hE, Pi.zero_apply,
-        Int.cast_zero])
-    (fun R => G.componentAlexanderMultiplicity_domain R q) hD
 
 /-- **The Alexander multigrading of a grid has no periodic values.** Every domain of the Heegaard
 diagram of a grid diagram whose boundary is a combination of whole curves has vanishing Alexander

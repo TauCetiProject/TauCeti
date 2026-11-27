@@ -185,8 +185,9 @@ private theorem continuousOn_floerConformalSobolevOperator_family (ω : Symplect
     (.of_forall fun p z hz hzK ↦ ?_)
   -- On the compact truncation `S_R` the coefficient field is jointly continuous in `(p, z)`.
   · have hz := preimage_truncation_subset_thricePuncturedSphereReal R hzK
-    have h := continuousAt_floerConformalJetCoeff_family ω (p := (lam, z)) (hJ lam hlam z hz)
-      (hKs lam hlam z hz) (hKt lam hlam z hz) (hu z hz)
+    have h := continuousAt_floerConformalJetCoeff_family ω (u := fun _ ↦ u) (p := (lam, z))
+      (hJ lam hlam z hz) (hKs lam hlam z hz) (hKt lam hlam z hz)
+      ((hu z hz).comp _ contDiffAt_snd)
       (isWeight_cylindricalWeight.continuousOn.continuousAt
         (isOpen_thricePuncturedSphereReal.mem_nhds hz))
       (isWeight_cylindricalWeight.pos _ hz)

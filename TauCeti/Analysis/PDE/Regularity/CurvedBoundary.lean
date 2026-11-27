@@ -592,8 +592,8 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables (m : ℕ)
   -- `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ` with `F ∘ Φ ∈ W^{m,2}(Ω')`.
   exact UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace (H := H)
     (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip hsm' m
-    (energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦm hΨ' (fun x _ => hΨΦ x)
-      (fun y _ => hΦΨ y) hu) hu0' hV hVU
+    (energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦm (by omega) (by omega) hΨ'
+      (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hu) hu0' hV hVU
 
 /-- **Local `H^{m+2}` regularity near a smooth boundary portion.** Let `Ω` be open, and suppose
 that in rigid coordinates `e` centred at `x₀ = e⁻¹ 0`, inside the normal cylinder of half-height

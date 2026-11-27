@@ -128,6 +128,13 @@ theorem heisenbergDeriv_apply (x : ι → ℂ) (P : MvPolynomial ι ℂ) :
       ∑ i, (x i • raiseOp ε i P - conj (x i * ((ε i : ℤ) : ℂ)) • lowerOp ε i P) := by
   simp [heisenbergDeriv]
 
+/-- Along a coordinate vector, `D_{c eⱼ} = c • A_j - conj (c * ε j) • B_j`. -/
+theorem heisenbergDeriv_single (j : ι) (c : ℂ) :
+    heisenbergDeriv ε (Pi.single j c) =
+      c • raiseOp ε j - conj (c * ((ε j : ℤ) : ℂ)) • lowerOp ε j := by
+  rw [heisenbergDeriv, Finset.sum_eq_single j (fun i _ hi ↦ by simp [hi]) (by simp)]
+  simp
+
 omit [DecidableEq ι] in
 /-- The value of `D_v P` at `l`: `(∑ i, conj (ζ(v) i) * l i) P(l) - ∑ i, ζ(v) i (∂_i P)(l)`. -/
 theorem eval_heisenbergDeriv (v l : ι → ℂ) (P : MvPolynomial ι ℂ) :
