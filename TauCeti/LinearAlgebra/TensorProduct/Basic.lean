@@ -30,6 +30,9 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
 * `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
+* `LinearMap.rTensor_map_comp_tensorTensorTensorComm` and
+  `LinearMap.lTensor_map_comp_tensorTensorTensorComm`: the tensor shuffle commutes with maps
+  on either pair of factors.
 * `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator
   `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` composed with itself, for an involution `τ`
   anticommuting with `b`.
@@ -102,6 +105,24 @@ section Naturality
 variable {P Q S T : Type*}
 variable [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
 variable [AddCommMonoid S] [Module R S] [AddCommMonoid T] [Module R T]
+
+/-- Mapping the first and third factors commutes with the tensor shuffle. -/
+theorem rTensor_map_comp_tensorTensorTensorComm (f : M →ₗ[R] S) (g : P →ₗ[R] T) :
+    (map f g).rTensor (N ⊗[R] Q) ∘ₗ
+        (tensorTensorTensorComm R M N P Q).toLinearMap =
+      (tensorTensorTensorComm R S N T Q).toLinearMap ∘ₗ
+        map (f.rTensor N) (g.rTensor Q) := by
+  simpa only [rTensor_def, map_id] using
+    (tensorTensorTensorComm_comp_map R f (id : N →ₗ[R] N) g (id : Q →ₗ[R] Q)).symm
+
+/-- Mapping the second and fourth factors commutes with the tensor shuffle. -/
+theorem lTensor_map_comp_tensorTensorTensorComm (f : N →ₗ[R] S) (g : Q →ₗ[R] T) :
+    (map f g).lTensor (M ⊗[R] P) ∘ₗ
+        (tensorTensorTensorComm R M N P Q).toLinearMap =
+      (tensorTensorTensorComm R M S P T).toLinearMap ∘ₗ
+        map (f.lTensor M) (g.lTensor P) := by
+  simpa only [lTensor_def, map_id] using
+    (tensorTensorTensorComm_comp_map R (id : M →ₗ[R] M) f (id : P →ₗ[R] P) g).symm
 
 /-- Reassociation commutes with tensoring a composite linear map and changing the last factor. -/
 theorem assoc_rTensor_lTensor_comp (f : N →ₗ[R] P) (g : Q →ₗ[R] S)
@@ -532,17 +553,14 @@ theorem assoc_rTensor_comp_map_tensorTensorTensorComm_tmul {p : X →ₗ[R] M �
           (tensorTensorTensorComm R X O Y S (x ⊗ₜ y))) =
       ((tensorTensorTensorComm R N O Q S).toLinearMap ∘ₗ map p' q').lTensor _
         (tensorTensorTensorComm R M X' P Y' (x' ⊗ₜ y')) := by
-  -- Move `p ⊗ q` and `p' ⊗ q'` inside the rearrangements (`tensorTensorTensorComm_comp_map`).
   have hl : (map p q).rTensor (O ⊗[R] S) (tensorTensorTensorComm R X O Y S (x ⊗ₜ y)) =
       tensorTensorTensorComm R _ O _ S (p.rTensor O x ⊗ₜ q.rTensor S y) := by
-    have := LinearMap.congr_fun (tensorTensorTensorComm_comp_map R p LinearMap.id q LinearMap.id)
-      (x ⊗ₜ y)
-    simpa [map_id, LinearMap.rTensor_def] using this.symm
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, map_tmul] using
+      LinearMap.congr_fun (LinearMap.rTensor_map_comp_tensorTensorTensorComm p q) (x ⊗ₜ y)
   have hr : (map p' q').lTensor (M ⊗[R] P) (tensorTensorTensorComm R M X' P Y' (x' ⊗ₜ y')) =
       tensorTensorTensorComm R M _ P _ (p'.lTensor M x' ⊗ₜ q'.lTensor P y') := by
-    have := LinearMap.congr_fun (tensorTensorTensorComm_comp_map R LinearMap.id p' LinearMap.id q')
-      (x' ⊗ₜ y')
-    simpa [map_id, LinearMap.lTensor_def] using this.symm
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, map_tmul] using
+      LinearMap.congr_fun (LinearMap.lTensor_map_comp_tensorTensorTensorComm p' q') (x' ⊗ₜ y')
   rw [LinearMap.rTensor_comp_apply, hl, assoc_rTensor_tensorTensorTensorComm_tmul, hx, hy,
     LinearMap.lTensor_comp_apply, hr]
 
