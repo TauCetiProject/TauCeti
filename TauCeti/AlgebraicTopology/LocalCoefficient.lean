@@ -118,6 +118,31 @@ theorem pullback_map_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
       η.app ((FundamentalGroupoid.map f).obj x) :=
   rfl
 
+/-- **Transport in a pulled-back local system only sees the image of a path.** Two paths with the
+same end points whose images under `f` are homotopic have the same transport in the pullback along
+`f` of a local coefficient system. -/
+theorem pullback_obj_map_mk_eq_of_homotopic {X : TopCat.{v₁}} {Y : TopCat.{v₂}}
+    (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y) {x y : X} {P Q : Path x y}
+    (h : (P.map f.continuous).Homotopic (Q.map f.continuous)) :
+    ((pullback (R := R) f).obj L).map
+        (Path.Homotopic.Quotient.mk P : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) =
+      ((pullback (R := R) f).obj L).map (Path.Homotopic.Quotient.mk Q) := by
+  rw [pullback_obj_map, pullback_obj_map, FundamentalGroupoid.map_map,
+    FundamentalGroupoid.map_map, ← Path.Homotopic.Quotient.mk_map,
+    ← Path.Homotopic.Quotient.mk_map]
+  exact congrArg L.map (Quotient.sound h)
+
+/-- Two paths with the same end points whose images under `f` agree at every time have the same
+transport in the pullback along `f` of a local coefficient system. -/
+theorem pullback_obj_map_mk_eq_of_forall_apply_eq {X : TopCat.{v₁}} {Y : TopCat.{v₂}}
+    (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y) {x y : X} {P Q : Path x y}
+    (h : ∀ t, f (P t) = f (Q t)) :
+    ((pullback (R := R) f).obj L).map
+        (Path.Homotopic.Quotient.mk P : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) =
+      ((pullback (R := R) f).obj L).map (Path.Homotopic.Quotient.mk Q) :=
+  pullback_obj_map_mk_eq_of_homotopic f L <|
+    (Path.ext (funext h) : P.map f.continuous = Q.map f.continuous) ▸ .refl _
+
 /-- Transport along corresponding morphisms, with propositionally equal targets, gives
 corresponding coefficients. -/
 theorem map_apply_heq (L : LocalCoefficientSystem.{u, v, w} R X)
@@ -494,6 +519,18 @@ theorem transport_symm {x y : X} (L : LocalCoefficientSystem.{u, v, w} R X)
     (FundamentalGroupoid.id_eq_path_refl _).symm
   rw [h]
   exact L.map_id_apply _ a
+
+/-- Transport along a path class whose ends are moved by equalities is the transport along the
+class, conjugated by the transports along the constant classes that move the ends. -/
+theorem transport_cast {a b a' b' : X} (L : LocalCoefficientSystem.{u, v, w} R X)
+    (p : Path.Homotopic.Quotient a b) (ha : a' = a) (hb : b' = b) :
+    transport L (p.cast ha hb) =
+      ((transport L ((Path.Homotopic.Quotient.refl a').cast rfl ha.symm)).trans
+        (transport L p)).trans
+          (transport L ((Path.Homotopic.Quotient.refl b').cast rfl hb.symm)).symm := by
+  subst ha hb
+  ext v
+  simp
 
 /-- Transport commutes with a morphism of local coefficient systems. -/
 theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R X}

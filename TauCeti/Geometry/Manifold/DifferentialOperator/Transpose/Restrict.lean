@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict.Basic
-public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Riemannian
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Subtype
 import TauCeti.MeasureTheory.Measure.Subtype
 
@@ -35,10 +36,22 @@ and with `g` near the support of `f`. Differential operators are local, so the t
 `U` are the integrals over `M` of `D (σ f) · σ g` and `σ f · D' (σ g)`, which agree by
 integration by parts on `M`. The case where `g` has compact support follows by symmetry.
 
+Formal transposes are unique for a locally finite measure that is positive on open sets of a
+σ-compact manifold, and these properties pass to `U` and `μ.comap Subtype.val`, so the formal
+transpose of `D|_U` is then `D'|_U`
+(`LinearMap.IsFormalTranspose.formalTranspose_restrictDifferentialOperators`). With respect to the
+Riemannian volume `dV`, for which every differential operator has a formal transpose, this reads
+`(D|_U)ᵗ = (Dᵗ)|_U` for the measure `dV.comap Subtype.val` on `U`
+(`LinearMap.formalTranspose_riemannianVolume_restrictDifferentialOperators`).
+
 ## Main results
 
 * `LinearMap.IsFormalTranspose.restrictDifferentialOperators`: the restriction of a formal
   transpose is a formal transpose of the restriction.
+* `LinearMap.IsFormalTranspose.formalTranspose_restrictDifferentialOperators`: the formal
+  transpose of the restriction is the restriction of a formal transpose.
+* `LinearMap.formalTranspose_riemannianVolume_restrictDifferentialOperators`: with respect to the
+  Riemannian volume, `(D|_U)ᵗ = (Dᵗ)|_U`.
 
 ## References
 
@@ -163,5 +176,34 @@ theorem IsFormalTranspose.formalTranspose_restrictDifferentialOperators [SigmaCo
   have := Manifold.sigmaCompactSpace_opens I U
   have := Measure.IsOpenPosMeasure.comap μ U.isOpen.isOpenEmbedding_subtypeVal
   exact (h.restrictDifferentialOperators U).formalTranspose_eq
+
+section RiemannianVolume
+
+open Bundle
+
+variable [I.Boundaryless] [SigmaCompactSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+local instance isContinuousRiemannianBundle_tangentSpace_restrict :
+    IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+
+/-- **Formal transposes agree with restriction.** With respect to the Riemannian volume `dV` of a
+σ-compact boundaryless manifold, the formal transpose of the restriction `D|_U` of a differential
+operator to an open subset `U`, taken for the restricted measure `dV.comap Subtype.val`, is the
+restriction of the formal transpose of `D`. -/
+theorem formalTranspose_riemannianVolume_restrictDifferentialOperators
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) (U : Opens M) :
+    (U.restrictDifferentialOperators m D : C^∞⟮I, U; ℝ⟯ →ₗ[ℝ] C^∞⟮I, U; ℝ⟯).formalTranspose
+      ((riemannianVolume I M).comap Subtype.val) =
+      U.restrictDifferentialOperators m
+        ⟨_, formalTranspose_riemannianVolume_mem_differentialOperators D.property⟩ :=
+  IsFormalTranspose.formalTranspose_restrictDifferentialOperators
+    (D' := ⟨_, formalTranspose_riemannianVolume_mem_differentialOperators D.property⟩)
+    (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators D.property) U
+
+end RiemannianVolume
 
 end LinearMap

@@ -16,15 +16,25 @@ occurs once, so an element is determined by its value: this file records that th
 the ambient type is injective. It also records that the occurrence index of an element is below
 the multiplicity of its value.
 
-The file also describes the two-element submultisets of the multiset `univ.val.map f` of values
-of a family `f` indexed by a finite type: they are the pairs of values of `f` at two distinct
-indices (`Multiset.cons_le_map_univ_val_iff`). A condition on ordered pairs of entries at distinct
+The file also records that reindexing a family along a bijection preserves the multiset of its
+values (`Multiset.map_univ_val_eq_of_equiv`) and describes the two-element submultisets of
+`univ.val.map f`: they are the pairs of values of `f` at two distinct indices
+(`Multiset.cons_le_map_univ_val_iff`). A condition on ordered pairs of entries at distinct
 indices therefore depends only on the multiset of values of the family.
 -/
 
 public section
 
 namespace Multiset
+
+/-- **Reindexing preserves the multiset of values.** If an equivalence `e : α ≃ β` matches the
+values of `f : α → γ` with those of `g : β → γ`, then the multisets of values of `f` and `g`
+agree. -/
+theorem map_univ_val_eq_of_equiv {α β γ : Type*} [Fintype α] [Fintype β]
+    {f : α → γ} {g : β → γ} (e : α ≃ β) (h : ∀ a, f a = g (e a)) :
+    Finset.univ.val.map f = Finset.univ.val.map g := by
+  have hf : f = g ∘ e := funext h
+  rw [hf, ← Multiset.map_map, Multiset.map_univ_val_equiv]
 
 variable {α : Type*} [DecidableEq α] {m : Multiset α}
 

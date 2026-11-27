@@ -19,7 +19,12 @@ import TauCeti.LinearAlgebra.Matrix.Vec
 # Determinant inequalities for positive-semidefinite matrices
 
 The determinant is monotone on the positive-semidefinite cone. Hadamard--Fischer
-bounds a block determinant by the product of its diagonal-block determinants.
+bounds a block determinant by the product of its diagonal-block determinants, including
+for the Gram matrix of concatenated columns. For equal-sized blocks `fromBlocks A B Bᴴ D`,
+the off-diagonal determinant satisfies the Cauchy--Schwarz bound `‖det B‖² ≤ ‖det A‖ · ‖det D‖`
+(`Matrix.PosSemidef.norm_det_sq_le_of_fromBlocks`), specializing to Gram pairings
+in matrix (`Matrix.PosSemidef.norm_det_conjTranspose_mul_mul_sq_le`) and vector-family
+(`Matrix.PosSemidef.norm_det_pairing_sq_le`) forms.
 The overlapping-block version is the local Gram determinant inequality used
 when comparing the Euclidean volumes of an intersection and a sum of subspaces.
 The monotonicity and block statements include singular matrices and empty blocks,
@@ -49,6 +54,9 @@ basis of `ℝⁿ`, it bounds `det T det A` by `(∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ / 
   Ann. of Math. 198 (2023), for the trace–determinant inequality and its equality case.
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative
   Subspace Theorem*, §6.1, (6.12), for the subspace-height application.
+* Gram-determinant Cauchy--Schwarz theorems adapted from `New.norm_det_pairing_sq_le` in
+  `src/Lib/General/LinearAlgebra/GramDeterminant.lean` of `grh-lean`
+  (<https://github.com/lsernau/grh-lean>, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
@@ -126,7 +134,83 @@ theorem PosSemidef.det_fromBlocks_le {A : Matrix m m 𝕜} {B : Matrix m n 𝕜}
   rw [det_fromBlocks₁₁, invOf_eq_nonsing_inv]
   exact mul_le_mul_of_nonneg_left hbound hA.det_nonneg
 
+omit [Fintype m] [DecidableEq m] in
+/-- **Off-diagonal determinant Cauchy--Schwarz inequality.** For a positive-semidefinite `2 × 2`
+block matrix `fromBlocks A B Bᴴ D` with square blocks of the same size over `ℝ` or `ℂ`,
+`‖B.det‖ ^ 2 ≤ ‖A.det‖ * ‖D.det‖`. -/
+theorem PosSemidef.norm_det_sq_le_of_fromBlocks {A B D : Matrix n n 𝕜}
+    (h : (fromBlocks A B Bᴴ D).PosSemidef) :
+    ‖B.det‖ ^ 2 ≤ ‖A.det‖ * ‖D.det‖ := by
+  have hA : A.PosSemidef := by simpa using h.toBlocks₁₁
+  have hD : D.PosSemidef := by simpa using h.toBlocks₂₂
+  by_cases hdet : A.det = 0
+  · obtain ⟨x, hx0, hAx⟩ := Matrix.exists_mulVec_eq_zero_iff.2 hdet
+    have hBx : Bᴴ *ᵥ x = 0 := by simpa using h.toBlocks₂₁_mulVec_eq_zero (by simpa using hAx)
+    have hBdet : B.det = 0 := by
+      have h' : Bᴴ.det = 0 := Matrix.exists_mulVec_eq_zero_iff.1 ⟨x, hx0, hBx⟩
+      simpa using h'
+    simp [hBdet, hdet]
+  have hA' : A.PosDef := hA.posDef_iff_det_ne_zero.mpr hdet
+  cases hA'.isUnit.nonempty_invertible
+  have hS : (D - Bᴴ * A⁻¹ * B).PosSemidef := h.schur_complement₁₁ hA.inv.isHermitian (by simp)
+  have hle : (Bᴴ * A⁻¹ * B).det ≤ D.det :=
+    (hA.inv.conjTranspose_mul_mul_same B).det_le_det (Matrix.le_iff.2 hS)
+  have h_lhs : (Bᴴ * A⁻¹ * B).det = ((‖B.det‖ ^ 2 / ‖A.det‖ : ℝ) : 𝕜) := by
+    simp only [det_mul, det_conjTranspose, det_nonsing_inv, Ring.inverse_eq_inv', RCLike.star_def]
+    rw [mul_right_comm, RCLike.conj_mul]
+    push_cast
+    rw [RCLike.norm_of_nonneg' hA.det_nonneg, div_eq_mul_inv]
+  have hle_real : ‖B.det‖ ^ 2 / ‖A.det‖ ≤ ‖D.det‖ := by
+    rw [← RCLike.ofReal_le_ofReal (K := 𝕜), ← h_lhs, RCLike.norm_of_nonneg' hD.det_nonneg]
+    exact hle
+  exact ((div_le_iff₀ (norm_pos_iff.2 hdet)).1 hle_real).trans_eq (mul_comm _ _)
+
+omit [DecidableEq m] in
+/-- **Cauchy--Schwarz inequality for Gram determinants (matrix form).** For a positive-semidefinite
+matrix `G : Matrix m m 𝕜` and matrices `A B : Matrix m n 𝕜` over `ℝ` or `ℂ`,
+`‖(Aᴴ * G * B).det‖ ^ 2 ≤ ‖(Aᴴ * G * A).det‖ * ‖(Bᴴ * G * B).det‖`. -/
+theorem PosSemidef.norm_det_conjTranspose_mul_mul_sq_le {G : Matrix m m 𝕜} (hG : G.PosSemidef)
+    (A B : Matrix m n 𝕜) :
+    ‖(Aᴴ * G * B).det‖ ^ 2 ≤ ‖(Aᴴ * G * A).det‖ * ‖(Bᴴ * G * B).det‖ := by
+  have h := hG.conjTranspose_mul_mul_same (fromCols A B)
+  rw [hG.isHermitian.conjTranspose_fromCols_mul_mul_fromCols A B] at h
+  exact h.norm_det_sq_le_of_fromBlocks
+
+omit [DecidableEq m] in
+/-- **Cauchy--Schwarz inequality for Gram determinants (vector-family form).** For a
+positive-semidefinite matrix `G : Matrix m m 𝕜` and two families `v w : n → m → 𝕜` of vectors over
+`ℝ` or `ℂ`, `‖det (star (v i) ⬝ᵥ G *ᵥ w k)‖ ^ 2 ≤`
+`‖det (star (v i) ⬝ᵥ G *ᵥ v k)‖ * ‖det (star (w i) ⬝ᵥ G *ᵥ w k)‖`. -/
+theorem PosSemidef.norm_det_pairing_sq_le {G : Matrix m m 𝕜} (hG : G.PosSemidef)
+    (v w : n → m → 𝕜) :
+    ‖(of fun i k : n ↦ star (v i) ⬝ᵥ G *ᵥ w k).det‖ ^ 2 ≤
+      ‖(of fun i k : n ↦ star (v i) ⬝ᵥ G *ᵥ v k).det‖ *
+        ‖(of fun i k : n ↦ star (w i) ⬝ᵥ G *ᵥ w k).det‖ := by
+  have h_eq (x y : n → m → 𝕜) :
+      (of x)ᵀᴴ * G * (of y)ᵀ = of fun i k : n ↦ star (x i) ⬝ᵥ G *ᵥ y k := by
+    rw [Matrix.mul_assoc]
+    ext i k
+    simp [Matrix.mul_apply, dotProduct, mulVec]
+  simpa only [h_eq] using hG.norm_det_conjTranspose_mul_mul_sq_le (of v)ᵀ (of w)ᵀ
+
 variable [Fintype p] [DecidableEq p]
+
+omit [DecidableEq m] in
+/-- **Fischer's inequality for concatenated columns.** For a positive-semidefinite form `G`,
+the Gram determinant norm of the concatenation is at most the product of the two individual
+Gram determinant norms. -/
+theorem PosSemidef.norm_det_conjTranspose_fromCols_mul_mul_fromCols_le {G : Matrix m m 𝕜}
+    (hG : G.PosSemidef) (A : Matrix m n 𝕜) (B : Matrix m p 𝕜) :
+    ‖((fromCols A B)ᴴ * G * fromCols A B).det‖ ≤
+      ‖(Aᴴ * G * A).det‖ * ‖(Bᴴ * G * B).det‖ := by
+  have hAB := hG.conjTranspose_mul_mul_same (fromCols A B)
+  have hblock := hG.isHermitian.conjTranspose_fromCols_mul_mul_fromCols A B
+  rw [← RCLike.ofReal_le_ofReal (K := 𝕜), RCLike.ofReal_mul,
+    RCLike.norm_of_nonneg' hAB.det_nonneg,
+    RCLike.norm_of_nonneg' (hG.conjTranspose_mul_mul_same A).det_nonneg,
+    RCLike.norm_of_nonneg' (hG.conjTranspose_mul_mul_same B).det_nonneg, hblock]
+  rw [hblock] at hAB
+  exact hAB.det_fromBlocks_le
 
 /-- **Koteljanskii's inequality for overlapping blocks.** The product of the
 principal minors on the common block and on all three blocks is bounded by the
@@ -150,11 +234,9 @@ theorem PosSemidef.det_mul_det_fromBlocks_le
   have hblock : fromBlocks D E Eᴴ F - (fromCols B C)ᴴ * A⁻¹ * fromCols B C =
       fromBlocks (D - Bᴴ * A⁻¹ * B) (E - Bᴴ * A⁻¹ * C)
         (E - Bᴴ * A⁻¹ * C)ᴴ (F - Cᴴ * A⁻¹ * C) := by
-    simp only [conjTranspose_fromCols_eq_fromRows_conjTranspose, fromRows_mul,
-      conjTranspose_sub, conjTranspose_mul,
-      conjTranspose_conjTranspose, hA.inv.isHermitian.eq]
-    ext i j
-    cases i <;> cases j <;> simp [Matrix.mul_assoc]
+    rw [hA.inv.isHermitian.conjTranspose_fromCols_mul_mul_fromCols B C, conjTranspose_sub,
+      sub_eq_add_neg, fromBlocks_neg, fromBlocks_add]
+    simp only [sub_eq_add_neg]
   rw [hblock] at hS
   have hbound := hS.det_fromBlocks_le
   rw [det_fromBlocks₁₁, det_fromBlocks₁₁, det_fromBlocks₁₁,

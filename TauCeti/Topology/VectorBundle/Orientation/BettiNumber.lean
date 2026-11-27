@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.EulerCharacteristic
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.Basic
@@ -36,6 +37,12 @@ Morse–Bott inequalities. This file compares them with the ordinary Betti numbe
   not (`TauCeti.VectorBundleOrientationCover.finrank_twistedHomology_zero_signLocalSystem`),
   while the ordinary zeroth Betti number of such a base is `1`. For the Möbius line over the
   circle, which is not orientable, the twisted zeroth Betti number over `ℚ` is `0`.
+* The twist never changes the alternating sum: since every fibre of `o(E)` has rank one, over a
+  division ring and a base of finite CW type `∑ⱼ (-1)ʲ dim Hⱼ(B; o(E) ⊗ K)` is the Euler
+  characteristic `χ(B)`
+  (`TauCeti.VectorBundleOrientationCover.finsum_finrank_twistedHomology_signLocalSystem`).
+  For the Möbius line over the circle over `ℚ` both sides vanish, although the twisted and the
+  ordinary Betti numbers differ in degrees `0` and `1`.
 
 Relabelling the frames of a bundle of rank `r` by `ULift (Fin r)`, which moves its model fibre to
 any universe, changes neither its orientation local system nor the dimensions of the homology with
@@ -212,5 +219,29 @@ theorem VectorBundleOrientationCover.finrank_twistedHomology_signLocalSystem_uLi
     (φ := fun _ ↦ ContinuousLinearEquiv.refl ℝ _) hφ).inv m)).toLinearEquiv.finrank_eq
 
 end ULift
+
+section EulerCharacteristic
+
+universe u uB uE uι
+
+variable {B : Type uB} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {E : B → Type uE} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {ι : Type uι} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
+
+/-- **The Euler characteristic with orientation-twisted coefficients.** Over a division ring `K`
+and a base `B` of finite CW type, the alternating sum of the dimensions of the homology of `B` with
+coefficients in the orientation local system of `E` is the Euler characteristic of `B`:
+`∑ⱼ (-1)ʲ dim Hⱼ(B; o(E) ⊗ K) = χ(B)`, whether or not `E` is orientable. -/
+theorem VectorBundleOrientationCover.finsum_finrank_twistedHomology_signLocalSystem
+    [FiniteCWType B] {K : Type u} [DivisionRing K] :
+    ∑ᶠ n : ℕ, (-1 : ℤ) ^ n *
+        finrank K (twistedHomology.{u, uB, max uE uι u} (signLocalSystem F E K hι) n) =
+      eulerChar B := by
+  rw [finsum_finrank_twistedHomology_of_finiteCWType B _ (finrank_signLocalSystem_obj hι),
+    Nat.cast_one, one_mul]
+
+end EulerCharacteristic
 
 end TauCeti

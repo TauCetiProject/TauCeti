@@ -28,6 +28,9 @@ Consequently, pulling `F : LocallyDiscrete Λ ⥤ᵖ C` back along the identity 
 composite `f ⋙ g` instead of first along `g` and then along `f`, does not change its unit and
 composition comparisons. The restriction `F.over U` of `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` to the
 slice `Over U` is the instance `P = (Over.forget U).op.toPseudofunctor` of such a composite.
+The constant pseudofunctor `CategoryTheory.Pseudofunctor.constant C D` on `C` with fibre a
+category `D` is Mathlib's `Functor.toPseudofunctor'` of the constant functor at `D`: its pullback
+functors and its unit and composition isomorphisms are identities.
 
 Finally, `CategoryTheory.LocallyDiscrete.mkCatPseudofunctor` builds a pseudofunctor
 `LocallyDiscrete B₀ ⥤ᵖ Cat` from functors, unit isomorphisms and composition isomorphisms
@@ -176,6 +179,47 @@ abbrev over : LocallyDiscrete (Over U)ᵒᵖ ⥤ᵖ Cat.{v', u'} :=
   (Over.forget U).op.toPseudofunctor.comp F
 
 end Over
+
+/-! ### The constant pseudofunctor -/
+
+section Constant
+
+universe v u v' u'
+
+variable (C : Type u) [Category.{v} C] (D : Type u') [Category.{v'} D]
+
+/-- The **constant pseudofunctor** on `C` with fibre `D`: every fibre is `D` and every pullback
+functor is the identity. -/
+def constant : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'} :=
+  ((Functor.const Cᵒᵖ).obj (Cat.of D)).toPseudofunctor'
+
+variable {C D}
+
+-- Not `@[simp]`: `simp` would rewrite the fibre inside the types of objects and arrows of the
+-- fibres, such as those of central sections, so left-hand sides mentioning them would not be in
+-- normal form.
+/-- The fibres of the constant pseudofunctor are `D`. -/
+theorem constant_obj (X : LocallyDiscrete Cᵒᵖ) : (constant C D).obj X = Cat.of D :=
+  rfl
+
+/-- The pullback functors of the constant pseudofunctor are the identity. -/
+@[simp]
+theorem constant_map {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) :
+    (constant C D).map f = 𝟙 (Cat.of D) :=
+  rfl
+
+/-- The unit isomorphisms of the constant pseudofunctor are identities. -/
+@[simp]
+theorem constant_mapId (X : LocallyDiscrete Cᵒᵖ) : (constant C D).mapId X = Iso.refl _ :=
+  rfl
+
+/-- The composition isomorphisms of the constant pseudofunctor are identities. -/
+@[simp]
+theorem constant_mapComp {X Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (constant C D).mapComp f g = Iso.refl _ :=
+  rfl
+
+end Constant
 
 end CategoryTheory.Pseudofunctor
 

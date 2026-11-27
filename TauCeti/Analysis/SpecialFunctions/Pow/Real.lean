@@ -56,6 +56,7 @@ For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` 
 factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
 For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`: a weight of
 nonpositive regularity at a larger index absorbs the inverse weight at a smaller one.
+For `0 < b` the weights cancel exactly: `b ^ (-s x) b ^ (s x) = 1`.
 For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`, the form of the
 off-diagonal decay `2 ^ (-M |j - k|)` between dyadic indices `j` and `k`.
 
@@ -343,6 +344,16 @@ theorem rpow_mul_mul_rpow_neg_mul_le_one {b : ℝ} (hb : 1 ≤ b) {s : ℝ} (hs 
   rw [← rpow_add (by linarith)]
   refine rpow_le_one_of_one_le_of_nonpos hb ?_
   nlinarith
+
+/-- For `0 < b`, the dyadic weights `b ^ (-s x)` and `b ^ (s x)` cancel. -/
+theorem rpow_neg_mul_mul_rpow_mul {b : ℝ} (hb : 0 < b) (s x : ℝ) :
+    b ^ (-s * x) * b ^ (s * x) = 1 := by
+  rw [← rpow_add hb, neg_mul, neg_add_cancel, rpow_zero]
+
+/-- For `0 < b`, the dyadic weights `b ^ (s x)` and `b ^ (-s x)` cancel. -/
+theorem rpow_mul_mul_rpow_neg_mul {b : ℝ} (hb : 0 < b) (s x : ℝ) :
+    b ^ (s * x) * b ^ (-s * x) = 1 := by
+  rw [mul_comm, rpow_neg_mul_mul_rpow_mul hb]
 
 /-- For `0 < b`, the geometric weight `(b ^ (-s)) ^ d` turns the dyadic weight `b ^ (s (d + k))`
 back into `b ^ (s k)`. -/

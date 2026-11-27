@@ -29,6 +29,10 @@ boundary conditions defined by those values.
   zero of `g ∘ f` is `g` after that of `f`.
 * `TauCeti.CkHolderSpaceOn.closureExtend_compLeftL`: the values on the closure of `g ∘ f` are `g`
   applied to those of `f`.
+* `TauCeti.CkHolderSpaceOn.ext_compLeftL_proj`: an element of `C^{k,α}(Ω, ι → F)` is determined by
+  its coordinates, and `TauCeti.CkHolderSpaceOn.compLeftL_proj_sum_compLeftL_single` and
+  `TauCeti.CkHolderSpaceOn.sum_compLeftL_single_compLeftL_proj`: taking coordinates and putting
+  them back with the coordinate inclusions are inverse.
 -/
 
 public section
@@ -111,6 +115,11 @@ theorem compLeftL_apply (g : F →L[ℝ] G) (f : CkHolderSpaceOn k α Ω F) (x :
     compLeftL g f x = g (f x) :=
   compLeft_apply g f x
 
+/-- The underlying function of `g ∘ f` is `g` after that of `f`. -/
+theorem coe_compLeftL (g : F →L[ℝ] G) (f : CkHolderSpaceOn k α Ω F) :
+    ⇑(compLeftL g f) = g ∘ f :=
+  funext (compLeftL_apply g f)
+
 /-- Near each point of `Ω`, the extension by zero of `g ∘ f` is `g` after the extension by zero of
 `f`. -/
 theorem extend_compLeftL_eventuallyEq (g : F →L[ℝ] G) (f : CkHolderSpaceOn k α Ω F) {x : E}
@@ -138,6 +147,24 @@ theorem norm_compLeftL_le (g : F →L[ℝ] G) :
 theorem compLeftL_id (f : CkHolderSpaceOn k α Ω F) : compLeftL (.id ℝ F) f = f :=
   ext fun _ ↦ by simp
 
+/-- Postcomposition with the zero map is zero. -/
+@[simp]
+theorem compLeftL_zero (f : CkHolderSpaceOn k α Ω F) : compLeftL (0 : F →L[ℝ] G) f = 0 :=
+  ext fun _ ↦ by simp [coe_zero]
+
+/-- Postcomposition is additive in the linear map. -/
+@[simp]
+theorem compLeftL_add (g₁ g₂ : F →L[ℝ] G) (f : CkHolderSpaceOn k α Ω F) :
+    compLeftL (g₁ + g₂) f = compLeftL g₁ f + compLeftL g₂ f :=
+  ext fun _ ↦ by simp
+
+/-- Postcomposition with a finite sum of linear maps is the sum of the postcompositions. -/
+@[simp]
+theorem compLeftL_sum {ι : Type*} (s : Finset ι) (g : ι → F →L[ℝ] G)
+    (f : CkHolderSpaceOn k α Ω F) :
+    compLeftL (∑ i ∈ s, g i) f = ∑ i ∈ s, compLeftL (g i) f :=
+  ext fun _ ↦ by simp
+
 /-- Postcomposition with `g` and then with `g'` is postcomposition with `g' ∘ g`. -/
 @[simp]
 theorem compLeftL_compLeftL (g : F →L[ℝ] G) (g' : G →L[ℝ] G') (f : CkHolderSpaceOn k α Ω F) :
@@ -153,5 +180,36 @@ theorem closureExtend_compLeftL [CompleteSpace F] (hΩ : Convex ℝ (Ω : Set E)
     (fun y ↦ by rw [compLeftL_apply, closureExtend_apply]) hx
     (g.continuous.continuousAt.comp_continuousWithinAt
       ((f.continuousOn_closureExtend hΩ x hx).mono subset_closure))
+
+/-! ### Coordinates of maps into a product -/
+
+section Pi
+
+variable {ι : Type*} [Fintype ι]
+
+/-- An element of `C^{k,α}(Ω, ι → F)` is determined by its coordinates. -/
+theorem ext_compLeftL_proj {f f' : CkHolderSpaceOn k α Ω (ι → F)}
+    (h : ∀ i, compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ F) i) f =
+      compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ F) i) f') :
+    f = f' :=
+  ext fun x ↦ funext fun i ↦ by simpa using congrArg (· x) (h i)
+
+variable [DecidableEq ι]
+
+/-- The `i`-th coordinate of the element of `C^{k,α}(Ω, ι → F)` with coordinates `f j` is
+`f i`. -/
+theorem compLeftL_proj_sum_compLeftL_single (f : ι → CkHolderSpaceOn k α Ω F) (i : ι) :
+    compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ F) i)
+      (∑ j, compLeftL (.single ℝ (fun _ ↦ F) j) (f j)) = f i :=
+  ext fun x ↦ by simp [Pi.single_apply]
+
+/-- An element of `C^{k,α}(Ω, ι → F)` is the sum of its coordinates, each put back in its
+place. -/
+theorem sum_compLeftL_single_compLeftL_proj (f : CkHolderSpaceOn k α Ω (ι → F)) :
+    ∑ i, compLeftL (.single ℝ (fun _ ↦ F) i)
+      (compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ F) i) f) = f :=
+  ext_compLeftL_proj fun i ↦ compLeftL_proj_sum_compLeftL_single _ i
+
+end Pi
 
 end TauCeti.CkHolderSpaceOn
