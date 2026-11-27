@@ -562,19 +562,13 @@ private theorem exists_restrictNormal_eq_and_mem_finiteGaloisUpperRamificationGr
   rw [← map_restrictNormalHom_finiteGaloisUpperRamificationGroup K (AlgebraicClosure K) hL₀N v]
     at hσ₀L₀
   obtain ⟨ρ, hρN, hρL₀⟩ := hσ₀L₀
-  have hval :
-      E.val.comp (inclusion (inf_le_left : E ⊓ N.toIntermediateField ≤ E)) =
-        L₀.toIntermediateField.val :=
-    AlgHom.ext fun _ ↦ rfl
   have hcompat :
       (inclusion (inf_le_left : E ⊓ N.toIntermediateField ≤ E)).restrictNormalHom τ =
         (inclusion
           (inf_le_right : E ⊓ N.toIntermediateField ≤ N.toIntermediateField)).restrictNormalHom
             ρ := by
-    rw [hρL₀, ← hσ₀, ← IntermediateField.restrictNormalHom_val E,
-      AlgHom.restrictNormalHom_restrictNormalHom, hval,
-      IntermediateField.restrictNormalHom_val]
-    rfl
+    rw [hρL₀, ← hσ₀, IntermediateField.restrictNormalHom_inclusion,
+      AlgEquiv.restrictNormalHom_apply_eq_restrictNormal]
   obtain ⟨σ, hσ⟩ := (IntermediateField.mem_range_restrictNormalHom_prod_restrictNormalHom_iff
     E N.toIntermediateField τ ρ).2 hcompat
   rw [MonoidHom.prod_apply, Prod.mk.injEq] at hσ

@@ -87,21 +87,13 @@ theorem map_restrictNormalHom_iInf_comap [Normal K L]
     (M : FiniteGaloisIntermediateField K L) :
     (⨅ N, (H N).comap (AlgEquiv.restrictNormalHom N : Gal(L/K) →* Gal(N/K))).map
         (AlgEquiv.restrictNormalHom M) = H M := by
-  let S (N : FiniteGaloisIntermediateField K L) : Subgroup Gal(L/K) :=
-    (H N).comap (AlgEquiv.restrictNormalHom N)
-  have hanti : Antitone S := antitone_comap_restrictNormalHom H fun _ _ h ↦ (hH h).le
-  have hclosed (N : FiniteGaloisIntermediateField K L) : IsClosed (S N : Set Gal(L/K)) :=
-    N.isClosed_comap_restrictNormalHom (H N)
-  rw [MonoidHom.map_iInf_of_isClosed _ (InfiniteGalois.restrictNormalHom_continuous
-    M.toIntermediateField) S hclosed (fun N P ↦ ⟨N ⊔ P, hanti le_sup_left, hanti le_sup_right⟩)]
-  refine le_antisymm ?_ (le_iInf fun N ↦ ?_)
-  · exact (iInf_le _ M).trans_eq
-      (Subgroup.map_comap_eq_self_of_surjective (AlgEquiv.restrictNormalHom_surjective L) _)
-  · intro τ hτ
-    rw [← hH (le_sup_left : M ≤ M ⊔ N)] at hτ
-    obtain ⟨ρ, hρ, hρτ⟩ := hτ
-    obtain ⟨σ, hσ⟩ := AlgEquiv.restrictNormalHom_surjective L ρ
-    refine ⟨σ, hanti (le_sup_right : N ≤ M ⊔ N) (by simpa [S, hσ] using hρ), ?_⟩
-    rw [← hρτ, ← hσ, IntermediateField.restrictNormalHom_inclusion]
+  refine map_iInf_comap_of_compatible (ι := FiniteGaloisIntermediateField K L)
+    (fun N ↦ AlgEquiv.restrictNormalHom N)
+    (fun {_ _} h ↦ (inclusion ((FiniteGaloisIntermediateField.le_iff _ _).mp h)).restrictNormalHom)
+    H (fun N ↦ InfiniteGalois.restrictNormalHom_continuous N.toIntermediateField)
+    (fun _ ↦ AlgEquiv.restrictNormalHom_surjective L)
+    (fun N ↦ N.isClosed_comap_restrictNormalHom (H N)) ?_ hH M
+  intro N P h
+  exact MonoidHom.ext fun σ ↦ IntermediateField.restrictNormalHom_inclusion _ σ
 
 end TauCeti

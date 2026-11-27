@@ -255,26 +255,15 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
       (H U).map (QuotientGroup.mapOfLE hUV) = H V)
     (U : OpenNormalSubgroup G) :
     (limitSubgroup H).map (QuotientGroup.mk' U.toSubgroup) = H U := by
-  let S (V : OpenNormalSubgroup G) : Subgroup G :=
-    (H V).comap (QuotientGroup.mk' V.toSubgroup)
-  have hmono : Monotone S := by
-    intro V W hVW g hg
-    have hmem : (QuotientGroup.mk g : G ⧸ W.toSubgroup) ∈
-        (H V).map (QuotientGroup.mapOfLE hVW) :=
-      ⟨QuotientGroup.mk g, hg, QuotientGroup.mapOfLE_mk _ g⟩
-    rwa [hH hVW] at hmem
-  have hclosed (V : OpenNormalSubgroup G) : IsClosed (S V : Set G) :=
-    (isClosed_discrete _).preimage QuotientGroup.continuous_mk
-  rw [limitSubgroup, MonoidHom.map_iInf_of_isClosed _ QuotientGroup.continuous_mk S hclosed
-    (fun V W ↦ ⟨V ⊓ W, hmono inf_le_left, hmono inf_le_right⟩)]
-  refine le_antisymm ?_ (le_iInf fun V ↦ ?_)
-  · exact (iInf_le _ U).trans_eq
-      (Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective U.toSubgroup) _)
-  · intro y hy
-    rw [← hH (inf_le_left : U ⊓ V ≤ U)] at hy
-    obtain ⟨z, hz, hzy⟩ := hy
-    obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective (U ⊓ V).toSubgroup z
-    exact ⟨g, hmono (inf_le_right : U ⊓ V ≤ V) hz, by simpa using hzy⟩
+  rw [limitSubgroup]
+  exact map_iInf_comap_of_compatible (ι := (OpenNormalSubgroup G)ᵒᵈ)
+    (fun V ↦ QuotientGroup.mk' V.ofDual.toSubgroup)
+    (fun {_ _} h ↦ QuotientGroup.mapOfLE h) (fun V ↦ H V.ofDual)
+    (fun _ ↦ QuotientGroup.continuous_mk) (fun _ ↦ QuotientGroup.mk'_surjective _)
+    (fun _ ↦ (isClosed_discrete _).preimage QuotientGroup.continuous_mk)
+    (fun {V W} h ↦
+      QuotientGroup.mapOfLE_comp_mk' (V := W.ofDual.toSubgroup) (U := V.ofDual.toSubgroup) h)
+    (fun {V W} h ↦ hH (U := W.ofDual) (V := V.ofDual) h) (OrderDual.toDual U)
 
 end LimitSubgroup
 
