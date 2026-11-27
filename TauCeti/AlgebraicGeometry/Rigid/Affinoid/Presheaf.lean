@@ -102,11 +102,33 @@ instance instFactIsAffinoidAlgebraSections (U : AffinoidSubdomain K A) :
     Fact (IsAffinoidAlgebra K U.sections) :=
   ⟨U.isAffinoidAlgebra⟩
 
+/-- Push an affinoid subdomain `W` of `Sp B` forward to an affinoid subdomain of `Sp A`, along a
+map `φ : A → B` representing an affinoid subdomain of `Sp A`. Its points are the image of `W`. -/
+noncomputable def _root_.TauCeti.IsAffinoidSubdomainMap.imageSubdomain {B : Type u} [CommRing B]
+    [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)} (hU : IsAffinoidSubdomainMap φ U)
+    (hA : IsAffinoidAlgebra K A) (W : AffinoidSubdomain K B) : AffinoidSubdomain K A :=
+  ofMap (hU.comp hA W.isAffinoidSubdomainMap)
+
+@[simp]
+theorem _root_.TauCeti.IsAffinoidSubdomainMap.coe_imageSubdomain {B : Type u} [CommRing B]
+    [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)} (hU : IsAffinoidSubdomainMap φ U)
+    (hA : IsAffinoidAlgebra K A) (W : AffinoidSubdomain K B) :
+    (hU.imageSubdomain hA W : Set (MaximalSpectrum A)) =
+      hU.isAffinoidAlgebra.maximalSpectrumComap φ '' (W : Set (MaximalSpectrum B)) :=
+  coe_ofMap _
+
+/-- The image of a point of `W` lies in the image subdomain. -/
+theorem _root_.TauCeti.IsAffinoidSubdomainMap.mem_imageSubdomain {B : Type u} [CommRing B]
+    [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)} (hU : IsAffinoidSubdomainMap φ U)
+    (hA : IsAffinoidAlgebra K A) {W : AffinoidSubdomain K B} {y : MaximalSpectrum B}
+    (hy : y ∈ W) : hU.isAffinoidAlgebra.maximalSpectrumComap φ y ∈ hU.imageSubdomain hA W :=
+  ⟨y, hy, rfl⟩
+
 /-- Push an affinoid subdomain of `Sp U.sections` forward along `U.toSections` to an affinoid
 subdomain of `Sp A` contained in `U`. -/
 noncomputable def mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
     (W : AffinoidSubdomain K U.sections) : AffinoidSubdomain K A :=
-  ofMap (U.isAffinoidSubdomainMap.comp hA W.isAffinoidSubdomainMap)
+  U.isAffinoidSubdomainMap.imageSubdomain hA W
 
 @[simp]
 theorem coe_mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
@@ -114,7 +136,7 @@ theorem coe_mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A
     (U.mapSubdomain hA W : Set (MaximalSpectrum A)) =
       U.isAffinoidAlgebra.maximalSpectrumComap U.toSections ''
         (W : Set (MaximalSpectrum U.sections)) :=
-  coe_ofMap _
+  U.isAffinoidSubdomainMap.coe_imageSubdomain hA W
 
 theorem mapSubdomain_le (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
     (W : AffinoidSubdomain K U.sections) : U.mapSubdomain hA W ≤ U := by
@@ -237,6 +259,21 @@ theorem sectionsAlgEquiv_restrict {U V : AffinoidSubdomain K A} (hUV : U ≤ V)
   apply V.isAffinoidSubdomainMap.algHom_ext hC.isAffinoidAlgebra
   ext a
   simpa using (AlgHom.congr_fun hψ a).symm
+
+/-- The image subdomain `hU.imageSubdomain hA W` has the coordinate algebra of `W`. -/
+noncomputable def _root_.TauCeti.IsAffinoidSubdomainMap.imageSectionsAlgEquiv {B : Type u}
+    [CommRing B] [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
+    (hU : IsAffinoidSubdomainMap φ U) (hA : IsAffinoidAlgebra K A) (W : AffinoidSubdomain K B) :
+    (hU.imageSubdomain hA W).sections ≃ₐ[K] W.sections :=
+  (hU.imageSubdomain hA W).sectionsAlgEquiv (hU.comp hA W.isAffinoidSubdomainMap)
+
+@[simp]
+theorem _root_.TauCeti.IsAffinoidSubdomainMap.imageSectionsAlgEquiv_toSections {B : Type u}
+    [CommRing B] [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
+    (hU : IsAffinoidSubdomainMap φ U) (hA : IsAffinoidAlgebra K A) (W : AffinoidSubdomain K B)
+    (a : A) :
+    hU.imageSectionsAlgEquiv hA W ((hU.imageSubdomain hA W).toSections a) = W.toSections (φ a) :=
+  (sectionsAlgEquiv_toSections _ _ a).trans (AlgHom.comp_apply _ _ _)
 
 /-- The whole classical spectrum as an affinoid subdomain. -/
 def univ (hA : IsAffinoidAlgebra K A) : AffinoidSubdomain K A :=

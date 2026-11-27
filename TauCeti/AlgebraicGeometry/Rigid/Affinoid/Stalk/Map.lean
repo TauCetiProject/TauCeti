@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Comap
-public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Stalk
+public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Stalk.Basic
 
 /-!
 # Stalk maps of morphisms of affinoid spaces
@@ -185,56 +185,6 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
   [hA : Fact (IsAffinoidAlgebra K A)] [hB : Fact (IsAffinoidAlgebra K B)]
   {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
 
-omit hB in
-/-- The affinoid subdomain of `Sp A` given by the image of an affinoid subdomain `W` of `Sp B`,
-for `φ : A → B` representing an affinoid subdomain of `Sp A`. -/
-private noncomputable def imageSubdomain (hU : IsAffinoidSubdomainMap φ U)
-    (W : AffinoidSubdomain K B) : AffinoidSubdomain K A :=
-  ofMap (hU.comp hA.out W.isAffinoidSubdomainMap)
-
-omit hB in
-/-- The image subdomain has the coordinate algebra of `W`. -/
-private noncomputable def imageSectionsAlgEquiv (hU : IsAffinoidSubdomainMap φ U)
-    (W : AffinoidSubdomain K B) : (imageSubdomain hU W).sections ≃ₐ[K] W.sections :=
-  (imageSubdomain hU W).sectionsAlgEquiv (by
-    rw [imageSubdomain, coe_ofMap]
-    exact hU.comp hA.out W.isAffinoidSubdomainMap)
-
-omit hB in
-private theorem imageSectionsAlgEquiv_toSections (hU : IsAffinoidSubdomainMap φ U)
-    (W : AffinoidSubdomain K B) (a : A) :
-    imageSectionsAlgEquiv hU W ((imageSubdomain hU W).toSections a) = W.toSections (φ a) :=
-  ((imageSubdomain hU W).sectionsAlgEquiv_toSections _ a).trans (AlgHom.comp_apply _ _ _)
-
-private theorem mem_imageSubdomain (hU : IsAffinoidSubdomainMap φ U)
-    {W : AffinoidSubdomain K B} {y : MaximalSpectrum B} (hy : y ∈ W) :
-    hB.out.maximalSpectrumComap φ y ∈ imageSubdomain hU W := by
-  rw [imageSubdomain, mem_ofMap]
-  exact ⟨y, hy, rfl⟩
-
-private theorem imageSubdomain_le (hU : IsAffinoidSubdomainMap φ U)
-    {W : AffinoidSubdomain K B} {V : AffinoidSubdomain K A} (hWV : W ≤ V.comap φ) :
-    imageSubdomain hU W ≤ V := by
-  intro x hx
-  rw [imageSubdomain, mem_ofMap] at hx
-  obtain ⟨w, hw, rfl⟩ := hx
-  exact (mem_comap V φ w).mp (hWV hw)
-
-/-- Under the identification of coordinate algebras, restriction from `V` to the image of
-`W ≤ φ⁻¹(V)` is pullback along `φ` followed by restriction to `W`. -/
-private theorem imageSectionsAlgEquiv_restrict (hU : IsAffinoidSubdomainMap φ U)
-    {W : AffinoidSubdomain K B} {V : AffinoidSubdomain K A} (hWV : W ≤ V.comap φ)
-    (f : V.sections) :
-    imageSectionsAlgEquiv hU W (restrict (imageSubdomain_le hU hWV) f) =
-      restrict hWV (V.comapSections φ f) := by
-  have : (imageSectionsAlgEquiv hU W).toAlgHom.comp (restrict (imageSubdomain_le hU hWV)) =
-      (restrict hWV).comp (V.comapSections φ) := by
-    refine V.isAffinoidSubdomainMap.algHom_ext W.isAffinoidAlgebra (AlgHom.ext fun a ↦ ?_)
-    simp only [AlgHom.comp_apply, restrict_toSections,
-      comapSections_toSections]
-    exact imageSectionsAlgEquiv_toSections hU W a
-  exact AlgHom.congr_fun this f
-
 /-- **Inclusions of affinoid subdomains induce isomorphisms of stalks.** If `φ : A → B`
 represents an affinoid subdomain of `Sp A`, then every stalk map
 `𝒪_{Sp A,φ(y)} → 𝒪_{Sp B,y}` is bijective. -/
@@ -245,15 +195,16 @@ theorem bijective_stalkMap (hU : IsAffinoidSubdomainMap φ U) (y : MaximalSpectr
     obtain ⟨V, hx, f, rfl⟩ := exists_germ_eq s
     rw [AlgHom.stalkMap_germ, germ_eq_zero_iff] at hs
     obtain ⟨W, hWV, hyW, hW⟩ := hs
-    refine (germ_eq_zero_iff hx f).mpr ⟨imageSubdomain hU W, imageSubdomain_le hU hWV,
-      mem_imageSubdomain hU hyW, (imageSectionsAlgEquiv hU W).injective ?_⟩
-    rw [imageSectionsAlgEquiv_restrict hU hWV, hW, map_zero]
+    refine (germ_eq_zero_iff hx f).mpr ⟨hU.imageSubdomain hA.out W, hU.imageSubdomain_le hWV,
+      hU.mem_imageSubdomain hA.out hyW, (hU.imageSectionsAlgEquiv hA.out W).injective ?_⟩
+    rw [hU.imageSectionsAlgEquiv_restrict hWV, hW, map_zero]
   · -- A germ on `W ∋ y` is the pullback of the corresponding germ on the image of `W`.
     obtain ⟨W, hy, g, rfl⟩ := exists_germ_eq s
-    have hWW : W ≤ (imageSubdomain hU W).comap φ := fun w hw ↦
-      (mem_comap _ φ w).mpr (mem_imageSubdomain hU hw)
-    refine ⟨germ _ (mem_imageSubdomain hU hy) ((imageSectionsAlgEquiv hU W).symm g), ?_⟩
-    rw [AlgHom.stalkMap_germ, ← germ_restrict hWW hy, ← imageSectionsAlgEquiv_restrict hU hWW,
+    have hWW : W ≤ (hU.imageSubdomain hA.out W).comap φ := fun w hw ↦
+      (mem_comap _ φ w).mpr (hU.mem_imageSubdomain hA.out hw)
+    refine ⟨germ _ (hU.mem_imageSubdomain hA.out hy) ((hU.imageSectionsAlgEquiv hA.out W).symm g),
+      ?_⟩
+    rw [AlgHom.stalkMap_germ, ← germ_restrict hWW hy, ← hU.imageSectionsAlgEquiv_restrict hWW,
       restrict_refl, AlgHom.id_apply, AlgEquiv.apply_symm_apply]
 
 end TauCeti.IsAffinoidSubdomainMap

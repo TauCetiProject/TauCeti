@@ -16,6 +16,8 @@ G-site of `Sp B` to that of `Sp A`. Inverse images are the actual inverse images
 points, and preserve finite affinoid covers. The universal property of subdomains supplies
 pullback of functions, natural under restriction and compatible with identities and composition.
 The restriction compatibility is the naturality square for the coordinate presheaves.
+For a map `φ` representing an affinoid subdomain, restricting to the image of an affinoid
+subdomain `W ≤ φ⁻¹(V)` of `Sp B` is pullback along `φ` followed by restriction to `W`.
 
 Only algebraic affinoidness is assumed: no norms on `A` or `B` are selected. The coordinate
 algebras retain nilpotents. This constructs morphisms of sites and their coordinate presheaves,
@@ -150,6 +152,40 @@ theorem comapSections_comp (U : AffinoidSubdomain K A) (φ : A →ₐ[K] B) (ψ 
   simp
 
 end TauCeti.AffinoidSubdomain
+
+namespace TauCeti.IsAffinoidSubdomainMap
+
+open AffinoidSubdomain
+
+universe u
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A B : Type u} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
+  [hA : Fact (IsAffinoidAlgebra K A)] [hB : Fact (IsAffinoidAlgebra K B)]
+  {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
+
+/-- If `W ≤ φ⁻¹(V)`, then the image of `W` under the affinoid subdomain map `φ` lies in `V`. -/
+theorem imageSubdomain_le (hU : IsAffinoidSubdomainMap φ U) {W : AffinoidSubdomain K B}
+    {V : AffinoidSubdomain K A} (hWV : W ≤ V.comap φ) : hU.imageSubdomain hA.out W ≤ V := by
+  rintro x hx
+  rw [← SetLike.mem_coe, coe_imageSubdomain] at hx
+  obtain ⟨w, hw, rfl⟩ := hx
+  exact (mem_comap V φ w).mp (hWV hw)
+
+/-- Under the identification `hU.imageSectionsAlgEquiv` of coordinate algebras, restriction from
+`V` to the image of `W ≤ φ⁻¹(V)` is pullback along `φ` followed by restriction to `W`. -/
+theorem imageSectionsAlgEquiv_restrict (hU : IsAffinoidSubdomainMap φ U)
+    {W : AffinoidSubdomain K B} {V : AffinoidSubdomain K A} (hWV : W ≤ V.comap φ)
+    (f : V.sections) :
+    hU.imageSectionsAlgEquiv hA.out W (restrict (hU.imageSubdomain_le hWV) f) =
+      restrict hWV (V.comapSections φ f) := by
+  have : (hU.imageSectionsAlgEquiv hA.out W).toAlgHom.comp
+      (restrict (hU.imageSubdomain_le hWV)) = (restrict hWV).comp (V.comapSections φ) := by
+    refine V.isAffinoidSubdomainMap.algHom_ext W.isAffinoidAlgebra (AlgHom.ext fun a ↦ ?_)
+    simp
+  exact AlgHom.congr_fun this f
+
+end TauCeti.IsAffinoidSubdomainMap
 
 namespace AlgHom
 
