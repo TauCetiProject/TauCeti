@@ -186,12 +186,14 @@ private theorem IsMaximalTorus.exists_weylAdjointRepresentation_apply_sub (hT : 
       B (c : LeftInvariantDerivation I G) X₀ =
         a X₀ * B (c : LeftInvariantDerivation I G) c / 2 := by
     have h0 := hcB (X₀ - (a X₀ / 2) • c) (by rw [map_sub, map_smul, hc, smul_eq_mul]; ring)
-    simp [hBs.eq] at h0
+    simp only [AddSubgroupClass.coe_sub, SetLike.val_smul, map_sub, map_smul,
+      LinearMap.sub_apply, hBs.eq, LinearMap.smul_apply, smul_eq_mul] at h0
     linear_combination h0
   refine ⟨B (c : LeftInvariantDerivation I G) c / 2, n, by positivity,
     fun Z hZ ↦ by rw [hrefl, hZ, zero_smul, sub_zero], fun Z X₀ ↦ ?_⟩
   rw [hrefl]
-  simp [hcX X₀]
+  simp only [AddSubgroupClass.coe_sub, SetLike.val_smul, map_sub, map_smul, LinearMap.sub_apply,
+    LinearMap.smul_apply, hcX X₀, smul_eq_mul, sub_right_inj]
   ring
 
 /-! ### Existence of a representative in the closed chamber -/
