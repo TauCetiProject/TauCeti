@@ -10,6 +10,9 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
+public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
+import TauCeti.Data.Bundle
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
@@ -49,6 +52,12 @@ form a smooth complex subbundle `s^⊥` of `V`, and
 
 as smooth bundles (`Bundle.ContMDiffRiemannianMetric.trivialProdOrthogonalSpanFamilyDiffeomorph`).
 The inverse sends `v` to its coefficients `⟪s i x, v⟫` and to `v - ∑ i, ⟪s i x, v⟫ • s i x`.
+Its fibres are complex linear isomorphisms
+(`Bundle.ContMDiffRiemannianMetric.trivialProdOrthogonalSpanFamilyEquiv`), and these form smooth
+sections of the bundles of real linear maps in both directions
+(`Bundle.ContMDiffRiemannianMetric.contMDiff_trivialProdOrthogonalSpanFamilyEquiv`,
+`Bundle.ContMDiffRiemannianMetric.contMDiff_trivialProdOrthogonalSpanFamilyEquiv_symm`): the form
+in which bundle isomorphisms act on Cauchy–Riemann operators.
 The map `v ↦ v - ∑ i, ⟪s i x, v⟫ • s i x` is a smooth fibrewise operator on `V` with range the
 complement, so the complement has smooth local frames in the same way.
 
@@ -582,5 +591,111 @@ theorem trivialProdOrthogonalSpanFamilyDiffeomorph_symm_apply
         ⟨p.snd - ∑ i, ⟪s i p.proj, p.snd⟫_ℂ • s i p.proj,
           g.sub_sum_inner_smul_mem_orthogonalSpanFamily hI s (hon _) _⟩)⟩ :=
   (rfl)
+
+section Equiv
+
+variable [FiniteDimensional ℂ F]
+
+omit [ContMDiffVectorBundle n F V IB] [FiniteDimensional ℂ F] in
+/-- For an orthonormal family, `(c, w) ↦ ∑ i, c i • s i x + w` is a bijection from `ℂ^ι × s^⊥`
+onto `V x`. -/
+theorem bijective_sum_smul_add_orthogonalSpanFamily {x : B}
+    (hon : letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+      letI := g.complexInnerProductSpace hI x
+      Orthonormal ℂ fun i ↦ s i x) :
+    Function.Bijective fun v : (ι → ℂ) × g.orthogonalSpanFamily hI s x ↦
+      ∑ i, v.1 i • s i x + (v.2 : V x) := by
+  let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+  let := g.complexInnerProductSpace hI x
+  -- The coefficients of `∑ i, c i • s i x + w` along the family are the `c i`.
+  have hc (v : (ι → ℂ) × g.orthogonalSpanFamily hI s x) (j : ι) :
+      ⟪s j x, ∑ i, v.1 i • s i x + (v.2 : V x)⟫_ℂ = v.1 j := by
+    rw [inner_add_right, hon.inner_right_fintype,
+      (g.mem_orthogonalSpanFamily_iff hI s).mp v.2.property j, add_zero]
+  refine ⟨fun v v' h ↦ ?_, fun v ↦ ⟨(fun i ↦ ⟪s i x, v⟫_ℂ,
+    ⟨_, g.sub_sum_inner_smul_mem_orthogonalSpanFamily hI s hon v⟩), add_sub_cancel _ _⟩⟩
+  have h₁ : v.1 = v'.1 := funext fun j ↦ by rw [← hc v j, ← hc v' j]; exact congrArg _ h
+  refine Prod.ext h₁ (Subtype.ext ?_)
+  simpa [h₁] using h
+
+omit [ContMDiffVectorBundle n F V IB] in
+/-- The fibres of the smooth splitting
+`Bundle.ContMDiffRiemannianMetric.trivialProdOrthogonalSpanFamilyDiffeomorph`: the complex linear
+isomorphism `(c, w) ↦ ∑ i, c i • s i x + w` from `ℂ^ι × s^⊥` onto `V x`, for an orthonormal
+family `s`. -/
+def trivialProdOrthogonalSpanFamilyEquiv
+    (hon : letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+      letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
+      ∀ x, Orthonormal ℂ fun i ↦ s i x) (x : B) :
+    (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) x ≃L[ℂ] V x :=
+  letI := VectorBundle.finiteDimensional ℂ F V x
+  letI := FiberBundle.t2Space F V x
+  letI := VectorBundle.continuousSMul ℂ F V x
+  (LinearEquiv.ofBijective
+    ((Fintype.linearCombination ℂ fun i ↦ s i x).comp (LinearMap.fst ℂ _ _) +
+      (g.orthogonalSpanFamily hI s x).subtype.comp (LinearMap.snd ℂ _ _))
+    (by
+      convert g.bijective_sum_smul_add_orthogonalSpanFamily hI s (hon x) using 1
+      ext v
+      simp [Fintype.linearCombination_apply])).toContinuousLinearEquiv
+
+omit [ContMDiffVectorBundle n F V IB] in
+/-- The fibre isomorphism of the splitting sends `(c, w)` to `∑ i, c i • s i x + w`. -/
+@[simp]
+theorem trivialProdOrthogonalSpanFamilyEquiv_apply
+    (hon : letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+      letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
+      ∀ x, Orthonormal ℂ fun i ↦ s i x) (x : B)
+    (v : (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) x) :
+    g.trivialProdOrthogonalSpanFamilyEquiv hI s hon x v =
+      ∑ i, (v.1 : ι → ℂ) i • s i x + (v.2 : V x) := by
+  simp [trivialProdOrthogonalSpanFamilyEquiv, Fintype.linearCombination_apply]
+
+variable (hon : letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+  letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
+  ∀ x, Orthonormal ℂ fun i ↦ s i x)
+
+include hs in
+/-- The fibre isomorphisms of the splitting form a smooth section of the bundle of real linear
+maps from `ℂ^ι ⊕ s^⊥` to `V`. -/
+theorem contMDiff_trivialProdOrthogonalSpanFamilyEquiv :
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars ℝ ℂ (Fin r → ℂ) fun x ↦ g.orthogonalSpanFamily hI s x
+    ContMDiff IB (IB.prod 𝓘(ℝ, (ι → ℂ) × (Fin r → ℂ) →L[ℝ] F)) n fun x ↦
+      TotalSpace.mk' ((ι → ℂ) × (Fin r → ℂ) →L[ℝ] F)
+        (E := fun x ↦ (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) x →L[ℝ]
+          V x) x
+        ((g.trivialProdOrthogonalSpanFamilyEquiv hI s hon x).restrictScalars' ℝ) := by
+  let := hV.fiberBundle
+  let := hV.vectorBundle
+  let := VectorBundle.restrictScalars ℝ ℂ (Fin r → ℂ) fun x ↦ g.orthogonalSpanFamily hI s x
+  refine (contMDiff_hom_bundle_iff _).2 ((g.contMDiff_trivialProdOrthogonalSpanFamily_sum hI s
+    hs hV).congr fun v ↦ ?_)
+  simp
+
+include hs in
+/-- The inverse fibre isomorphisms of the splitting form a smooth section of the bundle of real
+linear maps from `V` to `ℂ^ι ⊕ s^⊥`. -/
+theorem contMDiff_trivialProdOrthogonalSpanFamilyEquiv_symm :
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars ℝ ℂ (Fin r → ℂ) fun x ↦ g.orthogonalSpanFamily hI s x
+    letI := VectorBundle.continuousSMul ℝ (Fin r → ℂ) fun x ↦ g.orthogonalSpanFamily hI s x
+    ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] (ι → ℂ) × (Fin r → ℂ))) n fun x ↦
+      TotalSpace.mk' (F →L[ℝ] (ι → ℂ) × (Fin r → ℂ))
+        (E := fun x ↦ V x →L[ℝ]
+          (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) x) x
+        ((g.trivialProdOrthogonalSpanFamilyEquiv hI s hon x).symm.restrictScalars' ℝ) := by
+  let := hV.fiberBundle
+  let := hV.vectorBundle
+  let := VectorBundle.restrictScalars ℝ ℂ (Fin r → ℂ) fun x ↦ g.orthogonalSpanFamily hI s x
+  let := VectorBundle.continuousSMul ℝ (Fin r → ℂ) fun x ↦ g.orthogonalSpanFamily hI s x
+  have h := ContMDiff.clm_bundle_equiv_symm (b := fun x ↦ x)
+    (Φ := fun x ↦ (g.trivialProdOrthogonalSpanFamilyEquiv hI s hon x).restrictScalars' ℝ)
+    (g.contMDiff_trivialProdOrthogonalSpanFamilyEquiv hI s hs hV hon)
+  simpa only [ContinuousLinearEquiv.restrictScalars'_symm] using h
+
+end Equiv
 
 end Bundle.ContMDiffRiemannianMetric
