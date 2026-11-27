@@ -66,6 +66,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
   [ContMDiffCovariantDerivative cov ∞]
 
+omit [FiniteDimensional ℝ E] [T2Space M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)] in
+/-- The two vectors of a local frame of a surface are linearly independent on its domain. -/
+private theorem linearIndependent_vecCons (hs : IsLocalFrameOn I E ∞ s u) {x : M}
+    (hx : x ∈ u) : LinearIndependent ℝ ![s 0 x, s 1 x] := by
+  -- `FinVec.etaExpand_eq` is Mathlib's eta rule `![v 0, v 1] = v` for `Fin 2` tuples.
+  convert hs.linearIndependent hx using 1
+  exact FinVec.etaExpand_eq fun i ↦ s i x
+
 /-- On the domain of a local frame of a surface, the Gaussian curvature `Scal / 2` of a metric
 connection is the sectional curvature of the frame. -/
 private theorem sectionalCurvature_eq_scalarCurvature_div_two
@@ -73,10 +82,8 @@ private theorem sectionalCurvature_eq_scalarCurvature_div_two
     (hcov : IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov) {x : M} (hx : x ∈ u) :
     cov.sectionalCurvature hcov x (s 0 x) (s 1 x) = cov.scalarCurvature x / 2 :=
   (cov.hasSectionalCurvatureAt_scalarCurvature_div_two hcov
-    (by simpa using o.finrank_tangentSpace_eq x)).sectionalCurvature_eq _ _ (by
-      -- `FinVec.etaExpand_eq` is Mathlib's eta rule `![v 0, v 1] = v` for `Fin 2` tuples.
-      convert hs.linearIndependent hx using 1
-      exact FinVec.etaExpand_eq fun i ↦ s i x)
+    (by simpa using o.finrank_tangentSpace_eq x)).sectionalCurvature_eq _ _
+      (linearIndependent_vecCons hs hx)
 
 /-- A continuous function supported in the domain of a local frame of a surface, times the
 Gaussian curvature `Scal / 2` of a metric connection, is continuous: on the frame domain the
@@ -91,9 +98,8 @@ private theorem continuous_mul_scalarCurvature_div_two (o : Manifold.Orientation
   · refine hφ.continuousAt.mul (ContinuousAt.congr ?_ (Filter.eventually_of_mem (hu.mem_nhds hx)
       fun y hy ↦ sectionalCurvature_eq_scalarCurvature_div_two o hs hcov hy))
     exact (cov.contMDiffAt_sectionalCurvature hcov (n := 2)
-      ((hs.contMDiffAt hu hx 0).of_le (by simp)) ((hs.contMDiffAt hu hx 1).of_le (by simp)) (by
-        convert hs.linearIndependent hx using 1
-        exact FinVec.etaExpand_eq fun i ↦ s i x)).continuousAt
+      ((hs.contMDiffAt hu hx 0).of_le (by simp)) ((hs.contMDiffAt hu hx 1).of_le (by simp))
+      (linearIndependent_vecCons hs hx)).continuousAt
   · refine (continuousAt_const (y := (0 : ℝ))).congr ?_
     filter_upwards [notMem_tsupport_iff_eventuallyEq.mp (fun h ↦ hx (hφu h))] with y hy
     simp [hy]

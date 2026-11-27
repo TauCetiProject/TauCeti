@@ -56,16 +56,12 @@ theorem integralTopForm_mextDeriv_ofFunction_wedge_eq_neg
   have hηc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) η) :=
     hφc.isCompact.of_isClosed_subset (isClosed_tsupport _)
       (tsupport_smul_subset_left φ (show M → E [⋀^Fin k]→L[ℝ] ℝ from α))
-  have hcast {a b : ℕ} (h : a = b) (β : RoughForm I M ℝ a) (x : M)
-      (v : Fin b → TangentSpace I x) :
-      (LinearEquiv.cast (R := ℝ) (M := fun q ↦ RoughForm I M ℝ q) h β) x v =
-        β x (v ∘ Fin.cast h) := by cases h; rfl
   have heq : LinearEquiv.cast (R := ℝ) (M := fun q ↦ RoughForm I M ℝ q)
       (Nat.add_comm 1 k) ((mextDeriv (RoughForm.ofFunction I φ)).wedge α) =
         mextDeriv η - (fun x ↦ φ x • mextDeriv α x) := by
     funext x
     ext v
-    rw [hcast]
+    rw [RoughForm.cast_apply]
     by_cases hx : x ∈ tsupport φ
     · have hd := mextDeriv_fun_smul (hφ.mdifferentiableAt one_ne_zero)
         ((hα x hx).mdifferentiableAt one_ne_zero) v
