@@ -324,7 +324,8 @@ noncomputable def rootChartInvariantEquiv :
 @[simp]
 theorem coe_rootChartInvariantEquiv_apply (a : A) :
     (rootChartInvariantEquiv A f n a : rootChart A f n) = algebraMap A _ a :=
-  (rfl)
+  -- An `A`-algebra equivalence commutes with the structure maps, and `algebraMap A A a` is `a`.
+  congrArg Subtype.val ((rootChartInvariantEquiv A f n).commutes a)
 
 /-- An invariant element of the affine root chart is the constant given by its coefficient under
 `TauCeti.rootChartInvariantEquiv`. Not `@[simp]`: `algebraMap` is not in simp normal form here
