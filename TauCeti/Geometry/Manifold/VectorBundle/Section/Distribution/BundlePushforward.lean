@@ -372,10 +372,8 @@ theorem pushforward_apply_eq_cutoffCompCLM (hT : IsProperOnSupport ⇑T f) (s : 
 `f^*s` near each point of the support of `T`. -/
 theorem pushforward_apply_of_eventuallyEq (hT : IsProperOnSupport ⇑T f) (s : BundleTest J F V)
     {t : BundleTest I F ((f : C(X, Y)) *ᵖ V)}
-    (ht : ∀ x ∈ dsupport ⇑T, ∀ᶠ z in 𝓝 x, t z = s (f z)) : pushforward T hT s = T t := by
-  obtain ⟨χ, hχc, hχ⟩ := hT.exists_eventually_eq_one s.isCompact_tsupport
-  rw [pushforward_apply_eq_cutoffCompCLM hT s hχc hχ]
-  exact map_eq_map_of_eventuallyEq T <| eventually_nhdsSet_iff_forall.2 fun x hx ↦
+    (ht : ∀ x ∈ dsupport ⇑T, ∀ᶠ z in 𝓝 x, t z = s (f z)) : pushforward T hT s = T t :=
+  (isCutoffPullback_cutoffCompCLM f).pushforward_apply_of_eventuallyEq hT s fun _ hχc hχ x hx ↦
     ((cutoffCompCLM_eventuallyEq hχc f s hχ hx).and (ht x hx)).mono fun _ h ↦ h.1.trans h.2.symm
 
 /-- **The pushforward of a compactly supported functional** is its pushforward cut off by any
