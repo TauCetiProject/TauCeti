@@ -69,7 +69,7 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`, giving 
   `Chebyshev.mul_sqrt_add_theta_rpow_le_psi_sub_theta`,
   `Chebyshev.psi_sub_theta_le_mul_rpow_of_theta_le`: unconditional and general-`θ` bounds on
   `ψ − θ`.
-* `Chebyshev.theta_ge_psi_sub_mul`: lower bound for `θ` from a linear upper bound for `ψ`.
+* `Chebyshev.psi_sub_mul_le_theta`: lower bound for `θ` from a linear upper bound for `ψ`.
 * `Chebyshev.abs_theta_sub_self_le_of_theta_le`, `Chebyshev.abs_psi_sub_self_le_of_theta_le`,
   `Chebyshev.abs_theta_sub_self_le_mul_of_theta_le_of_abs_psi_sub_self_le`,
   `Chebyshev.abs_theta_sub_self_le_mul_of_abs_psi_sub_self_le`,
@@ -98,7 +98,7 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`, giving 
   `Chebyshev.psiSubThetaSqrtCoeff_of_le`, `Chebyshev.psiSubThetaSqrtCoeff_of_lt`,
   `Chebyshev.psiSubThetaSqrtCoeff_eq_one_add_max`,
   `Chebyshev.psi_sub_theta_le_of_psi_le_exp`, `Chebyshev.psi_sub_theta_le_mul_rpow_add`,
-  `Chebyshev.psi_sub_theta_le_mul_exp_add`: general-input transfer bounds of Broadbent, Kadiri,
+  `Chebyshev.le_theta_of_le_psi_exp`: general-input transfer bounds of Broadbent, Kadiri,
   Lumley, Ng, and Wilk.
 
 ## References
@@ -292,7 +292,7 @@ theorem psi_sub_theta_le_mul_rpow_of_theta_le {c x : ℝ} (hx : 0 ≤ x)
 /-- A linear upper bound for `ψ` gives a lower bound for `θ` through Costa Pereira's comparison
 `ψ(x) − θ(x) ≤ ψ(x^{1/2}) + ψ(x^{1/3}) + ψ(x^{1/5})`: if `ψ(y) ≤ c₀ y` for every `y ≥ 2`, then
 `ψ(x) − c₀ (√x + x^{1/3} + x^{1/5}) ≤ θ(x)` for `x ≥ 0`. -/
-theorem theta_ge_psi_sub_mul {c₀ x : ℝ} (hc₀ : ∀ y, 2 ≤ y → ψ y ≤ c₀ * y) (hx : 0 ≤ x) :
+theorem psi_sub_mul_le_theta {c₀ x : ℝ} (hc₀ : ∀ y, 2 ≤ y → ψ y ≤ c₀ * y) (hx : 0 ≤ x) :
     ψ x - c₀ * (√x + x ^ ((1 : ℝ) / 3) + x ^ ((1 : ℝ) / 5)) ≤ θ x := by
   have := psi_sub_theta_le_psi_add_psi_add_psi x
   rw [← one_div, ← one_div, ← one_div, ← sqrt_eq_rpow] at this
@@ -986,22 +986,18 @@ theorem psi_sub_theta_le_mul_rpow_add {c₀ X x : ℝ} (hX : 0 < X) (hXx : X ≤
     sqrt_eq_rpow x ▸ key (by norm_num) (by norm_num)
   have h3 : x ^ ((1 : ℝ) / 3) ≤ X ^ (-(2 : ℝ) / 3) * x := key (by norm_num) (by norm_num)
   have h5 : x ^ ((1 : ℝ) / 5) ≤ X ^ (-(4 : ℝ) / 5) * x := key (by norm_num) (by norm_num)
-  nlinarith [theta_ge_psi_sub_mul hψ hx]
+  nlinarith [psi_sub_mul_le_theta hψ hx]
 
-/-- Exponential-cutoff form of `psi_sub_theta_le_mul_rpow_add` (Broadbent, Kadiri, Lumley,
-Ng, and Wilk, Lemma 11, lower half): for `exp b ≤ x` and `ψ y ≤ c₀ * y` on `[2, ∞)`,
-`ψ x - θ x ≤ c₀ * (exp (-b / 2) + exp (-2 * b / 3) + exp (-4 * b / 5)) * x`. -/
-theorem psi_sub_theta_le_mul_exp_add {c₀ b x : ℝ} (hbx : exp b ≤ x)
-    (hψ : ∀ y, 2 ≤ y → ψ y ≤ c₀ * y) :
-    ψ x - θ x ≤
-      c₀ * (exp (-b / 2) + exp (-(2 * b) / 3) + exp (-(4 * b) / 5)) * x := by
+/-- Lower transfer from `ψ` to `θ` at an exponential cutoff `exp b` (Broadbent, Kadiri, Lumley,
+Ng, and Wilk, Lemma 11, lower half): from `a * x ≤ ψ x` and `ψ y ≤ c₀ * y` on `[2, ∞)`,
+`(a - c₀ * (exp (-b / 2) + exp (-2 * b / 3) + exp (-4 * b / 5))) * x ≤ θ x` for `exp b ≤ x`. -/
+theorem le_theta_of_le_psi_exp {a c₀ b x : ℝ} (hbx : exp b ≤ x)
+    (hψ : ∀ y, 2 ≤ y → ψ y ≤ c₀ * y) (hψx : a * x ≤ ψ x) :
+    (a - c₀ * (exp (-b / 2) + exp (-(2 * b) / 3) + exp (-(4 * b) / 5))) * x ≤ θ x := by
   have h := psi_sub_theta_le_mul_rpow_add (exp_pos b) hbx hψ
-  have he1 : exp b ^ (-(1 : ℝ) / 2) = exp (-b / 2) := by
-    rw [← exp_mul]; congr 1; ring
-  have he2 : exp b ^ (-(2 : ℝ) / 3) = exp (-(2 * b) / 3) := by
-    rw [← exp_mul]; congr 1; ring
-  have he3 : exp b ^ (-(4 : ℝ) / 5) = exp (-(4 * b) / 5) := by
-    rw [← exp_mul]; congr 1; ring
-  rwa [he1, he2, he3] at h
+  have hexp (r t : ℝ) (hrt : b * r = t) : exp b ^ r = exp t := by rw [← exp_mul, hrt]
+  rw [hexp _ (-b / 2) (by ring), hexp _ (-(2 * b) / 3) (by ring),
+    hexp _ (-(4 * b) / 5) (by ring)] at h
+  linarith
 
 end Chebyshev
