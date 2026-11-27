@@ -32,6 +32,9 @@ parametrization satisfying the hypotheses described below:
 * functions whose differentials at `x` vanish on `ker dF_x`, such as functions of `F`, then
   Poisson-commute at `x` as well
   (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_zero_of_ker_le`);
+* linear combinations `v ⬝ᵥ F` of functions that pairwise Poisson-commute at `x` and are
+  differentiable there Poisson-commute at `x`, for any two-form `σ`
+  (`TauCeti.SmoothTwoForm.poissonBracket_dotProduct_eq_zero`);
 * the rank of `F` at `x` (`TauCeti.mfderivRank`, the dimension of the image of `dF_x`) is the
   dimension of the span of the `X_{F_i}(x)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderivRank_eq_finrank_span_hamiltonianVectorField`), so
@@ -71,11 +74,33 @@ Liouville–Arnold theorem, are Lagrangian.
 public section
 
 open Module
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Matrix
 
 namespace TauCeti
 
 namespace SmoothTwoForm
+
+/-! ### Linear combinations of Poisson-commuting functions -/
+
+section LinearCombination
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] {σ : SmoothTwoForm I M}
+
+/-- **Linear combinations of Poisson-commuting functions Poisson-commute.** If functions `Fᵢ`,
+differentiable at `x`, pairwise Poisson-commute at `x`, so do any two of their linear combinations
+`v ⬝ᵥ F` and `w ⬝ᵥ F`. -/
+theorem poissonBracket_dotProduct_eq_zero {ι : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
+    (hF : ∀ i, MDifferentiableAt I 𝓘(ℝ) (F · i) x)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) (v w : ι → ℝ) :
+    σ.poissonBracket (fun y ↦ v ⬝ᵥ F y) (fun y ↦ w ⬝ᵥ F y) x = 0 := by
+  rw [poissonBracket_def, hamiltonianVectorField_dotProduct hF,
+    hamiltonianVectorField_dotProduct hF, ← SmoothForm.bilinFormAt_apply]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
+    SmoothForm.bilinFormAt_apply, ← poissonBracket_def, hcomm, smul_zero, Finset.sum_const_zero]
+
+end LinearCombination
 
 namespace IsNondegenerate
 

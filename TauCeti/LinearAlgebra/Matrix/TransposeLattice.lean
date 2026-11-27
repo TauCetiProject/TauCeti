@@ -29,6 +29,8 @@ This file shows that the lattice determines `L` up to a change of basis by `GL(�
   maps, the first injective, with the same transpose lattice differ by an element of `GL(ι, ℤ)`.
 * `ContinuousLinearMap.transposeLattice_toLin'_comp`: conversely, composing with an element of
   `GL(κ, ℤ)` does not change the transpose lattice.
+* `ContinuousLinearMap.transposeLattice_comp_toLin'`: for mutually inverse matrices `A` and `B`,
+  `(L B)ᵀ ℤ^κ` is the preimage of `Lᵀ ℤ^κ` under `w ↦ w A`.
 * `ContinuousLinearMap.closure_range_proj_comp_le_iff`: for linear maps `L₁`, `L₂` to `ℝ^κ` and
   `ℝ^κ'` on any space, the components of `L₁` lie in the subgroup spanned by those of `L₂` exactly
   when `L₁ = N L₂` for an integer matrix `N`.
@@ -144,6 +146,22 @@ theorem transposeLattice_toLin'_comp [DecidableEq κ] (M : GL κ ℤ) (L : (ι �
   rw [comp_apply, LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, mulVec_mulVec,
     ← hmap, ← Units.val_mul, inv_mul_cancel, Units.val_one, Matrix.map_one _ Int.cast_zero
     Int.cast_one, one_mulVec]
+
+/-- **Transpose lattices under a linear change of coordinates.** For mutually inverse square
+matrices `A` and `B`, the transpose lattice of `L B` is the preimage of that of `L` under
+`w ↦ w A`, that is `(L B)ᵀ ℤ^κ = (Aᵀ)⁻¹ (Lᵀ ℤ^κ)`. -/
+theorem transposeLattice_comp_toLin' [DecidableEq ι] (L : (ι → ℝ) →L[ℝ] (κ → ℝ))
+    {A B : Matrix ι ι ℝ} (hAB : A * B = 1) :
+    (L.comp (Matrix.toLin' B).toContinuousLinearMap).transposeLattice =
+      L.transposeLattice.comap A.vecMulLinear.toAddMonoidHom := by
+  ext w
+  simp only [AddSubgroup.mem_comap, LinearMap.toAddMonoidHom_coe, Matrix.vecMulLinear_apply,
+    mem_transposeLattice, comp_apply, LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply]
+  refine exists_congr fun n ↦ ⟨fun h c ↦ ?_, fun h c ↦ ?_⟩
+  · -- `(w A) ⬝ᵥ c = w ⬝ᵥ A c` and `B A c = c`.
+    rw [← dotProduct_mulVec, h, mulVec_mulVec, mul_eq_one_comm.1 hAB, one_mulVec]
+  · -- `w ⬝ᵥ c = (w A) ⬝ᵥ B c` since `A B c = c`.
+    rw [← h, ← dotProduct_mulVec, mulVec_mulVec, hAB, one_mulVec]
 
 omit [Fintype κ] in
 /-- **Comparing the subgroups spanned by the components.** For linear maps `L₁ : F → ℝ^κ` and
