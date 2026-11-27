@@ -55,7 +55,8 @@ Hamiltonian perturbation is free, the universal operator has dense range, and it
 * **Peetre's argument.** On the whole plane, a test section, such as a cut-off of the
   representative, whose weighted `W^{1,2}` energy is controlled by the `L²` norm of the
   representative has a jet of norm controlled by that of the element
-  (`TauCeti.ConformalSobolev.norm_toLp_jet_le_of_ae_eq`). When the `L²` norm of solutions of
+  (`TauCeti.ConformalSobolev.norm_toLp_jet_le_of_ae_eq`, in
+  `TauCeti.Analysis.Sobolev.Conformal`). When the `L²` norm of solutions of
   `D_u^* η = 0` is controlled on a set `K`, two cokernel elements whose cut-off representatives are
   close on `K` are close (`TauCeti.SymplecticForm.norm_sub_sq_le_of_setIntegral_le`). The proofs
   that the cokernel is finite-dimensional use both steps.
@@ -422,32 +423,6 @@ theorem exists_finset_subset_hamiltonianVariationsOn_range_sup_span_eq_top
   exact Submodule.exists_finset_subset_sup_span_eq_top
     (range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top hρ hUc hJ hJJ hKs
       hKt hu hM hO hOne hOU hW hcl hco)
-
-omit [FiniteDimensional ℝ V] in
-/-- **Jets of cut-off representatives of cokernel elements are bounded.** Let `η` represent
-`h ∈ L²(ℂ, V)`, as in `exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero`, with
-`‖h‖ ≤ r`, and let the weighted `W^{1,2}` energy of a test section `g`, typically a cut-off of `η`,
-be at most `K ∫ ‖η‖²`. Then the class of the jet of `g` has norm at most `√(max K 0 r²)`. -/
-theorem _root_.TauCeti.ConformalSobolev.norm_toLp_jet_le_of_ae_eq (hρ : IsWeight univ ρ)
-    {h : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))} {η g : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hηae : (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η) (hg : g ∈ testSection (V →L[ℝ] ℝ) univ)
-    {K r : ℝ} (hr : ‖h‖ ≤ r)
-    (hK : Integrable (fun z ↦ ‖η z‖ ^ 2) →
-      ∫ z, (ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 + ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤
-        K * ∫ z, ‖η z‖ ^ 2) :
-    ‖(memLp_jet hρ hg).toLp (jet ρ g)‖ ≤ √(max K 0 * r ^ 2) := by
-  obtain ⟨hηn, hηi⟩ : ∫ z, ‖η z‖ ^ 2 = ‖h‖ ^ 2 ∧ Integrable fun z ↦ ‖η z‖ ^ 2 := by
-    simpa only [Measure.restrict_univ] using
-      Lp.integral_norm_sq_eq_and_integrable_of_ae_eq_innerSL (ae_restrict_of_ae hηae)
-  have h1 := sq_norm_le_integral hρ hg (memLp_jet hρ hg).coeFn_toLp
-  rw [setIntegral_univ] at h1
-  have h4 : ∫ z, ‖η z‖ ^ 2 ≤ r ^ 2 := by
-    rw [hηn]
-    exact pow_le_pow_left₀ (norm_nonneg _) hr 2
-  refine Real.le_sqrt_of_sq_le ((h1.trans (hK hηi)).trans ?_)
-  calc K * ∫ z, ‖η z‖ ^ 2 ≤ max K 0 * ∫ z, ‖η z‖ ^ 2 :=
-        mul_le_mul_of_nonneg_right (le_max_left _ _) (integral_nonneg fun z ↦ by positivity)
-    _ ≤ max K 0 * r ^ 2 := mul_le_mul_of_nonneg_left h4 (le_max_right _ _)
 
 /-- **Two cokernel elements close on a set are close.** Let `η₁`, `η₂` be `C²` representatives of
 `h₁, h₂ ∈ L²(ℂ, V)` annihilated by `D_u^*`, and let every square-integrable `C²` solution `η` of

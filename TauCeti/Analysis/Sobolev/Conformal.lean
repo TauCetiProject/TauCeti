@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Analysis.Sobolev.JetOperator
+public import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -20,6 +21,7 @@ import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Normed.Operator.Prod
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The Sobolev space `W^{1,2}_0` of a planar domain with a conformal metric
@@ -76,6 +78,10 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   kernel (`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`) and closed range
   (`TauCeti.ConformalSobolev.isClosed_range_of_estimate`), by Rellich's theorem and
   `ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`.
+* **Jets controlled by an `L²` class.** On the whole plane, a test section, such as a cut-off of
+  a covector field `η` representing an element `h` of `L²` through the inner product, whose
+  weighted `W^{1,2}` energy is controlled by `∫ ‖η‖²` has a jet of norm controlled by `‖h‖`
+  (`TauCeti.ConformalSobolev.norm_toLp_jet_le_of_ae_eq`).
 
 ## References
 
@@ -745,5 +751,39 @@ theorem isClosed_range_of_estimate [FiniteDimensional ℝ V] (hρ : IsWeight U �
   exact ContinuousLinearMap.isClosed_range_of_compact_estimate D hc hb
 
 end Peetre
+
+/-! ### Jets controlled by an `L²` class -/
+
+section InnerSL
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **Jets of cut-off representatives are bounded.** Let `η` represent `h ∈ L²(ℂ, E)` through the
+inner product, `η z = ⟪h z, ·⟫` almost everywhere, with `‖h‖ ≤ r`, and let the weighted `W^{1,2}`
+energy of a test section `g`, typically a cut-off of `η`, be at most `K ∫ ‖η‖²`. Then the class of
+the jet of `g` has norm at most `√(max K 0 r²)`. Peetre's argument for the finiteness of the
+cokernel of the linearized Floer operator uses this step. -/
+theorem norm_toLp_jet_le_of_ae_eq (hρ : IsWeight univ ρ)
+    {h : Lp E 2 (volume.restrict (univ : Set (ℝ × ℝ)))} {η g : ℝ × ℝ → E →L[ℝ] ℝ}
+    (hηae : (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η) (hg : g ∈ testSection (E →L[ℝ] ℝ) univ)
+    {K r : ℝ} (hr : ‖h‖ ≤ r)
+    (hK : Integrable (fun z ↦ ‖η z‖ ^ 2) →
+      ∫ z, (ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 + ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤
+        K * ∫ z, ‖η z‖ ^ 2) :
+    ‖(memLp_jet hρ hg).toLp (jet ρ g)‖ ≤ √(max K 0 * r ^ 2) := by
+  obtain ⟨hηn, hηi⟩ : ∫ z, ‖η z‖ ^ 2 = ‖h‖ ^ 2 ∧ Integrable fun z ↦ ‖η z‖ ^ 2 := by
+    simpa only [Measure.restrict_univ] using
+      Lp.integral_norm_sq_eq_and_integrable_of_ae_eq_innerSL (ae_restrict_of_ae hηae)
+  have h1 := sq_norm_le_integral hρ hg (memLp_jet hρ hg).coeFn_toLp
+  rw [setIntegral_univ] at h1
+  have h4 : ∫ z, ‖η z‖ ^ 2 ≤ r ^ 2 := by
+    rw [hηn]
+    exact pow_le_pow_left₀ (norm_nonneg _) hr 2
+  refine Real.le_sqrt_of_sq_le ((h1.trans (hK hηi)).trans ?_)
+  calc K * ∫ z, ‖η z‖ ^ 2 ≤ max K 0 * ∫ z, ‖η z‖ ^ 2 :=
+        mul_le_mul_of_nonneg_right (le_max_left _ _) (integral_nonneg fun z ↦ by positivity)
+    _ ≤ max K 0 * r ^ 2 := mul_le_mul_of_nonneg_left h4 (le_max_right _ _)
+
+end InnerSL
 
 end TauCeti.ConformalSobolev
