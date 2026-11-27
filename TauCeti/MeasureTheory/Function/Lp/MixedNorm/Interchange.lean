@@ -36,12 +36,12 @@ measure spaces `(S, μ)`, `(T, ν)` and a Banach space `X`, the continuous linea
 
 interchanging the two variables: for measurable sets `A ⊆ S` and `B ⊆ T` of finite measure and
 `x : X` it sends the rectangle tensor `𝟙_A (𝟙_B x)` to `𝟙_B (𝟙_A x)`
-(`TauCeti.minkowskiContraction_indicatorConstLp`). The rectangle tensors span a dense subspace,
-so two continuous linear maps agreeing on them are equal
-(`TauCeti.continuousLinearMap_ext_indicatorConstLp_indicatorConstLp`); in particular the
-contraction is the unique continuous linear map with this rectangle formula, and it commutes with
-bounded linear maps of `X` (`TauCeti.minkowskiContraction_comp_compLpL`). For `p = q` the two
-interchanges are mutually inverse, which gives the linear isometric equivalence
+(`TauCeti.minkowskiContraction_indicatorConstLp`). The rectangle tensors span a dense subspace
+(`TauCeti.dense_span_indicatorConstLp_indicatorConstLp`), so two continuous linear maps agreeing
+on them are equal (`TauCeti.continuousLinearMap_ext_indicatorConstLp_indicatorConstLp`); in
+particular the contraction is the unique continuous linear map with this rectangle formula, and it
+commutes with bounded linear maps of `X` (`TauCeti.minkowskiContraction_comp_compLpL`). For `p = q`
+the two interchanges are mutually inverse, which gives the linear isometric equivalence
 `TauCeti.lpLpComm 𝕜 X μ ν p : Lᵖ(μ; Lᵖ(ν; X)) ≃ₗᵢ[𝕜] Lᵖ(ν; Lᵖ(μ; X))`.
 
 No σ-finiteness is assumed: a finite sum of rectangle tensors is supported in a product of two
@@ -72,12 +72,12 @@ namespace TauCeti
 
 section MixedNorm
 
-variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
-  {ν : Measure β} [NormedAddCommGroup E] {p q : ℝ≥0∞}
+variable {α β ε : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
+  {ν : Measure β} [TopologicalSpace ε] {p q : ℝ≥0∞}
 
 /-- Minkowski's inequality for mixed norms of a strongly measurable function. -/
-private theorem eLpNorm_eLpNorm_swap_le_of_stronglyMeasurable [SFinite μ] [SFinite ν]
-    {F : α × β → E} (hF : StronglyMeasurable F) (hpq : p ≤ q) (hq : q ≠ ∞) :
+private theorem eLpNorm_eLpNorm_swap_le_of_stronglyMeasurable [ContinuousENorm ε] [SFinite μ]
+    [SFinite ν] {F : α × β → ε} (hF : StronglyMeasurable F) (hpq : p ≤ q) (hq : q ≠ ∞) :
     eLpNorm (fun y ↦ eLpNorm (fun x ↦ F (x, y)) p μ) q ν ≤
       eLpNorm (fun x ↦ eLpNorm (fun y ↦ F (x, y)) q ν) p μ := by
   rcases eq_or_ne p 0 with rfl | hp0
@@ -128,7 +128,7 @@ private theorem eLpNorm_eLpNorm_swap_le_of_stronglyMeasurable [SFinite μ] [SFin
 strongly measurable function `F` on a product of s-finite measure spaces, the `L^q(ν)` norm of the
 `Lᵖ(μ)` norms of the sections `F (·, y)` is at most the `Lᵖ(μ)` norm of the `L^q(ν)` norms of the
 sections `F (x, ·)`. -/
-theorem eLpNorm_eLpNorm_swap_le [SFinite μ] [SFinite ν] {F : α × β → E}
+theorem eLpNorm_eLpNorm_swap_le [ContinuousENorm ε] [SFinite μ] [SFinite ν] {F : α × β → ε}
     (hF : AEStronglyMeasurable F (μ.prod ν)) (hpq : p ≤ q) (hq : q ≠ ∞) :
     eLpNorm (fun y ↦ eLpNorm (fun x ↦ F (x, y)) p μ) q ν ≤
       eLpNorm (fun x ↦ eLpNorm (fun y ↦ F (x, y)) q ν) p μ := by
@@ -152,7 +152,8 @@ theorem eLpNorm_eLpNorm_swap_le [SFinite μ] [SFinite ν] {F : α × β → E}
 /-- **Minkowski's inequality for mixed norms**, for arbitrary measures: it holds for a strongly
 measurable function supported in a product `A ×ˢ B` of sets on which `μ` and `ν` restrict to
 s-finite measures, for instance sets of finite measure. -/
-theorem eLpNorm_eLpNorm_swap_le_of_support_subset {F : α × β → E} (hF : StronglyMeasurable F)
+theorem eLpNorm_eLpNorm_swap_le_of_support_subset [ENormedAddMonoid ε] {F : α × β → ε}
+    (hF : StronglyMeasurable F)
     {A : Set α} {B : Set β} [SFinite (μ.restrict A)] [SFinite (ν.restrict B)]
     (hFAB : Function.support F ⊆ A ×ˢ B) (hpq : p ≤ q) (hq : q ≠ ∞) :
     eLpNorm (fun y ↦ eLpNorm (fun x ↦ F (x, y)) p μ) q ν ≤
@@ -335,12 +336,16 @@ private def rectangleRight (p q : ℝ≥0∞) [Fact (1 ≤ p)] (r : Rectangle μ
     Lp (Lp X p μ) q ν :=
   indicatorConstLp q r.hB r.hνB (indicatorConstLp p r.hA r.hμA r.x)
 
-/-- For finite exponents the rectangle tensors span a dense subspace of `Lᵖ(μ; L^q(ν; X))`. -/
-private theorem dense_span_rectangleLeft (hp : p ≠ ∞) (hq : q ≠ ∞) :
-    Dense (Submodule.span 𝕜 (range (rectangleLeft (μ := μ) (ν := ν) (X := X) p q)) :
+/-- For finite exponents the rectangle tensors `𝟙_A (𝟙_B x)`, for measurable sets `A ⊆ S` and
+`B ⊆ T` of finite measure and `x : X`, span a dense subspace of `Lᵖ(μ; L^q(ν; X))`. -/
+theorem dense_span_indicatorConstLp_indicatorConstLp (hp : p ≠ ∞) (hq : q ≠ ∞) :
+    Dense (Submodule.span 𝕜 {Φ : Lp (Lp X q ν) p μ | ∃ (A : Set S) (B : Set T)
+      (hA : MeasurableSet A) (hB : MeasurableSet B) (hμA : μ A ≠ ∞) (hνB : ν B ≠ ∞) (x : X),
+        indicatorConstLp p hA hμA (indicatorConstLp q hB hνB x) = Φ} :
       Set (Lp (Lp X q ν) p μ)) := by
-  set K :=
-    (Submodule.span 𝕜 (range (rectangleLeft (μ := μ) (ν := ν) (X := X) p q))).topologicalClosure
+  set K := (Submodule.span 𝕜 {Φ : Lp (Lp X q ν) p μ | ∃ (A : Set S) (B : Set T)
+    (hA : MeasurableSet A) (hB : MeasurableSet B) (hμA : μ A ≠ ∞) (hνB : ν B ≠ ∞) (x : X),
+      indicatorConstLp p hA hμA (indicatorConstLp q hB hνB x) = Φ}).topologicalClosure
   rw [Submodule.dense_iff_topologicalClosure_eq_top, Submodule.eq_top_iff']
   have hK : IsClosed (K : Set (Lp (Lp X q ν) p μ)) := Submodule.isClosed_topologicalClosure _
   refine Lp.induction hp (motive := (· ∈ K)) ?_ (fun _ _ _ _ _ h₁ h₂ ↦ K.add_mem h₁ h₂) hK
@@ -352,7 +357,7 @@ private theorem dense_span_rectangleLeft (hp : p ≠ ∞) (hq : q ≠ ∞) :
   · intro x B hB hνB
     rw [Lp.simpleFunc.coe_indicatorConst]
     exact Submodule.le_topologicalClosure _
-      (Submodule.subset_span ⟨⟨A, B, x, hA, hμA.ne, hB, hνB.ne⟩, rfl⟩)
+      (Submodule.subset_span ⟨A, B, hA, hB, hμA.ne, hνB.ne, x, rfl⟩)
   · intro f g _ _ _ h₁ h₂
     rw [← indicatorConstLp_add]
     exact K.add_mem h₁ h₂
@@ -369,14 +374,17 @@ theorem continuousLinearMap_ext_indicatorConstLp_indicatorConstLp {F : Type*}
       f (indicatorConstLp p hA hμA (indicatorConstLp q hB hνB x)) =
         g (indicatorConstLp p hA hμA (indicatorConstLp q hB hνB x))) :
     f = g :=
-  ContinuousLinearMap.ext_on (dense_span_rectangleLeft hp hq) <| by
-    rintro _ ⟨⟨A, B, x, hA, hμA, hB, hνB⟩, rfl⟩
+  ContinuousLinearMap.ext_on (dense_span_indicatorConstLp_indicatorConstLp hp hq) <| by
+    rintro _ ⟨A, B, hA, hB, hμA, hνB, x, rfl⟩
     exact h A B hA hB hμA hνB x
 
 private theorem denseRange_linearCombination_rectangleLeft (hp : p ≠ ∞) (hq : q ≠ ∞) :
     DenseRange (Finsupp.linearCombination 𝕜 (rectangleLeft (μ := μ) (ν := ν) (X := X) p q)) := by
   rw [DenseRange, ← LinearMap.coe_range, Finsupp.range_linearCombination]
-  exact dense_span_rectangleLeft hp hq
+  refine (dense_span_indicatorConstLp_indicatorConstLp hp hq).mono
+    (SetLike.coe_subset_coe.2 (Submodule.span_mono ?_))
+  rintro _ ⟨A, B, hA, hB, hμA, hνB, x, rfl⟩
+  exact ⟨⟨A, B, x, hA, hμA, hB, hνB⟩, rfl⟩
 
 private theorem norm_linearCombination_rectangleRight_le (hpq : p ≤ q) (hq : q ≠ ∞)
     (c : Rectangle μ ν X →₀ 𝕜) :
@@ -428,8 +436,11 @@ theorem norm_minkowskiContraction_apply_le (hpq : p ≤ q) (hq : q ≠ ∞)
 /-- Minkowski's contraction has operator norm at most one. -/
 theorem norm_minkowskiContraction_le (hpq : p ≤ q) (hq : q ≠ ∞) :
     ‖minkowskiContraction 𝕜 X μ ν p q‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun Φ ↦ by
-    simpa using norm_minkowskiContraction_apply_le hpq hq Φ
+  LinearMap.opNorm_extendOfNorm_le
+    (f := Finsupp.linearCombination 𝕜 (rectangleRight (μ := μ) (ν := ν) (X := X) p q))
+    (e := Finsupp.linearCombination 𝕜 (rectangleLeft (μ := μ) (ν := ν) (X := X) p q))
+    (denseRange_linearCombination_rectangleLeft (𝕜 := 𝕜) (ne_top_of_le_ne_top hq hpq) hq)
+    zero_le_one (norm_linearCombination_rectangleRight_le hpq hq)
 
 /-- Minkowski's contraction commutes with a bounded linear map `L : X →L[𝕜] Y` applied to the
 values. -/
