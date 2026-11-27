@@ -92,7 +92,9 @@ terminal-value problem and is the only continuous linear map that does; it is wi
 `exp (‖c‖ T) (1 + T) δ` of the classical solution whose `C_b^{2,α}` datum is uniformly within `δ`
 of `g`; it satisfies the maximum
 principle `u(x, t) ≤ exp (γ (T - t)) (M + (T - t) K)` for `c ≤ γ`, `f ≥ -K`, `g ≤ M`, and the
-comparison principle; and `u(·, T) = g`, with `u(·, t) → g` uniformly as `t → T⁻`.
+comparison principle; and `u(·, T) = g`, with `u(·, t) → g` uniformly as `t → T⁻`. Its regularity
+before the terminal time, with the Schauder estimate weighted by the distance to `T`, is in
+`TauCeti.Analysis.PDE.Parabolic.Holder.UniformlyContinuousData.TerminalRegularity`.
 
 Uniqueness among bounded classical solutions needs no Schauder estimate at positive times. If `g`
 is approximated within `δ` by a `C_b^{2,α}` datum, the whole-space maximum principle bounds `v`

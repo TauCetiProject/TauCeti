@@ -44,7 +44,8 @@ terminal-value problem.
 * `TauCeti.ParabolicC2HolderSpace.euclideanBackwardParabolicOperatorL` with the terminal-value
   bounds `le_exp_mul_mul_add_mul_of_le_euclideanBackwardParabolicOperatorL`,
   `abs_le_exp_mul_mul_add_mul_of_abs_euclideanBackwardParabolicOperatorL_le` and uniqueness
-  `eq_of_euclideanBackwardParabolicOperatorL_eq`.
+  `eq_of_euclideanBackwardParabolicOperatorL_eq`, and its commutation with restriction to a
+  smaller slab, `euclideanBackwardParabolicOperatorL_restrictL`.
 
 ## References
 
@@ -446,6 +447,23 @@ theorem eq_of_euclideanBackwardParabolicOperatorL_eq
   · rw [euclideanParabolicOperatorL_timeReverseLIE, euclideanParabolicOperatorL_timeReverseLIE,
       hP]
   · rw [timeReverseLIE_slabMk_left, timeReverseLIE_slabMk_left, hterm]
+
+/-- **Restriction to a smaller slab.** The backward operator commutes with restriction from
+`ℝⁿ × [t₀, t₁]` to `ℝⁿ × [t₀', t₁']`, when the coefficients are restricted as well. -/
+theorem euclideanBackwardParabolicOperatorL_restrictL {t₀' t₁' : ℝ} (h₀ : t₀ ≤ t₀')
+    (h₁ : t₁' ≤ t₁) (ht' : t₀' < t₁') (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanBackwardParabolicOperatorL hα
+        (fun i j ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) (a i j))
+        (fun i ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) (b i))
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) c)
+        (restrictL h₀ h₁ ht' u) =
+      HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
+        (euclideanBackwardParabolicOperatorL hα a b c u) := by
+  ext p
+  simp only [euclideanBackwardParabolicOperatorL_apply, HolderSpace.compLipschitzL_apply,
+    restrictL_apply, spatialFDerivL_restrictL, spatialSecondFDerivL_restrictL, timeDerivL_restrictL]
 
 end Euclidean
 
