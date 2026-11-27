@@ -74,6 +74,17 @@ namespace Module.Grassmannian
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k : ℕ}
   {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
 
+/-- Scalar extension preserves invariant kernels, without requiring their quotients to have
+constant rank or the coefficient map to be flat. -/
+theorem invtSubmodule_ker_baseChangeMkQ [Algebra A B] [IsScalarTower R A B]
+    {N : Submodule A (A ⊗[R] M)} {t : Module.End R M}
+    (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) :
+    (baseChangeMkQ B N).ker ∈ Module.End.invtSubmodule (t.baseChange B) := by
+  rw [ker_baseChangeMkQ, Module.End.mem_invtSubmodule, Submodule.span_le]
+  rintro _ ⟨x, hx, rfl⟩
+  rw [SetLike.mem_coe, Submodule.mem_comap, ← LinearMap.rTensor_baseChange]
+  exact Submodule.subset_span ⟨t.baseChange A x, hN hx, rfl⟩
+
 /-- The **stable locus** of a point `N` of `G(k, A ⊗[R] M; A)` for an endomorphism `t` of `M`: the
 content of the image of `N` under the base change `t_A` of `t` followed by the projection to the
 finite projective quotient by `N`. It cuts out the closed subscheme of `Spec A` over which `N` is
