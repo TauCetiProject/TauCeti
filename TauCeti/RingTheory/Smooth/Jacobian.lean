@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Smooth.StandardSmooth
 public import TauCeti.RingTheory.LocalRing.Coordinates
 import Mathlib.RingTheory.LocalRing.Module
 import TauCeti.RingTheory.Kaehler.Conormal
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Smoothness after inverting a Jacobian minor
@@ -96,9 +97,8 @@ theorem formallySmooth_quotient_of_basis_kaehlerDifferential (b : Module.Basis (
     refine Submodule.map_injective_of_injective N.injective_subtype ?_
     rw [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp]
     exact hN.symm
-  have hv : Submodule.span κ (Set.range fun t ↦ (1 : κ) ⊗ₜ[Q] v t) = ⊤ := by
-    rw [← Submodule.baseChange_top, ← hvN, Submodule.baseChange_span, ← Set.range_comp']
-    simp only [TensorProduct.mk_apply]
+  have hv : Submodule.span κ (Set.range fun t ↦ (1 : κ) ⊗ₜ[Q] v t) = ⊤ :=
+    span_one_tmul_eq_top hvN
   let bκ := Algebra.TensorProduct.basis κ b
   have himg (t : τ) : cotangentComplexBaseChange K _ Q κ ((1 : κ) ⊗ₜ v t) = bκ (.inl t) := by
     rw [cotangentComplexBaseChange_tmul, one_smul, kerToTensor_apply,
@@ -143,9 +143,8 @@ theorem formallySmooth_of_ker_eq_span_of_sum_mul_mem_sq [IsLocalRing P] [IsLocal
     refine Submodule.map_injective_of_injective N.injective_subtype ?_
     rw [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp]
     exact hker.symm
-  have hv : Submodule.span κ (Set.range fun t ↦ (1 : κ) ⊗ₜ[P] v t) = ⊤ := by
-    rw [← Submodule.baseChange_top, ← hvN, Submodule.baseChange_span, ← Set.range_comp]
-    simp [Function.comp_def, TensorProduct.mk_apply]
+  have hv : Submodule.span κ (Set.range fun t ↦ (1 : κ) ⊗ₜ[P] v t) = ⊤ :=
+    span_one_tmul_eq_top hvN
   refine LinearMap.injective_of_linearIndependent hv ?_
   rw [Fintype.linearIndependent_iff]
   intro c hc t

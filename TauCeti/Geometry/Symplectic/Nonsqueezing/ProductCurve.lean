@@ -38,8 +38,8 @@ pseudoholomorphic (`TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphic_pro
 So `u` has sphere component of degree one exactly when `u = (g • ·, t)`
 (`TauCeti.degree_fst_comp_eq_one_iff_exists_smul`), and every such map is smooth and
 pseudoholomorphic (`TauCeti.contMDiff_smul_prodMk_const`,
-`TauCeti.isPseudoholomorphic_smul_prodMk_const`, stated for any target `M` in place of `T`). The
-class of `u` is read off from its area: by
+`TauCeti.isPseudoholomorphic_smul_prodMk_const` of `Manifold/Sphere/ProductCurve.lean`, stated for
+any target `M` in place of `T`). The class of `u` is read off from its area: by
 `TauCeti.integralTopForm_mpullback_prod_torusSymplecticForm_eq_degree_mul` the area
 `∫ u^*(pr₁^*(a • ω_FS) + pr₂^*ω_T)` is `a` times the degree of the sphere component, so for
 `a ≠ 0` the spheres of area `a` are exactly the maps `(g • ·, t)`
@@ -53,8 +53,6 @@ class of `u` is read off from its area: by
   component of degree one exactly when it is `z ↦ (g • z, t)`.
 * `TauCeti.integralTopForm_mpullback_prod_torusSymplecticForm_eq_iff_exists_smul`: the same with
   the area `a` in place of the degree.
-* `TauCeti.contMDiff_smul_prodMk_const`, `TauCeti.isPseudoholomorphic_smul_prodMk_const`: the maps
-  `z ↦ (g • z, t)` into `S² × M` are smooth and pseudoholomorphic.
 
 ## References
 
@@ -129,33 +127,6 @@ theorem degree_fst_comp_eq_one_iff_exists_smul
       OnePoint.infty
   · rintro ⟨g, t, rfl⟩
     exact ⟨g, rfl⟩
-
-section Mobius
-
-variable {F H' M : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
-  {I' : ModelWithCorners ℝ F H'} [TopologicalSpace M] [ChartedSpace H' M]
-
-/-- The maps `z ↦ (g • z, t)` from the Riemann sphere to `S² × M` are smooth. -/
-theorem contMDiff_smul_prodMk_const (g : GL (Fin 2) ℂ) (t : M) :
-    ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod I') ∞ (fun z : OnePoint ℂ ↦ (g • z, t)) :=
-  -- The Möbius action is holomorphic, hence smooth for the underlying real structure.
-  haveI := ContMDiffConstSMul.restrictScalars ℝ
-    (inferInstance : ContMDiffConstSMul 𝓘(ℂ) ∞ (GL (Fin 2) ℂ) (OnePoint ℂ))
-  (contMDiff_const_smul g).prodMk contMDiff_const
-
-/-- The maps `z ↦ (g • z, t)` from the Riemann sphere to `S² × M` are pseudoholomorphic for the
-product of the complex structure of the sphere and any almost complex structure `L` on `M`. -/
-theorem isPseudoholomorphic_smul_prodMk_const [FiniteDimensional ℝ F] [IsManifold I' ∞ M]
-    (L : SmoothAlmostComplexStructure I' M) (g : GL (Fin 2) ℂ) (t : M) :
-    IsPseudoholomorphic (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))
-      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod L)
-      (fun z : OnePoint ℂ ↦ (g • z, t)) :=
-  SmoothAlmostComplexStructure.isPseudoholomorphic_prod_iff.2
-    ⟨isPseudoholomorphic_ofComplexManifold_iff.2
-      ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) g).mdifferentiable (by simp)),
-      isPseudoholomorphic_const _ _ t⟩
-
-end Mobius
 
 /-- **The pseudoholomorphic spheres of area `a` in `S²(a) × T`.** For `a ≠ 0`, a smooth map
 `u : OnePoint ℂ → S²(a) × T`, pseudoholomorphic for the product of the complex structure of the

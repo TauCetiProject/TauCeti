@@ -37,6 +37,11 @@ Two choices of `N` give the two cases of Fulton–Harris, Proposition E.5:
 Iterating these extensions along a flag of ideals is how a faithful nilrepresentation of the centre
 grows into a representation of the whole Lie algebra in the proof of Ado's theorem.
 
+Each theorem also has an internal form, for a Lie algebra `L` with an ideal `S` and a Lie
+subalgebra `H` whose underlying submodules are complementary. The internal statements mention no
+equivalence `L ≃ S ⋊ H`: they compose the extensions above with the inverse of the recognition
+isomorphism `LieIdeal.semiDirectSumEquiv`, which carries `s : S`, viewed in `L`, to `inl s`.
+
 ## Main results
 
 * `TauCeti.exists_semiDirectSum_rep_of_forall_mem`: the extension for derivations with values in a
@@ -46,6 +51,10 @@ grows into a representation of the whole Lie algebra in the proof of Ado's theor
   extension lies in that of the ideal.
 * `TauCeti.exists_semiDirectSum_rep_of_isNilpotent`: on a nilpotent split extension, a
   representation by nilpotent operators extends to one by nilpotent operators.
+* `LieIdeal.exists_rep_of_isCompl_of_forall_mem`, `LieIdeal.exists_rep_of_isCompl_of_isSolvable`
+  and `LieIdeal.exists_rep_of_isCompl_of_isNilpotent`: the internal forms, building from a
+  representation `σ` of a complemented ideal `S` of `L` a representation of `L` on a possibly
+  different module, keeping the same control of the kernel and of nilpotence on `S`.
 
 ## References
 
@@ -64,6 +73,8 @@ open _root_.LieAlgebra
 universe u v w x
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+
+section External
 
 variable {K : Type u} {S : Type v} {H : Type w} {V : Type x}
   [Field K] [LieRing S] [LieAlgebra K S] [FiniteDimensional K S]
@@ -150,5 +161,98 @@ theorem exists_semiDirectSum_rep_of_isNilpotent [LieRing.IsNilpotent (S ⋊⁅ψ
   exact ⟨_, inferInstance, inferInstance, hfin, envelopingQuotientRep K S ψ J hJ,
     ker_envelopingQuotientRep_comp_inl_le K S ψ J hJ σ hle,
     isNilpotent_envelopingQuotientRep_of_isNilpotent K S ψ J hJ fun s _ ↦ (hJnil s).mpr (hσ s)⟩
+
+end External
+
+section Internal
+
+/-! ### The internal form
+
+The theorems above, read for a Lie algebra `L` presented internally by an ideal `S` and a
+complementary Lie subalgebra `H`, through the recognition isomorphism
+`LieIdeal.semiDirectSumEquiv S H hc : ↥S ⋊⁅(LieIdeal.ad S).comp H.incl⁆ ↥H ≃ₗ⁅K⁆ L`, where
+`hc : IsCompl S.toSubmodule H.toSubmodule`. No equivalence appears in the statements. -/
+
+variable {K : Type u} {L : Type v} {V : Type x}
+  [Field K] [LieRing L] [LieAlgebra K L]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+omit [FiniteDimensional K V] in
+/-- Transport of the kernel control of a representation of `↥S ⋊ ↥H` to `L`, along the inverse
+of the recognition isomorphism, which carries `s : S`, viewed in `L`, to `inl s`. -/
+private theorem ker_comp_semiDirectSumEquiv_symm_le {S : LieIdeal K L} {H : LieSubalgebra K L}
+    (hc : IsCompl S.toSubmodule H.toSubmodule) {W : Type*} [AddCommGroup W] [Module K W]
+    (ρ : (↥S ⋊⁅(LieIdeal.ad S).comp H.incl⁆ ↥H) →ₗ⁅K⁆ Module.End K W)
+    (σ : S →ₗ⁅K⁆ Module.End K V) (hker : (ρ.comp (SemiDirectSum.inl _)).ker ≤ σ.ker) :
+    ((ρ.comp (S.semiDirectSumEquiv H hc).symm.toLieHom).comp S.incl).ker ≤ σ.ker := fun s hs ↦
+  hker <| by
+    rw [LieHom.mem_ker, LieHom.comp_apply, ← LieIdeal.semiDirectSumEquiv_symm_coe_left S H hc]
+    exact hs
+
+/-- **Extension across a complemented ideal, internal form.** Let `S` be a finite-dimensional ideal
+of `L` and `H` a complementary Lie subalgebra whose brackets with `S` lie in a Lie ideal `N` of `S`
+acting nilpotently under a finite-dimensional representation `σ` of `S`. Then there is a
+finite-dimensional representation `ρ` of `L`, on a possibly different module, that detects every
+direction of `S` detected by `σ`, and under which an element of `S` acts nilpotently exactly when
+it does under `σ`. -/
+theorem _root_.LieIdeal.exists_rep_of_isCompl_of_forall_mem (S : LieIdeal K L)
+    [FiniteDimensional K S] {H : LieSubalgebra K L} (hc : IsCompl S.toSubmodule H.toSubmodule)
+    (N : LieIdeal K S) (σ : S →ₗ⁅K⁆ Module.End K V) (hσ : ∀ s ∈ N, IsNilpotent (σ s))
+    (hH : ∀ h ∈ H, ∀ s, LieIdeal.ad S h s ∈ N) :
+    ∃ (W : Type (max u v)) (_ : AddCommGroup W) (_ : Module K W) (_ : FiniteDimensional K W)
+      (ρ : L →ₗ⁅K⁆ Module.End K W),
+      (ρ.comp S.incl).ker ≤ σ.ker ∧ ∀ s : S, IsNilpotent (ρ s) ↔ IsNilpotent (σ s) := by
+  obtain ⟨W, _, _, _, ρ, hker, hiff, -⟩ := exists_semiDirectSum_rep_of_forall_mem
+    ((LieIdeal.ad S).comp H.incl) N σ hσ fun h ↦ hH h h.property
+  exact ⟨W, _, _, inferInstance, ρ.comp (S.semiDirectSumEquiv H hc).symm.toLieHom,
+    ker_comp_semiDirectSumEquiv_symm_le hc ρ σ hker, fun s ↦ by
+      rw [LieHom.comp_apply, LieEquiv.coe_toLieHom, LieIdeal.semiDirectSumEquiv_symm_coe_left,
+        hiff]⟩
+
+/-- **Extension of nilrepresentations across a complemented solvable ideal, internal form.** In
+characteristic zero, let `S` be a solvable ideal of a finite-dimensional Lie algebra `L` containing
+the nilradical of `L`, complemented by a Lie subalgebra `H`. A finite-dimensional representation
+`σ` of `S` on which the nilradical of `S` acts nilpotently yields a finite-dimensional
+nilrepresentation `ρ` of `L`, on a possibly different module, that detects every direction of `S`
+detected by `σ`.
+
+The hypothesis `nilradical K L ≤ S` says that the nilradicals of `L` and `S` coincide as subsets of
+`L`, the nilradical of `S` being the part of the nilradical of `L` inside `S`
+(`LieIdeal.restrict_nilradical`). -/
+theorem _root_.LieIdeal.exists_rep_of_isCompl_of_isSolvable [CharZero K] [FiniteDimensional K L]
+    (S : LieIdeal K L) [IsSolvable S] {H : LieSubalgebra K L}
+    (hc : IsCompl S.toSubmodule H.toSubmodule) (hS : LieAlgebra.nilradical K L ≤ S)
+    (σ : S →ₗ⁅K⁆ Module.End K V) (hσ : ∀ s ∈ LieAlgebra.nilradical K S, IsNilpotent (σ s)) :
+    ∃ (W : Type (max u v)) (_ : AddCommGroup W) (_ : Module K W) (_ : FiniteDimensional K W)
+      (ρ : L →ₗ⁅K⁆ Module.End K W),
+      (ρ.comp S.incl).ker ≤ σ.ker ∧ ∀ x ∈ LieAlgebra.nilradical K L, IsNilpotent (ρ x) := by
+  have hnil {s : S} : s ∈ LieAlgebra.nilradical K S ↔ (s : L) ∈ LieAlgebra.nilradical K L := by
+    rw [← S.restrict_nilradical, LieIdeal.mem_restrict]
+  obtain ⟨W, _, _, _, ρ, hker, hiff⟩ := S.exists_rep_of_isCompl_of_forall_mem hc
+    (LieAlgebra.nilradical K S) σ hσ fun h _ ↦ (LieIdeal.ad S h).apply_mem_nilradical_of_isSolvable
+  refine ⟨W, _, _, inferInstance, ρ, hker, fun x hx ↦ ?_⟩
+  lift x to S using hS hx
+  exact (hiff x).mpr (hσ x (hnil.mpr hx))
+
+/-- **Extension of nilpotent representations across a complemented ideal of a nilpotent Lie
+algebra, internal form.** Over any field, let `S` be a finite-dimensional ideal of a nilpotent Lie
+algebra `L`, complemented by a Lie subalgebra `H`. A finite-dimensional representation `σ` of `S`
+by nilpotent endomorphisms yields a finite-dimensional representation of `L`, on a possibly
+different module, by nilpotent endomorphisms that detects every direction of `S` detected by `σ`. -/
+theorem _root_.LieIdeal.exists_rep_of_isCompl_of_isNilpotent [LieRing.IsNilpotent L]
+    (S : LieIdeal K L) [FiniteDimensional K S] {H : LieSubalgebra K L}
+    (hc : IsCompl S.toSubmodule H.toSubmodule) (σ : S →ₗ⁅K⁆ Module.End K V)
+    (hσ : ∀ s, IsNilpotent (σ s)) :
+    ∃ (W : Type (max u v)) (_ : AddCommGroup W) (_ : Module K W) (_ : FiniteDimensional K W)
+      (ρ : L →ₗ⁅K⁆ Module.End K W),
+      (ρ.comp S.incl).ker ≤ σ.ker ∧ ∀ x, IsNilpotent (ρ x) := by
+  have : LieRing.IsNilpotent (↥S ⋊⁅(LieIdeal.ad S).comp H.incl⁆ ↥H) :=
+    (S.semiDirectSumEquiv H hc).injective.lieAlgebra_isNilpotent
+  obtain ⟨W, _, _, _, ρ, hker, hρ⟩ := exists_semiDirectSum_rep_of_isNilpotent
+    ((LieIdeal.ad S).comp H.incl) σ hσ
+  exact ⟨W, _, _, inferInstance, ρ.comp (S.semiDirectSumEquiv H hc).symm.toLieHom,
+    ker_comp_semiDirectSumEquiv_symm_le hc ρ σ hker, fun x ↦ hρ _⟩
+
+end Internal
 
 end TauCeti

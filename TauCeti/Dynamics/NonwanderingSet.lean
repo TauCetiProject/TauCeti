@@ -34,6 +34,10 @@ of non-wandering points and proves its basic properties.
   support, every point is non-wandering (topological Poincaré recurrence).
 * `Dense.nonwanderingSet_eq_univ`: if every point of a dense set is non-wandering, so
   is every point.
+* `Function.Semiconj.mapsTo_nonwanderingSet`: a continuous semiconjugacy from `g` to `f` sends
+  non-wandering points of `g` to non-wandering points of `f`; with dense range, it transfers
+  `nonwanderingSet g = univ` to `nonwanderingSet f = univ`
+  (`Function.Semiconj.nonwanderingSet_eq_univ`).
 
 ## References
 
@@ -111,16 +115,29 @@ theorem Function.IsFixedPt.mem_nonwanderingSet (hx : IsFixedPt f x) :
     x ∈ nonwanderingSet f :=
   (hx.isPeriodicPt 1).mem_nonwanderingSet one_pos
 
-/-- A continuous map sends its non-wandering set into itself. -/
-theorem Continuous.mapsTo_nonwanderingSet (hf : Continuous f) :
-    MapsTo f (nonwanderingSet f) (nonwanderingSet f) := by
+/-- If a continuous map `φ` semiconjugates `g` to `f`, it sends the non-wandering points of `g`
+to non-wandering points of `f`. -/
+theorem Function.Semiconj.mapsTo_nonwanderingSet {Y : Type*} [TopologicalSpace Y] {φ : Y → X}
+    {g : Y → Y} (h : Semiconj φ g f) (hφ : Continuous φ) :
+    MapsTo φ (nonwanderingSet g) (nonwanderingSet f) := by
   intro x hx
   rw [mem_nonwanderingSet_iff_exists_iterate_mem] at hx ⊢
   intro U hU
-  obtain ⟨n, hn, y, hy, hny⟩ := hx _ (hf.continuousAt hU)
-  refine ⟨n, hn, f y, hy, ?_⟩
-  rw [← iterate_succ_apply, iterate_succ_apply']
-  exact hny
+  obtain ⟨n, hn, y, hy, hny⟩ := hx _ (hφ.continuousAt hU)
+  exact ⟨n, hn, φ y, hy, by rwa [← (h.iterate_right n).eq]⟩
+
+/-- If a continuous map `φ` with dense range semiconjugates `g` to `f` and every point is
+non-wandering for `g`, then every point is non-wandering for `f`. -/
+theorem Function.Semiconj.nonwanderingSet_eq_univ {Y : Type*} [TopologicalSpace Y] {φ : Y → X}
+    {g : Y → Y} (h : Semiconj φ g f) (hφ : Continuous φ) (hd : DenseRange φ)
+    (hg : nonwanderingSet g = univ) : nonwanderingSet f = univ :=
+  hd.nonwanderingSet_eq_univ <| range_subset_iff.2 fun y ↦
+    h.mapsTo_nonwanderingSet hφ (hg ▸ mem_univ y)
+
+/-- A continuous map sends its non-wandering set into itself. -/
+theorem Continuous.mapsTo_nonwanderingSet (hf : Continuous f) :
+    MapsTo f (nonwanderingSet f) (nonwanderingSet f) :=
+  (Function.Commute.refl f).mapsTo_nonwanderingSet hf
 
 /-- If `g` is a left inverse of `f`, every non-wandering point of `f` is non-wandering for `g`. -/
 theorem Function.LeftInverse.nonwanderingSet_subset (h : LeftInverse g f) :

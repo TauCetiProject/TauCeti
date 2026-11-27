@@ -43,16 +43,17 @@ diffeomorphism pulls `σ` back to that form plus `π^* (s^* σ)`
   (`IsLagrangianTorusFibration.exists_lagrangian_section_iff`). This is the comparison of a
   regular Lagrangian torus fibration with its model in the case of a globally framed period
   lattice.
-* **Global action–angle coordinates.** If moreover the frame is exact, `α_i = p • da_i` for a
-  smooth developing map `a : B → ℝⁿ` and a period `p > 0`, and `a` is injective, then composing
-  the inverse of the diffeomorphism with the action–angle chart of `T*B/Λ`
-  (`TauCeti.CotangentBundle.LatticeQuotient.actionAngleChart`) gives an injective symplectic
-  local diffeomorphism from `M` into the cotangent bundle of the torus `(ℝ/pℤ)ⁿ` whose actions are
-  `a ∘ π` (`IsLagrangianTorusFibration.exists_actionAngle_of_lagrangian_section`). Its image is
-  open, the covectors with actions in `a(B)`, and on it `σ = ∑ j, dθ_j ∧ dI_j`. This is the
-  sufficiency half of Duistermaat's criterion for global action–angle coordinates: trivial
-  monodromy and exact period forms with an injective developing map, together with a Lagrangian
-  section.
+* **Action–angle coordinates.** If moreover the frame is exact, `α_i = p • da_i` for a smooth
+  developing map `a : B → ℝⁿ` and a period `p > 0`, then composing the inverse of the
+  diffeomorphism with the action–angle chart of `T*B/Λ`
+  (`TauCeti.CotangentBundle.LatticeQuotient.actionAngleChart`) gives a symplectic local
+  diffeomorphism from `M` into the cotangent bundle of the torus `(ℝ/pℤ)ⁿ` whose actions are
+  `a ∘ π` and which is injective on every fibre of `π`
+  (`IsLagrangianTorusFibration.exists_actionAngle_of_lagrangian_section`). It is injective
+  exactly when `a` is, and then its image is open, the covectors with actions in `a(B)`, and on
+  it `σ = ∑ j, dθ_j ∧ dI_j`. This is the sufficiency half of Duistermaat's criterion for
+  action–angle coordinates: trivial monodromy and exact period forms, together with a Lagrangian
+  section, and for global coordinates into `T*Tⁿ` an injective developing map.
 
 ## Main definitions
 
@@ -77,8 +78,9 @@ diffeomorphism pulls `σ` back to that form plus `π^* (s^* σ)`
   Lagrangian section.
 * `IsLagrangianTorusFibration.exists_lagrangian_section_iff`: `π` has a smooth Lagrangian section
   exactly when it is symplectomorphic over `B` to its model `T*B/Λ`.
-* `IsLagrangianTorusFibration.exists_actionAngle_of_lagrangian_section`: global action–angle
-  coordinates from a Lagrangian section and an injective developing map of an exact frame.
+* `IsLagrangianTorusFibration.exists_actionAngle_of_lagrangian_section`: action–angle
+  coordinates from a Lagrangian section and an exact frame, global when the developing map is
+  injective.
 
 All in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`.
 
@@ -309,22 +311,22 @@ theorem exists_lagrangian_section_iff (hclosed : ∀ i, (α i).IsClosed) :
 variable [DecidableEq ι] (p : ℝ) [Fact (0 < p)] {a : B → ι → ℝ}
 
 include hs hα hΛ in
-/-- **Global action–angle coordinates.** Let the period lattice of a regular Lagrangian torus
-fibration be spanned at every point by the exact frame `α_i = p • da_i` of a smooth developing map
-`a : B → ℝ^ι`, and let `π` have a smooth Lagrangian section `s`. If `a` is injective, there is an
-injective local diffeomorphism `Φ` from `M` into the cotangent bundle of the torus
-`ι → AddCircle p` which pulls the canonical form back to `σ`, whose actions are `a ∘ π`, and whose
-image is the set of covectors with actions in `a(B)`. So `Φ` is a symplectomorphism of `M` onto
-this open set of covectors, on which `σ = ∑ j, dθ_j ∧ dI_j` and `π` reads `I = a`. The map is
-the inverse of `sectionDiffeomorph` followed by the action–angle chart of `T*B/Λ`. -/
+/-- **Action–angle coordinates from a Lagrangian section.** Let the period lattice of a regular
+Lagrangian torus fibration be spanned at every point by the exact frame `α_i = p • da_i` of a
+smooth developing map `a : B → ℝ^ι`, and let `π` have a smooth Lagrangian section `s`. Then there
+is a local diffeomorphism `Φ` from `M` into the cotangent bundle of the torus `ι → AddCircle p`
+which pulls the canonical form back to `σ`, whose actions are `a ∘ π`, which is injective on every
+fibre of `π`, and whose image is the set of covectors with actions in `a(B)`. It is injective
+exactly when `a` is; then `Φ` is a symplectomorphism of `M` onto this open set of covectors, on
+which `σ = ∑ j, dθ_j ∧ dI_j` and `π` reads `I = a`. The map is the inverse of
+`sectionDiffeomorph` followed by the action–angle chart of `T*B/Λ`. -/
 theorem exists_actionAngle_of_lagrangian_section (hsm : ContMDiff J I ∞ s)
     (hsσ : SmoothForm.mpullback s hsm σ = 0) (ha : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ a)
-    (hαa : ∀ i x v, SmoothForm.degreeOneEquiv (α i) x v = p * mfderiv J 𝓘(ℝ, ι → ℝ) a x v i)
-    (hinj : Injective a) :
+    (hαa : ∀ i x v, SmoothForm.degreeOneEquiv (α i) x v = p * mfderiv J 𝓘(ℝ, ι → ℝ) a x v i) :
     ∃ (Φ : M → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
       (hΦ : IsLocalDiffeomorph I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod
         𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ),
-      Injective Φ ∧
+      (∀ b, InjOn Φ (π ⁻¹' {b})) ∧ (Injective Φ ↔ Injective a) ∧
         SmoothForm.mpullback Φ hΦ.contMDiff
             (CotangentBundle.symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
               (ι → AddCircle p)) = σ ∧
@@ -335,14 +337,19 @@ theorem exists_actionAngle_of_lagrangian_section (hsm : ContMDiff J I ∞ s)
       𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ (actionAngleChart hα p a ∘ Ψ.symm) := fun y ↦
     IsLocalDiffeomorphAt.comp (hf := Ψ.symm.isLocalDiffeomorph y)
       (hg := isLocalDiffeomorph_actionAngleChart hα ha hαa _)
-  refine ⟨actionAngleChart hα p a ∘ Ψ.symm, hΦ,
-    ((actionAngleChart_injective_iff hα).2 hinj).comp Ψ.symm.injective, ?_, fun y ↦ ?_, ?_⟩
+  -- `Ψ⁻¹` maps the fibre of `π` over `b` into the fibre of `T*B/Λ` over `b`.
+  have hΨπ (y : M) : LatticeQuotient.proj hα (Ψ.symm y) = π y := by
+    rw [← h.proj_sectionDiffeomorph hσc hs hα hΛ hsm, Diffeomorph.apply_symm_apply]
+  refine ⟨actionAngleChart hα p a ∘ Ψ.symm, hΦ, fun b y hy y' hy' hyy' ↦ ?_,
+    ((Injective.of_comp_iff' _ Ψ.symm.bijective).trans (actionAngleChart_injective_iff hα)), ?_,
+    fun y ↦ ?_, ?_⟩
+  · exact Ψ.symm.injective
+      (injOn_actionAngleChart hα b ((hΨπ y).trans hy) ((hΨπ y').trans hy') hyy')
   · rw [← SmoothForm.mpullback_mpullback _ _ Ψ.symm.contMDiff
       (contMDiff_actionAngleChart hα ha hαa), mpullback_actionAngleChart_symplecticForm hα ha hαa]
     exact SmoothForm.mpullback_symm_eq_of_mpullback_eq
       (h.mpullback_sectionDiffeomorph_eq_symplecticForm hσc hs hα hΛ hsm hsσ)
-  · rw [comp_apply, torusActions_actionAngleChart,
-      ← h.proj_sectionDiffeomorph hσc hs hα hΛ hsm, Diffeomorph.apply_symm_apply]
+  · rw [comp_apply, torusActions_actionAngleChart, hΨπ]
   · exact (Ψ.symm.surjective.range_comp _).trans (range_actionAngleChart hα)
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration
