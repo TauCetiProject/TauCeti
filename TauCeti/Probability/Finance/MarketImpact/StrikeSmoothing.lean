@@ -46,7 +46,11 @@ integrable on `[0, ∞)`; it may take either sign. Then:
 * a density that is almost everywhere nonnegative on `(0, ∞)` gives a convex payoff
   (`TauCeti.Finance.convexOn_strikeSmoothedCallPayoff`).
 
-Without nonnegativity the payoff need not be convex: negating `ζ` negates `h`.
+The payoff is linear in the strike density: it commutes with scaling and negation of `ζ`
+(`TauCeti.Finance.strikeSmoothedCallPayoff_smul`, `TauCeti.Finance.strikeSmoothedCallPayoff_neg`),
+and at spot `x` it is additive in densities integrable on `(0, x]`
+(`TauCeti.Finance.strikeSmoothedCallPayoff_add`). Without nonnegativity the payoff therefore need
+not be convex: negating `ζ` negates `h`.
 
 ## References
 
@@ -81,6 +85,21 @@ theorem strikeSmoothedCallPayoff_zero_left : strikeSmoothedCallPayoff 0 = 0 := b
   ext x
   simp [strikeSmoothedCallPayoff_def]
 
+/-- Scaling the strike density scales the strike-smoothed call payoff. -/
+@[simp]
+theorem strikeSmoothedCallPayoff_smul (c : ℝ) (ζ : ℝ → ℝ) :
+    strikeSmoothedCallPayoff (c • ζ) = c • strikeSmoothedCallPayoff ζ := by
+  ext x
+  simp only [strikeSmoothedCallPayoff_def, Pi.smul_apply, smul_eq_mul, ← integral_const_mul]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun K => mul_left_comm _ _ _)
+
+/-- Negating the strike density negates the strike-smoothed call payoff. -/
+@[simp]
+theorem strikeSmoothedCallPayoff_neg (ζ : ℝ → ℝ) :
+    strikeSmoothedCallPayoff (-ζ) = -strikeSmoothedCallPayoff ζ := by
+  ext x
+  simp [strikeSmoothedCallPayoff_def, integral_neg]
+
 /-- Only the strikes `0 < K ≤ x` contribute to the strike-smoothed call payoff at spot `x`. -/
 theorem strikeSmoothedCallPayoff_eq_setIntegral (ζ : ℝ → ℝ) (x : ℝ) :
     strikeSmoothedCallPayoff ζ x = ∫ K in Ioc 0 x, (x - K) * ζ K := by
@@ -91,6 +110,20 @@ theorem strikeSmoothedCallPayoff_eq_setIntegral (ζ : ℝ → ℝ) (x : ℝ) :
   · intro K hK
     have hxK : x < K := not_le.1 fun h => hK.2 ⟨hK.1, h⟩
     rw [posPart_eq_zero.2 (sub_nonpos.2 hxK.le), zero_mul]
+
+/-- The strike-smoothed call payoff at spot `x` is additive in strike densities that are
+integrable on `(0, x]`. -/
+theorem strikeSmoothedCallPayoff_add {ζ₁ ζ₂ : ℝ → ℝ} (hζ₁ : IntegrableOn ζ₁ (Ioc 0 x))
+    (hζ₂ : IntegrableOn ζ₂ (Ioc 0 x)) :
+    strikeSmoothedCallPayoff (ζ₁ + ζ₂) x =
+      strikeSmoothedCallPayoff ζ₁ x + strikeSmoothedCallPayoff ζ₂ x := by
+  have hint (f : ℝ → ℝ) (hf : IntegrableOn f (Ioc 0 x)) :
+      IntegrableOn (fun K => (x - K) * f K) (Ioc 0 x) :=
+    (((integrableOn_Icc_iff_integrableOn_Ioc).2 hf).continuousOn_mul
+      (continuous_const.sub continuous_id).continuousOn isCompact_Icc).mono_set
+      Ioc_subset_Icc_self
+  simp only [strikeSmoothedCallPayoff_eq_setIntegral, Pi.add_apply, mul_add]
+  exact integral_add (hint ζ₁ hζ₁) (hint ζ₂ hζ₂)
 
 /-- The strike-smoothed call payoff vanishes at and below zero spot. -/
 theorem strikeSmoothedCallPayoff_of_nonpos (hx : x ≤ 0) : strikeSmoothedCallPayoff ζ x = 0 := by
