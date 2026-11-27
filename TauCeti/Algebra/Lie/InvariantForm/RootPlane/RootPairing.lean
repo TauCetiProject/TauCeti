@@ -140,15 +140,17 @@ theorem sub_smul_mem (hD : IsRootPlaneDecomposition B t α E J) (hBs : B.IsSymm)
     (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant L) (hE : ∀ i, E i ≠ ⊥)
     (hα : ∀ i, α i ≠ 0) [Finite ι] {γ δ : Dual ℝ t} (hγ : γ ∈ range α ∪ -range α)
     (hδ : δ ∈ range α ∪ -range α) :
-    δ - δ (B.coroot hBp.anisotropic γ) • γ ∈ range α ∪ -range α := by
+    δ - δ (B.coroot (B.anisotropic_toQuadraticMap_restrict hBp.anisotropic t) γ) • γ ∈
+      range α ∪ -range α := by
+  have hBt := B.anisotropic_toQuadraticMap_restrict hBp.anisotropic t
   obtain ⟨Eγ, Jγ, hEγ, hEγ0⟩ := hD.exists_isRootPlane_of_mem hE hγ
   obtain ⟨Eδ, Jδ, hEδ, hEδ0⟩ := hD.exists_isRootPlane_of_mem hE hδ
-  obtain ⟨a, ha⟩ := LinearMap.BilinForm.exists_forall_apply_eq hBp.anisotropic γ
+  obtain ⟨a, ha⟩ := LinearMap.BilinForm.exists_forall_apply_eq hBt γ
   obtain ⟨E', J', hE', hE'0⟩ := hEγ.exists_isRootPlane_sub_smul hEδ hBs hBp hB
     (fun z hz ↦ hD.mem_of_forall_lie_eq_zero hα hz) hEγ0 hEδ0 ha
-  have hne := LinearMap.BilinForm.sub_smul_ne_zero (hB := hBp.anisotropic) (ne_zero_of_mem hα hγ)
+  have hne := LinearMap.BilinForm.sub_smul_ne_zero (hB := hBt) (ne_zero_of_mem hα hγ)
     (ne_zero_of_mem hα hδ)
-  rw [LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq hBp.anisotropic ha, ha] at hne ⊢
+  rw [LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq hBt ha, ha] at hne ⊢
   obtain ⟨i, hi | hi⟩ := hD.exists_eq_or_eq_neg_of_isRootPlane hB hBp.anisotropic hE' hE'0 hne
   · exact Or.inl ⟨i, hi.symm⟩
   · exact Or.inr ⟨i, by simp [hi]⟩
@@ -158,14 +160,16 @@ theorem sub_smul_mem (hD : IsRootPlaneDecomposition B t α E J) (hBs : B.IsSymm)
 /-- The coroot map on the real roots, as an embedding. -/
 noncomputable def corootEmbedding (hBp : B.toQuadraticMap.PosDef) (hα : ∀ i, α i ≠ 0) :
     ↥(range α ∪ -range α) ↪ t where
-  toFun γ := B.coroot hBp.anisotropic γ
+  toFun γ := B.coroot (B.anisotropic_toQuadraticMap_restrict hBp.anisotropic t) γ
   inj' γ δ h := Subtype.ext <|
     LinearMap.BilinForm.coroot_injOn (ne_zero_of_mem hα γ.property)
       (ne_zero_of_mem hα δ.property) h
 
 @[simp]
 theorem corootEmbedding_apply (hBp : B.toQuadraticMap.PosDef) (hα : ∀ i, α i ≠ 0)
-    (γ : ↥(range α ∪ -range α)) : corootEmbedding hBp hα γ = B.coroot hBp.anisotropic γ :=
+    (γ : ↥(range α ∪ -range α)) :
+    corootEmbedding hBp hα γ =
+      B.coroot (B.anisotropic_toQuadraticMap_restrict hBp.anisotropic t) γ :=
   (rfl)
 
 /-- **The root pairing of a compact Lie algebra.** For a symmetric positive definite invariant form
@@ -178,7 +182,8 @@ noncomputable def rootPairing [Finite ι] (hD : IsRootPlaneDecomposition B t α 
     (hα : ∀ i, α i ≠ 0) : RootPairing ↥(range α ∪ -range α) ℝ (Dual ℝ t) t :=
   have : Finite ↥(range α ∪ -range α) := ((finite_range α).union (finite_range α).neg).to_subtype
   RootPairing.mk' LinearMap.id (Function.Embedding.subtype _) (corootEmbedding hBp hα)
-    (fun γ ↦ LinearMap.BilinForm.apply_coroot (hB := hBp.anisotropic)
+    (fun γ ↦ LinearMap.BilinForm.apply_coroot
+      (hB := (B.anisotropic_toQuadraticMap_restrict hBp.anisotropic t))
       (ne_zero_of_mem hα γ.property))
     (by
       rintro γ - ⟨δ, rfl⟩
@@ -205,13 +210,15 @@ theorem rootPairing_root (γ : ↥(range α ∪ -range α)) :
 
 @[simp]
 theorem rootPairing_coroot (γ : ↥(range α ∪ -range α)) :
-    (hD.rootPairing hBs hBp hB hE hα).coroot γ = B.coroot hBp.anisotropic γ :=
+    (hD.rootPairing hBs hBp hB hE hα).coroot γ =
+      B.coroot (B.anisotropic_toQuadraticMap_restrict hBp.anisotropic t) γ :=
   (rfl)
 
 /-- The pairing of the root `δ` with the coroot of `γ` is `δ(γ^∨)`. -/
 @[simp]
 theorem rootPairing_pairing (δ γ : ↥(range α ∪ -range α)) :
-    (hD.rootPairing hBs hBp hB hE hα).pairing δ γ = (δ : Dual ℝ t) (B.coroot hBp.anisotropic γ) :=
+    (hD.rootPairing hBs hBp hB hE hα).pairing δ γ =
+      (δ : Dual ℝ t) (B.coroot (B.anisotropic_toQuadraticMap_restrict hBp.anisotropic t) γ) :=
   (rfl)
 
 /-- **The root pairing of a compact Lie algebra is crystallographic**: the pairings `δ(γ^∨)` are
@@ -221,15 +228,16 @@ instance isCrystallographic_rootPairing :
   refine ⟨fun δ γ ↦ ?_⟩
   obtain ⟨Eγ, Jγ, hEγ, hEγ0⟩ := hD.exists_isRootPlane_of_mem hE γ.property
   obtain ⟨Eδ, Jδ, hEδ, hEδ0⟩ := hD.exists_isRootPlane_of_mem hE δ.property
-  obtain ⟨a, ha⟩ := LinearMap.BilinForm.exists_forall_apply_eq hBp.anisotropic (γ : Dual ℝ t)
-  obtain ⟨b, hb⟩ := LinearMap.BilinForm.exists_forall_apply_eq hBp.anisotropic (δ : Dual ℝ t)
+  have hBt := B.anisotropic_toQuadraticMap_restrict hBp.anisotropic t
+  obtain ⟨a, ha⟩ := LinearMap.BilinForm.exists_forall_apply_eq hBt (γ : Dual ℝ t)
+  obtain ⟨b, hb⟩ := LinearMap.BilinForm.exists_forall_apply_eq hBt (δ : Dual ℝ t)
   obtain ⟨n, hn⟩ := hEγ.exists_int_two_mul_apply_eq_mul hEδ hBs hBp hB
     (fun z hz ↦ hD.mem_of_forall_lie_eq_zero hα hz) hEγ0 hEδ0 ha hb
-  have haa := LinearMap.BilinForm.apply_self_ne_zero_of_forall_apply_eq hBp.anisotropic
+  have haa := LinearMap.BilinForm.apply_self_ne_zero_of_forall_apply_eq hBt
     (ne_zero_of_mem hα γ.property) ha
   refine ⟨n, ?_⟩
   rw [rootPairing_pairing,
-    LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq hBp.anisotropic ha, ← hb, hBs.eq b a,
+    LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq hBt ha, ← hb, hBs.eq b a,
     algebraMap_int_eq, eq_intCast]
   field_simp
   linarith

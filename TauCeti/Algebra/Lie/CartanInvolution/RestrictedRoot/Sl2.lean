@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Vector
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import Mathlib.Analysis.Real.Sqrt
 import Mathlib.LinearAlgebra.Reflection
+import TauCeti.LinearAlgebra.BilinearForm.Coroot
 
 /-!
 # The `𝔰𝔩₂` triple of a restricted root and integrality
@@ -74,21 +75,25 @@ variable (hθ : θ.IsCartanInvolution) (h𝔞 : 𝔞 ≤ θ.cartanP)
 
 /-- The **restricted coroot** `H'_λ = 2 H_λ / λ(H_λ)` of a functional `λ` on `𝔞`, where `H_λ ∈ 𝔞`
 represents `λ` under the Killing form (`LieEquiv.IsCartanInvolution.killingEquivDual`). Since
-`λ(H_λ) = B(H_λ, H_λ)`, this is `2 H_λ / B(H_λ, H_λ)`. -/
+`λ(H_λ) = B(H_λ, H_λ)`, this is `2 H_λ / B(H_λ, H_λ)`: the coroot `LinearMap.BilinForm.coroot` of
+`λ` for the Killing form, which is positive definite on `𝔞`. -/
 noncomputable def restrictedCoroot (μ : Dual K 𝔞) : 𝔞 :=
-  (2 / μ ((hθ.killingEquivDual h𝔞).symm μ)) • (hθ.killingEquivDual h𝔞).symm μ
+  have := hθ.finiteDimensional
+  (killingForm K L).coroot (hθ.posDef_killingForm_restrict h𝔞).anisotropic μ
 
 theorem restrictedCoroot_def (μ : Dual K 𝔞) :
     hθ.restrictedCoroot h𝔞 μ =
-      (2 / μ ((hθ.killingEquivDual h𝔞).symm μ)) • (hθ.killingEquivDual h𝔞).symm μ :=
-  (rfl)
+      (2 / μ ((hθ.killingEquivDual h𝔞).symm μ)) • (hθ.killingEquivDual h𝔞).symm μ := by
+  have := hθ.finiteDimensional
+  rw [restrictedCoroot, LinearMap.BilinForm.coroot_eq_of_forall_apply_eq _
+    (hθ.killingForm_killingEquivDual_symm h𝔞 μ), killingForm_killingEquivDual_symm]
 
 /-- **`λ(H'_λ) = 2`** for `λ ≠ 0`. -/
 @[simp]
 theorem apply_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
-    μ (hθ.restrictedCoroot h𝔞 μ) = 2 := by
-  rw [restrictedCoroot_def, map_smul, smul_eq_mul,
-    div_mul_cancel₀ _ (hθ.apply_killingEquivDual_symm_pos h𝔞 hμ).ne']
+    μ (hθ.restrictedCoroot h𝔞 μ) = 2 :=
+  have := hθ.finiteDimensional
+  LinearMap.BilinForm.apply_coroot hμ
 
 /-- The reflection `s_λ ν = ν - ν(H'_λ) λ` is an involution of `𝔞*`: `s_λ (s_λ ν) = ν`. This is
 Mathlib's `Module.involutive_reflection` for the reflection in `λ` along evaluation at `H'_λ`. -/
@@ -132,13 +137,10 @@ theorem eq_smul_killingEquivDual_restrictedCoroot (μ : Dual K 𝔞) :
       hθ.killingEquivDual h𝔞 (hθ.restrictedCoroot h𝔞 μ) := by
   rcases eq_or_ne μ 0 with rfl | hμ
   · simp [restrictedCoroot_def]
-  have hm := (hθ.apply_killingEquivDual_symm_pos h𝔞 hμ).ne'
-  rw [← hθ.killingEquivDual_apply_apply h𝔞]
-  simp only [restrictedCoroot_def, map_smul, LinearEquiv.apply_symm_apply, LinearMap.smul_apply,
-    smul_eq_mul, smul_smul]
-  conv_lhs => rw [← one_smul K μ]
-  congr 1
-  field_simp
+  have := hθ.finiteDimensional
+  ext H
+  rw [LinearMap.smul_apply, killingEquivDual_apply_apply, smul_eq_mul]
+  exact LinearMap.BilinForm.apply_eq_div_mul_of_ne_zero hμ H
 
 /-- **Distinct functionals have distinct coroots.** -/
 theorem restrictedCoroot_injective : Function.Injective (hθ.restrictedCoroot h𝔞) :=

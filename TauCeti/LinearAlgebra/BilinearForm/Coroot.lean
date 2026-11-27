@@ -12,12 +12,12 @@ import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
-# Coroots of an anisotropic bilinear form
+# Coroots of a bilinear form on an anisotropic subspace
 
-Let `B` be an anisotropic bilinear form on a module `V` over a field `K`, a positive definite form
-over `ℝ` for instance, and `t` a finite-dimensional subspace. The restriction of `B` to `t` is
-nondegenerate (`LinearMap.BilinForm.nondegenerate_restrict_of_anisotropic`), so every linear form
-`γ` on `t` is represented by a vector `a ∈ t`, `B(a, H) = γ(H)` for `H ∈ t`
+Let `B` be a bilinear form on a module `V` over a field `K` and `t` a finite-dimensional subspace
+on which `B` is anisotropic, for instance a subspace on which `B` is positive definite over `ℝ`.
+The restriction of `B` to `t` is nondegenerate (`LinearMap.BilinForm.nondegenerate_of_anisotropic`),
+so every linear form `γ` on `t` is represented by a vector `a ∈ t`, `B(a, H) = γ(H)` for `H ∈ t`
 (`LinearMap.BilinForm.exists_forall_apply_eq`). The **coroot** of `γ` is
 
 `γ^∨ = 2 a / B(a, a)`
@@ -48,26 +48,27 @@ open Module Set
 namespace LinearMap.BilinForm
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {B : LinearMap.BilinForm K V}
-  (hB : B.toQuadraticMap.Anisotropic) {t : Submodule K V} [FiniteDimensional K t]
+  {t : Submodule K V} (hB : (B.restrict t).toQuadraticMap.Anisotropic) [FiniteDimensional K t]
 
 variable (B) in
-/-- The **coroot** of a form `γ` on a subspace `t` for an anisotropic form `B`: the vector
+/-- The **coroot** of a form `γ` on a subspace `t` on which `B` is anisotropic: the vector
 `γ^∨ = 2 a / γ(a) = 2 a / B(a, a)` of `t`, where `a ∈ t` represents `γ` through `B`, that is
 `B(a, H) = γ(H)` for every `H ∈ t`. The coroot of `0` is `0`. -/
 noncomputable def coroot (γ : Dual K t) : t :=
-  (2 / γ (((B.restrict t).toDual (B.nondegenerate_restrict_of_anisotropic hB t)).symm γ)) •
-    ((B.restrict t).toDual (B.nondegenerate_restrict_of_anisotropic hB t)).symm γ
+  (2 / γ (((B.restrict t).toDual (nondegenerate_of_anisotropic _ hB)).symm γ)) •
+    ((B.restrict t).toDual (nondegenerate_of_anisotropic _ hB)).symm γ
 
 include hB in
-/-- Every form on `t` is represented by a vector of `t` through an anisotropic form `B`. -/
+/-- Every form on `t` is represented by a vector of `t` through `B`, when `B` is anisotropic on
+`t`. -/
 theorem exists_forall_apply_eq (γ : Dual K t) : ∃ a : t, ∀ H : t, B a H = γ H :=
-  ⟨_, apply_toDual_symm_apply (hB := B.nondegenerate_restrict_of_anisotropic hB t) γ⟩
+  ⟨_, apply_toDual_symm_apply (hB := nondegenerate_of_anisotropic _ hB) γ⟩
 
 /-- **The coroot of a represented form.** If `a ∈ t` represents `γ` through `B`, then
 `γ^∨ = 2 a / B(a, a)`. -/
 theorem coroot_eq_of_forall_apply_eq {γ : Dual K t} {a : t} (ha : ∀ H : t, B a H = γ H) :
     B.coroot hB γ = (2 / B a a) • a := by
-  have h : ((B.restrict t).toDual (B.nondegenerate_restrict_of_anisotropic hB t)).symm γ = a :=
+  have h : ((B.restrict t).toDual (nondegenerate_of_anisotropic _ hB)).symm γ = a :=
     (LinearEquiv.symm_apply_eq _).mpr (LinearMap.ext fun H ↦ (ha H).symm)
   rw [coroot, h, ← ha]
 
@@ -84,10 +85,11 @@ theorem apply_coroot_eq_of_forall_apply_eq {γ : Dual K t} {a : t} (ha : ∀ H :
 
 omit [FiniteDimensional K t] in
 include hB in
-/-- A vector representing a nonzero form through an anisotropic form has nonzero length. -/
+/-- A vector of `t` representing a nonzero form through `B`, anisotropic on `t`, has nonzero
+length. -/
 theorem apply_self_ne_zero_of_forall_apply_eq {γ : Dual K t} (hγ : γ ≠ 0) {a : t}
     (ha : ∀ H : t, B a H = γ H) : B a a ≠ 0 := fun h ↦
-  hγ (LinearMap.ext fun H ↦ by simp [← ha, hB (a : V) h])
+  hγ (LinearMap.ext fun H ↦ by simp [← ha, hB a h])
 
 variable {hB}
 
@@ -126,9 +128,9 @@ theorem coroot_injOn : InjOn (B.coroot hB (t := t)) {γ | γ ≠ 0} := fun γ h�
   LinearMap.ext fun H ↦ by
     rw [apply_eq_div_mul_of_ne_zero (hB := hB) hγ, apply_eq_div_mul_of_ne_zero (hB := hB) hδ, h]
 
-/-- **The coroots are compatible with the reflections.** For a symmetric anisotropic form `B` and
-forms `γ, δ` on `t`, the coroot of the reflection `δ - δ(γ^∨) γ` of `δ` is the
-reflection `δ^∨ - γ(δ^∨) γ^∨` of the coroot: the reflection is an isometry of `B`. -/
+/-- **The coroots are compatible with the reflections.** For a symmetric form `B`, anisotropic on
+`t`, and forms `γ, δ` on `t`, the coroot of the reflection `δ - δ(γ^∨) γ` of `δ` is the reflection
+`δ^∨ - γ(δ^∨) γ^∨` of the coroot: the reflection is an isometry of `B`. -/
 theorem coroot_sub_smul (hBs : B.IsSymm) (γ δ : Dual K t) :
     B.coroot hB (δ - δ (B.coroot hB γ) • γ) =
       B.coroot hB δ - γ (B.coroot hB δ) • B.coroot hB γ := by
