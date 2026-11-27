@@ -22,7 +22,7 @@ standard monomials of an ideal with respect to a monomial order. In both cases t
 rational, of the form `p / (1 - T)ᵈ` for a polynomial `p`.
 
 The proof is combinatorial. There are `d.multichoose n` exponents of degree `n`
-(`Finsupp.ncard_setOf_degree_eq`), whose series is `(1 - T)⁻ᵈ`
+(`Finsupp.natCard_degree_eq`), whose series is `(1 - T)⁻ᵈ`
 (`PowerSeries.mk_multichoose_eq_invOneSubPow`), and the exponents above a fixed
 `m` contribute `T^(deg m) (1 - T)⁻ᵈ`. By Dickson's lemma an upper set is the union of the sets of
 exponents above each of its finitely many minimal elements, and inclusion–exclusion, through
