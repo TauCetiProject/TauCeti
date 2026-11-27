@@ -38,6 +38,10 @@ only that `R` is dense in `Ô` and that `aÔ` is open in the finite adeles for e
 * `IsDedekindDomain.FiniteAdeleRing.quotientEquivQuotientCompletedIdeal`: the diagonal ring
   isomorphism `R ⧸ N ≃ Ô ⧸ NÔ` for `N ≠ ⊥`.
 * `IsDedekindDomain.FiniteAdeleRing.cardQuot_completedIdeal`: `[Ô : NÔ] = [R : N]` for `N ≠ ⊥`.
+* `IsDedekindDomain.FiniteAdeleRing.valued_le_of_mem_completedIdeal`: if `N ⊆ vᵏ`, every element
+  of `NÔ` has `v`-adic valuation at most `exp (-k)`.
+* `IsDedekindDomain.FiniteAdeleRing.hasBasis_nhds_zero_completedIdeal`: the ideals `NÔ`, `N ≠ ⊥`,
+  form a basis of neighbourhoods of `0` in `Ô`.
 
 ## References
 
@@ -228,5 +232,61 @@ the quotient `Ô ⧸ NÔ` is finite. -/
 theorem finite_quotient_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) [Finite (R ⧸ N)] :
     Finite (integralAdeles R K ⧸ completedIdeal K N) :=
   .of_equiv _ (quotientEquivQuotientCompletedIdeal K hN).toEquiv
+
+/-! ### Neighbourhoods of zero -/
+
+/-- **Elements of `NÔ` are divisible by the local powers dividing `N`.** If `N ⊆ vᵏ` for a finite
+place `v`, then every element of `NÔ` has `v`-adic valuation at most `exp (-k)` at `v`: the
+elements of `Ô` with this property form an ideal containing the image of `N`. -/
+theorem valued_le_of_mem_completedIdeal {N : Ideal R} {v : HeightOneSpectrum R} {k : ℕ}
+    (hN : N ≤ v.asIdeal ^ k) {x : integralAdeles R K} (hx : x ∈ completedIdeal K N) :
+    Valued.v ((x : 𝔸ᶠ[R, K]) v) ≤ WithZero.exp (-(k : ℤ)) := by
+  let J : Ideal (integralAdeles R K) :=
+    { carrier := {y | Valued.v ((y : 𝔸ᶠ[R, K]) v) ≤ WithZero.exp (-(k : ℤ))}
+      add_mem' := fun {a b} ha hb ↦ by
+        simpa only [Set.mem_ofPred_eq, Subalgebra.coe_add, add_apply] using
+          (Valuation.map_add _ _ _).trans (max_le ha hb)
+      zero_mem' := by simp
+      smul_mem' := fun c y hy ↦ by
+        have hc : Valued.v ((c : 𝔸ᶠ[R, K]) v) ≤ 1 :=
+          (mem_adicCompletionIntegers R K v).mp (mem_integralAdeles.mp c.property v)
+        simpa only [Set.mem_ofPred_eq, smul_eq_mul, Subalgebra.coe_mul, mul_apply,
+          Valuation.map_mul] using (mul_le_of_le_one_left' hc).trans hy }
+  -- The image of `r ∈ N` has valuation `v.intValuation r ≤ exp (-k)` because `r ∈ vᵏ`.
+  have hgen (r : R) (hr : r ∈ N) :
+      Valued.v ((algebraMap R (integralAdeles R K) r : 𝔸ᶠ[R, K]) v) ≤ WithZero.exp (-(k : ℤ)) := by
+    rw [Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply R K, algebraMap_apply,
+      valuedAdicCompletion_eq_valuation', valuation_of_algebraMap]
+    exact (v.intValuation_le_pow_iff_mem r k).mpr (hN hr)
+  -- Membership of `algebraMap R Ô r` in `J.comap (algebraMap R Ô)` is the bound `hgen`.
+  exact (Ideal.map_le_iff_le_comap.mpr hgen : completedIdeal K N ≤ J) hx
+
+open Topology in
+variable (K) in
+/-- **The completed ideals form a basis of neighbourhoods of zero in `Ô`.** For a nonzero ideal
+`N`, `NÔ` is an open neighbourhood of `0`; conversely a neighbourhood of `0` in `Ô` contains the
+integral finite adeles divisible by `v ^ k v` at finitely many places `v ∈ I`, hence contains `NÔ`
+for `N = ∏_{v ∈ I} v ^ k v`. -/
+theorem hasBasis_nhds_zero_completedIdeal :
+    (𝓝 (0 : integralAdeles R K)).HasBasis (fun N : Ideal R ↦ N ≠ ⊥)
+      fun N ↦ (completedIdeal K N : Set (integralAdeles R K)) := by
+  refine ⟨fun U ↦ ⟨fun hU ↦ ?_, fun ⟨N, hN, hNU⟩ ↦
+    Filter.mem_of_superset ((isOpen_completedIdeal K hN).mem_nhds (zero_mem _)) hNU⟩⟩
+  -- `Ô` is open in `𝔸_f`, so `U` is also a neighbourhood of `0` in `𝔸_f`.
+  have hU' : Subtype.val '' U ∈ 𝓝 (0 : 𝔸ᶠ[R, K]) := by
+    rw [← ZeroMemClass.coe_zero (integralAdeles R K),
+      ← (isOpen_integralAdeles R K).isOpenEmbedding_subtypeVal.map_nhds_eq]
+    exact Filter.image_mem_map hU
+  obtain ⟨I, k, hIk⟩ := exists_finset_forall_mem_of_mem_nhds_zero hU'
+  have hN : ∏ v ∈ I, v.asIdeal ^ k v ≠ ⊥ := by
+    rw [← Ideal.zero_eq_bot, Finset.prod_ne_zero_iff]
+    exact fun v _ ↦ pow_ne_zero _ (Ideal.zero_eq_bot (R := R) ▸ v.ne_bot)
+  refine ⟨∏ v ∈ I, v.asIdeal ^ k v, hN, fun x hx ↦ ?_⟩
+  have hle (v : HeightOneSpectrum R) (hv : v ∈ I) :
+      ∏ w ∈ I, w.asIdeal ^ k w ≤ v.asIdeal ^ k v :=
+    Ideal.prod_le_inf.trans (Finset.inf_le (f := fun w : HeightOneSpectrum R ↦ w.asIdeal ^ k w) hv)
+  obtain ⟨y, hyU, hyx⟩ := hIk (x : 𝔸ᶠ[R, K]) x.property fun v hv ↦
+    valued_le_of_mem_completedIdeal (hle v hv) hx
+  rwa [← Subtype.ext hyx]
 
 end IsDedekindDomain.FiniteAdeleRing
