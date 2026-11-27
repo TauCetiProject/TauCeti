@@ -84,8 +84,12 @@ theorem indecomposable_iff_nonempty_iso_regular_or_residueFG
     obtain ⟨f, hf⟩ := (isAlmostSplit_residueSequence hm hε hε₀).isRightAlmostSplit_g.factors
       M (FGModuleCat.ofHom q) hs
     -- A lift of a vector whose residue is 1 maps to a unit in the regular module.
-    have hfx : Ideal.Quotient.mk (maximalIdeal R) (f.hom.hom x) = 1 :=
-      (congrArg (fun a ↦ a.hom.hom x) hf).trans hq
+    have hfx : Ideal.Quotient.mk (maximalIdeal R) (f.hom.hom x) = 1 := by
+      have heval := congrArg (fun a ↦ a.hom.hom x) hf
+      rw [FGModuleCat.hom_hom_comp, LinearMap.comp_apply,
+        FGModuleCat.hom_hom_ofHom (Submodule.mkQ (maximalIdeal R)), FGModuleCat.hom_hom_ofHom q,
+        Submodule.mkQ_apply, Ideal.Quotient.mk_eq_mk] at heval
+      exact heval.trans hq
     have hu : IsUnit (f.hom.hom x) := notMem_maximalIdeal.mp fun h ↦
       zero_ne_one ((Ideal.Quotient.eq_zero_iff_mem.mpr h).symm.trans hfx)
     obtain ⟨a, ha⟩ := hu
@@ -93,8 +97,10 @@ theorem indecomposable_iff_nonempty_iso_regular_or_residueFG
       ⟨(r * ↑a⁻¹) • x, by rw [map_smul, ← ha, smul_eq_mul, mul_assoc]; simp⟩
     obtain ⟨s, hsection⟩ := Module.projective_lifting_property f.hom.hom
       (LinearMap.id : R →ₗ[R] R) hsurj
-    have hf' : IsSplitEpi f :=
-      IsSplitEpi.mk' ⟨FGModuleCat.ofHom s, FGModuleCat.hom_ext hsection⟩
+    have hf' : IsSplitEpi f := by
+      refine IsSplitEpi.mk' ⟨FGModuleCat.ofHom s, FGModuleCat.hom_ext ?_⟩
+      rw [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_ofHom s, FGModuleCat.hom_hom_id]
+      exact hsection
     have := hf'.isIso_of_isLocalRing_end
     exact Or.inl ⟨asIso f⟩
   · rintro (h | h) <;> obtain ⟨e⟩ := h <;>
