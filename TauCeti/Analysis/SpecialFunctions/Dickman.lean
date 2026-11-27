@@ -408,8 +408,19 @@ private theorem integral_dickman_of_le_one {u : ℝ} (h₀ : 0 ≤ u) (h₁ : u 
       exact dickman_of_le_one hv.1 (hv.2.trans h₁)
   rw [h, intervalIntegral.integral_const, sub_zero, smul_eq_mul, mul_one]
 
-private theorem mul_dickman_eq_integral_of_one_le {u : ℝ} (hu : 1 ≤ u) :
-    u * dickman u = ∫ v in (u - 1)..u, dickman v := by
+/-- For every real `u`, `u ρ(u) = ∫_{u-1}^u ρ(v) dv`. For `u < 1` this uses that the Dickman
+function vanishes on the negative reals. For `u ≥ 1` it is the fundamental theorem of calculus for
+`t ↦ t ρ(t)` on `[1, u]`, whose derivative is `ρ(t) - ρ(t - 1)`. -/
+theorem mul_dickman_eq_integral (u : ℝ) : u * dickman u = ∫ v in (u - 1)..u, dickman v := by
+  rcases le_total u 0 with hu0 | hu0
+  · rw [integral_dickman_of_le_zero (by linarith) hu0]
+    rcases hu0.eq_or_lt with rfl | h
+    · rw [zero_mul]
+    · rw [dickman_of_neg h, mul_zero]
+  rcases le_total u 1 with hu | hu
+  · rw [← integral_add_adjacent_intervals (intervalIntegrable_dickman (u - 1) 0)
+      (intervalIntegrable_dickman 0 u), integral_dickman_of_le_zero (by linarith) le_rfl, zero_add,
+      integral_dickman_of_le_one hu0 hu, dickman_of_le_one hu0 hu, mul_one]
   have hcont : ContinuousOn (fun t : ℝ ↦ t * dickman t) (Icc 1 u) :=
     (continuousOn_id.mul continuousOn_dickman).mono
       (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 zero_le_one))
@@ -435,20 +446,6 @@ private theorem mul_dickman_eq_integral_of_one_le {u : ℝ} (hu : 1 ≤ u) :
     (intervalIntegrable_dickman (u - 1) u)
   rw [integral_dickman_of_le_one zero_le_one le_rfl] at h₁
   linarith
-
-/-- For every real `u`, `u ρ(u) = ∫_{u-1}^u ρ(v) dv`. For `u < 1` this uses that the Dickman
-function vanishes on the negative reals. -/
-theorem mul_dickman_eq_integral (u : ℝ) : u * dickman u = ∫ v in (u - 1)..u, dickman v := by
-  rcases le_total 1 u with hu1 | hu1
-  · exact mul_dickman_eq_integral_of_one_le hu1
-  rcases le_total u 0 with hu0 | hu0
-  · rw [integral_dickman_of_le_zero (by linarith) hu0]
-    rcases hu0.eq_or_lt with rfl | h
-    · rw [zero_mul]
-    · rw [dickman_of_neg h, mul_zero]
-  · rw [← integral_add_adjacent_intervals (intervalIntegrable_dickman (u - 1) 0)
-      (intervalIntegrable_dickman 0 u), integral_dickman_of_le_zero (by linarith) le_rfl, zero_add,
-      integral_dickman_of_le_one hu0 hu1, dickman_of_le_one hu0 hu1, mul_one]
 
 /-! ### Positivity and monotonicity -/
 
