@@ -34,7 +34,7 @@ variable {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
   (hcoord : ∀ i j, ∀ x ∈ Z.baseSet i ∩ Z.baseSet j, ∀ v, Z.coordChange i j x v = v)
 
 /-- The global product trivialization of a core whose transitions are the identity on chart
-overlaps: it has base set `univ`, sends `q : Z.TotalSpace` to `(q.proj, q.snd)`, and has inverse
+overlaps: it has base set `univ`, sends `q : Z.TotalSpace` to `(q.proj, q.2)`, and has inverse
 `q ↦ ⟨q.1, q.2⟩`. -/
 def globalTrivializationOfCoordChangeEqId : Trivialization F (π F Z.Fiber) where
   toFun := fun q ↦ (q.proj, q.snd)

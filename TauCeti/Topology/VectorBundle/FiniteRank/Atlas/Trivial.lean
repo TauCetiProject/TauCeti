@@ -16,11 +16,8 @@ Given a locally constant rank function `r : LocallyConstant X ℕ`, `FiniteRankA
 places the constant-rank trivial core on each clopen rank stratum `{x : X // r x = n}`, with
 identity transition maps everywhere. `FiniteRankAtlas.continuous_mk_trivial_iff` characterizes
 continuity of maps into its reconstructed total space in terms of continuity of coordinate vectors
-on each clopen rank stratum, `(trivial 𝕜 X r).totalSpaceHomeomorphOfCoordChangeEqId`
-(with `fun _ _ _ _ _ _ => rfl`) identifies its reconstructed total space with the disjoint
-union of the stratum products via its generic `@[simp]` evaluation lemmas, and
-`FiniteRankAtlas.trivialConstTotalSpaceHomeomorph` identifies the reconstructed total space of a
-constant-rank trivial atlas with `X × (Fin n → 𝕜)`.
+on each clopen rank stratum, and `FiniteRankAtlas.trivialConstTotalSpaceHomeomorph` identifies the
+reconstructed total space of a constant-rank trivial atlas with `X × (Fin n → 𝕜)`.
 
 `FiniteRankAtlas.isZero_iff_rank_eq_zero` proves unconditionally (including when `X` is empty) that
 a variable-rank atlas `A` is a categorical zero object in `FiniteRankAtlas 𝕜 X` if and only if

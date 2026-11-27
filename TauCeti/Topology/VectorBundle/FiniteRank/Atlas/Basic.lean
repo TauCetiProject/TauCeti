@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Constructions.SumProd
-public import TauCeti.Topology.VectorBundle.Core.Trivial
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
-import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # Small variable-rank vector-bundle atlases
@@ -26,14 +24,9 @@ exactly its rank stratum. Thus its existing Mathlib vector-bundle topology is re
 rather than replaced by the product topology on coordinates.
 
 `FiniteRankAtlas.chartBaseSet` exposes the open domain in `X` of the preferred stratum chart
-at each base point. `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId` identifies the
-reconstructed total space of any atlas with identity transitions on chart overlaps with the
-disjoint union of the stratum products, via
-`VectorBundleCore.globalTrivializationOfCoordChangeEqId`,
-`Bundle.Trivialization.toHomeomorphOfBaseSetEqUniv`, and `Homeomorph.sigmaCongrRight`.
-`FiniteRankAtlas.ofBundles` takes actual vector bundles on the rank strata, in any fibre
-universe. `FiniteRankAtlas.reconstructionHomeomorph` compares the reconstruction with
-their disjoint union, using `TauCeti.pointIndexedCoreHomeomorph` on each stratum. Its
+at each base point. `FiniteRankAtlas.ofBundles` takes actual vector bundles on the rank strata,
+in any fibre universe. `FiniteRankAtlas.reconstructionHomeomorph` compares the reconstruction
+with their disjoint union, using `TauCeti.pointIndexedCoreHomeomorph` on each stratum. Its
 forward and inverse formulas retain the continuous linear fibre identifications.
 -/
 
@@ -257,47 +250,6 @@ theorem mem_baseSet_charts_iff {m : ℕ} {z x : {x : X // A.rank x = m}} :
   rw [A.baseSet_charts z, Set.mem_preimage]
 
 end ChartBaseSet
-
-section CoordChangeEqId
-
-/-- The reconstructed total space of any atlas whose transitions are the identity on all chart
-overlaps is homeomorphic to the disjoint union of the product spaces over its rank strata. -/
-def totalSpaceHomeomorphOfCoordChangeEqId
-    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
-      (A.charts n).coordChange i j x v = v) :
-    TotalSpace Unit A.Fiber ≃ₜ Σ n : ℕ, {x : X // A.rank x = n} × (Fin n → 𝕜) :=
-  A.totalSpaceHomeomorph.symm.trans
-    (Homeomorph.sigmaCongrRight fun n =>
-      ((A.charts n).globalTrivializationOfCoordChangeEqId (hcoord n)).toHomeomorphOfBaseSetEqUniv
-        ((A.charts n).globalTrivializationOfCoordChangeEqId_baseSet (hcoord n)))
-
-/-- Forward evaluation of `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId`. -/
-@[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_apply
-    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
-      (A.charts n).coordChange i j x v = v)
-    (p : TotalSpace Unit A.Fiber) :
-    A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ := by
-  simp only [totalSpaceHomeomorphOfCoordChangeEqId, Homeomorph.trans_apply,
-    totalSpaceHomeomorph_symm_apply, Homeomorph.sigmaCongrRight_apply,
-    Trivialization.coe_toHomeomorphOfBaseSetEqUniv,
-    VectorBundleCore.globalTrivializationOfCoordChangeEqId_apply]
-  -- `VectorBundleCore.Fiber` is semireducible, so `rfl` identifies the core fibre
-  -- `(A.charts (A.rank p.proj)).Fiber ⟨p.proj, rfl⟩` with `A.Fiber p.proj`.
-  rfl
-
-/-- Inverse evaluation of `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId`. -/
-@[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply
-    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
-      (A.charts n).coordChange i j x v = v)
-    (p : Σ n : ℕ, {x : X // A.rank x = n} × (Fin n → 𝕜)) :
-    (A.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm p =
-      ⟨p.2.1.val, fun i => p.2.2 (Fin.cast p.2.1.property i)⟩ := by
-  rw [Homeomorph.symm_apply_eq, totalSpaceHomeomorphOfCoordChangeEqId_apply]
-  rcases p with ⟨n, ⟨⟨x, hx⟩, v⟩⟩
-  cases hx
-  rfl
-
-end CoordChangeEqId
 
 section Reconstruction
 
