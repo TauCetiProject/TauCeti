@@ -18,6 +18,8 @@ Bhatt–Mathew, *The arc-topology*, Definition 4.6, for the spectrum of a valuat
   universal property by composing `Ideal.Quotient.lift` and `IsLocalization.lift`.
 * `PrimeSpectrum.intervalRingOrderIso` identifies the prime spectrum of the interval ring
   with `Set.Icc p q`, using the quotient and localization order isomorphisms.
+* `PrimeSpectrum.toIntervalRing_eq_zero_iff` and `PrimeSpectrum.isUnit_toIntervalRing_iff`
+  use contraction at the endpoints to detect zero and unit images for `p ≤ q`.
 * `PrimeSpectrum.intervalRingMap` restricts from a larger interval to a smaller one.
 * `PrimeSpectrum.isDomain_intervalRing` gives a domain for ordered endpoints. For a valuation
   domain, this lets the existing quotient and localization instances infer a valuation ring.
@@ -110,12 +112,9 @@ noncomputable def intervalRingOrderIso (p q : PrimeSpectrum R) :
   have hdisj (r : PrimeSpectrum (R ⧸ p.asIdeal)) :
       Disjoint (M : Set (R ⧸ p.asIdeal)) r.asIdeal ↔
         (e r : PrimeSpectrum R) ≤ q := by
-    have hcompl : (q.asIdeal.primeCompl : Set R)ᶜ = (q.asIdeal : Set R) :=
-      compl_compl _
     have he : (e r : PrimeSpectrum R) = r.comap (Ideal.Quotient.mk p.asIdeal) := rfl
-    -- Pull disjointness back to `R`, then read containment of ideals as the spectrum order.
-    rw [Submonoid.coe_map, Set.disjoint_image_left, ← le_compl_iff_disjoint_left, hcompl]
-    rw [← Ideal.coe_comap, SetLike.coe_subset_coe, ← comap_asIdeal, asIdeal_le_asIdeal, he]
+    rw [he, ← asIdeal_le_asIdeal, comap_asIdeal, disjoint_comm]
+    exact Ideal.disjoint_map_primeCompl_iff_comap_le
   (IsLocalization.primeSpectrumOrderIso M (IntervalRing p q)).trans
     { toFun := fun r ↦ ⟨e r, (e r).property, (hdisj r).mp r.property⟩
       invFun := fun r ↦ ⟨e.symm ⟨r, r.property.1⟩, (hdisj _).mpr (by
@@ -134,6 +133,30 @@ theorem intervalRingOrderIso_apply (p q : PrimeSpectrum R)
     (r : PrimeSpectrum (IntervalRing p q)) :
     (p.intervalRingOrderIso q r : PrimeSpectrum R) = r.comap (p.toIntervalRing q) :=
   (rfl)
+
+/-- For ordered endpoints, the canonical map to the interval ring vanishes exactly on the
+lower endpoint. -/
+@[simp]
+theorem toIntervalRing_eq_zero_iff {p q : PrimeSpectrum R} (h : p ≤ q) {x : R} :
+    p.toIntervalRing q x = 0 ↔ x ∈ p.asIdeal := by
+  refine ⟨fun hx ↦ ?_, p.toIntervalRing_eq_zero q⟩
+  let r := (p.intervalRingOrderIso q).symm ⟨p, le_rfl, h⟩
+  have hr : r.comap (p.toIntervalRing q) = p := by
+    simp only [r, ← intervalRingOrderIso_apply, OrderIso.apply_symm_apply]
+  rw [← hr, comap_asIdeal, Ideal.mem_comap, hx]
+  exact r.asIdeal.zero_mem
+
+/-- For ordered endpoints, the canonical map to the interval ring sends exactly the elements
+outside the upper endpoint to units. -/
+@[simp]
+theorem isUnit_toIntervalRing_iff {p q : PrimeSpectrum R} (h : p ≤ q) {x : R} :
+    IsUnit (p.toIntervalRing q x) ↔ x ∉ q.asIdeal := by
+  refine ⟨fun hx ↦ ?_, p.isUnit_toIntervalRing q⟩
+  let r := (p.intervalRingOrderIso q).symm ⟨q, h, le_rfl⟩
+  have hr : r.comap (p.toIntervalRing q) = q := by
+    simp only [r, ← intervalRingOrderIso_apply, OrderIso.apply_symm_apply]
+  rw [← hr, comap_asIdeal, Ideal.mem_comap]
+  exact r.asIdeal.notMem_of_isUnit hx
 
 /-- Restrict from `[p,q]` to an interval `[p',q']` whose endpoints lie inside it. -/
 noncomputable def intervalRingMap (p q : PrimeSpectrum R) {p' q' : PrimeSpectrum R}
