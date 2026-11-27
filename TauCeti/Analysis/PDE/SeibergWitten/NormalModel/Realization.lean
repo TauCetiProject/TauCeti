@@ -122,13 +122,6 @@ theorem snd_sobolevFrequencyNormalModel
 
 variable {a} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The coordinates of the element of `H¹(ℂ)⁴` given by a quadruple of test functions are the
-coordinates of their field. -/
-private theorem value_ofTestFunctionₗ_ae_eq_testField (χ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ))
-    (j : Fin 4) :
-    W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (χ j)) =ᵐ[μ⊤] fun z ↦ Vortex.testField χ z j :=
-  (W1p.value_ofTestFunctionₗ_ae (p := 2) (χ j)).mono fun z hz ↦ by simp [hz]
-
 /-- On a pair of test fields `(U, V)`, the first row of the realization is the classical normal row
 `L_x U - b_N(ξ) V` almost everywhere. -/
 theorem fst_sobolevFrequencyNormalModel_ofTestFunctionₗ_ae_eq (hax : a =ᵐ[μ⊤] x)
@@ -140,7 +133,8 @@ theorem fst_sobolevFrequencyNormalModel_ofTestFunctionₗ_ae_eq (hax : a =ᵐ[μ
   filter_upwards [Lp.coeFn_sub (Vortex.sobolevGaugeFixedOperator a _)
       ((normalFrequencyCoupling ξ).compLpL 2 μ⊤ (Vortex.sobolevFieldValues _)),
     Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax
-      ((Vortex.contDiff_testField φ).of_le (by simp)) (value_ofTestFunctionₗ_ae_eq_testField φ),
+      ((Vortex.contDiff_testField φ).of_le (by simp))
+      (Vortex.value_ofTestFunctionₗ_ae_eq_testField φ),
     (normalFrequencyCoupling ξ).coeFn_compLpL (Vortex.sobolevFieldValues
       (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (ψ j))),
     Vortex.sobolevFieldValues_ofTestFunctionₗ_ae ψ] with z h₁ h₂ h₃ h₄
@@ -157,7 +151,8 @@ theorem snd_sobolevFrequencyNormalModel_ofTestFunctionₗ_ae_eq (hax : a =ᵐ[μ
   filter_upwards [Lp.coeFn_add (Vortex.sobolevGaugeFixedAdjoint a _)
       ((pairedFrequencyCoupling ξ).compLpL 2 μ⊤ (Vortex.sobolevFieldValues _)),
     Vortex.sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax
-      ((Vortex.contDiff_testField ψ).of_le (by simp)) (value_ofTestFunctionₗ_ae_eq_testField ψ),
+      ((Vortex.contDiff_testField ψ).of_le (by simp))
+      (Vortex.value_ofTestFunctionₗ_ae_eq_testField ψ),
     (pairedFrequencyCoupling ξ).coeFn_compLpL (Vortex.sobolevFieldValues
       (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))),
     Vortex.sobolevFieldValues_ofTestFunctionₗ_ae φ] with z h₁ h₂ h₃ h₄
@@ -204,9 +199,9 @@ theorem norm_sobolevFrequencyNormalModel_sq (hx : Continuous x) (hax : a =ᵐ[μ
       Lp.norm_sq_eq_integral_of_ae_eq
         (snd_sobolevFrequencyNormalModel_ofTestFunctionₗ_ae_eq ξ hax φ ψ),
       Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator
-        hax hU (value_ofTestFunctionₗ_ae_eq_testField φ)),
+        hax hU (Vortex.value_ofTestFunctionₗ_ae_eq_testField φ)),
       Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint
-        hax hV (value_ofTestFunctionₗ_ae_eq_testField ψ)),
+        hax hV (Vortex.value_ofTestFunctionₗ_ae_eq_testField ψ)),
       Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevFieldValues_ofTestFunctionₗ_ae φ),
       Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevFieldValues_ofTestFunctionₗ_ae ψ)]
     simp only [Opens.coe_top, Measure.restrict_univ]
@@ -348,12 +343,8 @@ theorem sobolevFrequencyNormalModel_zero :
     sobolevFrequencyNormalModel a 0 =
       (WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap.comp
         ((Vortex.sobolevGaugeFixedOperator a).prodMap (Vortex.sobolevGaugeFixedAdjoint a)) := by
-  have h0 (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-      (0 : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)).compLp f = 0 := by
-    -- `‖L.compLp f‖ ≤ ‖L‖ * ‖f‖`, and `‖0‖ = 0`.
-    simpa using (0 : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)).norm_compLp_le f
   refine ContinuousLinearMap.ext fun y ↦ ?_
-  simp [sobolevFrequencyNormalModel, h0, Prod.map_def]
+  simp [sobolevFrequencyNormalModel, Prod.map_def]
 
 /-! ### Fredholm property, index and inverse -/
 
