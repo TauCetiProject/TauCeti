@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Group.IntegralConvolution
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Moments.Basic
+public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.MeasureTheory.Group.Convolution.Power
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
@@ -19,7 +20,6 @@ import Mathlib.Analysis.Convex.SpecificFunctions.Deriv
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Probability.Independence.Integration
-import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
@@ -167,6 +167,15 @@ theorem pgf_map {X : Ω → ℕ} (hX : AEMeasurable X μ) (t : ℝ) :
 theorem HasLaw.pgf_eq {X : Ω → ℕ} {ν : Measure ℕ} (hX : HasLaw X ν μ) (t : ℝ) :
     pgf X μ t = pgf id ν t := by
   rw [← hX.map_eq, pgf_map hX.aemeasurable]
+
+/-- Random variables with a given law have the same exponential-integrability domain as that
+law. -/
+theorem HasLaw.integrableExpSet_eq {X : Ω → ℝ} {ν : Measure ℝ} (hX : HasLaw X ν μ) :
+    integrableExpSet X μ = integrableExpSet id ν := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq]
+  rw [← hX.map_eq, integrable_map_measure (by fun_prop) hX.aemeasurable]
+  rfl
 
 /-- Evaluating the probability-generating function at `exp t` recovers the moment-generating
 function of the real-valued cast of the random variable. -/
