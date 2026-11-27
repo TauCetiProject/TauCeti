@@ -123,6 +123,40 @@ theorem not_continuousAt_jumpCoefficient {x : EuclideanSpace ℝ (Fin (n + 1))} 
   have := tendsto_nhds_unique (hlim.congr' hval) tendsto_const_nhds
   simp [jumpCoefficient, hx] at this
 
+/-- The jump coefficient is a symmetric matrix at every point. -/
+theorem isSymm_jumpCoefficient (x : EuclideanSpace ℝ (Fin (n + 1))) :
+    (jumpCoefficient n x).IsSymm := by
+  rw [jumpCoefficient_apply]
+  exact Matrix.isSymm_one.smul _
+
+/-- The bilinear form of the jump coefficient is `κ(x)` times the inner product. -/
+theorem matrixBilinearForm_jumpCoefficient_apply (x η ξ : EuclideanSpace ℝ (Fin (n + 1))) :
+    matrixBilinearForm (jumpCoefficient n x) η ξ =
+      (if 0 < x 0 then 1 else 2 : ℝ) * ⟪η, ξ⟫_ℝ := by
+  rw [jumpCoefficient_apply, matrixBilinearForm_smul_one_apply,
+    EuclideanSpace.inner_eq_star_dotProduct]
+  simp [dotProduct_comm]
+
+/-- The jump coefficient is not locally Lipschitz, in the operator norm of its bilinear forms, on
+any open set meeting the hyperplane `{x₀ = 0}`. -/
+theorem not_locallyLipschitzOn_jumpCoefficient {s : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    (hs : IsOpen s) {z : EuclideanSpace ℝ (Fin (n + 1))} (hzs : z ∈ s) (hz : z 0 = 0) :
+    ¬ LocallyLipschitzOn s fun x => matrixBilinearForm (jumpCoefficient n x) := by
+  intro h
+  set e : EuclideanSpace ℝ (Fin (n + 1)) := EuclideanSpace.single 0 1
+  -- The coefficient `κ(x)` is the bilinear form evaluated at `(e₀, e₀)`.
+  have hκ : ContinuousAt (fun x => matrixBilinearForm (jumpCoefficient n x) e e) z :=
+    ((h.continuousOn.continuousAt (hs.mem_nhds hzs)).clm_apply continuousAt_const).clm_apply
+      continuousAt_const
+  have heq : jumpCoefficient n =
+      fun x => matrixBilinearForm (jumpCoefficient n x) e e • (1 : Matrix _ _ ℝ) := by
+    funext x
+    rw [matrixBilinearForm_jumpCoefficient_apply, jumpCoefficient_apply]
+    simp [e]
+  refine not_continuousAt_jumpCoefficient (n := n) hz ?_
+  rw [heq]
+  exact hκ.smul continuousAt_const
+
 /-- The coordinate function `x₀` on a bounded open set, as an element of `W^{1,p}(Ω)` with weak
 gradient `e₀`; this specializes `TauCeti.W1p.exists_value_gradient_ae_eq_continuousLinearMap` to
 the coordinate functional. -/
@@ -259,10 +293,8 @@ private theorem matrixBilinearForm_jumpCoefficient_smul_single
       ((if 0 < x 0 then 1 else 2 : ℝ)⁻¹ • EuclideanSpace.single 0 1) =
       ⟪η, EuclideanSpace.single 0 1⟫_ℝ := by
   have hc0 : (if 0 < x 0 then 1 else 2 : ℝ) ≠ 0 := by split_ifs <;> norm_num
-  rw [jumpCoefficient_apply]
-  generalize (if 0 < x 0 then 1 else 2 : ℝ) = c at hc0 ⊢
-  rw [matrixBilinearForm_smul_one_apply, EuclideanSpace.inner_single_right]
-  simp [hc0]
+  rw [matrixBilinearForm_jumpCoefficient_apply, real_inner_smul_right, ← mul_assoc,
+    mul_inv_cancel₀ hc0, one_mul]
 
 /-- **The explicit solution is a weak solution.** On a bounded open set `Ω`, every `u ∈ H¹(Ω)`
 equal to `TauCeti.PDE.jumpSolution` almost everywhere solves `-div(κ ∇u) = 0` weakly:
