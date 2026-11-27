@@ -242,6 +242,70 @@ noncomputable instance instRigidCategory [RigidCategory C] : RigidCategory (Mat_
 
 end Duals
 
+-- Prefer the singleton instances on embeddings so the duality formulas can match independently
+-- of whether the ambient category is rigid. Both instances use the family construction above.
+/-- A one-term family has a right dual when its summand does. -/
+@[reducible]
+noncomputable instance (priority := high) instHasRightDualEmbeddingObj
+    (X : C) [HasRightDual X] : HasRightDual ((embedding C).obj X) :=
+  @instHasRightDual C _ _ _ _ ((embedding C).obj X) (fun _ ↦ ‹HasRightDual X›)
+
+/-- The right dual of a one-term family is the embedding of the right dual of its summand. -/
+@[simp]
+theorem rightDual_embedding_obj (X : C) [HasRightDual X] :
+    ((embedding C).obj X)ᘁ = (embedding C).obj Xᘁ :=
+  rfl
+
+-- Apply the entry formulas to the explicit singleton family so the diagonal identities simplify
+-- on its summand. The final match in `simpa using!` unfolds `embedding` to identify the families.
+/-- The evaluation of an embedded object against its right dual has the original evaluation as
+its only entry. -/
+@[simp↓]
+theorem evaluation_rightDual_embedding_obj (X : C) [HasRightDual X] :
+    ε_ ((embedding C).obj X) (((embedding C).obj X)ᘁ) = fun _ _ ↦ ε_ X Xᘁ := by
+  ext ⟨⟨⟩, ⟨⟩⟩ u
+  simpa only [id_apply_self, id_whiskerRight, Category.id_comp] using!
+    evaluation_rightDual_apply (⟨PUnit, fun _ ↦ X⟩ : Mat_ C) (PUnit.unit, PUnit.unit) u
+
+/-- The coevaluation of an embedded object with its right dual has the original coevaluation as
+its only entry. -/
+@[simp↓]
+theorem coevaluation_rightDual_embedding_obj (X : C) [HasRightDual X] :
+    η_ ((embedding C).obj X) (((embedding C).obj X)ᘁ) = fun _ _ ↦ η_ X Xᘁ := by
+  ext u ⟨⟨⟩, ⟨⟩⟩
+  simpa only [id_apply_self, rightDual_X, whiskerLeft_id, Category.comp_id] using!
+    coevaluation_rightDual_apply (⟨PUnit, fun _ ↦ X⟩ : Mat_ C) u (PUnit.unit, PUnit.unit)
+
+/-- A one-term family has a left dual when its summand does. -/
+@[reducible]
+noncomputable instance (priority := high) instHasLeftDualEmbeddingObj
+    (X : C) [HasLeftDual X] : HasLeftDual ((embedding C).obj X) :=
+  @instHasLeftDual C _ _ _ _ ((embedding C).obj X) (fun _ ↦ ‹HasLeftDual X›)
+
+/-- The left dual of a one-term family is the embedding of the left dual of its summand. -/
+@[simp]
+theorem leftDual_embedding_obj (X : C) [HasLeftDual X] :
+    (ᘁ((embedding C).obj X) : Mat_ C) = (embedding C).obj (ᘁX) :=
+  rfl
+
+/-- The evaluation of an embedded object against its left dual has the original evaluation as
+its only entry. -/
+@[simp↓]
+theorem evaluation_leftDual_embedding_obj (X : C) [HasLeftDual X] :
+    ε_ (ᘁ((embedding C).obj X)) ((embedding C).obj X) = fun _ _ ↦ ε_ (ᘁX : C) X := by
+  ext ⟨⟨⟩, ⟨⟩⟩ u
+  simpa only [id_apply_self, id_whiskerRight, Category.id_comp] using!
+    evaluation_leftDual_apply (⟨PUnit, fun _ ↦ X⟩ : Mat_ C) (PUnit.unit, PUnit.unit) u
+
+/-- The coevaluation of an embedded object with its left dual has the original coevaluation as
+its only entry. -/
+@[simp↓]
+theorem coevaluation_leftDual_embedding_obj (X : C) [HasLeftDual X] :
+    η_ (ᘁ((embedding C).obj X)) ((embedding C).obj X) = fun _ _ ↦ η_ (ᘁX : C) X := by
+  ext u ⟨⟨⟩, ⟨⟩⟩
+  simpa only [id_apply_self, whiskerLeft_id, Category.comp_id] using!
+    coevaluation_leftDual_apply (⟨PUnit, fun _ ↦ X⟩ : Mat_ C) u (PUnit.unit, PUnit.unit)
+
 /-- The right adjoint mate of a matrix is the transpose of the matrix of right adjoint mates of
 its entries. -/
 @[simp]
