@@ -357,7 +357,7 @@ theorem heights_of_tilingOfHeightOn_eq_wedgeConfig {H : ℤ × ℤ → ℤ}
   have h₃ := hc ⟨(-1, 0), 0⟩ (mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩)
   have h₄ := hc ⟨(0, 0), 1⟩ (mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩)
   simp [heightCochain_of_mem, heightCochain_of_notMem, Prod.ext_iff] at h₁ h₂ h₃ h₄
-  have h₀' : H (0, 0) = 0 := h₀
+  have h₀' : H (0, 0) = 0 := by rwa [← Prod.mk_zero_zero] at h₀
   omega
 
 end TauCeti.Examples.LozengeTiling

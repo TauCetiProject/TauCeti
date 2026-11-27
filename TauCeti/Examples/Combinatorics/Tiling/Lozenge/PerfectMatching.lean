@@ -109,7 +109,7 @@ theorem nonempty_cycleGraph_iso_induce_hexagon :
   · obtain ⟨i, hi⟩ := exists_hexagonFace_eq f.property
     exact ⟨i, Subtype.ext hi⟩
   · intro i j
-    change hexGraph.Adj (hexagonFace i) (hexagonFace j) ↔ (SimpleGraph.cycleGraph 6).Adj i j
+    simp only [SimpleGraph.induce_adj]
     rw [← SimpleGraph.mem_neighborSet, SimpleGraph.cycleGraph_adj]
     fin_cases i <;> fin_cases j <;>
       simp +decide [hexagonFace, hexGraph_neighborSet_mk_true, hexGraph_neighborSet_mk_false,
