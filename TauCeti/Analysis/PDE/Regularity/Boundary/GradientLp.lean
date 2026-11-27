@@ -977,7 +977,8 @@ private theorem exists_shear_ball {H : Opens E} {ν y₀ s : E} {c₀ R : ℝ} {
   refine ⟨W1p.restrictL hB₁U' w', ?_, fun v => ?_, ?_, ?_⟩
   · have hq := (measurePreserving_transvectionL volume
       (inner_neg_right_eq_zero hνs)).quasiMeasurePreserving.restrict (s := B₁) (t := ball y₀ R)
-        fun x hx => hB₁U' hx
+        fun x hx => by
+          simpa only [B, Opens.coe_mk] using hU'B (SetLike.coe_subset_coe.mpr hB₁U' hx)
     filter_upwards [W1p.value_restrictL_ae hB₁U' w', ae_restrict_of_ae_restrict_of_subset
       (SetLike.coe_subset_coe.mpr hB₁U') (value_shearCompOnL_ae hνs hU'B w), hq.ae hw0]
       with x h1 h2 h3 hxH
