@@ -218,7 +218,7 @@ omit [ContMDiffVectorBundle ∞ G W I] [MeasurableSpace E] [BorelSpace E] [T2Spa
 include hct in
 /-- A chart whose source lies over the base set of the preferred frame of the dual-density bundle
 at `α` has its source in the chart source and in the base set of `W` at `α`. -/
-private theorem source_subset_of_subset_baseSet :
+theorem source_subset_of_subset_baseSet :
     c.source ⊆ (chartAt H α).source ∩ (trivializationAt G W α).baseSet := by
   intro x hx
   have h := hct hx
@@ -229,7 +229,7 @@ private theorem source_subset_of_subset_baseSet :
 omit [ContMDiffVectorBundle ∞ G W I] [MeasurableSpace E] [BorelSpace E] [T2Space M] in
 include hct hcα in
 /-- A restriction of the preferred chart at `α` has the inverse of the preferred chart. -/
-private theorem symm_eq_extChartAt_symm {y : E} (hy : y ∈ c.target) :
+theorem symm_eq_extChartAt_symm {y : E} (hy : y ∈ c.target) :
     c.symm y = (extChartAt I α).symm y := by
   have hx := c.map_target hy
   have hxs : c.symm y ∈ (extChartAt I α).source := by

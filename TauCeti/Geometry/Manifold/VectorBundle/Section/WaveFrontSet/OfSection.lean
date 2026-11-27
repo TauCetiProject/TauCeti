@@ -112,9 +112,8 @@ the dual-density bundle, lies in the first-jet chart domain of `W` at `x`. -/
 private theorem mem_firstJetBundle_baseSet {x y : M}
     (hy : y ∈ (baseSetChart (G →L[ℝ] ℝ) I (fun x ↦ W x →L[ℝ] DensityBundle I M x) x).source) :
     y ∈ FirstJetBundle.baseSet (H := H) G W x := by
-  rw [baseSetChart_source, hom_trivializationAt_baseSet, TauCeti.Density.trivializationAt_eq,
-    Trivialization.density_baseSet, TangentBundle.trivializationAt_baseSet] at hy
-  exact (FirstJetBundle.mem_baseSet_iff G W).2 ⟨hy.2.1, hy.1⟩
+  have h := source_subset_of_subset_baseSet _ (baseSetChart_source_subset _ x) hy
+  exact (FirstJetBundle.mem_baseSet_iff G W).2 ⟨h.2, h.1⟩
 
 /-- **A section smooth near a point is smooth there as a distributional section.** If a locally
 integrable section `u` of `W` is smooth on a neighbourhood `U` of `x`, then `x` lies outside the
@@ -220,10 +219,8 @@ private theorem localRep_smul_symm_eq {x : M} {ρ : M → ℝ} {k : E → G} {z 
   set c := baseSetChart (G →L[ℝ] ℝ) I (fun x ↦ W x →L[ℝ] DensityBundle I M x) x
   have hy := c.map_target hz
   have hy' := (FirstJetBundle.mem_baseSet_iff G W).1 (mem_firstJetBundle_baseSet hy)
-  have hzy : (extChartAt I x).symm z = c.symm z := by
-    conv_lhs => rw [← extChartAt_baseSetChart_symm _ x hz]
-    exact (extChartAt I x).left_inv (by rw [extChartAt_source]; exact hy'.2)
-  rw [FirstJetBundle.localRep_apply, hzy, hρ, one_smul,
+  rw [FirstJetBundle.localRep_apply, ← symm_eq_extChartAt_symm c (baseSetChart_source_subset _ x)
+    (fun y _ ↦ by rw [coe_baseSetChart]) hz, hρ, one_smul,
     (trivializationAt G W x).apply_mk_symm hy'.1, c.right_inv hz]
 
 /-- The reading of a distributional section near a point outside its singular support, divided by
