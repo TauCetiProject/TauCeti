@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.LocallyConstant
-public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Basic
 
 /-!
 # Pullback of exterior powers in a locally constant degree
@@ -24,9 +24,8 @@ There it is the `n`-th exterior power comparison `f^* (⋀ⁿ M) ⟶ ⋀ⁿ (f^*
 identifications of `⋀^r` and `⋀^{r ∘ f}` with `⋀ⁿ` over `r⁻¹{n}` and `f⁻¹ (r⁻¹{n})` and through
 the commutation of pullback with restriction to opens
 (`restrictFunctor_map_pullbackLocallyConstantExteriorPowerComparison_app_comp`). The open sets
-`f⁻¹ (r⁻¹{n})` cover `X`, so the comparison is an isomorphism whenever all the `n`-th
-comparisons are (`isIso_pullbackLocallyConstantExteriorPowerComparison_app_of_isIso`), in
-particular for quasicoherent `M` (`isIso_pullbackLocallyConstantExteriorPowerComparison_app`).
+`f⁻¹ (r⁻¹{n})` cover `X`, so invertibility of the fixed-degree comparisons gives invertibility
+of the locally constant comparison for every module sheaf.
 
 ## Main declarations
 
@@ -34,10 +33,8 @@ particular for quasicoherent `M` (`isIso_pullbackLocallyConstantExteriorPowerCom
   comparison `f^* (⋀^r M) ⟶ ⋀^{r ∘ f} (f^* M)`;
 * `restrictFunctor_map_pullbackLocallyConstantExteriorPowerComparison_app_comp`: over
   `f⁻¹ (r⁻¹{n})` it is the `n`-th exterior power comparison;
-* `TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison_app_of_isIso`
-  and `TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison_app`: it is
-  an isomorphism when every `n`-th exterior power comparison is, in particular on quasicoherent
-  modules.
+* `TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison_app`: the
+  comparison is an isomorphism at every module sheaf.
 
 ## References
 
@@ -93,9 +90,8 @@ private def comparisonFiber (n : ℕ) :
         ((restrictPullbackIsoFiber f r n).hom.naturality φ)).trans <|
       (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) h)
 
-/-- The restricted comparison is an isomorphism when the `n`-th exterior power comparison is. -/
-private lemma isIso_comparisonFiber_app (n : ℕ) (M : Y.Modules)
-    (_ : IsIso ((pullbackExteriorPowerComparison f n).app M)) :
+/-- The restriction of the locally constant comparison to each fiber is an isomorphism. -/
+private lemma isIso_comparisonFiber_app (n : ℕ) (M : Y.Modules) :
     IsIso ((comparisonFiber f r n).app M) :=
   IsIso.comp_isIso' inferInstance (Functor.map_isIso
     (restrictFunctor (Scheme.Opens.ι ((r.comap f.base.hom).fiberClopens n).toOpens)) _)
@@ -203,10 +199,9 @@ theorem restrictFunctor_map_pullbackLocallyConstantExteriorPowerComparison_app_c
         (congrArg (fun x ↦ R.map x ≫ adj.counit.app _) (comparison_app_π f r n M)).trans <|
           (adj.homEquiv_counit _ _ _).symm.trans (Equiv.symm_apply_apply _ _)
 
-/-- The comparison `f^* (⋀^r M) ⟶ ⋀^{r ∘ f} (f^* M)` is an isomorphism as soon as every exterior
-power comparison `f^* (⋀ⁿ M) ⟶ ⋀ⁿ (f^* M)` is. -/
-theorem isIso_pullbackLocallyConstantExteriorPowerComparison_app_of_isIso (M : Y.Modules)
-    (h : ∀ n, IsIso ((pullbackExteriorPowerComparison f n).app M)) :
+/-- The comparison `f^* (⋀^r M) ⟶ ⋀^{r ∘ f} (f^* M)` is an isomorphism for every module
+sheaf `M` and every locally constant degree `r`. -/
+instance isIso_pullbackLocallyConstantExteriorPowerComparison_app (M : Y.Modules) :
     IsIso ((pullbackLocallyConstantExteriorPowerComparison f r).app M) := by
   -- Being an isomorphism is checked over the open cover of `X` by the fibers of `r ∘ f`, where
   -- the comparison is the `n`-th exterior power comparison.
@@ -219,16 +214,8 @@ theorem isIso_pullbackLocallyConstantExteriorPowerComparison_app_of_isIso (M : Y
       ((pullbackLocallyConstantExteriorPowerComparison f r).app M) ≫
         e.hom.app ((Scheme.Modules.pullback f).obj M)) :=
     (restrictFunctor_map_pullbackLocallyConstantExteriorPowerComparison_app_comp f r n M) ▸
-      isIso_comparisonFiber_app f r n M (h n)
+      isIso_comparisonFiber_app f r n M
   exact IsIso.of_isIso_comp_right _ (e.hom.app ((Scheme.Modules.pullback f).obj M))
-
-/-- **Exterior powers in a locally constant degree commute with pullback of quasicoherent
-sheaves**: for every morphism of schemes `f : X ⟶ Y`, every locally constant `r : Y → ℕ` and every
-quasicoherent `𝒪_Y`-module `M`, the comparison `f^* (⋀^r M) ⟶ ⋀^{r ∘ f} (f^* M)` is an
-isomorphism. -/
-instance isIso_pullbackLocallyConstantExteriorPowerComparison_app (M : Y.Modules)
-    [M.IsQuasicoherent] : IsIso ((pullbackLocallyConstantExteriorPowerComparison f r).app M) :=
-  isIso_pullbackLocallyConstantExteriorPowerComparison_app_of_isIso f r M fun _ ↦ inferInstance
 
 end
 

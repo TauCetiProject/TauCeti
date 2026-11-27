@@ -13,7 +13,8 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Stalk
 # Stalks of exterior powers of sheaves of modules
 
 The stalk of a sheaf exterior power is the exterior power of the stalk over the ring stalk.
-The equivalence sends the germ of a sheafified wedge to the wedge of the germs of its factors.
+The equivalence is natural in the module sheaf and sends the germ of a sheafified wedge to the
+wedge of the germs of its factors.
 It combines `PresheafOfModules.exteriorPowerStalkEquiv` with invariance under sheafification.
 
 ## References
@@ -91,5 +92,43 @@ theorem exteriorPowerStalkEquiv_germ_mk (U : Opens X) (hx : x ∈ U)
       exteriorPower.ιMulti (↑(stalk R.obj x)) n (fun i ↦ germ M.val.presheaf U x hx (m i))) :=
   ((M.exteriorPowerStalkEquiv x n).symm_apply_eq.mp
     (M.exteriorPowerStalkEquiv_symm_ιMulti_germ x n U hx m)).symm
+
+/-- The exterior-power stalk equivalence is natural in the module sheaf. -/
+theorem exteriorPowerStalkEquiv_naturality
+    {N : SheafOfModules.{u} (ringCatSheaf R)} (g : M ⟶ N) :
+    (N.exteriorPowerStalkEquiv x n).toLinearMap ∘ₗ
+        PresheafOfModules.stalkMapCommRing (S := R.obj) x ((exteriorPower R n).map g).val =
+      exteriorPower.map n (PresheafOfModules.stalkMapCommRing (S := R.obj) x g.val) ∘ₗ
+        (M.exteriorPowerStalkEquiv x n).toLinearMap := by
+  let e := M.exteriorPowerStalkEquiv x n
+  apply (LinearMap.cancel_right e.symm.surjective).mp
+  apply exteriorPower.linearMap_ext
+  apply AlternatingMap.ext
+  intro v
+  obtain ⟨U, _, hx, m, hm⟩ :=
+    TopCat.Presheaf.exists_le_germ_eq_family M.val.presheaf v (V := ⊤) (by trivial)
+  rw [← funext hm]
+  let w := exteriorPower.ιMulti ↑(stalk R.obj x) n (fun i ↦ germ M.val.presheaf U x hx (m i))
+  -- Evaluation removes the composite linear maps, whose stalk module instances are presented
+  -- through both the sheaf and its underlying presheaf.
+  change N.exteriorPowerStalkEquiv x n
+      (PresheafOfModules.stalkMapCommRing (S := R.obj) x ((exteriorPower R n).map g).val
+        ((M.exteriorPowerStalkEquiv x n).symm w)) =
+    exteriorPower.map n (PresheafOfModules.stalkMapCommRing (S := R.obj) x g.val)
+      (M.exteriorPowerStalkEquiv x n ((M.exteriorPowerStalkEquiv x n).symm w))
+  rw [LinearEquiv.apply_symm_apply]
+  dsimp only [w]
+  -- The wedge rewrite matches the sheaf's stalk module with the underlying presheaf's
+  -- stalk module. The germ rewrites match additive-presheaf sections with module sections.
+  erw [exteriorPower.map_apply_ιMulti, exteriorPowerStalkEquiv_symm_ιMulti_germ,
+    PresheafOfModules.stalkMapCommRing_germ]
+  let germToWedge (z : ((exteriorPower R n).obj N).val.obj (op U)) :=
+    N.exteriorPowerStalkEquiv x n (germ ((exteriorPower R n).obj N).val.presheaf U x hx z)
+  refine (congrArg germToWedge (exteriorPower_map_val_app_mk n g (op U) m)).trans ?_
+  refine (N.exteriorPowerStalkEquiv_germ_mk x n U hx
+    (fun i ↦ g.val.app (op U) (m i))).trans ?_
+  congr 1
+  funext i
+  exact (PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x g.val U hx (m i)).symm
 
 end SheafOfModules

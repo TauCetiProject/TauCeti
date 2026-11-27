@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Coherence
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.LocallyConstant
 public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.LocallyConstantRank
 -- Proof-only: the bodies of the full-subcategory lifts `determinant`, `FixedRank.pullback` and
@@ -18,9 +19,9 @@ import all TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 # Pullback of the determinant of a vector bundle
 
 Let `f : X ⟶ Y` be a morphism of schemes and `E` a finite locally free sheaf of constant rank `r`
-on `Y`. Since `E` is quasicoherent, the canonical exterior-power comparison
+on `Y`. The canonical exterior-power comparison
 `f^* (⋀ʳ E) ⟶ ⋀ʳ (f^* E)` is an isomorphism
-(`TauCeti.AlgebraicGeometry.isIso_pullbackExteriorPowerComparison_app`). It therefore gives an
+(`AlgebraicGeometry.Scheme.Modules.isIso_pullbackExteriorPowerComparison_app`). It gives an
 isomorphism of invertible sheaves `f^* (det E) ≅ det (f^* E)`, natural in `E`.
 
 These comparisons are coherent: along the identity the comparison is induced by the identity
@@ -31,7 +32,6 @@ fixed-rank sheaves.
 Without a constant rank, the determinant `det E = ⋀^{rank E} E` is the exterior power in the
 locally constant degree `rank E`. Its pullback is compared with `det (f^* E)` through the
 exterior-power comparison `f^* (⋀^{rank E} E) ⟶ ⋀^{rank E ∘ f} (f^* E)`, again an isomorphism
-since `E` is quasicoherent
 (`TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison_app`), and the
 identification `rank (f^* E) = rank E ∘ f` (`FiniteLocallyFreeSheaf.rank_pullback`).
 
@@ -71,8 +71,7 @@ variable {X Y Z : Scheme.{u}}
 
 /-- Pulling back the determinant of a finite locally free sheaf of constant rank `r` is naturally
 isomorphic to taking the determinant of its pullback: `f^* (det E) ≅ det (f^* E)`. The forward map
-is the canonical exterior-power comparison `f^* (⋀ʳ E) ⟶ ⋀ʳ (f^* E)`, which is invertible because
-`E` is quasicoherent. -/
+is the canonical exterior-power comparison `f^* (⋀ʳ E) ⟶ ⋀ʳ (f^* E)`. -/
 def pullbackDeterminantIso (f : X ⟶ Y) (r : ℕ) :
     determinant Y r ⋙ InvertibleSheaf.pullback f ≅ FixedRank.pullback f ⋙ determinant X r :=
   NatIso.ofComponents
@@ -151,7 +150,7 @@ theorem pullbackDeterminantIso_hom_app_comp (f : X ⟶ Y) (g : Y ⟶ Z) {r : ℕ
 /-- **Pullback of the determinant in locally constant rank.** For a morphism of schemes
 `f : X ⟶ Y` and a finite locally free sheaf `E` on `Y`, the pullback of `det E = ⋀^{rank E} E`
 is the determinant of `f^* E`. The forward map is the exterior-power comparison
-`f^* (⋀^{rank E} E) ⟶ ⋀^{rank E ∘ f} (f^* E)`, an isomorphism because `E` is quasicoherent,
+`f^* (⋀^{rank E} E) ⟶ ⋀^{rank E ∘ f} (f^* E)`,
 followed by the identification `rank (f^* E) = rank E ∘ f`. -/
 def pullbackDetIso (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
     (InvertibleSheaf.pullback f).obj (det E) ≅ det ((FiniteLocallyFreeSheaf.pullback f).obj E) :=

@@ -10,15 +10,10 @@ public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Basic
 /-!
 # The canonical exterior-power comparison on affine spectra
 
-For an arbitrary ring map `φ : R ⟶ S`, the canonical comparison
-`(Spec φ)^* (⋀ⁿ M) ⟶ ⋀ⁿ ((Spec φ)^* M)` is invertible for every quasicoherent module
-sheaf `M` on `Spec R`. There are no flatness, finite-presentation or local-freeness hypotheses.
-
-The comparison is the mate of the pushforward map on sheafified wedges, not a separately
-chosen isomorphism. We identify it with `tildePullbackExteriorPowerIso`, obtained from the
-scalar-extension isomorphism for modules. The identification follows by evaluating the
-pullback and tilde adjunctions on decomposable wedges. It supplies the affine computation
-needed to check invertibility of the canonical comparison locally on schemes.
+For an arbitrary ring map `φ : R ⟶ S` and an associated sheaf `tilde M` on `Spec R`, the
+canonical exterior-power pullback comparison is the forward map of
+`tildePullbackExteriorPowerIso`, obtained from the scalar-extension isomorphism for modules.
+The identification follows by evaluating the pullback and tilde adjunctions on decomposable wedges.
 
 ## References
 
@@ -159,35 +154,6 @@ theorem pullbackExteriorPowerComparison_tilde (n : ℕ) (M : ModuleCat.{u} R) :
     ((Category.assoc _ _ _).trans (pullback_tildeExteriorPowerIso_hom φ n M))
   exact h.trans ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·) (Category.assoc _ _ _)))
-
-/-- The canonical exterior-power pullback comparison is invertible for every quasicoherent
-sheaf on an affine spectrum and every ring map, including nonflat maps. -/
-instance isIso_pullbackExteriorPowerComparison_of_spec (n : ℕ) (M : (Spec R).Modules)
-    [M.IsQuasicoherent] :
-    IsIso ((Scheme.Modules.pullbackExteriorPowerComparison (Spec.map φ) n).app M) := by
-  let e := @asIso _ _ _ _ M.fromTildeΓ
-    (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent (R := R) M)
-  apply (NatTrans.isIso_app_iff_of_iso
-    (Scheme.Modules.pullbackExteriorPowerComparison (Spec.map φ) n) e).mp
-  rw [pullbackExteriorPowerComparison_tilde]
-  exact inferInstanceAs (IsIso (((tildePullbackExteriorPowerIso φ n).app
-    (moduleSpecΓFunctor.obj M)).hom))
-
-/-- Exterior powers commute with pullback of a quasicoherent sheaf along a ring map. The
-forward map is the canonical mate of the pushforward comparison on sheafified wedges. -/
-def pullbackExteriorPowerIsoOfSpec (n : ℕ) (M : (Spec R).Modules) [M.IsQuasicoherent] :
-    (Scheme.Modules.pullback (Spec.map φ)).obj
-        ((SheafOfModules.exteriorPower (Spec R).sheaf n).obj M) ≅
-      (SheafOfModules.exteriorPower (Spec S).sheaf n).obj
-        ((Scheme.Modules.pullback (Spec.map φ)).obj M) :=
-  asIso ((Scheme.Modules.pullbackExteriorPowerComparison (Spec.map φ) n).app M)
-
-/-- The forward affine comparison is the canonical exterior-power pullback map. -/
-@[simp]
-theorem pullbackExteriorPowerIsoOfSpec_hom (n : ℕ) (M : (Spec R).Modules) [M.IsQuasicoherent] :
-    (pullbackExteriorPowerIsoOfSpec φ n M).hom =
-      (Scheme.Modules.pullbackExteriorPowerComparison (Spec.map φ) n).app M :=
-  (rfl)
 
 end
 

@@ -102,7 +102,8 @@ theorem pullbackExteriorPowerComparison_stalk (y : Y) :
   obtain ⟨U, _, hy, m, hm⟩ :=
     TopCat.Presheaf.exists_le_germ_eq_family M.val.presheaf v (V := ⊤) (by trivial)
   rw [← funext hm]
-  let w := exteriorPower.ιMulti A n (fun i ↦ germ M.val.presheaf U (f y) hy (m i))
+  let germs := fun i ↦ germ M.val.presheaf U (f y) hy (m i)
+  let w := exteriorPower.ιMulti A n germs
   let e := M.exteriorPowerStalkEquiv (f y) n
   let d := PresheafOfModules.stalkMapCommRing (S := S.obj) y
     ((pullbackExteriorPowerComparison (pullbackPushforwardAdjunction φ) n).app M).val
@@ -114,10 +115,14 @@ theorem pullbackExteriorPowerComparison_stalk (y : Y) :
     (pullbackStalkEquiv φ M y).exteriorPower n
       ((TauCeti.exteriorPower.equivBaseChange B n).symm (1 ⊗ₜ w))
   rw [LinearEquiv.baseChange_tmul]
-  dsimp only [w]
-  erw [TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti, one_smul,
-    LinearEquiv.exteriorPower_apply_ιMulti]
-  exact pullbackExteriorPowerComparison_stalk_one_tmul_germ φ M n y U hy m
+  refine (pullbackExteriorPowerComparison_stalk_one_tmul_germ φ M n y U hy m).trans ?_
+  -- Apply the base-change formula directly to the tensor. A rewrite of the whole goal
+  -- would have to match the sheaf and underlying presheaf module structures on its stalk.
+  have hw := TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti (R := A) B (1 : B) germs
+  let E := pullbackStalkEquiv φ M y
+  symm
+  exact (congrArg (E.exteriorPower n) (hw.trans (one_smul B _))).trans
+    (E.exteriorPower_apply_ιMulti n (fun i ↦ 1 ⊗ₜ[A] germs i))
 
 /-- Pullback of sheaves of modules along a morphism of ringed spaces commutes with exterior
 powers in every degree. -/

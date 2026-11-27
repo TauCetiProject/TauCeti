@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.ExteriorPower.BaseChange
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Pullback
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Pullback.Stalk
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
@@ -16,18 +16,17 @@ public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 For a morphism of schemes `f : X ⟶ Y`, `Scheme.Modules.pullbackExteriorPowerComparison f n` is the
 canonical natural map `f^* (⋀ⁿ M) ⟶ ⋀ⁿ (f^* M)`, the scheme case of
 `SheafOfModules.pullbackExteriorPowerComparison`. It is characterized by its transpose
-under the pullback--pushforward adjunction, and it is an isomorphism in degree one. In degree zero
-it is the identification `f^* 𝒪_Y ≅ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`, so it is an
-isomorphism at every module, quasi-coherent or not.
+under the pullback--pushforward adjunction and is an isomorphism at every module in every degree.
+In degree one it is the identity under the degree-one identifications, and in degree zero it is
+the identification `f^* 𝒪_Y ≅ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`.
 
 For a ring map `φ : R ⟶ S`, pullback along `Spec φ` commutes with exterior powers of the
 sheaf associated with any `R`-module. The comparison is natural in the module and does not
 require flatness, finite presentation, or local freeness. It combines the affine computation
 of exterior powers with the identification of pullback with extension of scalars.
 
-This is the affine calculation used to descend exterior-power pullback comparisons on schemes.
-It includes finite projective modules and therefore the affine charts of finite locally free
-sheaves. The forward component is characterized as the composite of the existing affine
+The affine calculation includes finite projective modules and therefore the affine charts of
+finite locally free sheaves. The forward component is the composite of the existing affine
 comparisons and the scalar-extension map, whose value on a decomposable wedge is explicit in
 `TauCeti.extendScalarsExteriorPowerIso_hom_tmul_mk`.
 
@@ -138,6 +137,13 @@ theorem pullbackExteriorPowerComparison_eq (n : ℕ) :
     pullbackExteriorPowerComparison f n =
       SheafOfModules.pullbackExteriorPowerComparison (pullbackPushforwardAdjunction f) n :=
   (rfl)
+
+/-- The canonical exterior-power pullback comparison is an isomorphism at every module
+sheaf on a scheme. -/
+instance isIso_pullbackExteriorPowerComparison_app (n : ℕ) (M : Y.Modules) :
+    IsIso ((pullbackExteriorPowerComparison f n).app M) := by
+  rw [pullbackExteriorPowerComparison_eq]
+  exact SheafOfModules.isIso_pullbackExteriorPowerComparison_app f.toRingCatSheafHom M n
 
 /-- The mate of the scheme comparison under the pullback--pushforward adjunction is the
 pushforward comparison along `f.toRingCatSheafHom`. -/

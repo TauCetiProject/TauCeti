@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Coherence
 public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Functoriality
 -- Proof-only: identify the full-subcategory lifts with their underlying module functors.
@@ -18,7 +18,7 @@ import all TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 For any scheme morphism `f : X ⟶ Y`, the canonical comparison
 `f^* (⋀ⁿ E) ⟶ ⋀ⁿ (f^* E)` is an isomorphism of finite locally free sheaves,
 natural in `E`. Its underlying map is `Scheme.Modules.pullbackExteriorPowerComparison`,
-which is invertible on quasicoherent sheaves. No choice of a local basis is involved, and no
+which is invertible on every module sheaf. No choice of a local basis is involved, and no
 flatness or constant-rank hypothesis is needed.
 
 `pullbackExteriorPowerIso_hom_app_id` and `pullbackExteriorPowerIso_hom_app_comp` express
