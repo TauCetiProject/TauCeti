@@ -227,7 +227,7 @@ theorem compCLMOfOpenPartialHomeomorph_ofFun [MeasurableSpace E] [BorelSpace E]
   have hdet (x : E) (hx : x ∈ (U : Set E)) : (fderiv ℝ e x).det ≠ 0 :=
     e.det_fderiv_ne_zero_of_contDiffOn he he' (by simp) (hU hx)
   have hfe : LocallyIntegrableOn (fun x ↦ f (e x)) U μ :=
-    hf.comp_contDiffOn_diffeo U.isOpen ((he.mono hU).of_le (by simp)) (e.injOn.mono hU) hdet hUΩ
+    hf.comp_contDiffOn_diffeo U.isOpen ((he.mono hU).of_le (by simp)) hdet hUΩ
   ext φ
   rw [compCLMOfOpenPartialHomeomorph_apply, ofFun_apply hf, ofFun_apply hfe,
     integral_pushforwardCLM_smul]

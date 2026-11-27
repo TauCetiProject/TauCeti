@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.FDeriv.Homothety
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Hessian
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -21,6 +23,7 @@ and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity o
 
 ## Main declarations
 
+* `TauCeti.Wkp.IsChangeOfVariables.smul_add_const`: a homothety is a change of variables.
 * `TauCeti.Wkp.IsChangeOfVariables.mono_const` and
   `TauCeti.Wkp.IsChangeOfVariables.norm_fderiv_fderiv_le`: weakening the constants of a change of
   variables, and the bound `L` on its second derivative.
@@ -40,6 +43,8 @@ and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity o
   exponent `q`.
 * `TauCeti.Wkp.norm_iteratedGradient_compL_le_ae`: the pointwise bound
   `‖D²(u ∘ Φ)‖ ≤ L² ‖D²u(Φ ·)‖ + L ‖∇u(Φ ·)‖` for the weak Hessian.
+* `TauCeti.Wkp.iteratedGradient_compL_smul_add_const_ae`: the weak Hessian under a homothety
+  `Φ y = R y + a` is `R² D²u ∘ Φ`.
 * `TauCeti.Wkp.exists_value_eq_value_restrictL_of_w1pCompL`: if `u ∘ Φ` is `W^{k,p}` near a
   point, then so is `u` near its image.
 * `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL`: zero boundary values
@@ -77,6 +82,27 @@ theorem norm_fderiv_fderiv_le (h : IsChangeOfVariables (k + 2) U V Φ L c) :
     ∀ x ∈ (U : Set E), ‖fderiv ℝ (fderiv ℝ Φ) x‖ ≤ L := fun x hx => by
   rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
   exact h.norm_iteratedFDeriv_le 2 one_le_two (by omega) x hx
+
+/-- A homothety `x ↦ ε x + a` with `ε > 0` mapping `U` into `V` is a change of variables of every
+order, with constants `ε` and `ε ^ finrank ℝ E`. -/
+theorem smul_add_const {ε : ℝ} (hε : 0 < ε) (a : E) (hA : MapsTo (fun x : E => ε • x + a) U V) :
+    IsChangeOfVariables k U V (fun x : E => ε • x + a) ε (ε ^ Module.finrank ℝ E) := by
+  have hd := fderiv_smul_add_const ε a
+  exact
+    { contDiffOn := ((contDiff_id.const_smul ε).add contDiff_const).contDiffOn
+      differentiableOn := ((differentiable_id.const_smul ε).add_const a).differentiableOn
+      injOn := fun _ _ _ _ h => smul_right_injective E hε.ne' (add_right_cancel h)
+      mapsTo := hA
+      norm_iteratedFDeriv_le := fun i hi _ x _ => by
+        obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hi
+        rw [← norm_iteratedFDeriv_fderiv]
+        rcases n with _ | n
+        · simpa [hd, norm_smul, abs_of_pos hε] using
+            mul_le_of_le_one_right hε.le ContinuousLinearMap.norm_id_le
+        · rw [hd, iteratedFDeriv_const_of_ne n.succ_ne_zero]
+          simpa using hε.le
+      pos := pow_pos hε _
+      le_abs_det := fun x _ => (abs_det_fderiv_smul_add_const hε a x).ge }
 
 /-- **The chart between the two sides.** If mutually inverse changes of variables `Φ` and `Ψ`
 between `U` and `V` satisfy `Φ '' (H ∩ U) = Ω ∩ V`, then `Φ` restricts to a change of variables
@@ -254,6 +280,20 @@ theorem norm_iteratedGradient_compL_le_ae (h : IsChangeOfVariables 2 U V Φ L c)
         exact h.norm_fderiv_fderiv_le (k := 0) x hxU
       _ = L * ‖G‖ := mul_comm _ _
   linarith
+
+/-- **The Hessian under a homothety.** For a homothety `Φ y = R y + a` and `1 ≤ p < ∞`, the weak
+Hessian of `u ∘ Φ` is `D²(u ∘ Φ) = R² D²u ∘ Φ` almost everywhere on `U`. -/
+theorem iteratedGradient_compL_smul_add_const_ae (hp : p ≠ ⊤) {R : ℝ} {a : E}
+    (h : IsChangeOfVariables 2 U V (fun y => R • y + a) L c) (u : Wkp mu V p 2) :
+    iteratedGradient 1 (compL h u) =ᵐ[mu.restrict U]
+      fun y => R ^ 2 • iteratedGradient 1 u (R • y + a) := by
+  filter_upwards [inner_iteratedGradient_compL_ae h hp u] with y hy
+  refine ContinuousLinearMap.ext fun f => ext_inner_right ℝ fun g => ?_
+  rw [hy, fderiv_smul_add_const]
+  simp only [fderiv_fun_const, Pi.zero_apply, zero_apply, inner_zero_right,
+    add_zero, smul_apply, ContinuousLinearMap.id_apply, map_smul,
+    inner_smul_left, inner_smul_right, RCLike.conj_to_real]
+  ring
 
 /-- **Pushing `W^{k,p}` forward along a change of variables.** Let `Φ` be a change of variables
 from `Ω'` into `D ⊆ Ω`, and `Ψ` one of order `k` from `Ω ∩ V ⊆ D` into `Ω' ∩ V''` with

@@ -77,6 +77,9 @@ chart.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_contDiffAt_coeffEquiv_sobolevVortexDivisor`: near every
   field of `A_m^k`, the divisor coefficients of the vortices are a smooth function of their real
   coordinates.
+* `TauCeti.Vortex.SobolevFieldSpace.`
+  `exists_contDiffAt_eventually_coeffEquiv_sobolevVortexDivisor_eq`: the divisor coefficients of a
+  smooth family of vortices are smooth.
 * `TauCeti.Vortex.SobolevFieldSpace.contMDiff_vortexModuliHomeomorph_symm_coeffHomeomorph_symm`,
   `TauCeti.Vortex.SobolevFieldSpace.contMDiff_coeffHomeomorph_vortexModuliHomeomorph`: the vortex
   orbit is a smooth function of its divisor coefficients, and conversely.
@@ -394,6 +397,26 @@ theorem contMDiff_vortexModuliHomeomorph_symm_coeffHomeomorph_symm (hk : 3 < k) 
   exact contDiffAt_chart_mk_normalizedVortex hm (isSmoothVortexModuliChart_chartAt hk _)
     (mem_chart_source _ _)
 
+/-- **The divisor coefficients of a smooth family of vortices are smooth.** For `k ≥ 4`, let `Q` be
+a family of fields of `A_m^k`, parametrized by a real normed space and smooth at `e₀` in the real
+coordinates of the fields. There is a map `F`, smooth at `e₀`, such that near `e₀` the coefficients
+of the divisor of `Q e` are `F e` whenever `Q e` is a vortex. -/
+theorem exists_contDiffAt_eventually_coeffEquiv_sobolevVortexDivisor_eq (hk : 3 < k)
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Q : E → SobolevFieldSpace f m k}
+    {e₀ : E} (hQ : ContDiffAt ℝ ∞ (fun e ↦ (Q e).realSubRef (Nat.cast_nonneg k)) e₀) :
+    ∃ F : E → Fin m → ℂ, ContDiffAt ℝ ∞ F e₀ ∧
+      ∀ᶠ e in 𝓝 e₀, ∀ he : ∀ z, equation (Q e) z = 0,
+        Sym.coeffEquiv ℂ m
+          (sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices hk he⟩) = F e := by
+  -- `Q` is continuous at `e₀`, being smooth in the real chart of `A_m^k`.
+  have hQcont : ContinuousAt Q e₀ := by
+    have h := (continuous_ofRealSubRef (f := f) (m := m) (by exact_mod_cast (by omega : 1 < k))
+      (h := Nat.cast_nonneg k)).continuousAt.comp hQ.continuousAt
+    simpa only [Function.comp_def, ofRealSubRef_realSubRef] using h
+  obtain ⟨Φ, hΦ, hΦev⟩ := exists_contDiffAt_coeffEquiv_sobolevVortexDivisor hk (Q e₀)
+  exact ⟨fun e ↦ Φ ((Q e).realSubRef (Nat.cast_nonneg k)), hΦ.comp e₀ hQ,
+    hQcont.eventually hΦev⟩
+
 /-- **The divisor coefficients of a vortex orbit are smooth.** For `k ≥ 4`, the coefficients of the
 monic polynomial whose roots are the zero divisor, that is, the divisor homeomorphism read through
 the elementary symmetric chart `Sym.coeffHomeomorph`, form a smooth map from the vortex moduli space
@@ -412,17 +435,10 @@ theorem contMDiff_coeffHomeomorph_vortexModuliHomeomorph (hk : 3 < k) :
     Function.id_comp]
   obtain ⟨σ, hσc, hσ⟩ := he.exists_contDiffOn_lift
   have hv₀ : e q₀ ∈ e.target := e.map_source (mem_chart_source _ q₀)
-  have hσd : ContDiffAt ℝ ∞ (fun v ↦ (σ v).realSubRef (Nat.cast_nonneg k)) (e q₀) :=
-    hσc.contDiffAt (e.open_target.mem_nhds hv₀)
-  -- `σ` is continuous at `e q₀`, being smooth in the real chart of `A_m^k`.
-  have hσcont : ContinuousAt σ (e q₀) := by
-    have h := (continuous_ofRealSubRef (f := f) (m := m) (by exact_mod_cast (Fact.out : 1 < k))
-      (h := Nat.cast_nonneg k)).continuousAt.comp hσd.continuousAt
-    simpa only [Function.comp_def, ofRealSubRef_realSubRef] using h
-  obtain ⟨Φ, hΦ, hΦev⟩ := exists_contDiffAt_coeffEquiv_sobolevVortexDivisor hk (σ (e q₀))
-  refine (hΦ.comp (f := fun v ↦ (σ v).realSubRef (Nat.cast_nonneg k)) _
-    hσd).congr_of_eventuallyEq ?_
-  filter_upwards [hσcont.eventually hΦev, e.open_target.mem_nhds hv₀] with v hv hvt
+  obtain ⟨F, hF, hFev⟩ := exists_contDiffAt_eventually_coeffEquiv_sobolevVortexDivisor_eq hk
+    (hσc.contDiffAt (e.open_target.mem_nhds hv₀))
+  refine hF.congr_of_eventuallyEq ?_
+  filter_upwards [hFev, e.open_target.mem_nhds hv₀] with v hv hvt
   obtain ⟨hσv, hev⟩ := hσ v hvt
   rw [Function.comp_apply, hev, Sym.coeffHomeomorph_apply, vortexModuliHomeomorph_apply,
     vortexModuliDivisor_mk hk hσv]

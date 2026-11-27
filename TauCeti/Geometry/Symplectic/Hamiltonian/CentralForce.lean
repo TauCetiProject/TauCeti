@@ -65,6 +65,7 @@ there.
   Hamiltonian and commutes with its Hamiltonian vector field.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian`: Hamilton's
   equations for a central force.
+* `TauCeti.fderiv_angularMomentum_apply`: the Leibniz rule `dL(δq, δp) = L(δq, p) + L(q, δp)`.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
   rotations.
 * `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`,
@@ -190,6 +191,15 @@ theorem hasFDerivAt_angularMomentum (u w : V) (x : V × V) :
       (.of_forall fun y ↦ by simp [real_inner_comm])
   refine (((hq u).mul (hp w)).sub ((hq w).mul (hp u))).congr_fderiv
     (ContinuousLinearMap.ext fun v ↦ ?_)
+  simp [real_inner_comm]
+  ring
+
+/-- **Leibniz rule for the angular momentum.** Since `L` is bilinear in the position and the
+momentum, its differential at `(q, p)` sends `(δq, δp)` to `L(δq, p) + L(q, δp)`. -/
+theorem fderiv_angularMomentum_apply (u w : V) (x v : V × V) :
+    fderiv ℝ (angularMomentum u w) x v =
+      angularMomentum u w (v.1, x.2) + angularMomentum u w (x.1, v.2) := by
+  rw [(hasFDerivAt_angularMomentum u w x).fderiv]
   simp [real_inner_comm]
   ring
 

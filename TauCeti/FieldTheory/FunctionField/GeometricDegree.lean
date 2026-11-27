@@ -79,6 +79,8 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   `TauCeti.restrictScalarsConstantCompositumEquiv`.
 * `TauCeti.constantCompositum_tower_eq_top`: if `F' = F · k'` and `F'' = F' · k''` in a compatible
   square of extensions, then `F'' = F · k''`.
+* `TauCeti.constantCompositum_eq_top_of_span_eq_top`: `F'` is the compositum `F · k'` when the
+  image of `F` spans `F'` linearly over `k'`.
 * `TauCeti.constantCompositum_eq_top_of_adjoin_eq_top`: `F'` is the compositum `F · k'` as soon
   as the image of `F` generates `F'` over a field `k'`.
 * `TauCeti.exists_intermediateField_isIntegrallyClosedIn_constantCompositum`: pulling back
@@ -260,6 +262,25 @@ theorem constantCompositum_tower_eq_top {k'' F'' : Type*} [CommSemiring k''] [Fi
       algebraMap_mem_constantCompositum F k'' F'' w
   rw [h₂] at hle₂
   exact eq_top_iff.mpr fun z _ ↦ hle₂ IntermediateField.mem_top
+
+/-- **The compositum is everything when the image of `F` spans `F'` over `k'`**: if the `k'`-linear
+span of the image of `F` is all of `F'`, then `F' = F · k'`, because `F · k'` is closed under
+addition and multiplication and contains the images of both `F` and `k'`. -/
+theorem constantCompositum_eq_top_of_span_eq_top
+    (h : Submodule.span k' (Set.range (algebraMap F F')) = ⊤) :
+    constantCompositum F k' F' = ⊤ := by
+  rw [eq_top_iff]
+  rintro y -
+  have hy : y ∈ Submodule.span k' (Set.range (algebraMap F F')) := h ▸ Submodule.mem_top
+  induction hy using Submodule.span_induction with
+  | mem _ hx =>
+    obtain ⟨x, rfl⟩ := hx
+    exact (constantCompositum F k' F').algebraMap_mem x
+  | zero => exact zero_mem _
+  | add _ _ _ _ hx hy => exact add_mem hx hy
+  | smul a _ _ hx =>
+    rw [Algebra.smul_def]
+    exact mul_mem (algebraMap_mem_constantCompositum F k' F' a) hx
 
 /-- The `k'`-algebra structure on the compositum `F · k'` formed inside `F'`, through which `k'`
 maps into `F · k'`. It is not an instance: `F · k'` may carry another `k'`-algebra structure, for
