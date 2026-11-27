@@ -37,7 +37,7 @@ namespace TauCeti.Examples.GaussianIntervalShift
 
 /-- Two-sided bounds on `Φ(r) − 1/2` from the first ten and eleven terms of the error function
 series. -/
-private theorem cdf_bounds {r : ℝ} (hr : 0 ≤ r) (hr6 : r ^ 2 ≤ 6) :
+theorem cdf_bounds {r : ℝ} (hr : 0 ≤ r) (hr6 : r ^ 2 ≤ 6) :
     r / √(2 * π) * ∑ i ∈ range (2 * 5),
         (-1) ^ i * (r ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
       cdf (gaussianReal 0 1) r - 1 / 2 ∧
@@ -49,7 +49,7 @@ private theorem cdf_bounds {r : ℝ} (hr : 0 ≤ r) (hr6 : r ^ 2 ≤ 6) :
 
 /-- Two-sided bounds on `φ(x)` for `x² ≤ 2`, from the bounds on `(2π)^{−1/2}` and the eight-term
 bound `Real.exp_bound` on `e^{−x²/2}`, whose remainder is `(x²/2)⁸ · 9 / (8! · 8)`. -/
-private theorem gaussianPDFReal_bounds {x : ℝ} (hx : x ^ 2 ≤ 2) :
+theorem gaussianPDFReal_bounds {x : ℝ} (hx : x ^ 2 ≤ 2) :
     0.39894228 * (∑ i ∈ range 8, (-(x ^ 2 / 2)) ^ i / i.factorial -
         (x ^ 2 / 2) ^ 8 * (9 / (40320 * 8))) < gaussianPDFReal 0 1 x ∧
     gaussianPDFReal 0 1 x < 0.39894229 * (∑ i ∈ range 8, (-(x ^ 2 / 2)) ^ i / i.factorial +
