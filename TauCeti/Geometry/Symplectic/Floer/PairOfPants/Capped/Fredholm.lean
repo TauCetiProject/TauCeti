@@ -76,9 +76,7 @@ theorem isFredholm_floerConformalSobolevOperator_cappedComparison
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
-    fun z ↦ by
-      rw [cappedComparisonAlmostComplex_def]
-      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+    fun z ↦ compatible_cappedComparisonAlmostComplex h₀ hJc R _ _
 
 /-- **The index along the capped comparison family is that of the unperturbed sphere.** Under the
 hypotheses of `isFredholm_floerConformalSobolevOperator_cappedComparison`, for every member `R` of
@@ -102,9 +100,8 @@ theorem index_floerConformalSobolevOperator_cappedComparison_eq_const
   obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
   -- The structures of the family are compatible with `ω` everywhere.
   have hc (z : ℝ × ℝ) (y : V) :
-      ω.Compatible (cappedComparisonAlmostComplex h₀ J hJ R (equivRealProdCLM.symm z) y) := by
-    rw [cappedComparisonAlmostComplex_def]
-    exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+      ω.Compatible (cappedComparisonAlmostComplex h₀ J hJ R (equivRealProdCLM.symm z) y) :=
+    compatible_cappedComparisonAlmostComplex h₀ hJc R _ y
   exact ω.index_floerConformalSobolevOperator_sphereWeight_eq_const
     (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)

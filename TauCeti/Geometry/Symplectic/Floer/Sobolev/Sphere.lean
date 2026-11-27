@@ -587,6 +587,15 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero_
   rw [← integral_add_compl hKb hηi]
   linarith
 
+omit [FiniteDimensional ℝ V] in
+/-- The structure `J₀` at infinity is `ω`-compatible when `J` is compatible along `u`: it is
+`J(w, u w)` at a far point `w`. -/
+private theorem compatible_of_eq_base (ω : SymplecticForm V)
+    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀) (hc : ∀ z, ω.Compatible (J z (u z))) :
+    ω.Compatible J₀ := by
+  have hfar : T ≤ ‖((T, 0) : ℝ × ℝ)‖ := by simp [le_abs_self]
+  simpa [hJ₀ _ hfar] using hc (T, 0)
+
 /-- **The cokernel of the linearized operator on the sphere is finite-dimensional.** Let the Floer
 data `J`, `K_s`, `K_t` on the plane `ℝ × ℝ ≅ ℂ` be the fixed structure `J₀` and the zero
 perturbation on `‖w‖ ≥ T`, a neighbourhood of the point at infinity of the sphere. Let `J` be `C³`
@@ -606,8 +615,7 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereW
     FiniteDimensional ℝ (ω.floerConformalSobolevOperator univ sphereWeight
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).rangeᗮ := by
   -- The structure at infinity is the compatible structure `J₀`.
-  have hT : T ≤ ‖((|T|, 0) : ℝ × ℝ)‖ := by simp [le_abs_self]
-  have h₀ : ω.Compatible J₀ := by simpa [hJ₀ _ hT] using hc (|T|, 0)
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base ω hJ₀ hc
   -- `J` is bounded along `u`: it is continuous on the compact ball `‖w‖ ≤ T`, and `J₀` outside.
   have hJc : Continuous fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap :=
     continuous_iff_continuousAt.2 fun z ↦
@@ -751,8 +759,7 @@ theorem index_floerConformalSobolevOperator_sphereWeight_eq_of_eq_base (ω : Sym
   -- their Cayley coordinates relative to `J₀` and whose Hamiltonians run along the segment between
   -- them. Every member is Fredholm and the members form a continuous path of operators, along
   -- which the index is constant. The structure at infinity is compatible with `ω`.
-  have hfar : S ≤ ‖((S, 0) : ℝ × ℝ)‖ := by simp [le_abs_self]
-  have h₀ : ω.Compatible J₀ := by simpa [hJ₀ _ (hS.trans hfar)] using hc (S, 0)
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base ω hJ₀ hc
   -- On `‖w‖ ≥ S` every member of the path is `J₀` and the zero perturbation.
   have hJμ (μ : ℝ) (z : ℝ × ℝ) (hz : S ≤ ‖z‖) (y : V) :
       pathAlmostComplex h₀ hJt hJ't (μ, z) y = J₀ := by
@@ -807,8 +814,7 @@ theorem index_floerConformalSobolevOperator_sphereWeight_eq_const (ω : Symplect
       (ω.floerConformalSobolevOperator univ sphereWeight
         (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).index := by
   -- The structure at infinity is compatible with `ω`.
-  have hfar : T ≤ ‖((T, 0) : ℝ × ℝ)‖ := by simp [le_abs_self]
-  have h₀ : ω.Compatible J₀ := by simpa [hJ₀ _ hfar] using hc (T, 0)
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base ω hJ₀ hc
   exact (index_floerConformalSobolevOperator_sphereWeight_eq_of_eq_base ω hJ₀ hKs₀ hKt₀
     (J' := fun _ _ ↦ J₀) (T' := T) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) hJ
     (fun _ ↦ contDiffAt_const) hKs hKt (fun _ ↦ contDiffAt_const) (fun _ ↦ contDiffAt_const) hJt

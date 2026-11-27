@@ -115,9 +115,7 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_cappedComparis
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
-    fun z ↦ by
-      rw [cappedComparisonAlmostComplex_def]
-      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+    fun z ↦ compatible_cappedComparisonAlmostComplex h₀ hJc R _ _
 
 /-- **The coefficient field along the capped comparison family is bounded.** Under the hypotheses
 of `exists_forall_integral_le_mul_integral_floerLinearization_cappedComparison_add`, without the
@@ -167,9 +165,7 @@ theorem finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
-    fun z ↦ by
-      rw [cappedComparisonAlmostComplex_def]
-      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+    fun z ↦ compatible_cappedComparisonAlmostComplex h₀ hJc R _ _
 
 /-- **The linearized operator along the capped comparison family has closed range on
 `W^{1,2}`.** Under the hypotheses of
@@ -193,8 +189,6 @@ theorem isClosed_range_floerConformalSobolevOperator_cappedComparison
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
-    fun z ↦ by
-      rw [cappedComparisonAlmostComplex_def]
-      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+    fun z ↦ compatible_cappedComparisonAlmostComplex h₀ hJc R _ _
 
 end TauCeti.SymplecticForm
