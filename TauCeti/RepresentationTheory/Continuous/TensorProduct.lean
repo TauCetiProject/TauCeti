@@ -21,6 +21,11 @@ The last identity is the reason the construction is here: it is what makes the s
 coefficients of all finite-dimensional representations of `G` closed under multiplication, hence a
 subalgebra of `C(G, 𝕜)` rather than only a subspace.
 
+The *external* tensor product `σ ⊠ τ` of a representation `σ` of `G` and a representation `τ` of
+another monoid `H` is the representation of `G × H` on `V ⊗[𝕜] W` in which `(g, h)` acts by
+`σ g ⊗ τ h`. It is again continuous when `σ` and `τ` are. Applied to finite-dimensional kernels and
+cokernels, it computes the equivariant index of an external product of operators.
+
 Mathlib's inner product on `V ⊗[𝕜] W` (`TensorProduct.instInnerProductSpace`) is the one for which
 `⟪v ⊗ₜ v', w ⊗ₜ w'⟫ = ⟪v, w⟫ * ⟪v', w'⟫`, so no choice is being made here; the same file supplies
 `TensorProduct.mapL` with its multiplicativity `TensorProduct.mapL_mul` and its norm bound.
@@ -29,6 +34,8 @@ Mathlib's inner product on `V ⊗[𝕜] W` (`TensorProduct.instInnerProductSpace
 
 * `ContRepresentation.tprod`: the tensor product `π ⊗ ρ` of two continuous
   representations.
+* `ContRepresentation.externalTensor`: the external tensor product `σ ⊠ τ` of continuous
+  representations of two monoids.
 
 ## Main statements
 
@@ -37,6 +44,8 @@ Mathlib's inner product on `V ⊗[𝕜] W` (`TensorProduct.instInnerProductSpace
   continuous, and of unitary ones is unitary.
 * `ContRepresentation.matrixCoeff_tprod`: matrix coefficients of a tensor product at pure
   tensors are products of matrix coefficients.
+* `ContRepresentation.continuous_externalTensor`: the external tensor product of continuous
+  representations is continuous.
 
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
@@ -94,5 +103,42 @@ theorem matrixCoeff_tprod (hπ : Continuous π) (hρ : Continuous ρ) (v w : V) 
       matrixCoeff π hπ v w * matrixCoeff ρ hρ v' w' := by
   ext g
   simp
+
+end ContRepresentation
+
+namespace ContRepresentation
+
+section External
+
+variable {𝕜 G H V W : Type*} [RCLike 𝕜] [Monoid G] [Monoid H]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W]
+
+/-- **The external tensor product** `σ ⊠ τ` of a continuous representation `σ` of `G` on `V` and a
+continuous representation `τ` of `H` on `W`: the pair `(g, h)` acts on `V ⊗[𝕜] W` by `σ g ⊗ τ h`
+(`TensorProduct.mapL`). -/
+noncomputable def externalTensor (σ : ContRepresentation 𝕜 G V) (τ : ContRepresentation 𝕜 H W) :
+    ContRepresentation 𝕜 (G × H) (V ⊗[𝕜] W) :=
+  .ofMonoidHom
+    { toFun g := TensorProduct.mapL (σ g.1) (τ g.2)
+      map_one' := by simp [ContinuousLinearMap.one_def]
+      map_mul' g h := by
+        rw [Prod.fst_mul, Prod.snd_mul, map_mul, map_mul, TensorProduct.mapL_mul] }
+
+variable (σ : ContRepresentation 𝕜 G V) (τ : ContRepresentation 𝕜 H W)
+
+/-- The pair `(g, h)` acts on the external tensor product by `σ g ⊗ τ h`. -/
+@[simp]
+theorem externalTensor_apply (g : G × H) :
+    σ.externalTensor τ g = TensorProduct.mapL (σ g.1) (τ g.2) :=
+  (rfl)
+
+/-- The external tensor product of two continuous representations has a continuous operator-valued
+action. -/
+theorem continuous_externalTensor [TopologicalSpace G] [TopologicalSpace H] (hσ : Continuous σ)
+    (hτ : Continuous τ) : Continuous (σ.externalTensor τ) :=
+  (lipschitzWith_one_rTensor.continuous.comp (hσ.comp continuous_fst)).clm_comp
+    (lipschitzWith_one_lTensor.continuous.comp (hτ.comp continuous_snd))
+
+end External
 
 end ContRepresentation
