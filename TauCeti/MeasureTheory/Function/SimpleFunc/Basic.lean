@@ -74,22 +74,20 @@ theorem eq_sum_restrict_const [AddCommMonoid β] (u : SimpleFunc α β) :
 
 /-- Evaluating a family of strongly measurable functions `φ c` at the values `c = u x` of a simple
 function `u` gives a jointly strongly measurable function `(x, y) ↦ φ (u x) y`. No measurable
-structure on the values of `u` is needed: on each fibre `u ⁻¹' {c}` the function is `φ c`. -/
-theorem stronglyMeasurable_uncurry_comp [TopologicalSpace M] [ContinuousAdd M] {γ : Type*}
-    [MeasurableSpace γ] (u : SimpleFunc α β) {φ : β → γ → M} (hφ : ∀ c, StronglyMeasurable (φ c)) :
+structure on the values of `u` is needed: `u` factors through its finite range, with the discrete
+measurable structure. -/
+theorem stronglyMeasurable_uncurry_comp {γ E : Type*} [MeasurableSpace γ] [TopologicalSpace E]
+    (u : SimpleFunc α β) {φ : β → γ → E} (hφ : ∀ c, StronglyMeasurable (φ c)) :
     StronglyMeasurable (Function.uncurry (φ ∘ u)) := by
-  classical
-  have h : Function.uncurry (φ ∘ u) =
-      ∑ c ∈ u.range, ((u ⁻¹' {c}) ×ˢ Set.univ).indicator fun z : α × γ ↦ φ c z.2 := by
-    ext ⟨x, y⟩
-    rw [Finset.sum_apply, Finset.sum_eq_single (u x)]
-    · simp
-    · intro c _ hc
-      simp [Ne.symm hc]
-    · exact fun h ↦ absurd (u.mem_range_self x) h
-  rw [h]
-  exact Finset.stronglyMeasurable_sum _ fun c _ ↦ ((hφ c).comp_measurable measurable_snd).indicator
-    ((u.measurableSet_fiber c).prod MeasurableSet.univ)
+  let : MeasurableSpace u.range := ⊤
+  have : MeasurableSingletonClass u.range := ⟨fun _ ↦ trivial⟩
+  have hu : Measurable fun x ↦ (⟨u x, u.mem_range_self x⟩ : u.range) :=
+    measurable_to_countable' fun c ↦ by
+      convert u.measurableSet_fiber c.val using 1
+      ext x
+      simp [Subtype.ext_iff]
+  exact (stronglyMeasurable_uncurry_of_countable (ι := u.range) fun c ↦ hφ c).comp_measurable
+    (hu.prodMap measurable_id)
 
 /-- If a simple function `u` lies in `Lᵖ` for some `0 < p < ∞`, the constant `c` restricted to the
 fibre `u ⁻¹' {c}` lies in every `L^q`. The codomain only needs a zero of extended norm `0`. -/

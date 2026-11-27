@@ -30,7 +30,7 @@ sample measure the representatives are moreover jointly integrable, and on a σ-
 every sample function `t ↦ X t ω` is integrable.
 
 Such representatives always exist. An integrable curve `F` in `Lp E p P` has a jointly strongly
-measurable representative `X`, with `F t = X (t, ·)` almost everywhere for almost every `t`, whose
+measurable representative `X`, with `F t = X t` almost everywhere for almost every `t`, whose
 sample functions are integrable and integrate to the Bochner integral of `F` at almost every sample
 point. This holds for arbitrary measures when `p < ∞`, and for an arbitrary parameter measure and
 a σ-finite sample measure when `p = ∞`. The representative is the pointwise limit of the joint
@@ -276,14 +276,14 @@ private theorem Integrable.ae_restrict_compl_integral_Lp_eq [NormedSpace ℝ E] 
 
 /-- **Jointly measurable representatives of `Lᵖ`-valued integrals.** An integrable curve `F` in
 `Lp E p P`, with `1 ≤ p ≤ ∞` and Banach codomain `E`, has a jointly strongly measurable
-representative `X`: `F t = X (t, ·)` almost everywhere for almost every `t`. At almost every
-sample point `ω` the function `t ↦ X (t, ω)` is integrable and its integral is the value at `ω` of
+representative `X`: `F t = X t` almost everywhere for almost every `t`. At almost every
+sample point `ω` the function `t ↦ X t ω` is integrable and its integral is the value at `ω` of
 the Bochner integral of `F`. The parameter measure `μ` is arbitrary; the sample measure `P` is
 arbitrary when `p < ∞` and σ-finite when `p = ∞`. -/
 theorem Integrable.exists_integral_Lp_representative [NormedSpace ℝ E] [CompleteSpace E]
     (hF : Integrable F μ) (hpP : p ≠ ∞ ∨ SigmaFinite P) :
-    ∃ X : α × Ω → E, StronglyMeasurable X ∧ (∀ᵐ t ∂μ, ⇑(F t) =ᵐ[P] fun ω ↦ X (t, ω)) ∧
-      ∀ᵐ ω ∂P, Integrable (fun t ↦ X (t, ω)) μ ∧ (∫ t, F t ∂μ) ω = ∫ t, X (t, ω) ∂μ := by
+    ∃ X : α → Ω → E, StronglyMeasurable (Function.uncurry X) ∧ (∀ᵐ t ∂μ, ⇑(F t) =ᵐ[P] X t) ∧
+      ∀ᵐ ω ∂P, Integrable (fun t ↦ X t ω) μ ∧ (∫ t, F t ∂μ) ω = ∫ t, X t ω ∂μ := by
   obtain ⟨X₀, hX₀, heq₀, hsupp⟩ := hF.exists_stronglyMeasurable_ae_eq_Lp
   -- A set of samples `T` with `P.restrict T` σ-finite, outside of which `X₀` vanishes.
   obtain ⟨T, hT, hTσ, hX₀T⟩ : ∃ T, MeasurableSet T ∧ SigmaFinite (P.restrict T) ∧
@@ -314,7 +314,7 @@ theorem Integrable.exists_integral_Lp_representative [NormedSpace ℝ E] [Comple
     · rw [htS h]
       filter_upwards [Lp.coeFn_zero E p P] with ω hω
       rw [hω, hXS t ω h, Pi.zero_apply]
-  refine ⟨X, hXm, heq, ?_⟩
+  refine ⟨Function.curry X, hXm, heq, ?_⟩
   filter_upwards [(ae_restrict_iff' hT).1 (hF.ae_restrict_integral_Lp_eq hFS hXm hXS heq),
     (ae_restrict_iff' hT.compl).1 (hF.ae_restrict_compl_integral_Lp_eq hT hXT heq)] with ω h1 h2
   by_cases hω : ω ∈ T
