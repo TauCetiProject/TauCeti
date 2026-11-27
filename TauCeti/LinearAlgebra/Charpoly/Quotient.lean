@@ -33,9 +33,11 @@ multiplicative counterpart of the additivity of the trace `LinearMap.trace_eq_ad
 
 ## Main results
 
-* `Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot`: the same product for the
-  endomorphisms `Module.End.invtRestrict` and `Module.End.invtQuot` induced on an invariant
-  subspace and its quotient.
+* `Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot`:
+  `LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ` restated, through
+  `Module.End.invtRestrict_def` and `Module.End.invtQuot_def`, for the endomorphisms
+  `Module.End.invtRestrict` and `Module.End.invtQuot` induced on an invariant subspace and its
+  quotient.
 
 * `LinearMap.charpoly_dvd_of_injective_of_comp_eq_comp`: the characteristic polynomial of an
   endomorphism divides that of any endomorphism containing it through an injective intertwiner.
@@ -209,5 +211,5 @@ theorem Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot {k V : Type*} [Fi
     [AddCommGroup V] [Module k V] [Module.Finite k V] {g : Module.End k V} {U : Submodule k V}
     (hU : U ∈ g.invtSubmodule) :
     (g.invtRestrict hU).charpoly * (g.invtQuot hU).charpoly = g.charpoly := by
-  rw [g.invtRestrict_def, g.invtQuot_def,
-    ← LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ]
+  rw [Module.End.invtRestrict_def, Module.End.invtQuot_def]
+  exact (LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ U g _).symm
