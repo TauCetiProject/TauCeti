@@ -18,8 +18,9 @@ Bhatt–Mathew, *The arc-topology*, Definition 4.6, for the spectrum of a valuat
   universal property by composing `Ideal.Quotient.lift` and `IsLocalization.lift`.
 * `PrimeSpectrum.intervalRingOrderIso` identifies the prime spectrum of the interval ring
   with `Set.Icc p q`, using the quotient and localization order isomorphisms.
-* `PrimeSpectrum.toIntervalRing_eq_zero_iff` and `PrimeSpectrum.isUnit_toIntervalRing_iff`
-  use contraction at the endpoints to detect zero and unit images for `p ≤ q`.
+* `PrimeSpectrum.intervalRing_algebraMap_eq_zero_iff` and
+  `PrimeSpectrum.isUnit_intervalRing_algebraMap_iff` use contraction at the endpoints to detect
+  zero and unit images for `p ≤ q`.
 * `PrimeSpectrum.intervalRingMap` restricts from a larger interval to a smaller one.
 * `PrimeSpectrum.isDomain_intervalRing` gives a domain for ordered endpoints. For a valuation
   domain, this lets the existing quotient and localization instances infer a valuation ring.
@@ -49,28 +50,17 @@ theorem isDomain_intervalRing (p q : PrimeSpectrum R) (h : p ≤ q) :
   obtain ⟨x, hx, hzero⟩ := Submonoid.mem_map.mp hz
   exact hx (h (Ideal.Quotient.eq_zero_iff_mem.mp hzero))
 
-/-- The canonical map from the ambient ring to the ring of `[p,q]`. -/
-def toIntervalRing (p q : PrimeSpectrum R) : R →+* IntervalRing p q :=
-  (algebraMap (R ⧸ p.asIdeal) (IntervalRing p q)).comp (Ideal.Quotient.mk p.asIdeal)
-
-/-- The canonical map sends an element to its quotient class followed by localization.
-This equation is kept out of the simp set so that the lift and restriction rules can simplify
-applications to `toIntervalRing` before expansion. -/
-theorem toIntervalRing_apply (p q : PrimeSpectrum R) (x : R) :
-    p.toIntervalRing q x = algebraMap (R ⧸ p.asIdeal) (IntervalRing p q)
-      (Ideal.Quotient.mk p.asIdeal x) :=
-  (rfl)
-
 /-- The canonical map to the interval ring kills the lower endpoint. -/
 @[simp]
-theorem toIntervalRing_eq_zero (p q : PrimeSpectrum R) {x : R} (hx : x ∈ p.asIdeal) :
-    p.toIntervalRing q x = 0 := by
-  rw [toIntervalRing_apply, Ideal.Quotient.eq_zero_iff_mem.mpr hx, map_zero]
+theorem intervalRing_algebraMap_eq_zero (p q : PrimeSpectrum R) {x : R} (hx : x ∈ p.asIdeal) :
+    algebraMap R (IntervalRing p q) x = 0 := by
+  rw [IsScalarTower.algebraMap_apply R (R ⧸ p.asIdeal), Ideal.Quotient.algebraMap_eq,
+    Ideal.Quotient.eq_zero_iff_mem.mpr hx, map_zero]
 
 /-- The canonical map to the interval ring inverts elements outside the upper endpoint. -/
-theorem isUnit_toIntervalRing (p q : PrimeSpectrum R) {x : R} (hx : x ∉ q.asIdeal) :
-    IsUnit (p.toIntervalRing q x) := by
-  rw [toIntervalRing_apply]
+theorem isUnit_intervalRing_algebraMap (p q : PrimeSpectrum R) {x : R} (hx : x ∉ q.asIdeal) :
+    IsUnit (algebraMap R (IntervalRing p q) x) := by
+  rw [IsScalarTower.algebraMap_apply R (R ⧸ p.asIdeal), Ideal.Quotient.algebraMap_eq]
   exact IsLocalization.map_units (M := intervalDenominators p q)
     _ ⟨_, Submonoid.mem_map.mpr ⟨x, hx, rfl⟩⟩
 
@@ -88,20 +78,23 @@ noncomputable def intervalRingLift {S : Type*} [CommSemiring S] (p q : PrimeSpec
 /-- The factorization through an interval ring agrees with the initial homomorphism on the
 ambient ring. -/
 @[simp]
-theorem intervalRingLift_toIntervalRing {S : Type*} [CommSemiring S]
+theorem intervalRingLift_algebraMap {S : Type*} [CommSemiring S]
     (p q : PrimeSpectrum R) (f : R →+* S)
     (hzero : ∀ x ∈ p.asIdeal, f x = 0) (hunit : ∀ x ∉ q.asIdeal, IsUnit (f x)) (x : R) :
-    p.intervalRingLift q f hzero hunit (p.toIntervalRing q x) = f x := by
-  rw [toIntervalRing_apply, intervalRingLift, IsLocalization.lift_eq, Ideal.Quotient.lift_mk]
+    p.intervalRingLift q f hzero hunit (algebraMap R (IntervalRing p q) x) = f x := by
+  rw [IsScalarTower.algebraMap_apply R (R ⧸ p.asIdeal), Ideal.Quotient.algebraMap_eq,
+    intervalRingLift, IsLocalization.lift_eq, Ideal.Quotient.lift_mk]
 
 /-- Maps out of an interval ring are determined by their composite with the canonical map. -/
 theorem intervalRing_hom_ext {S : Type*} [Semiring S] (p q : PrimeSpectrum R)
     {f g : IntervalRing p q →+* S}
-    (h : f.comp (p.toIntervalRing q) = g.comp (p.toIntervalRing q)) : f = g := by
+    (h : f.comp (algebraMap R (IntervalRing p q)) = g.comp (algebraMap R (IntervalRing p q))) :
+    f = g := by
   apply IsLocalization.ringHom_ext (intervalDenominators p q)
   apply Ideal.Quotient.ringHom_ext
   exact RingHom.ext fun x ↦ by
-    simpa only [RingHom.comp_apply, ← toIntervalRing_apply] using RingHom.congr_fun h x
+    simpa only [RingHom.comp_apply, IsScalarTower.algebraMap_apply R (R ⧸ p.asIdeal),
+      Ideal.Quotient.algebraMap_eq] using RingHom.congr_fun h x
 
 /-- Contraction to the ambient ring identifies the prime spectrum of the interval ring
 with the closed interval between the two endpoints. -/
@@ -131,17 +124,17 @@ This computation rule permits simplification without unfolding the order isomorp
 @[simp]
 theorem intervalRingOrderIso_apply (p q : PrimeSpectrum R)
     (r : PrimeSpectrum (IntervalRing p q)) :
-    (p.intervalRingOrderIso q r : PrimeSpectrum R) = r.comap (p.toIntervalRing q) :=
+    (p.intervalRingOrderIso q r : PrimeSpectrum R) = r.comap (algebraMap R (IntervalRing p q)) :=
   (rfl)
 
 /-- For ordered endpoints, the canonical map to the interval ring vanishes exactly on the
 lower endpoint. -/
 @[simp]
-theorem toIntervalRing_eq_zero_iff {p q : PrimeSpectrum R} (h : p ≤ q) {x : R} :
-    p.toIntervalRing q x = 0 ↔ x ∈ p.asIdeal := by
-  refine ⟨fun hx ↦ ?_, p.toIntervalRing_eq_zero q⟩
+theorem intervalRing_algebraMap_eq_zero_iff {p q : PrimeSpectrum R} (h : p ≤ q) {x : R} :
+    algebraMap R (IntervalRing p q) x = 0 ↔ x ∈ p.asIdeal := by
+  refine ⟨fun hx ↦ ?_, p.intervalRing_algebraMap_eq_zero q⟩
   let r := (p.intervalRingOrderIso q).symm ⟨p, le_rfl, h⟩
-  have hr : r.comap (p.toIntervalRing q) = p := by
+  have hr : r.comap (algebraMap R (IntervalRing p q)) = p := by
     simp only [r, ← intervalRingOrderIso_apply, OrderIso.apply_symm_apply]
   rw [← hr, comap_asIdeal, Ideal.mem_comap, hx]
   exact r.asIdeal.zero_mem
@@ -149,11 +142,11 @@ theorem toIntervalRing_eq_zero_iff {p q : PrimeSpectrum R} (h : p ≤ q) {x : R}
 /-- For ordered endpoints, the canonical map to the interval ring sends exactly the elements
 outside the upper endpoint to units. -/
 @[simp]
-theorem isUnit_toIntervalRing_iff {p q : PrimeSpectrum R} (h : p ≤ q) {x : R} :
-    IsUnit (p.toIntervalRing q x) ↔ x ∉ q.asIdeal := by
-  refine ⟨fun hx ↦ ?_, p.isUnit_toIntervalRing q⟩
+theorem isUnit_intervalRing_algebraMap_iff {p q : PrimeSpectrum R} (h : p ≤ q) {x : R} :
+    IsUnit (algebraMap R (IntervalRing p q) x) ↔ x ∉ q.asIdeal := by
+  refine ⟨fun hx ↦ ?_, p.isUnit_intervalRing_algebraMap q⟩
   let r := (p.intervalRingOrderIso q).symm ⟨q, h, le_rfl⟩
-  have hr : r.comap (p.toIntervalRing q) = q := by
+  have hr : r.comap (algebraMap R (IntervalRing p q)) = q := by
     simp only [r, ← intervalRingOrderIso_apply, OrderIso.apply_symm_apply]
   rw [← hr, comap_asIdeal, Ideal.mem_comap]
   exact r.asIdeal.notMem_of_isUnit hx
@@ -161,16 +154,17 @@ theorem isUnit_toIntervalRing_iff {p q : PrimeSpectrum R} (h : p ≤ q) {x : R} 
 /-- Restrict from `[p,q]` to an interval `[p',q']` whose endpoints lie inside it. -/
 noncomputable def intervalRingMap (p q : PrimeSpectrum R) {p' q' : PrimeSpectrum R}
     (hp : p ≤ p') (hq : q' ≤ q) : IntervalRing p q →+* IntervalRing p' q' :=
-  p.intervalRingLift q (p'.toIntervalRing q')
-    (fun _ hx ↦ p'.toIntervalRing_eq_zero q' (hp hx))
-    (fun _ hx ↦ p'.isUnit_toIntervalRing q' (fun h ↦ hx (hq h)))
+  p.intervalRingLift q (algebraMap R (IntervalRing p' q'))
+    (fun _ hx ↦ p'.intervalRing_algebraMap_eq_zero q' (hp hx))
+    (fun _ hx ↦ p'.isUnit_intervalRing_algebraMap q' (fun h ↦ hx (hq h)))
 
 /-- Restriction preserves the image of each element of the ambient ring. -/
 @[simp]
-theorem intervalRingMap_toIntervalRing (p q : PrimeSpectrum R) {p' q' : PrimeSpectrum R}
+theorem intervalRingMap_algebraMap (p q : PrimeSpectrum R) {p' q' : PrimeSpectrum R}
     (hp : p ≤ p') (hq : q' ≤ q) (x : R) :
-    p.intervalRingMap q hp hq (p.toIntervalRing q x) = p'.toIntervalRing q' x := by
-  rw [intervalRingMap, intervalRingLift_toIntervalRing]
+    p.intervalRingMap q hp hq (algebraMap R (IntervalRing p q) x) =
+      algebraMap R (IntervalRing p' q') x := by
+  rw [intervalRingMap, intervalRingLift_algebraMap]
 
 /-- Restriction to the same interval is the identity. -/
 @[simp]
@@ -179,7 +173,7 @@ theorem intervalRingMap_refl (p q : PrimeSpectrum R) :
   apply p.intervalRing_hom_ext q
   apply RingHom.ext
   intro x
-  simp only [RingHom.comp_apply, intervalRingMap_toIntervalRing, RingHom.id_apply]
+  simp only [RingHom.comp_apply, intervalRingMap_algebraMap, RingHom.id_apply]
 
 /-- Restricting in two steps agrees with direct restriction. -/
 @[simp]
@@ -190,6 +184,14 @@ theorem intervalRingMap_comp (p q : PrimeSpectrum R) {p' q' p'' q'' : PrimeSpect
   apply p.intervalRing_hom_ext q
   apply RingHom.ext
   intro x
-  simp only [RingHom.comp_apply, intervalRingMap_toIntervalRing]
+  simp only [RingHom.comp_apply, intervalRingMap_algebraMap]
+
+/-- Applying two successive restrictions agrees with applying the direct restriction. -/
+@[simp]
+theorem intervalRingMap_intervalRingMap (p q : PrimeSpectrum R) {p' q' p'' q'' : PrimeSpectrum R}
+    (hp : p ≤ p') (hq : q' ≤ q) (hp' : p' ≤ p'') (hq' : q'' ≤ q') (x : IntervalRing p q) :
+    p'.intervalRingMap q' hp' hq' (p.intervalRingMap q hp hq x) =
+      p.intervalRingMap q (hp.trans hp') (hq'.trans hq) x := by
+  exact RingHom.congr_fun (p.intervalRingMap_comp q hp hq hp' hq') x
 
 end PrimeSpectrum
