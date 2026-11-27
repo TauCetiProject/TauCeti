@@ -77,10 +77,12 @@ theorem toEndAlgHom_comp_includeH (μ : LeftModuleAlgebra R H A) :
     μ.toEndAlgHom.comp SmashProduct.includeH = μ.action :=
   SmashProduct.lift_comp_includeH ..
 
+@[simp]
 theorem toEndAlgHom_includeA (μ : LeftModuleAlgebra R H A) (a b : A) :
     μ.toEndAlgHom (SmashProduct.includeA a) b = a * b := by
   simp [toEndAlgHom]
 
+@[simp]
 theorem toEndAlgHom_includeH (μ : LeftModuleAlgebra R H A) (h : H) (b : A) :
     μ.toEndAlgHom (SmashProduct.includeH h) b = μ.action h b := by
   simp [toEndAlgHom]

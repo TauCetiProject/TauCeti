@@ -526,6 +526,7 @@ theorem retractH_pure (φ : A →ₗ[R] R) (a : A) (h : H) :
     retractH μ φ (pure a h) = φ a • h := by
   simp [retractH]
 
+@[simp]
 theorem retractH_includeH {φ : A →ₗ[R] R} (hφ : φ 1 = 1) (h : H) :
     retractH μ φ (includeH h) = h := by
   simp [includeH_eq_pure, hφ]

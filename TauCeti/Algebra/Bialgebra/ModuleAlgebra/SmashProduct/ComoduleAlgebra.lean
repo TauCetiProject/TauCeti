@@ -186,10 +186,12 @@ theorem coact_one_pure (h : H) :
   rw [← includeH_eq_pure, ← toLinearMap_coactLift μ]
   simp [coactLift, coactIncludeH, Bialgebra.comulAlgHom_apply]
 
+@[simp↓]
 theorem coact_includeA (a : A) :
     Comodule.coact (R := R) (C := H) (includeA (μ := μ) a) = includeA a ⊗ₜ[R] 1 := by
   simp [includeA_eq_pure]
 
+@[simp↓]
 theorem coact_includeH (h : H) :
     Comodule.coact (R := R) (C := H) (includeH (μ := μ) h) =
       Algebra.TensorProduct.map (includeH (μ := μ)) (AlgHom.id R H)
@@ -200,14 +202,14 @@ theorem coact_includeH (h : H) :
 theorem coactAlgHom_comp_includeA (μ : LeftModuleAlgebra R H A) :
     (ComoduleAlgebra.coactAlgHom R H (SmashProduct μ)).comp includeA =
       Algebra.TensorProduct.includeLeft.comp includeA :=
-  AlgHom.ext fun a => by simp [coact_includeA]
+  AlgHom.ext fun a => by simp
 
 @[simp]
 theorem coactAlgHom_comp_includeH (μ : LeftModuleAlgebra R H A) :
     (ComoduleAlgebra.coactAlgHom R H (SmashProduct μ)).comp includeH =
       (Algebra.TensorProduct.map (includeH (μ := μ)) (AlgHom.id R H)).comp
         (Bialgebra.comulAlgHom R H) :=
-  AlgHom.ext fun h => by simp [coact_includeH, Bialgebra.comulAlgHom_apply]
+  AlgHom.ext fun h => by simp [Bialgebra.comulAlgHom_apply]
 
 end Coaction
 
@@ -220,7 +222,7 @@ variable (μ : LeftModuleAlgebra R H A)
 /-- For every `a : A`, `includeA a` is `H`-coinvariant in `A # H`. -/
 theorem includeA_mem_coinvariants (a : A) :
     includeA (μ := μ) a ∈ ComoduleAlgebra.coinvariants R H (SmashProduct μ) := by
-  simp [coact_includeA]
+  simp
 
 /-- Every `H`-coinvariant element of `A # H` is recovered from `retractA μ` via `includeA`. -/
 theorem includeA_retractA_of_mem_coinvariants {x : SmashProduct μ}
@@ -273,7 +275,7 @@ theorem coactAlgHom_comp_mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModul
     (ComoduleAlgebra.coactAlgHom R H (SmashProduct ν)).comp (mapBialg g f) =
       (Algebra.TensorProduct.map (mapBialg g f) g.toAlgHom).comp
         (ComoduleAlgebra.coactAlgHom R K (SmashProduct μ)) := by
-  refine algHom_ext (AlgHom.ext fun a => by simp [coact_includeA]) (AlgHom.ext fun k => ?_)
+  refine algHom_ext (AlgHom.ext fun a => by simp) (AlgHom.ext fun k => ?_)
   have hcomul : Coalgebra.comul (R := R) (g k) =
       Algebra.TensorProduct.map g.toAlgHom g.toAlgHom (Coalgebra.comul (R := R) k) :=
     (CoalgHomClass.map_comp_comul_apply g k).symm
