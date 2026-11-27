@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.AlgebraicTopology.Singular.Coefficients.BaseChange
+import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -127,10 +128,7 @@ theorem finrank_homology_succ
         (ModuleCat.of k k)).obj (TopCat.of (MappingTorus φ))).homology (n + 1)))
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
       hS.moduleCat_injective_f hS.moduleCat_surjective_g
-  -- The kernel and cokernel of the endomorphism `f` have the same dimension.
-  have hq := (LinearMap.range f).finrank_quotient_add_finrank
-  have hr := f.finrank_range_add_finrank_ker
-  omega
+  rw [h, LinearMap.finrank_quotient_range_eq_finrank_ker f]
 
 end Betti
 

@@ -26,8 +26,9 @@ of the fibre is finite-dimensional in degrees `n` and `n + 1`, this identifies d
 `det (Hₙ₊₁(F) ⧸ range A) ⊗ det (ker A) ≃ det Hₙ₊₁(T_φ)`.
 
 No complement of `ker A` or of `range A` is chosen, and `A` need not be invertible: when `φ_*` has
-eigenvalue one, the kernel and cokernel of `A` keep their full determinant lines, generalized
-eigenvectors included. The isomorphism sends `(ι₁ ∧ ⋯ ∧ ιₐ) ⊗ (δ y₁ ∧ ⋯ ∧ δ y_c)` to
+eigenvalue one, `ker A` is the `1`-eigenspace of `φ_*` and the cokernel of `A` has the same
+dimension, and both keep their full determinant lines. The isomorphism sends
+`(ι₁ ∧ ⋯ ∧ ιₐ) ⊗ (δ y₁ ∧ ⋯ ∧ δ y_c)` to
 `i_* x₁ ∧ ⋯ ∧ i_* xₐ ∧ y₁ ∧ ⋯ ∧ y_c`, where `ιⱼ` is the class of `xⱼ ∈ Hₙ₊₁(F)` modulo `range A`,
 `i_*` is the map induced by the fibre inclusion and `δ` the Wang connecting morphism
 (`TauCeti.MappingTorus.coe_wangDetLineEquiv_tmul`).
