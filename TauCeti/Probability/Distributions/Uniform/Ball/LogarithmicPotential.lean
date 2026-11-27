@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Measure.LogarithmicPotential.Basic
 public import TauCeti.Probability.Distributions.Uniform.Ball.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
-import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
+import TauCeti.Analysis.SpecialFunctions.Integrals.Log.Power
 import TauCeti.Analysis.SpecialFunctions.Integrals.PosLog
 import TauCeti.MeasureTheory.Integral.Circle.Average
 import TauCeti.MeasureTheory.Integral.PolarCoord

@@ -45,18 +45,20 @@ file describes the momenta of configurations on such a line `y = c`.
   no critical point of the action lies on the boundary of the block
   (`TauCeti.stripGeneratingSource_snd_mem_Ioo_of_fderiv_cyclicAction_eq_zero`).
 * **The velocity of a momentum on a face.** The momentum `y_k` of a configuration has derivative
-  `v ↦ -∂²S_k((v_k, v_(k+1)), (1, 0))` (`TauCeti.hasFDerivAt_stripGeneratingSource_snd`). Along
-  the negative gradient `v_i = y_i - Y_(i-1)` of the cyclic action
+  `v ↦ -∂²S_k((v_k, v_(k+1)), (1, 0))` (`TauCeti.hasFDerivAt_stripGeneratingSource_snd`), and the
+  input and output momenta are `Cⁿ` where `S_k` is `Cⁿ⁺¹`
+  (`TauCeti.contDiffAt_stripGeneratingSource_snd`, `TauCeti.contDiffAt_stripGeneratingTarget_snd`).
+  Along the negative gradient `v_i = y_i - Y_(i-1)` of the cyclic action
   (`TauCeti.fderiv_cyclicAction_apply`), for the band generating function `S_k` of a twist factor
-  and a momentum `y_k = c` on a line the factor preserves, this is
-  `(B_k'(q_k) (Y_(k-1) - c) + (y_(k+1) - c)) / ∂_y X_k(q_k, c)`, where `B_k(x) = X_k(x, c)`
+  and a momentum `y_k = c` on a line the factor preserves, this is `(B_k'(q_k) (Y_(k-1) - c) +
+  (y_(k+1) - c)) / ∂_y X_k(q_k, c)`, where `B_k(x) = X_k(x, c)`
   (`TauCeti.fderiv_stripGeneratingSource_snd_apply_neg_gradient_of_snd_eq`). When the neighbouring
   momenta lie on one side of `c`, the boundary graph is increasing and the preceding factor
   preserves the line bijectively, it vanishes exactly when both neighbouring **input** momenta are
   `c`, `y_(k-1) = c` and `y_(k+1) = c`
   (`TauCeti.fderiv_stripGeneratingSource_snd_apply_neg_gradient_eq_zero_iff`). So at the end of a
-  maximal cyclic run of momenta equal to `c`, the momentum leaves the face with nonzero velocity,
-  in the direction given by the sign of the twist
+  maximal cyclic run of momenta equal to `c`, the momentum leaves the face with nonzero velocity, in
+  the direction given by the sign of the twist
   (`TauCeti.mul_neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_nonneg`,
   `TauCeti.mul_neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_nonpos`).
 
@@ -242,6 +244,26 @@ theorem fderiv_stripGeneratingSource_snd_apply {S : ℝ × ℝ → ℝ} {k : ZMo
       -fderiv ℝ (fderiv ℝ S) (q k, q (k + 1)) (v k, v (k + 1)) (1, 0) := by
   rw [(hasFDerivAt_stripGeneratingSource_snd hS).fderiv]
   simp
+
+/-- The input momentum `q ↦ -∂₁ S(q_k, q_(k+1))` of configurations is `Cⁿ` at `q` when `S` is
+`Cⁿ⁺¹` at the edge `(q_k, q_(k+1))`. -/
+theorem contDiffAt_stripGeneratingSource_snd {S : ℝ × ℝ → ℝ} {k : ZMod N} {n : WithTop ℕ∞}
+    (hS : ContDiffAt ℝ (n + 1) S (q k, q (k + 1))) :
+    ContDiffAt ℝ n (fun q' : ZMod N → ℝ ↦ (stripGeneratingSource S (q' k, q' (k + 1))).2) q := by
+  have hL : ContDiffAt ℝ n (fun q' : ZMod N → ℝ ↦ (q' k, q' (k + 1))) q := by
+    fun_prop
+  simpa only [stripGeneratingSource_snd, Function.comp_apply] using
+    (((hS.fderiv_right le_rfl).comp q hL).clm_apply contDiffAt_const).neg
+
+/-- The output momentum `q ↦ ∂₂ S(q_k, q_(k+1))` of configurations is `Cⁿ` at `q` when `S` is
+`Cⁿ⁺¹` at the edge `(q_k, q_(k+1))`. -/
+theorem contDiffAt_stripGeneratingTarget_snd {S : ℝ × ℝ → ℝ} {k : ZMod N} {n : WithTop ℕ∞}
+    (hS : ContDiffAt ℝ (n + 1) S (q k, q (k + 1))) :
+    ContDiffAt ℝ n (fun q' : ZMod N → ℝ ↦ (stripGeneratingTarget S (q' k, q' (k + 1))).2) q := by
+  have hL : ContDiffAt ℝ n (fun q' : ZMod N → ℝ ↦ (q' k, q' (k + 1))) q := by
+    fun_prop
+  simpa only [stripGeneratingTarget_snd, Function.comp_apply] using
+    ((hS.fderiv_right le_rfl).comp q hL).clm_apply contDiffAt_const
 
 variable {J : Set ℝ} {k : ZMod N}
 

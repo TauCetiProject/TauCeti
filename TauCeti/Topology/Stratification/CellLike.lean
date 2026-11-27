@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Topology.Order.UpperLowerSetTopology
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Data.Set.Restrict
 import TauCeti.Geometry.Manifold.Boundary.Charts
 import TauCeti.Geometry.Manifold.Instances.Icc.Boundary
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Cell-like stratifications
@@ -38,6 +41,16 @@ spaces of the comparison families in Floer theory, whose boundaries are unions o
 smaller moduli spaces. A consequence of cell-likeness is that a point lying strictly below a
 stratum `t` is a boundary point of `X^≤t`, so `dim t ≥ 1`
 (`TauCeti.IsCellLikeOn.one_le_of_lt`).
+
+A manifold with boundary contained in a subspace is one in the subspace
+(`TauCeti.IsManifoldBoundaryPair.preimage_subtypeVal`). Stratifications and cell-like
+stratifications restrict to the preimage `σ⁻¹(L)` of a lower set `L`, stratified by `L`
+(`TauCeti.IsStratification.restrictPreimage`, `TauCeti.IsCellLike.restrictPreimage`), since the
+closed strata of the elements of `L` lie in `σ⁻¹(L)`. A chart with values in a product `F × G`
+that reads a subset `P` as `Y × G`, for a manifold with boundary `(Y, B)` in `F`, gives charts of
+`P` as a manifold with boundary times `G`
+(`TauCeti.IsManifoldBoundaryPair.exists_openPartialHomeomorph_prod`); this is how the local product
+models of a cell-like stratified implicit atlas restrict to its closed strata.
 
 The interval `[0, 1]` stratified by its two endpoints and its interior, with dimensions `0`, `0`
 and `1`, is cell-like (`TauCeti.isCellLike_unitIntervalStratum`). The strata are indexed by the
@@ -162,6 +175,18 @@ theorem boundary_eq_empty_of_nonpos (h : IsManifoldBoundaryPair Y B n) (hn : n �
 
 end IsManifoldBoundaryPair
 
+/-- A manifold with boundary `(Y, B)` contained in a subset `Z` of `X` is a manifold with boundary
+of the same dimension in the subspace `Z`. -/
+theorem IsManifoldBoundaryPair.preimage_subtypeVal {Y B Z : Set X} {n : ℤ}
+    (h : IsManifoldBoundaryPair Y B n) (hYZ : Y ⊆ Z) :
+    IsManifoldBoundaryPair (Subtype.val ⁻¹' Y : Set Z) (Subtype.val ⁻¹' B) n := by
+  -- Read the charts of the subspace `Y` of `X` on the subspace `Y` of `Z`.
+  let φ := Homeomorph.Set.preimageVal hYZ
+  refine ⟨fun y hy ↦ h.1 hy, fun y hy ↦ ?_⟩
+  rcases h.2 y.val hy with ⟨m, hm, c, hyc, hcB⟩ | ⟨m, hm, c, hyc, hcB⟩ <;> [left; right] <;>
+    exact ⟨m, hm, φ.toOpenPartialHomeomorph.trans c, by simpa [φ] using hyc,
+      fun z hz ↦ by simpa [φ] using hcB (φ z) (by simpa using hz)⟩
+
 /-- The empty set is a manifold with empty boundary in every dimension. -/
 theorem isManifoldBoundaryPair_empty (n : ℤ) : IsManifoldBoundaryPair (∅ : Set X) ∅ n :=
   ⟨empty_subset _, fun _ hy ↦ (notMem_empty _ hy).elim⟩
@@ -182,6 +207,45 @@ theorem isManifoldBoundaryPair_univ_boundary (n : ℕ) (M : Type*) [TopologicalS
   · simp
   · have hz' : (z : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) y).source := by simpa using hz
     simpa using ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hz'
+
+/-- **Product charts read a manifold with boundary in their first factor.** Let `e` be a chart of
+`M` with values in `F × G`, and let `(Y, B)` be a manifold with boundary of dimension `n` in `F`.
+Let `P` and `Q` be the subsets of `M` that `e` reads in `Y × G` and in `B × G`. Then every point of
+`P` in the source of `e` has a chart of the subspace `P` inside the source of `e`, with values
+either in `ℝⁿ × G` and missing `Q`, or in `EuclideanHalfSpace n × G` and reading `Q` as the
+hyperplane `x₀ = 0`, whose second coordinate is that of `e`. -/
+theorem IsManifoldBoundaryPair.exists_openPartialHomeomorph_prod {M F G : Type*}
+    [TopologicalSpace M] [TopologicalSpace F] [TopologicalSpace G] {Y B : Set F} {n : ℤ}
+    (hYB : IsManifoldBoundaryPair Y B n) (e : OpenPartialHomeomorph M (F × G)) {P Q : Set M}
+    (hP : ∀ y ∈ e.source, y ∈ P ↔ (e y).1 ∈ Y) (hQ : ∀ y ∈ e.source, y ∈ Q ↔ (e y).1 ∈ B)
+    {x : M} (hxe : x ∈ e.source) (hxP : x ∈ P) :
+    (∃ m : ℕ, (m : ℤ) = n ∧ ∃ c : OpenPartialHomeomorph P (EuclideanSpace ℝ (Fin m) × G),
+      ⟨x, hxP⟩ ∈ c.source ∧ c.source ⊆ Subtype.val ⁻¹' e.source ∧
+        Disjoint c.source (Subtype.val ⁻¹' Q) ∧ ∀ y ∈ c.source, (c y).2 = (e y).2) ∨
+    (∃ m : ℕ, (m + 1 : ℤ) = n ∧ ∃ c : OpenPartialHomeomorph P (EuclideanHalfSpace (m + 1) × G),
+      ⟨x, hxP⟩ ∈ c.source ∧ c.source ⊆ Subtype.val ⁻¹' e.source ∧
+        (∀ y ∈ c.source, (y : M) ∈ Q ↔ (c y).1.val 0 = 0) ∧ ∀ y ∈ c.source, (c y).2 = (e y).2) := by
+  -- Restrict `e` to a chart of `P` with values in `Y × G`, then compose with a chart `c` of
+  -- `(Y, B)` in the first factor.
+  have hY : (e x).1 ∈ Y := (hP x hxe).1 hxP
+  have : Nonempty P := ⟨⟨x, hxP⟩⟩
+  have : Nonempty Y := ⟨⟨_, hY⟩⟩
+  rcases hYB.2 _ hY with ⟨m, hm, c, hcx, hcB⟩ | ⟨m, hm, c, hcx, hcB⟩
+  · have hsrc (y : P) := e.mem_subtypeFst_trans_prod_refl_source hP c (y := y)
+    have happ (y : P) := e.subtypeFst_trans_prod_refl_apply hP c (y := y)
+    refine Or.inl ⟨m, hm, _, (hsrc _).2 ⟨hxe, hcx⟩, fun y hy ↦ ((hsrc y).1 hy).1,
+      disjoint_left.2 fun y hy hyQ ↦ ?_, fun y hy ↦ ?_⟩
+    · obtain ⟨hy', hcy⟩ := (hsrc y).1 hy
+      exact hcB _ hcy ((hQ _ hy').1 hyQ)
+    · rw [happ y ((hsrc y).1 hy).1]
+  · have hsrc (y : P) := e.mem_subtypeFst_trans_prod_refl_source hP c (y := y)
+    have happ (y : P) := e.subtypeFst_trans_prod_refl_apply hP c (y := y)
+    refine Or.inr ⟨m, hm, _, (hsrc _).2 ⟨hxe, hcx⟩, fun y hy ↦ ((hsrc y).1 hy).1, fun y hy ↦ ?_,
+      fun y hy ↦ ?_⟩
+    · obtain ⟨hy', hcy⟩ := (hsrc y).1 hy
+      rw [happ y hy', hQ _ hy']
+      exact hcB _ hcy
+    · rw [happ y ((hsrc y).1 hy).1]
 
 end ManifoldBoundaryPair
 
@@ -250,6 +314,37 @@ theorem isManifoldBoundaryPair (h : IsCellLike σ dim) (s : S) :
   simpa using h.2 s
 
 end IsCellLike
+
+/-! ### Restriction to the preimage of a lower set -/
+
+section RestrictPreimage
+
+variable {σ : X → S} {L : Set S}
+
+/-- A stratification restricts to a stratification of the preimage `σ⁻¹(L)` of a set `L` by `L`. -/
+theorem IsStratification.restrictPreimage (hσ : IsStratification σ) (L : Set S) :
+    IsStratification (L.restrictPreimage σ) := fun t ↦ by
+  rw [preimage_restrictPreimage_Iic]
+  exact (hσ t).preimage continuous_subtypeVal
+
+/-- A stratification cell-like on `U` restricts to one cell-like on the part of `U` in the
+preimage `σ⁻¹(L)` of a lower set `L`, stratified by `L`: the closed strata of the elements of `L`
+lie in `σ⁻¹(L)`. -/
+theorem IsCellLikeOn.restrictPreimage {U : Set X} {dim : S → ℤ} (h : IsCellLikeOn σ U dim)
+    (hL : IsLowerSet L) :
+    IsCellLikeOn (L.restrictPreimage σ) (Subtype.val ⁻¹' U) fun t ↦ dim t := fun t ↦ by
+  rw [preimage_restrictPreimage_Iic, preimage_restrictPreimage_Iio, ← preimage_inter,
+    ← preimage_inter]
+  exact (h t).preimage_subtypeVal fun x hx ↦ hL hx.2 t.property
+
+/-- A cell-like stratification restricts to a cell-like stratification of the preimage `σ⁻¹(L)` of
+a lower set `L`, stratified by `L`. -/
+theorem IsCellLike.restrictPreimage {dim : S → ℤ} (h : IsCellLike σ dim) (hL : IsLowerSet L) :
+    IsCellLike (L.restrictPreimage σ) fun t ↦ dim t :=
+  ⟨h.isStratification.restrictPreimage L, by
+    simpa using h.isCellLikeOn_univ.restrictPreimage hL⟩
+
+end RestrictPreimage
 
 end CellLike
 
