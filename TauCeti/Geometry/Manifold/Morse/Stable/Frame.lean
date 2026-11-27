@@ -109,8 +109,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   unstable manifold is linear in the chart, its coordinates of positive weight vanish.
 * `negativeCoord_toChart_flow_eq_zero_of_mem_stableSet`: once the forward orbit of a point of the
   stable manifold is linear in the chart, its coordinates of negative weight vanish.
-* `coord_toChart_flow_add`: along a linear stretch of an orbit in the chart, its coordinates follow
-  the linear flow.
+* `flow_add_mem_source_of_forall_mem_uIcc`, `coord_toChart_flow_add`: along a linear stretch of an
+  orbit in the chart, the orbit stays in the chart and its coordinates follow the linear flow.
 * `unstableFrame_exp_smul_negativeCoord`: the frame sends the direction in which a trajectory leaves
   the critical point to its velocity.
 * `negativeCoord_toChart_flow_neg_ne_zero`: that direction is nonzero away from the critical point.
@@ -284,6 +284,18 @@ variable (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘
   fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
 include hφ
 
+/-- Along a linear stretch of an orbit in the Morse chart `φ`, the orbit stays in the source of the
+chart: if `Φ_T y` lies in the chart and its linear orbit stays in the chart for the times between
+`0` and `s`, then `Φ_{s + T} y` lies in the source of the chart. -/
+theorem flow_add_mem_source_of_forall_mem_uIcc {y : M} {T s : ℝ}
+    (hT : hX.flow T y ∈ φ.toChart.source)
+    (hs : ∀ t ∈ uIcc 0 s, φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart (hX.flow T y)))) ∈
+      φ.toChart.target) :
+    hX.flow (s + T) y ∈ φ.toChart.source := by
+  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs
+  rw [φ.toChart_symm_coord_symm_coord hT, ← Flow.map_add] at hflow
+  exact hflow ▸ φ.toChart.map_target (hs s right_mem_uIcc)
+
 /-- **The derivative of the flow along a linear stretch.** If the orbit of `y` lies in the Morse
 chart `φ` at time `T` and its linear orbit stays in the chart for the times between `0` and `s`,
 then waiting for the further time `s` applies the linear flow to the coordinates of the derivative
@@ -294,11 +306,7 @@ theorem coord_mfderiv_toChart_comp_flow_add {y : M} {T s : ℝ}
       φ.toChart.target) (w : TangentSpace 𝓘(ℝ, E) y) :
     φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow (s + T)) y w) =
       φ.linearFlow s (φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y w)) := by
-  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs
-  rw [φ.toChart_symm_coord_symm_coord hT] at hflow
-  have hsrc : hX.flow (s + T) y ∈ φ.toChart.source := by
-    rw [Flow.map_add]
-    exact hflow ▸ φ.toChart.map_target (hs s right_mem_uIcc)
+  have hsrc := flow_add_mem_source_of_forall_mem_uIcc hφ hT hs
   have hd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow T) y :=
     (hX.contMDiff_flow_apply T).mdifferentiable (by simp) y
   rw [← mfderiv_toChart_comp_flow_mfderiv_flow hsrc, hX.coord_mfderiv_toChart_comp_flow φ hφ hT hs,

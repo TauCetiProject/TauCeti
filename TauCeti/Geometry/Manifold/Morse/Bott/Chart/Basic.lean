@@ -226,16 +226,23 @@ theorem coordL_symm_apply (z : Fin (Module.finrank ℝ E) → ℝ) :
     φ.coordL.symm z = φ.coord.symm z := by
   simp [coordL]
 
+/-- The coordinates of the points of the chart form an open set. -/
+theorem isOpen_preimage_coord_symm_target : IsOpen (φ.coord.symm ⁻¹' φ.toChart.target) := by
+  have h := φ.toChart.open_target.preimage φ.coordL.symm.continuous
+  rwa [show (φ.coordL.symm : _ → E) = φ.coord.symm from funext φ.coordL_symm_apply] at h
+
+/-- The coordinates `0`, those of the centre, are the coordinates of a point of the chart. -/
+theorem zero_mem_preimage_coord_symm_target :
+    (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coord.symm ⁻¹' φ.toChart.target := by
+  rw [mem_preimage, map_zero, ← φ.apply_self]
+  exact φ.toChart.map_source φ.mem_source
+
 /-- Coordinates of small sup norm are coordinates of points of the chart. -/
 theorem exists_pos_forall_norm_lt_mem_target :
     ∃ r > 0, ∀ z : Fin (Module.finrank ℝ E) → ℝ, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target := by
-  have := φ.finiteDimensional
-  have h0 : (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coordL.symm ⁻¹' φ.toChart.target := by
-    rw [mem_preimage, map_zero, ← φ.apply_self]
-    exact φ.toChart.map_source φ.mem_source
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
-    (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
-  exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 φ.isOpen_preimage_coord_symm_target 0
+    φ.zero_mem_preimage_coord_symm_target
+  exact ⟨r, hr, fun z hz ↦ hball (mem_ball_zero_iff.2 hz)⟩
 
 /-- The coordinate change of a Morse–Bott chart is continuous. -/
 theorem continuous_coord : Continuous φ.coord := by

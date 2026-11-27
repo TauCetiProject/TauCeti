@@ -265,15 +265,6 @@ variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace
     fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
 include hφ
 
-/-- Along a linear stretch of an orbit in the chart, the orbit stays in the source of the chart. -/
-private theorem flow_add_mem_source {y : M} {T s : ℝ} (hT : hX.flow T y ∈ φ.toChart.source)
-    (hs : ∀ t ∈ uIcc 0 s, φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart (hX.flow T y)))) ∈
-      φ.toChart.target) :
-    hX.flow (s + T) y ∈ φ.toChart.source := by
-  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs
-  rw [φ.toChart_symm_coord_symm_coord hT, ← Flow.map_add] at hflow
-  exact hflow ▸ φ.toChart.map_target (hs s right_mem_uIcc)
-
 /-- Along a linear stretch of an orbit in the chart, the coordinates of the orbit follow the linear
 flow and `f` is given by the quadratic normal form of those coordinates. -/
 private theorem flow_add_mem_source_and_eq {y : M} {T s : ℝ}
@@ -285,7 +276,7 @@ private theorem flow_add_mem_source_and_eq {y : M} {T s : ℝ}
       f (hX.flow (s + T) y) = f x + (2 : ℝ)⁻¹ *
         ∑ i, φ.weight i * φ.linearFlow s (φ.coord (φ.toChart (hX.flow T y))) i ^ 2 := by
   have hc := coord_toChart_flow_add hφ hT hs
-  exact ⟨hc, by rw [φ.eq_quadratic _ (flow_add_mem_source hφ hT hs), hc]⟩
+  exact ⟨hc, by rw [φ.eq_quadratic _ (flow_add_mem_source_of_forall_mem_uIcc hφ hT hs), hc]⟩
 
 /-- **Joining the two linear pieces of an orbit.** Let the orbit of `y` be in the chart at the
 times `a` and `τ`, with coordinates `w` and `ζ`. Suppose that the forward linear orbit of `w`
@@ -367,12 +358,8 @@ theorem eventually_forall_linearFlow_mem_target_of_broken (hf : IsMorse 𝓘(ℝ
   have := φ.finiteDimensional
   have ha' := (hX.mem_linearForwardTimes φ).1 ha
   have hb' := (hX.mem_linearBackwardTimes φ).1 hb
-  have hV : IsOpen (φ.coord.symm ⁻¹' φ.toChart.target) := by
-    simpa [Set.preimage, MorseBottChart.coordL_symm_apply] using
-      φ.toChart.open_target.preimage φ.coordL.symm.continuous
-  have h0 : (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coord.symm ⁻¹' φ.toChart.target := by
-    rw [mem_preimage, map_zero, ← φ.apply_self]
-    exact φ.toChart.map_source φ.mem_source
+  have hV := φ.isOpen_preimage_coord_symm_target
+  have h0 := φ.zero_mem_preimage_coord_symm_target
   -- The model statements forwards from `Φ_a y₀` and backwards from `Φ_{-b} z₀`.
   obtain ⟨c₁, hc₁, h₁⟩ := φ.toMorseBottChart.exists_pos_eventually_forall_linearFlow_mem
     φ.weight_eq_neg_one_or_eq_one hV h0

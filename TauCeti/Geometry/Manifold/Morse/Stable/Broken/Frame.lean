@@ -142,11 +142,8 @@ theorem mvfderiv_unstableFrame_flow_eq {F : Type*} [NormedAddCommGroup F] [Norme
     simp only [s]
     ring
   -- At time `s` the linear orbit is the orbit of the flow, so `Φ_{-b} z` lies in the chart.
-  have hzr : hX.flow (-b) z ∈ φr.toChart.source := by
-    have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φr hφr huIcc
-    rw [φr.toChart_symm_coord_symm_coord hya, ← Flow.map_add] at hflow
-    rw [← hsz, hflow]
-    exact φr.toChart.map_target (huIcc s right_mem_uIcc)
+  have hzr : hX.flow (-b) z ∈ φr.toChart.source :=
+    hsz ▸ flow_add_mem_source_of_forall_mem_uIcc hφr hya huIcc
   have hzen : z ∈ e.source := by simpa [e] using hzr
   -- `g` is `(g ∘ e⁻¹) ∘ e` near `z`, and `e ∘ Φ_T` is `φr ∘ Φ_{s + a}`.
   have hloc : g =ᶠ[𝓝 z] (g ∘ e.symm) ∘ e := by
