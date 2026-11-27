@@ -14,7 +14,6 @@ public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup.Speci
 public import TauCeti.Topology.Algebra.ProperAction.Basic
 import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Topology.Algebra.Group.Quotient
-import TauCeti.GroupTheory.Commutator
 
 /-!
 # The twisted `SU(r)` representation model of surface moduli
@@ -60,7 +59,7 @@ coprime rank and degree*, §3).
   `relationSet r ζ g` is nonempty).
 * `TauCeti.GaugeModuli.isEmpty_relationModuli_zero`: the genus-zero moduli is empty for `r ≥ 2`
   and primitive `ζ`.
-* `TauCeti.GaugeModuli.relationModuli_rank_one` and
+* `TauCeti.GaugeModuli.nonempty_relationModuli_rank_one` and
   `TauCeti.GaugeModuli.simplyConnectedSpace_relationModuli_rank_one`: for `r = 1` and `ζ = 1`, the
   moduli is a point (hence simply connected) in every genus.
 * Continuous central-twist action of `(Z(SU(r)) × Z(SU(r)))^g` (representing `H¹(X; μ_r)`) on both
@@ -84,46 +83,6 @@ namespace TauCeti
 namespace GaugeModuli
 
 section Definitions
-
-@[simp high]
-theorem mem_relationSet_zero_iff {r : ℕ} {ζ : ℂ}
-    {x : Fin 0 → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
-    x ∈ relationSet r ζ 0 ↔ (1 : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
-  simp [mem_relationSet]
-
-@[simp high]
-theorem mem_relationSet_one_iff {r : ℕ} {ζ : ℂ}
-    {x : Fin 1 → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
-    x ∈ relationSet r ζ 1 ↔
-      ((⁅(x 0).1, (x 0).2⁆ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
-        Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
-  simp [mem_relationSet]
-
-/-- Simultaneous conjugation in `SU(r)` preserves the twisted relation set. -/
-theorem conjAct_smul_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
-    (u : ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
-    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
-    (hx : x ∈ relationSet r ζ g) : u • x ∈ relationSet r ζ g := by
-  rw [mem_relationSet] at hx ⊢
-  set g₀ := ConjAct.ofConjAct u
-  have hprod :
-      (List.ofFn fun j => ⁅((u • x) j).1, ((u • x) j).2⁆).prod =
-        g₀ * (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod * g₀⁻¹ := by
-    have hmap := map_list_prod (MulAut.conj g₀) (List.ofFn fun j => ⁅(x j).1, (x j).2⁆)
-    rw [List.map_ofFn] at hmap
-    simpa [Function.comp_def, MulAut.conj_apply, map_commutatorElement, ConjAct.smul_def, g₀] using
-      hmap.symm
-  rw [hprod]
-  have hval : ((g₀ * (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod * g₀⁻¹ :
-      Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-      (g₀ : Matrix (Fin r) (Fin r) ℂ) * (ζ • (1 : Matrix (Fin r) (Fin r) ℂ)) *
-        ((g₀⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
-    simp [hx]
-  rw [hval, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one]
-  have hmul : (g₀ : Matrix (Fin r) (Fin r) ℂ) *
-      ((g₀⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = 1 :=
-    congrArg Subtype.val (mul_inv_cancel g₀)
-  rw [hmul]
 
 /-- Simultaneous conjugation of `SU(r)` restricts to `relationSet r ζ g`. -/
 instance instMulActionConjActRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
@@ -239,9 +198,7 @@ theorem toPSL_rangeRestrict_smul_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
     (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).rangeRestrict u • x =
       ConjAct.toConjAct u • x := by
-  dsimp only [instMulActionPSURelationSet, MulAction.compHom_smul_def, MonoidHom.liftOfSurjective]
-  rw [MonoidHom.liftOfRightInverse_comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulAction.toPermHom_apply, Equiv.Perm.smul_def, MulAction.toPerm_apply]
+  simp [MulAction.compHom_smul_def]
 
 /-- The simultaneous conjugation map `SU(r) × relationSet r ζ g → relationSet r ζ g` is
 continuous. -/
@@ -263,20 +220,7 @@ instance instContinuousSMulPSURelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     ContinuousSMul (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) where
   continuous_smul := by
-    have hq : IsOpenQuotientMap
-        ((toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-          ProjectiveSpecialLinearGroup (Fin r) ℂ).rangeRestrict :
-          Matrix.specialUnitaryGroup (Fin r) ℂ → _) := by
-      have heq : ((toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-            ProjectiveSpecialLinearGroup (Fin r) ℂ).rangeRestrict :
-            Matrix.specialUnitaryGroup (Fin r) ℂ → _) =
-          fun u => quotientKerToPSLContinuousMulEquiv (QuotientGroup.mk u) := by
-        ext1 u
-        exact Subtype.ext (coe_quotientKerToPSLContinuousMulEquiv_mk u).symm
-      rw [heq]
-      exact quotientKerToPSLContinuousMulEquiv.toHomeomorph.isOpenQuotientMap.comp
-        QuotientGroup.isOpenQuotientMap_mk
-    rw [← (hq.prodMap IsOpenQuotientMap.id).continuous_comp_iff]
+    rw [← (isOpenQuotientMap_toPSL_rangeRestrict.prodMap IsOpenQuotientMap.id).continuous_comp_iff]
     exact (continuous_conjAct_smul_relationSet r ζ g).congr fun ⟨u, x⟩ =>
       (toPSL_rangeRestrict_smul_relationSet u x).symm
 
@@ -421,57 +365,28 @@ instance instSubsingletonRelationSet {r : ℕ} [Subsingleton (Fin r)] (ζ : ℂ)
     Matrix.specialUnitaryGroup.toSL_injective.subsingleton
   infer_instance
 
-/-- In the untwisted (`ζ = 1`) relation set, the trivial tuple `1` (all entries equal to `1`) is
-always a solution. -/
-@[simp high]
-theorem one_mem_relationSet (r g : ℕ) :
-    (1 : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
-      Matrix.specialUnitaryGroup (Fin r) ℂ) ∈ relationSet r 1 g := by
-  rw [mem_relationSet, one_smul]
-  have hprod : (List.ofFn fun _ : Fin g =>
-      ⁅(1 : Matrix.specialUnitaryGroup (Fin r) ℂ),
-        (1 : Matrix.specialUnitaryGroup (Fin r) ℂ)⁆).prod = 1 := by
-    simp [List.ofFn_const]
-  exact congrArg Subtype.val hprod
-
 /-- At rank one with `ζ = 1`, the relation set is nonempty in every genus. -/
 theorem nonempty_relationSet_rank_one {ζ : ℂ} (hζ : IsPrimitiveRoot ζ 1) (g : ℕ) :
     Nonempty (relationSet 1 ζ g) :=
   ⟨⟨1, by rw [IsPrimitiveRoot.one_right_iff.mp hζ]; exact one_mem_relationSet 1 g⟩⟩
 
-/-- At rank one with a primitive `1`-st root of unity (`ζ = 1`), the moduli space is a point in
-every genus. -/
-theorem relationModuli_rank_one {ζ : ℂ} (hζ : IsPrimitiveRoot ζ 1) (g : ℕ) :
-    Nonempty (relationModuli 1 ζ g) ∧ Subsingleton (relationModuli 1 ζ g) := by
+/-- At rank one with a primitive `1`-st root of unity (`ζ = 1`), the moduli space is nonempty in
+every genus (and a subsingleton by `instSubsingletonRelationSet`). -/
+theorem nonempty_relationModuli_rank_one {ζ : ℂ} (hζ : IsPrimitiveRoot ζ 1) (g : ℕ) :
+    Nonempty (relationModuli 1 ζ g) := by
   obtain ⟨x⟩ := nonempty_relationSet_rank_one hζ g
-  exact ⟨⟨Quotient.mk _ x⟩, inferInstance⟩
+  exact ⟨Quotient.mk _ x⟩
 
 /-- At rank one with `ζ = 1`, the moduli space is simply connected in every genus. -/
 theorem simplyConnectedSpace_relationModuli_rank_one {ζ : ℂ} (hζ : IsPrimitiveRoot ζ 1) (g : ℕ) :
     SimplyConnectedSpace (relationModuli 1 ζ g) := by
   -- `Subsingleton` is inferred via `Quotient.instSubsingletonQuotient`; only `Nonempty` is needed.
-  have : Nonempty (relationModuli 1 ζ g) := (relationModuli_rank_one hζ g).1
+  have : Nonempty (relationModuli 1 ζ g) := nonempty_relationModuli_rank_one hζ g
   exact SimplyConnectedSpace.ofContractible _
 
 end BoundaryCases
 
 section CentralTwistAction
-
-/-- Multiplying the entries of a solution `x ∈ relationSet r ζ g` by central elements of `SU(r)`
-preserves the commutator product and hence preserves `relationSet r ζ g`. -/
-theorem center_mul_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
-    (ε : Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
-      Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
-    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
-    (hx : x ∈ relationSet r ζ g) :
-    (fun j => ((ε j).1.val * (x j).1, (ε j).2.val * (x j).2)) ∈ relationSet r ζ g := by
-  rw [mem_relationSet] at hx ⊢
-  have hcomm (j : Fin g) :
-      ⁅(ε j).1.val * (x j).1, (ε j).2.val * (x j).2⁆ = ⁅(x j).1, (x j).2⁆ := by
-    rw [(Subgroup.mem_center_iff.mp (ε j).1.property (x j).1).symm,
-      (Subgroup.mem_center_iff.mp (ε j).2.property (x j).2).symm]
-    exact TauCeti.commutatorElement_mul_mul_of_mem_center (ε j).1.property (ε j).2.property
-  simpa [hcomm] using hx
 
 /-- The central-twist action of `(Z(SU(r)) × Z(SU(r)))^g` (representing `H¹(X; μ_r)`) on
 `relationSet r ζ g`, multiplying each entry `(A_j, B_j)` by `(z_{1,j}, z_{2,j})`. -/

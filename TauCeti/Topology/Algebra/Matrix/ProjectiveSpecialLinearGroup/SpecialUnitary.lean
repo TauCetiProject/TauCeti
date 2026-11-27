@@ -35,6 +35,8 @@ kernel of `toPSL` onto `PSU(n)` is a homeomorphism
   `Matrix.specialUnitaryGroup.isClosed_range_toPSL`: `PSU(n)` is compact and closed in `PSL(n, 𝕜)`.
 * `Matrix.specialUnitaryGroup.quotientKerToPSLContinuousMulEquiv`: the isomorphism of topological
   groups `SU(n) ⧸ ker toPSL ≃ₜ* PSU(n)`.
+* `Matrix.specialUnitaryGroup.isOpenQuotientMap_toPSL_rangeRestrict`: `toPSL.rangeRestrict` is an
+  open quotient map from `SU(n)` onto `PSU(n)`.
 -/
 
 public section
@@ -105,6 +107,22 @@ theorem coe_quotientKerToPSLContinuousMulEquiv_mk (A : specialUnitaryGroup n �
     (quotientKerToPSLContinuousMulEquiv (A : specialUnitaryGroup n 𝕜 ⧸ _) :
       ProjectiveSpecialLinearGroup n 𝕜) = toPSL A := by
   rfl
+
+/-- Over `ℝ` or `ℂ`, the surjection `toPSL.rangeRestrict : SU(n) → PSU(n)` is an open quotient
+map. -/
+theorem isOpenQuotientMap_toPSL_rangeRestrict :
+    IsOpenQuotientMap
+      ((toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).rangeRestrict :
+        specialUnitaryGroup n 𝕜 → _) := by
+  have heq : ((toPSL : specialUnitaryGroup n 𝕜 →*
+        ProjectiveSpecialLinearGroup n 𝕜).rangeRestrict :
+        specialUnitaryGroup n 𝕜 → _) =
+      fun u => quotientKerToPSLContinuousMulEquiv (QuotientGroup.mk u) := by
+    ext1 u
+    exact Subtype.ext (coe_quotientKerToPSLContinuousMulEquiv_mk u).symm
+  rw [heq]
+  exact quotientKerToPSLContinuousMulEquiv.toHomeomorph.isOpenQuotientMap.comp
+    QuotientGroup.isOpenQuotientMap_mk
 
 end RCLike
 

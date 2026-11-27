@@ -21,13 +21,15 @@ Let `ζ : ℂ` be a primitive `r`-th root of unity. At genus one, the twisted re
 `SU(r)` (`Matrix.exists_coe_commutatorElement_eq_smul_one`), and any two solutions in `SU(r)` are
 simultaneously `SU(r)`-conjugate (`Matrix.exists_conj_eq_of_coe_commutatorElement_eq_smul_one`).
 Consequently, the genus-one representation model `relationModuli r ζ 1` is a single point
-(`TauCeti.GaugeModuli.relationModuli_genus_one`), hence simply connected, and the induced
-`PSU(r)` action identifies `PSU(r)` homeomorphically with `relationSet r ζ 1`
+(`TauCeti.GaugeModuli.nonempty_relationModuli_genus_one`,
+`TauCeti.GaugeModuli.subsingleton_relationModuli_genus_one`), hence simply connected, and the
+induced `PSU(r)` action identifies `PSU(r)` homeomorphically with `relationSet r ζ 1`
 (`TauCeti.GaugeModuli.psuOrbitHomeomorphGenusOne`).
 
 As immediate consequences we also deduce nonemptiness of `relationSet r ζ g` and
 `relationModuli r ζ g` for every positive genus `g ≥ 1`, triviality of the central-twist
-`H¹(T²; μ_r)` action at genus one (`TauCeti.GaugeModuli.centerTwist_smul_relationModuli_genus_one`),
+`H¹(T²; μ_r)` action at genus one
+(`TauCeti.GaugeModuli.centerTwist_smul_eq_self_relationModuli_genus_one`),
 and hence non-freeness of the central-twist action for every `r ≥ 2` and primitive `ζ`
 (`TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`). In contrast to the
 coprime case `r = 2, ζ = -1` (whose relation set is nonempty by
@@ -46,15 +48,16 @@ non-central stabilizers
 
 ## Main results
 
-* `TauCeti.GaugeModuli.nonempty_relationSet_genus_one` and
-  `TauCeti.GaugeModuli.relationModuli_genus_one`: existence and uniqueness up to simultaneous
-  `SU(r)`-conjugation of a solution to `⁅A, B⁆ = ζ • 1`.
+* `TauCeti.GaugeModuli.nonempty_relationSet_genus_one`,
+  `TauCeti.GaugeModuli.nonempty_relationModuli_genus_one`, and
+  `TauCeti.GaugeModuli.subsingleton_relationModuli_genus_one`: existence and uniqueness up to
+  simultaneous `SU(r)`-conjugation of a solution to `⁅A, B⁆ = ζ • 1`.
 * `TauCeti.GaugeModuli.simplyConnectedSpace_relationModuli_genus_one`: simple connectivity of the
   genus-one moduli.
 * `TauCeti.GaugeModuli.nonempty_relationSet_of_pos` and
   `TauCeti.GaugeModuli.nonempty_relationModuli_of_pos`: nonemptiness of the relation set and moduli
   for every genus `g ≥ 1`.
-* `TauCeti.GaugeModuli.centerTwist_smul_relationModuli_genus_one` and
+* `TauCeti.GaugeModuli.centerTwist_smul_eq_self_relationModuli_genus_one` and
   `TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`: the central-twist action
   is trivial at genus one, hence not free for any `r ≥ 2` and primitive `ζ`.
 * `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one` and
@@ -88,14 +91,20 @@ theorem nonempty_relationSet_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRo
     Matrix.exists_coe_commutatorElement_eq_smul_one (n := Fin r) (by simpa using hζ)
   exact ⟨⟨fun _ => (A, B), by simpa [mem_relationSet_one_iff] using hAB⟩⟩
 
-/-- **Genus-one representation model.** For a primitive `r`-th root of unity `ζ`, the twisted
-relation `⁅A, B⁆ = ζ • 1` has a solution in `SU(r)`, unique up to simultaneous `SU(r)`-conjugation,
-so the genus-one moduli space `relationModuli r ζ 1` is a single point. -/
-theorem relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ r) :
-    Nonempty (relationModuli r ζ 1) ∧ Subsingleton (relationModuli r ζ 1) := by
+/-- **Genus-one representation model (existence).** For a primitive `r`-th root of unity `ζ`, the
+genus-one moduli space `relationModuli r ζ 1` is nonempty. -/
+theorem nonempty_relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ r) :
+    Nonempty (relationModuli r ζ 1) := by
   obtain ⟨x⟩ := nonempty_relationSet_genus_one r ζ hζ
-  refine ⟨⟨Quotient.mk _ x⟩, (MulAction.pretransitive_iff_subsingleton_quotient
-    (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ 1)).mp ⟨fun y z => ?_⟩⟩
+  exact ⟨Quotient.mk _ x⟩
+
+/-- **Genus-one representation model (uniqueness).** For a primitive `r`-th root of unity `ζ`,
+any two solutions of `⁅A, B⁆ = ζ • 1` in `SU(r)` are simultaneously `SU(r)`-conjugate, so the
+genus-one moduli space `relationModuli r ζ 1` is a subsingleton. -/
+theorem subsingleton_relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ r) :
+    Subsingleton (relationModuli r ζ 1) := by
+  refine (MulAction.pretransitive_iff_subsingleton_quotient
+    (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ 1)).mp ⟨fun y z => ?_⟩
   obtain ⟨g, hg₁, hg₂⟩ := Matrix.exists_conj_eq_of_coe_commutatorElement_eq_smul_one
     (by simpa using hζ) (mem_relationSet_one_iff.mp y.property)
     (mem_relationSet_one_iff.mp z.property)
@@ -109,9 +118,8 @@ theorem simplyConnectedSpace_relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ 
     SimplyConnectedSpace (relationModuli r ζ 1) := by
   -- `SimplyConnectedSpace.ofContractible` consumes both `Nonempty` and `Subsingleton` via
   -- Mathlib's `ContractibleSpace` instance.
-  have h := relationModuli_genus_one r ζ hζ
-  have : Nonempty (relationModuli r ζ 1) := h.1
-  have : Subsingleton (relationModuli r ζ 1) := h.2
+  have : Nonempty (relationModuli r ζ 1) := nonempty_relationModuli_genus_one r ζ hζ
+  have : Subsingleton (relationModuli r ζ 1) := subsingleton_relationModuli_genus_one r ζ hζ
   exact SimplyConnectedSpace.ofContractible _
 
 /-- At genus one, the `PSU(r)` action on `relationSet r ζ 1` is pretransitive. -/
@@ -122,7 +130,7 @@ private theorem isPretransitive_psu_relationSet_genus_one {r : ℕ} {ζ : ℂ}
   have : MulAction.IsPretransitive (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
       (relationSet r ζ 1) :=
     (MulAction.pretransitive_iff_subsingleton_quotient _ _).mpr
-      (relationModuli_genus_one r ζ hζ).2
+      (subsingleton_relationModuli_genus_one r ζ hζ)
   refine ⟨fun x y => ?_⟩
   obtain ⟨u, hu⟩ :=
     MulAction.exists_smul_eq (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) x y
@@ -187,11 +195,12 @@ theorem nonempty_relationModuli_of_pos (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRo
   exact ⟨Quotient.mk _ x⟩
 
 /-- At genus one, the central-twist `H¹(T²; μ_r)` action on `relationModuli r ζ 1` is trivial. -/
-theorem centerTwist_smul_relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ r)
+theorem centerTwist_smul_eq_self_relationModuli_genus_one (r : ℕ) (ζ : ℂ)
+    (hζ : IsPrimitiveRoot ζ r)
     (ε : Fin 1 → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
     (q : relationModuli r ζ 1) : ε • q = q := by
-  have := (relationModuli_genus_one r ζ hζ).2
+  have := subsingleton_relationModuli_genus_one r ζ hζ
   exact Subsingleton.elim _ _
 
 /-- For every `r ≥ 2` and primitive `r`-th root of unity `ζ`, the central-twist `H¹(T²; μ_r)`
@@ -207,7 +216,7 @@ theorem exists_ne_one_centerTwist_smul_eq_self_genus_one {r : ℕ} (hr : 2 ≤ r
   let ε : Fin 1 → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := fun _ => (z, 1)
   obtain ⟨q⟩ := nonempty_relationModuli_of_pos r ζ hζ 1 le_rfl
-  refine ⟨ε, q, ?_, centerTwist_smul_relationModuli_genus_one r ζ hζ ε q⟩
+  refine ⟨ε, q, ?_, centerTwist_smul_eq_self_relationModuli_genus_one r ζ hζ ε q⟩
   intro h
   have h0 : z = 1 := congrArg Prod.fst (congrFun h 0)
   have hval := congr_fun₂ (congrArg

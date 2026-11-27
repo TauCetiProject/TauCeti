@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.GroupTheory.Commutator.Basic
+import TauCeti.GroupTheory.Commutator
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.ScalarCommutator
 
@@ -44,6 +47,10 @@ this fails: for `r = 2`, `ζ = 1` the pair `(1, 1)` is a solution stabilized by 
 
 ## Main results
 
+* `TauCeti.mem_relationSet`, `TauCeti.mem_relationSet_zero_iff`,
+  `TauCeti.mem_relationSet_one_iff`, `TauCeti.one_mem_relationSet`,
+  `TauCeti.conjAct_smul_mem_relationSet`, `TauCeti.center_mul_mem_relationSet`: basic membership
+  characterizations and symmetries of `relationSet`.
 * `TauCeti.relationSet_zero_eq_empty`: in genus zero the relation set is empty unless `ζ = 1`
   (for `r ≥ 1`).
 * `TauCeti.eq_bot_or_eq_top_of_invariant_relationSet`: for a primitive `r`-th root of unity `ζ`,
@@ -76,6 +83,77 @@ theorem mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
     x ∈ relationSet r ζ g ↔
       ((List.ofFn fun j ↦ ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 :=
   Iff.rfl
+
+/-- Membership in the genus-zero twisted relation set reduces to `1 = ζ • 1`. -/
+@[simp high]
+theorem mem_relationSet_zero_iff {r : ℕ} {ζ : ℂ}
+    {x : Fin 0 → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
+    x ∈ relationSet r ζ 0 ↔ (1 : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
+  simp [mem_relationSet]
+
+/-- Membership in the genus-one twisted relation set reduces to `⁅A, B⁆ = ζ • 1`. -/
+@[simp high]
+theorem mem_relationSet_one_iff {r : ℕ} {ζ : ℂ}
+    {x : Fin 1 → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
+    x ∈ relationSet r ζ 1 ↔
+      ((⁅(x 0).1, (x 0).2⁆ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
+        Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
+  simp [mem_relationSet]
+
+/-- In the untwisted (`ζ = 1`) relation set, the trivial tuple `1` (all entries equal to `1`) is
+always a solution. -/
+@[simp high]
+theorem one_mem_relationSet (r g : ℕ) :
+    (1 : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
+      Matrix.specialUnitaryGroup (Fin r) ℂ) ∈ relationSet r 1 g := by
+  rw [mem_relationSet, one_smul]
+  have hprod : (List.ofFn fun _ : Fin g =>
+      ⁅(1 : Matrix.specialUnitaryGroup (Fin r) ℂ),
+        (1 : Matrix.specialUnitaryGroup (Fin r) ℂ)⁆).prod = 1 := by
+    simp [List.ofFn_const]
+  exact congrArg Subtype.val hprod
+
+/-- Simultaneous conjugation in `SU(r)` preserves the twisted relation set. -/
+theorem conjAct_smul_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
+    (u : ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
+    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
+    (hx : x ∈ relationSet r ζ g) : u • x ∈ relationSet r ζ g := by
+  rw [mem_relationSet] at hx ⊢
+  set g₀ := ConjAct.ofConjAct u
+  have hprod :
+      (List.ofFn fun j => ⁅((u • x) j).1, ((u • x) j).2⁆).prod =
+        g₀ * (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod * g₀⁻¹ := by
+    have hmap := map_list_prod (MulAut.conj g₀) (List.ofFn fun j => ⁅(x j).1, (x j).2⁆)
+    rw [List.map_ofFn] at hmap
+    simpa [Function.comp_def, MulAut.conj_apply, map_commutatorElement, ConjAct.smul_def, g₀] using
+      hmap.symm
+  rw [hprod]
+  have hval : ((g₀ * (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod * g₀⁻¹ :
+      Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
+      (g₀ : Matrix (Fin r) (Fin r) ℂ) * (ζ • (1 : Matrix (Fin r) (Fin r) ℂ)) *
+        ((g₀⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
+    simp [hx]
+  rw [hval, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one]
+  have hmul : (g₀ : Matrix (Fin r) (Fin r) ℂ) *
+      ((g₀⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = 1 :=
+    congrArg Subtype.val (mul_inv_cancel g₀)
+  rw [hmul]
+
+/-- Multiplying the entries of a solution `x ∈ relationSet r ζ g` by central elements of `SU(r)`
+preserves the commutator product and hence preserves `relationSet r ζ g`. -/
+theorem center_mul_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
+    (ε : Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
+      Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
+    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
+    (hx : x ∈ relationSet r ζ g) :
+    (fun j => ((ε j).1.val * (x j).1, (ε j).2.val * (x j).2)) ∈ relationSet r ζ g := by
+  rw [mem_relationSet] at hx ⊢
+  have hcomm (j : Fin g) :
+      ⁅(ε j).1.val * (x j).1, (ε j).2.val * (x j).2⁆ = ⁅(x j).1, (x j).2⁆ := by
+    rw [(Subgroup.mem_center_iff.mp (ε j).1.property (x j).1).symm,
+      (Subgroup.mem_center_iff.mp (ε j).2.property (x j).2).symm]
+    exact TauCeti.commutatorElement_mul_mul_of_mem_center (ε j).1.property (ε j).2.property
+  simpa [hcomm] using hx
 
 /-- **The sphere relation set.** In genus zero the product of commutators is empty, so for
 `r ≥ 1` the relation `1 = ζ • 1` has no solution unless `ζ = 1`; in particular, for a primitive
@@ -121,6 +199,47 @@ private theorem isIrreducible_entryRep {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRo
     simp [entryRep, hzx, mem_relationSet.1 hx]
   exact Representation.isIrreducible_of_mem_commutator hz (by simpa using hζ) hzζ
 
+/-- The subgroup of `SU(r)` leaving a finite-dimensional subspace `V` invariant. -/
+private def invariantSubgroup {r : ℕ} (V : Submodule ℂ (Fin r → ℂ)) :
+    Subgroup (Matrix.specialUnitaryGroup (Fin r) ℂ) where
+  carrier := {a | ∀ v ∈ V, Matrix.toLin' (a : Matrix (Fin r) (Fin r) ℂ) v ∈ V}
+  one_mem' _ hv := by simpa using hv
+  mul_mem' ha hb v hv := by
+    simpa [Submonoid.coe_mul, Matrix.mulVec_mulVec] using ha _ (hb v hv)
+  inv_mem' {a} ha v hv := by
+    let e := Matrix.UnitaryGroup.toLinearEquiv
+      (⟨a, Matrix.specialUnitaryGroup_le_unitaryGroup a.property⟩ : Matrix.unitaryGroup (Fin r) ℂ)
+    have hmap : Submodule.map e.toLinearMap V = V :=
+      Submodule.eq_of_le_of_finrank_eq
+        (Submodule.map_le_iff_le_comap.mpr fun w hw => by
+          simpa [e, Matrix.UnitaryGroup.toLinearEquiv_apply] using ha w hw)
+        (LinearEquiv.finrank_map_eq e V)
+    obtain ⟨w, hw, hwa⟩ := hmap.symm.le hv
+    have hwa' : e.symm v = w := e.symm_apply_eq.mpr hwa.symm
+    exact hwa' ▸ hw
+
+private theorem forall_mem_closure_toLin'_mem {r : ℕ}
+    (S : Set (Matrix.specialUnitaryGroup (Fin r) ℂ)) (V : Submodule ℂ (Fin r → ℂ))
+    (hS : ∀ a ∈ S, ∀ v ∈ V, Matrix.toLin' (a : Matrix (Fin r) (Fin r) ℂ) v ∈ V) :
+    ∀ u ∈ Subgroup.closure S, ∀ v ∈ V, Matrix.toLin' (u : Matrix (Fin r) (Fin r) ℂ) v ∈ V :=
+  (Subgroup.closure_le (K := invariantSubgroup V)).mpr hS
+
+/-- The subgroup of `SU(r)` commuting with a complex matrix `M`. -/
+private def commuteSubgroup {r : ℕ} (M : Matrix (Fin r) (Fin r) ℂ) :
+    Subgroup (Matrix.specialUnitaryGroup (Fin r) ℂ) where
+  carrier := {a | Commute M (a : Matrix (Fin r) (Fin r) ℂ)}
+  one_mem' := Commute.one_right M
+  mul_mem' ha hb := by simpa [Submonoid.coe_mul] using ha.mul_right hb
+  inv_mem' {a} ha := Commute.units_inv_right
+    (u := Unitary.toUnits (⟨a, Matrix.specialUnitaryGroup_le_unitaryGroup a.property⟩ :
+      Matrix.unitaryGroup (Fin r) ℂ)) ha
+
+private theorem forall_mem_closure_commute {r : ℕ}
+    (S : Set (Matrix.specialUnitaryGroup (Fin r) ℂ)) (M : Matrix (Fin r) (Fin r) ℂ)
+    (hS : ∀ a ∈ S, Commute M (a : Matrix (Fin r) (Fin r) ℂ)) :
+    ∀ u ∈ Subgroup.closure S, Commute M (u : Matrix (Fin r) (Fin r) ℂ) :=
+  (Subgroup.closure_le (K := commuteSubgroup M)).mpr hS
+
 /-- **Irreducibility of coprime twisted representations.** For a primitive `r`-th root of unity
 `ζ`, no proper nontrivial subspace of `ℂ^r` is invariant under all entries `(x j).1` and
 `(x j).2` of a solution `x ∈ relationSet r ζ g`. -/
@@ -134,45 +253,11 @@ theorem eq_bot_or_eq_top_of_invariant_relationSet {r : ℕ} {ζ : ℂ}
   rcases Nat.eq_zero_or_pos r with rfl | hr
   · exact Or.inl (Subsingleton.elim _ _)
   have hirr := isIrreducible_entryRep hζ hr hx
-  have hinv : ∀ u ∈ entrySubgroup x, ∀ v ∈ V,
-      Matrix.toLin' (u : Matrix (Fin r) (Fin r) ℂ) v ∈ V := by
-    intro u hu
-    induction hu using Subgroup.closure_induction with
-    | mem y hy =>
-      rcases hy with ⟨j, rfl⟩ | ⟨j, rfl⟩
+  have hinv := forall_mem_closure_toLin'_mem
+    (Set.range (fun j => (x j).1) ∪ Set.range (fun j => (x j).2)) V (by
+      rintro y (⟨j, rfl⟩ | ⟨j, rfl⟩)
       · exact (hV j).1
-      · exact (hV j).2
-    | one =>
-      intro v hv
-      simpa using hv
-    | mul a b _ _ ha hb =>
-      intro v hv
-      simpa [Submonoid.coe_mul, Matrix.mulVec_mulVec] using ha _ (hb v hv)
-    | inv a _ ha =>
-      intro v hv
-      let e : (Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ) :=
-        { toLinearMap := Matrix.toLin' (a : Matrix (Fin r) (Fin r) ℂ)
-          invFun := Matrix.toLin' ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
-            Matrix (Fin r) (Fin r) ℂ)
-          left_inv := fun w => by
-            have ha1 : ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
-                Matrix (Fin r) (Fin r) ℂ) * (a : Matrix (Fin r) (Fin r) ℂ) = 1 :=
-              congrArg Subtype.val (inv_mul_cancel a)
-            simp [Matrix.mulVec_mulVec, ha1]
-          right_inv := fun w => by
-            have ha2 : (a : Matrix (Fin r) (Fin r) ℂ) *
-                ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = 1 :=
-              congrArg Subtype.val (mul_inv_cancel a)
-            simp [Matrix.mulVec_mulVec, ha2] }
-      have hmap : Submodule.map e.toLinearMap V = V :=
-        Submodule.eq_of_le_of_finrank_eq
-          (Submodule.map_le_iff_le_comap.mpr ha)
-          (LinearEquiv.finrank_map_eq e V)
-      obtain ⟨w, hw, hwa⟩ := hmap.symm.le hv
-      have hw' : Matrix.toLin'
-          ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) v = w :=
-        e.symm_apply_eq.mpr hwa.symm
-      simpa [hw'] using hw
+      · exact (hV j).2)
   let σ : Subrepresentation (entryRep x) := ⟨V, fun u v hv => hinv u u.property v hv⟩
   rcases hirr.eq_bot_or_eq_top σ with hbot | htop
   · exact Or.inl (congrArg Subrepresentation.toSubmodule hbot)
@@ -191,35 +276,11 @@ theorem exists_eq_smul_one_of_commute_relationSet {r : ℕ} {ζ : ℂ}
   rcases Nat.eq_zero_or_pos r with rfl | hr
   · exact ⟨0, Subsingleton.elim _ _⟩
   have := isIrreducible_entryRep hζ hr hx
-  have hcomm : ∀ u ∈ entrySubgroup x, Commute M (u : Matrix (Fin r) (Fin r) ℂ) := by
-    intro u hu
-    induction hu using Subgroup.closure_induction with
-    | mem y hy =>
-      rcases hy with ⟨j, rfl⟩ | ⟨j, rfl⟩
+  have hcomm := forall_mem_closure_commute
+    (Set.range (fun j => (x j).1) ∪ Set.range (fun j => (x j).2)) M (by
+      rintro y (⟨j, rfl⟩ | ⟨j, rfl⟩)
       · exact (hM j).1
-      · exact (hM j).2
-    | one => exact Commute.one_right M
-    | mul a b _ _ ha hb => simpa [Submonoid.coe_mul] using ha.mul_right hb
-    | inv a _ ha =>
-      rw [Commute, SemiconjBy]
-      calc M * ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)
-          = ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-              (a : Matrix (Fin r) (Fin r) ℂ) * M *
-              ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
-              have ha1 : ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
-                  Matrix (Fin r) (Fin r) ℂ) * (a : Matrix (Fin r) (Fin r) ℂ) = 1 :=
-                congrArg Subtype.val (inv_mul_cancel a)
-              rw [ha1, Matrix.one_mul]
-        _ = ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) * M *
-              ((a : Matrix (Fin r) (Fin r) ℂ) *
-                ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) := by
-              rw [Matrix.mul_assoc _ _ M, ha.symm.eq]
-              simp only [Matrix.mul_assoc]
-        _ = ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) * M := by
-              have ha2 : (a : Matrix (Fin r) (Fin r) ℂ) *
-                  ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = 1 :=
-                congrArg Subtype.val (mul_inv_cancel a)
-              rw [ha2, Matrix.mul_one]
+      · exact (hM j).2)
   obtain ⟨c, hc⟩ := Representation.IsIrreducible.exists_forall_apply_eq_smul (ρ := entryRep x)
     (Matrix.toLin' M) fun u v => by
       simp [entryRep, Matrix.mulVec_mulVec, (hcomm u u.property).eq]

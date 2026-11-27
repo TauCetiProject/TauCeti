@@ -233,8 +233,7 @@ theorem ker_toPSL_eq_center :
     have hcomm : Commute ((diagITest hij : specialUnitaryGroup n ℂ) : Matrix n n ℂ) A :=
       congrArg Subtype.val (Subgroup.mem_center_iff.mp hA (diagITest hij))
     refine TauCeti.apply_eq_zero_of_commute_diagonal hcomm ?_
-    simp [hij, Complex.ext_iff]
-    norm_num
+    norm_num [hij, Complex.ext_iff]
   have hconst : ∀ i : n, (A : Matrix n n ℂ) i i = (A : Matrix n n ℂ) i₀ i₀ := fun i => by
     by_cases hi : i = i₀
     · rw [hi]
@@ -244,8 +243,7 @@ theorem ker_toPSL_eq_center :
     have hentry := congr_fun₂ hcomm i i₀
     rw [← hdiag.diagonal_diag] at hentry
     have hR : ((signedSwapTest hi : specialUnitaryGroup n ℂ) : Matrix n n ℂ) i i₀ = -1 := by
-      simp [signedSwapTest, mul_diagonal, Equiv.Perm.permMatrix, PEquiv.toMatrix_apply,
-        Equiv.toPEquiv_apply]
+      simp [signedSwapTest, mul_diagonal]
     simpa [mul_diagonal, diagonal_mul, hR] using hentry.symm
   have hscalar : scalar n ((A : Matrix n n ℂ) i₀ i₀) = (A : Matrix n n ℂ) := by
     ext a b
