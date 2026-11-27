@@ -16,9 +16,10 @@ For a gerbe `F` with an `A`-banding `b`:
 * the local coefficient of `c_b(U)(a)` at `f` is the restriction of `a` along `f`;
 * two families of local objects on the same sieve give the same local coefficients, with no
   isomorphisms between the chosen objects;
-* the inverse of `c_b(U)` sends the unit section to the unit, `c_b(U)(a)` to `a` and `z⁻¹` to the
-  inverse coefficient; `c_b(U)` of the inverse of `z` is `z`; the inverse of a restricted section is
-  the restricted coefficient; a section other than the unit has a coefficient other than the unit.
+* the inverse map `(centerFromBandingEquiv U).symm` sends the unit section to the unit, `c_b(U)(a)`
+  to `a` and `z⁻¹` to the inverse coefficient; `c_b(U)` of the preimage
+  `(centerFromBandingEquiv U).symm z` is `z`; the inverse map sends a restricted section to the
+  restricted coefficient; a section other than the unit has a coefficient other than the unit.
 -/
 
 public section
@@ -34,9 +35,9 @@ variable {C : Type*} [Category* C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat}
   (xs : ∀ ⦃V : C⦄ (f : V ⟶ U), R f → F.obj (.mk (op V)))
 
 /-- The local coefficient of the unit section is zero on every arrow. -/
-example {V : C} (f : V ⟶ U) (hf : R f) : b.localCoefficient R xs 1 f hf = 0 := by
-  rw [localCoefficient_apply, map_one, map_one, toAdd_one]
-  rfl
+example {V : C} (f : V ⟶ U) (hf : R f) :
+    b.localCoefficient R xs 1 f hf = (0 : A.obj.obj (op V)) := by
+  simp [localCoefficient_apply]
 
 /-- The local coefficient of `c_b(U)(a)` at `f` is the restriction of `a` along `f`. -/
 example (a : Multiplicative (A.obj.obj (op U))) {V : C} (f : V ⟶ U) (hf : R f) :
@@ -55,7 +56,8 @@ example (ys : ∀ ⦃V : C⦄ (f : V ⟶ U), R f → F.obj (.mk (op V))) (z : In
 example : (b.centerFromBandingEquiv U).symm 1 = 1 :=
   map_one _
 
-/-- The inverse of `c_b(U)(a)` is `a`, and `c_b(U)` of the inverse of `z` is `z`. -/
+/-- The inverse map sends `c_b(U)(a)` to `a`, and `c_b(U)` of the preimage
+`(centerFromBandingEquiv U).symm z` is `z`. -/
 example (a : Multiplicative (A.obj.obj (op U))) (z : IntrinsicBandSections F U) :
     (b.centerFromBandingEquiv U).symm (b.centerFromBanding U a) = a ∧
       b.centerFromBanding U ((b.centerFromBandingEquiv U).symm z) = z :=

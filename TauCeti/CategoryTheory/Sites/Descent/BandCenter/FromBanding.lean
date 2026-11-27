@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.Limits
 public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Banding
 public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Cover
 public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Local
+public import TauCeti.CategoryTheory.Sites.Whiskering
 
 /-!
 # The coefficients of a banding are the intrinsic central sections
@@ -33,8 +34,8 @@ over which the fibre of `F` is empty (`AbelianBanding.centerFromBandingEquiv`).
   since central sections are separated. When an object `x` over `U` is given, the preimage of `z`
   is `b(U, x)⁻¹ (ev_(𝟙, x)(z))` directly (`AbelianBanding.centerFromBanding_surjective_of_object`).
 
-This is the comparison between the coefficient sheaf of a banding and the intrinsic band in the
-varying-base step of the Stacks Project, Lemma 8.11.8 (06NY).
+This is the sectionwise part of the comparison between the coefficient sheaf of a banding and the
+intrinsic band in the varying-base step of the Stacks Project, Lemma 8.11.8 (06NY).
 
 ## Main definitions
 
@@ -47,11 +48,12 @@ In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 
 * `centerFromBanding_injective`, `centerFromBanding_surjective`,
   `centerFromBanding_surjective_of_object`.
-* `centerFromBanding_symm_evaluation`: `c_b(V)(b(V, x)⁻¹ (ev_(f, x)(z))) = r_f(z)`.
+* `centerFromBanding_mulEquiv_symm_evaluation`: `c_b(V)(b(V, x)⁻¹ (ev_(f, x)(z))) = r_f(z)`.
 * `centerFromBanding_localCoefficient`, `localCoefficient_compatible`.
-* `centerFromBandingEquiv_symm_restrict`, `centerFromBandingEquiv_symm_restrict_eq`: the inverse
-  commutes with restriction, and its restriction along `f` is the local coefficient at any object
-  over the source of `f`.
+* `centerFromBandingEquiv_symm_restrict`,
+  `centerFromBandingEquiv_symm_restrict_eq_mulEquiv_symm_evaluation`: the inverse commutes with
+  restriction, and its restriction along `f` is the local coefficient at any object over the source
+  of `f`.
 
 ## References
 
@@ -95,8 +97,7 @@ over `U` is empty. -/
 theorem centerFromBanding_injective (U : C) : Function.Injective (b.centerFromBanding U) := by
   intro a a' h
   obtain ⟨R, hR, hne⟩ := IsGerbe.exists_covering_nonempty (F := F) (J := J) U
-  have hA := ((isSheaf_iff_isSheaf_of_type J _).1
-    (Presheaf.isSheaf_comp_of_isSheaf J A.obj (forget AddCommGrpCat) A.property)).isSeparated R hR
+  have hA := (A.isSheaf_obj_comp (forget AddCommGrpCat)).isSeparated R hR
   refine Multiplicative.toAdd.injective (hA.ext fun V f hf ↦ ?_)
   obtain ⟨x⟩ := hne f hf
   have hx := congrArg (IntrinsicBandSections.evaluation f x) h
@@ -106,7 +107,7 @@ theorem centerFromBanding_injective (U : C) : Function.Injective (b.centerFromBa
 /-- **Recovering a restriction from a local coefficient.** For `f : V ⟶ U`, an object `x` over `V`
 and `z ∈ ZF(U)`, the central section of the coefficient `b(V, x)⁻¹ (ev_(f, x)(z))` is the
 restriction `r_f(z)`. -/
-theorem centerFromBanding_symm_evaluation {U V : C} (f : V ⟶ U) (x : F.obj (.mk (op V)))
+theorem centerFromBanding_mulEquiv_symm_evaluation {U V : C} (f : V ⟶ U) (x : F.obj (.mk (op V)))
     (z : IntrinsicBandSections F U) :
     b.centerFromBanding V ((b.mulEquiv V x).symm (IntrinsicBandSections.evaluation f x z)) =
       restrict f z := by
@@ -118,7 +119,7 @@ theorem centerFromBanding_symm_evaluation {U V : C} (f : V ⟶ U) (x : F.obj (.m
 central section of the coefficient `b(U, x)⁻¹ (ev_(𝟙, x)(z))`. -/
 theorem centerFromBanding_surjective_of_object {U : C} (x : F.obj (.mk (op U))) :
     Function.Surjective (b.centerFromBanding U) :=
-  fun z ↦ ⟨_, (b.centerFromBanding_symm_evaluation (𝟙 U) x z).trans (restrict_id z)⟩
+  fun z ↦ ⟨_, (b.centerFromBanding_mulEquiv_symm_evaluation (𝟙 U) x z).trans (restrict_id z)⟩
 
 /-- **Local recovery.** The central section of the local coefficient at `f ∈ R` is `r_f(z)`. -/
 theorem centerFromBanding_localCoefficient {U : C} (R : Sieve U)
@@ -126,7 +127,7 @@ theorem centerFromBanding_localCoefficient {U : C} (R : Sieve U)
     {V : C} (f : V ⟶ U) (hf : R f) :
     b.centerFromBanding V (Multiplicative.ofAdd (b.localCoefficient R xs z f hf)) =
       restrict f z :=
-  b.centerFromBanding_symm_evaluation f (xs f hf) z
+  b.centerFromBanding_mulEquiv_symm_evaluation f (xs f hf) z
 
 /-- **The local coefficients are compatible**, with no compatibility between the chosen objects,
 no fibre products and no cover condition on `R`. -/
@@ -135,12 +136,9 @@ theorem localCoefficient_compatible {U : C} (R : Sieve U)
     (b.localCoefficient R xs z).Compatible := by
   intro Y₁ Y₂ Z g₁ g₂ f₁ f₂ h₁ h₂ comm
   refine Multiplicative.ofAdd.injective (b.centerFromBanding_injective Z ?_)
-  change b.centerFromBanding Z (.ofAdd (A.obj.map g₁.op
-      (Multiplicative.toAdd (Multiplicative.ofAdd (b.localCoefficient R xs z f₁ h₁))))) =
-    b.centerFromBanding Z (.ofAdd (A.obj.map g₂.op
-      (Multiplicative.toAdd (Multiplicative.ofAdd (b.localCoefficient R xs z f₂ h₂)))))
-  rw [← restrict_centerFromBanding, ← restrict_centerFromBanding,
-    centerFromBanding_localCoefficient, centerFromBanding_localCoefficient, restrict_comp,
+  refine (b.restrict_centerFromBanding g₁ (.ofAdd (b.localCoefficient R xs z f₁ h₁))).symm.trans
+    (Eq.trans ?_ (b.restrict_centerFromBanding g₂ (.ofAdd (b.localCoefficient R xs z f₂ h₂))))
+  rw [centerFromBanding_localCoefficient, centerFromBanding_localCoefficient, restrict_comp,
     restrict_comp, comm]
 
 /-- **The coefficient map of a banding is surjective** at every `U`, even when the fibre of `F`
@@ -150,8 +148,7 @@ theorem centerFromBanding_surjective (U : C) : Function.Surjective (b.centerFrom
   intro z
   obtain ⟨R, hR, hne⟩ := IsGerbe.exists_covering_nonempty (F := F) (J := J) U
   let xs : ∀ ⦃V : C⦄ (f : V ⟶ U), R f → F.obj (.mk (op V)) := fun _ f hf ↦ (hne f hf).some
-  have hA := ((isSheaf_iff_isSheaf_of_type J _).1
-    (Presheaf.isSheaf_comp_of_isSheaf J A.obj (forget AddCommGrpCat) A.property)) R hR
+  have hA := A.isSheaf_obj_comp (forget AddCommGrpCat) R hR
   have hc := b.localCoefficient_compatible R xs z
   refine ⟨Multiplicative.ofAdd (hA.amalgamate _ hc), eq_of_restrict_eq hR fun V f hf ↦ ?_⟩
   rw [restrict_centerFromBanding, ← b.centerFromBanding_localCoefficient R xs z f hf]
@@ -192,10 +189,11 @@ theorem centerFromBandingEquiv_symm_restrict {U V : C} (f : V ⟶ U)
 
 /-- **The inverse restricts to the local coefficients**: for `f : V ⟶ U` and any object `x` over
 `V`, the coefficient of `r_f(z)` is `b(V, x)⁻¹ (ev_(f, x)(z))`. -/
-theorem centerFromBandingEquiv_symm_restrict_eq {U V : C} (f : V ⟶ U) (x : F.obj (.mk (op V)))
-    (z : IntrinsicBandSections F U) :
+theorem centerFromBandingEquiv_symm_restrict_eq_mulEquiv_symm_evaluation {U V : C} (f : V ⟶ U)
+    (x : F.obj (.mk (op V))) (z : IntrinsicBandSections F U) :
     (b.centerFromBandingEquiv V).symm (restrict f z) =
       (b.mulEquiv V x).symm (IntrinsicBandSections.evaluation f x z) := by
-  rw [MulEquiv.symm_apply_eq, centerFromBandingEquiv_apply, centerFromBanding_symm_evaluation]
+  rw [MulEquiv.symm_apply_eq, centerFromBandingEquiv_apply,
+    centerFromBanding_mulEquiv_symm_evaluation]
 
 end CategoryTheory.Pseudofunctor.AbelianBanding
