@@ -500,6 +500,14 @@ theorem integral_empiricalMeasure_rclike {𝕜 : Type*} [RCLike 𝕜] {x : ℕ �
   rw [integral_empiricalMeasure hf, RCLike.real_smul_eq_coe_mul,
     RCLike.ofReal_inv, RCLike.ofReal_natCast]
 
+/-- Integrating against the uniform probability measure on `{1, …, m + 1}` is averaging the values
+at `1, …, m + 1`. -/
+theorem integral_empiricalMeasure_add_one [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] (m : ℕ) (f : ℕ → E) :
+    ∫ n, f n ∂(empiricalMeasure (· + 1) m : Measure ℕ) =
+      (m + 1 : ℝ)⁻¹ • ∑ k ∈ Finset.range (m + 1), f (k + 1) := by
+  rw [integral_empiricalMeasure .of_discrete, Nat.cast_add_one]
+
 /-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/
 theorem lintegral_empiricalMeasure {x : ℕ → α} {n : ℕ} {f : α → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ y, f y ∂(empiricalMeasure x n : Measure α) =

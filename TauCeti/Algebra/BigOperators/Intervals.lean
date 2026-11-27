@@ -61,6 +61,8 @@ by at most two `n'`, so `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 �
   over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
 * `Finset.sum_Ioc_neg_zero_eq_sum_range`: the sum of `F j` over `-a < j ≤ 0` is the sum of
   `F (-(k : ℤ))` over `k < a`.
+* `Finset.sum_Ioc_zero_natCast_eq_sum_range`: the sum of `F j` over `0 < j ≤ b` is the sum of
+  `F (k + 1)` over `k < b`.
 * `Finset.sum_Icc_neg_natCast_eq_sum_range`: the sum of `F j` over `-n ≤ j ≤ n` is the sum of
   `F (k - n)` over `k < 2 n + 1`.
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
@@ -199,6 +201,21 @@ theorem sum_Ioc_neg_zero_eq_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ →
     omega
   · simp only [mem_Ioc] at hj
     rw [Int.toNat_of_nonneg (by omega), neg_neg]
+
+/-- Reindexing a positive integer interval: the sum of `F j` over `0 < j ≤ b` is the sum of
+`F (k + 1)` over `k < b`. -/
+theorem sum_Ioc_zero_natCast_eq_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (b : ℕ) :
+    ∑ j ∈ Ioc (0 : ℤ) b, F j = ∑ k ∈ range b, F ((k : ℤ) + 1) := by
+  refine sum_nbij' (fun j ↦ (j - 1).toNat) (fun k ↦ (k : ℤ) + 1) (fun j hj ↦ ?_) (fun k hk ↦ ?_)
+    (fun j hj ↦ ?_) (fun k _ ↦ by simp) (fun j hj ↦ ?_)
+  · simp only [mem_Ioc, mem_range] at hj ⊢
+    omega
+  · simp only [mem_Ioc, mem_range] at hk ⊢
+    omega
+  · simp only [mem_Ioc] at hj
+    omega
+  · simp only [mem_Ioc] at hj
+    rw [Int.toNat_of_nonneg (by omega), sub_add_cancel]
 
 /-- Reindexing a centred integer interval: the sum of `F j` over `-n ≤ j ≤ n` is the sum of
 `F (k - n)` over `k < 2 n + 1`. -/
