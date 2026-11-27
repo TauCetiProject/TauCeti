@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.LSeries.GaussianTheta
-import TauCeti.Analysis.Asymptotics.Sum.AbelBound
+import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 
 /-!
@@ -31,42 +31,6 @@ public section
 open Filter MeasureTheory Real
 open scoped Topology
 
-namespace TauCeti
-
-private theorem gaussianMonomial_rescale (j : Fin 2) {u : ℝ} (hu : 0 < u) :
-    Differentiable ℝ (fun t : ℝ ↦ (gaussianMonomial j (t * u) : ℂ)) ∧
-      IntegrableOn (deriv fun t : ℝ ↦ (gaussianMonomial j (t * u) : ℂ)) (Set.Ici 0) ∧
-      Tendsto (fun t : ℝ ↦ (gaussianMonomial j (t * u) : ℂ)) atTop (𝓝 0) ∧
-      (∫ t in Set.Ioi 0, ‖deriv (fun x : ℝ ↦ (gaussianMonomial j (x * u) : ℂ)) t‖) ≤ 1 := by
-  let f (t : ℝ) : ℂ := gaussianMonomial j (t * u)
-  have hderiv (t : ℝ) : HasDerivAt f ((deriv (gaussianMonomial j) (t * u) * u : ℝ) : ℂ) t := by
-    have hm : HasDerivAt (fun t ↦ t * u) u t := by simpa using (hasDerivAt_id t).mul_const u
-    exact Complex.ofRealCLM.hasFDerivAt.comp_hasDerivAt t
-      ((differentiable_gaussianMonomial j (t * u)).hasDerivAt.comp t hm)
-  have hdf : deriv f = fun t ↦ ((deriv (gaussianMonomial j) (t * u) * u : ℝ) : ℂ) :=
-    funext fun t ↦ (hderiv t).deriv
-  have hscaled := (integrableOn_Ioi_comp_mul_right_iff (deriv (gaussianMonomial j)) 0 hu).2
-    (by simpa only [zero_mul] using integrableOn_deriv_gaussianMonomial j)
-  refine ⟨fun t ↦ (hderiv t).differentiableAt, ?_, ?_, ?_⟩
-  · have h : IntegrableOn (deriv f) (Set.Ioi 0) := by
-      rw [hdf]
-      exact (hscaled.mul_const u).ofReal
-    exact (integrableOn_Ici_iff_integrableOn_Ioi).mpr h
-  · have h := Complex.continuous_ofReal.continuousAt.tendsto.comp
-      ((tendsto_gaussianMonomial_atTop_zero j).comp (tendsto_id.atTop_mul_const hu))
-    simpa only [Function.comp_def, id_eq, Complex.ofReal_zero, f] using h
-  · have hnorm (t : ℝ) : ‖deriv f t‖ = u * ‖deriv (gaussianMonomial j) (t * u)‖ := by
-      rw [hdf, Complex.norm_real, norm_mul, norm_of_nonneg hu.le, mul_comm]
-    -- The factor `u` from the chain rule cancels the Jacobian of the rescaling.
-    have h : (∫ t in Set.Ioi 0, ‖deriv f t‖) =
-        ∫ t in Set.Ioi 0, ‖deriv (gaussianMonomial j) t‖ := by
-      simp_rw [hnorm]
-      rw [integral_const_mul, ← smul_eq_mul,
-        integral_comp_mul_right_Ioi' (fun t ↦ ‖deriv (gaussianMonomial j) t‖) 0 hu, zero_mul]
-    exact h.le.trans (integral_norm_deriv_gaussianMonomial_le j)
-
-end TauCeti
-
 namespace DirichletCharacter
 
 open TauCeti
@@ -80,9 +44,32 @@ theorem norm_gaussianTheta_le_of_ne_one {N : ℕ} [NeZero N] (χ : DirichletChar
   have hpartial (n : ℕ) : ‖∑ k ∈ Finset.Icc 0 n, χ k‖ ≤ (N : ℝ) := by
     simpa [Finset.Icc_eq_cons_Ioc n.zero_le, ← Finset.Icc_add_one_left_eq_Ioc, hχ0] using
       χ.norm_sum_Icc_le_level hχ n
-  obtain ⟨hf, hi, ht, hb⟩ := gaussianMonomial_rescale j hu
+  let f (t : ℝ) : ℂ := gaussianMonomial j (t * u)
+  have hderiv (t : ℝ) : HasDerivAt f ((deriv (gaussianMonomial j) (t * u) * u : ℝ) : ℂ) t := by
+    have hm : HasDerivAt (fun t ↦ t * u) u t := by simpa using (hasDerivAt_id t).mul_const u
+    exact ((differentiable_gaussianMonomial j (t * u)).hasDerivAt.comp t hm).ofReal_comp
+  have hdf : deriv f = fun t ↦ ((deriv (gaussianMonomial j) (t * u) * u : ℝ) : ℂ) :=
+    funext fun t ↦ (hderiv t).deriv
+  have hi : IntegrableOn (deriv f) (Set.Ici 0) := by
+    have hs := (integrableOn_Ioi_comp_mul_right_iff (deriv (gaussianMonomial j)) 0 hu).2
+      (by simpa only [zero_mul] using integrableOn_deriv_gaussianMonomial j)
+    rw [integrableOn_Ici_iff_integrableOn_Ioi, hdf]
+    exact (hs.mul_const u).ofReal
+  have ht : Tendsto f atTop (𝓝 0) := by
+    simpa only [Function.comp_def, id_eq, Complex.ofReal_zero, f] using
+      Complex.continuous_ofReal.continuousAt.tendsto.comp
+        ((tendsto_gaussianMonomial_atTop_zero j).comp (tendsto_id.atTop_mul_const hu))
+  have hnormDeriv (t : ℝ) : ‖deriv f t‖ = u * ‖deriv (gaussianMonomial j) (t * u)‖ := by
+    simp only [hdf, Complex.norm_real, norm_mul, norm_of_nonneg hu.le]
+    exact mul_comm _ _
+  -- The factor `u` from the chain rule cancels the Jacobian of the rescaling.
+  have hb : (∫ t in Set.Ioi 0, ‖deriv f t‖) ≤ 1 := by
+    simp_rw [hnormDeriv]
+    rw [integral_const_mul, ← smul_eq_mul,
+      integral_comp_mul_right_Ioi' (fun t ↦ ‖deriv (gaussianMonomial j) t‖) 0 hu, zero_mul]
+    exact integral_norm_deriv_gaussianMonomial_le j
   obtain ⟨L, hL, hnorm⟩ := exists_tendsto_sum_mul_and_norm_le
-    (f := fun t : ℝ ↦ (gaussianMonomial j (t * u) : ℂ)) hpartial (fun t _ ↦ hf t) hi ht
+    (f := f) hpartial (fun t _ ↦ (hderiv t).differentiableAt) hi ht
   have hs : Summable (fun n : ℕ ↦ χ n * (gaussianMonomial j (n * u) : ℂ)) :=
     summable_pnat_iff_summable_nat.mp <|
       summable_gaussianTheta (j := j) (c := fun n ↦ χ n) (fun n ↦ χ.norm_le_one _) hu
