@@ -277,7 +277,7 @@ local notation "c" => twoCocycleOfBilinear R ℤ L Φ hΦ hΦs
 local notation "E" => ofTwoCocycle c
 
 /-- The degree derivation is skew for the residue cocycle. -/
-theorem residuePairing_degreeDerivation_add (u v : P) :
+theorem twoCocycleOfBilinear_degreeDerivation_add_eq_zero (u v : P) :
     (c : twoCochain R P (TrivialLieModule R P R)) (degreeDerivation R L u) v +
       (c : twoCochain R P (TrivialLieModule R P R)) u (degreeDerivation R L v) = 0 := by
   simp only [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, ← map_add,
@@ -286,7 +286,8 @@ theorem residuePairing_degreeDerivation_add (u v : P) :
 /-- **The degree derivation on the central extension** `ĝ = ofTwoCocycle c`, acting by `t d/dt`
 on loop modes and annihilating the central element `K`. -/
 def extensionDegreeDerivation : LieDerivation R E E :=
-  ofTwoCocycle.derivation c (degreeDerivation R L) (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+  ofTwoCocycle.derivation c (degreeDerivation R L)
+    (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs)
 
 @[simp]
 theorem extensionDegreeDerivation_ofProd (u : P) (z : TrivialLieModule R P R) :
@@ -305,34 +306,34 @@ local notation "δ" => extensionDegreeDerivation Φ hΦ hΦs
 `loopAlgebra R ℤ L` by `Φ` with the degree derivation `d = t d/dt` adjoined. -/
 def extendedResidueExtension : Type _ :=
   ofTwoCocycle.derivationExtension c (degreeDerivation R L)
-    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+    (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs)
 
 instance : LieRing (extendedResidueExtension Φ hΦ hΦs) :=
   inferInstanceAs (LieRing
     (ofTwoCocycle.derivationExtension c (degreeDerivation R L)
-      (residuePairing_degreeDerivation_add Φ hΦ hΦs)))
+      (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs)))
 
 instance : LieAlgebra R (extendedResidueExtension Φ hΦ hΦs) :=
   inferInstanceAs (LieAlgebra R
     (ofTwoCocycle.derivationExtension c (degreeDerivation R L)
-      (residuePairing_degreeDerivation_add Φ hΦ hΦs)))
+      (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs)))
 
 local notation "E'" => extendedResidueExtension Φ hΦ hΦs
 
 /-- The inclusion of the residue central extension `ĝ` into the extended affine loop algebra. -/
 def toExtendedResidueExtension : E →ₗ⁅R⁆ E' :=
   ofTwoCocycle.toDerivationExtension c (degreeDerivation R L)
-    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+    (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs)
 
 /-- The adjoined degree element `d` of the extended affine loop algebra. -/
 def degreeElement : E' :=
   ofTwoCocycle.derivationElement c (degreeDerivation R L)
-    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+    (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs)
 
 /-- The projection from the extended affine loop algebra onto the degree coordinate `R`. -/
 def degreeProj : E' →ₗ⁅R⁆ R :=
   ofTwoCocycle.derivationProj c (degreeDerivation R L)
-    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+    (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs)
 
 /-- The degree projection vanishes on the residue central extension `ĝ`. -/
 @[simp]
@@ -348,7 +349,7 @@ theorem degreeProj_degreeElement : degreeProj Φ hΦ hΦs (degreeElement Φ hΦ 
 /-- The linear equivalence identifying `extendedResidueExtension Φ hΦ hΦs` with `ĝ × R`. -/
 def extendedToProd : E' ≃ₗ[R] E × R :=
   ofTwoCocycle.derivationToProd c (degreeDerivation R L)
-    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+    (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs)
 
 @[simp]
 theorem extendedToProd_toExtendedResidueExtension (x : E) :
@@ -360,7 +361,7 @@ theorem extendedToProd_degreeElement :
     extendedToProd Φ hΦ hΦs (degreeElement Φ hΦ hΦs) = (0, 1) :=
   ofTwoCocycle.derivationToProd_derivationElement c (degreeDerivation R L) _
 
-/-- Reconstructing an element of `extendedResidueExtension` from `(P × R) × R` coordinates. -/
+/-- Reconstructing an element of `extendedResidueExtension` from `ĝ × R` coordinates `(x, t)`. -/
 theorem extendedToProd_symm_apply (x : E) (t : R) :
     (extendedToProd Φ hΦ hΦs).symm (x, t) =
       toExtendedResidueExtension Φ hΦ hΦs x + t • degreeElement Φ hΦ hΦs :=
@@ -582,7 +583,7 @@ theorem extendedToProd_lie (x y : E') :
   -- definitionally equal to `ofTwoCocycle.derivationExtension`, and `extendedToProd` unfolds to
   -- `ofTwoCocycle.derivationToProd`.
   exact ofTwoCocycle.derivationToProd_lie_ofProd c (degreeDerivation R L)
-    (residuePairing_degreeDerivation_add Φ hΦ hΦs) x y
+    (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs) x y
 
 /-- **`extendedBilinForm` is `ĝ'`-invariant**: `B(⁅x, y⁆, w) + B(y, ⁅x, w⁆) = 0`. -/
 theorem extendedBilinForm_lieInvariant : (extendedBilinForm Φ hΦ hΦs).lieInvariant E' := by

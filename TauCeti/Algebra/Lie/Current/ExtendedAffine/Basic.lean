@@ -92,7 +92,7 @@ local notation "E" => ofTwoCocycle c
 local notation "d₀" => vectorFieldDerivation R L (single 1 1)
 
 /-- The degree derivation `t d/dt` is skew for the residue cocycle. -/
-theorem residuePairing_degreeDerivation_add (u v : C) :
+theorem twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero (u v : C) :
     (c : twoCochain R C (TrivialLieModule R C R)) (d₀ u) v +
       (c : twoCochain R C (TrivialLieModule R C R)) u (d₀ v) = 0 := by
   simp only [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, ← map_add,
@@ -102,25 +102,30 @@ theorem residuePairing_degreeDerivation_add (u v : C) :
 `Φ` with the degree derivation `d = t d/dt` adjoined, so that `⁅d, x_n⁆ = n x_n` and
 `⁅d, K⁆ = 0`. -/
 def extendedResidueExtension : Type _ :=
-  ofTwoCocycle.derivationExtension c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+  ofTwoCocycle.derivationExtension c d₀
+    (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs)
 
 instance : LieRing (extendedResidueExtension Φ hΦ hΦs) :=
   inferInstanceAs (LieRing
-    (ofTwoCocycle.derivationExtension c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)))
+    (ofTwoCocycle.derivationExtension c d₀
+      (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs)))
 
 instance : LieAlgebra R (extendedResidueExtension Φ hΦ hΦs) :=
   inferInstanceAs (LieAlgebra R
-    (ofTwoCocycle.derivationExtension c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)))
+    (ofTwoCocycle.derivationExtension c d₀
+      (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs)))
 
 local notation "E'" => extendedResidueExtension Φ hΦ hΦs
 
 /-- The inclusion of the residue central extension `ĝ` in the extended affine algebra. -/
 def toExtendedResidueExtension : E →ₗ⁅R⁆ E' :=
-  ofTwoCocycle.toDerivationExtension c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+  ofTwoCocycle.toDerivationExtension c d₀
+    (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs)
 
 /-- The adjoined degree element `d` of the extended affine algebra. -/
 def degreeElement : E' :=
-  ofTwoCocycle.derivationElement c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)
+  ofTwoCocycle.derivationElement c d₀
+    (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs)
 
 /-- The inclusion of `ĝ` in the extended affine algebra is injective. -/
 theorem toExtendedResidueExtension_injective :
@@ -135,7 +140,8 @@ theorem exists_eq_add_smul_degreeElement (y : E') :
 /-- The degree derivation on `ĝ` agrees with `ofTwoCocycle.derivation` for `t d/dt`. -/
 theorem vectorFieldExtensionDerivation_single_one_eq_derivation :
     vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) =
-      ofTwoCocycle.derivation c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs) := by
+      ofTwoCocycle.derivation c d₀
+        (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs) := by
   ext x
   obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective x
   rw [vectorFieldExtensionDerivation_ofProd, ofTwoCocycle.derivation_ofProd]
@@ -147,7 +153,7 @@ theorem lie_degreeElement_toExtendedResidueExtension (x : E) :
         (vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) x) := by
   rw [vectorFieldExtensionDerivation_single_one_eq_derivation]
   exact ofTwoCocycle.lie_derivationElement_toDerivationExtension c d₀
-    (residuePairing_degreeDerivation_add Φ hΦ hΦs) x
+    (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs) x
 
 /-- **The degree element on modes**: `⁅d, x_n⁆ = n x_n` for `x_n = r tⁿ ⊗ x`. -/
 theorem lie_degreeElement_toExtendedResidueExtension_ofProd_single_tmul (n : ℤ) (r : R) (x : L) :
@@ -188,7 +194,8 @@ local notation "d₀" => vectorFieldDerivation R L (single 1 1)
 private theorem vectorFieldEnvelopingDerivation_ι_derivation (x : ofTwoCocycle c) :
     (dU : Module.End R UK) (CentralQuotient.ι (centralElement c) a x) =
       CentralQuotient.ι (centralElement c) a
-        (ofTwoCocycle.derivation c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs) x) := by
+        (ofTwoCocycle.derivation c d₀
+          (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs) x) := by
   rw [vectorFieldEnvelopingDerivation_ι, vectorFieldExtensionDerivation_single_one_eq_derivation]
 
 /-- The algebra map `U(ĝ) / (ι K - a) → U(ĝ') / (ι K - a)` induced by the inclusion of `ĝ` in the
