@@ -34,7 +34,7 @@ Thus whenever `q` is integrable between `0` and `t`,
 `TauCeti.exp_neg_le_norm_diracHermiteBiehlerDirichlet_ofReal`). In particular `E(t, ·)` and
 `E~(t, ·)` have no zeros on `ℝ`. Between any two times `s, t` in an interval containing `0`
 on which `q` is integrable, either modulus grows by at most `exp |∫ₛᵗ |q||`
-(`TauCeti.norm_diracFundamentalMatrix_sub_I_mul_le_mul_exp_abs_integral`).
+(`TauCeti.norm_diracFundamentalMatrix_ofReal_sub_I_mul_le_mul_exp_abs_integral`).
 
 ## References
 
@@ -118,7 +118,7 @@ private theorem norm_diracFundamentalMatrix_ofReal_sub_I_mul (hq : IntegrableOn 
 /-- On the real axis either Hermite–Biehler column combination grows by a factor of at most
 `exp |∫ₛᵗ |q||` between two times in a closed interval containing `0` on which `q` is integrable.
 The times may be taken in either order. -/
-theorem norm_diracFundamentalMatrix_sub_I_mul_le_mul_exp_abs_integral
+theorem norm_diracFundamentalMatrix_ofReal_sub_I_mul_le_mul_exp_abs_integral
     {a b s : ℝ} (hq : IntegrableOn q (Icc a b)) (h0 : 0 ∈ Icc a b) (hs : s ∈ Icc a b)
     (ht : t ∈ Icc a b) (x : ℝ) (j : Fin 2) :
     ‖diracFundamentalMatrix q t x 0 j - I * diracFundamentalMatrix q t x 1 j‖ ≤

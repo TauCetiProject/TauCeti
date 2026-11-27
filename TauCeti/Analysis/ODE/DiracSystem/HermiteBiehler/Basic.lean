@@ -228,21 +228,12 @@ theorem diracFundamentalMatrix_sub_I_mul_eq_exp_mul_add_integral
       simp only [P, smul_apply, one_apply_eq_self, smul_eq_mul]
       rw [← intervalIntegral.integral_interval_sub_left (hint r hr) (hint s hs)]
       linear_combination hinit r hr - hinit s hs)
-  have hfree (r : ℝ) (hr : r ∈ Icc a b) (v : ℂ) :
+  have hfree (r : ℝ) (v : ℂ) :
       propagator P t r v = exp (k * (t - r)) * v := by
-    have hone := propagator_smul_one_apply_one
-      (h := fun _ ↦ k) (integrableOn_const measure_Icc_lt_top.ne) hr ht
-    have hv : propagator P t r v = v • propagator P t r 1 := by
-      rw [← map_smul]
-      simp
-    rw [hv, hone, intervalIntegral.integral_const, ← Complex.exp_eq_exp_ℂ]
-    simp [Algebra.smul_def, mul_comm]
-  rw [hfree s hs] at hsol
-  have hkernel : (∫ r in s..t, propagator P t r (F r)) =
-      ∫ r in s..t, exp (k * (t - r)) * F r :=
-    intervalIntegral.integral_congr fun r hr ↦ hfree r (uIcc_subset_Icc hs ht hr) (F r)
-  rw [hkernel] at hsol
-  exact hsol
+    simp only [P, propagator_const, smul_smul, RCLike.ofReal_eq_complex_ofReal]
+    rw [← Algebra.algebraMap_eq_smul_one, ← NormedSpace.algebraMap_exp_comm]
+    simp [← Complex.exp_eq_exp_ℂ, mul_comm k]
+  simpa only [hfree] using hsol
 
 /-- **The free case.** For the zero potential, `E(t, z) = e^{-itz}`. -/
 theorem diracHermiteBiehler_zero_potential (t : ℝ) (z : ℂ) :

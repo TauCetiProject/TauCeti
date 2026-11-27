@@ -27,8 +27,8 @@ namespace TauCeti.Examples.DiracSystem
 /-- The absolute integral of the norm of a real constant potential is `ct` when `ct ≥ 0`. -/
 private theorem abs_integral_norm_const {c t : ℝ} (hct : 0 ≤ c * t) :
     |∫ _ in (0 : ℝ)..t, ‖(c : ℂ)‖| = c * t := by
-  rw [intervalIntegral.integral_const, sub_zero, smul_eq_mul, Complex.norm_real, Real.norm_eq_abs,
-    abs_mul, abs_abs, ← abs_mul, mul_comm t c, abs_of_nonneg hct]
+  simpa [intervalIntegral.integral_const, smul_eq_mul, Complex.norm_real, abs_mul, mul_comm]
+    using abs_of_nonneg hct
 
 /-- At zero frequency, a real constant potential with `ct ≥ 0` attains the upper bound for
 `|E(t, 0)|`. -/
