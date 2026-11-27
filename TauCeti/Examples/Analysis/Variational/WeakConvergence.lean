@@ -23,8 +23,8 @@ Checks of the direct method that use the weak convergence `eₙ ⇀ 0` of the un
   (`exists_ge_norm_sq_mixed_eq_four`): Mazur's lemma on the tails of the whole sequence only
   bounds `‖0‖²` by `4`, while along the subsequence `(eₙ)` realizing the lower limit it gives the
   lower-semicontinuity inequality `‖0‖² ≤ 1` (`norm_sq_zero_le_one_of_mazur`,
-  from `ConvexOn.le_of_tendsto_weak_of_frequently_le`; in lower-limit form
-  `norm_sq_zero_le_liminf_mixed`, from `ConvexOn.le_liminf_of_tendsto_weak`).
+  from `QuasiconvexOn.le_of_tendsto_weak_of_frequently_le`; in lower-limit form
+  `norm_sq_zero_le_liminf_mixed`, from `QuasiconvexOn.le_liminf_of_tendsto_weak`).
 * `j = id` fails the conclusion that compact maps send weakly convergent sequences to norm
   convergent ones: `eₙ ⇀ 0` but `eₙ ↛ 0` in norm (`not_tendsto_e`).
 * The unbounded sequence `(n + 1) eₙ` does not converge weakly (`not_tendsto_toWeakSpace_smul_e`),
@@ -198,7 +198,7 @@ theorem lowerSemicontinuousWithinAt_norm_sq {x : L2} :
 /-- **Mazur along the subsequence `(eₙ)`**: the energies `‖u_{2n}‖² = 1` occur frequently, so
 `‖0‖² ≤ 1`. -/
 theorem norm_sq_zero_le_one_of_mazur : ‖(0 : L2)‖ ^ 2 ≤ 1 :=
-  convexOn_norm_sq.le_of_tendsto_weak_of_frequently_le (𝕜 := ℝ)
+  convexOn_norm_sq.quasiconvexOn.le_of_tendsto_weak_of_frequently_le (𝕜 := ℝ)
     lowerSemicontinuousWithinAt_norm_sq
     (.of_forall fun _ ↦ mem_univ _) tendsto_toWeakSpace_mixed
     (frequently_atTop.2 fun N ↦ ⟨2 * N, by omega, (norm_sq_mixed_two_mul N).le⟩)
@@ -206,7 +206,7 @@ theorem norm_sq_zero_le_one_of_mazur : ‖(0 : L2)‖ ^ 2 ≤ 1 :=
 /-- The lower-semicontinuity inequality `‖0‖² ≤ liminf ‖uₖ‖² = 1` for the two-level sequence. -/
 theorem norm_sq_zero_le_liminf_mixed :
     ((‖(0 : L2)‖ ^ 2 : ℝ) : EReal) ≤ liminf (fun k ↦ ((‖mixed k‖ ^ 2 : ℝ) : EReal)) atTop :=
-  convexOn_norm_sq.le_liminf_of_tendsto_weak (𝕜 := ℝ)
+  convexOn_norm_sq.quasiconvexOn.le_liminf_of_tendsto_weak (𝕜 := ℝ)
     lowerSemicontinuousWithinAt_norm_sq
     (.of_forall fun _ ↦ mem_univ _) tendsto_toWeakSpace_mixed
 
