@@ -33,6 +33,10 @@ continuous function by `m` gives a sequence tending to `0` locally uniformly
 Families converging locally uniformly converge jointly, as families of tuples
 (`TauCeti.tendstoLocallyUniformlyOn_pi`).
 
+A map on a product `s ×ˢ t` whose slices are continuous on `t` and converge uniformly on `t` as
+the first variable converges within `s` is jointly continuous
+(`TauCeti.continuousOn_prod_of_tendstoUniformlyOn`).
+
 Uniform and locally uniform convergence along a filter `l` pass to any family of indices tending
 to `l`, for instance to a subsequence (`TendstoUniformlyOn.comp_tendsto`,
 `TendstoLocallyUniformlyOn.comp_tendsto`, `TendstoLocallyUniformly.comp_tendsto`); along an image
@@ -326,6 +330,21 @@ theorem exists_tendstoLocallyUniformlyOn_iUnion_sdiff {γ κ : Type*} [UniformSp
     fun j ↦ (hvw j).mono (hsub j)
   rw [iUnion_sdiff]
   exact ⟨v, hv⟩
+
+/-- **Joint continuity from uniformly convergent slices.** A map `g` on `s ×ˢ t` is continuous if
+each slice `g (a, ·)`, `a ∈ s`, is continuous on `t` and the slices `g (b, ·)` converge to
+`g (a, ·)` uniformly on `t` as `b` tends to `a` within `s`. -/
+theorem continuousOn_prod_of_tendstoUniformlyOn {X Y Z : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [UniformSpace Z] {g : X × Y → Z} {s : Set X} {t : Set Y}
+    (hslice : ∀ a ∈ s, ContinuousOn (fun y ↦ g (a, y)) t)
+    (hunif : ∀ a ∈ s, TendstoUniformlyOn (fun b y ↦ g (b, y)) (fun y ↦ g (a, y)) (𝓝[s] a) t) :
+    ContinuousOn g (s ×ˢ t) := by
+  rintro ⟨a, y⟩ ⟨ha, hy⟩
+  have h1 : Tendsto Prod.fst (𝓝[s ×ˢ t] (a, y)) (𝓝[s] a) :=
+    continuous_fst.continuousWithinAt.tendsto_nhdsWithin fun x hx ↦ hx.1
+  have h2 : Tendsto Prod.snd (𝓝[s ×ˢ t] (a, y)) (𝓝[t] y) :=
+    continuous_snd.continuousWithinAt.tendsto_nhdsWithin fun x hx ↦ hx.2
+  exact ((hunif a ha).comp_tendsto h1).tendsto_comp (hslice a ha y hy) h2
 
 end TauCeti
 
