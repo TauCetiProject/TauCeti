@@ -79,7 +79,7 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddComm
 
 /-- For a continuous path, an almost everywhere bound of `A s - B` through `ι` on bounded windows
 holds at every time of every compact interval. -/
-private theorem forall_norm_sub_apply_le {B : D →L[ℝ] H} (hA : Continuous A)
+theorem forall_norm_sub_apply_le {B : D →L[ℝ] H} (hA : Continuous A)
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - B) x‖ ≤ c * ‖ι x‖) (R : ℝ) :
     ∃ c, ∀ r ∈ Icc (-R) R, ∀ x, ‖(A r - B) x‖ ≤ c * ‖ι x‖ := by
   obtain ⟨c, hc⟩ := hc (R + 1)
@@ -94,7 +94,7 @@ private theorem forall_norm_sub_apply_le {B : D →L[ℝ] H} (hA : Continuous A)
 /-- If `A r - B` is bounded through `ι` for `r` in compact intervals, then so is `A (φ s) - B'` for
 `s` in bounded windows, for a continuous reparametrization `φ` and any `B'` with `B' - B`
 bounded through `ι`. -/
-private theorem ae_norm_comp_sub_apply_le {B B' : D →L[ℝ] H}
+theorem ae_norm_comp_sub_apply_le {B B' : D →L[ℝ] H}
     (hb : ∀ R, ∃ c, ∀ r ∈ Icc (-R) R, ∀ x, ‖(A r - B) x‖ ≤ c * ‖ι x‖)
     (hB' : ∃ c, ∀ x, ‖(B' - B) x‖ ≤ c * ‖ι x‖) {φ : ℝ → ℝ} (hφ : Continuous φ) (T : ℝ) :
     ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A (φ s) - B') x‖ ≤ c * ‖ι x‖ := by
@@ -109,7 +109,7 @@ private theorem ae_norm_comp_sub_apply_le {B B' : D →L[ℝ] H}
   exact (norm_sub_le _ _).trans (add_le_add (hc _ hφs x) (hc' x))
 
 /-- A bound through `ι` of `A r - B` on compact intervals gives one at each single time. -/
-private theorem exists_norm_sub_apply_le {B : D →L[ℝ] H}
+theorem exists_norm_sub_apply_le {B : D →L[ℝ] H}
     (hb : ∀ R, ∃ c, ∀ r ∈ Icc (-R) R, ∀ x, ‖(A r - B) x‖ ≤ c * ‖ι x‖) (r : ℝ) :
     ∃ c, ∀ x, ‖(A r - B) x‖ ≤ c * ‖ι x‖ :=
   (hb |r|).imp fun _ hc ↦ hc r ⟨neg_abs_le r, le_abs_self r⟩

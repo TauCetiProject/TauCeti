@@ -251,6 +251,33 @@ theorem isUnit_one_add_smul_shiftedResolventTransform (h' : ((c' : 𝕜) • ι 
     isInvertible_smul_iff (RCLike.ofReal_ne_zero.2 (div_ne_zero hc hc'))]
   exact h'.comp h.inverse
 
+/-- The shifted resolvent transform of `-A` at `-c` is minus the shifted resolvent transform of
+`A` at `c`. -/
+theorem shiftedResolventTransform_neg (ι A : D →L[𝕜] H) (c : ℝ) :
+    ι.shiftedResolventTransform (-A) (-c) = -ι.shiftedResolventTransform A c := by
+  have hneg : (((-c : ℝ) : 𝕜) • ι - (-A)) = -((c : 𝕜) • ι - A) := by
+    rw [RCLike.ofReal_neg, neg_smul]
+    abel
+  by_cases h : ((c : 𝕜) • ι - A).IsInvertible
+  · have h' : (((-c : ℝ) : 𝕜) • ι - (-A)).IsInvertible := by
+      rwa [hneg, isInvertible_neg_iff]
+    ext y
+    obtain ⟨x, rfl⟩ := h.surjective y
+    have heq : ((c : 𝕜) • ι - A) x = (((-c : ℝ) : 𝕜) • ι - (-A)) (-x) := by
+      simp only [sub_apply, smul_apply, neg_apply, map_neg, neg_smul]
+      abel
+    calc ι.shiftedResolventTransform (-A) (-c) (((c : 𝕜) • ι - A) x)
+        = ι.shiftedResolventTransform (-A) (-c) (((-c : ℝ) : 𝕜) • ι (-x) - (-A) (-x)) := by
+          rw [heq, sub_apply, smul_apply]
+      _ = ((-c : ℝ) : 𝕜) • (-A) (-x) := shiftedResolventTransform_apply_sub h' (-x)
+      _ = -((c : 𝕜) • A x) := by simp
+      _ = (-ι.shiftedResolventTransform A c) (((c : 𝕜) • ι - A) x) := by
+          rw [neg_apply, sub_apply, smul_apply, shiftedResolventTransform_apply_sub h]
+  · have h' : ¬(((-c : ℝ) : 𝕜) • ι - (-A)).IsInvertible := by
+      rwa [hneg, isInvertible_neg_iff]
+    rw [shiftedResolventTransform_of_not_isInvertible h',
+      shiftedResolventTransform_of_not_isInvertible h, neg_zero]
+
 section Conjugation
 
 variable {D' K : Type*} [NormedAddCommGroup D'] [NormedSpace 𝕜 D'] [NormedAddCommGroup K]
