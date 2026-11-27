@@ -8,13 +8,12 @@ module
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.SetTheory.Cardinal.Finite
 
-import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.IntegralDomain
+import TauCeti.Algebra.Polynomial.Coeff.LinearMap
 import TauCeti.Algebra.Polynomial.LinearFactor
 import TauCeti.FieldTheory.Finite.Polynomial
 
@@ -42,10 +41,11 @@ Since `f^(N - ℓ)` divides `D^ℓ(f^N B)`, the polynomial `G_{N,ℓ}(B) = f^ℓ
 degree at most `ℓ m + deg B`, and it is linear in `B`. At `x ∈ S` we have `x^q = x` and
 `f(x)^(i c) = 1`, so `f(x)^ℓ (D^ℓ R)(x) = T_ℓ(x)` for `T_ℓ = ∑_{i,j} G_{i c, ℓ}(B_{ij}) X^j`.
 The conditions `T_ℓ = 0` for `ℓ < M` are `∑_{ℓ<M} (ℓ m + D + J)` linear equations in the
-`e J (D + 1)` coefficients of the `B_{ij}`. This argument needs `c > 0`, so that `f(x) ≠ 0` on
-`S`. For `c = 0` the sum `R` does not depend on `f`, and the case `f = 1`, `c = 1` gives the
-statement. The main result is stated over a domain: a finite domain is a field, and over an
-infinite domain `Nat.card` is `0`, so `M = 0` and only the degree conditions remain.
+`e J (D + 1)` coefficients of the `B_{ij}`, so they have a nonzero solution
+(`Polynomial.exists_ne_zero_forall_coeff_eq_zero`). This argument needs `c > 0`, so that
+`f(x) ≠ 0` on `S`. For `c = 0` the sum `R` does not depend on `f`, and the case `f = 1`, `c = 1`
+gives the statement. The main result is stated over a domain: a finite domain is a field, and
+over an infinite domain `Nat.card` is `0`, so `M = 0` and only the degree conditions remain.
 
 The companion statement, that `R ≠ 0` when the `A_i` are not all zero, needs further hypotheses
 on `f`, `e` and the degrees, and it is not part of this file.
@@ -97,14 +97,6 @@ private theorem natDegree_stepanovMap_le {f : F[X]} (hf : f ≠ 0) (N ℓ : ℕ)
   rw [natDegree_pow] at h₁ h₃
   omega
 
-private theorem hasseDeriv_sum_mul_eval_X_pow {e J ℓ : ℕ} (hℓ : ℓ < Nat.card F)
-    (g : Fin e → F[X]) (B : Fin e → Fin J → F[X]) :
-    hasseDeriv ℓ (∑ i, g i * (∑ j : Fin J, monomial (j : ℕ) (B i j)).eval (X ^ Nat.card F)) =
-      ∑ i, ∑ j : Fin J, hasseDeriv ℓ (g i * B i j) * (X ^ (j : ℕ)) ^ Nat.card F := by
-  simp only [eval_finsetSum, eval_monomial, Finset.mul_sum, map_sum]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  rw [← pow_mul, pow_mul', ← mul_assoc, hasseDeriv_mul_pow_natCard hℓ]
-
 /-- At a point `x` with `f(x)^c = 1`, the value `f(x)^ℓ (D^ℓ R)(x)` is the value at `x` of the
 polynomial `∑_{i,j} G_{i c, ℓ}(B_{ij}) X^j`. -/
 private theorem pow_mul_eval_hasseDeriv_eq {e J ℓ c : ℕ} (hℓ : ℓ < Nat.card F) {f : F[X]}
@@ -117,31 +109,14 @@ private theorem pow_mul_eval_hasseDeriv_eq {e J ℓ c : ℕ} (hℓ : ℓ < Nat.c
   have hq (y : F) : y ^ Nat.card F = y := by
     rw [Nat.card_eq_fintype_card]
     exact FiniteField.pow_card y
-  rw [hasseDeriv_sum_mul_eval_X_pow hℓ]
-  simp only [eval_finsetSum, Finset.mul_sum]
+  simp only [eval_finsetSum, eval_monomial, Finset.mul_sum, map_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  -- `(X ^ q) ^ j = (X ^ j) ^ q`, and `D^ℓ` passes through the `q`-th power.
+  rw [← pow_mul, pow_mul' (X : F[X]), ← mul_assoc, hasseDeriv_mul_pow_natCard hℓ]
   have h := congrArg (eval x) (pow_mul_stepanovMap hf ((i : ℕ) * c) ℓ (B i j))
   have hxi : f.eval x ^ ((i : ℕ) * c) = 1 := by rw [pow_mul', hx, one_pow]
   simp only [eval_mul, eval_pow, hxi, one_mul] at h
   simp only [eval_mul, eval_pow, eval_X, hq, h, mul_assoc]
-
-/-- If the linear conditions outnumber the unknowns, then some nonzero `v` makes the first `K ℓ`
-coefficients of `T ℓ v` vanish for every `ℓ < M`. -/
-private theorem exists_ne_zero_forall_coeff_eq_zero {V : Type*} [AddCommGroup V] [Module F V]
-    [FiniteDimensional F V] (T : ℕ → V →ₗ[F] F[X]) {M : ℕ} (K : ℕ → ℕ)
-    (hK : ∑ ℓ ∈ Finset.range M, K ℓ < Module.finrank F V) :
-    ∃ v : V, v ≠ 0 ∧ ∀ ℓ < M, ∀ r < K ℓ, (T ℓ v).coeff r = 0 := by
-  classical
-  let Φ : V →ₗ[F] ((Σ ℓ : Fin M, Fin (K ℓ)) → F) :=
-    LinearMap.pi fun k => lcoeff F (k.2 : ℕ) ∘ₗ T k.1
-  have hdim : Module.finrank F ((Σ ℓ : Fin M, Fin (K ℓ)) → F) < Module.finrank F V := by
-    rwa [Module.finrank_fintype_fun_eq_card, Fintype.card_sigma,
-      Fin.sum_univ_eq_sum_range (fun ℓ => Fintype.card (Fin (K ℓ))), ← Finset.sum_congr rfl
-        fun ℓ _ => (Fintype.card_fin (K ℓ)).symm]
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (LinearMap.ker_ne_bot_of_finrank_lt (f := Φ) hdim)
-  refine ⟨v, hv0, fun ℓ hℓ r hr => ?_⟩
-  simpa [Φ] using congrFun (LinearMap.mem_ker.mp hv) ⟨⟨ℓ, hℓ⟩, ⟨r, hr⟩⟩
 
 /-- The interpolation step for `c > 0`, where `f(x) ≠ 0` at every `x` with `f(x)^c = 1`. -/
 private theorem exists_eval_hasseDeriv_sum_pow_mul_eval_X_pow_eq_zero_of_pos {c e D J M : ℕ}
