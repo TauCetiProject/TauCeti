@@ -32,9 +32,9 @@ such a representative, with weak gradient that function
 continuous function with `Lᵖ` derivative has that function as representative and value, and its
 derivative as weak gradient
 (`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_value_gradient_ae_eq`); every `C¹` function
-and every Lipschitz function is a special case
+and every function Lipschitz on `[a, b]` is a special case
 (`TauCeti.W1p.exists_intervalRepresentativeL_eq_of_contDiff`,
-`TauCeti.W1p.exists_intervalRepresentativeL_eq_of_lipschitzWith`). Integrating by
+`TauCeti.W1p.exists_intervalRepresentativeL_eq_of_lipschitzOnWith`). Integrating by
 parts against the flux `F(x) = c - ∫_a^x f` of an integrable `f` gives
 `∫_a^b F v' = F(b) v(b) - F(a) v(a) + ∫_a^b f v` for every Sobolev class `v`
 (`TauCeti.W1p.setIntegral_sub_intervalIntegral_mul_gradient_eq`), so the class with
@@ -299,18 +299,20 @@ theorem exists_intervalRepresentativeL_eq_of_contDiff (hab : a < b) {f : ℝ →
     ((hf.continuous_deriv le_rfl).continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc
       measurableSet_Ioo Ioo_subset_Icc_self p)
 
-/-- A Lipschitz function on `ℝ` is the continuous representative of a Sobolev class on `(a, b)`,
-whose value and weak gradient agree almost everywhere with the function and its derivative. -/
-theorem exists_intervalRepresentativeL_eq_of_lipschitzWith (hab : a < b) {f : ℝ → ℝ}
-    {K : NNReal} (hf : LipschitzWith K f) :
+/-- A function Lipschitz on `[a, b]` is the continuous representative of a Sobolev class on
+`(a, b)`, whose value and weak gradient agree almost everywhere with the function and its
+derivative. -/
+theorem exists_intervalRepresentativeL_eq_of_lipschitzOnWith (hab : a < b) {f : ℝ → ℝ}
+    {K : NNReal} (hf : LipschitzOnWith K f (Icc a b)) :
     ∃ u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
       (∀ t : Icc a b, intervalRepresentativeL hab u t = f t) ∧
       value u =ᵐ[volume.restrict (Ioo a b)] f ∧
       gradient u =ᵐ[volume.restrict (Ioo a b)] deriv f :=
   exists_intervalRepresentativeL_eq_and_value_gradient_ae_eq hab
-    hf.lipschitzOnWith.absolutelyContinuousOnInterval
+    (uIcc_of_le hab.le ▸ hf).absolutelyContinuousOnInterval
     (MemLp.of_bound (measurable_deriv f).aestronglyMeasurable K
-      (ae_of_all _ fun _ ↦ norm_deriv_le_of_lipschitz hf))
+      (ae_restrict_of_forall_mem measurableSet_Ioo fun _ ht ↦
+        norm_deriv_le_of_lipschitzOn (Icc_mem_nhds ht.1 ht.2) hf))
 
 /-! ### Squared `L²` norms as interval integrals -/
 

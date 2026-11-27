@@ -181,10 +181,12 @@ theorem exists_intervalTraceL_eq_zero_and_setIntegral_one_add_sq_mul_gradient_su
     refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
     rw [Real.dist_eq, Real.dist_eq, coe_nnNorm, Real.norm_eq_abs, ← abs_mul]
     exact le_of_eq (congrArg abs (by ring))
-  obtain ⟨u, hu, -, hgu⟩ := W1p.exists_intervalRepresentativeL_eq_of_lipschitzWith (p := 2)
-    zero_lt_one (f := oneAddSqWitnessFst) (((haff 3 0).max (haff 15 (-4))).min (haff (-18) 18))
-  obtain ⟨v, hv, -, hgv⟩ := W1p.exists_intervalRepresentativeL_eq_of_lipschitzWith (p := 2)
-    zero_lt_one (f := oneAddSqWitnessSnd) (((haff (-6) 0).max (haff 21 (-9))).min (haff (-15) 15))
+  obtain ⟨u, hu, -, hgu⟩ := W1p.exists_intervalRepresentativeL_eq_of_lipschitzOnWith (p := 2)
+    zero_lt_one (f := oneAddSqWitnessFst)
+    (((haff 3 0).max (haff 15 (-4))).min (haff (-18) 18)).lipschitzOnWith
+  obtain ⟨v, hv, -, hgv⟩ := W1p.exists_intervalRepresentativeL_eq_of_lipschitzOnWith (p := 2)
+    zero_lt_one (f := oneAddSqWitnessSnd)
+    (((haff (-6) 0).max (haff 21 (-9))).min (haff (-15) 15)).lipschitzOnWith
   refine ⟨u, v, ?_, ?_, ?_⟩
   · rw [W1p.intervalTraceL_apply, hu, hu]
     norm_num [oneAddSqWitnessFst]
