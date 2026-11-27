@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.MvPolynomial
 public import TauCeti.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.LinearAlgebra.QuadraticForm.Restriction
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
@@ -115,17 +116,14 @@ theorem ext_algebraMap_comp ⦃Q₁ Q₂ : QuadraticMap L (ι → L) N⦄
     (h : ∀ v : ι → K, Q₁ (algebraMap K L ∘ v) = Q₂ (algebraMap K L ∘ v)) : Q₁ = Q₂ := by
   classical
   have := Fintype.ofFinite ι
-  -- `baseChange_ext` needs `N` as a `K`-module; restrict its scalars along `K → L`.
-  let : Module K N := Module.compHom N (algebraMap K L)
-  have : IsScalarTower K L N := IsScalarTower.of_compHom K L N
-  have hcomp : Q₁.comp (TensorProduct.piScalarRight K L L ι).toLinearMap =
-      Q₂.comp (TensorProduct.piScalarRight K L L ι).toLinearMap :=
-    baseChange_ext fun v ↦ by
-      rw [comp_apply, comp_apply, LinearEquiv.coe_toLinearMap,
-        TensorProduct.piScalarRight_one_tmul]
-      exact h v
-  ext x
-  simpa using DFunLike.congr_fun hcomp ((TensorProduct.piScalarRight K L L ι).symm x)
+  let f : (ι → K) →ₗ[K] (ι → L) := LinearMap.piMap fun _ ↦ Algebra.linearMap K L
+  apply ext_of_span_range_eq_top f ?_ h
+  apply top_unique
+  rw [← (Pi.basisFun L ι).span_eq]
+  apply Submodule.span_mono
+  exact fun _ ⟨i, hi⟩ ↦
+    ⟨Pi.single i 1, (Pi.single_one_eq_algebraMap_comp K i).symm.trans
+      ((Pi.basisFun_apply L ι i).symm.trans hi)⟩
 
 end QuadraticMap
 

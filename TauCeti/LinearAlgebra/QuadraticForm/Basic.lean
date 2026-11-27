@@ -36,6 +36,33 @@ public section
 
 namespace QuadraticMap
 
+section CodRestrict
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- Restrict the codomain of a quadratic map to a submodule containing its values, using
+`QuadraticMap.ofPolar` to package the restricted map. -/
+def codRestrict (Q : QuadraticMap R M N) (P : Submodule R N) (h : ∀ x, Q x ∈ P) :
+    QuadraticMap R M P :=
+  ofPolar (fun x ↦ (⟨Q x, h x⟩ : P))
+    (fun a x ↦ Subtype.ext (Q.map_smul a x))
+    (fun x y z ↦ Subtype.ext (Q.polar_add_left x y z))
+    (fun a x y ↦ Subtype.ext (Q.polar_smul_left a x y))
+
+/-- Including a codomain-restricted value recovers the original value. -/
+@[simp]
+theorem coe_codRestrict_apply (Q : QuadraticMap R M N) (P : Submodule R N)
+    (h : ∀ x, Q x ∈ P) (x : M) : (Q.codRestrict P h x : N) = Q x := (rfl)
+
+/-- Composing codomain restriction with the subtype inclusion recovers the original map. -/
+@[simp]
+theorem subtype_compQuadraticMap_codRestrict (Q : QuadraticMap R M N) (P : Submodule R N)
+    (h : ∀ x, Q x ∈ P) : P.subtype.compQuadraticMap (Q.codRestrict P h) = Q :=
+  QuadraticMap.ext fun x ↦ by
+    rw [LinearMap.compQuadraticMap_apply, Submodule.subtype_apply, coe_codRestrict_apply]
+
+end CodRestrict
+
 /-- The source of a nonzero quadratic map is nontrivial. -/
 theorem nontrivial_of_ne_zero {S V N : Type*} [CommSemiring S] [AddCommMonoid V]
     [Module S V] [AddCommMonoid N] [Module S N] {Q : QuadraticMap S V N} (hQ : Q ≠ 0) :
