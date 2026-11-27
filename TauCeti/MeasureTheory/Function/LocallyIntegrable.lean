@@ -35,7 +35,9 @@ inside the original domain. Likewise, for an additive Haar measure on a finite-d
 vector space, it is preserved by a nonzero dilation, and more generally by a linear change of
 variables, onto any set whose image stays inside the original domain. For such a measure local
 integrability does not depend on the choice of the Haar measure, since any two differ by a finite
-positive factor.
+positive factor. More generally, precomposition with any continuous map `Φ` with
+`Φ_* μ ≤ K ν`, `K ≠ ∞`, carries functions locally integrable for `ν` to functions locally
+integrable for `μ`.
 
 In an order with compact closed intervals, a function locally integrable on `[a, ∞)` is
 integrable on every interval `(a, b]`.
@@ -109,6 +111,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   preserves local integrability.
 * `MeasureTheory.LocallyIntegrableOn.of_isAddHaarMeasure`: on a locally compact second-countable
   group, local integrability for one additive Haar measure gives it for every other.
+* `MeasureTheory.LocallyIntegrable.comp_of_map_le`: precomposition with a continuous map whose
+  push-forward of `μ` is at most a finite multiple of `ν` preserves local integrability.
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
 * `MeasureTheory.LocallyIntegrableOn.integrableOn_Ioc_of_Ici`: local integrability on `[a, ∞)`
@@ -312,6 +316,24 @@ theorem LocallyIntegrableOn.of_isAddHaarMeasure {G F : Type*} [AddGroup G] [Topo
     [ν.IsAddHaarMeasure] (hu : LocallyIntegrableOn u Ω μ) : LocallyIntegrableOn u Ω ν := by
   rw [Measure.isAddLeftInvariant_eq_smul ν μ]
   exact hu.smul_measure ENNReal.coe_ne_top
+
+/-- If `Φ` is continuous with `Φ_* μ ≤ K ν`, `K ≠ ∞`, then `f ∘ Φ` is locally integrable for `μ`
+whenever `f` is for `ν`. -/
+theorem LocallyIntegrable.comp_of_map_le {X Y F : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+    [NormedAddCommGroup F] {μ : Measure X} {ν : Measure Y} {f : Y → F} {Φ : X → Y} {K : ENNReal}
+    (hf : LocallyIntegrable f ν) (hΦ : Continuous Φ) (hmap : μ.map Φ ≤ K • ν) (hK : K ≠ ⊤) :
+    LocallyIntegrable (f ∘ Φ) μ := by
+  intro x
+  obtain ⟨s, hs, hfs⟩ := hf (Φ x)
+  obtain ⟨t, hts, ht, hxt⟩ := _root_.mem_nhds_iff.1 hs
+  refine ⟨Φ ⁻¹' t, hΦ.continuousAt.preimage_mem_nhds (ht.mem_nhds hxt), ?_⟩
+  have hΦm := hΦ.measurable
+  have hft : Integrable f ((μ.map Φ).restrict t) :=
+    ((hfs.mono_set hts).smul_measure hK).mono_measure
+      (by rw [← Measure.restrict_smul]; exact Measure.restrict_mono subset_rfl hmap)
+  rw [Measure.restrict_map hΦm ht.measurableSet] at hft
+  exact (integrable_map_measure hft.aestronglyMeasurable hΦm.aemeasurable).1 hft
 
 end MeasureTheory
 

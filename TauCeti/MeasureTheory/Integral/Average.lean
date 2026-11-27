@@ -850,12 +850,12 @@ theorem setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage
   rw [eNorm_sub_rev, laverage_congr (ae_of_all _ fun y => eNorm_sub_rev (f x) (f y))]
   exact enorm_setAverage_sub_le_setLAverage hf h0 htop (f x)
 
-omit [CompleteSpace F] in
+omit [NormedSpace ℝ F] [CompleteSpace F] in
 /-- The average of `‖f x - f y‖ₑ` over pairs of points of `s` is at most twice the mean
+deviation of `f` from any constant `m` on `s`; for `m` the average of `f`, twice the mean
 oscillation of `f` on `s`. -/
-theorem setLAverage_setLAverage_enorm_sub_le :
-    ⨍⁻ x in s, ⨍⁻ y in s, ‖f x - f y‖ₑ ∂μ ∂μ ≤ 2 * ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ := by
-  set m := ⨍ y in s, f y ∂μ
+theorem setLAverage_setLAverage_enorm_sub_le (m : F) :
+    ⨍⁻ x in s, ⨍⁻ y in s, ‖f x - f y‖ₑ ∂μ ∂μ ≤ 2 * ⨍⁻ x in s, ‖f x - m‖ₑ ∂μ := by
   set A := ⨍⁻ x in s, ‖f x - m‖ₑ ∂μ with hA
   rcases eq_or_ne (μ s) 0 with h0 | h0
   · simp [Measure.restrict_eq_zero.2 h0]

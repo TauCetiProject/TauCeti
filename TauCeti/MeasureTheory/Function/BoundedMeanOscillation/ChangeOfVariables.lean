@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
+import TauCeti.Analysis.Normed.Group.UniformContinuity
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # Mean oscillation under changes of variables
@@ -81,47 +84,6 @@ variable {X Y F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasura
   [PseudoMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] [NormedAddCommGroup F] {μ : Measure X}
   {ν : Measure Y} {f : Y → F} {Φ : X → Y} {L K D : ℝ≥0}
 
-/-- The average of `‖f x - f y‖ₑ` over pairs of points of `s` is at most twice the mean deviation
-of `f` from any constant `k` on `s`. This is `setLAverage_setLAverage_enorm_sub_le` with an
-arbitrary constant in place of the average of `f`. -/
-private theorem setLAverage_setLAverage_enorm_sub_le_two_mul {X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {s : Set X} {g : X → F} (k : F) :
-    ⨍⁻ x in s, ⨍⁻ y in s, ‖g x - g y‖ₑ ∂μ ∂μ ≤ 2 * ⨍⁻ x in s, ‖g x - k‖ₑ ∂μ := by
-  set A := ⨍⁻ x in s, ‖g x - k‖ₑ ∂μ with hA
-  rcases eq_or_ne (μ s) 0 with h0 | h0
-  · simp [Measure.restrict_eq_zero.2 h0]
-  rcases eq_or_ne (μ s) ⊤ with htop | htop
-  · simp [setLAverage_eq, htop]
-  have hadd (c : ℝ≥0∞) : ⨍⁻ x in s, (c + ‖g x - k‖ₑ) ∂μ = c + A := by
-    rw [setLAverage_eq, lintegral_add_left' aemeasurable_const, setLIntegral_const,
-      ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, hA, setLAverage_eq]
-  calc ⨍⁻ x in s, ⨍⁻ y in s, ‖g x - g y‖ₑ ∂μ ∂μ
-      ≤ ⨍⁻ x in s, (‖g x - k‖ₑ + A) ∂μ := by
-        refine setLAverage_mono_ae s (ae_of_all _ fun x => ?_)
-        dsimp only
-        rw [← hadd]
-        refine setLAverage_mono_ae s (ae_of_all _ fun y => ?_)
-        dsimp only
-        rw [← sub_sub_sub_cancel_right (g x) (g y) k]
-        exact eNorm_sub_le
-    _ = A + A := by simp_rw [add_comm _ A, hadd]
-    _ = 2 * A := (two_mul A).symm
-
-/-- **Pushing a ball integral forward.** If `Φ` is `L`-Lipschitz, `L ≠ 0`, and `Φ_* μ ≤ K ν`, then
-`∫_{B(c, s)} g ∘ Φ dμ ≤ K ∫_{B(Φ c, L s)} g dν` for every measurable `g ≥ 0`. -/
-private theorem setLIntegral_ball_comp_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
-    (hmap : μ.map Φ ≤ K • ν) {g : Y → ℝ≥0∞} (hg : Measurable g) (c : X) (s : ℝ) :
-    ∫⁻ x in ball c s, g (Φ x) ∂μ ≤ K * ∫⁻ y in ball (Φ c) (L * s), g y ∂ν := by
-  calc ∫⁻ x in ball c s, g (Φ x) ∂μ ≤ ∫⁻ x in Φ ⁻¹' ball (Φ c) (L * s), g (Φ x) ∂μ :=
-        lintegral_mono_set (hΦ.mapsTo_ball hL c s)
-    _ = ∫⁻ y in ball (Φ c) (L * s), g y ∂μ.map Φ :=
-        (setLIntegral_map measurableSet_ball hg hΦ.continuous.measurable).symm
-    _ ≤ ∫⁻ y in ball (Φ c) (L * s), g y ∂(K • ν) :=
-        lintegral_mono' (Measure.restrict_mono subset_rfl hmap) le_rfl
-    _ = K * ∫⁻ y in ball (Φ c) (L * s), g y ∂ν := by
-        rw [Measure.restrict_smul, lintegral_smul_measure]
-        rfl
-
 /-- **Pushing a ball average forward.** Under the hypotheses of `vmoModulus_comp_le_of_map_le`,
 the mean deviation of `f ∘ Φ` from a constant `k` on `B(c, s)` is at most `K D` times that of `f`
 on `B(Φ c, L s)`. -/
@@ -137,7 +99,7 @@ private theorem setLAverage_ball_enorm_comp_sub_le (hΦ : LipschitzWith L Φ) (h
   · simp [setLAverage_eq, htop]
   have hν : ν (ball (Φ c) (L * s)) ≠ ⊤ :=
     ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top htop) hD
-  have hint := setLIntegral_ball_comp_le hΦ hL hmap (g := fun y => ‖f y - k‖ₑ)
+  have hint := hΦ.setLIntegral_ball_comp_le_of_map_le hL hmap (g := fun y => ‖f y - k‖ₑ)
     (hf.sub stronglyMeasurable_const).eNorm c s
   rw [← measure_mul_setLAverage _ hν] at hint
   rw [setLAverage_eq, ENNReal.div_eq_inv_mul]
@@ -153,22 +115,6 @@ private theorem comp_ae_eq_mk (hΦ : LipschitzWith L Φ) (hmap : μ.map Φ ≤ K
     (hf : AEStronglyMeasurable f ν) : f ∘ Φ =ᵐ[μ] hf.mk f ∘ Φ :=
   ae_eq_comp hΦ.continuous.measurable.aemeasurable
     ((Measure.absolutelyContinuous_of_le_smul hmap).ae_le hf.ae_eq_mk)
-
-/-- If `Φ` is continuous with `Φ_* μ ≤ K ν`, `K ≠ ∞`, then `f ∘ Φ` is locally integrable for `μ`
-whenever `f` is for `ν`. -/
-theorem _root_.MeasureTheory.LocallyIntegrable.comp_of_map_le {K : ℝ≥0∞}
-    (hf : LocallyIntegrable f ν) (hΦ : Continuous Φ) (hmap : μ.map Φ ≤ K • ν) (hK : K ≠ ∞) :
-    LocallyIntegrable (f ∘ Φ) μ := by
-  intro x
-  obtain ⟨s, hs, hfs⟩ := hf (Φ x)
-  obtain ⟨t, hts, ht, hxt⟩ := _root_.mem_nhds_iff.1 hs
-  refine ⟨Φ ⁻¹' t, hΦ.continuousAt.preimage_mem_nhds (ht.mem_nhds hxt), ?_⟩
-  have hΦm := hΦ.measurable
-  have hft : Integrable f ((μ.map Φ).restrict t) :=
-    ((hfs.mono_set hts).smul_measure hK).mono_measure
-      (by rw [← Measure.restrict_smul]; exact Measure.restrict_mono subset_rfl hmap)
-  rw [Measure.restrict_map hΦm ht.measurableSet] at hft
-  exact (integrable_map_measure hft.aestronglyMeasurable hΦm.aemeasurable).1 hft
 
 variable [NormedSpace ℝ F] [CompleteSpace F]
 
@@ -192,7 +138,7 @@ theorem vmoModulus_comp_le_of_map_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
         setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage
           (hg.comp_measurable hΦ.continuous.measurable).aestronglyMeasurable
     _ ≤ 2 * ⨍⁻ x in ball c s, ‖g (Φ x) - k‖ₑ ∂μ :=
-        setLAverage_setLAverage_enorm_sub_le_two_mul k
+        setLAverage_setLAverage_enorm_sub_le k
     _ ≤ 2 * (K * D * ⨍⁻ y in ball (Φ c) (L * s), ‖g y - k‖ₑ ∂ν) := by
         gcongr
         exact setLAverage_ball_enorm_comp_sub_le hΦ hL hmap hg k (hD c s hs0)
@@ -301,35 +247,19 @@ theorem vmoModulus_bilinear_le (B : F →L[ℝ] G →L[ℝ] H) (hf : AEStronglyM
         simp_rw [setLAverage_add_const h0 htop, laverage_const_mul hBN]
     _ ≤ ‖B‖ₑ * N * (2 * vmoModulus f μ r) + ‖B‖ₑ * M * ε := by
         gcongr
-        refine setLAverage_setLAverage_enorm_sub_le.trans ?_
+        refine (setLAverage_setLAverage_enorm_sub_le (⨍ y in ball c s, f y ∂μ)).trans ?_
         gcongr
         exact setLAverage_enorm_sub_setAverage_le_vmoModulus f μ c hs
     _ = ‖B‖ₑ * (2 * N * vmoModulus f μ r + M * ε) := by ring
 
-omit [MeasurableSpace X] [OpensMeasurableSpace X] [NormedSpace ℝ G] in
-/-- The oscillation `sup {‖g x - g y‖ₑ | dist x y < 2 r}` of a uniformly continuous `g` tends to `0`
-as `r → 0`. -/
-private theorem tendsto_iSup_enorm_sub (hg : UniformContinuous g) :
-    Tendsto (fun r : ℝ => ⨆ (x : X) (y : X) (_ : dist x y < 2 * r), ‖g x - g y‖ₑ) (𝓝[>] 0)
-      (𝓝 0) := by
-  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
-  rcases eq_or_ne ε ⊤ with rfl | hεtop
-  · exact Eventually.of_forall fun _ => le_top
-  obtain ⟨δ, hδ, hδg⟩ :=
-    Metric.uniformContinuous_iff.1 hg ε.toReal (ENNReal.toReal_pos hε.ne' hεtop)
-  filter_upwards [Ioo_mem_nhdsGT (half_pos hδ)] with r hr
-  refine iSup₂_le fun x y => iSup_le fun hxy => ?_
-  rw [← ofReal_norm, ← dist_eq_norm, ← ENNReal.ofReal_toReal hεtop]
-  exact ENNReal.ofReal_le_ofReal (hδg (hxy.trans (by linarith [hr.2]))).le
-
 /-- **Products with uniformly continuous functions.** Let `B` be a continuous bilinear map. If `f`
-has vanishing mean oscillation and is essentially bounded, and `g` is bounded, measurable and
-uniformly continuous, then `x ↦ B (f x) (g x)` has vanishing mean oscillation. -/
+has vanishing mean oscillation and is essentially bounded, and `g` is bounded and uniformly
+continuous, then `x ↦ B (f x) (g x)` has vanishing mean oscillation. -/
 theorem MemVMO.bilinear [SecondCountableTopology X] (B : F →L[ℝ] G →L[ℝ] H) (hf : MemVMO f μ)
-    {M N : ℝ≥0} (hfM : ∀ᵐ x ∂μ, ‖f x‖ ≤ M) (hgm : AEStronglyMeasurable g μ)
-    (hg : UniformContinuous g) (hgN : ∀ x, ‖g x‖ ≤ N) :
+    {M N : ℝ≥0} (hfM : ∀ᵐ x ∂μ, ‖f x‖ ≤ M) (hg : UniformContinuous g) (hgN : ∀ x, ‖g x‖ ≤ N) :
     MemVMO (fun x => B (f x) (g x)) μ := by
   have hfm := hf.memBMO.locallyIntegrable.aestronglyMeasurable
+  have hgm : AEStronglyMeasurable g μ := hg.continuous.aestronglyMeasurable
   have hfM' : ∀ᵐ x ∂μ, ‖f x‖ₑ ≤ M := hfM.mono fun x hx => by
     rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
     exact ENNReal.ofReal_le_ofReal hx
@@ -359,11 +289,17 @@ theorem MemVMO.bilinear [SecondCountableTopology X] (B : F →L[ℝ] G →L[ℝ]
           (by finiteness) hf.memBMO.bmoSeminorm_lt_top, by finiteness⟩))
     gcongr
     exacts [vmoModulus_le_bmoSeminorm f μ r, hω r]
-  · have hlim : Tendsto (fun r => ‖B‖ₑ * (2 * N * vmoModulus f μ r + M * ω r)) (𝓝[>] 0)
+  · have hscale : Tendsto (fun r : ℝ => 2 * r) (𝓝[>] 0) (𝓝[>] 0) := by
+      refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+      · simpa using ((continuous_const_mul (2 : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds
+      · filter_upwards [self_mem_nhdsWithin] with r hr
+        exact mul_pos two_pos hr
+    have hlim : Tendsto (fun r => ‖B‖ₑ * (2 * N * vmoModulus f μ r + M * ω r)) (𝓝[>] 0)
         (𝓝 (‖B‖ₑ * (2 * N * 0 + M * 0))) :=
       ENNReal.Tendsto.const_mul ((ENNReal.Tendsto.const_mul hf.tendsto_vmoModulus
-        (Or.inr (by finiteness))).add (ENNReal.Tendsto.const_mul (tendsto_iSup_enorm_sub hg)
-          (Or.inr (by finiteness)))) (Or.inr (by finiteness))
+        (Or.inr (by finiteness))).add (ENNReal.Tendsto.const_mul
+          (hg.tendsto_iSup_enorm_sub.comp hscale) (Or.inr (by finiteness))))
+        (Or.inr (by finiteness))
     simp only [mul_zero, add_zero] at hlim
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le) hη
 

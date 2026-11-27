@@ -400,7 +400,7 @@ theorem _root_.LipschitzWith.vmoModulus_comp_le
     _ = K * ⨍⁻ x in ball c s, ⨍⁻ y in ball c s, ‖f x - f y‖ₑ ∂μ ∂μ := by
       simp_rw [laverage_const_mul ENNReal.coe_ne_top]
     _ ≤ K * (2 * ⨍⁻ x in ball c s, ‖f x - ⨍ y in ball c s, f y ∂μ‖ₑ ∂μ) :=
-      mul_le_mul_right setLAverage_setLAverage_enorm_sub_le _
+      mul_le_mul_right (setLAverage_setLAverage_enorm_sub_le _) _
     _ ≤ 2 * K * vmoModulus f μ r := by
       rw [mul_left_comm, ← mul_assoc]
       exact mul_le_mul_right (setLAverage_enorm_sub_setAverage_le_vmoModulus f μ c hs) _

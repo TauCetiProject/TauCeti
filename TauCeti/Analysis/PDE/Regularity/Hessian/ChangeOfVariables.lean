@@ -375,7 +375,7 @@ theorem memVMO_nondivPullbackPrincipal {A : E → E →L[ℝ] E} (hA : MemVMO A 
   have h₁ : MemVMO (fun x => ContinuousLinearMap.compL ℝ E E E (A (Φ x))
       (fderiv ℝ Ψ (Φ x)).adjoint) mu :=
     (hA.comp_of_map_le_of_addHaar hΦ hmap).bilinear (ContinuousLinearMap.compL ℝ E E E) hAΦΛ
-      hadj.continuous.aestronglyMeasurable hadj fun x => by
+      hadj fun x => by
         rw [LinearIsometryEquiv.norm_map]
         exact hMN x
   have h₁N : ∀ᵐ x ∂mu, ‖ContinuousLinearMap.compL ℝ E E E (A (Φ x))
@@ -385,8 +385,7 @@ theorem memVMO_nondivPullbackPrincipal {A : E → E →L[ℝ] E} (hA : MemVMO A 
     rw [LinearIsometryEquiv.norm_map]
     gcongr
     exact hMN x
-  have h₂ := h₁.bilinear (ContinuousLinearMap.compL ℝ E E E).flip h₁N
-    hM.continuous.aestronglyMeasurable hM hMN
+  have h₂ := h₁.bilinear (ContinuousLinearMap.compL ℝ E E E).flip h₁N hM hMN
   convert h₂ using 1
   funext x
   simp [nondivPullbackPrincipal_apply]

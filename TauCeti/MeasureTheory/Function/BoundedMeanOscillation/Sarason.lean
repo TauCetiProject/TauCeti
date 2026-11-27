@@ -85,7 +85,7 @@ private theorem lintegral_lintegral_ball_enorm_sub_le (y : E) (t : ℝ) :
           lintegral_const_mul' _ _ hfin, measure_mul_setLAverage _ hfin]
     _ ≤ μ (ball y t) * (μ (ball y t) * (2 * vmoModulus f μ t)) := by
         gcongr
-        exact setLAverage_setLAverage_enorm_sub_le.trans
+        exact (setLAverage_setLAverage_enorm_sub_le (⨍ w in ball y t, f w ∂μ)).trans
           (by gcongr; exact setLAverage_enorm_sub_setAverage_le_vmoModulus f μ y le_rfl)
     _ = μ (ball (0 : E) t) ^ 2 * (2 * vmoModulus f μ t) := by
         rw [Measure.addHaar_ball_center μ y t, ← mul_assoc, sq]
@@ -242,7 +242,8 @@ private theorem setLAverage_setLAverage_enorm_convolution_sub_le {ψ : E → ℝ
     _ ≤ ∫⁻ z, ENNReal.ofReal (ψ z) * (2 * vmoModulus f μ r) ∂μ := by
         refine lintegral_mono fun z => mul_le_mul_right ?_ _
         simp only [ν, ← setLAverage_eq']
-        refine setLAverage_setLAverage_enorm_sub_le.trans (mul_le_mul_right ?_ _)
+        refine (setLAverage_setLAverage_enorm_sub_le (⨍ w in ball c s, f (w - z) ∂μ)).trans
+          (mul_le_mul_right ?_ _)
         simpa only [sub_eq_add_neg, vmoModulus_comp_add_right] using
           setLAverage_enorm_sub_setAverage_le_vmoModulus (fun x => f (x + -z)) μ c hs
     _ = 2 * vmoModulus f μ r := by

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 
@@ -23,6 +24,10 @@ boundedness of precomposition from `Lᵖ(ν)` to `Lᵖ(μ)`, with norm at most `
 For a measure-preserving measurable embedding the bound is an equality, also after restricting to
 the preimage of an arbitrary set (`MeasureTheory.MeasurePreserving.eLpNorm_comp_restrict_preimage`).
 
+The same domination pushes integrals over balls forward along a Lipschitz map:
+`∫_{B(c, s)} g ∘ Φ dμ ≤ K ∫_{B(Φ c, L s)} g dν` when `Φ` is `L`-Lipschitz and `μ.map Φ ≤ K • ν`
+(`LipschitzWith.setLIntegral_ball_comp_le_of_map_le`).
+
 For `p = ∞` no bound on the pushforward is needed: precomposition with a quasi-measure-preserving
 map, such as the projection `Prod.fst` from a product of σ-finite measures, preserves `L^∞`
 (`MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`). Conversely, pushing forward along
@@ -32,6 +37,8 @@ no separability assumption (`MeasureTheory.MemLp.id_map`).
 ## Main declarations
 
 * `MeasureTheory.eLpNorm_comp_le_of_map_le_smul`: the `eLpNorm` bound for precomposition.
+* `LipschitzWith.setLIntegral_ball_comp_le_of_map_le`: pushing a ball integral forward along a
+  Lipschitz map with dominated pushforward.
 * `MeasureTheory.MeasurePreserving.eLpNorm_comp_restrict_preimage`,
   `MeasureTheory.MeasurePreserving.memLp_comp_restrict_preimage_iff`: a measure-preserving
   measurable embedding `f` identifies the `Lᵖ` seminorm of `g ∘ f` on `f ⁻¹' s` with that of `g`
@@ -51,7 +58,7 @@ no separability assumption (`MeasureTheory.MemLp.id_map`).
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory
 
@@ -132,6 +139,24 @@ theorem _root_.ContinuousLinearMap.eLpNorm_comp_le {𝕜 𝕜₂ E F : Type*} [N
 end MeasureTheory
 
 open MeasureTheory Set
+
+/-- **Pushing a ball integral forward.** If `Φ` is `L`-Lipschitz, `L ≠ 0`, and `Φ_* μ ≤ K ν`, then
+`∫_{B(c, s)} g ∘ Φ dμ ≤ K ∫_{B(Φ c, L s)} g dν` for every measurable `g ≥ 0`. -/
+theorem LipschitzWith.setLIntegral_ball_comp_le_of_map_le {X Y : Type*} [PseudoMetricSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] [PseudoMetricSpace Y] [MeasurableSpace Y]
+    [BorelSpace Y] {μ : Measure X} {ν : Measure Y} {Φ : X → Y} {L : ℝ≥0} {K : ℝ≥0∞}
+    (hΦ : LipschitzWith L Φ) (hL : L ≠ 0) (hmap : μ.map Φ ≤ K • ν) {g : Y → ℝ≥0∞}
+    (hg : Measurable g) (c : X) (s : ℝ) :
+    ∫⁻ x in Metric.ball c s, g (Φ x) ∂μ ≤ K * ∫⁻ y in Metric.ball (Φ c) (L * s), g y ∂ν := by
+  calc ∫⁻ x in Metric.ball c s, g (Φ x) ∂μ
+      ≤ ∫⁻ x in Φ ⁻¹' Metric.ball (Φ c) (L * s), g (Φ x) ∂μ :=
+        lintegral_mono_set (hΦ.mapsTo_ball hL c s)
+    _ = ∫⁻ y in Metric.ball (Φ c) (L * s), g y ∂μ.map Φ :=
+        (setLIntegral_map Metric.isOpen_ball.measurableSet hg hΦ.continuous.measurable).symm
+    _ ≤ ∫⁻ y in Metric.ball (Φ c) (L * s), g y ∂(K • ν) :=
+        lintegral_mono' (Measure.restrict_mono subset_rfl hmap) le_rfl
+    _ = K * ∫⁻ y in Metric.ball (Φ c) (L * s), g y ∂ν := by
+        rw [Measure.restrict_smul, lintegral_smul_measure, smul_eq_mul]
 
 /-- **`eLpNorm` is invariant under postcomposition with an isometry fixing zero.** No measurability
 assumption is needed: `u` and `f ∘ u` are almost everywhere strongly measurable together, since `f`
