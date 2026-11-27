@@ -16,6 +16,7 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.NumberTheory.LSeries.Dilation
 
@@ -155,6 +156,18 @@ private theorem norm_gaussianMonomial_le (j : Fin 2) (x : ℝ) :
     _ ≤ exp (1 + (-|x| + -|x|)) := by rw [← Real.exp_add]; gcongr
     _ = exp 1 * exp (-|x|) ^ 2 := by rw [Real.exp_add, Real.exp_add, sq]
     _ ≤ 3 * exp (-|x|) ^ 2 := by gcongr; exact exp_one_lt_three.le
+
+/-- On positive arguments the Gaussian weights of both parities decay at least as fast as any
+prescribed nonnegative inverse power. -/
+theorem exists_norm_gaussianMonomial_le_mul_rpow {s : ℝ} (hs : 0 ≤ s) :
+    ∃ C ≥ 0, ∀ (j : Fin 2) (x : ℝ), 0 < x → ‖gaussianMonomial j x‖ ≤ C * x ^ (-s) := by
+  obtain ⟨C, hC, h⟩ := exists_rpow_mul_exp_neg_mul_le hs (by norm_num : (0 : ℝ) < 2)
+  refine ⟨3 * C, by positivity, fun j x hx ↦ (norm_gaussianMonomial_le j x).trans ?_⟩
+  have hbound : x ^ s * exp (-x) ^ 2 ≤ C := by
+    simpa only [sq, ← Real.exp_add, ← two_mul, mul_neg] using h x hx.le
+  rw [abs_of_pos hx, rpow_neg hx.le, mul_assoc, ← div_eq_mul_inv]
+  exact mul_le_mul_of_nonneg_left ((le_div_iff₀ (rpow_pos_of_pos hx s)).mpr
+    (by simpa only [mul_comm] using hbound)) (by norm_num)
 
 /-- The Mellin integral of the parity-`j` Gaussian converges for `-j < re s`. -/
 theorem mellinConvergent_gaussianMonomial {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
