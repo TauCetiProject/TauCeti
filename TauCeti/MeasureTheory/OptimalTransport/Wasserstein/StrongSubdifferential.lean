@@ -345,35 +345,23 @@ theorem _root_.StrongConvexOn.mem_wassersteinStrongSubdifferential_potentialEner
     ξ ∈ wassersteinStrongSubdifferential
       (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
       μ := by
-  have hρ := μ.hasFiniteMoment.memLp_id
-  have hint : Integrable V ((μ : ProbabilityMeasure E) : Measure E) :=
-    integrable_comp_of_norm_gradient_le hVd hV' hρ
-  have hφ := potentialEnergy_of_integrable hint
+  have hφ (ρ : WassersteinSpace 2 E) : potentialEnergy V ((ρ : ProbabilityMeasure E) : Measure E) =
+      ((∫ x, V x ∂((ρ : ProbabilityMeasure E) : Measure E) : ℝ) : EReal) :=
+    potentialEnergy_of_integrable
+      (integrable_comp_of_norm_gradient_le hVd hV' ρ.hasFiniteMoment.memLp_id)
   refine mem_wassersteinStrongSubdifferential_of_forall_le (m := m) (by simp [hφ]) (by simp [hφ])
     fun v ν hν ↦ ?_
-  have hv := Lp.memLp v
   have hT : AEMeasurable (fun x ↦ x + v x) ((μ : ProbabilityMeasure E) : Measure E) :=
-    aemeasurable_id.add hv.aestronglyMeasurable.aemeasurable
-  have hintv : Integrable (fun x ↦ V (x + v x)) ((μ : ProbabilityMeasure E) : Measure E) :=
-    integrable_comp_of_norm_gradient_le hVd hV' (hρ.add hv)
-  rw [hν, hφ, potentialEnergy_map hVd.continuous.measurable hT, potentialEnergy_of_integrable hintv,
-    ← EReal.coe_add, EReal.coe_le_coe_iff]
-  -- Replace `ξ` by `∇V` and every term by an integral against `μ`.
-  have hinner : Integrable (fun x ↦ ⟪gradient V x, v x⟫) ((μ : ProbabilityMeasure E) : Measure E) :=
-    ((Lp.memLp ξ).ae_eq hξ).integrable_inner hv
-  have hsq : Integrable (fun x ↦ m / 2 * ‖v x‖ ^ 2) ((μ : ProbabilityMeasure E) : Measure E) :=
-    (Lp.integrable_sq_norm v).const_mul _
-  have hpair : ⟪ξ, v⟫ = ∫ x, ⟪gradient V x, v x⟫ ∂((μ : ProbabilityMeasure E) : Measure E) := by
-    rw [L2.inner_def]
-    exact integral_congr_ae (hξ.mono fun x hx ↦ by simp only [hx])
-  rw [hpair, ← Lp.integral_norm_sq_eq_norm_sq, ← integral_const_mul, ← integral_add hinner hsq,
-    ← integral_add (g := fun x ↦ ⟪gradient V x, v x⟫ + m / 2 * ‖v x‖ ^ 2) hint (hinner.add hsq)]
-  refine integral_mono (hint.add (hinner.add hsq)) hintv fun x ↦ ?_
-  -- The first-order condition of strong convexity, at `x` towards `x + v x`.
-  have := hV.add_add_le_of_hasFDerivWithinAt (mem_univ x) (mem_univ (x + v x))
-    (hVd x).hasFDerivAt.hasFDerivWithinAt
-  rw [← toDual_gradient, InnerProductSpace.toDual_apply_apply, add_sub_cancel_left] at this
-  simpa only [Pi.add_apply, add_assoc] using this
+    aemeasurable_id.add (Lp.aestronglyMeasurable v).aemeasurable
+  -- The first-order condition along the graph plan of `x ↦ x + v x`, which couples `μ` and `ν`.
+  have hγ := isCoupling_graphPlan ⟨hT, hν.symm⟩
+  have h := hV.integral_add_add_le_of_isCoupling hVd hV' hξ hγ
+  rw [integral_graphPlan hT ((Lp.aestronglyMeasurable ξ).comp_measurePreserving
+      hγ.measurePreserving_fst |>.inner (by fun_prop)), integral_graphPlan hT (by fun_prop)] at h
+  simp only [add_sub_cancel_left, sub_add_cancel_left, norm_neg] at h
+  rw [hφ, hφ, ← EReal.coe_add, EReal.coe_le_coe_iff, L2.inner_def,
+    ← Lp.integral_norm_sq_eq_norm_sq]
+  exact h
 
 /-- **The strong subgradient of a potential energy is unique.** Let `V` be a differentiable
 potential whose gradient grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`. At every law `μ` of

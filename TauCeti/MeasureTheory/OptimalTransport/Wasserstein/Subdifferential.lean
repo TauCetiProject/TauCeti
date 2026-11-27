@@ -58,7 +58,8 @@ the interpolation of `γ` is the generalized geodesic from `μ` to `ν` based at
 The basic example is the potential energy `ν ↦ ∫ V dν` of a differentiable `m`-strongly convex
 potential `V` whose gradient grows at most linearly: its gradient `∇V` is a subgradient at every
 law of `P₂(E)`, by the first-order condition `V y ≥ V x + ⟪∇V x, y - x⟫ + (m / 2) ‖y - x‖²`
-integrated against an optimal coupling.
+integrated against an optimal coupling (`StrongConvexOn.integral_add_add_le_of_isCoupling`
+integrates it against any coupling).
 
 ## Main definitions
 
@@ -83,6 +84,8 @@ integrated against an optimal coupling.
   satisfying the global subgradient inequality with the term `(m / 2) W₂(μ, ν)²`.
 * `TauCeti.ConvexAlongGeneralizedGeodesics.mem_wassersteinSubdifferential_iff`: the same
   characterization for an energy that is `m`-convex along every generalized geodesic based at `μ`.
+* `StrongConvexOn.integral_add_add_le_of_isCoupling`: the first-order condition of an `m`-strongly
+  convex potential, integrated against a coupling.
 * `StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy` and
   `StrongConvexOn.nonempty_wassersteinSubdifferential_potentialEnergy`: the gradient of an
   `m`-strongly convex potential is a subgradient of its potential energy.
@@ -380,27 +383,24 @@ section PotentialEnergy
 
 variable {V : E → ℝ} {m C : ℝ}
 
-/-- **The gradient of a strongly convex potential is a subgradient of its potential energy.** Let
-`V` be a differentiable `m`-strongly convex potential whose gradient grows at most linearly,
-`‖∇V x‖ ≤ C (1 + ‖x‖)`. At every law `μ` of `P₂(E)`, every field `ξ ∈ L²(μ; E)` equal to `∇V`
-almost everywhere is a subgradient of the potential energy `ν ↦ ∫ V dν`. -/
-theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy
+/-- **The first-order condition of a strongly convex potential along a coupling.** Let `V` be a
+differentiable `m`-strongly convex potential whose gradient grows at most linearly,
+`‖∇V x‖ ≤ C (1 + ‖x‖)`, and let `ξ ∈ L²(μ; E)` equal `∇V` almost everywhere. For every coupling `γ`
+of `μ` with a law `ν` of `P₂(E)`,
+`∫ V dν ≥ ∫ V dμ + ∫ ⟪ξ x, y - x⟫ dγ + (m / 2) ∫ ‖x - y‖² dγ`. -/
+theorem _root_.StrongConvexOn.integral_add_add_le_of_isCoupling
     (hV : StrongConvexOn univ m V) (hVd : Differentiable ℝ V)
     (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖))
-    (hξ : ξ =ᵐ[((μ : ProbabilityMeasure E) : Measure E)] gradient V) :
-    ξ ∈ wassersteinSubdifferential
-      (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
-      μ := by
+    (hξ : ξ =ᵐ[((μ : ProbabilityMeasure E) : Measure E)] gradient V) {ν : WassersteinSpace 2 E}
+    {γ : Measure (E × E)}
+    (hγc : IsCoupling γ ((μ : ProbabilityMeasure E) : Measure E)
+      ((ν : ProbabilityMeasure E) : Measure E)) :
+    ∫ x, V x ∂((μ : ProbabilityMeasure E) : Measure E) +
+        (∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ + m / 2 * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ) ≤
+      ∫ x, V x ∂((ν : ProbabilityMeasure E) : Measure E) := by
   have hint (ρ : WassersteinSpace 2 E) : Integrable V ((ρ : ProbabilityMeasure E) : Measure E) :=
     integrable_comp_of_norm_gradient_le hVd hV' ρ.hasFiniteMoment.memLp_id
-  have hφ (ρ : WassersteinSpace 2 E) : potentialEnergy V ((ρ : ProbabilityMeasure E) : Measure E) =
-      ((∫ x, V x ∂((ρ : ProbabilityMeasure E) : Measure E) : ℝ) : EReal) :=
-    potentialEnergy_of_integrable (hint ρ)
-  refine mem_wassersteinSubdifferential_of_forall_le (m := m) (by simp [hφ]) (by simp [hφ])
-    fun ν γ hγ ↦ ?_
-  simp only [hφ, ← EReal.coe_add, EReal.coe_le_coe_iff]
-  have hγc := hγ.toIsCoupling
-  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
+  have : IsProbabilityMeasure γ := hγc.isProbabilityMeasure
   have hγ₂ := integrable_norm_sub_sq_of_hasFiniteMoment (hγc.fst_eq ▸ μ.hasFiniteMoment)
     (hγc.snd_eq ▸ ν.hasFiniteMoment)
   have hgrad : MemLp (gradient V) 2 ((μ : ProbabilityMeasure E) : Measure E) :=
@@ -423,8 +423,7 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy
         m / 2 * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ) := by
     rw [integral_add h₁ h₂, integral_add hinner (hγ₂.const_mul _), integral_const_mul]
   rw [hpair, ← hγc.integral_comp_fst (hint μ).aestronglyMeasurable,
-    ← hγc.integral_comp_snd (hint ν).aestronglyMeasurable,
-    WassersteinSpace.dist_sq_eq_integral hγ, ← hsum]
+    ← hγc.integral_comp_snd (hint ν).aestronglyMeasurable, ← hsum]
   refine integral_mono (h₁.add h₂)
     (hγc.integrable_comp_snd (hint ν)) fun z ↦ ?_
   -- The first-order condition of strong convexity, at `z.1` towards `z.2`.
@@ -433,6 +432,27 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy
   rw [← toDual_gradient, InnerProductSpace.toDual_apply_apply,
     norm_sub_rev] at this
   simpa only [Pi.add_apply, add_assoc] using this
+
+/-- **The gradient of a strongly convex potential is a subgradient of its potential energy.** Let
+`V` be a differentiable `m`-strongly convex potential whose gradient grows at most linearly,
+`‖∇V x‖ ≤ C (1 + ‖x‖)`. At every law `μ` of `P₂(E)`, every field `ξ ∈ L²(μ; E)` equal to `∇V`
+almost everywhere is a subgradient of the potential energy `ν ↦ ∫ V dν`. -/
+theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy
+    (hV : StrongConvexOn univ m V) (hVd : Differentiable ℝ V)
+    (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖))
+    (hξ : ξ =ᵐ[((μ : ProbabilityMeasure E) : Measure E)] gradient V) :
+    ξ ∈ wassersteinSubdifferential
+      (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
+      μ := by
+  have hφ (ρ : WassersteinSpace 2 E) : potentialEnergy V ((ρ : ProbabilityMeasure E) : Measure E) =
+      ((∫ x, V x ∂((ρ : ProbabilityMeasure E) : Measure E) : ℝ) : EReal) :=
+    potentialEnergy_of_integrable
+      (integrable_comp_of_norm_gradient_le hVd hV' ρ.hasFiniteMoment.memLp_id)
+  refine mem_wassersteinSubdifferential_of_forall_le (m := m) (by simp [hφ]) (by simp [hφ])
+    fun ν γ hγ ↦ ?_
+  simp only [hφ, ← EReal.coe_add, EReal.coe_le_coe_iff]
+  rw [WassersteinSpace.dist_sq_eq_integral hγ]
+  exact hV.integral_add_add_le_of_isCoupling hVd hV' hξ hγ.toIsCoupling
 
 /-- The potential energy of a differentiable `m`-strongly convex potential whose gradient grows at
 most linearly has a nonempty Wasserstein subdifferential at every law of `P₂(E)`: it contains the
