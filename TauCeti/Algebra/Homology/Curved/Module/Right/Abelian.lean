@@ -20,8 +20,9 @@ category. This characterizes the abelian structure on the closed category of cur
 
 The graded forgetful functor preserves finite limits and colimits. Short exactness of a short
 complex of closed morphisms is therefore equivalent to injectivity, surjectivity, and exactness of
-the underlying right-linear maps (`shortExact_iff`), and the kernel of an epimorphism yields a
-short exact sequence (`shortExact_kernelι`). This ambient abelian category and its forgetful
+the underlying right-linear maps (`shortExact_iff`), the kernel of an epimorphism yields a short
+exact sequence (`shortExact_kernelι`), and the cokernel of a monomorphism yields a short exact
+sequence (`shortExact_cokernelπ`). This ambient abelian category and its forgetful
 functor support the graded-split exact structure on curved modules.
 
 ## References
@@ -99,5 +100,18 @@ theorem shortExact_kernelι {Q M : CurvedDGRightModuleCat.{u, u, u} h}
     (IsLimit.equivIsoLimit e).symm (kernelIsLimit g)
   have : Mono (kernelι g) := mono_of_isLimit_fork hlim
   exact { exact := ShortComplex.exact_of_f_is_kernel _ hlim }
+
+/-- For a monomorphism `f` in the closed category of curved right modules, the short complex
+`M ⟶ Q ⟶ cokernelObj f` is short exact. -/
+theorem shortExact_cokernelπ {M Q : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q) [Mono f] :
+    (ShortComplex.mk f (cokernelπ f) (comp_cokernelπ f)).ShortExact := by
+  let e : cokernelCocone f ≅ CokernelCofork.ofπ (cokernelπ f) (comp_cokernelπ f) :=
+    Cofork.ext (eqToIso (cokernelCocone_pt f)) (by simp)
+  have hcolim : IsColimit (CokernelCofork.ofπ (cokernelπ f) (comp_cokernelπ f)) :=
+    (IsColimit.equivIsoColimit e) (cokernelIsColimit f)
+  have : Epi (cokernelπ f) := epi_of_isColimit_cofork hcolim
+  exact { exact := ShortComplex.exact_of_g_is_cokernel _ hcolim }
 
 end TauCeti.CurvedDGRightModuleCat

@@ -343,4 +343,18 @@ theorem exists_absolutelyAcyclic_trW_of_shortExact_of_isZero
     MorphismProperty.comp_mem _ _ _ (ObjectProperty.trW_of_isIso _ _)
       (absolutelyAcyclic_trW_coneDesc hS)⟩
 
+/-- Dual form of `exists_absolutelyAcyclic_trW_of_shortExact_of_isZero`: a short exact sequence
+`M ⟶ Q ⟶ C` of curved modules whose middle term `Q` is zero in the curved homotopy category gives
+a morphism `M ⟶ C[-1]` with absolutely acyclic cone. -/
+theorem exists_absolutelyAcyclic_trW_shift_neg_one_of_shortExact_of_isZero
+    {S : ShortComplex
+      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
+    (hS : S.ShortExact) (hQ : IsZero ((dgClosedToHomotopy R).obj S.X₂)) :
+    ∃ s : (dgClosedToHomotopy R).obj S.X₁ ⟶ ((dgClosedToHomotopy R).obj S.X₃)⟦(-1 : ℤ)⟧,
+      (absolutelyAcyclic R h).trW s := by
+  obtain ⟨u, hu⟩ := exists_absolutelyAcyclic_trW_of_shortExact_of_isZero hS hQ
+  let e := (shiftEquiv (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) (1 : ℤ)).unitIso
+  exact ⟨e.hom.app _ ≫ u⟦(-1 : ℤ)⟧',
+    MorphismProperty.comp_mem _ _ _ (ObjectProperty.trW_of_isIso _ _) (hu.shift (-1))⟩
+
 end TauCeti.CurvedDGRightModuleCat

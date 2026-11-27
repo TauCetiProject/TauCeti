@@ -24,6 +24,25 @@ module is contracted by extending its `K` component to `L` and descending the re
 correction to `M`. The Hom differential squares to zero because the curvatures agree.
 Closure under triangles and coproducts then gives the result for all coacyclic objects.
 
+## Main definitions
+
+* `TauCeti.CurvedDGRightModuleCat.gradedInjective`: the curved modules whose underlying graded
+  right module is injective.
+
+## Main results
+
+* `TauCeti.CurvedDGRightModuleCat.totalizations_le_leftOrthogonal_gradedInjective`:
+  totalizations of short exact sequences are left orthogonal to graded-injective modules.
+* `TauCeti.CurvedDGRightModuleCat.coacyclic_le_leftOrthogonal_gradedInjective`:
+  coacyclic modules are left orthogonal to graded-injective modules.
+* `TauCeti.CurvedDGRightModuleCat.gradedInjective_le_rightOrthogonal_coacyclic`: equivalently,
+  graded-injective modules are right orthogonal to coacyclic modules.
+* `TauCeti.CurvedDGRightModuleCat.isZero_of_coacyclic_of_gradedInjective`: every coacyclic
+  graded-injective curved right module is zero in the curved homotopy category.
+* `TauCeti.CurvedDGRightModuleCat.CoderivedCategory.map_bijective_of_gradedInjective`:
+  morphisms into a graded-injective module in the curved homotopy category are exactly the
+  morphisms in the coderived category.
+
 ## References
 
 * L. Positselski, *Two kinds of derived categories, Koszul duality, and comodule-contramodule
@@ -248,6 +267,21 @@ theorem coacyclic_le_leftOrthogonal_gradedInjective :
     coacyclic R h ≤ (gradedInjective R h).leftOrthogonal :=
   coacyclic_le_iff.2 (totalizations_le_leftOrthogonal_gradedInjective R h)
 
+variable (R h) in
+/-- Graded-injective curved modules are right orthogonal to the coacyclic ones. -/
+theorem gradedInjective_le_rightOrthogonal_coacyclic :
+    gradedInjective R h ≤ (coacyclic R h).rightOrthogonal :=
+  (ObjectProperty.le_leftOrthogonal_iff_le_rightOrthogonal _ _).1
+    (coacyclic_le_leftOrthogonal_gradedInjective R h)
+
+/-- Every coacyclic graded-injective object of the curved homotopy category is zero. -/
+theorem isZero_of_coacyclic_of_gradedInjective
+    {X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
+    (hX : coacyclic R h X) (hI : gradedInjective R h X) :
+    IsZero X :=
+  (IsZero.iff_id_eq_zero X).mpr
+    (coacyclic_le_leftOrthogonal_gradedInjective R h X hX (𝟙 X) hI)
+
 /-- Localization to the coderived category is bijective on morphisms into a graded-injective
 curved module. -/
 theorem CoderivedCategory.map_bijective_of_gradedInjective
@@ -255,7 +289,6 @@ theorem CoderivedCategory.map_bijective_of_gradedInjective
     {I : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)} (hI : gradedInjective R h I) :
     Function.Bijective ((CoderivedCategory.Q R h).map : (X ⟶ I) → _) :=
   ObjectProperty.rightOrthogonal.map_bijective_of_isTriangulated
-    ((ObjectProperty.le_leftOrthogonal_iff_le_rightOrthogonal _ _).1
-      (coacyclic_le_leftOrthogonal_gradedInjective R h) I hI) _ X
+    (gradedInjective_le_rightOrthogonal_coacyclic R h I hI) _ X
 
 end TauCeti.CurvedDGRightModuleCat

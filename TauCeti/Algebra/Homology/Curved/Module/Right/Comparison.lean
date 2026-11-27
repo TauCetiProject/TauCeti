@@ -16,9 +16,11 @@ category. This file constructs the resulting triangle functors
 `D_abs → D_co` and `D_abs → D_ctr`, with natural isomorphisms identifying their composites with
 the absolute localization with the original localization functors.
 
-These are not identifications of the three derived categories. On objects represented by curved
-modules, the kernels of the comparisons are precisely the coacyclic and contraacyclic classes,
-respectively. No comparison between the coderived and contraderived categories is asserted.
+These are not identifications of the three derived categories in general: on objects represented
+by curved modules, the kernels of the comparisons are precisely the coacyclic and contraacyclic
+classes, respectively, so each comparison is an equivalence if and only if the corresponding
+acyclic class coincides with the absolutely acyclic class. No comparison between the coderived and
+contraderived categories is asserted.
 
 The construction instantiates `ObjectProperty.trWLocalizerMorphismOfLE` and Mathlib's
 `LocalizerMorphism.localizedFunctor`; compatibility with localization is a natural isomorphism,
@@ -118,6 +120,35 @@ contraderived category consists exactly of the contraacyclic objects. -/
   exact ⟨fun hX ↦ (ObjectProperty.TrWLocalization.isZero_obj_iff _ _ X).1
     (hX.of_iso e.symm), fun hX ↦
       (ObjectProperty.TrWLocalization.isZero_obj_iff _ _ X).2 hX |>.of_iso e⟩
+
+/-- The comparison functor from the absolute derived category to the coderived category is an
+equivalence if and only if the absolutely acyclic and coacyclic classes of curved right modules
+coincide. -/
+theorem isEquivalence_toCoderived_iff :
+    (toCoderived R h).IsEquivalence ↔ absolutelyAcyclic R h = coacyclic R h := by
+  refine ⟨fun _ ↦ le_antisymm (absolutelyAcyclic_le_coacyclic R h) fun X hX ↦ ?_, fun hEq ↦ ?_⟩
+  · exact (isZero_Q_obj_iff X).1
+      (IsZero.of_full_of_faithful_of_isZero (toCoderived R h) _
+        ((isZero_toCoderived_obj_Q_obj_iff X).2 hX))
+  · have := ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE
+      (h := absolutelyAcyclic_le_coacyclic R h) hEq.ge
+    rw [toCoderived]
+    infer_instance
+
+/-- The comparison functor from the absolute derived category to the contraderived category is an
+equivalence if and only if the absolutely acyclic and contraacyclic classes of curved right
+modules coincide. -/
+theorem isEquivalence_toContraderived_iff :
+    (toContraderived R h).IsEquivalence ↔ absolutelyAcyclic R h = contraacyclic R h := by
+  refine ⟨fun _ ↦ le_antisymm (absolutelyAcyclic_le_contraacyclic R h) fun X hX ↦ ?_,
+    fun hEq ↦ ?_⟩
+  · exact (isZero_Q_obj_iff X).1
+      (IsZero.of_full_of_faithful_of_isZero (toContraderived R h) _
+        ((isZero_toContraderived_obj_Q_obj_iff X).2 hX))
+  · have := ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE
+      (h := absolutelyAcyclic_le_contraacyclic R h) hEq.ge
+    rw [toContraderived]
+    infer_instance
 
 end AbsoluteDerivedCategory
 
