@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.IntSubring
-public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Map
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.ResidueNorm
 
 import TauCeti.RingTheory.Affinoid.Continuity
@@ -52,7 +51,8 @@ dagger algebras:
   arbitrary `K`-algebra homomorphisms via `AlgHom.isPowerBounded_map_of_isDaggerAlgebra`) and
   the topologically nilpotent elements are `{a | |a|sup < 1}` (preserved via automatic continuity
   and `IsTopologicallyNilpotent.map`). So the power-bounded subring is the integral subring
-  `A^int` (`TauCeti.Dagger.mem_intSubring_iff_isPowerBounded`).
+  `A^int` (`TauCeti.Dagger.mem_intSubring_iff_isPowerBounded`,
+  `TauCeti.Dagger.intSubring_eq_powerBoundedSubring`).
 
 ## Main definitions
 
@@ -681,6 +681,18 @@ theorem mem_intSubring_iff_isPowerBounded {a : A} :
   let := residueNormedCommRing K A
   exact mem_intSubring_iff_supSeminorm_le_one.trans
     (IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one (K := K) (a := a)).symm
+
+/-- **The integral subring is the power-bounded subring**: for the canonical residue norm on a
+dagger algebra `A`, which is ultrametric, `A^int = A°`. -/
+theorem intSubring_eq_powerBoundedSubring :
+    letI := residueNormedCommRing K A
+    letI := isUltrametricDist_residueNormedCommRing K A
+    intSubring K A = Huber.powerBoundedSubring A := by
+  let := residueNormedCommRing K A
+  let := isUltrametricDist_residueNormedCommRing K A
+  ext a
+  rw [Huber.mem_powerBoundedSubring]
+  exact mem_intSubring_iff_isPowerBounded (K := K)
 
 end PowerBounded
 

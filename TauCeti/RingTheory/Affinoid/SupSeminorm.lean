@@ -238,6 +238,13 @@ theorem pointNorm_add_le (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f
   simp only [pointNorm, map_add]
   exact isNonarchimedean_spectralNorm _ _
 
+/-- By the ultrametric inequality, `|(1 - b)(x)| ≥ 1` at a classical point where `|b(x)| < 1`. -/
+theorem one_le_pointNorm_one_sub_of_pointNorm_lt_one (hA : IsAffinoidAlgebra K A)
+    {x : MaximalSpectrum A} {b : A} (hb : pointNorm K x b < 1) : 1 ≤ pointNorm K x (1 - b) := by
+  have h := hA.pointNorm_add_le x (1 - b) b
+  rw [sub_add_cancel, pointNorm_one] at h
+  exact (le_max_iff.mp h).resolve_right hb.not_ge
+
 /-- **The units of an affinoid algebra are the functions without zeros**: `f` is a unit if and
 only if `|f(x)| ≠ 0` at every classical point `x`. -/
 theorem isUnit_iff_forall_pointNorm_ne_zero (hA : IsAffinoidAlgebra K A) {f : A} :

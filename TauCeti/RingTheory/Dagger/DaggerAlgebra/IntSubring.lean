@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Map
-public import TauCeti.RingTheory.Dagger.IntegralWashnitzer.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 
 import TauCeti.RingTheory.Affinoid.PowerBounded
 
@@ -20,44 +20,45 @@ completion map `τ : A → Â` into its affinoid completion `Â = T_n ⧸ I T_n`
 A^int = τ⁻¹(Â°) = {a ∈ A | |a|sup ≤ 1}
 ```
 
-is the unit ball of the supremum seminorm of `A`. Since `τ` preserves the supremum seminorm
+is the preimage of the power-bounded subring `Â°` of `Â`. Since `τ` preserves the supremum seminorm
 (`TauCeti.Dagger.supSeminorm_toCompletion`) and the power-bounded elements of an affinoid algebra
-are those of supremum seminorm at most one, it is also the preimage of the power-bounded subring
-`Â°` of `Â`. It is the integral model of `A` from which the reduction of a dagger algebra of
+are those of supremum seminorm at most one, it is also the unit ball of the supremum seminorm of
+`A`. It is the integral model of `A` from which the reduction of a dagger algebra of
 Monsky–Washnitzer type is formed, and it plays for `A` the role that `Â°` plays for `Â`.
 
 Because a morphism of dagger algebras contracts the supremum seminorm, every `K`-algebra
 homomorphism `A → B` maps `A^int` into `B^int`, with no continuity hypothesis. For the
 Monsky–Washnitzer algebra `W = K⟨X⟩†` itself, the supremum seminorm is the Gauss norm, so `W^int` is
-the integral Monsky–Washnitzer algebra `K°⟨X⟩†` of overconvergent series with coefficients in `K°`,
-which is also the ring of power-bounded elements of `W`. Elements of supremum seminorm `< 1` lie in
-the Jacobson radical of `A^int`: if `|a|sup < 1` then `1 - a` is a unit of `A` whose inverse again
-has supremum seminorm at most one.
+the Gauss unit ball of `W`, which is also the ring of power-bounded elements of `W`. Elements of
+supremum seminorm `< 1` lie in the Jacobson radical of `A^int`: if `|a|sup < 1` then `1 - a` is a
+unit of `A` whose inverse again has supremum seminorm at most one.
 
 ## Main definitions
 
-* `TauCeti.Dagger.intSubring K A`: the integral subring `A^int = {a | |a|sup ≤ 1}` of a dagger
-  algebra.
+* `TauCeti.Dagger.intSubring K A`: the integral subring `A^int = τ⁻¹(Â°)` of a dagger algebra.
 
 ## Main results
 
-* `TauCeti.Dagger.mem_intSubring_iff_supSeminorm_le_one`: `a ∈ A^int` iff `|a|sup ≤ 1`, and
-  `TauCeti.Dagger.mem_intSubring_iff_isPowerBounded_toCompletion`: `A^int = τ⁻¹(Â°)`.
+* `TauCeti.Dagger.mem_intSubring_iff_supSeminorm_le_one`, `TauCeti.Dagger.coe_intSubring`:
+  `A^int = {a | |a|sup ≤ 1}`, and `TauCeti.Dagger.mem_intSubring_iff_isPowerBounded_toCompletion`,
+  `TauCeti.Dagger.coe_intSubring_eq_preimage`: `A^int = τ⁻¹(Â°)`.
 * `TauCeti.Dagger.algebraMap_mem_intSubring_iff`: a scalar lies in `A^int` iff it lies in `K°`
   (for `A ≠ 0`), and `TauCeti.Dagger.mem_intSubring_of_isNilpotent`: nilpotents lie in `A^int`.
 * `AlgHom.map_mem_intSubring`, `AlgEquiv.map_intSubring`: functoriality of `A^int` along
   arbitrary morphisms of dagger algebras.
-* `TauCeti.Dagger.washnitzerAlgebra.mem_intSubring_iff_norm_le_one`,
-  `TauCeti.Dagger.intWashnitzerAlgebra.range_toWashnitzerAlgebra`: `W^int` is the Gauss unit ball
-  `K°⟨X⟩†`, and `TauCeti.Dagger.washnitzerAlgebra.intSubring_eq_powerBoundedSubring`: it is the ring
+* `TauCeti.Dagger.washnitzerAlgebra.mem_intSubring_iff_norm_le_one`: `W^int` is the Gauss unit
+  ball, and `TauCeti.Dagger.washnitzerAlgebra.intSubring_eq_powerBoundedSubring`: it is the ring
   of power-bounded elements of `W`.
 * `TauCeti.Dagger.intSubring.isUnit_one_sub_of_supSeminorm_lt_one`,
   `TauCeti.Dagger.intSubring.mem_jacobson_of_supSeminorm_lt_one`: elements of supremum seminorm
   `< 1` lie in the Jacobson radical of `A^int`.
 
 That `A^int` is also the ring of power-bounded elements of `A` for its canonical residue-norm
-topology is `TauCeti.Dagger.mem_intSubring_iff_isPowerBounded`, proved alongside the other
-topological statements in `TauCeti.RingTheory.Dagger.DaggerAlgebra.Continuity`.
+topology is `TauCeti.Dagger.mem_intSubring_iff_isPowerBounded` and
+`TauCeti.Dagger.intSubring_eq_powerBoundedSubring`, proved alongside the other topological
+statements in `TauCeti.RingTheory.Dagger.DaggerAlgebra.Continuity`. The identification of `W^int`
+with the integral Monsky–Washnitzer algebra `K°⟨X⟩†` is in
+`TauCeti.RingTheory.Dagger.IntegralWashnitzer.IntSubring`.
 
 ## References
 
@@ -73,35 +74,51 @@ namespace TauCeti.Dagger
 
 open _root_.MvPowerSeries
 
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+section Defs
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
   {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
 variable (K A) in
-/-- The **integral subring** `A^int = {a ∈ A | |a|sup ≤ 1}` of a dagger algebra `A`: the unit ball
-of the supremum seminorm. Equivalently (`mem_intSubring_iff_isPowerBounded_toCompletion`) it is
-the preimage `τ⁻¹(Â°)` of the power-bounded elements of the affinoid completion `Â`. -/
-noncomputable def intSubring : Subring A where
-  carrier := {a | supSeminorm K a ≤ 1}
-  mul_mem' {a b} ha hb := (IsDaggerAlgebra.supSeminorm_mul_le a b).trans <|
-    (mul_le_mul ha hb (supSeminorm_nonneg b) zero_le_one).trans_eq (mul_one 1)
-  one_mem' := supSeminorm_le zero_le_one fun _ ↦ pointNorm_one.le
-  add_mem' ha hb := (IsDaggerAlgebra.supSeminorm_add_le _ _).trans (max_le ha hb)
-  zero_mem' := supSeminorm_zero.trans_le zero_le_one
-  neg_mem' ha := (supSeminorm_neg _).trans_le ha
-
-/-- **The integral subring is the unit ball of the supremum seminorm**: `a ∈ A^int` iff
-`|a|sup ≤ 1`. -/
-@[simp]
-theorem mem_intSubring_iff_supSeminorm_le_one {a : A} :
-    a ∈ intSubring K A ↔ supSeminorm K a ≤ 1 :=
-  Iff.rfl
+/-- The **integral subring** `A^int = τ⁻¹(Â°)` of a dagger algebra `A`: the preimage under the
+completion map `τ : A → Â` of the power-bounded subring of the affinoid completion `Â`.
+Equivalently (`mem_intSubring_iff_supSeminorm_le_one`) it is the unit ball `{a | |a|sup ≤ 1}` of
+the supremum seminorm. -/
+noncomputable def intSubring : Subring A :=
+  (Huber.powerBoundedSubring (completion K A)).comap (toCompletion K A).toRingHom
 
 /-- **`A^int = τ⁻¹(Â°)`**: an element of a dagger algebra lies in the integral subring iff its
 image in the affinoid completion `Â` is power-bounded. -/
 theorem mem_intSubring_iff_isPowerBounded_toCompletion {a : A} :
     a ∈ intSubring K A ↔ Huber.IsPowerBounded (toCompletion K A a) := by
-  rw [mem_intSubring_iff_supSeminorm_le_one, IsAffinoidAlgebra.isPowerBounded_iff_supSeminorm_le_one
-    (K := K) (A := completion K A) isAffinoidAlgebra_completion, supSeminorm_toCompletion]
+  rw [intSubring, Subring.mem_comap, Huber.mem_powerBoundedSubring]
+  rfl
+
+/-- As a set, the integral subring is the preimage `τ⁻¹(Â°)` of the power-bounded elements of the
+affinoid completion. -/
+theorem coe_intSubring_eq_preimage :
+    (intSubring K A : Set A) = toCompletion K A ⁻¹' {b | Huber.IsPowerBounded b} :=
+  Set.ext fun _ ↦ mem_intSubring_iff_isPowerBounded_toCompletion
+
+end Defs
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+/-- **The integral subring is the unit ball of the supremum seminorm**: `a ∈ A^int` iff
+`|a|sup ≤ 1`. -/
+@[simp]
+theorem mem_intSubring_iff_supSeminorm_le_one {a : A} :
+    a ∈ intSubring K A ↔ supSeminorm K a ≤ 1 := by
+  rw [mem_intSubring_iff_isPowerBounded_toCompletion,
+    IsAffinoidAlgebra.isPowerBounded_iff_supSeminorm_le_one (K := K) (A := completion K A)
+      isAffinoidAlgebra_completion, supSeminorm_toCompletion]
+
+/-- As a set, the integral subring is the unit ball `{a | |a|sup ≤ 1}` of the supremum
+seminorm. -/
+@[simp]
+theorem coe_intSubring : (intSubring K A : Set A) = {a | supSeminorm K a ≤ 1} :=
+  Set.ext fun _ ↦ mem_intSubring_iff_supSeminorm_le_one
 
 /-- A scalar of norm at most one lies in the integral subring. -/
 theorem algebraMap_mem_intSubring {c : K} (hc : ‖c‖ ≤ 1) : algebraMap K A c ∈ intSubring K A := by
@@ -130,20 +147,15 @@ theorem intSubring.isUnit_one_sub_of_supSeminorm_lt_one {a : intSubring K A}
     (ha : supSeminorm K (a : A) < 1) : IsUnit (1 - a) := by
   have hA := isAffinoidAlgebra_completion (K := K) (A := A)
   obtain ⟨u, hu⟩ := IsDaggerAlgebra.isUnit_one_sub_of_supSeminorm_lt_one ha
+  -- `τ(u⁻¹) = τ(u)⁻¹` is power-bounded since `|τ(1 - a)(x)| ≥ 1` at every classical point.
   have hinv : ((u⁻¹ : Aˣ) : A) ∈ intSubring K A := by
-    -- By the ultrametric inequality, `|1 - a| = 1` at every classical point of `Â`.
-    have h1 : ∀ x, 1 ≤ pointNorm K x (toCompletion K A u) := fun x ↦ by
-      have hax : pointNorm K x (toCompletion K A a) < 1 :=
-        (hA.pointNorm_le_supSeminorm x _).trans_lt (by rwa [supSeminorm_toCompletion])
-      have h := hA.pointNorm_add_le x (toCompletion K A u) (toCompletion K A a)
-      rw [← map_add, hu, sub_add_cancel, map_one, pointNorm_one] at h
-      rw [hu]
-      exact (le_max_iff.mp h).resolve_right hax.not_ge
-    have hτ : toCompletion K A ((u⁻¹ : Aˣ) : A) = Ring.inverse (toCompletion K A u) :=
-      (Ring.inverse_unit (Units.map (toCompletion K A : A →* completion K A) u)).symm
-    rw [mem_intSubring_iff_isPowerBounded_toCompletion, hτ]
-    exact (IsAffinoidAlgebra.isUnit_and_isPowerBounded_inverse_iff (K := K)
-      (A := completion K A) hA |>.mpr h1).2
+    rw [mem_intSubring_iff_isPowerBounded_toCompletion, ← Ring.inverse_unit u,
+      u.isUnit.map_ringInverse (toCompletion K A)]
+    refine ((IsAffinoidAlgebra.isUnit_and_isPowerBounded_inverse_iff (K := K)
+      (A := completion K A) hA).mpr fun x ↦ ?_).2
+    rw [hu, map_sub, map_one]
+    exact hA.one_le_pointNorm_one_sub_of_pointNorm_lt_one <|
+      (hA.pointNorm_le_supSeminorm x _).trans_lt (by rwa [supSeminorm_toCompletion])
   refine isUnit_iff_exists_inv.mpr ⟨⟨_, hinv⟩, Subtype.ext ?_⟩
   simp [← hu]
 
@@ -179,18 +191,6 @@ theorem intSubring_eq_powerBoundedSubring :
 
 end washnitzerAlgebra
 
-/-- **`W^int = K°⟨X⟩†`.** The integral subring of the Monsky–Washnitzer algebra `W = K⟨X⟩†` is the
-integral Monsky–Washnitzer algebra of overconvergent series with coefficients in `K°`. -/
-theorem intWashnitzerAlgebra.range_toWashnitzerAlgebra {σ : Type*} [Finite σ] :
-    (intWashnitzerAlgebra.toWashnitzerAlgebra σ K).range =
-      intSubring K (washnitzerAlgebra σ K) := by
-  ext f
-  rw [RingHom.mem_range, washnitzerAlgebra.mem_intSubring_iff_norm_le_one,
-    ← mem_intWashnitzerAlgebra_iff_norm_le_one]
-  refine ⟨?_, fun hf ↦ ⟨⟨f, hf⟩, toWashnitzerAlgebra_mk f hf⟩⟩
-  rintro ⟨g, rfl⟩
-  simp
-
 end TauCeti.Dagger
 
 namespace AlgHom
@@ -219,8 +219,11 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
   [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
 
 /-- An isomorphism of dagger algebras carries the integral subring onto the integral subring. -/
-theorem map_intSubring (e : A ≃ₐ[K] B) : (intSubring K A).map (e : A →+* B) = intSubring K B :=
-  le_antisymm (Subring.map_le_iff_le_comap.mpr fun _ ha ↦ e.toAlgHom.map_mem_intSubring ha)
-    fun b hb ↦ ⟨e.symm b, e.symm.toAlgHom.map_mem_intSubring hb, e.apply_symm_apply b⟩
+@[simp]
+theorem map_intSubring (e : A ≃ₐ[K] B) : (intSubring K A).map (e : A →+* B) = intSubring K B := by
+  ext b
+  refine (Subring.mem_map_equiv (f := e.toRingEquiv)).trans ?_
+  rw [mem_intSubring_iff_supSeminorm_le_one, mem_intSubring_iff_supSeminorm_le_one]
+  exact iff_of_eq (congrArg (· ≤ 1) (e.symm.supSeminorm_eq b))
 
 end AlgEquiv
