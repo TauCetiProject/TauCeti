@@ -263,9 +263,10 @@ variable (h : IsFlipAt v M M') (hR : (vertexFaces v : Set TriFace) ⊆ R)
 include h hR
 
 /-- **Heights of a flip.** If `M'` is obtained by a flip at `v` from the free tiling `M` of a
-height function `H` on `R`, and the six faces round `v` lie in `R`, then changing `H(v)` by `−1`
-(when `M` contains `highFlipEdges v`) or by `+1` (when `M` contains `lowFlipEdges v`) gives a
-height function on `R` with free tiling `M'`. -/
+height function `H` on `R`, and the six faces round `v` lie in `R`, then changing `H(v)` by some
+`ε = ±1` gives a height function on `R` with free tiling `M'`. The sign is determined by which
+flip edges `M` contains; see `IsHeightFunctionOn.update_sub_one` and
+`IsHeightFunctionOn.update_add_one`. -/
 theorem exists_isHeightFunctionOn_update (hH : IsHeightFunctionOn R H)
     (hM : tilingOfHeightOn R H = M) :
     ∃ ε : ℤ, (ε = 1 ∨ ε = -1) ∧ IsHeightFunctionOn R (Function.update H v (H v + ε)) ∧
