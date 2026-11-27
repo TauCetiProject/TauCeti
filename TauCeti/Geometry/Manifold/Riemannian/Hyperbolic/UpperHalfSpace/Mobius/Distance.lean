@@ -99,37 +99,18 @@ theorem isometry_ofUpperHalfPlane : Isometry ofUpperHalfPlane :=
 `SL(2, ℝ) → SL(2, ℂ)`. -/
 theorem ofUpperHalfPlane_smul (g : SL(2, ℝ)) (z : ℍ) :
     ofUpperHalfPlane (g • z) = g.map Complex.ofRealHom • ofUpperHalfPlane z := by
+  have hg : g • z = SpecialLinearGroup.mapGL ℝ g • z := rfl
   have hJ : denom (g.map Complex.ofRealHom) (ofUpperHalfPlane z) =
-      Complex.normSq (g 1 0 * (z : ℂ) + g 1 1) := by
-    simp only [denom_def, Fin.isValue, SpecialLinearGroup.map_apply_coe, map_apply,
-      Complex.ofRealHom_eq_coe, fst_ofUpperHalfPlane, Complex.normSq_apply, Complex.add_re,
-      Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, mul_zero, sub_zero, Complex.add_im,
-      Complex.mul_im, zero_mul, add_zero, height_ofUpperHalfPlane, UpperHalfPlane.coe_re,
-      UpperHalfPlane.coe_im, add_right_inj]
-    ring
-  have hre : (g • z).re = ((g 0 0 * z.re + g 0 1) * (g 1 0 * z.re + g 1 1) +
-      g 0 0 * g 1 0 * z.im ^ 2) / Complex.normSq (g 1 0 * (z : ℂ) + g 1 1) := by
-    rw [← UpperHalfPlane.coe_re, UpperHalfPlane.coe_specialLinearGroup_apply, Complex.div_re,
-      ← add_div]
-    simp only [Algebra.algebraMap_self, Fin.isValue, RingHom.id_apply, Complex.add_re,
-      Complex.mul_re, Complex.ofReal_re, UpperHalfPlane.coe_re, Complex.ofReal_im,
-      UpperHalfPlane.coe_im, zero_mul, sub_zero, Complex.add_im, Complex.mul_im, add_zero]
+      Complex.normSq (UpperHalfPlane.denom (SpecialLinearGroup.mapGL ℝ g) z) := by
+    simp [denom_def, UpperHalfPlane.denom, Complex.normSq_apply]
     ring
   refine ext_fst_height ?_ ?_
-  · rw [fst_ofUpperHalfPlane, fst_smul, hJ, hre, height_ofUpperHalfPlane, fst_ofUpperHalfPlane]
-    simp only [Fin.isValue, Complex.ofReal_div, Complex.ofReal_add, Complex.ofReal_mul,
-      Complex.ofReal_pow, SpecialLinearGroup.map_apply_coe, map_apply, Complex.ofRealHom_eq_coe,
-      map_add, map_mul, Complex.conj_ofReal]
-  · rw [height_ofUpperHalfPlane, height_smul, hJ, height_ofUpperHalfPlane,
-      ← UpperHalfPlane.coe_im, UpperHalfPlane.coe_specialLinearGroup_apply, Complex.div_im,
-      ← sub_div]
-    congr 1
-    have hdet : g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
-      rw [← Matrix.det_fin_two]
-      exact g.det_coe
-    simp only [Algebra.algebraMap_self, Fin.isValue, RingHom.id_apply, Complex.add_im,
-      Complex.mul_im, Complex.ofReal_re, UpperHalfPlane.coe_im, Complex.ofReal_im,
-      UpperHalfPlane.coe_re, zero_mul, add_zero, Complex.add_re, Complex.mul_re, sub_zero]
-    linear_combination z.im * hdet
+  · rw [fst_ofUpperHalfPlane, fst_smul, hJ, height_ofUpperHalfPlane, fst_ofUpperHalfPlane, hg,
+      UpperHalfPlane.re_smul, Complex.div_re, ← add_div]
+    simp [UpperHalfPlane.num, UpperHalfPlane.denom]
+    ring
+  · rw [height_ofUpperHalfPlane, height_smul, hJ, height_ofUpperHalfPlane, hg,
+      UpperHalfPlane.im_smul_eq_div_normSq]
+    simp
 
 end TauCeti.UpperHalfSpace
