@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
 import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
-import TauCeti.Analysis.Normed.Group.Completion
 import TauCeti.Analysis.Normed.Module.InfiniteSum
+import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
+import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
@@ -22,11 +23,10 @@ On a locally compact topological group `G` with a regular left-invariant Borel m
 
 This file derives pointwise almost-everywhere formulas for arbitrary Bochner-integrable functions
 `f, g : G → A` by expanding `L¹` classes into absolutely norm-summable series of compactly
-supported continuous functions (`UniformSpace.Completion.exists_hasSum_coe_of_norm_lt` transported
-across `ConvolutionAlgebra.completionEquivL1`), without assuming second countability of `G` or
-σ-finiteness of `μ`. It proves that the twisted convolution integrand
-`r ↦ f r * α r (g (r⁻¹ * s))` is Bochner-integrable for almost every `s` and integrates to
-`CStarAction.convolutionL1`.
+supported continuous functions (`CompactlySupportedContinuousMap.exists_hasSum_toLp`), without
+assuming second countability of `G` or σ-finiteness of `μ`. It proves that the twisted convolution
+integrand `r ↦ f r * α r (g (r⁻¹ * s))` is Bochner-integrable for almost every `s` and integrates
+to `CStarAction.convolutionL1`.
 
 ## Main results
 
@@ -44,7 +44,7 @@ public section
 
 noncomputable section
 
-open Filter Function MeasureTheory Topology UniformSpace
+open Filter Function MeasureTheory Topology
 open scoped CompactlySupported CStarAlgebra ENNReal NNReal
 
 namespace TauCeti.CStarAction
@@ -54,38 +54,6 @@ section RegularLeftInvariant
 variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
   {μ : Measure G} [μ.IsMulLeftInvariant] [μ.Regular]
-
-omit [μ.IsMulLeftInvariant] in
-private theorem exists_hasSum_toLp_of_L1 (α : CStarAction G A) (u : Lp A 1 μ) :
-    ∃ φ : ℕ → C_c(G, A),
-      HasSum (fun n => CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ n)) u ∧
-      Summable fun n => ‖CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ n)‖ := by
-  let x := (ConvolutionAlgebra.completionEquivL1 α μ).symm u
-  obtain ⟨w, hw_sum, hw_norm, -⟩ :=
-    Completion.exists_hasSum_coe_of_norm_lt x (lt_add_one ‖x‖)
-  refine ⟨fun n => (w n).ofConv, ?_, ?_⟩
-  · have hmap := hw_sum.map (ConvolutionAlgebra.completionEquivL1 α μ)
-      (ConvolutionAlgebra.completionEquivL1 α μ).continuous
-    simpa only [x, Function.comp_def, LinearIsometryEquiv.apply_symm_apply,
-      ConvolutionAlgebra.completionEquivL1_coe, ConvolutionAlgebra.toL1_eq_toLp] using hmap
-  · simpa only [← ConvolutionAlgebra.toL1_eq_toLp, ← ConvolutionAlgebra.toL1LI_apply,
-      LinearIsometry.norm_map] using hw_norm
-
-omit [Group G] [IsTopologicalGroup G] [LocallyCompactSpace G] [μ.IsMulLeftInvariant] in
-private theorem ae_hasSum_of_hasSum_toLp {ι : Type*} [Countable ι]
-    {ψ : ι → C_c(G, A)} {v : Lp A 1 μ}
-    (hsum : HasSum (fun i => CompactlySupportedContinuousMap.toLp 1 μ ℂ (ψ i)) v)
-    (hnorm : Summable fun i => ‖CompactlySupportedContinuousMap.toLp 1 μ ℂ (ψ i)‖) :
-    ∀ᵐ t ∂μ, HasSum (fun i => ψ i t) (v t) ∧ Summable fun i => ‖ψ i t‖ := by
-  have heNorm : ∑' i, ‖CompactlySupportedContinuousMap.toLp 1 μ ℂ (ψ i)‖ₑ ≠ ∞ :=
-    tsum_eNorm_ne_top_iff_summable_norm.2 hnorm
-  filter_upwards [Lp.hasSum_coeFn_tsum heNorm,
-    summable_norm_of_tsum_eLpNorm_ne_top Fact.out (by simpa [Lp.eNorm_def] using heNorm),
-    ae_all_iff.2 fun i => CompactlySupportedContinuousMap.coeFn_toLp (p := 1) (μ := μ) ℂ (ψ i)]
-    with t ht hnt hcoe
-  rw [hsum.tsum_eq] at ht
-  simp only [hcoe] at ht hnt
-  exact ⟨ht, hnt⟩
 
 variable (α : CStarAction G A)
 
@@ -188,7 +156,8 @@ private theorem ae_hasSum_convolution_of_hasSum_toLp {φ ψ : ℕ → C_c(G, A)}
       TauCeti.hasSum_bilinear_of_summable_norm (B := (α.convolutionL1 μ).toLinearMap₁₂)
         (C := 1) (fun x y => by simpa using α.norm_convolutionL1_apply_le x y)
         hφ_sum hψ_sum hφ_norm hψ_norm
-  exact (ae_hasSum_of_hasSum_toLp hF_sum hF_norm).mono fun _ hs => hs.1
+  exact (CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp ℂ hF_sum hF_norm).mono
+    fun _ hs => hs.1
 
 private theorem ae_integrable_and_convolutionL1_toL1_ae_eq {f g : G → A} (hf : Integrable f μ)
     (hg : Integrable g μ) :
@@ -198,16 +167,18 @@ private theorem ae_integrable_and_convolutionL1_toL1_ae_eq {f g : G → A} (hf :
   · simp
   · have : μ.IsOpenPosMeasure := isOpenPosMeasure_of_mulLeftInvariant_of_regular
     have : μ.IsHaarMeasure := ⟨⟩
-    obtain ⟨φ, hφ_sum, hφ_norm⟩ := α.exists_hasSum_toLp_of_L1 (hf.toL1 f)
-    obtain ⟨ψ, hψ_sum, hψ_norm⟩ := α.exists_hasSum_toLp_of_L1 (hg.toL1 g)
+    obtain ⟨φ, hφ_sum, hφ_norm⟩ :=
+      CompactlySupportedContinuousMap.exists_hasSum_toLp ENNReal.one_ne_top μ ℂ (hf.toL1 f)
+    obtain ⟨ψ, hψ_sum, hψ_norm⟩ :=
+      CompactlySupportedContinuousMap.exists_hasSum_toLp ENNReal.one_ne_top μ ℂ (hg.toL1 g)
     have hae_f :
         ∀ᵐ r ∂μ, HasSum (fun m => φ m r) (f r) ∧ Summable fun m => ‖φ m r‖ := by
-      filter_upwards [ae_hasSum_of_hasSum_toLp hφ_sum hφ_norm, hf.coeFn_toL1]
-        with r ⟨hr, hnr⟩ hfr
+      filter_upwards [CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp ℂ hφ_sum hφ_norm,
+        hf.coeFn_toL1] with r ⟨hr, hnr⟩ hfr
       exact ⟨hfr ▸ hr, hnr⟩
     have hae_g : ∀ᵐ t ∂μ, HasSum (fun n => ψ n t) (g t) ∧ Summable fun n => ‖ψ n t‖ := by
-      filter_upwards [ae_hasSum_of_hasSum_toLp hψ_sum hψ_norm, hg.coeFn_toL1]
-        with t ⟨ht, hnt⟩ hgt
+      filter_upwards [CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp ℂ hψ_sum hψ_norm,
+        hg.coeFn_toL1] with t ⟨ht, hnt⟩ hgt
       exact ⟨hgt ▸ ht, hnt⟩
     filter_upwards [α.ae_summable_integral_norm_of_summable hφ_norm hψ_norm,
       α.ae_hasSum_convolution_of_hasSum_toLp hφ_sum hφ_norm hψ_sum hψ_norm]
