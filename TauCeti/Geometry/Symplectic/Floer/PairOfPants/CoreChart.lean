@@ -148,9 +148,9 @@ private def outputRayPoint (k θ : ℝ) : ℝ × ℝ :=
 `coreOuterRadius θ`. -/
 private theorem outputRayPoint_one (θ : ℝ) :
     outputRayPoint 1 θ = Complex.equivRealProdCLM (circleMap (1 / 2) (coreOuterRadius θ) θ) := by
-  rw [outputRayPoint, outputRayRadius, coreOuterRadius, one_mul, one_pow,
-    show Real.cos θ ^ 2 + 16 - 1 = Real.cos θ ^ 2 + 15 by ring, Complex.ofReal_div,
-    Complex.ofReal_one, Complex.ofReal_ofNat]
+  simp only [outputRayPoint, outputRayRadius, coreOuterRadius]
+  push_cast
+  ring_nf
 
 private theorem outputRayPoint_add_two_pi (k θ : ℝ) :
     outputRayPoint k (θ + 2 * π) = outputRayPoint k θ := by
@@ -170,6 +170,19 @@ private theorem outputRayPoint_sq_add_sq {k : ℝ} (hk : k ^ 2 ≤ 16) (θ : ℝ
     Complex.mul_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
   linear_combination (1 / 4 : ℝ) * hs +
     ((-(k * Real.cos θ) + √((k * Real.cos θ) ^ 2 + 16 - k ^ 2)) / 2) ^ 2 * hcs
+
+/-- The point `outputRayPoint k θ` depends smoothly on `k` and `θ` while `k² < 16`. -/
+private theorem contDiff_outputRayPoint {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : ℕ∞} {k θ : E → ℝ} (hk : ContDiff ℝ n k) (hθ : ContDiff ℝ n θ)
+    (hk₁₆ : ∀ x, k x ^ 2 < 16) : ContDiff ℝ n fun x ↦ outputRayPoint (k x) (θ x) := by
+  have hD : ContDiff ℝ n fun x ↦ √((k x * Real.cos (θ x)) ^ 2 + 16 - k x ^ 2) :=
+    ContDiff.sqrt (by fun_prop) fun x ↦
+      (by nlinarith [sq_nonneg (k x * Real.cos (θ x)), hk₁₆ x] :
+        0 < (k x * Real.cos (θ x)) ^ 2 + 16 - k x ^ 2).ne'
+  have hof : ContDiff ℝ n Complex.ofReal := Complex.ofRealCLM.contDiff
+  have heq : ContDiff ℝ n Complex.equivRealProdCLM := Complex.equivRealProdCLM.contDiff
+  unfold outputRayPoint outputRayRadius circleMap
+  fun_prop
 
 /-- From the centre `0` the ray at the angle `θ` meets the output circle at `2 e^{iθ}`. -/
 private theorem outputRayPoint_zero (θ : ℝ) :

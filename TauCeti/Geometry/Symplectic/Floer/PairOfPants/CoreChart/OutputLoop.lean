@@ -9,10 +9,8 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CoreChart
 -- The rotation runs along the rays of the core chart to the output circle, so this file needs the
 -- definitions of these rays and of the angles of the lobes, not only the API of the core chart.
 import all TauCeti.Geometry.Symplectic.Floer.PairOfPants.CoreChart
-import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # The output loop of the core of the pair of pants
@@ -192,15 +190,8 @@ theorem contDiff_pairOfPantsOutputRotation {n : ℕ∞} :
     ContDiff ℝ n pairOfPantsOutputRotation := by
   have hτ := contDiff_coreLoopParam (m := n)
   have hθ : ContDiff ℝ n outputRotationAngle := by unfold outputRotationAngle; fun_prop
-  have hD : ContDiff ℝ n fun z : ℝ × ℝ ↦ √(((1 - smoothTransition z.1) *
-      Real.cos (outputRotationAngle z)) ^ 2 + 16 - (1 - smoothTransition z.1) ^ 2) := by
-    refine ContDiff.sqrt (by fun_prop) fun z ↦ ?_
-    nlinarith [sq_nonneg ((1 - smoothTransition z.1) * Real.cos (outputRotationAngle z)),
-      sq_one_sub_smoothTransition_le z.1]
-  have hof : ContDiff ℝ n Complex.ofReal := Complex.ofRealCLM.contDiff
-  have heq : ContDiff ℝ n Complex.equivRealProdCLM := Complex.equivRealProdCLM.contDiff
-  unfold pairOfPantsOutputRotation outputRayPoint outputRayRadius circleMap
-  fun_prop
+  exact contDiff_outputRayPoint (by fun_prop) hθ fun z ↦
+    (sq_one_sub_smoothTransition_le z.1).trans_lt (by norm_num)
 
 /-- The rotation of the output loop runs through the circle `‖w‖ = 2`. -/
 theorem norm_symm_pairOfPantsOutputRotation (z : ℝ × ℝ) :
