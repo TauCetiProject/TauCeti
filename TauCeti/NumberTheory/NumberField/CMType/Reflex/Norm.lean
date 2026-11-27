@@ -134,10 +134,8 @@ theorem reflexNorm_eq_one_of_not_finiteDimensional {k : IntermediateField ℚ �
     refine Fin.pos_iff_nonempty.1 (Nat.pos_of_ne_zero fun hn ↦ ?_)
     subst hn
     have h := Φ.typeTrace_add_typeTrace_star_eq_trace 1
-    rw [typeTrace_star, ← hρ, map_one, LinearMap.trace_one, Module.finrank_fin_fun] at h
-    rw [← map_one (algebraMap ℚ E), Algebra.trace_algebraMap] at h
-    have h' : (Module.finrank ℚ E : ℂ) = 0 := by simpa [eq_comm] using h
-    exact (Module.finrank_pos (R := ℚ) (M := E)).ne' (by exact_mod_cast h')
+    rw [typeTrace_star, ← hρ, ← map_one (algebraMap ℚ E), Algebra.trace_algebraMap] at h
+    exact (Module.finrank_pos (R := ℚ) (M := E)).ne' (by simpa using h.symm)
   exact hfin (Module.Finite.of_injective (LinearMap.single ℚ (fun _ : Fin n ↦ k) i)
     (Pi.single_injective (M := fun _ : Fin n ↦ k) i))
 

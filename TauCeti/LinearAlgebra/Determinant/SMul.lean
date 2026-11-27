@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
+import TauCeti.Algebra.Module.LinearMap.End
 
 /-!
 # The determinant of a commuting scalar action
@@ -28,14 +29,6 @@ Let `V` be a module over a commutative ring `E` with a commuting action of a sem
 -/
 
 public section
-
-/-- The scalar action on a product is the product of the scalar actions on the factors. -/
-theorem DistribSMul.toLinearMap_prod {R S M N : Type*} [Semiring R] [AddCommMonoid M]
-    [AddCommMonoid N] [Module R M] [Module R N] [DistribSMul S M] [DistribSMul S N]
-    [SMulCommClass S R M] [SMulCommClass S R N] (s : S) :
-    DistribSMul.toLinearMap R (M × N) s =
-      (DistribSMul.toLinearMap R M s).prodMap (DistribSMul.toLinearMap R N s) :=
-  LinearMap.ext fun _ ↦ Prod.smul_def _ _
 
 namespace TauCeti
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm
 import TauCeti.Algebra.Algebra.Tower
+import TauCeti.Algebra.Module.LinearMap.End
 import TauCeti.LinearAlgebra.Determinant.SMul.TensorProduct
 import TauCeti.RingTheory.NormTrace.BaseChange
 import TauCeti.RingTheory.Unramified.TraceRepresentation
@@ -80,16 +81,13 @@ theorem reflexNorm_mul_reflexNorm_star (Φ : CMType E) (hk : Φ.reflexField ≤ 
       LinearMap.trace k (k ⊗[ℚ] E) (DistribSMul.toLinearMap k (k ⊗[ℚ] E) c) := by
     -- `c` acts on `k ⊗_ℚ E` as multiplication by `1 ⊗ c`, whose trace is `Tr_{E/ℚ}(c)`.
     have hmul : DistribSMul.toLinearMap k (k ⊗[ℚ] E) c = Algebra.lmul k (k ⊗[ℚ] E) (1 ⊗ₜ c) :=
-      LinearMap.ext fun z ↦ by
-        rw [DistribSMul.toLinearMap_apply, Algebra.smul_def,
-          Algebra.TensorProduct.right_algebraMap_apply, Algebra.coe_lmul_eq_mul,
-          LinearMap.mul_apply']
-    apply Subtype.ext
-    rw [DistribSMul.toLinearMap_prod, hmul, LinearMap.trace_prodMap',
-      ← Algebra.trace_apply (R := k) (S := k ⊗[ℚ] E) (1 ⊗ₜ c),
-      Algebra.trace_baseChange_tmul, IntermediateField.coe_add, DistribSMul.toLinearMap_compHom,
-      DistribSMul.toLinearMap_compHom, hρ, hρ', typeTrace_add_typeTrace_star_eq_trace,
-      IntermediateField.coe_algebraMap_apply]
+      LinearMap.ext fun z ↦ by simp [Algebra.smul_def, Algebra.TensorProduct.right_algebraMap_apply]
+    rw [DistribSMul.toLinearMap_prod, hmul, ← Algebra.trace_apply (R := k) (S := k ⊗[ℚ] E) (1 ⊗ₜ c),
+      Algebra.trace_baseChange_tmul]
+    ext
+    simp only [LinearMap.trace_prodMap', DistribSMul.toLinearMap_compHom, IntermediateField.coe_add]
+    rw [hρ, hρ', typeTrace_add_typeTrace_star_eq_trace]
+    simp
   obtain ⟨e, he⟩ := exists_linearEquiv_of_trace_eq (R := ℚ) (V := V × V') (W := k ⊗[ℚ] E)
     (Module.toModuleEnd k (S := E) (V × V')).toRatAlgHom
     (Module.toModuleEnd k (S := E) (k ⊗[ℚ] E)).toRatAlgHom fun c ↦ by
