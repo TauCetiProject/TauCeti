@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Perfect
+public import TauCeti.Algebra.Group.Pow
 public import TauCeti.Algebra.GroupWithZero.Basic
 public import TauCeti.RingTheory.Perfection
 
@@ -21,8 +22,6 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 
 * `MulEquiv.perfectRing`: a multiplicative equivalence preserves bijectivity of the
   `p`-th power map.
-* `Function.Surjective.surjective_pow`: a surjective multiplicative map preserves surjectivity of
-  the `n`-th power map; for instance every quotient of a perfect ring is semiperfect.
 * `TauCeti.iterateFrobeniusEquiv_symm_pow`: the `p ^ n`-th power of the `p ^ n`-th root of `x`
   is `x`.
 * `TauCeti.iterateFrobeniusEquiv_symm_add_pow`: the `p ^ n`-th power of the `p ^ (m + n)`-th root
@@ -47,6 +46,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 * `Ideal.IsRadical.perfectRing_quotient`, `Ideal.Quotient.perfectRing_iff_isRadical`: the quotient
   of a perfect ring by a radical ideal is perfect, and in prime characteristic this characterizes
   radical ideals.
+
+Every quotient of a perfect ring is semiperfect, by `Function.Surjective.surjective_pow`.
 -/
 
 public section
@@ -59,17 +60,6 @@ theorem MulEquiv.perfectRing {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N)
     funext fun x ↦ (map_pow e x p).symm
   rw [hcomm]
   exact e.bijective.comp PerfectRing.bijective_frobenius
-
-/-- A surjective multiplicative map preserves surjectivity of the `n`-th power map. For instance,
-if every element of a ring is an `n`-th power, then so is every element of each of its quotients;
-no ideal or characteristic hypothesis is needed. -/
-theorem Function.Surjective.surjective_pow {F M N : Type*} [Monoid M] [Monoid N] [FunLike F M N]
-    [MonoidHomClass F M N] {f : F} (hf : Function.Surjective f) {n : ℕ}
-    (h : Function.Surjective fun x : M ↦ x ^ n) : Function.Surjective fun y : N ↦ y ^ n := by
-  intro y
-  obtain ⟨x, rfl⟩ := hf y
-  obtain ⟨z, rfl⟩ := h x
-  exact ⟨f z, (map_pow f z n).symm⟩
 
 namespace TauCeti
 
@@ -219,9 +209,8 @@ theorem perfectRing_quotient {A : Type*} [CommRing A] (p : ℕ) [ExpChar A p] [P
       dsimp only at h
       rw [← map_pow, ← map_pow, Ideal.Quotient.eq] at h
       exact Ideal.Quotient.eq.mpr (hI ⟨p, by rwa [sub_pow_expChar]⟩)
-    · obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-      obtain ⟨b, rfl⟩ := (PerfectRing.bijective_frobenius (p := p)).2 a
-      exact ⟨Ideal.Quotient.mk I b, (map_pow _ b p).symm⟩
+    · exact Ideal.Quotient.mk_surjective.surjective_pow
+        (PerfectRing.bijective_frobenius (p := p)).2 x
 
 end Ideal.IsRadical
 
