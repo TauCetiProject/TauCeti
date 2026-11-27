@@ -38,14 +38,15 @@ respectively `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`, at every point.
 
 Equations in non-divergence form with measurable coefficients have, in general, only strong
 solutions: functions `u ∈ W^{2,n}(Ω)`, `n` the dimension, satisfying the differential inequality or
-equation almost everywhere with the weak Hessian `D²u`. By Sobolev's embedding at the borderline
-exponent `p = n`, the precise representative `ū = preciseRepresentative μ (Wkp.value 2 u)` is
-continuous on `Ω` (`TauCeti.Wkp.continuousOn_preciseRepresentative`) and agrees with `u` almost
-everywhere (`TauCeti.Wkp.ae_eq_preciseRepresentative`). This file transfers the classical
-Krylov–Safonov theory — power decay, the local maximum principle, the weak Harnack inequality, the
-Harnack inequality, and the interior Hölder estimate — to `W^{2,n}` strong subsolutions,
-supersolutions, and solutions, without any regularity, measurability, or symmetry assumptions on the
-coefficient matrix `a`.
+equation almost everywhere with the weak Hessian `D²u`. Since `2 n > n` (`W^{2,p}` embeds into
+continuous functions for `p > n / 2`), the precise representative
+`ū = preciseRepresentative mu (Wkp.value 2 u)` is continuous on `Ω`
+(`TauCeti.Wkp.continuousOn_preciseRepresentative`) and agrees with `u` almost everywhere
+(`TauCeti.Wkp.ae_eq_preciseRepresentative`). This file transfers the classical Krylov–Safonov
+theory — power decay, the local maximum principle, the weak Harnack inequality, the Harnack
+inequality, and the interior Hölder estimate — to `W^{2,n}` strong subsolutions, supersolutions,
+and solutions, without any regularity, measurability, or symmetry assumptions on the coefficient
+matrix `a`.
 
 ## The approximation method
 
@@ -58,8 +59,9 @@ On any compact concentric sub-ball `closedBall x₀ s ⊂ B(x₀, R) ⊆ Ω`, in
 `w` within `η` of `ū` on `closedBall x₀ s` whose classical principal part controls the weak
 principal part up to an `Lⁿ` error of norm at most `η`:
 
-* For **power decay** (`TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`),
-  a rescaled mollification `w` with `ū / (1 + 3 ζ) ≤ w ≤ (ū + 2 ζ) / (1 + 3 ζ)` lets `ζ → 0`.
+* For **power decay**
+  (`TauCeti.PDE.exists_measure_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`), a rescaled
+  mollification `w` with `ū / (1 + 3 ζ) ≤ w ≤ (ū + 2 ζ) / (1 + 3 ζ)` lets `ζ → 0`.
 * For **strong subsolutions** (`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f` a.e.), approximating from below gives `w` with
   `ū - η ≤ w ≤ ū` on `closedBall c s`, so `w⁺ ≤ ū⁺` pointwise on `B(c, s)` while avoiding any
   quasi-triangle loss when `0 < p < 1`.
@@ -75,8 +77,8 @@ principal part up to an `Lⁿ` error of norm at most `η`:
 
 ## Main declarations
 
-* `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`: power decay
-  `|{ū ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|` for strong supersolutions.
+* `TauCeti.PDE.exists_measure_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`: power decay
+  `mu ({ū ≥ t} ∩ Q₀) ≤ C t^(-ε) mu Q₀` for strong supersolutions.
 * `TauCeti.PDE.exists_preciseRepresentative_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`: **the local
   maximum principle** for `W^{2,n}` strong subsolutions on `B(c, R) ⊆ Ω` and arbitrary additive Haar
   measure.
@@ -150,48 +152,74 @@ private theorem ae_abs_apply_le_ball_of_uniformlyEllipticOn
   (ae_restrict_mem measurableSet_ball).mono fun _ hz ↦ ha.abs_apply_le (hs hz)
 
 /-- **Power decay of the superlevel sets of a strong supersolution** (Gilbarg–Trudinger,
-Section 9.7; Caffarelli–Cabré, Lemma 4.6). Let `κ > 0`. There are constants `C > 0`, `ε > 0` and
-`ε₀ > 0`, depending only on the dimension `n ≥ 1` and on `κ`, with the following property. Let
-`Q₀` be a dyadic cube of level `k`, so of side `2ᵏ`, with centre `c`, let `R ≥ 4 · 2ᵏ √n`, and let
-`Ω` be an open set containing `closedBall c R`. Let the coefficient matrix `a` be uniformly
-elliptic on `B(c, R)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` have a representative
-`ū` continuous on `Ω` and nonnegative on `closedBall c R`, with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost
-everywhere in `B(c, R)` for the weak Hessian and `R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`. If `ū ≤ 1`
-somewhere in `B(c, 2 · 2ᵏ √n)`, then `|{ū ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|` for every `t > 0`. The
-coefficients need not be measurable or symmetric. -/
-theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
-    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} (hκ : 0 < κ) :
-    ∃ C ε ε₀ : ℝ, 0 < C ∧ 0 < ε ∧ 0 < ε₀ ∧
-      ∀ ⦃lam Lam R : ℝ⦄ ⦃k : ℤ⦄ ⦃m : ι → ℤ⦄ ⦃c : EuclideanSpace ℝ ι⦄
-        ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
-        ⦃ū f : EuclideanSpace ℝ ι → ℝ⦄ (u : Wkp volume Ω (Fintype.card ι) 2),
-        c = WithLp.toLp 2 (fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k) →
-        4 * 2 ^ k * √(Fintype.card ι) ≤ R → closedBall c R ⊆ Ω →
-        UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
-        ContinuousOn ū Ω → (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] ū →
-        (∀ x ∈ closedBall c R, 0 ≤ ū x) →
-        (∀ᵐ x ∂volume.restrict (ball c R),
-          ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x) →
-        ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
-          (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
-        (∃ x ∈ ball c (2 * 2 ^ k * √(Fintype.card ι)), ū x ≤ 1) →
-        ∀ ⦃t : ℝ⦄, 0 < t → volume ({x | t ≤ ū x} ∩ WithLp.ofLp ⁻¹' dyadicCube k m) ≤
-          ENNReal.ofReal (C * t ^ (-ε)) *
-            volume (WithLp.ofLp ⁻¹' dyadicCube k m : Set (EuclideanSpace ℝ ι)) := by
+Section 9.7; Caffarelli–Cabré, Lemma 4.6). Let `κ` be given. There are constants `C > 0` and
+`ε > 0`, depending only on the dimension `n ≥ 1` and on `κ`, such that for every additive Haar
+measure `mu` there is a constant `ε₀ > 0`, depending only on `n`, `κ`, and `mu`, with the
+following property. Let `Q₀` be a dyadic cube of level `k`, so of side `2ᵏ`, with centre `c`, let
+`R ≥ 4 · 2ᵏ √n`, and let `Ω` be an open set containing `closedBall c R`. Let the coefficient
+matrix `a` be uniformly elliptic on `B(c, R)` with constants `λ ≤ Λ ≤ κ λ`, and let
+`u ∈ W^{2,n}(Ω)` be nonnegative almost everywhere in `B(c, R)`, with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost
+everywhere in `B(c, R)` for the weak Hessian and `R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`. If the
+continuous precise representative `ū` of `u` satisfies `ū ≤ 1` somewhere in `B(c, 2 · 2ᵏ √n)`,
+then `mu ({ū ≥ t} ∩ Q₀) ≤ C t^(-ε) mu Q₀` for every `t > 0`. The coefficients need not be
+measurable or symmetric. -/
+theorem exists_measure_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] (κ : ℝ) :
+    ∃ C ε : ℝ, 0 < C ∧ 0 < ε ∧
+      ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure],
+        ∃ ε₀ : ℝ, 0 < ε₀ ∧
+          ∀ ⦃lam Lam R : ℝ⦄ ⦃k : ℤ⦄ ⦃m : ι → ℤ⦄ ⦃c : EuclideanSpace ℝ ι⦄
+            ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
+            ⦃f : EuclideanSpace ℝ ι → ℝ⦄ (u : Wkp mu Ω (Fintype.card ι) 2),
+            c = WithLp.toLp 2 (fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k) →
+            4 * 2 ^ k * √(Fintype.card ι) ≤ R → closedBall c R ⊆ Ω →
+            UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
+            (∀ᵐ x ∂mu.restrict (ball c R), 0 ≤ Wkp.value 2 u x) →
+            (∀ᵐ x ∂mu.restrict (ball c R),
+              ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x) →
+            ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
+              (mu.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
+            (∃ x ∈ ball c (2 * 2 ^ k * √(Fintype.card ι)),
+              preciseRepresentative mu (Wkp.value 2 u) x ≤ 1) →
+            ∀ ⦃t : ℝ⦄, 0 < t →
+              mu ({x | t ≤ preciseRepresentative mu (Wkp.value 2 u) x} ∩
+                  WithLp.ofLp ⁻¹' dyadicCube k m) ≤
+                ENNReal.ofReal (C * t ^ (-ε)) *
+                  mu (WithLp.ofLp ⁻¹' dyadicCube k m : Set (EuclideanSpace ℝ ι)) := by
   -- The classical estimate is applied, for each `ζ > 0`, to a mollification of `u` shifted up by
-  -- `ζ` and divided by `1 + 3 ζ`; then `ζ → 0`.
+  -- `ζ` and divided by `1 + 3 ζ`, after scaling `f⁺` and the superlevel measure between `mu` and
+  -- `volume`; then `ζ → 0`.
   have : Nonempty ι :=
     Fintype.card_pos_iff.1 (by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ Fintype.card ι))
-  obtain ⟨C, ε, ε₀, hC, hε, hε₀, H⟩ :=
-    exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul (ι := ι) hκ
-  refine ⟨C, ε, ε₀, hC, hε, hε₀, ?_⟩
-  intro lam Lam R k m c Ω a ū f u hc hR hRΩ ha hLam hcont hū hnonneg hsuper hf hx t ht
+  obtain ⟨C, ε, ε_vol, hC, hε, hε_vol, H⟩ :=
+    exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul (ι := ι) (κ := max κ 1)
+      (zero_lt_one.trans_le (le_max_right _ _))
+  refine ⟨C, ε, hC, hε, fun mu _ ↦ ?_⟩
+  set α₀ : ℝ := (Measure.addHaarScalarFactor volume mu : ℝ)
+  have hα₀ : 0 < α₀ :=
+    NNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure volume mu)
+  set ε₀ : ℝ := ε_vol / α₀ ^ (Fintype.card ι : ℝ)⁻¹
+  refine ⟨ε₀, by positivity, ?_⟩
+  intro lam Lam R k m c Ω a f u hc hR hRΩ ha hLam hnonneg hsuper hf hx t ht
   set n := Fintype.card ι
   set Q : Set (EuclideanSpace ℝ ι) := WithLp.ofLp ⁻¹' dyadicCube k m
+  set ū := preciseRepresentative mu (Wkp.value 2 u)
+  have hcont : ContinuousOn ū Ω :=
+    Wkp.continuousOn_preciseRepresentative (finrank_lt_two_mul_card (ι := ι)) u
+  have hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Ω] ū :=
+    Wkp.ae_eq_preciseRepresentative 2 u
   have hn : 0 < √(n : ℝ) := Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
   have hk : (0 : ℝ) < 2 ^ k := zpow_pos two_pos k
   have hR0 : 0 < R := lt_of_lt_of_le (by positivity) hR
   have hlam : 0 < lam := ha.pos
+  have hū_ball : ∀ y ∈ ball c R, 0 ≤ ū y := fun y hy ↦
+    Wkp.preciseRepresentative_nonneg (finrank_lt_two_mul_card (ι := ι)) u isOpen_ball
+      (ball_subset_closedBall.trans hRΩ) hnonneg hy
+  have hclosed : IsClosed (closedBall c R ∩ ū ⁻¹' Ici 0) :=
+    (hcont.mono hRΩ).preimage_isClosed_of_isClosed isClosed_closedBall isClosed_Ici
+  have hū_nonneg : ∀ y ∈ closedBall c R, 0 ≤ ū y := fun y hy ↦
+    (hclosed.closure_subset_iff.2 (fun z hz ↦ ⟨ball_subset_closedBall hz, hū_ball z hz⟩)
+      ((closure_ball c hR0.ne').symm ▸ hy)).2
   have hQ : Q ⊆ closedBall c R := fun y hy ↦ by
     have h := dist_toLp_lt_of_mem_dyadicCube hy (centre_mem_dyadicCube k m)
     rw [WithLp.toLp_ofLp, ← hc] at h
@@ -201,7 +229,7 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
   have hx₀R : x₀ ∈ closedBall c R :=
     ball_subset_closedBall (ball_subset_ball (by nlinarith [mul_pos hk hn]) hx₀)
   -- The bound on the right-hand side, divided by `R`.
-  have hfR : eLpNorm (fun x ↦ (f x)⁺) n (volume.restrict (ball c R)) ≤
+  have hfR : eLpNorm (fun x ↦ (f x)⁺) n (mu.restrict (ball c R)) ≤
       ENNReal.ofReal (ε₀ * lam / R) := by
     rw [ENNReal.ofReal_div_of_pos hR0,
       ENNReal.le_div_iff_mul_le (Or.inl (ENNReal.ofReal_pos.2 hR0).ne')
@@ -219,14 +247,48 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
       (ae_abs_apply_le_ball_of_uniformlyEllipticOn ha Subset.rfl) hsuper
       (by positivity) hfR hζ
   have hw2 : ContDiff ℝ 2 w := contDiff_infty.1 hw 2
+  have hg_vol : eLpNorm (fun x ↦ (g x)⁺) n (volume.restrict (ball c R)) ≤
+      ENNReal.ofReal (ε_vol * lam / R) := by
+    rw [eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul (fun x ↦ (g x)⁺) n volume mu (ball c R),
+      ENNReal.toReal_natCast]
+    calc (Measure.addHaarScalarFactor volume mu : ℝ≥0∞) ^ (n : ℝ)⁻¹ *
+          eLpNorm (fun x ↦ (g x)⁺) n (mu.restrict (ball c R))
+        ≤ ENNReal.ofReal (α₀ ^ (n : ℝ)⁻¹) * ENNReal.ofReal (ε₀ * lam / R) := by
+          gcongr
+          rw [← ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_rpow_of_pos hα₀]
+      _ = ENNReal.ofReal (ε_vol * lam / R) := by
+          rw [← ENNReal.ofReal_mul (by positivity)]
+          congr 1
+          simp only [ε₀, n]
+          field_simp
   have hgR : ENNReal.ofReal R * eLpNorm (fun x ↦ (g x)⁺) n (volume.restrict (ball c R)) ≤
-      ENNReal.ofReal (ε₀ * lam) := by
-    calc _ ≤ ENNReal.ofReal R * ENNReal.ofReal (ε₀ * lam / R) := by gcongr
-      _ = ENNReal.ofReal (ε₀ * lam) := by
+      ENNReal.ofReal (ε_vol * lam) := by
+    calc _ ≤ ENNReal.ofReal R * ENNReal.ofReal (ε_vol * lam / R) := by gcongr
+      _ = ENNReal.ofReal (ε_vol * lam) := by
           rw [← ENNReal.ofReal_mul hR0.le, mul_div_cancel₀ _ hR0.ne']
-  refine le_trans (measure_mono ?_) (H hc hR ha hLam hw2.continuous.continuousOn hw2.contDiffOn
-    (fun y hy ↦ (div_nonneg (hnonneg y hy) hσ.le).trans (hwū y hy).1) hwg hgR
-    ⟨x₀, hx₀, (hwū x₀ hx₀R).2.trans ((div_le_one hσ).2 (by linarith))⟩ (div_pos ht hσ))
+  have hvol_eq : ∀ S : Set (EuclideanSpace ℝ ι),
+      volume S = (Measure.addHaarScalarFactor volume mu : ℝ≥0∞) * mu S := fun S ↦ by
+    conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul volume mu]
+    rfl
+  have hvol_bound : volume ({x | t / (1 + 3 * ζ) ≤ w x} ∩ Q) ≤
+      ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * volume Q :=
+    H hc hR ha (hLam.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hlam.le))
+      hw2.continuous.continuousOn hw2.contDiffOn
+      (fun y hy ↦ (div_nonneg (hū_nonneg y hy) hσ.le).trans (hwū y hy).1) hwg hgR
+      ⟨x₀, hx₀, (hwū x₀ hx₀R).2.trans ((div_le_one hσ).2 (by linarith))⟩ (div_pos ht hσ)
+  have hmu_bound : mu ({x | t / (1 + 3 * ζ) ≤ w x} ∩ Q) ≤
+      ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * mu Q := by
+    have hα_ne0 : (Measure.addHaarScalarFactor volume mu : ℝ≥0∞) ≠ 0 := by
+      exact_mod_cast (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure volume mu).ne'
+    refine (ENNReal.mul_le_mul_iff_right hα_ne0 ENNReal.coe_ne_top).1 ?_
+    calc (Measure.addHaarScalarFactor volume mu : ℝ≥0∞) *
+          mu ({x | t / (1 + 3 * ζ) ≤ w x} ∩ Q)
+        = volume ({x | t / (1 + 3 * ζ) ≤ w x} ∩ Q) := (hvol_eq _).symm
+      _ ≤ ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * volume Q := hvol_bound
+      _ = (Measure.addHaarScalarFactor volume mu : ℝ≥0∞) *
+          (ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * mu Q) := by
+          rw [hvol_eq Q, mul_left_comm]
+  refine le_trans (measure_mono ?_) hmu_bound
   -- On the cube, `w ≥ ū / σ`.
   rintro y ⟨hy1, hy2⟩
   exact ⟨(div_le_div_of_nonneg_right hy1 hσ.le).trans (hwū y (hQ hy2)).1, hy2⟩
