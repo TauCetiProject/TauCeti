@@ -288,12 +288,12 @@ theorem isStripFunction_stripFunction (g : C.stripTraces) :
   let hF := (mem_stripTraces_iff.1 g.property).choose_spec
   have hEq : EqOn (C.stripFunction g) (mem_stripTraces_iff.1 g.property).choose
       (verticalClosedStrip 0 1) := fun _ hz => indicator_of_mem hz _
-  { diffContOnCl := ⟨hF.diffContOnCl.differentiableOn.congr
+  ⟨⟨hF.diffContOnCl.differentiableOn.congr
         (hEq.mono (verticalStrip_subset_verticalClosedStrip 0 1)),
-      hF.diffContOnCl.continuousOn.congr (hEq.mono (closure_verticalStrip_subset 0 1))⟩
-    isBounded := hEq.image_eq ▸ hF.isBounded
-    apply_mul_I t := (hEq (by simp)).trans (hF.apply_mul_I t)
-    apply_one_add_mul_I t := (hEq (by simp)).trans (hF.apply_one_add_mul_I t) }
+      hF.diffContOnCl.continuousOn.congr (hEq.mono (closure_verticalStrip_subset 0 1))⟩,
+    hEq.image_eq ▸ hF.isBounded,
+    fun t => (hEq (by simp)).trans (hF.apply_mul_I t),
+    fun t => (hEq (by simp)).trans (hF.apply_one_add_mul_I t)⟩
 
 variable {C} in
 theorem stripFunction_eq {g : C.stripTraces} {F : ℂ → C.SumSpace} (hF : C.IsStripFunction F g)
@@ -321,14 +321,13 @@ theorem stripFunction_eq {g : C.stripTraces} {F : ℂ → C.SumSpace} (hF : C.Is
 
 @[simp] theorem stripFunction_zero : C.stripFunction 0 = 0 := by
   ext z; by_cases hz : z ∈ verticalClosedStrip 0 1
-  · exact stripFunction_eq IsStripFunction.zero hz
-  · exact C.stripFunction_eq_zero _ hz
+  exacts [stripFunction_eq IsStripFunction.zero hz, C.stripFunction_eq_zero _ hz]
 
 @[simp] theorem stripFunction_add (g h : C.stripTraces) :
     C.stripFunction (g + h) = C.stripFunction g + C.stripFunction h := by
   ext z; by_cases hz : z ∈ verticalClosedStrip 0 1
-  · exact stripFunction_eq ((C.isStripFunction_stripFunction g).add
-      (C.isStripFunction_stripFunction h)) hz
+  · exact stripFunction_eq
+      ((C.isStripFunction_stripFunction g).add (C.isStripFunction_stripFunction h)) hz
   · simp [C.stripFunction_eq_zero _ hz]
 
 @[simp] theorem stripFunction_smul (c : ℂ) (g : C.stripTraces) :
@@ -372,13 +371,14 @@ theorem isClosed_stripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
   have hF (n : ℕ) : C.IsStripFunction (F n) (u n) := C.isStripFunction_stripFunction _
   have hdist (n m : ℕ) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
       ‖F n z - F m z‖ ≤ ‖u n - u m‖ := ((hF n).sub (hF m)).norm_le hz
-  have hcauchy {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) : CauchySeq fun n => F n z :=
-    Metric.cauchySeq_iff'.2 fun ε hε => let ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 hlim.cauchySeq ε hε
-      ⟨N, fun n hn => by
-        rw [dist_eq_norm]; exact (hdist n N hz).trans_lt (dist_eq_norm (u n) (u N) ▸ hN n hn)⟩
   let F' : ℂ → C.SumSpace := fun z => limUnder atTop fun n => F n z
   have hlimz {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
-      Tendsto (fun n => F n z) atTop (𝓝 (F' z)) := (hcauchy hz).tendsto_limUnder
+      Tendsto (fun n => F n z) atTop (𝓝 (F' z)) :=
+    (Metric.cauchySeq_iff'.2 fun ε hε =>
+      let ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 hlim.cauchySeq ε hε
+      ⟨N, fun n hn => by
+        rw [dist_eq_norm]
+        exact (hdist n N hz).trans_lt (dist_eq_norm (u n) (u N) ▸ hN n hn)⟩).tendsto_limUnder
   have hunif : TendstoUniformlyOn F F' atTop (verticalClosedStrip 0 1) := by
     refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
     filter_upwards [(tendsto_iff_norm_sub_tendsto_zero.1 hlim).eventually (gt_mem_nhds hε)] with

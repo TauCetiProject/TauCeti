@@ -100,8 +100,8 @@ namespace TauCeti
 
 /-- For `s ≠ 0`, `ENNReal.ofReal ‖WithLp.toLp s f‖` equals the `Lˢ` seminorm of `f` for the
 counting measure. -/
-theorem ofReal_norm_toLp_eq_eLpNorm_count {ι : Type*} [Fintype ι] {s : ℝ≥0∞} (hs : s ≠ 0)
-    (f : ι → ℝ) :
+theorem ofReal_norm_toLp_eq_eLpNorm_count {ι E : Type*} [Fintype ι] [SeminormedAddCommGroup E]
+    {s : ℝ≥0∞} (hs : s ≠ 0) (f : ι → E) :
     letI : MeasurableSpace ι := ⊤
     ENNReal.ofReal ‖WithLp.toLp s f‖ = MeasureTheory.eLpNorm f s MeasureTheory.Measure.count := by
   let _ : MeasurableSpace ι := ⊤
@@ -110,20 +110,19 @@ theorem ofReal_norm_toLp_eq_eLpNorm_count {ι : Type*} [Fintype ι] {s : ℝ≥0
   · rw [PiLp.norm_eq_ciSup, MeasureTheory.eLpNorm_count_top]
     cases isEmpty_or_nonempty ι
     · simp
-    · obtain ⟨i₀, hi₀⟩ := Finite.exists_max fun i ↦ |f i|
-      have hL : (⨆ i, ‖WithLp.toLp ∞ f i‖) = |f i₀| :=
+    · obtain ⟨i₀, hi₀⟩ := Finite.exists_max fun i ↦ ‖f i‖
+      have hL : (⨆ i, ‖WithLp.toLp ∞ f i‖) = ‖f i₀‖ :=
         le_antisymm (ciSup_le fun i ↦ by simpa [PiLp.toLp_apply] using hi₀ i)
           ((le_ciSup (Set.Finite.bddAbove (Set.finite_range _)) i₀).trans_eq' (by simp))
-      have hR : (⨆ i, ‖f i‖ₑ) = ENNReal.ofReal |f i₀| := le_antisymm
-        (iSup_le fun i ↦ by rw [Real.eNorm_eq_ofReal_abs]; exact ENNReal.ofReal_le_ofReal (hi₀ i))
-        ((Real.eNorm_eq_ofReal_abs _).symm.trans_le (le_iSup (fun i ↦ ‖f i‖ₑ) i₀))
+      have hR : (⨆ i, ‖f i‖ₑ) = ENNReal.ofReal ‖f i₀‖ := le_antisymm
+        (iSup_le fun i ↦ by rw [← ofReal_norm]; exact ENNReal.ofReal_le_ofReal (hi₀ i))
+        ((ofReal_norm _).trans_le (le_iSup (fun i ↦ ‖f i‖ₑ) i₀))
       rw [hL, hR]
   · have hs' : 0 < s.toReal := ENNReal.toReal_pos hs hs_top
     rw [PiLp.norm_eq_sum hs', MeasureTheory.eLpNorm_count_eq_tsum hs hs_top, tsum_fintype,
       ← ENNReal.ofReal_rpow_of_nonneg (Finset.sum_nonneg fun _ _ ↦ by positivity) (by positivity),
       ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ by positivity]
     exact congrArg (· ^ (1 / s.toReal)) (Finset.sum_congr rfl fun i _ ↦ by
-      rw [PiLp.toLp_apply, Real.norm_eq_abs, ← ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) hs'.le,
-        Real.eNorm_eq_ofReal_abs])
+      rw [PiLp.toLp_apply, ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hs'.le, ofReal_norm])
 
 end TauCeti

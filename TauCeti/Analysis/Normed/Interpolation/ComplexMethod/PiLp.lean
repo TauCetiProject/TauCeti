@@ -94,18 +94,6 @@ private def piLpFamilyStripTracesInv :
     (fstToSum_singleCLM_interFst_eq_sndToSum_singleCLM_interSnd C q₀ q₁ i)).comp
     (ContinuousLinearMap.proj i)
 
-private theorem piLpFamilyStripTracesFwd_apply_fst (g : (piLpFamily C q₀ q₁).stripTraces)
-    (i : ι) (t : ℝ) :
-    (piLpFamilyStripTracesFwd C q₀ q₁ g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).1 t =
-      (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 t i := by
-  simp [piLpFamilyStripTracesFwd]
-
-private theorem piLpFamilyStripTracesFwd_apply_snd (g : (piLpFamily C q₀ q₁).stripTraces)
-    (i : ι) (t : ℝ) :
-    (piLpFamilyStripTracesFwd C q₀ q₁ g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).2 t =
-      (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 t i := by
-  simp [piLpFamilyStripTracesFwd]
-
 private theorem piLpFamilyStripTracesInv_apply_fst (h : ∀ i, (C i).stripTraces) (t : ℝ) (j : ι) :
     ((piLpFamilyStripTracesInv C q₀ q₁ h :
         C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 t) j =
@@ -134,29 +122,26 @@ def piLpFamilyStripTracesEquiv :
     (piLpFamilyStripTracesInv C q₀ q₁)
     (ContinuousLinearMap.ext fun _ => funext fun _ => Subtype.ext (Prod.ext
       (ZeroAtInftyContinuousMap.ext fun _ => by
-        simp [piLpFamilyStripTracesFwd_apply_fst, piLpFamilyStripTracesInv_apply_fst])
+        simp [piLpFamilyStripTracesFwd, piLpFamilyStripTracesInv_apply_fst])
       (ZeroAtInftyContinuousMap.ext fun _ => by
-        simp [piLpFamilyStripTracesFwd_apply_snd, piLpFamilyStripTracesInv_apply_snd])))
+        simp [piLpFamilyStripTracesFwd, piLpFamilyStripTracesInv_apply_snd])))
     (ContinuousLinearMap.ext fun _ => Subtype.ext (Prod.ext
       (ZeroAtInftyContinuousMap.ext fun _ => PiLp.ext fun _ => by
-        simp [piLpFamilyStripTracesInv_apply_fst, piLpFamilyStripTracesFwd_apply_fst])
+        simp [piLpFamilyStripTracesInv_apply_fst, piLpFamilyStripTracesFwd])
       (ZeroAtInftyContinuousMap.ext fun _ => PiLp.ext fun _ => by
-        simp [piLpFamilyStripTracesInv_apply_snd, piLpFamilyStripTracesFwd_apply_snd])))
-
-private theorem piLpFamilyStripTracesEquiv_apply (g : (piLpFamily C q₀ q₁).stripTraces) :
-    piLpFamilyStripTracesEquiv C q₀ q₁ g = piLpFamilyStripTracesFwd C q₀ q₁ g := rfl
+        simp [piLpFamilyStripTracesInv_apply_snd, piLpFamilyStripTracesFwd])))
 
 @[simp] theorem piLpFamilyStripTracesEquiv_apply_fst (g : (piLpFamily C q₀ q₁).stripTraces)
     (i : ι) (t : ℝ) :
     (piLpFamilyStripTracesEquiv C q₀ q₁ g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).1 t =
       (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 t i := by
-  simp [piLpFamilyStripTracesEquiv, piLpFamilyStripTracesFwd_apply_fst]
+  simp [piLpFamilyStripTracesEquiv, piLpFamilyStripTracesFwd]
 
 @[simp] theorem piLpFamilyStripTracesEquiv_apply_snd (g : (piLpFamily C q₀ q₁).stripTraces)
     (i : ι) (t : ℝ) :
     (piLpFamilyStripTracesEquiv C q₀ q₁ g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).2 t =
       (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 t i := by
-  simp [piLpFamilyStripTracesEquiv, piLpFamilyStripTracesFwd_apply_snd]
+  simp [piLpFamilyStripTracesEquiv, piLpFamilyStripTracesFwd]
 
 @[simp] theorem piLpFamilyStripTracesEquiv_symm_apply_fst (h : ∀ i, (C i).stripTraces)
     (t : ℝ) (i : ι) :
@@ -178,8 +163,10 @@ private theorem piLpFamilyStripTracesEquiv_apply (g : (piLpFamily C q₀ q₁).s
     (g : (piLpFamily C q₀ q₁).stripTraces) (i : ι) (z : ℂ) :
     (C i).stripFunction (piLpFamilyStripTracesEquiv C q₀ q₁ g i) z =
       piLpFamilySumEquiv C q₀ q₁ ((piLpFamily C q₀ q₁).stripFunction g z) i := by
-  rw [← stripEval_apply, ← stripEval_apply, piLpFamilyStripTracesEquiv_apply,
-    piLpFamilyStripTracesFwd, ContinuousLinearMap.pi_apply,
+  rw [← stripEval_apply, ← stripEval_apply]
+  change (C i).stripEval z (piLpFamilyStripTracesFwd C q₀ q₁ g i) =
+    piLpFamilySumEquiv C q₀ q₁ ((piLpFamily C q₀ q₁).stripEval z g) i
+  rw [piLpFamilyStripTracesFwd, ContinuousLinearMap.pi_apply,
     stripEval_stripTracesMap (PiLp.proj q₀ X₀ i) (PiLp.proj q₁ X₁ i)
       (fstToSum_proj_interFst_eq_sndToSum_proj_interSnd C q₀ q₁ i),
     ← piLpFamilySumEquiv_apply_eq_sumLift]
@@ -248,12 +235,8 @@ private theorem piLpFamilyCLEInv_mk (h : ∀ i, (C i).stripTraces) :
   refine congrArg (mk θ) (Subtype.ext (Prod.ext
     (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => ?_)
     (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => ?_)))
-  · simp only [Submodule.coe_sum, Prod.fst_sum, FunLike.coe_sum, Finset.sum_apply, WithLp.ofLp_sum,
-      stripTracesMap_apply_fst, PiLp.singleCLM_apply, piLpFamilyStripTracesEquiv_symm_apply_fst]
-    rw [Fintype.sum_eq_single j (fun _ h => PiLp.single_eq_of_ne _ h.symm _), PiLp.single_eq_same]
-  · simp only [Submodule.coe_sum, Prod.snd_sum, FunLike.coe_sum, Finset.sum_apply, WithLp.ofLp_sum,
-      stripTracesMap_apply_snd, PiLp.singleCLM_apply, piLpFamilyStripTracesEquiv_symm_apply_snd]
-    rw [Fintype.sum_eq_single j (fun _ h => PiLp.single_eq_of_ne _ h.symm _), PiLp.single_eq_same]
+  · simpa [piLpFamilyStripTracesInv] using (piLpFamilyStripTracesInv_apply_fst C q₀ q₁ h t j)
+  · simpa [piLpFamilyStripTracesInv] using (piLpFamilyStripTracesInv_apply_snd C q₀ q₁ h t j)
 
 /-- Coordinatewise continuous linear equivalence between `(piLpFamily C q₀ q₁).ComplexMethodSpace θ`
 and `PiLp q (fun i => (C i).ComplexMethodSpace θ)`. Unlike `piLpFamilyEquiv`, this topological
@@ -273,15 +256,12 @@ def piLpFamilyContinuousLinearEquiv :
     (ContinuousLinearMap.ext fun u => by
       obtain ⟨g, rfl⟩ := mk_surjective u; simp [piLpFamilyCLEFwd_mk, piLpFamilyCLEInv_mk])
 
-private theorem piLpFamilyContinuousLinearEquiv_apply
-    (u : (piLpFamily C q₀ q₁).ComplexMethodSpace θ) :
-    piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ u = piLpFamilyCLEFwd C q₀ q₁ q θ u := rfl
-
 @[simp] theorem piLpFamilyContinuousLinearEquiv_mk_apply
     (g : (piLpFamily C q₀ q₁).stripTraces) (i : ι) :
     piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ (mk θ g) i =
       mk θ (piLpFamilyStripTracesEquiv C q₀ q₁ g i) := by
-  rw [piLpFamilyContinuousLinearEquiv_apply, piLpFamilyCLEFwd_mk, PiLp.toLp_apply]
+  change piLpFamilyCLEFwd C q₀ q₁ q θ (mk θ g) i = _
+  rw [piLpFamilyCLEFwd_mk, PiLp.toLp_apply]
 
 @[simp] theorem toSum_piLpFamilyContinuousLinearEquiv_apply
     (u : (piLpFamily C q₀ q₁).ComplexMethodSpace θ) (i : ι) :
@@ -316,23 +296,19 @@ private theorem norm_piLpFamilyContinuousLinearEquiv_zero
     (u : (piLpFamily C q₀ q₁).ComplexMethodSpace 0) :
     ‖piLpFamilyContinuousLinearEquiv C q₀ q₁ q₀ 0 u‖ = ‖u‖ := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  calc ‖piLpFamilyContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g)‖
-      = ‖WithLp.toLp q₀ fun i => ‖(g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 0 i‖‖ := by
-        rw [← PiLp.norm_norm (piLpFamilyContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g))]
-        simp only [piLpFamilyContinuousLinearEquiv_mk_apply, norm_mk_zero,
-          piLpFamilyStripTracesEquiv_apply_fst]
-    _ = ‖mk 0 g‖ := (PiLp.norm_norm _).trans (norm_mk_zero g).symm
+  rw [← PiLp.norm_norm (piLpFamilyContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g))]
+  simp only [piLpFamilyContinuousLinearEquiv_mk_apply, norm_mk_zero,
+    piLpFamilyStripTracesEquiv_apply_fst]
+  exact PiLp.norm_norm _
 
 private theorem norm_piLpFamilyContinuousLinearEquiv_one
     (u : (piLpFamily C q₀ q₁).ComplexMethodSpace 1) :
     ‖piLpFamilyContinuousLinearEquiv C q₀ q₁ q₁ 1 u‖ = ‖u‖ := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  calc ‖piLpFamilyContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g)‖
-      = ‖WithLp.toLp q₁ fun i => ‖(g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 0 i‖‖ := by
-        rw [← PiLp.norm_norm (piLpFamilyContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g))]
-        simp only [piLpFamilyContinuousLinearEquiv_mk_apply, norm_mk_one,
-          piLpFamilyStripTracesEquiv_apply_snd]
-    _ = ‖mk 1 g‖ := (PiLp.norm_norm _).trans (norm_mk_one g).symm
+  rw [← PiLp.norm_norm (piLpFamilyContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g))]
+  simp only [piLpFamilyContinuousLinearEquiv_mk_apply, norm_mk_one,
+    piLpFamilyStripTracesEquiv_apply_snd]
+  exact PiLp.norm_norm _
 
 private theorem norm_piLpFamilyContinuousLinearEquiv_le {q : ℝ≥0∞} [Fact (1 ≤ q)] {θ : ℝ}
     (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹)
@@ -350,30 +326,28 @@ private theorem norm_piLpFamilyContinuousLinearEquiv_le {q : ℝ≥0∞} [Fact (
         obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 hr
         let a (i : ι) := (1 - θ)⁻¹ * ∫ t, ‖g.val.1 t i‖ * stripPoisson₀ θ t
         let b (i : ι) := θ⁻¹ * ∫ t, ‖g.val.2 t i‖ * stripPoisson₁ θ t
-        have ha_norm := (ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le g.val.1
+        have ha := (ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le g.val.1
           (sub_pos.2 hθ1) (integrable_stripPoisson₀ θ) (ae_of_all _ fun t =>
             (stripPoisson₀_pos hθoo t).le) (integral_stripPoisson₀ ⟨hθ0, hθ1.le⟩)).trans
           ((norm_fst_le g.val).trans_eq (Submodule.norm_coe g))
-        have hb_norm := (ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le g.val.2 hθ0
+        have hb := (ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le g.val.2 hθ0
           (integrable_stripPoisson₁ θ) (ae_of_all _ fun t =>
             (stripPoisson₁_pos hθoo t).le) (integral_stripPoisson₁ ⟨hθ0.le, hθ1⟩)).trans
           ((norm_snd_le g.val).trans_eq (Submodule.norm_coe g))
-        refine ((PiLp.norm_mono (y := WithLp.toLp q fun i => a i ^ (1 - θ) * b i ^ θ)
-          fun i => ?_).trans (TauCeti.norm_toLp_rpow_mul_rpow_le
-            (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne'
+        refine ((PiLp.norm_mono (y := WithLp.toLp q fun i => a i ^ (1 - θ) * b i ^ θ) fun i => by
+          simpa [a, b, piLpFamilyContinuousLinearEquiv_mk_apply] using
+            (norm_mk_le_integral_stripPoisson_rpow_mul_rpow hθoo
+              (piLpFamilyStripTracesEquiv C q₀ q₁ g i)).trans (le_abs_self _)).trans
+          (TauCeti.norm_toLp_rpow_mul_rpow_le (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne'
             (zero_lt_one.trans_le (Fact.out : 1 ≤ q₁)).ne' (Ioo_subset_Icc_self hθoo) hq
             (fun i => mul_nonneg (inv_pos.2 (sub_pos.2 hθ1)).le (integral_nonneg fun t =>
               mul_nonneg (norm_nonneg _) (stripPoisson₀_pos hθoo t).le))
             (fun i => mul_nonneg (inv_pos.2 hθ0).le (integral_nonneg fun t =>
               mul_nonneg (norm_nonneg _) (stripPoisson₁_pos hθoo t).le)))).trans_lt
-          (lt_of_le_of_lt ?_ hg)
-        · simpa [piLpFamilyContinuousLinearEquiv_mk_apply] using
-            (norm_mk_le_integral_stripPoisson_rpow_mul_rpow hθoo
-              (piLpFamilyStripTracesEquiv C q₀ q₁ g i)).trans (le_abs_self _)
-        · exact (mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) ha_norm (sub_pos.2 hθ1).le)
-            (Real.rpow_le_rpow (norm_nonneg _) hb_norm hθ0.le) (Real.rpow_nonneg (norm_nonneg _) _)
-            (Real.rpow_nonneg (norm_nonneg _) _)).trans_eq (by rw [← Real.rpow_add_of_nonneg
-              (norm_nonneg _) (sub_pos.2 hθ1).le hθ0.le, sub_add_cancel, Real.rpow_one])
+          (lt_of_le_of_lt ((mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) ha (sub_pos.2 hθ1).le)
+            (Real.rpow_le_rpow (norm_nonneg _) hb hθ0.le) (by positivity) (by positivity)).trans_eq
+            (by rw [← Real.rpow_add_of_nonneg (norm_nonneg _) (sub_pos.2 hθ1).le hθ0.le,
+              sub_add_cancel, Real.rpow_one])) hg)
   · rw [eq_zero_of_notMem hθ u, map_zero, norm_zero, norm_zero]
 
 private theorem norm_piLpFamilyCLE_symm_le_of_mk {q : ℝ≥0∞} {θ : ℝ}
@@ -381,8 +355,8 @@ private theorem norm_piLpFamilyCLE_symm_le_of_mk {q : ℝ≥0∞} {θ : ℝ}
     (g : ∀ i, (C i).stripTraces) (hg_mk : ∀ i, mk θ (g i) = v i)
     (hG : ‖((piLpFamilyStripTracesEquiv C q₀ q₁).symm g).val‖ ≤ B) :
     ‖(piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ).symm v‖ ≤ B := by
-  have hv : v = WithLp.toLp q fun i => mk θ (g i) := PiLp.ext fun i => (hg_mk i).symm
-  rw [hv, piLpFamilyContinuousLinearEquiv_symm_mk]
+  rw [show v = WithLp.toLp q fun i => mk θ (g i) from PiLp.ext fun i => (hg_mk i).symm,
+    piLpFamilyContinuousLinearEquiv_symm_mk]
   exact (norm_mk_le _).trans ((Submodule.norm_coe _).symm.trans_le hG)
 
 private theorem norm_symm_le_of_eq_top {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
@@ -421,12 +395,10 @@ private theorem norm_symm_le_of_ne_top {q : ℝ≥0∞} [Fact (1 ≤ q)] {θ : �
   refine (norm_piLpFamilyCLE_symm_le_of_mk C v g' (fun i => (hg'_eq i).trans (hg_eq i))
     (norm_prod_le_iff.2 ⟨
       (ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t =>
-        (PiLp.norm_mono (y := WithLp.toLp q₀ fun i => B * (b i / B) ^ (q.toReal * (q₀⁻¹).toReal))
-          fun i => by simpa using (hg'_0 i t).trans (le_abs_self _)).trans
+        (PiLp.norm_mono fun i => by simpa using (hg'_0 i t).trans (le_abs_self _)).trans
           (TauCeti.norm_toLp_mul_div_rpow_le hq₀ hB (fun i => (hb i).1) hsum),
       (ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t =>
-        (PiLp.norm_mono (y := WithLp.toLp q₁ fun i => B * (b i / B) ^ (q.toReal * (q₁⁻¹).toReal))
-          fun i => by simpa using (hg'_1 i t).trans (le_abs_self _)).trans
+        (PiLp.norm_mono fun i => by simpa using (hg'_1 i t).trans (le_abs_self _)).trans
           (TauCeti.norm_toLp_mul_div_rpow_le hq₁ hB (fun i => (hb i).1) hsum)⟩)).trans hB_le
 
 private theorem norm_piLpFamilyContinuousLinearEquiv_symm_le {q : ℝ≥0∞} [Fact (1 ≤ q)] {θ : ℝ}
@@ -474,14 +446,12 @@ def piLpFamilyEquiv :
 @[simp] theorem coe_piLpFamilyEquiv :
     (piLpFamilyEquiv C hq : (piLpFamily C q₀ q₁).ComplexMethodSpace θ →
       PiLp q (fun i => (C i).ComplexMethodSpace θ)) =
-      piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ :=
-  (rfl)
+      piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ := (rfl)
 
 @[simp] theorem coe_piLpFamilyEquiv_symm :
     ((piLpFamilyEquiv C hq).symm : PiLp q (fun i => (C i).ComplexMethodSpace θ) →
       (piLpFamily C q₀ q₁).ComplexMethodSpace θ) =
-      (piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ).symm :=
-  (rfl)
+      (piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ).symm := (rfl)
 
 end
 
@@ -496,57 +466,50 @@ variable {X₀ X₁ V : Type*}
   {q₀ q₁ q : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q)] {θ : ℝ}
   (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹)
 
+omit [T1Space V] in private theorem piLpToFamily_h (x : (C.piLp ι q₀ q₁).inter) :
+    (piLpFamily (fun _ : ι => C) q₀ q₁).fstToSum
+        ((ContinuousLinearEquiv.refl ℂ _) ((C.piLp ι q₀ q₁).interFst x)) =
+      (piLpFamily (fun _ : ι => C) q₀ q₁).sndToSum
+        ((ContinuousLinearEquiv.refl ℂ _) ((C.piLp ι q₀ q₁).interSnd x)) :=
+  sumSpace_ext _ <| by ext k; simpa using congrFun ((C.piLp ι q₀ q₁).embed₀_interFst x) k
+
+omit [T1Space V] in
+private theorem piLpToFamily_hsymm (y : (piLpFamily (fun _ : ι => C) q₀ q₁).inter) :
+    (C.piLp ι q₀ q₁).fstToSum
+        ((ContinuousLinearEquiv.refl ℂ _).symm ((piLpFamily (fun _ : ι => C) q₀ q₁).interFst y)) =
+      (C.piLp ι q₀ q₁).sndToSum
+        ((ContinuousLinearEquiv.refl ℂ _).symm ((piLpFamily (fun _ : ι => C) q₀ q₁).interSnd y)) :=
+  sumSpace_ext _ <| by
+    ext k; simpa using congrFun ((piLpFamily (fun _ : ι => C) q₀ q₁).embed₀_interFst y) k
+
 /-- Canonical linear isometric identification between the complex interpolation space of
 `C.piLp ι q₀ q₁` and that of `piLpFamily (fun _ : ι => C) q₀ q₁`. -/
 private def piLpToFamilyEquiv (θ : ℝ) :
     (C.piLp ι q₀ q₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ]
       (piLpFamily (fun _ : ι => C) q₀ q₁).ComplexMethodSpace θ :=
-  let e₀ := ContinuousLinearEquiv.refl ℂ (PiLp q₀ fun _ : ι => X₀)
-  let e₁ := ContinuousLinearEquiv.refl ℂ (PiLp q₁ fun _ : ι => X₁)
-  let h : ∀ x : (C.piLp ι q₀ q₁).inter,
-      (piLpFamily (fun _ : ι => C) q₀ q₁).fstToSum (e₀ ((C.piLp ι q₀ q₁).interFst x)) =
-        (piLpFamily (fun _ : ι => C) q₀ q₁).sndToSum (e₁ ((C.piLp ι q₀ q₁).interSnd x)) :=
-    fun x => sumSpace_ext _ <| by
-      ext k; simpa [e₀, e₁] using congrFun ((C.piLp ι q₀ q₁).embed₀_interFst x) k
-  let hsymm : ∀ y : (piLpFamily (fun _ : ι => C) q₀ q₁).inter,
-      (C.piLp ι q₀ q₁).fstToSum (e₀.symm ((piLpFamily (fun _ : ι => C) q₀ q₁).interFst y)) =
-        (C.piLp ι q₀ q₁).sndToSum (e₁.symm ((piLpFamily (fun _ : ι => C) q₀ q₁).interSnd y)) :=
-    fun y => sumSpace_ext _ <| by
-      ext k; simpa [e₀, e₁] using congrFun ((piLpFamily (fun _ : ι => C) q₀ q₁).embed₀_interFst y) k
-  let e := mapEquiv θ e₀ e₁ h hsymm
+  let e := mapEquiv θ (ContinuousLinearEquiv.refl ℂ _) (ContinuousLinearEquiv.refl ℂ _)
+    (piLpToFamily_h C) (piLpToFamily_hsymm C)
   LinearIsometryEquiv.ofBounds e.toLinearEquiv
-    (fun u => (norm_mapEquiv (e₀ := e₀) (e₁ := e₁) (h := h) (hsymm := hsymm)
-      (fun _ => rfl) (fun _ => rfl) u).le)
+    (fun u => (norm_mapEquiv (ContinuousLinearEquiv.refl ℂ _) (ContinuousLinearEquiv.refl ℂ _)
+      (piLpToFamily_h C) (piLpToFamily_hsymm C) (fun _ => rfl) (fun _ => rfl) u).le)
     (fun v => by
-      have hnorm := norm_mapEquiv (e₀ := e₀) (e₁ := e₁) (h := h) (hsymm := hsymm)
-        (fun _ => rfl) (fun _ => rfl) (e.symm v)
+      have h := norm_mapEquiv (ContinuousLinearEquiv.refl ℂ _) (ContinuousLinearEquiv.refl ℂ _)
+        (piLpToFamily_h C) (piLpToFamily_hsymm C) (fun _ => rfl) (fun _ => rfl) (e.symm v)
       change ‖e.symm v‖ ≤ ‖v‖
-      rw [← hnorm, ContinuousLinearEquiv.apply_symm_apply])
+      rw [← h, ContinuousLinearEquiv.apply_symm_apply])
 
 private theorem toSum_piLpToFamilyEquiv (θ : ℝ)
     (u : (C.piLp ι q₀ q₁).ComplexMethodSpace θ) (k : ι) :
     (piLpFamily (fun _ : ι => C) q₀ q₁).sumSpaceEmbed (toSum (piLpToFamilyEquiv C θ u)) k =
       (C.piLp ι q₀ q₁).sumSpaceEmbed (toSum u) k := by
-  let e₀ := ContinuousLinearEquiv.refl ℂ (PiLp q₀ fun _ : ι => X₀)
-  let e₁ := ContinuousLinearEquiv.refl ℂ (PiLp q₁ fun _ : ι => X₁)
-  let h : ∀ x : (C.piLp ι q₀ q₁).inter,
-      (piLpFamily (fun _ : ι => C) q₀ q₁).fstToSum (e₀ ((C.piLp ι q₀ q₁).interFst x)) =
-        (piLpFamily (fun _ : ι => C) q₀ q₁).sndToSum (e₁ ((C.piLp ι q₀ q₁).interSnd x)) :=
-    fun x => sumSpace_ext _ <| by
-      ext j; simpa [e₀, e₁] using congrFun ((C.piLp ι q₀ q₁).embed₀_interFst x) j
-  let hsymm : ∀ y : (piLpFamily (fun _ : ι => C) q₀ q₁).inter,
-      (C.piLp ι q₀ q₁).fstToSum (e₀.symm ((piLpFamily (fun _ : ι => C) q₀ q₁).interFst y)) =
-        (C.piLp ι q₀ q₁).sndToSum (e₁.symm ((piLpFamily (fun _ : ι => C) q₀ q₁).interSnd y)) :=
-    fun y => sumSpace_ext _ <| by
-      ext j; simpa [e₀, e₁] using congrFun ((piLpFamily (fun _ : ι => C) q₀ q₁).embed₀_interFst y) j
-  have hu := toSum_mapEquiv (θ := θ) e₀ e₁ h hsymm u
+  have hu := toSum_mapEquiv (θ := θ) (ContinuousLinearEquiv.refl ℂ _)
+    (ContinuousLinearEquiv.refl ℂ _) (piLpToFamily_h C) (piLpToFamily_hsymm C) u
   change (piLpFamily (fun _ : ι => C) q₀ q₁).sumSpaceEmbed
-      (toSum (mapEquiv θ e₀ e₁ h hsymm u)) k =
+      (toSum (mapEquiv θ _ _ (piLpToFamily_h C) (piLpToFamily_hsymm C) u)) k =
     (C.piLp ι q₀ q₁).sumSpaceEmbed (toSum u) k
   rw [hu]
   obtain ⟨x₀, x₁, hx⟩ := (C.piLp ι q₀ q₁).exists_fstToSum_add_sndToSum_eq (toSum u)
-  rw [← hx]
-  simp [e₀, e₁]
+  rw [← hx]; simp
 
 /-- **Bergh–Löfström, Theorem 5.1.2 (for a single compatible couple, including `∞` endpoints).**
 `[PiLp q₀ X₀, PiLp q₁ X₁]_θ ≃ₗᵢ[ℂ] PiLp q (fun _ : ι => [X₀, X₁]_θ)` for `1 ≤ q₀, q₁, q ≤ ∞`
@@ -560,11 +523,9 @@ def piLpEquiv :
     (u : (C.piLp ι q₀ q₁).ComplexMethodSpace θ) (k : ι) :
     C.sumSpaceEmbed (toSum (piLpEquiv C hq u k)) =
       (C.piLp ι q₀ q₁).sumSpaceEmbed (toSum u) k := by
-  have h1 : toSum (piLpEquiv C hq u k) =
-      piLpFamilySumEquiv (fun _ : ι => C) q₀ q₁ (toSum (piLpToFamilyEquiv C θ u)) k :=
-    toSum_piLpFamilyContinuousLinearEquiv_apply (fun _ : ι => C) q₀ q₁ q θ
-      (piLpToFamilyEquiv C θ u) k
-  rw [h1, sumSpaceEmbed_piLpFamilySumEquiv_apply (fun _ : ι => C), toSum_piLpToFamilyEquiv]
+  rw [piLpEquiv, LinearIsometryEquiv.trans_apply, coe_piLpFamilyEquiv,
+    toSum_piLpFamilyContinuousLinearEquiv_apply (fun _ : ι => C),
+    sumSpaceEmbed_piLpFamilySumEquiv_apply (fun _ : ι => C), toSum_piLpToFamilyEquiv]
 
 @[simp] theorem sumSpaceEmbed_toSum_piLpEquiv_symm
     (v : PiLp q (fun _ : ι => C.ComplexMethodSpace θ)) (k : ι) :

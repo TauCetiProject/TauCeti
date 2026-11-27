@@ -52,12 +52,6 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
   let c : ℂ → ℂ := fun z => Complex.exp (-(A : ℂ)) * stripGaussian A 1 z
   have hc_norm (z : ℂ) : ‖c z‖ = Real.exp (-A + A * ((z.re - 1) ^ 2 - z.im ^ 2)) := by
     simp only [c, norm_mul, Complex.norm_exp, neg_re, ofReal_re, norm_stripGaussian, ← Real.exp_add]
-  have hc_zero : ‖c ((0 : ℝ) : ℂ)‖ = 1 := by rw [hc_norm]; simp
-  have hc_fst (t : ℝ) : ‖c (t * I)‖ = Real.exp (-(A * t ^ 2)) := by
-    rw [hc_norm]; congr 1; simp only [mul_I_re, ofReal_im, neg_zero, mul_I_im, ofReal_re]; ring
-  have hc_snd (t : ℝ) : ‖c (1 + t * I)‖ = Real.exp (-(A * (1 + t ^ 2))) := by
-    rw [hc_norm]; congr 1; simp only [add_re, one_re, mul_I_re, ofReal_im, neg_zero, add_zero,
-      add_im, one_im, mul_I_im, ofReal_re, zero_add]; ring
   have hc_le (z : ℂ) (hz : z ∈ verticalClosedStrip 0 1) : ‖c z‖ ≤ 1 := by
     rw [hc_norm]
     exact Real.exp_le_one_iff.2 <| by
@@ -75,16 +69,19 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
         have hA1' : 2 * ‖g.val.1‖ / ε < A * δ ^ 2 := (div_lt_iff₀ hε).2 <| by
           nlinarith [(div_lt_iff₀ (by positivity)).1
             (((le_max_left _ _).trans (le_max_right _ _)).trans_lt hAgt)]
-        rw [hc_fst]
+        rw [hc_norm, show ((t * I : ℂ).re - 1) ^ 2 - (t * I : ℂ).im ^ 2 = 1 - t ^ 2 by simp]
+        rw [show -A + A * (1 - t ^ 2) = -(A * t ^ 2) by ring]
         exact (exp_neg_mul_le_half_of_le (norm_nonneg _) (g.val.1.norm_coe_le_norm t)
           (by positivity) (by nlinarith) hε hA1').trans (le_add_of_nonneg_left (norm_nonneg _)))
     (fun t => by
-      rw [norm_smul, hc_snd]
+      rw [norm_smul, hc_norm, show ((1 + t * I : ℂ).re - 1) ^ 2 - (1 + t * I : ℂ).im ^ 2 =
+        -(t ^ 2) by simp, show -A + A * -(t ^ 2) = -(A * (1 + t ^ 2)) by ring]
       exact (exp_neg_mul_le_half_of_le (norm_nonneg _) (g.val.2.norm_coe_le_norm t)
         hA (by nlinarith [sq_nonneg t]) hε
         (((le_max_right _ _).trans (le_max_right _ _)).trans_lt hAgt)).trans
         (le_add_of_nonneg_left (norm_nonneg _)))
-  rw [norm_smul, hc_zero, one_mul] at hbound; linarith [half_lt_self hε]
+  rw [norm_smul, show ‖c ((0 : ℝ) : ℂ)‖ = 1 from by rw [hc_norm]; simp, one_mul] at hbound
+  linarith [half_lt_self hε]
 
 /-- At `θ = 0`, the quotient norm of an admissible trace pair is the norm in `X₀` of its left
 boundary trace at `0`. -/

@@ -156,8 +156,8 @@ theorem integrable_stripPoisson₀ (θ : ℝ) : Integrable (stripPoisson₀ θ) 
     refine ((exp_neg_integrableOn_Ioi 0 pi_pos).const_mul
       (|Real.sin (π * θ)| / (1 - |Real.cos (π * θ)|))).mono'
       (continuous_stripPoisson₀ θ).aestronglyMeasurable (ae_of_all _ fun t => ?_)
-    have hcosh : Real.exp (π * t) / 2 ≤ Real.cosh (π * t) := by
-      rw [Real.cosh_eq]; linarith [Real.exp_pos (-(π * t))]
+    have hcosh : Real.exp (π * t) / 2 ≤ Real.cosh (π * t) :=
+      Real.cosh_eq _ ▸ by linarith [Real.exp_pos (-(π * t))]
     have hden : (1 - |Real.cos (π * θ)|) * Real.exp (π * t) ≤
         2 * (Real.cosh (π * t) - Real.cos (π * θ)) := by
       nlinarith [one_sub_abs_cos_mul_cosh_le (π * θ) (π * t), hcosh]
@@ -166,9 +166,9 @@ theorem integrable_stripPoisson₀ (θ : ℝ) : Integrable (stripPoisson₀ θ) 
     exact (div_le_div_of_nonneg_left (abs_nonneg _) (mul_pos hc (Real.exp_pos _)) hden).trans_eq
       (by rw [neg_mul, Real.exp_neg]; field_simp [hc.ne'])
   have hIic : IntegrableOn (stripPoisson₀ θ) (Iic 0) := by
-    have hpre : Homeomorph.neg ℝ ⁻¹' Ici (0 : ℝ) = Iic 0 := by ext; simp
-    simpa [Function.comp_def, stripPoisson₀_neg, hpre] using
-      ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
+    simpa [Function.comp_def, stripPoisson₀_neg,
+      show Homeomorph.neg ℝ ⁻¹' Ici (0 : ℝ) = Iic 0 by ext; simp]
+      using ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
         (Homeomorph.neg ℝ).measurableEmbedding (f := stripPoisson₀ θ) (s := Ici 0)).2
         ((integrableOn_Ici_iff_integrableOn_Ioi (by simp)).2 hIoi)
   exact integrableOn_univ.1 (Iic_union_Ioi (a := (0 : ℝ)) ▸ hIic.union hIoi)
@@ -189,10 +189,10 @@ theorem integral_stripPoisson₀ {θ : ℝ} (hθ : θ ∈ Ioc 0 1) : ∫ t, stri
     ((Real.tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp
       (((Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop pi_pos)).atTop_add
         tendsto_const_nhds).atTop_div_const hsin)).const_mul π⁻¹
-  have htan : -Real.cos (π * θ) / Real.sin (π * θ) = Real.tan (π * θ - π / 2) := by
-    rw [Real.tan_eq_sin_div_cos, Real.sin_sub_pi_div_two, Real.cos_sub_pi_div_two]
   have hval : π⁻¹ * Real.arctan ((0 - Real.cos (π * θ)) / Real.sin (π * θ)) = θ - 2⁻¹ := by
-    rw [zero_sub, htan, Real.arctan_tan (by nlinarith [pi_pos, hθ.1]) (by nlinarith [pi_pos, h1])]
+    rw [zero_sub, show -Real.cos (π * θ) / Real.sin (π * θ) = Real.tan (π * θ - π / 2) by
+      rw [Real.tan_eq_sin_div_cos, Real.sin_sub_pi_div_two, Real.cos_sub_pi_div_two],
+      Real.arctan_tan (by nlinarith [pi_pos, hθ.1]) (by nlinarith [pi_pos, h1])]
     field_simp [pi_ne_zero]
   have hbot := hval ▸ ((Real.continuous_arctan.tendsto _).comp
     (((Real.tendsto_exp_atBot.comp (tendsto_id.const_mul_atBot pi_pos)).sub_const _).div_const
@@ -355,31 +355,27 @@ theorem differentiableOn_integral_holoPoisson₁ {u : ℝ → ℂ} (hu : Integra
   have hb : b < 1 := by grind
   have hmem {ζ : ℂ} (hζ : ζ ∈ ball ζ₀ r) (s : ℝ) : (ζ - s * I).re ∈ Icc a b := by
     have hre : |ζ.re - ζ₀.re| < r := (abs_re_le_norm (ζ - ζ₀)).trans_lt (mem_ball_iff_norm.1 hζ)
-    simp only [sub_re, mul_re, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
-      sub_zero, mem_Icc, a, b]; grind [abs_lt]
+    simp only [sub_re, mul_I_re, ofReal_im, neg_zero, sub_zero, mem_Icc, a, b]; grind [abs_lt]
   have hws {ζ : ℂ} (hζ : ζ ∈ ball ζ₀ r) (s : ℝ) : ζ - s * I ∈ verticalStrip 0 1 :=
     ⟨ha.trans_le (hmem hζ s).1, (hmem hζ s).2.trans_lt hb⟩
   let C := π / (2 * (1 + Real.cos (π * b)))
   have hderiv_cont : Continuous fun s : ℝ => deriv holoPoisson₁ (ζ₀ - s * I) :=
     (Continuous.div (by fun_prop) (by fun_prop) fun s => pow_ne_zero 2
       (one_add_exp_I_pi_mul_ne_zero (hws (mem_ball_self hr) s))).congr fun s =>
-      ((hasDerivAt_holoPoisson₁
-        (one_add_exp_I_pi_mul_ne_zero (hws (mem_ball_self hr) s))).deriv).symm
+      ((hasDerivAt_holoPoisson₁ (one_add_exp_I_pi_mul_ne_zero
+        (hws (mem_ball_self hr) s))).deriv).symm
   refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (s := ball ζ₀ r)
-    (F := fun ζ (s : ℝ) => u s * holoPoisson₁ (ζ - s * I))
-    (F' := fun ζ (s : ℝ) => u s * deriv holoPoisson₁ (ζ - s * I))
-    (bound := fun s => |C| * ‖u s‖) (ball_mem_nhds ζ₀ hr) ?_
-    (integrable_mul_holoPoisson₁ hu hζ₀)
-    (hu.aestronglyMeasurable.mul hderiv_cont.aestronglyMeasurable)
-    ?_ (hu.norm.const_mul |C|) ?_).2.differentiableAt.differentiableWithinAt
+    (F' := fun ζ (s : ℝ) => u s * deriv holoPoisson₁ (ζ - s * I)) (bound := fun s => |C| * ‖u s‖)
+    (ball_mem_nhds ζ₀ hr) ?_ (integrable_mul_holoPoisson₁ hu hζ₀)
+    (hu.aestronglyMeasurable.mul hderiv_cont.aestronglyMeasurable) ?_ (hu.norm.const_mul |C|) ?_
+    ).2.differentiableAt.differentiableWithinAt
   · filter_upwards [ball_mem_nhds ζ₀ hr] with ζ hζ
     exact hu.aestronglyMeasurable.mul (Continuous.div continuous_const (by fun_prop) fun s =>
       one_add_exp_I_pi_mul_ne_zero (hws hζ s)).aestronglyMeasurable
   · exact ae_of_all _ fun s ζ hζ => by
       rw [norm_mul, mul_comm]
-      exact mul_le_mul_of_nonneg_right
-        ((norm_deriv_holoPoisson₁_le hb ⟨ha.trans_le (hmem hζ s).1, (hmem hζ s).2⟩).trans
-          (le_abs_self C)) (norm_nonneg _)
+      exact mul_le_mul_of_nonneg_right ((norm_deriv_holoPoisson₁_le hb
+        ⟨ha.trans_le (hmem hζ s).1, (hmem hζ s).2⟩).trans (le_abs_self C)) (norm_nonneg _)
   · exact ae_of_all _ fun s ζ hζ =>
       have hd := hasDerivAt_holoPoisson₁ (one_add_exp_I_pi_mul_ne_zero (hws hζ s))
       by simpa using ((hd.comp ζ ((hasDerivAt_id ζ).sub_const ((s : ℂ) * I))).const_mul
@@ -456,9 +452,8 @@ theorem tendsto_intervalIntegral_stripPoisson₁_nhdsLT {r : ℝ} (hr : 0 < r) :
     Tendsto (fun θ => ∫ y in (-r)..r, stripPoisson₁ θ y) (𝓝[<] 1) (𝓝 1) := by
   simp_rw [← stripPoisson₀_one_sub]
   refine (tendsto_intervalIntegral_stripPoisson₀_nhdsGT hr).comp (tendsto_nhdsWithin_iff.2
-    ⟨((continuous_const.sub continuous_id).tendsto' 1 0 (sub_self 1)).mono_left
-      nhdsWithin_le_nhds,
-    by filter_upwards [self_mem_nhdsWithin] with _ (h : _ < 1); exact sub_pos.2 h⟩)
+    ⟨((continuous_const.sub continuous_id).tendsto' 1 0 (sub_self 1)).mono_left nhdsWithin_le_nhds,
+      by filter_upwards [self_mem_nhdsWithin] with _ (h : _ < 1); exact sub_pos.2 h⟩)
 
 private theorem mul_le_integral_mul_stripPoisson₀ {u : ℝ → ℝ} (hu : UniformContinuous u)
     (hbdd : ∃ M, ∀ t, ‖u t‖ ≤ M) (hunonneg : ∀ s, 0 ≤ u s) {ε c r a b : ℝ} (hε : ε ∈ Ioo 0 1)
@@ -468,8 +463,8 @@ private theorem mul_le_integral_mul_stripPoisson₀ {u : ℝ → ℝ} (hu : Unif
   have hint : Integrable (fun s => u s * stripPoisson₀ ε (c - s)) :=
     ((integrable_stripPoisson₀ ε).comp_sub_left c).bdd_mul hu.continuous.aestronglyMeasurable
       (ae_of_all _ hM)
-  calc a * b ≤ ∫ s in Icc (c - r) (c + r), a * stripPoisson₀ ε (c - s) := by
-        rw [integral_const_mul]; exact mul_le_mul_of_nonneg_left hb ha
+  calc a * b ≤ ∫ s in Icc (c - r) (c + r), a * stripPoisson₀ ε (c - s) :=
+        integral_const_mul a _ ▸ mul_le_mul_of_nonneg_left hb ha
     _ ≤ ∫ s in Icc (c - r) (c + r), u s * stripPoisson₀ ε (c - s) := setIntegral_mono_on
         (((integrable_stripPoisson₀ ε).comp_sub_left c).const_mul a).integrableOn hint.integrableOn
         measurableSet_Icc fun _ hs =>
@@ -529,14 +524,13 @@ theorem exists_forall_sub_le_integral_mul_contracted_stripPoisson₀ {u : ℝ �
     exists_forall_sub_le_integral_mul_stripPoisson₀ hu hbdd hunonneg (half_pos hκ)
   obtain ⟨η, hη, huc⟩ := Metric.uniformContinuous_iff.1 hu (κ / 2) (half_pos hκ)
   refine ⟨min ε₀ (η / (2 * (|T| + 1))), lt_min hε₀ (by positivity), fun ε hε t ht => ?_⟩
-  have htabs : |t| ≤ |T| + 1 :=
-    (abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩).trans ((le_abs_self T).trans (by linarith))
-  have hεη : ε * (2 * (|T| + 1)) < η :=
-    (lt_div_iff₀ (by positivity)).1 (hε.2.trans_le (min_le_right _ _))
   have hdt : dist ((1 - 2 * ε) * t) t < η := by
     rw [Real.dist_eq, show (1 - 2 * ε) * t - t = -(2 * ε * t) by ring, abs_neg, abs_mul,
       abs_of_pos (mul_pos two_pos hε.1)]
-    nlinarith [mul_pos two_pos hε.1]
+    have htabs : |t| ≤ |T| + 1 := (abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩).trans
+      ((le_abs_self T).trans (by linarith))
+    nlinarith [(lt_div_iff₀ (by positivity)).1 (hε.2.trans_le (min_le_right _ _)),
+      mul_pos two_pos hε.1]
   have hdu := huc hdt; rw [Real.dist_eq] at hdu
   linarith [(abs_sub_le_iff.1 hdu.le).2,
     happrox ε ⟨hε.1, hε.2.trans_le (min_le_left _ _)⟩ ((1 - 2 * ε) * t)]

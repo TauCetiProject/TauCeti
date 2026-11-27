@@ -768,12 +768,11 @@ theorem exists_stripTraces_rescale {θ α₀ α₁ b B : ℝ}
       _ = B * ((b / B) ^ (α - 1) * (b / B) ^ (1 : ℝ)) := by rw [Real.rpow_one]; field_simp [hB.ne']
       _ = B * (b / B) ^ α := by rw [← Real.rpow_add hq, sub_add_cancel]
   exact ⟨g', by rw [heq θ, hcθ, one_smul],
-    fun t => (hg₀' t ▸ norm_smul _ _).trans_le (by
-      rw [norm_scaleFactor_mul_I (Real.rpow_pos_of_pos hq _)]
-      exact hscale α₀ _ ((norm_stripTraces_fst_apply_le g t).trans hg)),
-    fun t => (hg₁' t ▸ norm_smul _ _).trans_le (by
-      rw [norm_scaleFactor_one_add_mul_I (Real.rpow_pos_of_pos hq _)]
-      exact hscale α₁ _ ((norm_stripTraces_snd_apply_le g t).trans hg))⟩
+    fun t => (hg₀' t ▸ norm_smul _ _).trans_le
+      (norm_scaleFactor_mul_I (Real.rpow_pos_of_pos hq _) t ▸
+        hscale α₀ _ ((norm_stripTraces_fst_apply_le g t).trans hg)),
+    fun t => (hg₁' t ▸ norm_smul _ _).trans_le (norm_scaleFactor_one_add_mul_I
+      (Real.rpow_pos_of_pos hq _) t ▸ hscale α₁ _ ((norm_stripTraces_snd_apply_le g t).trans hg))⟩
 
 /-- **Three-lines bound in `[X₀, X₁]_θ`.** For every real `θ` and admissible trace pair
 `g = (g₀, g₁)`, the complex interpolation norm satisfies
@@ -785,19 +784,21 @@ theorem norm_mk_le_rpow_mul_rpow (θ : ℝ) (g : C.stripTraces) :
   · refine (le_rpow_mul_rpow_mul_of_forall_pos (C := 1) hθ fun ε hε => ?_).trans_eq (mul_one _)
     set M₀ := ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1‖ + ε
     set M₁ := ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2‖ + ε
+    have hM₀ : 0 < M₀ := by positivity
+    have hM₁ : 0 < M₁ := by positivity
     have hb := norm_smul_mk_le_of_diffContOnCl θ g (differentiable_scaleFactor M₀ M₁).diffContOnCl
       (fun _ hz => norm_scaleFactor_le hz)
-      (fun t => (norm_smul _ _).trans_le <| by
-        rw [norm_scaleFactor_mul_I (by positivity)]
-        exact inv_mul_le_one_of_le₀ ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans
-          (le_add_of_nonneg_right hε.le)) (by positivity))
-      (fun t => (norm_smul _ _).trans_le <| by
-        rw [norm_scaleFactor_one_add_mul_I (by positivity)]
-        exact inv_mul_le_one_of_le₀ ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans
-          (le_add_of_nonneg_right hε.le)) (by positivity))
+      (fun t => (norm_smul _ _).trans_le (norm_scaleFactor_mul_I hM₀ t ▸
+        inv_mul_le_one_of_le₀
+          ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans (le_add_of_nonneg_right hε.le))
+          hM₀.le))
+      (fun t => (norm_smul _ _).trans_le (norm_scaleFactor_one_add_mul_I hM₁ t ▸
+        inv_mul_le_one_of_le₀
+          ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans (le_add_of_nonneg_right hε.le))
+          hM₁.le))
     calc ‖mk θ g‖ = M₀ ^ (1 - θ) * M₁ ^ θ * ‖scaleFactor M₀ M₁ θ • mk θ g‖ := by
           rw [norm_smul, ← mul_assoc, mul_comm (M₀ ^ (1 - θ) * M₁ ^ θ),
-            norm_scaleFactor_mul_rpow (by positivity) (by positivity), one_mul]
+            norm_scaleFactor_mul_rpow hM₀ hM₁, one_mul]
       _ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * 1 := mul_le_mul_of_nonneg_left hb (by positivity)
   · rw [eq_zero_of_notMem hθ (mk θ g), norm_zero]; positivity
 

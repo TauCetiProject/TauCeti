@@ -56,12 +56,6 @@ theorem integrable_logMaxDiv_mul {Ω E : Type*} [TopologicalSpace Ω] [Measurabl
       exact Real.log_le_log (div_pos (hδ.trans_le (le_max_right _ _)) hδ)
         (div_le_div_of_nonneg_right (max_le_max (norm_coe_le_norm f s) le_rfl) hδ.le))
 
-private theorem log_max_mul_eq_add {Ω E : Type*} [TopologicalSpace Ω]
-    [SeminormedAddCommGroup E] (f : C₀(Ω, E)) {δ : ℝ} (hδ : 0 < δ) (w : Ω → ℝ) :
-    (fun s ↦ Real.log (max ‖f s‖ δ) * w s) =
-      fun s ↦ Real.log δ * w s + logMaxDiv f δ s * w s :=
-  funext fun s ↦ by rw [← add_mul, log_add_logMaxDiv f hδ]
-
 /-- Splitting identity for a clipped weighted logarithmic integral of `f : C₀(Ω, E)` with
 threshold `δ > 0` and integrable weight `w`:
 `∫ Real.log (max ‖f s‖ δ) * w s ∂μ = (∫ Real.log δ * w s ∂μ) + (∫ f.logMaxDiv δ s * w s ∂μ)`. -/
@@ -70,7 +64,9 @@ theorem integral_log_max_mul_eq {Ω E : Type*} [TopologicalSpace Ω] [Measurable
     (hδ : 0 < δ) {w : Ω → ℝ} (hw_int : Integrable w μ) :
     (∫ s, Real.log (max ‖f s‖ δ) * w s ∂μ) =
       (∫ s, Real.log δ * w s ∂μ) + (∫ s, logMaxDiv f δ s * w s ∂μ) := by
-  rw [log_max_mul_eq_add f hδ w,
+  rw [show (fun s ↦ Real.log (max ‖f s‖ δ) * w s) =
+      fun s ↦ Real.log δ * w s + logMaxDiv f δ s * w s from
+      funext fun s ↦ by rw [← add_mul, log_add_logMaxDiv f hδ],
     integral_add (hw_int.const_mul _) (integrable_logMaxDiv_mul f hδ hw_int)]
 
 /-- Normalize the finite measure `w · μ` to a probability measure and apply Jensen's inequality
@@ -92,17 +88,15 @@ private theorem inv_mul_integral_log_max_le {Ω E : Type*} [TopologicalSpace Ω]
   let α_nn : ℝ≥0 := ⟨α, hα.le⟩
   have hν_mass : ν.mass = α_nn := ENNReal.coe_injective <|
     FiniteMeasure.ennreal_mass.trans (hν0_univ.trans (ENNReal.ofReal_eq_coe_nnreal hα.le))
-  have hν_ne : ν ≠ 0 :=
-    (ν.mass_ne_zero_iff).1 (hν_mass ▸ NNReal.coe_ne_zero.1 hα.ne')
   have hnorm_meas : (ν.normalize : Measure Ω) = ν.mass⁻¹ • ν0 := by
     rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
-      ν.normalize_eq_inv_mass_smul_of_ne_zero hν_ne, FiniteMeasure.toMeasure_smul,
-      FiniteMeasure.toMeasure_mk]
+      ν.normalize_eq_inv_mass_smul_of_ne_zero
+        ((ν.mass_ne_zero_iff).1 (hν_mass ▸ NNReal.coe_ne_zero.1 hα.ne')),
+      FiniteMeasure.toMeasure_smul, FiniteMeasure.toMeasure_mk]
   -- Translate integrability and integrals from `ν.normalize` back to `w`-weighted `μ`-integrals.
   have hint_norm {u : Ω → ℝ} (hu : Integrable (fun s ↦ u s * w s) μ) :
-      Integrable u (ν.normalize : Measure Ω) := by
-    rw [hnorm_meas]
-    exact ((TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
+      Integrable u (ν.normalize : Measure Ω) :=
+    hnorm_meas ▸ ((TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
       hw_int.aemeasurable hw_nonneg).2
       (hu.congr (ae_of_all _ fun _ ↦ mul_comm _ _))).smul_measure ENNReal.coe_ne_top
   have hintegral_norm (u : Ω → ℝ) :
@@ -112,8 +106,8 @@ private theorem inv_mul_integral_log_max_le {Ω E : Type*} [TopologicalSpace Ω]
     simp only [α_nn, NNReal.smul_def, smul_eq_mul]
     exact congrArg (α⁻¹ * ·) (integral_congr_ae (ae_of_all _ fun _ ↦ mul_comm _ _))
   have hlog_int : Integrable (fun s ↦ Real.log (max ‖f s‖ δ) * w s) μ :=
-    (log_max_mul_eq_add f hδ w).symm ▸
-      (hw_int.const_mul _).add (integrable_logMaxDiv_mul f hδ hw_int)
+    ((hw_int.const_mul (Real.log δ)).add (integrable_logMaxDiv_mul f hδ hw_int)).congr
+      (ae_of_all _ fun s ↦ by rw [Pi.add_apply, ← add_mul, log_add_logMaxDiv f hδ])
   rw [← hintegral_norm, ← hintegral_norm]
   exact (strictConcaveOn_log_Ioi.concaveOn.subset (Set.Ici_subset_Ioi.2 hδ)
     (convex_Ici δ)).le_map_integral (Real.continuousOn_log.mono fun _ hx ↦ (hδ.trans_le hx).ne')
@@ -129,15 +123,13 @@ theorem exp_integral_log_max_le_rpow {Ω E : Type*} [TopologicalSpace Ω] [Measu
     (hw_nonneg : 0 ≤ᵐ[μ] w) (hw_sum : ∫ s, w s ∂μ = α) :
     Real.exp (∫ s, Real.log (max ‖f s‖ δ) * w s ∂μ) ≤ (α⁻¹ * (∫ s, ‖f s‖ * w s ∂μ) + δ) ^ α := by
   have hmax_int := integrable_max_norm_mul f δ hw_int
-  -- Apply Jensen to `log (max ‖f‖ δ)`, exponentiate, and bound `max ‖f‖ δ ≤ ‖f‖ + δ`.
   have hjensen := inv_mul_integral_log_max_le f hα hδ hw_int hw_nonneg hw_sum hmax_int
   have hmax_pos : 0 < α⁻¹ * ∫ s, max ‖f s‖ δ * w s ∂μ := hδ.trans_le <| by
     rw [le_inv_mul_iff₀ hα, mul_comm α δ, ← hw_sum, ← integral_const_mul]
     exact integral_mono_ae (hw_int.const_mul δ) hmax_int
       (hw_nonneg.mono fun _ hs ↦ mul_le_mul_of_nonneg_right (le_max_right _ _) hs)
-  have hmax_le := inv_mul_integral_max_le f hδ.le hw_int hw_nonneg hw_sum
-  refine (Real.exp_le_exp.2 ((inv_mul_le_iff₀ hα).1 hjensen)).trans_eq ?_ |>.trans
-    (Real.rpow_le_rpow hmax_pos.le hmax_le hα.le)
-  rw [Real.rpow_def_of_pos hmax_pos, mul_comm α]
+  refine ((Real.exp_le_exp.2 ((inv_mul_le_iff₀ hα).1 hjensen)).trans_eq
+    (by rw [Real.rpow_def_of_pos hmax_pos, mul_comm α])).trans
+    (Real.rpow_le_rpow hmax_pos.le (inv_mul_integral_max_le f hδ.le hw_int hw_nonneg hw_sum) hα.le)
 
 end ZeroAtInftyContinuousMap

@@ -351,24 +351,20 @@ theorem exists_pos_le_norm_add_and_norm_apply_lt_and_sum_rpow_eq [Nonempty ι] {
   have hδ : 0 < δ := div_pos hε (by positivity)
   let b : ι → ℝ := fun i ↦ ‖v i‖ + δ
   have hb (i : ι) : 0 < b i := add_pos_of_nonneg_of_pos (norm_nonneg _) hδ
-  let B : ℝ := ‖WithLp.toLp q b‖
   obtain ⟨i₀⟩ := ‹Nonempty ι›
-  have hB : 0 < B := (hb i₀).trans_le ((le_abs_self (b i₀)).trans
+  have hB : 0 < ‖WithLp.toLp q b‖ := (hb i₀).trans_le ((le_abs_self (b i₀)).trans
     (PiLp.norm_apply_le (WithLp.toLp q b) i₀))
-  refine ⟨b, B, hB, ?_, fun i ↦ ⟨hb i, lt_add_of_pos_right ‖v i‖ hδ⟩, ?_⟩
+  refine ⟨b, ‖WithLp.toLp q b‖, hB, ?_, fun i ↦ ⟨hb i, lt_add_of_pos_right ‖v i‖ hδ⟩, ?_⟩
   · have hδu : δ * ‖u1‖ ≤ ε := by
       dsimp only [δ]; rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
       nlinarith [norm_nonneg u1, hε.le]
-    have hb_eq : WithLp.toLp q b = WithLp.toLp q (fun i ↦ ‖v i‖) + δ • u1 := by
-      ext i; simp [b, u1]
-    calc B ≤ ‖WithLp.toLp q (fun i ↦ ‖v i‖)‖ + ‖δ • u1‖ := by
-          dsimp only [B]; rw [hb_eq]; exact norm_add_le _ _
-      _ = ‖v‖ + δ * ‖u1‖ := by rw [PiLp.norm_norm, norm_smul, Real.norm_of_nonneg hδ.le]
-      _ ≤ ‖v‖ + ε := add_le_add_right hδu ‖v‖
-  · have hBeq : B = (∑ i, b i ^ q.toReal) ^ (1 / q.toReal) := by
-      dsimp only [B]; rw [PiLp.norm_eq_sum hq0]
-      congr 1; exact Finset.sum_congr rfl fun i _ ↦ by rw [Real.norm_of_nonneg (hb i).le]
-    rw [hBeq, one_div, Real.rpow_inv_rpow (Finset.sum_nonneg fun i _ ↦ by positivity) hq0.ne']
+    calc ‖WithLp.toLp q b‖ = ‖WithLp.toLp q (fun i ↦ ‖v i‖) + δ • u1‖ :=
+          congrArg norm (PiLp.ext fun _ ↦ by simp [b, u1])
+      _ ≤ ‖WithLp.toLp q (fun i ↦ ‖v i‖)‖ + ‖δ • u1‖ := norm_add_le _ _
+      _ ≤ ‖v‖ + ε := by rw [PiLp.norm_norm, norm_smul, Real.norm_of_nonneg hδ.le]; linarith
+  · rw [PiLp.norm_eq_sum hq0, one_div, Real.rpow_inv_rpow
+      (Finset.sum_nonneg fun _ _ ↦ by positivity) hq0.ne']
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [Real.norm_of_nonneg (hb i).le]
 
 end Scaling
 

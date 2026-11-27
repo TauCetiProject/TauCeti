@@ -49,10 +49,10 @@ theorem norm_toLp_rpow_mul_rpow_le {q₀ q₁ q : ℝ≥0∞} (hq₀ : q₀ ≠ 
       Measurable.of_discrete.aestronglyMeasurable (Filter.Eventually.of_forall fun i ↦ ?_)
     simp [Real.eNorm_eq_ofReal_abs, abs_of_nonneg, ha i, hb i, h1θ, hθ.1,
       ENNReal.ofReal_rpow_of_nonneg, Real.rpow_nonneg]
-  rw [ENNReal.ofReal_rpow_of_nonneg (PiLp.norm_nonneg' _) h1θ,
+  simpa [ENNReal.ofReal_rpow_of_nonneg (PiLp.norm_nonneg' _) h1θ,
     ENNReal.ofReal_rpow_of_nonneg (PiLp.norm_nonneg' _) hθ.1,
-    ← ENNReal.ofReal_mul (Real.rpow_nonneg (PiLp.norm_nonneg' _) _)] at h
-  exact (ENNReal.ofReal_le_ofReal_iff (mul_nonneg (Real.rpow_nonneg (PiLp.norm_nonneg' _) _)
-    (Real.rpow_nonneg (PiLp.norm_nonneg' _) _))).1 h
+    ← ENNReal.ofReal_mul (Real.rpow_nonneg (PiLp.norm_nonneg' _) _),
+    ENNReal.ofReal_le_ofReal_iff (mul_nonneg (Real.rpow_nonneg (PiLp.norm_nonneg' _) _)
+      (Real.rpow_nonneg (PiLp.norm_nonneg' _) _))] using h
 
 end TauCeti
