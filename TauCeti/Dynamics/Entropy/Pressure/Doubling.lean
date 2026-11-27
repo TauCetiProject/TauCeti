@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Entropy.Doubling
 public import TauCeti.Dynamics.Entropy.Pressure
+import TauCeti.Analysis.Asymptotics.ExpGrowth
 
 /-!
 # Pressure of constant potentials for the doubling map
@@ -52,16 +53,12 @@ theorem iSup_expGrowthSup_exp_mul_netMaxcard_two_nsmul_unitAddCircle (c : ℝ) :
       (netMaxcard (fun z : UnitAddCircle ↦ 2 • z) univ U n : ℝ≥0∞)) = ENNReal.log 2 := by
   have h0 : ENNReal.ofReal (Real.exp c) ≠ 0 := by simpa using Real.exp_pos c
   have htop : ENNReal.ofReal (Real.exp c) ≠ ∞ := ENNReal.ofReal_ne_top
-  have hconst := expGrowthSup_const h0 htop
-  have hconst' := expGrowthInf_const h0 htop
   rw [← coverEntropy_two_nsmul_unitAddCircle, coverEntropy_eq_iSup_netEntropyEntourage]
-  refine iSup_congr fun U ↦ iSup_congr fun _ ↦ le_antisymm ?_ ?_
-  · refine (expGrowthSup_mul_le (u := fun _ ↦ ENNReal.ofReal (Real.exp c))
-      (Or.inl (by simp [hconst])) (Or.inl (by simp [hconst]))).trans_eq ?_
-    rw [hconst, zero_add]
-    rfl
-  · refine le_trans ?_ (le_expGrowthSup_mul' (u := fun _ ↦ ENNReal.ofReal (Real.exp c)))
-    rw [hconst', zero_add]
-    rfl
+  refine iSup_congr fun U ↦ iSup_congr fun _ ↦ ?_
+  refine (expGrowthSup_mul_of_expGrowthInf_eq (u := fun _ ↦ ENNReal.ofReal (Real.exp c)) (a := 0)
+    (by simpa using expGrowthInf_const h0 htop)
+    (by simpa using expGrowthSup_const h0 htop)).trans ?_
+  rw [EReal.coe_zero, zero_add]
+  rfl
 
 end TauCeti
