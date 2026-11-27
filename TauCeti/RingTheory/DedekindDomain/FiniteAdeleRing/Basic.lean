@@ -75,6 +75,8 @@ approximates `a`.
   finite adele if and only if `x` lies in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_integralAdeles`: a finite adele has a
   common denominator in `R`.
+* `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_integralAdeles_of_isCompact`: so has a
+  compact set of finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le_and_forall_valued_sub_le_one`:
   strong approximation with explicit precision at finitely many places and integrality everywhere.
 * `IsDedekindDomain.FiniteAdeleRing.exists_sub_algebraMap_mem_integralAdeles`: every finite adele
@@ -384,6 +386,24 @@ theorem mul_nonZeroDivisor_mem_integralAdeles (a : FiniteAdeleRing R K) :
   · rw [← Finset.mul_prod_erase _ _ hv, map_mul, ← mul_assoc]
     exact mul_mem (hb v) (v.coe_mem_adicCompletionIntegers _)
   · exact mul_mem (by simpa using hv) (v.coe_mem_adicCompletionIntegers _)
+
+/-- **A compact set of finite adeles has a common denominator**: some nonzero divisor `b` of `R`
+makes `a * b` an integral finite adele for every `a` in the set. -/
+theorem mul_nonZeroDivisor_mem_integralAdeles_of_isCompact {s : Set (FiniteAdeleRing R K)}
+    (hs : IsCompact s) : ∃ b ∈ nonZeroDivisors R,
+      ∀ a ∈ s, a * algebraMap R (FiniteAdeleRing R K) b ∈ integralAdeles R K := by
+  classical
+  choose d hd0 hd using mul_nonZeroDivisor_mem_integralAdeles (R := R) (K := K)
+  -- the open sets on which a single denominator `d a` works cover `s`
+  obtain ⟨t, hst⟩ := hs.elim_finite_subcover
+    (fun a ↦ (· * algebraMap R (FiniteAdeleRing R K) (d a)) ⁻¹'
+      (integralAdeles R K : Set (FiniteAdeleRing R K)))
+    (fun a ↦ (isOpen_integralAdeles R K).preimage (continuous_id.mul continuous_const))
+    fun a _ ↦ Set.mem_iUnion.mpr ⟨a, Set.mem_preimage.mpr (hd a)⟩
+  refine ⟨∏ a ∈ t, d a, prod_mem fun a _ ↦ hd0 a, fun y hy ↦ ?_⟩
+  obtain ⟨a, ha, hya⟩ := Set.mem_iUnion₂.mp (hst hy)
+  rw [← Finset.mul_prod_erase _ _ ha, map_mul, ← mul_assoc]
+  exact mul_mem hya ((integralAdeles R K).algebraMap_mem _)
 
 /-- **Strong approximation for the finite adeles, in explicit form.** Every finite adele `a` is
 approximated by an element `x` of `K` to any prescribed precision at finitely many places, while
