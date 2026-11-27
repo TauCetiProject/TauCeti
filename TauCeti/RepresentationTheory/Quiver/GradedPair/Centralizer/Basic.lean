@@ -245,9 +245,8 @@ theorem centralizerEquiv_refl (P : GradedPair S d) :
     (refl P).centralizerEquiv = LinearEquiv.refl ℂ P.centralizer := by
   refine LinearEquiv.ext fun L ↦ Subtype.ext (LinearMap.ext fun v ↦ ?_)
   rw [coe_centralizerEquiv_apply, LinearEquiv.conj_apply_apply, coe_toLinearEquiv,
-    ← toLinearEquiv_symm, coe_toLinearEquiv]
-  rw [← refl_apply ((refl P).symm v), apply_symm_apply, refl_apply]
-  rfl
+    ← toLinearEquiv_symm, coe_toLinearEquiv, ← refl_apply ((refl P).symm v),
+    apply_symm_apply, refl_apply, LinearEquiv.refl_apply]
 
 theorem centralizerEquiv_trans (e : GradedPairEquiv P Q) (f : GradedPairEquiv Q R) :
     (e.trans f).centralizerEquiv = e.centralizerEquiv.trans f.centralizerEquiv := by
@@ -274,27 +273,28 @@ namespace GradedPair
 
 variable {S T : GradedCoordSpace} {d : StepDirection}
 
-/-- Every element of `P.centralizer` preserves `LinearMap.range (P.operator ^ k)`. -/
-theorem range_pow_mem_of_mem_centralizer (P : GradedPair S d) (k : ℕ)
-    {L : Module.End ℂ S.Carrier} (hL : L ∈ P.centralizer) {v : S.Carrier}
+/-- Any endomorphism commuting with `P.operator` preserves `LinearMap.range (P.operator ^ k)`. -/
+theorem apply_mem_range_pow_of_commute (P : GradedPair S d) (k : ℕ)
+    {L : Module.End ℂ S.Carrier} (hL : Commute L P.operator) {v : S.Carrier}
     (hv : v ∈ LinearMap.range (P.operator ^ k)) :
     L v ∈ LinearMap.range (P.operator ^ k) := by
-  obtain ⟨x, rfl⟩ := hv
-  have h1 : L ∘ₗ P.operator = P.operator ∘ₗ L := (mem_centralizer_iff.1 hL).2
-  have hpow : L ∘ₗ (P.operator ^ k) = (P.operator ^ k) ∘ₗ L := by
-    induction k with
-    | zero => simp [Module.End.one_eq_id]
-    | succ j ih =>
-      rw [pow_succ, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ih,
-        LinearMap.comp_assoc, h1, ← LinearMap.comp_assoc]
-  exact ⟨L x, (congrFun (congrArg DFunLike.coe hpow) x).symm⟩
+  have hsem : Function.Semiconj (P.operator ^ k) L L := fun x ↦ by
+    simpa only [mul_apply_eq_comp] using
+      (congrArg (fun f : Module.End ℂ S.Carrier ↦ f x) (hL.pow_right k).eq).symm
+  exact hsem.mapsTo_range hv
 
-/-- Every element of `P.centralizer` preserves `LinearMap.range P.operator`. -/
-theorem range_operator_mem_of_mem_centralizer (P : GradedPair S d)
-    {L : Module.End ℂ S.Carrier} (hL : L ∈ P.centralizer) {v : S.Carrier}
+/-- Any endomorphism commuting with `P.operator` preserves `LinearMap.range P.operator`. -/
+theorem apply_mem_range_operator_of_commute (P : GradedPair S d)
+    {L : Module.End ℂ S.Carrier} (hL : Commute L P.operator) {v : S.Carrier}
     (hv : v ∈ LinearMap.range P.operator) :
     L v ∈ LinearMap.range P.operator := by
-  simpa using P.range_pow_mem_of_mem_centralizer 1 hL (by simpa using hv)
+  have hv1 : v ∈ LinearMap.range (P.operator ^ 1) := by simpa only [pow_one] using hv
+  simpa only [pow_one] using P.apply_mem_range_pow_of_commute 1 hL hv1
+
+/-- Every element of `P.centralizer` preserves `LinearMap.range P.operator`. -/
+theorem apply_mem_range_operator_of_mem_centralizer (P : GradedPair S d) :
+    ∀ L ∈ P.centralizer, ∀ v ∈ LinearMap.range P.operator, L v ∈ LinearMap.range P.operator :=
+  fun _ hL _ hv ↦ P.apply_mem_range_operator_of_commute (mem_centralizer_iff.1 hL).2 hv
 
 namespace SubmoduleModel
 
@@ -333,11 +333,11 @@ theorem embed_restrictCentralizer_apply (M : P.SubmoduleModel W)
 
 /-- Conjugation by a graded equivalence commutes with restriction to image models through the
 induced image equivalence. -/
-theorem restrictCentralizer_comp_centralizerEquiv {Q : GradedPair T d}
+theorem centralizerEquiv_restrictCentralizer {Q : GradedPair T d}
     (e : GradedPairEquiv P Q) (M : P.ImageModel) (N : Q.ImageModel) (L : P.centralizer) :
     (e.imageEquiv M N).centralizerEquiv
-        (M.restrictCentralizer (fun _ hL _ hv ↦ P.range_operator_mem_of_mem_centralizer hL hv) L) =
-      N.restrictCentralizer (fun _ hL _ hv ↦ Q.range_operator_mem_of_mem_centralizer hL hv)
+        (M.restrictCentralizer P.apply_mem_range_operator_of_mem_centralizer L) =
+      N.restrictCentralizer Q.apply_mem_range_operator_of_mem_centralizer
         (e.centralizerEquiv L) := by
   refine Subtype.ext (LinearMap.ext fun w ↦ N.embed_injective ?_)
   have hemem : N.embed w = e (M.embed ((e.imageEquiv M N).symm w)) := by
@@ -345,11 +345,10 @@ theorem restrictCentralizer_comp_centralizerEquiv {Q : GradedPair T d}
       GradedPairEquiv.apply_symm_apply]
   calc
     N.embed (((e.imageEquiv M N).centralizerEquiv
-        (M.restrictCentralizer (fun _ hL _ hv ↦ P.range_operator_mem_of_mem_centralizer hL hv)
-          L) : Module.End ℂ N.space.Carrier) w)
+        (M.restrictCentralizer P.apply_mem_range_operator_of_mem_centralizer L) :
+        Module.End ℂ N.space.Carrier) w)
         = N.embed ((e.imageEquiv M N)
-            ((M.restrictCentralizer
-              (fun _ hL _ hv ↦ P.range_operator_mem_of_mem_centralizer hL hv) L :
+            ((M.restrictCentralizer P.apply_mem_range_operator_of_mem_centralizer L :
               Module.End ℂ M.space.Carrier) ((e.imageEquiv M N).symm w))) := by
           rw [← (e.imageEquiv M N).apply_symm_apply w, GradedPairEquiv.centralizerEquiv_apply_apply,
             GradedPairEquiv.apply_symm_apply]
@@ -358,8 +357,7 @@ theorem restrictCentralizer_comp_centralizerEquiv {Q : GradedPair T d}
           (e (M.embed ((e.imageEquiv M N).symm w))) := by
         rw [GradedPairEquiv.centralizerEquiv_apply_apply]
     _ = (e.centralizerEquiv L : Module.End ℂ T.Carrier) (N.embed w) := by rw [← hemem]
-    _ = N.embed ((N.restrictCentralizer
-          (fun _ hL _ hv ↦ Q.range_operator_mem_of_mem_centralizer hL hv)
+    _ = N.embed ((N.restrictCentralizer Q.apply_mem_range_operator_of_mem_centralizer
           (e.centralizerEquiv L) : Module.End ℂ N.space.Carrier) w) := by simp
 
 end SubmoduleModel
@@ -368,43 +366,141 @@ end SubmoduleModel
 `P.imageModel`. -/
 noncomputable def restrictCentralizer (P : GradedPair S d) :
     P.centralizer →ₗ[ℂ] P.imageModel.pair.centralizer :=
-  P.imageModel.restrictCentralizer fun _ hL _ hv ↦ P.range_operator_mem_of_mem_centralizer hL hv
+  P.imageModel.restrictCentralizer P.apply_mem_range_operator_of_mem_centralizer
 
 @[simp]
 theorem embed_restrictCentralizer_apply (P : GradedPair S d) (L : P.centralizer)
     (v : P.imageModel.space.Carrier) :
     P.imageModel.embed ((P.restrictCentralizer L : Module.End ℂ P.imageModel.space.Carrier) v) =
       (L : Module.End ℂ S.Carrier) (P.imageModel.embed v) :=
-  P.imageModel.embed_restrictCentralizer_apply
-    (fun _ hL _ hv ↦ P.range_operator_mem_of_mem_centralizer hL hv) L v
+  P.imageModel.embed_restrictCentralizer_apply P.apply_mem_range_operator_of_mem_centralizer L v
 
 /-- Conjugation by a graded equivalence commutes with `restrictCentralizer` through the induced
 equivalence between chosen image models. -/
-theorem restrictCentralizer_centralizerEquiv {Q : GradedPair T d}
+theorem centralizerEquiv_restrictCentralizer {Q : GradedPair T d}
     (e : GradedPairEquiv P Q) (L : P.centralizer) :
     (e.imageEquiv P.imageModel Q.imageModel).centralizerEquiv (P.restrictCentralizer L) =
       Q.restrictCentralizer (e.centralizerEquiv L) :=
-  SubmoduleModel.restrictCentralizer_comp_centralizerEquiv e P.imageModel Q.imageModel L
+  SubmoduleModel.centralizerEquiv_restrictCentralizer e P.imageModel Q.imageModel L
 
-/-- When `P.operator = 0`, the image centralizer is trivial and `P.restrictCentralizer = 0`. -/
+/-- When `P.operator = 0`, `P.restrictCentralizer = 0`. -/
 theorem restrictCentralizer_eq_zero_of_operator_eq_zero {P : GradedPair S d}
     (hP : P.operator = 0) :
     P.restrictCentralizer = 0 := by
   refine LinearMap.ext fun L ↦ Subtype.ext (LinearMap.ext fun v ↦ ?_)
-  have hn : P.imageModel.space.n = 0 := (ImageModel.n_eq_zero_iff P.imageModel).2 hP
-  have hsub : Subsingleton P.imageModel.space.Carrier :=
-    ⟨fun x y ↦ funext fun i ↦ Fin.elim0 (hn ▸ i)⟩
+  have : Subsingleton P.imageModel.space.Carrier :=
+    GradedCoordSpace.subsingleton_carrier_of_n_eq_zero
+      ((ImageModel.n_eq_zero_iff P.imageModel).2 hP)
   exact Subsingleton.elim _ _
 
-/-- On the zero-dimensional coordinate space, the centralizer is trivial and restriction is zero. -/
+/-- On the zero-dimensional coordinate space, `P.centralizer` is a subsingleton. -/
 theorem subsingleton_centralizer_of_n_eq_zero {P : GradedPair S d} (hn : S.n = 0) :
     Subsingleton P.centralizer := by
-  have hcar : Subsingleton S.Carrier := ⟨fun x y ↦ funext fun i ↦ Fin.elim0 (hn ▸ i)⟩
+  have : Subsingleton S.Carrier := GradedCoordSpace.subsingleton_carrier_of_n_eq_zero hn
   exact ⟨fun L₁ L₂ ↦ Subtype.ext (LinearMap.ext fun v ↦ Subsingleton.elim _ _)⟩
 
 /-! ### Surjective centralizer image extension -/
 
 section Extension
+
+/-- An opposite-degree map `L'` on `range P.operator` sends `rangeRestrict u` back into `S.grade a`
+whenever `u ∈ S.grade a`. -/
+private theorem extensionOnGrade_rangeRestrict_mem (P : GradedPair S d)
+    (L' : Module.End ℂ (LinearMap.range P.operator))
+    (hgrade : ∀ (a : ℤ) (v : LinearMap.range P.operator),
+      (v : S.Carrier) ∈ S.grade a → (L' v : S.Carrier) ∈ S.grade (a - d.step))
+    {a : ℤ} {u : S.Carrier} (hu : u ∈ S.grade a) :
+    (L' (P.operator.rangeRestrict u) : S.Carrier) ∈ S.grade a := by
+  have hPu : P.operator u ∈ S.grade (a + d.step) := P.isHomogeneous.map_mem hu
+  simpa only [add_sub_cancel_right] using hgrade (a + d.step) (P.operator.rangeRestrict u) hPu
+
+/-- Restriction of `P.operator` as a linear map from `S.grade (a - d.step)` to the range part
+`Rₐ = (LinearMap.range P.operator).comap (S.grade a).subtype`. -/
+private noncomputable def extensionGradeOperator (P : GradedPair S d) (a : ℤ) :
+    S.grade (a - d.step) →ₗ[ℂ] (LinearMap.range P.operator).comap (S.grade a).subtype :=
+  LinearMap.codRestrict ((LinearMap.range P.operator).comap (S.grade a).subtype)
+    (LinearMap.codRestrict (S.grade a) (P.operator ∘ₗ (S.grade (a - d.step)).subtype)
+      fun x ↦ by
+        simpa only [LinearMap.comp_apply, Submodule.coe_subtype, sub_add_cancel] using
+          P.isHomogeneous.map_mem x.property)
+    fun x ↦ LinearMap.mem_range_self P.operator (x : S.Carrier)
+
+private theorem coe_extensionGradeOperator (P : GradedPair S d) (a : ℤ)
+    (z : S.grade (a - d.step)) :
+    ((extensionGradeOperator P a z : S.grade a) : S.Carrier) = P.operator (z : S.Carrier) :=
+  (congrArg Subtype.val (LinearMap.codRestrict_apply _ _ z)).trans
+    ((LinearMap.codRestrict_apply _ _ z).trans
+      (by simp only [LinearMap.comp_apply, Submodule.coe_subtype]))
+
+/-- `extensionGradeOperator P a` is surjective onto `Rₐ`, using `range_inf_grade_eq_map`. -/
+private theorem range_extensionGradeOperator (P : GradedPair S d) (a : ℤ) :
+    LinearMap.range (extensionGradeOperator P a) = ⊤ := by
+  rw [eq_top_iff]
+  rintro ⟨⟨w, hwa⟩, hwr⟩ _
+  have hw : w ∈ (S.grade (a - d.step)).map P.operator := by
+    rw [← P.range_inf_grade_eq_map a]
+    exact ⟨hwr, hwa⟩
+  obtain ⟨x, hx, rfl⟩ := hw
+  exact ⟨⟨x, hx⟩, Subtype.ext (Subtype.ext (coe_extensionGradeOperator P a ⟨x, hx⟩))⟩
+
+/-- Inclusion of the range part `Rₐ = (LinearMap.range P.operator).comap (S.grade a).subtype`
+into `LinearMap.range P.operator`. -/
+private noncomputable def extensionInclR (P : GradedPair S d) (a : ℤ) :
+    (LinearMap.range P.operator).comap (S.grade a).subtype →ₗ[ℂ] LinearMap.range P.operator :=
+  LinearMap.codRestrict (LinearMap.range P.operator)
+    ((S.grade a).subtype ∘ₗ ((LinearMap.range P.operator).comap (S.grade a).subtype).subtype)
+    fun w ↦ w.property
+
+private theorem coe_extensionInclR (P : GradedPair S d) (a : ℤ)
+    (r : (LinearMap.range P.operator).comap (S.grade a).subtype) :
+    (extensionInclR P a r : S.Carrier) = ((r : S.grade a) : S.Carrier) :=
+  (LinearMap.codRestrict_apply _ _ r).trans
+    (by simp only [LinearMap.comp_apply, Submodule.coe_subtype])
+
+/-- Restriction of `L'` to the range part `Rₐ`, landing in `S.grade (a - d.step)`. -/
+private noncomputable def extensionPhi (P : GradedPair S d)
+    (L' : Module.End ℂ (LinearMap.range P.operator))
+    (hgrade : ∀ (a : ℤ) (v : LinearMap.range P.operator),
+      (v : S.Carrier) ∈ S.grade a → (L' v : S.Carrier) ∈ S.grade (a - d.step))
+    (a : ℤ) :
+    (LinearMap.range P.operator).comap (S.grade a).subtype →ₗ[ℂ] S.grade (a - d.step) :=
+  LinearMap.codRestrict (S.grade (a - d.step))
+    ((LinearMap.range P.operator).subtype ∘ₗ L' ∘ₗ extensionInclR P a)
+    fun w ↦ hgrade a (extensionInclR P a w) w.val.property
+
+private theorem coe_extensionPhi (P : GradedPair S d)
+    (L' : Module.End ℂ (LinearMap.range P.operator))
+    (hgrade : ∀ (a : ℤ) (v : LinearMap.range P.operator),
+      (v : S.Carrier) ∈ S.grade a → (L' v : S.Carrier) ∈ S.grade (a - d.step))
+    (a : ℤ) (r : (LinearMap.range P.operator).comap (S.grade a).subtype) :
+    (extensionPhi P L' hgrade a r : S.Carrier) = (L' (extensionInclR P a r) : S.Carrier) :=
+  (LinearMap.codRestrict_apply _ _ r).trans
+    (by simp only [LinearMap.comp_apply, Submodule.coe_subtype])
+
+/-- Lift of `L' ∘ P.operator.rangeRestrict` from a complement `Uₐ ⊆ S.grade a` to `Rₐ`. -/
+private noncomputable def extensionLiftU (P : GradedPair S d)
+    (L' : Module.End ℂ (LinearMap.range P.operator))
+    (hgrade : ∀ (a : ℤ) (v : LinearMap.range P.operator),
+      (v : S.Carrier) ∈ S.grade a → (L' v : S.Carrier) ∈ S.grade (a - d.step))
+    {a : ℤ} (Uₐ : Submodule ℂ (S.grade a)) :
+    Uₐ →ₗ[ℂ] (LinearMap.range P.operator).comap (S.grade a).subtype :=
+  LinearMap.codRestrict ((LinearMap.range P.operator).comap (S.grade a).subtype)
+    (LinearMap.codRestrict (S.grade a)
+      ((LinearMap.range P.operator).subtype ∘ₗ L' ∘ₗ P.operator.rangeRestrict ∘ₗ
+        (S.grade a).subtype ∘ₗ Uₐ.subtype)
+      fun u ↦ extensionOnGrade_rangeRestrict_mem P L' hgrade u.val.property)
+    fun u ↦ (L' (P.operator.rangeRestrict ((u : S.grade a) : S.Carrier))).property
+
+private theorem coe_extensionLiftU (P : GradedPair S d)
+    (L' : Module.End ℂ (LinearMap.range P.operator))
+    (hgrade : ∀ (a : ℤ) (v : LinearMap.range P.operator),
+      (v : S.Carrier) ∈ S.grade a → (L' v : S.Carrier) ∈ S.grade (a - d.step))
+    {a : ℤ} {Uₐ : Submodule ℂ (S.grade a)} (w : Uₐ) :
+    ((extensionLiftU P L' hgrade Uₐ w : S.grade a) : S.Carrier) =
+      (L' (P.operator.rangeRestrict ((w : S.grade a) : S.Carrier)) : S.Carrier) :=
+  (congrArg Subtype.val (LinearMap.codRestrict_apply _ _ w)).trans
+    ((LinearMap.codRestrict_apply _ _ w).trans
+      (by simp only [LinearMap.comp_apply, Submodule.coe_subtype]))
 
 /-- On each grade `S.grade a`, there exists a linear map into `S.grade (a - d.step)` extending
 `L'` on `LinearMap.range P.operator ⊓ S.grade a` and commuting with `P.operator` against `L'`. -/
@@ -422,83 +518,52 @@ private theorem exists_extensionOnGrade (P : GradedPair S d)
       (∀ x : S.grade a,
         P.operator (Lₐ x : S.Carrier) = L' (P.operator.rangeRestrict (x : S.Carrier))) := by
   classical
+  -- Split `S.grade a` into the range part `Rₐ` and a complement `Uₐ`, and pick a right inverse
+  -- `sₐ` to `extensionGradeOperator P a : S.grade (a - d.step) ↠ Rₐ`.
   let Rₐ : Submodule ℂ (S.grade a) := (LinearMap.range P.operator).comap (S.grade a).subtype
   obtain ⟨Uₐ, hRU⟩ := Rₐ.exists_isCompl
-  -- Restrict `P.operator` to a surjection `S.grade (a - d.step) ↠ Rₐ` and pick a right inverse.
-  let Tₐ : S.grade (a - d.step) →ₗ[ℂ] Rₐ :=
-    { toFun := fun x ↦
-        ⟨⟨P.operator x, by simpa only [sub_add_cancel] using P.isHomogeneous.map_mem x.property⟩,
-          LinearMap.mem_range_self _ _⟩
-      map_add' := fun x y ↦ by ext; simp
-      map_smul' := fun c x ↦ by ext; simp }
-  have hTₐ : LinearMap.range Tₐ = ⊤ := by
-    rw [eq_top_iff]
-    rintro ⟨⟨w, hwa⟩, hwr⟩ _
-    have hw : w ∈ (S.grade (a - d.step)).map P.operator := by
-      rw [← P.range_inf_grade_eq_map a]
-      exact ⟨hwr, hwa⟩
-    obtain ⟨x, hx, rfl⟩ := hw
-    exact ⟨⟨x, hx⟩, by ext; rfl⟩
-  let _ : Module.Projective ℂ ↥Rₐ := Module.Projective.of_basis (Basis.ofVectorSpace ℂ ↥Rₐ)
-  obtain ⟨sₐ, hsₐ⟩ := Tₐ.exists_rightInverse_of_surjective hTₐ
-  let φₐ : Rₐ →ₗ[ℂ] S.grade (a - d.step) :=
-    { toFun := fun w ↦ ⟨L' ⟨w, w.property⟩, hgrade a ⟨w, w.property⟩ w.val.property⟩
-      map_add' := fun w₁ w₂ ↦ Subtype.ext (by
-        have hw : (⟨((w₁ + w₂ : Rₐ) : S.Carrier), (w₁ + w₂).property⟩ :
-            LinearMap.range P.operator) = ⟨w₁, w₁.property⟩ + ⟨w₂, w₂.property⟩ := by
-          apply Subtype.ext; simp
-        have hL : (L' ⟨((w₁ + w₂ : Rₐ) : S.Carrier), (w₁ + w₂).property⟩ : S.Carrier) =
-            (L' ⟨w₁, w₁.property⟩ : S.Carrier) + (L' ⟨w₂, w₂.property⟩ : S.Carrier) :=
-          (congrArg (fun v : LinearMap.range P.operator ↦ (L' v : S.Carrier)) hw).trans
-            (by rw [map_add, Submodule.coe_add])
-        exact hL.trans (Submodule.coe_add _ _).symm)
-      map_smul' := fun c w ↦ Subtype.ext (by
-        have hw : (⟨((c • w : Rₐ) : S.Carrier), (c • w).property⟩ :
-            LinearMap.range P.operator) = c • ⟨w, w.property⟩ := by
-          apply Subtype.ext; simp
-        have hL : (L' ⟨((c • w : Rₐ) : S.Carrier), (c • w).property⟩ : S.Carrier) =
-            c • (L' ⟨w, w.property⟩ : S.Carrier) :=
-          (congrArg (fun v : LinearMap.range P.operator ↦ (L' v : S.Carrier)) hw).trans
-            (by rw [map_smul, Submodule.coe_smul])
-        exact hL.trans (Submodule.coe_smul c _).symm) }
-  let ψₐ : Uₐ →ₗ[ℂ] S.grade (a - d.step) :=
-    { toFun := fun u ↦ sₐ ⟨⟨L' (P.operator.rangeRestrict (u : S.Carrier)), by
-        have hu : P.operator (u : S.Carrier) ∈ S.grade (a + d.step) :=
-          P.isHomogeneous.map_mem u.val.property
-        have hl := hgrade (a + d.step) (P.operator.rangeRestrict (u : S.Carrier)) hu
-        simpa only [add_sub_cancel_right] using hl⟩,
-        (L' (P.operator.rangeRestrict (u : S.Carrier))).property⟩
-      map_add' := fun u₁ u₂ ↦ by rw [← map_add sₐ]; congr 1; ext; simp
-      map_smul' := fun c u ↦ by rw [← map_smul sₐ]; congr 1; ext; simp }
+  let _ : Module.Free ℂ ↥Rₐ := Module.Free.of_divisionRing ℂ ↥Rₐ
+  obtain ⟨sₐ, hsₐ⟩ := (extensionGradeOperator P a).exists_rightInverse_of_surjective
+    (range_extensionGradeOperator P a)
+  let φₐ := extensionPhi P L' hgrade a
+  let liftU := extensionLiftU P L' hgrade Uₐ
+  let ψₐ : Uₐ →ₗ[ℂ] S.grade (a - d.step) := sₐ ∘ₗ liftU
   refine ⟨LinearMap.ofIsCompl hRU φₐ ψₐ, ?_, ?_⟩
   · intro v hv
     have hvR : (⟨(v : S.Carrier), hv⟩ : S.grade a) ∈ Rₐ := v.property
-    exact congrArg Subtype.val
+    have hleft := congrArg Subtype.val
       (LinearMap.ofIsCompl_apply_left hRU (φ := φₐ) (ψ := ψₐ) ⟨⟨v, hv⟩, hvR⟩)
+    have hincv : extensionInclR P a ⟨⟨(v : S.Carrier), hv⟩, hvR⟩ = v :=
+      Subtype.ext (coe_extensionInclR P a ⟨⟨(v : S.Carrier), hv⟩, hvR⟩)
+    exact hleft.trans ((coe_extensionPhi P L' hgrade a ⟨⟨(v : S.Carrier), hv⟩, hvR⟩).trans
+      (by rw [hincv]))
   · intro x
     let lhs : S.grade a →ₗ[ℂ] S.Carrier :=
       P.operator ∘ₗ (S.grade (a - d.step)).subtype ∘ₗ LinearMap.ofIsCompl hRU φₐ ψₐ
     let rhs : S.grade a →ₗ[ℂ] S.Carrier :=
-      (LinearMap.range P.operator).subtype ∘ₗ L' ∘ₗ P.operator.rangeRestrict ∘ₗ (S.grade a).subtype
+      (LinearMap.range P.operator).subtype ∘ₗ L' ∘ₗ P.operator.rangeRestrict ∘ₗ
+        (S.grade a).subtype
     have hlhs : lhs = rhs := by
       rw [← LinearMap.ofIsCompl_eq' hRU rfl rfl (χ := lhs),
         ← LinearMap.ofIsCompl_eq' hRU rfl rfl (χ := rhs)]
       congr 1
       · refine LinearMap.ext fun r ↦ ?_
+        have hc := congrArg Subtype.val (hcomm (extensionInclR P a r))
+        have hp : (P.operator.rangeRestrict (L' (extensionInclR P a r) : S.Carrier) : S.Carrier) =
+            P.operator (L' (extensionInclR P a r) : S.Carrier) :=
+          LinearMap.codRestrict_apply _ _ _
         simp only [lhs, rhs, LinearMap.comp_apply, Submodule.coe_subtype,
-          LinearMap.ofIsCompl_apply_left]
-        exact (congrArg Subtype.val (hcomm ⟨r, r.property⟩)).symm
+          LinearMap.ofIsCompl_apply_left, φₐ]
+        rw [coe_extensionPhi, ← coe_extensionInclR P a r, ← hp]
+        exact hc.symm
       · refine LinearMap.ext fun u ↦ ?_
+        have hs := congrArg
+          (fun f : Rₐ →ₗ[ℂ] Rₐ ↦ ((f (liftU u) : S.grade a) : S.Carrier)) hsₐ
+        rw [LinearMap.comp_apply, LinearMap.id_apply, coe_extensionGradeOperator,
+          coe_extensionLiftU] at hs
         simp only [lhs, rhs, LinearMap.comp_apply, Submodule.coe_subtype,
-          LinearMap.ofIsCompl_apply_right, ψₐ, LinearMap.coe_mk, AddHom.coe_mk]
-        let w : Rₐ := ⟨⟨L' (P.operator.rangeRestrict (u : S.Carrier)), by
-          have hu : P.operator (u : S.Carrier) ∈ S.grade (a + d.step) :=
-            P.isHomogeneous.map_mem u.val.property
-          have hl := hgrade (a + d.step) (P.operator.rangeRestrict (u : S.Carrier)) hu
-          simpa only [add_sub_cancel_right] using hl⟩,
-          (L' (P.operator.rangeRestrict (u : S.Carrier))).property⟩
-        have hs := congrArg (fun f : Rₐ →ₗ[ℂ] Rₐ ↦ ((f w : S.grade a) : S.Carrier)) hsₐ
-        simpa [Tₐ, w] using hs
+          LinearMap.ofIsCompl_apply_right, ψₐ]
+        exact hs
     exact congrFun (congrArg DFunLike.coe hlhs) x
 
 end Extension
@@ -523,8 +588,8 @@ theorem centralizer_image_extension (P : GradedPair S d)
   have hL_grade (a : ℤ) (x : S.grade a) : L x = (g a x : S.Carrier) := by
     simp only [L, LinearMap.comp_apply, LinearEquiv.coe_coe,
       DirectSum.decomposeLinearEquiv_apply, DirectSum.decompose_coe]
-    rw [← DirectSum.lof_eq_of ℂ, DirectSum.toModule_lof]
-    rfl
+    rw [← DirectSum.lof_eq_of ℂ, DirectSum.toModule_lof, LinearMap.comp_apply,
+      Submodule.coe_subtype]
   have hL_hom : LinearMap.IsHomogeneous L S.grade S.grade (-d.step) :=
     LinearMap.isHomogeneous_def.2 fun a x hx ↦ by
       rw [hL_grade a ⟨x, hx⟩, ← sub_eq_add_neg]
@@ -558,7 +623,7 @@ variable {P : GradedPair S d}
 /-- Restriction of the opposite-degree centralizer to any image model of `P` is surjective. -/
 theorem restrictCentralizer_surjective (M : P.ImageModel) :
     Function.Surjective
-      (M.restrictCentralizer fun _ hL _ hv ↦ P.range_operator_mem_of_mem_centralizer hL hv) := by
+      (M.restrictCentralizer P.apply_mem_range_operator_of_mem_centralizer) := by
   intro L'
   let L'' : Module.End ℂ (LinearMap.range P.operator) :=
     M.equiv.toLinearMap ∘ₗ (L' : Module.End ℂ M.space.Carrier) ∘ₗ M.equiv.symm.toLinearMap
@@ -582,8 +647,8 @@ theorem restrictCentralizer_surjective (M : P.ImageModel) :
       apply Subtype.ext
       simp
     simp only [L'', LinearMap.comp_apply, LinearEquiv.coe_coe, hr, LinearEquiv.symm_apply_apply,
-      M.coe_equiv_apply, centralizer_operator_apply, M.embed_operator]
-    rfl
+      M.coe_equiv_apply, centralizer_operator_apply, M.embed_operator,
+      LinearMap.codRestrict_apply]
   obtain ⟨L, hL, hLext⟩ := P.centralizer_image_extension L'' hgrade hcomm
   refine ⟨⟨L, hL⟩, Subtype.ext (LinearMap.ext fun v ↦ M.embed_injective ?_)⟩
   have hv := hLext ⟨M.embed v, M.embed_mem v⟩

@@ -79,6 +79,14 @@ variable (S T : GradedCoordSpace)
 /-- The complex coordinate vector space of a graded presentation. -/
 abbrev Carrier : Type := Fin S.n → ℂ
 
+/-- When a coordinate presentation has zero dimension, its carrier is a subsingleton. -/
+theorem subsingleton_carrier_of_n_eq_zero {S : GradedCoordSpace} (hn : S.n = 0) :
+    Subsingleton S.Carrier := by
+  obtain ⟨n, degree⟩ := S
+  dsimp only at hn
+  subst hn
+  infer_instance
+
 /-- The degree-`a` piece: vectors vanishing at every coordinate whose degree is not `a`. -/
 def grade (a : ℤ) : Submodule ℂ S.Carrier where
   carrier := {v | ∀ i, S.degree i ≠ a → v i = 0}

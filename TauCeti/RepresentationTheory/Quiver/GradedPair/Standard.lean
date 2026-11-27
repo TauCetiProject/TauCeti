@@ -178,6 +178,31 @@ theorem standardVector_inj {i j : Fin m.card} {a b : ℤ} (ha : a ∈ occurrence
   simpa only [Sigma.subtype_ext_iff, StandardIndex.fst_mk, StandardIndex.coe_snd_mk] using
     (standardBasis m).injective h
 
+-- Not `@[simp]`: `standardBasis_repr_apply` simplifies the LHS.
+/-- The coefficient of `standardVector m i' b` at `(i, b)` in `standardBasis m` is `1` if
+`i' = i` and `0` otherwise. -/
+theorem standardBasis_repr_standardVector_same_deg {i' i : Fin m.card} {b : ℤ}
+    (hb : b ∈ occurrenceInterval m i) :
+    (standardBasis m).repr (standardVector m i' b) (StandardIndex.mk i b hb) =
+      if i' = i then 1 else 0 := by
+  by_cases heq : i' = i
+  · subst heq
+    simp [standardVector_of_mem hb]
+  · by_cases hb' : b ∈ occurrenceInterval m i'
+    · simp [standardVector_of_mem hb', Sigma.subtype_ext_iff, heq]
+    · simp [standardVector_of_notMem hb', heq]
+
+-- Not `@[simp]`: `standardBasis_repr_apply` simplifies the LHS.
+/-- The coefficient of `standardVector m i' a` at `(i, b)` in `standardBasis m` vanishes whenever
+`a ≠ b`. -/
+theorem standardBasis_repr_standardVector_of_ne {i' i : Fin m.card} {a b : ℤ}
+    (hab : a ≠ b) (hb : b ∈ occurrenceInterval m i) :
+    (standardBasis m).repr (standardVector m i' a) (StandardIndex.mk i b hb) = 0 := by
+  by_cases ha : a ∈ occurrenceInterval m i'
+  · rw [standardVector_of_mem ha, Basis.repr_self_apply]
+    simp [Sigma.subtype_ext_iff, hab]
+  · rw [standardVector_of_notMem ha, map_zero, Finsupp.coe_zero, Pi.zero_apply]
+
 /-- The standard vectors of the valid labels are linearly independent. -/
 theorem linearIndependent_standardVector :
     LinearIndependent ℂ fun x : StandardIndex m ↦ standardVector m x.1 x.2 := by
