@@ -91,6 +91,12 @@ namespace Subfunctor
 
 variable {ι} {Y : C ⥤ Type w}
 
+/-- Unfolds `CategoryTheory.Subfunctor.IsZariskiLocallyTop`. -/
+lemma isZariskiLocallyTop_iff (U : Subfunctor Y) :
+    U.IsZariskiLocallyTop ι ↔ ∀ (A : C) (y : Y.obj A) (m : Ideal (ι.obj A)), m.IsMaximal →
+      ∃ a ∉ m, ∀ (B : C) (f : A ⟶ B), IsUnit (ι.map f a) → Y.map f y ∈ U.obj B :=
+  Iff.rfl
+
 /-- The whole functor is Zariski-locally everything. -/
 lemma isZariskiLocallyTop_top : (⊤ : Subfunctor Y).IsZariskiLocallyTop ι :=
   fun _ _ m _ ↦ ⟨1, fun h ↦ (Ideal.IsMaximal.ne_top ‹_›) ((Ideal.eq_top_iff_one m).2 h),
