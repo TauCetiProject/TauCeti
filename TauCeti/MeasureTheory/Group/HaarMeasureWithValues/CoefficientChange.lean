@@ -20,8 +20,9 @@ measure `φ μ = μ.map φ` integrates it to the image of the integral
 composing with `φ` turns
 convolution against `μ` into convolution against `φ μ`
 (`TauCeti.HaarMeasureWithValues.convolution_map_mapCoeff`), and is a homomorphism of non-unital
-rings `H(G, A) → H(G, B)` (`TauCeti.HeckeAlgebra.mapCoeff`), semilinear over `φ`. This is the
-coefficient-change map underlying `H(G, A) ⊗_A B ≅ H(G, B)`.
+semirings `H(G, A) → H(G, B)` (of non-unital rings when `A` and `B` are rings)
+(`TauCeti.HeckeAlgebra.mapCoeff`), semilinear over `φ`. This is the coefficient-change map
+underlying `H(G, A) ⊗_A B ≅ H(G, B)`.
 
 ## References
 
@@ -72,8 +73,9 @@ variable [Group G] [IsTopologicalGroup G] [T2Space G] (φ : A →+* B)
   (μ : HaarMeasureWithValues A G)
 
 /-- **Change of coefficients for Hecke algebras**: composing with a ring homomorphism
-`φ : A →+* B` is a homomorphism of non-unital rings `H(G, A) → H(G, B)`, the Hecke algebra of
-`G` with respect to `μ` mapping to that with respect to `φ μ`. -/
+`φ : A →+* B` is a homomorphism of non-unital semirings `H(G, A) → H(G, B)` (of non-unital rings
+when `A` and `B` are rings), the Hecke algebra of `G` with respect to `μ` mapping to that with
+respect to `φ μ`. -/
 noncomputable def mapCoeff :
     HeckeAlgebra μ →ₙ+* HeckeAlgebra (μ.map (φ : A →+ B)) where
   toFun f := ⟨compactlySupported.mapCoeff φ f.toCompactlySupported⟩
