@@ -93,10 +93,8 @@ theorem continuousOn_blochWigner_sphere : ContinuousOn blochWigner (Metric.spher
 /-- **The Bloch–Wigner function and Lobachevsky's function**: `D(e^{2iθ}) = 2 Λ(θ)`. -/
 theorem blochWigner_exp_two_mul_I (θ : ℝ) :
     blochWigner (Complex.exp (2 * θ * Complex.I)) = 2 * lobachevsky θ := by
-  rw [blochWigner_of_norm_eq_one, lobachevsky_eq_im_polylog_two]
-  · ring
-  rw [show (2 : ℂ) * θ * Complex.I = ((2 * θ : ℝ) : ℂ) * Complex.I by push_cast; ring,
-    Complex.norm_exp_ofReal_mul_I]
+  rw [blochWigner_of_norm_eq_one (by simp [Complex.norm_exp]), lobachevsky_eq_im_polylog_two]
+  ring
 
 /-- **Fourier series of the Bloch–Wigner function** on the unit circle:
 `D(e^{it}) = ∑_{k ≥ 1} sin (k t) / k²`. -/
@@ -114,9 +112,7 @@ theorem blochWigner_exp_two_pi_mul_I (a : ℝ) :
     blochWigner (Complex.exp (2 * π * Complex.I * a)) = (HurwitzZeta.expZeta a 2).im := by
   have h := polylog_exp_eq_expZeta (n := 2) le_rfl a
   rw [Int.cast_ofNat] at h
-  rw [blochWigner_of_norm_eq_one, h]
-  rw [show 2 * π * Complex.I * a = ((2 * π * a : ℝ) : ℂ) * Complex.I by push_cast; ring,
-    Complex.norm_exp_ofReal_mul_I]
+  rw [blochWigner_of_norm_eq_one (by simp [Complex.norm_exp]), h]
 
 /-- **The Bloch–Wigner function at `i` is Catalan's constant**:
 `D(i) = ∑_{m ≥ 0} (-1)^m / (2m + 1)²`. -/
