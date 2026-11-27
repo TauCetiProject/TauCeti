@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
+public import TauCeti.MeasureTheory.Measure.FiniteMeasure.Ext
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Integral
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.BoundedLipschitz
 
@@ -22,10 +22,10 @@ symmetric, satisfies the triangle inequality, and vanishes exactly when the two 
 The last fact rests on an extensionality principle of independent interest: on a pseudometric
 space with its Borel σ-algebra, a finite measure is determined by the integrals of the `1`-Lipschitz
 functions bounded by `1`, since rescaled thickened indicators of a closed set are such functions
-and decrease to its indicator; the argument is that of Mathlib's
-`MeasureTheory.ext_of_forall_lintegral_eq_of_IsFiniteMeasure`, with the test functions rescaled
-to be `1`-Lipschitz. On a Polish space the distance metrizes weak convergence of
-probability measures, by the bounded-Lipschitz form of Kantorovich--Rubinstein duality.
+and decrease to its indicator. This principle is proved in
+`TauCeti.MeasureTheory.Measure.FiniteMeasure.Ext`. On a Polish space the distance metrizes weak
+convergence of probability measures, by the bounded-Lipschitz form of Kantorovich--Rubinstein
+duality.
 
 Unlike the Kolmogorov distance on `ℝ`, the bounded Lipschitz distance sees the geometry of the
 space: the point masses at `0` and `1 / n` are at bounded Lipschitz distance `1 / n` but at
@@ -37,16 +37,15 @@ Kolmogorov distance `1`.
 
 ## Main results
 
-* `MeasureTheory.ext_of_forall_integral_eq_of_lipschitzWith`: finite measures with the same
-  integrals of all `1`-Lipschitz functions bounded by `1` are equal;
 * `MeasureTheory.boundedLipschitzDist_le_iff`: upper bounds on the distance are bounds on the
   discrepancy of each test function;
 * `MeasureTheory.boundedLipschitzDist_comm`, `MeasureTheory.boundedLipschitzDist_triangle`:
   symmetry and the triangle inequality;
 * `MeasureTheory.boundedLipschitzDist_le_add`, `MeasureTheory.boundedLipschitzDist_le_two`: the
   distance is at most the sum of the total masses, hence at most `2` for probability measures;
-* `MeasureTheory.boundedLipschitzDist_le_etvDist`: the distance is at most the total variation
-  distance;
+* `MeasureTheory.boundedLipschitzDist_le_etvDist`,
+  `MeasureTheory.toReal_boundedLipschitzDist_le_tvDist`: the distance is at most the total
+  variation distance;
 * `MeasureTheory.boundedLipschitzDist_eq_zero_iff`: for finite Borel measures the distance
   vanishes exactly when the measures agree;
 * `MeasureTheory.ProbabilityMeasure.tendsto_boundedLipschitzDist_iff_tendsto`: on a Polish space,
@@ -67,58 +66,6 @@ open scoped BoundedContinuousFunction ENNReal NNReal Topology
 namespace MeasureTheory
 
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
-
-section Ext
-
-variable [BorelSpace X]
-
-/-- On a pseudometric space with its Borel σ-algebra, two finite measures are equal if they give
-the same integral to every `1`-Lipschitz real function bounded by `1` in absolute value. -/
-theorem ext_of_forall_integral_eq_of_lipschitzWith {μ ν : Measure X} [IsFiniteMeasure μ]
-    [IsFiniteMeasure ν]
-    (h : ∀ f : X → ℝ, LipschitzWith 1 f → (∀ x, ‖f x‖ ≤ 1) → ∫ x, f x ∂μ = ∫ x, f x ∂ν) :
-    μ = ν := by
-  have key {F : Set X} (hF : IsClosed F) : μ F = ν F := by
-    let δ : ℕ → ℝ := fun n ↦ 1 / (n + 1)
-    have hδ : ∀ n, 0 < δ n := fun n ↦ Nat.one_div_pos_of_nat
-    have hδ1 : ∀ n, δ n ≤ 1 := fun n ↦ div_le_one_of_le₀ (by simp) (by positivity)
-    let g : ℕ → X →ᵇ ℝ≥0 := fun n ↦ thickenedIndicator (hδ n) F
-    -- `δ n * g n` is `1`-Lipschitz and bounded by `δ n ≤ 1`, so it is a test function.
-    have hg (n : ℕ) : ∫⁻ x, g n x ∂μ = ∫⁻ x, g n x ∂ν := by
-      have hlip : LipschitzWith 1 fun x ↦ δ n * (g n x : ℝ) := by
-        refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
-        have hxy := (lipschitzWith_thickenedIndicator (hδ n) F).dist_le_mul x y
-        rw [NNReal.dist_eq] at hxy
-        rw [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos (hδ n), NNReal.coe_one, one_mul]
-        calc δ n * |(g n x : ℝ) - g n y| ≤ δ n * ((δ n).toNNReal⁻¹ * dist x y) := by
-              gcongr
-          _ = dist x y := by
-              rw [NNReal.coe_inv, Real.coe_toNNReal _ (hδ n).le, ← mul_assoc,
-                mul_inv_cancel₀ (hδ n).ne', one_mul]
-      have hbd (x : X) : ‖δ n * (g n x : ℝ)‖ ≤ 1 := by
-        have h1 : (g n x : ℝ) ≤ 1 := by exact_mod_cast thickenedIndicator_le_one (hδ n) F x
-        rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (hδ n).le (NNReal.coe_nonneg _))]
-        exact (mul_le_of_le_one_right (hδ n).le h1).trans (hδ1 n)
-      have hint := h _ hlip hbd
-      rw [integral_const_mul, integral_const_mul] at hint
-      refine (ENNReal.toReal_eq_toReal_iff' ((g n).lintegral_lt_top_of_nnreal μ).ne
-        ((g n).lintegral_lt_top_of_nnreal ν).ne).1 ?_
-      rw [BoundedContinuousFunction.toReal_lintegral_coe_eq_integral,
-        BoundedContinuousFunction.toReal_lintegral_coe_eq_integral]
-      exact mul_left_cancel₀ (hδ n).ne' hint
-    have hlim : Tendsto (fun n x ↦ g n x) atTop (𝓝 (F.indicator fun _ ↦ (1 : ℝ≥0))) := by
-      simpa [hF.closure_eq] using thickenedIndicator_tendsto_indicator_closure hδ
-        tendsto_one_div_add_atTop_nhds_zero_nat F
-    have hμ := measure_of_cont_bdd_of_tendsto_indicator μ hF.measurableSet g
-      (fun n x ↦ thickenedIndicator_le_one (hδ n) F x) hlim
-    have hν := measure_of_cont_bdd_of_tendsto_indicator ν hF.measurableSet g
-      (fun n x ↦ thickenedIndicator_le_one (hδ n) F x) hlim
-    simp_rw [hg] at hμ
-    exact tendsto_nhds_unique hμ hν
-  exact ext_of_generate_finite _ (BorelSpace.measurable_eq.trans borel_eq_generateFrom_isClosed)
-    isPiSystem_isClosed (fun _ ↦ key) (key isClosed_univ)
-
-end Ext
 
 /-- The **bounded Lipschitz distance** between two measures on a pseudometric space: the supremum,
 over the `1`-Lipschitz real functions `f` bounded by `1` in absolute value, of the discrepancy
@@ -194,6 +141,7 @@ theorem boundedLipschitzDist_lt_top [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
     ENNReal.add_lt_top.2 ⟨measure_lt_top μ univ, measure_lt_top ν univ⟩
 
 /-- The bounded Lipschitz distance between finite measures is finite. -/
+@[simp]
 theorem boundedLipschitzDist_ne_top [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
     boundedLipschitzDist μ ν ≠ ∞ :=
   boundedLipschitzDist_lt_top.ne
@@ -212,8 +160,16 @@ theorem boundedLipschitzDist_le_etvDist [OpensMeasurableSpace X] (μ ν : Measur
   · rw [etvDist_of_not_isFiniteMeasure h]
     exact le_top
 
+/-- The real-valued bounded Lipschitz distance is at most the total variation distance. -/
+theorem toReal_boundedLipschitzDist_le_tvDist [OpensMeasurableSpace X]
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    (boundedLipschitzDist μ ν).toReal ≤ tvDist μ ν := by
+  simpa only [tvDist] using
+    ENNReal.toReal_mono (etvDist_ne_top μ ν) (boundedLipschitzDist_le_etvDist μ ν)
+
 /-- On a pseudometric space with its Borel σ-algebra, the bounded Lipschitz distance between
 finite measures vanishes exactly when the measures are equal. -/
+@[simp]
 theorem boundedLipschitzDist_eq_zero_iff [BorelSpace X] [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
     boundedLipschitzDist μ ν = 0 ↔ μ = ν := by
   refine ⟨fun h ↦ ext_of_forall_integral_eq_of_lipschitzWith fun f hf hb ↦ ?_,

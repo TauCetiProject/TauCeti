@@ -6,9 +6,11 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureExt
+public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 public import Mathlib.MeasureTheory.Measure.Tight
 import TauCeti.Topology.ContinuousMap.Separation
+import TauCeti.Topology.MetricSpace.ThickenedIndicator
 
 /-!
 # Finite measures are determined by separating test functions
@@ -29,8 +31,16 @@ there: a non-regular Borel measure on a non-metrizable compact space can integra
 function like a point mass. This is the form needed
 on the Pontryagin dual of a locally compact abelian group that is not second countable.
 
+On a pseudometric Borel space, finite measures are also determined by the integrals of the
+`1`-Lipschitz real functions bounded by `1`. The proof follows Mathlib's
+`MeasureTheory.ext_of_forall_lintegral_eq_of_IsFiniteMeasure`, rescaling its thickened indicators
+to be `1`-Lipschitz.
+
 ## Main results
 
+* `MeasureTheory.ext_of_forall_integral_eq_of_lipschitzWith` — finite Borel measures on a
+  pseudometric space with the same integrals of all `1`-Lipschitz functions bounded by `1`
+  are equal.
 * `TauCeti.MeasureTheory.ext_of_forall_mem_submonoid_integral_eq_of_polish` — two finite Borel
   measures on a Polish space with the same integrals on a point-separating submonoid of
   `E →ᵇ ℝ` are equal.
@@ -277,3 +287,50 @@ end Tight
 end MeasureTheory
 
 end TauCeti
+
+namespace MeasureTheory
+
+open scoped ENNReal
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+
+section Ext
+
+variable [BorelSpace X]
+
+/-- On a pseudometric space with its Borel σ-algebra, two finite measures are equal if they give
+the same integral to every `1`-Lipschitz real function bounded by `1` in absolute value. -/
+theorem ext_of_forall_integral_eq_of_lipschitzWith {μ ν : Measure X} [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν]
+    (h : ∀ f : X → ℝ, LipschitzWith 1 f → (∀ x, ‖f x‖ ≤ 1) → ∫ x, f x ∂μ = ∫ x, f x ∂ν) :
+    μ = ν := by
+  have key {F : Set X} (hF : IsClosed F) : μ F = ν F := by
+    let δ : ℕ → ℝ := fun n ↦ 1 / (n + 1)
+    have hδ : ∀ n, 0 < δ n := fun n ↦ Nat.one_div_pos_of_nat
+    have hδ1 : ∀ n, δ n ≤ 1 := fun n ↦ div_le_one_of_le₀ (by simp) (by positivity)
+    let g : ℕ → X →ᵇ ℝ≥0 := fun n ↦ thickenedIndicator (hδ n) F
+    -- `δ n * g n` is `1`-Lipschitz and bounded by `δ n ≤ 1`, so it is a test function.
+    have hg (n : ℕ) : ∫⁻ x, g n x ∂μ = ∫⁻ x, g n x ∂ν := by
+      have hint := h _ (TauCeti.lipschitzWith_one_mul_thickenedIndicator (hδ n) F)
+        (fun x ↦ (TauCeti.norm_mul_thickenedIndicator_le (hδ n) F x).trans (hδ1 n))
+      rw [integral_const_mul, integral_const_mul] at hint
+      refine (ENNReal.toReal_eq_toReal_iff' ((g n).lintegral_lt_top_of_nnreal μ).ne
+        ((g n).lintegral_lt_top_of_nnreal ν).ne).1 ?_
+      rw [BoundedContinuousFunction.toReal_lintegral_coe_eq_integral,
+        BoundedContinuousFunction.toReal_lintegral_coe_eq_integral]
+      exact mul_left_cancel₀ (hδ n).ne' hint
+    have hlim : Tendsto (fun n x ↦ g n x) atTop (𝓝 (F.indicator fun _ ↦ (1 : ℝ≥0))) := by
+      simpa [hF.closure_eq] using thickenedIndicator_tendsto_indicator_closure hδ
+        tendsto_one_div_add_atTop_nhds_zero_nat F
+    have hμ := measure_of_cont_bdd_of_tendsto_indicator μ hF.measurableSet g
+      (fun n x ↦ thickenedIndicator_le_one (hδ n) F x) hlim
+    have hν := measure_of_cont_bdd_of_tendsto_indicator ν hF.measurableSet g
+      (fun n x ↦ thickenedIndicator_le_one (hδ n) F x) hlim
+    simp_rw [hg] at hμ
+    exact tendsto_nhds_unique hμ hν
+  exact ext_of_generate_finite _ (BorelSpace.measurable_eq.trans borel_eq_generateFrom_isClosed)
+    isPiSystem_isClosed (fun _ ↦ key) (key isClosed_univ)
+
+end Ext
+
+end MeasureTheory
