@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Data
-import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 
 /-!
 # The Liouville reduction of a short rational coefficient relation
@@ -130,15 +130,10 @@ theorem two_mul_pi_le_norm_intCast_mul_waldschmidtLinearForm (l b : Fin (n + 1) 
     (hb : ∀ k : Fin n, b k.succ = -(s k.castSucc : ℂ) / s (Fin.last n))
     (hΛ : waldschmidtLinearForm l b ≠ 0) (hα : ∏ j, cexp (l j) ^ s j = 1) :
     2 * Real.pi ≤ ‖(s (Fin.last n) : ℂ) * waldschmidtLinearForm l b‖ := by
-  rw [← exp_neg_intCast_mul_waldschmidtLinearForm l b hlast hb₀ hb, Complex.exp_eq_one_iff]
-    at hα
-  obtain ⟨k, hk⟩ := hα
-  have hk0 : k ≠ 0 := by
-    rintro rfl
-    exact mul_ne_zero (Int.cast_ne_zero.2 hlast) hΛ (by simpa using hk)
-  rw [← norm_neg, hk]
-  simpa [abs_of_pos Real.pi_pos] using le_mul_of_one_le_left (by positivity : 0 ≤ 2 * Real.pi)
-    (by exact_mod_cast Int.one_le_abs hk0 : (1 : ℝ) ≤ |(k : ℝ)|)
+  refine le_of_not_gt fun hlt ↦ mul_ne_zero (Int.cast_ne_zero.2 hlast) hΛ ?_
+  exact neg_eq_zero.1 (Complex.eq_zero_of_exp_eq_one_of_norm_lt
+    ((exp_neg_intCast_mul_waldschmidtLinearForm l b hlast hb₀ hb).trans hα)
+    (by rwa [norm_neg]))
 
 /-- The Liouville reduction of a short rational coefficient relation with `β₀ = 0`, both cases
 together: if `Λ ≠ 0` and `δ ≤ |α^s - 1|` whenever `α^s ≠ 1` (for instance by Liouville's
