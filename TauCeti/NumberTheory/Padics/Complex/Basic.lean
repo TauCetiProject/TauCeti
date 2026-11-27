@@ -28,9 +28,9 @@ over `ℂ_p` has points of type (4).
 
 Because `PadicAlgCl p` and `ℂ_[p]` are algebraically closed nontrivially normed fields, their
 positive norms are dense in `(0, ∞)`, making both fields densely normed. The file also compares the
-valuation with the norm, records `‖p‖ = p⁻¹ < 1` (also `‖p‖ < 1` in `PadicAlgCl p`) and the
-residue characteristic, and provides the integral coefficient inclusion and topological
-nilpotence of `ζ - 1` for `p`-th roots of unity.
+valuation with the norm, records `‖p‖ = p⁻¹ < 1` (also `‖p‖ < 1` in `PadicAlgCl p`), the norms
+of natural numbers and the residue characteristic, and provides the integral coefficient
+inclusion and topological nilpotence of `ζ - 1` for `p`-th roots of unity.
 
 ## Main results
 
@@ -45,6 +45,7 @@ nilpotence of `ζ - 1` for `p`-th roots of unity.
 * `PadicComplex.isTopologicallyNilpotent_sub_one`: `ζ - 1` is topologically nilpotent
   if `ζ ^ p = 1`.
 * `PadicComplex.norm_p`: `‖p‖ = p⁻¹` in `ℂ_[p]`.
+* `PadicComplex.norm_natCast`: a natural number has the same norm in `ℂ_[p]` as in `ℚ_[p]`.
 * `PadicComplex.norm_p_lt_one`, `PadicAlgCl.norm_p_lt_one`: `‖p‖ < 1` in `ℂ_[p]` and in
   `PadicAlgCl p`.
 * `PadicComplex.dense_setOf_isAlgebraic`: the algebraic numbers are dense in `ℂ_[p]`.
@@ -97,6 +98,13 @@ theorem norm_p : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
 theorem norm_p_lt_one : ‖(p : ℂ_[p])‖ < 1 := by
   rw [norm_p]
   exact inv_lt_one_of_one_lt₀ (mod_cast (Fact.out : p.Prime).one_lt)
+
+variable {p} in
+/-- The norm of a natural number in `ℂ_[p]` is its norm in `ℚ_[p]`: it is `1` when `p ∤ n`
+(`Padic.norm_natCast_eq_one_iff`) and less than `1` when `p ∣ n`
+(`Padic.norm_natCast_lt_one_iff`). -/
+theorem norm_natCast (n : ℕ) : ‖(n : ℂ_[p])‖ = ‖(n : ℚ_[p])‖ := by
+  rw [← map_natCast (algebraMap ℚ_[p] ℂ_[p]) n, norm_algebraMap']
 
 -- These instances reuse the valued-integer proofs: the underlying subtypes are definitionally
 -- equal, but typeclass search does not unfold `PadicComplexInt` to match their instance heads.
