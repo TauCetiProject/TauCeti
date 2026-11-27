@@ -309,11 +309,15 @@ theorem sum_componentColumns_X_eq_sum_O {M : Type*} [AddCommMonoid M] (q : G.Com
       rw [mem_componentColumns, mem_componentColumns, componentOfColumn_componentPerm_apply])
     fun c _ => by rw [X_componentPerm_apply]).symm
 
+/-- A sum over the columns of every component is a sum over all columns. -/
+theorem sum_sum_componentColumns {M : Type*} [AddCommMonoid M] (f : Fin n → M) :
+    ∑ q, ∑ c ∈ G.componentColumns q, f c = ∑ c, f c := by
+  simp only [componentColumns_def]
+  exact Finset.sum_fiberwise _ _ _
+
 /-- The component grid sizes `n_q` add up to the grid size. -/
 theorem sum_card_componentColumns : ∑ q, (G.componentColumns q).card = n := by
-  simp only [componentColumns_def]
-  rw [← Finset.card_eq_sum_card_fiberwise (fun c _ => Finset.mem_univ _), Finset.card_univ,
-    Fintype.card_fin]
+  simpa using G.sum_sum_componentColumns fun _ => (1 : ℕ)
 
 /-- A grid diagram represents a knot when its component permutation has exactly one cycle. -/
 def IsKnot : Prop :=
