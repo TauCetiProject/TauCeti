@@ -48,11 +48,9 @@ cohomology is affine: Stacks, Lemma 30.3.1 (01XF), (2) implies (1). The proof ha
 * `AlgebraicGeometry.Scheme.isAffine_of_subsingleton_cohomology_one_idealSheaf`: **Serre's
   criterion**, a quasi-compact scheme with `H¹(X, I) = 0` for every quasi-coherent ideal sheaf `I`
   is affine.
-* `AlgebraicGeometry.Scheme.isAffine_of_subsingleton_cohomology_one`: the same with `H¹(X, F) = 0`
-  for every quasi-coherent `F`. The converse is
-  `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`.
 * `AlgebraicGeometry.Scheme.isAffine_tfae`: the three conditions (affine, `H¹` of quasi-coherent
-  ideal sheaves vanishes, higher cohomology of quasi-coherent modules vanishes) are equivalent.
+  ideal sheaves vanishes, higher cohomology of quasi-coherent modules vanishes) are equivalent,
+  using the converse `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`.
 
 ## References
 
@@ -173,11 +171,14 @@ theorem isAffine_of_subsingleton_cohomology_one_idealSheaf (X : Scheme.{u}) [Com
     (kernel (C := X.Modules) (linearCombination F))
     (fun i ↦ kernel.ι (C := X.Modules) _ ≫ (FiniteLocallyFreeSheaf.freeBicone X t).π i)
     fun Z g hg ↦ by
+      -- `kernel.ι` is a monomorphism; the instance is not found through `X.Modules`.
       have : Mono (kernel.ι (C := X.Modules) (linearCombination F)) := equalizer.ι_mono
-      refine (cancel_mono (kernel.ι (C := X.Modules) (linearCombination F))).mp ?_
-      refine (FiniteLocallyFreeSheaf.isBilimitFreeBicone X t).isLimit.hom_ext fun ⟨j⟩ ↦ ?_
-      exact ((Category.assoc _ _ _).trans (hg j)).trans
-        (zero_comp.symm.trans (Category.assoc _ _ _).symm)
+      exact zero_of_comp_mono (kernel.ι (C := X.Modules) (linearCombination F))
+        ((FiniteLocallyFreeSheaf.isBilimitFreeBicone X t).isLimit.hom_ext fun ⟨j⟩ ↦ by
+          -- `rw [Category.assoc]` fails here: the composition is in `SheafOfModules`, not
+          -- `X.Modules`, so the associativity is applied as a term instead.
+          rw [Bicone.toCone_π_app_mk]
+          exact (Category.assoc _ _ _).trans ((hg j).trans zero_comp.symm))
   obtain ⟨c, hc⟩ := sections_surjective (TauCeti.kernelSequence_shortExact
     (C := X.Modules) (linearCombination F)) hK (1 : Γ(X, ⊤))
   obtain ⟨a, ha⟩ := exists_coefficients_linearCombination_app_eq_sum F ⊤ c
@@ -188,14 +189,6 @@ theorem isAffine_of_subsingleton_cohomology_one_idealSheaf (X : Scheme.{u}) [Com
     simp only [TopCat.Presheaf.map_apply_eq_self] at h1
     exact h1
   exact isAffine_of_isAffineOpen_basicOpen _ hspan fun _ ⟨i, hi⟩ ↦ hi ▸ haff i
-
-/-- **Serre's criterion for affineness**, for all quasi-coherent modules. A quasi-compact scheme on
-which the first cohomology of every quasi-coherent `𝒪_X`-module vanishes is affine. Stacks,
-Lemma 30.3.1 (01XF). -/
-theorem isAffine_of_subsingleton_cohomology_one (X : Scheme.{u}) [CompactSpace X]
-    (h : ∀ (F : X.Modules) [F.IsQuasicoherent], Subsingleton (Cohomology F 1)) :
-    IsAffine X :=
-  isAffine_of_subsingleton_cohomology_one_idealSheaf X fun I ↦ h I.sheaf
 
 /-- **Serre's criterion for affineness**, as equivalent conditions on a quasi-compact scheme `X`:
 `X` is affine; the first cohomology of every quasi-coherent ideal sheaf vanishes; all higher
