@@ -30,6 +30,9 @@ a commutative group, functorial in `R`, and fits into the exact sequence
 * `TauCeti.AlgebraicK2.mulExact_subtype_toStableGL`,
   `TauCeti.SteinbergGroup.mulExact_toStableGL_abelianizationOf`: exactness at `St(R)` and `GL_∞(R)`
   of `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`.
+* `TauCeti.SteinbergGroup.toStableGL_eq_one_iff_of_injective_prod`: for jointly injective ring
+  homomorphisms `f : R →+* S` and `g : R →+* T`, an element of `St(R)` lies in `K₂(R)` exactly when
+  its images lie in `K₂(S)` and `K₂(T)`.
 
 ## References
 
@@ -152,6 +155,24 @@ theorem mulExact_toStableGL_abelianizationOf :
     Function.MulExact (toStableGL R)
       (Group.Abelianization.of : StableGeneralLinearGroup R →* AlgebraicK1 R) :=
   MonoidHom.mulExact_iff.2 (range_toStableGL.trans AlgebraicK1.ker_of.symm).symm
+
+variable {R} {S T : Type*} [Ring S] [Ring T]
+
+/-- If two ring homomorphisms `f : R →+* S` and `g : R →+* T` are jointly injective, then an
+element of `St(R)` lies in `K₂(R)` exactly when its images under `f` and `g` lie in `K₂(S)` and
+`K₂(T)`. -/
+theorem toStableGL_eq_one_iff_of_injective_prod {f : R →+* S} {g : R →+* T}
+    (hfg : Function.Injective (f.prod g)) {z : SteinbergGroup R} :
+    toStableGL R z = 1 ↔
+      toStableGL S (IndexedSteinbergGroup.map f z) = 1 ∧
+        toStableGL T (IndexedSteinbergGroup.map g z) = 1 := by
+  simp only [toStableGL_map]
+  refine ⟨fun h ↦ by simp [h], fun ⟨hf, hg⟩ ↦ ?_⟩
+  refine StableGeneralLinearGroup.map_injective hfg ?_
+  rw [map_one]
+  refine StableGeneralLinearGroup.eq_one_of_map_fst_eq_one_of_map_snd_eq_one ?_ ?_
+  · rwa [StableGeneralLinearGroup.map_map, RingHom.fst_comp_prod]
+  · rwa [StableGeneralLinearGroup.map_map, RingHom.snd_comp_prod]
 
 end SteinbergGroup
 

@@ -86,6 +86,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   a non-zero-divisor dividing all its pairings splits off.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
   self-pairing splits off.
+* `LinearMap.BilinForm.eq_of_apply_eq_of_forall_ker_orthogonal`: for an anisotropic form, a vector
+  of a submodule orthogonal to the kernel of a linear map on it is determined by its image.
 * `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
   to an isotropic submodule preserves isotropy for an alternating form.
 * `LinearMap.BilinForm.IsAlt.linearIndependent_pair_of_mem_nonZeroDivisors`: two vectors whose
@@ -381,6 +383,18 @@ namespace LinearMap.BilinForm
 open Module
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- For an anisotropic form, a vector `c` of a submodule `W` that is orthogonal to the kernel of a
+linear map `f` on `W` is determined by `f c`: the difference of two such vectors lies in `ker f`
+and is orthogonal to itself. -/
+theorem eq_of_apply_eq_of_forall_ker_orthogonal {B : LinearMap.BilinForm R M}
+    (hB : B.toQuadraticMap.Anisotropic) {W : Submodule R M} {N : Type*} [AddCommGroup N]
+    [Module R N] {f : W →ₗ[R] N} {c c' : W} (hcc' : f c = f c')
+    (hc : ∀ X, f X = 0 → B (X : M) c = 0) (hc' : ∀ X, f X = 0 → B (X : M) c' = 0) : c = c' := by
+  have hd : f (c - c') = 0 := by rw [map_sub, hcc', sub_self]
+  have hdd : B (c - c' : W) ((c : M) - c') = 0 := by rw [map_sub, hc _ hd, hc' _ hd, sub_zero]
+  rw [← Submodule.coe_sub, ← LinearMap.BilinMap.toQuadraticMap_apply] at hdd
+  exact sub_eq_zero.mp (Submodule.coe_eq_zero.mp (hB _ hdd))
 
 /-- Adjoining an orthogonal vector to an isotropic submodule preserves isotropy for an
 alternating form. No nondegeneracy or characteristic assumption is needed. -/

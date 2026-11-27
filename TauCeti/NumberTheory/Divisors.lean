@@ -46,6 +46,9 @@ by their sum and by a positive square discriminant.
 
 `Int.card_divisors` counts the integer divisors of `z` as twice the natural divisors of `|z|`.
 
+`Nat.card_divisors_le_two_mul_sqrt` bounds the number of divisors of `n` by `2 * Nat.sqrt n`,
+pairing each divisor `d > √n` with `n / d`.
+
 `Nat.le_div_two_of_mem_properDivisors` bounds a proper divisor of `n` by `n / 2`. Hence
 `Nat.pow_sub_two_mul_pow_div_two_le_of_le_sum_divisors`: if `q ^ n ≤ 1 + ∑_{d ∣ n} f d` and
 `f d ≤ q ^ d` for the proper divisors `d`, then `q ^ n - 2 q ^ (n / 2) ≤ f n` with the subtraction
@@ -58,6 +61,9 @@ product over the divisors of `1, …, N` by divisor: `d` occurs `N / d` times.
 
 For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
 divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
+
+For coprime `m` and `n`, `Nat.Coprime.divisors_filter_pow_dvd_mul` splits the divisors `d` of
+`m * n` with `d ^ k ∣ m * n` as products of the corresponding divisors of `m` and of `n`.
 
 For `N ≠ 0`, `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the
 subtype of `N.divisors` omitting the unit divisor. `TauCeti.pnatDvdEquivDivisors`,
@@ -188,6 +194,30 @@ theorem le_div_two_of_mem_properDivisors {n d : ℕ} (hd : d ∈ n.properDivisor
   obtain ⟨k, hk, rfl⟩ :=
     (mem_properDivisors_iff_exists (Nat.ne_zero_of_lt (one_lt_of_mem_properDivisors hd))).mp hd
   exact (Nat.le_div_iff_mul_le two_pos).mpr (Nat.mul_le_mul_left d hk)
+
+open Finset in
+/-- A natural number `n` has at most `2 * Nat.sqrt n` divisors: every divisor `d` of `n` with
+`d > √n` is `n / e` for the divisor `e = n / d ≤ √n`. -/
+theorem card_divisors_le_two_mul_sqrt (n : ℕ) : #n.divisors ≤ 2 * n.sqrt := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  set A := {d ∈ n.divisors | d ≤ n.sqrt}
+  have hA : #A ≤ n.sqrt := by
+    refine (card_le_card fun d hd ↦ ?_).trans (card_Icc 1 n.sqrt).le
+    obtain ⟨hd, hle⟩ := mem_filter.mp hd
+    exact mem_Icc.mpr ⟨pos_of_mem_divisors hd, hle⟩
+  have hsub : n.divisors ⊆ A ∪ A.image (n / ·) := by
+    intro d hd
+    by_cases hle : d ≤ n.sqrt
+    · exact mem_union_left _ (mem_filter.mpr ⟨hd, hle⟩)
+    have hdvd := dvd_of_mem_divisors hd
+    refine mem_union_right _ (mem_image.mpr ⟨n / d, mem_filter.mpr
+      ⟨mem_divisors.mpr ⟨div_dvd_of_dvd hdvd, hn⟩, ?_⟩, Nat.div_div_self hdvd hn⟩)
+    rw [Nat.le_sqrt] at hle ⊢
+    have hmul : n / d * d = n := Nat.div_mul_cancel hdvd
+    nlinarith
+  calc #n.divisors ≤ #A + #(A.image (n / ·)) := (card_le_card hsub).trans (card_union_le _ _)
+    _ ≤ 2 * n.sqrt := by linarith [card_image_le (s := A) (f := (n / ·))]
 
 /-- If `f d ≤ q ^ d` for every proper divisor `d` of `n` and `q ^ n ≤ ∑_{d ∣ n} f d + 1`, then
 `q ^ n - 2 q ^ (n / 2) ≤ f n` in `ℤ` (integer subtraction), with `n / 2` the natural-number
@@ -511,5 +541,24 @@ theorem prod_Ioc_prod_divisors {M : Type*} [CommMonoid M] (N : ℕ) (f : ℕ →
       exact ⟨⟨⟨hi, hiN⟩, hdi⟩, Nat.pos_of_dvd_of_pos hdi hi, (Nat.le_of_dvd hi hdi).trans hiN⟩
     · rintro ⟨⟨⟨hi, hiN⟩, hdi⟩, -⟩
       exact ⟨⟨hi, hiN⟩, hdi, hi.ne'⟩
+
+/-- For coprime `m` and `n`, the divisors `d` of `m * n` with `d ^ k ∣ m * n` are the products
+`a * b` of divisors `a` of `m` with `a ^ k ∣ m` and `b` of `n` with `b ^ k ∣ n`. -/
+theorem Coprime.divisors_filter_pow_dvd_mul {m n : ℕ} (hmn : m.Coprime n) (k : ℕ) :
+    {d ∈ (m * n).divisors | d ^ k ∣ m * n} =
+      ({a ∈ m.divisors | a ^ k ∣ m} ×ˢ {b ∈ n.divisors | b ^ k ∣ n}).image
+        fun p ↦ p.1 * p.2 := by
+  ext d
+  simp only [mem_filter, mem_image, mem_product, mem_divisors, Prod.exists]
+  constructor
+  · rintro ⟨⟨hd, hmn0⟩, hdk⟩
+    obtain ⟨a, b, ha, hb, rfl⟩ := Nat.dvd_mul.mp hd
+    rw [mul_pow] at hdk
+    refine ⟨a, b, ⟨⟨⟨ha, left_ne_zero_of_mul hmn0⟩, ?_⟩, ⟨hb, right_ne_zero_of_mul hmn0⟩, ?_⟩, rfl⟩
+    · exact ((hmn.coprime_dvd_left ha).pow_left k).dvd_of_dvd_mul_right (dvd_of_mul_right_dvd hdk)
+    · exact ((hmn.symm.coprime_dvd_left hb).pow_left k).dvd_of_dvd_mul_left
+        (dvd_of_mul_left_dvd hdk)
+  · rintro ⟨a, b, ⟨⟨⟨ha, hm⟩, hak⟩, ⟨hb, hn⟩, hbk⟩, rfl⟩
+    exact ⟨⟨mul_dvd_mul ha hb, mul_ne_zero hm hn⟩, mul_pow a b k ▸ mul_dvd_mul hak hbk⟩
 
 end Nat

@@ -7,14 +7,18 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Artanh
 public import TauCeti.Geometry.Manifold.Flow.Basic
+public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import TauCeti.Geometry.Manifold.Morse.ExponentialConvergence
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Manifold.Flow.RestPoint
 import TauCeti.Geometry.Manifold.Morse.Sphere.Degenerate
+import TauCeti.Geometry.Manifold.Riemannian.Sphere.Distance
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 
 /-!
@@ -49,9 +53,12 @@ dimension.
   has squared length `1 - h²` (`TauCeti.norm_mgradient_sphereHeight_sq`), so along `γ` the height
   satisfies `h' = -(1 - h²)`. Hence `(1 + h) / (1 - h)` decays exactly like `exp (-2 t)`
   (`TauCeti.one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient`). If `u` is the
-  angle of `γ t` from the south pole, then `h = -cos u` and `(1 + h) / (1 - h) = tan² (u / 2)`:
-  this is the solution `tan (u / 2) = tan (u₀ / 2) exp (-t)` of the meridian equation
-  `u' = -sin u`.
+  angle of `γ t` from the south pole, then `h = -cos u` and `(1 + h) / (1 - h) = tan² (u / 2)`,
+  so `u = 2 arctan (tan (u₀ / 2) exp (-t))`
+  (`TauCeti.angle_maximalIntegralCurve_neg_mgradient_sphereHeight`), the solution of the meridian
+  equation `u' = -sin u`. The round distance is the angle
+  (`TauCeti.riemannianEDist_sphere_of_ne_neg`), so this is also the Riemannian distance from `γ t`
+  to the south pole (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sphereHeight`).
 * **Crossing a band of latitudes in bounded time, for the round metric.** On the band
   `-r ≤ h ≤ r` the gradient of `h` has squared length at least `1 - r²`, so the trajectory
   through a point with `h ≤ b` lies below the latitude `a` at every time `t ≥ 0` with
@@ -99,7 +106,7 @@ and that the squared chord from `γ t` to the south pole is `2 (1 + h (γ t))`.
 
 public section
 
-open Bundle Filter Metric Module Set Topology TauCeti.Manifold
+open Bundle Filter InnerProductGeometry Metric Module Set Topology TauCeti.Manifold
 open scoped Manifold
 
 namespace TauCeti
@@ -278,6 +285,72 @@ theorem one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (hx 
     (fun s hs ↦ (hg s hs.1).hasDerivWithinAt) t ⟨ht, le_rfl⟩
   simp only [g_def, h0, mul_zero, Real.exp_zero, mul_one] at hconst
   rw [← hconst, mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+
+/-- Away from the north pole `v`, half the angle `u` of a point `z` from the south pole lies in
+`[0, π / 2)`, and `tan² (u / 2) = (1 + h z) / (1 - h z)`: the height is `h z = -cos u`. -/
+private theorem tan_angle_neg_div_two_sq {z : sphere (0 : E) 1} (hz : sphereHeight v z < 1) :
+    0 ≤ angle (z : E) (-(v : E)) / 2 ∧ angle (z : E) (-(v : E)) / 2 < Real.pi / 2 ∧
+      Real.tan (angle (z : E) (-(v : E)) / 2) ^ 2 =
+        (1 + sphereHeight v z) / (1 - sphereHeight v z) := by
+  set u := angle (z : E) (-(v : E))
+  have hcos : Real.cos u = -sphereHeight v z := by
+    rw [← inner_eq_cos_angle_of_norm_eq_one (norm_eq_of_mem_sphere z) (by simp),
+      inner_neg_right, sphereHeight_apply]
+  have hne : Real.cos u ≠ -1 := by
+    rw [hcos, ne_eq, neg_inj]
+    exact hz.ne
+  refine ⟨by linarith [angle_nonneg (z : E) (-(v : E))], ?_, ?_⟩
+  · refine (div_lt_div_iff_of_pos_right two_pos).2 ((angle_le_pi _ _).lt_of_ne fun hu ↦ hne ?_)
+    rw [show u = Real.pi from hu, Real.cos_pi]
+  · have h := Real.cos_eq_two_mul_tan_half_div_one_sub_tan_half_sq u hne
+    rw [hcos] at h
+    have hpos : 0 < 1 + Real.tan (u / 2) ^ 2 := by positivity
+    rw [eq_div_iff hpos.ne'] at h
+    rw [eq_div_iff (sub_pos.2 hz).ne']
+    linarith
+
+/-- **The meridian law for the round metric.** Let `u₀` be the angle of a point `x` other than the
+north pole from the south pole. Along the trajectory `γ` of `-grad h` through `x`, the angle of
+`γ t` from the south pole is `2 arctan (tan (u₀ / 2) exp (-t))` for every `t ≥ 0`. This is the
+solution of the meridian equation `u' = -sin u`. -/
+theorem angle_maximalIntegralCurve_neg_mgradient_sphereHeight (hx : x ≠ v) {t : ℝ} (ht : 0 ≤ t) :
+    angle ((maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t : sphere (0 : E) 1) : E)
+        (-(v : E)) =
+      2 * Real.arctan (Real.tan (angle (x : E) (-(v : E)) / 2) * Real.exp (-t)) := by
+  set γ := maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x
+  obtain ⟨h0, hπ, hsq⟩ :=
+    tan_angle_neg_div_two_sq
+      (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one (n := n) hx ht)
+  obtain ⟨h0x, hπx, hsqx⟩ := tan_angle_neg_div_two_sq (v := v) (z := x)
+    ((sphereHeight_lt_self hx).trans_eq (sphereHeight_self v))
+  -- Both half-angle tangents are nonnegative, and the energy law makes their squares agree.
+  have htan : Real.tan (angle ((γ t : sphere (0 : E) 1) : E) (-(v : E)) / 2) =
+      Real.tan (angle (x : E) (-(v : E)) / 2) * Real.exp (-t) := by
+    refine (pow_left_inj₀ (Real.tan_nonneg_of_nonneg_of_le_pi_div_two h0 hπ.le)
+      (mul_nonneg (Real.tan_nonneg_of_nonneg_of_le_pi_div_two h0x hπx.le) (Real.exp_pos _).le)
+      two_ne_zero).1 ?_
+    rw [hsq, mul_pow, hsqx, ← Real.exp_natCast_mul, Nat.cast_ofNat,
+      one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient hx ht]
+    ring_nf
+  rw [← htan, Real.arctan_tan (by linarith [Real.pi_pos]) hπ]
+  ring
+
+/-- **The distance to the south pole along a meridian.** For the round metric, let `u₀` be the
+angle of a point `x` other than the north pole from the south pole. The Riemannian distance from
+the trajectory of `-grad h` through `x` to the south pole is `2 arctan (tan (u₀ / 2) exp (-t))` at
+every time `t ≥ 0`: the round distance is the angle
+(`TauCeti.riemannianEDist_sphere_of_ne_neg`). -/
+theorem riemannianEDist_maximalIntegralCurve_neg_mgradient_sphereHeight (hx : x ≠ v) {t : ℝ}
+    (ht : 0 ≤ t) :
+    Manifold.riemannianEDist (𝓡 n) (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t)
+        (-v) =
+      ENNReal.ofReal
+        (2 * Real.arctan (Real.tan (angle (x : E) (-(v : E)) / 2) * Real.exp (-t))) := by
+  have hne : -v ≠ -maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t := fun h ↦
+    (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one (n := n) hx ht).ne
+      (sphereHeight_eq_one_iff.2 (neg_inj.1 h).symm)
+  rw [riemannianEDist_sphere_of_ne_neg hne, coe_neg_sphere,
+    angle_maximalIntegralCurve_neg_mgradient_sphereHeight hx ht]
 
 /-- The energy law in product form: `1 + h (γ t) = R exp (-t)² (1 - h (γ t))` with
 `R = (1 + h x) / (1 - h x)`, for every `t ≥ 0`. -/

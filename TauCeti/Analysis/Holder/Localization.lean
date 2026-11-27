@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Analysis.Holder.Leibniz
 public import TauCeti.Analysis.Holder.Iterated
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Quantitative localization of finite-order Hölder maps
@@ -23,6 +26,18 @@ of `tsupport χ` lies in the open set, the Leibniz bound on balls of radius `δ`
 support, together with the supremum bound at larger distances, makes the top derivative of the
 cutoff product globally Hölder
 (`TauCeti.holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset`).
+
+This thickening result rests on the Leibniz rule `TauCeti.holderOnWith_iteratedFDeriv_smul`
+(through its convex specialization `TauCeti.holderOnWith_iteratedFDeriv_smul_of_convex`), which
+bounds the Hölder constant of the `k`-th derivative of `χ f` by the bounds and Hölder constants of
+the derivatives of the two factors, and on
+`TauCeti.dist_iteratedFDeriv_cutoff_smul_le_of_forall_mem_tsupport`, which reduces a Hölder
+bound for the cutoff product to pairs of points the first of which lies in the support of `χ`.
+
+On a finite-dimensional space, a smooth bump turns a `C¹` map whose derivative is `α`-Hölder on the
+whole space into one that agrees with it on a given ball and whose derivative is bounded and
+`β`-Hölder on the whole space for every `β ≤ min α 1`
+(`ContDiff.exists_eqOn_ball_holderWith_fderiv`).
 -/
 
 public section
@@ -91,6 +106,30 @@ theorem holderWith_iteratedFDeriv_cutoff_smul {k : ℕ} {s : Set E} {f : E → F
       gcongr
     _ = _ := by ring
 
+/-- The Leibniz rule for the Hölder constant of a product `χ f` on an open set `s`: if the
+derivatives through order `k` of `χ` and `f` are bounded on `s` by `N` and `M` and `α`-Hölder there
+with constants `A` and `B`, then the `k`-th derivative of `χ f` is `α`-Hölder on `s` with constant
+`2^k (N B + M A)`. -/
+theorem holderOnWith_iteratedFDeriv_smul {k : ℕ} {s : Set E} {f : E → F} {χ : E → ℝ}
+    {M N A B α : ℝ≥0} (hf : ContDiffOn ℝ k f s) (hχ : ContDiffOn ℝ k χ s) (hs : IsOpen s)
+    (hfb : ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ i f x‖ ≤ M)
+    (hχb : ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ i χ x‖ ≤ N)
+    (hχH : ∀ j ≤ k, HolderOnWith A α (iteratedFDeriv ℝ j χ) s)
+    (hfH : ∀ j ≤ k, HolderOnWith B α (iteratedFDeriv ℝ j f) s) :
+    HolderOnWith ((2 : ℝ≥0) ^ k * (N * B + M * A)) α
+      (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) s := by
+  let L : ℝ →L[ℝ] F →L[ℝ] F := ContinuousLinearMap.lsmul ℝ ℝ
+  have hL : ‖L‖₊ ≤ 1 := ContinuousLinearMap.opNNNorm_lsmul_le
+  have h := L.holderOnWith_iteratedFDeriv_comp₂ hχ hf hs hχb hfb hχH hfH
+  have hLf : (fun x ↦ L (χ x) (f x)) = fun x ↦ χ x • f x := by
+    ext x
+    simp [L]
+  rw [hLf] at h
+  refine h.mono_const ?_
+  calc
+    _ ≤ (2 : ℝ≥0) ^ k * 1 * (N * B + M * A) := by gcongr
+    _ = _ := by ring
+
 /-- On a convex open set `s` on which `f` is `C^k`, with derivatives through order `k` bounded
 by `M` and `k`-th derivative `α`-Hölder with constant `H`, the `k`-th derivative of the product
 `χ f` with a `C^{k+1}` function `χ` whose derivatives through order `k + 1` are bounded by `N` is
@@ -103,20 +142,34 @@ theorem holderOnWith_iteratedFDeriv_smul_of_convex {k : ℕ} {s : Set E} {f : E 
     (hfH : HolderOnWith H α (iteratedFDeriv ℝ k f) s) :
     HolderOnWith ((2 : ℝ≥0) ^ k * N * (H + 6 * M)) α
       (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) s := by
-  let L : ℝ →L[ℝ] F →L[ℝ] F := ContinuousLinearMap.lsmul ℝ ℝ
-  have hL : ‖L‖₊ ≤ 1 := ContinuousLinearMap.opNNNorm_lsmul_le
-  have h := L.holderOnWith_iteratedFDeriv_comp₂ (hχ.contDiffOn.of_le (by simp)) hf hs
-    (fun j hj y _ ↦ hχb j (by omega) y) hfb
+  refine (holderOnWith_iteratedFDeriv_smul hf (hχ.contDiffOn.of_le (by simp)) hs hfb
+    (fun j hj y _ ↦ hχb j (by omega) y)
     (fun j hj ↦ (hχ.holderWith_iteratedFDeriv_of_le hj hα hχb).holderOnWith s)
-    (fun j hj ↦ hf.holderOnWith_iteratedFDeriv_of_le hs hc hj hα hfb hfH)
-  have hLf : (fun x ↦ L (χ x) (f x)) = fun x ↦ χ x • f x := by
-    ext x
-    simp [L]
-  rw [hLf] at h
-  refine h.mono_const ?_
-  calc
-    _ ≤ (2 : ℝ≥0) ^ k * 1 * (N * (H + 3 * M) + M * (3 * N)) := by gcongr
-    _ = _ := by ring
+    (fun j hj ↦ hf.holderOnWith_iteratedFDeriv_of_le hs hc hj hα hfb hfH)).mono_const
+    (le_of_eq ?_)
+  ring
+
+/-- A bound on the `k`-th derivative of a cutoff product `χ f` between points at distance less
+than `ρ` holds as soon as it holds whenever the first point lies in the support of `χ`, since the
+derivative vanishes outside that support. -/
+theorem dist_iteratedFDeriv_cutoff_smul_le_of_forall_mem_tsupport {k : ℕ} {f : E → F}
+    {χ : E → ℝ} {C ρ r : ℝ} (hC : 0 ≤ C)
+    (h : ∀ x ∈ tsupport χ, ∀ y, dist x y < ρ →
+      dist (iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x)
+        (iteratedFDeriv ℝ k (fun x ↦ χ x • f x) y) ≤ C * dist x y ^ r)
+    {x y : E} (hxy : dist x y < ρ) :
+    dist (iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x)
+      (iteratedFDeriv ℝ k (fun x ↦ χ x • f x) y) ≤ C * dist x y ^ r := by
+  have hzero : ∀ x ∉ tsupport χ, iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x = 0 := fun x hx ↦
+    Function.notMem_support.1 fun h ↦
+      hx (tsupport_smul_subset_left _ _ (support_iteratedFDeriv_subset k h))
+  by_cases hx : x ∈ tsupport χ
+  · exact h x hx y hxy
+  by_cases hy : y ∈ tsupport χ
+  · rw [dist_comm x y, dist_comm (iteratedFDeriv ℝ k _ x)]
+    exact h y hy x (by rwa [dist_comm])
+  rw [hzero x hx, hzero y hy, dist_self]
+  positivity
 
 /-- The `k`-th derivative of a cutoff product `χ f` is globally `α`-Hölder when the
 `δ`-thickening of the support of the cutoff lies in an open set `s` on which `f` is `C^k`, with
@@ -133,10 +186,6 @@ theorem holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ} {s 
     HolderWith ((2 : ℝ≥0) ^ k * N * (H + 6 * M + 2 * M * δ ^ (-(α : ℝ)))) α
       (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) := by
   have hts : tsupport χ ⊆ s := (self_subset_thickening (by exact_mod_cast hδ) _).trans hχs
-  -- The derivative of the product vanishes outside the support of the cutoff.
-  have hzero : ∀ x ∉ tsupport χ, iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x = 0 := fun x hx ↦
-    Function.notMem_support.1 fun h ↦
-      hx (tsupport_smul_subset_left _ _ (support_iteratedFDeriv_subset k h))
   -- On a ball of radius `δ` centred in the support, the Leibniz rule gives a Hölder bound.
   have hball : ∀ x ∈ tsupport χ, HolderOnWith ((2 : ℝ≥0) ^ k * N * (H + 6 * M)) α
       (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) (ball x δ) := fun x hx ↦ by
@@ -148,20 +197,75 @@ theorem holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ} {s 
       (fun i hi ↦ hχb i (by omega))
   have h := HolderOnWith.of_dist_lt_of_dist_le (s := univ) (r := α) (D := 2 * 2 ^ k * N * M) hδ
     (K := (2 : ℝ≥0) ^ k * N * (H + 6 * M))
-    (f := iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) (fun x _ y _ hxy ↦ ?_)
+    (f := iteratedFDeriv ℝ k (fun x ↦ χ x • f x))
+    (fun x _ y _ hxy ↦ dist_iteratedFDeriv_cutoff_smul_le_of_forall_mem_tsupport
+      (by positivity) (fun x hx y hxy ↦ (hball x hx).dist_le
+        (mem_ball_self (by exact_mod_cast hδ)) (by rwa [mem_ball, dist_comm])) hxy)
     (fun x _ y _ ↦ (dist_le_norm_add_norm _ _).trans (by
       push_cast
       linarith [hbd x, hbd y]))
-  · refine holderOnWith_univ.mp (h.mono_const (le_of_eq ?_))
-    ring
-  · by_cases hx : x ∈ tsupport χ
-    · exact (hball x hx).dist_le (mem_ball_self (by exact_mod_cast hδ))
-        (by rwa [mem_ball, dist_comm])
-    by_cases hy : y ∈ tsupport χ
-    · rw [dist_comm x y, dist_comm (iteratedFDeriv ℝ k _ x)]
-      exact (hball y hy).dist_le (mem_ball_self (by exact_mod_cast hδ)) (by rwa [mem_ball])
-    rw [hzero x hx, hzero y hy, dist_self]
-    positivity
+  refine holderOnWith_univ.mp (h.mono_const (le_of_eq ?_))
+  ring
+
+/-- **Localizing a `C^{1,α}` map to a ball.** On a finite-dimensional space, a `C¹` map whose
+derivative is `α`-Hölder agrees on the ball `B(c, r)` with a `C¹` map whose derivative is `β`-Hölder
+on the whole space and bounded by some `M`, for every `β ≤ min α 1`: the product `χ f` with a smooth
+bump `χ` equal to one on the ball. The cutoff is what allows the smaller exponent, since an
+`α`-Hölder derivative may grow like `‖x‖^α` and so need not be `β`-Hölder for `β < α`. -/
+theorem _root_.ContDiff.exists_eqOn_ball_holderWith_fderiv [FiniteDimensional ℝ E] {f : E → F}
+    (hf : ContDiff ℝ 1 f) {K α β : ℝ≥0} (hK : HolderWith K α (fderiv ℝ f)) (hβα : β ≤ α)
+    (hβ1 : β ≤ 1) (c : E) {r : ℝ} (hr : 0 < r) :
+    ∃ (g : E → F) (K' M : ℝ≥0), ContDiff ℝ 1 g ∧ EqOn g f (ball c r) ∧
+      HolderWith K' β (fderiv ℝ g) ∧ ∀ x, ‖fderiv ℝ g x‖ ≤ M := by
+  let χ : ContDiffBump c := ⟨r, 2 * r, hr, by linarith⟩
+  have hχ : ContDiff ℝ 2 χ := χ.contDiff
+  have hχs : tsupport χ ⊆ ball c (3 * r) := by
+    rw [χ.tsupport_eq]
+    exact closedBall_subset_ball (show 2 * r < 3 * r by linarith)
+  have hcpt : IsCompact (closedBall c (3 * r)) := isCompact_closedBall c _
+  -- The derivatives of `χ` through order two are bounded, being continuous with compact support.
+  have hbd (i : ℕ) (hi : i ≤ 2) : ∃ C, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ C :=
+    (χ.hasCompactSupport.iteratedFDeriv i).exists_bound_of_continuous
+      (hχ.continuous_iteratedFDeriv (by exact_mod_cast hi))
+  obtain ⟨N₀, hN₀⟩ := hbd 0 (by norm_num)
+  obtain ⟨N₁, hN₁⟩ := hbd 1 (by norm_num)
+  obtain ⟨N₂, hN₂⟩ := hbd 2 le_rfl
+  have hN : ∀ i ≤ 1 + 1, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ (max (max N₀ N₁) N₂).toNNReal := by
+    intro i hi x
+    refine le_trans ?_ (Real.le_coe_toNNReal _)
+    interval_cases i
+    · exact (hN₀ x).trans ((le_max_left _ _).trans (le_max_left _ _))
+    · exact (hN₁ x).trans ((le_max_right _ _).trans (le_max_left _ _))
+    · exact (hN₂ x).trans (le_max_right _ _)
+  -- On the ball, `f` and `Df` are bounded and `Df` is `β`-Hölder.
+  obtain ⟨M₀, hM₀⟩ := hcpt.exists_bound_of_continuousOn hf.continuous.continuousOn
+  obtain ⟨M₁, hM₁⟩ :=
+    hcpt.exists_bound_of_continuousOn (hf.continuous_fderiv one_ne_zero).continuousOn
+  have hM : ∀ i ≤ 1, ∀ x ∈ ball c (3 * r), ‖iteratedFDeriv ℝ i f x‖ ≤ (max M₀ M₁).toNNReal := by
+    intro i hi x hx
+    refine le_trans ?_ (Real.le_coe_toNNReal _)
+    interval_cases i
+    · simpa using (hM₀ x (ball_subset_closedBall hx)).trans (le_max_left _ _)
+    · simpa using (hM₁ x (ball_subset_closedBall hx)).trans (le_max_right _ _)
+  obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ ball c (3 * r), ∀ y ∈ ball c (3 * r), edist x y ≤ D :=
+    ⟨_, fun _ hx _ hy => Metric.edist_le_diam_of_mem isBounded_ball hx hy⟩
+  have hcurry :
+      iteratedFDeriv ℝ 1 f = (continuousMultilinearCurryFin1 ℝ E F).symm ∘ fderiv ℝ f := by
+    rw [fderiv_eq_continuousMultilinearCurryFin1_comp (𝕜 := ℝ) f, ← Function.comp_assoc,
+      LinearIsometryEquiv.symm_comp_self, Function.id_comp]
+  have hH := holderWith_iteratedFDeriv_cutoff_smul (k := 1) (by simpa using hf.contDiffOn) hχ
+    isOpen_ball (convex_ball c _) hχs hβ1 hM hN (hcurry ▸
+      (continuousMultilinearCurryFin1 ℝ E F).symm.isometry.comp_holderOnWith
+        ((hK.holderOnWith _).of_le hD hβα))
+  -- The derivative of `χ f` is continuous with compact support, so it is bounded.
+  have hg : ContDiff ℝ 1 fun x => χ x • f x := (hχ.of_le one_le_two).smul hf
+  obtain ⟨M, hM⟩ := (χ.hasCompactSupport.smul_right (f' := f)).fderiv (𝕜 := ℝ)
+    |>.exists_bound_of_continuous (hg.continuous_fderiv one_ne_zero)
+  refine ⟨fun x => χ x • f x, _, M.toNNReal, hg, fun x hx => ?_,
+    (fderiv_eq_continuousMultilinearCurryFin1_comp (𝕜 := ℝ) (fun x => χ x • f x)) ▸
+      (continuousMultilinearCurryFin1 ℝ E F).isometry.comp_holderWith hH,
+    fun x => (hM x).trans (Real.le_coe_toNNReal _)⟩
+  simp [χ.one_of_mem_closedBall (ball_subset_closedBall hx)]
 
 namespace CkHolderSpace
 

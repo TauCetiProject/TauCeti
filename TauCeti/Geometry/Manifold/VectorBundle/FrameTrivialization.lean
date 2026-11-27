@@ -58,6 +58,9 @@ holomorphic section.
 * `IsLocalFrameOn.coeff_sum_smul`: the coefficients of a combination of frame vectors are its
   coefficients.
 * `IsLocalFrameOn.card_eq_finrank`: a frame has as many members as the dimension of the fibre.
+* `IsLocalFrameOn.of_linearIndependent_of_card_eq_finrank`: conversely, `C^n` sections which are
+  linearly independent at every point of `U` and as many as the dimension of the fibre form a
+  `C^n` local frame on `U`.
 * `IsLocalFrameOn.trivialization_mem_maximalAtlas`: the trivialization of a `C^n` local frame lies
   in the maximal atlas of `C^n` trivializations.
 * `Bundle.Trivialization.isLocalFrameOn_symm_of_mem_maximalAtlas`: a member of the maximal atlas
@@ -478,6 +481,21 @@ omit [CompleteSpace 𝕜] in
 theorem card_eq_finrank [Fintype ι] [VectorBundle 𝕜 F V] (hs : IsLocalFrameOn IB F n s U)
     {x : B} (hx : x ∈ U) : Fintype.card ι = finrank 𝕜 F :=
   (finrank_eq_card_basis (hs.toBasisAt hx)).symm.trans (VectorBundle.finrank_eq 𝕜 F V x)
+
+omit [CompleteSpace 𝕜] in
+/-- **Pointwise independent sections of the right number form a frame.** Sections of a vector
+bundle with finite-dimensional model fibre `F`, `C^n` on `U` and linearly independent at every
+point of `U`, form a `C^n` local frame on `U` when there are `finrank F` of them. This is a
+converse of `IsLocalFrameOn.card_eq_finrank`. -/
+theorem of_linearIndependent_of_card_eq_finrank [Fintype ι] [VectorBundle 𝕜 F V]
+    [FiniteDimensional 𝕜 F] (hι : Fintype.card ι = finrank 𝕜 F)
+    (hs : ∀ i, ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s i x)) U)
+    (hli : ∀ x ∈ U, LinearIndependent 𝕜 (s · x)) : IsLocalFrameOn IB F n s U := by
+  refine ⟨fun {x} hx ↦ hli x hx, fun {x} hx ↦ ?_, hs⟩
+  have : FiniteDimensional 𝕜 (V x) := ((trivializationAt F V x).linearEquivAt 𝕜 x
+    (FiberBundle.mem_baseSet_trivializationAt' x)).symm.finiteDimensional
+  exact ((hli x hx).span_eq_top_of_card_eq_finrank'
+    (hι.trans (VectorBundle.finrank_eq 𝕜 F V x).symm)).ge
 
 end IsLocalFrameOn
 

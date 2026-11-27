@@ -43,12 +43,30 @@ smooth family of contact forms on `M` it is the Gray vector field of the forms
 (`TauCeti.IsContactDistributionFamily.map_mfderiv_timeDependentFlowOf`, in
 `TauCeti.Geometry.Contact.Gray.Relative`).
 
+Families of hyperplane fields are often given by joint smoothness alone: the subspaces
+`0 × ξ_t(x)` of `T_(t, x) (ℝ × M)` form a smooth distribution of rank `dim M - 1` on `ℝ × M`. Adding
+the time direction gives the hyperplane field `ℝ × ξ_t(x)` on `ℝ × M`
+(`TauCeti.IsContMDiffDistribution.top_prod`), which near each point is the kernel of a smooth
+one-form `β` on `ℝ × M`. The slices `β_t = ι_t^* β` then have kernels `ξ_t`, and they are contact
+forms at the times and points near any `(t₀, x₀)` at which `ξ_(t₀)` is a contact structure. So such
+a family has local defining families near every time at which it is contact
+(`TauCeti.IsContMDiffDistribution.exists_isLocalContactFormFamily`). Local defining families are
+carried along a smooth reparametrization of time
+(`TauCeti.IsLocalContactFormFamily.mpullback_prodMap_id`).
+
 ## Main definitions
 
 * `TauCeti.IsLocalContactFormFamily ξ U α t₀`: `α` is a local defining family of `ξ` on `U` near
   time `t₀`.
 * `TauCeti.IsContactDistributionFamily ξ`: `ξ` is a smooth family of contact structures.
 * `TauCeti.distributionGrayVectorField ξ`: its Gray vector field.
+
+## Main results
+
+* `TauCeti.IsContactDistributionFamily.contMDiff_distributionGrayVectorField`: the Gray vector
+  field is smooth.
+* `TauCeti.IsContMDiffDistribution.exists_isLocalContactFormFamily`: a jointly smooth family of
+  hyperplane fields has local defining families near every time at which it is contact.
 
 ## References
 
@@ -105,13 +123,24 @@ theorem mpullback_inclusion (hα : IsLocalContactFormFamily ξ U α t₀) (h : V
         (contMDiff_id.prodMap (contMDiff_inclusion h)) α) t₀ := by
   filter_upwards [hα] with t ⟨hc, hk⟩
   refine ⟨?_, fun y ↦ ?_⟩
-  · rw [mpullback_prodMk_mpullback_prodMap _ (contMDiff_inclusion h)]
+  · rw [SmoothForm.mpullback_prodMk_mpullback_prodMap _ (contMDiff_inclusion h)]
     exact hc.mpullback _ _ (bijective_mfderiv_inclusion h)
-  · rw [mpullback_prodMk_mpullback_prodMap _ (contMDiff_inclusion h), kerDistribution_mpullback,
-      hk]
+  · rw [SmoothForm.mpullback_prodMk_mpullback_prodMap _ (contMDiff_inclusion h),
+      kerDistribution_mpullback, hk]
     ext v
     simp only [Submodule.mem_comap, ContinuousLinearMap.coe_coe]
     rw [mfderiv_subtype_val_inclusion_apply]
+
+/-- **Reparametrizing time.** A local defining family of `ξ` near `ρ t₀`, pulled back along
+`(t, x) ↦ (ρ t, x)` for a smooth map `ρ : ℝ → ℝ`, is a local defining family of the reparametrized
+hyperplane fields `t ↦ ξ_(ρ t)` near `t₀`. -/
+theorem mpullback_prodMap_id {ρ : ℝ → ℝ} (hρ : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ ρ)
+    (hα : IsLocalContactFormFamily ξ U α (ρ t₀)) :
+    IsLocalContactFormFamily (fun t ↦ ξ (ρ t)) U
+      (SmoothForm.mpullback (Prod.map ρ id) (hρ.prodMap contMDiff_id) α) t₀ := by
+  filter_upwards [hρ.continuous.continuousAt.eventually hα] with t ht
+  rw [mpullback_prodMk_mpullback_prodMap_id α hρ t]
+  exact ht
 
 /-- The slice at time `t` of a local defining family near `t` is a contact form. -/
 theorem isContactForm (hα : IsLocalContactFormFamily ξ U α t₀) :
@@ -315,5 +344,102 @@ theorem distributionGrayVectorField_kerDistribution [FiniteDimensional ℝ E] [I
       bijective_mfderiv_subtype_val]
 
 end SmoothForm
+
+/-! ### Jointly smooth families of hyperplane fields -/
+
+/-- **The hyperplane field swept out by a smooth family of distributions.** If the subspaces
+`0 × ξ_t(x)` of `T_(t, x) (ℝ × M)` form a `C^n` distribution of rank `k` on `ℝ × M`, then the
+subspaces `ℝ × ξ_t(x)`, spanned by them and the time direction `∂_t`, form a `C^n` distribution of
+rank `k + 1`. -/
+theorem IsContMDiffDistribution.top_prod {n : ℕ∞ω} {k : ℕ}
+    (hξ : IsContMDiffDistribution (𝓘(ℝ, ℝ).prod I) n k
+      (fun p : ℝ × M ↦ (ξ p.1 p.2).map (LinearMap.inr ℝ ℝ E))) :
+    IsContMDiffDistribution (𝓘(ℝ, ℝ).prod I) n (k + 1)
+      (fun p : ℝ × M ↦ (⊤ : Submodule ℝ ℝ).prod (ξ p.1 p.2)) := by
+  refine isContMDiffDistribution_iff.2 fun p ↦ ?_
+  obtain ⟨U, hU, hpU, X, hX⟩ := isContMDiffDistribution_iff.1 hξ p
+  -- The frame `X` of `0 × ξ`, preceded by the time direction `∂_t`.
+  let T : Π q : ℝ × M, TangentSpace (𝓘(ℝ, ℝ).prod I) q := fun _ ↦ ((1 : ℝ), (0 : E))
+  let Y : Fin (k + 1) → Π q : ℝ × M, TangentSpace (𝓘(ℝ, ℝ).prod I) q := Fin.cons T X
+  have hcons (q : ℝ × M) : (Y · q) = Fin.cons (T q) (X · q) :=
+    funext fun i ↦ Fin.cases rfl (fun _ ↦ rfl) i
+  refine ⟨U, hU, hpU, Y, ⟨fun i ↦ ?_, fun {q} hq ↦ ?_, fun {q} hq ↦ ?_⟩⟩
+  · refine Fin.cases ?_ (fun j ↦ ?_) i
+    · exact (contMDiff_const_prod_field (X := fun _ _ ↦ 0) 1
+        ((Bundle.contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd)).contMDiffOn
+    · exact hX.contMDiffOn j
+  · rw [hcons]
+    refine (hX.linearIndependent hq).finCons ?_
+    rw [hX.span_eq hq]
+    rintro ⟨v, -, hv⟩
+    -- `T_q (ℝ × M)` is `ℝ × E` by definition, and `inr v = (0, v)`. Since `inr` is coerced here
+    -- with codomain `TangentSpace`, `LinearMap.inr_apply` does not fire, so state this explicitly.
+    have hv' : ((0 : ℝ), v) = ((1 : ℝ), (0 : E)) := hv
+    simp at hv'
+  · rw [hcons, Fin.range_cons, Submodule.span_insert, hX.span_eq hq]
+    refine le_antisymm (sup_le ?_ ?_) ?_
+    · exact (Submodule.span_singleton_le_iff_mem _ _).2 ⟨trivial, zero_mem _⟩
+    · rintro _ ⟨v, hv, rfl⟩
+      exact ⟨trivial, hv⟩
+    · rintro ⟨a, v⟩ ⟨-, hv⟩
+      have hav : ((a, v) : ℝ × E) = a • ((1 : ℝ), (0 : E)) + (0, v) := by simp
+      rw [hav]
+      exact add_mem (Submodule.mem_sup_left (Submodule.smul_mem _ _
+        (Submodule.mem_span_singleton_self _))) (Submodule.mem_sup_right ⟨v, hv, rfl⟩)
+
+variable [FiniteDimensional ℝ E] [T2Space M] in
+/-- **Local defining families of a jointly smooth family of hyperplane fields.** Let `ξ_t` be
+hyperplane fields on `M`, jointly smooth in the sense that the subspaces `0 × ξ_t(x)` form a smooth
+distribution on `ℝ × M` of rank `dim M - 1`. If `ξ_(t₀)` is a contact structure, then every point
+`x₀` has an open neighbourhood `U` carrying a smooth family of one-forms on `U` which is a local
+defining family of `ξ` near every time close to `t₀`. No coorientation of the `ξ_t` is assumed. -/
+theorem IsContMDiffDistribution.exists_isLocalContactFormFamily
+    (hξ : IsContMDiffDistribution (𝓘(ℝ, ℝ).prod I) ∞ (Module.finrank ℝ E - 1)
+      (fun p : ℝ × M ↦ (ξ p.1 p.2).map (LinearMap.inr ℝ ℝ E)))
+    {t₀ : ℝ} (hc : IsContactDistribution I ∞ (ξ t₀)) (x₀ : M) :
+    ∃ U : Opens M, x₀ ∈ U ∧ ∃ α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × U) ℝ 1,
+      ∀ᶠ t in 𝓝 t₀, IsLocalContactFormFamily ξ U α t := by
+  have : Nonempty M := ⟨x₀⟩
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  have hk : Module.finrank ℝ E - 1 + 1 + 1 = Module.finrank ℝ (ℝ × E) := by
+    obtain ⟨m, hm⟩ := hc.odd_finrank
+    rw [Module.finrank_prod, Module.finrank_self]
+    omega
+  -- A global one-form `β` on `ℝ × M` with kernel `ℝ × ξ_t(x)` near `(t₀, x₀)`.
+  obtain ⟨W, hW, hpW, β, hβ, hβW⟩ := hξ.top_prod.exists_isSmoothForm_ker_eq hk (t₀, x₀)
+  let B : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1 := ⟨β, hβ.mem_smoothBundleForms⟩
+  -- On `W`, the slices of `β` have kernel `ξ`.
+  have hker {t : ℝ} {x : M} (hp : (t, x) ∈ W) :
+      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) B).kerDistribution x =
+        ξ t x := by
+    ext v
+    have h : ContinuousLinearMap.inr ℝ (TangentSpace 𝓘(ℝ, ℝ) t) (TangentSpace I x) v ∈
+        RoughForm.ker β (t, x) ↔ v ∈ ξ t x := by
+      rw [(hβW _ hp).2]
+      exact ⟨And.right, fun h ↦ ⟨Submodule.mem_top, h⟩⟩
+    rw [mem_kerDistribution, SmoothForm.mpullback_apply_one, mfderiv_prod_right]
+    exact RoughForm.mem_ker.symm.trans h
+  -- The slice at `t₀` defines the contact structure `ξ_(t₀)` near `x₀`, so it is contact at `x₀`;
+  -- being contact is an open condition on the slices.
+  have hc₀ : IsContactFormAt
+      (SmoothForm.mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id) B).val x₀ :=
+    hc.isContactFormAt_of_eventually_kerDistribution_eq (by simp)
+      (Filter.eventually_of_mem
+        ((continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
+          (hW.mem_nhds hpW)) fun _ hy ↦ hker hy)
+  obtain ⟨s, u, hs, ht₀, hu, hx₀, hsu⟩ := mem_nhds_prod_iff'.1
+    ((hW.inter (isOpen_setOf_isContactFormAt_mpullback_prodMk B)).mem_nhds ⟨hpW, hc₀⟩)
+  let U : Opens M := ⟨u, hu⟩
+  refine ⟨U, hx₀, SmoothForm.mpullback (Prod.map id (Subtype.val : U → M))
+    (contMDiff_id.prodMap contMDiff_subtypeVal) B, ?_⟩
+  filter_upwards [hs.mem_nhds ht₀] with t' ht'
+  filter_upwards [hs.mem_nhds ht'] with t ht
+  have hsu' (y : U) : (t, (y : M)) ∈ W ∧ IsContactFormAt
+      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) B).val y :=
+    hsu ⟨ht, y.property⟩
+  rw [SmoothForm.mpullback_prodMk_mpullback_prodMap _ contMDiff_subtypeVal]
+  refine ⟨isContactForm_iff_forall_isContactFormAt.2 fun y ↦
+    (isContactFormAt_mpullback_subtype_val_iff _ y).2 (hsu' y).2, fun y ↦ ?_⟩
+  rw [kerDistribution_mpullback, hker (hsu' y).1]
 
 end TauCeti

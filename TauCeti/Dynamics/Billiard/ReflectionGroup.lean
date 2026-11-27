@@ -36,6 +36,11 @@ the angles between directions of `D`, the squares `(d e⁻¹)²`
 every direction by `a` conjugates the reflection group by the rotation `a`
 (`TauCeti.Billiard.reflectionGroup_image_mul`).
 
+A finite reflection group with a rotation subgroup of order `N` consists of the `N` rotations and
+the reflections in `N` lines through `0` at angles `π/N` apart, spanned by `d₀ e^{ikπ/N}` for any
+`d₀ ∈ D` (`TauCeti.Billiard.conjReflection_mem_reflectionGroup_iff_exists`); every direction of
+`D` spans one of these lines (`TauCeti.Billiard.exists_eq_mul_exp_or_eq_neg_of_mem`).
+
 For directions `exp(kθ)`, `k ∈ s` with `0, 1 ∈ s`, the squares of the quotients are the powers
 of `exp(2θ)`, which generates the rotation subgroup
 (`TauCeti.Billiard.rotationSubgroup_reflectionGroup_exp`); the reflection group then has order
@@ -172,5 +177,44 @@ theorem natCard_reflectionGroup_exp (θ : ℝ) {s : Set ℤ} (h0 : 0 ∈ s) (h1 
   rw [natCard_eq_two_mul_natCard_rotationSubgroup
     (conjReflection_sq_mem_reflectionGroup (mem_image_of_mem _ h0)),
     rotationSubgroup_reflectionGroup_exp θ h0 h1, Nat.card_zpowers]
+
+/-- **The reflections of a finite reflection group.** If the reflection group of `D` is finite,
+with a rotation subgroup of order `N`, and `d₀ ∈ D`, then its reflections are the reflections in
+the `N` lines through `0` spanned by `d₀ e^{ikπ/N}`, `k ∈ ℤ`, at angles `π/N` apart: the
+reflection `v ↦ b · conj v` lies in it exactly when `b = (d₀ e^{ikπ/N})²` for some `k`. This is
+`TauCeti.Complex.conjReflection_mem_iff_exists_exp` for the reflection `σ_{d₀}`. -/
+theorem conjReflection_mem_reflectionGroup_iff_exists [Finite (reflectionGroup D)] {d₀ b : Circle}
+    (hd₀ : d₀ ∈ D) :
+    conjReflection b ∈ reflectionGroup D ↔ ∃ k : ℤ, b =
+      (d₀ * Circle.exp (k * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D)))) ^ 2 := by
+  have : Finite (rotationSubgroup (reflectionGroup D)) :=
+    finite_iff_finite_rotationSubgroup.1 inferInstance
+  have hsq : ∀ k : ℤ,
+      Circle.exp (k * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D))) ^ 2 =
+        Circle.exp (k * (2 * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D)))) :=
+    fun k => by
+      rw [← Circle.exp_natCast_mul]
+      congr 1
+      push_cast
+      ring
+  rw [conjReflection_mem_iff_exists_exp (conjReflection_sq_mem_reflectionGroup hd₀)]
+  exact exists_congr fun k => by rw [mul_pow, hsq]
+
+/-- **The side directions of a finite reflection group lie on its lines.** If the reflection group
+of `D` is finite, with a rotation subgroup of order `N`, then every direction `d ∈ D` is
+`±d₀ e^{ikπ/N}` for some `k ∈ ℤ`, for any `d₀ ∈ D`: the line spanned by `d` is one of the `N`
+lines of `TauCeti.Billiard.conjReflection_mem_reflectionGroup_iff_exists`. -/
+theorem exists_eq_mul_exp_or_eq_neg_of_mem [Finite (reflectionGroup D)] {d₀ d : Circle}
+    (hd₀ : d₀ ∈ D) (hd : d ∈ D) :
+    ∃ k : ℤ, d = d₀ * Circle.exp (k * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D))) ∨
+      d = -(d₀ * Circle.exp (k * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D)))) := by
+  obtain ⟨k, hk⟩ := (conjReflection_mem_reflectionGroup_iff_exists hd₀).1
+    (conjReflection_sq_mem_reflectionGroup hd)
+  refine ⟨k, ?_⟩
+  set e := d₀ * Circle.exp (k * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D)))
+  have h1 : (d * e⁻¹) ^ 2 = 1 := by rw [mul_pow, hk, inv_pow, mul_inv_cancel]
+  rcases (Circle.sq_eq_one_iff _).1 h1 with h | h
+  · exact Or.inl (mul_inv_eq_one.1 h)
+  · exact Or.inr (by rw [← neg_one_mul, ← h, inv_mul_cancel_right])
 
 end TauCeti.Billiard

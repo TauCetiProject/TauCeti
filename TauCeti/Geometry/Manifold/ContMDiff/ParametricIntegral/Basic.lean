@@ -36,7 +36,9 @@ cover.
 The same argument applies when the parameter manifold is not compact but `f x` vanishes outside a
 fixed compact set `K` for all `x` near the base point, and `μ K` is finite
 (`IsCompact.contMDiffAt_parametric_integral`), and to the integral over a compact set `K` of
-finite measure (`IsCompact.contMDiffAt_parametric_setIntegral`).
+finite measure (`IsCompact.contMDiffAt_parametric_setIntegral`). In particular a `C^n` function
+`(x, a) ↦ f x a` with compact support has `C^n` integral against a measure that is finite on
+compact sets (`ContMDiff.parametric_integral_of_hasCompactSupport`).
 
 The manifold `M` is assumed boundaryless, so that its chart targets are open in the model space.
 The parameter manifold `N` may have boundary and corners.
@@ -184,6 +186,17 @@ theorem _root_.IsCompact.contMDiffAt_parametric_integral {K : Set N} (hK : IsCom
   refine (hK.contMDiffAt_parametric_setIntegral hμK hf).congr_of_eventuallyEq ?_
   filter_upwards [hfK] with x hx
   exact (setIntegral_eq_integral_of_forall_compl_eq_zero hx).symm
+
+/-- **Smoothness of the integral of a compactly supported function.** If `(x, a) ↦ f x a` is `C^n`
+and compactly supported, and `μ` is finite on compact sets, then `x ↦ ∫ a, f x a ∂μ` is `C^n`:
+every `f x` vanishes off the second projection of the support, a compact set of finite measure. -/
+theorem _root_.ContMDiff.parametric_integral_of_hasCompactSupport [IsFiniteMeasureOnCompacts μ]
+    (hf : ContMDiff (I.prod J) 𝓘(ℝ, F) n (uncurry f)) (hfc : HasCompactSupport (uncurry f)) :
+    ContMDiff I 𝓘(ℝ, F) n (fun x ↦ ∫ a, f x a ∂μ) := fun _ ↦
+  (hfc.isCompact.image continuous_snd).contMDiffAt_parametric_integral
+    (hfc.isCompact.image continuous_snd).measure_lt_top.ne (fun _ _ ↦ hf _)
+    (.of_forall fun x a ha ↦ image_eq_zero_of_notMem_tsupport (f := uncurry f) (x := (x, a))
+      fun h ↦ ha ⟨(x, a), h, rfl⟩)
 
 /-- **Smoothness of an integral over a compact manifold of parameters.** If `(x, a) ↦ f x a` is
 `C^n` at every point `(x₀, a)`, with the parameter `a` ranging over a compact manifold carrying a

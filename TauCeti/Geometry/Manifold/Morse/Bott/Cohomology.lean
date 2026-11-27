@@ -44,7 +44,7 @@ of a critical submanifold of index `r`: the cohomology of the base, shifted up b
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_vectorBundleOrientation`).
 * For a non-orientable negative bundle and a ring in which `2 ≠ 0` the cohomology of the base must
   be twisted by the orientation local system `o(V)`: for every commutative ring `K` and every
-  injective `K`-module `N`, for instance `K = ℤ` and `N = ℚ`,
+  `K`-module `N`, for instance `K = N = ℤ`,
   `Hᵖ⁺ʳ(M_{c+ε}, M_{c-ε}; K, N) ≅ Hᵖ(B; o(V) ⊗ K, N)` with no orientation of `V`
   (`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology_signLocalSystem`).
 
@@ -57,8 +57,9 @@ closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`
 (`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`); the Thom isomorphism is used over a
 compact base (`TauCeti.thomEquivOfCompactSpace`). Its twisted form holds over any base
 (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`, in the namespace
-`TauCeti.VectorBundleOrientationCover`). The twisted form needs the base, the fibres and the ring in
-`Type`, and is computed with injective values only, through the universal coefficient theorem.
+`TauCeti.VectorBundleOrientationCover`). Both forms hold with the base, the fibres and the ring in
+any common universe, so every statement here takes the manifold, the base, the model fibre and the
+ring in one universe `u`.
 
 ## References
 
@@ -79,8 +80,6 @@ open scoped ContDiff Manifold
 universe u v w
 
 namespace TauCeti
-
-section Universe
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
@@ -261,26 +260,13 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_vecto
   nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass hfs hW hs ht hs₀
     ht₀ hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS hu N p
 
-end Universe
-
-section Twisted
-
-variable {E H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] {f s t : M → ℝ} {c ε : ℝ} {W : Set M}
-  {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F]
-  {V : B → Type} [∀ b, AddCommGroup (V b)] [∀ b, Module ℝ (V b)] [∀ b, TopologicalSpace (V b)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
-  {ρ : TotalSpace F V → ℝ} {g : TotalSpace F V → M}
-
 /-- **Across a Morse–Bott level the relative cohomology is the shifted cohomology of the critical
 submanifold twisted by the orientation of the negative bundle.** Under the hypotheses of
 `TauCeti.exists_isIso_singularCohomologyMap_sublevelPair_of_negativeDiscBundle`, where the
 negative disc bundle of the quadratic normal form `f = c - s + t` is parametrized by the disc
 bundle of a real vector bundle `V → B` of rank `r`, orientable or not, with orientation local
 system `o(V)` (`TauCeti.VectorBundleOrientationCover.signLocalSystem`), let `K` be a commutative
-ring and `N` an injective `K`-module, for instance `K = ℤ` and `N = ℚ`. Then
+ring and `N` a `K`-module, for instance `K = N = ℤ`. Then
 `Hᵖ⁺ʳ({f ≤ c + ε}, {f ≤ c - ε}; K, N) ≅ Hᵖ(B; o(V) ⊗ K, N)` in every degree `p`. -/
 theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology_signLocalSystem
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W) (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W)
@@ -298,8 +284,8 @@ theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology_signLocal
     (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
     (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
     (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
-    {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (K : Type) [CommRing K]
-    (N : ModuleCat.{0} K) [Injective N] (p : ℕ) :
+    {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (K : Type u) [CommRing K]
+    (N : ModuleCat.{u} K) (p : ℕ) :
     Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularCohomology
         (ModuleCat.of K K) K N (p + finrank ℝ F) ≅
       (VectorBundleOrientationCover.signLocalSystem F V K hι).twistedCohomology K N p) := by
@@ -308,7 +294,5 @@ theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology_signLocal
   obtain ⟨e'⟩ := open VectorBundleOrientationCover in
     nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem F V hι K N p
   exact ⟨e ≪≫ e'⟩
-
-end Twisted
 
 end TauCeti

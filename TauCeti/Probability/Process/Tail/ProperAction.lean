@@ -24,7 +24,9 @@ The general statement, `TauCeti.Probability.exists_measurableSet_tailEvents_ae_e
 for all finite `F, Λ ⊆ ι` some `g ∈ Γ` moves `F` off `Λ`; for an infinite group acting properly this
 holds because all but finitely many `g` do
 (`TauCeti.Probability.exists_forall_smul_notMem_of_proper`, used in
-`TauCeti.Probability.exists_measurableSet_tailEvents_ae_eq_of_proper`).
+`TauCeti.Probability.exists_measurableSet_tailEvents_ae_eq_of_proper`). Free actions, for instance
+a group acting on itself by left multiplication, are proper
+(`TauCeti.Probability.finite_setOf_exists_smul_mem_of_injective`).
 
 This is the ingredient of the face property of invariant Gibbs measures: Georgii, *Gibbs measures
 and phase transitions* (2nd ed., 2011), Theorem 14.15, and Sheffield, *Random surfaces*
@@ -126,15 +128,22 @@ theorem exists_forall_smul_notMem_of_proper [Infinite Γ]
   let ⟨g, hg⟩ := (hproper F Λ).infinite_compl.nonempty
   ⟨g, fun i hi hgi => hg ⟨i, hi, hgi⟩⟩
 
+/-- **A free action is proper.** If every orbit map `g ↦ g • i` is injective, then for finite
+`F, F' ⊆ ι` only finitely many `g` move a point of `F` into `F'`: for each `i ∈ F` they form the
+preimage of `F'` under the orbit map of `i`. -/
+theorem finite_setOf_exists_smul_mem_of_injective
+    (hfree : ∀ i : ι, Function.Injective (· • i : Γ → ι)) (F F' : Finset ι) :
+    {g : Γ | ∃ i ∈ F, g • i ∈ F'}.Finite := by
+  refine (F.finite_toSet.biUnion fun i _ => F'.finite_toSet.preimage (hfree i).injOn).subset ?_
+  rintro g ⟨i, hi, hg⟩
+  exact mem_biUnion hi hg
+
 /-- **An infinite group moves every finite subset of itself off every finite subset** by left
 multiplication. -/
 theorem exists_forall_smul_notMem_self [Infinite Γ] (F Λ : Finset Γ) :
-    ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ := by
-  classical
-  obtain ⟨g, hg⟩ := Infinite.exists_notMem_finset ((F ×ˢ Λ).image fun p => p.2 * p.1⁻¹)
-  refine ⟨g, fun i hi hgi => hg (Finset.mem_image.2 ⟨(i, g • i), Finset.mem_product.2 ⟨hi, hgi⟩,
-    ?_⟩)⟩
-  simp [smul_eq_mul]
+    ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ :=
+  exists_forall_smul_notMem_of_proper
+    (finite_setOf_exists_smul_mem_of_injective fun i => mul_left_injective i) F Λ
 
 /-- **Invariant events of a proper action are almost surely tail events.** Let an infinite group
 `Γ` act properly on a countable index set `ι`: for finite `F, F' ⊆ ι`, only finitely many `g` move

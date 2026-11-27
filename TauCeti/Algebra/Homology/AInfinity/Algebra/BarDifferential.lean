@@ -11,9 +11,10 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration.GradedCoderivatio
 /-!
 # Unary and higher parts of the A-infinity bar differential
 
-The bar differential does not increase tensor length, and on the words of length at most `n` it
-only depends on the Taylor map on those words
-(`TauCeti.AInfinityAlgebra.barDifferential_apply_eq_of_mem_filtration`).
+The bar differential does not increase tensor length, and on the words of length at most `n` both
+it and the operations `m k` for `k ≤ n` only depend on the Taylor map on those words
+(`TauCeti.AInfinityAlgebra.barDifferential_apply_eq_of_mem_filtration` and
+`TauCeti.AInfinityAlgebra.m_eq_of_taylor_eq_on_filtration`).
 
 The bar differential splits into a unary part acting on each letter and a higher part that
 strictly lowers tensor length. The corresponding Taylor maps agree with the original Taylor map
@@ -50,6 +51,19 @@ theorem barDifferential_apply_eq_of_mem_filtration {𝒜 𝒜' : AInfinityAlgebr
     𝒜.barDifferential z = 𝒜'.barDifferential z := by
   rw [barDifferential_def, barDifferential_def, hG]
   exact ReducedTensorWords.gradedCoderiv_apply_eq_of_mem_filtration _ 1 h hz
+
+/-- Two `A∞` structures with the same grading whose Taylor maps agree on the words of length at
+most `n` have the same arity-`k` operation whenever `k ≤ n`. -/
+theorem m_eq_of_taylor_eq_on_filtration {𝒜 𝒜' : AInfinityAlgebra R A}
+    (hG : 𝒜.grading = 𝒜'.grading) {k n : ℕ} (hkn : k ≤ n)
+    (h : ∀ z ∈ ReducedTensorWords.filtration R A n, 𝒜.taylor z = 𝒜'.taylor z) :
+    𝒜.m k = 𝒜'.m k := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk0
+  · rw [m_zero, m_zero]
+  refine MultilinearMap.ext fun x ↦ ?_
+  rw [𝒜.m_apply_eq_taylor_of_tprod_koszulTwist hk0,
+    𝒜'.m_apply_eq_taylor_of_tprod_koszulTwist hk0, hG]
+  exact h _ (ReducedTensorWords.of_mem_filtration R A (k := ⟨k, hk0⟩) hkn _)
 
 /-- The Taylor map of the higher bar operations, obtained by removing the unary component. -/
 noncomputable def higherTaylor (𝒜 : AInfinityAlgebra R A) :
