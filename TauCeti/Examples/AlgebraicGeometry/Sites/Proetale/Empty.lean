@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Sites.Proetale.EtaleComparison
 public import TauCeti.AlgebraicGeometry.Sites.Small
-import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
 /-!
 # The étale and pro-étale sites of the empty scheme
@@ -26,23 +25,12 @@ universe v u
 
 namespace TauCeti.Examples.ProetaleEmpty
 
-variable (X : Scheme.{u}) [IsEmpty X]
-
-/-- Every weakly étale `X`-scheme over the empty scheme `X` is empty. -/
-theorem isEmpty_proEt_left (V : X.ProEt) : IsEmpty V.left :=
-  V.hom.base.hom'.toFun.isEmpty (β := X)
-
-/-- On the empty scheme every sieve of the small étale site covers. -/
-theorem smallEtaleTopology_eq_top : Scheme.smallEtaleTopology X = ⊤ := by
-  rw [GrothendieckTopology.eq_top_iff]
-  exact fun V ↦ Scheme.bot_mem_smallGrothendieckTopology V
-
-variable (A : Type v) [Category A]
+variable (X : Scheme.{u}) [IsEmpty X] (A : Type v) [Category A]
 
 /-- Every étale sheaf on the empty scheme is terminal. -/
 noncomputable def isTerminalEtaleSheaf (F : Sheaf (Scheme.smallEtaleTopology X) A) :
     IsTerminal F :=
-  Sheaf.isTerminalOfEqTop (smallEtaleTopology_eq_top X) F
+  Sheaf.isTerminalOfEqTop (Scheme.smallEtaleTopology_eq_top_of_isEmpty X) F
 
 /-- Every pro-étale sheaf on the empty scheme is terminal. -/
 noncomputable def isTerminalProEtSheaf (F : Sheaf (Scheme.ProEt.topology X) A) :

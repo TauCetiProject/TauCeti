@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Sites.Etale
 public import Mathlib.AlgebraicGeometry.Sites.Small
 
 /-!
@@ -17,6 +18,10 @@ Complements to Mathlib's `Mathlib.AlgebraicGeometry.Sites.Small`, about the smal
 
 * `AlgebraicGeometry.Scheme.bot_mem_smallGrothendieckTopology`: on a small site of `S`, such as
   the small étale site, an object with empty underlying space is covered by the empty sieve.
+* `AlgebraicGeometry.Scheme.smallGrothendieckTopology_eq_top_of_isEmpty` and
+  `AlgebraicGeometry.Scheme.smallEtaleTopology_eq_top_of_isEmpty`: on the empty scheme every sieve
+  of a small site covers, as Mathlib's `AlgebraicGeometry.Scheme.ProEt.topology_eq_top_of_isEmpty`
+  says for the small pro-étale site.
 -/
 
 public section
@@ -36,5 +41,20 @@ theorem bot_mem_smallGrothendieckTopology {P Q : MorphismProperty Scheme.{u}} (U
   apply Functor.mem_restrictedTopology_of_functorPushforward_mem
   rw [GrothendieckTopology.mem_over_iff, Sieve.functorPushforward_bot, map_bot]
   exact bot_mem_grothendieckTopology (P := P) U.left
+
+variable (S) in
+/-- On the small site of the empty scheme `S` defined by morphism properties `P` and `Q`, every
+sieve covers. -/
+theorem smallGrothendieckTopology_eq_top_of_isEmpty {P Q : MorphismProperty Scheme.{u}}
+    [IsEmpty S] : S.smallGrothendieckTopology P (Q := Q) = ⊤ := by
+  rw [GrothendieckTopology.eq_top_iff]
+  intro U
+  have : IsEmpty U.left := Function.isEmpty (β := S) U.hom
+  exact bot_mem_smallGrothendieckTopology U
+
+variable (S) in
+/-- On the small étale site of the empty scheme `S`, every sieve covers. -/
+theorem smallEtaleTopology_eq_top_of_isEmpty [IsEmpty S] : smallEtaleTopology S = ⊤ :=
+  smallGrothendieckTopology_eq_top_of_isEmpty S
 
 end AlgebraicGeometry.Scheme

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Morphisms.WeaklyEtale
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Proetale.EtaleComparison
 
@@ -42,19 +43,6 @@ open CategoryTheory Limits MorphismProperty
 
 namespace AlgebraicGeometry
 
--- Instance search does not derive these from the general instances for categories with pullbacks
--- and for properties stable under base change, as for `@Etale` in
--- `TauCeti/AlgebraicGeometry/Morphisms/Etale/Basic.lean`.
-/-- Weakly étale schemes over `Y` can be pulled back along any `f : X ⟶ Y`. -/
-instance weaklyEtale_hasPullbacksAlong {X Y : Scheme.{u}} (f : X ⟶ Y) :
-    MorphismProperty.HasPullbacksAlong @WeaklyEtale f :=
-  ⟨fun _ _ ↦ inferInstance⟩
-
-/-- Weakly étale morphisms are stable under base change along any `f : X ⟶ Y`. -/
-instance weaklyEtale_isStableUnderBaseChangeAlong {X Y : Scheme.{u}} (f : X ⟶ Y) :
-    MorphismProperty.IsStableUnderBaseChangeAlong @WeaklyEtale f :=
-  ⟨MorphismProperty.IsStableUnderBaseChange.of_isPullback⟩
-
 namespace Scheme.Hom
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
@@ -84,9 +72,8 @@ lemma smallProEtBaseChange_map_left {V W : Y.ProEt} (g : V ⟶ W) :
 `𝟙 X`. -/
 lemma smallProEtBaseChange_map_left_eq_pullback_map {V W : Y.ProEt} (g : V ⟶ W) :
     (f.smallProEtBaseChange.map g).left =
-      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) := by
-  rw [smallProEtBaseChange_map_left]
-  apply pullback.hom_ext <;> simp
+      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) :=
+  MorphismProperty.Over.pullback_map_left_eq_pullback_map _ _ f g
 
 /-- **Naturality of `ν`**: base change of étale `Y`-schemes along `f`
 followed by the inclusion into weakly étale `X`-schemes is the inclusion of étale `Y`-schemes
