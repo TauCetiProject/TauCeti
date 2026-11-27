@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.ConnectedComponents
 
 /-!
-# Finitely many connected components from a compact frontier
+# Finiteness of connected components
 
 A set whose frontier is compact, and which is connected near each of its frontier points, has only
 finitely many connected components, in a locally connected, preconnected space
@@ -24,6 +24,8 @@ point, but its frontier is not compact.
 
 ## Main declarations
 
+* `ConnectedComponents.finite_iff_finite_image_connectedComponentIn`: the component quotient of
+  a subspace is finite exactly when the set of ambient component sets is finite.
 * `TauCeti.finite_connectedComponents_of_isCompact_frontier`: a set with compact frontier whose
   part in some neighbourhood of each frontier point is preconnected has finitely many connected
   components.
@@ -36,6 +38,15 @@ open Set Topology
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
+
+open ConnectedComponents in
+/-- A subspace has finitely many connected components exactly when its points determine
+only finitely many distinct ambient component sets. -/
+theorem _root_.ConnectedComponents.finite_iff_finite_image_connectedComponentIn {s : Set X} :
+    Finite (ConnectedComponents s) ↔ (connectedComponentIn s '' s).Finite := by
+  rw [← finite_range_iff (carrierIn_injective (s := s)),
+    ← (surjective_coe (α := s)).range_comp carrierIn, image_eq_range]
+  simp [Function.comp_def]
 
 /-- **Finitely many components from a compact frontier.** In a locally connected, preconnected
 space, let `s` have compact frontier, and let every frontier point `x` of `s` have a neighbourhood

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
-public import TauCeti.Topology.Algebra.PointTopology.Basic
+public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
 /-!
 # Closed subgroups cut out by Hopf ideals in the point topology
@@ -19,6 +19,8 @@ zero sets of the continuous evaluations at the elements of `I`.
 
 ## Main declarations
 
+* `TauCeti.PointTopology.isEmbedding_quotientPointsHom`: the point topology on a quotient
+  coordinate algebra agrees with the subspace topology on its image.
 * `TauCeti.PointTopology.isClosed_quotientPointsSubgroup`.
 -/
 
@@ -31,7 +33,22 @@ universe u
 namespace TauCeti.PointTopology
 
 variable {R : Type*} [CommRing R] (A : Type*) [CommRing A] [Algebra R A] [TopologicalSpace A]
-  [T1Space A]
+
+open Topology in
+/-- The points of the quotient coordinate algebra embed in the ambient point group for the
+evaluation topology, for any topology on the coefficient ring. -/
+theorem isEmbedding_quotientPointsHom (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
+    IsEmbedding (quotientPointsHom H I (CommAlgCat.of R A)) := by
+  let q := CommHopfAlgCat.mkQuotient H I
+  rw [← isHomeomorph_ofConv.isEmbedding.of_comp_iff]
+  have heq : ofConv ∘ quotientPointsHom H I (CommAlgCat.of R A) =
+      (fun x ↦ AlgHom.comp x q.hom.toAlgHom) ∘ ofConv :=
+    funext fun x ↦ congrArg ofConv (quotientPointsHom_apply H I _ x)
+  rw [heq]
+  exact (isEmbedding_comap_of_surjective q.hom.toAlgHom
+    (CommHopfAlgCat.mkQuotient_surjective H I)).comp isHomeomorph_ofConv.isEmbedding
+
+variable [T1Space A]
 
 /-- Over a T1 topological algebra `A`, the `A`-points of the closed subgroup scheme cut out by a
 Hopf ideal `I` form a closed subgroup of the `A`-points of `Spec H`. -/
