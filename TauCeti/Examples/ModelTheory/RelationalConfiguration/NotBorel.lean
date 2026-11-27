@@ -42,7 +42,7 @@ example : MeasurableSet {p : (∅ : Set (RelationalConfiguration Language.order 
     ¬ BorelComplete (∅ : Set (RelationalConfiguration Language.order ℕ)) :=
   ⟨Set.Subsingleton.measurableSet fun p ↦ p.1.property.elim, not_borelComplete_empty⟩
 
--- At every countable depth, two non-isomorphic coded linear orders are back-and-forth equivalent.
+-- At depth `0`, two non-isomorphic coded linear orders are back-and-forth equivalent.
 example : ∃ c ∈ linearOrderClass (V := ℕ), ∃ d ∈ linearOrderClass (V := ℕ),
     ¬ isoSetoid Language.order ℕ c d ∧ bfEquivSetoid Language.order ℕ (0 : Ordinal.{0}) c d :=
-  exists_not_isoSetoid_bfEquivSetoid (Ordinal.omega_pos 1)
+  exists_mem_linearOrderClass_not_isoSetoid_bfEquivSetoid (Ordinal.omega_pos 1)

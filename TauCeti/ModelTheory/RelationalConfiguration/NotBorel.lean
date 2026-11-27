@@ -28,13 +28,13 @@ single countable depth `β` would separate all of them
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.exists_not_isoSetoid_bfEquivSetoid`: for every countable
-  ordinal `β`, two coded linear orders on `ℕ` are not isomorphic but are back-and-forth equivalent
-  at depth `β`.
+* `TauCeti.RelationalConfiguration.exists_mem_linearOrderClass_not_isoSetoid_bfEquivSetoid`: for
+  every countable ordinal `β`, two coded linear orders on `ℕ` are not isomorphic but are
+  back-and-forth equivalent at depth `β`.
 * `TauCeti.RelationalConfiguration.not_measurableSet_classIso_of_borelComplete`: a Borel complete
   class has non-Borel isomorphism relation.
-* `TauCeti.RelationalConfiguration.not_borelReducible_of_borelComplete`: isomorphism on a Borel
-  complete class is Borel reducible to no equivalence relation with Borel graph.
+* `TauCeti.RelationalConfiguration.not_borelReducible_classIso_of_borelComplete`: isomorphism on
+  a Borel complete class is Borel reducible to no equivalence relation with Borel graph.
 
 ## References
 
@@ -53,7 +53,7 @@ attribute [local instance] Language.orderStructure
 /-- **Non-isomorphic coded linear orders at every countable depth.** For every countable ordinal
 `β`, the codes on `ℕ` of well-orders of types `ω ^ (1 + β)` and `ω ^ (1 + β) · 2` are coded linear
 orders that are not isomorphic but are back-and-forth equivalent at depth `β`. -/
-theorem exists_not_isoSetoid_bfEquivSetoid {β : Ordinal.{0}} (hβ : β < ω₁) :
+theorem exists_mem_linearOrderClass_not_isoSetoid_bfEquivSetoid {β : Ordinal.{0}} (hβ : β < ω₁) :
     ∃ c ∈ linearOrderClass (V := ℕ), ∃ d ∈ linearOrderClass (V := ℕ),
       ¬ isoSetoid Language.order ℕ c d ∧ bfEquivSetoid Language.order ℕ β c d := by
   have hγ : 1 + β < ω₁ := isPrincipal_add_omega 1 (one_lt_omega0.trans omega0_lt_omega_one) hβ
@@ -61,14 +61,10 @@ theorem exists_not_isoSetoid_bfEquivSetoid {β : Ordinal.{0}} (hβ : β < ω₁)
   have hpos : (0 : Ordinal) < 1 + β := zero_lt_one.trans_le le_self_add
   -- the two well-orders are countable and infinite, so they are carried by `ℕ`
   have hcode (δ : Ordinal.{0}) (hδ : 0 < δ) (hδω : δ < ω) :
-      Nonempty ((ω ^ (1 + β) * δ).ToType ≃ ℕ) := by
-    have hlt : ω ^ (1 + β) * δ < ω₁ :=
-      isPrincipal_mul_omega 1 hω (hδω.trans omega0_lt_omega_one)
-    have : Countable (ω ^ (1 + β) * δ).ToType := Cardinal.countable_toType_of_lt_omega_one hlt
-    have : Infinite (ω ^ (1 + β) * δ).ToType := Cardinal.infinite_iff.2 <| by
-      simpa [Cardinal.mk_toType] using Ordinal.card_le_card
-        ((left_le_opow ω hpos).trans (le_mul_left _ hδ))
-    exact Cardinal.eq.1 (by rw [Cardinal.mk_eq_aleph0, Cardinal.mk_eq_aleph0])
+      Nonempty ((ω ^ (1 + β) * δ).ToType ≃ ℕ) :=
+    nonempty_toType_equiv_of_omega0_le_of_lt_omega_one
+      ((left_le_opow ω hpos).trans (le_mul_left _ hδ))
+      (isPrincipal_mul_omega 1 hω (hδω.trans omega0_lt_omega_one))
   obtain ⟨e₁⟩ := hcode 1 zero_lt_one one_lt_omega0
   obtain ⟨e₂⟩ := hcode 2 zero_lt_two (natCast_lt_omega0 2)
   refine ⟨e₁.encodeVia, ?_, e₂.encodeVia, ?_, ?_, ?_⟩
@@ -111,12 +107,12 @@ theorem not_measurableSet_classIso_of_borelComplete {K : Set (RelationalConfigur
   obtain ⟨β, hβ, hsep⟩ := exists_uniform_bfSeparation.{0, 0, 0, 0} hS (by
     rintro _ ⟨p, hp, rfl⟩
     exact hp)
-  obtain ⟨c, hc, d, hd, hcd, hb⟩ := exists_not_isoSetoid_bfEquivSetoid hβ
+  obtain ⟨c, hc, d, hd, hcd, hb⟩ := exists_mem_linearOrderClass_not_isoSetoid_bfEquivSetoid hβ
   exact hsep (c, d) ⟨(⟨c, hc⟩, ⟨d, hd⟩), hcd, rfl⟩ hb
 
 /-- Isomorphism on a Borel complete class is Borel reducible to no equivalence relation with
 Borel graph: Borelness pulls back along reductions. -/
-theorem not_borelReducible_of_borelComplete {K : Set (RelationalConfiguration L ℕ)}
+theorem not_borelReducible_classIso_of_borelComplete {K : Set (RelationalConfiguration L ℕ)}
     (hK : BorelComplete K) {Y : Type*} [MeasurableSpace Y] {F : Setoid Y}
     (hF : MeasurableSet {p : Y × Y | F p.1 p.2}) : ¬ (classIso K).BorelReducible F :=
   fun h ↦ not_measurableSet_classIso_of_borelComplete hK (h.measurableSet_setOf hF)
