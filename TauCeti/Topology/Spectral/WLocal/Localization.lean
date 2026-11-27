@@ -149,8 +149,8 @@ private theorem isProConstructible_pairs :
         ((Prod.fst ⁻¹' (WithTopology.ofTopology ⁻¹' U.val))ᶜ ∪ Prod.snd ⁻¹' U.val) := by
     ext q
     simp only [mem_ofPred_eq, mem_iInter, mem_union, mem_compl_iff, mem_preimage]
-    rw [← not_iff_not, PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact]
-    simp
+    rw [PrespectralSpace.specializes_iff_forall_isOpen_isCompact]
+    simp [Subtype.forall, or_iff_not_imp_left]
   rw [heq]
   refine IsProConstructible.iInter fun U ↦ ?_
   have hU := U.property.2.isClopen_preimage_ofTopology_of_isOpen U.property.1
@@ -254,10 +254,9 @@ theorem isWLocal : IsWLocalSpace (WLocalization X) := by
       · intro h U
         exact not_or_of_imp (fun hy ↦ h ▸ hy)
       · intro h
-        have hs : WithTopology.ofTopology (componentLabel q) ⤳ toBase q := by
-          rw [← not_not (a := WithTopology.ofTopology (componentLabel q) ⤳ toBase q),
-            PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact]
-          simpa [Subtype.forall, or_iff_not_imp_left] using h
+        have hs : WithTopology.ofTopology (componentLabel q) ⤳ toBase q :=
+          PrespectralSpace.specializes_iff_forall_isOpen_isCompact.2 fun U hUo hUc hU ↦
+            (h ⟨U, hUo, hUc⟩).resolve_left (not_not_intro hU)
         exact q.specializes_label.antisymm hs |>.eq
     rw [heq]
     exact isClosed_iInter fun U ↦

@@ -185,6 +185,12 @@ theorem TauCeti.isClopen_constructibleTopology_iff_isConstructible [CompactSpace
 
 /-! ### Separation of the constructible topology -/
 
+/-- In a prespectral space, `x` specializes to `y` if and only if every quasi-compact open
+subset containing `y` also contains `x`. -/
+theorem PrespectralSpace.specializes_iff_forall_isOpen_isCompact [PrespectralSpace X]
+    {x y : X} : x ⤳ y ↔ ∀ U : Set X, IsOpen U → IsCompact U → y ∈ U → x ∈ U := by
+  simp [PrespectralSpace.isTopologicalBasis.nhds_hasBasis.specializes_iff, and_imp]
+
 /-- In a prespectral space, `x` does not specialize to `y` if and only if some quasi-compact open
 subset contains `y` but not `x`. -/
 theorem PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact [PrespectralSpace X]
