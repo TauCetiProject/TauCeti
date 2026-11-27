@@ -118,42 +118,50 @@ theorem projectivePlaneTopChart_symm_coords_ne_zero (u : EuclideanSpace ℝ (Fin
   have hu0 : u 0 = 0 := by simpa [Real.sqrt_ne_zero'] using h0
   simp [hu0, h1] at h2
 
-/-- The top chart in the affine coordinates `a = (x / z, y / z)`. -/
-private def topChartPlane (a : Fin 2 → ℝ) : EuclideanSpace ℝ (Fin 2) :=
-  (√(1 + a 0 ^ 2 + a 1 ^ 2))⁻¹ • !₂[√2 * a 0, a 1]
+/-- The stretch `(u₀, u₁) ↦ (√2 u₀, u₁)` of `ℝ²`, carrying the open unit disc onto the open
+ellipse `u₀² / 2 + u₁² < 1`. -/
+private def stretchFirst : EuclideanSpace ℝ (Fin 2) ≃ₜ EuclideanSpace ℝ (Fin 2) where
+  toFun u := !₂[√2 * u 0, u 1]
+  invFun w := !₂[w 0 / √2, w 1]
+  left_inv u := by
+    ext j
+    fin_cases j <;> simp
+  right_inv w := by
+    ext j
+    fin_cases j <;> simp [mul_div_cancel₀ _ (Real.sqrt_ne_zero'.2 zero_lt_two)]
+  continuous_toFun := (PiLp.continuous_toLp 2 _).comp (by fun_prop)
+  continuous_invFun := (PiLp.continuous_toLp 2 _).comp (by fun_prop)
 
-private theorem topChartPlane_apply_zero (a : Fin 2 → ℝ) :
-    topChartPlane a 0 = √2 * a 0 / √(1 + a 0 ^ 2 + a 1 ^ 2) := by
-  simp [topChartPlane, div_eq_inv_mul]
+/-- The top chart in the affine coordinates `a = (x / z, y / z)`,
+`a ↦ (√2 a₀, a₁) / √(1 + a₀² + a₁²)`: Mathlib's radial homeomorphism
+`OpenPartialHomeomorph.univUnitBall` onto the open unit disc, followed by the stretch
+`(u₀, u₁) ↦ (√2 u₀, u₁)` onto the open ellipse `u₀² / 2 + u₁² < 1`. -/
+private def topChartCoord : OpenPartialHomeomorph (Fin 2 → ℝ) (EuclideanSpace ℝ (Fin 2)) :=
+  ((EuclideanSpace.equiv (Fin 2) ℝ).symm.toHomeomorph.transOpenPartialHomeomorph
+    OpenPartialHomeomorph.univUnitBall).transHomeomorph stretchFirst
 
-private theorem topChartPlane_apply_one (a : Fin 2 → ℝ) :
-    topChartPlane a 1 = a 1 / √(1 + a 0 ^ 2 + a 1 ^ 2) := by
-  simp [topChartPlane, div_eq_inv_mul]
+private theorem topChartCoord_apply (a : Fin 2 → ℝ) :
+    topChartCoord a = (√(1 + a 0 ^ 2 + a 1 ^ 2))⁻¹ • !₂[√2 * a 0, a 1] := by
+  ext j
+  fin_cases j <;>
+    simp [topChartCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_apply,
+      EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, add_assoc, mul_left_comm]
 
-private theorem continuous_topChartPlane : Continuous topChartPlane := by
-  have hs : Continuous fun a : Fin 2 → ℝ ↦ √(1 + a 0 ^ 2 + a 1 ^ 2) := by fun_prop
-  refine Continuous.smul (hs.inv₀ fun a ↦ ?_) ?_
-  · exact Real.sqrt_ne_zero'.2 (by positivity)
-  · refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
-    fin_cases i
-    · exact continuous_const.mul (continuous_apply 0)
-    · exact continuous_apply 1
+private theorem topChartCoord_symm_apply (u : EuclideanSpace ℝ (Fin 2)) :
+    topChartCoord.symm u = (√(1 - (u 0 ^ 2 / 2 + u 1 ^ 2)))⁻¹ • ![u 0 / √2, u 1] := by
+  ext j
+  fin_cases j <;>
+    simp [topChartCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_symm_apply,
+      EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, div_pow]
 
-private theorem topChartPlane_ellipse (a : Fin 2 → ℝ) :
-    topChartPlane a 0 ^ 2 / 2 + topChartPlane a 1 ^ 2 =
-      (a 0 ^ 2 + a 1 ^ 2) / (1 + a 0 ^ 2 + a 1 ^ 2) := by
-  have hs : 0 < 1 + a 0 ^ 2 + a 1 ^ 2 := by positivity
-  rw [topChartPlane_apply_zero, topChartPlane_apply_one, div_pow, div_pow, mul_pow,
-    Real.sq_sqrt hs.le, Real.sq_sqrt zero_le_two]
-  field_simp
+private theorem topChartCoord_source : topChartCoord.source = univ := by
+  simp [topChartCoord, OpenPartialHomeomorph.univUnitBall_source]
 
-private theorem topChartPlane_normSq (a : Fin 2 → ℝ) :
-    topChartPlane a 0 ^ 2 + topChartPlane a 1 ^ 2 =
-      (2 * a 0 ^ 2 + a 1 ^ 2) / (1 + a 0 ^ 2 + a 1 ^ 2) := by
-  have hs : 0 < 1 + a 0 ^ 2 + a 1 ^ 2 := by positivity
-  rw [topChartPlane_apply_zero, topChartPlane_apply_one, div_pow, div_pow, mul_pow,
-    Real.sq_sqrt hs.le, Real.sq_sqrt zero_le_two]
-  field_simp
+private theorem topChartCoord_target :
+    topChartCoord.target = {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1} := by
+  ext u
+  simp [topChartCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_target,
+    ← sq_lt_one_iff₀ (norm_nonneg _), EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, div_pow]
 
 private theorem affineChart_two_mk_zero (v : Fin 3 → ℝ) (hv : v ≠ 0) :
     affineChart 2 (mk ℝ v hv) 0 = v 0 / v 2 := by
@@ -166,107 +174,67 @@ private theorem affineChart_two_mk_one (v : Fin 3 → ℝ) (hv : v ≠ 0) :
   rfl
 
 /-- The normalized Morse chart of `projectiveMomentFunction ℝ ![0, 1, 2]` at its maximum
-`[0 : 0 : 1]`: in the affine coordinates `a = x / z`, `b = y / z` it is
-`(√2 a, b) / √(1 + a² + b²)`. Its target is the open ellipse `u₀² / 2 + u₁² < 1`, and its inverse
-is `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
+`[0 : 0 : 1]`: the affine chart `z ≠ 0` followed by the radial homeomorphism onto the unit disc
+and the stretch `(u₀, u₁) ↦ (√2 u₀, u₁)`. In the affine coordinates `a = x / z`, `b = y / z` it
+is `(√2 a, b) / √(1 + a² + b²)`. Its target is the open ellipse `u₀² / 2 + u₁² < 1`, and its
+inverse there is `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
 def projectivePlaneTopChart :
-    OpenPartialHomeomorph (ℙ ℝ (Fin 3 → ℝ)) (EuclideanSpace ℝ (Fin 2)) where
-  toFun y := topChartPlane (affineChart 2 y)
-  invFun u := mk ℝ ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))]
-    (projectivePlaneTopChart_symm_coords_ne_zero u)
-  source := affineOpen 2
-  target := {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1}
-  map_source' y _ := by
-    rw [mem_ofPred_eq, topChartPlane_ellipse, div_lt_one (by positivity)]
-    linarith
-  map_target' u hu := by
-    rw [mk_mem_affineOpen_iff]
-    simp only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, ne_eq,
-      Real.sqrt_eq_zero', not_le, sub_pos]
-    exact hu
-  left_inv' y hy := by
-    induction y using ind with | h v hv =>
-    rw [mk_mem_affineOpen_iff] at hy
-    set a := affineChart 2 (mk ℝ v hv)
-    have hs : 0 < 1 + a 0 ^ 2 + a 1 ^ 2 := by positivity
-    have hr : √(1 - (topChartPlane a 0 ^ 2 / 2 + topChartPlane a 1 ^ 2)) =
-        1 / √(1 + a 0 ^ 2 + a 1 ^ 2) := by
-      rw [topChartPlane_ellipse, show 1 - (a 0 ^ 2 + a 1 ^ 2) / (1 + a 0 ^ 2 + a 1 ^ 2) =
-        1 / (1 + a 0 ^ 2 + a 1 ^ 2) by field_simp; ring, Real.sqrt_div zero_le_one, Real.sqrt_one]
-    rw [mk_eq_mk_iff']
-    refine ⟨1 / (√(1 + a 0 ^ 2 + a 1 ^ 2) * v 2), ?_⟩
-    have ha0 : a 0 = v 0 / v 2 := affineChart_two_mk_zero v hv
-    have ha1 : a 1 = v 1 / v 2 := affineChart_two_mk_one v hv
-    have hsq : √(1 + a 0 ^ 2 + a 1 ^ 2) ≠ 0 := Real.sqrt_ne_zero'.2 hs
-    ext i
-    fin_cases i
-    · simp only [Fin.zero_eta, ha0, Pi.smul_apply, smul_eq_mul, topChartPlane_apply_zero,
-        Matrix.cons_val_zero]
-      field_simp
-    · simp only [Fin.mk_one, ha1, Pi.smul_apply, smul_eq_mul, topChartPlane_apply_one,
-        Matrix.cons_val_one, Matrix.cons_val_zero]
-      field_simp
-    · simp only [Fin.reduceFinMk, Pi.smul_apply, smul_eq_mul, hr, Matrix.cons_val]
-      field_simp
-  right_inv' u hu := by
-    have hρ : u 0 ^ 2 / 2 + u 1 ^ 2 < 1 := hu
-    set r := √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))
-    have hr : 0 < r := Real.sqrt_pos.2 (by linarith)
-    have hr2 : r ^ 2 = 1 - (u 0 ^ 2 / 2 + u 1 ^ 2) := Real.sq_sqrt (by linarith)
-    set a := affineChart 2
-      (mk ℝ ![u 0 / √2, u 1, r] (projectivePlaneTopChart_symm_coords_ne_zero u))
-    have ha0 : a 0 = u 0 / √2 / r := affineChart_two_mk_zero _ _
-    have ha1 : a 1 = u 1 / r := affineChart_two_mk_one _ _
-    have hs : √(1 + a 0 ^ 2 + a 1 ^ 2) = 1 / r := by
-      rw [ha0, ha1, div_pow, div_pow, div_pow, Real.sq_sqrt zero_le_two]
-      rw [show 1 + u 0 ^ 2 / 2 / r ^ 2 + u 1 ^ 2 / r ^ 2 = (1 / r) ^ 2 by
-        field_simp
-        linarith]
-      exact Real.sqrt_sq (by positivity)
-    refine PiLp.ext (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
-    · rw [topChartPlane_apply_zero, hs, ha0]
-      field_simp
-    · rw [topChartPlane_apply_one, hs, ha1]
-      field_simp
-  open_source := isOpen_affineOpen 2
-  open_target := isOpen_lt (by fun_prop) continuous_const
-  continuousOn_toFun := continuous_topChartPlane.comp_continuousOn (continuousOn_affineChart 2)
-  continuousOn_invFun := (continuous_mk (by fun_prop) _).continuousOn
+    OpenPartialHomeomorph (ℙ ℝ (Fin 3 → ℝ)) (EuclideanSpace ℝ (Fin 2)) :=
+  (affineOpenPartialHomeomorph 2).trans topChartCoord
 
-/-- By definition, the top chart is `topChartPlane` read in the affine chart `z ≠ 0`. -/
+/-- The top chart is `topChartCoord` read in the affine chart `z ≠ 0`. -/
 private theorem projectivePlaneTopChart_apply (y : ℙ ℝ (Fin 3 → ℝ)) :
-    projectivePlaneTopChart y = topChartPlane (affineChart 2 y) :=
-  (rfl)
+    projectivePlaneTopChart y = topChartCoord (affineChart 2 y) := by
+  rw [projectivePlaneTopChart, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
+    coe_affineOpenPartialHomeomorph]
 
 @[simp]
-theorem projectivePlaneTopChart_source : projectivePlaneTopChart.source = affineOpen 2 :=
-  (rfl)
+theorem projectivePlaneTopChart_source : projectivePlaneTopChart.source = affineOpen 2 := by
+  simp [projectivePlaneTopChart, topChartCoord_source]
 
 @[simp]
 theorem projectivePlaneTopChart_target :
-    projectivePlaneTopChart.target = {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1} :=
-  (rfl)
+    projectivePlaneTopChart.target = {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1} := by
+  simp [projectivePlaneTopChart, topChartCoord_target]
 
 /-- The top chart in homogeneous coordinates: with `a = x / z` and `b = y / z`, it sends
 `[x : y : z]` to `(√2 a, b) / √(1 + a² + b²)`. -/
 theorem projectivePlaneTopChart_apply_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
     projectivePlaneTopChart (mk ℝ v hv) = (√(1 + (v 0 / v 2) ^ 2 + (v 1 / v 2) ^ 2))⁻¹ •
       !₂[√2 * (v 0 / v 2), v 1 / v 2] := by
-  rw [projectivePlaneTopChart_apply, topChartPlane, affineChart_two_mk_zero, affineChart_two_mk_one]
+  rw [projectivePlaneTopChart_apply, topChartCoord_apply, affineChart_two_mk_zero,
+    affineChart_two_mk_one]
 
-/-- The inverse of the top chart in homogeneous coordinates:
+/-- The inverse of the top chart in homogeneous coordinates on its target ellipse:
 `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
-theorem projectivePlaneTopChart_symm_apply (u : EuclideanSpace ℝ (Fin 2)) :
+theorem projectivePlaneTopChart_symm_apply {u : EuclideanSpace ℝ (Fin 2)}
+    (hu : u ∈ projectivePlaneTopChart.target) :
     projectivePlaneTopChart.symm u = mk ℝ ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))]
-      (projectivePlaneTopChart_symm_coords_ne_zero u) :=
-  (rfl)
+      (projectivePlaneTopChart_symm_coords_ne_zero u) := by
+  rw [projectivePlaneTopChart_target, mem_ofPred_eq] at hu
+  have hs : 0 < √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2)) := Real.sqrt_pos.2 (sub_pos.2 hu)
+  rw [projectivePlaneTopChart, OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply,
+    coe_affineOpenPartialHomeomorph_symm, topChartCoord_symm_apply, affineChart_symm_apply,
+    mk_eq_mk_iff']
+  refine ⟨(√(1 - (u 0 ^ 2 / 2 + u 1 ^ 2)))⁻¹, ?_⟩
+  ext j
+  fin_cases j <;> simp [Fin.insertNth, Fin.succAboveCases, hs.ne', mul_comm]
 
 /-- The inverse chart sends the origin to the maximum `[0 : 0 : 1]`. -/
 @[simp]
 theorem projectivePlaneTopChart_symm_zero :
     projectivePlaneTopChart.symm 0 = mk ℝ ![0, 0, 1] (by simp) := by
-  rw [projectivePlaneTopChart_symm_apply]
+  rw [projectivePlaneTopChart_symm_apply (by simp)]
   simp
+
+/-- In the affine chart at `[0 : 0 : 1]` the height is `(2 + a₁²) / (1 + a₀² + a₁²)`. -/
+private theorem projectiveMomentFunction_affineChart_symm (a : Fin 2 → ℝ) :
+    projectiveMomentFunction ℝ ![0, 1, 2] ((affineChart 2).symm a) =
+      (2 + a 1 ^ 2) / (1 + a 0 ^ 2 + a 1 ^ 2) := by
+  rw [← Function.comp_apply (f := projectiveMomentFunction ℝ ![0, 1, 2]),
+    projectiveMomentFunction_comp_affineChart_symm, ProjectiveMomentChart.model_apply]
+  simp [Fin.sum_univ_two, Fin.succAbove]
+  ring
 
 /-- **The normal form at the maximum.** In the top chart the height is
 `2 - u₀² - u₁²`, the normal form `c - Σ_{j < 2} uⱼ²` of index `2` at the value `c = 2`. -/
@@ -274,14 +242,15 @@ theorem projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source {y : �
     (hy : y ∈ projectivePlaneTopChart.source) :
     projectiveMomentFunction ℝ ![0, 1, 2] y = 2 + ∑ j : Fin 2,
       (if j.val < 2 then -1 else 1) * projectivePlaneTopChart y j ^ 2 := by
-  induction y using ind with | h v hv =>
-  rw [projectivePlaneTopChart_source, mk_mem_affineOpen_iff] at hy
-  have key := topChartPlane_normSq (affineChart 2 (mk ℝ v hv))
-  rw [affineChart_two_mk_zero, affineChart_two_mk_one] at key
-  simp only [Fin.sum_univ_two, Fin.val_zero, Fin.val_one, Nat.ofNat_pos, ↓reduceIte,
-    Nat.one_lt_ofNat, projectivePlaneTopChart_apply, neg_one_mul,
-    projectiveMomentFunction_zero_one_two_mk]
-  rw [← neg_add, ← sub_eq_add_neg, key]
+  obtain ⟨a, rfl⟩ : ∃ a, (affineChart 2).symm a = y :=
+    ⟨affineChart 2 y, (affineChart 2).left_inv (by simpa using hy)⟩
+  have hs : 0 < 1 + a 0 ^ 2 + a 1 ^ 2 := by positivity
+  simp only [projectivePlaneTopChart_apply, projectiveMomentFunction_affineChart_symm,
+    (affineChart 2).right_inv (by simp : a ∈ (affineChart 2).target), topChartCoord_apply,
+    Fin.sum_univ_two]
+  simp only [PiLp.smul_apply, smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one, mul_pow,
+    inv_pow, Real.sq_sqrt hs.le, Real.sq_sqrt zero_le_two]
+  simp
   field_simp
   ring
 
@@ -359,7 +328,7 @@ theorem projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source
 /-- The target of the reflected chart contains the closed ball of radius `√ε` for `ε < 1`. -/
 theorem closedBall_subset_projectivePlaneTopChartReflect_target {ε : ℝ} (hε : ε < 1) :
     closedBall 0 √ε ⊆ projectivePlaneTopChartReflect.target := by
-  rw [projectivePlaneTopChartReflect_target]
+  rw [projectivePlaneTopChartReflect_target, ← projectivePlaneTopChart_target]
   exact closedBall_subset_projectivePlaneTopChart_target hε
 
 /-! ### Admissibility of the widths `0 ≤ ε < 1` -/
@@ -919,11 +888,12 @@ private theorem coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingM
         ((w.down : EuclideanSpace ℝ (Fin 2)) 1 : ℝ) * Complex.I) ^ 2 /
       (((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0) ^ 2 +
         (w.down : EuclideanSpace ℝ (Fin 2)) 1 ^ 2 : ℝ) := by
-  set u := √ε • (w.down : EuclideanSpace ℝ (Fin 2))
   rw [coe_projectivePlaneSublevelCircleEquiv_apply_of_eq _ _
     ((coe_projectivePlaneAttachingMap_apply hε.le hε1 w).trans
-      (projectivePlaneTopChart_symm_apply u))]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, u, PiLp.smul_apply, smul_eq_mul]
+      (projectivePlaneTopChart_symm_apply (closedBall_subset_projectivePlaneTopChart_target hε1
+        (by rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 w.down.property,
+          Real.norm_of_nonneg (Real.sqrt_nonneg ε), mul_one]))))]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, PiLp.smul_apply, smul_eq_mul]
   rw [show √ε * (w.down : EuclideanSpace ℝ (Fin 2)) 0 / √2 =
     √ε * ((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0) by ring,
     sq_div_sq_add_sq_mul √ε _ _ (Real.sqrt_pos.2 hε).ne']
