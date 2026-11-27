@@ -270,17 +270,14 @@ theorem contactElementLine_eq_ker_of_le {θ : AddCircle π} {P : (ℝ × ℝ) �
     contactElementLine θ = LinearMap.ker (P : (ℝ × ℝ) →ₗ[ℝ] ℝ) := by
   induction θ using QuotientAddGroup.induction_on with | H τ => ?_
   refine le_antisymm h fun ⟨a, b⟩ hu ↦ ?_
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, P.apply_mk_eq_smul_add_smul, smul_eq_mul,
-    smul_eq_mul] at hu
+  rw [ContinuousLinearMap.mk_mem_ker_iff] at hu
   rw [mem_contactElementLine_coe]
   -- `P` vanishes on the direction `(-sin τ, cos τ)` of the line, so it is `k (cos τ, sin τ)`.
   have h₀ : -sin τ * P (1, 0) + cos τ * P (0, 1) = 0 := by
     have hmem : ((-sin τ, cos τ) : ℝ × ℝ) ∈ contactElementLine (τ : AddCircle π) := by
       rw [mem_contactElementLine_coe]
       ring
-    have := h hmem
-    rwa [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, P.apply_mk_eq_smul_add_smul, smul_eq_mul,
-      smul_eq_mul] at this
+    exact ContinuousLinearMap.mk_mem_ker_iff.1 (h hmem)
   have hs := sin_sq_add_cos_sq τ
   set k := P (1, 0) * cos τ + P (0, 1) * sin τ
   have ha : P (1, 0) = k * cos τ := by linear_combination (-sin τ) * h₀ - P (1, 0) * hs

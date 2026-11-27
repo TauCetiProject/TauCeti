@@ -110,12 +110,14 @@ theorem contactElementLine_contactElementOfCovector {p : (ℝ × ℝ) →L[ℝ] 
   have hn : ‖c‖ ≠ 0 := norm_ne_zero_iff.2 hc₀
   ext ⟨a, b⟩
   rw [contactElementOfCovector, mem_contactElementLine_coe, Complex.cos_arg hc₀, Complex.sin_arg,
-    LinearMap.mem_ker, ContinuousLinearMap.coe_coe, p.apply_mk_eq_smul_add_smul a b, smul_eq_mul,
-    smul_eq_mul]
+    ContinuousLinearMap.mk_mem_ker_iff]
   dsimp only
   -- `(cos τ, sin τ)` is `(p(1, 0), p(0, 1))` divided by its norm.
+  have hre : c.re = p (1, 0) := rfl
+  have him : c.im = p (0, 1) := rfl
   have key : c.re / ‖c‖ * a + c.im / ‖c‖ * b = (a * p (1, 0) + b * p (0, 1)) / ‖c‖ := by
-    rw [div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div, mul_comm c.re, mul_comm c.im]
+    rw [hre, him]
+    ring
   rw [key, div_eq_zero_iff, or_iff_left hn]
 
 /-- The contact element of a nonzero covector `p` is the angle class `θ` exactly when the contact
