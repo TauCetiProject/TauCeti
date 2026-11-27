@@ -26,6 +26,9 @@ statements are what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read o
   `TauCeti.FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap` its `Nat.card` spelling.
 * `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that a
   domain over `K` *all* of whose elements are fixed by the `q`-power map is `K` itself.
+* `Ideal.exists_natCast_sub_mem_of_pow_sub_self_mem`: its case `K = 𝔽_p` read modulo a prime
+  ideal `I` with `R ⧸ I` of characteristic `p`: if `x ^ p - x ∈ I`, then `x` is congruent modulo
+  `I` to a natural number.
 * `TauCeti.FiniteField.pow_natCard_pow_natCard`: in a quadratic extension the `q`-power map is an
   involution. `TauCeti.FiniteField.pow_natCard_ne` and
   `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` say that an element outside `K` is
@@ -249,5 +252,18 @@ theorem algebraMap_bijective_of_pow_card_eq_self {K L : Type*} [Field K] [Fintyp
     Function.Bijective (algebraMap K L) :=
   ⟨(algebraMap K L).injective,
     fun x => (FiniteField.pow_card_eq_self_iff_mem_range_algebraMap x).mp (h x)⟩
+
+/-- **The roots of `X ^ p - X` modulo a prime ideal are the integers.** If `I` is a prime ideal
+of `R` such that `R ⧸ I` has prime characteristic `p` and `x ^ p - x ∈ I`, then `x` is congruent
+modulo `I` to a natural number: in the domain `R ⧸ I` the roots of `X ^ p - X` form `𝔽_p`
+(`TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`). -/
+theorem _root_.Ideal.exists_natCast_sub_mem_of_pow_sub_self_mem {R : Type*} [CommRing R]
+    {p : ℕ} [Fact p.Prime] {I : Ideal R} [I.IsPrime] [CharP (R ⧸ I) p] {x : R}
+    (hx : x ^ p - x ∈ I) : ∃ d : ℕ, x - d ∈ I := by
+  let := ZMod.algebra (R ⧸ I) p
+  obtain ⟨e, he⟩ := (FiniteField.pow_card_eq_self_iff_mem_range_algebraMap
+    (K := ZMod p) (Ideal.Quotient.mk I x)).mp (by rwa [ZMod.card, ← map_pow, Ideal.Quotient.eq])
+  refine ⟨e.val, Ideal.Quotient.eq.mp ?_⟩
+  rw [map_natCast, ← he, ← map_natCast (algebraMap (ZMod p) (R ⧸ I)), ZMod.natCast_zmod_val]
 
 end TauCeti

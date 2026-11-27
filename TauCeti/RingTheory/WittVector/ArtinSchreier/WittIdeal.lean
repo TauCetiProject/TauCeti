@@ -70,6 +70,12 @@ theorem idealModPow_def (n : ℕ) : idealModPow p 𝔪 n =
       (Ideal.span {(p : 𝕎 K) ^ n}).toAddSubgroup :=
   (rfl)
 
+/-- A Witt vector lies in `W(𝔪) + p^n W(K)` exactly when it is the sum of the image of an element
+of `W(𝔪)` and a multiple of `p^n`. -/
+theorem mem_idealModPow {n : ℕ} {x : 𝕎 K} : x ∈ idealModPow p 𝔪 n ↔
+    ∃ w ∈ ideal p 𝔪, ∃ y ∈ Ideal.span {(p : 𝕎 K) ^ n}, map O.subtype w + y = x := by
+  simp [idealModPow, AddSubgroup.mem_sup]
+
 /-- The image of the Witt ideal `W(𝔪)` lies in `W(𝔪) + p^n W(K)`. -/
 theorem map_mem_idealModPow {w : 𝕎 O} (hw : w ∈ ideal p 𝔪) (n : ℕ) :
     map O.subtype w ∈ idealModPow p 𝔪 n :=
@@ -90,6 +96,16 @@ theorem idealModPow_antitone : Antitone (idealModPow p 𝔪) := fun _ _ h ↦
   sup_le_sup_left (Submodule.toAddSubgroup_mono
     (Ideal.span_singleton_le_span_singleton.mpr (pow_dvd_pow _ h))) _
 
+/-- `W(𝔪) + p^n W(K)` is stable under the Witt vector Frobenius. -/
+theorem frobenius_mem_idealModPow {n : ℕ} {x : 𝕎 K} (hx : x ∈ idealModPow p 𝔪 n) :
+    frobenius x ∈ idealModPow p 𝔪 n := by
+  obtain ⟨w, hw, y, hy, rfl⟩ := mem_idealModPow.mp hx
+  obtain ⟨t, rfl⟩ := Ideal.mem_span_singleton'.mp hy
+  rw [map_add, ← (frobenius_isPoly p).map]
+  refine add_mem (map_mem_idealModPow (frobenius_mem_ideal hw) n)
+    (mem_idealModPow_of_mem_span (Ideal.mem_span_singleton'.mpr ⟨frobenius t, ?_⟩))
+  simp
+
 variable [CharP K p] [PerfectRing K p]
 
 /-- Over a perfect ring of characteristic `p`, a Witt vector lies in `W(𝔪) + p^n W(K)` exactly
@@ -98,10 +114,9 @@ theorem mem_idealModPow_iff {n : ℕ} {x : 𝕎 K} :
     x ∈ idealModPow p 𝔪 n ↔ ∀ i < n, ∃ a ∈ 𝔪, (a : K) = x.coeff i := by
   constructor
   · intro hx i hi
-    obtain ⟨_, ⟨w, hw, rfl⟩, y, hy, rfl⟩ := AddSubgroup.mem_sup.mp hx
+    obtain ⟨w, hw, y, hy, rfl⟩ := mem_idealModPow.mp hx
     have hy : ∀ j < n, y.coeff j = 0 :=
       (mem_span_p_pow_iff_le_coeff_eq_zero y n).mp hy
-    simp only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass]
     -- adding `y`, whose first `n` coordinates vanish, does not change the first `n` coordinates
     have hcoeff : ∀ j < n, (map O.subtype w + y).coeff j = (map O.subtype w).coeff j :=
       le_coeff_eq_iff_le_sub_coeff_eq_zero.mpr (by simpa only [add_sub_cancel_left] using hy)
@@ -124,14 +139,6 @@ theorem mem_idealModPow_iff {n : ℕ} {x : 𝕎 K} :
 theorem mem_idealModPow_one_iff {x : 𝕎 K} :
     x ∈ idealModPow p 𝔪 1 ↔ ∃ a ∈ 𝔪, (a : K) = x.coeff 0 := by
   simp [mem_idealModPow_iff]
-
-/-- `W(𝔪) + p^n W(K)` is stable under the Witt vector Frobenius. -/
-theorem frobenius_mem_idealModPow {n : ℕ} {x : 𝕎 K} (hx : x ∈ idealModPow p 𝔪 n) :
-    frobenius x ∈ idealModPow p 𝔪 n := by
-  rw [mem_idealModPow_iff] at hx ⊢
-  intro i hi
-  obtain ⟨a, ha, hax⟩ := hx i hi
-  exact ⟨a ^ p, 𝔪.pow_mem_of_mem ha p hp.out.pos, by simp [coeff_frobenius_charP, ← hax]⟩
 
 /-- A Verschiebung `V x` lies in `W(𝔪) + p^(n+1) W(K)` exactly when `x` lies in
 `W(𝔪) + p^n W(K)`. -/
@@ -156,6 +163,25 @@ theorem iterate_verschiebung_mem_idealModPow_add_iff {n k : ℕ} {x : 𝕎 K} :
   | succ k ih =>
     rw [Function.iterate_succ_apply', ← add_assoc, verschiebung_mem_idealModPow_succ_iff, ih]
 
+omit [PerfectRing K p] in
+/-- Over a ring of characteristic `p`, the integer `p^n d` is the iterated Verschiebung
+`V^n d = V^n (F^n d)` of `d`. -/
+theorem intCast_pow_mul_eq_iterate_verschiebung (n : ℕ) (d : ℤ) :
+    ((p ^ n * d : ℤ) : 𝕎 K) = verschiebung^[n] (d : 𝕎 K) := by
+  rw [← Function.iterate_fixed (map_intCast (_root_.WittVector.frobenius : 𝕎 K →+* 𝕎 K) d) n,
+    iterate_verschiebung_iterate_frobenius]
+  push_cast
+  ring
+
+omit [PerfectRing K p] in
+/-- For a proper ideal `𝔪` of a subring `O` of a ring of characteristic `p`, the quotient
+`O ⧸ 𝔪` has characteristic `p`. -/
+private theorem charP_quotient (h𝔪 : 𝔪 ≠ ⊤) : CharP (O ⧸ 𝔪) p :=
+  have := Ideal.Quotient.nontrivial_iff.mpr h𝔪
+  (CharP.charP_iff_prime_eq_zero hp.out).mpr <| by
+    rw [← map_natCast (Ideal.Quotient.mk 𝔪), Ideal.Quotient.eq_zero_iff_mem]
+    exact (Subtype.ext (by simp) : (p : O) = 0) ▸ 𝔪.zero_mem
+
 /-- **The constants modulo `W(𝔪)`.** For a proper ideal `𝔪`, an integer `c` lies in
 `W(𝔪) + p^n W(K)` exactly when `p^n ∣ c`. -/
 theorem intCast_mem_idealModPow_iff (h𝔪 : 𝔪 ≠ ⊤) {n : ℕ} {c : ℤ} :
@@ -165,25 +191,18 @@ theorem intCast_mem_idealModPow_iff (h𝔪 : 𝔪 ≠ ⊤) {n : ℕ} {c : ℤ} :
   induction n generalizing c with
   | zero => simp
   | succ n ih =>
-    -- the zeroth coordinate `c` lies in `𝔪`, so `p ∣ c` since `𝔪` is proper
+    -- the zeroth coordinate `c` lies in `𝔪`, so `p ∣ c` since `O ⧸ 𝔪` has characteristic `p`
     have hpc : (p : ℤ) ∣ c := by
       obtain ⟨a, ha, hac⟩ := mem_idealModPow_one_iff.mp (idealModPow_antitone (by omega) hc)
       have hac : a = (c : O) := Subtype.ext <| by
         rw [Subring.coe_intCast, hac, ← constantCoeff_apply, map_intCast]
-      by_contra hdvd
-      obtain ⟨u, v, huv⟩ :=
-        (Prime.coprime_iff_not_dvd (Nat.prime_iff_prime_int.mp hp.out)).mpr hdvd
-      have hpO : (p : O) = 0 := Subtype.ext (by simp)
-      have hvc : (v : O) * c = 1 := by
-        simpa [hpO] using congrArg (Int.cast : ℤ → O) huv
-      exact h𝔪 ((𝔪.eq_top_iff_one).mpr (hvc ▸ 𝔪.mul_mem_left (v : O) (hac ▸ ha)))
+      have := charP_quotient h𝔪
+      rwa [← CharP.intCast_eq_zero_iff (O ⧸ 𝔪) p, ← map_intCast (Ideal.Quotient.mk 𝔪),
+        Ideal.Quotient.eq_zero_iff_mem, ← hac]
     obtain ⟨d, rfl⟩ := hpc
-    -- `p * d = V (F d) = V d`, so `d` lies in `W(𝔪) + p^n W(K)`
-    have hVd : ((p * d : ℤ) : 𝕎 K) = verschiebung (d : 𝕎 K) := by
-      rw [← map_intCast (_root_.WittVector.frobenius : 𝕎 K →+* 𝕎 K) d, verschiebung_frobenius]
-      push_cast
-      ring
-    rw [hVd, verschiebung_mem_idealModPow_succ_iff] at hc
+    -- `p * d = V d`, so `d` lies in `W(𝔪) + p^n W(K)`
+    rw [← pow_one (p : ℤ), intCast_pow_mul_eq_iterate_verschiebung, Function.iterate_one,
+      verschiebung_mem_idealModPow_succ_iff] at hc
     rw [pow_succ']
     exact mul_dvd_mul_left _ (ih hc)
 
@@ -194,19 +213,10 @@ private theorem exists_natCast_sub_mem [𝔪.IsPrime] (hO : ∀ z : K, z ^ p - z
     {z : K} {a : O} (ha : a ∈ 𝔪) (haz : (a : K) = z ^ p - z) :
     ∃ d : ℕ, ∃ b ∈ 𝔪, (b : K) = z - d := by
   have hz : z ∈ O := hO z (haz ▸ a.property)
-  have hpO : CharP (O ⧸ 𝔪) p := (CharP.charP_iff_prime_eq_zero hp.out).mpr <| by
-    rw [← map_natCast (Ideal.Quotient.mk 𝔪), Ideal.Quotient.eq_zero_iff_mem]
-    exact (Subtype.ext (by simp) : (p : O) = 0) ▸ 𝔪.zero_mem
-  have hr : Ideal.Quotient.mk 𝔪 ⟨z, hz⟩ ^ p = Ideal.Quotient.mk 𝔪 ⟨z, hz⟩ := by
-    rw [← map_pow, Ideal.Quotient.eq]
-    exact (Subtype.ext (by simpa using haz.symm) : (⟨z, hz⟩ : O) ^ p - ⟨z, hz⟩ = a) ▸ ha
-  -- in the domain `O ⧸ 𝔪` of characteristic `p`, the roots of `X ^ p - X` form `𝔽_p`
-  let := ZMod.algebra (O ⧸ 𝔪) p
-  obtain ⟨e, he⟩ := (TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap
-    (K := ZMod p) _).mp (by rwa [ZMod.card])
-  rw [RingHom.ext_zmod (algebraMap (ZMod p) (O ⧸ 𝔪)) (ZMod.castHom dvd_rfl _), ZMod.castHom_apply,
-    ← ZMod.natCast_val, ← map_natCast (Ideal.Quotient.mk 𝔪), Ideal.Quotient.eq] at he
-  exact ⟨e.val, _, 𝔪.neg_mem_iff.mpr he, by simp [-ZMod.natCast_val]⟩
+  have := charP_quotient (p := p) (Ideal.IsPrime.ne_top ‹_›)
+  have hza : (⟨z, hz⟩ : O) ^ p - ⟨z, hz⟩ = a := Subtype.ext (by simpa using haz.symm)
+  obtain ⟨d, hd⟩ := Ideal.exists_natCast_sub_mem_of_pow_sub_self_mem (p := p) (hza ▸ ha)
+  exact ⟨d, _, hd, by simp⟩
 
 /-- **The Artin–Schreier sequence modulo `W(𝔪)`.** Let `K` be a perfect ring of characteristic
 `p`, `O ⊆ K` a subring that contains every root `z ∈ K` of an equation `z ^ p - z = a` with
@@ -220,8 +230,7 @@ theorem exists_sub_intCast_mem_idealModPow [𝔪.IsPrime] (hO : ∀ z : K, z ^ p
   | succ n ih =>
     obtain ⟨c, hc⟩ := ih (idealModPow_antitone (Nat.le_succ n) hx)
     -- write `x - c = u + V^n z` with `u ∈ W(𝔪)`
-    obtain ⟨_, ⟨w, hw, rfl⟩, y, hy, hxy⟩ := AddSubgroup.mem_sup.mp hc
-    simp only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass] at hxy
+    obtain ⟨w, hw, y, hy, hxy⟩ := mem_idealModPow.mp hc
     set z := y.shift n
     have hyz : y = verschiebung^[n] z :=
       eq_iterate_verschiebung ((mem_span_p_pow_iff_le_coeff_eq_zero y n).mp hy)
@@ -240,21 +249,18 @@ theorem exists_sub_intCast_mem_idealModPow [𝔪.IsPrime] (hO : ∀ z : K, z ^ p
     rw [iterate_verschiebung_mem_idealModPow_add_iff, mem_idealModPow_one_iff] at hVz
     obtain ⟨a, ha, haz⟩ := hVz
     obtain ⟨d, b, hb, hbz⟩ := exists_natCast_sub_mem hO ha (by
-      simp only [haz, ← constantCoeff_apply, map_sub]
-      rw [constantCoeff_apply, constantCoeff_apply, coeff_frobenius_charP])
+      simpa [coeff_frobenius_charP] using haz.trans (map_sub constantCoeff (frobenius z) z))
     refine ⟨c + p ^ n * d, ?_⟩
-    -- `p^n d = V^n (F^n d) = V^n d`, so `x - (c + p^n d) = u + V^n (z - d)`
-    have hpd : ((p ^ n * d : ℤ) : 𝕎 K) = verschiebung^[n] (d : 𝕎 K) := by
-      rw [← Function.iterate_fixed (map_natCast (_root_.WittVector.frobenius : 𝕎 K →+* 𝕎 K) d) n,
-        iterate_verschiebung_iterate_frobenius]
-      push_cast
-      ring
+    -- `p^n d = V^n d`, so `x - (c + p^n d) = u + V^n (z - d)`
+    have hpd := intCast_pow_mul_eq_iterate_verschiebung (K := K) n d
+    rw [Int.cast_natCast] at hpd
     have hx' : x - ((c + p ^ n * d : ℤ) : 𝕎 K) =
         map O.subtype w + verschiebung^[n] (z - (d : 𝕎 K)) := by
-      rw [iterate_map_sub, ← hpd, ← hyz, Int.cast_add, ← sub_sub, ← add_sub_assoc, hxy]
+      rw [Int.cast_add, iterate_map_sub, ← hyz, ← hpd]
+      linear_combination -hxy
     rw [hx']
     refine add_mem hu ?_
     rw [add_comm n, iterate_verschiebung_mem_idealModPow_add_iff, mem_idealModPow_one_iff]
-    exact ⟨b, hb, by simp only [hbz, ← constantCoeff_apply, map_sub, map_natCast]⟩
+    exact ⟨b, hb, by simpa [hbz] using (map_sub constantCoeff z (d : 𝕎 K)).symm⟩
 
 end TauCeti.WittVector
