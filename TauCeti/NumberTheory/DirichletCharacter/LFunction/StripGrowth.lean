@@ -121,7 +121,7 @@ theorem exists_norm_LFunction_le_rpow (a b : ℝ) :
   have hC : 0 < C := mul_pos (by linarith) (lt_max_of_lt_left one_pos)
   refine ⟨C, E + 1, hC, by linarith, fun N _ χ hχ hne s ha hb ↦ ?_⟩
   set X : ℝ := N * (|s.im| + 2)
-  have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne N)
+  have hN1 : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
   have hX1 : 1 ≤ X := by
     simp only [X]
     nlinarith [abs_nonneg s.im]

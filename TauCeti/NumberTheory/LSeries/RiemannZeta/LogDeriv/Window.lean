@@ -39,8 +39,9 @@ by their analytic order `m(ρ)`.
 
 ## Implementation notes
 
-The zero count is Jensen's bound `AnalyticOnNhd.sum_divisor_le_log_div_log` for the entire
-function `(s - 1) ζ(s)` on a disc centred on the line `Re s = 2`, with the relative growth bound
+The zero count is Jensen's bound
+`AnalyticOnNhd.sum_divisor_le_log_div_log_of_closedBall_subset` for the entire function
+`(s - 1) ζ(s)` on a disc centred on the line `Re s = 2`, with the relative growth bound
 `TauCeti.exists_norm_LFunctionTrivChar₁_one_le_rpow_mul`. The window form applies the local
 expansion `TauCeti.riemannZeta_local_logDeriv` with centre `s₀ = 2 + i Im s` and radii `3 < 4`.
 Every zero of the window lies in the disc of radius `4`. Every other zero of `ζ` is at distance at
@@ -111,16 +112,15 @@ theorem exists_finsum_analyticOrderAt_riemannZeta_le (σ₀ r : ℝ) :
   have hF := (differentiable_LFunctionTrivChar₁ 1).differentiableOn.analyticOnNhd isOpen_univ
   have hFc : LFunctionTrivChar₁ 1 c ≠ 0 :=
     LFunctionTrivChar₁_one_ne_zero (riemannZeta_ne_zero_of_one_lt_re (by simp [hc]))
-  have hJ := (hF.mono (subset_univ _)).sum_divisor_le_log_div_log hR (lt_add_one R) hFc
-    fun w hw ↦ hD c w hc (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le)
+  have hsub : closedBall s₀ r ⊆ closedBall c R := closedBall_subset_closedBall' <| by
+    rw [dist_eq_norm, hcdef, norm_sub_two_add_im_mul_I, hs₀]
+    linarith [le_abs_self r]
+  have hJ := (hF.mono (subset_univ _)).sum_divisor_le_log_div_log_of_closedBall_subset hR
+    (lt_add_one R) hFc (fun w hw ↦ hD c w hc (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le))
+    hsub
   rw [Real.log_rpow (by rwa [hcim]), hcim] at hJ
-  have hsub (z : ℂ) (hz : ‖z - s₀‖ ≤ r) : ‖z - c‖ ≤ R := by
-    have hsc : ‖s₀ - c‖ = |σ₀ - 2| := by rw [hcdef, norm_sub_two_add_im_mul_I, hs₀]
-    calc ‖z - c‖ = ‖(z - s₀) + (s₀ - c)‖ := by rw [sub_add_sub_cancel]
-      _ ≤ ‖z - s₀‖ + ‖s₀ - c‖ := norm_add_le _ _
-      _ ≤ R := by rw [hsc]; linarith [le_abs_self r]
-  have hdiv : ∑ᶠ ρ, MeromorphicOn.divisor (LFunctionTrivChar₁ 1) (closedBall c R) ρ =
-      ∑ z ∈ riemannZetaZerosClosedBall c R, ((analyticOrderAt riemannZeta z).toNat : ℤ) := by
+  have hdiv : ∑ᶠ ρ, MeromorphicOn.divisor (LFunctionTrivChar₁ 1) (closedBall s₀ r) ρ =
+      ∑ z ∈ riemannZetaZerosClosedBall s₀ r, ((analyticOrderAt riemannZeta z).toNat : ℤ) := by
     refine (finsum_eq_sum_of_support_subset _ fun z hz ↦ ?_).trans
       (Finset.sum_congr rfl fun z hz ↦ ?_)
     · rw [Function.mem_support, divisor_LFunctionTrivChar₁_one_closedBall_apply] at hz
@@ -128,11 +128,7 @@ theorem exists_finsum_analyticOrderAt_riemannZeta_le (σ₀ r : ℝ) :
     · rw [divisor_LFunctionTrivChar₁_one_closedBall_apply,
         ite_eq_left (mem_riemannZetaZerosClosedBall.mp hz)]
   rw [finsum_subtype_riemannZeta_eq_sum s₀ r fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℝ)]
-  calc _ ≤ ∑ z ∈ riemannZetaZerosClosedBall c R, ((analyticOrderAt riemannZeta z).toNat : ℝ) :=
-        Finset.sum_le_sum_of_subset_of_nonneg (fun z hz ↦ by
-          rw [mem_riemannZetaZerosClosedBall] at hz ⊢
-          exact ⟨hsub z hz.1, hz.2⟩) fun _ _ _ ↦ by positivity
-    _ ≤ D * Real.log (|s₀.im| + 2) / Real.log ((R + 1) / R) := by exact_mod_cast hdiv ▸ hJ
+  calc _ ≤ D * Real.log (|s₀.im| + 2) / Real.log ((R + 1) / R) := by exact_mod_cast hdiv ▸ hJ
     _ = _ := by ring
 
 /-- A zero `ρ` of `ζ` outside the window `0 < Re ρ < 1`, `|Im ρ - Im s| ≤ 1` is at distance at
