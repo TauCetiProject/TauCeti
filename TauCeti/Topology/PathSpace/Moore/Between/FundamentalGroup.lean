@@ -61,9 +61,8 @@ theorem fundamentalGroupHom_loopAppendHomotopyEquiv_symm_op_smul (δ : MoorePath
     obtain ⟨H⟩ := (loopAppendHomotopyEquiv δ).left_inv
     have h : D * E = (loopAppendHomotopyEquiv δ).symm (loopAppendHomotopyEquiv δ 1) :=
       MooreLoopSpace.ext (by simp [D, E])
-    rw [← map_mul, h, ← MooreLoopSpace.zerothHomotopyEquivFundamentalGroup_mk,
-      ← map_one g, ← MooreLoopSpace.zerothHomotopyEquivFundamentalGroup_mk]
-    exact congrArg _ (Quotient.sound ⟨H.evalAt 1⟩)
+    rw [← map_mul, h, ← map_one g]
+    exact MooreLoopSpace.fundamentalGroupHom_eq_iff_joined.mpr ⟨H.evalAt 1⟩
   have h : (loopAppendHomotopyEquiv δ).symm (op l • δ) = D * l * E :=
     MooreLoopSpace.ext (by simp [D, E, MoorePath.trans_assoc])
   rw [h, map_mul, map_mul, eq_inv_of_mul_eq_one_right hDE]

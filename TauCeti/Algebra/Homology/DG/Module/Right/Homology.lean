@@ -70,7 +70,8 @@ private theorem map_cyclesEquivKer_boundaries :
   ext z
   rw [Submodule.mem_map_equiv, Submodule.restrictScalars_mem, mem_boundaries,
     LinearMap.mem_boundariesInKer]
-  rfl
+  -- `cyclesEquivKer` and its inverse are the identity on underlying elements.
+  exact Iff.rfl
 
 /-- **The cohomology of a DG right module is the homology of its differential**: forgetting the
 action of the cohomology algebra, `H(M)` is `ker dM ⧸ im dM` as an `R`-module. A class goes to

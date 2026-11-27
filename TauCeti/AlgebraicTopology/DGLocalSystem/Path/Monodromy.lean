@@ -26,9 +26,9 @@ homotopy equivalence of chain complexes `M → M ⊗ C_*(P_{a→b} B)`
 (`TauCeti.tensorPathChainPoint_tensorPathChainAct`,
 `TauCeti.exists_tensorPathChainAct_tensorPathChainPoint`), linear over the ground ring but not
 over the loops. So it induces an isomorphism on homology
-(`TauCeti.tensorPathChainPointCohomologyEquiv`, built from `LinearMap.homologyMap` through the
-identification `TauCeti.IsDGRightModule.cohomologyEquivHomology` of `H(M)` with the homology of
-the differential):
+(`TauCeti.tensorPathChainPointCohomologyEquiv`, built from `LinearMap.homologyEquivOfHomotopy`
+through the identification `TauCeti.IsDGRightModule.cohomologyEquivHomology` of `H(M)` with the
+homology of the differential):
 
 `H(M) ≅ H(M ⊗ C_*(P_{a→b} B))`.
 
@@ -60,8 +60,6 @@ change of basepoint along a loop does not change the monodromy on homology
 
 ## Main results
 
-* `TauCeti.pathChainToLoopChain_pathChainPoint`: appending the reversal of `δ` sends the `0`-chain
-  of a path `γ` to the `0`-chain of the loop `γ ⋆ δ⁻¹`.
 * `TauCeti.tensorPathChainPoint_op_smul_eq_op_smul_add_differential`: the chain-level comparison of
   the two actions.
 * `TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation`: the isomorphism carries
@@ -89,48 +87,9 @@ open CategoryTheory MulOpposite BalancedTensorProduct DGRightModuleCat
 
 universe u v w
 
-section Point
-
-variable {B : Type u} [TopologicalSpace B] {R : Type*} [CommRing R] {a b : B}
-
-/-- **Appending the reversal of `δ` to the `0`-chain of a path `γ` gives the `0`-chain of the loop
-`γ ⋆ δ⁻¹`.** -/
-theorem pathChainToLoopChain_pathChainPoint (δ γ : MoorePathBetween B a b) :
-    pathChainToLoopChain R δ (pathChainPoint R γ) =
-      cubicalChainPoint (MooreLoopSpace B a) R
-        ((MoorePathBetween.loopAppendHomotopyEquiv δ).symm γ) := by
-  rw [pathChainPoint_def, pathChainToLoopChain_lof, NormalizedCubicalChain.map_ofCube,
-    cubicalChainPoint_def]
-  exact congrArg _ (congrArg _ (ContinuousMap.ext fun _ ↦ by simp [SingularCube.point_apply]))
-
-end Point
-
 section BasepointChange
 
 variable {B : Type u} [TopologicalSpace B] {a b : B}
-
-/-- The right action of the loop chains on `M ⊗ C_*(P_{a→b} B)`, which instance search does not
-see through the carrier of the tensor product. -/
-local instance {R : Type w} [CommRing R]
-    (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
-    Module (loopChainAlgebra B b R)ᵐᵒᵖ (tensorBimoduleObj M (pathChainBimodule B a b R)) :=
-  (tensorBimoduleObj M (pathChainBimodule B a b R)).moduleOp
-
-/-- The ground ring acts compatibly with the right action of the loop chains on
-`M ⊗ C_*(P_{a→b} B)`. -/
-local instance {R : Type w} [CommRing R]
-    (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
-    IsScalarTower R (loopChainAlgebra B b R)ᵐᵒᵖ
-      (tensorBimoduleObj M (pathChainBimodule B a b R)) :=
-  (tensorBimoduleObj M (pathChainBimodule B a b R)).scalarTower
-
-/-- The right action of the loop chains on `M ⊗ C_*(P_{a→b} B)` is graded. -/
-local instance {R : Type w} [CommRing R]
-    (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
-    SetLike.GradedSMul
-      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
-      (tensorBimoduleObj M (pathChainBimodule B a b R)).grading :=
-  (tensorBimoduleObj M (pathChainBimodule B a b R)).gradedSMul
 
 section Equiv
 
@@ -175,33 +134,18 @@ path `δ` from `a` to `b`, `m ↦ m ⊗ [δ]`, induces an isomorphism
 def tensorPathChainPointCohomologyEquiv :
     M.isDGRightModule.Cohomology ≃ₗ[R]
       (tensorBimoduleObj M (pathChainBimodule B a b R)).isDGRightModule.Cohomology :=
-  have hΨ : tensorPathChainPoint M δ ∘ₗ M.differential =
-      (tensorBimoduleObj M (pathChainBimodule B a b R)).differential ∘ₗ
-        tensorPathChainPoint M δ :=
-    LinearMap.ext fun m ↦ (differential_tensorPathChainPoint δ m).symm
-  have hΦ : tensorPathChainAct M δ ∘ₗ
-        (tensorBimoduleObj M (pathChainBimodule B a b R)).differential =
-      M.differential ∘ₗ tensorPathChainAct M δ :=
-    LinearMap.ext fun z ↦ (differential_tensorPathChainAct δ z).symm
   M.isDGRightModule.cohomologyEquivHomology ≪≫ₗ
-    LinearEquiv.ofLinearMap
-      (LinearMap.homologyMap (tensorPathChainPoint M δ) _ _ hΨ)
-      (LinearMap.homologyMap (tensorPathChainAct M δ) _ _ hΦ)
-      (by
-        rw [LinearMap.homologyMap_comp_homologyMap,
-          LinearMap.homologyMap_eq_of_sub_eq _ LinearMap.id (tensorPathChainHomotopy M δ) _ _ _
-            (by simp) (LinearMap.ext fun z ↦ ?_), LinearMap.homologyMap_id]
-        rw [LinearMap.sub_apply, LinearMap.comp_apply, tensorPathChainPoint_tensorPathChainAct,
-          LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.id_apply,
-          add_assoc, add_sub_cancel_left])
+    LinearMap.homologyEquivOfHomotopy (tensorPathChainPoint M δ) (tensorPathChainAct M δ)
+      M.isDGRightModule.comp_self_eq_zero
+      (tensorBimoduleObj M (pathChainBimodule B a b R)).isDGRightModule.comp_self_eq_zero
+      (LinearMap.ext fun m ↦ (differential_tensorPathChainPoint δ m).symm)
+      (LinearMap.ext fun z ↦ (differential_tensorPathChainAct δ z).symm)
       (by
         obtain ⟨K, hK⟩ := exists_tensorPathChainAct_tensorPathChainPoint M δ
-        rw [LinearMap.homologyMap_comp_homologyMap,
-          LinearMap.homologyMap_eq_of_sub_eq _ LinearMap.id K _ _ _ (by simp)
-            (LinearMap.ext fun m ↦ ?_), LinearMap.homologyMap_id]
-        rw [LinearMap.sub_apply, LinearMap.comp_apply, hK, LinearMap.add_apply,
-          LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.id_apply, add_assoc,
-          add_sub_cancel_left]) ≪≫ₗ
+        exact ⟨K, LinearMap.ext fun m ↦ by simp [hK, add_assoc]⟩)
+      ⟨tensorPathChainHomotopy M δ, LinearMap.ext fun z ↦ by
+        rw [LinearMap.sub_apply, LinearMap.comp_apply, tensorPathChainPoint_tensorPathChainAct]
+        simp [add_assoc]⟩ ≪≫ₗ
     (tensorBimoduleObj M (pathChainBimodule B a b R)).isDGRightModule.cohomologyEquivHomology.symm
 
 /-- The isomorphism sends the class of a cycle `m` to the class of `m ⊗ [δ]`. -/
@@ -212,8 +156,23 @@ theorem tensorPathChainPointCohomologyEquiv_mk (z : M.isDGRightModule.cycles) :
         rw [IsDGRightModule.mem_cycles, differential_tensorPathChainPoint,
           M.isDGRightModule.mem_cycles.mp z.property, map_zero]⟩ := by
   simp only [tensorPathChainPointCohomologyEquiv, LinearEquiv.trans_apply,
-    IsDGRightModule.cohomologyEquivHomology_mk, LinearEquiv.coe_ofLinearMap,
+    IsDGRightModule.cohomologyEquivHomology_mk, LinearMap.homologyEquivOfHomotopy_apply,
     LinearMap.homologyMap_mk, IsDGRightModule.cohomologyEquivHomology_symm_mk]
+
+/-- The inverse isomorphism sends the class of a cycle `z` of `M ⊗ C_*(P_{a→b} B)` to the class
+of its image under `m ⊗ c ↦ m · ρ(c)`. -/
+@[simp]
+theorem tensorPathChainPointCohomologyEquiv_symm_mk
+    (z : (tensorBimoduleObj M (pathChainBimodule B a b R)).isDGRightModule.cycles) :
+    (tensorPathChainPointCohomologyEquiv M δ).symm (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ⟨tensorPathChainAct M δ z, by
+        rw [IsDGRightModule.mem_cycles, differential_tensorPathChainAct,
+          (tensorBimoduleObj M (pathChainBimodule B a b R)).isDGRightModule.mem_cycles.mp
+            z.property, map_zero]⟩ := by
+  simp only [tensorPathChainPointCohomologyEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    LinearEquiv.symm_symm, IsDGRightModule.cohomologyEquivHomology_mk,
+    LinearMap.homologyEquivOfHomotopy_symm_apply, LinearMap.homologyMap_mk,
+    IsDGRightModule.cohomologyEquivHomology_symm_mk]
 
 end Equiv
 
