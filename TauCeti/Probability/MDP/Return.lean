@@ -190,6 +190,14 @@ theorem integrable_finitePathReturn (γ : ℝ≥0) (N : ℕ) {g : S → ℝ} {C 
     (Eventually.of_forall fun ω ↦
       (Real.norm_eq_abs _).trans_le (M.abs_finitePathReturn_le γ N hg ω))
 
+/-- A bounded function of the state-action pair at a fixed time `n` is integrable for every finite
+measure on paths. -/
+theorem integrable_comp_eval_of_abs_le (n : ℕ) {f : S × A → ℝ} {C : ℝ} (hf : ∀ x, |f x| ≤ C)
+    (μ : Measure (ℕ → S × A)) [IsFiniteMeasure μ] : Integrable (fun ω ↦ f (ω n)) μ :=
+  Integrable.of_bound
+    ((measurable_of_countable f).comp (measurable_pi_apply n)).aestronglyMeasurable C
+    (Eventually.of_forall fun _ ↦ (Real.norm_eq_abs _).trans_le (hf _))
+
 end Path
 
 /-! ### Expected returns under a policy -/

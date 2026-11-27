@@ -247,6 +247,18 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_comp_apply_of_fderi
     (ℓ.contDiff.contDiffAt.comp _ hg) hφ hv, fderiv_comp _ ℓ.differentiableAt
     (hg.differentiableAt (by norm_num)), ℓ.fderiv]
 
+/-- At a point `φ x` where `ℓ ∘ g` is critical, for a `C²` map `g` and a continuous linear
+functional `ℓ` with `ℓ ∘ Dg(φ x) = 0`, the Hessian of `ℓ ∘ g ∘ φ` at `x` is the Hessian of `ℓ ∘ g`
+at `φ x` pulled back along `Dφ(x)`. -/
+theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_comp_of_comp_fderiv_eq_zero
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (ℓ : G →L[ℝ] ℝ) {g : F → G} {φ : E → F}
+    (hg : ContDiffAt ℝ 2 g (φ x)) (hφ : ContDiffAt ℝ 2 φ x) (hℓ : ℓ.comp (fderiv ℝ g (φ x)) = 0) :
+    hessianQuadraticForm (ℓ ∘ g ∘ φ) x =
+      (hessianQuadraticForm (ℓ ∘ g) (φ x)).comp (fderiv ℝ φ x).toLinearMap := by
+  rw [← Function.comp_assoc, hessianQuadraticForm_comp (ℓ.contDiff.contDiffAt.comp _ hg) hφ]
+  -- `ℓ ∘ g` is critical at `φ x`, since its differential there is `ℓ ∘ Dg(φ x) = 0`.
+  rw [fderiv_comp _ ℓ.differentiableAt (hg.differentiableAt two_ne_zero), ℓ.fderiv, hℓ]
+
 /-- At a critical point `x` of a `C²` map `φ`, the Hessian of `h ∘ φ` only involves the
 differential of `h` at `φ x`: it is the Hessian of `Dh(φ x) ∘ φ`. -/
 theorem hessianQuadraticForm_comp_eq_fderiv_comp {h : F → ℝ} {φ : E → F}
