@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.LaplacianSymbol
+public import TauCeti.Analysis.Fourier.Laplacian.Symbol
 public import TauCeti.Analysis.Fourier.PhaseGroup
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv

@@ -30,7 +30,8 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
 
 ## Main declarations
 
-* `TauCeti.laplacianSymbol`: the symbol `-4π² ‖ξ‖²` of the Laplacian.
+* `TauCeti.laplacianSymbol`: the symbol `-4π² ‖ξ‖²` of the Laplacian, nonpositive by
+  `TauCeti.laplacianSymbol_nonpos`.
 * `SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol`: on Schwartz functions, `Δ` is the
   Fourier multiplier with symbol `TauCeti.laplacianSymbol`.
 * `SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul`: pointwise on the Fourier side,
@@ -69,6 +70,11 @@ def laplacianSymbol : C(E, ℝ) :=
 @[simp]
 theorem laplacianSymbol_apply (ξ : E) : laplacianSymbol ξ = -(4 * π ^ 2 * ‖ξ‖ ^ 2) :=
   (rfl)
+
+/-- The symbol of the Laplacian is nonpositive. -/
+theorem laplacianSymbol_nonpos (ξ : E) : laplacianSymbol ξ ≤ 0 := by
+  rw [laplacianSymbol_apply, neg_nonpos]
+  positivity
 
 /-- The symbol `ξ ↦ 2π ‖ξ‖` of `D = √(-Δ)`, in Mathlib's normalization of the Fourier
 transform. -/
@@ -256,11 +262,8 @@ theorem _root_.MeasureTheory.Lp.re_inner_nonpos_of_laplacian_toTemperedDistribut
     ← integral_re (L2.integrable_inner _ _)]
   refine integral_nonpos_of_ae ?_
   filter_upwards [(Lp.laplacian_toTemperedDistribution_eq_iff f h).1 hfh] with ξ hξ
-  have hΔ : laplacianSymbol ξ ≤ 0 := by
-    rw [laplacianSymbol_apply, neg_nonpos]
-    positivity
   rw [Pi.zero_apply, hξ, inner_smul_right, inner_self_eq_norm_sq_to_K]
-  simpa [← Complex.ofReal_pow] using
-    mul_nonpos_of_nonpos_of_nonneg hΔ (sq_nonneg ‖(𝓕 f : Lp F 2 (volume : Measure E)) ξ‖)
+  simpa [← Complex.ofReal_pow] using mul_nonpos_of_nonpos_of_nonneg (laplacianSymbol_nonpos ξ)
+    (sq_nonneg ‖(𝓕 f : Lp F 2 (volume : Measure E)) ξ‖)
 
 end TauCeti
