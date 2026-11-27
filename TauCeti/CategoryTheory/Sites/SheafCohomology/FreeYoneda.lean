@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Sites.Pullback
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import TauCeti.Algebra.Homology.Ext.Basic
 
+import Mathlib.Algebra.Category.Grp.Zero
 import TauCeti.CategoryTheory.Sites.FreeYoneda
 
 /-!
@@ -37,7 +38,9 @@ naturally both in the object of the site and in the coefficient sheaf.
 * `TauCeti.CategoryTheory.freeYonedaSheafSectionsEquiv`, the additive equivalence between
   morphisms from that sheaf to `F` and sections of `F` over `U`, and
   `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
-  as a corepresentation of the sections functor;
+  as a corepresentation of the sections functor, and
+  `TauCeti.CategoryTheory.isZero_freeYonedaSheaf_of_bot_mem`, the vanishing of that sheaf for an
+  object covered by the empty sieve;
 * `TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv F U`, identifying degree-zero cohomology
   over `U` with sections, and `TauCeti.CategoryTheory.cohomologyPresheafZeroIso F`, identifying
   degree-zero cohomology with sections and their restriction maps, and
@@ -56,6 +59,8 @@ naturally both in the object of the site and in the coefficient sheaf.
 The equivalence composes the sheafification adjunction, the free-forgetful adjunction for abelian
 groups, and the Yoneda equivalence. This is the same model of the free abelian sheaf used
 definitionally by Mathlib's `Sheaf.cohomologyPresheafFunctor`.
+
+The free-Yoneda section representation is compatible with the actual sheaf adjunction.
 -/
 
 public section
@@ -151,6 +156,15 @@ lemma freeYonedaSheafSectionsEquiv_naturality_left {U V : C} (i : U ⟶ V)
       F.obj.map i.op (freeYonedaSheafSectionsEquiv J V F f) := by
   exact AddCommGrpCat.adj.freeYonedaSectionsAddEquiv_naturality_left
     (A := 𝟭 AddCommGrpCat) J i F f
+
+/-- The free abelian sheaf on an object `U` covered by the empty sieve is zero: morphisms out of it
+are the sections over `U` of a sheaf, and these are trivial. -/
+lemma isZero_freeYonedaSheaf_of_bot_mem {U : C} (hU : ⊥ ∈ J U) :
+    IsZero ((freeYonedaSheafFunctor J).obj U) := by
+  refine (IsZero.iff_id_eq_zero _).2 ((freeYonedaSheafSectionsEquiv J U _).injective ?_)
+  have := AddCommGrpCat.subsingleton_of_isZero
+    (Sheaf.isTerminalOfBotCover ((freeYonedaSheafFunctor J).obj U) U hU).isZero
+  exact Subsingleton.elim _ _
 
 section
 
@@ -402,3 +416,29 @@ instance : IsIso (u.freeYonedaSheafToSheafPullback J K) :=
 end
 
 end CategoryTheory.Functor
+
+/-! ### Evaluation through the actual free-abelian-sheaf adjunction -/
+
+namespace TauCeti.CategoryTheory
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  {D : Type u'} [Category.{v} D] (K : GrothendieckTopology D)
+  [HasSheafify J AddCommGrpCat.{v}] [HasSheafify K AddCommGrpCat.{v}]
+  (t : C ⥤ D) [t.IsContinuous J K]
+  [(t.sheafPushforwardContinuous AddCommGrpCat.{v} J K).IsRightAdjoint]
+/-- The sheaf adjunction identifies the free-Yoneda morphism with its represented section. -/
+lemma freeYonedaSheafAdjunction_sectionsEquiv (V : C) (F : Sheaf K AddCommGrpCat.{v})
+    (g : (t.sheafPullback AddCommGrpCat.{v} J K).obj ((freeYonedaSheafFunctor J).obj V) ⟶ F) :
+    freeYonedaSheafSectionsEquiv K (t.obj V) F
+      ((t.freeYonedaSheafToSheafPullback J K).app V ≫ g) =
+      freeYonedaSheafSectionsEquiv J V
+        ((t.sheafPushforwardContinuous AddCommGrpCat.{v} J K).obj F)
+        ((t.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).homEquiv _ _ g) := by
+  rw [freeYonedaSheafSectionsEquiv_naturality_right,
+    Functor.freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app,
+    Adjunction.homEquiv_unit,
+    ← Category.id_comp ((t.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.app _ ≫ _),
+    freeYonedaSheafSectionsEquiv_naturality_right]
+  simp only [Functor.id_obj, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    Functor.sheafPushforwardContinuous_map_hom_app]
+  exact (ConcreteCategory.comp_apply _ _ _).symm
+end TauCeti.CategoryTheory

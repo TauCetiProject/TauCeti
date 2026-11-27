@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.ZMod.Count
 
 /-!
-# The discrete Fourier transform on `ZMod N`: reductions and integrality
+# The discrete Fourier transform on `ZMod N`: bounds, reductions and integrality
 
 For `v ∣ N`, a function `f` on `ZMod v` pulls back to `ZMod N` along the reduction
 `j ↦ (j.val : ZMod v)`. Its discrete Fourier transform modulo `N` is supported on the multiples
@@ -29,6 +29,8 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 
 ## Main results
 
+* `ZMod.norm_invDFT_le_of_forall_norm_le`: a pointwise bound on a function also bounds every
+  coefficient of its inverse Fourier transform.
 * `ZMod.stdAddChar_intCast_natCast_mul`: the additive character modulo `m n` at `n x` is the
   additive character modulo `m` at `x`.
 * `ZMod.fourier_val_div_eq_stdAddChar`: the Fourier mode `n` at `j.val / N` on the circle is the
@@ -37,11 +39,27 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 * `ZMod.dft_comp_natCast_val`: the transform of a function of the reduction modulo `v ∣ N`.
 * `ZMod.dft_apply_mem`: the transform of an `R`-valued function is `R`-valued when `R` contains
   the `N`-th roots of unity.
+* `ZMod.map_dft_of_comp_unitMul`: a cyclotomic coefficient map `σ` sends `𝓕 Φ k` to `𝓕 Ψ k`
+  when `Ψ (d * j) = σ (Φ j)`.
 -/
 
 public section
 
 namespace ZMod
+
+/-- The normalized inverse discrete Fourier transform preserves uniform norm bounds. -/
+theorem norm_invDFT_le_of_forall_norm_le {N : ℕ} [NeZero N] {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] {Φ : ZMod N → E} {C : ℝ}
+    (hΦ : ∀ a, ‖Φ a‖ ≤ C) (k : ZMod N) : ‖𝓕⁻ Φ k‖ ≤ C := by
+  rw [invDFT_apply]
+  simp only [norm_smul, norm_inv, Complex.norm_natCast]
+  calc
+    _ ≤ (N : ℝ)⁻¹ * ∑ a : ZMod N, ‖Φ a‖ := by
+      gcongr
+      simpa [norm_smul, AddChar.norm_apply] using
+        norm_sum_le Finset.univ (fun a : ZMod N ↦ stdAddChar (a * k) • Φ a)
+    _ ≤ (N : ℝ)⁻¹ * ∑ _a : ZMod N, C := by gcongr; exact hΦ _
+    _ = C := by simp [ZMod.card, nsmul_eq_mul, NeZero.ne N]
 
 variable {v N : ℕ} [NeZero v] [NeZero N] {E : Type*} [AddCommGroup E] [Module ℂ E]
 
@@ -138,5 +156,20 @@ theorem dft_apply_mem {R : Subring ℂ} (hR : ∀ ζ : ℂ, ζ ^ N = 1 → ζ �
   rw [smul_eq_mul]
   refine R.mul_mem (hR _ ?_) (hΦ j)
   rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_self, zero_mul, AddChar.map_zero_eq_one]
+
+omit [NeZero v] [AddCommGroup E] [Module ℂ E] in
+/-- Let `σ` be a coefficient map with `σ (stdAddChar j) = stdAddChar (d * j)` for a unit `d`.
+If the input `Ψ` is obtained from `Φ` by conjugating its values and moving the residue variable,
+`Ψ (d * j) = σ (Φ j)`, then `σ (𝓕 Φ k) = 𝓕 Ψ k` at the same frequency `k`. No continuity of the
+coefficient map is required. -/
+theorem map_dft_of_comp_unitMul {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
+    (hσ : ∀ j : ZMod N, σ (stdAddChar j) = stdAddChar ((d : ZMod N) * j))
+    {Φ Ψ : ZMod N → ℂ} (hΦ : ∀ j, Ψ ((d : ZMod N) * j) = σ (Φ j)) (k : ZMod N) :
+    σ (𝓕 Φ k) = 𝓕 Ψ k := by
+  have hmap : σ (𝓕 Φ k) = 𝓕 (fun j ↦ σ (Φ j)) ((d : ZMod N) * k) := by
+    simp only [dft_apply, smul_eq_mul, map_sum, map_mul, hσ]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [mul_neg, mul_left_comm]
+  simp only [hmap, ← hΦ, dft_comp_unitMul, Units.inv_mul_cancel_left]
 
 end ZMod

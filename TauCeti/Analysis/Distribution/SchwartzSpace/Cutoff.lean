@@ -7,11 +7,15 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+public import Mathlib.Analysis.Fourier.FourierTransform
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Cutoff
+import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Cutting off a Schwartz function
@@ -44,10 +48,16 @@ derivatives are bounded independently of `R`, so its `(k, n)` seminorm is `O(R�
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
+* `SchwartzMap.tendsto_seminorm_smulLeftCLM_comp_smul_sub_atTop_of_iteratedFDeriv_eq_zero`: if the
+  derivatives of `f` of order at most `N` vanish at `x`, the seminorms of order at most `N` of the
+  products `φ (t • (· - x)) • f` with shrinking cutoffs tend to zero as `t → ∞`.
 * `SchwartzMap.tendsto_smulLeftCLM_contDiffBump`: the truncations `φ (R⁻¹ ·) • f` by a
   `ContDiffBump` converge to `f` as `R → ∞`, for complex-valued multipliers.
 * `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (R⁻¹ ·)` of a `ContDiffBump`, as a
-  complex Schwartz function.
+  complex Schwartz function, and `ContDiffBump.mul_lowPassSchwartz_of_support_subset`: it fixes
+  every symbol supported in the closed ball of radius `R φ.rIn`.
+* `ContDiffBump.fourierInv_lowPassSchwartz_apply`: its kernel is the `L¹`-normalised dilate
+  `R^n 𝓕⁻ φ (R ·)` of the kernel at scale `1`.
 * Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 * `IsCompact.exists_schwartzMap_cutoff`: a compact subset `K` of an open set `U` has a compactly
@@ -88,6 +98,15 @@ theorem hasCompactSupport_smulLeftCLM_comp_inv_smul
     HasCompactSupport (smulLeftCLM F (fun y ↦ χ (R⁻¹ • y)) f) :=
   (hsupp.comp_smul (inv_ne_zero hR)).isCompact.of_isClosed_subset (isClosed_tsupport _)
     ((tsupport_smulLeftCLM_subset _ f).trans Set.inter_subset_right)
+
+/-- Multiplying a Schwartz function by the shifted and dilated cutoff `φ (t • (· - x))`, for a
+smooth compactly supported `φ` and `t ≠ 0`, is pointwise multiplication. -/
+theorem smulLeftCLM_comp_smul_sub_apply {φ : E → ℝ} (hφ : ContDiff ℝ ∞ φ)
+    (hφc : HasCompactSupport φ) {t : ℝ} (ht : t ≠ 0) (x : E) (f : 𝓢(E, F)) :
+    smulLeftCLM F (fun y ↦ φ (t • (y - x))) f = fun y ↦ φ (t • (y - x)) • f y :=
+  smulLeftCLM_apply ((hφc.comp_homeomorph
+    ((Homeomorph.subRight x).trans (Homeomorph.smulOfNeZero t ht))).hasTemperateGrowth
+    (hφ.comp ((contDiff_const_smul t).comp (contDiff_id.sub contDiff_const)))) f
 
 /-- Where `‖x‖ ≥ ρ > 0`, one power of `‖x‖` can be traded for `ρ⁻¹` against the next seminorm. -/
 private lemma pow_mul_norm_iteratedFDeriv_le_div (f : 𝓢(E, F)) (k j : ℕ) {ρ : ℝ} (hρ : 0 < ρ)
@@ -199,6 +218,53 @@ theorem tendsto_smulLeftCLM_comp_inv_smul_atTop (hχ : ContDiff ℝ ∞ χ)
   rw [div_lt_iff₀ (mul_pos hr hε)] at hKR
   linarith [mul_comm R (r * ε), mul_left_comm ε r R]
 
+section ShrinkingCutoff
+
+variable [FiniteDimensional ℝ E]
+
+/-- **Shrinking cutoffs at a flat point.** If the derivatives of `f` of order at most `N` vanish
+at `x`, the Schwartz seminorms of order `n ≤ N` of the products of `f` with the shrinking cutoffs
+`φ (t • (· - x))` tend to zero as `t → ∞`: by `TauCeti.exists_norm_iteratedFDeriv_smul_le_mul`
+their derivatives of order at most `N` are `O(t⁻¹)`, and they are supported in
+`closedBall x t⁻¹`. -/
+theorem tendsto_seminorm_smulLeftCLM_comp_smul_sub_atTop_of_iteratedFDeriv_eq_zero {φ : E → ℝ}
+    (hφ : ContDiff ℝ ∞ φ) (hφs : tsupport φ ⊆ closedBall 0 1) (f : 𝓢(E, F)) {x : E} {N : ℕ}
+    (hf : ∀ i ≤ N, iteratedFDeriv ℝ i f x = 0) (k : ℕ) {n : ℕ} (hn : n ≤ N) :
+    Tendsto (fun t : ℝ ↦ (smulLeftCLM F (fun y ↦ φ (t • (y - x))) f).seminorm ℝ k n)
+      atTop (𝓝 0) := by
+  have hφc : HasCompactSupport φ :=
+    (isCompact_closedBall 0 1).of_isClosed_subset (isClosed_tsupport φ) hφs
+  obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_smul_le_mul (r := N)
+    (hφ.of_le (mod_cast le_top)) hφs (f.smooth _) hf
+  have hC0 : 0 ≤ C := by simpa using (norm_nonneg _).trans (hC 1 one_pos le_rfl 0 (Nat.zero_le _) x)
+  refine squeeze_zero' (g := fun t : ℝ ↦ (‖x‖ + 1) ^ k * C * t⁻¹)
+    (.of_forall fun _ ↦ apply_nonneg _ _) ?_
+    (by simpa using tendsto_inv_atTop_zero.const_mul ((‖x‖ + 1) ^ k * C))
+  filter_upwards [eventually_ge_atTop 1] with t ht
+  have ht0 : 0 < t := one_pos.trans_le ht
+  have ht1 : t⁻¹ ≤ 1 := inv_le_one_of_one_le₀ ht
+  refine seminorm_le_bound ℝ k n _ (by positivity) fun y ↦ ?_
+  have hy := hC t⁻¹ (inv_pos.2 ht0) ht1 n hn y
+  have hsupp := TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall hφs (inv_pos.2 ht0) x
+  simp only [inv_inv] at hy hsupp
+  rw [smulLeftCLM_comp_smul_sub_apply hφ hφc ht0.ne']
+  by_cases hyx : y ∈ closedBall x t⁻¹
+  · have hy1 : ‖y‖ ≤ ‖x‖ + 1 := by
+      calc ‖y‖ = ‖x + (y - x)‖ := by simp
+        _ ≤ ‖x‖ + ‖y - x‖ := norm_add_le _ _
+        _ ≤ ‖x‖ + 1 := by gcongr; exact (mem_closedBall_iff_norm.1 hyx).trans ht1
+    calc ‖y‖ ^ k * ‖iteratedFDeriv ℝ n (fun y ↦ φ (t • (y - x)) • f y) y‖
+        ≤ (‖x‖ + 1) ^ k * (C * t⁻¹) := by gcongr
+      _ = (‖x‖ + 1) ^ k * C * t⁻¹ := by ring
+  · -- Away from `closedBall x t⁻¹` the product vanishes near `y`.
+    have hy0 : y ∉ tsupport fun y ↦ φ (t • (y - x)) • f y :=
+      fun h ↦ hyx (hsupp (tsupport_smul_subset_left _ _ h))
+    rw [Function.notMem_support.mp fun h ↦ hy0 (support_iteratedFDeriv_subset n h), norm_zero,
+      mul_zero]
+    positivity
+
+end ShrinkingCutoff
+
 section Truncation
 
 variable [FiniteDimensional ℝ E] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
@@ -243,7 +309,7 @@ theorem hasSum_smulLeftCLM_latticeBump_sub (f : 𝓢(EuclideanSpace ℝ (Fin n),
   have hK : 0 ≤ K := Finset.sum_nonneg fun i _ ↦ by have := hB0 i; positivity
   set R := √n + K / ε + 1
   have hRn : 0 < R - √n := by have := div_nonneg hK hε.le; simp only [R]; linarith
-  filter_upwards [Filter.eventually_ge_atTop (finite_setOf_norm_latticePoint_lt R).toFinset]
+  filter_upwards [Filter.eventually_ge_atTop (finite_setOf_norm_latticePoint_le R).toFinset]
     with s hs
   rw [schwartzSeminormFamily_apply]
   -- The partial sum is `f` times `∑_{j ∈ s} χ(· - j) - 1`, which vanishes on `‖y‖ < R - √n`.
@@ -253,7 +319,7 @@ theorem hasSum_smulLeftCLM_latticeBump_sub (f : 𝓢(EuclideanSpace ℝ (Fin n),
     (B := fun i ↦ B i * (1 + (n : ℝ)) ^ n * S + 1) (fun i y ↦ ?_) hRn (fun y hy ↦ ?_)
     (f := f) (fun y ↦ ?_) k j).trans_lt ?_
   · exact norm_iteratedFDeriv_sum_latticeBump_sub_sub_one_le (hB i) s y
-  · simp [sum_latticeBump_sub_eq_one (fun j hj ↦ hs ((Set.Finite.mem_toFinset _).2 hj))
+  · simp [sum_latticeBump_sub_eq_one (fun j hj ↦ hs ((Set.Finite.mem_toFinset _).2 hj.le))
       (by linarith : ‖y‖ + √n < R)]
   · simp [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub _),
       Finset.sum_smul, sub_smul]
@@ -293,6 +359,29 @@ theorem coe_lowPassSchwartz_eq_comp {R : ℝ} (hR : R ≠ 0) :
     ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ φ.lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
   ext ξ
   simp
+
+/-- **The low-pass symbol fixes low-frequency symbols.** Multiplication by `φ (R⁻¹ ·)`, `R > 0`,
+fixes every function supported in the closed ball of radius `R φ.rIn`, where `φ (R⁻¹ ·) = 1`. -/
+theorem mul_lowPassSchwartz_of_support_subset {R : ℝ} (hR : 0 < R) {g : E → ℂ}
+    (hg : Function.support g ⊆ closedBall 0 (R * φ.rIn)) :
+    g * ⇑(φ.lowPassSchwartz hR.ne') = g := by
+  ext ξ
+  by_cases hξ : g ξ = 0
+  · simp [hξ]
+  rw [Pi.mul_apply, lowPassSchwartz_apply, φ.one_of_mem_closedBall, Complex.ofReal_one, mul_one]
+  rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, inv_mul_le_iff₀ hR]
+  exact mem_closedBall_zero_iff.1 (hg hξ)
+
+open FourierTransform in
+/-- The kernel `𝓕⁻ (φ (R⁻¹ ·))` of the low-pass symbol at a scale `R > 0` is the
+`L¹`-normalised dilate `R^n 𝓕⁻ φ (R ·)` of the kernel at scale `1`, where `n` is the dimension. -/
+theorem fourierInv_lowPassSchwartz_apply {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (φ : ContDiffBump (0 : E)) {R : ℝ} (hR : 0 < R) (y : E) :
+    𝓕⁻ (⇑(φ.lowPassSchwartz hR.ne')) y =
+      (R ^ Module.finrank ℝ E) • 𝓕⁻ (⇑(φ.lowPassSchwartz one_ne_zero)) (R • y) := by
+  rw [coe_lowPassSchwartz_eq_comp, TauCeti.fourierInv_comp_smul, inv_inv, inv_pow, abs_inv,
+    inv_inv, abs_of_pos (by positivity)]
 
 end ContDiffBump
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.RingTheory.Ideal.Radical
 public import TauCeti.RingTheory.Perfect.TensorProduct

@@ -17,12 +17,12 @@ inverse, the determinant, and the resulting element of the general linear group.
 stated for plain pairs of vectors, and every hypothesis is a value of one of the pairings
 `v ⬝ᵥ u` of the vectors involved.
 
-The products, the commutation and braid relations, the two-sided inverse and the general linear
-group element hold over an arbitrary ring, where the scalar of a product sits between the two
-vectors: `vecMulVec u (c • v)` has entries `u i * c * v j`. The quadratic relation, the
-determinant, the matrix inverse `⁻¹` and the induced linear automorphisms are stated over a
-commutative ring. The action of a scaled perturbation `1 - c • vecMulVec v w` on a column vector
-is computed for vectors in any algebra over a commutative ring.
+The products, the commutation and braid relations, the two-sided inverse, the general linear
+group element and the action on row vectors hold over an arbitrary ring, where the scalar of a
+product sits between the two vectors: `vecMulVec u (c • v)` has entries `u i * c * v j`. The
+quadratic relation, the determinant, the matrix inverse `⁻¹` and the induced linear automorphisms
+are stated over a commutative ring. The action of a scaled perturbation `1 - c • vecMulVec v w` on
+a column vector is computed for vectors in any algebra over a commutative ring.
 
 ## Main definitions
 
@@ -34,10 +34,12 @@ is computed for vectors in any algebra over a commutative ring.
 * `TauCeti.one_sub_vecMulVec_mul_comm` and `TauCeti.one_sub_vecMulVec_braid`: the commutation and
   braid relations, from the values of the pairings.
 * `TauCeti.one_sub_vecMulVec_mul_self`: the quadratic relation.
-* `TauCeti.det_one_sub_vecMulVec` and `TauCeti.inv_one_sub_vecMulVec`: the determinant and the
-  inverse.
-* `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply` and its inverse counterpart compute the
-  induced linear automorphism on column vectors.
+* `TauCeti.det_one_sub_vecMulVec`, `TauCeti.det_one_add_smul_vecMulVec`, and
+  `TauCeti.inv_one_sub_vecMulVec`: the determinants of `1 - vecMulVec u v` and
+  `1 + c • vecMulVec u v`, and the inverse.
+* `TauCeti.one_sub_vecMulVec_mulVec`, `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply`, and its
+  inverse counterpart compute the matrix-vector product and induced linear automorphism on column
+  vectors, and `TauCeti.vecMul_one_sub_vecMulVec` the vector-matrix product on row vectors.
 * `Matrix.one_sub_smul_vecMulVec_mulVec`: the matrix `1 - c v wᵀ`, such as a Householder
   reflection, sends `x` to `x - c v (w ⬝ᵥ x)`.
 -/
@@ -115,9 +117,20 @@ theorem coe_oneSubVecMulVecGL_inv (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (
     (↑(oneSubVecMulVecGL t u v h)⁻¹ : Matrix α α R) = 1 - vecMulVec u (((t⁻¹ : Rˣ) : R) • v) :=
   (rfl)
 
+/-- A rank-one perturbation of the identity subtracts the column pairing in the row direction:
+`w (1 - u vᵀ) = w - (w ⬝ᵥ u) vᵀ`, the row counterpart of `TauCeti.one_sub_vecMulVec_mulVec`. -/
+theorem vecMul_one_sub_vecMulVec (u v w : α → R) :
+    w ᵥ* (1 - vecMulVec u v) = w - (w ⬝ᵥ u) • v := by
+  rw [vecMul_sub, vecMul_one, vecMul_vecMulVec]
+
 end Ring
 
 variable [CommRing R]
+
+/-- A rank-one perturbation of the identity subtracts the row pairing in the column direction. -/
+theorem one_sub_vecMulVec_mulVec (u v x : α → R) :
+    (1 - vecMulVec u v) *ᵥ x = x - (v ⬝ᵥ x) • u := by
+  rw [sub_mulVec, one_mulVec, vecMulVec_mulVec, op_smul_eq_smul]
 
 /-- The quadratic relation for a rank-one perturbation of the identity whose self-pairing is
 `t + 1`. -/
@@ -131,6 +144,15 @@ theorem one_sub_vecMulVec_mul_self (t : R) {u v : α → R} (h : v ⬝ᵥ u = t 
 theorem det_one_sub_vecMulVec (u v : α → R) : (1 - vecMulVec u v).det = 1 - v ⬝ᵥ u := by
   rw [sub_eq_add_neg, ← neg_vecMulVec, vecMulVec_eq Unit,
     det_one_add_replicateCol_mul_replicateRow, dotProduct_neg]
+  ring
+
+/-- The determinant of a scaled rank-one perturbation `1 + c • vecMulVec u v` of the identity in
+terms of its self-pairing. -/
+@[simp]
+theorem det_one_add_smul_vecMulVec (c : R) (u v : α → R) :
+    (1 + c • vecMulVec u v).det = 1 + c * (v ⬝ᵥ u) := by
+  rw [← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec, det_one_sub_vecMulVec, dotProduct_smul,
+    smul_eq_mul]
   ring
 
 /-- The inverse of a rank-one perturbation of the identity whose self-pairing is `t + 1`.

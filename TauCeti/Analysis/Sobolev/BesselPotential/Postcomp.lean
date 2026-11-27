@@ -27,7 +27,8 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
 ## Main declarations
 
 * `BesselPotentialSpace.postcomp`: the operator `H^{s,p}(E, F) →L[ℂ] H^{s,p}(E, G)` induced by
-  `L : F →L[ℂ] G`.
+  `L : F →L[ℂ] G`, of norm at most `‖L‖` (`BesselPotentialSpace.norm_postcomp_le`); the identity
+  induces the identity (`BesselPotentialSpace.postcomp_id`).
 * `SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM`: on Schwartz functions it is
   `u ↦ L ∘ u`, and `BesselPotentialSpace.toDistr_postcomp`: on tempered distributions it applies
   `L` to the values.
@@ -104,6 +105,15 @@ theorem toDistribution_toDistr_postcomp {Ω : TopologicalSpace.Opens E} (L : F �
 theorem toLp_postcomp (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) :
     (postcomp E s p L f).toLp = L.compLp f.toLp :=
   (rfl)
+
+/-- The identity of the values induces the identity of `H^{s,p}`. -/
+@[simp]
+theorem postcomp_id : postcomp E s p (ContinuousLinearMap.id ℂ F) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun f ↦ ext <| by ext φ; simp
+
+/-- The operator induced by `L` on `H^{s,p}` has norm at most `‖L‖`. -/
+theorem norm_postcomp_le (L : F →L[ℂ] G) : ‖postcomp E s p L‖ ≤ ‖L‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg L) _
 
 /-- **Expansion in a basis of the values.** For a basis `(e_j)` of a finite-dimensional `F` with
 coordinate functionals `(c_j)`, every `u ∈ H^{s,p}(E, F)` is the sum `∑ⱼ e_j (c_j u)` of its

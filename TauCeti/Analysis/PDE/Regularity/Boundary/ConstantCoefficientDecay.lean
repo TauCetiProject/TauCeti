@@ -8,11 +8,12 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.HyperplaneReflection
 public import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 import TauCeti.Analysis.InnerProductSpace.Transvection
-import TauCeti.Analysis.InnerProductSpace.Reflection
+import TauCeti.Analysis.PDE.Ellipticity.ConormalShear
 import TauCeti.Analysis.PDE.EnergyForm.ConstantCoefficient
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.InterBall
 
 /-!
@@ -70,86 +71,7 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι]
-
-/-! ### The conormal shear vector -/
-
-variable [DecidableEq ι]
-
-/-- The **conormal shear vector** of a matrix `A` and a normal `ν`:
-`s = A ν / ⟪ν, A ν⟫ - ν / ‖ν‖²`. It is orthogonal to `ν`, and the shear along it carries the
-conormal direction `A ν` to a multiple of `ν`. -/
-private def conormalShearVector (A : Matrix ι ι ℝ) (ν : EuclideanSpace ℝ ι) :
-    EuclideanSpace ℝ ι :=
-  (matrixBilinearForm A ν ν)⁻¹ • toEuclideanCLM (𝕜 := ℝ) A ν - (‖ν‖ ^ 2)⁻¹ • ν
-
-private theorem inner_conormalShearVector (A : Matrix ι ι ℝ) (ν x : EuclideanSpace ℝ ι) :
-    ⟪conormalShearVector A ν, x⟫_ℝ =
-      (matrixBilinearForm A ν ν)⁻¹ * matrixBilinearForm A x ν - (‖ν‖ ^ 2)⁻¹ * ⟪ν, x⟫_ℝ := by
-  rw [conormalShearVector, inner_sub_left, inner_smul_left, inner_smul_left, RCLike.conj_to_real,
-    RCLike.conj_to_real, real_inner_comm, inner_toEuclideanCLM, matrixBilinearForm_apply,
-    matrixBilinearForm_apply]
-
-private theorem inner_conormalShearVector_self {A : Matrix ι ι ℝ} {ν : EuclideanSpace ℝ ι}
-    (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0) :
-    ⟪ν, conormalShearVector A ν⟫_ℝ = 0 := by
-  rw [real_inner_comm, inner_conormalShearVector, real_inner_self_eq_norm_sq,
-    inv_mul_cancel₀ hq, inv_mul_cancel₀ (by positivity), sub_self]
-
-private theorem norm_mul_norm_conormalShearVector_le {A : Matrix ι ι ℝ} {ν : EuclideanSpace ℝ ι}
-    {lam Lam : ℝ} (hlam : 0 < lam) (hν : ν ≠ 0)
-    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hA' : ∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) :
-    ‖ν‖ * ‖conormalShearVector A ν‖ ≤ Lam / lam := by
-  set s := conormalShearVector A ν
-  have hν' : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  have hq : lam * ‖ν‖ ^ 2 ≤ matrixBilinearForm A ν ν := by
-    simpa [matrixBilinearForm_apply, toQuadraticForm'_apply] using hA ν
-  have hq0 : 0 < matrixBilinearForm A ν ν := lt_of_lt_of_le (by positivity) hq
-  -- `‖s‖² β(ν, ν) = β(s, ν)`, since `s ⊥ ν`.
-  have hss : ‖s‖ ^ 2 * matrixBilinearForm A ν ν = matrixBilinearForm A s ν := by
-    have hsν : ⟪ν, s⟫_ℝ = 0 := inner_conormalShearVector_self hν hq0.ne'
-    rw [← real_inner_self_eq_norm_sq]
-    conv_lhs => rw [inner_conormalShearVector]
-    rw [hsν, mul_zero, sub_zero]
-    field_simp
-  have hβ : matrixBilinearForm A s ν ≤ Lam * ‖s‖ * ‖ν‖ := by
-    rw [matrixBilinearForm_apply]
-    exact (le_abs_self _).trans (hA' s ν)
-  have h1 : ‖s‖ * (‖s‖ * (lam * ‖ν‖ ^ 2)) ≤ ‖s‖ * (Lam * ‖ν‖) := by
-    calc ‖s‖ * (‖s‖ * (lam * ‖ν‖ ^ 2)) ≤ ‖s‖ ^ 2 * matrixBilinearForm A ν ν := by
-          rw [← mul_assoc, ← sq]; exact mul_le_mul_of_nonneg_left hq (sq_nonneg _)
-      _ ≤ ‖s‖ * (Lam * ‖ν‖) := by rw [hss]; linarith
-  have hLam : 0 ≤ Lam := by nlinarith [(abs_nonneg _).trans (hA' ν ν), mul_pos hν' hν']
-  rcases eq_or_lt_of_le (norm_nonneg s) with hs | hs
-  · rw [← hs, mul_zero]; exact div_nonneg hLam hlam.le
-  have h2 : ‖s‖ * (lam * ‖ν‖ ^ 2) ≤ Lam * ‖ν‖ := le_of_mul_le_mul_left h1 hs
-  rw [le_div_iff₀ hlam]
-  nlinarith [h2, hν']
-
-/-- **The sheared form is invariant under the reflection.** For symmetric `A` with `⟪ν, A ν⟫ ≠ 0`
-and `M x = x - ⟪s, x⟫ ν`, `s` the conormal shear vector, the form `(ξ, η) ↦ ⟪M ξ, A M η⟫` is
-invariant under the reflection `R` in `ν⊥`. -/
-private theorem matrixBilinearForm_transvectionL_reflection {A : Matrix ι ι ℝ}
-    {ν : EuclideanSpace ℝ ι} (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0)
-    (hAs : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ = matrixBilinearForm A ξ η)
-    (ξ η : EuclideanSpace ℝ ι) :
-    matrixBilinearForm A (transvectionL (conormalShearVector A ν) (-ν) ((ℝ ∙ ν)ᗮ.reflection ξ))
-        (transvectionL (conormalShearVector A ν) (-ν) ((ℝ ∙ ν)ᗮ.reflection η)) =
-      matrixBilinearForm A (transvectionL (conormalShearVector A ν) (-ν) ξ)
-        (transvectionL (conormalShearVector A ν) (-ν) η) := by
-  have hsν : ⟪conormalShearVector A ν, ν⟫_ℝ = 0 := by
-    rw [real_inner_comm]; exact inner_conormalShearVector_self hν hq
-  have : ‖ν‖ ^ 2 ≠ 0 := by positivity
-  have hM : ∀ x, transvectionL (conormalShearVector A ν) (-ν) x =
-      x - ⟪conormalShearVector A ν, x⟫_ℝ • ν := fun x => by
-    rw [transvectionL_apply, smul_neg, sub_eq_add_neg]
-  simp only [hM, reflection_orthogonal_singleton_apply_div_norm_sq, map_sub, map_smul,
-    sub_apply, smul_apply, inner_sub_right,
-    inner_smul_right, hsν, smul_eq_mul, inner_conormalShearVector]
-  rw [hAs ν η]
-  field_simp
-  ring
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-! ### The shear as a change of variables -/
 
@@ -221,14 +143,8 @@ private theorem dist_boundaryShear_symm_le (h : ⟪ν, conormalShearVector A ν�
 /-- The shear preserves the Lebesgue measure: its linear part has determinant one. -/
 private theorem measurePreserving_boundaryShear (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) :
     MeasurePreserving (boundaryShear A ν c₀ h) volume volume := by
-  have hdet : LinearMap.det (transvectionL ν (conormalShearVector A ν)).toLinearMap = 1 := by
-    simp [h]
-  have hL : MeasurePreserving (transvectionL ν (conormalShearVector A ν)) volume volume := by
-    refine ⟨(transvectionL ν _).continuous.measurable, ?_⟩
-    simpa [hdet] using Measure.map_linearMap_addHaar_eq_smul_addHaar volume
-      (f := (transvectionL ν (conormalShearVector A ν)).toLinearMap) (by simp [hdet])
   rw [coe_boundaryShear]
-  exact (measurePreserving_sub_right volume _).comp hL
+  exact (measurePreserving_sub_right volume _).comp (measurePreserving_transvectionL volume h)
 
 private theorem fderiv_boundaryShear (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0)
     (y : EuclideanSpace ℝ ι) :
@@ -456,36 +372,6 @@ private theorem exists_comp_boundaryShear (hs : ⟪ν, conormalShearVector A ν�
         (W1p.gradient_restrictL_ae hBr u)] with y h1 h2
     rw [h1, h2]
 
-/-- The pulled-back matrix `B` in sheared coordinates satisfies `B(K η, K ξ) = A(η, ξ)` for the
-transposed shear `K x = x + ⟪s, x⟫ ν`. -/
-private theorem matrixBilinearForm_pullbackPrincipal_transvectionL
-    (hs : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) (η ξ : EuclideanSpace ℝ ι) :
-    matrixBilinearForm (pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z)
-        (transvectionL (conormalShearVector A ν) ν η)
-        (transvectionL (conormalShearVector A ν) ν ξ) =
-      matrixBilinearForm A η ξ := by
-  have hfd := fderiv_boundaryShear hs (c₀ := c₀) z
-  have h := matrixBilinearForm_pullbackPrincipal (Φ := boundaryShear A ν c₀ hs) (fun _ => A)
-    (x := z) (by rw [hfd, det_transvectionL, hs, add_zero]; exact one_ne_zero) η ξ
-  rwa [hfd, adjoint_transvectionL, det_transvectionL, hs, add_zero, abs_one, one_mul] at h
-
-/-- The pulled-back matrix is invariant under the reflection in the hyperplane `ν⊥`: in sheared
-coordinates the conormal direction of `A` is the normal `ν`. -/
-private theorem matrixBilinearForm_pullbackPrincipal_reflection
-    (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0)
-    (hAs : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ = matrixBilinearForm A ξ η)
-    (hs : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) (ξ η : EuclideanSpace ℝ ι) :
-    matrixBilinearForm (pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z)
-        ((ℝ ∙ ν)ᗮ.reflection ξ) ((ℝ ∙ ν)ᗮ.reflection η) =
-      matrixBilinearForm (pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z) ξ η := by
-  set s := conormalShearVector A ν
-  have hs' : ⟪s, ν⟫_ℝ = 0 := by rw [real_inner_comm]; exact hs
-  have hBK := matrixBilinearForm_pullbackPrincipal_transvectionL (c₀ := c₀) (z := z) hs
-  have hK : ∀ x, transvectionL s ν (transvectionL s (-ν) x) = x :=
-    transvectionL_transvectionL_neg hs'
-  rw [← hK ((ℝ ∙ ν)ᗮ.reflection ξ), ← hK ((ℝ ∙ ν)ᗮ.reflection η), hBK,
-    matrixBilinearForm_transvectionL_reflection hν hq hAs, ← hBK, hK, hK]
-
 /-- The energy integrand of the reflected constant coefficient `B` is that of `B` itself. -/
 private theorem energyIntegrand_reflectPrincipal_pullbackPrincipal
     (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0)
@@ -505,7 +391,8 @@ private theorem energyIntegrand_reflectPrincipal_pullbackPrincipal
     rw [pullbackDrift_zero, pullbackDensity_zero, Pi.zero_apply, Pi.zero_apply] at h
     rw [h]
     simp only [energyIntegrand_apply, Pi.zero_apply, driftForm_apply, inner_zero_left,
-      matrixBilinearForm_pullbackPrincipal_reflection hν hq hAs hs]
+      matrixBilinearForm_pullbackPrincipal_reflection_of_fderiv_eq hν hq hAs
+        (fderiv_boundaryShear hs z)]
   · rw [reflectPrincipal_of_le hx]
 
 /-- The pulled-back matrix is uniformly elliptic, with constants `λ / κ²` and `Λ κ²` when the
@@ -527,7 +414,9 @@ private theorem toQuadraticForm'_pullbackPrincipal_boundaryShear_bounds {lam Lam
   have hQ : (pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z).toQuadraticForm' ξ =
       A.toQuadraticForm' ζ := by
     rw [toQuadraticForm'_apply, toQuadraticForm'_apply, ← matrixBilinearForm_apply,
-      ← matrixBilinearForm_apply, ← hξ, matrixBilinearForm_pullbackPrincipal_transvectionL hs]
+      ← matrixBilinearForm_apply, matrixBilinearForm_pullbackPrincipal_of_fderiv_eq_transvectionL
+        (fun _ => A) hs (fderiv_boundaryShear hs z), ContinuousLinearMap.bilinearComp_apply,
+        transvectionL_neg_left]
   have h1 : ‖ξ‖ ≤ κ * ‖ζ‖ := by
     conv_lhs => rw [← hξ]
     exact ((transvectionL s ν).le_opNorm ζ).trans (mul_le_mul_of_nonneg_right hK (norm_nonneg _))
@@ -717,7 +606,7 @@ private theorem boundaryShear_constants {lam Lam : ℝ} (hlam : 0 < lam) (hν : 
   have h0 : 0 ≤ Lam / lam := (by positivity : (0 : ℝ) ≤ ‖ν‖ * _).trans hN
   have hN' : 1 + ‖conormalShearVector A ν‖ * ‖ν‖ ≤ 1 + Lam / lam := by
     rw [mul_comm]; linarith
-  refine ⟨inner_conormalShearVector_self hν hq.ne', hq.ne', ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨inner_conormalShearVector_right_eq_zero hν hq.ne', hq.ne', ?_, ?_, ?_, ?_, ?_⟩
   · have h := mul_nonneg h0 hlam.le
     rwa [div_mul_cancel₀ _ hlam.ne'] at h
   · exact (norm_transvectionL_le _ _).trans (by linarith)
@@ -903,9 +792,9 @@ boundary hyperplane, and let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ`
 `∫_{B_ρ⁺} ‖∇u - p_ρ‖² ≤ C (ρ / r)^(n + 2) ∫_{B_r⁺} ‖∇u - t ν‖²`,
 
 where `p_ρ = (⟪(∇u)_{B_ρ⁺}, ν⟫ / ‖ν‖²) ν` is the multiple of `ν` closest to `∇u` in `L²(B_ρ⁺)`
-(`TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le`), so that the estimate can be
-iterated. The multiples of `ν` are the gradients of the linear functions `t (⟪x, ν⟫ - c₀)`, which
-vanish on the hyperplane and solve the equation. -/
+(`TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset`), so that the
+estimate can be iterated. The multiples of `ν` are the gradients of the linear functions
+`t (⟪x, ν⟫ - c₀)`, which vanish on the hyperplane and solve the equation. -/
 theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smul_sq_le
     {lam Lam : ℝ} (hlam : 0 < lam) :
     ∃ C : ℝ, 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
@@ -932,11 +821,6 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
   rcases hρ.eq_or_lt with rfl | hρ0
   · rw [ball_zero, empty_inter, Measure.restrict_empty, integral_zero_measure]
     positivity
-  -- Among the multiples of `ν`, the projection of the average of `∇u` is the best constant.
-  have hmin := setIntegral_norm_sub_inner_setAverage_div_smul_sq_le
-    (measure_ball_inter_ne_top (x := z) (r := ρ) (s := H)) ((Lp.memLp (W1p.gradient u)).mono_measure
-      (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hρr).trans hball))
-        le_rfl)) ν
   refine le_mul_div_pow_mul_of_le (n + 2) (le_add_of_nonneg_right (div_nonneg hLam hlam.le)) hρ0
     hρr hI (by positivity) (fun hsmall => ?_)
     (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset
@@ -954,7 +838,13 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
       (mapsTo_hyperplaneReflection_ball hz _) measurableSet_ball
       (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hsmall) hodd)
   have hMm : M m = (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν := (congrArg M hm).trans (hM _)
-  calc _ ≤ ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - M m‖ ^ 2 := by rw [hMm]; exact hmin _
+  -- Among the multiples of `ν`, the projection of the average of `∇u` is the best constant.
+  calc _ ≤ ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - M m‖ ^ 2 := by
+        rw [hMm]
+        exact setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset subset_rfl
+          measure_ball_inter_ne_top ((Lp.memLp (W1p.gradient u)).mono_measure
+            (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hρr).trans hball))
+              le_rfl)) ν _
     _ ≤ κ ^ 2 * ∫ y in ball z (κ * ρ), ‖W1p.gradient w y - m‖ ^ 2 :=
         hT ρ hsmall ((ball_subset_ball hρr).trans hball) m
     _ ≤ κ ^ 2 * (D * (κ * ρ / (r / κ)) ^ (n + 2) *

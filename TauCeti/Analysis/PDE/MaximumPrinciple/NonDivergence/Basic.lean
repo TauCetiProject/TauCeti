@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Topology.Frontier
 
@@ -87,6 +88,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_b + c` by a weight `exp ∘ ℓ`, for functions that are `C²` at a point.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
+* `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier_of_pos`: the weak
+  maximum principle for `-L + c` with `c > 0`, for degenerate `a` and arbitrary drift.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
   principle.
 * `TauCeti.PDE.abs_le_of_sum_mul_fderiv_fderiv_add_fderiv_eq_mul_abs_le_frontier`: the two-sided
@@ -101,6 +104,9 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   lower bound.
 * `TauCeti.PDE.abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier`: the
   a priori bound on `sup |u|`.
+* `TauCeti.PDE.abs_le_mul_of_abs_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_eq_zero_frontier`:
+  the same bound for zero boundary values on the closure of a bounded domain `Ω` with
+  `interior (closure Ω) = Ω`, for the operator `L u + c u` with `c ≤ 0`.
 
 ## References
 
@@ -407,6 +413,37 @@ theorem exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq (A : Matrix ι ι �
     (fun i j ↦ fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
     (fun i ↦ fderiv ℝ ℓ x (EuclideanSpace.single i 1))
     (fun i ↦ fderiv ℝ v x (EuclideanSpace.single i 1))
+
+/-- **The weak maximum principle with a positive zeroth-order coefficient.** Let `K` be compact,
+and on its interior let `a` have nonnegative quadratic form, `0 ≤ ξᵀ a(x) ξ`, and let `c > 0`. If
+`f` is continuous on `K`, `C²` on its interior, and satisfies
+`c f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf` there, then every nonnegative bound `m` for `f` on `frontier K`
+bounds `f` on `K`.
+
+Unlike `le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`, the operator may be
+degenerate, the drift `b` is arbitrary and the index type may be empty: the positivity of `c`
+alone rules out an interior maximum above `m`. -/
+theorem le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier_of_pos
+    {K : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c f : EuclideanSpace ℝ ι → ℝ} {m : ℝ}
+    (ha : ∀ ⦃x⦄, x ∈ interior K → ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ (a x).toQuadraticForm' ξ)
+    (hc : ∀ ⦃x⦄, x ∈ interior K → 0 < c x) (hm : 0 ≤ m) (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hsub : ∀ ⦃x⦄, x ∈ interior K → c x * f x ≤
+      ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ f x (b x))
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) :
+    ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
+  intro x hx
+  obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hx⟩ hcont
+  refine (isMaxOn_iff.mp hzmax x hx).trans (not_lt.mp fun hlt ↦ ?_)
+  -- A maximizer above `m` lies in the interior, where `L f ≥ c f > 0` forbids a local maximum.
+  have hzint : z ∈ interior K := by
+    by_contra hz
+    exact hlt.not_ge (hbdry ⟨subset_closure hzK, hz⟩)
+  exact not_isLocalMax_of_sum_mul_fderiv_fderiv_add_fderiv_pos (ha hzint) (hcd hzint)
+    ((mul_pos (hc hzint) (hm.trans_lt hlt)).trans_le (hsub hzint))
+    (hzmax.isLocalMax (mem_interior_iff_mem_nhds.mp hzint))
 
 variable [Nonempty ι]
 
@@ -740,6 +777,39 @@ theorem abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_fro
     hβ (neg_nonpos.mpr hM) hF hcont hcd (fun _ hy ↦ by linarith [(abs_le.mp (hL hy)).2])
     (fun _ hy ↦ (abs_le.mp (hbdry hy)).1) hx
   exact abs_le.mpr ⟨by linarith, hle⟩
+
+/-- **The bound on `sup |u|` for zero boundary values.** Let `Ω` be a bounded subset of
+`ℝⁿ = EuclideanSpace ℝ ι` that is the interior of its closure, for instance a Lipschitz domain
+(`Set.IsLipschitzDomain.interior_closure`). Let `a` be elliptic with constant `λ > 0`, let the drift
+`b` be bounded by `β` and let `c ≤ 0`, all on `Ω`. If `f` is continuous on `closure Ω`, `C²` on `Ω`
+and zero on `frontier Ω`, and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf + c f| ≤ F` on `Ω`, then
+
+`|f| ≤ (exp ((β / λ + 1) diam (closure Ω)) - 1) / λ * F` on `closure Ω`.
+
+This is `abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier` on the
+compact set `closure Ω`, for the operator `L f + c f` with `c ≤ 0`, the sign convention of the
+Schauder theory. -/
+theorem abs_le_mul_of_abs_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_eq_zero_frontier
+    {Ω : Set (EuclideanSpace ℝ ι)} (hΩ : Bornology.IsBounded Ω) (hint : interior (closure Ω) = Ω)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c f : EuclideanSpace ℝ ι → ℝ} {lam β F : ℝ} (hlam : 0 < lam)
+    (ha : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ β) (hc : ∀ ⦃x⦄, x ∈ Ω → c x ≤ 0) (hβ : 0 ≤ β) (hF : 0 ≤ F)
+    (hcont : ContinuousOn f (closure Ω)) (hcd : ∀ ⦃x⦄, x ∈ Ω → ContDiffAt ℝ 2 f x)
+    (hL : ∀ ⦃x⦄, x ∈ Ω →
+      |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ f x (b x) + c x * f x| ≤ F)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier Ω → f x = 0) :
+    ∀ ⦃x⦄, x ∈ closure Ω →
+      |f x| ≤ (Real.exp ((β / lam + 1) * Metric.diam (closure Ω)) - 1) / lam * F := by
+  intro x hx
+  have h := abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier
+    (c := -c) (M := 0) hΩ.isCompact_closure hlam (fun _ hy ↦ ha (hint ▸ hy))
+    (fun _ hy ↦ hb (hint ▸ hy)) (fun _ hy ↦ neg_nonneg.2 (hc (hint ▸ hy))) hβ hF hcont
+    (fun _ hy ↦ hcd (hint ▸ hy))
+    (fun _ hy ↦ by simpa only [Pi.neg_apply, neg_mul, sub_neg_eq_add] using hL (hint ▸ hy))
+    (fun _ hy ↦ by rw [hbdry (frontier_closure_subset hy), abs_zero]) hx
+  rwa [zero_add, mul_div_right_comm] at h
 
 end PDE
 

@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # A manifold carrying a chosen Riemannian metric
@@ -135,6 +137,12 @@ theorem coe_homeomorph : ⇑(homeomorph g) = ofWithMetric :=
 @[simp]
 theorem coe_homeomorph_symm : ⇑(homeomorph g).symm = toWithMetric g :=
   (rfl)
+
+/-- A set of `M` is compact if and only if its preimage in the copy carrying `g` is compact. -/
+@[simp]
+theorem isCompact_preimage_ofWithMetric {K : Set M} :
+    IsCompact (ofWithMetric ⁻¹' K : Set (WithMetric g)) ↔ IsCompact K :=
+  (homeomorph g).isCompact_preimage
 
 /-- The copy of a nonempty manifold is nonempty. -/
 instance [Nonempty M] : Nonempty (WithMetric g) :=
@@ -433,6 +441,37 @@ theorem mfderiv_diffeomorphWithMetric
   rw [show ⇑(diffeomorphWithMetric g g' k) = toWithMetric g' ∘ ofWithMetric from
     funext (diffeomorphWithMetric_apply g' k)]
   exact ((hasMFDerivAt_toWithMetric x.ofWithMetric).comp x (hasMFDerivAt_ofWithMetric x)).mfderiv
+
+/-- `ofWithMetric` sends the differential of `diffeomorphWithMetric` back to
+`mfderiv I I ofWithMetric`, transported along `(diffeomorphWithMetric g g' k x).ofWithMetric =
+x.ofWithMetric`. -/
+theorem mfderiv_ofWithMetric_diffeomorphWithMetric
+    (g' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (k : ℕ∞ω) (hk : k ≠ 0)
+    (x : WithMetric g) (v : TangentSpace I x) :
+    tangentSpaceCast I (diffeomorphWithMetric g g' k x).ofWithMetric x.ofWithMetric
+        (mfderiv I I ofWithMetric (diffeomorphWithMetric g g' k x)
+          ((diffeomorphWithMetric g g' k).mfderivToContinuousLinearEquiv hk x v)) =
+      mfderiv I I ofWithMetric x v := by
+  set Φ := diffeomorphWithMetric g g' k
+  have hcomp : (ofWithMetric : WithMetric g' → M) ∘ Φ = ofWithMetric := funext fun _ ↦ by simp [Φ]
+  have h := DFunLike.congr_fun
+    ((Filter.EventuallyEq.of_eq hcomp.symm).mfderiv_eq (I := I) (I' := I) (x := x)) v
+  rw [Φ.mfderiv_comp_diffeomorph hk ofWithMetric x, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, ← Φ.mfderivToContinuousLinearEquiv_apply hk x v] at h
+  exact h.symm
+
+/-- Transporting a basepoint-dependent expression along `mfderiv_ofWithMetric_diffeomorphWithMetric`
+reduces evaluation at `(diffeomorphWithMetric g g' k x).ofWithMetric` to evaluation at
+`x.ofWithMetric`. -/
+theorem congr_mfderiv_ofWithMetric_diffeomorphWithMetric {α : Sort*}
+    (g' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (k : ℕ∞ω) (hk : k ≠ 0)
+    (F : ∀ b : M, TangentSpace I b → α) (x : WithMetric g) (v : TangentSpace I x) :
+    F (diffeomorphWithMetric g g' k x).ofWithMetric
+        (mfderiv I I ofWithMetric (diffeomorphWithMetric g g' k x)
+          ((diffeomorphWithMetric g g' k).mfderivToContinuousLinearEquiv hk x v)) =
+      F x.ofWithMetric (mfderiv I I ofWithMetric x v) :=
+  apply_eq_of_tangentSpaceCast F (by simp)
+    (mfderiv_ofWithMetric_diffeomorphWithMetric g' k hk x v)
 
 end DiffeomorphWithMetric
 

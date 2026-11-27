@@ -36,6 +36,7 @@ equivalence and recover the cardinality and minimum distance of a finite additiv
 ## Main statements
 
 * `Set.weightEnumerator_eq_sum`: `W_C` is the sum over codewords of `X^(n - wt c) Y^(wt c)`.
+* `Set.weightPolynomial_eq_sum`: the weight polynomial is the sum over codewords of `Y^(wt c)`.
 * `Set.coeff_weightEnumerator`, `Set.coeff_weightPolynomial`: the coefficients are the weight
   distribution.
 * `Set.isHomogeneous_weightEnumerator`, `Set.eval_one_weightEnumerator`: `W_C` is homogeneous of
@@ -213,6 +214,12 @@ theorem aeval_weightEnumerator (C : Set (∀ i, β i)) :
   simp only [weightEnumerator_def, weightPolynomial_def, map_sum]
   refine sum_congr rfl fun w _ ↦ ?_
   simp [← Polynomial.C_mul_X_pow_eq_monomial]
+
+/-- The one-variable weight enumerator of a finite set of words is the sum over its words `c` of
+`Y^(wt c)`. -/
+theorem weightPolynomial_eq_sum (hC : C.Finite) :
+    C.weightPolynomial = ∑ c ∈ hC.toFinset, Polynomial.X ^ hammingNorm c := by
+  simp [← aeval_weightEnumerator, weightEnumerator_eq_sum hC]
 
 /-- The one-variable weight enumerator of a finite set of words evaluates to its cardinality at
 `Y = 1`. -/

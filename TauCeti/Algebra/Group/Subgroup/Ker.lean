@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Ker
+public import Mathlib.Algebra.Group.Subgroup.Basic
 
 /-!
 # Ranges and equality loci of group homomorphisms
 
 This file supplies the characteristic membership equation for the subgroup equality locus, the
 invariance of the range of a group homomorphism under precomposition with a surjection, the
-compatibility of ranges and kernels with a commutative square, and the range and kernel of the
-pointwise inverse of a homomorphism into a commutative group.
+compatibility of ranges and kernels with a commutative square, the range and kernel of the
+pointwise inverse of a homomorphism into a commutative group, the kernel of a pointwise product of
+homomorphisms, the kernel of a homomorphism into a product, and the homomorphism between the ranges
+of two homomorphisms out of the same group when the first kernel lies in the second, an isomorphism
+when the kernels are equal.
 
 ## Main results
 
@@ -25,6 +28,13 @@ pointwise inverse of a homomorphism into a commutative group.
   carried into the kernel of the opposite side.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
+* `MonoidHom.ker_inf_ker_le_ker_mul`: the kernel of `f * g` contains the kernels' intersection.
+* `MonoidHom.ker_pi`: the kernel of `MonoidHom.pi f` is the intersection of the kernels of the
+  `f i`.
+* `MonoidHom.rangeHom`: for `f : C →* N` and `g : C →* N'` with `f.ker ≤ g.ker`, the
+  homomorphism `f.range →* g.range` sending `f c` to `g c`.
+* `MonoidHom.rangeEquivRange`: for `f.ker = g.ker`, the isomorphism `f.range ≃* g.range` sending
+  `f c` to `g c`.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -84,6 +94,94 @@ additive group has the same kernel. -/]
 theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker := by
   ext x
   simp
+
+/-- An element in the kernels of both `f` and `g` is in the kernel of their pointwise product. -/
+@[to_additive /-- An element in the kernels of both `f` and `g` is in the kernel of their
+pointwise sum. -/]
+theorem ker_inf_ker_le_ker_mul {H : Type*} [CommMonoid H] (f g : G →* H) :
+    f.ker ⊓ g.ker ≤ (f * g).ker :=
+  fun x hx ↦ by simp [mem_ker.mp hx.1, mem_ker.mp hx.2]
+
+/-- The kernel of a homomorphism into a product is the intersection of the kernels of its
+components. This is the family version of `MonoidHom.ker_prod`. -/
+@[to_additive /-- The kernel of an additive homomorphism into a product is the intersection of the
+kernels of its components. This is the family version of `AddMonoidHom.ker_prod`. -/]
+theorem ker_pi {ι : Type*} {H : ι → Type*} [∀ i, MulOneClass (H i)] (f : ∀ i, G →* H i) :
+    (MonoidHom.pi f).ker = ⨅ i, (f i).ker := by
+  ext x
+  simp [mem_ker, Subgroup.mem_iInf, funext_iff]
+
+section rangeEquivRange
+
+variable {C N N' : Type*} [Group C] [Group N] [Group N'] (f : C →* N) (g : C →* N')
+
+/-- Two injective homomorphisms out of the same group have the same kernel, the trivial one. -/
+@[to_additive /-- Two injective additive homomorphisms out of the same additive group have the
+same kernel, the trivial one. -/]
+theorem ker_eq_ker_of_injective {f : C →* N} {g : C →* N'} (hf : Function.Injective f)
+    (hg : Function.Injective g) : f.ker = g.ker := by
+  rw [(ker_eq_bot_iff f).2 hf, (ker_eq_bot_iff g).2 hg]
+
+/-- For `f.ker ≤ g.ker`, the homomorphism `f.range →* g.range` sending `f c` to `g c`. -/
+@[to_additive /-- For `f.ker ≤ g.ker`, the additive homomorphism `f.range →+ g.range` sending
+`f c` to `g c`. -/]
+noncomputable def rangeHom (h : f.ker ≤ g.ker) : f.range →* g.range :=
+  f.rangeRestrict.liftOfSurjective f.rangeRestrict_surjective
+    ⟨g.rangeRestrict, by rwa [ker_rangeRestrict, ker_rangeRestrict]⟩
+
+variable {f g}
+
+@[to_additive (attr := simp)]
+theorem rangeHom_rangeRestrict (h : f.ker ≤ g.ker) (c : C) :
+    rangeHom f g h (f.rangeRestrict c) = g.rangeRestrict c :=
+  liftOfRightInverse_comp_apply ..
+
+@[to_additive (attr := simp)]
+theorem rangeHom_comp_rangeRestrict (h : f.ker ≤ g.ker) :
+    (rangeHom f g h).comp f.rangeRestrict = g.rangeRestrict :=
+  ext (rangeHom_rangeRestrict h)
+
+variable (f g)
+
+/-- For homomorphisms `f : C →* N` and `g : C →* N'` with the same kernel, the isomorphism
+`f.range ≃* g.range` sending `f c` to `g c`, with inverse sending `g c` to `f c`. -/
+@[to_additive /-- For additive homomorphisms `f : C →+ N` and `g : C →+ N'` with the same kernel,
+the isomorphism `f.range ≃+ g.range` sending `f c` to `g c`, with inverse sending `g c` to
+`f c`. -/]
+noncomputable def rangeEquivRange (h : f.ker = g.ker) : f.range ≃* g.range :=
+  (rangeHom f g h.le).toMulEquiv (rangeHom g f h.ge)
+    ((cancel_right f.rangeRestrict_surjective).1 <| by
+      rw [comp_assoc, rangeHom_comp_rangeRestrict, rangeHom_comp_rangeRestrict, id_comp])
+    ((cancel_right g.rangeRestrict_surjective).1 <| by
+      rw [comp_assoc, rangeHom_comp_rangeRestrict, rangeHom_comp_rangeRestrict, id_comp])
+
+variable {f g}
+
+/-- As a homomorphism, `rangeEquivRange f g h` is `rangeHom f g h.le`. -/
+@[to_additive (attr := simp) /-- As an additive homomorphism, `rangeEquivRange f g h` is
+`rangeHom f g h.le`. -/]
+theorem rangeEquivRange_toMonoidHom (h : f.ker = g.ker) :
+    (rangeEquivRange f g h : f.range →* g.range) = rangeHom f g h.le :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem rangeEquivRange_rangeRestrict (h : f.ker = g.ker) (c : C) :
+    rangeEquivRange f g h (f.rangeRestrict c) = g.rangeRestrict c :=
+  rangeHom_rangeRestrict h.le c
+
+-- Not `@[simp]`: `simp` proves it by `rangeEquivRange_toMonoidHom` and
+-- `rangeHom_comp_rangeRestrict`.
+@[to_additive]
+theorem rangeEquivRange_comp_rangeRestrict (h : f.ker = g.ker) :
+    (MonoidHom.ofClass (rangeEquivRange f g h)).comp f.rangeRestrict = g.rangeRestrict :=
+  rangeHom_comp_rangeRestrict h.le
+
+@[to_additive (attr := simp)]
+theorem rangeEquivRange_symm_rangeRestrict (h : f.ker = g.ker) (c : C) :
+    (rangeEquivRange f g h).symm (g.rangeRestrict c) = f.rangeRestrict c :=
+  rangeHom_rangeRestrict h.ge c
+
+end rangeEquivRange
 
 end MonoidHom
 
