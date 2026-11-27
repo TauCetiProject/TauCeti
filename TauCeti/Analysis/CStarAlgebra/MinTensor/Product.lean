@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.MinTensor.Norm
 public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Product
-import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
 # The minimal C*-tensor product
@@ -79,8 +78,7 @@ def minCStarTensorNorm : CStarTensorNorm A B where
   eq_zero_of_map_eq_zero' _ := minTensorNorm_eq_zero_iff.1
   smul' := minTensorNorm_smul
   mul_le' := minTensorNorm_mul_le
-  star' := minTensorNorm_star
-  star_mul_self' := minTensorNorm_star_mul_self
+  star_mul_self_le' x := (minTensorNorm_star_mul_self x).ge
 
 @[simp]
 theorem minCStarTensorNorm_apply (x : A ⊗[ℂ] B) : minCStarTensorNorm A B x = minTensorNorm A B x :=
@@ -137,8 +135,7 @@ injective. -/
 theorem spatialTensorHom_injective {π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)} {ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)}
     (hπ : Function.Injective π) (hρ : Function.Injective ρ) :
     Function.Injective (spatialTensorHom π ρ) :=
-  (injective_iff_map_eq_zero _).2 fun u hu ↦
-    norm_eq_zero.1 (by rw [← norm_spatialTensorHom hπ hρ u, hu]; simp)
+  extend_injective _ fun x ↦ (minTensorNorm_eq_norm_spatialTensorHom hπ hρ x).symm
 
 end Spatial
 
@@ -182,7 +179,7 @@ theorem norm_map {φ : A →⋆ₙₐ[ℂ] A'} {ψ : B →⋆ₙₐ[ℂ] B'} (h�
 injective. -/
 theorem map_injective {φ : A →⋆ₙₐ[ℂ] A'} {ψ : B →⋆ₙₐ[ℂ] B'} (hφ : Function.Injective φ)
     (hψ : Function.Injective ψ) : Function.Injective (map φ ψ) :=
-  (AddMonoidHomClass.isometry_of_norm _ (norm_map hφ hψ)).injective
+  extend_injective _ fun x ↦ by simpa using norm_map hφ hψ (of _ x)
 
 @[simp]
 theorem map_id :
@@ -219,11 +216,8 @@ theorem toMin_of (x : A ⊗[ℂ] B) :
   extend_of _ _ x
 
 /-- **The canonical map `A ⊗max B → A ⊗min B` is surjective.** -/
-theorem toMin_surjective : Function.Surjective (toMin (A := A) (B := B)) := by
-  refine NonUnitalStarAlgHom.surjective_of_denseRange ?_
-  refine (denseRange_of (N := minCStarTensorNorm A B)).mono ?_
-  rintro _ ⟨x, rfl⟩
-  exact ⟨of (maxCStarTensorNorm A B) x, toMin_of x⟩
+theorem toMin_surjective : Function.Surjective (toMin (A := A) (B := B)) :=
+  extend_surjective _ _ denseRange_of
 
 end MaxTensorProduct
 
@@ -258,13 +252,9 @@ theorem norm_minTensorProductToMinTensor (u : MinTensorProduct A B) :
   CStarTensorProduct.norm_extend _ (norm_toMinTensor_eq_minTensorNorm A B) u
 
 theorem minTensorProductToMinTensor_bijective :
-    Function.Bijective (minTensorProductToMinTensor A B) := by
-  refine ⟨(AddMonoidHomClass.isometry_of_norm _
-      (norm_minTensorProductToMinTensor A B)).injective,
-    NonUnitalStarAlgHom.surjective_of_denseRange ?_⟩
-  refine (denseRange_toMinTensor A B).mono ?_
-  rintro _ ⟨x, rfl⟩
-  exact ⟨CStarTensorProduct.of (minCStarTensorNorm A B) x, minTensorProductToMinTensor_of A B x⟩
+    Function.Bijective (minTensorProductToMinTensor A B) :=
+  ⟨CStarTensorProduct.extend_injective _ (norm_toMinTensor_eq_minTensorNorm A B),
+    CStarTensorProduct.extend_surjective _ _ (denseRange_toMinTensor A B)⟩
 
 /-- For closed concrete operator algebras `A ⊆ B(E)` and `B ⊆ B(F)`, the minimal tensor product
 `A ⊗min B` is isomorphic to the spatial tensor product `A ⊗_min B ⊆ B(E ⊗₂ F)`, compatibly with

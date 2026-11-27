@@ -62,8 +62,7 @@ def maxCStarTensorNorm : CStarTensorNorm A B where
   eq_zero_of_map_eq_zero' _ := maxTensorNorm_eq_zero_iff.1
   smul' := maxTensorNorm_smul
   mul_le' := maxTensorNorm_mul_le
-  star' := maxTensorNorm_star
-  star_mul_self' := maxTensorNorm_star_mul_self
+  star_mul_self_le' x := (maxTensorNorm_star_mul_self x).ge
 
 @[simp]
 theorem maxCStarTensorNorm_apply (x : A ⊗[ℂ] B) : maxCStarTensorNorm A B x = maxTensorNorm A B x :=

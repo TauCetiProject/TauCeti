@@ -11,20 +11,24 @@ public import Mathlib.Algebra.Star.TensorProduct
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
+import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
 # The C*-tensor product with respect to a C*-norm
 
 Let `A` and `B` be (possibly non-unital) C*-algebras. A **C*-norm** on the algebraic tensor
-product `A ⊗[ℂ] B` (`TauCeti.CStarTensorNorm A B`) is a norm that is submultiplicative,
-star-invariant and satisfies the C*-identity `N (x⋆ x) = N x ^ 2`. With such a norm, `A ⊗[ℂ] B`
-is a normed star algebra satisfying the C*-identity (`TauCeti.CStarTensorAlgebra N`, a type
-synonym of `A ⊗[ℂ] B`). Its completion is the **C*-tensor product** `TauCeti.CStarTensorProduct N`
-(written A ⊗_N B in the literature; this file declares no notation for it), a C*-algebra, with
-the star homomorphism `TauCeti.CStarTensorProduct.of N : A ⊗[ℂ] B → TauCeti.CStarTensorProduct N`,
-which is injective, isometric for `N` and has dense range. A star homomorphism `A ⊗[ℂ] B → C` into
-a C*-algebra bounded by `N` extends to `TauCeti.CStarTensorProduct N`
-(`TauCeti.CStarTensorProduct.extend`), isometrically if it preserves `N`.
+product `A ⊗[ℂ] B` (`TauCeti.CStarTensorNorm A B`) is a norm that is submultiplicative and
+satisfies the C*-inequality `N x ^ 2 ≤ N (x⋆ x)`. With such a norm, `A ⊗[ℂ] B` is a normed
+star algebra satisfying the C*-identity (`TauCeti.CStarTensorAlgebra N`, a type synonym of
+`A ⊗[ℂ] B`); in particular `N` is star-invariant (`TauCeti.CStarTensorNorm.map_star`) and
+satisfies the C*-identity `N (x⋆ x) = N x ^ 2` (`TauCeti.CStarTensorNorm.map_star_mul_self`).
+Its completion is the **C*-tensor product** `TauCeti.CStarTensorProduct N` (written A ⊗_N B in
+the literature; this file declares no notation for it), a C*-algebra, with the star
+homomorphism `TauCeti.CStarTensorProduct.of N : A ⊗[ℂ] B → TauCeti.CStarTensorProduct N`, which
+is injective, isometric for `N` and has dense range. A star homomorphism `A ⊗[ℂ] B → C` into a
+C*-algebra bounded by `N` extends to `TauCeti.CStarTensorProduct N`
+(`TauCeti.CStarTensorProduct.extend`), isometrically and injectively if it preserves `N`, and
+surjectively if it has dense range.
 
 The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
 `TauCeti.MinTensorProduct A B` are the cases of the maximal and minimal norms.
@@ -38,7 +42,8 @@ The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
 * `TauCeti.CStarTensorProduct.of`, `TauCeti.CStarTensorProduct.norm_of`,
   `TauCeti.CStarTensorProduct.of_injective`, `TauCeti.CStarTensorProduct.denseRange_of`,
   `TauCeti.CStarTensorProduct.starAlgHom_ext`.
-* `TauCeti.CStarTensorProduct.extend`: extension of star homomorphisms bounded by `N`.
+* `TauCeti.CStarTensorProduct.extend`: extension of star homomorphisms bounded by `N`, with
+  `TauCeti.CStarTensorProduct.extend_injective` and `TauCeti.CStarTensorProduct.extend_surjective`.
 
 ## References
 
@@ -58,16 +63,16 @@ namespace TauCeti
 
 variable (A : Type u) (B : Type v) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
 
-/-- A **C*-norm** on the algebraic tensor product `A ⊗[ℂ] B`: a norm that is submultiplicative,
-star-invariant and satisfies the C*-identity `N (x⋆ x) = N x ^ 2`. Its completion is the
-C*-tensor product `TauCeti.CStarTensorProduct N`. -/
+/-- A **C*-norm** on the algebraic tensor product `A ⊗[ℂ] B`: a norm that is submultiplicative
+and satisfies the C*-inequality `N x ^ 2 ≤ N (x⋆ x)`. Star-invariance and the C*-identity
+`N (x⋆ x) = N x ^ 2` follow (`TauCeti.CStarTensorNorm.map_star`,
+`TauCeti.CStarTensorNorm.map_star_mul_self`). Its completion is the C*-tensor product
+`TauCeti.CStarTensorProduct N`. -/
 structure CStarTensorNorm extends RingNorm (A ⊗[ℂ] B) where
   /-- A C*-norm is absolutely homogeneous. -/
   smul' (c : ℂ) (x : A ⊗[ℂ] B) : toFun (c • x) = ‖c‖ * toFun x
-  /-- A C*-norm is star-invariant. -/
-  star' (x : A ⊗[ℂ] B) : toFun (star x) = toFun x
-  /-- A C*-norm satisfies the C*-identity. -/
-  star_mul_self' (x : A ⊗[ℂ] B) : toFun (star x * x) = toFun x ^ 2
+  /-- A C*-norm satisfies the C*-inequality. -/
+  star_mul_self_le' (x : A ⊗[ℂ] B) : toFun x ^ 2 ≤ toFun (star x * x)
 
 namespace CStarTensorNorm
 
@@ -104,15 +109,10 @@ theorem map_smul_eq_mul (N : CStarTensorNorm A B) (c : ℂ) (x : A ⊗[ℂ] B) :
     N (c • x) = ‖c‖ * N x :=
   N.smul' c x
 
-/-- A C*-norm is star-invariant. -/
-@[simp]
-theorem map_star (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) : N (star x) = N x :=
-  N.star' x
-
-/-- A C*-norm satisfies the C*-identity. -/
-theorem map_star_mul_self (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) :
-    N (star x * x) = N x ^ 2 :=
-  N.star_mul_self' x
+/-- A C*-norm satisfies the C*-inequality. -/
+theorem sq_le_map_star_mul_self (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) :
+    N x ^ 2 ≤ N (star x * x) :=
+  N.star_mul_self_le' x
 
 end CStarTensorNorm
 
@@ -184,19 +184,29 @@ instance : NonUnitalNormedRing (CStarTensorAlgebra N) where
     rw [norm_def, norm_def, norm_def, map_mul]
     exact map_mul_le_mul N _ _
 
-/-- The star operation is isometric for a C*-norm. -/
-instance : NormedStarGroup (CStarTensorAlgebra N) where
-  norm_star_le x := by
-    rw [norm_def, norm_def, map_star]
-    exact (N.map_star _).le
-
-/-- A C*-norm satisfies the C*-identity. -/
+/-- A C*-norm satisfies the C*-inequality, so `TauCeti.CStarTensorAlgebra N` is a C*-ring. -/
 instance : CStarRing (CStarTensorAlgebra N) where
   norm_mul_self_le x := by
     rw [norm_def, norm_def, map_mul, map_star, ← sq]
-    exact (N.map_star_mul_self _).ge
+    exact N.sq_le_map_star_mul_self _
 
 end CStarTensorAlgebra
+
+namespace CStarTensorNorm
+
+open CStarTensorAlgebra
+
+/-- A C*-norm is star-invariant. -/
+@[simp]
+theorem map_star (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) : N (star x) = N x := by
+  rw [← norm_equiv, StarHomClass.map_star, norm_star, norm_equiv]
+
+/-- A C*-norm satisfies the C*-identity. -/
+theorem map_star_mul_self (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) :
+    N (star x * x) = N x ^ 2 := by
+  rw [← norm_equiv, map_mul, StarHomClass.map_star, CStarRing.norm_star_mul_self, norm_equiv, sq]
+
+end CStarTensorNorm
 
 open CStarTensorAlgebra
 
@@ -305,6 +315,18 @@ theorem norm_extend {C : Type*} [NonUnitalCStarAlgebra C] (f : A ⊗[ℂ] B →�
     ‖extend f (fun x ↦ (hf x).le) u‖ = ‖u‖ :=
   induction_on u (isClosed_eq (continuous_norm.comp (map_continuous _)) continuous_norm)
     fun x ↦ by rw [extend_of, norm_of, hf]
+
+/-- If `f` preserves `N`, its extension to `CStarTensorProduct N` is injective. -/
+theorem extend_injective {C : Type*} [NonUnitalCStarAlgebra C] (f : A ⊗[ℂ] B →⋆ₙₐ[ℂ] C)
+    (hf : ∀ x, ‖f x‖ = N x) : Function.Injective (extend f fun x ↦ (hf x).le) :=
+  (AddMonoidHomClass.isometry_of_norm _ (norm_extend f hf)).injective
+
+/-- If `f` has dense range, its extension to `CStarTensorProduct N` is surjective. -/
+theorem extend_surjective {C : Type*} [NonUnitalCStarAlgebra C] (f : A ⊗[ℂ] B →⋆ₙₐ[ℂ] C)
+    (hf : ∀ x, ‖f x‖ ≤ N x) (hd : DenseRange f) : Function.Surjective (extend f hf) :=
+  NonUnitalStarAlgHom.surjective_of_denseRange <| hd.mono <| by
+    rintro _ ⟨x, rfl⟩
+    exact ⟨of N x, extend_of f hf x⟩
 
 end CStarTensorProduct
 
