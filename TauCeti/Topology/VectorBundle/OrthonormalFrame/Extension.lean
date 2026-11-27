@@ -216,11 +216,14 @@ noncomputable def extendEquivOfEquivariant (t : OrthonormalFrameLift F E n H ρ'
     refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_
     have ht := t.toFrame_smul x (φ x p) h v
     rw [hφf] at ht
+    have hmk : (Extend.principalEquivOfEquivariant σ hσ φ hφ hφc).toEquiv x (Extend.mk σ hσ p h) =
+        op h • φ x p := by
+      rw [Extend.principalEquivOfEquivariant_toEquiv, Extend.equivOfEquivariant_mk]
     -- `rw` cannot see through the fibre `(s.extend …).P x = Extend s.P σ hσ x`, so the value of
     -- the comparison map at `[p, h]` is substituted by `congrArg`.
     exact (congrArg (fun q : t.P x ↦ TotalSpace.mk' F (t.toFrame ⟨x, q⟩).proj
       ((t.toFrame ⟨x, q⟩).frame (WithLp.toLp 2 v)))
-        (Extend.equivOfEquivariant_mk σ hσ φ hφ p h)).trans
+        hmk).trans
       (ht.trans (s.toFrame_extend_mk σ hσ hσρ hρ'n hρ'c x p h v).symm)
 
 @[simp]
@@ -230,8 +233,9 @@ theorem extendEquivOfEquivariant_toEquiv_mk (t : OrthonormalFrameLift F E n H ρ
     (hφf : ∀ x (p : s.P x), t.toFrame ⟨x, φ x p⟩ = s.toFrame ⟨x, p⟩) (x : X) (p : s.P x)
     (h : H) :
     (s.extendEquivOfEquivariant σ hσ hσρ hρ'n hρ'c t φ hφ hφc hφf).toEquiv x
-        (Extend.mk σ hσ p h) = op h • φ x p :=
-  Extend.equivOfEquivariant_mk σ hσ φ hφ p h
+        (Extend.mk σ hσ p h) = op h • φ x p := by
+  simp only [extendEquivOfEquivariant, Extend.principalEquivOfEquivariant_toEquiv]
+  exact Extend.equivOfEquivariant_mk σ hσ φ hφ p h
 
 @[simp]
 theorem extendEquivOfEquivariant_toEquiv_inl (t : OrthonormalFrameLift F E n H ρ')
@@ -239,19 +243,32 @@ theorem extendEquivOfEquivariant_toEquiv_inl (t : OrthonormalFrameLift F E n H �
     (hφc : Continuous fun p : TotalSpace G s.P ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace H t.P))
     (hφf : ∀ x (p : s.P x), t.toFrame ⟨x, φ x p⟩ = s.toFrame ⟨x, p⟩) (x : X) (p : s.P x) :
     (s.extendEquivOfEquivariant σ hσ hσρ hρ'n hρ'c t φ hφ hφc hφf).toEquiv x
-        (Extend.inl σ hσ p) = φ x p :=
-  Extend.equivOfEquivariant_inl σ hσ φ hφ p
+        (Extend.inl σ hσ p) = φ x p := by
+  simp only [extendEquivOfEquivariant, Extend.principalEquivOfEquivariant_toEquiv]
+  exact Extend.equivOfEquivariant_inl σ hσ φ hφ p
 
 /-- **Equivalences of lifts extend**: an equivalence `s ≃ t` of lifts along `ρ` induces an
 equivalence of their extensions along `σ`, sending `[p, h]` to `[φ p, h]`. -/
 noncomputable def Equiv.extend {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
     (s.extend σ hσ hσρ hρ'n hρ'c).Equiv (t.extend σ hσ hσρ hρ'n hρ'c) where
   toPrincipalBundleEquiv := φ.toPrincipalBundleEquiv.extend σ hσ
-  toFrame_map := (s.extendEquivOfEquivariant σ hσ hσρ hρ'n hρ'c (t.extend σ hσ hσρ hρ'n hρ'c)
-    (fun x p ↦ Extend.inl σ hσ (φ.toEquiv x p))
-    (fun x p g ↦ by rw [φ.map_smul]; exact Extend.inl_smul σ hσ _ g)
-    ((Extend.continuous_inl t.P σ hσ).comp φ.continuous_toFun)
-    (fun x p ↦ by rw [toFrame_extend_inl, φ.toFrame_map])).toFrame_map
+  toFrame_map := by
+    let ψ := s.extendEquivOfEquivariant σ hσ hσρ hρ'n hρ'c (t.extend σ hσ hσρ hρ'n hρ'c)
+      (fun x p ↦ Extend.inl σ hσ (φ.toEquiv x p))
+      (fun x p g ↦ by rw [φ.map_smul]; exact Extend.inl_smul σ hσ _ g)
+      ((Extend.continuous_inl t.P σ hσ).comp φ.continuous_toFun)
+      (fun x p ↦ by rw [toFrame_extend_inl, φ.toFrame_map])
+    -- The frame condition is that of the universal comparison map `ψ`, whose principal part
+    -- agrees with `φ.toPrincipalBundleEquiv.extend σ hσ` on every `[p, h]`.
+    have hψ : φ.toPrincipalBundleEquiv.extend σ hσ = ψ.toPrincipalBundleEquiv := by
+      ext x z
+      obtain ⟨p, h, rfl⟩ := Extend.exists_mk (P := s.P) (ρ := σ) (hρ := hσ) (b := x) z
+      rw [PrincipalBundle.Equiv.extend_toEquiv_mk]
+      exact (s.extendEquivOfEquivariant_toEquiv_mk σ hσ hσρ hρ'n hρ'c
+        (t.extend σ hσ hσρ hρ'n hρ'c) _ _ _ _ x p h).trans
+          (Extend.smul_inl σ hσ (φ.toEquiv x p) h) |>.symm
+    rw [hψ]
+    exact ψ.toFrame_map
 
 @[simp]
 theorem Equiv.extend_toEquiv_mk {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (x : X)
@@ -326,13 +343,17 @@ noncomputable def extendCompEquiv :
   toFrame_map x z := by
     obtain ⟨p, k, rfl⟩ := Extend.exists_mk (P := s.P) (ρ := τ.comp σ) (hρ := hτ.comp hσ) (b := x) z
     refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_
+    have hmk : (Extend.compPrincipalEquiv σ hσ τ hτ).symm.toEquiv x
+        (Extend.mk (τ.comp σ) (hτ.comp hσ) p k) = Extend.mk τ hτ (Extend.inl σ hσ p) k := by
+      rw [PrincipalBundle.Equiv.symm_toEquiv, Extend.compPrincipalEquiv_toEquiv,
+        Extend.compEquiv_symm_mk]
     -- `rw` cannot see through the fibre `(s.extend …).P x = Extend s.P (τ.comp σ) _ x`, so the
     -- value of the comparison map at `[p, k]` is substituted by `congrArg`.
     refine (congrArg (fun q : Extend (Extend s.P σ hσ) τ hτ x ↦
       TotalSpace.mk' F (((s.extend σ hσ hσρ hρ'n hρ'c).extend τ hτ hτρ hρ''n hρ''c).toFrame
         ⟨x, q⟩).proj ((((s.extend σ hσ hσρ hρ'n hρ'c).extend τ hτ hτρ hρ''n hρ''c).toFrame
           ⟨x, q⟩).frame (WithLp.toLp 2 v)))
-        (Extend.compEquiv_symm_mk σ hσ τ hτ p k)).trans ?_
+        hmk).trans ?_
     refine ((s.extend σ hσ hσρ hρ'n hρ'c).toFrame_extend_mk τ hτ hτρ hρ''n hρ''c x
       (Extend.inl σ hσ p) k v).trans ?_
     rw [toFrame_extend_inl]
@@ -342,15 +363,19 @@ noncomputable def extendCompEquiv :
 theorem extendCompEquiv_toEquiv_mk (x : X) (p : s.P x) (k : K) :
     (s.extendCompEquiv σ hσ hσρ hρ'n hρ'c τ hτ hτρ hρ''n hρ''c).toEquiv x
         (Extend.mk (τ.comp σ) (hτ.comp hσ) p k) =
-      Extend.mk τ hτ (Extend.inl σ hσ p) k :=
-  Extend.compEquiv_symm_mk σ hσ τ hτ p k
+      Extend.mk τ hτ (Extend.inl σ hσ p) k := by
+  simp only [extendCompEquiv, PrincipalBundle.Equiv.symm_toEquiv,
+    Extend.compPrincipalEquiv_toEquiv]
+  exact Extend.compEquiv_symm_mk σ hσ τ hτ p k
 
 @[simp]
 theorem extendCompEquiv_toEquiv_inl (x : X) (p : s.P x) :
     (s.extendCompEquiv σ hσ hσρ hρ'n hρ'c τ hτ hτρ hρ''n hρ''c).toEquiv x
         (Extend.inl (τ.comp σ) (hτ.comp hσ) p) =
-      Extend.inl τ hτ (Extend.inl σ hσ p) :=
-  Extend.compEquiv_symm_inl σ hσ τ hτ p
+      Extend.inl τ hτ (Extend.inl σ hσ p) := by
+  simp only [extendCompEquiv, PrincipalBundle.Equiv.symm_toEquiv,
+    Extend.compPrincipalEquiv_toEquiv]
+  exact Extend.compEquiv_symm_inl σ hσ τ hτ p
 
 /-- The inverse of `TauCeti.OrthonormalFrameLift.extendCompEquiv` sends `[[p, h], k]` to
 `[p, τ h * k]`. -/
@@ -358,7 +383,8 @@ theorem extendCompEquiv_symm_toEquiv_mk_mk (x : X) (p : s.P x) (h : H) (k : K) :
     (s.extendCompEquiv σ hσ hσρ hρ'n hρ'c τ hτ hτρ hρ''n hρ''c).symm.toEquiv x
         (Extend.mk τ hτ (Extend.mk σ hσ p h) k) =
       Extend.mk (τ.comp σ) (hτ.comp hσ) p (τ h * k) := by
-  rw [Equiv.symm_toEquiv]
+  simp only [Equiv.symm_toEquiv, extendCompEquiv, PrincipalBundle.Equiv.symm_toEquiv,
+    Extend.compPrincipalEquiv_toEquiv]
   exact Extend.compEquiv_mk σ hσ τ hτ p h k
 
 end Comp
