@@ -34,7 +34,7 @@ The square-to-disc homeomorphism `TauCeti.squareHomeomorphClosedBall` identifies
 along the four closed sides of `I × I` defines a continuous bijection from the compact boundary
 `TauCeti.squareBoundary` onto `C`, hence a homeomorphism. Transferring to `sphere (0 : ℂ) 1`
 supplies the boundary data for the prescribed-boundary Schoenflies theorem
-(`TauCeti.exists_homeomorph_sphere_eq`), whose extension restricts to the required homeomorphism
+(`Homeomorph.exists_homeomorph_sphere_eq`), whose extension restricts to the required homeomorphism
 `I × I ≃ₜ filledHull C`.
 
 ## Main results
@@ -198,7 +198,7 @@ theorem exists_homeomorph_unitInterval_prod_filledHull {a b c d : ℂ}
     eQ.symm.trans ψ
   have hC : IsJordanCurve (range top ∪ range bot ∪ range left ∪ range right) :=
     (isJordanCurve_sphere 0 one_pos).of_homeomorph φ
-  obtain ⟨e, heφ, -, -, heCB⟩ := exists_homeomorph_sphere_eq φ
+  obtain ⟨e, heφ, -, -, heCB⟩ := φ.exists_homeomorph_sphere_eq
   let Φ : I × I ≃ₜ filledHull (range top ∪ range bot ∪ range left ∪ range right) :=
     sq.trans ((e.image (closedBall 0 1)).trans (Homeomorph.setCongr heCB))
   have hΦb (p : I × I) (hp : p ∈ squareBoundary) : (Φ p : ℂ) = ψ ⟨p, hp⟩ := by

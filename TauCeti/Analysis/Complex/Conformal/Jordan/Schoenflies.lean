@@ -57,7 +57,7 @@ of `ℂ` restricted to its unit circle, and a homeomorphism `τ` of the circle
   `C`, its inside and its closure.
 * `TauCeti.IsJordanCurve.exists_homeomorph_image_sphere`: **the Schoenflies theorem**.
 * `TauCeti.exists_homeomorph_sphere_eq_of_mem` and
-  `TauCeti.exists_homeomorph_sphere_eq`: the Schoenflies theorem with a prescribed
+  `Homeomorph.exists_homeomorph_sphere_eq`: the Schoenflies theorem with a prescribed
   homeomorphism `sphere (0 : ℂ) 1 ≃ₜ C` on the boundary circle (and optionally a prescribed image
   of `0`).
 * `TauCeti.IsJordanCurve.exists_homeomorph_image_inner_eq_zero`: the Schoenflies theorem on the
@@ -162,7 +162,7 @@ theorem exists_homeomorph_sphere_eq_of_mem
 /-- **The Schoenflies theorem with prescribed boundary parametrization.** Every homeomorphism
 `φ : sphere (0 : ℂ) 1 ≃ₜ C` into `ℂ` extends to a homeomorphism of `ℂ` carrying the unit circle,
 open unit disc, and closed unit disc onto `C`, its inside, and `filledHull C`. -/
-theorem exists_homeomorph_sphere_eq (φ : sphere (0 : ℂ) 1 ≃ₜ C) :
+theorem _root_.Homeomorph.exists_homeomorph_sphere_eq (φ : sphere (0 : ℂ) 1 ≃ₜ C) :
     ∃ e : ℂ ≃ₜ ℂ, (∀ u : sphere (0 : ℂ) 1, e u = φ u) ∧
       e '' sphere 0 1 = C ∧ e '' ball 0 1 = filledHull C \ C ∧
       e '' closedBall 0 1 = filledHull C := by

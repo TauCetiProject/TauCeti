@@ -528,9 +528,9 @@ private theorem coboundAnnulus_of_continuous_injective_complex {f g : sphere (0 
     (hsub : range g ⊆ filledHull (range f) \ range f) :
     CoboundAnnulus f g := by
   have hC₁ : IsJordanCurve (range f) :=
-    isJordanCurve_range (sphereCircleHomeomorph 0 one_pos) hfc hfi
+    (sphereCircleHomeomorph 0 one_pos).isJordanCurve_range hfc hfi
   have hC₂ : IsJordanCurve (range g) :=
-    isJordanCurve_range (sphereCircleHomeomorph 0 one_pos) hgc hgi
+    (sphereCircleHomeomorph 0 one_pos).isJordanCurve_range hgc hgi
   rw [coboundAnnulus_iff_exists_homeomorph]
   exact hC₁.exists_homeomorph_sphere_prod_unitInterval hC₂ hsub
 

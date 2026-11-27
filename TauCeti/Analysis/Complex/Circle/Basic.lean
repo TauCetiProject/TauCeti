@@ -84,7 +84,7 @@ upper and lower semicircle paths from `1` to `-1` in `ℂ`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
-* `Circle.semicircleCoord`: the affine homeomorphism `[0, 1] ≃ₜ [-1, 1]` sending `t` to `1 - 2t`.
+* `TauCeti.semicircleCoord`: the affine homeomorphism `[0, 1] ≃ₜ [-1, 1]` sending `t` to `1 - 2t`.
 * `TauCeti.upperSemicirclePath`, `TauCeti.lowerSemicirclePath`, `TauCeti.circleParam`,
   `TauCeti.mem_range_upperSemicirclePath_iff`, `TauCeti.mem_range_lowerSemicirclePath_iff`: the
   upper and lower semicircle paths from `1` to `-1` in `ℂ`, their range characterizations, and
@@ -489,30 +489,6 @@ theorem continuous_toUnits : Continuous toUnits := by
   · exact continuous_subtypeVal
   · exact continuous_subtypeVal.comp (continuous_inv (G := Circle))
 
-/-- The affine homeomorphism `t ↦ 1 - 2 * t` from `unitInterval` onto `[-1, 1]`. -/
-def semicircleCoord : unitInterval ≃ₜ Set.Icc (-1 : ℝ) 1 :=
-  unitInterval.symmHomeomorph.trans (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
-
-theorem coe_semicircleCoord (t : unitInterval) :
-    (semicircleCoord t : ℝ) = 1 - 2 * (t : ℝ) := by
-  simp only [semicircleCoord, Homeomorph.trans_apply, unitInterval.symmHomeomorph_apply,
-    iccHomeoI_symm_apply_coe, unitInterval.coe_symm_eq]
-  ring
-
-theorem coe_semicircleCoord_symm (x : Set.Icc (-1 : ℝ) 1) :
-    (semicircleCoord.symm x : ℝ) = (1 - (x : ℝ)) / 2 := by
-  have h := congrArg Subtype.val (semicircleCoord.apply_symm_apply x)
-  rw [coe_semicircleCoord] at h
-  linarith
-
-@[simp]
-theorem coe_semicircleCoord_zero : (semicircleCoord 0 : ℝ) = 1 := by
-  simp [coe_semicircleCoord]
-
-@[simp]
-theorem coe_semicircleCoord_one : (semicircleCoord 1 : ℝ) = -1 := by
-  simp [coe_semicircleCoord]; norm_num
-
 /-! ### Elements of order two in powers of the circle -/
 
 /-- In a finite power of the circle only finitely many elements square to `1`: each of their
@@ -608,11 +584,35 @@ theorem hasDerivAt_coe_circleExp (t : ℝ) :
 
 /-! ### Semicircle paths on the unit circle -/
 
+/-- The affine homeomorphism `t ↦ 1 - 2 * t` from `unitInterval` onto `[-1, 1]`. -/
+def semicircleCoord : unitInterval ≃ₜ Set.Icc (-1 : ℝ) 1 :=
+  unitInterval.symmHomeomorph.trans (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
+
+theorem coe_semicircleCoord (t : unitInterval) :
+    (semicircleCoord t : ℝ) = 1 - 2 * (t : ℝ) := by
+  simp only [semicircleCoord, Homeomorph.trans_apply, unitInterval.symmHomeomorph_apply,
+    iccHomeoI_symm_apply_coe, unitInterval.coe_symm_eq]
+  ring
+
+theorem coe_semicircleCoord_symm (x : Set.Icc (-1 : ℝ) 1) :
+    (semicircleCoord.symm x : ℝ) = (1 - (x : ℝ)) / 2 := by
+  have h := congrArg Subtype.val (semicircleCoord.apply_symm_apply x)
+  rw [coe_semicircleCoord] at h
+  linarith
+
+@[simp]
+theorem coe_semicircleCoord_zero : (semicircleCoord 0 : ℝ) = 1 := by
+  simp [coe_semicircleCoord]
+
+@[simp]
+theorem coe_semicircleCoord_one : (semicircleCoord 1 : ℝ) = -1 := by
+  simp [coe_semicircleCoord]; norm_num
+
 /-- The upper semicircle path from `1` to `-1` in `ℂ`. -/
 def upperSemicirclePath : Path (1 : ℂ) (-1 : ℂ) where
-  toFun t := Circle.upperSemicircle (Circle.semicircleCoord t)
+  toFun t := Circle.upperSemicircle (semicircleCoord t)
   continuous_toFun := continuous_subtypeVal.comp
-    (Circle.continuous_upperSemicircle.comp Circle.semicircleCoord.continuous)
+    (Circle.continuous_upperSemicircle.comp semicircleCoord.continuous)
   source' := Complex.ext (by simp) (by simp)
   target' := Complex.ext (by simp) (by simp)
 
@@ -621,7 +621,7 @@ def lowerSemicirclePath : Path (1 : ℂ) (-1 : ℂ) :=
   (upperSemicirclePath.map Complex.continuous_conj).cast (by simp) (by simp)
 
 theorem upperSemicirclePath_apply (t : unitInterval) :
-    upperSemicirclePath t = Circle.upperSemicircle (Circle.semicircleCoord t) :=
+    upperSemicirclePath t = Circle.upperSemicircle (semicircleCoord t) :=
   (rfl)
 
 /-- The lower semicircle path is the complex conjugate of the upper semicircle path, as a
@@ -636,12 +636,12 @@ theorem lowerSemicirclePath_eq_conj (t : unitInterval) :
   congrFun coe_lowerSemicirclePath t
 
 theorem lowerSemicirclePath_apply (t : unitInterval) :
-    lowerSemicirclePath t = ((Circle.upperSemicircle (Circle.semicircleCoord t))⁻¹ : Circle) := by
+    lowerSemicirclePath t = ((Circle.upperSemicircle (semicircleCoord t))⁻¹ : Circle) := by
   rw [lowerSemicirclePath_eq_conj, upperSemicirclePath_apply, Circle.coe_inv_eq_conj]
 
 theorem upperSemicirclePath_mem_sphere (t : unitInterval) :
     upperSemicirclePath t ∈ sphere (0 : ℂ) 1 :=
-  (Circle.upperSemicircle (Circle.semicircleCoord t)).property
+  (Circle.upperSemicircle (semicircleCoord t)).property
 
 theorem lowerSemicirclePath_mem_sphere (t : unitInterval) :
     lowerSemicirclePath t ∈ sphere (0 : ℂ) 1 := by
@@ -660,7 +660,7 @@ theorem lowerSemicirclePath_im_nonpos (t : unitInterval) :
   exact neg_nonpos.mpr (upperSemicirclePath_im_nonneg t)
 
 theorem upperSemicirclePath_injective : Function.Injective upperSemicirclePath := fun _ _ h ↦
-  Circle.semicircleCoord.injective (Circle.upperSemicircle_injective (Circle.coe_injective h))
+  semicircleCoord.injective (Circle.upperSemicircle_injective (Circle.coe_injective h))
 
 theorem lowerSemicirclePath_injective : Function.Injective lowerSemicirclePath := by
   rw [coe_lowerSemicirclePath]
@@ -673,9 +673,9 @@ theorem range_upperSemicirclePath_union_lowerSemicirclePath :
     (range_subset_iff.mpr lowerSemicirclePath_mem_sphere)) fun z hz ↦ ?_
   obtain ⟨x, hx⟩ := Circle.exists_upperSemicircle_eq_or_inv_eq ⟨z, hz⟩
   rcases hx with hx | hx
-  · exact Or.inl ⟨Circle.semicircleCoord.symm x, by
+  · exact Or.inl ⟨semicircleCoord.symm x, by
       simpa [upperSemicirclePath_apply] using congrArg Subtype.val hx⟩
-  · exact Or.inr ⟨Circle.semicircleCoord.symm x, by
+  · exact Or.inr ⟨semicircleCoord.symm x, by
       simpa [lowerSemicirclePath_apply] using congrArg Subtype.val hx⟩
 
 /-- The upper and lower semicircle paths meet only at `1` and `-1`. -/
@@ -686,9 +686,9 @@ theorem range_upperSemicirclePath_inter_lowerSemicirclePath :
     rw [upperSemicirclePath_apply, lowerSemicirclePath_apply] at hst
     obtain ⟨_, hsq⟩ := Circle.upperSemicircle_eq_inv_iff.mp (Circle.coe_injective hst.symm)
     rcases sq_eq_one_iff.mp hsq with hs1 | hs1
-    · have hs : s = 0 := Circle.semicircleCoord.injective (Subtype.ext (by simp [hs1]))
+    · have hs : s = 0 := semicircleCoord.injective (Subtype.ext (by simp [hs1]))
       exact Or.inl (hs ▸ upperSemicirclePath.source)
-    · have hs : s = 1 := Circle.semicircleCoord.injective (Subtype.ext (by simp [hs1]))
+    · have hs : s = 1 := semicircleCoord.injective (Subtype.ext (by simp [hs1]))
       exact Or.inr (hs ▸ upperSemicirclePath.target)
   · rintro z (rfl | rfl)
     · exact ⟨upperSemicirclePath.source_mem_range, lowerSemicirclePath.source_mem_range⟩
@@ -696,31 +696,31 @@ theorem range_upperSemicirclePath_inter_lowerSemicirclePath :
 
 /-- The semicircle parameter `(1 - u.re) / 2 ∈ unitInterval` on the unit circle. -/
 def circleParam (u : sphere (0 : ℂ) 1) : unitInterval :=
-  Circle.semicircleCoord.symm ⟨(u : ℂ).re, abs_le.1 (by simpa using abs_re_le_norm (u : ℂ))⟩
+  semicircleCoord.symm ⟨(u : ℂ).re, abs_le.1 (by simpa using abs_re_le_norm (u : ℂ))⟩
 
 theorem coe_circleParam (u : sphere (0 : ℂ) 1) :
     (circleParam u : ℝ) = (1 - (u : ℂ).re) / 2 :=
-  Circle.coe_semicircleCoord_symm _
+  coe_semicircleCoord_symm _
 
 @[simp]
 theorem coe_semicircleCoord_circleParam (u : sphere (0 : ℂ) 1) :
-    (Circle.semicircleCoord (circleParam u) : ℝ) = (u : ℂ).re := by
+    (semicircleCoord (circleParam u) : ℝ) = (u : ℂ).re := by
   simp [circleParam]
 
 @[fun_prop]
 theorem continuous_circleParam : Continuous circleParam :=
-  Circle.semicircleCoord.symm.continuous.comp
+  semicircleCoord.symm.continuous.comp
     (Continuous.subtype_mk (continuous_re.comp continuous_subtypeVal) _)
 
 @[simp]
 theorem circleParam_upperSemicirclePath (t : unitInterval) :
     circleParam ⟨upperSemicirclePath t, upperSemicirclePath_mem_sphere t⟩ = t :=
-  Circle.semicircleCoord.injective (Subtype.ext (by simp [upperSemicirclePath_apply]))
+  semicircleCoord.injective (Subtype.ext (by simp [upperSemicirclePath_apply]))
 
 @[simp]
 theorem circleParam_lowerSemicirclePath (t : unitInterval) :
     circleParam ⟨lowerSemicirclePath t, lowerSemicirclePath_mem_sphere t⟩ = t :=
-  Circle.semicircleCoord.injective (Subtype.ext (by simp [lowerSemicirclePath_apply]))
+  semicircleCoord.injective (Subtype.ext (by simp [lowerSemicirclePath_apply]))
 
 /-- Complex conjugation leaves `TauCeti.circleParam` invariant. -/
 theorem circleParam_conj (u : sphere (0 : ℂ) 1) :
