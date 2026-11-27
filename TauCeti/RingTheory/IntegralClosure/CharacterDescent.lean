@@ -16,7 +16,7 @@ This gives descent of rational points of finite algebras over valuation rings.
 
 ## References
 
-* The Stacks Project, Section 10.36, especially Definition 10.36.9 (Tag 00GP),
+* The Stacks Project, Section 10.36 (Tag 00GH),
   https://stacks.math.columbia.edu/tag/00GH.
 -/
 
