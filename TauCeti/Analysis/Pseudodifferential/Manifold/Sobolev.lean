@@ -234,21 +234,12 @@ theorem exists_norm_chartReading_apply_le (hP : P ∈ classicalPseudodifferentia
   obtain ⟨C, hC⟩ :=
     exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum hP hc' φ hc ψ
       hψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s
-  refine ⟨|C| * Real.sqrt (Fintype.card ι), fun u ↦ ?_⟩
-  calc ‖chartReading hc' φ t (P u)‖
-      ≤ ∑ j, ‖chartReading hc' φ t (P u) j‖ := PiLp.norm_le_sum_norm _
-    _ ≤ ∑ j, ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
-          ((c' j).cutoffPushforwardSchwartz (hc' j) (φ j) (P u))‖ :=
-      Finset.sum_le_sum fun j _ ↦ by
-        rw [chartReading_apply, ← BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM ht]
-        exact BesselPotentialSpace.norm_inclusion_apply_le ht _
-    _ ≤ |C| * ∑ i, ‖chartReading hc ψ s u i‖ := by
-      simp only [chartReading_apply]
-      exact (hC u).trans (mul_le_mul_of_nonneg_right (le_abs_self C)
-        (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _))
-    _ ≤ |C| * (Real.sqrt (Fintype.card ι) * ‖chartReading hc ψ s u‖) :=
-      mul_le_mul_of_nonneg_left (PiLp.sum_norm_le_sqrt_card_mul_norm _) (abs_nonneg C)
-    _ = |C| * Real.sqrt (Fintype.card ι) * ‖chartReading hc ψ s u‖ := (mul_assoc ..).symm
+  refine PiLp.exists_norm_le_mul_norm_of_sum_norm_le (f := fun u ↦ chartReading hc' φ t (P u))
+    (C := C) fun u ↦ ?_
+  simp only [chartReading_apply]
+  refine (Finset.sum_le_sum fun j _ ↦ ?_).trans (hC u)
+  rw [← BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM ht]
+  exact BesselPotentialSpace.norm_inclusion_apply_le ht _
 
 /-- **Classical pseudodifferential operators act on Sobolev spaces.** On a compact manifold, with
 the Sobolev spaces `H^s(M)` of a chart partition `ψᵢ` (`TauCeti.chartSobolevSpace`), a classical
@@ -261,7 +252,7 @@ theorem chartSobolevExtension_toChartSobolevSpace_of_mem
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     chartSobolevExtension hc ψ hc' φ P s t (toChartSobolevSpace hc ψ s u) =
       toChartSobolevSpace hc' φ t (P u) :=
-  chartSobolevExtension_toChartSobolevSpace (exists_norm_chartReading_apply_le hP hψ ht) u
+  LinearMap.rangeClosureExtension_toRangeClosure (exists_norm_chartReading_apply_le hP hψ ht) u
 
 /-- **Operators gaining more than their order are compact.** On a compact manifold, the extension
 of a classical pseudodifferential operator `P` of order `m` to `H^s(M) → H^t(M)` is a compact
@@ -271,8 +262,8 @@ theorem isCompactOperator_chartSobolevExtension_of_mem
     (hP : P ∈ classicalPseudodifferentialOperators m)
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t < s - m) :
     IsCompactOperator (chartSobolevExtension hc ψ hc' φ P s t) := by
-  rw [← chartSobolevInclusion_comp_chartSobolevExtension ht.le
-    (exists_norm_chartReading_apply_le hP hψ le_rfl)]
+  rw [chartSobolevExtension, ← LinearMap.rangeClosureMap_comp_rangeClosureExtension
+    (piMap_inclusion_chartReading hc' φ ht.le) (exists_norm_chartReading_apply_le hP hψ le_rfl)]
   exact (isCompactOperator_chartSobolevInclusion hc' φ ht).comp_clm _
 
 /-- **Extensions of classical pseudodifferential operators compose.** If `Q` and `P` are classical
@@ -291,7 +282,7 @@ theorem chartSobolevExtension_comp_of_mem {c'' : ν → OpenPartialHomeomorph M 
     (hr : r ≤ t - m) :
     chartSobolevExtension hc' φ hc'' χ P t r ∘L chartSobolevExtension hc ψ hc' φ Q s t =
       chartSobolevExtension hc ψ hc'' χ (P ∘ₗ Q) s r :=
-  chartSobolevExtension_comp (exists_norm_chartReading_apply_le hP hφ hr)
+  LinearMap.rangeClosureExtension_comp (exists_norm_chartReading_apply_le hP hφ hr)
     (exists_norm_chartReading_apply_le hQ hψ ht)
 
 /-- **Extensions of classical pseudodifferential operators commute with the inclusions.** Let `P` be
@@ -305,9 +296,9 @@ theorem chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusio
     (hts : t ≤ s - m) (hts' : t' ≤ s' - m) :
     chartSobolevExtension hc ψ hc' φ P s t ∘L chartSobolevInclusion hc ψ hs =
       chartSobolevInclusion hc' φ ht ∘L chartSobolevExtension hc ψ hc' φ P s' t' := by
-  rw [chartSobolevExtension_comp_chartSobolevInclusion hs
+  rw [LinearMap.rangeClosureExtension_comp_rangeClosureMap (piMap_inclusion_chartReading hc ψ hs)
       (exists_norm_chartReading_apply_le hP hψ hts),
-    chartSobolevInclusion_comp_chartSobolevExtension ht
+    LinearMap.rangeClosureMap_comp_rangeClosureExtension (piMap_inclusion_chartReading hc' φ ht)
       (exists_norm_chartReading_apply_le hP hψ hts')]
 
 /-- **Extensions of sums.** The extension to `H^s(M) → H^t(M)`, `t ≤ s - m`, of the sum of two
@@ -320,7 +311,7 @@ theorem chartSobolevExtension_add_of_mem
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t ≤ s - m) :
     chartSobolevExtension hc ψ hc' φ (P + Q) s t =
       chartSobolevExtension hc ψ hc' φ P s t + chartSobolevExtension hc ψ hc' φ Q s t :=
-  chartSobolevExtension_add (exists_norm_chartReading_apply_le hP hψ ht)
+  LinearMap.rangeClosureExtension_add (exists_norm_chartReading_apply_le hP hψ ht)
     (exists_norm_chartReading_apply_le hQ hψ ht)
 
 /-- **Extensions of differences.** The extension to `H^s(M) → H^t(M)`, `t ≤ s - m`, of the
@@ -334,7 +325,7 @@ theorem chartSobolevExtension_sub_of_mem
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t ≤ s - m) :
     chartSobolevExtension hc ψ hc' φ (P - Q) s t =
       chartSobolevExtension hc ψ hc' φ P s t - chartSobolevExtension hc ψ hc' φ Q s t :=
-  chartSobolevExtension_sub (exists_norm_chartReading_apply_le hP hψ ht)
+  LinearMap.rangeClosureExtension_sub (exists_norm_chartReading_apply_le hP hψ ht)
     (exists_norm_chartReading_apply_le hQ hψ ht)
 
 /-- **Extensions of finite sums.** The extension to `H^s(M) → H^t(M)`, `t ≤ s - m`, of a finite
@@ -346,7 +337,7 @@ theorem chartSobolevExtension_sum_of_mem {α : Type*} (S : Finset α)
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t ≤ s - m) :
     chartSobolevExtension hc ψ hc' φ (∑ k ∈ S, A k) s t =
       ∑ k ∈ S, chartSobolevExtension hc ψ hc' φ (A k) s t :=
-  chartSobolevExtension_eq _ fun u ↦ by
+  LinearMap.rangeClosureExtension_eq _ fun u ↦ by
     rw [sum_apply, LinearMap.sum_apply, map_sum]
     exact Finset.sum_congr rfl fun k hk ↦
       chartSobolevExtension_toChartSobolevSpace_of_mem (hA k hk) hψ ht u

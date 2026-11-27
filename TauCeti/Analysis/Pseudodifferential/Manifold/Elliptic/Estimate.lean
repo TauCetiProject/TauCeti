@@ -274,10 +274,10 @@ theorem IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension_add
     (s := s + m) (t := s) (by linarith)
   refine ⟨|C| * Real.sqrt (Fintype.card ι), fun x ↦ ?_⟩
   -- Both sides are continuous in `x`, so the estimate extends from smooth functions.
-  refine (denseRange_toChartSobolevSpace hc ψ (s + m)).induction_on x
+  refine (chartReading hc ψ (s + m)).denseRange_toRangeClosure.induction_on x
     (isClosed_le (by fun_prop) (by fun_prop)) fun u ↦ ?_
-  rw [hPx, chartSobolevInclusion_toChartSobolevSpace]
-  simp only [norm_toChartSobolevSpace]
+  rw [hPx, LinearMap.rangeClosureMap_toRangeClosure]
+  simp only [LinearMap.norm_toRangeClosure]
   -- On smooth functions this is the estimate in the sums of the norms of the chart readings.
   calc ‖chartReading hc ψ (s + m) u‖
       ≤ ∑ i, ‖chartReading hc ψ (s + m) u i‖ := PiLp.norm_le_sum_norm _
