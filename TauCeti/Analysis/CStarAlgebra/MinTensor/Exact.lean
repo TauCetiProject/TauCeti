@@ -20,8 +20,9 @@ II.9.6.6): the sequence
 of the star homomorphisms `TauCeti.MinTensorProduct.map` of the inclusion `J → B` and of the
 quotient map `B → B/J` is exact. Two of the three exactness conditions hold for every `A`: the
 first map is injective, since the minimal tensor product preserves injectivity
-(`TauCeti.MinTensorProduct.map_starAlgHom_injective`), and the last one is surjective
-(`TauCeti.MinTensorProduct.map_mkStarAlgHom_surjective`). The composite is zero, so the image of
+(`TauCeti.MinTensorProduct.map_injective` with `TwoSidedIdeal.starAlgHom_injective`), and the last
+one is surjective (`TauCeti.MinTensorProduct.map_surjective` with
+`TwoSidedIdeal.Quotient.mkStarAlgHom_surjective`). The composite is zero, so the image of
 `A ⊗min J`, which is the closure of the image of `A ⊗[ℂ] J`
 (`TauCeti.MinTensorProduct.range_map`), always lies in the kernel of `A ⊗min B → A ⊗min (B/J)`
 (`TauCeti.MinTensorProduct.map_mkStarAlgHom_map_starAlgHom_eq_zero`). Exactness is therefore the
@@ -66,18 +67,7 @@ section Ideal
 
 variable (J : TwoSidedIdeal B) [IsClosed (J : Set B)]
 
-open TwoSidedIdeal.Quotient (mkStarAlgHom mkStarAlgHom_surjective)
-
-/-- The inclusion of a closed ideal `J` of `B` induces an injective map
-`A ⊗min J → A ⊗min B`. -/
-theorem map_starAlgHom_injective (φ : A →⋆ₙₐ[ℂ] A') (hφ : Function.Injective φ) :
-    Function.Injective (map φ J.starAlgHom) :=
-  map_injective hφ J.starAlgHom_injective
-
-/-- The quotient map `B → B/J` induces a surjective map `A ⊗min B → A ⊗min (B/J)`. -/
-theorem map_mkStarAlgHom_surjective (φ : A →⋆ₙₐ[ℂ] A') (hφ : Function.Surjective φ) :
-    Function.Surjective (map φ (mkStarAlgHom J)) :=
-  map_surjective hφ (mkStarAlgHom_surjective J)
+open TwoSidedIdeal.Quotient (mkStarAlgHom)
 
 /-- The composite `A ⊗min J → A ⊗min B → A ⊗min (B/J)` is zero: the image of `A ⊗min J` lies
 in the kernel of the quotient map. -/
@@ -101,8 +91,8 @@ open MinTensorProduct TwoSidedIdeal.Quotient
 /-- A C*-algebra `A` is **exact** when for every C*-algebra `B` (in the universe `w`) and every
 closed two-sided ideal `J` of `B`, the sequence `A ⊗min J → A ⊗min B → A ⊗min (B/J)` induced by
 the inclusion of `J` and the quotient map is exact. The first map is always injective and the
-second always surjective (`TauCeti.MinTensorProduct.map_starAlgHom_injective`,
-`TauCeti.MinTensorProduct.map_mkStarAlgHom_surjective`), so this is exactness of the whole
+second always surjective (`TauCeti.MinTensorProduct.map_injective`,
+`TauCeti.MinTensorProduct.map_surjective`), so this is exactness of the whole
 sequence `0 → A ⊗min J → A ⊗min B → A ⊗min (B/J) → 0`. -/
 class IsExact.{w', u'} (A : Type u') [NonUnitalCStarAlgebra A] : Prop where
   /-- Tensoring with `A` preserves exactness of closed-ideal sequences. -/
@@ -123,14 +113,6 @@ theorem isExact_iff : IsExact.{w} A ↔
     Function.Exact.of_comp_of_mem_range (funext (map_mkStarAlgHom_map_starAlgHom_eq_zero J))
       (h B J)⟩⟩
 
-/-- In an exact `A`, every element of the kernel of `A ⊗min B → A ⊗min (B/J)` comes from
-`A ⊗min J`. -/
-theorem IsExact.mem_range [IsExact.{w} A] {B : Type w} [NonUnitalCStarAlgebra B]
-    (J : TwoSidedIdeal B) [IsClosed (J : Set B)] {u : MinTensorProduct A B}
-    (hu : map (NonUnitalStarAlgHom.id ℂ A) (mkStarAlgHom J) u = 0) :
-    u ∈ Set.range (map (NonUnitalStarAlgHom.id ℂ A) J.starAlgHom) :=
-  isExact_iff.1 ‹_› B J u hu
-
 /-- **Exactness is invariant under star isomorphism.** -/
 theorem IsExact.of_starAlgEquiv {A' : Type*} [NonUnitalCStarAlgebra A'] (e : A ≃⋆ₐ[ℂ] A')
     [IsExact.{w} A] : IsExact.{w} A' := by
@@ -139,12 +121,12 @@ theorem IsExact.of_starAlgEquiv {A' : Type*} [NonUnitalCStarAlgebra A'] (e : A �
       (map e.symm.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ B) u) = 0 := by
     simpa [MinTensorProduct.map_map] using
       congrArg (map e.symm.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ (B ⧸ J))) hu
-  obtain ⟨v, hv⟩ := IsExact.mem_range J hu'
+  obtain ⟨v, hv⟩ := (IsExact.exact_map (A := A) B J _).1 hu'
   refine ⟨map e.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ J) v, ?_⟩
   calc _ = map e.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ B)
           (map (NonUnitalStarAlgHom.id ℂ A) J.starAlgHom v) := by
         simp [MinTensorProduct.map_map]
-    _ = u := by rw [hv]; exact map_map_symm e (StarAlgEquiv.refl ℂ B) u
+    _ = u := by rw [hv]; simpa using map_map_symm e (StarAlgEquiv.refl ℂ B) u
 
 end CStarAlgebra
 

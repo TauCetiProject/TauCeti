@@ -219,8 +219,7 @@ theorem map_map_symm (e : A ≃⋆ₐ[ℂ] A') (e' : B ≃⋆ₐ[ℂ] B') (u : M
     ext; simp
   have he' : e'.toNonUnitalStarAlgHom.comp e'.symm.toNonUnitalStarAlgHom = .id ℂ B' := by
     ext; simp
-  rw [map_map, he, he', map_id]
-  rfl
+  rw [map_map, he, he', map_id, NonUnitalStarAlgHom.coe_id, id_eq]
 
 /-- Star isomorphisms `e : A ≃ A'` and `e' : B ≃ B'` give mutually inverse maps of minimal tensor
 products: `map e.symm e'.symm` undoes `map e e'`. -/
