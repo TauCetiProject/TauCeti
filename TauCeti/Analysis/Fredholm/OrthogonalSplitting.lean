@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Fredholm.ConstantNullity
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 import TauCeti.Analysis.Calculus.FDeriv.SecondOrderIdentity
+import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
 # Orthogonal kernel projections and right inverses of Fredholm families
@@ -95,6 +96,11 @@ complement of `ker (T x₀)` the derivative of these adjoints is
   complement splits every `e` as `e = π e + Q (T e)`.
 * `ContinuousLinearMap.eq_zero_of_mem_ker_of_forall_inner_eq_zero`: an element of the kernel
   `ι`-orthogonal to the kernel vanishes.
+* `ContinuousLinearMap.IsOrthogonalKerProjection.apply_eq_zero_of_forall_inner_eq_zero`: the
+  orthogonal kernel projection vanishes on the `ι`-orthogonal complement of the kernel.
+* `ContinuousLinearMap.exists_norm_le_mul_norm_of_forall_inner_eq_zero`: an operator with closed
+  range and finite-dimensional kernel is bounded below on the `ι`-orthogonal complement of its
+  kernel, `‖e‖ ≤ C ‖T e‖`.
 * `ContinuousLinearMap.apply_eq_of_ker_projection_conj` and
   `ContinuousLinearMap.apply_eq_of_rightInverse_conj`: an equivalence `e` carrying the kernel of
   `T` to that of `T'` and the `ι`-pairing to the `ι'`-pairing conjugates the orthogonal kernel
@@ -243,6 +249,14 @@ theorem IsOrthogonalKerProjection.apply_of_mem_ker (hι : Injective ι) {π : E 
     (h : IsOrthogonalKerProjection ι T π) {k : E} (hk : k ∈ T.ker) : π k = k :=
   (sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero hι
     (T.ker.sub_mem hk (h.mem_ker k)) (h.inner_sub_eq_zero k))).symm
+
+/-- The orthogonal kernel projection vanishes on the `ι`-orthogonal complement of the kernel, for
+an injective `ι`. -/
+theorem IsOrthogonalKerProjection.apply_eq_zero_of_forall_inner_eq_zero (hι : Injective ι)
+    {π : E →L[𝕜] E} (h : IsOrthogonalKerProjection ι T π) {e : E}
+    (he : ∀ k ∈ T.ker, ⟪ι e, ι k⟫_𝕜 = 0) : π e = 0 :=
+  eq_zero_of_mem_ker_of_forall_inner_eq_zero hι (h.mem_ker e) fun k hk ↦ by
+    simpa [inner_sub_left, he k hk] using h.inner_sub_eq_zero e k hk
 
 /-- Pairing with the orthogonal kernel projection gives its squared norm:
 `⟪ι e, ι (π e)⟫ = ‖ι (π e)‖²`, since `ι (e - π e)` is orthogonal to `ι (π e)`. -/
@@ -572,6 +586,33 @@ theorem isOrthogonalKerProjection_orthogonalKerProjection (hι : Injective ι) (
   · have hkκ : k = κ ((euclideanEquiv T.ker).symm ⟨k, hk⟩) := by simp [κ]
     rw [hkκ]
     exact gramProjection_inner_eq_zero hG e _
+
+/-- **A closed-range operator is bounded below on the `ι`-orthogonal complement of its kernel.**
+Let `T` be an operator between Banach spaces with closed range and finite-dimensional kernel, for
+instance a Fredholm operator, and let `ι` be an injective operator into a Hilbert space. There is
+`C > 0` with `‖e‖ ≤ C * ‖T e‖` for every `e` such that `ι e` is orthogonal to `ι k` for every `k`
+in the kernel. With `ι` the inclusion of a Sobolev space into `L²`, this is the a priori estimate
+of an elliptic operator on the `L²`-orthogonal complement of its kernel, with no lower-order term.
+-/
+theorem exists_norm_le_mul_norm_of_forall_inner_eq_zero (hι : Injective ι) {T : E →L[𝕜] F}
+    (hT : IsClosed (T.range : Set F)) [FiniteDimensional 𝕜 T.ker] :
+    ∃ C > 0, ∀ e, (∀ k ∈ T.ker, ⟪ι e, ι k⟫_𝕜 = 0) → ‖e‖ ≤ C * ‖T e‖ := by
+  set π := orthogonalKerProjection ι T
+  have hπ : IsOrthogonalKerProjection ι T π :=
+    isOrthogonalKerProjection_orthogonalKerProjection hι T
+  -- The kernel of `π` is a closed complement of the kernel of `T`, on which `T` is bounded below
+  -- by the open mapping theorem, and it contains every `e` that is `ι`-orthogonal to the kernel.
+  have hcompl : IsCompl π.ker T.ker := by
+    refine ⟨Submodule.disjoint_def.2 fun x hx hxT ↦ ?_,
+      Submodule.codisjoint_iff_exists_add_eq.2 fun x ↦
+        ⟨x - π x, π x, ?_, hπ.mem_ker x, sub_add_cancel x _⟩⟩
+    · rw [← hπ.apply_of_mem_ker hι hxT]
+      exact hx
+    · rw [LinearMap.mem_ker, coe_coe, map_sub, hπ.apply_of_mem_ker hι (hπ.mem_ker x), sub_self]
+  obtain ⟨C, hC, hbound⟩ := T.exists_norm_le_mul_norm_of_mem hT
+    (Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hcompl π.isClosed_ker).symm
+  exact ⟨C, hC, fun e he ↦
+    hbound e (LinearMap.mem_ker.2 (hπ.apply_eq_zero_of_forall_inner_eq_zero hι he))⟩
 
 /-- Near a Fredholm operator `T₀` that is onto, the orthogonal kernel projections and right
 inverses exist and depend continuously on the operator. -/
