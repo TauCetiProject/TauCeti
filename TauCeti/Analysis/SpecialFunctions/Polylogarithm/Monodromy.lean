@@ -40,9 +40,9 @@ counterclockwise continuation shifts are assigned to `periph0⁻¹` and `periph1
   `TauCeti.Polylog.isPolylogTowerGerm_polylogBranch_comp`, `TauCeti.Polylog.polylogBranch_trans`,
   `TauCeti.Polylog.eqOn_polylogBranch_comp_polylogTower`,
   `TauCeti.Polylog.polylogBranch_eq_polylog_of_one_sub_mem_slitPlane`,
-  `TauCeti.Polylog.polylogBranch_smul`, `TauCeti.Polylog.exists_polylogBranch_monodromy`: all-height
-  continuation, universal-cover branch, uniqueness, tower ODEs, concatenation, principal-section
-  agreement, principal-domain comparison, and polynomial `π₁`-equivariance of `polylogTower N`.
+  `TauCeti.Polylog.polylogBranch_smul`: all-height continuation, universal-cover branch,
+  uniqueness, tower ODEs, concatenation, principal-section agreement, principal-domain comparison,
+  and polynomial `π₁`-equivariance of `polylogTower N`.
 
 ## References
 
@@ -721,25 +721,6 @@ theorem polylogBranch_smul (N : ℕ) (g : FundamentalGroup ThricePuncturedSphere
     (polylogTower_zero N (1 / 2))
     (fun _ hz => AnalyticAt.pi fun i => analyticOnNhd_polylog_ball (i.succ : ℕ) _ hz)
     (fun i => Eventually.of_forall fun z => polylogTower_succ N z i) g p
-
-/-- Summary packaging the coherent universal-cover branch `B = polylogBranch N` and polynomial
-monodromy representation `ρ = polylogMonodromy N` of `polylogTower N`, with continuation witnesses,
-explicit `periph0⁻¹`/`periph1⁻¹` formulas, and full `π₁`-equivariance. -/
-theorem exists_polylogBranch_monodromy (N : ℕ) :
-    ∃ (B : UniversalCover basePt → Fin (N + 1) → ℂ)
-      (ρ : FundamentalGroup ThricePuncturedSphere basePt →* Equiv.Perm (Fin (N + 1) → ℂ)),
-      (∀ (z : ThricePuncturedSphere) (γ : Path basePt z),
-        ∃ f : I → ℂ → Fin (N + 1) → ℂ, IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ ∧
-          (f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogTower N) ∧
-          B ⟨z, Path.Homotopic.Quotient.mk γ⟩ = f 1 (z : ℂ)) ∧
-      (∀ g i, ∃ P : MvPolynomial (Fin (N + 1)) ℂ, ∀ w, ρ g w i = MvPolynomial.eval w P) ∧
-      (∀ w i, ρ periph0⁻¹ w i = w i + if (i : ℕ) = 0 then 2 * Real.pi * Complex.I else 0) ∧
-      (∀ w i, ρ periph1⁻¹ w i = w i - if (i : ℕ) = 0 then 0 else
-        2 * Real.pi * Complex.I * w 0 ^ ((i : ℕ) - 1) / (((i : ℕ) - 1).factorial : ℂ)) ∧
-      (∀ g p, B (g • p) = ρ g (B p)) :=
-  ⟨polylogBranch N, polylogMonodromy N, fun _ => exists_isAnalyticContinuationAlong_polylogBranch N,
-    exists_mvPolynomial_polylogMonodromy N, polylogMonodromy_periph0_inv N,
-    polylogMonodromy_periph1_inv N, polylogBranch_smul N⟩
 
 /-- At the constant path class at `basePt`, `polylogBranch N` equals `polylogTower N (1 / 2)`. -/
 @[simp] theorem polylogBranch_refl (N : ℕ) :
