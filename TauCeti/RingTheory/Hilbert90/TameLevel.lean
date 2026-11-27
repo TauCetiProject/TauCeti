@@ -30,8 +30,9 @@ Let `R` be a commutative ring, `σ : R →+* R` a ring endomorphism of finite pe
 `m ∣ ∑ i ∈ Finset.range p, (σ ^ i) e - 1`, and for every `0 < i < p`, every prime ideal modulo
 which `σ ^ i` acts trivially contains `m`.
 
-Over any Artinian commutative ring `R`, we prove Hilbert's Theorem 90 with congruence level `m` for
-both `GL n R` and `Rˣ`:
+Tameness passes to the quotient by a `σ`-stable ideal
+(`TauCeti.TameHilbert90.IsTameAtLevel.quotientMap`). Over any Artinian commutative ring `R`, we
+prove Hilbert's Theorem 90 with congruence level `m` for both `GL n R` and `Rˣ`:
 
 * `TauCeti.TameHilbert90.IsTameAtLevel.exists_smul_mem_span_fixedPoints`: Galois descent at any
   prime `P` with `m ∉ P` for a `σ`-semilinear map `τ : V →ₛₗ[σ] V` of period `p` (no Artinian
@@ -132,6 +133,26 @@ theorem IsTameAtLevel.of_sq_eq_one_of_isUnit_sub {σ : R →+* R} {m x : R}
       omega
     have h_mem : x - σ x ∈ P := sub_mem_comm_iff.mp (by simpa using h_triv x)
     exact P.mem_of_dvd hx.dvd h_mem
+
+/-- Tameness at level `m` passes to the quotient by a `σ`-stable ideal `I`, with the endomorphism
+induced by `σ` and the level reduced modulo `I`. -/
+theorem IsTameAtLevel.quotientMap {σ : R →+* R} {p : ℕ} {m : R} (h_tame : IsTameAtLevel σ p m)
+    (I : Ideal R) (hI : I ≤ I.comap σ) :
+    IsTameAtLevel (Ideal.quotientMap I σ hI) p (Ideal.Quotient.mk I m) := by
+  have h_pow (i : ℕ) (y : R) :
+      (Ideal.quotientMap I σ hI)^[i] (Ideal.Quotient.mk I y) = Ideal.Quotient.mk I (σ^[i] y) := by
+    induction i with
+    | zero => rfl
+    | succ i ih => rw [iterate_succ_apply', ih, Ideal.quotientMap_mk, iterate_succ_apply']
+  obtain ⟨e, he⟩ := h_tame.exists_dvd_sum_range_pow_sub_one
+  refine ⟨by rw [Ideal.quotientMap_mk, h_tame.map_level], ⟨Ideal.Quotient.mk I e, ?_⟩, ?_,
+    h_tame.pos, fun i hi P _ h_triv ↦ ?_⟩
+  · simpa [h_pow] using map_dvd (Ideal.Quotient.mk I) he
+  · refine Ideal.Quotient.ringHom_ext (RingHom.ext fun y ↦ ?_)
+    simpa [h_pow] using congrArg (Ideal.Quotient.mk I) (RingHom.congr_fun h_tame.pow_eq_one y)
+  · have h_mem := h_tame.mem_of_forall_sub_mem hi (P.comap (Ideal.Quotient.mk I))
+      fun y ↦ by simpa [Ideal.mem_comap, h_pow] using h_triv (Ideal.Quotient.mk I y)
+    exact Ideal.mem_comap.mp h_mem
 
 /-- **Galois descent at a prime away from the level.** If `σ` is tame at level `m`, `τ` is a
 `σ`-semilinear map on an `R`-module `V` of period `p`, and `P` is a prime ideal with `m ∉ P`, then
