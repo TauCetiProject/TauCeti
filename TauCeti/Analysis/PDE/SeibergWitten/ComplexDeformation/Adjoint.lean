@@ -211,9 +211,9 @@ private theorem targetPairing_add_smul (c₁ c₂ : ℝ)
     (.inr (by simp [compactlySupportedForms_eq_top]))
   rw [SmoothForm.integralTopForm_inner_smul_left, SmoothForm.integralTopForm_inner_smul_left]
     at h₀ h₂
-  rw [targetPairing, targetPairing, targetPairing, Prod.fst_add, Prod.snd_add, Prod.smul_fst,
-    Prod.smul_fst, Prod.smul_snd, Prod.smul_snd, h₀, Submodule.coe_add, Submodule.coe_smul,
-    Submodule.coe_smul, h₂]
+  simp only [targetPairing, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd,
+    Submodule.coe_add, Submodule.coe_smul] at h₀ h₂ ⊢
+  rw [h₀, h₂]
   ring
 
 omit [BoundarylessManifold I M] [T2Space M] in
