@@ -15,9 +15,10 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 Removing a neighbourhood of zero makes the Mellin transform of a locally integrable,
 exponentially decaying kernel entire. On the imaginary axis its norm is controlled by the
-unweighted tail mass for `dt / t`. On a closed strip to the right of that axis, only the part
-over `t > 1` needs a higher moment. The estimates keep the tail mass explicit, so that a bound
-on that mass can be used as a boundary estimate in the three-lines theorem.
+unweighted tail mass for `dt / t` by `TauCeti.norm_mellin_indicator_Ioi_le_integral_rpow_mul_norm`
+in `TauCeti.Analysis.MellinTransform.Basic`. On a closed strip to the right of that axis, only
+`t > 1` needs a higher moment. The estimates keep the tail mass explicit, so that a bound on
+that mass can be used as a boundary estimate in the three-lines theorem.
 
 This is the analytic step for the truncated theta mollifier in
 `New.mollifier` and `New.three_lines_bound_of_LFunction_eq_zero` of the shorter formal proof
@@ -69,15 +70,6 @@ theorem differentiable_mellin_indicator_Ioi_of_isBigO_exp {f : ℝ → E} {r c :
   intro s
   obtain ⟨hloc, htop, hbot⟩ := mellin_indicator_Ioi_bounds hr hf hdecay (s.re - 1)
   exact mellin_differentiableAt_of_isBigO_rpow_exp hc hloc htop hbot (sub_one_lt _)
-
-/-- Bound the norm of a truncated Mellin transform by the absolute moment at `Re s`.
-On the imaginary axis this is the `dt / t` mass of the kernel's norm above the cutoff. -/
-theorem norm_mellin_indicator_Ioi_le_integral_rpow_mul_norm (f : ℝ → E) {r : ℝ} (hr : 0 ≤ r)
-    (s : ℂ) : ‖mellin ((Ioi r).indicator f) s‖ ≤ ∫ t in Ioi r, t ^ (s.re - 1) * ‖f t‖ := by
-  rw [mellin_indicator_Ioi _ hr]
-  refine (norm_integral_le_integral_norm _).trans_eq ?_
-  refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
-  rw [norm_smul, norm_cpow_eq_rpow_re_of_pos (hr.trans_lt ht), sub_re, one_re]
 
 /-- For `0 ≤ Re s ≤ R`, bound a truncated Mellin transform by its absolute mass on the
 imaginary axis plus a Gamma moment of the exponential majorant above `1`. In applications
