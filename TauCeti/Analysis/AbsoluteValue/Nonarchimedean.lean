@@ -234,14 +234,15 @@ theorem liesOver_nonarchRpow {K L : Type*} [CommSemiring K] [Semiring L] [Algebr
   simp [under_def, LiesOver.apply_algebraMap u]
 
 /-- An absolute value on an algebraic field extension `L / K` is nontrivial if and only if its
-restriction to `K` is. If `w` is trivial on `K`, it is bounded by `1` on the natural numbers,
-hence nonarchimedean, and so bounded by `1` on every element of `L`, which is integral over `K`;
-applied to `x` and `x⁻¹` this gives `w x = 1`. -/
+restriction to `K` is. -/
 theorem isNontrivial_iff_of_liesOver {K L : Type*} [Field K] [Field L] [Algebra K L]
     [Algebra.IsAlgebraic K L] (w : AbsoluteValue L ℝ) (u : AbsoluteValue K ℝ) [w.LiesOver u] :
     w.IsNontrivial ↔ u.IsNontrivial := by
   refine ⟨fun hw ↦ ?_, fun ⟨k, hk, hk1⟩ ↦
     ⟨algebraMap K L k, by simpa using hk, by rwa [LiesOver.apply_algebraMap u]⟩⟩
+  -- If `w` is trivial on `K`, it is bounded by `1` on the natural numbers, hence nonarchimedean,
+  -- and so bounded by `1` on every element of `L`, which is integral over `K`; applied to `x` and
+  -- `x⁻¹` this gives `w x = 1`.
   by_contra hu
   have hle (k : K) : w (algebraMap K L k) ≤ 1 := by
     rw [LiesOver.apply_algebraMap u]

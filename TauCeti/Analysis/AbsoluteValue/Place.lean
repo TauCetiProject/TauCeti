@@ -74,7 +74,7 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
   nontrivial, and so, when `L` is algebraic over `ℚ`, every nontrivial absolute value, is
   equivalent to exactly one place.
 * `AbsoluteValue.toPlace_eq_iff`, `AbsoluteValue.Place.toPlace_val`, `AbsoluteValue.toPlace_smul`,
-  `AbsoluteValue.toPlace_under`: the normalised representative is characterised by equivalence,
+  `AbsoluteValue.under_toPlace`: the normalised representative is characterised by equivalence,
   is the identity on places, and commutes with the action and with restriction.
 
 ## Acknowledgments
@@ -85,6 +85,11 @@ Riemann-Hypothesis channel, topic Library design discrepancies between RH/Mathli
 <https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643780662>
 and
 <https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643806146>.
+
+The construction of the normalised representative `AbsoluteValue.toPlace` follows
+`AbsoluteValue.normalization` in Jz Pan's lean-iwasawa
+(<https://github.com/acmepjz/lean-iwasawa>, branch `autoformalize.v1` at `7666c16`,
+`Iwasawalib/NumberTheory/AbsoluteValue/Normalization.lean`, Apache 2.0).
 
 ## References
 
@@ -266,10 +271,7 @@ section Normalisation
 variable {w : AbsoluteValue L ℝ}
 
 /-- **Existence of the normalised representative.** An absolute value of `L` whose restriction to
-`ℚ` is nontrivial is equivalent to a place. By Ostrowski's theorem, `(w.under ℚ) ^ c` is the real
-or a `p`-adic absolute value for some `c > 0`, and then so is the restriction of `x ↦ w x ^ c`,
-which is an absolute value by `AbsoluteValue.rpowOfNatCast` in the first case and by
-`AbsoluteValue.nonarchRpow` in the second. -/
+`ℚ` is nontrivial is equivalent to a place. -/
 theorem exists_isEquiv_of_isNontrivial_under (hw : (w.under ℚ).IsNontrivial) :
     ∃ v : Place L, w.IsEquiv v.val := by
   rcases Rat.AbsoluteValue.equiv_real_or_padic _ hw with h | ⟨p, ⟨_, h⟩, -⟩
@@ -350,7 +352,7 @@ theorem toPlace_smul {G : Type*} [Group G] [MulSemiringAction G L] (g : G) :
     simpa only [smul_apply, Place.val_smul] using isEquiv_toPlace hw (g⁻¹ • x) (g⁻¹ • y)
 
 /-- Taking the normalised representative commutes with restriction to a subfield. -/
-theorem toPlace_under (K : Type*) [Field K] [CharZero K] [Algebra K L] :
+theorem under_toPlace (K : Type*) [Field K] [CharZero K] [Algebra K L] :
     (w.toPlace hw).under K = (w.under K).toPlace (by rwa [under_under]) :=
   ((toPlace_eq_iff _).mpr fun x y ↦ by
     simpa only [under_apply, Place.val_under] using
