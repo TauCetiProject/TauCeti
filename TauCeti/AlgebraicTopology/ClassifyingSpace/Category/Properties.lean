@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Category.Cat
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Category
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Category.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FundamentalGroupoid
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.FundamentalGroupoid
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
@@ -15,15 +15,16 @@ import TauCeti.CategoryTheory.Category.ULift
 /-!
 # Further properties and examples of classifying spaces of categories
 
-Building on `TauCeti.AlgebraicTopology.ClassifyingSpace.Category`, this file establishes universe
-changes via `CategoryTheory.nerve.asSmallIso` (`classifyingSpace.asSmallHomeomorph`,
+Building on `TauCeti.AlgebraicTopology.ClassifyingSpace.Category.Basic`, this file establishes
+universe changes via `CategoryTheory.nerve.asSmallIso` (`classifyingSpace.asSmallHomeomorph`,
 `classifyingSpace.mapOfFunctor`, `classifyingSpace.homeomorphOfStrictIso`), faithfulness
 (`CategoryTheory.Functor.classifyingSpaceMap_injective`, `classifyingSpace.mapOfFunctor_injective`,
 `TauCeti.CategoryTheory.classifyingSpaceFunctor.Faithful`), non-fullness
 (`TauCeti.CategoryTheory.not_full_classifyingSpaceFunctor`), naturality of
-`classifyingSpace.toFundamentalGroupoid` (`classifyingSpace.toFundamentalGroupoidNatIso`),
-vertex injectivity (`classifyingSpace.vertex_injective`), and identifications for empty, discrete,
-contractible linear-order, `Fin 2`, and constant-functor examples.
+`classifyingSpace.toFundamentalGroupoid`
+(`classifyingSpace.toFundamentalGroupoidMapOfFunctorNatIso`), vertex injectivity
+(`classifyingSpace.vertex_injective`), and identifications for empty, discrete, contractible
+linear-order, `Fin 2`, and constant-functor examples.
 
 ## References
 
@@ -187,7 +188,9 @@ continuous map at `vertex Y`. -/
       AsSmall.{max u₂ v₂} C ⥤ AsSmall.{max u₁ v₁} D) =
       (Functor.const _).obj (AsSmall.up.obj Y) :=
     CategoryTheory.Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by
-      dsimp [Functor.comp, Functor.const]; simp
+      simp only [Functor.comp_map, Functor.const_obj_map, eqToHom_refl, Category.id_comp,
+        Category.comp_id]
+      exact CategoryTheory.Functor.map_id _ _
   simp [mapOfFunctor, hconst]
 
 /-- `mapOfFunctor` is injective on functors across arbitrary object and morphism universes. -/
@@ -265,27 +268,6 @@ lemma edge_mapOfFunctor {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Cat
   ext t
   rw [edge_apply, Path.cast_coe, Path.map_coe, Function.comp_apply, edge_apply,
     mapOfFunctor_toTopObjMk, Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_mk₁]
-
-/-- Naturality isomorphism comparing `toFundamentalGroupoid` along `F : C ⥤ D` with
-`FundamentalGroupoid.map F.classifyingSpaceMap.hom`. -/
-noncomputable def toFundamentalGroupoidNatIso (F : C ⥤ D) :
-    F ⋙ toFundamentalGroupoid D ≅
-      toFundamentalGroupoid C ⋙ FundamentalGroupoid.map F.classifyingSpaceMap.hom :=
-  NatIso.ofComponents
-    (fun X ↦ eqToIso (_root_.FundamentalGroupoid.ext (F.classifyingSpaceMap_vertex X).symm))
-    fun f ↦ by
-      dsimp only [Functor.comp_obj, Functor.comp_map]
-      rw [toFundamentalGroupoid_map, toFundamentalGroupoid_map]
-      exact _root_.FundamentalGroupoid.fromPath_naturality_eqToHom
-        (φ := F.classifyingSpaceMap.hom)
-        (F.classifyingSpaceMap_vertex _) (F.classifyingSpaceMap_vertex _)
-        (edge f) (edge (F.map f)) (by ext t; exact congrArg (· t) (map_edge F f).symm)
-
-@[simp] lemma toFundamentalGroupoidNatIso_inv_app (F : C ⥤ D) (X : C) :
-    (toFundamentalGroupoidNatIso F).inv.app X = eqToHom (by ext; simp) := (rfl)
-
-@[simp] lemma toFundamentalGroupoidNatIso_hom_app (F : C ⥤ D) (X : C) :
-    (toFundamentalGroupoidNatIso F).hom.app X = eqToHom (by ext; simp) := (rfl)
 
 /-- Naturality isomorphism comparing `toFundamentalGroupoid` along `F : C ⥤ D` across arbitrary
 universes with `FundamentalGroupoid.map (mapOfFunctor F)`. -/
@@ -414,9 +396,9 @@ noncomputable def preorderHomeomorphStdSimplex {n : ℕ} {α : Type u} [Preorder
   have hθ : (nerve.representableBy α e).homEquiv θ = s :=
     nerve.objEquiv.injective <| ComposableArrows.ext
       (fun i ↦ by
-        rw [nerve.objEquiv_eq]
-        dsimp [nerve.representableBy, SimplexCategory.homEquivFunctor,
-          SimplexCategory.homEquivOrderHom, θ]
+        change (nerve.objEquiv ((nerve.representableBy α e).homEquiv θ)).obj i =
+          (nerve.objEquiv s).obj i
+        rw [nerve.representableBy_homEquiv_obj]
         exact e.symm_apply_apply _)
       (fun _ _ ↦ Subsingleton.elim _ _)
   have hinv : (SSet.stdSimplex.isoOfRepresentableBy (nerve.representableBy α e)).inv.app (op ⦋m⦌)

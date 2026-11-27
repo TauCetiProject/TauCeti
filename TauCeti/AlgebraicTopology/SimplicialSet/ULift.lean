@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+import Mathlib.CategoryTheory.Limits.Preserves.Ulift
 
 /-!
 # Universe lifts of simplicial sets
@@ -114,6 +116,13 @@ instance : (uliftFunctor.{v, u}).Full :=
 
 instance : (uliftFunctor.{v, u}).Faithful :=
   fullyFaithfulUliftFunctor.faithful
+
+/-- The universe lift `SSet.uliftFunctor` preserves small colimits. -/
+noncomputable instance preservesColimitsOfSize_uliftFunctor :
+    PreservesColimitsOfSize.{0, u} uliftFunctor.{v, u} :=
+  inferInstanceAs (PreservesColimitsOfSize.{0, u}
+    ((Functor.whiskeringRight SimplexCategoryᵒᵖ (Type u) (Type max u v)).obj
+      CategoryTheory.uliftFunctor.{v, u}))
 
 /-- On simplices, the preimage under `SSet.fullyFaithfulUliftFunctor` strips the outer `ULift`. -/
 @[simp]

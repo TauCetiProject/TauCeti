@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
+import TauCeti.AlgebraicTopology.TopologicalSimplex
 import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
@@ -92,11 +93,11 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
       Function.Injective (objEquiv y) ∧ (∀ j, w'.weights j ≠ 0) ∧
       toTopObjMk x w = toTopObjMk y w' ∧
       StdSimplex.map (objEquiv x) w = StdSimplex.map (objEquiv y) w' := by
-  -- First strip zero weights via `StdSimplex.exists_strictMono_map_eq`, then factor out
-  obtain ⟨k, f, w₀, hf, hw₀, hw⟩ := StdSimplex.exists_strictMono_map_eq w
-  let θ : ⦋k⦌ ⟶ ⦋n⦌ := SimplexCategory.Hom.mk ⟨f, hf.monotone⟩
-  have hwθ : w = w₀.map θ.toOrderHom := hw
-  rw [hwθ]
+  -- First strip zero weights via `SimplexCategory.exists_mono_stdSimplex_map_eq` to land in a face
+  -- with interior weights, then factor the resulting simplex into a nondegenerate one via
+  -- `SSet.exists_nonDegenerate`.
+  obtain ⟨k, θ, _, w₀, hw₀, hw⟩ := SimplexCategory.exists_mono_stdSimplex_map_eq w
+  rw [hw]
   obtain ⟨r, π, hπ, ⟨y, hy⟩, hxy⟩ :=
     SSet.exists_nonDegenerate (Δ[p] ⊗ Δ[q] : SSet.{u}) ((Δ[p] ⊗ Δ[q] : SSet.{u}).map θ.op x)
   refine ⟨r, y, w₀.map π.toOrderHom, (nonDegenerate_iff_injective_objEquiv y).1 hy,
@@ -110,6 +111,7 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
     have h1 := objEquiv_map_apply x θ j
     have h2 := objEquiv_map_apply y π j
     dsimp only [Function.comp_apply] at h1 h2 ⊢
+    change (objEquiv x) (θ.toOrderHom j) = (objEquiv y) (π.toOrderHom j)
     rw [← h1, hxy, h2]
 
 /-- Two points of the realizations of simplices of `Δ[p] ⊗ Δ[q]` with injective vertex maps and
@@ -122,8 +124,7 @@ private lemma toTopObjMk_eq_of_injective {r r' : ℕ} {y : (Δ[p] ⊗ Δ[q] : SS
     (hw' : ∀ j, w'.weights j ≠ 0)
     (h : StdSimplex.map (objEquiv y) w = StdSimplex.map (objEquiv y') w') :
     toTopObjMk y w = toTopObjMk y' w' := by
-  obtain rfl : r = r' := Nat.succ.inj (by
-    simpa using Fintype.card_congr (StdSimplex.equivOfInjectiveMapEq hy hw hy' hw' h))
+  obtain rfl : r = r' := StdSimplex.eq_of_injective_map_eq_fin hy hw hy' hw' h
   have hmono {y : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋r⦌} (hy : Function.Injective (objEquiv y)) :
       StrictMono (toLex ∘ objEquiv y) :=
     (Prod.Lex.toLex_mono.comp (objEquiv y).monotone).strictMono_of_injective

@@ -384,6 +384,14 @@ theorem _root_.CategoryTheory.nerveEquiv_symm_eq_const (X : C) :
   objEquiv.injective <| ComposableArrows.ext (fun j ↦ by fin_cases j; rfl)
     (fun _ _ ↦ Subsingleton.elim _ _)
 
+@[simp] theorem representableBy_homEquiv_obj {m n : ℕ} {α : Type u} [Preorder α]
+    (e : α ≃o Fin (n + 1)) (θ : ⦋m⦌ ⟶ ⦋n⦌) (i : Fin (m + 1)) :
+    (objEquiv ((representableBy α e).homEquiv θ)).obj i = e.symm (θ.toOrderHom i) := by
+  -- Unfolds `nerve.representableBy`, `SimplexCategory.homEquivFunctor`, and `homEquivOrderHom`.
+  rw [objEquiv_eq]
+  dsimp [representableBy, SimplexCategory.homEquivFunctor, SimplexCategory.homEquivOrderHom]
+  rfl
+
 /-- The nerve of `AsSmall.{w} C` is isomorphic to the universe lift of `nerve C`. -/
 def asSmallIso (C : Type u) [Category.{v} C] :
     nerve (AsSmall.{w} C) ≅ SSet.uliftFunctor.{w, max u v}.obj (nerve C) where
@@ -407,15 +415,27 @@ def asSmallIso (C : Type u) [Category.{v} C] :
   -- `(AsSmall.up.mapComposableArrows n).obj s.down`.
   rfl
 
+-- Not `@[simp]`: `asSmallIso_inv_app` already simplifies the LHS (`simpNF`).
+lemma asSmallIso_inv_app_ulift_nerveEquiv_symm (C : Type u) [Category.{v} C] (X : C) :
+    (asSmallIso.{w} C).inv.app (op ⦋0⦌)
+        ((nerve C).uliftFunctorObjEquiv (op ⦋0⦌) (nerveEquiv.symm X)) =
+      nerveEquiv.symm ((AsSmall.up : C ⥤ AsSmall.{w} C).obj X) := by
+  rw [← objEquiv_symm_eq (nerveEquiv.symm X), asSmallIso_inv_app, Equiv.symm_apply_apply,
+    Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_nerveEquiv_symm, objEquiv_symm_eq]
+
 /-- The nerve of any discrete category `C` (`[IsDiscrete C]`) is isomorphic to the constant
 simplicial set on `ULift.{v} C`. -/
 def isDiscreteIso (C : Type u) [Category.{v} C] [IsDiscrete C] :
     nerve C ≅ (Functor.const SimplexCategoryᵒᵖ).obj (ULift.{v} C) where
   hom :=
     { app _ := ↾fun F ↦ ULift.up (F.obj 0)
-      naturality _ _ _ := ConcreteCategory.hom_ext _ _ fun F ↦ by
-        dsimp [nerve, Functor.const]
-        exact ULift.ext (IsDiscrete.eq_of_hom (F.map (homOfLE (Fin.zero_le _)))).symm }
+      naturality m₁ m₂ f := ConcreteCategory.hom_ext _ _ fun F ↦ by
+        rcases m₁ with ⟨⟨m₁⟩⟩; rcases m₂ with ⟨⟨m₂⟩⟩
+        have hF : (objEquiv ((nerve C).map f F)).obj 0 = F.obj (f.unop.toOrderHom 0) :=
+          congrArg (·.obj 0) (objEquiv_map f.unop F)
+        -- `isDiscreteIso.hom.app` evaluates `ULift.up (·.obj 0)` at `((nerve C).map f F)` and `F`.
+        change ULift.up ((objEquiv ((nerve C).map f F)).obj 0) = ULift.up (F.obj 0)
+        exact ULift.ext (hF.trans (IsDiscrete.eq_of_hom (F.map (homOfLE (Fin.zero_le _)))).symm) }
   inv := { app m := ↾fun x ↦ (Functor.const (Fin (m.unop.len + 1))).obj x.down }
   hom_inv_id := by
     ext ⟨⟨n⟩⟩ F : 4

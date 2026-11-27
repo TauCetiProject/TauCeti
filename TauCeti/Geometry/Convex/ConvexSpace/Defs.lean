@@ -514,6 +514,7 @@ noncomputable def equivOfInjectiveMapEq {Z : Type*} {f₁ : X → Z} (hf₁ : f�
     (Equiv.ofInjective f₂ hf₂).symm
 
 /-- `equivOfInjectiveMapEq` intertwines `f₂` with `f₁`. -/
+-- Not `@[simp]`: LHS has free variable `f₂` as head symbol (`warning.simp.varHead`).
 theorem apply_equivOfInjectiveMapEq {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.Injective)
     {w₁ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) {f₂ : Y → Z} (hf₂ : f₂.Injective)
     {w₂ : StdSimplex R Y} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) (x : X) :
@@ -521,11 +522,22 @@ theorem apply_equivOfInjectiveMapEq {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.I
   simp [equivOfInjectiveMapEq, Equiv.apply_ofInjective_symm]
 
 /-- The inverse of `equivOfInjectiveMapEq` intertwines `f₁` with `f₂`. -/
+-- Not `@[simp]`: LHS has free variable `f₁` as head symbol (`warning.simp.varHead`).
 theorem apply_equivOfInjectiveMapEq_symm {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.Injective)
     {w₁ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) {f₂ : Y → Z} (hf₂ : f₂.Injective)
     {w₂ : StdSimplex R Y} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) (y : Y) :
     f₁ ((equivOfInjectiveMapEq hf₁ hw₁ hf₂ hw₂ h).symm y) = f₂ y := by
   simp [equivOfInjectiveMapEq, Equiv.apply_ofInjective_symm]
+
+/-- Two injective maps out of `Fin (k₁ + 1)` and `Fin (k₂ + 1)` pushing interior points of
+standard simplices to the same point have equal domain dimensions `k₁ = k₂`. -/
+theorem eq_of_injective_map_eq_fin {Z : Type*} {k₁ k₂ : ℕ}
+    {f₁ : Fin (k₁ + 1) → Z} (hf₁ : f₁.Injective)
+    {w₁ : StdSimplex R (Fin (k₁ + 1))} (hw₁ : ∀ i, w₁.weights i ≠ 0)
+    {f₂ : Fin (k₂ + 1) → Z} (hf₂ : f₂.Injective)
+    {w₂ : StdSimplex R (Fin (k₂ + 1))} (hw₂ : ∀ j, w₂.weights j ≠ 0)
+    (h : w₁.map f₁ = w₂.map f₂) : k₁ = k₂ :=
+  Nat.succ.inj (by simpa using Fintype.card_congr (equivOfInjectiveMapEq hf₁ hw₁ hf₂ hw₂ h))
 
 /-- A strictly monotone map from a linear order pushing an interior point to a given point of a
 standard simplex is uniquely determined together with the interior point. -/

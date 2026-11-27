@@ -119,10 +119,8 @@ lemma eq_dim_of_mono_stdSimplex_map_eq {n k₁ k₂ : ℕ} {ι₁ : ⦋k₁⦌ �
     {w₁ : StdSimplex R (Fin (k₁ + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0) {ι₂ : ⦋k₂⦌ ⟶ ⦋n⦌} [Mono ι₂]
     {w₂ : StdSimplex R (Fin (k₂ + 1))} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map ι₁ = w₂.map ι₂) :
     k₁ = k₂ :=
-  Nat.succ.inj (by
-    simpa using Fintype.card_congr
-      (StdSimplex.equivOfInjectiveMapEq (mono_iff_injective.1 ‹_›) hw₁
-        (mono_iff_injective.1 ‹_›) hw₂ h))
+  StdSimplex.eq_of_injective_map_eq_fin
+    (mono_iff_injective.1 ‹_›) hw₁ (mono_iff_injective.1 ‹_›) hw₂ h
 
 /-- A monomorphism `⦋k⦌ ⟶ ⦋n⦌` pushing an interior point to a given point is uniquely determined
 together with the interior point. -/
@@ -365,6 +363,21 @@ noncomputable def toTopUliftIso :
     dsimp% toTopUliftIso.{u, v}.hom.app m t =
       (toTop.{u}.obj m).uliftFunctorObjHomeo.{v} (ULift.up t.down) :=
   (rfl)
+
+/-- Evaluating `SimplexCategory.toTopUliftIso.hom.app m` on the realized standard simplex point of
+`w` recovers the universe lift of the corresponding point in `SimplexCategory.toTop.{u}.obj m`. -/
+lemma toTopUliftIso_hom_app_toTopSimplex (m : SimplexCategory)
+    (w : StdSimplex ℝ (Fin (m.len + 1))) :
+    toTopUliftIso.{u, v}.hom.app m
+        (SSet.toTopSimplex.{max u v}.hom.app m (m.toTopHomeo.{max u v}.symm w)) =
+      (toTop.{u}.obj m).uliftFunctorObjHomeo.{v}
+        (SSet.toTopSimplex.{u}.hom.app m (m.toTopHomeo.{u}.symm w)) := by
+  rw [toTopUliftIso_hom_app_apply]
+  refine congrArg ((toTop.{u}.obj m).uliftFunctorObjHomeo.{v}) ?_
+  apply ((toTop₀.obj m).uliftFunctorObjHomeo.{u}).symm.injective
+  -- Both sides evaluate to `m.toTopHomeo (m.toTopHomeo.symm w)` (`toTop₀.obj m` is `StdSimplex`).
+  exact (m.toTopHomeo.{max u v}.apply_symm_apply w).trans
+    (m.toTopHomeo.{u}.apply_symm_apply w).symm
 
 /-- The inverse component of `SimplexCategory.toTopUliftIso` removes the outer `ULift` layer via
 `(toTop.{u}.obj m).uliftFunctorObjHomeo.symm`. -/
