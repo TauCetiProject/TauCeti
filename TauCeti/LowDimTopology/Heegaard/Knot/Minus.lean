@@ -135,7 +135,7 @@ variable {H A}
 @[simp]
 theorem knotMinusAlexanderGrading_piece :
     (H.knotMinusAlexanderGrading A).piece = H.knotMinusAlexanderPiece A :=
-  (rfl)
+  monomialGrading_piece
 
 /-- A chain of `CFK⁻` has Alexander degree `a` exactly when each of its terms `U ^ k x` has
 `A(x) - k = a`. -/
@@ -367,6 +367,10 @@ theorem isHomogeneous_knotMinusDifferential_alexander (h : H.IsKnotGrading χ w 
     LinearMap.IsHomogeneous (H.knotMinusDifferential χ w z) (H.knotMinusAlexanderPiece A)
       (H.knotMinusAlexanderPiece A) 0 := by
   -- Check the degree on the basis `U ^ k x` of `CFK⁻`, which spans its pieces.
+  have hspan : H.knotMinusAlexanderPiece A = fun a => Submodule.span (ZMod 2)
+      (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) '' {i | A i.1 - i.2 = a}) :=
+    monomialGradedPiece_eq_span
+  nth_rw 1 [hspan]
   refine LinearMap.isHomogeneous_span_iff.2 ?_
   rintro a _ ⟨⟨x, k⟩, hi, rfl⟩
   rw [mem_knotMinusAlexanderPiece_iff]
@@ -405,7 +409,8 @@ piece of degree `a` consists of the classes of cycles of Alexander degree `a`, i
 has degree `A(x) - k`. -/
 noncomputable def knotMinusHomologyAlexanderGrading (h : H.IsKnotGrading χ w z M A) :
     InternalGrading (ZMod 2) (H.knotMinusHomology χ w z hd) ℤ :=
-  (H.knotMinusAlexanderGrading A).homology h.isHomogeneous_knotMinusDifferential_alexander hd
+  (H.knotMinusAlexanderGrading A).homology
+    (knotMinusAlexanderGrading_piece ▸ h.isHomogeneous_knotMinusDifferential_alexander) hd
 
 /-- A class of `HFK⁻` has Alexander degree `a` exactly when it is the class of a cycle all of whose
 terms `U ^ k x` have `A(x) - k = a`. -/
@@ -414,8 +419,9 @@ theorem mem_knotMinusHomologyAlexanderGrading_piece_iff (h : H.IsKnotGrading χ 
     y ∈ (h.knotMinusHomologyAlexanderGrading hd).piece a ↔
       ∃ c : LinearMap.ker (H.knotMinusDifferential χ w z),
         (c : H.Generator →₀ (ZMod 2)[X]) ∈ H.knotMinusAlexanderPiece A a ∧
-          (H.knotMinusDifferential χ w z).homologyπ hd c = y :=
-  InternalGrading.mem_homology_piece_iff _ _ _
+          (H.knotMinusDifferential χ w z).homologyπ hd c = y := by
+  rw [knotMinusHomologyAlexanderGrading, InternalGrading.mem_homology_piece_iff,
+    knotMinusAlexanderGrading_piece]
 
 /-- **`U` lowers the Alexander grading of `HFK⁻` by one.** -/
 theorem X_smul_mem_knotMinusHomologyAlexanderGrading_piece (h : H.IsKnotGrading χ w z M A)
@@ -423,8 +429,9 @@ theorem X_smul_mem_knotMinusHomologyAlexanderGrading_piece (h : H.IsKnotGrading 
     (hy : y ∈ (h.knotMinusHomologyAlexanderGrading hd).piece a) :
     (X : (ZMod 2)[X]) • y ∈ (h.knotMinusHomologyAlexanderGrading hd).piece (a - 1) := by
   rw [sub_eq_add_neg]
-  exact InternalGrading.smul_mem_homology_piece _ _ _
-    (fun _ _ hc => by simpa [sub_eq_add_neg] using X_smul_mem_knotMinusAlexanderPiece hc) hy
+  refine InternalGrading.smul_mem_homology_piece _ _ _ (fun _ _ hc => ?_) hy
+  rw [knotMinusAlexanderGrading_piece] at hc ⊢
+  simpa [sub_eq_add_neg] using X_smul_mem_knotMinusAlexanderPiece hc
 
 /-- **Shifting the Alexander grading by `a` shifts the grading of `HFK⁻` by `a`**: the Alexander
 grading of `HFK⁻` for `A + a` is the shift by `-a` of the one for `A`, whose degree-`p` piece is

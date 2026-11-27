@@ -161,10 +161,7 @@ theorem isGreatest_nonTorsionDegrees_neg_tau (h : H.IsKnotGrading χ w z M A)
 class, and the supremum of the empty set of degrees is `0`. -/
 theorem tau_eq_zero_of_isTorsion (h : H.IsKnotGrading χ w z M A)
     (hT : Module.IsTorsion (ZMod 2)[X] (H.knotMinusHomology χ w z hd)) : h.tau hd = 0 := by
-  rw [tau_def, InternalGrading.supNonTorsionDegree_def,
-    Set.not_nonempty_iff_eq_empty.mp fun hne =>
-      (InternalGrading.nonTorsionDegrees_nonempty_iff _).mp hne hT,
-    Int.csSup_empty, neg_zero]
+  rw [tau_def, InternalGrading.supNonTorsionDegree_eq_zero_of_isTorsion _ hT, neg_zero]
 
 /-- **Shifting the Alexander grading by `a` lowers `τ` by `a`**, when `HFK⁻` is not torsion: every
 non-torsion degree is shifted by `a`. -/

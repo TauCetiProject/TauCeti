@@ -297,20 +297,26 @@ variable {ι : Type*} (deg : H.Generator → ℕ → ι)
 each chain `U ^ k x`: the span of the chains `U ^ k x` with `deg x k = a`. The grading of `CF⁻`
 (`minusGradedPiece`) and the Alexander grading of the minus knot Floer complex are of this
 form. -/
-@[expose] noncomputable def monomialGradedPiece (a : ι) :
+noncomputable def monomialGradedPiece (a : ι) :
     Submodule (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) :=
   Submodule.span (ZMod 2)
     (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) '' {i | deg i.1 i.2 = a})
 
 /-- The grading of the free `𝔽₂[U]`-module on the generators in which `U ^ k x` has degree
 `deg x k`: the grading of its `𝔽₂`-basis of the chains `U ^ k x` by these degrees. -/
-@[expose] noncomputable def monomialGrading [DecidableEq ι] :
+noncomputable def monomialGrading [DecidableEq ι] :
     InternalGrading (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) ι where
   piece := H.monomialGradedPiece deg
   isInternal := (Finsupp.basis fun _ : H.Generator => basisMonomials (ZMod 2))
     |>.isInternal_span_image_fiber fun i => deg i.1 i.2
 
 variable {H deg}
+
+/-- The pieces of the monomial grading are spanned by the chains `U ^ k x` of each degree. -/
+theorem monomialGradedPiece_eq_span :
+    H.monomialGradedPiece deg = fun a => Submodule.span (ZMod 2)
+      (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) '' {i | deg i.1 i.2 = a}) :=
+  (rfl)
 
 @[simp]
 theorem monomialGrading_piece [DecidableEq ι] :
