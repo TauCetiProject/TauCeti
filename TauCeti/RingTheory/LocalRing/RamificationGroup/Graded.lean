@@ -89,13 +89,21 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
   uniformizer.
 * `TauCeti.IsLocalRing.toAdd_ramificationGroupToResidueField_of_mul_eq`: changing the uniformizer
   from `π` to `π a` multiplies the positive-depth coordinate by the `(n + 1)`-st power of `a`.
-* `TauCeti.IsLocalRing.ker_tameCharacter` and `TauCeti.IsLocalRing.tameCharacterGraded_injective`,
+* `TauCeti.IsLocalRing.ker_tameCharacter`, `TauCeti.IsLocalRing.tameCharacter_injective_iff`,
+  `TauCeti.IsLocalRing.tameCharacter_injective_of_charZero`, and
+  `TauCeti.IsLocalRing.tameCharacterGraded_injective`;
   `TauCeti.IsLocalRing.ker_ramificationGroupToResidueField` and
   `TauCeti.IsLocalRing.ramificationGroupGradedToResidueField_injective`: for a separable residue
   extension, the kernels are `G_1` and `G_{n+2}`, and the graded maps are injective.
-* `TauCeti.IsLocalRing.isCyclic_ramificationGroupGraded_zero` and
-  `TauCeti.IsLocalRing.not_dvd_index_ramificationGroup_one`: a finite `G_0 / G_1` is
-  cyclic of order prime to the residue characteristic.
+* `TauCeti.IsLocalRing.isCyclic_ramificationGroupGraded_zero`,
+  `TauCeti.IsLocalRing.isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot`,
+  `TauCeti.IsLocalRing.isCyclic_ramificationGroup_zero_of_charZero`,
+  `TauCeti.IsLocalRing.not_dvd_index_ramificationGroup_one`,
+  `TauCeti.IsLocalRing.natCard_ramificationGroup_one`, and
+  `TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: a
+  finite `G_0 / G_1` is cyclic of order prime to the residue characteristic, `#G_1 = p ^ v_p(#G_0)`,
+  `G_1 = ⊥` iff `p ∤ #G_0`, and finite `G_0` is cyclic when `G_1 = ⊥` or in residue
+  characteristic zero.
 
 ## References
 
@@ -730,6 +738,28 @@ theorem ker_tameCharacter (R : Type*) [CommRing R] [IsLocalRing R] [Algebra R S]
   exact (mem_ramificationGroup_natCast_iff_smul_sub_mem R hπ.maximalIdeal_eq σ.property
     (n := 1)).mpr hσ
 
+/-- When `S` is a local `R`-algebra on which `G` acts by `R`-algebra automorphisms with separable
+residue extension, `TauCeti.IsLocalRing.tameCharacter` is injective if and only if the wild
+inertia group `G_1` is trivial. -/
+theorem tameCharacter_injective_iff (R : Type*) [CommRing R] [IsLocalRing R] [Algebra R S]
+    [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] :
+    Function.Injective (tameCharacter G S) ↔ ramificationGroup G S 1 = ⊥ := by
+  rw [← MonoidHom.ker_eq_bot_iff, ker_tameCharacter R, Subgroup.subgroupOf_eq_bot,
+    disjoint_iff, inf_eq_left.mpr (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ 1))]
+
+/-- When `S` is a local `R`-algebra on which `G` acts faithfully by `R`-algebra automorphisms with
+separable residue extension, residue characteristic zero, and finite wild inertia `G_1`, the tame
+character `TauCeti.IsLocalRing.tameCharacter G S` is injective. -/
+theorem tameCharacter_injective_of_charZero (R : Type*) [CommRing R] [IsLocalRing R]
+    [Algebra R S] [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] [CharZero (ResidueField S)]
+    [FaithfulSMul G S] [Finite (ramificationGroup G S 1)] :
+    Function.Injective (tameCharacter G S) :=
+  (tameCharacter_injective_iff R).mpr
+    (ramificationGroup_eq_bot_of_charZero (G := G) (S := S) (i := 1) one_pos
+      (iInf_ramificationGroup_eq_bot G S))
+
 variable (G S) in
 /-- The tame character on the tame quotient `G_0 / G_1`. -/
 noncomputable def tameCharacterGraded : RamificationGroupGraded G S 0 →* (ResidueField S)ˣ :=
@@ -763,6 +793,34 @@ theorem isCyclic_ramificationGroupGraded_zero (R : Type*) [CommRing R] [IsLocalR
   isCyclic_of_injective_ringHom ((Units.coeHom _).comp (tameCharacterGraded G S))
     (Units.val_injective.comp (tameCharacterGraded_injective R))
 
+/-- When `S` is a local `R`-algebra on which `G` acts by `R`-algebra automorphisms with separable
+residue extension, a finite inertia group `G_0` with trivial wild inertia `G_1 = ⊥` is cyclic. -/
+theorem isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot (R : Type*) [CommRing R]
+    [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] [Finite (ramificationGroup G S 0)]
+    (h : ramificationGroup G S 1 = ⊥) :
+    IsCyclic (ramificationGroup G S 0) := by
+  have : IsCyclic (RamificationGroupGraded G S 0) :=
+    isCyclic_ramificationGroupGraded_zero R
+  refine isCyclic_of_injective
+    (QuotientGroup.mk' ((ramificationGroup G S ((0 : ℤ) + 1)).subgroupOf
+      (ramificationGroup G S 0))) ?_
+  rw [← MonoidHom.ker_eq_bot_iff, QuotientGroup.ker_mk', zero_add, h, Subgroup.bot_subgroupOf]
+
+/-- When `S` is a local `R`-algebra on which `G` acts faithfully by `R`-algebra automorphisms with
+separable residue extension and residue characteristic zero, every finite inertia group `G_0` is
+cyclic. -/
+theorem isCyclic_ramificationGroup_zero_of_charZero (R : Type*) [CommRing R] [IsLocalRing R]
+    [Algebra R S] [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] [CharZero (ResidueField S)]
+    [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
+    IsCyclic (ramificationGroup G S 0) := by
+  have : Finite (ramificationGroup G S 1) :=
+    finite_ramificationGroup_of_le G S zero_le_one
+  exact isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot R
+    (ramificationGroup_eq_bot_of_charZero (G := G) (S := S) one_pos
+      (iInf_ramificationGroup_eq_bot G S))
+
 /-- **The order of the tame quotient is prime to the residue characteristic**: the index of
 `G_1` in `G_0` is not divisible by `p` when `G_0 / G_1` is finite and the residue extension is
 separable. The quotient embeds into `kˣ`, which has no element of order `p` when `k` has
@@ -784,6 +842,29 @@ theorem not_dvd_index_ramificationGroup_one (R : Type*) [CommRing R] [IsLocalRin
     exact (hord ▸ IsPrimitiveRoot.orderOf _).neZero'.out (CharP.cast_eq_zero _ p)
   · rw [zero_dvd_iff]
     exact Nat.card_pos.ne'
+
+/-- When `S` is a local `R`-algebra on which `G` acts faithfully by `R`-algebra automorphisms with
+separable residue extension, prime residue characteristic `p`, and finite `G_0`, the cardinality of
+`G_1` is the `p`-primary part `p ^ v_p(#G_0)` of the cardinality of `G_0`. -/
+theorem natCard_ramificationGroup_one (R : Type*) [CommRing R] [IsLocalRing R] [Algebra R S]
+    [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] (p : ℕ) [Fact p.Prime]
+    [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
+    Nat.card (ramificationGroup G S 1) =
+      p ^ (Nat.card (ramificationGroup G S 0)).factorization p :=
+  natCard_ramificationGroup_one_of_not_dvd_index G S p
+    (not_dvd_index_ramificationGroup_one R p)
+
+/-- **Wild inertia is trivial if and only if `p ∤ #G_0`**, when `S` is a local `R`-algebra on which
+`G` acts faithfully by `R`-algebra automorphisms with separable residue extension, residue
+characteristic `p`, and finite `G_0`. -/
+theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (R : Type*)
+    [CommRing R] [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)]
+    [SMulCommClass G R S] [Algebra.IsSeparable (ResidueField R) (ResidueField S)] (p : ℕ)
+    [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
+    ramificationGroup G S 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G S 0) :=
+  ramificationGroup_one_eq_bot_iff_not_dvd_card_of_not_dvd_index G S p
+    (not_dvd_index_ramificationGroup_one R p)
 
 /-! ### The positive-depth graded embeddings -/
 
