@@ -236,6 +236,6 @@ theorem isGreatest_geometricMean {A B : Matrix n n ℂ} (hA : A.PosDef) (hB : B.
   -- Mathlib proves the operator monotonicity of the square root in C⋆-algebras; the `ℓ²`
   -- operator norm makes complex square matrices one.
   open scoped Matrix.Norms.L2Operator in
-  exact isGreatest_geometricMean_setOf_mul_ringInverse_mul_le hA.isStrictlyPositive hB.nonneg
+  exact hA.isStrictlyPositive.isGreatest_geometricMean_setOf_mul_ringInverse_mul_le hB.nonneg
 
 end TauCeti

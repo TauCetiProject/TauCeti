@@ -43,9 +43,9 @@ roots (`CFC.sqrt_unique`).
 * `TauCeti.geometricMean_add_geometricMean_le`: the arithmetic--geometric mean inequality.
 * `TauCeti.eq_geometricMean_ringInverse_of_mul_mul`: the transport form `x * a * x = b`.
 * `TauCeti.le_geometricMean_of_mul_ringInverse_mul_le` and
-  `TauCeti.isGreatest_geometricMean_setOf_mul_ringInverse_mul_le`: in a C⋆-algebra, the geometric
-  mean lies above every self-adjoint `x` with `x * a⁻¹ * x ≤ b`, and it is the greatest
-  nonnegative such `x`.
+  `IsStrictlyPositive.isGreatest_geometricMean_setOf_mul_ringInverse_mul_le`: in a C⋆-algebra,
+  the geometric mean lies above every self-adjoint `x` with `x * a⁻¹ * x ≤ b`, and it is the
+  greatest nonnegative such `x`.
 
 ## References
 
@@ -258,6 +258,14 @@ theorem le_geometricMean_of_mul_ringInverse_mul_le (h : x * a⁻¹ʳ * x ≤ b)
   calc x = conjSqrt a y := (conjSqrt_conjSqrt_ringInverse a x ha).symm
     _ ≤ geometricMean a b := conjSqrt_le_conjSqrt (hyabs.trans (sqrt_le_sqrt _ _ hy))
 
+end TauCeti
+
+namespace IsStrictlyPositive
+
+open TauCeti
+
+variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {a b : A}
+
 /-- **The geometric mean as a greatest element.** In a C⋆-algebra, for strictly positive `a` and
 nonnegative `b`, the geometric mean of `a` and `b` is the greatest nonnegative `x` with
 `x * a⁻¹ * x ≤ b`. -/
@@ -267,4 +275,4 @@ theorem isGreatest_geometricMean_setOf_mul_ringInverse_mul_le
   ⟨⟨geometricMean_nonneg a b, (geometricMean_mul_ringInverse_mul_geometricMean ha hb).le⟩,
     fun _ hx => le_geometricMean_of_mul_ringInverse_mul_le hx.2 ha hx.1.isSelfAdjoint⟩
 
-end TauCeti
+end IsStrictlyPositive
