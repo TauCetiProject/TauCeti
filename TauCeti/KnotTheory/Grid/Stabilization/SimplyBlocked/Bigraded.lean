@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.Series.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Stabilization.Components
 public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Grading
 public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Homology
 import Mathlib.LinearAlgebra.Dimension.Finrank

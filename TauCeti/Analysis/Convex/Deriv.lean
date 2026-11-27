@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Convex.Function.Basic
 
 /-!
 # Derivatives and convexity on intervals
@@ -21,6 +23,10 @@ A real function whose third derivative is positive on `(a, b)` and whose second 
 continuous on `[a, b]` and nonnegative at `a` is strictly convex on `[a, b]`, since its second
 derivative increases from a nonnegative value.
 
+A differentiable strictly convex function on `[l, u]`, positive at both ends and negative at some
+interior point, has exactly two zeros in `(l, u)`, with negative derivative at the first and
+positive derivative at the second.
+
 ## Main statements
 
 * `ConvexOn.rightDeriv_le_rightDeriv_of_slope_le` compares right derivatives from
@@ -32,6 +38,8 @@ derivative increases from a nonnegative value.
 * `ConvexOn.exists_mul_sub_le_max_zero`: a supporting line with nonnegative slope and
   nonpositive intercept to the positive part of a convex function `Φ` on `[0, ∞)` with
   `Φ 0 ≤ 0`.
+* `StrictConvexOn.exists_setOf_eq_zero_eq_pair`: the two zeros of a strictly convex function that
+  is positive at the ends of an interval and negative inside.
 * `TauCeti.strictConvexOn_Icc_of_deriv3_pos`: strict convexity on `[a, b]` from a positive third
   derivative and a nonnegative second derivative at `a`.
 
@@ -127,6 +135,38 @@ theorem exists_mul_sub_le_max_zero {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0
   exact ⟨k, k * c - Ψ c, hk, hd, fun s hs ↦ by linarith [htan s hs], by ring⟩
 
 end ConvexOn
+
+/-- A strictly convex function, differentiable on `[l, u]`, positive at `l` and `u` and negative
+at `x ∈ (l, u)`, has exactly two zeros `p < x < q` in `(l, u)`. It is negative between them, with
+negative derivative at `p` and positive derivative at `q`. -/
+theorem StrictConvexOn.exists_setOf_eq_zero_eq_pair {φ : ℝ → ℝ} {l u x : ℝ}
+    (hφ : StrictConvexOn ℝ (Icc l u) φ) (hd : ∀ y ∈ Icc l u, DifferentiableAt ℝ φ y)
+    (hl : 0 < φ l) (hu : 0 < φ u) (hx : x ∈ Ioo l u) (hφx : φ x < 0) :
+    ∃ p ∈ Ioo l x, ∃ q ∈ Ioo x u, {y ∈ Ioo l u | φ y = 0} = {p, q} ∧ φ p = 0 ∧ φ q = 0 ∧
+      (∀ y ∈ Ioo p q, φ y < 0) ∧ deriv φ p < 0 ∧ 0 < deriv φ q := by
+  have hc : ContinuousOn φ (Icc l u) := fun y hy ↦ (hd y hy).continuousAt.continuousWithinAt
+  -- A zero on each side of `x`, by the intermediate value theorem.
+  obtain ⟨p, hp, hp0⟩ := intermediate_value_Ioo' hx.1.le
+    (hc.mono (Icc_subset_Icc_right hx.2.le)) ⟨hφx, hl⟩
+  obtain ⟨q, hq, hq0⟩ := intermediate_value_Ioo hx.2.le
+    (hc.mono (Icc_subset_Icc_left hx.1.le)) ⟨hφx, hu⟩
+  have hpI : p ∈ Icc l u := ⟨hp.1.le, hp.2.le.trans hx.2.le⟩
+  have hqI : q ∈ Icc l u := ⟨hx.1.le.trans hq.1.le, hq.2.le⟩
+  have hpq : p < q := hp.2.trans hq.1
+  refine ⟨p, hp, q, hq, ?_, hp0, hq0, fun y hy ↦ ?_, ?_, ?_⟩
+  · ext y
+    simp only [mem_sep_iff, mem_insert_iff, mem_singleton_iff]
+    refine ⟨fun ⟨hy, hy0⟩ ↦
+      hφ.eq_or_eq_of_apply_eq hpI hqI (Ioo_subset_Icc_self hy) hpq hp0 hq0 hy0, ?_⟩
+    rintro (rfl | rfl)
+    exacts [⟨⟨hp.1, hp.2.trans hx.2⟩, hp0⟩, ⟨⟨hx.1.trans hq.1, hq.2⟩, hq0⟩]
+  · -- By strict convexity `φ` lies below the chord from `p` to `q`, which is zero.
+    have h := hφ.lt_on_openSegment hpI hqI hpq.ne (by rwa [openSegment_eq_Ioo hpq])
+    rwa [hp0, hq0, max_self] at h
+  · have h := hφ.lt_slope_of_hasDerivAt hpI hqI hpq (hd p hpI).hasDerivAt
+    rwa [slope_def_field, hp0, hq0, sub_self, zero_div] at h
+  · have h := hφ.slope_lt_of_hasDerivAt hpI hqI hpq (hd q hqI).hasDerivAt
+    rwa [slope_def_field, hp0, hq0, sub_self, zero_div] at h
 
 namespace TauCeti
 

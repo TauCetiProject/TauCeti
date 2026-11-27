@@ -29,8 +29,6 @@ surjective as soon as it attains a generator of the units of its codomain.
 
 * `MonoidWithZeroHom.ValueGroup₀.embedding_coe`: the embedding sends `x : valueGroup f`, viewed
   in `ValueGroup₀ f`, to `((x : Bˣ) : B)`.
-* `MonoidWithZeroHom.mem_valueMonoid_iff_exists`: for a monoid-with-zero homomorphism,
-  membership in `f.valueMonoid` is equivalent to being attained by `f`.
 * `MonoidWithZeroHom.mem_valueGroup_iff`: for a homomorphism between groups with zero,
   membership in `f.valueGroup` is equivalent to being attained by `f`.
 * `MonoidWithZeroHom.valueGroup_eq_range_unitsMap`: for a homomorphism between groups with zero,
@@ -85,12 +83,6 @@ end ValueGroup₀
 section MonoidWithZero
 
 variable {A B : Type*} [MonoidWithZero A] [MonoidWithZero B]
-
-/-- For a monoid-with-zero homomorphism `f : A →*₀ B`, an element `γ : Bˣ` lies in
-`f.valueMonoid` if and only if `(γ : B)` is attained by `f`. -/
-theorem mem_valueMonoid_iff_exists {f : A →*₀ B} {γ : Bˣ} :
-    γ ∈ f.valueMonoid ↔ ∃ a : A, f a = γ := by
-  simp only [mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range]
 
 /-- Surjectivity of `f` makes its value group the whole of `Bˣ`. -/
 theorem valueGroup_eq_top_of_surjective (f : A →*₀ B) (hf : Function.Surjective f) :

@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.IntegralClosure
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.Discrete.AddVal
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
-public import TauCeti.RingTheory.Valuation.Extension
+public import TauCeti.RingTheory.Valuation.RamificationIdx
 
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.Algebra.GroupWithZero.Range

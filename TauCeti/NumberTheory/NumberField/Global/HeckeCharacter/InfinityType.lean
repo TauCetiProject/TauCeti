@@ -392,27 +392,8 @@ theorem mem_range_ofRayClassCharacter_erase {𝔪 : Modulus K} {χ : HeckeCharac
     χ ∈ (ofRayClassCharacter
       ⟨𝔪.finitePart, 𝔪.finitePart_ne_bot, 𝔪.infinitePart.erase w⟩).range := by
   rw [mem_range_ofRayClassCharacter_iff] at hχ ⊢
-  intro c hc
-  obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.mp hc
-  obtain ⟨h₁, h₂, h₃⟩ := mem_ideleCongruenceSubgroup_iff.mp hx
-  -- Dividing `x` by its own component at `w` gives an idele congruent to one modulo `𝔪`.
-  let u : w.val.Completionˣ := w.val.ideleInfiniteCoord x
-  have hy : x * (IdeleGroup.ofCompletion (𝓞 K) K w.val u)⁻¹ ∈ ideleCongruenceSubgroup 𝔪 := by
-    refine mem_ideleCongruenceSubgroup_iff.mpr
-      ⟨fun v hv ↦ by simpa using h₁ v hv, fun v hv ↦ by simpa [Modulus.exponent_def] using h₂ v hv,
-        fun w' hw' ↦ ?_⟩
-    by_cases hww' : w' = w
-    · subst hww'
-      simp [u]
-    · have hne : w'.val ≠ w.val := fun h ↦ hww' (Subtype.ext h)
-      simpa [hne] using h₃ w' (Finset.mem_erase.mpr ⟨hww', hw'⟩)
-  have hsplit : QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x =
-      QuotientGroup.mk' _ (x * (IdeleGroup.ofCompletion (𝓞 K) K w.val u)⁻¹) *
-        IdeleClassGroup.ofCompletion (𝓞 K) K w.val u := by
-    rw [IdeleClassGroup.ofCompletion_apply, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
-      ← QuotientGroup.mk_mul, inv_mul_cancel_right]
-  rw [MonoidHom.mem_ker, hsplit, map_mul,
-    MonoidHom.mem_ker.mp (hχ (mem_raySubgroup_iff.mpr ⟨_, hy, rfl⟩)), one_mul]
+  refine (raySubgroup_erase_le_sup_range_ofCompletion 𝔪 w).trans (sup_le hχ ?_)
+  rintro _ ⟨u, rfl⟩
   simpa using DFunLike.congr_fun hw u
 
 /-! ### The norm characters -/

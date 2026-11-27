@@ -34,6 +34,9 @@ allowed, so the result applies both to embeddings and to possibly singular proje
   a translation.
 * `TauCeti.Probability.map_comp_multivariateGaussian`: reindexing the coordinates along a map of
   index types.
+* `TauCeti.Probability.gaussianReal_map_toLp_const`: copying a scalar Gaussian into every
+  coordinate gives the Gaussian with constant mean and covariance, including zero variance and
+  the empty index type.
 * `ProbabilityTheory.HasLaw.affine_multivariateGaussian`,
   `ProbabilityTheory.HasLaw.add_smul_multivariateGaussian`, and
   `ProbabilityTheory.HasLaw.comp_multivariateGaussian`: the corresponding affine, scalar-affine,
@@ -196,6 +199,27 @@ theorem map_comp_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix ι
     ext
     simp [L, Matrix.mul_apply, Matrix.one_apply]
   simpa [hL, hcov] using map_affine_multivariateGaussian m hS L 0
+
+/-- Repeating a scalar Gaussian in every coordinate gives the Gaussian with constant mean
+and covariance. This includes zero variance and the empty coordinate type. -/
+theorem gaussianReal_map_toLp_const (ι : Type*) [Fintype ι] [DecidableEq ι]
+    (μ : ℝ) (v : ℝ≥0) :
+    (gaussianReal μ v).map (fun z ↦ WithLp.toLp 2 (fun _ : ι ↦ z)) =
+      multivariateGaussian (WithLp.toLp 2 (fun _ : ι ↦ μ))
+        (Matrix.of fun _ _ : ι ↦ (v : ℝ)) := by
+  let m : EuclideanSpace ℝ Unit := WithLp.toLp 2 (fun _ ↦ μ)
+  let S : Matrix Unit Unit ℝ := (v : ℝ) • 1
+  have hS : S.PosSemidef := Matrix.PosSemidef.one.smul v.coe_nonneg
+  have heval := (measurePreserving_eval_multivariateGaussian (μ := m) hS (i := ())).map_eq
+  simp only [m, S, Matrix.smul_apply, Matrix.one_apply_eq,
+    smul_eq_mul, mul_one, Real.toNNReal_coe] at heval
+  rw [← heval, Measure.map_map (by fun_prop) (by fun_prop)]
+  have hcov : S.submatrix (fun _ : ι ↦ ()) (fun _ : ι ↦ ()) =
+      Matrix.of (fun _ _ : ι ↦ (v : ℝ)) := by
+    ext i j
+    simp [Matrix.submatrix_apply, S]
+  simpa only [Function.comp_def, m, WithLp.ofLp_toLp, hcov] using
+    map_comp_multivariateGaussian m hS (fun _ : ι ↦ ())
 
 /-- An isotropic Gaussian with covariance `v • 1` is the product of its variance-`v` Gaussian
 coordinate laws, transported to Euclidean space. This includes `v = 0`, where both sides are the

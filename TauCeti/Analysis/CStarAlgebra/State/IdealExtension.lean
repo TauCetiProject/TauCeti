@@ -29,7 +29,8 @@ The estimates for positive contractions
 `TauCeti.Analysis.CStarAlgebra.State.Unitization`, and the extension formula, uniqueness and
 existence along a star homomorphism (`PositiveContinuousLinearMap.tendsto_apply_map_mul_mul_map`,
 `eq_of_apply_map_eq`, `exists_apply_map_eq`) in `TauCeti.Analysis.CStarAlgebra.State.Extension`.
-This file specializes them to a closed ideal.
+This file specializes them to a closed ideal. The unitization case `A ⊆ Unitization ℂ A`
+(`PositiveContinuousLinearMap.eq_unitization_of_apply_inr_eq`) is in the latter file.
 
 * `PositiveContinuousLinearMap.tendsto_apply_mul_mul_of_apply_coe_eq` and
   `tendsto_apply_mul_mul_of_apply_coe_eq'`: a positive functional `γ` with `‖γ‖ ≤ ‖τ‖`

@@ -105,7 +105,6 @@ theorem den_dvd_ramificationIndex_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf :
     (hq : ∀ m ∈ f.newtonSlopes (realAddValuation K), m = q) {α : L} (hα : α ≠ 0)
     (hroot : aeval α f = 0) : q.den ∣ ramificationIndex K L := by
   rw [← ramificationIdx_valuation_eq_ramificationIndex]
-  rw [← realAddVal_valuation_eq_realAddValuation] at hq
   exact den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq (valuation K) (valuation L) hf hq hα
     hroot
 
@@ -125,7 +124,6 @@ theorem isTotallyRamified_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0
     IsTotallyRamified K L := by
   have : Module.Finite K L := finite_of_valuativeExtension K L
   rw [isTotallyRamified_iff_ramificationIdx_eq_finrank]
-  rw [← realAddVal_valuation_eq_realAddValuation] at hq
   exact ramificationIdx_eq_finrank_of_forall_mem_newtonSlopes_eq (valuation K) (valuation L) hf hq
     hα hroot hdeg
 
@@ -135,7 +133,6 @@ theorem IsPureSlopeFactorization.den_dvd_ramificationIndex_of_aeval_eq_zero {f :
     {g : ℝ → K[X]} (hg : f.IsPureSlopeFactorization (realAddValuation K) g) {q : ℚ} {α : L}
     (hroot : aeval α (g q) = 0) : q.den ∣ ramificationIndex K L := by
   rw [← ramificationIdx_valuation_eq_ramificationIndex]
-  rw [← realAddVal_valuation_eq_realAddValuation] at hg
   exact hg.den_dvd_ramificationIdx_of_aeval_eq_zero (valuation K) (valuation L) hroot
 
 end Polynomial
@@ -151,8 +148,7 @@ theorem newtonSlopes_realAddValuation_eq_replicate {α : L} (hα : α ≠ 0) :
   let _ := normalizedNontriviallyNormedField K
   obtain ⟨_, _, hb, hv⟩ := localField_norm_hypotheses K
   exact newtonSlopes_eq_replicate hb hv
-    (fun x ↦ by rw [Valuation.extRealAddVal_algebraMap (valuation K) (valuation L),
-      realAddVal_valuation_eq_realAddValuation])
+    (fun x ↦ Valuation.extRealAddVal_algebraMap (valuation K) (valuation L) x)
     (Algebra.IsIntegral.isIntegral α) hα
 
 /-- **Pure minimal-polynomial slopes divide `ramificationIndex K L`.** If `α : L` is nonzero and

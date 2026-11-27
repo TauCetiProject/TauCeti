@@ -5,311 +5,177 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Index
-public import Mathlib.LinearAlgebra.Dimension.Finite
-public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-public import Mathlib.RingTheory.Valuation.Extension
-import TauCeti.Algebra.GroupWithZero.Range
-import TauCeti.RingTheory.Valuation.LinearIndependent
+public import Mathlib.RingTheory.KrullDimension.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
+public import Mathlib.RingTheory.Valuation.ValuationRing
+
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+import Mathlib.RingTheory.Localization.AtPrime.Basic
+import TauCeti.RingTheory.Flat.NonZeroDivisors
+import TauCeti.RingTheory.Ideal.Maps
+import TauCeti.RingTheory.Valuation.IdealMap
+import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
-# The value-group ramification index of a valuation on an algebra
+# Extensions of valuation domains
 
-For a valuation `w` on an algebra `L` over a commutative ring `K`, the value group of
-`w.comap (algebraMap K L)` is a subgroup of `w.valueGroup`. We define the value-group ramification
-index `w.ramificationIdx K : ℕ` as its relative index in `w.valueGroup`, prove equivalence
-invariance and tower multiplicativity, and show that over a field `K`, elements with valuations in
-distinct cosets are `K`-linearly independent, giving `[Γ_w : Γ_{w|_K}] ≤ [L : K]` for a finite
-division-ring extension `L / K`.
+An *extension* of a valuation domain `V` is an injective local homomorphism `e : V →+* W` into a
+valuation domain `W`. Such extensions are the enlargements of test rings allowed in the
+valuative lifting conditions defining v-covers and arc-covers. This file proves two facts about
+them.
 
-## Main definitions
+First, an injective local homomorphism from a valuation domain to a local domain is faithfully
+flat: over a valuation domain torsion-free modules are flat, and a flat local homomorphism of
+local rings is faithfully flat.
 
-* `Valuation.ramificationIdx`: the relative index `[Γ_w : Γ_{w|_K}]`.
+Second, extensions of valuation domains of rank at most one can be cut down to rank at most one.
+If `V` is a domain of Krull dimension at most one and `e : V →+* W` is an injective local
+homomorphism to a local ring, then there is a homomorphism `g : W →+* W'` to a valuation domain
+`W'` of Krull dimension at most one such that `g ∘ e` is again injective and local. One may first
+replace `W` by a valuation domain dominating a prime of `W` over `0` and the maximal ideal of `W`.
+When `V` is a field one takes for `W'` the residue field of `W`. Otherwise fix a nonzero nonunit
+`t` of `V`, let `q` be the largest ideal of `W` meeting the image of `V` only in zero, and let `r`
+be the radical of `t (W ⧸ q)`; then `W' = (W ⧸ q)_r`, whose spectrum is the interval between `q`
+and `r` in `Spec W`. Every nonzero prime of `W ⧸ q` meets `V` in a nonzero prime, hence in the
+maximal ideal of `V`, and so contains `r`. Thus `W'` has only the two primes `0` and `r W'`.
+
+The second fact shows that every v-cover is an arc-cover; the first shows that over a valuation
+domain of rank at most one every arc-cover is a v-cover.
 
 ## Main results
 
-* `Valuation.valueGroup_comap_le`, `Valuation.ramificationIdx_eq_one_iff`,
-  `Valuation.ramificationIdx_ne_zero_iff`, and `Valuation.ramificationIdx_pos`: basic subgroup and
-  index characterizations.
-* `Valuation.IsEquiv.ramificationIdx_eq`: equivalence invariance of `ramificationIdx`.
-* `Valuation.ramificationIdx_comap_mul_ramificationIdx` and `Valuation.ramificationIdx_tower`:
-  multiplicativity in algebra towers.
-* `Valuation.linearIndependent_of_quotient_valueGroup`,
-  `Valuation.isFiniteRelIndex_valueGroup_comap`, `Valuation.ramificationIdx_le_finrank`,
-  `Valuation.le_finrank_of_dvd_ramificationIdx`, and `Valuation.ramificationIdx_eq_finrank_of_dvd`:
-  coset linear independence, finiteness, `[Γ_w : Γ_{w|_K}] ≤ [L : K]`, and total ramification.
+* `RingHom.FaithfullyFlat.of_injective_of_isLocalHom`: an injective local homomorphism from a
+  valuation domain to a local domain is faithfully flat.
+* `RingHom.exists_krullDimLE_one_injective_isLocalHom_comp`: an injective local homomorphism from
+  a domain of Krull dimension at most one to a local ring is followed by a homomorphism to a
+  valuation domain of rank at most one whose composite with it is again injective and local.
 
 ## References
 
-* J. Neukirch, *Algebraic Number Theory*, Grundlehren 322, Springer, 1999, Chapter II, Prop. 6.8.
-* N. Bourbaki, *Commutative Algebra*, Chapter VI, §8.
+* B. Bhatt and A. Mathew, *The arc-topology*, Forum Math. Pi 9 (2021), proof of
+  Proposition 2.1.
+* [Stacks Project, Tag 0539](https://stacks.math.columbia.edu/tag/0539) (torsion-free modules
+  over valuation rings are flat).
 -/
 
 public section
 
-open MonoidWithZeroHom
+universe u
 
-namespace Valuation
+open IsLocalRing
 
-section MonoidWithZero
+namespace RingHom
 
-variable {R S K L M Γ : Type*} [LinearOrderedCommMonoidWithZero Γ]
+/-- An injective local homomorphism from a valuation domain to a local domain is faithfully
+flat. -/
+theorem FaithfullyFlat.of_injective_of_isLocalHom {V W : Type*} [CommRing V] [IsDomain V]
+    [ValuationRing V] [CommRing W] [IsDomain W] [IsLocalRing W] {e : V →+* W}
+    (he : Function.Injective e) [IsLocalHom e] : e.FaithfullyFlat := by
+  algebraize [e]
+  have : Module.Flat V W := Module.Flat.of_algebraMap_injective_of_isBezout he
+  exact Module.FaithfullyFlat.of_flat_of_isLocalHom
 
-/-- Restricting a valuation along a ring homomorphism shrinks its value monoid. -/
-theorem valueMonoid_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+* S) :
-    (w.comap f).valueMonoid ≤ w.valueMonoid := by
-  intro γ hγ
-  simp only [mem_valueMonoid_iff_exists, _root_.Valuation.coe_toMonoidWithZeroHom] at hγ ⊢
-  obtain ⟨r, hr⟩ := hγ
-  exact ⟨f r, by simpa only [comap_apply] using hr⟩
+/-- The case of `RingHom.exists_krullDimLE_one_injective_isLocalHom_comp` in which `V` is a
+field: the residue field of `W` is a valuation domain of rank zero. -/
+private theorem exists_krullDimLE_one_injective_isLocalHom_comp_of_forall_isUnit {V : Type*}
+    [CommRing V] {W : Type u} [CommRing W] [IsLocalRing W] (e : V →+* W)
+    (hV : ∀ t : V, t ≠ 0 → IsUnit t) :
+    ∃ (W' : Type u) (_ : CommRing W') (_ : IsDomain W') (_ : ValuationRing W')
+      (_ : Ring.KrullDimLE 1 W') (g : W →+* W'),
+      Function.Injective (g.comp e) ∧ IsLocalHom (g.comp e) := by
+  refine ⟨ResidueField W, inferInstance, inferInstance, inferInstance, inferInstance, residue W,
+    (injective_iff_map_eq_zero _).mpr fun x hx => ?_, ⟨fun x hx => ?_⟩⟩
+  · by_contra h0
+    exact ((hV x h0).map ((residue W).comp e)).ne_zero hx
+  · by_cases h0 : x = 0
+    · simp [h0] at hx
+    · exact hV x h0
 
-/-- Restricting a valuation along a ring homomorphism shrinks its value group. -/
-theorem valueGroup_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+* S) :
-    (w.comap f).valueGroup ≤ w.valueGroup :=
-  Subgroup.closure_mono (w.valueMonoid_comap_le f)
+/-- The case of `RingHom.exists_krullDimLE_one_injective_isLocalHom_comp` in which `V` has a
+nonzero nonunit `t`: the valuation domain `W'` is the localization of `W ⧸ q` at the radical of
+the ideal generated by `t`, where `q` is the largest ideal of `W` meeting `V` only in zero. -/
+private theorem exists_krullDimLE_one_injective_isLocalHom_comp_of_ne_zero {V : Type*}
+    [CommRing V] [IsDomain V] [IsLocalRing V] [Ring.KrullDimLE 1 V] {W : Type u} [CommRing W]
+    [IsDomain W] [ValuationRing W] (e : V →+* W) (he : Function.Injective e) [IsLocalHom e]
+    {t : V} (ht0 : t ≠ 0) (ht : ¬IsUnit t) :
+    ∃ (W' : Type u) (_ : CommRing W') (_ : IsDomain W') (_ : ValuationRing W')
+      (_ : Ring.KrullDimLE 1 W') (g : W →+* W'),
+      Function.Injective (g.comp e) ∧ IsLocalHom (g.comp e) := by
+  obtain ⟨q, hq⟩ := Ideal.exists_isGreatest_comap_le e ⊥
+    ((RingHom.injective_iff_ker_eq_bot e).mp he).le
+  have : q.IsPrime := Ideal.isPrime_of_isGreatest_comap_le e hq
+  let e₁ : V →+* W ⧸ q := (Ideal.Quotient.mk q).comp e
+  have : IsLocalHom (Ideal.Quotient.mk q) := .of_surjective _ Ideal.Quotient.mk_surjective
+  have he₁ : Function.Injective e₁ := (injective_iff_map_eq_zero e₁).mpr fun x hx =>
+    (Ideal.mem_bot (R := V)).mp (hq.1 ((Ideal.Quotient.eq_zero_iff_mem (I := q)).mp hx))
+  -- A nonzero prime `P` of `W ⧸ q` meets `V` in a nonzero prime, that is in `maximalIdeal V`,
+  -- so `P` contains the image of `t`; hence it contains the radical `r` of `t (W ⧸ q)`.
+  let r : Ideal (W ⧸ q) := (Ideal.span {e₁ t}).radical
+  have hr_le (P : Ideal (W ⧸ q)) (hP : P.IsPrime) (hP0 : P ≠ ⊥) : r ≤ P := by
+    have hne : P.comap e₁ ≠ ⊥ := fun h => hP0 <| by
+      have hle : P.comap (Ideal.Quotient.mk q) ≤ q :=
+        hq.2 (by rw [Set.mem_ofPred_eq, Ideal.comap_comap]; exact h.le)
+      rw [eq_bot_iff, ← Ideal.map_comap_of_surjective _ Ideal.Quotient.mk_surjective P,
+        ← Ideal.map_quotient_self q]
+      exact Ideal.map_mono hle
+    have hmax : P.comap e₁ = maximalIdeal V :=
+      eq_maximalIdeal ((Ideal.comap_isPrime e₁ P).isMaximal_of_ne_bot hne)
+    rw [hP.radical_le_iff, Ideal.span_singleton_le_iff_mem, ← Ideal.mem_comap, hmax]
+    exact ht
+  have htr : e₁ t ∈ r := Ideal.le_radical (Ideal.mem_span_singleton_self _)
+  have hr_top : r ≠ ⊤ := by
+    rw [Ne, Ideal.radical_eq_top, Ideal.span_singleton_eq_top]
+    exact fun h => ht (h.of_map e₁)
+  have : r.IsPrime := Ideal.IsRadical.isPrime_of_ne_top (Ideal.radical_isRadical _) hr_top
+  have hr : r.comap e₁ = maximalIdeal V := eq_maximalIdeal <|
+    (Ideal.comap_isPrime e₁ r).isMaximal_of_ne_bot fun h =>
+      ht0 (by rw [← Ideal.mem_bot, ← h]; exact htr)
+  -- The primes of `(W ⧸ q)_r` are `0` and its maximal ideal.
+  let W' := Localization.AtPrime r
+  have : Ring.KrullDimLE 1 W' := Ring.KrullDimLE.mk₁' fun I hI0 hI => by
+    have hJ : (I.comap (algebraMap (W ⧸ q) W')).IsPrime := Ideal.comap_isPrime _ I
+    have hJr : I.comap (algebraMap (W ⧸ q) W') ≤ r := Set.disjoint_compl_left_iff_subset.mp
+      ((IsLocalization.isPrime_iff_isPrime_disjoint r.primeCompl W' I).mp hI).2
+    have hJ0 : I.comap (algebraMap (W ⧸ q) W') ≠ ⊥ := fun h => hI0 <| by
+      rw [← IsLocalization.map_under r.primeCompl W' I, Ideal.under, h, Ideal.map_bot]
+    rw [← IsLocalization.map_under r.primeCompl W' I, Ideal.under, le_antisymm hJr (hr_le _ hJ hJ0),
+      Localization.AtPrime.map_eq_maximalIdeal]
+    exact maximalIdeal.isMaximal W'
+  refine ⟨W', inferInstance, inferInstance, inferInstance, this,
+    (algebraMap (W ⧸ q) W').comp (Ideal.Quotient.mk q),
+    (IsLocalization.injective W' r.primeCompl_le_nonZeroDivisors).comp he₁,
+    ⟨fun x hx => of_not_not fun hxu => ?_⟩⟩
+  -- A nonunit `x` of `V` lies in `maximalIdeal V = r.comap e₁`, so it maps into `r`.
+  exact (IsLocalization.AtPrime.isUnit_to_map_iff W' r (e₁ x)).mp hx
+    (hr.ge ((mem_maximalIdeal x).mpr hxu))
 
-/-- Restricting a valuation along a surjective ring homomorphism preserves its value group. -/
-theorem valueGroup_comap_eq_of_surjective [Ring R] [Ring S] (w : Valuation S Γ) {f : R →+* S}
-    (hf : Function.Surjective f) : (w.comap f).valueGroup = w.valueGroup := by
-  refine le_antisymm (w.valueGroup_comap_le f) (Subgroup.closure_mono fun γ hγ ↦ ?_)
-  simp only [SetLike.mem_coe, mem_valueMonoid_iff_exists,
-    _root_.Valuation.coe_toMonoidWithZeroHom] at hγ ⊢
-  obtain ⟨s, hs⟩ := hγ
-  obtain ⟨r, rfl⟩ := hf s
-  exact ⟨r, by simpa only [comap_apply] using hs⟩
+/-- Let `e : V →+* W` be an injective local homomorphism from a domain `V` of Krull dimension at
+most one, such as a valuation domain of rank at most one, to a local ring `W`. Then there is a
+homomorphism `g : W →+* W'` to a valuation domain of Krull dimension at most one such that
+`g ∘ e` is again injective and local. -/
+theorem exists_krullDimLE_one_injective_isLocalHom_comp {V : Type*} [CommRing V] [IsDomain V]
+    [Ring.KrullDimLE 1 V] {W : Type u} [CommRing W] [IsLocalRing W] (e : V →+* W)
+    (he : Function.Injective e) [IsLocalHom e] :
+    ∃ (W' : Type u) (_ : CommRing W') (_ : IsDomain W') (_ : ValuationRing W')
+      (_ : Ring.KrullDimLE 1 W') (g : W →+* W'),
+      Function.Injective (g.comp e) ∧ IsLocalHom (g.comp e) := by
+  by_cases hV : ∃ t : V, t ≠ 0 ∧ ¬IsUnit t
+  swap
+  · push Not at hV
+    exact exists_krullDimLE_one_injective_isLocalHom_comp_of_forall_isUnit e hV
+  obtain ⟨t, ht0, ht⟩ := hV
+  have : IsLocalRing V := e.domain_isLocalRing
+  -- Some prime `P` of `W` lies over `0`; dominate the pair `P ⊆ maximalIdeal W` by a valuation
+  -- domain `W₁`, and then cut `W₁` down to rank at most one.
+  obtain ⟨P, _, hP⟩ := (Ideal.comap_map_eq_self_iff_of_isPrime (f := e) ⊥).mp
+    (by rw [Ideal.map_bot, Ideal.comap_bot_of_injective e he])
+  let := e.toAlgebra
+  obtain ⟨W₁, _, _, _, g₁, hg₁, _⟩ := TauCeti.exists_valuationRing_of_isPrime_le (V := V)
+    (le_maximalIdeal (Ideal.IsPrime.ne_top ‹_›)) hP (maximalIdeal_comap e)
+  obtain ⟨W', i₁, i₂, i₃, i₄, g, hg, hg'⟩ :=
+    exists_krullDimLE_one_injective_isLocalHom_comp_of_ne_zero (g₁.comp e) hg₁ ht0 ht
+  exact ⟨W', i₁, i₂, i₃, i₄, g.comp g₁, hg, hg'⟩
 
-/-- The **value-group ramification index** `[Γ_w : Γ_{w|_K}]` of a valuation `w` on a `K`-algebra
-`L`: the relative index of the restricted value group in `w.valueGroup` (`0` when infinite). -/
-noncomputable def ramificationIdx {L : Type*} [Ring L]
-    (w : Valuation L Γ) (K : Type*) [CommRing K] [Algebra K L] : ℕ :=
-  ((w.comap (algebraMap K L)).valueGroup).relIndex w.valueGroup
-
-/-- The defining formula of `Valuation.ramificationIdx`. -/
-theorem ramificationIdx_def [CommRing K] [Ring L] [Algebra K L] (w : Valuation L Γ) :
-    w.ramificationIdx K = ((w.comap (algebraMap K L)).valueGroup).relIndex w.valueGroup := (rfl)
-
-/-- The value-group ramification index equals `1` if and only if restricting `w` to `K` has the
-same value group as `w`. -/
-theorem ramificationIdx_eq_one_iff [CommRing K] [Ring L] [Algebra K L] (w : Valuation L Γ) :
-    w.ramificationIdx K = 1 ↔ (w.comap (algebraMap K L)).valueGroup = w.valueGroup := by
-  rw [ramificationIdx_def, Subgroup.relIndex_eq_one]
-  exact ⟨fun h ↦ le_antisymm (w.valueGroup_comap_le (algebraMap K L)) h, fun h ↦ h.ge⟩
-
-/-- The value-group ramification index is nonzero if and only if the restricted value group has
-finite relative index in `w.valueGroup`. -/
-theorem ramificationIdx_ne_zero_iff [CommRing K] [Ring L] [Algebra K L] (w : Valuation L Γ) :
-    w.ramificationIdx K ≠ 0 ↔
-      ((w.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w.valueGroup :=
-  Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero.symm
-
-/-- Whenever the restricted value group has finite relative index in `w.valueGroup`, the
-value-group ramification index is positive. -/
-theorem ramificationIdx_pos [CommRing K] [Ring L] [Algebra K L] (w : Valuation L Γ)
-    [((w.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w.valueGroup] :
-    0 < w.ramificationIdx K :=
-  Nat.pos_of_ne_zero Subgroup.relIndex_ne_zero
-
-/-- A valuation has ramification index `1` over its own ring. -/
-@[simp]
-theorem ramificationIdx_self [CommRing K] (w : Valuation K Γ) : w.ramificationIdx K = 1 := by
-  simp [ramificationIdx_def]
-
-/-- When `algebraMap K L` is surjective, every valuation on `L` has ramification index `1` over
-`K`. -/
-theorem ramificationIdx_eq_one_of_surjective [CommRing K] [Ring L] [Algebra K L]
-    (w : Valuation L Γ) (h : Function.Surjective (algebraMap K L)) :
-    w.ramificationIdx K = 1 := by
-  rw [ramificationIdx_eq_one_iff, w.valueGroup_comap_eq_of_surjective h]
-
-/-- Pulling back a valuation along a surjective `K`-algebra homomorphism preserves its ramification
-index over `K`. -/
-theorem ramificationIdx_comap_of_surjective [CommRing K] [Ring L] [Ring M] [Algebra K L]
-    [Algebra K M] (w : Valuation M Γ) {f : L →+* M} (hf : Function.Surjective f)
-    (hcomp : f.comp (algebraMap K L) = algebraMap K M) :
-    (w.comap f).ramificationIdx K = w.ramificationIdx K := by
-  rw [ramificationIdx_def, ramificationIdx_def, ← comap_comp, hcomp,
-    w.valueGroup_comap_eq_of_surjective hf]
-
-/-- Pulling back a valuation along a `K`-algebra equivalence preserves its ramification index over
-`K`. -/
-@[simp]
-theorem ramificationIdx_comap_algEquiv [CommRing K] [Ring L] [Ring M] [Algebra K L] [Algebra K M]
-    (w : Valuation M Γ) (e : L ≃ₐ[K] M) :
-    (w.comap (e : L →+* M)).ramificationIdx K = w.ramificationIdx K :=
-  w.ramificationIdx_comap_of_surjective e.surjective e.toAlgHom.comp_algebraMap
-
-/-- **Multiplicativity of the value-group ramification index in a tower**, written via restriction
-to the intermediate algebra. -/
-theorem ramificationIdx_comap_mul_ramificationIdx [CommRing K] [CommRing L] [Ring M]
-    [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M] (w : Valuation M Γ) :
-    (w.comap (algebraMap L M)).ramificationIdx K * w.ramificationIdx L = w.ramificationIdx K := by
-  have hcomp : w.comap (algebraMap K M) = (w.comap (algebraMap L M)).comap (algebraMap K L) := by
-    rw [IsScalarTower.algebraMap_eq K L M, comap_comp]
-  rw [ramificationIdx_def, ramificationIdx_def, ramificationIdx_def, hcomp]
-  exact Subgroup.relIndex_mul_relIndex _ _ _
-    ((w.comap (algebraMap L M)).valueGroup_comap_le (algebraMap K L))
-    (w.valueGroup_comap_le (algebraMap L M))
-
-end MonoidWithZero
-
-section GroupWithZero
-
-variable {R K L M Γ₁ Γ₂ : Type*}
-  [LinearOrderedCommGroupWithZero Γ₁] [LinearOrderedCommGroupWithZero Γ₂]
-
-private theorem val_valueGroup_mk_comap [Ring R] [Ring L] (w : Valuation L Γ₁) (f : R →+* L)
-    {r s : R} (hr : (w.comap f : R →*₀ Γ₁) r ≠ 0) (hs : (w.comap f : R →*₀ Γ₁) s ≠ 0) :
-    (valueGroup.mk (w.comap f : R →*₀ Γ₁) r s hr hs : Γ₁ˣ) =
-      (valueGroup.mk (w : L →*₀ Γ₁) (f r) (f s)
-        (by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hr)
-        (by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hs) : Γ₁ˣ) :=
-  Units.ext <| by simp only [valueGroup.mk_eq_div, coe_toMonoidWithZeroHom, comap_apply]
-
-private theorem map_orderMonoidIso_subgroupOf_valueGroup_comap_le [Ring R] [Ring L]
-    {w₁ : Valuation L Γ₁} {w₂ : Valuation L Γ₂} (h : w₁.IsEquiv w₂) (f : R →+* L) :
-    Subgroup.map (h.orderMonoidIso.toMulEquiv : w₁.valueGroup →* w₂.valueGroup)
-        (((w₁.comap f).valueGroup).subgroupOf w₁.valueGroup) ≤
-      ((w₂.comap f).valueGroup).subgroupOf w₂.valueGroup := by
-  rintro _ ⟨γ, hγ, rfl⟩
-  rw [SetLike.mem_coe, Subgroup.mem_subgroupOf] at hγ
-  obtain ⟨r, s, hr, hs, hmk⟩ := (mem_valueGroup_iff_exists_mk_of_comm (w₁.comap f : R →*₀ Γ₁)).mp hγ
-  have hrL : w₁ (f r) ≠ 0 := by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hr
-  have hsL : w₁ (f s) ≠ 0 := by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hs
-  have hγ' : γ = valueGroup.mk (w₁ : L →*₀ Γ₁) (f r) (f s) hrL hsL :=
-    Subtype.ext (hmk.trans (val_valueGroup_mk_comap w₁ f hr hs))
-  have hmap : (h.orderMonoidIso.toMulEquiv : w₁.valueGroup →* w₂.valueGroup) γ =
-      valueGroup.mk (w₂ : L →*₀ Γ₂) (f r) (f s) (h.eq_zero.ne.mp hrL) (h.eq_zero.ne.mp hsL) :=
-    hγ' ▸ h.orderMonoidIso_spec hrL hsL
-  rw [Subgroup.mem_subgroupOf, hmap]
-  have hr₂ : (w₂.comap f : R →*₀ Γ₂) r ≠ 0 := by
-    simpa only [coe_toMonoidWithZeroHom, comap_apply] using h.eq_zero.ne.mp hrL
-  have hs₂ : (w₂.comap f : R →*₀ Γ₂) s ≠ 0 := by
-    simpa only [coe_toMonoidWithZeroHom, comap_apply] using h.eq_zero.ne.mp hsL
-  exact (mem_valueGroup_iff_exists_mk_of_comm (w₂.comap f : R →*₀ Γ₂)).mpr
-    ⟨r, s, hr₂, hs₂, (val_valueGroup_mk_comap w₂ f hr₂ hs₂).symm⟩
-
-/-- The value-group isomorphism induced by an equivalence of valuations carries the restricted
-value subgroup of a ring homomorphism to the corresponding restricted value subgroup. -/
-theorem IsEquiv.map_orderMonoidIso_subgroupOf_valueGroup_comap [Ring R] [Ring L]
-    {w₁ : Valuation L Γ₁} {w₂ : Valuation L Γ₂} (h : w₁.IsEquiv w₂) (f : R →+* L) :
-    Subgroup.map (h.orderMonoidIso.toMulEquiv : w₁.valueGroup →* w₂.valueGroup)
-        (((w₁.comap f).valueGroup).subgroupOf w₁.valueGroup) =
-      ((w₂.comap f).valueGroup).subgroupOf w₂.valueGroup := by
-  refine le_antisymm (map_orderMonoidIso_subgroupOf_valueGroup_comap_le h f) fun γ hγ ↦ ?_
-  exact ⟨_, map_orderMonoidIso_subgroupOf_valueGroup_comap_le h.symm f ⟨γ, hγ, rfl⟩,
-    h.orderMonoidIso.apply_symm_apply γ⟩
-
-/-- **Equivalent valuations have the same value-group ramification index.** -/
-theorem IsEquiv.ramificationIdx_eq [CommRing K] [Ring L] [Algebra K L]
-    {w₁ : Valuation L Γ₁} {w₂ : Valuation L Γ₂} (h : w₁.IsEquiv w₂) :
-    w₁.ramificationIdx K = w₂.ramificationIdx K := by
-  rw [ramificationIdx_def, ramificationIdx_def, Subgroup.relIndex, Subgroup.relIndex,
-    ← h.map_orderMonoidIso_subgroupOf_valueGroup_comap (algebraMap K L)]
-  exact (Subgroup.index_map_equiv _ h.orderMonoidIso.toMulEquiv).symm
-
-/-- Equivalent valuations agree on whether the restricted value group has finite relative index. -/
-theorem IsEquiv.isFiniteRelIndex_valueGroup_comap_iff [CommRing K] [Ring L] [Algebra K L]
-    {w₁ : Valuation L Γ₁} {w₂ : Valuation L Γ₂} (h : w₁.IsEquiv w₂) :
-    ((w₁.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w₁.valueGroup ↔
-      ((w₂.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w₂.valueGroup := by
-  simp only [← ramificationIdx_ne_zero_iff, h.ramificationIdx_eq]
-
-/-- **Multiplicativity of the value-group ramification index in a tower** `M/L/K`, when `w` on `M`
-extends `v` on `L`. No valuation on `K` is needed. -/
-theorem ramificationIdx_tower
-    (K : Type*) {L M : Type*} [CommRing K] [CommRing L] [Ring M]
-    [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
-    (v : Valuation L Γ₁) (w : Valuation M Γ₂) [v.HasExtension w] :
-    w.ramificationIdx K = v.ramificationIdx K * w.ramificationIdx L := by
-  rw [← w.ramificationIdx_comap_mul_ramificationIdx (K := K) (L := L),
-    (HasExtension.val_isEquiv_comap (vR := v) (vA := w)).ramificationIdx_eq]
-
-end GroupWithZero
-
-section FieldBase
-
-variable {K L Γ : Type*} [Field K] [Ring L] [Algebra K L]
-  [LinearOrderedCommGroupWithZero Γ] (w : Valuation L Γ)
-
-/-- **Elements with valuations in distinct cosets of the base value group are linearly
-independent.** If `e i ∈ L` has nonzero valuation `g i` and the classes of `g i` modulo
-`(w.comap (algebraMap K L)).valueGroup` are pairwise distinct, then `e` is `K`-linearly
-independent. -/
-theorem linearIndependent_of_quotient_valueGroup {ι : Type*} {e : ι → L} {g : ι → w.valueGroup}
-    (hg : ∀ i, w (e i) = ((g i : Γˣ) : Γ))
-    (hinj : Function.Injective fun i ↦
-      QuotientGroup.mk
-        (s := ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup) (g i)) :
-    LinearIndependent K e := by
-  have hne (c : K) (hc : c ≠ 0) : w (algebraMap K L c) ≠ 0 :=
-    ((hc.isUnit.map (algebraMap K L)).map w).ne_zero
-  refine w.linearIndependent_of_map_smul_ne (fun i a ha ↦ ?_) fun i j hij a b ha hb heq ↦ ?_
-  · rw [Algebra.smul_def, map_mul, hg]
-    exact mul_ne_zero (hne a ha) (Units.ne_zero _)
-  · have hmem (c : K) (hc : c ≠ 0) :
-        Units.mk0 (w (algebraMap K L c)) (hne c hc) ∈ (w.comap (algebraMap K L)).valueGroup :=
-      mem_valueGroup _ ⟨c, by rw [coe_toMonoidWithZeroHom, comap_apply, Units.val_mk0]⟩
-    set ua := Units.mk0 (w (algebraMap K L a)) (hne a ha)
-    set ub := Units.mk0 (w (algebraMap K L b)) (hne b hb)
-    have hu : ua * (g i : Γˣ) = ub * (g j : Γˣ) :=
-      Units.ext <| by simpa [ua, ub, Algebra.smul_def, map_mul, hg] using heq
-    have hrel : ((g i : Γˣ))⁻¹ * (g j : Γˣ) = ua * ub⁻¹ := by
-      rw [inv_mul_eq_iff_eq_mul, ← mul_assoc, mul_comm (g i : Γˣ) ua, hu, mul_right_comm,
-        mul_inv_cancel, one_mul]
-    exact hij (hinj (QuotientGroup.eq.mpr
-      (by simpa [Subgroup.mem_subgroupOf, hrel] using mul_mem (hmem a ha) (inv_mem (hmem b hb)))))
-
-end FieldBase
-
-section DivisionRing
-
-variable {K L Γ : Type*} [Field K] [DivisionRing L] [Algebra K L]
-  [LinearOrderedCommGroupWithZero Γ] (w : Valuation L Γ)
-
-/-- Choosing one element of `L` in each coset of the base value group produces a `K`-linearly
-independent family indexed by the value-group quotient. -/
-private theorem exists_linearIndependent_quotient_valueGroup :
-    ∃ e : (w.valueGroup ⧸ ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup) → L,
-      LinearIndependent K e := by
-  classical
-  set H := ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup
-  have hex (q : w.valueGroup ⧸ H) : ∃ y : L, w y = ((q.out : Γˣ) : Γ) := by
-    simpa only [coe_toMonoidWithZeroHom] using mem_valueGroup_iff.mp q.out.property
-  exact ⟨fun q ↦ (hex q).choose, w.linearIndependent_of_quotient_valueGroup
-    (fun q ↦ (hex q).choose_spec) fun q₁ q₂ hq ↦ by simpa using hq⟩
-
-section Finite
-
-variable [Module.Finite K L]
-
-/-- **Finiteness of the value-group index in a finite extension.** For any valuation `w` on a
-division ring `L` finite over a field `K`, the restricted value group has finite relative index in
-`w.valueGroup`. -/
-instance isFiniteRelIndex_valueGroup_comap :
-    ((w.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w.valueGroup := by
-  obtain ⟨_, he⟩ := w.exists_linearIndependent_quotient_valueGroup (K := K)
-  exact ⟨Nat.card_ne_zero.mpr ⟨inferInstance, he.finite⟩⟩
-
-/-- **The value-group ramification index is at most the degree**: `[Γ_w : Γ_{w|_K}] ≤ [L : K]`. -/
-theorem ramificationIdx_le_finrank : w.ramificationIdx K ≤ Module.finrank K L := by
-  obtain ⟨_, he⟩ := w.exists_linearIndependent_quotient_valueGroup (K := K)
-  let _ := @Fintype.ofFinite _ he.finite
-  rw [ramificationIdx_def, Subgroup.relIndex, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
-  exact he.fintype_card_le_finrank
-
-/-- Any divisor of `w.ramificationIdx K` is at most `[L : K]`. -/
-theorem le_finrank_of_dvd_ramificationIdx {d : ℕ} (h : d ∣ w.ramificationIdx K) :
-    d ≤ Module.finrank K L :=
-  (Nat.le_of_dvd w.ramificationIdx_pos h).trans w.ramificationIdx_le_finrank
-
-/-- **Total ramification from a divisor of the ramification index.** If `d` divides
-`w.ramificationIdx K` and `[L : K] ≤ d`, then `w.ramificationIdx K = [L : K]`. -/
-theorem ramificationIdx_eq_finrank_of_dvd {d : ℕ} (h : d ∣ w.ramificationIdx K)
-    (hdeg : Module.finrank K L ≤ d) : w.ramificationIdx K = Module.finrank K L :=
-  Nat.le_antisymm w.ramificationIdx_le_finrank (hdeg.trans (Nat.le_of_dvd w.ramificationIdx_pos h))
-
-end Finite
-
-end DivisionRing
-
-end Valuation
+end RingHom

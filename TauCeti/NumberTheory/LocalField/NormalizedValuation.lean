@@ -11,8 +11,8 @@ public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import TauCeti.Data.Int.WithZero
 public import TauCeti.RingTheory.Valuation.AbsoluteValue
+public import TauCeti.RingTheory.Valuation.Discrete.AddVal
 public import TauCeti.RingTheory.Valuation.Discrete.Order
-import TauCeti.RingTheory.Valuation.Discrete.AddVal
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 import TauCeti.RingTheory.Valuation.Surjective
 import TauCeti.RingTheory.Valuation.ValuativeRel.ValueGroup
@@ -215,7 +215,9 @@ theorem toAdd_normalizedValuation_eq_neg_log (x : Kˣ) :
       = -WithZero.log (valueGroupWithZeroIsoInt K (valuation K (x : K))) := by
   simp [normalizedValuation, ← WithZero.toAdd_unzero_eq_log]
 
-private theorem toAdd_normalizedValuation_eq_ord (x : Kˣ) :
+/-- On `Kˣ`, `(normalizedValuation K x).toAdd` equals `Valuation.ord (valuation K).intValuation x`.
+-/
+theorem toAdd_normalizedValuation_eq_ord (x : Kˣ) :
     (normalizedValuation K x).toAdd = Valuation.ord (valuation K).intValuation (x : K) := by
   rw [toAdd_normalizedValuation_eq_neg_log, intValuation_eq_map, Valuation.ord_def]
   rfl
@@ -494,12 +496,11 @@ variable (K) in
 For a nonzero element `x`, its value is `q ^ (-v_K(x))`, where
 `q = Nat.card 𝓀[K]` is the cardinality of the residue field. -/
 noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
-  ((valuation K).map (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)).toAbsoluteValue
+  (valuation K).intValuation.toAbsoluteValue
     (WithZeroMulInt.toNNRat (one_lt_natCard_residueField (K := K)).ne_zero)
     (WithZeroMulInt.toNNRat_strictMono (one_lt_natCard_residueField (K := K))).monotone
     (fun _ ↦ map_eq_zero _)
-    (fun _ ↦ ((valuation K).map
-      (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)).zero_iff)
+    (fun _ ↦ (valuation K).intValuation.zero_iff)
 
 /-- The normalized absolute value is the rational power `q ^ (-v_K(x))` at every nonzero
 element, where `q` is the cardinality of the residue field. -/
@@ -509,7 +510,7 @@ theorem normalizedAbsoluteValue_apply_ne_zero (x : K) (hx : x ≠ 0) :
         (-(normalizedValuation K (Units.mk0 x hx)).toAdd) := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_apply_of_ne_zero]
-  · rw [toAdd_normalizedValuation_eq_ord, intValuation_eq_map, Valuation.ord_def, neg_neg]
+  · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg]
     simp only [Units.val_mk0]
   · simp [hx]
 
@@ -559,7 +560,7 @@ theorem normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff (x y : K) :
       valuation K x ≤ valuation K y := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply, Valuation.toAbsoluteValue_apply,
     (WithZeroMulInt.toNNRat_strictMono (one_lt_natCard_residueField (K := K))).le_iff_le]
-  exact OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
+  exact (valuation K).isEquiv_intValuation x y
 
 /-- The normalized absolute value induces the strict order of Mathlib's valuation. -/
 @[simp]
@@ -582,10 +583,8 @@ theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
     normalizedAbsoluteValue K x = 1 ↔ valuation K x = 1 := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_eq_one_iff]
-  · simp only [Valuation.map_apply]
-    have hone : valueGroupWithZeroIsoInt K (1 : ValueGroupWithZero K) = 1 := map_one _
-    rw [← hone]
-    exact (valueGroupWithZeroIsoInt K).injective.eq_iff
+  · simp only [le_antisymm_iff, ← map_one (valuation K).intValuation, ← map_one (valuation K),
+      (valuation K).isEquiv_intValuation x 1, (valuation K).isEquiv_intValuation 1 x]
   · exact (one_lt_natCard_residueField (K := K)).ne'
 
 /-- The normalized absolute value takes its values in the powers of `q`, so it is less than
@@ -609,10 +608,7 @@ theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
     x ∈ 𝒪[K] ↔ normalizedAbsoluteValue K x ≤ 1 := by
   rw [Valuation.mem_integer_iff, normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_le_one_iff]
-  · change valuation K x ≤ 1 ↔ valueGroupWithZeroIsoInt K (valuation K x) ≤ 1
-    simpa only [map_one] using
-      (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
-        (a := valuation K x) (b := 1)).symm
+  · simpa only [map_one] using ((valuation K).isEquiv_intValuation x 1).symm
   · exact one_lt_natCard_residueField (K := K)
 
 /-- The ring of integers is `{0}` together with the shells `|x|_K = q ^ (-n)`, `n : ℕ`, where `q`

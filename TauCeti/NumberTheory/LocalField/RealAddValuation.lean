@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.WithTop.Untop0
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
+public import TauCeti.RingTheory.Valuation.Discrete.AddVal
 public import TauCeti.RingTheory.Valuation.ToAdditive
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
@@ -56,22 +57,22 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchi
 variable (K) in
 /-- The real-valued normalized additive valuation of a nonarchimedean local field `K`: zero maps to
 `⊤` and nonzero `x` maps to `((WithZero.log (normalizedValuationWithZero K x) : ℤ) : ℝ)`. -/
-def realAddValuation : AddValuation K (WithTop ℝ) :=
-  (((valuation K).map
-    (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)).addVal).map
-    { toFun := WithTop.map (Int.castAddHom ℝ)
-      map_zero' := by simp
-      map_add' := WithTop.map_add (Int.castAddHom ℝ)
-      monotone' := WithTop.monotone_map_iff.mpr fun _ _ h ↦ Int.cast_le.mpr h }
-    (WithTop.map_top (Int.castAddHom ℝ))
+abbrev realAddValuation : AddValuation K (WithTop ℝ) :=
+  (valuation K).realAddVal
+
+/-- The defining formula of `TauCeti.realAddValuation`. -/
+theorem realAddValuation_def : realAddValuation K = (valuation K).realAddVal := rfl
 
 /-- Evaluating `realAddValuation` transports `valuation` via `WithZero.negLog` and casts to `ℝ`. -/
 theorem realAddValuation_apply (x : K) :
     realAddValuation K x =
       (WithZero.negLog (valueGroupWithZeroIsoInt K (valuation K x))).map ((↑) : ℤ → ℝ) := by
-  unfold realAddValuation
-  rw [AddValuation.map_apply]
-  simp [Valuation.addVal_apply, Valuation.map_apply]
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [realAddValuation]
+  · rw [realAddValuation_def, Valuation.realAddVal_eq_map,
+      (valuation K).intAddVal_of_ne_zero hx, ← Units.val_mk0 hx,
+      ← toAdd_normalizedValuation_eq_ord, valueGroupWithZeroIsoInt_valuation,
+      WithZero.negLog_exp, neg_neg, WithTop.map_coe]
 
 /-- Only zero has infinite `realAddValuation`. -/
 theorem realAddValuation_eq_top_iff {x : K} : realAddValuation K x = ⊤ ↔ x = 0 :=

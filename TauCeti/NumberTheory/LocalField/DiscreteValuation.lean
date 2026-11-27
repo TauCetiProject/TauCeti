@@ -26,8 +26,7 @@ For a nonarchimedean local field `K`, `ValuativeRel.isRankOneDiscrete_valuation`
 ## Main results
 
 * `TauCeti.normalizedValuationWithZero_eq_inv_intValuation`, `TauCeti.intAddVal_valuation_coe`,
-  `TauCeti.realAddVal_valuation_eq_realAddValuation`, and
-  `TauCeti.normalizedNormedField_norm_eq_rpow_neg_realAddVal`: comparison with
+  and `TauCeti.normalizedNormedField_norm_eq_rpow_neg_realAddVal`: comparison with
   `normalizedValuationWithZero`, `normalizedValuation`, `realAddValuation`, and
   `normalizedNormedField`.
 * `TauCeti.ramificationIdx_valuation_eq_ramificationIndex`,
@@ -69,33 +68,11 @@ theorem intValuation_valuation_apply (x : K) :
     (valuation K).intValuation x = (normalizedValuationWithZero K x)⁻¹ := by
   rw [normalizedValuationWithZero_eq_inv_intValuation, inv_inv]
 
-/-- On `Kˣ`, `(normalizedValuation K x).toAdd` equals `Valuation.ord (valuation K).intValuation x`.
--/
-theorem toAdd_normalizedValuation_eq_ord_intValuation (x : Kˣ) :
-    (normalizedValuation K x).toAdd = Valuation.ord (valuation K).intValuation (x : K) := by
-  apply WithZero.exp_injective
-  rw [WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd, ← normalizedValuationWithZero_coe,
-    normalizedValuationWithZero_eq_inv_intValuation,
-    Valuation.valuation_eq_exp_neg_ord (valuation K).intValuation
-      ((valuation K).intValuation.ne_zero_iff.mpr x.ne_zero),
-    ← WithZero.exp_neg, neg_neg]
-
 /-- On `Kˣ`, `(valuation K).intAddVal` agrees with `(normalizedValuation K x).toAdd`. -/
 @[simp]
 theorem intAddVal_valuation_coe (x : Kˣ) :
     (valuation K).intAddVal (x : K) = ((normalizedValuation K x).toAdd : WithTop ℤ) := by
-  rw [(valuation K).intAddVal_of_ne_zero x.ne_zero, toAdd_normalizedValuation_eq_ord_intValuation]
-
-/-- On a nonarchimedean local field `K`, `(valuation K).realAddVal` agrees with
-`TauCeti.realAddValuation K`. -/
-@[simp]
-theorem realAddVal_valuation_eq_realAddValuation :
-    (valuation K).realAddVal = realAddValuation K := by
-  ext x
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · rw [(valuation K).realAddVal_eq_map, ← Units.val_mk0 hx, intAddVal_valuation_coe,
-      WithTop.map_coe, realAddValuation_coe_unit]
+  rw [(valuation K).intAddVal_of_ne_zero x.ne_zero, toAdd_normalizedValuation_eq_ord]
 
 /-- In `normalizedNormedField K`, every nonzero element has norm
 `(Nat.card 𝓀[K]) ^ (-(realAddValuation K x).untop₀)`. -/
@@ -167,8 +144,8 @@ theorem isTotallyRamified_iff_ramificationIdx_eq_finrank :
 theorem extRealAddVal_valuation_coe (x : Lˣ) :
     (valuation L).extRealAddVal K (x : L) =
       ((((normalizedValuation L x).toAdd : ℝ) / (ramificationIndex K L : ℝ)) : WithTop ℝ) := by
-  rw [(valuation L).extRealAddVal_eq_map_realAddVal, realAddVal_valuation_eq_realAddValuation,
-    realAddValuation_coe_unit, WithTop.map_coe, ramificationIdx_valuation_eq_ramificationIndex]
+  rw [(valuation L).extRealAddVal_eq_map_realAddVal, realAddValuation_coe_unit, WithTop.map_coe,
+    ramificationIdx_valuation_eq_ramificationIndex]
 
 /-- Outside `0`, `((valuation L).extRealAddVal K x).untop₀` is the normalized valuation over `e`. -/
 theorem untop₀_extRealAddVal_valuation_of_ne_zero {x : L} (hx : x ≠ 0) :
@@ -219,8 +196,8 @@ theorem realAddVal_valuation_padic :
 /-- On `ℚ_[p]`, `TauCeti.realAddValuation ℚ_[p]` equals `TauCeti.padicRealValuation p`. -/
 @[simp]
 theorem realAddValuation_padic :
-    realAddValuation ℚ_[p] = padicRealValuation p := by
-  rw [← realAddVal_valuation_eq_realAddValuation, realAddVal_valuation_padic]
+    realAddValuation ℚ_[p] = padicRealValuation p :=
+  realAddVal_valuation_padic p
 
 end TauCeti
 
