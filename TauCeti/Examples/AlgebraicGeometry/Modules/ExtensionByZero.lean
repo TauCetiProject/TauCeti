@@ -11,9 +11,9 @@ import Mathlib.Algebra.Homology.Additive
 /-!
 # Checks for extension by zero and its projection formula
 
-Restriction recovers extension by zero for the empty and full opens as well as for arbitrary
-opens. On the distinguished open `D(2)` of `Spec ℤ`, the projection formula also gives the
-comparison for a structure sheaf placed in degree `-3`, after applying extension by zero
+Restricting an extension by zero recovers the original module sheaf; this is checked on the
+empty and full opens. On the distinguished open `D(2)` of `Spec ℤ`, the projection formula also
+gives the comparison for a structure sheaf placed in degree `-3`, after applying extension by zero
 degreewise. This tests the ordinary formula on single complexes; tensor totalization of
 arbitrary complexes requires an additional comparison.
 -/
