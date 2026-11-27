@@ -67,6 +67,8 @@ therefore takes `a < b` as a hypothesis rather than assuming it silently.
   the same way;
 * `charFun_uniformMeasure_zero` and `charFun_uniformMeasure` — the characteristic function,
   likewise;
+* `ProbabilityTheory.HasLaw.integrable_uniformMeasure` and the neighboring declarations — the
+  corresponding integrability, expectation, variance, MGF, and CGF results for random variables;
 * `map_uniformMeasure_affine` — every uniform law is an affine image of the standard one;
 * `measurable_uniformMeasure` — the family is measurable in its endpoints, so it can be used as a
   kernel. Other families keep their parameter-measurability results in family-specific
@@ -459,6 +461,70 @@ theorem charFun_uniformMeasure {a b t : ℝ} (hab : a < b) (ht : t ≠ 0) :
   rw [he b, he a]
   push_cast
   field_simp
+
+end Probability
+
+end TauCeti
+
+/-! ### Random variables with the uniform law -/
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {a b : ℝ}
+
+/-- An interval-uniform random variable is integrable, including when its totalized law is zero. -/
+theorem integrable_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) : Integrable X P := by
+  apply hX.integrable
+  exact TauCeti.Probability.integrable_uniformMeasure
+    (Continuous.integrableOn_Ioc continuous_id)
+
+/-- The expectation of an interval-uniform random variable is the midpoint of its interval. -/
+theorem integral_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b) :
+    ∫ ω, X ω ∂P = (a + b) / 2 := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_uniformMeasure hab]
+
+/-- The variance of an interval-uniform random variable is one twelfth of the squared interval
+length. -/
+theorem variance_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b) :
+    variance X P = (b - a) ^ 2 / 12 := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_uniformMeasure hab]
+
+/-- Every real exponential moment of an interval-uniform random variable is integrable. -/
+theorem integrable_exp_mul_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  simpa only [Function.comp_def] using
+    hX.integrable_comp
+      (TauCeti.Probability.integrable_exp_mul_id_uniformMeasure (a := a) (b := b) (t := t))
+
+/-- The exact exponential-integrability domain of an interval-uniform random variable is all of
+the real line. -/
+theorem integrableExpSet_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) :
+    integrableExpSet X P = Set.univ := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+  exact hX.integrable_exp_mul_uniformMeasure t
+
+/-- The moment-generating function of an interval-uniform random variable away from zero. -/
+theorem mgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b)
+    {t : ℝ} (ht : t ≠ 0) :
+    mgf X P t = (Real.exp (t * b) - Real.exp (t * a)) / ((b - a) * t) := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq,
+    TauCeti.Probability.mgf_id_uniformMeasure hab ht]
+
+/-- The cumulant-generating function of an interval-uniform random variable away from zero. -/
+theorem cgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b)
+    {t : ℝ} (ht : t ≠ 0) :
+    cgf X P t =
+      Real.log ((Real.exp (t * b) - Real.exp (t * a)) / ((b - a) * t)) := by
+  rw [cgf, hX.mgf_uniformMeasure hab ht]
+
+end ProbabilityTheory.HasLaw
+
+namespace TauCeti
+
+namespace Probability
 
 /-! ### Affine transport
 
