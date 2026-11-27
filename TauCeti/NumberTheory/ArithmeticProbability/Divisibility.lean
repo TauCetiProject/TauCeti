@@ -107,12 +107,10 @@ theorem neg_inv_lt_empiricalMeasure_add_one_real_dvd_sub_inv (m d : ℕ) :
     -(m + 1 : ℝ)⁻¹ < (empiricalMeasure (· + 1) m : Measure ℕ).real {n | d ∣ n} - (d : ℝ)⁻¹ := by
   rw [empiricalMeasure_add_one_real_dvd_sub_inv]
   rcases eq_or_ne d 0 with rfl | hd
-  · simp only [Nat.cast_zero, mul_zero, div_zero, Left.neg_neg_iff, inv_pos]
-    positivity
-  have hd' : (0 : ℝ) < d := Nat.cast_pos.2 (Nat.pos_of_ne_zero hd)
+  · simp [Nat.cast_add_one_pos]
   have hmod : (((m + 1) % d : ℕ) : ℝ) < d := Nat.cast_lt.2 (Nat.mod_lt _ (Nat.pos_of_ne_zero hd))
-  rw [neg_div, neg_lt_neg_iff, div_lt_iff₀ (mul_pos (by positivity) hd'), inv_mul_eq_div,
-    mul_div_cancel_left₀ _ (by positivity)]
+  rw [neg_div, neg_lt_neg_iff, div_lt_iff₀ (by positivity)]
+  field_simp
   exact hmod
 
 /-- The divisibility probability is within `1 / N` of the model value `1 / d`. -/
