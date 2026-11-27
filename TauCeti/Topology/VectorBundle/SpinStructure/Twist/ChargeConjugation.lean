@@ -204,7 +204,7 @@ private theorem continuous_inverseDeterminantTwistMap :
 def chargeConjEquivTwist : s.chargeConj.Equiv (s.twist s.inverseDeterminantBundle) :=
   s.extendSpinCEquivOfEquivariant χ hχ hπχ (s.twist s.inverseDeterminantBundle)
     (inverseDeterminantTwistMap s) (inverseDeterminantTwistMap_smul s)
-    (continuous_inverseDeterminantTwistMap s) fun x p ↦ toFrame_twist_inl s x p _
+    (continuous_inverseDeterminantTwistMap s) fun x p ↦ s.toFrame_twist_inl _ _ _ _ _ x p _
 
 /-- **The comparison of charge conjugate and twist at `[p, 1]`**: it sends `[p, 1]` to
 `[(p, [p, 1]), 1]`. -/
@@ -293,7 +293,7 @@ def twistChargeConjEquivTwist :
       (s.twist (s.inverseDeterminantTwistBundle Q)) (twistChargeConjTwistMap s Q)
       (fun x z g ↦ twistChargeConjTwistMap_smul s Q x z g)
       (continuous_twistChargeConjTwistMap s Q)
-      fun x z ↦ toFrame_twist_inl s x z.fst _)
+      fun x z ↦ s.toFrame_twist_inl _ _ _ _ _ x z.fst _)
 
 /-- **The comparison of the charge conjugate of a twist with a twist at `[[(p, q), 1], 1]`**: it
 sends `[[(p, q), 1], 1]` to `[(p, [(p, q), 1]), 1]`. -/
@@ -409,7 +409,8 @@ def chargeConjTwistEquiv (s : SpinCStructure F V n) (ψ : ∀ x, L x → L' x)
         (Continuous.totalSpaceMk_fiberProdMk
           ((Extend.continuous_inl s.P χ hχ).comp FiberProd.continuous_totalSpaceMk_fst)
           (hψc.comp FiberProd.continuous_totalSpaceMk_snd)))
-      fun x z ↦ (s.chargeConj.toFrame_twist_inl x _ _).trans (s.toFrame_chargeConj_inl x _))
+      fun x z ↦ (s.chargeConj.toFrame_twist_inl _ _ _ _ _ x _ _).trans
+        (s.toFrame_chargeConj_inl x _))
 
 /-- **The equivalence `(s.twist L).chargeConj ≃ s.chargeConj.twist L'` in frames**:
 `[[(p, l), a], h] ↦ [([p, 1], ψ l), χ(a) h]`. -/
@@ -616,7 +617,7 @@ def chargeConjTwistEquivTwist (s : SpinCStructure F V n) :
           (Continuous.totalSpaceMk_fiberProdMk
             ((Extend.continuous_inl s.P δ hδ).comp FiberProd.continuous_totalSpaceMk_fst)
             ((Extend.continuous_inl E ν hν).comp FiberProd.continuous_totalSpaceMk_snd)))))
-    (fun x z ↦ toFrame_twist_inl s x (FiberProd.fst (P := s.P) (Q := E) z) _)
+    (fun x z ↦ s.toFrame_twist_inl _ _ _ _ _ x (FiberProd.fst (P := s.P) (Q := E) z) _)
 
 /-- **The equivalence `(s.twist E).chargeConj ≃ s.twist ((P ×_{det⁻¹} U(1)) ⊗ E⁻¹)` in a frame**:
 it sends `[[(p, e), a], h]` to `[(p, [([p, 1], [e, 1]), 1]), χ a h]`. -/

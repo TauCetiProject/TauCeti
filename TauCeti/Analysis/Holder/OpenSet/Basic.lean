@@ -450,6 +450,26 @@ theorem norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpa
   · exact (BoundedContinuousFunction.norm_le (hM0 i)).2 (hM i)
   · exact_mod_cast hK.nnholderNorm_le
 
+/-- An element `f` of `C^{k,α}(Ω)` agreeing on `Ω` with a function `g` whose derivatives of order at
+most `k` are bounded by `N` on `Ω`, and whose `k`-th derivative is `α`-Hölder on `Ω` with constant
+`N`, has norm at most `(k + 2) N`. -/
+theorem norm_le_of_forall_norm_iteratedFDeriv_le {f : CkHolderSpaceOn k α Ω F} {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) {N : ℝ≥0}
+    (hN : ∀ i ≤ k, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ N)
+    (hH : HolderOnWith N α (_root_.iteratedFDeriv ℝ k g) Ω) : ‖f‖ ≤ (k + 2) * N := by
+  have he : (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) =
+      (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) :=
+    funext fun x ↦ f.iteratedFDeriv_eq hg (Fin.last k) x
+  have h := hH.holderWith
+  rw [he] at h
+  refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith (M := fun _ ↦ (N : ℝ))
+    (fun _ ↦ N.property) (fun i x ↦ ?_) h).trans_eq ?_
+  · rw [← f.iteratedFDeriv_eq hg i x]
+    exact hN i (Nat.lt_succ_iff.1 i.isLt) x
+  · simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    ring
+
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields on `Ω`.
 It is bounded by the `C^{k,α}(Ω)` norm pointwise, by `CkHolderSpaceOn.norm_iteratedFDeriv_le`. -/
 def iteratedFDerivL (i : Fin (k + 1)) :

@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import TauCeti.Analysis.Normed.Lp.WithLp
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.Topology.MetricSpace.Thickening
@@ -95,6 +96,8 @@ linear maps is identified with the product of their sources.
   slice inclusions `y ↦ (a, y)` and `t ↦ (t, y)` into `WithLp p (X × Y)` are closed embeddings.
 * `WithLp.diagonal`, `WithLp.diagonalEquiv` — the diagonal of `WithLp p (M × M)` and its
   isomorphism `x ↦ (x, x)` with `M`.
+* `LinearIsometryEquiv.toLinearEquiv_withLpProdAssoc` — the underlying linear equivalence of
+  `LinearIsometryEquiv.withLpProdAssoc` is `LinearEquiv.withLpProdAssoc`.
 -/
 
 public section
@@ -727,3 +730,17 @@ theorem diagonalEquiv_symm_apply (x : diagonal p R M) :
 end Diagonal
 
 end WithLp
+
+namespace LinearIsometryEquiv
+
+/-- The underlying linear equivalence of `LinearIsometryEquiv.withLpProdAssoc` is the algebraic
+associator `LinearEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdAssoc (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β γ : Type*) [Semiring 𝕜]
+    [SeminormedAddCommGroup α] [Module 𝕜 α] [SeminormedAddCommGroup β] [Module 𝕜 β]
+    [SeminormedAddCommGroup γ] [Module 𝕜 γ] :
+    (withLpProdAssoc p 𝕜 α β γ).toLinearEquiv = LinearEquiv.withLpProdAssoc p 𝕜 α β γ := by
+  ext x
+  simp
+
+end LinearIsometryEquiv

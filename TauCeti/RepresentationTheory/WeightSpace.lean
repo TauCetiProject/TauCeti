@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Basic
@@ -17,9 +18,10 @@ import TauCeti.RepresentationTheory.Coset
 # The subspace on which a representation acts through a character
 
 For a representation `ρ` of a monoid `G` on `V` and a character `c : G →* k`, the vectors `v` with
-`ρ g v = c g • v` for every `g` form a `G`-stable subspace `ρ.weightSpace c`, the intersection of
-the eigenspaces of the `ρ g` for the eigenvalues `c g`. For `c = 1` it is the subspace of
-invariants.
+`ρ g v = c g • v` for every `g` form a `G`-stable submodule `ρ.weightSpace c`; over a ring it is
+the intersection of the eigenspaces of the `ρ g` for the eigenvalues `c g`. For a group `G` and
+`c = 1` it is the subspace of invariants. Restricting `ρ` to a subgroup `K` gives the level spaces
+`Representation.weightSpace (ρ.comp K.subtype) χ` of the theory of Hecke operators.
 The name follows Mathlib's `LieModule.weightSpace`, the same intersection of eigenspaces for a Lie
 module. `TauCeti.weightSpace` is the analogous space for the diagonal torus of a representation of
 `GL n k`, indexed by integer weights.
@@ -44,8 +46,12 @@ provided each element of its image lifts through `red`. The resulting representa
 ## Main results
 
 * `Representation.mem_weightSpace`: membership is the equation `ρ g v = c g • v` for every `g`.
+* `Representation.weightSpace_eq_iInf_eigenspace`: over a ring, `ρ.weightSpace c` is the
+  intersection of the eigenspaces of the `ρ g` for the eigenvalues `c g`.
 * `Representation.weightSpace_one`: for a group `G`, the trivial character cuts out the invariants.
 * `Representation.weightSpace_le_comap`: `ρ.weightSpace c` is `G`-stable.
+* `Representation.map_mem_weightSpace_of_commute`: a linear map commuting with every `ρ g`
+  preserves `ρ.weightSpace c`.
 * `Representation.trace_eq_finrank_weightSpace_mul_add`: the splitting of the trace.
 * `Representation.mem_weightSpace_comp_subgroupComap_iff`: membership in the
   pulled-back weight space in terms of arbitrary lifts.
@@ -77,6 +83,14 @@ theorem mem_weightSpace {ρ : Representation k G V} {c : G →* k} {v : V} :
     v ∈ ρ.weightSpace c ↔ ∀ g, ρ g v = c g • v := by
   simp [weightSpace]
 
+/-- Over a ring, `ρ.weightSpace c` is the intersection of the eigenspaces of the `ρ g` for the
+eigenvalues `c g`. -/
+theorem weightSpace_eq_iInf_eigenspace {k V : Type*} [CommRing k] [AddCommGroup V] [Module k V]
+    (ρ : Representation k G V) (c : G →* k) :
+    ρ.weightSpace c = ⨅ g, Module.End.eigenspace (ρ g) (c g) := by
+  ext
+  simp
+
 /-- For a group, the subspace on which `ρ` acts through the trivial character is the subspace of
 invariants. -/
 @[simp]
@@ -94,6 +108,12 @@ theorem weightSpace_le_comap (ρ : Representation k G V) (c : G →* k) (h : G) 
   rw [mem_weightSpace] at hv
   intro g
   rw [← mul_apply_eq_comp, ← map_mul, hv, hv, map_mul, mul_smul]
+
+/-- A linear map commuting with every `ρ g` preserves the subspace on which `ρ` acts through `c`. -/
+theorem map_mem_weightSpace_of_commute {ρ : Representation k G V} {c : G →* k} {v : V}
+    {a : Module.End k V} (hv : v ∈ ρ.weightSpace c) (h_comm : ∀ g, Commute (ρ g) a) :
+    a v ∈ ρ.weightSpace c := mem_weightSpace.mpr fun g ↦ by
+  rw [← mul_apply_eq_comp, (h_comm g).eq, mul_apply_eq_comp, mem_weightSpace.mp hv g, map_smul]
 
 /-- The trace of `ρ g` splits along the vectors on which `G` acts through `c`. -/
 theorem trace_eq_finrank_weightSpace_mul_add {F V : Type*} [Field F] [AddCommGroup V]

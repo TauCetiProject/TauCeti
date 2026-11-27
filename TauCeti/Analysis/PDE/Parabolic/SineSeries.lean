@@ -89,7 +89,7 @@ theorem inner_sineHilbertBasis_eq_exp_mul_of_hasWeakLineDerivOn_gelfandDual (hab
     (hd : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
       (fun t => (W1p0.valueL (mu := volume) (Omega := intervalDomain a b) (p := 2)).gelfandDual
         (W1p0.valueL (u t))) u' 1)
-    (hu : MemLp u 2 (volume.restrict (Ioo t₀ t₁)))
+    (hu : IntegrableOn u (Ioo t₀ t₁))
     (heq : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 volume (intervalDomain a b) 2,
       u' t v + energyFormH1 (fun _ => 1) 0 0 (u t : W1p volume (intervalDomain a b) 2)
         (v : W1p volume (intervalDomain a b) 2) = 0)
@@ -103,7 +103,7 @@ theorem inner_sineHilbertBasis_eq_exp_mul_of_hasWeakLineDerivOn_gelfandDual (hab
     (isBounded_intervalDomain (a := a) (b := b))
   choose v hv using exists_value_eq_sineHilbertBasis hab
   exact inner_eq_exp_mul_of_hasWeakLineDerivOn_gelfandDual hcoeff hcoercive (sineHilbertBasis hab)
-    (fun i => (hv i).1) (fun i => (hv i).2) hd (hu.integrable one_le_two) heq hw hae ht k
+    (fun i => (hv i).1) (fun i => (hv i).2) hd hu heq hw hae ht k
 
 /-- **The Dirichlet energy of the heat flow on an interval.** Let `u` be a weak solution of
 `∂ₜu - Δu = 0` in `(t₀, t₁) × (a, b)` with zero boundary values, `w` its continuous
@@ -118,7 +118,7 @@ theorem ae_hasSum_energyFormH1_of_hasWeakLineDerivOn_gelfandDual (hab : a < b)
     (hd : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
       (fun t => (W1p0.valueL (mu := volume) (Omega := intervalDomain a b) (p := 2)).gelfandDual
         (W1p0.valueL (u t))) u' 1)
-    (hu : MemLp u 2 (volume.restrict (Ioo t₀ t₁)))
+    (hu : IntegrableOn u (Ioo t₀ t₁))
     (heq : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 volume (intervalDomain a b) 2,
       u' t v + energyFormH1 (fun _ => 1) 0 0 (u t : W1p volume (intervalDomain a b) 2)
         (v : W1p volume (intervalDomain a b) 2) = 0)
@@ -221,7 +221,7 @@ theorem hasSum_exp_div_smul_of_hasSum_inv_smul_sin
     (hd : HasWeakLineDerivOn volume ⟨Ioo 0 T, isOpen_Ioo⟩
       (fun t => (W1p0.valueL (mu := volume) (Omega := intervalDomain 0 π) (p := 2)).gelfandDual
         (W1p0.valueL (u t))) u' 1)
-    (hu : MemLp u 2 (volume.restrict (Ioo 0 T)))
+    (hu : IntegrableOn u (Ioo 0 T))
     (heq : ∀ᵐ t ∂volume.restrict (Ioo 0 T), ∀ v : W1p0 volume (intervalDomain 0 π) 2,
       u' t v + energyFormH1 (fun _ => 1) 0 0 (u t : W1p volume (intervalDomain 0 π) 2)
         (v : W1p volume (intervalDomain 0 π) 2) = 0)
@@ -250,7 +250,7 @@ theorem ae_hasSum_energyFormH1_of_hasSum_inv_smul_sin
     (hd : HasWeakLineDerivOn volume ⟨Ioo 0 T, isOpen_Ioo⟩
       (fun t => (W1p0.valueL (mu := volume) (Omega := intervalDomain 0 π) (p := 2)).gelfandDual
         (W1p0.valueL (u t))) u' 1)
-    (hu : MemLp u 2 (volume.restrict (Ioo 0 T)))
+    (hu : IntegrableOn u (Ioo 0 T))
     (heq : ∀ᵐ t ∂volume.restrict (Ioo 0 T), ∀ v : W1p0 volume (intervalDomain 0 π) 2,
       u' t v + energyFormH1 (fun _ => 1) 0 0 (u t : W1p volume (intervalDomain 0 π) 2)
         (v : W1p volume (intervalDomain 0 π) 2) = 0)
@@ -270,9 +270,10 @@ theorem ae_hasSum_energyFormH1_of_hasSum_inv_smul_sin
 /-- **The heat flow of `∑ₖ sin (k x) / k` is not continuous into `H¹₀(0, π)`.** For the weak
 solution `u` of `∂ₜu - Δu = 0` in `(0, T) × (0, π)` with zero boundary values and initial value
 `∑ₖ sin (k x) / k`, the energy `∫_0^π |∂ₓu(t)|² = (π / 2) ∑ₖ e^{-2 k² t}` tends to infinity as
-`t ↓ 0`, outside a null set of times, although `u ∈ L²(0, T; H¹₀(0, π))`: since
-`∑ₖ sin (k x) / k` is not in `H¹₀(0, π)`, the weak solution is not continuous into `H¹₀(0, π)`
-at `t = 0`. -/
+`t ↓ 0`, outside a null set of times, although the weak solution of
+`TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1` lies in `L²(0, T; H¹₀(0, π))`:
+since `∑ₖ sin (k x) / k` is not in `H¹₀(0, π)`, the weak solution is not continuous into
+`H¹₀(0, π)` at `t = 0`. Only `u ∈ L¹(0, T; H¹₀(0, π))` is assumed. -/
 theorem tendsto_energyFormH1_atTop_of_hasSum_inv_smul_sin (hT : 0 < T)
     (hs : ∀ k : ℕ, s k =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
       fun x => Real.sin (((k : ℝ) + 1) * x 0))
@@ -280,7 +281,7 @@ theorem tendsto_energyFormH1_atTop_of_hasSum_inv_smul_sin (hT : 0 < T)
     (hd : HasWeakLineDerivOn volume ⟨Ioo 0 T, isOpen_Ioo⟩
       (fun t => (W1p0.valueL (mu := volume) (Omega := intervalDomain 0 π) (p := 2)).gelfandDual
         (W1p0.valueL (u t))) u' 1)
-    (hu : MemLp u 2 (volume.restrict (Ioo 0 T)))
+    (hu : IntegrableOn u (Ioo 0 T))
     (heq : ∀ᵐ t ∂volume.restrict (Ioo 0 T), ∀ v : W1p0 volume (intervalDomain 0 π) 2,
       u' t v + energyFormH1 (fun _ => 1) 0 0 (u t : W1p volume (intervalDomain 0 π) 2)
         (v : W1p volume (intervalDomain 0 π) 2) = 0)

@@ -367,6 +367,17 @@ theorem doubleAlongSwap_mk_inl_eq_self_iff {a : X} (ha : a ∈ A) (v : Fin C.ran
 
 end Double
 
+/-- The common chart domain of the doubles of two cores at `i` and `j` is the preimage under the
+fold of the common chart domain of the cores at the folded points. -/
+theorem baseSet_inter_baseSet_doubleAlong {C C' : FiniteRankBundleCore ℂ X}
+    (hC : C.IsRealAlong A) (hC' : C'.IsRealAlong A) (i j : DoubleAlong A) :
+    (C.doubleAlong hC).core.baseSet i ∩ (C'.doubleAlong hC').core.baseSet j =
+      DoubleAlong.fold A ⁻¹' (C.core.baseSet (DoubleAlong.fold A i) ∩
+        C'.core.baseSet (DoubleAlong.fold A j)) := by
+  ext y
+  rw [Set.mem_inter_iff, mem_baseSet_doubleAlong, mem_baseSet_doubleAlong, Set.mem_preimage,
+    Set.mem_inter_iff]
+
 /-- The double of a trivial core is trivial, by the identity in coordinates. Under this
 identification the lifted swap `doubleAlongSwap` is `(z, v) ↦ (swap z, conj v)`
 (`doubleAlongSwap_mk`). -/
