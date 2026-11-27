@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Higher
 import TauCeti.Analysis.Sobolev.Local.Reflection.Tangential
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
@@ -62,6 +63,9 @@ The induction instead runs through the tangential derivative `∂_s`:
 * `TauCeti.IsWeakCRSolution.crReflection_partial_one`: the tangential derivative of a reflected
   solution is a reflected solution.
 * `TauCeti.memWkpLoc_succ_of_ae_cauchyRiemann_halfPlane`: recovery of the normal derivative.
+* `TauCeti.ae_cauchyRiemann_of_crReflection`, `TauCeti.hasWeakFDerivOn_of_crReflectionCoeff` and
+  `TauCeti.memWkpLoc_one_twistedReflection`: the equation, the derivative of `J` and order-one
+  regularity, read off a reflected solution.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_succ_of_crReflection`: `W^{k+1,q}` regularity up to the
   axis for a reflected solution.
 * `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_succ`: `W^{k+1,q}` regularity up to the axis for a weak
@@ -218,9 +222,12 @@ theorem IsWeakCRSolution.crReflection_partial_one [FiniteDimensional ℝ V] {p q
 
 /-! ### Regularity of every order -/
 
-/-- On the open upper part, a weak solution of the reflected equation solves the original one
-almost everywhere, for every weak derivative `Dξ` of `ξ` there. -/
-private theorem ae_cauchyRiemann_of_crReflection [FiniteDimensional ℝ V] {p q : ℝ≥0∞}
+/-- **The equation up to the axis from the reflected equation.** Let the reflected coefficients be
+Sobolev coefficients on `Ω` with `1/p + 1/q ≤ 1` and `p, q` finite, and let the twisted reflection
+of `ξ`, of class `W^{1,q}_loc(Ω)`, be a weak solution on `Ω` of the reflected equation with right
+side the twisted reflection of `η`. Then for every weak derivative `Dξ` of `ξ` on the open upper
+part, `∂_s ξ + J ∂_t ξ + S ξ = η` holds almost everywhere on `Ω ∩ {0 ≤ t}`. -/
+theorem ae_cauchyRiemann_of_crReflection [FiniteDimensional ℝ V] {p q : ℝ≥0∞}
     (hc : IsSobolevCRCoefficients p Ω (crReflectionCoeff R J) (crReflectionDeriv R DJ)
       (crReflectionZeroth R S))
     (h : IsWeakCRSolution q Ω (crReflectionCoeff R J) (crReflectionDeriv R DJ)
@@ -246,8 +253,9 @@ private theorem ae_cauchyRiemann_of_crReflection [FiniteDimensional ℝ V] {p q 
   simpa [hDz, hz0] using hz
 
 omit [CompleteSpace V] in
-/-- On the open upper part, the reflected derivative is the derivative of `J`. -/
-private theorem hasWeakFDerivOn_of_crReflectionCoeff {p : ℝ≥0∞}
+/-- If the reflected coefficients are Sobolev coefficients on `Ω`, then `DJ` is a weak derivative
+of `J` on the open upper part, where the reflections agree with `J` and `DJ`. -/
+theorem hasWeakFDerivOn_of_crReflectionCoeff {p : ℝ≥0∞}
     (hc : IsSobolevCRCoefficients p Ω (crReflectionCoeff R J) (crReflectionDeriv R DJ)
       (crReflectionZeroth R S)) :
     HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) J DJ :=
@@ -257,8 +265,12 @@ private theorem hasWeakFDerivOn_of_crReflectionCoeff {p : ℝ≥0∞}
       simp [hz])).congr_ae_deriv
     ((ae_restrict_interior_inter_setOf_im_nonneg_im_pos Ω).mono fun _ hz => by simp [hz])
 
-/-- Interior regularity on the doubled domain: a reflected solution is in `W^{1,q}_loc(Ω)`. -/
-private theorem memWkpLoc_one_twistedReflection [FiniteDimensional ℝ V] {p q : ℝ≥0}
+/-- **Order-one regularity on the doubled domain.** Let `Ω` be invariant under conjugation, let
+the reflected coefficients be Sobolev coefficients on `Ω` for some `p > 2`, with `J² = -1` almost
+everywhere on `Ω ∩ {0 ≤ t}`, and let the twisted reflection of `ξ` be a weak solution on `Ω` of the
+reflected equation with right side the twisted reflection of `η`, for `1/p + 1/q < 1` and `q ≤ p`.
+If `η ∈ L^q_loc` up to the axis, then the twisted reflection of `ξ` is in `W^{1,q}_loc(Ω)`. -/
+theorem memWkpLoc_one_twistedReflection [FiniteDimensional ℝ V] {p q : ℝ≥0}
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hp : 2 < p) (hq : 1 < q)
     (hJ2 : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), J z * J z = -1)
     (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hqp : q ≤ p)
@@ -292,7 +304,7 @@ theorem IsWeakCRSolution.memWkpLoc_succ_of_crReflection [FiniteDimensional ℝ V
     (hη : MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k η) :
     MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) ξ := by
   have hq : 1 < q := by
-    have : (1 : ℝ≥0∞) < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
+    have : (1 : ℝ≥0∞) < q := ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
     exact_mod_cast this
   have hDJ := hasWeakFDerivOn_of_crReflectionCoeff hc
   induction k generalizing S ξ η with
