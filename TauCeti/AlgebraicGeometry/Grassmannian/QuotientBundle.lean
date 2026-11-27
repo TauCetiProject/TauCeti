@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Grassmannian.Points
 public import TauCeti.AlgebraicGeometry.Modules.AffineSubmodule
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
@@ -74,33 +75,17 @@ namespace Module.Grassmannian
 
 variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R) (k : ℕ)
 
-variable (R) in
-/-- The `R`-algebra structure on the functions on an open `U` of the Grassmannian scheme
-`G(k, M)`, through its structure morphism to `Spec R`. -/
-abbrev sectionsAlgebra (U : (scheme R M k).Opens) : Algebra R Γ(scheme R M k, U) :=
-  (((toSpec R M k).appLE ⊤ U le_top).hom.comp (algebraMap R Γ(Spec R, ⊤))).toAlgebra
-
-attribute [local instance] sectionsAlgebra
-
-/-- The algebra map `R → Γ(G(k, M), U)` is the composite of `R → Γ(Spec R, ⊤)` with the map on
-functions of the structure morphism. -/
-theorem sectionsAlgebra_algebraMap (U : (scheme R M k).Opens) (r : R) :
-    algebraMap R Γ(scheme R M k, U) r =
-      (toSpec R M k).appLE ⊤ U le_top (algebraMap R Γ(Spec R, ⊤) r) :=
-  (rfl)
-
-/-- On an affine open `U`, the inclusion `Spec Γ(G(k, M), U) ⟶ G(k, M)` lies over `Spec R`. -/
-theorem fromSpec_toSpec (U : (scheme R M k).affineOpens) :
-    U.property.fromSpec ≫ toSpec R M k =
-      Spec.map (CommRingCat.ofHom (algebraMap R Γ(scheme R M k, U))) := by
-  refine (IsAffineOpen.fromSpec_comp_eq_SpecMap _ U.property).trans ?_
-  congr 1
+/-- The functions on an open `U` of the Grassmannian scheme `G(k, M)` form an `R`-algebra through
+its structure morphism to `Spec R`. -/
+local instance (U : (scheme R M k).Opens) : Algebra R Γ(scheme R M k, U) :=
+  (toSpec R M k).sectionsAlgebra U
 
 /-- The point of `G(k, Γ(G(k, M), U) ⊗[R] M)` classified by the inclusion of an affine open `U` of
 the Grassmannian scheme: its quotient is the universal quotient over `U`. -/
 def sectionsPoint (U : (scheme R M k).affineOpens) :
     G(k, Γ(scheme R M k, U) ⊗[R] M; Γ(scheme R M k, U)) :=
-  (schemeHomEquiv R M k Γ(scheme R M k, U)).symm ⟨U.property.fromSpec, fromSpec_toSpec M k U⟩
+  (schemeHomEquiv R M k Γ(scheme R M k, U)).symm
+    ⟨U.property.fromSpec, (toSpec R M k).fromSpec_toSpec U.property⟩
 
 /-- **The point `N_U` classifies the inclusion of `U`.** -/
 @[simp]
@@ -108,28 +93,14 @@ theorem toSchemeHom_sectionsPoint (U : (scheme R M k).affineOpens) :
     toSchemeHom (sectionsPoint M k U) = U.property.fromSpec :=
   toSchemeHom_schemeHomEquiv_symm_apply _
 
-/-- Restriction of functions from an open `U` of `G(k, M)` to an open `V ≤ U`, as a map of
-`R`-algebras. -/
-def restrictAlgHom {U V : (scheme R M k).Opens} (h : V ≤ U) :
-    Γ(scheme R M k, U) →ₐ[R] Γ(scheme R M k, V) where
-  toRingHom := ((scheme R M k).presheaf.map (homOfLE h).op).hom
-  commutes' r := by
-    have := (toSpec R M k).appLE_map (U := ⊤) (V := U) le_top (homOfLE h).op
-    exact congrArg (fun φ ↦ φ.hom (algebraMap R Γ(Spec R, ⊤) r)) this
-
-/-- `restrictAlgHom` is restriction of functions. -/
-@[simp]
-theorem restrictAlgHom_apply {U V : (scheme R M k).Opens} (h : V ≤ U) (a : Γ(scheme R M k, U)) :
-    restrictAlgHom M k h a = (scheme R M k).presheaf.map (homOfLE h).op a :=
-  (rfl)
-
 /-- **The points `N_U` are compatible with restriction.** For affine opens `V ≤ U` of `G(k, M)`,
 the point classified by `V` is the base change of the point classified by `U` along restriction
 of functions. -/
 theorem map_sectionsPoint {U V : (scheme R M k).affineOpens} (h : (V : (scheme R M k).Opens) ≤ U) :
-    map (restrictAlgHom M k h) (sectionsPoint M k U) = sectionsPoint M k V := by
+    map ((toSpec R M k).resₐ h) (sectionsPoint M k U) = sectionsPoint M k V := by
   refine toSchemeHom_injective ?_
-  rw [toSchemeHom_map, toSchemeHom_sectionsPoint, toSchemeHom_sectionsPoint]
+  rw [toSchemeHom_map, ← AlgHom.toRingHom_eq_coe, Scheme.Hom.resₐ_toRingHom,
+    CommRingCat.ofHom_hom, toSchemeHom_sectionsPoint, toSchemeHom_sectionsPoint]
   exact IsAffineOpen.map_fromSpec U.property V.property (homOfLE h).op
 
 variable (R) in
@@ -158,7 +129,7 @@ def sectionsLinearMap (U : (scheme R M k).Opens) : M →ₗ[R] Γ(pullbackTilde 
   map_add' m m' := by rw [map_add, map_add]
   map_smul' r m := by
     rw [map_smul, ← algebraMap_smul Γ(Spec R, ⊤) r (tildeToTop M m), map_smulₛₗ]
-    rfl
+    exact congrArg (· • _) (RingHom.congr_fun ((toSpec R M k).algebraMap_sections U) r).symm
 
 /-- `sectionsLinearMap` pulls back global sections of `M~`. -/
 theorem sectionsLinearMap_apply (U : (scheme R M k).Opens) (m : M) :
@@ -183,9 +154,11 @@ theorem isBaseChange_sectionsLinearMap (U : (scheme R M k).affineOpens) :
     Module.compHom _ (algebraMap Γ(Spec R, ⊤) Γ(scheme R M k, U))
   have : IsScalarTower Γ(Spec R, ⊤) Γ(scheme R M k, U) Γ(pullbackTilde R M k, U) :=
     IsScalarTower.of_compHom _ _ _
-  have : IsScalarTower R Γ(Spec R, ⊤) Γ(scheme R M k, U) := .of_algebraMap_eq' rfl
+  have : IsScalarTower R Γ(Spec R, ⊤) Γ(scheme R M k, U) :=
+    .of_algebraMap_eq' ((toSpec R M k).algebraMap_sections U)
   have : IsScalarTower R Γ(Spec R, ⊤) Γ(pullbackTilde R M k, U) :=
-    .of_algebraMap_smul fun _ _ ↦ rfl
+    .of_algebraMap_smul fun r x ↦
+      congrArg (· • x) (RingHom.congr_fun ((toSpec R M k).algebraMap_sections U) r).symm
   let φ : Γ(tilde M, ⊤) →ₗ[Γ(Spec R, ⊤)] Γ(pullbackTilde R M k, U) :=
     { toFun := (toSpec R M k).pullbackSectionsLE (tilde M) ⊤ U le_top
       map_add' := map_add _
@@ -211,13 +184,13 @@ theorem sectionsEquiv_tmul (U : (scheme R M k).affineOpens) (a : Γ(scheme R M k
 /-- `sectionsEquiv` commutes with restriction to a smaller affine open. -/
 theorem sectionsEquiv_rTensor {U V : (scheme R M k).affineOpens}
     (h : (V : (scheme R M k).Opens) ≤ U) (x : Γ(scheme R M k, U) ⊗[R] M) :
-    sectionsEquiv M k V ((restrictAlgHom M k h).toLinearMap.rTensor M x) =
+    sectionsEquiv M k V (((toSpec R M k).resₐ h).toLinearMap.rTensor M x) =
       (pullbackTilde R M k).presheaf.map (homOfLE h).op (sectionsEquiv M k U x) := by
   induction x using TensorProduct.inductionOn with
   | tmul a m =>
     rw [LinearMap.rTensor_tmul, sectionsEquiv_tmul, sectionsEquiv_tmul, Scheme.Modules.map_smul,
       map_sectionsLinearMap]
-    rfl
+    exact congrArg (· • _) (RingHom.congr_fun ((toSpec R M k).resₐ_toRingHom h) a)
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
 
 /-- The submodule `N_U` of `Γ(π^* M~, U)` over an affine open `U`: the image under `sectionsEquiv`

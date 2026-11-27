@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 
 import Mathlib.Algebra.Module.LocalizedModule.Away
+import TauCeti.Algebra.Category.ModuleCat.Presheaf.Submodule
 
 /-!
 # Quasi-coherent submodules from submodules of sections over affine opens
@@ -208,7 +209,8 @@ theorem submoduleSheaf_obj (W : X.Opensᵒᵖ) :
   (rfl)
 
 /-- The quasi-coherent submodule of `M` determined by `D`, as an `𝒪_X`-module. Its sections over
-an affine open `U` are the given submodule `D.submodule U` (`AffineSubmoduleData.range_ι_app`). -/
+an affine open `U` are the given submodule `D.submodule U` (`AffineSubmoduleData.sections_eq` and
+`PresheafOfModules.Submodule.range_ι_app`). -/
 @[expose]
 def sheaf : X.Modules :=
   D.submoduleSheaf.toSheafOfModules
@@ -220,10 +222,6 @@ def ι : D.sheaf ⟶ M :=
 
 instance : Mono D.ι :=
   SheafOfModules.Submodule.instMonoι D.submoduleSheaf
-
-/-- The sections of the submodule over `W` are sections of `M` lying in `D.sections W`. -/
-theorem ι_app_mem (W : X.Opens) (s : Γ(D.sheaf, W)) : D.ι.app W s ∈ D.sections W :=
-  (show ↥(D.sections W) from s).property
 
 /-- A section of `M` lying in `D.sections W`, as a section of the submodule over `W`. -/
 def sectionMk {W : X.Opens} (s : Γ(M, W)) (hs : s ∈ D.sections W) : Γ(D.sheaf, W) :=
@@ -239,12 +237,6 @@ theorem ι_app_sectionMk {W : X.Opens} (s : Γ(M, W)) (hs : s ∈ D.sections W) 
 theorem ι_app_injective (W : X.Opens) : Function.Injective (D.ι.app W) :=
   fun _ _ h ↦ Subtype.val_injective h
 
-/-- Over an open `W`, the image of the inclusion of the submodule on sections is `D.sections W`. -/
-theorem range_ι_app (W : X.Opens) :
-    LinearMap.range ((sectionsFunctor W).map D.ι).hom = D.sections W := by
-  ext s
-  exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ D.ι_app_mem W t, fun hs ↦ ⟨D.sectionMk s hs, rfl⟩⟩
-
 /-- **The submodule determined by `D` is quasi-coherent**: over a basic open `D(f)` of an affine
 open `U`, its sections are the localization at `f` of its sections over `U`, because the given
 submodule over `D(f)` is spanned by the restrictions of the given submodule over `U` and
@@ -258,7 +250,9 @@ instance isQuasicoherent_sheaf : D.sheaf.IsQuasicoherent := by
   · -- a section of the submodule over `D(f)` is a fraction `m / f ^ n` with `m` over `U`
     have hy : D.ι.app _ y ∈
         Submodule.span Γ(X, X.basicOpen f) (M.basicOpenRestrict f '' D.submodule U) := by
-      have := (D.sections_eq ⟨X.basicOpen f, hU.basicOpen f⟩).le (D.ι_app_mem _ y)
+      have hy : D.ι.app _ y ∈ D.sections (X.basicOpen f) :=
+        D.submoduleSheaf.toSubmodule.ι_app_mem (op _) y
+      have := (D.sections_eq ⟨X.basicOpen f, hU.basicOpen f⟩).le hy
       rw [D.submodule_eq_span (U := U) (X.basicOpen_le f)] at this
       convert this using 2
       exact Set.image_congr fun x _ ↦ M.basicOpenRestrict_apply f x
@@ -309,15 +303,18 @@ quotient `M / N` are `Γ(M, U) ⧸ D.submodule U`, `Γ(X, U)`-linearly. -/
 def sectionsQuotientEquiv (U : X.affineOpens) :
     Γ(D.quotient, U) ≃ₗ[Γ(X, U)] Γ(M, U) ⧸ D.submodule U :=
   sectionsCokernelEquiv D.ι U.property ≪≫ₗ
-    Submodule.quotEquivOfEq _ _ ((D.range_ι_app U).trans (D.sections_eq U))
+    Submodule.quotEquivOfEq _ _ ((SetLike.coe_injective ((LinearMap.coe_range _).trans
+      (D.submoduleSheaf.toSubmodule.range_ι_app (op U)))).trans (D.sections_eq U))
 
 /-- Under `sectionsQuotientEquiv`, the projection onto the quotient is the quotient map. -/
 @[simp]
 theorem sectionsQuotientEquiv_π_app (U : X.affineOpens) (s : Γ(M, U)) :
     D.sectionsQuotientEquiv U (D.π.app U s) = Submodule.Quotient.mk s := by
+  have hN : LinearMap.range ((sectionsFunctor (U : X.Opens)).map D.ι).hom = D.submodule U :=
+    (SetLike.coe_injective ((LinearMap.coe_range _).trans
+      (D.submoduleSheaf.toSubmodule.range_ι_app (op U)))).trans (D.sections_eq U)
   have h := sectionsCokernelEquiv_π_app D.ι U.property s
-  exact (congrArg (Submodule.quotEquivOfEq _ _ ((D.range_ι_app U).trans (D.sections_eq U)))
-    h).trans rfl
+  exact (congrArg (Submodule.quotEquivOfEq _ _ hN) h).trans rfl
 
 end Quasicoherent
 
