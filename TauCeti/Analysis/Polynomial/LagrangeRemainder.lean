@@ -27,7 +27,7 @@ public section
 
 open Finset Polynomial Set
 
-namespace TauCeti
+namespace Set.InjOn
 
 /-- The interpolation correction has highest derivative `c * N!`: the interpolant has degree
 less than `N`, and the nodal polynomial is monic of degree `N`. -/
@@ -62,10 +62,11 @@ theorem exists_sub_eval_interpolate_eq {ι : Type*} [DecidableEq ι] {s : Finset
   rcases s.eq_empty_or_nonempty with rfl | hne
   · exact ⟨x, hx, by simp⟩
   by_cases hnode : x ∈ s.image v
-  · obtain ⟨i, hi, rfl⟩ := mem_image.mp hnode
+  · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hnode
     exact ⟨v i, hx, by rw [Lagrange.eval_interpolate_at_node _ hv hi,
       Lagrange.eval_nodal_at_node hi, sub_self, mul_zero]⟩
-  have hnot (i : ι) (hi : i ∈ s) : x ≠ v i := fun h ↦ hnode (mem_image.mpr ⟨i, hi, h.symm⟩)
+  have hnot (i : ι) (hi : i ∈ s) : x ≠ v i :=
+    fun h ↦ hnode (Finset.mem_image.mpr ⟨i, hi, h.symm⟩)
   have hab : a < b := by
     obtain ⟨i, hi⟩ := hne
     exact lt_of_not_ge fun h ↦ hnot i hi ((subsingleton_Icc_of_ge h) hx (hvab i hi))
@@ -94,9 +95,9 @@ theorem exists_sub_eval_interpolate_eq {ι : Type*} [DecidableEq ι] {s : Finset
   rw [← Pi.sub_def, iteratedDerivWithin_sub hξ huniq (hf ξ hξ) hq.contDiffAt.contDiffWithinAt,
     iteratedDerivWithin_eq_iteratedDeriv huniq hq.contDiffAt hξ] at hξzero
   simp only [Polynomial.iteratedDeriv] at hξzero
-  rw [eval_iterate_derivative_interpolation_correction hv (fun i ↦ f (v i)) c ξ,
+  rw [hv.eval_iterate_derivative_interpolation_correction (fun i ↦ f (v i)) c ξ,
     sub_eq_zero] at hξzero
   have hquot := (div_eq_iff (Nat.cast_ne_zero.mpr s.card.factorial_ne_zero)).mpr hξzero
   exact ⟨ξ, hξ, hc.symm.trans (congrArg (· * w.eval x) hquot.symm)⟩
 
-end TauCeti
+end Set.InjOn
