@@ -55,9 +55,8 @@ theorem analyticAt_logDerivMean {s : ℂ}
 /-- The logarithmic-derivative mean is analytic at every `s` with `Re s ≥ 1`. -/
 theorem analyticAt_logDerivMean_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
     AnalyticAt ℂ (logDerivMean d q) s :=
-  analyticAt_logDerivMean fun ψ ↦
-    ⟨ψ.entireLFunction_ne_zero_of_one_le_re hs,
-      (ψ.legendreTwist d).entireLFunction_ne_zero_of_one_le_re hs⟩
+  analyticAt_logDerivMean fun ψ ↦ ⟨ψ.entireLFunction_ne_zero_of_one_le_re hs,
+    (ψ.legendreTwist d).entireLFunction_ne_zero_of_one_le_re hs⟩
 
 open Classical in
 /-- Count the principal members of the twisted family in the polar contribution. -/
