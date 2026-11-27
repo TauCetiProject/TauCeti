@@ -181,12 +181,6 @@ private theorem tensorHom_smul (r : R) (f : X ⟶ Y) (g : X' ⟶ Y') :
     f ⊗ₘ (r • g) = r • (f ⊗ₘ g) :=
   hom_ext <| by simp [coeff_tensorHom]
 
-/-- Every basis morphism is the image of a circle-free diagram under linearization. -/
-private theorem diagBasis_eq_linearize_map (x : PlanarMatching (X.as + Y.as)) :
-    diagBasis X Y x =
-      (linearize R δ).map (TLDiagCat.Hom.mk ⟨x, 0⟩ : TLDiagCat.of X.as ⟶ TLDiagCat.of Y.as) := by
-  simp
-
 /-- **Linearization preserves tensor products of morphisms**: juxtaposition adds the circle counts
 of two diagrams, and `δ ^ (c + c') = δ ^ c * δ ^ c'`. -/
 @[simp]
