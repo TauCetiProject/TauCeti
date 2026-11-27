@@ -59,7 +59,8 @@ theorem finite_setOf_infinitePlace_le_and_finiteAdele_mem {s : Set 𝔸ᶠ[K]}
   exact ⟨fun w ↦ by
     simpa only [AdeleRing.algebraMap_fst_apply, InfiniteAdeleRing.algebraMap_apply,
       ← InfinitePlace.Completion.algebraMap_apply_eq_coe,
-      InfinitePlace.Completion.norm_algebraMap] using hx.1 w, hx.2⟩
+      InfinitePlace.Completion.norm_algebraMap] using hx.1 w,
+    by simpa only [AdeleRing.algebraMap_snd_def] using hx.2⟩
 
 /-- A compact condition on finite adelic vectors and coordinate bounds at all infinite places
 cut out finitely many rational vectors. -/
