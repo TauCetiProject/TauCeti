@@ -327,6 +327,7 @@ exceeds the number of variables. -/
 theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
     symmetricEsymm σ R k = 0 := by
   ext1
+  rw [coe_symmetricEsymm, ZeroMemClass.coe_zero]
   exact MvPolynomial.esymm_eq_zero_of_card_lt h
 
 end symmetricEsymm

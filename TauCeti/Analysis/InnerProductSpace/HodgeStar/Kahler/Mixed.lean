@@ -122,9 +122,9 @@ theorem wedge_wedgeProd_wedgePow_ofComplexModule {n k l : ℕ} (hn : finrank ℂ
         wedgePow ((∑ i ∈ Sᶜ, α i : realOneOneForms E) : E [⋀^Fin 2]→L[ℝ] ℝ) k := by
     simp only [Submodule.coe_sum]
     rw [← factorial_smul_wedgeProd even_two, smul_smul, inv_mul_cancel₀ hk, one_smul]
-  rw [hw, wedge_def, pairedWedge_smul_left, pairedWedge_sum_left,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sum_apply]
-  simp only [pairedWedge_smul_left, ContinuousAlternatingMap.smul_apply, ← wedge_def,
+  rw [hw, wedge_smul_left, wedge_sum_left, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.sum_apply]
+  simp only [wedge_smul_left, ContinuousAlternatingMap.smul_apply,
     wedge_wedgePow_wedgePow_ofComplexModule
       (realOneOneForms_apply_I_smul (∑ i ∈ _ᶜ, α i)) hn hkl v, mixedEsymm_def,
     smul_eq_mul, Finset.mul_sum, Finset.sum_mul]
@@ -240,41 +240,37 @@ theorem hasDerivAt_esymm_relEigenvalues_add_smul {n k : ℕ} (hn : finrank ℂ E
   classical
   set f := mixedEsymmMultilinear (E := E) hn k
   set c : Finset (Fin k) → ℝ := fun S ↦ f (S.piecewise (fun _ ↦ α) fun _ ↦ β)
-  have hexp (t : ℝ) : MvPolynomial.eval
-      ((isSymm_hermitianSesqForm (realOneOneForms_apply_I_smul (β + t • α))).relEigenvalues hn)
-      (MvPolynomial.esymm (Fin n) ℝ k) = ∑ S : Finset (Fin k), t ^ #S * c S := by
-    rw [← mixedEsymm_const hn, ← mixedEsymmMultilinear_apply,
-      show (fun _ : Fin k ↦ β + t • α) = (fun _ ↦ t • α) + fun _ ↦ β from
-        funext fun _ ↦ add_comm _ _, f.map_add_univ]
-    refine Finset.sum_congr rfl fun S _ ↦ ?_
+  have hpw (t : ℝ) (S : Finset (Fin k)) :
+      f (S.piecewise (fun _ ↦ t • α) fun _ ↦ β) = t ^ #S * c S := by
     have hS : S.piecewise (fun _ ↦ t • α) (fun _ ↦ β) =
         S.piecewise (fun i ↦ t • S.piecewise (fun _ ↦ α) (fun _ ↦ β) i)
           (S.piecewise (fun _ ↦ α) fun _ ↦ β) := by
       funext i
       by_cases hi : i ∈ S <;> simp [Finset.piecewise, hi]
     rw [hS, f.map_piecewise_smul, Finset.prod_const, RingHom.id_apply, smul_eq_mul]
+  have hexp (t : ℝ) : MvPolynomial.eval
+      ((isSymm_hermitianSesqForm (realOneOneForms_apply_I_smul (β + t • α))).relEigenvalues hn)
+      (MvPolynomial.esymm (Fin n) ℝ k) = f (fun _ ↦ β) +
+        t * ∑ i : Fin k, mixedEsymm hn (Function.update (fun _ ↦ β) i α) +
+        ∑ S with 2 ≤ #S, t ^ #S * c S := by
+    rw [← mixedEsymm_const hn, ← mixedEsymmMultilinear_apply,
+      show (fun _ : Fin k ↦ β + t • α) = (fun _ ↦ β) + fun _ ↦ t • α from rfl,
+      MultilinearMap.map_add_eq_map_add_linearDeriv_add (M := fun _ : Fin k ↦ realOneOneForms E),
+      MultilinearMap.linearDeriv_apply]
+    simp only [f.map_update_smul, RingHom.id_apply, smul_eq_mul, mixedEsymmMultilinear_apply, f,
+      Finset.mul_sum, hpw]
   simp only [hexp]
-  have hd : HasDerivAt (fun t : ℝ ↦ ∑ S : Finset (Fin k), t ^ #S * c S)
-      (∑ S : Finset (Fin k), (#S * (0 : ℝ) ^ (#S - 1)) * c S) 0 :=
-    HasDerivAt.fun_sum fun S _ ↦ HasDerivAt.mul_const (hasDerivAt_pow #S (0 : ℝ)) (c S)
+  have hd : HasDerivAt (fun t : ℝ ↦ f (fun _ ↦ β) +
+        t * ∑ i : Fin k, mixedEsymm hn (Function.update (fun _ ↦ β) i α) +
+        ∑ S with 2 ≤ #S, t ^ #S * c S)
+      (0 + 1 * ∑ i : Fin k, mixedEsymm hn (Function.update (fun _ ↦ β) i α) +
+        ∑ S with 2 ≤ #S, (#S * (0 : ℝ) ^ (#S - 1)) * c S) 0 :=
+    ((hasDerivAt_const _ _).add ((hasDerivAt_id' 0).mul_const _)).add
+      (HasDerivAt.fun_sum fun S _ ↦ (hasDerivAt_pow #S (0 : ℝ)).mul_const (c S))
   convert hd using 1
-  have hzero (S : Finset (Fin k)) (hS : S ∉ Finset.univ.image fun i : Fin k ↦ {i}) :
-      (#S * (0 : ℝ) ^ (#S - 1)) * c S = 0 := by
-    have h1 : #S ≠ 1 := fun h1 ↦ by
-      obtain ⟨i, rfl⟩ := Finset.card_eq_one.1 h1
-      exact hS (Finset.mem_image_of_mem _ (Finset.mem_univ i))
-    rcases Nat.eq_zero_or_pos #S with h0 | hpos
-    · simp [h0]
-    · rw [zero_pow (by omega), mul_zero, zero_mul]
-  rw [← Finset.sum_subset (Finset.subset_univ _) fun S _ hS ↦ hzero S hS,
-    Finset.sum_image fun i _ j _ h ↦ Finset.singleton_injective h]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hpw : ({i} : Finset (Fin k)).piecewise (fun _ ↦ α) (fun _ ↦ β) =
-      Function.update (fun _ ↦ β) i α := by
-    funext j
-    by_cases hj : j = i <;> simp [Finset.piecewise, hj]
-  simp only [Finset.card_singleton, Nat.cast_one, Nat.sub_self, pow_zero, mul_one, one_mul, c,
-    hpw, f, mixedEsymmMultilinear_apply]
+  rw [zero_add, one_mul, left_eq_add]
+  refine Finset.sum_eq_zero fun S hS ↦ ?_
+  rw [zero_pow (by have := (Finset.mem_filter.1 hS).2; omega), mul_zero, zero_mul]
 
 /-- **`M_k` as a derivative**: `(m + 1) M_{m+1}(α, β, …, β)` is the derivative of
 `t ↦ σ_{m+1}(λ[β + t α])` at `0`, by symmetry of `M_{m+1}`. -/
