@@ -40,11 +40,6 @@ public section
 
 namespace RingHom
 
-private theorem finite_setOf_pow_eq_one (K : Type*) [Field K] {N : ℕ} (hN : N ≠ 0) :
-    {ζ : K | ζ ^ N = 1}.Finite :=
-  (Polynomial.nthRootsFinset N (1 : K)).finite_toSet.subset fun ζ hζ => by
-    simpa [Polynomial.mem_nthRootsFinset (Nat.pos_of_ne_zero hN)] using hζ
-
 /-- Over an infinite field, two field endomorphisms `g₁, g₂` cannot satisfy pointwise relations
 `(g₁ x * g₂ x) ^ N = 1` for all nonzero `x` and a nonzero natural number `N`. -/
 theorem not_forall_mul_apply_pow_eq_one {K : Type*} [Field K] [Infinite K]
@@ -53,7 +48,10 @@ theorem not_forall_mul_apply_pow_eq_one {K : Type*} [Field K] [Infinite K]
   classical
   intro h
   let R : Set K := {ζ : K | ζ ^ N = 1}
-  have hR : R.Finite := finite_setOf_pow_eq_one K hN
+  have hR : R.Finite := by
+    rw [show R = ↑(Polynomial.nthRootsFinset N (1 : K)) from
+      (Polynomial.nthRootsFinset_toSet (Nat.pos_of_ne_zero hN) 1).symm]
+    exact Finset.finite_toSet _
   let qPoly : K × K → Polynomial K := fun p =>
     Polynomial.X ^ 2 - Polynomial.C (p.2 - 1 - p.1) * Polynomial.X + Polynomial.C p.1
   have hqPoly_ne (p : K × K) : qPoly p ≠ 0 :=
@@ -80,7 +78,10 @@ theorem eq_of_forall_apply_pow_eq {K : Type*} [Field K] [Infinite K]
     (g₁ g₂ : K →+* K) {N : ℕ} (hN : N ≠ 0)
     (h : ∀ x : K, x ≠ 0 → (g₁ x) ^ N = (g₂ x) ^ N) : g₁ = g₂ := by
   let R : Set K := {ζ : K | ζ ^ N = 1}
-  have hR : R.Finite := finite_setOf_pow_eq_one K hN
+  have hR : R.Finite := by
+    rw [show R = ↑(Polynomial.nthRootsFinset N (1 : K)) from
+      (Polynomial.nthRootsFinset_toSet (Nat.pos_of_ne_zero hN) 1).symm]
+    exact Finset.finite_toSet _
   let E : K × K → Set K := fun p => {y : K | p.1 ≠ p.2 ∧ (p.1 - p.2) * y = p.2 - 1}
   have hE (p : K × K) : (E p).Finite := Set.Subsingleton.finite fun y₁ hy₁ y₂ hy₂ => by
     have hdiff : (p.1 - p.2) * (y₁ - y₂) = 0 := by
