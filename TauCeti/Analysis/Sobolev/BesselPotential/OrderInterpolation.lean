@@ -753,7 +753,7 @@ theorem exists_norm_inclusion_le_mul_norm_inclusion_rpow_mul_norm_rpow (hp : 1 <
     rw [toDistr_copy _ ht.symm]
     simp [x, e, C, ComplexMethodSpace.toSum_ofInter ⟨hθ.1.le, hθ.2.le⟩]
   calc ‖inclusion hts u‖ = ‖e (ComplexMethodSpace.ofInter θ x)‖ := by
-        rw [hx, ← norm_toLp_eq, toLp_copy _ ht.symm, norm_toLp_eq]
+        rw [hx, norm_copy]
     _ ≤ ‖e.toContinuousLinearMap‖ * ‖ComplexMethodSpace.ofInter θ x‖ :=
         e.toContinuousLinearMap.le_opNorm _
     _ ≤ ‖e.toContinuousLinearMap‖ * (‖C.interFst x‖ ^ (1 - θ) * ‖C.interSnd x‖ ^ θ) := by

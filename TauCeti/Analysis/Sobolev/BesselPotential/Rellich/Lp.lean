@@ -230,7 +230,6 @@ private theorem rellichAt_sub_two {t : ℝ} (h : RellichAt E F hp hp_top t) :
     RellichAt E F hp hp_top (t - 2) := by
   intro φ r hr
   set b := stdOrthonormalBasis ℝ E
-  have hd (ψ : 𝓢(E, ℂ)) {r' : ℝ} (hr' : r' < t) := h ψ r' hr'
   have h₂ : r + 2 < t := by linarith
   have h₁ : r + 1 < t := by linarith
   set D : Fin (Module.finrank ℝ E) → H^{t, p}(E, F) →L[ℂ] H^{r, p}(E, F) := fun i ↦
@@ -245,12 +244,12 @@ private theorem rellichAt_sub_two {t : ℝ} (h : RellichAt E F hp hp_top t) :
           (inclusion h₂.le ∘L smulLeftCLMOfOneLt hp hp_top (∂_{b i} (∂_{b i} φ))))
   have hS : IsCompactOperator S := by
     let 𝒦 := compactOperator (RingHom.id ℂ) H^{t, p}(E, F) H^{r, p}(E, F)
-    have hD : ∀ i, D i ∈ 𝒦 := fun i ↦ (hd _ h₁).clm_comp _
+    have hD : ∀ i, D i ∈ 𝒦 := fun i ↦ (h _ _ h₁).clm_comp _
     refine 𝒦.add_mem
-      ((hd φ h₂).clm_comp (inclusion _ ∘L besselPotentialCLM hp hp_top ((2 : ℝ) : ℂ)))
+      ((h φ _ h₂).clm_comp (inclusion _ ∘L besselPotentialCLM hp hp_top ((2 : ℝ) : ℂ)))
       (𝒦.smul_mem _ (𝒦.sum_mem fun i _ ↦ ?_))
     exact 𝒦.sub_mem (𝒦.add_mem (hD i) (hD i))
-      ((hd _ h₂).clm_comp _)
+      ((h _ _ h₂).clm_comp _)
   have heq : (inclusion hr.le ∘L smulLeftCLMOfOneLt hp hp_top φ :
       H^{t - 2, p}(E, F) →L[ℂ] H^{r, p}(E, F)) =
       S ∘L (inclusion (by simp only [Complex.ofReal_re]; linarith) ∘L
