@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
@@ -148,7 +149,7 @@ private theorem isCompactOperator_inclusion_comp_smulLeftCLMOfOneLt_zero (hp : 1
   set T := TauCeti.integralOperatorLp (TauCeti.convMulKernel F g φ) p
     (TauCeti.aestronglyMeasurable_convMulKernel hg.aestronglyMeasurable φ.continuous) hAB.1 hAB.2
   have hT : IsCompactOperator T :=
-    TauCeti.isCompactOperator_integralOperatorLp_convMulKernel_of_tendsto hg φ.continuous hC
+    TauCeti.isCompactOperator_integralOperatorLp_convMulKernel_of_tendsto hg φ.continuous
       φ.tendsto_cocompact
   have heq : (inclusion hr.le ∘L smulLeftCLMOfOneLt hp hp_top φ :
       H^{0, p}(E, F) →L[ℂ] H^{r, p}(E, F)) =
@@ -269,6 +270,15 @@ end Steps
 
 /-! ### The Rellich theorem -/
 
+/-- For `p = 2`, `BesselPotentialSpace.smulLeftCLMOfOneLt` is `BesselPotentialSpace.smulLeftCLM`:
+both multiply the underlying tempered distribution by `φ`. So the Rellich theorems below
+specialise at `p = 2` to `BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM` and
+`BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`. -/
+theorem smulLeftCLMOfOneLt_two_eq_smulLeftCLM [CompleteSpace F] {s : ℝ} (φ : 𝓢(E, ℂ)) :
+    (smulLeftCLMOfOneLt ENNReal.one_lt_two ENNReal.ofNat_ne_top φ :
+      H^{s, 2}(E, F) →L[ℂ] H^{s, 2}(E, F)) = smulLeftCLM s φ :=
+  ContinuousLinearMap.ext fun _ ↦ ext (by simp)
+
 section Rellich
 
 variable [CompleteSpace F] [FiniteDimensional ℂ F]
@@ -292,8 +302,9 @@ private theorem rellichAt_two_mul (hp : 1 < p) (hp_top : p ≠ ∞) (k : ℤ) :
 /-- **The Rellich theorem for `H^{s,p}`.** Let `F` be a finite-dimensional complex inner product
 space, `1 < p < ∞` and `φ` a Schwartz function. For real orders `r < s`,
 multiplication by `φ` followed by the inclusion `H^{s,p} ⊆ H^{r,p}` is a compact operator
-`H^{s,p}(E, F) → H^{r,p}(E, F)`. For `p = 2` this is
-`BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM`. -/
+`H^{s,p}(E, F) → H^{r,p}(E, F)`. For `p = 2`, where `smulLeftCLMOfOneLt` is
+`BesselPotentialSpace.smulLeftCLM` (`BesselPotentialSpace.smulLeftCLMOfOneLt_two_eq_smulLeftCLM`),
+this is `BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM`. -/
 theorem isCompactOperator_inclusion_comp_smulLeftCLMOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞)
     (φ : 𝓢(E, ℂ)) {r s : ℝ} (h : r < s) :
     IsCompactOperator (inclusion h.le ∘L smulLeftCLMOfOneLt hp hp_top φ :
@@ -335,7 +346,9 @@ theorem isCompactOperator_inclusion_comp_smulLeftCLMOfOneLt (hp : 1 < p) (hp_top
 `1 < p < ∞`, `φ` a Schwartz function and `r < s`. A bounded subset of
 `H^{s,p}(E, F)` on which multiplication by `φ` is the identity, for instance a bounded set of
 elements supported in a compact set on a neighbourhood of which `φ = 1`, has compact closure in
-`H^{r,p}(E, F)`. -/
+`H^{r,p}(E, F)`. For `p = 2` this is
+`BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`, through
+`BesselPotentialSpace.smulLeftCLMOfOneLt_two_eq_smulLeftCLM`. -/
 theorem isCompact_closure_image_inclusion_of_smulLeftCLMOfOneLt_eq (hp : 1 < p)
     (hp_top : p ≠ ∞) {φ : 𝓢(E, ℂ)} {r s : ℝ} (h : r < s)
     {S : Set H^{s, p}(E, F)} (hS : Bornology.IsBounded S)

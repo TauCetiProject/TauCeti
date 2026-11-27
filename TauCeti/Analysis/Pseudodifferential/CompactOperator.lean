@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Recovery
-public import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+public import TauCeti.Analysis.Sobolev.BesselPotential.Rellich.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.StrongConvergence
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality

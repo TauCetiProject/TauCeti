@@ -750,10 +750,8 @@ theorem exists_norm_inclusion_le_mul_norm_inclusion_rpow_mul_norm_rpow (hp : 1 <
   let x : C.inter := ⟨(inclusion (hrt.trans hts) u, u), C.mem_inter_iff.2 (by simp [C])⟩
   have hx : inclusion hts u = (e (ComplexMethodSpace.ofInter θ x)).copy t ht.symm := by
     refine ext ?_
-    rw [toDistr_inclusion, toDistr_copy _ ht.symm,
-      toDistr_besselPotentialSpaceComplexMethodContinuousLinearEquiv_apply,
-      ComplexMethodSpace.toSum_ofInter ⟨hθ.1.le, hθ.2.le⟩, sumSpaceEmbed_fstToSum, interFst_apply,
-      besselPotentialSpace_embed₀_apply, toDistr_inclusion]
+    rw [toDistr_copy _ ht.symm]
+    simp [x, e, C, ComplexMethodSpace.toSum_ofInter ⟨hθ.1.le, hθ.2.le⟩]
   calc ‖inclusion hts u‖ = ‖e (ComplexMethodSpace.ofInter θ x)‖ := by
         rw [hx, ← norm_toLp_eq, toLp_copy _ ht.symm, norm_toLp_eq]
     _ ≤ ‖e.toContinuousLinearMap‖ * ‖ComplexMethodSpace.ofInter θ x‖ :=

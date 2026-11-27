@@ -39,7 +39,7 @@ and the Rellich theorem `BesselPotentialSpace.isCompactOperator_inclusion_comp_s
 compact for `E ≠ 0` and `F ≠ 0`: translates of a fixed Schwartz function `u` form a bounded
 subset of `H^s` whose image in `H^r` has no convergent subsequence
 (`BesselPotentialSpace.not_isCompactOperator_inclusion`, for every `1 ≤ p ≤ ∞`, in
-`TauCeti.Analysis.Sobolev.BesselPotential.Rellich`).
+`TauCeti.Analysis.Sobolev.BesselPotential.Rellich.Basic`).
 
 ## Main results
 

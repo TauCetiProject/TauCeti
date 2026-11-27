@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 import TauCeti.MeasureTheory.Function.Lp.Operator.Compact
 import TauCeti.Topology.UrysohnsLemma
 
@@ -194,24 +195,28 @@ theorem isCompactOperator_integralOperatorLp_convMulKernel [FiniteDimensional �
         continuous_const).continuousOn) fun x y h ↦ convMulKernel_eq_zero h
 
 /-- **Convolution after multiplication is compact on `Lᵖ`**, for a multiplier vanishing at
-infinity: for an integrable `g` and a bounded continuous `ψ` tending to `0` at infinity, the
+infinity: for an integrable `g` and a continuous `ψ` tending to `0` at infinity, the
 operator `w ↦ g ⋆ (ψ w)` on `Lᵖ(E, F)` is compact. It is the limit in Schur norm of the operators
 for the compactly supported multipliers `χₙ ψ`, where `χₙ` is a continuous cutoff equal to `1`
 where `‖ψ‖ ≥ 1 / (n + 1)`. -/
 theorem isCompactOperator_integralOperatorLp_convMulKernel_of_tendsto
-    [FiniteDimensional ℂ F] {g ψ : E → ℂ} (hg : Integrable g) (hψ : Continuous ψ) {C : ℝ≥0}
-    (hC : ∀ y, ‖ψ y‖ ≤ C) (hψ0 : Tendsto ψ (cocompact E) (𝓝 0))
+    [FiniteDimensional ℂ F] {g ψ : E → ℂ} (hg : Integrable g) (hψ : Continuous ψ)
+    (hψ0 : Tendsto ψ (cocompact E) (𝓝 0))
     {hK : AEStronglyMeasurable (uncurry (convMulKernel F g ψ)) (volume.prod volume)} {A B : ℝ≥0}
     {hA : ∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖convMulKernel F g ψ x y‖ₑ ≤ A}
     {hB : ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖convMulKernel F g ψ x y‖ₑ ≤ B} :
     IsCompactOperator (integralOperatorLp (convMulKernel F g ψ) p hK hA hB) := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
+  obtain ⟨C₀, hC₀⟩ := isBounded_iff_forall_norm_le.1
+    (ZeroAtInftyContinuousMap.isBounded_range ⟨⟨ψ, hψ⟩, hψ0⟩)
+  have hC (y : E) : ‖ψ y‖ ≤ C₀.toNNReal :=
+    (hC₀ _ (mem_range_self y)).trans (Real.le_coe_toNNReal C₀)
   set I : ℝ≥0 := (∫⁻ z, ‖g z‖ₑ).toNNReal
   have hfin : ∫⁻ z, ‖g z‖ₑ ≤ I := (ENNReal.coe_toNNReal hg.hasFiniteIntegral.ne).ge
   have happrox (n : ℕ) := hψ.exists_hasCompactSupport_norm_sub_le hψ0
     (by positivity : (0 : ℝ) < (((n : ℝ≥0) + 1)⁻¹ : ℝ≥0))
   choose ψ' hψ'cont hψ'c hψ'ψ hsub using happrox
-  have hψ'le (n : ℕ) (y : E) : ‖ψ' n y‖ ≤ C := (hψ'ψ n y).trans (hC y)
+  have hψ'le (n : ℕ) (y : E) : ‖ψ' n y‖ ≤ C₀.toNNReal := (hψ'ψ n y).trans (hC y)
   refine isCompactOperator_of_tendsto (l := atTop)
     (F := fun n ↦ integralOperatorLp (convMulKernel F g (ψ' n)) p
       (aestronglyMeasurable_convMulKernel hg.aestronglyMeasurable (hψ'cont n))

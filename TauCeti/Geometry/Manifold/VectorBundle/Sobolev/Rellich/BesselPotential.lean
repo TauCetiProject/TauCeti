@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
-import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+import TauCeti.Analysis.Sobolev.BesselPotential.Rellich.Basic
 
 /-!
 # The Rellich theorem for the Sobolev spaces of a square chart partition

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+public import TauCeti.Analysis.Sobolev.BesselPotential.Rellich.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 
