@@ -16,9 +16,9 @@ import TauCeti.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.ResidueField
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
 import TauCeti.RingTheory.Flat.PrincipalQuotient
+import TauCeti.RingTheory.Flat.Fiber.FinitePresentation
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Localization.Ideal
-import TauCeti.RingTheory.Smooth.Fiber.Regular
 
 /-!
 # The fibre criterion for relative effective Cartier divisors
@@ -27,10 +27,10 @@ Let `f : X ⟶ S` be flat with `X` locally noetherian, and let `I` be an ideal s
 closed subscheme `D` is flat over `S`. This file proves that `D` is a relative effective Cartier
 divisor as soon as each of its fibres `D_s ⊆ X_s = X ×_S Spec κ(s)` over the residue fields of
 `S` is an effective Cartier divisor
-(`Scheme.IdealSheafData.isEffectiveCartier_of_isEffectiveCartier_comap_fiberι`). With the
+(`isEffectiveCartier_of_isEffectiveCartier_comap_fiberι_of_noetherian`). With the
 converse `Scheme.IdealSheafData.IsRelativeEffectiveCartier.isEffectiveCartier_comap_of_field`,
 this characterizes relative effective Cartier divisors by their residue-field fibres
-(`Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι`).
+(`isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι_of_noetherian`).
 The base `S` need not be noetherian; when it is locally noetherian and `f` is locally of finite
 type, `X` is locally noetherian by Mathlib's `LocallyOfFiniteType.isLocallyNoetherian`. The
 criterion reduces the effective Cartier condition for a family over a general base to the same
@@ -45,7 +45,7 @@ is locally noetherian, by descent along flat surjective morphisms). The fibres o
 of a locally noetherian `X` are locally noetherian
 (`AlgebraicGeometry.Scheme.Hom.isLocallyNoetherian_fiber`), so relative effective Cartier
 divisors are also characterized by their geometric fibres
-(`isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed`).
+(`isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed_of_noetherian`).
 
 The proof of the residue-field criterion works at a point `x` of `X` over `s`. For affine opens
 `U ∋ x` and `W ∋ s` with `f(U) ⊆ W`, write `A = Γ(S, W)`, `B = Γ(X, U)`, `p` and `q` for the
@@ -72,29 +72,40 @@ is effective Cartier exactly when that fibre is; the noetherian criterion then m
 effective Cartier divisor near the image in `X` of each point of `X ×_S T`, and relative effective
 Cartier divisors are stable under base change.
 
-Over an arbitrary base, the criterion holds for smooth families: if `f : X ⟶ S` is smooth and the
+Over an arbitrary base, the criterion holds when `f : X ⟶ S` is flat and locally of finite
+presentation and the
 closed subscheme of `I` is locally of finite presentation and flat over `S`, then `I` is a relative
 effective Cartier divisor exactly when its fibres over the residue fields (or over the geometric
 points) of `S` are effective Cartier divisors
-(`isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι_of_smooth`). Here neither
+(`isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι`). Here neither
 `S` nor `X` need be locally noetherian. Near a point `x` over `s`, a generator `t ∈ I(U)` of the
 fibre of `I` at `x` generates `I` on a basic open neighbourhood of `x`, by Nakayama's lemma and
 finite presentation (`Module.Flat.exists_mem_and_map_eq_span_singleton_of_fiber`). The fibres of
 `I` over all points of `S` make `t` a nonzerodivisor on each fibre ring of that neighbourhood, and
-for a smooth algebra this makes `t` a nonzerodivisor
-(`Algebra.Smooth.isSMulRegular_of_forall_isSMulRegular_fiber`, proved through a noetherian model).
+for a flat finitely presented algebra this makes `t` a nonzerodivisor
+(`Module.Flat.isSMulRegular_of_forall_isSMulRegular_fiber`, proved through a noetherian model).
+
+If `I` is already locally principal, the ambient flatness and finite presentation suffice:
+effective Cartier fibres make the local equations regular and their quotients flat. Thus `I`
+is a relative effective Cartier divisor without a separate flatness assumption on its closed
+subscheme.
 
 ## Main results
 
+* `isRelativeEffectiveCartier_of_locallyPrincipal_of_forall_isEffectiveCartier_comap_fiberι`:
+  a locally principal ideal on a flat finitely presented family is relatively effective Cartier
+  when all its residue-field fibres are effective Cartier.
 * `Scheme.IdealSheafData.exists_eq_span_singleton_of_isEffectiveCartier_comap_fiberι`: the
   pointwise criterion, giving a nonzerodivisor equation near every point over which the fibre is
   an effective Cartier divisor.
-* `Scheme.IdealSheafData.isEffectiveCartier_of_isEffectiveCartier_comap_fiberι`: an ideal sheaf
+* `isEffectiveCartier_of_isEffectiveCartier_comap_fiberι_of_noetherian`:
+  an ideal sheaf
   whose closed subscheme is flat over the base, and whose residue-field fibres are effective
   Cartier divisors, is an effective Cartier divisor.
-* `Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι`:
+* `isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι_of_noetherian`:
   the fibre criterion for relative effective Cartier divisors over residue fields.
-* `isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed`: the fibre
+* `isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed_of_noetherian`:
+  the fibre
   criterion for relative effective Cartier divisors over geometric points.
 * `Scheme.IdealSheafData.isRelativeEffectiveCartier_comap_fst_of_isEffectiveCartier_comap_fiberι`:
   the base change to `X ×_S T` of a divisor on a locally noetherian family `X ⟶ S` is a relative
@@ -102,10 +113,11 @@ for a smooth algebra this makes `t` a nonzerodivisor
 * `isRelativeEffectiveCartier_comap_fst_iff_forall_isEffectiveCartier_comap_fiberι`
   and `isRelativeEffectiveCartier_comap_fst_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed`:
   the fibre criterion over residue fields and over geometric points for such base changes.
-* `isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι_of_smooth` and
-  `isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed_of_smooth`:
-  the fibre criterion over residue fields and over geometric points for a smooth family over an
-  arbitrary base.
+* `isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι` and
+  `isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed`:
+  the fibre criterion over residue fields and over geometric points for a flat finitely presented
+  family
+  over an arbitrary base.
 * `Scheme.IdealSheafData.IsEffectiveCartier.comap_fst_of_comap_fiberι`: effective Cartier
   residue-field fibres give effective Cartier fibres over every field-valued point.
 * `Scheme.IdealSheafData.IsEffectiveCartier.comap_fiberι_of_comap_fst`: conversely, an effective
@@ -252,7 +264,8 @@ theorem exists_eq_span_singleton_of_isEffectiveCartier_comap_fiberι [IsLocallyN
 locally noetherian, and let `I` be an ideal sheaf on `X` whose closed subscheme is flat over `S`.
 If the fibre of `I` over the residue field of every point of `S` is an effective Cartier divisor,
 then `I` is an effective Cartier divisor. -/
-theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι [IsLocallyNoetherian X]
+theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι_of_noetherian
+    [IsLocallyNoetherian X]
     {I : X.IdealSheafData} {f : X ⟶ S} [Flat f] [Flat (I.subschemeι ≫ f)]
     (h : ∀ s : S, (I.comap (f.fiberι s)).IsEffectiveCartier) : I.IsEffectiveCartier :=
   (isEffectiveCartier_iff I).mpr fun x ↦
@@ -262,26 +275,27 @@ theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι [IsLocallyNoether
 `f : X ⟶ S` be flat with `X` locally noetherian, and let `I` be an ideal sheaf on `X` whose closed
 subscheme is flat over `S`. Then `I` is a relative effective Cartier divisor if and only if its
 fibre over the residue field of every point of `S` is an effective Cartier divisor. -/
-theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι
+theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι_of_noetherian
     [IsLocallyNoetherian X] {I : X.IdealSheafData} {f : X ⟶ S} [Flat f]
     [Flat (I.subschemeι ≫ f)] :
     I.IsRelativeEffectiveCartier f ↔ ∀ s : S, (I.comap (f.fiberι s)).IsEffectiveCartier :=
   ⟨fun hI s ↦ hI.isEffectiveCartier_comap_of_field (S.fromSpecResidueField s), fun h ↦
     (isRelativeEffectiveCartier_iff I f).mpr
-      ⟨isEffectiveCartier_of_isEffectiveCartier_comap_fiberι h, inferInstance⟩⟩
+      ⟨isEffectiveCartier_of_isEffectiveCartier_comap_fiberι_of_noetherian h, inferInstance⟩⟩
 
 /-- **The fibre criterion for relative effective Cartier divisors over geometric points.** Let
 `f : X ⟶ S` be flat with `X` locally noetherian, and let `I` be an ideal sheaf on `X` whose closed
 subscheme is flat over `S`. Then `I` is a relative effective Cartier divisor if and only if its
 fibre over every geometric point `Spec K ⟶ S`, with `K` algebraically closed, is an effective
 Cartier divisor. -/
-theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed
+theorem
+    isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed_of_noetherian
     [IsLocallyNoetherian X] {I : X.IdealSheafData} {f : X ⟶ S} [Flat f]
     [Flat (I.subschemeι ≫ f)] :
     I.IsRelativeEffectiveCartier f ↔ ∀ (K : Type u) [Field K] [IsAlgClosed K]
       (g : Spec (.of K) ⟶ S), (I.comap (pullback.fst f g)).IsEffectiveCartier := by
   refine ⟨fun hI K _ _ g ↦ hI.isEffectiveCartier_comap_of_field g, fun h ↦ ?_⟩
-  rw [isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι]
+  rw [isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι_of_noetherian]
   intro s
   -- The fibre of `f` over `κ(s)` is locally noetherian since `X` is
   -- (`Scheme.Hom.isLocallyNoetherian_fiber`).
@@ -443,13 +457,15 @@ private theorem IsEffectiveCartier.isSMulRegular_fiber_of_ideal_eq_span_singleto
   refine hreg.right_eq_zero_of_smul ?_
   rw [smul_eq_mul, ← map_mul, ← smul_eq_mul, hy, map_zero]
 
-/-- **The fibre criterion for effective Cartier divisors on a smooth family.** Let `f : X ⟶ S` be
-smooth, and let `I` be an ideal sheaf on `X` whose closed subscheme is locally of finite
+/-- **The fibre criterion for effective Cartier divisors on a flat finitely presented
+family.** Let `f : X ⟶ S` be flat and locally of finite presentation, and let `I` be an ideal sheaf
+on `X` whose closed subscheme is locally of finite
 presentation and flat over `S`. If the fibre of `I` over the residue field of every point of `S`
 is an effective Cartier divisor, then `I` is an effective Cartier divisor. Neither `S` nor `X`
 need be locally noetherian. -/
-theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι_of_smooth {I : X.IdealSheafData}
-    {f : X ⟶ S} [Smooth f] [Flat (I.subschemeι ≫ f)] [LocallyOfFinitePresentation I.subschemeι]
+theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι {I : X.IdealSheafData}
+    {f : X ⟶ S} [Flat f] [LocallyOfFinitePresentation f]
+    [Flat (I.subschemeι ≫ f)] [LocallyOfFinitePresentation I.subschemeι]
     (h : ∀ s : S, (I.comap (f.fiberι s)).IsEffectiveCartier) : I.IsEffectiveCartier := by
   refine (isEffectiveCartier_iff I).mpr fun x ↦ ?_
   -- Affine opens `W ∋ f x` of `S` and `U ∋ x` of `X` with `f(U) ⊆ W`.
@@ -463,42 +479,52 @@ theorem isEffectiveCartier_of_isEffectiveCartier_comap_fiberι_of_smooth {I : X.
     (I.ker_subschemeι ▸
       IsClosedImmersion.locallyOfFinitePresentation_iff.mp ‹_› ⟨U, hU⟩) hxU (h (f x))
   refine ⟨X.affineBasicOpen r, hxr, a, ?_, hIa⟩
-  -- `a` is a nonzerodivisor on each fibre ring of the smooth `Γ(S, W)`-algebra `Γ(X, U')`, hence
+  -- `a` is a nonzerodivisor on each fibre ring of the flat finitely presented `Γ(S, W)`-algebra
+  -- `Γ(X, U')`, hence
   -- on `Γ(X, U')`.
   have hU'W : (X.affineBasicOpen r).val ≤ f ⁻¹ᵁ W := (X.basicOpen_le r).trans hUW
   let _ : Algebra Γ(S, W) Γ(X, (X.affineBasicOpen r).val) := (f.appLE W _ hU'W).hom.toAlgebra
-  have : Algebra.Smooth Γ(S, W) Γ(X, (X.affineBasicOpen r).val) :=
-    HasRingHomProperty.appLE @Smooth f ‹_› ⟨W, hW⟩ (X.affineBasicOpen r) hU'W
-  exact Algebra.Smooth.isSMulRegular_of_forall_isSMulRegular_fiber (R := Γ(S, W)) fun P _ ↦
+  have : Module.Flat Γ(S, W) Γ(X, (X.affineBasicOpen r).val) :=
+    HasRingHomProperty.appLE @Flat f inferInstance ⟨W, hW⟩ (X.affineBasicOpen r) hU'W
+  have : Algebra.FinitePresentation Γ(S, W) Γ(X, (X.affineBasicOpen r).val) :=
+    HasRingHomProperty.appLE @LocallyOfFinitePresentation f inferInstance
+      ⟨W, hW⟩ (X.affineBasicOpen r) hU'W
+  exact Module.Flat.isSMulRegular_of_forall_isSMulRegular_fiber (R := Γ(S, W)) fun P _ ↦
     IsEffectiveCartier.isSMulRegular_fiber_of_ideal_eq_span_singleton hW (X.affineBasicOpen r)
       hU'W rfl P (IsEffectiveCartier.comap_fst_of_comap_fiberι _ (h _)) hIa
 
-/-- **The fibre criterion for relative effective Cartier divisors on a smooth family.** Let
-`f : X ⟶ S` be smooth, and let `I` be an ideal sheaf on `X` whose closed subscheme is locally of
+/-- **The fibre criterion for relative effective Cartier divisors on a flat finitely presented
+family.** Let
+`f : X ⟶ S` be flat and locally of finite presentation, and let `I` be an ideal sheaf on `X` whose
+closed subscheme is locally of
 finite presentation and flat over `S`. Then `I` is a relative effective Cartier divisor if and
 only if its fibre over the residue field of every point of `S` is an effective Cartier divisor.
 This is the form of the criterion over an arbitrary base: neither `S` nor `X` need be locally
 noetherian. -/
-theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι_of_smooth
-    {I : X.IdealSheafData} {f : X ⟶ S} [Smooth f] [Flat (I.subschemeι ≫ f)]
+theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι
+    {I : X.IdealSheafData} {f : X ⟶ S} [Flat f] [LocallyOfFinitePresentation f]
+    [Flat (I.subschemeι ≫ f)]
     [LocallyOfFinitePresentation I.subschemeι] :
     I.IsRelativeEffectiveCartier f ↔ ∀ s : S, (I.comap (f.fiberι s)).IsEffectiveCartier :=
   ⟨fun hI s ↦ hI.isEffectiveCartier_comap_of_field (S.fromSpecResidueField s), fun h ↦
     (isRelativeEffectiveCartier_iff I f).mpr
-      ⟨isEffectiveCartier_of_isEffectiveCartier_comap_fiberι_of_smooth h, inferInstance⟩⟩
+      ⟨isEffectiveCartier_of_isEffectiveCartier_comap_fiberι h, inferInstance⟩⟩
 
-/-- **The fibre criterion over geometric points for a smooth family.** Let `f : X ⟶ S` be smooth,
-and let `I` be an ideal sheaf on `X` whose closed subscheme is locally of finite presentation and
+/-- **The fibre criterion over geometric points for a flat finitely presented family.** Let `f : X ⟶
+S` be flat and locally of finite
+presentation, and let `I` be an ideal sheaf on `X` whose closed subscheme is locally of finite
+presentation and
 flat over `S`. Then `I` is a relative effective Cartier divisor if and only if its fibre over
 every geometric point `Spec K ⟶ S`, with `K` algebraically closed, is an effective Cartier
 divisor. -/
-theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed_of_smooth
-    {I : X.IdealSheafData} {f : X ⟶ S} [Smooth f] [Flat (I.subschemeι ≫ f)]
+theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed
+    {I : X.IdealSheafData} {f : X ⟶ S} [Flat f] [LocallyOfFinitePresentation f]
+    [Flat (I.subschemeι ≫ f)]
     [LocallyOfFinitePresentation I.subschemeι] :
     I.IsRelativeEffectiveCartier f ↔ ∀ (K : Type u) [Field K] [IsAlgClosed K]
       (g : Spec (.of K) ⟶ S), (I.comap (pullback.fst f g)).IsEffectiveCartier := by
   refine ⟨fun hI K _ _ g ↦ hI.isEffectiveCartier_comap_of_field g, fun h ↦ ?_⟩
-  rw [isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι_of_smooth]
+  rw [isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι]
   intro s
   -- The fibres of `f` are locally of finite type over fields, so locally noetherian.
   have (s' : S) : IsLocallyNoetherian (f.fiber s') :=
@@ -506,5 +532,73 @@ theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_is
     @LocallyOfFiniteType.isLocallyNoetherian _ _ (f.fiberToSpecResidueField s') this _
   have hs := IsEffectiveCartier.comap_fiberι_of_comap_fst (S.fromSpecAlgebraicClosure s) (h _ _)
   convert hs using 3 <;> exact (S.fromSpecAlgebraicClosure_apply s _).symm
+
+private theorem regular_equation_and_flat_quotient_on_flat_chart {I : X.IdealSheafData}
+    {f : X ⟶ S} [Flat f] [LocallyOfFinitePresentation f] {W : S.Opens} (hW : IsAffineOpen W)
+    (U : X.affineOpens) (hUW : U.val ≤ f ⁻¹ᵁ W) {a : Γ(X, U)}
+    (hIa : I.ideal U = Ideal.span {a})
+    (hfib : ∀ s : S, (I.comap (f.fiberι s)).IsEffectiveCartier) :
+    IsSMulRegular Γ(X, U) a ∧
+      (f.appLE W U hUW ≫ CommRingCat.ofHom (Ideal.Quotient.mk (I.ideal U))).hom.Flat := by
+  let : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+  have : Module.Flat Γ(S, W) Γ(X, U) :=
+    HasRingHomProperty.appLE @Flat f inferInstance ⟨W, hW⟩ U hUW
+  have : Algebra.FinitePresentation Γ(S, W) Γ(X, U) :=
+    HasRingHomProperty.appLE @LocallyOfFinitePresentation f inferInstance ⟨W, hW⟩ U hUW
+  have hregular (P : Ideal Γ(S, W)) [P.IsPrime] :
+      IsSMulRegular (P.Fiber Γ(X, U)) ((1 : P.ResidueField) ⊗ₜ[Γ(S, W)] a) :=
+    IsEffectiveCartier.isSMulRegular_fiber_of_ideal_eq_span_singleton hW U hUW rfl P
+      (IsEffectiveCartier.comap_fst_of_comap_fiberι _ (hfib _)) hIa
+  refine ⟨Module.Flat.isSMulRegular_of_forall_isSMulRegular_fiber hregular, ?_⟩
+  rw [CommRingCat.hom_comp, hIa]
+  exact Module.Flat.quotient_span_singleton_of_forall_isSMulRegular_fiber hregular
+
+/-- A locally principal ideal on a flat family locally of finite presentation defines a relative
+effective Cartier divisor if its residue-field fibres are effective Cartier. Flatness of its
+closed subscheme over the base follows from the fibrewise regular equations. -/
+theorem isRelativeEffectiveCartier_of_locallyPrincipal_of_forall_isEffectiveCartier_comap_fiberι
+    {I : X.IdealSheafData}
+    {f : X ⟶ S} [Flat f] [LocallyOfFinitePresentation f]
+    (hprincipal : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧
+      ∃ a : Γ(X, U), I.ideal U = Ideal.span {a})
+    (hfib : ∀ s : S, (I.comap (f.fiberι s)).IsEffectiveCartier) :
+    I.IsRelativeEffectiveCartier f := by
+  have key (x : X) : ∃ (W : S.affineOpens) (V : X.affineOpens)
+      (hVW : V.val ≤ f ⁻¹ᵁ W.val), x ∈ V.val ∧
+        (∃ a : Γ(X, V), IsSMulRegular Γ(X, V) a ∧ I.ideal V = Ideal.span {a}) ∧
+        (f.appLE W V hVW ≫ CommRingCat.ofHom (Ideal.Quotient.mk (I.ideal V))).hom.Flat := by
+    obtain ⟨_, ⟨W, hW, rfl⟩, hxW, -⟩ :=
+      S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
+    obtain ⟨U, hxU, a, hIa⟩ := hprincipal x
+    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
+      X.isBasis_affineOpens.exists_subset_of_mem_open
+        (⟨hxU, hxW⟩ : x ∈ U.val ⊓ f ⁻¹ᵁ W) (U.val ⊓ f ⁻¹ᵁ W).isOpen
+    let b := X.presheaf.map (homOfLE (hVU.trans inf_le_left)).op a
+    have hIb : I.ideal ⟨V, hV⟩ = Ideal.span {b} := by
+      rw [← I.map_ideal (U := ⟨V, hV⟩) (V := U) (hVU.trans inf_le_left), hIa,
+        Ideal.map_span, Set.image_singleton]
+      rfl
+    obtain ⟨hb, hflat⟩ := regular_equation_and_flat_quotient_on_flat_chart
+      hW ⟨V, hV⟩ (hVU.trans inf_le_right) hIb hfib
+    exact ⟨⟨W, hW⟩, ⟨V, hV⟩, hVU.trans inf_le_right, hxV, ⟨b, hb, hIb⟩, hflat⟩
+  rw [isRelativeEffectiveCartier_iff]
+  refine ⟨?_, ?_⟩
+  · rw [isEffectiveCartier_iff]
+    intro x
+    obtain ⟨W, V, hVW, hxV, hV, _⟩ := key x
+    exact ⟨V, hxV, hV⟩
+  · rw [HasRingHomProperty.iff_exists_appLE (P := @Flat)
+      (RingHom.Flat.stableUnderComposition.stableUnderCompositionWithLocalizationAway
+        RingHom.Flat.holdsForLocalizationAway).left]
+    intro d
+    obtain ⟨W, V, hVW, hxV, _, hflat⟩ := key (I.subschemeι d)
+    refine ⟨W, ⟨_, V.property.preimage I.subschemeι⟩, hxV,
+      I.subschemeι.preimage_mono hVW, ?_⟩
+    rw [← Scheme.Hom.appLE_comp_appLE _ _ _ V.val _ hVW le_rfl,
+      ← Scheme.Hom.app_eq_appLE]
+    rw [Scheme.IdealSheafData.subschemeι_app, ← Category.assoc, CommRingCat.hom_comp]
+    apply (RingHom.Flat.respectsIso.cancel_right_isIso _ _).mpr
+    exact hflat
+
 
 end AlgebraicGeometry.Scheme.IdealSheafData

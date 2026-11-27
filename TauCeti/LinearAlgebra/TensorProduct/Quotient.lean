@@ -620,6 +620,26 @@ theorem quotient_map_tensor_bijective (p : Ideal R)
 
 end TensorProduct
 
+namespace Algebra
+
+open _root_.TensorProduct
+
+/-- Tensoring an element of an algebra with the unit of a quotient vanishes exactly
+when the element belongs to the extended ideal. -/
+lemma tmul_one_quotient_eq_zero_iff {R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] (I : Ideal R) (x : A) :
+    x ⊗ₜ[R] (1 : R ⧸ I) = 0 ↔ x ∈ I.map (algebraMap R A) := by
+  rw [← (TensorProduct.comm R A (R ⧸ I)).map_eq_zero_iff]
+  -- The zero-preservation law uses the underlying additive-equivalence coercion.
+  change TensorProduct.comm R A (R ⧸ I) (x ⊗ₜ[R] 1) = 0 ↔ _
+  rw [TensorProduct.comm_tmul]
+  -- After commuting the factors, `1 ⊗ₜ x = 0` is definitionally membership in the
+  -- kernel of `TensorProduct.mk R (R ⧸ I) A 1`; this presents the map for its kernel law.
+  exact show x ∈ LinearMap.ker (TensorProduct.mk R (R ⧸ I) A 1) ↔ _ by
+    rw [LinearMap.ker_tensorProductMk, Ideal.smul_top_eq_map, Submodule.restrictScalars_mem]
+
+end Algebra
+
 namespace TensorProduct
 
 section QuotientScalars
