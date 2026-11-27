@@ -29,7 +29,7 @@ is the `L²` function `Q χ` for every `χ ∈ L²`
 (`MeasureTheory.Lp.laplacian_laplacianResolventCLM_apply`). Its symbol does not vanish, so `P` is
 injective (`MeasureTheory.Lp.laplacianResolventCLM_injective`). On `L²` it agrees with the
 resolvent `TemperedDistribution.laplacianResolvent F 1` on tempered distributions
-(`MeasureTheory.Lp.laplacianResolventCLM_toTemperedDistribution_eq`).
+(`MeasureTheory.Lp.laplacianResolvent_toTemperedDistribution_eq`).
 
 ## Main declarations
 
@@ -41,7 +41,7 @@ resolvent `TemperedDistribution.laplacianResolvent F 1` on tempered distribution
 * `MeasureTheory.Lp.laplacian_laplacianResolventCLM_apply`: `Δ ((1 - Δ)⁻¹ χ) = Δ (1 - Δ)⁻¹ χ`.
 * `MeasureTheory.Lp.laplacianResolventCLM_sub_laplacianMulResolventCLM`: `P - Q = 1`, so
   `(1 - Δ) P χ = χ`.
-* `MeasureTheory.Lp.laplacianResolventCLM_toTemperedDistribution_eq`: `P` is the restriction to
+* `MeasureTheory.Lp.laplacianResolvent_toTemperedDistribution_eq`: `P` is the restriction to
   `L²` of the resolvent `TemperedDistribution.laplacianResolvent F 1`.
 * `MeasureTheory.Lp.isSelfAdjoint_laplacianResolventCLM`,
   `MeasureTheory.Lp.isSelfAdjoint_laplacianMulResolventCLM`: both are self-adjoint.
@@ -196,7 +196,7 @@ theorem laplacianResolventCLM_apply_sub_laplacianMulResolventCLM_apply
 
 /-- The resolvent `(1 - Δ)⁻¹` on `L²` is the restriction of the resolvent
 `TemperedDistribution.laplacianResolvent F 1` on tempered distributions. -/
-theorem laplacianResolventCLM_toTemperedDistribution_eq (χ : Lp F 2 (volume : Measure E)) :
+theorem laplacianResolvent_toTemperedDistribution_eq (χ : Lp F 2 (volume : Measure E)) :
     TemperedDistribution.laplacianResolvent F 1 (χ : 𝓢'(E, F)) =
       (laplacianResolventCLM F χ : 𝓢'(E, F)) := by
   conv_lhs => rw [← laplacianResolventCLM_apply_sub_laplacianMulResolventCLM_apply χ,
