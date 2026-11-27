@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.GroupTheory.OrderOfElement.PPart
-import TauCeti.GroupTheory.OrderOfElement.Basic
+import TauCeti.Algebra.Group.Conj
 
 /-!
 # `p`-sections of a group
@@ -43,8 +43,6 @@ An element `s` is **`p`-regular** when `(orderOf s).Coprime p`.
 
 * `TauCeti.existsUnique_mem_pSection`: the sections of a set of representatives of the conjugacy
   classes of `p`-elements partition `G`.
-* `TauCeti.exists_le_forall_pow_prime_pow_eq_self_of_coprime`: in a finite group, some power
-  `p ^ N`, with `N` as large as we like, fixes every `p`-regular element.
 * `TauCeti.pPart_eq_iff_exists_mul_eq`: the elements with `p`-part `x` are the products `s * x`
   with `s` a `p`-regular element of `C_G(x)`.
 * `TauCeti.pFreePartEquiv_conj`: the parametrization is equivariant for conjugation by `C_G(x)`.
@@ -246,26 +244,7 @@ theorem mk_mem_pRegularConjClasses_iff {g : G} :
 /-- The chosen representative of a `p`-regular conjugacy class has order coprime to `p`. -/
 theorem coprime_orderOf_out_of_mem_pRegularConjClasses {c : ConjClasses G}
     (hc : c ∈ pRegularConjClasses p G) : (orderOf c.out).Coprime p :=
-  (mk_mem_pRegularConjClasses_iff p).1 <| by
-    rwa [show ConjClasses.mk c.out = c from Quotient.out_eq c]
-
-/-- In a finite group, for every `n` there is `N ≥ n` such that `g ^ (p ^ N) = g` for every
-`p`-regular `g`. -/
-theorem exists_le_forall_pow_prime_pow_eq_self_of_coprime (hp : p.Prime) [Finite G] (n : ℕ) :
-    ∃ N, n ≤ N ∧ ∀ g : G, (orderOf g).Coprime p → g ^ p ^ N = g := by
-  set m := ordCompl[p] (Nat.card G)
-  have hm0 : 0 < m := Nat.ordCompl_pos p Nat.card_pos.ne'
-  refine ⟨m.totient * n, Nat.le_mul_of_pos_left n (Nat.totient_pos.2 hm0), fun g hg ↦ ?_⟩
-  have hdvd : orderOf g ∣ m :=
-    (Nat.Coprime.dvd_of_dvd_mul_left
-      (hg.pow_right _)
-      (by rw [Nat.ordProj_mul_ordCompl_eq_self]; exact orderOf_dvd_natCard _))
-  -- Euler's theorem for the exponent `m` of the `p`-regular elements, iterated `n` times.
-  have h1 : g ^ p ^ m.totient = g := pow_pow_totient_eq_self
-    (Nat.coprime_ordCompl hp Nat.card_pos.ne') (orderOf_dvd_iff_pow_eq_one.1 hdvd)
-  induction n with
-  | zero => simp
-  | succ n ih => rw [Nat.mul_succ, pow_add, pow_mul, ih, h1]
+  (mk_mem_pRegularConjClasses_iff p).1 <| by rwa [ConjClasses.mk_out]
 
 /-! ### Conjugacy classes in a section -/
 

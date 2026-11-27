@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import TauCeti.Algebra.Algebra.PPowerCommutator.Basic
+public import TauCeti.Algebra.Algebra.CyclicQuotient
 import Mathlib.Algebra.CharP.Lemmas
+import TauCeti.Algebra.Algebra.PPowerCommutator.Basic
 
 /-!
 # Matrix traces and the commutator submodule

@@ -9,12 +9,15 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 public import TauCeti.Algebra.Algebra.PPowerCommutator.Split
 public import TauCeti.GroupTheory.OrderOfElement.PPart.Section
+public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Group.ConjFinite
 import Mathlib.Algebra.MonoidAlgebra.Module
 import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.RingTheory.Artinian.Ring
+import TauCeti.Algebra.Group.Conj
+import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # The `p`-power commutator subspace of a group algebra and the `p`-regular classes
@@ -40,15 +43,10 @@ characteristic `p`. With `TauCeti.finrank_quotient_pPowerCommutatorSubmodule_of_
 this counts the matrix factors of `k[G] / rad k[G]` when `k` is a splitting field, in particular
 when `k` is algebraically closed.
 
-## Main definitions
-
-* `TauCeti.classCoeff k G c`: the `k`-linear sum of the coefficients over the conjugacy class `c`.
-
 ## Main results
 
 * `TauCeti.commutatorSubmodule_le_ker_classCoeff`: every coefficient sum over a conjugacy class
-  kills the commutators of `k[G]`.
-
+  (`TauCeti.classCoeff k c`) kills the commutators of `k[G]`.
 * `TauCeti.finrank_quotient_pPowerCommutatorSubmodule_monoidAlgebra`: `dim_k k[G] / T(k[G])` is
   the number of `p`-regular conjugacy classes of `G`.
 * `TauCeti.card_eq_card_pRegularConjClasses_of_algEquiv_pi_matrix`: if
@@ -74,33 +72,9 @@ section CommRing
 
 variable (p : ℕ) (k : Type*) [CommRing k] {G : Type*} [Group G]
 
-variable (G) in
-open Classical in
-/-- The sum of the coefficients of an element of `k[G]` over a conjugacy class. -/
-@[expose]
-noncomputable def classCoeff [Fintype G] (c : ConjClasses G) :
-    MonoidAlgebra k G →ₗ[k] k where
-  toFun x := ∑ g ∈ univ.filter (fun g ↦ ConjClasses.mk g = c), x.coeff g
-  map_add' x y := by simp [coeff_add, sum_add_distrib]
-  map_smul' r x := by simp [coeff_smul, mul_sum]
-
-open Classical in
-/-- `classCoeff k G c x` is the sum of the coefficients of `x` at the members of `c`. -/
-theorem classCoeff_apply [Fintype G] (c : ConjClasses G) (x : MonoidAlgebra k G) :
-    classCoeff k G c x = ∑ g ∈ univ.filter (fun g ↦ ConjClasses.mk g = c), x.coeff g :=
-  rfl
-
-open Classical in
-/-- The coefficient sum over `c` of `single h r` is `r` if `h ∈ c`, and `0` otherwise. -/
-@[simp]
-theorem classCoeff_single [Fintype G] (c : ConjClasses G) (h : G) (r : k) :
-    classCoeff k G c (single h r) = if ConjClasses.mk h = c then r else 0 := by
-  rw [classCoeff_apply]
-  simp [coeff_single, Finsupp.single_apply]
-
 /-- The coefficient sum over a conjugacy class kills the commutators of `k[G]`. -/
 theorem commutatorSubmodule_le_ker_classCoeff [Fintype G] (c : ConjClasses G) :
-    commutatorSubmodule k (MonoidAlgebra k G) ≤ LinearMap.ker (classCoeff k G c) := by
+    commutatorSubmodule k (MonoidAlgebra k G) ≤ LinearMap.ker (classCoeff k c) := by
   refine (commutatorSubmodule_le_ker_iff _).2 fun x y ↦ ?_
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp
@@ -199,7 +173,6 @@ private theorem linearIndependent_mkQ_single_out [Finite G] :
   have := Fintype.ofFinite G
   have := Fintype.ofFinite (pRegularConjClasses p G)
   set T := pPowerCommutatorSubmodule p k (MonoidAlgebra k G)
-  have hmk : ∀ c : ConjClasses G, ConjClasses.mk c.out = c := fun c ↦ Quotient.out_eq c
   rw [Fintype.linearIndependent_iff]
   intro μ hμ c₀
   have hy : ∑ c : pRegularConjClasses p G, single c.val.out (μ c) ∈ T := by
@@ -220,8 +193,8 @@ private theorem linearIndependent_mkQ_single_out [Finite G] :
   -- The coefficient sum over the class of `c₀` picks out `μ c₀ ^ p ^ N`.
   have h0 := commutatorSubmodule_le_ker_classCoeff k c₀.val hz
   rw [LinearMap.mem_ker, map_sum] at h0
-  simp only [classCoeff_single, hmk, Subtype.coe_inj, Finset.sum_ite_eq', Finset.mem_univ,
-    ite_true] at h0
+  simp only [classCoeff_single, ConjClasses.mk_out, Subtype.coe_inj, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true] at h0
   exact pow_eq_zero_iff (pow_ne_zero N hp.out.ne_zero) |>.1 h0
 
 include hp in
