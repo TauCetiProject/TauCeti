@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Conj
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.End.Invariant
 import Mathlib.Algebra.Module.PID
@@ -55,6 +56,12 @@ These classes index the class functions on all square matrices of the Hall algeb
   class of the corresponding block map `Module.End.blockTriangular`.
 * `TauCeti.SimilarityClass.isConj_of_ofEnd_toLin'_eq`: invertible matrices of the same class are
   conjugate in `GL n k`.
+* `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`: a semisimple block triangular
+  map is similar to its block diagonal part.
+* `TauCeti.SimilarityClass.ofEnd_blockTriangular_eq_of_sylvester`: on a Fitting component
+  `C = ker T` of `g`, a block triangular map with diagonal blocks `g|_C` and `g|_{V / C}` whose
+  corner `x` is `g|_C ∘ y - y ∘ g|_{V / C}` for some `y` is similar to `g`; by
+  `Module.End.exists_sylvester_eq` every corner has this form.
 
 ## References
 
@@ -69,6 +76,13 @@ These classes index the class functions on all square matrices of the Hall algeb
   the carrier.
 * Adapted from grh-lean as above: `New.simClassOf_submatrix` in
   `src/Lib/LocalGL/Green/HallAlgebra.lean`.
+* Adapted from grh-lean as above: the similarity of a semisimple block triangular map with its
+  block diagonal part from `src/Lib/LocalGL/Green/CuspidalFunctions.lean`, here proved with an
+  invariant complement of the first summand rather than with a projection.
+* Adapted from the same file: the conjugation of a block triangular map to `g` through a solution
+  of the Sylvester equation on a Fitting component, from the proof of
+  `New.Hall.IsCuspidal.exists_charpoly_eq_pow`, here with `Submodule.liftQ` instead of
+  `quotKerEquivRange`.
 -/
 
 public section
@@ -316,6 +330,101 @@ theorem isConj_of_ofEnd_toLin'_eq {n : Type*} [Fintype n] [DecidableEq n] {g h :
   refine isConj_iff.2 ⟨u, mul_inv_eq_of_eq_mul (Matrix.GeneralLinearGroup.toLin.injective
     (Units.ext (LinearMap.ext fun x ↦ ?_)))⟩
   simpa [u, Matrix.GeneralLinearGroup.coe_toLin, Matrix.toLin'_apply'] using he x
+
+variable {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
+  [AddCommGroup W] [Module k W] [Module.Finite k W]
+
+open Module.End (blockTriangular blockTriangular_apply) in
+/-- A semisimple block upper triangular map `(v, w) ↦ (a v + x w, b w)` is similar to the block
+diagonal map `a ⊕ b`. -/
+theorem ofEnd_blockTriangular_of_isSemisimple {a : Module.End k V} {b : Module.End k W}
+    {x : W →ₗ[k] V} (h : (blockTriangular a b x).IsSemisimple) :
+    ofEnd (blockTriangular a b x) = ofEnd (a.prodMap b) := by
+  set g := blockTriangular a b x
+  -- `V × 0` is invariant; take an invariant complement `C`, which maps isomorphically onto `W`.
+  have hK : LinearMap.ker (LinearMap.snd k V W) ∈ g.invtSubmodule :=
+    (Module.End.mem_invtSubmodule _).2 fun p hp ↦ by
+      simp_all [g, blockTriangular_apply]
+  obtain ⟨C, hC, hKC⟩ := Module.End.isSemisimple_iff.1 h _ hK
+  -- The second coordinate is an isomorphism from `C` onto `W`: `C ≃ (V × W) ⧸ ker snd ≃ W`.
+  let eC : C ≃ₗ[k] W := (Submodule.quotientEquivOfIsCompl _ C hKC).symm ≪≫ₗ
+    (LinearMap.snd k V W).quotKerEquivOfSurjective LinearMap.snd_surjective
+  have heC (c : C) : eC c = (c : V × W).2 := by
+    simp [eC, Submodule.quotientEquivOfIsCompl_symm_apply]
+  -- `(v, w) ↦ (v, 0) + c(w)`, with `c(w) ∈ C` the element of second coordinate `w`, conjugates
+  -- `a ⊕ b` to `g`.
+  let φ : Module.End k (V × W) :=
+    LinearMap.coprod (LinearMap.inl k V W) (C.subtype ∘ₗ eC.symm.toLinearMap)
+  have hφ_snd (w : W) : ((eC.symm w : C) : V × W).2 = w := by
+    rw [← heC, eC.apply_symm_apply]
+  have h_comm (p : V × W) : φ (a.prodMap b p) = g (φ p) := by
+    -- `g` preserves `C`, and on `C` it acts on the second coordinate as `b`.
+    have hgc : g (eC.symm p.2) = (eC.symm (b p.2) : V × W) := by
+      have h_mem : g (eC.symm p.2) ∈ C := (Module.End.mem_invtSubmodule _).1 hC (eC.symm p.2).prop
+      have := eC.injective (a₁ := ⟨_, h_mem⟩) (a₂ := eC.symm (b p.2)) (by
+        simp [heC, hφ_snd, g, blockTriangular_apply])
+      exact congrArg Subtype.val this
+    simp [φ, map_add, hgc, g, blockTriangular_apply]
+  have hφ_inj : Function.Injective φ := by
+    refine (injective_iff_map_eq_zero _).2 fun p hp ↦ ?_
+    have h₂ : p.2 = 0 := by simpa [φ, hφ_snd] using congrArg Prod.snd hp
+    have h₁ : p.1 = 0 := by simpa [φ, h₂] using congrArg Prod.fst hp
+    exact Prod.ext h₁ h₂
+  exact (ofEnd_eq_of_apply_eq (LinearEquiv.ofInjectiveEndo φ hφ_inj) h_comm).symm
+
+section Sylvester
+
+open Module.End (blockTriangular blockTriangular_apply)
+
+variable {g T : Module.End k V} {C : Submodule k V} (hC : C ∈ g.invtSubmodule)
+  (hCT : LinearMap.ker T = C) (hN : IsCompl C (LinearMap.range T))
+
+include hCT hN in
+/-- With `y` solving the Sylvester equation `g|_C ∘ y - y ∘ g|_{V / C} = x`, the block map with
+upper right block `x` is similar to `g`, by `(c, [v]) ↦ c + y [v] + T v`. -/
+theorem ofEnd_blockTriangular_eq_of_sylvester (hgT : Commute g T)
+    {x y : (V ⧸ C) →ₗ[k] C} (hxy : g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC = x) :
+    ofEnd (blockTriangular (g.invtRestrict hC) (g.invtQuot hC) x) = ofEnd g := by
+  let ι : (V ⧸ C) →ₗ[k] V := C.liftQ T hCT.ge
+  have hι (v : V) : ι (Submodule.Quotient.mk v) = T v := Submodule.liftQ_apply _ _ _
+  have hι_inj : Function.Injective ι := by
+    rw [← LinearMap.ker_eq_bot, Submodule.ker_liftQ_eq_bot' _ _ hCT.symm]
+  have hTg (v : V) : T (g v) = g (T v) := by
+    rw [← mul_apply_eq_comp, ← hgT.eq, mul_apply_eq_comp]
+  let E : (C × (V ⧸ C)) →ₗ[k] V := C.subtype.coprod (C.subtype ∘ₗ y + ι)
+  have hE_inj : Function.Injective E := by
+    refine (injective_iff_map_eq_zero E).2 fun p hp ↦ ?_
+    have h_eq : ι p.2 = -((p.1 : V) + y p.2) :=
+      eq_neg_of_add_eq_zero_right (by simpa [E, add_assoc] using hp)
+    have h_mem : ι p.2 ∈ C ⊓ LinearMap.range T := by
+      refine ⟨h_eq ▸ C.neg_mem (C.add_mem p.1.prop (y p.2).prop), ?_⟩
+      induction p.2 using Submodule.Quotient.induction_on with
+      | H v => exact ⟨v, rfl⟩
+    rw [hN.inf_eq_bot, Submodule.mem_bot, ← map_zero ι] at h_mem
+    have h₂ : p.2 = 0 := hι_inj h_mem
+    have h₁ : p.1 = 0 := Subtype.ext (by simpa [E, h₂] using hp)
+    exact Prod.ext h₁ h₂
+  have h_dim : Module.finrank k (C × (V ⧸ C)) = Module.finrank k V := by
+    rw [Module.finrank_prod, add_comm, C.finrank_quotient_add_finrank]
+  have hE (c : C) (v : V) :
+      E (blockTriangular (g.invtRestrict hC) (g.invtQuot hC) x (c, Submodule.Quotient.mk v)) =
+        g (E (c, Submodule.Quotient.mk v)) := by
+    have hx : (x (Submodule.Quotient.mk v) : V) =
+        g (y (Submodule.Quotient.mk v)) - y (Submodule.Quotient.mk (g v)) := by
+      rw [← hxy]
+      simp
+    simp only [E, blockTriangular_apply, Module.End.invtQuot_mk, LinearMap.coprod_apply, map_add,
+      Submodule.subtype_apply, Module.End.coe_invtRestrict_apply, hx, LinearMap.add_apply,
+      LinearMap.coe_comp, Submodule.coe_subtype, Function.comp_apply, hι, hTg]
+    abel
+  refine ofEnd_eq_of_apply_eq (LinearEquiv.ofBijective E
+    ⟨hE_inj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h_dim).1 hE_inj⟩)
+    fun p ↦ ?_
+  obtain ⟨c, q⟩ := p
+  induction q using Submodule.Quotient.induction_on with
+  | H v => exact hE c v
+
+end Sylvester
 
 end Block
 
