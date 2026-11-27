@@ -61,6 +61,8 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Spec.map_appLE_basicOpen_algebraMap`: the section map of a spectral
   morphism on principal opens sends a numerator to its ring-map image.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal scheme morphisms induce equal section maps.
+* `AlgebraicGeometry.Scheme.Hom.resLE_appTop_topIso_inv`: on global sections, the restriction
+  `f.resLE U V e` of a morphism to open subschemes is the section map `f.appLE U V e`.
 * `CategoryTheory.CommSq.preimage_preimage_eq` and
   `CategoryTheory.CommSq.app_comp_app_eq_app_comp_appLE`: the two paths around a commutative
   square induce equal inverse images and equal section maps.
@@ -595,6 +597,14 @@ theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Op
     f.appLE U V hf = g.appLE U V hg := by
   subst e
   rfl
+
+/-- On global sections of open subschemes, the restriction `f.resLE U V e : V ⟶ U` is the section
+map `f.appLE U V e`, read through the identifications `Scheme.Opens.topIso`. -/
+theorem Scheme.Hom.resLE_appTop_topIso_inv {U : Y.Opens} {V : X.Opens} (e : V ≤ f ⁻¹ᵁ U)
+    (r : Γ(Y, U)) :
+    (f.resLE U V e).appTop (U.topIso.inv r) = V.topIso.inv (f.appLE U V e r) := by
+  rw [Scheme.Hom.appTop, Scheme.Hom.resLE_app_top, CommRingCat.comp_apply,
+    CommRingCat.comp_apply, Iso.inv_hom_id_apply]
 
 end AlgebraicGeometry
 

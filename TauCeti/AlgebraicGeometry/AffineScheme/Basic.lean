@@ -83,6 +83,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
   under `φ` in `A`.
 * `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
   affine opens of `S'` lying over affine opens of `S` form a basis.
+* `CategoryTheory.IsPullback.isPullback_resLE_preimage`: in a cartesian square of schemes, the
+  preimage of an affine open `V` of `Y'` lying over an affine open `U` of `Y` is the base change of
+  the preimage of `U` along `Spec Γ(Y', V) ⟶ Spec Γ(Y, U)`.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal_eq_smul`: for this action, the prime ideal of
   `Γ(X, ⊤)` at the point `σ g x` is the translate by `g` of the prime ideal at `x`.
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
@@ -329,22 +332,18 @@ lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : 
         rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
           Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
 
-/-- Over an affine base `Y`, the preimage `f'⁻¹ V` of an affine open `V` of `Y'` is the base change
-of `X` along `Spec Γ(Y', V) ⟶ Spec Γ(Y, ⊤)`. -/
-lemma _root_.CategoryTheory.IsPullback.isPullback_preimage_ι_comp
+/-- For a cartesian square `g' ≫ f = f' ≫ g`, an affine open `U` of `Y` and an affine open
+`V ≤ g⁻¹ U` of `Y'`, the open subscheme `f'⁻¹ V` of `X'` is the base change of the open subscheme
+`f⁻¹ U` of `X` along `Spec Γ(Y', V) ⟶ Spec Γ(Y, U)`. -/
+lemma _root_.CategoryTheory.IsPullback.isPullback_resLE_preimage
     {X Y X' Y' : Scheme.{u}} {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
-    (H : IsPullback g' f' f g) [IsAffine Y] {V : Y'.Opens}
-    (hV : IsAffineOpen V) (hVg : V ≤ g ⁻¹ᵁ ⊤) :
-    IsPullback ((f' ⁻¹ᵁ V).ι ≫ g') (f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom)
-      (f ≫ Y.toSpecΓ) (Spec.map (g.appLE ⊤ V hVg)) := by
-  have : IsIso V.toSpecΓ := inferInstanceAs (IsIso hV.isoSpec.hom)
-  have hB : IsPullback (V.ι ≫ g) V.toSpecΓ Y.toSpecΓ (Spec.map (g.appLE ⊤ V hVg)) := by
-    refine IsPullback.of_vert_isIso ⟨?_⟩
-    rw [Category.assoc, Scheme.toSpecΓ_naturality,
-      ← Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top_assoc, ← Spec.map_comp]
-    -- `g.appLE ⊤ V hVg` is by definition `g.appTop` followed by restriction to `V`.
-    rfl
-  exact ((f'.isPullback_resLE_of_eq V rfl).flip.paste_horiz H).paste_vert hB
+    (H : IsPullback g' f' f g) {U : Y.Opens} (hU : IsAffineOpen U) {V : Y'.Opens}
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) (hle : f' ⁻¹ᵁ V ≤ g' ⁻¹ᵁ f ⁻¹ᵁ U) :
+    IsPullback (g'.resLE (f ⁻¹ᵁ U) (f' ⁻¹ᵁ V) hle)
+      (f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom) (f.resLE U (f ⁻¹ᵁ U) le_rfl ≫ hU.isoSpec.hom)
+      (Spec.map (g.appLE U V hVU)) :=
+  (Scheme.Hom.isPullback_resLE H hVU le_rfl (inf_eq_right.2 hle).symm).paste_vert
+    (IsPullback.of_vert_isIso ⟨(Scheme.Opens.toSpecΓ_SpecMap_appLE g U V hVU).symm⟩)
 
 /-- Reading a function on an affine open chart `ι : Spec A ⟶ X` as an element of `A` and
 mapping it along `φ : A ⟶ A'` is the same as restricting it to the image `V` of `Spec A'` and
