@@ -46,6 +46,8 @@ The ring axioms are transported from `2 × 2` matrices over `K_*ᴹ(k)`: right m
   `a + b Π ↦ a` and `a + b Π ↦ a + b {-1}` to `K_*ᴹ(k)`.
 * `TauCeti.SerreAlgebra.shift c`: for `c ∈ kˣ`, the ring automorphism fixing `K_*ᴹ(k)` and sending
   `Π` to `Π - {c}`.
+* `TauCeti.SerreAlgebra.rescale n`: for `n : ℤ`, the ring endomorphism fixing `K_*ᴹ(k)` and sending
+  `Π` to `n Π`.
 * `TauCeti.SerreAlgebra.map`: the ring homomorphism `L(k) → L(k')` induced by a field homomorphism.
 * `TauCeti.SerreAlgebra.degree n`: the degree-`n` piece `K_nᴹ(k) ⊕ K_{n-1}ᴹ(k) Π`, making `L(k)`
   a graded monoid, with `degreeZeroEquiv` and `degreeSuccEquiv` identifying the pieces.
@@ -373,6 +375,47 @@ theorem shift_symm (c : kˣ) : (shift c).symm = shift c⁻¹ := by
   ext x : 1
   rw [RingEquiv.symm_apply_eq, shift_shift, mul_inv_cancel, shift_one, RingEquiv.refl_apply]
 
+/-! ### Rescaling the indeterminate -/
+
+/-- For `n : ℤ`, the ring endomorphism `rescale n` of `L(k)` fixing `K_*ᴹ(k)` and sending `Π` to
+`n Π`, so `a + b Π ↦ a + n b Π`. It respects `Π Π = {-1} Π` because `n²` and `n` have the same
+parity while `{-1}` is killed by two. Two rescalings compose as
+`rescale m ∘ rescale n = rescale (m n)` (`TauCeti.SerreAlgebra.rescale_rescale`). -/
+def rescale (n : ℤ) : SerreAlgebra k →+* SerreAlgebra k :=
+  lift C (n • X) (fun x ↦ by rw [smul_mul_assoc, X_mul_C, mul_smul_comm])
+    (by
+      ext
+      · simp
+      · simpa [zsmul_eq_mul, Int.cast_comm] using
+          zsmul_ofUnit_neg_one_eq_of_even_sub (R := k) (m := n * n) (n := n)
+            (by simpa [mul_sub] using Int.even_mul_pred_self n))
+
+@[simp]
+theorem fst_rescale (n : ℤ) (x : SerreAlgebra k) : (rescale n x).fst = x.fst := by
+  simp [rescale, lift_apply]
+
+@[simp]
+theorem snd_rescale (n : ℤ) (x : SerreAlgebra k) : (rescale n x).snd = n • x.snd := by
+  simp [rescale, lift_apply, zsmul_eq_mul, Int.cast_comm]
+
+@[simp]
+theorem rescale_C (n : ℤ) (a : MilnorK k) : rescale n (C a) = C a := by
+  ext <;> simp
+
+@[simp]
+theorem rescale_X (n : ℤ) : rescale n X = n • (X : SerreAlgebra k) := by
+  ext <;> simp
+
+@[simp]
+theorem rescale_one : rescale 1 = RingHom.id (SerreAlgebra k) := by
+  ext <;> simp
+
+/-- Rescalings compose multiplicatively: `rescale m (rescale n x) = rescale (m n) x`. -/
+@[simp]
+theorem rescale_rescale (m n : ℤ) (x : SerreAlgebra k) :
+    rescale m (rescale n x) = rescale (m * n) x := by
+  ext <;> simp [mul_smul]
+
 /-! ### Functoriality -/
 
 section Map
@@ -563,6 +606,17 @@ theorem shift_mem_degree (c : kˣ) {n : ℕ} {x : SerreAlgebra k} (hx : x ∈ de
     exact mem_degree_succ.2
       ⟨by simpa using sub_mem ha (SetLike.mul_mem_graded hb (ofUnit_mem_degree_one c)),
         by simpa using hb⟩
+
+/-- The endomorphism `rescale n` preserves the grading. -/
+theorem rescale_mem_degree (m : ℤ) {n : ℕ} {x : SerreAlgebra k} (hx : x ∈ degree k n) :
+    rescale m x ∈ degree k n := by
+  cases n with
+  | zero =>
+    obtain ⟨ha, hb⟩ := mem_degree_zero.1 hx
+    exact mem_degree_zero.2 ⟨by simpa using ha, by simp [hb]⟩
+  | succ n =>
+    obtain ⟨ha, hb⟩ := mem_degree_succ.1 hx
+    exact mem_degree_succ.2 ⟨by simpa using ha, by simpa using zsmul_mem hb m⟩
 
 /-- The maps induced by field homomorphisms preserve the grading. -/
 theorem map_mem_degree {k' : Type*} [Field k'] (f : k →+* k') {n : ℕ} {x : SerreAlgebra k}

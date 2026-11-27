@@ -61,6 +61,9 @@ starting at an equilibrium stays there.
 * `IsMIntegralCurve.antitone_comp`: `f` is antitone along `γ`.
 * `IsMIntegralCurve.lt_of_mvfderiv_apply_lt_zero`: `f` strictly decreases along `γ` after a time
   at which `df(v) < 0`.
+* `IsMIntegralCurve.antitone_comp_of_ne_zero`,
+  `IsMIntegralCurve.lt_of_mvfderiv_apply_lt_zero_of_ne_zero`: the same for a `C¹` field, with `f`
+  differentiable and `df(v) ≤ 0` only where `v ≠ 0`.
 * `IsMIntegralCurveOn.strictAntiOn_comp`: `f` strictly decreases along an integral curve on a
   convex set of times when `df(v) < 0` along `γ` at its interior times.
 * `IsMIntegralCurveOn.apply_eq_add_smul_of_mvfderiv_apply_eq`: a map `g` into a normed space
@@ -149,6 +152,39 @@ theorem apply_eq_of_eq_zero [IsManifold I 1 M] [T2Space M] {t₀ : ℝ}
     (hγ : IsMIntegralCurve γ v) (h : v (γ t₀) = 0) (t : ℝ) : γ t = γ t₀ :=
   (hγ.isMIntegralCurveOn univ).apply_eq_of_eq_zero isPreconnected_univ (mem_univ t₀)
     hv h (mem_univ t)
+
+/-- **Monotonicity along an integral curve, away from the zeros of the field.** Let `v` be a `C¹`
+vector field on a Hausdorff manifold, and `f` a real function which is differentiable with
+`df(v) ≤ 0` at every point where `v` does not vanish. Then `f` is antitone along every integral
+curve of `v`: an integral curve through a zero of `v` is constant, and any other one stays where
+`v ≠ 0`. Nothing is assumed of `f` at the zeros of `v`. -/
+theorem antitone_comp_of_ne_zero [IsManifold I 1 M] [T2Space M]
+    (hv : CMDiff 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) (hγ : IsMIntegralCurve γ v)
+    (hf : ∀ x, v x ≠ 0 → MDifferentiableAt I 𝓘(ℝ) f x)
+    (hvf : ∀ x, v x ≠ 0 → mvfderiv I f x (v x) ≤ 0) : Antitone (f ∘ γ) := by
+  by_cases h : ∃ u, v (γ u) = 0
+  · -- the curve passes through a zero of `v`, so it is constant
+    obtain ⟨u, hu⟩ := h
+    intro a b _
+    simp only [Function.comp_apply, hγ.apply_eq_of_eq_zero (hv _) hu a,
+      hγ.apply_eq_of_eq_zero (hv _) hu b, le_refl]
+  · exact hγ.antitone_comp (fun u ↦ hf _ (not_exists.1 h u)) fun u ↦ hvf _ (not_exists.1 h u)
+
+/-- **Strict decrease along an integral curve, away from the zeros of the field.** Let `v` be a
+`C¹` vector field on a Hausdorff manifold, and `f` a real function which is differentiable with
+`df(v) ≤ 0` at every point where `v` does not vanish. If `df(v) < 0` at `γ s` for an integral
+curve `γ` of `v`, then `f (γ t) < f (γ s)` for every `t > s`. -/
+theorem lt_of_mvfderiv_apply_lt_zero_of_ne_zero [IsManifold I 1 M] [T2Space M]
+    (hv : CMDiff 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) (hγ : IsMIntegralCurve γ v)
+    (hf : ∀ x, v x ≠ 0 → MDifferentiableAt I 𝓘(ℝ) f x)
+    (hvf : ∀ x, v x ≠ 0 → mvfderiv I f x (v x) ≤ 0) {s t : ℝ}
+    (hs : mvfderiv I f (γ s) (v (γ s)) < 0) (hst : s < t) : f (γ t) < f (γ s) := by
+  -- `v` does not vanish at `γ s`, so the curve is not constant and avoids the zeros of `v`
+  have hvs : v (γ s) ≠ 0 := fun h ↦ lt_irrefl (0 : ℝ) (by rwa [h, map_zero] at hs)
+  have h (u : ℝ) : v (γ u) ≠ 0 := fun hu ↦ by
+    rw [hγ.apply_eq_of_eq_zero (hv _) hu s] at hvs
+    exact hvs hu
+  exact hγ.lt_of_mvfderiv_apply_lt_zero (fun u ↦ hf _ (h u)) (fun u ↦ hvf _ (h u)) hs hst
 
 end IsMIntegralCurve
 

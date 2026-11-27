@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Unique
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Finiteness.Basic
 
@@ -19,7 +21,9 @@ import TauCeti.Data.Matrix.Mul
 # Factoring matrices through a column range
 
 A matrix `L'` factors as `L * G` whenever each of its columns belongs to the range of
-matrix-vector multiplication by `L`. The column index type of `L'` need not be finite. We also
+matrix-vector multiplication by `L`. The column index type of `L'` need not be finite. Over an
+`S`-algebra, if the columns of `L'` lie in the `S`-span of those of `L`, the factor `G` can be taken
+over `S`. Over a field, a matrix with independent columns has a left inverse. We also
 give a criterion, splitting off the top row, for the column range of a matrix to be a given
 submodule.
 
@@ -47,6 +51,8 @@ vanishing on the range is a dot product with such a `z`.
   rows and columns are reindexed along equivalences via `Matrix.submatrix`.
 * `Matrix.rangeMulVecBilinOneEquiv` and `Matrix.rangeMulVecBilinSingleOneEquiv`: the column ranges
   of `1 : Matrix m m R` and of a diagonal matrix unit `Eᵢᵢ` are `m → Rᵐᵒᵖ` and `Rᵐᵒᵖ`.
+* `Matrix.rangeMulVecBilinOfUniqueEquivSpan`: the column range of the `1 × 1` matrix
+  `Matrix.uniqueRingEquiv.symm a` with entry `a` is the principal right ideal `aR`.
 
 ## Main result
 
@@ -64,6 +70,12 @@ vanishing on the range is a dot product with such a `z`.
   column-range `finrank` of `1` and of diagonal matrix units `Eᵢᵢ` under
   `StrongRankCondition Rᵐᵒᵖ`.
 * `Matrix.exists_mul_eq_of_range_le`: construct the right factor from column preimages.
+* `Matrix.exists_mul_map_eq_of_span_le`: if the columns of `C` lie in the `S`-span of those of
+  `B`, then `C = B U` with `U` over `S`.
+* `Matrix.exists_mul_eq_one_of_linearIndependent_col`,
+  `Matrix.exists_mul_map_mul_eq_one_of_linearIndependent_col`: over a field, a matrix with
+  independent columns has a left inverse, and so does its product with an invertible matrix over
+  an algebra.
 * `Matrix.mul_left_cancel_of_mulVec_injective`: cancel an injective left factor even for
   matrices with an empty output-column index type.
 * `Matrix.range_mulVecLin_eq_of_succ`: a matrix with columns in a submodule `L` of `R^(n+1)` has
@@ -115,6 +127,22 @@ theorem exists_mul_eq_of_range_le {L : Matrix m ι R} {L' : Matrix m κ R}
   ext i j
   simpa [Matrix.mul_apply, Matrix.mulVec, dotProduct] using congrFun (hv j) i
 
+/-- Let `A` be an `S`-algebra. If the columns of `C` lie in the `S`-span of the columns of `B`,
+then `C = B U` for a matrix `U` with entries in `S`. Adapted from
+`New.Filling.exists_isIntMatrix_mul_eq` in `src/New/Spanning/RemainingTerms/Discriminants.lean`
+of grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). -/
+theorem exists_mul_map_eq_of_span_le {S A : Type*} [CommSemiring S] [CommSemiring A]
+    [Algebra S A] {B : Matrix m ι A} {C : Matrix m κ A}
+    (h : Submodule.span S (Set.range C.col) ≤ Submodule.span S (Set.range B.col)) :
+    ∃ U : Matrix ι κ S, B * U.map (algebraMap S A) = C := by
+  choose c hc using fun j ↦
+    Submodule.mem_span_range_iff_exists_fun S |>.1 (h (Submodule.subset_span ⟨j, rfl⟩))
+  refine ⟨Matrix.of fun i j ↦ c j i, Matrix.ext fun k j ↦ ?_⟩
+  have := congrFun (hc j) k
+  simp only [Finset.sum_apply, Pi.smul_apply, col_apply] at this
+  simp only [Algebra.smul_def] at this
+  simp only [Matrix.mul_apply, map_apply, of_apply, ← this, mul_comm]
+
 section Field
 
 variable {K m n : Type*} [Field K] [Fintype m] [Fintype n]
@@ -134,6 +162,32 @@ theorem mem_range_mulVecLin_iff_forall_vecMul_eq_zero (A : Matrix m n K) (v : m 
     have := (Submodule.mem_dualAnnihilator _).mp hφ _ (LinearMap.mem_range_self _ (Pi.single j 1))
     rwa [dotProductEquiv_apply_apply, mulVecLin_apply, dotProduct_mulVec,
       dotProduct_single_one] at this
+
+omit [Fintype n] in
+/-- A matrix over a field with linearly independent columns has a left inverse. -/
+theorem exists_mul_eq_one_of_linearIndependent_col [Finite n] [DecidableEq n] {x : Matrix m n K}
+    (hx : LinearIndependent K x.col) : ∃ l : Matrix n m K, l * x = 1 := by
+  classical
+  cases nonempty_fintype n
+  obtain ⟨g, hg⟩ := x.mulVecLin.exists_leftInverse_of_injective
+    (LinearMap.ker_eq_bot.2 (Matrix.mulVec_injective_iff.2 hx))
+  refine ⟨LinearMap.toMatrix' g, ?_⟩
+  rw [← LinearMap.toMatrix'_toLin' x, ← LinearMap.toMatrix'_comp, Matrix.toLin'_apply', hg,
+    LinearMap.toMatrix'_id]
+
+/-- Let `A` be a `K`-algebra. If `x` is a matrix over the field `K` with linearly independent
+columns and `a` is an invertible matrix over `A`, then `x a`, read over `A`, has a left inverse.
+Adapted from `New.Filling.hasLeftInv_finAdeleMatrix_mul` in
+`src/New/Spanning/RemainingTerms/Discriminants.lean` of grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). -/
+theorem exists_mul_map_mul_eq_one_of_linearIndependent_col {A : Type*} [CommRing A]
+    [Algebra K A] [DecidableEq n] {x : Matrix m n K} (hx : LinearIndependent K x.col)
+    (a : GL n A) : ∃ l : Matrix n m A, l * (x.map (algebraMap K A) * (a : Matrix n n A)) = 1 := by
+  obtain ⟨l, hl⟩ := exists_mul_eq_one_of_linearIndependent_col hx
+  refine ⟨((a⁻¹ : GL n A) : Matrix n n A) * l.map (algebraMap K A), ?_⟩
+  rw [Matrix.mul_assoc, ← Matrix.mul_assoc (l.map _), ← Matrix.map_mul, hl,
+    Matrix.map_one _ (map_zero _) (map_one _), Matrix.one_mul]
+  exact a.inv_mul
 
 end Field
 
@@ -508,5 +562,37 @@ theorem finrank_range_mulVecBilin_single_one (R : Type*) [Semiring R] [StrongRan
     {m : Type*} [Fintype m] [DecidableEq m] (i : m) :
     Module.finrank Rᵐᵒᵖ (LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 :=
   (rangeMulVecBilinSingleOneEquiv R i).finrank_eq.trans (Module.finrank_self Rᵐᵒᵖ)
+
+/-- The column range of the `1 × 1` matrix `Matrix.uniqueRingEquiv.symm a` with entry `a` is the
+principal right ideal `aR`, a submodule of `Rᵐᵒᵖ`: a column is sent to the opposite of its unique
+entry. -/
+def rangeMulVecBilinOfUniqueEquivSpan (R : Type*) [Semiring R] (m : Type*) [Unique m] (a : R) :
+    LinearMap.range ((uniqueRingEquiv.symm a : Matrix m m R).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ]
+      Submodule.span Rᵐᵒᵖ {MulOpposite.op a} where
+  toFun w := ⟨MulOpposite.op ((w : m → R) default), by
+    obtain ⟨v, hv⟩ := w.property
+    rw [← hv, Submodule.mem_span_singleton]
+    exact ⟨MulOpposite.op (v default), by simp [mulVec, dotProduct]⟩⟩
+  invFun x := ⟨fun _ ↦ MulOpposite.unop (x : Rᵐᵒᵖ), by
+    obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.1 x.property
+    exact ⟨fun _ ↦ MulOpposite.unop r, funext fun _ ↦ by simp [mulVec, dotProduct, ← hr]⟩⟩
+  map_add' _ _ := Subtype.ext (MulOpposite.op_add _ _)
+  map_smul' r w := Subtype.ext (by simp)
+  left_inv w := Subtype.ext (funext fun i ↦ by simp [Unique.eq_default i])
+  right_inv _ := Subtype.ext (by simp)
+
+@[simp]
+theorem coe_rangeMulVecBilinOfUniqueEquivSpan_apply (R : Type*) [Semiring R] (m : Type*)
+    [Unique m] (a : R)
+    (w : LinearMap.range ((uniqueRingEquiv.symm a : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) :
+    (rangeMulVecBilinOfUniqueEquivSpan R m a w : Rᵐᵒᵖ) = MulOpposite.op ((w : m → R) default) :=
+  (rfl)
+
+@[simp]
+theorem coe_rangeMulVecBilinOfUniqueEquivSpan_symm_apply (R : Type*) [Semiring R] (m : Type*)
+    [Unique m] (a : R) (x : Submodule.span Rᵐᵒᵖ {MulOpposite.op a}) :
+    ((rangeMulVecBilinOfUniqueEquivSpan R m a).symm x : m → R) =
+      fun _ ↦ MulOpposite.unop (x : Rᵐᵒᵖ) :=
+  (rfl)
 
 end Matrix

@@ -150,14 +150,15 @@ theorem mem_chartDomain_iff_surjective {u : Fin k ↪ ℕ} {W : infiniteGrassman
   mem_chartDomain_iff_injective.trans <| LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     ((finrank_tautological W).trans (Module.finrank_fin_fun 𝕜).symm)
 private def frameCoordMatrix (u : Fin k ↪ ℕ) {n : ℕ} (f : finiteFullRankFrame 𝕜 k n) :
-    Matrix (Fin k) (Fin k) 𝕜 := Matrix.of fun j i ↦ coordinateInclusion n (f.val i) (u j)
+    Matrix (Fin k) (Fin k) 𝕜 := Matrix.of fun j i ↦ coordinateInclusion (R := 𝕜) n (f.val i) (u j)
 private def stageFrameBasis {n : ℕ} (f : finiteFullRankFrame 𝕜 k n) :
     Module.Basis (Fin k) 𝕜 (Tautological 𝕜 k (toInfinite (frameSpan f))) :=
   (Module.Basis.span f.property).map <| (LinearEquiv.ofEq _ _ (coe_frameSpan f).symm).trans <|
     (Submodule.equivMapOfInjective _ (coordinateInclusion_injective n) _).trans <|
       (LinearEquiv.ofEq _ _ (coe_toInfinite _).symm).trans (tautologicalEquiv 𝕜 k _).symm
 private theorem val_stageFrameBasis_apply {n : ℕ} (f : finiteFullRankFrame 𝕜 k n) (i : Fin k) :
-    (stageFrameBasis f i).val = coordinateInclusion n (f.val i) := by simp [stageFrameBasis]
+    (stageFrameBasis f i).val = coordinateInclusion (R := 𝕜) n (f.val i) := by
+  simp [stageFrameBasis]
 private theorem chartLinearMap_stageFrameBasis_symm (u : Fin k ↪ ℕ) {n : ℕ}
     (f : finiteFullRankFrame 𝕜 k n) (c : Fin k → 𝕜) :
     chartLinearMap u (toInfinite (frameSpan f)) ((stageFrameBasis f).equivFun.symm c) =
@@ -256,7 +257,7 @@ end Maps
 private theorem continuous_frameCoordMatrix (u : Fin k ↪ ℕ) (n : ℕ) :
     Continuous (frameCoordMatrix (𝕜 := 𝕜) u (n := n)) :=
   continuous_matrix fun j i ↦ (LinearMap.continuous_on_pi ((lapply (R := 𝕜) (M := 𝕜) (u j)).comp
-    (coordinateInclusion n))).comp ((continuous_apply i).comp continuous_subtypeVal)
+    (coordinateInclusion (R := 𝕜) n))).comp ((continuous_apply i).comp continuous_subtypeVal)
 private theorem chartEquiv_symm_stageFrameBasis (u : Fin k ↪ ℕ) {n : ℕ}
     (f : finiteFullRankFrame 𝕜 k n) (hf : toInfinite (frameSpan f) ∈ chartDomain u)
     (v : Fin k → 𝕜) : (chartEquiv u hf).symm v =
@@ -500,7 +501,7 @@ def toInfiniteTautologicalEquiv (V : finiteGrassmannian 𝕜 k n) :
         (infiniteGrassmannian.tautologicalEquiv 𝕜 k V.toInfinite).symm).toContinuousLinearEquiv
 @[simp] theorem val_toInfiniteTautologicalEquiv (V : finiteGrassmannian 𝕜 k n)
     (v : Tautological 𝕜 k n V) :
-    (V.toInfiniteTautologicalEquiv v).val = coordinateInclusion n (WithLp.ofLp v.val) := by
+    (V.toInfiniteTautologicalEquiv v).val = coordinateInclusion (R := 𝕜) n (WithLp.ofLp v.val) := by
   simp [toInfiniteTautologicalEquiv]
 @[simp] theorem coe_toInfiniteTautologicalEquiv_symm_apply (V : finiteGrassmannian 𝕜 k n)
     (w : infiniteGrassmannian.Tautological 𝕜 k V.toInfinite) :

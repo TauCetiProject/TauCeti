@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
+public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+public import TauCeti.RingTheory.Valuation.AbsoluteValue
 -- Proof-only: a uniformiser of `𝒪[K]` has norm less than one.
 import Mathlib.Topology.Algebra.Valued.LocallyCompact
 
@@ -53,6 +55,13 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
   through `TauCeti.IsAdicComplete.henselianLocalRing`.
 * `Valuation.Integers.isAdicComplete_maximalIdeal`: if the maximal ideal of `O` is principal, then
   `O` is complete for its maximal ideal.
+
+## Absolute values
+
+* `NormedField.toValuation_toAbsoluteValue`: `NormedField.valuation` is the valuation
+  `AbsoluteValue.toValuation` attached to the norm, viewed as a nonarchimedean absolute value.
+* `Valuation.isNonarchimedean_absoluteValue`: Mathlib's absolute value `Valuation.absoluteValue`
+  of a valuation of rank at most one is nonarchimedean.
 -/
 
 public section
@@ -198,3 +207,22 @@ instance Valuation.integer.isAdicComplete_maximalIdeal {K : Type*} [NormedField 
     IsAdicComplete (IsLocalRing.maximalIdeal (NormedField.valuation (K := K)).integer)
       (NormedField.valuation (K := K)).integer :=
   (Valuation.integer.integers _).isAdicComplete_maximalIdeal (IsPrincipalIdealRing.principal _)
+
+namespace NormedField
+
+open scoped NNReal
+
+variable (K : Type*) [NormedField K] [IsUltrametricDist K]
+
+/-- Mathlib's valuation of a nonarchimedean normed field is the valuation attached to its norm. -/
+theorem toValuation_toAbsoluteValue :
+    (toAbsoluteValue K).toValuation (isNonarchimedean_toAbsoluteValue K) = valuation :=
+  Valuation.ext fun x ↦ NNReal.eq (by simp [NormedField.valuation_apply])
+
+end NormedField
+
+/-- Mathlib's absolute value of a valuation of rank at most one is nonarchimedean. -/
+theorem Valuation.isNonarchimedean_absoluteValue {K Γ₀ : Type*} [DivisionRing K]
+    [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation K Γ₀) [RankLeOne v] :
+    IsNonarchimedean v.absoluteValue := fun x y ↦ by
+  simpa using v.norm_add_le x y

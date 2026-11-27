@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Charpoly
 import TauCeti.RepresentationTheory.Dual
 import TauCeti.RepresentationTheory.Quotient
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix

@@ -10,8 +10,10 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 /-!
 # Measurability of partially monotone functions
 
-This file gives a measurability criterion for functions between linearly ordered spaces that are
-monotone on an open interval and constant away from its endpoints, such as quantile functions.
+This file gives measurability criteria for partially monotone functions between linearly ordered
+spaces: functions that are monotone on an open interval and constant away from its endpoints (such
+as quantile functions), and compositions `x ↦ g (f x)` where `g` is monotone on a set containing the
+values of a measurable map `f`.
 -/
 
 public section
@@ -39,3 +41,17 @@ theorem MonotoneOn.measurable_of_eq_const {f : β → α} {a b : β} {c : α}
   exact ((ordConnected_Ioo.inter hu).measurableSet.union
     ((toFinite _).subset inter_subset_right).measurableSet).union
     ((MeasurableSet.const _).inter (measurableSet_Iio.union measurableSet_Ioi))
+
+/-- Composing a function that is monotone on `t` with a measurable function taking values in `t`
+produces a measurable function. No measurability or order-connectedness assumption on `t` is
+needed. -/
+theorem MonotoneOn.measurable_comp {γ : Type*} [MeasurableSpace γ] {g : β → α} {t : Set β}
+    (hg : MonotoneOn g t) {f : γ → β} (hf : Measurable f) (hft : ∀ x, f x ∈ t) :
+    Measurable fun x ↦ g (f x) := by
+  refine measurable_of_Iic fun a ↦ ?_
+  obtain ⟨u, hu, htu⟩ := ordConnected_Iic.preimage_monotoneOn (s := Iic a) hg
+  have hpre : (fun x ↦ g (f x)) ⁻¹' Iic a = f ⁻¹' u := by
+    ext x
+    have hmem : f x ∈ t ∩ g ⁻¹' Iic a ↔ f x ∈ t ∩ u := by rw [htu]
+    simpa [hft x] using hmem
+  exact hpre ▸ hf hu.measurableSet
