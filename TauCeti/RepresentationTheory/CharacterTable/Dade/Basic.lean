@@ -281,15 +281,6 @@ theorem mem_centralizer_of_conj_mem_smul (hD : DadeDatum L A H) (ha : a ∈ A) {
   have hga := ((hD.conj_mul_eq_mul_iff ha ha hu hv g).1 hvx.symm).1
   exact mem_centralizer_singleton_iff.2 (mul_inv_eq_iff_eq_mul.1 hga)
 
-/-- **The normalizer of the coset `a • H a` is `C_G(a)`** (Peterfalvi (2.4)(c)). -/
-theorem normalizer_smul_eq (hD : DadeDatum L A H) (ha : a ∈ A) :
-    normalizer (a • (H a : Set G)) = centralizer {a} := by
-  have ha1 : a ∈ a • (H a : Set G) := Set.mem_smul_set.2 ⟨1, one_mem _, mul_one a⟩
-  refine le_antisymm (fun g hg => hD.mem_centralizer_of_conj_mem_smul ha ha1
-    ((mem_set_normalizer_iff.1 hg a).1 ha1)) fun g hg => mem_set_normalizer_iff.2 fun x => ?_
-  refine ⟨hD.conj_mem_smul ha hg, fun hx => ?_⟩
-  simpa [mul_assoc] using hD.conj_mem_smul ha (inv_mem hg) hx
-
 /-- **The coset `a • H a` is a trivial-intersection set for `C_G(a)`** (Peterfalvi (2.4)(c)). -/
 theorem isTISet_smul (hD : DadeDatum L A H) (ha : a ∈ A) :
     IsTISet (a • (H a : Set G)) (centralizer {a}) where
@@ -298,6 +289,11 @@ theorem isTISet_smul (hD : DadeDatum L A H) (ha : a ∈ A) :
     exact mul_mem (mem_inf.1 (hD.mem_inf_centralizer ha)).2 (hD.le_centralizer a ha hu)
   conj_mem g hg x hx := hD.conj_mem_smul ha hg hx
   disjoint_conj g hg x hx hgx := hg (hD.mem_centralizer_of_conj_mem_smul ha hx hgx)
+
+/-- **The normalizer of the coset `a • H a` is `C_G(a)`** (Peterfalvi (2.4)(c)). -/
+theorem normalizer_smul_eq (hD : DadeDatum L A H) (ha : a ∈ A) :
+    normalizer (a • (H a : Set G)) = centralizer {a} :=
+  (hD.isTISet_smul ha).normalizer_eq ⟨a, Set.mem_smul_set.2 ⟨1, one_mem _, mul_one a⟩⟩
 
 /-- **The Dade support avoids the identity**: `a * u = 1` with `u ∈ H a` would put `a` in
 `H a ⊓ C_L(a) = 1`. -/
@@ -332,14 +328,8 @@ theorem isTISet (hD : DadeDatum L A H) (hH : ∀ a ∈ A, H a = ⊥) : IsTISet A
 /-- **A nonempty set carrying Dade data with trivial complements has normalizer `L`**
 (Peterfalvi (2.3)). Nonemptiness is needed: every element normalizes `∅`. -/
 theorem normalizer_eq (hD : DadeDatum L A H) (hH : ∀ a ∈ A, H a = ⊥) (hA : A.Nonempty) :
-    normalizer A = L := by
-  have hTI := hD.isTISet hH
-  refine le_antisymm (fun g hg => ?_) fun l hl => mem_set_normalizer_iff.2 fun x => ?_
-  · obtain ⟨a, ha⟩ := hA
-    by_contra hgL
-    exact hTI.disjoint_conj g hgL a ha ((mem_set_normalizer_iff.1 hg a).1 ha)
-  · refine ⟨fun hx => hD.conj_mem x hx l hl, fun hx => ?_⟩
-    simpa [mul_assoc] using hD.conj_mem _ hx l⁻¹ (L.inv_mem hl)
+    normalizer A = L :=
+  (hD.isTISet hH).normalizer_eq hA
 
 end DadeDatum
 
