@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
@@ -32,16 +31,6 @@ with chains with coefficients in `G k` (Mathlib's `SSet.chainComplexFunctorObjCo
 singular simplices), and the homology comparison from its homology version
 `CategoryTheory.Functor.singularHomologyFunctorObjCompIso`.
 
-In particular, for an `R`-algebra `S` and an `S`-module `M` carrying a compatible `R`-module
-structure (`IsScalarTower R S M`), singular homology with `R`-module coefficients `M` is naturally
-isomorphic to singular homology with `S`-module coefficients `M` followed by restriction of scalars
-along `algebraMap R S` (`TauCeti.singularHomologyRestrictScalarsNatIso`). Because restriction of
-scalars is faithful and reflects isomorphisms, singular homology with `R`-module coefficients `M`
-vanishes if and only if singular homology with `S`-module coefficients `M` does
-(`TopCat.isZero_singularHomology_restrictScalars_iff`), and a continuous map induces an
-isomorphism on one if and only if it induces an isomorphism on the other
-(`TopCat.Hom.isIso_singularHomologyMap_restrictScalars_iff`).
-
 ## Main definitions and results
 
 * `TopCat.restrictScalarsChainMap`, `TopCat.restrictScalarsHomologyMap`: the comparison of chains
@@ -50,12 +39,6 @@ isomorphism on one if and only if it induces an isomorphism on the other
   comparison.
 * `TopCat.homologyπ_restrictScalarsHomologyMap`: the homology comparison on the class of a cycle.
 * `TopCat.restrictScalarsHomologyMap_naturality`: the homology comparison is natural in the space.
-* `TauCeti.singularHomologyRestrictScalarsNatIso`: natural isomorphism comparing `Hₙ(-; M)` over
-  `R` with restriction of scalars of `Hₙ(-; M)` over `S`.
-* `TopCat.isZero_singularHomology_restrictScalars_iff`: vanishing of singular homology with
-  coefficients `M` is invariant under restriction of scalars along `algebraMap R S`.
-* `TopCat.Hom.isIso_singularHomologyMap_restrictScalars_iff`: inducing an isomorphism on singular
-  homology with coefficients `M` is invariant under restriction of scalars along `algebraMap R S`.
 
 ## References
 
@@ -69,43 +52,9 @@ noncomputable section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicTopology HomologicalComplex Simplicial
 
-universe u u₁ u₂ w
-
-namespace TauCeti
-
-/-- For an `R`-algebra `S` and an `S`-module `M` carrying a compatible `R`-module structure,
-singular homology with `R`-module coefficients `M` is naturally isomorphic to singular homology with
-`S`-module coefficients `M` followed by restriction of scalars along `algebraMap R S`. -/
-def singularHomologyRestrictScalarsNatIso (R : Type u₁) (S : Type u₂) [CommRing R] [Ring S]
-    [Algebra R S] (M : Type u) [AddCommGroup M] [Module R M] [Module S M]
-    [IsScalarTower R S M] (n : ℕ) :
-    (singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R M) ≅
-      (singularHomologyFunctor (ModuleCat.{u} S) n).obj (ModuleCat.of S M) ⋙
-        ModuleCat.restrictScalars.{u} (algebraMap R S) :=
-  (singularHomologyFunctor (ModuleCat.{u} R) n).mapIso
-      (ModuleCat.restrictScalarsAlgebraMapIso (R := R) (S := S) M).symm ≪≫
-    (Functor.singularHomologyFunctorObjCompIso
-      (ModuleCat.restrictScalars.{u} (algebraMap R S))
-      (ModuleCat.of S M) n).symm
-
-end TauCeti
+universe w
 
 namespace TopCat
-
-/-- Singular homology with coefficients in an `S`-module `M`, viewed as an `R`-module through
-`IsScalarTower R S M`, vanishes exactly when singular homology with `S`-module coefficients `M`
-does. -/
-theorem isZero_singularHomology_restrictScalars_iff (X : TopCat.{u})
-    (R : Type u₁) (S : Type u₂) [CommRing R] [Ring S] [Algebra R S]
-    (M : Type u) [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M] (n : ℕ) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R M)).obj X) ↔
-      IsZero (((singularHomologyFunctor (ModuleCat.{u} S) n).obj (ModuleCat.of S M)).obj X) := by
-  rw [Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{u} R) n).mapIso
-      (ModuleCat.restrictScalarsAlgebraMapIso (R := R) (S := S) M).symm).app X)]
-  exact (ModuleCat.restrictScalars.{u} (algebraMap R S)).isZero_singularHomologyFunctor_iff
-    (ModuleCat.of S M) n X
-
-section MapComparison
 
 variable (X : TopCat.{w}) {R k : Type w} [CommRing R] [CommRing k] (f : R →+* k)
   {T : ModuleCat.{w} R} (c : T ⟶ (ModuleCat.restrictScalars f).obj (𝟙_ (ModuleCat.{w} k)))
@@ -204,23 +153,4 @@ lemma restrictScalarsHomologyMap_naturality {Y : TopCat.{w}} (g : X ⟶ Y) (n : 
     (((ModuleCat.restrictScalars f).singularHomologyFunctorObjCompIso
       (𝟙_ (ModuleCat.{w} k)) n).inv.naturality g)
 
-end MapComparison
-
 end TopCat
-
-namespace TopCat.Hom
-
-/-- A continuous map induces an isomorphism on singular homology with coefficients in an
-`S`-module `M`, viewed as an `R`-module through `IsScalarTower R S M`, exactly when it induces one
-with `S`-module coefficients `M`. -/
-theorem isIso_singularHomologyMap_restrictScalars_iff {X Y : TopCat.{u}} (f : X ⟶ Y)
-    (R : Type u₁) (S : Type u₂) [CommRing R] [Ring S] [Algebra R S]
-    (M : Type u) [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M] (n : ℕ) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R M)).map f) ↔
-      IsIso (((singularHomologyFunctor (ModuleCat.{u} S) n).obj (ModuleCat.of S M)).map f) :=
-  (NatIso.isIso_map_iff (TauCeti.singularHomologyRestrictScalarsNatIso R S M n) f).trans
-    (isIso_iff_of_reflects_iso _ (ModuleCat.restrictScalars.{u} (algebraMap R S)))
-
-end TopCat.Hom
-
-end

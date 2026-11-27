@@ -55,9 +55,9 @@ Another is **restriction over a weakly equivalent subspace**. If the inclusion o
 and over `T` are Serre fibrations with the same fibres. For instance the preimage of a
 deformation retract of the base is weakly equivalent to the preimage of the ambient subspace.
 
-A third is **base change to a weakly contractible space**. The inclusion of a fibre of a Serre
-fibration into its base change along a map `g : K ⟶ B` from a space whose homotopy groups vanish
-at `k` (`TopCat.Hom.pullbackFiberι`), is a weak homotopy equivalence
+A third is **base change to a contractible space**. The inclusion of a fibre of a Serre fibration
+into its base change along a map `g : K ⟶ B` from a contractible space, at any point of `K`
+(`TopCat.Hom.pullbackFiberι`), is a weak homotopy equivalence
 (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`): it is the inclusion of a fibre of a
 Serre fibration over a base with no homotopy.
 
@@ -76,7 +76,7 @@ Serre fibration over a base with no homotopy.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_inclusion_preimage`: restriction of a Serre fibration
   over a weakly equivalent subspace.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`: the fibre inclusions into a base
-  change of a Serre fibration to a weakly contractible space.
+  change of a Serre fibration to a contractible space.
 
 ## References
 
@@ -450,20 +450,20 @@ theorem isWeakHomotopyEquivalence_inclusion_preimage (hp : serreFibrations p) {S
       by ext x; simpa using congrArg Subtype.val (sq.fiberMap_apply_coe b _)⟩
   exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso (sq.fiberMap b))
 
-/-- **Fibre inclusions over a weakly contractible base are weak homotopy equivalences.** If `p` is
-a Serre fibration and every homotopy group of `K` at `k` vanishes, the inclusion of the fibre of `p`
-over `g k` into the base change of `p` along `g : K ⟶ B`, at `k`, is a weak homotopy
-equivalence. -/
+/-- **Fibre inclusions over a contractible base are weak homotopy equivalences.** If `p` is a Serre
+fibration and `K` is contractible, the inclusion of the fibre of `p` over `g k` into the base change
+of `p` along `g : K ⟶ B`, at `k`, is a weak homotopy equivalence. -/
 theorem isWeakHomotopyEquivalence_pullbackFiberι (hp : serreFibrations p) {K : TopCat.{u}}
-    (g : K ⟶ B) {k : K} {b : B} (h : g k = b) (hK : ∀ n, Subsingleton (π_ n K k)) :
+    [ContractibleSpace K] (g : K ⟶ B) {k : K} {b : B} (h : g k = b) :
     (p.pullbackFiberι g h).hom.IsWeakHomotopyEquivalence := by
   subst h
   -- Up to the identification of the fibres of the base change, this is the inclusion of the fibre
-  -- of the base change over `k`, which is a weak equivalence since `K` has no homotopy.
+  -- of the base change over `k`, which is `n`-connected for every `n` since `K` has no homotopy.
   rw [TopCat.Hom.pullbackFiberι_eq_fiberPullbackFstIso_inv_comp_fiberι, TopCat.hom_comp]
   refine ContinuousMap.IsWeakHomotopyEquivalence.comp ?_
     ((mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _))
-  exact isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations
-    (mem_serreFibrations_pullbackFst hp g) hK
+  exact ContinuousMap.isWeakHomotopyEquivalence_iff_forall_isNConnected.2 fun _ ↦
+    isNConnected_fiberι_of_mem_serreFibrations (mem_serreFibrations_pullbackFst hp g)
+      fun _ _ ↦ inferInstance
 
 end TauCeti.TopCat

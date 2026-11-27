@@ -120,8 +120,7 @@ isomorphisms on singular homology with coefficients in any module. -/
 theorem isIso_singularHomologyMap_pullbackFiberι [ContractibleSpace K]
     (g : K ⟶ B) {k : K} {b : B} (h : g k = b) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.pullbackFiberι g h)) :=
-  (isWeakHomotopyEquivalence_pullbackFiberι hp g h fun _ ↦ inferInstance).isIso_singularHomologyMap
-    M n
+  (isWeakHomotopyEquivalence_pullbackFiberι hp g h).isIso_singularHomologyMap M n
 
 /-- **Transport on homology over a contractible parameter space.** For a Serre fibration `p`, a map
 `g : K ⟶ B` from a contractible space and points `k₀, k₁` of `K` over `b₀, b₁`, the map
@@ -175,19 +174,6 @@ theorem pullbackFiberTransport_comp_pullbackFiberTransport (g : K ⟶ B)
     pullbackFiberTransport hp M n g h₀ h₁ ≫ pullbackFiberTransport hp M n g h₁ h₂ =
       pullbackFiberTransport hp M n g h₀ h₂ :=
   (eq_pullbackFiberTransport_iff hp M n g h₀ h₂ _).2 (by simp)
-
-/-- **Transport over a contractible parameter space is an isomorphism.** -/
-instance isIso_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B}
-    (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) : IsIso (pullbackFiberTransport hp M n g h₀ h₁) :=
-  ⟨pullbackFiberTransport hp M n g h₁ h₀, by simp, by simp⟩
-
-/-- The inverse of transport over a contractible parameter space is transport in the opposite
-direction. -/
-@[simp]
-theorem inv_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B}
-    (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) :
-    inv (pullbackFiberTransport hp M n g h₀ h₁) = pullbackFiberTransport hp M n g h₁ h₀ :=
-  IsIso.inv_eq_of_hom_inv_id (by simp)
 
 /-- **Transport along a path on which the map to `B` is constant is the identity.** If `γ` is a path
 from `k₀` to `k₁` in `K` which `g` maps to the point `b`, then transport from `k₀` to `k₁` is the
@@ -247,6 +233,13 @@ theorem pullbackFiberTransport_comp_left {K' : TopCat.{u}} [ContractibleSpace K'
   simpa using pullbackFiberTransport_naturality hp M n (CommSq.mk (by simp : 𝟙 E ≫ p = p ≫ 𝟙 B))
     hp (φ ≫ g) g φ (Category.comp_id _).symm h₀ h₁ h₀' h₁'
 
+instance isIso_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B} (h₀ : g k₀ = b₀)
+    (h₁ : g k₁ = b₁) : IsIso (pullbackFiberTransport hp M n g h₀ h₁) := by
+  have := isIso_singularHomologyMap_pullbackFiberι hp M n g h₀
+  have := isIso_singularHomologyMap_pullbackFiberι hp M n g h₁
+  unfold pullbackFiberTransport
+  infer_instance
+
 /-- **Transport is natural in the coefficients.** Transport commutes with the maps induced on
 homology by a linear map of coefficient modules. -/
 @[reassoc]
@@ -298,12 +291,6 @@ lemma fiberHomologyTransport_eq_pullbackFiberTransport (γ : Path b₀ b₁) :
         (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ :=
   (rfl)
 
-/-- **Transport along a path is an isomorphism.** -/
-instance isIso_fiberHomologyTransport (γ : Path b₀ b₁) :
-    IsIso (fiberHomologyTransport hp M n γ) := by
-  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
-  infer_instance
-
 /-- **Characterization of transport along a path.** Transport along `γ` followed by the inclusion
 of the fibre over `b₁` into `γ*E` is the inclusion of the fibre over `b₀`. -/
 @[reassoc (attr := simp)]
@@ -333,6 +320,11 @@ theorem eq_fiberHomologyTransport_iff (γ : Path b₀ b₁)
             (TopCat.pathEquiv.symm γ).hom₀) := by
   rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   exact eq_pullbackFiberTransport_iff hp M n _ _ _ f
+
+instance isIso_fiberHomologyTransport (γ : Path b₀ b₁) :
+    IsIso (fiberHomologyTransport hp M n γ) := by
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
+  infer_instance
 
 /-- **Transport along the image of a path in a contractible space.** For `g : K ⟶ B` with `K`
 contractible and a path `ε` from `k₀` to `k₁` in `K`, transport along the image of `ε` under `g` is
@@ -423,15 +415,6 @@ theorem fiberHomologyTransport_trans (γ : Path b₀ b₁)
       TopCat.I.secondHalf_zero TopCat.I.secondHalf_one (TopCat.pathEquiv.symm δ).hom₀
       (TopCat.pathEquiv.symm δ).hom₁
       (TopCat.pathEquiv_symm_trans_hom_midpoint γ δ) (TopCat.pathEquiv.symm (γ.trans δ)).hom₁]
-
-/-- The inverse of transport along a path is transport along the reversed path. -/
-@[simp]
-theorem inv_fiberHomologyTransport (γ : Path b₀ b₁) :
-    inv (fiberHomologyTransport hp M n γ) = fiberHomologyTransport hp M n γ.symm := by
-  refine IsIso.inv_eq_of_hom_inv_id ?_
-  rw [← fiberHomologyTransport_trans,
-    fiberHomologyTransport_congr hp M n (Path.Homotopic.trans_symm γ),
-    fiberHomologyTransport_refl]
 
 /-- **Transport along a path is natural in maps of Serre fibrations.** For a commutative square
 from `p` to `p'` over `g : B ⟶ B'`, transport along `γ` followed by the map of fibres over `b₁` is
