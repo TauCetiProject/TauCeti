@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Ergodic.Action.Basic
+public import TauCeti.Analysis.Semigroups.Group.Eigenspace
 public import TauCeti.Dynamics.Ergodic.Action.Koopman
 import TauCeti.Analysis.Semigroups.Group.MeanErgodic
 import TauCeti.Dynamics.Ergodic.Action.Eigenfunction
@@ -35,6 +36,8 @@ the averaged correlations: `T⁻¹ ∫₀ᵀ ⟪g, U_t f⟫ dt → (∫ f) conj 
   almost everywhere constant;
 * `TauCeti.ergodicVAdd_of_forall_koopmanGroup_eq`, `TauCeti.ergodicVAdd_iff_forall_koopmanGroup_eq`:
   the converse, and the characterisation of ergodicity by Koopman-fixed vectors;
+* `TauCeti.tendsto_average_inner_koopmanGroup_of_sub_const_mem_orthogonal`: averaged correlations
+  of `f` whose projection onto the fixed vectors is the constant `∫ f`;
 * `TauCeti.tendsto_average_inner_koopmanGroup_of_ergodicVAdd`: averaged correlations of an ergodic
   action.
 -/
@@ -98,6 +101,30 @@ theorem ergodicVAdd_iff_forall_koopmanGroup_eq [VAddInvariantMeasure ℝ X μ] [
         ∃ c : ℂ, u =ᵐ[μ] Function.const X c :=
   ⟨fun _ => exists_ae_eq_const_of_koopmanGroup_eq, ergodicVAdd_of_forall_koopmanGroup_eq⟩
 
+/-- **Averaged correlations of a vector orthogonal to the fixed vectors up to its mean.** For a
+jointly measurable action of `ℝ` preserving a finite measure `μ`, if `f - ∫ f` is orthogonal to
+the Koopman-fixed vectors of complex `L²(μ)`, so that the projection of `f` onto them is the
+constant `∫ f`, then for every `g` the averages `T⁻¹ ∫₀ᵀ ⟪g, U_t f⟫ dt` of the Koopman
+correlations tend to `(∫ f) conj (∫ g)`. -/
+theorem tendsto_average_inner_koopmanGroup_of_sub_const_mem_orthogonal
+    [VAddInvariantMeasure ℝ X μ] [IsFiniteMeasure μ] {f : Lp ℂ 2 μ}
+    (hf : f - Lp.const 2 μ (∫ x, f x ∂μ) ∈
+      ((koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top).fixedSubmodule
+        (koopmanGroup_isUnitary μ ℂ).isComplexLinear)ᗮ) (g : Lp ℂ 2 μ) :
+    Tendsto (fun T : ℝ => (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T,
+        ⟪g, koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t f⟫_ℂ) atTop
+      (𝓝 ((∫ x, f x ∂μ) * conj (∫ x, g x ∂μ))) := by
+  set U := koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top
+  have hU : U.IsUnitary := koopmanGroup_isUnitary μ ℂ
+  have := Semigroups.StronglyContinuousGroup.hasOrthogonalProjection_fixedSubmodule U
+    hU.isComplexLinear
+  have hconst : Lp.const 2 μ (∫ x, f x ∂μ) ∈ U.fixedSubmodule hU.isComplexLinear :=
+    (Semigroups.StronglyContinuousGroup.mem_fixedSubmodule_iff U _ _).2
+      (koopmanGroup_const μ ℂ 2 ENNReal.ofNat_ne_top _)
+  convert hU.tendsto_average_inner f g using 2
+  rw [Submodule.eq_starProjection_of_mem_orthogonal hconst hf, L2.inner_const_right,
+    RCLike.inner_apply, mul_comm]
+
 /-- **Averaged correlations of an ergodic action.** For an ergodic jointly measurable action of
 `ℝ` preserving a probability measure `μ`, and `f g` in complex `L²(μ)`, the averages
 `T⁻¹ ∫₀ᵀ ⟪g, U_t f⟫ dt` of the Koopman correlations tend to `(∫ f) conj (∫ g)`. -/
@@ -106,27 +133,13 @@ theorem tendsto_average_inner_koopmanGroup_of_ergodicVAdd [IsProbabilityMeasure 
     Tendsto (fun T : ℝ => (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T,
         ⟪g, koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t f⟫_ℂ) atTop
       (𝓝 ((∫ x, f x ∂μ) * conj (∫ x, g x ∂μ))) := by
-  set U := koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top
-  have hU : U.IsUnitary := koopmanGroup_isUnitary μ ℂ
-  have := Semigroups.StronglyContinuousGroup.hasOrthogonalProjection_fixedSubmodule U
-    hU.isComplexLinear
-  set K := U.fixedSubmodule hU.isComplexLinear
-  -- the projection of `f` onto the fixed vectors is the constant `∫ f`
-  have hproj : K.starProjection f = Lp.const 2 μ (∫ x, f x ∂μ) := by
-    obtain ⟨c, hc⟩ := exists_ae_eq_const_of_koopmanGroup_eq _
-      ((Semigroups.StronglyContinuousGroup.mem_fixedSubmodule_iff U _ _).1
-        (K.starProjection_apply_mem f))
-    have hPc : K.starProjection f = Lp.const 2 μ c := Lp.ext (hc.trans (Lp.coeFn_const 2 μ c).symm)
-    have hone : Lp.const 2 μ (1 : ℂ) ∈ K :=
-      (Semigroups.StronglyContinuousGroup.mem_fixedSubmodule_iff U _ _).2
-        (koopmanGroup_const μ ℂ 2 ENNReal.ofNat_ne_top 1)
-    have h := K.inner_starProjection_left_eq_right (Lp.const 2 μ (1 : ℂ)) f
-    rw [K.starProjection_eq_self_iff.2 hone, hPc, L2.inner_const_left, L2.inner_const_left,
-      integral_congr_ae (Lp.coeFn_const 2 μ c)] at h
-    rw [hPc]
-    congr 1
-    simpa using h.symm
-  convert hU.tendsto_average_inner f g using 2
-  rw [hproj, L2.inner_const_right, RCLike.inner_apply, mul_comm]
+  refine tendsto_average_inner_koopmanGroup_of_sub_const_mem_orthogonal ?_ g
+  -- a fixed vector is a constant `c`, and `f - ∫ f` has integral `0`
+  refine (Submodule.mem_orthogonal _ _).2 fun u hu => ?_
+  obtain ⟨c, hc⟩ := exists_ae_eq_const_of_koopmanGroup_eq u
+    ((Semigroups.StronglyContinuousGroup.mem_fixedSubmodule_iff _ _ _).1 hu)
+  rw [show u = Lp.const 2 μ c from Lp.ext (hc.trans (Lp.coeFn_const 2 μ c).symm), inner_sub_right,
+    L2.inner_const_left, L2.inner_const_left, integral_congr_ae (Lp.coeFn_const 2 μ _)]
+  simp only [Function.const_apply, integral_const, probReal_univ, one_smul, sub_self]
 
 end TauCeti

@@ -73,10 +73,10 @@ theorem tendsto_average_add {ψ₁ ψ₂ : ℝ → ℝ} {a₁ a₂ : ℝ}
   simpa [intervalIntegral.integral_add (h₁i _) (h₂i _), mul_add] using h₁.add h₂
 
 /-- If `c₁` is Cesàro close to `α` in absolute value, `T⁻¹ ∫₀ᵀ |c₁ t - α| dt → 0`, and the
-continuous function `c₂` is bounded by `1` in absolute value with Cesàro limit `β`, then `c₁ c₂`
+continuous function `c₂` is bounded by `C` in absolute value with Cesàro limit `β`, then `c₁ c₂`
 has Cesàro limit `α β`. -/
 theorem tendsto_average_mul_of_tendsto_average_abs_sub {c₁ c₂ : ℝ → ℝ}
-    (h₁ : Continuous c₁) (h₂ : Continuous c₂) (hc₂ : ∀ t, |c₂ t| ≤ 1) {α β : ℝ}
+    (h₁ : Continuous c₁) (h₂ : Continuous c₂) {C : ℝ} (hc₂ : ∀ t, |c₂ t| ≤ C) {α β : ℝ}
     (hα : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, |c₁ t - α|) atTop (𝓝 0))
     (hβ : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, c₂ t) atTop (𝓝 β)) :
     Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, c₁ t * c₂ t) atTop (𝓝 (α * β)) := by
@@ -98,16 +98,17 @@ theorem tendsto_average_mul_of_tendsto_average_abs_sub {c₁ c₂ : ℝ → ℝ}
   simp_rw [hsplit]
   rw [← zero_add (α * β)]
   refine Tendsto.add ?_ (hβ.const_mul α)
-  refine squeeze_zero_norm' ?_ hα
+  refine squeeze_zero_norm' ?_ (by simpa only [mul_zero] using hα.const_mul C)
   filter_upwards [eventually_ge_atTop 0] with T hT
-  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (inv_nonneg.2 hT)]
+  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (inv_nonneg.2 hT), mul_left_comm,
+    ← intervalIntegral.integral_const_mul]
   gcongr
   refine (intervalIntegral.abs_integral_le_integral_abs hT).trans ?_
   refine intervalIntegral.integral_mono_on hT
     (((h₁.sub continuous_const).mul h₂).abs.intervalIntegrable _ _)
-    ((h₁.sub continuous_const).abs.intervalIntegrable _ _) fun t _ => ?_
-  rw [abs_mul]
-  exact mul_le_of_le_one_right (abs_nonneg _) (hc₂ t)
+    (continuous_const.mul (h₁.sub continuous_const).abs |>.intervalIntegrable _ _) fun t _ => ?_
+  rw [abs_mul, mul_comm C]
+  exact mul_le_mul_of_nonneg_left (hc₂ t) (abs_nonneg _)
 
 section Family
 

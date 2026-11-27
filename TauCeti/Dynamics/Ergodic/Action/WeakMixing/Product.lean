@@ -105,11 +105,12 @@ private theorem tendsto_average_inner_rectL2 [IsProbabilityMeasure μ] [IsProbab
     simp only [TauCeti.inner_indicatorConstLp_koopmanGroup ν hB hD,
       intervalIntegral.integral_ofReal, integral_indicatorConstLp] at h
     have h' := (Complex.continuous_re.tendsto _).comp h
-    simpa [Function.comp_def] using h'
+    simpa only [Function.comp_def, ← Complex.ofReal_inv, Complex.real_smul, mul_one,
+      Complex.conj_ofReal, ← Complex.ofReal_mul, Complex.ofReal_re] using h'
   have hlim := TauCeti.tendsto_average_mul_of_tendsto_average_abs_sub
     (TauCeti.continuous_measureReal_preimage_vadd_inter μ hA hC)
     (TauCeti.continuous_measureReal_preimage_vadd_inter ν hB hD)
-    (fun t => by
+    (C := 1) (fun t => by
       rw [abs_of_nonneg measureReal_nonneg]
       exact measureReal_le_one) ((isWeaklyMixing_def.1 hμ) A C hA hC) h₂
   simp_rw [inner_rectL2_koopmanGroup hA hB hC hD, intervalIntegral.integral_ofReal]
@@ -132,9 +133,9 @@ private theorem tendsto_average_inner_koopmanGroup_rectL2 [IsProbabilityMeasure 
     hU.isComplexLinear
   set K := U.fixedSubmodule hU.isComplexLinear
   suffices hLc : K.starProjection (rectL2 hA hB) =
-      Lp.const 2 (μ.prod ν) (∫ z, rectL2 (μ := μ) (ν := ν) hA hB z ∂(μ.prod ν)) by
-    convert hU.tendsto_average_inner (rectL2 hA hB) F using 2
-    rw [hLc, L2.inner_const_right, RCLike.inner_apply, mul_comm]
+      Lp.const 2 (μ.prod ν) (∫ z, rectL2 (μ := μ) (ν := ν) hA hB z ∂(μ.prod ν)) from
+    TauCeti.tendsto_average_inner_koopmanGroup_of_sub_const_mem_orthogonal
+      (hLc ▸ K.sub_starProjection_mem_orthogonal _) F
   rw [← sub_eq_zero]
   refine Lp.eq_zero_of_forall_inner_indicatorConstLp_prod _ fun C D hC hD => ?_
   have h₁ := tendsto_nhds_unique (hU.tendsto_average_inner (rectL2 hA hB) (rectL2 hC hD))
