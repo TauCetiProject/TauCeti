@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Algebra.Group.Nat.Even
+public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import TauCeti.Data.List.CommonPrefix
 public import TauCeti.Data.List.Unsplit
@@ -18,8 +19,11 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
-formal inverses and of words of constant sign, powers of a letter, compatibility of formal
-inversion with subwords, concatenation of lists of words (`FreeGroup.invRev_flatten`), generator
+formal inverses and of words of constant sign, powers of a letter, emptiness of formal inverses
+(`FreeGroup.invRev_eq_nil_iff`), compatibility of formal inversion with subwords, concatenation
+of lists of words (`FreeGroup.invRev_flatten`) and of powers of a word
+(`FreeGroup.invRev_flatten_replicate`; so a word is a power `uⁿ`, `n ≥ 2`, exactly when its
+formal inverse is), cyclic permutations (`List.IsRotated.invRev`), generator
 renaming (`FreeGroup.map_prodMap_invRev`), and factorisations splitting no occurrence of a word
 (`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
 either join, and of words `u⁻¹ v` for reduced `u` and `v` with different first letters
@@ -122,6 +126,11 @@ theorem isReduced_of_forall_snd_eq {w : List (α × Bool)} {e : Bool} (h : ∀ x
   (List.pairwise_of_forall_mem_list (r := fun a b : α × Bool ↦ a.1 = b.1 → a.2 = b.2)
     fun a ha b hb _ ↦ (h a ha).trans (h b hb).symm).isChain
 
+/-- The formal inverse of a word is empty exactly when the word is. -/
+@[simp]
+theorem invRev_eq_nil_iff {w : List (α × Bool)} : invRev w = [] ↔ w = [] := by
+  rw [← List.length_eq_zero_iff, invRev_length, List.length_eq_zero_iff]
+
 /-- The formal inverse of the concatenation of a list of words is the concatenation of their formal
 inverses in the reverse order. -/
 theorem invRev_flatten (M : List (List (α × Bool))) :
@@ -129,6 +138,29 @@ theorem invRev_flatten (M : List (List (α × Bool))) :
   induction M with
   | nil => rfl
   | cons v M ih => simp [invRev_append, ih]
+
+/-- The formal inverse of the concatenation of `n` copies of a word is the concatenation of `n`
+copies of its formal inverse. -/
+@[simp]
+theorem invRev_flatten_replicate (w : List (α × Bool)) (n : ℕ) :
+    invRev (List.replicate n w).flatten = (List.replicate n (invRev w)).flatten := by
+  simp [invRev_flatten]
+
+/-- The formal inverse of a word is a power `uⁿ` of a word `u` with `n ≥ 2` exactly when the word
+itself is such a power. -/
+@[simp]
+theorem exists_invRev_eq_flatten_replicate_iff {w : List (α × Bool)} :
+    (∃ u n, 2 ≤ n ∧ invRev w = (List.replicate n u).flatten) ↔
+      ∃ u n, 2 ≤ n ∧ w = (List.replicate n u).flatten := by
+  constructor <;> rintro ⟨u, n, hn, h⟩ <;> refine ⟨invRev u, n, hn, ?_⟩
+  · rw [← invRev_invRev (L₁ := w), h, invRev_flatten_replicate]
+  · rw [h, invRev_flatten_replicate]
+
+/-- The formal inverses of two cyclic permutations of each other are cyclic permutations of each
+other. -/
+theorem _root_.List.IsRotated.invRev {u v : List (α × Bool)} (h : u ~r v) :
+    invRev u ~r invRev v := by
+  simpa only [FreeGroup.invRev] using (h.map _).reverse
 
 /-- Renaming the generators of a formal inverse is the formal inverse of the renamed word. -/
 @[simp]

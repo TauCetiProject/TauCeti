@@ -98,7 +98,7 @@ theorem continuous_mulInvariantExpAddMonoidHom :
 the identification of `E` with left-invariant derivations. -/
 private theorem toIntSubmodule_ker_mulInvariantExpAddMonoidHom :
     (mulInvariantExpAddMonoidHom I G).ker.toIntSubmodule =
-      ZLattice.comap ℝ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
+      ZLattice.comap ℝ (lieExpLattice (I := I) (G := G))
         (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
           (G := G)).symm.toContinuousLinearEquiv.toLinearMap := by
   apply Submodule.toAddSubgroup_injective

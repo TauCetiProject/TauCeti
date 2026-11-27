@@ -20,11 +20,13 @@ matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero. A submatrix of a product can be computed through part of the inner index, provided the
-relevant rows of the left factor vanish off that part. Products of matrices respect gradings of
-their indices: the identity matrix and a product of degree-preserving matrices are
-degree-preserving, and a product of matrices intertwining square matrices intertwines them.
+relevant rows of the left factor, or the relevant columns of the right factor, vanish off that
+part. Products of matrices respect gradings of their indices: the identity matrix and a product of
+degree-preserving matrices are degree-preserving, and a product of matrices intertwining square
+matrices intertwines them.
 
 Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
+The outer product of two constant vectors is the constant matrix of their product.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
@@ -49,6 +51,8 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
   is nonempty and neither factor is zero.
 * `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
   through an injective inner reindexing whose range carries the relevant rows of the left factor.
+* `Matrix.submatrix_mul_of_injective_right`: the same when the range carries the relevant columns
+  of the right factor.
 * `Matrix.submatrix_val_mul_of_forall`: the same through the inclusions of subtypes, when the
   relevant rows of the left factor vanish off the inner subtype.
 * `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
@@ -59,6 +63,7 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
+* `Matrix.vecMulVec_const_const`: the outer product of constant vectors is a constant matrix.
 * `Matrix.transpose_mul_map_op`, `Matrix.transpose_mul_map_unop`, `Matrix.op_comp_mulVec`,
   `Matrix.transpose_map_op_map_ringHom_op`: transposing a product and passing to or from the
   opposite ring reverses the factors, intertwines `mulVec` with `vecMul`, and commutes with
@@ -75,6 +80,12 @@ public section
 open scoped Matrix
 
 namespace Matrix
+
+/-- The outer product of constant vectors is the constant matrix of their product. -/
+theorem vecMulVec_const_const {α m n : Type*} [Mul α] (a b : α) :
+    vecMulVec (fun _ : m ↦ a) (fun _ : n ↦ b) = of (fun _ _ ↦ a * b) := by
+  ext
+  simp [vecMulVec_apply]
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
@@ -131,6 +142,16 @@ theorem submatrix_mul_of_injective {l o q : Type*} [Fintype o] (A : Matrix m n K
     (A * B).submatrix e₁ e₃ = A.submatrix e₁ e₂ * B.submatrix e₂ e₃ :=
   ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
     (fun j hj ↦ by simp [not_ne_iff.mp (mt (hA i j) hj)]) fun _ ↦ rfl).symm
+
+/-- The rows `e₁` and columns `e₃` of a matrix product can be computed through the inner indices
+`e₂` alone, when `e₂` is injective and the columns `e₃` of the right factor vanish outside its
+range. This is the right-factor version of `Matrix.submatrix_mul_of_injective`. -/
+theorem submatrix_mul_of_injective_right {l o q : Type*} [Fintype o] (A : Matrix m n K)
+    (B : Matrix n p K) (e₁ : l → m) (e₂ : o → n) (e₃ : q → p) (he₂ : Function.Injective e₂)
+    (hB : ∀ j k, B j (e₃ k) ≠ 0 → j ∈ Set.range e₂) :
+    (A * B).submatrix e₁ e₃ = A.submatrix e₁ e₂ * B.submatrix e₂ e₃ :=
+  ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
+    (fun j hj ↦ by simp [not_ne_iff.mp (mt (hB j k) hj)]) fun _ ↦ rfl).symm
 
 /-- The rows satisfying `r` of a matrix product can be computed through the inner indices
 satisfying `s` alone, when the rows satisfying `r` of the left factor vanish at the inner indices

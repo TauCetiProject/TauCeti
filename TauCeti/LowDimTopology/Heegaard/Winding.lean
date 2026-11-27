@@ -52,6 +52,14 @@ the periodic domains of Maslov index zero.
 
 ## Main results
 
+* `TauCeti.exists_lt_of_winding` and `TauCeti.exists_pos_and_neg_of_winding`: the coefficients of
+  `e P` in the winding regions, for an additive map `e` into the domains of any region system.
+* `TauCeti.exists_forall_nonneg_eq_zero_of_winding`,
+  `TauCeti.exists_forall_exists_pos_and_neg_of_winding` and
+  `TauCeti.exists_forall_exists_half_lt_of_winding`: the three admissibility conditions below for
+  any subgroup `S` of `Region → ℤ` reached by `e`, and any functional `m` with `m (e P) = c P` in
+  place of the Maslov index; the versions for Heegaard triples in
+  `TauCeti.LowDimTopology.Heegaard.Triple.Winding` use them too.
 * `TauCeti.HeegaardRegionSystem.exists_forall_weaklyAdmissible_of_winding`: sufficiently wound
   diagrams are weakly admissible.
 * `TauCeti.HeegaardRegionSystem.exists_forall_weaklyAdmissibleAt_of_winding`: sufficiently wound
@@ -74,14 +82,12 @@ namespace TauCeti
 
 universe u v w
 
-namespace HeegaardRegionSystem
+variable {L ι : Type*} [AddCommGroup L]
 
-variable {L ι : Type*} [AddCommGroup L] [Finite ι]
-
-omit [Finite ι] in
-/-- A region realizing a winding multiplicity of `e P` above `t` gives a region of `e P` above
-`t`. -/
-private theorem exists_lt_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
+/-- Let `e : L →+ (Region → ℤ)` have, for each `i`, a region on which `e P` has multiplicity
+`p_i(P) + N aᵢ(P)` and a region on which it has multiplicity `q_i(P) - N aᵢ(P)`, for all `P`. If one
+of these winding multiplicities of `P` exceeds `t`, then some coefficient of `e P` exceeds `t`. -/
+theorem exists_lt_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
     {e : L →+ (Region → ℤ)} {N : ℕ}
     (hp : ∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P)
     (hq : ∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) {P : L} {t : ℝ}
@@ -93,10 +99,10 @@ private theorem exists_lt_of_winding {Region : Type*} {a p q : ι → L →+ ℤ
   · obtain ⟨r, hr⟩ := hq i
     exact ⟨r, by rwa [hr]⟩
 
-omit [Finite ι] in
-/-- If the winding estimate with `c = 0` holds for `P` and `-P`, then `e P` has a positive and a
-negative coefficient. -/
-private theorem exists_pos_and_neg_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
+/-- Let `e : L →+ (Region → ℤ)` have the winding regions of `exists_lt_of_winding`. If the winding
+estimate `AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul` with the functional `0` holds
+at `N`, then `e P` has a positive and a negative coefficient for every `P ≠ 0`. -/
+theorem exists_pos_and_neg_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
     {e : L →+ (Region → ℤ)} {N : ℕ}
     (hp : ∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P)
     (hq : ∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P)
@@ -106,6 +112,84 @@ private theorem exists_pos_and_neg_of_winding {Region : Type*} {a p q : ι → L
   obtain ⟨r, hr⟩ := exists_lt_of_winding hp hq (hest P hP)
   obtain ⟨s, hs⟩ := exists_lt_of_winding hp hq (hest (-P) (neg_ne_zero.mpr hP))
   exact ⟨⟨r, by simpa using hr⟩, ⟨s, by simpa using hs⟩⟩
+
+variable [Finite ι]
+
+/-- **Nonnegative domains vanish after winding.** Let the coordinates `aᵢ` detect the elements of
+`L`. Then there is `N₀` such that, for every `N ≥ N₀`, the only nonnegative element of a subgroup
+`S` of domains is `0`, as soon as an additive map `e : L →+ (Region → ℤ)` reaches all of `S` and,
+for each `i`, there are regions on which `e P` has multiplicities `p_i(P) + N aᵢ(P)` and
+`q_i(P) - N aᵢ(P)`. This is weak admissibility by winding, for diagrams and for triples. -/
+theorem exists_forall_nonneg_eq_zero_of_winding {a : ι → L →+ ℤ}
+    (ha : ∀ P, (∀ i, a i P = 0) → P = 0) (p q : ι → L →+ ℤ) :
+    ∃ N₀ : ℕ, ∀ N : ℕ, N₀ ≤ N → ∀ {Region : Type v} (S : AddSubgroup (Region → ℤ))
+      (e : L →+ (Region → ℤ)), (∀ D ∈ S, ∃ P, e P = D) →
+      (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
+      (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → ∀ D ∈ S, 0 ≤ D → D = 0 := by
+  obtain ⟨N₀, hN₀⟩ :=
+    AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q (0 : L →+ ℝ)
+  refine ⟨N₀, fun N hN Region S e he hp hq D hD hD₀ => ?_⟩
+  obtain ⟨P, rfl⟩ := he D hD
+  by_contra hne
+  obtain ⟨-, r, hr⟩ := exists_pos_and_neg_of_winding (P := P) hp hq (hN₀ N hN)
+    (by rintro rfl; exact hne (map_zero e))
+  exact (hD₀ r).not_gt hr
+
+/-- **Domains of index zero have coefficients of both signs after winding.** Let `c : L →+ ℚ` and
+let the coordinates `aᵢ` detect the elements of `L` with `c P = 0`. Then there is `N₀` such that,
+for every `N ≥ N₀`, every nonzero element `D` of a subgroup `S` of domains with `m D = 0` has a
+positive and a negative coefficient, as soon as an additive map `e : L →+ (Region → ℤ)` reaches
+all of `S`, `m (e P) = c P`, and, for each `i`, there are regions on which `e P` has multiplicities
+`p_i(P) + N aᵢ(P)` and `q_i(P) - N aᵢ(P)`. This is weak admissibility at a generator or a
+triangle domain by winding, for `m` the Maslov index. -/
+theorem exists_forall_exists_pos_and_neg_of_winding (c : L →+ ℚ) {a : ι → L →+ ℤ}
+    (ha : ∀ P, c P = 0 → (∀ i, a i P = 0) → P = 0) (p q : ι → L →+ ℤ) :
+    ∃ N₀ : ℕ, ∀ N : ℕ, N₀ ≤ N → ∀ {Region : Type v} (S : AddSubgroup (Region → ℤ))
+      (m : (Region → ℤ) → ℚ) (e : L →+ (Region → ℤ)), (∀ D ∈ S, ∃ P, e P = D) →
+      (∀ P, m (e P) = c P) →
+      (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
+      (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) →
+      ∀ D ∈ S, m D = 0 → D ≠ 0 → (∃ r, 0 < D r) ∧ ∃ r, D r < 0 := by
+  -- Apply the estimate on the lattice `ker c` of elements of Maslov index zero.
+  let incl := c.ker.subtype
+  obtain ⟨N₀, hN₀⟩ := AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul
+    (a := fun i => (a i).comp incl)
+    (fun P hP => Subtype.ext (ha P P.property (by simpa [incl] using hP)))
+    (fun i => (p i).comp incl) (fun i => (q i).comp incl)
+    (0 : c.ker →+ ℝ)
+  refine ⟨N₀, fun N hN Region S m e he hc hp hq D hD hD0 hD₀ => ?_⟩
+  obtain ⟨P, rfl⟩ := he D hD
+  have hP : P ∈ c.ker := by rw [AddMonoidHom.mem_ker, ← hc]; exact hD0
+  exact exists_pos_and_neg_of_winding (e := e.comp incl) (P := ⟨P, hP⟩)
+    (fun i => (hp i).imp fun _ hr P => by simpa [incl] using hr P)
+    (fun i => (hq i).imp fun _ hr P => by simpa [incl] using hr P)
+    (hN₀ N hN) fun h => hD₀ (by rw [(AddSubgroup.mk_eq_zero _).mp h, map_zero])
+
+/-- **Large coefficients after winding.** Let `c : L →+ ℚ` and let the coordinates `aᵢ` detect the
+elements of `L`. Then there is `N₀` such that, for every `N ≥ N₀`, every nonzero element `D` of a
+subgroup `S` of domains has a coefficient larger than `m D / 2`, as soon as an additive map
+`e : L →+ (Region → ℤ)` reaches all of `S`, `m (e P) = c P`, and, for each `i`, there are regions on
+which `e P` has multiplicities `p_i(P) + N aᵢ(P)` and `q_i(P) - N aᵢ(P)`. This is strong
+admissibility by winding, for `m` the Maslov index. -/
+theorem exists_forall_exists_half_lt_of_winding (c : L →+ ℚ) {a : ι → L →+ ℤ}
+    (ha : ∀ P, (∀ i, a i P = 0) → P = 0) (p q : ι → L →+ ℤ) :
+    ∃ N₀ : ℕ, ∀ N : ℕ, N₀ ≤ N → ∀ {Region : Type v} (S : AddSubgroup (Region → ℤ))
+      (m : (Region → ℤ) → ℚ) (e : L →+ (Region → ℤ)), (∀ D ∈ S, ∃ P, e P = D) →
+      (∀ P, m (e P) = c P) →
+      (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
+      (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) →
+      ∀ D ∈ S, D ≠ 0 → ∃ r, m D / 2 < D r := by
+  obtain ⟨N₀, hN₀⟩ := AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q
+    ((Rat.castHom ℝ).toAddMonoidHom.comp ((AddMonoidHom.mulLeft (2⁻¹ : ℚ)).comp c))
+  refine ⟨N₀, fun N hN Region S m e he hc hp hq D hD hD₀ => ?_⟩
+  obtain ⟨P, rfl⟩ := he D hD
+  have hP : P ≠ 0 := by rintro rfl; exact hD₀ (map_zero e)
+  obtain ⟨r, hr⟩ := exists_lt_of_winding hp hq (hN₀ N hN P hP)
+  refine ⟨r, ?_⟩
+  rw [hc, div_eq_inv_mul, ← Rat.cast_lt (K := ℝ)]
+  simpa using hr
+
+namespace HeegaardRegionSystem
 
 /-- **Weak admissibility by winding.** Let the coordinates `aᵢ` detect the elements of `L`.
 Then there is `N₀` such that, for every `N ≥ N₀`, a region system is weakly admissible as soon
@@ -118,15 +202,9 @@ theorem exists_forall_weaklyAdmissible_of_winding {a : ι → L →+ ℤ}
       (e : L →+ (Region → ℤ)), (∀ D ∈ H.periodicDomains, ∃ P, e P = D) →
       (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
       (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → H.WeaklyAdmissible := by
-  obtain ⟨N₀, hN₀⟩ :=
-    AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q (0 : L →+ ℝ)
-  refine ⟨N₀, fun N hN n Point Region Basepoint H e he hp hq =>
-    weaklyAdmissible_iff.mpr fun D hD hD₀ => ?_⟩
-  obtain ⟨P, rfl⟩ := he D hD
-  by_contra hne
-  obtain ⟨-, r, hr⟩ := exists_pos_and_neg_of_winding (P := P) hp hq (hN₀ N hN)
-    (by rintro rfl; exact hne (map_zero e))
-  exact (hD₀ r).not_gt hr
+  obtain ⟨N₀, hN₀⟩ := exists_forall_nonneg_eq_zero_of_winding ha p q
+  exact ⟨N₀, fun N hN n Point Region Basepoint H e he hp hq =>
+    weaklyAdmissible_iff.mpr (hN₀ N hN H.periodicDomains e he hp hq)⟩
 
 /-- **Weak admissibility at a generator by winding.** Let `c : L →+ ℚ` give the Maslov indices
 of the transported periodic domains at a generator `x`, and let the coordinates `aᵢ` detect the
@@ -143,21 +221,9 @@ theorem exists_forall_weaklyAdmissibleAt_of_winding (c : L →+ ℚ) {a : ι →
       (∀ P, H.maslovIndex χ x x (e P) = c P) →
       (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
       (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → H.WeaklyAdmissibleAt χ x := by
-  -- Apply the estimate on the lattice `ker c` of elements of Maslov index zero.
-  let incl := c.ker.subtype
-  obtain ⟨N₀, hN₀⟩ := AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul
-    (a := fun i => (a i).comp incl)
-    (fun P hP => Subtype.ext (ha P P.property (by simpa [incl] using hP)))
-    (fun i => (p i).comp incl) (fun i => (q i).comp incl)
-    (0 : c.ker →+ ℝ)
-  refine ⟨N₀, fun N hN n Point Region Basepoint _ _ _ H χ x e he hc hp hq =>
-    weaklyAdmissibleAt_def.mpr fun D hD hD0 hD₀ => ?_⟩
-  obtain ⟨P, rfl⟩ := he D hD
-  have hP : P ∈ c.ker := by rw [AddMonoidHom.mem_ker, ← hc]; exact hD0
-  exact exists_pos_and_neg_of_winding (e := e.comp incl) (P := ⟨P, hP⟩)
-    (fun i => (hp i).imp fun _ hr P => by simpa [incl] using hr P)
-    (fun i => (hq i).imp fun _ hr P => by simpa [incl] using hr P)
-    (hN₀ N hN) fun h => hD₀ (by rw [(AddSubgroup.mk_eq_zero _).mp h, map_zero])
+  obtain ⟨N₀, hN₀⟩ := exists_forall_exists_pos_and_neg_of_winding c ha p q
+  exact ⟨N₀, fun N hN n Point Region Basepoint _ _ _ H χ x e he hc hp hq =>
+    weaklyAdmissibleAt_def.mpr (hN₀ N hN H.periodicDomains _ e he hc hp hq)⟩
 
 /-- **Strong admissibility by winding.** Let `c : L →+ ℚ` give the Maslov indices of the
 transported periodic domains at a generator `x`, and let the coordinates `aᵢ` detect the
@@ -174,16 +240,10 @@ theorem exists_forall_stronglyAdmissible_of_winding (c : L →+ ℚ) {a : ι →
       (∀ P, H.maslovIndex χ x x (e P) = c P) →
       (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
       (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → H.StronglyAdmissible χ x := by
-  obtain ⟨N₀, hN₀⟩ := AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q
-    ((Rat.castHom ℝ).toAddMonoidHom.comp ((AddMonoidHom.mulLeft (2⁻¹ : ℚ)).comp c))
-  refine ⟨N₀, fun N hN n Point Region Basepoint _ _ _ H χ x e he hc hp hq =>
-    stronglyAdmissible_iff.mpr fun D hD hD₀ _ => ?_⟩
-  obtain ⟨P, rfl⟩ := he D hD
-  have hP : P ≠ 0 := by rintro rfl; exact hD₀ (map_zero e)
-  obtain ⟨r, hr⟩ := exists_lt_of_winding hp hq (hN₀ N hN P hP)
-  refine ⟨r, ?_⟩
-  rw [hc, div_eq_inv_mul, ← Rat.cast_lt (K := ℝ)]
-  simpa using hr
+  obtain ⟨N₀, hN₀⟩ := exists_forall_exists_half_lt_of_winding c ha p q
+  exact ⟨N₀, fun N hN n Point Region Basepoint _ _ _ H χ x e he hc hp hq =>
+    stronglyAdmissible_iff.mpr fun D hD hD₀ _ =>
+      hN₀ N hN H.periodicDomains _ e he hc hp hq D hD hD₀⟩
 
 end HeegaardRegionSystem
 

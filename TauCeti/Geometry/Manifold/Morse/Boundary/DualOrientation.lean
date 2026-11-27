@@ -41,8 +41,11 @@ of `-f` in degree `k` with the integral cochains of `f` in degree `n - k`. This 
 form, on an oriented manifold, of the comparison of boundary maps that underlies the Morse-theoretic
 proof of Poincaré duality; its mod-two form is
 `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.toDual_comp_morseBoundary_neg`. The results here are
-identities of boundary maps only: the integral relation `∂ ∘ ∂ = 0`, needed to speak of an integral
-Morse complex and its homology, is not proved here.
+identities of boundary maps only. In particular the coefficients of `∂ ∘ ∂` for `-f` are those of
+`∂ ∘ ∂` for `f`, transposed and negated (in the namespace `TauCeti.IsAdaptedPseudoGradient`,
+`IsMorseSmale.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply`), so the relation
+`∂ ∘ ∂ = 0` holds for `-f` exactly when it holds for `f`; the integral relation `∂ ∘ ∂ = 0`
+itself, needed to speak of an integral Morse complex and its homology, is not proved here.
 
 ## Main definitions
 
@@ -57,6 +60,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   of `f`, transposed, times `(-1) ^ ind_f p`.
 * `IsMorseSmale.toDual_comp_signedMorseBoundary_dual`: the boundary of `-f` is the signed dual
   map of the boundary of `f`.
+* `IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_iff`: the Morse
+  boundary of `-f` squares to zero exactly when that of `f` does.
 
 ## References
 
@@ -175,6 +180,55 @@ theorem IsMorseSmale.signedMorseBoundary_dual_single_apply (hMS : hX.IsMorseSmal
     hMS.signedMorseBoundaryCoeff_dual 𝔬 hf oM]
   push_cast
   rw [← mul_assoc, ← mul_assoc, ((Commute.neg_one_right a).pow_right _).eq]
+
+/-- **`∂ ∘ ∂` for the opposite function.** For the dual orientation data, the coefficient of `p` in
+the boundary of the boundary of `r` for `-f` is minus the coefficient of `r` in the boundary of the
+boundary of `p` for `f`. Each intermediate critical point `q` contributes the product of the signs
+`(-1) ^ ind_f q` and `(-1) ^ ind_f p`, which is `-1` since `ind_f p = ind_f q + 1`. -/
+theorem IsMorseSmale.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply
+    (hMS : hX.IsMorseSmale) (r p : criticalPoints 𝓘(ℝ, E) (-f)) :
+    (hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R
+        ((hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R (Finsupp.single r 1)) p =
+      -hX.signedMorseBoundary 𝔬 hf R
+        (hX.signedMorseBoundary 𝔬 hf R (Finsupp.single (Set.equivOfEq criticalPoints_neg p) 1))
+          (Set.equivOfEq criticalPoints_neg r) := by
+  have := hf.finite_criticalPoints.to_subtype
+  have := hf.neg.finite_criticalPoints.to_subtype
+  have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f)
+  have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) (-f))
+  rw [signedMorseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
+    signedMorseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
+  simp_rw [signedMorseBoundary_single_apply, one_mul, hMS.signedMorseBoundaryCoeff_dual 𝔬 hf oM,
+    ← Int.cast_mul, ← Int.cast_sum, ← Int.cast_neg, ← Finset.sum_neg_distrib]
+  congr 1
+  -- Reindex by the critical points of `f`, and compare the summands at each `q`.
+  refine Fintype.sum_equiv (Set.equivOfEq criticalPoints_neg) _ _ fun q ↦ ?_
+  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
+  · simp only [Set.equivOfEq_apply, hpq, pow_succ]
+    rcases neg_one_pow_eq_or ℤ (manifoldMorseIndex 𝓘(ℝ, E) f q) with h | h <;> rw [h] <;> ring
+  · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one (p := Set.equivOfEq _ p)
+      (q := Set.equivOfEq _ q) (by simpa using hpq)]
+    simp
+
+/-- **`∂² = 0` for `-f` exactly when `∂² = 0` for `f`.** For the dual orientation data, the Morse
+boundary of `-f` with coefficients in a ring `R` squares to zero exactly when the Morse boundary of
+`f` with coefficients in `R` does. In particular, the integral Morse complex of `-f` is defined
+whenever that of `f` is. -/
+theorem IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_iff
+    (hMS : hX.IsMorseSmale) :
+    (hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R ∘ₗ
+        (hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R = 0 ↔
+      hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 := by
+  -- Compare the two maps on the basis: by the transposition identity, the coefficient of `p` in
+  -- `∂∂r` for `-f` is minus the coefficient of `r` in `∂∂p` for `f`.
+  refine ⟨fun h ↦ Finsupp.basisSingleOne.ext fun p ↦ Finsupp.ext fun r ↦ ?_,
+    fun h ↦ Finsupp.basisSingleOne.ext fun r ↦ Finsupp.ext fun p ↦ ?_⟩
+  · simpa [hMS.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply 𝔬 hf oM] using
+      congr($h (Finsupp.single ((Set.equivOfEq criticalPoints_neg).symm r) 1)
+        ((Set.equivOfEq criticalPoints_neg).symm p))
+  · simpa [hMS.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply 𝔬 hf oM] using
+      congr($h (Finsupp.single (Set.equivOfEq criticalPoints_neg p) 1)
+        (Set.equivOfEq criticalPoints_neg r))
 
 end Ring
 

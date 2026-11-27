@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 public import TauCeti.Algebra.Algebra.StrictPositivity
 
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 
 /-!
 # The polar decomposition of an invertible element
@@ -52,7 +53,11 @@ abstract algebra, where invertibility makes the factor an element of the unitary
   `Units.mul_eq_iff_polarUnitary_eq_and_sqrt_star_mul_eq`: uniqueness of both factorizations;
   `Units.sqrt_star_mul_eq`: the two positive factors are conjugate by the unitary factor.
 * `Units.polarUnitary_unitary_mul_mul_unitary`, `Units.sqrt_unitary_mul_mul_unitary`: unitary
-  equivariance.
+  equivariance; `Units.polarUnitary_neg`: the unitary factor is odd.
+* `Units.coe_polarUnitary_map`: naturality of the unitary factor for unital star ring
+  homomorphisms.
+* `Units.polarUnitary_mul_eq_mul_polarUnitary`: the unitary factor intertwines any two
+  self-adjoint elements that `a` intertwines.
 
 ## References
 
@@ -272,6 +277,12 @@ theorem polarUnitary_unitary_mul_mul_unitary (v w : unitary A) :
     (star_right_conjugate_nonneg (CFC.sqrt_nonneg ((a : A) * star (a : A))) (v : A))
     (unitary_mul_mul_unitary_eq a v w)
 
+/-- The unitary factor is odd: the unitary factor of `-a = √(a a⋆) (-u)` is `-u`. -/
+@[simp]
+theorem polarUnitary_neg : (-a).polarUnitary = -a.polarUnitary :=
+  polarUnitary_eq_of_mul_eq _ (CFC.sqrt_nonneg ((a : A) * star (a : A))) <| by
+    rw [Unitary.coe_neg, mul_neg, sqrt_mul_star_mul_polarUnitary, Units.val_neg]
+
 /-- **Unitary equivariance of the positive factor.** For unitaries `v` and `w`, the positive
 factor of `v a w` is the conjugate `v √(a a⋆) v⋆`. -/
 theorem sqrt_unitary_mul_mul_unitary (v w : unitary A) :
@@ -281,5 +292,38 @@ theorem sqrt_unitary_mul_mul_unitary (v w : unitary A) :
   sqrt_mul_star_eq_of_mul_eq _
     (star_right_conjugate_nonneg (CFC.sqrt_nonneg ((a : A) * star (a : A))) (v : A))
     (unitary_mul_mul_unitary_eq a v w)
+
+
+/-- **Naturality of the unitary factor**: a unital star ring homomorphism sends the unitary factor
+of `a` to the unitary factor of the image of `a`. -/
+theorem coe_polarUnitary_map {B : Type*} [PartialOrder B] [Ring B] [StarRing B]
+    [StarOrderedRing B] [TopologicalSpace B] [Algebra ℝ B]
+    [ContinuousFunctionalCalculus ℝ B IsSelfAdjoint] [NonnegSpectrumClass ℝ B]
+    [IsSemitopologicalRing B] [T2Space B] {F : Type*} [FunLike F A B] [RingHomClass F A B]
+    [StarHomClass F A B] (φ : F) :
+    ((Units.map (φ : A →* B) a).polarUnitary : B) = φ (a.polarUnitary : A) :=
+  congrArg Subtype.val (polarUnitary_eq_of_mul_eq (v := ⟨_, Unitary.map_mem φ a.polarUnitary.prop⟩)
+    _ (map_nonneg φ (CFC.sqrt_nonneg ((a : A) * star (a : A))))
+    (by simp [← map_mul, sqrt_mul_star_mul_polarUnitary]))
+
+/-- **The unitary factor intertwines what `a` intertwines.** If `a x = y a` for self-adjoint `x`
+and `y`, then also `u x = y u` for the unitary factor `u = a.polarUnitary`. In particular, if `a`
+conjugates a projection `p` to a projection `q`, then so does the unitary `u`. -/
+theorem polarUnitary_mul_eq_mul_polarUnitary {x y : A}
+    (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) (h : (a : A) * x = y * a) :
+    (a.polarUnitary : A) * x = y * a.polarUnitary := by
+  -- `y` commutes with `a a⋆`, hence with its square root and the inverse of that square root.
+  have h' : x * star (a : A) = star (a : A) * y := by
+    simpa only [star_mul, hx.star_eq, hy.star_eq] using congrArg star h
+  have hc : Commute ((a : A) * star (a : A)) y := by
+    rw [Commute, SemiconjBy, mul_assoc, ← h', ← mul_assoc, h, mul_assoc]
+  obtain ⟨s, hs⟩ := (isStrictlyPositive_sqrt_mul_star a).isUnit
+  have hinv : Commute (CFC.sqrt ((a : A) * star (a : A)))⁻¹ʳ y := by
+    rw [← hs, inverse_unit]
+    have hsq : Commute (CFC.sqrt ((a : A) * star (a : A))) y := by
+      rw [CFC.sqrt_eq_cfc, cfc_nnreal_eq_real _ _ (mul_star_self_nonneg _)]
+      exact (IsSelfAdjoint.mul_star_self (a : A)).commute_cfc hc _
+    exact (hs ▸ hsq).units_inv_left
+  rw [coe_polarUnitary, mul_assoc, h, ← mul_assoc, hinv.eq, mul_assoc]
 
 end Units

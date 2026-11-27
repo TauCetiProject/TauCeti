@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
 public import TauCeti.NumberTheory.RamificationInertia.HilbertTheory.IntermediateRing
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Data.Multiset.Fintype
-import TauCeti.GroupTheory.GroupAction.Orbit.Quotient
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!

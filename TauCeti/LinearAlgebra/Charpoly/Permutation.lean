@@ -46,6 +46,8 @@ characteristic polynomial recovers the full cycle type of the permutation.
   same characteristic polynomial iff the permutations have the same full cycle type.
 * `Matrix.charpoly_permMatrixHom`, `Matrix.charpoly_permMatrixHom_finRotate`: the characteristic
   polynomial of a permutation matrix `Matrix.permMatrixHom π` and of cyclic rotation `finRotate m`.
+* `Matrix.charpolyRev_permMatrixHom`: `det (1 - X P)` for the permutation matrix
+  `P = Matrix.permMatrixHom π` is `∏ (1 - X ^ d)` over the full cycle type of `π`.
 -/
 
 public section
@@ -195,6 +197,15 @@ theorem charpoly_permMatrixHom {R α : Type*} [CommRing R] [Fintype α] [Decidab
       (π.fullCycleType.map fun d ↦ X ^ d - 1).prod := by
   rw [← LinearMap.toMatrix_basisSingleOne_lmapDomain, LinearMap.charpoly_toMatrix,
     Equiv.Perm.charpoly_lmapDomain]
+
+/-- The reversed characteristic polynomial `det (1 - X P)` of the permutation matrix
+`P = Matrix.permMatrixHom π` is `∏ (1 - X ^ d)` over the full cycle type of `π`. -/
+theorem charpolyRev_permMatrixHom {R α : Type*} [CommRing R] [Fintype α] [DecidableEq α]
+    (π : Equiv.Perm α) :
+    (permMatrixHom (R := R) π).charpolyRev =
+      (π.fullCycleType.map fun d ↦ 1 - X ^ d).prod := by
+  rw [← reverse_charpoly, ← LinearMap.toMatrix_basisSingleOne_lmapDomain,
+    LinearMap.charpoly_toMatrix, Equiv.Perm.reverse_charpoly_lmapDomain]
 
 /-- The characteristic polynomial of the cyclic-rotation matrix `Matrix.permMatrixHom (finRotate m)`
 (`m ≠ 0`) is `X ^ m - 1`. -/

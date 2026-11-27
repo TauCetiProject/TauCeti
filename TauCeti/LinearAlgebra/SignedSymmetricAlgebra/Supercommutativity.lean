@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Perm.KoszulSign
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Basic
 import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Generators
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Permutation
 
 /-!
 # Supercommutativity of the signed symmetric algebra
@@ -24,7 +26,10 @@ identities to elements of pure parity across multiple integer degrees: even-pari
 the center of `SignedSym G` over any commutative ring, and every element of odd parity has square
 zero when `2` is invertible in the coefficient ring. These identities allow the signed symmetric
 algebra to serve as a receiving supercommutative algebra in universal properties and tensor
-comparisons, for both integer and parity (`ZMod 2`) gradings.
+comparisons, for both integer and parity (`ZMod 2`) gradings. Permuting the factors of a product
+of homogeneous elements multiplies it by the Koszul sign `Equiv.Perm.koszulSign` of their degrees
+(`TauCeti.SignedSym.list_prod_ofFn_comp_perm`), or of their parities for factors of pure parity
+(`TauCeti.SignedSym.list_prod_ofFn_comp_perm_of_mem_parityGrading`).
 
 The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous` from
 `TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Generators`.
@@ -121,6 +126,14 @@ theorem sq_eq_zero_of_mem_one [Invertible (2 : R)] {a : SignedSym G}
     (ha : a ∈ signedSymPiece G 1) : a ^ 2 = 0 :=
   sq_eq_zero G ha (uzpow_one (-1))
 
+/-- Listing homogeneous elements `a i` of degrees `d i` in the order of a permutation `σ` multiplies
+their product by the Koszul sign `σ.koszulSign d`. In particular this reorders monomials in the
+generators. -/
+theorem list_prod_ofFn_comp_perm {n : ℕ} {d : Fin n → ι} {a : Fin n → SignedSym G}
+    (ha : ∀ i, a i ∈ signedSymPiece G (d i)) (σ : Equiv.Perm (Fin n)) :
+    (List.ofFn (a ∘ σ)).prod = σ.koszulSign d • (List.ofFn a).prod :=
+  list_prod_ofFn_comp_perm_of_mul_eq_uzpow_smul_mul (mul_eq_uzpow_smul_mul G) ha σ
+
 end General
 
 section Int
@@ -133,6 +146,16 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedS
     (ha : a ∈ parityGrading (signedSymPiece G) i) (hb : b ∈ parityGrading (signedSymPiece G) j) :
     a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) :=
   TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading (mul_eq_uzpow_smul_mul G) ha hb
+
+/-- Listing elements `a i` of pure parities `d i` in the order of a permutation `σ` multiplies
+their product by the Koszul sign `σ.koszulSign d` of the parities, even when the factors combine
+multiple integer degrees. -/
+theorem list_prod_ofFn_comp_perm_of_mem_parityGrading {n : ℕ} {d : Fin n → ZMod 2}
+    {a : Fin n → SignedSym G} (ha : ∀ i, a i ∈ parityGrading (signedSymPiece G) (d i))
+    (σ : Equiv.Perm (Fin n)) :
+    (List.ofFn (a ∘ σ)).prod = σ.koszulSign d • (List.ofFn a).prod :=
+  list_prod_ofFn_comp_perm_of_mul_eq_uzpow_smul_mul
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha σ
 
 /-- Every element of even parity commutes with all of `SignedSym G`. -/
 theorem commute_of_mem_parityGrading_zero {a : SignedSym G}

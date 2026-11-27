@@ -152,3 +152,29 @@ lemma sectionsIsoCechZero_hom_naturality {G : Sheaf (Opens.grothendieckTopology 
 end GlobalSections
 
 end TauCeti.Topology
+
+namespace TauCeti.Topology.PointOpenCover
+
+universe u₁ a₁ b₁
+
+open CategoryTheory Limits TopologicalSpace Opposite TauCeti.CategoryTheory
+
+variable {X : TopCat.{u₁}} {A : Type a₁} [Category.{b₁} A] [Preadditive A]
+  [HasProducts.{u₁} A] [CategoryWithHomology A]
+  [HasColimitsOfShape (PointOpenCover X) A]
+
+/-- Equality transport of the actual cover complex preserves its native colimit class. -/
+@[reassoc]
+theorem homologyMap_eqToIso_comp_cechCohomologyι (U V : PointOpenCover X) (q : U = V)
+    (P : (Opens X)ᵒᵖ ⥤ A) (n : ℕ) :
+    HomologicalComplex.homologyMap
+        ((eqToIso (congrArg (fun W : PointOpenCover X ↦
+          cechComplexFunctor.{u₁} (A := A) W.opens) q)).hom.app P) n ≫
+        (cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ hf ↦ hf) n V).app P =
+      (cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ hf ↦ hf) n U).app P := by
+  subst V
+  simp only [eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
+    HomologicalComplex.homologyMap_id]
+  exact Category.id_comp _
+
+end TauCeti.Topology.PointOpenCover

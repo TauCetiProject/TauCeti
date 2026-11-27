@@ -45,6 +45,13 @@ to a linear symplectic form on each contact hyperplane `ker α_x`
 (`TauCeti.isContactDistribution_standardContactDistribution`, in
 `TauCeti.Geometry.Contact.Standard`).
 
+Being a contact structure is local and invariant under local diffeomorphisms: the pullback of a
+contact structure along a local diffeomorphism is a contact structure
+(`TauCeti.IsContactDistribution.comap_mfderiv_of_isLocalDiffeomorph`), and a hyperplane field whose
+pullback along a surjective local diffeomorphism is a contact structure is one itself
+(`TauCeti.IsContactDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`). The second statement
+builds contact structures on quotients, such as those which are the kernel of no global one-form.
+
 The Levi form of a contact structure is a nondegenerate alternating form with values in a line, so
 the contact hyperplanes have even dimension and `M` has odd dimension `2 m + 1`
 (`TauCeti.IsContactDistribution.odd_finrank`). In dimension at least three a contact structure is
@@ -68,6 +75,10 @@ has no integral hypersurfaces.
   contact structure exactly when it is locally the kernel of one-forms that are contact.
 * `TauCeti.IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq`: a smooth
   one-form whose kernel is a contact structure near a point is a contact form at that point.
+* `TauCeti.IsContactDistribution.comap_mfderiv_of_isLocalDiffeomorph`,
+  `TauCeti.IsContactDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`,
+  `TauCeti.isContactDistribution_comap_mfderiv_iff_of_surjective`: contact structures pull back
+  along local diffeomorphisms and descend along surjective ones.
 * `TauCeti.SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution`: a smooth one-form
   is a contact form exactly when its kernel is a contact structure.
 * `TauCeti.IsContactDistribution.even_finrank` and `TauCeti.IsContactDistribution.odd_finrank`:
@@ -115,6 +126,11 @@ structure IsContactDistribution [FiniteDimensional ℝ E]
 namespace IsContactDistribution
 
 variable [FiniteDimensional ℝ E]
+
+/-- A contact structure of class `C^n` is a contact structure of every lower class `C^m`. -/
+theorem of_le {m : ℕ∞ω} (hD : IsContactDistribution I n D) (hmn : m ≤ n) :
+    IsContactDistribution I m D :=
+  ⟨hD.isContMDiffDistribution.of_le hmn, hD.ne_top, hD.bijective_distributionLeviForm⟩
 
 /-- A contact distribution is a hyperplane field: its rank is one less than the dimension of `M`. -/
 theorem finrank_add_one (hD : IsContactDistribution I n D) (x : M) :
@@ -196,32 +212,33 @@ theorem IsContactDistribution.exists_isContactFormAt [IsManifold I (n + 1) M]
       (zero_lt_one.trans_le hn).ne') ?_).2 ⟨(hαD y hy).1, hD.bijective_distributionLeviForm y⟩
   exact eventually_of_mem (hU.mem_nhds hy) fun z hz ↦ (hαD z hz).2
 
+/-- **A smooth one-form defining a contact structure near a point is a contact form there.** If
+the kernel of a smooth one-form `α` is the `C^n` contact structure `D` near `x`, with `1 ≤ n`, then
+`α` is a contact form at `x`. -/
+theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
+    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) {α : SmoothForm I M ℝ 1} {x : M}
+    (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) : IsContactFormAt α.val x := by
+  obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution x
+  refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
+    (hV.mem_nhds hxV) (α.mdifferentiableAt x)
+    (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
+    ⟨?_, hD.bijective_distributionLeviForm x⟩
+  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
+  exact hD.ne_top x
+
 /-- **A contact structure is defined near each point by a global contact form there.** Every point
 `x` has an open neighbourhood `W` and a smooth one-form `α` on all of `M` such that, at every point
-of `W`, the kernel of `α` is the contact hyperplane and `α` is a contact form. The form is a local
-defining form cut off by a smooth bump function. -/
+of `W`, the kernel of `α` is the contact hyperplane and `α` is a contact form. -/
 theorem IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt [IsManifold I ∞ M]
     [T2Space M] (hD : IsContactDistribution I ∞ D) (x : M) :
     ∃ W : Set M, IsOpen W ∧ x ∈ W ∧ ∃ α : SmoothForm I M ℝ 1,
       ∀ y ∈ W, RoughForm.ker α.val y = D y ∧ IsContactFormAt α.val y := by
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  obtain ⟨U, hU, hxU, α, hα, hαξ⟩ := hD.exists_isContactFormAt (by simp) x
-  obtain ⟨f, -, hfU⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1
-    (hU.mem_nhds hxU)
-  obtain ⟨V, hVf, hV, hxV⟩ := mem_nhds_iff.1 f.eventuallyEq_one
-  have hψ : IsSmoothForm I ∞ (fun y ↦ f y • α y : RoughForm I M ℝ 1) := by
-    rw [isSmoothForm_def]
-    exact f.contMDiff.contMDiffOn.smul_section_of_tsupport hU hfU hα
-  refine ⟨V ∩ U, hV.inter hU, ⟨hxV, hxU⟩, ⟨_, hψ.mem_smoothBundleForms⟩, fun y hy ↦ ?_⟩
-  -- On the open set `V`, where `f = 1`, the cut-off form is the local defining form.
-  have hev : ∀ᶠ z in 𝓝 y, f z • α z = α z := by
-    filter_upwards [hV.mem_nhds hy.1] with z hz
-    rw [show f z = 1 from hVf hz, one_smul]
-  have hval : f y • α y = α y := hev.self_of_nhds
-  refine ⟨?_, (isContactFormAt_congr hval fun v _ w _ ↦ ?_).2 (hαξ y hy.2).2⟩
-  · ext v
-    simp only [RoughForm.mem_ker, hval, ← (hαξ y hy.2).1]
-  · exact congrArg (fun A ↦ A ![v, w]) (mextDeriv_congr_of_eventuallyEq hev)
+  obtain ⟨W, hW, hxW, α, hα, hαD⟩ := hD.isContMDiffDistribution.exists_isSmoothForm_ker_eq
+    (hD.isContMDiffDistribution.finrank_eq x ▸ hD.finrank_add_one x) x
+  refine ⟨W, hW, hxW, ⟨α, hα.mem_smoothBundleForms⟩, fun y hy ↦ ⟨(hαD y hy).2, ?_⟩⟩
+  exact hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp)
+    (eventually_of_mem (hW.mem_nhds hy) fun z hz ↦
+      (SmoothForm.kerDistribution_eq_ker _ z).trans (hαD z hz).2)
 
 /-- **Contact structures are the hyperplane fields locally defined by contact forms.** A `C^n`
 distribution `D` of rank `dim E - 1`, with `1 ≤ n`, is a contact structure exactly when near every
@@ -246,19 +263,67 @@ theorem isContactDistribution_iff_forall_exists_isContactFormAt [IsManifold I (n
     exact ((RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
       (hV.mem_nhds hxV) hαd hαD).1 hα).2
 
-/-- **A smooth one-form defining a contact structure near a point is a contact form there.** If
-the kernel of a smooth one-form `α` is the `C^n` contact structure `D` near `x`, with `1 ≤ n`, then
-`α` is a contact form at `x`. -/
-theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
-    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) {α : SmoothForm I M ℝ 1} {x : M}
-    (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) : IsContactFormAt α.val x := by
-  obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution x
-  refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
-    (hV.mem_nhds hxV) (α.mdifferentiableAt x)
-    (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
-    ⟨?_, hD.bijective_distributionLeviForm x⟩
-  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
-  exact hD.ne_top x
+/-! ### Pullback and descent along local diffeomorphisms -/
+
+section LocalDiffeomorph
+
+variable {F H' N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J 2 N] {D' : Π y : N, Submodule ℝ (TangentSpace J y)} {f : M → N} {m : ℕ∞ω}
+
+/-- **Contact structures pull back along local diffeomorphisms.** The pullback
+`x ↦ (df_x)⁻¹ (D' (f x))` of a `C^n` contact structure `D'` along a `C^m` local diffeomorphism `f`,
+with `1 ≤ n` and `n + 1 ≤ m`, is a `C^n` contact structure. -/
+theorem IsContactDistribution.comap_mfderiv_of_isLocalDiffeomorph
+    (hD' : IsContactDistribution J n D') (hn : 1 ≤ n) (hf : IsLocalDiffeomorph I J m f)
+    (hnm : n + 1 ≤ m) :
+    IsContactDistribution I n (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap) := by
+  have hm : 2 ≤ m := le_trans (by rw [← one_add_one_eq_two]; exact add_le_add hn le_rfl) hnm
+  have hm0 : m ≠ 0 := (zero_lt_two.trans_le hm).ne'
+  refine ⟨?_, fun x ↦ ?_, fun x ↦ ?_⟩
+  · rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+    · exact isContMDiffDistribution_iff.2 fun x ↦ isEmptyElim x
+    rw [(hf x).finrank_eq hm0]
+    exact hD'.isContMDiffDistribution.comap_mfderiv_of_isLocalDiffeomorph hf hnm
+  · intro htop
+    refine hD'.ne_top (f x) (top_le_iff.1 ?_)
+    rw [← LinearMap.range_eq_top.2 ((hf x).isInvertible_mfderiv hm0).surjective]
+    exact LinearMap.range_le_iff_comap.2 htop
+  · exact (bijective_distributionLeviForm_iff_of_isLocalDiffeomorphAt hD'.isContMDiffDistribution
+      hn (hf x) hm (.of_forall fun _ ↦ rfl)).1 (hD'.bijective_distributionLeviForm (f x))
+
+/-- **Contact structures descend along surjective local diffeomorphisms.** Let `f` be a surjective
+`C^m` local diffeomorphism and `D'` a distribution on its target whose pullback
+`x ↦ (df_x)⁻¹ (D' (f x))` is a `C^n` contact structure, with `1 ≤ n` and `n + 1 ≤ m`. Then `D'`
+is a `C^n` contact structure. -/
+theorem IsContactDistribution.of_comap_mfderiv_of_isLocalDiffeomorph
+    (hD : IsContactDistribution I n (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap))
+    (hn : 1 ≤ n) (hf : IsLocalDiffeomorph I J m f) (hnm : n + 1 ≤ m) (hsurj : Surjective f) :
+    IsContactDistribution J n D' := by
+  have hm : 2 ≤ m := le_trans (by rw [← one_add_one_eq_two]; exact add_le_add hn le_rfl) hnm
+  have hm0 : m ≠ 0 := (zero_lt_two.trans_le hm).ne'
+  have hsmooth : IsContMDiffDistribution J n (finrank ℝ F - 1) D' := by
+    rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+    · exact isContMDiffDistribution_iff.2 fun y ↦ isEmptyElim (hsurj y).choose
+    rw [← (hf x).finrank_eq hm0]
+    exact hD.isContMDiffDistribution.of_comap_mfderiv_of_isLocalDiffeomorph hf hsurj hnm
+  refine ⟨hsmooth, fun y htop ↦ ?_, fun y ↦ ?_⟩ <;> obtain ⟨x, rfl⟩ := hsurj y
+  · exact hD.ne_top x (by simp only [htop, Submodule.comap_top])
+  · exact (bijective_distributionLeviForm_iff_of_isLocalDiffeomorphAt hsmooth hn (hf x) hm
+      (.of_forall fun _ ↦ rfl)).2 (hD.bijective_distributionLeviForm x)
+
+/-- **A distribution is a contact structure exactly when its pullback along a surjective local
+diffeomorphism is.** For a surjective `C^m` local diffeomorphism `f`, with `1 ≤ n` and
+`n + 1 ≤ m`, a distribution `D'` on the target is a `C^n` contact structure exactly when its
+pullback `x ↦ (df_x)⁻¹ (D' (f x))` is. -/
+theorem isContactDistribution_comap_mfderiv_iff_of_surjective (hn : 1 ≤ n)
+    (hf : IsLocalDiffeomorph I J m f) (hnm : n + 1 ≤ m) (hsurj : Surjective f) :
+    IsContactDistribution I n (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap) ↔
+      IsContactDistribution J n D' :=
+  ⟨fun h ↦ h.of_comap_mfderiv_of_isLocalDiffeomorph hn hf hnm hsurj,
+    fun h ↦ h.comap_mfderiv_of_isLocalDiffeomorph hn hf hnm⟩
+
+end LocalDiffeomorph
 
 /-! ### Kernels of contact forms -/
 

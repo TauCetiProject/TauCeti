@@ -17,7 +17,7 @@ public import TauCeti.Algebra.Group.Conj
 -- `TauCeti.diagGL` and `TauCeti.diagonalTorus` occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.GL2NonSplitTorus` occurs in the statements below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus.Basic
 -- `TauCeti.jordanGL` and `TauCeti.GL2ScalarUnipotent` occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- Non-public: the order of `GL (Fin 2) F` over a finite field is used only inside the counting

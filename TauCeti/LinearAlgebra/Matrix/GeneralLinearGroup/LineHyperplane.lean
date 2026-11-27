@@ -54,6 +54,8 @@ For `n = 2` both subgroups are line stabilizers and they are conjugate.
   stabilizer equations.
 * `TauCeti.mem_lineStabilizer_iff` and `TauCeti.mem_hyperplaneStabilizer_iff`: membership in
   terms of matrix entries.
+* `TauCeti.coe_mul_apply_of_mem_lineStabilizer`: right multiplication by an element of the line
+  stabilizer scales column `i` by its diagonal entry.
 * `TauCeti.map_inverseTranspose_lineStabilizer`: inverse transpose carries the line stabilizer
   onto the hyperplane stabilizer.
 * `TauCeti.exists_conj_notMem_lineStabilizer`: a representation with no proper stable subspace
@@ -124,6 +126,14 @@ theorem mem_lineStabilizer_iff {g : GL n K} {i : n} :
     · subst hj
       simp
     · simp [h j hj, hj]
+
+/-- If `p` stabilizes the coordinate line `K ∙ eᵢ`, then column `i` of `h p` is column `i` of `h`
+times the entry `p i i`. -/
+theorem coe_mul_apply_of_mem_lineStabilizer (h : GL n K) {p : GL n K} {i : n}
+    (hp : p ∈ lineStabilizer K i) (j : n) : (h * p) j i = h j i * p i i :=
+  calc (h * p) j i = ∑ k : n, h j k * p k i := Matrix.mul_apply
+    _ = h j i * p i i := Fintype.sum_eq_single i fun k hk ↦ by
+        rw [mem_lineStabilizer_iff.1 hp k hk, mul_zero]
 
 /-- **Membership in the hyperplane stabilizer**: an invertible matrix stabilizes the coordinate
 hyperplane `{v | v i = 0}` exactly when its row `i` vanishes off the diagonal. -/

@@ -305,6 +305,19 @@ theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m :
   simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
     filter_gt_eq_Iio, Fin.card_Iio]
 
+/-- An element is the `m`-th smallest in `s` exactly when it belongs to `s` and
+exactly `m` members of `s` lie strictly below it. -/
+theorem orderEmbOfFin_eq_iff (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k) (a : α) :
+    s.orderEmbOfFin h m = a ↔ a ∈ s ∧ #{b ∈ s | b < a} = m := by
+  constructor
+  · rintro rfl
+    exact ⟨orderEmbOfFin_mem s h m, card_filter_lt_orderEmbOfFin s h m⟩
+  · rintro ⟨ha, hcount⟩
+    have hrange : a ∈ Set.range (s.orderEmbOfFin h) := (range_orderEmbOfFin s h).symm ▸ ha
+    obtain ⟨n, rfl⟩ := Set.mem_range.mp hrange
+    have hmn : m = n := Fin.ext (hcount.symm.trans (card_filter_lt_orderEmbOfFin s h n))
+    exact congrArg (s.orderEmbOfFin h) hmn
+
 /-- For a predicate `p` that passes to smaller elements, the `m`-th element of `s` in increasing
 order satisfies `p` exactly when more than `m` elements of `s` satisfy `p`. -/
 theorem lt_card_filter_iff_apply_orderEmbOfFin_of_imp (s : Finset α) {k : ℕ} (h : #s = k)

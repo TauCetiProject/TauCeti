@@ -32,6 +32,8 @@ elementary metric properties, and the graph map `v ↦ (v, A v)` of a continuous
 * `ContinuousLinearMap.range_normalGraphL`: its range is the linear graph of `A`.
 * `LipschitzOnWith.graph`, `LipschitzWith.graph`: a map `K`-Lipschitz on a set, or on the whole
   space, has a graph parametrization `x ↦ (x, f x)` that is `(K + 1)`-Lipschitz there.
+* `TauCeti.antilipschitzWith_graph`: the graph parametrization `x ↦ (x, f x)` is
+  `1`-antilipschitz.
 * `ContinuousLinearMap.graphL`: the continuous linear graph map `v ↦ (v, A v)` of
   `A : E →L[ℝ] F`, in every codimension.
 * `ContinuousLinearMap.injective_graphL`, `ContinuousLinearMap.range_graphL`: it is injective,
@@ -171,6 +173,11 @@ theorem _root_.LipschitzOnWith.graph {α β : Type*} [PseudoEMetricSpace α] [Ps
       norm_num
     _ ≤ K * b + b := add_le_add (hf hx hy) le_rfl
     _ = (K + 1) * b := by rw [add_mul, one_mul]
+
+/-- The graph parametrization `x ↦ (x, f x)` into the `L²` product is `1`-antilipschitz. -/
+theorem antilipschitzWith_graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    (f : α → β) : AntilipschitzWith 1 (fun x ↦ WithLp.toLp 2 (x, f x)) := fun x y ↦ by
+  simpa using WithLp.edist_fst_le (WithLp.toLp 2 (x, f x)) (WithLp.toLp 2 (y, f y))
 
 /-- A `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization `x ↦ (x, f x)` into the
 `L²` product. -/

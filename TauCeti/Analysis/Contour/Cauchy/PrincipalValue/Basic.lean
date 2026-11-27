@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.Complex.Basic
 import TauCeti.Topology.Algebra.Group.LimUnder
+import TauCeti.Topology.LimUnder
 import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.Contour.Curve.Distance
 
@@ -487,8 +488,7 @@ theorem cauchyPVAt_congr_curve_ae {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {f : �
     filter_upwards [self_mem_nhdsWithin] with ε hε
     exact intervalIntegral.integral_congr_ae_restrict
       (truncated_integrand_congr_ae h_eq h_deriv (Set.mem_Ioi.mp hε))
-  unfold cauchyPVAt Filter.limUnder
-  rw [Filter.map_congr hev]
+  exact Filter.limUnder_congr hev
 
 /-- Value form of `HasCauchyPVAt.congr_curve`. -/
 theorem cauchyPVAt_congr_curve {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}

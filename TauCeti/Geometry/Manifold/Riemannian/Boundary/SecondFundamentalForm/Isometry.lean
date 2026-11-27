@@ -13,10 +13,14 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 
 An isometry `Φ : M → M'` of Riemannian manifolds with boundary maps `∂M` onto `∂M'`, and it
 preserves the second fundamental form of the boundary: if `u, w ∈ T_q∂M` and `u', w' ∈ T_{Φ q}∂M'`
-correspond under `dΦ`, that is `dι' u' = dΦ (dι u)` and `dι' w' = dΦ (dι w)`, then
+correspond under `dΦ` (`TauCeti.BoundaryTangentCorr`), that is `dι' u' = dΦ (dι u)` and
+`dι' w' = dΦ (dι w)`, then
 `II'_{Φ q}(u', w') = II_q(u, w)`
 (`TauCeti.RiemannianIsometry.boundarySecondFundamentalForm_map`). In other words
-`(Φ|∂M)^* II' = II`.
+`(Φ|∂M)^* II' = II`. It also preserves the induced metric, `h'(u', w') = h(u, w)`
+(`TauCeti.RiemannianIsometry.boundaryInducedForm_map`), and the corresponding vector `u'` of
+`u ∈ T_q∂M` is its image under the boundary tangent map `TauCeti.boundaryTangentMap`
+(`TauCeti.RiemannianIsometry.boundaryTangentCorr_boundaryTangentMap`).
 
 The proof transports the description `II_q(u, w) = -⟨∇_{dι u} W, ν_out(q)⟩` of
 `TauCeti.boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal`: a vector field `W'`
@@ -56,16 +60,8 @@ theorem RiemannianIsometry.boundarySecondFundamentalForm_map
     (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
     (u' w' : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
       (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M'))
-    (hu : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M' → M') ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u' =
-      mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q
-        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u))
-    (hw : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M' → M') ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w' =
-      mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q
-        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w)) :
+    (hu : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u u')
+    (hw : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w w') :
     boundarySecondFundamentalForm ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u' w' =
       boundarySecondFundamentalForm q u w := by
   have hΦ := Φ.isLocalRiemannianIsometry
@@ -84,5 +80,39 @@ theorem RiemannianIsometry.boundarySecondFundamentalForm_map
     boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal _ u' w' hW' hW'q hW't,
     ← Φ.inner_mfderiv (q : M), hΦ.mfderiv_leviCivitaConnection_mpullback hW',
     Φ.mfderiv_outwardUnitNormal, hu]
+
+namespace RiemannianIsometry
+
+variable (Φ : RiemannianIsometry (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) M M') (q : (𝓡∂ (n + 1)).boundary M)
+
+omit [IsManifold (𝓡∂ (n + 1)) 2 M] [IsManifold (𝓡∂ (n + 1)) 2 M']
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M' ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
+/-- **Naturality of the induced metric of the boundary.** If `u, w ∈ T_q∂M` correspond under an
+isometry `Φ` to `u', w' ∈ T_{Φ q}∂M'`, then `h'(u', w') = h(u, w)`. -/
+theorem boundaryInducedForm_map {u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q}
+    {u' w' : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+      (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M')}
+    (hu : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u u')
+    (hw : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w w') :
+    boundaryInducedForm ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u' w' =
+      boundaryInducedForm q u w := by
+  rw [boundaryInducedForm_apply, boundaryInducedForm_apply, hu, hw, Φ.inner_mfderiv]
+
+omit [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M' ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
+/-- An isometry `Φ` carries `u ∈ T_q∂M` to the corresponding vector of `T_{Φ q}∂M'` given by the
+boundary tangent map of its underlying diffeomorphism. -/
+theorem boundaryTangentCorr_boundaryTangentMap (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u
+      (boundaryTangentMap (by simp) Φ.toDiffeomorph q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ rfl
+        u) :=
+  TauCeti.boundaryTangentCorr_boundaryTangentMap _ Φ.toDiffeomorph q _ rfl u
+
+end RiemannianIsometry
 
 end TauCeti
