@@ -24,15 +24,13 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [T2Sp
 
 /-- Changing coefficients along the identity does not change the underlying function. -/
 example (A : Type*) [CommRing A] (μ : HaarMeasureWithValues A G) (f : HeckeAlgebra μ) :
-    ((HeckeAlgebra.mapCoeff (RingHom.id A) μ f).toCompactlySupported : LocallyConstant G A) =
-      f.toCompactlySupported := by
-  ext x
-  rw [HeckeAlgebra.toCompactlySupported_mapCoeff, mapCoeff_apply, RingHom.id_apply]
+    (HeckeAlgebra.mapCoeff (RingHom.id A) μ f).toCompactlySupported = f.toCompactlySupported := by
+  rw [HeckeAlgebra.toCompactlySupported_mapCoeff, compactlySupported.mapCoeff_id]
 
 /-- For `μ(U) = 2` over `ℤ`, the reduction modulo `2` of `1_U ⋆ 1_U = 2 • 1_U` vanishes. -/
 example (μ : HaarMeasureWithValues ℤ G) (U : OpenSubgroup G) (hU : IsCompact (U : Set G))
     (h2 : μ (U.toCompactOpens hU) = 2) :
-    mapCoeff (Int.castRingHom (ZMod 2)) (μ.convolution
+    compactlySupported.mapCoeff (Int.castRingHom (ZMod 2)) (μ.convolution
       ⟨compactOpenIndicator (U.toCompactOpens hU) 1,
         compactOpenIndicator_mem_compactlySupported _ 1⟩
       ⟨compactOpenIndicator (U.toCompactOpens hU) 1,
