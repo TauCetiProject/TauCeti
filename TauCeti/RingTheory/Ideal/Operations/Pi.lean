@@ -103,6 +103,8 @@ noncomputable def FG.quotientSmulTopEquivPi {R : Type*} [CommRing R] (ι : Type*
     ⟨fun r s x ↦ by
       obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
       obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+      -- `Ideal.modulePi` defines `mk s • mk x` as `mk (s • x)` without an evaluation lemma,
+      -- and `r • Ideal.Quotient.mk J s` is definitionally `Ideal.Quotient.mk J (r • s)`.
       change Submodule.Quotient.mk ((r • s) • x) = r • Submodule.Quotient.mk (s • x)
       rw [smul_assoc, Submodule.Quotient.mk_smul]⟩
   Submodule.quotEquivOfEq _ _ hpi ≪≫ₗ
@@ -117,6 +119,8 @@ theorem FG.quotientSmulTopEquivPi_mk {R : Type*} [CommRing R] (ι : Type*)
     hJ.quotientSmulTopEquivPi ι (Submodule.Quotient.mk x) i = Ideal.Quotient.mk J (x i) := by
   simp only [FG.quotientSmulTopEquivPi, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
     Submodule.Quotient.restrictScalarsEquiv_mk, LinearEquiv.restrictScalars_apply]
+  -- `Ideal.piQuotEquiv` has no evaluation lemma in Mathlib; its `toFun` is definitionally
+  -- `Quotient.liftOn' · (fun f i ↦ Ideal.Quotient.mk J (f i))`.
   rfl
 
 end Ideal

@@ -86,9 +86,8 @@ end Submodule
 /-- When the topology of `R` is `J`-adic, each `e.submodulePiPow J s n` is open in `M`. -/
 theorem isOpen_submodulePiPow (e : M ≃L[R] (I → R)) {J : Ideal R} (hJ : IsAdic J)
     (s : Finset I) (n : ℕ) : IsOpen (e.submodulePiPow J s n : Set M) := by
-  rw [submodulePiPow_def, Submodule.comap_coe, Submodule.coe_pi,
-    LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
-  exact (isOpen_set_pi s.finite_toSet fun _ _ ↦ hJ.isOpen_pow n).preimage e.continuous
+  simpa [submodulePiPow_def] using
+    (isOpen_set_pi s.finite_toSet fun _ _ ↦ hJ.isOpen_pow n).preimage e.continuous
 
 /-- **Neighbourhood basis from a product coordinate equivalence.** If `e : M ≃L[R] (I → R)` and
 the topology of `R` is `J`-adic, then `e.submodulePiPow J s n` form a basis of neighbourhoods of

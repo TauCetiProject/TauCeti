@@ -170,7 +170,10 @@ theorem mk_liftIdealTower (n : ℕ) (m : M) :
     Ideal.Quotient.mk (K n) (hI.liftIdealTower ha hK g hopen hcomp m) = g n m := by
   have := hI.nonarchimedeanRing
   apply (Submodule.quotEquivOfEq _ _ (eq_pow_smul_top hK n)).injective
-  simp [liftIdealTower, ← Ideal.Quotient.mk_eq_mk, -smul_eq_mul]
+  rw [← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk]
+  dsimp only [liftIdealTower]
+  rw [IsAdicComplete.StrictMono.mk_liftContinuousLinearMap]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
 
 /-- Uniqueness of `IsAdic.liftIdealTower`. -/
 theorem eq_liftIdealTower {F : M →L[R] R}

@@ -92,7 +92,8 @@ theorem exists_lift_span_pow_succ {ϖ : O} (hϖ : ϖ ≠ 0) (n : ℕ)
   · rw [LinearMap.ker_comp_of_ker_eq_bot φ₀ (LinearEquiv.ker e)]
     exact hopen
   · obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (φ₀ m)
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ← hr, e, Submodule.quotEquivOfEq_ideal_mk]
+    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, ← hr, ← Ideal.Quotient.mk_eq_mk,
+      Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk]
     simpa [← hr] using hcomp m
 
 end PrincipalIdealRing

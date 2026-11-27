@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Ideal.Operations
-public import Mathlib.RingTheory.Noetherian.Defs
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact

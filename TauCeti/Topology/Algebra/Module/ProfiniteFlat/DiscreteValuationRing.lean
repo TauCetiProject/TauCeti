@@ -87,7 +87,8 @@ theorem exists_continuousLinearMap_mk_maximalIdeal_eq (φ₀ : M →L[O] (O ⧸ 
   -- `tower 0` is definitionally the base step of the `Nat.rec` tower.
   have htower0 : (tower 0).val = e₀.toLinearMap ∘ₗ φ₀.toLinearMap := rfl
   refine ⟨F, fun m ↦ e₀.injective ?_⟩
-  rw [Submodule.quotEquivOfEq_ideal_mk, hadic.mk_liftIdealTower _ hK _ _ _ 0 m, htower0]
+  rw [← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk,
+    hadic.mk_liftIdealTower _ hK _ _ _ 0 m, htower0]
   simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, ContinuousLinearMap.coe_coe]
 
 /-- **Existence of a pseudobasis.** Every profinite flat module `M : Type v` over a compact

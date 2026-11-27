@@ -47,8 +47,9 @@ variable (K : Type*) {V : Type*} [DivisionRing K] [TopologicalSpace K]
 `K`-linear topology, then `K` must be finite. -/
 theorem finite_of_compactSpace_of_isLinearTopology [DiscreteTopology K] [CompactSpace V]
     [Nontrivial V] : Finite K := by
+  have := separatingDual_of_isLinearTopology K V
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  obtain ⟨φ, hφ⟩ := exists_continuousLinearMap_apply_ne_zero K hv
+  obtain ⟨φ, hφ⟩ := SeparatingDual.exists_ne_zero (R := K) hv
   have := (φ.toLinearMap.surjective fun h ↦ hφ (DFunLike.congr_fun h v)).compactSpace φ.continuous
   exact finite_of_compact_of_discrete
 
@@ -65,13 +66,12 @@ variable {K V ι : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
 omit [CompactSpace V] [T2Space K] in
 private theorem pi_injective (b : Module.Basis ι K (V →L[K] K)) :
     Function.Injective (ContinuousLinearMap.pi b).toLinearMap := by
+  have := TauCeti.separatingDual_of_isLinearTopology K V
   rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
   intro v hv
-  by_contra hv0
-  obtain ⟨φ, hφ⟩ := TauCeti.exists_continuousLinearMap_apply_ne_zero K hv0
+  refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := K) fun φ ↦ ?_
   have hbv : ∀ i : ι, b i v = 0 := fun i ↦ by
     simpa [ContinuousLinearMap.pi_apply] using congr_fun (LinearMap.mem_ker.mp hv) i
-  refine hφ ?_
   conv_lhs => rw [← b.linearCombination_repr φ]
   simp [Finsupp.linearCombination_apply, Finsupp.sum, hbv]
 
