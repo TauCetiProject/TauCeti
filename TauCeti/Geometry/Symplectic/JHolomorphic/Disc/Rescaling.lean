@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Disc.Existence
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Algebra.Ring.CayleyChart
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
@@ -29,18 +31,28 @@ argument, `x ↦ J(t x)` with small `t > 0`, makes them so, and rescaling the di
   `\bar∂u = Q(u) ∂u` is equivalent to `∂ₛu + J(u) ∂ₜu = 0`. The rotation-equivariant discs of the
   Beltrami equation then give a family of discs `u_ξ` through `0` in every direction `‖ξ‖ ≤ 1`, on
   a common disc, with `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`
-  (`TauCeti.exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq`).
+  (`exists_pos_exists_fderiv_one_add_apply_fderiv_I_eq_zero_and_norm_sub_le_and_apply_smul_eq`).
   This equivariance is the `U(1)` normal-frame equivariance of the normal disc families used to
   foliate a neighbourhood of a pseudoholomorphic curve in the large-parameter analysis of the
   Seiberg–Witten equations.
+* The discs are close to complex lines. In the rescaled coordinates the Beltrami coefficient is
+  of size `O(t)` in the `C¹` norm, and the disc of a small coefficient is close in `C¹` to the
+  disc `w ↦ w ξ` of the zero coefficient. So, for any `κ > 0`, the family can be chosen on a disc
+  small enough that `‖du_ξ - (w ↦ w ξ)‖ ≤ κ` there. With `κ = 1/2` and `‖ξ‖ = 1`, `u_ξ` is
+  `2`-antilipschitz on that disc and so is its derivative at every point: each disc is an
+  embedding, injective with injective derivative.
 
 ## Main results
 
 * `TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`: for a structure of class
   `C²` near `0`, a solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`, for every `ξ`.
-* `TauCeti.exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq`: for
-  an almost complex structure of class `C²` near `0`, a family of such discs `u_ξ`, `‖ξ‖ ≤ 1`, on a
-  common disc, with `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
+* `exists_pos_exists_fderiv_one_add_apply_fderiv_I_eq_zero_and_norm_sub_le_and_apply_smul_eq`: for
+  an almost complex structure of class `C²` near `0` and any `κ > 0`, a family of such discs
+  `u_ξ`, `‖ξ‖ ≤ 1`, on a common disc, with `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1` and derivatives
+  within `κ` of the derivative of `w ↦ w ξ`.
+* `TauCeti.exists_pos_exists_fderiv_one_add_apply_fderiv_I_eq_zero_and_antilipschitzWith`:
+  such a family in which every disc with a unit first jet, and its derivative at every point, is
+  `2`-antilipschitz, so that the discs are embedded.
 
 ## References
 
@@ -299,32 +311,89 @@ private theorem exists_neg_cayleyCoord_local [CompleteSpace F] {J : F → F →L
   exact ⟨min r₁ r₂, lt_min hr₁ hr₂, K, by rw [hI0, cayleyCoord_self, neg_zero],
     fun x hx ↦ hd x (h₁ hx), fun x hx y hy ↦ hL x (h₁ hx) y (h₁ hy), fun x hx ↦ hr₂J (h₂ hx)⟩
 
-/-- **A rotation-equivariant family of `J`-holomorphic discs with prescribed first jets.** Let
-`J : F → (F →L[ℝ] F)` be of class `C²` near `0`, with `J(0) v = i v` and `J(x)² = -1` near `0`, as
-for an almost complex structure in coordinates centred at a point where it is standard. Then
-there are `ε > 0` and maps `u_ξ : ℂ → F`, for `‖ξ‖ ≤ 1`, each `C¹` on the disc of radius `ε` with
-`u_ξ(0) = 0` and `∂ₛu_ξ(0) = ξ`, solving `∂ₛu_ξ + J(u_ξ) ∂ₜu_ξ = 0` there, such that rotating the
-first jet rotates the parameter: `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`. So the discs through `0`
-with first jets `ξ` and `c ξ` have the same image, parametrized differently by the rotation
-`w ↦ c w`. -/
-theorem exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq
+/-- A coefficient vanishing at `0` with derivative bounded by `a` on the ball of radius `4` is
+within `4 a` of the zero coefficient in the `C¹` norm there. -/
+private theorem norm_sub_zero_le_of_norm_fderiv_le {P : F → F →L[ℝ] F} {a : ℝ} (ha : 0 ≤ a)
+    (hP0 : P 0 = 0) (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ P x)
+    (hA : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ P x‖ ≤ a) :
+    (∀ x ∈ closedBall (0 : F) 4, ‖P x - (0 : F → F →L[ℝ] F) x‖ ≤ 4 * a) ∧
+      ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ P x - fderiv ℝ (0 : F → F →L[ℝ] F) x‖ ≤ 4 * a := by
+  refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · have h := Convex.norm_image_sub_le_of_norm_fderiv_le hd hA (convex_closedBall (0 : F) 4)
+      (mem_closedBall_self (by norm_num)) hx
+    rw [hP0, sub_zero, sub_zero] at h
+    rw [Pi.zero_apply, sub_zero]
+    exact h.trans (mul_le_mul_of_nonneg_left (by simpa using hx) ha |>.trans_eq (mul_comm a 4))
+  · rw [show fderiv ℝ (0 : F → F →L[ℝ] F) x = 0 from fderiv_const_apply 0, sub_zero]
+    exact (hA x hx).trans (by linarith)
+
+/-- Bounds `a` on the derivative of a coefficient and on its Lipschitz constant on the ball of
+radius `4` give the bounds `b` for every `b ≥ a`. -/
+private theorem fderiv_bounds_mono {P : F → F →L[ℝ] F} {a b : ℝ} (hab : a ≤ b)
+    (hA : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ P x‖ ≤ a)
+    (hL : ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
+      ‖fderiv ℝ P x - fderiv ℝ P y‖ ≤ a * ‖x - y‖) :
+    (∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ P x‖ ≤ b) ∧
+      ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
+        ‖fderiv ℝ P x - fderiv ℝ P y‖ ≤ b * ‖x - y‖ :=
+  ⟨fun x hx ↦ (hA x hx).trans hab, fun x hx y hy ↦
+    (hL x hx y hy).trans (mul_le_mul_of_nonneg_right hab (norm_nonneg _))⟩
+
+/-- The derivative of a parametrization `w ↦ w ξ` of a complex line. -/
+private theorem fderiv_eq_smulRight_of_eq_smul {v : ℂ → F} {ξ : F} (hv : ∀ w, v w = w • ξ)
+    (z : ℂ) : fderiv ℝ v z = (ContinuousLinearMap.id ℝ ℂ).smulRight ξ := by
+  rw [show v = fun w ↦ w • ξ from funext hv]
+  exact ((hasFDerivAt_id _).smul_const ξ).fderiv
+
+/-- **A rotation-equivariant family of `J`-holomorphic discs with prescribed first jets, close to
+complex lines.** Let `J : F → (F →L[ℝ] F)` be of class `C²` near `0`, with `J(0) v = i v` and
+`J(x)² = -1` near `0`, as for an almost complex structure in coordinates centred at a point where
+it is standard, and let `κ > 0`. Then there are `ε > 0` and maps `u_ξ : ℂ → F`, for `‖ξ‖ ≤ 1`,
+each `C¹` on the disc of radius `ε` with `u_ξ(0) = 0` and `∂ₛu_ξ(0) = ξ`, solving
+`∂ₛu_ξ + J(u_ξ) ∂ₜu_ξ = 0` there, such that
+
+* on the disc of radius `ε`, the derivative of `u_ξ` is within `κ` in operator norm of `v ↦ v ξ`,
+  the derivative of the complex line `w ↦ w ξ` with the same first jet;
+* rotating the first jet rotates the parameter: `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`. So the
+  discs through `0` with first jets `ξ` and `c ξ` have the same image, parametrized differently by
+  the rotation `w ↦ c w`. -/
+theorem exists_pos_exists_fderiv_one_add_apply_fderiv_I_eq_zero_and_norm_sub_le_and_apply_smul_eq
     [FiniteDimensional ℂ F] {J : F → F →L[ℝ] F} (hJ : ContDiffAt ℝ 2 J 0)
-    (hJ0 : ∀ v, J 0 v = I • v) (hJJ : ∀ᶠ x in 𝓝 0, ∀ v, J x (J x v) = -v) :
+    (hJ0 : ∀ v, J 0 v = I • v) (hJJ : ∀ᶠ x in 𝓝 0, ∀ v, J x (J x v) = -v) {κ : ℝ} (hκ : 0 < κ) :
     ∃ ε > 0, ∃ u : F → ℂ → F, (∀ ξ : F, ‖ξ‖ ≤ 1 →
       ContDiffOn ℝ 1 (u ξ) (ball 0 ε) ∧ u ξ 0 = 0 ∧ fderiv ℝ (u ξ) 0 1 = ξ ∧
-        ∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ (u ξ) z 1 + J (u ξ z) (fderiv ℝ (u ξ) z I) = 0) ∧
+        (∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ (u ξ) z 1 + J (u ξ z) (fderiv ℝ (u ξ) z I) = 0) ∧
+        ∀ z ∈ ball (0 : ℂ) ε,
+          ‖fderiv ℝ (u ξ) z - (ContinuousLinearMap.id ℝ ℂ).smulRight ξ‖ ≤ κ) ∧
       ∀ ξ : F, ‖ξ‖ ≤ 1 → ∀ c : ℂ, ‖c‖ = 1 → ∀ w, u (c • ξ) w = u ξ (c * w) := by
+  -- Rescale the Beltrami coefficient `Q` of `J` by `t`, small enough that `Q(t ·)` is admissible
+  -- for the Beltrami discs and within `4 η'` of `0` in `C¹`, with `C (4 η') ≤ κ`. The discs of
+  -- `Q(t ·)`, rescaled back, solve the equation for `J`, and their derivatives are within
+  -- `C (4 η')` of those of the discs `w ↦ w ξ` of the zero coefficient.
   have := FiniteDimensional.completeSpace ℂ F
-  obtain ⟨η, hη, -, -, V, hdisc, -⟩ :=
+  obtain ⟨η, hη, C, hC, V, hdisc, hV0, hlip⟩ :=
     exists_pos_exists_conjWirtingerDeriv_eq_and_apply_smul_eq_and_norm_sub_le (F := F)
   obtain ⟨r, hr, K, hQ0, hd, hL, hrJ⟩ := exists_neg_cayleyCoord_local hJ hJ0 hJJ
   set Q : F → F →L[ℝ] F := fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)
-  obtain ⟨t, ht, htr, hdt, hAt, hLt⟩ := exists_rescale hη hr hd hL
+  -- Rescale until the coefficient is below both `η` and `κ / (4 (C + 1))` in the `C¹` norm.
+  set η' := min η (κ / (4 * (C + 1)))
+  have hη' : 0 < η' := lt_min hη (by positivity)
+  obtain ⟨t, ht, htr, hdt, hAt, hLt⟩ := exists_rescale hη' hr hd hL
   have hmem : ∀ x : F, ‖x‖ ≤ 2 → t • x ∈ closedBall (0 : F) r := fun x hx ↦ by
     rw [mem_closedBall, dist_zero_right, norm_smul, Real.norm_of_nonneg ht.le]
     nlinarith
-  obtain ⟨hv, hveq⟩ := hdisc (fun x ↦ Q (t • x)) (by rw [smul_zero]; exact hQ0) hdt hAt hLt
-  generalize V (fun x ↦ Q (t • x)) = v at hv hveq
+  have hQt0 : (fun x ↦ Q (t • x)) 0 = 0 := by simp only [smul_zero]; exact hQ0
+  obtain ⟨hAη, hLη⟩ := fderiv_bounds_mono (min_le_left η _) hAt hLt
+  obtain ⟨hv, hveq⟩ := hdisc (fun x ↦ Q (t • x)) hQt0 hdt hAη hLη
+  -- The rescaled coefficient is within `4 η'` of `0` in the `C¹` norm on the ball of radius `4`.
+  obtain ⟨hQsmall, hDsmall⟩ := norm_sub_zero_le_of_norm_fderiv_le hη'.le hQt0 hdt hAt
+  have hlip0 := hlip (fun x ↦ Q (t • x)) 0 hQt0 rfl hdt (fun _ _ ↦ differentiableAt_const _) hAη
+    (fun _ _ ↦ by simpa [ContinuousLinearMap.opNorm_zero] using hη.le) hLη
+    (fun _ _ _ _ ↦ by
+      simpa [ContinuousLinearMap.opNorm_zero] using mul_nonneg hη.le (norm_nonneg _))
+  have hCη : C * (4 * η') ≤ κ := by
+    have h : η' * (4 * (C + 1)) ≤ κ := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
+    nlinarith
   replace hveq := hveq fun x hx w ↦ by
     -- The Cayley coordinate of a square root of `-1` anticommutes with `i`.
     have h := congrArg (fun T : F →L[ℝ] F ↦ T w)
@@ -332,23 +401,77 @@ theorem exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply
         (mul_self_eq_neg_one (hrJ _ (hmem x (by simpa using hx))).1))
     simp only [mul_apply_eq_comp, neg_apply, ContinuousLinearMap.lsmul_apply] at h
     simp only [Q, neg_apply, h, smul_neg]
-  refine ⟨t / 2, by positivity, fun ξ z ↦ t • v ξ (t⁻¹ • z), fun ξ hξ ↦ ?_,
-    fun ξ hξ c hc w ↦ ?_⟩
+  set v := V (fun x ↦ Q (t • x))
+  refine ⟨t / 2, by positivity, fun ξ z ↦ t • v ξ (t⁻¹ • z), fun ξ hξ ↦ ?_, fun ξ hξ c hc w ↦ ?_⟩
   · obtain ⟨hvC, hv0, hv1, hvb, hvbel⟩ := hv ξ hξ
     obtain ⟨huC, hu0, hu1, hu⟩ := rescale_props ht one_pos hvC hv0 (by simpa using hv1)
     rw [mul_one] at huC hu0 hu1 hu
-    refine ⟨huC, hu0, hu1, fun z hz ↦ ?_⟩
-    obtain ⟨hz', hDu⟩ := hu z hz
-    have hvy : ‖v ξ (t⁻¹ • z)‖ ≤ 2 :=
-      hvb _ (ball_subset_closedBall.trans (closedBall_subset_closedBall (by norm_num)) hz')
-    have hy' := hrJ _ (hmem _ hvy)
-    have hfd : fderiv ℝ (fun z ↦ t • v ξ (t⁻¹ • z)) z = fderiv ℝ (v ξ) (t⁻¹ • z) :=
-      ContinuousLinearMap.ext fun w ↦ by rw [hDu, mul_inv_cancel₀ ht.ne', one_smul]
-    refine apply_one_add_apply_apply_I_eq_zero hy'.1 hy'.2 ?_
-    rw [hfd, ← conjWirtingerDeriv_eq_complexAntilinearPart, ← wirtingerDeriv_eq_complexLinearPart]
-    exact hvbel _ hz'
+    have hfd : ∀ z ∈ ball (0 : ℂ) (t / 2),
+        fderiv ℝ (fun z ↦ t • v ξ (t⁻¹ • z)) z = fderiv ℝ (v ξ) (t⁻¹ • z) := fun z hz ↦
+      ContinuousLinearMap.ext fun w ↦ by rw [(hu z hz).2, mul_inv_cancel₀ ht.ne', one_smul]
+    have hz1 : ∀ z ∈ ball (0 : ℂ) (t / 2), t⁻¹ • z ∈ closedBall (0 : ℂ) 1 := fun z hz ↦
+      ball_subset_closedBall.trans (closedBall_subset_closedBall (by norm_num)) (hu z hz).1
+    refine ⟨huC, hu0, hu1, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+    · have hy' := hrJ _ (hmem _ (hvb _ (hz1 z hz)))
+      refine apply_one_add_apply_apply_I_eq_zero hy'.1 hy'.2 ?_
+      rw [hfd z hz, ← conjWirtingerDeriv_eq_complexAntilinearPart,
+        ← wirtingerDeriv_eq_complexLinearPart]
+      exact hvbel _ (hu z hz).1
+    · have h := (hlip0 ξ ξ (4 * η') hξ hξ hQsmall hDsmall _ (hz1 z hz)).2
+      rw [sub_self, norm_zero, zero_add, fderiv_eq_smulRight_of_eq_smul (hV0 ξ hξ), ← hfd z hz] at h
+      exact h.trans hCη
   · dsimp only
     rw [hveq ξ hξ c hc, mul_smul_comm]
+
+/-- **The `J`-holomorphic discs with unit first jets are embedded.** Under the hypotheses of
+`exists_pos_exists_fderiv_one_add_apply_fderiv_I_eq_zero_and_norm_sub_le_and_apply_smul_eq`, the
+rotation-equivariant family of discs `u_ξ` can be chosen so that, for every unit vector `ξ`,
+`u_ξ` is injective on the disc of radius `ε`, with `|w - w'| ≤ 2 ‖u_ξ(w) - u_ξ(w')‖` there, and
+its derivative is injective at every point of that disc, with `|v| ≤ 2 ‖du_ξ(w) v‖`. So each
+`u_ξ` is an embedding of the disc, and the discs through `0` in the directions `ξ` are embedded
+`J`-holomorphic discs. -/
+theorem exists_pos_exists_fderiv_one_add_apply_fderiv_I_eq_zero_and_antilipschitzWith
+    [FiniteDimensional ℂ F] {J : F → F →L[ℝ] F} (hJ : ContDiffAt ℝ 2 J 0)
+    (hJ0 : ∀ v, J 0 v = I • v) (hJJ : ∀ᶠ x in 𝓝 0, ∀ v, J x (J x v) = -v) :
+    ∃ ε > 0, ∃ u : F → ℂ → F, (∀ ξ : F, ‖ξ‖ ≤ 1 →
+      ContDiffOn ℝ 1 (u ξ) (ball 0 ε) ∧ u ξ 0 = 0 ∧ fderiv ℝ (u ξ) 0 1 = ξ ∧
+        ∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ (u ξ) z 1 + J (u ξ z) (fderiv ℝ (u ξ) z I) = 0) ∧
+      (∀ ξ : F, ‖ξ‖ ≤ 1 → ∀ c : ℂ, ‖c‖ = 1 → ∀ w, u (c • ξ) w = u ξ (c * w)) ∧
+      ∀ ξ : F, ‖ξ‖ = 1 → AntilipschitzWith 2 ((ball (0 : ℂ) ε).domRestrict (u ξ)) ∧
+        ∀ z ∈ ball (0 : ℂ) ε, AntilipschitzWith 2 (fderiv ℝ (u ξ) z) := by
+  obtain ⟨ε, hε, u, hu, hrot⟩ :=
+    exists_pos_exists_fderiv_one_add_apply_fderiv_I_eq_zero_and_norm_sub_le_and_apply_smul_eq
+      hJ hJ0 hJJ (by norm_num : (0 : ℝ) < 2⁻¹)
+  refine ⟨ε, hε, u, fun ξ hξ ↦ ?_, hrot, fun ξ hξ ↦ ?_⟩
+  · obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hu ξ hξ
+    exact ⟨h₁, h₂, h₃, h₄⟩
+  obtain ⟨huC, -, -, -, hD⟩ := hu ξ hξ.le
+  -- The complex line `w ↦ w ξ` is an isometry, and `u_ξ` is within `1/2` of it in `C¹`.
+  set φ := (ContinuousLinearMap.id ℝ ℂ).smulRight ξ
+  have hφ : AntilipschitzWith 1 φ := φ.antilipschitz_of_bound fun w ↦ by
+    simp [φ, norm_smul, hξ]
+  have hDnn : ∀ z ∈ ball (0 : ℂ) ε, ‖fderiv ℝ (u ξ) z - φ‖₊ ≤ 2⁻¹ := fun z hz ↦ by
+    exact_mod_cast hD z hz
+  have hK : (2⁻¹ : ℝ≥0) < (1 : ℝ≥0)⁻¹ := by norm_num
+  have hK2 : ((1 : ℝ≥0)⁻¹ - 2⁻¹)⁻¹ = 2 := by
+    rw [← NNReal.coe_inj]
+    norm_num [NNReal.coe_sub_def]
+  have hdiff : ∀ z ∈ ball (0 : ℂ) ε, DifferentiableAt ℝ (u ξ) z := fun z hz ↦
+    (huC.contDiffAt (isOpen_ball.mem_nhds hz)).differentiableAt one_ne_zero
+  refine ⟨?_, fun z hz ↦ ?_⟩
+  · have hlip : LipschitzOnWith 2⁻¹ (u ξ - ⇑φ) (ball 0 ε) :=
+      (convex_ball (0 : ℂ) ε).lipschitzOnWith_of_nnNorm_fderiv_le
+        (fun z hz ↦ (hdiff z hz).sub φ.differentiableAt) fun z hz ↦ by
+          rw [fderiv_sub (hdiff z hz) φ.differentiableAt, φ.fderiv]
+          exact hDnn z hz
+    have := (hφ.domRestrict (ball (0 : ℂ) ε)).add_sub_lipschitzWith
+      (g := (ball (0 : ℂ) ε).domRestrict (u ξ)) hlip.to_restrict hK
+    rwa [hK2] at this
+  · have := hφ.add_sub_lipschitzWith (g := fderiv ℝ (u ξ) z)
+      (by
+        rw [← FunLike.coe_sub]
+        exact (fderiv ℝ (u ξ) z - φ).lipschitzWith.weaken (hDnn z hz)) hK
+    rwa [hK2] at this
 
 end EquivariantFamily
 
