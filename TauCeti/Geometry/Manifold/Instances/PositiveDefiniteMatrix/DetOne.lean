@@ -351,8 +351,8 @@ since `det (V P Vᴴ) = det P`. The regularity order `k` can be arbitrary, inclu
 def unitaryConj (k : ℕ∞ω) (V : unitaryGroup n 𝕜) :
     PosDefDetOne n 𝕜 ≃ₘ^k⟮𝓘(ℝ, Model n 𝕜), 𝓘(ℝ, Model n 𝕜)⟯ PosDefDetOne n 𝕜 where
   toEquiv := (posDefUnitaryConj n 𝕜 k V).toEquiv.subtypeEquiv fun P ↦ by
-    rw [Diffeomorph.coe_toEquiv, coe_posDefUnitaryConj_apply, det_mul, det_mul, mul_comm,
-      ← mul_assoc, ← det_mul, Unitary.coe_star_mul_self, det_one, one_mul]
+    rw [Diffeomorph.coe_toEquiv, coe_posDefUnitaryConj_apply,
+      ← inv_eq_left_inv (Unitary.coe_star_mul_self V), det_conj Unitary.isUnit_coe]
   contMDiff_toFun := contMDiff_subtypeVal_comp_iff.1
     ((posDefUnitaryConj n 𝕜 k V).contMDiff.comp contMDiff_subtypeVal)
   contMDiff_invFun := contMDiff_subtypeVal_comp_iff.1

@@ -457,6 +457,14 @@ theorem polarDiffeomorph_eq_iff (g : SpecialLinearGroup n 𝕜)
   · intro h
     rw [← Subtype.ext h, Diffeomorph.apply_symm_apply]
 
+/-- The polar coordinates of a matrix of determinant one, computed in `GL(n, 𝕜)`, are its polar
+coordinates on `SL(n, 𝕜)`, read in the positive-definite cone and the unitary group. -/
+theorem _root_.Matrix.GeneralLinearGroup.polarDiffeomorph_toGL (g : SpecialLinearGroup n 𝕜) :
+    GeneralLinearGroup.polarDiffeomorph n 𝕜 (toGL g) =
+      (((polarDiffeomorph n 𝕜 g).1 : posDefOpens n 𝕜),
+        Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup (polarDiffeomorph n 𝕜 g).2) :=
+  (rfl)
+
 /-- **Special unitary equivariance of the polar coordinates on `SL(n, 𝕜)`.** For special unitary
 matrices `V` and `W`, the polar coordinates of `V g W` are `(V P Vᴴ, V U W)`, where `(P, U)` are
 the polar coordinates of `g`. -/
@@ -468,11 +476,11 @@ theorem polarDiffeomorph_toSL_mul_mul_toSL (V : specialUnitaryGroup n 𝕜)
   have h := GeneralLinearGroup.polarDiffeomorph_toUnits_mul_mul_toUnits
     (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup V) (toGL g)
     (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup W)
-  rw [← specialUnitaryGroup.toGL_toSL, ← specialUnitaryGroup.toGL_toSL, ← map_mul,
-    ← map_mul] at h
-  refine Prod.ext (Subtype.ext ?_) (Subtype.ext (congrArg (fun q ↦ (q.2 : Matrix n n 𝕜)) h))
-  rw [PosDefDetOne.coe_unitaryConj_apply]
-  exact congrArg Prod.fst h
+  rw [← specialUnitaryGroup.toGL_toSL, ← specialUnitaryGroup.toGL_toSL, ← map_mul, ← map_mul,
+    GeneralLinearGroup.polarDiffeomorph_toGL, GeneralLinearGroup.polarDiffeomorph_toGL,
+    ← PosDefDetOne.coe_unitaryConj_apply] at h
+  exact Prod.ext (Subtype.ext (congrArg Prod.fst h))
+    (Submonoid.inclusion_injective specialUnitaryGroup_le_unitaryGroup (congrArg Prod.snd h))
 
 /-! ### The right polar coordinates on `SL(n, 𝕜)` -/
 
@@ -564,6 +572,15 @@ theorem rightPolarDiffeomorph_eq_iff (g : SpecialLinearGroup n 𝕜)
   · intro h
     rw [← Subtype.ext h, Diffeomorph.apply_symm_apply]
 
+/-- The right polar coordinates of a matrix of determinant one, computed in `GL(n, 𝕜)`, are its
+right polar coordinates on `SL(n, 𝕜)`, read in the unitary group and the positive-definite cone. -/
+theorem _root_.Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toGL
+    (g : SpecialLinearGroup n 𝕜) :
+    GeneralLinearGroup.rightPolarDiffeomorph n 𝕜 (toGL g) =
+      (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup (rightPolarDiffeomorph n 𝕜 g).1,
+        ((rightPolarDiffeomorph n 𝕜 g).2 : posDefOpens n 𝕜)) :=
+  (rfl)
+
 /-- **Special unitary equivariance of the right polar coordinates on `SL(n, 𝕜)`.** For special
 unitary matrices `V` and `W`, the right polar coordinates of `V g W` are `(V U W, Wᴴ Q W)`, where
 `(U, Q)` are the right polar coordinates of `g`. -/
@@ -576,10 +593,11 @@ theorem rightPolarDiffeomorph_toSL_mul_mul_toSL (V : specialUnitaryGroup n 𝕜)
   have h := GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul_mul_toUnits
     (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup V) (toGL g)
     (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup W)
-  rw [← specialUnitaryGroup.toGL_toSL, ← specialUnitaryGroup.toGL_toSL, ← map_mul,
-    ← map_mul] at h
-  refine Prod.ext (Subtype.ext (congrArg (fun q ↦ (q.1 : Matrix n n 𝕜)) h)) (Subtype.ext ?_)
-  rw [PosDefDetOne.coe_unitaryConj_apply]
-  exact congrArg Prod.snd h
+  rw [← specialUnitaryGroup.toGL_toSL, ← specialUnitaryGroup.toGL_toSL, ← map_mul, ← map_mul,
+    GeneralLinearGroup.rightPolarDiffeomorph_toGL,
+    GeneralLinearGroup.rightPolarDiffeomorph_toGL, ← PosDefDetOne.coe_unitaryConj_apply] at h
+  exact Prod.ext
+    (Submonoid.inclusion_injective specialUnitaryGroup_le_unitaryGroup (congrArg Prod.fst h))
+    (Subtype.ext (congrArg Prod.snd h))
 
 end Matrix.SpecialLinearGroup
