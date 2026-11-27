@@ -62,6 +62,8 @@ gives a set of measure one.
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.addHaar_real_ball`: the real measure of a nonnegative-radius ball in a
+  nontrivial space.
 * `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball`: the ratio of the real measures
   of two balls is the ratio of their radii raised to the dimension.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
@@ -143,6 +145,8 @@ gives a set of measure one.
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `ContinuousLinearEquiv.measurePreserving_map_symm`: a continuous linear equivalence `e` carries
+  `μ.map e.symm` to `μ`.
 * `ContinuousLinearEquiv.quasiMeasurePreserving_restrict`: a continuous linear automorphism mapping
   `s` into `t` is quasi measure preserving between the restrictions of an additive Haar measure to
   `s` and to `t`.
@@ -185,6 +189,16 @@ theorem addHaar_real_ball_of_pos
     (x : E) {r : ℝ} (hr : 0 < r) :
     mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- In a nontrivial space, the real measure of a ball of nonnegative radius is the corresponding
+power of the radius times the real measure of the unit ball. -/
+theorem addHaar_real_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 ≤ r) :
+    mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
+  rw [measureReal_def, mu.addHaar_ball x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
 
 /-- The ratio of the real measures of two balls of positive radii is the ratio of the radii raised
@@ -903,6 +917,14 @@ theorem measurePreserving_of_abs_det_eq_one
 end ContinuousAffineMap
 
 namespace ContinuousLinearEquiv
+
+/-- A continuous linear equivalence `e` carries the pushforward `μ.map e.symm` back to `μ`, so it
+transports integrals for `μ.map e.symm` to integrals for `μ` without a Jacobian. -/
+theorem measurePreserving_map_symm {R E F : Type*} [Semiring R] [TopologicalSpace E]
+    [AddCommMonoid E] [Module R E] [MeasurableSpace E] [BorelSpace E] [TopologicalSpace F]
+    [AddCommMonoid F] [Module R F] [MeasurableSpace F] [BorelSpace F] (e : E ≃L[R] F)
+    (μ : Measure F) : MeasurePreserving e (μ.map e.symm) μ := by
+  simpa using e.symm.toHomeomorph.toMeasurableEquiv.measurePreserving_symm μ
 
 /-- A continuous linear automorphism `e` of a finite-dimensional real normed space that maps `s`
 into `t` is quasi measure preserving between the restrictions of an additive Haar measure to `s`

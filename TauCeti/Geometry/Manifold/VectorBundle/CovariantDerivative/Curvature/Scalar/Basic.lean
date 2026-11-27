@@ -91,34 +91,37 @@ theorem scalarCurvature_eq_sum_chartInvGramMatrix (a : M) {x : M}
   simp only [smul_eq_mul]
 
 open Riemannian.Tensor in
-/-- The scalar curvature of a smooth connection on the tangent bundle is smooth when the metric is
-smooth. Neither metric compatibility nor vanishing torsion is required, so this applies in
+/-- The scalar curvature of a smooth connection on the tangent bundle is `C^n` when the metric is
+`C^n`. Neither metric compatibility nor vanishing torsion is required, so this applies in
 particular to the Levi-Civita connection of a smooth metric. -/
-theorem contMDiff_scalarCurvature
-    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] :
-    ContMDiff I 𝓘(ℝ) ∞ cov.scalarCurvature := by
-  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+theorem contMDiff_scalarCurvature {n : ℕ∞}
+    [IsContMDiffRiemannianBundle I n E (TangentSpace I : M → Type _)] :
+    ContMDiff I 𝓘(ℝ) n cov.scalarCurvature := by
+  have : IsManifold I ((n : ℕ∞ω) + 1) M := .of_le (n := ∞) (by exact_mod_cast le_top)
   intro a
   have hGinv (i j : Fin (Module.finrank ℝ E)) :
-      ContMDiffOn I 𝓘(ℝ) ∞ (fun x ↦ chartInvGramMatrix (I := I) a x i j)
+      ContMDiffOn I 𝓘(ℝ) n (fun x ↦ chartInvGramMatrix (I := I) a x i j)
         (chartAt H a).source := by
     simpa only [TangentBundle.trivializationAt_baseSet] using
-      contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) a i j
-  have hsum : ContMDiffOn I 𝓘(ℝ) ∞
+      contMDiffOn_chartInvGramMatrix_entry (I := I) (n := n) a i j
+  have hsum : ContMDiffOn I 𝓘(ℝ) n
       (fun x ↦ ∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
         cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x))
       (chartAt H a).source :=
     contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
-      (hGinv i j).mul (cov.contMDiffOn_ricciTensor_chartLocalFrame a i j)
+      (hGinv i j).mul
+        ((cov.contMDiffOn_ricciTensor_chartLocalFrame a i j).of_le (by exact_mod_cast le_top))
   exact (hsum.congr fun x hx ↦ cov.scalarCurvature_eq_sum_chartInvGramMatrix a hx).contMDiffAt
     ((chartAt H a).open_source.mem_nhds (mem_chart_source H a))
 
 /-- The scalar curvature of a smooth connection on the tangent bundle is continuous when the
-metric is smooth. -/
+metric is continuous. -/
 theorem continuous_scalarCurvature
-    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] :
-    Continuous cov.scalarCurvature :=
-  cov.contMDiff_scalarCurvature.continuous
+    [IsContinuousRiemannianBundle E (TangentSpace I : M → Type _)] :
+    Continuous cov.scalarCurvature := by
+  let : IsContMDiffRiemannianBundle I 0 E (TangentSpace I : M → Type _) :=
+    IsContinuousRiemannianBundle.toIsContMDiffZero
+  exact (cov.contMDiff_scalarCurvature (n := 0)).continuous
 
 /-- On a compact manifold with a smooth metric, the scalar curvature of a smooth connection on the
 tangent bundle is bounded below: `-K ≤ scalarCurvature` for some `K ≥ 0`. -/
@@ -126,7 +129,8 @@ theorem exists_nonneg_forall_neg_le_scalarCurvature [CompactSpace M]
     [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ x, -K ≤ cov.scalarCurvature x := by
   obtain ⟨C, hC⟩ :=
-    isCompact_univ.exists_bound_of_continuousOn cov.continuous_scalarCurvature.continuousOn
+    isCompact_univ.exists_bound_of_continuousOn
+      (cov.contMDiff_scalarCurvature (n := ⊤)).continuous.continuousOn
   exact ⟨max C 0, le_max_right C 0, fun x ↦ neg_le_of_abs_le <|
     (Real.norm_eq_abs _ ▸ hC x (Set.mem_univ x)).trans (le_max_left C 0)⟩
 
@@ -181,7 +185,7 @@ theorem contMDiffAt_of_eventually_ricciTensor_eq_smul_inner
     have : DiscreteTopology M := ChartedSpace.discreteTopology H M
     exact contMDiff_of_discreteTopology.contMDiffAt
   have hn : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast hpos
-  refine (cov.contMDiff_scalarCurvature.div_const
+  refine ((cov.contMDiff_scalarCurvature (n := ⊤)).div_const
     (Module.finrank ℝ E : ℝ)).contMDiffAt.congr_of_eventuallyEq ?_
   filter_upwards [ha] with y hy
   rw [cov.scalarCurvature_eq_of_ricciTensor_eq_smul_inner y (a y) hy,
@@ -222,7 +226,7 @@ theorem mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub
   have hn : ((Module.finrank ℝ E : ℝ) * (Module.finrank ℝ E - 1)) ≠ 0 := by
     have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hdim
     nlinarith
-  refine (((cov.contMDiff_scalarCurvature.div_const ((Module.finrank ℝ E : ℝ) *
+  refine ((((cov.contMDiff_scalarCurvature (n := ⊤)).div_const ((Module.finrank ℝ E : ℝ) *
     (Module.finrank ℝ E - 1))).mdifferentiable (by simp)) x).congr_of_eventuallyEq ?_
   filter_upwards [hκ] with y hy
   rw [cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub y (κ y) hy, eq_div_iff hn]

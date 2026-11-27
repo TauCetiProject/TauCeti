@@ -62,7 +62,8 @@ for a partition `ψᵢ` follows by writing `u = ∑ᵢ Ψᵢ u`.
 * `TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le`: the estimate between two
   charts.
 * `TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_le_sum`: the reading of `P u` in one chart
-  is bounded in `‖Lt ·‖` by the sum of the `‖Ls ·‖` norms of the readings of `u` for a partition.
+  is bounded in `‖Lt ·‖` by the sum of the `‖Ls ·‖` norms of the readings of `u` through cutoffs
+  adding up to `1` on a set outside which `P` does not look.
 * `TauCeti.exists_sum_norm_cutoffPushforwardSchwartz_apply_le_sum`: the same for the sum of the
   readings of `P u` over finitely many charts.
 
@@ -221,13 +222,25 @@ theorem exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le
     fun y hy ↦ (hχ k).1.self_of_nhdsSet y hy, mul_assoc]
   exact (hA k _).trans (mul_le_mul_of_nonneg_left (hB k g) (hA0 k))
 
-/-- **The estimate in one chart.** Let `Ls`, `Lt` and `P` be as in
-`TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le`, and `ψᵢ` finitely many cutoffs
-in charts `e'ᵢ` whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`, extended by `0`, add up to `1`; such
-cutoffs exist on every compact manifold (`IsCompact.exists_sum_cutoffPullback_eq_one`). For a
-cutoff `φ` in a chart `e` there is a constant `C` such that every smooth `u` on `M` satisfies
+omit [T2Space M] in
+/-- Agreement on all of `M` is equality, so with `K = M` every operator `P` satisfies the agreement
+hypothesis of `TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_le_sum`. -/
+theorem eqOn_apply_of_eqOn_univ {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hfg : EqOn f g univ) (S : Set M) : EqOn (P f) (P g) S :=
+  fun _ _ ↦ by rw [DFunLike.coe_injective ((eqOn_univ f g).1 hfg)]
 
-`‖Lt (φ · ((P u) ∘ e⁻¹))‖ ≤ C ∑ᵢ ‖Ls (ψᵢ · (u ∘ e'ᵢ⁻¹))‖`. -/
+/-- **The estimate in one chart.** Let `Ls`, `Lt` and `P` be as in
+`TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le`, `φ` a cutoff in a chart `e`, and
+`K ⊆ M` a set such that `P f` and `P g` agree on `e⁻¹(supp φ)` whenever `f` and `g` agree on `K`.
+Let `ψᵢ` be finitely many cutoffs in charts `e'ᵢ` whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`, extended
+by `0`, add up to `1` on `K`. There is a constant `C` such that every smooth `u` on `M` satisfies
+
+`‖Lt (φ · ((P u) ∘ e⁻¹))‖ ≤ C ∑ᵢ ‖Ls (ψᵢ · (u ∘ e'ᵢ⁻¹))‖`.
+
+For `K = M` the agreement hypothesis is automatic, and such cutoffs exist on every compact manifold
+(`IsCompact.exists_sum_cutoffPullback_eq_one`). For a properly supported `P`, a compact such `K`
+exists (`TauCeti.IsProperlySupported.exists_isCompact_forall_eqOn`), so `M` need not be
+compact. -/
 theorem exists_norm_cutoffPushforwardSchwartz_apply_le_sum
     [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] (hP : P ∈ classicalPseudodifferentialOperators m)
     {Ls : Gs} (hLs : Function.Injective Ls)
@@ -239,23 +252,31 @@ theorem exists_norm_cutoffPushforwardSchwartz_apply_le_sum
     (Lt : Gt) (hq : ∀ a : Symbol n ℂ ℂ m, ∀ ha : a.HasCompactSpatialSupport, ∃ A,
       ∀ w, ‖Lt (Symbol.quantizeUniformCLM a ha.isUniform w)‖ ≤ A * ‖Ls w‖)
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {ι : Type*} [Fintype ι]
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {K : Set M}
+    (hPK : ∀ f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      EqOn f g K → EqOn (P f) (P g) (e.symm '' tsupport φ)) {ι : Type*} [Fintype ι]
     {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
     (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ))
-    (hψ : ∀ x, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) :
+    (hψ : ∀ x ∈ K, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) :
     ∃ C, ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       ‖Lt (e.cutoffPushforwardSchwartz he φ (P u))‖ ≤
         C * ∑ i, ‖Ls ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
   choose C hC using fun i ↦
     exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le hP hLs hcov Lt hq he (he' i) φ (ψ i)
   refine ⟨∑ i, |C i|, fun u ↦ ?_⟩
-  -- `u = ∑ᵢ Ψᵢ u`, and each piece is estimated in the chart `eᵢ`.
-  have hu : u = ∑ i,
-      LinearMap.mulLeft ℂ (ContMDiffMap.ofReal ((e' i).cutoffPullback (he' i) (ψ i) 1)) u :=
-    ContMDiffMap.eq_sum_mulLeft_ofReal _ _ (subset_univ _) fun x _ ↦ hψ x
-  conv_lhs => rw [hu, map_sum, map_sum, map_sum]
-  rw [Finset.mul_sum]
+  -- Since `u = ∑ᵢ Ψᵢ u` on `K`, the reading of `P u` is the sum of the readings of `P (Ψᵢ u)`,
+  -- and each piece is estimated in the chart `e'ᵢ`.
+  have hu : e.cutoffPushforwardSchwartz he φ (P u) = ∑ i, e.cutoffPushforwardSchwartz he φ (P
+      (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal ((e' i).cutoffPullback (he' i) (ψ i) 1)) u)) := by
+    rw [← map_sum, ← map_sum]
+    ext y
+    rw [cutoffPushforwardSchwartz_apply, cutoffPushforwardSchwartz_apply]
+    by_cases hy : y ∈ tsupport φ
+    · exact congrArg _
+        (hPK _ _ (ContMDiffMap.eqOn_sum_mulLeft_ofReal _ _ u hψ) (mem_image_of_mem _ hy))
+    · simp [image_eq_zero_of_notMem_tsupport hy]
+  rw [hu, map_sum, Finset.mul_sum]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (hC i u).trans ?_)
   exact mul_le_mul_of_nonneg_right ((le_abs_self _).trans (Finset.single_le_sum
     (fun j _ ↦ abs_nonneg (C j)) (Finset.mem_univ i))) (norm_nonneg _)
@@ -289,7 +310,8 @@ theorem exists_sum_norm_cutoffPushforwardSchwartz_apply_le_sum
       ∑ j, ‖Lt ((e j).cutoffPushforwardSchwartz (he j) (φ j) (P u))‖ ≤
         C * ∑ i, ‖Ls ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
   choose C hC using fun j ↦
-    exists_norm_cutoffPushforwardSchwartz_apply_le_sum hP hLs hcov Lt hq (he j) (φ j) he' ψ hψ
+    exists_norm_cutoffPushforwardSchwartz_apply_le_sum hP hLs hcov Lt hq (he j) (φ j)
+      (K := univ) (fun _ _ hfg ↦ eqOn_apply_of_eqOn_univ hfg _) he' ψ fun x _ ↦ hψ x
   exact ⟨∑ j, C j, fun u ↦ (Finset.sum_le_sum fun j _ ↦ hC j u).trans_eq (Finset.sum_mul ..).symm⟩
 
 end TauCeti

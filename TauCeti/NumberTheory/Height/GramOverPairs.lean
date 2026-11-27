@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
-public import TauCeti.NumberTheory.Height.FamilyOverPairs
+public import TauCeti.NumberTheory.Height.FamilyOverPairs.Basic
 import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 import TauCeti.Analysis.Matrix.Ultra
 import TauCeti.Data.Matrix.Block

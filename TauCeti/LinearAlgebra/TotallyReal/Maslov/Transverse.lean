@@ -60,8 +60,10 @@ convention that a positive crossing counts `+1`:
 For a loop based at a chart subspace it is the Maslov index of the loop
 (`TauCeti.TotallyRealLoop.transverseMaslovIndex_toTotallyRealPath`).
 
-The crossing-form formula for the index and its extension to endpoints that are not transverse
-are not treated here.
+The comparison with Souriau's spectral index of paths of unitary frames, and through it the
+localization axiom and the crossing-form formula for paths of graphs `{x + i A x}`, are in
+`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Transverse`. The extension to endpoints that are not
+transverse is not treated here.
 
 ## References
 
