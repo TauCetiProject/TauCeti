@@ -816,6 +816,7 @@ open CategoryTheory LocalCoefficientSystem in
 systems of the negative normal bundles of `i` and of `i'` is the map induced by the inverses of the
 fibrewise isomorphisms `negativeNormalSpaceEquivOfComp`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`). -/
+@[simp]
 theorem negativeNormalSpaceTwistedHomologyIsoOfComp_hom
     (h : i.IsNondegenerateCriticalSubmanifold (f ∘ σ))
     (h' : i'.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n) (hk' : k + 1 ≤ n')

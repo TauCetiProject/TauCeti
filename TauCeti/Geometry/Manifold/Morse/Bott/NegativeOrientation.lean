@@ -295,6 +295,7 @@ open CategoryTheory LocalCoefficientSystem in
 systems of the negative normal bundles of two fibre metrics is the map induced by projecting along
 the positive normal spaces of `g`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`). -/
+@[simp]
 theorem negativeNormalSpaceTwistedHomologyIso_hom
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
