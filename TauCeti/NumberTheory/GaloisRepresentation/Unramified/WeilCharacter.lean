@@ -105,9 +105,9 @@ theorem exists_eq_weilUnramifiedCharacter_iff {δ : WeilGroup K →ₜ* G} :
   refine ⟨?_, fun hδ ↦ ?_⟩
   · rintro ⟨α, rfl⟩ w hw
     exact weilUnramifiedCharacter_apply_of_mem_inertiaSubgroup α hw
-  · obtain ⟨w₀, hw₀⟩ := surjective_weilDegree K (Multiplicative.ofAdd 1)
+  · obtain ⟨w₀, hw₀⟩ := exists_isArithFrobeniusLift_weilToAbsolute K
     exact ⟨δ w₀, ContinuousMonoidHom.toMonoidHom_injective <| eq_weilUnramifiedCharacter _
-      δ.toMonoidHom hδ (weilDegree_eq_ofAdd_one_iff.1 hw₀) rfl⟩
+      δ.toMonoidHom hδ hw₀ rfl⟩
 
 variable (K) in
 /-- An unramified Weil character determines its value at a Frobenius lift, so `α ↦ λ(α)` is
@@ -115,10 +115,9 @@ injective. -/
 theorem weilUnramifiedCharacter_injective :
     Function.Injective (weilUnramifiedCharacter K : G → WeilGroup K →ₜ* G) := by
   intro α β h
-  obtain ⟨w₀, hw₀⟩ := surjective_weilDegree K (Multiplicative.ofAdd 1)
-  have hw₀' := weilDegree_eq_ofAdd_one_iff.1 hw₀
-  rw [← weilUnramifiedCharacter_apply_of_isArithFrobeniusLift α hw₀',
-    ← weilUnramifiedCharacter_apply_of_isArithFrobeniusLift β hw₀', h]
+  obtain ⟨w₀, hw₀⟩ := exists_isArithFrobeniusLift_weilToAbsolute K
+  rw [← weilUnramifiedCharacter_apply_of_isArithFrobeniusLift α hw₀,
+    ← weilUnramifiedCharacter_apply_of_isArithFrobeniusLift β hw₀, h]
 
 variable (K) in
 /-- `λ(1) = 1`: the unramified Weil character of `1` is trivial. -/

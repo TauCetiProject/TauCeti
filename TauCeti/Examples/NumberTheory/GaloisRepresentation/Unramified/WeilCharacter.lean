@@ -28,9 +28,8 @@ example (p : ℕ) [Fact p.Prime] :
     ∃ w : WeilGroup K, IsArithFrobeniusLift K (weilToAbsolute K w) ∧
       weilUnramifiedCharacter K (Units.mk0 (p : ℚ_[p]) (NeZero.ne _)) w =
         Units.mk0 (p : ℚ_[p]) (NeZero.ne _) := by
-  obtain ⟨w, hw⟩ := surjective_weilDegree K (Multiplicative.ofAdd 1)
-  have hw' := weilDegree_eq_ofAdd_one_iff.1 hw
-  exact ⟨w, hw', weilUnramifiedCharacter_apply_of_isArithFrobeniusLift _ hw'⟩
+  obtain ⟨w, hw⟩ := exists_isArithFrobeniusLift_weilToAbsolute K
+  exact ⟨w, hw, weilUnramifiedCharacter_apply_of_isArithFrobeniusLift _ hw⟩
 
 /-- The unramified Weil character is trivial on inertia. -/
 example (p : ℕ) [Fact p.Prime] (w : WeilGroup K)
