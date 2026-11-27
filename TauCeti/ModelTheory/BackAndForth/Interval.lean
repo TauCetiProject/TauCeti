@@ -31,6 +31,8 @@ ordinals `ω ^ γ * δ` and `ω ^ γ * ε` at level `γ` for nonzero `δ` and `�
 ## Main results
 
 * `TauCeti.bfEquiv_iff_forall_cmpCell`: the interval lemma.
+* `TauCeti.bfEquiv_snoc_elim0_iff`: the interval lemma for one point, whose cells are the initial
+  and final segments it cuts out.
 * `TauCeti.BFEquiv.sumLex`: back-and-forth equivalence at level `γ` passes to ordered sums.
 
 ## References
@@ -149,6 +151,28 @@ theorem bfEquiv_iff_forall_cmpCell (γ : Ordinal.{o}) (a : Fin n → M) (b : Fin
       SameAtomicType (L := Language.order) a b ∧ ∀ σ, BFEquiv (L := Language.order) γ 0
         (Fin.elim0 : Fin 0 → cmpCell a σ) (Fin.elim0 : Fin 0 → cmpCell b σ) :=
   intervalLemma γ M N n a b
+
+/-- **The interval lemma for one point.** Two points of linear orders are back-and-forth
+equivalent at level `γ` exactly when the initial segments below them are, and so are the final
+segments above them. -/
+theorem bfEquiv_snoc_elim0_iff (γ : Ordinal.{o}) (x : M) (y : N) :
+    BFEquiv (L := Language.order) γ 1 (snoc (Fin.elim0 : Fin 0 → M) x)
+        (snoc (Fin.elim0 : Fin 0 → N) y) ↔
+      BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → Set.Iio x)
+          (Fin.elim0 : Fin 0 → Set.Iio y) ∧
+        BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → Set.Ioi x)
+          (Fin.elim0 : Fin 0 → Set.Ioi y) := by
+  rw [bfEquiv_iff_forall_cmpCell, and_iff_right (sameAtomicType_snoc_elim0 x y)]
+  refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨hIio, hIoi⟩ τ => ?_⟩
+  · have := h fun _ => .gt
+    rwa [cmpCell_snoc_elim0_of_gt rfl, cmpCell_snoc_elim0_of_gt rfl] at this
+  · have := h fun _ => .lt
+    rwa [cmpCell_snoc_elim0_of_lt rfl, cmpCell_snoc_elim0_of_lt rfl] at this
+  · rcases hτ : τ (last 0)
+    · rwa [cmpCell_snoc_elim0_of_lt hτ, cmpCell_snoc_elim0_of_lt hτ]
+    · rw [cmpCell_snoc_elim0_of_eq hτ, cmpCell_snoc_elim0_of_eq hτ]
+      exact (BFEquiv.refl γ _).orderIso_congr (OrderIso.refl _) (OrderIso.ofUnique _ _)
+    · rwa [cmpCell_snoc_elim0_of_gt hτ, cmpCell_snoc_elim0_of_gt hτ]
 
 end IntervalLemma
 

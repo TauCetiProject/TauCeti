@@ -44,6 +44,8 @@ joins two positive triples related by a move.
 * `TauCeti.markoffVieta_involutive`: each move is an involution of `R³`.
 * `TauCeti.bijOn_markoffVieta_markoffSetNonzero`: each move permutes `X*(R)`.
 * `TauCeti.markoffVieta_comp_perm`: coordinate permutations normalise the moves.
+* `TauCeti.apply_ne_zero_of_mem_markoffSetNonzero`: over a reduced ring, a point of `X*(R)` has
+  at most one vanishing coordinate.
 * `TauCeti.markoffVieta_apply_self_mul_self`: the two roots in the moved coordinate multiply to
   `x_{i+1}² + x_{i+2}²`.
 * `TauCeti.markoffVieta_mem_positiveMarkoffTriples_iff`: the moves preserve `M`, in both
@@ -152,6 +154,35 @@ theorem comp_perm_mem_markoffSetNonzero_iff {x : Fin 3 → R} {σ : Equiv.Perm (
   ext i
   simpa using congrFun h (σ.symm i)
 
+/-- Over a reduced ring, a point of the nonzero locus `X*(R)` has at most one vanishing
+coordinate: if two coordinates vanished, the Markoff equation would make the square of the third
+vanish as well. -/
+theorem apply_ne_zero_of_mem_markoffSetNonzero [IsReduced R] {x : Fin 3 → R}
+    (hx : x ∈ markoffSetNonzero R) {i j : Fin 3} (hi : x i = 0) (hji : j ≠ i) : x j ≠ 0 := by
+  intro hj
+  obtain ⟨hx, hne⟩ := mem_markoffSetNonzero.mp hx
+  rw [mem_markoffSet] at hx
+  refine hne (funext fun k => ?_)
+  rcases eq_or_ne k i with rfl | hki
+  · exact hi
+  rcases eq_or_ne k j with rfl | hkj
+  · exact hj
+  refine eq_zero_of_pow_eq_zero (n := 2) ?_
+  fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all
+
+/-- Precomposing with `σ.symm` carries the two coordinates other than `σ i` to the two
+coordinates other than `i`, in some order, so their products agree:
+`x_{σ⁻¹(σ i + 1)} x_{σ⁻¹(σ i + 2)} = x_{i+1} x_{i+2}`. -/
+theorem apply_add_one_mul_apply_add_two_comp_perm (σ : Equiv.Perm (Fin 3)) (i : Fin 3)
+    (x : Fin 3 → R) :
+    x (σ.symm (σ i + 1)) * x (σ.symm (σ i + 2)) = x (i + 1) * x (i + 2) := by
+  have key : ∀ (τ : Equiv.Perm (Fin 3)) (k : Fin 3),
+      (τ.symm (τ k + 1) = k + 1 ∧ τ.symm (τ k + 2) = k + 2) ∨
+        (τ.symm (τ k + 1) = k + 2 ∧ τ.symm (τ k + 2) = k + 1) := by
+    decide
+  rcases key σ i with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2]
+  exact mul_comm _ _
+
 /-! ### The Vieta moves -/
 
 /-- The Vieta move `R_i`: replace the `i`-th coordinate `x_i` of a triple by
@@ -201,9 +232,7 @@ theorem markoffVieta_markoffVieta (i : Fin 3) (x : Fin 3 → R) :
     markoffVieta i (markoffVieta i x) = x := by
   ext j
   rcases eq_or_ne j i with rfl | h
-  · have h1 : j + 1 ≠ j := by fin_cases j <;> decide
-    have h2 : j + 2 ≠ j := by fin_cases j <;> decide
-    simp [h1, h2]
+  · simp
   · simp [h]
 
 /-- Each Vieta move is an involution of `R³`, with no hypothesis on the ring or the triple. -/
@@ -257,12 +286,7 @@ theorem markoffVieta_comp_perm (σ : Equiv.Perm (Fin 3)) (i : Fin 3) (x : Fin 3 
     markoffVieta (σ i) (x ∘ σ.symm) = markoffVieta i x ∘ σ.symm := by
   ext j
   rcases eq_or_ne j (σ i) with rfl | h
-  · -- The two coordinates other than `σ i` are pulled back to the two coordinates other than `i`.
-    have key : ∀ (τ : Equiv.Perm (Fin 3)) (k : Fin 3),
-        (τ.symm (τ k + 1) = k + 1 ∧ τ.symm (τ k + 2) = k + 2) ∨
-          (τ.symm (τ k + 1) = k + 2 ∧ τ.symm (τ k + 2) = k + 1) := by
-      decide
-    rcases key σ i with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> simp [h1, h2, mul_right_comm]
+  · simp [mul_assoc, apply_add_one_mul_apply_add_two_comp_perm]
   · have h' : σ.symm j ≠ i := fun hj => h (by rw [← hj, Equiv.apply_symm_apply])
     simp [h, h']
 
