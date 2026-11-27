@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.ProductHalfSpaceModel
+public import TauCeti.Geometry.Manifold.Boundary.ProductHalfSpace.Model
 public import TauCeti.Geometry.Manifold.ModelTransport.Homeomorph
 public import TauCeti.Geometry.Manifold.PLGroupoid.Basic
 
