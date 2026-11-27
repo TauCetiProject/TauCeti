@@ -48,7 +48,8 @@ variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
   {N : Type v'} [AddCommGroup N] [Module R N] {d : ℕ}
   {A : Type w} [CommRing A] [Algebra R A]
 
-/-- A quotient presentation of the cokernel makes an injection universally injective. -/
+/-- A quotient presentation of the cokernel keeps an injection injective after extension of
+scalars to any commutative algebra. -/
 theorem baseChange_injective_of_toSubmodule_eq_range (i : M →ₗ[R] N)
     (hi : Function.Injective i) (P : G(d, N; R))
     (hP : P.toSubmodule = LinearMap.range i) :
@@ -239,6 +240,15 @@ noncomputable def mapOfInjectiveBaseChange (S : G(r, A ⊗[R] M; A)) (i : M →�
     G(r + d, A ⊗[R] N; A) :=
   (mapEquivOfInjectiveBaseChange r i hi P hP A S).val
 
+/-- The coefficientwise construction is the image construction for the extended injection. -/
+theorem mapOfInjectiveBaseChange_eq_mapOfInjective (S : G(r, A ⊗[R] M; A))
+    (i : M →ₗ[R] N) (hi : Function.Injective i) (P : G(d, N; R))
+    (hP : P.toSubmodule = LinearMap.range i) :
+    S.mapOfInjectiveBaseChange i hi P hP =
+      S.mapOfInjective (i.baseChange A)
+        (i.baseChange_injective_of_toSubmodule_eq_range hi P hP)
+        (P.baseChange A) (P.toSubmodule_baseChange_eq_range i hP) := (rfl)
+
 /-- On every coefficient algebra the injection construction takes images of kernels. -/
 @[simp]
 theorem toSubmodule_mapOfInjectiveBaseChange (S : G(r, A ⊗[R] M; A)) (i : M →ₗ[R] N)
@@ -284,8 +294,7 @@ theorem mapOfInjectiveBaseChange_comp {L : Type*} [AddCommGroup L] [Module R L] 
     cast (congrArg (fun n ↦ G(n, A ⊗[R] L; A)) (Nat.add_assoc r d d'))
       ((S.mapOfInjectiveBaseChange i hi P hP).mapOfInjectiveBaseChange j hj P' hP') =
       S.mapOfInjectiveBaseChange (j ∘ₗ i) (hj.comp hi) Q hQ := by
-  simpa only [mapOfInjectiveBaseChange, mapEquivOfInjectiveBaseChange,
-    mapEquivOfInjective_apply_val, LinearMap.baseChange_comp] using
+  simpa only [mapOfInjectiveBaseChange_eq_mapOfInjective, LinearMap.baseChange_comp] using
     mapOfInjective_comp S (i.baseChange A) (i.baseChange_injective_of_toSubmodule_eq_range hi P hP)
       (P.baseChange A) (P.toSubmodule_baseChange_eq_range i hP)
       (j.baseChange A) (j.baseChange_injective_of_toSubmodule_eq_range hj P' hP')
@@ -313,6 +322,7 @@ theorem mapOfInjectiveBaseChange_mem_invtSubmodule_iff (S : G(r, A ⊗[R] M; A))
     (htu : i ∘ₗ t = u ∘ₗ i) :
     (S.mapOfInjectiveBaseChange i hi P hP).toSubmodule ∈ Module.End.invtSubmodule (u.baseChange A) ↔
       S.toSubmodule ∈ Module.End.invtSubmodule (t.baseChange A) := by
+  rw [mapOfInjectiveBaseChange_eq_mapOfInjective]
   apply mapOfInjective_mem_invtSubmodule_iff (i := i.baseChange A)
     (hi := i.baseChange_injective_of_toSubmodule_eq_range hi P hP) (P := P.baseChange A)
     (hP := P.toSubmodule_baseChange_eq_range i hP) (t := t.baseChange A) (u := u.baseChange A)
