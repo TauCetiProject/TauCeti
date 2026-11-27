@@ -7,11 +7,11 @@ module
 
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
 public import TauCeti.Probability.Gibbs.Dimer.Specification
-import TauCeti.MeasureTheory.Group.Action
 import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.MeasureTheory.Group.CountableAction
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Action
 import TauCeti.Probability.Gibbs.Extreme
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Invariant and ergodic dimer Gibbs measures
@@ -49,7 +49,7 @@ two notions of ergodicity in the literature: extreme points of `𝒢_inv` (Gorin
 measures with trivial invariant events (Kenyon). Conditioning an invariant dimer Gibbs measure on an
 almost invariant event of positive measure gives an invariant dimer Gibbs measure
 (`SimpleGraph.cond_mem_dimerGibbsInvariant`), by the face property applied to the decomposition
-`μ = μ(t) μ[|t] + μ(tᶜ) μ[|tᶜ]`.
+`μ = μ(t) μ[|t] + μ(tᶜ) μ[|tᶜ]` (`IsExtreme.cond_mem`).
 
 **Compactness.** The dimer Gibbs probability measures form a weakly compact set
 (`SimpleGraph.isCompact_setOf_isDimerGibbs`): they are the push-forwards along the inclusion of
@@ -213,39 +213,8 @@ theorem cond_mem_dimerGibbsInvariant
     {t : Set (G.edgeSet → Bool)} (ht : NullMeasurableSet t μ)
     (htg : ∀ g : Γ, (fun ω => g • ω) ⁻¹' t =ᵐ[μ] t) (ht₀ : μ t ≠ 0) :
     μ[|t] ∈ G.dimerGibbsInvariant Γ w := by
-  have := hμ.2.isProbabilityMeasure
-  have := (mem_invariantMeasuresOfMeasureUnivEq_iff.1 hμ.1).1
   have := TauCeti.measurableConstSMul_of_smul_apply hσ
-  -- replace `t` by a measurable version; the conditioned measure does not change
-  obtain ⟨t', -, ht', htt'⟩ := ht.exists_measurable_subset_ae_eq
-  have hcond : μ[|t] = μ[|t'] := by
-    simp only [ProbabilityTheory.cond, measure_congr htt', Measure.restrict_congr_set htt']
-  rw [hcond]
-  rw [← measure_congr htt'] at ht₀
-  have htg' : ∀ g : Γ, (fun ω => g • ω) ⁻¹' t' =ᵐ[μ] t' := fun g =>
-    preimage_smul_ae_eq_self_of_ae_eq htt' (htg g)
-  have hmem {u : Set (G.edgeSet → Bool)} (hu : MeasurableSet u)
-      (hug : ∀ g : Γ, (fun ω => g • ω) ⁻¹' u =ᵐ[μ] u) (hu₀ : μ u ≠ 0) :
-      μ[|u] ∈ invariantMeasuresOfMeasureUnivEq Γ (G.edgeSet → Bool) 1 :=
-    mem_invariantMeasuresOfMeasureUnivEq_iff.2
-      ⟨SMulInvariantMeasure.cond hu hug,
-        (ProbabilityTheory.cond_isProbabilityMeasure hu₀).measure_univ⟩
-  rcases eq_or_ne (μ t'ᶜ) 0 with hc | hc
-  · -- `t'` has full measure, so conditioning on it does not change `μ`
-    have h1 : μ t' = 1 := (prob_compl_eq_zero_iff ht').1 hc
-    rwa [ProbabilityTheory.cond, Measure.restrict_eq_self_of_ae_mem (ae_iff.2 hc), h1, inv_one,
-      one_smul]
-  · -- otherwise `μ = μ(t') μ[|t'] + μ(t'ᶜ) μ[|t'ᶜ]` is a proper convex combination
-    have htc : ∀ g : Γ, (fun ω => g • ω) ⁻¹' t'ᶜ =ᵐ[μ] t'ᶜ := fun g => by
-      rw [preimage_compl]
-      exact (htg' g).compl
-    refine (isExtreme_dimerGibbsInvariant hΓ hσ hw hmove).left_mem_of_mem_openSegment
-      (hmem ht' htg' ht₀) (hmem ht'.compl htc hc) hμ
-      ⟨μ t', μ t'ᶜ, pos_iff_ne_zero.2 ht₀, pos_iff_ne_zero.2 hc, prob_add_prob_compl ht', ?_⟩
-    ext u -
-    simp only [add_apply, smul_apply, smul_eq_mul]
-    rw [mul_comm (μ t'), mul_comm (μ t'ᶜ)]
-    exact ProbabilityTheory.cond_add_cond_compl_eq ht' μ
+  exact (isExtreme_dimerGibbsInvariant hΓ hσ hw hmove).cond_mem hμ ht htg ht₀
 
 /-- **Invariant dimer Gibbs measures form a weakly compact set.** For a positive weight, the
 invariant dimer Gibbs measures `𝒢_inv` form a weakly compact set of probability measures on
