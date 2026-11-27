@@ -32,6 +32,13 @@ open Subgroup
 variable {G M : Type*} [CommGroup G] [Finite G] [CommMonoid M]
   [HasEnoughRootsOfUnity M (Monoid.exponent G)]
 
+/-- The two binary exponents of a value `u ≠ 1` give different powers. This reads a twist
+index off the value of the twist at its detecting element. -/
+private theorem pow_finTwo_val_injective {N : Type*} [Monoid N] {u : N} (hu : u ≠ 1) :
+    Function.Injective fun i : Fin 2 ↦ u ^ i.val := by
+  intro i j h
+  fin_cases i <;> fin_cases j <;> simp_all [eq_comm]
+
 /-- The surviving characters of a two-twist family are precisely the products of a power of
 `ψ` and a binary power of each quadratic factor. The factors need not be independent for
 this membership criterion. -/
@@ -73,14 +80,11 @@ noncomputable def dualInfKerEquiv (ψ α β : G →* Mˣ) (hα : α ^ 2 = 1) (h�
     ⟨?_, ?_⟩
   · rintro ⟨l, i, j⟩ ⟨l', i', j'⟩ h
     have he := congrArg Subtype.val h
-    have hi : i = i' := by
-      have hi' := DFunLike.congr_fun he q
-      simp only [mul_apply, pow_apply, hqψ, hqβ, one_pow, one_mul, mul_one] at hi'
-      fin_cases i <;> fin_cases i' <;> simp_all
-    have hj : j = j' := by
-      have hj' := DFunLike.congr_fun he d
-      simp only [mul_apply, pow_apply, hdψ, hdα, one_pow, one_mul] at hj'
-      fin_cases j <;> fin_cases j' <;> simp_all
+    have hi : i = i' := pow_finTwo_val_injective hqα <| by
+      simpa only [mul_apply, pow_apply, hqψ, hqβ, one_pow, one_mul, mul_one] using
+        DFunLike.congr_fun he q
+    have hj : j = j' := pow_finTwo_val_injective hdβ <| by
+      simpa only [mul_apply, pow_apply, hdψ, hdα, one_pow, one_mul] using DFunLike.congr_fun he d
     subst i'
     subst j'
     have hl : l = l' := Fin.ext <| pow_injOn_Iio_orderOf l.isLt l'.isLt
@@ -123,13 +127,13 @@ theorem mem_zpowers_iff_apply_eq_one_of_mem_dual_inf_ker (ψ α β χ : G →* M
   · obtain ⟨l, i, j, rfl⟩ := (ψ.mem_dual_inf_ker_iff_exists_pow_mul α β χ hα hβ).mp hχ
     rintro ⟨hq, hd⟩
     simp only [mul_apply, pow_apply, hqψ, hqβ, hdψ, hdα, one_pow, one_mul, mul_one] at hq hd
-    have hi : i = 0 := by fin_cases i <;> simp_all
-    have hj : j = 0 := by fin_cases j <;> simp_all
+    have hi : i = 0 := pow_finTwo_val_injective hqα <| by simpa using hq
+    have hj : j = 0 := pow_finTwo_val_injective hdβ <| by simpa using hd
     simp [hi, hj]
 
 /-- Exactly three of the four twist choices are discarded, so the count of non-kept
 characters is three times the order of `ψ`. -/
-theorem card_not_mem_zpowers_in_dual_inf_ker (ψ α β : G →* Mˣ)
+theorem card_notMem_zpowers_of_dual_inf_ker (ψ α β : G →* Mˣ)
     (hα : α ^ 2 = 1) (hβ : β ^ 2 = 1) {q d : G}
     (hqψ : ψ q = 1) (hqα : α q ≠ 1) (hqβ : β q = 1)
     (hdψ : ψ d = 1) (hdα : α d = 1) (hdβ : β d ≠ 1) :

@@ -47,6 +47,8 @@ complete list of linear characters.
 * `MonoidHom.exists_comp_eq_iff_ker_le_ker`: a character extends along a homomorphism into a
   finite commutative group exactly when it kills the kernel of that homomorphism. This is
   Mathlib's `MonoidHom.domRestrict_surjective` applied to the range of the homomorphism.
+* `MonoidHom.dual_ker_eq_zpowers`: the characters of a finite commutative group trivial on
+  `ker ψ` are exactly the powers of `ψ`.
 
 ## References
 
