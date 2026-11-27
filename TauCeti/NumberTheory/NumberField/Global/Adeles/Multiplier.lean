@@ -9,9 +9,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Saturating
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Lattice
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
-import Mathlib.Topology.Instances.Matrix
+import TauCeti.Algebra.Algebra.Subalgebra.Span
 import TauCeti.LinearAlgebra.Matrix.Range
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
@@ -213,17 +212,6 @@ theorem glMultiplier_inv (g : GL n 𝔸ᶠ[E]) :
   obtain ⟨u, hu⟩ := exists_isSaturating g
   rw [hu.inv.glMultiplier_eq, hu.glMultiplier_eq, map_mul, QuotientGroup.mk_mul]
 
-/-- `x` lies in `δ Ô` exactly when `δ⁻¹ x` is integral, for a finite idele `δ`. -/
-private theorem mem_span_singleton_iff (δ : 𝔸ᶠ[E]ˣ) {x : 𝔸ᶠ[E]} :
-    x ∈ Submodule.span (integralAdeles (𝓞 E) E) {(δ : 𝔸ᶠ[E])} ↔
-      ((δ⁻¹ : 𝔸ᶠ[E]ˣ) : 𝔸ᶠ[E]) * x ∈ integralAdeles (𝓞 E) E := by
-  rw [Submodule.mem_span_singleton]
-  constructor
-  · rintro ⟨c, rfl⟩
-    simp [Subalgebra.smul_def, ← mul_assoc, mul_comm _ (c : 𝔸ᶠ[E])]
-  · intro h
-    exact ⟨⟨_, h⟩, by simp [Subalgebra.smul_def, mul_comm, ← mul_assoc]⟩
-
 /-- **The multiplier through elementary divisors.** For `k`, `k' ∈ GL_n(Ô)` and a diagonal matrix
 `d`, `Δ(k d k') = ∏ᵢ δᵢ` whenever `δᵢ Ô = Ô ∩ dᵢ⁻¹ Ô` for every `i`. -/
 theorem glMultiplier_map_mul_diagGL_mul_map (k k' : GL n (integralAdeles (𝓞 E) E))
@@ -244,9 +232,11 @@ theorem glMultiplier_map_mul_diagGL_mul_map (k k' : GL n (integralAdeles (𝓞 E
     simp only [mulVec_diagonal, ← forall_and]
     refine forall_congr' fun i ↦ ?_
     have h := SetLike.ext_iff.1 (hδ i) (x i)
-    have h_one := mem_span_singleton_iff (E := E) 1 (x := x i)
+    have h_one :=
+      Subalgebra.mem_span_singleton_iff_inv_mul_mem (integralAdeles (𝓞 E) E) 1 (x := x i)
     rw [Units.val_one, inv_one, Units.val_one, one_mul] at h_one
-    rw [Submodule.mem_inf, mem_span_singleton_iff, mem_span_singleton_iff, inv_inv, h_one] at h
+    rw [Submodule.mem_inf, Subalgebra.mem_span_singleton_iff_inv_mul_mem,
+      Subalgebra.mem_span_singleton_iff_inv_mul_mem, inv_inv, h_one] at h
     simpa using h
   rw [glMultiplier_map_mul_mul_map, hsat.glMultiplier_eq, ← QuotientGroup.mk_prod]
   congr 1
