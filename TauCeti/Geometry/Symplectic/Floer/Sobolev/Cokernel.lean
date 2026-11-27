@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
+import TauCeti.MeasureTheory.Function.L2Space.InnerSL
 
 /-!
 # Finite cokernels of the linearized operator on the plane
@@ -67,23 +68,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
 omit [FiniteDimensional ℝ V] in
-/-- A covector field almost everywhere equal to `⟪h, ·⟫` for `h ∈ L²(ℂ, V)` is square integrable
-with the norm of `h`. -/
-private theorem integral_norm_sq_eq_and_integrable_of_ae_eq
-    {h : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))} {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hae : (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η) :
-    ∫ z, ‖η z‖ ^ 2 = ‖h‖ ^ 2 ∧ Integrable fun z ↦ ‖η z‖ ^ 2 := by
-  have hn : (fun z ↦ ‖η z‖ ^ 2) =ᵐ[volume] fun z ↦ ‖h z‖ ^ 2 :=
-    hae.mono fun z hz ↦ by
-      simp only at hz ⊢
-      rw [← hz, innerSL_apply_norm]
-  have hm : MemLp (⇑h) 2 volume := by simpa only [Measure.restrict_univ] using Lp.memLp h
-  have hm' : MemLp (⇑h) ((2 : ℕ) : ℝ≥0∞) volume := by simpa using hm
-  refine ⟨?_, (hm'.integrable_norm_pow two_ne_zero).congr hn.symm⟩
-  rw [integral_congr_ae hn, ← Lp.integral_norm_sq_eq_norm_sq]
-  exact setIntegral_univ.symm
-
-omit [FiniteDimensional ℝ V] in
 /-- The jets in `W^{1,2}` of the cut-offs `χ η` of cokernel elements are bounded: if the weighted
 energy of `χ η` is at most `K ∫ ‖η‖²`, `η` represents `h ∈ L²(ℂ, V)` and `‖h‖ ≤ r`, then the class
 of the jet of `χ η` has norm at most `√(max K 0 r²)`. -/
@@ -95,7 +79,10 @@ private theorem norm_toLp_jet_le {ρ : ℝ × ℝ → ℝ} (hρ : IsWeight univ 
       ∫ z, (ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 + ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤
         K * ∫ z, ‖η z‖ ^ 2) :
     ‖(memLp_jet hρ hg).toLp (jet ρ g)‖ ≤ √(max K 0 * r ^ 2) := by
-  obtain ⟨hηn, hηi⟩ := integral_norm_sq_eq_and_integrable_of_ae_eq hηae
+  obtain ⟨hηn, hηi⟩ :=
+    Lp.integral_norm_sq_eq_and_integrable_of_innerSL_ae_eq (ae_restrict_of_ae hηae)
+  rw [setIntegral_univ] at hηn
+  replace hηi := integrableOn_univ.1 hηi
   have h1 := sq_norm_le_integral hρ hg (memLp_jet hρ hg).coeFn_toLp
   rw [setIntegral_univ] at h1
   have h4 : ∫ z, ‖η z‖ ^ 2 ≤ r ^ 2 := by
@@ -150,7 +137,10 @@ private theorem norm_sub_sq_le_of_setIntegral_le (ω : SymplecticForm V)
     have hsub := (ae_restrict_iff' MeasurableSet.univ).1 (Lp.coeFn_sub h₁ h₂)
     filter_upwards [hsub, hae₁, hae₂] with z h1 h2 h3
     rw [h1 (mem_univ z), Pi.sub_apply, map_sub, h2, h3, Pi.sub_apply]
-  obtain ⟨hdn, hdi⟩ := integral_norm_sq_eq_and_integrable_of_ae_eq hae
+  obtain ⟨hdn, hdi⟩ :=
+    Lp.integral_norm_sq_eq_and_integrable_of_innerSL_ae_eq (ae_restrict_of_ae hae)
+  rw [setIntegral_univ] at hdn
+  replace hdi := integrableOn_univ.1 hdi
   have hdD (z : ℝ × ℝ) : ω.floerLinearizationAdjoint
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (η₁ - η₂) z = 0 := by
     rw [floerLinearizationAdjoint_sub ((hη₁.differentiable (by norm_num)) z)

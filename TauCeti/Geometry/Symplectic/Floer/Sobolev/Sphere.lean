@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Sphere
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Conformal
-public import TauCeti.Analysis.Fredholm.ClosedRange
+public import TauCeti.Analysis.Fredholm.SemiFredholm
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
-import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Complex.EquivRealProd
-import TauCeti.Analysis.Sobolev.Poincare.Slab
 import TauCeti.Geometry.Symplectic.Floer.Linearization.Infinity
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
@@ -214,36 +212,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {J : ℝ × ℝ → V → AlmostComplexStructure V}
   {J₀ : AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {T : ℝ}
 
-/-- **The `L²` norm of a field of the chart from its adjoint.** For a constant `ω`-compatible
-structure `J₀` and the zero perturbation, a compactly supported `C²` covector field `g` vanishing on
-`|ζ| ≥ a` satisfies `∫ ‖g‖² ≤ (2a)² C ∫ ‖D₀^* g‖²`: the Poincaré inequality on the strip
-`|Im ζ| ≤ a` bounds `∫ ‖g‖²` by the Dirichlet energy, and the energy estimate of constant data
-bounds that by the `L²` norm of the adjoint. -/
-private theorem exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const
-    (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃a : ℝ⦄ ⦃g : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 g → HasCompactSupport g →
-      (∀ ζ, a ≤ ‖Complex.equivRealProdCLM.symm ζ‖ → g ζ = 0) →
-      ∫ ζ, ‖g ζ‖ ^ 2 ≤ (2 * a) ^ 2 * C * ∫ ζ, ‖ω.floerLinearizationAdjoint
-        (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 g
-          ζ‖ ^ 2 := by
-  obtain ⟨C, hC, hE⟩ := exists_forall_integral_norm_fderiv_sq_le_of_const (ω := ω) h₀
-  refine ⟨C, hC, fun a g hg hgc hga ↦ ?_⟩
-  have hP := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd (r := a)
-    (hg.of_le one_le_two) hgc fun ζ hζ ↦ hga ζ (hζ.trans (by
-      simpa using Complex.abs_im_le_norm (Complex.equivRealProdCLM.symm ζ)))
-  rw [← stdComplexLineImag_eq] at hP
-  have iD := integrable_norm_fderiv_sq_add (μ := volume) (hg.of_le one_le_two) hgc
-    stdComplexLineReal stdComplexLineImag
-  have hI : ∫ ζ, ‖fderiv ℝ g ζ stdComplexLineImag‖ ^ 2 ≤
-      ∫ ζ, (‖fderiv ℝ g ζ stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ g ζ stdComplexLineImag‖ ^ 2) :=
-    integral_mono_of_nonneg (ae_of_all _ fun _ ↦ sq_nonneg _) iD
-      (ae_of_all _ fun ζ ↦ by simp only; nlinarith [sq_nonneg ‖fderiv ℝ g ζ stdComplexLineReal‖])
-  calc _ ≤ (2 * a) ^ 2 * ∫ ζ, (‖fderiv ℝ g ζ stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ g ζ stdComplexLineImag‖ ^ 2) :=
-        hP.trans (mul_le_mul_of_nonneg_left hI (sq_nonneg _))
-    _ ≤ (2 * a) ^ 2 * (C * _) := mul_le_mul_of_nonneg_left (hE hg hgc) (sq_nonneg _)
-    _ = _ := by ring
-
 /-- **The adjoint of a cut-off field of the chart, pointwise.** Let `η₀` be smooth on the disc
 `|ζ| < ρ₀` and annihilated there, off `ζ = 0`, by the adjoint `D₀^*` of the constant data `J₀`,
 `0`. Let `χ` be a cutoff whose derivative has norm at most `M` and vanishes off the annulus
@@ -359,7 +327,7 @@ private theorem exists_setIntegral_norm_sq_le_mul_setIntegral_annulus (ω : Symp
   set ν : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖
   have hν : Continuous ν := Complex.equivRealProdCLM.symm.continuous.norm
   obtain ⟨C, hC, hPE⟩ :=
-    exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const ω h₀
+    exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const (ω := ω) h₀
   obtain ⟨χ, hχs, -, hχ1, hχ0, hχd0, hχd2, hχM⟩ :=
     exists_contDiff_cutoff_comp_continuousLinearMap
       (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ) hr
@@ -670,24 +638,17 @@ theorem isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base
     (hu : ContDiff ℝ 3 u) (hc : ∀ z, ω.Compatible (J z (u z))) :
     (ω.floerConformalSobolevOperator univ sphereWeight
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).IsFredholm := by
-  set D := ω.floerConformalSobolevOperator univ sphereWeight
-    (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
   have hJ1 (z : ℝ × ℝ) := (hJ z).of_le (by norm_num : (1 : WithTop ℕ∞) ≤ 3)
   have hKs2 (z : ℝ × ℝ) := (hKs z).of_le (by norm_num : (2 : WithTop ℕ∞) ≤ 4)
   have hKt2 (z : ℝ × ℝ) := (hKt z).of_le (by norm_num : (2 : WithTop ℕ∞) ≤ 4)
   have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
-  rw [TauCeti.isFredholm_iff_finite_ker_coker]
-  refine ⟨finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base ω hJ₀ hKs₀
-    hKt₀ hJ1 hKs2 hKt2 hu1 hc, ?_⟩
-  -- The range is closed, so the cokernel is the orthogonal complement of the range.
-  have hcl := isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base ω hJ₀ hKs₀
-    hKt₀ hJ1 hKs2 hKt2 hu1 hc
-  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range] at hcl
-  have : CompleteSpace D.range := hcl.completeSpace_coe
-  have := finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereWeight_of_eq_base
-    ω hJ₀ hKs₀ hKt₀ hJ hKs hKt hu hc
-  exact (Submodule.quotientEquivOfIsCompl D.range D.rangeᗮ
-    (Submodule.isCompl_orthogonal _)).symm.finiteDimensional
+  exact .of_finite_ker_of_isClosed_range_of_finite_orthogonal _
+    (finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base ω hJ₀ hKs₀ hKt₀
+      hJ1 hKs2 hKt2 hu1 hc)
+    (isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base ω hJ₀ hKs₀ hKt₀ hJ1
+      hKs2 hKt2 hu1 hc)
+    (finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereWeight_of_eq_base ω
+      hJ₀ hKs₀ hKt₀ hJ hKs hKt hu hc)
 
 end Cokernel
 

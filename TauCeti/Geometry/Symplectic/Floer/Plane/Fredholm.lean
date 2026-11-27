@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Plane.SemiFredholm.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Sobolev
-public import TauCeti.Analysis.Fredholm.ClosedRange
+public import TauCeti.Analysis.Fredholm.SemiFredholm
 
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
@@ -524,18 +524,11 @@ theorem isFredholm_floerConformalSobolevOperator_positive (ω : SymplecticForm V
             ‖η z‖ ^ 2)) :
     (ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).IsFredholm := by
-  set D := ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight
-    (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
-  rw [TauCeti.isFredholm_iff_finite_ker_coker]
-  refine ⟨finiteDimensional_ker_floerConformalSobolevOperator_pssPlane ω positive hM hest, ?_⟩
-  -- The range is closed, so the cokernel is the orthogonal complement of the range.
-  have hcl := isClosed_range_floerConformalSobolevOperator_pssPlane ω positive hM hest
-  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range] at hcl
-  have : CompleteSpace D.range := hcl.completeSpace_coe
-  have := finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positive ω hJ hKs hKt
-    hu hc hB hM hadj
-  exact (Submodule.quotientEquivOfIsCompl D.range D.rangeᗮ
-    (Submodule.isCompl_orthogonal _)).symm.finiteDimensional
+  exact .of_finite_ker_of_isClosed_range_of_finite_orthogonal _
+    (finiteDimensional_ker_floerConformalSobolevOperator_pssPlane ω positive hM hest)
+    (isClosed_range_floerConformalSobolevOperator_pssPlane ω positive hM hest)
+    (finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positive ω hJ hKs hKt
+      hu hc hB hM hadj)
 
 /-- On the end of the positive plane, the slice defect of a map `u` read in end coordinates has
 period one in the angular coordinate, for a Hamiltonian of period one. -/
