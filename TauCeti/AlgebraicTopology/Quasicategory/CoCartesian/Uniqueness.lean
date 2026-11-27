@@ -41,8 +41,6 @@ condition `SSet.IsSegal` is stated, are unique up to equivalence.
 * `SSet.Edge.IsCoCartesian.exists_isEquivalence`: **uniqueness of coCartesian lifts**, two
   coCartesian edges with the same source over the same edge are joined by an equivalence of the
   fiber.
-* `SSet.exists_lift_tensor_horn_zero`: families of horns `Λ[m + 2, 0]` with coCartesian initial
-  edges, parametrized by a simplicial set, lift along an inner fibration.
 * `SSet.CoCartesianTransport.exists_isEquivalence`: **uniqueness of coCartesian transports**, two
   coCartesian transports along an edge are equivalent in the functor quasicategory of the fibers.
 
@@ -247,42 +245,6 @@ theorem IsCoCartesian.exists_isEquivalence {t : S _⦋0⦌} {y y' : (fiber p t :
   exact ⟨g.toSubcomplex (fiber p t) hg, hf.isEquivalence_of_compStruct hf' c hc, c, hc⟩
 
 end Edge
-
-section parametrized
-
-variable {X S : SSet.{u}} (p : X ⟶ S) {m : ℕ} (β : Δ[m + 2] ⟶ S)
-
-/-- **Lifting families of horns with coCartesian initial edges.** Let `p : X ⟶ S` be an inner
-fibration and `β : Δ[m + 2] ⟶ S`. A family `b : Z ⊗ Λ[m + 2, 0] ⟶ X` of horns over `β`,
-parametrized by a simplicial set `Z`, whose initial edges `(z, 0 ⟶ 1)` are all `p`-coCartesian,
-extends to a family `Z ⊗ Δ[m + 2] ⟶ X` of simplices over `β`. This is the case of the empty
-simplicial subset of `Z` in `SSet.exists_lift_ihomOver_pre_horn_zero`. -/
-theorem exists_lift_tensor_horn_zero [InnerFibration p] {Z : SSet.{u}}
-    (b : Z ⊗ (Λ[m + 2, 0] : SSet) ⟶ X) (hb : b ≫ p = snd _ _ ≫ Λ[m + 2, 0].ι ≫ β)
-    (hZ : ∀ z : Z _⦋0⦌, (Edge.mk' (b.app _
-      (Z.σ 0 z, horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsCoCartesian p) :
-    ∃ l : Z ⊗ Δ[m + 2] ⟶ X, Z ◁ Λ[m + 2, 0].ι ≫ l = b ∧ l ≫ p = snd _ _ ≫ β := by
-  -- By adjunction, this is a lifting problem against the restriction
-  -- `Fun_S(Δ[m + 2], X) ⟶ Fun_S(Λ[m + 2, 0], X)` of functors over `β`, along `∅ ⟶ Z`.
-  -- The braided family `Λ[m + 2, 0] ⊗ Z ⟶ X`, as a map `Z ⟶ Fun_S(Λ[m + 2, 0], X)`.
-  let b' : (Λ[m + 2, 0] : SSet) ⊗ Z ⟶ X := (β_ _ _).hom ≫ b
-  have hb' : b' ≫ p = fst _ _ ≫ Λ[m + 2, 0].ι ≫ β := by
-    rw [Category.assoc, hb, braiding_hom_snd_assoc]
-  obtain ⟨l, -, hl⟩ := exists_lift_ihomOver_pre_horn_zero p β (initial.to Z) (initial.to _)
-    (ihomOver.homEquiv.symm ⟨b', hb'⟩) (initial.hom_ext _ _)
-    fun z ↦ by
-      rw [ihomOver.obj₀Equiv_app_coe, Equiv.apply_symm_apply]
-      have hz : (lift (𝟙 _) (const z)).app _ (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
-          (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), Z.σ 0 z) :=
-        lift_id_const_app_one z _
-      exact (hZ z).of_edge_eq (congrArg (fun q ↦ b.app _ ((β_ (Λ[m + 2, 0] : SSet) Z).hom.app _ q))
-        hz.symm)
-  refine ⟨(β_ _ _).hom ≫ (ihomOver.homEquiv l).val, ?_, ?_⟩
-  · rw [BraidedCategory.braiding_naturality_right_assoc, ← ihomOver.homEquiv_comp_pre_coe, hl,
-      Equiv.apply_symm_apply, SymmetricCategory.symmetry_assoc]
-  · rw [Category.assoc, (ihomOver.homEquiv l).property, braiding_hom_fst_assoc]
-
-end parametrized
 
 namespace CoCartesianTransport
 

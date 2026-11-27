@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
 public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.HornFilling
 public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
@@ -39,13 +38,12 @@ of Moss). Over a point, the edges of a quasicategory which are coCartesian are i
 * `SSet.prodStdSimplex.exists_ext_unionProd_horn_zero`: a map from
   `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])` to a quasicategory which is defined on the vertical
   edge `(0, 0) ⟶ (1, 0)` and sends it to an equivalence extends to `Δ[m + 1] ⊗ Δ[n]`.
-* `SSet.exists_lift_of_forall_boundary`: a map whose lifting problems against boundary inclusions,
-  with bottom map in a full enhanced subcategory of the target, all have solutions, restricts over
-  that full subcategory to a trivial fibration.
 * `SSet.exists_lift_ihomOver_pre_horn_zero`: for an inner fibration `p : X ⟶ S` and
   `β : Δ[m + 2] ⟶ S`, over the horns whose initial edge is `p`-coCartesian, restriction
   `Fun_S(Δ[m + 2], X) ⟶ Fun_S(Λ[m + 2, 0], X)` of functors over `β` has the right lifting property
   with respect to monomorphisms.
+* `SSet.exists_lift_tensor_horn_zero`: families of horns `Λ[m + 2, 0]` with coCartesian initial
+  edges, parametrized by a simplicial set, lift along an inner fibration.
 * `SSet.Quasicategory.exists_ext_cylinder_boundary`: a cylinder on a simplex extends a given
   start and boundary cylinder when its initial vertical edge is an equivalence.
 * `SSet.Quasicategory.exists_lift_pre_horn_zero`: over the horns whose initial edge is an
@@ -93,54 +91,6 @@ theorem exists_ext_unionProd_horn_zero [Quasicategory C] {m n : ℕ}
   exact ⟨b, hb⟩
 
 end prodStdSimplex
-
-/-- **Lifting along monomorphisms from lifting along boundaries, over a full subcategory.** Let
-`ρ : A ⟶ B` be a map of simplicial sets and `P` a predicate on the vertices of `B`. Suppose that
-every lifting problem of `∂Δ[n] ⟶ Δ[n]` against `ρ` whose bottom map `Δ[n] ⟶ B` sends all vertices
-into `P` has a solution. Then so does every lifting problem of a monomorphism `i : Y ⟶ Z` against
-`ρ` whose bottom map sends all vertices into `P`: the restriction of `ρ` over the full enhanced
-subcategory `B.fullEnhancedSubcategory P` is a trivial fibration. -/
-theorem exists_lift_of_forall_boundary {A B : SSet.{u}} (ρ : A ⟶ B) (P : B _⦋0⦌ → Prop)
-    (hρ : ∀ (n : ℕ) (t : (∂Δ[n] : SSet.{u}) ⟶ A) (b : Δ[n] ⟶ B), t ≫ ρ = ∂Δ[n].ι ≫ b →
-      (∀ z : Δ[n] _⦋0⦌, P (b.app _ z)) → ∃ l : Δ[n] ⟶ A, ∂Δ[n].ι ≫ l = t ∧ l ≫ ρ = b)
-    {Y Z : SSet.{u}} (i : Y ⟶ Z) [Mono i] (t : Y ⟶ A) (b : Z ⟶ B) (w : t ≫ ρ = i ≫ b)
-    (hb : ∀ z : Z _⦋0⦌, P (b.app _ z)) :
-    ∃ l : Z ⟶ A, i ≫ l = t ∧ l ≫ ρ = b := by
-  let H := B.fullEnhancedSubcategory P
-  -- A map lands in the preimage of `H` when its composite with `ρ` lands in `H`.
-  have hpre {W : SSet.{u}} (f : W ⟶ A) (hf : Subcomplex.range (f ≫ ρ) ≤ H) :
-      Subcomplex.range f ≤ H.preimage ρ := by
-    rwa [← Subcomplex.image_le_iff, ← Subcomplex.range_comp]
-  -- Restriction of `ρ` over `H` is a trivial fibration: it suffices to lift against boundary
-  -- inclusions.
-  have hρ' : (MorphismProperty.monomorphisms SSet.{u}).rlp (H.fromPreimage ρ) := by
-    rw [rlp_monomorphisms]
-    rintro _ _ _ ⟨n⟩
-    refine ⟨fun {t b} sq ↦ ?_⟩
-    obtain ⟨l, hl₁, hl₂⟩ := hρ n (t ≫ (H.preimage ρ).ι) (b ≫ H.ι)
-      (by rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.w,
-        Category.assoc])
-      (fun z ↦ (mem_fullEnhancedSubcategory_obj_zero_iff _ _).1 (b.app _ z).property)
-    have hl : Subcomplex.range l ≤ H.preimage ρ := hpre l (by
-      rw [hl₂, Subcomplex.range_comp]
-      exact (Subcomplex.image_le_range _ _).trans (by simp))
-    exact ⟨⟨{ l := Subcomplex.lift l hl
-              fac_left := by rw [← cancel_mono (H.preimage ρ).ι, Category.assoc,
-                Subcomplex.lift_ι, hl₁]
-              fac_right := by rw [← cancel_mono H.ι, Category.assoc,
-                Subcomplex.fromPreimage_ι, ← Category.assoc, Subcomplex.lift_ι, hl₂] }⟩⟩
-  have hb' : Subcomplex.range b ≤ H := (range_le_fullEnhancedSubcategory_iff _ _).2 hb
-  have ht : Subcomplex.range t ≤ H.preimage ρ := hpre t (by
-    rw [w, Subcomplex.range_comp]
-    exact (Subcomplex.image_le_range _ _).trans hb')
-  have sq : CommSq (Subcomplex.lift t ht) i (H.fromPreimage ρ) (Subcomplex.lift b hb') :=
-    ⟨by rw [← cancel_mono H.ι, Category.assoc, Subcomplex.fromPreimage_ι, ← Category.assoc,
-      Subcomplex.lift_ι, Category.assoc, Subcomplex.lift_ι, w]⟩
-  have := hρ' i (MorphismProperty.monomorphisms.infer_property i)
-  refine ⟨sq.lift ≫ (H.preimage ρ).ι, ?_, ?_⟩
-  · rw [← Category.assoc, sq.fac_left, Subcomplex.lift_ι]
-  · rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.fac_right,
-      Subcomplex.lift_ι]
 
 section relative
 
@@ -200,6 +150,36 @@ theorem exists_lift_ihomOver_pre_horn_zero [InnerFibration p] {Y Z : SSet.{u}} (
     (fun v ↦ (Edge.mk' ((ihomOver.obj₀Equiv v).val.app _
       (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsCoCartesian p)
     (fun _ t₀ b₀ w₀ hb₀ ↦ exists_lift_boundary_pre_horn_zero p β t₀ b₀ w₀ hb₀) i t b w hb
+
+/-- **Lifting families of horns with coCartesian initial edges.** Let `p : X ⟶ S` be an inner
+fibration and `β : Δ[m + 2] ⟶ S`. A family `b : Z ⊗ Λ[m + 2, 0] ⟶ X` of horns over `β`,
+parametrized by a simplicial set `Z`, whose initial edges `(z, 0 ⟶ 1)` are all `p`-coCartesian,
+extends to a family `Z ⊗ Δ[m + 2] ⟶ X` of simplices over `β`. This is the case of the empty
+simplicial subset of `Z` in `SSet.exists_lift_ihomOver_pre_horn_zero`. -/
+theorem exists_lift_tensor_horn_zero [InnerFibration p] {Z : SSet.{u}}
+    (b : Z ⊗ (Λ[m + 2, 0] : SSet) ⟶ X) (hb : b ≫ p = snd _ _ ≫ Λ[m + 2, 0].ι ≫ β)
+    (hZ : ∀ z : Z _⦋0⦌, (Edge.mk' (b.app _
+      (Z.σ 0 z, horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsCoCartesian p) :
+    ∃ l : Z ⊗ Δ[m + 2] ⟶ X, Z ◁ Λ[m + 2, 0].ι ≫ l = b ∧ l ≫ p = snd _ _ ≫ β := by
+  -- By adjunction, this is a lifting problem against the restriction
+  -- `Fun_S(Δ[m + 2], X) ⟶ Fun_S(Λ[m + 2, 0], X)` of functors over `β`, along `∅ ⟶ Z`.
+  -- The braided family `Λ[m + 2, 0] ⊗ Z ⟶ X`, as a map `Z ⟶ Fun_S(Λ[m + 2, 0], X)`.
+  let b' : (Λ[m + 2, 0] : SSet) ⊗ Z ⟶ X := (β_ _ _).hom ≫ b
+  have hb' : b' ≫ p = fst _ _ ≫ Λ[m + 2, 0].ι ≫ β := by
+    rw [Category.assoc, hb, braiding_hom_snd_assoc]
+  obtain ⟨l, -, hl⟩ := exists_lift_ihomOver_pre_horn_zero p β (initial.to Z) (initial.to _)
+    (ihomOver.homEquiv.symm ⟨b', hb'⟩) (initial.hom_ext _ _)
+    fun z ↦ by
+      rw [ihomOver.obj₀Equiv_app_coe, Equiv.apply_symm_apply]
+      have hz : (lift (𝟙 _) (const z)).app _ (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
+          (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), Z.σ 0 z) :=
+        lift_id_const_app_one z _
+      exact (hZ z).of_edge_eq (congrArg (fun q ↦ b.app _ ((β_ (Λ[m + 2, 0] : SSet) Z).hom.app _ q))
+        hz.symm)
+  refine ⟨(β_ _ _).hom ≫ (ihomOver.homEquiv l).val, ?_, ?_⟩
+  · rw [BraidedCategory.braiding_naturality_right_assoc, ← ihomOver.homEquiv_comp_pre_coe, hl,
+      Equiv.apply_symm_apply, SymmetricCategory.symmetry_assoc]
+  · rw [Category.assoc, (ihomOver.homEquiv l).property, braiding_hom_fst_assoc]
 
 end relative
 
