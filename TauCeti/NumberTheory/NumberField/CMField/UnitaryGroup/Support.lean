@@ -166,25 +166,9 @@ theorem val_cut (S : Set (HeightOneSpectrum (𝓞 E))) (hS : conjPlace ⁻¹' S 
 /-- Cutting along `S` is continuous. -/
 @[fun_prop]
 theorem continuous_cut (S : Set (HeightOneSpectrum (𝓞 E))) (hS : conjPlace ⁻¹' S = S) :
-    Continuous (cut E ι S hS) := by
-  -- The underlying matrices of a cut and of its inverse are affine functions
-  -- `e_S • m + (1 - e_S) • 1` of the underlying matrices `m` of `g` and of its inverse.
-  have haff {m : finiteAdelicUnitaryGroup E ι → Matrix ι ι 𝔸ᶠ[E]} (hm : Continuous m) :
-      Continuous fun x ↦ FiniteAdeleRing.indicatorOne (K := E) S • m x +
-        (1 - FiniteAdeleRing.indicatorOne (K := E) S) • (1 : Matrix ι ι 𝔸ᶠ[E]) :=
-    by fun_prop
-  have hinv (x : finiteAdelicUnitaryGroup E ι) :
-      ((↑(cut E ι S hS x) : GL ι 𝔸ᶠ[E])⁻¹ : GL ι 𝔸ᶠ[E]).val =
-        FiniteAdeleRing.indicatorOne (K := E) S • ((x : GL ι 𝔸ᶠ[E])⁻¹).val +
-          (1 - FiniteAdeleRing.indicatorOne (K := E) S) • 1 := by
-    rw [← InvMemClass.coe_inv, ← map_inv, val_cut, InvMemClass.coe_inv]
-  have hGL : Continuous fun x ↦ (cut E ι S hS x : GL ι 𝔸ᶠ[E]) := by
-    refine Units.continuous_iff.2 ⟨?_, ?_⟩
-    · simpa only [Function.comp_def, val_cut] using
-        haff (Units.continuous_val.comp continuous_subtypeVal)
-    · simpa only [hinv, Function.comp_apply] using
-        haff (Units.continuous_coe_inv.comp continuous_subtypeVal)
-  exact hGL.subtype_mk fun x ↦ (cut E ι S hS x).property
+    Continuous (cut E ι S hS) :=
+  ((FiniteAdeleRing.isIdempotentElem_indicatorOne S).continuous_cutGL.comp
+    continuous_subtypeVal).subtype_mk _
 
 open Classical in
 /-- **Components of a cut.** The component of the cut of `g` along `S` at a finite place `w` is
