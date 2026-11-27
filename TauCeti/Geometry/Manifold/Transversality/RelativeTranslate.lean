@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Transversality.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.MeasureTheory.Measure.OpenPos
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Relative transverse perturbations of maps from manifolds
@@ -20,9 +21,9 @@ instance second countable) but not necessarily Hausdorff, and let `f : M → V`,
 transverse to `j` at every zero of `β`, then for every parameter `p ∈ V` outside a set that is null
 for every additive Haar measure, the relative translate `TauCeti.relativeTranslate f β p`,
 `x ↦ f x + β x • p`, is transverse to `j` at every point of `M`
-(`TauCeti.addHaar_setOf_not_forall_isTransverseAt_relativeTranslate`). It agrees with `f` on the
-zero set of `β`, so it is a perturbation of `f` relative to that set. The smoothness `n` must reach
-the Morse–Sard threshold `dim M + dim N - dim V + 1`.
+(`TauCeti.addHaar_setOf_not_forall_isTransverseAt_relativeTranslate_eq_zero`). It agrees with `f`
+on the zero set of `β`, so it is a perturbation of `f` relative to that set. The smoothness `n`
+must reach the Morse–Sard threshold `dim M + dim N - dim V + 1`.
 
 The family `(x, p) ↦ f x + β x • p` is universally transverse to `j`: where `β x > 0` the
 parameter derivative `β x • id` is onto, and at a zero of `β ≥ 0`, which is a minimum and hence a
@@ -40,8 +41,8 @@ identically to `V = ℝ`, `M` a point, `f = 0` and `β = 1`, every parameter is 
 
 ## Main declarations
 
-* `TauCeti.addHaar_setOf_not_forall_isTransverseAt_relativeTranslate`: the parameters whose
-  relative translate fails to be transverse to `j` somewhere form a Haar-null set.
+* `TauCeti.addHaar_setOf_not_forall_isTransverseAt_relativeTranslate_eq_zero`: the parameters
+  whose relative translate fails to be transverse to `j` somewhere form a Haar-null set.
 * `TauCeti.dense_setOf_forall_isTransverseAt_relativeTranslate`,
   `TauCeti.exists_forall_isTransverseAt_relativeTranslate`: good parameters are dense, and
   arbitrarily small ones fix `f` on the zero set of `β`.
@@ -70,23 +71,13 @@ variable {E F H G M N V : Type*}
   [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-/-- A `C^n` map on a boundaryless `C^n` manifold, read in an extended chart, is `C^n` at every
-point of the chart target. -/
-private theorem contDiffAt_comp_extChartAt_symm_of_mem_target {n : ℕ∞ω} [IsManifold I n M]
-    {g : M → V} (hg : ContMDiff I 𝓘(ℝ, V) n g) (a : M) {w : E}
-    (hw : w ∈ (extChartAt I a).target) :
-    ContDiffAt ℝ n (g ∘ (extChartAt I a).symm) w :=
-  (contMDiffOn_iff_contDiffOn.1 (hg.comp_contMDiffOn (contMDiffOn_extChartAt_symm a))).contDiffAt
-    ((isOpen_extChartAt_target a).mem_nhds hw)
-
 /-- **Parametric transversality relative to a closed set, on manifolds.** Let `f : M → V`,
 `j : N → V` and `β : M → ℝ` be `C^n` maps from boundaryless Lindelöf manifolds over
 finite-dimensional models, with `β ≥ 0` and `n` at least `dim M + dim N - dim V + 1`. If `f` is
 transverse to `j` at every zero of `β`, then the parameters `p` for which
 `relativeTranslate f β p = f + β • p` fails to be transverse to `j` at some point of `M` form a
 set of (outer) measure zero for every additive Haar measure on `V`. -/
-theorem addHaar_setOf_not_forall_isTransverseAt_relativeTranslate
+theorem addHaar_setOf_not_forall_isTransverseAt_relativeTranslate_eq_zero
     [LindelofSpace M] [LindelofSpace N] [MeasurableSpace V] [BorelSpace V]
     (μ : Measure V) [IsAddHaarMeasure μ] {f : M → V} {β : M → ℝ} {j : N → V} {n : ℕ∞ω}
     [IsManifold I n M] [IsManifold J n N]
@@ -108,11 +99,11 @@ theorem addHaar_setOf_not_forall_isTransverseAt_relativeTranslate
     (((extChartAt I a).target ×ˢ (extChartAt J b).target) ×ˢ univ) p}
   have hbad (a : M) (b : N) : μ (bad a b) = 0 := by
     refine addHaar_setOf_not_isRegularIncidenceParameterOn_relativeTranslate_eq_zero μ
-      (fun z hz _ ↦ contDiffAt_comp_extChartAt_symm_of_mem_target hf a hz.1.1)
-      (fun z hz _ ↦ contDiffAt_comp_extChartAt_symm_of_mem_target hβ a hz.1.1)
-      (fun z hz _ ↦ contDiffAt_comp_extChartAt_symm_of_mem_target hj b hz.1.2)
+      (fun z hz _ ↦ hf.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.1)
+      (fun z hz _ ↦ hβ.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.1)
+      (fun z hz _ ↦ hj.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.2)
       (fun z _ h0 _ ↦ IsLocalMin.fderiv_eq_zero
-        (Eventually.of_forall fun w ↦ h0.symm ▸ hnonneg _))
+        (Eventually.of_forall fun _ ↦ h0.trans_le (hnonneg _)))
       (fun z hz h0 heq ↦ ?_) hn
     -- At a zero of the coordinate cutoff, transversality of `f` gives that of its coordinate
     -- expression.
@@ -127,8 +118,8 @@ theorem addHaar_setOf_not_forall_isTransverseAt_relativeTranslate
   intro p hp
   obtain ⟨x, hx⟩ := not_forall.1 hp
   obtain ⟨y, hxy, hsurj⟩ := not_forall₂.1 (mt isTransverseAt_iff.2 hx)
-  obtain ⟨a, ha, hxa⟩ := mem_iUnion₂.1 (hAcov.symm ▸ mem_univ x : x ∈ ⋃ a ∈ A, _)
-  obtain ⟨b, hb, hyb⟩ := mem_iUnion₂.1 (hBcov.symm ▸ mem_univ y : y ∈ ⋃ b ∈ B, _)
+  obtain ⟨a, ha, hxa⟩ := mem_iUnion₂.1 (hAcov.ge (mem_univ x))
+  obtain ⟨b, hb, hyb⟩ := mem_iUnion₂.1 (hBcov.ge (mem_univ y))
   refine mem_iUnion₂.2 ⟨a, ha, mem_iUnion₂.2 ⟨b, hb, fun hreg ↦ hsurj ?_⟩⟩
   have h : Surjective ((fderiv ℝ (relativeTranslate (f ∘ (extChartAt I a).symm)
       (β ∘ (extChartAt I a).symm) p) (extChartAt I a x)).coprod
@@ -140,9 +131,9 @@ theorem addHaar_setOf_not_forall_isTransverseAt_relativeTranslate
   rw [relativeTranslate_comp] at h
   exact (surjective_coprod_fderiv_comp_extChartAt_symm_iff hxa hyb).1 h
 
-/-- Under the hypotheses of `TauCeti.addHaar_setOf_not_forall_isTransverseAt_relativeTranslate`,
-the parameters `p` for which `relativeTranslate f β p` is transverse to `j` at every point are
-dense in `V`. -/
+/-- Under the hypotheses of
+`TauCeti.addHaar_setOf_not_forall_isTransverseAt_relativeTranslate_eq_zero`, the parameters `p`
+for which `relativeTranslate f β p` is transverse to `j` at every point are dense in `V`. -/
 theorem dense_setOf_forall_isTransverseAt_relativeTranslate [LindelofSpace M] [LindelofSpace N]
     {f : M → V} {β : M → ℝ} {j : N → V} {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
     (hf : ContMDiff I 𝓘(ℝ, V) n f) (hβ : ContMDiff I 𝓘(ℝ) n β) (hj : ContMDiff J 𝓘(ℝ, V) n j)
@@ -151,11 +142,12 @@ theorem dense_setOf_forall_isTransverseAt_relativeTranslate [LindelofSpace M] [L
     Dense {p | ∀ x, IsTransverseAt I J (relativeTranslate f β p) j x} := by
   borelize V
   exact Measure.dense_of_ae (μ := (addHaar : Measure V)) <| ae_iff.2 <|
-    addHaar_setOf_not_forall_isTransverseAt_relativeTranslate addHaar hf hβ hj hnonneg hgood hn
+    addHaar_setOf_not_forall_isTransverseAt_relativeTranslate_eq_zero addHaar hf hβ hj hnonneg hgood
+      hn
 
 /-- **Small relative transverse perturbations on manifolds.** Under the hypotheses of
-`TauCeti.addHaar_setOf_not_forall_isTransverseAt_relativeTranslate`, for every `r > 0` there is
-`p` with `‖p‖ < r` such that `relativeTranslate f β p` is transverse to `j` at every point of `M`
+`TauCeti.addHaar_setOf_not_forall_isTransverseAt_relativeTranslate_eq_zero`, for every `r > 0` there
+is `p` with `‖p‖ < r` such that `relativeTranslate f β p` is transverse to `j` at every point of `M`
 and agrees with `f` on the zero set of `β`. -/
 theorem exists_forall_isTransverseAt_relativeTranslate [LindelofSpace M] [LindelofSpace N]
     {f : M → V} {β : M → ℝ} {j : N → V} {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
@@ -169,7 +161,8 @@ theorem exists_forall_isTransverseAt_relativeTranslate [LindelofSpace M] [Lindel
   exact ⟨p, mem_ball_zero_iff.1 hpr, hp, eqOn_relativeTranslate_of_eq_zero p fun _ h ↦ h⟩
 
 /-- **Transverse perturbations fixing a closed set.** Let `M` be a Hausdorff σ-compact boundaryless
-smooth manifold and `C ⊆ M` closed. If a `C^n` map `f : M → V` is transverse to `j` at every point
+smooth manifold, `C ⊆ M` closed, and `j : N → V` a `C^n` map from a boundaryless Lindelöf manifold
+`N` over a finite-dimensional model. If a `C^n` map `f : M → V` is transverse to `j` at every point
 of `C`, with `n` at least `dim M + dim N - dim V + 1`, then there is a smooth cutoff
 `β : M → [0, 1]` vanishing exactly on `C` such that for every `r > 0` some `p` with `‖p‖ < r`
 makes `relativeTranslate f β p` transverse to `j` at every point, while agreeing with `f` on

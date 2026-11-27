@@ -73,6 +73,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   - `TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm`,
     `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`,
     `ContMDiffAt.contDiffAt_comp_extChartAt_symm`,
+    `ContMDiff.contDiffAt_comp_extChartAt_symm_of_mem_target`,
     `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`, and
     `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: `C^n` and
     differentiability equivalences for maps into a normed space in preferred or maximal-atlas
@@ -99,6 +100,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
     differentials, zeros, injectivity, critical points, and (for boundaryless sources) Fréchet
     derivative norms across arbitrary charts for maps into a normed space.
   - `TauCeti.fderivWithin_comp_extChartAt_symm`,
+    `TauCeti.range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm_of_mem_source`,
     `ContMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm`,
     `HasMFDerivAt.hasFDerivAt_extChartAt_comp`, `ContinuousAt.fderiv_extChartAt_comp_apply`, and
     `ContinuousAt.symmL_fderiv_extChartAt_comp_apply`: chart-coordinate derivatives and compact-set
@@ -516,6 +518,15 @@ theorem ContMDiffAt.contDiffAt_comp_extChartAt_symm {n : WithTop ℕ∞}
     ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
   TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.mp hf
 
+/-- On a boundaryless `C^n` manifold, a `C^n` map into a normed space, read in the extended chart
+at `x`, is `C^n` at every point of the chart target, not only at the chart image of `x`. -/
+theorem ContMDiff.contDiffAt_comp_extChartAt_symm_of_mem_target {n : WithTop ℕ∞}
+    [IsManifold I n M] (hf : ContMDiff I 𝓘(𝕜, F) n f) {w : E}
+    (hw : w ∈ (extChartAt I x).target) :
+    ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) w :=
+  (contMDiffOn_iff_contDiffOn.1 (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x))).contDiffAt
+    ((isOpen_extChartAt_target x).mem_nhds hw)
+
 /-- On a product of boundaryless manifolds, a map into a normed space which is `C^n` at `(x, x')`
 has a `C^n` coordinate expression in the preferred extended charts at `x` and `x'`, at the pair of
 chart images. -/
@@ -833,6 +844,33 @@ theorem fderivWithin_comp_extChartAt_symm {f : M → F} {x : M} (α : M)
     rw [fderivWithin_zero_of_not_differentiableWithinAt (mt hiff.mpr hf),
       mfderiv_zero_of_not_mdifferentiableAt hf]
     exact (ContinuousLinearMap.zero_comp _).symm
+
+/-- On a boundaryless `C¹` manifold, the range of the differential of `f : M → F` at `x` is the
+range of the Fréchet derivative of `f` read in any extended chart whose source contains `x`; the
+chart need not be centred at `x`, and `f` need not be differentiable. For the preferred chart at
+`x` this is `TauCeti.range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm`, which needs no
+smoothness of the atlas. -/
+theorem range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm_of_mem_source [I.Boundaryless]
+    {f : M → F} {a x : M} (hx : x ∈ (extChartAt I a).source) :
+    (mvfderiv I f x).range = (fderiv 𝕜 (f ∘ (extChartAt I a).symm) (extChartAt I a x)).range := by
+  -- Both chart readings are `mfderiv` after a tangent coordinate change, and the change from the
+  -- chart at `x` to itself is the identity at `x`.
+  have hd : fderiv 𝕜 (f ∘ (extChartAt I a).symm) (extChartAt I a x) =
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) ∘L tangentCoordChange I a x x := by
+    simp only [← fderivWithin_univ, ← ModelWithCorners.Boundaryless.range_eq_univ (I := I),
+      fderivWithin_comp_extChartAt_symm a hx,
+      fderivWithin_comp_extChartAt_symm x (mem_extChartAt_source x)]
+    ext v
+    change mfderiv I 𝓘(𝕜, F) f x (tangentCoordChange I a x x v) =
+      mfderiv I 𝓘(𝕜, F) f x (tangentCoordChange I x x x (tangentCoordChange I a x x v))
+    rw [tangentCoordChange_self (mem_extChartAt_source x)]
+  -- The tangent coordinate change from the chart at `a` to the chart at `x` is onto, with right
+  -- inverse the change in the other direction.
+  have hT : (tangentCoordChange I a x x : E →ₗ[𝕜] E).range = ⊤ :=
+    LinearMap.range_eq_top.2 fun v ↦ ⟨tangentCoordChange I x a x v,
+      tangentCoordChange_tangentCoordChange (mem_extChartAt_source x) hx v⟩
+  rw [hd, range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp_of_range_eq_top _ hT]
 
 end TauCeti
 

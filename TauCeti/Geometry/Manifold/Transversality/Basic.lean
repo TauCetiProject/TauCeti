@@ -192,29 +192,6 @@ end Incidence
 
 section Charts
 
-/-- On a boundaryless `C¹` manifold, the range of the differential of `g : M → V` at `x` is the
-range of the Fréchet derivative of `g` read in any extended chart whose source contains `x`; the
-chart need not be centred at `x`, and `g` need not be differentiable. For the preferred chart at
-`x` this is `TauCeti.range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm`, which needs no
-smoothness of the atlas. -/
-theorem range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm_of_mem_source [I.Boundaryless]
-    [IsManifold I 1 M] {g : M → V} {a x : M} (hx : x ∈ (extChartAt I a).source) :
-    (mvfderiv I g x).range = (fderiv 𝕜 (g ∘ (extChartAt I a).symm) (extChartAt I a x)).range := by
-  have hd : fderiv 𝕜 (g ∘ (extChartAt I a).symm) (extChartAt I a x) =
-      (mvfderiv I g x ∘L tangentCoordChange I a x x : E →L[𝕜] V) := by
-    rw [← fderivWithin_univ, ← ModelWithCorners.Boundaryless.range_eq_univ (I := I),
-      fderivWithin_comp_extChartAt_symm a hx]
-    -- `mvfderiv` is `mfderiv` followed by the identification of `TangentSpace 𝓘(𝕜, V) (g x)`
-    -- with `V`, which is the identity.
-    rfl
-  -- The tangent coordinate change from the chart at `a` to the chart at `x` is onto, with right
-  -- inverse the change in the other direction.
-  have hT : (tangentCoordChange I a x x : E →ₗ[𝕜] E).range = ⊤ :=
-    LinearMap.range_eq_top.2 fun v ↦ ⟨tangentCoordChange I x a x v,
-      tangentCoordChange_tangentCoordChange (mem_extChartAt_source x) hx v⟩
-  rw [hd]
-  exact (LinearMap.range_comp_of_range_eq_top _ hT).symm
-
 /-- **Transversality in charts.** On boundaryless `C¹` manifolds, the surjectivity condition
 defining `TauCeti.IsTransverseAt` at a pair `(x, y)` can be read in any extended charts whose
 sources contain `x` and `y`: it holds for the Fréchet derivatives of `g` and `j` in these charts
