@@ -30,6 +30,12 @@ By translating a degree-zero idempotent `p : (I → A) →ₗ[A] (I → A)` into
   finite homogeneous `A`-basis `b : Module.Basis (Fin n) A (LinearMap.range p)` with
   `(b i).val j ∈ 𝒜 (d i - s j)`.
 
+Compare `TauCeti.exists_homogeneous_basis_range_idempotent` in
+`TauCeti.RingTheory.GradedAlgebra.IdempotentBasis`, which treats commutative algebras under the
+weaker `[SetLike.GradedOne 𝒜]` hypothesis via block-triangular matrix idempotents; here `A` need
+not be commutative and `exists_homogeneous_splitting_of_idempotent_of_connected` also constructs
+explicit homogeneous splitting maps `ι` and `π`.
+
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
@@ -132,12 +138,8 @@ theorem exists_homogeneous_basis_range_idempotent_of_connected
       (GradedModuleCat.retractRangeOfPiIdempotent s p hp hhom)
   let equivRange := GradedModuleCat.rangeEquivRangeObj s p hhom
   refine ⟨n, b.map equivRange.symm, d, fun i ↦ ?_⟩
-  have hval : (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm
-      (b.map equivRange.symm i).val = (b i).val := by
-    rw [Module.Basis.map_apply,
-      ← GradedModuleCat.coe_rangeEquivRangeObj_apply s p hhom (equivRange.symm (b i)),
-      equivRange.apply_symm_apply]
-  exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s (d i) _).mp
-    (hval ▸ (GradedModuleCat.mem_rangeObjOfPiEnd_piece_iff s p hhom).mp (hb i))
+  have hb' : equivRange (b.map equivRange.symm i) = b i := by
+    rw [Module.Basis.map_apply, equivRange.apply_symm_apply]
+  exact (GradedModuleCat.mem_rangeObjOfPiEnd_piece_iff_coord s p hhom).mp (hb' ▸ hb i)
 
 end TauCeti

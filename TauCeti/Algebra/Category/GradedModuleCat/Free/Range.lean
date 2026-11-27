@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 import Mathlib.Algebra.Module.LinearMap.DivisionRing
 import TauCeti.Algebra.Category.GradedModuleCat.Free.Coordinates
 import TauCeti.Algebra.Category.GradedModuleCat.Free.Head
-import TauCeti.Algebra.Module.GradedModule.Product
 
 /-!
 # Degree-multiset uniqueness for homogeneous bases of graded endomorphism ranges
@@ -70,15 +69,9 @@ theorem multiset_map_eq_of_homogeneous_basis_range
   let mkIso : ∀ {n : ℕ} (b : Module.Basis (Fin n) A (LinearMap.range p)) (d : Fin n → ℤ),
       (∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) →
         (free 𝒜 (d ∘ ULift.down) ≅ rangeObjOfPiEnd s p hhom) :=
-    fun b d hb ↦ ((b.reindex Equiv.ulift.symm).map equivRange).isoGradedFree fun i ↦
-      (mem_rangeObjOfPiEnd_piece_iff s p hhom).mpr <| by
-        have hval : (((b.reindex Equiv.ulift.symm).map equivRange) i).val =
-            (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm (b i.down).val := by
-          rw [Module.Basis.map_apply, Module.Basis.reindex_apply]
-          exact coe_rangeEquivRangeObj_apply s p hhom (b i.down)
-        rw [hval]
-        exact (linearEquivFunOnFintype_symm_mem_free_piece_iff
-          𝒜 s (d i.down) (b i.down).val).mpr (hb i.down)
+    fun b d hb ↦ ((b.reindex Equiv.ulift.symm).map equivRange).isoGradedFree fun i ↦ by
+      rw [Module.Basis.map_apply, Module.Basis.reindex_apply]
+      exact (mem_rangeObjOfPiEnd_piece_iff_coord s p hhom).mpr (hb i.down)
   have hU := multiset_map_eq_of_iso_free hneg hzero
     ((mkIso b₁ d₁ hb₁).trans (mkIso b₂ d₂ hb₂).symm)
   have huniv : ∀ {n : ℕ} (d : Fin n → ℤ),
@@ -120,7 +113,7 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
     rw [hval]
     exact hw j
   have h := multiset_map_eq_of_homogeneous_basis_range hneg hzero s p
-    (InternalGrading.homogeneous_of_apply_eq_smul s i₀ hp hw) b d hb b₀ (fun _ ↦ s i₀) hb₀
+    (homogeneous_of_apply_eq_smul s i₀ hp hw) b d hb b₀ (fun _ ↦ s i₀) hb₀
   simpa using h
 
 end TauCeti.GradedModuleCat

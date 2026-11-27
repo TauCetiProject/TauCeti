@@ -467,7 +467,7 @@ theorem exists_isMinimal (M : GradedModuleCat.{max uA v} 𝒜) (b : ℤ)
       refine ⟨P, π, hP, hπ, hmin, hPb, fun p hp => ?_⟩
       rw [Submodule.eq_bot_iff]
       intro z hz
-      rw [InternalGrading.mem_submodule_piece, hPb p hp, Submodule.mem_bot] at hz
+      rw [mem_submoduleObj_piece_iff, hPb p hp, Submodule.mem_bot] at hz
       exact Subtype.ext hz) M hb
 
 variable [HasExt.{w} (GradedModuleCat.{max uA v} 𝒜)]

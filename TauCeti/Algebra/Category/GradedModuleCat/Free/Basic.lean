@@ -431,4 +431,22 @@ theorem homogeneousBasis_mem_piece {I : Type uI} {d : I → ℤ}
   rw [homogeneousBasis_apply]
   exact map_mem Φ.hom (freeGenerator_mem_free_piece i)
 
+/-- Converting a homogeneous `A`-basis to an isomorphism and back recovers the original basis. -/
+@[simp]
+theorem homogeneousBasis_isoGradedFree {I : Type uI} {d : I → ℤ}
+    {M : GradedModuleCat.{max uA uI} 𝒜} (b : Module.Basis I A M)
+    (hb : ∀ i, b i ∈ M.grading.piece (d i)) :
+    (b.isoGradedFree hb).homogeneousBasis = b := by
+  ext i
+  rw [homogeneousBasis_apply, Module.Basis.isoGradedFree_hom_freeGenerator]
+
+/-- Converting an isomorphism `free 𝒜 d ≅ M` to its homogeneous basis and back recovers the
+original isomorphism. -/
+@[simp]
+theorem _root_.Module.Basis.isoGradedFree_homogeneousBasis {I : Type uI} {d : I → ℤ}
+    {M : GradedModuleCat.{max uA uI} 𝒜} (Φ : free 𝒜 d ≅ M) :
+    Φ.homogeneousBasis.isoGradedFree Φ.homogeneousBasis_mem_piece = Φ := by
+  ext i
+  rw [Module.Basis.isoGradedFree_hom_freeGenerator, homogeneousBasis_apply]
+
 end CategoryTheory.Iso

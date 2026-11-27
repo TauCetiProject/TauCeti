@@ -64,7 +64,7 @@ theorem coe_kernelDifferential (x : LinearMap.ker (closedHom f)) :
 private theorem mem_gradedKernel_piece_iff {p : ℤ} {x : LinearMap.ker (closedHom f)} :
     x ∈ (GradedModuleCat.kernelObj ((forgetDifferential (h := h)).map f)).grading.piece p ↔
       (x : M) ∈ M.grading p := by
-  simp only [GradedModuleCat.kernelObj, InternalGrading.mem_submodule_piece]
+  rw [GradedModuleCat.mem_submoduleObj_piece_iff]
   -- The element is typed through the kernel subtype of the forgetful object. Rewriting
   -- that object equality would change its dependent element type; align this foreign
   -- carrier once in the helper, then use the public grading equation.

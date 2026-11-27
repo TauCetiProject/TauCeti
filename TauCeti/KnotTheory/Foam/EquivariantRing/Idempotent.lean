@@ -64,7 +64,7 @@ theorem exists_homogeneous_splitting_of_idempotent (N : ℕ) {I : Type*} [Finite
         (∀ j, v j ∈ grading N (q - s j)) → ∀ i, π v i ∈ grading N (q - d i)) :=
   exists_homogeneous_splitting_of_idempotent_of_connected
     (𝒜 := grading N) (fun _ ↦ grading_eq_bot_of_lt_zero N)
-    (mem_range_of_mem_grading_zero N) s p hp hhom
+    (fun _ hx ↦ grading_zero_eq_range N ▸ hx) s p hp hhom
 
 /-- **Integral homogeneous basis of an idempotent image over `EquivariantRing N`.**
 Every degree-zero idempotent `EquivariantRing N`-linear endomorphism `p` on a finite sum of shifted
@@ -85,7 +85,7 @@ theorem exists_homogeneous_basis_range_idempotent (N m : ℕ) (s : Fin m → ℤ
   exists_homogeneous_basis_range_idempotent_of_connected
     (𝒜 := grading N)
     (fun _ ↦ grading_eq_bot_of_lt_zero N)
-    (mem_range_of_mem_grading_zero N) s p hp hhom
+    (fun _ hx ↦ grading_zero_eq_range N ▸ hx) s p hp hhom
 
 end EquivariantRing
 

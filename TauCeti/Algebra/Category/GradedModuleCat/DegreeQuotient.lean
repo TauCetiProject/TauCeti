@@ -87,20 +87,17 @@ abbrev offDegreeObj (M : GradedModuleCat.{v} 𝒜) (p : ℤ) : GradedModuleCat.{
 theorem mem_offDegreeObj_piece_iff (M : GradedModuleCat.{v} 𝒜) (p q : ℤ)
     (x : M.offDegreeObj p) :
     x ∈ (M.offDegreeObj p).grading.piece q ↔ (x : M) ∈ M.grading.piece q :=
-  InternalGrading.mem_submodule_piece ..
+  M.mem_submoduleObj_piece_iff (M.offDegreeSpan p) (M.isHomogeneous_offDegreeSpan p)
 
 /-- The inclusion of the submodule killed by the degree quotient. -/
 def offDegreeι (M : GradedModuleCat.{v} 𝒜) (p : ℤ) : M.offDegreeObj p ⟶ M :=
-  ofHom (M.offDegreeSpan p).subtype <|
-    LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
-      simpa only [add_zero, Submodule.subtype_apply] using
-        (M.mem_offDegreeObj_piece_iff p q x).mp hx
+  M.submoduleι (M.offDegreeSpan p) (M.isHomogeneous_offDegreeSpan p)
 
 /-- The off-degree inclusion has the underlying submodule inclusion as its linear map. -/
 @[simp]
 theorem hom_offDegreeι (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
     (M.offDegreeι p).hom = (M.offDegreeSpan p).subtype :=
-  (rfl)
+  M.hom_submoduleι _ _
 
 /-- The universal quotient of `M` concentrated in internal degree `p`. -/
 abbrev degreeQuotient (M : GradedModuleCat.{v} 𝒜) (p : ℤ) : GradedModuleCat.{v} 𝒜 :=

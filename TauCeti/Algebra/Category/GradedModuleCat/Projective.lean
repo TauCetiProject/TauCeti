@@ -136,7 +136,7 @@ theorem isIso_of_sub_id_mem_positive_smul_top
   have hker_below : ∀ p < b, (kernelObj f).grading.piece p = ⊥ := fun p hp ↦
     (Submodule.eq_bot_iff _).mpr fun z hz ↦ Subtype.ext <|
       (Submodule.eq_bot_iff _).mp (hb p hp) z.val
-        ((InternalGrading.mem_submodule_piece _ _ _).mp hz)
+        ((mem_submoduleObj_piece_iff P _ _).mp hz)
   let _ := (kernelObj f).gradedSMul
   have : Subsingleton (kernelObj f) :=
     InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 b hker_below hker_top

@@ -88,13 +88,12 @@ noncomputable abbrev kernelObj : GradedModuleCat.{v} 𝒜 :=
 /-- The inclusion of the kernel of a morphism of graded modules. -/
 @[expose]
 noncomputable def kernelι : kernelObj f ⟶ M :=
-  ofHom (M := kernelObj f) (LinearMap.ker f.hom).subtype <|
-    LinearMap.isHomogeneous_def.2 fun _ _ hz ↦ by simpa [kernelObj] using hz
+  M.submoduleι (LinearMap.ker f.hom) f.isHomogeneous.isHomogeneous_ker
 
 /-- The underlying linear map of the kernel inclusion is the submodule inclusion. -/
 @[simp]
 theorem hom_kernelι : (kernelι f).hom = (LinearMap.ker f.hom).subtype :=
-  rfl
+  M.hom_submoduleι _ _
 
 @[reassoc (attr := simp)]
 theorem kernelι_comp : kernelι f ≫ f = 0 :=
@@ -113,7 +112,7 @@ theorem hom_kernelCone_ι : (kernelCone f).ι.hom = (LinearMap.ker f.hom).subtyp
 @[simp]
 theorem mem_kernelCone_pt_piece_iff {p : ℤ} {z : (kernelCone f).pt} :
     z ∈ (kernelCone f).pt.grading.piece p ↔ (kernelCone f).ι.hom z ∈ M.grading.piece p :=
-  InternalGrading.mem_submodule_piece _ _ _
+  mem_submoduleObj_piece_iff M _ _
 
 /-- The kernel of a morphism of graded modules is a limit. -/
 noncomputable def kernelIsLimit : IsLimit (kernelCone f) :=

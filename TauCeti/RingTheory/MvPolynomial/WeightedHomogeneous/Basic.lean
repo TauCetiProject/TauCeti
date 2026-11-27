@@ -121,9 +121,9 @@ degree-zero part `R`.
   weights in `ℕ`, every variable occurring in a weighted homogeneous polynomial of weight `m`
   in `idealOfVars σ R ^ 2` has weight strictly less than `m`.
 * `MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_neg` and
-  `MvPolynomial.mem_bot_of_mem_weightedHomogeneousSubmodule_zero`: for nonnegative weights the
-  pieces of negative weight vanish, and for positive weights the piece of weight zero consists of
-  constants (`MvPolynomial.IsWeightedHomogeneous.eq_C_coeff_zero`).
+  `MvPolynomial.IsWeightedHomogeneous.eq_C_coeff_zero`: for nonnegative weights the
+  pieces of negative weight vanish, and for positive weights weighted homogeneous polynomials of
+  weight zero are constants.
 
 ## References
 
@@ -596,13 +596,6 @@ theorem IsWeightedHomogeneous.eq_C_coeff_zero {φ : MvPolynomial σ R}
 theorem weightedHomogeneousSubmodule_eq_bot_of_neg (hw : ∀ i, 0 ≤ w i) {n : M} (hn : n < 0) :
     weightedHomogeneousSubmodule R w n = ⊥ :=
   (Submodule.eq_bot_iff _).2 fun _ hφ ↦ IsWeightedHomogeneous.eq_zero_of_neg hφ hw hn
-
-/-- For positive weights, the weighted homogeneous submodule of weight zero consists of
-constants. -/
-theorem mem_bot_of_mem_weightedHomogeneousSubmodule_zero (hw : ∀ i, 0 < w i)
-    {φ : MvPolynomial σ R} (hφ : φ ∈ weightedHomogeneousSubmodule R w 0) :
-    φ ∈ (⊥ : Subalgebra R (MvPolynomial σ R)) :=
-  Algebra.mem_bot.2 ⟨φ.coeff 0, (IsWeightedHomogeneous.eq_C_coeff_zero hφ hw).symm⟩
 
 end NonnegWeight
 

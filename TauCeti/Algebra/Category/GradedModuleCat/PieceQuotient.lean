@@ -161,6 +161,19 @@ theorem pieceQuotientHom_apply {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p
         ⟨f.hom x.val, mem_pieceSubmodule.mpr (map_mem f (mem_pieceSubmodule.mp x.property))⟩ :=
   Submodule.mapQ_apply _ _ _ _
 
+/-- `pieceQuotientHom f p` commutes with the quotient projections `pieceQuotientMap`. -/
+@[simp]
+theorem pieceQuotientHom_pieceQuotientMap {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ)
+    (x : M) :
+    pieceQuotientHom f p (pieceQuotientMap M p x) = pieceQuotientMap N p (f.hom x) := by
+  simp only [pieceQuotientMap, LinearMap.coe_comp, LinearMap.coe_mk, AddHom.coe_mk,
+    Function.comp_apply, Submodule.mkQ_apply, pieceQuotientHom_apply]
+  congr 1
+  ext
+  have h := f.isHomogeneous.map_decompose p x
+  rw [add_zero] at h
+  exact h
+
 /-- `pieceQuotientHom` sends the identity morphism to the identity linear map. -/
 @[simp]
 theorem pieceQuotientHom_id (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :

@@ -166,11 +166,6 @@ theorem grading_zero_eq_range (N : ℕ) :
   rw [grading_def]
   exact MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range ℤ (weight_pos N)
 
-/-- Every degree-zero element of `EquivariantRing N` lies in the image of `ℤ`. -/
-theorem mem_range_of_mem_grading_zero (N : ℕ) (a : EquivariantRing N) (ha : a ∈ grading N 0) :
-    a ∈ LinearMap.range (Algebra.linearMap ℤ (EquivariantRing N)) :=
-  grading_zero_eq_range N ▸ ha
-
 /-- Membership in `grading N (2 * m)` (`m : ℕ`) is equivalent to `ℕ`-weighted homogeneity of weight
 `m` for the standard elementary-symmetric weights `i ↦ i + 1`. -/
 theorem mem_grading_two_mul_iff {N : ℕ} {m : ℕ} {f : EquivariantRing N} :

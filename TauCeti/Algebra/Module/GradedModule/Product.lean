@@ -20,8 +20,6 @@ of the total modules. An arbitrary family of inhomogeneous elements need not bel
 The internal grading is transported from the canonical summands of the direct sum. Homogeneous
 maps of one common degree lift componentwise into this product. This includes degree-one
 differentials and degree-minus-one homotopies, as well as degree-zero graded morphisms.
-Coordinatewise maps of the form `v ↦ v i₀ • w` preserve shifted degree-zero homogeneity when
-`w j ∈ 𝒜 (s i₀ - s j)` (`TauCeti.InternalGrading.homogeneous_of_apply_eq_smul`).
 
 ## References
 
@@ -304,19 +302,5 @@ theorem productLift_isHomogeneous :
   exact (mem_product_piece_iff G (p + r) _).mpr fun j ↦ (hf j).map_mem hx
 
 end Scalars
-
-section ShiftedProduct
-
-/-- If `p v = v i₀ • w` and `∀ j, w j ∈ 𝒜 (s i₀ - s j)`, then `p` preserves shifted homogeneity
-of degree zero on the shifted module `I → A` with shifts `s`. -/
-theorem homogeneous_of_apply_eq_smul {A I σ : Type*} [Semiring A] [SetLike σ A]
-    {𝒜 : ℤ → σ} [SetLike.GradedMul 𝒜] (s : I → ℤ) {p : (I → A) →ₗ[A] (I → A)}
-    (i₀ : I) {w : I → A} (hp : ∀ v, p v = v i₀ • w) (hw : ∀ j, w j ∈ 𝒜 (s i₀ - s j))
-    (d : ℤ) (v : I → A) (hv : ∀ j, v j ∈ 𝒜 (d - s j)) (j : I) :
-    p v j ∈ 𝒜 (d - s j) := by
-  rw [hp, Pi.smul_apply, smul_eq_mul]
-  simpa [sub_add_sub_cancel] using SetLike.mul_mem_graded (hv i₀) (hw j)
-
-end ShiftedProduct
 
 end TauCeti.InternalGrading

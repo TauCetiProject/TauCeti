@@ -23,9 +23,12 @@ a coordinate membership criterion and graded endomorphisms and range objects in
   `TauCeti.GradedModuleCat.linearEquivFunOnFintype_trans_piCongrLeft_symm_mem_free_piece_iff`:
   tuple membership in the degree-`p` piece of `free 𝒜 d` and its reindexing along an
   equivalence.
+* `TauCeti.GradedModuleCat.homogeneous_of_apply_eq_smul`: rank-one coordinatewise maps
+  `v ↦ v i₀ • w` preserve shifted degree-zero homogeneity.
 * `TauCeti.GradedModuleCat.freeEndOfPiEnd`, `TauCeti.GradedModuleCat.rangeObjOfPiEnd`,
-  `TauCeti.GradedModuleCat.rangeEquivRangeObj`: graded endomorphism and graded range object in
-  `GradedModuleCat 𝒜` associated to a degree-zero endomorphism of `I → A`.
+  `TauCeti.GradedModuleCat.rangeEquivRangeObj`,
+  `TauCeti.GradedModuleCat.mem_rangeObjOfPiEnd_piece_iff_coord`: graded endomorphism and graded
+  range object in `GradedModuleCat 𝒜` associated to a degree-zero endomorphism of `I → A`.
 -/
 
 public section
@@ -35,6 +38,16 @@ open CategoryTheory _root_.DirectSum
 namespace TauCeti.GradedModuleCat
 
 universe uk uA uI
+
+/-- If `p v = v i₀ • w` and `∀ j, w j ∈ 𝒜 (s i₀ - s j)`, then `p` preserves shifted homogeneity
+of degree zero on the shifted module `I → A` with shifts `s`. -/
+theorem homogeneous_of_apply_eq_smul {A I σ : Type*} [Semiring A] [SetLike σ A]
+    {𝒜 : ℤ → σ} [SetLike.GradedMul 𝒜] (s : I → ℤ) {p : (I → A) →ₗ[A] (I → A)}
+    (i₀ : I) {w : I → A} (hp : ∀ v, p v = v i₀ • w) (hw : ∀ j, w j ∈ 𝒜 (s i₀ - s j))
+    (d : ℤ) (v : I → A) (hv : ∀ j, v j ∈ 𝒜 (d - s j)) (j : I) :
+    p v j ∈ 𝒜 (d - s j) := by
+  rw [hp, Pi.smul_apply, smul_eq_mul]
+  simpa [sub_add_sub_cancel] using SetLike.mul_mem_graded (hv i₀) (hw j)
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
@@ -117,7 +130,7 @@ theorem mem_rangeObjOfPiEnd_piece_iff {I : Type uI} [Fintype I] (s : I → ℤ)
     {q : ℤ} {x : rangeObjOfPiEnd s p hhom} :
     x ∈ (rangeObjOfPiEnd s p hhom).grading.piece q ↔
       x.val ∈ (free 𝒜 s).grading.piece q :=
-  InternalGrading.mem_submodule_piece _ _ _
+  mem_submoduleObj_piece_iff (free 𝒜 s) _ _
 
 /-- `A`-linear identification `LinearMap.range p ≃ₗ[A] rangeObjOfPiEnd s p hhom`. -/
 noncomputable def rangeEquivRangeObj {I : Type uI} [Fintype I] (s : I → ℤ)
@@ -142,5 +155,16 @@ theorem coe_rangeEquivRangeObj_apply {I : Type uI} [Fintype I] (s : I → ℤ)
     (rangeEquivRangeObj s p hhom x).val =
       (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm x.val :=
   LinearEquiv.ofSubmodules_apply _ _ x
+
+/-- An element `x` of `LinearMap.range p`, transported via `rangeEquivRangeObj`, has degree `q`
+in `rangeObjOfPiEnd s p hhom` exactly when its `j`-th coordinate lies in `𝒜 (q - s j)`. -/
+theorem mem_rangeObjOfPiEnd_piece_iff_coord {I : Type uI} [Fintype I] (s : I → ℤ)
+    (p : (I → A) →ₗ[A] (I → A))
+    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j))
+    {q : ℤ} {x : LinearMap.range p} :
+    rangeEquivRangeObj s p hhom x ∈ (rangeObjOfPiEnd s p hhom).grading.piece q ↔
+      ∀ j, x.val j ∈ 𝒜 (q - s j) := by
+  rw [mem_rangeObjOfPiEnd_piece_iff, coe_rangeEquivRangeObj_apply,
+    linearEquivFunOnFintype_symm_mem_free_piece_iff]
 
 end TauCeti.GradedModuleCat

@@ -19,6 +19,13 @@ as an object `TauCeti.GradedModuleCat.submoduleObj M U hU` of `GradedModuleCat �
 
 * `TauCeti.GradedModuleCat.submoduleObj`: a homogeneous `A`-submodule packaged as a graded
   `𝒜`-module.
+* `TauCeti.GradedModuleCat.submoduleι`: the canonical inclusion morphism `M.submoduleObj U hU ⟶ M`.
+
+## Main results
+
+* `TauCeti.GradedModuleCat.mem_submoduleObj_piece_iff`: degree-`p` membership in
+  `M.submoduleObj U hU` is ambient degree-`p` membership in `M`.
+* `TauCeti.GradedModuleCat.hom_submoduleι`: `(submoduleι M U hU).hom = U.subtype`.
 -/
 
 public section
@@ -42,5 +49,28 @@ noncomputable abbrev submoduleObj (M : GradedModuleCat.{v} 𝒜) (U : Submodule 
   gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
     rw [InternalGrading.mem_submodule_piece] at hx ⊢
     exact SetLike.GradedSMul.smul_mem (B := M.grading.piece) ha hx⟩
+
+/-- An element of a homogeneous submodule `M.submoduleObj U hU` has degree `p` exactly when its
+underlying element has degree `p` in `M`. This is not a simp lemma:
+`InternalGrading.submodule_piece` and `Submodule.mem_comap` already simplify its left side. -/
+theorem mem_submoduleObj_piece_iff (M : GradedModuleCat.{v} 𝒜) (U : Submodule A M)
+    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U) {p : ℤ}
+    {x : M.submoduleObj U hU} :
+    x ∈ (M.submoduleObj U hU).grading.piece p ↔ x.val ∈ M.grading.piece p :=
+  InternalGrading.mem_submodule_piece _ _ _
+
+/-- The canonical inclusion morphism of a homogeneous submodule into the ambient graded module. -/
+@[expose]
+noncomputable def submoduleι (M : GradedModuleCat.{v} 𝒜) (U : Submodule A M)
+    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U) :
+    M.submoduleObj U hU ⟶ M :=
+  ofHom U.subtype (M.grading.isHomogeneous_subtype U hU)
+
+/-- The underlying linear map of `submoduleι` is the submodule inclusion `U.subtype`. -/
+@[simp]
+theorem hom_submoduleι (M : GradedModuleCat.{v} 𝒜) (U : Submodule A M)
+    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U) :
+    (submoduleι M U hU).hom = U.subtype :=
+  rfl
 
 end TauCeti.GradedModuleCat

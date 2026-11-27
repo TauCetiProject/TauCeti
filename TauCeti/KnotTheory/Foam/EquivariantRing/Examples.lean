@@ -7,8 +7,8 @@ module
 
 public import TauCeti.KnotTheory.Foam.EquivariantRing.Idempotent
 import Mathlib.Tactic.FinCases
+import TauCeti.Algebra.Category.GradedModuleCat.Free.Coordinates
 import TauCeti.Algebra.Category.GradedModuleCat.Free.Range
-import TauCeti.Algebra.Module.GradedModule.Product
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -57,7 +57,7 @@ theorem id_shift_three_degree (N : ℕ) :
     (LinearMap.comp_id _) (fun _ _ hv j ↦ hv j)
   refine ⟨n, b, d, hb, GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range
     (fun _ ↦ EquivariantRing.grading_eq_bot_of_lt_zero N)
-    (EquivariantRing.mem_range_of_mem_grading_zero N)
+    (fun _ hx ↦ EquivariantRing.grading_zero_eq_range N ▸ hx)
     (fun _ ↦ 3) 0 (w := fun _ ↦ 1) (fun v ↦ funext fun j ↦ ?_) rfl hw b d hb⟩
   rw [Fin.eq_zero j]
   simp
@@ -82,10 +82,10 @@ theorem diag_one_zero_degree (N : ℕ) (a b : ℤ) :
     · simp
   obtain ⟨n, basis, d, hb⟩ := exists_homogeneous_basis_range_idempotent N 2 ![a, b] p
     (idempotent_of_apply_eq_smul 0 (fun _ ↦ rfl) rfl)
-    (InternalGrading.homogeneous_of_apply_eq_smul ![a, b] 0 (fun _ ↦ rfl) hw)
+    (GradedModuleCat.homogeneous_of_apply_eq_smul ![a, b] 0 (fun _ ↦ rfl) hw)
   exact ⟨n, basis, d, hb, GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range
     (fun _ ↦ EquivariantRing.grading_eq_bot_of_lt_zero N)
-    (EquivariantRing.mem_range_of_mem_grading_zero N)
+    (fun _ hx ↦ EquivariantRing.grading_zero_eq_range N ▸ hx)
     ![a, b] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
 
 /-- Off-diagonal projection `p(x, y) = (x, e₁ x)` on shifts `![2, 0]` for `N + 1 ≥ 1`: `p` is
@@ -110,11 +110,11 @@ theorem e1_offDiag_degree (N : ℕ) :
     · simpa [w] using EquivariantRing.X_mem_grading (N + 1) 0
   have hp : p.comp p = p := idempotent_of_apply_eq_smul (0 : Fin 2) (w := w) (fun _ ↦ rfl) rfl
   obtain ⟨n, basis, d, hb⟩ := exists_homogeneous_basis_range_idempotent (N + 1) 2 ![2, 0] p hp
-    (InternalGrading.homogeneous_of_apply_eq_smul ![2, 0] 0 (fun _ ↦ rfl) hw)
+    (GradedModuleCat.homogeneous_of_apply_eq_smul ![2, 0] 0 (fun _ ↦ rfl) hw)
   exact ⟨hp, n, basis, d, hb,
     GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range
       (fun _ ↦ EquivariantRing.grading_eq_bot_of_lt_zero (N + 1))
-      (EquivariantRing.mem_range_of_mem_grading_zero (N + 1))
+      (fun _ hx ↦ EquivariantRing.grading_zero_eq_range (N + 1) ▸ hx)
       ![2, 0] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
 
 end TauCeti.EquivariantRing.Examples
