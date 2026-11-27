@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
@@ -63,8 +64,9 @@ theorem integral_comap_val [NormedSpace ℝ E] [NullSingletonClass μ] (g : K �
 charge `0` exactly when it is integrable over `K`. -/
 theorem integrable_comap_val_iff [NullSingletonClass μ] {g : K → E} :
     Integrable (fun x : Kˣ ↦ g x) (μ.comap Units.val) ↔ Integrable g μ := by
-  rw [← map_val_comap_val (μ := μ), measurableEmbedding_val₀.integrable_map_iff, map_val_comap_val]
-  rfl
+  have h := measurableEmbedding_val₀.integrable_map_iff (μ := μ.comap Units.val) (g := g)
+  rw [map_val_comap_val, Function.comp_def] at h
+  exact h.symm
 
 /-- The pullback to `Kˣ` of a measure invariant under multiplication by units is left invariant. -/
 theorem isMulLeftInvariant_comap_val [MeasurableMul K] (h : ∀ b : Kˣ, μ.map ((b : K) * ·) = μ) :

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 
 /-!
 # The local Tate zeta integral
@@ -23,6 +25,8 @@ Mathlib's totalized Bochner integral, and proves the identities that only use th
 integrand:
 
 * it is linear in the test function;
+* it is holomorphic in `s` on every half-plane `α < re s` on which `‖f χ‖ a ^ σ` is integrable
+  for all `σ > α`;
 * rescaling the measure by `c` rescales the integral by `c`;
 * twisting `χ` by the norm power `a ^ t` translates `s` by `t`: `z(s, χ a^t; f) = z(s + t, χ; f)`;
 * for a left-invariant `ν` and a multiplicative positive `a`, translating the test function by
@@ -42,6 +46,8 @@ local field are in `TauCeti.NumberTheory.LocalField.TateZeta.Nonarchimedean`.
 
 * `TauCeti.TateZeta.localZetaIntegral_add`, `TauCeti.TateZeta.localZetaIntegral_const_mul`:
   linearity in the test function.
+* `TauCeti.TateZeta.differentiableOn_localZetaIntegral_of_integrable`: holomorphy on a
+  half-plane of absolute convergence.
 * `TauCeti.TateZeta.localZetaIntegral_smul_measure`: `z_{c ν} = c z_ν`.
 * `TauCeti.TateZeta.localZetaIntegral_of_twist`: `z(s, χ a^t; f) = z(s + t, χ; f)`.
 * `TauCeti.TateZeta.localZetaIntegral_comp_mul_left`:
@@ -100,6 +106,16 @@ theorem localZetaIntegral_const_mul (c : ℂ) (f : F → ℂ) (s : ℂ) :
     localZetaIntegral ν a χ (fun x ↦ c * f x) s = c * localZetaIntegral ν a χ f s := by
   rw [localZetaIntegral_def, localZetaIntegral_def, ← integral_const_mul]
   simp only [mul_assoc]
+
+/-- **Holomorphy on a half-plane of absolute convergence.** If `a` is positive and measurable
+on `Fˣ`, `f χ` is almost everywhere strongly measurable and `‖f(x) χ(x)‖ a(x) ^ σ` is integrable
+for every `σ > α`, then `s ↦ z(s, χ; f)` is holomorphic on the half-plane `α < re s`. -/
+theorem differentiableOn_localZetaIntegral_of_integrable {f : F → ℂ} (ha : ∀ x : Fˣ, 0 < a x)
+    (ham : Measurable fun x : Fˣ ↦ a x)
+    (hf : AEStronglyMeasurable (fun x : Fˣ ↦ f x * (χ x : ℂ)) ν) {α : ℝ}
+    (hint : ∀ σ : ℝ, α < σ → Integrable (fun x : Fˣ ↦ ‖f x * (χ x : ℂ)‖ * a x ^ σ) ν) :
+    DifferentiableOn ℂ (localZetaIntegral ν a χ f) {s | α < s.re} :=
+  differentiableOn_integral_mul_cpow ν ha hf ham hint
 
 /-- Rescaling the multiplicative measure by `c` rescales the local zeta integral by `c`. -/
 theorem localZetaIntegral_smul_measure (c : ENNReal) (f : F → ℂ) (s : ℂ) :

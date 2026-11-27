@@ -63,12 +63,8 @@ theorem unitsFormMeasure_apply (s : Set Kˣ) :
 /-- The pushforward of the form measure along `Units.val` is the measure `|x|_K⁻¹ μ` on `K`. -/
 theorem map_val_unitsFormMeasure :
     (unitsFormMeasure K μ).map Units.val =
-      μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
-  rw [unitsFormMeasure, Units.measurableEmbedding_val₀.map_comap]
-  refine restrict_eq_self_of_ae_mem ?_
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1
-    (withDensity_absolutelyContinuous μ _ (measure_singleton 0))] with x hx
-  exact ⟨Units.mk0 x hx, rfl⟩
+      μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ :=
+  Units.map_val_comap_val
 
 instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeftInvariant :=
   Units.isMulLeftInvariant_comap_val fun u ↦

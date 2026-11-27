@@ -11,7 +11,6 @@ public import TauCeti.Analysis.SpecialFunctions.Complex.ArchimedeanCharacter
 public import TauCeti.MeasureTheory.Constructions.Polish.Units
 public import TauCeti.MeasureTheory.Measure.Haar.ArchimedeanMultHaar
 public import TauCeti.NumberTheory.LocalField.TateZeta.Basic
-import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.Distribution.SchwartzSpace.SingularWeight
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -166,19 +165,15 @@ exponent `r`, `s ↦ z(s, χ; f)` is holomorphic on `re s + r > 0`. -/
 theorem differentiableOn_localZetaIntegral_real {χ : ℝˣ →ₜ* ℂˣ} {r : ℝ}
     (hχ : ∀ x : ℝˣ, ‖(χ x : ℂ)‖ = |(x : ℝ)| ^ r) :
     DifferentiableOn ℂ (localZetaIntegral realUnitsMultHaar (fun x ↦ |x|) χ f)
-      {s | 0 < s.re + r} := by
-  have h := differentiableOn_integral_mul_cpow realUnitsMultHaar (F := fun x ↦ f x * (χ x : ℂ))
-    (a := fun x ↦ |(x : ℝ)|) (α := -r) (fun x ↦ abs_pos.2 x.ne_zero)
+      {s | 0 < s.re + r} :=
+  (differentiableOn_localZetaIntegral_of_integrable realUnitsMultHaar _ χ
+    (fun x ↦ abs_pos.2 x.ne_zero) (continuous_abs.comp Units.continuous_val).measurable
     ((f.continuous.comp Units.continuous_val).mul
-      (Units.continuous_val.comp χ.continuous)).aestronglyMeasurable
-    (continuous_abs.comp Units.continuous_val).measurable fun σ hσ ↦ ?_
-  · rw [show localZetaIntegral realUnitsMultHaar (fun x ↦ |x|) χ f =
-        fun s ↦ ∫ x : ℝˣ, f x * (χ x : ℂ) * ((|(x : ℝ)| : ℝ) : ℂ) ^ s ∂realUnitsMultHaar from
-      funext fun s ↦ localZetaIntegral_def _ _ _ _ _]
-    exact h.mono fun s (hs : 0 < s.re + r) ↦ show -r < s.re by linarith
-  · exact (integrable_realUnitsMultHaar_iff.2
+      (Units.continuous_val.comp χ.continuous)).aestronglyMeasurable (α := -r)
+    fun σ hσ ↦ (integrable_realUnitsMultHaar_iff.2
       (integrable_realMultHaar_norm_mul_rpow f (σ := σ + r) (by linarith))).congr
-      (ae_of_all _ fun x ↦ (norm_mul_mul_rpow_real f hχ σ x).symm)
+      (ae_of_all _ fun x ↦ (norm_mul_mul_rpow_real f hχ σ x).symm)).mono
+    fun s (hs : 0 < s.re + r) ↦ show -r < s.re by linarith
 
 /-- **Continuity on the Schwartz space at `ℝ`.** For a quasi-character `χ` of `ℝˣ` of exponent
 `r` and `re s + r > 0`, the local zeta integral `f ↦ z(s, χ; f)` is a continuous linear functional
@@ -304,20 +299,15 @@ exponent `r` for `|z|_ℂ = normSq z`, `s ↦ z(s, χ; f)` is holomorphic on `re
 theorem differentiableOn_localZetaIntegral_complex {χ : ℂˣ →ₜ* ℂˣ} {r : ℝ}
     (hχ : ∀ z : ℂˣ, ‖(χ z : ℂ)‖ = normSq (z : ℂ) ^ r) :
     DifferentiableOn ℂ (localZetaIntegral complexUnitsMultHaar (fun z ↦ normSq z) χ f)
-      {s | 0 < s.re + r} := by
-  have h := differentiableOn_integral_mul_cpow complexUnitsMultHaar
-    (F := fun z ↦ f z * (χ z : ℂ)) (a := fun z ↦ normSq (z : ℂ)) (α := -r)
-    (fun z ↦ normSq_pos.2 z.ne_zero)
+      {s | 0 < s.re + r} :=
+  (differentiableOn_localZetaIntegral_of_integrable complexUnitsMultHaar _ χ
+    (fun z ↦ normSq_pos.2 z.ne_zero) (continuous_normSq.comp Units.continuous_val).measurable
     ((f.continuous.comp Units.continuous_val).mul
-      (Units.continuous_val.comp χ.continuous)).aestronglyMeasurable
-    (continuous_normSq.comp Units.continuous_val).measurable fun σ hσ ↦ ?_
-  · rw [show localZetaIntegral complexUnitsMultHaar (fun z ↦ normSq z) χ f =
-        fun s ↦ ∫ z : ℂˣ, f z * (χ z : ℂ) * ((normSq (z : ℂ) : ℝ) : ℂ) ^ s
-          ∂complexUnitsMultHaar from funext fun s ↦ localZetaIntegral_def _ _ _ _ _]
-    exact h.mono fun s (hs : 0 < s.re + r) ↦ show -r < s.re by linarith
-  · exact (integrable_complexUnitsMultHaar_iff.2
+      (Units.continuous_val.comp χ.continuous)).aestronglyMeasurable (α := -r)
+    fun σ hσ ↦ (integrable_complexUnitsMultHaar_iff.2
       (integrable_complexMultHaar_norm_mul_rpow f (σ := σ + r) (by linarith))).congr
-      (ae_of_all _ fun z ↦ (norm_mul_mul_rpow_complex f hχ σ z).symm)
+      (ae_of_all _ fun z ↦ (norm_mul_mul_rpow_complex f hχ σ z).symm)).mono
+    fun s (hs : 0 < s.re + r) ↦ show -r < s.re by linarith
 
 /-- **Continuity on the Schwartz space at `ℂ`.** For a quasi-character `χ` of `ℂˣ` of exponent
 `r` for `|z|_ℂ` and `re s + r > 0`, the local zeta integral `f ↦ z(s, χ; f)` is a continuous
@@ -362,9 +352,9 @@ theorem localZetaIntegral_complex_gaussian {s : ℂ} (hs : 0 < s.re) :
   rw [← integral_congr_ae (ae_of_all _ fun w ↦ ?_)] at h
   · rw [h]
     simp_rw [mul_comm (Real.exp _ : ℂ)]
-    rw [integral_multHaar_cpow_mul_exp_neg_mul_sq (by positivity) (by simpa using hs), Gammaℂ_def]
-    rw [mul_div_cancel_left₀ _ two_ne_zero, ofReal_mul, ofReal_ofNat]
-    simp only [real_smul, ofReal_mul, ofReal_ofNat]
+    rw [integral_multHaar_cpow_mul_exp_neg_mul_sq (by positivity) (by simpa using hs), Gammaℂ_def,
+      mul_div_cancel_left₀ _ two_ne_zero, real_smul]
+    push_cast
     ring
   · rw [normSq_eq_norm_sq, ofReal_pow, ofReal_pow_cpow (norm_nonneg w), Nat.cast_ofNat]
 
@@ -412,9 +402,8 @@ theorem localZetaIntegral_complexUnitsCharacter_eq_zero_of_rotation {f : ℂ →
   refine localZetaIntegral_eq_zero_of_comp_mul_left complexUnitsMultHaar (fun z ↦ normSq z)
     (complexUnitsCharacter u k) (fun z ↦ normSq_pos.2 z.ne_zero)
     (fun z w ↦ by simp only [Units.val_mul, map_mul]) (b := ζ) (c := (ζ : ℂ) ^ m) (hf θ) ?_
-  rw [coe_complexUnitsCharacter_apply, hζ, hnormSq, ofReal_one, one_cpow, one_cpow, div_one,
-    one_mul, mul_one, ← zpow_add₀ ζ.ne_zero, hpow]
-  norm_num
+  rw [coe_complexUnitsCharacter_apply, hζ, hnormSq]
+  norm_num [← zpow_add₀ ζ.ne_zero, hpow]
 
 end Complex
 

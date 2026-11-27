@@ -365,10 +365,8 @@ theorem integral_complexMultHaar_comp_norm (G : ℝ → E) :
     field_simp
     ring
   rw [integral_complexMultHaar, h, integral_multHaar_eq_setIntegral, Complex.finrank_real_complex,
-    hball, hint, smul_smul, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
-  congr 1
-  push_cast
-  ring
+    hball, hint]
+  module
 
 end Radial
 

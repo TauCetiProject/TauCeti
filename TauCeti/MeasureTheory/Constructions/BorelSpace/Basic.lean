@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Algebra.IsOpenUnits
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
@@ -42,7 +43,6 @@ In a monoid with zero whose units form an open subspace with continuous inversio
 * `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
 * `Units.borelSpace₀`
-* `Units.range_val_eq_compl_zero`
 * `Units.measurableEmbedding_val₀`
 * `IsLocalHomeomorph.measurableSet_image`
 * `IsLocalHomeomorph.measurable_comp_iff`
@@ -87,12 +87,6 @@ embedding (`Units.isEmbedding_val₀`). -/
 instance Units.borelSpace₀ {G₀ : Type*} [GroupWithZero G₀] [TopologicalSpace G₀]
     [ContinuousInv₀ G₀] [MeasurableSpace G₀] [BorelSpace G₀] : BorelSpace G₀ˣ :=
   ⟨by rw [← Units.isEmbedding_val₀.isInducing.comap_borel, ← BorelSpace.measurable_eq]; rfl⟩
-
-/-- The units of a group with zero are exactly its nonzero elements. -/
-theorem Units.range_val_eq_compl_zero {G₀ : Type*} [GroupWithZero G₀] :
-    Set.range (Units.val : G₀ˣ → G₀) = {0}ᶜ := by
-  ext x
-  exact ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
 
 /-- The inclusion `Units.val : G₀ˣ → G₀` of the units of a group with zero is a measurable
 embedding, for the measurable structure on `G₀ˣ` pulled back along it: its range is the

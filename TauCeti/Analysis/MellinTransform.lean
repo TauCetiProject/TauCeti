@@ -135,8 +135,8 @@ theorem integral_multHaar_cpow_mul_exp_neg_mul_sq {b : ℝ} (hb : 0 < b) {w : �
   have key := integral_map (μ := multHaar) (measurable_id'.pow_const (2 : ℝ)).aemeasurable hh
   rw [hmap, integral_smul_measure, integral_multHaar_cpow_mul_exp_neg_mul hb.le hw2] at key
   rw [← integral_congr_ae (ae_pos_multHaar.mono fun t (ht : 0 < t) ↦ ?_)]
-  · rw [← key, abs_of_pos (inv_pos.2 two_pos), ENNReal.toReal_ofReal (inv_pos.2 two_pos).le,
-      real_smul, ofReal_inv, ofReal_ofNat, one_div]
+  · rw [← key]
+    norm_num
   · simp only [h, Real.rpow_two]
     rw [ofReal_pow, ofReal_pow_cpow ht.le, Nat.cast_ofNat, mul_div_cancel₀ _ two_ne_zero]
 
