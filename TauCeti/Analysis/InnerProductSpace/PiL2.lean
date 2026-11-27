@@ -48,6 +48,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.add_sub_smul_single_apply`: the point `x + (t - xᵢ) eᵢ` is `x` with its `i`-th
   coordinate replaced by `t`; the map `t ↦ x + (t - xᵢ) eᵢ` is `1`-Lipschitz
   (`EuclideanSpace.lipschitzWith_add_sub_smul_single`).
+* `EuclideanSpace.toLp_insertNth_eq_add_sub_smul_single`: inserting `t` as the `i`-th coordinate
+  is moving the point with `i`-th coordinate `s` along the `i`-th axis.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
@@ -177,6 +179,22 @@ theorem lipschitzWith_add_sub_smul_single {𝕜 ι : Type*} [RCLike 𝕜] [Finty
     LipschitzWith 1 fun t : 𝕜 ↦ x + (t - x i) • EuclideanSpace.single i (1 : 𝕜) :=
   LipschitzWith.of_dist_le_mul fun s t ↦ by
     simp [dist_eq_norm, ← sub_smul, norm_smul]
+
+/-- The point with `i`-th coordinate `t` and other coordinates `y` is obtained from the point with
+`i`-th coordinate `s` and the same other coordinates by moving along the `i`-th axis. -/
+theorem toLp_insertNth_eq_add_sub_smul_single {𝕜 : Type*} [RCLike 𝕜] {n : ℕ} (i : Fin (n + 1))
+    (s t : 𝕜) (y : Fin n → 𝕜) :
+    (WithLp.toLp 2 (i.insertNth t y) : EuclideanSpace 𝕜 (Fin (n + 1))) =
+      WithLp.toLp 2 (i.insertNth s y) +
+        (t - (WithLp.toLp 2 (i.insertNth s y) : EuclideanSpace 𝕜 (Fin (n + 1))) i) •
+          EuclideanSpace.single i 1 := by
+  ext j
+  rw [add_sub_smul_single_apply]
+  split_ifs with h
+  · subst h
+    simp
+  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq h
+    simp
 
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
