@@ -25,6 +25,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   equation.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
+* `HasFDerivAt.mfderiv_apply`: on normed spaces, the manifold derivative of a map with Fréchet
+  derivative `f'` applies `f'` through the tangent-space identifications.
 * `TauCeti.mvfderiv_apply_eval`: the derivative of evaluation `a ↦ a u` of continuous linear maps
   is evaluation at `u`.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
@@ -66,6 +68,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   differentiability hypothesis.
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
+* `TauCeti.mvfderiv_apply_eq_neg_mul_mul_of_mul_eq_one`: the derivative of a pointwise inverse in a
+  normed algebra is `dg = -g (df) g`.
 * `TauCeti.mvfderiv_smul_left`: for a group acting on a normed space by continuous linear maps,
   the derivative of `k • ·` is `k • ·`.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
@@ -122,6 +126,15 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
     mvfderiv 𝓘(𝕜, F) f x v = fderiv 𝕜 f x v := by
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
   exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
+
+/-- For a map between normed spaces with Fréchet derivative `f'` at `x`, the manifold derivative
+at `x` applies `f'` to a tangent vector, read through the model-space tangent identifications. -/
+theorem _root_.HasFDerivAt.mfderiv_apply {f : F → F'} {f' : F →L[𝕜] F'} {x : F}
+    (h : HasFDerivAt f f' x) (v : TangentSpace 𝓘(𝕜, F) x) :
+    mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F') f x v =
+      (NormedSpace.fromTangentSpace (f x)).symm (f' (NormedSpace.fromTangentSpace x v)) := by
+  rw [mfderiv_eq_fderiv, h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe]
 
 /-- The derivative of the evaluation map `a ↦ a u` on continuous linear maps is evaluation
 at `u`. -/
@@ -446,6 +459,25 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp] at h ⊢
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
+
+/-- The derivative of a pointwise inverse in a normed algebra: if `f * g = 1` near `x` and
+`g x * f x = 1`, then `dg = -g (df) g` at `x`. -/
+theorem mvfderiv_apply_eq_neg_mul_mul_of_mul_eq_one {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] {f g : M → A} {x : M} (hf : MDifferentiableAt I 𝓘(𝕜, A) f x)
+    (hg : MDifferentiableAt I 𝓘(𝕜, A) g x) (hfg : f * g =ᶠ[𝓝 x] 1) (hgf : g x * f x = 1)
+    (v : TangentSpace I x) :
+    mvfderiv I g x v = -(g x * mvfderiv I f x v * g x) := by
+  have hfg' : f • g =ᶠ[𝓝 x] fun _ ↦ 1 :=
+    hfg.mono fun y hy ↦ by
+      simpa only [Pi.smul_apply, smul_eq_mul, Pi.mul_apply, Pi.one_apply] using hy
+  have h := mvfderiv_smul_algebra (F := A) hf hg
+  rw [hfg'.mvfderiv_eq, mvfderiv_const] at h
+  have h' : f x * mvfderiv I g x v + mvfderiv I f x v * g x = 0 := by
+    simpa only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
+      zero_apply] using (congrArg (fun L ↦ L v) h).symm
+  calc mvfderiv I g x v = g x * (f x * mvfderiv I g x v) := by
+        rw [← mul_assoc, hgf, one_mul]
+    _ = _ := by rw [eq_neg_of_add_eq_zero_left h']; noncomm_ring
 
 /-- For a group acting on a normed space by continuous linear maps, the derivative of `k • ·`, read
 in the space, is `k • ·` at every point. -/

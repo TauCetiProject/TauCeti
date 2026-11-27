@@ -49,10 +49,11 @@ The cellular classifying space is a CW complex
 killing the higher homotopy groups have dimension at least `3`. In particular it has CW type, so
 the theory of classical CW complexes, such as Whitehead's theorem, applies to it, and, as a
 Hausdorff CW complex, it is delta-generated and hence locally path-connected
-(`TauCeti.instDeltaGeneratedSpaceOfCWComplexUniv`). Its only
-`0`-cell is the base point (`TauCeti.skeletonLT_one_cellularClassifyingSpace`), so the pointed
-maps realizing a homomorphism of fundamental groups are unique up to homotopy relative to the base
-point (`TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`). If the presentation complex
+(`TauCeti.instDeltaGeneratedSpaceOfCWComplexUniv`). Its only `0`-cell is the base point
+(`TauCeti.skeletonLT_one_cellularClassifyingSpace`), and as a path-connected Hausdorff CW complex
+(`TauCeti.instPathConnectedSpaceCellularClassifyingSpace`), pointed maps realizing a homomorphism
+of fundamental groups are unique up to homotopy relative to the base point
+(`TauCeti.homotopicRel_of_mapOfEq_eq_of_cwComplex`). If the presentation complex
 is already aspherical, as it is for a presentation of a free group without relators, the cells
 killing the higher homotopy groups change nothing up to homotopy: by Whitehead's theorem the
 inclusion of the presentation complex is a homotopy equivalence
@@ -79,9 +80,6 @@ inclusion of the presentation complex is a homotopy equivalence
   induced by a pointed map.
 * `TauCeti.instCWComplexCellularClassifyingSpace`: the cellular classifying space is a CW complex,
   with a single `0`-cell at its base point (`TauCeti.skeletonLT_one_cellularClassifyingSpace`).
-* `TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`: pointed maps from the cellular
-  classifying space to a space with vanishing higher homotopy groups that induce the same
-  homomorphism of fundamental groups are homotopic relative to the base point.
 
 ## References
 
@@ -164,6 +162,11 @@ theorem isEilenbergMacLaneSpaceOne_cellularClassifyingSpace :
   (isEilenbergMacLaneSpaceOne_killHomotopyGroups _ _).of_mulEquiv
     (PresentationComplex.fundamentalGroupMulEquiv R)
 
+/-- The cellular classifying space is path connected. -/
+instance instPathConnectedSpaceCellularClassifyingSpace :
+    PathConnectedSpace (cellularClassifyingSpace R) :=
+  (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace R).isAspherical.pathConnectedSpace
+
 /-- **Homomorphisms out of the fundamental group of a cellular classifying space are induced by
 pointed maps.** If the homotopy groups of `(Z, z)` vanish in dimensions at least two, every
 homomorphism from the fundamental group of `cellularClassifyingSpace R` to `π₁(Z, z)` is induced
@@ -232,22 +235,6 @@ theorem skeletonLT_one_cellularClassifyingSpace :
     (skeletonLT (univ : Set (cellularClassifyingSpace R)) 1 : Set (cellularClassifyingSpace R)) =
       {cellularClassifyingSpaceBasepoint R} := by
   simp [skeletonLT_one_eq_insert]
-
-/-- **Maps out of the cellular classifying space are determined up to pointed homotopy by their
-effect on `π₁`.** If the homotopy groups of `Z` vanish in dimensions at least two, at every point,
-two maps from `cellularClassifyingSpace R` to `Z` that send the base point to `z` and induce the
-same homomorphism of fundamental groups are homotopic relative to the base point. Together with
-`TauCeti.exists_mapOfEq_cellularClassifyingSpace`, pointed maps into `Z` up to pointed homotopy
-correspond to homomorphisms of fundamental groups. -/
-theorem homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace {Z : Type*} [TopologicalSpace Z]
-    (hZ : ∀ (z : Z) (n : ℕ), Subsingleton (π_ (n + 2) Z z))
-    {f g : C(cellularClassifyingSpace R, Z)} {z : Z}
-    (hf : f (cellularClassifyingSpaceBasepoint R) = z)
-    (hg : g (cellularClassifyingSpaceBasepoint R) = z)
-    (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
-    f.HomotopicRel g {cellularClassifyingSpaceBasepoint R} :=
-  homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex hZ
-    (skeletonLT_one_cellularClassifyingSpace R) hf hg hfg
 
 variable {R}
 

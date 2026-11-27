@@ -12,10 +12,14 @@ import TauCeti.LinearAlgebra.Complex.Module
 # Bounds for real-linear maps out of the complex line
 
 The values on `1` and `I` determine a continuous real-linear map on every complex vector
-(`ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I`).
+(`ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I`), so one vanishing at `1` and nonzero
+somewhere is nonzero at `I` (`ContinuousLinearMap.apply_I_ne_zero_of_apply_one_eq_zero`).
 A real-linear map is the sum of its values at `1` and `I` weighted by the real and imaginary
 parts (`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`, and for families
-`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`).
+`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`). A complex antilinear one is
+determined by its value at `1`: it is `w ↦ conj w • L 1`, the image of `L 1` under
+`ContinuousLinearMap.antilinearOfOneL`
+(`ContinuousLinearMap.antilinearOfOneL_apply_eq_of_antilinear`).
 For a real bilinear map `B` on `ℂ` with `B 1 I = B I 1`, the trace `B a a + B (I a) (I a)` over the
 orthogonal pair `a, I a` is `‖a‖²` times the trace over `1, I`
 (`ContinuousLinearMap.apply_add_apply_I_mul_eq_norm_sq_smul`).
@@ -38,6 +42,12 @@ theorem apply_eq_re_smul_one_add_im_smul_I {F : Type*} [TopologicalSpace F] [Add
     [Module ℝ F] (L : ℂ →L[ℝ] F) (z : ℂ) : L z = z.re • L 1 + z.im • L Complex.I :=
   L.toLinearMap.apply_eq_re_smul_one_add_im_smul_I z
 
+/-- A continuous real-linear map out of `ℂ` vanishing at `1` and nonzero somewhere is nonzero at
+`I`. -/
+theorem apply_I_ne_zero_of_apply_one_eq_zero {F : Type*} [TopologicalSpace F] [AddCommMonoid F]
+    [Module ℝ F] {L : ℂ →L[ℝ] F} (h1 : L 1 = 0) {v : ℂ} (hv : L v ≠ 0) : L Complex.I ≠ 0 :=
+  fun hI ↦ hv (by rw [L.apply_eq_re_smul_one_add_im_smul_I, h1, hI, smul_zero, smul_zero, add_zero])
+
 /-- A real-linear map out of `ℂ` is determined by its values at `1` and `I`:
 `L = re ⬝ L 1 + im ⬝ L I`. -/
 theorem eq_reCLM_smulRight_add_imCLM_smulRight {V : Type*} [SeminormedAddCommGroup V]
@@ -45,6 +55,46 @@ theorem eq_reCLM_smulRight_add_imCLM_smulRight {V : Type*} [SeminormedAddCommGro
     L = Complex.reCLM.smulRight (L 1) + Complex.imCLM.smulRight (L Complex.I) := by
   ext z
   simp [L.apply_eq_re_smul_one_add_im_smul_I z]
+
+/-- The complex antilinear real-linear map out of `ℂ` with value `v` at `1`, `w ↦ conj w • v`, as
+a continuous linear map in `v`: `ContinuousLinearMap.smulRightL` applied to complex conjugation. -/
+noncomputable def antilinearOfOneL (V : Type*) [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] : V →L[ℝ] ℂ →L[ℝ] V :=
+  smulRightL ℝ ℝ ℂ ℂ V (Complex.conjCLE : ℂ →L[ℝ] ℂ)
+
+/-- **The antilinear map with value `v` at `1`** is `w ↦ conj w • v`. -/
+@[simp]
+theorem antilinearOfOneL_apply_apply {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) (w : ℂ) :
+    antilinearOfOneL V v w = (starRingEnd ℂ w) • v := by
+  simp [antilinearOfOneL]
+
+/-- `antilinearOfOneL V v` has value `v` at `1`. -/
+theorem antilinearOfOneL_apply_apply_one {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) :
+    antilinearOfOneL V v 1 = v := by
+  simp
+
+/-- `antilinearOfOneL V v` is complex antilinear: `w ↦ conj w • v` anticommutes with `i`, since
+`conj (i w) = -i conj w`. -/
+theorem antilinearOfOneL_apply_I_smul {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) (w : ℂ) :
+    antilinearOfOneL V v (Complex.I • w) = -(Complex.I • antilinearOfOneL V v w) := by
+  simp [smul_smul]
+
+/-- **Antilinear maps are determined by their value at `1`.** A complex antilinear real-linear map
+out of `ℂ` is the antilinear map with its value at `1`: `L w = conj w • L 1`. -/
+theorem antilinearOfOneL_apply_eq_of_antilinear {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (L : ℂ →L[ℝ] V)
+    (hL : ∀ v, L (Complex.I • v) = -(Complex.I • L v)) : antilinearOfOneL V (L 1) = L := by
+  -- `L w = re w • L 1 + im w • L i` and `L i = -(i • L 1)`.
+  have hI : L Complex.I = -(Complex.I • L 1) := by simpa using hL 1
+  ext w
+  -- `conj w = re w - im w * i`, with real scalars acting through `ℂ`.
+  have hw : starRingEnd ℂ w = (w.re : ℂ) - w.im * Complex.I := by
+    apply Complex.ext <;> simp
+  rw [antilinearOfOneL_apply_apply, L.apply_eq_re_smul_one_add_im_smul_I w, hI, hw]
+  module
 
 /-- A family of real-linear maps out of `ℂ` splits through its values at `1` and `I`, written
 with the continuous linear maps `smulRightL` so that it can be postcomposed in families. -/

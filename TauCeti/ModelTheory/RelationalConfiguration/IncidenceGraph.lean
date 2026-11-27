@@ -52,6 +52,8 @@ countable graphs are Borel complete.
   `TauCeti.RelationalConfiguration.isoSetoid_iff_exists_iso_incidenceGraph`: two configurations
   are isomorphic exactly when their incidence graphs are isomorphic by a colour-preserving
   isomorphism.
+* `TauCeti.RelationalConfiguration.continuous_incidenceGraph_adj`: each adjacency of the incidence
+  graph depends continuously on the configuration.
 
 ## References
 
@@ -315,6 +317,19 @@ theorem not_incidenceGraph_adj_truth_position :
 @[simp]
 theorem not_incidenceGraph_adj_truth_truth : ¬c.incidenceGraph.Adj (truth q) (truth r) := by
   simp [incidenceGraph, IncidenceRel]
+
+open Classical in
+/-- **Each adjacency of the incidence graph is continuous** in the configuration: it is constant,
+except between a tuple vertex and the truth vertex of its atom, where it is the value of that
+atom. -/
+theorem continuous_incidenceGraph_adj (v w : IncidenceVertex L V) :
+    Continuous fun c : RelationalConfiguration L V => decide ((incidenceGraph c).Adj v w) := by
+  have key (q r : Atom L V) :
+      Continuous fun c : RelationalConfiguration L V => decide (q = r) && c.eval q := by
+    by_cases h : q = r
+    · simpa [h] using continuous_eval r
+    · simpa [h] using continuous_const
+  cases v <;> cases w <;> simp [key, continuous_const]
 
 /-- The incidence graph is bipartite: points and tuple vertices form one side, position and
 truth vertices the other. -/

@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.Arakelov.SectionDegree
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
 public import Mathlib.RingTheory.FractionalIdeal.Norm
 
+import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.NumberTheory.NumberField.FractionalIdeal
 import TauCeti.RingTheory.FractionalIdeal.Norm
 
@@ -34,12 +36,20 @@ counting the embeddings inducing `v`. It is `TauCeti.sectionDegreeOfNorms` for t
 * `TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_map`: isometric lines have equal degree.
 * `TauCeti.HermitianMetric.sectionDegree_fractionalIdeal`:
   `deg(𝔞, e^{-λ_v} |·|_v) = -log N(𝔞) + Σ_v mult(v) λ_v`.
+* `TauCeti.HermitianMetric.sectionDegree_eq_sectionDegree`,
+  `TauCeti.HermitianBundle.sectionDegree_eq_sectionDegree`: on a line, any two nonzero sections
+  compute the same degree (the product formula).
+* `TauCeti.HermitianMetric.sectionDegree_map_eq_add_log_cardQuot_range`: the lattice index term
+  `deg(L') = deg(L) + log #(L' / L)`.
+* `TauCeti.HermitianBundle.sectionDegree_trivial`: every nonzero section of `Ō_K` has degree `0`.
 
 ## References
 
 * P. Deligne, *Preuves des conjectures de Tate et de Shafarevitch*, Séminaire Bourbaki 616,
-  §1.1, pp. 25–26.
+  §1.1, pp. 25–26, and §2.1, p. 36.
 * L. Szpiro, *Degrés, intersections, hauteurs*, Astérisque 127, §1.1–1.2, Corollaire, p. 14.
+* J.-B. Bost, *Périodes et isogénies des variétés abéliennes sur les corps de nombres*,
+  Séminaire Bourbaki 795, Appendice A.3, p. 147.
 -/
 
 public noncomputable section
@@ -90,12 +100,8 @@ with `s`. -/
 @[simp]
 theorem _root_.TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_map {h' : HermitianMetric K F}
     (e : IsometryEquiv h h') (s : E) : h'.sectionDegree (e s) = h.sectionDegree s := by
-  have hcard : (Submodule.span (𝓞 K) {e s}).cardQuot = (Submodule.span (𝓞 K) {s}).cardQuot := by
-    rw [Submodule.cardQuot, Submodule.cardQuot,
-      ← AddSubgroup.index_map_equiv _ e.toLinearEquiv.toAddEquiv]
-    congr 1
-    ext x
-    simp [Submodule.mem_span_singleton]
+  have hcard : (Submodule.span (𝓞 K) {e s}).cardQuot = (Submodule.span (𝓞 K) {s}).cardQuot :=
+    Submodule.cardQuot_span_singleton_map_equiv e.toLinearEquiv s
   simp only [sectionDegree_def, hcard, e.norm_tmul_map]
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
@@ -133,4 +139,61 @@ theorem sectionDegree_fractionalIdeal {I : FractionalIdeal (𝓞 K)⁰ K} (hI : 
   simp only [hlog, mul_add, Finset.sum_add_distrib, mul_neg, Finset.sum_neg_distrib]
   ring
 
+omit [NumberField K] in
+/-- An integer `a` of `K` scales the norm at `σ` by `|σ(a)|`: `‖a • x‖_σ = |σ(a)| ‖x‖_σ`. -/
+theorem norm_one_tmul_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
+    h.norm σ (1 ⊗ₜ (a • x)) = ‖σ (algebraMap (𝓞 K) K a)‖ * h.norm σ (1 ⊗ₜ x) := by
+  rw [Codomain.tmul_smul, norm_smul]
+
+/-- **Independence of the multiple.** On a line, the degree computed with `a • s` equals the one
+computed with `s`, for every nonzero integer `a` of `K`. -/
+theorem sectionDegree_smul [Module.Finite (𝓞 K) E] [Module.Flat (𝓞 K) E]
+    (hE : Module.finrank K (K ⊗[𝓞 K] E) = 1) {a : 𝓞 K} (ha : a ≠ 0) (s : E) :
+    h.sectionDegree (a • s) = h.sectionDegree s := by
+  obtain rfl | hs := eq_or_ne s 0
+  · rw [smul_zero]
+  unfold sectionDegree
+  exact sectionDegreeOfNorms_smul hE (h.norm_one_tmul_smul) hs
+    (fun σ ↦ (h.norm_pos (Codomain.one_tmul_ne_zero σ hs)).ne') ha
+
+/-- **Independence of the section.** On a line, any two nonzero sections compute the same degree
+`log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ`. This is the product formula; it makes the expression an
+invariant of the hermitian line, its Arakelov degree. -/
+theorem sectionDegree_eq_sectionDegree [Module.Finite (𝓞 K) E] [Module.Flat (𝓞 K) E]
+    (hE : Module.finrank K (K ⊗[𝓞 K] E) = 1) {s t : E} (hs : s ≠ 0) (ht : t ≠ 0) :
+    h.sectionDegree s = h.sectionDegree t := by
+  unfold sectionDegree
+  exact sectionDegreeOfNorms_eq_of_finrank_eq_one hE (h.norm_one_tmul_smul)
+    (fun σ _ hx ↦ (h.norm_pos (Codomain.one_tmul_ne_zero σ hx)).ne') hs ht
+
+/-- **Lattice index term.** Let `f : E → F` be an injective `𝓞 K`-linear map preserving the norms,
+so that `E` is a sublattice of `F` with the same metrics. For a section `s` of `E` generating a
+sublattice of finite index, and `F / f E` finite, the degree of `F` computed with `f s` is the
+degree of `E` computed with `s` plus `log #(F / f E)`. -/
+theorem sectionDegree_map_eq_add_log_cardQuot_range {g : HermitianMetric K F}
+    (f : E →ₗ[𝓞 K] F) (hf : Function.Injective f)
+    (hnorm : ∀ σ x, g.norm σ (1 ⊗ₜ f x) = h.norm σ (1 ⊗ₜ x)) (s : E)
+    [Finite (E ⧸ Submodule.span (𝓞 K) {s})] [Finite (F ⧸ LinearMap.range f)] :
+    g.sectionDegree (f s) = h.sectionDegree s + Real.log (LinearMap.range f).cardQuot := by
+  unfold sectionDegree
+  exact sectionDegreeOfNorms_map_eq_add_log_cardQuot_range f hf hnorm s
+
 end TauCeti.HermitianMetric
+
+namespace TauCeti.HermitianBundle
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Independence of the section** for a hermitian line bundle: if `Ē` has rank one, any two
+nonzero sections compute the same degree. -/
+theorem sectionDegree_eq_sectionDegree (Ē : HermitianBundle K) (hĒ : Ē.rank = 1) {s t : Ē}
+    (hs : s ≠ 0) (ht : t ≠ 0) : Ē.metric.sectionDegree s = Ē.metric.sectionDegree t :=
+  Ē.metric.sectionDegree_eq_sectionDegree (Ē.rank_eq_finrank_tensorProduct ▸ hĒ) hs ht
+
+/-- Every nonzero section of `Ō_K` has degree `0`. -/
+theorem sectionDegree_trivial {s : 𝓞 K} (hs : s ≠ 0) : (trivial K).metric.sectionDegree s = 0 :=
+  ((trivial K).sectionDegree_eq_sectionDegree (rank_trivial K) (t := (1 : 𝓞 K)) hs
+    (one_ne_zero (α := 𝓞 K))).trans
+    (HermitianMetric.sectionDegree_trivial_one)
+
+end TauCeti.HermitianBundle

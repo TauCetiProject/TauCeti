@@ -64,6 +64,7 @@ noncomputable section
 open Complex NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
   TauCeti.NumberField.mixedEmbedding
 open scoped NumberField nonZeroDivisors
+open scoped Topology
 
 namespace TauCeti.LFunctions
 
@@ -127,6 +128,76 @@ theorem summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian
   refine Summable.of_norm_bounded hL fun a ↦ ?_
   rw [mul_assoc, norm_mul]
   exact mul_le_of_le_one_left (norm_nonneg _) (χ.primitive.norm_finiteCharacterField_le _)
+
+/-- The twisted theta series is continuous at every parameter with positive coordinates. -/
+theorem continuousAt_heckeTheta (χ : Grossencharacter K 𝔪)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {y : realSpace K} (hy : ∀ w, 0 < y w) :
+    ContinuousAt (χ.heckeTheta I) y := by
+  let z : realSpace K := fun w ↦ y w / 2
+  let U : Set (realSpace K) := {p | ∀ w, z w < p w}
+  have hU : IsOpen U := by
+    simp only [U, Set.ofPred_forall]
+    exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
+  have hyU : y ∈ U := fun w ↦ half_lt_self (hy w)
+  have hsum := (χ.summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian I
+    (y := z) (fun w ↦ half_pos (hy w))).norm
+  rw [funext (χ.heckeTheta_def I)]
+  refine continuousAt_const.add ((continuousOn_tsum (s := U) ?_ hsum ?_).continuousAt
+    (hU.mem_nhds hyU))
+  · exact fun a ↦ (continuous_const.mul (continuous_archGaussian (mixedEmbedding K a))).continuousOn
+  · intro a p hp
+    simp only [norm_mul]
+    exact mul_le_mul_of_nonneg_left
+      (norm_archGaussian_le (fun w ↦ (hp w).le) (mixedEmbedding K a)) (by positivity)
+
+/-- The weighted, centered twisted theta series is bounded by a constant times the centered
+ordinary theta series at half the parameter. The bound is uniform in the fractional ideal
+and holds throughout the positive orthant. -/
+theorem exists_norm_archWeight_mul_heckeTheta_sub_le (χ : Grossencharacter K 𝔪) :
+    ∃ C ≥ 0, ∀ (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (y : realSpace K), (∀ w, 0 < y w) →
+      ‖(χ.archWeight y : ℂ) * (χ.heckeTheta J y - χ.heckeEpsilon)‖ ≤
+        C * ‖latticeTheta (idealLattice K J) ((1 / 2 : ℝ) • y) - 1‖ := by
+  classical
+  obtain ⟨C, hC, hbound⟩ := exists_norm_archWeight_mul_harmonicFactor_mul_archGaussian_le χ
+  refine ⟨C, hC, fun J y hy ↦ ?_⟩
+  let g : ↥(J : Submodule (𝓞 K) K) → ℂ :=
+    fun a ↦ archGaussian ((1 / 2 : ℝ) • y) (mixedEmbedding K a)
+  have hg : Summable g := by
+    simpa only [g, Function.comp_def, coe_idealLatticeEquiv] using
+      (idealLatticeEquiv J).summable_iff.mpr (summable_archGaussian (idealLattice K J)
+        ((1 / 2 : ℝ) • y) (fun w ↦ mul_pos (by norm_num) (hy w)))
+  let a : ↥(J : Submodule (𝓞 K) K) → ℝ :=
+    Set.indicator ({0} : Set ↥(J : Submodule (𝓞 K) K))ᶜ fun x ↦ ‖g x‖
+  have ha : Summable a := hg.norm.indicator {0}ᶜ
+  have hnorm : ‖latticeTheta (idealLattice K J) ((1 / 2 : ℝ) • y) - 1‖ = ∑' x, a x := by
+    have hθ : latticeTheta (idealLattice K J) ((1 / 2 : ℝ) • y) = ∑' x, g x := by
+      rw [latticeTheta_def, ← (idealLatticeEquiv J).tsum_eq]
+      simp only [g, coe_idealLatticeEquiv]
+    have hg0 : g 0 = 1 := by simp [g]
+    have hgPos (x : ↥(J : Submodule (𝓞 K) K)) : g x = (‖g x‖ : ℂ) := by
+      simp only [g, archGaussian_apply, Complex.norm_real, Real.norm_eq_abs, Real.abs_exp]
+    have hgCast (x : ↥(J : Submodule (𝓞 K) K)) :
+        (if x = 0 then 0 else g x) = (a x : ℂ) := by
+      by_cases hx : x = 0
+      · simp [a, hx]
+      simp only [a, ite_eq_right hx, Set.indicator_of_mem
+        (by simpa using hx : x ∈ ({0} : Set ↥(J : Submodule (𝓞 K) K))ᶜ)]
+      exact hgPos x
+    rw [hθ, hg.tsum_eq_add_tsum_ite 0, hg0, add_sub_cancel_left, tsum_congr hgCast,
+      ← Complex.ofReal_tsum, Complex.norm_real, Real.norm_eq_abs]
+    exact abs_of_nonneg (tsum_nonneg (Set.indicator_nonneg fun _ _ ↦ norm_nonneg _))
+  rw [heckeTheta_def, add_sub_cancel_left, ← tsum_mul_left, hnorm, ← tsum_mul_left]
+  refine tsum_of_norm_bounded (ha.mul_left C).hasSum fun x ↦ ?_
+  by_cases hx : x = 0
+  · simp [hx, a]
+  have hx' : x ∈ ({0}ᶜ : Set ↥(J : Submodule (𝓞 K) K)) := by simpa using hx
+  simp only [a, Set.indicator_of_mem hx', g]
+  calc
+    _ = ‖χ.primitive.finiteCharacterField x‖ *
+        ‖(χ.archWeight y : ℂ) * χ.harmonicFactor (mixedEmbedding K x) *
+          archGaussian y (mixedEmbedding K x)‖ := by simp only [norm_mul]; ring
+    _ ≤ _ := (mul_le_of_le_one_left (norm_nonneg _)
+      (χ.primitive.norm_finiteCharacterField_le _)).trans (hbound y hy (mixedEmbedding K x))
 
 /-- **The twisted theta series depends only on the Hecke character**, not on the presentation
 modulus. -/
@@ -198,9 +269,7 @@ theorem archWeight_mul_heckeTheta_unitScale (χ : Grossencharacter K 𝔪)
     by_cases hε : χ.heckeEpsilon = 0
     · rw [hε, zero_mul]
     obtain ⟨-, hdeg⟩ := not_or.mp (mt χ.heckeEpsilon_eq_zero_iff.mpr hε)
-    rw [not_not, harmonicDegree_def] at hdeg
-    have hexp (w : InfinitePlace K) : χ.harmonicExponent w = 0 :=
-      Finset.sum_eq_zero_iff.mp hdeg w (Finset.mem_univ w)
+    have hexp := χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero (not_not.mp hdeg)
     simp [μ, hexp]
   linear_combination (χ.archWeight y : ℂ) * key + (χ.archWeight y : ℂ) * hεμ
 

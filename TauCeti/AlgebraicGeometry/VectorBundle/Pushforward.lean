@@ -8,15 +8,20 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
+public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Tilde.Pushforward
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
+import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
+import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
 /-!
 # Pushforward of finite locally free sheaves along finite locally free morphisms
@@ -65,7 +70,13 @@ and its additivity and identity and composition comparisons.
   `f_* 𝒪_X` is finite locally free (Stacks 02KB);
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pushforward`: the direct image functor
   `FiniteLocallyFreeSheaf X ⥤ FiniteLocallyFreeSheaf Y`, with `pushforwardCompιIso`,
-  `pullbackPushforwardAdjunction`, `pushforwardId`, and `pushforwardComp`.
+  `pullbackPushforwardAdjunction`, `pushforwardId`, and `pushforwardComp`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_pushforward_unit_apply`: the rank of
+  `f_* 𝒪_X` at `y` is Mathlib's rank `Scheme.Hom.finrank f y` of `f`, which is defined through
+  the rank of the coordinate ring of `f⁻¹ U` over that of an affine open `U ∋ y`
+  (`Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE`); that coordinate ring is the module of
+  sections of `f_* 𝒪_X` over `U`, whose rank is that of `f_* 𝒪_X`
+  (`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rankAtStalk_sections`).
 
 ## References
 
@@ -244,8 +255,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isFinite_and_flat_and_locallyOfFinit
   refine ⟨fun ⟨_, _, _⟩ ↦ ⟨inferInstance, isFiniteLocallyFree_pushforward_unit f⟩,
     fun ⟨_, h⟩ ↦ ?_⟩
   let 𝒰 := Y.affineCover
-  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FiniteType)
   have : IsZariskiLocalAtTarget @Flat.{u} :=
@@ -499,6 +508,37 @@ theorem pushforwardComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) [IsFinite f] [Fl
         eqToHom (pushforwardComp_obj_obj f g E).symm := by
   simp only [pushforwardComp, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
     Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv, Category.assoc]
+
+/-- **The rank of `f_* 𝒪_X` is the rank of `f`.** For a finite, flat, locally finitely presented
+morphism `f : X ⟶ Y`, the rank of the finite locally free sheaf `f_* 𝒪_X` at `y` is Mathlib's rank
+`Scheme.Hom.finrank f y` of the morphism `f` at `y`. -/
+@[simp]
+theorem rank_pushforward_unit_apply (f : X ⟶ Y) [IsFinite f] [Flat f]
+    [LocallyOfFinitePresentation f] (y : Y) :
+    ((pushforward f).obj (𝟙_ (FiniteLocallyFreeSheaf X))).rank y = f.finrank y := by
+  set E := (pushforward f).obj (𝟙_ (FiniteLocallyFreeSheaf X))
+  obtain ⟨U, hU, hyU, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top y)
+  obtain ⟨p, rfl⟩ : y ∈ Set.range hU.fromSpec := by rwa [hU.range_fromSpec]
+  -- Over the affine open `U ∋ y`, `f` is the spectrum of the finite flat map
+  -- `φ : Γ(Y, U) ⟶ Γ(X, f⁻¹ U)`, and the rank of `E` is that of its sections over `U`.
+  have : (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.Finite := by
+    rw [← f.app_eq_appLE]; exact f.finite_app U hU
+  have : (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.Flat := f.flat_appLE hU (hU.preimage f) le_rfl
+  rw [f.finrank_fromSpec_eq_finrank_SpecMap_appLE hU p, ← E.rankAtStalk_sections hU p]
+  algebraize [(f.appLE U (f ⁻¹ᵁ U) le_rfl).hom]
+  -- The sections of `f_* 𝒪_X` over `U` are `Γ(X, f⁻¹ U)`, on which a function `r` on `U` acts
+  -- as multiplication by `f.app U r` (`pushforward_obj_smul`), that is, by `φ r`.
+  let e : Γ(E.obj, U) ≃ₗ[Γ(Y, U)] Γ(X, f ⁻¹ᵁ U) :=
+    { AddEquiv.refl _ with
+      map_smul' r x := (TauCeti.AlgebraicGeometry.pushforward_obj_smul f _ r x).trans <| by
+        -- Both sides are now the product `φ r * x` in `Γ(X, f⁻¹ U)`: on the left by the
+        -- module structure of `𝒪_X` over itself, on the right by `Algebra.smul_def` for the
+        -- algebra structure defined by `φ`. The two sides are stated over the defeq carriers
+        -- `Γ(E, U)` and `Γ(X, f⁻¹ U)`, so `rw [Algebra.smul_def]` cannot match them.
+        rw [f.app_eq_appLE]
+        rfl }
+  rw [Module.rankAtStalk_eq_of_equiv e]
+  exact (Scheme.Hom.finrank_SpecMap_algebraMap _ _ p).symm
 
 end TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf
 

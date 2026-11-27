@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Uniform.Finite
+public import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 public import Mathlib.GroupTheory.GroupAction.Basic
 
 /-!
@@ -65,7 +65,9 @@ theorem map_smul_uniformOn_univ {G α : Type*} [Group G] [Finite G]
     apply ENNReal.eq_inv_of_mul_eq_one_left
     calc
       μ {a} * Fintype.card α = ∑ b : α, μ {b} := by simp [hmass, mul_comm]
-      _ = 1 := by simp [μ]
+      _ = 1 := by
+        rw [sum_measure_singleton, Finset.coe_univ]
+        exact (Measure.map_apply hmeas MeasurableSet.univ).trans (by simp)
   apply Measure.ext_of_singleton
   intro b
   rw [hmass, hatom, uniformOn_univ, Measure.count_singleton, one_div]

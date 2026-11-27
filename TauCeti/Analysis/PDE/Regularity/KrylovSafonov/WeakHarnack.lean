@@ -11,7 +11,7 @@ import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Sobolev
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Basic.ENNReal.Real
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral

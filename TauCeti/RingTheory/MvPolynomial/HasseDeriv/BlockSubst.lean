@@ -42,17 +42,26 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 
 * `MvPolynomial.aeval_blockLinearForm_eq_linearSubst`, `MvPolynomial.blockSubst_eq_linearSubst`:
   substituting square block-linear forms is a block-diagonal `MvPolynomial.linearSubst`, and in
-  particular `blockSubst A` is `linearSubst (1 ⊗ₖ A)`.
+  particular `blockSubst A` is `linearSubst (1 ⊗ₖ A)`; conversely, by
+  `MvPolynomial.linearSubst_eq_aeval_blockLinearForm_of_block`, a block-diagonal `linearSubst` is
+  the substitution of the block-linear forms given by its diagonal blocks.
 * `MvPolynomial.blockSubst_mul`: block substitution is a right action of the matrix monoid, and
   `MvPolynomial.blockSubst_inv_blockSubst`, `MvPolynomial.blockSubst_blockSubst_inv`: an
   invertible matrix gives an automorphism.
 * `MvPolynomial.eval_blockSubst`: evaluating `blockSubst A P` at `y` evaluates `P` at the point
   whose block `h` is `A` applied to block `h` of `y`.
 * `MvPolynomial.IsMultiHomogeneous.blockSubst`: block substitution preserves the multidegree.
+* `MvPolynomial.IsMultiHomogeneous.aeval_blockLinearForm`,
+  `MvPolynomial.IsMultiHomogeneous.linearSubst_of_block`: so do block-varying linear forms and
+  block-diagonal linear substitutions.
 * `MvPolynomial.hasseDeriv_blockSubst`: the chain rule for a block substitution.
 * `MvPolynomial.blockSubst_inv_hasseDeriv`: a Hasse derivative of `P`, written in the coordinates
   of the rows of `A`, is a combination of the derivatives of `blockSubst A⁻¹ P` of the same block
   degrees.
+* `TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt` transfers coefficient vanishing
+  above a weighted threshold to the derivative after allowing for the normalized derivative order.
+  This and the one-row result use the shifted-coefficient criterion
+  `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add`.
 * `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero`: if the coefficients of `blockSubst A⁻¹ P`
   vanish below the threshold `θ` in the weighted degree `∑ h, N (h, i) / d h`, then those of
   `blockSubst A⁻¹ (hasseDeriv I P)` vanish below `θ` minus the weighted order of `I`.
@@ -63,6 +72,8 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
   (2006), §7.5.14 and Lemma 7.5.15.
 * W. M. Schmidt, *Diophantine Approximation*, Lecture Notes in Mathematics 785, Springer (1980),
   Chapter VI.
+* J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace theorem*,
+  Ann. of Math. 177 (2013), §13, Proposition 13.6.
 -/
 
 public section
@@ -133,12 +144,43 @@ theorem blockSubst_mul_apply (A B : Matrix ι ι R) (P : MvPolynomial (κ × ι)
     blockSubst (A * B) P = blockSubst B (blockSubst A P) := by
   rw [blockSubst_mul, AlgHom.comp_apply]
 
+omit [Fintype ι] in
+/-- Substituting block-linear forms preserves multihomogeneity and the multidegree. -/
+theorem IsMultiHomogeneous.aeval_blockLinearForm [DecidableEq κ] {τ : Type*} [Fintype τ]
+    {d : κ → ℕ} {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) (A : κ → ι → τ → R) :
+    IsMultiHomogeneous d (aeval (blockLinearForm A) P) :=
+  isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
+    (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
+
 /-- Block substitution preserves multihomogeneity and the multidegree. -/
 theorem IsMultiHomogeneous.blockSubst [DecidableEq κ] {d : κ → ℕ} {P : MvPolynomial (κ × ι) R}
     (hP : IsMultiHomogeneous d P) (A : Matrix ι ι R) :
     IsMultiHomogeneous d (MvPolynomial.blockSubst A P) :=
-  isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
-    (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
+  hP.aeval_blockLinearForm _
+
+/-- A linear substitution whose matrix is block diagonal, `M x y = 0` whenever `x` and `y` lie in
+different blocks, is the substitution of the block-linear forms `MvPolynomial.blockLinearForm`
+given by the diagonal blocks of `M`. -/
+theorem linearSubst_eq_aeval_blockLinearForm_of_block [Fintype κ]
+    {M : Matrix (κ × ι) (κ × ι) R} (hM : ∀ x y, x.1 ≠ y.1 → M x y = 0) :
+    linearSubst M = aeval (blockLinearForm fun h p q ↦ M (h, p) (h, q)) := by
+  classical
+  rw [aeval_blockLinearForm_eq_linearSubst]
+  congr 1
+  ext ⟨h, p⟩ ⟨h', q⟩
+  by_cases hh : h = h'
+  · subst hh
+    simp
+  · simp [hh, hM (h, p) (h', q) hh]
+
+/-- A linear substitution whose matrix is block diagonal, `M x y = 0` whenever `x` and `y` lie in
+different blocks, preserves multihomogeneity and the multidegree. -/
+theorem IsMultiHomogeneous.linearSubst_of_block [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
+    {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) {M : Matrix (κ × ι) (κ × ι) R}
+    (hM : ∀ x y, x.1 ≠ y.1 → M x y = 0) :
+    IsMultiHomogeneous d (linearSubst M P) := by
+  rw [linearSubst_eq_aeval_blockLinearForm_of_block hM]
+  exact hP.aeval_blockLinearForm _
 
 variable [Fintype κ] [DecidableEq κ] [DecidableEq ι]
 
@@ -195,6 +237,49 @@ theorem coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add [Finite κ]
   rw [AddMonoidAlgebra.coeff_smul_apply, hasseDeriv_coeff, hP e (mem_filter.1 he).2, mul_zero,
     smul_zero]
 
+/-- Suppose `A.det` is a unit and the coefficients of `blockSubst A⁻¹ P` vanish above weight
+`θ`. If the weights in block `h` are bounded below by `b h`, the coefficients of
+`blockSubst A⁻¹ (hasseDeriv I P)` vanish above `θ` minus the sum of the blockwise lower bounds
+times the corresponding block orders of `I`. -/
+theorem _root_.TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt_of_blockwise_le
+    [Fintype κ] (hA : IsUnit A.det) {P : MvPolynomial (κ × ι) R}
+    {u : κ × ι → ℝ} {b : κ → ℝ} {θ : ℝ} (hw : ∀ h i, b h ≤ u (h, i))
+    (hP : ∀ n : κ × ι →₀ ℕ, θ < n.weight u → (blockSubst A⁻¹ P).coeff n = 0)
+    {I J : κ × ι →₀ ℕ} (hJ : θ - ∑ h, b h * ((∑ i, I (h, i) : ℕ) : ℝ) < J.weight u) :
+    (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
+  refine coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add hA fun e he ↦ hP (J + e) ?_
+  have hshift : ∑ h, b h * ((∑ i, I (h, i) : ℕ) : ℝ) ≤ e.weight u := by
+    rw [Finsupp.weight_prod_eq_sum]
+    refine sum_le_sum fun h _ ↦ ?_
+    rw [← he h, Nat.cast_sum, mul_sum]
+    simp only [nsmul_eq_mul]
+    refine sum_le_sum fun i _ ↦ ?_
+    rw [mul_comm (b h)]
+    exact mul_le_mul_of_nonneg_left (hw h i) (Nat.cast_nonneg _)
+  rw [map_add]
+  linarith
+
+/-- Suppose `A.det` is a unit, every weight is at least `-γ`, and coefficients of
+`blockSubst A⁻¹ P` vanish above normalized weight `θ`. The coefficients of
+`blockSubst A⁻¹ (hasseDeriv I P)` then vanish above `θ` plus `γ` times the normalized order.
+Both weights and derivative orders are normalized by the original block degrees. -/
+theorem _root_.TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt
+    [Fintype κ] (hA : IsUnit A.det) {P : MvPolynomial (κ × ι) R} {r : κ → ℕ}
+    {w : κ → ι → ℝ} {γ θ : ℝ} (hw : ∀ h i, -γ ≤ w h i)
+    (hP : ∀ n : κ × ι →₀ ℕ, θ < n.weight (fun p ↦ w p.1 p.2 / r p.1) →
+      (blockSubst A⁻¹ P).coeff n = 0) {I J : κ × ι →₀ ℕ}
+    (hJ : θ + γ * (∑ h, ((∑ i, I (h, i) : ℕ) : ℝ) / r h) <
+      J.weight (fun p ↦ w p.1 p.2 / r p.1)) :
+    (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
+  refine TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt_of_blockwise_le hA
+    (b := fun h ↦ -γ / r h) (fun h i ↦ div_le_div_of_nonneg_right (hw h i) (Nat.cast_nonneg _))
+    hP ?_
+  have hloss : ∑ h, (-γ / (r h : ℝ)) * ((∑ i, I (h, i) : ℕ) : ℝ) =
+      -(γ * ∑ h, ((∑ i, I (h, i) : ℕ) : ℝ) / r h) := by
+    rw [mul_sum, ← sum_neg_distrib]
+    exact sum_congr rfl fun h _ ↦ by ring
+  rwa [hloss, sub_neg_eq_add]
+
 /-- **Vanishing along a form passes to Hasse derivatives** (Bombieri–Gubler, §7.5.14). Fix a
 row `i` of the invertible matrix `A` and a multidegree `d`. If the coefficients of
 `blockSubst A⁻¹ P` vanish at every exponent vector `N` whose weighted degree
@@ -207,14 +292,21 @@ theorem coeff_blockSubst_hasseDeriv_eq_zero [Fintype κ] (hA : IsUnit A.det)
     {I J : κ × ι →₀ ℕ}
     (hJ : ∑ h, (J (h, i) : ℝ) / d h < θ - ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h) :
     (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
-  refine coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add hA fun e he ↦ hP _ ?_
-  -- Shifting by `e` raises the weighted degree in row `i` by at most the weighted order of `I`.
-  have hle : ∑ h, (e (h, i) : ℝ) / d h ≤ ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h := by
-    refine sum_le_sum fun h _ ↦ div_le_div_of_nonneg_right ?_ (Nat.cast_nonneg _)
-    rw [← he h]
-    exact_mod_cast single_le_sum (f := fun j ↦ e (h, j)) (fun _ _ ↦ Nat.zero_le _) (mem_univ i)
-  simp only [Finsupp.coe_add, Pi.add_apply, Nat.cast_add, add_div, sum_add_distrib]
-  linarith
+  let w (_ : κ) (j : ι) : ℝ := if j = i then -1 else 0
+  have hw (h : κ) (j : ι) : -(1 : ℝ) ≤ w h j := by
+    dsimp [w]
+    split <;> norm_num
+  have hweight (N : κ × ι →₀ ℕ) :
+      N.weight (fun p ↦ w p.1 p.2 / d p.1) = -(∑ h, (N (h, i) : ℝ) / d h) := by
+    rw [Finsupp.weight_prod_eq_sum, ← sum_neg_distrib]
+    refine sum_congr rfl fun h _ ↦ ?_
+    simp [w, nsmul_eq_mul, div_eq_mul_inv]
+  refine TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt hA hw
+    (θ := -θ) (r := d) (fun N hN ↦ hP N ?_) ?_
+  · rw [hweight] at hN
+    exact neg_lt_neg_iff.1 hN
+  · rw [hweight, one_mul]
+    linarith
 
 end CommRing
 

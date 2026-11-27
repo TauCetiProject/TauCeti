@@ -45,6 +45,9 @@ estimates into total-variation estimates.
 * `MeasureTheory.iSup_measure_sub_comm`, `MeasureTheory.etvDist_eq_two_mul_iSup_sub`: for finite
   measures of equal total mass, the two one-sided excesses agree and `etvDist μ ν` is twice either
   of them;
+* `MeasureTheory.etvDist_eq_two_mul_measure_univ_sub_inf`: for a finite measure and a measure of
+  the same total mass, `etvDist μ ν` is twice the mass of `μ` not shared with `ν`, the shared part
+  being the infimum `μ ⊓ ν`;
 * `MeasureTheory.etvDist_le_of_forall_le_add`: eventwise bounds in both directions bound the
   total variation distance;
 * `MeasureTheory.etvDist_le_two_mul_iff`: for finite measures of equal total mass,
@@ -132,6 +135,26 @@ theorem etvDist_eq_two_mul_iSup_sub (h : μ univ = ν univ) :
   rw [etvDist_eq_posPart_univ_add_negPart_univ,
     ← Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ_iff.2 h,
     ← two_mul, Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
+
+omit [IsFiniteMeasure ν] in
+/-- **Total variation and overlap.** For a finite measure `μ` and a measure `ν` of the same total
+mass (e.g. two probability measures), the total variation distance is twice the mass of `μ` that
+is not shared with `ν`, the shared part being the infimum `μ ⊓ ν`. -/
+theorem etvDist_eq_two_mul_measure_univ_sub_inf (h : μ univ = ν univ) :
+    etvDist μ ν = 2 * (μ univ - (μ ⊓ ν) univ) := by
+  rw [etvDist_eq_two_mul_iSup_sub h, Measure.inf_apply .univ]
+  congr 1
+  refine le_antisymm (iSup₂_le fun A hA => ?_) (tsub_le_iff_tsub_le.1 (le_sInf ?_))
+  · -- Splitting `univ` into `Aᶜ`, measured by `μ`, and `A`, measured by `ν`.
+    calc μ A - ν A = μ univ - (μ Aᶜ + ν A) := by
+          rw [← tsub_tsub, ← measure_compl hA.compl (measure_ne_top μ _), compl_compl]
+      _ ≤ μ univ - sInf {m | ∃ t, m = μ (t ∩ univ) + ν (tᶜ ∩ univ)} :=
+          tsub_le_tsub_left (sInf_le (by exact ⟨Aᶜ, by simp⟩)) _
+  · rintro _ ⟨t, rfl⟩
+    refine tsub_le_iff_tsub_le.1 ?_
+    rw [inter_univ, inter_univ, ← iSup_measure_sub_eq_iSup_measurableSet, ← tsub_tsub]
+    exact le_iSup_of_le tᶜ
+      (tsub_le_tsub_right (tsub_le_iff_left.2 (measure_univ_le_add_compl t)) _)
 
 /-- **Total variation from eventwise bounds.** If every measurable event has `μ`-mass at most its
 `ν`-mass plus `c`, and `ν`-mass at most its `μ`-mass plus `d`, then `etvDist μ ν ≤ c + d`. -/
