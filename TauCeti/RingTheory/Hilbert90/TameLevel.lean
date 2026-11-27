@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.Artinian.Ring
 public import TauCeti.Algebra.Group.Hom.TwistedNorm
+public import TauCeti.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Algebra.Algebra.Subalgebra.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.GroupTheory.Index
@@ -139,19 +140,14 @@ induced by `σ` and the level reduced modulo `I`. -/
 theorem IsTameAtLevel.quotientMap {σ : R →+* R} {p : ℕ} {m : R} (h_tame : IsTameAtLevel σ p m)
     (I : Ideal R) (hI : I ≤ I.comap σ) :
     IsTameAtLevel (Ideal.quotientMap I σ hI) p (Ideal.Quotient.mk I m) := by
-  have h_pow (i : ℕ) (y : R) :
-      (Ideal.quotientMap I σ hI)^[i] (Ideal.Quotient.mk I y) = Ideal.Quotient.mk I (σ^[i] y) := by
-    induction i with
-    | zero => rfl
-    | succ i ih => rw [iterate_succ_apply', ih, Ideal.quotientMap_mk, iterate_succ_apply']
   obtain ⟨e, he⟩ := h_tame.exists_dvd_sum_range_pow_sub_one
   refine ⟨by rw [Ideal.quotientMap_mk, h_tame.map_level], ⟨Ideal.Quotient.mk I e, ?_⟩, ?_,
     h_tame.pos, fun i hi P _ h_triv ↦ ?_⟩
-  · simpa [h_pow] using map_dvd (Ideal.Quotient.mk I) he
+  · simpa using map_dvd (Ideal.Quotient.mk I) he
   · refine Ideal.Quotient.ringHom_ext (RingHom.ext fun y ↦ ?_)
-    simpa [h_pow] using congrArg (Ideal.Quotient.mk I) (RingHom.congr_fun h_tame.pow_eq_one y)
+    simpa using congrArg (Ideal.Quotient.mk I) (RingHom.congr_fun h_tame.pow_eq_one y)
   · have h_mem := h_tame.mem_of_forall_sub_mem hi (P.comap (Ideal.Quotient.mk I))
-      fun y ↦ by simpa [Ideal.mem_comap, h_pow] using h_triv (Ideal.Quotient.mk I y)
+      fun y ↦ by simpa [Ideal.mem_comap] using h_triv (Ideal.Quotient.mk I y)
     exact Ideal.mem_comap.mp h_mem
 
 /-- **Galois descent at a prime away from the level.** If `σ` is tame at level `m`, `τ` is a

@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
+public import TauCeti.RingTheory.ProfiniteRing
+import Mathlib.RingTheory.Filtration
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
@@ -33,6 +35,9 @@ Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well
 divides every element of no larger norm, so that a nonempty family of `p`-adic integers is a common
 multiple `q • w` of a family `w` with a coordinate equal to `1`, namely at an index of maximal norm.
 This is the shape in which the exponent vector of a relator of a free pro-`p` group is read.
+
+The ring `ℤ_[p]` is also profinite in the sequence-ultralimit sense
+(`TauCeti.IsProfiniteRing.padicInt`).
 
 ## Main results
 
@@ -514,3 +519,38 @@ theorem exists_forall_norm_pow_mul_le_one {ι : Type*} [Finite ι] (x : ι → �
   exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (x j)) (Finset.mem_univ i)).trans hk.le
 
 end Padic
+
+namespace TauCeti.IsProfiniteRing
+
+open Filter Topology
+
+/-- The `p`-adic integers are profinite. -/
+instance padicInt (p : ℕ) [Fact p.Prime] : IsProfiniteRing ℤ_[p] := by
+  have hp : (0 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).pos
+  have h_span (n : ℕ) : ((Ideal.span {(p : ℤ_[p]) ^ n} : Ideal ℤ_[p]) : Set ℤ_[p]) ∈ 𝓝 0 := by
+    refine mem_of_superset (Metric.ball_mem_nhds 0 (zpow_pos hp (-n : ℤ))) fun y hy ↦ ?_
+    rw [Metric.mem_ball, dist_zero_right] at hy
+    rw [SetLike.mem_coe, ← PadicInt.norm_le_pow_iff_mem_span_pow]
+    exact hy.le
+  refine of_compactSpace (fun M hM ↦ ?_) fun z hz ↦ ?_
+  · obtain ⟨n, u, hu, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hM p (Fact.out : p.Prime).ne_one
+    have h_unit : IsUnit (u : ℤ_[p]) := by
+      have h_lt : ¬ ‖((u : ℤ) : ℤ_[p])‖ < 1 := by
+        rw [PadicInt.norm_int_lt_one_iff_dvd]
+        exact_mod_cast hu
+      rw [PadicInt.isUnit_iff]
+      simpa using le_antisymm (PadicInt.norm_le_one _) (not_lt.mp h_lt)
+    refine Filter.mem_of_superset (h_span n) fun y hy ↦ ?_
+    rw [SetLike.mem_coe, Ideal.mem_span_singleton] at hy ⊢
+    rw [Nat.cast_mul, Nat.cast_pow]
+    exact h_unit.mul_right_dvd.mpr hy
+  · have h_mem (n : ℕ) : z ∈ IsLocalRing.maximalIdeal ℤ_[p] ^ n := by
+      rw [PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
+      simpa using hz (p ^ n) (pow_ne_zero n (Fact.out : p.Prime).ne_zero)
+    have := Ideal.iInf_pow_eq_bot_of_isLocalRing (IsLocalRing.maximalIdeal ℤ_[p])
+      (Ideal.IsPrime.ne_top inferInstance)
+    have h_inf := Ideal.mem_iInf.mpr h_mem
+    rwa [this, Ideal.mem_bot] at h_inf
+
+
+end TauCeti.IsProfiniteRing

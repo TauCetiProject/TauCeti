@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Hilbert90.TameLevel
 public import TauCeti.RingTheory.ProfiniteRing
 import Mathlib.Algebra.BigOperators.Pi
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Hilbert's Theorem 90 at a congruence level over profinite rings
@@ -77,7 +78,7 @@ private theorem iterate_ultralimRingHom (i : ℕ)
   | zero => rfl
   | succ i ih =>
     simp only [Function.iterate_succ_apply']
-    rw [ih, map_ultralimRingHom]
+    rw [ih, RingHom.map_ultralimRingHom]
 
 /-- Hilbert's Theorem 90 for `GL n` over each quotient `R ⧸ N! R`. -/
 private theorem exists_mul_map_eq_of_twistedNorm_eq_one_quotient {n : Type*} [Fintype n]
@@ -96,17 +97,6 @@ private theorem exists_mul_map_eq_of_twistedNorm_eq_one_quotient {n : Type*} [Fi
       (τ := GeneralLinearGroup.map σ) (τ' := GeneralLinearGroup.map (quotSigma σ N))
       (fun g ↦ by ext i j; simp [Ideal.quotientMap_mk]), hc, map_one]
 
-omit [IsProfiniteRing R] in
-/-- The orbit product of an element, reduced modulo `N!`, is the reduction of its orbit
-product. -/
-private theorem prod_range_pow_quotSigma_facMk (x : R) (N : ℕ) :
-    ∏ i ∈ range p, (quotSigma σ N ^ i) (facMk N x) = facMk N (∏ i ∈ range p, (σ ^ i) x) := by
-  have h := MonoidHom.map_twistedNorm (facMk (R := R) N : R →* FacQuot R N)
-    (τ := (σ : R →* R)) (τ' := (quotSigma σ N : FacQuot R N →* FacQuot R N))
-    (fun y ↦ by simp [Ideal.quotientMap_mk]) p x
-  rw [MonoidHom.twistedNorm_ringHom_eq_prod_pow, MonoidHom.twistedNorm_ringHom_eq_prod_pow] at h
-  simpa using h.symm
-
 /-- **Hilbert's Theorem 90 for `GL n` at congruence level `m` over a profinite ring.** If `σ` is
 tame at level `m` with exponent `p` and `c : GL n R` satisfies `c.val = 1 + m • Y` and
 `MonoidHom.twistedNorm (GeneralLinearGroup.map σ) p c = 1`, then
@@ -124,29 +114,23 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_twistedNorm_eq_one_of_isProfiniteRing
     RingHom.pi fun N ↦ (quotSigma σ N).comp (Pi.evalRingHom (FacQuot R) N)
   let kP : GL n (∀ N, FacQuot R N) := (GeneralLinearGroup.piEquiv (FacQuot R)).symm k
   have h_eval (N : ℕ) : GeneralLinearGroup.map (Pi.evalRingHom (FacQuot R) N) kP = k N := by
-    ext i j
-    simp [kP]
+    simpa only [GeneralLinearGroup.piEquiv_apply_eq_map_eval] using
+      congrFun ((GeneralLinearGroup.piEquiv (FacQuot R)).apply_symm_apply k) N
   have hkP : GeneralLinearGroup.map δ c * GeneralLinearGroup.map σP kP = kP := by
     refine (GeneralLinearGroup.piEquiv (FacQuot R)).injective (funext fun N ↦ ?_)
-    have h_pi (g : GL n (∀ N, FacQuot R N)) :
-        GeneralLinearGroup.piEquiv (FacQuot R) g N =
-          GeneralLinearGroup.map (Pi.evalRingHom (FacQuot R) N) g := by
-      ext i j
-      simp
     have h_δ : (Pi.evalRingHom (FacQuot R) N).comp δ = facMk N := RingHom.ext fun _ ↦ by simp [δ]
     have h_σ : (Pi.evalRingHom (FacQuot R) N).comp σP =
         (quotSigma σ N).comp (Pi.evalRingHom (FacQuot R) N) := RingHom.ext fun _ ↦ by simp [σP]
-    rw [h_pi, h_pi, map_mul, ← MonoidHom.comp_apply, ← GeneralLinearGroup.map_comp, h_δ,
-      ← MonoidHom.comp_apply (GeneralLinearGroup.map _), ← GeneralLinearGroup.map_comp, h_σ,
-      GeneralLinearGroup.map_comp, MonoidHom.comp_apply, h_eval, hk]
+    simp only [GeneralLinearGroup.piEquiv_apply_eq_map_eval, map_mul]
+    simp only [← GeneralLinearGroup.map_comp_apply, ← GeneralLinearGroup.map_comp, h_δ, h_σ]
+    simp only [GeneralLinearGroup.map_comp, GeneralLinearGroup.map_comp_apply, h_eval, hk]
   have hΛδ : Λ.comp δ = RingHom.id R := RingHom.ext ultralimRingHom_mk
-  have hΛσ : Λ.comp σP = σ.comp Λ := RingHom.ext fun a ↦ (map_ultralimRingHom σ a).symm
+  have hΛσ : Λ.comp σP = σ.comp Λ := RingHom.ext fun a ↦ (RingHom.map_ultralimRingHom σ a).symm
   let WP : Matrix n n (∀ N, FacQuot R N) := Matrix.of fun i j N ↦ W N i j
   refine ⟨GeneralLinearGroup.map Λ kP, WP.map Λ, ?_, ?_⟩
-  · have h := congrArg (GeneralLinearGroup.map Λ) hkP
-    rwa [map_mul, ← GeneralLinearGroup.map_comp_apply, ← GeneralLinearGroup.map_comp_apply,
-      ← GeneralLinearGroup.map_comp, ← GeneralLinearGroup.map_comp, hΛδ, hΛσ,
-      GeneralLinearGroup.map_comp, GeneralLinearGroup.map_id] at h
+  · simpa only [map_mul, ← GeneralLinearGroup.map_comp_apply, ← GeneralLinearGroup.map_comp,
+      hΛδ, hΛσ, GeneralLinearGroup.map_id, MonoidHom.id_apply] using
+      congrArg (GeneralLinearGroup.map Λ) hkP
   · ext i j
     have h_kP : kP i j = (1 : Matrix n n (∀ N, FacQuot R N)) i j + δ m * WP i j := by
       funext N
@@ -174,21 +158,21 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_prod_eq_one_of_isProfiniteRing
         (x := Units.map (facMk (R := R) N : R →* FacQuot R N) x)
         (by simpa using map_dvd (facMk N) hx_one)
         (by
-          have h := prod_range_pow_quotSigma_facMk (σ := σ) (p := p) (x : R) N
+          have h := Ideal.Quotient.mk_prod_range_pow_quotientMap (facIdeal R N) σ
+            Ideal.span_natCast_le_comap p (x : R)
           rw [hx_norm, map_one] at h
-          simpa using h)
+          simpa using h.symm)
     exact ⟨g, hg_one, by simpa using congrArg Units.val hg⟩
   choose g hg_one hg using key
   let Λ : (∀ N, FacQuot R N) →+* R := ultralimRingHom
-  let G : Rˣ := Units.map Λ.toMonoidHom (MulEquiv.piUnits.symm g)
-  have hG : (G : R) = Λ fun N ↦ (g N : FacQuot R N) := by simp [G, MulEquiv.piUnits]
+  let G : Rˣ := ultralimUnitsHom g
+  have hG : (G : R) = Λ fun N ↦ (g N : FacQuot R N) := coe_ultralimUnitsHom g
   refine ⟨G, ?_, Units.ext ?_⟩
-  · rw [hG, ← map_one Λ, ← map_sub]
-    exact dvd_ultralimRingHom hg_one
+  · exact dvd_ultralimUnitsHom_sub_one hg_one
   · calc ((x * Units.map (σ : R →* R) G : Rˣ) : R)
         = Λ (fun N ↦ facMk N (x : R)) * Λ (fun N ↦ quotSigma σ N (g N)) := by
           rw [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, ultralimRingHom_mk,
-            ← map_ultralimRingHom, ← hG]
+            ← RingHom.map_ultralimRingHom, ← hG]
       _ = G := by rw [← map_mul, hG]; exact congrArg Λ (funext hg)
 
 /-- **Surjectivity of the orbit product on `σ`-fixed units at congruence level `m` over a profinite
@@ -211,15 +195,11 @@ theorem IsTameAtLevel.exists_prod_range_pow_eq_of_isProfiniteRing (h_tame : IsTa
     exact ⟨z, hz_one, hz_inv, by simpa using hz⟩
   choose z hz_one hz_inv hz using key
   let Λ : (∀ N, FacQuot R N) →+* R := ultralimRingHom
-  let Z : Rˣ := Units.map Λ.toMonoidHom (MulEquiv.piUnits.symm z)
-  have hZ : (Z : R) = Λ fun N ↦ (z N : FacQuot R N) := by simp [Z, MulEquiv.piUnits]
-  have hZ' : ((Z⁻¹ : Rˣ) : R) = Λ fun N ↦ (((z N)⁻¹ : (FacQuot R N)ˣ) : FacQuot R N) := by
-    simp [Z, MulEquiv.piUnits]
+  let Z : Rˣ := ultralimUnitsHom z
+  have hZ : (Z : R) = Λ fun N ↦ (z N : FacQuot R N) := coe_ultralimUnitsHom z
   refine ⟨Z, ?_, ?_, ?_⟩
-  · rw [hZ, ← map_one Λ, ← map_sub]
-    exact dvd_ultralimRingHom hz_one
-  · rw [hZ', ← map_one Λ, ← map_sub]
-    exact dvd_ultralimRingHom hz_inv
+  · exact dvd_ultralimUnitsHom_sub_one hz_one
+  · simpa only [← Pi.inv_def, map_inv] using dvd_ultralimUnitsHom_sub_one hz_inv
   · calc ∏ i ∈ range p, (σ ^ i) (Z : R)
         = Λ (∏ i ∈ range p, fun N ↦ (quotSigma σ N)^[i] (z N : FacQuot R N)) := by
           simp only [RingHom.coe_pow, hZ, Λ, iterate_ultralimRingHom, map_prod]
