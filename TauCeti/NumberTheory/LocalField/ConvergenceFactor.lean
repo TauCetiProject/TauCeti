@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.NumberTheory.LocalField.Padic
+public import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard
 import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 import TauCeti.NumberTheory.LocalField.Topology
 
@@ -96,18 +97,6 @@ theorem map_smul_withDensity_inv_normalizedAbsoluteValue {c : K} (hc : c ≠ 0) 
 end MeasureTheory.Measure
 
 namespace TauCeti
-
-section ResidueField
-
-variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
-
-/-- The local convergence factor `1 - q⁻¹` of a nonarchimedean local field is nonzero, since its
-residue field has `q > 1` elements. -/
-theorem one_sub_inv_natCard_residueField_ne_zero : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ 0 :=
-  (tsub_pos_iff_lt.2 (ENNReal.inv_lt_one.2 (by exact_mod_cast Finite.one_lt_card))).ne'
-
-end ResidueField
 
 section Padic
 

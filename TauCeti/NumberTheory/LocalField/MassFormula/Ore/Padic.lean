@@ -27,6 +27,8 @@ exponent `j` arises from a totally ramified degree-`n` subextension inside `Sepa
 
 * `TauCeti.isOreAdmissiblePadic_iff`, `TauCeti.not_isOreAdmissiblePadic_zero_left`: arithmetic
   characterization and degree-zero vanishing for `IsOreAdmissiblePadic`.
+* `TauCeti.addVal_natCast_padic`, `TauCeti.IsOreAdmissible.div_le_padicValNat`: `p`-adic
+  valuation of a nonzero natural number in `𝒪[ℚ_[p]]` and the upper bound `j / n ≤ v_p(n)`.
 * `TauCeti.isOreAdmissible_padic_iff`: Ore's inequality characterizing admissible wild exponents for
   degree-`n` totally ramified subextensions of `SeparableClosure ℚ_[p]` (Pauli–Roblot,
   Proposition 3.1).
@@ -75,6 +77,19 @@ instance (p n j : ℕ) : Decidable (IsOreAdmissiblePadic p n j) :=
 
 noncomputable section
 
+/-- The additive valuation of a nonzero natural number in `𝒪[ℚ_[p]]` is `padicValNat p m`. -/
+theorem addVal_natCast_padic (p : ℕ) [Fact p.Prime] {m : ℕ} (hm : m ≠ 0) :
+    addVal 𝒪[ℚ_[p]] (m : 𝒪[ℚ_[p]]) = (padicValNat p m : ℕ∞) := by
+  rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] m (Nat.cast_ne_zero.mpr hm),
+    _root_.Padic.natCastValuation_eq_padicValNat]
+
+/-- For a `p`-adically Ore-admissible pair `(n, j)` (with `p` prime), `j / n ≤ v_p(n)`. -/
+theorem IsOreAdmissible.div_le_padicValNat {p : ℕ} [Fact p.Prime] {n j : ℕ}
+    (hadm : IsOreAdmissible 𝒪[ℚ_[p]] n j) : j / n ≤ padicValNat p n := by
+  have h := hadm.div_le_addVal
+  rw [addVal_natCast_padic p hadm.pos.ne'] at h
+  exact_mod_cast h
+
 /-- **Ore's inequality over `ℚ_[p]`** (Pauli–Roblot, Proposition 3.1): for prime `p`, a wild
 exponent `j` is Ore-admissible for degree `n` over `𝒪[ℚ_[p]]` (equivalently, occurs for a totally
 ramified degree-`n` subextension inside `SeparableClosure ℚ_[p]`) if and only if
@@ -86,10 +101,7 @@ theorem isOreAdmissible_padic_iff (p : ℕ) [Fact p.Prime] {n j : ℕ} :
   rw [isOreAdmissiblePadic_iff]
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
-  have hn0 : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  have hvn : addVal 𝒪[ℚ_[p]] (n : 𝒪[ℚ_[p]]) = (padicValNat p n : ℕ∞) := by
-    rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] n hn0,
-      _root_.Padic.natCastValuation_eq_padicValNat]
+  have hvn := addVal_natCast_padic p hn.ne'
   have hdiv := Nat.div_add_mod j n
   have hlt := Nat.mod_lt j hn
   rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
@@ -97,10 +109,7 @@ theorem isOreAdmissible_padic_iff (p : ℕ) [Fact p.Prime] {n j : ℕ} :
     simp only [hn, true_and, ENat.natCast_inj]
     rw [hmod, add_zero, Nat.mul_comm n (j / n)] at hdiv
     rw [← hdiv, ← le_antisymm_iff, Nat.mul_div_cancel _ hn, Nat.mul_left_inj hn.ne', eq_comm]
-  · have hb0 : ((j % n : ℕ) : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hmod.ne'
-    have hvb : addVal 𝒪[ℚ_[p]] ((j % n : ℕ) : 𝒪[ℚ_[p]]) = (padicValNat p (j % n) : ℕ∞) := by
-      rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] (j % n) hb0,
-        _root_.Padic.natCastValuation_eq_padicValNat]
+  · have hvb := addVal_natCast_padic p hmod.ne'
     rw [isOreAdmissible_iff_of_mod_pos hmod, ite_eq_right hmod.ne', hvn, hvb]
     simp only [hn, true_and]
     norm_cast

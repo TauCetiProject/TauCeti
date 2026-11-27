@@ -72,7 +72,7 @@ open scoped IntermediateField ENNReal
 namespace TauCeti
 
 open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff natDegree_monicOfCoeff
-  natDegree_eq_of_map_eq_monicOfCoeff coeff_monicOfCoeff map_monicOfCoeff)
+  coeff_monicOfCoeff map_monicOfCoeff)
 
 section DiscreteValuationRing
 
@@ -169,8 +169,7 @@ theorem eisensteinBox_zero_right_of_isUnit {n : ℕ} (hu : IsUnit (n : 𝒪[K]))
   have hn : 0 < n := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hu
   refine Set.Subset.antisymm (eisensteinBox_subset_eisensteinSet K n 0) fun a ha ↦ ?_
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
-  have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
+  have hdeg : f.natDegree = n := he.natDegree_eq_of_map_eq_monicOfCoeff hf
   refine (mem_eisensteinBox_iff_of_map_eq hf).mpr ⟨isOreAdmissible_zero_right_iff.mpr ⟨hn, hu⟩, he,
     fun h _ hhn ↦ ?_, fun hb ↦ by simp at hb⟩
   rw [oreCoefficientDepth_zero_right]
@@ -193,8 +192,7 @@ theorem separable_monicOfCoeff_of_mem_eisensteinBox {n j : ℕ} {a : Fin n → K
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp
     (eisensteinBox_subset_eisensteinSet K n j ha)
   obtain ⟨hadm, -, hcoeff, hcrit⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha
-  have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
+  have hdeg : f.natDegree = n := he.natDegree_eq_of_map_eq_monicOfCoeff hf
   exact hf ▸ hadm.separable_map_of_isEisensteinAt he hdeg hcoeff hcrit
 
 variable (K) in
@@ -205,8 +203,7 @@ theorem pairwiseDisjoint_eisensteinBox (n : ℕ) :
   refine Set.disjoint_left.mpr fun a ha₁ ha₂ ↦ hne ?_
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp
     (eisensteinBox_subset_eisensteinSet K n j₁ ha₁)
-  have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
+  have hdeg : f.natDegree = n := he.natDegree_eq_of_map_eq_monicOfCoeff hf
   obtain ⟨hadm₁, -, hcoeff₁, hcrit₁⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha₁
   obtain ⟨hadm₂, -, hcoeff₂, hcrit₂⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha₂
   have h₁ := (iInf_addVal_derivative_add_one_eq_iff hadm₁.pos he hdeg).mpr ⟨hadm₁, hcoeff₁, hcrit₁⟩
@@ -225,8 +222,7 @@ theorem setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox {n : ℕ} (hn 
   refine ⟨fun ⟨ha, hsep⟩ ↦ ?_, fun ⟨j, hj⟩ ↦ ⟨eisensteinBox_subset_eisensteinSet K n j hj,
     separable_monicOfCoeff_of_mem_eisensteinBox hj⟩⟩
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
-  have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
+  have hdeg : f.natDegree = n := he.natDegree_eq_of_map_eq_monicOfCoeff hf
   -- Step 1: separability of `monicOfCoeff a` ensures `f'` is nonzero, so the derivative valuation
   -- infimum `⨅ i, T i` is finite.
   have hf' : f.derivative ≠ 0 := by
@@ -469,8 +465,7 @@ theorem mem_eisensteinBox_iff_wildExponent_adjoin_eq {n j : ℕ} {a : Fin n → 
     (hx : aeval x (monicOfCoeff a) = 0) :
     a ∈ eisensteinBox K n j ↔ (K⟮x⟯).wildExponent = j := by
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
-  have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
+  have hdeg : f.natDegree = n := he.natDegree_eq_of_map_eq_monicOfCoeff hf
   rw [mem_eisensteinBox_iff_of_map_eq hf,
     wildExponent_adjoin_eq_iff_of_eisenstein he hdeg (hf ▸ hx)]
   exact ⟨fun ⟨h₁, _, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, he, h₂, h₃⟩⟩
@@ -484,8 +479,7 @@ theorem adjoin_mem_totallyRamifiedOfDegree_and_wildExponent_eq_of_mem_eisenstein
     K⟮x⟯ ∈ totallyRamifiedOfDegree K n ∧ (K⟮x⟯).wildExponent = j := by
   have ha' := eisensteinBox_subset_eisensteinSet K n j ha
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha'
-  have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
+  have hdeg : f.natDegree = n := he.natDegree_eq_of_map_eq_monicOfCoeff hf
   exact ⟨adjoin_mem_totallyRamifiedOfDegree_of_eisenstein he hdeg (hf ▸ hx),
     (mem_eisensteinBox_iff_wildExponent_adjoin_eq ha' hx).mp ha⟩
 

@@ -17,7 +17,7 @@ Basic nonzero and finiteness lemmas in `ℝ≥0∞` for the residue-field scalin
 
 ## Main results
 
-* `TauCeti.one_sub_one_div_natCard_residueField_ne_zero`: `1 - q⁻¹ ≠ 0`.
+* `TauCeti.one_sub_inv_natCard_residueField_ne_zero`: `1 - q⁻¹ ≠ 0`.
 * `TauCeti.one_div_natCard_residueField_pow_mul_one_sub_ne_zero`: `q ^ (-n) · (1 - q⁻¹) ≠ 0`.
 * `TauCeti.one_div_natCard_residueField_pow_mul_one_sub_ne_top`: `q ^ (-n) · (1 - q⁻¹) ≠ ∞`.
 -/
@@ -29,20 +29,20 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [ValuativeRel K] [Finite 𝓀[K]]
+/-- The local convergence factor `1 - q⁻¹` is nonzero when the residue field is finite, since its
+residue field has `q > 1` elements. -/
+theorem one_sub_inv_natCard_residueField_ne_zero (K : Type*) [Field K] [ValuativeRel K]
+    [Finite 𝓀[K]] : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ 0 :=
+  (tsub_pos_iff_lt.2 (ENNReal.inv_lt_one.2 (by exact_mod_cast Finite.one_lt_card))).ne'
 
-/-- The residue factor `1 - q⁻¹` is nonzero when the residue field is finite. -/
-theorem one_sub_one_div_natCard_residueField_ne_zero :
-    1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by
-  have hq : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
-  exact (tsub_pos_of_lt (by rwa [one_div, ENNReal.inv_lt_one])).ne'
+variable {K : Type*} [Field K] [ValuativeRel K] [Finite 𝓀[K]]
 
 /-- The scaling factor `q ^ (-n) · (1 - q⁻¹)` is nonzero when the residue field is finite. -/
 theorem one_div_natCard_residueField_pow_mul_one_sub_ne_zero {n : ℕ} :
     1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ 0 :=
   mul_ne_zero
     (ENNReal.div_pos one_ne_zero (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))).ne'
-    one_sub_one_div_natCard_residueField_ne_zero
+    (by simpa [one_div] using one_sub_inv_natCard_residueField_ne_zero K)
 
 /-- The scaling factor `q ^ (-n) · (1 - q⁻¹)` is finite when the residue field is finite. -/
 theorem one_div_natCard_residueField_pow_mul_one_sub_ne_top {n : ℕ} :

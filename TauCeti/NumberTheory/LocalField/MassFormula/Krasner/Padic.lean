@@ -125,11 +125,7 @@ theorem sum_oreCoefficientDepth_padic_of_mod_eq_zero (p : ℕ) [Fact p.Prime] {n
     (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[ℚ_[p]] n j h) +
       ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i = n + j - 1 := by
   have hn := hadm.pos
-  have ha_le : j / n ≤ padicValNat p n := by
-    have h := hadm.div_le_addVal
-    rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] n (Nat.cast_ne_zero.mpr hn.ne'),
-      _root_.Padic.natCastValuation_eq_padicValNat] at h
-    exact_mod_cast h
+  have ha_le : j / n ≤ padicValNat p n := hadm.div_le_padicValNat
   have hdepth : ∀ h ∈ Finset.Ico 1 n,
       oreCoefficientDepth 𝒪[ℚ_[p]] n j h = 1 + (j / n - padicValNat p h) := by
     intro h hh
@@ -153,14 +149,9 @@ theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j :
     (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[ℚ_[p]] n j h) +
       (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1)) = n + j - 2 := by
   have hn := hadm.pos
-  have ha_le : j / n ≤ padicValNat p n := by
-    have h := hadm.div_le_addVal
-    rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] n (Nat.cast_ne_zero.mpr hn.ne'),
-      _root_.Padic.natCastValuation_eq_padicValNat] at h
-    exact_mod_cast h
+  have ha_le : j / n ≤ padicValNat p n := hadm.div_le_padicValNat
   obtain ⟨hvb, -⟩ := (isOreAdmissible_iff_of_mod_pos hmod).mp hadm |>.2
-  rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] (j % n)
-    (Nat.cast_ne_zero.mpr hmod.ne'), _root_.Padic.natCastValuation_eq_padicValNat] at hvb
+  rw [addVal_natCast_padic p hmod.ne'] at hvb
   have hvb_le : padicValNat p (j % n) ≤ j / n := by exact_mod_cast hvb
   have hlt_b : j % n < n := Nat.mod_lt j hn
   have hdepth : ∀ h ∈ Finset.Ico 1 n,

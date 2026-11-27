@@ -10,10 +10,10 @@ public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
+public import TauCeti.RingTheory.Polynomial.Eisenstein.LocalRing
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import TauCeti.Data.Set.Function
 import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import Mathlib.RingTheory.Polynomial.GaussLemma
@@ -144,8 +144,7 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
         rw [coeff_monicOfCoeff a ⟨0, hn⟩] at h0
         exact forall_valuation_le_iff_notMem_maximalIdeal_sq.1 h0
   · rintro ⟨f, hf, hE⟩
-    have hdeg : f.natDegree = n :=
-      natDegree_eq_of_map_eq_monicOfCoeff (by simp [hE.isUnit_leadingCoeff.ne_zero]) hf
+    have hdeg : f.natDegree = n := hE.natDegree_eq_of_map_eq_monicOfCoeff hf
     have hcoeff (i : ℕ) : (monicOfCoeff a).coeff i = f.coeff i := by
       rw [← hf, coeff_map, Algebra.algebraMap_ofSubsemiring_apply]
     refine ⟨fun i ↦ ?_, ?_⟩
@@ -161,8 +160,7 @@ theorem irreducible_monicOfCoeff_of_mem_eisensteinSet {n : ℕ} (hn : 0 < n)
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
   have hmonic : f.Monic := (FaithfulSMul.algebraMap_injective 𝒪[K] K).monic_map_iff.mpr
     (hf ▸ monic_monicOfCoeff a)
-  have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
+  have hdeg : f.natDegree = n := he.natDegree_eq_of_map_eq_monicOfCoeff hf
   exact hf ▸ hmonic.irreducible_iff_irreducible_map_fraction_map.mp
     (he.irreducible (Ideal.IsMaximal.isPrime inferInstance) hmonic.isPrimitive (hdeg ▸ hn))
 

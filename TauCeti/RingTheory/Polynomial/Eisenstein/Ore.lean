@@ -399,6 +399,7 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
   have hlt_b := Nat.mod_lt j hn
   have hj_decomp : j + n = (j / n + 1) * n + j % n := by
     have := Nat.div_add_mod j n; rw [Nat.mul_comm (j / n + 1) n, Nat.mul_add_one]; omega
+  -- Rewrite the infimum to `⨅ i, T i` by splitting `addVal R (f_{i+1} * (i+1))`.
   let T (i : Fin n) : ℕ∞ :=
     n • (addVal R (f.coeff ((i : ℕ) + 1)) + addVal R (((i : ℕ) + 1 : ℕ) : R)) +
       ((i : ℕ) + 1 : ℕ∞)
@@ -410,34 +411,47 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
     dsimp only [T]
     rw [addVal_mul]
     norm_cast
-  have hTop_eq := addVal_Eisenstein_top_eq_iff (j := j) hn hf hdeg
-  have hTop_le := le_addVal_Eisenstein_top_iff (j := j) hn hf hdeg
+  -- Translate the top-index (`i = iTop`) equality and lower-bound conditions on `T`.
+  have hT_top_eq : T iTop = (((j / n + 1) * n + j % n : ℕ) : ℕ∞) ↔
+      j % n = 0 ∧ ((j / n : ℕ) : ℕ∞) = addVal R (n : R) := by
+    simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using
+      addVal_Eisenstein_top_eq_iff (j := j) hn hf hdeg
+  have hle_T_top : (((j / n + 1) * n + j % n : ℕ) : ℕ∞) ≤ T iTop ↔
+      (j % n = 0 ∧ ((j / n : ℕ) : ℕ∞) ≤ addVal R (n : R)) ∨
+        (0 < j % n ∧ ((j / n : ℕ) : ℕ∞) + 1 ≤ addVal R (n : R)) := by
+    simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using
+      le_addVal_Eisenstein_top_iff (j := j) hn hf hdeg
+  -- Apply `ciInf_eq_iff`: `⨅ i, T i = target` iff `target` is attained at some `i` and bounds
+  -- every `T k` from below.
   rw [hinf, hj_decomp]
   refine (ciInf_eq_iff T _).trans
     ⟨fun ⟨⟨i, hi⟩, hle⟩ ↦ ?_, fun ⟨hadm, hcoeff, hcrit⟩ ↦ ?_⟩
-  · have hcoeff : ∀ h, 1 ≤ h → h < n →
+  · -- Forward direction: extract the lower-coefficient Ore depth bounds from `hle`, then split on
+    -- whether the infimum is attained at the top index `iTop` or a lower index.
+    have hcoeff : ∀ h, 1 ≤ h → h < n →
         (oreCoefficientDepth R n j h : ℕ∞) ≤ addVal R (f.coeff h) := fun h hh1 hhn ↦ by
       let k : Fin n := ⟨h - 1, by omega⟩
       have hk : (k : ℕ) + 1 = h := by dsimp [k]; omega
       have hm1 : 1 ≤ addVal R (f.coeff h) := hf.one_le_addVal_coeff (by omega)
       exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hhn hm1).mp
         (by simpa only [T, ← Nat.cast_add_one (k : ℕ), hk] using hle k)
-    rcases eq_or_lt_of_le (Nat.succ_le_of_lt i.isLt) with hiTop | hiLow
-    · rw [(Fin.ext (by dsimp [iTop]; omega) : i = iTop)] at hi
-      have hi' := hTop_eq.mp (by simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using hi)
+    rcases eq_or_ne i iTop with rfl | hi_ne
+    · have hi' := hT_top_eq.mp hi
       exact ⟨⟨hn, .inl hi'⟩, hcoeff, fun hb ↦ absurd hi'.1 hb.ne'⟩
-    · have hm1 : 1 ≤ addVal R (f.coeff ((i : ℕ) + 1)) :=
+    · have hiLow : (i : ℕ) + 1 < n := by
+        have := Fin.val_ne_of_ne hi_ne; dsimp [iTop] at this; omega
+      have hm1 : 1 ≤ addVal R (f.coeff ((i : ℕ) + 1)) :=
         hf.one_le_addVal_coeff (hdeg ▸ hiLow)
       obtain ⟨hmod, hvb, heq_m⟩ := (nsmul_add_eq_iff (j := j) hn hiLow hm1).mp hi
       have hb_pos : 0 < j % n := by omega
-      rcases hTop_le.mp (by simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using hle iTop) with
-        ⟨h0, -⟩ | ⟨-, hvn⟩
+      rcases hle_T_top.mp (hle iTop) with ⟨h0, -⟩ | ⟨-, hvn⟩
       · exact absurd h0 hb_pos.ne'
       · exact ⟨⟨hn, .inr ⟨hb_pos, hmod ▸ hvb, hvn⟩⟩, hcoeff, fun _ ↦ hmod ▸ heq_m⟩
-  · refine ⟨?_, fun i ↦ ?_⟩
+  · -- Backward direction: witness the attaining index (`iTop` if `n ∣ j`, `j % n - 1` otherwise)
+    -- and verify `target ≤ T i` for the top index and lower indices.
+    refine ⟨?_, fun i ↦ ?_⟩
     · rcases hadm.2 with ⟨h0, heq⟩ | ⟨hb_pos, hvb, -⟩
-      · exact ⟨iTop,
-          by simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using hTop_eq.mpr ⟨h0, heq⟩⟩
+      · exact ⟨iTop, hT_top_eq.mpr ⟨h0, heq⟩⟩
       · let ib : Fin n := ⟨j % n - 1, by omega⟩
         have hib : (ib : ℕ) + 1 = j % n := by dsimp [ib]; omega
         have hm1 : 1 ≤ addVal R (f.coeff (j % n)) := hf.one_le_addVal_coeff (by omega)
@@ -445,11 +459,12 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
         dsimp only [T]
         rw [← Nat.cast_add_one (ib : ℕ), hib]
         exact (nsmul_add_eq_iff (j := j) hn hlt_b hm1).mpr ⟨rfl, hvb, hcrit hb_pos⟩
-    · rcases eq_or_lt_of_le (Nat.succ_le_of_lt i.isLt) with hiTop | hiLow
-      · rw [(Fin.ext (by dsimp [iTop]; omega) : i = iTop)]
-        simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using hTop_le.mpr
+    · rcases eq_or_ne i iTop with rfl | hi_ne
+      · exact hle_T_top.mpr
           (hadm.2.imp (fun ⟨h0, heq⟩ ↦ ⟨h0, heq.le⟩) fun ⟨hp, _, hvn⟩ ↦ ⟨hp, hvn⟩)
-      · have hm1 : 1 ≤ addVal R (f.coeff ((i : ℕ) + 1)) :=
+      · have hiLow : (i : ℕ) + 1 < n := by
+          have := Fin.val_ne_of_ne hi_ne; dsimp [iTop] at this; omega
+        have hm1 : 1 ≤ addVal R (f.coeff ((i : ℕ) + 1)) :=
           hf.one_le_addVal_coeff (hdeg ▸ hiLow)
         exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hiLow hm1).mpr
           (hcoeff ((i : ℕ) + 1) (Nat.succ_pos _) hiLow)

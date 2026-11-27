@@ -194,7 +194,7 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure {n j : 
     rw [one_div, ENNReal.mul_inv_cancel
       (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
       (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))]
-  refine (ENNReal.eq_div_iff (one_sub_one_div_natCard_residueField_ne_zero (K := K))
+  refine (ENNReal.eq_div_iff (by simpa [one_div] using one_sub_inv_natCard_residueField_ne_zero K)
     (ENNReal.sub_ne_top ENNReal.one_ne_top)).mpr ?_
   calc (1 - 1 / q) * ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞)
       = q ^ (n + j) * (1 / q ^ (n + j)) *
@@ -224,7 +224,7 @@ private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreA
     ENNReal.div_self (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
       (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))
   have hsub : (1 - 1 / q) / (1 - 1 / q) = 1 :=
-    ENNReal.div_self (one_sub_one_div_natCard_residueField_ne_zero (K := K))
+    ENNReal.div_self (by simpa [one_div] using one_sub_inv_natCard_residueField_ne_zero K)
       (ENNReal.sub_ne_top ENNReal.one_ne_top)
   rw [hid]
   calc

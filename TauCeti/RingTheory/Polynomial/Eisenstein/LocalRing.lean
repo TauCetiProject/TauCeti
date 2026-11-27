@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 
 /-!
 # Eisenstein polynomials over local rings
@@ -17,6 +18,8 @@ Over a local ring, an Eisenstein polynomial at the maximal ideal has a unit lead
 
 * `Polynomial.IsEisensteinAt.exists_monic_aeval_eq_zero`: an Eisenstein polynomial can be scaled by
   a unit to a monic Eisenstein polynomial of the same degree with the same roots.
+* `Polynomial.IsEisensteinAt.natDegree_eq_of_map_eq_monicOfCoeff`: an Eisenstein polynomial mapped
+  onto `monicOfCoeff c` over a nontrivial commutative semiring has degree `n`.
 -/
 
 public section
@@ -25,8 +28,17 @@ open IsLocalRing
 
 namespace Polynomial.IsEisensteinAt
 
-variable {R : Type*} [CommSemiring R] [IsLocalRing R] {S : Type*} [Semiring S] [Algebra R S]
-  {f : R[X]} {x : S}
+variable {R : Type*} [CommSemiring R] [IsLocalRing R] {f : R[X]}
+
+/-- Over a local ring, an Eisenstein polynomial at the maximal ideal whose map to a nontrivial
+commutative semiring equals `monicOfCoeff c` has degree `n`. -/
+theorem natDegree_eq_of_map_eq_monicOfCoeff {S : Type*} [CommSemiring S] [Nontrivial S]
+    (hf : f.IsEisensteinAt (maximalIdeal R)) {φ : R →+* S} {n : ℕ} {c : Fin n → S}
+    (hmap : f.map φ = TauCeti.Polynomial.monicOfCoeff c) : f.natDegree = n :=
+  TauCeti.Polynomial.natDegree_eq_of_map_eq_monicOfCoeff
+    ((notMem_maximalIdeal.mp hf.leading).map φ).ne_zero hmap
+
+variable {S : Type*} [Semiring S] [Algebra R S] {x : S}
 
 /-- Over a local ring, an Eisenstein polynomial at the maximal ideal has a unit leading
 coefficient, so scaling it by the inverse gives a monic Eisenstein polynomial of the same degree
