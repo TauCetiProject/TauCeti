@@ -20,6 +20,10 @@ equivalence between the homologies of their cokernels
 (`LinearMap.quotientHomologyEquivOfHomotopy`). If `e c = f a`, it sends the class of `c` to the
 class of `c - h a`.
 
+When `M` and `N` carry zero differentials, the cone `(m, n) ↦ (0, f m)` of any linear map
+`f : M → N`, injective or not, has homology `ker f × N ⧸ range f`
+(`LinearMap.mappingConeZeroZeroHomologyEquiv`).
+
 These constructions use the square-zero mapping cone `LinearMap.mappingCone`.
 They apply to differential modules without requiring a grading or a splitting of
 the quotient map. For example, they compare the complexes obtained by setting either of two
@@ -224,5 +228,89 @@ theorem quotientHomologyEquivOfHomotopy_symm
   · have hx : f a - g a = e (h a) + h (d a) := congr($hh a)
     rw [apply_eq_zero_of_apply_eq he hg hgi ha.symm, map_zero, add_zero] at hx
     rw [LinearMap.neg_apply, sub_neg_eq_add, map_add, ← ha, ← hx, add_sub_cancel]
+
+section ZeroDifferential
+
+/-! ### Cones of maps between modules with zero differential -/
+
+variable {S M N : Type*} [Ring S] [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
+  {f : M →ₗ[S] N}
+
+variable (f) in
+/-- The mapping cone `(m, n) ↦ (0, f m)` of a linear map between modules with zero differentials
+squares to zero. -/
+theorem mappingCone_zero_zero_comp_self :
+    mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f ∘ₗ mappingCone 0 0 f = 0 :=
+  mappingCone_comp_self f (zero_comp 0) (zero_comp 0) (by rw [comp_zero, zero_comp])
+
+/-- The cycles `(m, n)` of the cone of `f` between modules with zero differentials are those with
+`f m = 0`. -/
+theorem mem_ker_mappingCone_zero_zero_iff {x : M × N} :
+    x ∈ ker (mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f) ↔ x.1 ∈ ker f := by
+  simp [Prod.ext_iff]
+
+/-- The boundaries of the cone of `f` between modules with zero differentials are the pairs
+`(0, f m)`. -/
+theorem mem_range_mappingCone_zero_zero_iff {x : M × N} :
+    x ∈ range (mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f) ↔ x.1 = 0 ∧ x.2 ∈ range f := by
+  constructor
+  · rintro ⟨y, rfl⟩
+    simp
+  · rintro ⟨h₁, m, h₂⟩
+    exact ⟨(m, 0), Prod.ext (by simp [h₁]) (by simp [h₂])⟩
+
+variable (f) in
+/-- A cycle `(m, n)` of the cone of `f` between modules with zero differentials, sent to `m` in the
+kernel of `f` and to the class of `n` in the cokernel of `f`. -/
+private def mappingConeZeroZeroCyclesMap :
+    ker (mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f) →ₗ[S] ker f × (N ⧸ range f) :=
+  ((fst S M N ∘ₗ (ker _).subtype).codRestrict (ker f)
+    fun z ↦ mem_ker_mappingCone_zero_zero_iff.mp z.property).prod
+    ((range f).mkQ ∘ₗ snd S M N ∘ₗ (ker _).subtype)
+
+private theorem mappingConeZeroZeroCyclesMap_apply
+    (z : ker (mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f)) :
+    mappingConeZeroZeroCyclesMap f z =
+      (⟨(z : M × N).1, mem_ker_mappingCone_zero_zero_iff.mp z.property⟩,
+        Submodule.Quotient.mk (z : M × N).2) :=
+  (rfl)
+
+private theorem ker_mappingConeZeroZeroCyclesMap :
+    ker (mappingConeZeroZeroCyclesMap f) =
+      (mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f).boundariesInKer := by
+  ext z
+  rw [mem_boundariesInKer, mem_range_mappingCone_zero_zero_iff, mem_ker,
+    mappingConeZeroZeroCyclesMap_apply, Prod.mk_eq_zero, Submodule.mk_eq_zero,
+    Submodule.Quotient.mk_eq_zero]
+
+private theorem mappingConeZeroZeroCyclesMap_surjective :
+    Function.Surjective (mappingConeZeroZeroCyclesMap f) := by
+  rintro ⟨m, n⟩
+  obtain ⟨n, rfl⟩ := Submodule.Quotient.mk_surjective _ n
+  exact ⟨⟨(m, n), mem_ker_mappingCone_zero_zero_iff.mpr m.property⟩, by
+    simp [mappingConeZeroZeroCyclesMap_apply]⟩
+
+variable (f) in
+/-- **Homology of the cone of a map between modules with zero differentials.** The cone
+`(m, n) ↦ (0, f m)` of `f : M → N` has homology `ker f × coker f`: the class of a cycle `(m, n)`
+goes to `m` and to the class of `n`. -/
+noncomputable def mappingConeZeroZeroHomologyEquiv :
+    (mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f).homology
+        (mappingCone_zero_zero_comp_self f) ≃ₗ[S]
+      ker f × (N ⧸ range f) :=
+  Submodule.quotEquivOfEq _ _ ker_mappingConeZeroZeroCyclesMap.symm ≪≫ₗ
+    (mappingConeZeroZeroCyclesMap f).quotKerEquivOfSurjective
+      mappingConeZeroZeroCyclesMap_surjective
+
+/-- The class of a cycle `(m, n)` of the cone of `f` goes to `m` and to the class of `n`. -/
+@[simp]
+theorem mappingConeZeroZeroHomologyEquiv_mk
+    (z : ker (mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f)) :
+    mappingConeZeroZeroHomologyEquiv f (Submodule.Quotient.mk z) =
+      (⟨(z : M × N).1, mem_ker_mappingCone_zero_zero_iff.mp z.property⟩,
+        Submodule.Quotient.mk (z : M × N).2) :=
+  (rfl)
+
+end ZeroDifferential
 
 end LinearMap

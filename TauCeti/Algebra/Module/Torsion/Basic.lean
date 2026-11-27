@@ -352,6 +352,12 @@ theorem pi {ι : Type*} [Finite ι] {P : ι → Type*} [∀ i, AddCommMonoid (P 
 
 end Module.IsTorsion
 
+/-- An element `r` of a commutative ring `R` acts by zero on `R ⧸ (r)`. -/
+theorem Module.isTorsionBy_quotient_span_singleton {R : Type*} [CommRing R] (r : R) :
+    Module.IsTorsionBy R (R ⧸ Ideal.span {r}) r :=
+  (Module.isTorsionBy_quotient_iff _ r).mpr fun x =>
+    Ideal.mul_mem_right x _ (Ideal.mem_span_singleton_self r)
+
 namespace TauCeti
 
 /-- Over a nontrivial commutative semiring `R`, the free module `ι → R` is torsion exactly when

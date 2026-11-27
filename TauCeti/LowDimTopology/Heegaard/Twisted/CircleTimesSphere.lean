@@ -9,6 +9,7 @@ public import TauCeti.Algebra.MonoidAlgebra.Exactness
 public import TauCeti.LowDimTopology.Heegaard.CircleTimesSphere
 public import TauCeti.LowDimTopology.Heegaard.Twisted.Basic
 public import TauCeti.RingTheory.Regular.Tor
+public import TauCeti.Algebra.Module.Torsion.Basic
 import Mathlib.Algebra.Field.ZMod
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import Mathlib.LinearAlgebra.DirectSum.Finsupp
@@ -35,10 +36,10 @@ the Koszul complex of `1 + t`. Since `R` has no zero divisors and `1 + t ≠ 0`,
 multiples of `p₁`, and the boundaries are the multiples of `(1 + t) p₁`, so the homology is
 `R ⧸ (1 + t)`. This quotient is `𝔽₂`: in characteristic two `1 + t = t - 1`, and as `t`
 generates the group of periodic domains, `t - 1` generates the kernel of the augmentation
-`R → 𝔽₂`. So, informally, the twisted homology has rank one over `𝔽₂`, as `HF̂(S¹ × S²)` with
-twisted coefficients does, while the untwisted complex has rank two. The results below give the
-cycles, the boundaries and the quotient; the homology module itself is not packaged as a single
-statement. The augmentation of the twisted differential is the untwisted one at the level of chains
+`R → 𝔽₂`. So the twisted homology
+(`TauCeti.HeegaardRegionSystem.circleTimesSphereTwistedHomologyEquiv`) has rank one over `𝔽₂`, as
+`HF̂(S¹ × S²)` with twisted coefficients does, while the untwisted complex has rank two. The
+augmentation of the twisted differential is the untwisted one at the level of chains
 (`TauCeti.HeegaardRegionSystem.mapRange_augmentation_twistedHatDifferential`); the difference of
 the two homologies is the failure of the non-flat augmentation to commute with homology.
 
@@ -49,14 +50,17 @@ an `R`-module `X`, the complex becomes `X → X`, multiplication by `1 + t`, who
 the `(1 + t)`-torsion `X[1 + t]`
 (`lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff`), which is
 `Tor₁^R(X, R ⧸ (1 + t))` (`ModuleCat.torOneQuotientSpanSingletonIso`); its homology at `p₁` is
-`X ⧸ (1 + t) X = X ⊗_R R ⧸ (1 + t)` (not formalized here). For `X = 𝔽₂ = R ⧸ (1 + t)`, with `R`
-acting through the augmentation, `1 + t` acts by zero and the two classes `p₀` and `p₁` of the
-augmented complex survive. What is formalized is that `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))` is
-abstractly `𝔽₂` (`TauCeti.HeegaardRegionSystem.circleTimesSphereTorOneAddEquiv`); this is
-`Tor₁^R(R ⧸ (1 + t), 𝔽₂)` via `R ⧸ (1 + t) ≃ 𝔽₂`
-(`TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`). Informally, and not formalized
-here, it accounts for the class `p₀` that the augmented twisted homology
-`R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂` misses.
+`X ⧸ (1 + t) X = X ⊗_R R ⧸ (1 + t)`. Together, the homology of `X ⊗_R CF` is
+`Tor₁^R(X, R ⧸ (1 + t)) × X ⊗_R R ⧸ (1 + t)`
+(`TauCeti.HeegaardRegionSystem.circleTimesSphereLTensorHomologyEquiv`), the universal coefficient
+decomposition of the free complex `CF`: the class of `x ⊗ c`, for a twisted cycle `c`, is
+`x ⊗ [c]` in the second factor, and the class of `x ⊗ p₀`, for `x ∈ X[1 + t]`, lies in the `Tor`
+factor. For `X = 𝔽₂ = R ⧸ (1 + t)`, with `R` acting through the augmentation, `1 + t` acts by zero,
+the differential of the augmented complex vanishes, and its homology is `𝔽₂ × 𝔽₂`
+(`TauCeti.HeegaardRegionSystem.circleTimesSphereAugmentedHomologyEquiv`). The class of `p₁` is
+the augmented twisted homology `R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂`, and the class of `p₀`, which the
+augmented twisted homology misses, generates `Tor₁^R(R ⧸ (1 + t), 𝔽₂) = 𝔽₂`
+(`TauCeti.HeegaardRegionSystem.circleTimesSphereTorOneAddEquiv`).
 
 ## Main definitions
 
@@ -74,8 +78,7 @@ here, it accounts for the class `p₀` that the augmented twisted homology
   differential sends a chain `c` to `c(p₀) (1 + t) p₁`.
 * `TauCeti.HeegaardRegionSystem.twistedHatDifferential_circleTimesSphere_zero_eq_zero_iff`: its
   cycles are the chains vanishing at `p₀`.
-* `TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`: `R ⧸ (1 + t) ≃ 𝔽₂` (informally,
-  the twisted homology at `p₁`).
+* `TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`: `R ⧸ (1 + t) ≃ 𝔽₂`.
 * `TauCeti.HeegaardRegionSystem.isSMulRegular_one_add_single_circleTimesSpherePeriodicDomain`:
   multiplication by `1 + t` is injective.
 * `lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff`: with coefficients
@@ -83,6 +86,18 @@ here, it accounts for the class `p₀` that the augmented twisted homology
 * `TauCeti.HeegaardRegionSystem.circleTimesSphereTorOneAddEquiv`:
   `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))` is abstractly `𝔽₂`, with
   `circleTimesSphereTorOneAddEquiv_apply`.
+* `TauCeti.HeegaardRegionSystem.circleTimesSphereTwistedHomologyEquiv`: the twisted homology is
+  `R ⧸ (1 + t)`.
+* `TauCeti.HeegaardRegionSystem.circleTimesSphereLTensorHomologyEquiv`: with coefficients in `X`,
+  the homology is `Tor₁^R(X, R ⧸ (1 + t)) × X ⊗_R R ⧸ (1 + t)`, with
+  `circleTimesSphereLTensorHomologyEquiv_mk_tmul` and
+  `circleTimesSphereLTensorHomologyEquiv_mk_tmul_single_zero`.
+* `TauCeti.HeegaardRegionSystem.lTensor_twistedHatDifferential_circleTimesSphere_zero_eq_zero`:
+  the differential vanishes with coefficients on which `1 + t` acts by zero.
+* `TauCeti.HeegaardRegionSystem.circleTimesSphereAugmentedHomologyEquiv`: with coefficients in
+  `𝔽₂ = R ⧸ (1 + t)` the homology is `𝔽₂ × 𝔽₂`, the class of `p₀` generating the `Tor` factor
+  (`circleTimesSphereAugmentedHomologyEquiv_mk_tmul_single_zero`) and the class of `p₁` the
+  augmented twisted homology (`circleTimesSphereAugmentedHomologyEquiv_mk_tmul_single_one`).
 
 ## References
 
@@ -245,8 +260,8 @@ theorem span_one_add_single_circleTimesSpherePeriodicDomain :
   simp [sub_eq_add_neg, add_comm, one_def, ← single_neg]
 
 /-- The quotient `R ⧸ (1 + t)` of the group ring of the periodic domains of the genus-one diagram
-of `S¹ × S²` is `𝔽₂`, through the augmentation. Informally, this quotient is the twisted homology
-at `p₁` (see the module docstring), but the homology module itself is not defined here. -/
+of `S¹ × S²` is `𝔽₂`, through the augmentation. This quotient is the twisted homology
+(`TauCeti.HeegaardRegionSystem.circleTimesSphereTwistedHomologyEquiv`). -/
 noncomputable def circleTimesSphereQuotientEquiv :
     (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
       Ideal.span {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)})
@@ -261,6 +276,11 @@ theorem circleTimesSphereQuotientEquiv_mk
     (f : MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) :
     circleTimesSphereQuotientEquiv (Ideal.Quotient.mk _ f) = augmentation (ZMod 2) _ f := by
   simp [circleTimesSphereQuotientEquiv, Ideal.quotientEquivAlgOfEq_mk]
+
+/-- The equivalence `R ⧸ (1 + t) ≃ 𝔽₂` sends `1` to `1`. -/
+@[simp]
+theorem circleTimesSphereQuotientEquiv_one : circleTimesSphereQuotientEquiv 1 = 1 := by
+  rw [← map_one (Ideal.Quotient.mk _), circleTimesSphereQuotientEquiv_mk, map_one]
 
 /-! ### Changing coefficients: the derived comparison
 
@@ -296,13 +316,10 @@ genus-one diagram of `S¹ × S²`, with homology `R ⧸ (1 + t)`, the group
 `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))` is abstractly `𝔽₂`, where `R ⧸ (1 + t)` is also `𝔽₂` with `R`
 acting through the augmentation (`TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`).
 
-The augmented complex `𝔽₂ ⊗_R CF` has zero differential
-(`TauCeti.HeegaardRegionSystem.hatDifferential_circleTimesSphere_zero`), so its homology has the two
-classes `p₀` and `p₁`. Informally, and not formalized here (this equivalence is abstract, with no
-map to that homology), the class `p₁` is `R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂`, the augmented
-twisted homology, and the class `p₀` is this `Tor₁`: the chains `x ⊗ p₀` that are cycles are those
-with `(1 + t) • x = 0` (`lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff`),
-and `1 + t` acts by zero on `𝔽₂`. -/
+The augmented complex `𝔽₂ ⊗_R CF` has zero differential, so its homology has the two classes `p₀`
+and `p₁`. The class `p₁` is `R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂`, the augmented twisted homology, and the
+class `p₀` generates this `Tor₁`
+(`TauCeti.HeegaardRegionSystem.circleTimesSphereAugmentedHomologyEquiv`). -/
 noncomputable def circleTimesSphereTorOneAddEquiv :
     ((Tor (ModuleCat.{0}
         (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains))) 1).obj
@@ -328,6 +345,295 @@ theorem circleTimesSphereTorOneAddEquiv_apply (x) :
       circleTimesSphereQuotientEquiv ((ModuleCat.torOneQuotientSpanSingletonSelfIso
         isSMulRegular_one_add_single_circleTimesSpherePeriodicDomain).hom x) := by
   simp [circleTimesSphereTorOneAddEquiv]
+
+/-! ### The twisted homology and the homology with coefficients
+
+Splitting the chains into their coefficients at `p₀` and at `p₁` turns the twisted complex, and
+the twisted complex with coefficients in any `R`-module `X`, into the cone of multiplication by
+`1 + t` (`LinearMap.mappingCone`). -/
+
+/-- The twisted hat differential of the genus-one diagram of `S¹ × S²` squares to zero. -/
+theorem twistedHatDifferential_circleTimesSphere_zero_comp_self :
+    (circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains ![0, 1, 1] ∘ₗ
+      (circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains
+        ![0, 1, 1] = 0 := by
+  refine LinearMap.ext fun c => ?_
+  have h : circleTimesSphereGenerator 0 1 ≠ circleTimesSphereGenerator 0 0 :=
+    (circleTimesSphereGenerator_bijective 0).1.ne (by decide)
+  simp [twistedHatDifferential_circleTimesSphere_zero, h]
+
+section Coefficients
+
+variable (X : Type*) [AddCommGroup X]
+  [Module (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) X]
+
+/-- The chains of the genus-one diagram of `S¹ × S²` with coefficients in `X`, split into their
+coefficients at `p₀` and at `p₁`. -/
+private noncomputable def circleTimesSphereChainEquiv :
+    ((circleTimesSphere 0).Generator →₀ X) ≃ₗ[
+      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)] X × X :=
+  Finsupp.linearEquivFunOnFinite _ X _ ≪≫ₗ
+    LinearEquiv.funCongrLeft _ X (Equiv.ofBijective _ (circleTimesSphereGenerator_bijective 0)) ≪≫ₗ
+    LinearEquiv.finTwoArrow _ X
+
+private theorem circleTimesSphereChainEquiv_apply (c : (circleTimesSphere 0).Generator →₀ X) :
+    circleTimesSphereChainEquiv X c =
+      (c (circleTimesSphereGenerator 0 0), c (circleTimesSphereGenerator 0 1)) :=
+  (rfl)
+
+open scoped TensorProduct
+
+/-- The chains of the genus-one diagram of `S¹ × S²` with coefficients in `X`, written as
+`X ⊗_R CF`, split into their coefficients at `p₀` and at `p₁`. -/
+private noncomputable def circleTimesSphereTensorChainEquiv :
+    X ⊗[MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)]
+        ((circleTimesSphere 0).Generator →₀
+          MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) ≃ₗ[
+      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)] X × X :=
+  TensorProduct.finsuppScalarRight _ _ X _ ≪≫ₗ circleTimesSphereChainEquiv X
+
+private theorem circleTimesSphereTensorChainEquiv_tmul (x : X)
+    (c : (circleTimesSphere 0).Generator →₀
+      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) :
+    circleTimesSphereTensorChainEquiv X (x ⊗ₜ c) =
+      (c (circleTimesSphereGenerator 0 0) • x, c (circleTimesSphereGenerator 0 1) • x) := by
+  simp [circleTimesSphereTensorChainEquiv, circleTimesSphereChainEquiv_apply]
+
+/-- With coefficients in `X`, the twisted hat complex of the genus-one diagram of `S¹ × S²` is the
+cone of multiplication by `1 + t` on `X`. -/
+private theorem circleTimesSphereTensorChainEquiv_comp_lTensor :
+    (circleTimesSphereTensorChainEquiv X).toLinearMap ∘ₗ
+        ((circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains
+          ![0, 1, 1]).lTensor X =
+      LinearMap.mappingCone 0 0 (DistribSMul.toLinearMap _ X
+          (1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2))) ∘ₗ
+        (circleTimesSphereTensorChainEquiv X).toLinearMap := by
+  have h : circleTimesSphereGenerator 0 1 ≠ circleTimesSphereGenerator 0 0 :=
+    (circleTimesSphereGenerator_bijective 0).1.ne (by decide)
+  refine TensorProduct.ext' fun x c => ?_
+  simp [circleTimesSphereTensorChainEquiv_tmul, twistedHatDifferential_circleTimesSphere_zero, h,
+    mul_smul]
+
+/-- The twisted hat complex of the genus-one diagram of `S¹ × S²` is the cone of multiplication by
+`1 + t` on `R`. -/
+private theorem circleTimesSphereChainEquiv_comp_twistedHatDifferential :
+    (circleTimesSphereChainEquiv _).toLinearMap ∘ₗ
+        (circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains
+          ![0, 1, 1] =
+      LinearMap.mappingCone 0 0 (DistribSMul.toLinearMap _ _
+          (1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2))) ∘ₗ
+        (circleTimesSphereChainEquiv _).toLinearMap := by
+  have h : circleTimesSphereGenerator 0 1 ≠ circleTimesSphereGenerator 0 0 :=
+    (circleTimesSphereGenerator_bijective 0).1.ne (by decide)
+  refine LinearMap.ext fun c => ?_
+  simpa [circleTimesSphereChainEquiv_apply, twistedHatDifferential_circleTimesSphere_zero, h]
+    using mul_comm _ _
+
+/-- If `1 + t` acts by zero on `X`, then the twisted hat differential of the genus-one diagram of
+`S¹ × S²` with coefficients in `X` vanishes. For `X = R ⧸ (1 + t) = 𝔽₂` this is the vanishing of
+the untwisted hat differential (`hatDifferential_circleTimesSphere_zero`). -/
+theorem lTensor_twistedHatDifferential_circleTimesSphere_zero_eq_zero
+    (hX : Module.IsTorsionBy _ X
+      (1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2))) :
+    ((circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains
+      ![0, 1, 1]).lTensor X = 0 := by
+  have h := circleTimesSphereTensorChainEquiv_comp_lTensor X
+  rw [show DistribSMul.toLinearMap _ X _ = 0 from LinearMap.ext hX] at h
+  refine LinearMap.ext fun t => (circleTimesSphereTensorChainEquiv X).injective ?_
+  rw [LinearMap.zero_apply, map_zero, ← Prod.mk_zero_zero]
+  simpa using congr($h t)
+
+/-- **The twisted homology of `S¹ × S²`.** The twisted hat homology of the genus-one diagram of
+`S¹ × S²` is `R ⧸ (1 + t)`: a cycle vanishes at `p₀`, and its class goes to the class of its
+coefficient at `p₁`. -/
+noncomputable def circleTimesSphereTwistedHomologyEquiv :
+    ((circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains
+        ![0, 1, 1]).homology twistedHatDifferential_circleTimesSphere_zero_comp_self ≃ₗ[
+      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)]
+      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+        Ideal.span
+          {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)} :=
+  (circleTimesSphereChainEquiv _).homologyEquiv _ (LinearMap.mappingCone_zero_zero_comp_self _)
+      circleTimesSphereChainEquiv_comp_twistedHatDifferential ≪≫ₗ
+    LinearMap.mappingConeZeroZeroHomologyEquiv _ ≪≫ₗ
+    LinearEquiv.prodCongr
+      (LinearEquiv.ofEq _ ⊥ (LinearMap.ker_eq_bot.mpr fun _ _ h =>
+        isSMulRegular_one_add_single_circleTimesSpherePeriodicDomain (by simpa using h)))
+      (Submodule.quotEquivOfEq _ _ <| by
+        ext a
+        simp [Ideal.mem_span_singleton', mul_comm, eq_comm]) ≪≫ₗ
+    LinearEquiv.uniqueProd
+
+/-- The class of a twisted cycle `c` goes to the class of its coefficient at `p₁`. -/
+@[simp]
+theorem circleTimesSphereTwistedHomologyEquiv_mk
+    (c : LinearMap.ker ((circleTimesSphere 0).twistedHatDifferential
+      circleTimesSphereReferenceDomains ![0, 1, 1])) :
+    circleTimesSphereTwistedHomologyEquiv (Submodule.Quotient.mk c) =
+      Ideal.Quotient.mk _ ((c : (circleTimesSphere 0).Generator →₀
+        MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains))
+          (circleTimesSphereGenerator 0 1)) := by
+  simp [circleTimesSphereTwistedHomologyEquiv, circleTimesSphereChainEquiv_apply]
+  rfl
+
+end Coefficients
+
+section Tor
+
+open scoped TensorProduct
+
+variable (X : Type) [AddCommGroup X]
+  [Module (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) X]
+
+open CategoryTheory in
+/-- **Changing the coefficients of the twisted complex of `S¹ × S²`.** With coefficients in an
+`R`-module `X`, the homology of `X ⊗_R CF` is `Tor₁^R(X, R ⧸ (1 + t)) × X ⊗_R R ⧸ (1 + t)`, where
+`R ⧸ (1 + t)` is the twisted homology (`circleTimesSphereTwistedHomologyEquiv`). This is the
+universal coefficient decomposition of the free complex `CF`: the second factor is the twisted
+homology with its coefficients changed, and receives the class of `x ⊗ c` for every twisted
+cycle `c` (`circleTimesSphereLTensorHomologyEquiv_mk_tmul`); the first factor is the `Tor`
+correction, and receives the class of `x ⊗ p₀` when `(1 + t) • x = 0`
+(`circleTimesSphereLTensorHomologyEquiv_mk_tmul_single_zero`). -/
+noncomputable def circleTimesSphereLTensorHomologyEquiv :
+    (((circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains
+        ![0, 1, 1]).lTensor X).homology
+        (LinearMap.lTensor_comp_lTensor_eq_zero _ X
+          twistedHatDifferential_circleTimesSphere_zero_comp_self) ≃ₗ[
+      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)]
+      ((Tor (ModuleCat.{0}
+          (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains))) 1).obj
+        (ModuleCat.of _ X)).obj (ModuleCat.of _
+          (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+            Ideal.span
+              {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)})) ×
+        X ⊗[MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)]
+          (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+            Ideal.span
+              {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)}) :=
+  (circleTimesSphereTensorChainEquiv X).homologyEquiv _
+      (LinearMap.mappingCone_zero_zero_comp_self _)
+      (circleTimesSphereTensorChainEquiv_comp_lTensor X) ≪≫ₗ
+    ModuleCat.mappingConeSMulHomologyEquiv
+      isSMulRegular_one_add_single_circleTimesSpherePeriodicDomain X
+
+/-- For a twisted cycle `c`, the class of `x ⊗ c` goes to `x ⊗ [c]` in the second factor, where
+`[c]` is the twisted homology class of `c` in `R ⧸ (1 + t)`. -/
+@[simp]
+theorem circleTimesSphereLTensorHomologyEquiv_mk_tmul (x : X)
+    (c : LinearMap.ker ((circleTimesSphere 0).twistedHatDifferential
+      circleTimesSphereReferenceDomains ![0, 1, 1])) :
+    circleTimesSphereLTensorHomologyEquiv X
+        (Submodule.Quotient.mk ⟨x ⊗ₜ (c : (circleTimesSphere 0).Generator →₀
+          MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)),
+          LinearMap.tmul_mem_ker_lTensor x c.property⟩) =
+      (0, x ⊗ₜ circleTimesSphereTwistedHomologyEquiv (Submodule.Quotient.mk c)) := by
+  have hc := (twistedHatDifferential_circleTimesSphere_zero_eq_zero_iff c).mp c.property
+  simp only [circleTimesSphereLTensorHomologyEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.homologyEquiv_mk, ModuleCat.mappingConeSMulHomologyEquiv_mk,
+    circleTimesSphereTwistedHomologyEquiv_mk, circleTimesSphereTensorChainEquiv_tmul, hc, zero_smul]
+  refine Prod.ext (map_zero _) ?_
+  rw [TensorProduct.smul_tmul, Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq]
+
+/-- For `x` with `(1 + t) • x = 0`, the class of `x ⊗ p₀` goes to the class of `x` in
+`Tor₁^R(X, R ⧸ (1 + t))` (`ModuleCat.torOneQuotientSpanSingletonIso`), in the first factor. -/
+@[simp]
+theorem circleTimesSphereLTensorHomologyEquiv_mk_tmul_single_zero (x : X)
+    (hx : x ∈ Submodule.torsionBy _ X
+      (1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2))) :
+    circleTimesSphereLTensorHomologyEquiv X
+        (Submodule.Quotient.mk ⟨x ⊗ₜ Finsupp.single (circleTimesSphereGenerator 0 0) 1,
+          (lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff x).mpr hx⟩) =
+      ((ModuleCat.torOneQuotientSpanSingletonIso
+          isSMulRegular_one_add_single_circleTimesSpherePeriodicDomain (ModuleCat.of _ X)).inv
+        ⟨x, hx⟩, 0) := by
+  have h : circleTimesSphereGenerator 0 0 ≠ circleTimesSphereGenerator 0 1 :=
+    (circleTimesSphereGenerator_bijective 0).1.ne (by decide)
+  simp [circleTimesSphereLTensorHomologyEquiv, circleTimesSphereTensorChainEquiv_tmul, h]
+
+/-- `R ⧸ (1 + t) ⊗_R R ⧸ (1 + t) ≃ R ⧸ (1 + t)`, sending `x ⊗ 1` to `x`. -/
+private noncomputable def circleTimesSphereQuotientTensorEquiv :
+    (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+        Ideal.span {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)})
+      ⊗[MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)]
+      (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+        Ideal.span {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)})
+      ≃ₗ[MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)]
+      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+        Ideal.span
+          {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)} :=
+  (QuotSMulTop.equivTensorQuot _ _).symm ≪≫ₗ
+    Submodule.quotEquivOfEqBot _ (eq_bot_iff.mpr fun _ hy => by
+      obtain ⟨b, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hy
+      exact (Submodule.mem_bot _).mpr (Module.isTorsionBy_quotient_span_singleton _ (x := b)))
+
+open scoped Pointwise in
+private theorem circleTimesSphereQuotientTensorEquiv_tmul_one
+    (x : MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+      Ideal.span {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)}) :
+    circleTimesSphereQuotientTensorEquiv (x ⊗ₜ 1) = x := by
+  have h : QuotSMulTop.equivTensorQuot _ _
+      (Submodule.Quotient.mk
+        (p := (1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)) • ⊤)
+        x) = x ⊗ₜ 1 := by
+    simp [QuotSMulTop.equivTensorQuot]
+  rw [circleTimesSphereQuotientTensorEquiv, LinearEquiv.trans_apply, ← h,
+    LinearEquiv.symm_apply_apply, Submodule.quotEquivOfEqBot_apply_mk]
+
+open CategoryTheory in
+/-- **The augmented complex of `S¹ × S²` has two classes.** With coefficients in
+`R ⧸ (1 + t) = 𝔽₂`, on which `R` acts through the augmentation, the twisted hat complex of the
+genus-one diagram of `S¹ × S²` has zero differential
+(`lTensor_twistedHatDifferential_circleTimesSphere_zero_eq_zero`), and its homology is
+`𝔽₂ × 𝔽₂`. The first factor is `Tor₁^R(𝔽₂, R ⧸ (1 + t)) ≃ 𝔽₂`
+(`circleTimesSphereTorOneAddEquiv`) and holds the class of `p₀`; the second is the augmented
+twisted homology `𝔽₂ ⊗_R R ⧸ (1 + t) ≃ 𝔽₂` and holds the class of `p₁`. So the class that the
+twisted homology `R ⧸ (1 + t)`, of rank one, loses is the `Tor` class of `p₀`. -/
+noncomputable def circleTimesSphereAugmentedHomologyEquiv :
+    (((circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains
+        ![0, 1, 1]).lTensor
+        (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+          Ideal.span
+            {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)})
+      ).homology
+        (LinearMap.lTensor_comp_lTensor_eq_zero _ _
+          twistedHatDifferential_circleTimesSphere_zero_comp_self) ≃+
+      ZMod 2 × ZMod 2 :=
+  (circleTimesSphereLTensorHomologyEquiv _).toAddEquiv.trans <|
+    AddEquiv.prodCongr circleTimesSphereTorOneAddEquiv
+      (circleTimesSphereQuotientTensorEquiv.toAddEquiv.trans
+        circleTimesSphereQuotientEquiv.toAddEquiv)
+
+/-- The class of `1 ⊗ p₀` in the augmented complex of `S¹ × S²` is the generator of the `Tor`
+factor. -/
+theorem circleTimesSphereAugmentedHomologyEquiv_mk_tmul_single_zero :
+    circleTimesSphereAugmentedHomologyEquiv
+        (Submodule.Quotient.mk ⟨1 ⊗ₜ Finsupp.single (circleTimesSphereGenerator 0 0) 1,
+          (lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff _).mpr
+            ((Submodule.mem_torsionBy_iff _ _).mpr
+              (Module.isTorsionBy_quotient_span_singleton _ (x := 1)))⟩) = (1, 0) := by
+  have h := circleTimesSphereLTensorHomologyEquiv_mk_tmul_single_zero _ 1
+    ((Submodule.mem_torsionBy_iff _ _).mpr (Module.isTorsionBy_quotient_span_singleton _ (x := 1)))
+  simp [circleTimesSphereAugmentedHomologyEquiv, AddEquiv.prodCongr, h]
+
+/-- The class of `1 ⊗ p₁` in the augmented complex of `S¹ × S²` is the generator of the augmented
+twisted homology. -/
+theorem circleTimesSphereAugmentedHomologyEquiv_mk_tmul_single_one :
+    circleTimesSphereAugmentedHomologyEquiv
+        (Submodule.Quotient.mk ⟨1 ⊗ₜ Finsupp.single (circleTimesSphereGenerator 0 1) 1,
+          LinearMap.tmul_mem_ker_lTensor _
+            ((twistedHatDifferential_circleTimesSphere_zero_eq_zero_iff _).mpr
+              (Finsupp.single_eq_of_ne ((circleTimesSphereGenerator_bijective 0).1.ne
+                (by decide))))⟩) = (0, 1) := by
+  have h := circleTimesSphereLTensorHomologyEquiv_mk_tmul
+    (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
+      Ideal.span {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)}) 1
+    ⟨Finsupp.single (circleTimesSphereGenerator 0 1) 1,
+      (twistedHatDifferential_circleTimesSphere_zero_eq_zero_iff _).mpr
+        (Finsupp.single_eq_of_ne ((circleTimesSphereGenerator_bijective 0).1.ne (by decide)))⟩
+  simp [circleTimesSphereAugmentedHomologyEquiv, AddEquiv.prodCongr,
+    circleTimesSphereQuotientTensorEquiv_tmul_one, h]
+
+end Tor
 
 end HeegaardRegionSystem
 

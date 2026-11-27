@@ -14,6 +14,8 @@ public import TauCeti.Algebra.Module.Torsion.LTensor
 public import TauCeti.Algebra.Module.Torsion.Map
 public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 public import TauCeti.RingTheory.QuotSMulTop
+public import TauCeti.Algebra.Homology.SquareZero.Cone
+import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
 # `Tor` against the quotient by a regular element
@@ -37,9 +39,11 @@ the resolution before reducing modulo `f`.
 This is how `Tor` measures the failure of a nonflat change of coefficients to commute with
 homology. The complex `R → R` of multiplication by `f` has homology `R ⧸ (f)` in degree zero only,
 but after tensoring with `X` it has homology `X ⧸ f X ≅ X ⊗ R ⧸ (f)` in degree zero and `X[f]` in
-degree one, and the degree-one class is `Tor₁^R(X, R ⧸ (f))`. Twisted Floer complexes, with
-coefficients in a group ring, change their coefficients along the augmentation in exactly this
-way.
+degree one, and the degree-one class is `Tor₁^R(X, R ⧸ (f))`. Written as the cone
+`(x, y) ↦ (0, f • x)` of multiplication by `f` on `X` (`LinearMap.mappingCone`), its homology is
+`Tor₁^R(X, R ⧸ (f)) × X ⊗ R ⧸ (f)` (`ModuleCat.mappingConeSMulHomologyEquiv`). Twisted Floer
+complexes, with coefficients in a group ring, change their coefficients along the augmentation in
+exactly this way.
 
 ## Main results
 
@@ -51,6 +55,8 @@ way.
   `ModuleCat.torOneQuotientSpanSingletonIso`.
 * `ModuleCat.torOneQuotientSpanSingletonSelfIso`: `Tor₁^R(R ⧸ (f), R ⧸ (f)) ≅ R ⧸ (f)`, with
   `ModuleCat.torOneQuotientSpanSingletonSelfIso_hom`.
+* `ModuleCat.mappingConeSMulHomologyEquiv`: the homology of the cone of multiplication by `f` on
+  `X` is `Tor₁^R(X, R ⧸ (f)) × X ⊗ R ⧸ (f)`, with `ModuleCat.mappingConeSMulHomologyEquiv_mk`.
 
 ## References
 
@@ -176,9 +182,7 @@ theorem torOneQuotientSpanSingletonIsoOfIsTorsionBy_hom (hf : IsSMulRegular R f)
 def torOneQuotientSpanSingletonSelfIso (hf : IsSMulRegular R f) :
     ((Tor (ModuleCat.{u} R) 1).obj (of R (R ⧸ Ideal.span {f}))).obj
       (of R (R ⧸ Ideal.span {f})) ≅ of R (R ⧸ Ideal.span {f}) :=
-  torOneQuotientSpanSingletonIsoOfIsTorsionBy hf <|
-    (Module.isTorsionBy_quotient_iff _ f).mpr fun x =>
-      Ideal.mul_mem_right x _ (Ideal.mem_span_singleton_self f)
+  torOneQuotientSpanSingletonIsoOfIsTorsionBy hf (Module.isTorsionBy_quotient_span_singleton f)
 
 /-- The identification `Tor₁^R(R ⧸ (f), R ⧸ (f)) ≅ R ⧸ (f)` is `torOneQuotientSpanSingletonIso`
 followed by the inclusion of the `f`-torsion of `R ⧸ (f)`, which is everything. -/
@@ -188,5 +192,43 @@ theorem torOneQuotientSpanSingletonSelfIso_hom (hf : IsSMulRegular R f) :
       (torOneQuotientSpanSingletonIso hf (of R (R ⧸ Ideal.span {f}))).hom ≫
         ofHom (torsionBy R (R ⧸ Ideal.span {f}) f).subtype := by
   rw [torOneQuotientSpanSingletonSelfIso, torOneQuotientSpanSingletonIsoOfIsTorsionBy_hom]
+
+open scoped TensorProduct in
+/-- **`Tor₁` and the cone of multiplication by a regular element.** For `f` regular on `R`, the
+complex `R → R` of multiplication by `f` resolves `R ⧸ (f)`. With coefficients in `X` it becomes
+the cone `(x, y) ↦ (0, f • x)` of multiplication by `f` on `X`, and its homology is
+`Tor₁^R(X, R ⧸ (f)) × X ⊗ R ⧸ (f)`: the `f`-torsion `X[f]` in the source of `f` is `Tor₁`, and
+the cokernel `X ⧸ f X` is `X ⊗ R ⧸ (f)`. -/
+def mappingConeSMulHomologyEquiv (hf : IsSMulRegular R f) (X : Type u) [AddCommGroup X]
+    [Module R X] :
+    (LinearMap.mappingCone (0 : X →ₗ[R] X) 0 (DistribSMul.toLinearMap R X f)).homology
+        (LinearMap.mappingCone_zero_zero_comp_self _) ≃ₗ[R]
+      ((Tor (ModuleCat.{u} R) 1).obj (of R X)).obj (of R (R ⧸ Ideal.span {f})) ×
+        X ⊗[R] (R ⧸ Ideal.span {f}) :=
+  LinearMap.mappingConeZeroZeroHomologyEquiv _ ≪≫ₗ
+    -- `torsionBy R X f` is by definition the kernel of `DistribSMul.toLinearMap R X f`.
+    LinearEquiv.prodCongr
+      (LinearEquiv.ofEq _ _ rfl ≪≫ₗ (torOneQuotientSpanSingletonIso hf (of R X)).toLinearEquiv.symm)
+      (Submodule.quotEquivOfEq _ _ (LinearMap.range_eq_map _) ≪≫ₗ QuotSMulTop.equivTensorQuot f X)
+
+open scoped TensorProduct in
+/-- The class of a cycle `(x, y)` of the cone of multiplication by `f` on `X`, with `f • x = 0`,
+goes to the class of `x` in `Tor₁^R(X, R ⧸ (f))` and to `y ⊗ 1` in `X ⊗ R ⧸ (f)`. -/
+@[simp]
+theorem mappingConeSMulHomologyEquiv_mk (hf : IsSMulRegular R f) (X : Type u) [AddCommGroup X]
+    [Module R X] (z : LinearMap.ker
+      (LinearMap.mappingCone (0 : X →ₗ[R] X) 0 (DistribSMul.toLinearMap R X f))) :
+    mappingConeSMulHomologyEquiv hf X (Submodule.Quotient.mk z) =
+      ((torOneQuotientSpanSingletonIso hf (of R X)).inv
+          ⟨(z : X × X).1, by
+            simpa using LinearMap.mem_ker_mappingCone_zero_zero_iff.mp z.property⟩,
+        (z : X × X).2 ⊗ₜ 1) := by
+  simp only [mappingConeSMulHomologyEquiv, LinearEquiv.trans_apply,
+    LinearMap.mappingConeZeroZeroHomologyEquiv_mk, LinearEquiv.prodCongr_apply,
+    QuotSMulTop.equivTensorQuot, Submodule.quotEquivOfEq_mk,
+    TensorProduct.tensorQuotEquivQuotSMul_symm_mk]
+  -- `LinearEquiv.ofEq _ _ rfl` only changes the type of the membership proof, and
+  -- `Iso.toLinearEquiv.symm` applies `Iso.inv`.
+  rfl
 
 end ModuleCat
