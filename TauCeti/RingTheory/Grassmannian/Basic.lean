@@ -428,6 +428,11 @@ noncomputable def _root_.IsBaseChange.grassmannianEquiv :
 
 variable {A}
 
+/-- `IsBaseChange.grassmannianEquiv` is transport along `A ⊗[R'] M' ≃ A ⊗[R] M`. -/
+theorem _root_.IsBaseChange.grassmannianEquiv_apply (N : G(k, A ⊗[R'] M'; A)) :
+    hf.grassmannianEquiv A N = (hf.cancelBaseChange A).grassmannianCongr N := by
+  rw [IsBaseChange.grassmannianEquiv]
+
 @[simp]
 theorem _root_.IsBaseChange.toSubmodule_grassmannianEquiv (N : G(k, A ⊗[R'] M'; A)) :
     (hf.grassmannianEquiv A N).toSubmodule =

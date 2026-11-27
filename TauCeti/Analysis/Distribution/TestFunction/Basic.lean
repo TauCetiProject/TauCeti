@@ -59,6 +59,8 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   a test function on the target of `e` is compact.
 * `OpenPartialHomeomorph.symm_image_tsupport_subset_source`: the image `e⁻¹(supp φ)` lies in the
   source of `e`.
+* `OpenPartialHomeomorph.hasCompactSupport_and_tsupport_subset_source_of_subset`: a function on
+  `M` supported in `e⁻¹(supp φ)` has compact support inside the source of `e`.
 * `OpenPartialHomeomorph.tsupport_subset_symm_image_tsupport`: a function on `M` vanishing off the
   source of `e` and wherever `φ ∘ e` vanishes is supported in `e⁻¹(supp φ)`.
 * `TestFunction.compOfIsProperMap`: the composite of a test function with a smooth proper map,
@@ -380,6 +382,14 @@ in the source of `e`. -/
 theorem symm_image_tsupport_subset_source (φ : 𝓓^{n}(⟨e.target, e.open_target⟩, F)) :
     e.symm '' tsupport φ ⊆ e.source :=
   (e.mapsTo_symm.mono_left φ.tsupport_subset).image_subset
+
+/-- A function on `M` supported in the image `e⁻¹(supp φ)` of the support of a test function `φ`
+on the target of `e` has compact support inside the source of `e`. -/
+theorem hasCompactSupport_and_tsupport_subset_source_of_subset {G : Type*} [Zero G] {g : M → G}
+    (φ : 𝓓^{n}(⟨e.target, e.open_target⟩, F)) (hg : tsupport g ⊆ e.symm '' tsupport φ) :
+    HasCompactSupport g ∧ tsupport g ⊆ e.source :=
+  ⟨(e.isCompact_symm_image_tsupport φ).of_isClosed_subset (isClosed_tsupport g) hg,
+    hg.trans (e.symm_image_tsupport_subset_source φ)⟩
 
 /-- A function on `M` vanishing off the source of `e` and at the points `x` with `φ (e x) = 0` is
 supported in the image of the support of `φ` under the inverse of `e`. -/

@@ -71,7 +71,9 @@ Pairing a covector field along a map `u` with the image of a tangent field under
 In a chart `c` into a normed space, differentiable with its inverse, a covector `ξ` at `x` is read
 as the covector `ξ ∘ D(c⁻¹)(c x)` of the model space, and this reading is a bijection
 (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`); in particular only the zero
-covector is read as zero (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff`).
+covector is read as zero (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff`),
+and only the zero covector of the model space pulls back along `c` to zero
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_eq_zero_iff`).
 If charts `c` of `M` and `φ` of `N` read a map `ι : N → M` as a continuous linear map `L`, then by
 the chain rule a covector at `ι y` vanishes on the image of `dι_y` exactly when its reading in `c`
 vanishes on the range of `L` (`TauCeti.comp_mfderiv_eq_zero_iff_of_eq_linearMap`).
@@ -528,6 +530,19 @@ theorem comp_mfderiv_symm_eq_zero_iff (hc : c.MDifferentiable I 𝓘(𝕜, G)) {
     (hx : x ∈ c.source) {ξ : TangentSpace I x →L[𝕜] 𝕜} :
     ξ ∘L mfderiv 𝓘(𝕜, G) I c.symm (c x) = 0 ↔ ξ = 0 :=
   (comp_mfderiv_symm_bijective hc hx).1.eq_iff' (ContinuousLinearMap.zero_comp _)
+
+/-- For an open partial homeomorphism `c` into a normed space, differentiable with its inverse, and
+`y` in its target, a covector `η` of `G` pulls back along `c` at `c⁻¹ y` to the zero covector
+`η ∘ Dc(c⁻¹ y)` exactly when it is zero, since `Dc(c⁻¹ y)` has the right inverse `D(c⁻¹)(y)`. -/
+theorem comp_mfderiv_eq_zero_iff (hc : c.MDifferentiable I 𝓘(𝕜, G)) {y : G}
+    (hy : y ∈ c.target) {η : G →L[𝕜] 𝕜} :
+    η ∘L mfderiv I 𝓘(𝕜, G) c (c.symm y) = 0 ↔ η = 0 := by
+  refine ⟨fun h ↦ ContinuousLinearMap.ext fun u ↦ ?_,
+    fun h ↦ h ▸ ContinuousLinearMap.zero_comp _⟩
+  have hu : mfderiv I 𝓘(𝕜, G) c (c.symm y) (mfderiv 𝓘(𝕜, G) I c.symm y u) = u :=
+    congr($(hc.comp_symm_deriv hy) u)
+  rw [zero_apply, ← hu]
+  exact congr($h (mfderiv 𝓘(𝕜, G) I c.symm y u))
 
 end OpenPartialHomeomorph.MDifferentiable
 
