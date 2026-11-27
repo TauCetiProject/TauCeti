@@ -198,7 +198,7 @@ theorem stage_eq_supported (r : ℕ) :
 /-- Membership in `stage B ι α r` is equivalent to every occurring variable having order `≤ r`. -/
 theorem mem_stage_iff {r : ℕ} {p : RelJetAlgebra B ι α} :
     p ∈ stage B ι α r ↔ ∀ a I, (a, I) ∈ p.vars → I.degree ≤ r := by
-  rw [stage, MvPolynomial.mem_supported]
+  rw [stage_eq_supported, MvPolynomial.mem_supported]
   constructor
   · intro h a I haI
     exact h haI
@@ -212,14 +212,15 @@ theorem stage_mono : Monotone (stage B ι α) := by
 
 /-- A field-jet variable `uᵃ_I` lies in `stage B ι α r` whenever `I.degree ≤ r`. -/
 theorem X_mem_stage {r : ℕ} {a : α} {I : ι →₀ ℕ} (hI : I.degree ≤ r) :
-    (X (a, I) : RelJetAlgebra B ι α) ∈ stage B ι α r :=
-  Algebra.subset_adjoin ⟨(a, I), hI, rfl⟩
+    (X (a, I) : RelJetAlgebra B ι α) ∈ stage B ι α r := by
+  rw [stage_eq_supported, MvPolynomial.supported_eq_adjoin_X]
+  exact Algebra.subset_adjoin ⟨(a, I), hI, rfl⟩
 
 /-- Over a nontrivial coefficient ring, `uᵃ_I ∈ stage B ι α r` if and only if `I.degree ≤ r`. -/
 @[simp]
 theorem X_mem_stage_iff [Nontrivial B] {r : ℕ} {a : α} {I : ι →₀ ℕ} :
     (X (a, I) : RelJetAlgebra B ι α) ∈ stage B ι α r ↔ I.degree ≤ r := by
-  simp [stage]
+  simp [stage_eq_supported]
 
 /-- Every relative jet polynomial belongs to some finite stage. -/
 theorem exists_mem_stage (p : RelJetAlgebra B ι α) : ∃ r, p ∈ stage B ι α r :=

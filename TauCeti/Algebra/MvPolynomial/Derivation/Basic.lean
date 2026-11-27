@@ -56,6 +56,7 @@ theorem _root_.Derivation.map_mem_supported
     {s t : Set σ} (hst : s ⊆ t) (hC : ∀ b : B, D (C b) ∈ supported B t)
     (hX : ∀ i ∈ s, D (X i) ∈ supported B t) {p : MvPolynomial σ B} (hp : p ∈ supported B s) :
     D p ∈ supported B t := by
+  rw [MvPolynomial.supported_eq_adjoin_X] at hp
   induction hp using Algebra.adjoin_induction with
   | mem _ hx =>
     obtain ⟨i, hi, rfl⟩ := hx
@@ -67,6 +68,7 @@ theorem _root_.Derivation.map_mem_supported
     rw [map_add]
     exact add_mem hx hy
   | mul x y hx hy ihx ihy =>
+    rw [← MvPolynomial.supported_eq_adjoin_X] at hx hy
     rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
     exact add_mem (mul_mem (supported_mono hst hx) ihy) (mul_mem (supported_mono hst hy) ihx)
 

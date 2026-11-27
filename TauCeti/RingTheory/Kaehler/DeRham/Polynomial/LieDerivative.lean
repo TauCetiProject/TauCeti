@@ -47,7 +47,10 @@ theorem deRhamLieDeriv_mem_supportedForms {R B σ : Type*} [CommRing R] [CommRin
     exact algebraMap_mem_supportedForms (hD p hp)
   | mem_ι_D_X i hi =>
     rw [Derivation.deRhamLieDeriv_ι, Derivation.kaehlerLieDeriv_D]
-    exact ι_D_mem_supportedForms (hD (X i) (Algebra.subset_adjoin ⟨i, hi, rfl⟩))
+    have hXi : (X i : MvPolynomial σ B) ∈ MvPolynomial.supported B s := by
+      rw [MvPolynomial.supported_eq_adjoin_X]
+      exact Algebra.subset_adjoin ⟨i, hi, rfl⟩
+    exact ι_D_mem_supportedForms (hD (X i) hXi)
   | add x y _ _ hx hy =>
     rw [map_add]
     exact add_mem hx hy

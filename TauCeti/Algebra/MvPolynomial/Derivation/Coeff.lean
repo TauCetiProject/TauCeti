@@ -82,8 +82,9 @@ theorem mapCoeffsMvPolynomial_C (d : Derivation R B B) (b : B) :
 @[simp]
 theorem mapCoeffsMvPolynomial_X (d : Derivation R B B) (i : σ) :
     d.mapCoeffsMvPolynomial (σ := σ) (X i) = 0 := by
-  have hX : (X i : MvPolynomial σ B) = monomial (Finsupp.single i 1) 1 := rfl
-  rw [hX, mapCoeffsMvPolynomial_monomial, d.map_one_eq_zero, monomial_zero]
+  classical
+  ext m
+  simp [coeff_X, apply_ite d]
 
 end
 

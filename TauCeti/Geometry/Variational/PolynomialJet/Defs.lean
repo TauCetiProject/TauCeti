@@ -101,7 +101,7 @@ theorem stage_eq_supported (r : ℕ) :
 /-- Membership in a finite stage means that every field variable occurring has bounded order. -/
 theorem mem_stage_iff (p : PolynomialJet R ι α) (r : ℕ) :
     p ∈ stage R ι α r ↔ ∀ a I, Sum.inr (a, I) ∈ p.vars → I.degree ≤ r := by
-  rw [stage, mem_supported]
+  rw [stage_eq_supported, mem_supported]
   constructor
   · intro h a I hI
     exact h hI
@@ -121,6 +121,7 @@ theorem stage_mono : Monotone (stage R ι α) := by
 @[simp]
 theorem X_base_mem_stage (r : ℕ) (j : ι) :
     (X (Sum.inl j) : PolynomialJet R ι α) ∈ stage R ι α r := by
+  rw [stage_eq_supported, supported_eq_adjoin_X]
   exact Algebra.subset_adjoin ⟨Sum.inl j, trivial, rfl⟩
 
 /-- Base-coordinate polynomials lie in every finite stage of `PolynomialJet`. -/
@@ -135,12 +136,13 @@ theorem rename_inl_mem_stage (r : ℕ) (b : MvPolynomial ι R) :
 
 theorem X_field_mem_stage (r : ℕ) (a : α) (I : ι →₀ ℕ) (hI : I.degree ≤ r) :
     (X (Sum.inr (a, I)) : PolynomialJet R ι α) ∈ stage R ι α r := by
+  rw [stage_eq_supported, supported_eq_adjoin_X]
   exact Algebra.subset_adjoin ⟨Sum.inr (a, I), hI, rfl⟩
 
 @[simp]
 theorem X_field_mem_stage_iff [Nontrivial R] (r : ℕ) (a : α) (I : ι →₀ ℕ) :
     (X (Sum.inr (a, I)) : PolynomialJet R ι α) ∈ stage R ι α r ↔ I.degree ≤ r := by
-  simp [stage]
+  simp [stage_eq_supported]
 
 end
 
