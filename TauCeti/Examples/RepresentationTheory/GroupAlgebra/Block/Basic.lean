@@ -309,8 +309,11 @@ abbrev S₃ : Type := Equiv.Perm (Fin 3)
 /-- The `3`-cycle `ρ = (0 1 2)` of `S₃`. -/
 abbrev ρ : S₃ := finRotate 3
 
+/-- The transposition `s = (0 1)` of `S₃`. -/
+abbrev s : S₃ := Equiv.swap 0 1
+
 /-- The classes of `S₃`: the identity, the `3`-cycles and the transpositions. -/
-def classOfS₃ (g : S₃) : Fin 3 :=
+@[expose] def classOfS₃ (g : S₃) : Fin 3 :=
   if g = 1 then 0 else if g * g * g = 1 then 1 else 2
 
 /-- `classOfS₃` only identifies conjugate elements. -/
