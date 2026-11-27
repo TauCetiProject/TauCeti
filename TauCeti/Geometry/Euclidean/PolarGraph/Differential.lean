@@ -22,7 +22,7 @@ open scoped RealInnerProductSpace
 namespace TauCeti.PolarGraph
 
 /-- Mathlib's Cartesian parametrization agrees with the polar covering map on positive radii. -/
-theorem polarCoord_symm_eq_projection (p : PolarPoint) :
+theorem complexPolarCoord_symm_eq_projection (p : PolarPoint) :
     Complex.polarCoord.symm p.val = projection p := by
   apply Complex.ext <;> simp [-Complex.ofReal_cos, -Complex.ofReal_sin, radius_def, angle_def]
 
@@ -31,7 +31,7 @@ theorem inner_fderivComplexPolarCoordSymm_deckShift (k : ℤ) (p : PolarPoint) (
     ⟪fderivComplexPolarCoordSymm (deckShift k p).val v,
       fderivComplexPolarCoordSymm (deckShift k p).val w⟫ =
       ⟪fderivComplexPolarCoordSymm p.val v, fderivComplexPolarCoordSymm p.val w⟫ := by
-  simpa only [deckShift_val] using
+  simpa only [val_deckShift] using
     inner_fderivComplexPolarCoordSymm_add_angle p.val v w ((k : ℝ) * (2 * Real.pi))
 
 end TauCeti.PolarGraph

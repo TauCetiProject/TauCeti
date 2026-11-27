@@ -24,7 +24,7 @@ namespace TauCeti
 
 /-- The Cartesian polar parametrization is a `C^n` local diffeomorphism at every nonzero
 radius, for every regularity `n ≥ 1`, including analytic regularity. -/
-theorem isLocalDiffeomorphAt_polarCoord_symm (x : ℝ × ℝ) (hx : x.1 ≠ 0)
+theorem isLocalDiffeomorphAt_complexPolarCoord_symm (x : ℝ × ℝ) (hx : x.1 ≠ 0)
     {n : WithTop ℕ∞} (hn : 1 ≤ n) :
     IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℂ) n Complex.polarCoord.symm x := by
   have hs : ContDiff ℝ n Complex.polarCoord.symm := by
