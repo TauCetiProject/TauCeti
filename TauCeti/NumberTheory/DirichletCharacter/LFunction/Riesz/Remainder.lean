@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.Chebyshev.RieszRemainder
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.VonMangoldt
 
 /-!
 # Lipschitz and size bounds for the Riesz remainder of a Dirichlet character
@@ -15,7 +16,8 @@ For a Dirichlet character `χ` the *Riesz remainder* is
 `G_χ(y) = ∑_{1 ≤ n ≤ y} χ(n) Λ(n) (y / n - 1) + y (L′/L)(1, χ)`, with the sum written as
 `TauCeti.rieszSum (fun n ↦ χ n * Λ n) y` and `(L′/L)(1, χ)` as
 `logDeriv (LFunction χ) 1`. Since `‖χ(n) Λ(n)‖ ≤ Λ(n)`
-(`DirichletCharacter.norm_mul_vonMangoldt_le`), the bounds of
+(`DirichletCharacter.norm_mul_vonMangoldt_le`, in
+`TauCeti.NumberTheory.DirichletCharacter.LFunction.VonMangoldt`), the bounds of
 `TauCeti.NumberTheory.Chebyshev.RieszRemainder` for coefficients dominated by `Λ` give, for
 `a ≥ 0`, `w, w' > 0` and `y, z` with `max y z ≥ 1`, resp. `y ≥ 1`,
 * `‖w G_χ(a / w) - w' G_χ(a / w')‖ ≤ 3 (a / min w w') |w - w'|`;
@@ -29,7 +31,6 @@ junk value of `logDeriv (LFunction χ) 1`. The Mellin side of the Riesz remainde
 
 ## Main results
 
-* `DirichletCharacter.norm_mul_vonMangoldt_le`: `‖χ(n) Λ(n)‖ ≤ Λ(n)`.
 * `DirichletCharacter.norm_mul_rieszSum_div_add_mul_logDeriv_sub_le`,
   `DirichletCharacter.norm_rieszSum_add_mul_logDeriv_sub_le`,
   `DirichletCharacter.norm_rieszSum_add_mul_logDeriv_le`: the three bounds for `G_χ`.
@@ -48,12 +49,6 @@ open ArithmeticFunction TauCeti
 namespace DirichletCharacter
 
 variable {q : ℕ} (χ : DirichletCharacter ℂ q)
-
-/-- A Dirichlet character twist of the von Mangoldt function is dominated by it:
-`‖χ(n) Λ(n)‖ ≤ Λ(n)`. -/
-theorem norm_mul_vonMangoldt_le (n : ℕ) : ‖χ n * (Λ n : ℂ)‖ ≤ Λ n := by
-  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg vonMangoldt_nonneg]
-  exact mul_le_of_le_one_left vonMangoldt_nonneg (χ.norm_le_one n)
 
 variable [NeZero q]
 

@@ -39,11 +39,8 @@ theorem exists_norm_rieszSum_add_mul_logDeriv_le_linear [NeZero N] (hχ : χ ≠
         (y : ℂ) * logDeriv χ.LFunction 1‖ ≤ C * y := by
   obtain ⟨B, hB⟩ := χ.exists_norm_sum_mul_vonMangoldt_div_le hχ
   refine ⟨B + (Real.log 4 + 4) + ‖logDeriv χ.LFunction 1‖, fun y hy₀ ↦ ?_⟩
-  have hpsi : ‖∑ n ∈ Ioc 0 ⌊y⌋₊, χ n * (Λ n : ℂ)‖ ≤ (Real.log 4 + 4) * y := by
-    refine (norm_sum_le _ _).trans ((sum_le_sum fun n _ ↦ ?_).trans
-      (Chebyshev.psi_le_const_mul_self hy₀))
-    rw [norm_mul, Complex.norm_of_nonneg vonMangoldt_nonneg]
-    exact mul_le_of_le_one_left vonMangoldt_nonneg (χ.norm_le_one n)
+  have hpsi : ‖∑ n ∈ Ioc 0 ⌊y⌋₊, χ n * (Λ n : ℂ)‖ ≤ (Real.log 4 + 4) * y :=
+    (χ.norm_sum_mul_vonMangoldt_le_psi y).trans (Chebyshev.psi_le_const_mul_self hy₀)
   have hyIcc : y ∈ Set.Icc (⌊y⌋₊ : ℝ) ((⌊y⌋₊ : ℝ) + 1) :=
     ⟨Nat.floor_le hy₀, (Nat.lt_floor_add_one y).le⟩
   rw [TauCeti.rieszSum_eq_sum_mul_sub_sum_of_mem_Icc _ hyIcc]
