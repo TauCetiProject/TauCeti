@@ -25,6 +25,8 @@ stalk through `Spec σ`, which acts on the Galois set by `φ ↦ φ ∘ σ`.
 
 ## Main definitions
 
+* `TauCeti.FiniteEtaleScheme.toEtaleSpecFiniteEtaleFieldIso`: the finite étale `K`-scheme
+  `Spec Ω`, in the small étale site of `Spec K`, is the étale geometric point `Spec Ω ⟶ Spec K`.
 * `TauCeti.FiniteEtaleScheme.etaleStalkGaloisModuleSheafEquiv`: the stalk of
   `galoisModuleSheaf K Ω ρ` at `Spec Ω ⟶ Spec K` is `M`.
 
@@ -56,49 +58,50 @@ variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [I
 variable {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M] [Module Λ M]
   (ρ : Representation Λ Gal(Ω/K) M)
 
-/-- For a finite separable extension `Ω` of `K`, the morphism `Spec Ω ⟶ Spec K` is étale. -/
-instance etale_specMap_algebraMap (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω]
-    [Algebra.IsSeparable K Ω] [FiniteDimensional K Ω] :
-    Etale (Spec.map (CommRingCat.ofHom (algebraMap K Ω))) :=
-  have : Algebra.Etale K Ω := Algebra.Etale.of_isSeparable K Ω
-  (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
-
 /-- `Ω`, finite and separable over `K`, as a finite étale `K`-algebra. -/
 noncomputable abbrev finiteEtaleField : CommAlgCat.FiniteEtale.{u} K :=
   haveI : Algebra.Etale K Ω := Algebra.Etale.of_isSeparable K Ω
   CommAlgCat.FiniteEtale.of K Ω
-
-omit [IsSepClosed Ω] [IsGalois K Ω] in
-/-- `Gal(Ω/K)` acts simply transitively on the `K`-embeddings `Ω → Ω`, through the identity. -/
-theorem bijective_smul_algHomId :
-    Function.Bijective fun σ : Gal(Ω/K) ↦ σ • (AlgHom.id K Ω) := by
-  refine ⟨fun σ τ h ↦ AlgEquiv.ext fun x ↦ congr($h x), fun φ ↦ ?_⟩
-  exact ⟨AlgEquiv.ofBijective φ φ.bijective, AlgHom.ext fun x ↦ rfl⟩
-
-/-- **The stalk of the étale sheaf of a Galois representation.** For `Ω` finite over `K`, the stalk
-of `galoisModuleSheaf K Ω ρ` at the geometric point `Spec Ω ⟶ Spec K` is `M`: the point is étale,
-so the stalk is the module of sections over `Spec Ω`, which are the `Gal(Ω/K)`-maps from the
-`K`-embeddings `Ω → Ω` into `ρ`, and these are determined by their value at the identity. -/
-@[expose] noncomputable def etaleStalkGaloisModuleSheafEquiv :
-    (etaleStalk Λ (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).obj
-      (galoisModuleSheaf K Ω ρ) ≃ₗ[Λ] M :=
-  let s := Spec.map (CommRingCat.ofHom (algebraMap K Ω))
-  let X := (spec (.of K)).obj (op (finiteEtaleField K Ω))
-  -- The étale `K`-scheme `Spec Ω` is the finite étale `K`-scheme `X`, definitionally.
-  ((Scheme.pointSmallEtaleSheafFiberIso s).app _ ≪≫
-    galoisModuleSheafObjIso K Ω ρ X ≪≫
-    (ContAction.modulePresheaf ρ).mapIso
-      ((specCompGaloisEquivalenceFunctorIso K Ω).app (op (finiteEtaleField K Ω))).symm.op
-    ).toLinearEquiv ≪≫ₗ
-    ContAction.modulePresheafObjEquivOfBijective ρ
-      (S := (galoisFiber K Ω).obj (op (finiteEtaleField K Ω)))
-      (AlgHom.id K Ω) (bijective_smul_algHomId K Ω)
 
 /-- `σ` as an endomorphism of the finite étale `K`-algebra `Ω`. -/
 noncomputable abbrev finiteEtaleFieldHom (σ : Gal(Ω/K)) :
     finiteEtaleField K Ω ⟶ finiteEtaleField K Ω :=
   haveI : Algebra.Etale K Ω := Algebra.Etale.of_isSeparable K Ω
   CommAlgCat.FiniteEtale.ofHom (σ : Ω →ₐ[K] Ω)
+
+/-- The finite étale `K`-scheme `Spec Ω`, regarded in the small étale site of `Spec K`, is the
+étale geometric point `Spec Ω ⟶ Spec K`. -/
+noncomputable def toEtaleSpecFiniteEtaleFieldIso :
+    (toEtale _).obj ((spec (.of K)).obj (op (finiteEtaleField K Ω))) ≅
+      Scheme.Etale.mk (Spec.map (CommRingCat.ofHom (algebraMap K Ω))) :=
+  (Scheme.Etale.forgetFullyFaithful _).preimageIso (specObjObjIso (.of K) (finiteEtaleField K Ω))
+
+omit [IsSepClosed Ω] in
+/-- The morphism over `Spec K` underlying `toEtaleSpecFiniteEtaleFieldIso` is `specObjObjIso`. -/
+@[simp]
+theorem forget_map_toEtaleSpecFiniteEtaleFieldIso_hom :
+    (Scheme.Etale.forget _).map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom =
+      (specObjObjIso (.of K) (finiteEtaleField K Ω)).hom :=
+  (Scheme.Etale.forgetFullyFaithful _).map_preimage _
+
+/-- **The stalk of the étale sheaf of a Galois representation.** For `Ω` finite over `K`, the stalk
+of `galoisModuleSheaf K Ω ρ` at the geometric point `Spec Ω ⟶ Spec K` is `M`: the point is étale,
+so the stalk is the module of sections over `Spec Ω`, which are the `Gal(Ω/K)`-maps from the
+`K`-embeddings `Ω → Ω` into `ρ`, and these are determined by their value at the identity. -/
+noncomputable def etaleStalkGaloisModuleSheafEquiv :
+    (etaleStalk Λ (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).obj
+      (galoisModuleSheaf K Ω ρ) ≃ₗ[Λ] M :=
+  ((Scheme.pointSmallEtaleSheafFiberIso _).app _ ≪≫
+    (galoisModuleSheaf K Ω ρ).obj.mapIso (toEtaleSpecFiniteEtaleFieldIso K Ω).op ≪≫
+    galoisModuleSheafObjIso K Ω ρ _ ≪≫
+    (ContAction.modulePresheaf ρ).mapIso
+      ((specCompGaloisEquivalenceFunctorIso K Ω).app (op (finiteEtaleField K Ω))).symm.op
+    ).toLinearEquiv ≪≫ₗ
+    -- `σ • AlgHom.id K Ω` is `σ` as an algebra map, so `Gal(Ω/K)` acts simply transitively on
+    -- the `K`-embeddings `Ω → Ω` because every such embedding is an automorphism.
+    ContAction.modulePresheafObjEquivOfBijective ρ
+      (S := (galoisFiber K Ω).obj (op (finiteEtaleField K Ω)))
+      (AlgHom.id K Ω) (Algebra.IsAlgebraic.algEquivEquivAlgHom K Ω).bijective
 
 /-- `etaleStalkGaloisModuleSheafEquiv` sends an element of the stalk, viewed as a section over
 `Spec Ω`, to the value at the identity embedding of the corresponding `Gal(Ω/K)`-map. -/
@@ -108,39 +111,57 @@ theorem etaleStalkGaloisModuleSheafEquiv_apply
     etaleStalkGaloisModuleSheafEquiv K Ω ρ x =
       (ContAction.modulePresheafObjEquiv ρ _
         ((galoisModuleSheafObjIso K Ω ρ ((spec (.of K)).obj (op (finiteEtaleField K Ω)))).hom
-          ((Scheme.pointSmallEtaleSheafFiberIso (A := ModuleCat.{u} Λ)
-            (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app
-              (galoisModuleSheaf K Ω ρ) x))).val
+          ((galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom.op
+            ((Scheme.pointSmallEtaleSheafFiberIso (A := ModuleCat.{u} Λ)
+              (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app
+                (galoisModuleSheaf K Ω ρ) x)))).val
         ((ContAction.fiberFunctor Gal(Ω/K)).map
           ((specCompGaloisEquivalenceFunctorIso K Ω).app (op (finiteEtaleField K Ω))).inv
           (AlgHom.id K Ω)) :=
   (ContAction.modulePresheafObjEquivOfBijective_apply ρ _ _ _).trans
     (ContAction.modulePresheafObjEquiv_map_apply ρ _ _ _)
 
-/-- On sections over `Spec Ω`, the Galois action on the stalk is restriction along `Spec σ`. -/
+/-- On sections over `Spec Ω`, the Galois action on the stalk is restriction along `Spec σ`. The
+stalk is identified with these sections through `pointSmallEtaleSheafFiberIso` and
+`toEtaleSpecFiniteEtaleFieldIso`. -/
 theorem galoisStalkMap_comp_pointSmallEtaleSheafFiberIso (σ : Gal(Ω/K)) :
     (galoisStalkMap K Ω (ModuleCat.{u} Λ) σ).app (galoisModuleSheaf K Ω ρ) ≫
         (Scheme.pointSmallEtaleSheafFiberIso
-          (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app (galoisModuleSheaf K Ω ρ) =
+          (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app (galoisModuleSheaf K Ω ρ) ≫
+          (galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom.op =
       (Scheme.pointSmallEtaleSheafFiberIso
           (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app (galoisModuleSheaf K Ω ρ) ≫
-        (galoisModuleSheaf K Ω ρ).obj.map
-          ((toEtale _).map ((spec (.of K)).map (finiteEtaleFieldHom K Ω σ).op)).op := by
+        (galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom.op ≫
+          (galoisModuleSheaf K Ω ρ).obj.map
+            ((toEtale _).map ((spec (.of K)).map (finiteEtaleFieldHom K Ω σ).op)).op := by
   refine GrothendieckTopology.Point.presheafFiber_hom_ext _ fun Y y ↦ ?_
-  erw [toPresheafFiber_galoisStalkMap_app_assoc]
-  erw [Scheme.toPresheafFiber_pointSmallEtaleSheafFiberIso_hom_app, ← Category.assoc,
+  -- `presheafFiber_hom_ext` takes germs of `(sheafToPresheaf _ _).obj F`, which is `F.obj` only
+  -- after unfolding `sheafToPresheaf`, so the germ lemmas below need `erw` to match.
+  erw [toPresheafFiber_galoisStalkMap_app_assoc, ← Category.assoc,
     Scheme.toPresheafFiber_pointSmallEtaleSheafFiberIso_hom_app]
-  refine Eq.trans ?_ ((galoisModuleSheaf K Ω ρ).obj.map_comp _ _)
+  rw [← Functor.map_comp, ← Functor.map_comp]
+  erw [← Category.assoc, Scheme.toPresheafFiber_pointSmallEtaleSheafFiberIso_hom_app]
+  rw [← Functor.map_comp, ← op_comp, ← op_comp, ← op_comp]
   refine congrArg _ (congrArg Quiver.Hom.op ((Scheme.Etale.forget _).map_injective ?_))
-  erw [Scheme.forget_map_pointSmallEtaleFiberCorepresentableBy_homEquiv_symm, Functor.map_comp,
+  rw [Functor.map_comp, Functor.map_comp, Functor.map_comp,
     Scheme.forget_map_pointSmallEtaleFiberCorepresentableBy_homEquiv_symm]
-  refine Over.OverMorphism.ext ?_
+  -- The Galois-translated lift is a lift of `(galoisGeometricPoint K Ω).hom`, which is
+  -- `Spec.map (CommRingCat.ofHom (algebraMap K Ω))` only after unfolding the abbreviation.
+  erw [Scheme.forget_map_pointSmallEtaleFiberCorepresentableBy_homEquiv_symm]
+  rw [forget_map_toEtale_map, forget_map_toEtaleSpecFiniteEtaleFieldIso_hom]
+  -- The composite passes through `(Scheme.Etale.forget _).obj ((toEtale _).obj X)`, which is
+  -- `X.obj` only after unfolding `toEtale`.
+  erw [spec_map_hom_comp_specObjObjIso_hom]
+  refine (congrArg (_ ≫ ·) (Over.OverMorphism.ext ?_)).trans (Category.assoc _ _ _).symm
+  -- The lift `y` is an element of the fibre functor, a morphism over `Spec K` only after
+  -- unfolding `pointSmallEtale`.
   erw [GeometricPoint.toPointFunctor_map_hom_app_left, galoisGeometricPointIso_hom_hom]
+  -- `finiteEtaleFieldHom K Ω σ` is `σ` as a `K`-algebra map, so both sides are `Spec σ ≫ y.left`.
   rfl
 
 /-- The map of Galois sets induced by `Spec σ` sends the point corresponding to the identity
 embedding to its translate by `σ`. -/
-theorem fiberFunctor_map_galoisEquivalence_map_spec_map (σ : Gal(Ω/K)) :
+private theorem fiberFunctor_map_galoisEquivalence_map_spec_map (σ : Gal(Ω/K)) :
     (ContAction.fiberFunctor Gal(Ω/K)).map
         ((galoisEquivalence K Ω).functor.map ((spec (.of K)).map (finiteEtaleFieldHom K Ω σ).op))
         ((ContAction.fiberFunctor Gal(Ω/K)).map
@@ -154,11 +175,15 @@ theorem fiberFunctor_map_galoisEquivalence_map_spec_map (σ : Gal(Ω/K)) :
       (AlgHom.id K Ω))
   simp only [Functor.map_comp] at h
   refine h.symm.trans ?_
+  -- `galoisFiber` acts on morphisms by precomposition, and `σ • φ` is postcomposition with `σ`:
+  -- applied to the identity embedding, both give `σ`.
   have hσ : (ContAction.fiberFunctor Gal(Ω/K)).map
       ((galoisFiber K Ω).map (finiteEtaleFieldHom K Ω σ).op) (AlgHom.id K Ω) =
         σ • (AlgHom.id K Ω : (ContAction.fiberFunctor Gal(Ω/K)).obj
           ((galoisFiber K Ω).obj (op (finiteEtaleField K Ω)))) :=
-    AlgHom.ext fun _ ↦ rfl
+    (galoisFiber_map_hom_apply K Ω _ _).trans (AlgHom.ext fun _ ↦ rfl)
+  -- Evaluate the composite of maps of Galois sets in `h` pointwise; `rw` and `simp` with
+  -- `ConcreteCategory.comp_apply` do not see through the composite of functions here.
   change (ContAction.fiberFunctor Gal(Ω/K)).map
       ((specCompGaloisEquivalenceFunctorIso K Ω).app (op (finiteEtaleField K Ω))).inv
       ((ContAction.fiberFunctor Gal(Ω/K)).map
@@ -182,10 +207,11 @@ theorem etaleStalkGaloisModuleSheafEquiv_galoisStalkMap (σ : Gal(Ω/K))
   have h' := congr(ConcreteCategory.hom
     $(galoisModuleSheafObjIso_hom_naturality K Ω ρ
       ((spec (.of K)).map (finiteEtaleFieldHom K Ω σ).op))
-      ((Scheme.pointSmallEtaleSheafFiberIso (A := ModuleCat.{u} Λ)
-            (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app (galoisModuleSheaf K Ω ρ) x))
-  simp only at h'
-  erw [h', ContAction.modulePresheafObjEquiv_map_apply,
+      ((galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom.op
+        ((Scheme.pointSmallEtaleSheafFiberIso (A := ModuleCat.{u} Λ)
+          (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app (galoisModuleSheaf K Ω ρ) x)))
+  simp only [ConcreteCategory.comp_apply] at h'
+  rw [h', ContAction.modulePresheafObjEquiv_map_apply,
     fiberFunctor_map_galoisEquivalence_map_spec_map]
   exact (ContAction.mem_equivariantMaps ρ _).1 (Subtype.property _) σ _
 

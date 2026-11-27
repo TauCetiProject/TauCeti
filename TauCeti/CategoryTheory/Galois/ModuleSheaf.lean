@@ -110,22 +110,19 @@ noncomputable def modulePresheafObjEquivOfBijective {S : ContAction FintypeCat.{
     (s₀ : (fiberFunctor G).obj S) (h : Function.Bijective fun g : G ↦ g • s₀) :
     (modulePresheaf ρ).obj (op S) ≃ₗ[Λ] M :=
   let e := Equiv.ofBijective _ h
+  have he₀ (g : G) : e g = g • s₀ := rfl
   have he (g : G) (s) : e.symm (g • s) = g * e.symm s :=
-    e.symm_apply_eq.mpr (by
-      change g • s = (g * e.symm s) • s₀
-      rw [mul_smul]
-      exact congrArg (g • ·) (e.apply_symm_apply s).symm)
+    e.symm_apply_eq.mpr (by rw [he₀, mul_smul, ← he₀, e.apply_symm_apply])
   { toFun φ := φ.val s₀
     invFun m := ⟨fun s ↦ ρ (e.symm s) m, (mem_equivariantMaps ρ _).2 fun g s ↦ by
       rw [he, map_mul, mul_apply_eq_comp]⟩
     map_add' _ _ := rfl
     map_smul' _ _ := rfl
     left_inv φ := Subtype.ext (funext fun s ↦ by
-      change ρ (e.symm s) (φ.val s₀) = φ.val s
-      rw [← (mem_equivariantMaps ρ _).1 φ.property]
-      exact congrArg φ.val (e.apply_symm_apply s))
+      dsimp only
+      rw [← (mem_equivariantMaps ρ _).1 φ.property, ← he₀, e.apply_symm_apply])
     right_inv m := by
-      change ρ (e.symm s₀) m = m
+      dsimp only
       rw [show e.symm s₀ = 1 from e.symm_apply_eq.mpr (one_smul G s₀).symm, map_one]
       rfl }
 
@@ -136,6 +133,17 @@ theorem modulePresheafObjEquivOfBijective_apply {S : ContAction FintypeCat.{u} G
     (φ : (modulePresheaf ρ).obj (op S)) :
     modulePresheafObjEquivOfBijective ρ s₀ h φ = (modulePresheafObjEquiv ρ S φ).val s₀ :=
   (rfl)
+
+/-- The inverse of `modulePresheafObjEquivOfBijective` sends `m` to the `G`-map
+`g • s₀ ↦ ρ g m`. -/
+theorem modulePresheafObjEquivOfBijective_symm_apply_smul {S : ContAction FintypeCat.{u} G}
+    (s₀ : (fiberFunctor G).obj S) (h : Function.Bijective fun g : G ↦ g • s₀) (m : M) (g : G) :
+    (modulePresheafObjEquiv ρ S ((modulePresheafObjEquivOfBijective ρ s₀ h).symm m)).val
+        (g • s₀) =
+      ρ g m := by
+  rw [(mem_equivariantMaps ρ _).1 (Subtype.property _),
+    ← modulePresheafObjEquivOfBijective_apply ρ s₀ h,
+    LinearEquiv.apply_symm_apply]
 
 /-- The underlying presheaf of sets of `modulePresheaf ρ` is the presheaf of `G`-maps into the
 underlying `G`-set of `ρ`. -/
@@ -215,11 +223,11 @@ is a nonzero `G`-map from the left regular `G`-set into `ρ`: the orbit map `g �
 nonzero `m`. -/
 theorem nontrivial_modulePresheaf_obj_leftRegular [Finite G] [DiscreteTopology G] [Nontrivial M] :
     Nontrivial ((modulePresheaf ρ).obj (op (leftRegular G))) := by
-  obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  let φ : equivariantMaps ρ (leftRegular G) :=
-    ⟨fun x ↦ ρ (leftRegularFiberEquiv G x) m, (mem_equivariantMaps ρ _).2 fun g x ↦ by
-      rw [leftRegularFiberEquiv_smul, map_mul, mul_apply_eq_comp]⟩
-  refine (modulePresheafObjEquiv ρ _).nontrivial_congr.2 ⟨φ, 0, fun h ↦ hm ?_⟩
-  simpa [φ] using congr(Subtype.val $h ((leftRegularFiberEquiv G).symm 1))
+  -- The left regular `G`-set is a `G`-torsor: `g ↦ g • 1` is the identification with `G`.
+  have h : Function.Bijective fun g : G ↦ g • (leftRegularFiberEquiv G).symm 1 := by
+    convert (leftRegularFiberEquiv G).symm.bijective using 1
+    funext g
+    rw [Equiv.eq_symm_apply, leftRegularFiberEquiv_smul, Equiv.apply_symm_apply, mul_one]
+  exact (modulePresheafObjEquivOfBijective ρ _ h).nontrivial_congr.2 ‹_›
 
 end ContAction

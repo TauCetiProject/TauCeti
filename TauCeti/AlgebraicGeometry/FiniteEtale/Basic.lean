@@ -110,7 +110,7 @@ noncomputable def isTerminalOfHomId (S : Scheme.{u}) : Limits.IsTerminal (ofHom 
 variable (R : CommRingCat.{u})
 
 /-- The spectrum functor on finite étale algebras, with target finite étale schemes. -/
-@[expose] noncomputable def spec : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ ⥤ FiniteEtaleScheme (Spec R) :=
+noncomputable def spec : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ ⥤ FiniteEtaleScheme (Spec R) :=
   (finiteEtaleSchemeProperty (Spec R)).lift
     ((CommAlgCat.finiteEtale R).ι.op ⋙ algSpec R) fun A ↦ by
       -- `algSpec` bundles the ordinary spectrum and its algebra structure map. Give the
@@ -136,6 +136,25 @@ spectrum of its coordinate algebra. -/
 theorem spec_obj_obj (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     ((spec R).obj A).obj = (algSpec R).obj (op A.unop.obj) :=
   (rfl)
+
+/-- The scheme over `Spec R` underlying the finite étale spectrum of `A` is `Spec A`, with the
+spectrum of the algebra map as structure morphism. -/
+noncomputable def specObjObjIso (A : CommAlgCat.FiniteEtale.{u} R) :
+    ((spec R).obj (op A)).obj ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R A.obj))) :=
+  Iso.refl _
+
+/-- Under `specObjObjIso`, the finite étale spectrum of a morphism `f : A ⟶ B` of finite étale
+`R`-algebras is `Spec f`. -/
+@[reassoc]
+theorem spec_map_hom_comp_specObjObjIso_hom {A B : CommAlgCat.FiniteEtale.{u} R} (f : A ⟶ B) :
+    ((spec R).map f.op).hom ≫ (specObjObjIso R A).hom =
+      (specObjObjIso R B).hom ≫
+        Over.homMk (V := Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R A.obj))))
+          (Spec.map (CommRingCat.ofHom (f.hom.hom : A.obj →+* B.obj))) (by
+          simp only [Over.mk_hom, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+            AlgHom.comp_algebraMap]) :=
+  -- Both sides are `Spec f`, since `specObjObjIso` is the identity.
+  (Category.comp_id _).trans (Category.id_comp _).symm
 
 private theorem exists_spec_iso (X : FiniteEtaleScheme (Spec R)) :
     ∃ A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ, Nonempty ((spec R).obj A ≅ X) := by
