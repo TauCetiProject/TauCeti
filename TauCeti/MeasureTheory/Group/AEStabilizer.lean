@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.AEStabilizer
 public import Mathlib.MeasureTheory.Measure.ContinuousPreimage
-public import TauCeti.MeasureTheory.Measure.Restrict
+public import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 
 /-!
 # The a.e. stabilizer of a set is closed
@@ -59,8 +59,8 @@ theorem measure_smul_inter_eq_of_mem_closure_aestabilizer {s E : Set X} {g : G}
     exact (measure_inter_inv_smul μ h s E).symm
   -- Moving `E` changes the measure of `s ∩ E` by at most that of the symmetric difference.
   have le_add (A B : Set X) : μ (s ∩ A) ≤ μ (s ∩ B) + μ (A ∆ B) := by
-    refine (measure_mono (show s ∩ A ⊆ s ∩ B ∪ A ∆ B from fun x ⟨hxs, hxA⟩ ↦ ?_)).trans
-      (measure_union_le _ _)
+    refine (measure_mono ?_).trans (measure_union_le _ _)
+    rintro x ⟨hxs, hxA⟩
     by_cases hxB : x ∈ B
     · exact Or.inl ⟨hxs, hxB⟩
     · exact Or.inr (mem_symmDiff.2 (Or.inl ⟨hxA, hxB⟩))

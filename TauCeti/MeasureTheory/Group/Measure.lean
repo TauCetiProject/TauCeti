@@ -348,12 +348,14 @@ left translation gives a left-invariant measure. -/
 @[to_additive /-- Restricting an additive left-invariant measure to a set that is invariant up to
 null sets under every left translation gives an additive left-invariant measure. -/]
 theorem isMulLeftInvariant_restrict (μ : Measure G) [μ.IsMulLeftInvariant] {s : Set G}
-    (hs : MeasurableSet s) (h : ∀ g : G, g • s =ᵐ[μ] s) : (μ.restrict s).IsMulLeftInvariant := by
-  refine ⟨fun g ↦ ?_⟩
+    (h : ∀ g : G, g • s =ᵐ[μ] s) : (μ.restrict s).IsMulLeftInvariant := by
+  refine ⟨fun g ↦ ext fun t ht ↦ ?_⟩
   have hpre : (g * ·) ⁻¹' s =ᵐ[μ] s := by
     simpa only [← smul_eq_mul, preimage_smul] using h g⁻¹
-  have hmap := ((measurePreserving_mul_left μ g).restrict_preimage hs).map_eq
-  rwa [restrict_congr_set hpre] at hmap
+  have hinter : (g * ·) ⁻¹' t ∩ s =ᵐ[μ] (g * ·) ⁻¹' t ∩ (g * ·) ⁻¹' s :=
+    ae_eq_set_inter (.refl _ _ : (g * ·) ⁻¹' t =ᵐ[μ] (g * ·) ⁻¹' t) hpre.symm
+  rw [map_apply (measurable_const_mul g) ht, restrict_apply (measurable_const_mul g ht),
+    restrict_apply ht, measure_congr hinter, ← preimage_inter, measure_preimage_mul]
 
 end LeftInvariant
 
