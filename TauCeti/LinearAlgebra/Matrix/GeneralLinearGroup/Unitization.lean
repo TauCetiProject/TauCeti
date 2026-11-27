@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Algebra.Quasiregular
 public import TauCeti.Algebra.Algebra.Unitization.Matrix
 public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+import TauCeti.Algebra.Ring.Units
 import TauCeti.Algebra.Star.Unitary
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
@@ -60,6 +61,8 @@ of the relative `K₁` of `A`, it compares relative `K₁` over different scalar
 * `TauCeti.coe_unitizationGLFst_mem_unitary`, `TauCeti.coe_unitizationGLInl_mem_unitary`,
   `TauCeti.coe_unitizationGLRetract_mem_unitary`: the scalar part, the inclusion of scalar matrices
   and the retraction preserve unitary matrices.
+* `TauCeti.units_map_starMap_mul_inv_mul`: an invertible matrix `u` over `(A × B)⁺` with scalar
+  part `s` is `e₁(u) · s⁻¹ · e₂(u)`, for `e₁(a, b) = (a, 0)` and `e₂(a, b) = (0, b)`.
 * `TauCeti.units_map_unitizationGLFstOneEquiv_symm`: the inverse isomorphisms for two scalar rings
   `R → S` are compatible with `Unitization R A → Unitization S A`.
 
@@ -322,6 +325,58 @@ theorem coe_unitizationGLRetract_mem_unitary {g : GL n (Unitization R A)}
   exact mul_mem hg (Unitary.star_mem h)
 
 end Star
+
+section Prod
+
+variable {R A B : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
+  [NonUnitalSemiring B] [StarRing B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
+  [StarModule R B] {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **Decomposition of an invertible matrix over `(A × B)⁺`.** With `e₁(a, b) = (a, 0)`,
+`e₂(a, b) = (0, b)` and `s` the scalar part of `u`, `e₁(u) · s⁻¹ · e₂(u) = u`. -/
+theorem units_map_starMap_mul_inv_mul (u : GL n (Unitization R (A × B))) :
+    Units.map ((starMap ((NonUnitalStarAlgHom.inl R A B).comp
+        (NonUnitalStarAlgHom.fst R A B)) : Unitization R (A × B) →+* Unitization R (A × B)
+          ).mapMatrix (m := n)).toMonoidHom u *
+      (unitizationGLInl R (A × B) n (unitizationGLFst R (A × B) n u))⁻¹ *
+      Units.map ((starMap ((NonUnitalStarAlgHom.inr R A B).comp
+        (NonUnitalStarAlgHom.snd R A B)) : Unitization R (A × B) →+* Unitization R (A × B)
+          ).mapMatrix (m := n)).toMonoidHom u = u := by
+  -- `u = s + N₁ + N₂`, with `s` the scalar part and `N₁`, `N₂` the parts with entries in `A`
+  -- and in `B`; then `e₁(u) = s + N₁` and `e₂(u) = s + N₂`.
+  set s := unitizationGLInl R (A × B) n (unitizationGLFst R (A × B) n u)
+  let N₁ : Matrix n n (Unitization R (A × B)) :=
+    (u : Matrix n n (Unitization R (A × B))).map fun x ↦ inr (x.snd.1, 0)
+  let N₂ : Matrix n n (Unitization R (A × B)) :=
+    (u : Matrix n n (Unitization R (A × B))).map fun x ↦ inr (0, x.snd.2)
+  have hs : (s : Matrix n n (Unitization R (A × B))) =
+      (u : Matrix n n (Unitization R (A × B))).map fun x ↦ inl x.fst := by
+    simp [s, Matrix.map_map, Function.comp_def]
+  have hN : N₁ * (s⁻¹ : GL n (Unitization R (A × B))) * N₂ = 0 := by
+    refine Matrix.ext fun i j ↦ ?_
+    simp only [Matrix.mul_apply, Finset.sum_mul, Matrix.zero_apply]
+    refine Finset.sum_eq_zero fun k _ ↦ Finset.sum_eq_zero fun l _ ↦ ?_
+    simp [s, N₁, N₂, ← map_inv, Unitization.inr_mul_inl, ← Unitization.inr_mul, Prod.mk_zero_zero]
+  refine Units.ext ?_
+  rw [Units.val_mul, Units.val_mul, Units.coe_map, Units.coe_map]
+  simp only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply]
+  have h₁ : (u : Matrix n n (Unitization R (A × B))).map
+      (starMap ((NonUnitalStarAlgHom.inl R A B).comp (NonUnitalStarAlgHom.fst R A B)) :
+        Unitization R (A × B) →+* Unitization R (A × B)) = s + N₁ := by
+    rw [hs]
+    ext i j <;> simp [N₁]
+  have h₂ : (u : Matrix n n (Unitization R (A × B))).map
+      (starMap ((NonUnitalStarAlgHom.inr R A B).comp (NonUnitalStarAlgHom.snd R A B)) :
+        Unitization R (A × B) →+* Unitization R (A × B)) = s + N₂ := by
+    rw [hs]
+    ext i j <;> simp [N₂]
+  have hu : (u : Matrix n n (Unitization R (A × B))) = s + N₁ + N₂ := by
+    rw [hs]
+    ext i j <;> simp [N₁, N₂]
+  rw [h₁, h₂, add_mul_mul_add_of_mul_eq_one (Units.mul_inv s) (Units.inv_mul s) hN, hu]
+
+end Prod
 
 section ChangeOfScalars
 

@@ -37,6 +37,7 @@ term of the subgradient inequality is subtracted from the bound.
 * `TauCeti.OnlineConvexOptimization.regret_le_sum_apply_sub`: the case `m = 0`.
 * `TauCeti.OnlineConvexOptimization.regret_le_sum_inner_sub_sub`: the same bound in a real inner
   product space, with the subgradients `g t` given as vectors.
+* `TauCeti.OnlineConvexOptimization.regret_le_sum_inner_sub`: its case `m = 0`.
 
 ## References
 
@@ -117,6 +118,15 @@ theorem regret_le_sum_inner_sub_sub (f : ℕ → E → ℝ) (x : ℕ → E) (g :
   simpa only [innerSL_apply_apply] using
     regret_le_sum_apply_sub_sub f x (fun t ↦ innerSL ℝ (g t)) m
       (u := u) fun t ht ↦ by simpa only [innerSL_apply_apply] using h t ht
+
+/-- **Linearization of the regret** in a real inner product space, without modulus: if, at each
+round `t < T`, the vector `g t` satisfies the subgradient inequality of `f t` at `x t` at the
+comparator `u`, then the regret on `f` is at most the regret `∑_{t < T} ⟪g t, x t - u⟫` on the
+linear losses `⟪g t, ·⟫`. -/
+theorem regret_le_sum_inner_sub (f : ℕ → E → ℝ) (x : ℕ → E) (g : ℕ → E) {T : ℕ} {u : E}
+    (h : ∀ t < T, f t (x t) + ⟪g t, u - x t⟫ ≤ f t u) :
+    regret f x T u ≤ ∑ t ∈ range T, ⟪g t, x t - u⟫ := by
+  simpa using regret_le_sum_inner_sub_sub f x g 0 (u := u) fun t ht ↦ by simpa using h t ht
 
 end Inner
 

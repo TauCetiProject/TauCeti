@@ -77,6 +77,7 @@ the Milnor ring is not an exterior algebra. The grade involution `σ`, which is 
   `TauCeti.MilnorK.ofUnit_mul_ofUnit_self`, `TauCeti.MilnorK.symbol_append_cons_cons_swap`: over a
   field, `{a, -a} = 0`, `{a, b} = -{b, a}`, `{a, a} = {a, -1}`, and swapping adjacent entries
   negates a symbol.
+* `TauCeti.MilnorK.symbol_append_cons_cons_self`: over a field, `{…, a, a, …} = {…, a, -1, …}`.
 * `TauCeti.MilnorK.involute_of_mem_degree`: `σ` is multiplication by `(-1) ^ n` on `K_nᴹ(R)`.
 * `TauCeti.MilnorK.ofUnit_mul_involute`, `TauCeti.MilnorK.mul_comm_of_mem_degree`: over a field,
   `{a} σ(x) = x {a}`, and the Milnor K-ring is graded-commutative.
@@ -217,6 +218,17 @@ theorem two_nsmul_ofUnit_neg_one_pow {n : ℕ} (hn : n ≠ 0) : 2 • ofUnit (-1
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   rw [pow_succ, ← mul_smul_comm, two_nsmul_ofUnit_neg_one, mul_zero]
 
+/-- `{a, -1}` is its own negative, `-{a, -1} = {a, -1}`, so it has order dividing two. -/
+@[simp]
+theorem neg_ofUnit_mul_ofUnit_neg_one (a : Rˣ) :
+    -(ofUnit a * ofUnit (-1)) = ofUnit a * ofUnit (-1) := by
+  rw [← mul_neg, neg_ofUnit_neg_one]
+
+/-- `{-1}` has order dividing two, so `m {-1}` depends only on the parity of `m`. -/
+theorem zsmul_ofUnit_neg_one_eq_of_even_sub {m n : ℤ} (h : Even (m - n)) :
+    m • ofUnit (-1 : Rˣ) = n • ofUnit (-1) := by
+  rw [← ofUnit_zpow, ← ofUnit_zpow, ← sub_add_cancel m n, zpow_add, h.neg_one_zpow, one_mul]
+
 /-- The **Steinberg relation**: `{a} {b} = 0` whenever the units `a` and `b` add up to one. -/
 theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
@@ -247,6 +259,10 @@ theorem symbol_cons (a : Rˣ) (l : List Rˣ) : symbol (a :: l) = ofUnit a * symb
 
 theorem symbol_singleton (a : Rˣ) : symbol [a] = ofUnit a := by
   simp
+
+/-- A Milnor symbol is the ordered product of the degree-one classes of its entries. -/
+theorem symbol_def (l : List Rˣ) : symbol l = (l.map ofUnit).prod :=
+  (rfl)
 
 /-- The product of two symbols is the symbol of the concatenated list, in that order. -/
 @[simp]
@@ -749,6 +765,12 @@ theorem symbol_append_cons_cons_swap (l₁ l₂ : List Fˣ) (a b : Fˣ) :
     symbol (l₁ ++ b :: a :: l₂) = -symbol (l₁ ++ a :: b :: l₂) := by
   simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_comm b a, neg_mul,
     mul_neg]
+
+/-- Over a field, a consecutive repeated pair of entries `a, a` of a Milnor symbol may be replaced
+by `a, -1`. -/
+theorem symbol_append_cons_cons_self (l₁ l₂ : List Fˣ) (a : Fˣ) :
+    symbol (l₁ ++ a :: a :: l₂) = symbol (l₁ ++ a :: (-1) :: l₂) := by
+  simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_self]
 
 /-- Over a field, a degree-one class `{a}` moves past any element `x` at the cost of the grade
 involution: `{a} σ(x) = x {a}`. -/

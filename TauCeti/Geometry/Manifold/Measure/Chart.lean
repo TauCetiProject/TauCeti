@@ -32,6 +32,9 @@ the target are integrable.
 
 * `TauCeti.map_restrict_extChartAt_source_apply_image`: the chart pushforward gives the chart
   image of a measurable subset of the source the measure of the subset.
+* `TauCeti.setLIntegral_eq_setLIntegral_map_extChartAt`: lower integrals over a subset of a chart
+  source are lower integrals in the chart against the chart pushforward, with no measurability
+  assumption.
 * `TauCeti.restrict_extChartAt_source_eq_of_map_eq`: two measures with the same chart pushforward
   agree on the chart source.
 * `TauCeti.map_withDensity_restrict_extChartAt_source`: reweighting by a continuous function read
@@ -134,6 +137,44 @@ theorem map_restrict_extChartAt_source_apply_image {x : M} {s : Set M} (hs : Mea
     (μ.restrict (extChartAt I x).source).map (extChartAt I x) ((extChartAt I x) '' s) = μ s := by
   rw [map_restrict_extChartAt_source_apply x (hs.image_extChartAt x hsub),
     (extChartAt I x).injOn.preimage_image_inter hsub]
+
+/-- **Integration in a chart.** Over a subset `s` of a chart source, the lower integral of `φ`
+against `μ` is the lower integral, over the chart image of `s`, of `φ` read in the chart against the
+chart pushforward of `μ`. No measurability of `s` or `φ` is needed. -/
+theorem setLIntegral_eq_setLIntegral_map_extChartAt {x : M} {s : Set M}
+    (hsub : s ⊆ (extChartAt I x).source) (φ : M → ℝ≥0∞) :
+    ∫⁻ z in s, φ z ∂μ = ∫⁻ y in extChartAt I x '' s, φ ((extChartAt I x).symm y)
+      ∂(μ.restrict (extChartAt I x).source).map (extChartAt I x) := by
+  set e := extChartAt I x
+  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
+  -- `measurableEmbedding_extChartAt_restrict` is stated for the Borel σ-algebra of `E`.
+  have hR : MeasurableEmbedding (e.source.domRestrict e) := by
+    obtain rfl : ‹MeasurableSpace E› = borel E := BorelSpace.measurable_eq
+    exact measurableEmbedding_extChartAt_restrict x
+  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
+    MeasurableEmbedding.subtypeVal hsrc
+  -- The chart pushforward of `μ` is the pushforward of `μ` pulled back to the chart source.
+  have hmap : (μ.restrict e.source).map e = (μ.comap Subtype.val).map (e.source.domRestrict e) := by
+    ext A hA
+    rw [map_restrict_extChartAt_source_apply x hA, hR.map_apply, hval.comap_apply]
+    congr 1
+    ext z
+    simp only [mem_inter_iff, mem_preimage, mem_image, Set.domRestrict_apply, Subtype.exists,
+      exists_and_right, exists_eq_right]
+    tauto
+  -- `φ` read in the chart and composed with the chart is `φ` on the chart source.
+  have hφ : ∀ z : e.source, φ (e.symm (e.source.domRestrict e z)) = φ z := fun z ↦ by
+    rw [Set.domRestrict_apply, e.left_inv z.property]
+  have hpre : e.source.domRestrict e ⁻¹' (e '' s) = Subtype.val ⁻¹' s := by
+    ext z
+    exact e.injOn.mem_image_iff hsub z.property
+  -- Pulled back to the chart source, `μ` restricted to `s` pushes forward to `μ` restricted to `s`.
+  have hleft : ((μ.comap (Subtype.val : e.source → M)).restrict (Subtype.val ⁻¹' s)).map
+      Subtype.val = μ.restrict s := by
+    rw [hval.restrict_comap, hval.map_comap, Subtype.range_coe, Measure.restrict_restrict hsrc,
+      Subtype.image_preimage_coe, inter_eq_right.2 hsub, inter_eq_right.2 hsub]
+  rw [hmap, hR.restrict_map, hR.lintegral_map, hpre, ← hleft, hval.lintegral_map]
+  simp only [hφ]
 
 /-- Two measures with the same pushforward from a chart source agree on that source. -/
 theorem restrict_extChartAt_source_eq_of_map_eq {x : M} {α β : Measure M}

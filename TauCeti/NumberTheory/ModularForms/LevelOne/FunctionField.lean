@@ -56,6 +56,10 @@ The same map `β` identifies the integral closure of `ℂ[j]` in the meromorphic
 with the functions having no poles on the upper half-plane
 (`Subgroup.isIntegral_adjoin_jMeromorphicFunction_iff`).
 
+A function `r(j)` with `r = P / Q` in lowest terms has a pole at every point where `j` takes the
+value of a root of `Q`. Since `j : Y(1) → ℂ` is surjective, the functions on `X(1)` with no pole on
+`Y(1)` are exactly the polynomials `P(j)`.
+
 ## Main definitions
 
 * `TauCeti.ModularGroup.jMeromorphicFunction`: the modular invariant `j` as a meromorphic function
@@ -76,6 +80,9 @@ with the functions having no poles on the upper half-plane
   `X_H` pulled back from `X(1)` are those invariant under `SL(2, ℤ)`.
 * `Subgroup.isIntegral_adjoin_jMeromorphicFunction_iff`: a meromorphic function on `X_H` is
   integral over `ℂ[j]` exactly when it has no poles on the upper half-plane.
+* `TauCeti.ModularGroup.holomorphicSubalgebra_range_ofQuotient_eq_adjoin`: the meromorphic
+  functions on `X(1)` without poles on `Y(1)`, the image of the upper half-plane, are the
+  polynomials in `j`.
 
 ## References
 
@@ -368,5 +375,38 @@ theorem _root_.Subgroup.isIntegral_adjoin_jMeromorphicFunction_iff (H : _root_.S
       induction p using Quotient.inductionOn with
       | h τ => exact h τ
     | ofCusp C => exact (hx (by simp [β])).elim
+
+/-! ### Functions holomorphic on `Y(1)` -/
+
+/-- **The modular functions holomorphic on `Y(1)` are the polynomials in `j`.** A meromorphic
+function on `X(1)` has no pole at the orbit of any point of the upper half-plane, that is, its only
+possible pole is the cusp, exactly when it is a polynomial in `j`. -/
+theorem holomorphicSubalgebra_range_ofQuotient_eq_adjoin :
+    holomorphicSubalgebra (Set.range (ofQuotient (Γ := psl2zToPSL2R.range))) =
+      Algebra.adjoin ℂ {jMeromorphicFunction} := by
+  refine le_antisymm (fun G hG ↦ ?_) (Algebra.adjoin_le (Set.singleton_subset_iff.mpr ?_))
+  · obtain ⟨r, rfl⟩ := jRatFuncEquiv.surjective G
+    -- a root of the denominator of `r` would be a value of `j` at which `r(j)` has a pole
+    have hden : r.denom = 1 := by
+      refine eq_one_of_monic_natDegree_zero r.monic_denom (by_contra fun hd ↦ ?_)
+      obtain ⟨z, hQ⟩ :=
+        IsAlgClosed.exists_root r.denom fun h ↦ hd (natDegree_eq_of_degree_eq_some h)
+      obtain ⟨τ, rfl⟩ := ModularForm.j_surjective z
+      have hP : r.num.eval (ModularForm.j τ) ≠ 0 := by
+        simpa [hQ.eq_zero] using aeval_ne_zero_of_isCoprime r.isCoprime_num_denom (ModularForm.j τ)
+      have hj : jMeromorphicFunction (ofQuotient (Quotient.mk _ τ)) = ModularForm.j τ := by simp
+      have hmul : jRatFuncEquiv r * aeval jMeromorphicFunction r.denom =
+          aeval jMeromorphicFunction r.num := by
+        rw [jRatFuncEquiv_apply,
+          div_mul_cancel₀ _ (aeval_jMeromorphicFunction_ne_zero r.denom_ne_zero)]
+      have hval := congrArg (· (ofQuotient (Quotient.mk _ τ))) hmul
+      rw [mul_apply_of_eq_coe (coe_finitePart (mem_holomorphicSubalgebra.mp hG _ ⟨_, rfl⟩)).symm
+          (aeval_apply_of_eq_coe hj _), aeval_apply_of_eq_coe hj, hQ.eq_zero, mul_zero] at hval
+      exact hP (OnePoint.coe_injective hval).symm
+    rw [jRatFuncEquiv_apply, hden, map_one, div_one]
+    exact aeval_mem_adjoin_singleton ℂ _
+  · rw [SetLike.mem_coe, mem_holomorphicSubalgebra]
+    rintro _ ⟨p, rfl⟩
+    induction p using Quotient.inductionOn with | h τ => simp
 
 end TauCeti.ModularGroup

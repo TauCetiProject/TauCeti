@@ -190,6 +190,30 @@ noncomputable section
 open Filter Function Matrix.ProjectiveSpecialLinearGroup Metric MulAction Set UpperHalfPlane
 open scoped ComplexConjugate ContDiff Manifold MatrixGroups ModularForm Topology
 
+namespace Subgroup.CuspDatum
+
+variable {Γ : Subgroup PSL(2, ℝ)}
+
+/-- **Boundedness at a cusp depends only on its cusp orbit.** If `F` satisfies the weight-`k`
+transformation law for `Γ' ≤ SL(2, ℝ)`, whose image contains `Γ`, and is bounded at the cusp of
+a cusp datum `D`, then it is bounded at the cusp of every cusp datum `D'` representing the same cusp
+orbit. -/
+theorem isBoundedAt_of_cuspOrbit_eq {Γ' : _root_.Subgroup SL(2, ℝ)}
+    (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ)))) {k : ℤ} {F : ℍ → ℂ}
+    (hF : ∀ g ∈ Γ', ∀ τ : ℍ, F (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * F τ)
+    {D D' : Γ.CuspDatum} (hDD' : D'.cuspOrbit = D.cuspOrbit)
+    (hD : OnePoint.IsBoundedAt D.cusp F k) : OnePoint.IsBoundedAt D'.cusp F k := by
+  obtain ⟨γ, hγ⟩ := (D'.cuspOrbit_eq_iff D).mp hDD'
+  obtain ⟨h, hh, hhγ⟩ := _root_.Subgroup.mem_map.mp (hΓ γ.property)
+  have hc : Matrix.SpecialLinearGroup.mapGL ℝ h • D.cusp = D'.cusp := by
+    rw [OnePoint.mapGL_smul, ← hγ]
+    exact congrArg (· • D.cusp) hhγ
+  rw [← hc, OnePoint.IsBoundedAt.smul_iff,
+    (Matrix.SpecialLinearGroup.slash_mapGL_eq_self_iff h k F).mpr (hF h hh)]
+  exact hD
+
+end Subgroup.CuspDatum
+
 namespace TauCeti.Subgroup.CuspDatum
 
 variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)
@@ -895,6 +919,39 @@ theorem automorphyFrame_compatible
       automorphyFrame D s k r (g • σ) =
         denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * automorphyFrame D s k r σ :=
   fun g hg σ hσ hgσ ↦ automorphyFrame_smul_of_mem hΓ hs hk hg (hprec g hg σ hσ hgσ) σ
+
+/-- **The exponent of the frame at a cusp.** Let `s` lift the scaling of `D`. If `k` is even or
+`-1 ∉ Γ'`, some `r < 2` satisfies the sign condition `ε ^ k = (-1) ^ r` of
+`TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_mem` for every lift `g ∈ Γ'` of the
+generator. In even weight `r = 0`; in odd weight the generator has at most one lift in `Γ'`, and
+`r = 1` exactly when its sign `ε` is `-1`, that is, when the cusp is irregular. -/
+theorem exists_lt_two_forall_zpow_eq_neg_one_pow (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hk : -1 ∈ Γ' → Even k) :
+    ∃ r < 2, ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D.generator →
+      ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r := by
+  -- the sign of a lift of the generator is `±1`
+  have hsign {g : SL(2, ℝ)} (hg : (g : PSL(2, ℝ)) = D.generator) :
+      ((s * g * s⁻¹) 1 1 : ℝ) = 1 ∨ ((s * g * s⁻¹) 1 1 : ℝ) = -1 :=
+    mul_self_eq_one_iff.mp (TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom
+      (coe_conj_eq_upperRightHom hs hg)).2
+  rcases Int.even_or_odd k with hke | hko
+  · refine ⟨0, two_pos, fun g _ hg ↦ ?_⟩
+    rcases hsign hg with h | h <;> simp [h, hke.neg_one_zpow]
+  have hneg : (-1 : SL(2, ℝ)) ∉ Γ' := fun h ↦ Int.not_even_iff_odd.mpr hko (hk h)
+  by_cases hlift : ∃ g₀ ∈ Γ', (g₀ : PSL(2, ℝ)) = D.generator
+  swap
+  · exact ⟨0, two_pos, fun g hg hgen ↦ absurd ⟨g, hg, hgen⟩ hlift⟩
+  obtain ⟨g₀, hg₀, hg₀gen⟩ := hlift
+  -- in odd weight `-1 ∉ Γ'`, so the generator has a single lift in `Γ'`
+  have huniq {g : SL(2, ℝ)} (hg : g ∈ Γ') (hgen : (g : PSL(2, ℝ)) = D.generator) : g = g₀ := by
+    have hc : g * g₀⁻¹ ∈ _root_.Subgroup.center SL(2, ℝ) := (QuotientGroup.eq_one_iff _).mp <| by
+      rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, hgen, ← hg₀gen, mul_inv_cancel]
+    rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc with h | h
+    · exact mul_inv_eq_one.mp h
+    · exact absurd (h ▸ mul_mem hg (inv_mem hg₀)) hneg
+  rcases hsign hg₀gen with h | h
+  · exact ⟨0, two_pos, fun g hg hgen ↦ by simp [huniq hg hgen, h]⟩
+  · exact ⟨1, one_lt_two, fun g hg hgen ↦ by rw [huniq hg hgen, h, hko.neg_one_zpow, pow_one]⟩
 
 end
 
