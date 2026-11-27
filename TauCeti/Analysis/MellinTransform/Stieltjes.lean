@@ -34,16 +34,19 @@ expansion of the Stieltjes transform. The second sum is the part that termwise i
 expansion of `f` misses (DLMF 2.6.6–2.6.7).
 
 For `α = 1`, where the terms of the expansion of `f` are `a_k t^{-k-1}`, the model integral
-`∫₀^∞ t^{-1} / (t + z) dt` diverges at `0`, the continued Mellin transform has its poles exactly at
-the points `s + 1` where the second sum evaluates it, and `log z` appears (DLMF 2.6.28):
+`∫₀^∞ t^{-1} / (t + z) dt` diverges at `0`, the candidate poles of the continued Mellin transform
+are exactly the points `s + 1` where the second sum evaluates it, and `log z` appears
+(DLMF 2.6.28):
 
 `∫₀^∞ f(t) / (t + z) dt = ∑_{s<n} (-1)^s z^{-s-1} (a_s log z + d_s) + R_n(z)`,
 
 with the same remainder `R_n` and `R_n(z) = O(‖z‖^{-n-1} log ‖z‖)` in closed sectors. The
-constants are the finite parts `d_s = lim_{w → s+1} (𝓜f(w) + a_s / (w - s - 1))` of the continued
-Mellin transform at its poles (DLMF 2.6.29, `TauCeti.tendsto_mellinContAtTop_add_inv_smul`); they
-appear in the statement as `mellinContAtTop f a (k ↦ k + 1) n (s + 1)`, whose defining formula
-drops the singular term at `w = s + 1`.
+constants appear in the statement as `d_s = mellinContAtTop f a (k ↦ k + 1) n (s + 1)`, whose
+defining formula drops the singular term at the candidate pole `w = s + 1`. When moreover
+`f = O(t^c)` as `t → 0+` for some `c > -1`, so that every `s + 1` lies in the strip of the
+continuation, they are the finite parts `d_s = lim_{w → s+1} (𝓜f(w) + a_s / (w - s - 1))`
+(DLMF 2.6.29, `TauCeti.tendsto_mellinContAtTop_add_inv_smul`). Local integrability alone does not
+give this limit at `s = 0`, since `𝓜f(w)` need not be defined for `Re w < 1`.
 
 ## Main results
 
@@ -63,12 +66,13 @@ converges absolutely at `n + 1`. The new term `a_n t^{-n-α}` contributes the mo
 `∫₀^∞ t^{-α} / (t + z) dt = π / sin (π α) * z^{-α}` (`Complex.integral_cpow_neg_mul_inv_add`).
 The continued Mellin transform at `s + 1 ≤ n` is unchanged by subtracting the term `k = n`.
 
-For `α = 1` the integral `∫₀^∞ tⁿ f_{n+1}(t) dt` diverges at `0`, so the induction step splits
+For `α = 1` the integral `∫₀^∞ tⁿ f_{n+1}(t) dt` can diverge at `0` (it does when `a_n ≠ 0`),
+so the induction step splits
 `(0, ∞)` at `1` instead: on `(0, 1]` it keeps `f_n`, on `(1, ∞)` it subtracts the new term
 `a_n t^{-n-1}`, whose contribution `∫₁^∞ t^{-1} / (t + z) dt = z⁻¹ log (1 + z)` combines with
 `∫₀¹ 1 / (t + z) dt = log (1 + z) - log z` into `z⁻¹ log z`
 (`Complex.integral_Ioi_inv_mul_inv_add`). What remains is `∫₀¹ tⁿ f_n + ∫₁^∞ tⁿ f_{n+1}`, which is
-the continued Mellin transform at its pole `n + 1` with the singular term dropped.
+the continued Mellin transform at its candidate pole `n + 1` with the singular term dropped.
 
 ## References
 
@@ -386,7 +390,7 @@ theorem stieltjes_eq [CompleteSpace E] (hα₀ : 0 < α) (hα₁ : α < 1)
 
 /-- At `n + 1`, the continued Mellin transform through `n + 1` terms of an expansion with
 exponents `k + 1` is the finite part `∫₀¹ tⁿ f_n(t) dt + ∫₁^∞ tⁿ f_{n+1}(t) dt`: the term `k = n`,
-whose pole is at `n + 1`, drops out of the defining formula. -/
+whose candidate pole is at `n + 1`, drops out of the defining formula. -/
 private theorem mellinContAtTop_natCast_add_one_eq_integral_add [CompleteSpace E]
     (hf : LocallyIntegrableOn f (Ici 0)) (n : ℕ) :
     mellinContAtTop f a (fun k ↦ (k : ℂ) + 1) (n + 1) ((n : ℂ) + 1) =
@@ -587,9 +591,10 @@ the slit plane
 
 with `f_n(t) = f(t) - ∑_{k<n} a_k t^{-k-1}` and the principal logarithm and powers. The constants
 `d_s = mellinContAtTop f a (k ↦ k + 1) n (s + 1)` (DLMF's constants with a tilde, not the `d_s` of
-DLMF 2.6.21) are the finite parts of the continued Mellin transform `𝓜f` at its poles `s + 1`:
-`d_s = lim_{w → s+1} (𝓜f(w) + a_s / (w - s - 1))` (DLMF 2.6.29;
-`TauCeti.tendsto_mellinContAtTop_add_inv_smul`, when `f = O(t^c)` at `0+` with `c > -1`).
+DLMF 2.6.21) are the values of the continued Mellin transform `𝓜f` at its candidate poles
+`s + 1` with the singular term dropped. When `f = O(t^c)` at `0+` with `c > -1`, they are the finite
+parts `d_s = lim_{w → s+1} (𝓜f(w) + a_s / (w - s - 1))` (DLMF 2.6.29;
+`TauCeti.tendsto_mellinContAtTop_add_inv_smul`).
 Explicitly, `d_s = ∫₀¹ tˢ f_s(t) dt + ∫₁^∞ tˢ f_{s+1}(t) dt`. The last term is the remainder
 `R_n(z)` of DLMF 2.6.30, which is `O(‖z‖^{-n-1} log ‖z‖)` in closed sectors
 (`TauCeti.isBigO_stieltjes_log_remainder`). -/

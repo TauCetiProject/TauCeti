@@ -68,8 +68,9 @@ of integrals `∫₀^∞ f(t) h(xt) dt` (DLMF §2.5(iii)) and of the distributio
   the principal parts `a_k/(z + α_k)` (DLMF 2.5.25) and `-b_k/(z - β_k)` (DLMF 2.5.27).
 * `TauCeti.differentiableAt_mellinContAtZero`, `TauCeti.differentiableAt_mellinContAtTop`:
   holomorphy away from the poles `-α_k` and `β_k`.
-* `TauCeti.tendsto_mellinContAtTop_add_inv_smul`: at a simple pole `β_j`, the continuation minus
-  its principal part tends to `mellinContAtTop f b β n β_j`, the finite part (DLMF 2.6.29).
+* `TauCeti.tendsto_mellinContAtTop_add_inv_smul`: at a candidate pole `β_j` inside the strip, the
+  continuation minus its principal part tends to `mellinContAtTop f b β n β_j`, the finite part
+  (DLMF 2.6.29).
 * `TauCeti.add_re_pos_of_mellinConvergent`, `TauCeti.re_lt_of_mellinConvergent`: a nonzero
   coefficient bounds the strip of absolute convergence.
 * `TauCeti.mellinContAtZero_spec`, `TauCeti.mellinContAtTop_spec`: these properties assembled
@@ -503,8 +504,9 @@ theorem differentiableAt_mellinContAtTop (hf : LocallyIntegrableOn f (Ioi 0))
         (sub_ne_zero.mpr (hpole k (Finset.mem_range.mp hk)))).smul_const (b k)
   simpa only [add_sub_cancel_right] using h₁.fun_sub h₂
 
-/-- **The finite part at a pole** (DLMF 2.5.27, 2.6.29). Let `β_j`, `j < n`, lie in the strip
-`-c < Re z < Re β_n`, and let no other `β_k`, `k < n`, equal it. Removing the principal part
+/-- **The finite part at a candidate pole** (DLMF 2.5.27, 2.6.29). Let `β_j`, `j < n`, lie in the
+strip `-c < Re z < Re β_n`, and let no other `β_k`, `k < n`, equal it; it is a simple pole when
+`b_j ≠ 0`. Removing the principal part
 `-b_j/(z - β_j)` from the continuation at `+∞` leaves a function with a limit at `β_j`, namely
 `mellinContAtTop f b β n β_j`: at `z = β_j` the defining formula drops the singular term, since
 `(β_j - β_j)⁻¹ = 0`. -/
