@@ -72,13 +72,14 @@ theorem deriv_realStirlingSeriesRemainder (n : ℕ) {x : ℝ} (hx : 0 < x) :
         (-((bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * x ^ (2 * j)))) x := by
     intro j hj
     have hj1 : 1 ≤ j := (Finset.mem_Ico.mp hj).1
-    have h2j1 : (2 * (j : ℝ) - 1) ≠ 0 := (two_mul_sub_one_pos (𝕜 := ℝ) hj1).ne'
+    have h2j1 : (2 * (j : ℝ) - 1) ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast (by omega : 2 * j ≠ 1))
     let c : ℝ := (bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * (2 * j - 1 : ℝ))
     have hd := HasDerivAt.const_div_pow (hasDerivAt_id x) hx.ne' c (2 * j - 1)
     refine (hd.congr_of_eventuallyEq (Eventually.of_forall fun t ↦ ?_)).congr_deriv ?_
     · simp only [stirlingTerm_def, c, id_eq, div_eq_mul_inv, mul_inv]; ring
     · have hpow : x ^ (2 * j - 1 + 1) = x ^ (2 * j) := by congr 1; omega
-      rw [id_eq, hpow, natCast_two_mul_sub_one hj1]
+      rw [id_eq, hpow, Nat.cast_sub (by omega : 1 ≤ 2 * j)]
+      push_cast
       dsimp only [c]
       field_simp
   have htot : HasDerivAt (realStirlingSeriesRemainder n) _ x :=

@@ -10,7 +10,6 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Series
 
 import TauCeti.Analysis.SpecialFunctions.Integrals.Periodic.Bernoulli
 import TauCeti.NumberTheory.Bernoulli.Values
-import TauCeti.NumberTheory.ZetaValues
 
 /-!
 # Alzer's complete monotonicity and enveloping bounds for Stirling's series
@@ -162,7 +161,7 @@ theorem neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos {n : ℕ} (hn : 1 �
 theorem neg_one_pow_succ_mul_stirlingTerm_pos {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 < x) :
     0 < (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := by
   have hden : 0 < (2 * (n : ℝ)) * (2 * (n : ℝ) - 1) * x ^ (2 * n - 1) := by
-    have h2n1 : (0 : ℝ) < 2 * (n : ℝ) - 1 := two_mul_sub_one_pos hn
+    have h2n1 : (0 : ℝ) < 2 * (n : ℝ) - 1 := sub_pos.mpr (by exact_mod_cast (by omega : 1 < 2 * n))
     positivity
   have hB : 0 < (-1 : ℝ) ^ (n + 1) * (bernoulli (2 * n) : ℝ) := by
     exact_mod_cast neg_one_pow_mul_bernoulli_two_mul_pos (by omega : n ≠ 0)
