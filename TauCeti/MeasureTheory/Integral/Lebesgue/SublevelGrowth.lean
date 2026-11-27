@@ -12,20 +12,21 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 /-!
 # Negative powers of a function whose sublevel sets grow polynomially
 
-Let `u ≥ 1` almost everywhere be a measurable real function on a measure space, and suppose that
-its sublevel sets grow at most polynomially:
+Let `u` be a real function with `u ≥ 1` almost everywhere on a measure space. Suppose its
+sublevel sets grow at most polynomially:
 
 `ν {u ≤ R} ≤ R ^ ε * C` for every `R ≥ 1`.
 
 Then for every exponent `A > ε`, `A > 0`, the negative power `u ^ (-A)` has lower integral at most
-`A / (A - ε) * C`, and it is integrable when `C` is finite. The measure need not be finite: the
-growth exponent `ε` controls the measure at infinity, and the bound `u ≥ 1` the behaviour near
-`u = 0`.
+`A / (A - ε) * C`. If `u` is almost everywhere measurable and `C` is finite, this power is
+integrable. The growth exponent `ε` controls the measure at infinity, and the bound `u ≥ 1`
+controls the behaviour near `u = 0`.
 
-The proof is the layer-cake formula for `u⁻¹ ≤ 1`: the superlevel set `{t < u⁻¹}` lies in
+A measurable minorant attaining the lower integral gives the one-sided layer-cake bound. For
+`u⁻¹ ≤ 1`, the superlevel set `{t < u⁻¹}` lies in
 `{u ≤ t⁻¹}` for `0 < t < 1` and is null for `t ≥ 1`, so
 
-`∫ u ^ (-A) = A ∫_0^∞ ν {t < u⁻¹} t ^ (A - 1) dt ≤ A C ∫_0^1 t ^ (A - 1 - ε) dt = A C / (A - ε)`.
+`∫⁻ u ^ (-A) ≤ A ∫_0^∞ ν {t < u⁻¹} t ^ (A - 1) dt ≤ A C ∫_0^1 t ^ (A - 1 - ε) dt = A C / (A - ε)`.
 
 Typical sublevel sets are the norm balls `{g | ‖g‖ ≤ R}` of a group of matrices under a Haar
 measure, whose polynomial growth makes negative powers of the norm integrable.
@@ -63,10 +64,36 @@ namespace TauCeti
 
 variable {α : Type*} [MeasurableSpace α] {ν : Measure α} {u : α → ℝ} {ε A : ℝ} {C : ℝ≥0∞}
 
+/-- A measurable minorant attaining the lower integral gives the upper layer-cake bound. -/
+private theorem lintegral_ofReal_rpow_le_lintegral_meas_lt_mul {f : α → ℝ} (hf : 0 ≤ᵐ[ν] f)
+    {p : ℝ} (hp : 0 < p) :
+    ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂ν ≤ ENNReal.ofReal p *
+      ∫⁻ t in Ioi (0 : ℝ), ν {x | t < f x} * ENNReal.ofReal (t ^ (p - 1)) := by
+  obtain ⟨g, hg, hgf, hint⟩ :=
+    exists_measurable_le_lintegral_eq ν (fun x ↦ (ENNReal.ofReal (f x)) ^ p)
+  let v := fun x ↦ g x ^ p⁻¹
+  have hpow (x) : v x ^ p = g x := by simp [v, ← ENNReal.rpow_mul, hp.ne']
+  have hle (x) : v x ≤ ENNReal.ofReal (f x) := by
+    calc v x ≤ ((ENNReal.ofReal (f x)) ^ p) ^ p⁻¹ :=
+          ENNReal.rpow_le_rpow (hgf x) (by positivity)
+         _ = _ := by simp [← ENNReal.rpow_mul, hp.ne']
+  calc
+    ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂ν = ∫⁻ x, (ENNReal.ofReal (f x)) ^ p ∂ν := by
+      refine lintegral_congr_ae (hf.mono fun x hx ↦ ?_)
+      exact (ENNReal.ofReal_rpow_of_nonneg hx hp.le).symm
+    _ = ∫⁻ x, v x ^ p ∂ν := by simpa only [hpow] using hint
+    _ = _ := lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν
+      (show AEMeasurable v ν by dsimp [v]; fun_prop) hp
+    _ ≤ _ := by
+      gcongr ENNReal.ofReal p * ?_
+      refine setLIntegral_mono' measurableSet_Ioi fun t ht ↦ ?_
+      refine mul_le_mul_left (measure_mono fun x hx ↦ ?_) _
+      exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (show 0 < t from ht).le).1 (hx.trans_le (hle x))
+
 /-- **Negative powers under polynomial sublevel growth.** If `u ≥ 1` almost everywhere and
 `ν {u ≤ R} ≤ R ^ ε * C` for every `R ≥ 1`, then for `0 < A` and `ε < A`,
 `∫⁻ u ^ (-A) ∂ν ≤ A / (A - ε) * C`. -/
-theorem lintegral_ofReal_rpow_neg_le_of_measure_le_rpow (hu : AEMeasurable u ν)
+theorem lintegral_ofReal_rpow_neg_le_of_measure_le_rpow
     (hu₁ : ∀ᵐ x ∂ν, 1 ≤ u x) (hA : 0 < A) (hεA : ε < A)
     (h : ∀ R, 1 ≤ R → ν {x | u x ≤ R} ≤ ENNReal.ofReal (R ^ ε) * C) :
     ∫⁻ x, ENNReal.ofReal (u x ^ (-A)) ∂ν ≤ ENNReal.ofReal (A / (A - ε)) * C := by
@@ -95,10 +122,10 @@ theorem lintegral_ofReal_rpow_neg_le_of_measure_le_rpow (hu : AEMeasurable u ν)
         refine lintegral_congr_ae (hu₁.mono fun x hx ↦ ?_)
         dsimp only
         rw [Real.inv_rpow (zero_le_one.trans hx), Real.rpow_neg (zero_le_one.trans hx)]
-    _ = ENNReal.ofReal A *
+    _ ≤ ENNReal.ofReal A *
           ∫⁻ t in Ioi 0, ν {x | t < (u x)⁻¹} * ENNReal.ofReal (t ^ (A - 1)) :=
-        lintegral_rpow_eq_lintegral_meas_lt_mul ν
-          (hu₁.mono fun x hx ↦ inv_nonneg.2 (zero_le_one.trans hx)) hu.inv hA
+        lintegral_ofReal_rpow_le_lintegral_meas_lt_mul
+          (hu₁.mono fun x hx ↦ inv_nonneg.2 (zero_le_one.trans hx)) hA
     _ ≤ ENNReal.ofReal A * ∫⁻ t in Ioi 0,
           (Ioo 0 1).indicator (fun t ↦ ENNReal.ofReal (t ^ (A - 1 - ε)) * C) t := by
         gcongr ENNReal.ofReal A * ?_
@@ -112,9 +139,9 @@ theorem lintegral_ofReal_rpow_neg_le_of_measure_le_rpow (hu : AEMeasurable u ν)
         simp only [Real.one_rpow]
         congr 1; ring
 
-/-- **Integrability of negative powers under polynomial sublevel growth.** If `u ≥ 1` almost
-everywhere is measurable and `ν {u ≤ R} ≤ R ^ ε * C` for every `R ≥ 1`, with `C` finite, then
-`u ^ (-A)` is integrable for `0 < A` and `ε < A`. -/
+/-- **Integrability of negative powers under polynomial sublevel growth.** Suppose `u` is almost
+everywhere measurable, `u ≥ 1` almost everywhere, and `ν {u ≤ R} ≤ R ^ ε * C` for every `R ≥ 1`.
+If `C` is finite, then `u ^ (-A)` is integrable for `0 < A` and `ε < A`. -/
 theorem integrable_rpow_neg_of_measure_le_rpow (hu : AEMeasurable u ν)
     (hu₁ : ∀ᵐ x ∂ν, 1 ≤ u x) (hA : 0 < A) (hεA : ε < A) (hC : C ≠ ∞)
     (h : ∀ R, 1 ≤ R → ν {x | u x ≤ R} ≤ ENNReal.ofReal (R ^ ε) * C) :
@@ -122,7 +149,7 @@ theorem integrable_rpow_neg_of_measure_le_rpow (hu : AEMeasurable u ν)
   refine ⟨(hu.pow_const _).aestronglyMeasurable, ?_⟩
   rw [hasFiniteIntegral_iff_ofReal
     (hu₁.mono fun x hx ↦ Real.rpow_nonneg (zero_le_one.trans hx) _)]
-  exact (lintegral_ofReal_rpow_neg_le_of_measure_le_rpow hu hu₁ hA hεA h).trans_lt
+  exact (lintegral_ofReal_rpow_neg_le_of_measure_le_rpow hu₁ hA hεA h).trans_lt
     (by finiteness)
 
 end TauCeti

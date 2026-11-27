@@ -31,9 +31,10 @@ For the unitary group `unitaryGroupOf J` of a unitary Gram matrix `J`, with the 
 `Matrix.one_le_norm_val_of_mem_unitaryGroupOf`). Hence the sets `{s | ‖y * j s‖ ≤ R}` have
 measure at most `(3 R²) ^ d ν B` for `R ≥ 1` and `ε = 1`, where `d = dim_ℝ M_n(𝕜)`, which is
 `2 n²` over `ℂ` and `n²` over `ℝ`. By the layer-cake bound of
-`TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow`, the function `s ↦ ‖y * j s‖ ^ (-A)` is
-integrable for every `A > 2 d` as soon as `B` has finite measure, with a bound uniform in `y`. In
-particular, for a Haar measure on `unitaryGroupOf J` itself, such as `U(p, q)` with
+`TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow`, the lower integral of
+`s ↦ ‖y * j s‖ ^ (-A)` is bounded uniformly in `y` for every `A > 2 d`. For continuous `j` and
+`B` of finite measure, the function is integrable. In particular, for a Haar measure on
+`unitaryGroupOf J` itself, such as `U(p, q)` with
 `J = diag(1, …, 1, -1, …, -1)`, every inverse power `‖g‖ ^ (-A)` with `A > 2 d` of the operator
 norm is integrable. The threshold `2 d` comes from the crude covering argument and is not sharp.
 
@@ -43,7 +44,7 @@ norm is integrable. The threshold `2 d` comes from the crude covering argument a
   to the units of a finite-dimensional normed algebra.
 * `Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le`: for a unitary Gram matrix `J`,
   `ν {s | ‖y * j s‖ ≤ R} ≤ (1 + 2 R² / ε) ^ d * ν {s | ‖j s - 1‖ ≤ ε}`.
-* `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le`: for continuous `j` and `A > 2 d`,
+* `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le`: for `A > 2 d`,
   `∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`.
 * `Matrix.unitaryGroupOf.integrable_norm_mul_rpow_neg`: the corresponding integrability when the
   ball `{s | ‖j s - 1‖ ≤ 1}` has finite measure.
@@ -135,6 +136,27 @@ private theorem measure_setOf_norm_mul_le_le_rpow (ν : Measure S) [ν.IsMulLeft
           gcongr
     _ = _ := by rw [ENNReal.ofReal_mul (by positivity), mul_assoc]
 
+/-- **Inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary matrix, `ν` a
+left-invariant measure on a group `S`, `j : S →* unitaryGroupOf J` and `y : unitaryGroupOf J`.
+For a real `A > 2 d`, where `d` is the real dimension of the matrices,
+
+`∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`
+
+in the operator norm. The bound does not depend on `y`. -/
+theorem lintegral_norm_mul_rpow_neg_le (ν : Measure S) [ν.IsMulLeftInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) (j : S →* unitaryGroupOf J) (y : unitaryGroupOf J)
+    {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    ∫⁻ s, ENNReal.ofReal (‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ∂ν ≤
+      ENNReal.ofReal (3 ^ finrank ℝ (Matrix n n 𝕜) * A / (A - 2 * finrank ℝ (Matrix n n 𝕜))) *
+        ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} := by
+  have hA₀ : 0 < A := lt_of_le_of_lt (by positivity) hA
+  cases isEmpty_or_nonempty n
+  · simp [Subsingleton.elim (_ : Matrix n n 𝕜) 0, Real.zero_rpow (neg_ne_zero.2 hA₀.ne')]
+  refine (TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow
+    (.of_forall fun s ↦ one_le_norm_val_of_mem_unitaryGroupOf hJ (y * j s).property) hA₀ hA
+    fun R hR ↦ measure_setOf_norm_mul_le_le_rpow ν hJ j y hR).trans_eq ?_
+  rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_comm (A / _), mul_div_assoc]
+
 variable [TopologicalSpace S]
 
 omit [MeasurableSpace S] [MeasurableMul S] in
@@ -145,28 +167,6 @@ private theorem continuous_norm_val_mul {j : S →* unitaryGroupOf J} (hj : Cont
   (Units.continuous_val.comp (continuous_subtypeVal.comp (continuous_const.mul hj))).norm
 
 variable [OpensMeasurableSpace S]
-
-/-- **Inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary matrix, `ν` a
-left-invariant measure on a topological group `S`, `j : S →* unitaryGroupOf J` continuous and
-`y ∈ unitaryGroupOf J`. For a real `A > 2 d`, where `d` is the real dimension of the matrices,
-
-`∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`
-
-in the operator norm. The bound does not depend on `y`. -/
-theorem lintegral_norm_mul_rpow_neg_le (ν : Measure S) [ν.IsMulLeftInvariant]
-    (hJ : J ∈ unitary (Matrix n n 𝕜)) {j : S →* unitaryGroupOf J} (hj : Continuous j)
-    (y : unitaryGroupOf J) {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
-    ∫⁻ s, ENNReal.ofReal (‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ∂ν ≤
-      ENNReal.ofReal (3 ^ finrank ℝ (Matrix n n 𝕜) * A / (A - 2 * finrank ℝ (Matrix n n 𝕜))) *
-        ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} := by
-  have hA₀ : 0 < A := lt_of_le_of_lt (by positivity) hA
-  cases isEmpty_or_nonempty n
-  · simp [Subsingleton.elim (_ : Matrix n n 𝕜) 0, Real.zero_rpow (neg_ne_zero.2 hA₀.ne')]
-  refine (TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow
-    (continuous_norm_val_mul hj y).aemeasurable
-    (.of_forall fun s ↦ one_le_norm_val_of_mem_unitaryGroupOf hJ (y * j s).property) hA₀ hA
-    fun R hR ↦ measure_setOf_norm_mul_le_le_rpow ν hJ j y hR).trans_eq ?_
-  rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_comm (A / _), mul_div_assoc]
 
 /-- **Integrability of inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary
 matrix, `ν` a left-invariant measure on a topological group `S` and `j : S →* unitaryGroupOf J`
@@ -180,7 +180,7 @@ theorem integrable_norm_mul_rpow_neg (ν : Measure S) [ν.IsMulLeftInvariant]
     Integrable (fun s ↦ ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ν := by
   refine ⟨((continuous_norm_val_mul hj y).aemeasurable.pow_const _).aestronglyMeasurable, ?_⟩
   rw [hasFiniteIntegral_iff_ofReal (.of_forall fun s ↦ Real.rpow_nonneg (norm_nonneg _) _)]
-  exact (lintegral_norm_mul_rpow_neg_le ν hJ hj y hA).trans_lt (by finiteness)
+  exact (lintegral_norm_mul_rpow_neg_le ν hJ j y hA).trans_lt (by finiteness)
 
 end Covering
 
