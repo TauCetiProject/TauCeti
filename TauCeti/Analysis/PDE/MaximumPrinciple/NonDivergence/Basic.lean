@@ -88,6 +88,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_b + c` by a weight `exp ∘ ℓ`, for functions that are `C²` at a point.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
+* `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier_of_pos`: the weak
+  maximum principle for `-L + c` with `c > 0`, for degenerate `a` and arbitrary drift.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
   principle.
 * `TauCeti.PDE.abs_le_of_sum_mul_fderiv_fderiv_add_fderiv_eq_mul_abs_le_frontier`: the two-sided
@@ -411,6 +413,37 @@ theorem exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq (A : Matrix ι ι �
     (fun i j ↦ fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
     (fun i ↦ fderiv ℝ ℓ x (EuclideanSpace.single i 1))
     (fun i ↦ fderiv ℝ v x (EuclideanSpace.single i 1))
+
+/-- **The weak maximum principle with a positive zeroth-order coefficient.** Let `K` be compact,
+and on its interior let `a` have nonnegative quadratic form, `0 ≤ ξᵀ a(x) ξ`, and let `c > 0`. If
+`f` is continuous on `K`, `C²` on its interior, and satisfies
+`c f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf` there, then every nonnegative bound `m` for `f` on `frontier K`
+bounds `f` on `K`.
+
+Unlike `le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`, the operator may be
+degenerate, the drift `b` is arbitrary and the index type may be empty: the positivity of `c`
+alone rules out an interior maximum above `m`. -/
+theorem le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier_of_pos
+    {K : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c f : EuclideanSpace ℝ ι → ℝ} {m : ℝ}
+    (ha : ∀ ⦃x⦄, x ∈ interior K → ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ (a x).toQuadraticForm' ξ)
+    (hc : ∀ ⦃x⦄, x ∈ interior K → 0 < c x) (hm : 0 ≤ m) (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hsub : ∀ ⦃x⦄, x ∈ interior K → c x * f x ≤
+      ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ f x (b x))
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) :
+    ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
+  intro x hx
+  obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hx⟩ hcont
+  refine (isMaxOn_iff.mp hzmax x hx).trans (not_lt.mp fun hlt ↦ ?_)
+  -- A maximizer above `m` lies in the interior, where `L f ≥ c f > 0` forbids a local maximum.
+  have hzint : z ∈ interior K := by
+    by_contra hz
+    exact hlt.not_ge (hbdry ⟨subset_closure hzK, hz⟩)
+  exact not_isLocalMax_of_sum_mul_fderiv_fderiv_add_fderiv_pos (ha hzint) (hcd hzint)
+    ((mul_pos (hc hzint) (hm.trans_lt hlt)).trans_le (hsub hzint))
+    (hzmax.isLocalMax (mem_interior_iff_mem_nhds.mp hzint))
 
 variable [Nonempty ι]
 
