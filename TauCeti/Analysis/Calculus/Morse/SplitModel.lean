@@ -208,15 +208,11 @@ theorem strictAnti_sum_sq_sub_sum_sq_splitQuadraticFlow {z : WithLp 2 ((ι → �
   have hpos : 0 < A ∨ 0 < B := by
     by_contra h
     simp only [not_or, not_lt] at h
-    have hfst : ∀ i, z.fst i = 0 := fun i ↦ pow_eq_zero_iff two_ne_zero |>.1 <|
-      (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ sq_nonneg (z.fst i)).1 (le_antisymm h.1 hA) i
-        (Finset.mem_univ i)
-    have hsnd : ∀ j, z.snd j = 0 := fun j ↦ pow_eq_zero_iff two_ne_zero |>.1 <|
-      (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg (z.snd j)).1 (le_antisymm h.2 hB) j
-        (Finset.mem_univ j)
+    have hfst := (Finset.sum_sq_eq_zero_iff _ _).1 (le_antisymm h.1 hA)
+    have hsnd := (Finset.sum_sq_eq_zero_iff _ _).1 (le_antisymm h.2 hB)
     refine hz (WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)) <;> funext i
-    · simpa using hfst i
-    · simpa using hsnd i
+    · simpa using hfst i (Finset.mem_univ i)
+    · simpa using hsnd i (Finset.mem_univ i)
   -- Along the orbit the two sums are rescaled by `e^{-2t}` and `e^{2t}`.
   have hQ (t : ℝ) :
       ∑ i, (splitQuadraticFlow t z).fst i ^ 2 - ∑ j, (splitQuadraticFlow t z).snd j ^ 2 =

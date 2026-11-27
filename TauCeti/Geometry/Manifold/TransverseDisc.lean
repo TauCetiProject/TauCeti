@@ -39,9 +39,9 @@ does `T ∩ ker dg` have the dimension of `G`. The cut itself is flattened onto 
 In Morse homology this produces the discs that enter the gluing of broken trajectories: for an
 adapted pseudo-gradient near a critical point, `s` is the unstable manifold of a critical point of
 higher index, `s'` is the stable manifold, `P` is the projection onto the expanding coordinates of a
-Morse chart, `g` is the Morse function and `v` is the pseudo-gradient. The kernel of `P ∘ ι'` is
-then tangent to the family of trajectories between the two critical points, and it is zero when
-their indices differ by one.
+Morse chart, `g` is the Morse function and `v` is the pseudo-gradient. By rank–nullity the kernel
+of `P ∘ ι'` then has dimension `dim s - 1 - dim G`, the difference of the two indices minus one, so
+it is zero when the indices differ by one.
 
 Without the level, when the tangent space of `s` at `y` has the dimension of `G`, the same
 construction parametrizes `s` itself near `y` by the subspace onto which a chart flattens it. In
@@ -344,10 +344,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
     exists_param_inter_preimage_surjective_of_span_mtangentConeAt_sup_eq_top hn hq hs hy hys hys'
       hU hyU hg htr hvs hvs' hgv he hye hP hs'P
   -- A surjection between spaces of the same dimension is invertible.
-  have hdim' : Module.finrank 𝕜 F = Module.finrank 𝕜 G := by omega
-  refine ⟨F, ι, ι', hι0, hcont, hmem, hd,
-    (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq hdim').2 ?_, hreach⟩
-  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := (P ∘L ι' : F →ₗ[𝕜] G))
-    hdim').2 hsurj
+  exact ⟨F, ι, ι', hι0, hcont, hmem, hd,
+    (ContinuousLinearMap.isInvertible_iff_surjective_of_finrank_eq (by omega)).2 hsurj, hreach⟩
 
 end TauCeti
