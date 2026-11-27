@@ -18,7 +18,8 @@ from the terms of an `I`-adically convergent sequence in an algebra to its limit
 
 The coordinates of an element of the completion `AdicCompletion I M` are compatible: a
 representative of its coordinate modulo `I ^ n` also represents its coordinate modulo `I ^ m` for
-every `m ≤ n`.
+every `m ≤ n`. The canonical map `M → AdicCompletion I M` reflects the `I`-adic filtration:
+`x ∈ I ^ n • M` exactly when its image lies in `I ^ n` times the completion.
 
 ## Main results
 
@@ -28,6 +29,8 @@ every `m ≤ n`.
   class.
 * `AdicCompletion.val_eq_mk_of_le`: a representative of a coordinate of an element of the
   completion represents all its lower coordinates.
+* `AdicCompletion.of_mem_pow_smul_top_iff`: `of I M x ∈ I ^ n • ⊤` if and only if
+  `x ∈ I ^ n • ⊤`.
 -/
 
 public section
@@ -57,3 +60,14 @@ also represents its coordinate modulo `I ^ m` for every `m ≤ n`. -/
 theorem AdicCompletion.val_eq_mk_of_le {x : AdicCompletion I M} {m n : ℕ} (hmn : m ≤ n) {a : M}
     (ha : x.val n = Submodule.Quotient.mk a) : x.val m = Submodule.Quotient.mk a := by
   rw [← x.property hmn, ha, AdicCompletion.transitionMap_mk]
+
+variable {I} in
+/-- The canonical map `M → AdicCompletion I M` reflects the `I`-adic filtration: `of I M x` lies in
+`I ^ n` times the completion exactly when `x ∈ I ^ n • M`. The `n`-th coordinate of `of I M x` is
+the class of `x` modulo `I ^ n • M`, and it vanishes on `I ^ n` times the completion. -/
+theorem AdicCompletion.of_mem_pow_smul_top_iff {n : ℕ} {x : M} :
+    of I M x ∈ (I ^ n • ⊤ : Submodule R (AdicCompletion I M)) ↔
+      x ∈ (I ^ n • ⊤ : Submodule R M) := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ Submodule.smul_top_le_comap_smul_top _ (of I M) hx⟩
+  have := pow_smul_top_le_ker_eval I n hx
+  rwa [LinearMap.mem_ker, eval_of, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at this
