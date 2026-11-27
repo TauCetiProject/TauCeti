@@ -163,6 +163,7 @@ theorem isMicrolocallySobolevAt_smul_iff {s : ℝ} {T : BundleTest I F V →L_c[
 /-- A real functional is microlocally `H^s` at `-ξ` exactly when it is microlocally `H^s` at `ξ`:
 its components are real distributions, and conjugation reflects microlocal `H^s` regularity in the
 frequency variable (`Distribution.isMicrolocallySobolevAt_conj_iff`). -/
+@[simp]
 theorem isMicrolocallySobolevAt_neg_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     {ξ : TangentSpace I x →L[ℝ] ℝ} :
     IsMicrolocallySobolevAt s T x (-ξ) ↔ IsMicrolocallySobolevAt s T x ξ :=

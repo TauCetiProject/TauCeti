@@ -221,6 +221,7 @@ theorem mk_smul_mem_waveFrontSet_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {x :
 /-- A real functional is microlocally smooth at `-ξ` exactly when it is microlocally smooth at `ξ`:
 its components are real distributions, and conjugation reflects microlocal smoothness in the
 frequency variable (`Distribution.isMicrolocallySmoothAt_conj_iff`). -/
+@[simp]
 theorem isMicrolocallySmoothAt_neg_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     {ξ : TangentSpace I x →L[ℝ] ℝ} :
     IsMicrolocallySmoothAt T x (-ξ) ↔ IsMicrolocallySmoothAt T x ξ :=
