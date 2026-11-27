@@ -24,7 +24,9 @@ permutation of `a :: List.ofFn f` (`List.ofFn_insertNth_perm`).
 
 The list operation `List.contractNth l op`, which combines the entries `l` and `l + 1` of a list
 with `op`, is the list analogue of `Fin.contractNth`: `List.ofFn (Fin.contractNth l op a)` is
-`List.contractNth l op (List.ofFn a)` (`List.ofFn_contractNth`).
+`List.contractNth l op (List.ofFn a)` (`List.ofFn_contractNth`). Contracting shortens the list by
+one when it has an entry `l + 1` (`List.length_contractNth_of_lt`) and leaves it unchanged
+otherwise (`List.contractNth_of_length_le`).
 -/
 
 public section
@@ -115,6 +117,33 @@ theorem contractNth_singleton (l : ℕ) (op : α → α → α) (x : α) : contr
 theorem contractNth_cons_ne_nil (l : ℕ) (op : α → α → α) (x : α) (L : List α) :
     contractNth l op (x :: L) ≠ [] := by
   cases l <;> cases L <;> simp
+
+/-- Contracting at a position `l` with no entry `l + 1` leaves the list unchanged. -/
+theorem contractNth_of_length_le {l : ℕ} {L : List α} (op : α → α → α) (h : L.length ≤ l + 1) :
+    contractNth l op L = L := by
+  induction L generalizing l with
+  | nil => simp
+  | cons x L ih =>
+    cases l with
+    | zero => cases L <;> simp_all
+    | succ l => simp [ih (l := l) (by simpa using h)]
+
+/-- Contracting at a position `l` with an entry `l + 1` shortens the list by one. -/
+theorem length_contractNth_of_lt {l : ℕ} {L : List α} (op : α → α → α) (h : l + 1 < L.length) :
+    (contractNth l op L).length = L.length - 1 := by
+  induction L generalizing l with
+  | nil => simp at h
+  | cons x L ih =>
+    cases l with
+    | zero =>
+      cases L with
+      | nil => simp at h
+      | cons y L => simp
+    | succ l =>
+      simp only [contractNth_succ_cons, length_cons]
+      rw [ih (by simpa using h)]
+      simp only [length_cons] at h
+      omega
 
 /-- The list of entries of `Fin.contractNth l op a` is `List.contractNth l op` of the list of
 entries of `a`. -/
