@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.RingTheory.Nilpotent.Defs
+public import TauCeti.LinearAlgebra.Matrix.Minor
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.Order.Preorder.Finite
@@ -38,6 +39,8 @@ Lie-algebra theory.
 
 * `Matrix.BlockTriangular.det_eq_prod_diag` — a matrix that is block triangular for an injective
   ranking of its indices has the product of its diagonal entries as determinant.
+* `Matrix.BlockTriangular.principalMinor_eq_prod_diag` — a principal minor of a matrix triangular
+  for an injective ranking is the product of the chosen diagonal entries.
 * `Matrix.mul_apply_diag_of_isUpperTriangular` — the diagonal of a product of upper-triangular
   matrices is the pointwise product of the diagonals.
 * `Matrix.mul_apply_diag_of_isLowerTriangular` — the corresponding formula for lower-triangular
@@ -122,6 +125,16 @@ theorem BlockTriangular.det_eq_prod_diag {ι α S : Type*} [Fintype ι] [Decidab
   refine Finset.prod_congr rfl fun i _ ↦ ?_
   let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.property)⟩
   exact det_unique _
+
+/-- A principal minor of a matrix that is block triangular for an injective ranking of its
+indices is the product of the chosen diagonal entries. -/
+theorem BlockTriangular.principalMinor_eq_prod_diag {ι S α : Type*} [DecidableEq ι] [CommRing S]
+    [LinearOrder α] {b : Matrix ι ι S} {o : ι → α} (hb : b.BlockTriangular o)
+    (ho : Function.Injective o) (s : Finset ι) : b.principalMinor s = ∏ a ∈ s, b a a := by
+  rw [principalMinor_def,
+    (hb.submatrix (f := Subtype.val)).det_eq_prod_diag (ho.comp Subtype.val_injective),
+    ← Finset.prod_coe_sort s]
+  simp only [submatrix_apply]
 
 /-- A square matrix is upper unitriangular when it is upper triangular and every diagonal entry
 is one. -/
