@@ -22,6 +22,8 @@ against the Perron integrand is the series of the individual kernels, one for ea
 * `TauCeti.integral_LSeries_mul_perronIntegrand`: the interchange of the integral with the series.
 * `TauCeti.truncatedPerron_LSeries`: the truncated summatory formula, as a series of truncated
   Perron kernels at the ratios `x / n`.
+* `TauCeti.norm_truncatedPerron_LSeries_sub_tsum_step_le`: the finite-height error bound with
+  the half-weighted step, including a possible integer endpoint.
 * `TauCeti.norm_truncatedPerron_LSeries_sub_sum_le`: the off-norm form, comparing the truncated
   integral with the sharp partial sum `∑_{n < x} f n`.
 * `TauCeti.tendsto_truncatedPerron_LSeries`: the limiting form, at every positive `x`.
@@ -191,25 +193,79 @@ private theorem summable_norm_mul_kernelError (hx : 0 < x) (hT : 0 < T)
     gcongr
   exact hbound.trans_eq (by ring)
 
-/-- At each index the `n`-th term of the truncated Perron series differs from its sharp step by at
-most `‖f n‖` times the smoothed-step kernel error at the ratio `x / n`.  The index `0`
-contributes
-nothing on either side. -/
 private theorem norm_mul_truncatedPerronKernel_sub_step_le (hx : 0 < x) (hc : 0 < c) (hT : 0 < T)
-    (f : ℕ → ℂ) (hoff : ∀ n : ℕ, f n ≠ 0 → x ≠ n) (n : ℕ) :
+    (f : ℕ → ℂ) (n : ℕ) :
     ‖f n * truncatedPerronKernel (x / n) c T - f n * perronStep (x / n)‖
-      ≤ ‖f n‖ * ((x / n) ^ c / (π * T * |Real.log (x / n)|)) := by
-  rcases eq_or_ne (f n) 0 with hfn | hfn
-  · rw [hfn, zero_mul, zero_mul, sub_zero, norm_zero, zero_mul]
+      ≤ ‖f n‖ * ((x / n) ^ c / (π * T * |Real.log (x / n)|)) +
+        (if x = n then ‖f n‖ / 2 else 0) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn0
-  · rw [Nat.cast_zero, div_zero, truncatedPerronKernel_zero, mul_zero,
-      perronStep_of_lt_one zero_lt_one, mul_zero, sub_zero, norm_zero]
-    positivity
-  · have hcast : (0 : ℝ) < n := Nat.cast_pos.2 hn0
-    have hne : x / n ≠ 1 := fun hh ↦ hoff n hfn ((div_eq_one_iff_eq hcast.ne').1 hh)
-    rw [← mul_sub, norm_mul]
-    gcongr
-    exact norm_truncatedPerronKernel_sub_step_le (div_pos hx hcast) hne hc hT
+  · simp [truncatedPerronKernel_zero, hx.ne', Real.zero_rpow hc.ne']
+  have hn : (0 : ℝ) < n := Nat.cast_pos.2 hn0
+  rw [← mul_sub, norm_mul]
+  by_cases he : x = n
+  · rw [ite_eq_left he, he, div_self hn.ne', Real.log_one, abs_zero, mul_zero, div_zero,
+      mul_zero, zero_add, perronStep_one, div_eq_mul_inv ‖f n‖]
+    apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
+    have hhalf : ((↑(1 / 2 : ℝ)) : ℂ) = 1 / 2 := by norm_num
+    rw [truncatedPerronKernel_one hc.ne', ← hhalf, ← ofReal_sub, norm_real, Real.norm_eq_abs,
+      abs_sub_le_iff]
+    constructor
+    · have h := mul_le_mul_of_nonneg_left (Real.arctan_lt_pi_div_two (T / c)).le
+        (inv_nonneg.mpr Real.pi_pos.le)
+      have hp : π⁻¹ * (π / 2) = 1 / 2 := by field_simp
+      rw [hp] at h
+      linarith
+    · linarith [mul_nonneg (inv_nonneg.mpr Real.pi_pos.le)
+        (Real.arctan_nonneg.mpr (div_nonneg hT.le hc.le))]
+  · rw [ite_eq_right he, add_zero]
+    exact mul_le_mul_of_nonneg_left
+      (norm_truncatedPerronKernel_sub_step_le (div_pos hx hn)
+        (fun hh ↦ he ((div_eq_one_iff_eq hn.ne').1 hh)) hc hT) (norm_nonneg _)
+
+/-- The Perron step series has finite support, including at a natural-number cutoff. -/
+theorem summable_mul_perronStep_div (f : ℕ → ℂ) (x : ℝ) :
+    Summable (fun n : ℕ ↦ f n * perronStep (x / n)) := by
+  refine summable_of_ne_finset_zero (s := Finset.range (⌊x⌋₊ + 1)) fun n hn ↦ ?_
+  have hn₀ : ⌊x⌋₊ < n := by simpa using hn
+  have hxn := Nat.lt_of_floor_lt hn₀
+  have hn' : (0 : ℝ) < n := Nat.cast_pos.mpr ((Nat.zero_le _).trans_lt hn₀)
+  rw [perronStep_of_lt_one ((div_lt_one hn').2 hxn), mul_zero]
+
+/-- Finite-height Perron error relative to the half-weighted sum. At a natural-number cutoff
+`x`, the endpoint contributes at most `‖f ⌊x⌋₊‖/2` in addition to the off-endpoint error. -/
+theorem norm_truncatedPerron_LSeries_sub_tsum_step_le (hx : 0 < x) (hc : 0 < c) (hT : 0 < T)
+    (h : LSeriesSummable f (c : ℂ)) :
+    ‖(((2 * π : ℝ) : ℂ)⁻¹ * ∫ t in -T..T, LSeries f ((c : ℂ) + t * I) * perronIntegrand x c t)
+        - ∑' n : ℕ, f n * perronStep (x / n)‖
+      ≤ (∑' n : ℕ, ‖f n‖ * ((x / n) ^ c / (π * T * |Real.log (x / n)|))) +
+        if x = ⌊x⌋₊ then ‖f ⌊x⌋₊‖ / 2 else 0 := by
+  have herr := summable_norm_mul_kernelError hx hT h
+  have heq (n : ℕ) : x = n ↔ n = ⌊x⌋₊ ∧ x = ⌊x⌋₊ := by
+    constructor
+    · intro hn
+      simp [hn]
+    · rintro ⟨rfl, he⟩
+      exact he
+  have he (n : ℕ) : (if x = n then ‖f n‖ / 2 else 0) =
+      (if n = ⌊x⌋₊ then (if x = ⌊x⌋₊ then ‖f ⌊x⌋₊‖ / 2 else 0) else 0) := by
+    by_cases hn : n = ⌊x⌋₊
+    · subst n
+      rw [ite_eq_left rfl]
+    · rw [ite_eq_right hn, ite_eq_right (fun hx' ↦ hn ((heq n).mp hx').1)]
+  have hE : Summable (fun n : ℕ ↦ if x = n then ‖f n‖ / 2 else 0) := by
+    refine summable_of_ne_finset_zero (s := {⌊x⌋₊}) fun n hn ↦ ?_
+    rw [he n, ite_eq_right (by simpa using hn)]
+  have hDnorm := Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _)
+    (norm_mul_truncatedPerronKernel_sub_step_le hx hc hT f) (herr.add hE)
+  have hD := hDnorm.of_norm
+  have hB := summable_mul_perronStep_div f x
+  have hA : Summable fun n : ℕ ↦ f n * truncatedPerronKernel (x / n) c T := by
+    simpa only [sub_add_cancel] using hD.add hB
+  rw [truncatedPerron_LSeries hx hc hT.le h, ← hA.tsum_sub hB]
+  refine (norm_tsum_le_tsum_norm hDnorm).trans <| (Summable.tsum_le_tsum
+    (norm_mul_truncatedPerronKernel_sub_step_le hx hc hT f) hDnorm (herr.add hE)).trans_eq ?_
+  rw [herr.tsum_add hE]
+  exact congrArg (fun v : ℝ ↦ _ + v) ((tsum_congr he).trans (tsum_ite_eq _ _))
 
 /-- **The off-norm arithmetic Perron formula.**  When `x` is not a natural number at which `f` is
 nonzero, the truncated integral differs from the sharp partial sum `∑_{n < x} f n` by at most the
@@ -220,21 +276,13 @@ theorem norm_truncatedPerron_LSeries_sub_sum_le (hx : 0 < x) (hc : 0 < c) (hT : 
     ‖(((2 * π : ℝ) : ℂ)⁻¹ * ∫ t in -T..T, LSeries f ((c : ℂ) + t * I) * perronIntegrand x c t)
         - ∑ n ∈ Finset.Ico 1 ⌈x⌉₊, f n‖
       ≤ ∑' n : ℕ, ‖f n‖ * ((x / n) ^ c / (π * T * |Real.log (x / n)|)) := by
-  have herr := summable_norm_mul_kernelError hx hT h
-  have hstep := norm_mul_truncatedPerronKernel_sub_step_le hx hc hT f hoff
-  have hDnorm : Summable fun n : ℕ ↦
-      ‖f n * truncatedPerronKernel (x / n) c T - f n * perronStep (x / n)‖ :=
-    Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hstep herr
-  have hD : Summable fun n : ℕ ↦
-      f n * truncatedPerronKernel (x / n) c T - f n * perronStep (x / n) := .of_norm hDnorm
-  have hB : Summable fun n : ℕ ↦ f n * perronStep (x / n) :=
-    summable_of_ne_finset_zero (s := Finset.Ico 1 ⌈x⌉₊) fun n hn ↦
-      mul_perronStep_div_eq_zero_of_notMem f hoff hn
-  have hA : Summable fun n : ℕ ↦ f n * truncatedPerronKernel (x / n) c T := by
-    simpa using hD.add hB
-  rw [truncatedPerron_LSeries hx hc hT.le h, ← tsum_mul_perronStep_div f hoff,
-    ← hA.tsum_sub hB]
-  exact (norm_tsum_le_tsum_norm hDnorm).trans (Summable.tsum_le_tsum hstep hDnorm herr)
+  rw [← tsum_mul_perronStep_div f hoff]
+  have he : (if x = ⌊x⌋₊ then ‖f ⌊x⌋₊‖ / 2 else 0) = 0 := by
+    split_ifs with hx'
+    · have hz : f ⌊x⌋₊ = 0 := not_ne_iff.mp fun hf ↦ hoff ⌊x⌋₊ hf hx'
+      simp [hz]
+    · rfl
+  simpa only [he, add_zero] using norm_truncatedPerron_LSeries_sub_tsum_step_le hx hc hT h
 
 /-- Uniformly in heights `T ≥ 1`, the truncated Perron kernel at a positive ratio `y` is bounded by
 the smoothed-step error at `y`, together with `1` once `y` exceeds `1 / 2`.  Above `1 / 2` the sharp
