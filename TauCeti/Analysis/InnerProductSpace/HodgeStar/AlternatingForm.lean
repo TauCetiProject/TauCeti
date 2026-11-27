@@ -109,6 +109,26 @@ theorem formHodgeStar_alternatingFormEquiv {k l : ℕ} (hkl : k + l = finrank �
       alternatingFormEquiv V l (o.hodgeStar hkl x) := by
   simp [formHodgeStar]
 
+/-- Pullback along a linear isometric equivalence intertwines the Hodge stars for the
+source orientation and its transported orientation. -/
+theorem formHodgeStar_compContinuousLinearMap
+    {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [FiniteDimensional ℝ W] {k l : ℕ} [Fact (Module.finrank ℝ W = n)] (D : V ≃ₗᵢ[ℝ] W)
+    (hV : k + l = Module.finrank ℝ V) (hW : k + l = Module.finrank ℝ W)
+    (a : W [⋀^Fin k]→L[ℝ] ℝ) :
+    ((Orientation.map (Fin n) D.toLinearEquiv o).formHodgeStar hW a).compContinuousLinearMap
+        D.toLinearIsometry.toContinuousLinearMap =
+      o.formHodgeStar hV (a.compContinuousLinearMap D.toLinearIsometry.toContinuousLinearMap) := by
+  obtain ⟨u, rfl⟩ := ((alternatingFormEquiv W k).surjective.comp
+    (exteriorPower.map_surjective (n := k) D.surjective)) a
+  have hmusical (j : ℕ) (v : ⋀[ℝ]^j V) :
+      (alternatingFormEquiv W j (exteriorPower.map j D.toLinearMap v)).compContinuousLinearMap
+          D.toLinearIsometry.toContinuousLinearMap = alternatingFormEquiv V j v :=
+    D.toLinearIsometry.alternatingFormEquiv_map v
+  dsimp only [Function.comp_apply]
+  rw [hmusical, Orientation.formHodgeStar_alternatingFormEquiv, o.hodgeStar_map D hV hW,
+    hmusical, Orientation.formHodgeStar_alternatingFormEquiv]
+
 /-- The Hodge star of a form `α` evaluates on `(v₁, …, vₗ)` as the volume of `a ∧ v₁ ∧ ⋯ ∧ vₗ`,
 where `a ∈ ⋀ᵏ V` represents `α`. -/
 theorem formHodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V) (α : V [⋀^Fin k]→L[ℝ] ℝ)

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.SemiFredholm
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.Fredholm.CompactPerturbation
+import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -80,6 +81,8 @@ the spectral flow of `A` is not treated here.
 * `TauCeti.WeakDerivStep.exists_isCompactOperator_familyDomainTrajectoryOperator_comp_sub_one`:
   a right parametrix of `D_A` modulo compact operators.
 * `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`: `D_A` is Fredholm.
+* `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_of_forall_symm`: the same for
+  a family that is `ι`-symmetric at every time, whose limits are then `ι`-symmetric.
 * `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq`: the index depends only on the
   limits `B±`.
 * `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero`: equal limits give index
@@ -495,22 +498,13 @@ theorem exists_isCompactOperator_familyDomainTrajectoryOperator_comp_sub_one
     (fun T ↦ (hc T).imp fun c h ↦ by
       filter_upwards [hAL, ae_restrict_of_ae h] with s hs h'
       rwa [hs])
-  -- `‖S‖ ≤ 1 / 2`, so `1 + S` is invertible, and `Q (1 + S)⁻¹` is the parametrix.
-  have hSn : ‖-S‖ < 1 := by
-    rw [ContinuousLinearMap.opNorm_neg]
+  -- `‖S‖ ≤ 1 / 2`, so `Q (1 + S)⁻¹` is the parametrix.
+  have hSn : ‖S‖ < 1 := by
     refine (S.opNorm_le_bound (by positivity) hS).trans_lt ?_
     rw [inv_mul_lt_one₀ (by positivity)]
     linarith [norm_nonneg Rbot, norm_nonneg Rtop]
-  set U := Units.oneSub (-S) hSn
-  set V : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀ := ↑U⁻¹
-  refine ⟨Q.comp V, ?_⟩
-  have hU : (U : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀).comp V = 1 := U.mul_inv
-  have : (familyDomainTrajectoryOperator ι AL).comp (Q.comp V) - 1 = K.comp V := by
-    rw [← ContinuousLinearMap.comp_assoc, hQ, show (1 : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀) + S =
-      U by rw [Units.val_oneSub, sub_neg_eq_add], ContinuousLinearMap.add_comp, hU]
-    abel
-  rw [this]
-  exact hK.comp_clm _
+  exact ContinuousLinearMap.exists_isCompactOperator_comp_sub_one_of_comp_eq_one_add_add _
+    (hQ.trans (add_right_comm _ _ _)) hK hSn
 
 /-- **The trajectory operator over a compactly embedded domain is Fredholm.** Let `ι` be a compact
 operator, and let `A(s)` converge to invertible `ι`-symmetric operators `Bbot` and `Btop` at `-∞`
@@ -528,6 +522,24 @@ theorem isFredholm_familyDomainTrajectoryOperator (hι : IsCompactOperator ι)
   exact .of_finite_ker_coker _ (finiteDimensional_ker_familyDomainTrajectoryOperator hι hSymmbot
     hBbot hSymmtop hBtop hAL hbot htop hc)
     (ContinuousLinearMap.cofg_range_of_isCompactOperator_comp_sub_one _ hQ)
+
+/-- **A path of `ι`-symmetric operators has a Fredholm trajectory operator.** Let `ι` be compact
+and let `A` be a path of operators `D → H` which are `ι`-symmetric at every time, converging to
+invertible operators `Bbot` and `Btop` at `-∞` and `∞`, and differing from `Btop` on every bounded
+interval by an operator bounded through `ι`. Then `u ↦ (ι ∘ u)' + A u` is Fredholm. This is
+`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`, whose hypothesis that the limits
+are `ι`-symmetric follows from the symmetry of `A`. -/
+theorem isFredholm_familyDomainTrajectoryOperator_of_forall_symm (hι : IsCompactOperator ι)
+    (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ) (hBbot : Bbot.IsInvertible)
+    (hBtop : Btop.IsInvertible) (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot))
+    (htop : Tendsto A atTop (𝓝 Btop))
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
+    (familyDomainTrajectoryOperator (p := 2) ι AL).IsFredholm :=
+  isFredholm_familyDomainTrajectoryOperator hι
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot
+      (.of_forall fun s ↦ hSymm s x y)) hBbot
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
+      (.of_forall fun s ↦ hSymm s x y)) hBtop hAL hbot htop hc
 
 /-- **The index depends only on the limits.** Let `A` and `A'` both converge to the invertible
 `ι`-symmetric operators `Bbot` at `-∞` and `Btop` at `∞`, and differ from `Btop` on every bounded

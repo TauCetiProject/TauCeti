@@ -12,6 +12,7 @@ public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.LinearAlgebra.Matrix.Trace.Positive
 
 /-!
 # Positive involutions: examples
@@ -19,7 +20,8 @@ public import Mathlib.RingTheory.SimpleRing.Matrix
 * On `ℚ` the identity is a positive involution: `Trd(x x) = x² > 0`.
 * On `M_n(ℚ)` the transpose is a positive involution: `Trd(x xᵀ) = Σ_{i,j} x_{ij}² > 0`.
 * On `M_2(ℚ)` the canonical involution `x ↦ adj x` is not positive: `x adj x = det x · 1`, and at
-  `x = diag(1, -1)` the reduced trace of `x adj x` is `-2`.
+  `x = diag(1, -1)` the reduced trace of `x adj x` is `-2` and its regular trace (the trace of
+  left multiplication on the `4`-dimensional space `M_2(ℚ)`) is `-4`.
 * On `ℚ(i)`, realised as `QuadraticAlgebra ℚ (-1) 0`, the identity is not positive
   (`Trd(i · i) = -2`), while complex conjugation is (`Trd(x x*) = 2 |x|²`).
 -/
@@ -48,8 +50,7 @@ def transpose (n : Type*) [Fintype n] [DecidableEq n] :
     PositiveInvolution (Matrix n n ℚ) :=
   PositiveInvolution.ofStarRing fun x hx ↦ by
     rw [star_eq_conjTranspose, semisimpleReducedTrace_matrix]
-    exact (posSemidef_self_mul_conjTranspose x).trace_nonneg.lt_of_ne'
-      (trace_mul_conjTranspose_self_eq_zero_iff.not.2 hx)
+    exact trace_mul_conjTranspose_self_pos hx
 
 example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n ℚ) :
     (transpose n).toStarRing.star x = xᵀ :=
@@ -72,6 +73,30 @@ theorem not_positiveInvolution_adjugate :
   have h := P.semisimpleReducedTrace_mul_star_pos !![1, 0; 0, -1] fun h ↦ by
     simpa using congrFun (congrFun h 0) 0
   rw [hP, semisimpleReducedTrace_diag_one_neg_one_mul_adjugate] at h
+  norm_num at h
+
+/-- At `x = diag(1, -1)`, the regular trace of `x adj x = -1`, the trace of left multiplication
+on `M_2(ℚ)`, is `-4`. -/
+theorem trace_mulLeft_diag_one_neg_one_mul_adjugate :
+    LinearMap.trace ℚ (Matrix (Fin 2) (Fin 2) ℚ)
+      (LinearMap.mulLeft ℚ (!![1, 0; 0, -1] * adjugate !![1, 0; 0, -1])) = -4 := by
+  have h : (!![1, 0; 0, -1] * adjugate !![1, 0; 0, -1] : Matrix (Fin 2) (Fin 2) ℚ) = -1 := by
+    rw [adjugate_fin_two]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  have hL : LinearMap.mulLeft ℚ (-1 : Matrix (Fin 2) (Fin 2) ℚ) = -LinearMap.id := by
+    ext1 x
+    simp
+  rw [h, hL, map_neg, LinearMap.trace_id, Module.finrank_matrix]
+  norm_num
+
+/-- The canonical involution of `M_2(ℚ)` also fails positivity for the regular trace. -/
+example : ¬ ∃ P : PositiveInvolution (Matrix (Fin 2) (Fin 2) ℚ),
+    ∀ x, P.toStarRing.star x = adjugate x := by
+  rintro ⟨P, hP⟩
+  have h := P.trace_mulLeft_mul_star_pos (x := !![1, 0; 0, -1]) fun h ↦ by
+    simpa using congrFun (congrFun h 0) 0
+  rw [hP, trace_mulLeft_diag_one_neg_one_mul_adjugate] at h
   norm_num at h
 
 /-! ### Involutions of `ℚ(i)` -/

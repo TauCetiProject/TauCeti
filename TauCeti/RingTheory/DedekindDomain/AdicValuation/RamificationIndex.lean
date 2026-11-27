@@ -112,14 +112,21 @@ theorem isWildlyRamified_adicCompletion_iff :
       ((w.asIdeal.ramificationIdx R : ℕ) : R ⧸ v.asIdeal) = 0 := by
   rw [← TauCeti.not_isTamelyRamified_iff, isTamelyRamified_adicCompletion_iff v w, not_ne_iff]
 
+/-- **Unramifiedness of the completed extension.** The extension of local fields `L_w / K_v` is
+unramified if and only if the ramification index of `w` over `R` equals `1`. -/
+@[simp]
+theorem isUnramified_adicCompletion_iff :
+    TauCeti.IsUnramified (v.adicCompletion K) (w.adicCompletion L) ↔
+      w.asIdeal.ramificationIdx R = 1 := by
+  rw [TauCeti.isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_adicCompletion v w]
+
 /-- **An unramified place gives an unramified completed extension.** If `B` is essentially of
 finite type over `R` and `w` is unramified over `R`, the extension of local fields `L_w / K_v` is
 unramified. -/
 theorem isUnramified_adicCompletion_of_isUnramifiedAt [Algebra.EssFiniteType R B]
     [Algebra.IsUnramifiedAt R w.asIdeal] :
-    TauCeti.IsUnramified (v.adicCompletion K) (w.adicCompletion L) := by
-  rw [TauCeti.isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_adicCompletion v w,
-    Ideal.ramificationIdx_eq_one w.asIdeal R]
+    TauCeti.IsUnramified (v.adicCompletion K) (w.adicCompletion L) :=
+  (isUnramified_adicCompletion_iff v w).2 (Ideal.ramificationIdx_eq_one w.asIdeal R)
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt

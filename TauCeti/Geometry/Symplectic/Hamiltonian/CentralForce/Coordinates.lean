@@ -67,6 +67,8 @@ are the momenta conjugate to `r` and `θ`: the values of the covector `p` on the
 * `TauCeti.centralForceHamiltonian_polarCanonicalDiffeomorph`: `H = p_r² / (2m) + U_L(r)`.
 * `TauCeti.fst_polarCanonicalDiffeomorph`: the coordinates cover the polar coordinates of the
   plane.
+* `TauCeti.isLocalDiffeomorphAt_smul_polarRadialUnit`: polar coordinates `(r, θ) ↦ r e_r` with a
+  real angle are a local diffeomorphism on `r > 0`.
 
 The descent along the quotient map `ℝ → AddCircle (2 * π)` and the passage from a bijective local
 diffeomorphism to a global diffeomorphism follow the oscillator action-angle coordinates of
@@ -571,6 +573,29 @@ theorem coe_polarPlaneDiffeomorph_symm_apply (q : puncturedSpace V) :
     ((polarPlaneDiffeomorph b).symm q : ℝ × AddCircle (2 * π)) =
       (‖(q : V)‖, (((polarAngle (b 0) (b 1) q).toReal : ℝ) : AddCircle (2 * π))) :=
   (rfl)
+
+/-- **Polar coordinates with a real angle are a local diffeomorphism off the origin.** At
+`(r, θ)` with `r > 0`, the map `(r, θ) ↦ r e_r` from `ℝ × ℝ` to the plane is a local
+diffeomorphism: it is the quotient map `θ ↦ θ mod 2π` followed by
+`TauCeti.polarPlaneDiffeomorph`. -/
+theorem isLocalDiffeomorphAt_smul_polarRadialUnit {x : ℝ × ℝ} (hr : 0 < x.1) :
+    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) ∞
+      (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x := by
+  let y : polarHalfCylinder := ⟨(x.1, x.2), mem_polarHalfCylinder.2 hr⟩
+  -- On the half-cylinder, `polarPlaneMap` is the diffeomorphism `polarPlaneDiffeomorph`.
+  have hP :
+      IsLocalDiffeomorphAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, V) ∞ (polarPlaneMap (b 0) (b 1)) y := by
+    have h : IsLocalDiffeomorphAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, V) ∞
+        (polarPlaneMap (b 0) (b 1) ∘ Subtype.val) y :=
+      IsLocalDiffeomorphAt.comp (hf := (polarPlaneDiffeomorph b).isLocalDiffeomorph y)
+        (hg := isLocalDiffeomorph_subtype_val _)
+    exact h.of_comp_right (isLocalDiffeomorph_subtype_val y)
+  have hcomp : (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) =
+      polarPlaneMap (b 0) (b 1) ∘ Prod.map id ((↑) : ℝ → AddCircle (2 * π)) :=
+    funext fun x ↦ (polarPlaneMap_coe _ _ x.1 x.2).symm
+  rw [hcomp]
+  exact IsLocalDiffeomorphAt.comp (hf := AddCircle.isLocalDiffeomorph_prodMap_id_coe (2 * π) ∞ x)
+    (hg := hP)
 
 /-- **Global polar canonical coordinates lie over polar coordinates of the plane.** The position of
 the point with polar canonical coordinates `((r, p_r), (θ, L))` is the point with polar coordinates

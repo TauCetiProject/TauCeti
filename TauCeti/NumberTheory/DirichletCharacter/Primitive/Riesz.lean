@@ -10,7 +10,7 @@ public import TauCeti.Analysis.LaplaceTransform.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.RemainderMellin
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.RieszMellin
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.RayClass
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
@@ -125,6 +125,42 @@ theorem rieszRemainder_of_ne_one {χ : PrimitiveDirichletCharacter} (hχ : χ �
       rieszSum (fun n ↦ χ.character n * (Λ n : ℂ)) y +
         (y : ℂ) * logDeriv χ.character.LFunction 1 := by
   simp [rieszRemainder, hχ]
+
+open Complex in
+/-- The real part of the first Riesz remainder has a quadratic upper bound on `y ≥ 1`. -/
+theorem exists_re_rieszRemainder_le_rpow_two (χ : PrimitiveDirichletCharacter) :
+    ∃ D : ℝ, 0 ≤ D ∧ ∀ y ≥ 1, (χ.rieszRemainder y).re ≤ D * y ^ (2 : ℝ) := by
+  let a (n : ℕ) := χ.character n * (Λ n : ℂ)
+  let M := ∑' n : ℕ, ‖LSeries.term a (2 : ℂ) n‖
+  have hM : 0 ≤ M := tsum_nonneg fun _ ↦ norm_nonneg _
+  have hs : LSeriesSummable a (2 : ℂ) :=
+    χ.character.LSeriesSummable_twist_vonMangoldt (by norm_num)
+  have hsum (y : ℝ) (hy : 1 ≤ y) : (rieszSum a y).re ≤ M * y ^ (2 : ℝ) := by
+    rw [mul_comm M]
+    exact (re_le_norm _).trans (norm_rieszSum_le (σ := 2) (by norm_num) (zero_le_one.trans hy) hs)
+  have hy₂ {y : ℝ} (hy : 1 ≤ y) : y ≤ y ^ (2 : ℝ) :=
+    Real.self_le_rpow_of_one_le hy (by norm_num)
+  by_cases hχ : χ = 1
+  · let D : ℝ := 1 + Real.eulerMascheroniConstant
+    refine ⟨M + |D|, add_nonneg hM (abs_nonneg _), fun y hy ↦ ?_⟩
+    have ha : rieszSum a y = rieszSum (fun n ↦ (Λ n : ℂ)) y := by
+      subst χ
+      simp only [a, character_one_apply, one_mul]
+    have hlin : y * D ≤ |D| * y ^ (2 : ℝ) := calc
+      y * D ≤ y * |D| := mul_le_mul_of_nonneg_left (le_abs_self _) (zero_le_one.trans hy)
+      _ ≤ |D| * y ^ (2 : ℝ) := by
+        rw [mul_comm y]
+        exact mul_le_mul_of_nonneg_left (hy₂ hy) (abs_nonneg _)
+    rw [hχ, rieszRemainder_one, ← ha]
+    simp only [add_re, sub_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero, one_re, add_mul]
+    have hlog : 0 ≤ y * Real.log y := mul_nonneg (zero_le_one.trans hy) (Real.log_nonneg hy)
+    exact add_le_add (hsum y hy) ((sub_le_self _ hlog).trans hlin)
+  · let d := logDeriv χ.character.LFunction 1
+    refine ⟨M + ‖d‖, add_nonneg hM (norm_nonneg _), fun y hy ↦ ?_⟩
+    rw [rieszRemainder_of_ne_one hχ, add_re, add_mul]
+    refine add_le_add (hsum y hy) ((re_le_norm ((y : ℂ) * d)).trans ?_)
+    rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_nonneg (zero_le_one.trans hy), mul_comm y]
+    exact mul_le_mul_of_nonneg_left (hy₂ hy) (norm_nonneg _)
 
 /-- The first Riesz remainder is continuous, including at the lower Mellin endpoint `1`. -/
 theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
