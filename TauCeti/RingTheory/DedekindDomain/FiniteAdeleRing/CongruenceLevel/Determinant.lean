@@ -20,7 +20,9 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 Over the finite adeles of a Dedekind domain `R` with fraction field `K`, with `Ô` the integral
 adeles, the determinants of the levels of `GL₂` over a commutative ring
 (`TauCeti.GL2K1.map_det`, `TauCeti.GL2K0.map_det`) and of the reduction kernel
-(`Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`) give for every ideal `N` of `R`:
+(`Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`), transported along the inclusion
+`GL₂(Ô) → GL₂(𝔸_f)` (`IsDedekindDomain.FiniteAdeleRing.map_det_map_integralGL`), give for every
+ideal `N` of `R`:
 
 * `det K₀(N) = det K₁(N) = Ô^×`, the everywhere-integral units `integralUnits R K` of `𝔸_f`;
 * `det K(N) = {x ∈ Ô^× : x ≡ 1 mod NÔ}`.
@@ -29,8 +31,6 @@ For `R = ℤ` these are the determinants of `K₀(N)`, `K₁(N)` and `K(N)` in `
 
 ## Main results
 
-* `IsDedekindDomain.FiniteAdeleRing.map_det_map_integralGL`: the determinant of the image in
-  `GL_n(𝔸_f)` of a subgroup of `GL_n(Ô)` is the image of its determinant.
 * `IsDedekindDomain.FiniteAdeleRing.map_det_level1`,
   `IsDedekindDomain.FiniteAdeleRing.map_det_level0`: `det K₁(N) = det K₀(N) = Ô^×`.
 * `IsDedekindDomain.FiniteAdeleRing.map_det_principalLevel`:
@@ -54,17 +54,6 @@ open TauCeti
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
-
-/-- The determinant of the image in `GL_n(𝔸_f)` of a subgroup `H ≤ GL_n(Ô)` is the image in
-`𝔸_f^×` of the determinant of `H`. -/
-theorem map_det_map_integralGL {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (H : Subgroup (GL ι (integralAdeles R K))) :
-    (H.map (integralGL K ι)).map GeneralLinearGroup.det =
-      (H.map GeneralLinearGroup.det).map
-        (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])) := by
-  rw [Subgroup.map_map, Subgroup.map_map]
-  congr 1
-  exact MonoidHom.ext fun g ↦ det_integralGL g
 
 /-- **`det K₁(N) = Ô^×`**: the determinants of `K₁(N)` are the everywhere-integral units. -/
 theorem map_det_level1 (N : Ideal R) :

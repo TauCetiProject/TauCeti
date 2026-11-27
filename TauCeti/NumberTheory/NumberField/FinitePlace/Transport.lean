@@ -18,6 +18,8 @@ finite place `v` of `K` to the finite place
 that `e` itself carries the `v`-adic valuation to the valuation of any finite place `w` of `L`
 whose ideal is the image of that of `v`, and in particular to the valuation of the corresponding
 place. This is the hypothesis `adicCompletionCongr` needs to extend `e` to the adic completions.
+The corresponding place is the only finite place of `L` doing so; this is the finite-place
+counterpart of `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`.
 
 ## Main results
 
@@ -25,6 +27,8 @@ place. This is the hypothesis `adicCompletionCongr` needs to extend `e` to the a
   `w.valuation L (e x) = v.valuation K x`.
 * `RingEquiv.valuation_equivOfRingEquiv`: the same for the finite place of `L` corresponding to
   `v`.
+* `IsDedekindDomain.HeightOneSpectrum.eq_equivOfRingEquiv_mapRingEquiv_iff`: a finite place `w'`
+  of `L` is the place corresponding to `w` exactly when `|e x|_{w'} = |x|_w` for every `x ∈ K`.
 -/
 
 public section
@@ -54,3 +58,21 @@ theorem valuation_equivOfRingEquiv (e : K ≃+* L) (v : HeightOneSpectrum (𝓞 
   e.valuation_apply_of_asIdeal_eq (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v) x
 
 end RingEquiv
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {K L : Type*} [Field K] [Field L] [NumberField K] [NumberField L]
+
+/-- **The image of a finite place is characterised by its valuation**: a finite place `w'` of `L`
+satisfies `|e x|_{w'} = |x|_w` for all `x ∈ K` exactly when it is the image of `w` under the
+isomorphism `𝓞 K ≃+* 𝓞 L` induced by `e`. -/
+theorem eq_equivOfRingEquiv_mapRingEquiv_iff (e : K ≃+* L) {w : HeightOneSpectrum (𝓞 K)}
+    {w' : HeightOneSpectrum (𝓞 L)} :
+    w' = equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) w ↔
+      ∀ x, w'.valuation L (e x) = w.valuation K x := by
+  refine ⟨fun h ↦ h ▸ e.valuation_equivOfRingEquiv w, fun hw ↦ ?_⟩
+  refine valuation_injective L (Valuation.ext fun y ↦ ?_)
+  obtain ⟨x, rfl⟩ := e.surjective y
+  rw [hw, e.valuation_equivOfRingEquiv]
+
+end IsDedekindDomain.HeightOneSpectrum

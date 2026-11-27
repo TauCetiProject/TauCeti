@@ -20,7 +20,9 @@ import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 Let `R` be a commutative ring with an involution `star`. For a square matrix `A` over `R`, the
 **unitary group of `A`**, `Matrix.unitaryGroupOf A`, is the subgroup of `GL n R` of the
 matrices `g` with `star g * A * g = A`: the invertible matrices preserving the sesquilinear form
-`⟨z, w⟩ = star z ⬝ᵥ A *ᵥ w` of Gram matrix `A`, conjugate-linear in the first slot.
+`⟨z, w⟩ = star z ⬝ᵥ A *ᵥ w` of Gram matrix `A`, conjugate-linear in the first slot. The definition,
+and its behaviour under conjugation by a matrix `x` pulling one form back to another, only use
+that `R` is a semiring with an involution, commutative or not.
 
 For `J = LieAlgebra.Orthogonal.indefiniteDiagonal p q R = diag(1, …, 1, -1, …, -1)`, the Gram
 matrix of the Hermitian form
@@ -82,10 +84,10 @@ The basic structure of these groups is recorded here.
 * `Matrix.star_mem_unitaryGroupOf_iff_of_mul_self_eq_one`: for an involution `A` (`A * A = 1`),
   `unitaryGroupOf A` is stable under conjugate transposition.
 * `Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
-* `Matrix.inv_mul_mul_mem_unitaryGroupOf`: conjugation by an isometry `x` with
-  `star x * A * x = B` maps `unitaryGroupOf A` into `unitaryGroupOf B`, and
-  `Matrix.star_mul_mul_mul_eq_of_mem_unitaryGroupOf`: such an `x` stays an isometry after right
-  multiplication by `unitaryGroupOf B`.
+* `Matrix.inv_mul_mul_mem_unitaryGroupOf`: conjugation by an invertible `x` pulling the form `A`
+  back to `B` (`star x * A * x = B`) maps `unitaryGroupOf A` into `unitaryGroupOf B`, and
+  `Matrix.star_mul_mul_mul_eq_of_mem_unitaryGroupOf`: such an `x` still pulls `A` back to `B` after
+  right multiplication by `unitaryGroupOf B`.
 * `Matrix.map_mem_unitaryGroupOf`: a ring homomorphism commuting with the involutions maps
   `unitaryGroupOf A` into `unitaryGroupOf (A.map f)`.
 * `Matrix.unitaryGroupOf.scalarHom_injective`: the embedding of the unitary scalars is
@@ -124,9 +126,25 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-section CommRing
+section NonUnitalSemiring
 
-variable {R : Type*} [CommRing R] [StarRing R]
+variable {R : Type*} [NonUnitalSemiring R] [StarRing R] {A : Matrix n n R}
+
+omit [DecidableEq n] in
+/-- If `x` pulls the form of Gram matrix `A` back to the form of Gram matrix `B`, that is
+`star x * A * x = B`, then the Gram matrix for `A` of the family of vectors `x * F` is the Gram
+matrix for `B` of the family `F`: `(x F)ᴴ A (x F) = Fᴴ B F`. Here `x` sends vectors on the side of
+`B` to vectors on the side of `A`. For `B = A`, an isometry of `A` does not change Gram matrices. -/
+theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m : Type*} {B x : Matrix n n R}
+    (hx : star x * A * x = B) (F : Matrix n m R) : (x * F)ᴴ * A * (x * F) = Fᴴ * B * F := by
+  rw [← hx]
+  simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
+
+end NonUnitalSemiring
+
+section Semiring
+
+variable {R : Type*} [Semiring R] [StarRing R]
 
 /-- The **unitary group of a sesquilinear form**: the invertible matrices `g` with
 `star g * A * g = A`, that is the invertible matrices preserving the form
@@ -156,20 +174,44 @@ theorem mem_unitaryGroupOf_iff {g : GL n R} :
     g ∈ unitaryGroupOf A ↔ star (g : Matrix n n R) * A * g = A :=
   Iff.rfl
 
-omit [DecidableEq n] in
-/-- A matrix `x` carrying the form of Gram matrix `A` to the form of Gram matrix `B`, that is
-`star x * A * x = B`, carries the Gram matrix of a family of vectors for `A` to that for `B`:
-`(x F)ᴴ A (x F) = Fᴴ B F`. For `B = A`, an isometry of `A` does not change Gram matrices. -/
-theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m : Type*} {B x : Matrix n n R}
-    (hx : star x * A * x = B) (F : Matrix n m R) : (x * F)ᴴ * A * (x * F) = Fᴴ * B * F := by
-  rw [← hx]
-  simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
-
 /-- Two elements of `unitaryGroupOf A` are equal when their matrices are. -/
 @[ext]
 theorem unitaryGroupOf.ext {g h : unitaryGroupOf A}
     (H : ((g : GL n R) : Matrix n n R) = ((h : GL n R) : Matrix n n R)) : g = h :=
   Subtype.ext <| Units.ext H
+
+/-- **Conjugation by an invertible matrix pulling back the form.** If `x` pulls the form of Gram
+matrix `A` back to the form of Gram matrix `B`, that is `star x * A * x = B`, then
+`g ↦ x⁻¹ * g * x` maps `unitaryGroupOf A` into `unitaryGroupOf B`. -/
+theorem inv_mul_mul_mem_unitaryGroupOf {B : Matrix n n R} {x : GL n R}
+    (hx : star (x : Matrix n n R) * A * x = B) {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
+    x⁻¹ * g * x ∈ unitaryGroupOf B := by
+  rw [mem_unitaryGroupOf_iff] at hg ⊢
+  set y : Matrix n n R := ((x⁻¹ : GL n R) : Matrix n n R)
+  -- `x⁻¹` pulls the form `B` back to the form `A`: this is the Gram identity for `F = x⁻¹`.
+  have h : star y * B * y = A := by
+    have h := conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx y
+    rw [Units.mul_inv, conjTranspose_one, Matrix.one_mul, Matrix.mul_one] at h
+    rw [star_eq_conjTranspose, ← h]
+  -- `(x⁻¹ (g x))ᴴ B (x⁻¹ (g x)) = (g x)ᴴ A (g x) = xᴴ A x = B`
+  have h' := conjTranspose_mul_mul_mul_of_star_mul_mul_eq h ((g * x : GL n R) : Matrix n n R)
+  rw [Units.val_mul, conjTranspose_mul_mul_mul_of_star_mul_mul_eq hg,
+    ← star_eq_conjTranspose (x : Matrix n n R), hx] at h'
+  simpa only [y, Units.val_mul, Matrix.mul_assoc, star_eq_conjTranspose] using h'
+
+/-- If `x` pulls the form of Gram matrix `A` back to the form of Gram matrix `B`, that is
+`star x * A * x = B`, then so does `x * g` for every `g ∈ unitaryGroupOf B`. -/
+theorem star_mul_mul_mul_eq_of_mem_unitaryGroupOf {B x : Matrix n n R}
+    (hx : star x * A * x = B) {g : GL n R} (hg : g ∈ unitaryGroupOf B) :
+    star (x * (g : Matrix n n R)) * A * (x * (g : Matrix n n R)) = B := by
+  rw [star_eq_conjTranspose, conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx,
+    ← star_eq_conjTranspose, mem_unitaryGroupOf_iff.1 hg]
+
+end Semiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R] [StarRing R] {A : Matrix n n R}
 
 /-- **`unitaryGroupOf A` is the group of isometries of the form**: `g ∈ unitaryGroupOf A` exactly
 when `⟨g x, g y⟩ = ⟨x, y⟩` for all `x` and `y`, where `⟨x, y⟩ = star x ⬝ᵥ A *ᵥ y`. -/
@@ -239,40 +281,15 @@ theorem det_mem_unitary_of_mem_unitaryGroupOf (hA : IsUnit A) {g : GL n R}
   rw [Unitary.mem_iff_star_mul_self]
   exact ((isUnit_iff_isUnit_det A).mp hA).mul_eq_right.mp h
 
-/-- **Conjugation by an isometry.** If `x` carries the form of Gram matrix `B` to the form of Gram
-matrix `A`, that is `star x * A * x = B`, then `g ↦ x⁻¹ * g * x` maps `unitaryGroupOf A` into
-`unitaryGroupOf B`. -/
-theorem inv_mul_mul_mem_unitaryGroupOf {B : Matrix n n R} {x : GL n R}
-    (hx : star (x : Matrix n n R) * A * x = B) {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
-    x⁻¹ * g * x ∈ unitaryGroupOf B := by
-  rw [mem_unitaryGroupOf_iff] at hg ⊢
-  set y : Matrix n n R := ((x⁻¹ : GL n R) : Matrix n n R)
-  -- `x⁻¹` carries the form `B` back to the form `A`.
-  have h : star y * B * y = A := by
-    rw [← hx, ← Matrix.mul_assoc, ← Matrix.mul_assoc, ← star_mul, Units.mul_inv, star_one,
-      Matrix.one_mul, Matrix.mul_assoc, Units.mul_inv, Matrix.mul_one]
-  -- `(x⁻¹ (g x))ᴴ B (x⁻¹ (g x)) = (g x)ᴴ A (g x) = xᴴ A x = B`
-  have h' := conjTranspose_mul_mul_mul_of_star_mul_mul_eq h ((g * x : GL n R) : Matrix n n R)
-  rw [Units.val_mul, conjTranspose_mul_mul_mul_of_star_mul_mul_eq hg,
-    ← star_eq_conjTranspose (x : Matrix n n R), hx] at h'
-  simpa only [y, Units.val_mul, Matrix.mul_assoc, star_eq_conjTranspose] using h'
-
-/-- If `x` carries the form of Gram matrix `B` to the form of Gram matrix `A`, that is
-`star x * A * x = B`, then so does `x * g` for every `g ∈ unitaryGroupOf B`. -/
-theorem star_mul_mul_mul_eq_of_mem_unitaryGroupOf {B : Matrix n n R} {x : GL n R}
-    (hx : star (x : Matrix n n R) * A * x = B) {g : GL n R} (hg : g ∈ unitaryGroupOf B) :
-    star ((x * g : GL n R) : Matrix n n R) * A * (x * g : GL n R) = B := by
-  rw [Units.val_mul, star_eq_conjTranspose, conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx,
-    ← star_eq_conjTranspose, mem_unitaryGroupOf_iff.1 hg]
-
 /-- A ring homomorphism commuting with the involutions maps `unitaryGroupOf A` into
 `unitaryGroupOf (A.map f)`. -/
 theorem map_mem_unitaryGroupOf {S : Type*} [CommRing S] [StarRing S] {f : R →+* S}
     (hf : ∀ r, f (star r) = star (f r)) {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
     GeneralLinearGroup.map f g ∈ unitaryGroupOf (A.map f) := by
-  rw [mem_unitaryGroupOf_iff] at hg ⊢
-  rw [GeneralLinearGroup.val_map_apply, star_eq_conjTranspose,
-    ← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, ← star_eq_conjTranspose, hg]
+  -- Apply `f` entrywise to the equation `gᴴ A g = A`.
+  have h := congrArg (fun M ↦ M.map f) (mem_unitaryGroupOf_iff.1 hg)
+  simp only [Matrix.map_mul, star_eq_conjTranspose, conjTranspose_map f hf] at h
+  rw [mem_unitaryGroupOf_iff, GeneralLinearGroup.val_map_apply, star_eq_conjTranspose, h]
 
 namespace unitaryGroupOf
 

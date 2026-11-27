@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.Unique
 
 /-!
@@ -27,6 +28,13 @@ Over any topological star semiring `α`:
 Conjugation by a fixed unitary matrix and by its inverse are continuous for the
 entrywise topology, giving a continuous linear equivalence on the matrix space.
 
+Over a Hausdorff topological ring with continuous star, the unitary group
+`Matrix.unitaryGroupOf A` of a Gram matrix `A`, the invertible matrices `g` with
+`star g * A * g = A`, is a closed subgroup of the general linear group with the topology of units
+(`Matrix.isClosed_unitaryGroupOf`). For invertible `A` it is also a closed subset of the matrices,
+with the subspace topology (`Matrix.unitaryGroupOf.isClosedEmbedding_val`), since its inverse
+`A⁻¹ * star g * A` is a continuous function of `g`.
+
 ## Main definitions
 
 * `Matrix.unitaryReindexContinuousMulEquiv`: the isomorphism of topological groups
@@ -35,6 +43,12 @@ entrywise topology, giving a continuous linear equivalence on the matrix space.
   `unitary (Matrix m m α) ≃ₜ* unitary α` for `[Unique m]`.
 * `Matrix.UnitaryGroup.conjStarAlgAutCLE`: the continuous linear equivalence induced by
   unitary conjugation on the matrix space.
+
+## Main results
+
+* `Matrix.isClosed_unitaryGroupOf`: `unitaryGroupOf A` is closed in `GL n R`.
+* `Matrix.unitaryGroupOf.isClosedEmbedding_val`: for invertible `A`, the coercion of
+  `unitaryGroupOf A` to the matrices is a closed embedding.
 -/
 
 public section
@@ -180,3 +194,52 @@ theorem conjStarAlgAutCLE_trans (U V : unitary (Matrix n n R)) :
     Unitary.star_eq_inv]
 
 end Matrix.UnitaryGroup
+
+namespace Matrix
+
+section UnitaryGroupOf
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- `unitaryGroupOf A` is a closed subgroup of `GL n R`: it is cut out by the continuous equation
+`star g * A * g = A`. -/
+theorem isClosed_unitaryGroupOf {R : Type*} [CommRing R] [StarRing R] [TopologicalSpace R]
+    [IsTopologicalRing R] [ContinuousStar R] [T2Space R] (A : Matrix n n R) :
+    IsClosed (unitaryGroupOf A : Set (GL n R)) := by
+  have h : (unitaryGroupOf A : Set (GL n R)) =
+      {g : GL n R | star (g : Matrix n n R) * A * g = A} :=
+    Set.ext fun _ => mem_unitaryGroupOf_iff
+  rw [h]
+  exact isClosed_eq (((Units.continuous_val.star).matrix_mul continuous_const).matrix_mul
+    Units.continuous_val) continuous_const
+
+/-- **`unitaryGroupOf A` is a closed subset of the matrices**, for invertible `A`: the coercion to
+matrices is a closed embedding. The topology of `GL n R` is that of the pair `(g, g⁻¹)`, and on
+`unitaryGroupOf A` the inverse `A⁻¹ * star g * A` is a continuous function of `g`; the image is
+cut out by the continuous equation `star M * A * M = A`, every solution of which is invertible. -/
+theorem unitaryGroupOf.isClosedEmbedding_val {R : Type*} [CommRing R] [StarRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [ContinuousStar R] [T2Space R] {A : Matrix n n R}
+    (hA : IsUnit A) :
+    Topology.IsClosedEmbedding fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) := by
+  have hc : Continuous fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) :=
+    Units.continuous_val.comp continuous_subtypeVal
+  have hrange : Set.range (fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R)) =
+      {M | star M * A * M = A} :=
+    Set.ext fun M => ⟨fun ⟨g, hg⟩ => hg ▸ mem_unitaryGroupOf_iff.mp g.property,
+      fun hM => ⟨ofMatrix hA M hM, val_ofMatrix hA M hM⟩⟩
+  refine ⟨⟨Topology.IsInducing.of_comp hc
+      (g := fun M : Matrix n n R => (M, MulOpposite.op (A⁻¹ * star M * A)))
+      (continuous_id.prodMk (MulOpposite.continuous_op.comp
+        ((continuous_const.matrix_mul continuous_id.star).matrix_mul continuous_const))) ?_,
+    fun g h hgh => unitaryGroupOf.ext hgh⟩, ?_⟩
+  · -- The composite is `g ↦ (g, g⁻¹)`, the inducing map defining the topology of `GL n R`.
+    convert Units.isInducing_embedProduct.comp Topology.IsInducing.subtypeVal using 1
+    funext g
+    simp [Units.embedProduct_apply, val_inv_of_mem_unitaryGroupOf hA g.property]
+  · rw [hrange]
+    exact isClosed_eq ((continuous_id.star.matrix_mul continuous_const).matrix_mul continuous_id)
+      continuous_const
+
+end UnitaryGroupOf
+
+end Matrix

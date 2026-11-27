@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
@@ -21,11 +20,11 @@ group; the former is the finite component of the latter. Transport of finite ade
 integral finite adeles (`TauCeti.GlobalNumberFields.finiteAdeleEquiv_mem_integralAdeles_iff`).
 
 Place by place, a field isomorphism `e : K ≃+* L` carries a finite place `w` of `K` to the finite
-place `e w` of `L`, the image of `w` under the induced isomorphism `𝓞 K ≃+* 𝓞 L`, which is the
-unique finite place with `|e x|_{e w} = |x|_w` for `x ∈ K`
-(`TauCeti.GlobalNumberFields.eq_equivOfRingEquiv_mapRingEquiv_iff`). The component at `e w` of
-the transport of a finite adele `a` is the image of `a_w` under the isomorphism `K_w ≃ L_{e w}`
-extending `e` (`TauCeti.GlobalNumberFields.finiteAdeleEquiv_apply_eq_adicCompletionCongr`).
+place `e w` of `L`, the unique finite place with `|e x|_{e w} = |x|_w` for `x ∈ K`
+(`IsDedekindDomain.HeightOneSpectrum.eq_equivOfRingEquiv_mapRingEquiv_iff`). The component at
+`e w` of the transport of a finite adele `a` is the image of `a_w` under the isomorphism
+`K_w ≃ L_{e w}` extending `e`
+(`TauCeti.GlobalNumberFields.finiteAdeleEquiv_apply_eq_adicCompletionCongr`).
 
 The construction uses `finiteAdeleExtension` and `infiniteAdeleExtension` with the algebra
 structure induced by the field isomorphism. In particular, it preserves the restricted-product
@@ -269,36 +268,11 @@ theorem finiteAdeleEquiv_mem_integralAdeles_iff (e : K ≃+* L) {x : FiniteAdele
   simpa [← finiteAdeleEquiv_symm] using finiteAdeleEquiv_mem_integralAdeles e.symm hx
 
 variable {K L} in
-/-- **The image of a finite place.** A field isomorphism `e : K ≃+* L` carries the `w`-adic
-valuation of `K` to the valuation of `L` at the image of `w` under the induced isomorphism
-`𝓞 K ≃+* 𝓞 L`: `|e x|_{e w} = |x|_w`. -/
-theorem valuation_equivOfRingEquiv_mapRingEquiv (e : K ≃+* L) (w : HeightOneSpectrum (𝓞 K))
-    (x : K) :
-    (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) w).valuation L (e x) =
-      w.valuation K x := by
-  simpa only [RingOfIntegers.ringEquivOfRingEquiv_mapRingEquiv] using
-    HeightOneSpectrum.valuation_ringEquivOfRingEquiv (K := K) (K' := L)
-      (RingOfIntegers.mapRingEquiv e) (HeightOneSpectrum.asIdeal_equivOfRingEquiv _ w) x
-
-variable {K L} in
-/-- **The image of a finite place is characterised by its valuation**: a finite place `w'` of `L`
-satisfies `|e x|_{w'} = |x|_w` for all `x ∈ K` exactly when it is the image of `w` under the
-isomorphism `𝓞 K ≃+* 𝓞 L` induced by `e`. -/
-theorem eq_equivOfRingEquiv_mapRingEquiv_iff (e : K ≃+* L) {w : HeightOneSpectrum (𝓞 K)}
-    {w' : HeightOneSpectrum (𝓞 L)} :
-    w' = HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) w ↔
-      ∀ x, w'.valuation L (e x) = w.valuation K x := by
-  refine ⟨fun h ↦ h ▸ valuation_equivOfRingEquiv_mapRingEquiv e w, fun hw ↦ ?_⟩
-  refine HeightOneSpectrum.valuation_injective L (Valuation.ext fun y ↦ ?_)
-  obtain ⟨x, rfl⟩ := e.surjective y
-  rw [hw, valuation_equivOfRingEquiv_mapRingEquiv]
-
-variable {K L} in
 /-- **Transport of finite adeles at a place.** If the field isomorphism `e : K ≃+* L` carries the
 `w`-adic valuation to the `w'`-adic valuation, `|e x|_{w'} = |x|_w` for `x ∈ K` (that is, `w'` is
-the image of `w`, `eq_equivOfRingEquiv_mapRingEquiv_iff`), then the component at `w'` of the
-transport of a finite adele `a` is the image of its component `a_w` under the isomorphism
-`K_w ≃ L_{w'}` extending `e`. -/
+the image of `w`, `IsDedekindDomain.HeightOneSpectrum.eq_equivOfRingEquiv_mapRingEquiv_iff`),
+then the component at `w'` of the transport of a finite adele `a` is the image of its component
+`a_w` under the isomorphism `K_w ≃ L_{w'}` extending `e`. -/
 theorem finiteAdeleEquiv_apply_eq_adicCompletionCongr (e : K ≃+* L)
     {w : HeightOneSpectrum (𝓞 K)} {w' : HeightOneSpectrum (𝓞 L)}
     (hw : ∀ x, w'.valuation L (e x) = w.valuation K x) (a : FiniteAdeleRing (𝓞 K) K) :
