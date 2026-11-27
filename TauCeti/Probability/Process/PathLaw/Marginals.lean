@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Logic.Equiv.Fin.Basic
-public import TauCeti.MeasureTheory.MeasurableSpace.Pi
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
 public import TauCeti.Probability.Process.PathLaw.Basic
 import TauCeti.MeasureTheory.Measure.Measurability

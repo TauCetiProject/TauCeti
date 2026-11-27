@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.MeasurableSpace.Pi
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 public import TauCeti.Probability.Exchangeability.FiniteDeFinetti
 public import TauCeti.Probability.Exchangeability.PermutedPopulation
 import Mathlib.Tactic.NormNum

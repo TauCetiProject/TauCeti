@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi.SplitAt
 
 import Mathlib.Probability.Independence.Basic
-import TauCeti.MeasureTheory.MeasurableSpace.Pi
+import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 
 /-!
 # Coordinate projections of finite product measures

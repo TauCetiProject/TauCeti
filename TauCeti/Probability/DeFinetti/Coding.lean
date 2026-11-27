@@ -15,7 +15,7 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegr
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 import TauCeti.Probability.DeFinetti.Subsequence
 import TauCeti.Probability.Independence.InfinitePi
-import TauCeti.MeasureTheory.MeasurableSpace.Pi
+import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 
 /-!
 # The coding representation of an exchangeable sequence

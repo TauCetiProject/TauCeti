@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
-public import TauCeti.MeasureTheory.MeasurableSpace.Pi
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.Pairs

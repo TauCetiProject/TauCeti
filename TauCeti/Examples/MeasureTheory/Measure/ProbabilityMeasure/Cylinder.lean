@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.ProductMeasure
 public import Mathlib.Probability.UniformOn
-public import TauCeti.MeasureTheory.MeasurableSpace.Pi
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cylinder
 
 /-!
