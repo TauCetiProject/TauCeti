@@ -33,6 +33,8 @@ and keeps the others.
 * `Finsupp.signEquiv_one`, `Finsupp.signEquiv_trans`: the trivial signs give the identity, and
   composing sign changes multiplies the signs.
 * `Finsupp.support_signEquiv`: the sign change keeps the support.
+* `LinearMap.comp_signEquiv_eq_smul`: a linear map supported on the indices of one sign `u` is
+  multiplied by `u` under the sign change.
 * `Finsupp.signReversal_single`, `Finsupp.signReversal_apply`,
   `Finsupp.signReversal_signReversal`, `Finsupp.signReversal_symm`,
   `Finsupp.signReversal_trans_self`, `Finsupp.signReversal_empty`,
@@ -118,6 +120,19 @@ theorem support_signEquiv (c : α →₀ A) : (signEquiv R ε c).support = c.sup
   ext q
   rw [mem_support_iff, mem_support_iff, signEquiv_apply]
   rcases Int.units_eq_one_or (ε q) with h | h <;> simp [h]
+
+/-- **A linear map supported on one sign.** If an `R`-linear map `a` on `α →₀ A` vanishes on the
+coefficients at every `q` whose sign `ε q` is not `u`, then composing `a` with the sign change by
+`ε` multiplies it by `u`. For the Koszul sign `ε q = (-1) ^ |q|` of a graded basis, a linear form
+of degree `k` is multiplied by `(-1) ^ k`. -/
+theorem _root_.LinearMap.comp_signEquiv_eq_smul {N : Type*} [AddCommGroup N] [Module R N]
+    (a : (α →₀ A) →ₗ[R] N) {u : ℤˣ} (ha : ∀ q, ε q ≠ u → ∀ c, a (single q c) = 0) :
+    a ∘ₗ (signEquiv R ε).toLinearMap = (u : ℤ) • a := by
+  refine lhom_ext fun q c ↦ ?_
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, signEquiv_single, LinearMap.smul_apply]
+  by_cases hq : ε q = u
+  · rw [hq, ← smul_single, map_zsmul]
+  · rw [ha q hq, ha q hq, smul_zero]
 
 variable (R) in
 /-- The sign change by the trivial signs is the identity. -/
