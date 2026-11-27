@@ -12,6 +12,7 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.GrowthNearOne
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFreeRegion.Dirichlet
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFreeRegion.RiemannZeta
 import TauCeti.NumberTheory.LSeries.Quadratic.Siegel
@@ -152,7 +153,27 @@ private theorem eventually_entireLFunction_ne_zero_of_level_le_pow (B : ℕ) :
 private theorem norm_entireLFunction_le_mul_reference {B q : ℕ} [NeZero q]
     (χ : DirichletCharacter ℂ q) {y : ℝ} (hy : 1 ≤ y) (hq : (q : ℝ) ≤ y ^ B)
     {s : ℂ} (hs : ‖s - 1‖ ≤ 1 / 2) :
-    ‖χ.entireLFunction s‖ ≤ (16 * y ^ (B + 2)) * ‖χ.entireLFunction (1 + (y⁻¹ : ℝ))‖ := by
+    ‖χ.entireLFunction s‖ ≤ (72 * y ^ (B + 2)) * ‖χ.entireLFunction (1 + (y⁻¹ : ℝ))‖ := by
+  have hupper : ‖χ.entireLFunction s‖ ≤ 36 * q := by
+    have hre : |s.re - 1| ≤ 1 / 2 := by simpa using (abs_re_le_norm (s - 1)).trans hs
+    have hsre : 1 / 2 ≤ s.re := by linarith [(abs_le.mp hre).1]
+    have hsabs : ‖s‖ ≤ 3 / 2 := by
+      linarith [norm_le_norm_sub_add s 1, norm_one (α := ℂ)]
+    have hreg : ‖χ.regularizedLFunction s‖ ≤ 24 * q :=
+      (χ.norm_regularizedLFunction_le_mul_norm hsre).trans (by
+        calc
+          _ ≤ 16 * (q : ℝ) * (3 / 2) := by gcongr
+          _ = _ := by ring)
+    by_cases hχ : χ = 1
+    · subst χ
+      have hs₀ : s ≠ 0 := ne_zero_of_re_pos (by linarith)
+      calc
+        _ = ‖(1 : DirichletCharacter ℂ q).regularizedLFunction s‖ * ‖s‖ := by
+          rw [regularizedLFunction_one_apply, ← norm_mul, div_mul_cancel₀ _ hs₀]
+        _ ≤ (24 * (q : ℝ)) * (3 / 2) := by gcongr
+        _ = _ := by ring
+    · rw [entireLFunction_of_ne_one hχ, ← regularizedLFunction_of_ne_one χ hχ]
+      exact hreg.trans (by linarith)
   let z : ℂ := 1 + (y⁻¹ : ℝ)
   have hy₀ : 0 < y := zero_lt_one.trans_le hy
   have hz : 1 < z.re := by simpa [z] using inv_pos.mpr hy₀
@@ -162,9 +183,9 @@ private theorem norm_entireLFunction_le_mul_reference {B q : ℕ} [NeZero q]
     simpa only [hdist, hre, inv_inv, min_eq_right (inv_le_one_of_one_le₀ hy)] using
       χ.min_one_norm_sub_one_div_le_norm_entireLFunction hz
   calc
-    _ ≤ 8 * (q : ℝ) := χ.norm_entireLFunction_le_eight_mul_level hs
-    _ ≤ 8 * y ^ B := by gcongr
-    _ = (16 * y ^ (B + 2)) * (y⁻¹ / (2 * y)) := by rw [pow_add]; field_simp; ring
+    _ ≤ 36 * (q : ℝ) := hupper
+    _ ≤ 36 * y ^ B := by gcongr
+    _ = (72 * y ^ (B + 2)) * (y⁻¹ / (2 * y)) := by rw [pow_add]; field_simp; ring
     _ ≤ _ := mul_le_mul_of_nonneg_left
       ((div_le_div_of_nonneg_left (inv_nonneg.mpr hy₀.le) (by positivity) (by linarith)).trans
         hlower) (by positivity)
@@ -175,7 +196,7 @@ private theorem eventually_norm_logDeriv_near_one_sq (B : ℕ) :
         χ.entireLFunction s ≠ 0 ∧ ‖logDeriv χ.entireLFunction s‖ ≤ y ^ 2 := by
   have hlog : (fun y ↦ 6 * (B + 3 : ℝ) * log y) =o[atTop] (fun y : ℝ ↦ y) := by
     simpa only [rpow_one] using (isLittleO_log_rpow_atTop one_pos).const_mul_left (6 * (B + 3 : ℝ))
-  filter_upwards [eventually_gt_atTop (16 : ℝ),
+  filter_upwards [eventually_gt_atTop (72 : ℝ),
     eventually_entireLFunction_ne_zero_of_level_le_pow B, hlog.eventuallyLE]
     with y hy hzero hlog q _ χ hq s hs
   let r := y⁻¹
@@ -191,7 +212,7 @@ private theorem eventually_norm_logDeriv_near_one_sq (B : ℕ) :
   have hF₀ (w : ℂ) (hw : w ∈ ball z (4 * r)) : χ.entireLFunction w ≠ 0 :=
     hzero q χ hq w (hdist hw)
   have hM (w : ℂ) (hw : w ∈ ball z (4 * r)) :
-      ‖χ.entireLFunction w‖ ≤ (16 * y ^ (B + 2)) * ‖χ.entireLFunction z‖ :=
+      ‖χ.entireLFunction w‖ ≤ (72 * y ^ (B + 2)) * ‖χ.entireLFunction z‖ :=
     norm_entireLFunction_le_mul_reference χ hy₁ hq
       ((hdist hw).trans ((div_le_iff₀ hy₀).2 (by linarith)))
   have hs' : ‖s - z‖ ≤ 2 * r := by
@@ -201,15 +222,15 @@ private theorem eventually_norm_logDeriv_near_one_sq (B : ℕ) :
     linarith only [h, hs.trans hsmall]
   have hs'' : ‖s - z‖ < 4 * r := hs'.trans_lt (by linarith)
   refine ⟨hF₀ s (mem_ball_iff_norm.mpr hs''), ?_⟩
-  have hlogM : log (16 * y ^ (B + 2)) ≤ (B + 3 : ℝ) * log y := by
+  have hlogM : log (72 * y ^ (B + 2)) ≤ (B + 3 : ℝ) * log y := by
     rw [log_mul (by norm_num) (by positivity), log_pow, Nat.cast_add, Nat.cast_ofNat]
-    linarith [log_le_log (by norm_num : (0 : ℝ) < 16) hy.le]
+    linarith [log_le_log (by norm_num : (0 : ℝ) < 72) hy.le]
   calc
-    _ ≤ 4 * (4 * r + ‖s - z‖) / (4 * r - ‖s - z‖) ^ 2 * log (16 * y ^ (B + 2)) :=
+    _ ≤ 4 * (4 * r + ‖s - z‖) / (4 * r - ‖s - z‖) ^ 2 * log (72 * y ^ (B + 2)) :=
       norm_logDeriv_le_of_forall_mem_ball_norm_le_mul
         χ.differentiable_entireLFunction.differentiableOn hF₀ hM hs''
     _ ≤ 4 * (6 * r) / (2 * r) ^ 2 * ((B + 3 : ℝ) * log y) := by
-      have hlog₀ : 0 ≤ log (16 * y ^ (B + 2)) := log_nonneg (by
+      have hlog₀ : 0 ≤ log (72 * y ^ (B + 2)) := log_nonneg (by
         have := one_le_pow₀ hy₁ (n := B + 2)
         linarith)
       gcongr <;> linarith

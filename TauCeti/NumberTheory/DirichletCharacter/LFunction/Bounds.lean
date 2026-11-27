@@ -37,8 +37,8 @@ every character `χ` of level `N`, principal or nonprincipal.
 
 The bounds on `Re(s) > 0` above are for the native analytic continuation, not the Dirichlet
 series (which need not converge absolutely in this half-plane). No zero-free hypothesis is
-required. With the principal pole removed, `‖E_χ(s)‖ ≤ 8 N` on `‖s - 1‖ ≤ 1/2`, and the
-Möbius series gives a level-independent lower bound on `Re s > 1`.
+required. With the principal pole removed, the Möbius series gives a level-independent lower
+bound on `Re s > 1`.
 
 On `Re(s) ≥ 1 + 1 / A`, where the Dirichlet series converges absolutely, comparison with
 `ζ(Re s) < 1 + 1 / (Re s - 1)` gives `‖L(s, χ)‖ ≤ 1 + A`
@@ -184,38 +184,6 @@ theorem norm_LFunction_le {s : ℂ} (hs : 0 < s.re) (h1 : s ≠ 1 ∨ χ ≠ 1) 
       _ = (N : ℝ) * (‖s‖ / s.re) := mul_div_assoc _ _ _
       _ ≤ (N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re) :=
           mul_le_mul_of_nonneg_left (le_add_of_nonneg_left (by positivity)) (Nat.cast_nonneg N)
-
-/-- On the closed disc `‖s - 1‖ ≤ 1/2`, the pole-removed L-function satisfies
-`‖E_χ(s)‖ ≤ 8 N`, including at `s = 1` for the principal character. -/
-theorem norm_entireLFunction_le_eight_mul_level {s : ℂ} (hs : ‖s - 1‖ ≤ 1 / 2) :
-    ‖χ.entireLFunction s‖ ≤ 8 * N := by
-  have hre : |s.re - 1| ≤ 1 / 2 := by simpa using (abs_re_le_norm (s - 1)).trans hs
-  have hsre : 1 / 2 ≤ s.re := by linarith [(abs_le.mp hre).1]
-  have hspos : 0 < s.re := by linarith
-  have hsabs : ‖s‖ ≤ 3 / 2 := by
-    linarith [norm_le_norm_sub_add s 1, norm_one (α := ℂ)]
-  have hquot : ‖s‖ / s.re ≤ 3 := (div_le_iff₀ hspos).2 (by linarith)
-  by_cases hχ : χ = 1
-  · subst χ
-    rw [entireLFunction_one]
-    rcases eq_or_ne s 1 with rfl | h₁
-    · refine (TauCeti.norm_LFunctionTrivChar₁_apply_one_le_one N).trans ?_
-      have hN : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
-      linarith
-    · rw [LFunctionTrivChar₁_apply_of_ne_one N h₁, norm_mul]
-      have ht : 0 < ‖s - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr h₁)
-      have hb := (1 : DirichletCharacter ℂ N).norm_LFunction_le hspos (.inl h₁)
-      calc
-        _ ≤ ‖s - 1‖ * ((N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re)) :=
-          mul_le_mul_of_nonneg_left hb ht.le
-        _ ≤ ‖s - 1‖ * ((N : ℝ) * (‖s - 1‖⁻¹ + 4)) := by
-          exact mul_le_mul_of_nonneg_left
-            (mul_le_mul_of_nonneg_left (by linarith only [hquot]) (Nat.cast_nonneg N)) ht.le
-        _ = (N : ℝ) * (1 + 4 * ‖s - 1‖) := by field_simp
-        _ ≤ 8 * N := by rw [mul_comm 8]; gcongr; linarith
-  · rw [entireLFunction_of_ne_one hχ]
-    exact (χ.norm_LFunction_le_level_mul_norm_div_re hχ hspos).trans (by
-      rw [mul_div_assoc, mul_comm 8]; gcongr; linarith)
 
 /-- On `Re s > 1`, the norm of the pole-removed L-function is bounded below by
 `min 1 ‖s - 1‖ / (1 + (Re s - 1)⁻¹)`, independently of the level. -/
