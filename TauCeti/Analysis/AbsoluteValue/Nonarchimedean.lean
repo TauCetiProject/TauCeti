@@ -17,6 +17,7 @@ import Mathlib.Analysis.Normed.Field.Ultra
 import Mathlib.Analysis.Normed.Field.WithAbs
 import Mathlib.RingTheory.Algebraic.Integral
 import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
+import TauCeti.Analysis.AbsoluteValue.Rpow
 
 /-!
 # Nonarchimedean absolute values
@@ -46,10 +47,10 @@ finite place of the extension.
   Mathlib's `Valuation.Integers.isIntegral_iff_v_le_one`, and the proof follows the same size
   argument on the equation of integrality.
 * `AbsoluteValue.nonarchRpow`: for `t > 0`, the function `x ↦ v x ^ t` is again an absolute value
-  when `v` is nonarchimedean, equivalent to `v`, nonarchimedean, and lying over the corresponding
-  power of the restriction of `v`. For an archimedean absolute value only `t ≤ 1` works in
-  general; the example at the end of the file checks that `|·| ^ 2` on `ℚ` is not an absolute
-  value.
+  (an `AbsoluteValue.rpow`) when `v` is nonarchimedean, equivalent to `v`, nonarchimedean, and
+  lying over the corresponding power of the restriction of `v`. For an archimedean absolute value
+  only `t ≤ 1` works in general; the example at the end of the file checks that `|·| ^ 2` on `ℚ`
+  is not an absolute value.
 * `AbsoluteValue.isNonarchimedean_comp`: the restriction of a nonarchimedean absolute value along
   an injective ring homomorphism is nonarchimedean.
 * `AbsoluteValue.isNonarchimedean_trivial`: the trivial absolute value on any semiring without zero
@@ -187,12 +188,8 @@ variable {R : Type*} [Semiring R] (v : AbsoluteValue R ℝ) (hv : IsNonarchimede
 /-- The `t`-th power `x ↦ v x ^ t` of a nonarchimedean absolute value `v`, for `t > 0`, as an
 absolute value. The strong triangle inequality is what makes it subadditive; for an archimedean
 `v` and `t > 1` it is in general not an absolute value. -/
-noncomputable def nonarchRpow : AbsoluteValue R ℝ where
-  toFun x := v x ^ t
-  map_mul' x y := by simp [Real.mul_rpow (v.nonneg x) (v.nonneg y)]
-  nonneg' x := Real.rpow_nonneg (v.nonneg x) t
-  eq_zero' x := by simp [Real.rpow_eq_zero (v.nonneg x) ht.ne']
-  add_le' x y := by
+noncomputable def nonarchRpow : AbsoluteValue R ℝ :=
+  v.rpow ht fun x y ↦ by
     have hmax : v (x + y) ^ t ≤ max (v x ^ t) (v y ^ t) := by
       rw [← Real.rpow_max (v.nonneg x) (v.nonneg y) ht.le]
       exact Real.rpow_le_rpow (v.nonneg _) (hv x y) ht.le
@@ -201,7 +198,7 @@ noncomputable def nonarchRpow : AbsoluteValue R ℝ where
 
 @[simp]
 theorem nonarchRpow_apply (x : R) : v.nonarchRpow hv ht x = v x ^ t :=
-  (rfl)
+  v.rpow_apply ht _ x
 
 /-- A real power of a nonarchimedean absolute value is nonarchimedean. -/
 theorem isNonarchimedean_nonarchRpow : IsNonarchimedean (v.nonarchRpow hv ht) := fun x y ↦ by
@@ -209,8 +206,8 @@ theorem isNonarchimedean_nonarchRpow : IsNonarchimedean (v.nonarchRpow hv ht) :=
     Real.rpow_le_rpow (v.nonneg _) (hv x y) ht.le
 
 /-- A nonarchimedean absolute value is equivalent to each of its positive real powers. -/
-theorem isEquiv_nonarchRpow : v.IsEquiv (v.nonarchRpow hv ht) := fun x y ↦ by
-  simp [Real.rpow_le_rpow_iff (v.nonneg x) (v.nonneg y) ht]
+theorem isEquiv_nonarchRpow : v.IsEquiv (v.nonarchRpow hv ht) :=
+  v.isEquiv_rpow ht _
 
 @[simp]
 theorem nonarchRpow_one : v.nonarchRpow hv one_pos = v := by

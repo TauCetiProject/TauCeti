@@ -38,8 +38,8 @@ absolute value `w` whose restriction to `ℚ` is nontrivial is equivalent to exa
 representative `AbsoluteValue.toPlace`. By Ostrowski's theorem `w.under ℚ` is the `c`-th root of the
 real or of a `p`-adic absolute value for some `c > 0`, and `x ↦ w x ^ c` is the place: in both
 cases it is at most the real absolute value on the natural numbers, which is enough for the
-triangle inequality (`AbsoluteValue.rpowOfNatCast`). When `L` is algebraic over `ℚ`, the
-restriction to `ℚ` of a nontrivial absolute value is nontrivial
+triangle inequality (`AbsoluteValue.rpow_add_le_of_forall_natCast`). When `L` is algebraic over
+`ℚ`, the restriction to `ℚ` of a nontrivial absolute value is nontrivial
 (`AbsoluteValue.isNontrivial_iff_of_liesOver`), so every nontrivial absolute value of `L` is
 equivalent to exactly one place (`AbsoluteValue.Place.existsUnique_isEquiv`), and the places are
 the places of `L` in the classical sense. For a field that is not algebraic over `ℚ` the places are
@@ -286,7 +286,8 @@ theorem exists_isEquiv_of_isNontrivial_under (hw : (w.under ℚ).IsNontrivial) :
   obtain ⟨c, hc, hcw⟩ := isEquiv_iff_exists_rpow_eq.mp h
   have hn (n : ℕ) : w n ^ c ≤ n := by
     simpa [under_apply] using (congrFun hcw n).trans_le (hun n)
-  refine ⟨⟨w.rpowOfNatCast hc hn, ?_⟩, isEquiv_rpowOfNatCast w hc hn⟩
+  have hadd := w.rpow_add_le_of_forall_natCast hc hn
+  refine ⟨⟨w.rpow hc hadd, ?_⟩, w.isEquiv_rpow hc hadd⟩
   convert hu using 1
   ext q
   simpa [under_apply] using congrFun hcw q

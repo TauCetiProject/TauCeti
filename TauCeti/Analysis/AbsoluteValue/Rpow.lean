@@ -12,10 +12,11 @@ import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# Powers of an absolute value that are bounded on the natural numbers
+# Real powers of an absolute value
 
-For a real absolute value `v` and `t > 0`, the function `x ↦ v x ^ t` is multiplicative, but it
-need not satisfy the triangle inequality when `t > 1`: `|·| ^ 2` on `ℚ` does not. It does when it
+For a real absolute value `v` and `t > 0`, the function `x ↦ v x ^ t` is multiplicative, and it is
+an absolute value equivalent to `v` as soon as it satisfies the triangle inequality
+(`AbsoluteValue.rpow`). It need not when `t > 1`: `|·| ^ 2` on `ℚ` does not. It does when it
 is bounded by the real absolute value on the natural numbers, that is, when `v n ^ t ≤ n` for every
 `n : ℕ` (`AbsoluteValue.rpow_add_le_of_forall_natCast`). The proof applies `v` to the binomial
 expansion of `(x + y) ^ n`, which gives `v (x + y) ^ n ≤ (n + 1) * M ^ n` for every `n`, where
@@ -27,12 +28,15 @@ makes it restrict to the real or a `p`-adic absolute value on `ℚ`
 
 ## Main definitions
 
-* `AbsoluteValue.rpowOfNatCast`: the absolute value `x ↦ v x ^ t` when `v n ^ t ≤ n` on `ℕ`.
+* `AbsoluteValue.rpow`: the absolute value `x ↦ v x ^ t`, for `t > 0`, given its triangle
+  inequality. The power of a nonarchimedean absolute value, `AbsoluteValue.nonarchRpow`, is a
+  special case.
 
 ## Main results
 
-* `AbsoluteValue.rpow_add_le_of_forall_natCast`: the triangle inequality for `x ↦ v x ^ t`.
-* `AbsoluteValue.isEquiv_rpowOfNatCast`: `v` is equivalent to `AbsoluteValue.rpowOfNatCast`.
+* `AbsoluteValue.isEquiv_rpow`: `v` is equivalent to `AbsoluteValue.rpow`.
+* `AbsoluteValue.rpow_add_le_of_forall_natCast`: the triangle inequality for `x ↦ v x ^ t` when
+  `v n ^ t ≤ n` on `ℕ`.
 
 The argument is the one of `normalization_triangle` in Jz Pan's lean-iwasawa
 (`acmepjz/lean-iwasawa` at `7666c16`, branch `autoformalize.v1`, file
@@ -48,6 +52,30 @@ The argument is the one of `normalization_triangle` in Jz Pan's lean-iwasawa
 public section
 
 namespace AbsoluteValue
+
+section Semiring
+
+variable {R : Type*} [Semiring R] (v : AbsoluteValue R ℝ) {t : ℝ} (ht : 0 < t)
+  (hadd : ∀ x y, v (x + y) ^ t ≤ v x ^ t + v y ^ t)
+
+/-- The power `x ↦ v x ^ t` of a real absolute value `v`, as an absolute value, when `t > 0` and
+it satisfies the triangle inequality `hadd`. -/
+noncomputable def rpow : AbsoluteValue R ℝ where
+  toFun x := v x ^ t
+  map_mul' x y := by simp [Real.mul_rpow (v.nonneg x) (v.nonneg y)]
+  nonneg' x := Real.rpow_nonneg (v.nonneg x) t
+  eq_zero' x := by simp [Real.rpow_eq_zero (v.nonneg x) ht.ne']
+  add_le' := hadd
+
+@[simp]
+theorem rpow_apply (x : R) : v.rpow ht hadd x = v x ^ t :=
+  (rfl)
+
+/-- A real absolute value `v` is equivalent to its power `x ↦ v x ^ t`. -/
+theorem isEquiv_rpow : v.IsEquiv (v.rpow ht hadd) := fun x y ↦ by
+  simp [Real.rpow_le_rpow_iff (v.nonneg x) (v.nonneg y) ht]
+
+end Semiring
 
 variable {R : Type*} [CommSemiring R] (v : AbsoluteValue R ℝ) {t : ℝ} (ht : 0 < t)
   (h : ∀ n : ℕ, v n ^ t ≤ n)
@@ -99,22 +127,5 @@ theorem rpow_add_le_of_forall_natCast (x y : R) : v (x + y) ^ t ≤ v x ^ t + v 
       _ = (n + 1) * M ^ n := by simp
   have hle : v (x + y) ≤ M := (div_le_one hM0).mp (Real.le_one_of_forall_pow_le_mul_rpow hn)
   exact (Real.rpow_le_rpow (v.nonneg _) hle ht.le).trans_eq hM
-
-/-- The power `x ↦ v x ^ t` of a real absolute value `v`, as an absolute value, when `t > 0` and
-`v n ^ t ≤ n` for every natural number `n`. -/
-noncomputable def rpowOfNatCast : AbsoluteValue R ℝ where
-  toFun x := v x ^ t
-  map_mul' x y := by simp [Real.mul_rpow (v.nonneg x) (v.nonneg y)]
-  nonneg' x := Real.rpow_nonneg (v.nonneg x) t
-  eq_zero' x := by simp [Real.rpow_eq_zero (v.nonneg x) ht.ne']
-  add_le' := rpow_add_le_of_forall_natCast v ht h
-
-@[simp]
-theorem rpowOfNatCast_apply (x : R) : v.rpowOfNatCast ht h x = v x ^ t :=
-  (rfl)
-
-/-- A real absolute value `v` is equivalent to its power `x ↦ v x ^ t`. -/
-theorem isEquiv_rpowOfNatCast : v.IsEquiv (v.rpowOfNatCast ht h) := fun x y ↦ by
-  simp [Real.rpow_le_rpow_iff (v.nonneg x) (v.nonneg y) ht]
 
 end AbsoluteValue
