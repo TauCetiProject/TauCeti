@@ -85,8 +85,9 @@ variable [HasColimitsOfSize.{w, w} C]
 
 /-- **A retract of a homotopy K-sheaf is a homotopy K-sheaf.** If `G` is a retract of a homotopy
 K-sheaf `F`, in the category of K-presheaves of cochain complexes, then `G` is a homotopy K-sheaf:
-each of its axioms is a retract of the corresponding axiom of `F`. The colimits over the compact
-neighbourhoods of a compact set are assumed to exist in `C`. -/
+each of its axioms is a retract of the corresponding axiom of `F`. The category `C` is assumed to
+have all `w`-small colimits (`HasColimitsOfSize.{w, w}`), among them the colimits over the compact
+neighbourhoods of a compact set. -/
 theorem IsHomotopyKSheaf.of_retract (e : Retract G F) (hF : F.IsHomotopyKSheaf) :
     G.IsHomotopyKSheaf where
   acyclic_bot n := by
@@ -110,10 +111,10 @@ theorem IsHomotopyKSheaf.of_retract (e : Retract G F) (hF : F.IsHomotopyKSheaf) 
         (hc.desc (F.coconeOfCompacts K)) :=
       { i := Arrow.homMk (colimit.desc (D ⋙ G)
             ((Cocone.precompose (Functor.whiskerLeft D e.i)).obj c)) (e.i.app (op K))
-          (colimit.hom_ext fun L ↦ by simp; rfl)
+          (colimit.hom_ext fun L ↦ by simp [coconeOfCompacts, D])
         r := Arrow.homMk (hc.desc ((Cocone.precompose (Functor.whiskerLeft D e.r)).obj
             (colimit.cocone (D ⋙ G)))) (e.r.app (op K))
-          (hc.hom_ext fun L ↦ by simp; rfl)
+          (hc.hom_ext fun L ↦ by simp [coconeOfCompacts, D])
         retract := Arrow.hom_ext _ _ hir
           (Retract.retract_app e _) }
     rw [← mem_quasiIso_iff] at hq ⊢

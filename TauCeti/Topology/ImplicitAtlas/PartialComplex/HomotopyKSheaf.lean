@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.HomotopyKSheaf
 public import TauCeti.CategoryTheory.Limits.Shapes.SingleObj
-public import TauCeti.Topology.ImplicitAtlas.PartialComplex
+public import TauCeti.Topology.ImplicitAtlas.PartialComplex.Basic
 public import TauCeti.Topology.Sheaves.KSheaf.Retract
 
 /-!
@@ -104,21 +104,6 @@ a `k`-module: the coefficients of the partial virtual complexes. -/
 abbrev partialVirtualCoefficients (B : Finset A) : SingleObj ((α : B) → Γ α) ⥤ ModuleCat.{u} k :=
   (Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k
 
-/-- The deformation pairs `(D_(I,J,B), D_(I,J,B) ∖ Z_K)` with their actions of `Γ_B`, as a
-contravariant functor of the compact set `K ⊆ X`. -/
-def deformationPairPresheaf (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
-    (Compacts (TopCat.of X))ᵒᵖ ⥤ (SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}) where
-  obj K := 𝒜.deformationPairFunctor I hJB K.unop
-  map h := 𝒜.deformationPairRestriction I hJB (SetLike.coe_subset_coe.2 (leOfHom h.unop))
-  map_id _ := deformationPairRestriction_refl _ _
-  map_comp _ _ := (deformationPairRestriction_comp_deformationPairRestriction _ _ _).symm
-
-/-- The partial virtual complex is the invariant chains of the deformation pairs. -/
-theorem partialVirtualComplex_eq (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
-    𝒜.partialVirtualComplex k I hJB = 𝒜.deformationPairPresheaf I hJB ⋙
-      invariantChainsFunctor ρ k B (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ)) :=
-  (rfl)
-
 /-- The relative chains of the deformation pairs with coefficients in `o_(E_B)^∨`, before taking
 invariants, are the relative chains along the supports `Z_K`. -/
 def deformationPairChainsIso (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (n : ℤ) :
@@ -174,7 +159,7 @@ def partialVirtualComplexRetract (I : Finset A) {J B : Finset A} (hJB : J ⊆ B)
     rw [← Nat.card_eq_fintype_card, Nat.card_pi, Nat.cast_prod]
     exact IsUnit.prod_univ_iff.2 fun α ↦ hΓ α
   let r := SingleObj.limRetract (C := ChainComplex (ModuleCat.{u} k) ℕ) hB
-  -- the source is `(Φ ⋙ lim) ⋙ ext` by `partialVirtualComplex_eq`, which holds by `rfl`
+  -- the source is `(Φ ⋙ lim) ⋙ ext` by the definition of `partialVirtualComplex`
   Retract.trans
     { i := Functor.whiskerRight (Functor.whiskerLeft Φ r.i) ext
       r := Functor.whiskerRight (Functor.whiskerLeft Φ r.r) ext

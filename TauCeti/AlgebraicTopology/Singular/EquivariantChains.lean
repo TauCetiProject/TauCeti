@@ -29,7 +29,7 @@ hence a chain map of invariants `lim.map (TopPair.diagonalChainActionMap L τ)`.
 
 With `L` the dual orientation line of an obstruction representation, these invariant chains on the
 deformation spaces of an implicit atlas are the partial virtual complexes of Pardon's construction
-of virtual fundamental classes (`TauCeti.Topology.ImplicitAtlas.PartialComplex`).
+of virtual fundamental classes (`TauCeti.Topology.ImplicitAtlas.PartialComplex.Basic`).
 
 ## Main definitions
 
@@ -113,15 +113,6 @@ lemma diagonalChainActionMap_app (τ : P ⟶ P') (Y : SingleObj G) :
   change ((singularChainComplexFunctor C).map (𝟙 (L.obj Y))).app (P.obj Y) ≫
     ((singularChainComplexFunctor C).obj (L.obj Y)).map (τ.app Y) = _
   rw [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
-
--- Stated for the relative chain functor itself, whose values the composites typecheck against.
-private lemma singularChainComplexFunctor_obj_map_comp_eqToHom {Q Q' : TopPair.{w}} (f : Q ⟶ Q')
-    (R : C) :
-    ((singularChainComplexFunctor C).obj R).map f ≫
-        eqToHom (singularChainComplexFunctor_obj_obj (C := C) Q' R) =
-      eqToHom (singularChainComplexFunctor_obj_obj (C := C) Q R) ≫
-        singularChainComplexMap f R := by
-  simp [singularChainComplexFunctor_obj_map]
 
 /-- Read in the relative singular chain complexes, the component of the chain map induced by an
 equivariant map of pairs is the chain map `TopPair.singularChainComplexMap` of the map of pairs. -/

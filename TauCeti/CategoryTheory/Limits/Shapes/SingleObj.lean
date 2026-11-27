@@ -278,8 +278,7 @@ lemma limit_π_comp_lift_averageCone (J : SingleObj G ⥤ C) :
   rw [Category.assoc, limit.lift_π, averageCone_π_app, Linear.comp_smul, Preadditive.comp_sum,
     Category.id_comp]
   simp_rw [limit.w]
-  rw [Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul k, smul_smul,
-    IsUnit.val_inv_mul, one_smul]
+  simp [← Nat.cast_smul_eq_nsmul k, smul_smul]
 
 /-- The lift of the averaging cone is natural in the action. -/
 @[reassoc]
@@ -298,6 +297,7 @@ unit of `k`, the limit functor on actions of `G` on objects of a `k`-linear cate
 of the evaluation at the object of `SingleObj G`: the leg of the limit cone is the inclusion of the
 invariants, and the lift of the averaging cone (`CategoryTheory.Limits.SingleObj.averageCone`) is
 the retraction, both natural in the action. -/
+-- The body is exposed for `@[simps]`, whose projection lemmas are checked by unfolding it.
 @[expose, simps]
 noncomputable def limRetract :
     Retract (lim : (SingleObj G ⥤ C) ⥤ C) ((evaluation (SingleObj G) C).obj (SingleObj.star G))
