@@ -34,6 +34,7 @@ estimate, after summing over nonzero frequencies.
   a unit `d` of `ZMod N`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
 * `ZMod.norm_sum_range_stdAddChar_mul_add_le`: a geometric-sum bound at nonzero frequency.
+* `ZMod.norm_sum_range_stdAddChar_mul_add_le_min_inv_sin`: the length and cosecant bound.
 * `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le_harmonic`: the summed geometric-sum bound,
   in terms of the harmonic number `H_{N-1}`.
 * `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le`: the summed geometric-sum bound, in terms of
@@ -166,6 +167,27 @@ theorem norm_sum_range_stdAddChar_mul_add_le (a k : ZMod N) (H : ℕ)
       (stdAddChar (N := N)).map_nsmul_eq_pow j k
   rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul]
   exact TauCeti.norm_geom_sum_le (by simp [ZMod.stdAddChar_apply]) hz H
+
+/-- An interval sum at a nonzero additive frequency is bounded both by its length and by
+`1 / sin (π * k.val / N)`, where `k.val` is the least nonnegative representative. -/
+theorem norm_sum_range_stdAddChar_mul_add_le_min_inv_sin (a k : ZMod N) (H : ℕ)
+    (hk : k ≠ 0) :
+    ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤
+      min (H : ℝ) (Real.sin (π * k.val / N))⁻¹ := by
+  have hlength : ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤ H := by
+    refine (norm_sum_le _ _).trans_eq ?_
+    simp only [stdAddChar_apply, Circle.norm_coe, sum_const, card_range, nsmul_eq_mul, mul_one]
+  have hchord : ‖stdAddChar k - 1‖ = 2 * Real.sin (π * k.val / N) := by
+    have hval : (k.val : ℝ) ≤ N := Nat.cast_le.mpr (val_lt k).le
+    have hangle : π * k.val / N ≤ π :=
+      (div_le_iff₀ (Nat.cast_pos.mpr (NeZero.pos N))).mpr (by gcongr)
+    have hsin := Real.sin_nonneg_of_nonneg_of_le_pi (by positivity) hangle
+    have hhalf : 2 * π * (k.val / (N : ℝ)) / 2 = π * k.val / N := by ring
+    rw [stdAddChar_apply, toCircle_eq_circleExp, Circle.coe_exp, mul_comm _ Complex.I,
+      Complex.norm_exp_I_mul_ofReal_sub_one, hhalf, Real.norm_eq_abs,
+      abs_of_nonneg (mul_nonneg two_pos.le hsin)]
+  refine le_min hlength ((norm_sum_range_stdAddChar_mul_add_le a k H hk).trans ?_)
+  rw [hchord, inv_eq_one_div, div_mul_eq_div_div, div_self two_ne_zero]
 
 /-- Summing the norms of interval sums of the standard additive character over nonzero
 frequencies is bounded by the modulus times the harmonic number `H_{N-1}`. -/
