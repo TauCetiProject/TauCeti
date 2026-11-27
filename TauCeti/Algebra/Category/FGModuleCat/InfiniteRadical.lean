@@ -52,10 +52,9 @@ variable (R : Type u) [CommRing R] [IsArtinianRing R] {A : Type v} [Ring A] [Alg
 
 include R
 
-/-- Nilpotence of the radical bounds the number of steps needed to reach every indecomposable
-from the summands of a separator by iterating left almost split maps. -/
-private theorem isRepresentationFinite_of_radical_pow_eq_bot {G : FGModuleCat.{w} A}
-    (hG : IsSeparator G) {n : ℕ}
+/-- An Artin algebra is representation-finite if the radical of its category of finitely
+generated modules has a vanishing power. -/
+theorem isRepresentationFinite_of_jacobsonRadicalIdeal_pow_eq_bot {n : ℕ}
     (hn : jacobsonRadicalIdeal (FGModuleCat.{w} A) ^ n = ⊥) : IsRepresentationFinite.{w} A := by
   classical
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
@@ -64,13 +63,21 @@ private theorem isRepresentationFinite_of_radical_pow_eq_bot {G : FGModuleCat.{w
       (Functor.ofSequence f).map (homOfLE (Nat.zero_le n)) = 0 := by
     have hval : Monotone (Fin.val : Fin (n + 1) → ℕ) := fun _ _ h ↦ h
     let F : ComposableArrows (FGModuleCat.{w} A) n := hval.functor ⋙ Functor.ofSequence f
+    -- The restriction sends the first and last vertices to `0` and `n` and their arrow
+    -- to the unique arrow from `0` to `n` in `ℕ`.
+    have hF : F.hom = (Functor.ofSequence f).map (homOfLE (Nat.zero_le n)) := rfl
     have hmem := F.hom_mem_jacobsonRadicalIdeal_pow
       (fun i ↦ (IsKrullSchmidt.indecomposable_iff_isLocalRing_end (X i)).1 (hX i))
       (fun j hj ↦ by
         -- The link of the restricted finite chain is the same link of the original sequence.
-        simpa [F, ComposableArrows.map'] using hf j)
+        change ¬ IsIso ((Functor.ofSequence f).map (homOfLE (Nat.le_add_right j 1)))
+        simpa only [Functor.ofSequence_map_homOfLE_succ] using hf j)
     rw [hn] at hmem
+    rw [← hF]
     exact MorphismIdeal.mem_bot.mp hmem
+  let G := FGModuleCat.of A (Shrink.{w} A)
+  have : Module.IsGenerator A (Shrink.{w} A) := .of_linearEquiv (Shrink.linearEquiv A A)
+  have hG : IsSeparator G := FGModuleCat.isSeparator_of_isGenerator _
   obtain ⟨m, P, hP, ⟨e⟩⟩ := IsKrullSchmidt.exists_iso_biproduct G
   obtain ⟨S, hS, -, hreach⟩ := exists_finite_forall_iso_of_hom_ne_zero
     (fun X : FGModuleCat.{w} A ↦ Indecomposable X)
@@ -89,15 +96,21 @@ private theorem isRepresentationFinite_of_radical_pow_eq_bot {G : FGModuleCat.{w
   obtain ⟨Q, hQ, hiso⟩ := hreach Y hY (P j) (Set.mem_range_self j) f hf
   exact ⟨enum ⟨Q, hQ⟩, by simpa using hiso⟩
 
+/-- An Artin algebra is representation-finite exactly when the radical of its category of
+finitely generated modules is nilpotent. -/
+theorem isRepresentationFinite_iff_exists_jacobsonRadicalIdeal_pow_eq_bot :
+    IsRepresentationFinite.{w} A ↔ ∃ n : ℕ, jacobsonRadicalIdeal (FGModuleCat.{w} A) ^ n = ⊥ :=
+  ⟨fun h ↦ h.exists_jacobsonRadicalIdeal_pow_eq_bot R,
+    fun ⟨_, hn⟩ ↦ isRepresentationFinite_of_jacobsonRadicalIdeal_pow_eq_bot R hn⟩
+
 /-- An Artin algebra is representation-finite exactly when the intersection of the powers
 of the radical of its category of finitely generated modules is zero. -/
 theorem isRepresentationFinite_iff_forall_mem_jacobsonRadicalIdeal_pow :
     IsRepresentationFinite.{w} A ↔
       ∀ (X Y : FGModuleCat.{w} A) (f : X ⟶ Y),
         (∀ n : ℕ, f ∈ (jacobsonRadicalIdeal (FGModuleCat.{w} A) ^ n).hom X Y) → f = 0 := by
-  refine ⟨fun h X Y f hf ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨n, hn⟩ := h.exists_jacobsonRadicalIdeal_pow_eq_bot R
-    exact MorphismIdeal.mem_bot.mp (hn ▸ hf n)
+  rw [isRepresentationFinite_iff_exists_jacobsonRadicalIdeal_pow_eq_bot R]
+  refine ⟨fun ⟨n, hn⟩ X Y f hf ↦ MorphismIdeal.mem_bot.mp (hn ▸ hf n), fun h ↦ ?_⟩
   · -- Use the centre so that the coefficient module for Matlis duality fits the module universe.
     let Z := Subalgebra.center R A
     have : Module.Finite Z A := Subalgebra.finite_centerAlgebra_of_finite
@@ -114,8 +127,7 @@ theorem isRepresentationFinite_iff_forall_mem_jacobsonRadicalIdeal_pow :
     have hG' : IsSeparator G' := FGModuleCat.isSeparator_of_isGenerator _
     let D := (e.inverse.obj G').unop
     have hD : IsCoseparator D := (isCoseparator_unop_iff _).2 (hG'.of_equivalence e.symm)
-    obtain ⟨n, hn⟩ := (jacobsonRadicalIdeal (FGModuleCat.{w} A))
+    exact (jacobsonRadicalIdeal (FGModuleCat.{w} A))
       |>.exists_pow_eq_bot_of_forall_mem_pow R hG hD (h G D)
-    exact isRepresentationFinite_of_radical_pow_eq_bot R hG hn
 
 end TauCeti

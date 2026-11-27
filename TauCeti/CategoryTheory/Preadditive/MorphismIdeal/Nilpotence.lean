@@ -34,22 +34,20 @@ theorem exists_pow_eq_bot_of_forall_mem_pow (I : MorphismIdeal C) (R : Type*) [S
     (h : ∀ f : G ⟶ D, (∀ n : ℕ, f ∈ (I ^ n).hom G D) → f = 0) :
     ∃ n : ℕ, I ^ n = ⊥ := by
   have hpow {m n : ℕ} (hmn : m ≤ n) : I ^ n ≤ I ^ m :=
-    pow_le_pow_right_of_le_one' (by rw [one_eq_top]; exact le_top) hmn
+    pow_le_pow_right_of_le_one' le_top hmn
   -- Stabilize the chain on the hom space from the separator to the coseparator.
   let filtration : ℕ →o (Submodule R (G ⟶ D))ᵒᵈ :=
-    ⟨fun n ↦ (I ^ n).homSubmodule R G D, fun _ _ hmn f hf ↦
-      (MorphismIdeal.mem_homSubmodule R _ f).2
-        (le_def.mp (hpow hmn) f ((MorphismIdeal.mem_homSubmodule R _ f).1 hf))⟩
+    ⟨fun n ↦ (I ^ n).homSubmodule R G D, fun _ _ hmn f ↦ by
+      simpa only [mem_homSubmodule] using (le_def.mp (hpow hmn) f)⟩
   obtain ⟨n, hn⟩ := IsArtinian.monotone_stabilizes filtration
   have htest (f : G ⟶ D) (hf : f ∈ (I ^ n).hom G D) : f = 0 := by
     apply h f
     intro m
     obtain hmn | hnm := le_total m n
     · exact le_def.mp (hpow hmn) f hf
-    · apply (MorphismIdeal.mem_homSubmodule R _ f).1
-      have hm : (I ^ n).homSubmodule R G D = (I ^ m).homSubmodule R G D := hn m hnm
-      rw [← hm]
-      exact (MorphismIdeal.mem_homSubmodule R _ f).2 hf
+    · have hm : (I ^ n).homSubmodule R G D = (I ^ m).homSubmodule R G D := hn m hnm
+      have hf' : f ∈ (I ^ n).homSubmodule R G D := (mem_homSubmodule R _ f).2 hf
+      exact (mem_homSubmodule R _ f).1 (hm ▸ hf')
   -- Precompose and postcompose with all test maps to detect an arbitrary morphism.
   refine ⟨n, le_antisymm (le_def.mpr fun X Y f hf ↦ mem_bot.mpr ?_) bot_le⟩
   apply (Preadditive.isSeparator_iff G).mp hG f
