@@ -104,12 +104,8 @@ theorem finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom :
         eqToIso (finiteTypeCoordinateHopfAlgebra_obj K n).symm).hom := by
   simp only [finiteTypeCoordinateHopfAlgebraBaseChangeIso, coordinateHopfAlgebraBaseChangeIso,
     Iso.trans_hom, eqToIso.hom, ObjectProperty.FullSubcategory.comp_hom,
-    ConstantForm.Special.finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom, Category.assoc]
-  have hom_eqToHom {H L : FiniteTypeCommHopfAlgCat.{max u v, max u v} K}
-      (p : H = L) : (eqToHom p).hom = eqToHom (congrArg (·.obj) p) := by
-    subst L
-    rfl
-  simp only [hom_eqToHom, eqToHom_trans_assoc, eqToHom_trans]
+    ConstantForm.Special.finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom, Category.assoc,
+    ObjectProperty.eqToHom_hom, eqToHom_trans_assoc, eqToHom_trans]
 
 /-- The inverse base-change isomorphism is compatible with the quotient coordinate morphisms. -/
 @[reassoc]
@@ -202,18 +198,17 @@ theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom :
       (groupSchemeBaseChangeIso R K n).hom ≫ inclusion K n := by
   have h := ConstantForm.Special.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso_hom
     (Matrix.map_one (n := Fin n) (algebraMap R K) (map_zero _) (map_one _))
-  have transport (S : Type u) [CommRing S]
-      {I J : HopfIdeal S (GeneralLinear.coordinateHopfAlgebra S n)} (hIJ : I = J) :
-      eqToHom (congrArg (CommHopfAlgCat.quotientSpec _) hIJ) ≫
-        GeneralLinear.hopfIdealInclusion S n J = GeneralLinear.hopfIdealInclusion S n I := by
-    subst J
-    simp
+  have hR := CommHopfAlgCat.eqToHom_comp_quotientSpecι
+    (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal_eq_special R n)
+  have hK := CommHopfAlgCat.eqToHom_comp_quotientSpecι
+    (GeneralLinear.coordinateHopfAlgebra K n) (definingHopfIdeal_eq_special K n).symm
   rw [inclusion_eq_eqToHom_comp_hopfIdealInclusion, inclusion_eq_eqToHom_comp_hopfIdealInclusion,
     groupSchemeBaseChangeIso]
-  rw [← transport R (definingHopfIdeal_eq_special R n),
-    eqToHom_trans_assoc, Functor.map_comp, Category.assoc, h]
+  rw [GeneralLinear.hopfIdealInclusion_def, ← reassoc_of% hR,
+    ← GeneralLinear.hopfIdealInclusion_def, eqToHom_trans_assoc,
+    Functor.map_comp, Category.assoc, h]
   simp only [Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom, Category.assoc,
-    eqToHom_trans_assoc, transport K (definingHopfIdeal_eq_special K n).symm]
+    eqToHom_trans_assoc, GeneralLinear.hopfIdealInclusion_def, reassoc_of% hK]
 
 end GroupScheme
 
