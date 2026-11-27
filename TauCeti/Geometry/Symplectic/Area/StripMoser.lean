@@ -323,6 +323,11 @@ theorem stripMoserVectorField_snd (t : ℝ) (p : ℝ × ℝ) :
     (stripMoserVectorField g t p).2 = (1 + t * g p)⁻¹ * stripMoserDxCoeff g p.2 := by
   simp [stripMoserVectorField]
 
+/-- The Moser vector field of the zero function vanishes. -/
+@[simp]
+theorem stripMoserVectorField_zero (t : ℝ) (p : ℝ × ℝ) : stripMoserVectorField 0 t p = 0 := by
+  simp [stripMoserVectorField, stripMoserDyCoeff, stripMoserDxCoeff, stripRowMean]
+
 /-- The Moser vector field is tangent to the bottom boundary line `y = 0`. -/
 theorem stripMoserVectorField_snd_mk_zero (t x : ℝ) :
     (stripMoserVectorField g t (x, 0)).2 = 0 := by

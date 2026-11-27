@@ -37,8 +37,9 @@ An isotopy `h_u`, `u ∈ [0, 1]`, has a whole family of densities `1 + g u`, one
 correction `h_u ∘ ψ_u` must again depend smoothly on `u`. So the construction is carried out for a
 family `g`, jointly `C^r` in the parameter and the point. The Moser flows `ψ_u` of the densities
 `1 + g u` are then jointly `C^r` in `u` and the point, together with their inverses, and `ψ_u` is
-the identity whenever `g u = 0`, so the correction leaves alone the maps `h_u` that already preserve
-area, such as the endpoints of an isotopy from the identity to an area-preserving map.
+the identity whenever `g u` vanishes identically on the plane, so the correction leaves `h_u`
+unchanged when `g u` is chosen to vanish identically, for example at the endpoints of an isotopy
+from the identity to an area-preserving map.
 
 The field `X_t` is only defined where `1 + t g ≠ 0`, which contains `[0, 1] × (ℝ × [0, 1])`, and
 it is not globally Lipschitz there. So the proof cuts it off, by a bump function equal to one
@@ -67,7 +68,7 @@ variables; by uniqueness of solutions its orbits are those of the flows of the i
 * `TauCeti.exists_stripMoserFlow`: the case of a single density.
 * `TauCeti.exists_det_fderiv_comp_stripMoserFlow_eq_one`: a path of maps `h u` of the strip with
   Jacobian determinants `1 + g u` becomes area preserving after composing with the time-one maps of
-  the Moser flows, smoothly in `u` and without changing the maps that already preserve area.
+  the Moser flows, smoothly in `u` and without changing `h u` when `g u` vanishes identically.
 
 ## References
 
@@ -263,11 +264,8 @@ private theorem exists_cutoff_stripMoserVectorField {r : ℕ∞} (hr : 1 ≤ r)
     fun u t x y ↦ by simpa using hYper u t (x, y)
   refine ⟨cutoffField g χ, C, hC, hY, hYper, fun u t x ↦ by simp [cutoffField],
     fun u hu t p ↦ ?_, fun u hu ↦ ⟨fun t x ↦ ?_, fun t ht p hp ↦ ?_⟩⟩
-  · -- The Moser primitive of the zero function vanishes.
-    have h0 : g u = 0 := funext hu
-    have hX : stripMoserVectorField (g u) t p = 0 := by
-      ext <;> simp [h0, stripMoserDyCoeff_def, stripMoserDxCoeff_def, stripRowMean_def]
-    simp [cutoffField, hX]
+  · have h0 : g u = 0 := funext hu
+    simp [cutoffField, h0]
   · simp [cutoffField, stripMoserDxCoeff_one_eq_zero_iff.2 (harea u hu)]
   · filter_upwards [(continuous_snd.tendsto p).eventually (isOpen_Ioo.mem_nhds (hIcc hp))]
       with p' hp'
@@ -434,8 +432,9 @@ Then there are `C^r` diffeomorphisms `ψ u` of the plane, jointly `C^r` in `u` a
 together with their inverses, such that every `h u ∘ ψ u`, `u ∈ [0, 1]`, preserves `dx ∧ dy` on
 the strip. Each `ψ u` commutes with the deck translation `(x, y) ↦ (x + 1, y)`; for `u ∈ [0, 1]`
 it maps each of the boundary lines `y = 0` and `y = 1` into itself and the strip bijectively onto
-itself; and `ψ u = id` whenever `g u = 0`, so the correction does not change the maps `h u` that
-already preserve `dx ∧ dy`, such as the endpoints `id` and an area-preserving `h 1`. -/
+itself; and `ψ u = id` whenever `g u` vanishes identically on the plane (not only on the strip),
+so the correction leaves `h u` unchanged when `g u` is chosen to vanish identically, for example at
+the endpoints of an isotopy from `id` to an area-preserving map. -/
 theorem exists_det_fderiv_comp_stripMoserFlow_eq_one {r : ℕ∞} (hr : 1 ≤ r)
     (hg : ContDiff ℝ r (uncurry g)) (hper : ∀ u x y, g u (x + 1, y) = g u (x, y))
     (hpos : ∀ u ∈ Icc (0 : ℝ) 1, ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < 1 + g u (x, y))
