@@ -34,11 +34,11 @@ a weight `λ` is the central character `χ_{λ - ρ}(z)`.
 ## Main results
 
 * `TauCeti.lieCartanRestriction_harishChandraChevalleyIso_apply`: the restriction to `H` of the
-  invariant attached to `z` is the linear Harish-Chandra projection of `z`.
-* `TauCeti.lift_lieCartanRestriction_harishChandraChevalleyIso_apply`: its value at `λ` is the
-  central character `χ_{λ - ρ}(z)`.
-* `TauCeti.harishChandraChevalleyIso_symm_apply`: the inverse sends an invariant `p` to the central
-  element whose linear Harish-Chandra projection is the restriction of `p`.
+  invariant attached to `z` is the linear Harish-Chandra projection of `z`; with
+  `TauCeti.lift_hcProjectionLinear`, its value at `λ` is the central character `χ_{λ - ρ}(z)`.
+* `TauCeti.hcProjectionLinear_harishChandraChevalleyIso_symm_apply`: the inverse sends an
+  invariant `p` to the central element whose linear Harish-Chandra projection is the restriction
+  of `p`.
 -/
 
 public section
@@ -81,17 +81,9 @@ theorem lieCartanRestriction_harishChandraChevalleyIso_apply (z : Subalgebra.cen
   rw [← LieSubalgebra.coe_lieChevalleyRestrictionIso_apply,
     lieChevalleyRestrictionIso_harishChandraChevalleyIso_apply, coe_harishChandraLinearIso_apply]
 
-/-- **The invariant attached to `z` evaluates the central characters**: its restriction to `H`,
-evaluated at a weight `λ`, is the central character `χ_{λ - ρ}(z)`. -/
-theorem lift_lieCartanRestriction_harishChandraChevalleyIso_apply (lam : Module.Dual K H)
-    (z : Subalgebra.center K (U L)) :
-    _root_.SymmetricAlgebra.lift lam
-        (lieCartanRestriction H (harishChandraChevalleyIso b z : _root_.SymmetricAlgebra K L)) =
-      vermaCentralCharacter b (lam - weylVector (IsKilling.rootSystem H) b) z := by
-  rw [lieCartanRestriction_harishChandraChevalleyIso_apply, lift_hcProjectionLinear]
-
 /-- **The inverse isomorphism** sends an invariant `p` to the central element whose linear
 Harish-Chandra projection is the restriction of `p` to `H`. -/
+@[simp]
 theorem hcProjectionLinear_harishChandraChevalleyIso_symm_apply (p : lieInvariants K L L) :
     hcProjectionLinear b ((harishChandraChevalleyIso b).symm p) =
       lieCartanRestriction H (p : _root_.SymmetricAlgebra K L) := by
