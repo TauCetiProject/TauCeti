@@ -43,6 +43,8 @@ is the number of `(n - j)`-dimensional subspaces of `kⁿ`, namely `[n, n - j]_q
 ## Main definitions
 
 * `HeckeRing.GLn.minusculeDiag π n j`: the diagonal matrix `diag(π^{(j)}, 1^{(n - j)})`.
+* `HeckeRing.GLn.minusculeDiagLift ϖ n j` and `HeckeRing.GLn.minusculeDiagLiftCompl ϖ n j`:
+  integral representatives of `η_j` and `π η_j⁻¹`, whose product is `ϖ • 1`.
 * `HeckeRing.GLn.zeroPrefixSubspace k n j`: the subspace of `kⁿ` of vectors whose first `j`
   coordinates vanish.
 
@@ -196,6 +198,55 @@ theorem minusculeDiag_zero (π : Kˣ) (n : ℕ) : minusculeDiag π n 0 = 1 := by
   simp
 
 end Minuscule
+
+section IntegralLift
+
+variable {R : Type*} [CommRing R] {K : Type*} [Field K] [Algebra R K] {ϖ : R} {π : Kˣ}
+
+/-- The integral matrix `diag(ϖ^{(j)}, 1^{(n - j)})` with image `η_j` in `GL_n(K)`. -/
+def minusculeDiagLift (ϖ : R) (n j : ℕ) : Matrix (Fin n) (Fin n) R :=
+  diagonal fun i ↦ if (i : ℕ) < j then ϖ else 1
+
+/-- The defining equation of `minusculeDiagLift`. -/
+theorem minusculeDiagLift_def (ϖ : R) (n j : ℕ) :
+    minusculeDiagLift ϖ n j = diagonal (fun i : Fin n ↦ if (i : ℕ) < j then ϖ else 1) :=
+  (rfl)
+
+/-- The integral matrix `diag(1^{(j)}, ϖ^{(n - j)})` with image `π η_j⁻¹`. -/
+def minusculeDiagLiftCompl (ϖ : R) (n j : ℕ) : Matrix (Fin n) (Fin n) R :=
+  diagonal fun i ↦ if (i : ℕ) < j then 1 else ϖ
+
+/-- The defining equation of `minusculeDiagLiftCompl`. -/
+theorem minusculeDiagLiftCompl_def (ϖ : R) (n j : ℕ) :
+    minusculeDiagLiftCompl ϖ n j = diagonal (fun i : Fin n ↦ if (i : ℕ) < j then 1 else ϖ) :=
+  (rfl)
+
+/-- The integral minuscule diagonal and its complementary diagonal multiply to `ϖ • 1`. -/
+@[simp]
+theorem minusculeDiagLift_mul_minusculeDiagLiftCompl (ϖ : R) (n j : ℕ) :
+    minusculeDiagLift ϖ n j * minusculeDiagLiftCompl ϖ n j = ϖ • 1 := by
+  ext a b
+  by_cases hab : a = b
+  · subst hab
+    by_cases ha : (a : ℕ) < j <;> simp [minusculeDiagLift_def, minusculeDiagLiftCompl_def, ha]
+  · simp [minusculeDiagLift_def, minusculeDiagLiftCompl_def, hab]
+
+/-- The determinant of the integral minuscule diagonal with `j ≤ n` is `ϖ ^ j`. -/
+@[simp]
+theorem det_minusculeDiagLift (ϖ : R) {n j : ℕ} (hj : j ≤ n) :
+    (minusculeDiagLift ϖ n j).det = ϖ ^ j := by
+  simp [minusculeDiagLift_def, Finset.prod_ite, Fin.card_filter_val_lt, hj]
+
+/-- Mapping the integral minuscule diagonal to `K` gives `minusculeDiag π n j`. -/
+theorem map_minusculeDiagLift (hπ : algebraMap R K ϖ = π) (n j : ℕ) :
+    (minusculeDiagLift ϖ n j).map (algebraMap R K) =
+      (minusculeDiag π n j : Matrix (Fin n) (Fin n) K) := by
+  rw [minusculeDiagLift_def, minusculeDiag_def, diagGL_coe, diagonal_map (map_zero _)]
+  congr 1
+  funext i
+  split_ifs <;> simp [hπ]
+
+end IntegralLift
 
 section Cosets
 

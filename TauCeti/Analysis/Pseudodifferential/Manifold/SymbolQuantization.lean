@@ -155,9 +155,7 @@ private theorem contDiffOn_chartHomogeneousSymbol (ρ : 𝓓(⟨e.target, e.open
     {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
     (hs : s ∈ homogeneousCotangentSymbols n M m) :
     ContDiffOn ℝ ∞ (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      ((ρ p.1 : ℂ) * s (e.symm p.1)
-        ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1)))) •
-          ContinuousLinearMap.id ℂ ℂ) {p | p.2 ≠ 0} := by
+      ((ρ p.1 : ℂ) * chartCotangentSymbol s e p) • ContinuousLinearMap.id ℂ ℂ) {p | p.2 ≠ 0} := by
   rintro ⟨y, η⟩ hη
   refine ContDiffAt.contDiffWithinAt ?_
   by_cases hy : y ∈ e.target
@@ -182,17 +180,16 @@ def chartHomogeneousSymbol (ρ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
     (hs : s ∈ homogeneousCotangentSymbols n M m) :
     HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) ℂ ℂ m where
-  coefficient p := ((ρ p.1 : ℂ) * s (e.symm p.1)
-    ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1)))) •
-      ContinuousLinearMap.id ℂ ℂ
-  zero_covector y := by simp [(mem_homogeneousCotangentSymbols_iff.1 hs).1]
+  coefficient p := ((ρ p.1 : ℂ) * chartCotangentSymbol s e p) • ContinuousLinearMap.id ℂ ℂ
+  zero_covector y := by
+    simp [chartCotangentSymbol_apply, (mem_homogeneousCotangentSymbols_iff.1 hs).1]
   contDiffOn_coefficient := contDiffOn_chartHomogeneousSymbol he ρ hs
   homogeneous y η t ht := by
     have hη : innerSL ℝ (t • η) = t • innerSL ℝ η := by
       ext v
       simp
     refine ContinuousLinearMap.ext_ring ?_
-    simp only [hη, ContinuousLinearMap.smul_comp,
+    simp only [chartCotangentSymbol_apply, hη, ContinuousLinearMap.smul_comp,
       (mem_homogeneousCotangentSymbols_iff.1 hs).2.1 _ _ t ht, FunLike.coe_smul, Pi.smul_apply,
       ContinuousLinearMap.id_apply, Complex.real_smul, smul_eq_mul]
     ring
@@ -203,9 +200,7 @@ theorem chartHomogeneousSymbol_coefficient (ρ : 𝓓(⟨e.target, e.open_target
     {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
     (hs : s ∈ homogeneousCotangentSymbols n M m) (y η : CoordinateSpace n) :
     (e.chartHomogeneousSymbol he ρ hs).coefficient (y, η) =
-      ((ρ y : ℂ) * s (e.symm y)
-        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm y)))) •
-          ContinuousLinearMap.id ℂ ℂ :=
+      ((ρ y : ℂ) * chartCotangentSymbol s e (y, η)) • ContinuousLinearMap.id ℂ ℂ :=
   (rfl)
 
 /-- **The principal symbol of a quantized homogeneous function.** The chart quantization, localized
@@ -223,7 +218,8 @@ theorem classicalPrincipalSymbol_chartQuantization_ofHomogeneous
         ℂ) * s x ξ := by
   by_cases hx : x ∈ e.source
   · rw [classicalPrincipalSymbol_chartQuantization he _ _ _ hx,
-      ClassicalSymbol.principal_ofHomogeneous, chartHomogeneousSymbol_coefficient, e.left_inv hx,
+      ClassicalSymbol.principal_ofHomogeneous, chartHomogeneousSymbol_coefficient,
+      chartCotangentSymbol_apply, e.left_inv hx,
       innerSL_toDual_symm_comp_inverse_mvfderiv
         (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx]
     simp [cutoffPullback_one_apply_of_mem he _ hx, mul_assoc]
@@ -267,13 +263,13 @@ def principalSymbolQuantization :
     refine Finset.sum_congr rfl fun i _ ↦ (c i).chartQuantization_eq_add (hc i) _ _ ?_
     funext ⟨y, η⟩
     refine ContinuousLinearMap.ext_ring ?_
-    simp [mul_add]
+    simp [chartCotangentSymbol_apply, mul_add]
   map_smul' a s := by
     rw [RingHom.id_apply, Finset.smul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ (c i).chartQuantization_eq_smul (hc i) _ _ a ?_
     funext ⟨y, η⟩
     refine ContinuousLinearMap.ext_ring ?_
-    simp [mul_left_comm]
+    simp [chartCotangentSymbol_apply, mul_left_comm]
 
 omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
 /-- Unfolding `TauCeti.principalSymbolQuantization`. -/
