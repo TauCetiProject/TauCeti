@@ -34,6 +34,11 @@ inside `L¹`: the norm of `∑ i, indicatorConstLp 1 (hs i) (hμs i) (c i)` is
 `∑ i, μ(s i) * ‖c i‖`. An `Lᵖ` class represented by `φ ∘ G` for a simple function `G` is the
 sum of the indicator classes of the fibres of `G` with constants `φ w`.
 
+For finite exponents, the indicator classes of the partial unions of a sequence of sets converge
+to the indicator class of the union when the union has finite measure. Hence a closed additive
+subgroup of `Lᵖ` containing the indicator classes of a pairwise disjoint sequence contains the
+indicator class of its union.
+
 In `L∞` the indicator of any measurable set is essentially bounded, whatever its measure. The
 class `TauCeti.linftyIndicator μ s hs` of `1_s` in real `L∞(μ)` therefore needs no finiteness of
 `μ s`, unlike `indicatorConstLp`. It is additive on disjoint sets, nonnegative, vanishes on null
@@ -54,6 +59,10 @@ constant indicator classes it intersects the supporting sets.
   disjoint sets.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
   function `G`, as a sum of indicator classes of the fibres of `G`.
+* `TauCeti.tendsto_indicatorConstLp_accumulate`: for `p < ∞`, the indicator classes of the partial
+  unions of a sequence of sets converge to that of the union, if the union has finite measure.
+* `TauCeti.indicatorConstLp_iUnion_mem`: for `p < ∞`, a closed additive subgroup of `Lᵖ` containing
+  the indicator classes of a pairwise disjoint sequence of sets contains that of their union.
 * `MeasureTheory.SimpleFunc.memLp_indicator`, `MeasureTheory.SimpleFunc.integrable_indicator`: a
   simple function cut off to a measurable set of finite measure lies in every `Lᵖ`.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
@@ -201,6 +210,60 @@ theorem eq_sum_indicatorConstLp_fiber {F : Type*} {G : SimpleFunc α F} {φ : F 
     simp [hw]
 
 end Disjoint
+
+section DisjointUnion
+
+open Filter Set
+open scoped symmDiff Topology
+
+variable [Fact (1 ≤ p)] {f : ℕ → Set α} {c : E}
+
+/-- For `p < ∞`, the indicator classes of the partial unions `accumulate f n` of a sequence of sets
+converge in `Lᵖ` to the indicator class of the whole union, provided the union has finite
+measure. -/
+theorem tendsto_indicatorConstLp_accumulate {hU : MeasurableSet (⋃ i, f i)}
+    {hμU : μ (⋃ i, f i) ≠ ∞} {hA : ∀ n, MeasurableSet (accumulate f n)}
+    {hμA : ∀ n, μ (accumulate f n) ≠ ∞} (hp : p ≠ ∞) :
+    Tendsto (fun n ↦ indicatorConstLp p (hA n) (hμA n) c) atTop
+      (𝓝 (indicatorConstLp p hU hμU c)) := by
+  refine tendsto_indicatorConstLp_set hp ?_
+  simp_rw [symmDiff_of_le (accumulate_subset_iUnion _)]
+  have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun n ↦ (⋃ i, f i) \ accumulate f n)
+    (fun n ↦ (hU.diff (hA n)).nullMeasurableSet)
+    (fun i j hij ↦ sdiff_subset_sdiff_right (monotone_accumulate hij))
+    ⟨0, measure_ne_top_of_subset sdiff_subset hμU⟩
+  rwa [← sdiff_iUnion, iUnion_accumulate, Set.sdiff_self, measure_empty] at h
+
+/-- If a closed additive subgroup of `Lᵖ`, `p < ∞`, contains the indicator classes of the members
+of a pairwise disjoint sequence of measurable sets, it contains the indicator class of their union,
+provided the union has finite measure. -/
+theorem indicatorConstLp_iUnion_mem {V : AddSubgroup (Lp E p μ)}
+    (hV : IsClosed (V : Set (Lp E p μ))) (hp : p ≠ ∞) (hfm : ∀ i, MeasurableSet (f i))
+    (hfd : Pairwise (Function.onFun Disjoint f)) (hμ : μ (⋃ i, f i) ≠ ∞)
+    (hf : ∀ i (hμi : μ (f i) ≠ ∞), indicatorConstLp p (hfm i) hμi c ∈ V) :
+    indicatorConstLp p (MeasurableSet.iUnion hfm) hμ c ∈ V := by
+  have hA : ∀ n, MeasurableSet (accumulate f n) := fun n ↦
+    MeasurableSet.biUnion (to_countable _) fun i _ ↦ hfm i
+  have hμA : ∀ n, μ (accumulate f n) ≠ ∞ := fun n ↦
+    measure_ne_top_of_subset (accumulate_subset_iUnion n) hμ
+  have hμf : ∀ i, μ (f i) ≠ ∞ := fun i ↦ measure_ne_top_of_subset (subset_iUnion f i) hμ
+  -- the partial unions have indicator classes in `V`
+  have hAV : ∀ n, indicatorConstLp p (hA n) (hμA n) c ∈ V := by
+    intro n
+    induction n with
+    | zero =>
+      convert hf 0 (hμf 0) using 2
+      exact accumulate_zero_nat f
+    | succ n ih =>
+      convert V.add_mem ih (hf _ (hμf (n + 1))) using 1
+      rw [← indicatorConstLp_disjoint_union (hA n) (hfm _) (hμA n) (hμf _)
+        (disjoint_accumulate hfd n.lt_succ_self)]
+      congr 1
+      exact accumulate_succ f n
+  exact hV.mem_of_tendsto (tendsto_indicatorConstLp_accumulate (hA := hA) (hμA := hμA) hp)
+    (Eventually.of_forall hAV)
+
+end DisjointUnion
 
 section IndicatorContinuousOn
 

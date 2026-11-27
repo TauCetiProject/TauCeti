@@ -43,7 +43,8 @@ classes `𝟙_A (𝟙_B x)` of rectangle tensors span a dense subspace of `Lᵖ(
 The π-system statement is proved by a Dynkin system argument: inside a fixed member `B` of the
 cover, the measurable sets `t` for which `𝟙_{t ∩ B} c` lies in the closed span are closed under
 relative complements and countable disjoint unions, the latter because `Lᵖ` norms of indicators of
-the tails of a disjoint union of finite measure tend to zero for `p < ∞`.
+the tails of a disjoint union of finite measure tend to zero for `p < ∞`
+(`TauCeti.indicatorConstLp_iUnion_mem`).
 
 ## References
 
@@ -53,8 +54,8 @@ the tails of a disjoint union of finite measure tend to zero for `p < ∞`.
 
 public section
 
-open Filter Function Set
-open scoped ENNReal symmDiff Topology
+open Set
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -73,44 +74,6 @@ private theorem indicatorConstLp_mem_of_eq {s t : Set α} (hst : s = t) {hs : Me
     (h : indicatorConstLp p hs hμs c ∈ V) : indicatorConstLp p ht hμt c ∈ V := by
   subst hst
   exact h
-
-/-- If a closed additive subgroup of `Lᵖ`, `p < ∞`, contains the indicator classes of the members
-of a pairwise disjoint sequence of measurable sets, it contains the indicator class of their union,
-provided the union has finite measure. -/
-private theorem indicatorConstLp_iUnion_mem {V : AddSubgroup (Lp E p μ)}
-    (hV : IsClosed (V : Set (Lp E p μ))) (hp : p ≠ ∞) {f : ℕ → Set α}
-    (hfm : ∀ i, MeasurableSet (f i)) (hfd : Pairwise (Disjoint on f)) (hμ : μ (⋃ i, f i) ≠ ∞)
-    (hf : ∀ i (hμi : μ (f i) ≠ ∞), indicatorConstLp p (hfm i) hμi c ∈ V) :
-    indicatorConstLp p (MeasurableSet.iUnion hfm) hμ c ∈ V := by
-  have hAm : ∀ n, MeasurableSet (accumulate f n) := fun n ↦
-    MeasurableSet.biUnion (to_countable _) fun i _ ↦ hfm i
-  have hAμ : ∀ n, μ (accumulate f n) ≠ ∞ := fun n ↦
-    measure_ne_top_of_subset (accumulate_subset_iUnion n) hμ
-  -- the partial unions have indicator classes in `V`
-  have hA : ∀ n, indicatorConstLp p (hAm n) (hAμ n) c ∈ V := by
-    intro n
-    induction n with
-    | zero =>
-      exact indicatorConstLp_mem_of_eq (accumulate_zero_nat f).symm
-        (hf 0 (measure_ne_top_of_subset (subset_iUnion f 0) hμ))
-    | succ n ih =>
-      have hμ' : μ (f (n + 1)) ≠ ∞ := measure_ne_top_of_subset (subset_iUnion f _) hμ
-      refine indicatorConstLp_mem_of_eq (accumulate_succ f n).symm
-        (hs := (hAm n).union (hfm _)) (hμs := measure_union_ne_top (hAμ n) hμ') ?_
-      rw [indicatorConstLp_disjoint_union (hAm n) (hfm _) (hAμ n) hμ'
-        (disjoint_accumulate hfd n.lt_succ_self)]
-      exact V.add_mem ih (hf _ hμ')
-  -- and the measure of the remaining part of the union tends to zero
-  have hlim : Tendsto (fun n ↦ μ (accumulate f n ∆ ⋃ i, f i)) atTop (𝓝 0) := by
-    have hsub : ∀ n, accumulate f n ⊆ ⋃ i, f i := fun n ↦ accumulate_subset_iUnion n
-    simp_rw [symmDiff_of_le (hsub _)]
-    have h := tendsto_measure_iInter_atTop (μ := μ)
-      (s := fun n ↦ (⋃ i, f i) \ accumulate f n)
-      (fun n ↦ ((MeasurableSet.iUnion hfm).diff (hAm n)).nullMeasurableSet)
-      (fun i j hij ↦ sdiff_subset_sdiff_right (monotone_accumulate hij))
-      ⟨0, measure_ne_top_of_subset sdiff_subset hμ⟩
-    rwa [← sdiff_iUnion, iUnion_accumulate, Set.sdiff_self, measure_empty] at h
-  exact hV.mem_of_tendsto (tendsto_indicatorConstLp_set hp hlim) (Eventually.of_forall hA)
 
 /-- **Dynkin step.** Let `𝒞` be a π-system generating the σ-algebra and let `B ∈ 𝒞` have finite
 measure. If a closed additive subgroup of `Lᵖ`, `p < ∞`, contains the indicator classes of the
@@ -147,7 +110,7 @@ private theorem indicatorConstLp_inter_mem {V : AddSubgroup (Lp E p μ)}
     simpa using V.sub_mem hB' (hu (hum.inter hBm) (hsub _ inter_subset_right))
   · intro f hfd hfm hf _ hμf
     simp_rw [iUnion_inter] at hμf ⊢
-    exact indicatorConstLp_iUnion_mem hV hp (fun i ↦ (hfm i).inter hBm)
+    exact TauCeti.indicatorConstLp_iUnion_mem hV hp (fun i ↦ (hfm i).inter hBm)
       (hfd.mono fun i j h ↦ h.mono inter_subset_left inter_subset_left) hμf
       fun i ↦ hf i ((hfm i).inter hBm)
 
@@ -228,7 +191,7 @@ theorem _root_.IsPiSystem.topologicalClosure_span_indicatorConstLp_eq_top {𝒞 
       iUnion_disjointed, S.spanning, inter_univ]
   have hm : ∀ n, MeasurableSet (t ∩ disjointed S.set n) := fun n ↦
     ht.inter (MeasurableSet.disjointed hSm n)
-  have key := indicatorConstLp_iUnion_mem hV hp (fun n ↦ (hm n).inter (hSm n))
+  have key := TauCeti.indicatorConstLp_iUnion_mem hV hp (fun n ↦ (hm n).inter (hSm n))
     ((disjoint_disjointed S.set).mono fun i j h ↦ h.mono
       (inter_subset_left.trans inter_subset_right) (inter_subset_left.trans inter_subset_right))
     (ht' ▸ hμt) fun n ↦ indicatorConstLp_inter_mem hV hp h𝒞 hgen hgenP (S.set_mem n)

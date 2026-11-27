@@ -519,7 +519,7 @@ theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
         (hfin s hs) 1}).topologicalClosure = ⊤ := by
   obtain ⟨v, hv, hspan⟩ := hcover
   have hD : (Submodule.span ℝ ({1} : Set ℝ)).topologicalClosure = ⊤ := by
-    rw [show Submodule.span ℝ ({1} : Set ℝ) = ⊤ from Ideal.span_singleton_one]
+    rw [(Submodule.span_singleton_eq_top_iff ℝ (1 : ℝ)).2 fun v ↦ ⟨v, mul_one v⟩]
     exact top_unique (Submodule.le_topologicalClosure _)
   refine top_unique ((hpi.topologicalClosure_span_indicatorConstLp_eq_top hgen
     ⟨v, hv, fun n ↦ (hfin _ (hv n)).lt_top, hspan⟩ (by norm_num) hD).symm.trans_le
