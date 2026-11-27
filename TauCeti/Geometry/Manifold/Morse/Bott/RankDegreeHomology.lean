@@ -21,13 +21,13 @@ negative normal bundle. Let `a < c < b` be such that the band `f⁻¹[a, b]` is 
 critical points lie on `i`. Bott's theorem identifies the relative homology across the level with
 the homology of `S` shifted by the index and twisted by the orientation local system `o(ν⁻)`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem`):
-`Hⱼ({f ≤ b}, {f ≤ a}; ℤ) ≅ H_{j - r}(S; o(ν⁻))`. This file proves this identification in the
+`Hⱼ({f ≤ b}, {f ≤ a}; R) ≅ H_{j - r}(S; o(ν⁻))`. This file proves this identification in the
 degrees `j < r`, and also in the degree `j = r` when the index `r` is positive, with no
 orientation of `ν⁻`:
 
 * below the index the relative homology vanishes, with any coefficients
   (`isZero_singularHomology_sublevelPair_of_lt`);
-* in the degree of a positive index, `Hᵣ({f ≤ b}, {f ≤ a}; ℤ) ≅ H₀(S; o(ν⁻))`
+* in the degree of a positive index, `Hᵣ({f ≤ b}, {f ≤ a}; R) ≅ H₀(S; o(ν⁻))` for every ring `R`
   (`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, stated for index `r + 1`).
 
 The relative homology across the level is that of the Thom pair `(ν⁻, ν⁻₀)`
@@ -35,13 +35,14 @@ The relative homology across the level is that of the Thom pair `(ν⁻, ν⁻�
 (`TauCeti.isZero_singularHomology_thomPair_of_compactSpace`) and is `H₀(S; o(ν⁻))` in the rank
 degree (`TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology`).
 
-For a connected critical submanifold of positive index the group `H₀(S; o(ν⁻))` is `ℤ` when `ν⁻`
-is orientable and `ℤ/2` when it is not, so the integral homology across the level in the degree of
-the index detects the orientability of the negative normal bundle:
+For a connected critical submanifold of positive index and a commutative ring `R`, the group
+`H₀(S; o(ν⁻))` is `R` when `ν⁻` is orientable and `R ⧸ 2R` when it is not, so when `2 ≠ 0` in `R`,
+for instance over `ℤ`, the homology across the level in the degree of the index detects the
+orientability of the negative normal bundle:
 
-* `Hᵣ({f ≤ b}, {f ≤ a}; ℤ) ≅ ℤ` exactly when `ν⁻` is orientable
+* `Hᵣ({f ≤ b}, {f ≤ a}; R) ≅ R` exactly when `ν⁻` is orientable, if `2 ≠ 0` in `R`
   (`nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelPair_linearEquiv`);
-* `Hᵣ({f ≤ b}, {f ≤ a}; ℤ) ≅ ℤ/2` when it is not
+* `Hᵣ({f ≤ b}, {f ≤ a}; R) ≅ R ⧸ 2R` when it is not
   (`nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two`).
 
 For instance, a critical circle of index one whose negative normal bundle is a Möbius line
@@ -140,12 +141,13 @@ continuous local frames of size `r + 1`, so that they form the negative normal b
 `r + 1`; the Morse index of `f` along `i` is then `r + 1`, and conversely such frames exist when
 the Morse index is `r + 1` at every point of `i`
 (`IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_negativeNormalSpace`). Then
-`H_{r+1}({f ≤ b}, {f ≤ a}; ℤ) ≅ H₀(S; o(ν⁻))`, where `o(ν⁻)` is the orientation local system of
-`ν⁻`. No orientation of `ν⁻` is assumed. -/
+`H_{r+1}({f ≤ b}, {f ≤ a}; R) ≅ H₀(S; o(ν⁻))` for every ring `R`, for instance `ℤ`, where `o(ν⁻)`
+is the orientation local system of `ν⁻`. No orientation of `ν⁻` is assumed. -/
 theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology {r : ℕ}
     (hV : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      HasLocalSubbundleFrames P (Fin (r + 1)) (h.negativeNormalSpace hn g.toRiemannianMetric)) :
+      HasLocalSubbundleFrames P (Fin (r + 1)) (h.negativeNormalSpace hn g.toRiemannianMetric))
+    (R : Type) [Ring R] :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     letI := subbundleTopology P (F' := Fin (r + 1) → ℝ)
@@ -153,9 +155,9 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology {r : ℕ}
     letI := hV.fiberBundle
     haveI := hV.vectorBundle
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology
-        (ModuleCat.of ℤ ℤ) (r + 1) ≅
+        (ModuleCat.of R R) (r + 1) ≅
       twistedHomology.{0, 0, 0} (signLocalSystem (Fin (r + 1) → ℝ)
-        (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) ℤ
+        (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) R
         ((Fintype.card_fin (r + 1)).trans (finrank_fin_fun ℝ).symm)) 0) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
@@ -173,24 +175,26 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology {r : ℕ}
     -- The frames have size the dimension of the negative normal spaces, which is the index.
     have hr := h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV
     obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
-      hcrit hdim g hr (ModuleCat.of ℤ ℤ) (r + 1)
+      hcrit hdim g hr (ModuleCat.of R R) (r + 1)
     -- The model fibre `Fin (r + 1) → ℝ` has dimension `r + 1`; its standard basis orients it.
     have hd : r + 1 = finrank ℝ (Fin (r + 1) → ℝ) := (finrank_fin_fun ℝ).symm
-    exact ⟨e ≪≫ eqToIso (congrArg (TopPair.singularHomology _ (ModuleCat.of ℤ ℤ)) hd) ≪≫
-      thomPairSingularHomologyFinrankIsoTwistedHomology ℤ (Fin (r + 1) → ℝ) _
+    exact ⟨e ≪≫ eqToIso (congrArg (TopPair.singularHomology _ (ModuleCat.of R R)) hd) ≪≫
+      thomPairSingularHomologyFinrankIsoTwistedHomology R (Fin (r + 1) → ℝ) _
         ((Fintype.card_fin (r + 1)).trans hd) (Pi.basisFun ℝ (Fin (r + 1))).orientation⟩
 
 include h hfs hc hac hcb hcompact hcrit in
 /-- **The homology across a connected Morse–Bott level detects the orientability of the negative
 normal bundle.** Under the hypotheses of
-`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, with `S` connected, the integral
-relative homology `H_{r+1}({f ≤ b}, {f ≤ a}; ℤ)` in the degree of the index is isomorphic to `ℤ`
-exactly when the negative normal bundle `ν⁻` is orientable. -/
+`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, with `S` connected, and for a
+commutative ring `R` in which `2 ≠ 0`, for instance `ℤ`, the relative homology
+`H_{r+1}({f ≤ b}, {f ≤ a}; R)` in the degree of the index is isomorphic to `R` exactly when the
+negative normal bundle `ν⁻` is orientable. -/
 theorem nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelPair_linearEquiv
     [ConnectedSpace S] {r : ℕ}
     (hV : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      HasLocalSubbundleFrames P (Fin (r + 1)) (h.negativeNormalSpace hn g.toRiemannianMetric)) :
+      HasLocalSubbundleFrames P (Fin (r + 1)) (h.negativeNormalSpace hn g.toRiemannianMetric))
+    (R : Type) [CommRing R] (h2 : (2 : R) ≠ 0) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     letI := subbundleTopology P (F' := Fin (r + 1) → ℝ)
@@ -200,7 +204,7 @@ theorem nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelP
     Nonempty (VectorBundleOrientation (Fin (r + 1) → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (Fin (r + 1))) ↔
       Nonempty (((sublevelPair f (hac.trans hcb).le).singularHomology
-        (ModuleCat.of ℤ ℤ) (r + 1) : ModuleCat.{0} ℤ) ≃ₗ[ℤ] ℤ) := by
+        (ModuleCat.of R R) (r + 1) : ModuleCat.{0} R) ≃ₗ[R] R) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   let := subbundleTopology P (F' := Fin (r + 1) → ℝ)
@@ -209,16 +213,17 @@ theorem nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelP
   have := hV.vectorBundle
   have := J.locallyPathConnectedSpace_of_chartedSpace S
   obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_twistedHomology hn hfs hc hac hcb
-    hcompact hcrit hdim g hV
+    hcompact hcrit hdim g hV R
   rw [VectorBundleOrientation.nonempty_iff_nonempty_twistedHomology₀_linearEquiv
-    ((Fintype.card_fin (r + 1)).trans (finrank_fin_fun ℝ).symm) (two_ne_zero : (2 : ℤ) ≠ 0)]
+    ((Fintype.card_fin (r + 1)).trans (finrank_fin_fun ℝ).symm) h2]
   exact ⟨fun ⟨φ⟩ ↦ ⟨e.toLinearEquiv ≪≫ₗ φ⟩, fun ⟨φ⟩ ↦ ⟨e.symm.toLinearEquiv ≪≫ₗ φ⟩⟩
 
 include h hfs hc hac hcb hcompact hcrit in
-/-- **Across a connected Morse–Bott level with non-orientable negative normal bundle the integral
-homology in the degree of the index is `ℤ/2`.** Under the hypotheses of
+/-- **Across a connected Morse–Bott level with non-orientable negative normal bundle the
+homology in the degree of the index is `R ⧸ 2R`.** Under the hypotheses of
 `nonempty_singularHomology_sublevelPair_iso_twistedHomology`, with `S` connected and the negative
-normal bundle `ν⁻` not orientable, `H_{r+1}({f ≤ b}, {f ≤ a}; ℤ) ≅ ℤ ⧸ 2ℤ`. -/
+normal bundle `ν⁻` not orientable, `H_{r+1}({f ≤ b}, {f ≤ a}; R) ≅ R ⧸ 2R` for every commutative
+ring `R`; over `ℤ` this is `ℤ/2`. -/
 theorem nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two [ConnectedSpace S]
     {r : ℕ}
     (hV : letI := i.normalSpaceFiberBundle hn hdim
@@ -231,10 +236,11 @@ theorem nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two [Connect
       letI := hV.fiberBundle
       haveI := hV.vectorBundle
       IsEmpty (VectorBundleOrientation (Fin (r + 1) → ℝ)
-        (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (Fin (r + 1)))) :
+        (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (Fin (r + 1))))
+    (R : Type) [CommRing R] :
     Nonempty (((sublevelPair f (hac.trans hcb).le).singularHomology
-        (ModuleCat.of ℤ ℤ) (r + 1) : ModuleCat.{0} ℤ) ≃ₗ[ℤ]
-      ℤ ⧸ Ideal.span {(2 : ℤ)}) := by
+        (ModuleCat.of R R) (r + 1) : ModuleCat.{0} R) ≃ₗ[R]
+      R ⧸ Ideal.span {(2 : R)}) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   let := subbundleTopology P (F' := Fin (r + 1) → ℝ)
@@ -244,7 +250,7 @@ theorem nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two [Connect
   have := J.locallyPathConnectedSpace_of_chartedSpace S
   obtain ⟨s⟩ := (inferInstance : Nonempty S)
   obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_twistedHomology hn hfs hc hac hcb
-    hcompact hcrit hdim g hV
+    hcompact hcrit hdim g hV R
   -- Any orientation of a single fibre serves as the base point of the identification.
   let o := (Module.finBasisOfFinrankEq ℝ _
     ((hV.finrank_eq s).trans (Fintype.card_fin (r + 1)))).orientation
