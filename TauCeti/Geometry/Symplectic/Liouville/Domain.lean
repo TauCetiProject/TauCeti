@@ -53,6 +53,8 @@ primitive `-λ` of the cotangent bundle
   `ι_Z ω = α` points strictly out of a Liouville domain along its boundary.
 * `TauCeti.IsLiouvilleDomain.exists_isRestrictedContactType`: the boundary is a regular level of
   a defining function, and is of restricted contact type.
+* `TauCeti.not_isLiouvilleDomain_neg_of_mextDeriv_eq`: if `dα = ω`, then `-α` is not the primitive
+  of any Liouville domain for `ω`.
 
 ## References
 
@@ -165,5 +167,26 @@ theorem exists_isRestrictedContactType [I.Boundaryless] [FiniteDimensional ℝ E
       exact (hf x hx).2.ne'⟩
 
 end IsLiouvilleDomain
+
+/-- **The sign of the primitive matters.** If `dα = ω` for a two-form `ω` on a nonempty manifold of
+positive dimension, then no set is a Liouville domain for `ω` with the primitive `-α`: its
+differential is `-ω`, which is not `ω` since the two-form of a Liouville domain is
+nondegenerate. -/
+theorem not_isLiouvilleDomain_neg_of_mextDeriv_eq [Nonempty M] [Nontrivial E]
+    (hα : mextDeriv α.val = ω.val) (W : Set M) :
+    ¬ IsLiouvilleDomain ω (-α) W := by
+  intro h
+  have hneg := h.mextDeriv_eq
+  rw [NegMemClass.coe_neg, mextDeriv_neg, hα] at hneg
+  -- Some tangent vector `v ≠ 0` pairs nontrivially with some `w`, which contradicts `-ω = ω`.
+  set x := Classical.arbitrary M
+  obtain ⟨v, hv⟩ : ∃ v : TangentSpace I x, v ≠ 0 := exists_ne (0 : E)
+  obtain ⟨w, hw⟩ : ∃ w, SmoothBundleForm.eval₂ ω x v w ≠ 0 := by
+    by_contra! h0
+    exact hv (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 h.isNondegenerate x v h0)
+  have hvw := congrArg (fun φ ↦ φ x ![v, w]) hneg
+  simp only [Pi.neg_apply, ContinuousAlternatingMap.neg_apply] at hvw
+  rw [SmoothBundleForm.eval₂_apply] at hw
+  exact hw (by linarith)
 
 end TauCeti

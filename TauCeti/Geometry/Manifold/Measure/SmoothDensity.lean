@@ -62,6 +62,8 @@ nonempty open sets.
 * `TauCeti.HasSmoothPositiveDensity.exists_map_restrict_source_eq_withDensity`: hence a measure
   with a smooth positive density that is finite on compact sets reads in every chart of the
   maximal atlas as a measure with a smooth positive density on the chart target.
+* `TauCeti.HasSmoothPositiveDensity.exists_measure_le_smul`: on a compact subset of a chart
+  target, such a measure read in the chart and Lebesgue measure bound each other up to constants.
 * `TauCeti.HasSmoothPositiveDensity.isPositiveDensityMeasure`: such a measure is a positive
   continuous density measure.
 
@@ -76,7 +78,7 @@ public section
 noncomputable section
 
 open Set MeasureTheory
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold ENNReal
 
 namespace TauCeti
 
@@ -228,6 +230,58 @@ theorem HasSmoothPositiveDensity.exists_map_restrict_source_eq_withDensity
   obtain ⟨ρ, hρ, hρ0, hint⟩ := hμ e he
   exact ⟨ρ, hρ, hρ0, map_restrict_source_eq_withDensity_of_forall_integral_eq hρ.continuousOn
     (fun y hy ↦ (hρ0 y hy).le) hint⟩
+
+/-- **Lebesgue measure and a smooth positive density bound each other on compacts.** Let `μ` have a
+smooth positive density and be finite on compact sets. On a compact subset `K` of the target of a
+chart `e` of the maximal atlas, the measure `volume` and the reading `ρ(y) dy` of `μ` in the chart
+dominate each other up to finite constants, because the density `ρ` is continuous and positive on
+`K`. -/
+theorem HasSmoothPositiveDensity.exists_measure_le_smul
+    [IsFiniteMeasureOnCompacts (volume : Measure E)]
+    (hμ : HasSmoothPositiveDensity E μ) {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {K : Set E} (hK : IsCompact K)
+    (hKt : K ⊆ e.target) :
+    ∃ c D : ℝ≥0∞, c ≠ ⊤ ∧ D ≠ ⊤ ∧
+      volume.restrict K ≤ c • (μ.restrict e.source).map e ∧
+      ((μ.restrict e.source).map e).restrict K ≤ D • volume := by
+  obtain ⟨ρ, hρ, hρ0, hmap⟩ := hμ.exists_map_restrict_source_eq_withDensity he
+  have hKm : MeasurableSet K := hK.isClosed.measurableSet
+  have hρK : ContinuousOn ρ K := hρ.continuousOn.mono hKt
+  -- `ρ` lies between two positive constants on the compact set `K`.
+  obtain ⟨c, hc0, hc⟩ : ∃ c > 0, ∀ y ∈ K, c ≤ ρ y := by
+    rcases K.eq_empty_or_nonempty with hK' | hK'
+    · exact ⟨1, one_pos, by simp [hK']⟩
+    obtain ⟨y₀, hy₀, hmin⟩ := hK.exists_isMinOn hK' hρK
+    exact ⟨ρ y₀, hρ0 y₀ (hKt hy₀), fun y hy ↦ hmin hy⟩
+  obtain ⟨D, hD⟩ := hK.exists_bound_of_continuousOn hρK
+  have hres : ((volume.restrict e.target).withDensity fun y ↦ ENNReal.ofReal (ρ y)).restrict K =
+      (volume.restrict K).withDensity fun y ↦ ENNReal.ofReal (ρ y) := by
+    rw [restrict_withDensity hKm, Measure.restrict_restrict hKm, inter_eq_left.2 hKt]
+  refine ⟨(ENNReal.ofReal c)⁻¹, ENNReal.ofReal D, by simpa using hc0, ENNReal.ofReal_ne_top,
+    ?_, ?_⟩ <;> rw [hmap]
+  · have hc' : ENNReal.ofReal c ≠ 0 := by simpa using hc0
+    calc volume.restrict K
+        = (ENNReal.ofReal c)⁻¹ • (ENNReal.ofReal c • volume.restrict K) := by
+          rw [smul_smul, ENNReal.inv_mul_cancel hc' ENNReal.ofReal_ne_top, one_smul]
+      _ ≤ (ENNReal.ofReal c)⁻¹ •
+            ((volume.restrict K).withDensity fun y ↦ ENNReal.ofReal (ρ y)) := by
+          gcongr
+          rw [← withDensity_const]
+          exact withDensity_mono (ae_restrict_of_forall_mem hKm fun y hy ↦
+            ENNReal.ofReal_le_ofReal (hc y hy))
+      _ ≤ _ := by
+          rw [← hres]
+          gcongr
+          exact Measure.restrict_le_self
+  · rw [hres]
+    calc (volume.restrict K).withDensity (fun y ↦ ENNReal.ofReal (ρ y))
+        ≤ (volume.restrict K).withDensity fun _ ↦ ENNReal.ofReal D :=
+          withDensity_mono (ae_restrict_of_forall_mem hKm fun y hy ↦
+            ENNReal.ofReal_le_ofReal ((Real.le_norm_self _).trans (hD y hy)))
+      _ = ENNReal.ofReal D • volume.restrict K := withDensity_const _
+      _ ≤ ENNReal.ofReal D • volume := by
+          gcongr
+          exact Measure.restrict_le_self
 
 /-- A measure with a smooth positive density (`TauCeti.HasSmoothPositiveDensity`) that is finite on
 compact sets is a positive continuous density measure (`TauCeti.IsPositiveDensityMeasure`); in
