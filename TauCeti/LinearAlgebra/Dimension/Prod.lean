@@ -21,7 +21,9 @@ over a semiring with the strong rank condition (`Module.finrank_prod_self`).
 A free module of positive dimension is finite, so the dimensions of factors of dimensions
 `m + 1` and `n + 1` add without a separate finiteness hypothesis
 (`Module.finrank_prod_eq_succ`). The sum is written `d + 1` together with a proof of
-`(m + 1) + (n + 1) = d + 1`, the form used for products of local orientations.
+`(m + 1) + (n + 1) = d + 1`, the form used for products of local orientations. Dimensions cancel:
+a finite module `M` isomorphic to `M × M'` forces `finrank M' = 0`
+(`LinearEquiv.finrank_eq_zero_of_self_prod`).
 
 For a finite-dimensional vector space `V` over a field `K`, the space `V × V^* × K`, the linear
 model of the one-jet space of `V`, has dimension `2 * finrank K V + 1`
@@ -57,6 +59,16 @@ theorem finrank_prod_eq_succ (hM : finrank R M = m + 1) (hM' : finrank R M' = n 
   have := finite_of_finrank_eq_succ hM
   have := finite_of_finrank_eq_succ hM'
   rw [Module.finrank_prod, hM, hM', hd]
+
+/-- If a finite module `M` is isomorphic to `M × M'`, then `M'` has dimension `0`. -/
+theorem _root_.LinearEquiv.finrank_eq_zero_of_self_prod [Module.Finite R M] (e : M ≃ₗ[R] M × M') :
+    finrank R M' = 0 := by
+  have : Module.Finite R M' :=
+    .of_surjective ((LinearMap.snd R M M').comp e.toLinearMap)
+      (Prod.snd_surjective.comp e.surjective)
+  have h := e.finrank_eq
+  rw [Module.finrank_prod] at h
+  omega
 
 /-- The dimension of `V × V^* × K` is `2 * finrank K V + 1` for a finite-dimensional vector space
 `V` over a field `K`. -/

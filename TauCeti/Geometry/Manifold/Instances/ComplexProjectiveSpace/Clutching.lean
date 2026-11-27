@@ -80,7 +80,7 @@ private theorem affineParam_zero_single_mem_affineOpen_one {z : ℂ} (hz : z ≠
   simpa using hz
 
 /-- For `z ≠ 0`, the point `[1 : z : 0 : ⋯ : 0]` is `[z⁻¹ : 1 : 0 : ⋯ : 0]`. -/
-private theorem affineParam_zero_single_eq {z : ℂ} (hz : z ≠ 0) :
+theorem affineParam_zero_single_eq {z : ℂ} (hz : z ≠ 0) :
     affineParam 0 (Pi.single 0 z : Fin (n + 1) → ℂ) = affineParam 1 (Pi.single 0 z⁻¹) := by
   rw [← affineChart_one_affineParam_zero_single, ← affineChart_symm_apply (k := 1)]
   exact ((affineChart 1).left_inv

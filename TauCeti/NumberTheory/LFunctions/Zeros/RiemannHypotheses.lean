@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
-public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
+public import TauCeti.NumberTheory.LFunctions.Hecke.ChangeModulus
 public import TauCeti.NumberTheory.LFunctions.Zeros.CriticalLine
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 
 /-!
 # The extended and generalized Riemann hypotheses over a number field
@@ -62,7 +59,6 @@ namespace TauCeti
 open Set Complex
 open scoped NumberField
 open GlobalNumberFields
-open RayClassCharacter
 
 /-- The **extended Riemann hypothesis** for the number field `K`: every zero of the continued
 Dedekind zeta function `TauCeti.LFunctions.dedekindZetaC K` in the open critical strip
@@ -114,13 +110,7 @@ variable (K : Type*) [Field K] [NumberField K]
 `TauCeti.LFunctions.dedekindZetaC K`. -/
 theorem heckeGRH_one_iff_dedekindERH :
     HeckeGRH (1 : RayClassCharacter (Modulus.one K)) ↔ DedekindERH K := by
-  have hc1 : LFunctions.heckeLFunctionC (1 : RayClassCharacter (Modulus.one K)) =
-      LFunctions.dedekindZetaC K := by
-    rw [LFunctions.heckeLFunctionC_def, toUnitaryIdealWeight_one,
-      UnitaryIdealWeight.toIdealArithmeticFunction_one, LFunctions.dedekindZetaC_def]
-    exact congrArg (meromorphicContinuation 1)
-      (funext fun s ↦ (dedekindZeta_eq_LSeries_normCoeff_one K s).symm)
-  rw [heckeGRH_def, dedekindERH_def, hc1]
+  rw [heckeGRH_def, dedekindERH_def, LFunctions.heckeLFunctionC_one_modulus_one]
 
 end NumberFieldRiemannHypotheses
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Convex.Strong
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Convex.Deriv
+import TauCeti.Analysis.Calculus.EulerHomogeneous
 import TauCeti.Analysis.Calculus.Taylor.Integral
 import TauCeti.Analysis.Calculus.SecondDerivative
 
@@ -26,13 +27,16 @@ for a line derivative first and the Fréchet version is deduced from it.
 
 For `m = 0` this is the familiar statement that a differentiable convex function lies above its
 tangent hyperplanes; it holds on an arbitrary convex set, with no interior or openness assumption
-on the base point. The parameter `m` may be negative, in which case the paraboloid opens
-downwards. In an inner product space, with `f'` given by the gradient, this is the inequality that
-makes the gradient of a strongly convex potential a subgradient of its potential energy on the
-Wasserstein space.
+on the base point, and its concave counterpart follows by negation. For a concave function that is
+positively homogeneous of degree one, Euler's identity `f' x = f x` moves the tangent hyperplane at
+`x` through the origin, which gives the tangent inequality `f y ≤ f' y`. The parameter `m` may be
+negative, in which case the paraboloid opens downwards. In an inner product space, with `f'` given
+by the gradient, this is the inequality that makes the gradient of a strongly convex potential a
+subgradient of its potential energy on the Wasserstein space.
 
-Uniform concavity is preserved by translation. Restriction to an affine line rescales a signed
-strong modulus by the squared direction norm. At a point where the derivative is differentiable,
+Adding a convex function preserves strong convexity. Uniform concavity is preserved by
+translation. Restriction to an affine line rescales a signed strong modulus by the squared
+direction norm. At a point where the derivative is differentiable,
 strong concavity and convexity bound the diagonal second derivative; differentiability of the
 original function is needed only in a neighbourhood, not continuity of its second derivative.
 
@@ -47,7 +51,13 @@ original function is needed only in a neighbourhood, not continuity of its secon
   convexity, for a line derivative.
 * `StrongConvexOn.add_add_le_of_hasFDerivWithinAt`: the first-order condition for strong convexity,
   for a Fréchet derivative.
+* `StrongConvexOn.add_convexOn`: a strongly convex function plus a convex function is strongly
+  convex with the same modulus.
 * `ConvexOn.add_le_of_hasFDerivWithinAt`: a convex function lies above its tangent hyperplanes.
+* `ConcaveOn.le_add_of_hasFDerivWithinAt`: a concave function lies below its tangent hyperplanes.
+* `ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous`: for a concave function that is positively
+  homogeneous of degree one along a ray, the tangent hyperplane at a point of that ray passes
+  through the origin, so `f y ≤ f' y`.
 -/
 
 public section
@@ -69,6 +79,21 @@ nonrec theorem StrongConvexOn.neg (hf : StrongConvexOn s m f) : StrongConcaveOn 
 /-- Negation turns signed strong concavity into signed strong convexity. -/
 nonrec theorem StrongConcaveOn.neg (hf : StrongConcaveOn s m f) : StrongConvexOn s m (-f) :=
   hf.neg
+
+/-- A strongly convex function plus a convex function is strongly convex with the same
+modulus. -/
+theorem StrongConvexOn.add_convexOn {g : E → ℝ} (hf : StrongConvexOn s m f)
+    (hg : ConvexOn ℝ s g) : StrongConvexOn s m (f + g) := by
+  -- `StrongConvexOn` is uniform convexity with a quadratic modulus, and a convex function is
+  -- uniformly convex with modulus zero.
+  have h := UniformConvexOn.add hf hg.uniformConvexOn_zero
+  rwa [add_zero] at h
+
+/-- A convex function plus a strongly convex function is strongly convex with the same
+modulus. -/
+theorem ConvexOn.add_strongConvexOn {g : E → ℝ} (hf : ConvexOn ℝ s f)
+    (hg : StrongConvexOn s m g) : StrongConvexOn s m (f + g) :=
+  add_comm g f ▸ hg.add_convexOn hf
 
 /-- **The first-order condition for strong convexity**, for a line derivative. If `f` is
 `m`-strongly convex on `s` and has line derivative `d` within `s` at a point `x ∈ s` in the
@@ -107,12 +132,43 @@ theorem StrongConvexOn.add_add_le_of_hasFDerivWithinAt (hf : StrongConvexOn s m 
     f x + f' (y - x) + m / 2 * ‖y - x‖ ^ 2 ≤ f y :=
   hf.add_add_le_of_hasLineDerivWithinAt hx hy (hd.hasLineDerivWithinAt _)
 
+/-- The squared dual norm of a derivative within the domain bounds the value gap
+of a strongly convex function to any comparison point in the domain. -/
+theorem StrongConvexOn.mul_sub_le_norm_sq_of_hasFDerivWithinAt (hf : StrongConvexOn s m f)
+    (hm : 0 ≤ m) (hx : x ∈ s) (hy : y ∈ s) (hd : HasFDerivWithinAt f f' s x) :
+    2 * m * (f x - f y) ≤ ‖f'‖ ^ 2 := by
+  have ht := hf.add_add_le_of_hasFDerivWithinAt hx hy hd
+  have hb : -(‖f'‖ * ‖y - x‖) ≤ f' (y - x) :=
+    (neg_le_neg (f'.le_opNorm _)).trans (neg_abs_le _)
+  nlinarith [mul_nonneg hm (sub_nonneg.mpr ht), mul_nonneg hm (sub_nonneg.mpr hb),
+    sq_nonneg (‖f'‖ - m * ‖y - x‖)]
+
 /-- **Tangent support for convex functions.** If `f` is convex on `s` and has derivative `f'`
 within `s` at a point `x ∈ s`, then `f` lies above its tangent hyperplane at `x` on `s`:
 `f x + f' (y - x) ≤ f y` for every `y ∈ s`. -/
 theorem ConvexOn.add_le_of_hasFDerivWithinAt (hf : ConvexOn ℝ s f) (hx : x ∈ s) (hy : y ∈ s)
     (hd : HasFDerivWithinAt f f' s x) : f x + f' (y - x) ≤ f y := by
   simpa using (strongConvexOn_zero.2 hf).add_add_le_of_hasFDerivWithinAt hx hy hd
+
+/-- **Tangent support for concave functions.** If `f` is concave on `s` and has derivative `f'`
+within `s` at a point `x ∈ s`, then `f` lies below its tangent hyperplane at `x` on `s`:
+`f y ≤ f x + f' (y - x)` for every `y ∈ s`. -/
+theorem ConcaveOn.le_add_of_hasFDerivWithinAt (hf : ConcaveOn ℝ s f) (hx : x ∈ s) (hy : y ∈ s)
+    (hd : HasFDerivWithinAt f f' s x) : f y ≤ f x + f' (y - x) := by
+  have h := hf.neg.add_le_of_hasFDerivWithinAt hx hy hd.neg
+  simp only [Pi.neg_apply, neg_apply] at h
+  linarith
+
+/-- **The tangent inequality for positively homogeneous concave functions.** Let `f` be concave on
+`s` and differentiable at `x ∈ s` with derivative `f'`, and suppose that `f (t • x) = t * f x` for
+`t` near `1`. Then the tangent hyperplane at `x` passes through the origin, and `f y ≤ f' y` for
+every `y ∈ s`. -/
+theorem ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous (hf : ConcaveOn ℝ s f) (hx : x ∈ s)
+    (hy : y ∈ s) (hd : HasFDerivAt f f' x) (hhom : ∀ᶠ t in 𝓝 (1 : ℝ), f (t • x) = t * f x) :
+    f y ≤ f' y := by
+  have hsupp := hf.le_add_of_hasFDerivWithinAt hx hy hd.hasFDerivWithinAt
+  rw [map_sub, hd.apply_self_eq_of_eventually_homogeneous hhom] at hsupp
+  linarith
 
 /-- Uniform concavity depends only on the values of the function on its domain. -/
 theorem UniformConcaveOn.congr {f g : E → ℝ} {ψ : ℝ → ℝ} {s : Set E}

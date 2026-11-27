@@ -7,6 +7,8 @@ module
 
 public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 public import TauCeti.GroupTheory.TransversalWord
+public import TauCeti.GroupTheory.GroupAction.Orbit.Quotient
+import Mathlib.GroupTheory.GroupAction.Period
 
 /-!
 # The monomial homomorphism of a subgroup transversal
@@ -152,5 +154,49 @@ theorem monomialFinHom_injective (s : U.LeftTransversal)
   (WreathProduct.congr e).injective.comp (monomialHom_injective U s)
 
 end FiniteCoordinates
+
+/-- The right projection of the monomial homomorphism is the permutation representation of `G` on
+`G ⧸ U`. -/
+@[simp]
+theorem rightHom_comp_monomialHom (s : U.LeftTransversal) :
+    (SemidirectProduct.rightHom : WreathProduct U (G ⧸ U) →* Equiv.Perm (G ⧸ U)).comp
+        (monomialHom U s) = MulAction.toPermHom G (G ⧸ U) :=
+  MonoidHom.ext fun g ↦ Equiv.Perm.ext (monomialHom_right U s g)
+
+/-- Integer powers of `(U.monomialHom s g).right` act on `G ⧸ U` as powers of `g`. -/
+@[simp]
+theorem monomialHom_right_zpow (s : U.LeftTransversal) (g : G) (k : ℤ) (x : G ⧸ U) :
+    ((monomialHom U s g).right ^ k) x = g ^ k • x := by
+  have h := DFunLike.congr_fun
+    (congrArg (fun φ : G →* Equiv.Perm (G ⧸ U) ↦ φ g ^ k) (rightHom_comp_monomialHom U s)) x
+  rw [MonoidHom.comp_apply, SemidirectProduct.rightHom_eq_right] at h
+  rw [h, ← map_zpow, MulAction.toPermHom_apply, MulAction.toPerm_apply]
+
+/-- **Orbit monodromy of the monomial homomorphism.** The product of the base coordinates of
+`U.monomialHom s g` along a `⟨(U.monomialHom s g).right⟩`-orbit on `G ⧸ U` equals the coset
+monodromy element in `U`. -/
+theorem monomialHom_orbit_prod (s : U.LeftTransversal) (g : G) (q : G ⧸ U) :
+    (List.ofFn fun t : Fin (Function.minimalPeriod ((monomialHom U s g).right • ·) q) ↦
+        (monomialHom U s g).left (((monomialHom U s g).right⁻¹ ^ (t : ℕ)) q)).prod =
+      ⟨(leftTransversalRep U s q)⁻¹ * g ^ Function.minimalPeriod (g • ·) q *
+          leftTransversalRep U s q,
+        conj_pow_minimalPeriod_mem U g (leftTransversalRep_mk U s q)⟩ := by
+  apply Subtype.ext
+  have hval :
+      ((List.ofFn fun t : Fin (Function.minimalPeriod ((monomialHom U s g).right • ·) q) ↦
+          (monomialHom U s g).left (((monomialHom U s g).right⁻¹ ^ (t : ℕ)) q)).prod : G) =
+        (List.ofFn fun k : Fin (Function.minimalPeriod (g • ·) q) ↦
+          TauCeti.lWord U (leftTransversalRep U s) ((g⁻¹ ^ (k : ℕ)) • q) g).prod := by
+    rw [SubmonoidClass.coe_list_prod]
+    refine congrArg List.prod (List.ext_getElem (by simp) fun i _ _ ↦ ?_)
+    have hinv : ((monomialHom U s g).right⁻¹ ^ (i : ℕ)) q = (g⁻¹ ^ (i : ℕ)) • q := by
+      have h1 : (monomialHom U s g).right⁻¹ = (monomialHom U s g⁻¹).right := by
+        rw [← SemidirectProduct.inv_right, ← map_inv (monomialHom U s)]
+      rw [h1, ← zpow_natCast, monomialHom_right_zpow, zpow_natCast]
+    simp only [List.getElem_map, List.getElem_ofFn]
+    rw [monomialHom_left, hinv]
+  have hper : (g ^ Function.minimalPeriod (g • ·) q)⁻¹ • q = q := by
+    rw [inv_smul_eq_iff, ← MulAction.period_eq_minimalPeriod, MulAction.pow_period_smul]
+  rw [hval, TauCeti.prod_ofFn_lWord_eq_lWord_pow, TauCeti.lWord_def, hper]
 
 end Subgroup

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
+public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Principal
 
 /-!
 # Scalar extension of blocks
@@ -25,6 +26,10 @@ Artinian `S` and a finite `G` such a family exists
 single block: along `𝔽₂ ⊆ 𝔽₄`, the block `r + r²` of `𝔽₂[C₃]` splits into the two blocks
 `1 + α² r + α r²` and `1 + α r + α² r²` of `𝔽₄[C₃]`, where `α² + α + 1 = 0`.
 
+The augmentation commutes with `f`, so for a field extension `k ⊆ k'` and a finite `G`, the
+principal block of `k[G]`, if it stays a block of `k'[G]`, is the principal block of `k'[G]`, and
+the image of a non-principal block has augmentation `0`.
+
 ## Main results
 
 * `TauCeti.exists_centerMapRingHom_eq_sum`: the image of a central idempotent of `R[G]`, in
@@ -33,6 +38,12 @@ single block: along `𝔽₂ ⊆ 𝔽₄`, the block `r + r²` of `𝔽₂[C₃]
 * `TauCeti.exists_completeOrthogonalIdempotents_centerMapRingHom_eq_sum`: over an Artinian `S`
   and a finite `G`, the image of a block idempotent of `R[G]` is a sum of block idempotents
   of `S[G]` taken from a complete orthogonal family.
+* `TauCeti.centerAugmentation_centerMapRingHom`: the augmentation of `f b` is `f` of that of `b`.
+* `TauCeti.centerMapRingHom_principalBlockIdempotent_of_isBlockIdempotent`: for a field
+  extension, if the image of the principal block idempotent of `k[G]` is a block idempotent of
+  `k'[G]`, it is the principal block idempotent of `k'[G]`.
+* `TauCeti.centerAugmentation_centerMapRingHom_eq_zero`: the image of a non-principal block
+  idempotent of `k[G]` has augmentation `0`.
 
 ## References
 
@@ -69,5 +80,41 @@ theorem exists_completeOrthogonalIdempotents_centerMapRingHom_eq_sum [IsArtinian
         ∃ s : Finset (Fin n), centerMapRingHom G f b = ∑ i ∈ s, c i := by
   obtain ⟨n, c, hc, hcp⟩ := exists_completeOrthogonalIdempotents_isBlockIdempotent S G
   exact ⟨n, c, hc, hcp, exists_centerMapRingHom_eq_sum f hb hc hcp⟩
+
+section Augmentation
+
+variable {R S G : Type*} [CommRing R] [CommRing S] [Monoid G]
+
+/-- The augmentation commutes with a change of coefficients on the centre:
+`ε(f b) = f(ε(b))`. -/
+theorem centerAugmentation_centerMapRingHom (f : R →+* S)
+    (b : Subalgebra.center R (MonoidAlgebra R G)) :
+    centerAugmentation S G (centerMapRingHom G f b) = f (centerAugmentation R G b) := by
+  rw [centerAugmentation_apply, centerAugmentation_apply, coe_centerMapRingHom,
+    augmentation_mapRingHom]
+
+variable {k : Type*} [Field k] [Finite G]
+
+/-- **The principal block under scalar extension.** For a field extension `f : k →+* k'`, if the
+image of the principal block idempotent of `k[G]` is a block idempotent of `k'[G]`, then it is
+the principal block idempotent of `k'[G]`: its augmentation is `f 1 = 1`. -/
+theorem centerMapRingHom_principalBlockIdempotent_of_isBlockIdempotent {k' : Type*} [Field k']
+    (f : k →+* k')
+    (h : IsBlockIdempotent (centerMapRingHom G f (principalBlockIdempotent k G))) :
+    centerMapRingHom G f (principalBlockIdempotent k G) = principalBlockIdempotent k' G := by
+  rw [h.eq_principalBlockIdempotent_iff, centerAugmentation_centerMapRingHom,
+    centerAugmentation_principalBlockIdempotent, map_one]
+  exact one_ne_zero
+
+/-- **Non-principal blocks under scalar extension.** For a ring homomorphism `f : k →+* k'` to a
+commutative ring, the image of a block idempotent of `k[G]` other than the principal one has
+augmentation `0`. -/
+theorem centerAugmentation_centerMapRingHom_eq_zero {k' : Type*} [CommRing k'] (f : k →+* k')
+    {b : Subalgebra.center k (MonoidAlgebra k G)} (hb : IsBlockIdempotent b)
+    (hne : b ≠ principalBlockIdempotent k G) :
+    centerAugmentation k' G (centerMapRingHom G f b) = 0 := by
+  rw [centerAugmentation_centerMapRingHom, hb.centerAugmentation_eq_zero hne, map_zero]
+
+end Augmentation
 
 end TauCeti

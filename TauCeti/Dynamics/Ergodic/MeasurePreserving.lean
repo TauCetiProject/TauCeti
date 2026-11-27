@@ -13,14 +13,20 @@ public import Mathlib.Topology.Order.Compact
 import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
-# Finiteness, trimming and fixed points of measure-preserving maps
+# Restriction, finiteness, trimming and fixed points of measure-preserving maps
 
 ## Main results
 
+* `MeasureTheory.MeasurePreserving.restrict_of_preimage_eq` and
+  `MeasureTheory.MeasurePreserving.symm_restrict_of_preimage_eq` — a measure-preserving map, and
+  the inverse of a measure-preserving measurable equivalence, preserve the measures restricted to
+  `t = f ⁻¹' s` and `s`.
 * `MeasureTheory.MeasurePreserving.isFiniteMeasure` — a finite source measure makes the target of
   a measure-preserving map finite.
 * `MeasureTheory.MeasurePreserving.trim_comap` — a measure-preserving map preserves the measures
   trimmed to a target sub-σ-algebra and its pullback on the source.
+* `MeasureTheory.MeasurePreserving.preimage_ae_eq_preimage_iff` — a measure-preserving map
+  identifies almost-everywhere equality of null-measurable sets with that of their preimages.
 * `MeasureTheory.MeasurePreserving.isFixedPt_of_strictMono` — a strictly increasing map of a
   densely ordered space preserving a locally finite measure of full support fixes every point
   between two of its fixed points.
@@ -33,6 +39,19 @@ namespace MeasureTheory.MeasurePreserving
 variable {α β : Type*} {m : MeasurableSpace β}
   [mα : MeasurableSpace α] [mβ : MeasurableSpace β]
   {μ : Measure α} {ν : Measure β} {f g : α → β}
+
+/-- If `t = f ⁻¹' s` for a measurable `s`, a measure-preserving `f` is measure-preserving between
+the restrictions of the measures to `t` and to `s`. -/
+theorem restrict_of_preimage_eq (hf : MeasurePreserving f μ ν) {s : Set β} {t : Set α}
+    (hs : MeasurableSet s) (hts : t = f ⁻¹' s) :
+    MeasurePreserving f (μ.restrict t) (ν.restrict s) :=
+  hts ▸ hf.restrict_preimage hs
+
+/-- If `t = e ⁻¹' s`, the inverse of a measure-preserving measurable equivalence `e` is
+measure-preserving between the restrictions of the measures to `s` and to `t`. -/
+theorem symm_restrict_of_preimage_eq (e : α ≃ᵐ β) (he : MeasurePreserving e μ ν) {s : Set β}
+    {t : Set α} (hts : t = e ⁻¹' s) : MeasurePreserving e.symm (ν.restrict s) (μ.restrict t) :=
+  (hts ▸ he.restrict_preimage_emb e.measurableEmbedding s).symm e
 
 /-- A finite source measure makes the target of a measure-preserving map finite. -/
 theorem isFiniteMeasure [IsFiniteMeasure μ] (hf : MeasurePreserving f μ ν) : IsFiniteMeasure ν :=
@@ -50,6 +69,14 @@ theorem trim_comap (hg : MeasurePreserving g μ ν) (hm : m ≤ mβ) :
   have hs' : MeasurableSet[m.comap g] (g ⁻¹' s) := ⟨s, hs, rfl⟩
   rw [Measure.map_apply hmeas hs, trim_measurableSet_eq hmg hs', trim_measurableSet_eq hm hs]
   exact hg.measure_preimage (hm s hs).nullMeasurableSet
+
+/-- A measure-preserving map identifies almost-everywhere equality of null-measurable sets with that
+of their preimages. -/
+theorem preimage_ae_eq_preimage_iff (hf : MeasurePreserving f μ ν) {s t : Set β}
+    (hs : NullMeasurableSet s ν) (ht : NullMeasurableSet t ν) :
+    f ⁻¹' s =ᵐ[μ] f ⁻¹' t ↔ s =ᵐ[ν] t := by
+  rw [ae_eq_set, ae_eq_set, ← Set.preimage_sdiff, ← Set.preimage_sdiff,
+    hf.measure_preimage (hs.diff ht), hf.measure_preimage (ht.diff hs)]
 
 section StrictMono
 

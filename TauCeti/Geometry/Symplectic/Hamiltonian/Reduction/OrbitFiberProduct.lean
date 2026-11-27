@@ -51,8 +51,11 @@ On `Y_O` the reduced form of reduction at `c` satisfies the orbit-reduction iden
 the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`), where `i_Y` and `pr_Y` are the two
 components of `Φ`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.coe_orbitFiberProductDiffeomorph_mk`).
-Transporting this identity across `Φ` to `W_O`, and comparing `W_O` with the zero level of the
-shifting map on `M × O⁻`, are not done here.
+`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.ReducedForm` transports this
+identity across `Φ` to `W_O` (`existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub`,
+in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`) and identifies `W_O` with the zero
+level of the shifting map on `M × O⁻`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorphShiftingLevel`).
 
 ## Main definitions
 

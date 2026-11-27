@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 public import TauCeti.Analysis.Sobolev.Wkp.SupercriticalMultiplication
 import TauCeti.Analysis.Sobolev.BesselPotential.Holder
-import TauCeti.Analysis.Sobolev.GagliardoNirenberg
+import TauCeti.Analysis.Sobolev.ProductEstimate
 import TauCeti.Analysis.Sobolev.Wkp.BilinOfAeMul
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Basic.ENNReal.Real
@@ -19,7 +19,7 @@ import TauCeti.MeasureTheory.Measure.Restrict
 /-!
 # `W^{k,p}(ℝⁿ)`, `k p > n`, is an algebra
 
-Let `E` be a finite-dimensional real inner product space of dimension `n`, let `2 ≤ p < ∞` and let
+Let `E` be a finite-dimensional real inner product space of dimension `n`, let `1 < p < ∞` and let
 `k p > n`. The weak-derivative Sobolev space `W^{k,p}(E)` on the whole space is closed under
 pointwise multiplication, with the estimate
 
@@ -30,9 +30,9 @@ Multiplication is then a bounded bilinear map `W^{k,p}(E) × W^{k,p}(E) → W^{k
 (`TauCeti.Wkp.mulOfFinrankLtL`). For
 `p > n` this holds at every order `k ≥ 1` (`TauCeti.Wkp.mulL`), since then every factor of positive
 order is bounded, and the two multiplications agree where both are defined
-(`TauCeti.Wkp.mulOfFinrankLtL_eq_mulL`). The content here is the range `2 ≤ p ≤ n` with
-`k p > n`, in which the intermediate derivatives of the factors need not be bounded. The range
-`n / k < p < 2` is not covered.
+(`TauCeti.Wkp.mulOfFinrankLtL_eq_mulL`). The content here is the range `1 < p ≤ n` with
+`k p > n`, in which the intermediate derivatives of the factors need not be bounded. The endpoint
+`p = 1` is not covered.
 
 For classical functions this gives the estimate that makes the `Lᵖ` norms of the derivatives
 through order `k` behave like a Banach algebra norm. If `f` and `g` are `Cᵏ` on `E` and their
@@ -46,20 +46,18 @@ those of their factors. No explicit value of the constants is claimed.
 
 ## The argument
 
-Two estimates combine. The Moser product estimate
-(`TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le`) bounds, for `Cᵏ` functions with compact
-support,
+Two estimates combine. The product estimate
+(`TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul`) bounds, for `Cᵏ`
+functions with compact support and `i ≤ k`,
 
-`‖Dⁱ (f g)‖_p ≤ C (‖f‖_∞ ‖Dⁱ g‖_p + ‖Dⁱ f‖_p ‖g‖_∞)`,
+`‖Dⁱ (f g)‖_p ≤ C (‖f‖_∞ + ∑_{l ≤ k} ‖Dˡ f‖_p) (‖g‖_∞ + ∑_{l ≤ k} ‖Dˡ g‖_p)`,
 
 and the Sobolev embedding `W^{k,p}(E) ⊆ C_b^{0,α}(E)` for `k p > n` (`TauCeti.Wkp.toCkHolderSpace`)
 bounds `‖f‖_∞` by the `W^{k,p}` norm. Together they give the algebra estimate for test functions.
 Test functions are dense in `W^{k,p}(E)` (`TauCeti.Wkp.denseRange_ofTestFunctionₗ_top`), and by the
 estimate the products of approximating test functions form a Cauchy sequence; its limit has as
 value the product of the values, since multiplication `L^∞ × Lᵖ → Lᵖ` is continuous and the values
-converge in `L^∞` by the embedding. The Moser estimate rests on the Gagliardo–Nirenberg inequality
-for intermediate derivatives (`TauCeti.exists_eLpNorm_iteratedFDeriv_le`), whose proof needs
-`p ≥ 2`.
+converge in `L^∞` by the embedding. The Hölder embedding is where `p > 1` is used.
 
 ## References
 
@@ -129,13 +127,71 @@ private theorem eLpNorm_iteratedFDeriv_le_enorm (z : Wkp (volume : Measure E) �
   rw [← ofReal_norm]
   exact (ENNReal.le_ofReal_iff_toReal_le hmem.eLpNorm_ne_top (norm_nonneg z)).2 hle
 
+omit [Fact (1 ≤ p)] in
+/-- The product estimate for real functions: for `1 ≤ p < ∞`, `k p > dim E` and `i ≤ k`,
+`‖Dⁱ (f g)‖_p ≤ c (‖f‖_∞ + ∑_{l ≤ k} ‖Dˡ f‖_p) (‖g‖_∞ + ∑_{l ≤ k} ‖Dˡ g‖_p)` for compactly
+supported `Cᵏ` functions `f` and `g`. -/
+private theorem exists_eLpNorm_iteratedFDeriv_mul_le (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (hk : (finrank ℝ E : ℝ) < k * p.toReal) {i : ℕ} (hik : i ≤ k) :
+    ∃ c : ℝ≥0, ∀ f g : E → ℝ, ContDiff ℝ k f → HasCompactSupport f →
+      ContDiff ℝ k g → HasCompactSupport g →
+      eLpNorm (iteratedFDeriv ℝ i (f * g)) p volume ≤ c *
+        (eLpNorm f ∞ volume +
+          ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l f) p volume) *
+        (eLpNorm g ∞ volume +
+          ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l g) p volume) := by
+  have hpp : ((p.toNNReal : ℝ≥0) : ℝ≥0∞) = p := ENNReal.coe_toNNReal hp'
+  have hp₁ : 1 ≤ p.toNNReal := by
+    rw [← ENNReal.coe_le_coe, hpp, ENNReal.coe_one]
+    exact hp
+  have hk' : (finrank ℝ E : ℝ) < k * p.toNNReal := by rwa [ENNReal.coe_toNNReal_eq_toReal]
+  have hB : ‖ContinuousLinearMap.mul ℝ ℝ‖ₑ ≤ 1 := by
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_one.2 (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)
+  obtain ⟨c, hc⟩ := exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul (μ := volume)
+    (F := ℝ) (G := ℝ) (H := ℝ) hp₁ hk' hik
+  refine ⟨c, fun f g hf hfc hg hgc ↦ ?_⟩
+  -- `f * g` is the bilinear expression `x ↦ mul (f x) (g x)` of the product estimate.
+  have h := hc (ContinuousLinearMap.mul ℝ ℝ) f g hf hfc hg hgc
+  rw [hpp] at h
+  rw [show f * g = fun x ↦ ContinuousLinearMap.mul ℝ ℝ (f x) (g x) by ext; simp]
+  refine h.trans ?_
+  gcongr
+  exact mul_le_of_le_one_right' hB
+
+/-- If the values of `W^{k,p}(E)` are represented in `L^∞` by a bounded operator `J`, then for a
+`Cᵏ` representative `h` of `z ∈ W^{k,p}(E)`,
+`‖h‖_∞ + ∑_{l ≤ k} ‖Dˡ h‖_p ≤ (‖J‖ + k + 1) ‖z‖`. -/
+private theorem eLpNorm_top_add_sum_le {J : Wkp (volume : Measure E) ⊤ p k →L[ℝ]
+      Lp ℝ ∞ ((volume : Measure E).restrict ((⊤ : Opens E) : Set E))}
+    (hJ : ∀ u, (J u : E → ℝ) =ᵐ[(volume : Measure E).restrict ((⊤ : Opens E) : Set E)]
+      value k u) (z : Wkp (volume : Measure E) ⊤ p k) {h : E → ℝ} (hh : ContDiff ℝ k h)
+    (hz : (value k z : E → ℝ) =ᵐ[volume] h) :
+    eLpNorm h ∞ volume + ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l h) p volume ≤
+      (‖J‖ₑ + (k + 1)) * ‖z‖ₑ := by
+  have hsup : eLpNorm h ∞ volume ≤ ‖J‖ₑ * ‖z‖ₑ :=
+    calc eLpNorm h ∞ volume
+        = eLpNorm h ∞ ((volume : Measure E).restrict ((⊤ : Opens E) : Set E)) := by
+          rw [Measure.restrict_coe_opens_top]
+      _ = ‖J z‖ₑ := by
+          rw [Lp.eNorm_def, eLpNorm_congr_ae ((hJ z).trans (ae_restrict_of_ae hz))]
+      _ ≤ ‖J‖ₑ * ‖z‖ₑ := J.le_opENorm z
+  calc eLpNorm h ∞ volume + ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l h) p volume
+      ≤ ‖J‖ₑ * ‖z‖ₑ + ∑ _l ∈ Finset.range (k + 1), ‖z‖ₑ := by
+        gcongr with l hl
+        exact eLpNorm_iteratedFDeriv_le_enorm z hh hz (Nat.lt_succ_iff.1 (Finset.mem_range.1 hl))
+    _ = (‖J‖ₑ + (k + 1)) * ‖z‖ₑ := by simp [add_mul]
+
 /-- **The algebra estimate for compactly supported representatives.** If the values of
-`W^{k,p}(E)` are represented in `L^∞` by a bounded operator `J`, then for `2 ≤ p < ∞` there is a
-constant `C` such that whenever `u` and `v` are represented by `Cᵏ` functions `f` and `g` with
-compact support, `f g` is the value of some `w` with `‖w‖ ≤ C ‖u‖ ‖v‖`. This is the Moser product
-estimate, with `‖f‖_∞ ≤ ‖J‖ ‖u‖` and `‖Dⁱ g‖_p ≤ ‖v‖`. -/
-private theorem exists_value_ae_eq_mul_and_norm_le_of_hasCompactSupport (hp : 2 ≤ p)
-    (hp' : p ≠ ∞) {J : Wkp (volume : Measure E) ⊤ p k →L[ℝ]
+`W^{k,p}(E)` are represented in `L^∞` by a bounded operator `J`, then for `1 < p < ∞` and
+`k p > dim E` there is a constant `C` such that whenever `u` and `v` are represented by `Cᵏ`
+functions `f` and `g` with compact support, `f g` is the value of some `w` with
+`‖w‖ ≤ C ‖u‖ ‖v‖`. This is the product estimate
+`TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul`, with `‖f‖_∞ ≤ ‖J‖ ‖u‖` and
+`‖Dⁱ f‖_p ≤ ‖u‖`. -/
+private theorem exists_value_ae_eq_mul_and_norm_le_of_hasCompactSupport (hp : 1 < p)
+    (hp' : p ≠ ∞) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
+    {J : Wkp (volume : Measure E) ⊤ p k →L[ℝ]
       Lp ℝ ∞ ((volume : Measure E).restrict ((⊤ : Opens E) : Set E))}
     (hJ : ∀ u, (J u : E → ℝ) =ᵐ[(volume : Measure E).restrict ((⊤ : Opens E) : Set E)]
       value k u) :
@@ -144,9 +200,13 @@ private theorem exists_value_ae_eq_mul_and_norm_le_of_hasCompactSupport (hp : 2 
       (value k u : E → ℝ) =ᵐ[volume] f → (value k v : E → ℝ) =ᵐ[volume] g →
       ∃ w : Wkp (volume : Measure E) ⊤ p k, (value k w : E → ℝ) =ᵐ[volume] f * g ∧
         ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
-  choose c hc using fun i : ℕ ↦ exists_eLpNorm_iteratedFDeriv_bilinear_le
-    (μ := (volume : Measure E)) (F := ℝ) (G := ℝ) (H := ℝ) hp hp' i
-  refine ⟨∑ i ∈ Finset.range (k + 1), 2 * c i * ‖J‖, fun u v f g hf hfc hg hgc hu hv ↦ ?_⟩
+  -- The constants of the product estimate, extended by zero beyond `k`.
+  have hc (i : ℕ) := (em (i ≤ k)).elim
+    (fun hik ↦ (exists_eLpNorm_iteratedFDeriv_mul_le hp.le hp' hk hik).imp fun _ hc _ ↦ hc)
+    fun hik ↦ ⟨0, fun h ↦ absurd h hik⟩
+  choose c hc using hc
+  refine ⟨∑ i ∈ Finset.range (k + 1), c i * (‖J‖ + (k + 1)) ^ 2,
+    fun u v f g hf hfc hg hgc hu hv ↦ ?_⟩
   have hfg : ContDiff ℝ k (f * g) := hf.mul hg
   obtain ⟨w, hw, hwn⟩ := exists_value_ae_eq_and_norm_le (p := p) hfg fun i hi ↦
     (hfg.continuous_iteratedFDeriv (by exact_mod_cast hi)).memLp_of_hasCompactSupport (μ := volume)
@@ -154,41 +214,25 @@ private theorem exists_value_ae_eq_mul_and_norm_le_of_hasCompactSupport (hp : 2 
   refine ⟨w, hw, hwn.trans ?_⟩
   rw [Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
-  have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  -- The sup norm of a representative is bounded through `J`.
-  have hsup (z : Wkp (volume : Measure E) ⊤ p k) {h : E → ℝ}
-      (hz : (value k z : E → ℝ) =ᵐ[volume] h) : eLpNorm h ∞ volume ≤ ‖J‖ₑ * ‖z‖ₑ := by
-    calc eLpNorm h ∞ volume
-        = eLpNorm h ∞ ((volume : Measure E).restrict ((⊤ : Opens E) : Set E)) := by
-          rw [Measure.restrict_coe_opens_top]
-      _ = ‖J z‖ₑ := by rw [Lp.eNorm_def, eLpNorm_congr_ae ((hJ z).trans (ae_restrict_of_ae hz))]
-      _ ≤ ‖J‖ₑ * ‖z‖ₑ := J.le_opENorm z
-  have hB : ‖ContinuousLinearMap.mul ℝ ℝ‖ₑ ≤ 1 := by
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_one.2 (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)
   calc eLpNorm (iteratedFDeriv ℝ i (f * g)) p volume
-      ≤ c i * ‖ContinuousLinearMap.mul ℝ ℝ‖ₑ * (eLpNorm f ∞ volume *
-          eLpNorm (iteratedFDeriv ℝ i g) p volume +
-            eLpNorm (iteratedFDeriv ℝ i f) p volume * eLpNorm g ∞ volume) := by
-        -- `f * g` is the bilinear expression `x ↦ mul (f x) (g x)` of the Moser estimate.
-        rw [show f * g = fun x ↦ ContinuousLinearMap.mul ℝ ℝ (f x) (g x) by ext; simp]
-        exact hc i _ f g (hf.of_le (by exact_mod_cast hik)) hfc (hg.of_le (by exact_mod_cast hik))
-          hgc
-    _ ≤ c i * 1 * (‖J‖ₑ * ‖u‖ₑ * ‖v‖ₑ + ‖u‖ₑ * (‖J‖ₑ * ‖v‖ₑ)) := by
-        gcongr
-        exacts [hsup u hu, eLpNorm_iteratedFDeriv_le_enorm v hg hv hik,
-          eLpNorm_iteratedFDeriv_le_enorm u hf hu hik, hsup v hv]
-    _ = ENNReal.ofReal (2 * c i * ‖J‖ * ‖u‖ * ‖v‖) := by
-        simp (disch := positivity) only [ENNReal.ofReal_mul, ofReal_norm, ENNReal.ofReal_coe_nnreal,
-          ENNReal.ofReal_ofNat]
+      ≤ c i * ((‖J‖ₑ + (k + 1)) * ‖u‖ₑ) * ((‖J‖ₑ + (k + 1)) * ‖v‖ₑ) :=
+        (hc i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)) f g hf hfc hg hgc).trans (by
+          gcongr
+          exacts [eLpNorm_top_add_sum_le hJ u hf hu, eLpNorm_top_add_sum_le hJ v hg hv])
+    _ = ENNReal.ofReal (c i * (‖J‖ + (k + 1)) ^ 2 * ‖u‖ * ‖v‖) := by
+        simp (disch := positivity) only [ENNReal.ofReal_mul, ENNReal.ofReal_pow,
+          ENNReal.ofReal_add, ofReal_norm, ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_natCast,
+          ENNReal.ofReal_one]
         ring
 
 /-- **The algebra estimate for test functions.** If the values of `W^{k,p}(E)` are represented in
-`L^∞` by a bounded operator `J` and `2 ≤ p < ∞`, the product `a b` of two test functions on `E` is
+`L^∞` by a bounded operator `J`, `1 < p < ∞` and `k p > dim E`, the product `a b` of two test
+functions on `E` is
 the value of an element `P a b` of `W^{k,p}(E)`, and `P` satisfies the bilinear estimates
 `‖P a b‖ ≤ C ‖a‖ ‖b‖` and `‖P a b - P a' b'‖ ≤ C ‖a - a'‖ ‖b‖ + C ‖a'‖ ‖b - b'‖` in the
 `W^{k,p}` norm. -/
-private theorem exists_value_ae_eq_mul_testFunction (hp : 2 ≤ p) (hp' : p ≠ ∞)
+private theorem exists_value_ae_eq_mul_testFunction (hp : 1 < p) (hp' : p ≠ ∞)
+    (hk : (finrank ℝ E : ℝ) < k * p.toReal)
     {J : Wkp (volume : Measure E) ⊤ p k →L[ℝ]
       Lp ℝ ∞ ((volume : Measure E).restrict ((⊤ : Opens E) : Set E))}
     (hJ : ∀ u, (J u : E → ℝ) =ᵐ[(volume : Measure E).restrict ((⊤ : Opens E) : Set E)]
@@ -204,7 +248,7 @@ private theorem exists_value_ae_eq_mul_testFunction (hp : 2 ≤ p) (hp' : p ≠ 
         C * ‖ofTestFunctionₗ (mu := volume) (p := p) k a'‖ *
           ‖ofTestFunctionₗ (mu := volume) (p := p) k b -
             ofTestFunctionₗ (mu := volume) (p := p) k b'‖ := by
-  obtain ⟨C, hC⟩ := exists_value_ae_eq_mul_and_norm_le_of_hasCompactSupport hp hp' hJ
+  obtain ⟨C, hC⟩ := exists_value_ae_eq_mul_and_norm_le_of_hasCompactSupport hp hp' hk hJ
   choose P hP hPn using fun a b : 𝓓((⊤ : Opens E), ℝ) ↦ hC (ofTestFunctionₗ k a)
     (ofTestFunctionₗ k b) (a.contDiff.of_le (by exact_mod_cast le_top)) a.hasCompactSupport
     (b.contDiff.of_le (by exact_mod_cast le_top)) b.hasCompactSupport
@@ -262,18 +306,18 @@ private theorem value_ae_eq_mul_of_tendsto {J : Wkp (volume : Measure E) ⊤ p k
   filter_upwards [hM (J u) (value k v), hJ u] with x h₁ h₂
   rw [hval, h₁, h₂]
 
-/-- **`W^{k,p}(E)`, `k p > dim E`, is an algebra.** For `2 ≤ p < ∞` and `k p > dim E` there is a
+/-- **`W^{k,p}(E)`, `k p > dim E`, is an algebra.** For `1 < p < ∞` and `k p > dim E` there is a
 constant `C` such that for all `u, v ∈ W^{k,p}(E)` on the whole space, the pointwise product of
 their values is the value of some `w ∈ W^{k,p}(E)` with `‖w‖ ≤ C ‖u‖ ‖v‖`. Finiteness of `p` is
 implied by `k p > dim E`, since `∞.toReal = 0`. -/
-theorem exists_norm_mul_le (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal) :
+theorem exists_norm_mul_le (hp : 1 < p) (hk : (finrank ℝ E : ℝ) < k * p.toReal) :
     ∃ C, ∀ u v : Wkp (volume : Measure E) ⊤ p k, ∃ w : Wkp (volume : Measure E) ⊤ p k,
       (value k w : E → ℝ) =ᵐ[volume] (fun x ↦ value k u x * value k v x) ∧
         ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
   have hp' : p ≠ ∞ := ENNReal.ne_top_of_pos_mul_toReal ((Nat.cast_nonneg _).trans_lt hk)
   set T := ofTestFunctionₗ (mu := (volume : Measure E)) (Omega := ⊤) (p := p) k
-  obtain ⟨J, hJ⟩ := exists_toLpTop (ENNReal.one_lt_two.trans_le hp) hp' hk
-  obtain ⟨C, P, hP, hPn, hPsub⟩ := exists_value_ae_eq_mul_testFunction hp hp' hJ
+  obtain ⟨J, hJ⟩ := exists_toLpTop hp hp' hk
+  obtain ⟨C, P, hP, hPn, hPsub⟩ := exists_value_ae_eq_mul_testFunction hp hp' hk hJ
   -- Approximate `u` and `v` by test functions.
   have hseq (z : Wkp (volume : Measure E) ⊤ p k) :
       ∃ φ : ℕ → 𝓓((⊤ : Opens E), ℝ), Tendsto (fun n ↦ T (φ n)) atTop (𝓝 z) := by
@@ -309,12 +353,12 @@ theorem exists_norm_mul_le (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.to
     value_ofTestFunctionₗ_top_ae (p := p) k (ψ n)] with x h₁ h₂ h₃
   rw [h₁, h₂, h₃, Pi.mul_apply]
 
-/-- **Multiplication in `W^{k,p}(E)` for `2 ≤ p` and `k p > dim E`**, as a bounded bilinear map:
+/-- **Multiplication in `W^{k,p}(E)` for `1 < p` and `k p > dim E`**, as a bounded bilinear map:
 there is a constant `C`, the norm of `mulOfFinrankLtL hp hk`, with `‖u v‖ ≤ C ‖u‖ ‖v‖`
 (`ContinuousLinearMap.le_opNorm₂`). The value of `mulOfFinrankLtL hp hk u v` is the pointwise
 product of the values of `u` and `v` (`TauCeti.Wkp.value_mulOfFinrankLtL_ae`), and this determines
 it (`TauCeti.Wkp.eq_mulOfFinrankLtL_iff`). -/
-def mulOfFinrankLtL (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal) :
+def mulOfFinrankLtL (hp : 1 < p) (hk : (finrank ℝ E : ℝ) < k * p.toReal) :
     Wkp (volume : Measure E) ⊤ p k →L[ℝ]
       Wkp (volume : Measure E) ⊤ p k →L[ℝ] Wkp (volume : Measure E) ⊤ p k :=
   bilinOfAeMul k
@@ -324,14 +368,14 @@ def mulOfFinrankLtL (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal) :
       exact ⟨w, ae_restrict_of_ae hw⟩)
     fun u ↦ by
       -- The value of `u` is bounded by the `L^∞` norm of its image under the Sobolev embedding.
-      obtain ⟨J, hJ⟩ := exists_toLpTop (ENNReal.one_lt_two.trans_le hp)
+      obtain ⟨J, hJ⟩ := exists_toLpTop hp
         (ENNReal.ne_top_of_pos_mul_toReal ((Nat.cast_nonneg _).trans_lt hk)) hk
       refine ⟨‖J u‖, ?_⟩
       filter_upwards [hJ u, Lp.ae_norm_le_norm_top (J u)] with x h₁ h₂
       rwa [← h₁]
 
 /-- The value of the product `mulOfFinrankLtL hp hk u v` is the pointwise product of the values. -/
-theorem value_mulOfFinrankLtL_ae (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
+theorem value_mulOfFinrankLtL_ae (hp : 1 < p) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
     (u v : Wkp (volume : Measure E) ⊤ p k) :
     (value k (mulOfFinrankLtL hp hk u v) : E → ℝ) =ᵐ[volume]
       fun x ↦ value k u x * value k v x := by
@@ -340,7 +384,7 @@ theorem value_mulOfFinrankLtL_ae (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k 
 
 /-- The product `mulOfFinrankLtL hp hk u v` is the unique element of `W^{k,p}(E)` whose value is
 the pointwise product of the values of `u` and `v`. -/
-theorem eq_mulOfFinrankLtL_iff (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
+theorem eq_mulOfFinrankLtL_iff (hp : 1 < p) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
     {u v w : Wkp (volume : Measure E) ⊤ p k} :
     w = mulOfFinrankLtL hp hk u v ↔
       (value k w : E → ℝ) =ᵐ[volume] fun x ↦ value k u x * value k v x := by
@@ -348,21 +392,21 @@ theorem eq_mulOfFinrankLtL_iff (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * 
   exact eq_bilinOfAeMul_iff
 
 /-- Multiplication in `W^{k,p}(E)` is commutative. -/
-theorem mulOfFinrankLtL_comm (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
+theorem mulOfFinrankLtL_comm (hp : 1 < p) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
     (u v : Wkp (volume : Measure E) ⊤ p k) :
     mulOfFinrankLtL hp hk u v = mulOfFinrankLtL hp hk v u :=
   bilinOfAeMul_comm u v
 
 /-- Multiplication in `W^{k,p}(E)` is associative. -/
-theorem mulOfFinrankLtL_assoc (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
+theorem mulOfFinrankLtL_assoc (hp : 1 < p) (hk : (finrank ℝ E : ℝ) < k * p.toReal)
     (u v w : Wkp (volume : Measure E) ⊤ p k) :
     mulOfFinrankLtL hp hk (mulOfFinrankLtL hp hk u v) w =
       mulOfFinrankLtL hp hk u (mulOfFinrankLtL hp hk v w) :=
   bilinOfAeMul_assoc u v w
 
-/-- For `p > dim E` and `2 ≤ p`, multiplication `mulOfFinrankLtL` agrees with the supercritical
+/-- For `p > dim E` and `1 < p`, multiplication `mulOfFinrankLtL` agrees with the supercritical
 multiplication `TauCeti.Wkp.mulL` on `W^{j+1,p}(E)`. -/
-theorem mulOfFinrankLtL_eq_mulL {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 2 ≤ (q : ℝ≥0∞))
+theorem mulOfFinrankLtL_eq_mulL {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < (q : ℝ≥0∞))
     (hq : (finrank ℝ E : ℝ≥0) < q) {j : ℕ}
     (hk : (finrank ℝ E : ℝ) < (j + 1 : ℕ) * (q : ℝ≥0∞).toReal) :
     mulOfFinrankLtL hp hk = mulL (mu := (volume : Measure E)) hq j := by
@@ -371,12 +415,12 @@ theorem mulOfFinrankLtL_eq_mulL {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))] (h
 
 end Wkp
 
-/-- **Products of classical functions with `Lᵖ` derivatives.** If `2 ≤ p < ∞` and `k p > dim E`,
+/-- **Products of classical functions with `Lᵖ` derivatives.** If `1 < p < ∞` and `k p > dim E`,
 there is a constant `C` such that for all functions `f` and `g` that are `Cᵏ` on `E` with
 derivatives in `Lᵖ` through order `k`, the derivatives of `f g` through order `k` are in `Lᵖ` and
 
 `∑_{i ≤ k} ‖Dⁱ (f g)‖_p ≤ C (∑_{i ≤ k} ‖Dⁱ f‖_p) (∑_{i ≤ k} ‖Dⁱ g‖_p)`. -/
-theorem exists_sum_lpNorm_iteratedFDeriv_mul_le (hp : 2 ≤ p)
+theorem exists_sum_lpNorm_iteratedFDeriv_mul_le (hp : 1 < p)
     (hk : (finrank ℝ E : ℝ) < k * p.toReal) :
     ∃ C, ∀ f g : E → ℝ, ContDiff ℝ k f → ContDiff ℝ k g →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) p) →
