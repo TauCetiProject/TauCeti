@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
+import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Continuous maps of ring-scalar operator norm zero
@@ -99,14 +100,10 @@ private theorem halveIndex_single (i : ℕ) :
 
 private theorem exists_cutoff_of_isFiniteRank {g : E →L[R] E} (hg : (g : E →ₗ[R] E).IsFiniteRank) :
     ∃ N : ℕ, ∀ x i, N ≤ i → g x i = 0 := by
-  classical
-  obtain ⟨Q, ⟨s, rfl⟩, hQ⟩ := LinearMap.isFiniteRank_iff_forall_mem.mp hg
-  let t := s.biUnion Finsupp.support
-  have hspan : Submodule.span R (s : Set E) ≤ Finsupp.supported R R (t : Set ℕ) :=
-    Submodule.span_le.2 fun x hx ↦
-      (Finsupp.mem_supported R x).2 fun i hi ↦ Finset.mem_biUnion.2 ⟨x, hx, hi⟩
-  refine ⟨t.sup id + 1, fun x i hi ↦ (Finsupp.mem_supported' _ _).1 (hspan (hQ x)) i ?_⟩
-  exact fun hit ↦ (Nat.not_succ_le_self (t.sup id)) (hi.trans (Finset.le_sup (f := id) hit))
+  obtain ⟨Q, hQfg, hQ⟩ := LinearMap.isFiniteRank_iff_forall_mem.mp hg
+  obtain ⟨N, hN⟩ := hQfg.exists_le_supported_Iio
+  refine ⟨N, fun x i hi ↦ (Finsupp.mem_supported' R (g x)).1 (hN (hQ x)) i ?_⟩
+  exact fun hi' ↦ hi.not_gt (Set.mem_Iio.mp hi')
 
 private theorem not_exists_bound_add {d : E →L[R] E}
     (h : ∃ N : ℕ, ∀ k ≥ N, d (Finsupp.single (2 * k) 1) k = 0) :
