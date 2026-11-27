@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Prod
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Prod
 import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
-import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -38,61 +37,19 @@ identifies `S(L)^L` with `S(z(L)) ⊗ S([L, L])^{[L, L]}`, matching the decompos
 
 ## Main results
 
-* `Module.Basis.mem_range_lTensor_subtype_iff`: an element of `A ⊗ M` lies in `A ⊗ W` exactly
-  when its coordinates in a basis of `A` lie in `W`.
-* `TensorProduct.forall_lTensor_eq_zero_iff_mem_range`: for free `A`, the common kernel of the
-  maps `1 ⊗ f_j` is `A ⊗ ⋂ ker f_j`.
 * `TauCeti.SymmetricAlgebra.lieModuleDerivation_prodEquiv_symm`: under `S(Z × S) ≃ S(Z) ⊗ S(S)`
   the action of `x` is `1 ⊗` the action of `x.2`.
 * `TauCeti.SymmetricAlgebra.prodEquiv_symm_mem_lieInvariants_iff`: an element of `S(Z) ⊗ S(S)` is
   invariant exactly when it lies in `S(Z) ⊗ S(S)^S`.
 * `TauCeti.SymmetricAlgebra.lieInvariantsProdHom`,
   `TauCeti.SymmetricAlgebra.lieInvariantsProdEquiv`: the algebra equivalence
-  `S(Z × S)^{Z × S} ≃ S(Z) ⊗ S(S)^S`, inverse to `p ⊗ q ↦ p q`.
+  `S(Z × S)^{Z × S} ≃ S(Z) ⊗ S(S)^S`, inverse to `p ⊗ q ↦ p q`
+  (`TauCeti.SymmetricAlgebra.lieInvariantsProdHom_lieInvariantsProdEquiv`).
 -/
 
 public section
 
 open TensorProduct
-
-/-! ### Common kernels of `1 ⊗ f` -/
-
-namespace Module.Basis
-
-variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid M]
-  [Module R M]
-  {κ : Type*} [DecidableEq κ] (b : Module.Basis κ R A)
-
-/-- **An element of `A ⊗ M` lies in `A ⊗ W` exactly when its coordinates lie in `W`**, for a
-basis of `A`. -/
-theorem mem_range_lTensor_subtype_iff (W : Submodule R M) (x : A ⊗[R] M) :
-    x ∈ LinearMap.range (W.subtype.lTensor A) ↔ ∀ k, equivFinsuppOfBasisLeft b x k ∈ W := by
-  constructor
-  · rintro ⟨y, rfl⟩ k
-    rw [equivFinsuppOfBasisLeft_lTensor_apply]
-    exact (equivFinsuppOfBasisLeft b y k).property
-  · intro h
-    refine ⟨∑ k ∈ (equivFinsuppOfBasisLeft b x).support, b k ⊗ₜ ⟨_, h k⟩, ?_⟩
-    rw [map_sum]
-    simp only [LinearMap.lTensor_tmul, Submodule.subtype_apply]
-    conv_rhs => rw [← (equivFinsuppOfBasisLeft b).symm_apply_apply x,
-      equivFinsuppOfBasisLeft_symm_apply]
-    rfl
-
-omit [DecidableEq κ] in
-/-- **The common kernel of the maps `1 ⊗ f_j` on `A ⊗ M` is `A ⊗ ⋂ ker f_j`**, for a free
-module `A`. -/
-theorem _root_.TensorProduct.forall_lTensor_eq_zero_iff_mem_range [Module.Free R A]
-    {N ι : Type*} [AddCommMonoid N] [Module R N] (f : ι → M →ₗ[R] N) (x : A ⊗[R] M) :
-    (∀ j, (f j).lTensor A x = 0) ↔
-      x ∈ LinearMap.range ((⨅ j, LinearMap.ker (f j)).subtype.lTensor A) := by
-  classical
-  let b := Module.Free.chooseBasis R A
-  simp_rw [b.mem_range_lTensor_subtype_iff, b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft,
-    Submodule.mem_iInf, LinearMap.mem_ker]
-  exact forall_comm
-
-end Module.Basis
 
 namespace TauCeti.SymmetricAlgebra
 
@@ -101,9 +58,10 @@ open _root_.SymmetricAlgebra
 variable {K Z S : Type*} [CommRing K] [LieRing Z] [LieAlgebra K Z] [IsLieAbelian Z] [LieRing S]
   [LieAlgebra K S]
 
-/-- `Z` acts trivially on its own symmetric algebra through the product: the action of `x` on the
-image of `S(Z)` in `S(Z × S)` is zero, `Z` being abelian. -/
-theorem lieModuleDerivation_map_inl (x : Z × S) (p : SymmetricAlgebra K Z) :
+/-- The product `Z × S` acts by zero on the image of `S(Z)` in `S(Z × S)`, `Z` being abelian and
+central in the product. -/
+@[simp]
+theorem _root_.SymmetricAlgebra.lieModuleDerivation_map_inl (x : Z × S) (p : SymmetricAlgebra K Z) :
     lieModuleDerivation K (Z × S) (Z × S) x (map K (LinearMap.inl K Z S) p) = 0 := by
   rw [lieModuleDerivation_apply, ← map_apply_derivationOfEnd K (LinearMap.inl K Z S)
     (f := 0), map_zero, zero_apply, map_zero]
@@ -111,7 +69,8 @@ theorem lieModuleDerivation_map_inl (x : Z × S) (p : SymmetricAlgebra K Z) :
 
 omit [IsLieAbelian Z] in
 /-- The action of `x` on the image of `S(S)` in `S(Z × S)` is the action of `x.2` on `S(S)`. -/
-theorem lieModuleDerivation_map_inr (x : Z × S) (q : SymmetricAlgebra K S) :
+@[simp]
+theorem _root_.SymmetricAlgebra.lieModuleDerivation_map_inr (x : Z × S) (q : SymmetricAlgebra K S) :
     lieModuleDerivation K (Z × S) (Z × S) x (map K (LinearMap.inr K Z S) q) =
       map K (LinearMap.inr K Z S) (lieModuleDerivation K S S x.2 q) := by
   rw [lieModuleDerivation_apply, lieModuleDerivation_apply,
@@ -127,11 +86,7 @@ theorem lieModuleDerivation_prodEquiv_symm (x : Z × S)
         ((lieModuleDerivation K S S x.2).toLinearMap.lTensor (SymmetricAlgebra K Z) y) := by
   induction y using TensorProduct.inductionOn with
   | add y y' hy hy' => rw [map_add, map_add, hy, hy', map_add, map_add]
-  | tmul p q =>
-    rw [prodEquiv_symm_tmul, Derivation.leibniz, lieModuleDerivation_map_inl,
-      lieModuleDerivation_map_inr, smul_zero, add_zero, LinearMap.lTensor_tmul,
-      prodEquiv_symm_tmul, smul_eq_mul]
-    rfl
+  | tmul p q => simp [prodEquiv_symm_tmul, Derivation.leibniz]
 
 variable [Module.Free K Z]
 
@@ -165,25 +120,29 @@ of `S(Z × S) ≃ S(Z) ⊗ S(S)`. -/
 theorem lieInvariantsProdHom_apply (y : SymmetricAlgebra K Z ⊗[K] lieInvariants K S S) :
     lieInvariantsProdHom K Z S y = (prodEquiv K Z S).symm
       ((lieInvariants K S S).toSubmodule.subtype.lTensor (SymmetricAlgebra K Z) y) := by
-  change (prodEquiv K Z S).symm _ = _
-  congr 1
+  rw [lieInvariantsProdHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+  -- `Algebra.TensorProduct.map (AlgHom.id _ _) (lieInvariants K S S).val` is by definition
+  -- `TensorProduct.map LinearMap.id` of the inclusion of `S(S)^S`, that is, the `lTensor` of the
+  -- inclusion of its underlying submodule; the two differ only in how the domain is coerced.
+  rfl
 
 omit [IsLieAbelian Z] [Module.Free K Z] in
 /-- `lieInvariantsProdHom` sends `p ⊗ q` to the product of the images of `p` and `q` in
 `S(Z × S)`. -/
-theorem lieInvariantsProdHom_tmul (p : SymmetricAlgebra K Z) (q : lieInvariants K S S) :
+@[simp]
+theorem _root_.SymmetricAlgebra.lieInvariantsProdHom_tmul (p : SymmetricAlgebra K Z)
+    (q : lieInvariants K S S) :
     lieInvariantsProdHom K Z S (p ⊗ₜ q) =
       map K (LinearMap.inl K Z S) p * map K (LinearMap.inr K Z S) q := by
-  rw [lieInvariantsProdHom_apply, LinearMap.lTensor_tmul, prodEquiv_symm_tmul]
-  rfl
+  rw [lieInvariantsProdHom_apply, LinearMap.lTensor_tmul, Submodule.subtype_apply,
+    prodEquiv_symm_tmul]
 
 omit [IsLieAbelian Z] in
-/-- `lieInvariantsProdHom` is injective: tensoring with the free module `S(Z)` preserves
-injectivity. -/
+/-- The map `S(Z) ⊗ S(S)^S → S(Z × S)` is injective. -/
 theorem lieInvariantsProdHom_injective : Function.Injective (lieInvariantsProdHom K Z S) := by
   intro y y' h
   rw [lieInvariantsProdHom_apply, lieInvariantsProdHom_apply] at h
-  exact Module.Flat.lTensor_preserves_injective_linearMap _ Subtype.val_injective
+  exact Module.Flat.lTensor_preserves_injective_linearMap _ (Submodule.injective_subtype _)
     ((prodEquiv K Z S).symm.injective h)
 
 /-- The range of `lieInvariantsProdHom` is the algebra of invariants `S(Z × S)^{Z × S}`. -/
@@ -193,7 +152,9 @@ theorem range_lieInvariantsProdHom :
   rw [AlgHom.mem_range, ← (prodEquiv K Z S).symm_apply_apply p,
     prodEquiv_symm_mem_lieInvariants_iff, LinearMap.mem_range]
   simp_rw [lieInvariantsProdHom_apply, (prodEquiv K Z S).symm.injective.eq_iff]
-  exact Iff.rfl
+  -- Both sides quantify over `S(Z) ⊗ S(S)^S`, its second factor written once as the subalgebra
+  -- `S(S)^S` and once as its underlying submodule.
+  exact exists_congr fun _ ↦ Iff.rfl
 
 variable (K Z S) in
 /-- **The adjoint invariants of a product with an abelian factor**:
@@ -210,5 +171,11 @@ theorem coe_lieInvariantsProdEquiv_symm_apply
     ((lieInvariantsProdEquiv K Z S).symm y : SymmetricAlgebra K (Z × S)) =
       lieInvariantsProdHom K Z S y :=
   (rfl)
+
+/-- `lieInvariantsProdHom` recovers an invariant from its image under `lieInvariantsProdEquiv`. -/
+@[simp]
+theorem lieInvariantsProdHom_lieInvariantsProdEquiv (p : lieInvariants K (Z × S) (Z × S)) :
+    lieInvariantsProdHom K Z S (lieInvariantsProdEquiv K Z S p) = p := by
+  rw [← coe_lieInvariantsProdEquiv_symm_apply, AlgEquiv.symm_apply_apply]
 
 end TauCeti.SymmetricAlgebra
