@@ -12,10 +12,11 @@ public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Product
 
 Let `A` and `B` be unital C*-algebras. The maximal tensor product `A ⊗max B`
 (`TauCeti.MaxTensorProduct A B`) is then a unital C*-algebra with unit `1 ⊗ 1`
-(`TauCeti.MaxTensorProduct.one_def`): the algebraic tensor product
-`TauCeti.MaxTensorAlgebra A B` is then a unital normed algebra, and its completion carries Mathlib's
-unital ring, algebra and normed structures, which extend the ones of the nonunital C*-algebra
-`A ⊗max B`. The canonical map `TauCeti.MaxTensorProduct.of` is unital
+(`TauCeti.MaxTensorProduct.one_def`): the algebraic tensor product with the maximal norm,
+`TauCeti.CStarTensorAlgebra (TauCeti.maxCStarTensorNorm A B)`, is then a unital normed algebra, and
+its completion carries Mathlib's unital ring, algebra and normed structures, which extend the ones
+of the nonunital C*-algebra `A ⊗max B`. The canonical map
+`TauCeti.CStarTensorProduct.of (TauCeti.maxCStarTensorNorm A B)` is unital
 (`TauCeti.MaxTensorProduct.ofStarAlgHom`).
 
 The unital star homomorphisms `a ↦ a ⊗ 1` and `b ↦ 1 ⊗ b`
@@ -54,53 +55,56 @@ namespace TauCeti
 
 variable {A : Type u} {B : Type v} [CStarAlgebra A] [CStarAlgebra B]
 
-namespace MaxTensorAlgebra
+namespace CStarTensorAlgebra
 
-/-- For unital `A` and `B`, `TauCeti.MaxTensorAlgebra A B` is the unital ring `A ⊗[ℂ] B`. -/
-instance : Ring (MaxTensorAlgebra A B) :=
+/-- For unital `A` and `B`, `A ⊗[ℂ] B` with the maximal norm is the unital ring `A ⊗[ℂ] B`. -/
+instance : Ring (CStarTensorAlgebra (maxCStarTensorNorm A B)) :=
   inferInstanceAs (Ring (A ⊗[ℂ] B))
 
-/-- For unital `A` and `B`, `TauCeti.MaxTensorAlgebra A B` is the complex algebra `A ⊗[ℂ] B`. -/
-instance : Algebra ℂ (MaxTensorAlgebra A B) :=
+/-- For unital `A` and `B`, `A ⊗[ℂ] B` with the maximal norm is the complex algebra `A ⊗[ℂ] B`. -/
+instance : Algebra ℂ (CStarTensorAlgebra (maxCStarTensorNorm A B)) :=
   inferInstanceAs (Algebra ℂ (A ⊗[ℂ] B))
 
-/-- For unital `A` and `B`, `TauCeti.MaxTensorAlgebra A B` is a unital normed ring. -/
-instance : NormedRing (MaxTensorAlgebra A B) where
-  __ : NonUnitalNormedRing (MaxTensorAlgebra A B) := inferInstance
-  __ : Ring (MaxTensorAlgebra A B) := inferInstance
+/-- For unital `A` and `B`, `A ⊗[ℂ] B` with the maximal norm is a unital normed ring. -/
+instance : NormedRing (CStarTensorAlgebra (maxCStarTensorNorm A B)) where
+  __ : NonUnitalNormedRing (CStarTensorAlgebra (maxCStarTensorNorm A B)) := inferInstance
+  __ : Ring (CStarTensorAlgebra (maxCStarTensorNorm A B)) := inferInstance
 
-/-- For unital `A` and `B`, `TauCeti.MaxTensorAlgebra A B` is a normed algebra. -/
-instance : NormedAlgebra ℂ (MaxTensorAlgebra A B) where
-  __ : Algebra ℂ (MaxTensorAlgebra A B) := inferInstance
+/-- For unital `A` and `B`, `A ⊗[ℂ] B` with the maximal norm is a normed algebra. -/
+instance : NormedAlgebra ℂ (CStarTensorAlgebra (maxCStarTensorNorm A B)) where
+  __ : Algebra ℂ (CStarTensorAlgebra (maxCStarTensorNorm A B)) := inferInstance
   norm_smul_le := norm_smul_le
 
-end MaxTensorAlgebra
+end CStarTensorAlgebra
 
 namespace MaxTensorProduct
 
+open CStarTensorProduct
+
 /-- **Units.** The maximal tensor product of unital C*-algebras is a unital C*-algebra, the
-completion of the unital normed algebra `TauCeti.MaxTensorAlgebra A B`, with unit `1 ⊗ 1`. -/
+completion of the unital normed algebra `A ⊗[ℂ] B` with the maximal norm, with unit `1 ⊗ 1`. -/
 instance instCStarAlgebra : CStarAlgebra (MaxTensorProduct A B) :=
-  letI : CStarAlgebra (Completion (MaxTensorAlgebra A B)) :=
+  letI : CStarAlgebra (Completion (CStarTensorAlgebra (maxCStarTensorNorm A B))) :=
     { toCStarRing := Completion.cstarRing fun x ↦ (CStarRing.norm_star_mul_self (x := x)).ge
       norm_smul_le := norm_smul_le }
-  inferInstanceAs (CStarAlgebra (Completion (MaxTensorAlgebra A B)))
+  inferInstanceAs (CStarAlgebra (Completion (CStarTensorAlgebra (maxCStarTensorNorm A B))))
 
 /-- The canonical map `A ⊗[ℂ] B → A ⊗max B` is unital. -/
 @[simp]
-theorem of_one : of A B 1 = 1 := by
-  rw [← coe_toMax_eq_of, ← MaxTensorAlgebra.toMaxStarAlgEquiv_apply, map_one]
+theorem of_one : of (maxCStarTensorNorm A B) 1 = 1 := by
+  rw [← coe_equiv_eq_of, map_one]
   -- the unit of `MaxTensorProduct A B` is the unit of the completion, reached through the
   -- `CStarAlgebra` instance rather than syntactically as `Completion`'s `One`
-  exact Completion.coe_one (MaxTensorAlgebra A B)
+  exact Completion.coe_one (CStarTensorAlgebra (maxCStarTensorNorm A B))
 
 /-- The unit of `A ⊗max B` is `1 ⊗ 1`. -/
 @[simp]
-theorem of_one_tmul_one : of A B ((1 : A) ⊗ₜ (1 : B)) = 1 := by
+theorem of_one_tmul_one : of (maxCStarTensorNorm A B) ((1 : A) ⊗ₜ (1 : B)) = 1 := by
   rw [← Algebra.TensorProduct.one_def, of_one]
 
 /-- The unit of `A ⊗max B` is `1 ⊗ 1`. -/
-theorem one_def : (1 : MaxTensorProduct A B) = of A B ((1 : A) ⊗ₜ (1 : B)) :=
+theorem one_def :
+    (1 : MaxTensorProduct A B) = of (maxCStarTensorNorm A B) ((1 : A) ⊗ₜ (1 : B)) :=
   of_one_tmul_one.symm
 
 /-- For nonzero unital `A` and `B`, the maximal tensor product is nonzero:
@@ -113,44 +117,48 @@ variable (A B)
 
 /-- The canonical map `A ⊗[ℂ] B → A ⊗max B` as a unital star homomorphism. -/
 def ofStarAlgHom : A ⊗[ℂ] B →⋆ₐ[ℂ] MaxTensorProduct A B where
-  __ := of A B
+  __ := of (maxCStarTensorNorm A B)
   map_one' := of_one
   commutes' r := by simp [Algebra.algebraMap_eq_smul_one]
 
 variable {A B} in
 @[simp]
-theorem ofStarAlgHom_apply (x : A ⊗[ℂ] B) : ofStarAlgHom A B x = of A B x :=
+theorem ofStarAlgHom_apply (x : A ⊗[ℂ] B) :
+    ofStarAlgHom A B x = of (maxCStarTensorNorm A B) x :=
   (rfl)
 
 /-- The unital star homomorphism `A → A ⊗max B`, `a ↦ a ⊗ 1`. -/
 def includeLeft : A →⋆ₐ[ℂ] MaxTensorProduct A B where
   __ := (ofStarAlgHom A B).toAlgHom.comp Algebra.TensorProduct.includeLeft
-  map_star' a := by simpa [TensorProduct.star_tmul] using map_star (of A B) (a ⊗ₜ (1 : B))
+  map_star' a := by
+    simpa [TensorProduct.star_tmul] using map_star (of (maxCStarTensorNorm A B)) (a ⊗ₜ (1 : B))
 
 /-- The unital star homomorphism `B → A ⊗max B`, `b ↦ 1 ⊗ b`. -/
 def includeRight : B →⋆ₐ[ℂ] MaxTensorProduct A B where
   __ := (ofStarAlgHom A B).toAlgHom.comp Algebra.TensorProduct.includeRight
-  map_star' b := by simpa [TensorProduct.star_tmul] using map_star (of A B) ((1 : A) ⊗ₜ b)
+  map_star' b := by
+    simpa [TensorProduct.star_tmul] using map_star (of (maxCStarTensorNorm A B)) ((1 : A) ⊗ₜ b)
 
 variable {A B}
 
 @[simp]
-theorem includeLeft_apply (a : A) : includeLeft A B a = of A B (a ⊗ₜ 1) :=
+theorem includeLeft_apply (a : A) : includeLeft A B a = of (maxCStarTensorNorm A B) (a ⊗ₜ 1) :=
   (rfl)
 
 @[simp]
-theorem includeRight_apply (b : B) : includeRight A B b = of A B (1 ⊗ₜ b) :=
+theorem includeRight_apply (b : B) :
+    includeRight A B b = of (maxCStarTensorNorm A B) (1 ⊗ₜ b) :=
   (rfl)
 
 /-- `(a ⊗ 1)(1 ⊗ b) = a ⊗ b`. -/
 theorem includeLeft_mul_includeRight (a : A) (b : B) :
-    includeLeft A B a * includeRight A B b = of A B (a ⊗ₜ b) := by
+    includeLeft A B a * includeRight A B b = of (maxCStarTensorNorm A B) (a ⊗ₜ b) := by
   rw [includeLeft_apply, includeRight_apply, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul,
     mul_one, one_mul]
 
 /-- `(1 ⊗ b)(a ⊗ 1) = a ⊗ b`. -/
 theorem includeRight_mul_includeLeft (a : A) (b : B) :
-    includeRight A B b * includeLeft A B a = of A B (a ⊗ₜ b) := by
+    includeRight A B b * includeLeft A B a = of (maxCStarTensorNorm A B) (a ⊗ₜ b) := by
   rw [includeLeft_apply, includeRight_apply, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul,
     mul_one, one_mul]
 
@@ -188,14 +196,15 @@ def liftStarAlgHom : MaxTensorProduct A B →⋆ₐ[ℂ] C where
 `Algebra.TensorProduct.lift`. -/
 @[simp]
 theorem liftStarAlgHom_of (x : A ⊗[ℂ] B) :
-    liftStarAlgHom φ ψ h (of A B x) = Algebra.TensorProduct.lift φ.toAlgHom ψ.toAlgHom h x := by
+    liftStarAlgHom φ ψ h (of (maxCStarTensorNorm A B) x) =
+      Algebra.TensorProduct.lift φ.toAlgHom ψ.toAlgHom h x := by
   induction x using TensorProduct.inductionOn with
   | tmul a b => exact lift_of_tmul φ.toNonUnitalStarAlgHom ψ.toNonUnitalStarAlgHom h a b
   | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The unital extension sends `a ⊗ b` to `φ a * ψ b`. -/
 theorem liftStarAlgHom_of_tmul (a : A) (b : B) :
-    liftStarAlgHom φ ψ h (of A B (a ⊗ₜ b)) = φ a * ψ b :=
+    liftStarAlgHom φ ψ h (of (maxCStarTensorNorm A B) (a ⊗ₜ b)) = φ a * ψ b :=
   lift_of_tmul φ.toNonUnitalStarAlgHom ψ.toNonUnitalStarAlgHom h a b
 
 /-- The unital extension restricts to `φ` along `a ↦ a ⊗ 1`. -/
