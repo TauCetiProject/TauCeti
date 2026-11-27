@@ -394,6 +394,14 @@ theorem quotientMkContinuousMonoidHom_apply (N : Subgroup G) [N.Normal] (g : G) 
     quotientMkContinuousMonoidHom N g = (g : G ⧸ N) :=
   (rfl)
 
+/-- The kernel of the projection onto the quotient by a normal subgroup is that subgroup. Not
+tagged `@[simp]`: simp proves it from `coe_quotientMkContinuousMonoidHom` and
+`QuotientGroup.ker_mk'`. -/
+theorem ker_quotientMkContinuousMonoidHom (N : Subgroup G) [N.Normal] :
+    (quotientMkContinuousMonoidHom N).ker = N := by
+  ext
+  simp
+
 /-- The inclusion of the fixed-point additive subgroup is equivariant along the continuous
 quotient map. This is the compatible-pair form of the quotient action on fixed points. -/
 theorem fixedPoints_subtype_quotientMk_smul (N : Subgroup G) [N.Normal]

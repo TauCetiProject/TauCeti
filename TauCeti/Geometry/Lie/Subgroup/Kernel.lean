@@ -25,6 +25,8 @@ kernel is trivial.
 
 ## Main results
 
+* `ContinuousMonoidHom.lieMap_eq_zero_iff_forall_lieExp_smul_mem_ker`: the Lie map kills `X` exactly
+  when the one-parameter subgroup `t ↦ exp(t X)` lies in the kernel.
 * `ContinuousMonoidHom.lieMap_injective_of_discreteTopology_ker`: a continuous homomorphism with
   discrete kernel has injective Lie map.
 * `ContinuousMonoidHom.injective_mfderiv_of_discreteTopology_ker`,
@@ -59,6 +61,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
 
+/-- **The kernel of the Lie map.** The Lie map of a continuous homomorphism `f` kills `X` if and
+only if `exp(t X)` lies in the kernel of `f` for every real `t`. -/
+theorem lieMap_eq_zero_iff_forall_lieExp_smul_mem_ker [T2Space G] [BoundarylessManifold I G]
+    [T2Space G'] [BoundarylessManifold I' G'] (f : G →ₜ* G') {X : LeftInvariantDerivation I G} :
+    lieMap (I := I) (I' := I') f X = 0 ↔ ∀ t : ℝ, lieExp (t • X) ∈ f.ker := by
+  refine ⟨fun hX t ↦ ?_, fun hX ↦ ?_⟩
+  · rw [MonoidHom.mem_ker, coe_toMonoidHom, MonoidHom.coe_ofClass, map_lieExp (I' := I'),
+      map_smul, hX, smul_zero, lieExp_zero]
+  · apply oneParameterSubgroup_injective (I := I') (G := G')
+    ext t
+    obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
+    simpa [← map_smul, ← map_lieExp (I' := I')] using hX t
+
 /-- **A continuous homomorphism with discrete kernel has injective Lie map.** In particular the Lie
 map of a homomorphism with finite kernel is injective. -/
 theorem lieMap_injective_of_discreteTopology_ker (f : G →ₜ* G') [DiscreteTopology f.ker] :
@@ -71,9 +86,7 @@ theorem lieMap_injective_of_discreteTopology_ker (f : G →ₜ* G') [DiscreteTop
   have : T2Space G' := I'.t2Space_of_lieGroup ∞
   have : BoundarylessManifold I' G' := ContMDiffMul.boundarylessManifold
   -- The one-parameter subgroup through `X` lies in the kernel of `f`.
-  have hker (t : ℝ) : lieExp (I := I) (G := G) (t • X) ∈ f.ker := by
-    rw [MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
-      map_lieExp (I' := I'), map_smul, hX', smul_zero, lieExp_zero]
+  have hker := (lieMap_eq_zero_iff_forall_lieExp_smul_mem_ker f).1 hX'
   -- So `X` lies in the Lie algebra of the closed discrete subgroup `ker f`, which is trivial.
   have hclosed : IsClosed (f.ker : Set G) := isClosed_singleton.preimage f.continuous
   have hmem := mem_lieSubalgebraOfSubgroup_of_forall (K := f.ker) hker
