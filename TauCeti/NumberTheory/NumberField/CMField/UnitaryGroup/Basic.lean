@@ -193,9 +193,8 @@ theorem finiteAdelicUnitaryGroup.proj_conjPlace (g : finiteAdelicUnitaryGroup E 
 
 /-- An element of `G_f` is determined by its components at the finite places. -/
 theorem finiteAdelicUnitaryGroup.ext_proj {g h : finiteAdelicUnitaryGroup E ι}
-    (H : ∀ w : HeightOneSpectrum (𝓞 E), proj E ι w g = proj E ι w h) : g = h := by
-  refine Subtype.ext <| Units.ext <| Matrix.ext fun i j ↦ FiniteAdeleRing.ext E fun w ↦ ?_
-  rw [← proj_apply, ← proj_apply, H w]
+    (H : ∀ w : HeightOneSpectrum (𝓞 E), proj E ι w g = proj E ι w h) : g = h :=
+  Subtype.ext <| FiniteAdeleRing.generalLinearGroup_ext H
 
 /-! ### The integral subgroup `K₀` -/
 

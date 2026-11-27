@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Idempotent
-public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
 /-!
@@ -79,6 +78,7 @@ theorem val_map_mul_cutGL_inv_mul {B : Type*} [CommRing B] (f : A →+* B)
 
 /-- An invertible matrix is the product of its cuts along the complementary idempotents `e` and
 `1 - e`. -/
+@[simp]
 theorem cutGL_mul_cutGL_one_sub (he : IsIdempotentElem e) (g : GL n A) :
     he.cutGL g * he.one_sub.cutGL g = g := by
   ext : 1
@@ -88,6 +88,7 @@ theorem cutGL_mul_cutGL_one_sub (he : IsIdempotentElem e) (g : GL n A) :
   module
 
 /-- Cutting along `f` and then along `e` is cutting along `e * f`. -/
+@[simp]
 theorem cutGL_cutGL (he : IsIdempotentElem e) {f : A} (hf : IsIdempotentElem f) (g : GL n A) :
     he.cutGL (hf.cutGL g) = (he.mul hf).cutGL g := by
   ext : 1
@@ -96,6 +97,7 @@ theorem cutGL_cutGL (he : IsIdempotentElem e) {f : A} (hf : IsIdempotentElem f) 
 
 /-- The conjugate transpose of the cut of `g` along an idempotent `e` is the cut of the conjugate
 transpose of `g` along the idempotent `star e`. -/
+@[simp]
 theorem star_cutGL [StarRing A] (he : IsIdempotentElem e) (g : GL n A) :
     Star.star (he.cutGL g) = he.star.cutGL (Star.star g) := by
   ext : 1

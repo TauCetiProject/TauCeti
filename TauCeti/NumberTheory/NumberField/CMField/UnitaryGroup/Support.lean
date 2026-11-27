@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Idempotent
 public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.Basic
+import TauCeti.Data.Set.Image
 
 /-!
 # Supports of elements of the finite adelic unitary group
@@ -42,11 +43,16 @@ its integral subgroup `K₀` and to its elements supported at a single place and
 ## Main results
 
 * `TauCeti.finiteAdelicUnitaryGroup.proj_cut`: the components of a cut.
+* `TauCeti.finiteAdelicUnitaryGroup.range_cut`, `TauCeti.finiteAdelicUnitaryGroup.ker_cut`: the
+  cut along `S` has image the elements supported on `S` and kernel the elements trivial on `S`;
+  `TauCeti.finiteAdelicUnitaryGroup.continuous_cut`: it is continuous.
 * `TauCeti.finiteAdelicUnitaryGroup.cut_mul_cut_compl`: `g` is the product of its cuts along `S`
   and along the complement of `S`.
 * `TauCeti.finiteAdelicUnitaryGroup.exists_supportedOn_mul_eq`: for every set `S` of finite
   places, every `g ∈ G_f` is a product `a * b` with `a` supported on `S ∪ conj S` and `b` trivial
   there, with `a, b ∈ K₀` when `g ∈ K₀`.
+* `TauCeti.finiteAdelicUnitaryGroup.cut_mem_integralAdelicUnitaryGroup_iff_forall_mem_range`: the
+  cut of `g` along `S` lies in `K₀` exactly when `g_w ∈ GL_n(𝒪_w)` at every place `w ∈ S`.
 * `TauCeti.finiteAdelicUnitaryGroup.eventually_proj_mem_range`: `g_w ∈ GL_n(𝒪_w)` for all but
   finitely many finite places `w`.
 * `TauCeti.finiteAdelicUnitaryGroup.eq_top_of_integralAdelicUnitaryGroup_le`: a subgroup of `G_f`
@@ -95,13 +101,13 @@ theorem mem_supportedOn_iff {S : Set (HeightOneSpectrum (𝓞 E))}
   simp only [supportedOn, Subgroup.mem_iInf, MonoidHom.mem_ker, Set.mem_compl_iff]
 
 /-- Being supported on a set of places is inherited by larger sets. -/
-theorem supportedOn_mono : Monotone (supportedOn E ι) := fun _ _ hST _ hg ↦
-  mem_supportedOn_iff.2 fun w hw ↦ mem_supportedOn_iff.1 hg w fun h ↦ hw (hST h)
+theorem supportedOn_mono : Monotone (supportedOn E ι) := fun _ _ hST ↦
+  iInf_le_iInf_of_subset (Set.compl_subset_compl.2 hST)
 
 /-- Every element is supported on the set of all finite places. -/
 @[simp]
-theorem supportedOn_univ : supportedOn E ι Set.univ = ⊤ :=
-  eq_top_iff.2 fun _ _ ↦ mem_supportedOn_iff.2 fun _ hw ↦ absurd (Set.mem_univ _) hw
+theorem supportedOn_univ : supportedOn E ι Set.univ = ⊤ := by
+  rw [supportedOn, Set.compl_univ, iInf_emptyset]
 
 /-- Only `1` is supported on the empty set of places. -/
 @[simp]
@@ -112,11 +118,7 @@ theorem supportedOn_empty : supportedOn E ι ∅ = ⊥ :=
 /-- An element supported on `S` and on `T` is supported on `S ∩ T`. -/
 theorem supportedOn_inter (S T : Set (HeightOneSpectrum (𝓞 E))) :
     supportedOn E ι (S ∩ T) = supportedOn E ι S ⊓ supportedOn E ι T := by
-  refine le_antisymm (le_inf (supportedOn_mono Set.inter_subset_left)
-    (supportedOn_mono Set.inter_subset_right)) fun g hg ↦ mem_supportedOn_iff.2 fun w hw ↦ ?_
-  rcases not_and_or.1 hw with hS | hT
-  · exact mem_supportedOn_iff.1 (Subgroup.mem_inf.1 hg).1 w hS
-  · exact mem_supportedOn_iff.1 (Subgroup.mem_inf.1 hg).2 w hT
+  rw [supportedOn, supportedOn, supportedOn, Set.compl_inter, iInf_union]
 
 /-! ### Cutting along a set of places stable under conjugation -/
 
@@ -126,13 +128,15 @@ private theorem cutGL_mem {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace
     (g : finiteAdelicUnitaryGroup E ι) :
     (FiniteAdeleRing.isIdempotentElem_indicatorOne S).cutGL (g : GL ι 𝔸ᶠ[E]) ∈
       finiteAdelicUnitaryGroup E ι := by
-  have hstar := FiniteAdeleRing.star_indicatorOne S
-  rw [hS] at hstar
-  have hg := g.property
-  rw [mem_unitarySubgroup_iff, Unitary.mem_iff] at hg ⊢
-  simp only [IsIdempotentElem.star_cutGL, hstar]
-  rw [← map_mul, ← map_mul, hg.1, hg.2, map_one]
-  exact ⟨rfl, rfl⟩
+  have hstar : star (FiniteAdeleRing.indicatorOne (K := E) S) = FiniteAdeleRing.indicatorOne S := by
+    rw [FiniteAdeleRing.star_indicatorOne, hS]
+  -- Along a self-adjoint idempotent, cutting is a star monoid endomorphism of `GL_n(𝔸_f)`, so it
+  -- preserves unitary elements.
+  let f : GL ι 𝔸ᶠ[E] →⋆* GL ι 𝔸ᶠ[E] :=
+    { (FiniteAdeleRing.isIdempotentElem_indicatorOne S).cutGL with
+      map_star' := fun x ↦ by simp only [MonoidHom.toFun_eq_coe, IsIdempotentElem.star_cutGL,
+        hstar] }
+  exact mem_unitarySubgroup_iff.2 (Unitary.map_mem f (mem_unitarySubgroup_iff.1 g.property))
 
 variable (E ι) in
 /-- The **cut** of `g ∈ G_f` along a set `S` of finite places stable under conjugation: the
@@ -158,6 +162,29 @@ theorem val_cut (S : Set (HeightOneSpectrum (𝓞 E))) (hS : conjPlace ⁻¹' S 
       FiniteAdeleRing.indicatorOne (K := E) S • (g : GL ι 𝔸ᶠ[E]).val +
         (1 - FiniteAdeleRing.indicatorOne (K := E) S) • 1 :=
   IsIdempotentElem.val_cutGL _ _
+
+/-- Cutting along `S` is continuous. -/
+@[fun_prop]
+theorem continuous_cut (S : Set (HeightOneSpectrum (𝓞 E))) (hS : conjPlace ⁻¹' S = S) :
+    Continuous (cut E ι S hS) := by
+  -- The underlying matrices of a cut and of its inverse are affine functions
+  -- `e_S • m + (1 - e_S) • 1` of the underlying matrices `m` of `g` and of its inverse.
+  have haff {m : finiteAdelicUnitaryGroup E ι → Matrix ι ι 𝔸ᶠ[E]} (hm : Continuous m) :
+      Continuous fun x ↦ FiniteAdeleRing.indicatorOne (K := E) S • m x +
+        (1 - FiniteAdeleRing.indicatorOne (K := E) S) • (1 : Matrix ι ι 𝔸ᶠ[E]) :=
+    by fun_prop
+  have hinv (x : finiteAdelicUnitaryGroup E ι) :
+      ((↑(cut E ι S hS x) : GL ι 𝔸ᶠ[E])⁻¹ : GL ι 𝔸ᶠ[E]).val =
+        FiniteAdeleRing.indicatorOne (K := E) S • ((x : GL ι 𝔸ᶠ[E])⁻¹).val +
+          (1 - FiniteAdeleRing.indicatorOne (K := E) S) • 1 := by
+    rw [← InvMemClass.coe_inv, ← map_inv, val_cut, InvMemClass.coe_inv]
+  have hGL : Continuous fun x ↦ (cut E ι S hS x : GL ι 𝔸ᶠ[E]) := by
+    refine Units.continuous_iff.2 ⟨?_, ?_⟩
+    · simpa only [Function.comp_def, val_cut] using
+        haff (Units.continuous_val.comp continuous_subtypeVal)
+    · simpa only [hinv, Function.comp_apply] using
+        haff (Units.continuous_coe_inv.comp continuous_subtypeVal)
+  exact hGL.subtype_mk fun x ↦ (cut E ι S hS x).property
 
 open Classical in
 /-- **Components of a cut.** The component of the cut of `g` along `S` at a finite place `w` is
@@ -207,7 +234,34 @@ theorem range_cut {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' 
   le_antisymm (by rintro _ ⟨g, rfl⟩; exact cut_mem_supportedOn hS g)
     fun _ hg ↦ ⟨_, (cut_eq_self_iff hS).2 hg⟩
 
+/-- The kernel of cutting along `S` is the subgroup of elements trivial on `S`, that is supported
+on the complement of `S`. -/
+@[simp]
+theorem ker_cut {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' S = S) :
+    (cut E ι S hS).ker = supportedOn E ι Sᶜ := by
+  ext g
+  rw [MonoidHom.mem_ker, mem_supportedOn_iff]
+  refine ⟨fun h w hw ↦ ?_, fun h ↦ ext_proj fun w ↦ ?_⟩
+  · rw [← proj_cut_of_mem hS g (Set.notMem_compl_iff.1 hw), h, map_one]
+  · by_cases hw : w ∈ S
+    · rw [proj_cut_of_mem hS g hw, h w (Set.notMem_compl_iff.2 hw), map_one]
+    · rw [proj_cut_of_notMem hS g hw, map_one]
+
+/-- Cutting along the set of all finite places is the identity. -/
+@[simp]
+theorem cut_univ (h : conjPlace ⁻¹' (Set.univ : Set (HeightOneSpectrum (𝓞 E))) = Set.univ) :
+    cut E ι Set.univ h = MonoidHom.id _ :=
+  MonoidHom.ext fun g ↦ ext_proj fun _ ↦ proj_cut_of_mem h g (Set.mem_univ _)
+
+/-- Cutting along the empty set of places is trivial. -/
+@[simp]
+theorem cut_empty (h : conjPlace ⁻¹' (∅ : Set (HeightOneSpectrum (𝓞 E))) = ∅) :
+    cut E ι ∅ h = 1 :=
+  MonoidHom.ext fun g ↦ ext_proj fun w ↦ by
+    rw [proj_cut_of_notMem h g (Set.notMem_empty w), MonoidHom.one_apply, map_one]
+
 /-- Cutting along `T` and then along `S` is cutting along `S ∩ T`. -/
+@[simp]
 theorem cut_cut {S T : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' S = S)
     (hT : conjPlace ⁻¹' T = T) (g : finiteAdelicUnitaryGroup E ι) :
     cut E ι S hS (cut E ι T hT g) =
@@ -217,6 +271,7 @@ theorem cut_cut {S T : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' 
 
 /-- **Decomposition along a set of places.** An element of `G_f` is the product of its cuts along
 a set `S` of finite places stable under conjugation and along the complement of `S`. -/
+@[simp]
 theorem cut_mul_cut_compl {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' S = S)
     (g : finiteAdelicUnitaryGroup E ι) :
     cut E ι S hS g * cut E ι Sᶜ (by rw [Set.preimage_compl, hS]) g = g := by
@@ -238,6 +293,20 @@ theorem cut_mem_integralAdelicUnitaryGroup_iff {S : Set (HeightOneSpectrum (𝓞
   · simpa [hw] using h w hw i j
   · by_cases hij : i = j <;> simp [hw, hij, zero_mem, one_mem]
 
+/-- **Integrality of a cut, place by place.** The cut of `g` along `S` lies in `K₀` exactly when
+the component `g_w` lies in the image `GL_n(𝒪_w)` of the general linear group over the local
+integers at every place `w ∈ S`. -/
+theorem cut_mem_integralAdelicUnitaryGroup_iff_forall_mem_range
+    {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' S = S)
+    {g : finiteAdelicUnitaryGroup E ι} :
+    cut E ι S hS g ∈ integralAdelicUnitaryGroup E ι ↔ ∀ w ∈ S, proj E ι w g ∈
+      (GeneralLinearGroup.map (n := ι) (w.adicCompletionIntegers E).subtype).range := by
+  rw [mem_integralAdelicUnitaryGroup_iff_forall_place]
+  refine ⟨fun h w hw ↦ proj_cut_of_mem hS g hw ▸ h w, fun h w ↦ ?_⟩
+  by_cases hw : w ∈ S
+  · exact (proj_cut_of_mem hS g hw).symm ▸ h w hw
+  · exact (proj_cut_of_notMem hS g hw).symm ▸ one_mem _
+
 /-- The cut of an element of `K₀` lies in `K₀`. -/
 theorem cut_mem_integralAdelicUnitaryGroup {S : Set (HeightOneSpectrum (𝓞 E))}
     (hS : conjPlace ⁻¹' S = S) {g : finiteAdelicUnitaryGroup E ι}
@@ -253,39 +322,21 @@ theorem exists_supportedOn_mul_eq (S : Set (HeightOneSpectrum (𝓞 E)))
     ∃ a ∈ supportedOn E ι (S ∪ conjPlace ⁻¹' S), ∃ b ∈ supportedOn E ι (S ∪ conjPlace ⁻¹' S)ᶜ,
       a * b = g ∧ (g ∈ integralAdelicUnitaryGroup E ι →
         a ∈ integralAdelicUnitaryGroup E ι ∧ b ∈ integralAdelicUnitaryGroup E ι) := by
-  have hS := preimage_conjPlace_union_preimage S
+  have hS := Function.Involutive.preimage_union_preimage conjPlace_conjPlace S
   exact ⟨_, cut_mem_supportedOn hS g, _, cut_mem_supportedOn _ g, cut_mul_cut_compl hS g,
     fun hg ↦ ⟨cut_mem_integralAdelicUnitaryGroup hS hg, cut_mem_integralAdelicUnitaryGroup _ hg⟩⟩
 
 /-! ### Almost all components are integral, and local generation -/
 
-/-- The entries of an element of `G_f` are integral at all but finitely many finite places. -/
-private theorem exists_finset_forall_mem (g : finiteAdelicUnitaryGroup E ι) :
-    ∃ T : Finset (HeightOneSpectrum (𝓞 E)), ∀ w ∉ T, ∀ i j,
-      ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j w ∈ w.adicCompletionIntegers E := by
-  have h : ∀ᶠ w in Filter.cofinite, ∀ i j,
-      ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j w ∈ w.adicCompletionIntegers E :=
-    Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦
-      ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j |>.cofinite_mem_adicCompletionIntegers
-  exact ⟨(Filter.eventually_cofinite.1 h).toFinset, fun w hw ↦ by simpa using hw⟩
-
 /-- **Almost all components are integral**: for `g ∈ G_f`, the component `g_w` lies in
-`GL_n(𝒪_w)` at all but finitely many finite places `w`. -/
+`GL_n(𝒪_w)` at all but finitely many finite places `w`. This is the case of `G_f` of
+`IsDedekindDomain.FiniteAdeleRing.eventually_map_proj_mem_range`. -/
 theorem eventually_proj_mem_range (g : finiteAdelicUnitaryGroup E ι) :
     ∀ᶠ w in Filter.cofinite, proj E ι w g ∈
       (GeneralLinearGroup.map (n := ι) (w.adicCompletionIntegers E).subtype).range := by
-  obtain ⟨T, hT⟩ := exists_finset_forall_mem g
-  have hinv : Function.Involutive (conjPlace (E := E)) := conjPlace_conjPlace
-  have hC : ((T : Set (HeightOneSpectrum (𝓞 E))) ∪ conjPlace ⁻¹' T).Finite :=
-    T.finite_toSet.union (T.finite_toSet.preimage hinv.injective.injOn)
-  have hA := preimage_conjPlace_union_preimage (T : Set (HeightOneSpectrum (𝓞 E)))
-  -- The cut of `g` away from `T ∪ conj T` lies in `K₀`, and has the components of `g` there.
-  have hK := (cut_mem_integralAdelicUnitaryGroup_iff (g := g)
-    (S := ((T : Set (HeightOneSpectrum (𝓞 E))) ∪ conjPlace ⁻¹' T)ᶜ)
-    (by rw [Set.preimage_compl, hA])).2 fun w hw ↦ hT w fun h ↦ hw (Or.inl h)
-  filter_upwards [hC.compl_mem_cofinite] with w hw
-  rw [← proj_cut_of_mem _ g hw]
-  exact mem_integralAdelicUnitaryGroup_iff_forall_place.1 hK w
+  filter_upwards [FiniteAdeleRing.eventually_map_proj_mem_range (g : GL ι 𝔸ᶠ[E])] with w hw
+  convert hw using 1
+  exact GeneralLinearGroup.ext fun i j ↦ by simp
 
 /-- The elements supported on `F ∪ conj F`, for a finite set `F` of places, lie in every subgroup
 containing the elements supported on `{w, conj w}` for each finite place `w`. -/
@@ -300,7 +351,8 @@ private theorem supportedOn_union_preimage_le {H : Subgroup (finiteAdelicUnitary
     intro x hx
     -- Split `x` along `A = F ∪ conj F`: the part on `A` is handled by induction, and the part
     -- away from `A` is supported on `{u, conj u}`.
-    have hA := preimage_conjPlace_union_preimage (F : Set (HeightOneSpectrum (𝓞 E)))
+    have hA := Function.Involutive.preimage_union_preimage conjPlace_conjPlace
+      (F : Set (HeightOneSpectrum (𝓞 E)))
     rw [← cut_mul_cut_compl hA x]
     refine H.mul_mem (ih (cut_mem_supportedOn hA x)) (hH u (mem_supportedOn_iff.2 fun w hw ↦ ?_))
     by_cases hwA : w ∈ (F : Set _) ∪ conjPlace ⁻¹' F
@@ -321,10 +373,14 @@ theorem eq_top_of_integralAdelicUnitaryGroup_le {H : Subgroup (finiteAdelicUnita
     (hK : integralAdelicUnitaryGroup E ι ≤ H)
     (hH : ∀ w : HeightOneSpectrum (𝓞 E), supportedOn E ι {w, w.conjPlace} ≤ H) : H = ⊤ := by
   refine eq_top_iff.2 fun g _ ↦ ?_
-  obtain ⟨T, hT⟩ := exists_finset_forall_mem g
-  have hS := preimage_conjPlace_union_preimage (T : Set (HeightOneSpectrum (𝓞 E)))
+  -- Split `g` along `T ∪ conj T`, for the finite set `T` of places where `g_w ∉ GL_n(𝒪_w)`.
+  have hT := Filter.eventually_cofinite.1 (eventually_proj_mem_range g)
+  have hS := Function.Involutive.preimage_union_preimage conjPlace_conjPlace
+    (hT.toFinset : Set (HeightOneSpectrum (𝓞 E)))
   rw [← cut_mul_cut_compl hS g]
-  refine H.mul_mem (supportedOn_union_preimage_le hH T (cut_mem_supportedOn hS g)) (hK ?_)
-  exact (cut_mem_integralAdelicUnitaryGroup_iff _).2 fun w hw ↦ hT w fun h ↦ hw (Or.inl h)
+  refine H.mul_mem (supportedOn_union_preimage_le hH _ (cut_mem_supportedOn hS g)) (hK ?_)
+  refine (cut_mem_integralAdelicUnitaryGroup_iff_forall_mem_range _).2 fun w hw ↦ ?_
+  by_contra h
+  exact hw (Or.inl (hT.mem_toFinset.2 h))
 
 end TauCeti.finiteAdelicUnitaryGroup

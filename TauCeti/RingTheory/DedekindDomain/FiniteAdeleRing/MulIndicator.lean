@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Idempotent
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 /-!
@@ -107,28 +106,44 @@ theorem indicatorOne_apply_of_notMem {S : Set (HeightOneSpectrum R)} {v : Height
   classical
   rw [indicatorOne_apply, ite_eq_right hv]
 
+/-- The indicator of the empty set of places is `0`. -/
+@[simp]
+theorem indicatorOne_empty : indicatorOne (K := K) (∅ : Set (HeightOneSpectrum R)) = 0 :=
+  ext K fun _ ↦ indicatorOne_apply_of_notMem (Set.notMem_empty _)
+
+/-- The indicator of the set of all finite places is `1`. -/
+@[simp]
+theorem indicatorOne_univ : indicatorOne (K := K) (Set.univ : Set (HeightOneSpectrum R)) = 1 :=
+  ext K fun _ ↦ indicatorOne_apply_of_mem (Set.mem_univ _)
+
 /-- The indicator of `S` times the indicator of `T` is the indicator of `S ∩ T`. -/
+@[simp]
 theorem indicatorOne_mul_indicatorOne (S T : Set (HeightOneSpectrum R)) :
     indicatorOne (K := K) S * indicatorOne T = indicatorOne (S ∩ T) := by
   classical
   refine ext K fun v ↦ ?_
-  rw [mul_apply, indicatorOne_apply, indicatorOne_apply, indicatorOne_apply]
-  by_cases hS : v ∈ S <;> by_cases hT : v ∈ T <;> simp [hS, hT]
+  simpa [indicatorOne_apply, Set.indicator_apply] using
+    (congrFun (Set.inter_indicator_one (M₀ := v.adicCompletion K) (s := S) (t := T)) v).symm
 
 /-- The indicator of a set of places is idempotent. -/
+@[simp]
 theorem isIdempotentElem_indicatorOne (S : Set (HeightOneSpectrum R)) :
     IsIdempotentElem (indicatorOne (K := K) S) := by
   rw [IsIdempotentElem, indicatorOne_mul_indicatorOne, Set.inter_self]
 
 /-- `1` minus the indicator of `S` is the indicator of the complement of `S`. -/
+@[simp]
 theorem one_sub_indicatorOne (S : Set (HeightOneSpectrum R)) :
     1 - indicatorOne (K := K) S = indicatorOne Sᶜ := by
   classical
   refine ext K fun v ↦ ?_
-  rw [sub_apply, one_apply, indicatorOne_apply, indicatorOne_apply]
-  by_cases hS : v ∈ S <;> simp [hS]
+  simpa [indicatorOne_apply, Set.indicator_apply] using
+    (congrFun (Set.indicator_compl S (1 : HeightOneSpectrum R → v.adicCompletion K)) v).symm
 
-/-- The indicator of a set of places is an integral finite adele. -/
+/-- The indicator of a set of places is an integral finite adele. It takes priority over the
+place-by-place unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp` lemma.
+-/
+@[simp high]
 theorem indicatorOne_mem_integralAdeles (S : Set (HeightOneSpectrum R)) :
     indicatorOne (K := K) S ∈ integralAdeles R K :=
   mulIndicator_mem_integralAdeles.2 fun _ _ ↦ zero_mem _
