@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
+public import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.CodimensionOne
-import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
-import TauCeti.Geometry.Manifold.ModelTransport.Finrank
-import TauCeti.Topology.Bases
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Topology.Instances.Shrink
 
 /-!
@@ -32,6 +32,7 @@ public section
 noncomputable section
 
 open Module
+open scoped Topology.Homotopy
 
 universe u
 
@@ -50,9 +51,7 @@ theorem subsingleton_homotopyGroup_threeManifold_of_lt (hd : finrank ℝ E = 3) 
   have : FiniteDimensional ℝ E := .of_finrank_pos (by omega)
   let : ChartedSpace (Fin 3 → ℝ) M :=
     ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [hd])
-  have := ChartedSpace.secondCountable_of_sigmaCompact (Fin 3 → ℝ) M
-  have : Small.{0} M := Cardinal.small_of_lift_mk_le_lift (c := Cardinal.continuum.{0})
-    (by simpa using mk_le_continuum_of_secondCountableTopology M)
+  have : Small.{0} M := ChartedSpace.small_of_lindelof (Fin 3 → ℝ) M
   let e := Shrink.homeomorph.{0} M
   let : ChartedSpace (Fin 3 → ℝ) (Shrink.{0} M) := e.chartedSpace
   have : SimplyConnectedSpace (Shrink.{0} M) := e.symm.toHomotopyEquiv.simplyConnectedSpace
@@ -79,15 +78,45 @@ def homotopyGroupThreeManifoldAddEquiv (hd : finrank ℝ E = 3) (z x : M) :
     (((TopCat.of M).singularHomologyUliftAddEquiv ℤ 3).trans
       (top.toLinearEquiv.toAddEquiv.trans AddEquiv.ulift))
 
+/-- The integer coordinate is the local coordinate at `z` of the Hurewicz image evaluated at one. -/
+@[simp]
+theorem homotopyGroupThreeManifoldAddEquiv_apply (hd : finrank ℝ E = 3) (z x : M)
+    (a : Additive (HomotopyGroup (Fin 3) M x)) :
+    homotopyGroupThreeManifoldAddEquiv hd z x a =
+      haveI : FiniteDimensional ℝ E := .of_finrank_pos (by omega)
+      letI : ChartedSpace (ULift.{u} (Fin 3) → ℝ) M :=
+        ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [hd])
+      let top := singularHomologyIsoOfSimplyConnectedSpace
+        (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ)) (E := ULift.{u} (Fin 3) → ℝ)
+        (n := 2) (by simp) z
+      (top.hom (((TopCat.of M).singularHomologyUliftAddEquiv ℤ 3)
+        ((HomotopyGroup.hurewiczHom (ModuleCat.of ℤ (ULift.{u} ℤ)) 2 a).hom 1))).down := by
+  simp only [homotopyGroupThreeManifoldAddEquiv, AddEquiv.trans_apply,
+    HomotopyGroup.hurewiczUliftAddEquiv_apply]
+  rfl
+
+/-- A generalized loop represents the integer obtained by reading its Hurewicz class at `z`. -/
+theorem homotopyGroupThreeManifoldAddEquiv_ofMul_mk (hd : finrank ℝ E = 3) (z x : M)
+    (p : Ω^ (Fin 3) M x) :
+    homotopyGroupThreeManifoldAddEquiv hd z x (Additive.ofMul ⟦p⟧) =
+      haveI : FiniteDimensional ℝ E := .of_finrank_pos (by omega)
+      letI : ChartedSpace (ULift.{u} (Fin 3) → ℝ) M :=
+        ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [hd])
+      let top := singularHomologyIsoOfSimplyConnectedSpace
+        (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ)) (E := ULift.{u} (Fin 3) → ℝ)
+        (n := 2) (by simp) z
+      (top.hom (((TopCat.of M).singularHomologyUliftAddEquiv ℤ 3)
+        ((GenLoop.hurewicz (ModuleCat.of ℤ (ULift.{u} ℤ)) p).hom 1))).down := by
+  simp only [homotopyGroupThreeManifoldAddEquiv, AddEquiv.trans_apply,
+    HomotopyGroup.hurewiczUliftAddEquiv_ofMul_mk]
+  rfl
+
 /-- Moving the basepoint along a path preserves the integer of a third homotopy class
 computed at a fixed reference point. -/
-@[simp]
 theorem homotopyGroupThreeManifoldAddEquiv_homotopyGroupTransport
     (hd : finrank ℝ E = 3) (z : M) {x y : M} (γ : Path x y) (a : HomotopyGroup (Fin 3) M x) :
     homotopyGroupThreeManifoldAddEquiv hd z y (Additive.ofMul (homotopyGroupTransport γ a)) =
       homotopyGroupThreeManifoldAddEquiv hd z x (Additive.ofMul a) := by
-  simp only [homotopyGroupThreeManifoldAddEquiv, AddEquiv.trans_apply,
-    HomotopyGroup.hurewiczUliftAddEquiv_apply, HomotopyGroup.hurewiczHom_apply, toMul_ofMul,
-    HomotopyGroup.hurewicz_homotopyGroupTransport]
+  simp
 
 end TauCeti
