@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Unramified.Field
 public import TauCeti.Algebra.Module.LinearMap.CompHom
 public import TauCeti.LinearAlgebra.Determinant.SMul
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Representation
+import TauCeti.Algebra.Algebra.Tower
 
 /-!
 # The reflex norm on rational points
@@ -31,6 +32,10 @@ infinite then `V` is not finitely generated over `E` and the determinant is the 
   trace chosen by `TauCeti.CMType.exists_trace_eq_typeTrace`.
 * `TauCeti.CMType.reflexNorm_eq_smulDet`: `N_{k,Φ}` is the determinant on any finite-dimensional
   representation with the type trace, so it does not depend on the choice of `V`.
+* `TauCeti.CMType.exists_reflexNorm_eq_smulDet`: `N_{k,Φ}` is the determinant on a representation
+  with the type trace that is finitely generated over `E` exactly when `k` has finite degree.
+* `TauCeti.CMType.reflexNorm_eq_one_of_not_finiteDimensional`: `N_{k,Φ}` is the junk value `1` if
+  `k` has infinite degree.
 * `TauCeti.CMType.reflexNorm_apply_of_coe_eq_singleton`: for a one-element type `Φ = {φ}` on a
   number field, `N_Φ(φ c) = c`.
 
@@ -109,6 +114,50 @@ variable {E : Type*} [Field E] [NumberField E]
 
 -- A number field is formally unramified over `ℚ`, so its reflex norm is defined.
 attribute [local instance] Algebra.FormallyUnramified.of_isSeparable
+
+/-- **A representation computing the reflex norm.** For a CM type `Φ` on a number field `E` and a
+subfield `k ⊆ ℂ` containing the reflex field, there is a representation `V` of `E` over `k` with
+the type trace on which `N_{k,Φ}` is the determinant. `V` is finitely generated over `E` exactly
+when `k` has finite degree over `ℚ`. -/
+theorem exists_reflexNorm_eq_smulDet {k : IntermediateField ℚ ℂ} (Φ : CMType E)
+    (hk : Φ.reflexField ≤ k) :
+    ∃ (V : Type) (_ : AddCommGroup V) (_ : Module k V) (_ : Module E V)
+      (_ : SMulCommClass E k V) (_ : FiniteDimensional k V) (_ : Module ℚ V)
+      (_ : IsScalarTower ℚ k V),
+      (∀ c : E, (LinearMap.trace k V (DistribSMul.toLinearMap k V c) : ℂ) = Φ.typeTrace c) ∧
+        (Module.Finite E V ↔ FiniteDimensional ℚ k) ∧ Φ.reflexNorm hk = smulDet E k V := by
+  obtain ⟨n, ρ, hρ⟩ := Φ.exists_trace_eq_typeTrace hk
+  let V := Fin n → k
+  let := Module.compHom V ρ
+  have := SMul.comp.smulCommClass (α := V) (β := k) ρ
+  have : IsScalarTower ℚ E V := ρ.toRatAlgHom.isScalarTower_compHom
+  have hV (c : E) : (LinearMap.trace k V (DistribSMul.toLinearMap k V c) : ℂ) = Φ.typeTrace c := by
+    rw [DistribSMul.toLinearMap_compHom]
+    exact hρ c
+  refine ⟨V, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, hV, ⟨fun hE ↦ ?_, fun hfin ↦ ?_⟩, reflexNorm_eq_smulDet Φ hk V hV⟩
+  · have : Module.Finite ℚ V := Module.Finite.trans E V
+    -- `V ≠ 0`: the type traces of `Φ` and `ιΦ` at `1` add up to `[E : ℚ] ≠ 0`.
+    obtain ⟨i⟩ : Nonempty (Fin n) := by
+      refine Fin.pos_iff_nonempty.1 (Nat.pos_of_ne_zero fun hn ↦ ?_)
+      subst hn
+      have h := Φ.typeTrace_add_typeTrace_star_eq_trace 1
+      rw [typeTrace_star, ← hρ, ← map_one (algebraMap ℚ E), Algebra.trace_algebraMap] at h
+      exact (Module.finrank_pos (R := ℚ) (M := E)).ne' (by simpa using h.symm)
+    exact Module.Finite.of_injective (LinearMap.single ℚ (fun _ : Fin n ↦ k) i)
+      (Pi.single_injective (M := fun _ : Fin n ↦ k) i)
+  · have : Module.Finite ℚ V := Module.Finite.trans k V
+    exact Module.Finite.of_restrictScalars_finite ℚ E V
+
+/-- **The junk value of the reflex norm.** If `k` has infinite degree over `ℚ`, the reflex norm is
+`1`: the representation with the type trace is nonzero, so it is not finitely generated over
+`E`. -/
+theorem reflexNorm_eq_one_of_not_finiteDimensional {k : IntermediateField ℚ ℂ}
+    (hfin : ¬FiniteDimensional ℚ k) (Φ : CMType E) (hk : Φ.reflexField ≤ k) (a : k) :
+    Φ.reflexNorm hk a = 1 := by
+  obtain ⟨V, _, _, _, _, _, _, _, -, hV, hN⟩ := Φ.exists_reflexNorm_eq_smulDet hk
+  have : SMulCommClass k E V := .symm E k V
+  rw [hN, smulDet_apply, LinearMap.det_eq_one_of_not_module_finite (mt hV.1 hfin)]
 
 /-- **The reflex norm of a one-element CM type.** If `Φ = {φ}` is a CM type on a number field, as
 for an imaginary quadratic field, then `N_Φ = N_{E*,Φ}` inverts `φ`: `N_Φ(φ c) = c`. -/
