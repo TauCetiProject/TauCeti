@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
+public import TauCeti.AlgebraicTopology.SimplicialSet.Op
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 
 /-!
@@ -49,6 +50,7 @@ structure.
 * `SSet.Shrinking.ofHomotopy`: a section of a Kan fibration which is a homotopy inverse extends to
   a shrinking.
 * `SSet.rlp_monomorphisms_iff`: the resulting characterization of trivial fibrations.
+* `SSet.rlp_monomorphisms_opFunctor_map_iff`: opposite preserves and reflects trivial fibrations.
 * `SSet.bijective_mapπ₀_of_rlp_monomorphisms`: a trivial fibration induces a bijection on
   connected components.
 
@@ -264,5 +266,20 @@ lemma bijective_mapπ₀_of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms
   refine Function.bijective_iff_has_inverse.2 ⟨mapπ₀ h.section_, fun c ↦ ?_, fun c ↦ ?_⟩
   · rw [← mapπ₀_comp_apply, h.homotopy.mapπ₀_eq, mapπ₀_id_apply]
   · rw [← mapπ₀_comp_apply, h.section_comp, mapπ₀_id_apply]
+
+/-- The opposite of a map `p` has the right lifting property with respect to `∂Δ[n] ⟶ Δ[n]`
+exactly when `p` has it. -/
+theorem hasLiftingProperty_boundary_ι_opFunctor_map_iff (p : X ⟶ Y) (n : ℕ) :
+    HasLiftingProperty ∂Δ[n].ι (opFunctor.map p) ↔ HasLiftingProperty ∂Δ[n].ι p :=
+  (opEquivalence.toAdjunction.hasLiftingProperty_iff ∂Δ[n].ι p).symm.trans
+    (HasLiftingProperty.iff_of_arrow_iso_left
+      (Arrow.isoMk (boundary.opIso n) (stdSimplex.opIso ⦋n⦌) (boundary.opIso_hom_ι n)) p)
+
+/-- The opposite functor preserves and reflects trivial fibrations. -/
+theorem rlp_monomorphisms_opFunctor_map_iff (p : X ⟶ Y) :
+    (monomorphisms SSet.{u}).rlp (opFunctor.map p) ↔ (monomorphisms SSet.{u}).rlp p := by
+  rw [SSet.rlp_monomorphisms]
+  exact ⟨fun h _ _ _ ⟨n⟩ ↦ (hasLiftingProperty_boundary_ι_opFunctor_map_iff p n).1 (h _ ⟨n⟩),
+    fun h _ _ _ ⟨n⟩ ↦ (hasLiftingProperty_boundary_ι_opFunctor_map_iff p n).2 (h _ ⟨n⟩)⟩
 
 end SSet

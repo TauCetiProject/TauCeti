@@ -46,6 +46,13 @@ data on `η'` is the Jacobian times `D_u^* η`.
   orbit, with the weight `ρ⁻¹ = 1 + ‖z‖²` for the cylindrical weight `ρ`. The end estimate is
   `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive`,
   with the weight `‖z‖² ≤ ρ⁻¹`.
+* `exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_finite_energy_positive` is the
+  same estimate along a finite-energy solution of the Floer equation on the end of the positive
+  plane, with values in a compact set on which every one-periodic orbit is nondegenerate: the
+  convergence of the end to a nondegenerate orbit follows from the exponential decay of the end
+  (`exists_tendstoUniformlyOn_sliceDefect_of_finite_energy`). Every PSS plane is the positive
+  plane for a rescaled Hamiltonian (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), so this
+  covers the negative plane as well.
 
 This is the plane counterpart of the semi-Fredholm estimate of the formal adjoint on the pair of
 pants,
@@ -76,40 +83,6 @@ namespace TauCeti.SymplecticForm
 open Floer Floer.PSSPlane
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-omit [FiniteDimensional ℝ V] in
-/-- The energy density of a covector field far out on the end of a PSS plane, read in end
-coordinates, is integrable over `ℝ × [0, 1]`, when `J` is `C¹` along the `C¹` map `u`: the pulled-
-back field is `C¹` and vanishes off a band of the end. -/
-private theorem integrableOn_sobolevDensity_covectorPullback_cylindricalEndLift (p : PSSPlane)
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z)) (hu : ContDiff ℝ 1 u)
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η) {R : ℝ}
-    (hηR : tsupport η ⊆ {z | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖}) :
-    IntegrableOn (sobolevDensity (covectorPullback (realChart p.cylindricalEndLift) J u η))
-      (univ ×ˢ Icc (0 : ℝ) 1) := by
-  set φ := realChart p.cylindricalEndLift
-  have hφ : ContDiff ℝ (1 + 1) φ := contDiff_realChart p.contDiff_cylindricalEndLift
-  have hφ₁ : ContDiff ℝ 1 φ := hφ.of_le le_self_add
-  have hA : ContDiff ℝ 1 fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
-    (hφ.fderiv_right le_rfl).clm_apply contDiff_const
-  have hJφ : ContDiff ℝ 1 fun ζ ↦ J (φ ζ) (u (φ ζ)) := contDiff_iff_contDiffAt.2 fun ζ ↦
-    (hJ (φ ζ)).comp (f := fun ζ ↦ (φ ζ, u (φ ζ))) ζ
-      (hφ₁.contDiffAt.prodMk (hu.comp hφ₁).contDiffAt)
-  have hcp : ContDiff ℝ 1 (covectorPullback φ J u η) :=
-    contDiff_covectorPullback_of_contDiffOn isOpen_univ
-      ((((contDiff_fst.comp hA).smul contDiff_const).add
-        ((contDiff_snd.comp hA).smul hJφ)).contDiffOn) (hη.comp hφ₁) (subset_univ _)
-  -- In end coordinates `η` vanishes off a band `[a, b] × ℝ`.
-  obtain ⟨a, b, -, -, -, -, hout⟩ := p.exists_band_of_tsupport_subset hηc hηR
-  refine IntegrableOn.of_forall_sdiff_eq_zero (s := Icc a b ×ˢ Icc 0 1)
-    ((continuous_sobolevDensity hcp).continuousOn.integrableOn_compact
-      (isCompact_Icc.prod isCompact_Icc))
-    (MeasurableSet.univ.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hev : covectorPullback φ J u η =ᶠ[𝓝 ζ] 0 :=
-    (hout ζ fun h ↦ hζ.2 ⟨h, hζ.1.2⟩).mono fun ζ' h ↦
-      covectorPullback_eq_zero_of_apply_eq_zero φ J u h
-  rw [sobolevDensity_congr_of_eventuallyEq hev, sobolevDensity_zero]
 
 omit [FiniteDimensional ℝ V] in
 /-- **The end piece agrees with its cut-off.** If `β = 1` near every point with
@@ -194,7 +167,7 @@ private theorem exists_setIntegral_sobolevDensity_covectorPullback_le_of_end
   rw [setIntegral_sobolevDensity_covectorPullback_eq_smul p hβ1]
   calc _ ≤ ∫ ζ in univ ×ˢ Icc (0 : ℝ) 1,
         sobolevDensity (covectorPullback (realChart p.cylindricalEndLift) J' u η₁) ζ :=
-        setIntegral_mono_set (integrableOn_sobolevDensity_covectorPullback_cylindricalEndLift p
+        setIntegral_mono_set (p.integrableOn_sobolevDensity_covectorPullback
           hJ hu (hη₁.of_le one_le_two) hη₁c hη₁r)
           (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)
           (ae_of_all _ (prod_mono (subset_univ _) subset_rfl))
@@ -342,14 +315,9 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive
   have hKt := fun z : ℝ × ℝ ↦
     (contDiff_uncurry_perturbation (p := positive) hH hHs₂ Complex.I).contDiffAt (x := (z, u z))
   -- The inverse of the cylindrical weight is `1 + ‖z‖²`, continuous and at least `‖z‖²`.
-  have hρ (z : ℝ × ℝ) :
-      (cylindricalWeight z)⁻¹ = 1 + ‖Complex.equivRealProdCLM.symm z‖ ^ 2 := by
-    rw [cylindricalWeight_apply, inv_inv]
-  have hρc : Continuous fun z ↦ (cylindricalWeight z)⁻¹ := by
-    simp only [hρ]
-    fun_prop
+  have hρc := continuous_inv_cylindricalWeight
   have hρ₀ (z : ℝ × ℝ) : 0 < (cylindricalWeight z)⁻¹ := by
-    rw [hρ]
+    rw [inv_cylindricalWeight]
     positivity
   obtain ⟨Ce, Re, he⟩ :=
     ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive
@@ -374,7 +342,7 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive
     have hle := integral_mono
       (hint (w := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖ ^ 2) (by fun_prop))
       (hint hρc) fun z ↦ mul_le_mul_of_nonneg_right
-        (by rw [hρ]; linarith) (sq_nonneg _)
+        (by rw [inv_cylindricalWeight]; linarith) (sq_nonneg _)
     refine (he hη hηc hηR).trans ((mul_le_mul_of_nonneg_right (le_max_left _ _)
       (integral_nonneg fun z ↦ by positivity)).trans
       (mul_le_mul_of_nonneg_left hle (le_max_right _ _)))
@@ -385,5 +353,96 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive
     ext s
     simp
   simpa only [hset] using hest hη hηc
+
+section FiniteEnergy
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **The semi-Fredholm estimate of the formal adjoint on a finite-energy positive PSS plane.**
+Let `u` be a `C¹` map, `C³` on a part `‖w‖ > r` of the end of the positive PSS plane, solving there
+the Floer equation for the perturbation of a jointly `C³` period-one Hamiltonian `H` with globally
+Lipschitz suspended vector field, with finite energy and values in a compact set `K` on which every
+one-periodic orbit of `H` is nondegenerate. Let the structures `J` be `C¹` along `u` and compatible
+along `u` on the disc `‖w‖ ≤ r`, and on the part `‖w‖ > r` of the end equal to a `C²` period-one
+family `J_q(t)` read in the angular coordinate, with `J_q` compatible on `K`. Then there are
+`C ≥ 0` and `R` such that every `C²` covector field `η` of compact support satisfies
+
+`∫_{s > R} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) +`
+`  ∫_{‖w‖ ≤ e^{2πR}} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²)`
+`  ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{‖w‖ ≤ e^{2π (R + 1)}} ‖η‖²)`
+
+for the formal adjoint `D_u^*` of the linearized Floer operator of the datum
+`(J, positive.perturbation H)`, where `η' = η (φ ·) ∘ (a + b J)` is `η` read in the cylinder
+coordinates of the end lift `φ` (`TauCeti.Floer.covectorPullback`), the first integral is over
+`(R, ∞) × [0, 1]` and the other integrals over the plane, and `ρ` is the cylindrical weight
+`TauCeti.Floer.PSSPlane.cylindricalWeight` of the Sobolev space of the plane. The weight `ρ⁻¹` on
+the right is that of the dual of `W^{1,2}`. The kernel of `D_u^*` is the cokernel of `D_u`. Every
+PSS plane is the positive plane for the Hamiltonian `ε H(ε t)`
+(`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), so the estimate applies to the negative plane
+as well. This is the counterpart for `D_u^*` of
+`exists_forall_le_mul_integral_floerLinearization_add_of_finite_energy`. The exponential decay of
+the end (`exists_tendstoUniformlyOn_sliceDefect_of_finite_energy`) gives the asymptotic orbit and
+the uniform convergence that
+`exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive` assumes. -/
+theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_finite_energy_positive
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H))
+    {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {K : Set V}
+    (hK : IsCompact K) {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJq : ContDiff ℝ 2 fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap)
+    (hJqper : Periodic Jq 1) (hJqK : ∀ t, ∀ y ∈ K, ω.Compatible (Jq t y))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {r : ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1
+      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hJr : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      J z = Jq (positive.endCoord (Complex.equivRealProdCLM.symm z)).im)
+    (hu : ContDiff ℝ 1 u) (hur : ContDiffOn ℝ 3 u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
+    (hc : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ r → ω.Compatible (J z (u z)))
+    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
+    (hF : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+          z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) ≠ ⊤)
+    (hnd : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
+    ∃ C, 0 ≤ C ∧ ∃ R : ℝ, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      (∫ ζ in Ioi R ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+          (realChart positive.cylindricalEndLift)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * R)},
+          sobolevDensity η z ≤
+        C * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u η z‖ ^ 2) +
+          ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (R + 1))},
+            ‖η z‖ ^ 2) := by
+  have hΩ : IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
+    isOpen_lt continuous_const (by fun_prop)
+  -- The end converges to an orbit `x` in `K`, which is nondegenerate.
+  obtain ⟨x, hxper, hx, hxK, a, hsub, hJeq, hux, hδ⟩ :=
+    ω.exists_tendstoUniformlyOn_sliceDefect_of_finite_energy positive hH hHs hL hK hJq hJqper
+      (fun t y hy ↦ (hJqK t y hy).tames) hJr hur huK hF hE hnd
+  simp only [endSign_positive, one_mul] at hJeq hux hδ
+  -- Compatibility on the disc, and on the end from that of `J_q` on `K`.
+  have hc' (z : ℝ × ℝ) : ω.Compatible (J z (u z)) := by
+    rcases le_or_gt ‖Complex.equivRealProdCLM.symm z‖ r with hz | hz
+    · exact hc z hz
+    · rw [hJr z hz]
+      exact hJqK _ _ (huK z hz)
+  exact ω.exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive hH
+    (hHs.of_le (by norm_num)) hL hx (hnd x hxper hx hxK) hJq (fun t ↦ hJqK t _ (hxK t)) hJeq hJ hu
+    (fun z hz ↦ (hur.contDiffAt (hΩ.mem_nhds (hsub hz))).of_le (by norm_num)) hc'
+    (fun z hz ↦ hF z (hsub hz)) hux hδ
+
+end FiniteEnergy
 
 end TauCeti.SymplecticForm

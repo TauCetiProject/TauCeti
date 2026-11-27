@@ -97,14 +97,14 @@ theorem exists_restrictPreimage_cyclicDistanceCutBrokenGeodesic_comp_homotopic
           (ContinuousMap.inclusion hKS) := by
   obtain ⟨N, hN⟩ := exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic hr hK hε
   refine ⟨N, fun n hn δ hεδ hδ ↦ ?_⟩
-  obtain ⟨e, he, hhom⟩ := hN n hn δ hεδ hδ
+  obtain ⟨e, G, he, -⟩ := hN n hn δ hεδ hδ
   -- `geoⁿ ∘ evₙ` is homotopic to the inclusion of `K ⊆ S`, so it takes its values in `S`.
   have hmem (γ : K) : cyclicDistanceCutBrokenGeodesic hr hδ (e γ) ∈ S :=
-    hhom.symm.apply_mem hS (hKS γ.property)
+    (ContinuousMap.Homotopic.symm ⟨G⟩).apply_mem hS (hKS γ.property)
   refine ⟨⟨fun γ ↦ ⟨e γ, hmem γ⟩, (map_continuous e).subtype_mk _⟩, he, ?_⟩
   -- The free homotopy never leaves `S`. Both sides are the corestrictions to `S` of the maps of
   -- the free homotopy, by definition of `restrictPreimage` and `inclusion`.
-  exact ContinuousMap.Homotopic.codRestrict hS hhom
+  exact ContinuousMap.Homotopic.codRestrict hS ⟨G⟩
 
 /-! ### The vertex slide -/
 

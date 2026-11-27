@@ -142,6 +142,28 @@ theorem succ_le_right_of_mem_baseItems {μ : Fin Ω.numBases} {k : Fin Ω.numIte
     (hk : k ∈ Ω.baseItems μ) : k.succ ≤ Ω.right μ :=
   Fin.le_def.2 (Ω.mem_baseItems.1 hk).2
 
+/-- A section between two boundaries of a variable base `μ` consists of items of `μ`. -/
+theorem sectionItems_subset_baseItems {μ : Fin Ω.numBases} {i j : ℕ} (hi : (Ω.left μ : ℕ) ≤ i)
+    (hj : j ≤ Ω.right μ) : Ω.sectionItems i j ⊆ Ω.baseItems μ := fun k hk => by
+  rw [mem_sectionItems] at hk
+  rw [mem_baseItems]
+  omega
+
+variable {Ω} in
+/-- Induction over the boundaries of a variable base `μ`: a property of the boundary `α(μ)` which
+passes from the left to the right end-point of every item of `μ` holds at every boundary `p` with
+`α(μ) ≤ p ≤ β(μ)`. -/
+@[elab_as_elim]
+theorem base_induction {μ : Fin Ω.numBases} {motive : Fin (Ω.numItems + 1) → Prop}
+    (left : motive (Ω.left μ)) (succ : ∀ k ∈ Ω.baseItems μ, motive k.castSucc → motive k.succ)
+    (p : Fin (Ω.numItems + 1)) (h₁ : Ω.left μ ≤ p) (h₂ : p ≤ Ω.right μ) : motive p := by
+  suffices H : ∀ n, (Ω.left μ : ℕ) ≤ n → ∀ hn : n ≤ Ω.right μ, motive ⟨n, by omega⟩ from
+    H p h₁ h₂
+  intro n hn
+  induction n, hn using Nat.le_induction with
+  | base => exact fun _ ↦ left
+  | succ n hn ih => exact fun h ↦ succ ⟨n, by omega⟩ (Ω.mem_baseItems.2 ⟨hn, h⟩) (ih (by omega))
+
 /-- A base `μ` is contained in a base `ν`, that is `σ(μ) ⊆ σ(ν)`, exactly when
 `α(ν) ≤ α(μ) < β(μ) ≤ β(ν)`. -/
 theorem baseItems_subset_baseItems_iff {μ ν : Fin Ω.numBases} :

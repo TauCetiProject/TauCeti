@@ -33,6 +33,7 @@ map again, while multiplying by an arbitrary scalar from `L` does not. So the mo
 ## Main definitions
 
 * `TauCeti.FiniteIsocrystal σ`: the category of finite isocrystals over `(L, σ)`.
+* `TauCeti.FiniteIsocrystal.frobeniusEquiv`: the Frobenius as a `σ`-semilinear equivalence.
 * `TauCeti.FiniteIsocrystal.isoMk`: an isomorphism from an intertwining linear equivalence.
 * `TauCeti.FiniteIsocrystal.pi`: the isocrystal on a finite product, with coordinatewise
   Frobenius, and `TauCeti.FiniteIsocrystal.isBilimitBicone`, which shows that it is a biproduct.
@@ -100,6 +101,41 @@ theorem frobenius_injective (D : FiniteIsocrystal.{u} σ) : Function.Injective D
 
 theorem frobenius_surjective (D : FiniteIsocrystal.{u} σ) : Function.Surjective D.frobenius :=
   D.frobenius_bijective.surjective
+
+/-! ### The Frobenius as a semilinear equivalence -/
+
+/-- `σ` and `σ⁻¹` are inverse ring homomorphisms. This is scoped, as Mathlib does not make
+`RingHomInvPair.of_ringEquiv` an instance: an involution has the better instance
+`RingHomInvPair σ σ`. -/
+scoped instance ringHomInvPair : RingHomInvPair (σ : L →+* L) (σ.symm : L →+* L) :=
+  RingHomInvPair.of_ringEquiv σ.toRingEquiv
+
+/-- `σ⁻¹` and `σ` are inverse ring homomorphisms; the companion of `ringHomInvPair`. -/
+scoped instance ringHomInvPair_symm : RingHomInvPair (σ.symm : L →+* L) (σ : L →+* L) :=
+  RingHomInvPair.of_ringEquiv_symm σ.toRingEquiv
+
+/-- The Frobenius of a finite isocrystal as a `σ`-semilinear equivalence; its inverse is the
+`σ⁻¹`-semilinear map `Φ⁻¹`. -/
+noncomputable def frobeniusEquiv (D : FiniteIsocrystal.{u} σ) : D ≃ₛₗ[(σ : L →+* L)] D :=
+  LinearEquiv.ofBijective D.frobenius D.frobenius_bijective
+
+@[simp]
+theorem frobeniusEquiv_apply (D : FiniteIsocrystal.{u} σ) (x : D) :
+    D.frobeniusEquiv x = D.frobenius x := (rfl)
+
+@[simp]
+theorem toLinearMap_frobeniusEquiv (D : FiniteIsocrystal.{u} σ) :
+    D.frobeniusEquiv.toLinearMap = D.frobenius := (rfl)
+
+@[simp]
+theorem frobenius_frobeniusEquiv_symm (D : FiniteIsocrystal.{u} σ) (x : D) :
+    D.frobenius (D.frobeniusEquiv.symm x) = x :=
+  D.frobeniusEquiv.apply_symm_apply x
+
+@[simp]
+theorem frobeniusEquiv_symm_frobenius (D : FiniteIsocrystal.{u} σ) (x : D) :
+    D.frobeniusEquiv.symm (D.frobenius x) = x :=
+  D.frobeniusEquiv.symm_apply_apply x
 
 /-- The Frobenius commutes with scalars from `E`, since `σ` fixes them. -/
 theorem frobenius_algebraMap_smul (D : FiniteIsocrystal.{u} σ) (c : E) (x : D) :

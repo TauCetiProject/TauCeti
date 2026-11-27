@@ -445,6 +445,18 @@ instance : ContinuousInv (StrongUnitary 𝕜 H) where
 /-- `StrongUnitary 𝕜 H` is a topological group under composition (Williams, Lemma D.42). -/
 instance : IsTopologicalGroup (StrongUnitary 𝕜 H) := {}
 
+/-- The pointwise adjoint of a strongly continuous family of unitary operators is strongly
+continuous. -/
+theorem continuous_adjoint_apply_of_mem_unitary {X : Type*} [TopologicalSpace X]
+    {F : X → H →L[𝕜] H} (hF : ∀ v, Continuous fun x ↦ F x v)
+    (hU : ∀ x, F x ∈ unitary (H →L[𝕜] H)) (v : H) :
+    Continuous fun x ↦ ContinuousLinearMap.adjoint (F x) v := by
+  let u (x : X) : StrongUnitary 𝕜 H := ofUnitary ⟨F x, hU x⟩
+  have hu : Continuous u := continuous_iff_forall_continuous.2 <| by
+    simpa only [u, ofUnitary_apply] using hF
+  simpa only [Function.comp_apply, ← toCLM_apply, toCLM_inv, u, toCLM_ofUnitary] using
+    continuous_iff_forall_continuous.1 (continuous_inv.comp hu) v
+
 /-- Scalar multiplication of `StrongUnitary 𝕜 H` by `unitary 𝕜`. -/
 instance : SMul (unitary 𝕜) (StrongUnitary 𝕜 H) :=
   ⟨fun α u => ofUnitary (α • u.toUnitary)⟩

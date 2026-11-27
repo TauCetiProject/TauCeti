@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
+import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -150,11 +151,7 @@ to an injective map of the value modules, the second condition follows from the 
 def symplecticNormalCongr (e : V ≃ₗ[K] V') (hW : W.map (e : V →ₗ[K] V') = W')
     (hWB : (W.orthogonalBilin B).map (e : V →ₗ[K] V') = W'.orthogonalBilin B') :
     SymplecticNormal B W ≃ₗ[K] SymplecticNormal B' W' :=
-  Submodule.Quotient.equiv _ _ (e.ofSubmodules _ _ hWB) <| by
-    subst hW
-    ext ⟨y, hy⟩
-    obtain ⟨v, rfl⟩ := e.surjective y
-    simp [Submodule.mem_map_equiv, LinearEquiv.ofSubmodules_symm_apply]
+  Submodule.Quotient.equiv _ _ (e.ofSubmodules _ _ hWB) (e.map_comap_subtype_ofSubmodules hWB hW)
 
 /-- The induced map of symplectic normal spaces is `[u] ↦ [e u]`. -/
 @[simp]

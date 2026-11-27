@@ -265,6 +265,14 @@ theorem isFredholm_prodMap_loopOperator (hB : B.IsInvertible) :
     ((I • loopOperator T S).prodMap B).IsFredholm :=
   (isFredholm_I_smul_loopOperator T S).prodMap hB.isFredholm
 
+/-- **Continuous dependence on the loop and the operator.** The operators `(J₀ L_{M x}) ⊕ B x`
+depend continuously, in operator norm, on `x` where the loops `M x` and the operators `B x` do. -/
+theorem continuousOn_prodMap_loopOperator {X : Type*} [TopologicalSpace X]
+    {M : X → C(AddCircle T, F →L[ℝ] F)} {B : X → E →L[ℝ] E'} {s : Set X}
+    (hM : ContinuousOn M s) (hB : ContinuousOn B s) :
+    ContinuousOn (fun x ↦ (I • loopOperator T (M x)).prodMap (B x)) s :=
+  ContinuousOn.prod_mapL ℝ (((continuous_loopOperator T).const_smul I).comp_continuousOn hM) hB
+
 /-- **The asymptotic operator beside an invertible operator has index zero**: the index is additive
 under `prodMap`, `J₀ L_S` has the index zero of `L_S`, and the invertible `B` has index zero. -/
 @[simp]
@@ -358,6 +366,13 @@ def periodicTorusOperator (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
 theorem periodicTorusOperator_apply (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
     (x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) :
     periodicTorusOperator T ℓ S x = (I • loopOperator T S x.1, torusModeOperator T _ S x.2) :=
+  (rfl)
+
+/-- `TauCeti.periodicTorusOperator` is `(J₀ L_S) ⊕ B` for the operator `B` on the modes of nonzero
+frequency. -/
+theorem periodicTorusOperator_eq_prodMap (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
+    periodicTorusOperator T ℓ S =
+      (I • loopOperator T S).prodMap (torusModeOperator T (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) S) :=
   (rfl)
 
 /-- **Complex linearity.** If the loop operator `L_S` commutes with multiplication by complex

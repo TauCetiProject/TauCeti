@@ -378,6 +378,16 @@ lemma filtrationFunctor_map_bot (a : EInt) :
 instance {a b : EInt} (f : a ⟶ b) : Mono ((filtrationFunctor F hF).map f) :=
   inferInstanceAs (Mono (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))))
 
+/-- A transition map `F_a ⟶ F_b` of the functor of a filtration is an isomorphism when the
+pieces `F_a` and `F_b` are equal. -/
+lemma isIso_filtrationFunctor_map_of_eq {a b : EInt} (f : a ⟶ b)
+    (h : filtrationEInt F a = filtrationEInt F b) : IsIso ((filtrationFunctor F hF).map f) := by
+  have := (Subobject.isoOfEq _ _ h).isIso_hom
+  have : IsIso ((filtrationFunctor F hF).map f ≫ (filtrationFunctorObjIso F hF b).hom) := by
+    rw [filtrationFunctor_map_comp_objIso_hom]
+    exact IsIso.comp_isIso' inferInstance this
+  exact IsIso.of_isIso_comp_right _ (filtrationFunctorObjIso F hF b).hom
+
 /-- The cokernel of a transition map of the functor of a filtration is the cokernel of the
 corresponding inclusion of subcomplexes. -/
 noncomputable def cokernelFiltrationFunctorMapIso {a b : EInt} (f : a ⟶ b) :

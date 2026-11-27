@@ -10,6 +10,7 @@ public import TauCeti.LowDimTopology.Heegaard.CircleTimesSphere
 public import TauCeti.LowDimTopology.Heegaard.Twisted.Basic
 public import TauCeti.RingTheory.Regular.Tor
 import Mathlib.Algebra.Field.ZMod
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import Mathlib.LinearAlgebra.DirectSum.Finsupp
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.Algebra.Ring.Regular
@@ -170,28 +171,8 @@ theorem twistedHatCoefficient_circleTimesSphere_zero_zero_one :
     (circleTimesSphere 0).twistedHatCoefficient circleTimesSphereReferenceDomains ![0, 1, 1]
       (circleTimesSphereGenerator 0 0) (circleTimesSphereGenerator 0 1) =
       1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) 1 := by
-  classical
-  have hD := hatDomains_circleTimesSphere_zero_zero_one
-  have h1 : (Pi.single 1 1 : Fin 3 → ℤ) ∈ (circleTimesSphere 0).hatDomains ![0, 1, 1]
-      (circleTimesSphereGenerator 0 0) (circleTimesSphereGenerator 0 1) := by
-    simp [hD]
-  have h2 : (Pi.single 2 1 : Fin 3 → ℤ) ∈ (circleTimesSphere 0).hatDomains ![0, 1, 1]
-      (circleTimesSphereGenerator 0 0) (circleTimesSphereGenerator 0 1) := by
-    simp [hD]
-  have := (weaklyAdmissible_circleTimesSphere_zero.finite_hatDomains ![0, 1, 1]
-    (circleTimesSphereGenerator 0 0) (circleTimesSphereGenerator 0 1)).fintype
-  have huniv : (Finset.univ : Finset ((circleTimesSphere 0).hatDomains ![0, 1, 1]
-      (circleTimesSphereGenerator 0 0) (circleTimesSphereGenerator 0 1))) =
-      {⟨_, h2⟩, ⟨_, h1⟩} := by
-    ext ⟨D, hDm⟩
-    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, Subtype.mk.injEq,
-      true_iff]
-    rw [hD] at hDm
-    simpa [or_comm] using hDm
-  have hne : (⟨_, h2⟩ : (circleTimesSphere 0).hatDomains ![0, 1, 1]
-      (circleTimesSphereGenerator 0 0) (circleTimesSphereGenerator 0 1)) ≠ ⟨_, h1⟩ := by
-    simp [funext_iff, Fin.forall_fin_succ, Pi.single_apply]
-  rw [twistedHatCoefficient_eq_sum, huniv, Finset.sum_pair hne, one_def]
+  rw [twistedHatCoefficient_of_hatDomains_eq_pair hatDomains_circleTimesSphere_zero_zero_one
+    (by simp [funext_iff, Fin.forall_fin_succ, Pi.single_apply]), add_comm, one_def]
   congr 2 <;> refine congrArg Multiplicative.ofAdd (Subtype.ext ?_) <;>
     simp [ReferenceDomains.label_def]
 
@@ -232,10 +213,8 @@ theorem twistedHatDifferential_circleTimesSphere_zero
 not zero. -/
 theorem one_add_single_circleTimesSpherePeriodicDomain_ne_zero :
     (1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) 1 :
-      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) ≠ 0 := by
-  intro h
-  have := congrArg (fun f => f.coeff 1) h
-  simp [one_def, coeff_single, circleTimesSpherePeriodicDomain_ne_zero] at this
+      MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) ≠ 0 :=
+  one_add_single_ne_zero (by simpa using circleTimesSpherePeriodicDomain_ne_zero) _
 
 /-- Multiplication by `1 + t` is injective on the group ring of the periodic domains of the
 genus-one diagram of `S¹ × S²`: the twisted hat complex `R → R` is a free resolution of its

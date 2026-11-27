@@ -46,6 +46,9 @@ of degree `i` with `i + l = d`.
   an idempotent with zero degree-zero component is zero.
 * `TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular`: if `a ∈ 𝒜 i` is left regular and
   `a * b ∈ 𝒜 (i + j)`, then `b ∈ 𝒜 j`.
+* `TauCeti.GradedAlgebra.mem_of_mul_mul_eq_self`: if `a` has degree `i`, `a * b` and `b * a` have
+  degree `0` and `b * a * b = b`, then `b` is homogeneous of every degree `j` with `i + j = 0`;
+  `TauCeti.GradedAlgebra.mem_of_mul_eq_algebraMap` is the case of an inverse up to a scalar.
 * `TauCeti.GradedAlgebra.proj_mem`: the degree-`i` projection lands in the degree-`i` component.
 * `TauCeti.GradedAlgebra.proj_of_mem_same` and `TauCeti.GradedAlgebra.proj_of_mem_ne`: the
   degree-`j` projection fixes elements of degree `j` and kills elements of any other degree.
@@ -221,6 +224,44 @@ theorem mem_of_mul_mem_add_of_isLeftRegular {a b : A} {i j : ι} (ha : a ∈ �
   exact (decompose 𝒜 b j).property
 
 end Regular
+
+section Inverse
+
+variable {A σ ι : Type*} [AddLeftCancelMonoid ι] [DecidableEq ι] [Semiring A] [SetLike σ A]
+  [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜]
+
+/-- **A generalised inverse of a homogeneous element is homogeneous.** If `a` is homogeneous of
+degree `i`, the products `a * b` and `b * a` have degree `0`, and `b * a * b = b`, then `b` is
+homogeneous of every degree `j` with `i + j = 0`. -/
+theorem mem_of_mul_mul_eq_self {a b : A} {i j : ι} (hij : i + j = 0) (ha : a ∈ 𝒜 i)
+    (hab : a * b ∈ 𝒜 0) (hba : b * a ∈ 𝒜 0) (hbab : b * a * b = b) : b ∈ 𝒜 j := by
+  classical
+  -- A component of `b` away from degree `j` is killed by `a`, hence by `b * a`, which fixes it.
+  have hk (k : ι) (hk : k ≠ j) : (decompose 𝒜 b k : A) = 0 := by
+    have hz : a * (decompose 𝒜 b k : A) = 0 := by
+      rw [← coe_decompose_mul_add_of_left_mem 𝒜 ha]
+      exact decompose_of_mem_ne 𝒜 hab fun h ↦ hk (add_left_cancel (h.symm.trans hij.symm))
+    have hf := coe_decompose_mul_add_of_left_mem 𝒜 (b := b) (j := k) hba
+    rw [zero_add, hbab] at hf
+    rw [hf, mul_assoc, hz, mul_zero]
+  rw [← sum_support_decompose 𝒜 b]
+  refine sum_mem fun k _ ↦ ?_
+  obtain rfl | hkj := eq_or_ne k j
+  · exact SetLike.coe_mem _
+  · rw [hk k hkj]
+    exact zero_mem _
+
+/-- **An inverse up to a scalar of a homogeneous element is homogeneous.** If `a` is homogeneous
+of degree `i` and `a * b = b * a = algebraMap R A f` for a scalar `f` with `f • b = b`, then `b`
+is homogeneous of every degree `j` with `i + j = 0`. -/
+theorem mem_of_mul_eq_algebraMap {R : Type*} [CommSemiring R] [Algebra R A]
+    (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] {a b : A} {f : R} {i j : ι} (hij : i + j = 0)
+    (ha : a ∈ 𝒜 i) (hb : f • b = b) (hab : a * b = algebraMap R A f)
+    (hba : b * a = algebraMap R A f) : b ∈ 𝒜 j :=
+  mem_of_mul_mul_eq_self 𝒜 hij ha (hab ▸ SetLike.algebraMap_mem_graded 𝒜 f)
+    (hba ▸ SetLike.algebraMap_mem_graded 𝒜 f) (by rw [hba, ← Algebra.smul_def, hb])
+
+end Inverse
 
 section Proj
 
