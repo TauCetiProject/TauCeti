@@ -78,6 +78,17 @@ identities. It is a finite form of `∑_{j ≥ 0} t^(j²+j) / ((1 - t) ⋯ (1 - 
 noncomputable def rogersRamanujanSumTwo (t : R) (n : ℕ) : R :=
   ∑ j ∈ range (n + 1), t ^ (j ^ 2 + j) * gaussianBinomial t (n - j) j
 
+/-- `rogersRamanujanSum t n` is the finite sum `∑_{j ≤ n} t^(j²) [n-j j]_t`. -/
+theorem rogersRamanujanSum_def (t : R) (n : ℕ) :
+    rogersRamanujanSum t n = ∑ j ∈ range (n + 1), t ^ (j ^ 2) * gaussianBinomial t (n - j) j :=
+  (rfl)
+
+/-- `rogersRamanujanSumTwo t n` is the finite sum `∑_{j ≤ n} t^(j²+j) [n-j j]_t`. -/
+theorem rogersRamanujanSumTwo_def (t : R) (n : ℕ) :
+    rogersRamanujanSumTwo t n =
+      ∑ j ∈ range (n + 1), t ^ (j ^ 2 + j) * gaussianBinomial t (n - j) j :=
+  (rfl)
+
 /-- Two powers of `t` agree in front of `[m k]_t` once their exponents agree for `k ≤ m`. -/
 private theorem pow_mul_gaussianBinomial_congr (t : R) {m k x y : ℕ} (hxy : k ≤ m → x = y) :
     t ^ x * gaussianBinomial t m k = t ^ y * gaussianBinomial t m k := by
@@ -166,6 +177,19 @@ the second of Schur's polynomial identities. Only the finitely many `h` with
 noncomputable def schurAlternatingSumTwo (t : R) (n : ℕ) : R :=
   ∑ᶠ h : ℤ, negOnePowCast R h * t ^ (h * (5 * h + 3) / 2).toNat *
     gaussianBinomialInt t (n + 1) (((n : ℤ) - 5 * h) / 2)
+
+/-- `schurAlternatingSum t n` is the sum `∑ᶠ h : ℤ, (-1)^h t^(h(5h+1)/2) [n ⌊(n-5h)/2⌋]_t`. -/
+theorem schurAlternatingSum_def (t : R) (n : ℕ) :
+    schurAlternatingSum t n = ∑ᶠ h : ℤ, negOnePowCast R h * t ^ (h * (5 * h + 1) / 2).toNat *
+      gaussianBinomialInt t n (((n : ℤ) - 5 * h) / 2) :=
+  (rfl)
+
+/-- `schurAlternatingSumTwo t n` is the sum
+`∑ᶠ h : ℤ, (-1)^h t^(h(5h+3)/2) [n+1 ⌊(n-5h)/2⌋]_t`. -/
+theorem schurAlternatingSumTwo_def (t : R) (n : ℕ) :
+    schurAlternatingSumTwo t n = ∑ᶠ h : ℤ, negOnePowCast R h * t ^ (h * (5 * h + 3) / 2).toNat *
+      gaussianBinomialInt t (n + 1) (((n : ℤ) - 5 * h) / 2) :=
+  (rfl)
 
 /-- A function on `ℤ` vanishing wherever `[m ⌊(N-5h)/2⌋]_t` does has finite support. -/
 private theorem hasFiniteSupport_of_gaussianBinomialInt (t : R) (m : ℕ) (N : ℤ) {f : ℤ → R}
