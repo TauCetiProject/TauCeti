@@ -25,8 +25,13 @@ identification of the double of the trivial line core with the trivial line core
 double over the zeros of `σ` (`doubleAlongSection_eq_zero_iff`); in particular it has finitely many
 zeros when `σ` has (`finite_setOf_doubleAlongSection_eq_zero`).
 
-Counting the zeros of doubled sections computes the first Chern class of the doubled bundle, hence
-the Maslov index of a bundle pair over a Riemann surface with boundary.
+The sum of the local indices of the zeros of a doubled section computes the first Chern class of
+the doubled bundle, hence the Maslov index of a bundle pair over a Riemann surface with boundary.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  Appendix C.3, the doubled bundle.
 -/
 
 public section

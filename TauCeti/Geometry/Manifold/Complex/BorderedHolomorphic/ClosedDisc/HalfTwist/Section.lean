@@ -7,21 +7,22 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc.HalfTwist
 public import TauCeti.Topology.VectorBundle.FiniteRank.DoubleAlong.Section
-public import TauCeti.Topology.VectorBundle.FiniteRank.Trivial
 
 /-!
 # Sections of the half-twisted bundle pairs with real boundary values
 
 The half-twisted pair `(ℂ, z^{k/2} ℝ)` over the closed unit disc (`halfTwistCore k`) has continuous
 sections with values in `z^{k/2} ℝ` along the circle and finitely many zeros, which double to
-sections of the doubled bundle over the Riemann sphere with finitely many zeros. Counting the
-zeros of the doubled section computes the Maslov index `μ(halfTwistCore k) = k`.
+sections of the doubled bundle over the Riemann sphere with finitely many zeros. The sum of the
+local indices of the zeros of the doubled section, a zero of order `m` at `0` on each sheet (with
+sign) and, for odd `k`, a simple zero at `-1` on the seam, is `k`; it computes the Maslov index
+`μ(halfTwistCore k) = k`.
 
 Write `|k| = 2m + e` with `e ∈ {0, 1}`. The *half-twist profile* (`halfTwistProfile k`) is the
 function `z ↦ z^m (1 + z)^e` for `k ≥ 0` and its complex conjugate for `k < 0`. On the circle,
 divided by the frame `z^{k/2}` of the pair, it becomes the real number `(r + r⁻¹)^e` for
 `r = z^{1/2}`, as `r⁻¹ = conj r` (`cpow_inv_mul_halfTwistProfile`). Its zeros are `0` (for
-`|k| ≥ 2`) and `-1` (for odd `k`).
+`|k| ≥ 2`) and `-1` (for odd `k`) (`halfTwistProfile_eq_zero_iff`).
 
 The section `halfTwistSection k` of `halfTwistCore k` is the profile, read through the isomorphism
 `halfTwistIso k` with the trivial line core. It is real along the circle
@@ -29,6 +30,11 @@ The section `halfTwistSection k` of `halfTwistCore k` is the profile, read throu
 (`halfTwistSection_eq_zero_iff`), and its double
 (`TauCeti.FiniteRankBundleCore.doubleAlongSection`) has finitely many zeros
 (`finite_setOf_doubleAlongSection_halfTwistSection_eq_zero`).
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  Theorem C.3.5 (normalization of the boundary Maslov index), Appendix C.3 (doubling).
 -/
 
 public section
@@ -54,17 +60,33 @@ theorem continuous_halfTwistProfile (k : ℤ) : Continuous (halfTwistProfile k) 
   · fun_prop
   · exact continuous_conj.comp (by fun_prop)
 
-/-- The half-twist profile vanishes only at `0` and `-1`. -/
-theorem eq_zero_or_eq_neg_one_of_halfTwistProfile_eq_zero {k : ℤ} {z : ℂ}
-    (h : halfTwistProfile k z = 0) : z = 0 ∨ z = -1 := by
-  unfold halfTwistProfile at h
-  split_ifs at h
-  · rcases mul_eq_zero.1 h with h | h
-    · exact .inl (pow_eq_zero_iff'.1 h).1
-    · exact .inr (eq_neg_of_add_eq_zero_right (pow_eq_zero_iff'.1 h).1)
-  · rcases mul_eq_zero.1 ((map_eq_zero (starRingEnd ℂ)).1 h) with h | h
-    · exact .inl (pow_eq_zero_iff'.1 h).1
-    · exact .inr (eq_neg_of_add_eq_zero_right (pow_eq_zero_iff'.1 h).1)
+/-- For `k ≥ 0` the half-twist profile is `z^m (1 + z)^e`, `|k| = 2m + e`. -/
+theorem halfTwistProfile_of_nonneg {k : ℤ} (hk : 0 ≤ k) (z : ℂ) :
+    halfTwistProfile k z = z ^ (k.natAbs / 2) * (1 + z) ^ (k.natAbs % 2) := by
+  simp only [halfTwistProfile, hk, ↓reduceIte]
+
+/-- For `k < 0` the half-twist profile is the conjugate of `z^m (1 + z)^e`, `|k| = 2m + e`. -/
+theorem halfTwistProfile_of_neg {k : ℤ} (hk : k < 0) (z : ℂ) :
+    halfTwistProfile k z = conj (z ^ (k.natAbs / 2) * (1 + z) ^ (k.natAbs % 2)) := by
+  simp only [halfTwistProfile, not_le.2 hk, ↓reduceIte]
+
+/-- The half-twist profile vanishes at `0` when `|k| ≥ 2` and at `-1` when `k` is odd, and
+nowhere else. -/
+theorem halfTwistProfile_eq_zero_iff {k : ℤ} {z : ℂ} :
+    halfTwistProfile k z = 0 ↔ (z = 0 ∧ 2 ≤ k.natAbs) ∨ (z = -1 ∧ k.natAbs % 2 = 1) := by
+  have h : z ^ (k.natAbs / 2) * (1 + z) ^ (k.natAbs % 2) = 0 ↔
+      (z = 0 ∧ 2 ≤ k.natAbs) ∨ (z = -1 ∧ k.natAbs % 2 = 1) := by
+    have hz : 1 + z = 0 ↔ z = -1 := by
+      rw [add_eq_zero_iff_eq_neg']
+    rw [mul_eq_zero, pow_eq_zero_iff', pow_eq_zero_iff', hz, Nat.mod_two_ne_zero,
+      show k.natAbs / 2 ≠ 0 ↔ 2 ≤ k.natAbs by omega]
+  rcases le_or_gt 0 k with hk | hk
+  · rw [halfTwistProfile_of_nonneg hk, h]
+  · rw [halfTwistProfile_of_neg hk, map_eq_zero, h]
+
+private theorem norm_cpow_inv_two_of_norm_eq_one {a : ℂ} (ha : ‖a‖ = 1) :
+    ‖a ^ (2⁻¹ : ℂ)‖ = 1 := by
+  rw [show (2⁻¹ : ℂ) = ((2⁻¹ : ℝ) : ℂ) by push_cast; rfl, norm_cpow_real, ha, Real.one_rpow]
 
 /-- **The half-twist profile divided by the frame is real on the circle**: for `‖a‖ = 1`,
 `a^{-k/2}` times the profile at `a` is `(r + r⁻¹)^e` with `r = a^{1/2}` and `e = |k| mod 2`, a real
@@ -72,11 +94,9 @@ number since `r⁻¹ = conj r`. -/
 theorem cpow_inv_mul_halfTwistProfile (k : ℤ) {a : ℂ} (ha : ‖a‖ = 1) :
     (a ^ ((k : ℂ) / 2))⁻¹ * halfTwistProfile k a =
       (a ^ (2⁻¹ : ℂ) + (a ^ (2⁻¹ : ℂ))⁻¹) ^ (k.natAbs % 2) := by
-  set r := a ^ (2⁻¹ : ℂ) with hr
+  set r := a ^ (2⁻¹ : ℂ)
   have hr2 : r ^ 2 = a := cpow_nat_inv_pow a two_ne_zero
-  have hrn : ‖r‖ = 1 := by
-    rw [hr, show (2⁻¹ : ℂ) = ((2⁻¹ : ℝ) : ℂ) by push_cast; rfl, norm_cpow_real, ha,
-      Real.one_rpow]
+  have hrn : ‖r‖ = 1 := norm_cpow_inv_two_of_norm_eq_one ha
   have hr0 : r ≠ 0 := fun h ↦ by simp [h] at hrn
   have hconj : conj r = r⁻¹ := (inv_eq_conj hrn).symm
   have hk : a ^ ((k : ℂ) / 2) = r ^ k := by
@@ -108,8 +128,7 @@ theorem cpow_inv_mul_halfTwistProfile (k : ℤ) {a : ℂ} (ha : ‖a‖ = 1) :
 theorem conj_cpow_inv_mul_halfTwistProfile (k : ℤ) {a : ℂ} (ha : ‖a‖ = 1) :
     conj ((a ^ ((k : ℂ) / 2))⁻¹ * halfTwistProfile k a) =
       (a ^ ((k : ℂ) / 2))⁻¹ * halfTwistProfile k a := by
-  have hr : ‖a ^ (2⁻¹ : ℂ)‖ = 1 := by
-    rw [show (2⁻¹ : ℂ) = ((2⁻¹ : ℝ) : ℂ) by push_cast; rfl, norm_cpow_real, ha, Real.one_rpow]
+  have hr : ‖a ^ (2⁻¹ : ℂ)‖ = 1 := norm_cpow_inv_two_of_norm_eq_one ha
   rw [cpow_inv_mul_halfTwistProfile k ha, map_pow, map_add, map_inv₀, ← inv_eq_conj hr, inv_inv,
     add_comm]
 
@@ -167,10 +186,9 @@ theorem finite_setOf_halfTwistSection_eq_zero (k : ℤ) :
     {z | (halfTwistSection k).fiberMap z = 0}.Finite := by
   refine ((finite_singleton (0 : ℂ)).insert (-1)).preimage coe_injective.injOn |>.subset ?_
   intro z hz
-  rcases eq_zero_or_eq_neg_one_of_halfTwistProfile_eq_zero
-    ((halfTwistSection_eq_zero_iff k z).1 hz) with h | h
-  · exact .inr h
-  · exact .inl h
+  rcases halfTwistProfile_eq_zero_iff.1 ((halfTwistSection_eq_zero_iff k z).1 hz) with h | h
+  · exact .inr h.1
+  · exact .inl h.1
 
 /-- The double of the boundary-real section of the half-twisted pair has finitely many zeros on
 the Riemann sphere. -/
