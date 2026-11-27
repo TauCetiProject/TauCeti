@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Commutant
-import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.OffDiagonal
 
 /-!
 # Calderón–Zygmund operators
@@ -452,78 +452,31 @@ namespace HasStandardKernel
 variable {T : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V)} {K K' : V → V → ℂ}
   {C C' : ℝ≥0} {δ δ' : ℝ}
 
-/-- Off a closed ball `B`, a Calderón–Zygmund operator maps `1_B v` to `(∫_B K x y dy) • v`. -/
-private theorem ae_apply_indicatorConstLp_closedBall_eq [CompleteSpace F]
-    (h : HasStandardKernel T K C δ) (y₀ : V) (ρ : ℝ) (v : F) :
-    ∀ᵐ x, x ∉ closedBall y₀ ρ →
-      T (indicatorConstLp 2 (measurableSet_closedBall (x := y₀) (ε := ρ))
-        measure_closedBall_lt_top.ne v) x = (∫ y in closedBall y₀ ρ, K x y) • v := by
-  have hf := indicatorConstLp_coeFn (p := 2) (μ := (volume : Measure V))
-    (hs := measurableSet_closedBall (x := y₀) (ε := ρ)) (hμs := measure_closedBall_lt_top.ne)
-    (c := v)
-  have hvan : ∀ᵐ x, x ∉ closedBall y₀ ρ →
-      (indicatorConstLp 2 (measurableSet_closedBall (x := y₀) (ε := ρ))
-        measure_closedBall_lt_top.ne v : Lp F 2 (volume : Measure V)) x = 0 := by
-    filter_upwards [hf] with x hx hxt
-    rw [hx, indicator_of_notMem hxt]
-  filter_upwards [h.ae_apply_eq_integral _ _ (isCompact_closedBall y₀ ρ) hvan] with x hx hxt
-  rw [hx hxt, ← integral_smul_const, ← integral_indicator measurableSet_closedBall]
-  refine integral_congr_ae ?_
-  filter_upwards [hf] with y hy
-  rw [hy]
-  by_cases hyt : y ∈ closedBall y₀ ρ <;> simp [hyt]
-
 /-- **The kernel is determined by the operator off the diagonal.** If `T` has the standard kernels
 `K` and `K'`, then `K x y = K' x y` for `x ≠ y`. On the diagonal the definition asks nothing of a
 standard kernel, so nothing can be said there. -/
 theorem unique [CompleteSpace F] [Nontrivial F] (h : HasStandardKernel T K C δ)
     (h' : HasStandardKernel T K' C' δ') {x₀ y₀ : V} (hxy : x₀ ≠ y₀) : K x₀ y₀ = K' x₀ y₀ := by
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  set r := dist x₀ y₀ / 2 with hr_def
-  have hr : 0 < r := half_pos (dist_pos.2 hxy)
-  have hcont : ContinuousOn (fun q : V × V ↦ K q.1 q.2 - K' q.1 q.2) {q | q.1 ≠ q.2} :=
-    h.continuousOn_uncurry.sub h'.continuousOn_uncurry
-  have hsep : ∀ x ∈ ball x₀ r, ∀ y ∈ closedBall y₀ r, x ≠ y := by
-    rintro x hx y hy rfl
-    have := dist_triangle_left x₀ y₀ x
-    rw [mem_ball] at hx
-    rw [mem_closedBall] at hy
-    linarith
-  set ρ : ℕ → ℝ := fun k ↦ r / (k + 1)
-  have hρ : ∀ k, 0 < ρ k := fun k ↦ div_pos hr (by positivity)
-  have hρr : ∀ k, ρ k ≤ r := fun k ↦ div_le_self hr.le (le_add_of_nonneg_left k.cast_nonneg)
-  have hρ₀ : Tendsto ρ atTop (𝓝 0) := by
-    simpa [ρ, Function.comp_def] using
-      (tendsto_const_div_atTop_nhds_zero_nat r).comp (tendsto_add_atTop_nat 1)
-  -- off each ball `closedBall y₀ ρₖ`, the integrals of `K x` and `K' x` over it agree
-  have hint : ∀ᵐ x, ∀ k, x ∉ closedBall y₀ (ρ k) →
-      ∫ y in closedBall y₀ (ρ k), K x y = ∫ y in closedBall y₀ (ρ k), K' x y := by
-    refine ae_all_iff.2 fun k ↦ ?_
-    filter_upwards [h.ae_apply_indicatorConstLp_closedBall_eq y₀ (ρ k) v,
-      h'.ae_apply_indicatorConstLp_closedBall_eq y₀ (ρ k) v] with x h₁ h₂ hx
-    exact smul_left_injective ℂ hv ((h₁ hx).symm.trans (h₂ hx))
-  -- so `K x y₀ = K' x y₀` for almost every `x` near `x₀`
-  have hae : (fun x ↦ K x y₀ - K' x y₀) =ᵐ[volume.restrict (ball x₀ r)] fun _ ↦ 0 := by
-    refine (ae_restrict_iff' measurableSet_ball).2 ?_
-    filter_upwards [hint] with x hx hxb
-    have hK : ContinuousOn (fun y ↦ K x y) (closedBall y₀ r) :=
-      h.continuousOn_uncurry.comp (Continuous.prodMk_right x).continuousOn
-        fun y hy ↦ hsep x hxb y hy
-    have hK' : ContinuousOn (fun y ↦ K' x y) (closedBall y₀ r) :=
-      h'.continuousOn_uncurry.comp (Continuous.prodMk_right x).continuousOn
-        fun y hy ↦ hsep x hxb y hy
-    refine ContinuousOn.eq_zero_of_forall_setIntegral_closedBall_eq_zero (μ := volume)
-      (g := fun y ↦ K x y - K' x y) (hK.sub hK') hρ hρr hρ₀ fun k ↦ ?_
-    have hBr := closedBall_subset_closedBall (x := y₀) (hρr k)
-    rw [integral_sub ((hK.mono hBr).integrableOn_compact (isCompact_closedBall _ _))
-      ((hK'.mono hBr).integrableOn_compact (isCompact_closedBall _ _)),
-      hx k fun hx' ↦ hsep x hxb x (hBr hx') rfl, sub_self]
-  -- and by continuity at `x₀`
-  have hg : ContinuousOn (fun x ↦ K x y₀ - K' x y₀) (ball x₀ r) :=
-    hcont.comp (Continuous.prodMk_left y₀).continuousOn
-      fun x hx ↦ hsep x hx y₀ (mem_closedBall_self hr.le)
-  exact sub_eq_zero.1 (Measure.eqOn_open_of_ae_eq hae isOpen_ball hg continuousOn_const
-    (mem_ball_self hr))
+  -- the operator kernels are continuous, so locally integrable, in `y` off the diagonal
+  have hloc {K : V → V → ℂ} {C : ℝ≥0} {δ : ℝ} (h : HasStandardKernel T K C δ) :
+      ∀ᵐ x, LocallyIntegrableOn (opKernel F ℂ K x) {x}ᶜ :=
+    .of_forall fun x ↦ ContinuousOn.locallyIntegrableOn
+      (((ContinuousLinearMap.lsmul ℂ ℂ).continuous.comp_continuousOn
+        (h.continuousOn_uncurry.comp (Continuous.prodMk_right x).continuousOn
+          fun _ hy ↦ Ne.symm hy)).congr fun _ hy ↦ by simp [opKernel, offDiag_of_ne (Ne.symm hy)])
+      (measurableSet_singleton x).compl
+  have hae := uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integral (fun f ↦ ⇑(T f))
+    h.stronglyMeasurable_opKernel h'.stronglyMeasurable_opKernel (hloc h) (hloc h')
+    h.ae_apply_eq_integral_opKernel h'.ae_apply_eq_integral_opKernel
+  -- off the diagonal the operator kernels are multiplication by `K` and by `K'`
+  have hK : Function.uncurry K =ᵐ[(volume.prod volume).restrict (diagonal V)ᶜ]
+      Function.uncurry K' := by
+    filter_upwards [hae, ae_restrict_mem measurableSet_diagonal.compl] with ⟨x, y⟩ hq hd
+    refine smul_left_injective ℂ hv ?_
+    simpa [opKernel, offDiag_of_ne (show x ≠ y from hd)] using congr($hq v)
+  exact Measure.eqOn_open_of_ae_eq hK isClosed_diagonal.isOpen_compl h.continuousOn_uncurry
+    h'.continuousOn_uncurry (x := (x₀, y₀)) hxy
 
 /-- **Adding a multiplication operator does not change the kernel.** If `T` has the standard kernel
 `K`, then so has `T + M_a` for every `a ∈ L∞`, with the same constants: multiplication by `a` does
