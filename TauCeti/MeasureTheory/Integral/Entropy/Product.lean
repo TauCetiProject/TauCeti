@@ -50,7 +50,7 @@ theorem entropy_prod_eq {α β : Type*} [MeasurableSpace α] [MeasurableSpace β
 transforms are integrable. -/
 theorem integrable_entropy_prod_left {α β : Type*}
     [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) (ν : Measure β)
-    [SFinite μ] [SFinite ν] (g : α × β → ℝ)
+    [SFinite ν] (g : α × β → ℝ)
     (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν))
     (hmarg : Integrable (fun x ↦ (∫ y, g (x, y) ∂ν) *
       Real.log (∫ y, g (x, y) ∂ν)) μ) :
