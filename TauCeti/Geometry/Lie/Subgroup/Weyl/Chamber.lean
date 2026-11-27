@@ -130,6 +130,12 @@ theorem self_mem_sameSideChamber (α : ι → Dual ℝ M) (X₀ : M) :
     X₀ ∈ sameSideChamber α X₀ :=
   fun _ ↦ mul_self_nonneg _
 
+/-- A same-side chamber is convex, as an intersection of closed half-spaces. -/
+theorem convex_sameSideChamber (α : ι → Dual ℝ M) (X₀ : M) :
+    Convex ℝ (sameSideChamber α X₀) := by
+  simp only [sameSideChamber, Set.ofPred_forall]
+  exact convex_iInter fun i ↦ convex_halfSpace_ge (α i X₀ • α i).isLinear 0
+
 /-- A same-side chamber of a finite-dimensional space is closed. -/
 theorem isClosed_sameSideChamber [TopologicalSpace M] [IsTopologicalAddGroup M]
     [ContinuousSMul ℝ M] [T2Space M] [FiniteDimensional ℝ M] (α : ι → Dual ℝ M) (X₀ : M) :
