@@ -185,6 +185,30 @@ theorem mem_Ioo_of_mem_unstableSet_inter_stableSet
     simpa only [Flow.map_zero_apply] using hanti (neg_lt_zero.2 zero_lt_one)
   exact ⟨hb.trans_lt h₁, h₂.trans_le ha⟩
 
+/-- **A trajectory down by one index ends below a separating level.** If every critical value of
+`f` below `f a` lies below `c`, then the ends of a trajectory from `a` to a critical point `b` with
+`ind a = ind b + 1` are distinct, and `f b < c`. -/
+theorem ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one
+    (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x < f a → f x < c)
+    (hab : manifoldMorseIndex 𝓘(ℝ, E) f a = manifoldMorseIndex 𝓘(ℝ, E) f b + 1)
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) : a ≠ b ∧ f b < c := by
+  have hab' : a ≠ b := by rintro rfl; omega
+  have hfy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab' hy
+  exact ⟨hab', hgap b (mem_criticalPoints_iff_mfderiv_eq_zero.2
+    (hX.mfderiv_eq_zero_of_mem_stableSet hy.2)) (hfy.1.trans hfy.2)⟩
+
+/-- **A trajectory down by one index starts above a separating level.** If every critical value of
+`f` above `f b` lies above `c`, then the ends of a trajectory from a critical point `a` to `b` with
+`ind a = ind b + 1` are distinct, and `c < f a`. -/
+theorem ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one
+    (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f b < f x → c < f x)
+    (hab : manifoldMorseIndex 𝓘(ℝ, E) f a = manifoldMorseIndex 𝓘(ℝ, E) f b + 1)
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) : a ≠ b ∧ c < f a := by
+  have hab' : a ≠ b := by rintro rfl; omega
+  have hfy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab' hy
+  exact ⟨hab', hgap a (mem_criticalPoints_iff_mfderiv_eq_zero.2
+    (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1)) (hfy.1.trans hfy.2)⟩
+
 /-- **Trajectories lie between the critical values of their ends.** A point `y` whose orbit
 converges to `a` in backward time and to `b` in forward time satisfies `f b ≤ f y ≤ f a`. Unlike
 `mem_Ioo_of_mem_unstableSet_inter_stableSet`, this allows `a = b`, where `y = a`. -/
@@ -815,6 +839,28 @@ theorem lowerLevelPoint_of_le {c : ℝ} {x : M} (h : f x ≤ c) : hX.lowerLevelP
 theorem lowerLevelPoint_of_lt {c : ℝ} {x : M} (h : c < f x) :
     hX.lowerLevelPoint c x = hX.levelPoint c x :=
   ite_eq_right h.not_ge
+
+/-- **The upper level point is the point of the orbit on the level.** If a point `x` of `W^u(p)`
+lies below the level `c < f p`, and `w` is a point of its orbit on that level, then `w` is the upper
+level point of `x`. -/
+theorem upperLevelPoint_eq_of_flow_eq {p x w : M} (hx : x ∈ hX.flow.unstableSet p) {c : ℝ}
+    (hcp : c < f p) (hxc : f x < c) (hw : f w = c) {t : ℝ} (ht : hX.flow t w = x) :
+    hX.upperLevelPoint c x = w := by
+  obtain ⟨a, hpa, hxa⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hx
+    (ne_of_apply_ne f (hxc.trans hcp).ne)
+  rw [hX.upperLevelPoint_of_lt hxc, hX.levelPoint_eq hpa hxa (t := -t)
+    (by rw [← ht, Flow.map_neg_apply_map, hw]), ← ht, Flow.map_neg_apply_map]
+
+/-- **The lower level point is the point of the orbit on the level.** If a point `x` of `W^s(r)`
+lies above the level `c > f r`, and `w` is a point of its orbit on that level, then `w` is the lower
+level point of `x`. -/
+theorem lowerLevelPoint_eq_of_flow_eq {r x w : M} (hx : x ∈ hX.flow.stableSet r) {c : ℝ}
+    (hrc : f r < c) (hcx : c < f x) (hw : f w = c) {t : ℝ} (ht : hX.flow t w = x) :
+    hX.lowerLevelPoint c x = w := by
+  obtain ⟨b, hbr, hxb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hx
+    (ne_of_apply_ne f (hrc.trans hcx).ne')
+  rw [hX.lowerLevelPoint_of_lt hcx, hX.levelPoint_eq hbr hxb (t := -t)
+    (by rw [← ht, Flow.map_neg_apply_map, hw]), ← ht, Flow.map_neg_apply_map]
 
 /-- On `W^u(p)`, for `c < f p`, the upper level point on the level `c` is the lower level point
 for `-X` on the level `-c` of `-f`. -/
