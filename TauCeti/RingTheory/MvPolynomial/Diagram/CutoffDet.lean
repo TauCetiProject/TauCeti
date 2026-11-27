@@ -487,6 +487,18 @@ theorem mapHomogeneousSubmodule_diagramDivisionEnd {B : Type*} [CommSemiring B] 
   · simp [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem_diagramCell _
       fun _ hv ↦ hex ⟨_, hv⟩]
 
+private theorem coeff_map_diagramDivisionEnd_homogeneousMonomialBasis {B : Type*} [CommSemiring B]
+    (φ : A →+* B) {D : Set (σ →₀ ℕ)} {H : D.diagramVertices → MvPolynomial σ A}
+    (hH : ∀ v, (H v).IsHomogeneous v.val.degree) {ℓ : ℕ} (s : σ →₀ ℕ)
+    (t : {δ : σ →₀ ℕ // δ.degree = ℓ}) :
+    φ ((D.diagramDivisionEnd H hH ℓ (TauCeti.homogeneousMonomialBasis ℓ t) :
+        MvPolynomial σ A).coeff s) =
+      (D.diagramDivisionEnd (fun v ↦ MvPolynomial.map φ (H v)) (fun v ↦ (hH v).map φ) ℓ
+        (TauCeti.homogeneousMonomialBasis ℓ t) : MvPolynomial σ B).coeff s := by
+  rw [← coeff_map, ← TauCeti.coe_mapHomogeneousSubmodule_apply,
+    mapHomogeneousSubmodule_diagramDivisionEnd,
+    TauCeti.mapHomogeneousSubmodule_homogeneousMonomialBasis]
+
 /-- Changing coefficients along `φ : A →+* B` maps `D.diagramDivisionMatrix H hH ℓ` entrywise
 to the division matrix of `MvPolynomial.map φ ∘ H`. -/
 theorem map_diagramDivisionMatrix {B : Type*} [CommSemiring B] (φ : A →+* B)
@@ -496,11 +508,8 @@ theorem map_diagramDivisionMatrix {B : Type*} [CommSemiring B] (φ : A →+* B)
       D.diagramDivisionMatrix (fun v ↦ MvPolynomial.map φ (H v))
         (fun v ↦ (hH v).map φ) ℓ := by
   ext s t
-  simpa [diagramDivisionMatrix_apply, coeff_map, TauCeti.coe_mapHomogeneousSubmodule_apply,
-    TauCeti.mapHomogeneousSubmodule_homogeneousMonomialBasis] using congrArg
-    (fun x : homogeneousSubmodule σ B ℓ ↦ x.val.coeff s.val)
-    (mapHomogeneousSubmodule_diagramDivisionEnd φ hH ℓ
-      (TauCeti.homogeneousMonomialBasis ℓ ⟨t.val, t.property.2⟩))
+  simp only [Matrix.map_apply, diagramDivisionMatrix_apply]
+  exact coeff_map_diagramDivisionEnd_homogeneousMonomialBasis φ hH s.val ⟨t.val, t.property.2⟩
 
 end CommSemiring
 
@@ -649,13 +658,12 @@ theorem map_det_diagramDivisionEnd {B : Type*} [CommRing B] (φ : A →+* B)
       (D.diagramDivisionEnd (fun v ↦ MvPolynomial.map φ (H v)) (fun v ↦ (hH v).map φ) ℓ) := by
   classical
   let bA := TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ
-  rw [← LinearMap.det_toMatrix bA, ← LinearMap.det_toMatrix
-    (TauCeti.homogeneousMonomialBasis (σ := σ) (R := B) ℓ), RingHom.map_det]
-  congr 1; ext s t; simpa [bA, LinearMap.toMatrix_apply,
-    TauCeti.homogeneousMonomialBasis_repr_apply, TauCeti.coe_mapHomogeneousSubmodule_apply,
-    coeff_map, TauCeti.mapHomogeneousSubmodule_homogeneousMonomialBasis] using congrArg
-    (fun x : homogeneousSubmodule σ B ℓ ↦ x.val.coeff s.val)
-    (mapHomogeneousSubmodule_diagramDivisionEnd φ hH ℓ (bA t))
+  let bB := TauCeti.homogeneousMonomialBasis (σ := σ) (R := B) ℓ
+  rw [← LinearMap.det_toMatrix bA, ← LinearMap.det_toMatrix bB, RingHom.map_det]
+  congr 1; ext s t
+  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, LinearMap.toMatrix_apply,
+    TauCeti.homogeneousMonomialBasis_repr_apply, bA, bB]
+  exact coeff_map_diagramDivisionEnd_homogeneousMonomialBasis φ hH s.val t
 
 /-- The finite-jet determinant product across degrees `ℓ ≤ D.diagramCutoff` controlling
 homogeneous supported division in *all* degrees for a monotone upward-closed diagram `D`

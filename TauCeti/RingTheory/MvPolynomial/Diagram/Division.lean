@@ -131,9 +131,6 @@ theorem image_renameEquiv_diagramSpanSet {τ : Type*} [Finite τ] [LinearOrder �
   have hren (s : τ →₀ ℕ) : renameEquiv A e.toEquiv (monomial s (1 : A)) =
       monomial (Finsupp.equivMapDomain e.toEquiv s) 1 := by
     rw [renameEquiv_apply, rename_monomial, Finsupp.equivMapDomain_eq_mapDomain]
-  have hsurj (s : σ →₀ ℕ) : ∃ s₀, Finsupp.equivMapDomain e.toEquiv s₀ = s :=
-    ⟨Finsupp.equivMapDomain e.toEquiv.symm s, by
-      rw [← Finsupp.equivMapDomain_trans, Equiv.symm_trans_self, Finsupp.equivMapDomain_refl]⟩
   refine Subset.antisymm ?_ ?_
   · rintro _ ⟨q, (⟨v₀, β₀, hβ₀, hdeg₀, rfl⟩ | ⟨γ₀, hγ₀, hdeg₀, rfl⟩), rfl⟩
     · rw [map_mul, renameEquiv_pullBackGenerators, hren]
@@ -143,13 +140,17 @@ theorem image_renameEquiv_diagramSpanSet {τ : Type*} [Finite τ] [LinearOrder �
     · rw [hren]; exact monomial_mem_diagramSpanSet hγ₀
         (by simpa [Finsupp.equivMapDomain_eq_mapDomain] using hdeg₀)
   · rintro _ (⟨⟨v, hv⟩, β, hβ, hdeg, rfl⟩ | ⟨γ, hγ, hdeg, rfl⟩)
-    · obtain ⟨v₀, rfl⟩ := hsurj v; obtain ⟨β₀, rfl⟩ := hsurj β
+    · obtain ⟨v₀, rfl⟩ := (Finsupp.domCongr e.toEquiv (M := ℕ)).surjective v
+      obtain ⟨β₀, rfl⟩ := (Finsupp.domCongr e.toEquiv (M := ℕ)).surjective β
+      simp only [Finsupp.domCongr_apply] at hv hβ hdeg ⊢
       exact ⟨_, monomial_mul_mem_diagramSpanSet ⟨v₀,
         (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mpr hv⟩
         ((mem_diagramBox_preimage_equivMapDomain_iff e).mpr hβ)
         (by simpa [Finsupp.equivMapDomain_eq_mapDomain] using hdeg),
         by rw [map_mul, renameEquiv_pullBackGenerators, hren]⟩
-    · obtain ⟨γ₀, rfl⟩ := hsurj γ; exact ⟨_, monomial_mem_diagramSpanSet hγ
+    · obtain ⟨γ₀, rfl⟩ := (Finsupp.domCongr e.toEquiv (M := ℕ)).surjective γ
+      simp only [Finsupp.domCongr_apply] at hγ hdeg ⊢
+      exact ⟨_, monomial_mem_diagramSpanSet hγ
         (by simpa [Finsupp.equivMapDomain_eq_mapDomain] using hdeg), hren γ₀⟩
 
 /-- If every element of `D` has degree strictly greater than `ℓ`, then `D.diagramSpanSet H ℓ`
