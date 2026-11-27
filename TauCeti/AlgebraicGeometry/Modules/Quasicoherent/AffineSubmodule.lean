@@ -65,6 +65,9 @@ submodules of a quasi-coherent `M`.
   sections of the submodule are the given submodule, and
   `AlgebraicGeometry.Scheme.Modules.AffineSubmoduleData.range_sectionsFunctor_map_ι` the same for
   the image of the inclusion `N ⟶ M`.
+* `AlgebraicGeometry.Scheme.Modules.AffineSubmoduleData.mem_submodule_basicOpen_iff`: over a basic
+  open `D(f)` of an affine open `U`, the given submodule is the localization at `f` of the one
+  over `U`.
 * `AlgebraicGeometry.Scheme.Modules.AffineSubmoduleData.mem_submodule_of_span_eq_top`: membership
   in the given submodule over an affine open `U` can be checked on basic opens `D(f)` for `f`
   generating the unit ideal.
@@ -91,6 +94,7 @@ open `U` of `X`, a `Γ(X, U)`-submodule `N(U)` of the sections `Γ(M, U)`, such 
 `V ≤ U` the submodule `N(V)` is spanned over `Γ(X, V)` by the restrictions of the elements of
 `N(U)`. For quasi-coherent `M` these are the sections over affine opens of a quasi-coherent
 submodule of `M` (`AlgebraicGeometry.Scheme.Modules.AffineSubmoduleData.sheaf`). -/
+@[ext]
 structure AffineSubmoduleData where
   /-- The submodule of the sections over an affine open. -/
   submodule (U : X.affineOpens) : Submodule Γ(X, U) Γ(M, U)
@@ -161,6 +165,24 @@ section Quasicoherent
 
 variable [M.IsQuasicoherent]
 
+/-- **Over a basic open, the given submodule is the localization of the one over `U`.** A section
+of `M` over the basic open `D(f)` of an affine open `U` lies in the given submodule exactly when
+its product with some power of `f` is the restriction of an element of the given submodule over
+`U`. -/
+theorem mem_submodule_basicOpen_iff (U : X.affineOpens) (f : Γ(X, U)) {s : Γ(M, X.basicOpen f)} :
+    s ∈ D.submodule ⟨X.basicOpen f, U.property.basicOpen f⟩ ↔
+      ∃ m ∈ D.submodule U, ∃ n : ℕ, M.basicOpenRestrict f m = f ^ n • s := by
+  have hU : IsAffineOpen (U : X.Opens) := U.property
+  have := M.isLocalizedModule_basicOpenRestrict hU f
+  have := hU.isLocalization_basicOpen f
+  rw [D.submodule_basicOpen_eq_span U f, ← Submodule.localized'_eq_span Γ(X, X.basicOpen f)
+    (Submonoid.powers f), Submodule.mem_localized']
+  constructor
+  · rintro ⟨m, hm, ⟨_, n, rfl⟩, hmk⟩
+    exact ⟨m, hm, n, IsLocalizedModule.mk'_eq_iff.1 hmk⟩
+  · rintro ⟨m, hm, n, hmn⟩
+    exact ⟨m, hm, ⟨f ^ n, n, rfl⟩, IsLocalizedModule.mk'_eq_iff.2 hmn⟩
+
 /-- **Membership in the given submodule is local on basic opens.** A section of `M` over an affine
 open `U` lies in the given submodule as soon as its restrictions to the basic opens `D(f)`, for `f`
 in a set generating the unit ideal of `Γ(X, U)`, lie in the given submodules. -/
@@ -172,17 +194,11 @@ theorem mem_submodule_of_span_eq_top (U : X.affineOpens) {t : Set Γ(X, U)}
   have hU : IsAffineOpen (U : X.Opens) := U.property
   refine Submodule.mem_of_span_eq_top_of_smul_pow_mem _ t ht s fun ⟨f, hf⟩ ↦ ?_
   have := M.isLocalizedModule_basicOpenRestrict hU f
-  have := hU.isLocalization_basicOpen f
-  have h : _ ∈ D.submodule ⟨X.basicOpen f, U.property.basicOpen f⟩ := hs f hf
-  -- over `D(f)` the given submodule is the localization at `f` of the one over `U`
-  rw [D.submodule_basicOpen_eq_span U f, ← Submodule.localized'_eq_span Γ(X, X.basicOpen f)
-    (Submonoid.powers f), Submodule.mem_localized'] at h
-  obtain ⟨m, hm, ⟨_, n, rfl⟩, hmk⟩ := h
+  obtain ⟨m, hm, n, hmn⟩ := (D.mem_submodule_basicOpen_iff U f).1 (hs f hf)
   -- `f ^ n • s` and `m` have the same image in the localization, so they agree after
   -- multiplication by a further power of `f`
   have heq : M.basicOpenRestrict f (f ^ n • s) = M.basicOpenRestrict f m := by
-    rw [LinearMap.map_smul, M.basicOpenRestrict_apply, ← hmk]
-    exact IsLocalizedModule.mk'_cancel' _ _ (⟨f ^ n, n, rfl⟩ : Submonoid.powers f)
+    rw [LinearMap.map_smul, M.basicOpenRestrict_apply, hmn]
   obtain ⟨⟨_, j, rfl⟩, hc⟩ := IsLocalizedModule.exists_of_eq (S := Submonoid.powers f) heq
   refine ⟨j + n, ?_⟩
   rw [pow_add, mul_smul]
@@ -279,15 +295,12 @@ instance isQuasicoherent_sheaf : D.sheaf.IsQuasicoherent := by
   refine D.sheaf.isQuasicoherent_iff_isLocalizedModule.2 fun U hU f ↦ ?_
   obtain ⟨U, rfl⟩ : ∃ U' : X.affineOpens, U'.val = U := ⟨⟨U, hU⟩, rfl⟩
   have := M.isLocalizedModule_basicOpenRestrict hU f
-  have := hU.isLocalization_basicOpen f
   refine .mk_of_addCommGroup (D.sheaf.isUnit_algebraMap_end_basicOpen f) (fun y ↦ ?_)
     fun x hx ↦ ?_
   · -- a section of the submodule over `D(f)` is a fraction `m / f ^ n` with `m` over `U`
     have hy : D.ι.app _ y ∈ D.submodule ⟨X.basicOpen f, U.property.basicOpen f⟩ :=
       (D.sections_eq ⟨X.basicOpen f, hU.basicOpen f⟩).le (D.ι_app_mem _ y)
-    rw [D.submodule_basicOpen_eq_span U f, ← Submodule.localized'_eq_span Γ(X, X.basicOpen f)
-      (Submonoid.powers f), Submodule.mem_localized'] at hy
-    obtain ⟨m, hm, ⟨_, n, rfl⟩, hmk⟩ := hy
+    obtain ⟨m, hm, n, hmn⟩ := (D.mem_submodule_basicOpen_iff U f).1 hy
     refine ⟨n, D.sectionMk m ((D.sections_eq U).ge hm), D.ι_app_injective _ ?_⟩
     rw [Scheme.Modules.basicOpenRestrict_apply]
     -- On both sides `f ^ n` acts on sections over `D(f)` through its restriction to `D(f)`, and
@@ -295,8 +308,7 @@ instance isQuasicoherent_sheaf : D.sheaf.IsQuasicoherent := by
     -- with this action and with restriction; the restriction of `sectionMk m` is included as the
     -- restriction of `m`.
     change f ^ n • D.ι.app _ y = M.presheaf.map _ m
-    rw [← M.basicOpenRestrict_apply, ← hmk]
-    exact IsLocalizedModule.mk'_cancel' _ _ (⟨f ^ n, n, rfl⟩ : Submonoid.powers f)
+    rw [← M.basicOpenRestrict_apply, hmn]
   · -- a section of the submodule vanishing on `D(f)` is killed by a power of `f`
     have hx' : M.basicOpenRestrict f (D.ι.app U x) = M.basicOpenRestrict f 0 := by
       have := congrArg (D.ι.app _) hx
@@ -335,6 +347,7 @@ theorem π_desc {P : X.Modules} (g : M ⟶ P) (hg : D.ι ≫ g = 0) : D.π ≫ D
   cokernel.π_desc D.ι g hg
 
 /-- Two morphisms out of the quotient agree when they agree after the projection. -/
+@[ext]
 theorem hom_ext {P : X.Modules} {g h : D.quotient ⟶ P} (e : D.π ≫ g = D.π ≫ h) : g = h :=
   coequalizer.hom_ext e
 
