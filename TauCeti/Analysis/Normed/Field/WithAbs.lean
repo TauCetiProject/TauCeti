@@ -6,14 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.WithAbs
+public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import TauCeti.Analysis.Normed.Ring.WithAbs
 
+import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import Mathlib.Analysis.Normed.Field.Ultra
+
 /-!
-# Completion maps along extensions and isomorphisms of absolute values
+# Absolute-value completions
+
+The ground field is dense in its completion, where the norm extends the absolute value.
+Nonarchimedean absolute values give ultrametric completions, and nontrivial absolute values give
+nontrivially normed completions.
 
 If `w` is an absolute value on `L` lying over an absolute value `v` on `K`, the completion map
 `AbsoluteValue.Completion.map v w : v.Completion →+* w.Completion` is an isometry, so it preserves
-the norm (`AbsoluteValue.Completion.norm_map`).
+the norm (`AbsoluteValue.Completion.norm_map`) and gives a normed algebra structure.
 
 In addition, a field isomorphism `σ : K ≃+* L` carrying a real absolute value `v` on `K` to a
 real absolute value `w` on `L` (`w (σ x) = v x`) is an isometry `WithAbs v → WithAbs w`, so it
@@ -52,6 +60,46 @@ public section
 
 namespace AbsoluteValue.Completion
 
+section Basic
+
+variable {K : Type*} [Field K] (v : AbsoluteValue K ℝ)
+
+/-- The norm of a scalar in the completion is its original absolute value. -/
+@[simp]
+theorem norm_algebraMap (x : K) : ‖algebraMap K v.Completion x‖ = v x := by
+  rw [algebraMap_def, norm_coe, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply,
+    WithAbs.ofAbs_toAbs]
+
+/-- The image of the ground field is dense in its absolute-value completion. -/
+theorem denseRange_algebraMap : DenseRange (algebraMap K v.Completion) := by
+  have h : (algebraMap K v.Completion : K → v.Completion) =
+      ((↑) : WithAbs v → v.Completion) ∘ (WithAbs.equiv v).symm := by
+    funext x
+    rw [algebraMap_def, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply]
+    rfl
+  rw [h]
+  exact (denseRange_coe v).comp (WithAbs.equiv v).symm.surjective.denseRange (continuous_coe v)
+
+/-- The completion of a nonarchimedean absolute value is ultrametric. -/
+theorem isUltrametricDist (hv : IsNonarchimedean v) : IsUltrametricDist v.Completion :=
+  IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
+    rw [← map_natCast (algebraMap K v.Completion), norm_algebraMap]
+    exact hv.apply_natCast_le_one (by simp) (map_one v)
+
+/-- The completion at a nontrivial absolute value has an element of norm greater than one. -/
+theorem exists_one_lt_norm (hv : v.IsNontrivial) : ∃ x : v.Completion, 1 < ‖x‖ := by
+  obtain ⟨a, ha⟩ := hv.exists_abv_gt_one
+  exact ⟨algebraMap K v.Completion a, by simpa only [norm_algebraMap] using ha⟩
+
+/-- The completion at a nontrivial absolute value, as a nontrivially normed field.
+The underlying normed field is the existing completion instance. -/
+@[expose, instance_reducible]
+noncomputable def nontriviallyNormedField (hv : v.IsNontrivial) :
+    NontriviallyNormedField v.Completion where
+  non_trivial := exists_one_lt_norm v hv
+
+end Basic
+
 section LiesOver
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
@@ -61,6 +109,16 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 @[simp]
 theorem norm_map (x : v.Completion) : ‖map v w x‖ = ‖x‖ :=
   (isometry_map v w).norm_map_of_map_zero (map_zero _) x
+
+attribute [local instance] algebraOfLiesOver
+
+variable (w) in
+/-- The isometric embedding of completions induces a normed algebra structure with
+underlying algebra `algebraOfLiesOver`. -/
+@[expose, instance_reducible]
+noncomputable def normedAlgebraOfLiesOver : NormedAlgebra v.Completion w.Completion where
+  norm_smul_le a b := by
+    rw [Algebra.smul_def, norm_mul, algebraMap_apply_of_liesOver, norm_map]
 
 end LiesOver
 

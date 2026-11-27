@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.TensorProduct.Basic
-import Mathlib.Analysis.Normed.Field.Ultra
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 import TauCeti.Analysis.Normed.Field.WithAbs
@@ -44,41 +43,9 @@ namespace AbsoluteValue.Completion
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
   (v : AbsoluteValue K ℝ)
 
-/-- The norm of a scalar in the completion is its original absolute value. -/
-@[simp]
-theorem norm_algebraMap (x : K) : ‖algebraMap K v.Completion x‖ = v x := by
-  rw [algebraMap_def, norm_coe, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply,
-    WithAbs.ofAbs_toAbs]
-
-/-- The image of the ground field is dense in its absolute-value completion. -/
-theorem denseRange_algebraMap : DenseRange (algebraMap K v.Completion) := by
-  have h : (algebraMap K v.Completion : K → v.Completion) =
-      ((↑) : WithAbs v → v.Completion) ∘ (WithAbs.equiv v).symm := by
-    funext x
-    rw [algebraMap_def, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply]
-    rfl
-  rw [h]
-  exact (denseRange_coe v).comp (WithAbs.equiv v).symm.surjective.denseRange (continuous_coe v)
-
-/-- The completion of a nonarchimedean absolute value is ultrametric. -/
-theorem isUltrametricDist (hv : IsNonarchimedean v) : IsUltrametricDist v.Completion :=
-  IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
-    rw [← map_natCast (algebraMap K v.Completion), norm_algebraMap]
-    exact hv.apply_natCast_le_one (by simp) (map_one v)
-
-private theorem exists_one_lt_norm (hv : v.IsNontrivial) : ∃ x : v.Completion, 1 < ‖x‖ := by
-  obtain ⟨a, ha⟩ := hv.exists_abv_gt_one
-  exact ⟨algebraMap K v.Completion a, by simpa only [norm_algebraMap] using ha⟩
-
 attribute [local instance] algebraOfLiesOver
 
 variable {v} (w : AbsoluteValue L ℝ) [w.LiesOver v]
-
-/-- The isometric embedding of completions induces a normed algebra structure. -/
-@[instance_reducible]
-noncomputable def normedAlgebraOfLiesOver : NormedAlgebra v.Completion w.Completion where
-  norm_smul_le a b := by
-    rw [Algebra.smul_def, norm_mul, algebraMap_apply_of_liesOver, norm_map]
 
 /-- The comparison from scalar extension to the completion at an absolute value extending
 `v`. It sends `a ⊗ x` to the product of the images of `a` and `x`. -/
@@ -105,7 +72,7 @@ variable [FiniteDimensional K L]
 /-- For a finite field extension, scalar extension onto a completion above `v` is surjective. -/
 theorem tensorToCompletion_surjective (hv : v.IsNontrivial) :
     Function.Surjective (tensorToCompletion w (v := v)) := by
-  let : NontriviallyNormedField v.Completion := { non_trivial := exists_one_lt_norm v hv }
+  let := nontriviallyNormedField v hv
   let := normedAlgebraOfLiesOver w (v := v)
   let f := (tensorToCompletion w (v := v)).toLinearMap
   have : FiniteDimensional v.Completion f.range := Module.Finite.range f
@@ -213,8 +180,7 @@ theorem ofCompletionFactor_completionMaximalIdeal (hv : v.IsNontrivial)
 theorem completionMaximalIdeal_ofCompletionFactor (hv : v.IsNontrivial)
     (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
     completionMaximalIdeal hv (ofCompletionFactor hna m) = m := by
-  let : NontriviallyNormedField v.Completion :=
-    { non_trivial := Completion.exists_one_lt_norm v hv }
+  let := Completion.nontriviallyNormedField v hv
   let := Completion.isUltrametricDist v hna
   let F := A ⧸ m.asIdeal
   let : NormedField F := TauCeti.spectralNormedField v.Completion F
@@ -332,10 +298,11 @@ theorem isNonarchimedean_degreeNormalized (w : AbsoluteValue L ℝ) [w.LiesOver 
   rw [degreeNormalized]
   exact isNonarchimedean_nonarchRpow _ _ _
 
-section Reduced
+/-- An absolute value in the subtype of absolute values over `v` lies over `v`. -/
+instance instLiesOverSubtype (w : {w : AbsoluteValue L ℝ // w.LiesOver v}) :
+    w.val.LiesOver v := w.property
 
-local instance (w : {w : AbsoluteValue L ℝ // w.LiesOver v}) : w.val.LiesOver v :=
-  w.property
+section Reduced
 
 variable [IsReduced (v.Completion ⊗[K] L)]
 
