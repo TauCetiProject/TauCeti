@@ -100,6 +100,8 @@ estimates do not see the boundary.
   parameter and in space, the energy form is a.e. strongly measurable in the parameter.
 * `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral`: the energy form with no lower-order
   terms is the integral of `⟨a ∇u, ∇v⟩`.
+* `TauCeti.PDE.energyFormH1_eq_zero_of_gradient_eq_zero`: with no mass term, a left argument
+  with vanishing gradient has zero energy against everything.
 * `TauCeti.PDE.energyFormH1_add_const_left`: with no mass term, shifting the left argument by a
   constant does not change the form.
 * `TauCeti.PDE.energyFormH1_const_right`: with no drift and no mass term, the form vanishes on a
@@ -663,6 +665,20 @@ theorem energyFormH1_neg_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ)
     (u v : W1p mu Omega 2) : energyFormH1 a b c (-u) v = -energyFormH1 a b c u v := by
   rw [← neg_one_smul ℝ u, energyFormH1_smul_left, neg_one_mul]
+
+/-- **Functions with vanishing gradient have no energy.** With no mass term, the left argument
+enters the energy form only through its gradient, so `a(u, v) = 0` for every `v` once `∇u = 0`:
+for instance when `u` is constant on each connected component of `Ω`. -/
+theorem energyFormH1_eq_zero_of_gradient_eq_zero (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) {u : W1p mu Omega 2}
+    (hu : W1p.gradient u = 0) (v : W1p mu Omega 2) : energyFormH1 a b 0 u v = 0 := by
+  have hu' : ⇑(W1p.gradient u) =ᵐ[mu.restrict Omega] 0 := by
+    rw [hu]
+    exact Lp.coeFn_zero _ _ _
+  rw [energyFormH1_def]
+  refine (integral_congr_ae ?_).trans (integral_zero _ ℝ)
+  filter_upwards [hu'] with x hx
+  simp [hx]
 
 /-- **Shifting by a constant.** On a domain of finite measure, an energy form with no mass term
 does not see constants: `a(u + δ, v) = a(u, v)` for every constant `δ`, since adding a constant
