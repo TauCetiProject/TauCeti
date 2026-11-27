@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import TauCeti.AlgebraicGeometry.Curves.Category
@@ -16,6 +17,12 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.RingTheory.Smooth.Jacobian
+
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FormallySmooth
+import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Affine
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
 
 /-!
 # Smoothness of the projective Weierstrass model
@@ -32,6 +39,14 @@ of the point is a nonzero solution of the projective equation over `k`, hence no
 the discriminant is a unit in `k`, and Euler's relation `3W = Σ Xⱼ ∂W/∂Xⱼ` with `Xᵢ = 1` shows that
 some `∂W/∂Xⱼ` with `j ≠ i` is nonzero there.
 
+Conversely, if `W.projModel` is smooth over `Spec R` then the discriminant is a unit. Smoothness
+makes the chart `Z ≠ 0`, the affine coordinate ring of `W`, formally smooth over `R`. If the
+discriminant lay in a maximal ideal `m`, the model would acquire a singular point over an algebraic
+closure of `R ⧸ m`, which obstructs formal smoothness
+(`WeierstrassCurve.Affine.not_formallySmooth_coordinateRing_of_isSingular`). Over a discrete
+valuation ring this identifies good reduction of an integral equation with smoothness of the
+projective model of its integral model.
+
 ## Main results
 
 * `WeierstrassCurve.Projective.isStandardSmoothOfRelativeDimension_localizationAway_pderiv`: the
@@ -43,6 +58,12 @@ some `∂W/∂Xⱼ` with `j ≠ i` is nonzero there.
   elliptic Weierstrass curve is smooth of relative dimension one over the base.
 * `WeierstrassCurve.smooth_projModelOver`: the projective model of an elliptic Weierstrass curve
   is smooth over the base.
+* `WeierstrassCurve.isElliptic_of_smooth_projModelOver` and
+  `WeierstrassCurve.smooth_projModelOver_iff`: conversely, a Weierstrass curve whose projective
+  model is smooth over the base has unit discriminant.
+* `WeierstrassCurve.hasGoodReduction_iff_smooth_projModelOver`: over a discrete valuation ring, an
+  integral equation has good reduction exactly when the projective model of its integral model is
+  smooth.
 * `WeierstrassCurve.topologicalKrullDim_projModel`: over a field, the projective model of an
   elliptic curve has dimension one.
 * `WeierstrassCurve.isDiscreteValuationRing_stalk_projModel`: over a field, the local rings of the
@@ -55,6 +76,8 @@ some `∂W/∂Xⱼ` with `j ≠ i` is nonzero there.
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
 * P. Deligne and M. Rapoport, *Les schémas de modules de courbes elliptiques*, II.1.
 * Stacks Project, Tag 00T7.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.5.
+* S. Bosch, W. Lütkebohmert and M. Raynaud, *Néron Models*, §1.5.
 
 ## Provenance
 
@@ -219,6 +242,50 @@ instance smoothOfRelativeDimension_over_projModel [W.IsElliptic] :
     SmoothOfRelativeDimension 1 (W.projModel ↘ Spec (.of R)) := by
   rw [over_projModel]
   infer_instance
+
+/-- If the projective model is smooth over the base, so is each standard affine chart. -/
+private theorem formallySmooth_chartRing_of_smooth_projModelOver [Smooth W.projModelOver]
+    (i : Fin 3) : Algebra.FormallySmooth R (W.toProjective.ChartRing i) := by
+  have : Smooth (W.chartι i ≫ W.projModelOver) := inferInstance
+  rw [chartι_projModelOver, HasRingHomProperty.Spec_iff (P := @Smooth), CommRingCat.hom_ofHom,
+    RingHom.smooth_algebraMap] at this
+  infer_instance
+
+/-- **A Weierstrass curve with smooth projective model is elliptic**: if `W.projModel` is smooth
+over `Spec R`, the discriminant of `W` is a unit. -/
+theorem isElliptic_of_smooth_projModelOver [Smooth W.projModelOver] : W.IsElliptic := by
+  have := W.formallySmooth_chartRing_of_smooth_projModelOver 2
+  have hA : Algebra.FormallySmooth R W.toAffine.CoordinateRing :=
+    .of_equiv W.toProjective.chartRingTwoEquivCoordinateRing
+  refine ⟨?_⟩
+  by_contra hΔ
+  obtain ⟨m, hm, hΔm⟩ := Ideal.exists_le_maximal _ (Ideal.span_singleton_ne_top hΔ)
+  have hk : (W⁄(AlgebraicClosure m.ResidueField)).Δ = 0 := by
+    rw [baseChange, map_Δ, IsScalarTower.algebraMap_apply R m.ResidueField,
+      Ideal.algebraMap_residueField_eq_zero.mpr (hΔm (Ideal.mem_span_singleton_self _)), map_zero]
+  obtain ⟨x, y, h⟩ :=
+    Affine.exists_isSingular_of_Δ_eq_zero (W⁄(AlgebraicClosure m.ResidueField)).toAffine hk
+  exact Affine.not_formallySmooth_coordinateRing_of_isSingular (W := W.toAffine) h hA
+
+/-- **The projective Weierstrass model is smooth over the base exactly when the discriminant is a
+unit.** -/
+theorem smooth_projModelOver_iff : Smooth W.projModelOver ↔ W.IsElliptic :=
+  ⟨fun _ ↦ W.isElliptic_of_smooth_projModelOver, fun _ ↦ inferInstance⟩
+
+section DiscreteValuationRing
+
+variable (R) [IsDomain R] [IsDiscreteValuationRing R] {K : Type*} [Field K] [Algebra R K]
+  [IsFractionRing R K]
+
+/-- **Good reduction is smoothness of the projective integral model.** Over a discrete valuation
+ring `R` with fraction field `K`, an integral Weierstrass equation over `K` has good reduction
+exactly when the projective model of its integral model is smooth over `Spec R`. Both sides force
+the equation to be minimal. -/
+theorem hasGoodReduction_iff_smooth_projModelOver (W : WeierstrassCurve K) [IsIntegral R W] :
+    W.HasGoodReduction R ↔ Smooth (W.integralModel R).projModelOver := by
+  rw [smooth_projModelOver_iff, isElliptic_iff, hasGoodReduction_iff_isUnit_integralModel_Δ]
+
+end DiscreteValuationRing
 
 section Field
 
