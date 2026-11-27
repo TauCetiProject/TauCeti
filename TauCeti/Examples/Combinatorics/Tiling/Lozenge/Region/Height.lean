@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Height
 public import TauCeti.Combinatorics.Tiling.Lozenge.Flip
+public import TauCeti.Examples.Combinatorics.Tiling.Lozenge.Tiling
 
 /-!
 # Checks: heights on regions
@@ -18,6 +19,8 @@ public import TauCeti.Combinatorics.Tiling.Lozenge.Flip
   `T_a = highFlipEdges 0` and `T_b = lowFlipEdges 0` both give `H = 0` at `(1,0)`, `(0,1)`,
   `(1,1)` and `H = −1` at `(−1,0)`, `(0,−1)`, `(−1,−1)`, while `H(0) = 0` for `T_a` (because
   `(0,1) ∉ T_a`) and `H(0) = −1` for `T_b` (because `(0,1) ∈ T_b`).
+* On the wedge `R = {W(0), W(−e₁)}` with free tiling `M = {(0,3), (0,2)}`, normalised by
+  `H(0) = 0`: the height function of `M` is `0` at `0`, `e₁`, `e₃`, `−e₁` and `1` at `e₂`.
 -/
 
 public section
@@ -157,6 +160,58 @@ example {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn hexagon H)
       H 0 = -1 := by
   have := increments_hexagon hH hT
   simp [heightCochain_of_mem, heightCochain_of_notMem, Prod.ext_iff] at this
+  omega
+
+/-! ### A wedge -/
+
+open TauCeti.Examples.LozengeTiling (wedge wedgeConfig)
+
+/-- The height function of `M` on the wedge normalised by `H(0) = 0`: `1` at `e₂` and `0` at the
+other vertices `0`, `e₁`, `e₃`, `−e₁` of the wedge. -/
+def wedgeHeight (v : ℤ × ℤ) : ℤ := if v = (0, 1) then 1 else 0
+
+/-- An edge of the wedge is one of the three edges of `W(0)` or of `W(−e₁)`. -/
+private theorem eq_of_mem_regionEdges_wedge {e : TriEdge} (he : e ∈ regionEdges wedge) :
+    e = ⟨(0, 0), 0⟩ ∨ e = ⟨(1, 0), 1⟩ ∨ e = ⟨(0, 0), 2⟩ ∨ e = ⟨(-1, 0), 0⟩ ∨
+      e = ⟨(0, 0), 1⟩ ∨ e = ⟨(-1, 0), 2⟩ := by
+  obtain ⟨f, hf, he⟩ := mem_regionEdges.1 he
+  rcases hf with rfl | rfl <;>
+    simp only [TriFace.edges_mk_true, Finset.mem_insert, Finset.mem_singleton] at he <;>
+    rcases he with rfl | rfl | rfl <;> norm_num
+
+/-- `wedgeHeight` is a height function on the wedge. -/
+theorem isHeightFunctionOn_wedgeHeight : IsHeightFunctionOn wedge wedgeHeight := by
+  refine isHeightFunctionOn_def.2 fun e he => ?_
+  rcases eq_of_mem_regionEdges_wedge he with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [wedgeHeight]
+
+/-- The free tiling of `wedgeHeight` on the wedge is `M`. -/
+theorem tilingOfHeightOn_wedgeHeight : tilingOfHeightOn wedge wedgeHeight = wedgeConfig := by
+  ext e
+  refine ⟨fun he => ?_, ?_⟩
+  · obtain ⟨hH, he⟩ := mem_tilingOfHeightOn.1 he
+    rcases eq_of_mem_regionEdges_wedge he with rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp_all [wedgeHeight]
+  · rintro (rfl | rfl)
+    · exact mem_tilingOfHeightOn.2 ⟨by simp [wedgeHeight],
+        mem_regionEdges.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩⟩
+    · exact mem_tilingOfHeightOn.2 ⟨by simp [wedgeHeight],
+        mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩⟩
+
+/-- Every height function on the wedge with free tiling `M` and `H(0) = 0` is `0` at `0`, `e₁`,
+`e₃`, `−e₁` and `1` at `e₂`. -/
+theorem heights_of_tilingOfHeightOn_eq_wedgeConfig {H : ℤ × ℤ → ℤ}
+    (hH : IsHeightFunctionOn wedge H) (hT : tilingOfHeightOn wedge H = wedgeConfig)
+    (h₀ : H 0 = 0) :
+    H (1, 0) = 0 ∧ H (1, 1) = 0 ∧ H (-1, 0) = 0 ∧ H (0, 1) = 1 := by
+  have hc := fun (e : TriEdge) (he : e ∈ regionEdges wedge) =>
+    hT ▸ hH.heightCochain_tilingOfHeightOn he
+  have h₁ := hc ⟨(0, 0), 0⟩ (mem_regionEdges.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩)
+  have h₂ := hc ⟨(0, 0), 2⟩ (mem_regionEdges.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩)
+  have h₃ := hc ⟨(-1, 0), 0⟩ (mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩)
+  have h₄ := hc ⟨(0, 0), 1⟩ (mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩)
+  simp [heightCochain_of_mem, heightCochain_of_notMem, Prod.ext_iff] at h₁ h₂ h₃ h₄
+  have h₀' : H (0, 0) = 0 := by rwa [← Prod.mk_zero_zero] at h₀
   omega
 
 end TauCeti.Examples.LozengeRegionHeightChecks
