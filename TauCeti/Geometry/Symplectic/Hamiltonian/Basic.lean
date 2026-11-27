@@ -54,7 +54,11 @@ form `ω(·, -J ·)`, the gradient of `H` is `-J X_H`, with no invariance needed
 Hamiltonian vector field of `(c / 2) ‖y‖²` is the linear field `-c J`
 (`TauCeti.SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq`), whose derivative has norm
 at most `c ≥ 0`
-(`TauCeti.SymplecticForm.norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le`).
+(`TauCeti.SymplecticForm.norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le`). Adding it to
+a Hamiltonian `H` therefore subtracts `c J` from the derivative of `X_H`
+(`TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq`), so it shifts
+`-J dX_H` by `-c`
+(`TauCeti.SymplecticForm.neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq`).
 
 Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
 family evaluated along a continuous map, the Hamiltonian vector fields vary continuously.
@@ -658,6 +662,15 @@ theorem hamiltonianVectorField_div_two_mul_norm_sq {ω : SymplecticForm E}
   simp [hJ]
   ring
 
+/-- If the inner product of `E` is the metric `ω(·, J ·)`, the almost complex structure `J`, an
+isometry, has operator norm at most one. -/
+theorem norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) :
+    ‖J.toLinearMap.toContinuousLinearMap‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
+    rw [one_mul, LinearMap.coe_toContinuousLinearMap']
+    exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
+
 /-- If the inner product of `E` is the metric `ω(·, J ·)`, the derivative `-c J` of the Hamiltonian
 vector field of `Q(y) = (c / 2) ‖y‖²` has norm at most `c ≥ 0`, since `J` is an isometry. -/
 theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le {ω : SymplecticForm E}
@@ -665,9 +678,58 @@ theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le {ω : Symplect
     ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ c / 2 * ‖y‖ ^ 2) y‖ ≤ c := by
   rw [hamiltonianVectorField_div_two_mul_norm_sq hg c, ContinuousLinearMap.fderiv, norm_smul,
     norm_neg, Real.norm_eq_abs, abs_of_nonneg hc]
-  refine mul_le_of_le_one_right hc (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_)
-  rw [one_mul, LinearMap.coe_toContinuousLinearMap']
-  exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
+  exact mul_le_of_le_one_right hc (norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner hg)
+
+/-- If the inner product of `E` is the metric `ω(·, J ·)`, adding `(δ / 2) ‖y‖²` to a Hamiltonian
+whose vector field is differentiable at `y` subtracts `δ J` from the derivative of the Hamiltonian
+vector field at `y`. -/
+theorem fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} {H : E → ℝ} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : Differentiable ℝ H) {y : E}
+    (hX : DifferentiableAt ℝ (ω.hamiltonianVectorField H) y) (δ : ℝ) :
+    fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H x + δ / 2 * ‖x‖ ^ 2) y =
+      fderiv ℝ (ω.hamiltonianVectorField H) y - δ • J.toLinearMap.toContinuousLinearMap := by
+  have hQ : Differentiable ℝ fun x : E ↦ δ / 2 * ‖x‖ ^ 2 :=
+    (differentiable_const _).mul ((contDiff_norm_sq ℝ (n := 1)).differentiable one_ne_zero)
+  have hXQ : ω.hamiltonianVectorField (fun x ↦ H x + δ / 2 * ‖x‖ ^ 2) =
+      ω.hamiltonianVectorField H + ⇑(-δ • J.toLinearMap.toContinuousLinearMap) := by
+    funext x
+    rw [Pi.add_apply, ← hamiltonianVectorField_div_two_mul_norm_sq hg δ]
+    exact ω.hamiltonianVectorField_add (hH x) (hQ x)
+  rw [hXQ, fderiv_add hX (ContinuousLinearMap.differentiableAt _), ContinuousLinearMap.fderiv,
+    neg_smul, sub_eq_add_neg]
+
+/-- If the inner product of `E` is the metric `ω(·, J ·)`, adding `(δ / 2) ‖y‖²` to the Hamiltonian
+shifts `-J dX_H(y)` by `-δ`: the asymptotic operator of the shifted Hamiltonian at `y` is that of
+`H` minus `δ`. -/
+theorem neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} {H : E → ℝ} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : Differentiable ℝ H) {y : E}
+    (hX : DifferentiableAt ℝ (ω.hamiltonianVectorField H) y) (δ : ℝ) :
+    -(J.toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H x + δ / 2 * ‖x‖ ^ 2) y)) =
+      -(J.toLinearMap.toContinuousLinearMap.comp (fderiv ℝ (ω.hamiltonianVectorField H) y)) -
+        δ • ContinuousLinearMap.id ℝ E := by
+  have hJJ : J.toLinearMap.toContinuousLinearMap.comp J.toLinearMap.toContinuousLinearMap =
+      -ContinuousLinearMap.id ℝ E :=
+    ContinuousLinearMap.ext J.apply_apply
+  rw [fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg hH hX, ContinuousLinearMap.comp_sub,
+    ContinuousLinearMap.comp_smul, hJJ, smul_neg]
+  abel
+
+/-- If the inner product of `E` is the metric `ω(·, J ·)`, adding `(δ / 2) ‖y‖²` to the Hamiltonian
+increases the norm of the derivative of the Hamiltonian vector field at `y` by at most `|δ|`. -/
+theorem norm_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq_le {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} {H : E → ℝ} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : Differentiable ℝ H) {y : E}
+    (hX : DifferentiableAt ℝ (ω.hamiltonianVectorField H) y) (δ : ℝ) :
+    ‖fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H x + δ / 2 * ‖x‖ ^ 2) y‖ ≤
+      ‖fderiv ℝ (ω.hamiltonianVectorField H) y‖ + |δ| := by
+  rw [fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg hH hX]
+  refine (norm_sub_le _ _).trans (add_le_add le_rfl ?_)
+  rw [norm_smul, Real.norm_eq_abs]
+  exact mul_le_of_le_one_right (abs_nonneg δ)
+    (norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner hg)
 
 end Gradient
 

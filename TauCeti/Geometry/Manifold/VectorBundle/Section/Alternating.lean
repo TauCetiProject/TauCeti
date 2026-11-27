@@ -12,7 +12,7 @@ import Mathlib.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial

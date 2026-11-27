@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
 import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Analysis.Fredholm.SemiFredholm
 import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
-import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 
 /-!
 # The Fredholm property and index of the pair-of-pants operator do not depend on the core data
@@ -84,42 +83,6 @@ private theorem eq_of_max_le_fst_positiveEndCoord {J J' : ℝ × ℝ → V → A
   rw [← positiveEndChart_positiveEndCoord q
       (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     hJeq q _ ((le_max_left _ _).trans hR), hJeq' q _ ((le_max_right _ _).trans hR)]
-
-/-- **Continuity of the coefficient fields along a family of data in `L^∞`.** Let
-`(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data on `S`, `C¹` (with `C²` Hamiltonians) jointly in
-the parameter `μ`, the domain point and the target point along the graph of a map `u` which is `C¹`
-on `S`, and equal outside the truncation `S_R` to the data at `lam`. If the coefficient fields on
-conformal jets of the data at every `μ` are almost everywhere strongly measurable on `S`, then they
-converge in `L^∞(S)` to the coefficient field at `lam` as `μ → lam`. -/
-private theorem tendsto_eLpNorm_floerConformalJetCoeff_family (ω : SymplecticForm V)
-    {J : ℝ × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : ℝ × (ℝ × ℝ) → V → ℝ} {R : ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (uncurry J) ((μ, z), u z))
-    (hKs : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) ((μ, z), u z))
-    (hKt : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) ((μ, z), u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {lam : ℝ}
-    (heq : ∀ μ, ∀ z ∈ thricePuncturedSphereReal,
-      z ∉ Complex.equivRealProdCLM.symm ⁻¹' truncation R →
-        J (μ, z) = J (lam, z) ∧ Ks (μ, z) = Ks (lam, z) ∧ Kt (μ, z) = Kt (lam, z))
-    (hmeas : ∀ μ, AEStronglyMeasurable (ω.floerConformalJetCoeff cylindricalWeight
-      (fun z ↦ J (μ, z)) (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u)
-        (volume.restrict thricePuncturedSphereReal)) :
-    Tendsto (fun μ ↦ eLpNorm (ω.floerConformalJetCoeff cylindricalWeight (fun z ↦ J (μ, z))
-      (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u - ω.floerConformalJetCoeff cylindricalWeight
-        (fun z ↦ J (lam, z)) (fun z ↦ Ks (lam, z)) (fun z ↦ Kt (lam, z)) u) ∞
-          (volume.restrict thricePuncturedSphereReal)) (𝓝 lam) (𝓝 0) := by
-  refine tendsto_eLpNorm_top_sub_of_continuousAt_of_eq
-    (M := fun μ ↦ ω.floerConformalJetCoeff cylindricalWeight (fun z ↦ J (μ, z))
-      (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u)
-    isOpen_thricePuncturedSphereReal.measurableSet (isCompact_preimage_truncation R)
-    (.of_forall hmeas) (fun z hzK ↦ ?_) (.of_forall fun μ z hz hzK ↦ ?_)
-  -- On the compact truncation `S_R` the coefficient field is jointly continuous in `(μ, z)`.
-  · have hz := preimage_truncation_subset_thricePuncturedSphereReal R hzK
-    exact continuousAt_floerConformalJetCoeff_family ω (hJ lam z hz) (hKs lam z hz)
-      (hKt lam z hz) (hu z hz) (isWeight_cylindricalWeight.continuousOn.continuousAt
-        (isOpen_thricePuncturedSphereReal.mem_nhds hz)) (isWeight_cylindricalWeight.pos _ hz)
-  -- Off the truncation the data, hence the coefficient fields, do not depend on `μ`.
-  · obtain ⟨hJz, hsz, htz⟩ := heq μ z hz hzK
-    exact ω.floerConformalJetCoeff_congr_data _ u hJz hsz htz
 
 /-- **The Fredholm property and the index along a family of data on the pair of pants.** Let
 `(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data on `S`, `C¹` (with `C²` Hamiltonians) jointly in
@@ -210,15 +173,24 @@ private theorem isFredholm_and_index_eq_of_family (ω : SymplecticForm V)
       IsClosed ((T μ).range : Set (Lp V 2 (volume.restrict S))) :=
     ω.isClosed_range_floerConformalSobolevOperator_pairOfPants hH hHs hX hx hnd hJe hJex
       (hJeq μ) (hK μ) (hJμ μ) (hKsμ μ) (hKtμ μ) hu (hc μ) (hF μ) hux hδ
+  -- The data change only over the compact truncation `S_R`, a subset of `S`.
+  have hKS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ S :=
+    preimage_truncation_subset_thricePuncturedSphereReal R
   have hT : ContinuousOn T (Icc 0 1) := by
     simp only [T, floerConformalSobolevOperator_def]
     exact (continuousOn_jetOperator (fun μ _ ↦ hM μ) fun lam _ ↦ tendsto_nhdsWithin_of_tendsto_nhds
       (tendsto_eLpNorm_floerConformalJetCoeff_family ω
-        (J := fun p y ↦ (J p y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
-        (fun μ z hz hzK ↦ by
+        isOpen_thricePuncturedSphereReal.measurableSet (isCompact_preimage_truncation R)
+        (J := fun p y ↦ (J p y).toLinearMap.toContinuousLinearMap)
+        (fun z hzK ↦ hJ lam z (hKS hzK)) (fun z hzK ↦ hKs lam z (hKS hzK))
+        (fun z hzK ↦ hKt lam z (hKS hzK)) (fun z hzK ↦ hu z (hKS hzK))
+        (fun z hzK ↦ isWeight_cylindricalWeight.continuousOn.continuousAt
+          (isOpen_thricePuncturedSphereReal.mem_nhds (hKS hzK)))
+        (fun z hzK ↦ isWeight_cylindricalWeight.pos _ (hKS hzK))
+        (.of_forall fun μ z hz hzK ↦ by
           obtain ⟨hJz, hsz, htz⟩ := heq μ lam z hz hzK
           exact ⟨by rw [hJz], hsz, htz⟩)
-        (fun μ ↦ (hM μ).aestronglyMeasurable))).clm_comp continuousOn_const
+        (.of_forall fun μ ↦ (hM μ).aestronglyMeasurable))).clm_comp continuousOn_const
   have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.2 zero_le_one
   have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
   have hFred (μ : ℝ) (hμ : μ ∈ Icc (0 : ℝ) 1) : (T μ).IsFredholm :=

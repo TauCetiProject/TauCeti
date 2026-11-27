@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.BumpFunction
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
+import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -48,6 +51,16 @@ The principal symbol is linear in the operator, vanishes exactly on the operator
 (`TauCeti.sectionClassicalPrincipalSymbol_eq_zero_iff`), vanishes at the zero covector and is
 positively homogeneous of degree `m` in `ξ`.
 
+For a **differential operator** `P` of order at most `k` between the bundles, in Grothendieck's
+sense for commutators with multiplication by complex-valued smooth functions, the principal symbol
+is read from iterated commutators, in the angular-frequency convention `σ(∂ⱼ) = i ξⱼ`: at the
+nonzero differential `df_x` of a real-valued smooth function `f`,
+`σ_k(P)(x, df_x) (s x) = (i ^ k / k!) ([⋯[P, f], …, f] s)(x)` for every smooth section `s`
+(`TauCeti.sectionClassicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators`). The `k`-fold
+commutator is linear over the functions, so its value at `x` only depends on `s(x)`
+(`TauCeti.apply_eq_apply_of_map_smul`), and in frames this is the scalar statement
+`TauCeti.classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators` for the matrix entries.
+
 An operator is **elliptic at** `x` (`TauCeti.IsSectionClassicalEllipticAt`) when `σ_m(P)(x, ξ)` is
 bijective for every nonzero covector `ξ`. Ellipticity is unchanged by perturbations of order
 `m - 1` and by nonzero scalars, and over a manifold of positive dimension it forces the two bundles
@@ -68,17 +81,23 @@ are no nonzero covectors, every operator is elliptic and the ranks are unconstra
   whose readings in one pair of frames are the principal symbols of these entries.
 * `TauCeti.sectionClassicalPrincipalSymbol_add`, `TauCeti.sectionClassicalPrincipalSymbol_smul`,
   `TauCeti.sectionClassicalPrincipalSymbol_zero`, `TauCeti.sectionClassicalPrincipalSymbol_neg`,
-  `TauCeti.sectionClassicalPrincipalSymbol_sub`: linearity in the operator.
+  `TauCeti.sectionClassicalPrincipalSymbol_sub`, `TauCeti.sectionClassicalPrincipalSymbol_sum`:
+  linearity in the operator.
 * `TauCeti.sectionClassicalPrincipalSymbol_eq_zero_iff`: the principal symbol of an operator of
   order `m` vanishes exactly when the operator has order `m - 1`.
 * `TauCeti.sectionClassicalPrincipalSymbol_zero_covector`,
   `TauCeti.sectionClassicalPrincipalSymbol_smul_covector`: homogeneity in the covector.
 * `TauCeti.sectionClassicalPrincipalSymbol_id`, `TauCeti.isSectionClassicalElliptic_id`: the
   identity of `Γ(E)` has principal symbol the identity of `E_x` and is elliptic of order `0`.
+* `TauCeti.sectionClassicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators`: the principal
+  symbol of a differential operator at `df_x` is `i ^ k / k!` times its `k`-fold commutator with
+  `f`, evaluated at `x`.
 * `TauCeti.isSectionClassicalEllipticAt_add_iff`: ellipticity only depends on the principal symbol.
 * `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
   point forces `rank E = rank F`.
+* `TauCeti.IsSectionClassicalEllipticAt.mem_or_subsingleton`: in positive dimension, ellipticity at
+  a point forces order `m` unless both model fibres are trivial.
 
 ## References
 
@@ -112,14 +131,12 @@ variable (n) {V : Type*} [NormedAddCommGroup V] (E : M → Type*) [TopologicalSp
 private theorem exists_frameCutoff (x : M) :
     ∃ ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯,
       tsupport ρ ⊆ (trivializationAt V E x).baseSet ∩ (trivializationAt W F x).baseSet ∧
-        ∀ᶠ y in 𝓝 x, ρ y = 1 := by
-  obtain ⟨f, -, hf⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := 𝓘(ℝ, CoordinateSpace n)) x).mem_iff.1
-      (inter_mem ((trivializationAt V E x).open_baseSet.mem_nhds
-          (FiberBundle.mem_baseSet_trivializationAt V E x))
-        ((trivializationAt W F x).open_baseSet.mem_nhds
-          (FiberBundle.mem_baseSet_trivializationAt W F x)))
-  exact ⟨⟨f, f.contMDiff⟩, hf, f.eventuallyEq_one⟩
+        ∀ᶠ y in 𝓝 x, ρ y = 1 :=
+  ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (inter_mem ((trivializationAt V E x).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt V E x))
+      ((trivializationAt W F x).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt W F x)))
 
 /-- The cutoff through which the principal symbol at `x` is read off: a real smooth function equal
 to `1` near `x`, supported in the base sets of the preferred trivializations of `E` and `F` at
@@ -282,12 +299,10 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_input
   set k : Fin (finrank ℂ V) → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := fun i ↦
     (trivializationAt V E x).cutoffFrameCoeff _ hρ ((finBasis ℂ V).coord i).toContinuousLinearMap
       (t.cutoffFrameSection ψ hψ v)
-  obtain ⟨f₀, -, hθU⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := 𝓘(ℝ, CoordinateSpace n)) x).mem_iff.1
+  obtain ⟨θ, hθU, hθ⟩ :=
+    ContMDiffMap.exists_tsupport_subset_eventually_eq_one (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
       (inter_mem (frameCutoff_eventually_eq_one (V := V) (W := W) n E F x)
         ((trivializationAt V E x).open_baseSet.mem_nhds hx))
-  set θ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ := ⟨f₀, f₀.contMDiff⟩
-  have hθ : ∀ᶠ y in 𝓝 x, θ y = 1 := f₀.eventuallyEq_one
   set θc := ContMDiffMap.ofReal θ
   -- Near `x` the input section is `∑ᵢ kᵢ ρ t₀⁻¹ bᵢ`; the rest is cut off by `1 - θ`.
   have hs := (trivializationAt V E x).smul_eq_sum_smul_cutoffFrameSection_add _ hρ
@@ -461,6 +476,23 @@ theorem sectionClassicalPrincipalSymbol_sub
   rw [sub_eq_add_neg, sectionClassicalPrincipalSymbol_add hP (neg_mem hQ),
     sectionClassicalPrincipalSymbol_neg, ← sub_eq_add_neg]
 
+/-- The principal symbol of a finite sum of operators of order `m` between bundles is the sum of
+their principal symbols. -/
+theorem sectionClassicalPrincipalSymbol_sum {ι : Type*} (s : Finset ι)
+    {P : ι → Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hP : ∀ i ∈ s, P i ∈ sectionClassicalPseudodifferentialOperators m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    sectionClassicalPrincipalSymbol m (∑ i ∈ s, P i) x ξ =
+      ∑ i ∈ s, sectionClassicalPrincipalSymbol m (P i) x ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      sectionClassicalPrincipalSymbol_add (hP i (Finset.mem_insert_self i s))
+        (Submodule.sum_mem _ fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)),
+      ih fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)]
+
 /-- **Operators of lower order.** A classical pseudodifferential operator between bundles of order
 `m - 1` has principal symbol `0` in order `m`. -/
 theorem sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one
@@ -562,6 +594,59 @@ theorem sectionClassicalPrincipalSymbol_smul_covector (x : M)
       smul_eq_mul]
   · simp [sectionClassicalPrincipalSymbol_of_notMem hP]
 
+/-! ### Differential operators -/
+
+/-- **The principal symbol of a differential operator between bundles.** Let `P : Γ(E) → Γ(F)` be a
+differential operator of order at most `k` in Grothendieck's sense, for commutators with
+multiplication by complex-valued smooth functions, so that `P` is a classical pseudodifferential
+operator of order `k`
+(`TauCeti.mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators`). At the
+differential `df_x` of a real-valued smooth function `f`, if it is nonzero, its principal
+symbol of order `k` is read from the `k`-fold commutator of `P` with multiplication by `f`:
+
+`σ_k(P)(x, df_x) (s x) = (i ^ k / k!) ([⋯[P, f], …, f] s)(x)`
+
+for every smooth section `s` of `E`. This is the angular-frequency convention `σ(∂ⱼ) = i ξⱼ`;
+the scalar case is `TauCeti.classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators`. -/
+theorem sectionClassicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators {k : ℕ}
+    (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) {x : M}
+    (hf : mvfderiv 𝓘(ℝ, CoordinateSpace n) f x ≠ 0) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    sectionClassicalPrincipalSymbol k P x (mvfderiv 𝓘(ℝ, CoordinateSpace n) f x) (s x) =
+      (Complex.I ^ k / k.factorial) • (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P s x := by
+  set R := (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P with hRdef
+  -- The `k`-fold commutator `R` has order `0`: it is linear over the functions.
+  have hR : ∀ (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) σ, R (g • σ) = g • R σ :=
+    mem_differentialOperators_zero_iff.1
+      (smulCommutator_pow_mem_differentialOperators (m := 0) (by simpa using hP) _)
+  -- Read both sides in the preferred frames at `x`, with the frame cutoff `ρ`, equal to `1` at `x`.
+  set t := trivializationAt V E x
+  set t' := trivializationAt W F x
+  have hxt : x ∈ t.baseSet := FiberBundle.mem_baseSet_trivializationAt V E x
+  have hxt' : x ∈ t'.baseSet := FiberBundle.mem_baseSet_trivializationAt W F x
+  set ρ := frameCutoff (V := V) (W := W) n E F x
+  have hρ := tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x
+  have hρ' := tsupport_frameCutoff_subset_right (V := V) (W := W) n E F x
+  have hρx : ρ x = 1 := frameCutoff_self (V := V) (W := W) n E F x
+  set v := t.continuousLinearMapAt ℂ x (s x)
+  have hv : t.symm x v = s x := by
+    rw [← t.symmL_apply (R := ℂ) hxt, t.symmL_continuousLinearMapAt (R := ℂ) hxt]
+  refine (t'.continuousLinearEquivAt ℂ x hxt').injective
+    ((SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_)
+  simp only [t'.coe_continuousLinearEquivAt_eq (R := ℂ) hxt']
+  -- The entry of `P` is a scalar differential operator, whose `k`-fold commutator with `f` is the
+  -- entry of `R`, and the value of `R` at `x` on the cut-off frame section `ρ t⁻¹ v` is its value
+  -- on `s`.
+  have hentry := sectionEntry_mem_differentialOperators t ρ hρ v t' ρ hρ' ℓ hP
+  have hRs : R (t.cutoffFrameSection ρ hρ v) x = R s x :=
+    apply_eq_apply_of_map_smul hR (by rw [t.cutoffFrameSection_apply, hρx, one_smul, hv])
+  rw [← hv, coord_sectionClassicalPrincipalSymbol
+      (mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators hP),
+    classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators hentry f hf,
+    ← sectionEntry_smulCommutator_pow]
+  simp [sectionEntry_apply, ← hRdef, hRs, hρx]
+
 /-! ### Ellipticity -/
 
 variable (m P) in
@@ -627,14 +712,34 @@ is elliptic at some point, then `E` and `F` have the same rank: the principal sy
 covector is a linear isomorphism between the fibres. -/
 theorem IsSectionClassicalEllipticAt.finrank_eq [Nontrivial (CoordinateSpace n)] {x : M}
     (hPx : IsSectionClassicalEllipticAt m P x) : finrank ℂ V = finrank ℂ W := by
-  obtain ⟨η, hη⟩ := exists_ne (0 : CoordinateSpace n)
-  have hξ : (innerSL ℝ η : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) ≠ 0 := fun h ↦
-    hη (by simpa using DFunLike.congr_fun h η)
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
   rw [← ((trivializationAt V E x).continuousLinearEquivAt ℂ x
       (FiberBundle.mem_baseSet_trivializationAt V E x)).toLinearEquiv.finrank_eq,
     ← ((trivializationAt W F x).continuousLinearEquivAt ℂ x
       (FiberBundle.mem_baseSet_trivializationAt W F x)).toLinearEquiv.finrank_eq]
   exact (LinearEquiv.ofBijective _ (hPx _ hξ)).finrank_eq
+
+/-- **Ellipticity forces the order.** Over a manifold of positive dimension, an operator between
+bundles elliptic at some point is a classical pseudodifferential operator of order `m` unless both
+model fibres are trivial: otherwise its principal symbol vanishes, and the zero map between the
+fibres is not bijective. -/
+theorem IsSectionClassicalEllipticAt.mem_or_subsingleton [Nontrivial (CoordinateSpace n)] {x : M}
+    (hPx : IsSectionClassicalEllipticAt m P x) :
+    P ∈ sectionClassicalPseudodifferentialOperators m ∨ (Subsingleton V ∧ Subsingleton W) := by
+  refine or_iff_not_imp_left.2 fun hP ↦ ?_
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
+  have h0 := isSectionClassicalEllipticAt_iff.1 hPx _ hξ
+  rw [sectionClassicalPrincipalSymbol_of_notMem hP] at h0
+  -- The zero map `E_x → F_x` is bijective, so both fibres are trivial.
+  have hE : Subsingleton (E x) := ⟨fun u v ↦ h0.1 (by simp)⟩
+  have hF : Subsingleton (F x) := ⟨fun u v ↦ by
+    obtain ⟨u', rfl⟩ := h0.2 u
+    obtain ⟨v', rfl⟩ := h0.2 v
+    simp⟩
+  exact ⟨((trivializationAt V E x).continuousLinearEquivAt ℂ x
+      (FiberBundle.mem_baseSet_trivializationAt V E x)).symm.toEquiv.subsingleton,
+    ((trivializationAt W F x).continuousLinearEquivAt ℂ x
+      (FiberBundle.mem_baseSet_trivializationAt W F x)).symm.toEquiv.subsingleton⟩
 
 /-- In dimension zero every covector vanishes, so every operator between bundles is elliptic at
 every point, whatever the ranks of the bundles. -/
@@ -644,6 +749,14 @@ theorem isSectionClassicalEllipticAt_of_subsingleton [Subsingleton (CoordinateSp
   have : Subsingleton (TangentSpace 𝓘(ℝ, CoordinateSpace n) x) :=
     inferInstanceAs (Subsingleton (CoordinateSpace n))
   exact absurd (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]) hξ
+
+/-- Between bundles whose model fibres are both trivial, every operator is elliptic at every point:
+every linear map between the trivial fibres is bijective. -/
+theorem isSectionClassicalEllipticAt_of_subsingleton_fiber [Subsingleton V] [Subsingleton W]
+    (x : M) : IsSectionClassicalEllipticAt m P x := fun _ _ ↦ by
+  have := subsingleton_fiber_of_subsingleton V E x
+  have := subsingleton_fiber_of_subsingleton W F x
+  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 omit [FiniteDimensional ℂ W] in
 /-- **The identity is elliptic** of order `0`: its principal symbol at a nonzero covector is the
