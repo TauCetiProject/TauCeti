@@ -36,10 +36,10 @@ need not have left-continuous paths on the exceptional null set.
 
 For almost-surely continuous local martingales, the predictable version is also almost-surely
 continuous, and cross-brackets or quadratic brackets relative to strongly predictable processes
-transfer to it (`TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initialValue_sub`,
+transfer to it (`TauCeti.Probability.exists_isStronglyPredictable_indist_mul_sub_initialValue_sub`,
 `ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub`, and on
 finite measure spaces
-`ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_centered_sq_sub`).
+`ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sub_initialValue_sq_sub`).
 
 ## References
 
@@ -91,7 +91,7 @@ cross-brackets matching `M i t * M j t - M i 0 * M j 0 - A i j t` (for strongly 
 `A i j`) admits almost-surely continuous, strongly predictable indistinguishable versions `Y i`
 that remain local martingales and have strongly predictable local-martingale cross-brackets
 `Y i t * Y j t - Y i 0 * Y j 0 - A i j t`. -/
-theorem TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
+theorem TauCeti.Probability.exists_isStronglyPredictable_indist_mul_sub_initialValue_sub
     {ι Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
     {M : ι → ℝ≥0 → Ω → ℝ} {A Q : ι → ι → ℝ≥0 → Ω → ℝ}
     (hM : ∀ i, ProbabilityTheory.Locally (fun U ↦ Martingale U ℱ P) ℱ (M i) P)
@@ -131,7 +131,7 @@ theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sq_sub_ini
       IsStronglyPredictable ℱ (fun t ω ↦ Y t ω ^ 2 - Y 0 ω ^ 2 - A t ω) ∧
       Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦ Y t ω ^ 2 - Y 0 ω ^ 2 - A t ω) P :=
   let ⟨Y, hYp, hYM, hYc, hYl, hQp, hQY⟩ :=
-    TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
+    TauCeti.Probability.exists_isStronglyPredictable_indist_mul_sub_initialValue_sub
       (ι := Unit) (M := fun _ ↦ M) (A := fun _ _ ↦ A) (Q := fun _ _ ↦ Q)
       (fun _ ↦ hM) (fun _ _ ↦ hQ) (fun _ _ ↦ hA) (fun _ ↦ hcont)
       (fun _ _ ↦ by simpa only [sq] using hQM)
@@ -141,10 +141,10 @@ theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sq_sub_ini
 /-- An almost-surely continuous real native local martingale `M` on a finite measure space whose
 quadratic bracket `M t ^ 2 - M 0 ^ 2 - A t` (for strongly predictable, almost-surely
 right-continuous `A`) is indistinguishable from a local martingale `Q` admits an almost-surely
-continuous, strongly predictable indistinguishable centered version `N` of `M - M 0` with `N 0 = 0`
-which remains a local martingale and has strongly predictable local-martingale quadratic bracket
+continuous, strongly predictable indistinguishable version `N` of `M - M 0` with `N 0 = 0` which
+remains a local martingale and has strongly predictable local-martingale quadratic bracket
 `N t ^ 2 - A t`. -/
-theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_centered_sq_sub
+theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sub_initialValue_sq_sub
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
     {ℱ : Filtration ℝ≥0 mΩ} {M A Q : ℝ≥0 → Ω → ℝ}
     (hM : Locally (fun U ↦ Martingale U ℱ P) ℱ M P) (hQ : Locally (fun U ↦ Martingale U ℱ P) ℱ Q P)

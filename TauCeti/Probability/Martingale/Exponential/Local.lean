@@ -120,7 +120,7 @@ private lemma exists_predictable_centered_linProc {M : ℝ≥0 → Ω → ℝ} {
       Locally (fun U ↦ Martingale U ℱ P) ℱ N P ∧
       Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦ N t ω ^ 2 - c * (t : ℝ)) P :=
   let ⟨N, hNp, hN0, hNM, hNc, hNl, _, hQN⟩ :=
-    hM.exists_isStronglyPredictable_indist_centered_sq_sub (A := linProc c) hQ
+    hM.exists_isStronglyPredictable_indist_sub_initialValue_sq_sub (A := linProc c) hQ
       (ℱ.isStronglyPredictable_const_mul_coe c)
       (ae_of_all P fun _ ↦ (continuous_const.mul NNReal.continuous_coe).isRightContinuous)
       hcont (ae_of_all P fun _ _ ↦ rfl)

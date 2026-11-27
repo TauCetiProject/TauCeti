@@ -20,9 +20,9 @@ import TauCeti.Probability.Independence.CharacteristicFunction
 import TauCeti.Probability.Martingale.Basic
 import TauCeti.Probability.Martingale.Exponential.Local
 import TauCeti.Probability.Martingale.Local.Version
-import TauCeti.Probability.Martingale.QuadraticVariation
+import TauCeti.Probability.Martingale.QuadraticSums
 import TauCeti.Probability.Process.LocalProperty
-import TauCeti.Topology.Instances.Real.UniformGrid
+import TauCeti.Topology.Instances.NNReal.UniformGrid
 
 /-!
 # Scalar Lévy characterization of Brownian motion

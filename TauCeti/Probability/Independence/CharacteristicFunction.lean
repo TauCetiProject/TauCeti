@@ -34,8 +34,19 @@ This file contains two groups of results connecting characteristic functions and
    stated for a finite set of indices `s`
    (`ProbabilityTheory.iIndepFun.measureReal_abs_finsetSum_sub_le_le_integral_prod_norm_charFun`)
    and for a finite index type
-   (`ProbabilityTheory.iIndepFun.measureReal_abs_sum_sub_le_le_integral_prod_norm_charFun`),
-   as well as weighted sums `∑ i ∈ s, a i * ξ i`.
+   (`ProbabilityTheory.iIndepFun.measureReal_abs_sum_sub_le_le_integral_prod_norm_charFun`).
+
+   For a weighted sum `∑ i ∈ s, a i * ξ i`, the factors are the characteristic functions of the
+   `ξ i` evaluated at `a i * t` (see
+   `ProbabilityTheory.iIndepFun.measureReal_abs_finsetSum_mul_sub_le_le_integral_prod_norm_charFun`
+   and `ProbabilityTheory.iIndepFun.measureReal_abs_sum_mul_sub_le_le_integral_prod_norm_charFun`
+   over a finite index type). The bound is small when the product
+   `∏ i ∈ s, ‖charFun (P.map (ξ i)) (a i * t)‖` is small for most `t` in `[-ε⁻¹, ε⁻¹]`; for general
+   summand laws nothing more is claimed. For symmetric signs `ξ i`, each factor is
+   `|cos (a i * t)|`, which is close to one only when `a i * t` is close to a multiple of `π`, so
+   the product is small at every `t` for which `t • a` is far from the lattice of multiples of `π`
+   in Euclidean distance. This is how Rudelson and Vershynin bound small-ball probabilities through
+   the arithmetic structure of `a`.
 
 ## References
 

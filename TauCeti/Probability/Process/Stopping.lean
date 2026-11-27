@@ -27,7 +27,7 @@ random times tend to `⊤`, the stopped values at a fixed time eventually agree 
 process (`MeasureTheory.eventually_stoppedProcess_eq_of_tendsto` and
 `MeasureTheory.eventually_stoppedProcess_indicator_pos_eq_of_tendsto`).
 
-Simultaneous almost-surely nonnegativity controls random-time evaluations, including stopped
+Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
 Pathwise set membership up to the random time also passes to the stopped process. Neither
 fact requires a stopping-time or measurability assumption. Restricting a strongly progressive

@@ -12,11 +12,11 @@ import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.MeasureTheory.Function.Lp.Bounded
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.Probability.Martingale.Basic
-import TauCeti.Probability.Martingale.QuadraticVariation
+import TauCeti.Probability.Martingale.QuadraticSums
 import TauCeti.Probability.Process.Adapted
 import TauCeti.Probability.Process.QuadraticVariation
 import TauCeti.Probability.Process.UniformGrid
-import TauCeti.Topology.Instances.Real.UniformGrid
+import TauCeti.Topology.Instances.NNReal.UniformGrid
 
 /-!
 # Complex exponential martingales for bounded continuous martingales
@@ -56,12 +56,14 @@ private abbrev remTerm (X A : ℝ≥0 → Ω → ℝ) (α : ℝ) (u v : ℝ≥0)
   expProc X A α u ω * expRem α (X v ω - X u ω) (A v ω - A u ω)
 
 private def remBound (X : ℝ≥0 → Ω → ℝ) (c : ℝ) (s t : ℝ≥0) (m : ℕ) (ω : Ω) : ℝ :=
-  maxInc X s t m ω * quadraticSum X (uniformGridFin s t m) ω +
-    c * ((t : ℝ) - s) * maxInc X s t m ω + (c * ((t : ℝ) - s)) ^ 2 / (m + 1 : ℝ)
+  uniformGridMaxAbsSub X s t m ω * quadraticSum X (uniformGridFin s t m) ω +
+    c * ((t : ℝ) - s) * uniformGridMaxAbsSub X s t m ω + (c * ((t : ℝ) - s)) ^ 2 / (m + 1 : ℝ)
 
 private lemma remBound_eq (X : ℝ≥0 → Ω → ℝ) (c : ℝ) (s t : ℝ≥0) (m : ℕ) (ω : Ω) :
-    remBound X c s t m ω = maxInc X s t m ω * quadraticSum X (uniformGridFin s t m) ω +
-      c * ((t : ℝ) - s) * maxInc X s t m ω + (c * ((t : ℝ) - s)) ^ 2 / (m + 1 : ℝ) :=
+    remBound X c s t m ω =
+      uniformGridMaxAbsSub X s t m ω * quadraticSum X (uniformGridFin s t m) ω +
+        c * ((t : ℝ) - s) * uniformGridMaxAbsSub X s t m ω +
+        (c * ((t : ℝ) - s)) ^ 2 / (m + 1 : ℝ) :=
   rfl
 
 private lemma exists_norm_expRem_le (α R : ℝ) {L : ℝ} (hL : 0 ≤ L) :
@@ -136,7 +138,7 @@ private lemma exists_ae_norm_sum_expRem_le {X A : ℝ≥0 → Ω → ℝ} {R c :
         hω.trans (Real.exp_le_exp.2 <| mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
           (NNReal.coe_le_coe.2 (uniformGridFin_mem_Icc hst m k.castSucc).2) hc) (by positivity))]
     with ω hXω hAω hZω
-  let D := maxInc X s t m ω; have hD0 := maxInc_nonneg X s t m ω
+  let D := uniformGridMaxAbsSub X s t m ω; have hD0 := uniformGridMaxAbsSub_nonneg X s t m ω
   have hMz : 0 ≤ Mz := (Real.exp_pos _).le; have hmne : (m : ℝ) + 1 ≠ 0 := by positivity
   refine (norm_sum_le _ _).trans <| (Finset.sum_le_sum (g := fun k : Fin (m + 1) ↦ Mz * K *
       (D * (X (g k.succ) ω - X (g k.castSucc) ω) ^ 2 +
@@ -144,7 +146,7 @@ private lemma exists_ae_norm_sum_expRem_le {X A : ℝ≥0 → Ω → ℝ} {R c :
   · obtain ⟨h1, h2⟩ := hAω k
     have hrem := hK (D := D) (hXω k)
       ((Finset.le_sup' (f := fun j : Fin (m + 1) ↦ |X (g j.succ) ω - X (g j.castSucc) ω|)
-        hk).trans_eq (maxInc_apply X s t m ω).symm) h1
+        hk).trans_eq (uniformGridMaxAbsSub_apply X s t m ω).symm) h1
       (h2.trans (div_le_self hL (by linarith [Nat.cast_nonneg (α := ℝ) m])))
     exact ((norm_mul _ _).trans_le (mul_le_mul (hZω k) hrem (norm_nonneg _) hMz)).trans
       (by rw [mul_assoc]; gcongr)
@@ -206,17 +208,18 @@ private lemma setIntegral_expProc_step (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0) (α : 
           ((hXR u).mono fun _ h ↦ (Real.norm_eq_abs _).trans_le h) hZ_bd)).integrableOn]
   simp
 
-private lemma integral_maxInc_remBound_le (hc : 0 ≤ c) {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) :
+private lemma integral_uniformGridMaxAbsSub_remBound_le (hc : 0 ≤ c) {s t : ℝ≥0} (hst : s ≤ t)
+    (m : ℕ) :
     let L := c * ((t : ℝ) - s)
     Integrable (remBound X c s t m) P ∧ ∫ ω, remBound X c s t m ω ∂P ≤
       (√((4 * R ^ 2 * L + 2 * L ^ 2) * P.real univ) + L * √(P.real univ)) *
-        √(∫ ω, maxInc X s t m ω ^ 2 ∂P) + L ^ 2 * P.real univ / (m + 1 : ℝ) := by
+        √(∫ ω, uniformGridMaxAbsSub X s t m ω ^ 2 ∂P) + L ^ 2 * P.real univ / (m + 1 : ℝ) := by
   intro L
-  let g := uniformGridFin s t m; let D := maxInc X s t m; let S := quadraticSum X g
+  let g := uniformGridFin s t m; let D := uniformGridMaxAbsSub X s t m; let S := quadraticSum X g
   have hXa := hX.stronglyAdapted
   have hL : 0 ≤ L := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hst))
-  have hD_lp := memLp_maxInc 2 s t m (fun k ↦ ((hXa (g k)).mono (ℱ.le _)).aestronglyMeasurable)
-    (fun _ ↦ hXR _)
+  have hD_lp := memLp_uniformGridMaxAbsSub 2 s t m
+    (fun k ↦ ((hXa (g k)).mono (ℱ.le _)).aestronglyMeasurable) (fun _ ↦ hXR _)
   have hS_lp : MemLp S 2 P :=
     memLp_quadraticSum_of_bound 2 g (fun k ↦ ((hXa (g k)).mono (ℱ.le _)).aestronglyMeasurable)
       (fun _ ↦ hXR _)
@@ -244,7 +247,7 @@ private lemma exists_norm_setIntegral_expProc_sub_le (hc : 0 ≤ c) (hA0 : ∀�
     (hZ_int : ∀ u, Integrable (expProc X A α u) P) {s t : ℝ≥0} (hst : s ≤ t)
     {E : Set Ω} (hE : MeasurableSet[ℱ s] E) :
     ∃ C₁ C₂ : ℝ, ∀ m : ℕ, ‖∫ ω in E, (expProc X A α t ω - expProc X A α s ω) ∂P‖ ≤
-      C₁ * √(∫ ω, maxInc X s t m ω ^ 2 ∂P) + C₂ / (m + 1 : ℝ) := by
+      C₁ * √(∫ ω, uniformGridMaxAbsSub X s t m ω ^ 2 ∂P) + C₂ / (m + 1 : ℝ) := by
   let L := c * ((t : ℝ) - s); let Mz := Real.exp (α ^ 2 / 2 * (c * (t : ℝ)))
   obtain ⟨K, hK0, hK⟩ := exists_ae_norm_sum_expRem_le hXR hA0 hA_step hc α hst
   refine ⟨Mz * K * (√((4 * R ^ 2 * L + 2 * L ^ 2) * P.real univ) + L * √(P.real univ)),
@@ -253,7 +256,8 @@ private lemma exists_norm_setIntegral_expProc_sub_le (hc : 0 ≤ c) (hA0 : ∀�
   have hstepk (k : Fin (m + 1)) := setIntegral_expProc_step hX hQ hXR hA_step hA0 α hZ_adapt
     hZ_int (uniformGridFin_monotone s t m (Fin.castSucc_le_succ k))
     (uniformGridFin_mem_Icc hst m k.castSucc).1 hE
-  obtain ⟨hf_int, hf_le⟩ := integral_maxInc_remBound_le hX hQ hXR hA_step hc hst m
+  obtain ⟨hf_int, hf_le⟩ :=
+    integral_uniformGridMaxAbsSub_remBound_le hX hQ hXR hA_step hc hst m
   have hL : 0 ≤ L := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hst))
   have htele : ∫ ω in E, (expProc X A α t ω - expProc X A α s ω) ∂P =
       ∫ ω in E, ∑ k : Fin (m + 1), remTerm X A α (g k.castSucc) (g k.succ) ω ∂P := by
@@ -268,7 +272,8 @@ private lemma exists_norm_setIntegral_expProc_sub_le (hc : 0 ≤ c) (hA0 : ∀�
     (integrable_finsetSum _ fun k _ ↦ (hstepk k).1).norm (hf_int.const_mul (Mz * K)).integrableOn
     (ae_restrict_of_ae (hK m))).trans (setIntegral_le_integral (hf_int.const_mul (Mz * K))
       (ae_of_all P fun ω ↦ by
-        have hinc_nn := maxInc_nonneg X s t m ω; have hqs_nn := quadraticSum_nonneg X g ω
+        have hinc_nn := uniformGridMaxAbsSub_nonneg X s t m ω
+        have hqs_nn := quadraticSum_nonneg X g ω
         dsimp only [Pi.zero_apply]; rw [remBound_eq]; positivity)))).trans ?_
   rw [integral_const_mul]
   exact (mul_le_mul_of_nonneg_left hf_le (by positivity)).trans_eq (by ring)
@@ -304,7 +309,7 @@ theorem exp_I_mul_add_of_bounded {X A : ℝ≥0 → Ω → ℝ} {R c : ℝ}
   exact le_antisymm (ge_of_tendsto' (by
     simpa only [Function.comp_def, Real.sqrt_zero, mul_zero, mul_one_div, add_zero] using
       ((Real.continuous_sqrt.continuousAt.tendsto.comp
-        (tendsto_integral_maxInc_sq hst
+        (tendsto_integral_uniformGridMaxAbsSub_sq hst
           (fun u _ ↦ ((hX.stronglyAdapted u).mono (ℱ.le u)).aestronglyMeasurable)
           (hcont.mono fun _ hω ↦ hω.continuousOn) (fun u _ ↦ hXR u))).const_mul C₁).add
         ((tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul C₂)) hbd) (norm_nonneg _)

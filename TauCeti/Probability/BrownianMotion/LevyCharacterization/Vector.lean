@@ -110,7 +110,7 @@ theorem setIntegral_exp_I_mul_sum_sub_of_locally_martingale [IsFiniteMeasure P] 
       ((P A).toReal : ℂ) *
         exp (-((∑ i, ∑ j, v i * v j * C i j) * ((t : ℝ) - s) / 2 : ℝ)) := by
   obtain ⟨Y, hYp, hYM, hYc, hYl, hQp, hQY⟩ :=
-    exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
+    exists_isStronglyPredictable_indist_mul_sub_initialValue_sub
       (A := fun i j t _ ↦ C i j * (t : ℝ)) hM hQ
       (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont
       (fun _ _ ↦ ae_of_all P fun _ _ ↦ rfl)
@@ -219,10 +219,65 @@ theorem hasLaw_sub_pi_gaussianReal_of_locally_martingale [IsProbabilityMeasure P
     charFun_map_eq_integral (e.measurable.comp_aemeasurable hX) v]
   simp_rw [e, Function.comp_apply, TauCeti.exp_inner_toLp_mul_I, hset, charFun_gaussianReal,
     ← exp_sum]; congr 1
-  simp only [mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, NNReal.coe_mul,
-    NNReal.coe_sub hst, ofReal_zero, zero_mul, zero_sub, Finset.sum_neg_distrib, ← Finset.sum_div]
-  push_cast; rw [Finset.sum_mul, Finset.sum_div, Finset.sum_div]
-  congr 1; exact Finset.sum_congr rfl fun i _ ↦ by ring
+  have hdiag : ∑ i : ι, ∑ j : ι, (v i : ℝ) * v j * (if i = j then (c i : ℝ) else 0) =
+      ∑ i : ι, (v i : ℝ) ^ 2 * (c i : ℝ) := by
+    simp [mul_ite, Finset.sum_ite_eq, sq]
+  rw [hdiag]
+  simp only [NNReal.coe_mul, NNReal.coe_sub hst, ofReal_zero, mul_zero, zero_mul, zero_sub]
+  push_cast
+  simp only [Finset.sum_neg_distrib, Finset.sum_mul, Finset.sum_div, neg_inj]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
+
+private lemma exists_isStronglyPredictable_indist_diag_of_ae_eq {ι : Type*} [DecidableEq ι]
+    {M : ι → ℝ≥0 → Ω → ℝ} {c : ι → ℝ≥0} {Q : ι → ι → ℝ≥0 → Ω → ℝ}
+    (hM : ∀ i, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (M i) P)
+    (hQ : ∀ i j, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (Q i j) P)
+    (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω))
+    (hQM : ∀ i j, ∀ᵐ ω ∂P, ∀ t,
+      M i t ω * M j t ω - M i 0 ω * M j 0 ω -
+        (if i = j then (c i : ℝ) else 0) * (t : ℝ) = Q i j t ω) :
+    ∃ Y : ι → ℝ≥0 → Ω → ℝ, (∀ i, IsStronglyPredictable ℱ (Y i)) ∧
+      (∀ i, Y i ≡ᵐ[P] M i) ∧ (∀ i, ∀ᵐ ω ∂P, Continuous (Y i · ω)) ∧
+      (∀ i, Locally (fun U ↦ Martingale U ℱ P) ℱ (Y i) P) ∧
+      (∀ i j, Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦
+        Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω -
+          (if i = j then (c i : ℝ) else 0) * (t : ℝ)) P) :=
+  let ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
+    exists_isStronglyPredictable_indist_mul_sub_initialValue_sub
+      (A := fun i j t _ ↦ (if i = j then (c i : ℝ) else 0) * (t : ℝ)) hM hQ
+      (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont hQM
+  ⟨Y, hYp, hYM, hYc, hYl, hQY⟩
+
+private lemma exists_isStronglyPredictable_indist_diag_sub_initialValue {ι : Type*} [DecidableEq ι]
+    {M : ι → ℝ≥0 → Ω → ℝ} {c : ι → ℝ≥0}
+    (hM : ∀ i, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (M i) P)
+    (hQ : ∀ i j, Locally (fun Y ↦ Martingale Y ℱ P) ℱ
+      (fun t ω ↦ M i t ω * M j t ω - M i 0 ω * M j 0 ω -
+        (if i = j then (c i : ℝ) * (t : ℝ) else 0)) P)
+    (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω)) :
+    ∃ Y : ι → ℝ≥0 → Ω → ℝ, (∀ i, IsStronglyPredictable ℱ (Y i)) ∧
+      (∀ i, Y i ≡ᵐ[P] M i) ∧ (∀ i, ∀ᵐ ω ∂P, Continuous (Y i · ω)) ∧
+      (∀ i, Locally (fun U ↦ Martingale U ℱ P) ℱ (Y i) P) ∧
+      (∀ i j, Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦
+        Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω -
+          (if i = j then (c i : ℝ) else 0) * (t : ℝ)) P) :=
+  exists_isStronglyPredictable_indist_diag_of_ae_eq hM hQ hcont
+    (fun _ _ ↦ ae_of_all P fun _ _ ↦ by simp)
+
+private lemma exists_isStronglyPredictable_indist_diag {ι : Type*} [DecidableEq ι]
+    {M : ι → ℝ≥0 → Ω → ℝ} {c : ι → ℝ≥0}
+    (hM : ∀ i, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (M i) P)
+    (hQ : ∀ i j, Locally (fun Y ↦ Martingale Y ℱ P) ℱ
+      (fun t ω ↦ M i t ω * M j t ω - if i = j then (c i : ℝ) * (t : ℝ) else 0) P)
+    (h0 : ∀ i, ∀ᵐ ω ∂P, M i 0 ω = 0) (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω)) :
+    ∃ Y : ι → ℝ≥0 → Ω → ℝ, (∀ i, IsStronglyPredictable ℱ (Y i)) ∧
+      (∀ i, Y i ≡ᵐ[P] M i) ∧ (∀ i, ∀ᵐ ω ∂P, Continuous (Y i · ω)) ∧
+      (∀ i, Locally (fun U ↦ Martingale U ℱ P) ℱ (Y i) P) ∧
+      (∀ i j, Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦
+        Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω -
+          (if i = j then (c i : ℝ) else 0) * (t : ℝ)) P) :=
+  exists_isStronglyPredictable_indist_diag_of_ae_eq hM hQ hcont
+    (fun i j ↦ (h0 i).mp ((h0 j).mono fun _ h0j h0i _ ↦ by simp [h0i, h0j]))
 
 private lemma iIndepFun_grid_increments [IsProbabilityMeasure P] {ι : Type*} [DecidableEq ι]
     {Y : ι → ℝ≥0 → Ω → ℝ} {c : ι → ℝ≥0} (hYp : ∀ i, IsStronglyPredictable ℱ (Y i))
@@ -254,6 +309,38 @@ private lemma iIndepFun_grid_increments [IsProbabilityMeasure P] {ι : Type*} [D
     (fun k i ↦ (((hm i (g k.succ)).mono (ℱ.le _) le_rfl).sub
       ((hm i (g k.castSucc)).mono (ℱ.le _) le_rfl)).aemeasurable)
 
+/-- Every finite family of coordinate time sets `J i` embeds into one sorted grid `e` containing
+`0`, so that the centered values `Y i t - Y i 0` (`t ∈ J i`) are measurable cumulative sums of
+the grid increments along `e`. -/
+private lemma exists_measurable_factor_grid_increments {ι : Type*}
+    (S : Finset ι) (J : S → Finset ℝ≥0) :
+    ∃ (m : ℕ) (e : Fin (m + 1) → ℝ≥0), Monotone e ∧
+      ∃ g : ∀ i : S, (Fin m → ℝ) → (J i → ℝ),
+        (∀ i, Measurable (g i)) ∧
+          ∀ (Y : ι → ℝ≥0 → Ω → ℝ) (i : S) (ω : Ω) (t : J i),
+            g i (fun k ↦ Y i (e k.succ) ω - Y i (e k.castSucc) ω) t =
+              Y i t ω - Y i 0 ω := by
+  let T : Finset ℝ≥0 := insert 0 (Finset.univ.biUnion J)
+  have h0T : (0 : ℝ≥0) ∈ T := Finset.mem_insert_self 0 _
+  let e : Fin (T.card - 1 + 1) ≃o T :=
+    T.orderIsoOfFin (Nat.sub_add_cancel (Finset.card_pos.2 ⟨0, h0T⟩)).symm
+  let idx (i : S) (t : J i) : Fin (T.card - 1 + 1) := e.symm ⟨t.val,
+    Finset.mem_insert_of_mem (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, t.property⟩)⟩
+  let g (i : S) (d : Fin (T.card - 1) → ℝ) (t : J i) : ℝ :=
+    Fin.cases 0 (fun k ↦ ∑ j ∈ Finset.Iic k, d j) (idx i t)
+  refine ⟨T.card - 1, fun k ↦ e k, fun _ _ h ↦ e.monotone h, g, fun i ↦ ?_, fun Y i ω t ↦ ?_⟩
+  · refine measurable_pi_iff.2 fun t ↦ ?_
+    dsimp only [g]; cases idx i t using Fin.cases with
+    | zero => exact measurable_const
+    | succ k => exact Finset.measurable_sum _ fun _ _ ↦ measurable_pi_apply _
+  · have hg0 : (e 0 : ℝ≥0) = 0 := le_antisymm (Subtype.coe_le_coe.2
+      ((e.monotone (Fin.zero_le _)).trans_eq (e.apply_symm_apply ⟨0, h0T⟩))) bot_le
+    have ht : (e (idx i t) : ℝ≥0) = t.val := congrArg Subtype.val (e.apply_symm_apply _)
+    dsimp only [g]; cases hk : idx i t using Fin.cases with
+    | zero => rw [hk] at ht; simp [← ht, hg0]
+    | succ k => rw [hk] at ht; simpa only [Fin.cases_succ, ← ht, hg0] using
+        Fin.sum_Iic_sub k fun j ↦ Y i (e j) ω
+
 /-- **Global pathwise coordinate independence under orthogonal vector Lévy hypotheses (arbitrary
 start).**
 If `M : ι → ℝ≥0 → Ω → ℝ` is a family of almost-surely continuous local martingales on `ℱ`
@@ -268,36 +355,15 @@ theorem iIndepFun_sub_initialValue_of_locally_martingale [IsProbabilityMeasure P
         (if i = j then (c i : ℝ) * (t : ℝ) else 0)) P)
     (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω)) :
     iIndepFun (fun i ω t ↦ M i t ω - M i 0 ω) P := by
-  obtain ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
-    exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
-      (A := fun i j t _ ↦ (if i = j then (c i : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont
-      (fun _ _ ↦ ae_of_all P fun _ _ ↦ by simp)
+  obtain ⟨Y, hYp, hYM, hYc, hYl, hQY⟩ :=
+    exists_isStronglyPredictable_indist_diag_sub_initialValue hM hQ hcont
   have hYm i t : Measurable (Y i t) :=
     ((hYp i).isStronglyProgressive.stronglyAdapted t).measurable.mono (ℱ.le t) le_rfl
   refine (iIndepFun.iIndepFun_process (fun i t ↦ (hYm i t).sub (hYm i 0))
     fun S J ↦ ?_).process_congr fun i t ↦ (hYM i).mono fun _ hω ↦ by simp [hω t, hω 0]
-  let T : Finset ℝ≥0 := insert 0 (Finset.univ.biUnion J)
-  have h0T : (0 : ℝ≥0) ∈ T := Finset.mem_insert_self 0 _
-  let e : Fin (T.card - 1 + 1) ≃o T :=
-    T.orderIsoOfFin (Nat.sub_add_cancel (Finset.card_pos.2 ⟨0, h0T⟩)).symm
-  let idx (i : S) (t : J i) : Fin (T.card - 1 + 1) := e.symm ⟨t.val,
-    Finset.mem_insert_of_mem (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, t.property⟩)⟩
-  let g (i : S) (d : Fin (T.card - 1) → ℝ) (t : J i) : ℝ :=
-    Fin.cases 0 (fun k ↦ ∑ j ∈ Finset.Iic k, d j) (idx i t)
-  convert (iIndepFun_grid_increments hYp hYc hYl hQY S fun _ _ h ↦ e.monotone h).comp g
-    (fun i ↦ measurable_pi_iff.2 fun t ↦ by
-      dsimp only [g]; cases idx i t using Fin.cases with
-      | zero => exact measurable_const
-      | succ k => exact Finset.measurable_sum _ fun _ _ ↦ measurable_pi_apply _) using 1
-  ext i ω t
-  have hg0 : (e 0 : ℝ≥0) = 0 := le_antisymm (Subtype.coe_le_coe.2
-    ((e.monotone (Fin.zero_le _)).trans_eq (e.apply_symm_apply ⟨0, h0T⟩))) bot_le
-  have ht : (e (idx i t) : ℝ≥0) = t.val := congrArg Subtype.val (e.apply_symm_apply _)
-  dsimp only [g, Function.comp_apply]; cases hk : idx i t using Fin.cases with
-  | zero => rw [hk] at ht; simp [← ht, hg0]
-  | succ k => rw [hk] at ht; simpa only [Fin.cases_succ, Pi.sub_apply, ← ht, hg0] using
-      (Fin.sum_Iic_sub k fun j ↦ Y i (e j) ω).symm
+  obtain ⟨_, e, he, g, hgm, hgeq⟩ := exists_measurable_factor_grid_increments S J
+  convert (iIndepFun_grid_increments hYp hYc hYl hQY S he).comp g hgm using 1
+  ext i ω t; exact (hgeq Y i ω t).symm
 
 /-- **Global pathwise coordinate independence under orthogonal vector Lévy hypotheses (started at
 zero).**
@@ -311,11 +377,7 @@ theorem iIndepFun_of_locally_martingale [IsProbabilityMeasure P] {ι : Type*} [D
       (fun t ω ↦ M i t ω * M j t ω - if i = j then (c i : ℝ) * (t : ℝ) else 0) P)
     (h0 : ∀ i, ∀ᵐ ω ∂P, M i 0 ω = 0) (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω)) :
     iIndepFun (fun i ω t ↦ M i t ω) P := by
-  obtain ⟨Y, _, hYM, hYc, hYl, _, hQY⟩ :=
-    exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
-      (A := fun i j t _ ↦ (if i = j then (c i : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont
-      (fun i j ↦ (h0 i).mp ((h0 j).mono fun _ h0j h0i _ ↦ by simp [h0i, h0j]))
+  obtain ⟨Y, _, hYM, hYc, hYl, hQY⟩ := exists_isStronglyPredictable_indist_diag hM hQ h0 hcont
   exact (iIndepFun_sub_initialValue_of_locally_martingale hYl
     (fun i j ↦ by simpa only [ite_mul, zero_mul] using hQY i j) hYc).process_congr fun i t ↦
     (h0 i).mp <| (hYM i).mono fun _ hω h0ω ↦ by simp [hω t, hω 0, h0ω]
@@ -341,16 +403,14 @@ theorem exists_isStronglyPredictable_indist_isBrownianVector_of_locally_martinga
     ∃ W : ι → ℝ≥0 → Ω → ℝ, (∀ i, IsStronglyPredictable ℱ (W i)) ∧ (∀ i, W i ≡ᵐ[P] M i) ∧
       IsBrownianVector W P ∧ (∀ i, IsFilteredPreBrownianReal ℱ (W i) P) ∧
       (∀ s t, s ≤ t → Indep (.comap (fun ω i ↦ W i t ω - W i s ω) inferInstance) (ℱ s) P) := by
-  obtain ⟨W, hWp, hWM, hWc, hWl, _, hQW⟩ :=
-    exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
-      (A := fun i j t _ ↦ (if i = j then (1 : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont
-      (fun i j ↦ (h0 i).mp ((h0 j).mono fun _ h0j h0i _ ↦ by simp [h0i, h0j]))
+  obtain ⟨W, hWp, hWM, hWc, hWl, hQW⟩ := exists_isStronglyPredictable_indist_diag (c := fun _ ↦ 1)
+    hM (fun i j ↦ by simpa only [NNReal.coe_one, one_mul] using hQ i j) h0 hcont
   have hW0 i : ∀ᵐ ω ∂P, W i 0 ω = 0 := (h0 i).mp <| (hWM i).mono fun _ heq h0ω ↦ by rw [heq 0, h0ω]
   have hWa i := (hWp i).isStronglyProgressive.stronglyAdapted.adapted
   have hFB i : IsFilteredPreBrownianReal ℱ (W i) P :=
     (Locally.isFilteredPreBrownianReal_sub_initialValue (hWl i)
-      (by simpa only [sq, ↓reduceIte, one_mul] using hQW i i) (hWc i) (hWa i)).congr (hWa i)
+      (by simpa only [sq, ↓reduceIte, NNReal.coe_one, one_mul] using hQW i i)
+      (hWc i) (hWa i)).congr (hWa i)
       fun _ ↦ (hW0 i).mono fun _ h0ω ↦ by simp [h0ω]
   have hWind : iIndepFun (fun i ω t ↦ W i t ω) P :=
     (iIndepFun_sub_initialValue_of_locally_martingale (c := fun _ ↦ 1) hWl
