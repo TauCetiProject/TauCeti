@@ -118,12 +118,17 @@ theorem inner_fderivComplexPolarCoordSymm_add_angle (x v w : ℝ × ℝ) (t : �
   simp only [inner_fderivComplexPolarCoordSymm]
   simp
 
-/-- The polar parametrization has injective differential at every nonzero radius. -/
-theorem fderivComplexPolarCoordSymm_injective (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
-    Function.Injective (fderivComplexPolarCoordSymm x) := by
+/-- The real polar parametrization has bijective differential at every nonzero radius. -/
+theorem bijective_fderivPolarCoordSymm (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
+    Function.Bijective (fderivPolarCoordSymm x) := by
   have hunit : IsUnit (fderivPolarCoordSymm x : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
     rw [LinearMap.isUnit_iff_isUnit_det, ← ContinuousLinearMap.det, det_fderivPolarCoordSymm]
     exact hx.isUnit
-  exact Complex.equivRealProdCLM.symm.injective.comp ((Module.End.isUnit_iff _).mp hunit).injective
+  exact (Module.End.isUnit_iff _).mp hunit
+
+/-- The polar parametrization has injective differential at every nonzero radius. -/
+theorem fderivComplexPolarCoordSymm_injective (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
+    Function.Injective (fderivComplexPolarCoordSymm x) :=
+  Complex.equivRealProdCLM.symm.injective.comp (bijective_fderivPolarCoordSymm x hx).injective
 
 end TauCeti
