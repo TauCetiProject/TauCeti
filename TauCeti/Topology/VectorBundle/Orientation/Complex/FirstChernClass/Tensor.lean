@@ -25,7 +25,7 @@ bundles with its universal value on a product of classifying spaces.
 * Tensoring with a line bundle `L` that has a nowhere-zero continuous section does not change it:
   `c₁(E ⊗ L) = c₁(E)` (`TauCeti.firstChernClass_tensorProduct_eq_of_forall_ne_zero`) and
   `c₁(L ⊗ E) = c₁(E)` (`TauCeti.firstChernClass_tensorProduct_eq_of_forall_ne_zero_left`), through
-  the isomorphism `v ↦ v ⊗ s b` (`TauCeti.tensorEquivOfNeZero`).
+  the isomorphism `v ↦ v ⊗ s b` (`TauCeti.bundleTensorEquivOfNeZero`).
 
 The tensor fibres carry the `ℂ`-module topology, as in
 `TauCeti.Topology.VectorBundle.TensorProduct.Basic`.
@@ -125,7 +125,7 @@ continuous section `s` with no zeros, then `c₁(E₁ ⊗ E₂) = c₁(E₁)`, t
 theorem firstChernClass_tensorProduct_eq_of_forall_ne_zero (hF₂ : finrank ℂ F₂ = 1)
     {s : ∀ x, E₂ x} (hsc : Continuous fun x ↦ TotalSpace.mk' F₂ x (s x)) (hs : ∀ x, s x ≠ 0) :
     firstChernClass (ProjectiveTensor ℂ F₁ F₂) (fun x ↦ E₁ x ⊗[ℂ] E₂ x) = firstChernClass F₁ E₁ :=
-  (firstChernClass_eq_of_fiberwise (continuous_tensorEquivOfNeZero hF₂ hs hsc)).symm
+  (firstChernClass_eq_of_fiberwise (continuous_bundleTensorEquivOfNeZero hF₂ hs hsc)).symm
 
 variable [∀ x, TopologicalSpace (E₂ x ⊗[ℂ] E₁ x)] [∀ x, IsModuleTopology ℂ (E₂ x ⊗[ℂ] E₁ x)] in
 /-- **A line with a nowhere-zero section does not change `c₁`, on the left**: if the line bundle

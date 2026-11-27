@@ -13,16 +13,17 @@ public import TauCeti.Topology.VectorBundle.Trivialization
 
 Let `L` be a line bundle, with model fibre of dimension one, and let `s` be a section of `L` that
 vanishes nowhere. Then `v ↦ v ⊗ s b` is a fibrewise linear isomorphism `E b ≃ E b ⊗ L b`
-(`TauCeti.tensorEquivOfNeZero`): its inverse divides by `s b`, through the coordinate
+(`TauCeti.bundleTensorEquivOfNeZero`): its inverse divides by `s b`, through the coordinate
 `TauCeti.VectorBundle.lineCoord` of the line `L b` along `s b`. When `s` is
-continuous, so is this isomorphism on total spaces (`TauCeti.continuous_tensorEquivOfNeZero`).
+continuous, so is this isomorphism on total spaces
+(`TauCeti.continuous_bundleTensorEquivOfNeZero`).
 So tensoring with a trivializable line changes nothing.
 
 ## Main declarations
 
-* `TauCeti.tensorEquivOfNeZero`: `E b ≃ E b ⊗ L b`, `v ↦ v ⊗ s b`, with inverse
-  `v ⊗ w ↦ c • v` for `w = c • s b` (`TauCeti.tensorEquivOfNeZero_symm_apply_tmul`).
-* `TauCeti.continuous_tensorEquivOfNeZero`: it is continuous on total spaces.
+* `TauCeti.bundleTensorEquivOfNeZero`: `E b ≃ E b ⊗ L b`, `v ↦ v ⊗ s b`, with inverse
+  `v ⊗ w ↦ c • v` for `w = c • s b` (`TauCeti.bundleTensorEquivOfNeZero_symm_apply_tmul`).
+* `TauCeti.continuous_bundleTensorEquivOfNeZero`: it is continuous on total spaces.
 
 ## References
 
@@ -54,8 +55,8 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [T
 variable (F) in
 /-- **Tensoring with a line with a nowhere-zero section.** For a line bundle `L` with a
 nowhere-zero section `s`, the fibrewise isomorphism `E b ≃ E b ⊗ L b`, `v ↦ v ⊗ s b`
-(`TauCeti.tensorEquivOfNeZero_apply`). -/
-def tensorEquivOfNeZero (x : B) : E x ≃L[𝕜] E x ⊗[𝕜] L x :=
+(`TauCeti.bundleTensorEquivOfNeZero_apply`). -/
+def bundleTensorEquivOfNeZero (x : B) : E x ≃L[𝕜] E x ⊗[𝕜] L x :=
   letI := VectorBundle.isTopologicalAddGroup 𝕜 F E x
   letI := VectorBundle.continuousSMul 𝕜 F E x
   letI := FiberBundle.t2Space F E x
@@ -69,29 +70,31 @@ def tensorEquivOfNeZero (x : B) : E x ≃L[𝕜] E x ⊗[𝕜] L x :=
 /-- The isomorphism `E b ≃ E b ⊗ L b` of a nowhere-zero section `s` of a line bundle `L` is
 `v ↦ v ⊗ s b`. -/
 @[simp]
-theorem tensorEquivOfNeZero_apply (x : B) (v : E x) :
-    tensorEquivOfNeZero F hG hs x v = v ⊗ₜ[𝕜] s x := by
-  simp [tensorEquivOfNeZero]
+theorem bundleTensorEquivOfNeZero_apply (x : B) (v : E x) :
+    bundleTensorEquivOfNeZero F hG hs x v = v ⊗ₜ[𝕜] s x := by
+  simp [bundleTensorEquivOfNeZero]
 
 /-- The inverse of `E b ≃ E b ⊗ L b` divides by `s b`: it sends `v ⊗ w` to `c • v`, where
 `w = c • s b`. -/
 @[simp]
-theorem tensorEquivOfNeZero_symm_apply_tmul (x : B) (v : E x) (w : L x) :
-    (tensorEquivOfNeZero F hG hs x).symm (v ⊗ₜ[𝕜] w) = VectorBundle.lineCoord hG (hs x) w • v := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, tensorEquivOfNeZero_apply, TensorProduct.smul_tmul,
+theorem bundleTensorEquivOfNeZero_symm_apply_tmul (x : B) (v : E x) (w : L x) :
+    (bundleTensorEquivOfNeZero F hG hs x).symm (v ⊗ₜ[𝕜] w) =
+      VectorBundle.lineCoord hG (hs x) w • v := by
+  rw [ContinuousLinearEquiv.symm_apply_eq, bundleTensorEquivOfNeZero_apply, TensorProduct.smul_tmul,
     VectorBundle.lineCoord_smul_self]
 
 variable [FiniteDimensional 𝕜 G] in
 /-- For a continuous nowhere-zero section `s` of a line bundle `L`, the isomorphism
 `E ≃ E ⊗ L`, `v ↦ v ⊗ s b`, is continuous on total spaces. -/
-theorem continuous_tensorEquivOfNeZero (hsc : Continuous fun x ↦ TotalSpace.mk' G x (s x)) :
+theorem continuous_bundleTensorEquivOfNeZero
+    (hsc : Continuous fun x ↦ TotalSpace.mk' G x (s x)) :
     Continuous fun p : TotalSpace F E ↦ TotalSpace.mk' (ProjectiveTensor 𝕜 F G)
-      (E := fun x ↦ E x ⊗[𝕜] L x) p.proj (tensorEquivOfNeZero F hG hs p.proj p.snd) := by
+      (E := fun x ↦ E x ⊗[𝕜] L x) p.proj (bundleTensorEquivOfNeZero F hG hs p.proj p.snd) := by
   have := VectorBundle.isTopologicalAddGroup 𝕜 F E
   have := VectorBundle.continuousSMul 𝕜 F E
   have := VectorBundle.isTopologicalAddGroup 𝕜 G L
   have := VectorBundle.continuousSMul 𝕜 G L
-  simp only [tensorEquivOfNeZero_apply]
+  simp only [bundleTensorEquivOfNeZero_apply]
   exact Continuous.tmul_section (b := TotalSpace.proj) (v := TotalSpace.snd) continuous_id
     (hsc.comp (continuous_proj F E))
 
