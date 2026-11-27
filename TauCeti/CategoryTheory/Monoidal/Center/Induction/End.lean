@@ -76,6 +76,21 @@ namespace CategoryTheory.Center
 
 attribute [local instance] Abelian.hasFiniteBiproducts
 
+section MateCancel
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
+/-- Double left-whiskering cancels the right adjoint mates of the inverse and forward components
+of an isomorphism `u : Y ≅ Y'`. -/
+@[reassoc]
+theorem whiskerLeft_rightAdjointMate_inv_comp_hom (Z X : C) {Y Y' : C}
+    [HasRightDual Y] [HasRightDual Y'] (u : Y ≅ Y') :
+    Z ◁ X ◁ (u.inv)ᘁ ≫ Z ◁ X ◁ (u.hom)ᘁ = 𝟙 (Z ⊗ X ⊗ Yᘁ) := by
+  rw [← whiskerLeft_comp, ← whiskerLeft_comp, ← comp_rightAdjointMate, u.hom_inv_id,
+    rightAdjointMate_id, whiskerLeft_id, whiskerLeft_id]
+
+end MateCancel
+
 section EndWedge
 
 variable (k : Type w) [Field k] [IsAlgClosed k]
@@ -201,8 +216,7 @@ theorem inductionEndπ_repr (X : C) (S : SimpleClasses C) :
   rw [Finset.sum_eq_single i (fun j _ hj ↦ absurd (hi j) hj)
       (fun hi' ↦ absurd (Finset.mem_univ i) hi'),
     ← hu_hom, ← hu_inv, ← Category.assoc, repr_dinatural k X u.inv, Category.assoc,
-    ← whiskerLeft_comp, ← whiskerLeft_comp, ← comp_rightAdjointMate, u.hom_inv_id,
-    rightAdjointMate_id, whiskerLeft_id, whiskerLeft_id, Category.comp_id]
+    whiskerLeft_rightAdjointMate_inv_comp_hom, Category.comp_id]
 
 omit [MonoidalPreadditive C] in
 /-- Naturality of `inductionEndπ` in `X` with respect to `inductionMap f`. -/

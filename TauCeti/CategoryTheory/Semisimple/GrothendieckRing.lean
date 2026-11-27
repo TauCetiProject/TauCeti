@@ -117,6 +117,23 @@ theorem of_eq_sum (X : C) :
   rw [Finsupp.sum_single_index (by simp), one_smul,
     of_congr (SimpleClasses.classOfReprIso (f i))]
 
+omit [EssentiallySmall.{w} C] in
+/-- An additive invariant evaluates on an object as the multiplicity-weighted sum of its values
+on the simple representatives. -/
+theorem AdditiveInvariant.obj_eq_sum [HasBinaryBiproducts C] {G : Type*} [AddCommGroup G]
+    (a : AdditiveInvariant C G) (X : C) :
+    a.obj X = (simpleMultiplicities X).sum fun S n ↦ n • a.obj S.repr := by
+  let := Abelian.hasFiniteBiproducts (C := C)
+  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
+  let := hι
+  let := hf
+  let := hbf
+  rw [simpleMultiplicities_eq_of_iso_biproduct f e, a.map_iso e, a.obj_biproduct,
+    ← Finsupp.sum_finsetSum_index (by simp) (by simp [add_smul])]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Finsupp.sum_single_index (by simp), one_smul,
+    a.map_iso (SimpleClasses.classOfReprIso (f i))]
+
 variable (C) in
 /-- The classes of the simple representatives form a `ℤ`-basis of split `K₀`. -/
 def simpleBasis : Module.Basis (SimpleClasses C) ℤ (SplitK0 C) :=

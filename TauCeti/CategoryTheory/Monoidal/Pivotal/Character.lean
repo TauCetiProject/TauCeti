@@ -211,17 +211,6 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [Monoida
   [RigidCategory C] [PivotalCategory C] [Linear k C] [IsFiniteSemisimpleCategory C]
   [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] [Fintype (SimpleClasses C)]
 
-omit [IsAlgClosed k] [RigidCategory C] [PivotalCategory C] [Linear k C] [Simple (𝟙_ C)]
-  [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] in
-private theorem additiveInvariant_obj_eq_sum [HasBinaryBiproducts C]
-    (inv : SplitK0.AdditiveInvariant C k) (X : C) :
-    inv.obj X = ∑ S : SimpleClasses C, (simpleMultiplicities X S : k) * inv.obj S.repr := by
-  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
-  have h := congrArg (SplitK0.lift inv) (SplitK0.of_eq_sum X)
-  rw [SplitK0.lift_of, map_finsuppSum, Finsupp.sum_fintype _ _ (by simp)] at h
-  simp_rw [map_nsmul, SplitK0.lift_of, nsmul_eq_mul] at h
-  exact h
-
 /-- The left dimension of an object, read in `k`, is the multiplicity-weighted sum of the left
 dimensions of the simple classes. -/
 theorem endAlgEquivOfSimple_leftDim_eq_sum (X : C) :
@@ -230,7 +219,8 @@ theorem endAlgEquivOfSimple_leftDim_eq_sum (X : C) :
         (simpleMultiplicities X S : k) *
           endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim S.repr)) := by
   let := Abelian.hasFiniteBiproducts (C := C)
-  exact additiveInvariant_obj_eq_sum k (SplitK0.leftDimInvariant k C) X
+  simpa [SplitK0.leftDimInvariant, Finsupp.sum_fintype, nsmul_eq_mul] using
+    (SplitK0.leftDimInvariant k C).obj_eq_sum X
 
 /-- The right dimension of an object, read in `k`, is the multiplicity-weighted sum of the right
 dimensions of the simple classes. -/
@@ -240,7 +230,8 @@ theorem endAlgEquivOfSimple_rightDim_eq_sum (X : C) :
         (simpleMultiplicities X S : k) *
           endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim S.repr)) := by
   let := Abelian.hasFiniteBiproducts (C := C)
-  exact additiveInvariant_obj_eq_sum k (SplitK0.rightDimInvariant k C) X
+  simpa [SplitK0.rightDimInvariant, Finsupp.sum_fintype, nsmul_eq_mul] using
+    (SplitK0.rightDimInvariant k C).obj_eq_sum X
 
 end Multiplicity
 

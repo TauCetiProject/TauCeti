@@ -264,9 +264,7 @@ theorem inductionCoendι_repr (X : C) (S : SimpleClasses C) :
     inductionCoendι X S.repr = biproduct.ι (inductionSummand X) S := by
   obtain ⟨R, u, _, hu⟩ := exists_inductionCoendι_repr_iso X S
   rw [hu, summandTransport_hom, Category.assoc, ← whisker_exchange_assoc,
-    repr_codinatural k X u.hom, ← whiskerLeft_comp_assoc, ← whiskerLeft_comp,
-    ← comp_rightAdjointMate, u.hom_inv_id, rightAdjointMate_id, whiskerLeft_id,
-    whiskerLeft_id, Category.id_comp]
+    repr_codinatural k X u.hom, whiskerLeft_rightAdjointMate_inv_comp_hom_assoc]
 
 omit [MonoidalPreadditive C] in
 /-- Naturality of `inductionCoendι` in `X` with respect to `inductionMap f`. -/
@@ -292,16 +290,13 @@ theorem inductionCoendι_comp_inductionEndπ_of_simple (X S : C) [Simple S] :
     rw [← inductionCoendι_repr k X (SimpleClasses.classOf S)]
     dsimp only [t]
     rw [summandTransport_hom, Category.assoc, ← whisker_exchange_assoc,
-      inductionCoendι_dinatural k X e.hom, ← whiskerLeft_comp_assoc, ← whiskerLeft_comp,
-      ← comp_rightAdjointMate, Iso.hom_inv_id, rightAdjointMate_id, whiskerLeft_id,
-      whiskerLeft_id, Category.id_comp]
+      inductionCoendι_dinatural k X e.hom, whiskerLeft_rightAdjointMate_inv_comp_hom_assoc]
   have hend : inductionEndπ X S =
       biproduct.π (inductionSummand X) (SimpleClasses.classOf S) ≫ t.inv := by
     rw [← inductionEndπ_repr k X (SimpleClasses.classOf S)]
     dsimp only [t]
     rw [summandTransport_inv, whisker_exchange, inductionEndπ_dinatural_assoc k X e.inv,
-      ← whiskerLeft_comp, ← whiskerLeft_comp, ← comp_rightAdjointMate, Iso.hom_inv_id,
-      rightAdjointMate_id, whiskerLeft_id, whiskerLeft_id, Category.comp_id]
+      whiskerLeft_rightAdjointMate_inv_comp_hom, Category.comp_id]
   rw [hcoend, hend, Category.assoc, biproduct.ι_π_self_assoc, t.hom_inv_id]
 
 end Coendι
