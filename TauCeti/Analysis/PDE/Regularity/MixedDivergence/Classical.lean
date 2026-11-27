@@ -57,7 +57,9 @@ theorem horizontal_gradient_lift {u : E → ℝ} {x : E'}
     fderiv_lift_apply hu, horizontal_basis_inl, vertical_basis_inl]
   simp [gradient_apply_eq_fderiv_apply_single, EuclideanSpace.basisFun_apply]
 
-/-- The vertical derivative of the lifted function is the function itself. -/
+/-- When `u` is differentiable at `horizontal x`, the vertical component of the lifted
+gradient equals `lift u x`. See `lineDeriv_lift_vertical` for the unconditional vertical
+line derivative. -/
 theorem vertical_gradient_lift {u : E → ℝ} {x : E'}
     (hu : DifferentiableAt ℝ u (horizontal x)) :
     vertical (∇ (lift u) x) = lift u x := by
@@ -174,9 +176,8 @@ theorem divMatrixGradient_lift_eq_iff (a : E → Matrix ι ι ℝ) (b : E → E)
   simp only [lift_apply]
   constructor
   · intro h
-    have h' := h.trans (show _ = rexp (vertical x) *
-      ((c (horizontal x) + 1) * u (horizontal x) - f (horizontal x)) by ring)
-    linarith only [mul_left_cancel₀ (Real.exp_ne_zero _) h']
+    rw [mul_left_comm (c (horizontal x) + 1), ← mul_sub] at h
+    linarith only [mul_left_cancel₀ (Real.exp_ne_zero _) h]
   · intro h
     rw [h]
     ring
