@@ -141,6 +141,7 @@ theorem mtangentConeAt_eq_tangentConeAt (s : Set E) (y : E) :
 This is the manifold form of `tangentConeAt_nonempty_of_properSpace`. -/
 theorem mtangentConeAt_nonempty_of_properSpace [ProperSpace E] {s : Set M} {y : M}
     (hy : AccPt y (𝓟 s)) : (mtangentConeAt I s y ∩ {0}ᶜ).Nonempty := by
+  rw [mtangentConeAt_def]
   refine tangentConeAt_nonempty_of_properSpace (accPt_iff_frequently.2 ?_)
   -- The points of `s` near `y`, other than `y`, are read in the chart at `y` as distinct points.
   refine (continuousAt_extChartAt (I := I) y).tendsto.frequently_map _ (fun w hw ↦ ?_)

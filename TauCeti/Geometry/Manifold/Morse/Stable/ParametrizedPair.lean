@@ -139,6 +139,16 @@ theorem isParametrizedMorseSmalePair_iff {hX₀ : IsAdaptedPseudoGradient f₀ X
           Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) (Φ z.1 z.2)) = ⊤ :=
   Iff.rfl
 
+/-- A limit `z` of points of the parametrized intersection from `p` to `q` has its point in the
+closure of `W^u_{X₀}(p)` and its image under `(λ, y) ↦ Φ λ y` in the closure of `W^s_{X₁}(q)`. -/
+private theorem mem_closure_of_mem_closure_parametrizedPairSlice
+    {hX₀ : IsAdaptedPseudoGradient f₀ X₀} {hX₁ : IsAdaptedPseudoGradient f₁ X₁}
+    (hΦ : Continuous (uncurry Φ)) (hz : z ∈ closure (hX₀.parametrizedPairSlice hX₁ Φ p q)) :
+    z.2 ∈ closure (hX₀.flow.unstableSet p) ∧ uncurry Φ z ∈ closure (hX₁.flow.stableSet q) :=
+  ⟨map_mem_closure continuous_snd hz fun w (hw : w ∈ hX₀.parametrizedPairSlice hX₁ Φ p q) ↦
+      hw.2.1,
+    map_mem_closure hΦ hz fun w (hw : w ∈ hX₀.parametrizedPairSlice hX₁ Φ p q) ↦ hw.2.2⟩
+
 /-- **Limits of points of a parametrized intersection break.** Let `X₀` and `X₁` be Morse–Smale,
 and `(λ, y) ↦ Φ λ y` continuous. A limit `z` of points of the parametrized intersection from `p` to
 `q` lies in the parametrized intersection from `a` to `b` for points `a` and `b` with `a = p` or
@@ -156,11 +166,7 @@ theorem exists_mem_parametrizedPairSlice_of_mem_closure {hX₀ : IsAdaptedPseudo
   have hz₁ : z.1 ∈ Icc 0 1 :=
     closure_minimal (fun w (hw : w ∈ hX₀.parametrizedPairSlice hX₁ Φ p q) ↦ hw.1)
       (isClosed_Icc.preimage continuous_fst) hz
-  have hzu : z.2 ∈ closure (hX₀.flow.unstableSet p) :=
-    map_mem_closure continuous_snd hz fun w (hw : w ∈ hX₀.parametrizedPairSlice hX₁ Φ p q) ↦
-      hw.2.1
-  have hzs : uncurry Φ z ∈ closure (hX₁.flow.stableSet q) :=
-    map_mem_closure hΦ hz fun w (hw : w ∈ hX₀.parametrizedPairSlice hX₁ Φ p q) ↦ hw.2.2
+  obtain ⟨hzu, hzs⟩ := mem_closure_of_mem_closure_parametrizedPairSlice hΦ hz
   -- The backward orbit of `z.2` for `X₀` and the forward orbit of `Φ z.1 z.2` for `X₁` converge
   -- to critical points.
   obtain ⟨a, -, hya⟩ := hX₀.exists_tendsto_atBot z.2
@@ -350,11 +356,7 @@ theorem closure_parametrizedPairSlice_subset (h : IsParametrizedMorseSmalePair h
   obtain ⟨a, b, hz', hap, hbq⟩ :=
     exists_mem_parametrizedPairSlice_of_mem_closure h₀ h₁ hf₀ hf₁ hΦ hz
   have hba := h.manifoldMorseIndex_le_add_one hf₀ hz'
-  have hzu : z.2 ∈ closure (hX₀.flow.unstableSet p) :=
-    map_mem_closure continuous_snd hz fun w (hw : w ∈ hX₀.parametrizedPairSlice hX₁ Φ p q) ↦
-      hw.2.1
-  have hzs : uncurry Φ z ∈ closure (hX₁.flow.stableSet q) :=
-    map_mem_closure hΦ hz fun w (hw : w ∈ hX₀.parametrizedPairSlice hX₁ Φ p q) ↦ hw.2.2
+  obtain ⟨hzu, hzs⟩ := mem_closure_of_mem_closure_parametrizedPairSlice hΦ hz
   simp only [mem_union, mem_iUnion₂, mem_ofPred_eq, exists_prop]
   -- At most one end breaks, since the index can only drop at the source and rise at the target,
   -- and it rises by at most one along the family.
