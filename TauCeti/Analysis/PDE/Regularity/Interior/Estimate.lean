@@ -235,19 +235,6 @@ private theorem mul_le_of_mul_le_of_le {r δ t m : ℝ} (hr : 0 ≤ r) (hrδ : r
     (h : δ * t ≤ m) (hm : 0 ≤ m) : r * t ≤ m := by
   rcases le_total 0 t with ht | ht <;> nlinarith
 
-/-- The output `2 κ ^ n (c₁ A + c₂ B)` of the averaging over balls, with `A`, `B` finite, is at
-most `ofReal X` for every real `X ≥ 2 κ ^ n (c₁ A + c₂ B)`. -/
-private theorem two_mul_ofReal_pow_mul_add_le {A B : ℝ≥0∞} {κ c₁ c₂ X : ℝ} {n : ℕ}
-    (hA : A ≠ ⊤) (hB : B ≠ ⊤) (hκ : 0 ≤ κ) (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂)
-    (h : 2 * κ ^ n * (c₁ * A.toReal + c₂ * B.toReal) ≤ X) :
-    2 * ENNReal.ofReal κ ^ n * (ENNReal.ofReal c₁ * A + ENNReal.ofReal c₂ * B) ≤
-      ENNReal.ofReal X := by
-  rw [← ENNReal.ofReal_toReal hA, ← ENNReal.ofReal_toReal hB, ← ENNReal.ofReal_mul hc₁,
-    ← ENNReal.ofReal_mul hc₂, ← ENNReal.ofReal_add (by positivity) (by positivity),
-    ← ENNReal.ofReal_pow hκ, ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two,
-    ← ENNReal.ofReal_mul (by positivity)]
-  exact ENNReal.ofReal_le_ofReal h
-
 /-- The arithmetic of the averaged gradient estimate on a set, with balls of radius `δ / 3`. -/
 private theorem two_mul_two_pow_mul_add_le {C₀ U F lam δ : ℝ} (n : ℕ) (hC₀ : 0 ≤ C₀)
     (hF : 0 ≤ F) (hlam : 0 < lam) (hδ : 0 < δ) :
@@ -340,9 +327,11 @@ theorem exists_toReal_eLpNorm_gradient_le_of_thickening [DecidableEq ι] (M : �
   · have hlam := ha.pos
     rw [finrank_euclideanSpace] at hest
     exact ENNReal.toReal_le_of_le_ofReal (by positivity) (hest.trans
-      (two_mul_ofReal_pow_mul_add_le (Lp.eLpNorm_restrict_ne_top _ hΩ)
-        (Lp.eLpNorm_restrict_ne_top f hΩ) zero_le_two (by positivity) (by positivity)
-        (two_mul_two_pow_mul_add_le _ hC₀ ENNReal.toReal_nonneg hlam hδ)))
+      (ENNReal.mul_ofReal_mul_add_ofReal_mul_le_ofReal (by finiteness)
+        (Lp.eLpNorm_restrict_ne_top _ hΩ) (Lp.eLpNorm_restrict_ne_top f hΩ) (by positivity)
+        (by positivity) (by
+          rw [show (2 * ENNReal.ofReal 2 ^ Fintype.card ι).toReal = 2 * 2 ^ Fintype.card ι by simp]
+          exact two_mul_two_pow_mul_add_le _ hC₀ ENNReal.toReal_nonneg hlam hδ)))
   -- The local estimate on a ball meeting `V`.
   have hzT := hsub z hz
   exact ENNReal.le_ofReal_mul_add_ofReal_mul_of_toReal_le
@@ -434,9 +423,11 @@ theorem exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_gradient_of_thickening
         (by positivity) (by positivity) (hG.trans_eq (by ring))⟩
   -- The glued derivative lies in `L²(V)`, with the stated norm.
   rw [finrank_euclideanSpace] at hglob
-  replace hglob := hglob.trans (two_mul_ofReal_pow_mul_add_le (Lp.eLpNorm_restrict_ne_top f hΩ)
-    (Lp.eLpNorm_restrict_ne_top _ hΩ) (by norm_num) (by positivity) (by positivity)
-    (two_mul_four_pow_mul_add_le _ (by positivity) ENNReal.toReal_nonneg hlam hδ))
+  replace hglob := hglob.trans (ENNReal.mul_ofReal_mul_add_ofReal_mul_le_ofReal (by finiteness)
+    (Lp.eLpNorm_restrict_ne_top f hΩ) (Lp.eLpNorm_restrict_ne_top _ hΩ) (by positivity)
+    (by positivity) (by
+      rewrite [show (2 * ENNReal.ofReal 4 ^ Fintype.card ι).toReal = 2 * 4 ^ Fintype.card ι by simp]
+      exact two_mul_four_pow_mul_add_le _ (by positivity) ENNReal.toReal_nonneg hlam hδ))
   have hmem : MemLp G₀ 2 (mu.restrict V) := hglob.trans_lt ENNReal.ofReal_lt_top
   refine ⟨hmem.toLp G₀, ?_, hGV.congr_ae_deriv hmem.coeFn_toLp.symm⟩
   rw [Lp.norm_toLp]
