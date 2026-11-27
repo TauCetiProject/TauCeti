@@ -274,6 +274,16 @@ private theorem mul_self_eq_neg_one {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = 
   ext v
   simp [hAA]
 
+/-- The Beltrami coefficient `Q` of `A` takes conjugate-linear values, `Q (i v) = -i Q v`, when
+`A² = -1`. -/
+private theorem neg_cayleyCoord_apply_I_smul {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v) (v : F) :
+    (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) (I • v) =
+      -(I • (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v) := by
+  have h := congrArg (fun T : F →L[ℝ] F ↦ T v)
+    (cayleyCoord_mul_eq_neg_mul ContinuousLinearMap.lsmul_I_mul_lsmul_I (mul_self_eq_neg_one hAA))
+  simp only [mul_apply_eq_comp, neg_apply, ContinuousLinearMap.lsmul_apply] at h
+  simp only [neg_apply, h, smul_neg]
+
 /-- `(A + i) Q v = (i - A) v` for the Beltrami coefficient `Q` of `A`, when `A² = -1` and `i + A`
 is invertible. -/
 private theorem add_apply_neg_cayleyCoord {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v)
@@ -599,73 +609,54 @@ theorem exists_pos_exists_fderiv_one_add_apply_fderiv_I_eq_zero_and_norm_sub_le_
         ∀ z ∈ ball (0 : ℂ) ε,
           ‖u p ξ z - u p' ξ' z‖ ≤ C * (‖p - p'‖ + ‖ξ - ξ'‖) ∧
             ‖fderiv ℝ (u p ξ) z - fderiv ℝ (u p' ξ') z‖ ≤ C * (‖p - p'‖ + ‖ξ - ξ'‖) := by
-  -- Rescale the Beltrami coefficients of the `J p` by one `t`, small enough that for every `p`
-  -- near `p₀` the rescaled coefficient `Q_p` is admissible for the Beltrami discs and within
-  -- `4 η'` of `0` in `C¹`, with `C (4 η') ≤ κ`. The discs of the `Q_p`, rescaled back, solve the
-  -- equations of the `J p`. Two coefficients `Q_p`, `Q_p'` differ in `C¹` by `O(‖p - p'‖)`, so
-  -- their discs differ by `O(‖p - p'‖ + ‖ξ - ξ'‖)`.
+  -- One rescaling makes all `Q_p` admissible and `4 η'`-small in `C¹`, with `C (4 η') ≤ κ`; their
+  -- discs, rescaled back, solve the equations of the `J p`, and are `O(‖p - p'‖)` apart in `C¹`.
   have := FiniteDimensional.completeSpace ℂ F
   obtain ⟨η, hη, C, hC, V, hdisc, hV0, hlip⟩ :=
     exists_pos_exists_conjWirtingerDeriv_eq_and_apply_smul_eq_and_norm_sub_le (F := F)
-  set η' := min η (κ / (4 * (C + 1)))
-  have hη' : 0 < η' := lt_min hη (by positivity)
-  have hCη : C * (4 * η') ≤ κ := by
-    have h : η' * (4 * (C + 1)) ≤ κ := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
-    nlinarith
+  obtain ⟨a, ha, haκ⟩ := exists_pos_mul_lt hκ (4 * C)
+  set η' := min η a
+  have hη' : 0 < η' := lt_min hη ha
+  have hCη : C * (4 * η') ≤ κ := by nlinarith [mul_le_mul_of_nonneg_left (min_le_right η a) hC]
   obtain ⟨r, hr, t, ht, ht1, L, hL0, hQt, hQsub⟩ := exists_rescaled_beltrami_family hJ hJ0 hJJ hη'
+  -- For each `p`, `Q_p` is bounded by `η`, so it has Beltrami discs, which rescale back.
+  have hQη := fun p (hp : p ∈ closedBall p₀ r) ↦
+    fderiv_bounds_mono (min_le_left η _) (hQt p hp).2.2.1 (hQt p hp).2.2.2.1
+  have hV := fun p (hp : p ∈ closedBall p₀ r) ↦
+    hdisc _ (hQt p hp).1 (hQt p hp).2.1 (hQη p hp).1 (hQη p hp).2
+  have hres := fun p (hp : p ∈ closedBall p₀ r) ξ (hξ : ‖ξ‖ ≤ 1) ↦
+    have hv := (hV p hp).1 ξ hξ
+    rescaled_disc ht hv.1 hv.2.1 hv.2.2.1 hv.2.2.2.1 hv.2.2.2.2 (hQt p hp).2.2.2.2
   refine ⟨r, hr, t / 2, by positivity, C * (1 + L), by positivity, fun p ξ z ↦ t • V
     (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p (t • x))) ξ (t⁻¹ • z),
     fun p hp ξ hξ ↦ ?_, fun p hp ξ hξ c hc w ↦ ?_, fun p hp p' hp' ξ ξ' hξ hξ' z hz ↦ ?_⟩
-  · obtain ⟨hQt0, hdt, hAt, hLt, hJt⟩ := hQt p hp
-    obtain ⟨hAη, hLη⟩ := fderiv_bounds_mono (min_le_left η _) hAt hLt
-    obtain ⟨hvC, hv0, hv1, hvb, hvbel⟩ := (hdisc _ hQt0 hdt hAη hLη).1 ξ hξ
-    obtain ⟨huC, hu0, hu1, hu⟩ := rescaled_disc ht hvC hv0 hv1 hvb hvbel hJt
+  · obtain ⟨hQt0, hdt, hAt, -, -⟩ := hQt p hp
+    obtain ⟨huC, hu0, hu1, hu⟩ := hres p hp ξ hξ
     refine ⟨huC, hu0, hu1, fun z hz ↦ (hu z hz).2.2, fun z hz ↦ ?_⟩
-    -- `Q_p` is within `4 η'` of `0` in `C¹`, so its disc is within `C (4 η')` of the complex line
-    -- `w ↦ w ξ` in `C¹`.
+    -- `Q_p` is within `4 η'` of `0` in `C¹`, so its disc is `C (4 η')`-close to `w ↦ w ξ`.
     obtain ⟨hQsmall, hDsmall⟩ := norm_sub_zero_le_of_norm_fderiv_le hη'.le hQt0 hdt hAt
-    have h := (hlip _ 0 hQt0 rfl hdt (fun _ _ ↦ differentiableAt_const _) hAη
-      (fun _ _ ↦ by simpa [ContinuousLinearMap.opNorm_zero] using hη.le) hLη
-      (fun _ _ _ _ ↦ by
-        simpa [ContinuousLinearMap.opNorm_zero] using mul_nonneg hη.le (norm_nonneg _))
-      ξ ξ (4 * η') hξ hξ hQsmall hDsmall _ (hu z hz).1).2
+    have h0 := fderiv_bounds_mono (F := F) (P := 0) hη.le
+      (by simp [ContinuousLinearMap.opNorm_zero]) (by simp [ContinuousLinearMap.opNorm_zero])
+    have h := (hlip _ 0 hQt0 rfl hdt (fun _ _ ↦ differentiableAt_const _) (hQη p hp).1 h0.1
+      (hQη p hp).2 h0.2 ξ ξ (4 * η') hξ hξ hQsmall hDsmall _ (hu z hz).1).2
     rw [sub_self, norm_zero, zero_add, fderiv_eq_smulRight_of_eq_smul (hV0 ξ hξ),
       ← (hu z hz).2.1] at h
     exact h.trans hCη
-  · obtain ⟨hQt0, hdt, hAt, hLt, hJt⟩ := hQt p hp
-    obtain ⟨hAη, hLη⟩ := fderiv_bounds_mono (min_le_left η _) hAt hLt
-    -- The Cayley coordinate of a square root of `-1` anticommutes with `i`, so `Q_p` takes
-    -- conjugate-linear values and its discs are rotation equivariant.
-    have hrot := (hdisc _ hQt0 hdt hAη hLη).2 fun x hx v ↦ by
-      have h := congrArg (fun T : F →L[ℝ] F ↦ T v)
-        (cayleyCoord_mul_eq_neg_mul ContinuousLinearMap.lsmul_I_mul_lsmul_I
-          (mul_self_eq_neg_one (hJt x hx).1))
-      simp only [mul_apply_eq_comp, neg_apply, ContinuousLinearMap.lsmul_apply] at h
-      simp only [neg_apply, h, smul_neg]
-    dsimp only
-    rw [hrot ξ hξ c hc, mul_smul_comm]
-  · obtain ⟨hQt0, hdt, hAt, hLt, hJt⟩ := hQt p hp
-    obtain ⟨hQt0', hdt', hAt', hLt', hJt'⟩ := hQt p' hp'
-    obtain ⟨hAη, hLη⟩ := fderiv_bounds_mono (min_le_left η _) hAt hLt
-    obtain ⟨hAη', hLη'⟩ := fderiv_bounds_mono (min_le_left η _) hAt' hLt'
-    obtain ⟨hvC, hv0, hv1, hvb, hvbel⟩ := (hdisc _ hQt0 hdt hAη hLη).1 ξ hξ
-    obtain ⟨hvC', hv0', hv1', hvb', hvbel'⟩ := (hdisc _ hQt0' hdt' hAη' hLη').1 ξ' hξ'
-    obtain ⟨-, -, -, hu⟩ := rescaled_disc ht hvC hv0 hv1 hvb hvbel hJt
-    obtain ⟨-, -, -, hu'⟩ := rescaled_disc ht hvC' hv0' hv1' hvb' hvbel' hJt'
-    -- `Q_p` and `Q_p'` differ by `L ‖p - p'‖` in `C¹`, so the rescaled discs and their
-    -- derivatives differ by `C (‖ξ - ξ'‖ + L ‖p - p'‖)`.
+  · -- `Q_p` takes conjugate-linear values, so its discs are rotation equivariant.
+    have hrot := (hV p hp).2 fun x hx v ↦ neg_cayleyCoord_apply_I_smul ((hQt p hp).2.2.2.2 x hx).1 v
+    simp only [hrot ξ hξ c hc, mul_smul_comm]
+  · obtain ⟨-, -, -, hu⟩ := hres p hp ξ hξ
+    obtain ⟨-, -, -, hu'⟩ := hres p' hp' ξ' hξ'
+    -- `Q_p`, `Q_p'` differ by `L ‖p - p'‖` in `C¹`, so the discs by `C (‖ξ - ξ'‖ + L ‖p - p'‖)`.
     obtain ⟨hQ₀, hQ₁⟩ := hQsub p hp p' hp'
-    obtain ⟨h₀, h₁⟩ := hlip _ _ hQt0 hQt0' hdt hdt' hAη hAη' hLη hLη' ξ ξ' _ hξ hξ' hQ₀ hQ₁ _
-      (hu z hz).1
+    obtain ⟨h₀, h₁⟩ := hlip _ _ (hQt p hp).1 (hQt p' hp').1 (hQt p hp).2.1 (hQt p' hp').2.1
+      (hQη p hp).1 (hQη p' hp').1 (hQη p hp).2 (hQη p' hp').2 ξ ξ' _ hξ hξ' hQ₀ hQ₁ _ (hu z hz).1
     have hb : C * (‖ξ - ξ'‖ + L * ‖p - p'‖) ≤ C * (1 + L) * (‖p - p'‖ + ‖ξ - ξ'‖) := by
       nlinarith [mul_nonneg hC (norm_nonneg (p - p')),
         mul_nonneg (mul_nonneg hC hL0) (norm_nonneg (ξ - ξ'))]
-    refine ⟨?_, ?_⟩
-    · dsimp only
-      rw [← smul_sub, norm_smul, Real.norm_of_nonneg ht.le]
-      exact (mul_le_of_le_one_left (norm_nonneg _) ht1).trans (h₀.trans hb)
-    · rw [(hu z hz).2.1, (hu' z hz).2.1]
-      exact h₁.trans hb
+    refine ⟨?_, by rw [(hu z hz).2.1, (hu' z hz).2.1]; exact h₁.trans hb⟩
+    simp only [← smul_sub, norm_smul, Real.norm_of_nonneg ht.le]
+    exact (mul_le_of_le_one_left (norm_nonneg _) ht1).trans (h₀.trans hb)
 
 /-- **A rotation-equivariant family of `J`-holomorphic discs with prescribed first jets, close to
 complex lines.** Let `J : F → (F →L[ℝ] F)` be of class `C²` near `0`, with `J(0) v = i v` and
