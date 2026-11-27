@@ -133,7 +133,7 @@ theorem gaussianMellin_eq {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
   exact (Complex.measurable_ofReal.comp continuous_sqrt.measurable).mul measurable_gaussianTheta
 
 /-- A pointwise exponential majorant for the Gaussian weights of both parities. -/
-private theorem norm_gaussianMonomial_le (j : Fin 2) (x : ℝ) :
+theorem norm_gaussianMonomial_le (j : Fin 2) (x : ℝ) :
     ‖gaussianMonomial j x‖ ≤ 3 * exp (-|x|) ^ 2 := by
   have hpow : |x| ^ j.val ≤ exp |x| :=
     calc |x| ^ j.val ≤ |x| + 1 := by fin_cases j <;> simp
