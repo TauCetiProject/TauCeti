@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace.Basic
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Variational.Shift
 import TauCeti.Topology.Algebra.Module.Span
 
@@ -71,16 +70,9 @@ theorem mem_formEigenspace_energy_of_isMinOn_orthogonal_span (hs : s.Finite)
     (hu : u ∈ P.unitConstraint (span 𝕜 (P.inclusion '' s))ᗮ)
     (hmin : IsMinOn P.energy (P.unitConstraint (span 𝕜 (P.inclusion '' s))ᗮ) u) :
     u ∈ P.formEigenspace (P.energy u) := by
-  let S := span 𝕜 s
-  let : FiniteDimensional 𝕜 S := FiniteDimensional.span_of_finite 𝕜 hs
-  let : FiniteDimensional 𝕜 (S.map P.inclusion.toLinearMap) := Module.Finite.map _ _
-  have hcompl := S.isCompl_comap_orthogonal_map P.inclusion.toLinearMap P.injective
-  rw [Submodule.map_span, coe_coe] at hcompl
   refine mem_formEigenspace.2 fun v ↦ ?_
-  have hv : v ∈ S ⊔ (span 𝕜 (P.inclusion '' s))ᗮ.comap P.inclusion.toLinearMap := by
-    simp [hcompl.sup_eq_top]
-  obtain ⟨w, hw, z, hz, rfl⟩ := Submodule.mem_sup.1 hv
-  have hsub := form_apply_eq_mul_inner_of_isMinOn hu hmin (Submodule.mem_comap.1 hz)
+  obtain ⟨w, hw, z, hz, rfl⟩ := P.exists_add_mem_span_inclusion_mem_orthogonal hs v
+  have hsub := form_apply_eq_mul_inner_of_isMinOn hu hmin hz
   have hspan := P.form_apply_eq_mul_inner_of_mem_span (lam := P.energy u)
     (mem_unitConstraint.1 hu).1 heig hw
   simp only [map_add, inner_add_right, mul_add, hspan, hsub]

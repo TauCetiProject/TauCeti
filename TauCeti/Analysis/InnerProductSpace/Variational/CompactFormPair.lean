@@ -207,6 +207,21 @@ theorem unitConstraint_top_nonempty_iff : (P.unitConstraint ⊤).Nonempty ↔ No
     obtain ⟨x, hx⟩ := exists_ne (0 : H)
     exact hx (huniv (mem_univ x))
 
+/-- Every form-domain vector splits into a vector in a given finite span and a vector whose
+image is orthogonal to the images of that span. -/
+theorem exists_add_mem_span_inclusion_mem_orthogonal (P : CompactFormPair 𝕜 V H) {s : Set V}
+    (hs : s.Finite) (v : V) :
+    ∃ w ∈ Submodule.span 𝕜 s, ∃ z, P.inclusion z ∈ (Submodule.span 𝕜 (P.inclusion '' s))ᗮ ∧
+      w + z = v := by
+  let S := Submodule.span 𝕜 s
+  let : FiniteDimensional 𝕜 S := FiniteDimensional.span_of_finite 𝕜 hs
+  let : FiniteDimensional 𝕜 (S.map P.inclusion.toLinearMap) := Module.Finite.map _ _
+  have hcompl := S.isCompl_comap_orthogonal_map P.inclusion.toLinearMap P.injective
+  rw [Submodule.map_span, ContinuousLinearMap.coe_coe] at hcompl
+  have hv : v ∈ S ⊔ (Submodule.span 𝕜 (P.inclusion '' s))ᗮ.comap P.inclusion.toLinearMap := by
+    simp [hcompl.sup_eq_top]
+  simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe] using Submodule.mem_sup.1 hv
+
 /-- A proper finite span of form-domain images leaves a nonempty orthogonal unit constraint. -/
 theorem unitConstraint_orthogonal_span_nonempty (P : CompactFormPair 𝕜 V H) {s : Set V}
     (hs : s.Finite) (hne : Submodule.span 𝕜 (P.inclusion '' s) ≠ ⊤) :
@@ -216,16 +231,10 @@ theorem unitConstraint_orthogonal_span_nonempty (P : CompactFormPair 𝕜 V H) {
   have hr : ¬ range P.inclusion ⊆ W := fun h ↦ hne <| top_unique fun x _ ↦
     closure_minimal h W.isClosed_of_finiteDimensional (P.denseRange x)
   obtain ⟨v, hv⟩ : ∃ v, P.inclusion v ∉ W := by simpa [range_subset_iff] using hr
-  let S := Submodule.span 𝕜 s
-  have hmap : S.map P.inclusion.toLinearMap = W := Submodule.map_span _ _
-  let : FiniteDimensional 𝕜 (S.map P.inclusion.toLinearMap) := hmap.symm ▸ ‹FiniteDimensional 𝕜 W›
-  have hcompl := S.isCompl_comap_orthogonal_map P.inclusion.toLinearMap P.injective
-  rw [hmap] at hcompl
-  have hv' : v ∈ S ⊔ Wᗮ.comap P.inclusion.toLinearMap := by simp [hcompl.sup_eq_top]
-  obtain ⟨w, hw, z, hz, rfl⟩ := Submodule.mem_sup.1 hv'
-  refine unitConstraint_nonempty_iff.2 ⟨z, Submodule.mem_comap.1 hz, fun h ↦ hv ?_⟩
-  rw [map_add, h, add_zero, ← hmap]
-  exact Submodule.mem_map_of_mem hw
+  obtain ⟨w, hw, z, hz, rfl⟩ := P.exists_add_mem_span_inclusion_mem_orthogonal hs v
+  refine unitConstraint_nonempty_iff.2 ⟨z, hz, fun h ↦ hv ?_⟩
+  rw [map_add, h, add_zero]
+  exact Submodule.apply_mem_span_image_of_mem_span P.inclusion.toLinearMap hw
 
 /-! ### Bounds on constrained spheres -/
 
