@@ -193,6 +193,12 @@ theorem coe_twistedKernelFrameEquiv_apply (he : Differentiable ℝ e) (he₀ : �
     (twistedKernelFrameEquiv he he₀ heχ w : ℂ → ℂ) = e * w :=
   (rfl)
 
+@[simp]
+theorem coe_twistedKernelFrameEquiv_symm_apply (he : Differentiable ℝ e) (he₀ : ∀ z, e z ≠ 0)
+    (heχ : e ∈ signTwisted ℝ j χ) (v : ↥(signTwisted ℝ j (χ + χ') ⊓ cauchyRiemannKernel ν μ)) :
+    ((twistedKernelFrameEquiv (χ' := χ') he he₀ heχ).symm v : ℂ → ℂ) = e⁻¹ * v :=
+  (rfl)
+
 end Frame
 
 /-! ### The phase of a sign character -/
@@ -234,13 +240,19 @@ theorem conj_linearPhase_div (z : ℂ) :
   push_cast
   ring
 
-private theorem hasFDerivAt_linearPhase (z : ℂ) :
+/-- The derivative of the phase: `d e_c = 2π i e_c c`. -/
+theorem hasFDerivAt_linearPhase (z : ℂ) :
     HasFDerivAt (linearPhase c)
       (linearPhase c z • ((2 * π * I) • (ofRealCLM.comp c).restrictScalars ℝ)) z := by
   have h : HasFDerivAt (fun y : ℂ ↦ 2 * π * I * (c y : ℂ))
       ((2 * π * I) • (ofRealCLM.comp c).restrictScalars ℝ) z :=
     ((ofRealCLM.comp c).restrictScalars ℝ).hasFDerivAt.const_smul (2 * π * I)
   exact h.cexp
+
+theorem fderiv_linearPhase (z : ℂ) :
+    fderiv ℝ (linearPhase c) z =
+      linearPhase c z • ((2 * π * I) • (ofRealCLM.comp c).restrictScalars ℝ) :=
+  (hasFDerivAt_linearPhase c z).fderiv
 
 theorem differentiable_linearPhase : Differentiable ℝ (linearPhase c) :=
   fun z ↦ (hasFDerivAt_linearPhase c z).differentiableAt
@@ -251,7 +263,7 @@ theorem contDiff_linearPhase {n : WithTop ℕ∞} : ContDiff ℝ n (linearPhase 
 /-- **The connection form of the phase frame.** `∂bar e_c = π i (c 1 + i c i) e_c`. -/
 theorem conjWirtingerDeriv_linearPhase (z : ℂ) :
     conjWirtingerDeriv (linearPhase c) z 1 = π * I * (c 1 + I * c I) * linearPhase c z := by
-  rw [conjWirtingerDeriv_apply, (hasFDerivAt_linearPhase c z).fderiv]
+  rw [conjWirtingerDeriv_apply, fderiv_linearPhase]
   simp only [smul_apply, ContinuousLinearMap.coe_restrictScalars',
     ContinuousLinearMap.comp_apply, ofRealCLM_apply, smul_eq_mul, mul_one]
   ring
