@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
+import TauCeti.Geometry.Manifold.Measure.Chart
 
 /-!
 # Integrals over a manifold of parameters
@@ -67,33 +68,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {μ : Measure N}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : M → N → F} {x₀ : M}
-
-/-- Change of variables along a chart of the parameter manifold: for a measurable set `s` of
-parameters inside a compact subset `K` of the source of the extended chart `ψ` at `b`, and a
-function `g` continuous on `K`, the integral of `g` over `s` is the integral over `ψ '' K` of
-`g ∘ ψ.symm` against the pushforward along `ψ` of `μ` restricted to `s`. -/
-private theorem setIntegral_map_extChartAt [MeasurableSpace E'] [BorelSpace E'] {b : N}
-    {K : Set N} (hK : IsCompact K) (hKb : K ⊆ (extChartAt J b).source) {s : Set N}
-    (hs : MeasurableSet s) (hsK : s ⊆ K) {g : N → F} (hg : ContinuousOn g K) :
-    ∫ z in extChartAt J b '' K, g ((extChartAt J b).symm z) ∂(μ.restrict s).map (extChartAt J b) =
-      ∫ a in s, g a ∂μ := by
-  set ψ := extChartAt J b
-  have hψc : ContinuousOn ψ K := (continuousOn_extChartAt b).mono hKb
-  have hk : IsCompact (ψ '' K) := hK.image_of_continuousOn hψc
-  have hψm : AEMeasurable ψ (μ.restrict s) := (hψc.mono hsK).aemeasurable hs
-  have hνk : ((μ.restrict s).map ψ).restrict (ψ '' K) = (μ.restrict s).map ψ :=
-    Measure.restrict_eq_self_of_ae_mem <| (ae_map_iff hψm hk.measurableSet).2 <|
-      ae_restrict_of_forall_mem hs fun a ha ↦ mem_image_of_mem ψ (hsK ha)
-  have hc : ContinuousOn (fun z ↦ g (ψ.symm z)) (ψ '' K) := by
-    refine hg.comp ((continuousOn_extChartAt_symm b).mono ?_) ?_ <;>
-      rintro _ ⟨a, ha, rfl⟩
-    · exact ψ.map_source (hKb ha)
-    · simpa only [mem_preimage, ψ.left_inv (hKb ha)] using ha
-  have hm : AEStronglyMeasurable (fun z ↦ g (ψ.symm z)) ((μ.restrict s).map ψ) := by
-    simpa only [hνk] using
-      hc.aestronglyMeasurable_of_isCompact (μ := (μ.restrict s).map ψ) hk hk.measurableSet
-  rw [hνk, integral_map hψm hm]
-  exact setIntegral_congr_fun hs fun a ha ↦ by simp only [ψ.left_inv (hKb (hsK ha))]
 
 /-- The integral of a `C^m` function over a measurable set of parameters contained in a compact
 subset of one chart of the parameter manifold is `C^m` at `x₀`, provided the function is `C^m`
