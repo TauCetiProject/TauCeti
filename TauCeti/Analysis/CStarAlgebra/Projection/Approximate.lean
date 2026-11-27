@@ -87,7 +87,7 @@ section Unital
 variable {A : Type*} [CStarAlgebra A] {p q w : A}
 
 /-- **Approximate partial isometries, unital case.** If `w = q w p` with `‖w⋆w - p‖ < 1` and
-`‖ww⋆ - q‖ < 1`, then `v = w (p + 1 - w⋆w) ^ (-1 / 2)` has `v⋆v = p` and `vv⋆ = q`. -/
+`‖ww⋆ - q‖ < 1`, then `v = w (1 - p + w⋆w) ^ (-1 / 2)` has `v⋆v = p` and `vv⋆ = q`. -/
 private theorem exists_star_mul_self_eq_of_norm_star_mul_self_sub_lt_one_of_unital
     (hp : IsStarProjection p) (hq : IsStarProjection q) (hw : q * w * p = w)
     (h₁ : ‖star w * w - p‖ < 1) (h₂ : ‖w * star w - q‖ < 1) :

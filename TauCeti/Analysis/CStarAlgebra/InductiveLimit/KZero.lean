@@ -321,6 +321,7 @@ section ProjectionMonoid
 open NonUnitalStarRingHom (ofClass)
 
 /-- The maps induced on `V` by the canonical maps are compatible with the connecting maps. -/
+@[simp]
 theorem projectionMonoid_map_of_map_f {i j : ι} (hij : i ≤ j) (y : ProjectionMonoid (A i)) :
     ProjectionMonoid.map (ofClass (of A f j)) (ProjectionMonoid.map (ofClass (f i j hij)) y) =
       ProjectionMonoid.map (ofClass (of A f i)) y := by
@@ -331,11 +332,34 @@ theorem projectionMonoid_map_of_map_f {i j : ι} (hij : i ≤ j) (y : Projection
 
 omit [IsDirectedOrder ι] [Nonempty ι] in
 /-- The maps induced on `V` by the connecting maps compose. -/
+@[simp]
 theorem projectionMonoid_map_f_map_f {i j k : ι} (hij : i ≤ j) (hjk : j ≤ k)
     (y : ProjectionMonoid (A i)) :
     ProjectionMonoid.map (ofClass (f j k hjk)) (ProjectionMonoid.map (ofClass (f i j hij)) y) =
       ProjectionMonoid.map (ofClass (f i k (hij.trans hjk))) y := by
   rw [ProjectionMonoid.map_map]
+  congr 2
+  ext a
+  exact DirectedSystem.map_map (f := (f · · ·)) hij hjk a
+
+/-- The maps induced on `K₀` by the canonical maps are compatible with the connecting maps. -/
+@[simp]
+theorem projectionKZero_map_of_map_f {i j : ι} (hij : i ≤ j) (y : ProjectionKZero (A i)) :
+    ProjectionKZero.map (ofClass (of A f j)) (ProjectionKZero.map (ofClass (f i j hij)) y) =
+      ProjectionKZero.map (ofClass (of A f i)) y := by
+  rw [ProjectionKZero.map_map]
+  congr 2
+  ext a
+  exact of_f hij a
+
+omit [IsDirectedOrder ι] [Nonempty ι] in
+/-- The maps induced on `K₀` by the connecting maps compose. -/
+@[simp]
+theorem projectionKZero_map_f_map_f {i j k : ι} (hij : i ≤ j) (hjk : j ≤ k)
+    (y : ProjectionKZero (A i)) :
+    ProjectionKZero.map (ofClass (f j k hjk)) (ProjectionKZero.map (ofClass (f i j hij)) y) =
+      ProjectionKZero.map (ofClass (f i k (hij.trans hjk))) y := by
+  rw [ProjectionKZero.map_map]
   congr 2
   ext a
   exact DirectedSystem.map_map (f := (f · · ·)) hij hjk a
