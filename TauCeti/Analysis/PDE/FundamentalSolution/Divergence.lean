@@ -19,6 +19,7 @@ import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Integral.DistRpow
 import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
+import TauCeti.MeasureTheory.Integral.RieszPotential.Bounded
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -45,6 +46,22 @@ This is how a scalar right-hand side enters an estimate for divergence-form equa
 accepts data in divergence form: localizing a weak solution of `-div(a ∇u) = -div G` with a cutoff
 `ζ` produces the scalar term `⟪G - a ∇u, ∇ζ⟫`, and replacing it by its field `H` costs only its
 `L^q` norm, a lower order of integrability of `∇u` than the `Lᵖ` norm being estimated.
+
+## Data supported in a bounded set
+
+When `h` is integrable and vanishes off a bounded set `Ω`, the same field is controlled on `Ω`
+in every `Lᵖ`, `1 ≤ p ≤ ∞`, without a change of exponent:
+
+`‖H‖_{Lᵖ(Ω)} ≤ d diam(Ω) ‖h‖_{Lᵖ(Ω)}`
+
+(`TauCeti.exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq`). This holds in every
+dimension, including `d = 1`, because on `Ω` the Riesz potential of order one only integrates
+`‖x - y‖^(1 - d)` over a ball of radius `diam Ω` (`TauCeti.eLpNorm_rieszPotential_restrict_le`).
+The factor `diam Ω` is the scaling of one derivative, which is how a scalar datum enters a
+divergence-form estimate on a ball of radius `R` with the weight `R`. On a ball `B = B(x₀, r)`, an
+`f` integrable on `B` is minus the divergence in `B` of a field with
+`‖H‖_{Lᵖ(B)} ≤ 2 d r ‖f‖_{Lᵖ(B)}`
+(`TauCeti.exists_eLpNorm_restrict_ball_le_and_setIntegral_inner_gradient_eq`).
 
 ## Data in a Morrey space
 
@@ -641,6 +658,16 @@ theorem exists_holderWith_and_integral_inner_gradient_eq_of_morreyNormPow_le
   exact dist_divField_le hhi hα' hα1' hgrowth x x'
 
 
+/-- The field of an integrable, compactly supported datum is almost everywhere strongly
+measurable. -/
+private theorem aestronglyMeasurable_divField [FiniteDimensional ℝ E] [BorelSpace E]
+    [Nontrivial E] [μ.IsAddHaarMeasure] {h : E → ℝ} (hhi : Integrable h μ)
+    (hhc : HasCompactSupport h) : AEStronglyMeasurable (divField μ h) μ := by
+  simp only [funext (divField_apply μ h)]
+  exact Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦
+    (hhc.locallyIntegrable_convolution_right _ (locallyIntegrable_divKernel μ _)
+      hhi).aestronglyMeasurable.smul_const _
+
 /-- **Compactly supported `L^q` data are minus divergences of `Lᵖ` fields.** Let `E` be a nontrivial
 finite-dimensional real inner product space of dimension `d` with an additive Haar measure `μ`,
 and let `1 < q` and `1 / p = 1 / q - 1 / d`. There is a constant `C` such that every compactly
@@ -661,11 +688,7 @@ theorem exists_eLpNorm_le_and_integral_inner_gradient_eq [FiniteDimensional ℝ 
     ((hh.locallyIntegrable (by exact_mod_cast hq.le)).integrableOn_isCompact
       hhc.isCompact).integrable_of_forall_notMem_eq_zero
         fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
-  have hmeas : AEStronglyMeasurable (divField μ h) μ := by
-    simp only [funext (divField_apply μ h)]
-    exact Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦
-      (hhc.locallyIntegrable_convolution_right _ (locallyIntegrable_divKernel μ _)
-        hhi).aestronglyMeasurable.smul_const _
+  have hmeas : AEStronglyMeasurable (divField μ h) μ := aestronglyMeasurable_divField hhi hhc
   refine ⟨divField μ h, hmeas, ?_, fun φ hφ hφc ↦ integral_inner_divField_gradient hhi hhc hφ hφc⟩
   calc eLpNorm (divField μ h) p μ
       ≤ (((finrank ℝ E : ℝ≥0) * ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹.toNNReal :
@@ -673,5 +696,102 @@ theorem exists_eLpNorm_le_and_integral_inner_gradient_eq [FiniteDimensional ℝ 
         eLpNorm_le_mul_eLpNorm_of_ae_le_mul' hmeas (ae_of_all _ (enorm_divField_le h)) _
     _ ≤ _ * (C * eLpNorm h q μ) := by gcongr; exact hC h
     _ = _ := by push_cast; ring
+
+/-- **Compactly supported integrable data are minus divergences of fields controlled on bounded
+sets.** Let `E` be a nontrivial finite-dimensional real inner product space of dimension `d` with
+an additive Haar measure `μ`. Every integrable `h` with compact support is minus the divergence of
+a field `H`: `∫ ⟪H, ∇φ⟫ = ∫ h φ` for every `C¹` function `φ` with compact support. On every bounded
+set `Ω` off which `h` vanishes, `H` is controlled in every `Lᵖ`, `1 ≤ p ≤ ∞`, by
+
+`‖H‖_{Lᵖ(Ω)} ≤ d diam(Ω) ‖h‖_{Lᵖ(Ω)}`.
+
+Unlike `TauCeti.exists_eLpNorm_le_and_integral_inner_gradient_eq`, the exponent is not raised,
+and the estimate holds in every dimension, including `d = 1`, and at `p = 1` and `p = ∞`; the
+price is the factor `diam Ω`, which is the scaling of one derivative. The field is the gradient of
+the Newtonian potential of `h`, pointwise at most `(μ(B(0, 1)))⁻¹` times the Riesz potential of
+order one of `h`, and on `Ω` that potential is bounded in `Lᵖ(Ω)` by `d μ(B(0, 1)) diam(Ω)` times
+`‖h‖_{Lᵖ(Ω)}` (`TauCeti.eLpNorm_rieszPotential_restrict_le`). -/
+theorem exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq [FiniteDimensional ℝ E]
+    [BorelSpace E] [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure] {h : E → ℝ}
+    (hhi : Integrable h μ) (hhc : HasCompactSupport h) :
+    ∃ H : E → E, AEStronglyMeasurable H μ ∧
+      (∀ {Ω : Set E}, Bornology.IsBounded Ω → (∀ x ∉ Ω, h x = 0) →
+        ∀ {p : ℝ≥0∞}, 1 ≤ p →
+          eLpNorm H p (μ.restrict Ω) ≤
+            ENNReal.ofReal (finrank ℝ E * diam Ω) * eLpNorm h p (μ.restrict Ω)) ∧
+      ∀ φ : E → ℝ, ContDiff ℝ 1 φ → HasCompactSupport φ →
+        ∫ x, ⟪H x, ∇ φ x⟫_ℝ ∂μ = ∫ x, h x * φ x ∂μ := by
+  have hmeas : AEStronglyMeasurable (divField μ h) μ := aestronglyMeasurable_divField hhi hhc
+  refine ⟨divField μ h, hmeas, fun {Ω} hb hh0 {p} hp ↦ ?_,
+    fun φ hφ hφc ↦ integral_inner_divField_gradient hhi hhc hφ hφc⟩
+  set d : ℝ := (finrank ℝ E : ℝ)
+  set ω : ℝ := μ.real (ball (0 : E) 1)
+  have hd : 0 < d := Nat.cast_pos.2 Module.finrank_pos
+  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  -- Off `Ω` the datum vanishes, so its Riesz potential only integrates over `Ω`.
+  have hriesz : rieszPotential μ 1 h = rieszPotential (μ.restrict Ω) 1 h := by
+    ext x
+    rw [rieszPotential_def, rieszPotential_def, setLIntegral_eq_of_support_subset]
+    intro y hy
+    by_contra hyΩ
+    simp [hh0 y hyΩ] at hy
+  calc eLpNorm (divField μ h) p (μ.restrict Ω)
+      ≤ (((finrank ℝ E : ℝ≥0) * ((finrank ℝ E : ℝ) * ω)⁻¹.toNNReal : ℝ≥0) : ℝ≥0∞) *
+          eLpNorm (rieszPotential μ 1 h) p (μ.restrict Ω) :=
+        eLpNorm_le_mul_eLpNorm_of_ae_le_mul' hmeas.restrict (ae_of_all _ (enorm_divField_le h)) _
+    _ ≤ (((finrank ℝ E : ℝ≥0) * ((finrank ℝ E : ℝ) * ω)⁻¹.toNNReal : ℝ≥0) : ℝ≥0∞) *
+          (ENNReal.ofReal (d * ω / 1 * diam Ω ^ (1 : ℝ)) * eLpNorm h p (μ.restrict Ω)) := by
+        rw [hriesz]
+        gcongr
+        exact eLpNorm_rieszPotential_restrict_le hb one_pos hp h
+    _ = ENNReal.ofReal (d * diam Ω) * eLpNorm h p (μ.restrict Ω) := by
+        rw [← mul_assoc, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity)]
+        congr 2
+        push_cast
+        rw [Real.coe_toNNReal _ (by positivity), Real.rpow_one, div_one]
+        have hd' : (finrank ℝ E : ℝ) ≠ 0 := hd.ne'
+        field_simp
+
+/-- **Integrable data on a ball are minus divergences of fields controlled on the ball.** Let `E`
+be a nontrivial finite-dimensional real inner product space of dimension `d` with an additive Haar
+measure `μ`, and let `f` be integrable on the ball `B = B(x₀, r)`. There is a field `H` with
+`∫_B ⟪H, ∇φ⟫ = ∫_B f φ` for every `C¹` function `φ` with compact support in `B`, so that
+`-div H = f` weakly in `B`, controlled in every `Lᵖ(B)`, `1 ≤ p ≤ ∞`, by
+
+`‖H‖_{Lᵖ(B)} ≤ 2 d r ‖f‖_{Lᵖ(B)}`.
+
+This is `TauCeti.exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq` applied to `f` cut off
+outside `B`. -/
+theorem exists_eLpNorm_restrict_ball_le_and_setIntegral_inner_gradient_eq [FiniteDimensional ℝ E]
+    [BorelSpace E] [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure] {x₀ : E} {r : ℝ}
+    (hr : 0 ≤ r) {f : E → ℝ} (hf : IntegrableOn f (ball x₀ r) μ) :
+    ∃ H : E → E, AEStronglyMeasurable H μ ∧
+      (∀ {p : ℝ≥0∞}, 1 ≤ p → eLpNorm H p (μ.restrict (ball x₀ r)) ≤
+        ENNReal.ofReal (finrank ℝ E * (2 * r)) * eLpNorm f p (μ.restrict (ball x₀ r))) ∧
+      ∀ φ : E → ℝ, ContDiff ℝ 1 φ → tsupport φ ⊆ ball x₀ r →
+        ∫ x in ball x₀ r, ⟪H x, ∇ φ x⟫_ℝ ∂μ = ∫ x in ball x₀ r, f x * φ x ∂μ := by
+  -- The datum cut off outside the ball is integrable with compact support.
+  have hhi : Integrable ((ball x₀ r).indicator f) μ :=
+    (integrable_indicator_iff measurableSet_ball).2 hf
+  have hhc : HasCompactSupport ((ball x₀ r).indicator f) :=
+    HasCompactSupport.intro (isCompact_closedBall x₀ r) fun x hx =>
+      indicator_of_notMem (fun hxB => hx (ball_subset_closedBall hxB)) f
+  obtain ⟨H, hHm, hHle, hHeq⟩ := exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq μ hhi hhc
+  refine ⟨H, hHm, fun {p} hp => ?_, fun φ hφ1 hφs => ?_⟩
+  · refine (hHle isBounded_ball (fun x hx => indicator_of_notMem hx f) hp).trans ?_
+    rw [eLpNorm_congr_ae (indicator_ae_eq_restrict measurableSet_ball.nullMeasurableSet)]
+    gcongr
+    exact diam_ball hr
+  calc ∫ x in ball x₀ r, ⟪H x, ∇ φ x⟫_ℝ ∂μ
+      = ∫ x, ⟪H x, ∇ φ x⟫_ℝ ∂μ :=
+        setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+          rw [gradient, fderiv_of_notMem_tsupport ℝ fun h => hx (hφs h), map_zero,
+            inner_zero_right]
+    _ = ∫ x, (ball x₀ r).indicator f x * φ x ∂μ :=
+        hHeq φ hφ1 <| (isCompact_closedBall x₀ r).of_isClosed_subset (isClosed_tsupport φ)
+          (hφs.trans ball_subset_closedBall)
+    _ = ∫ x in ball x₀ r, f x * φ x ∂μ := by
+        rw [← integral_indicator measurableSet_ball]
+        exact integral_congr_ae (ae_of_all _ fun x => (indicator_mul_left _ _ _).symm)
 
 end TauCeti
