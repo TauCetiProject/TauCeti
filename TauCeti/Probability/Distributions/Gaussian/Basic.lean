@@ -254,3 +254,41 @@ theorem hasDerivAt_gaussianPDFRealEReal (v : ℝ≥0) (e : EReal) (μ : ℝ) :
       ring
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory
+open scoped ENNReal Nat NNReal Real
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0}
+
+/-- The expectation of a real Gaussian random variable is its mean parameter. -/
+theorem integral_gaussianReal (hX : HasLaw X (gaussianReal m v) P) :
+    ∫ ω, X ω ∂P = m := by
+  rw [hX.integral_eq, integral_id_gaussianReal]
+
+/-- The variance of a real Gaussian random variable is its variance parameter. -/
+theorem variance_gaussianReal (hX : HasLaw X (gaussianReal m v) P) :
+    variance X P = v := by
+  rw [hX.variance_eq, variance_id_gaussianReal]
+
+/-- Every real exponential moment of a real Gaussian random variable is integrable. -/
+theorem integrable_exp_mul_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  simpa only [Function.comp_def] using
+    hX.integrable_comp (ProbabilityTheory.integrable_exp_mul_gaussianReal t)
+
+/-- The exact exponential-integrability domain of a real Gaussian random variable is all of the
+real line. -/
+theorem integrableExpSet_gaussianReal (hX : HasLaw X (gaussianReal m v) P) :
+    integrableExpSet X P = Set.univ := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+  exact hX.integrable_exp_mul_gaussianReal t
+
+/-- The characteristic function of the image law of a real Gaussian random variable. -/
+theorem charFun_map_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (t : ℝ) :
+    charFun (P.map X) t = Complex.exp (t * m * Complex.I - v * t ^ 2 / 2) := by
+  rw [hX.map_eq, ProbabilityTheory.charFun_gaussianReal]
+
+end ProbabilityTheory.HasLaw

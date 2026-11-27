@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Distributions.Gaussian.Real
+public import TauCeti.Probability.Distributions.Gaussian.Basic
 public import TauCeti.Probability.Moments.Determinacy
 import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Chi.Moments
@@ -162,3 +162,87 @@ theorem isMomentDeterminate_gaussianReal (m : ℝ) (v : ℝ≥0) :
     (integrable_exp_mul_gaussianReal 1) (integrable_exp_mul_gaussianReal (-1)))
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+open scoped ENNReal
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0}
+
+/-- Every natural power of the absolute deviation of a real Gaussian random variable from its
+mean is integrable. -/
+theorem integrable_abs_sub_pow_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    Integrable (fun ω ↦ |X ω - m| ^ n) P := by
+  let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  have hmem : MemLp (fun ω ↦ X ω - m) (n : ℝ≥0∞) P :=
+    (ProbabilityTheory.gaussianReal_sub_const hX m).memLp
+      (memLp_id_gaussianReal' (n : ℝ≥0∞) (by simp))
+  simpa only [Real.norm_eq_abs] using hmem.integrable_norm_pow'
+
+/-- The absolute centered moments of a real Gaussian random variable. -/
+theorem integral_abs_sub_pow_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    ∫ ω, |X ω - m| ^ n ∂P =
+      (2 * (v : ℝ)) ^ ((n : ℝ) / 2) * Real.Gamma (((n : ℝ) + 1) / 2) / √Real.pi := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ |x - m| ^ n),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_abs_sub_pow_gaussianReal]
+
+/-- The mean absolute value of a centered real Gaussian random variable. -/
+theorem integral_abs_gaussianReal (hX : HasLaw X (gaussianReal 0 v) P) :
+    ∫ ω, |X ω| ∂P = √(2 * v / Real.pi) := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ |x|), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_abs_gaussianReal]
+
+/-- Every natural power of the deviation of a real Gaussian random variable from its mean is
+integrable. -/
+theorem integrable_sub_pow_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    Integrable (fun ω ↦ (X ω - m) ^ n) P := by
+  rw [← integrable_norm_iff
+    ((hX.aemeasurable.sub_const m).pow_const n).aestronglyMeasurable]
+  simpa only [Real.norm_eq_abs, norm_pow] using hX.integrable_abs_sub_pow_gaussianReal n
+
+/-- The even centered moments of a real Gaussian random variable. -/
+theorem integral_sub_pow_two_mul_gaussianReal
+    (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    ∫ ω, (X ω - m) ^ (2 * n) ∂P = (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ (x - m) ^ (2 * n)),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal]
+
+/-- The even central moments of a real Gaussian random variable. -/
+theorem centralMoment_two_mul_gaussianReal
+    (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    centralMoment X (2 * n) P = (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
+  rw [centralMoment, hX.integral_gaussianReal]
+  exact hX.integral_sub_pow_two_mul_gaussianReal n
+
+/-- The second raw moment of a real Gaussian random variable. -/
+theorem integral_sq_gaussianReal (hX : HasLaw X (gaussianReal m v) P) :
+    ∫ ω, X ω ^ 2 ∂P = v + m ^ 2 := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ 2), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sq_gaussianReal]
+
+/-- The fourth centered moment of a real Gaussian random variable. -/
+theorem integral_sub_pow_four_gaussianReal (hX : HasLaw X (gaussianReal m v) P) :
+    ∫ ω, (X ω - m) ^ 4 ∂P = 3 * (v : ℝ) ^ 2 := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ (x - m) ^ 4),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sub_pow_four_gaussianReal]
+
+/-- The odd centered moments of a real Gaussian random variable vanish. -/
+theorem integral_sub_pow_two_mul_add_one_gaussianReal
+    (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    ∫ ω, (X ω - m) ^ (2 * n + 1) ∂P = 0 := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ (x - m) ^ (2 * n + 1)),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sub_pow_two_mul_add_one_gaussianReal]
+
+/-- The odd central moments of a real Gaussian random variable vanish. -/
+theorem centralMoment_two_mul_add_one_gaussianReal
+    (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    centralMoment X (2 * n + 1) P = 0 := by
+  rw [centralMoment, hX.integral_gaussianReal]
+  exact hX.integral_sub_pow_two_mul_add_one_gaussianReal n
+
+end ProbabilityTheory.HasLaw
