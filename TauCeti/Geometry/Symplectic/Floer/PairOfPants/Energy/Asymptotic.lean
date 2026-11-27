@@ -230,7 +230,7 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact
     (C := max (C q) 0) fun t ht ↦ ?_).trans_eq (by norm_num))
   rw [uIoc_of_le zero_le_one] at ht
   exact (hC q (t, u (endChart q (s, t)))
-    ⟨⟨ht.1.le, ht.2⟩, huB _ (endChart_mem_thricePuncturedSphereReal hs_pos)⟩).trans
+    ⟨⟨ht.1.le, ht.2⟩, huB _ (endChart_mem_thricePuncturedSphereReal hs_pos.le)⟩).trans
     (le_max_left _ _)
 
 end

@@ -344,8 +344,10 @@ theorem mpullback_comp_apply_eq_det_smul (φ : RoughForm I M F 2) {u : ℝ × �
   -- Read the pullback along `u` as a flat form on the plane, whose tangent spaces are `ℝ × ℝ`.
   let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (L z)
   refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
-  exact congrArg (· ![((1 : ℝ), (0 : ℝ)), (0, 1)])
-    (ψ.toAlternatingMap.compLinearMap_eq_det_smul (Module.Basis.finTwoProd ℝ) A.toLinearMap)
+  have h := congr($(ψ.toAlternatingMap.compLinearMap_eq_det_smul (Module.Basis.finTwoProd ℝ)
+    A.toLinearMap) ![((1 : ℝ), (0 : ℝ)), (0, 1)])
+  rwa [AlternatingMap.compLinearMap_apply, smul_apply,
+    ContinuousAlternatingMap.coe_toAlternatingMap, ← ContinuousLinearMap.det] at h
 
 /-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
 `u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/

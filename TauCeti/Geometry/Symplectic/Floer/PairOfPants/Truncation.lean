@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CoreChart
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Geometry.Manifold.ContMDiff.Fract
+import TauCeti.MeasureTheory.Integral.Circle.Integral
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.MetricSpace.Annulus
@@ -26,9 +27,10 @@ cylindrical ends between the heights `0` and `R`. The energy identity of a Floer
 read off on `S_R` through the loops of a map `u` along the circles of the ends at the height `R`,
 parametrized by the end charts `TauCeti.Floer.endChart`: the action terms of the inputs at
 `t ↦ u (endChart q (R, t))` and of the output at `t ↦ u (endChart ∞ (-R, t))`. This file presents
-`S_R` by cylinder charts whose boundary loops are exactly these end loops, and computes the integral
-of a two-form over `u` along each of them, so that the topological term `∫_{S_R} u^* φ` becomes a
-sum of integrals over cylinders, to which caps of the end loops can be glued.
+`S_R` by charts whose boundary circles run through exactly these end loops, and computes the
+integral of a two-form over `u` along each of them, so that the topological term `∫_{S_R} u^* φ`
+becomes a sum of integrals over `u` composed with these charts, to whose boundary loops caps of the
+end loops can be glued.
 
 * **The end annuli.** The end chart of the end `q` on `[a, b] × [0, 1]`, for heights `a ≤ b` in
   the end, sweeps the closed annulus about the center `c_q` of the end between the radii
@@ -88,6 +90,9 @@ private noncomputable def endRadius (q : Puncture) (x : ℝ) : ℝ :=
 private theorem endRadius_pos (q : Puncture) (x : ℝ) : 0 < endRadius q x :=
   mul_pos (norm_pos_iff.2 q.endScale_ne_zero) (Real.exp_pos _)
 
+/-- The circle of the output end at the height `0` is the output circle `‖w‖ = 2`. -/
+private theorem endRadius_inf_zero : endRadius .inf 0 = 2 := by simp [endRadius]
+
 private theorem endRadius_le_endRadius_iff (q : Puncture) {x y : ℝ} :
     endRadius q x ≤ endRadius q y ↔ y ≤ x := by
   rw [endRadius, endRadius, mul_le_mul_iff_right₀ (norm_pos_iff.2 q.endScale_ne_zero),
@@ -122,57 +127,6 @@ private theorem det_fderiv_endChart_eq_endRadius (q : Puncture) (z : ℝ × ℝ)
     (fderiv ℝ (endChart q) z).det = 4 * π ^ 2 * endRadius q z.1 ^ 2 := by
   rw [det_fderiv_endChart, equivRealProdCLM_symm_endChart_mk,
     norm_circleMap_sub_center _ (endRadius_pos q _).le]
-
-/-- The end chart of the end `q` at a height `x` with `±x ≥ 0` lies in `S`. -/
-private theorem endChart_mem_thricePuncturedSphereReal_of_nonneg {q : Puncture} {x : ℝ}
-    (hx : 0 ≤ q.endSign * x) (t : ℝ) : endChart q (x, t) ∈ thricePuncturedSphereReal := by
-  rw [mem_thricePuncturedSphereReal_iff, equivRealProdCLM_symm_endChart_mk]
-  have hr := endRadius_pos q x
-  cases q
-  · -- The input end `0`: the circle of radius at most `1/2` about `0`.
-    have h : endRadius .zero x ≤ 1 / 2 := by
-      rw [endRadius, Puncture.endScale_zero]
-      simp only [one_div, norm_inv, Complex.norm_ofNat]
-      have : Real.exp (-(2 * π * x)) ≤ 1 := Real.exp_le_one_iff.2 (by
-        simp only [Puncture.endSign_zero, one_mul] at hx; nlinarith [Real.pi_pos])
-      linarith
-    refine ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩
-    · have := congrArg norm h0
-      rw [norm_zero, Puncture.endCenter_zero, norm_circleMap_zero, abs_of_pos hr] at this
-      linarith
-    · have := congrArg norm h1
-      rw [norm_one, Puncture.endCenter_zero, norm_circleMap_zero, abs_of_pos hr] at this
-      linarith
-  · -- The input end `1`: the circle of radius at most `1/2` about `1`.
-    have h : endRadius .one x ≤ 1 / 2 := by
-      rw [endRadius, Puncture.endScale_one]
-      simp only [norm_neg, one_div, norm_inv, Complex.norm_ofNat]
-      have : Real.exp (-(2 * π * x)) ≤ 1 := Real.exp_le_one_iff.2 (by
-        simp only [Puncture.endSign_one, one_mul] at hx; nlinarith [Real.pi_pos])
-      linarith
-    have hd := norm_circleMap_sub_center (Puncture.endCenter .one) hr.le
-      (Complex.arg Puncture.one.endScale - 2 * π * t)
-    rw [Puncture.endCenter_one] at hd
-    refine ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩
-    · rw [Puncture.endCenter_one] at h0
-      rw [h0, zero_sub, norm_neg, norm_one] at hd
-      linarith
-    · rw [Puncture.endCenter_one] at h1
-      rw [h1, sub_self, norm_zero] at hd
-      linarith
-  · -- The output end: the circle of radius at least `2` about `0`.
-    have h : 2 ≤ endRadius .inf x := by
-      rw [endRadius, Puncture.endScale_inf, Complex.norm_ofNat]
-      have : 1 ≤ Real.exp (-(2 * π * x)) := Real.one_le_exp_iff.2 (by
-        simp only [Puncture.endSign_inf, neg_one_mul] at hx; nlinarith [Real.pi_pos])
-      linarith
-    refine ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩
-    · have := congrArg norm h0
-      rw [norm_zero, Puncture.endCenter_inf, norm_circleMap_zero, abs_of_pos hr] at this
-      linarith
-    · have := congrArg norm h1
-      rw [norm_one, Puncture.endCenter_inf, norm_circleMap_zero, abs_of_pos hr] at this
-      linarith
 
 /-- A height between two heights of the end `q` with `±x ≥ 0` has `±x ≥ 0`. -/
 private theorem endSign_mul_nonneg_of_mem_uIcc {q : Puncture} {a b x : ℝ}
@@ -239,28 +193,10 @@ private theorem integral_annulus_eq_intervalIntegral {φ : RoughForm I M F 2}
   have hA : MapsTo Complex.equivRealProdCLM A thricePuncturedSphereReal := fun w hw ↦ by
     have h := hS ‖w - c‖ hw (Complex.arg (w - c))
     rwa [circleMap, Complex.norm_mul_exp_arg_mul_I, add_sub_cancel] at h
-  have hpre : Complex.measurableEquivRealProd ⁻¹' (Complex.equivRealProdCLM.symm ⁻¹' A) = A := by
-    ext w
-    simp [Complex.measurableEquivRealProd]
-  rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-    Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre,
-    Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM]
+  rw [Complex.setIntegral_preimage_equivRealProdCLM_symm]
   exact integral_annulus_eq_integral_circleMap h₀ h₁₂
     ((hf.comp Complex.equivRealProdCLM.continuous.continuousOn hA).integrableOn_compact
       (isCompact_setOf_le_norm_sub_le c r₁ r₂))
-
-/-- Around a circle of the end, the average over the end parameter `t ∈ [0, 1]` is the integral
-over the angles `[-π, π]` divided by `2π`. -/
-private theorem intervalIntegral_circleMap_sub_mul {g : ℂ → F} (c : ℂ) (r α : ℝ) :
-    ∫ t in (0 : ℝ)..1, g (circleMap c r (α - 2 * π * t)) =
-      (2 * π)⁻¹ • ∫ θ in -π..π, g (circleMap c r θ) := by
-  have hper : Periodic (fun θ ↦ g (circleMap c r θ)) (2 * π) := fun θ ↦ by
-    simp only [periodic_circleMap c r θ]
-  rw [intervalIntegral.integral_comp_sub_mul (fun θ ↦ g (circleMap c r θ))
-    (by positivity : (2 * π : ℝ) ≠ 0) α, mul_one, mul_zero, sub_zero]
-  congr 1
-  have h := hper.intervalIntegral_add_eq (α - 2 * π) (-π)
-  rwa [sub_add_cancel, show -π + 2 * π = π by ring] at h
 
 /-- The integral of a function continuous on `S` around the circles of radius `r` about `c` is
 continuous in `r` on a set of radii whose circles lie in `S`. -/
@@ -315,7 +251,7 @@ private theorem rectangleIntegral_comp_endChart_prodMap {φ : RoughForm I M F 2}
     (hasDerivAt_endRadius q (σ x)).comp x (hσd x)
   have hmem {x : ℝ} (hx : x ∈ [[a, b]]) (t : ℝ) :
       endChart q (σ x, t) ∈ thricePuncturedSphereReal :=
-    endChart_mem_thricePuncturedSphereReal_of_nonneg (hσS x hx) t
+    endChart_mem_thricePuncturedSphereReal (z := (σ x, t)) (hσS x hx)
   -- On the rectangle the integrand is `σ' · 4π² ρ²` times `u^* φ` on the circle of radius `ρ`.
   have hpt {x : ℝ} (hx : x ∈ [[a, b]]) (t : ℝ) :
       mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ endChart q ∘ Prod.map σ id) φ (x, t) ![(1, 0), (0, 1)] =
@@ -358,8 +294,8 @@ private theorem equivRealProdCLM_circleMap_mem_of_mem_Icc {q : Puncture} {a b : 
   have hmem : x ∈ [[a, b]] :=
     ⟨(endRadius_le_endRadius_iff q).1 (by rw [hx]; exact hr.2),
       (endRadius_le_endRadius_iff q).1 (by rw [hx]; exact hr.1)⟩
-  have h := endChart_mem_thricePuncturedSphereReal_of_nonneg
-    (endSign_mul_nonneg_of_mem_uIcc ha hb hmem) ((Complex.arg q.endScale - θ) / (2 * π))
+  have h := endChart_mem_thricePuncturedSphereReal
+    (z := (x, (Complex.arg q.endScale - θ) / (2 * π))) (endSign_mul_nonneg_of_mem_uIcc ha hb hmem)
   rwa [← equivRealProdCLM_circleMap_endRadius, hx] at h
 
 /-- **The integral over an end annulus.** Let `u` be a map of the pair of pants which is `C¹` on
@@ -398,17 +334,16 @@ private theorem periodic_outputCirclePoint : Periodic outputCirclePoint (2 * π)
 
 private theorem outputCirclePoint_mem (θ : ℝ) :
     outputCirclePoint θ ∈ thricePuncturedSphereReal := by
-  have h := endChart_mem_thricePuncturedSphereReal_of_nonneg (q := .inf) (x := 0) (by simp)
-    ((Complex.arg Puncture.inf.endScale - θ) / (2 * π))
-  rwa [← equivRealProdCLM_circleMap_endRadius, (show endRadius .inf 0 = 2 by simp [endRadius]),
-    Puncture.endCenter_inf] at h
+  have h := endChart_mem_thricePuncturedSphereReal (q := .inf)
+    (z := (0, (Complex.arg Puncture.inf.endScale - θ) / (2 * π))) (by simp)
+  rwa [← equivRealProdCLM_circleMap_endRadius, endRadius_inf_zero, Puncture.endCenter_inf] at h
 
 /-- The end loop of the output at the height `0` runs clockwise around the output circle. -/
 private theorem endChart_inf_mk_zero (t : ℝ) :
     endChart .inf (0, t) = outputCirclePoint (-(2 * π * t)) := by
   rw [← Complex.equivRealProdCLM.apply_symm_apply (endChart _ _),
     equivRealProdCLM_symm_endChart_mk, outputCirclePoint, Puncture.endCenter_inf,
-    (show endRadius .inf 0 = 2 by simp [endRadius])]
+    endRadius_inf_zero]
   simp
 
 /-- The angle by which the point of the output circle on the ray from `1/2` at the angle `θ` is
@@ -555,9 +490,7 @@ private theorem turnChart_mk_zero (t : ℝ) : turnChart (0, t) = pairOfPantsCore
     have hA : turnAngle x = -(π / 2) - π * Real.smoothTransition (6 * x - 1) := by
       rw [turnAngle, Real.smoothTransition.zero_of_nonpos (by linarith : 6 * x - 4 ≤ 0), add_zero]
     dsimp only
-    rw [hA, pairOfPantsOuterRadius_def, cos_neg_pi_div_two_sub]
-    congr 3
-    rw [neg_neg, neg_sq]
+    rw [hA, pairOfPantsOuterRadius_def, cos_neg_pi_div_two_sub, neg_neg, neg_sq]
   · -- On the second lobe it is `-3π/2 - π r`.
     rw [loopwiseTrans_of_lt _ _ (z := (1, x)) hx hx₁]
     have hA : turnAngle x = -(3 * π / 2) - π * Real.smoothTransition (6 * x - 4) := by
@@ -621,8 +554,7 @@ private theorem outputAnnulus_apply_add_one (R s t : ℝ) :
 
 private theorem outputAnnulus_mem {R : ℝ} (hR : 0 ≤ R) (z : ℝ × ℝ) :
     outputAnnulus R z ∈ thricePuncturedSphereReal :=
-  endChart_mem_thricePuncturedSphereReal_of_nonneg
-    (endSign_inf_mul_neg_mul_smoothTransition_nonneg hR z.1) z.2
+  endChart_mem_thricePuncturedSphereReal (endSign_inf_mul_neg_mul_smoothTransition_nonneg hR z.1)
 
 /-- **The integral over the output annulus.** It is minus the integral of `u^* φ` over the
 annulus `2 ≤ ‖w‖ ≤ 2 exp (2πR)`: the annulus is swept outwards, against the orientation of the
@@ -637,13 +569,12 @@ private theorem rectangleIntegral_comp_outputAnnulus {φ : RoughForm I M F 2}
     (contDiff_const.mul Real.smoothTransition.contDiff).neg
   have hrad (x : ℝ) : endRadius .inf x = 2 * Real.exp (-(2 * π * x)) := by
     simp [endRadius]
-  have h₀ : endRadius .inf 0 = 2 := by simp [hrad]
   have h₁ : endRadius .inf (-R) = 2 * Real.exp (2 * π * R) := by
     rw [hrad, mul_neg, neg_neg]
   have hset : {w : ℂ | 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * Real.exp (2 * π * R)} =
       {w | endRadius .inf 0 ≤ ‖w - Puncture.inf.endCenter‖ ∧
         ‖w - Puncture.inf.endCenter‖ ≤ endRadius .inf (-R)} := by
-    simp [h₀, h₁]
+    simp [endRadius_inf_zero, h₁]
   have hR₀ : endRadius .inf 0 ≤ endRadius .inf (-R) :=
     (endRadius_le_endRadius_iff _).2 (by linarith)
   rw [outputAnnulus_eq_comp,
@@ -683,6 +614,7 @@ theorem contDiff_pairOfPantsOutputChart (R : ℝ) {n : ℕ∞} :
       (turnChart_mk_one_eq_outputAnnulus R)) (pairOfPantsCoreChart_mk_one_eq_turnChart R)
 
 /-- The output chart is `1`-periodic in its second coordinate. -/
+@[simp]
 theorem pairOfPantsOutputChart_apply_add_one (R s t : ℝ) :
     pairOfPantsOutputChart R (s, t + 1) = pairOfPantsOutputChart R (s, t) :=
   rectangleTrans_apply_add_snd (fun z ↦ pairOfPantsCoreChart_apply_add_one z.1 z.2)
@@ -705,15 +637,9 @@ theorem pairOfPantsOutputChart_mk_one (R t : ℝ) :
 
 /-- For `R ≥ 0` the output chart lies in the pair of pants `S`. -/
 theorem pairOfPantsOutputChart_mem_thricePuncturedSphereReal {R : ℝ} (hR : 0 ≤ R)
-    (z : ℝ × ℝ) : pairOfPantsOutputChart R z ∈ thricePuncturedSphereReal := by
-  refine rectangleTrans_mem (fun z ↦ ?_) (rectangleTrans_mem turnChart_mem (outputAnnulus_mem hR)) z
-  have h := truncation_subset 0 (pairOfPantsCoreChart_mem_preimage_truncation z)
-  rwa [mem_thricePuncturedSphereReal_iff]
-
-private theorem pairOfPantsCoreChart_mem (z : ℝ × ℝ) :
-    pairOfPantsCoreChart z ∈ thricePuncturedSphereReal := by
-  have h := truncation_subset 0 (pairOfPantsCoreChart_mem_preimage_truncation z)
-  rwa [mem_thricePuncturedSphereReal_iff]
+    (z : ℝ × ℝ) : pairOfPantsOutputChart R z ∈ thricePuncturedSphereReal :=
+  rectangleTrans_mem pairOfPantsCoreChart_mem_thricePuncturedSphereReal
+    (rectangleTrans_mem turnChart_mem (outputAnnulus_mem hR)) z
 
 /-- **The area of the output chart.** For `R ≥ 0`, a continuous two-form `φ` and a map `u` of the
 pair of pants which is `C¹` on `S`, the integral of `φ` over `u` composed with the output chart is
@@ -728,7 +654,8 @@ theorem rectangleIntegral_comp_pairOfPantsOutputChart {φ : RoughForm I M F 2}
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
             {w | 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * Real.exp (2 * π * R)},
           φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)]) := by
-  have hc := hu.comp_contMDiff contDiff_pairOfPantsCoreChart.contMDiff pairOfPantsCoreChart_mem
+  have hc := hu.comp_contMDiff contDiff_pairOfPantsCoreChart.contMDiff
+    pairOfPantsCoreChart_mem_thricePuncturedSphereReal
   have hT := hu.comp_contMDiff contDiff_turnChart.contMDiff turnChart_mem
   have hA := hu.comp_contMDiff (contDiff_outputAnnulus R).contMDiff (outputAnnulus_mem hR)
   have hTA : ∀ t, (u ∘ turnChart) (1, t) = (u ∘ outputAnnulus R) (0, t) := fun t ↦ by
@@ -771,6 +698,11 @@ theorem isLoopCylinder_comp_pairOfPantsOutputChart {R : ℝ} (hR : 0 ≤ R) {u :
 
 /-! ### The truncation as the core and three annuli -/
 
+/-- The norms of `w` and `1` differ by at most `‖w - 1‖`. -/
+private theorem le_norm_sub_one (w : ℂ) :
+    ‖w‖ - 1 ≤ ‖w - 1‖ ∧ 1 - ‖w‖ ≤ ‖w - 1‖ :=
+  ⟨by simpa using norm_sub_norm_le w 1, by simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w⟩
+
 /-- For `R ≥ 0`, the truncation `S_R` is the truncation `S₀` together with the annuli of the three
 ends between the heights `0` and `R`. -/
 private theorem truncation_eq_union {R : ℝ} (hR : 0 ≤ R) :
@@ -780,8 +712,7 @@ private theorem truncation_eq_union {R : ℝ} (hR : 0 ≤ R) :
   have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
   have he' : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp_iff.2 (by nlinarith [Real.pi_pos])
   ext w
-  have h₁ : ‖w‖ - 1 ≤ ‖w - 1‖ := by simpa using norm_sub_norm_le w 1
-  have h₂ : 1 - ‖w‖ ≤ ‖w - 1‖ := by simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w
+  obtain ⟨h₁, h₂⟩ := le_norm_sub_one w
   simp only [truncation_eq, mul_zero, neg_zero, Real.exp_zero, mul_one, mem_union, mem_inter_iff,
     mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
   constructor
@@ -798,20 +729,6 @@ private theorem truncation_eq_union {R : ℝ} (hR : 0 ≤ R) :
     · exact ⟨⟨by linarith, by linarith⟩, hb⟩
     · exact ⟨⟨ha, by linarith⟩, by linarith⟩
     · exact ⟨⟨by linarith, ha⟩, by linarith⟩
-
-private theorem aedisjoint_of_subset_sphere {s t : Set ℂ} {c : ℂ} {r : ℝ}
-    (h : s ∩ t ⊆ Metric.sphere c r) : AEDisjoint volume s t :=
-  measure_mono_null h (Measure.addHaar_sphere volume c r)
-
-/-- Integrals over preimages under the real coordinates of `ℂ` are integrals over `ℂ`. -/
-private theorem setIntegral_preimage_equivRealProdCLM_symm (f : ℝ × ℝ → F) (X : Set ℂ) :
-    ∫ z in Complex.equivRealProdCLM.symm ⁻¹' X, f z = ∫ w in X, f (Complex.equivRealProdCLM w) := by
-  have hpre : Complex.measurableEquivRealProd ⁻¹' (Complex.equivRealProdCLM.symm ⁻¹' X) = X := by
-    ext w
-    simp [Complex.measurableEquivRealProd]
-  rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-    Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre,
-    Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM]
 
 /-- **The integral over the truncation, piece by piece.** For `R ≥ 0` and a function integrable
 on `S_R`, its integral over `S_R` is the sum of its integrals over the annuli of the inputs, over
@@ -837,23 +754,24 @@ private theorem setIntegral_truncation_eq_add {g : ℂ → F} {R : ℝ} (hR : 0 
       (hint.mono_set (subset_union_left.trans (subset_union_left.trans subset_union_left)))
       (hint.mono_set (subset_union_right.trans (subset_union_left.trans subset_union_left)))]
   · abel
-  · refine aedisjoint_of_subset_sphere (c := 0) (r := 2) fun w ⟨hw₁, hw₂, _⟩ ↦ ?_
+  · refine measure_mono_null (fun w ⟨hw₁, hw₂, _⟩ ↦ ?_) (Measure.addHaar_sphere volume (0 : ℂ) 2)
     rw [truncation_eq] at hw₁
     simp only [mem_inter_iff, mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right, mul_zero,
       Real.exp_zero, mul_one] at hw₁
     simp only [mem_sphere_zero_iff_norm]
     linarith [hw₁.2]
-  · refine aedisjoint_of_subset_sphere (c := 0) (r := 1 / 2) fun w ⟨hw₁, _, hw₂⟩ ↦ ?_
+  · refine measure_mono_null (fun w ⟨hw₁, _, hw₂⟩ ↦ ?_)
+      (Measure.addHaar_sphere volume (0 : ℂ) (1 / 2))
     simp only [mem_sphere_zero_iff_norm]
     rcases hw₁ with hw₁ | hw₁
     · rw [truncation_eq] at hw₁
       simp only [mem_inter_iff, mem_ofPred_eq, mul_zero, neg_zero, Real.exp_zero] at hw₁
       linarith [hw₁.1.1]
     · linarith [hw₁.1]
-  · refine aedisjoint_of_subset_sphere (c := 1) (r := 1 / 2) fun w ⟨hw₁, _, hw₂⟩ ↦ ?_
+  · refine measure_mono_null (fun w ⟨hw₁, _, hw₂⟩ ↦ ?_)
+      (Measure.addHaar_sphere volume (1 : ℂ) (1 / 2))
     rw [mem_sphere_iff_norm]
-    have h₂ : 1 - ‖w‖ ≤ ‖w - 1‖ := by simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w
-    have h₁ : ‖w‖ - 1 ≤ ‖w - 1‖ := by simpa using norm_sub_norm_le w 1
+    obtain ⟨h₁, h₂⟩ := le_norm_sub_one w
     rcases hw₁ with (hw₁ | hw₁) | hw₁
     · rw [truncation_eq] at hw₁
       simp only [mem_inter_iff, mem_ofPred_eq, mul_zero, neg_zero, Real.exp_zero] at hw₁
@@ -865,8 +783,9 @@ private theorem setIntegral_truncation_eq_add {g : ℂ → F} {R : ℝ} (hR : 0 
 two-form `φ` and a map `u` of the pair of pants which is `C¹` on `S`, the integral of `u^* φ` over
 the truncation `S_R` is the sum of the integrals of `φ` over `u` along the end charts of the two
 inputs between the heights `0` and `R`, minus the integral over `u` composed with the output chart
-`TauCeti.Floer.pairOfPantsOutputChart R`. All three maps are cylinders whose boundary loops are
-the end loops of `u` at the heights `0` and `R`. -/
+`TauCeti.Floer.pairOfPantsOutputChart R`. The boundary circles of each chart run through the end
+loops at the heights `0` and `R`, and for `u` of class `C²` the composite of `u` with the output
+chart is a cylinder (`TauCeti.Floer.isLoopCylinder_comp_pairOfPantsOutputChart`). -/
 theorem setIntegral_truncation_eq_rectangleIntegral {φ : RoughForm I M F 2}
     (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {R : ℝ} (hR : 0 ≤ R) :
@@ -893,7 +812,7 @@ theorem setIntegral_truncation_eq_rectangleIntegral {φ : RoughForm I M F 2}
   rw [rectangleIntegral_comp_endChart hφ hu .zero hR (by simp) (by simp [hR]),
     rectangleIntegral_comp_endChart hφ hu .one hR (by simp) (by simp [hR]),
     rectangleIntegral_comp_pairOfPantsOutputChart hφ hu hR, sub_neg_eq_add, hZ, hO]
-  simp only [setIntegral_preimage_equivRealProdCLM_symm]
+  simp only [Complex.setIntegral_preimage_equivRealProdCLM_symm]
   refine setIntegral_truncation_eq_add hR ?_
   -- `u^* φ` is continuous on the compact truncation `S_R`.
   refine ContinuousOn.integrableOn_compact (isCompact_truncation R) ?_

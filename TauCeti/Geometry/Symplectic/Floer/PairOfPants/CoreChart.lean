@@ -47,7 +47,8 @@ The **core chart** `TauCeti.Floer.pairOfPantsCoreChart` is the loopwise concaten
 (`TauCeti.loopwiseTrans`) of these two halves. It is a smooth map of the cylinder `ℝ × ℝ / ℤ`
 (`TauCeti.Floer.contDiff_pairOfPantsCoreChart`,
 `TauCeti.Floer.pairOfPantsCoreChart_apply_add_one`) into `S₀`
-(`TauCeti.Floer.pairOfPantsCoreChart_mem_preimage_truncation`). It is constant in `s` for
+(`TauCeti.Floer.pairOfPantsCoreChart_mem_preimage_truncation`), hence into `S`
+(`TauCeti.Floer.pairOfPantsCoreChart_mem_thricePuncturedSphereReal`). It is constant in `s` for
 `s ≤ 0` and for `s ≥ 1` (`TauCeti.Floer.pairOfPantsCoreChart_mk_of_nonpos`,
 `TauCeti.Floer.pairOfPantsCoreChart_mk_of_one_le`). At `s = 0` it runs through the collared
 concatenation of the end loops of the inputs `0` and `1` at height `0`, both starting at `1/2`
@@ -620,6 +621,12 @@ theorem pairOfPantsCoreChart_mem_preimage_truncation (z : ℝ × ℝ) :
   exact loopwiseTrans_mem (fun _ hr ↦ symm_coreLobe_mem_truncation (.inl rfl) hr)
     (fun _ hr ↦ symm_coreLobe_mem_truncation (.inr rfl) hr)
 
+/-- The core chart takes values in the pair of pants `S`. -/
+theorem pairOfPantsCoreChart_mem_thricePuncturedSphereReal (z : ℝ × ℝ) :
+    pairOfPantsCoreChart z ∈ thricePuncturedSphereReal := by
+  have h := truncation_subset 0 (pairOfPantsCoreChart_mem_preimage_truncation z)
+  rwa [mem_thricePuncturedSphereReal_iff]
+
 /-- **The input loop of the core chart.** For `s = 0` the core chart runs through the collared
 concatenation of the end charts of the input ends `0` and `1` at height `0`, the circles of
 radius `1/2` about `0` and about `1`, both starting at `1/2`. -/
@@ -891,13 +898,7 @@ theorem rectangleIntegral_comp_pairOfPantsCoreChart [IsManifold I 1 M] {φ : Rou
       Complex.equivRealProdCLM.continuous.continuousOn fun w hw ↦ ?_
     rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
     exact truncation_subset 0 hw
-  have hpre : Complex.measurableEquivRealProd ⁻¹'
-      (Complex.equivRealProdCLM.symm ⁻¹' truncation 0) = truncation 0 := by
-    ext w
-    simp [Complex.measurableEquivRealProd]
-  rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-    Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre,
-    Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM]
+  rw [Complex.setIntegral_preimage_equivRealProdCLM_symm]
   exact congrArg (fun x ↦ -x) (integral_truncation_zero_eq_lobes hg).symm
 
 /-! ### The core as a cylinder -/
@@ -905,9 +906,8 @@ theorem rectangleIntegral_comp_pairOfPantsCoreChart [IsManifold I 1 M] {φ : Rou
 private theorem contMDiff_comp_pairOfPantsCoreChart {n : ℕ∞} {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u thricePuncturedSphereReal) :
     ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (u ∘ pairOfPantsCoreChart) :=
-  hu.comp_contMDiff contDiff_pairOfPantsCoreChart.contMDiff fun z ↦ by
-    have h := truncation_subset 0 (pairOfPantsCoreChart_mem_preimage_truncation z)
-    rwa [mem_thricePuncturedSphereReal_iff]
+  hu.comp_contMDiff contDiff_pairOfPantsCoreChart.contMDiff
+    pairOfPantsCoreChart_mem_thricePuncturedSphereReal
 
 /-- **The core of the pair of pants as a cylinder.** For a map `u` of the pair of pants `S` into
 a manifold `M` which is `C²` on `S`, the composite of `u` with the core chart is a cylinder from

@@ -31,6 +31,8 @@ any parameter interval `[a, a + 2π]`.
   any parameter interval of length `2π`.
 * `TauCeti.integral_neg_pi_pi_eq_circleIntegral`: a circle integral as an integral over
   `[-π, π]`.
+* `TauCeti.intervalIntegral_circleMap_sub_mul`: the integral over `t ∈ [0, 1]` around a circle run
+  through clockwise at the speed `2π` is the integral over the angles `[-π, π]` divided by `2π`.
 * `ContinuousOn.continuousOn_circleIntegral`: for `f` continuous on the closed disc
   `|z - c| ≤ R`, the map `r ↦ ∮ z in C(c, r), f z` is continuous on `[0, R]`.
 -/
@@ -70,6 +72,20 @@ theorem TauCeti.integral_neg_pi_pi_eq_circleIntegral (f : ℂ → E) (c : ℂ) (
   rw [TauCeti.circleIntegral_eq_intervalIntegral_add_two_pi f c R (-π),
     show -π + 2 * π = π by ring]
   simp only [deriv_circleMap]
+
+/-- Running clockwise around a circle at the speed `2π` from the angle `α`, the integral over the
+parameters `t ∈ [0, 1]` is the integral over the angles `[-π, π]` divided by `2π`. -/
+theorem TauCeti.intervalIntegral_circleMap_sub_mul {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (g : ℂ → G) (c : ℂ) (r α : ℝ) :
+    ∫ t in (0 : ℝ)..1, g (circleMap c r (α - 2 * π * t)) =
+      (2 * π)⁻¹ • ∫ θ in -π..π, g (circleMap c r θ) := by
+  have hper : Function.Periodic (fun θ ↦ g (circleMap c r θ)) (2 * π) := fun θ ↦ by
+    simp only [periodic_circleMap c r θ]
+  rw [intervalIntegral.integral_comp_sub_mul (fun θ ↦ g (circleMap c r θ))
+    (by positivity : (2 * π : ℝ) ≠ 0) α, mul_one, mul_zero, sub_zero]
+  congr 1
+  have h := hper.intervalIntegral_add_eq (α - 2 * π) (-π)
+  rwa [sub_add_cancel, show -π + 2 * π = π by ring] at h
 
 /-- For `f` continuous on the closed disc `|z - c| ≤ R`, the circle integrals
 `r ↦ ∮ z in C(c, r), f z` over the concentric circles are continuous in the radius on `[0, R]`,

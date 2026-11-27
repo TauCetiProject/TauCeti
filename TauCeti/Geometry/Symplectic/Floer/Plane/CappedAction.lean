@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.PolarCoord
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.MetricSpace.Annulus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
@@ -284,14 +285,12 @@ theorem rectangleIntegral_comp_endDisc [IsManifold I 1 M] {φ : RoughForm I M F 
     simp only [hangle, intervalIntegral.integral_smul]
     rw [intervalIntegral.smul_integral_comp_mul_left (fun s ↦ s • A s) ρ, mul_zero, mul_one]
   -- Polar coordinates on the disc.
-  have hpre : Complex.measurableEquivRealProd ⁻¹' (Complex.equivRealProdCLM.symm ⁻¹'
-      Metric.closedBall 0 ρ) = {w : ℂ | 0 ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} := by
+  have hball : Metric.closedBall (0 : ℂ) ρ = {w : ℂ | 0 ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} := by
     ext w
-    simp [Complex.measurableEquivRealProd]
+    simp
   have hdisc : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 ρ, f z =
       ∫ s in (0 : ℝ)..ρ, s • A s := by
-    rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-      Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre]
+    rw [Complex.setIntegral_preimage_equivRealProdCLM_symm, hball]
     exact integral_annulus_eq_integral_circleMap le_rfl hρ
       ((hf.comp Complex.equivRealProdCLM.continuous).continuousOn.integrableOn_compact
         (isCompact_setOf_le_norm_sub_le 0 0 ρ))

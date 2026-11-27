@@ -460,7 +460,7 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V)
           1 / 2 * ω (u (endChart q ζ)) (fderiv ℝ (u ∘ endChart q) ζ stdComplexLineImag))) := by
   set L := fderiv ℝ (endChart q) ζ
   set x := u (endChart q ζ)
-  have hw := endChart_mem_thricePuncturedSphereReal hζ
+  have hw := endChart_mem_thricePuncturedSphereReal hζ.le
   have hφ : DifferentiableAt ℝ (endChart q) ζ := (hasFDerivAt_endChart q ζ).differentiableAt
   have hu₁ : DifferentiableAt ℝ u (endChart q ζ) :=
     (hu.differentiableOn (by norm_num) _ hw).differentiableAt
@@ -498,7 +498,7 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
   set x : ℝ → V := fun t ↦ u (endChart q (s, t)) with hx
   have huq (t : ℝ) : ContDiffAt ℝ 2 (u ∘ endChart q) (s, t) :=
     (hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds
-      (endChart_mem_thricePuncturedSphereReal (z := (s, t)) hs))).comp (s, t)
+      (endChart_mem_thricePuncturedSphereReal (z := (s, t)) hs.le))).comp (s, t)
       (contDiff_endChart q 2).contDiffAt
   have hline (t : ℝ) : HasDerivAt (fun t : ℝ ↦ (s, t)) stdComplexLineImag t := by
     simpa [stdComplexLineImag_eq] using HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
