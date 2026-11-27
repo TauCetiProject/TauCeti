@@ -17,7 +17,9 @@ shapes: it carries previous and next indices of `c` to those of `c'`
 (`ComplexShape.Embedding.prev_f_of_surjective`, `ComplexShape.Embedding.next_f_of_surjective`).
 So the restriction of a complex along `e` has, at every index `j`, the homology of the complex at
 `e.f j` (`HomologicalComplex.restrictionHomologyIsoOfSurjective`), naturally in the complex
-(`HomologicalComplex.homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom`). This
+(`HomologicalComplex.homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom`) and
+sending the class of a cycle to the class of the same cycle
+(`HomologicalComplex.liftCycles_homologyπ_restrictionHomologyIsoOfSurjective_hom`). This
 is Mathlib's `HomologicalComplex.restrictionHomologyIso`, whose compatibility hypotheses on
 previous and next indices then hold at every index. Such embeddings are given by bijections of
 indices compatible with the relations (`ComplexShape.Embedding.mk'`); they are used to read a
@@ -88,5 +90,25 @@ lemma homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom
     homologyπ_restrictionHomologyIso_hom, homologyπ_restrictionHomologyIso_hom_assoc,
     homologyπ_naturality]
   rw [reassoc_of% hcycles]
+
+/-- The comparison `restrictionHomologyIsoOfSurjective` on cycles: the class of a cycle `x` of the
+restriction at `j` is sent to the class of the same cycle of the complex at `j' = e.f j`. -/
+@[reassoc]
+lemma liftCycles_homologyπ_restrictionHomologyIsoOfSurjective_hom (K : HomologicalComplex C c')
+    (j : ι) (j' : ι') (hj : e.f j = j') [K.HasHomology j'] [(K.restriction e).HasHomology j]
+    {A : C} (x : A ⟶ (K.restriction e).X j) (k : ι) (hk : c.next j = k)
+    (hx : x ≫ (K.restriction e).d j k = 0) :
+    (K.restriction e).liftCycles x k hk hx ≫ (K.restriction e).homologyπ j ≫
+        (K.restrictionHomologyIsoOfSurjective e he j j' hj).hom =
+      K.liftCycles (x ≫ (K.restrictionXIso e hj).hom) (e.f k)
+          (by rw [← hj, ← hk, e.next_f_of_surjective he j])
+          (by rw [← cancel_mono (K.restrictionXIso e (rfl : e.f k = e.f k)).inv, zero_comp,
+            Category.assoc, Category.assoc, ← K.restriction_d_eq e hj rfl, hx]) ≫
+        K.homologyπ j' := by
+  rw [restrictionHomologyIsoOfSurjective, homologyπ_restrictionHomologyIso_hom,
+    ← Category.assoc]
+  congr 1
+  rw [← cancel_mono (K.iCycles j')]
+  simp
 
 end HomologicalComplex
