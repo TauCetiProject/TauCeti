@@ -231,6 +231,7 @@ theorem coefficientMatrix_baseChangeForm (q : QuadraticForm R (ι → R)) (A : T
 
 /-- **Base change of forms is transitive**: for a tower `R → A → B`, the form on `B^ι` with the
 coefficients of `q_A` is the form with the coefficients of `q`. -/
+@[simp]
 theorem baseChangeForm_baseChangeForm (q : QuadraticForm R (ι → R)) (A B : Type*) [CommRing A]
     [CommRing B] [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B] :
     baseChangeForm (baseChangeForm q A) B = baseChangeForm q B := by

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Matrix
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
@@ -37,22 +38,6 @@ commutes with `reverse`, and `ι(A^n)` is the `A`-span of the images of the coor
 -/
 
 public section
-
-/-- The isometry equivalence between equal quadratic maps: the identity of the underlying module.
--/
-@[expose]
-def QuadraticMap.IsometryEquiv.ofEq {R M N : Type*} [CommSemiring R] [AddCommMonoid M]
-    [Module R M] [AddCommMonoid N] [Module R N] {Q₁ Q₂ : QuadraticMap R M N} (h : Q₁ = Q₂) :
-    Q₁.IsometryEquiv Q₂ where
-  toLinearEquiv := LinearEquiv.refl R M
-  map_app' _ := by rw [h]; rfl
-
-/-- `QuadraticMap.IsometryEquiv.ofEq` is the identity on the underlying module. -/
-@[simp]
-theorem QuadraticMap.IsometryEquiv.ofEq_apply {R M N : Type*} [CommSemiring R] [AddCommMonoid M]
-    [Module R M] [AddCommMonoid N] [Module R N] {Q₁ Q₂ : QuadraticMap R M N} (h : Q₁ = Q₂)
-    (m : M) : QuadraticMap.IsometryEquiv.ofEq h m = m :=
-  (rfl)
 
 namespace CliffordAlgebra
 
@@ -131,8 +116,9 @@ theorem baseChangeHom_self (x : CliffordAlgebra q) :
         x := by
   rw [equivOfIsometry_apply]
   refine AlgHom.congr_fun (CliffordAlgebra.hom_ext (LinearMap.ext fun m ↦ ?_)) x
-  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, baseChangeHom_ι, map_apply_ι]
-  rfl
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, baseChangeHom_ι, map_apply_ι,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, QuadraticMap.IsometryEquiv.ofEq_apply,
+    Algebra.algebraMap_self, RingHom.coe_id, Function.id_comp]
 
 /-- **Base change is transitive**: for a tower `R → A → B`, `C(q) → C(q_A) → C((q_A)_B)` is
 `C(q) → C(q_B)` followed by the identification of the equal forms `q_B` and `(q_A)_B`. -/
@@ -149,9 +135,8 @@ theorem baseChangeHom_baseChangeHom (B : Type*) [CommRing B] [Algebra A B] [Alge
         (baseChangeHom q B))
     (CliffordAlgebra.hom_ext (LinearMap.ext fun m ↦ ?_)) x
   simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
-    AlgHom.restrictScalars_apply, baseChangeHom_ι, map_apply_ι]
-  congr 1
-  ext i
-  exact (IsScalarTower.algebraMap_apply R A B (m i)).symm
+    AlgHom.restrictScalars_apply, baseChangeHom_ι, map_apply_ι,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, QuadraticMap.IsometryEquiv.ofEq_apply,
+    IsScalarTower.algebraMap_eq R A B, RingHom.coe_comp, Function.comp_assoc]
 
 end CliffordAlgebra
