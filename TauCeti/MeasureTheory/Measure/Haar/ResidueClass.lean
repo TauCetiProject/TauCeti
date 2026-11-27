@@ -40,9 +40,11 @@ theorem measure_residueClass (g : Aˣ) (x₀ : ι → A) :
   rw [R.residueClass_eq_pi, Measure.pi_pi]
   have hcoord (i : ι) : μ ((fun y : A ↦ x₀ i + g * y) '' (R : Set A)) =
       (distribHaarChar A g : ℝ≥0∞) * μ R := by
-    rw [← Set.image_image]
-    rw [Set.image_add_left, measure_preimage_add]
-    exact (distribHaarChar_mul μ g (R : Set A)).symm
+    have himage : (fun y : A ↦ x₀ i + g * y) '' (R : Set A) =
+        (x₀ i + ·) '' (g • (R : Set A)) := by
+      rw [← Set.image_smul, Set.image_image]
+      simp [Units.smul_def]
+    rw [himage, Set.image_add_left, measure_preimage_add, distribHaarChar_mul]
   simp_rw [hcoord]
   simp [mul_pow]
 

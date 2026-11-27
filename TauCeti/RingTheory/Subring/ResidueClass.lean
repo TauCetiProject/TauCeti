@@ -78,8 +78,8 @@ theorem residueClass_eq_vadd (g : Aˣ) (x₀ : ι → A) :
 /-- Two classes of the same scale agree exactly when their centres are congruent. -/
 theorem residueClass_eq_iff (g : Aˣ) (x₀ x₁ : ι → A) :
     R.residueClass g x₁ = R.residueClass g x₀ ↔ x₁ ∈ R.residueClass g x₀ := by
-  rw [residueClass_eq_vadd, residueClass_eq_vadd, leftAddCoset_eq_iff, mem_leftAddCoset_iff,
-    SetLike.mem_coe, ← neg_mem_iff, neg_add_rev, neg_neg]
+  rw [residueClass_eq_vadd, residueClass_eq_vadd, leftAddCoset_eq_iff, ← neg_mem_iff]
+  simp [mem_leftAddCoset_iff, neg_add_eq_sub]
 
 /-- Changing the centre within a class does not change the class. -/
 theorem residueClass_eq_of_mem (g : Aˣ) {x₀ x₁ : ι → A}
