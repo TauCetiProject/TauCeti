@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
@@ -19,9 +19,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 # The differential of the complex polar parametrization
 
 The Cartesian polar map has differential `polarCoordSymmDeriv` at every real radius and angle.
-Its differential is injective at nonzero radius, where the map is a `C^n` local diffeomorphism
-for every regularity `n ≥ 1`, including analytic regularity. The translated polar map is smooth
-even at zero radius. Its radial and angular derivative vectors give the pullback Euclidean metric
+Its differential is injective at nonzero radius. The translated polar map is smooth even at
+zero radius. Its radial and angular derivative vectors give the pullback Euclidean metric
 `dr² + r² dθ²`, which is invariant under angular translations.
 -/
 
@@ -29,7 +28,7 @@ public noncomputable section
 
 namespace TauCeti
 
-open scoped Manifold ContDiff RealInnerProductSpace
+open scoped ContDiff RealInnerProductSpace
 
 open Complex
 
@@ -110,18 +109,5 @@ theorem polarCoordSymmDeriv_injective (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
     rw [LinearMap.isUnit_iff_isUnit_det, ← ContinuousLinearMap.det, det_fderivPolarCoordSymm]
     exact hx.isUnit
   exact Complex.equivRealProdCLM.symm.injective.comp ((Module.End.isUnit_iff _).mp hunit).injective
-
-/-- The Cartesian polar parametrization is a `C^n` local diffeomorphism at every nonzero
-radius, for every regularity `n ≥ 1`, including analytic regularity. -/
-theorem isLocalDiffeomorphAt_polarCoord_symm (x : ℝ × ℝ) (hx : x.1 ≠ 0)
-    {n : WithTop ℕ∞} (hn : 1 ≤ n) :
-    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℂ) n Complex.polarCoord.symm x := by
-  have hs : ContDiff ℝ n Complex.polarCoord.symm := by
-    simpa only [zero_add] using TauCeti.contDiff_add_polarCoord_symm (n := n) 0
-  refine TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv hs.contMDiff.contMDiffOn
-    isOpen_univ (Set.mem_univ x) BoundarylessManifold.isInteriorPoint hn ?_
-    Complex.equivRealProdCLM.symm.toLinearEquiv.finrank_eq
-  rw [mfderiv_eq_fderiv, fderiv_polarCoord_symm]
-  exact polarCoordSymmDeriv_injective x hx
 
 end TauCeti
