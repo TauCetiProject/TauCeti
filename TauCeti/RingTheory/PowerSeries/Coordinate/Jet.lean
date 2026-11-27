@@ -155,6 +155,18 @@ theorem jet_eq_one_iff {N : ℕ} {φ : FormalCoordinate R} :
 
 namespace Jet
 
+/-- The coefficient at an index `i ≤ N` of an `N`-jet, independent of its representative. -/
+noncomputable def coeff {N : ℕ} (x : Jet R N) (i : Fin (N + 1)) : R :=
+  PowerSeries.coeff i (Function.surjInv (jet_surjective N) x).toPowerSeries
+
+/-- The coefficients of a jet are those of any representative, up to its jet order. -/
+@[simp]
+theorem coeff_jet {N : ℕ} (φ : FormalCoordinate R) (i : Fin (N + 1)) :
+    (jet N φ).coeff i = PowerSeries.coeff i φ.toPowerSeries := by
+  have h : jet N (Function.surjInv (jet_surjective N) (jet N φ)) = jet N φ :=
+    Function.rightInverse_surjInv (jet_surjective N) _
+  exact (jet_eq_jet_iff_coeff.mp h) i (Nat.le_of_lt_succ i.isLt)
+
 /-- For `N ≤ M`, the truncation of `M`-jets to `N`-jets. -/
 noncomputable def truncate {N M : ℕ} (h : N ≤ M) : Jet R M →* Jet R N :=
   QuotientGroup.map _ _ (.id _) (jetKernel_mono h)
@@ -163,6 +175,13 @@ noncomputable def truncate {N M : ℕ} (h : N ≤ M) : Jet R M →* Jet R N :=
 theorem truncate_jet {N M : ℕ} (h : N ≤ M) (φ : FormalCoordinate R) :
     truncate h (jet M φ) = jet N φ :=
   (rfl)
+
+/-- Truncation preserves each coefficient in the retained range. -/
+@[simp]
+theorem coeff_truncate {N M : ℕ} (h : N ≤ M) (x : Jet R M) (i : Fin (N + 1)) :
+    (truncate h x).coeff i = x.coeff (i.castLE (Nat.succ_le_succ h)) := by
+  obtain ⟨φ, rfl⟩ := jet_surjective M x
+  simp only [truncate_jet, coeff_jet, Fin.val_castLE]
 
 theorem truncate_comp_jet {N M : ℕ} (h : N ≤ M) :
     (truncate h).comp (jet M) = jet (R := R) N :=
@@ -247,7 +266,7 @@ theorem map_injective {f : R →+* S} (hf : Function.Injective f) (N : ℕ) :
   rw [jet_eq_one_iff, X_pow_dvd_iff]
   intro m hm
   apply hf
-  rw [map_zero, ← coeff_map, map_sub, PowerSeries.map_X, ← toPowerSeries_map]
+  rw [map_zero, ← PowerSeries.coeff_map, map_sub, PowerSeries.map_X, ← toPowerSeries_map]
   exact hx m hm
 
 end Jet
