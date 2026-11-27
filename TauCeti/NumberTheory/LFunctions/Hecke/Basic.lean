@@ -86,6 +86,11 @@ theorem meromorphicNFOn_heckeLFunctionC (χ : RayClassCharacter 𝔪) :
     MeromorphicNFOn (heckeLFunctionC χ) univ :=
   meromorphicNFOn_meromorphicContinuation _ _
 
+/-- The presented Hecke L-function is meromorphic on the plane. -/
+theorem meromorphic_heckeLFunctionC (χ : RayClassCharacter 𝔪) :
+    Meromorphic (heckeLFunctionC χ) :=
+  meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC χ).meromorphicOn
+
 /-- The presented Hecke L-function is holomorphic on `Re s > 1`. -/
 theorem analyticOnNhd_heckeLFunctionC (χ : RayClassCharacter 𝔪) :
     AnalyticOnNhd ℂ (heckeLFunctionC χ) {s | 1 < s.re} :=
