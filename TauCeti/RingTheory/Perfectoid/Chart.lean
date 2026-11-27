@@ -15,14 +15,15 @@ public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Period
 
 Let `A` be a `p`-adically complete ring in which `p` is not a unit, `A♭ = PreTilt A p` its tilt,
 `A_inf = W(A♭)` and `θ : A_inf → A` Fontaine's map. The motivating case is `A = O_C`, the valuation
-ring of `ℂ_p`. For `f : ℕ`, the *constants* `𝔽_{p^f} ⊆ A♭` are the elements fixed by the
+ring of `ℂ_p`. For `f ≥ 1`, the *constants* `𝔽_{p^f} ⊆ A♭` are the elements fixed by the
 `p ^ f`-power Frobenius (`TauCeti.frobeniusFixedSubring`), and `Λ = W(𝔽_{p^f})` maps into `A_inf`
-by functoriality of Witt vectors. For `f ≠ 0` and `A` a domain, `𝔽_{p^f}` is a field
+by functoriality of Witt vectors. When `A` is a domain, `𝔽_{p^f}` is a finite field
 (`TauCeti.isField_frobeniusFixedSubring`), with exactly `p ^ f` elements when `A♭` is absolutely
 integrally closed, as it is for `A = O_C`
 (`TauCeti.IsAbsolutelyIntegrallyClosed.natCard_frobeniusFixedSubring`).
 
-A *chart* (`TauCeti.Perfectoid.Chart`) is the data of a `Λ`-algebra map `Λ⟦X⟧ → A_inf`, an element
+A *chart* (`TauCeti.Perfectoid.Chart`) requires `f ≠ 0` and consists of a `Λ`-algebra map
+`Λ⟦X⟧ → A_inf`, an element
 `ϖ♭ ∈ A♭` with `X ↦ z = [ϖ♭]`, an integer `e ≥ 0` and a unit `A(X)` of `Λ⟦X⟧`, such that the image
 `E = z ^ e A(z) + p` of `X ^ e A(X) + p` generates the kernel of `θ`. Its ring `S ⊆ A_inf` is the
 image of `Λ⟦X⟧`. For `A = O_C` the condition on `E` says that `E` is a unit multiple of the period
@@ -79,9 +80,11 @@ kernel of Fontaine's map `θ : A_inf → A`.
 
 The image of `Λ⟦X⟧` is the ring `TauCeti.Perfectoid.Chart.S` of the chart. The conditions force
 `e ≠ 0` and that `z` is not a unit (`TauCeti.Perfectoid.Chart.e_ne_zero`,
-`TauCeti.Perfectoid.Chart.not_isUnit_z`). At `f = 0` the constants are all of `A♭`; the case of
-interest is `f ≠ 0`, where they form a finite field when `A` is a domain. -/
+`TauCeti.Perfectoid.Chart.not_isUnit_z`). The constant-field exponent `f` is nonzero, so the
+constants form a finite field when `A` is a domain. -/
 structure Chart (f : ℕ) where
+  /-- The constant-field exponent is positive. -/
+  f_ne_zero : f ≠ 0
   /-- The map `Λ⟦X⟧ → A_inf` of the chart. -/
   seriesMap : (WittVector p (frobeniusFixedSubring (PreTilt A p) p f))⟦X⟧ →+*
     WittVector p (PreTilt A p)

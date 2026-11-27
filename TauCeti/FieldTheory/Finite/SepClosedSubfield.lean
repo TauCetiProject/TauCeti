@@ -83,18 +83,13 @@ theorem coe_frobeniusFixedSubfield_eq_rootSet (hn : n ≠ 0) :
   ext a
   simp [Polynomial.mem_rootSet, hne, sub_eq_zero]
 
-/-- The equivalence used to count the Frobenius-fixed subfield: its elements are exactly the roots
-of `X ^ p ^ n - X`, a separable polynomial of degree `p ^ n`. The public form of this is
-`coe_frobeniusFixedSubfield_eq_rootSet`. -/
-private noncomputable def frobeniusFixedSubfieldEquivRootSet (hn : n ≠ 0) :
-    frobeniusFixedSubfield K p n ≃ (X ^ p ^ n - X : K[X]).rootSet K :=
-  Set.equivOfEq (coe_frobeniusFixedSubfield_eq_rootSet K p n hn)
-
 /-- The Frobenius-fixed subfield of a field of characteristic `p` is finite once `n ≠ 0`, being a
 set of roots of a nonzero polynomial. This is not an instance: at `n = 0` the subfield is the whole
 of `K`, which need not be finite. -/
-theorem finite_frobeniusFixedSubfield (hn : n ≠ 0) : Finite (frobeniusFixedSubfield K p n) :=
-  .of_equiv _ (frobeniusFixedSubfieldEquivRootSet K p n hn).symm
+theorem finite_frobeniusFixedSubfield (hn : n ≠ 0) : Finite (frobeniusFixedSubfield K p n) := by
+  have := finite_frobeniusFixedSubring K p n hn
+  exact .of_equiv _ (Equiv.subtypeEquivRight fun a ↦ by
+    rw [← Subfield.mem_toSubring, toSubring_frobeniusFixedSubfield]).symm
 
 /-- **Uniqueness of the subfield of `q` elements.** A subfield with `p ^ n` elements of a field of
 characteristic `p` is the subfield fixed by the `p ^ n`-power Frobenius.
@@ -130,11 +125,11 @@ theorem card_frobeniusFixedSubfield (hn : n ≠ 0) :
     Nat.card (frobeniusFixedSubfield K p n) = p ^ n := by
   have hsep : Separable (X ^ p ^ n - X : K[X]) :=
     galois_poly_separable p (p ^ n) (dvd_pow_self p hn)
-  have hsplit : ((X ^ p ^ n - X : K[X]).map (algebraMap K K)).Splits :=
-    IsSepClosed.splits_domain _ hsep
-  rw [Nat.card_congr (frobeniusFixedSubfieldEquivRootSet K p n hn), Nat.card_eq_fintype_card,
-    card_rootSet_eq_natDegree hsep hsplit,
-    natDegree_X_pow_sub_X (Nat.one_lt_pow hn (Fact.out (p := p.Prime)).one_lt)]
+  have hsplit : (X ^ p ^ n - X : K[X]).Splits :=
+    IsSepClosed.splits_of_separable _ hsep
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun a ↦ by
+    rw [← Subfield.mem_toSubring, toSubring_frobeniusFixedSubfield])]
+  exact natCard_frobeniusFixedSubring_of_splits K p hn hsplit
 
 /-- The Frobenius-fixed subfield of a separably closed field is a copy of Mathlib's
 `GaloisField p n`, the two being finite fields of the same cardinality. The isomorphism is not
