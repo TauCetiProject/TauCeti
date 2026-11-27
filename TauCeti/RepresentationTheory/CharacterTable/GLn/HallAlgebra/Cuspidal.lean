@@ -65,7 +65,7 @@ similar to `g`, since the Sylvester map `y ↦ g y - y g` between the two blocks
   pointwise product `New.Hall.mulMoebius` is written out here, and the irreducible factor `P` is
   taken from the minimal polynomial. The similarity of a semisimple block triangular map with its
   block diagonal part is `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`, and the
-  Sylvester equation on a Fitting component is `TauCeti.SimilarityClass.exists_sylvester_eq`.
+  Sylvester equation on a Fitting component is `Module.End.exists_sylvester_eq`.
 -/
 
 public section
@@ -106,24 +106,12 @@ theorem moebius_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) : moebius
     eq_of_dim_eq_zero (c := ofEnd (o.rep.invtRestrict (⊥ : o.rep.invtSubmodule).prop)) (by simp)
       h] at key
 
-/-- **`μ` vanishes off the semisimple classes.** If `μ(g) ≠ 0`, then `g` is semisimple. -/
-private theorem isSemisimple_of_moebius_ofEnd_ne_zero {g : Module.End k V}
-    (h : moebius (ofEnd g) ≠ 0) : g.IsSemisimple := by
-  classical
-  -- Evaluated at `g`, `μ ∗ 𝟙 = 1` makes `U ↦ μ(g|_U)` the Möbius function `U ↦ μ(⊥, U)` of the
-  -- modular lattice of `g`-invariant subspaces, so by Crapo's complementation theorem this
-  -- lattice is complemented when `μ(g) ≠ 0`.
-  have := Fintype.ofFinite g.invtSubmodule
-  -- The `g`-invariant subspaces form a modular lattice, as a sublattice of `Submodule k V`.
-  have : IsModularLattice g.invtSubmodule :=
-    ⟨fun {_} y {_} hxz ↦ IsModularLattice.sup_inf_le_assoc_of_le (y : Submodule k V) hxz⟩
-  have h_top : ofEnd (g.invtRestrict (⊤ : g.invtSubmodule).prop) = ofEnd g :=
-    ofEnd_invtRestrict_eq_of_injective (g := g) (g' := g) LinearMap.id (fun _ ↦ rfl)
-      (⊤ : g.invtSubmodule).prop Function.injective_id LinearMap.range_id
-  have : ComplementedLattice g.invtSubmodule :=
-    complementedLattice_of_sum_le_eq_zero (μ := fun U ↦ moebius (ofEnd (g.invtRestrict U.prop)))
-      (fun X hX ↦ ?_) (by rwa [h_top])
-  · exact Module.End.isSemisimple_iff'.2 fun p ↦ exists_isCompl p
+open scoped Classical in
+/-- For a nonzero `g`-invariant subspace `X`, the values `μ(g|_U)` at the `g`-invariant subspaces
+`U ≤ X` add up to `0`: they are those of `g|_X`, which add up to `1(g|_X) = 0`. -/
+private theorem sum_moebius_invtRestrict_le_eq_zero (g : Module.End k V)
+    [Fintype g.invtSubmodule] {X : g.invtSubmodule} (hX : X ≠ ⊥) :
+    ∑ U with U ≤ X, moebius (ofEnd (g.invtRestrict U.prop)) = 0 := by
   -- The invariant subspaces of `g` below `X` are those of `g` on `X`.
   have hX' : (X : Submodule k V) ≠ ⊥ := fun h ↦ hX (Subtype.ext h)
   have := Fintype.ofFinite (g.invtRestrict X.prop).invtSubmodule
@@ -140,6 +128,25 @@ private theorem isSemisimple_of_moebius_ofEnd_ne_zero {g : Module.End k V}
     exact Subtype.coe_le_coe.symm
   · exact congrArg moebius (ofEnd_invtRestrict_comap _ (g.coe_invtRestrict_apply X.prop)
       X.val.injective_subtype U.prop (by simpa using (Finset.mem_filter.1 hU).2)).symm
+
+/-- **`μ` vanishes off the semisimple classes.** If `μ(g) ≠ 0`, then `g` is semisimple. -/
+private theorem isSemisimple_of_moebius_ofEnd_ne_zero {g : Module.End k V}
+    (h : moebius (ofEnd g) ≠ 0) : g.IsSemisimple := by
+  classical
+  -- Evaluated at `g`, `μ ∗ 𝟙 = 1` makes `U ↦ μ(g|_U)` the Möbius function `U ↦ μ(⊥, U)` of the
+  -- modular lattice of `g`-invariant subspaces, so by Crapo's complementation theorem this
+  -- lattice is complemented when `μ(g) ≠ 0`.
+  have := Fintype.ofFinite g.invtSubmodule
+  -- The `g`-invariant subspaces form a modular lattice, as a sublattice of `Submodule k V`.
+  have : IsModularLattice g.invtSubmodule :=
+    ⟨fun {_} y {_} hxz ↦ IsModularLattice.sup_inf_le_assoc_of_le (y : Submodule k V) hxz⟩
+  have h_top : ofEnd (g.invtRestrict (⊤ : g.invtSubmodule).prop) = ofEnd g :=
+    ofEnd_invtRestrict_eq_of_injective (g := g) (g' := g) LinearMap.id (fun _ ↦ rfl)
+      (⊤ : g.invtSubmodule).prop Function.injective_id LinearMap.range_id
+  have : ComplementedLattice g.invtSubmodule :=
+    complementedLattice_of_sum_le_eq_zero (μ := fun U ↦ moebius (ofEnd (g.invtRestrict U.prop)))
+      (fun _ hX ↦ sum_moebius_invtRestrict_le_eq_zero g hX) (by rwa [h_top])
+  exact Module.End.isSemisimple_iff'.2 fun p ↦ exists_isCompl p
 
 /-- `μ` takes real values. -/
 @[simp]
@@ -238,7 +245,7 @@ private theorem isNilpotent_aeval_of_isCuspidal {A : HallAlgebra k} (hA : A.IsCu
     rw [blockAverage_ofEnd]
     refine fun h ↦ hg ?_
     rw [← h, Finset.expect_congr rfl fun x _ ↦ by
-      obtain ⟨y, hy⟩ := exists_sylvester_eq hC rfl hN hT x
+      obtain ⟨y, hy⟩ := Module.End.exists_sylvester_eq hC rfl hN hT x
       rw [ofEnd_blockTriangular_eq_of_sylvester hC rfl hN hgT hy]]
     simp
   by_cases hC₀ : Module.finrank k (LinearMap.ker T) = 0

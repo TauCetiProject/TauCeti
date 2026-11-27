@@ -53,10 +53,10 @@ These classes index the class functions on all square matrices of the Hall algeb
   `W`.
 * `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`: a semisimple block triangular
   map is similar to its block diagonal part.
-* `TauCeti.SimilarityClass.exists_sylvester_eq`,
-  `TauCeti.SimilarityClass.ofEnd_blockTriangular_eq_of_sylvester`: on a Fitting component
-  `C = ker T` of `g`, the Sylvester map `y ↦ g|_C ∘ y - y ∘ g|_{V / C}` is surjective, and every
-  block triangular map with diagonal blocks `g|_C` and `g|_{V / C}` is similar to `g`.
+* `TauCeti.SimilarityClass.ofEnd_blockTriangular_eq_of_sylvester`: on a Fitting component
+  `C = ker T` of `g`, a block triangular map with diagonal blocks `g|_C` and `g|_{V / C}` whose
+  corner `x` is `g|_C ∘ y - y ∘ g|_{V / C}` for some `y` is similar to `g`; by
+  `Module.End.exists_sylvester_eq` every corner has this form.
 
 ## References
 
@@ -72,9 +72,10 @@ These classes index the class functions on all square matrices of the Hall algeb
 * Adapted from grh-lean as above: the similarity of a semisimple block triangular map with its
   block diagonal part from `src/Lib/LocalGL/Green/CuspidalFunctions.lean`, here proved with an
   invariant complement of the first summand rather than with a projection.
-* Adapted from the same file: the Sylvester equation on a Fitting component and the resulting
-  conjugation, from the proof of `New.Hall.IsCuspidal.exists_charpoly_eq_pow`, here with
-  `Submodule.liftQ` instead of `quotKerEquivRange`.
+* Adapted from the same file: the conjugation of a block triangular map to `g` through a solution
+  of the Sylvester equation on a Fitting component, from the proof of
+  `New.Hall.IsCuspidal.exists_charpoly_eq_pow`, here with `Submodule.liftQ` instead of
+  `quotKerEquivRange`.
 -/
 
 public section
@@ -303,33 +304,23 @@ theorem ofEnd_blockTriangular_of_isSemisimple {a : Module.End k V} {b : Module.E
     (Module.End.mem_invtSubmodule _).2 fun p hp ↦ by
       simp_all [g, blockTriangular_apply]
   obtain ⟨C, hC, hKC⟩ := Module.End.isSemisimple_iff.1 h _ hK
-  -- The second coordinate is an isomorphism from `C` onto `W`.
-  have h_inj : Function.Injective (LinearMap.snd k V W ∘ₗ C.subtype) := by
-    refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-    have : (c : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊓ C :=
-      ⟨LinearMap.mem_ker.2 (by simpa using hc), c.prop⟩
-    simpa [hKC.inf_eq_bot] using this
-  have h_surj : Function.Surjective (LinearMap.snd k V W ∘ₗ C.subtype) := by
-    intro w
-    obtain ⟨u, hu, c, hc, huc⟩ := Submodule.mem_sup.1 (hKC.sup_eq_top ▸ Submodule.mem_top :
-      ((0, w) : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊔ C)
-    refine ⟨⟨c, hc⟩, ?_⟩
-    have h₂ : u.2 + c.2 = w := congrArg Prod.snd huc
-    have hu₂ : u.2 = 0 := by simpa using LinearMap.mem_ker.1 hu
-    simp [← h₂, hu₂]
-  let eC := LinearEquiv.ofBijective _ ⟨h_inj, h_surj⟩
+  -- The second coordinate is an isomorphism from `C` onto `W`: `C ≃ (V × W) ⧸ ker snd ≃ W`.
+  let eC : C ≃ₗ[k] W := (Submodule.quotientEquivOfIsCompl _ C hKC).symm ≪≫ₗ
+    (LinearMap.snd k V W).quotKerEquivOfSurjective LinearMap.snd_surjective
+  have heC (c : C) : eC c = (c : V × W).2 := by
+    simp [eC, Submodule.quotientEquivOfIsCompl_symm_apply]
   -- `(v, w) ↦ (v, 0) + c(w)`, with `c(w) ∈ C` the element of second coordinate `w`, conjugates
   -- `a ⊕ b` to `g`.
   let φ : Module.End k (V × W) :=
     LinearMap.coprod (LinearMap.inl k V W) (C.subtype ∘ₗ eC.symm.toLinearMap)
-  have hφ_snd (w : W) : ((eC.symm w : C) : V × W).2 = w :=
-    eC.apply_symm_apply w
+  have hφ_snd (w : W) : ((eC.symm w : C) : V × W).2 = w := by
+    rw [← heC, eC.apply_symm_apply]
   have h_comm (p : V × W) : φ (a.prodMap b p) = g (φ p) := by
     -- `g` preserves `C`, and on `C` it acts on the second coordinate as `b`.
     have hgc : g (eC.symm p.2) = (eC.symm (b p.2) : V × W) := by
       have h_mem : g (eC.symm p.2) ∈ C := (Module.End.mem_invtSubmodule _).1 hC (eC.symm p.2).prop
-      have := h_inj (a₁ := ⟨_, h_mem⟩) (a₂ := eC.symm (b p.2)) (by
-        simp [hφ_snd, g, blockTriangular_apply])
+      have := eC.injective (a₁ := ⟨_, h_mem⟩) (a₂ := eC.symm (b p.2)) (by
+        simp [heC, hφ_snd, g, blockTriangular_apply])
       exact congrArg Subtype.val this
     simp [φ, map_add, hgc, g, blockTriangular_apply]
   have hφ_inj : Function.Injective φ := by
@@ -345,39 +336,6 @@ open Module.End (blockTriangular blockTriangular_apply)
 
 variable {g T : Module.End k V} {C : Submodule k V} (hC : C ∈ g.invtSubmodule)
   (hCT : LinearMap.ker T = C) (hN : IsCompl C (LinearMap.range T))
-
-include hCT hN in
-/-- Let `T` commute with every map commuting with `g`, with `C = ker T` complementary to
-`range T` (a Fitting component). Then the Sylvester map `y ↦ g|_C ∘ y - y ∘ g|_{V / C}` is
-injective, hence surjective. -/
-theorem exists_sylvester_eq (hT : ∀ Y : Module.End k V, Commute Y g → Commute Y T)
-    (x : (V ⧸ C) →ₗ[k] C) :
-    ∃ y : (V ⧸ C) →ₗ[k] C, g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC = x := by
-  let S : ((V ⧸ C) →ₗ[k] C) →ₗ[k] ((V ⧸ C) →ₗ[k] C) :=
-    { toFun y := g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC
-      map_add' y y' := by ext; simp; abel
-      map_smul' c y := by ext; simp [smul_sub] }
-  suffices h_inj : Function.Injective S by
-    obtain ⟨y, hy⟩ := LinearMap.injective_iff_surjective.1 h_inj x
-    exact ⟨y, hy⟩
-  refine (injective_iff_map_eq_zero S).2 fun y hy ↦ ?_
-  have hy' (v : V) : (y (Submodule.Quotient.mk (g v)) : V) = g (y (Submodule.Quotient.mk v)) := by
-    have := congrArg (fun z ↦ ((z (Submodule.Quotient.mk v) : C) : V)) (sub_eq_zero.1 hy)
-    simpa [S] using this.symm
-  -- `y` read on `V` commutes with `g`, hence with `T`; it kills `C` and `range T`.
-  let Y : Module.End k V := C.subtype ∘ₗ y ∘ₗ C.mkQ
-  have hYT := hT Y (LinearMap.ext fun v ↦ by simp [Y, hy'])
-  have hY : Y = 0 := by
-    refine LinearMap.ext fun v ↦ ?_
-    obtain ⟨c, hc, _, ⟨w, rfl⟩, rfl⟩ := Submodule.mem_sup.1 (hN.sup_eq_top ▸ Submodule.mem_top :
-      v ∈ C ⊔ LinearMap.range T)
-    have hYc : Y c = 0 := by simp [Y, (Submodule.Quotient.mk_eq_zero C).2 hc]
-    have hYw : Y (T w) = 0 := by
-      rw [← mul_apply_eq_comp, hYT.eq, mul_apply_eq_comp, ← LinearMap.mem_ker, hCT]
-      exact (y (C.mkQ w)).prop
-    simp [map_add, hYc, hYw]
-  ext v
-  simpa [Y] using LinearMap.congr_fun hY v
 
 include hCT hN in
 /-- With `y` solving the Sylvester equation `g|_C ∘ y - y ∘ g|_{V / C} = x`, the block map with
@@ -413,7 +371,9 @@ theorem ofEnd_blockTriangular_eq_of_sylvester (hgT : Commute g T)
         g (y (Submodule.Quotient.mk v)) - y (Submodule.Quotient.mk (g v)) := by
       rw [← hxy]
       simp
-    simp [E, blockTriangular_apply, hx, hι, hTg, map_add]
+    simp only [E, blockTriangular_apply, Module.End.invtQuot_mk, LinearMap.coprod_apply, map_add,
+      Submodule.subtype_apply, Module.End.coe_invtRestrict_apply, hx, LinearMap.add_apply,
+      LinearMap.coe_comp, Submodule.coe_subtype, Function.comp_apply, hι, hTg]
     abel
   refine ofEnd_eq_of_apply_eq (LinearEquiv.ofBijective E
     ⟨hE_inj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h_dim).1 hE_inj⟩)
