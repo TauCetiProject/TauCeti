@@ -32,17 +32,18 @@ its order, the **Coxeter number**. The root-count identity `|Φ| = r h` already 
 degrees `dᵢ` and exponents `eᵢ = dᵢ - 1` of a homogeneous basic invariant system of `Sym(M*)^W`.
 
 Over an algebraically closed field `K` containing `ℝ` (such as `ℂ`), this file first proves
-`RootPairing.degree_sub_one_lt_orderOf_wordProd`: every exponent `dᵢ - 1` is less than `h`
-(deriving `|Φ| = r h` internally along the way). It then extends the exponent theorems to
-arbitrary characteristic-zero fields `K` via base change from the rational model `b.rationalModel`
-to `ℂ` (`TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.BaseChange` and
+the exponent bound `dᵢ - 1 < h` (deriving `|Φ| = r h` internally along the way). It then extends
+this bound and the remaining exponent theorems to arbitrary characteristic-zero fields `K` via base
+change from the rational model `b.rationalModel` to `ℂ`
+(`TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.BaseChange` and
 `TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.BaseChange`), together with the regular
 eigenvector for `exp (-2πi / h)` from the Coxeter plane construction
 (`TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane`) and cyclotomic descent
 (`TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.CoprimeExponents` and
 `TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents`):
 
-* Degree bounds `2 ≤ dᵢ ≤ h`.
+* Exponent upper bound `dᵢ - 1 < h` (hence `dᵢ ≤ h`, complementing `2 ≤ dᵢ` from
+  `RootPairing.two_le_of_injective_aeval_weylGroupRootRep_dual`).
 * Exponent duality `dᵢ - 1 ↦ h - (dᵢ - 1)`.
 * The crystallographic coprime-exponent theorem (including `2` and `h`).
 * `(P.weylGroupRootRep c).charpoly = ∏ i, (X - C (ζ ^ (dᵢ - 1)))` for any primitive `h`-th
@@ -70,10 +71,8 @@ and the rational characteristic polynomial descend from `ℂ` to `K`.
 
 ## Main results
 
-* `RootPairing.degree_sub_one_lt_orderOf_wordProd`: over an algebraically closed field containing
-  `ℝ`, every exponent `dᵢ - 1` of a homogeneous basic invariant system is less than `h`.
-* `RootPairing.two_le_and_le_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual`: over any
-  characteristic-zero field, `2 ≤ dᵢ ≤ h`.
+* `RootPairing.degree_sub_one_lt_orderOf_wordProd`: over any characteristic-zero field, every
+  exponent `dᵢ - 1` of a homogeneous basic invariant system is less than `h`.
 * `RootPairing.map_sub_one_eq_map_orderOf_sub_of_bijective_aeval_weylGroupRootRep_dual`: exponent
   duality `dᵢ - 1 ↦ h - (dᵢ - 1)`.
 * `RootPairing.exists_degree_sub_one_eq_of_coprime_orderOf_wordProd`,
@@ -163,12 +162,8 @@ private theorem natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement
   rw [← this]
   exact Nat.mod_lt _ (orderOf_pos g)
 
-/-- **The exponents are less than the Coxeter number.** For a base of a finite irreducible reduced
-crystallographic root system over an algebraically closed field containing `ℝ`, every exponent
-`d k - 1` of a finite homogeneous basic invariant system of `Sym(M*)^W` is less than the order of
-any Coxeter element. -/
-theorem degree_sub_one_lt_orderOf_wordProd [Finite κ] (b : P.Base) {l : List b.support}
-    (hl : l.Nodup) (hl' : ∀ i, i ∈ l)
+private theorem degree_sub_one_lt_orderOf_wordProd_aux [Finite κ] (b : P.Base)
+    {l : List b.support} (hl : l.Nodup) (hl' : ∀ i, i ∈ l)
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
     (hf : ∀ k, (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
       homogeneousSubmodule K (Module.Dual K M) (d k))
@@ -185,17 +180,6 @@ variable {ι K M N : Type*} [Field K] [CharZero K]
   [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
   (P : RootPairing ι K M N) [Finite ι] [P.IsCrystallographic] [P.IsReduced]
   [P.IsRootSystem] [P.IsIrreducible]
-
-private lemma map_supportEquiv_nodup_mem
-    {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
-    [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic]
-    [P.IsRootSystem] (b : P.Base) (S : Type*) [CommRing S] [IsDomain S] [Algebra ℚ S]
-    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l) :
-    let e := b.supportEquivRootPairingBaseChangeRationalModel S
-    (l.map e.symm).Nodup ∧ ∀ j, j ∈ l.map e.symm :=
-  ⟨hl.map (b.supportEquivRootPairingBaseChangeRationalModel S).symm.injective,
-    fun j ↦ List.mem_map.2
-      ⟨_, hall _, (b.supportEquivRootPairingBaseChangeRationalModel S).symm_apply_apply j⟩⟩
 
 private lemma finite_of_bijective_aeval_weylGroupRootRep_dual (b : P.Base) {κ : Type*}
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants}
@@ -256,12 +240,12 @@ private lemma exists_complex_model_degrees_and_eigenvector (b : P.Base)
       PC.IsRegularWeight v ∧
       wordProd PC bC lC • v =
         (Complex.exp (2 * Real.pi * Complex.I / orderOf (wordProd P b l)))⁻¹ • v := by
-  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
-  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  have : Nonempty ι := P.nonempty_of_isIrreducible
   let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
   let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
-  obtain ⟨hlC, hallC⟩ := map_supportEquiv_nodup_mem b ℂ hl hall
+  obtain ⟨hlC, hallC⟩ :=
+    b.nodup_and_forall_mem_map_supportEquivRootPairingBaseChangeRationalModel_symm ℂ hl hall
   obtain ⟨g, e, hg, hgbij, hmult⟩ := P.exists_complex_bijective_aeval_degrees_eq b hf hbij
   have hordC := (b.orderOf_wordProd_rootPairingBaseChange_rationalModel ℂ l).symm
   obtain ⟨v, hv_reg, hv_eig⟩ :=
@@ -269,30 +253,30 @@ private lemma exists_complex_model_degrees_and_eigenvector (b : P.Base)
   rw [hordC] at hv_eig
   exact ⟨g, e, v, hg, hgbij, hmult, hlC, hallC, hordC, hv_reg, hv_eig⟩
 
-/-- **Degree bounds for basic invariants of an irreducible crystallographic Weyl group.** Over
-any characteristic-zero field, every basic invariant degree `d i` satisfies
-`2 ≤ d i ≤ orderOf (wordProd P b l)`. -/
-theorem two_le_and_le_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual (b : P.Base)
+/-- **The exponents are less than the Coxeter number.** Over any characteristic-zero field, every
+exponent `d i - 1` of a homogeneous basic invariant system of `Sym(M*)^W` is less than the
+order of any Coxeter element. -/
+theorem degree_sub_one_lt_orderOf_wordProd (b : P.Base)
     {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l)
     {κ : Type*}
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
     (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
       homogeneousSubmodule K (Module.Dual K M) (d i))
     (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) (i : κ) :
-    2 ≤ d i ∧ d i ≤ orderOf (wordProd P b l) := by
+    d i - 1 < orderOf (wordProd P b l) := by
   have : Finite κ := P.finite_of_bijective_aeval_weylGroupRootRep_dual b hbij
   let := Fintype.ofFinite κ
-  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
-  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  have : Nonempty ι := P.nonempty_of_isIrreducible
   let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
   let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
-  obtain ⟨hlC, hallC⟩ := map_supportEquiv_nodup_mem b ℂ hl hall
+  have := PC.nonempty_of_isIrreducible
+  obtain ⟨hlC, hallC⟩ :=
+    b.nodup_and_forall_mem_map_supportEquivRootPairingBaseChangeRationalModel_symm ℂ hl hall
   obtain ⟨g, e, hg, hgbij, hmult⟩ := P.exists_complex_bijective_aeval_degrees_eq b hf hbij
   rcases Multiset.mem_map.1 (hmult ▸ Multiset.mem_map.2 ⟨i, Finset.mem_univ i, rfl⟩)
     with ⟨j, -, hj⟩
-  have h2 : 2 ≤ e j := PC.two_le_of_injective_aeval_weylGroupRootRep_dual hg hgbij.1 j
-  have hlt := PC.degree_sub_one_lt_orderOf_wordProd bC hlC hallC hg hgbij j
+  have hlt := PC.degree_sub_one_lt_orderOf_wordProd_aux bC hlC hallC hg hgbij j
   rw [← b.orderOf_wordProd_rootPairingBaseChange_rationalModel ℂ l] at hlt
   omega
 
@@ -310,8 +294,7 @@ theorem map_sub_one_eq_map_orderOf_sub_of_bijective_aeval_weylGroupRootRep_dual 
       Finset.univ.val.map (fun i ↦ orderOf (wordProd P b l) - (d i - 1)) := by
   classical
   have : Nontrivial M := IsIrreducible.nontrivial P
-  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
-  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  have : Nonempty ι := P.nonempty_of_isIrreducible
   set h : ℕ := orderOf (wordProd P b l)
   have hh2 : 2 ≤ h := P.two_le_orderOf_wordProd b hl hall
   have hh_pos : 0 < h := by omega
@@ -363,8 +346,7 @@ theorem exists_degree_sub_one_eq_of_coprime_orderOf_wordProd (b : P.Base)
   have : Finite κ := P.finite_of_bijective_aeval_weylGroupRootRep_dual b hbij
   let := Fintype.ofFinite κ
   have : Nontrivial M := IsIrreducible.nontrivial P
-  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
-  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  have : Nonempty ι := P.nonempty_of_isIrreducible
   let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
   let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
@@ -403,8 +385,8 @@ theorem exists_degree_eq_two_of_bijective_aeval_weylGroupRootRep_dual
   exact ⟨i, by omega⟩
 
 /-- **The Coxeter number is a basic invariant degree.** Over any characteristic-zero field, some
-`d i` equals `orderOf (wordProd P b l)`; together with
-`two_le_and_le_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual` it is the largest. -/
+`d i` equals `orderOf (wordProd P b l)`; together with `degree_sub_one_lt_orderOf_wordProd` it is
+the largest. -/
 theorem exists_degree_eq_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual (b : P.Base)
     {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l)
     {κ : Type*}
@@ -436,8 +418,7 @@ theorem charpoly_weylGroupRootRep_wordProd_eq_prod [Module.Finite K M] (b : P.Ba
     (P.weylGroupRootRep (wordProd P b l)).charpoly = ∏ i : κ, (X - C (ζ ^ (d i - 1))) := by
   classical
   have : Nontrivial M := IsIrreducible.nontrivial P
-  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
-  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  have : Nonempty ι := P.nonempty_of_isIrreducible
   set h : ℕ := orderOf (wordProd P b l)
   have hh2 : 2 ≤ h := P.two_le_orderOf_wordProd b hl hall
   have hh_pos : 0 < h := by omega

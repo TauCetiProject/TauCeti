@@ -11,7 +11,6 @@ import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.Dual.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Weyl.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
-import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 import TauCeti.RepresentationTheory.BaseChange.Dual
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.SymmetricAlgebra.BaseChange
@@ -91,11 +90,7 @@ theorem finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBase
         eDual ((Q.weylGroupRootRep.dual.baseChange S) w ψ) := by
     dsimp only [eDual, LinearEquiv.trans_apply]
     rw [← _root_.Representation.dual_baseChange_baseChangeEvaluationEquiv Q.weylGroupRootRep w ψ]
-    have h₁ := IntertwiningMap.isIntertwining _ _ eqvPi.dual.toIntertwiningMap w
-      (TauCeti.Module.Dual.baseChangeEvaluationEquiv ψ)
-    simpa only [_root_.Representation.dual_apply, MonoidHom.comp_apply,
-      MulEquiv.coe_toMonoidHom, map_inv, _root_.Representation.Equiv.coe_toIntertwiningMap,
-      _root_.Representation.Equiv.toLinearEquiv_apply] using h₁.symm
+    exact eqvPi.dual_comp_apply w (TauCeti.Module.Dual.baseChangeEvaluationEquiv ψ)
   let ρS := Q.weylGroupRootRep.dual.baseChange S
   rw [← ρS.finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv
     eG eDual heDual n]
@@ -129,15 +124,8 @@ theorem
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, MonoidHom.comp_apply,
         MulEquiv.coe_toMonoidHom, weylGroupRootRep_apply, RootPairing.Equiv.weightEquiv_apply]
       exact (eqv.weylGroupEquiv_smul w x).symm
-  have heDual (w : P.weylGroup) (φ : Module.Dual K M) :
-      PK.weylGroupRootRep.dual (eqv.weylGroupEquiv w) (eqvRep.dual φ) =
-        eqvRep.dual (P.weylGroupRootRep.dual w φ) := by
-    simpa only [_root_.Representation.dual_apply, MonoidHom.comp_apply,
-      MulEquiv.coe_toMonoidHom, map_inv, _root_.Representation.Equiv.coe_toIntertwiningMap,
-      _root_.Representation.Equiv.toLinearEquiv_apply] using
-      (IntertwiningMap.isIntertwining _ _ eqvRep.dual.toIntertwiningMap w φ).symm
   rw [P.weylGroupRootRep.dual.finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv
-    eqv.weylGroupEquiv eqvRep.dual.toLinearEquiv heDual n,
+    eqv.weylGroupEquiv eqvRep.dual.toLinearEquiv (fun w φ ↦ eqvRep.dual_comp_apply w φ) n,
     finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBaseChange (S := K) _ _ n,
     ← finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBaseChange
       (S := L) _ _ n]

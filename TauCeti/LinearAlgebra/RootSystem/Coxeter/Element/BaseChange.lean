@@ -22,6 +22,10 @@ reflections from `(P, b)` to that base-changed rational model over `S`, using `A
 
 ## Main results
 
+* `RootPairing.Base.mem_map_supportEquivRootPairingBaseChangeRationalModel_symm_iff` and
+  `RootPairing.Base.nodup_and_forall_mem_map_supportEquivRootPairingBaseChangeRationalModel_symm`:
+  transporting list membership, `Nodup`, and full coverage along
+  `(b.supportEquivRootPairingBaseChangeRationalModel S).symm`.
 * `RootPairing.Base.orderOf_wordProd_rootPairingBaseChange_rationalModel`: rational base change
   to `S` preserves the order of any word in the simple reflections.
 * `RootPairing.Base.charpoly_weylGroupRootRep_wordProd_rootPairingBaseChange_rationalModel`: the
@@ -39,6 +43,32 @@ namespace RootPairing.Base
 variable {ι R M N : Type*} [CommRing R] [CharZero R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsRootSystem]
+
+omit [Finite ι] in
+/-- Membership of an index in a list mapped along
+`(b.supportEquivRootPairingBaseChangeRationalModel S).symm`. -/
+theorem mem_map_supportEquivRootPairingBaseChangeRationalModel_symm_iff (b : P.Base)
+    (S : Type*) [CommRing S] [IsDomain S] [Algebra ℚ S] (l : List b.support)
+    (i : (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
+      b.rationalModelBase).support) :
+    i ∈ l.map (b.supportEquivRootPairingBaseChangeRationalModel S).symm ↔
+      b.supportEquivRootPairingBaseChangeRationalModel S i ∈ l :=
+  ⟨fun h ↦ by rcases List.mem_map.1 h with ⟨a, ha, rfl⟩; simpa using ha,
+    fun h ↦ List.mem_map.2
+      ⟨b.supportEquivRootPairingBaseChangeRationalModel S i, h,
+        (b.supportEquivRootPairingBaseChangeRationalModel S).symm_apply_apply i⟩⟩
+
+omit [Finite ι] in
+/-- Transporting `Nodup` and full membership of a support list along
+`(b.supportEquivRootPairingBaseChangeRationalModel S).symm`. -/
+theorem nodup_and_forall_mem_map_supportEquivRootPairingBaseChangeRationalModel_symm
+    (b : P.Base) (S : Type*) [CommRing S] [IsDomain S] [Algebra ℚ S]
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ j, j ∈ l) :
+    (l.map (b.supportEquivRootPairingBaseChangeRationalModel S).symm).Nodup ∧
+      ∀ i, i ∈ l.map (b.supportEquivRootPairingBaseChangeRationalModel S).symm :=
+  ⟨hl.map (b.supportEquivRootPairingBaseChangeRationalModel S).symm.injective,
+    fun i ↦ (b.mem_map_supportEquivRootPairingBaseChangeRationalModel_symm_iff S l i).2
+      (hall _)⟩
 
 /-- Rational base change to a characteristic-zero `ℚ`-algebra domain `S` preserves the order of
 any word in the simple reflections. -/

@@ -70,6 +70,8 @@ taking invariants under it.
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
+* `Representation.Equiv.dual_comp_apply`: if `e` intertwines `ρ` with `τ.comp f`, then `e.dual`
+  intertwines `ρ.dual` with `τ.dual.comp f`.
 * `Representation.Equiv.ker_eq`: equivalent representations have the same kernel.
 * `Representation.IntertwiningMap.ker_le_ker_of_surjective`: an element acting trivially in a
   representation acts trivially in each of its quotients.
@@ -495,6 +497,15 @@ def dual (e : Equiv ρ σ) : Equiv ρ.dual σ.dual :=
 theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
     e.dual f w = f (e.symm w) :=
   (rfl)
+
+/-- For an equivalence `e : Equiv ρ (τ.comp f)` intertwining `ρ` with the pullback of `τ` along
+`f : G →* H`, `e.dual` intertwines `ρ.dual` with `(τ.dual).comp f`. -/
+theorem dual_comp_apply {H : Type*} [Group H] {τ : Representation A H W} {f : G →* H}
+    (e : Equiv ρ (τ.comp f)) (g : G) (φ : Module.Dual A V) :
+    τ.dual (f g) (e.dual φ) = e.dual (ρ.dual g φ) := by
+  simpa only [dual_apply, MonoidHom.comp_apply, map_inv, coe_toIntertwiningMap,
+    toLinearEquiv_apply] using
+    (IntertwiningMap.isIntertwining _ _ e.dual.toIntertwiningMap g φ).symm
 
 end Dual
 

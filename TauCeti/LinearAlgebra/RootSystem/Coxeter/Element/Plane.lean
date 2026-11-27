@@ -153,6 +153,7 @@ private lemma mulVec_sq_map_of_bipartite_mulVec_eq_smul {n : Type*} [Fintype n]
     (A * A).map Complex.ofReal *ᵥ z = ((1 + ω) ^ 2 / ω) • z := by
   classical
   set AC : Matrix n n ℂ := A.map Complex.ofReal
+  -- Step 1: `M₁` is an involution (`M₁² = 1`), so `(M₁ * M₂) z = ω z` yields `M₂ z = ω M₁ z`.
   have hM₁_invol : ∀ y : n → ℂ, M₁ *ᵥ (M₁ *ᵥ y) = y := fun y ↦ by
     ext i
     rw [hM₁_mul]
@@ -170,6 +171,8 @@ private lemma mulVec_sq_map_of_bipartite_mulVec_eq_smul {n : Type*} [Fintype n]
   have hM₂_eq : M₂ *ᵥ z = ω • (M₁ *ᵥ z) := by
     have h1 := congrArg (M₁ *ᵥ ·) heig
     rwa [← mulVec_mulVec, hM₁_invol, mulVec_smul] at h1
+  -- Step 2: Split `z = z₁ + z₂` by colour; `M₂ z = ω M₁ z` decouples into two equations
+  -- `(1 + ω) z₁ = ω A z₂` and `A z₁ = (1 + ω) z₂`.
   set z₁ : n → ℂ := fun i ↦ if col i = true then z i else 0
   set z₂ : n → ℂ := fun i ↦ if col i = false then z i else 0
   have hz_split : z = z₁ + z₂ := by
@@ -203,6 +206,7 @@ private lemma mulVec_sq_map_of_bipartite_mulVec_eq_smul {n : Type*} [Fintype n]
     rw [hAz]
     cases hci : col i <;> simp [hci] at hi ⊢
     linear_combination hi
+  -- Step 3: Compose the two colour equations to get `ω A² z = (1 + ω)² z` and divide by `ω`.
   have h1 : ω • (AC *ᵥ (AC *ᵥ z₁)) = (1 + ω) ^ 2 • z₁ := by
     rw [heq₂, mulVec_smul, smul_comm, ← heq₁, smul_smul, sq]
   have h2 : ω • (AC *ᵥ (AC *ᵥ z₂)) = (1 + ω) ^ 2 • z₂ := by
@@ -238,10 +242,43 @@ private lemma norm_one_add_sq_div_le_sq_of_mulVec_eq_smul {n : Type*} [Fintype n
     (le_of_eq (by rw [← mulVec_mulVec, ha_eig, mulVec_smul, ha_eig, smul_smul, sq]))
     hz hA2_eig
 
-private lemma mem_map_symm_iff {α β : Type*} (e : α ≃ β) (l : List β) (i : α) :
-    i ∈ l.map e.symm ↔ e i ∈ l :=
-  ⟨fun h ↦ by rcases List.mem_map.1 h with ⟨a, ha, rfl⟩; simpa using ha,
-    fun h ↦ List.mem_map.2 ⟨e i, h, e.symm_apply_apply i⟩⟩
+/-- If `c = 2 * Real.cos t`, both `exp (2 * t * I)` and `(exp (2 * t * I))⁻¹` satisfy the quadratic
+`w ^ 2 + (2 - c ^ 2) * w + 1 = 0`. -/
+private lemma exp_pm_two_mul_I_quad {c t : ℝ} (hc : c = 2 * Real.cos t) :
+    let ζ : ℂ := Complex.exp (2 * (t : ℂ) * Complex.I)
+    (ζ ^ 2 + (2 - algebraMap ℝ ℂ c ^ 2) * ζ + 1 = 0) ∧
+      ((ζ⁻¹) ^ 2 + (2 - algebraMap ℝ ℂ c ^ 2) * ζ⁻¹ + 1 = 0) := by
+  let μ : ℂ := Complex.exp ((t : ℂ) * Complex.I)
+  have hμ_ne : μ ≠ 0 := Complex.exp_ne_zero _
+  have hμ_sum : μ + μ⁻¹ = (c : ℂ) := by
+    rw [show μ⁻¹ = Complex.exp (-(t : ℂ) * Complex.I) by
+      simp [μ, ← Complex.exp_neg, neg_mul], ← Complex.two_cos, ← Complex.ofReal_cos, hc]
+    push_cast; ring
+  have hζ_eq : Complex.exp (2 * (t : ℂ) * Complex.I) = μ ^ 2 := by
+    simp only [μ, sq, ← Complex.exp_add]; congr 1; ring
+  have hζ_ne : μ ^ 2 ≠ 0 := pow_ne_zero 2 hμ_ne
+  have hsum : μ ^ 2 + (μ ^ 2)⁻¹ = algebraMap ℝ ℂ c ^ 2 - 2 := by
+    have h1 : μ ^ 2 + (μ⁻¹) ^ 2 = (μ + μ⁻¹) ^ 2 - 2 := by field_simp [hμ_ne]; ring
+    rw [hμ_sum] at h1
+    simpa [inv_pow, Complex.coe_algebraMap] using h1
+  rw [hζ_eq]
+  refine ⟨?_, ?_⟩
+  · have h := congrArg (· * μ ^ 2) hsum
+    rw [add_mul, inv_mul_cancel₀ hζ_ne, ← sq] at h
+    linear_combination h
+  · have h := congrArg (· * (μ ^ 2)⁻¹) hsum
+    rw [add_mul, mul_inv_cancel₀ hζ_ne, ← sq] at h
+    linear_combination h
+
+private lemma wordProd_eq_colorClassProd_of_mem_iff
+    {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
+    [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι]
+    [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
+    (x : Bool) {l : List b.support} (hl : l.Nodup) (hcol : ∀ i : b.support, i ∈ l ↔ col i = x) :
+    wordProd P b l = (weylCoxeterSystem P b).colorClassProd col x := by
+  rw [← weylCoxeterSystem_wordProd P b l]
+  exact (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl hcol
 
 private noncomputable def coloringBaseChangeRat
     {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
@@ -283,9 +320,8 @@ private lemma wordProd_mul_wordProd_eq_bipartiteCoxeterElement
     (hcol₂ : ∀ i : b.support, i ∈ l₂ ↔ col i = false) :
     wordProd P b l₁ * wordProd P b l₂ =
       (weylCoxeterSystem P b).bipartiteCoxeterElement col := by
-  rw [← weylCoxeterSystem_wordProd P b l₁, ← weylCoxeterSystem_wordProd P b l₂,
-    (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₁ hcol₁,
-    (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₂ hcol₂,
+  rw [wordProd_eq_colorClassProd_of_mem_iff P b col true hl₁ hcol₁,
+    wordProd_eq_colorClassProd_of_mem_iff P b col false hl₂ hcol₂,
     CoxeterSystem.bipartiteCoxeterElement_def]
 
 private lemma bipartiteCoxeterElement_coloringBaseChangeRat
@@ -312,11 +348,14 @@ private lemma bipartiteCoxeterElement_coloringBaseChangeRat
   have hl₂C : (l₂.map eCB.symm).Nodup := hl₂.map eCB.symm.injective
   have hmemC (x : Bool) {l : List b.support} (hlx : ∀ j, j ∈ l ↔ col j = x) (i : bC.support) :
       i ∈ l.map eCB.symm ↔ coloringBaseChangeRat P b col i = x := by
-    rw [mem_map_symm_iff, coloringBaseChangeRat_apply, hlx]
+    rw [b.mem_map_supportEquivRootPairingBaseChangeRationalModel_symm_iff ℂ,
+      coloringBaseChangeRat_apply, hlx]
   rw [CoxeterSystem.bipartiteCoxeterElement_def,
-    ← (weylCoxeterSystem PC bC).wordProd_eq_colorClassProd _ hl₁C (hmemC true hmem₁),
-    ← (weylCoxeterSystem PC bC).wordProd_eq_colorClassProd _ hl₂C (hmemC false hmem₂),
-    weylCoxeterSystem_wordProd, weylCoxeterSystem_wordProd, List.map_append, wordProd_append]
+    ← wordProd_eq_colorClassProd_of_mem_iff PC bC (coloringBaseChangeRat P b col) true hl₁C
+      (hmemC true hmem₁),
+    ← wordProd_eq_colorClassProd_of_mem_iff PC bC (coloringBaseChangeRat P b col) false hl₂C
+      (hmemC false hmem₂),
+    List.map_append, wordProd_append]
 
 open Classical in
 /-- Matrix entry of the integer matrix `W` representing a colour-class product
@@ -416,6 +455,46 @@ private lemma colorClassProd_matrix_mulVec
       colorClassProd_matrix_entry P b col A hA b0 hW i i, ite_eq_right hci, ite_eq_left rfl,
       one_mul]
 
+open Classical in
+/-- Properties of the off-diagonal negated Cartan matrix `A i j = -(b.cartanMatrix j i : ℝ)`
+(`i ≠ j`): non-negativity, vanishing on same-colour pairs, and `A *ᵥ y = (2 - κ) • y` for a
+`κ`-left-eigenvector `y` of `P.pairingIn ℤ`. -/
+private lemma offDiagNegCartanMatrix_spec
+    {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
+    [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι]
+    [P.IsCrystallographic] (b : P.Base)
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
+    {κ : ℝ} {y : b.support → ℝ}
+    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) :
+    let A : Matrix b.support b.support ℝ :=
+      fun i j ↦ if i = j then 0 else -(b.cartanMatrix j i : ℝ)
+    (∀ i j, 0 ≤ A i j) ∧ (∀ i j, col i = col j → A i j = 0) ∧ A *ᵥ y = (2 - κ) • y := by
+  let := Fintype.ofFinite ι
+  intro A
+  refine ⟨fun i j ↦ ?_, fun i j hsame ↦ ?_, ?_⟩
+  · by_cases hij : i = j
+    · simp [A, hij]
+    · simp only [A, ite_eq_right hij, neg_nonneg]
+      exact_mod_cast b.cartanMatrix_le_zero_of_ne j i (Ne.symm hij)
+  · by_cases hij : i = j
+    · simp [A, hij]
+    · dsimp only [A, Base.cartanMatrix]
+      rw [ite_eq_right hij, Base.cartanMatrixIn_def,
+        pairingIn_eq_zero_of_color_eq P b col (Ne.symm hij) hsame.symm, Int.cast_zero, neg_zero]
+  · ext i
+    simp only [mulVec, dotProduct, Pi.smul_apply, smul_eq_mul, A]
+    have h2 : ∑ j : b.support, (if i = j then (b.cartanMatrix j i : ℝ) else 0) * y j =
+        2 * y i := by
+      rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [hj.symm]) (by simp), ite_eq_left rfl,
+        b.cartanMatrix_apply_same i]
+      norm_num
+    have hsum : ∑ j : b.support, (if i = j then 0 else -(b.cartanMatrix j i : ℝ)) * y j =
+        2 * y i - ∑ j : b.support, y j * (b.cartanMatrix j i : ℝ) := by
+      rw [← h2, ← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun j _ ↦ by by_cases hij : i = j <;> simp [hij, mul_comm]
+    rw [hsum, show ∑ j : b.support, y j * (b.cartanMatrix j i : ℝ) = κ * y i from hy i]
+    ring
+
 /-- Identifying the Perron–Frobenius dihedral parameter `2 - κ` with `2 cos (π / h)`, where `h`
 is the order of the bipartite Coxeter element, shared between the real Coxeter plane and complex
 regular-eigenvector constructions. -/
@@ -448,12 +527,9 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   set c₁ := (weylCoxeterSystem P b).colorClassProd col true
   set c₂ := (weylCoxeterSystem P b).colorClassProd col false
   set c := (weylCoxeterSystem P b).bipartiteCoxeterElement col
-  have hc₁_eq : wordProd P b l₁ = c₁ := by
-    rw [← weylCoxeterSystem_wordProd]
-    exact (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₁ hmem₁
-  have hc₂_eq : wordProd P b l₂ = c₂ := by
-    rw [← weylCoxeterSystem_wordProd]
-    exact (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₂ hmem₂
+  have hc₁_eq : wordProd P b l₁ = c₁ := wordProd_eq_colorClassProd_of_mem_iff P b col true hl₁ hmem₁
+  have hc₂_eq : wordProd P b l₂ = c₂ :=
+    wordProd_eq_colorClassProd_of_mem_iff P b col false hl₂ hmem₂
   have hc_eq : wordProd P b (l₁ ++ l₂) = c := by
     rw [← weylCoxeterSystem_wordProd]; exact hl_eq
   set h : ℕ := orderOf c
@@ -464,30 +540,13 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   have hlam_nonneg : 0 ≤ lam := by linarith
   have hlam_lt : lam < 2 := by linarith
   set θ : ℝ := Real.arccos (lam / 2)
-  have hcosθ : Real.cos θ = lam / 2 := Real.cos_arccos (by linarith) (by linarith)
-  set μ : ℂ := Complex.exp ((θ : ℂ) * Complex.I)
-  set ζ : ℂ := μ ^ 2
-  have hζ_ne : ζ ≠ 0 := pow_ne_zero 2 (Complex.exp_ne_zero _)
-  have hμ_add_inv : μ + μ⁻¹ = (lam : ℂ) := by
-    rw [← Complex.exp_neg, ← neg_mul, ← Complex.two_cos, ← Complex.ofReal_cos, hcosθ]
-    push_cast; ring
-  have hζinv_quad : (ζ⁻¹) ^ 2 + (2 - algebraMap ℝ ℂ (2 - κ) ^ 2) * ζ⁻¹ + 1 = 0 := by
-    have hsum : ζ + ζ⁻¹ = (lam : ℂ) ^ 2 - 2 := by
-      have h1 : μ ^ 2 + (μ⁻¹) ^ 2 = (μ + μ⁻¹) ^ 2 - 2 := by
-        have hμ0 : μ ≠ 0 := Complex.exp_ne_zero _
-        field_simp [hμ0]; ring
-      rw [hμ_add_inv] at h1
-      simpa [ζ, inv_pow] using h1
-    have h2 : (ζ⁻¹) ^ 2 + 1 = (algebraMap ℝ ℂ (2 - κ) ^ 2 - 2) * ζ⁻¹ := by
-      have h' := congrArg (· * ζ⁻¹) hsum
-      rw [add_mul, mul_inv_cancel₀ hζ_ne, ← sq] at h'
-      simpa [lam, Complex.coe_algebraMap, add_comm] using h'
-    simp only [Complex.coe_algebraMap]
-    calc (ζ⁻¹) ^ 2 + (2 - ((2 - κ : ℝ) : ℂ) ^ 2) * ζ⁻¹ + 1
-        = ((ζ⁻¹) ^ 2 + 1) + (2 - ((2 - κ : ℝ) : ℂ) ^ 2) * ζ⁻¹ := by abel
-      _ = ((algebraMap ℝ ℂ (2 - κ) ^ 2 - 2) * ζ⁻¹) + (2 - ((2 - κ : ℝ) : ℂ) ^ 2) * ζ⁻¹ := by
-        rw [h2]
-      _ = 0 := by simp [Complex.coe_algebraMap]; ring
+  have hlam_cos : lam = 2 * Real.cos θ := by
+    linarith [Real.cos_arccos (by linarith : (-1 : ℝ) ≤ lam / 2) (by linarith : lam / 2 ≤ 1)]
+  set ζ : ℂ := Complex.exp (2 * (θ : ℂ) * Complex.I)
+  have hζ_sq : Complex.exp ((θ : ℂ) * Complex.I) ^ 2 = ζ := by
+    simp only [ζ, sq, ← Complex.exp_add]; congr 1; ring
+  have hζinv_quad : (ζ⁻¹) ^ 2 + (2 - algebraMap ℝ ℂ (2 - κ) ^ 2) * ζ⁻¹ + 1 = 0 :=
+    (exp_pm_two_mul_I_quad hlam_cos).2
   -- Phase 3: Transport to `rootPairingBaseChange ℂ b.rationalModel` to invoke `Regular.lean`.
   let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
   let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
@@ -544,41 +603,18 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   rw [hp_M, ← Matrix.charpoly_toLin' (M₁C * M₂C),
     ← Module.End.hasEigenvalue_iff_isRoot_charpoly] at hω₀_root_p
   obtain ⟨z, hz⟩ := hω₀_root_p.exists_hasEigenvector
-  -- Phase 5: Non-negative adjacency matrix `A` for the bipartite spectral bound.
+  -- Phase 5: Combine with the off-diagonal negated Cartan matrix `A` for the spectral bound.
   set A : Matrix b.support b.support ℝ :=
     fun i j ↦ if i = j then 0 else -(b.cartanMatrix j i : ℝ)
-  have hA_nonneg : ∀ i j, 0 ≤ A i j := fun i j ↦ by
-    by_cases hij : i = j
-    · simp [A, hij]
-    · simp only [A, ite_eq_right hij, neg_nonneg]
-      exact_mod_cast b.cartanMatrix_le_zero_of_ne j i (Ne.symm hij)
-  have hA_same : ∀ i j, col i = col j → A i j = 0 := fun i j hsame ↦ by
-    by_cases hij : i = j
-    · simp [A, hij]
-    · dsimp only [A, Base.cartanMatrix]
-      rw [ite_eq_right hij, Base.cartanMatrixIn_def,
-        pairingIn_eq_zero_of_color_eq P b col (Ne.symm hij) hsame.symm, Int.cast_zero, neg_zero]
-  have hA_eig : A *ᵥ y = lam • y := by
-    ext i
-    simp only [mulVec, dotProduct, Pi.smul_apply, smul_eq_mul, A]
-    have h2 : ∑ j : b.support, (if i = j then (b.cartanMatrix j i : ℝ) else 0) * y j =
-        2 * y i := by
-      rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [hj.symm]) (by simp), ite_eq_left rfl,
-        b.cartanMatrix_apply_same i]
-      norm_num
-    have hsum : ∑ j : b.support, (if i = j then 0 else -(b.cartanMatrix j i : ℝ)) * y j =
-        2 * y i - ∑ j : b.support, y j * (b.cartanMatrix j i : ℝ) := by
-      rw [← h2, ← Finset.sum_sub_distrib]
-      exact Finset.sum_congr rfl fun j _ ↦ by by_cases hij : i = j <;> simp [hij, mul_comm]
-    rw [hsum, show ∑ j : b.support, y j * (b.cartanMatrix j i : ℝ) = κ * y i from hy i]
-    ring
+  obtain ⟨hA_nonneg, hA_same, hA_eig⟩ := offDiagNegCartanMatrix_spec P b col hy
   have hW₁_acts : b.ActsBy c₁ W₁ := hc₁_eq ▸ b.actsBy_wordProd l₁
   have hW₂_acts : b.ActsBy c₂ W₂ := hc₂_eq ▸ b.actsBy_wordProd l₂
   have hM₁C_mul := colorClassProd_matrix_mulVec P b col A (fun _ _ ↦ rfl) true hW₁_acts
   have hM₂C_mul := colorClassProd_matrix_mulVec P b col A (fun _ _ ↦ rfl) false hW₂_acts
   simp only [Bool.not_true, Bool.not_false] at hM₁C_mul hM₂C_mul
   exact eq_two_mul_cos_pi_div_of_norm_one_add_sq_div_le lam hlam_nonneg hlam_lt h2le
-    hζ_prim.pow_eq_one (norm_one_add_sq_div_le_sq_of_mulVec_eq_smul A hA_nonneg hA_same hy0 hA_eig
+    (hζ_sq ▸ hζ_prim.pow_eq_one)
+    (norm_one_add_sq_div_le_sq_of_mulVec_eq_smul A hA_nonneg hA_same hy0 hA_eig
       hM₁C_mul hM₂C_mul (Complex.exp_ne_zero _) hz.2 (Module.End.mem_eigenspace_iff.1 hz.1))
 
 /-- For a rank-1 root system, every bipartite Coxeter element has order `2`. -/
@@ -629,12 +665,10 @@ private lemma dihedral_colorPart_of_eig
       wordProd P b l₂ • colorPart P b col y true = colorPart P b col y true +
         (2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂))) •
           colorPart P b col y false := by
-  have hc₁_eq : wordProd P b l₁ = (weylCoxeterSystem P b).colorClassProd col true := by
-    rw [← weylCoxeterSystem_wordProd P b l₁]
-    exact (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₁ hcol₁
-  have hc₂_eq : wordProd P b l₂ = (weylCoxeterSystem P b).colorClassProd col false := by
-    rw [← weylCoxeterSystem_wordProd P b l₂]
-    exact (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₂ hcol₂
+  have hc₁_eq : wordProd P b l₁ = (weylCoxeterSystem P b).colorClassProd col true :=
+    wordProd_eq_colorClassProd_of_mem_iff P b col true hl₁ hcol₁
+  have hc₂_eq : wordProd P b l₂ = (weylCoxeterSystem P b).colorClassProd col false :=
+    wordProd_eq_colorClassProd_of_mem_iff P b col false hl₂ hcol₂
   have hv_dom : colorPart P b col y true + colorPart P b col y false ∈ openDominantChamber P b := by
     rw [mem_openDominantChamber]; intro i hi
     simpa [P.coroot'_colorPart_add (c := col) hy ⟨i, hi⟩] using mul_pos hκ (hy0 ⟨i, hi⟩)
@@ -778,8 +812,8 @@ theorem exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
         (Complex.exp (2 * Real.pi * Complex.I / orderOf (wordProd P b l)))⁻¹ • v := by
   classical
   let := Fintype.ofFinite ι
+  have : Nonempty ι := P.nonempty_of_isIrreducible
   have : Nonempty b.support := b.nonempty_support_of_isIrreducible
-  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
   obtain ⟨col⟩ := nonempty_coloring_graph_coxeterMatrixOfBase P b
   set c := (weylCoxeterSystem P b).bipartiteCoxeterElement col
   have hc_eig : ∃ v : M, IsRegularWeight P v ∧
@@ -801,24 +835,9 @@ theorem exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
       have hy := P.sum_mul_pairingIn_eq_of_vecMul_eq_smul b hyC
       have hlam : 2 - κ = 2 * Real.cos (Real.pi / orderOf c) :=
         two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement P b col hy hy0 hκ hκ2
-      set ν : ℂ := (Complex.exp (2 * Real.pi * Complex.I / orderOf c))⁻¹
-      have hν_ne : ν ≠ 0 := inv_ne_zero (Complex.exp_ne_zero _)
-      have hν_add : ν + ν⁻¹ = algebraMap ℝ ℂ (2 - κ) ^ 2 - 2 := by
-        have h1 : ν + ν⁻¹ = ((2 * Real.cos (2 * (Real.pi / orderOf c)) : ℝ) : ℂ) := by
-          have hcos := Complex.two_cos ((2 * (Real.pi / orderOf c) : ℝ) : ℂ)
-          have harg : ((2 * (Real.pi / orderOf c) : ℝ) : ℂ) * Complex.I =
-              2 * Real.pi * Complex.I / orderOf c := by push_cast; ring
-          rw [← Complex.ofReal_cos, neg_mul, Complex.exp_neg, harg, add_comm] at hcos
-          simpa [ν] using hcos.symm
-        rw [h1, Real.cos_two_mul,
-          show 2 * (2 * Real.cos (Real.pi / orderOf c) ^ 2 - 1) =
-            (2 * Real.cos (Real.pi / orderOf c)) ^ 2 - 2 by ring,
-          ← hlam]
-        simp only [Complex.coe_algebraMap]; push_cast; ring
-      have hν : ν ^ 2 + (2 - algebraMap ℝ ℂ (2 - κ) ^ 2) * ν + 1 = 0 := by
-        have h := congrArg (· * ν) hν_add
-        rw [add_mul, inv_mul_cancel₀ hν_ne, ← sq] at h
-        linear_combination h
+      have hν := (exp_pm_two_mul_I_quad hlam).2
+      rw [show (2 * ((Real.pi / orderOf c : ℝ) : ℂ) * Complex.I) =
+        2 * Real.pi * Complex.I / orderOf c by push_cast; ring] at hν
       exact ⟨_, P.isRegularWeight_one_add_smul_colorPart_add_smul (c := col) hy hy0 hκ hκ2 hν,
         P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul (c := col) hy hν⟩
   obtain ⟨v, hv_reg, hv_eig⟩ := hc_eig
