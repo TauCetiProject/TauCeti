@@ -237,10 +237,9 @@ theorem coe_specialOrthogonalLieAlgebraEquiv_apply
     (specialOrthogonalLieAlgebraEquiv n ξ : Matrix n n ℝ) =
       mvfderiv (Matrix.specialUnitaryGroup.model n ℝ)
         (Subtype.val : Matrix.specialOrthogonalGroup n ℝ → Matrix n n ℝ) 1 ξ := by
-  rw [← coe_specialOrthogonalLieAlgebraMap_apply]
-  -- `specialOrthogonalLieAlgebraEquiv` is `LieEquiv.ofBijective` of the bracket-preserving
-  -- `specialOrthogonalLieAlgebraMap`, so its forward map is that map.
-  rfl
+  rw [specialOrthogonalLieAlgebraEquiv, ← LieEquiv.coe_toLinearEquiv,
+    LieEquiv.toLinearEquiv_ofBijective, LinearEquiv.ofBijective_apply,
+    coe_specialOrthogonalLieAlgebraMap_apply]
 
 /-! ### The dual of the Lie algebra of `SO(3)` -/
 

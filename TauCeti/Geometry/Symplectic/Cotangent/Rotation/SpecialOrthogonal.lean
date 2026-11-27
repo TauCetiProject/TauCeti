@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.SpecialOrthogonal
 public import TauCeti.Geometry.Symplectic.Cotangent.Rotation
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
 # The moment map of the cotangent-lifted special orthogonal group
@@ -200,10 +201,8 @@ theorem cotangentAngularMomentum_smul (g : SO₃) (z : T*ℝ³) :
       (g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ
         fun i ↦ (modelSpaceDiffeomorph (Fin 3 → ℝ) z).2 (Pi.single i 1) := by
     funext i
-    have hinv : ((g⁻¹ : SO₃) : Matrix (Fin 3) (Fin 3) ℝ) = (g : Matrix (Fin 3) (Fin 3) ℝ)ᵀ := by
-      rw [← star_eq_inv, specialUnitaryGroup.coe_star, star_eq_conjTranspose,
-        conjTranspose_eq_transpose_of_trivial]
-    rw [snd_modelSpaceDiffeomorph_smul_apply, hinv, mulVec_single_one, col_transpose]
+    rw [snd_modelSpaceDiffeomorph_smul_apply, coe_specialOrthogonalGroup_inv, mulVec_single_one,
+      col_transpose]
     conv_lhs => rw [pi_eq_sum_univ' ((g : Matrix (Fin 3) (Fin 3) ℝ).row i)]
     simp only [mulVec, dotProduct, row_apply]
     exact (map_sum (modelSpaceDiffeomorph (Fin 3 → ℝ) z).2 _ _).trans
