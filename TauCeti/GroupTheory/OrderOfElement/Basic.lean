@@ -74,6 +74,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
   `n`.
+* `TauCeti.exists_le_forall_pow_prime_pow_eq_self_of_coprime`: in a finite group, some power
+  `p ^ N`, with `N` as large as we like, fixes every element of order prime to `p`.
 * `TauCeti.pow_pow_div_gcd_eq_one`: `(x ^ d) ^ (n / gcd(n, d)) = 1` whenever `x ^ n = 1`, and its
   additive counterpart.
 * `TauCeti.eq_one_of_pow_ordCompl_eq_one`, `TauCeti.eq_of_pow_ordCompl_eq`: an element `x` with
@@ -255,6 +257,25 @@ theorem natCast_natCard_sub_one_eq_neg_one (R : Type*) [AddGroupWithOne R] [Fini
 theorem pow_pow_totient_eq_self {M : Type*} [Monoid M] {q n : ℕ} (hq : q.Coprime n) {x : M}
     (hx : x ^ n = 1) : x ^ q ^ n.totient = x := by
   rw [pow_eq_pow_mod _ hx, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hx, pow_one]
+
+/-- In a finite group, for every `n` there is `N ≥ n` such that `g ^ (p ^ N) = g` for every
+`g` of order coprime to the prime `p`. -/
+theorem exists_le_forall_pow_prime_pow_eq_self_of_coprime {G : Type*} [Group G] [Finite G]
+    {p : ℕ} (hp : p.Prime) (n : ℕ) :
+    ∃ N, n ≤ N ∧ ∀ g : G, (orderOf g).Coprime p → g ^ p ^ N = g := by
+  set m := ordCompl[p] (Nat.card G)
+  have hm0 : 0 < m := Nat.ordCompl_pos p Nat.card_pos.ne'
+  refine ⟨m.totient * n, Nat.le_mul_of_pos_left n (Nat.totient_pos.2 hm0), fun g hg ↦ ?_⟩
+  have hdvd : orderOf g ∣ m :=
+    (Nat.Coprime.dvd_of_dvd_mul_left
+      (hg.pow_right _)
+      (by rw [Nat.ordProj_mul_ordCompl_eq_self]; exact orderOf_dvd_natCard _))
+  -- Euler's theorem for the exponent `m` of the `p`-regular elements, iterated `n` times.
+  have h1 : g ^ p ^ m.totient = g := pow_pow_totient_eq_self
+    (Nat.coprime_ordCompl hp Nat.card_pos.ne') (orderOf_dvd_iff_pow_eq_one.1 hdvd)
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Nat.mul_succ, pow_add, pow_mul, ih, h1]
 
 /-- If `x ^ n = 1` in a monoid, then every power `x ^ d` is killed by the `(n / gcd(n, d))`-th
 power map: `(x ^ d) ^ (n / gcd(n, d)) = 1`. In a group of order `N` this applies with `n = N`
