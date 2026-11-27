@@ -320,8 +320,8 @@ theorem integral_comp_commSL {B N : Type*} [CommSemiring B] [AddCommMonoid N] [M
 theorem integral_comp_comm {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
     (f : compactlySupported A G M) :
     μ.integral (compactlySupported.map φ f) = φ (μ.integral f) := by
-  have hμ : μ.map (RingHom.id A : A →+ A) = μ := ext fun K ↦ map_apply μ _ K
-  simpa only [hμ] using integral_comp_commSL μ (RingHom.id A) φ f
+  simpa only [RingHom.toAddMonoidHom_id, map_id] using
+    integral_comp_commSL μ (RingHom.id A) φ f
 
 /-- **Coset sums.** For a compact open subgroup `U` and a test function `f` invariant under right
 translation by `U`, the integral is the sum over the cosets `gU` of `μ(U) • f(g)`, written through

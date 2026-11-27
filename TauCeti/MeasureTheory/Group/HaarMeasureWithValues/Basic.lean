@@ -177,6 +177,11 @@ theorem map_apply {B : Type*} [AddCommMonoid B] (f : A →+ B) (K : CompactOpens
     μ.map f K = f (μ K) :=
   (rfl)
 
+/-- Pushing `μ` forward along the identity gives `μ` back. -/
+@[simp]
+theorem map_id : μ.map (AddMonoidHom.id A) = μ :=
+  ext fun _ ↦ rfl
+
 end AddCommMonoid
 
 /-! ### Compact open sets as unions of cosets -/

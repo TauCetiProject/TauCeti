@@ -18,7 +18,7 @@ a Hausdorff topological group `G`. Composing with `φ` sends a test function `f 
 image of the integral, by naturality of the integral under semilinear maps
 (`TauCeti.HaarMeasureWithValues.integral_comp_commSL`). Hence composing with `φ` turns
 convolution against `μ` into convolution against `φ μ`
-(`TauCeti.HaarMeasureWithValues.convolution_map_mapCoeff`), and is a homomorphism of non-unital
+(`TauCeti.HaarMeasureWithValues.convolution_map_map`), and is a homomorphism of non-unital
 semirings `H(G, A) → H(G, B)` (of non-unital rings when `A` and `B` are rings)
 (`TauCeti.HeckeAlgebra.mapCoeff`), semilinear over `φ`. This is the coefficient-change map
 underlying `H(G, A) ⊗_A B ≅ H(G, B)`.
@@ -45,7 +45,7 @@ variable (φ : A →+* B) [Group G] [IsTopologicalGroup G] [T2Space G]
 /-- **Convolution commutes with change of coefficients**:
 `(φ ∘ f₁) ⋆_{φ μ} (φ ∘ f₂) = φ ∘ (f₁ ⋆_μ f₂)`. -/
 @[simp]
-theorem convolution_map_mapCoeff (f₁ f₂ : compactlySupported A G A) :
+theorem convolution_map_map (f₁ f₂ : compactlySupported A G A) :
     (μ.map (φ : A →+ B)).convolution (compactlySupported.map φ.toSemilinearMap f₁)
         (compactlySupported.map φ.toSemilinearMap f₂) =
       compactlySupported.map φ.toSemilinearMap (μ.convolution f₁ f₂) := by
@@ -72,7 +72,7 @@ noncomputable def mapCoeff :
   toFun f := ⟨compactlySupported.map φ.toSemilinearMap f.toCompactlySupported⟩
   map_mul' f₁ f₂ := by
     ext1
-    exact (HaarMeasureWithValues.convolution_map_mapCoeff φ μ _ _).symm
+    exact (HaarMeasureWithValues.convolution_map_map φ μ _ _).symm
   map_zero' := by
     ext1
     simp
