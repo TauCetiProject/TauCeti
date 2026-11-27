@@ -58,4 +58,11 @@ theorem ratTensorProductAlgHomEquiv_tmul (f : E →+* B) (a : A) (e : E) :
   simp only [ratTensorProductAlgHomEquiv, Equiv.trans_apply, AlgHom.liftEquiv_tmul,
     RingHom.equivRatAlgHom_apply, RingHom.toRatAlgHom_apply, Algebra.smul_def]
 
+/-- The inverse homomorphism evaluates `f` on tensors of the form `1 ⊗ₜ e`. -/
+@[simp]
+theorem ratTensorProductAlgHomEquiv_symm_apply (f : A ⊗[ℚ] E →ₐ[A] B) (e : E) :
+    (ratTensorProductAlgHomEquiv A E B).symm f e = f (1 ⊗ₜ e) := by
+  simpa only [ratTensorProductAlgHomEquiv_tmul, map_one, one_mul] using
+    AlgHom.congr_fun ((ratTensorProductAlgHomEquiv A E B).apply_symm_apply f) (1 ⊗ₜ e)
+
 end TauCeti
