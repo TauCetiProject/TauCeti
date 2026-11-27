@@ -30,8 +30,12 @@ handles identity and composite transport cells. The file also evaluates the natu
 of a composite strong transformation on objects, with the Cat endpoints made explicit, and
 packages the components of a naturality isomorphism at an object
 (`Pseudofunctor.StrongTrans.naturalityObjIso`), with their naturality and their composition
-law along a composite (`Pseudofunctor.StrongTrans.naturalityObjIso_hom_comp'`). It also
-conjugates pullbacks of morphisms by the naturality isomorphisms of a strong transformation,
+law along a composite (`Pseudofunctor.StrongTrans.naturalityObjIso_hom_comp'`), and the naturality
+square of a modification on objects
+(`Pseudofunctor.StrongTrans.app_comp_naturalityObjIso_hom`). It also
+shows stability of essential images under the target functors
+(`Pseudofunctor.StrongTrans.map_obj_mem_essImage`), conjugates pullbacks of morphisms by the
+naturality isomorphisms of a strong transformation,
 and computes the image of a morphism between pullbacks along an identity transported back along
 `mapId'` (`Pseudofunctor.StrongTrans.map_mapId'_inv_comp_comp_mapId'_hom`). When the values of
 the target pseudofunctor are groupoids, every modification between strong transformations into it
@@ -206,6 +210,15 @@ lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
   (rfl)
 
+/-- The essential image of a strong transformation into `Cat` is stable under its target's
+functors on `1`-morphisms. -/
+lemma map_obj_mem_essImage {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) {X : G.obj a}
+    (hX : (η.app a).toFunctor.essImage X) :
+    (η.app b).toFunctor.essImage ((G.map f).toFunctor.obj X) :=
+  ⟨(F.map f).toFunctor.obj hX.witness,
+    ⟨η.naturalityObjIso f _ ≪≫ (G.map f).toFunctor.mapIso hX.getIso⟩⟩
+
 /-- The naturality isomorphism of a strong transformation `η : F ⟶ G` into `Cat` along a
 composite `f ≫ g = fg`, on an object `X`: it is the image under `η` of the composition isomorphism
 of `F`, followed by the naturality isomorphisms along `g` and along `f`, and the inverse of the
@@ -232,6 +245,29 @@ lemma naturalityObjIso_hom_naturality {B : Type u₁} [Bicategory.{w₁, v₁} B
     (η.app b).toFunctor.map ((F.map f).toFunctor.map φ) ≫ (η.naturalityObjIso f Y).hom =
       (η.naturalityObjIso f X).hom ≫ (G.map f).toFunctor.map ((η.app a).toFunctor.map φ) :=
   by simpa using (η.naturality f).hom.toNatTrans.naturality φ
+
+/-- Naturality of the inverses of the components of the naturality isomorphism of a strong
+transformation into `Cat`. -/
+@[reassoc]
+lemma naturalityObjIso_inv_naturality {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) {X Y : F.obj a}
+    (φ : X ⟶ Y) :
+    (G.map f).toFunctor.map ((η.app a).toFunctor.map φ) ≫ (η.naturalityObjIso f Y).inv =
+      (η.naturalityObjIso f X).inv ≫ (η.app b).toFunctor.map ((F.map f).toFunctor.map φ) := by
+  rw [Iso.comp_inv_eq, Category.assoc, naturalityObjIso_hom_naturality, Iso.inv_hom_id_assoc]
+
+/-- The naturality square of a modification `Δ : η ⟶ θ` between strong transformations into
+`Cat` along `f`, on an object, written with the naturality isomorphisms of `η` and `θ`. -/
+@[reassoc]
+lemma app_comp_naturalityObjIso_hom {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} {η θ : F ⟶ G} (Δ : η ⟶ θ) {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    (Δ.as.app b).toNatTrans.app ((F.map f).toFunctor.obj X) ≫ (θ.naturalityObjIso f X).hom =
+      (η.naturalityObjIso f X).hom ≫ (G.map f).toFunctor.map ((Δ.as.app a).toNatTrans.app X) := by
+  have h := congrArg (fun t ↦ t.toNatTrans.app X) (Δ.as.naturality f)
+  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
+  rw [naturalityObjIso_hom, naturalityObjIso_hom]
+  -- `h` matches the goal after unfolding the composite functors in `Cat`.
+  exact h
 
 /-- Conjugating by the naturality isomorphism of a strong transformation `η` into `Cat` at `f`
 turns the image under `η.app b` of the pullback of a morphism `φ` into the pullback of the image

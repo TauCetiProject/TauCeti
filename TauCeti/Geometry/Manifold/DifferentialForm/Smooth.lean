@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.Alternating.Basic
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Topology.FiberBundle.Separation
@@ -412,6 +413,20 @@ theorem ext_eval₂ {φ ψ : SmoothBundleForm I F V 2}
 theorem ext_eval₂_iff {φ ψ : SmoothBundleForm I F V 2} :
     φ = ψ ↔ ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w :=
   ⟨fun h ↦ by subst h; intros; rfl, ext_eval₂⟩
+
+/-- Two smooth bundle-valued one-forms are equal when they agree on every tangent vector. -/
+theorem ext_eval₁ {φ ψ : SmoothBundleForm I F V 1}
+    (h : ∀ x (v : TangentSpace I x), φ.val x ![v] = ψ.val x ![v]) : φ = ψ :=
+  Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
+    have hv : v = ![v 0] := (FinVec.etaExpand_eq v).symm
+    rw [hv]
+    exact h x (v 0)
+
+/-- Two smooth bundle-valued one-forms are equal exactly when they agree on every tangent
+vector. -/
+theorem ext_eval₁_iff {φ ψ : SmoothBundleForm I F V 1} :
+    φ = ψ ↔ ∀ x (v : TangentSpace I x), φ.val x ![v] = ψ.val x ![v] :=
+  ⟨fun h ↦ by subst h; intros; rfl, ext_eval₁⟩
 
 section Evaluation
 
@@ -820,6 +835,14 @@ theorem const_apply {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rw [const_toRoughForm, ContinuousAlternatingMap.compContinuousLinearMap_apply]
   rfl
 
+/-- A constant one-form evaluates a tangent vector as the model-space vector it is. -/
+theorem const_apply_one {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (A : V [⋀^Fin 1]→L[ℝ] F) {x : V} (v : TangentSpace (modelWithCornersSelf ℝ V) x) :
+    (const A).val x ![v] = A ![v] := by
+  simp only [const_apply, NormedSpace.fromTangentSpace_apply (𝕜 := ℝ), Matrix.cons_val_fin_one]
+  exact congrArg A (funext fun i ↦ (Matrix.cons_val_fin_one v ![] i).symm)
+
 /-- The coordinate one-form `dz` of the real line. -/
 def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
   const (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ 0 (ContinuousLinearMap.id ℝ ℝ))
@@ -885,6 +908,13 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   apply MultilinearMap.isAlt_toBilinMap
   intro v
   exact (φ.val x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+
+/-- The bilinear form represented by a degree-two smooth form at a point is nondegenerate exactly
+when its kernel is trivial: since the form is alternating, separation on one side suffices. -/
+theorem nondegenerate_bilinFormAt_iff_ker_eq_bot (φ : SmoothForm I M ℝ 2) (x : M) :
+    (φ.bilinFormAt x).Nondegenerate ↔ LinearMap.ker (φ.bilinFormAt x) = ⊥ :=
+  (φ.isAlt_bilinFormAt x).isRefl.nondegenerate_iff_separatingLeft.trans
+    LinearMap.separatingLeft_iff_ker_eq_bot
 
 /-- The bilinear form represented by a degree-two smooth form at a point vanishes exactly when the
 form vanishes there. -/

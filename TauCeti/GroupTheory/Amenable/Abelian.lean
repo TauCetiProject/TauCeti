@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Int
+import TauCeti.GroupTheory.Amenable.DirectedUnion
+import TauCeti.GroupTheory.Amenable.DiscreteFoelner
+import TauCeti.GroupTheory.Amenable.Prod
 import TauCeti.GroupTheory.Finiteness
 import TauCeti.GroupTheory.NoncommPiCoprod
 

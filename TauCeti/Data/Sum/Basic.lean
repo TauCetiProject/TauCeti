@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Data.Sum.Basic
 public import Mathlib.Basic.IsEmpty.Defs
 public import Mathlib.Basic.Nontrivial.Defs
 
 /-!
-# Sum types: swapping, distinct pairs, and injective maps out of a sum
+# Sum types: swapping, distinct pairs, injective maps out of a sum, and finite families
 
 Swapping a sum commutes with mapping its components, with the component maps exchanged.
 
@@ -22,6 +23,9 @@ A map `Sum.elim f g` out of a sum stays injective when its two parts are reindex
 maps, and it is injective as soon as `f` is when the second summand is empty. A map
 `Sum.elim (Sum.elim f g) h` out of a nested sum stays injective when its two inner parts are
 exchanged and all three parts are reindexed by injective maps.
+
+A family of types `Sum.elim β₁ β₂` indexed by `α ⊕ β` consists of finite types when `β₁` and `β₂`
+do (`Sum.instFiniteElim`).
 
 ## Main results
 
@@ -37,6 +41,8 @@ exchanged and all three parts are reindexed by injective maps.
 -/
 
 public section
+
+universe u
 
 namespace Sum
 
@@ -54,6 +60,13 @@ theorem nontrivial_of_ne_of_ne_swap {p q : α ⊕ α} (h : q ≠ p) (h' : q ≠ 
     Nontrivial α := by
   rcases p with a | a <;> rcases q with b | b <;>
     exact ⟨b, a, fun hba => by subst hba; simp_all⟩
+
+/-- The family `Sum.elim β₁ β₂` of types indexed by `α ⊕ β` takes finite values when `β₁` and `β₂`
+do. -/
+instance instFiniteElim {β : Type*} {β₁ : α → Sort u} {β₂ : β → Sort u} [∀ a, Finite (β₁ a)]
+    [∀ b, Finite (β₂ b)] : ∀ i : α ⊕ β, Finite (Sum.elim β₁ β₂ i)
+  | .inl a => inferInstanceAs (Finite (β₁ a))
+  | .inr b => inferInstanceAs (Finite (β₂ b))
 
 end Sum
 

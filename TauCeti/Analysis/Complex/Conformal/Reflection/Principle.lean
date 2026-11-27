@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Hadamard
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import TauCeti.Analysis.Complex.Conformal.Removability.Basic
 
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Complex.VerticalStrip.Basic
 
 /-!
 # The Schwarz reflection principle across the real axis
@@ -39,15 +42,18 @@ the real axis, holomorphic above it and vanishing on it vanishes identically,
 `TauCeti.eqOn_zero_of_zero_on_real_axis`. The horizontal-strip form
 `TauCeti.eqOn_zero_im_preimage_uIcc_of_zero_on_real_axis`, for strips on either side of the
 axis, determines a bounded holomorphic function on a strip by its values on one edge, as for
-the KMS functions of C⋆-algebra dynamics.
+the KMS functions of C⋆-algebra dynamics. Applying boundary uniqueness to
+`z ↦ f z - conj (f (conj z))` yields global conjugation symmetry `f (conj z) = conj (f z)` for a
+holomorphic function real on the real axis (`TauCeti.apply_conj_eq_conj_of_real_on_axis`), and by
+continuity on the closure of a vertical strip (`TauCeti.apply_conj_eq_conj_of_im_eq_zero_on_strip`).
 -/
 
 public section
 
-namespace TauCeti
-
-open Complex Filter Set Topology
+open _root_.Complex Filter Set Topology
 open scoped ComplexConjugate
+
+namespace TauCeti
 
 variable {f : ℂ → ℂ}
 
@@ -170,17 +176,8 @@ theorem eqOn_zero_of_zero_on_real_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω) (hΩ
     EqOn f 0 (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
   obtain ⟨F, hFd, hFf, -⟩ := exists_differentiableOn_eqOn_conj_of_symmetric hΩopen hΩ hcont
     hholo fun z hz hz0 => by rw [hzero z hz hz0, zero_im]
-  -- the extension vanishes at the real points of `Ω` accumulating at `x`
-  have hreal : ∀ᶠ t : ℝ in 𝓝[≠] x, F t = 0 := by
-    filter_upwards [nhdsWithin_le_nhds <| continuous_ofReal.continuousAt.preimage_mem_nhds
-      (hΩopen.mem_nhds hx)] with t ht
-    rw [hFf ⟨ht, by simp⟩, hzero _ ht (ofReal_im t)]
-  have hmap : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] x) (𝓝[≠] (x : ℂ)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_ofReal.tendsto x |>.mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun t ht => by simpa using ht)
-  have hF0 := (hFd.analyticOnNhd hΩopen).eqOn_zero_of_preconnected_of_frequently_eq_zero hΩconn
-    hx (hmap.frequently hreal.frequently)
+  have hF0 := hFd.eqOn_zero_of_zero_on_real_axis hΩopen hΩconn hx
+    fun z hz hz0 => (hFf ⟨hz, hz0.ge⟩).trans (hzero z hz hz0)
   exact fun z hz => (hFf hz).symm.trans (hF0 hz.1)
 
 /-- **Boundary uniqueness on an upper horizontal strip.** For `0 < c`, a function continuous
@@ -234,5 +231,52 @@ theorem eqOn_zero_im_preimage_uIcc_of_zero_on_real_axis {c : ℝ}
   · simpa [uIcc_of_le hc.le, uIoo_of_le hc.le] using
       eqOn_zero_im_preimage_Icc_of_zero_on_real_axis hc (by simpa [uIcc_of_le hc.le] using hcont)
         (by simpa [uIoo_of_le hc.le] using hholo) hzero
+
+/-- **Conjugation symmetry of a holomorphic function real on the axis.** On a preconnected
+conjugation-symmetric open set `Ω` meeting the real axis, a holomorphic function that is real on
+`Ω ∩ ℝ` satisfies `f (conj z) = conj (f z)` throughout `Ω`. -/
+theorem apply_conj_eq_conj_of_real_on_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω)
+    (hΩconn : IsPreconnected Ω) (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) {x : ℝ} (hx : (x : ℂ) ∈ Ω)
+    (hf : DifferentiableOn ℂ f Ω) (hreal : ∀ z ∈ Ω, z.im = 0 → (f z).im = 0)
+    {z : ℂ} (hz : z ∈ Ω) :
+    f ((starRingEnd ℂ) z) = (starRingEnd ℂ) (f z) := by
+  let G : ℂ → ℂ := fun w => f w - (starRingEnd ℂ) (f ((starRingEnd ℂ) w))
+  have hG0 : EqOn G 0 Ω :=
+    (hf.sub (differentiableOn_conj_conj_of_symmetric hΩ hf)).eqOn_zero_of_zero_on_real_axis
+      hΩopen hΩconn hx fun w hw hw0 => by
+        rw [Pi.sub_apply, Complex.conj_eq_iff_im.mpr hw0,
+          Complex.conj_eq_iff_im.mpr (hreal w hw hw0), sub_self]
+  have h0 : f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := sub_eq_zero.mp (hG0 hz)
+  simpa only [starRingEnd_self_apply] using (congrArg (starRingEnd ℂ) h0).symm
+
+/-- **Schwarz reflection symmetry on a closed vertical strip.** If `f` is holomorphic on the open
+strip `verticalStrip a b` (`a < b`), continuous on the closed strip `verticalClosedStrip a b`, and
+real on `(a, b)`, then `f (conj z) = conj (f z)` throughout `verticalClosedStrip a b`. -/
+theorem apply_conj_eq_conj_of_im_eq_zero_on_strip {a b : ℝ} (hab : a < b)
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a b))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a b))
+    (hreal : ∀ x : ℝ, a < x → x < b → (f x).im = 0)
+    {z : ℂ} (hz : z ∈ Complex.HadamardThreeLines.verticalClosedStrip a b) :
+    f (conj z) = conj (f z) := by
+  have hΩ : EqOn (fun w => f (conj w)) (fun w => conj (f w))
+      (Complex.HadamardThreeLines.verticalStrip a b) := fun w hw =>
+    apply_conj_eq_conj_of_real_on_axis (TauCeti.Complex.HadamardThreeLines.isOpen_verticalStrip a b)
+      (TauCeti.Complex.HadamardThreeLines.convex_verticalStrip a b).isPreconnected
+      (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalStrip a b) (x := (a + b) / 2)
+      (by simp only [TauCeti.Complex.HadamardThreeLines.mem_verticalStrip_iff, ofReal_re, mem_Ioo]
+          constructor <;> linarith)
+      hf
+      (fun u hu hu0 => by
+        rw [← re_add_im u, hu0, ofReal_zero, zero_mul, add_zero]
+        exact hreal u.re hu.1 hu.2) hw
+  have hS : EqOn (fun w => f (conj w)) (fun w => conj (f w))
+      (Complex.HadamardThreeLines.verticalClosedStrip a b) :=
+    hΩ.of_subset_closure
+      (hcont.comp continuous_conj.continuousOn
+        (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalClosedStrip a b))
+      (continuous_conj.comp_continuousOn hcont)
+      (TauCeti.Complex.HadamardThreeLines.verticalStrip_subset_verticalClosedStrip a b)
+      (TauCeti.Complex.HadamardThreeLines.closure_verticalStrip hab).superset
+  exact hS hz
 
 end TauCeti

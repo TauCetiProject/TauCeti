@@ -94,17 +94,15 @@ theorem closureExtend_eventuallyEq_extend (f : CkHolderSpaceOn k α Ω F) {x : E
 theorem lipschitzOnWith_extend (hΩ : Convex ℝ (Ω : Set E)) (f : CkHolderSpaceOn (k + 1) α Ω F) :
     LipschitzOnWith ‖f‖₊ f.extend Ω := by
   refine hΩ.lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ) (fun x hx ↦ ?_) fun x hx ↦ ?_
-  · exact (f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt
-      (Ω.isOpen.mem_nhds hx)
+  · exact f.differentiableAt_extend hx
   · rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm, ← norm_iteratedFDeriv_one (𝕜 := ℝ)]
     exact f.norm_iteratedFDeriv_extend_le (i := 1) (by omega) ⟨x, hx⟩
 
 /-- From order one on, the extension to the closure is differentiable on `Ω`. -/
 theorem differentiableOn_closureExtend (f : CkHolderSpaceOn (k + 1) α Ω F) :
-    DifferentiableOn ℝ f.closureExtend Ω := fun x hx ↦
-  (((f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt
-    (Ω.isOpen.mem_nhds hx)).congr_of_eventuallyEq
-      (f.closureExtend_eventuallyEq_extend hx)).differentiableWithinAt
+    DifferentiableOn ℝ f.closureExtend Ω := fun _ hx ↦
+  ((f.differentiableAt_extend hx).congr_of_eventuallyEq
+    (f.closureExtend_eventuallyEq_extend hx)).differentiableWithinAt
 
 /-- **Uniqueness of the extension to the closure.** At a point of the closure of `Ω`, the
 extension to the closure takes the value of any function that agrees with the element on `Ω` and
@@ -234,7 +232,7 @@ theorem exists_ckHolderSpaceOn_one_of_isCompact_closure (hΩ : IsCompact (closur
         rw [norm_iteratedFDeriv_one, hu' x x.property]
         exact hC' x (subset_closure x.property)⟩
   · have h : HolderOnWith K α (iteratedFDeriv ℝ 1 u) Ω := by
-      rw [holderOnWith_iteratedFDeriv_succ_iff, holderOnWith_iteratedFDeriv_zero_iff]
+      rw [holderOnWith_iteratedFDeriv_one_iff]
       exact hu'H.congr fun z hz ↦ (hu' z hz).symm
     exact h.holderWith
 
