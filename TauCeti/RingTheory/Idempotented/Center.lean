@@ -221,6 +221,12 @@ noncomputable def centroidToCatCenter : CentroidHom H →+* CatCenter (NondegMod
 
 variable {A H}
 
+/-- A bimodule endomorphism `φ` acts on a nondegenerate module `M` by `φ.moduleEnd`. -/
+@[simp]
+theorem centroidToCatCenter_app_hom_hom (φ : CentroidHom H) (M : NondegMod.{v} A H) :
+    ((centroidToCatCenter.{v} A H φ).app M).hom.hom = φ.moduleEnd M.isNondegenerate :=
+  (rfl)
+
 /-- A bimodule endomorphism `φ` acts on an element `m` of a nondegenerate module by `φ(e)`, for any
 `e ∈ H` with `e • m = m`. -/
 theorem centroidToCatCenter_app_apply (φ : CentroidHom H) (M : NondegMod.{v} A H) {m : M.obj}
