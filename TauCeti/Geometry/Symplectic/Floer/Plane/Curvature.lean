@@ -207,16 +207,6 @@ theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × �
   rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
   simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
-/-- The real and imaginary parts of the derivative of the end lift of a PSS plane in the direction
-`∂s` have squared norm the Jacobian of the end lift. -/
-theorem sq_add_sq_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (ζ : ℝ × ℝ) :
-    (fderiv ℝ (realChart p.cylindricalEndLift) ζ stdComplexLineReal).1 ^ 2 +
-        (fderiv ℝ (realChart p.cylindricalEndLift) ζ stdComplexLineReal).2 ^ 2 =
-      (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det := by
-  rw [TauCeti.Complex.fderiv_realChart_apply (p.hasDerivAt_cylindricalEndLift _),
-    TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _), Complex.normSq_apply]
-  simp [stdComplexLineReal, sq]
-
 /-- **The Jacobian of the end lift.** In real coordinates, the Jacobian determinant of the end lift
 `φ` at `ζ` is `4π² |φ(ζ)|²`. -/
 theorem det_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (ζ : ℝ × ℝ) :

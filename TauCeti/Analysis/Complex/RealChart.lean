@@ -107,6 +107,15 @@ theorem det_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
   rw [(hasFDerivAt_realChart hf).fderiv]
   simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply]
 
+/-- In real coordinates, the derivative of a map with complex derivative `f'` along `(1, 0)` is
+`(Re f', Im f')`, whose squared norm `|f'|²` is the Jacobian determinant. -/
+theorem sq_add_sq_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
+    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) :
+    (fderiv ℝ (realChart f) w (1, 0)).1 ^ 2 + (fderiv ℝ (realChart f) w (1, 0)).2 ^ 2 =
+      (fderiv ℝ (realChart f) w).det := by
+  rw [fderiv_realChart_apply hf, det_fderiv_realChart hf, Complex.normSq_apply]
+  simp [sq]
+
 /-- In real coordinates, the Jacobian determinant of a map with a complex derivative is
 nonnegative. -/
 theorem det_fderiv_realChart_nonneg {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
