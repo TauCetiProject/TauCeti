@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
+public import TauCeti.Algebra.Polynomial.ExpTwistDeriv
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Analysis.Normed.Group.Ultra
@@ -37,7 +38,11 @@ predictably under polynomial operations:
   `Bp * Bq` on `p * q` (`Polynomial.norm_coeff_mul_mul_pow_le`), give `B ^ m` on `p ^ m` when
   `‖1‖ = 1` (`Polynomial.norm_coeff_pow_mul_pow_le`,
   `Polynomial.norm_coeff_X_sub_C_pow_mul_pow_le`), and give `∏ i ∈ s, B i` on finite products when
-  `R` is commutative with `‖1‖ = 1` (`Polynomial.norm_coeff_prod_mul_pow_le`).
+  `R` is commutative with `‖1‖ = 1` (`Polynomial.norm_coeff_prod_mul_pow_le`). Over an
+  ultrametric seminormed commutative ring, the twisted derivative
+  `Polynomial.expTwistDeriv c m = (d/dX + c) ^ m` multiplies a common bound on the coefficients by
+  at most `max 1 ‖c‖ ^ m` (`Polynomial.norm_coeff_expTwistDeriv_le`), because the integer factors
+  introduced by differentiation have norm at most one.
 
 Over an ultrametric seminormed commutative ring with `‖1‖ = 1`, let `p a` be polynomials of
 degree at most one whose constant coefficients have norm at most one and whose linear
@@ -212,6 +217,27 @@ theorem norm_coeff_prod_mul_pow_le {ι R : Type*} [SeminormedCommRing R] [NormOn
     rw [prod_insert hi, prod_insert hi]
     exact norm_coeff_mul_mul_pow_le hc (hf i (mem_insert_self i s))
       (ih fun j hj ↦ hf j (mem_insert_of_mem hj)) n
+
+/-- Over an ultrametric seminormed commutative ring, a bound `M` on the coefficients of `P` gives
+the bound `max 1 ‖c‖ ^ m * M` on the coefficients of the twisted derivative
+`expTwistDeriv c m P = (d/dX + c) ^ m P`. -/
+theorem norm_coeff_expTwistDeriv_le {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    (c : R) (m : ℕ) {P : R[X]} {M : ℝ} (hP : ∀ j, ‖P.coeff j‖ ≤ M) (k : ℕ) :
+    ‖(expTwistDeriv c m P).coeff k‖ ≤ max 1 ‖c‖ ^ m * M := by
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hP 0)
+  induction m generalizing k with
+  | zero => simpa using hP k
+  | succ m ih =>
+    have hB : 0 ≤ max 1 ‖c‖ ^ m * M := by positivity
+    rw [expTwistDeriv_succ, coeff_add, coeff_derivative, smul_eq_C_mul, coeff_C_mul, pow_succ',
+      mul_assoc]
+    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
+    · -- the derivative multiplies a coefficient by the integer `k + 1`
+      rw [← Nat.cast_succ, mul_comm, ← nsmul_eq_mul]
+      exact (IsUltrametricDist.norm_nsmul_le _ _).trans
+        ((ih (k + 1)).trans (le_mul_of_one_le_left hB (le_max_left _ _)))
+    · exact (norm_mul_le _ _).trans
+        (mul_le_mul (le_max_right _ _) (ih k) (norm_nonneg _) (by positivity))
 
 end Polynomial
 
