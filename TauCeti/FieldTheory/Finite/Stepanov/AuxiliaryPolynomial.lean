@@ -76,9 +76,7 @@ private theorem dvd_eval_sub_sum {e : ℕ} (a : F) (f : F[X]) (c : ℕ) (A : Fin
   simp only [eval_finsetSum, eval_monomial, ← Finset.sum_sub_distrib]
   refine Finset.dvd_sum fun i _ ↦ ?_
   rw [pow_mul', mul_comm, ← mul_sub]
-  refine dvd_mul_of_dvd_right ?_ _
-  rw [X_sub_C_pow_natCard]
-  exact dvd_sub_comm.1 (sub_dvd_eval_sub _ _ _)
+  exact dvd_mul_of_dvd_right (dvd_sub_comm.1 (X_sub_C_pow_natCard_dvd_eval_sub_eval a (A i))) _
 
 /-- If `(X - a) ^ q` divides `Q(f ^ (q - 1))`, where `f(a) ≠ 0`, `deg Q < e` and the coefficients
 of `Q` have degree at most `E` with `E + (e - 1) deg f < q`, then `Q(f(a) / f) = 0` in the
@@ -97,8 +95,8 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
     have h₁ : f ^ q = (f.map C).eval (X ^ q) := by
       rw [eval_map, hq, Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card,
         coe_expand]
-    rw [h₁, ← eval₂_at_apply, ← eval_map, X_sub_C_pow_natCard]
-    exact sub_dvd_eval_sub _ _ _
+    rw [h₁, ← eval₂_at_apply, ← eval_map]
+    exact X_sub_C_pow_natCard_dvd_eval_sub_eval a _
   have hG : (X - C a) ^ q ∣ G := by
     have hq1 : 1 ≤ q := Nat.one_le_iff_ne_zero.2 Nat.card_pos.ne'
     rw [← dvd_sub_right (dvd_mul_of_dvd_right hdvd (f ^ (e - 1))), eval_eq_sum_range' hQdeg,

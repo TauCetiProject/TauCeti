@@ -54,11 +54,11 @@ theorem irreducible_X_pow_sub_C_div {e : ℕ} (he : e ≠ 0) {f : F[X]} {c : F} 
   -- If `b ^ ℓ = d / f` with `d` a nonzero constant, then `b⁻¹ ^ ℓ` is the polynomial
   -- `C d⁻¹ * f`, so `b⁻¹` is a polynomial `g` since `F[X]` is integrally closed, and
   -- `f = C d * g ^ ℓ`.
+  have hCinv (d : F) : algebraMap F[X] K (C d⁻¹) = (algebraMap F[X] K (C d))⁻¹ :=
+    map_inv₀ ((algebraMap F[X] K).comp C) d
   have key : ∀ (ℓ : ℕ) (d : F), 1 < ℓ → ℓ ∣ e → d ≠ 0 → ∀ b : K,
       b ^ ℓ ≠ algebraMap F[X] K (C d) / algebraMap F[X] K f := by
     intro ℓ d hℓ hℓe hd b hb
-    have hCinv : algebraMap F[X] K (C d⁻¹) = (algebraMap F[X] K (C d))⁻¹ :=
-      eq_inv_of_mul_eq_one_left (by rw [← map_mul, ← C_mul, inv_mul_cancel₀ hd, C_1, map_one])
     have hpow : b⁻¹ ^ ℓ = algebraMap F[X] K (C d⁻¹ * f) := by
       rw [inv_pow, hb, inv_div, map_mul, hCinv, div_eq_inv_mul]
     have hint : IsIntegral F[X] b⁻¹ :=
@@ -78,10 +78,7 @@ theorem irreducible_X_pow_sub_C_div {e : ℕ} (he : e ≠ 0) {f : F[X]} {c : F} 
   have h4K0 : (-4 : K) ≠ 0 := by
     rw [h4K]
     exact (map_ne_zero_iff _ hinj).2 (C_ne_zero.2 h4F)
-  have hinv : algebraMap F[X] K (C (-4)⁻¹) = (-4 : K)⁻¹ := by
-    rw [h4K]
-    exact map_inv₀ ((algebraMap F[X] K).comp C) (-4)
-  rw [div_eq_mul_inv c, C_mul, map_mul, hinv, mul_comm (algebraMap F[X] K (C c)), mul_div_assoc,
-    ← hb, ← mul_assoc, inv_mul_cancel₀ h4K0, one_mul]
+  rw [div_eq_mul_inv c, C_mul, map_mul, hCinv, ← h4K, mul_comm (algebraMap F[X] K (C c)),
+    mul_div_assoc, ← hb, ← mul_assoc, inv_mul_cancel₀ h4K0, one_mul]
 
 end Polynomial

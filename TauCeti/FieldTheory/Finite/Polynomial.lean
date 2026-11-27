@@ -23,10 +23,12 @@ reduces the claim to `Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`.
 The polynomial `X ^ q ^ n - X` is separable for `n ≠ 0` over any commutative ring with `q`
 elements (`Polynomial.separable_X_pow_card_pow_sub_X`).
 
-Over a finite field with `q` elements, `(X - a) ^ q = X ^ q - a` (`Polynomial.X_sub_C_pow_natCard`).
-If `f ∈ K[X]` and `A ∈ K[X][Y]` are nonzero with `deg_Y A + deg f < q`, some `a ∈ K` has
-`f(a) ≠ 0` and `A(X, a) ≠ 0` (`Polynomial.exists_eval_ne_zero_and_eval_C_ne_zero`), because the
-two polynomials have together fewer than `q` roots.
+Over a finite field with `q` elements, `(X - a) ^ q = X ^ q - a` (`Polynomial.X_sub_C_pow_natCard`),
+so `(X - a) ^ q` divides `A(X, X ^ q) - A(X, a)` for `A ∈ K[X][Y]`
+(`Polynomial.X_sub_C_pow_natCard_dvd_eval_sub_eval`). If `f ∈ K[X]` and `A ∈ K[X][Y]` are nonzero
+with `deg_Y A + deg f < q`, some `a ∈ K` has `f(a) ≠ 0` and `A(X, a) ≠ 0`
+(`Polynomial.exists_eval_ne_zero_and_eval_C_ne_zero`): otherwise `A · f` vanishes at the `q`
+points `C a`, but it is nonzero of degree less than `q`.
 -/
 
 public section
@@ -78,36 +80,29 @@ theorem X_sub_C_pow_natCard (a : K) : (X - C a) ^ Nat.card K = X ^ Nat.card K - 
   have := Fintype.ofFinite K
   rw [Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card, map_sub, expand_X, expand_C]
 
+/-- Over a finite field with `q` elements, `(X - a) ^ q` divides `A(X, X ^ q) - A(X, a)` for every
+`A ∈ K[X][Y]`. -/
+theorem X_sub_C_pow_natCard_dvd_eval_sub_eval (a : K) (A : K[X][X]) :
+    (X - C a) ^ Nat.card K ∣ A.eval (X ^ Nat.card K) - A.eval (C a) := by
+  rw [X_sub_C_pow_natCard]
+  exact sub_dvd_eval_sub _ _ _
+
 /-- If `f ≠ 0` in `K[X]` and `A ≠ 0` in `K[X][X]` have degrees with sum less than `#K`, some
 `a ∈ K` has `f a ≠ 0` and `A (C a) ≠ 0`. -/
 theorem exists_eval_ne_zero_and_eval_C_ne_zero {f : K[X]} (hf : f ≠ 0) {A : K[X][X]} (hA : A ≠ 0)
     (hdeg : A.natDegree + f.natDegree < Nat.card K) :
     ∃ a : K, f.eval a ≠ 0 ∧ A.eval (C a) ≠ 0 := by
-  classical
   have := Fintype.ofFinite K
   by_contra! H
-  have h₁ : (Finset.univ.filter fun a ↦ f.eval a = 0).card ≤ f.natDegree :=
-    calc _ ≤ f.roots.toFinset.card := Finset.card_le_card fun a ha ↦ by
-            simp only [Finset.mem_filter] at ha; simp [mem_roots hf, ha.2]
-      _ ≤ f.roots.card := Multiset.toFinset_card_le _
-      _ ≤ f.natDegree := card_roots' f
-  have h₂ : (Finset.univ.filter fun a ↦ A.eval (C a) = 0).card ≤ A.natDegree :=
-    calc _ ≤ A.roots.toFinset.card :=
-          Finset.card_le_card_of_injOn C (fun a ha ↦ by
-            simp only [Finset.coe_filter, Set.mem_ofPred_eq, Finset.mem_univ, true_and] at ha
-            simp [mem_roots hA, ha]) C_injective.injOn
-      _ ≤ A.roots.card := Multiset.toFinset_card_le _
-      _ ≤ A.natDegree := card_roots' A
-  have hsub : (Finset.univ : Finset K) ⊆ (Finset.univ.filter fun a ↦ f.eval a = 0) ∪
-      (Finset.univ.filter fun a ↦ A.eval (C a) = 0) := by
-    intro a _
-    simp only [Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and]
+  -- `A * f(X)` vanishes at every `C a`, and it has fewer than `#K` roots unless it is zero.
+  refine mul_ne_zero hA ((Polynomial.map_ne_zero_iff C_injective).2 hf)
+    (eq_zero_of_natDegree_lt_card_of_eval_eq_zero (A * f.map C) C_injective (fun a ↦ ?_) ?_)
+  · rw [eval_mul, eval_map, eval₂_at_apply]
     by_cases ha : f.eval a = 0
-    · exact Or.inl ha
-    · exact Or.inr (H a ha)
-  have hcard := (Finset.card_le_card hsub).trans (Finset.card_union_le _ _)
-  rw [Finset.card_univ, ← Nat.card_eq_fintype_card] at hcard
-  lia
+    · rw [ha, C_0, mul_zero]
+    · rw [H a ha, zero_mul]
+  · rw [← Nat.card_eq_fintype_card]
+    exact natDegree_mul_le.trans_lt ((Nat.add_le_add_left natDegree_map_le _).trans_lt hdeg)
 
 end Finite
 
