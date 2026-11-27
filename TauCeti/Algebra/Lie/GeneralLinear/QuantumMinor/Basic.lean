@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.LinearAlgebra.Matrix.Determinant.Column
 
 /-!
@@ -43,6 +44,31 @@ theorem quantumMinor_eq_columnDet (E : Matrix ι ι A) (u : K) (a b : Fin n → 
       (of fun i j => (if a i = b j then algebraMap K A (u - (j.val : K)) else 0) +
         E (a i) (b j)).columnDet :=
   (rfl)
+
+/-- Algebra homomorphisms preserve quantum minors with the same spectral parameter. -/
+@[simp] theorem _root_.AlgHom.map_quantumMinor {B : Type*} [Ring B] [Algebra K B]
+    (f : A →ₐ[K] B) (E : Matrix ι ι A) (u : K) (a b : Fin n → ι) :
+    f (E.quantumMinor u a b) = (E.map f).quantumMinor u a b := by
+  simp only [quantumMinor_eq_columnDet, ← AlgHom.coe_toRingHom, RingHom.map_columnDet]
+  congr 1
+  ext i j
+  simp only [AlgHom.coe_toRingHom, Matrix.map_apply, of_apply, map_add, apply_ite f,
+    AlgHom.commutes, map_zero]
+
+/-- A constant scalar diagonal shift adds that scalar to the spectral parameter of every
+quantum minor, without any commutator hypothesis on the generators. -/
+@[simp] theorem quantumMinor_add_diagonal_algebraMap (E : Matrix ι ι A) (u t : K)
+    (a b : Fin n → ι) :
+    (E + diagonal (fun _ ↦ algebraMap K A t)).quantumMinor u a b =
+      E.quantumMinor (u + t) a b := by
+  simp only [quantumMinor_eq_columnDet]
+  congr 1
+  ext i j
+  by_cases h : a i = b j
+  · simp only [of_apply, Matrix.add_apply, h, diagonal_apply_eq, ↓reduceIte]
+    have hs : (u - (j.val : K)) + t = u + t - j.val := by abel
+    rw [← add_assoc, add_right_comm, ← map_add, hs]
+  · simp [h]
 
 /-- An element commuting with the entries in the selected rows and columns also commutes with
 the quantum minor. -/
@@ -110,5 +136,20 @@ theorem quantumMinor_succ_column_last (E : Matrix ι ι A) (u : K) (a b : Fin (n
   simp only [quantumMinor_eq_columnDet, columnDet_succ_column_last, of_apply, Fin.val_last]
   refine Finset.sum_congr rfl fun i _ => ?_
   congr 3
+
+/-- A quantum minor lies in any subalgebra containing the entries selected by its row and
+column tuples. -/
+theorem quantumMinor_mem_subalgebra (E : Matrix ι ι A) (u : K) (a b : Fin n → ι)
+    {S : Subalgebra K A} (hS : ∀ i j, E (a i) (b j) ∈ S) : E.quantumMinor u a b ∈ S := by
+  rw [quantumMinor_eq_columnDet, columnDet_apply]
+  refine S.sum_mem fun σ _ ↦ ?_
+  rw [Units.smul_def]
+  refine S.zsmul_mem (list_prod_mem fun x hx ↦ ?_) _
+  obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hx
+  simp only [of_apply]
+  refine S.add_mem ?_ (hS _ _)
+  split_ifs
+  · exact S.algebraMap_mem _
+  · exact S.zero_mem
 
 end Matrix

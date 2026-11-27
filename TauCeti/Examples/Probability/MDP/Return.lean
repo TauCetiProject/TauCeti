@@ -101,15 +101,9 @@ example (M : MDP Bool Bool) (htrans : ∀ s a, M.trans s a = PMF.pure a) (d : �
     (s : Bool) (n : ℕ) :
     ∀ᵐ ω ∂(HistoryPolicy.ofMarkov fun k ↦ ofDet (d k)).trajLaw M.transKernel s,
       (ω (n + 1)).1 = (ω n).2 ∧ (ω (n + 1)).2 = d (n + 1) (ω (n + 1)).1 := by
-  set μ := (HistoryPolicy.ofMarkov fun k ↦ ofDet (d k)).trajLaw M.transKernel s
-  have haction : ∀ᵐ ω ∂μ, (ω (n + 1)).2 = d (n + 1) (ω (n + 1)).1 := by
-    have h : ∀ᵐ p ∂(μ.map (fun x ↦ (x (n + 1)).1) ⊗ₘ Kernel.ofPMF (ofDet (d (n + 1)))),
-        p.2 = d (n + 1) p.1 :=
-      Kernel.ae_compProd_ofPMF_of_eq_pure (ofDet_apply (d (n + 1)))
-    rw [← HistoryPolicy.trajLaw_ofMarkov_map_eval_succ] at h
-    exact ae_of_ae_map (measurable_pi_apply _).aemeasurable h
   filter_upwards [M.trajLaw_ae_state_succ_of_trans_eq_pure _ s (f := fun _ a ↦ a) htrans,
-    haction] with ω h1 h2
-  exact ⟨h1 n, h2⟩
+    HistoryPolicy.trajLaw_ofMarkov_ae_action_eq M.transKernel s fun k s ↦ ofDet_apply (d k) s]
+    with ω h1 h2
+  exact ⟨h1 n, h2 (n + 1)⟩
 
 end TauCeti.Examples.MDPReturn

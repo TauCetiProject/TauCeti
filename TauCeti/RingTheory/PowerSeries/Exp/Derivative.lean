@@ -6,39 +6,73 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Exp
-public import TauCeti.Algebra.Polynomial.ExpTwistDeriv
-public import TauCeti.RingTheory.PowerSeries.Derivative
+public import TauCeti.Algebra.Polynomial.ExpDerivFactor
+import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
 # Derivatives of exponential polynomials
 
-Over a commutative `ℚ`-algebra, differentiating an exponential polynomial `P(X) e^{cX}` gives
-`(P' + c P) e^{cX}`, so its `m`-th derivative is `(expTwistDeriv c m P)(X) e^{cX}`, where
-`Polynomial.expTwistDeriv c m = (d/dX + c) ^ m`.
+Over a commutative `ℚ`-algebra `A`, the exponential polynomial `Q (X) exp (ψ X)`, for a polynomial
+`Q` and `ψ ∈ A`, is the formal power series `Q * rescale ψ (exp A)`. Its formal derivative is
+`(Q′ + ψ Q) exp (ψ X)`, so its `m`-th formal derivative is `((D + ψ) ^ m Q) (X) exp (ψ X)`, with
+`(D + ψ) ^ m` the operator `Polynomial.expDerivFactor ψ m`. This is what makes the derivatives of
+the auxiliary functions of Baker's method again exponential polynomials with the same frequencies,
+whose polynomial parts are computed by `Polynomial.expDerivFactor`.
+
+The identity only uses that `exp (ψ X)` satisfies `f′ = ψ f`, and it is proved in that form, for
+any power series `f` over a commutative semiring.
 
 ## Main results
 
-* `PowerSeries.iterate_derivative_coe_mul_rescale_exp`: the `m`-th derivative of `P(X) e^{cX}` is
-  `(expTwistDeriv c m P)(X) e^{cX}`.
+* `PowerSeries.derivative_rescale_exp`: `d/dX exp (ψ X) = ψ exp (ψ X)`.
+* `PowerSeries.iterate_derivative_coe_mul_of_derivative_eq_C_mul`: if `f′ = c f`, then the `m`-th
+  derivative of `Q f` is `((D + c) ^ m Q) f`.
+* `PowerSeries.iterate_derivative_coe_mul_rescale_exp`: the `m`-th derivative of
+  `Q (X) exp (ψ X)` is `((D + ψ) ^ m Q) (X) exp (ψ X)`.
+
+## References
+
+* A. Baker, *Transcendental Number Theory*, Cambridge University Press, 1975, Chapter 2.
 -/
 
 public section
 
+open scoped Polynomial
+
 namespace PowerSeries
 
-/-- **Derivatives of an exponential polynomial**: over a commutative `ℚ`-algebra, the `m`-th
-derivative of `P(X) e^{cX}` is `(expTwistDeriv c m P)(X) e^{cX}`, where
-`expTwistDeriv c m = (d/dX + c) ^ m`. -/
-theorem iterate_derivative_coe_mul_rescale_exp {R : Type*} [CommRing R] [Algebra ℚ R] (c : R)
-    (m : ℕ) (P : Polynomial R) :
-    d⁄dX^[m] ((P : R⟦X⟧) * rescale c (exp R)) =
-      (Polynomial.expTwistDeriv c m P : R⟦X⟧) * rescale c (exp R) := by
+/-- If `f′ = c f`, then `(Q f)′ = (Q′ + c Q) f` for a polynomial `Q`. -/
+theorem derivative_coe_mul_of_derivative_eq_C_mul {A : Type*} [CommSemiring A] {f : A⟦X⟧}
+    {c : A} (hf : d⁄dX f = C c * f) (Q : A[X]) :
+    d⁄dX ((Q : A⟦X⟧) * f) = ((Polynomial.expDerivFactor c 1 Q : A[X]) : A⟦X⟧) * f := by
+  rw [Polynomial.expDerivFactor_one, Derivation.leibniz, hf]
+  push_cast [derivative_coe, smul_eq_mul]
+  ring
+
+/-- If `f′ = c f`, then the `m`-th derivative of `Q f` is `((D + c) ^ m Q) f` for a polynomial
+`Q`. -/
+theorem iterate_derivative_coe_mul_of_derivative_eq_C_mul {A : Type*} [CommSemiring A]
+    {f : A⟦X⟧} {c : A} (hf : d⁄dX f = C c * f) (Q : A[X]) (m : ℕ) :
+    (d⁄dX)^[m] ((Q : A⟦X⟧) * f) = ((Polynomial.expDerivFactor c m Q : A[X]) : A⟦X⟧) * f := by
   induction m with
   | zero => simp
   | succ m ih =>
-    rw [Function.iterate_succ_apply', ih]
-    simp [Derivation.leibniz, derivative_rescale, derivative_exp, derivative_coe,
-      Polynomial.expTwistDeriv_succ, Polynomial.smul_eq_C_mul]
-    ring
+    rw [Function.iterate_succ_apply', ih, derivative_coe_mul_of_derivative_eq_C_mul hf,
+      ← Polynomial.expDerivFactor_add, add_comm]
+
+variable {A : Type*} [CommRing A] [Algebra ℚ A]
+
+/-- The derivative of `exp (ψ X)` is `ψ exp (ψ X)`. -/
+@[simp]
+theorem derivative_rescale_exp (ψ : A) :
+    d⁄dX (rescale ψ (exp A)) = C ψ * rescale ψ (exp A) := by
+  rw [derivative_rescale, derivative_exp]
+
+/-- **The derivatives of an exponential polynomial.** The `m`-th derivative of `Q (X) exp (ψ X)`
+is `((D + ψ) ^ m Q) (X) exp (ψ X)`. -/
+theorem iterate_derivative_coe_mul_rescale_exp (Q : A[X]) (ψ : A) (m : ℕ) :
+    (d⁄dX)^[m] ((Q : A⟦X⟧) * rescale ψ (exp A)) =
+      ((Polynomial.expDerivFactor ψ m Q : A[X]) : A⟦X⟧) * rescale ψ (exp A) :=
+  iterate_derivative_coe_mul_of_derivative_eq_C_mul (derivative_rescale_exp ψ) Q m
 
 end PowerSeries

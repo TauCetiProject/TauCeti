@@ -38,6 +38,9 @@ only isometry of the zero space is the identity.
   `L` is nonzero, `K_p(L)` contains an isometry of determinant `-1`.
 * `TauCeti.IntegralLattice.relIndex_localStabilizer_eq_two`: in positive rank the index is two.
 * `TauCeti.IntegralLattice.relIndex_localStabilizer_eq_one`: in rank zero the index is one.
+* `TauCeti.IntegralLattice.exists_mem_localStabilizer_mul_mem_specialOrthogonalWithin`:
+  `O(V_p) = SO(V_p) K_p(L)`, every local isometry becoming proper after right multiplication by an
+  element of `K_p(L)`.
 
 ## References
 
@@ -106,5 +109,25 @@ theorem relIndex_localStabilizer_eq_two (hn : 0 < Module.finrank ℤ L) :
   have : Nontrivial V := Module.finrank_pos_iff.mp (L.finrank_carrier ▸ hn)
   exact (L.relIndex_localStabilizer_eq_two_iff p).mpr
     (L.exists_mem_localStabilizer_orthogonalDet_eq_neg_one p L.form_nondegenerate.ne_zero)
+
+/-- **Every local isometry is proper up to the local stabilizer**: for every `g ∈ O(V_p)` there is
+`k ∈ K_p(L)` with `g k ∈ SO(V_p)`, that is, `O(V_p) = SO(V_p) K_p(L)`. In positive rank `k` is
+`1` or an improper element of `K_p(L)`; in rank zero every isometry is proper. -/
+theorem exists_mem_localStabilizer_mul_mem_specialOrthogonalWithin
+    (g : orthogonalGroup (L.norm.baseChange ℚ_[p])) :
+    ∃ k ∈ L.localStabilizer p, g * k ∈ specialOrthogonalWithin (L.norm.baseChange ℚ_[p]) := by
+  have := L.finiteDimensional
+  rcases (Module.finrank ℤ L).eq_zero_or_pos with hn | hn
+  · -- In rank zero the only isometry is the identity, which is proper.
+    have hV : Module.finrank ℚ_[p] (ℚ_[p] ⊗[ℚ] V) = 0 := by
+      rw [Module.finrank_baseChange, ← L.finrank_carrier, hn]
+    refine ⟨1, one_mem _, ?_⟩
+    rw [mul_one, mem_specialOrthogonalWithin_iff]
+    exact Units.ext ((LinearEquiv.coe_det _).trans (LinearMap.det_eq_one_of_finrank_eq_zero hV _))
+  · have : Nontrivial V := Module.finrank_pos_iff.mp (L.finrank_carrier ▸ hn)
+    have hQ := QuadraticForm.Nondegenerate.baseChange (A := ℚ_[p]) L.nondegenerate_norm
+    exact (L.localStabilizer p).exists_mem_mul_mem_specialOrthogonalWithin
+      (nondegenerate_polar_iff.mpr hQ).1
+      (L.exists_mem_localStabilizer_orthogonalDet_eq_neg_one p L.form_nondegenerate.ne_zero) g
 
 end TauCeti.IntegralLattice
