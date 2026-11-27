@@ -22,8 +22,8 @@ For a central idempotent `e` of `R[G]`, `G` finite, a `p`-subgroup `D`, `R` of c
 and `C_G(D) ≤ H ≤ N_G(D)`, `brauerCorrespondent hCH e` is a central idempotent of `R[H]`: it is
 central because the coefficients of `e` are constant on `H`-conjugacy classes and `C_G(D)` is
 normalized by `H`, and idempotent because the Brauer projection is multiplicative on `R[G]^D`
-(`TauCeti.brauerProjection_mul`). On centres this is `TauCeti.centerBrauerProjection`. When `D` is
-a defect group of a block idempotent `e_B` it is nonzero. That at `H = N_G(D)` it is then a block
+(`TauCeti.brauerProjection_mul`). On centres this is `TauCeti.centerBrauerCorrespondent`. When `D`
+is a defect group of a block idempotent `e_B` it is nonzero. That at `H = N_G(D)` it is then a block
 idempotent of `R[N_G(D)]` with defect group `D`, the idempotent of the Brauer correspondent of
 `B`, is Brauer's first main theorem, not proved here.
 
@@ -31,7 +31,7 @@ idempotent of `R[N_G(D)]` with defect group `D`, the idempotent of the Brauer co
 
 * `TauCeti.brauerCorrespondent hCH`: for `C_G(D) ≤ H`, the `R`-linear map `R[G] → R[H]`,
   `e ↦ Br_D(e)`.
-* `TauCeti.centerBrauerProjection hCH hHN`: for `C_G(D) ≤ H ≤ N_G(D)`, its restriction
+* `TauCeti.centerBrauerCorrespondent hCH hHN`: for `C_G(D) ≤ H ≤ N_G(D)`, its restriction
   `Z(R[G]) → Z(R[H])` to centres.
 
 ## Main results
@@ -48,8 +48,8 @@ idempotent of `R[N_G(D)]` with defect group `D`, the idempotent of the Brauer co
 * `TauCeti.isIdempotentElem_brauerCorrespondent`: it maps idempotents of `R[G]^D` to idempotents,
   for a `p`-subgroup `D` of a finite group in characteristic `p`;
   `TauCeti.IsBlockIdempotent.isIdempotentElem_brauerCorrespondent` states this for a block
-  idempotent, and `TauCeti.isIdempotentElem_centerBrauerProjection` on centres.
-* `TauCeti.centerBrauerProjection_one`, `TauCeti.centerBrauerProjection_mul`: on centres it is
+  idempotent, and `TauCeti.isIdempotentElem_centerBrauerCorrespondent` on centres.
+* `TauCeti.centerBrauerCorrespondent_one`, `TauCeti.centerBrauerCorrespondent_mul`: on centres it is
   unital, and multiplicative for a `p`-subgroup `D` in characteristic `p`.
 * `TauCeti.IsDefectGroup.brauerCorrespondent_ne_zero`: it is nonzero at a defect group.
 
@@ -200,43 +200,43 @@ theorem IsDefectGroup.brauerCorrespondent_ne_zero {p : ℕ} {e : MonoidAlgebra R
 /-- The **Brauer correspondent on centres** (Martínez, Theorem 4.5, p. 26): for
 `C_G(D) ≤ H ≤ N_G(D)`, the map `Z(R[G]) → Z(R[H])`, `z ↦ Br_D(z)`, with the coefficients of `z` on
 `C_G(D)` and `0` elsewhere (`TauCeti.brauerCorrespondent_mem_center`). -/
-noncomputable def centerBrauerProjection (hCH : Subgroup.centralizer (D : Set G) ≤ H)
+noncomputable def centerBrauerCorrespondent (hCH : Subgroup.centralizer (D : Set G) ≤ H)
     (hHN : H ≤ Subgroup.normalizer (D : Set G)) (z : Subalgebra.center R (MonoidAlgebra R G)) :
     Subalgebra.center R (MonoidAlgebra R H) :=
   ⟨brauerCorrespondent hCH (z : MonoidAlgebra R G),
     brauerCorrespondent_mem_center hCH hHN (center_le_conjInvariants H z.property)⟩
 
-/-- `centerBrauerProjection hCH hHN z` is the Brauer correspondent of `z`. -/
+/-- `centerBrauerCorrespondent hCH hHN z` is the Brauer correspondent of `z`. -/
 @[simp]
-theorem coe_centerBrauerProjection (hCH : Subgroup.centralizer (D : Set G) ≤ H)
+theorem coe_centerBrauerCorrespondent (hCH : Subgroup.centralizer (D : Set G) ≤ H)
     (hHN : H ≤ Subgroup.normalizer (D : Set G)) (z : Subalgebra.center R (MonoidAlgebra R G)) :
-    (centerBrauerProjection hCH hHN z : MonoidAlgebra R H) =
+    (centerBrauerCorrespondent hCH hHN z : MonoidAlgebra R H) =
       brauerCorrespondent hCH (z : MonoidAlgebra R G) :=
   (rfl)
 
 /-- The Brauer correspondent on centres sends `1` to `1`. -/
 @[simp]
-theorem centerBrauerProjection_one (hCH : Subgroup.centralizer (D : Set G) ≤ H)
+theorem centerBrauerCorrespondent_one (hCH : Subgroup.centralizer (D : Set G) ≤ H)
     (hHN : H ≤ Subgroup.normalizer (D : Set G)) :
-    centerBrauerProjection hCH hHN (1 : Subalgebra.center R (MonoidAlgebra R G)) = 1 :=
+    centerBrauerCorrespondent hCH hHN (1 : Subalgebra.center R (MonoidAlgebra R G)) = 1 :=
   Subtype.ext (brauerCorrespondent_one hCH)
 
 /-- For a `p`-subgroup `D` of a finite group `G` and `R` of characteristic `p`, the Brauer
 correspondent on centres is multiplicative (`TauCeti.brauerCorrespondent_mul`). -/
-theorem centerBrauerProjection_mul [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p]
+theorem centerBrauerCorrespondent_mul [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p]
     (hCH : Subgroup.centralizer (D : Set G) ≤ H) (hHN : H ≤ Subgroup.normalizer (D : Set G))
     (hD : IsPGroup p D) (z w : Subalgebra.center R (MonoidAlgebra R G)) :
-    centerBrauerProjection hCH hHN (z * w) =
-      centerBrauerProjection hCH hHN z * centerBrauerProjection hCH hHN w :=
+    centerBrauerCorrespondent hCH hHN (z * w) =
+      centerBrauerCorrespondent hCH hHN z * centerBrauerCorrespondent hCH hHN w :=
   Subtype.ext (brauerCorrespondent_mul hCH hD (center_le_conjInvariants D z.property)
     (center_le_conjInvariants D w.property))
 
 /-- For a `p`-subgroup `D` of a finite group `G` and `R` of characteristic `p`, the Brauer
 correspondent on centres maps idempotents to idempotents. -/
-theorem isIdempotentElem_centerBrauerProjection [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p]
+theorem isIdempotentElem_centerBrauerCorrespondent [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p]
     (hCH : Subgroup.centralizer (D : Set G) ≤ H) (hHN : H ≤ Subgroup.normalizer (D : Set G))
     (hD : IsPGroup p D) {e : Subalgebra.center R (MonoidAlgebra R G)} (he : IsIdempotentElem e) :
-    IsIdempotentElem (centerBrauerProjection hCH hHN e) := by
-  rw [IsIdempotentElem, ← centerBrauerProjection_mul hCH hHN hD, he.eq]
+    IsIdempotentElem (centerBrauerCorrespondent hCH hHN e) := by
+  rw [IsIdempotentElem, ← centerBrauerCorrespondent_mul hCH hHN hD, he.eq]
 
 end TauCeti

@@ -166,11 +166,9 @@ theorem IsBlockIdempotent.apply_eq_zero_of_brauerProjection_eq_zero [Finite G]
       simp only [Subgroup.coe_subtype] at hs
       rw [hs]
       simp [MulAut.smul_def, mul_assoc]
-    have hcomm : (s : G) * x = x * s := (Subgroup.mem_centralizer_singleton_iff.1 s.property).eq
+    have hcomm : Commute (s : G) x := Subgroup.mem_centralizer_singleton_iff.1 s.property
     rw [hds]
-    calc g * s * g⁻¹ * (g * x * g⁻¹) = g * (s * x) * g⁻¹ := by group
-      _ = g * (x * s) * g⁻¹ := by rw [hcomm]
-      _ = g * x * g⁻¹ * (g * s * g⁻¹) := by group
+    simpa only [MulAut.conj_apply] using (hcomm.map (MulAut.conj g)).eq
   have h0 := hw _ hy
   rw [center_coeff_eq_of_isConj w (isConj_iff.2 ⟨g, rfl⟩).symm] at h0
   rw [classSumBasis_repr_apply, centerToConjClasses_mk, h0, zero_mul]

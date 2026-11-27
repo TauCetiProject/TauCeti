@@ -15,10 +15,11 @@ public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.NormalPSubgr
 
 Let `k` be a field of characteristic `p`, `G` a finite group and `f : H →* G` injective, for
 instance the inclusion of a subgroup. For `z ∈ k[G]`, `z_H ∈ k[H]` keeps the coefficients on `H`
-(`TauCeti.restrictCoeff`); it maps `Z(k[G])` to `Z(k[H])` (`TauCeti.centerRestrict`). A block
-`B` of `k[G]` is **induced** from a block `b` of `k[H]`, `b^G = B`, when the central characters
-satisfy `λ_B(z) = λ_b(z_H)` for every `z ∈ Z(k[G])` (`TauCeti.IsInducedBlock`; Sambale,
-Definition 1.10, p. 16, and Martínez, p. 25, over an algebraically closed field). The map
+(`TauCeti.comapDomainLinearMap`); it maps `Z(k[G])` to `Z(k[H])`
+(`TauCeti.centerComapDomain`). A block `B` of `k[G]` is **induced** from a block `b` of `k[H]`,
+`b^G = B`, when the central characters satisfy `λ_B(z) = λ_b(z_H)` for every `z ∈ Z(k[G])`
+(`TauCeti.IsInducedBlock`; Sambale, Definition 1.10, p. 16, and Martínez, p. 25, over an
+algebraically closed field). The map
 `z ↦ λ_b(z_H)` is linear but need not be multiplicative, so `b^G` need not exist; it is unique
 when it does.
 
@@ -30,14 +31,14 @@ The basic tool is that a central character only sees the centralizer of a defect
 * `TauCeti.IsBlockIdempotent.exists_isInducedBlock`: `b^G` is defined for a block `b` with a
   central character and a defect group `D` with `C_G(D) ≤ H` (Sambale, Proposition 1.11, p. 16):
   for central `z, w` the elements `(z w)_H` and `z_H w_H` agree on `C_H(D)`
-  (`TauCeti.coeff_restrictCoeff_mul_of_mem_centralizer`).
+  (`TauCeti.coeff_comapDomainLinearMap_mul_of_mem_centralizer`).
 * `TauCeti.IsInducedBlock.unique`, `TauCeti.IsInducedBlock.iff_centralCharacter`: uniqueness of
   `b^G`, and the defining relation for the central characters over an algebraically closed field.
 * `TauCeti.IsInducedBlock.exists_isDefectGroup_le`: every defect group of `b` lies in a defect
   group of `b^G` (Sambale, Proposition 1.11, p. 16).
 * `TauCeti.IsInducedBlock.trans`, `TauCeti.IsInducedBlock.of_comp`: block induction is
   transitive.
-* `TauCeti.IsBlockIdempotent.centerBrauerProjection_eq_sum`: for a `p`-subgroup `P` with
+* `TauCeti.IsBlockIdempotent.centerBrauerCorrespondent_eq_sum`: for a `p`-subgroup `P` with
   `P C_G(P) ≤ H ≤ N_G(P)` and `k` algebraically closed, `Br_P(e_B) = ∑_{b^G = B} e_b` (Martínez,
   Theorem 4.5 and Corollary 4.6, p. 26); `TauCeti.IsBlockIdempotent.brauerCorrespondent_eq_sum`
   is the case `H = N_G(P)`.
@@ -68,9 +69,9 @@ section Restrict
 variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
 
 /-- The **restriction of coefficients** `k[G] → k[H]` along an injective homomorphism
-`f : H →* G`: the coefficient of `restrictCoeff f hf x` at `h` is that of `x` at `f h`. For a
+`f : H →* G`: the coefficient of `comapDomainLinearMap f hf x` at `h` is that of `x` at `f h`. For a
 subgroup `H ≤ G` it sends `z` to `z_H`, which keeps the coefficients on `H`. -/
-noncomputable def restrictCoeff (f : H →* G) (hf : Function.Injective f) :
+noncomputable def comapDomainLinearMap (f : H →* G) (hf : Function.Injective f) :
     MonoidAlgebra k G →ₗ[k] MonoidAlgebra k H where
   toFun := comapDomain f hf
   map_add' := comapDomain_add _ _
@@ -78,34 +79,33 @@ noncomputable def restrictCoeff (f : H →* G) (hf : Function.Injective f) :
     ext
     simp
 
-/-- The coefficient of `restrictCoeff f hf x` at `h` is the coefficient of `x` at `f h`. -/
+/-- The coefficient of `comapDomainLinearMap f hf x` at `h` is the coefficient of `x` at `f h`. -/
 @[simp]
-theorem coeff_restrictCoeff (f : H →* G) (hf : Function.Injective f) (x : MonoidAlgebra k G)
-    (h : H) : (restrictCoeff f hf x).coeff h = x.coeff (f h) := by
-  simp [restrictCoeff]
+theorem coeff_comapDomainLinearMap (f : H →* G) (hf : Function.Injective f) (x : MonoidAlgebra k G)
+    (h : H) : (comapDomainLinearMap f hf x).coeff h = x.coeff (f h) := by
+  simp [comapDomainLinearMap]
 
 /-- Restriction of coefficients along the identity is the identity. -/
 @[simp]
-theorem restrictCoeff_id (x : MonoidAlgebra k G) :
-    restrictCoeff (MonoidHom.id G) Function.injective_id x = x := by
+theorem comapDomainLinearMap_id (x : MonoidAlgebra k G) :
+    comapDomainLinearMap (MonoidHom.id G) Function.injective_id x = x := by
   ext
   simp
 
 /-- Restriction of coefficients along a composite is the composite of the restrictions. -/
-theorem restrictCoeff_comp {K : Type*} [Monoid K] (f₂ : H →* G) (hf₂ : Function.Injective f₂)
+theorem comapDomainLinearMap_comp {K : Type*} [Monoid K] (f₂ : H →* G) (hf₂ : Function.Injective f₂)
     (f₁ : K →* H) (hf₁ : Function.Injective f₁) (x : MonoidAlgebra k G) :
-    restrictCoeff (f₂.comp f₁) (hf₂.comp hf₁) x =
-      restrictCoeff f₁ hf₁ (restrictCoeff f₂ hf₂ x) := by
+    comapDomainLinearMap (f₂.comp f₁) (hf₂.comp hf₁) x =
+      comapDomainLinearMap f₁ hf₁ (comapDomainLinearMap f₂ hf₂ x) := by
   ext
   simp
 
 /-- The restriction of `1` is `1`. -/
 @[simp]
-theorem restrictCoeff_one (f : H →* G) (hf : Function.Injective f) :
-    restrictCoeff f hf (1 : MonoidAlgebra k G) = 1 := by
+theorem comapDomainLinearMap_one (f : H →* G) (hf : Function.Injective f) :
+    comapDomainLinearMap f hf (1 : MonoidAlgebra k G) = 1 := by
   ext h
-  rw [coeff_restrictCoeff, one_def, one_def, coeff_single, coeff_single, ← map_one f,
-    Finsupp.single_apply_left hf]
+  simpa [one_def] using Finsupp.single_apply_left hf (1 : H) h (1 : k)
 
 end Restrict
 
@@ -115,45 +115,45 @@ variable {k G H : Type*} [CommSemiring k] [Group G] [Group H]
 
 /-- The restriction of a central element is central: its coefficients are constant on conjugacy
 classes of `G`, hence on those of `H`. -/
-theorem restrictCoeff_mem_center (f : H →* G) (hf : Function.Injective f)
+theorem comapDomainLinearMap_mem_center (f : H →* G) (hf : Function.Injective f)
     {z : MonoidAlgebra k G} (hz : z ∈ Subalgebra.center k (MonoidAlgebra k G)) :
-    restrictCoeff f hf z ∈ Subalgebra.center k (MonoidAlgebra k H) := by
+    comapDomainLinearMap f hf z ∈ Subalgebra.center k (MonoidAlgebra k H) := by
   rw [← conjInvariants_top, mem_conjInvariants_iff_coeff] at hz ⊢
   intro h _ g
   simpa using hz (f h) trivial (f g)
 
 /-- The restriction of coefficients `Z(k[G]) → Z(k[H])` on centres, `z ↦ z_H`. -/
-noncomputable def centerRestrict (f : H →* G) (hf : Function.Injective f) :
+noncomputable def centerComapDomain (f : H →* G) (hf : Function.Injective f) :
     Subalgebra.center k (MonoidAlgebra k G) →ₗ[k] Subalgebra.center k (MonoidAlgebra k H) where
-  toFun z := ⟨restrictCoeff f hf z, restrictCoeff_mem_center f hf z.property⟩
-  map_add' z w := Subtype.ext (map_add (restrictCoeff f hf) (z : MonoidAlgebra k G) w)
-  map_smul' c z := Subtype.ext (map_smul (restrictCoeff f hf) c (z : MonoidAlgebra k G))
+  toFun z := ⟨comapDomainLinearMap f hf z, comapDomainLinearMap_mem_center f hf z.property⟩
+  map_add' z w := Subtype.ext (map_add (comapDomainLinearMap f hf) (z : MonoidAlgebra k G) w)
+  map_smul' c z := Subtype.ext (map_smul (comapDomainLinearMap f hf) c (z : MonoidAlgebra k G))
 
-/-- `centerRestrict f hf z` is `restrictCoeff f hf z`. -/
+/-- `centerComapDomain f hf z` is `comapDomainLinearMap f hf z`. -/
 @[simp]
-theorem coe_centerRestrict (f : H →* G) (hf : Function.Injective f)
+theorem coe_centerComapDomain (f : H →* G) (hf : Function.Injective f)
     (z : Subalgebra.center k (MonoidAlgebra k G)) :
-    (centerRestrict f hf z : MonoidAlgebra k H) = restrictCoeff f hf z :=
+    (centerComapDomain f hf z : MonoidAlgebra k H) = comapDomainLinearMap f hf z :=
   (rfl)
 
 /-- Restriction on centres along the identity is the identity. -/
 @[simp]
-theorem centerRestrict_id (z : Subalgebra.center k (MonoidAlgebra k G)) :
-    centerRestrict (MonoidHom.id G) Function.injective_id z = z :=
-  Subtype.ext (restrictCoeff_id _)
+theorem centerComapDomain_id (z : Subalgebra.center k (MonoidAlgebra k G)) :
+    centerComapDomain (MonoidHom.id G) Function.injective_id z = z :=
+  Subtype.ext (comapDomainLinearMap_id _)
 
 /-- The restriction of `1` on centres is `1`. -/
 @[simp]
-theorem centerRestrict_one (f : H →* G) (hf : Function.Injective f) :
-    centerRestrict f hf (1 : Subalgebra.center k (MonoidAlgebra k G)) = 1 :=
+theorem centerComapDomain_one (f : H →* G) (hf : Function.Injective f) :
+    centerComapDomain f hf (1 : Subalgebra.center k (MonoidAlgebra k G)) = 1 :=
   Subtype.ext (by simp)
 
 /-- Restriction on centres along a composite is the composite of the restrictions. -/
-theorem centerRestrict_comp {K : Type*} [Group K] (f₂ : H →* G) (hf₂ : Function.Injective f₂)
+theorem centerComapDomain_comp {K : Type*} [Group K] (f₂ : H →* G) (hf₂ : Function.Injective f₂)
     (f₁ : K →* H) (hf₁ : Function.Injective f₁) (z : Subalgebra.center k (MonoidAlgebra k G)) :
-    centerRestrict (f₂.comp f₁) (hf₂.comp hf₁) z =
-      centerRestrict f₁ hf₁ (centerRestrict f₂ hf₂ z) :=
-  Subtype.ext (by simpa using restrictCoeff_comp f₂ hf₂ f₁ hf₁ (z : MonoidAlgebra k G))
+    centerComapDomain (f₂.comp f₁) (hf₂.comp hf₁) z =
+      centerComapDomain f₁ hf₁ (centerComapDomain f₂ hf₂ z) :=
+  Subtype.ext (by simpa using comapDomainLinearMap_comp f₂ hf₂ f₁ hf₁ (z : MonoidAlgebra k G))
 
 end CenterRestrict
 
@@ -166,14 +166,14 @@ variable {k G H : Type*} [CommSemiring k] [Group G] [Group H] [Finite G] {p : �
 injective, `G` finite, `D` a `p`-subgroup of `H` with `C_G(f(D)) ≤ f(H)`, and `k` of
 characteristic `p`. For central `z, w ∈ k[G]` and `x ∈ C_H(D)`, the coefficients of `(z w)_H` and
 `z_H w_H` at `x` agree. -/
-theorem coeff_restrictCoeff_mul_of_mem_centralizer (f : H →* G) (hf : Function.Injective f)
+theorem coeff_comapDomainLinearMap_mul_of_mem_centralizer (f : H →* G) (hf : Function.Injective f)
     {D : Subgroup H} (hD : IsPGroup p D)
     (hC : Subgroup.centralizer ((D.map f : Subgroup G) : Set G) ≤ f.range)
     {z w : MonoidAlgebra k G} (hz : z ∈ Subalgebra.center k (MonoidAlgebra k G))
     (hw : w ∈ Subalgebra.center k (MonoidAlgebra k G)) {x : H}
     (hx : x ∈ Subgroup.centralizer (D : Set H)) :
-    (restrictCoeff f hf (z * w)).coeff x =
-      (restrictCoeff f hf z * restrictCoeff f hf w).coeff x := by
+    (comapDomainLinearMap f hf (z * w)).coeff x =
+      (comapDomainLinearMap f hf z * comapDomainLinearMap f hf w).coeff x := by
   classical
   have := Fintype.ofFinite G
   have : Finite H := Finite.of_injective f hf
@@ -213,9 +213,9 @@ theorem coeff_restrictCoeff_mul_of_mem_centralizer (f : H →* G) (hf : Function
     · simp [hF', hF, map_mul, map_inv]
   have h2 := IsPGroup.sum_eq_sum_centralizer_of_nsmul_eq_zero (hD.map f) hp F hFinv
   have h3 := IsPGroup.sum_eq_sum_centralizer_of_nsmul_eq_zero (hD.map f) hp F' hF'inv
-  rw [coeff_restrictCoeff, coeff_mul_apply_left, Finsupp.sum_fintype _ _ (by simp),
+  rw [coeff_comapDomainLinearMap, coeff_mul_apply_left, Finsupp.sum_fintype _ _ (by simp),
     coeff_mul_apply_left, Finsupp.sum_fintype _ _ (by simp)]
-  simp only [coeff_restrictCoeff]
+  simp only [coeff_comapDomainLinearMap]
   rw [h1, h3]
   refine Eq.trans h2 (Finset.sum_congr rfl fun a ha => ?_)
   simp only [hF']
@@ -231,8 +231,8 @@ variable (k) in
 /-- **Block induction.** For an injective homomorphism `f : H →* G`, for instance the inclusion
 of a subgroup, a block `B` of `k[G]` is **induced** from a block `b` of `k[H]`, written
 `b^G = B`, when the central characters satisfy `λ_B(z) = λ_b(z_H)` for every `z ∈ Z(k[G])`, where
-`z_H` keeps the coefficients on `H` (`TauCeti.centerRestrict`). Central characters are unique when
-they exist (`TauCeti.IsPrimitiveIdempotent.algHom_ext`), and over an algebraically closed field
+`z_H` keeps the coefficients on `H` (`TauCeti.centerComapDomain`). Central characters are unique
+when they exist (`TauCeti.IsPrimitiveIdempotent.algHom_ext`), and over an algebraically closed field
 they exist (`TauCeti.IsBlockIdempotent.centralCharacter`); `B` is then unique when it exists
 (`TauCeti.IsInducedBlock.unique`). -/
 def IsInducedBlock (f : H →* G) (hf : Function.Injective f)
@@ -241,7 +241,7 @@ def IsInducedBlock (f : H →* G) (hf : Function.Injective f)
   IsBlockIdempotent b ∧ IsBlockIdempotent B ∧
     ∃ (φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k)
       (ψ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k),
-      φ b = 1 ∧ ψ B = 1 ∧ ∀ z, ψ z = φ (centerRestrict f hf z)
+      φ b = 1 ∧ ψ B = 1 ∧ ∀ z, ψ z = φ (centerComapDomain f hf z)
 
 omit [Finite G] in
 /-- Unfolding `TauCeti.IsInducedBlock`: `b^G = B` when `e_b`, `e_B` are block idempotents with
@@ -251,7 +251,7 @@ theorem isInducedBlock_iff {f : H →* G} {hf : Function.Injective f}
     IsInducedBlock k f hf b B ↔ IsBlockIdempotent b ∧ IsBlockIdempotent B ∧
       ∃ (φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k)
         (ψ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k),
-        φ b = 1 ∧ ψ B = 1 ∧ ∀ z, ψ z = φ (centerRestrict f hf z) :=
+        φ b = 1 ∧ ψ B = 1 ∧ ∀ z, ψ z = φ (centerComapDomain f hf z) :=
   Iff.rfl
 
 namespace IsInducedBlock
@@ -265,7 +265,7 @@ characters with `φ(e_b) = 1`, `ψ(e_B) = 1` and `ψ(z) = φ(z_H)` for every `z`
 theorem of_apply_eq (hb : IsBlockIdempotent b) (hB : IsBlockIdempotent B)
     {φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k}
     {ψ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k} (hφ : φ b = 1) (hψ : ψ B = 1)
-    (h : ∀ z, ψ z = φ (centerRestrict f hf z)) : IsInducedBlock k f hf b B :=
+    (h : ∀ z, ψ z = φ (centerComapDomain f hf z)) : IsInducedBlock k f hf b B :=
   ⟨hb, hB, φ, ψ, hφ, hψ, h⟩
 
 omit [Finite G] in
@@ -284,7 +284,7 @@ omit [Finite G] in
 theorem exists_algHom (h : IsInducedBlock k f hf b B) :
     ∃ (φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k)
       (ψ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k),
-      φ b = 1 ∧ ψ B = 1 ∧ ∀ z, ψ z = φ (centerRestrict f hf z) :=
+      φ b = 1 ∧ ψ B = 1 ∧ ∀ z, ψ z = φ (centerComapDomain f hf z) :=
   h.2.2
 
 /-- **The defining relation, for any choice of characters.** If `b^G = B`, then for all
@@ -293,7 +293,7 @@ theorem exists_algHom (h : IsInducedBlock k f hf b B) :
 theorem apply_eq (h : IsInducedBlock k f hf b B)
     {φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k}
     {ψ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k} (hφ : φ b = 1) (hψ : ψ B = 1)
-    (z : Subalgebra.center k (MonoidAlgebra k G)) : ψ z = φ (centerRestrict f hf z) := by
+    (z : Subalgebra.center k (MonoidAlgebra k G)) : ψ z = φ (centerComapDomain f hf z) := by
   have : Finite H := Finite.of_injective f hf
   obtain ⟨φ', ψ', hφ', hψ', hrel⟩ := h.exists_algHom
   rw [h.isBlockIdempotent_right.algHom_ext hψ hψ', h.isBlockIdempotent_left.algHom_ext hφ hφ',
@@ -317,7 +317,7 @@ theorem trans {K : Type*} [Group K] {f₁ : K →* H} {hf₁ : Function.Injectiv
   obtain ⟨φ, χ, hφ, hχ, hrel₁⟩ := h₁.exists_algHom
   obtain ⟨-, ψ, -, hψ, -⟩ := h₂.exists_algHom
   refine of_apply_eq h₁.isBlockIdempotent_left h₂.isBlockIdempotent_right hφ hψ fun z => ?_
-  rw [h₂.apply_eq hχ hψ, hrel₁, centerRestrict_comp]
+  rw [h₂.apply_eq hχ hψ, hrel₁, centerComapDomain_comp]
 
 /-- **Block induction in stages.** For injective `f₁ : K →* H` and `f₂ : H →* G`, if `b^H = c`
 and `b^G = B` along `f₂ ∘ f₁`, then `c^G = B`. -/
@@ -329,14 +329,14 @@ theorem of_comp {K : Type*} [Group K] {f₁ : K →* H} {hf₁ : Function.Inject
   obtain ⟨φ, χ, hφ, hχ, hrel₁⟩ := h₁.exists_algHom
   obtain ⟨-, ψ, -, hψ, -⟩ := h.exists_algHom
   refine of_apply_eq h₁.isBlockIdempotent_right h.isBlockIdempotent_right hχ hψ fun z => ?_
-  rw [h.apply_eq hφ hψ, hrel₁, centerRestrict_comp]
+  rw [h.apply_eq hφ hψ, hrel₁, centerComapDomain_comp]
 
 /-- **The defining relation for central characters.** Over an algebraically closed field,
 `b^G = B` exactly when `λ_B(z) = λ_b(z_H)` for every `z ∈ Z(k[G])`. -/
 theorem iff_centralCharacter [Finite H] [IsAlgClosed k] (hb : IsBlockIdempotent b)
     (hB : IsBlockIdempotent B) :
     IsInducedBlock k f hf b B ↔
-      ∀ z, hB.centralCharacter z = hb.centralCharacter (centerRestrict f hf z) :=
+      ∀ z, hB.centralCharacter z = hb.centralCharacter (centerComapDomain f hf z) :=
   ⟨fun h => h.apply_eq hb.centralCharacter_self hB.centralCharacter_self,
     of_apply_eq hb hB hb.centralCharacter_self hB.centralCharacter_self⟩
 
@@ -362,7 +362,7 @@ theorem exists_isDefectGroup_le (h : IsInducedBlock k f hf b B) {D : Subgroup H}
   obtain ⟨c, hc⟩ := hBr
   rw [Classical.not_imp] at hc
   obtain ⟨hc, hcC⟩ := hc
-  rw [coe_centerRestrict, coeff_restrictCoeff, classSumCenter_coe, classSum_coeff] at hcC
+  rw [coe_centerComapDomain, coeff_comapDomainLinearMap, classSumCenter_coe, classSum_coeff] at hcC
   have hyC : ConjClasses.mk (f c) = C := by
     by_contra hne
     simp [hne] at hcC
@@ -384,7 +384,7 @@ theorem _root_.TauCeti.IsBlockIdempotent.isInducedBlock_id
     {b : Subalgebra.center k (MonoidAlgebra k H)} (hb : IsBlockIdempotent b)
     {φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k} (hφ : φ b = 1) :
     IsInducedBlock k (MonoidHom.id H) Function.injective_id b b :=
-  of_apply_eq hb hb hφ hφ fun z => by rw [centerRestrict_id]
+  of_apply_eq hb hb hφ hφ fun z => by rw [centerComapDomain_id]
 
 end IsInducedBlock
 
@@ -400,21 +400,23 @@ variable {k G H : Type*} [Field k] [Group G] [Group H] [Finite G] {p : ℕ}
 /-- **Restriction is multiplicative under a central character.** Let `e_b` be a block idempotent
 of `k[H]` with a `k`-algebra homomorphism `φ : Z(k[H]) → k`, `φ(e_b) = 1`, and a defect group `D`
 with `C_G(f(D)) ≤ f(H)`. Then `z ↦ φ(z_H)` is multiplicative on `Z(k[G])`. -/
-theorem IsBlockIdempotent.apply_centerRestrict_mul (hb : IsBlockIdempotent b) (hφ : φ b = 1)
+theorem IsBlockIdempotent.apply_centerComapDomain_mul (hb : IsBlockIdempotent b) (hφ : φ b = 1)
     (hD : IsDefectGroup k p (b : MonoidAlgebra k H) D)
     (hC : Subgroup.centralizer ((D.map f : Subgroup G) : Set G) ≤ f.range)
     (z w : Subalgebra.center k (MonoidAlgebra k G)) :
-    φ (centerRestrict f hf (z * w)) = φ (centerRestrict f hf z) * φ (centerRestrict f hf w) := by
+    φ (centerComapDomain f hf (z * w)) =
+      φ (centerComapDomain f hf z) * φ (centerComapDomain f hf w) := by
   have : Finite H := Finite.of_injective f hf
   -- `(z w)_H - z_H w_H` has no coefficient on `C_H(D)`, so `φ` kills it.
   rw [← map_mul, ← sub_eq_zero, ← map_sub]
   refine hb.apply_eq_zero_of_brauerProjection_eq_zero hφ hD ?_
   rw [brauerProjection_eq_zero_iff]
   intro c hc
-  simp only [Subalgebra.coe_sub, Subalgebra.coe_mul, coe_centerRestrict, coeff_sub,
+  simp only [Subalgebra.coe_sub, Subalgebra.coe_mul, coe_centerComapDomain, coeff_sub,
     Finsupp.coe_sub, Pi.sub_apply]
   rw [sub_eq_zero]
-  exact coeff_restrictCoeff_mul_of_mem_centralizer f hf hD.isPGroup hC z.property w.property hc
+  exact coeff_comapDomainLinearMap_mul_of_mem_centralizer f hf hD.isPGroup hC z.property
+    w.property hc
 
 /-- **Existence of the induced block** (Sambale, Proposition 1.11, p. 16). Let `e_b` be a block
 idempotent of `k[H]`, `k` a field of characteristic `p`, with a `k`-algebra homomorphism
@@ -426,8 +428,8 @@ theorem IsBlockIdempotent.exists_isInducedBlock (hb : IsBlockIdempotent b) (hφ 
     ∃ B, IsInducedBlock k f hf b B := by
   -- `z ↦ φ(z_H)` is a `k`-algebra homomorphism, so the character of exactly one block of `k[G]`.
   let ψ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k :=
-    AlgHom.ofLinearMap (φ.toLinearMap ∘ₗ centerRestrict f hf) (by simp)
-      (hb.apply_centerRestrict_mul hφ hD hC)
+    AlgHom.ofLinearMap (φ.toLinearMap ∘ₗ centerComapDomain f hf) (by simp)
+      (hb.apply_centerComapDomain_mul hφ hD hC)
   obtain ⟨B, ⟨hB, hψ⟩, -⟩ := existsUnique_isBlockIdempotent_apply_eq_one ψ
   exact ⟨B, IsInducedBlock.of_apply_eq hb hB hφ hψ fun _ => rfl⟩
 
@@ -442,20 +444,20 @@ variable {k G : Type*} [Field k] [Group G] [Finite G] {P H : Subgroup G} {p : �
 and `e_b` a block idempotent of `k[H]` with a character `φ : Z(k[H]) → k`, `φ(e_b) = 1`. Then `b`
 induces a block `B'` of `k[G]`, and `φ(Br_P(e_B)) = ψ(e_B)` for every block `B` of `k[G]` and
 every character `ψ` of `Z(k[G])` with `ψ(e_{B'}) = 1`. -/
-theorem IsBlockIdempotent.exists_isInducedBlock_apply_centerBrauerProjection (hP : IsPGroup p P)
+theorem IsBlockIdempotent.exists_isInducedBlock_apply_centerBrauerCorrespondent (hP : IsPGroup p P)
     (hPH : P ≤ H) (hCH : Subgroup.centralizer (P : Set G) ≤ H)
     (hHN : H ≤ Subgroup.normalizer (P : Set G)) {b : Subalgebra.center k (MonoidAlgebra k H)}
     (hb : IsBlockIdempotent b) {φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k}
     (hφ : φ b = 1) :
     ∃ B', IsInducedBlock k H.subtype H.subtype_injective b B' ∧
       ∀ ψ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k, ψ B' = 1 →
-        ∀ B, φ (centerBrauerProjection hCH hHN B) = ψ B := by
+        ∀ B, φ (centerBrauerCorrespondent hCH hHN B) = ψ B := by
   classical
   obtain ⟨D, hD⟩ := exists_isDefectGroup p (e := (b : MonoidAlgebra k H))
     fun h => hb.ne_zero (Subtype.ext h)
   -- `P ≤ D`, so elements centralizing `D` centralize `P`.
   have hPD : P ≤ D.map H.subtype := by
-    simpa [Subgroup.subgroupOf_map_subtype, inf_eq_left.2 hPH] using
+    simpa [Subgroup.map_subgroupOf_eq_of_le hPH] using
       Subgroup.map_mono (f := H.subtype) (hb.subgroupOf_le_of_isDefectGroup hP hPH hHN hD)
   have hCP : Subgroup.centralizer ((D.map H.subtype : Subgroup G) : Set G) ≤
       Subgroup.centralizer (P : Set G) :=
@@ -474,68 +476,65 @@ theorem IsBlockIdempotent.exists_isInducedBlock_apply_centerBrauerProjection (hP
 /-- **`Br_P(e_B)` absorbs the blocks inducing `B`** (Martínez, Theorem 4.5, p. 26). Let `P` be a
 `p`-subgroup of `G`, `P C_G(P) ≤ H ≤ N_G(P)`, and `k` a field of characteristic `p`. If
 `b^G = B`, then `Br_P(e_B) e_b = e_b`. -/
-theorem IsInducedBlock.centerBrauerProjection_mul_eq_right (hP : IsPGroup p P) (hPH : P ≤ H)
+theorem IsInducedBlock.centerBrauerCorrespondent_mul_eq_right (hP : IsPGroup p P) (hPH : P ≤ H)
     (hCH : Subgroup.centralizer (P : Set G) ≤ H) (hHN : H ≤ Subgroup.normalizer (P : Set G))
     {B : Subalgebra.center k (MonoidAlgebra k G)} {b : Subalgebra.center k (MonoidAlgebra k H)}
     (h : IsInducedBlock k H.subtype H.subtype_injective b B) :
-    centerBrauerProjection hCH hHN B * b = b := by
+    centerBrauerCorrespondent hCH hHN B * b = b := by
   have hb := h.isBlockIdempotent_left
   have hB := h.isBlockIdempotent_right
   obtain ⟨φ, ψ, hφ, hψ, -⟩ := h.exists_algHom
   obtain ⟨B', hB', hchar⟩ :=
-    hb.exists_isInducedBlock_apply_centerBrauerProjection hP hPH hCH hHN hφ
+    hb.exists_isInducedBlock_apply_centerBrauerCorrespondent hP hPH hCH hHN hφ
   have h1 := hchar ψ (by rw [hB'.unique h, hψ]) B
   rw [hψ] at h1
   rw [mul_comm]
   refine ((hb.mul_eq_zero_or_eq_of_commute
-    (isIdempotentElem_centerBrauerProjection hCH hHN hP hB.isIdempotentElem)
+    (isIdempotentElem_centerBrauerCorrespondent hCH hHN hP hB.isIdempotentElem)
     (Commute.all _ _)).resolve_left fun h0 => ?_)
-  have := congrArg φ h0
-  rw [map_mul, hφ, h1, mul_one, map_zero] at this
-  exact one_ne_zero this
+  exact one_ne_zero <| h1.symm.trans <|
+    MulHomClass.map_eq_zero_of_map_eq_one_of_mul_eq_zero φ hφ h0
 
 /-- **`Br_P(e_B)` kills the blocks not inducing `B`** (Martínez, Theorem 4.5, p. 26). Let `P` be
 a `p`-subgroup of `G`, `P C_G(P) ≤ H ≤ N_G(P)`, and `k` algebraically closed of characteristic
 `p`. If `e_b` is a block idempotent of `k[H]` with `b^G ≠ B`, then `Br_P(e_B) e_b = 0`. -/
-theorem IsBlockIdempotent.centerBrauerProjection_mul_eq_zero [IsAlgClosed k] (hP : IsPGroup p P)
+theorem IsBlockIdempotent.centerBrauerCorrespondent_mul_eq_zero [IsAlgClosed k] (hP : IsPGroup p P)
     (hPH : P ≤ H) (hCH : Subgroup.centralizer (P : Set G) ≤ H)
     (hHN : H ≤ Subgroup.normalizer (P : Set G)) {B : Subalgebra.center k (MonoidAlgebra k G)}
     (hB : IsBlockIdempotent B) {b : Subalgebra.center k (MonoidAlgebra k H)}
     (hb : IsBlockIdempotent b) (h : ¬IsInducedBlock k H.subtype H.subtype_injective b B) :
-    centerBrauerProjection hCH hHN B * b = 0 := by
+    centerBrauerCorrespondent hCH hHN B * b = 0 := by
   obtain ⟨B', hB', hchar⟩ :=
-    hb.exists_isInducedBlock_apply_centerBrauerProjection hP hPH hCH hHN hb.centralCharacter_self
+    hb.exists_isInducedBlock_apply_centerBrauerCorrespondent hP hPH hCH hHN hb.centralCharacter_self
   have hB'b := hB'.isBlockIdempotent_right
   have hne : B' ≠ B := fun hBB => h (hBB ▸ hB')
   have h0 := hchar _ hB'b.centralCharacter_self B
   rw [hB'b.apply_eq_zero_of_ne hB hB'b.centralCharacter_self hne] at h0
   rw [mul_comm]
   refine ((hb.mul_eq_zero_or_eq_of_commute
-    (isIdempotentElem_centerBrauerProjection hCH hHN hP hB.isIdempotentElem)
+    (isIdempotentElem_centerBrauerCorrespondent hCH hHN hP hB.isIdempotentElem)
     (Commute.all _ _)).resolve_right fun h1 => ?_)
-  have := congrArg hb.centralCharacter h1
-  rw [map_mul, hb.centralCharacter_self, h0, mul_zero] at this
-  exact zero_ne_one this
+  simpa [h0] using congrArg hb.centralCharacter h1
 
 /-- **Brauer's formula for `Br_P(e_B)`** (Martínez, Theorem 4.5 and Corollary 4.6, p. 26). Let `P`
 be a `p`-subgroup of `G`, `P C_G(P) ≤ H ≤ N_G(P)`, `k` algebraically closed of characteristic
 `p`, and `e_B` a block idempotent of `k[G]`. For a complete family `(e_i)` of block idempotents
 of `k[H]`, `Br_P(e_B) = ∑_{b_i^G = B} e_i`. -/
-theorem IsBlockIdempotent.centerBrauerProjection_eq_sum [IsAlgClosed k] (hP : IsPGroup p P)
+theorem IsBlockIdempotent.centerBrauerCorrespondent_eq_sum [IsAlgClosed k] (hP : IsPGroup p P)
     (hPH : P ≤ H) (hCH : Subgroup.centralizer (P : Set G) ≤ H)
     (hHN : H ≤ Subgroup.normalizer (P : Set G)) {B : Subalgebra.center k (MonoidAlgebra k G)}
     (hB : IsBlockIdempotent B) {ι : Type*} [Fintype ι]
     {e : ι → Subalgebra.center k (MonoidAlgebra k H)} (he : CompleteOrthogonalIdempotents e)
     (hbl : ∀ i, IsBlockIdempotent (e i))
     [DecidablePred fun i => IsInducedBlock k H.subtype H.subtype_injective (e i) B] :
-    centerBrauerProjection hCH hHN B =
+    centerBrauerCorrespondent hCH hHN B =
       ∑ i with IsInducedBlock k H.subtype H.subtype_injective (e i) B, e i := by
-  rw [← mul_one (centerBrauerProjection hCH hHN B), ← he.complete, Finset.mul_sum,
+  rw [← mul_one (centerBrauerCorrespondent hCH hHN B), ← he.complete, Finset.mul_sum,
     Finset.sum_filter]
   refine Finset.sum_congr rfl fun i _ => ?_
   split_ifs with hi
-  · exact hi.centerBrauerProjection_mul_eq_right hP hPH hCH hHN
-  · exact hB.centerBrauerProjection_mul_eq_zero hP hPH hCH hHN (hbl i) hi
+  · exact hi.centerBrauerCorrespondent_mul_eq_right hP hPH hCH hHN
+  · exact hB.centerBrauerCorrespondent_mul_eq_zero hP hPH hCH hHN (hbl i) hi
 
 /-- **Brauer's formula at the normalizer** (Martínez, Theorem 4.5 and Corollary 4.6, p. 26): for
 a `p`-subgroup `P` of `G` and `k` algebraically closed of characteristic `p`, the Brauer
@@ -551,7 +550,7 @@ theorem IsBlockIdempotent.brauerCorrespondent_eq_sum [IsAlgClosed k] (hP : IsPGr
       ∑ i with IsInducedBlock k (Subgroup.normalizer (P : Set G)).subtype
         (Subgroup.normalizer (P : Set G)).subtype_injective (e i) B,
         (e i : MonoidAlgebra k (Subgroup.normalizer (P : Set G))) := by
-  rw [← coe_centerBrauerProjection _ le_rfl, hB.centerBrauerProjection_eq_sum hP
+  rw [← coe_centerBrauerCorrespondent _ le_rfl, hB.centerBrauerCorrespondent_eq_sum hP
     Subgroup.le_normalizer _ le_rfl he hbl, AddSubmonoidClass.coe_finsetSum]
 
 /-- **Defect groups of the blocks inducing `B`.** Let `P` be a defect group of a block `B` of
@@ -571,8 +570,7 @@ theorem IsInducedBlock.isDefectGroup_subgroupOf (hPH : P ≤ H)
   obtain ⟨E, hE, hDE⟩ := h.exists_isDefectGroup_le hD
   obtain ⟨g, rfl⟩ := h.isBlockIdempotent_right.isDefectGroup_conj hP hE
   have hcardP : Nat.card (P.subgroupOf H) = Nat.card P := by
-    rw [← Subgroup.card_map_of_injective H.subtype_injective, Subgroup.subgroupOf_map_subtype,
-      inf_eq_left.2 hPH]
+    rw [← Subgroup.card_map_of_injective H.subtype_injective, Subgroup.map_subgroupOf_eq_of_le hPH]
   have hcard : Nat.card D ≤ Nat.card (P.subgroupOf H) := by
     rw [hcardP, ← Subgroup.card_map_of_injective H.subtype_injective, ← card_conj_smul_eq g P]
     exact Subgroup.card_le_of_le hDE
