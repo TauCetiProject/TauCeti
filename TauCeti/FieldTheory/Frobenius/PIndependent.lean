@@ -15,6 +15,7 @@ import Mathlib.Algebra.CharP.Algebra
 import Mathlib.LinearAlgebra.Span.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.PowChar
+import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Finsupp.MapDomain
 
 /-!
@@ -85,7 +86,7 @@ theorem pMonomial_single (b : ι → M) (i : ι) (n : Fin p) :
 /-- A unit exponent in coordinate `i` recovers `b i`. -/
 theorem pMonomial_single_one (hp : 1 < p) (b : ι → M) (i : ι) :
     pMonomial p b (Finsupp.single i 1) = b i := by
-  simp [pMonomial_single, Nat.mod_eq_of_lt hp]
+  rw [pMonomial_single, Fin.val_one_of_two_le hp, pow_one]
 
 /-- On a finite index type, `pMonomial` is the ordinary finite product over all indices. -/
 theorem pMonomial_eq_fintype_prod [Fintype ι] (b : ι → M) (e : ι →₀ Fin p) :
@@ -260,9 +261,9 @@ theorem IsPIndependent.injective [Fact p.Prime] {b : ι → k} (hb : IsPIndepend
       pMonomial p b (Finsupp.single j (1 : Fin p)) := by
     rw [pMonomial_single_one p (Fact.out : p.Prime).one_lt,
       pMonomial_single_one p (Fact.out : p.Prime).one_lt, hij]
-  have hne : (1 : Fin p) ≠ 0 := by
-    simp [Fin.ext_iff, Nat.mod_eq_of_lt (Fact.out : p.Prime).one_lt]
-  exact Finsupp.single_left_injective hne (hb.linearIndependent.injective h1)
+  exact Finsupp.single_left_injective
+    (Fin.natCast_ne_zero one_ne_zero (Fact.out : p.Prime).one_lt)
+    (hb.linearIndependent.injective h1)
 
 end ExpCharField
 

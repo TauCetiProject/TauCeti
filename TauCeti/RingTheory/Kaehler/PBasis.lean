@@ -35,6 +35,10 @@ formula `[k : k ^ p] = p ^ dim_k Ω[k⁄R]` when `[k : k ^ p]` is finite.
 
 ## Main results
 
+* `TauCeti.IsPBasis.linearIndependent_D`: the differentials `{D R k (b i)}` of a `p`-basis are
+  linearly independent over `k`.
+* `TauCeti.span_range_D_eq_top_of_adjoin_eq_top`: if `b` generates `k` over `k ^ p`, then
+  `{D R k (b i)}` spans `Ω[k⁄R]`.
 * `TauCeti.IsPBasis.derivationEquiv_symm_apply_basis`: the inverse of `derivationEquiv` takes
   prescribed values on `b`.
 * `TauCeti.IsPBasis.coordDerivation_eq_dualDerivation`: `hb.coordDerivation j` is the derivation
@@ -76,25 +80,35 @@ section KaehlerTheorems
 variable {p : ℕ} [Fact p.Prime] {R k : Type*} [CommRing R] [Field k] [ExpChar k p] [Algebra R k]
 variable {ι : Type*}
 
+/-- The differentials `{D R k (b i)}` of a `p`-basis `b : ι → k` are linearly independent over `k`,
+for any base ring `R` whose image lies in `k ^ p`. -/
+theorem IsPBasis.linearIndependent_D {b : ι → k} (hb : IsPBasis p b)
+    (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) :
+    LinearIndependent k (fun i ↦ D R k (b i)) :=
+  let φ : ι → Module.Dual k Ω[k⁄R] := fun j ↦
+    (hb.coordDerivation j).liftKaehlerDifferential.comp
+      (kaehlerEquivFieldRangeFrobenius p R k hR).toLinearMap
+  LinearIndependent.of_pairwise_dual_eq_zero_one (fun i ↦ D R k (b i)) φ
+    (fun i j hij ↦ by simp [φ, hij.symm])
+    (fun i ↦ by simp [φ])
+
+/-- If a family `b : ι → k` generates `k` over `k ^ p`, then `{D R k (b i)}` spans `Ω[k⁄R]`. -/
+theorem span_range_D_eq_top_of_adjoin_eq_top {b : ι → k}
+    (hadj : IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b) = ⊤) :
+    Submodule.span k (Set.range fun i ↦ D R k (b i)) = ⊤ := by
+  rw [eq_top_iff, ← span_range_derivation R k, Submodule.span_le]
+  rintro _ ⟨x, rfl⟩
+  refine (D R k).map_mem_span_of_mem_adjoin (p := p) b ?_
+  rw [hadj]
+  exact IntermediateField.mem_top
+
 /-- The differentials `{D R k (b i)}` of a `p`-basis `b : ι → k` form a `k`-basis of `Ω[k⁄R]`,
 for any base ring `R` whose image lies in `k ^ p`. -/
 def IsPBasis.kaehlerBasis {b : ι → k} (hb : IsPBasis p b)
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) :
     Module.Basis ι k Ω[k⁄R] :=
-  let φ : ι → Module.Dual k Ω[k⁄R] := fun j ↦
-    (hb.coordDerivation j).liftKaehlerDifferential.comp
-      (kaehlerEquivFieldRangeFrobenius p R k hR).toLinearMap
-  have hlin : LinearIndependent k (fun i ↦ D R k (b i)) :=
-    LinearIndependent.of_pairwise_dual_eq_zero_one (fun i ↦ D R k (b i)) φ
-      (fun i j hij ↦ by simp [φ, hij.symm])
-      (fun i ↦ by simp [φ])
-  have hspan : Submodule.span k (Set.range fun i ↦ D R k (b i)) = ⊤ := by
-    rw [eq_top_iff, ← span_range_derivation R k, Submodule.span_le]
-    rintro _ ⟨x, rfl⟩
-    refine (D R k).map_mem_span_of_mem_adjoin (p := p) b ?_
-    rw [hb.adjoin_eq_top]
-    exact IntermediateField.mem_top
-  Module.Basis.mk hlin hspan.ge
+  Module.Basis.mk (hb.linearIndependent_D hR)
+    (span_range_D_eq_top_of_adjoin_eq_top hb.adjoin_eq_top).ge
 
 /-- Evaluating `IsPBasis.kaehlerBasis` at `i` gives the differential `D R k (b i)`. -/
 @[simp]
@@ -202,17 +216,11 @@ theorem mem_adjoin_fieldRange_frobenius_iff_D_mem_span
 theorem adjoin_fieldRange_frobenius_eq_top_iff_span_D
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (b : ι → k) :
     IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b) = ⊤ ↔
-      Submodule.span k (Set.range fun i ↦ D R k (b i)) = ⊤ := by
-  constructor
-  · intro hadj
-    rw [eq_top_iff, ← span_range_derivation R k, Submodule.span_le]
-    rintro _ ⟨x, rfl⟩
-    exact (mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR b).mp
-      (hadj.symm ▸ IntermediateField.mem_top)
-  · intro hspan
+      Submodule.span k (Set.range fun i ↦ D R k (b i)) = ⊤ :=
+  ⟨span_range_D_eq_top_of_adjoin_eq_top, fun hspan ↦ by
     rw [eq_top_iff]
     intro x _
-    exact (mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR b).mpr (hspan.symm ▸ ⟨⟩)
+    exact (mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR b).mpr (hspan.symm ▸ ⟨⟩)⟩
 
 /-- A family in a field `k` of prime characteristic `p` is a `p`-basis if and only if its
 Kähler differentials over `R` are linearly independent and span `Ω[k⁄R]`, for any base ring `R`

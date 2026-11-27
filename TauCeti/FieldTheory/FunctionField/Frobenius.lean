@@ -66,9 +66,8 @@ variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 
 namespace IsFunctionField
 
-/-- The degree of a one-variable function field over its subfield of `p`-th powers is `p`.
-In prime characteristic, specializes
-`TauCeti.finrank_fieldRange_frobenius_eq_pow_finrank_kaehlerDifferential` to `dim Ω[F⁄k] = 1`. -/
+/-- The degree of a one-variable function field over a perfect field over its subfield of
+`p`-th powers is `p`, for any exponential characteristic `p`. -/
 theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionField k F)
     (p : ℕ) [ExpChar F p] :
     Module.finrank (frobenius F p).fieldRange F = p := by

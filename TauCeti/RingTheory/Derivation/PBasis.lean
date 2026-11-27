@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Frobenius.PBasis
 public import TauCeti.RingTheory.Derivation.Frobenius
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Derivations and `p`-bases
@@ -121,8 +122,10 @@ theorem IsPBasis.coordDerivation_apply_pMonomial {b : ι → k} (hb : IsPBasis p
 theorem IsPBasis.coordDerivation_apply_self {b : ι → k} (hb : IsPBasis p b) (j : ι) :
     hb.coordDerivation j (b j) = 1 := by
   have h := hb.coordDerivation_apply_pMonomial j (Finsupp.single j 1)
-  rw [pMonomial_single_one p (Fact.out : p.Prime).one_lt] at h
-  simpa [Fin.val_one', Nat.mod_eq_of_lt (Fact.out : p.Prime).one_lt] using h
+  rw [pMonomial_single_one p (Fact.out : p.Prime).one_lt, Finsupp.single_eq_same,
+    Fin.val_one_of_two_le (Fact.out : p.Prime).one_lt, Nat.cast_one, sub_self, pMonomial_zero,
+    mul_one] at h
+  exact h
 
 /-- The `j`-th coordinate derivation vanishes on `b i` for `i ≠ j`. -/
 @[simp]

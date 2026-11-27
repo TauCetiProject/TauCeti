@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.FieldTheory.Frobenius.PIndependent
 import Mathlib.FieldTheory.IntermediateField.Algebraic
 import Mathlib.Order.Zorn
+import TauCeti.Data.Fin.Basic
 import TauCeti.FieldTheory.Frobenius.Range
 import TauCeti.FieldTheory.PurelyInseparable.PowerBasis
 
@@ -217,8 +218,8 @@ private theorem notMem_adjoin_of_isPIndependent_option {b : ι → k} {x : k}
   have hnotmem :
       Finsupp.single (none : Option ι) (1 : Fin p) ∉
         {e : Option ι →₀ Fin p | e none = 0} := by
-    simp only [Set.mem_ofPred_eq, Finsupp.single_eq_same, Fin.ext_iff, Fin.val_one', Fin.val_zero,
-      Nat.mod_eq_of_lt (Fact.out : p.Prime).one_lt, one_ne_zero, not_false_eq_true]
+    rw [Set.mem_ofPred_eq, Finsupp.single_eq_same]
+    exact Fin.natCast_ne_zero one_ne_zero (Fact.out : p.Prime).one_lt
   exact hopt.linearIndependent.notMem_span_image hnotmem hmem
 
 private theorem isPIndependent_option_of_notMem_adjoin {b : ι → k} (hb : IsPIndependent p b)
