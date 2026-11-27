@@ -230,6 +230,23 @@ theorem congr_symm (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
     (congr e f).symm = congr e.symm f.symm :=
   StarAlgEquiv.symm_ofNonUnitalStarAlgHom _ _ _ _
 
+/-- The identities induce the identity. -/
+@[simp]
+theorem congr_refl :
+    congr (.refl ℂ A) (.refl ℂ B) = StarAlgEquiv.refl ℂ (MinTensorProduct A B) :=
+  StarAlgEquiv.ext fun x ↦ by simp
+
+/-- The isomorphism induced by composites is the composite of the induced isomorphisms. -/
+theorem congr_trans (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') (e' : A' ≃⋆ₐ[ℂ] A'')
+    (f' : B' ≃⋆ₐ[ℂ] B'') : (congr e f).trans (congr e' f') = congr (e.trans e') (f.trans f') :=
+  StarAlgEquiv.ext fun x ↦ by simp [map_map]
+
+/-- `map 0 ψ = 0`. -/
+@[simp]
+theorem map_zero_left (ψ : B →⋆ₙₐ[ℂ] B') :
+    map (0 : A →⋆ₙₐ[ℂ] A') ψ = 0 :=
+  starAlgHom_ext fun a b ↦ by simp
+
 /-- `map φ 0 = 0`. -/
 @[simp]
 theorem map_zero_right (φ : A →⋆ₙₐ[ℂ] A') :
