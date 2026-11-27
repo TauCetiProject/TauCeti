@@ -40,7 +40,8 @@ local instance (i : Option (Fin n)) : Fact (0 < cOption i) :=
   | none => inferInstanceAs (Fact (0 < r 0))
   | some j => inferInstanceAs (Fact (0 < r j.succ))
 
--- Use composition in the signature so the existing positivity instance applies to `Fin.tail r`.
+-- The split's coefficient radii `fun i ↦ cOption (some i)` reduce to `r ∘ Fin.succ` by
+-- `Option.elim'` and `Fin.tail`. This lets the split reuse the positivity instance for `r`.
 local notation "Inner" => IsRestricted.subring (R := R) (r ∘ Fin.succ)
 local notation "Outer" => PowerSeries.IsRestricted.subring (R := Inner) (r 0)
 
@@ -49,15 +50,18 @@ noncomputable def restrictedFinSuccEquiv :
     IsRestricted.subring (R := R) r ≃ₐ[R] Outer :=
   restrictedSplitEquiv (c := cOption) (_root_.finSuccEquiv n) option_elim_comp_finSuccEquiv
 
+/-- Mathlib's formal split first renames the variables and then separates the option index. -/
+private theorem finSuccEquiv_apply [CommSemiring S] (f : MvPowerSeries (Fin (n + 1)) S) :
+    finSuccEquiv S n f = optionEquivLeft (Fin n) S (renameEquiv S (_root_.finSuccEquiv n) f) := rfl
+
 /-- After forgetting restrictedness, splitting off the first variable agrees with Mathlib's
 formal comparison. -/
 @[simp]
 theorem map_subtype_restrictedFinSuccEquiv (f : IsRestricted.subring (R := R) r) :
     PowerSeries.map (Inner).subtype (restrictedFinSuccEquiv f : PowerSeries Inner) =
       finSuccEquiv R n (f : MvPowerSeries (Fin (n + 1)) R) := by
-  simpa only [restrictedFinSuccEquiv, finSuccEquiv, AlgEquiv.trans_apply] using!
-    map_subtype_restrictedSplitEquiv (c := cOption) (_root_.finSuccEquiv n)
-      option_elim_comp_finSuccEquiv f
+  rw [finSuccEquiv_apply]
+  exact map_subtype_restrictedSplitEquiv (_root_.finSuccEquiv n) option_elim_comp_finSuccEquiv f
 
 /-- Flattening agrees with the inverse of Mathlib's formal comparison. -/
 theorem coe_restrictedFinSuccEquiv_symm (g : Outer) :
@@ -92,9 +96,10 @@ theorem coeff_restrictedFinSuccEquiv_symm (f : Outer) (t : Fin (n + 1) →₀ �
 theorem coe_restrictedFinSuccEquiv_X_zero :
     (restrictedFinSuccEquiv (⟨X 0, isRestricted_X r 0⟩ :
       IsRestricted.subring (R := R) r) : PowerSeries Inner) = PowerSeries.X := by
-  simpa only [restrictedFinSuccEquiv, finSuccEquiv_symm_none] using!
-    (coe_restrictedSplitEquiv_X_none (R := R) (c := cOption) (_root_.finSuccEquiv n)
-      option_elim_comp_finSuccEquiv)
+  have h := coe_restrictedSplitEquiv_X_none (R := R) (_root_.finSuccEquiv n)
+    (option_elim_comp_finSuccEquiv (r := r))
+  rw [finSuccEquiv_symm_none] at h
+  exact h
 
 /-- Each remaining variable becomes an outer constant with value the corresponding
 variable of the coefficient algebra. -/
@@ -103,9 +108,10 @@ theorem coe_restrictedFinSuccEquiv_X_succ (i : Fin n) :
     (restrictedFinSuccEquiv (⟨X i.succ, isRestricted_X r i.succ⟩ :
       IsRestricted.subring (R := R) r) : PowerSeries Inner) =
         PowerSeries.C ⟨X i, isRestricted_X _ i⟩ := by
-  simpa only [restrictedFinSuccEquiv, finSuccEquiv_symm_some] using!
-    (coe_restrictedSplitEquiv_X_some (R := R) (c := cOption) (_root_.finSuccEquiv n)
-      option_elim_comp_finSuccEquiv i)
+  have h := coe_restrictedSplitEquiv_X_some (R := R) (_root_.finSuccEquiv n)
+    (option_elim_comp_finSuccEquiv (r := r)) i
+  rw [finSuccEquiv_symm_some] at h
+  exact h
 
 /-- Splitting off the first variable preserves the Gauss norm. -/
 @[simp]
