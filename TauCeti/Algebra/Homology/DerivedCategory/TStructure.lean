@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import Mathlib.Algebra.Homology.DerivedCategory.TStructure
 public import Mathlib.CategoryTheory.Triangulated.TStructure.TruncLEGT
 public import Mathlib.CategoryTheory.Triangulated.TStructure.TruncLTGE
-import TauCeti.CategoryTheory.Triangulated.TStructure.TruncLEGT
 
 /-!
 # Cohomology of canonical truncations in the derived category
@@ -269,17 +268,8 @@ end
 /-- For `q ≤ n`, the canonical truncation morphism `(τ_{≤ n} X) ⟶ X` induces an isomorphism on
 `q`-th cohomology. -/
 theorem isIso_homologyFunctor_map_truncLEι_app (X : DerivedCategory C) {q n : ℤ} (hqn : q ≤ n) :
-    IsIso ((homologyFunctor C q).map ((TStructure.t.truncLEι n).app X)) := by
-  let T := (TStructure.t.triangleLEGE n (n + 1) rfl).obj X
-  have hT : T ∈ distTriang (DerivedCategory C) :=
-    TStructure.t.triangleLEGE_distinguished n (n + 1) rfl X
-  have hEpi : Epi ((homologyFunctor C q).map T.mor₁) := by
-    rw [HomologySequence.epi_homologyMap_mor₁_iff T hT q]
-    exact (isZero_of_isGE T.obj₃ (n + 1) q (by omega)).eq_of_tgt _ _
-  have hMono : Mono ((homologyFunctor C q).map T.mor₁) := by
-    rw [HomologySequence.mono_homologyMap_mor₁_iff T hT (q - 1) q (by omega)]
-    exact (isZero_of_isGE T.obj₃ (n + 1) (q - 1) (by omega)).eq_of_src _ _
-  exact isIso_of_mono_of_epi ((homologyFunctor C q).map T.mor₁)
+    IsIso ((homologyFunctor C q).map ((TStructure.t.truncLEι n).app X)) :=
+  isIso_homologyFunctor_map_truncLTι_app X (Int.lt_add_one_iff.mpr hqn)
 
 /-- If `X` is concentrated in degrees `≤ n` and `Y` in degrees `≥ n`, then `H^n` induces a
 bijection `(X ⟶ Y) → ((homologyFunctor C n).obj X ⟶ (homologyFunctor C n).obj Y)`. -/

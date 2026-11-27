@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
-public import TauCeti.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.CategoryTheory.Linear.Conj
 public import TauCeti.CategoryTheory.Linear.Endomorphism
@@ -29,10 +28,8 @@ and, via `quotientCompQhIso`, to `End (Q.obj K)`
 (`CochainComplex.IsKProjective.homotopyToDerivedEndEquivQ`), while `Q` induces a surjective
 `R`-algebra homomorphism from chain endomorphisms `End K` onto `End (Q.obj K)`
 (`CochainComplex.IsKProjective.Q_mapEndAlgHom_surjective`). For any chain-level `R`-algebra action
-`α : H →ₐ[R] End K`, descending through `quotient` and `Q` via `AlgHom.rangeMap` gives surjective
-`R`-algebra homomorphisms from `α.range` onto the descended action ranges, and for K-projective
-`K` the homotopy-to-derived equivalences restrict via `AlgEquiv.rangeMap` to `R`-algebra
-equivalences on the descended action ranges
+`α : H →ₐ[R] End K` and K-projective `K`, the homotopy-to-derived equivalences restrict via
+`AlgEquiv.subalgebraMap` to `R`-algebra equivalences on the descended action ranges
 (`CochainComplex.IsKProjective.homotopyToDerivedActionRangeEquiv` and
 `CochainComplex.IsKProjective.homotopyToDerivedActionRangeEquivQ`).
 
@@ -195,8 +192,8 @@ noncomputable def homotopyToDerivedActionRangeEquiv [(Qh (C := C)).Linear R]
     (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range ≃ₐ[R]
       ((Qh.mapEndAlgHom R ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K)).comp
         (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α)).range :=
-  ((homotopyToDerivedEndEquiv R K).rangeMap _).trans
-    (Subalgebra.equivOfEq _ _ (by rw [homotopyToDerivedEndEquiv_toAlgHom]))
+  ((homotopyToDerivedEndEquiv R K).subalgebraMap _).trans
+    (Subalgebra.equivOfEq _ _ (by rw [← AlgHom.range_comp, homotopyToDerivedEndEquiv_toAlgHom]))
 
 /-- Applying `homotopyToDerivedActionRangeEquiv` sends `x` to `Qh.mapEndAlgHom R _ x.val`. -/
 @[simp]
@@ -227,9 +224,10 @@ noncomputable def homotopyToDerivedActionRangeEquivQ [(Qh (C := C)).Linear R]
     {H : Type t'} [Semiring H] [Algebra R H] (α : H →ₐ[R] End K) :
     (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range ≃ₐ[R]
       ((Q.mapEndAlgHom R K).comp α).range :=
-  ((homotopyToDerivedEndEquivQ R K).rangeMap _).trans
+  ((homotopyToDerivedEndEquivQ R K).subalgebraMap _).trans
     (Subalgebra.equivOfEq _ _ (by
-      rw [← AlgHom.comp_assoc, homotopyToDerivedEndEquivQ_comp_quotient_mapEndAlgHom]))
+      rw [← AlgHom.range_comp, ← AlgHom.comp_assoc,
+        homotopyToDerivedEndEquivQ_comp_quotient_mapEndAlgHom]))
 
 /-- Applying `homotopyToDerivedActionRangeEquivQ` sends `x` to
 `homotopyToDerivedEndEquivQ R K x.val`. -/
@@ -253,15 +251,16 @@ theorem homotopyToDerivedActionRangeEquivQ_apply_asHom [(Qh (C := C)).Linear R]
         ((quotientCompQhIso C).app K).hom := by
   simp
 
-/-- Applying `homotopyToDerivedActionRangeEquivQ` to the homotopy class of `x : α.range` gives
-`(Q.mapEndAlgHom R K).rangeMap α x`. -/
+/-- Applying `homotopyToDerivedActionRangeEquivQ` to the homotopy class of `α h` gives the
+derived class of `α h`. -/
 @[simp]
-theorem homotopyToDerivedActionRangeEquivQ_apply_rangeMap
+theorem homotopyToDerivedActionRangeEquivQ_apply_rangeRestrict
     [(Qh (C := C)).Linear R] [(Q (C := C)).Linear R] (K : CochainComplex C ℤ) [K.IsKProjective]
-    {H : Type t'} [Semiring H] [Algebra R H] (α : H →ₐ[R] End K) (x : α.range) :
+    {H : Type t'} [Semiring H] [Algebra R H] (α : H →ₐ[R] End K) (h : H) :
     homotopyToDerivedActionRangeEquivQ R K α
-      (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).rangeMap α x) =
-      (Q.mapEndAlgHom R K).rangeMap α x := by
+      ((((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).rangeRestrict
+        h) =
+      ((Q.mapEndAlgHom R K).comp α).rangeRestrict h := by
   apply Subtype.ext
   simp
 

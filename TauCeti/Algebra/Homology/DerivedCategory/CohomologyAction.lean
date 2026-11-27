@@ -31,9 +31,7 @@ When `R` is a ring and `C` is `R`-linear, this module's public import of
 `TauCeti.Algebra.Homology.DerivedCategory.Linear` (which publicly imports
 `Mathlib.Algebra.Homology.DerivedCategory.Linear`) automatically supplies the
 `Linear R (DerivedCategory C)` and `(homologyFunctor C i).Linear R` instances needed by the
-`R`-algebra API below. Over a general semiring `R`,
-`TauCeti.Algebra.Homology.DerivedCategory.Linear` also supplies `(homologyFunctor C i).Linear R`
-whenever `Linear R (DerivedCategory C)` and `DerivedCategory.Q.Linear R` are available.
+`R`-algebra API below.
 
 Main declarations:
 

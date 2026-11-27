@@ -19,7 +19,7 @@ These examples exercise `TauCeti.Algebra.Homology.DerivedCategory.KProjective`:
   ring `A`, `CochainComplex.IsKProjective.homotopyToDerivedEndEquivQ` provides an `A`-algebra
   equivalence between homotopy endomorphisms of `K` and derived endomorphisms of `Q.obj K`, and
   for any chain-level action `α : H →ₐ[A] End K` the descended action images compare via
-  `AlgHom.rangeMap` and `CochainComplex.IsKProjective.homotopyToDerivedActionRangeEquivQ`;
+  `AlgHom.subalgebraMap` and `CochainComplex.IsKProjective.homotopyToDerivedActionRangeEquivQ`;
 * the mapping cone of `𝟙 K` on a single complex `K = ℤ[0]` is nonzero at the chain level
   (`𝟙 (mappingCone (𝟙 K)) ≠ 0`), yet its identity vanishes in both the homotopy category and the
   derived category, illustrating why `Q.mapEndAlgHom` is surjective rather than injective on chain
@@ -39,15 +39,16 @@ example {A : Type u} [CommRing A] {C : Type v} [Category.{w} C] [Abelian C] [Lin
     [HasDerivedCategory.{t} C] {H : Type t'} [Semiring H] [Algebra A H]
     (K : CochainComplex C ℤ) [K.IsKProjective] (α : H →ₐ[A] End K) (h : H) :
     Function.Surjective
-        (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom A K).rangeMap α) ∧
-    Function.Surjective ((Q.mapEndAlgHom A K).rangeMap α) ∧
+        (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom A K).subalgebraMap
+          α.range) ∧
+    Function.Surjective ((Q.mapEndAlgHom A K).subalgebraMap α.range) ∧
     homotopyToDerivedActionRangeEquivQ A K α
-      (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom A K).rangeMap α
-        (α.rangeRestrict h)) =
-      (Q.mapEndAlgHom A K).rangeMap α (α.rangeRestrict h) :=
-  ⟨AlgHom.rangeMap_surjective _ α,
-    AlgHom.rangeMap_surjective _ α,
-    homotopyToDerivedActionRangeEquivQ_apply_rangeMap A K α (α.rangeRestrict h)⟩
+      ((((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom A K).comp α).rangeRestrict
+        h) =
+      ((Q.mapEndAlgHom A K).comp α).rangeRestrict h :=
+  ⟨AlgHom.subalgebraMap_surjective α.range _,
+    AlgHom.subalgebraMap_surjective α.range _,
+    homotopyToDerivedActionRangeEquivQ_apply_rangeRestrict A K α h⟩
 
 attribute [local instance] HasDerivedCategory.standard
 
