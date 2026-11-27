@@ -48,8 +48,8 @@ bracket of tangent vectors. -/
 theorem adDerivation_lie (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra R A B))
     (d₁ d₂ : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
     adDerivation B g ⁅d₁, d₂⁆ = ⁅adDerivation B g d₁, adDerivation B g d₂⁆ := by
-  have hinv : toConv ((g⁻¹).ofConv.toLinearMap) * toConv g.ofConv.toLinearMap = 1 := by
-    rw [← AlgHom.toLinearMap_convMul, inv_mul_cancel, AlgHom.toLinearMap_convOne]
+  have hinv : toConv ((g⁻¹).ofConv.toLinearMap) * toConv g.ofConv.toLinearMap = 1 :=
+    WithConv.algHom_toConv_inv_mul_toConv g
   have hbr : ∀ e₁ e₂ : Derivation R A (Bialgebra.CounitAlgebra R A B),
       toConv (↑⁅e₁, e₂⁆ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) =
         toConv (↑e₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *

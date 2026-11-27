@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
@@ -78,6 +79,8 @@ The basic structure of these groups is recorded here.
   of `unitaryGroupOf A` are the special isometry group of the form.
 * `Matrix.mem_unitaryGroupOf_iff'`: membership as the equation `g * A⁻¹ * star g = A⁻¹`.
 * `Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`.
+* `Matrix.star_mem_unitaryGroupOf_iff_of_mul_self_eq_one`: for an involution `A` (`A * A = 1`),
+  `unitaryGroupOf A` is stable under conjugate transposition.
 * `Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
 * `Matrix.unitaryGroupOf.scalarHom_injective`: the embedding of the unitary scalars is
   injective.
@@ -91,8 +94,13 @@ The basic structure of these groups is recorded here.
   transposition.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff`: the image of
   `U(p) × U(q)` is the subgroup of elements with vanishing lower-left block.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff_mem_unitaryGroup`: when `2`
+  is left-regular in `R`, the image of `U(p) × U(q)` is `U(p, q) ∩ U(p ⊕ q)`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`: over a field of
   characteristic zero, the centre of `U(p, q)` is the group of unit scalars.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_comap_center`: over a field of
+  characteristic zero, an element of `U(p, q)` is central in `U(p, q)` exactly when it is central
+  in the general linear group.
 
 ## References
 
@@ -141,6 +149,14 @@ variable {A : Matrix n n R}
 theorem mem_unitaryGroupOf_iff {g : GL n R} :
     g ∈ unitaryGroupOf A ↔ star (g : Matrix n n R) * A * g = A :=
   Iff.rfl
+
+omit [DecidableEq n] in
+/-- An isometry `x` of the form `A`, that is `star x * A * x = A`, does not change the Gram
+matrix of a family of vectors: `(x F)ᴴ A (x F) = Fᴴ A F`. -/
+theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m : Type*} {x : Matrix n n R}
+    (hx : star x * A * x = A) (F : Matrix n m R) : (x * F)ᴴ * A * (x * F) = Fᴴ * A * F := by
+  conv_rhs => rw [← hx]
+  simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
 
 /-- Two elements of `unitaryGroupOf A` are equal when their matrices are. -/
 @[ext]
@@ -198,6 +214,14 @@ theorem mem_unitaryGroupOf_iff' (hA : IsUnit A) {g : GL n R} :
 theorem star_mem_unitaryGroupOf_inv_iff (hA : IsUnit A) {g : GL n R} :
     star g ∈ unitaryGroupOf A⁻¹ ↔ g ∈ unitaryGroupOf A := by
   rw [mem_unitaryGroupOf_iff, mem_unitaryGroupOf_iff' hA, Units.coe_star, star_star]
+
+/-- For an involution `A` (`A * A = 1`), `unitaryGroupOf A` is stable under conjugate
+transposition (`star`). -/
+theorem star_mem_unitaryGroupOf_iff_of_mul_self_eq_one (hA : A * A = 1) {g : GL n R} :
+    star g ∈ unitaryGroupOf A ↔ g ∈ unitaryGroupOf A := by
+  have hA_unit : IsUnit A := isUnit_iff_exists_inv.2 ⟨A, hA⟩
+  have hA_inv : A⁻¹ = A := inv_eq_left_inv hA
+  simpa only [hA_inv] using star_mem_unitaryGroupOf_inv_iff hA_unit
 
 /-- **The determinant of an element of `unitaryGroupOf A` is a unitary scalar**, for invertible
 `A`: `star (det g) * det g = 1`. Over `ℂ` this says `|det g| = 1`. -/
@@ -453,6 +477,39 @@ theorem mem_range_fromBlocksHom_iff {g : indefiniteUnitaryGroup p q R} :
   rw [val_fromBlocksHom]
   exact (hB0 ▸ hM).symm
 
+/-- An element of `U(p, q)` (or `O(p, q)`) is unitary in the ambient space if and only if it lies
+in the block-diagonal subgroup `U(p) × U(q)` (the range of `fromBlocksHom`), provided `2` is
+left-regular in `R`. -/
+theorem mem_range_fromBlocksHom_iff_mem_unitaryGroup (h2 : IsLeftRegular (2 : R))
+    (g : indefiniteUnitaryGroup p q R) :
+    g ∈ (fromBlocksHom p q R).range ↔
+      ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) ∈ unitaryGroup (p ⊕ q) R := by
+  constructor
+  · rintro ⟨x, rfl⟩
+    rw [val_fromBlocksHom, ← UnitaryGroup.coe_sum]
+    exact (UnitaryGroup.sum x).property
+  · intro hU
+    rw [mem_range_fromBlocksHom_iff]
+    set M : Matrix (p ⊕ q) (p ⊕ q) R := ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R)
+    set J : Matrix (p ⊕ q) (p ⊕ q) R := indefiniteDiagonal p q R
+    have hJM : Mᴴ * J * M = J := by
+      simpa only [star_eq_conjTranspose] using mem_unitaryGroupOf_iff.1 g.property
+    have hcomm : J * M = M * J := by
+      have h1 : M * Mᴴ = 1 := (mem_unitaryGroup_iff).1 hU
+      calc J * M = (M * Mᴴ) * J * M := by rw [h1, Matrix.one_mul]
+        _ = M * (Mᴴ * J * M) := by simp only [Matrix.mul_assoc]
+        _ = M * J := by rw [hJM]
+    have h21 : (J * M).toBlocks₂₁ = (M * J).toBlocks₂₁ := congrArg Matrix.toBlocks₂₁ hcomm
+    have hJblock : J = fromBlocks 1 0 0 (-1) := indefiniteDiagonal_eq_fromBlocks
+    rw [← fromBlocks_toBlocks M, hJblock] at h21
+    simp only [fromBlocks_multiply, Matrix.zero_mul, Matrix.mul_zero, add_zero, zero_add,
+      Matrix.one_mul, Matrix.mul_one, Matrix.neg_mul, toBlocks_fromBlocks₂₁] at h21
+    ext i j
+    have h2ij : (2 : R) * M.toBlocks₂₁ i j = (2 : R) * 0 := by
+      rw [two_mul, mul_zero]
+      exact eq_neg_iff_add_eq_zero.1 (congrFun (congrFun h21.symm i) j)
+    exact h2 h2ij
+
 end indefiniteUnitaryGroup
 
 end CommRing
@@ -548,6 +605,19 @@ theorem center_eq_range_scalarHom :
     rw [Unitary.mem_iff_star_mul_self]
     exact mul_right_cancel₀ (indefiniteDiagonal_apply_self_ne_zero i₀) (by linear_combination h)
   exact ⟨⟨_, hu⟩, unitaryGroupOf.ext <| by rw [unitaryGroupOf.val_scalarHom]; exact hMs.symm⟩
+
+/-- **The centre of `U(p, q)` is cut out by the centre of the general linear group.** Over a field
+of characteristic zero, an element of `U(p, q)` commutes with every element of `U(p, q)` exactly
+when it commutes with every invertible matrix: both say that it is a scalar matrix. -/
+theorem center_eq_comap_center :
+    Subgroup.center (indefiniteUnitaryGroup p q K) =
+      (Subgroup.center (GL (p ⊕ q) K)).comap (indefiniteUnitaryGroup p q K).subtype := by
+  refine le_antisymm (fun g hg => ?_) fun g hg => Subgroup.mem_center_iff.mpr fun h =>
+    Subtype.ext (Subgroup.mem_center_iff.mp hg h)
+  rw [center_eq_range_scalarHom] at hg
+  obtain ⟨u, rfl⟩ := hg
+  exact Subgroup.mem_comap.mpr <| GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.mpr
+    ⟨u, (unitaryGroupOf.val_scalarHom (A := indefiniteDiagonal p q K) u).symm⟩
 
 end indefiniteUnitaryGroup
 

@@ -62,6 +62,8 @@ homology with coefficients in one to that with coefficients in the other
   space.
 * `TauCeti.TopCat.fiberHomologyTransport`: transport on homology along a path.
 * `TauCeti.TopCat.serreFiberLocalSystem`: the local system `b ↦ Hₙ(p⁻¹(b); M)`.
+* `TauCeti.TopCat.serreFiberLocalSystemOn`: its restriction, with coefficients `R`, to a subspace
+  of the base.
 * `CategoryTheory.CommSq.serreFiberLocalSystemMap`: the morphism of local systems induced by a map
   of Serre fibrations.
 * `TauCeti.TopCat.serreFiberLocalSystemMapCoeff`: the morphism of local systems induced by a map of
@@ -573,6 +575,18 @@ theorem serreFiberLocalSystemIsoFiberLocalSystem_hom_app
   (rfl)
 
 end Path
+
+section Restriction
+
+variable (C : Set B) (R : Type u) [Ring R] (hp : serreFibrations p)
+
+/-- The local system of fibre homology `b ↦ Hq(p⁻¹(b); R)` of a Serre fibration `p`, restricted to
+a subspace `C ⊆ B`. -/
+abbrev serreFiberLocalSystemOn (q : ℕ) : LocalCoefficientSystem.{u, u, u} R (TopCat.of C) :=
+  (LocalCoefficientSystem.pullback ⟨Subtype.val, continuous_subtypeVal⟩).obj
+    (serreFiberLocalSystem hp (ModuleCat.of R R) q)
+
+end Restriction
 
 end TauCeti.TopCat
 

@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.ODE.Gronwall.Integrable
-import TauCeti.Analysis.ODE.NonlinearCaratheodory
+import TauCeti.Analysis.ODE.NonlinearCaratheodory.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
@@ -63,7 +63,7 @@ lies in it at all times (`Continuous.mem_of_hasDerivAt_clm_apply`).
 The vector field `(t, z) ↦ M t z + F t` has integrable sections and is Lipschitz in `z` with the
 integrable constant `‖M t‖`, so existence, uniqueness, absolute continuity and the derivative of
 solutions are instances of the nonlinear Carathéodory theorem in
-`TauCeti/Analysis/ODE/NonlinearCaratheodory.lean`
+`TauCeti/Analysis/ODE/NonlinearCaratheodory/Basic.lean`
 (`TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith` and its companions). The
 norm bound follows from Grönwall's inequality with an integrable kernel on either side of `t₀`
 (`TauCeti.le_mul_exp_abs_integral_of_le_add_abs_integral_mul`).

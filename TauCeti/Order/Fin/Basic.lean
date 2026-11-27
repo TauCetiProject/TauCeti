@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Order.Interval.Set.Defs
+import Mathlib.Order.UpperLower.Basic
 
 /-!
 # Order characterizations on `Fin`
 
 This file characterizes elements of `Fin (k + 1)` by how they sit relative to the embedded indices
-`i'.castSucc` (`i' : Fin k`), and records the Galois connections between codegeneracy
-(`Fin.predAbove`) and coface (`Fin.succAbove`) maps.
+`i'.castSucc` (`i' : Fin k`), records the Galois connections between codegeneracy
+(`Fin.predAbove`) and coface (`Fin.succAbove`) maps, and records that the embedded indices
+`Fin.castLE` form an initial segment.
 
 ## Main results
 
@@ -26,6 +28,9 @@ This file characterizes elements of `Fin (k + 1)` by how they sit relative to th
 * `Fin.galoisConnection_succ_succAbove_predAbove`: `i.succ.succAbove ⊣ i.predAbove`.
 * `Fin.strictMono_of_forall_mem_Ioo`: a tuple separated by a sequence, `a k < w k < a (k + 1)`,
   is strictly increasing.
+* `Fin.isLowerSet_range_castLE`: the image of `Fin.castLE` is an initial segment.
+* `Fin.isLowerSet_iff_exists_eq_setOf_val_lt`: the lower sets of `Fin n` are the initial
+  segments `{i | i < m}`.
 -/
 
 public section
@@ -122,5 +127,21 @@ theorem strictMono_of_forall_mem_Ioo {α : Type*} [Preorder α] {n : ℕ} {w : F
   · exact fun i ↦ i.elim0
   · exact strictMono_iff_lt_succ.2 fun i ↦
       ((h i.castSucc).2.trans_le (le_of_eq (by simp))).trans (h i.succ).1
+
+/-- The image of `Fin.castLE` is an initial segment of `Fin l`. -/
+theorem isLowerSet_range_castLE {k l : ℕ} (h : k ≤ l) :
+    IsLowerSet (Set.range (castLE h)) := by
+  rw [range_castLE]
+  exact fun _ _ hab hb ↦ lt_of_le_of_lt (le_iff_val_le_val.mp hab) hb
+
+/-- The lower sets of `Fin n` are the initial segments `{i | i < m}`, for `m : ℕ`. -/
+theorem isLowerSet_iff_exists_eq_setOf_val_lt {n : ℕ} {s : Set (Fin n)} :
+    IsLowerSet s ↔ ∃ m : ℕ, s = {i : Fin n | (i : ℕ) < m} := by
+  refine ⟨fun hs ↦ ?_, ?_⟩
+  · rcases hs.eq_univ_or_Iio with rfl | ⟨a, rfl⟩
+    · exact ⟨n, by ext i; simp⟩
+    · exact ⟨a, by ext i; simp⟩
+  · rintro ⟨m, rfl⟩ i j hji hi
+    exact (le_def.1 hji).trans_lt hi
 
 end Fin

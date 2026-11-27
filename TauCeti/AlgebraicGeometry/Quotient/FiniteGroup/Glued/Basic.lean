@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Cover.Directed
 public import TauCeti.AlgebraicGeometry.GroupAction.InvariantOpen
 public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.UniversalProperty
+import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 
 /-!
 # Quotients of schemes by finite groups with an invariant affine open cover
@@ -711,8 +712,6 @@ theorem projection_of_forall_exists (hσ : HasInvariantAffineCover σ)
 /-- The quotient projection is integral, since sections are integral over invariant sections for
 a finite group. -/
 instance (hσ : HasInvariantAffineCover σ) : IsIntegralHom (projection σ hσ) := by
-  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   refine (projection_iff hσ (P := @IsIntegralHom)).mpr fun U ↦ ?_
   let := Scheme.sectionsMulSemiringAction σ U.property.2
   infer_instance

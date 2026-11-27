@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
+public import TauCeti.LinearAlgebra.Projectivization.OnePoint
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 
 import Mathlib.Analysis.Analytic.Polynomial
@@ -53,9 +56,14 @@ is injective on homogeneous polynomials of degree `d`
 * `Projectivization.twistCore k`: the vector-bundle core of `𝒪(k)`.
 * `Projectivization.isContMDiff_twistCore`: `𝒪(k)` is an analytic line bundle.
 * `Projectivization.contMDiff_section_twistCore_iff`: a section of `𝒪(k)` is `C^r` exactly when
-  its coordinate in every standard chart is `C^r` on that chart.
+  its coordinate in every standard chart is `C^r` on that chart, and
+  `Projectivization.contMDiffOn_section_twistCore_iff` is the version on an open set;
+  `Projectivization.mdifferentiable_section_twistCore_iff` is the differentiable version.
 * `Projectivization.homogeneousSection`: the section of `𝒪(d)` defined by a homogeneous
   polynomial of degree `d`, analytic by `Projectivization.contMDiff_homogeneousSection`.
+* `Projectivization.twistTransition_one_zero_equivProjectivization` and
+  `Projectivization.twistTransition_zero_one_equivProjectivization`: on the projective line, the
+  transitions of `𝒪(k)` between the two charts are the powers `t⁻ᵏ` and `tᵏ` at `[t : 1]`.
 
 ## References
 
@@ -197,11 +205,45 @@ theorem twistCore_localTriv_baseSet (k : ℤ) (i : Fin (n + 1)) :
     ((twistCore (𝕜 := 𝕜) k).localTriv i).baseSet = affineOpen i :=
   (rfl)
 
+/-- The preferred chart of `𝒪(k)` at `x` is the affine open chosen by `exists_mem_affineOpen x`. -/
+theorem twistCore_indexAt (k : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    (twistCore k).indexAt x = (exists_mem_affineOpen x).choose :=
+  (rfl)
+
 /-- The preferred chart of `𝒪(k)` at `x` is the chart of the manifold structure at `x`. -/
 theorem chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt (k : ℤ)
     (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     chartAt (Fin n → 𝕜) x = affineOpenPartialHomeomorph ((twistCore k).indexAt x) :=
   (rfl)
+
+/-- Every point lies in the standard affine open of the preferred chart of `𝒪(k)` at it. -/
+@[simp]
+theorem mem_affineOpen_twistCore_indexAt (k : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    x ∈ affineOpen ((twistCore (𝕜 := 𝕜) k).indexAt x) :=
+  (twistCore (𝕜 := 𝕜) (n := n) k).mem_baseSet_at x
+
+/-- On the projective line, the preferred chart of `𝒪(k)` at a point outside the standard affine
+open of the coordinate `1` is the chart `0`. -/
+theorem indexAt_twistCore_eq_zero_of_notMem (k : ℤ) {x : ℙ 𝕜 (Fin 2 → 𝕜)}
+    (hx : x ∉ affineOpen 1) : (twistCore (𝕜 := 𝕜) (n := 1) k).indexAt x = 0 := by
+  have h := mem_affineOpen_twistCore_indexAt (n := 1) k x
+  generalize (twistCore (𝕜 := 𝕜) (n := 1) k).indexAt x = i at h ⊢
+  fin_cases i
+  · rfl
+  · exact absurd h hx
+
+/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `[v]` does not vanish
+on `v`. -/
+theorem apply_indexAt_twistCore_mk_ne_zero (k : ℤ) {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) :
+    v ((twistCore (𝕜 := 𝕜) k).indexAt (mk 𝕜 v hv)) ≠ 0 := by
+  have hx := (twistCore (𝕜 := 𝕜) (n := n) k).mem_baseSet_at (mk 𝕜 v hv)
+  rwa [twistCore_baseSet, mk_mem_affineOpen_iff] at hx
+
+/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `x` does not vanish on the
+chosen representative. -/
+theorem rep_indexAt_twistCore_ne_zero (k : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    x.rep ((twistCore (𝕜 := 𝕜) k).indexAt x) ≠ 0 := by
+  simpa only [mk_rep] using apply_indexAt_twistCore_mk_ne_zero k x.rep_ne_zero
 
 @[simp]
 theorem twistCore_coordChange_apply (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜))
@@ -226,6 +268,34 @@ theorem twistCore_localTriv_apply (k : ℤ) (j : Fin (n + 1)) (s : ℙ 𝕜 (Fin
       twistTransition k ((twistCore k).indexAt x) j x * s x :=
   (rfl)
 
+/-- In the trivialization of `𝒪(k)` at `x₀`, a vector at `x` with coordinate `c` in the frame of the
+preferred chart at `x` has the coordinate
+`twistTransition k ((twistCore k).indexAt x) ((twistCore k).indexAt x₀) x * c`. -/
+theorem twistCore_trivializationAt_apply_snd (k : ℤ) (x₀ x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) (c : 𝕜) :
+    (trivializationAt 𝕜 (twistCore k).Fiber x₀ ⟨x, c⟩).2 =
+      twistTransition k ((twistCore k).indexAt x) ((twistCore k).indexAt x₀) x * c :=
+  (rfl)
+
+/-- **Sections of `𝒪(k)` over an open set, in the standard charts.** A section `s` of `𝒪(k)` is
+`C^r` on an open set `W` exactly when, for every `j`, its coordinate
+`x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x` in the frame of the chart `j` is `C^r`
+on `W ∩ U_j`. -/
+theorem contMDiffOn_section_twistCore_iff (k : ℤ) {r : ℕ∞ω} (s : ℙ 𝕜 (Fin (n + 1) → 𝕜) → 𝕜)
+    {W : Set (ℙ 𝕜 (Fin (n + 1) → 𝕜))} (hW : IsOpen W) :
+    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) (𝓘(𝕜, Fin n → 𝕜).prod 𝓘(𝕜)) r
+        (fun x ↦ TotalSpace.mk' 𝕜 (E := (twistCore k).Fiber) x (s x)) W ↔
+      ∀ j, ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜) r
+        (fun x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x) (W ∩ affineOpen j) := by
+  let s' : ∀ x, (twistCore (𝕜 := 𝕜) (n := n) k).Fiber x := s
+  have key (j : Fin (n + 1)) := by
+    haveI : MemTrivializationAtlas ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j) := ⟨⟨j, rfl⟩⟩
+    exact ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j).contMDiffOn_section_iff
+      (IB := 𝓘(𝕜, Fin n → 𝕜)) (n := r) (s := s') (a := W ∩ affineOpen j)
+      (hW.inter (isOpen_affineOpen j)) inter_subset_right
+  conv_lhs => rw [← inter_univ W, ← iUnion_affineOpen, inter_iUnion]
+  rw [contMDiffOn_iUnion_iff_of_isOpen fun j ↦ hW.inter (isOpen_affineOpen j)]
+  exact forall_congr' key
+
 /-- **Sections of `𝒪(k)` in the standard charts.** A section `s` of `𝒪(k)` is `C^r` exactly when,
 for every `j`, its coordinate `x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x` in the
 frame of the chart `j` is `C^r` on the standard affine open `U_j`. -/
@@ -234,14 +304,26 @@ theorem contMDiff_section_twistCore_iff (k : ℤ) {r : ℕ∞ω} (s : ℙ 𝕜 (
         (fun x ↦ TotalSpace.mk' 𝕜 (E := (twistCore k).Fiber) x (s x)) ↔
       ∀ j, ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜) r
         (fun x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x) (affineOpen j) := by
+  simpa only [univ_inter] using
+    contMDiffOn_univ.symm.trans (contMDiffOn_section_twistCore_iff k s isOpen_univ)
+
+/-- **Differentiable sections of `𝒪(k)` in the standard charts.** A section `s` of `𝒪(k)` is
+differentiable exactly when, for every `j`, its coordinate
+`x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x` in the frame of the chart `j` is
+differentiable on the standard affine open `U_j`. -/
+theorem mdifferentiable_section_twistCore_iff (k : ℤ) (s : ℙ 𝕜 (Fin (n + 1) → 𝕜) → 𝕜) :
+    MDifferentiable 𝓘(𝕜, Fin n → 𝕜) (𝓘(𝕜, Fin n → 𝕜).prod 𝓘(𝕜))
+        (fun x ↦ TotalSpace.mk' 𝕜 (E := (twistCore k).Fiber) x (s x)) ↔
+      ∀ j, MDifferentiableOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜)
+        (fun x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x) (affineOpen j) := by
   let s' : ∀ x, (twistCore (𝕜 := 𝕜) (n := n) k).Fiber x := s
   have key (j : Fin (n + 1)) := by
     haveI : MemTrivializationAtlas ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j) := ⟨⟨j, rfl⟩⟩
-    exact ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j).contMDiffOn_section_iff
-      (IB := 𝓘(𝕜, Fin n → 𝕜)) (n := r) (s := s') (a := affineOpen j) (isOpen_affineOpen j)
+    exact ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j).mdifferentiableOn_section_iff
+      (IB := 𝓘(𝕜, Fin n → 𝕜)) (s := s') (a := affineOpen j) (isOpen_affineOpen j)
       fun _ hx ↦ hx
-  rw [← contMDiffOn_univ, ← iUnion_affineOpen,
-    contMDiffOn_iUnion_iff_of_isOpen fun j ↦ isOpen_affineOpen j]
+  rw [← mdifferentiableOn_univ, ← iUnion_affineOpen,
+    mdifferentiableOn_iUnion_iff_of_isOpen fun j ↦ isOpen_affineOpen j]
   exact forall_congr' key
 
 /-! ### Sections from homogeneous polynomials -/
@@ -288,8 +370,7 @@ theorem twistTransition_mul_homogeneousSection (d : ℕ) (P : MvPolynomial (Fin 
     (j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     twistTransition (d : ℤ) ((twistCore (d : ℤ)).indexAt x) j x * homogeneousSection d P x =
       eval x.rep P / x.rep j ^ d := by
-  have ha : x.rep ((twistCore (𝕜 := 𝕜) (d : ℤ)).indexAt x) ≠ 0 :=
-    (mem_affineOpen_iff _ x).1 ((twistCore (𝕜 := 𝕜) (d : ℤ)).mem_baseSet_at x)
+  have ha := rep_indexAt_twistCore_ne_zero (𝕜 := 𝕜) (d : ℤ) x
   simp only [homogeneousSection, twistTransition, zpow_natCast]
   rw [div_pow]
   field_simp
@@ -327,8 +408,7 @@ theorem homogeneousSection_mk_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 
     (hP : P.IsHomogeneous d) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     homogeneousSection d P (mk 𝕜 v hv) = 0 ↔ eval v P = 0 := by
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep 𝕜 v hv
-  have hi := (mem_affineOpen_iff _ _).1
-    ((twistCore (𝕜 := 𝕜) (n := n) (d : ℤ)).mem_baseSet_at (mk 𝕜 v hv))
+  have hi := rep_indexAt_twistCore_ne_zero (𝕜 := 𝕜) (d : ℤ) (mk 𝕜 v hv)
   have hrep : eval (mk 𝕜 v hv).rep P = (a : 𝕜) ^ d * eval v P := by
     rw [← ha, Units.smul_def, hP.eval_smul]
   simp [homogeneousSection, hrep, hi]
@@ -348,5 +428,31 @@ theorem homogeneousSection_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 1))
     · exact hz v hv
   · funext x
     simp [homogeneousSection, h]
+
+/-! ### The projective line -/
+
+section ProjectiveLine
+
+variable [ProperSpace 𝕜] [DecidableEq 𝕜]
+
+/-- On the projective line, the transition from the chart `1` to the chart `0` of `𝒪(k)` at the
+point `[t : 1]` is the `k`-th power of the inverted coordinate `t⁻¹`. -/
+theorem twistTransition_one_zero_equivProjectivization (k : ℤ) (y : OnePoint 𝕜)
+    (hy : y ≠ (OnePoint.infty : OnePoint 𝕜)) :
+    twistTransition k 1 0 (OnePoint.equivProjectivization 𝕜 y) = OnePoint.invChart y ^ k := by
+  induction y using OnePoint.rec with
+  | infty => exact absurd rfl hy
+  | coe t => simp [one_div]
+
+/-- On the projective line, the transition from the chart `0` to the chart `1` of `𝒪(k)` at the
+point `[t : 1]` is the `(-k)`-th power of the inverted coordinate `t⁻¹`. -/
+theorem twistTransition_zero_one_equivProjectivization (k : ℤ) (y : OnePoint 𝕜)
+    (hy : y ≠ (OnePoint.infty : OnePoint 𝕜)) :
+    twistTransition k 0 1 (OnePoint.equivProjectivization 𝕜 y) = OnePoint.invChart y ^ (-k) := by
+  induction y using OnePoint.rec with
+  | infty => exact absurd rfl hy
+  | coe t => simp [zpow_neg]
+
+end ProjectiveLine
 
 end Projectivization

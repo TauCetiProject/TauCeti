@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -72,7 +74,11 @@ Let `dφ_w` be complex linear, so that it is multiplication by a complex number 
   equations for `w ↦ (a, b)`, which follow from the symmetry of the second derivative of `φ`
   (`TauCeti.isComplexLinearMap_fderiv_fderiv_apply_stdComplexLineReal`). So the transformation
   law of the adjoint carries the factor `a² + b²` that the `L²` pairing `∫ η (D ξ)` acquires under
-  the change of variables, and no derivative of `J`.
+  the change of variables, and no derivative of `J`. On a cylindrical end, where `J ∘ φ` is an end
+  structure and `φ` has period one in `t`, the form `η'` is `C^n` when the end structure, `u` and
+  `η` are, and has period one
+  (`TauCeti.Floer.contDiff_covectorPullback_of_eqOn`,
+  `TauCeti.Floer.covectorPullback_add_snd_of_periodic_snd`).
 
 Away from solutions, `floerLinearization_perturbationPullback_eq_sub` gives the correction
 `-b (dJ ξ) F(u)` for endomorphism-valued families with `J² = -1` near the target point.
@@ -116,6 +122,19 @@ theorem covectorPullback_apply (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ 
         (fderiv ℝ φ w stdComplexLineReal).2 • J (φ w) (u (φ w))) :=
   (rfl)
 
+/-- The pulled-back covector field is `C^n` when `η ∘ φ` is, and the factor
+`a + b J(φ ·, u ∘ φ)` is `C^n` on an open set containing the support of `η ∘ φ`. -/
+theorem contDiff_covectorPullback_of_contDiffOn {φ : ℝ × ℝ → ℝ × ℝ}
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {n : WithTop ℕ∞}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hM : ContDiffOn ℝ n (fun ζ ↦ (fderiv ℝ φ ζ stdComplexLineReal).1 • (1 : V →L[ℝ] V) +
+      (fderiv ℝ φ ζ stdComplexLineReal).2 • J (φ ζ) (u (φ ζ))) U)
+    (hηφ : ContDiff ℝ n (η ∘ φ)) (hsupp : tsupport (η ∘ φ) ⊆ U) :
+    ContDiff ℝ n (covectorPullback φ J u η) := by
+  have h := (ContinuousLinearMap.compL ℝ V V ℝ).flip.contDiff_of_tsupport_subset_right hM
+    hηφ.contDiffOn hU hsupp
+  rwa [funext (covectorPullback_apply φ J u η)]
+
 /-- The pulled-back covector field is `a η + b (η ∘ J)`, with `η` and `J` taken at `φ w`. -/
 theorem covectorPullback_eq_add (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (u : ℝ × ℝ → V) (η : ℝ × ℝ → V →L[ℝ] ℝ) (w : ℝ × ℝ) :
@@ -123,6 +142,51 @@ theorem covectorPullback_eq_add (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ
       (fderiv ℝ φ w stdComplexLineReal).2 • (η (φ w)).comp (J (φ w) (u (φ w))) := by
   rw [covectorPullback_apply, ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_smul,
     ContinuousLinearMap.comp_smul, ContinuousLinearMap.one_def, ContinuousLinearMap.comp_id]
+
+/-- Pulling back commutes with multiplying the covector field by a scalar function `f`, which is
+read at `φ w`. -/
+@[simp]
+theorem covectorPullback_fun_smul (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (u : ℝ × ℝ → V) (f : ℝ × ℝ → ℝ) (η : ℝ × ℝ → V →L[ℝ] ℝ) (w : ℝ × ℝ) :
+    covectorPullback φ J u (fun z ↦ f z • η z) w = f (φ w) • covectorPullback φ J u η w := by
+  simp only [covectorPullback_apply, ContinuousLinearMap.smul_comp]
+
+/-- The pulled-back covector field vanishes at `w` when `η` vanishes at `φ w`. -/
+theorem covectorPullback_eq_zero_of_apply_eq_zero (φ : ℝ × ℝ → ℝ × ℝ)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (u : ℝ × ℝ → V) {η : ℝ × ℝ → V →L[ℝ] ℝ} {w : ℝ × ℝ}
+    (h : η (φ w) = 0) : covectorPullback φ J u η w = 0 := by
+  simp only [covectorPullback_apply, h, ContinuousLinearMap.zero_comp]
+
+/-- The pulled-back covector field has period `c` in the second coordinate when `φ` has, as an end
+chart `(s, t) ↦ φ (s, t)` of a cylindrical end does for `c = 1`. -/
+theorem covectorPullback_add_snd_of_periodic_snd {φ : ℝ × ℝ → ℝ × ℝ} {c : ℝ}
+    (hφ : ∀ s t, φ (s, t + c) = φ (s, t)) (J : ℝ × ℝ → V → V →L[ℝ] V) (u : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ) (s t : ℝ) :
+    covectorPullback φ J u η (s, t + c) = covectorPullback φ J u η (s, t) := by
+  simp only [covectorPullback_apply, hφ, fderiv_add_snd_of_periodic_snd hφ]
+
+/-- The pulled-back covector field is `C^n` when `η ∘ φ` is `C^n`, and on an open set `U`
+containing the support of `η ∘ φ` the map `φ` is `C^(n+1)`, the structure `J ∘ φ` agrees with a
+jointly `C^n` family `J_e` and `u` is `C^n` at `φ ζ`. This is how a covector field supported far
+out on a cylindrical end, where `J` is an end structure `J_e(t)`, reads in the end chart. -/
+theorem contDiff_covectorPullback_of_eqOn {φ : ℝ × ℝ → ℝ × ℝ} {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Je : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {n : WithTop ℕ∞}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hφ : ∀ ζ ∈ U, ContDiffAt ℝ (n + 1) φ ζ)
+    (hJe : ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ Je p.1 p.2) (hJeq : EqOn (J ∘ φ) Je U)
+    (hu : ∀ ζ ∈ U, ContDiffAt ℝ n u (φ ζ)) (hηφ : ContDiff ℝ n (η ∘ φ))
+    (hsupp : tsupport (η ∘ φ) ⊆ U) :
+    ContDiff ℝ n (covectorPullback φ J u η) := by
+  refine contDiff_covectorPullback_of_contDiffOn hU (fun ζ hζ ↦ ?_) hηφ hsupp
+  have hA : ContDiffAt ℝ n (fun ζ' ↦ fderiv ℝ φ ζ' stdComplexLineReal) ζ :=
+    ((hφ ζ hζ).fderiv_right le_rfl).clm_apply contDiffAt_const
+  -- Near `ζ ∈ U` the factor `a + b J(φ ·, u ∘ φ)` is `a + b J_e(·, u ∘ φ)`, which is `C^n`.
+  have hJζ : ContDiffAt ℝ n (fun ζ' ↦ Je ζ' (u (φ ζ'))) ζ :=
+    hJe.contDiffAt.comp ζ (contDiffAt_id.prodMk ((hu ζ hζ).comp ζ
+      ((hφ ζ hζ).of_le le_self_add)))
+  refine (ContDiffAt.congr_of_eventuallyEq ((hA.fst.smul
+    (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add (hA.snd.smul hJζ)) ?_).contDiffWithinAt
+  filter_upwards [hU.mem_nhds hζ] with ζ' hζ'
+  simp only [Pi.smul_apply', ← hJeq hζ', Function.comp_apply]
 
 end TauCeti.Floer
 

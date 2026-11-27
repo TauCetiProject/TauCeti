@@ -109,7 +109,7 @@ include hY
 omit [CWType Y] in
 /-- A pointed map from the cellular classifying space to an aspherical space realizing a given
 isomorphism of fundamental groups is a weak homotopy equivalence, packaged with the map. -/
-private theorem exists_isWeakHomotopyEquivalence_mapOfEq_cellularClassifyingSpace :
+theorem exists_isWeakHomotopyEquivalence_mapOfEq_cellularClassifyingSpace :
     ∃ (f : C(cellularClassifyingSpace R, Y)) (hf : f (cellularClassifyingSpaceBasepoint R) = y),
       FundamentalGroup.mapOfEq f hf = φ.toMonoidHom ∧ f.IsWeakHomotopyEquivalence := by
   obtain ⟨f, hf, hfφ⟩ := exists_mapOfEq_cellularClassifyingSpace R
@@ -167,8 +167,7 @@ theorem homotopicRel_cellularClassifyingSpaceHomotopyEquiv_toFun
     (hfφ : ∀ a, FundamentalGroup.mapOfEq f hf a = φ a) :
     f.HomotopicRel (cellularClassifyingSpaceHomotopyEquiv R hY φ).toFun
       {cellularClassifyingSpaceBasepoint R} :=
-  homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace R
-    (fun z n ↦ (hY.of_basepoint z).subsingleton_homotopyGroup n) hf
+  homotopicRel_of_mapOfEq_eq_of_cwComplex hY.subsingleton_homotopyGroup hf
     (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hY φ)
     (MonoidHom.ext fun a ↦ by simp [hfφ])
 
@@ -181,7 +180,6 @@ theorem exists_path_map_cellularClassifyingSpaceHomotopyEquiv_invFun :
         (cellularClassifyingSpaceBasepoint R),
       ∀ a, fundamentalGroupMulEquivOfPath γ
         (map (cellularClassifyingSpaceHomotopyEquiv R hY φ).invFun y a) = φ.symm a := by
-  have := (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace R).isAspherical.pathConnectedSpace
   set e := cellularClassifyingSpaceHomotopyEquiv R hY φ
   -- The inverse `e⁻¹` is a homotopy right inverse of `e`, and `φ⁻¹ ∘ e_*` is the identity.
   obtain ⟨γ, hγ⟩ := e.right_inv.some.exists_path_fundamentalGroupMulEquivOfPath_map_comp

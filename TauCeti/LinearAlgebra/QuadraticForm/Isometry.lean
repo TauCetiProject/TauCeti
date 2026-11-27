@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
@@ -19,6 +20,7 @@ This file records general properties of quadratic-map isometries.
 
 * `QuadraticMap.Isometry.neg`: an isometry also preserves the negatives of the quadratic maps.
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
+* `QuadraticMap.Isometry.associated_apply`: an isometry preserves the associated bilinear map.
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
 * `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
@@ -26,6 +28,8 @@ This file records general properties of quadratic-map isometries.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.polarBilin_compl₁₂`: an isometric equivalence pulls the polar
   bilinear form of the target back to that of the source.
+* `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence maps polar
+  orthogonal complements to polar orthogonal complements.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
@@ -73,6 +77,15 @@ theorem _root_.QuadraticMap.Isometry.polar_apply {R : Type u} {M₁ : Type v} {M
     {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (x y : M₁) :
     polar Q₂ (f x) (f y) = polar Q₁ x y := by
   simp only [QuadraticMap.polar, ← map_add f, QuadraticMap.Isometry.map_app]
+
+/-- An isometry preserves the associated bilinear map of a quadratic map. -/
+@[simp]
+theorem _root_.QuadraticMap.Isometry.associated_apply {R : Type u} {M₁ : Type v} {M₂ : Type*}
+    {N : Type w} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] [Invertible (2 : Module.End R N)] {Q₁ : QuadraticMap R M₁ N}
+    {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (x y : M₁) :
+    associated Q₂ (f x) (f y) = associated Q₁ x y := by
+  simp only [QuadraticMap.associated_apply, ← map_add f, QuadraticMap.Isometry.map_app]
 
 /-- A linear map preserving a quadratic form is an isometry of its polar bilinear form. -/
 theorem _root_.QuadraticForm.isIsometry_polarBilin_of_forall_map_app
@@ -128,6 +141,25 @@ theorem _root_.QuadraticMap.IsometryEquiv.map_polarKernel
   simp only [Submodule.mem_map_equiv, LinearMap.mem_ker, polarBilin_apply_apply,
     IsometryEquiv.coe_symm_toLinearEquiv, IsometryEquiv.coe_toLinearEquiv]
   rw [← e.polar_apply x (e.symm y), e.apply_symm_apply]
+
+/-- An isometric equivalence maps the polar orthogonal complement of a submodule onto the polar
+orthogonal complement of its image. -/
+theorem _root_.QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} (e : Q₁.IsometryEquiv Q₂)
+    (W : Submodule R M₁) :
+    (LinearMap.BilinForm.orthogonal Q₁.polarBilin W).map e.toLinearMap =
+      LinearMap.BilinForm.orthogonal Q₂.polarBilin (W.map e.toLinearMap) := by
+  ext y
+  simp only [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
+    polarBilin_apply_apply, IsometryEquiv.coe_symm_toLinearEquiv,
+    IsometryEquiv.coe_toLinearEquiv]
+  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · rw [← e.apply_symm_apply x, ← e.apply_symm_apply y, e.polar_apply]
+    exact h _ hx
+  · rw [← e.polar_apply, e.apply_symm_apply]
+    exact h (e x) (by simpa using hx)
 
 /-- The restriction of an isometric equivalence to the kernels of polarization against
 corresponding vectors. -/

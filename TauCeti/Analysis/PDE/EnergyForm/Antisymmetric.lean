@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 
 /-!
 # The antisymmetric part of a principal coefficient is a drift

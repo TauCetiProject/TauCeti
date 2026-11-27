@@ -22,6 +22,7 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.MeasureTheory.Measure.Restrict
 
@@ -35,7 +36,8 @@ bounds.
 
 * `MeasureTheory.Lp.normLp`: the pointwise norm `x ↦ ‖f x‖` bundled as an element of `Lp ℝ p μ`.
 * `MeasureTheory.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
-  two-term linear combination.
+  two-term linear combination; `MeasureTheory.Lp.norm_le_add_add_of_ae_norm_le` is the three-term
+  form.
 * `MeasureTheory.Lp.ofReal_norm_add_mul_norm` and `MeasureTheory.memLp_of_eLpNorm_add_mul_ne_top`:
   the cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions in terms of `eLpNorm`, and a pair of
   functions of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, `t > 0`, lies in `L^{p₀} × L^{p₁}`.
@@ -47,6 +49,8 @@ bounds.
   power of the pointwise norm of an `Lᵖ` function is the `p`-th power of its `Lᵖ` norm.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.eNorm_rpow_eq_lintegral` and `MeasureTheory.Lp.eNorm_rpow_two_eq_lintegral`:
+  the same identities for the extended norm and the lower integral of an `Lᵖ` function.
 * `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂` for
   `L²` functions.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
@@ -63,6 +67,8 @@ bounds.
   for operators bounded by `c` applied to `f`.
 * `LipschitzWith.tendsto_integral_norm_sub_sq`: if `∫ ‖f i - g‖² → 0` with eventually integrable
   integrands, then the Bochner integrals `∫ ‖T (f i) - T g‖²` tend to `0` for Lipschitz `T`.
+* `MeasureTheory.Lp.dist_le_of_ae_dist_le_top`: an almost everywhere bound of the pointwise
+  distance of two `L∞` classes bounds their `L∞` distance.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
@@ -71,6 +77,9 @@ bounds.
   `MeasureTheory.Lp.norm_eq_lpNorm_of_restrict_coe_opens_top`: an element of `Lᵖ` over the whole
   space, written as the top open set, is an `Lᵖ` function for the measure itself, with the same
   norm.
+* `MeasureTheory.eLpNorm_restrict_coe_opens_top` and
+  `MeasureTheory.integral_restrict_coe_opens_top`: the `eLpNorm` and the integral of a function for
+  the restriction of a measure to the top open set are those for the measure itself.
 * `MeasureTheory.lpNorm_le_norm_of_ae_eq_of_le`: for `ν ≤ ν'`, the `Lᵖ(ν)` norm of a
   representative of an element of `Lᵖ(ν')` is at most its norm.
 * `MeasureTheory.Lp.ae_norm_le_norm_top`: an `L∞` function is bounded almost everywhere by its
@@ -99,6 +108,8 @@ bounds.
   `measureUnivNNReal μ ^ p.toReal⁻¹ * C`.
 * `MeasureTheory.MemLp.norm_toLp_le_of_eLpNorm_le`: an `eLpNorm` bound `‖g‖_p ≤ B ‖u‖_p` against
   a representative `u` of `v ∈ Lᵖ` is the norm bound `‖g‖ ≤ B ‖v‖`.
+* `MeasureTheory.memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul`: a bound `‖g‖_p ≤ K ‖f‖_p` with
+  `‖f‖_p ≤ N` puts `g` in `Lᵖ`, with `‖g‖_p ≤ K N` as a real number.
 * `TauCeti.Lp.isBounded_range_of_ae_bound` and `TauCeti.isBounded_range_toLp_of_ae_bound`: on a
   finite measure space, a family in `Lᵖ` (`1 ≤ p`) with a uniform almost-everywhere pointwise norm
   bound has bounded range.
@@ -112,6 +123,9 @@ bounds.
   sum of their norms.
 * `MeasureTheory.Lp.norm_le_mul_norm_of_ae_eq_smul`: multiplying an `Lᵖ` class by a function
   bounded by `C` multiplies its norm by at most `C`.
+* `MeasureTheory.Lp.eLpNorm_smul_add_le` and `MeasureTheory.Lp.eLpNorm_smul_neg`: for any weight
+  `w`, the weighted seminorm `‖w g‖_p` of `g ∈ Lᵖ` is subadditive for `1 ≤ p` and invariant under
+  negation.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
 * `MeasureTheory.memLp_top_inv_of_ae_le_norm` and
@@ -243,6 +257,30 @@ namespace MeasureTheory
 open Filter
 open scoped ENNReal NNReal Topology
 
+/-- The norm of an `Lᵖ` function dominated pointwise by a three-term combination of three other
+`Lᵖ` functions obeys the same bound in norm. -/
+theorem Lp.norm_le_add_add_of_ae_norm_le {alpha E F G H : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedAddCommGroup H]
+    {m : Measure alpha} {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp E q m} {g : Lp F q m} {h : Lp G q m}
+    {k : Lp H q m} {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c)
+    (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖ + c * ‖k z‖) :
+    ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ + c * ‖k‖ := by
+  calc ‖f‖ ≤ ‖a • Lp.normLp g + b • Lp.normLp h + c • Lp.normLp k‖ := by
+        refine Lp.norm_le_norm_of_ae_le ?_
+        filter_upwards [hle, Lp.coeFn_normLp g, Lp.coeFn_normLp h, Lp.coeFn_normLp k,
+          Lp.coeFn_add (a • Lp.normLp g + b • Lp.normLp h) (c • Lp.normLp k),
+          Lp.coeFn_add (a • Lp.normLp g) (b • Lp.normLp h),
+          Lp.coeFn_smul a (Lp.normLp g), Lp.coeFn_smul b (Lp.normLp h),
+          Lp.coeFn_smul c (Lp.normLp k)]
+          with z hz hA hB hC hadd₁ hadd₂ hsA hsB hsC
+        simp only [hadd₁, Pi.add_apply, hadd₂, hsA, hsB, hsC, Pi.smul_apply, smul_eq_mul, hA, hB,
+          hC]
+        exact hz.trans (Real.le_norm_self _)
+    _ ≤ ‖a • Lp.normLp g‖ + ‖b • Lp.normLp h‖ + ‖c • Lp.normLp k‖ := norm_add₃_le
+    _ = a * ‖g‖ + b * ‖h‖ + c * ‖k‖ := by
+        simp only [norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb,
+          Real.norm_of_nonneg hc, Lp.norm_normLp]
+
 /-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
 `Lᵖ` functions obeys the same bound in norm. -/
 theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alpha]
@@ -251,17 +289,8 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
     (ha : 0 ≤ a) (hb : 0 ≤ b)
     (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
     ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
-  calc ‖f‖ ≤ ‖a • Lp.normLp g + b • Lp.normLp h‖ := by
-        refine Lp.norm_le_norm_of_ae_le ?_
-        filter_upwards [hle, Lp.coeFn_normLp g, Lp.coeFn_normLp h,
-          Lp.coeFn_add (a • Lp.normLp g) (b • Lp.normLp h),
-          Lp.coeFn_smul a (Lp.normLp g), Lp.coeFn_smul b (Lp.normLp h)]
-          with z hz hA hB hadd hsA hsB
-        simp only [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, smul_eq_mul, hA, hB]
-        exact hz.trans (Real.le_norm_self _)
-    _ ≤ ‖a • Lp.normLp g‖ + ‖b • Lp.normLp h‖ := norm_add_le _ _
-    _ = a * ‖g‖ + b * ‖h‖ := by
-        simp only [norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, Lp.norm_normLp]
+  simpa using Lp.norm_le_add_add_of_ae_norm_le ha hb le_rfl (k := (0 : Lp ℝ q m))
+    (hle.mono fun z hz ↦ by simpa using hz)
 
 /-- The `Lᵖ` norm of a function depends only on its almost everywhere class. -/
 theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
@@ -291,6 +320,26 @@ theorem Lp.norm_eq_lpNorm_of_restrict_coe_opens_top {alpha F : Type*} [Measurabl
     ‖f‖ = lpNorm f p ν :=
   (Lp.norm_eq_lpNorm_of_ae_eq EventuallyEq.rfl).trans
     (congrArg (lpNorm f p) (Measure.restrict_coe_opens_top ν))
+
+/-- The `eLpNorm` of a function for the restriction of a measure to the whole space, written as the
+top open set, is its `eLpNorm` for the measure itself. Unlike a rewrite with
+`Measure.restrict_coe_opens_top`, rewriting with this changes the measure only in the `eLpNorm`,
+not in the types of `Lᵖ` classes that the function mentions. -/
+theorem eLpNorm_restrict_coe_opens_top {alpha F : Type*} [MeasurableSpace alpha]
+    [TopologicalSpace alpha] [NormedAddCommGroup F] (ν : Measure alpha) {f : alpha → F}
+    {p : ℝ≥0∞} :
+    eLpNorm f p (ν.restrict ((⊤ : TopologicalSpace.Opens alpha) : Set alpha)) = eLpNorm f p ν := by
+  rw [Measure.restrict_coe_opens_top]
+
+/-- The integral of a function for the restriction of a measure to the whole space, written as the
+top open set, is its integral for the measure itself. As for `eLpNorm_restrict_coe_opens_top`,
+rewriting with this does not change the measure in the types of `Lᵖ` classes that the integrand
+mentions. -/
+theorem integral_restrict_coe_opens_top {alpha G : Type*} [MeasurableSpace alpha]
+    [TopologicalSpace alpha] [NormedAddCommGroup G] [NormedSpace ℝ G] (ν : Measure alpha)
+    {f : alpha → G} :
+    ∫ x, f x ∂ν.restrict ((⊤ : TopologicalSpace.Opens alpha) : Set alpha) = ∫ x, f x ∂ν := by
+  rw [Measure.restrict_coe_opens_top]
 
 /-- The `Lᵖ(ν)` norm of a function agreeing `ν`-almost everywhere with an element of `Lᵖ(ν')`, for
 `ν ≤ ν'`, is at most the norm of that element. -/
@@ -327,6 +376,16 @@ theorem Lp.norm_toLp_memLp_top_const_le {alpha F : Type*} [MeasurableSpace alpha
   refine Lp.norm_le_of_ae_bound_top (norm_nonneg c) ?_
   filter_upwards [(memLp_top_const (μ := m) c).coeFn_toLp] with x hx
   rw [hx]
+
+/-- The `L∞` distance of two classes is at most any almost everywhere bound of the pointwise
+distance. -/
+theorem Lp.dist_le_of_ae_dist_le_top {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} {f g : Lp F ∞ m} {δ : ℝ} (hδ : 0 ≤ δ)
+    (h : ∀ᵐ x ∂m, dist (f x) (g x) ≤ δ) : dist f g ≤ δ := by
+  rw [_root_.dist_eq_norm]
+  refine Lp.norm_le_of_ae_bound_top hδ ?_
+  filter_upwards [Lp.coeFn_sub f g, h] with x hx h
+  rwa [hx, Pi.sub_apply, ← _root_.dist_eq_norm]
 
 /-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
 `[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/
@@ -371,6 +430,22 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- For `0 < p < ∞`, the `p`-th power of the extended norm of an `Lᵖ` function is the lower
+integral of the `p`-th power of its pointwise extended norm. -/
+theorem Lp.eNorm_rpow_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (f : Lp F p m) :
+    ‖f‖ₑ ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
+  rw [Lp.eNorm_def, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp (Lp.aestronglyMeasurable f)]
+
+/-- The squared extended norm of an `L²` function is the lower integral of its squared pointwise
+extended norm. -/
+theorem Lp.eNorm_rpow_two_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :
+    ‖f‖ₑ ^ (2 : ℝ) = ∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂m := by
+  simpa only [ENNReal.toReal_ofNat] using
+    Lp.eNorm_rpow_eq_lintegral two_ne_zero ENNReal.ofNat_ne_top f
 
 /-- **Cauchy–Schwarz for `L²` functions.** For `f, g ∈ L²`, possibly with different codomains,
 `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂`. -/
@@ -602,6 +677,19 @@ theorem MemLp.norm_toLp_le_of_eLpNorm_le {α E F : Type*} [MeasurableSpace α]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
     ((eLpNorm_congr_ae hv).trans_ne (Lp.eLpNorm_ne_top v))) h
 
+/-- A bound `‖g‖_p ≤ K ‖f‖_p` with `‖f‖_p ≤ N` puts `g` in `Lᵖ`, with `‖g‖_p ≤ K N` as a real
+number. -/
+theorem memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul {α ε ε' : Type*} [MeasurableSpace α]
+    [TopologicalSpace ε] [ENorm ε] [TopologicalSpace ε'] [ENorm ε'] {μ : Measure α} {p : ℝ≥0∞}
+    {g : α → ε} {f : α → ε'} {K : ℝ≥0} {N : ℝ} (hN : 0 ≤ N)
+    (hgf : eLpNorm g p μ ≤ K * eLpNorm f p μ) (hf : eLpNorm f p μ ≤ ENNReal.ofReal N) :
+    MemLp g p μ ∧ (eLpNorm g p μ).toReal ≤ K * N := by
+  have h : eLpNorm g p μ ≤ ENNReal.ofReal (K * N) := by
+    rw [ENNReal.ofReal_mul K.coe_nonneg, ENNReal.ofReal_coe_nnreal]
+    exact hgf.trans (by gcongr)
+  exact ⟨memLp_iff.2 (h.trans_lt ENNReal.ofReal_lt_top),
+    ENNReal.toReal_le_of_le_ofReal (by positivity) h⟩
+
 section Restrict
 
 variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
@@ -701,6 +789,23 @@ theorem Lp.norm_le_mul_norm_of_ae_eq_smul {𝕜 : Type*} [SeminormedAddGroup �
   filter_upwards [hv, hC] with x hx hCx
   rw [hx]
   exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right hCx (norm_nonneg _))
+
+/-- **Weighted seminorms are subadditive on `Lᵖ`.** For any weight `w` and `1 ≤ p`, the classes
+`g, h ∈ Lᵖ` satisfy `‖w (g + h)‖_p ≤ ‖w g‖_p + ‖w h‖_p`, where either side may be infinite. -/
+theorem Lp.eLpNorm_smul_add_le {R : Type*} [Monoid R] [DistribMulAction R F] {p : ℝ≥0∞}
+    (hp : 1 ≤ p) (w : X → R) (g h : Lp F p μ) :
+    eLpNorm (fun x ↦ w x • (g + h) x) p μ ≤
+      eLpNorm (fun x ↦ w x • g x) p μ + eLpNorm (fun x ↦ w x • h x) p μ := by
+  rw [eLpNorm_congr_ae ((Lp.coeFn_add g h).mono fun x hx ↦ by rw [hx, Pi.add_apply, smul_add])]
+  exact eLpNorm_add_le hp
+
+/-- **Weighted seminorms are invariant under negation on `Lᵖ`.** For any weight `w`, the class
+`g ∈ Lᵖ` satisfies `‖w (-g)‖_p = ‖w g‖_p`. -/
+theorem Lp.eLpNorm_smul_neg {R : Type*} [Monoid R] [DistribMulAction R F] {p : ℝ≥0∞}
+    (w : X → R) (g : Lp F p μ) :
+    eLpNorm (fun x ↦ w x • (-g) x) p μ = eLpNorm (fun x ↦ w x • g x) p μ := by
+  rw [eLpNorm_congr_ae ((Lp.coeFn_neg g).mono fun x hx ↦ by rw [hx, Pi.neg_apply, smul_neg])]
+  exact eLpNorm_neg (fun x ↦ w x • g x) p μ
 
 end Smul
 

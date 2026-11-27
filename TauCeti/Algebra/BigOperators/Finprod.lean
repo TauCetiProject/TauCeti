@@ -28,7 +28,8 @@ ray `{i} × ℕ` to its starting values. Shifting the index of an alternating pr
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
 On pairwise disjoint sets, a product of indicators glues different functions on the pieces.
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
-function, is a finite sum over the support of the weights.
+function, is a finite sum over the support of the weights, and it cancels against its shift by
+`r` when the weights change sign under that shift.
 A product over a finset is compared with the `finprod` of a finitely supported family whose
 factors off the finset are all at least `1`, or all at most `1`. A `finsum` whose terms are fixed by
 multiplication by an element is fixed by it. Over a ring with no zero divisors, a product of two
@@ -44,6 +45,8 @@ by a left-regular element commutes with `finsum` even when the support is infini
 * `TauCeti.hasFiniteMulSupport_sum_type`: a family on `α ⊕ β` has finite multiplicative support as
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
+* `TauCeti.finprod_eq_prod_mul_finprod_compl`: a finitely supported product splits at a finset as
+  the product over the finset times the product over its complement.
 * `TauCeti.exists_ne_one_of_finprod_ne_one`, `TauCeti.exists_ne_zero_of_finsum_ne_zero`: a
   product that is not `1` has a factor that is not `1`, and likewise for sums.
 * `TauCeti.finprod_comp_eq_of_injective` and `TauCeti.finsum_comp_eq_of_injective`: reindex
@@ -77,6 +80,8 @@ by a left-regular element commutes with `finsum` even when the support is infini
   finite sum over the support of the weights.
 * `TauCeti.finsum_smul_inv_smul`: translating the point of a sum weighted by the translates of a
   function translates the summation variable.
+* `TauCeti.finsum_smul_add_finsum_comp_add_right_smul_eq_zero`: a finitely supported weighted
+  sum cancels against its shift by `r` when the weights change sign under that shift.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
@@ -95,6 +100,8 @@ by a left-regular element commutes with `finsum` even when the support is infini
 * `Set.exists_finprod_mem_comp_eq_multiset_prod_map` and
   `Set.exists_finsum_mem_comp_eq_multiset_sum_map`: for any set `s`, `∏ᶠ x ∈ s, g (f x)` (or
   `∑ᶠ x ∈ s, g (f x)`) equals `(m.map g).prod` (or `(m.map g).sum`) for some multiset `m`.
+* `Set.finprod_mem_const` and `Set.finsum_mem_const`: the product of a constant `c` over any set
+  `s` is `c ^ s.ncard`, and the sum is `s.ncard • c`.
 -/
 
 public section
@@ -153,6 +160,19 @@ theorem finprod_sum_type (f : α ⊕ β → M) (hl : HasFiniteMulSupport (f ∘ 
   rw [← finprod_mem_univ, ← range_inl_union_range_inr,
     finprod_mem_union' isCompl_range_inl_range_inr.disjoint hfl hfr,
     finprod_mem_range Sum.inl_injective, finprod_mem_range Sum.inr_injective]
+
+/-- A finitely supported product splits at a finset `T` as the product over `T` times the
+product over the complement of `T`. -/
+@[to_additive /-- A finitely supported sum splits at a finset `T` as the sum over `T` plus the
+sum over the complement of `T`. -/]
+theorem finprod_eq_prod_mul_finprod_compl {ι : Type*} {f : ι → M} (hf : HasFiniteMulSupport f)
+    (T : Finset ι) :
+    ∏ᶠ i, f i = (∏ i : T, f i.val) * ∏ᶠ i : {i // i ∉ T}, f i.val := by
+  classical
+  rw [← finprod_comp_equiv (Equiv.sumCompl fun i ↦ i ∈ T),
+    finprod_sum_type (fun j ↦ f (Equiv.sumCompl (fun i ↦ i ∈ T) j)) (Set.toFinite _)
+      (hf.preimage Subtype.val_injective.injOn), finprod_eq_prod_of_fintype]
+  simp
 
 /-- If a product is not `1`, then one of its factors is not `1`. This is the case `s = univ` of
 `exists_ne_one_of_finprod_mem_ne_one`. -/
@@ -363,6 +383,23 @@ theorem finsum_smul_inv_smul {G X R V : Type*} [Group G] [MulAction G X] [AddCom
   rw [← finsum_comp_equiv (Equiv.mulRight a)]
   simp [mul_smul]
 
+/-- A sum weighted by a finitely supported family of scalars `b` cancels against its shift by `r`
+when the weights `w` change sign under that shift: `∑ᶠ p, b p • w p + ∑ᶠ p, b (p + r) • w p = 0`.
+-/
+theorem finsum_smul_add_finsum_comp_add_right_smul_eq_zero {ι R A : Type*} [AddGroup ι]
+    [Semiring R] [AddCommGroup A] [Module R A] {b : ι → R} (hb : HasFiniteSupport b) {r : ι}
+    {w : ι → A} (hw : ∀ p, w (p + r) = -w p) :
+    ∑ᶠ p, b p • w p + ∑ᶠ p, b (p + r) • w p = 0 := by
+  have hfin : ∀ u : ι → A, HasFiniteSupport fun p ↦ b p • u p := fun u ↦
+    hb.subset fun p hp h0 ↦ hp (by simp [h0])
+  rw [← finsum_comp_equiv (Equiv.subRight r) (f := fun p ↦ b (p + r) • w p)]
+  simp only [Equiv.subRight_apply, sub_add_cancel]
+  rw [← finsum_add_distrib (hfin _) (hfin _)]
+  refine finsum_eq_zero_of_forall_eq_zero fun q ↦ ?_
+  have hq := hw (q - r)
+  rw [sub_add_cancel] at hq
+  rw [← smul_add, hq, neg_add_cancel, smul_zero]
+
 end WeightedSum
 
 section FixedByMul
@@ -499,5 +536,18 @@ theorem exists_finprod_mem_comp_eq_multiset_prod_map {α β M : Type*} [CommMono
   · exact ⟨ht.toFinset.val.map f, by
       rw [← finprod_mem_inter_mulSupport, ht.finprod_mem_comp_eq_multiset_prod_map]⟩
   · exact ⟨0, by rw [finprod_mem_eq_one_of_infinite ht, Multiset.map_zero, Multiset.prod_zero]⟩
+
+/-- The product of a constant `c` over a set `s` is `c ^ s.ncard`. For infinite `s` both sides are
+`1`, since `s.ncard = 0`. -/
+@[to_additive (attr := simp) /-- The sum of a constant `c` over a set `s` is `s.ncard • c`. For
+infinite `s` both sides are `0`, since `s.ncard = 0`. -/]
+theorem finprod_mem_const {α M : Type*} [CommMonoid M] (s : Set α) (c : M) :
+    ∏ᶠ _ ∈ s, c = c ^ s.ncard := by
+  by_cases hs : s.Finite
+  · rw [finprod_mem_eq_finite_toFinset_prod _ hs, Finset.prod_const, ncard_eq_toFinset_card _ hs]
+  rw [Infinite.ncard hs, pow_zero]
+  by_cases hc : c = 1
+  · simp [hc]
+  exact finprod_mem_eq_one_of_infinite <| by simpa [Function.mulSupport_const hc] using hs
 
 end Set
