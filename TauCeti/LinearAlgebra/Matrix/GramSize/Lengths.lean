@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Star.SelfAdjoint
 import TauCeti.LinearAlgebra.Matrix.DotProduct
-import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # Lengths of vectors at points of a unitary group, and their comparison at two points
@@ -297,8 +296,7 @@ theorem LengthsDifferLe.of_succ (hJ : J.IsHermitian) (hg : g ∈ unitaryGroupOf 
     intro b hb
     rcases Nat.lt_succ_iff_lt_or_eq.mp hb with hb | rfl
     · simp [hω₀, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, hω b hb, hζ b hb]
-    · simpa only [Function.comp_def, RingHom.id_apply, Pi.star_def, one_mul, hω₀, lam] using
-        comp_dotProduct_mulVec_sub_smul_eq_zero (σ := RingHom.id A) (by simp) hζa ω
+    · simp [hω₀, lam, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, hζa]
   obtain ⟨ω₀', hω₀ω₀', hD₂⟩ := ht (i + 2 * c + 4) ω₀ hω₀orth hω₀g
   have hIio : e '' Set.Iio (a + 1) = insert (e a) (e '' Set.Iio a) := by
     rw [← Set.image_insert_eq, ← Order.succ_eq_add_one, Order.Iio_succ_eq_insert]
