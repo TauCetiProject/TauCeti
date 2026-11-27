@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
 public import Mathlib.RingTheory.Finiteness.Defs
+public import TauCeti.RingTheory.MvPowerSeries.NormCoeff
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.MvPolynomial.Basic
@@ -249,12 +250,6 @@ theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : T
       exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw t)
     _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
     _ = ε := add_halves ε
-
-omit hc in
-/-- The weights of exponents are multiplicative. -/
-theorem prod_pow_add (s t : σ →₀ ℕ) :
-    (s + t).prod (c · ^ ·) = s.prod (c · ^ ·) * t.prod (c · ^ ·) :=
-  Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _
 
 /-- At positive polyradii the restricted-series subring carries its Gauss norm. -/
 noncomputable instance instNormedRingIsRestrictedSubring :

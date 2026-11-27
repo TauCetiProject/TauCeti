@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.Billiard.PolygonalTable
 public import TauCeti.Dynamics.Billiard.SideReflection
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Dynamics.Billiard.PolygonalTable.Frontier
 
 /-!
 # The phase space of a polygonal billiard table
@@ -28,8 +29,15 @@ quotient σ-algebra.
 * `TauCeti.PolygonalTable.encard_setOf_mk_eq_le_two`: every class has at most two points.
 * `TauCeti.PolygonalTable.PhaseSpace.flip`: the time reversal `J(x, v) = (x, -v)` descends to
   the phase space, because `σ_S (-v) = -σ_S v`; it is a continuous and measurable involution.
+* `TauCeti.PolygonalTable.PhaseSpace.position`: the position of a state, well defined because
+  identified states have the same position.
 * `TauCeti.PolygonalTable.liouville`: the Liouville probability measure `μ_P`, the image of
   `(2π area P)⁻¹ Leb_P ⊗ dθ` (`TauCeti.circleArcLength`).
+* `TauCeti.PolygonalTable.liouville_setOf_position_mem_eq_zero`: the states whose position lies
+  in a Lebesgue-null set form a `μ_P`-null set.
+* `TauCeti.PolygonalTable.liouville_setOf_position_mem_frontier_eq_zero`: the states whose
+  position lies on the frontier of the table form a `μ_P`-null set, since the frontier is
+  Lebesgue-null (`TauCeti.PolygonalTable.volume_frontier_carrier`).
 
 ## References
 
@@ -225,6 +233,31 @@ theorem PhaseSpace.measurable_flip : Measurable (PhaseSpace.flip (T := T)) :=
   measurable_from_quotient.2 <|
     PhaseSpace.measurable_mk.comp (continuous_fst.prodMk continuous_snd.neg).measurable
 
+/-- The position of a state of the phase space: identified states have the same position. -/
+def PhaseSpace.position : T.PhaseSpace → T.carrier :=
+  PhaseSpace.lift Prod.fst fun _ _ h => by
+    rcases h with rfl | ⟨h, -⟩
+    · rfl
+    · exact h
+
+@[simp]
+theorem PhaseSpace.position_mk (p : T.carrier × Circle) :
+    PhaseSpace.position (PhaseSpace.mk p) = p.1 :=
+  (rfl)
+
+/-- Time reversal does not move the position of a state. -/
+@[simp]
+theorem PhaseSpace.position_flip (z : T.PhaseSpace) :
+    PhaseSpace.position (PhaseSpace.flip z) = PhaseSpace.position z := by
+  induction z using PhaseSpace.ind
+  simp
+
+theorem PhaseSpace.continuous_position : Continuous (PhaseSpace.position (T := T)) :=
+  PhaseSpace.continuous_lift continuous_fst
+
+theorem PhaseSpace.measurable_position : Measurable (PhaseSpace.position (T := T)) :=
+  PhaseSpace.measurable_lift measurable_fst
+
 variable (T)
 
 /-- **The Liouville probability measure** `μ_P` on the phase space: the image of the normalised
@@ -266,6 +299,32 @@ instance : IsProbabilityMeasure T.liouville := by
   exact ENNReal.inv_mul_cancel
     (mul_ne_zero (ENNReal.ofReal_pos.2 Real.two_pi_pos).ne' T.volume_carrier_pos.ne')
     (ENNReal.mul_ne_top ENNReal.ofReal_ne_top T.volume_carrier_lt_top.ne)
+
+/-- The states of the phase space whose position lies in a Lebesgue-null set of positions form a
+`μ_P`-null set. -/
+theorem liouville_setOf_position_mem_eq_zero {s : Set ℂ} (hs : volume s = 0) :
+    T.liouville {z | (PhaseSpace.position z : ℂ) ∈ s} = 0 := by
+  set t := toMeasurable volume s
+  have ht : volume.comap ((↑) : T.carrier → ℂ) ((↑) ⁻¹' t) = 0 := by
+    rw [comap_subtypeVal_apply T.isClosed_carrier.measurableSet]
+    exact measure_mono_null (image_preimage_subset _ _) (by rwa [measure_toMeasurable])
+  set F := {z : T.PhaseSpace | (PhaseSpace.position z : ℂ) ∈ t}
+  have hm : MeasurableSet F :=
+    (measurable_subtypeVal.comp PhaseSpace.measurable_position) (measurableSet_toMeasurable _ _)
+  have hpre : PhaseSpace.mk ⁻¹' F = ((↑) ⁻¹' t : Set T.carrier) ×ˢ univ := by
+    ext p
+    simp [F]
+  have hsub : {z : T.PhaseSpace | (PhaseSpace.position z : ℂ) ∈ s} ⊆ F := fun _ hz =>
+    subset_toMeasurable volume s hz
+  refine measure_mono_null hsub ?_
+  rw [liouville_apply T hm, hpre, Measure.prod_prod, ht]
+  simp
+
+/-- **The frontier states are null**: the states of the phase space whose position lies on the
+frontier of the table form a `μ_P`-null set, because the frontier is Lebesgue-null. -/
+theorem liouville_setOf_position_mem_frontier_eq_zero :
+    T.liouville {z | (PhaseSpace.position z : ℂ) ∈ frontier T.carrier} = 0 :=
+  T.liouville_setOf_position_mem_eq_zero T.volume_frontier_carrier
 
 end PolygonalTable
 

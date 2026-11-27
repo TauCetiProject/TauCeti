@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Structure
+import TauCeti.Algebra.Coalgebra.Subcoalgebra.Map
+import TauCeti.Algebra.HopfAlgebra.Basic
 import TauCeti.Algebra.HopfAlgebra.TensorShear
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.Flat.TensorProduct
@@ -51,6 +53,7 @@ and the antipode is read off from its inverse.
 
 * `Subalgebra.IsHopfSubalgebra`: a subalgebra stable under comultiplication and the
   antipode.
+* `Subalgebra.IsHopfSubalgebra.map`: the image of a Hopf subalgebra under a bialgebra morphism.
 * `Subalgebra.IsHopfSubalgebra.hopfAlgebra`: the restricted Hopf algebra structure, under
   flatness.
 * `Subalgebra.IsHopfSubalgebra.of_finiteDimensional`: over a field, a finite-dimensional
@@ -97,6 +100,16 @@ include hA
 abbrev toSubcoalgebra : TauCeti.Subcoalgebra R H where
   carrier := toSubmodule A
   comul_mem' := hA.comul_mem
+
+/-- **The image of a Hopf subalgebra is a Hopf subalgebra.** A bialgebra morphism of Hopf algebras
+maps a Hopf subalgebra onto a Hopf subalgebra. -/
+theorem map {K : Type*} [Semiring K] [HopfAlgebra R K] (f : H →ₐc[R] K) :
+    (A.map (f : H →ₐ[R] K)).IsHopfSubalgebra where
+  -- Both underlying submodules of the image are, by definition, the image of `toSubmodule A`.
+  comul_mem _ hx := (hA.toSubcoalgebra.map (f : H →ₗc[R] K)).comul_mem hx
+  antipode_mem := by
+    rintro _ ⟨a, ha, rfl⟩
+    exact ⟨_, hA.antipode_mem ha, BialgHomClass.map_antipode f a⟩
 
 variable [Module.Flat R H] [Module.Flat R A]
 

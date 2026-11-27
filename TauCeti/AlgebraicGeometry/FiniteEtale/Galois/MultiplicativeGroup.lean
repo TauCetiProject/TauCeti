@@ -29,7 +29,8 @@ groups (`TauCeti.FiniteEtaleScheme.multiplicativeGroupAutFiberContinuousMulEquiv
 
 Building on the general affine-base Kummer monodromy construction in
 `TauCeti/AlgebraicGeometry/FiniteEtale/Galois/Kummer.lean` (`kummerMonodromyLevel`,
-`kummerMonodromy`, `kummerCoverFiberEquivRootsOfUnity_smul`, `card_kummerCoverFiber`), the
+`kummerMonodromy`, `kummerCoverFiberEquivRootsOfUnity_smul`) and on the fibre count
+`card_kummerCoverFiber` of `TauCeti/AlgebraicGeometry/FiniteEtale/Kummer.lean`, the
 identification proceeds in two stages so that each hypothesis enters only where needed:
 
 * **The multiplicative group in arbitrary characteristic.** For `R = K[T, T⁻¹]` and `t = T` over a
@@ -175,7 +176,6 @@ theorem card_multiplicativeGroupPowerCoverFiber (Ω : Type u) [Field Ω] [IsSepC
       (kummerCover (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) n hn)) = n :=
   letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
   card_kummerCoverFiber (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) Ω n hn
-    (laurentEval_genericUnit (R := K) (1 : Ωˣ))
 
 end CommRing
 
@@ -211,7 +211,6 @@ noncomputable def multiplicativeGroupPrimeToPMonodromy (p : ℕ) [ExpChar K p] :
     Aut (fiber (multiplicativeGroupOnePoint K K)) →ₜ* PrimeToPTateModule p K :=
   letI : Algebra K[T;T⁻¹] K := (laurentEval (R := K) (1 : Kˣ)).toRingHom.toAlgebra
   kummerMonodromy (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
-    (laurentEval_genericUnit (R := K) (1 : Kˣ))
     (fun m ↦ LaurentPolynomial.isUnit_natCast_of_coprime m.property.1 m.property.2)
     fun m ↦ restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m
 
@@ -226,7 +225,6 @@ theorem proj_multiplicativeGroupPrimeToPMonodromy (p : ℕ) [ExpChar K p]
         (σ • (multiplicativeGroupPowerCoverFiberEquiv K K m hn).symm 1) := by
   let _ : Algebra K[T;T⁻¹] K := (laurentEval (R := K) (1 : Kˣ)).toRingHom.toAlgebra
   exact (proj_kummerMonodromy (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
-    (laurentEval_genericUnit (R := K) (1 : Kˣ))
     (fun m ↦ LaurentPolynomial.isUnit_natCast_of_coprime m.property.1 m.property.2)
     (fun m ↦ restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m) m σ).trans
     (kummerMonodromyLevel_apply (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K m hn
@@ -252,7 +250,6 @@ theorem multiplicativeGroupPowerCoverFiberEquiv_smul (p : ℕ) [ExpChar K p]
     (restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m) σ y).trans ?_
   exact congrArg (· * multiplicativeGroupPowerCoverFiberEquiv K K m hn y)
     (proj_kummerMonodromy (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
-      (laurentEval_genericUnit (R := K) (1 : Kˣ))
       (fun m ↦ LaurentPolynomial.isUnit_natCast_of_coprime m.property.1 m.property.2)
       (fun m ↦ restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m) m σ).symm
 
@@ -262,7 +259,6 @@ theorem multiplicativeGroupPrimeToPMonodromy_surjective (p : ℕ) [ExpChar K p] 
     Function.Surjective (multiplicativeGroupPrimeToPMonodromy K p) := by
   let _ : Algebra K[T;T⁻¹] K := (laurentEval (R := K) (1 : Kˣ)).toRingHom.toAlgebra
   exact kummerMonodromy_surjective (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
-    (laurentEval_genericUnit (R := K) (1 : Kˣ))
     (fun m ↦ LaurentPolynomial.isUnit_natCast_of_coprime m.property.1 m.property.2)
     (fun m ↦ restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m)
     fun m ↦ inferInstance

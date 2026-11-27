@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.Algebra.DirectSum.Algebra
+public import TauCeti.Algebra.DirectSum.Ring
 
 /-!
 # Graded rings from homogeneous multiplications of modules
@@ -106,26 +107,18 @@ graded unit and associativity laws. The product of `a : M i` and `b : M j` is
 `mul i j (a ⊗ₜ b)` and the unit is `one 1`. -/
 @[expose, instance_reducible]
 def gRingOfHomogeneous : DirectSum.GRing (fun i ↦ M i) :=
-  letI : GradedMonoid.GMul (fun i ↦ M i) := ⟨fun a b ↦ (mul _ _).hom (a ⊗ₜ b)⟩
-  letI : GradedMonoid.GOne (fun i ↦ M i) := ⟨one.hom 1⟩
-  { mul_zero a := (congrArg (mul _ _).hom (TensorProduct.tmul_zero _ a)).trans (map_zero _)
-    zero_mul b := (congrArg (mul _ _).hom (TensorProduct.zero_tmul _ b)).trans (map_zero _)
-    mul_add a b c := (congrArg (mul _ _).hom (TensorProduct.tmul_add a b c)).trans (map_add _ _ _)
-    add_mul a b c := (congrArg (mul _ _).hom (TensorProduct.add_tmul a b c)).trans (map_add _ _ _)
-    one_mul a := (gradedMonoid_mk_mul_one_hom_tmul one_mul 1 a.2).trans
-      (congrArg (GradedMonoid.mk _) (one_smul R a.2))
-    mul_one a := (gradedMonoid_mk_mul_tmul_one_hom mul_one 1 a.2).trans
-      (congrArg (GradedMonoid.mk _) (one_smul R a.2))
-    mul_assoc a b c :=
+  TauCeti.DirectSum.gRingOfMul
+    (fun i j ↦ LinearMap.toAddMonoidHom'.comp
+      ((TensorProduct.mk R (M i) (M j)).compr₂ (mul i j).hom).toAddMonoidHom)
+    (one.hom 1)
+    (fun a ↦ (gradedMonoid_mk_mul_one_hom_tmul one_mul 1 a).trans
+      (congrArg (GradedMonoid.mk _) (one_smul R a)))
+    (fun a ↦ (gradedMonoid_mk_mul_tmul_one_hom mul_one 1 a).trans
+      (congrArg (GradedMonoid.mk _) (one_smul R a)))
+    (fun {i j k} a b c ↦
       (congrArg (GradedMonoid.mk (A := fun i ↦ M i) _)
-        congr($(ModuleCat.hom_ext_iff.mp (mul_assoc a.1 b.1 c.1)) (a.2 ⊗ₜ b.2 ⊗ₜ c.2))).trans
-        (gradedMonoid_mk_eqToHom_hom M (add_assoc a.1 b.1 c.1).symm _)
-    natCast n := n • one.hom 1
-    natCast_zero := zero_smul _ _
-    natCast_succ n := succ_nsmul _ n
-    intCast n := n • one.hom 1
-    intCast_ofNat n := natCast_zsmul _ n
-    intCast_negSucc_ofNat n := negSucc_zsmul _ n }
+        congr($(ModuleCat.hom_ext_iff.mp (mul_assoc i j k)) (a ⊗ₜ b ⊗ₜ c))).trans
+        (gradedMonoid_mk_eqToHom_hom M (add_assoc i j k).symm _))
 
 /-- In `gRingOfHomogeneous`, the product of homogeneous elements is the given homogeneous
 multiplication applied to their tensor product. -/

@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.GroupTheory.Index
 -- `Matrix.GeneralLinearGroup.map_surjective` lifts invertible matrices modulo `I`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
+-- `TauCeti.parahoricSubgroup` gives the general parahoric congruence subgroup.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 -- `TauCeti.UpperTriangularGroup.map_surjective` lifts invertible upper-triangular matrices.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Lift
 
@@ -103,6 +105,13 @@ theorem mem_upperTriangularCongruenceSubgroup_iff {g : GL m R} :
   simp only [← map_mem_upperTriangularGroup_iff, UpperTriangularGroup.mem_iff,
     Matrix.IsUpperTriangular, Matrix.BlockTriangular, id, GeneralLinearGroup.map_apply,
     Ideal.Quotient.eq_zero_iff_mem]
+
+/-- The upper-triangular congruence subgroup modulo `I` coincides with `parahoricSubgroup` for the
+dual order `OrderDual.toDual : m → mᵒᵈ`. -/
+theorem parahoricSubgroup_toDual_eq_upperTriangularCongruenceSubgroup (I : Ideal R) :
+    parahoricSubgroup (OrderDual.toDual : m → mᵒᵈ) I = upperTriangularCongruenceSubgroup m I := by
+  ext g
+  simp [mem_parahoricSubgroup, mem_upperTriangularCongruenceSubgroup_iff]
 
 /-- Membership in the upper-unitriangular congruence subgroup modulo `I`: every entry below the
 diagonal lies in `I`, and every diagonal entry is congruent to `1` modulo `I`. -/
