@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RankOne
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -46,8 +47,8 @@ the Gram matrix `!![2a, b; b, 2c]` of a binary form this is `b² - 4ac ≡ b² (
   diagonal over a field has square determinant.
 * `Matrix.isSquare_det_of_transpose_eq_neg`: a skew-symmetric integer matrix has square
   determinant.
-* `Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg`: for a `2 × 2` skew-symmetric matrix
-  `S` with zero diagonal, `M S Mᵀ = det M • S`.
+* `Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg_of_diag_eq_zero`: for a `2 × 2`
+  skew-symmetric matrix `S` with zero diagonal, `M S Mᵀ = det M • S`.
 * `Matrix.four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose`: in dimension `2k`,
   `(-1)^k det (S + Sᵀ) ≡ det (S - Sᵀ)` modulo `4`.
 * `Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`: for a symmetric integer matrix `A` of
@@ -102,17 +103,18 @@ theorem isSquare_det_of_transpose_eq_neg {M : Matrix ι ι ℤ} (hM : Mᵀ = -M)
     (transpose_map_of_transpose_eq_neg (Int.castRingHom ℚ) hM) (by simp [hd])
 
 /-- **Congruence of a `2 × 2` skew-symmetric matrix multiplies it by the determinant.** For a
-skew-symmetric matrix `S` with zero diagonal and any `M`, `M S Mᵀ = det M • S`: the only entry of
-`S` is its Pfaffian `S 0 1`, and `Pf(M S Mᵀ) = det M Pf(S)`. -/
-theorem mul_mul_transpose_eq_det_smul_of_transpose_eq_neg {R : Type*} [CommRing R]
-    (M : Matrix (Fin 2) (Fin 2) R) {S : Matrix (Fin 2) (Fin 2) R} (hS : Sᵀ = -S)
+skew-symmetric matrix `S` with zero diagonal and any `M`, `M S Mᵀ = det M • S`: `S` is a multiple
+of the standard alternating form `JFin 1`, for which this is
+`TauCeti.mul_JFin_one_mul_transpose_eq_det_smul`. -/
+theorem mul_mul_transpose_eq_det_smul_of_transpose_eq_neg_of_diag_eq_zero {R : Type*}
+    [CommRing R] (M : Matrix (Fin 2) (Fin 2) R) {S : Matrix (Fin 2) (Fin 2) R} (hS : Sᵀ = -S)
     (hd : ∀ i, S i i = 0) : M * S * Mᵀ = M.det • S := by
-  have h10 : S 1 0 = -S 0 1 := by simpa using congrFun (congrFun hS 0) 1
-  have h00 := hd 0
-  have h11 := hd 1
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, det_fin_two, h00, h11, h10] <;> ring
+  have hJ : S = S 1 0 • TauCeti.JFin 1 R := by
+    have h01 : S 0 1 = -S 1 0 := by simpa using congrFun (congrFun hS 1) 0
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [TauCeti.JFin_one_eq, hd, h01]
+  rw [hJ, Matrix.mul_smul, Matrix.smul_mul,
+    TauCeti.mul_JFin_one_mul_transpose_eq_det_smul, smul_comm]
 
 /-! ### The determinant of `S + Sᵀ` modulo `4` -/
 

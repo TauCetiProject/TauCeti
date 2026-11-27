@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.InnerProductSpace.Orientation
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.StrictCauchySchwarz
 import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.Skew
@@ -46,9 +47,9 @@ the oriented angle and the rotations of an oriented plane in a complex coordinat
 Congruence by an operator `T` multiplies a skew-adjoint operator `A` of a Euclidean plane by the
 determinant, `T A T⋆ = det T • A` (`ContinuousLinearMap.mul_mul_star_eq_det_smul`). In an
 orthonormal basis this is the identity `M S Mᵀ = det M • S` for `2 × 2` skew-symmetric matrices
-(`Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg`). So an orthogonal transformation
-commutes with every skew-adjoint operator when it preserves the orientation and anticommutes with
-it when it reverses the orientation.
+(`Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg_of_diag_eq_zero`). So an orthogonal
+transformation commutes with every skew-adjoint operator when it preserves the orientation and
+anticommutes with it when it reverses the orientation.
 -/
 
 public section
@@ -211,17 +212,15 @@ theorem mul_mul_star_eq_det_smul (hE : Module.finrank ℝ E = 2) {A : E →L[ℝ
   -- `LinearMap.toMatrixOrthonormal`, where `A` becomes a skew-symmetric `2 × 2` matrix.
   let b : OrthonormalBasis (Fin 2) ℝ E := (stdOrthonormalBasis ℝ E).reindex (finCongr hE)
   let φ := LinearMap.toMatrixOrthonormal b
-  have hstar (B : E →L[ℝ] E) : ((star B : E →L[ℝ] E) : E →ₗ[ℝ] E) = star (B : E →ₗ[ℝ] E) := by
-    rw [LinearMap.star_eq_adjoint, adjoint_toLinearMap, star_eq_adjoint]
   have hA' : (φ (A : E →ₗ[ℝ] E))ᵀ = -φ (A : E →ₗ[ℝ] E) := by
     rw [← Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.star_eq_conjTranspose,
-      ← map_star φ, ← hstar, skewAdjoint.mem_iff.1 hA, toLinearMap_neg, map_neg]
+      ← map_star φ, ← toLinearMap_star, skewAdjoint.mem_iff.1 hA, toLinearMap_neg, map_neg]
   have hd := Matrix.diag_eq_zero_of_transpose_eq_neg hA' fun x hx ↦ by linarith
+  have hT : T.det = (φ T).det := (LinearMap.det_toMatrix b.toBasis _).symm
   apply ContinuousLinearMap.coe_injective
   apply EquivLike.injective φ
-  rw [toLinearMap_mul, toLinearMap_mul, hstar, toLinearMap_smul, map_mul φ, map_mul φ, map_star φ,
-    map_smul φ, det, ← LinearMap.det_toMatrix b.toBasis, Matrix.star_eq_conjTranspose,
-    Matrix.conjTranspose_eq_transpose_of_trivial]
-  exact Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg _ hA' hd
+  simpa only [toLinearMap_mul, toLinearMap_star, toLinearMap_smul, map_mul, map_star, map_smul, hT,
+    Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial] using
+    Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg_of_diag_eq_zero (φ T) hA' hd
 
 end ContinuousLinearMap

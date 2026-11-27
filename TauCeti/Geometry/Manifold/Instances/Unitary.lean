@@ -44,7 +44,6 @@ factor of the smooth Cartan decomposition.
   `Unitary.contMDiff_iff`: smoothness of maps into `unitary R` tested after coercion to `R`.
 * `Unitary.instContMDiffSMul`: restriction of a `C^n` action (`n ≤ ∞`) of `R` on a manifold to
   `unitary R`.
-* `Unitary.instContMDiffConstSMul`: each element of `unitary R` then acts by a `C^n` map.
 * `Unitary.finiteDimensional_model`: the model space is finite-dimensional.
 * `Unitary.tangentSpaceCastModel_mfderiv_val_mem_skewAdjoint`: the differential of the inclusion
   into `R` at the identity takes values in the skew-adjoint elements.
@@ -189,15 +188,6 @@ instance instContMDiffSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
     ContMDiffSMul (model R) I n (unitary R) M :=
   MulAction.contMDiffSMul_compHom (f := (unitary R).subtype)
     (contMDiff_val.of_le ENat.LEInfty.out)
-
-/-- Under any `C^n` action of the ambient algebra `R` on a manifold, each element of `unitary R`
-acts by a `C^n` map. -/
-instance instContMDiffConstSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
-    [MulAction R M] [ContMDiffSMul 𝓘(ℝ, R) I n R M] :
-    ContMDiffConstSMul I n (unitary R) M :=
-  ⟨fun g ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓘(ℝ, R)) (g : R)⟩
 
 /-- The vector-space model of the unitary group is finite-dimensional. -/
 instance finiteDimensional_model : FiniteDimensional ℝ 𝔩 := by
