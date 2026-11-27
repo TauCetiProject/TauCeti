@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.JacobiSum.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 import TauCeti.Data.ZMod.Units
+import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.JacobiSum.Basic
 
 /-!
 # Jacobi sums of Dirichlet characters
@@ -60,11 +62,11 @@ theorem sum_mul_apply_sub_eq_zero_of_isPrimitive (h : (χ * ψ).IsPrimitive) {t 
   -- Since `χ ψ` is primitive, it does not factor through `N / g < N`.
   have hnf : ¬(χ * ψ).FactorsThrough (N / g) := fun hf ↦
     ((Nat.sInf_le hf).trans_lt (Nat.div_lt_self (NeZero.pos N) hg1)).ne h
-  obtain ⟨u, hu, hχψu⟩ : ∃ u ∈ (ZMod.unitsMap hd).ker, (χ * ψ) (u : ZMod N) ≠ 1 := by
-    by_contra! hall
-    refine hnf ((factorsThrough_iff_ker_unitsMap hd).mpr fun u hu ↦ ?_)
-    rw [MonoidHom.mem_ker, ← Units.val_inj, MulChar.coe_toUnitHom, Units.val_one]
-    exact hall u hu
+  obtain ⟨u, hu1, hχψu1⟩ := exists_alt_unit_in_coset_with_char_separation hd hnf 1
+  have hu : u ∈ (ZMod.unitsMap hd).ker := MonoidHom.mem_ker.2 (hu1.trans (map_one _))
+  rw [map_one] at hχψu1
+  have hχψu : (χ * ψ) (u : ZMod N) ≠ 1 := fun h ↦
+    hχψu1 (Units.ext (by rw [MulChar.coe_toUnitHom, h, Units.val_one]))
   have hut : (u : ZMod N) * t = t := ZMod.unit_mul_eq_self_of_mem_ker_unitsMap hu
   -- The substitution `x = u x'` multiplies the sum by `(χ ψ)(u)`.
   have key : ∑ x, χ x * ψ (t - x) = (χ * ψ) (u : ZMod N) * ∑ x, χ x * ψ (t - x) := by
@@ -86,9 +88,7 @@ theorem gaussSum_mul_jacobiSum_of_isPrimitive (h : (χ * ψ).IsPrimitive) (e : A
   by_cases ht : IsUnit t
   · -- At a unit `t`, the substitution `x = t r`.
     obtain ⟨v, rfl⟩ := ht
-    rw [jacobiSum, mul_sum]
-    refine Fintype.sum_bijective _ (Units.mulLeft_bijective v) _ _ fun r ↦ ?_
-    rw [MulChar.mul_apply, ← mul_one_sub, map_mul, map_mul]
+    rw [← sum_mul, MulChar.sum_mul_apply_sub_eq_mul_jacobiSum]
     ring
   · rw [MulChar.map_nonunit _ ht, zero_mul, zero_mul, ← sum_mul,
       sum_mul_apply_sub_eq_zero_of_isPrimitive h ht, zero_mul]
