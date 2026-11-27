@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
+import TauCeti.Topology.Homotopy.Monodromy.BasepointChange
 public import TauCeti.Topology.Circle.AddCircle
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Circle.Loop
@@ -63,6 +64,9 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   its basepoint-`0` specialisation.
 * `AddCircle.fundamentalGroupMulEquiv_eq_windingNumberIso`: for positive periods the
   chosen-lift computation agrees with Mathlib, including the sign of the generator.
+* `AddCircle.windingNumberIso_fundamentalGroupMulEquivOfPath`: changing the basepoint along a
+  path preserves Mathlib's winding number. This is the circle case of
+  `IsAddQuotientCoveringMap.fundamentalGroupEquiv_fundamentalGroupMulEquivOfPath`.
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `Circle.expLoop`, `t ↦ exp(2πit)`, going
   once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
@@ -93,6 +97,9 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 It consumes Mathlib's `AddCircle` covering map (`AddCircle.isCoveringMap_coe`, Junyan Xu) and
 the contractibility of a real topological vector space, together with Tau Ceti's
 deck-transformation theory.
+
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 1.3 (path lifting and
+  monodromy of a covering), used for the basepoint independence of the winding number.
 -/
 
 public section
@@ -330,6 +337,21 @@ lemma windingNumberIso_apply_eq_iff [hp : Fact (0 < p)] {x : AddCircle p}
       ((isCoveringMap_coe p).monodromy γ.toPath e : ℝ) = (e : ℝ) + n.toAdd • p := by
   rw [← fundamentalGroupMulEquiv_eq_windingNumberIso p e]
   exact fundamentalGroupMulEquiv_apply_eq_iff p hp.out.ne' e γ n
+
+/-- **The winding number does not depend on the basepoint**: changing the basepoint of the
+fundamental group of the circle along any path, by
+`FundamentalGroup.fundamentalGroupMulEquivOfPath`, preserves the winding number. -/
+theorem windingNumberIso_fundamentalGroupMulEquivOfPath [Fact (0 < p)] {a b : AddCircle p}
+    (δ : Path a b) (g : FundamentalGroup (AddCircle p) a) :
+    windingNumberIso b (FundamentalGroup.fundamentalGroupMulEquivOfPath δ g) =
+      windingNumberIso a g := by
+  have hq := isAddQuotientCoveringMap_coe p
+  let ea : ((↑) : ℝ → AddCircle p) ⁻¹' {a} := ⟨(equivIco p 0 a : ℝ), coe_equivIco⟩
+  -- `windingNumberIso` reads loops through a lift of the basepoint; since the group of periods is
+  -- commutative, the lift may be taken to be the transport of `ea` along `δ`.
+  simp only [windingNumberIso, MulEquiv.trans_apply]
+  rw [hq.fundamentalGroupEquiv_eq _ (hq.isCoveringMap.monodromy (.mk δ) ea),
+    hq.fundamentalGroupEquiv_fundamentalGroupMulEquivOfPath]
 
 end AddCircle
 
