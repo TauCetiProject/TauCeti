@@ -25,8 +25,8 @@ inner products, `⟪v, w⟫ = ⟪df v, df w⟫`. For a vector `e ∈ F`, the coo
 
 for the mean curvature vector `H = (tr B) / m`
 (`TauCeti.laplaceBeltrami_inner_eq_finrank_mul_inner_immersionMeanCurvatureVector`), with Tau
-Ceti's sign convention `Δ = div grad`. With the positive Laplacian `Δ⁺ = -div grad` of the
-RiemannianGeometry roadmap this is `Δ⁺ f = -m H`, read componentwise. Hence
+Ceti's sign convention `Δ = div grad`. With the positive (geometers') Laplacian
+`Δ⁺ = -div grad` this is `Δ⁺ f = -m H`, read componentwise. Hence
 `f` is minimal at a point exactly when every coordinate function `⟪f, e⟫` has vanishing Laplacian
 there (`TauCeti.immersionMeanCurvatureVector_eq_zero_iff_laplaceBeltrami_inner_eq_zero`), and
 `f` is minimal everywhere exactly when all its coordinate functions are harmonic
@@ -49,7 +49,7 @@ public section
 noncomputable section
 
 open Bundle Manifold Module
-open scoped InnerProductSpace Manifold ContDiff
+open scoped InnerProductSpace Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -80,45 +80,33 @@ theorem immersionSecondFundamentalFormAt_model_space_eq_sub {x : M}
     immersionSecondFundamentalForm_model_space (hf.mdifferentiableAt two_ne_zero) hdW]
   refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun z hz ↦ ?_
   · -- `D_v (df W) - df (∇_v W)` is orthogonal to the image of `df`, by the Gauss formula.
-    rw [orthogonalNormalSpace_def]
-    refine (Submodule.mem_orthogonal
-      (LinearMap.range (mfderiv I 𝓘(ℝ, F) f x).toLinearMap) _).2 ?_
-    rintro _ ⟨u, rfl⟩
+    refine mem_orthogonalNormalSpace_iff.2 fun u ↦ ?_
     have hG := (isLeviCivitaConnection_leviCivitaConnection I).inner_apply_eq_inner_mvfderiv
       hf hg hV hW u
+    -- `mvfderiv` is `mfderiv` followed by the identification of `TangentSpace 𝓘(ℝ, F) _` with
+    -- `F`, which is the identity, so this restates the goal in `mvfderiv` form.
     change ⟪mvfderiv I f x u, mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
       mvfderiv I f x (leviCivitaConnection I M W x (V x))⟫_ℝ = 0
     rw [inner_sub_right, real_inner_comm, ← hG, ← hg, real_inner_comm, sub_self]
-  · -- `df (∇_v W)` is tangent, so orthogonal to the normal space.
+  · -- `df (∇_v W)` is tangent, so orthogonal to the normal space. As above, `change` restates
+    -- the goal in `mvfderiv` form.
     change ⟪mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
       (mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
         mvfderiv I f x (leviCivitaConnection I M W x (V x))), (z : F)⟫_ℝ = 0
     rw [sub_sub_cancel]
-    rw [orthogonalNormalSpace_def] at hz
-    exact Submodule.inner_right_of_mem_orthogonal (LinearMap.mem_range_self _ _) hz
-
-omit [FiniteDimensional ℝ E] [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ F] in
-/-- The derivative of a coordinate function `⟪f, e⟫` is `⟪df, e⟫`. -/
-theorem mvfderiv_inner_const_apply {x : M} (hf : MDifferentiableAt I 𝓘(ℝ, F) f x) (e : F)
-    (v : TangentSpace I x) :
-    mvfderiv I (fun y ↦ ⟪f y, e⟫_ℝ) x v = ⟪mvfderiv I f x v, e⟫_ℝ := by
-  rw [mvfderiv_inner_apply hf mdifferentiableAt_const v, mvfderiv_const]
-  simp
+    exact mem_orthogonalNormalSpace_iff.1 hz _
 
 /-- **The Hessian of a coordinate function of an isometric immersion into a Euclidean space** is
 the second fundamental form in that direction: `Hess ⟪f, e⟫ (v, w) = ⟪B(v, w), e⟫`. -/
-theorem hessian_inner_eq_inner_immersionSecondFundamentalFormAt
-    (hf : ContMDiff I 𝓘(ℝ, F) 2 f)
+theorem hessian_inner_eq_inner_immersionSecondFundamentalFormAt {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, F) 2 f x)
     (hg : ∀ y (v w : TangentSpace I y), ⟪v, w⟫_ℝ = ⟪mvfderiv I f y v, mvfderiv I f y w⟫_ℝ)
-    (e : F) (x : M) (v w : TangentSpace I x) :
+    (e : F) (v w : TangentSpace I x) :
     hessian I (fun y ↦ ⟪f y, e⟫_ℝ) x v w =
       ⟪immersionSecondFundamentalFormAt (leviCivitaConnection 𝓘(ℝ, F) F) f x v w, e⟫_ℝ := by
-  have hf1 (y : M) : MDifferentiableAt I 𝓘(ℝ, F) f y :=
-    (hf y).mdifferentiableAt two_ne_zero
   have hφ : ContMDiffAt I 𝓘(ℝ) 2 (fun y ↦ ⟪f y, e⟫_ℝ) x := by
     have := ContMDiffAt.comp x
-      ((contDiff_id.inner ℝ (contDiff_const (c := e))).contMDiff.contMDiffAt) (hf x)
+      ((contDiff_id.inner ℝ (contDiff_const (c := e))).contMDiff.contMDiffAt) hf
     simpa [Function.comp_def] using this
   set V : Π y : M, TangentSpace I y := FiberBundle.extend E v
   set W : Π y : M, TangentSpace I y := FiberBundle.extend E w
@@ -127,12 +115,15 @@ theorem hessian_inner_eq_inner_immersionSecondFundamentalFormAt
   have hVx : V x = v := FiberBundle.extend_apply_self _ v
   have hWx : W x = w := FiberBundle.extend_apply_self _ w
   have hH := hessian_apply_eq_mvfderiv_sub x hφ V W hW
-  have hfun : (fun y ↦ mvfderiv I (fun y ↦ ⟪f y, e⟫_ℝ) y (W y)) =
+  -- `f` is `C²` near `x`, so `d⟪f, e⟫ = ⟪df, e⟫` near `x`.
+  have hfun : (fun y ↦ mvfderiv I (fun y ↦ ⟪f y, e⟫_ℝ) y (W y)) =ᶠ[𝓝 x]
       fun y ↦ ⟪mvfderiv I f y (W y), e⟫_ℝ :=
-    funext fun y ↦ mvfderiv_inner_const_apply (hf1 y) e (W y)
-  rw [hfun, mvfderiv_inner_const_apply (mdifferentiableAt_mvfderiv_apply (hf x) le_rfl hW),
-    mvfderiv_inner_const_apply (hf1 x), ← inner_sub_left, hVx, hWx] at hH
-  have hB := immersionSecondFundamentalFormAt_model_space_eq_sub (hf x) hg hV hW
+    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf).mono fun y hy ↦
+      mvfderiv_inner_const_apply (hy.mdifferentiableAt two_ne_zero) e (W y)
+  rw [hfun.mvfderiv_eq, mvfderiv_inner_const_apply (mdifferentiableAt_mvfderiv_apply hf le_rfl hW),
+    mvfderiv_inner_const_apply (hf.mdifferentiableAt two_ne_zero), ← inner_sub_left, hVx,
+    hWx] at hH
+  have hB := immersionSecondFundamentalFormAt_model_space_eq_sub hf hg hV hW
   rw [hVx, hWx] at hB
   rw [hH]
   exact congrArg (fun z ↦ ⟪z, e⟫_ℝ) hB.symm
@@ -140,10 +131,10 @@ theorem hessian_inner_eq_inner_immersionSecondFundamentalFormAt
 /-- **`Δ⁺ f = -m H` for an isometric immersion into a Euclidean space**, componentwise: for every
 `e`, the Laplacian `Δ = div grad` of the coordinate function `⟪f, e⟫` is `m ⟪H, e⟫`, with
 `m = dim M` and `H` the mean curvature vector. -/
-theorem laplaceBeltrami_inner_eq_finrank_mul_inner_immersionMeanCurvatureVector
-    (hf : ContMDiff I 𝓘(ℝ, F) 2 f)
+theorem laplaceBeltrami_inner_eq_finrank_mul_inner_immersionMeanCurvatureVector {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, F) 2 f x)
     (hg : ∀ y (v w : TangentSpace I y), ⟪v, w⟫_ℝ = ⟪mvfderiv I f y v, mvfderiv I f y w⟫_ℝ)
-    (e : F) (x : M) :
+    (e : F) :
     laplaceBeltrami I (fun y ↦ ⟪f y, e⟫_ℝ) x =
       finrank ℝ E * ⟪immersionMeanCurvatureVector (I := I)
         (leviCivitaConnection 𝓘(ℝ, F) F) f x, e⟫_ℝ := by
@@ -154,7 +145,7 @@ theorem laplaceBeltrami_inner_eq_finrank_mul_inner_immersionMeanCurvatureVector
         = ∑ i, hessian I (fun y ↦ ⟪f y, e⟫_ℝ) x (b i) (b i) :=
           laplaceBeltrami_eq_sum_hessian I _ x b
       _ = ∑ i, ⟪B (b i) (b i), e⟫_ℝ := Finset.sum_congr rfl fun i _ ↦
-          hessian_inner_eq_inner_immersionSecondFundamentalFormAt hf hg e x _ _
+          hessian_inner_eq_inner_immersionSecondFundamentalFormAt hf hg e _ _
       _ = ⟪∑ i, B (b i) (b i), e⟫_ℝ := (sum_inner _ _ _).symm
   have hH : ⟪immersionMeanCurvatureVector (I := I) (leviCivitaConnection 𝓘(ℝ, F) F) f x, e⟫_ℝ =
       (finrank ℝ E : ℝ)⁻¹ * ⟪∑ i, B (b i) (b i), e⟫_ℝ :=
@@ -162,22 +153,22 @@ theorem laplaceBeltrami_inner_eq_finrank_mul_inner_immersionMeanCurvatureVector
       (real_inner_smul_left _ _ _)
   rw [hsum, hH]
   rcases eq_or_ne (finrank ℝ E) 0 with h0 | h0
-  · -- In dimension zero every tangent vector vanishes, and both sides are `0`.
-    have hE : Subsingleton E := Module.finrank_zero_iff.1 h0
-    have : Subsingleton (TangentSpace I x) := hE
+  · -- In dimension zero every tangent vector vanishes (`TangentSpace I x` is `E`), and both
+    -- sides are `0`.
+    have : Subsingleton (TangentSpace I x) := (Module.finrank_zero_iff.1 h0 : Subsingleton E)
     have hB : ∑ i, B (b i) (b i) = 0 :=
       Finset.sum_eq_zero fun i _ ↦ by simp [Subsingleton.elim (b i) 0]
-    have h0' : ⟪(0 : TangentSpace 𝓘(ℝ, F) (f x)), e⟫_ℝ = 0 := inner_zero_left _
-    rw [hB, h0', mul_zero, mul_zero]
+    -- The zero of `TangentSpace 𝓘(ℝ, F) (f x)` is the zero of `F`.
+    rw [hB, h0, Nat.cast_zero, zero_mul]
+    exact inner_zero_left _
   · exact (mul_inv_cancel_left₀ (Nat.cast_ne_zero.2 h0) _).symm
 
 /-- **Minimality in coordinates.** An isometric immersion into a Euclidean space has vanishing
 mean curvature vector at `x` iff every coordinate function `⟪f, e⟫` has vanishing Laplacian
 at `x`. -/
-theorem immersionMeanCurvatureVector_eq_zero_iff_laplaceBeltrami_inner_eq_zero
-    (hf : ContMDiff I 𝓘(ℝ, F) 2 f)
-    (hg : ∀ y (v w : TangentSpace I y), ⟪v, w⟫_ℝ = ⟪mvfderiv I f y v, mvfderiv I f y w⟫_ℝ)
-    (x : M) :
+theorem immersionMeanCurvatureVector_eq_zero_iff_laplaceBeltrami_inner_eq_zero {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, F) 2 f x)
+    (hg : ∀ y (v w : TangentSpace I y), ⟪v, w⟫_ℝ = ⟪mvfderiv I f y v, mvfderiv I f y w⟫_ℝ) :
     immersionMeanCurvatureVector (I := I) (leviCivitaConnection 𝓘(ℝ, F) F) f x = 0 ↔
       ∀ e : F, laplaceBeltrami I (fun y ↦ ⟪f y, e⟫_ℝ) x = 0 := by
   rcases eq_or_ne (finrank ℝ E) 0 with h0 | hm
@@ -190,8 +181,9 @@ theorem immersionMeanCurvatureVector_eq_zero_iff_laplaceBeltrami_inner_eq_zero
   simp_rw [laplaceBeltrami_inner_eq_finrank_mul_inner_immersionMeanCurvatureVector hf hg,
     mul_eq_zero, Nat.cast_eq_zero, hm, false_or]
   refine ⟨fun h e ↦ ?_, fun h ↦ ext_inner_right ℝ fun e ↦ by rw [h e, inner_zero_left]⟩
-  have h0' : ⟪(0 : TangentSpace 𝓘(ℝ, F) (f x)), e⟫_ℝ = 0 := inner_zero_left _
-  rw [h, h0']
+  -- The zero of `TangentSpace 𝓘(ℝ, F) (f x)` is the zero of `F`.
+  rw [h]
+  exact inner_zero_left _
 
 /-- **Minimal immersions are those with harmonic coordinate functions.** An isometric immersion
 into a Euclidean space is minimal everywhere iff all its coordinate functions `⟪f, e⟫` are
@@ -201,7 +193,7 @@ theorem forall_immersionMeanCurvatureVector_eq_zero_iff_forall_laplaceBeltrami_i
     (hg : ∀ y (v w : TangentSpace I y), ⟪v, w⟫_ℝ = ⟪mvfderiv I f y v, mvfderiv I f y w⟫_ℝ) :
     (∀ x, immersionMeanCurvatureVector (I := I) (leviCivitaConnection 𝓘(ℝ, F) F) f x = 0) ↔
       ∀ e : F, laplaceBeltrami I (fun y ↦ ⟪f y, e⟫_ℝ) = 0 := by
-  simp_rw [immersionMeanCurvatureVector_eq_zero_iff_laplaceBeltrami_inner_eq_zero hf hg,
+  simp_rw [immersionMeanCurvatureVector_eq_zero_iff_laplaceBeltrami_inner_eq_zero (hf _) hg,
     funext_iff, Pi.zero_apply]
   exact forall_comm
 
