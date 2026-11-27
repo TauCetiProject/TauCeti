@@ -83,11 +83,14 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
   its cdf;
-* `MeasureTheory.Measure.cdf_neg_of_measure_singleton_eq_zero` computes the cdf of a reflected
-  law away from atoms;
+* `MeasureTheory.Measure.cdf_neg` computes the cdf of a reflected law, and
+  `MeasureTheory.Measure.cdf_neg_of_measure_singleton_eq_zero` expresses it through the cdf away
+  from atoms;
 * `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
   evaluate the cdf of the image of a real law under absolute value, and
   `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
+* `MeasureTheory.Measure.cdf_map_orderIso` evaluates the cdf of the image of a real law under an
+  order isomorphism of `ℝ`;
 * `MeasureTheory.Measure.cdf_map_const_mul_sqrt` evaluates the cdf of the image of a real law
   under a positive multiple of the square root;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
@@ -184,6 +187,12 @@ theorem cdf_map {I : Type*} [MeasurableSpace I] (μ : Measure I) [IsProbabilityM
     cdf (μ.map label) x = μ.real (label ⁻¹' Iic x) := by
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hlabel measurableSet_Iic]
 
+/-- The cdf of the image of a probability measure under an order isomorphism of `ℝ` (an
+increasing homeomorphism) is the cdf of the measure composed with the inverse isomorphism. -/
+theorem cdf_map_orderIso (μ : Measure ℝ) [IsProbabilityMeasure μ] (f : ℝ ≃o ℝ) (x : ℝ) :
+    cdf (μ.map f) x = cdf μ (f.symm x) := by
+  rw [cdf_map μ f f.monotone.measurable.aemeasurable, f.preimage_Iic, cdf_eq_real]
+
 /-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
 theorem cdf_conv (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (x : ℝ) : cdf (μ ∗ ν) x = ∫ y, cdf ν (x - y) ∂μ := by
@@ -238,16 +247,20 @@ theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsN
   rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def,
     measureReal_Ioi_eq_one_sub_cdf]
 
-/-- **The cumulative distribution function of the reflected law.** If `μ` has no atom at `-x`,
-the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
-theorem cdf_neg_of_measure_singleton_eq_zero {μ : Measure ℝ} [IsProbabilityMeasure μ] {x : ℝ}
-    (hx : μ {-x} = 0) : cdf μ.neg x = 1 - cdf μ (-x) := by
+/-- **The cumulative distribution function of the reflected law.** The law of `-X` puts mass
+`1 - μ (Iio (-x))` on `Iic x`. -/
+theorem cdf_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] (x : ℝ) :
+    cdf μ.neg x = 1 - μ.real (Iio (-x)) := by
   have hpre : (Neg.neg ⁻¹' Iic x : Set ℝ) = (Iio (-x))ᶜ := by
     ext y
     simp
   rw [cdf_eq_real, neg_def, map_measureReal_apply measurable_neg measurableSet_Iic, hpre,
-    measureReal_compl measurableSet_Iio, probReal_univ, measureReal_congr (Iio_ae_eq_Iic' hx),
-    cdf_eq_real]
+    measureReal_compl measurableSet_Iio, probReal_univ]
+
+/-- If `μ` has no atom at `-x`, the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
+theorem cdf_neg_of_measure_singleton_eq_zero {μ : Measure ℝ} [IsProbabilityMeasure μ] {x : ℝ}
+    (hx : μ {-x} = 0) : cdf μ.neg x = 1 - cdf μ (-x) := by
+  rw [cdf_neg, measureReal_congr (Iio_ae_eq_Iic' hx), cdf_eq_real]
 
 /-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
 `[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/
