@@ -283,7 +283,8 @@ theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (S.conj U.symm).conj U = S :=
 @[simp]
 theorem conj_refl : S.conj (LinearIsometryEquiv.refl ℂ H) = S := by
   have hrefl : ((LinearIsometryEquiv.refl ℂ H : H ≃L[ℂ] H) : H ≃ₗ[ℂ] H) =
-      LinearEquiv.refl ℂ H := LinearEquiv.ext fun _ ↦ rfl
+      LinearEquiv.refl ℂ H := by
+    ext x; simp
   ext1
   · ext1 a; simp
   · rw [conj_operator, hrefl, LinearPMap.conj_refl]

@@ -69,12 +69,7 @@ theorem conj_mem_domain (A : E →ₗ.[R] E) {T : E →L[R] E}
     (hT : ∀ {x : E}, x ∈ A.domain → T x ∈ A.domain) {y : F}
     (hy : y ∈ (A.conj (e : E ≃ₗ[R] F)).domain) :
     ((e : E →L[R] F) ∘L T ∘L (e.symm : F →L[R] E)) y ∈ (A.conj (e : E ≃ₗ[R] F)).domain := by
-  rw [mem_conj_domain_iff] at hy ⊢
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ← ContinuousLinearEquiv.coe_toLinearEquiv]
-  rw [LinearEquiv.symm_apply_apply]
-  rw [← ContinuousLinearEquiv.toLinearEquiv_symm, ContinuousLinearEquiv.coe_toLinearEquiv] at hy
-  exact hT hy
+  simpa [mem_conj_domain_iff] using hT (mem_conj_domain_iff.1 hy)
 
 /-- Evaluating `A.conj e` on `(e ∘L T ∘L e⁻¹) y` applies `e` to `A (T (e⁻¹ y))`. -/
 theorem conj_apply_comp_conj (A : E →ₗ.[R] E) {T : E →L[R] E}
@@ -84,24 +79,16 @@ theorem conj_apply_comp_conj (A : E →ₗ.[R] E) {T : E →L[R] E}
         ⟨((e : E →L[R] F) ∘L T ∘L (e.symm : F →L[R] E)) y,
           conj_mem_domain e A hT y.property⟩ =
       e (A ⟨T (e.symm y), hT (mem_conj_domain_iff.1 y.property)⟩) := by
-  let x : A.domain := ⟨T (e.symm y), hT (mem_conj_domain_iff.1 y.property)⟩
-  have hmem := map_mem_conj_domain (A := A) (e := (e : E ≃ₗ[R] F)) x
-  have hdom : (⟨((e : E →L[R] F) ∘L T ∘L (e.symm : F →L[R] E)) y,
-      conj_mem_domain e A hT y.property⟩ : (A.conj (e : E ≃ₗ[R] F)).domain) =
-      ⟨(e : E ≃ₗ[R] F) x, hmem⟩ :=
-    Subtype.ext (by
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-        ContinuousLinearEquiv.coe_toLinearEquiv, x])
-  rw [hdom, conj_apply_map, ContinuousLinearEquiv.coe_toLinearEquiv]
+  rw [conj_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
+  congr 2
+  exact Subtype.ext (by simp)
 
 /-- Evaluating `e ∘L T ∘L e⁻¹` on `A.conj e y` applies `e` to `T (A (e⁻¹ y))`. -/
 theorem comp_conj_apply_conj (A : E →ₗ.[R] E) (T : E →L[R] E)
     (y : (A.conj (e : E ≃ₗ[R] F)).domain) :
     ((e : E →L[R] F) ∘L T ∘L (e.symm : F →L[R] E)) (A.conj (e : E ≃ₗ[R] F) y) =
       e (T (A ⟨e.symm y, mem_conj_domain_iff.1 y.property⟩)) := by
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, conj_apply]
-  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
-    ← ContinuousLinearEquiv.toLinearEquiv_symm, ContinuousLinearEquiv.symm_apply_apply]
+  simp [conj_apply]
 
 /-! ### Intertwining -/
 
