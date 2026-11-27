@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Reflection
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectionPerm
+public import TauCeti.LinearAlgebra.RootSystem.Indivisible
+public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -311,14 +314,6 @@ theorem finite_indivisibleRestrictedRoots_subtype (hθ : θ.IsCartanInvolution)
   have := hθ.finiteDimensional
   Submodule.finite_indivisibleRestrictedRoots.to_subtype
 
-private theorem weylGroup_smul_dual_apply {ι R M : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] (P : RootPairing ι R (Dual R M) M) (hP : ∀ f x, P.toLinearMap f x = f x)
-    (w : P.weylGroup) (μ : Dual R M) (H : M) :
-    (w • μ) H = μ ((w : P.Aut).coweightEquiv H) := by
-  have ht := (w : P.Aut).toLinearMap_weightEquiv μ H
-  simp only [hP, RootPairing.Equiv.weightEquiv_apply] at ht
-  exact ht
-
 private theorem exists_intCast_eq_apply_restrictedCoroot (hθ : θ.IsCartanInvolution)
     (h𝔞 : θ.IsMaximalAbelianInP 𝔞) {μ ν : Dual ℝ 𝔞}
     (hμ : μ ∈ 𝔞.restrictedRoots) (hν : ν ∈ 𝔞.restrictedRoots) :
@@ -376,7 +371,7 @@ theorem restrictedRootPairing_root'_apply (μ : 𝔞.restrictedRoots) (H : 𝔞)
 theorem restrictedRootPairing_weylGroup_smul_apply
     (w : (hθ.restrictedRootPairing h𝔞).weylGroup) (μ : Dual ℝ 𝔞) (H : 𝔞) :
     (w • μ) H = μ ((w : (hθ.restrictedRootPairing h𝔞).Aut).coweightEquiv H) :=
-  weylGroup_smul_dual_apply (hθ.restrictedRootPairing h𝔞) (fun _ _ ↦ rfl) w μ H
+  RootPairing.weylGroup_smul_dual_apply (hθ.restrictedRootPairing h𝔞) (fun _ _ ↦ rfl) w μ H
 
 @[simp]
 theorem restrictedRootPairing_coroot_apply (μ : 𝔞.restrictedRoots) :
@@ -506,64 +501,51 @@ theorem sub_smul_mem_indivisibleRestrictedRoots {μ ν : Dual ℝ 𝔞}
     (hμ : μ ∈ 𝔞.restrictedRoots) (hν : ν ∈ 𝔞.indivisibleRestrictedRoots) :
     ν - ν (hθ.restrictedCoroot h𝔞.le_cartanP μ) • μ ∈
       𝔞.indivisibleRestrictedRoots := by
-  rw [mem_indivisibleRestrictedRoots_iff_half_notMem] at hν ⊢
-  refine ⟨hθ.sub_smul_mem_restrictedRoots h𝔞 hμ hν.left, fun hhalf ↦ hν.right ?_⟩
-  have hrefl := hθ.sub_smul_mem_restrictedRoots h𝔞 hμ hhalf
-  have hinv := hθ.sub_smul_sub_smul_restrictedCoroot h𝔞.le_cartanP
-    (mem_restrictedRoots.mp hμ).left ν
-  have hsmul := congrArg ((1 / 2 : ℝ) • ·) hinv
-  rw [smul_sub, smul_smul] at hsmul
-  have heq : (1 / 2 : ℝ) • (ν - ν (hθ.restrictedCoroot h𝔞.le_cartanP μ) • μ) -
-      ((1 / 2 : ℝ) • (ν - ν (hθ.restrictedCoroot h𝔞.le_cartanP μ) • μ))
-        (hθ.restrictedCoroot h𝔞.le_cartanP μ) • μ = (1 / 2 : ℝ) • ν := by
-    simpa only [LinearMap.smul_apply, smul_eq_mul] using hsmul
-  rwa [heq] at hrefl
+  rw [← hθ.restrictedRootPairing_reflection_apply h𝔞 ⟨μ, hμ⟩ ν,
+    ← RootPairing.Equiv.reflection_smul, ← RootPairing.weylGroup.ofIdx_smul]
+  exact (hθ.smul_mem_indivisibleRestrictedRoots_iff h𝔞
+    (RootPairing.weylGroup.ofIdx (hθ.restrictedRootPairing h𝔞) ⟨μ, hμ⟩)).mpr hν
 
-include hθ h𝔞 in
-/-- **The indivisible restricted roots span `𝔞*`.** -/
-theorem span_indivisibleRestrictedRoots_eq_top :
-    Submodule.span ℝ 𝔞.indivisibleRestrictedRoots = ⊤ := by
-  refine eq_top_iff.mpr ?_
-  rw [← hθ.span_restrictedRoots_eq_top h𝔞.le_cartanP
-      fun _ hx _ hy ↦ h𝔞.lie_eq_zero hx hy, Submodule.span_le]
-  intro μ hμ
-  rcases hθ.mem_indivisibleRestrictedRoots_or_exists_eq_two_smul h𝔞 hμ with h | ⟨γ, hγ, rfl⟩
-  · exact Submodule.subset_span h
-  · exact Submodule.smul_mem _ 2 (Submodule.subset_span hγ)
+/-- An index `μ : 𝔞.restrictedRoots` is indivisible for `restrictedRootPairing` iff `μ` lies in
+`𝔞.indivisibleRestrictedRoots`. -/
+@[simp]
+theorem isIndivisible_restrictedRootPairing_iff (μ : 𝔞.restrictedRoots) :
+    (hθ.restrictedRootPairing h𝔞).IsIndivisible μ ↔
+      (μ : Dual ℝ 𝔞) ∈ 𝔞.indivisibleRestrictedRoots := by
+  simp only [RootPairing.isIndivisible_iff, restrictedRootPairing_root_apply,
+    Submodule.mem_indivisibleRestrictedRoots, Subtype.coe_prop, true_and, Subtype.forall]
+
+/-- Canonical equivalence between the indivisible indices of `hθ.restrictedRootPairing h𝔞` and
+the subtype `𝔞.indivisibleRestrictedRoots`. -/
+def indivisibleRestrictedRootsEquiv :
+    {μ : 𝔞.restrictedRoots // (hθ.restrictedRootPairing h𝔞).IsIndivisible μ} ≃
+      𝔞.indivisibleRestrictedRoots where
+  toFun μ := ⟨μ.val.val, (hθ.isIndivisible_restrictedRootPairing_iff h𝔞 μ.val).mp μ.property⟩
+  invFun μ := ⟨⟨μ.val, μ.property.left⟩,
+    (hθ.isIndivisible_restrictedRootPairing_iff h𝔞 _).mpr μ.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
 
 /-- **The reduced restricted root system.** The indivisible restricted roots `Σ_indiv` and their
 coroots form a reduced crystallographic root system on `(𝔞*, 𝔞)`. -/
 noncomputable def indivisibleRestrictedRootPairing :
     RootPairing 𝔞.indivisibleRestrictedRoots ℝ (Dual ℝ 𝔞) 𝔞 :=
   have := hθ.finiteDimensional
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  RootPairing.mk''
-    LinearMap.id
-    ⟨Subtype.val, Subtype.val_injective⟩
-    ⟨fun μ ↦ hθ.restrictedCoroot h𝔞.le_cartanP μ, fun μ ν h ↦
-      Subtype.ext
-        (hθ.injOn_restrictedCoroot h𝔞.le_cartanP μ.property.left ν.property.left h)⟩
-    (fun μ ↦
-      hθ.apply_restrictedCoroot h𝔞.le_cartanP (mem_restrictedRoots.mp μ.property.left).left)
-    (by
-      rintro μ - ⟨ν, rfl⟩
-      refine ⟨⟨(ν : Dual ℝ 𝔞) -
-          (ν : Dual ℝ 𝔞) (hθ.restrictedCoroot h𝔞.le_cartanP μ) • (μ : Dual ℝ 𝔞),
-        hθ.sub_smul_mem_indivisibleRestrictedRoots h𝔞 μ.property.left ν.property⟩, rfl⟩)
-    (by
-      simpa only [Function.Embedding.coeFn_mk, Subtype.range_coe_subtype,
-        Set.ofPred_mem_eq] using
-        hθ.span_indivisibleRestrictedRoots_eq_top h𝔞)
+  have : Finite 𝔞.restrictedRoots := Submodule.finite_restrictedRoots.to_subtype
+  (hθ.restrictedRootPairing h𝔞).indivisible.map
+    (hθ.indivisibleRestrictedRootsEquiv h𝔞)
+    (LinearEquiv.refl ℝ (Dual ℝ 𝔞))
+    (LinearEquiv.refl ℝ 𝔞)
 
 @[simp]
 theorem indivisibleRestrictedRootPairing_toLinearMap_apply (f : Dual ℝ 𝔞) (x : 𝔞) :
-    (hθ.indivisibleRestrictedRootPairing h𝔞).toLinearMap f x = f x :=
-  (rfl)
+    (hθ.indivisibleRestrictedRootPairing h𝔞).toLinearMap f x = f x := by
+  simp [indivisibleRestrictedRootPairing, RootPairing.map]
 
 @[simp]
 theorem indivisibleRestrictedRootPairing_root_apply (μ : 𝔞.indivisibleRestrictedRoots) :
-    (hθ.indivisibleRestrictedRootPairing h𝔞).root μ = μ :=
-  (rfl)
+    (hθ.indivisibleRestrictedRootPairing h𝔞).root μ = μ := by
+  simp [indivisibleRestrictedRootPairing, RootPairing.map, indivisibleRestrictedRootsEquiv]
 
 /-- Evaluating a root functional of `Σ_indiv` at `H : 𝔞` is evaluating `μ` at `H`.
 
@@ -571,8 +553,8 @@ Not a `simp` lemma: `simp` proves this from `indivisibleRestrictedRootPairing_ro
 `indivisibleRestrictedRootPairing_toLinearMap_apply`. -/
 theorem indivisibleRestrictedRootPairing_root'_apply (μ : 𝔞.indivisibleRestrictedRoots)
     (H : 𝔞) :
-    (hθ.indivisibleRestrictedRootPairing h𝔞).root' μ H = (μ : Dual ℝ 𝔞) H :=
-  (rfl)
+    (hθ.indivisibleRestrictedRootPairing h𝔞).root' μ H = (μ : Dual ℝ 𝔞) H := by
+  simp [RootPairing.root']
 
 /-- Evaluating a flipped coroot functional of `Σ_indiv` at `H : 𝔞` is evaluating `μ` at `H`.
 
@@ -580,40 +562,41 @@ Not a `simp` lemma: `RootPairing.coroot'` is an abbreviation for `LinearMap.flip
 rewrites the left-hand side via `LinearMap.flip_apply`. -/
 theorem indivisibleRestrictedRootPairing_flip_coroot'_apply
     (μ : 𝔞.indivisibleRestrictedRoots) (H : 𝔞) :
-    (hθ.indivisibleRestrictedRootPairing h𝔞).flip.coroot' μ H = (μ : Dual ℝ 𝔞) H :=
-  (rfl)
+    (hθ.indivisibleRestrictedRootPairing h𝔞).flip.coroot' μ H = (μ : Dual ℝ 𝔞) H := by
+  simp [RootPairing.coroot']
 
 /-- Evaluating `w • μ` at `H : 𝔞` is evaluating `μ` at the coweight action of `w` on `H`. -/
 theorem indivisibleRestrictedRootPairing_weylGroup_smul_apply
     (w : (hθ.indivisibleRestrictedRootPairing h𝔞).weylGroup) (μ : Dual ℝ 𝔞) (H : 𝔞) :
     (w • μ) H = μ ((w : (hθ.indivisibleRestrictedRootPairing h𝔞).Aut).coweightEquiv H) :=
-  weylGroup_smul_dual_apply (hθ.indivisibleRestrictedRootPairing h𝔞) (fun _ _ ↦ rfl) w μ H
+  RootPairing.weylGroup_smul_dual_apply (hθ.indivisibleRestrictedRootPairing h𝔞)
+    (fun _ _ ↦ by simp) w μ H
 
 @[simp]
 theorem indivisibleRestrictedRootPairing_coroot_apply (μ : 𝔞.indivisibleRestrictedRoots) :
     (hθ.indivisibleRestrictedRootPairing h𝔞).coroot μ =
-      hθ.restrictedCoroot h𝔞.le_cartanP μ :=
-  (rfl)
+      hθ.restrictedCoroot h𝔞.le_cartanP μ := by
+  simp [indivisibleRestrictedRootPairing, RootPairing.map, indivisibleRestrictedRootsEquiv]
 
 @[simp]
 theorem indivisibleRestrictedRootPairing_pairing_apply (ν μ : 𝔞.indivisibleRestrictedRoots) :
     (hθ.indivisibleRestrictedRootPairing h𝔞).pairing ν μ =
-      (ν : Dual ℝ 𝔞) (hθ.restrictedCoroot h𝔞.le_cartanP μ) :=
-  (rfl)
+      (ν : Dual ℝ 𝔞) (hθ.restrictedCoroot h𝔞.le_cartanP μ) := by
+  simp [RootPairing.pairing]
 
 @[simp]
 theorem indivisibleRestrictedRootPairing_reflection_apply (μ : 𝔞.indivisibleRestrictedRoots)
     (ν : Dual ℝ 𝔞) :
     (hθ.indivisibleRestrictedRootPairing h𝔞).reflection μ ν =
-      ν - ν (hθ.restrictedCoroot h𝔞.le_cartanP μ) • (μ : Dual ℝ 𝔞) :=
-  (rfl)
+      ν - ν (hθ.restrictedCoroot h𝔞.le_cartanP μ) • (μ : Dual ℝ 𝔞) := by
+  simp [RootPairing.reflection_apply, RootPairing.coroot']
 
 @[simp]
 theorem indivisibleRestrictedRootPairing_coreflection_apply
     (μ : 𝔞.indivisibleRestrictedRoots) (H : 𝔞) :
     (hθ.indivisibleRestrictedRootPairing h𝔞).coreflection μ H =
-      H - (μ : Dual ℝ 𝔞) H • hθ.restrictedCoroot h𝔞.le_cartanP μ :=
-  (rfl)
+      H - (μ : Dual ℝ 𝔞) H • hθ.restrictedCoroot h𝔞.le_cartanP μ := by
+  simp [RootPairing.coreflection_apply, RootPairing.root']
 
 @[simp]
 theorem indivisibleRestrictedRootPairing_reflectionPerm_apply
@@ -628,28 +611,37 @@ theorem indivisibleRestrictedRootPairing_reflectionPerm_apply
 
 /-- The indivisible restricted root system is crystallographic. -/
 instance isCrystallographic_indivisibleRestrictedRootPairing :
-    (hθ.indivisibleRestrictedRootPairing h𝔞).IsCrystallographic where
-  exists_value μ ν :=
-    hθ.exists_intCast_eq_apply_restrictedCoroot h𝔞 μ.property.left ν.property.left
+    (hθ.indivisibleRestrictedRootPairing h𝔞).IsCrystallographic :=
+  have := hθ.finiteDimensional
+  have : Finite 𝔞.restrictedRoots := Submodule.finite_restrictedRoots.to_subtype
+  ((hθ.restrictedRootPairing h𝔞).indivisible.equivMap _ _ _).toHom.isValuedIn ℤ
 
 /-- The indivisible restricted root system is a root system. -/
 instance isRootSystem_indivisibleRestrictedRootPairing :
     (hθ.indivisibleRestrictedRootPairing h𝔞).IsRootSystem := by
   have := hθ.finiteDimensional
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
+  have : Finite 𝔞.restrictedRoots := Submodule.finite_restrictedRoots.to_subtype
   dsimp only [indivisibleRestrictedRootPairing]
-  exact RootPairing.isRootSystem_mk'' fun μ ν ↦
-    hθ.exists_intCast_eq_apply_restrictedCoroot h𝔞 μ.property.left ν.property.left
+  infer_instance
 
 /-- **The indivisible restricted root system is reduced.** -/
 instance isReduced_indivisibleRestrictedRootPairing :
-    (hθ.indivisibleRestrictedRootPairing h𝔞).IsReduced where
-  eq_or_eq_neg μ ν hdep := by
-    rw [LinearIndependent.pair_iff' ((hθ.indivisibleRestrictedRootPairing h𝔞).ne_zero _),
-      not_forall] at hdep
-    simp only [indivisibleRestrictedRootPairing_root_apply, ne_eq, not_not] at hdep
-    obtain ⟨c, hc⟩ := hdep
-    exact hθ.eq_or_eq_neg_of_mem_indivisibleRestrictedRoots h𝔞 μ.property ν.property hc.symm
+    (hθ.indivisibleRestrictedRootPairing h𝔞).IsReduced :=
+  have := hθ.finiteDimensional
+  have : Finite 𝔞.restrictedRoots := Submodule.finite_restrictedRoots.to_subtype
+  ((hθ.restrictedRootPairing h𝔞).indivisible.equivMap _ _ _).isReduced
+
+include hθ h𝔞 in
+/-- **The indivisible restricted roots span `𝔞*`.** -/
+theorem span_indivisibleRestrictedRoots_eq_top :
+    Submodule.span ℝ 𝔞.indivisibleRestrictedRoots = ⊤ := by
+  have hr : Set.range (hθ.indivisibleRestrictedRootPairing h𝔞).root =
+      𝔞.indivisibleRestrictedRoots := by
+    ext μ
+    simp only [Set.mem_range, indivisibleRestrictedRootPairing_root_apply]
+    exact ⟨fun ⟨ν, hν⟩ ↦ hν ▸ ν.property, fun hμ ↦ ⟨⟨μ, hμ⟩, rfl⟩⟩
+  rw [← hr]
+  exact RootPairing.IsRootSystem.span_root_eq_top
 
 end Indivisible
 
@@ -661,49 +653,19 @@ variable (hθ : θ.IsCartanInvolution) (h𝔞 : θ.IsMaximalAbelianInP 𝔞)
 theorem range_reflection_indivisibleRestrictedRootPairing_eq :
     Set.range (hθ.indivisibleRestrictedRootPairing h𝔞).reflection =
       Set.range (hθ.restrictedRootPairing h𝔞).reflection := by
-  ext s
-  constructor
-  · rintro ⟨μ, rfl⟩
-    refine ⟨⟨μ.val, μ.property.left⟩, LinearEquiv.ext fun ν ↦ ?_⟩
-    simp only [indivisibleRestrictedRootPairing_reflection_apply,
-      restrictedRootPairing_reflection_apply]
-  · rintro ⟨μ, rfl⟩
-    rcases hθ.mem_indivisibleRestrictedRoots_or_exists_eq_two_smul h𝔞 μ.property with
-      h | ⟨γ, hγ, hμ⟩
-    · refine ⟨⟨μ.val, h⟩, LinearEquiv.ext fun ν ↦ ?_⟩
-      simp only [indivisibleRestrictedRootPairing_reflection_apply,
-        restrictedRootPairing_reflection_apply]
-    · refine ⟨⟨γ, hγ⟩, LinearEquiv.ext fun ν ↦ ?_⟩
-      rw [hθ.indivisibleRestrictedRootPairing_reflection_apply,
-        hθ.restrictedRootPairing_reflection_apply, hμ, restrictedCoroot_smul]
-      simp only [map_smul, smul_eq_mul, smul_smul]
-      have hhalf : (2 : ℝ)⁻¹ * ν (hθ.restrictedCoroot h𝔞.le_cartanP γ) * 2 =
-          ν (hθ.restrictedCoroot h𝔞.le_cartanP γ) := by
-        ring
-      rw [hhalf]
+  have := hθ.finiteDimensional
+  have : Finite 𝔞.restrictedRoots := Submodule.finite_restrictedRoots.to_subtype
+  rw [indivisibleRestrictedRootPairing, RootPairing.range_map_reflection_refl,
+    RootPairing.range_reflection_indivisible]
 
 /-- **The coreflections of `Σ` and `Σ_indiv` on `𝔞` coincide**, since `s_{2λ} = s_λ`. -/
 theorem range_coreflection_indivisibleRestrictedRootPairing_eq :
     Set.range (hθ.indivisibleRestrictedRootPairing h𝔞).coreflection =
       Set.range (hθ.restrictedRootPairing h𝔞).coreflection := by
-  ext s
-  constructor
-  · rintro ⟨μ, rfl⟩
-    refine ⟨⟨μ.val, μ.property.left⟩, LinearEquiv.ext fun H ↦ ?_⟩
-    simp only [indivisibleRestrictedRootPairing_coreflection_apply,
-      restrictedRootPairing_coreflection_apply]
-  · rintro ⟨μ, rfl⟩
-    rcases hθ.mem_indivisibleRestrictedRoots_or_exists_eq_two_smul h𝔞 μ.property with
-      h | ⟨γ, hγ, hμ⟩
-    · refine ⟨⟨μ.val, h⟩, LinearEquiv.ext fun H ↦ ?_⟩
-      simp only [indivisibleRestrictedRootPairing_coreflection_apply,
-        restrictedRootPairing_coreflection_apply]
-    · refine ⟨⟨γ, hγ⟩, LinearEquiv.ext fun H ↦ ?_⟩
-      rw [hθ.indivisibleRestrictedRootPairing_coreflection_apply,
-        hθ.restrictedRootPairing_coreflection_apply, hμ, restrictedCoroot_smul]
-      simp only [LinearMap.smul_apply, smul_eq_mul, smul_smul]
-      have hhalf : 2 * γ H * (2 : ℝ)⁻¹ = γ H := by ring
-      rw [hhalf]
+  have := hθ.finiteDimensional
+  have : Finite 𝔞.restrictedRoots := Submodule.finite_restrictedRoots.to_subtype
+  rw [indivisibleRestrictedRootPairing, RootPairing.range_map_coreflection_refl,
+    RootPairing.range_coreflection_indivisible]
 
 /-- **Same Weyl group on `𝔞*`**: the image of `W(Σ_indiv)` in `GL(𝔞*)` equals that of
 `W(Σ)`. -/

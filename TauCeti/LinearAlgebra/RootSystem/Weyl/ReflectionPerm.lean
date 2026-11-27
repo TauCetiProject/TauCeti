@@ -84,7 +84,8 @@ variable {ι₁ ι₂ R M N₁ N₂ : Type*} [CommRing R]
   [AddCommGroup N₁] [Module R N₁]
   [AddCommGroup N₂] [Module R N₂]
 
-private theorem weylGroup_weightHom_injective {ι R M N : Type*} [CommRing R] [AddCommGroup M]
+/-- The weight-space representation of the Weyl group is injective. -/
+theorem weylGroup_weightHom_injective {ι R M N : Type*} [CommRing R] [AddCommGroup M]
     [Module R M] [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) :
     Function.Injective ((Equiv.weightHom P).domRestrict P.weylGroup) :=
   (Equiv.weightHom_injective P).comp Subtype.val_injective

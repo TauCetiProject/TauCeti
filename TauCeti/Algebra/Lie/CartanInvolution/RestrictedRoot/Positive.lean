@@ -32,10 +32,13 @@ open Weyl chambers of `Σ` in `𝔞` are the open dominant chambers
 * the explicit bijection between positive restricted root systems `Σ⁺` and bases `b` of
   `Σ_indiv` (`LieEquiv.IsCartanInvolution.baseEquivPositiveRestrictedRootSystem`), with every `H₀`
   in the open dominant chamber of `b.flip` in `𝔞` inducing `Σ⁺(b)`;
-* integrality and sign of restricted root coordinates: every restricted root is a `ℤ`-linear
-  combination of the simple restricted roots `b.support` with all coefficients `≥ 0` (when
-  `λ ∈ Σ⁺(b)`) or all coefficients `≤ 0` (when `λ ∉ Σ⁺(b)`)
-  (`LieEquiv.IsCartanInvolution.exists_int_nonneg_or_nonpos_of_mem_restrictedRoots`);
+* integrality and sign of restricted root coordinates: relative to `b`, every restricted root is
+  either a `ℤ`-linear combination of `b.support` with all coefficients `≥ 0` or one with all
+  coefficients `≤ 0`
+  (`LieEquiv.IsCartanInvolution.exists_int_nonneg_or_nonpos_of_mem_restrictedRoots`), with the sign
+  determined by membership in `Σ⁺(b)`
+  (`LieEquiv.IsCartanInvolution.exists_nat_eq_sum_of_mem_positiveRestrictedRootsOfBase`,
+  `LieEquiv.IsCartanInvolution.exists_int_nonpos_eq_sum_of_notMem_positiveRestrictedRootsOfBase`);
 * the transitive and simply transitive action of the restricted Weyl group `W(Σ)` on positive
   restricted root systems
   (`LieEquiv.IsCartanInvolution.existsUnique_weylGroup_smul_positiveRestrictedRoots`), obtained by
@@ -576,8 +579,10 @@ theorem exists_int_nonpos_eq_sum_of_notMem_positiveRestrictedRootsOfBase
       rw [neg_smul, natCast_zsmul]
 
 /-- **Integrality and sign of restricted root coordinates**: relative to a base `b` of `Σ_indiv`,
-every restricted root is a `ℤ`-linear combination of `b.support` with all coefficients `≥ 0`
-(when `λ ∈ Σ⁺(b)`) or all `≤ 0` (when `λ ∉ Σ⁺(b)`). -/
+every restricted root is either a `ℤ`-linear combination of `b.support` with all coefficients `≥ 0`
+or one with all coefficients `≤ 0`. See `exists_nat_eq_sum_of_mem_positiveRestrictedRootsOfBase`
+and `exists_int_nonpos_eq_sum_of_notMem_positiveRestrictedRootsOfBase` for the versions separated by
+membership in `Σ⁺(b)`. -/
 theorem exists_int_nonneg_or_nonpos_of_mem_restrictedRoots
     (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) {μ : Dual ℝ 𝔞}
     (hμ : μ ∈ 𝔞.restrictedRoots) :
@@ -633,10 +638,12 @@ theorem smul_positiveRestrictedRootsOfBase (w : (hθ.restrictedRootPairing h𝔞
     mem_positiveRestrictedRootsOfBase, hθ.smul_mem_restrictedRoots_iff h𝔞 w⁻¹,
     TauCeti.posRootCone_map, AddSubmonoid.mem_map]
   refine and_congr Iff.rfl ⟨fun hmem ↦ ⟨w⁻¹ • μ, hmem, ?_⟩, ?_⟩
-  · change hθ.restrictedWeylGroupEquiv h𝔞 w • (w⁻¹ • μ) = μ
-    rw [hθ.restrictedWeylGroupEquiv_smul, smul_inv_smul]
+  · rw [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
+      ← RootPairing.Equiv.smul_eq_weightEquiv, ← Subgroup.smul_def,
+      hθ.restrictedWeylGroupEquiv_smul, smul_inv_smul]
   · rintro ⟨ν, hν, hEq⟩
-    change hθ.restrictedWeylGroupEquiv h𝔞 w • ν = μ at hEq
+    rw [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
+      ← RootPairing.Equiv.smul_eq_weightEquiv, ← Subgroup.smul_def] at hEq
     rwa [← hEq, hθ.restrictedWeylGroupEquiv_smul, inv_smul_smul]
 
 /-- **Simple transitivity of `W(Σ)` on positive restricted root systems.** For any two positive
