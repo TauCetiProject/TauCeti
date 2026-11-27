@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Regular.LinearMap
-public import TauCeti.Algebra.Module.Injective.Bidual
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.RingTheory.Nilpotent.Defs
 
@@ -24,19 +23,12 @@ Noetherian ring with two minimal primes, as in `IsLocalRing.isDomain_of_isIntegr
 A nilpotent ideal of a nontrivial ring, at the other extreme, kills a nonzero element: its last
 nonzero power does.
 
-Over a self-injective commutative ring, every finitely generated ideal equals its double
-annihilator. This follows by applying reflexivity of finitely presented modules to the quotient
-by the ideal. It makes annihilation reverse and reflect inclusion in a noetherian self-injective
-ring, allowing the ascending and descending chain conditions to be compared.
-
 ## Main results
 
 * `Ideal.exists_mem_annihilator_sup_isSMulRegular`: in a reduced Noetherian ring, every ideal
   together with its annihilator contains a nonzerodivisor.
 * `Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent`: a nilpotent ideal of a nontrivial
   ring kills a nonzero element.
-* `Ideal.annihilator_annihilator_of_fg`: a finitely generated ideal of a self-injective
-  commutative ring equals its double annihilator.
 -/
 
 public section
@@ -72,29 +64,3 @@ theorem Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent {R : Type*} [Comm
   have hmem := Ideal.mul_mem_mul hx hsmem
   rwa [← pow_succ', Nat.sub_add_cancel (pos_nilpotencyClass_iff.mpr hI), pow_nilpotencyClass hI,
     Ideal.zero_eq_bot, Ideal.mem_bot] at hmem
-
-/-- A finitely generated ideal in a self-injective commutative ring is its double
-annihilator. -/
-@[simp]
-theorem Ideal.annihilator_annihilator_of_fg {R : Type*} [CommRing R] [Module.Injective R R]
-    (I : Ideal R) (hI : I.FG) : I.annihilator.annihilator = I := by
-  have : Module.FinitePresentation R (R ⧸ I) :=
-    Module.finitePresentation_of_surjective I.mkQ I.mkQ_surjective
-      (by simpa [Ideal.FG, Submodule.FG] using hI)
-  apply le_antisymm
-  · intro x hx
-    apply Ideal.Quotient.eq_zero_iff_mem.mp
-    apply (Module.bijective_dual_eval R (R ⧸ I)).injective
-    ext f
-    have hfx (r : R) : f (Ideal.Quotient.mk I r) = r * f (Ideal.Quotient.mk I 1) := by
-      simpa using (f.comp I.mkQ).map_smul r 1
-    have hf : f (Ideal.Quotient.mk I 1) ∈ I.annihilator :=
-      Submodule.mem_annihilator.mpr fun r hr ↦ by
-        simp only [smul_eq_mul, mul_comm, ← hfx]
-        simp [Ideal.Quotient.eq_zero_iff_mem.mpr hr]
-    have hx' := Submodule.mem_annihilator.mp hx _ hf
-    simpa only [smul_eq_mul, ← hfx, map_zero, Module.Dual.eval_apply,
-      LinearMap.zero_apply] using hx'
-  · intro x hx
-    exact Submodule.mem_annihilator.mpr fun r hr ↦ by
-      simpa [mul_comm] using Submodule.mem_annihilator.mp hr x hx

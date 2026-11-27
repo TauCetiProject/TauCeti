@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.Ideal.Cotangent
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.LocalRing.Quotient
+import Mathlib.RingTheory.HopkinsLevitzki
 
 /-!
 # The maximal ideal and the cotangent space of a quotient of a local ring
@@ -24,6 +25,9 @@ Dividing both sides of a local homomorphism by an ideal of the base, as in induc
 dimension of the base, therefore stays among local homomorphisms.
 When `J` is the maximal ideal of `R` and generates the maximal ideal of `S`, this map is the
 residue field extension, whose degree is then the rank of a finite free `S`.
+
+An Artinian local ring with finite residue field is finite; this supplies finiteness
+from a chain condition without any self-injectivity assumption.
 
 ## Main results
 
@@ -45,6 +49,8 @@ residue field extension, whose degree is then the rank of a finite free `S`.
   of a local ring is a local ring.
 * `TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_ker`: a local homomorphism to an Artinian local
   ring kills a power of the maximal ideal of the source.
+* `TauCeti.IsLocalRing.finite_of_isArtinianRing`: an Artinian local ring with finite residue
+  field is finite.
 -/
 
 public section
@@ -252,5 +258,12 @@ theorem exists_maximalIdeal_pow_le_ker {S : Type*} [CommRing S] [IsLocalRing S] 
       ≤ ((maximalIdeal S).comap f) ^ n := Ideal.pow_right_mono (maximalIdeal_comap f).ge n
     _ ≤ (maximalIdeal S ^ n).comap f := Ideal.le_comap_pow _ n
     _ = RingHom.ker f := by rw [hn, Ideal.zero_eq_bot, RingHom.ker_eq_comap_bot]
+
+variable (R) in
+/-- An Artinian commutative local ring with finite residue field is finite. -/
+theorem finite_of_isArtinianRing [IsArtinianRing R] [Finite (ResidueField R)] : Finite R := by
+  have : Finite (R ⧸ (⊥ : Ideal R)) :=
+    finite_quotient_iff.mpr (exists_maximalIdeal_pow_le_of_isArtinianRing_quotient ⊥)
+  exact Finite.of_equiv _ (RingEquiv.quotientBot R).toEquiv
 
 end TauCeti.IsLocalRing
