@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Trans
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Plane
 public import TauCeti.Geometry.Symplectic.Prod.Basic
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Symplectic.Floer.Examples.LinearPerturbation
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -322,22 +323,6 @@ private theorem differentiableAt_of_isHamiltonianVectorField_dilationField {f : 
   rw [fderiv_zero_of_not_differentiableAt hd] at this
   simp only [zero_apply, mul_one] at this
   exact hx this.symm
-
-/-- If the derivative of `f` in the direction `e` is the constant `c` along the segment
-`s ↦ x + s • e`, `s ∈ [a, b]`, then `f` grows by `c (b - a)` along it. -/
-private theorem sub_eq_mul_of_fderiv_apply_eq {f : ℝ × ℝ → ℝ} (x e : ℝ × ℝ) {a b c : ℝ}
-    (hab : a < b)
-    (hf : ∀ s ∈ Icc a b, DifferentiableAt ℝ f (x + s • e) ∧ fderiv ℝ f (x + s • e) e = c) :
-    f (x + b • e) - f (x + a • e) = c * (b - a) := by
-  have hd : ∀ s ∈ Icc a b, HasDerivAt (fun s ↦ f (x + s • e)) c s := fun s hs ↦ by
-    refine ((hf s hs).1.hasFDerivAt.comp_hasDerivAt s
-      (((hasDerivAt_id s).smul_const e).const_add x)).congr_deriv ?_
-    simp [(hf s hs).2]
-  obtain ⟨d, -, hd'⟩ := exists_hasDerivAt_eq_slope (fun s ↦ f (x + s • e)) (fun _ ↦ c) hab
-    (fun s hs ↦ (hd s hs).continuousAt.continuousWithinAt)
-    (fun s hs ↦ hd s (Ioo_subset_Icc_self hs))
-  rw [eq_div_iff (sub_ne_zero.2 hab.ne')] at hd'
-  exact hd'.symm
 
 /-- The field `q ∂_q` is the Hamiltonian vector field of no function `f : ℝ² → ℝ`, differentiable
 or not, on `(ℝ², dq ∧ dp)`. -/
