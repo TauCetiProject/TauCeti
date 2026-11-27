@@ -158,8 +158,9 @@ private theorem eq_sqrt_smul_sineHilbertBasis_of_ae_eq_sin
   filter_upwards [hs k, sineHilbertBasis_ae_eq Real.pi_pos k,
     Lp.coeFn_smul (√(π / 2)) (sineHilbertBasis Real.pi_pos k)] with x h₁ h₂ h₃
   simp only [sub_zero] at h₂
-  rw [h₁, h₃, Pi.smul_apply, h₂, smul_eq_mul, ← mul_assoc, ← Real.sqrt_mul (by positivity),
-    show π / 2 * (2 / π) = 1 by field_simp, Real.sqrt_one, one_mul]
+  have hπ : π / 2 * (2 / π) = 1 := by field_simp
+  rw [h₁, h₃, Pi.smul_apply, h₂, smul_eq_mul, ← mul_assoc, ← Real.sqrt_mul (by positivity), hπ,
+    Real.sqrt_one, one_mul]
   congr 1
   field_simp
 

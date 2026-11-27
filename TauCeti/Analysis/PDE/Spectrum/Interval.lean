@@ -22,7 +22,6 @@ import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
-import TauCeti.Analysis.Sobolev.W1p.Hilbert
 
 /-!
 # The Dirichlet, Neumann and mixed eigenvalues of `-Δ` on an interval
@@ -1066,16 +1065,16 @@ private theorem inner_value_sineEigenfunction (hab : a < b) (j k : ℕ) :
   split_ifs with hjk
   · rw [hjk, real_inner_self_eq_norm_sq, norm_value_sineEigenfunction_sq hab k]
   · -- Eigenfunctions of the symmetric energy form with distinct eigenvalues are orthogonal.
-    have h₁ := inner_gradient_sineEigenfunction hab j (sineEigenfunction hab k)
-    have h₂ := inner_gradient_sineEigenfunction hab k (sineEigenfunction hab j)
-    rw [real_inner_comm (W1p.gradient _), h₂, real_inner_comm (W1p.value _)] at h₁
     have : 0 < b - a := sub_pos.2 hab
-    have hne : (((k : ℝ) + 1) * π / (b - a)) ^ 2 ≠ (((j : ℝ) + 1) * π / (b - a)) ^ 2 := by
+    have hne : (((j : ℝ) + 1) * π / (b - a)) ^ 2 ≠ (((k : ℝ) + 1) * π / (b - a)) ^ 2 := by
       intro h
       rw [div_pow, div_pow, div_left_inj₀ (by positivity), mul_pow, mul_pow,
         mul_left_inj' (by positivity), sq_eq_sq₀ (by positivity) (by positivity)] at h
-      exact hjk (by exact_mod_cast (add_left_inj 1).1 h.symm)
-    exact (mul_eq_mul_right_iff.1 h₁).resolve_left hne
+      exact hjk (by exact_mod_cast (add_left_inj 1).1 h)
+    exact W1p.inner_value_eq_zero_of_energyFormH1_eq_of_ne
+      (ae_of_all _ fun _ => Matrix.isSymm_one) hne
+      ((energyFormH1_one_zero_zero_eq_inner _ _).trans (inner_gradient_sineEigenfunction hab j _))
+      ((energyFormH1_one_zero_zero_eq_inner _ _).trans (inner_gradient_sineEigenfunction hab k _))
 
 /-- The `k`-th vector of the sine basis: the value of the `(k + 1)`-th sine eigenfunction,
 normalized in `L²(a, b)`. -/

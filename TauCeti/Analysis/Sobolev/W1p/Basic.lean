@@ -67,6 +67,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   `TauCeti.W1p.gradient_coe` identifying them with the components of the ambient jet.
 * `TauCeti.W1p.coe_ae_eq_toLp_value_gradient`: the ambient jet of a Sobolev function is almost
   everywhere its value-gradient pair.
+* `TauCeti.W1p.inner_eq_inner_value_add_inner_gradient`: at `p = 2` the inner product is
+  `⟪u, v⟫_{L²(Ω)} + ⟪∇u, ∇v⟫_{L²(Ω; E)}`.
 * `TauCeti.W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral`: on `s ⊆ Ω`, the `L²(s)` seminorm of the
   value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`, which is at most `‖w‖`
   (`TauCeti.W1p.sqrt_setIntegral_value_sq_le_norm`).
@@ -758,6 +760,16 @@ theorem W1p.coe_ae_eq_toLp_value_gradient (u : W1p mu Omega p) :
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
     ‖u‖ ^ 2 = ‖W1p.value u‖ ^ 2 + ‖W1p.gradient u‖ ^ 2 :=
   Sobolev1JetLp.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u.val
+
+/-- **The inner product of `H¹(Ω)`** is the sum of the `L²` inner products of the values and of the
+weak gradients: `⟪u, v⟫ = ⟪u, v⟫_{L²(Ω)} + ⟪∇u, ∇v⟫_{L²(Ω; E)}`, the polarization of
+`TauCeti.W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq`. -/
+theorem W1p.inner_eq_inner_value_add_inner_gradient (u v : W1p mu Omega 2) :
+    ⟪u, v⟫_ℝ = ⟪W1p.value u, W1p.value v⟫_ℝ + ⟪W1p.gradient u, W1p.gradient v⟫_ℝ := by
+  have h (w : W1p mu Omega 2) := W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq w
+  simp only [real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
+    ← sq, h, W1p.value_add, W1p.gradient_add]
+  ring
 
 /-- Under a Poincaré-type bound `‖u‖₂ ≤ P ‖∇u‖₂`, the `W^{1,2}` norm is controlled by the
 gradient: `‖u‖² ≤ (P² + 1) ‖∇u‖₂²`. -/
