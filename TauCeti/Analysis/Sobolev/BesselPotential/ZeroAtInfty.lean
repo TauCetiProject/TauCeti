@@ -352,10 +352,14 @@ theorem fderiv_apply_mem_realSobolevFunctions {P : Type*} [NormedAddCommGroup P]
       simp [Φ, hg]
     have h2 : DifferentiableAt ℝ (fun q ↦ g q x) p := by
       simpa [Function.comp_def] using (Complex.reCLM.hasFDerivAt.comp p h1).differentiableAt
-    have h3 := (Complex.ofRealCLM.hasFDerivAt.comp p h2.hasFDerivAt).fderiv
-    rw [show (fun q ↦ (g q x : ℂ)) = ⇑Complex.ofRealCLM ∘ fun q ↦ g q x from
-      funext fun _ ↦ (Complex.ofRealCLM_apply _).symm] at h1
-    simpa [Φ] using congrArg (· v) (h1.fderiv.symm.trans h3)
+    -- Both `Φ ∘ ∂U` and the real derivative of `q ↦ g q x` differentiate `q ↦ g q x`.
+    have h3 : HasFDerivAt (fun q ↦ (g q x : ℂ))
+        (Complex.ofRealCLM.comp (fderiv ℝ (fun q ↦ g q x) p)) p := by
+      simpa only [Function.comp_def, Complex.ofRealCLM_apply] using
+        Complex.ofRealCLM.hasFDerivAt.comp p h2.hasFDerivAt
+    simpa only [Φ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+      ZeroAtInftyContinuousMap.evalCLM_apply, Complex.ofRealCLM_apply] using
+      congrArg (· v) (h1.unique h3)
   rw [mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq h0]
   exact ⟨fderiv ℝ U p v,
     (coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 _).trans (.of_forall hev)⟩

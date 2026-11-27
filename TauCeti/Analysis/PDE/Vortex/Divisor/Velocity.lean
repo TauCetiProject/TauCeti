@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Divisor.Normalized
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Cohomology
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Tangent
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
-import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.RingTheory.Polynomial.SymmetricPower
@@ -114,8 +114,8 @@ private theorem sectionValue_normalizedVortex (c : Fin m → ℂ) (w : ℂ) :
 /-- The normalized vortices are differentiable in the divisor coordinates at every point. -/
 private theorem differentiableAt_normalizedVortex_apply (c : Fin m → ℂ) (w : ℂ) :
     DifferentiableAt ℝ (fun c' ↦ normalizedVortex c' w) c :=
-  (contDiff_normalizedVortex_uncurry.differentiable (by simp) (c, w)).comp
-    (f := fun c' ↦ (c', w)) c (differentiableAt_id.prodMk (differentiableAt_const w))
+  (contDiff_normalizedVortex_uncurry.differentiable (by simp) (c, w)).hasFDerivAt_slice_fst
+    |>.differentiableAt
 
 open TauCeti.Polynomial in
 /-- **The velocity of the normalized vortices moves the divisor by its coordinates.** The
@@ -192,6 +192,39 @@ def normalizedVortexKernelEquiv (hm : 0 < m) (c : Fin m → ℂ) :
     (fun w ↦ by simp [equation_normalizedVortex hm c w]) (tendsto_normSq_normalizedVortex hm c)
     (isZeroMultiplicity_sectionValue_normalizedVortex c)
 
+/-- The divisor coordinates at `y_c` are `TauCeti.Vortex.gaugeFixedKernelEquivCoeff` at `y_c`. -/
+theorem normalizedVortexKernelEquiv_def (hm : 0 < m) (c : Fin m → ℂ) :
+    normalizedVortexKernelEquiv hm c =
+      gaugeFixedKernelEquivCoeff (contDiff_normalizedVortex c)
+        (fun w ↦ by simp [equation_normalizedVortex hm c w]) (tendsto_normSq_normalizedVortex hm c)
+        (isZeroMultiplicity_sectionValue_normalizedVortex c) :=
+  (rfl)
+
+/-- **The divisor coordinates are the coefficients of the divisor variation.** An element `y` of
+the kernel of `L_{y_c}` has divisor coordinates `v` exactly when the polynomial with coefficients
+`v` is a divisor variation of `y` at the divisor with symmetric coordinates `c`. -/
+theorem normalizedVortexKernelEquiv_eq_iff (hm : 0 < m) {c : Fin m → ℂ}
+    {y : gaugeFixedKernel (normalizedVortex c)} {v : Fin m → ℂ} :
+    normalizedVortexKernelEquiv hm c y = v ↔ IsDivisorVariation (normalizedVortex c) y
+      ((Sym.coeffEquiv ℂ m).symm c : Multiset ℂ) ((degreeLTEquiv ℂ m).symm v) := by
+  rw [normalizedVortexKernelEquiv_def, gaugeFixedKernelEquivCoeff_apply,
+    ← LinearEquiv.eq_symm_apply, gaugeFixedKernelEquivDegreeLT_eq_iff]
+
+/-- The kernel element with divisor coordinates `v` has divisor variation the polynomial with
+coefficients `v`. -/
+theorem isDivisorVariation_normalizedVortexKernelEquiv_symm (hm : 0 < m) (c v : Fin m → ℂ) :
+    IsDivisorVariation (normalizedVortex c) ((normalizedVortexKernelEquiv hm c).symm v)
+      ((Sym.coeffEquiv ℂ m).symm c : Multiset ℂ) ((degreeLTEquiv ℂ m).symm v) :=
+  (normalizedVortexKernelEquiv_eq_iff hm).1 (LinearEquiv.apply_symm_apply _ v)
+
+/-- In divisor coordinates the complex structure `J` of the kernel is multiplication by `i`. -/
+@[simp]
+theorem normalizedVortexKernelEquiv_symm_I_smul (hm : 0 < m) (c v : Fin m → ℂ) :
+    (normalizedVortexKernelEquiv hm c).symm (I • v) =
+      gaugeFixedKernelAlmostComplexStructure (normalizedVortex c)
+        ((normalizedVortexKernelEquiv hm c).symm v) :=
+  gaugeFixedKernelEquivCoeff_symm_I_smul _ _ _ _ v
+
 /-- **The velocity of the normalized vortices is the kernel field of its divisor coordinates, up
 to gauge.** Let `y_c` be the normalized vortex with divisor coefficients `c ∈ ℂᵐ`, `m ≥ 1`, and let
 `E : ker L_{y_c} ≃ ℂᵐ` be the divisor coordinates of the kernel of its gauge-fixed operator
@@ -224,8 +257,8 @@ theorem exists_fderiv_normalizedVortex_eq_add_gaugeDirection (hm : 0 < m) {k : �
       ((isDivisorVariation_gaugeDirection _ hu3.continuous _).smul (-1))
     simpa [sub_eq_add_neg] using h
   have hE : (normalizedVortexKernelEquiv hm c).symm v = ⟨_, (Submodule.mem_inf.1 hK).left⟩ := by
-    rw [LinearEquiv.symm_apply_eq, normalizedVortexKernelEquiv, gaugeFixedKernelEquivCoeff_apply,
-      (gaugeFixedKernelEquivDegreeLT_eq_iff _ _ _ _).2 hdiv, LinearEquiv.apply_symm_apply]
+    rw [LinearEquiv.symm_apply_eq, eq_comm, normalizedVortexKernelEquiv_eq_iff]
+    exact hdiv
   rw [hE]
   simp
 

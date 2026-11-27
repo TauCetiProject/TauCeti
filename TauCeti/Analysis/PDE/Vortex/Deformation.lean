@@ -51,7 +51,7 @@ For a family of fields `F_q` depending on a parameter, the section of the veloci
 `w ↦ ∂_v F_p (w)` is the velocity of the sections (`sectionValue_fderiv`), and if the family is
 jointly `C²` and solves the equation near `p`, its velocity solves the linearized equation
 (`linearizedEquation_fderiv_eq_zero`), by swapping the parameter and spatial derivatives
-(`TauCeti.fderiv_fderiv_slice_apply_comm`).
+(`TauCeti.fderiv_fderiv_slice_piLp_apply_comm`).
 The vacuum is `(0, 0, 1/2, 0)`; its linearization agrees with the last three rows of
 `vacuumOperator`. This is a smooth differential expression; no completed field space,
 Fredholm property or quotient construction is asserted.
@@ -1223,49 +1223,6 @@ section Linearization
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
   {F : P → ℂ → EuclideanSpace ℝ (Fin 4)} {p : P} {z : ℂ}
 
-/-- A coordinate of a jointly `C²` family of fields, as a function of the parameter and the
-point. -/
-private theorem contDiffAt_coord (hF : ContDiffAt ℝ 2 (Function.uncurry F) (p, z)) (i : Fin 4) :
-    ContDiffAt ℝ (minSmoothness ℝ 2) (fun pq : P × ℂ ↦ F pq.1 pq.2 i) (p, z) := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  exact (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.contDiffAt.comp _ hF
-
-/-- A spatial derivative of a coordinate of a jointly `C²` family is differentiable in the
-parameter. -/
-private theorem differentiableAt_fderiv_coord (hF : ContDiffAt ℝ 2 (Function.uncurry F) (p, z))
-    (i : Fin 4) (e : ℂ) : DifferentiableAt ℝ (fun q ↦ fderiv ℝ (fun w ↦ F q w i) z e) p := by
-  have hG := contDiffAt_coord hF i
-  exact ((TauCeti.hasFDerivAt_spatialFDeriv hG).clm_apply (hasFDerivAt_const e p)).differentiableAt
-
-/-- A coordinate of a jointly `C²` family is differentiable in the parameter. -/
-private theorem differentiableAt_coord (hF : ContDiffAt ℝ 2 (Function.uncurry F) (p, z))
-    (i : Fin 4) : DifferentiableAt ℝ (fun q ↦ F q z i) p :=
-  ((contDiffAt_coord hF i).differentiableAt (by simp)).comp (f := fun q ↦ (q, z)) p
-    (differentiableAt_id.prodMk (differentiableAt_const z))
-
-/-- A jointly `C²` family is differentiable in the parameter. -/
-private theorem differentiableAt_slice (hF : ContDiffAt ℝ 2 (Function.uncurry F) (p, z)) :
-    DifferentiableAt ℝ (fun q ↦ F q z) p :=
-  (hF.differentiableAt two_ne_zero).comp (f := fun q ↦ (q, z)) p
-    (differentiableAt_id.prodMk (differentiableAt_const z))
-
-/-- The parameter derivative of a spatial derivative of a coordinate is the spatial derivative of
-that coordinate of the velocity. -/
-private theorem fderiv_fderiv_coord (hF : ContDiffAt ℝ 2 (Function.uncurry F) (p, z))
-    (i : Fin 4) (e : ℂ) (v : P) :
-    fderiv ℝ (fun q ↦ fderiv ℝ (fun w ↦ F q w i) z e) p v =
-      fderiv ℝ (fun w ↦ fderiv ℝ (fun q ↦ F q w) p v i) z e := by
-  have hG := contDiffAt_coord hF i
-  rw [TauCeti.fderiv_fderiv_slice_apply_comm hG v e]
-  have hev : ∀ᶠ w in 𝓝 z, ContDiffAt ℝ 2 (Function.uncurry F) (p, w) :=
-    (continuous_const.prodMk continuous_id : Continuous fun w : ℂ ↦ (p, w)).continuousAt.eventually
-      (hF.eventually (by simp))
-  have heq : (fun w ↦ fderiv ℝ (fun q ↦ F q w i) p v) =ᶠ[𝓝 z]
-      fun w ↦ fderiv ℝ (fun q ↦ F q w) p v i := by
-    filter_upwards [hev] with w hw
-    exact (differentiableAt_slice hw).fderiv_piLp_apply i v
-  rw [heq.fderiv_eq]
-
 /-- **The velocity of a family of vortices solves the linearized equation.** Let `F` be a family of
 plane fields, jointly `C²` in the parameter and the point near `(p, z)`, solving the vortex
 equation at `z` for all parameters near `p`. Then for every direction `v` the velocity
@@ -1278,28 +1235,41 @@ theorem linearizedEquation_fderiv_eq_zero (hF : ContDiffAt ℝ 2 (Function.uncur
       (hg : ∀ q, g q = equation (F q) z k) : L v = 0 := by
     have h : g =ᶠ[𝓝 p] fun _ ↦ 0 := hsol.mono fun q hq ↦ by simp [hg, hq]
     rw [← hL.fderiv, h.fderiv_eq, fderiv_const_apply, zero_apply]
-  have hc (i : Fin 4) := (differentiableAt_coord hF i).hasFDerivAt
-  have hd (i : Fin 4) (e : ℂ) := (differentiableAt_fderiv_coord hF i e).hasFDerivAt
-  have hdd (i : Fin 4) (e : ℂ) := fderiv_fderiv_coord hF i e v
-  have hcc (i : Fin 4) := (differentiableAt_slice hF).fderiv_piLp_apply i v
+  -- The coordinates of `F` are jointly `C²`, so differentiable in each variable.
+  have hG (i : Fin 4) :
+      ContDiffAt ℝ (minSmoothness ℝ 2) (fun pq : P × ℂ ↦ F pq.1 pq.2 i) (p, z) := by
+    rw [minSmoothness_of_isRCLikeNormedField]
+    exact (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.contDiffAt.comp _ hF
+  have hslice : DifferentiableAt ℝ (fun q ↦ F q z) p :=
+    (hF.differentiableAt two_ne_zero).hasFDerivAt_slice_fst.differentiableAt
+  have hc (i : Fin 4) : HasFDerivAt (fun q ↦ F q z i) (fderiv ℝ (fun q ↦ F q z i) p) p :=
+    ((hG i).differentiableAt (by simp)).hasFDerivAt_slice_fst.differentiableAt.hasFDerivAt
+  have hd (i : Fin 4) (e : ℂ) :=
+    ((TauCeti.hasFDerivAt_spatialFDeriv (hG i)).clm_apply (hasFDerivAt_const e p)).differentiableAt
+      |>.hasFDerivAt
+  have hdd (i : Fin 4) (e : ℂ) : fderiv ℝ (fun q ↦ fderiv ℝ (fun w ↦ F q w i) z e) p v =
+      fderiv ℝ (fun w ↦ fderiv ℝ (fun q ↦ F q w) p v i) z e :=
+    TauCeti.fderiv_fderiv_slice_piLp_apply_comm (F := Function.uncurry F)
+      (by rwa [minSmoothness_of_isRCLikeNormedField]) i v e
+  have hcc (i : Fin 4) := hslice.fderiv_piLp_apply i v
   ext k
   fin_cases k
   · have h := hzero 0 (((hd 0 I).sub (hd 1 1)).add
       ((((hc 2).pow 2).add ((hc 3).pow 2)).const_mul (1 / 2) |>.sub_const (1 / 8)))
       fun q ↦ by rw [equation_apply_zero]; simp only [Pi.add_apply, Pi.sub_apply]; ring
     simp only [add_apply, sub_apply, smul_apply, smul_eq_mul, nsmul_eq_mul, hdd, hcc] at h
-    simp only [Fin.zero_eta, Fin.isValue, linearizedEquation_apply_zero, PiLp.zero_apply]
     norm_num at h
+    simp
     linear_combination h
   · have h := hzero 1 ((((hd 2 1).sub (hd 3 I)).sub ((hc 0).mul (hc 3))).sub ((hc 1).mul (hc 2)))
-      fun q ↦ by rw [equation_apply_one]; rfl
+      fun q ↦ by rw [equation_apply_one]; simp only [Pi.sub_apply, Pi.mul_apply]
     simp only [add_apply, sub_apply, smul_apply, smul_eq_mul, hdd, hcc] at h
-    simp only [Fin.mk_one, Fin.isValue, linearizedEquation_apply_one, PiLp.zero_apply]
+    simp
     linear_combination h
   · have h := hzero 2 ((((hd 3 1).add (hd 2 I)).add ((hc 0).mul (hc 2))).sub ((hc 1).mul (hc 3)))
-      fun q ↦ by rw [equation_apply_two]; rfl
+      fun q ↦ by rw [equation_apply_two]; simp only [Pi.add_apply, Pi.sub_apply, Pi.mul_apply]
     simp only [add_apply, sub_apply, smul_apply, smul_eq_mul, hdd, hcc] at h
-    simp only [Fin.reduceFinMk, Fin.isValue, linearizedEquation_apply_two, PiLp.zero_apply]
+    simp
     linear_combination h
 
 end Linearization

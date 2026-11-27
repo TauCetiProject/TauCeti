@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
 public import Mathlib.RingTheory.Polynomial.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Meromorphic.PrincipalPart
 import TauCeti.Analysis.PDE.Vortex.AmplitudeForm
 public import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
@@ -195,8 +196,7 @@ theorem isDivisorVariation_fderiv_of_sectionValue_eq_mul {P : Type*} [NormedAddC
   -- The derivative of `H` along the parameter, as a function of the point.
   have hHd (w : ℂ) : HasFDerivAt (fun q ↦ H q w)
       ((fderiv ℝ (Function.uncurry H) (p, w)).comp (ContinuousLinearMap.inl ℝ P ℂ)) p :=
-    ((hH.differentiable one_ne_zero (p, w)).hasFDerivAt).comp (f := fun q ↦ (q, w)) p
-      (hasFDerivAt_prodMk_left (𝕜 := ℝ) p w)
+    (hH.differentiable one_ne_zero (p, w)).hasFDerivAt_slice_fst
   refine isDivisorVariation_iff.2 ⟨fun w ↦ fderiv ℝ (fun q ↦ H q w) p v / H p w, ?_, fun w ↦ ?_⟩
   · have hc : Continuous fun w ↦ fderiv ℝ (Function.uncurry H) (p, w) (v, 0) :=
       ((hH.continuous_fderiv one_ne_zero).comp (continuous_const.prodMk continuous_id)).clm_apply
