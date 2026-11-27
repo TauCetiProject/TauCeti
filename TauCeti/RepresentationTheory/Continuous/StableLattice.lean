@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.NumberTheory.LocalField.Lattice
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 
 import Mathlib.LinearAlgebra.Matrix.Basis
 import Mathlib.RingTheory.Flat.TorsionFree

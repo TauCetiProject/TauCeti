@@ -47,7 +47,8 @@ pair, is in `TauCeti.Analysis.PDE.Schrodinger.Endpoint`.
   estimate on the line at `(4, ∞)`.
 * `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le_of_finrank_eq_one`: the
   homogeneous estimate on the line at `(4, ∞)`, in weak form.
-* `TauCeti.two_le_of_admissible`: an admissible pair has `2 ≤ r`.
+* `TauCeti.two_le_of_admissible`, `TauCeti.ne_top_of_admissible`: an admissible pair has `2 ≤ r`,
+  so the Hölder conjugate `r'` is finite.
 * `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`: the dual estimate in every
   dimension.
 * `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le`: the homogeneous estimate in
@@ -164,6 +165,18 @@ theorem two_le_of_admissible (hq : 0 < q) (hr0 : r ≠ 0)
     2 ≤ r := by
   have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast hq)
   exact ENNReal.two_le_of_toReal_inv_le hr0 (by nlinarith)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The Hölder conjugate `r'` of the space exponent of an admissible pair `2 / q + n / r = n / 2`
+with `0 < q` is finite, since `2 ≤ r`. -/
+theorem ne_top_of_admissible (hq : 0 < q)
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    r' ≠ ∞ :=
+  (ENNReal.HolderConjugate.ne_top_iff_ne_one r' r).2 fun h ↦ by
+    have := two_le_of_admissible (E := E) hq
+      (ENNReal.HolderConjugate.ne_zero r r') hqr
+    rw [h] at this
+    norm_num at this
 
 /-- In every dimension `n`, the time pairings `S(s) S(t)* = S(s - t)` of the Schrödinger
 propagator decay from `L^{r'}` to `L^r` like `|s - t| ^ (-2 / q)` along an admissible pair

@@ -37,6 +37,9 @@ to `(Δⁿ f)(a)`. This is shared by the Taylor theories of entire series
 * `taylor_coe`: on polynomials, the translate is `Polynomial.taylor`.
 * `taylor_zero`: translation by `0` is the identity.
 * `taylor_one`: the translate of `1` is `1`.
+* `order_taylor_X_pow_of_pow_ne_zero`, `order_taylor_X_pow_of_ne_zero` and `order_taylor_X_pow`:
+  over a nontrivial ring the Taylor order of `X ^ n` at `0` is `n`, and away from `0` it is `0`
+  whenever `a ^ n ≠ 0` (in particular for `a ≠ 0` when the ring has no zero divisors).
 * `evalAt_taylor_of_summable`: the Taylor identity `(taylor a f)(b) = f(b + a)` for any series
   whose double series at `(a, b)` is summable with rows converging to `(Δⁿ f)(a)`.
 * `taylor_add_of_summable_norm`, `taylor_mul_of_summable_norm`: translation is additive and
@@ -99,6 +102,29 @@ theorem taylor_zero_right (a : R) : taylor a (0 : R⟦X⟧) = 0 := by
 @[simp]
 theorem taylor_one (a : R) : taylor a (1 : R⟦X⟧) = 1 := by
   simpa using taylor_coe a 1
+
+/-- When `a ^ n ≠ 0`, the Taylor translate of `X ^ n` at `a` has order `0`. -/
+theorem order_taylor_X_pow_of_pow_ne_zero {a : R} {n : ℕ} (ha : a ^ n ≠ 0) :
+    (taylor a (X ^ n : R⟦X⟧)).order = 0 := by
+  by_contra hne
+  apply ha
+  have hev := order_taylor_ne_zero_iff.mp hne
+  rwa [X_pow_eq, evalAt_monomial, one_smul] at hev
+
+/-- Over a ring with no zero divisors, the Taylor translate of `X ^ n` at any `a ≠ 0` has order
+`0`. -/
+@[simp]
+theorem order_taylor_X_pow_of_ne_zero [NoZeroDivisors R] {a : R} (ha : a ≠ 0) (n : ℕ) :
+    (taylor a (X ^ n : R⟦X⟧)).order = 0 :=
+  order_taylor_X_pow_of_pow_ne_zero (pow_ne_zero n ha)
+
+/-- Over a nontrivial ring with no zero divisors, the Taylor translate of `X ^ n` at `a` has
+order `n` if `a = 0` and `0` otherwise. -/
+theorem order_taylor_X_pow [NoZeroDivisors R] [Nontrivial R] [DecidableEq R] (a : R) (n : ℕ) :
+    (taylor a (X ^ n : R⟦X⟧)).order = if a = 0 then (n : ℕ∞) else 0 := by
+  split_ifs with ha
+  · subst ha; simp
+  · exact order_taylor_X_pow_of_ne_zero ha n
 
 end Topological
 

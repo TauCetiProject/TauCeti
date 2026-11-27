@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.ObjectProperty.OrthogonalLimits
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Abelian
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Exact
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangulated
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Basic
 public import TauCeti.Algebra.Homology.Curved.Module.Right.SecondKind
@@ -40,8 +41,10 @@ subcategory closed under products, so it contains the contraacyclic modules.
 
 Consequently the localization functor to the contraderived category is bijective on morphisms
 out of a graded-projective module. This is the full faithfulness in Positselski's graded-projective
-model of the contraderived category; its essential surjectivity needs a further hypothesis on
-countable products of projective graded modules and is not treated here.
+model of the contraderived category; essential surjectivity under the countable-product
+hypothesis is proved in `Graded.Projective.Countable`
+(`isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProductsOfProjective` in
+`ContraderivedCategory`).
 
 ## Main definitions
 
@@ -50,6 +53,10 @@ countable products of projective graded modules and is not treated here.
 
 ## Main results
 
+* `TauCeti.CurvedDGRightModuleCat.projective_toGradedModuleCat_cone`: the mapping cone of a
+  closed morphism between graded-projective curved modules is graded-projective.
+* `TauCeti.CurvedDGRightModuleCat.instIsTriangulatedGradedProjective`: the graded-projective
+  curved right modules form a triangulated subcategory of the curved homotopy category.
 * `TauCeti.CurvedDGRightModuleCat.totalizations_le_rightOrthogonal_gradedProjective`:
   totalizations of short exact sequences are right orthogonal to graded-projective modules.
 * `TauCeti.CurvedDGRightModuleCat.contraacyclic_le_rightOrthogonal_gradedProjective`:
@@ -72,7 +79,7 @@ countable products of projective graded modules and is not treated here.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated
+open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
 
 namespace TauCeti.CurvedDGRightModuleCat
 
@@ -103,14 +110,77 @@ theorem gradedProjective_iff (X : DGHomotopyCategory R (CurvedDGRightModuleCat.{
     gradedProjective R h X ↔ Projective (toGradedModuleCat X.underlying) :=
   Iff.rfl
 
+/-- A shift of a graded-projective curved right module is graded-projective. -/
+instance projective_toGradedModuleCat_shift (M : CurvedDGRightModuleCat.{u, u, u} h) (n : ℤ)
+    [Projective (toGradedModuleCat M)] :
+    Projective (toGradedModuleCat (M.shift n)) := by
+  have h0 : Projective ((forgetDifferential (h := h) ⋙ GradedModuleCat.shiftFunctor (-n)).obj
+      (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) :=
+    GradedModuleCat.projective_shiftObj (toGradedModuleCat M) (-n)
+  have hShift : Projective ((closedShiftFunctor (h := h) n ⋙ forgetDifferential).obj
+      (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) :=
+    Projective.of_iso
+      ((closedShiftFunctorCompForgetDifferentialIso (h := h) n).app
+        (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)).symm h0
+  rw [Functor.comp_obj, closedShiftFunctor_obj_of] at hShift
+  exact hShift
+
+/-- The mapping cone of a closed morphism between graded-projective curved right modules is
+graded-projective. -/
+instance projective_toGradedModuleCat_cone {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
+    [Projective (toGradedModuleCat M)] [Projective (toGradedModuleCat N)] :
+    Projective (toGradedModuleCat (cone f)) := by
+  have hiso : toGradedModuleCat N ⊞ toGradedModuleCat (M.shift 1) ≅
+      toGradedModuleCat (cone f) :=
+    biprod.mapIso (eqToIso (by simp [coneShortComplex_X₁]))
+        (eqToIso (by simp [coneShortComplex_X₃])) ≪≫
+      (coneGradedSplitting f).isoBinaryBiproduct.symm ≪≫
+      eqToIso (by simp [coneShortComplex_X₂])
+  exact Projective.of_iso hiso inferInstance
+
+/-- The zero curved module is graded-projective. -/
+instance : (gradedProjective R h).ContainsZero where
+  exists_zero :=
+    ⟨(dgClosedToHomotopy R).obj
+        (0 : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
+          (CurvedDGRightModuleCat.{u, u, u} h)),
+      (dgClosedToHomotopy R).map_isZero (isZero_zero _),
+      (gradedProjective_iff _).2
+        ((forgetDifferential (h := h)).map_isZero (isZero_zero _)).projective⟩
+
 /-- Shifts of graded-projective curved modules are graded-projective: the underlying graded
 module of a cohomological shift is a grading shift. -/
 instance : (gradedProjective R h).IsStableUnderShift ℤ where
   isStableUnderShiftBy n := ⟨fun X hX ↦ (gradedProjective_iff _).2 <|
-    have := (gradedProjective_iff X).1 hX
-    Projective.of_iso ((closedShiftFunctorCompForgetDifferentialIso (h := h) n).app
-      (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) X.underlying)).symm
-      (GradedModuleCat.projective_shiftObj (toGradedModuleCat X.underlying) (-n))⟩
+    have : Projective (toGradedModuleCat X.underlying) := (gradedProjective_iff X).1 hX
+    projective_toGradedModuleCat_shift X.underlying n⟩
+
+/-- Mapping cones of morphisms between graded-projective curved modules are graded-projective up
+to homotopy equivalence. -/
+instance : (gradedProjective R h).IsTriangulatedClosed₃ where
+  ext₃' T hT h₁ h₂ := by
+    obtain ⟨f, hf⟩ := (dgClosedToHomotopy R).map_surjective
+      (X := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) T.obj₁.underlying)
+      (Y := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) T.obj₂.underlying)
+      (eqToHom (DGHomotopyCategory.of_underlying R T.obj₁) ≫ T.mor₁ ≫
+        eqToHom (DGHomotopyCategory.of_underlying R T.obj₂).symm)
+    have : Projective (toGradedModuleCat T.obj₁.underlying) := (gradedProjective_iff _).1 h₁
+    have : Projective (toGradedModuleCat T.obj₂.underlying) := (gradedProjective_iff _).1 h₂
+    have hcone : gradedProjective R h (DGHomotopyCategory.of R (cone f)) :=
+      (gradedProjective_iff _).2 (projective_toGradedModuleCat_cone f)
+    obtain ⟨e, _⟩ := exists_iso_of_arrow_iso (coneTriangle f) T
+      (coneTriangle_distinguished f) hT
+      (Arrow.isoMk (eqToIso (DGHomotopyCategory.of_underlying R T.obj₁))
+        (eqToIso (DGHomotopyCategory.of_underlying R T.obj₂))
+        (by dsimp; rw [hf]; simp))
+    exact ⟨DGHomotopyCategory.of R (cone f), hcone, ⟨(Triangle.π₃.mapIso e).symm⟩⟩
+
+/-- The graded-projective curved right modules form a triangulated subcategory of the curved
+homotopy category. -/
+instance instIsTriangulatedGradedProjective : (gradedProjective R h).IsTriangulated where
+  toIsTriangulatedClosed₂ := ObjectProperty.IsTriangulatedClosed₂.of_isTriangulatedClosed₃
 
 /-! ### Lifting and factoring homogeneous maps -/
 

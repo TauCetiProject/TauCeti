@@ -8,14 +8,15 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Map
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Subfield
 
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.LinearAlgebra.TensorProduct.Pi
-import TauCeti.LinearAlgebra.LinearMap.BaseChange
+import TauCeti.LinearAlgebra.Matrix.BaseChange
 import TauCeti.RepresentationTheory.Intertwining
+import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # Matrix bridges for continuous representations
@@ -122,13 +123,7 @@ that the coordinate map `b.equivFun` and hence the matrix entries are continuous
 noncomputable def toGL (ρ : ContinuousRep Γ A V) (b : Module.Basis ι A V) : Γ →ₜ* GL ι A where
   toMonoidHom :=
     (Units.map (LinearMap.toMatrixAlgEquiv b).toMonoidHom).comp ρ.toRepresentation.toHomUnits
-  continuous_toFun := by
-    refine Continuous.of_coeHom_comp ?_
-    have hequiv : Continuous b.equivFun :=
-      IsModuleTopology.continuous_of_linearMap b.equivFun.toLinearMap
-    refine continuous_matrix fun i j ↦ ?_
-    exact ((_root_.continuous_apply i).comp (hequiv.comp (ρ.continuous_orbit (b j)))).congr
-      fun g ↦ (LinearMap.toMatrixAlgEquiv_apply b (ρ g) i j).symm
+  continuous_toFun := (MonoidHom.continuous_iff_continuous_val _).2 (ρ.continuous_toMatrix b)
 
 @[simp]
 theorem coe_toGL (ρ : ContinuousRep Γ A V) (b : Module.Basis ι A V) (g : Γ) :
@@ -213,14 +208,21 @@ def baseChangeOfGLIso (φ : Γ →ₜ* GL ι A) :
     have hrep : (ofGL φ).toRepresentation g = Matrix.mulVecLin (φ g : Matrix ι ι A) :=
       LinearMap.ext fun v ↦ by simp only [coe_toRepresentation, ofGL_apply, Matrix.mulVecLin_apply]
     refine LinearMap.ext fun x ↦ ?_
+    have hpi : TensorProduct.piScalarRight A B B ι
+          ((Matrix.mulVecLin (φ g : Matrix ι ι A)).baseChange B x) =
+        ((φ g : Matrix ι ι A).map (algebraMap A B)).mulVec
+          (TensorProduct.piScalarRight A B B ι x) := by
+      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply] using
+        LinearMap.congr_fun
+          (Matrix.piScalarRight_comp_baseChange_mulVecLin (S := B) (φ g : Matrix ι ι A)) x
     have hmap :
         ((Matrix.GeneralLinearGroup.map (algebraMap A B) (φ g) : GL ι B) : Matrix ι ι B) =
           (φ g : Matrix ι ι A).map (algebraMap A B) := by
       ext i j
       simp [Matrix.GeneralLinearGroup.map_apply]
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, toRepresentation_baseChange,
-      Representation.baseChange_apply, hrep, TensorProduct.piScalarRight_baseChange_mulVecLin,
-      coe_toRepresentation, ofGL_apply, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      Representation.baseChange_apply, hrep, hpi, coe_toRepresentation, ofGL_apply,
+      ContinuousMonoidHom.coe_comp, Function.comp_apply,
       Matrix.GeneralLinearGroup.continuousMap_apply, hmap])
 
 /-- Underlying map of `baseChangeOfGLIso` as `TensorProduct.piScalarRight`. -/

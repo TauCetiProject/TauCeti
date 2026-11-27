@@ -11,6 +11,7 @@ import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Comp
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 
 /-!
 # Nondegenerate points of positive rank
@@ -81,16 +82,25 @@ rank-zero version follows
   `X_{ℓ ∘ F}(x)`.
 * `TauCeti.SymplecticForm.isCoisotropic_ker_fderiv_iff`: `ker dF_x` is coisotropic exactly when
   the functions `ℓ ∘ F` Poisson-commute at `x`.
+* `TauCeti.SymplecticForm.poissonBracket_comp_eq_zero`,
+  `TauCeti.SymplecticForm.poissonBracket_comp_eventuallyEq_zero`: if the components of
+  `F : E → (ι → ℝ)` Poisson-commute, so do all functions `ℓ ∘ F`.
 * `TauCeti.SymplecticForm.finrank_reducedSpace_ker_fderiv`: the transversal space has dimension
   `dim E - 2 rank dF_x`.
 * `TauCeti.SymplecticForm.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal`: the Hessians of
   critical functions `ℓ ∘ F` vanish on `(ker dF_x)^ω` for Poisson-commuting components.
+* `TauCeti.SymplecticForm.span_range_hessianQuadraticForm_of_fderiv_eq_zero`: at a critical point
+  the Hessians of the critical functions `ℓ ∘ F` span the same space as those of all `ℓ ∘ F`.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_iff_isNondegenerateRankZeroPoint`: at a critical
   point, nondegeneracy is rank-zero nondegeneracy.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_of_two_mul_finrank_range`: regular points of
   maximal rank are nondegenerate.
 * `TauCeti.SymplecticForm.isTransversallyNondegenerate_comp_iff`: transversal nondegeneracy is
   invariant under linear symplectomorphisms.
+* `TauCeti.SymplecticForm.forall_polar_hessianQuadraticForm_comp_eq_zero_iff`,
+  `TauCeti.SymplecticForm.span_range_reducedQuadraticForm_hessianQuadraticForm_comp_eq`: under
+  reparametrization of the values, the transversal Hessians of `g ∘ F` descend exactly when those
+  of `F` do, and then span the same space.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff`,
   `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_iff`: invariance under
   reparametrization of the values.
@@ -160,6 +170,40 @@ theorem isCoisotropic_ker_fderiv_iff (hF : DifferentiableAt ℝ F x) :
     rw [poissonBracket_def, ← apply_hamiltonianVectorField_comp ω ℓ hF, ω.neg_eq]
   simp only [hbr, neg_eq_zero]
   exact ⟨fun h ℓ ↦ by rw [h, map_zero], SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ)⟩
+
+/-- **Functions of Poisson-commuting components Poisson-commute.** If the components `F_i` of
+`F : E → (ι → ℝ)` pairwise Poisson-commute at a point where `F` is differentiable, then so do all
+functions `ℓ ∘ F`, for `ℓ` a continuous linear functional on `ι → ℝ`. -/
+theorem poissonBracket_comp_eq_zero {ι : Type*} [Finite ι] {F : E → ι → ℝ}
+    (hF : DifferentiableAt ℝ F x) (hcomm : ∀ i j, ω.poissonBracket (F · i) (F · j) x = 0)
+    (ℓ ℓ' : (ι → ℝ) →L[ℝ] ℝ) : ω.poissonBracket (ℓ ∘ F) (ℓ' ∘ F) x = 0 := by
+  have := Fintype.ofFinite ι
+  have hproj (i : ι) : ContinuousLinearMap.proj (R := ℝ) i ∘ F = (F · i) :=
+    funext fun y ↦ ContinuousLinearMap.proj_apply i (F y)
+  -- `dF_x X_{ℓ' ∘ F}(x)` has components `{F_i, ℓ' ∘ F}(x)`.
+  have hcomp (ℓ' : (ι → ℝ) →L[ℝ] ℝ) (i : ι) :
+      fderiv ℝ F x (ω.hamiltonianVectorField (ℓ' ∘ F) x) i =
+        ω.poissonBracket (F · i) (ℓ' ∘ F) x := by
+    rw [poissonBracket_def, ← hproj, apply_hamiltonianVectorField_comp ω _ hF,
+      ContinuousLinearMap.proj_apply]
+  -- Each `X_{F_j}(x)` lies in `ker dF_x`, hence so does each `X_{ℓ' ∘ F}(x)`.
+  have hX (ℓ' : (ι → ℝ) →L[ℝ] ℝ) : fderiv ℝ F x (ω.hamiltonianVectorField (ℓ' ∘ F) x) = 0 := by
+    have hXj (j : ι) : fderiv ℝ F x (ω.hamiltonianVectorField (F · j) x) = 0 :=
+      funext fun i ↦ by rw [← hproj j, hcomp, hproj, hcomm, Pi.zero_apply]
+    funext i
+    rw [hcomp, ← neg_poissonBracket, poissonBracket_def,
+      apply_hamiltonianVectorField_comp ω _ hF, hXj, map_zero, neg_zero, Pi.zero_apply]
+  rw [poissonBracket_def, apply_hamiltonianVectorField_comp ω _ hF, hX, map_zero]
+
+/-- **Functions of Poisson-commuting components Poisson-commute near a point.** If `F : E → (ι → ℝ)`
+is differentiable near `x` and its components `F_i` pairwise Poisson-commute near `x`, then so do
+all functions `ℓ ∘ F`, for `ℓ` a continuous linear functional on `ι → ℝ`. -/
+theorem poissonBracket_comp_eventuallyEq_zero {ι : Type*} [Finite ι] {F : E → ι → ℝ}
+    (hF : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ F y)
+    (hcomm : ∀ i j, ω.poissonBracket (F · i) (F · j) =ᶠ[𝓝 x] 0) (ℓ ℓ' : (ι → ℝ) →L[ℝ] ℝ) :
+    ω.poissonBracket (ℓ ∘ F) (ℓ' ∘ F) =ᶠ[𝓝 x] 0 := by
+  filter_upwards [hF, eventually_all.2 fun i ↦ eventually_all.2 (hcomm i)] with y hy hc
+  exact ω.poissonBracket_comp_eq_zero hy hc ℓ ℓ'
 
 /-- **The dimension of the transversal space.** If the functions `ℓ ∘ F` Poisson-commute at `x`,
 the reduced space of `ker dF_x` has dimension `dim E - 2 rank dF_x`; for `dim E = 2 n` and rank
@@ -378,6 +422,19 @@ theorem isNondegeneratePoint_of_two_mul_finrank_range (hF : ContDiffAt ℝ 2 F x
   exact (isNondegeneratePoint_iff_of_poissonBracket hF hcomm).2
     (isNondegenerateQuadraticFamily_of_subsingleton _)
 
+omit [FiniteDimensional ℝ E] in
+/-- At a critical point of `F` every functional `ℓ` on `G` vanishes on the image of `dF_x`, so the
+Hessians of the critical functions `ℓ ∘ F` are those of all functions `ℓ ∘ F`, and both families
+span the same space. -/
+theorem span_range_hessianQuadraticForm_of_fderiv_eq_zero (h : fderiv ℝ F x = 0) :
+    Submodule.span ℝ (Set.range fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
+      hessianQuadraticForm (ℓ.val ∘ F) x) =
+      Submodule.span ℝ (Set.range fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x) := by
+  congr 1
+  ext Q
+  exact ⟨fun ⟨ℓ, hℓ⟩ ↦ ⟨ℓ.val, hℓ⟩,
+    fun ⟨ℓ, hℓ⟩ ↦ ⟨⟨ℓ, by rw [h, ContinuousLinearMap.comp_zero]⟩, hℓ⟩⟩
+
 /-- **Comparison with rank zero.** At a critical point of `F`, the transversal space is the whole
 space and `x` is a nondegenerate point exactly when it is a nondegenerate rank-zero point. -/
 theorem isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h : fderiv ℝ F x = 0) :
@@ -392,19 +449,78 @@ theorem isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h : fderiv ℝ F 
     intro ℓ w hw u _
     rw [hker, orthogonal_top, inf_bot_eq, Submodule.mem_bot] at hw
     rw [hw, QuadraticMap.polar_zero_left]
-  -- Every functional vanishes on the image of `dF_x = 0`.
-  have hspan : Submodule.span ℝ (Set.range fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
-      hessianQuadraticForm (ℓ.val ∘ F) x) =
-      Submodule.span ℝ (Set.range fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x) := by
-    congr 1
-    ext Q
-    exact ⟨fun ⟨ℓ, hℓ⟩ ↦ ⟨ℓ.val, hℓ⟩,
-      fun ⟨ℓ, hℓ⟩ ↦ ⟨⟨ℓ, by rw [h, ContinuousLinearMap.comp_zero]⟩, hℓ⟩⟩
   have key := (isNondegenerateQuadraticFamily_reduction_iff_of_eq_top hker _
     fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦ hpolar ℓ.val).trans
-      (isNondegenerateQuadraticFamily_iff_of_span_eq hspan)
+      (isNondegenerateQuadraticFamily_iff_of_span_eq
+        (span_range_hessianQuadraticForm_of_fderiv_eq_zero h))
   exact ⟨fun hx ↦ ⟨hx.contDiffAt, h, key.1 hx.isNondegenerateQuadraticFamily⟩,
     fun hx ↦ ⟨hx.contDiffAt, fun ℓ _ ↦ hpolar ℓ, key.2 hx.isNondegenerateQuadraticFamily⟩⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- **Descent of the transversal Hessians under reparametrization of the values.** Let `g` be `C²`
+at `F x` with differential `Dg` having a continuous linear left inverse, and `U = ker dF_x`. The
+Hessians of the critical functions `ℓ' ∘ g ∘ F` vanish on `(U ∩ U^ω) × U` exactly when those of
+the critical functions `ℓ ∘ F` do: on `U` the former are the latter for `ℓ = ℓ' ∘ Dg`, and every
+`ℓ` is of this form. -/
+theorem forall_polar_hessianQuadraticForm_comp_eq_zero_iff {G' : Type*} [NormedAddCommGroup G']
+    [NormedSpace ℝ G'] {g : G → G'} (hg : ContDiffAt ℝ 2 g (F x))
+    (hD : (fderiv ℝ g (F x)).HasLeftInverse) (hF : ContDiffAt ℝ 2 F x) :
+    (∀ ℓ' : G' →L[ℝ] ℝ, ℓ'.comp (fderiv ℝ (g ∘ F) x) = 0 →
+      ∀ w ∈ (fderiv ℝ F x).ker ⊓ ω.orthogonal (fderiv ℝ F x).ker, ∀ u ∈ (fderiv ℝ F x).ker,
+        QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u = 0) ↔
+      ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp (fderiv ℝ F x) = 0 →
+        ∀ w ∈ (fderiv ℝ F x).ker ⊓ ω.orthogonal (fderiv ℝ F x).ker, ∀ u ∈ (fderiv ℝ F x).ker,
+          QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F) x) w u = 0 := by
+  rw [fderiv_comp x (hg.differentiableAt two_ne_zero) (hF.differentiableAt two_ne_zero)]
+  -- On `ker dF_x` the Hessian of `ℓ' ∘ g ∘ F` is the Hessian of `(ℓ' ∘ Dg) ∘ F`.
+  have hpolar (ℓ' : G' →L[ℝ] ℝ) {w u : E} (hw : w ∈ (fderiv ℝ F x).ker)
+      (hu : u ∈ (fderiv ℝ F x).ker) :
+      QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u =
+        QuadraticMap.polar (hessianQuadraticForm (ℓ'.comp (fderiv ℝ g (F x)) ∘ F) x) w u := by
+    simp only [QuadraticMap.polar,
+      ℓ'.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF (add_mem hw hu),
+      ℓ'.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF hw,
+      ℓ'.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF hu]
+  refine ⟨fun hQ ℓ hℓ w hw u hu ↦ ?_, fun hQ ℓ' hℓ' w hw u hu ↦ ?_⟩
+  · rw [← hD.comp_leftInverse_comp ℓ, ← hpolar _ hw.1 hu]
+    exact hQ _ (by rwa [← ContinuousLinearMap.comp_assoc, hD.comp_leftInverse_comp]) w hw u hu
+  · rw [hpolar ℓ' hw.1 hu]
+    exact hQ _ (by rwa [ContinuousLinearMap.comp_assoc]) w hw u hu
+
+omit [FiniteDimensional ℝ E] in
+/-- **The transversal Hessians under reparametrization of the values.** Let `g` be `C²` at `F x`
+with differential `Dg` having a continuous linear left inverse, and `U = ker dF_x`. Descended to
+the reduced space of `U`, the Hessians of the critical functions `ℓ' ∘ g ∘ F` span the same space
+as those of the critical functions `ℓ ∘ F`: they are the latter reindexed along the surjection
+`ℓ' ↦ ℓ' ∘ Dg`. -/
+theorem span_range_reducedQuadraticForm_hessianQuadraticForm_comp_eq {G' : Type*}
+    [NormedAddCommGroup G'] [NormedSpace ℝ G'] {g : G → G'} (hg : ContDiffAt ℝ 2 g (F x))
+    (hD : (fderiv ℝ g (F x)).HasLeftInverse) (hF : ContDiffAt ℝ 2 F x)
+    (hQ' : ∀ ℓ' : G' →L[ℝ] ℝ, ℓ'.comp (fderiv ℝ (g ∘ F) x) = 0 →
+      ∀ w ∈ (fderiv ℝ F x).ker ⊓ ω.orthogonal (fderiv ℝ F x).ker, ∀ u ∈ (fderiv ℝ F x).ker,
+        QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u = 0)
+    (hQ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp (fderiv ℝ F x) = 0 →
+      ∀ w ∈ (fderiv ℝ F x).ker ⊓ ω.orthogonal (fderiv ℝ F x).ker, ∀ u ∈ (fderiv ℝ F x).ker,
+        QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F) x) w u = 0) :
+    Submodule.span ℝ (Set.range fun ℓ' : {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp (fderiv ℝ (g ∘ F) x) = 0} ↦
+      ω.reducedQuadraticForm _ (hessianQuadraticForm (ℓ'.val ∘ g ∘ F) x)
+        (hQ' ℓ'.val ℓ'.property)) =
+      Submodule.span ℝ (Set.range fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
+        ω.reducedQuadraticForm _ (hessianQuadraticForm (ℓ.val ∘ F) x) (hQ ℓ.val ℓ.property)) := by
+  have hgF := fderiv_comp x (hg.differentiableAt two_ne_zero) (hF.differentiableAt two_ne_zero)
+  -- `ℓ' ↦ ℓ' ∘ Dg` maps the critical functionals of `g ∘ F` onto those of `F`.
+  let f : {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp (fderiv ℝ (g ∘ F) x) = 0} →
+      {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} :=
+    fun ℓ' ↦ ⟨ℓ'.val.comp (fderiv ℝ g (F x)), by
+      rw [ContinuousLinearMap.comp_assoc, ← hgF]; exact ℓ'.property⟩
+  have hf : Function.Surjective f := fun ℓ ↦
+    ⟨⟨ℓ.val.comp hD.leftInverse, by
+      rw [hgF, ← ContinuousLinearMap.comp_assoc, hD.comp_leftInverse_comp, ℓ.property]⟩,
+      Subtype.ext (hD.comp_leftInverse_comp ℓ.val)⟩
+  refine congrArg _ ?_
+  rw [← hf.range_comp]
+  exact congrArg Set.range (funext fun ℓ' ↦ reducedQuadraticForm_congr _ _ _ _ fun _ hu ↦
+    ℓ'.val.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF hu)
 
 /-- **Invariance under reparametrization of the values.** Composing `F` with a `C²` map `g` whose
 differential `Dg` at `F x` has a continuous linear left inverse preserves and reflects
@@ -414,44 +530,14 @@ theorem isNondegeneratePoint_comp_iff {G' : Type*} [NormedAddCommGroup G'] [Norm
     {g : G → G'} (hg : ContDiffAt ℝ 2 g (F x)) (hD : (fderiv ℝ g (F x)).HasLeftInverse)
     (hF : ContDiffAt ℝ 2 F x) :
     ω.IsNondegeneratePoint (g ∘ F) x ↔ ω.IsNondegeneratePoint F x := by
-  set T := fderiv ℝ F x
-  set D := fderiv ℝ g (F x)
-  have hgF : fderiv ℝ (g ∘ F) x = D.comp T :=
-    fderiv_comp x (hg.differentiableAt (by norm_num)) (hF.differentiableAt (by norm_num))
-  have hker : (D.comp T).ker = T.ker :=
-    LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 hD.injective)
-  -- On `ker dF_x` the Hessian of `ℓ' ∘ g ∘ F` is the Hessian of `(ℓ' ∘ Dg) ∘ F`.
-  have hH : ∀ ℓ' : G' →L[ℝ] ℝ, ∀ u ∈ T.ker,
-      hessianQuadraticForm (ℓ' ∘ g ∘ F) x u = hessianQuadraticForm (ℓ'.comp D ∘ F) x u :=
-    fun ℓ' _ hu ↦ ℓ'.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF hu
-  have hpolar : ∀ ℓ' : G' →L[ℝ] ℝ, ∀ w ∈ T.ker, ∀ u ∈ T.ker,
-      QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u =
-        QuadraticMap.polar (hessianQuadraticForm (ℓ'.comp D ∘ F) x) w u := fun ℓ' w hw u hu ↦ by
-    simp only [QuadraticMap.polar, hH ℓ' _ (add_mem hw hu), hH ℓ' w hw, hH ℓ' u hu]
-  -- Every functional `ℓ` on `G` is `(ℓ ∘ P) ∘ Dg` for a continuous linear left inverse `P` of
-  -- `Dg`, so `ℓ' ↦ ℓ' ∘ Dg` maps the critical functionals of `g ∘ F` onto those of `F`.
-  have hfac : ∀ ℓ : G →L[ℝ] ℝ, ∃ ℓ' : G' →L[ℝ] ℝ, ℓ'.comp D = ℓ := fun ℓ ↦
-    ⟨ℓ.comp hD.leftInverse, ContinuousLinearMap.ext fun v ↦ by
-      simp [hD.leftInverse_leftInverse v]⟩
-  let f : {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp (D.comp T) = 0} → {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} :=
-    fun ℓ' ↦ ⟨ℓ'.val.comp D, by rw [ContinuousLinearMap.comp_assoc]; exact ℓ'.property⟩
-  have hf : Function.Surjective f := fun ℓ ↦ by
-    obtain ⟨ℓ', hℓ'⟩ := hfac ℓ.val
-    exact ⟨⟨ℓ', by rw [← ContinuousLinearMap.comp_assoc, hℓ', ℓ.property]⟩, Subtype.ext hℓ'⟩
-  rw [isNondegeneratePoint_iff_of_fderiv_eq hgF, isNondegeneratePoint_iff_of_fderiv_eq rfl,
-    isTransversallyNondegenerate_iff_of_ker_eq hker, isTransversallyNondegenerate_iff_of_ker_eq rfl]
-  refine and_congr (iff_of_true (hg.comp x hF) hF) ((Equiv.ofIff
-    ⟨fun hQ₁ ℓ hℓ w hw u hu ↦ ?_, fun hQ₂ ℓ' hℓ' w hw u hu ↦ ?_⟩).exists_congr fun hQ₁ ↦ ?_)
-  · obtain ⟨ℓ', rfl⟩ := hfac ℓ
-    rw [← hpolar ℓ' w hw.1 u hu]
-    exact hQ₁ ℓ' (by rwa [ContinuousLinearMap.comp_assoc] at hℓ) w hw u hu
-  · rw [hpolar ℓ' w hw.1 u hu]
-    exact hQ₂ _ (f ⟨ℓ', hℓ'⟩).property w hw u hu
-  -- The transversal Hessians of `g ∘ F` are those of `F`, reindexed along `f`.
-  · refine isNondegenerateQuadraticFamily_iff_of_span_eq (congrArg _ ?_)
-    rw [← hf.range_comp]
-    exact congrArg Set.range
-      (funext fun ℓ' ↦ reducedQuadraticForm_congr _ _ _ _ fun u hu ↦ hH ℓ'.val u hu)
+  rw [isNondegeneratePoint_iff_of_fderiv_eq rfl, isNondegeneratePoint_iff_of_fderiv_eq rfl,
+    isTransversallyNondegenerate_iff_of_ker_eq (ker_fderiv_comp_of_injective
+      (hg.differentiableAt two_ne_zero) hD.injective (hF.differentiableAt two_ne_zero)),
+    isTransversallyNondegenerate_iff_of_ker_eq rfl]
+  exact and_congr (iff_of_true (hg.comp x hF) hF)
+    ((Equiv.ofIff (forall_polar_hessianQuadraticForm_comp_eq_zero_iff hg hD hF)).exists_congr
+      fun hQ' ↦ isNondegenerateQuadraticFamily_iff_of_span_eq
+        (span_range_reducedQuadraticForm_hessianQuadraticForm_comp_eq hg hD hF hQ' _))
 
 /-- **Invariance of rank-zero points under reparametrization of the values.** Composing `F` with a
 `C²` map `g` whose differential at `F x` has a continuous linear left inverse preserves and

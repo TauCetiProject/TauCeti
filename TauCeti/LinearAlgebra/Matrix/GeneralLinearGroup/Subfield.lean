@@ -17,17 +17,8 @@ matrix over a field `L` whose entries lie in a subfield `E` automatically has no
 in `E` and therefore lifts to `GL ι E`. In particular, the inverse matrix also has entries in `E`,
 and the image of `GL ι E →* GL ι L` is cut out purely by entrywise membership in `E`.
 
-## Main definitions
-
-* `Matrix.GeneralLinearGroup.liftOfMem`: lift an element of `GL ι L` with entries in a subfield
-  `E` to `GL ι E`.
-
 ## Main results
 
-* `Matrix.GeneralLinearGroup.map_subtype_liftOfMem`: pushing `liftOfMem E A hA` forward along
-  `SubringClass.subtype E` recovers `A`.
-* `Matrix.GeneralLinearGroup.coe_liftOfMem_apply`: the entries of `liftOfMem E A hA` agree with
-  those of `A`.
 * `Matrix.GeneralLinearGroup.mem_range_map_subtype_iff`: an element of `GL ι L` lies in the range
   of `GL ι E →* GL ι L` if and only if all of its entries lie in `E`.
 * `Matrix.GeneralLinearGroup.inv_apply_mem`: if every entry of `A : GL ι L` lies in `E`, then
@@ -41,10 +32,10 @@ namespace Matrix.GeneralLinearGroup
 variable {L S ι : Type*} [Field L] [SetLike S L] [SubfieldClass S L]
   [Fintype ι] [DecidableEq ι]
 
-/-- **Lifting an invertible matrix to a subfield.** If every entry of `A : GL ι L` lies in a
+/-- Lifting an invertible matrix to a subfield: if every entry of `A : GL ι L` lies in a
 subfield `E`, then its determinant is nonzero in `E`, so `A` lifts to `GL ι E`. -/
-noncomputable def liftOfMem (E : S) (A : GL ι L) (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) :
-    GL ι E :=
+private noncomputable def liftOfMem (E : S) (A : GL ι L)
+    (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) : GL ι E :=
   let M : Matrix ι ι E := Matrix.of fun i j ↦ ⟨(A : Matrix ι ι L) i j, hA i j⟩
   have hM : (SubringClass.subtype E).mapMatrix M = (A : Matrix ι ι L) := by
     ext i j
@@ -58,20 +49,12 @@ noncomputable def liftOfMem (E : S) (A : GL ι L) (hA : ∀ i j, (A : Matrix ι 
   Matrix.GeneralLinearGroup.mkOfDetNeZero M hdet
 
 /-- Pushing `liftOfMem E A hA` forward along `SubringClass.subtype E` recovers `A`. -/
-@[simp]
-theorem map_subtype_liftOfMem (E : S) (A : GL ι L) (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) :
+private theorem map_subtype_liftOfMem (E : S) (A : GL ι L)
+    (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) :
     Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (liftOfMem E A hA) = A := by
   ext i j
   simp only [liftOfMem, Matrix.GeneralLinearGroup.map_apply, val_mkOfDetNeZero, Matrix.of_apply,
     SubringClass.coe_subtype]
-
-/-- The entries of `liftOfMem E A hA` coerce to the entries of `A`. -/
-@[simp]
-theorem coe_liftOfMem_apply (E : S) (A : GL ι L) (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E)
-    (i j : ι) :
-    ((liftOfMem E A hA : Matrix ι ι E) i j : L) = (A : Matrix ι ι L) i j := by
-  have h := congrArg (fun u : GL ι L ↦ (u : Matrix ι ι L) i j) (map_subtype_liftOfMem E A hA)
-  simpa only [Matrix.GeneralLinearGroup.map_apply, SubringClass.coe_subtype] using h
 
 /-- **Range of `GL ι E →* GL ι L` for a subfield.** An invertible matrix over `L` comes from a
 subfield `E` if and only if all of its entries lie in `E`. -/

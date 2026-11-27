@@ -10,6 +10,7 @@ public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subfield
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Map
 
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Descend
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
@@ -64,39 +65,43 @@ end Matrix.GeneralLinearGroup
 
 namespace ContinuousMonoidHom
 
+open TauCeti.CoefficientDescent
+
 variable {L S ι : Type*} [Field L] [SetLike S L] [SubfieldClass S L]
   [Fintype ι] [DecidableEq ι]
 
+private theorem entries_subset_range_subtype {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
+    [TopologicalSpace L] (ρ : Γ →ₜ* GL ι L) (E : S)
+    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) :
+    entries (ρ : Γ →* GL ι L) ⊆ Set.range (SubringClass.subtype E) := by
+  intro x hx
+  obtain ⟨g, i, j, rfl⟩ := mem_entries_iff.mp hx
+  exact ⟨⟨(ρ g : Matrix ι ι L) i j, hE g i j⟩, rfl⟩
+
 /-- **Lifting a continuous matrix homomorphism to a subfield.** If every matrix entry of
 `ρ : Γ →ₜ* GL ι L` lies in a subfield `E`, then `ρ` lifts continuously to `Γ →ₜ* GL ι E`. -/
-noncomputable def liftGLOfMem {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
+noncomputable def liftGLOfMem {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [TopologicalSpace L]
     (ρ : Γ →ₜ* GL ι L) (E : S)
     (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) : Γ →ₜ* GL ι E where
-  toFun g := Matrix.GeneralLinearGroup.liftOfMem E (ρ g) (hE g)
-  map_one' :=
-    Matrix.GeneralLinearGroup.map_injective (f := SubringClass.subtype E) Subtype.val_injective <|
-      by simp only [Matrix.GeneralLinearGroup.map_subtype_liftOfMem, map_one]
-  map_mul' g h :=
-    Matrix.GeneralLinearGroup.map_injective (f := SubringClass.subtype E) Subtype.val_injective <|
-      by simp only [map_mul, Matrix.GeneralLinearGroup.map_subtype_liftOfMem]
-  continuous_toFun :=
-    (Topology.IsInducing.generalLinearGroup_map (n := ι) (f := SubringClass.subtype E)
-      Topology.IsInducing.subtypeVal).continuous_iff.mpr <| by
-        simpa only [Function.comp_def, Matrix.GeneralLinearGroup.map_subtype_liftOfMem] using
-          map_continuous ρ
+  toMonoidHom := descend Subtype.val_injective (entries_subset_range_subtype ρ E hE)
+  continuous_toFun := by
+    refine (Topology.IsInducing.generalLinearGroup_map (n := ι) (f := SubringClass.subtype E)
+      Topology.IsInducing.subtypeVal).continuous_iff.mpr ?_
+    exact (map_continuous ρ).congr fun g ↦
+      (map_descend Subtype.val_injective (entries_subset_range_subtype ρ E hE) g).symm
 
 /-- Pushing `ρ.liftGLOfMem E hE` forward along `SubringClass.subtype E` recovers `ρ`. -/
 @[simp]
-theorem map_subtype_liftGLOfMem {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
+theorem map_subtype_liftGLOfMem {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [TopologicalSpace L]
     (ρ : Γ →ₜ* GL ι L) (E : S)
     (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) :
     Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (ρ.liftGLOfMem E hE g) = ρ g :=
-  Matrix.GeneralLinearGroup.map_subtype_liftOfMem E (ρ g) (hE g)
+  map_descend Subtype.val_injective (entries_subset_range_subtype ρ E hE) g
 
 /-- Composing `ρ.liftGLOfMem E hE` with `Matrix.GeneralLinearGroup.continuousMap` along
 `SubringClass.subtype E` recovers `ρ`. -/
 @[simp]
-theorem continuousMap_subtype_comp_liftGLOfMem {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ]
+theorem continuousMap_subtype_comp_liftGLOfMem {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
     [TopologicalSpace L] (ρ : Γ →ₜ* GL ι L) (E : S)
     (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E)
     {hf : Continuous (SubringClass.subtype E)} :
@@ -108,32 +113,31 @@ theorem continuousMap_subtype_comp_liftGLOfMem {Γ : Type*} [Monoid Γ] [Topolog
 
 /-- The entries of `ρ.liftGLOfMem E hE g` coerce to the entries of `ρ g`. -/
 @[simp]
-theorem coe_liftGLOfMem_apply {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
+theorem coe_liftGLOfMem_apply {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [TopologicalSpace L]
     (ρ : Γ →ₜ* GL ι L) (E : S)
     (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) (i j : ι) :
     ((ρ.liftGLOfMem E hE g : Matrix ι ι E) i j : L) = (ρ g : Matrix ι ι L) i j :=
-  Matrix.GeneralLinearGroup.coe_liftOfMem_apply E (ρ g) (hE g) i j
+  map_descend_apply Subtype.val_injective (entries_subset_range_subtype ρ E hE) g i j
 
 /-- Pushing the matrix of `ρ.liftGLOfMem E hE g` forward along `Subtype.val` recovers `ρ g`. -/
 @[simp]
 theorem map_subtype_liftGLOfMem_matrix
-    {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
+    {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [TopologicalSpace L]
     (ρ : Γ →ₜ* GL ι L) (E : S)
     (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) :
-    (ρ.liftGLOfMem E hE g : Matrix ι ι E).map Subtype.val = (ρ g : Matrix ι ι L) := by
-  ext i j
-  simp only [Matrix.map_apply, coe_liftGLOfMem_apply]
+    (ρ.liftGLOfMem E hE g : Matrix ι ι E).map Subtype.val = (ρ g : Matrix ι ι L) :=
+  map_coe_descend Subtype.val_injective (entries_subset_range_subtype ρ E hE) g
 
 /-- **Uniqueness of `ContinuousMonoidHom.liftGLOfMem`.** A continuous homomorphism `Γ →ₜ* GL ι E`
 pushing forward to `ρ` along `SubringClass.subtype E` equals `ρ.liftGLOfMem E hE`. -/
-theorem liftGLOfMem_unique {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
+theorem liftGLOfMem_unique {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [TopologicalSpace L]
     (ρ : Γ →ₜ* GL ι L) (E : S)
     (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E)
     {φ : Γ →ₜ* GL ι E}
     (hφ : ∀ g, Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (φ g) = ρ g) :
     φ = ρ.liftGLOfMem E hE := by
   ext1 g
-  exact Matrix.GeneralLinearGroup.map_injective (f := SubringClass.subtype E)
-    Subtype.val_injective (by rw [hφ g, map_subtype_liftGLOfMem])
+  exact DFunLike.congr_fun
+    ((eq_descend_iff Subtype.val_injective (entries_subset_range_subtype ρ E hE)).mpr hφ) g
 
 end ContinuousMonoidHom

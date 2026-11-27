@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
+import TauCeti.LinearAlgebra.Matrix.BaseChange
+
 /-!
 # Scalar extension of linear maps and Hom spaces
 
@@ -20,14 +22,15 @@ The canonical map from `A ⊗[R] Hom_R(M,N)` to `Hom_A(A ⊗[R] M, A ⊗[R] N)` 
 no finiteness condition is needed on `N` or on the commutative value algebra `A`.
 This comparison allows a scalar-extended Hom representation to act on scalar-extended vectors.
 
-Under `TensorProduct.piScalarRight`, the scalar extension of `Matrix.mulVecLin M` corresponds to
-left multiplication by `M.map (algebraMap A B)`
-(`TensorProduct.piScalarRight_baseChange_mulVecLin`).
+Under `TensorProduct.piScalarRight` and basis coordinates `Module.Basis.equivFun`, the scalar
+extension of `Matrix.mulVecLin M` intertwines with a linear map whose matrix is
+`M.map (algebraMap E L)` (`TensorProduct.piScalarRight_equivFun_intertwining`).
 
 When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
 maps (`LinearMap.baseChange_injective`). Faithful flatness therefore permits checking equality of
 linear maps after extension of scalars, including comparing maps defined over two intermediate
-algebras inside a common enlargement (`LinearMap.baseChange_eq_of_baseChange_eq`). Scalar-tower
+algebras inside a common enlargement (`LinearMap.baseChange_eq_of_baseChange_eq`) and noting
+that only the identity extends to the identity (`LinearEquiv.baseChange_eq_one_iff`). Scalar-tower
 cancellation `AlgebraTensorModule.cancelBaseChange` also commutes with scalar multiples and finite
 sums of scalar multiples of base-changed linear maps
 (`LinearMap.cancelBaseChange_comp_smul_baseChange`,
@@ -134,23 +137,6 @@ end LinearMap
 
 namespace TensorProduct
 
-/-- Applying `TensorProduct.piScalarRight` intertwines the scalar extension of
-`Matrix.mulVecLin M` with left multiplication by the mapped matrix `M.map (algebraMap A B)`. -/
-theorem piScalarRight_baseChange_mulVecLin {A B ι₁ ι₂ : Type*}
-    [CommSemiring A] [CommSemiring B] [Algebra A B]
-    [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂]
-    (M : Matrix ι₂ ι₁ A) (x : B ⊗[A] (ι₁ → A)) :
-    TensorProduct.piScalarRight A B B ι₂ ((Matrix.mulVecLin M).baseChange B x) =
-      (M.map (algebraMap A B)).mulVec (TensorProduct.piScalarRight A B B ι₁ x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, Matrix.mulVec_add, hx, hy]
-  | tmul b v =>
-    ext i
-    simp only [LinearMap.baseChange_tmul, Matrix.mulVecLin_apply,
-      TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul,
-      Matrix.mulVec, dotProduct, Matrix.map_apply, Finset.sum_smul, mul_smul]
-    exact Finset.sum_congr rfl fun j _ ↦ _root_.Algebra.smul_def _ _
-
 /-- Under `TensorProduct.piScalarRight` and basis coordinates `Module.Basis.equivFun`, the
 scalar extension of `Matrix.mulVecLin M` intertwines with a linear map `f` whose matrix is
 `M.map (algebraMap E L)`. -/
@@ -165,7 +151,11 @@ theorem piScalarRight_equivFun_intertwining {E L V W ιV ιW : Type*}
     bW.equivFun.symm (TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x)) =
       f (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) := by
   apply bW.equivFun.injective
-  rw [LinearEquiv.apply_symm_apply, TensorProduct.piScalarRight_baseChange_mulVecLin, hM]
+  have hpi : TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x) =
+      (M.map (algebraMap E L)).mulVec (TensorProduct.piScalarRight E L L ιV x) := by
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply] using
+      LinearMap.congr_fun (Matrix.piScalarRight_comp_baseChange_mulVecLin (S := L) M) x
+  rw [LinearEquiv.apply_symm_apply, hpi, hM]
   have hrepr : (bV.repr (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) : ιV → L) =
       TensorProduct.piScalarRight E L L ιV x := by
     ext i
@@ -207,6 +197,21 @@ theorem baseChange_injective :
   exact _root_.sub_self (g.lTensor A)
 
 end LinearMap
+
+namespace LinearEquiv
+
+variable {R : Type*} {A : Type*} {M : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module.FaithfullyFlat R A]
+
+/-- A faithfully flat extension of scalars, for instance a field extension, sends only the
+identity to the identity. -/
+@[simp]
+theorem baseChange_eq_one_iff {e : M ≃ₗ[R] M} : e.baseChange R A M M = 1 ↔ e = 1 := by
+  rw [← baseChange_one R A M, ← toLinearMap_inj, ← toLinearMap_inj, coe_baseChange,
+    coe_baseChange]
+  exact LinearMap.baseChange_injective.eq_iff
+
+end LinearEquiv
 
 public section
 
