@@ -111,15 +111,27 @@ theorem markedPointsMFDeriv_mfderiv {E H M : Type*} [NormedAddCommGroup E] [Norm
     mfderiv_eq_mfderivMk_comp (hev _).mdifferentiableAt h₂, (hev _).mfderiv, (hev _).mfderiv,
     (hev _).mfderiv]
   -- Both sides now apply the same maps; they differ only in coercing `dF X` to a linear map.
+  -- The compositions cross the type synonym `TangentSpace`, which `simp` and `rw` do not unfold,
+  -- so the remaining step is definitional.
   rfl
 
 variable {φ : Dual 𝕜 (Fin (n + 1) → 𝕜)} {v w : Fin (n + 1) → 𝕜}
 
-/-- The three values of the marked line are nonzero when `v` and `w` are linearly independent and
-off `ker φ`. -/
-private theorem markedLine_ne_zero (hvw : LinearIndependent 𝕜 ![v, w]) (hv : φ v ≠ 0)
-    (hw : φ w ≠ 0) (t : Fin 2 → 𝕜) (ht : t ≠ 0) : markedLine φ v w t ≠ 0 :=
-  fun h ↦ ht (markedLine_injective hvw hv hw (h.trans (map_zero _).symm))
+/-- At the marked point `1`, the derivative of the projection vanishes exactly on the line `𝕜 v`:
+the marked line sends `1` to a nonzero multiple of `v`. -/
+theorem ker_mfderivMk_markedLine_one (hv : φ v ≠ 0) (hw : φ w ≠ 0) :
+    (mfderivMk (markedLine φ v w 1)).ker = 𝕜 ∙ v := by
+  have hv₀ : v ≠ 0 := fun h ↦ hv (by simp [h])
+  rw [ker_mfderivMk (by simpa [markedLine_one] using ⟨hw, hv₀⟩), markedLine_one,
+    span_singleton_smul_eq hw.isUnit]
+
+/-- At the marked point `∞`, the derivative of the projection vanishes exactly on the line `𝕜 w`:
+the marked line sends `∞` to a nonzero multiple of `w`. -/
+theorem ker_mfderivMk_markedLine_single_zero_one (hv : φ v ≠ 0) (hw : φ w ≠ 0) :
+    (mfderivMk (markedLine φ v w (Pi.single 0 1))).ker = 𝕜 ∙ w := by
+  have hw₀ : w ≠ 0 := fun h ↦ hw (by simp [h])
+  rw [ker_mfderivMk (by simpa [markedLine_single_zero_one] using ⟨hv, hw₀⟩),
+    markedLine_single_zero_one, span_singleton_smul_eq hv.isUnit]
 
 /-- **The evaluation of marked lines is transverse to `H × {p} × {q}`.** At the line through
 `[v]` and `[w]` marked at its point `[u]` on `ker φ`, for `v` and `w` linearly independent and off
@@ -131,35 +143,34 @@ theorem range_markedPointsMFDeriv_markedLine_sup_eq_top (hvw : LinearIndependent
     LinearMap.range (markedPointsMFDeriv (markedLine φ v w)) ⊔
         ((LinearMap.ker φ).map (mfderivMk (markedLine φ v w (Pi.single 1 1))).toLinearMap).prod
           ⊥ = ⊤ := by
-  have hne := markedLine_ne_zero hvw hv hw
+  have hne {t : Fin 2 → 𝕜} (ht : t ≠ 0) := markedLine_ne_zero hvw hv hw ht
   refine eq_top_iff'.2 fun ⟨y₀, y₁, y₂⟩ ↦ ?_
-  obtain ⟨x₀, rfl⟩ := surjective_mfderivMk (hne (Pi.single 1 1) (by simp)) y₀
-  obtain ⟨x₁, rfl⟩ := surjective_mfderivMk (hne 1 one_ne_zero) y₁
-  obtain ⟨x₂, rfl⟩ := surjective_mfderivMk (hne (Pi.single 0 1) (by simp)) y₂
+  obtain ⟨x₀, rfl⟩ := surjective_mfderivMk (hne (t := Pi.single 1 1) (by simp)) y₀
+  obtain ⟨x₁, rfl⟩ := surjective_mfderivMk (hne one_ne_zero) y₁
+  obtain ⟨x₂, rfl⟩ := surjective_mfderivMk (hne (t := Pi.single 0 1) (by simp)) y₂
   -- A solution `A` of the linear incidence conditions with the values of `x₀`, `x₁` and `x₂`
   -- has the right derivatives at `1` and `∞`, and at `0` it differs by a vector of `ker φ`.
   obtain ⟨A, hA⟩ := markedLineIncidence_surjective (w := w) hv
     (φ x₀, (𝕜 ∙ v).mkQ x₁, (𝕜 ∙ w).mkQ x₂)
   simp only [markedLineIncidence_apply, mkQ_apply, Prod.mk.injEq, Submodule.Quotient.eq] at hA
   obtain ⟨hA₀, hA₁, hA₂⟩ := hA
-  have hker (t : Fin 2 → 𝕜) (ht : t ≠ 0) (z : Fin (n + 1) → 𝕜)
-      (hz : z ∈ 𝕜 ∙ markedLine φ v w t) : mfderivMk (markedLine φ v w t) z = 0 :=
-    LinearMap.mem_ker.1 ((ker_mfderivMk (hne t ht)).ge hz)
   have e₁ : mfderivMk (markedLine φ v w 1) (A 1) = mfderivMk (markedLine φ v w 1) x₁ := by
-    rw [← sub_eq_zero, ← map_sub]
-    exact hker 1 one_ne_zero _ (by rwa [markedLine_one, span_singleton_smul_eq hw.isUnit])
+    rw [← sub_eq_zero, ← map_sub, ← ContinuousLinearMap.coe_coe, ← LinearMap.mem_ker,
+      ker_mfderivMk_markedLine_one hv hw]
+    exact hA₁
   have e₂ : mfderivMk (markedLine φ v w (Pi.single 0 1)) (A (Pi.single 0 1)) =
       mfderivMk (markedLine φ v w (Pi.single 0 1)) x₂ := by
-    rw [← sub_eq_zero, ← map_sub]
-    exact hker (Pi.single 0 1) (by simp) _
-      (by rwa [markedLine_single_zero_one, span_singleton_smul_eq hv.isUnit])
+    rw [← sub_eq_zero, ← map_sub, ← ContinuousLinearMap.coe_coe, ← LinearMap.mem_ker,
+      ker_mfderivMk_markedLine_single_zero_one hv hw]
+    exact hA₂
   refine mem_sup.2 ⟨markedPointsMFDeriv (markedLine φ v w) A, LinearMap.mem_range_self _ _,
     (mfderivMk (markedLine φ v w (Pi.single 1 1)) (x₀ - A (Pi.single 1 1)), 0, 0),
     mem_prod.2 ⟨mem_map_of_mem (by simp [hA₀]), zero_mem _⟩, ?_⟩
   simp only [markedPointsMFDeriv_apply, Prod.mk_add_mk, add_zero, e₁, e₂, map_sub,
     add_sub_cancel]
 
-/-- **The evaluation of marked lines meets `H × {p} × {q}` in a single line.** At the line through
+/-- **The derivative of the evaluation pulls `T_h H × 0 × 0` back to the line of the marked
+line.** At the line through
 `[v]` and `[w]` marked at its point `[u]` on `ker φ`, for `v` and `w` linearly independent and off
 `ker φ`, the variations that the derivative of the evaluation sends into the tangent space
 `T_[u] ℙ(ker φ) × 0 × 0` of `ℙ(ker φ) × {[v]} × {[w]}` are exactly the multiples of the marked
@@ -168,11 +179,11 @@ theorem comap_markedPointsMFDeriv_markedLine (hvw : LinearIndependent 𝕜 ![v, 
     (hw : φ w ≠ 0) :
     (((LinearMap.ker φ).map (mfderivMk (markedLine φ v w (Pi.single 1 1))).toLinearMap).prod
         ⊥).comap (markedPointsMFDeriv (markedLine φ v w)) = 𝕜 ∙ markedLine φ v w := by
-  have hne := markedLine_ne_zero hvw hv hw
   -- The marked point `0` lies on `ker φ`, so the kernel of the derivative of the projection at
   -- it, the line it spans, is contained in `ker φ`.
   have hu : (mfderivMk (markedLine φ v w (Pi.single 1 1))).toLinearMap.ker ≤ LinearMap.ker φ := by
-    rw [ker_mfderivMk (hne (Pi.single 1 1) (by simp)), span_singleton_le_iff_mem, LinearMap.mem_ker]
+    rw [ker_mfderivMk (markedLine_ne_zero hvw hv hw (t := Pi.single 1 1) (by simp)),
+      span_singleton_le_iff_mem, LinearMap.mem_ker]
     exact apply_markedLine_single_one_one_eq_zero
   -- The three conditions of the comap are the three linear incidence conditions.
   have h₀ (z : Fin (n + 1) → 𝕜) : mfderivMk (markedLine φ v w (Pi.single 1 1)) z ∈
@@ -181,13 +192,11 @@ theorem comap_markedPointsMFDeriv_markedLine (hvw : LinearIndependent 𝕜 ![v, 
     rw [← ContinuousLinearMap.coe_coe, ← mem_comap, comap_map_eq, sup_eq_left.2 hu,
       LinearMap.mem_ker]
   have h₁ (z : Fin (n + 1) → 𝕜) : mfderivMk (markedLine φ v w 1) z = 0 ↔ z ∈ 𝕜 ∙ v := by
-    rw [← ContinuousLinearMap.coe_coe, ← LinearMap.mem_ker, ker_mfderivMk (hne 1 one_ne_zero),
-      markedLine_one, span_singleton_smul_eq hw.isUnit]
+    rw [← ContinuousLinearMap.coe_coe, ← LinearMap.mem_ker, ker_mfderivMk_markedLine_one hv hw]
   have h₂ (z : Fin (n + 1) → 𝕜) :
       mfderivMk (markedLine φ v w (Pi.single 0 1)) z = 0 ↔ z ∈ 𝕜 ∙ w := by
     rw [← ContinuousLinearMap.coe_coe, ← LinearMap.mem_ker,
-      ker_mfderivMk (hne (Pi.single 0 1) (by simp)),
-      markedLine_single_zero_one, span_singleton_smul_eq hv.isUnit]
+      ker_mfderivMk_markedLine_single_zero_one hv hw]
   ext A
   rw [← ker_markedLineIncidence hv, mem_ker_markedLineIncidence_iff]
   simp only [mem_comap, markedPointsMFDeriv_apply, mem_prod, mem_bot, Prod.mk_eq_zero]

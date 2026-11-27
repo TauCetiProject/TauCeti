@@ -24,7 +24,8 @@ the tangent space of `ℙⁿ` at `[v]` with the quotient `𝕜ⁿ⁺¹ / 𝕜 v`
 
 A map `f` to projective space that near a point `x` sends `y` to `[F y]`, for homogeneous
 coordinates `F` differentiable at `x`, therefore has the derivative
-`mfderivMk (F x) ∘ dF` at `x` (`Projectivization.mfderiv_eq_mfderivMk_comp`). Its kernel consists
+`mfderivMk (F x) ∘ dF` at `x` (`Projectivization.hasMFDerivAt_of_eventually_eq_mk`,
+`Projectivization.mfderiv_eq_mfderivMk_comp`). Its kernel consists
 of the tangent vectors that `dF` sends into the line `𝕜 (F x)`
 (`Projectivization.ker_mfderiv_of_eventually_eq_mk`), and it is onto exactly when the range of
 `dF` and the line `𝕜 (F x)` together span `𝕜ⁿ⁺¹`
@@ -42,8 +43,8 @@ are read off from this formula, the inverse chart having an invertible derivativ
 * `Projectivization.mfderivMk`: the derivative of the projection `w ↦ [w]` at a vector `v`.
 * `Projectivization.ker_mfderivMk`, `Projectivization.surjective_mfderivMk`: at `v ≠ 0` it is onto
   with kernel `𝕜 v`.
-* `Projectivization.mfderiv_eq_mfderivMk_comp`: the chain rule for maps given in homogeneous
-  coordinates.
+* `Projectivization.hasMFDerivAt_of_eventually_eq_mk`, `Projectivization.mfderiv_eq_mfderivMk_comp`:
+  the chain rule for maps given in homogeneous coordinates.
 
 ## References
 
@@ -79,17 +80,21 @@ private theorem eventually_dite_eq_mk {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) 
   filter_upwards [isOpen_ne.mem_nhds hv] with w hw
   exact ⟨hw, by simp [hw]⟩
 
+section ChainRule
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  {f : M → ℙ 𝕜 (Fin (n + 1) → 𝕜)} {F : M → Fin (n + 1) → 𝕜} {x : M}
+
 open scoped Classical in
 /-- **The chain rule for maps given in homogeneous coordinates.** If a map `f` to projective space
-sends `y` to `[F y]` near `x`, for homogeneous coordinates `F` differentiable at `x`, then its
-derivative at `x` is the derivative `dF` followed by the derivative of the projection at `F x`. -/
-theorem mfderiv_eq_mfderivMk_comp {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
-    {f : M → ℙ 𝕜 (Fin (n + 1) → 𝕜)} {F : M → Fin (n + 1) → 𝕜} {x : M}
-    (hF : MDifferentiableAt I 𝓘(𝕜, Fin (n + 1) → 𝕜) F x)
+sends `y` to `[F y]` near `x`, for homogeneous coordinates `F` with derivative `F'` at `x`, then `f`
+has at `x` the derivative `F'` followed by the derivative of the projection at `F x`. -/
+theorem hasMFDerivAt_of_eventually_eq_mk
+    {F' : TangentSpace I x →L[𝕜] Fin (n + 1) → 𝕜}
+    (hF : HasMFDerivAt I 𝓘(𝕜, Fin (n + 1) → 𝕜) F x F')
     (hf : ∀ᶠ y in 𝓝 x, ∃ hy : F y ≠ 0, f y = mk 𝕜 (F y) hy) :
-    mfderiv I 𝓘(𝕜, Fin n → 𝕜) f x =
-      (mfderivMk (F x)).comp (mfderiv I 𝓘(𝕜, Fin (n + 1) → 𝕜) F x) := by
+    HasMFDerivAt I 𝓘(𝕜, Fin n → 𝕜) f x ((mfderivMk (F x)).comp F') := by
   set g : (Fin (n + 1) → 𝕜) → ℙ 𝕜 (Fin (n + 1) → 𝕜) :=
     fun w ↦ if hw : w = 0 then mk 𝕜 (Pi.single 0 1) (by simp) else mk 𝕜 w hw
   obtain ⟨hx, -⟩ := hf.self_of_nhds
@@ -98,7 +103,27 @@ theorem mfderiv_eq_mfderivMk_comp {E H M : Type*} [NormedAddCommGroup E] [Normed
       |>.mdifferentiableAt one_ne_zero
   have hfg : f =ᶠ[𝓝 x] g ∘ F := hf.mono fun y ⟨hy, hfy⟩ ↦ by simp [g, hy, hfy]
   rw [mfderivMk]
-  exact ((hg.hasMFDerivAt.comp x hF.hasMFDerivAt).congr_of_eventuallyEq hfg).mfderiv
+  exact (hg.hasMFDerivAt.comp x hF).congr_of_eventuallyEq hfg
+
+/-- A map to projective space given near `x` by homogeneous coordinates differentiable at `x` is
+differentiable at `x`. -/
+theorem mdifferentiableAt_of_eventually_eq_mk
+    (hF : MDifferentiableAt I 𝓘(𝕜, Fin (n + 1) → 𝕜) F x)
+    (hf : ∀ᶠ y in 𝓝 x, ∃ hy : F y ≠ 0, f y = mk 𝕜 (F y) hy) :
+    MDifferentiableAt I 𝓘(𝕜, Fin n → 𝕜) f x :=
+  (hasMFDerivAt_of_eventually_eq_mk hF.hasMFDerivAt hf).mdifferentiableAt
+
+/-- **The chain rule for maps given in homogeneous coordinates**, for `mfderiv`. If a map `f` to
+projective space sends `y` to `[F y]` near `x`, for homogeneous coordinates `F` differentiable at
+`x`, then its derivative at `x` is the derivative `dF` followed by the derivative of the projection
+at `F x`. -/
+theorem mfderiv_eq_mfderivMk_comp (hF : MDifferentiableAt I 𝓘(𝕜, Fin (n + 1) → 𝕜) F x)
+    (hf : ∀ᶠ y in 𝓝 x, ∃ hy : F y ≠ 0, f y = mk 𝕜 (F y) hy) :
+    mfderiv I 𝓘(𝕜, Fin n → 𝕜) f x =
+      (mfderivMk (F x)).comp (mfderiv I 𝓘(𝕜, Fin (n + 1) → 𝕜) F x) :=
+  (hasMFDerivAt_of_eventually_eq_mk hF.hasMFDerivAt hf).mfderiv
+
+end ChainRule
 
 /-! ### The projection in an affine chart -/
 
@@ -171,13 +196,19 @@ private theorem mfderivMk_eq_comp {i : Fin (n + 1)} {v : Fin (n + 1) → 𝕜} (
     mk_eq_mk_iff']
   exact ⟨(w i)⁻¹, (Fin.insertNth_one_div_eq_inv_smul i w hwi).symm⟩
 
+/-- The inverse of the affine chart at `i` has an invertible derivative at every point. -/
+private theorem isInvertible_mfderiv_affineChart_symm (i : Fin (n + 1)) (z : Fin n → 𝕜) :
+    (mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) (affineOpenPartialHomeomorph (K := 𝕜) i).symm
+      z).IsInvertible :=
+  TauCeti.isInvertible_mfderiv_chart_symm
+    (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(𝕜, Fin n → 𝕜)) (r := 1) i) (by simp)
+
 /-- **The kernel of the derivative of the projection.** At `v ≠ 0` the derivative of `w ↦ [w]`
 vanishes exactly on the line `𝕜 v`. -/
 theorem ker_mfderivMk {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) :
     (mfderivMk v).ker = 𝕜 ∙ v := by
   obtain ⟨i, hvi⟩ := Function.ne_iff.1 hv
-  have hJ := TauCeti.isInvertible_mfderiv_chart_symm (affineOpenPartialHomeomorph_mem_maximalAtlas
-    (I := 𝓘(𝕜, Fin n → 𝕜)) (r := 1) i) (z := fun k ↦ v (i.succAbove k) / v i) (by simp)
+  have hJ := isInvertible_mfderiv_affineChart_symm (𝕜 := 𝕜) i fun k ↦ v (i.succAbove k) / v i
   rw [mfderivMk_eq_comp hvi]
   exact (LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 hJ.injective)).trans
     (ker_ratioFDeriv hvi)
@@ -186,8 +217,7 @@ theorem ker_mfderivMk {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) :
 projective space at `[v]` is the derivative of `w ↦ [w]` along some vector of `𝕜ⁿ⁺¹`. -/
 theorem surjective_mfderivMk {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) : Surjective (mfderivMk v) := by
   obtain ⟨i, hvi⟩ := Function.ne_iff.1 hv
-  have hJ := TauCeti.isInvertible_mfderiv_chart_symm (affineOpenPartialHomeomorph_mem_maximalAtlas
-    (I := 𝓘(𝕜, Fin n → 𝕜)) (r := 1) i) (z := fun k ↦ v (i.succAbove k) / v i) (by simp)
+  have hJ := isInvertible_mfderiv_affineChart_symm (𝕜 := 𝕜) i fun k ↦ v (i.succAbove k) / v i
   rw [mfderivMk_eq_comp hvi]
   exact hJ.surjective.comp (surjective_ratioFDeriv hvi)
 
