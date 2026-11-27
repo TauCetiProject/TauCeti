@@ -73,11 +73,12 @@ theorem injective_and_isIntegralElem_mem_range_appTop_iff :
         RingHom.IsIntegralElem.map hs eB.inv.hom
       rw [Scheme.ΓSpecIso_inv_naturality φ, Iso.hom_inv_id_apply] at hmap
       exact hmap.of_comp
-  have hrange : eB.hom ⁻¹' Set.range (algebraMap C B) = Set.range g := by
+  have hrange : eB.hom ⁻¹' Set.range (algebraMap C B) = Set.range g.hom := by
     rw [← hC.surjective.range_comp (algebraMap C B), ← hcomp, Set.range_comp,
       hB.injective.preimage_image]
-  have hmem (s) : eB.hom s ∈ (algebraMap C B).range ↔ s ∈ g.hom.range :=
-    Set.ext_iff.mp hrange s
+  have hmem (s) : eB.hom s ∈ (algebraMap C B).range ↔ s ∈ g.hom.range := by
+    simpa only [Set.mem_preimage, ← RingHom.coe_range, SetLike.mem_coe] using
+      Set.ext_iff.mp hrange s
   refine and_congr hinj ?_
   exact (forall_congr' fun s ↦ imp_congr (hint s) (hmem s).symm).trans
     (hB.surjective.forall (p := fun b ↦ _root_.IsIntegral A b → b ∈ (algebraMap C B).range)).symm
@@ -96,9 +97,6 @@ theorem isIso_normalizationDesc_spec_iff [IsIntegralHom (Spec.algebraMap A C)] :
   let g := Spec.algebraMap C B
   let h := Spec.algebraMap A C
   have H : f = g ≫ h := (Spec.algebraMap_comp_algebraMap A C B).symm
-  have htop : g.appLE (h ⁻¹ᵁ ⊤) (f ⁻¹ᵁ ⊤)
-      (by simp only [Scheme.Hom.preimage_top, le_refl]) = g.appTop :=
-    g.appLE_eq_app (U := ⊤)
   have : IsAffine f.normalization := isAffine_of_isAffineHom f.fromNormalization
   have hiso : IsIso (f.normalizationDesc g h H) ↔
       IsIso (f.normalizationDesc g h H).appTop := by
@@ -106,9 +104,10 @@ theorem isIso_normalizationDesc_spec_iff [IsIntegralHom (Spec.algebraMap A C)] :
       (MorphismProperty.isomorphisms _).arrow_mk_iso_iff
         (arrowIsoSpecΓOfIsAffine (f.normalizationDesc g h H)),
       MorphismProperty.isomorphisms.iff, isIso_SpecMap_iff, ConcreteCategory.isIso_iff_bijective]
+  have htop : g.appLE ⊤ ⊤ le_top = g.appTop := by
+    simpa only [Scheme.Hom.preimage_top] using g.appLE_eq_app (U := ⊤)
   have hcriterion := f.isIso_normalizationDesc_app_iff g h H (isAffineOpen_top _)
-  rw [htop] at hcriterion
-  simp only [Scheme.Hom.preimage_top] at hcriterion
+  simp only [Scheme.Hom.preimage_top, htop] at hcriterion
   rw [hiso, hcriterion]
   exact injective_and_isIntegralElem_mem_range_appTop_iff
 
