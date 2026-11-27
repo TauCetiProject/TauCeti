@@ -52,7 +52,7 @@ theorem ofSL_five : (ofSL five).fst = 5 ∧ (ofSL five).snd = 2 := by
 theorem map_ofSL_fiveTranspose {C : Type*} [Group C] {s : MennickePair (span {(2 : ℤ)}) → C}
     (hs : IsMennickeSymbol s) : s (ofSL fiveTranspose) = (s (ofSL five))⁻¹ := by
   rw [← ofGL_kerMapToGL, ← ofGL_kerMapToGL]
-  refine hs.map_ofGL_of_transpose ?_
+  refine hs.map_ofGL_eq_inv_of_transpose ?_
   ext i j
   fin_cases i <;> fin_cases j <;> simp [five, fiveTranspose, SpecialLinearGroup.toGL]
 

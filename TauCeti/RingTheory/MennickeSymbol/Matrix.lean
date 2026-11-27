@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.Coset.Defs
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.RingTheory.MennickeSymbol.Dedekind
-import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Coprime
 
 /-!
 # Mennicke pairs as first rows of congruence matrices
@@ -57,9 +57,8 @@ matrices, which Kubota and Bass–Milnor–Serre show to be a homomorphism over 
   `u ≡ 1` modulo `I`, and `u = 1` in `SL₂(A, I)`.
 * `Ideal.MennickePair.ofGL_eq_ofGL_iff`, `Ideal.MennickePair.ofSL_eq_ofSL_iff`: two matrices have
   the same first row exactly when they lie in one right coset of the stabilizer.
-* `Ideal.IsMennickeSymbol.map_mul_map_eq_one`: `[b/a] [c/a] = 1` whenever `a d - b c` is a unit.
-* `Ideal.IsMennickeSymbol.map_ofGL_of_transpose`: transposition inverts the value of a Mennicke
-  symbol on `GL₂(A, I)`.
+* `Ideal.IsMennickeSymbol.map_ofGL_eq_inv_of_transpose`: transposition inverts the value of a
+  Mennicke symbol on `GL₂(A, I)`.
 * `Ideal.IsMennickeSymbol.map_ofGL_eq_of_row_one`: over a Dedekind domain, the value on
   `[[a, b], [c, d]]` is also `[c/d]`.
 
@@ -91,13 +90,7 @@ def ofGL (g : (GeneralLinearGroup.map (n := Fin 2) (Ideal.Quotient.mk I)).ker) :
   fst_sub_one_mem := by
     simpa using (GeneralLinearGroup.mem_ker_map_quotientMk_iff I).1 g.property 0 0
   snd_mem := by simpa using (GeneralLinearGroup.mem_ker_map_quotientMk_iff I).1 g.property 0 1
-  isCoprime := by
-    -- `d δ⁻¹ a - c δ⁻¹ b = 1` for `δ = a d - b c`.
-    let δ := GeneralLinearGroup.det (g : GL (Fin 2) A)
-    refine ⟨(g : GL (Fin 2) A) 1 1 * ↑δ⁻¹, -((g : GL (Fin 2) A) 1 0 * ↑δ⁻¹), ?_⟩
-    have h := δ.mul_inv
-    rw [GeneralLinearGroup.val_det_apply, Matrix.det_fin_two] at h
-    linear_combination h
+  isCoprime := GeneralLinearGroup.isCoprime_row _ 0
 
 @[simp]
 theorem ofGL_fst (g : (GeneralLinearGroup.map (n := Fin 2) (Ideal.Quotient.mk I)).ker) :
@@ -302,15 +295,18 @@ variable (I) in
 identifies `stabilizerGL I \ GL₂(A, I)` with `W(A, I)`. -/
 noncomputable def rightCosetEquivGL :
     Quotient (QuotientGroup.rightRel (stabilizerGL I)) ≃ MennickePair I :=
-  Equiv.ofBijective (_root_.Quotient.lift ofGL fun _ _ ↦ rightRel_stabilizerGL_iff.1)
-    ⟨by
-      rintro ⟨g⟩ ⟨h⟩ hgh
-      exact _root_.Quotient.sound (rightRel_stabilizerGL_iff.2 hgh),
-    fun p ↦ (ofGL_surjective p).elim fun g hg ↦ ⟨_root_.Quotient.mk _ g, hg⟩⟩
+  (Quotient.congrRight fun _ _ ↦ rightRel_stabilizerGL_iff).trans
+    (Setoid.quotientKerEquivOfRightInverse ofGL (fun p ↦ SpecialLinearGroup.kerMapToGL _ p.toSL)
+      fun p ↦ by rw [ofGL_kerMapToGL, ofSL_toSL])
 
 @[simp]
 theorem rightCosetEquivGL_mk (g : (GeneralLinearGroup.map (n := Fin 2) (Ideal.Quotient.mk I)).ker) :
     rightCosetEquivGL I (_root_.Quotient.mk _ g) = ofGL g :=
+  (rfl)
+
+@[simp]
+theorem rightCosetEquivGL_symm_apply (p : MennickePair I) :
+    (rightCosetEquivGL I).symm p = _root_.Quotient.mk _ (SpecialLinearGroup.kerMapToGL _ p.toSL) :=
   (rfl)
 
 variable (I) in
@@ -318,11 +314,8 @@ variable (I) in
 identifies `stabilizerSL I \ SL₂(A, I)` with `W(A, I)`. -/
 noncomputable def rightCosetEquivSL :
     Quotient (QuotientGroup.rightRel (stabilizerSL I)) ≃ MennickePair I :=
-  Equiv.ofBijective (_root_.Quotient.lift ofSL fun _ _ ↦ rightRel_stabilizerSL_iff.1)
-    ⟨by
-      rintro ⟨g⟩ ⟨h⟩ hgh
-      exact _root_.Quotient.sound (rightRel_stabilizerSL_iff.2 hgh),
-    fun p ↦ ⟨_root_.Quotient.mk _ p.toSL, ofSL_toSL p⟩⟩
+  (Quotient.congrRight fun _ _ ↦ rightRel_stabilizerSL_iff).trans
+    (Setoid.quotientKerEquivOfRightInverse ofSL toSL ofSL_toSL)
 
 @[simp]
 theorem rightCosetEquivSL_mk (g : (SpecialLinearGroup.map (n := Fin 2) (Ideal.Quotient.mk I)).ker) :
@@ -332,7 +325,7 @@ theorem rightCosetEquivSL_mk (g : (SpecialLinearGroup.map (n := Fin 2) (Ideal.Qu
 @[simp]
 theorem rightCosetEquivSL_symm_apply (p : MennickePair I) :
     (rightCosetEquivSL I).symm p = _root_.Quotient.mk _ p.toSL :=
-  (rightCosetEquivSL I).symm_apply_eq.2 (ofSL_toSL p).symm
+  (rfl)
 
 end MennickePair
 
@@ -342,20 +335,11 @@ namespace IsMennickeSymbol
 
 variable {C : Type*} [Group C] {s : MennickePair I → C}
 
-/-- `[b/a] [c/a] = 1` for admissible pairs `(a, b)` and `(a, c)` such that `a d - b c` is a unit
-for some `d`. -/
-theorem map_mul_map_eq_one (hs : IsMennickeSymbol s) {p q : MennickePair I}
-    (hfst : p.fst = q.fst) {d : A} (hd : IsUnit (p.fst * d - p.snd * q.snd)) :
-    s p * s q = 1 := by
-  -- `[b c / a] = 1`, since `b c` is congruent modulo `a` to the unit `-(a d - b c)`
-  rw [← hs.map_mulSnd p q hfst]
-  exact hs.map_eq_one_of_dvd_snd_sub hd.neg ⟨d, by simp⟩
-
 open MennickePair in
 /-- **Transposition inverts a Mennicke symbol on matrices**: if `h = gᵀ` in `GL₂(A, I)`, then the
 value of `s` on the first row of `h` is the inverse of its value on the first row of `g`, that is
 `[c/a] = [b/a]⁻¹` for `g = [[a, b], [c, d]]`. -/
-theorem map_ofGL_of_transpose (hs : IsMennickeSymbol s)
+theorem map_ofGL_eq_inv_of_transpose (hs : IsMennickeSymbol s)
     {g h : (GeneralLinearGroup.map (n := Fin 2) (Ideal.Quotient.mk I)).ker}
     (hgh : ((h : GL (Fin 2) A) : Matrix (Fin 2) (Fin 2) A) =
       ((g : GL (Fin 2) A) : Matrix (Fin 2) (Fin 2) A).transpose) :
@@ -366,26 +350,8 @@ theorem map_ofGL_of_transpose (hs : IsMennickeSymbol s)
     simpa using congrFun (congrFun hgh 0) 1
   refine eq_inv_of_mul_eq_one_right (hs.map_mul_map_eq_one (d := (g : GL (Fin 2) A) 1 1)
     (by simp [h₀]) ?_)
-  rw [ofGL_fst, ofGL_snd, ofGL_snd, h₁, ← Matrix.det_fin_two, ← GeneralLinearGroup.val_det_apply]
-  exact Units.isUnit _
-
-/-- **A Mennicke symbol from the second row.** Over a Dedekind domain, `[b/a] = [c/d]` for
-admissible pairs `(a, b)` and `(d, c)` such that `a d - b c` is a unit. -/
-theorem map_eq_of_isUnit_mul_sub_mul [IsDedekindDomain A] (hs : IsMennickeSymbol s)
-    {p q : MennickePair I} (h : IsUnit (p.fst * q.fst - p.snd * q.snd)) : s p = s q := by
-  -- With the pairs `r = (a, c)` and `r' = (a d, c)`: `[b/a] [c/a] = 1`, while Lam's identity gives
-  -- `[c/a] [c/d] = [c/(a d)] = 1` because `a d` is congruent modulo `c` to the unit `a d - b c`.
-  let r : MennickePair I := ⟨p.fst, q.snd, p.fst_sub_one_mem, q.snd_mem, by
-    obtain ⟨u, hu⟩ := h
-    exact ⟨q.fst * ↑u⁻¹, -(p.snd * ↑u⁻¹), by linear_combination -(↑u⁻¹ : A) * hu + u.inv_mul⟩⟩
-  let r' : MennickePair I := ⟨p.fst * q.fst, q.snd,
-    by simpa [mul_sub, sub_add_sub_cancel] using
-      I.add_mem (I.mul_mem_left p.fst q.fst_sub_one_mem) p.fst_sub_one_mem,
-    q.snd_mem, r.isCoprime.mul_left q.isCoprime⟩
-  have hpr : s p * s r = 1 := hs.map_mul_map_eq_one rfl h
-  have hr' : s r' = s r * s q := hs.map_eq_mul_of_fst_eq_mul rfl rfl rfl
-  have hr'_one : s r' = 1 := hs.map_eq_one_of_dvd_fst_sub h ⟨p.snd, by simp [r']; ring⟩
-  rw [eq_inv_of_mul_eq_one_left hpr, eq_inv_of_mul_eq_one_right (hr'.symm.trans hr'_one)]
+  rw [ofGL_fst, ofGL_snd, ofGL_snd, h₁]
+  exact GeneralLinearGroup.isUnit_mul_sub_mul _
 
 open MennickePair in
 /-- **The value of a Mennicke symbol from the second row of a matrix.** Over a Dedekind domain,
@@ -396,8 +362,8 @@ theorem map_ofGL_eq_of_row_one [IsDedekindDomain A] (hs : IsMennickeSymbol s)
     (hfst : p.fst = (g : GL (Fin 2) A) 1 1) (hsnd : p.snd = (g : GL (Fin 2) A) 1 0) :
     s (ofGL g) = s p := by
   refine hs.map_eq_of_isUnit_mul_sub_mul ?_
-  rw [ofGL_fst, ofGL_snd, hfst, hsnd, ← Matrix.det_fin_two, ← GeneralLinearGroup.val_det_apply]
-  exact Units.isUnit _
+  rw [ofGL_fst, ofGL_snd, hfst, hsnd]
+  exact GeneralLinearGroup.isUnit_mul_sub_mul _
 
 end IsMennickeSymbol
 

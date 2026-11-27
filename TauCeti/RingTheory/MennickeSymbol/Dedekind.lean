@@ -34,6 +34,8 @@ its Mennicke symbol, so that `b` generates `I` together with any prescribed nonz
   Mennicke group is commutative.
 * `Ideal.IsMennickeSymbol.commute`: any two values of a Mennicke symbol commute.
 * `Ideal.IsMennickeSymbol.map_eq_mul_of_fst_eq_mul`: Lam's identity.
+* `Ideal.IsMennickeSymbol.map_eq_of_isUnit_mul_sub_mul`: `[b/a] = [c/d]` whenever `a d - b c` is
+  a unit.
 
 ## References
 
@@ -221,6 +223,25 @@ theorem map_eq_mul_of_fst_eq_mul (hs : IsMennickeSymbol s) {p₁ p₂ q : Mennic
     (by simp only [MennickePair.shiftFst_fst, MennickePair.shiftSnd_snd, MennickePair.shiftSnd_fst]
         linear_combination (1 - p₁.fst * m * t) * hfst + p₁.fst * m * h₂)
   simpa only [hs.map_shiftFst, hs.map_shiftSnd] using H
+
+/-- **A Mennicke symbol from the second row.** `[b/a] = [c/d]` for admissible pairs `(a, b)` and
+`(d, c)` such that `a d - b c` is a unit. -/
+theorem map_eq_of_isUnit_mul_sub_mul (hs : IsMennickeSymbol s) {p q : MennickePair I}
+    (h : IsUnit (p.fst * q.fst - p.snd * q.snd)) : s p = s q := by
+  -- With the pairs `r = (a, c)` and `r' = (a d, c)`: `[b/a] [c/a] = 1`, while Lam's identity gives
+  -- `[c/a] [c/d] = [c/(a d)] = 1` because `a d` is congruent modulo `c` to the unit `a d - b c`.
+  let r : MennickePair I := ⟨p.fst, q.snd, p.fst_sub_one_mem, q.snd_mem, by
+    obtain ⟨u, hu⟩ := h
+    exact ⟨q.fst * ↑u⁻¹, -(p.snd * ↑u⁻¹), by linear_combination -(↑u⁻¹ : A) * hu + u.inv_mul⟩⟩
+  let r' : MennickePair I := ⟨p.fst * q.fst, q.snd,
+    by simpa [mul_sub, sub_add_sub_cancel] using
+      I.add_mem (I.mul_mem_left p.fst q.fst_sub_one_mem) p.fst_sub_one_mem,
+    q.snd_mem, r.isCoprime.mul_left q.isCoprime⟩
+  have hpr : s p * s r = 1 := hs.map_mul_map_eq_one rfl h
+  have hr' : s r' = s r * s q := hs.map_eq_mul_of_fst_eq_mul rfl rfl rfl
+  have hr'_one : s r' = 1 := hs.map_eq_one_of_dvd_fst_sub h
+    ⟨p.snd, show p.fst * q.fst - (p.fst * q.fst - p.snd * q.snd) = q.snd * p.snd by ring⟩
+  rw [eq_inv_of_mul_eq_one_left hpr, eq_inv_of_mul_eq_one_right (hr'.symm.trans hr'_one)]
 
 end IsMennickeSymbol
 
