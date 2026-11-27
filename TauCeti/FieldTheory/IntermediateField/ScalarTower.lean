@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 public import Mathlib.FieldTheory.IntermediateField.Basic
 
 /-!
@@ -58,6 +59,8 @@ and field-range transport for intermediate fields and their algebra equivalences
   field `E'` as soon as some algebra structure of `E'` over `E` is compatible with `L`.
 * `IntermediateField.restrictScalars_self`: restricting the scalars of an intermediate field of
   `L / K` to `K` itself is the identity.
+* `IntermediateField.mem_bot_iff_mem`: for an intermediate field `F` of `L / K`, an element of
+  `L` lies in the bottom intermediate field of `L / F` if and only if it lies in `F`.
 * `IntermediateField.nonempty_extendScalars_algEquiv_iff`: `extendScalars h₁` and
   `extendScalars h₂` are `U`-isomorphic precisely when some `L₁ ≃ₐ[K] L₂` fixes `U` pointwise.
 * `IntermediateField.extendScalarsAlgEquivHom_injective` and
@@ -112,6 +115,14 @@ identity. -/
 theorem restrictScalars_self {K L : Type*} [Field K] [Field L] [Algebra K L]
     (E : IntermediateField K L) : E.restrictScalars K = E :=
   SetLike.coe_injective (coe_restrictScalars (K := K))
+
+/-- For an intermediate field `F` of `L / K`, an element of `L` lies in the bottom intermediate
+field of `L / F` exactly when it lies in `F`. This is the membership form of Mathlib's
+`IntermediateField.restrictScalars_bot_eq_self`. -/
+@[simp]
+theorem mem_bot_iff_mem {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {F : IntermediateField K L} {x : L} : x ∈ (⊥ : IntermediateField F L) ↔ x ∈ F := by
+  rw [← mem_restrictScalars K, restrictScalars_bot_eq_self]
 
 variable (K : Type*) {L' L : Type*} [Field K] [Field L'] [Field L] [Algebra K L'] [Algebra K L]
   [Algebra L' L] [IsScalarTower K L' L]

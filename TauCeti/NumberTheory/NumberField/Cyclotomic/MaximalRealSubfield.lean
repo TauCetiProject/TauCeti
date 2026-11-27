@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Norm.Defs
 import Mathlib.Analysis.Complex.Basic
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealSubfield
 
 /-!
@@ -323,7 +324,7 @@ private theorem finrank_adjoin_add_inv_eq_two_of_notMem [NeZero n] (hζ : IsPrim
   have : Module.Finite k⟮ζ + ζ⁻¹⟯ K := .of_restrictScalars_finite ℚ _ K
   have hpos : 0 < finrank k⟮ζ + ζ⁻¹⟯ K := finrank_pos
   have hne : finrank k⟮ζ + ζ⁻¹⟯ K ≠ 1 := fun h1 ↦ h <| by
-    refine TauCeti.IntermediateField.mem_bot_iff_mem.1 ?_
+    refine IntermediateField.mem_bot_iff_mem.1 ?_
     rw [bot_eq_top_iff_finrank_eq_one.2 h1]
     exact mem_top
   omega
@@ -395,7 +396,7 @@ theorem adjoin_adjoin_add_inv_eq_top [NeZero n] (hζ : IsPrimitiveRoot ζ n) {m 
   have := isSimpleOrder_of_finrank_prime k⟮ζ + ζ⁻¹⟯ K
     (finrank_adjoin_add_inv_eq_two_of_notMem hζ hζ' ▸ Nat.prime_two)
   refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦
-    hη (TauCeti.IntermediateField.mem_bot_iff_mem.1 ?_)
+    hη (IntermediateField.mem_bot_iff_mem.1 ?_)
   rw [← hbot]
   exact mem_adjoin_simple_self _ η
 
