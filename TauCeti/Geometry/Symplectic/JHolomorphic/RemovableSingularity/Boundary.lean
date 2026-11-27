@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
-import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap.Boundary
+import TauCeti.Analysis.Complex.EvenReflection
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
@@ -30,8 +30,8 @@ included, and solves the Cauchy–Riemann equation at every point of it
 (`TauCeti.SymplecticForm.exists_contDiffOn_update_inter_of_finite_energy`). This is the boundary
 case of the removal of singularities theorem of McDuff–Salamon, Section 4.5, in the flat model
 of a constant symplectic form and a linear Lagrangian boundary condition; it is the boundary
-counterpart of `TauCeti.SymplecticForm.exists_contDiffOn_update_of_finite_energy`, and the step
-which extends the strip and disc bubbles of Gromov compactness across their boundary punctures.
+counterpart of `TauCeti.SymplecticForm.exists_contDiffOn_update_of_finite_energy`. Curved
+Lagrangian boundary conditions and strip ends are not treated here.
 
 The two conditions on `J(p)` say that `L` is maximal totally real for `J(p)` and orthogonal to
 `J(p) L`. The first, `J(p) L ⊆ Lᗮ`, is the hypothesis of the boundary mean-value inequality behind
@@ -114,7 +114,7 @@ theorem exists_pos_two_lt_memLp_fderivWithin_inter_of_finite_energy
   set M := max B 0
   have hbound : ∀ z ∈ H ∩ (ball x₀ R \ {x₀}), ‖J (u z)‖ ≤ M := fun z hz ↦
     (hB _ (huK hz)).trans (le_max_left _ _)
-  obtain ⟨ε, hε, hεR, C, hC, hpoint⟩ := ω.exists_pos_norm_fderivWithin_le_rpow hg hc hR hW hJ hK
+  obtain ⟨ε, hε, hεR, C, -, hpoint⟩ := ω.exists_pos_norm_fderivWithin_le_rpow hg hc hR hW hJ hK
     hKW hJsq hJL hLω hx₀ hu hCR huL huK htame hbound henergy
   set β := c / (1 + M) ^ 2
   have hβ : 0 < β := by positivity
@@ -126,12 +126,10 @@ theorem exists_pos_two_lt_memLp_fderivWithin_inter_of_finite_energy
   have hSm : MeasurableSet (H ∩ (ball x₀ ε \ {x₀})) :=
     (isClosed_le continuous_const continuous_im).measurableSet.inter
       (measurableSet_ball.diff (measurableSet_singleton _))
-  have hcont : ContinuousOn (fderivWithin ℝ u H) (H ∩ (ball x₀ ε \ {x₀})) := by
-    have hsmall : ContDiffOn ℝ 3 u (H ∩ (ball x₀ ε \ {x₀})) :=
-      hu.mono (inter_subset_inter_right _ (sdiff_subset_sdiff_left (ball_subset_ball hεR.le)))
-    refine (hsmall.continuousOn_fderivWithin ((uniqueDiffOn_setOfPred_le_im 0).inter hSo)
-      (by norm_num)).congr fun z hz ↦ ?_
-    exact (fderivWithin_inter (hSo.mem_nhds hz.2)).symm
+  have hcont : ContinuousOn (fderivWithin ℝ u H) (H ∩ (ball x₀ ε \ {x₀})) :=
+    continuousOn_fderivWithin_setOfPred_le_im_inter hSo
+      (hu.mono (inter_subset_inter_right _ (sdiff_subset_sdiff_left (ball_subset_ball hεR.le))))
+      (by norm_num)
   have hnull : volume.restrict (H ∩ (ball x₀ ε \ {x₀})) = volume.restrict (H ∩ ball x₀ ε) := by
     refine Measure.restrict_congr_set ?_
     rw [← inter_sdiff_assoc]
@@ -139,25 +137,15 @@ theorem exists_pos_two_lt_memLp_fderivWithin_inter_of_finite_energy
   have hmeas : AEStronglyMeasurable (fderivWithin ℝ u H) (volume.restrict (H ∩ ball x₀ ε)) := by
     rw [← hnull]
     exact hcont.aestronglyMeasurable hSm
-  rw [← integrable_norm_rpow_iff hmeas (ENNReal.ofReal_pos.mpr hp).ne' ENNReal.ofReal_ne_top,
-    ENNReal.toReal_ofReal hp.le]
-  -- The majorant `C ^ p ‖z - x₀‖ ^ ((β - 1) p)` is integrable since `(β - 1) p > -2`.
-  have hexponent : -(Module.finrank ℝ ℂ : ℝ) < (β - 1) * p := by
-    rw [Complex.finrank_real_complex, Nat.cast_ofNat]
+  -- The bound `‖du z‖ ≤ C ‖z - x₀‖ ^ (β - 1)` is `Lᵖ` since `(β - 1) p > -2`.
+  have hexponent : -(Module.finrank ℝ ℂ : ℝ) < (β - 1) * (ENNReal.ofReal p).toReal := by
+    rw [ENNReal.toReal_ofReal hp.le, Complex.finrank_real_complex, Nat.cast_ofNat]
     nlinarith [mul_pos hβ hβ]
-  have hmajorant : IntegrableOn (fun z ↦ C ^ p * ‖x₀ - z‖ ^ ((β - 1) * p)) (H ∩ ball x₀ ε) :=
-    IntegrableOn.mono_set ((integrableOn_norm_sub_rpow_ball (mu := volume) hexponent x₀
-      (R := ε)).const_mul (C ^ p)) inter_subset_right
-  refine hmajorant.mono' (hmeas.norm.aemeasurable.pow_const p).aestronglyMeasurable ?_
+  refine (isBounded_ball.subset inter_subset_right).memLp_of_ae_norm_le_mul_norm_sub_rpow
+    (C := C) ENNReal.ofReal_ne_top hexponent x₀ hmeas ?_
   rw [← hnull]
   filter_upwards [ae_restrict_mem hSm] with z hz
-  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]
-  calc
-    ‖fderivWithin ℝ u H z‖ ^ p ≤ (C * ‖z - x₀‖ ^ (β - 1)) ^ p :=
-      Real.rpow_le_rpow (norm_nonneg _) (hpoint z hz) hp.le
-    _ = C ^ p * ‖x₀ - z‖ ^ ((β - 1) * p) := by
-      rw [Real.mul_rpow hC.le (Real.rpow_nonneg (norm_nonneg _) _),
-        ← Real.rpow_mul (norm_nonneg _), norm_sub_rev z x₀]
+  simpa only [norm_sub_rev x₀ z] using hpoint z hz
 
 open Classical in
 /-- **The filled boundary puncture is a weak solution.** Under the hypotheses of
@@ -199,8 +187,7 @@ theorem exists_isWeakCauchyRiemannOn_update_inter_of_finite_energy
   -- The derivative within `H` is continuous off the puncture.
   have hSo : IsOpen (ball x₀ R \ {x₀}) := isOpen_ball.sdiff isClosed_singleton
   have hdcont : ContinuousOn (fderivWithin ℝ u H) (H ∩ (ball x₀ R \ {x₀})) :=
-    (hu.continuousOn_fderivWithin ((uniqueDiffOn_setOfPred_le_im 0).inter hSo)
-      (by norm_num)).congr fun z hz ↦ (fderivWithin_inter (hSo.mem_nhds hz.2)).symm
+    continuousOn_fderivWithin_setOfPred_le_im_inter hSo hu (by norm_num)
   refine ⟨q, hq, hlim, hmaps, p, hp, isWeakCauchyRiemannOn_iff.2
     ⟨hcont, hcont.memLpLoc, fderivWithin ℝ u H, ?_, ?_, ?_⟩⟩
   · -- On the open half-disc the filling is `u`, differentiable with derivative its derivative
@@ -305,9 +292,7 @@ theorem exists_contDiffOn_update_inter_of_finite_energy {ℓ : ℕ∞} (hℓ : 2
   -- Off the puncture the equation is that of `u`; at the puncture it follows by continuity of both
   -- sides. The derivative within `H` is that within the half-disc, which is continuous.
   have hdv : ContinuousOn (fderivWithin ℝ v H) (H ∩ ball x₀ R) :=
-    (hv.continuousOn_fderivWithin ((uniqueDiffOn_setOfPred_le_im 0).inter isOpen_ball)
-      (le_trans (by norm_num) h2)).congr fun z hz ↦
-        (fderivWithin_inter (isOpen_ball.mem_nhds hz.2)).symm
+    continuousOn_fderivWithin_setOfPred_le_im_inter isOpen_ball hv (le_trans (by norm_num) h2)
   refine ⟨q, hq, hlim, hmaps, hv, EqOn.of_subset_closure (f := fun z ↦ fderivWithin ℝ v H z I)
     (g := fun z ↦ J (v z) (fderivWithin ℝ v H z 1)) (s := (H ∩ ball x₀ R) \ {x₀}) (fun z hz ↦ ?_)
     (hdv.clm_apply continuousOn_const) (((hJ.continuousOn.mono hKW).comp hv.continuousOn
