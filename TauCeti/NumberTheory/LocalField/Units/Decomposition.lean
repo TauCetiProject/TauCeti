@@ -169,8 +169,6 @@ variable (K) in
 identifies it with `ℤ × U(K,0)`, a countable discrete group times a compact one. -/
 instance instSigmaCompactSpaceUnits : SigmaCompactSpace Kˣ := by
   obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
-  have : CompactSpace (unitFiltration K 0) :=
-    isCompact_iff_compactSpace.1 (isCompact_unitFiltration 0)
   exact isSigmaCompact_univ_iff.1 <| by
     simpa using isSigmaCompact_range (unitsEquivIntProd K ϖ hϖ).symm.continuous
 

@@ -49,10 +49,6 @@ Composing a corresponding Galois character with the arithmetic Artin map gives `
 
 * `TauCeti.ClassFieldTheory.comp_geometricArtinMap_eq_unramifiedCharacter_iff`: a character
   corresponds to `μ_a` exactly when it is unramified and sends geometric Frobenius to `a`.
-* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_geometricArtinMap_padic`: the
-  cyclotomic character corresponds to `x|x|`; its arithmetic form
-  `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_padicUnitPart` is the
-  `simp` normal form.
 * `ContinuousMonoidHom.padicGaloisCharacter_geometricArtinMap` and
   `ContinuousMonoidHom.eq_padicGaloisCharacter`: existence and uniqueness of the Galois
   character corresponding to `δ`.
@@ -126,27 +122,6 @@ theorem comp_geometricArtinMap_eq_unramifiedCharacter_iff
     · rw [MonoidHom.comp_apply, ← hτ, hF τ hτF]
 
 end Unramified
-
-section Padic
-
-variable (p : ℕ) [Fact p.Prime]
-
-/-- Through the arithmetic local Artin map of `ℚ_p`, the cyclotomic character of the Artin symbol
-of `x ∈ ℚ_pˣ` is the inverse of the unit part `x |x|` of `x`. -/
-@[simp]
-theorem abelianizedLocalCyclotomicCharacter_artinMap_padicUnitPart (x : ℚ_[p]ˣ) :
-    abelianizedLocalCyclotomicCharacter p ℚ_[p] (artinMap ℚ_[p] x) = (padicUnitPart p x)⁻¹ :=
-  abelianizedLocalCyclotomicCharacter_artinMap_padic p (coe_eq_zpow_valuation_mul_padicUnitPart x)
-
-/-- **The cyclotomic character corresponds to `x|x|`.** Through the geometric local Artin map of
-`ℚ_p`, the cyclotomic character of the geometric Artin symbol of `x ∈ ℚ_pˣ` is the unit part
-`x |x|` of `x`. -/
-theorem abelianizedLocalCyclotomicCharacter_geometricArtinMap_padic (x : ℚ_[p]ˣ) :
-    abelianizedLocalCyclotomicCharacter p ℚ_[p] (geometricArtinMap ℚ_[p] x) =
-      padicUnitPart p x := by
-  simp
-
-end Padic
 
 end TauCeti.ClassFieldTheory
 

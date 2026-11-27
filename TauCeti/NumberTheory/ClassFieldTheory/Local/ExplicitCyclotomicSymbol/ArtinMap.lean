@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Cyclotomic
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.GeometricArtinMap
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.NumberTheory.Padics.UnitsCharacter.Basic
 import TauCeti.Data.ZMod.Pow
 import TauCeti.Data.ZMod.Units
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
@@ -63,6 +65,9 @@ norms `a² - 3b²` fill only `1 + 3ℤ_3`, while the image is all of `ℤ_3ˣ`.
 
 * `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_padic`: the cyclotomic
   character of the Artin symbol of `pᵏ u` is `u⁻¹`.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_padicUnitPart` and
+  `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_geometricArtinMap_padic`:
+  arithmetic and geometric cyclotomic evaluations in terms of `TauCeti.padicUnitPart p`.
 * `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_padic`: a representative of the
   Artin symbol of a unit `u ∈ ℤ_pˣ` has cyclotomic character `u⁻¹`.
 * `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_mul_normUnits`: for
@@ -297,6 +302,21 @@ theorem localCyclotomicCharacter_artinMap_padic (u : ℤ_[p]ˣ)
     localCyclotomicCharacter p ℚ_[p] σ = u⁻¹ := by
   rw [← abelianizedLocalCyclotomicCharacter_mk, hσ]
   exact abelianizedLocalCyclotomicCharacter_artinMap_padic p (k := 0) (by simp)
+
+/-- Through the arithmetic local Artin map of `ℚ_p`, the cyclotomic character of the Artin symbol
+of `x ∈ ℚ_pˣ` is the inverse of the unit part `x |x|` of `x`. -/
+@[simp]
+theorem abelianizedLocalCyclotomicCharacter_artinMap_padicUnitPart (x : ℚ_[p]ˣ) :
+    abelianizedLocalCyclotomicCharacter p ℚ_[p] (artinMap ℚ_[p] x) = (padicUnitPart p x)⁻¹ :=
+  abelianizedLocalCyclotomicCharacter_artinMap_padic p (coe_eq_zpow_valuation_mul_padicUnitPart x)
+
+/-- **The cyclotomic character corresponds to `x|x|`.** Through the geometric local Artin map of
+`ℚ_p`, the cyclotomic character of the geometric Artin symbol of `x ∈ ℚ_pˣ` is the unit part
+`x |x|` of `x`. -/
+theorem abelianizedLocalCyclotomicCharacter_geometricArtinMap_padic (x : ℚ_[p]ˣ) :
+    abelianizedLocalCyclotomicCharacter p ℚ_[p] (geometricArtinMap ℚ_[p] x) =
+      padicUnitPart p x := by
+  simp
 
 /-- **The cyclotomic normalization of the local Artin map of a finite extension of `ℚ_p` for
 arbitrary elements.** Let `F` be a nonarchimedean local field with any finite `ℚ_p`-algebra

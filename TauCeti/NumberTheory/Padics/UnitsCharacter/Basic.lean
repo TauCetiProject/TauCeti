@@ -164,9 +164,7 @@ identity on `ℤ_pˣ`. -/
 theorem padicUnitPart_apply_of_eq {x : ℚ_[p]ˣ} {k : ℤ} {u : ℤ_[p]ˣ}
     (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * (u : ℤ_[p])) : padicUnitPart p x = u := by
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
-  have hv : (x : ℚ_[p]).valuation = k := by
-    rw [hx, Padic.valuation_p_zpow_mul k (by simp), PadicInt.valuation_coe,
-      PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero, add_zero]
+  have hv : (x : ℚ_[p]).valuation = k := TauCeti.Padic.valuation_eq_of_eq hx
   refine Units.ext <| PadicInt.ext ?_
   rw [coe_padicUnitPart_apply, hv, hx, zpow_neg]
   field_simp

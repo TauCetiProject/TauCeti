@@ -51,10 +51,10 @@ characters sending a uniformizer to `!![1, 1; 0, 1]` and `!![1, 0; 1, 1]` is not
 on `Kˣ`, because these matrices do not commute. -/
 theorem exists_unramifiedCharacter_matrix_mul_not_monoidHom (K : Type*) [Field K]
     [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] :
-    ∃ δ₁ δ₂ : Kˣ →ₜ* (Matrix (Fin 2) (Fin 2) (ZMod 3))ˣ,
+    ∃ a b : (Matrix (Fin 2) (Fin 2) (ZMod 3))ˣ,
       ¬ ∃ δ : Kˣ →* (Matrix (Fin 2) (Fin 2) (ZMod 3))ˣ,
-        ∀ x : Kˣ, δ x = δ₁ x * δ₂ x := by
-  refine ⟨unramifiedCharacter K matA, unramifiedCharacter K matB, ?_⟩
+        ∀ x : Kˣ, δ x = unramifiedCharacter K a x * unramifiedCharacter K b x := by
+  refine ⟨matA, matB, ?_⟩
   rw [exists_monoidHom_mul_unramifiedCharacter_iff]
   intro hcomm
   have h : (matA : Matrix (Fin 2) (Fin 2) (ZMod 3)) * matB =

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Local.GaloisCharacter.Basic
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.ArtinMap
 public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Rationals
 
 /-!
@@ -33,6 +33,12 @@ identifying the arithmetic local Artin symbol of `x = p ^ v_p(x) * u` with
 * `TauCeti.ClassFieldTheory.padicAbsoluteGaloisGroupAbelianizationEquiv_artinMap` and
   `TauCeti.ClassFieldTheory.padicAbsoluteGaloisGroupAbelianizationEquiv_geometricArtinMap`:
   images of the arithmetic and geometric Artin symbols.
+
+## References
+
+* J.-P. Serre, *Local Class Field Theory*, in *Algebraic Number Theory* (J. W. S. Cassels and
+  A. Fröhlich, eds.), Academic Press, 1967, Chapter VI, §3.
+* J. S. Milne, *Class Field Theory*, Chapter I, Local Kronecker–Weber.
 -/
 
 public section
@@ -98,15 +104,11 @@ private theorem padicAbelianizationProdHom_surjective :
       Set.range (padicAbelianizationProdHom p) := by
     rintro ⟨_, u⟩ ⟨⟨n, rfl⟩, -⟩
     let x : ℚ_[p]ˣ := padicPrimeUnit p ^ n.toAdd * padicIntUnitsInclusion p u⁻¹
-    have hx : padicUnitsEquivIntProd p x = (.ofAdd n.toAdd, u⁻¹) :=
-      padicUnitsEquivIntProd_eq_of_decomposition p x n.toAdd u⁻¹ <| by
-        rw [Units.val_mul, Units.val_zpow_eq_zpow_val, coe_padicPrimeUnit,
-          coe_padicIntUnitsInclusion_apply]
-    have hval : (x : ℚ_[p]).valuation = n.toAdd := by
-      simpa [padicUnitsEquivIntProd_apply_fst] using
-        congrArg (Multiplicative.toAdd ∘ Prod.fst) hx
-    have hunit : padicUnitPart p x = u⁻¹ := by
-      simpa [padicUnitsEquivIntProd_apply_snd] using congrArg Prod.snd hx
+    have hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ n.toAdd * ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) := by
+      rw [Units.val_mul, Units.val_zpow_eq_zpow_val, coe_padicPrimeUnit,
+        coe_padicIntUnitsInclusion_apply]
+    have hval : (x : ℚ_[p]).valuation = n.toAdd := TauCeti.Padic.valuation_eq_of_eq hx
+    have hunit : padicUnitPart p x = u⁻¹ := padicUnitPart_apply_of_eq hx
     refine ⟨artinMap ℚ_[p] x, ?_⟩
     rw [padicAbelianizationProdHom_artinMap, hval, hunit, inv_inv, ← zHat.ofInt_ofAdd,
       ofAdd_toAdd]

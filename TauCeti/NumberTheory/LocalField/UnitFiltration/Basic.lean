@@ -61,9 +61,10 @@ action on a finite extension, and its behaviour under a field embedding.
 * `TauCeti.unitFiltration_antitone` and `TauCeti.unitFiltration_succ_lt`: the filtration is
   decreasing, and strictly so from depth one on.
 * `TauCeti.iInf_unitFiltration`: the filtration separates points, `⨅ i, U(K,i) = ⊥`.
-* `TauCeti.isOpen_unitFiltration`, `TauCeti.isCompact_unitFiltration` and
-  `TauCeti.hasBasis_nhds_one_unitFiltration`: every `U(K,i)` is an open compact subgroup of
-  `Kˣ`, and the family is a neighbourhood basis of `1`; in particular `Kˣ` is Hausdorff.
+* `TauCeti.isOpen_unitFiltration`, `TauCeti.isCompact_unitFiltration`,
+  `TauCeti.compactSpace_unitFiltration` and `TauCeti.hasBasis_nhds_one_unitFiltration`: every
+  `U(K,i)` is an open compact subgroup of `Kˣ` (hence compact as a topological space), and the
+  family is a neighbourhood basis of `1`; in particular `Kˣ` is Hausdorff.
 * `TauCeti.unitFiltration_le_of_isClosed_of_le_sup`: successive one-step approximations by a
   closed subgroup imply containment of the entire filtration step.
 
@@ -492,6 +493,11 @@ theorem isCompact_unitFiltration (i : ℕ) : IsCompact (unitFiltration K i : Set
   exact hzero.of_isClosed_subset
     ((unitFiltration K i).isClosed_of_isOpen (isOpen_unitFiltration i))
     (unitFiltration_antitone (Nat.zero_le i))
+
+/-- Each step `unitFiltration K i` of the unit filtration of a nonarchimedean local field is a
+compact space. -/
+instance compactSpace_unitFiltration (i : ℕ) : CompactSpace (unitFiltration K i) :=
+  isCompact_iff_compactSpace.mp (isCompact_unitFiltration i)
 
 /-- The unit filtration is a neighbourhood basis of `1` in `Kˣ`. -/
 theorem hasBasis_nhds_one_unitFiltration :

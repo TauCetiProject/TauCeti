@@ -44,9 +44,9 @@ variable (p : ℕ) [hp : Fact p.Prime] (K : Type*) [Field K] [CharZero K]
 /-- **The mod-`p` cyclotomic character** `G_K →ₜ* (ZMod p)ˣ`, defined as the level-`p` reduction
 of `profiniteCyclotomicCharacter K`. -/
 def modPLocalCyclotomicCharacter : Field.absoluteGaloisGroup K →ₜ* (ZMod p)ˣ :=
-  ContinuousMonoidHom.comp
-    ⟨Units.map (zHat.toZMod.{0} ⟨p, hp.out.pos⟩).toMonoidHom,
-      (zHat.continuous_toZMod.{0} ⟨p, hp.out.pos⟩).units_map _⟩
+  (ContinuousMonoidHom.unitsMap
+      ⟨(zHat.toZMod.{0} (⟨p, hp.out.pos⟩ : ℕ+)).toMonoidHom,
+        zHat.continuous_toZMod.{0} (⟨p, hp.out.pos⟩ : ℕ+)⟩).comp
     (profiniteCyclotomicCharacter.{_, 0} K)
 
 /-- The value of `modPLocalCyclotomicCharacter p K` in `ZMod p` is the mod-`p` reduction of
@@ -55,7 +55,16 @@ def modPLocalCyclotomicCharacter : Field.absoluteGaloisGroup K →ₜ* (ZMod p)�
 theorem coe_modPLocalCyclotomicCharacter_apply (σ : Field.absoluteGaloisGroup K) :
     (modPLocalCyclotomicCharacter p K σ : ZMod p) =
       PadicInt.toZMod (localCyclotomicCharacter p K σ : ℤ_[p]) := by
-  rw [← PadicInt.cast_toZModPow_eq_toZMod one_ne_zero,
+  have hlhs : (modPLocalCyclotomicCharacter p K σ : ZMod p) =
+      zHat.toZMod.{0} (⟨p, hp.out.pos⟩ : ℕ+)
+        (profiniteCyclotomicCharacter.{_, 0} K σ : Additive zHat) := by
+    let f : Additive zHat.{0} →ₜ* ZMod p :=
+      ⟨(zHat.toZMod.{0} (⟨p, hp.out.pos⟩ : ℕ+)).toMonoidHom,
+        zHat.continuous_toZMod.{0} (⟨p, hp.out.pos⟩ : ℕ+)⟩
+    change (ContinuousMonoidHom.unitsMap f (profiniteCyclotomicCharacter.{_, 0} K σ) : ZMod p) =
+      f (profiniteCyclotomicCharacter.{_, 0} K σ : Additive zHat)
+    exact ContinuousMonoidHom.coe_unitsMap_apply f (profiniteCyclotomicCharacter.{_, 0} K σ)
+  rw [hlhs, ← PadicInt.cast_toZModPow_eq_toZMod one_ne_zero,
     ← map_component_profiniteCyclotomicCharacter.{_, 0} K p σ, Units.coe_map, MonoidHom.coe_ofClass,
     zHat.toZModPow_component p 1]
   exact (zHat.cast_toZMod (m := ⟨p, hp.out.pos⟩) (n := ⟨p ^ 1, pow_pos hp.out.pos 1⟩)
@@ -67,16 +76,16 @@ extension `L / ℚ_[p]`) agrees with pushing `modPLocalCyclotomicCharacter p K` 
 `ZMod.castHom`. -/
 theorem map_continuousLocalCyclotomicCharacter_eq_cast_modP {k : Type*} [Ring k] [CharP k p]
     [TopologicalSpace k] (f : ℤ_[p] →+* k) :
-    ContinuousMonoidHom.comp
-        ⟨Units.map f.toMonoidHom, (PadicInt.continuous_of_charP f).units_map _⟩
+    (ContinuousMonoidHom.unitsMap ⟨f.toMonoidHom, f.continuous_of_padicInt_charP⟩).comp
         (continuousLocalCyclotomicCharacter p K) =
-      ContinuousMonoidHom.comp
-        ⟨Units.map (ZMod.castHom (dvd_refl p) k).toMonoidHom,
-          continuous_of_discreteTopology.units_map _⟩
+      (ContinuousMonoidHom.unitsMap
+          ⟨(ZMod.castHom (dvd_refl p) k).toMonoidHom, continuous_of_discreteTopology⟩).comp
         (modPLocalCyclotomicCharacter p K) := by
+  rw [ContinuousMonoidHom.unitsMap_ringHom_comp_eq_castHom f
+    (continuousLocalCyclotomicCharacter p K)]
+  congr 1
   ext1 σ
   apply Units.ext
-  simpa using DFunLike.congr_fun (PadicInt.ringHom_eq_castHom_comp_toZMod f)
-    (localCyclotomicCharacter p K σ : ℤ_[p])
+  simp [coe_modPLocalCyclotomicCharacter_apply]
 
 end TauCeti

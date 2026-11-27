@@ -52,6 +52,9 @@ universe be applied to a group in a smaller one.
   and `multiplicativeAdditive_symm_apply`.
 * `TauCeti.ContinuousMulEquiv.ulift`: the topological isomorphism `ULift M ≃ₜ* M`, with its
   evaluation lemmas `ulift_apply` and `ulift_symm_apply`.
+* `ContinuousMulEquiv.inv`: inversion on a commutative topological group (or `DivisionCommMonoid`
+  with continuous inversion) as a `ContinuousMulEquiv` (with additive version
+  `ContinuousAddEquiv.neg`), with `inv_apply` and `inv_symm`.
 -/
 
 public section
@@ -245,5 +248,41 @@ theorem ContinuousMulEquiv.ulift_symm_apply (x : M) :
   (rfl)
 
 end ULift
+
+section Inv
+
+variable (G : Type*) [DivisionMonoid G] [IsMulCommutative G] [TopologicalSpace G]
+  [ContinuousInv G]
+
+/-- Inversion on a commutative topological group (or `DivisionMonoid` with `IsMulCommutative` and
+continuous inversion) as a `ContinuousMulEquiv`. This is `MulEquiv.inv` upgraded to a
+`ContinuousMulEquiv`. -/
+@[to_additive
+  /-- Negation on a commutative additive topological group (or `SubtractionMonoid` with
+  `IsAddCommutative` and continuous negation) as a `ContinuousAddEquiv`. This is `AddEquiv.neg`
+  upgraded to a `ContinuousAddEquiv`. -/]
+def _root_.ContinuousMulEquiv.inv : G ≃ₜ* G where
+  toEquiv := Equiv.inv G
+  map_mul' a b := by
+    change (a * b)⁻¹ = a⁻¹ * b⁻¹
+    rw [mul_inv_rev]
+    exact IsMulCommutative.is_comm.comm _ _
+  continuous_toFun := continuous_inv
+  continuous_invFun := continuous_inv
+
+variable {G}
+
+@[to_additive (attr := simp)]
+theorem _root_.ContinuousMulEquiv.inv_apply (x : G) :
+    ContinuousMulEquiv.inv G x = x⁻¹ :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem _root_.ContinuousMulEquiv.inv_symm (G : Type*) [DivisionMonoid G] [IsMulCommutative G]
+    [TopologicalSpace G] [ContinuousInv G] :
+    (ContinuousMulEquiv.inv G).symm = ContinuousMulEquiv.inv G :=
+  DFunLike.ext _ _ fun x ↦ (ContinuousMulEquiv.inv G).symm_apply_eq.mpr (inv_inv x).symm
+
+end Inv
 
 end TauCeti

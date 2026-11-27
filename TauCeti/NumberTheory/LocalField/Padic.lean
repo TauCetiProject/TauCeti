@@ -337,6 +337,16 @@ theorem valuation_eq_one_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]ˣ} (ha : (a : �
   (normalizedValuation_eq_one_iff a).mp
     (toAdd_eq_zero.mp (_root_.Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq ha))
 
+variable {p} in
+/-- If `x : ℚ_[p]ˣ` factors as `p ^ k * u` with `u ∈ ℤ_[p]ˣ`, then its `p`-adic valuation is `k`. -/
+theorem valuation_eq_of_eq {x : ℚ_[p]ˣ} {k : ℤ} {u : ℤ_[p]ˣ}
+    (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * (u : ℤ_[p])) :
+    (x : ℚ_[p]).valuation = k := by
+  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rw [hx, _root_.Padic.valuation_mul (zpow_ne_zero _ hp) (PadicInt.coe_ne_zero.mpr u.ne_zero),
+    _root_.Padic.valuation_zpow, _root_.Padic.valuation_p, mul_one, PadicInt.valuation_coe,
+    PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero, add_zero]
+
 /-- The principal fractional ideal of `p ^ n` in `ℚ_[p]` is `𝓂[ℚ_[p]] ^ n`. -/
 theorem spanSingleton_natCast_pow_eq_maximalIdeal_zpow (n : ℕ) :
     FractionalIdeal.spanSingleton (nonZeroDivisors 𝒪[ℚ_[p]]) ((p : ℚ_[p]) ^ n) =

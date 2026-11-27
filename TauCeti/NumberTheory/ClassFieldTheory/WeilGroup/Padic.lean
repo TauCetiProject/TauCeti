@@ -24,6 +24,11 @@ Combining geometric local Weil reciprocity
 
 * `TauCeti.ClassFieldTheory.localWeilGeometricArtinEquiv_symm_padic_mk`: explicit Colmez inverse
   reciprocity formula on `W_{ℚ_p}`.
+
+## References
+
+* P. Colmez, *Représentations de `GL₂(ℚ_p)` et `(φ, Γ)`-modules*, Astérisque 330 (2010),
+  Introduction §1.
 -/
 
 public section
@@ -50,17 +55,15 @@ theorem localWeilGeometricArtinEquiv_symm_padic_mk (p : ℕ) [Fact p.Prime] (w :
     unramifiedCoordinate_weilDegree, abelianizedLocalCyclotomicCharacter_mk]
   let x : ℚ_[p]ˣ := padicPrimeUnit p ^ (-(weilDegree ℚ_[p] w).toAdd) *
     padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w))
-  have hx_eq : padicUnitsEquivIntProd p x =
-      (.ofAdd (-(weilDegree ℚ_[p] w).toAdd),
-        localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w)) :=
-    padicUnitsEquivIntProd_eq_of_decomposition p x (-(weilDegree ℚ_[p] w).toAdd)
-      (localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w)) (by simp [x])
-  have hval : (x : ℚ_[p]).valuation = -(weilDegree ℚ_[p] w).toAdd := by
-    have h1 := congrArg (Multiplicative.toAdd ∘ Prod.fst) hx_eq
-    simpa [padicUnitsEquivIntProd_apply_fst] using h1
+  have hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ (-(weilDegree ℚ_[p] w).toAdd) *
+      ((localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w) : ℤ_[p]ˣ) : ℤ_[p]) := by
+    rw [Units.val_mul, Units.val_zpow_eq_zpow_val, coe_padicPrimeUnit,
+      coe_padicIntUnitsInclusion_apply]
+  have hval : (x : ℚ_[p]).valuation = -(weilDegree ℚ_[p] w).toAdd :=
+    TauCeti.Padic.valuation_eq_of_eq hx
   have hunit : padicUnitPart p x =
-      localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w) := by
-    simpa [padicUnitsEquivIntProd_apply_snd] using congrArg Prod.snd hx_eq
+      localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w) :=
+    padicUnitPart_apply_of_eq hx
   refine Prod.ext ?_ hunit.symm
   rw [hval, neg_neg]
   conv_lhs => rw [← ofAdd_toAdd (weilDegree ℚ_[p] w), zHat.ofInt_ofAdd]

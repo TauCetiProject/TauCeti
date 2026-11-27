@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
@@ -637,22 +638,47 @@ theorem pow_appr_eq_pow_appr (x : ℤ_[p]) {m : ℕ} (hg : g ^ p ^ m = 1) (hmn :
     g ^ x.appr n = g ^ x.appr m :=
   pow_eq_pow_of_modEq (x.appr_modEq hmn) hg
 
+end PadicInt
+
+namespace RingHom
+
 /-- Any ring homomorphism `ℤ_[p] →+* k` into a ring of characteristic `p` factors through
 `PadicInt.toZMod` via `ZMod.castHom`. -/
-theorem ringHom_eq_castHom_comp_toZMod {k : Type*} [Ring k] [CharP k p] (f : ℤ_[p] →+* k) :
-    f = (ZMod.castHom (dvd_refl p) k).comp toZMod := by
+theorem eq_castHom_comp_toZMod {p : ℕ} [Fact p.Prime] {k : Type*} [Ring k] [CharP k p]
+    (f : ℤ_[p] →+* k) :
+    f = (ZMod.castHom (dvd_refl p) k).comp PadicInt.toZMod := by
   ext x
-  obtain ⟨y, hy⟩ := dvd_sub_appr x 1
+  obtain ⟨y, hy⟩ := PadicInt.dvd_sub_appr x 1
   rw [pow_one] at hy
   have hx : x = (x.appr 1 : ℤ_[p]) + (p : ℤ_[p]) * y := eq_add_of_sub_eq' hy
   rw [RingHom.comp_apply, hx]
   simp only [map_add, map_mul, map_natCast, CharP.cast_eq_zero, zero_mul, add_zero]
 
 /-- Any ring homomorphism `ℤ_[p] →+* k` into a topological ring of characteristic `p` is
-continuous, because it factors through `PadicInt.toZMod` (`ringHom_eq_castHom_comp_toZMod`). -/
-theorem continuous_of_charP {k : Type*} [Ring k] [CharP k p] [TopologicalSpace k]
-    (f : ℤ_[p] →+* k) : Continuous f := by
-  rw [ringHom_eq_castHom_comp_toZMod f, RingHom.coe_comp]
-  exact (continuous_of_discreteTopology (f := ZMod.castHom (dvd_refl p) k)).comp continuous_toZMod
+continuous, because it factors through `PadicInt.toZMod` (`RingHom.eq_castHom_comp_toZMod`). -/
+theorem continuous_of_padicInt_charP {p : ℕ} [Fact p.Prime] {k : Type*} [Ring k] [CharP k p]
+    [TopologicalSpace k] (f : ℤ_[p] →+* k) : Continuous f := by
+  rw [f.eq_castHom_comp_toZMod, RingHom.coe_comp]
+  exact (continuous_of_discreteTopology (f := ZMod.castHom (dvd_refl p) k)).comp
+    PadicInt.continuous_toZMod
 
-end PadicInt
+end RingHom
+
+namespace ContinuousMonoidHom
+
+/-- Pushing any continuous character `χ : A →ₜ* ℤ_[p]ˣ` along a ring homomorphism `f : ℤ_[p] →+* k`
+into a topological ring `k` of characteristic `p` agrees with pushing its mod-`p` reduction along
+`ZMod.castHom`. -/
+theorem unitsMap_ringHom_comp_eq_castHom {p : ℕ} [Fact p.Prime] {A k : Type*}
+    [Monoid A] [TopologicalSpace A] [Ring k] [CharP k p] [TopologicalSpace k]
+    (f : ℤ_[p] →+* k) (χ : A →ₜ* ℤ_[p]ˣ) :
+    (unitsMap ⟨f.toMonoidHom, f.continuous_of_padicInt_charP⟩).comp χ =
+      (unitsMap ⟨(ZMod.castHom (dvd_refl p) k).toMonoidHom, continuous_of_discreteTopology⟩).comp
+        ((unitsMap ⟨PadicInt.toZMod.toMonoidHom, PadicInt.continuous_toZMod⟩).comp χ) := by
+  ext1 a
+  apply Units.ext
+  simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
+    ContinuousMonoidHom.coe_unitsMap_apply]
+  exact DFunLike.congr_fun f.eq_castHom_comp_toZMod (χ a : ℤ_[p])
+
+end ContinuousMonoidHom

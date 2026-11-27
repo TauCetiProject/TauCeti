@@ -130,20 +130,13 @@ theorem padicUnitsEquivIntProd_apply_fst (x : ℚ_[p]ˣ) :
     rw [padicUnitsEquivIntProd, ContinuousMulEquiv.trans_apply, prodUnitFiltrationEquiv_apply]
     simp
 
-/-- The `ℤ_[p]ˣ`-component of `padicUnitsEquivIntProd p` has underlying `p`-adic number
-`x · p ^ (-v_p(x))`. -/
-theorem coe_padicUnitsEquivIntProd_apply_snd (x : ℚ_[p]ˣ) :
-    (((padicUnitsEquivIntProd p x).2 : ℤ_[p]) : ℚ_[p]) =
-      (x : ℚ_[p]) * (p : ℚ_[p]) ^ (-(x : ℚ_[p]).valuation) := by
-  rw [padicUnitsEquivIntProd, ContinuousMulEquiv.trans_apply, prodUnitFiltrationEquiv_apply]
-  simp
-
 /-- The `ℤ_[p]ˣ`-component of `padicUnitsEquivIntProd p` is `TauCeti.padicUnitPart p`. -/
 @[simp]
 theorem padicUnitsEquivIntProd_apply_snd (x : ℚ_[p]ˣ) :
     (padicUnitsEquivIntProd p x).2 = padicUnitPart p x :=
   Units.ext <| PadicInt.ext <| by
-    rw [coe_padicUnitsEquivIntProd_apply_snd, coe_padicUnitPart_apply]
+    rw [padicUnitsEquivIntProd, ContinuousMulEquiv.trans_apply, prodUnitFiltrationEquiv_apply]
+    simp
 
 /-- The inverse of `padicUnitsEquivIntProd p` sends `(n, u)` to `p ^ n * u`. -/
 @[simp]
@@ -164,14 +157,14 @@ theorem padicUnitsEquivIntProd_eq_of_decomposition (x : ℚ_[p]ˣ) (k : ℤ) (w 
   apply Units.ext
   simpa [padicUnitsEquivIntProd_symm_apply] using hx
 
-/-- `padicUnitsEquivIntProd p` sends `p` to `(1, 1)`. -/
+/-- `padicUnitsEquivIntProd p` sends `p` to `(.ofAdd 1, 1)`. -/
 @[simp]
 theorem padicUnitsEquivIntProd_padicPrimeUnit :
     padicUnitsEquivIntProd p (padicPrimeUnit p) = (.ofAdd 1, 1) := by
   rw [← (padicUnitsEquivIntProd p).apply_symm_apply (.ofAdd 1, 1)]
   simp
 
-/-- `padicUnitsEquivIntProd p` sends a unit `u ∈ ℤ_[p]ˣ` to `(0, u)`. -/
+/-- `padicUnitsEquivIntProd p` sends a unit `u ∈ ℤ_[p]ˣ` to `(.ofAdd 0, u)`. -/
 @[simp]
 theorem padicUnitsEquivIntProd_padicIntUnitsInclusion (u : ℤ_[p]ˣ) :
     padicUnitsEquivIntProd p (padicIntUnitsInclusion p u) = (1, u) := by

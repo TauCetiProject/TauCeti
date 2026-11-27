@@ -37,6 +37,8 @@ geometric Frobenius to `λ`.
 * `TauCeti.unramifiedCharacter_apply_of_valuation_eq_one`: `μ_a` is trivial on `U(K,0)`.
 * `TauCeti.unramifiedCharacter_mul`, `TauCeti.unramifiedCharacter_inv`: `μ_{ab} = μ_a μ_b` and
   `μ_{a⁻¹} = (μ_a)⁻¹` for a commutative group `G`.
+* `TauCeti.exists_monoidHom_mul_unramifiedCharacter_iff`: the pointwise product `μ_a μ_b` is a
+  homomorphism on `Kˣ` iff `a` and `b` commute.
 * `TauCeti.apply_eq_unramifiedCharacter_of_isUniformizer`: a homomorphism trivial on `U(K,0)` is
   the unramified character of its value at a uniformizer.
 * `TauCeti.exists_eq_unramifiedCharacter_iff`: a continuous character is unramified exactly when
