@@ -326,7 +326,7 @@ private theorem restrictCLM_compCLMOfSubmersion_eq (T : 𝓓'(Ω', ℂ))
       compCLMOfOpenPartialHomeomorph Θ hΘ hΘ' hU.subset hΘUV
         (compCLMOfSubmersion μ ν A A.contDiff.contDiffOn hAV hAsurj T) := by
   have hΘsurj : ∀ z ∈ U, Function.Surjective (fderiv ℝ Θ z) := fun z hz ↦
-    (Θ.isInvertible_fderiv_of_contDiffOn hΘ hΘ' (by simp) (hU ▸ hz)).surjective
+    Θ.surjective_fderiv_of_contDiffOn hΘ hΘ' (by simp) (hU ▸ hz)
   have hAΘ : ContDiffOn ℝ ∞ (A ∘ Θ) U := A.contDiff.comp_contDiffOn (hU ▸ hΘ)
   have hAΘΩ : MapsTo (A ∘ Θ) U Ω' := fun z hz ↦ by
     rw [← hfΘ hz]

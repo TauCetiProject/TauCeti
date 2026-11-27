@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TensorProduct
 public import TauCeti.Analysis.Distribution.Gluing
 public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
@@ -38,7 +39,8 @@ the image measure of `φ μ` need not have a smooth density.
 Since the defining identity determines `f_♯ φ`, fibre integration only depends on `f` on `Ω`
 (`TestFunction.fiberIntegralCLM_congr`), it is compatible with shrinking `Ω`
 (`TestFunction.fiberIntegralCLM_monoCLM`), and it is functorial: `(g ∘ f)_♯ = g_♯ ∘ f_♯`
-(`TestFunction.fiberIntegralCLM_comp`).
+(`TestFunction.fiberIntegralCLM_comp`). It is multiplicative on products: the fibre integral of
+`φ ⊗ ψ` along `k₁ × k₂` is `k₁_♯ φ ⊗ k₂_♯ ψ` (`TestFunction.fiberIntegralCLM_prodMap_prodSMulCLM`).
 
 ## Construction
 
@@ -488,3 +490,89 @@ theorem fiberIntegralCLM_apply_eq_integral {X : Type*} [NormedAddCommGroup X] [N
 end Submersion
 
 end TestFunction
+
+/-! ### Fibre integrals along products of submersions -/
+
+section Prod
+
+open Function MeasureTheory Set TopologicalSpace TestFunction TauCeti
+
+variable {E₀ D₀ E D : Type*} [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [FiniteDimensional ℝ E₀]
+  [MeasurableSpace E₀] [BorelSpace E₀] [NormedAddCommGroup D₀] [NormedSpace ℝ D₀]
+  [FiniteDimensional ℝ D₀] [MeasurableSpace D₀] [BorelSpace D₀] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D]
+  [BorelSpace D] {Ω₀ : Opens E₀} {O₀ : Opens D₀} {Ω : Opens E} {O : Opens D}
+  {V₀ : Opens (E₀ × D₀)} {V : Opens (E × D)} {k₁ : E₀ → E} {k₂ : D₀ → D}
+
+/-- **Fibre integrals of tensor products.** Integrating `(x, y) ↦ φ x ψ y` over the fibres of
+`k₁ × k₂`, with the product measures, gives `(x', y') ↦ (k₁_♯ φ) x' (k₂_♯ ψ) y'`. -/
+theorem TestFunction.fiberIntegralCLM_prodMap_prodSMulCLM
+    (μ₁ : Measure E₀) [μ₁.IsAddHaarMeasure] (μ₂ : Measure D₀) [μ₂.IsAddHaarMeasure]
+    (ν₁ : Measure E) [ν₁.IsAddHaarMeasure] (ν₂ : Measure D) [ν₂.IsAddHaarMeasure]
+    (hk₁ : ContDiffOn ℝ ∞ k₁ Ω₀) (hk₁Ω : MapsTo k₁ Ω₀ Ω)
+    (hk₁s : ∀ x ∈ Ω₀, Surjective (fderiv ℝ k₁ x))
+    (hk₂ : ContDiffOn ℝ ∞ k₂ O₀) (hk₂O : MapsTo k₂ O₀ O)
+    (hk₂s : ∀ x ∈ O₀, Surjective (fderiv ℝ k₂ x))
+    (hV₀ : (V₀ : Set (E₀ × D₀)) = (Ω₀ : Set E₀) ×ˢ (O₀ : Set D₀))
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+    {hk : ContDiffOn ℝ ∞ (Prod.map k₁ k₂) V₀} {hkV : MapsTo (Prod.map k₁ k₂) V₀ V}
+    {hks : ∀ p ∈ V₀, Surjective (fderiv ℝ (Prod.map k₁ k₂) p)}
+    (φ : 𝓓(Ω₀, ℝ)) (ψ : 𝓓(O₀, ℝ)) :
+    fiberIntegralCLM (μ₁.prod μ₂) (ν₁.prod ν₂) (Prod.map k₁ k₂) hk hkV hks
+        (prodSMulCLM ψ hV₀.symm.subset φ) =
+      prodSMulCLM (fiberIntegralCLM μ₂ ν₂ k₂ hk₂ hk₂O hk₂s ψ) hV.symm.subset
+        (fiberIntegralCLM μ₁ ν₁ k₁ hk₁ hk₁Ω hk₁s φ) := by
+  set φ' := fiberIntegralCLM μ₁ ν₁ k₁ hk₁ hk₁Ω hk₁s φ
+  set ψ' := fiberIntegralCLM μ₂ ν₂ k₂ hk₂ hk₂O hk₂s ψ
+  set Θ := prodSMulCLM ψ' hV.symm.subset φ'
+  set Θ₀ := prodSMulCLM ψ hV₀.symm.subset φ
+  symm
+  refine (eq_fiberIntegralCLM_iff _ _ _ _ _).2 fun g hg hgc _ ↦ ?_
+  -- The partial integral `h y₁ = ∫ ψ'(y₂) g(y₁, y₂) dy₂` is continuous in `y₁`.
+  set h : E → ℝ := fun y₁ ↦ ∫ y₂, ψ' y₂ * g (y₁, y₂) ∂ν₂ with h_def
+  have hh : Continuous h :=
+    continuous_integral_of_hasCompactSupport_uncurry (f := fun y₁ y₂ ↦ ψ' y₂ * g (y₁, y₂))
+      ((ψ'.continuous.comp continuous_snd).mul hg.continuous) hgc.mul_left
+  -- Both sides are iterated integrals; the inner integrals are computed by fibre integration.
+  have hint₁ : Integrable (fun q ↦ Θ q • g q) (ν₁.prod ν₂) :=
+    (Θ.continuous.smul hg.continuous).integrable_of_hasCompactSupport
+      Θ.hasCompactSupport.smul_right
+  have hint₂ : Integrable (fun q ↦ Θ₀ q • g (Prod.map k₁ k₂ q)) (μ₁.prod μ₂) := by
+    refine Continuous.integrable_of_hasCompactSupport (continuous_of_tsupport fun q hq ↦ ?_)
+      Θ₀.hasCompactSupport.smul_right
+    have hq' : q ∈ (Ω₀ : Set E₀) ×ˢ (O₀ : Set D₀) :=
+      hV₀ ▸ Θ₀.tsupport_subset (tsupport_smul_subset_left _ _ hq)
+    have hKq : ContinuousAt (Prod.map k₁ k₂) q :=
+      ((hk₁.continuousOn.prodMap hk₂.continuousOn) q hq').continuousAt
+        ((Ω₀.isOpen.prod O₀.isOpen).mem_nhds hq')
+    exact Θ₀.continuous.continuousAt.smul (hg.continuous.continuousAt.comp hKq)
+  rw [integral_prod _ hint₁, integral_prod _ hint₂]
+  simp only [Θ, Θ₀, prodSMulCLM_apply, smul_eq_mul, Prod.map_apply]
+  have hin (x₁ : E₀) :
+      ∫ x₂, ψ x₂ * φ x₁ * g (k₁ x₁, k₂ x₂) ∂μ₂ = φ x₁ * h (k₁ x₁) := by
+    have := integral_fiberIntegralCLM_smul μ₂ ν₂ hk₂ hk₂O hk₂s ψ
+      (g := fun y₂ ↦ g (k₁ x₁, y₂))
+      (hg.continuous.comp (continuous_const.prodMk continuous_id)).continuousOn
+    simp only [smul_eq_mul] at this
+    rw [h_def]
+    dsimp only
+    rw [this, ← integral_const_mul]
+    congr 1
+    funext x₂
+    ring
+  have hout : ∫ y₁, φ' y₁ * h y₁ ∂ν₁ = ∫ x₁, φ x₁ * h (k₁ x₁) ∂μ₁ := by
+    simpa only [smul_eq_mul] using
+      integral_fiberIntegralCLM_smul μ₁ ν₁ hk₁ hk₁Ω hk₁s φ hh.continuousOn
+  simp only [hin]
+  rw [← hout]
+  congr 1
+  funext y₁
+  rw [h_def]
+  dsimp only
+  rw [← integral_const_mul]
+  congr 1
+  funext y₂
+  ring
+
+end Prod

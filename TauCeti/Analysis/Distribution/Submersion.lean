@@ -29,7 +29,9 @@ of the support of `T`; and when `f` is a change of variables and `μ = ν`, `f^*
 and local: it only depends on `f` on `Ω`, and restricting `f^* T` to an open subset `U` of `Ω` gives
 the pullback of `T` along `f` on `U`. Its complex-linear extension to complex test functions pairs
 `f^* T` with `φ` as `T` with the fibre integral of `φ`. Along a linear map `A`, the pullback has
-vanishing derivatives along `ker A`.
+vanishing derivatives along `ker A`. The tensor product commutes with pullback along a product
+`k₁ × k₂` of submersions, by the identity `(k₁ × k₂)_♯ (φ ⊗ ψ) = k₁_♯ φ ⊗ k₂_♯ ψ` of fibre
+integrals.
 
 Typical submersions are the projections of a product, coordinate charts followed by projections,
 and the maps `(x, y) ↦ x - y`, along which a distribution in one variable becomes a distribution
@@ -54,6 +56,8 @@ constant along parallel hyperplanes.
   function `φ` is that of `T` with the fibre integral of `φ`.
 * `Distribution.lineDerivOp_compCLMOfSubmersion_eq_zero`: the pullback along a linear map `A` has
   vanishing derivatives along `ker A`.
+* `Distribution.compCLMOfSubmersion_prodMap_tensorProduct`: the tensor product commutes with
+  pullback along products of submersions, `(k₁ × k₂)^* (S ⊗ T) = k₁^* S ⊗ k₂^* T`.
 
 ## References
 
@@ -256,5 +260,42 @@ theorem compCLMOfSubmersion_ofFun {F : Type*} [NormedAddCommGroup F] [NormedSpac
   rw [compCLMOfSubmersion_apply, ofFun_apply (hg.locallyIntegrableOn Ω'.isOpen.measurableSet),
     ofFun_apply (hgf.locallyIntegrableOn Ω.isOpen.measurableSet),
     integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ hg]
+
+/-! ### Tensor products -/
+
+section Prod
+
+variable {E₀ D₀ D : Type*} [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [FiniteDimensional ℝ E₀]
+  [MeasurableSpace E₀] [BorelSpace E₀] [NormedAddCommGroup D₀] [NormedSpace ℝ D₀]
+  [FiniteDimensional ℝ D₀] [MeasurableSpace D₀] [BorelSpace D₀] [NormedAddCommGroup D]
+  [NormedSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D]
+  {Ω₀ : Opens E₀} {O₀ : Opens D₀} {O : Opens D}
+  {V₀ : Opens (E₀ × D₀)} {V : Opens (E × D)} {k₁ : E₀ → E} {k₂ : D₀ → D}
+
+/-- **The tensor product commutes with pullback along submersions**:
+`(k₁ × k₂)^* (S ⊗ T) = k₁^* S ⊗ k₂^* T`, the pullbacks being taken by integration over the fibres,
+with the product measures on the products. -/
+theorem compCLMOfSubmersion_prodMap_tensorProduct
+    (μ₁ : Measure E₀) [μ₁.IsAddHaarMeasure] (μ₂ : Measure D₀) [μ₂.IsAddHaarMeasure]
+    (ν₁ : Measure E) [ν₁.IsAddHaarMeasure] (ν₂ : Measure D) [ν₂.IsAddHaarMeasure]
+    (hk₁ : ContDiffOn ℝ ∞ k₁ Ω₀) (hk₁Ω : MapsTo k₁ Ω₀ Ω)
+    (hk₁s : ∀ x ∈ Ω₀, Function.Surjective (fderiv ℝ k₁ x))
+    (hk₂ : ContDiffOn ℝ ∞ k₂ O₀) (hk₂O : MapsTo k₂ O₀ O)
+    (hk₂s : ∀ x ∈ O₀, Function.Surjective (fderiv ℝ k₂ x))
+    (hV₀ : (V₀ : Set (E₀ × D₀)) = (Ω₀ : Set E₀) ×ˢ (O₀ : Set D₀))
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+    {hk : ContDiffOn ℝ ∞ (Prod.map k₁ k₂) V₀} {hkV : MapsTo (Prod.map k₁ k₂) V₀ V}
+    {hks : ∀ p ∈ V₀, Function.Surjective (fderiv ℝ (Prod.map k₁ k₂) p)}
+    (S : 𝓓'(Ω, ℂ)) (T : 𝓓'(O, ℂ)) :
+    compCLMOfSubmersion (μ₁.prod μ₂) (ν₁.prod ν₂) (Prod.map k₁ k₂) hk hkV hks
+        (S.tensorProduct T hV.subset) =
+      (compCLMOfSubmersion μ₁ ν₁ k₁ hk₁ hk₁Ω hk₁s S).tensorProduct
+        (compCLMOfSubmersion μ₂ ν₂ k₂ hk₂ hk₂O hk₂s T) hV₀.subset := by
+  refine (tensorProduct_eq _ _ hV₀ fun φ ψ ↦ ?_).symm
+  rw [compCLMOfSubmersion_apply, compCLMOfSubmersion_apply, compCLMOfSubmersion_apply,
+    fiberIntegralCLM_prodMap_prodSMulCLM μ₁ μ₂ ν₁ ν₂ hk₁ hk₁Ω hk₁s hk₂ hk₂O hk₂s hV₀ hV,
+    tensorProduct_prodSMulCLM]
+
+end Prod
 
 end Distribution

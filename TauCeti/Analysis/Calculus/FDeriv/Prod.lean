@@ -71,6 +71,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   the partial derivative in the real first variable vanishes on `ℝ × T` exactly when the function
   is constant along the horizontal lines through `T`.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
+* `TauCeti.surjective_fderiv_prodMap`: a product `Prod.map f g` of maps with surjective
+  derivatives has surjective derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
 * `DifferentiableAt.hasFDerivAt_slice_fst`, `DifferentiableAt.hasFDerivAt_slice_snd`: the
@@ -293,6 +295,16 @@ theorem fderiv_const_prodMk (c : F) (g : E → G) (x : E) :
     ext w <;> simp
   rw [h, fderiv_const_add, (ContinuousLinearMap.inr 𝕜 F G).fderiv_comp_left_of_leftInverse
     (ContinuousLinearMap.snd 𝕜 F G) (fun _ ↦ rfl)]
+
+/-- The derivative of a product map `Prod.map f g` at `p` is surjective when `f` and `g` are
+differentiable at `p.1` and `p.2` with surjective derivatives there. -/
+theorem surjective_fderiv_prodMap {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {f : E → G} {g : F → H} {p : E × F} (hf : DifferentiableAt 𝕜 f p.1)
+    (hg : DifferentiableAt 𝕜 g p.2) (hf' : Function.Surjective (fderiv 𝕜 f p.1))
+    (hg' : Function.Surjective (fderiv 𝕜 g p.2)) :
+    Function.Surjective (fderiv 𝕜 (Prod.map f g) p) := by
+  rw [(hf.hasFDerivAt.prodMap p hg.hasFDerivAt).fderiv, ContinuousLinearMap.coe_prodMap']
+  exact hf'.prodMap hg'
 
 /-- The first coordinate of the derivative of a map `f : E → F × G` is the derivative of its first
 coordinate `x ↦ (f x).1`. -/

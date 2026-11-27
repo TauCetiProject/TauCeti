@@ -51,7 +51,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv_of_contDiffOn`: for an open partial homeomorphism
-  that is `C^n`, `n ≠ 0`, in both directions, the derivative is invertible on the source.
+  that is `C^n`, `n ≠ 0`, in both directions, the derivative is invertible on the source; in
+  particular it is surjective there (`OpenPartialHomeomorph.surjective_fderiv_of_contDiffOn`).
 * `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
   itself, the derivative at such a point has nonzero determinant.
 * `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
@@ -235,6 +236,13 @@ theorem isInvertible_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : W
     (hx : x ∈ e.source) : (fderiv 𝕜 e x).IsInvertible :=
   have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
   e.isInvertible_fderiv hx hd.1 hd.2
+
+/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on its
+target, has a surjective derivative at every point of its source: it is a submersion there. -/
+theorem surjective_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : Function.Surjective (fderiv 𝕜 e x) :=
+  (e.isInvertible_fderiv_of_contDiffOn he hes hn hx).surjective
 
 /-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
