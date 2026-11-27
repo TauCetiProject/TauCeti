@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.LocalRing.Hessian
 public import TauCeti.RingTheory.LocalRing.Module
 public import TauCeti.RingTheory.LocalRing.Quotient
 public import Mathlib.RingTheory.Etale.Basic
+public import Mathlib.RingTheory.RegularLocalRing.Defs
 import TauCeti.RingTheory.Kaehler.Conormal
 
 /-!
@@ -52,6 +53,8 @@ as for the local ring at a point of a complete intersection curve in affine `n`-
   gradients by elements independent modulo them and `𝔪²` keeps the gradients independent.
 * `TauCeti.exists_coordinates`: a coordinate system exists when `Ω[Q⁄K]` has a finite basis, `𝔪`
   is finitely generated and the residue field is formally étale over `K`.
+* `TauCeti.isRegularLocalRing_of_basis_kaehlerDifferential`: consequently a Noetherian such `Q`
+  whose dimension is at least the rank of `Ω[Q⁄K]` is a regular local ring.
 * `TauCeti.exists_minimal_presentation`: the minimal presentation of a quotient of `Q`.
 * `TauCeti.exists_hypersurface_presentation`: a quotient of `Q` by `n - e + 1` relations is a
   hypersurface in a local ring with `e` coordinates.
@@ -309,6 +312,21 @@ theorem exists_coordinates [Algebra.FormallyEtale K (ResidueField Q)]
   have : ∑ i, c i * x i ∈ Ideal.span (Set.range x) :=
     Ideal.sum_mem _ fun i _ ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨i, rfl⟩)
   simpa using Submodule.add_mem_sup this hzero
+
+/-- **Free differentials of small rank force regularity.** Let `Q` be a Noetherian local
+`K`-algebra whose residue field is formally étale over `K` and whose differentials `Ω[Q⁄K]` have a
+basis indexed by `ι`. If `Q` has dimension at least `Nat.card ι`, then `Q` is a regular local ring:
+the coordinates of `TauCeti.exists_coordinates` generate its maximal ideal with `Nat.card ι`
+elements. -/
+theorem isRegularLocalRing_of_basis_kaehlerDifferential [IsNoetherianRing Q]
+    [Algebra.FormallyEtale K (ResidueField Q)] (b : Basis ι Q Ω[Q⁄K])
+    (hdim : (Nat.card ι : WithBot ℕ∞) ≤ ringKrullDim Q) : IsRegularLocalRing Q := by
+  obtain ⟨x, -, hx, -⟩ := exists_coordinates (IsNoetherian.noetherian _) b
+  refine .of_spanFinrank_maximalIdeal_le Q (le_trans ?_ hdim)
+  rw [hx]
+  have h := (Submodule.spanFinrank_span_le_ncard_of_finite (R := Q) (Set.finite_range x)).trans
+    ((Nat.card_coe_set_eq _).symm.trans_le (Finite.card_range_le x))
+  exact_mod_cast h
 
 end Existence
 
