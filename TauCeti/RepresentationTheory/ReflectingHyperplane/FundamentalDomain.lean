@@ -218,7 +218,7 @@ private theorem exists_mem_forall_mem_le_mul [Finite G] (hB : ∀ v, v ≠ 0 →
   have hcc : 0 < B c c := hB c fun h0 ↦ by simp [h0] at hc
   -- Reflecting `ρ h x` in `ker α i` would raise the height.
   have hle := hmax (g * h) (H.mul_mem hgH hH)
-  rw [map_mul, mul_apply_eq_comp, hg, LinearEquiv.coe_coe,
+  simp only [map_mul, mul_apply_eq_comp, hg, LinearEquiv.coe_coe,
     Module.bilinForm_apply_reflection_right hc horth] at hle
   nlinarith [mul_pos (neg_pos.2 hneg) hcc]
 
@@ -251,7 +251,7 @@ theorem apply_ne_zero_of_forall_apply_ne_zero
     simp [hs, Module.reflection_apply, h0]
   have hs1 : s = 1 := by
     have := hfree _ x hx hfix
-    rwa [mul_assoc, inv_mul_eq_one, eq_comm, mul_eq_right] at this
+    simpa [mul_assoc, inv_mul_eq_one] using this
   -- But the reflection sends the coroot `c ≠ 0` to `-c`.
   have hc' := congrArg (· c) hs
   simp only [hs1, map_one, one_apply_eq_self, LinearEquiv.coe_coe,
@@ -355,7 +355,8 @@ theorem apply_eq_self_of_apply_mem_closedChamber [Finite G] [Finite ι]
   obtain ⟨t, ht0, ht⟩ := exists_pos_add_smul_mem_closedChamber hgx hx₀ hS
   -- The element `h g` maps the regular point `x + t x₀` of the open chamber to `y + t v`.
   have himg : ρ (h * g) (x + t • x₀) = y + t • v := by
-    rw [map_mul, mul_apply_eq_comp, map_add, map_smul, map_add, map_smul, hh]
+    simp only [map_mul, mul_apply_eq_comp, map_add, map_smul]
+    exact congrArg (· + t • v) hh
   have hopen := add_smul_mem_openChamber hx hx₀ ht0
   have hyv : y + t • v ∈ openChamber α x₀ := by
     refine (mem_openChamber_iff_of_mem_closedChamber ht hx₀).2 (himg ▸

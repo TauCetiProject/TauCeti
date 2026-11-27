@@ -142,8 +142,7 @@ theorem IsMaximalTorus.eq_one_of_weylAdjointRepresentation_apply_eq_self (hT : I
   have hn : (n : G) ∈
       (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
         (X : LeftInvariantDerivation I G) := by
-    rw [Representation.mem_stabilizer, ContRepresentation.toRepresentation_apply,
-      continuousAdjointRepresentation_apply, ← Subgroup.coe_weylAdjointRepresentation_mk_apply, hwX]
+    simpa [Representation.mem_stabilizer] using congrArg Subtype.val hwX
   rw [hstab] at hn
   exact (T.normalizerQuotientMk_eq_one_iff n).2 hn
 
