@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Projectivization.CoordLine
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Canonical
-public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum
+public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -46,9 +46,9 @@ total spaces over `ℙ¹`.
 Combined with the vanishing `H¹(ℂP¹, 𝒪(k)) = 0` for `k ≥ -1`, the splitting
 `ℓ* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ* TℂPⁿ) = 0`
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`, in
-`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Cohomology`). This group is the cokernel
-of the linearized Cauchy–Riemann operator along `ℓ`, so its vanishing makes `ℓ` regular as a
-holomorphic sphere in `ℂPⁿ`.
+`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent.Cohomology`). This group is the
+cokernel of the linearized Cauchy–Riemann operator along `ℓ`, so its vanishing makes `ℓ` regular
+as a holomorphic sphere in `ℂPⁿ`.
 
 ## Main declarations
 

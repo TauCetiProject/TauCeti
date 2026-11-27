@@ -10,13 +10,13 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Twist
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Cech
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle
-public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent
+public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum.Cech
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 import TauCeti.Topology.Separation.Hausdorff
 import TauCeti.Topology.Sheaves.Cech.Functoriality
 
 /-!
-# The first cohomology of `𝒪(k)` and of `ℓ* TℂPⁿ` on the complex projective line
+# The first cohomology of `𝒪(k)` on the complex projective line
 
 This file proves that the first Čech cohomology of the sheaf of holomorphic sections of the line
 bundle `𝒪(k)` (`Projectivization.twistCore k`) on the complex projective line
@@ -24,8 +24,8 @@ bundle `𝒪(k)` (`Projectivization.twistCore k`) on the complex projective line
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le`). This is
 the vanishing `H¹(ℂℙ¹, 𝒪(k)) = 0` that makes a holomorphic sphere `u` with
 `u* TX ≅ 𝒪(a₁) ⊕ ⋯ ⊕ 𝒪(aₘ)`, all `aᵢ ≥ -1`, a regular sphere: for a line in `ℂPⁿ`,
-`u* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`. The file then carries this vanishing to such split bundles and to
-the tangent bundle of `ℂPᵐ⁺¹` along the coordinate line.
+`u* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`. The file then carries this vanishing to such split bundles
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`).
 
 The proof compares `𝒪(k)` with the divisor sheaf `𝒪(k [∞])` of the Riemann sphere `OnePoint ℂ`,
 whose cohomology is known from Riemann–Roch on `ℙ¹`
@@ -46,21 +46,11 @@ degree `k`.
 The argument uses no Serre duality: it computes `H¹(ℂℙ¹, 𝒪(k))` from the divisor sheaves of the
 Riemann sphere, whose first cohomology vanishes in degree at least `-1`.
 
-**Split bundles.** On `ℂℙⁿ`, the sheaf of holomorphic sections of a finite direct sum
-`⨁ₗ 𝒪(k l)` (`Projectivization.twistSumCore k`) is the biproduct of the sheaves of holomorphic
-sections of the summands (`Projectivization.twistSumBiconeIsBilimit`), by the projections onto the
-summands and the inclusions of the summands. Čech cohomology is additive, so `Hᵐ(ℂℙⁿ, ⨁ₗ 𝒪(k l))`
-vanishes exactly when every `Hᵐ(ℂℙⁿ, 𝒪(k l))` does
-(`Projectivization.isZero_holomorphicSectionCechCohomology_twistSumCore_iff`).
-
-**The tangent bundle along the coordinate line.** The pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle
-along the coordinate line `ℓ : ℂℙ¹ → ℂPᵐ⁺¹` is `𝒪(2) ⊕ 𝒪(1)ᵐ`
-(`Projectivization.coordLineTangentDiffeomorph`), so the sheaves of holomorphic sections agree
-(`Projectivization.coordLineTangentSectionIso`) and `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`
-(`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`). This is
-the cohomological vanishing behind the regularity of the lines of `ℂPⁿ` as holomorphic spheres
-(Fulton–Pandharipande, Lemma 10); identifying `H¹(ℂℙ¹, u* TℂPⁿ)` with the cokernel of the
-linearized Cauchy–Riemann operator along `u` is not done here.
+**Split bundles.** On `ℂℙⁿ`, `Hᵐ(ℂℙⁿ, ⨁ₗ 𝒪(k l))` vanishes exactly when every
+`Hᵐ(ℂℙⁿ, 𝒪(k l))` does (`Projectivization.isZero_holomorphicSectionCechCohomology_twistSumCore_iff`,
+in `TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum.Cech`), so `H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0`
+when every `k l ≥ -1`. The tangent bundle of `ℂPᵐ⁺¹` along the coordinate line is treated in
+`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent.Cohomology`.
 
 ## Main declarations
 
@@ -75,18 +65,8 @@ linearized Cauchy–Riemann operator along `u` is not done here.
   and its inverse by `Projectivization.inv_twistCoreDivisorHom_app_apply`.
 * `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le`:
   `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`.
-* `Projectivization.twistSumSectionProj`, `Projectivization.twistSumSectionSingle` and
-  `Projectivization.twistSumBicone`: the projections onto and inclusions of the summands of
-  `⨁ₗ 𝒪(k l)` on sheaves of holomorphic sections; `Projectivization.twistSumBiconeIsBilimit`: the
-  sheaf of `⨁ₗ 𝒪(k l)` is their biproduct.
-* `Projectivization.isZero_holomorphicSectionCechCohomology_twistSumCore_iff`:
-  `Hᵐ(ℂℙⁿ, ⨁ₗ 𝒪(k l)) = 0` if and only if every `Hᵐ(ℂℙⁿ, 𝒪(k l)) = 0`;
-  `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`:
+* `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`:
   `H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.
-* `Projectivization.coordLineTangentSectionIso`: the sheaf of holomorphic sections of
-  `ℓ* TℂPᵐ⁺¹` is that of `𝒪(2) ⊕ 𝒪(1)ᵐ`;
-  `Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`:
-  `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`.
 
 ## References
 
@@ -774,127 +754,8 @@ theorem isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le (hk 
 
 section Sum
 
-variable {n : ℕ} {κ : Type} [Fintype κ] [DecidableEq κ] (k : κ → ℤ)
+variable {κ : Type} [Fintype κ] (k : κ → ℤ)
 
-/-- The projection of the sheaf of holomorphic sections of `⨁ₗ 𝒪(k l)` onto the sheaf of
-holomorphic sections of the summand `𝒪(k l)`, taking a section to its component `l`. -/
-def twistSumSectionProj (l : κ) :
-    holomorphicSectionSheaf 𝓘(ℂ, Fin n → ℂ) (κ → ℂ) (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber ⟶
-      holomorphicSectionSheaf 𝓘(ℂ, Fin n → ℂ) ℂ (twistCore (𝕜 := ℂ) (n := n) (k l)).Fiber :=
-  holomorphicSectionSheaf.homOfLinearMap (fun _ ↦ LinearMap.proj l)
-    (contMDiff_twistSumCore_apply k l)
-
-/-- The inclusion of the sheaf of holomorphic sections of the summand `𝒪(k l)` into the sheaf of
-holomorphic sections of `⨁ₗ 𝒪(k l)`, placing a section in the summand `l`. -/
-def twistSumSectionSingle (l : κ) :
-    holomorphicSectionSheaf 𝓘(ℂ, Fin n → ℂ) ℂ (twistCore (𝕜 := ℂ) (n := n) (k l)).Fiber ⟶
-      holomorphicSectionSheaf 𝓘(ℂ, Fin n → ℂ) (κ → ℂ) (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber :=
-  holomorphicSectionSheaf.homOfLinearMap (fun _ ↦ LinearMap.single ℂ (fun _ : κ ↦ ℂ) l)
-    (contMDiff_twistSumCore_single k l)
-
-variable {k}
-
-omit [DecidableEq κ] in
-@[simp]
-theorem twistSumSectionProj_app_apply (l : κ) {U : (Opens (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))))ᵒᵖ}
-    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin n → ℂ) (κ → ℂ)
-      (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber).obj.obj U) (x : ↥(unop U)) :
-    (twistSumSectionProj k l).hom.app U s x = s x l :=
-  holomorphicSectionSheaf.homOfLinearMap_app_apply _ _ s x
-
-@[simp]
-theorem twistSumSectionSingle_app_apply (l : κ)
-    {U : (Opens (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))))ᵒᵖ}
-    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin n → ℂ) ℂ
-      (twistCore (𝕜 := ℂ) (n := n) (k l)).Fiber).obj.obj U) (x : ↥(unop U)) :
-    (twistSumSectionSingle k l).hom.app U s x = Pi.single (M := fun _ : κ ↦ ℂ) l (s x) :=
-  holomorphicSectionSheaf.homOfLinearMap_app_apply _ _ s x
-
-@[reassoc (attr := simp)]
-theorem twistSumSectionSingle_comp_twistSumSectionProj_self (l : κ) :
-    twistSumSectionSingle (n := n) k l ≫ twistSumSectionProj k l = 𝟙 _ :=
-  holomorphicSectionSheaf.hom_ext fun _ s x ↦ by
-    simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ModuleCat.hom_comp,
-      LinearMap.coe_comp, Function.comp_apply, twistSumSectionProj_app_apply,
-      twistSumSectionSingle_app_apply, ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app,
-      ModuleCat.hom_id, LinearMap.id_coe, id_eq]
-    -- the fibres of `twistCore` are `ℂ` only up to unfolding, so `Pi.single` is evaluated here
-    exact Pi.single_eq_same (M := fun _ : κ ↦ ℂ) l (s x)
-
-@[reassoc (attr := simp)]
-theorem twistSumSectionSingle_comp_twistSumSectionProj_of_ne {l l' : κ} (h : l ≠ l') :
-    twistSumSectionSingle (n := n) k l ≫ twistSumSectionProj k l' = 0 :=
-  holomorphicSectionSheaf.hom_ext fun _ s x ↦ by
-    simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ModuleCat.hom_comp,
-      LinearMap.coe_comp, Function.comp_apply, twistSumSectionProj_app_apply,
-      twistSumSectionSingle_app_apply, ObjectProperty.zero_hom, zero_app,
-      ModuleCat.hom_zero, LinearMap.zero_apply, holomorphicSectionSheaf.zero_apply]
-    -- the fibres of `twistCore` are `ℂ` only up to unfolding, so `Pi.single` is evaluated here
-    exact Pi.single_eq_of_ne' (M := fun _ : κ ↦ ℂ) h (s x)
-
-/-- The projections onto the summands followed by the inclusions of the summands add up to the
-identity of the sheaf of holomorphic sections of `⨁ₗ 𝒪(k l)`. -/
-theorem sum_twistSumSectionProj_comp_twistSumSectionSingle :
-    ∑ l, twistSumSectionProj (n := n) k l ≫ twistSumSectionSingle k l = 𝟙 _ := by
-  refine holomorphicSectionSheaf.hom_ext fun U s x ↦ ?_
-  rw [holomorphicSectionSheaf.sum_app_apply]
-  refine (Finset.sum_congr rfl fun l _ ↦ ?_).trans (Finset.univ_sum_single (s x))
-  -- the composite takes the component `l` of `s x` and places it in the summand `l`
-  exact (twistSumSectionSingle_app_apply l _ x).trans
-    (congrArg (Pi.single (M := fun _ : κ ↦ ℂ) l) (twistSumSectionProj_app_apply l s x))
-
-variable (k)
-
-/-- The sheaf of holomorphic sections of `⨁ₗ 𝒪(k l)`, with the morphisms induced by the
-projections onto the summands and the inclusions of the summands, as a bicone over the sheaves
-of holomorphic sections of the summands `𝒪(k l)`. -/
--- Exposed so that the cone point is visibly the sheaf of the split bundle: otherwise the legs
--- cannot be stated as `twistSumSectionProj` and `twistSumSectionSingle` in the simp lemmas.
-@[expose, simps]
-def twistSumBicone :
-    Bicone fun l ↦
-      holomorphicSectionSheaf 𝓘(ℂ, Fin n → ℂ) ℂ (twistCore (𝕜 := ℂ) (n := n) (k l)).Fiber :=
-  Bicone.mk
-    (holomorphicSectionSheaf 𝓘(ℂ, Fin n → ℂ) (κ → ℂ) (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber)
-    (twistSumSectionProj k) (twistSumSectionSingle k) fun l l' ↦ by
-      split_ifs with h
-      · subst h
-        simp
-      · exact twistSumSectionSingle_comp_twistSumSectionProj_of_ne h
-
-/-- **The sheaf of a split bundle is a biproduct.** The sheaf of holomorphic sections of
-`⨁ₗ 𝒪(k l)` on `ℂℙⁿ` is the biproduct of the sheaves of holomorphic sections of the
-summands `𝒪(k l)`. -/
-def twistSumBiconeIsBilimit : (twistSumBicone (n := n) k).IsBilimit :=
-  isBilimitOfTotal _ sum_twistSumSectionProj_comp_twistSumSectionSingle
-
-omit [DecidableEq κ] in
-/-- **The cohomology of a split bundle vanishes exactly when that of every summand does.** The
-Čech cohomology `Hᵐ(ℂℙⁿ, ⨁ₗ 𝒪(k l))` of the sheaf of holomorphic sections of a finite direct sum
-of the line bundles `𝒪(k l)` is zero if and only if every `Hᵐ(ℂℙⁿ, 𝒪(k l))` is zero, since Čech
-cohomology is additive and so carries the biproduct `Projectivization.twistSumBiconeIsBilimit`
-to a biproduct. -/
-theorem isZero_holomorphicSectionCechCohomology_twistSumCore_iff (m : ℕ) :
-    IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) (κ → ℂ)
-        (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber m) ↔
-      ∀ l, IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) ℂ
-        (twistCore (𝕜 := ℂ) (n := n) (k l)).Fiber m) := by
-  classical
-  -- Čech cohomology of the sheaves carries the bilimit bicone to a bilimit bicone `b`
-  let G := sheafToPresheaf (Opens.grothendieckTopology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))))
-    (ModuleCat.{0} ℂ) ⋙
-    Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) (ModuleCat.{0} ℂ) m
-  let b := G.mapBicone (twistSumBicone k)
-  have hb : b.IsBilimit := isBilimitOfPreserves G (twistSumBiconeIsBilimit k)
-  refine ⟨fun h l ↦ (IsZero.iff_id_eq_zero _).2 ?_, fun h ↦ (IsZero.iff_id_eq_zero _).2 ?_⟩
-  · -- each summand is a retract of the direct sum
-    have h' : IsZero b.pt := h
-    exact (bicone_ι_π_self b l).symm.trans (by rw [h'.eq_of_src (b.π l) 0, comp_zero])
-  · -- the identity of the direct sum factors through the summands
-    exact (IsBilimit.total hb).symm.trans
-      (Finset.sum_eq_zero fun l _ ↦ by rw [(h l).eq_of_tgt (b.π l) 0, zero_comp])
-
-omit [DecidableEq κ] in
 /-- **`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.** The first Čech cohomology of the sheaf
 of holomorphic sections of a finite direct sum of line bundles `𝒪(k l)` on the complex projective
 line vanishes when every twist is at least `-1`. -/
@@ -906,49 +767,5 @@ theorem isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le
     isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le (k l) (hk l)
 
 end Sum
-
-/-! ### The tangent bundle along the coordinate line -/
-
-variable (m : ℕ)
-
-/-- The sheaf of holomorphic sections of the pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle along the
-coordinate line `ℓ` is isomorphic to the sheaf of holomorphic sections of `𝒪(2) ⊕ 𝒪(1)ᵐ`, by the
-fibrewise isomorphisms `Projectivization.coordLineTangentEquiv`. -/
-def coordLineTangentSectionIso :
-    holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ) (CoordLineTangentSpace ℂ m) ≅
-      holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
-        (twistSumCore (𝕜 := ℂ) (n := 1) (lineTwist m)).Fiber :=
-  holomorphicSectionSheaf.isoOfLinearEquiv (fun x ↦ (coordLineTangentEquiv x).toLinearEquiv)
-    contMDiff_coordLineTangentEquiv <|
-      (coordLineTangentDiffeomorph (𝕜 := ℂ) (m := m) ω).symm.contMDiff.congr fun q ↦
-        (coordLineTangentDiffeomorph_symm_apply ω q).symm
-
-@[simp]
-theorem coordLineTangentSectionIso_hom_app_apply
-    {U : (Opens (TopCat.of (ℙ ℂ (Fin 2 → ℂ))))ᵒᵖ}
-    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
-      (CoordLineTangentSpace ℂ m)).obj.obj U) (x : ↥(unop U)) :
-    (coordLineTangentSectionIso m).hom.hom.app U s x = coordLineTangentEquiv x (s x) :=
-  holomorphicSectionSheaf.isoOfLinearEquiv_hom_app_apply _ _ _ s x
-
-@[simp]
-theorem coordLineTangentSectionIso_inv_app_apply
-    {U : (Opens (TopCat.of (ℙ ℂ (Fin 2 → ℂ))))ᵒᵖ}
-    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
-      (twistSumCore (𝕜 := ℂ) (n := 1) (lineTwist m)).Fiber).obj.obj U) (x : ↥(unop U)) :
-    (coordLineTangentSectionIso m).inv.hom.app U s x = (coordLineTangentEquiv x).symm (s x) :=
-  holomorphicSectionSheaf.isoOfLinearEquiv_inv_app_apply _ _ _ s x
-
-/-- **`H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`.** The first Čech cohomology of the sheaf of holomorphic sections
-of the pullback of the tangent bundle of `ℂPᵐ⁺¹` along the coordinate line `ℓ` vanishes, since
-`ℓ* TℂPᵐ⁺¹ ≅ 𝒪(2) ⊕ 𝒪(1)ᵐ` and `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`. -/
-theorem isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace :
-    IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
-      (CoordLineTangentSpace ℂ m) 1) := by
-  refine (isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le (lineTwist m)
-    fun l ↦ ?_).of_iso
-    ((Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) 1).mapIso
-      ((sheafToPresheaf _ _).mapIso (coordLineTangentSectionIso m)))
-  cases l using Fin.cases <;> simp
 
 end Projectivization
