@@ -83,9 +83,12 @@ open scoped ComplexConjugate RealInnerProductSpace
 
 namespace TauCeti.AlmostComplexStructure
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] (J : AlmostComplexStructure V)
-
 /-! ### The `(0,1)`-covectors -/
+
+section ZeroOneCovectors
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  (J : AlmostComplexStructure V)
 
 /-- **The `(0,1)`-covectors** of a complex structure `J`: the real-linear functionals
 `D : V → ℂ` that are complex antilinear, `D (J w) = -i D w`. They form a complex subspace of the
@@ -114,7 +117,11 @@ theorem mem_zeroOneCovectors {D : V →L[ℝ] ℂ} :
     D ∈ zeroOneCovectors J ↔ ∀ w, D (J w) = -(I * D w) :=
   ⟨fun hD w ↦ hD.apply w, fun hD ↦ isComplexAntilinear_of_apply hD⟩
 
+end ZeroOneCovectors
+
 /-! ### The metric isomorphism -/
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {J : AlmostComplexStructure V}
 
 variable (J) in
 /-- **The `(0,1)`-part of the metric dual**, doubled: `v♭ w = ⟪v, w⟫ - i ⟪J v, w⟫`. For an
