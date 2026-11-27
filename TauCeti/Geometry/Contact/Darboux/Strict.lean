@@ -283,6 +283,31 @@ private theorem exists_symplecticSliceDarboux_opens {K : Type*} [NormedAddCommGr
     (mfderiv J 𝓘(ℝ, K) ψ.symm z w)
   rwa [hinv_d u, hinv_d w] at key
 
+/-- Pullback of `dβ` through `ψ.toDiffeomorphSourceTarget.symm` and `Subtype.val` evaluates via
+`ψ.symm`. -/
+private theorem mextDeriv_mpullback_symm_subtypeVal {K F : Type*} [NormedAddCommGroup K]
+    [NormedSpace ℝ K] [NormedAddCommGroup F] [NormedSpace ℝ F] {S_K : Opens K}
+    (β : SmoothForm 𝓘(ℝ, K) S_K ℝ 1) (ψ : PartialDiffeomorph 𝓘(ℝ, K) 𝓘(ℝ, F) S_K F ∞)
+    (x : (⟨ψ.target, ψ.open_target⟩ : Opens F)) (u w : TangentSpace 𝓘(ℝ, F) x) :
+    mextDeriv (SmoothForm.mpullback ψ.toDiffeomorphSourceTarget.symm
+        ψ.toDiffeomorphSourceTarget.symm.contMDiff
+        (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal β)).val x ![u, w] =
+      (mextDerivₗ 𝓘(ℝ, K) 1 β).eval₂ (ψ.symm x.val)
+        (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, K) ψ.symm x.val
+          (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x u))
+        (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, K) ψ.symm x.val
+          (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x w)) := by
+  have hcomp : (Subtype.val : (⟨ψ.source, ψ.open_source⟩ : Opens S_K) → S_K) ∘
+      ψ.toDiffeomorphSourceTarget.symm =
+      ψ.symm ∘ (Subtype.val : (⟨ψ.target, ψ.open_target⟩ : Opens F) → F) :=
+    funext fun y ↦ ψ.toDiffeomorphSourceTarget_symm_apply_coe y
+  rw [← mextDerivₗ_apply, SmoothForm.mextDerivₗ_mpullback, SmoothForm.mextDerivₗ_mpullback,
+    ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp, SmoothForm.coe_mpullback, hcomp,
+    mpullback_comp_at ((contMDiff_subtypeVal (n := ∞)).mdifferentiable (by simp) x)
+      (ψ.symm.mdifferentiableAt (n := ∞) (by simp) x.property),
+    mpullback_apply_pair, mpullback_apply_pair, Manifold.mfderiv_subtype_val,
+    ContinuousLinearEquiv.coe_coe, ← SmoothBundleForm.eval₂_apply]
+
 /-- On `ψ.target`, the sum of the pushed-forward slice one-form `β` and a smooth primitive `θ` of
 `-ω₀` is closed. -/
 private theorem mextDeriv_pullback_add_eq_zero {K F : Type*} [NormedAddCommGroup K]
@@ -302,27 +327,18 @@ private theorem mextDeriv_pullback_add_eq_zero {K F : Type*} [NormedAddCommGroup
         (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal β) +
       SmoothForm.mpullback (Subtype.val : (⟨ψ.target, ψ.open_target⟩ : Opens F) → F)
         contMDiff_subtypeVal θ).val = 0 := by
-  let U_t : Opens F := ⟨ψ.target, ψ.open_target⟩
-  let dψ := ψ.toDiffeomorphSourceTarget
   funext x
   refine ContinuousAlternatingMap.ext_fin_two fun u w ↦ ?_
-  have hcomp : (Subtype.val : (⟨ψ.source, ψ.open_source⟩ : Opens S_K) → S_K) ∘ dψ.symm =
-      ψ.symm ∘ (Subtype.val : U_t → F) :=
-    funext fun y ↦ ψ.toDiffeomorphSourceTarget_symm_apply_coe y
-  have hdβ : mextDeriv (SmoothForm.mpullback dψ.symm dψ.symm.contMDiff
+  have hdβ : mextDeriv (SmoothForm.mpullback ψ.toDiffeomorphSourceTarget.symm
+        ψ.toDiffeomorphSourceTarget.symm.contMDiff
         (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal β)).val x ![u, w] =
       ω₀ (NormedSpace.fromTangentSpace x.val (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x u))
         (NormedSpace.fromTangentSpace x.val
-          (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x w)) := by
-    rw [← mextDerivₗ_apply, SmoothForm.mextDerivₗ_mpullback, SmoothForm.mextDerivₗ_mpullback,
-      ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp, SmoothForm.coe_mpullback,
-      hcomp, mpullback_comp_at ((contMDiff_subtypeVal (n := ∞)).mdifferentiable (by simp) x)
-        (ψ.symm.mdifferentiableAt (n := ∞) (by simp) x.property),
-      mpullback_apply_pair, mpullback_apply_pair, Manifold.mfderiv_subtype_val,
-      ContinuousLinearEquiv.coe_coe, ← SmoothBundleForm.eval₂_apply]
-    exact hψ_symp x.val x.property _ _
-  have hdθ' : mextDeriv (SmoothForm.mpullback (Subtype.val : U_t → F) contMDiff_subtypeVal θ).val
-        x ![u, w] =
+          (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x w)) :=
+    (mextDeriv_mpullback_symm_subtypeVal β ψ x u w).trans (hψ_symp x.val x.property _ _)
+  have hdθ' : mextDeriv
+        (SmoothForm.mpullback (Subtype.val : (⟨ψ.target, ψ.open_target⟩ : Opens F) → F)
+          contMDiff_subtypeVal θ).val x ![u, w] =
       -ω₀ (NormedSpace.fromTangentSpace x.val (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x u))
         (NormedSpace.fromTangentSpace x.val
           (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x w)) := by
@@ -330,9 +346,8 @@ private theorem mextDeriv_pullback_add_eq_zero {K F : Type*} [NormedAddCommGroup
       mpullback_apply_pair, mextDerivₗ_apply, Manifold.mfderiv_subtype_val,
       ContinuousLinearEquiv.coe_coe]
     exact hdθ x.val _ _
-  rw [← mextDerivₗ_apply, map_add, SmoothForm.add_toRoughForm, Pi.add_apply,
-    ContinuousAlternatingMap.add_apply, mextDerivₗ_apply, mextDerivₗ_apply, hdβ, hdθ',
-    add_neg_cancel, Pi.zero_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  rw [← mextDerivₗ_apply, map_add]
+  simp [-SmoothForm.coe_mpullback, mextDerivₗ_apply, hdβ, hdθ']
 
 /-- On an open neighbourhood `B ⊆ ψ.target` of `0`, construct a smooth function `g : B → ℝ`
 vanishing at `0` such that the pushed-forward form `-β_B` differs from the restriction of a smooth
@@ -401,12 +416,9 @@ private theorem exists_primitive_on_symplecticSlice {K F : Type*} [NormedAddComm
   have hdg : mextDeriv (RoughForm.ofFunction 𝓘(ℝ, F) g_B) z =
       -mpullback 𝓘(ℝ, F) 𝓘(ℝ, F) (Opens.inclusion hBU) (β_t + θ_t).val z := by
     rw [hneg, mextDeriv_neg, Pi.neg_apply, (hprim₀.mpullback hinc_diff).mextDeriv_eq z (hinc_mem z)]
-  rw [SmoothForm.neg_toRoughForm, Pi.neg_apply, Pi.add_apply,
-    SmoothForm.coe_mpullback (Opens.inclusion hBU) (contMDiff_inclusion hBU) β_t,
-    SmoothForm.coe_mpullback (Subtype.val : B → F) contMDiff_subtypeVal θ, hdg,
-    SmoothForm.add_toRoughForm, mpullback_add, Pi.add_apply, hθ_eq, neg_add,
-    add_comm (-mpullback 𝓘(ℝ, F) 𝓘(ℝ, F) (Opens.inclusion hBU) β_t.val z),
-    ← add_assoc, add_neg_cancel, zero_add]
+  simp only [SmoothForm.neg_toRoughForm, SmoothForm.coe_mpullback, SmoothForm.add_toRoughForm,
+    Pi.neg_apply, Pi.add_apply, hdg, mpullback_add, hθ_eq, β_t]
+  abel
 
 /-- Pulling back a one-form along the four-step composition
 `assoc ∘ Prod.map inc id ∘ contactizationShift g ∘ Prod.map e id` reduces to the contactization of
@@ -506,11 +518,8 @@ private theorem exists_contactizationChart {K V : Type*} [NormedAddCommGroup K]
   let inc_B := sv_B.prod id_ℝ
   let assoc := (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm.toPartialDiffeomorph
   let Ω := (ψ_B.prod id_ℝ).trans (shift.trans (inc_B.trans assoc))
-  have hsv_src : sv_B.symm.source = (B : Set (V × V)) := by
-    rw [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source,
-      PartialDiffeomorph.subtypeVal_target]
   have hψB_src : ψ_B.source = ψ.source ∩ ψ ⁻¹' (B : Set (V × V)) := by
-    rw [PartialDiffeomorph.trans_source, hsv_src]
+    simp [ψ_B, sv_B]
   have hψB_coe (x : S_K) : ψ_B x = sv_B.symm (ψ x) := by
     rw [PartialDiffeomorph.coe_trans, Function.comp_apply]
   have hψB_val (x : S_K) (hx : ψ x ∈ (B : Set (V × V))) : (ψ_B x : V × V) = ψ x := by
@@ -528,8 +537,10 @@ private theorem exists_contactizationChart {K V : Type*} [NormedAddCommGroup K]
   let e_B : W_ψ → B := fun x ↦ ψ_B x.val
   have he_B : ContMDiff 𝓘(ℝ, K) 𝓘(ℝ, V × V) ∞ e_B :=
     ψ_B.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property
-  refine ⟨W_ψ, e_B, Ω, he_B, fun x ↦ (hψB_src ▸ (show x.val ∈ ψ_B.source from x.property)).1,
-    fun x ↦ hψB_val x.val (hψB_src ▸ (show x.val ∈ ψ_B.source from x.property)).2,
+  have hx_mem (x : W_ψ) : x.val ∈ ψ.source ∩ ψ ⁻¹' (B : Set (V × V)) := by
+    rw [← hψB_src]
+    simp [W_ψ]
+  refine ⟨W_ψ, e_B, Ω, he_B, fun x ↦ (hx_mem x).1, fun x ↦ hψB_val x.val (hx_mem x).2,
     fun q hq ↦ (hsrc q).1 hq,
     (hsrc _).2 (by rw [hψB_src]; exact ⟨hs₀ψ, by simpa [hψs₀] using h0B⟩), hΩ₀, funext fun z ↦ ?_⟩
   simp [Ω, sv_B, e_B, id_ℝ, shift, inc_B, assoc, Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
@@ -611,17 +622,15 @@ private theorem exists_partialDiffeomorph_trans_opens {E₁ H₁ M₁ E₂ : Typ
     rw [PartialDiffeomorph.trans_source]; exact ⟨hp₀Ψ, by simpa [hΨp₀] using hq₀Ω⟩
   let sv := PartialDiffeomorph.subtypeVal 𝓘(ℝ, E) ∞ W₀ ⟨p₀⟩
   let Φ := sv.symm.trans Ξ
-  have hsv_src : sv.symm.source = (W₀ : Set E) := by
-    rw [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source,
-      PartialDiffeomorph.subtypeVal_target]
+  have hΦ_src : Φ.source = (W₀ : Set E) ∩ sv.symm ⁻¹' Ξ.source := by
+    simp [Φ, sv]
   have hsv_p (q : W₀) : sv.symm (q : E) = q := by
     rw [PartialDiffeomorph.symm_toPartialEquiv]
     exact PartialDiffeomorph.subtypeVal_symm_apply_coe W₀ ⟨p₀⟩ q
   have hp₀Φ : (p₀ : E) ∈ Φ.source := by
-    rw [PartialDiffeomorph.trans_source, hsv_src, mem_inter_iff, mem_preimage, hsv_p p₀]
+    rw [hΦ_src, mem_inter_iff, mem_preimage, hsv_p p₀]
     exact ⟨p₀.property, hp₀Ξ⟩
-  have hΦW₀ : Φ.source ⊆ W₀ := fun y hy ↦
-    (PartialDiffeomorph.trans_source (Φ := sv.symm) (Ψ := Ξ) ▸ hy).1 |> (hsv_src ▸ ·)
+  have hΦW₀ : Φ.source ⊆ W₀ := fun y hy ↦ (hΦ_src ▸ hy).1
   have hΦp₀ : Φ p₀ = z₀ := by
     rw [PartialDiffeomorph.coe_trans, Function.comp_apply, hsv_p p₀,
       PartialDiffeomorph.coe_trans, Function.comp_apply, hΨp₀, hΩ₀]
@@ -630,22 +639,27 @@ private theorem exists_partialDiffeomorph_trans_opens {E₁ H₁ M₁ E₂ : Typ
       PartialDiffeomorph.coe_trans, Function.comp_apply]
   refine ⟨Φ, hp₀Φ, hΦW₀, hΦp₀, fun y hy ↦ ?_⟩
   let p : W₀ := ⟨y, hΦW₀ hy⟩
-  have hpΞ : p ∈ Ξ.source :=
-    hsv_p p ▸ (PartialDiffeomorph.trans_source (Φ := sv.symm) (Ψ := Ξ) ▸ hy).2
+  have hpΞ : p ∈ Ξ.source := hsv_p p ▸ (hΦ_src ▸ hy).2
   have ⟨hpΨ, hpΩ⟩ : p ∈ Ψ.source ∩ Ψ ⁻¹' Ω.source :=
     PartialDiffeomorph.trans_source (Φ := Ψ) (Ψ := Ω) ▸ hpΞ
   refine ⟨hΦW₀ hy, hpΨ, hpΩ, congrFun heq_Φ p, fun v ↦ ?_⟩
   let v_p : TangentSpace 𝓘(ℝ, E) p := (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, E)) p).symm
     ((NormedSpace.fromTangentSpace y).symm v)
-  have h1 := congrArg (fun L ↦ L v_p) (congrArg (fun f ↦ mvfderiv 𝓘(ℝ, E) f p) heq_Φ)
-  rw [mvfderiv_comp_apply p (Φ.mdifferentiableAt (n := ∞) (by simp) hy)
-      ((contMDiff_subtypeVal (I := 𝓘(ℝ, E)) (n := ∞)).mdifferentiableAt (x := p) (by simp)),
+  have hΦ_d : mvfderiv 𝓘(ℝ, E) (Φ ∘ (Subtype.val : W₀ → E)) p v_p = fderiv ℝ Φ y v := by
+    have hΦm : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E₂) Φ p.val :=
+      Φ.mdifferentiableAt (n := ∞) (by simp) hy
+    have hsvm : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : W₀ → E) p :=
+      (contMDiff_subtypeVal (I := 𝓘(ℝ, E)) (n := ∞)).mdifferentiableAt (by simp)
+    simp only [mvfderiv_comp_apply p hΦm hsvm, Manifold.mfderiv_subtype_val,
+      ContinuousLinearEquiv.coe_coe, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, v_p,
+      ContinuousLinearEquiv.apply_symm_apply]
+    dsimp only [p]
+    rw [ContinuousLinearEquiv.apply_symm_apply]
+  have hΩΨ_d : mvfderiv 𝓘(ℝ, E) (⇑Ω ∘ ⇑Ψ) p v_p =
+      mvfderiv I₁ Ω (Ψ p) (mfderiv 𝓘(ℝ, E) I₁ Ψ p v_p) :=
     mvfderiv_comp_apply p (Ω.mdifferentiableAt (n := ∞) (by simp) hpΩ)
-      (Ψ.mdifferentiableAt (n := ∞) (by simp) hpΨ),
-    Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply, mvfderiv_eq_fderiv,
-    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at h1
-  dsimp only [p] at h1; rwa [ContinuousLinearEquiv.apply_symm_apply] at h1
+      (Ψ.mdifferentiableAt (n := ∞) (by simp) hpΨ) v_p
+  rw [← hΦ_d, heq_Φ, hΩΨ_d]
 
 /-- **The strict contact Darboux theorem on normed spaces.** Let `η` be a smooth one-form on an
 open subset `W` of a finite-dimensional real normed space `E`, which is a contact form at `y₀ ∈ W`.

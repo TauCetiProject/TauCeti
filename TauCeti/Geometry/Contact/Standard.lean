@@ -499,10 +499,8 @@ theorem mpullback_prodAssocSymmSelf_symm_innerProductContactForm :
     rw [← h_eq] at h
     exact h.trans (congrArg₂ (· + ·) (h1 u.fst) (h2 u.snd))
   rw [SmoothForm.mpullback_apply_one, innerProductContactForm_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply, hassoc_d, SmoothForm.contactization_apply,
-    innerProductMomentumForm_apply, NormedSpace.fromTangentSpace_apply,
-    NormedSpace.fromTangentSpace_apply, Diffeomorph.prodAssocSymmSelf_symm_apply]
-  simp [g₁, g₂]
+    ← mvfderiv_apply_eq_mfderiv_apply, hassoc_d]
+  simp [g₁, g₂, NormedSpace.fromTangentSpace_apply]
 
 end InnerProductSpace
 
