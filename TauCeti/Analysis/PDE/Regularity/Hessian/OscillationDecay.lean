@@ -428,7 +428,8 @@ private theorem setAverage_norm_iteratedGradient_sub_setAverage_le_of_contractio
       2 * ⨍ x in ball x₀ ρ, ‖Wkp.iteratedGradient 1 w x‖ := by
   have : IsFiniteMeasure (volume.restrict (ball x₀ r)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  set uB := Wkp.restrictL (show (⟨ball x₀ r, isOpen_ball⟩ : Opens _) ≤ U from hball) 2 u
+  have hBU : (⟨ball x₀ r, isOpen_ball⟩ : Opens _) ≤ U := SetLike.coe_subset_coe.1 hball
+  set uB := Wkp.restrictL hBU 2 u
   have huB : Wkp.iteratedGradient 1 uB =ᵐ[volume.restrict (ball x₀ r)]
       Wkp.iteratedGradient 1 u := Wkp.iteratedGradient_restrictL_ae _ 1 u
   -- `v = u - w` solves the homogeneous equation on `B_r`, so its mean oscillation decays.
@@ -450,6 +451,27 @@ private theorem setAverage_norm_iteratedGradient_sub_setAverage_le_of_contractio
     (mul_nonneg (by positivity) (div_nonneg hρ.le (hρ.le.trans hρr)))
     (((Lp.memLp (Wkp.iteratedGradient 1 uB)).ae_eq huB).integrable Fact.out)
     ((Lp.memLp (Wkp.iteratedGradient 1 w)).integrable Fact.out) hv hdec
+
+/-- The bounds on the frozen solution: if `w ∈ W^{2,p}(B_r)` has `‖D²w‖_{Lᵖ(B_r)} ≤ C ‖G‖_{Lᵖ(B_r)}`
+with `G = F` almost everywhere on `B_r`, then for `0 < ρ ≤ r`
+`⨍_{B_ρ} ‖D²w‖^p ≤ (r / ρ)^(n + 1) ⨍_{B_r} ‖D²w‖^p` and `⨍_{B_r} ‖D²w‖^p ≤ C^p ⨍_{B_r} ‖F‖^p`. -/
+private theorem setAverage_norm_iteratedGradient_rpow_le_of_norm_le
+    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ r C : ℝ}
+    {w : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⟨ball x₀ r, isOpen_ball⟩ p 2}
+    {G : Lp ℝ p (volume.restrict (ball x₀ r))} {F : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hC : 0 ≤ C) (hwG : ‖Wkp.iteratedGradient 1 w‖ ≤ C * ‖G‖)
+    (hGF : G =ᵐ[volume.restrict (ball x₀ r)] F) (hρ : 0 < ρ) (hρr : ρ ≤ r) :
+    ⨍ x in ball x₀ ρ, ‖Wkp.iteratedGradient 1 w x‖ ^ p.toReal ≤
+        (r / ρ) ^ (n + 1) * ⨍ x in ball x₀ r, ‖Wkp.iteratedGradient 1 w x‖ ^ p.toReal ∧
+      ⨍ x in ball x₀ r, ‖Wkp.iteratedGradient 1 w x‖ ^ p.toReal ≤
+        C ^ p.toReal * ⨍ x in ball x₀ r, ‖F x‖ ^ p.toReal := by
+  refine ⟨?_, (Lp.average_norm_rpow_le_of_norm_le hC hwG).trans_eq ?_⟩
+  · have : IsFiniteMeasure (volume.restrict (ball x₀ r)) :=
+      isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+    simpa only [finrank_euclideanSpace_fin] using setAverage_ball_le_div_pow_mul_setAverage_ball
+      volume hρ hρr (ae_of_all _ fun x => by positivity)
+      (Lp.memLp (Wkp.iteratedGradient 1 w)).integrable_norm_rpow'
+  · exact congr_arg _ (average_congr (hGF.mono fun x hx => by simp only [hx]))
 
 /-- **Mean oscillation of the Hessian in `L¹` for constant coefficients with forcing.** Let
 `1 < p < ∞` and write `γ = p`. There are constants `K₁, K₂`, depending only on `n`, `p`, `λ` and
@@ -511,18 +533,10 @@ theorem exists_rpow_setAverage_norm_iteratedGradient_sub_setAverage_le_of_sum_mu
     hA' u w hρ hρr hball (by filter_upwards [hw, hFp.coeFn_toLp] with x h1 h2; rw [h1, h2])
   have hWγ : IntegrableOn (fun x => ‖W x‖ ^ p.toReal) (ball x₀ r) :=
     (Lp.memLp (Wkp.iteratedGradient 1 w)).integrable_norm_rpow'
-  have hWF : ⨍ x in ball x₀ r, ‖W x‖ ^ p.toReal ≤
-      C ^ p.toReal * ⨍ x in ball x₀ r, ‖F x‖ ^ p.toReal := by
-    refine (Lp.average_norm_rpow_le_of_norm_le (le_max_right CD 0) (hwn.trans
-      (mul_le_mul_of_nonneg_right (le_max_left CD 0) (norm_nonneg _)))).trans_eq ?_
-    congr 1
-    refine average_congr ?_
-    filter_upwards [hFp.coeFn_toLp, heq] with x h1 h2
-    rw [h1, Matrix.contraction_apply, h2]
-  have hWρ : ⨍ x in ball x₀ ρ, ‖W x‖ ^ p.toReal ≤
-      (r / ρ) ^ (n + 1) * ⨍ x in ball x₀ r, ‖W x‖ ^ p.toReal := by
-    simpa only [finrank_euclideanSpace_fin] using setAverage_ball_le_div_pow_mul_setAverage_ball
-      volume hρ hρr (ae_of_all _ fun x => by positivity) hWγ
+  obtain ⟨hWρ, hWF⟩ := setAverage_norm_iteratedGradient_rpow_le_of_norm_le (le_max_right CD 0)
+    (hwn.trans (mul_le_mul_of_nonneg_right (le_max_left CD 0) (norm_nonneg _)))
+    (by filter_upwards [hFp.coeFn_toLp, heq] with x h1 h2; rw [h1, Matrix.contraction_apply, h2])
+    hρ hρr
   refine (rpow_le_of_le_mul_add_add hγ.le (average_nonneg fun x => norm_nonneg _)
     (average_nonneg fun x => norm_nonneg _) (average_nonneg fun x => norm_nonneg _)
     (average_nonneg fun x => norm_nonneg _) (average_nonneg fun x => by positivity)

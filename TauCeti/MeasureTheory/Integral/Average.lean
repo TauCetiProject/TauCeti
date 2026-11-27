@@ -17,6 +17,7 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.InnerProductSpace.OfNorm
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Bochner.Holder
+import TauCeti.MeasureTheory.Integral.Average.Jensen
 
 /-!
 # Norms of averages
@@ -138,7 +139,8 @@ applied to an integrable function that is almost everywhere at least `a`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
-  `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
+  `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation; the
+  case `γ = 2` of `TauCeti.rpow_setAverage_norm_le_setAverage_norm_rpow` (`Average/Jensen.lean`).
 * `TauCeti.measureReal_mul_sq_norm_setAverage_le`: the real form `μ s ‖f_s‖² ≤ ∫_s ‖f‖²`, for
   `f ∈ L²(s)`, of Hölder's bound `TauCeti.enorm_setAverage_rpow_le` at exponent `2`.
 * `TauCeti.norm_le_add_sqrt_of_ae_eq`: a pointwise bound from `L²` and oscillation bounds.
@@ -601,16 +603,13 @@ theorem sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq {E : Type*} [NormedAdd
     rpow_laverage_le_laverage_rpow (μ := μ.restrict s) (u := fun x => ‖h x‖ₑ) one_le_two
 
 /-- **Jensen's inequality for the square of a mean.** The square of the mean of `‖g‖` over `s` is
-at most the mean of `‖g‖²`. If `μ s` is `0` or `∞`, both averages are `0`. -/
+at most the mean of `‖g‖²`. If `μ s` is `0` or `∞`, both averages are `0`. This is the case
+`γ = 2` of `TauCeti.rpow_setAverage_norm_le_setAverage_norm_rpow`. -/
 theorem sq_setAverage_norm_le_setAverage_norm_sq {E : Type*} [NormedAddCommGroup E]
     {s : Set X} {g : X → E} (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
     (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ := by
-  have h1 := pow_le_pow_left' (enorm_setAverage_le_setLAverage μ (fun x ↦ ‖g x‖) s) 2
-  simp only [eNorm_norm] at h1
-  have h := h1.trans (sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq hg2)
-  have ha : 0 ≤ ⨍ x in s, ‖g x‖ ∂μ := average_nonneg fun _ ↦ norm_nonneg _
-  simp only [Real.eNorm_of_nonneg ha, ← ENNReal.ofReal_pow ha] at h
-  exact (ENNReal.ofReal_le_ofReal_iff (average_nonneg fun _ ↦ by positivity)).1 h
+  simpa only [Real.rpow_two] using rpow_setAverage_norm_le_setAverage_norm_rpow one_le_two
+    (by simpa only [Real.rpow_two] using hg2)
 
 /-- The measure of a set `s` of finite measure times the squared norm of the average of `f` over
 `s` is at most `∫_s ‖f‖²`. This is the real-valued form of `enorm_setAverage_rpow_le` at

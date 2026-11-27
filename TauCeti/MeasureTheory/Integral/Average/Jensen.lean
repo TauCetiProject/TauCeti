@@ -20,6 +20,11 @@ For `γ ≥ 1` the power `t ↦ t^γ` is convex on `[0, ∞)`, so the `γ`-th po
 This compares a mean oscillation in `L¹` with one in `L^γ`, as in Krylov's sharp function method,
 and an `L¹` average with an `L^γ` average.
 
+The square case `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq` and the forms of Jensen's
+inequality for lower averages in `ℝ≥0∞` (`TauCeti.rpow_laverage_le_laverage_rpow`) stay in
+`TauCeti.MeasureTheory.Integral.Average`, which imports this file: they are used there together
+with its `ℝ≥0∞` average API, and the square case is derived from the lemma below.
+
 ## Main results
 
 * `TauCeti.rpow_setAverage_norm_le_setAverage_norm_rpow`: `(⨍_s ‖f‖)^γ ≤ ⨍_s ‖f‖^γ`.
