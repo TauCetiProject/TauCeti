@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Hemisphere
 public import TauCeti.Geometry.Manifold.Morse.Sphere.PseudoGradient
 public import TauCeti.Geometry.Manifold.Morse.Stable.Broken.TrajectorySpace
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # The trajectory space of the height function on the sphere
@@ -125,8 +126,7 @@ theorem exists_homeomorph_morseBrokenTrajectorySpace_sphereHeight
   refine ⟨(Φ.trans (Homeomorph.setCongr hslice)).trans (latitudeHomeomorphParallel v ha).symm,
     fun w ↦ ?_⟩
   rw [Homeomorph.trans_apply, ← coe_latitudeHomeomorphParallel_apply v ha,
-    Homeomorph.apply_symm_apply, Homeomorph.trans_apply]
-  -- `Homeomorph.setCongr` is `Set.equivOfEq`, which keeps the underlying point.
+    Homeomorph.apply_symm_apply, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact hΦ w
 
 end IsAdaptedPseudoGradient

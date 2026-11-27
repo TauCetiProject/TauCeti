@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Stable.LevelPath
 import TauCeti.Geometry.Manifold.Morse.Stable.Stratum
+import TauCeti.Topology.Homeomorph.SetCongr
 import TauCeti.Topology.Order.OrderClosed
 
 /-!
@@ -278,10 +279,10 @@ theorem exists_homeomorph_morseBrokenTrajectorySpace_of_forall_notMem {x y : M}
       ∀ w, (Φ w : M) = (w : c ⁻¹' Ioo (f y) (f x) → M) i₀ := by
   obtain ⟨Φ, hΦ⟩ := hX.exists_homeomorph_morseTrajectoryRecords hxy
     (c := (c ⁻¹' Ioo (f y) (f x)).domRestrict c) (fun i ↦ i.property) i₀
-  -- `Homeomorph.setCongr` is `Set.equivOfEq`, which keeps the underlying record.
-  exact ⟨(Homeomorph.setCongr
-    (morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem hx hy hxy hcrit)).trans
-      Φ, fun w ↦ hΦ _⟩
+  have hrec := hX.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem (c := c)
+    hx hy hxy hcrit
+  exact ⟨(Homeomorph.setCongr hrec).trans Φ, fun w ↦
+    (hΦ (Homeomorph.setCongr hrec w)).trans (by rw [Homeomorph.setCongr_apply])⟩
 
 variable {x z y : M}
 
