@@ -40,8 +40,9 @@ change along `j` is Mathlib's functor `CategoryTheory.Over.pullback j : Over S �
 * `MappingProperty.existsUnique`, `MappingProperty.hom_ext`: each generic morphism from a test
   object extends uniquely, and two morphisms from a test object agreeing generically are equal.
 * `mappingProperty_iff_existsUnique`: the property is unique extension of generic morphisms.
-* `mappingProperty_iff_bijective_counit_comp`: the property is bijectivity of precomposition
-  with the projection `Y ×_S η ⟶ Y`, viewed in `Over S`.
+* `bijective_pullback_map_iff_bijective_counit_comp`, `mappingProperty_iff_bijective_counit_comp`:
+  the property is bijectivity of precomposition with the projection `Y ×_S η ⟶ Y`, viewed in
+  `Over S`.
 * `MappingProperty.of_le`: the property for a class of test morphisms implies it for every
   smaller class; in particular `NeronMappingProperty.weakNeronMappingProperty`.
 * `MappingProperty.of_iso`: the property is invariant under isomorphism in `Over S`.
@@ -191,6 +192,21 @@ theorem mappingProperty_iff_existsUnique {P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶
   ⟨fun h Y hY f ↦ h.existsUnique Y hY f,
     fun h ↦ ⟨fun Y hY ↦ Function.bijective_iff_existsUnique _ |>.2 (h Y hY)⟩⟩
 
+/-- For a single test object `Y`, base change along `j` is bijective on `S`-morphisms `Y ⟶ X`
+exactly when precomposition with the counit `(Over.map j).obj ((Over.pullback j).obj Y) ⟶ Y` of
+the adjunction `Over.map j ⊣ Over.pullback j`, the projection `Y ×_S η ⟶ Y` regarded as an
+`S`-morphism, is a bijection onto the `S`-morphisms `Y ×_S η ⟶ X`. -/
+theorem bijective_pullback_map_iff_bijective_counit_comp (j : η ⟶ S) (Y X : Over S) :
+    Function.Bijective ((Over.pullback j).map : (Y ⟶ X) → _) ↔
+      Function.Bijective fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f := by
+  -- Precomposition with the counit is base change followed by the adjunction bijection.
+  have key : (fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f) =
+      ((Over.mapPullbackAdj j).homEquiv _ _).symm ∘ (Over.pullback j).map := by
+    ext1 f
+    rw [Function.comp_apply, Adjunction.homEquiv_counit]
+    exact ((Over.mapPullbackAdj j).counit.naturality f).symm
+  rw [key, (Equiv.bijective _).of_comp_iff']
+
 /-- The mapping property through the adjunction `Over.map j ⊣ Over.pullback j`: `X` has the
 property exactly when, for every test object `Y`, precomposition with the counit
 `(Over.map j).obj ((Over.pullback j).obj Y) ⟶ Y`, the projection `Y ×_S η ⟶ Y` regarded as an
@@ -198,18 +214,9 @@ property exactly when, for every test object `Y`, precomposition with the counit
 theorem mappingProperty_iff_bijective_counit_comp {P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop}
     {j : η ⟶ S} {X : Over S} :
     MappingProperty P j X ↔ ∀ (Y : Over S), P Y.hom →
-      Function.Bijective fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f := by
-  -- Precomposition with the counit is base change followed by the adjunction bijection.
-  have key (Y : Over S) : (fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f) =
-      ((Over.mapPullbackAdj j).homEquiv _ _).symm ∘ (Over.pullback j).map := by
-    ext1 f
-    rw [Function.comp_apply, Adjunction.homEquiv_counit]
-    exact ((Over.mapPullbackAdj j).counit.naturality f).symm
-  refine ⟨fun h Y hY ↦ ?_, fun h ↦ ⟨fun Y hY ↦ ?_⟩⟩
-  · rw [key]
-    exact (Equiv.bijective _).comp (h.bijective Y hY)
-  · rw [← (Equiv.bijective ((Over.mapPullbackAdj j).homEquiv _ _).symm).of_comp_iff', ← key]
-    exact h Y hY
+      Function.Bijective fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f :=
+  ⟨fun h Y hY ↦ (bijective_pullback_map_iff_bijective_counit_comp j Y X).1 (h.bijective Y hY),
+    fun h ↦ ⟨fun Y hY ↦ (bijective_pullback_map_iff_bijective_counit_comp j Y X).2 (h Y hY)⟩⟩
 
 /-- The Néron mapping property implies the weak Néron mapping property: étale test objects are
 smooth. -/
