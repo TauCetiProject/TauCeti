@@ -31,10 +31,13 @@ abelian subalgebra.
 
 * The pairing of a form `δ` with `γ^∨` is `δ(γ^∨) = 2 δ(a) / B(a, a)`
   (`LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq`).
+* The coroot of `c γ` is `c⁻¹ γ^∨` (`LinearMap.BilinForm.coroot_smul`), in particular the coroot of
+  `-γ` is `-γ^∨` (`LinearMap.BilinForm.coroot_neg`), and the coroot of a nonzero form is nonzero
+  (`LinearMap.BilinForm.coroot_ne_zero`).
 * The reflection `δ - δ(γ^∨) γ` of a nonzero form `δ` in a nonzero form `γ` is nonzero
-  (`LinearMap.BilinForm.sub_smul_ne_zero`).
+  (`LinearMap.BilinForm.sub_apply_coroot_smul_ne_zero`).
 * A nonzero form is recovered from its coroot `c` as `γ = (2 / B(c, c)) B(c, ·)`
-  (`LinearMap.BilinForm.apply_eq_div_mul_of_ne_zero`), so the coroot map is injective on nonzero
+  (`LinearMap.BilinForm.apply_eq_div_mul_coroot`), so the coroot map is injective on nonzero
   forms (`LinearMap.BilinForm.coroot_injOn`).
 * For a symmetric `B`, the coroot of the reflection `δ - δ(γ^∨) γ` of `δ` is the reflection
   `δ^∨ - γ(δ^∨) γ^∨` of `δ^∨` (`LinearMap.BilinForm.coroot_sub_smul`). These are the compatibility
@@ -94,6 +97,7 @@ theorem apply_self_ne_zero_of_forall_apply_eq {γ : Dual K t} (hγ : γ ≠ 0) {
 variable {hB}
 
 /-- **`γ(γ^∨) = 2`** for a nonzero form `γ`. -/
+@[simp]
 theorem apply_coroot {γ : Dual K t} (hγ : γ ≠ 0) : γ (B.coroot hB γ) = 2 := by
   obtain ⟨a, ha⟩ := exists_forall_apply_eq hB γ
   rw [apply_coroot_eq_of_forall_apply_eq hB ha, ← ha,
@@ -102,7 +106,7 @@ theorem apply_coroot {γ : Dual K t} (hγ : γ ≠ 0) : γ (B.coroot hB γ) = 2 
 /-- **The reflection of a nonzero form is nonzero.** For `γ ≠ 0` and `δ ≠ 0`, the reflection
 `δ - δ(γ^∨) γ` is nonzero: evaluated at `γ^∨` it is `-δ(γ^∨)`, so if it vanished then
 `δ(γ^∨) = 0` and `δ` would be `0`. -/
-theorem sub_smul_ne_zero {γ δ : Dual K t} (hγ : γ ≠ 0) (hδ : δ ≠ 0) :
+theorem sub_apply_coroot_smul_ne_zero {γ δ : Dual K t} (hγ : γ ≠ 0) (hδ : δ ≠ 0) :
     δ - δ (B.coroot hB γ) • γ ≠ 0 := by
   intro h
   have hc : δ (B.coroot hB γ) = 0 := by
@@ -112,10 +116,36 @@ theorem sub_smul_ne_zero {γ δ : Dual K t} (hγ : γ ≠ 0) (hδ : δ ≠ 0) :
     linear_combination -this
   exact hδ (by rwa [hc, zero_smul, sub_zero] at h)
 
+/-- The coroot of `c γ` is `c⁻¹ γ^∨`. -/
+@[simp]
+theorem coroot_smul (c : K) (γ : Dual K t) : B.coroot hB (c • γ) = c⁻¹ • B.coroot hB γ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  rcases eq_or_ne γ 0 with rfl | hγ
+  · simp
+  obtain ⟨a, ha⟩ := exists_forall_apply_eq hB γ
+  have haa := apply_self_ne_zero_of_forall_apply_eq hB hγ ha
+  have hca (H : t) : B ((c • a : t) : V) H = (c • γ) H := by
+    simp [← ha]
+  rw [coroot_eq_of_forall_apply_eq hB hca, coroot_eq_of_forall_apply_eq hB ha, smul_smul,
+    smul_smul]
+  congr 1
+  simp only [Submodule.coe_smul, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  field_simp
+
+/-- The coroot of `-γ` is `-γ^∨`. -/
+@[simp]
+theorem coroot_neg (γ : Dual K t) : B.coroot hB (-γ) = -B.coroot hB γ := by
+  rw [← neg_one_smul K γ, coroot_smul, inv_neg, inv_one, neg_one_smul]
+
 variable [NeZero (2 : K)]
 
+/-- The coroot of a nonzero form is nonzero. -/
+theorem coroot_ne_zero {γ : Dual K t} (hγ : γ ≠ 0) : B.coroot hB γ ≠ 0 := fun h ↦
+  two_ne_zero (α := K) <| by rw [← apply_coroot (hB := hB) hγ, h, map_zero]
+
 /-- A nonzero form `γ` is recovered from its coroot `c = γ^∨` as `γ(H) = (2 / B(c, c)) B(c, H)`. -/
-theorem apply_eq_div_mul_of_ne_zero {γ : Dual K t} (hγ : γ ≠ 0) (H : t) :
+theorem apply_eq_div_mul_coroot {γ : Dual K t} (hγ : γ ≠ 0) (H : t) :
     γ H = 2 / B (B.coroot hB γ) (B.coroot hB γ) * B (B.coroot hB γ) H := by
   obtain ⟨a, ha⟩ := exists_forall_apply_eq hB γ
   have haa := apply_self_ne_zero_of_forall_apply_eq hB hγ ha
@@ -126,7 +156,7 @@ theorem apply_eq_div_mul_of_ne_zero {γ : Dual K t} (hγ : γ ≠ 0) (H : t) :
 /-- **A nonzero form is determined by its coroot.** -/
 theorem coroot_injOn : InjOn (B.coroot hB (t := t)) {γ | γ ≠ 0} := fun γ hγ δ hδ h ↦
   LinearMap.ext fun H ↦ by
-    rw [apply_eq_div_mul_of_ne_zero (hB := hB) hγ, apply_eq_div_mul_of_ne_zero (hB := hB) hδ, h]
+    rw [apply_eq_div_mul_coroot (hB := hB) hγ, apply_eq_div_mul_coroot (hB := hB) hδ, h]
 
 /-- **The coroots are compatible with the reflections.** For a symmetric form `B`, anisotropic on
 `t`, and forms `γ, δ` on `t`, the coroot of the reflection `δ - δ(γ^∨) γ` of `δ` is the reflection

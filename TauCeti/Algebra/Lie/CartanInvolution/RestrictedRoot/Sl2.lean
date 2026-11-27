@@ -106,30 +106,23 @@ theorem sub_smul_sub_smul_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) (
 
 /-- The restricted coroot of a nonzero functional is nonzero. -/
 theorem restrictedCoroot_ne_zero {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
-    hθ.restrictedCoroot h𝔞 μ ≠ 0 := by
-  intro h
-  have := hθ.apply_restrictedCoroot h𝔞 hμ
-  rw [h, map_zero] at this
-  exact two_ne_zero this.symm
+    hθ.restrictedCoroot h𝔞 μ ≠ 0 :=
+  have := hθ.finiteDimensional
+  LinearMap.BilinForm.coroot_ne_zero hμ
 
 /-- The restricted coroot of `cλ` is `c⁻¹ H'_λ`. -/
 @[simp]
 theorem restrictedCoroot_smul (μ : Dual K 𝔞) (c : K) :
-    hθ.restrictedCoroot h𝔞 (c • μ) = c⁻¹ • hθ.restrictedCoroot h𝔞 μ := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp [restrictedCoroot_def]
-  rcases eq_or_ne μ 0 with rfl | hμ
-  · simp [restrictedCoroot_def]
-  have hpos := (hθ.apply_killingEquivDual_symm_pos h𝔞 hμ).ne'
-  simp only [restrictedCoroot_def, map_smul, LinearMap.smul_apply, smul_eq_mul, smul_smul]
-  congr 1
-  field_simp
+    hθ.restrictedCoroot h𝔞 (c • μ) = c⁻¹ • hθ.restrictedCoroot h𝔞 μ :=
+  have := hθ.finiteDimensional
+  LinearMap.BilinForm.coroot_smul c μ
 
 /-- The restricted coroot of `-λ` is `-H'_λ`. -/
 @[simp]
 theorem restrictedCoroot_neg (μ : Dual K 𝔞) :
-    hθ.restrictedCoroot h𝔞 (-μ) = -hθ.restrictedCoroot h𝔞 μ := by
-  rw [← neg_one_smul K μ, restrictedCoroot_smul, inv_neg, inv_one, neg_one_smul]
+    hθ.restrictedCoroot h𝔞 (-μ) = -hθ.restrictedCoroot h𝔞 μ :=
+  have := hθ.finiteDimensional
+  LinearMap.BilinForm.coroot_neg μ
 
 /-- A functional is recovered from its coroot: `λ = (2 / B(H'_λ, H'_λ)) B(H'_λ, ·)`. -/
 theorem eq_smul_killingEquivDual_restrictedCoroot (μ : Dual K 𝔞) :
@@ -140,7 +133,7 @@ theorem eq_smul_killingEquivDual_restrictedCoroot (μ : Dual K 𝔞) :
   have := hθ.finiteDimensional
   ext H
   rw [LinearMap.smul_apply, killingEquivDual_apply_apply, smul_eq_mul]
-  exact LinearMap.BilinForm.apply_eq_div_mul_of_ne_zero hμ H
+  exact LinearMap.BilinForm.apply_eq_div_mul_coroot hμ H
 
 /-- **Distinct functionals have distinct coroots.** -/
 theorem restrictedCoroot_injective : Function.Injective (hθ.restrictedCoroot h𝔞) :=

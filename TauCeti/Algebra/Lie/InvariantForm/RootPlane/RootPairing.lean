@@ -98,15 +98,19 @@ theorem exists_eq_or_eq_neg_of_isRootPlane (hD : IsRootPlaneDecomposition B t α
   -- `B(·, w)` vanishes on `t` and on every plane, hence everywhere.
   have hle : t ⊔ ⨆ i, E i ≤ LinearMap.ker (B.flip w) := by
     refine sup_le (fun H hH ↦ ?_) (iSup_le fun i v hv ↦ ?_)
-    · exact hE'.apply_eq_zero_of_forall_lie_eq_zero hB hγ
+    · rw [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply]
+      exact hE'.apply_eq_zero_of_forall_lie_eq_zero hB hγ
         (fun H' ↦ hD.lie_eq_zero H'.property hH) ⟨w, hw⟩
     · obtain ⟨H, hH⟩ : ∃ H, α i H ^ 2 ≠ γ H ^ 2 := by
         by_contra! hsq
         rcases Module.Dual.eq_or_eq_neg_of_forall_sq_eq fun H ↦ (hsq H).symm with h' | h'
         · exact (h i).1 h'
         · exact (h i).2 h'
-      exact (hD.isRootPlane i).le_orthogonal hE' hB hH hw v hv
-  have hww : B w w = 0 := hle (hD.sup_eq_top ▸ Submodule.mem_top)
+      rw [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply]
+      exact LinearMap.BilinForm.mem_orthogonal_iff.mp
+        ((hD.isRootPlane i).le_orthogonal hE' hB hH hw) v hv
+  have hww : w ∈ LinearMap.ker (B.flip w) := hle (hD.sup_eq_top ▸ Submodule.mem_top)
+  rw [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply] at hww
   exact hw0 (hBa w hww)
 
 /-- Each real root `±α_i` is the root of a nonzero root plane: `E_i` with the rotation `±J_i`. -/
@@ -148,7 +152,7 @@ theorem sub_smul_mem (hD : IsRootPlaneDecomposition B t α E J) (hBs : B.IsSymm)
   obtain ⟨a, ha⟩ := LinearMap.BilinForm.exists_forall_apply_eq hBt γ
   obtain ⟨E', J', hE', hE'0⟩ := hEγ.exists_isRootPlane_sub_smul hEδ hBs hBp hB
     (fun z hz ↦ hD.mem_of_forall_lie_eq_zero hα hz) hEγ0 hEδ0 ha
-  have hne := LinearMap.BilinForm.sub_smul_ne_zero (hB := hBt) (ne_zero_of_mem hα hγ)
+  have hne := LinearMap.BilinForm.sub_apply_coroot_smul_ne_zero (hB := hBt) (ne_zero_of_mem hα hγ)
     (ne_zero_of_mem hα hδ)
   rw [LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq hBt ha, ha] at hne ⊢
   obtain ⟨i, hi | hi⟩ := hD.exists_eq_or_eq_neg_of_isRootPlane hB hBp.anisotropic hE' hE'0 hne
