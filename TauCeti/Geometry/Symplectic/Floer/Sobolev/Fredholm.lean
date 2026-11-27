@@ -38,6 +38,14 @@ when the asymptotic orbits are one-periodic and nondegenerate.
   `D_{u'}` is (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_iff_of_cylindrical`), and
   then the two have the same index
   (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`).
+* **With a weight.** The same holds for the realization `D_u - c(s)` of the operator conjugated by
+  an exponential weight whose slope `c` is `δ±` near `±∞`, when the shifted fields
+  `dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` have nondegenerate return maps
+  (`TauCeti.SymplecticForm.isFredholm_floerWeightedSobolevOperator_iff_of_cylindrical`), with the
+  same index
+  (`TauCeti.SymplecticForm.index_floerWeightedSobolevOperator_eq_of_cylindrical_of_tendsto`):
+  along the segment of maps the weight does not change, so the weighted semi-Fredholm estimate
+  holds throughout. The unweighted statements are its case `c = 0`.
 * **Invariance under the data.** Let `(J, K_s, K_t)` and `(J', K'_s, K'_t)` be Floer data with the
   same end Hamiltonians `H₋_t` and `H₊_t`, possibly cylindrical from different radii on, and with
   possibly different almost complex structures, also on the ends. Then along the same map `u` the
@@ -479,9 +487,108 @@ section Invariance
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- The Fredholm property and the index pass from `D_u` to `D_{u'}` along the segment
-`u + λ (u' - u)`. -/
+/-- The Fredholm property and the index pass from `D_u - c(s)` to `D_{u'} - c(s)` along the
+segment `u + λ (u' - u)`, for a weight slope `c` equal to `δ±` near `±∞` at which the shifted
+fields of the ends have nondegenerate return maps. -/
 private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u u' : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 1 u) (hu' : ContDiff ℝ 1 u')
+    {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (Jm t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hu'xm : TendstoUniformlyOn (fun s t ↦ u' (s, t)) xm atBot (Icc 0 1))
+    (hδ'm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u' (s, t)) 0 atBot
+        (Icc 0 1)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (Jp t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    (hu'xp : TendstoUniformlyOn (fun s t ↦ u' (s, t)) xp atTop (Icc 0 1))
+    (hδ'p : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u' (s, t)) 0 atTop
+        (Icc 0 1))
+    (h : (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+      Ks Kt u c).IsFredholm) :
+    (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u' c).IsFredholm ∧
+      (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+          u' c).index =
+        (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks
+          Kt u c).index := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  obtain ⟨hR, hR'⟩ : R ≤ |R| ∧ -|R| ≤ -R := ⟨le_abs_self R, neg_le_neg (le_abs_self R)⟩
+  -- The data of the ends are the data of the cylinder at `s = ∓|R|`.
+  obtain ⟨hJm, hHm, hJxm⟩ := endData_of_eq ω (-|R|)
+    (fun t ↦ hcyl.almostComplex_eq_of_le_neg (_, t) hR')
+    (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (_, t) hR') hJ hKt hJc
+  obtain ⟨hJp, hHp, hJxp⟩ := endData_of_eq ω |R| (fun t ↦ hcyl.almostComplex_eq_of_le (_, t) hR)
+    (fun t ↦ hcyl.hamiltonianT_eq_of_le (_, t) hR) hJ hKt hJc
+  have hXmc : Continuous (uncurry fun t ↦ ω.hamiltonianVectorField (Hm t)) :=
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hHm).continuous
+  have hXpc : Continuous (uncurry fun t ↦ ω.hamiltonianVectorField (Hp t)) :=
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hHp).continuous
+  have hxmc : Continuous xm := continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt
+  have hxpc : Continuous xp := continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt
+  have hd := hu.differentiable one_ne_zero
+  have hd' := hu'.differentiable one_ne_zero
+  -- Every point of the segment has the asymptotics of `u` and `u'`.
+  have hseg (μ : ℝ) := And.intro
+    (tendstoUniformlyOn_add_smul_sub_and_sliceDefect hXmc hd hd' hxmc huxm hδm hu'xm hδ'm μ)
+    (tendstoUniformlyOn_add_smul_sub_and_sliceDefect hXpc hd hd' hxpc huxp hδp hu'xp hδ'p μ)
+  set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ z ↦
+    ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      (u + μ • (u' - u)) z - c z.1 • fst ℝ V (V × V)
+  have hcylμ (μ : ℝ) :=
+    Floer.isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt (u + μ • (u' - u))
+  have huμ (μ : ℝ) : ContDiff ℝ 1 (u + μ • (u' - u)) := hu.add ((hu'.sub hu).const_smul μ)
+  have hM (μ : ℝ) : MemLp (M μ) ∞ stripMeasure :=
+    ω.memLp_floerJetCoeff_sub_smul_fst_of_cylindrical (hcylμ μ) (huμ μ) hHm hJm (hseg μ).1.1
+      (hseg μ).1.2 hHp hJp (hseg μ).2.1 (hseg μ).2.2 hc hcm hcp
+  have hest (μ : ℝ) : ∃ C T, HasSemiFredholmEstimate (M μ) C T :=
+    ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical (hcylμ μ) (huμ μ)
+      (fun z ↦ hJc z _) hc hcm hcp hHm hxmc hJm (fun t ↦ hJxm t _) hdetm (hseg μ).1.1
+      (hseg μ).1.2 hHp hxpc hJp (fun t ↦ hJxp t _) hdetp (hseg μ).2.1 (hseg μ).2.2
+  -- `u`, `u'` and their derivatives in `t` are bounded on the strip.
+  obtain ⟨C, hC⟩ :=
+    exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect hXmc hXpc hu hxmc hxpc huxm hδm
+      huxp hδp
+  obtain ⟨C', hC'⟩ :=
+    exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect hXmc hXpc hu' hxmc hxpc hu'xm hδ'm
+      hu'xp hδ'p
+  -- The weight cancels in the differences of the coefficient fields.
+  have hcont (μ : ℝ) (_ : μ ∈ univ) :
+      Tendsto (fun ν ↦ eLpNorm (M ν - M μ) ∞ stripMeasure) (𝓝[univ] μ) (𝓝 0) := by
+    rw [nhdsWithin_univ]
+    simp only [M, ← Pi.sub_def, sub_sub_sub_cancel_right]
+    exact tendsto_eLpNorm_floerJetCoeff_add_smul_sub ω hcyl hJ hKs hKt hu hu' (B := max C C')
+      (fun s t ht ↦ ⟨(hC s t ht).1.trans (le_max_left _ _), (hC' s t ht).1.trans (le_max_right _ _),
+        (hC s t ht).2.trans (le_max_left _ _), (hC' s t ht).2.trans (le_max_right _ _)⟩) μ
+  have key := isFredholm_and_index_eq_of_hasSemiFredholmEstimate isPreconnected_univ
+    (fun μ _ ↦ hM μ) hcont (fun μ _ ↦ hest μ) (mem_univ 0) (mem_univ 1)
+    (by simpa only [M, zero_smul, add_zero, ← floerWeightedSobolevOperator_def] using h)
+  simpa only [M, zero_smul, add_zero, one_smul, add_sub_cancel, ← floerWeightedSobolevOperator_def]
+    using key
+
+/-- The Fredholm property and the index pass from `D_u` to `D_{u'}`: the weight slope `0` in
+`isFredholm_and_index_eq_of_cylindrical`, at which the return maps of nondegenerate orbits are
+nondegenerate. -/
+private theorem isFredholm_and_index_eq_of_cylindrical_zero (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u u' : ℝ × ℝ → V}
     (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
@@ -518,58 +625,19 @@ private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
           u').index =
         (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           u).index := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hR := le_abs_self R
   have hR' : -|R| ≤ -R := by linarith
-  -- The data of the ends are the data of the cylinder at `s = ∓|R|`.
-  obtain ⟨hJm, hHm, hJxm⟩ := endData_of_eq ω (-|R|)
-    (fun t ↦ hcyl.almostComplex_eq_of_le_neg (_, t) hR')
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (_, t) hR') hJ hKt hJc
-  obtain ⟨hJp, hHp, hJxp⟩ := endData_of_eq ω |R| (fun t ↦ hcyl.almostComplex_eq_of_le (_, t) hR)
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le (_, t) hR) hJ hKt hJc
-  have hXmc : Continuous (uncurry fun t ↦ ω.hamiltonianVectorField (Hm t)) :=
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hHm).continuous
-  have hXpc : Continuous (uncurry fun t ↦ ω.hamiltonianVectorField (Hp t)) :=
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hHp).continuous
-  have hxmc : Continuous xm := continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt
-  have hxpc : Continuous xp := continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt
-  have hd := hu.differentiable one_ne_zero
-  have hd' := hu'.differentiable one_ne_zero
-  -- Every point of the segment has the asymptotics of `u` and `u'`.
-  have hseg (μ : ℝ) := And.intro
-    (tendstoUniformlyOn_add_smul_sub_and_sliceDefect hXmc hd hd' hxmc huxm hδm hu'xm hδ'm μ)
-    (tendstoUniformlyOn_add_smul_sub_and_sliceDefect hXpc hd hd' hxpc huxp hδp hu'xp hδ'p μ)
-  set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦
-    ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt (u + μ • (u' - u))
-  have hcylμ (μ : ℝ) :=
-    Floer.isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt (u + μ • (u' - u))
-  have huμ (μ : ℝ) : ContDiff ℝ 1 (u + μ • (u' - u)) := hu.add ((hu'.sub hu).const_smul μ)
-  have hM (μ : ℝ) : MemLp (M μ) ∞ stripMeasure :=
-    ω.memLp_floerJetCoeff_of_cylindrical (hcylμ μ) (huμ μ) hHm hJm (hseg μ).1.1 (hseg μ).1.2 hHp
-      hJp (hseg μ).2.1 (hseg μ).2.2
-  have hest (μ : ℝ) : ∃ C T, HasSemiFredholmEstimate (M μ) C T :=
-    ω.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (hcylμ μ) (huμ μ)
-      (fun z ↦ hJc z _) hXm hHm hxm hndm hJm (fun t ↦ hJxm t _) (hseg μ).1.1 (hseg μ).1.2 hXp hHp
-      hxp hndp hJp (fun t ↦ hJxp t _) (hseg μ).2.1 (hseg μ).2.2
-  -- `u`, `u'` and their derivatives in `t` are bounded on the strip.
-  obtain ⟨C, hC⟩ :=
-    exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect hXmc hXpc hu hxmc hxpc huxm hδm
-      huxp hδp
-  obtain ⟨C', hC'⟩ :=
-    exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect hXmc hXpc hu' hxmc hxpc hu'xm hδ'm
-      hu'xp hδ'p
-  have hcont (μ : ℝ) (_ : μ ∈ univ) :
-      Tendsto (fun ν ↦ eLpNorm (M ν - M μ) ∞ stripMeasure) (𝓝[univ] μ) (𝓝 0) := by
-    rw [nhdsWithin_univ]
-    exact tendsto_eLpNorm_floerJetCoeff_add_smul_sub ω hcyl hJ hKs hKt hu hu' (B := max C C')
-      (fun s t ht ↦ ⟨(hC s t ht).1.trans (le_max_left _ _), (hC' s t ht).1.trans (le_max_right _ _),
-        (hC s t ht).2.trans (le_max_left _ _), (hC' s t ht).2.trans (le_max_right _ _)⟩) μ
-  have h₀ : u + (0 : ℝ) • (u' - u) = u := by simp
-  have h₁ : u + (1 : ℝ) • (u' - u) = u' := by simp
-  have key := isFredholm_and_index_eq_of_hasSemiFredholmEstimate isPreconnected_univ
-    (fun μ _ ↦ hM μ) hcont (fun μ _ ↦ hest μ) (mem_univ 0) (mem_univ 1)
-    (by simpa only [M, h₀, ← floerSobolevOperator_def] using h)
-  simpa only [M, h₀, h₁, ← floerSobolevOperator_def] using key
+  have hHm := (endData_of_eq ω (-|R|) (fun t ↦ hcyl.almostComplex_eq_of_le_neg (_, t) hR')
+    (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (_, t) hR') hJ hKt hJc).2.1
+  have hHp := (endData_of_eq ω |R| (fun t ↦ hcyl.almostComplex_eq_of_le (_, t) hR)
+    (fun t ↦ hcyl.hamiltonianT_eq_of_le (_, t) hR) hJ hKt hJc).2.1
+  simp only [← floerWeightedSobolevOperator_zero] at h ⊢
+  exact isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' continuous_const
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hxm
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt hXm hHm hxm hndm
+      _) huxm hδm hu'xm hδ'm hxp
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt hXp hHp hxp hndp
+      _) huxp hδp hu'xp hδ'p h
 
 /-- **The Fredholm property of the linearized Floer operator depends only on the asymptotic
 orbits.** Let the Floer data `(J, K_s, K_t)` be `C¹` (with `C²` Hamiltonians) on the whole
@@ -611,9 +679,9 @@ theorem isFredholm_floerSobolevOperator_iff_of_cylindrical (ω : SymplecticForm 
         u).IsFredholm ↔
       (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u').IsFredholm :=
-  ⟨fun h ↦ (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm
-      hδm hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).1,
-    fun h ↦ (isFredholm_and_index_eq_of_cylindrical ω
+  ⟨fun h ↦ (isFredholm_and_index_eq_of_cylindrical_zero ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm
+      huxm hδm hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).1,
+    fun h ↦ (isFredholm_and_index_eq_of_cylindrical_zero ω
       (Floer.isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt u') hJ hKs hKt hJc hu' hu hXm hxm
       hndm hu'xm hδ'm huxm hδm hXp hxp hndp hu'xp hδ'p huxp hδp h).1⟩
 
@@ -655,8 +723,106 @@ theorem index_floerSobolevOperator_eq_of_cylindrical (ω : SymplecticForm V)
         u').index =
       (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).index :=
-  (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm hδm
+  (isFredholm_and_index_eq_of_cylindrical_zero ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm hδm
     hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).2
+
+/-- **The Fredholm property of the weighted linearized Floer operator depends only on the
+asymptotic orbits.** Let the Floer data `(J, K_s, K_t)` be `C¹` (with `C²` Hamiltonians) on the
+whole cylinder, compatible with `ω` and cylindrical near the ends: equal to `(J₋_t, 0, H₋_t)` for
+`s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`. Let the slope `c` of the weight be continuous and
+equal to `δ₋` for `s ≤ -R` and to `δ₊` for `s ≥ R`, where the shifted fields
+`dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` along orbits `x±` of `H±` have nondegenerate return maps. Let
+`u` and `u'` be `C¹` maps whose loops converge uniformly to `x₋` at `-∞` and `x₊` at `+∞`, with
+slice defects `∂t u - X_{H±_t}(u)` tending uniformly to zero at the corresponding end. Then
+`D_u - c(s) : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` is Fredholm if and only if `D_{u'} - c(s)` is. -/
+theorem isFredholm_floerWeightedSobolevOperator_iff_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u u' : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 1 u) (hu' : ContDiff ℝ 1 u')
+    {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (Jm t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hu'xm : TendstoUniformlyOn (fun s t ↦ u' (s, t)) xm atBot (Icc 0 1))
+    (hδ'm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u' (s, t)) 0 atBot
+        (Icc 0 1)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (Jp t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    (hu'xp : TendstoUniformlyOn (fun s t ↦ u' (s, t)) xp atTop (Icc 0 1))
+    (hδ'p : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u' (s, t)) 0 atTop
+        (Icc 0 1)) :
+    (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u c).IsFredholm ↔
+      (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u' c).IsFredholm :=
+  ⟨fun h ↦ (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hc hcm hcp hxm
+      hdetm huxm hδm hu'xm hδ'm hxp hdetp huxp hδp hu'xp hδ'p h).1,
+    fun h ↦ (isFredholm_and_index_eq_of_cylindrical ω
+      (Floer.isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt u') hJ hKs hKt hJc hu' hu hc hcm
+      hcp hxm hdetm hu'xm hδ'm huxm hδm hxp hdetp hu'xp hδ'p huxp hδp h).1⟩
+
+/-- **The index of the weighted linearized Floer operator depends only on the asymptotic
+orbits.** Under the hypotheses of
+`TauCeti.SymplecticForm.isFredholm_floerWeightedSobolevOperator_iff_of_cylindrical`, if
+`D_u - c(s)` is Fredholm, then `D_{u'} - c(s)` has the same index as `D_u - c(s)`. -/
+theorem index_floerWeightedSobolevOperator_eq_of_cylindrical_of_tendsto (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u u' : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 1 u) (hu' : ContDiff ℝ 1 u')
+    {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (Jm t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hu'xm : TendstoUniformlyOn (fun s t ↦ u' (s, t)) xm atBot (Icc 0 1))
+    (hδ'm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u' (s, t)) 0 atBot
+        (Icc 0 1)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (Jp t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    (hu'xp : TendstoUniformlyOn (fun s t ↦ u' (s, t)) xp atTop (Icc 0 1))
+    (hδ'p : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u' (s, t)) 0 atTop
+        (Icc 0 1))
+    (h : (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+      Ks Kt u c).IsFredholm) :
+    (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u' c).index =
+      (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u c).index :=
+  (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hc hcm hcp hxm hdetm huxm
+    hδm hu'xm hδ'm hxp hdetp huxp hδp hu'xp hδ'p h).2
 
 /-- **The Fredholm property and the index along a family of data.** Let `(J_μ, K_{s,μ}, K_{t,μ})`
 be a family of Floer data, `C¹` jointly in the parameter `μ`, the point of the cylinder and the

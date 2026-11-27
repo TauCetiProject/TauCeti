@@ -668,10 +668,8 @@ theorem weakEquivalence_of_homotopyEquiv (f : X ⟶ Y) (g : Y ⟶ X) (H₁ : Hom
 trivial fibration of the Kan–Quillen model structure, is a weak equivalence. -/
 theorem weakEquivalence_of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) :
     WeakEquivalence p := by
-  have := isSplitEpi_of_rlp_monomorphisms hp
-  let h := Shrinking.ofRLP hp (section_ p) (IsSplitEpi.id p)
-  exact weakEquivalence_of_homotopyEquiv p h.section_ h.homotopy
-    (RelativeMorphism.Homotopy.ofEq (congrArg _ h.section_comp))
+  obtain ⟨g, ⟨H₁⟩, ⟨H₂⟩⟩ := exists_homotopy_inverse_of_rlp_monomorphisms hp
+  exact weakEquivalence_of_homotopyEquiv p g H₁ H₂
 
 end modelCategoryQuillen
 

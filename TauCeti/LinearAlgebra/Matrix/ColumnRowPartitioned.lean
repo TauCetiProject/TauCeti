@@ -45,6 +45,14 @@ public section
 
 namespace Matrix
 
+/-- The row indexed by `Sum.inr j` in `A.fromRows (a • 1)` is the scaled standard basis vector. -/
+@[simp]
+theorem row_fromRows_smul_one_inr {R r k : Type*} [MulZeroOneClass R] [DecidableEq k]
+    (A : Matrix r k R) (a : R) (j : k) :
+    (A.fromRows (a • (1 : Matrix k k R))).row (.inr j) = a • Pi.single j (1 : R) := by
+  ext i
+  simp [Matrix.one_apply, Pi.single_apply, eq_comm]
+
 section Add
 
 variable {R m m₁ m₂ n n₁ n₂ : Type*} [Add R]
