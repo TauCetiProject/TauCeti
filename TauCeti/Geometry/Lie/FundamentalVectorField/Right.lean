@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 public import TauCeti.Geometry.Manifold.Algebra.LeftToRight
 import TauCeti.Geometry.Lie.Interior
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.Translation
 import TauCeti.Geometry.Manifold.VectorField.Related
@@ -287,16 +288,10 @@ if the derivative at `1` of `h ↦ op h • (op g • x)` is injective. -/
 theorem injective_mfderiv_op_smul_const_iff [ContMDiffMul I 1 G] {x : M} {g : G} :
     Injective (mfderiv I I' (fun h : G => op h • x) g) ↔
       Injective (mfderiv I I' (fun h : G => op h • (op g • x)) 1) := by
-  have hcoe : (⇑(mfderiv I I' (fun h : G => op h • x) g) : E → E') =
-      (⇑(mfderiv I I' (fun h : G => op h • (op g • x)) 1) : E → E') ∘
-        ((Diffeomorph.smul I I 1 g⁻¹).mfderivToContinuousLinearEquiv
-          one_ne_zero g) := funext fun v =>
-    (mfderiv_op_smul_const_apply (I := I) (I' := I') v).trans
-      (congrArg (mfderiv I I' (fun h : G => op h • (op g • x)) 1)
-        (DFunLike.congr_fun (mfderiv_mul_left_inv (I := I) g) v))
-  exact (congrArg Injective hcoe).to_iff.trans
-    (((Diffeomorph.smul I I 1 g⁻¹).mfderivToContinuousLinearEquiv
-      one_ne_zero g).toEquiv.injective_comp _)
+  have h := (Diffeomorph.smul I I 1 g⁻¹).mfderiv_comp_diffeomorph_injective_iff (K := I')
+    one_ne_zero (f := fun h : G => op h • (op g • x)) (x := g)
+  rw [op_smul_comp_smul_inv (I := I) x g, Diffeomorph.smul_apply, smul_eq_mul, inv_mul_cancel] at h
+  exact h
 
 /-- **Equivariance under right translation.** For a `C¹` Lie group `G`, the derivative of right
 translation `y ↦ op g • y` at `x` carries the right fundamental vector field of `ξ` at `x` to that

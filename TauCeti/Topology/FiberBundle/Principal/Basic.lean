@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Algebra.MulAction
 public import TauCeti.Algebra.Group.Action.TotalSpace
 public import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Principal bundles
@@ -131,15 +132,6 @@ theorem symm_apply_eq_smul (hb : b ∈ e.baseSet) (g : G) :
     ?_).symm
   rw [e.coe_coe, e.apply_smul hs, TotalSpace.eta, hes, one_mul, hsb]
 
-/-- An equivariant trivialization exhibits the element carrying `p` to `q` in a fibre over its base
-set: it is `(e p).2⁻¹ * (e q).2`. -/
-private theorem op_inv_mul_smul (hb : b ∈ e.baseSet) (p q : P b) :
-    op ((e ⟨b, p⟩).2⁻¹ * (e ⟨b, q⟩).2) • p = q := by
-  refine TotalSpace.mk_injective b (e.toOpenPartialHomeomorph.injOn (e.mem_source.2 hb)
-    (e.mem_source.2 hb) ?_)
-  rw [e.coe_coe, e.apply_smul hb, mul_inv_cancel_left]
-  exact e.mk_proj_snd' (x := ⟨b, q⟩) hb
-
 /-- **Transition maps of equivariant trivializations are left multiplications.** Over a point of
 both base sets, the coordinate change between two equivariant trivializations is left
 multiplication by its value at `1`. -/
@@ -242,7 +234,11 @@ noncomputable def division (p q : P b) : G :=
 /-- The division map of `p` and `q` carries `p` to `q`. -/
 @[simp]
 theorem smul_division (p q : P b) : op (division G p q) • p = q :=
-  (trivializationAt G P b).op_inv_mul_smul (mem_baseSet_trivializationAt G P b) p q
+  TotalSpace.mk_injective b <|
+    (trivializationAt G P b).op_inv_mul_smul (fun _ _ ↦ rfl)
+      (fun g z hz ↦ (trivializationAt G P b).snd_apply_smul hz z.snd g)
+      (p := (⟨b, p⟩ : TotalSpace G P)) (q := (⟨b, q⟩ : TotalSpace G P))
+      (mem_baseSet_trivializationAt G P b) rfl
 
 /-- On the total space, acting on `⟨b, p⟩` by `division G p q` yields `⟨b, q⟩`. -/
 theorem smul_division_mk (p q : P b) :
@@ -261,7 +257,9 @@ instance isPretransitive (b : B) : MulAction.IsPretransitive Gᵐᵒᵖ (P b) :=
 /-- The division map read in an equivariant trivialization `e` whose base set contains `b`. -/
 theorem division_eq_of_mem_baseSet {e : Trivialization G (π G P)} [e.IsEquivariant]
     (hb : b ∈ e.baseSet) (p q : P b) : division G p q = (e ⟨b, p⟩).2⁻¹ * (e ⟨b, q⟩).2 :=
-  division_eq_iff.2 (e.op_inv_mul_smul hb p q)
+  division_eq_iff.2 <| TotalSpace.mk_injective b <|
+    e.op_inv_mul_smul (fun _ _ ↦ rfl) (fun g z hz ↦ e.snd_apply_smul hz z.snd g)
+      (p := (⟨b, p⟩ : TotalSpace G P)) (q := (⟨b, q⟩ : TotalSpace G P)) hb rfl
 
 omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]

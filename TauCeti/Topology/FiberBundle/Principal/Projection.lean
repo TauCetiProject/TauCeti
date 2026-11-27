@@ -258,8 +258,9 @@ theorem actionDivision_eq_inv_sectionCoord_mul_sectionCoord {x y : E} (hx : f x 
     eq_inv_mul_iff_mul_eq]
   exact actionDivision_mul_actionDivision horbit (hfree (f x) hx) (hs (f x) hx) hxy
 
-/-- Quotient formula for `actionDivisionOrOne` on `f ⁻¹' U` relative to a local section `s` along
-which the action is free. -/
+/-- On `f ⁻¹' U`, `actionDivisionOrOne` between two points in the same fibre equals the quotient
+of their `sectionCoord` coordinates relative to a local section `s` along which the action is
+free. -/
 theorem actionDivisionOrOne_eq_inv_sectionCoord_mul_sectionCoord {x y : E} (hx : f x ∈ U)
     (hxy : f x = f y) :
     actionDivisionOrOne horbit x y =

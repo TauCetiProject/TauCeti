@@ -42,8 +42,8 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
    `contMDiffOn_sectionCoord`. Under the stronger model hypothesis `[IP.Boundaryless]`, these
    charts yield `C^n` principal bundle structures on `MapFiber p`, a `G`-equivariant `C^n`
    diffeomorphism `ManifoldTotalSpace G (MapFiber p) ≃ₘ^n P` over `B`, and (when
-   `[LieGroup IG n G]`) `C^n` regularity of `actionDivisionOrOne`
-   (`contMDiffWithinAt_actionDivisionOrOne`).
+   `[LieGroup IG n G]`) `C^n` regularity of `actionDivisionOrOne` along locally fibre-matched
+   families (`contMDiffWithinAt_actionDivisionOrOne`).
 2. **Finite-dimensional `C^n` criterion (`1 ≤ n`, over `[RCLike 𝕜]`):** injectivity of
    `d(g ↦ op g • x)_1` and `finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the
    vertical-range condition by rank-nullity (`range_mfderiv_op_smul_one_eq_ker_of_finrank_eq`),
@@ -57,8 +57,10 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
 * `ContMDiff.contMDiffOn_op_smul_section`,
   `TauCeti.PrincipalBundle.isLocalDiffeomorphOn_op_smul_section`, `contMDiffOn_sectionCoord`,
   `ContMDiff.contMDiffOn_actionTrivializationOfSection`,
-  `ContMDiff.contMDiffOn_symm_actionTrivializationOfSection`: action sweep local diffeomorphism,
-  `C^n` section coordinates, and smoothness of `Continuous.actionTrivializationOfSection`.
+  `ContMDiff.contMDiffOn_symm_actionTrivializationOfSection`,
+  `TauCeti.PrincipalBundle.sectionTrivialization`, `contMDiffOn_sectionTrivialization`,
+  `contMDiffOn_symm_sectionTrivialization`: action sweep local diffeomorphism, `C^n` section
+  coordinates, and smooth equivariant section charts.
 * `TauCeti.PrincipalBundle.fiberBundleOfSubmersion`,
   `mem_trivializationAtlas_fiberBundleOfSubmersion_iff`,
   `toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas`,
@@ -68,8 +70,8 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
 * `Continuous.contMDiffWithinAt_actionDivisionOrOne_of_section`,
   `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivisionOrOne`,
   `contMDiffAt_actionDivisionOrOne`, `contMDiffOn_actionDivisionOrOne`,
-  `contMDiff_actionDivisionOrOne`: `C^n` regularity of
-  `actionDivisionOrOne` for a `C^n` Lie group `G`.
+  `contMDiff_actionDivisionOrOne`: `C^n` regularity of `actionDivisionOrOne` along locally
+  fibre-matched families for a `C^n` Lie group `G`.
 * `TauCeti.PrincipalBundle.contMDiffOn_sectionCoord_of_finrank_eq`: finite-dimensional `C^n`
   section smoothness.
 
@@ -388,6 +390,67 @@ theorem contMDiffOn_sectionCoord
     exact (congrArg Prod.snd hleft).symm
   exact ((contMDiff_snd.comp_contMDiffOn hinv).congr hcongr) x hx
 
+/-- The equivariant `Trivialization G p` induced by a `C^n` local section `s` over open `U ⊆ B`
+satisfying the Banach vertical-tangent hypotheses. -/
+def sectionTrivialization
+    (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
+    {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
+    (hs : ∀ b ∈ U, p (s b) = b) (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1)
+    (hinj : ∀ b ∈ U, Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
+    (hker : ∀ b ∈ U,
+      (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
+    Trivialization G p :=
+  hp.continuous.actionTrivializationOfSection horbit hU hfree hs
+    (contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj hker).continuousOn
+    (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn
+
+/-- Any `Continuous.actionTrivializationOfSection` formed from the same local section data equals
+`sectionTrivialization` (by proof irrelevance of the continuity witnesses). -/
+theorem sectionTrivialization_eq_actionTrivializationOfSection
+    (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
+    {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
+    (hs : ∀ b ∈ U, p (s b) = b) (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1)
+    (hinj : ∀ b ∈ U, Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
+    (hker : ∀ b ∈ U,
+      (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range)
+    (hcoord : ContinuousOn (sectionCoord horbit hs) (p ⁻¹' U))
+    (hsmul_s : ContinuousOn (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ)) :
+    sectionTrivialization hn hsmul hp horbit hU hs_smooth hs hfree hinj hker =
+      hp.continuous.actionTrivializationOfSection horbit hU hfree hs hcoord hsmul_s := by
+  dsimp [sectionTrivialization]
+
+/-- Forward `C^n` smoothness of `sectionTrivialization` on its source. -/
+theorem contMDiffOn_sectionTrivialization
+    (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
+    {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
+    (hs : ∀ b ∈ U, p (s b) = b) (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1)
+    (hinj : ∀ b ∈ U, Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
+    (hker : ∀ b ∈ U,
+      (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
+    ContMDiffOn IP (IB.prod IG) n
+      (sectionTrivialization hn hsmul hp horbit hU hs_smooth hs hfree hinj hker)
+      (sectionTrivialization hn hsmul hp horbit hU hs_smooth hs hfree hinj hker).source := by
+  dsimp [sectionTrivialization]
+  exact hp.contMDiffOn_actionTrivializationOfSection horbit hU hfree hs
+    (contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj hker)
+    (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn
+
+/-- Inverse `C^n` smoothness of `sectionTrivialization` on its target. -/
+theorem contMDiffOn_symm_sectionTrivialization
+    (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
+    {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
+    (hs : ∀ b ∈ U, p (s b) = b) (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1)
+    (hinj : ∀ b ∈ U, Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
+    (hker : ∀ b ∈ U,
+      (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
+    ContMDiffOn (IB.prod IG) IP n
+      (sectionTrivialization hn hsmul hp horbit hU hs_smooth hs hfree hinj
+        hker).toOpenPartialHomeomorph.symm
+      (sectionTrivialization hn hsmul hp horbit hU hs_smooth hs hfree hinj hker).target := by
+  dsimp [sectionTrivialization]
+  exact hsmul.contMDiffOn_symm_actionTrivializationOfSection hp.continuous horbit hU hs_smooth hfree
+    hs (contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj hker).continuousOn
+
 end LocalSection
 
 section Submersion
@@ -403,17 +466,15 @@ variable [IP.Boundaryless] [ContMDiffMul IG n G]
 private def submersionTrivializationAtlas : Set (Trivialization G p) :=
   {t | ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
     (hs : ∀ b ∈ U, p (s b) = b),
-    t = hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU (fun b _ ↦ hfree (s b))
-      hs (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
-        (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).continuousOn
-      (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn}
+    t = sectionTrivialization hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+      (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))}
 
 include hsurj in
 private theorem exists_mem_submersionTrivializationAtlas (b : B) :
     ∃ t ∈ submersionTrivializationAtlas hn hsmul hsub hfree horbit hinj hker, b ∈ t.baseSet := by
   obtain ⟨x, rfl⟩ := hsurj b
   obtain ⟨U, hU, hxU, s, -, hs_smooth, hs⟩ := (hsub.isSubmersionAt x).exists_contMDiffOn_section
-  exact ⟨_, ⟨U, hU, s, hs_smooth, hs, rfl⟩, by simpa using hxU⟩
+  exact ⟨_, ⟨U, hU, s, hs_smooth, hs, rfl⟩, by simpa [sectionTrivialization] using hxU⟩
 
 private def submersionAtlas : MapFiber.Atlas G p :=
   MapFiber.Atlas.ofSet
@@ -424,11 +485,8 @@ private theorem mem_charts_submersionAtlas_iff (t : Trivialization G p) :
     t ∈ (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).charts ↔
       ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
         (hs : ∀ b ∈ U, p (s b) = b),
-        t = hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU
-          (fun b _ ↦ hfree (s b)) hs
-          (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
-            (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).continuousOn
-          (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn := by
+        t = sectionTrivialization hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+          (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b)) := by
   simp [submersionAtlas, submersionTrivializationAtlas]
 
 private theorem isContMDiff_submersionAtlas :
@@ -436,15 +494,10 @@ private theorem isContMDiff_submersionAtlas :
   refine ⟨fun {t} ht ↦ ?_, fun {t} ht ↦ ?_⟩ <;>
     obtain ⟨U, hU, s, hs_smooth, hs, rfl⟩ :=
       (mem_charts_submersionAtlas_iff hn hsmul hsub hsurj hfree horbit hinj hker t).1 ht
-  · exact hsub.contMDiff.contMDiffOn_actionTrivializationOfSection horbit hU
-      (fun b _ ↦ hfree (s b)) hs
-      (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
-        (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b)))
-      (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn
-  · exact hsmul.contMDiffOn_symm_actionTrivializationOfSection hsub.contMDiff.continuous horbit hU
-      hs_smooth (fun b _ ↦ hfree (s b)) hs
-      (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
-        (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).continuousOn
+  · exact contMDiffOn_sectionTrivialization hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+      (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))
+  · exact contMDiffOn_symm_sectionTrivialization hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+      (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))
 
 /-- **`FiberBundle` structure on the fibres of a surjective free orbit-exact `C^n` submersion**
 (Banach version, `1 ≤ n`), for `p : P → B` with `Surjective p` (`hsurj`), `P` modelled on a
@@ -458,19 +511,16 @@ def fiberBundleOfSubmersion : FiberBundle G (MapFiber p) :=
   (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).fiberBundle
 
 /-- A trivialization belongs to the atlas of `fiberBundleOfSubmersion` iff it is the
-`MapFiber` transport of `Continuous.actionTrivializationOfSection` for some `C^n` local
-section `s` of `p` over an open set `U ⊆ B`. -/
+`MapFiber` transport of `sectionTrivialization` for some `C^n` local section `s` of `p` over an
+open set `U ⊆ B`. -/
 theorem mem_trivializationAtlas_fiberBundleOfSubmersion_iff
     (e : Trivialization G (π G (MapFiber p))) :
     (letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker;
       e ∈ trivializationAtlas G (MapFiber p)) ↔
       ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
         (hs : ∀ b ∈ U, p (s b) = b),
-        e = (hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU
-          (fun b _ ↦ hfree (s b)) hs
-          (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
-            (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).continuousOn
-          (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).toMapFiber := by
+        e = (sectionTrivialization hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+          (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).toMapFiber := by
   rw [fiberBundleOfSubmersion, MapFiber.Atlas.trivializationAtlas_fiberBundle, mem_image]
   simp only [mem_charts_submersionAtlas_iff]
   exact ⟨fun ⟨_, ⟨U, hU, s, hs_s, hs, rfl⟩, ht⟩ ↦ ⟨U, hU, s, hs_s, hs, ht.symm⟩,
@@ -487,7 +537,10 @@ theorem toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas
     (hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU (fun b _ ↦ hfree (s b)) hs
       hcoord hsmul_s).toMapFiber ∈ trivializationAtlas G (MapFiber p) :=
   (mem_trivializationAtlas_fiberBundleOfSubmersion_iff hn hsmul hsub hsurj hfree horbit hinj hker
-    _).2 ⟨U, hU, s, hs_smooth, hs, rfl⟩
+    _).2 ⟨U, hU, s, hs_smooth, hs, congrArg Bundle.Trivialization.toMapFiber
+      (sectionTrivialization_eq_actionTrivializationOfSection hn hsmul hsub.contMDiff horbit hU
+        hs_smooth hs (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))
+        hcoord hsmul_s).symm⟩
 
 /-- **`PrincipalBundle` structure on the fibres of a surjective free orbit-exact `C^n` submersion**
 (Banach version, under the full hypotheses of `fiberBundleOfSubmersion`: `1 ≤ n`,
@@ -502,6 +555,7 @@ theorem principalBundleOfSubmersion :
     fun t ht x hx g ↦ by
       obtain ⟨U, hU, s, hs_smooth, hs, rfl⟩ :=
         (mem_charts_submersionAtlas_iff hn hsmul hsub hsurj hfree horbit hinj hker t).1 ht
+      dsimp only [sectionTrivialization] at hx ⊢
       rw [Continuous.baseSet_actionTrivializationOfSection] at hx
       simpa only [Continuous.actionTrivializationOfSection_apply] using
         sectionCoord_op_smul horbit (fun b _ ↦ hfree (s b)) hs hx g

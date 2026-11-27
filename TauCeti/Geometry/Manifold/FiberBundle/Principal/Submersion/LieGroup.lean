@@ -30,8 +30,8 @@ orbits equal to the fibres of `p`:
 * **Local results (without surjectivity of `p`):** along a `C^n` local section `s` over open
   `U ⊆ B` on which the action is free, `sectionCoord` is `C^n` on `p ⁻¹' U`
   (`contMDiffOn_sectionCoord_of_lieGroup`), giving smooth equivariant section charts; similarly
-  `actionDivisionOrOne` is `C^n` wherever `p` is a submersion
-  (`contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`).
+  `actionDivisionOrOne` is `C^n` along locally fibre-matched families where `p` is a submersion at
+  the first point (`contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`).
 
 The Lindelöf hypothesis on `G` is essential (e.g. `ℝ → PUnit` under translation by discrete `ℝ`).
 
@@ -39,8 +39,9 @@ The Lindelöf hypothesis on `G` is essential (e.g. `ℝ → PUnit` under transla
 
 * `TauCeti.PrincipalBundle.finrank_eq_add_finrank_of_isRegularValue_of_orbit_eq_fiber`,
   `finrank_eq_add_finrank_of_isSubmersion_of_orbit_eq_fiber`,
-  `range_mfderiv_op_smul_one_eq_ker_of_lieGroup`: automatic dimension identity and vertical-kernel
-  identification.
+  `injective_mfderiv_op_smul_one_of_lieGroup`,
+  `range_mfderiv_op_smul_one_eq_ker_of_lieGroup`: automatic dimension identity, orbit-differential
+  injectivity, and vertical-kernel identification.
 * `TauCeti.PrincipalBundle.contMDiffOn_sectionCoord_of_lieGroup`: `C^n` section coordinates.
 * `TauCeti.PrincipalBundle.fiberBundleOfSubmersionLieGroup`,
   `mem_trivializationAtlas_fiberBundleOfSubmersionLieGroup_iff`,
@@ -50,7 +51,8 @@ The Lindelöf hypothesis on `G` is essential (e.g. `ℝ → PUnit` under transla
 * `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`,
   `contMDiffAt_actionDivisionOrOne_of_lieGroup`,
   `contMDiffOn_actionDivisionOrOne_of_lieGroup`,
-  `contMDiff_actionDivisionOrOne_of_lieGroup`: `C^n` regularity of `actionDivisionOrOne` without
+  `contMDiff_actionDivisionOrOne_of_lieGroup`: `C^n` regularity of `actionDivisionOrOne` along
+  locally fibre-matched families where `p` is a submersion at the first point, without
   surjectivity.
 
 ## References
@@ -171,26 +173,16 @@ theorem contMDiffOn_sectionCoord_of_lieGroup (hn : 3 ≤ n)
 section VerticalKernel
 
 omit [FiniteDimensional ℝ EP] [IP.Boundaryless] [LindelofSpace G] in
-private theorem injective_mfderiv_op_smul_one (hn : 3 ≤ n)
+/-- For a free jointly `C^n` right action (`3 ≤ n`) of a `C^n` Lie group `G` on a `C^n` manifold
+`P`, the orbit differential `d(g ↦ op g • x)_1` is injective at every `x : P`. -/
+theorem injective_mfderiv_op_smul_one_of_lieGroup (hn : 3 ≤ n)
     (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
     (hfree : ∀ (x : P) (g : G), op g • x = x → g = 1) (x : P) :
     Injective (mfderiv IG IP (fun g : G ↦ op g • x) 1) :=
   have hn1 := one_le_of_three_le hn
   have : IsManifold IP 1 P := .of_le hn1
-  (hsmul.of_le hn1).injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp one_ne_zero hn (hfree x)
-
-private theorem ker_mfderiv_le_range_of_lieGroup (hn : 3 ≤ n)
-    (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
-    {p : P → B} (hsub : IsSubmersion IP IB n p)
-    (hfree : ∀ (x : P) (g : G), op g • x = x → g = 1)
-    (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y) (x : P) :
-    (mfderiv IP IB p x).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • x) 1).range :=
-  (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
-    (isRegularPoint_iff.2
-      (hsub.surjective_mfderiv (ENat.one_le_iff_ne_zero_withTop.mp (one_le_of_three_le hn)) x))
-    (fun g ↦ apply_op_smul_eq_of_orbit_eq_fiber horbit g x)
-    (injective_mfderiv_op_smul_one hn hsmul hfree x)
-    (finrank_eq_add_finrank_of_isSubmersion_of_orbit_eq_fiber hn hsmul hsub hfree horbit x)).ge
+  ContMDiff.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp (hsmul.of_le hn1) one_ne_zero hn
+    (hfree x)
 
 /-- Under the Lie-group submersion hypotheses (`3 ≤ n`, finite-dimensional real `C^n` manifolds
 with `[IP.Boundaryless]`, `C^n` submersion `p : P → B`, and free orbit-exact `C^n` right action of
@@ -202,9 +194,12 @@ theorem range_mfderiv_op_smul_one_eq_ker_of_lieGroup (hn : 3 ≤ n)
     (hfree : ∀ (x : P) (g : G), op g • x = x → g = 1)
     (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y) (x : P) :
     (mfderiv IG IP (fun g : G ↦ op g • x) 1).range = (mfderiv IP IB p x).ker :=
-  le_antisymm
-    (range_mfderiv_op_smul_one_le_ker fun g ↦ apply_op_smul_eq_of_orbit_eq_fiber horbit g x)
-    (ker_mfderiv_le_range_of_lieGroup hn hsmul hsub hfree horbit x)
+  range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
+    (isRegularPoint_iff.2
+      (hsub.surjective_mfderiv (ENat.one_le_iff_ne_zero_withTop.mp (one_le_of_three_le hn)) x))
+    (fun g ↦ apply_op_smul_eq_of_orbit_eq_fiber horbit g x)
+    (injective_mfderiv_op_smul_one_of_lieGroup hn hsmul hfree x)
+    (finrank_eq_add_finrank_of_isSubmersion_of_orbit_eq_fiber hn hsmul hsub hfree horbit x)
 
 end VerticalKernel
 
@@ -223,29 +218,27 @@ action of a Lindelöf finite-dimensional real `C^n` Lie group `G`, equips `MapFi
 @[instance_reducible]
 def fiberBundleOfSubmersionLieGroup : FiberBundle G (MapFiber p) :=
   fiberBundleOfSubmersion (one_le_of_three_le hn) hsmul hsub hsurj hfree horbit
-    (injective_mfderiv_op_smul_one hn hsmul hfree)
-    (ker_mfderiv_le_range_of_lieGroup hn hsmul hsub hfree horbit)
+    (injective_mfderiv_op_smul_one_of_lieGroup hn hsmul hfree)
+    (fun x ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit x).ge)
 
 /-- A trivialization belongs to the atlas of `fiberBundleOfSubmersionLieGroup` iff it is the
-`MapFiber` transport of `Continuous.actionTrivializationOfSection` for some `C^n` local section `s`
-of `p` over an open set `U ⊆ B` (with continuity witnesses supplied by
-`contMDiffOn_sectionCoord_of_lieGroup` and `ContMDiff.contMDiffOn_op_smul_section`). -/
+`MapFiber` transport of `sectionTrivialization` for some `C^n` local section `s` of `p` over an
+open set `U ⊆ B`. -/
 theorem mem_trivializationAtlas_fiberBundleOfSubmersionLieGroup_iff
     (e : Trivialization G (π G (MapFiber p))) :
     (letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit;
       e ∈ trivializationAtlas G (MapFiber p)) ↔
       ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
         (hs : ∀ b ∈ U, p (s b) = b),
-        e = (hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU
-          (fun b _ ↦ hfree (s b)) hs
-          (contMDiffOn_sectionCoord_of_lieGroup hn hsmul hsub.contMDiff horbit hU hs_smooth hs
-            fun b _ ↦ hfree (s b)).continuousOn
-          (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).toMapFiber := by
-  have hn1 := one_le_of_three_le hn
+        e = (sectionTrivialization ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn) hsmul hsub.contMDiff
+          horbit hU hs_smooth hs (fun b _ ↦ hfree (s b))
+          (fun b _ ↦ injective_mfderiv_op_smul_one_of_lieGroup hn hsmul hfree (s b))
+          (fun b _ ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit
+            (s b)).ge)).toMapFiber := by
   rw [fiberBundleOfSubmersionLieGroup,
-    mem_trivializationAtlas_fiberBundleOfSubmersion_iff hn1 hsmul hsub hsurj hfree horbit
-      (injective_mfderiv_op_smul_one hn hsmul hfree)
-      (ker_mfderiv_le_range_of_lieGroup hn hsmul hsub hfree horbit)]
+    mem_trivializationAtlas_fiberBundleOfSubmersion_iff (one_le_of_three_le hn) hsmul hsub hsurj
+      hfree horbit (injective_mfderiv_op_smul_one_of_lieGroup hn hsmul hfree)
+      (fun x ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit x).ge)]
 
 /-- The `MapFiber` transport of `Continuous.actionTrivializationOfSection` for any `C^n` local
 section `s` of `p` over open `U ⊆ B` belongs to the atlas of `fiberBundleOfSubmersionLieGroup`. -/
@@ -257,8 +250,10 @@ theorem toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas_of_lieG
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
     (hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU (fun b _ ↦ hfree (s b)) hs
       hcoord hsmul_s).toMapFiber ∈ trivializationAtlas G (MapFiber p) :=
-  (mem_trivializationAtlas_fiberBundleOfSubmersionLieGroup_iff hn hsmul hsub hsurj hfree horbit
-    _).2 ⟨U, hU, s, hs_smooth, hs, rfl⟩
+  toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas (one_le_of_three_le hn) hsmul
+    hsub hsurj hfree horbit (injective_mfderiv_op_smul_one_of_lieGroup hn hsmul hfree)
+    (fun x ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit x).ge)
+    hU hs_smooth hs hcoord hsmul_s
 
 /-- **Kolář–Michor–Slovák, Lemma 10.3 (`PrincipalBundle` structure).** Under the same hypotheses as
 `fiberBundleOfSubmersionLieGroup` (surjective `C^n` submersion `p : P → B`, `3 ≤ n`, finite
@@ -269,8 +264,8 @@ theorem principalBundleOfSubmersionLieGroup :
     letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
     PrincipalBundle G (MapFiber p) :=
   principalBundleOfSubmersion (one_le_of_three_le hn) hsmul hsub hsurj hfree horbit
-    (injective_mfderiv_op_smul_one hn hsmul hfree)
-    (ker_mfderiv_le_range_of_lieGroup hn hsmul hsub hfree horbit)
+    (injective_mfderiv_op_smul_one_of_lieGroup hn hsmul hfree)
+    (fun x ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit x).ge)
 
 /-- **Kolář–Michor–Slovák, Lemma 10.3 (`ContMDiffFiberBundle` structure).** Under the same
 hypotheses as `fiberBundleOfSubmersionLieGroup` (surjective `C^n` submersion `p : P → B`, `3 ≤ n`,
@@ -281,8 +276,8 @@ theorem contMDiffFiberBundleOfSubmersionLieGroup :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
     ContMDiffFiberBundle n G (MapFiber p) IB IG :=
   contMDiffFiberBundleOfSubmersion (one_le_of_three_le hn) hsmul hsub hsurj hfree horbit
-    (injective_mfderiv_op_smul_one hn hsmul hfree)
-    (ker_mfderiv_le_range_of_lieGroup hn hsmul hsub hfree horbit)
+    (injective_mfderiv_op_smul_one_of_lieGroup hn hsmul hfree)
+    (fun x ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit x).ge)
 
 /-- **Kolář–Michor–Slovák, Lemma 10.3 (total-space `C^n` diffeomorphism).** Under the same
 hypotheses as `fiberBundleOfSubmersionLieGroup` (surjective `C^n` submersion `p : P → B`, `3 ≤ n`,
@@ -293,8 +288,8 @@ def diffeomorphManifoldTotalSpaceOfSubmersionLieGroup :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
     ManifoldTotalSpace G (MapFiber p) ≃ₘ^n⟮IB.prod IG, IP⟯ P :=
   diffeomorphManifoldTotalSpaceOfSubmersion (one_le_of_three_le hn) hsmul hsub hsurj hfree horbit
-    (injective_mfderiv_op_smul_one hn hsmul hfree)
-    (ker_mfderiv_le_range_of_lieGroup hn hsmul hsub hfree horbit)
+    (injective_mfderiv_op_smul_one_of_lieGroup hn hsmul hfree)
+    (fun x ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit x).ge)
 
 /-- Forward map of `diffeomorphManifoldTotalSpaceOfSubmersionLieGroup`. -/
 @[simp]
