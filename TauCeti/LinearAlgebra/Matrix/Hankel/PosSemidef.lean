@@ -11,16 +11,17 @@ public import TauCeti.LinearAlgebra.Matrix.Hankel
 import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
-# Positive Hankel forms and the Riesz functional
+# Positive Hankel forms
 
 A sequence `m : ℕ → R` defines the *Riesz functional* `L_m` on `R[X]`, the linear functional with
-`L_m (X ^ k) = m k`, and the Hankel quadratic forms `∑_{i,j<n} m (i + j) ξᵢ ξⱼ`. The two are tied
-together by the identity `ξ ⬝ᵥ (hankelMatrix m n *ᵥ η) = L_m (p_ξ * p_η)` for the polynomials
-`p_ξ = ∑_{i<n} ξᵢ Xⁱ` and `p_η` of degree less than `n`. So the Hankel matrix of size `n` is
-positive semidefinite (respectively definite) exactly when `L_m (p * p)` is nonnegative (positive)
-for every (nonzero) polynomial `p` of degree less than `n`, and the infinite Hankel matrix
-`(m (i + j))_{i,j ∈ ℕ}` is positive semidefinite exactly when every finite section is, that is,
-exactly when `L_m` is nonnegative on all squares.
+`L_m (X ^ k) = m k` (`TauCeti.rieszFunctional`), and the Hankel quadratic forms
+`∑_{i,j<n} m (i + j) ξᵢ ξⱼ`. The two are tied together by the identity
+`ξ ⬝ᵥ (hankelMatrix m n *ᵥ η) = L_m (p_ξ * p_η)` for the polynomials `p_ξ = ∑_{i<n} ξᵢ Xⁱ` and
+`p_η` of degree less than `n` (`TauCeti.dotProduct_hankelMatrix_mulVec`). So the Hankel matrix of
+size `n` is positive semidefinite (respectively definite) exactly when `L_m (p * p)` is nonnegative
+(positive) for every (nonzero) polynomial `p` of degree less than `n`, and the infinite Hankel
+matrix `(m (i + j))_{i,j ∈ ℕ}` is positive semidefinite exactly when every finite section is, that
+is, exactly when `L_m` is nonnegative on all squares.
 
 Over a linearly ordered ring a positive Hankel form satisfies the Cauchy–Schwarz inequality
 `L_m (p * q) ^ 2 ≤ L_m (p * p) * L_m (q * q)`, and consequently the polynomials `p` with
@@ -28,26 +29,18 @@ Over a linearly ordered ring a positive Hankel form satisfies the Cauchy–Schwa
 are the algebraic input of the Hamburger moment problem, whose representing measures are
 recovered from positive semidefinite Hankel matrices.
 
-## Main definitions
-
-* `TauCeti.rieszFunctional m`: the Riesz functional `L_m : R[X] →ₗ[R] R` of a sequence `m`.
-
 ## Main results
 
-* `TauCeti.rieszFunctional_moments`: every linear functional on `R[X]` is the Riesz functional of
-  its moments.
-* `TauCeti.dotProduct_hankelMatrix_mulVec`: the Hankel form of a section is a value of the Riesz
-  functional.
 * `TauCeti.posSemidef_hankelMatrix_iff`, `TauCeti.posDef_hankelMatrix_iff`: positivity of a
   Hankel section in terms of the Riesz functional.
 * `TauCeti.posSemidef_hankel_iff_forall_posSemidef_hankelMatrix`,
   `TauCeti.posSemidef_hankel_iff`: the infinite Hankel matrix is positive semidefinite iff all
   its sections are, iff the Riesz functional is nonnegative on squares.
 * `TauCeti.sq_rieszFunctional_mul_le_of_posSemidef_hankel`: the Cauchy–Schwarz inequality.
-* `TauCeti.rieszFunctional_mul_eq_zero_of_posSemidef_hankel`: the kernel of a positive Riesz
-  functional is an ideal.
+* `TauCeti.rieszFunctional_mul_eq_zero_of_posSemidef_hankel`: the polynomials `p` with
+  `L_m (p * p) = 0` satisfy `L_m (p * q) = 0` for every `q`, so they form an ideal.
 
-Both inequalities are also stated for a single positive semidefinite section and polynomials of
+Both results are also stated for a single positive semidefinite section and polynomials of
 degree less than its size.
 
 ## References
@@ -64,86 +57,6 @@ namespace TauCeti
 
 variable {R : Type*}
 
-section Riesz
-
-variable [CommRing R]
-
-/-- The Riesz functional `L_m` of a sequence `m`: the linear functional on `R[X]` sending `X ^ k`
-to `m k`, that is `L_m (∑ₖ aₖ Xᵏ) = ∑ₖ aₖ m k`. -/
-noncomputable def rieszFunctional (m : ℕ → R) : R[X] →ₗ[R] R :=
-  Polynomial.lsum fun k => LinearMap.mulRight R (m k)
-
-theorem rieszFunctional_apply (m : ℕ → R) (p : R[X]) :
-    rieszFunctional m p = p.sum fun k a => a * m k := by
-  simp [rieszFunctional]
-
-@[simp]
-theorem rieszFunctional_monomial (m : ℕ → R) (k : ℕ) (a : R) :
-    rieszFunctional m (monomial k a) = a * m k := by
-  rw [rieszFunctional_apply, sum_monomial_index a (fun k a => a * m k) (zero_mul _)]
-
-@[simp]
-theorem rieszFunctional_C (m : ℕ → R) (a : R) : rieszFunctional m (C a) = a * m 0 := by
-  rw [← monomial_zero_left, rieszFunctional_monomial]
-
-@[simp]
-theorem rieszFunctional_X_pow (m : ℕ → R) (k : ℕ) : rieszFunctional m (X ^ k) = m k := by
-  rw [← monomial_one_right_eq_X_pow, rieszFunctional_monomial, one_mul]
-
-@[simp]
-theorem rieszFunctional_one (m : ℕ → R) : rieszFunctional m 1 = m 0 := by
-  simpa using rieszFunctional_X_pow m 0
-
-@[simp]
-theorem rieszFunctional_X (m : ℕ → R) : rieszFunctional m X = m 1 := by
-  simpa using rieszFunctional_X_pow m 1
-
-/-- Every linear functional on `R[X]` is the Riesz functional of its moments `L (X ^ k)`. -/
-@[simp]
-theorem rieszFunctional_moments (L : R[X] →ₗ[R] R) :
-    rieszFunctional (fun k => L (X ^ k)) = L := by
-  ext k
-  simp [monomial_one_right_eq_X_pow]
-
-/-- The Hankel form of the section of size `n` is a value of the Riesz functional:
-`ξ ⬝ᵥ (hankelMatrix m n *ᵥ η) = L_m (p_ξ * p_η)` with `p_ξ = ∑_{i<n} ξᵢ Xⁱ`. -/
-theorem dotProduct_hankelMatrix_mulVec (m : ℕ → R) {n : ℕ} (ξ η : Fin n → R) :
-    ξ ⬝ᵥ (hankelMatrix m n *ᵥ η) =
-      rieszFunctional m ((∑ i : Fin n, monomial i (ξ i)) * ∑ j : Fin n, monomial j (η j)) := by
-  rw [Finset.sum_mul_sum]
-  simp only [dotProduct, mulVec, hankelMatrix_apply, Finset.mul_sum, map_sum,
-    monomial_mul_monomial, rieszFunctional_monomial]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  ring
-
-end Riesz
-
-/-- A polynomial of degree less than `n` is the sum of its first `n` monomials. -/
-private theorem sum_monomial_coeff_of_degree_lt [CommRing R] {n : ℕ} {p : R[X]}
-    (hp : p.degree < n) : ∑ i : Fin n, monomial i (p.coeff i) = p := by
-  rw [sum_fin (fun i a => monomial i a) (fun i => monomial_zero_right i) hp, sum_monomial_eq]
-
-/-- The polynomial `∑_{i<n} ξᵢ Xⁱ` has degree less than `n`. -/
-private theorem degree_sum_monomial_lt [CommRing R] {n : ℕ} (ξ : Fin n → R) :
-    (∑ i : Fin n, monomial i (ξ i)).degree < n :=
-  mem_degreeLT.mp <| (degreeLT R n).sum_mem fun i _ => monomial_coe_mem_degreeLT i (ξ i)
-
-private theorem degree_lt_natDegree_add_one [CommRing R] (p : R[X]) :
-    p.degree < ↑(p.natDegree + 1) :=
-  degree_le_natDegree.trans_lt (WithBot.coe_lt_coe.mpr p.natDegree.lt_succ_self)
-
-/-- Two polynomials have degree less than `max p.natDegree q.natDegree + 1`. -/
-private theorem degree_lt_max_natDegree_add_one [CommRing R] (p q : R[X]) :
-    p.degree < ↑(max p.natDegree q.natDegree + 1) ∧
-      q.degree < ↑(max p.natDegree q.natDegree + 1) :=
-  ⟨(degree_lt_natDegree_add_one p).trans_le (Nat.cast_le.mpr (by omega)),
-    (degree_lt_natDegree_add_one q).trans_le (Nat.cast_le.mpr (by omega))⟩
-
-/-- Over a ring with trivial star, a Hankel section is Hermitian. -/
-theorem isHermitian_hankelMatrix [Star R] [TrivialStar R] (m : ℕ → R) (n : ℕ) :
-    (hankelMatrix m n).IsHermitian :=
-  isHermitian_iff_isSymm.mpr (isSymm_hankelMatrix m n)
-
 section Sections
 
 variable [CommRing R] [PartialOrder R] [StarRing R] [TrivialStar R]
@@ -155,9 +68,12 @@ theorem posSemidef_hankelMatrix_iff (m : ℕ → R) (n : ℕ) :
       ∀ p : R[X], p.degree < n → 0 ≤ rieszFunctional m (p * p) := by
   refine ⟨fun h p hp => ?_, fun h => .of_dotProduct_mulVec_nonneg
     (isHermitian_hankelMatrix m n) fun ξ => ?_⟩
-  · simpa [dotProduct_hankelMatrix_mulVec, sum_monomial_coeff_of_degree_lt hp] using
-      h.dotProduct_mulVec_nonneg fun i : Fin n => p.coeff i
-  · simpa [dotProduct_hankelMatrix_mulVec] using h _ (degree_sum_monomial_lt ξ)
+  · obtain ⟨ξ, rfl⟩ : ∃ ξ, ((degreeLTEquiv R n).symm ξ : R[X]) = p :=
+      ⟨degreeLTEquiv R n ⟨p, mem_degreeLT.mpr hp⟩, by simp⟩
+    have := h.dotProduct_mulVec_nonneg ξ
+    rwa [star_trivial, dotProduct_hankelMatrix_mulVec] at this
+  · rw [star_trivial, dotProduct_hankelMatrix_mulVec]
+    exact h ((degreeLTEquiv R n).symm ξ) (mem_degreeLT.mp ((degreeLTEquiv R n).symm ξ).property)
 
 /-- The Hankel section of size `n` is positive definite iff the Riesz functional is positive on
 the squares of the nonzero polynomials of degree less than `n`. -/
@@ -166,15 +82,13 @@ theorem posDef_hankelMatrix_iff (m : ℕ → R) (n : ℕ) :
       ∀ p : R[X], p ≠ 0 → p.degree < n → 0 < rieszFunctional m (p * p) := by
   refine ⟨fun h p hp0 hp => ?_, fun h => .of_dotProduct_mulVec_pos
     (isHermitian_hankelMatrix m n) fun ξ hξ => ?_⟩
-  · have hξ : (fun i : Fin n => p.coeff i) ≠ 0 := fun hξ => hp0 <| by
-      rw [← sum_monomial_coeff_of_degree_lt hp]
-      simp [funext_iff.mp hξ]
-    simpa [dotProduct_hankelMatrix_mulVec, sum_monomial_coeff_of_degree_lt hp] using
-      h.dotProduct_mulVec_pos hξ
-  · have hp0 : ∑ i : Fin n, monomial i (ξ i) ≠ 0 := fun h0 => hξ <| funext fun i => by
-      simpa [finsetSum_coeff, coeff_monomial, Finsupp.single_apply, Fin.val_inj] using
-        congr_arg (·.coeff (i : ℕ)) h0
-    simpa [dotProduct_hankelMatrix_mulVec] using h _ hp0 (degree_sum_monomial_lt ξ)
+  · obtain ⟨ξ, rfl⟩ : ∃ ξ, ((degreeLTEquiv R n).symm ξ : R[X]) = p :=
+      ⟨degreeLTEquiv R n ⟨p, mem_degreeLT.mpr hp⟩, by simp⟩
+    have := h.dotProduct_mulVec_pos (show ξ ≠ 0 by simpa using hp0)
+    rwa [star_trivial, dotProduct_hankelMatrix_mulVec] at this
+  · rw [star_trivial, dotProduct_hankelMatrix_mulVec]
+    exact h ((degreeLTEquiv R n).symm ξ) (by simpa using hξ)
+      (mem_degreeLT.mp ((degreeLTEquiv R n).symm ξ).property)
 
 end Sections
 
@@ -188,9 +102,7 @@ theorem posSemidef_hankel_iff_forall_posSemidef_hankelMatrix [Ring R] [PartialOr
   (posSemidef_iff_submatrix_of_forall_finset (fun n (i : Fin n) => (i : ℕ))
     (fun s => ⟨s.sup id + 1, fun x hx =>
       ⟨⟨x, Nat.lt_succ_of_le (Finset.le_sup (f := id) hx)⟩, rfl⟩⟩)).trans <|
-    forall_congr' fun n => by
-      rw [show (Matrix.of fun i j : ℕ => m (i + j)).submatrix (fun i : Fin n => (i : ℕ))
-        (fun i : Fin n => (i : ℕ)) = hankelMatrix m n by ext; simp]
+    forall_congr' fun n => by rw [submatrix_hankel_eq_hankelMatrix]
 
 variable [CommRing R] [PartialOrder R] [StarRing R] [TrivialStar R]
 
@@ -200,7 +112,8 @@ theorem posSemidef_hankel_iff (m : ℕ → R) :
     (Matrix.of fun i j : ℕ => m (i + j)).PosSemidef ↔
       ∀ p : R[X], 0 ≤ rieszFunctional m (p * p) := by
   simp_rw [posSemidef_hankel_iff_forall_posSemidef_hankelMatrix, posSemidef_hankelMatrix_iff]
-  exact ⟨fun h p => h _ p (degree_lt_natDegree_add_one p), fun h _ p _ => h p⟩
+  exact ⟨fun h p => h _ p <| degree_le_natDegree.trans_lt <| Nat.cast_lt.mpr <| Nat.lt_succ_self _,
+    fun h _ p _ => h p⟩
 
 end Infinite
 
@@ -224,9 +137,9 @@ theorem sq_rieszFunctional_mul_le_of_posSemidef_hankelMatrix {m : ℕ → R} {n 
     ⟨p, mem_degreeLT.mpr hp⟩ ⟨q, mem_degreeLT.mpr hq⟩
   simpa only [hB, mul_comm q p, ← sq] using h
 
-/-- **The kernel of a positive Hankel form is an ideal**, for one section: if the section of
-size `n` is positive semidefinite, `p` and `q` have degree less than `n` and `L_m (p * p) = 0`,
-then `L_m (p * q) = 0`. -/
+/-- **Isotropic vectors of a positive semidefinite Hankel section lie in its radical:** if the
+section of size `n` is positive semidefinite, `p` and `q` have degree less than `n` and
+`L_m (p * p) = 0`, then `L_m (p * q) = 0`. -/
 theorem rieszFunctional_mul_eq_zero_of_posSemidef_hankelMatrix {m : ℕ → R} {n : ℕ}
     (hm : (hankelMatrix m n).PosSemidef) {p q : R[X]} (hp : p.degree < n) (hq : q.degree < n)
     (hpp : rieszFunctional m (p * p) = 0) : rieszFunctional m (p * q) = 0 := by
@@ -240,17 +153,20 @@ theorem sq_rieszFunctional_mul_le_of_posSemidef_hankel {m : ℕ → R}
     (hm : (Matrix.of fun i j : ℕ => m (i + j)).PosSemidef) (p q : R[X]) :
     rieszFunctional m (p * q) ^ 2 ≤ rieszFunctional m (p * p) * rieszFunctional m (q * q) :=
   sq_rieszFunctional_mul_le_of_posSemidef_hankelMatrix
-    ((posSemidef_hankel_iff_forall_posSemidef_hankelMatrix m).mp hm _)
-    (degree_lt_max_natDegree_add_one p q).1 (degree_lt_max_natDegree_add_one p q).2
+    ((posSemidef_hankel_iff_forall_posSemidef_hankelMatrix m).mp hm
+      (max p.natDegree q.natDegree + 1))
+    (degree_le_natDegree.trans_lt (Nat.cast_lt.mpr (by omega)))
+    (degree_le_natDegree.trans_lt (Nat.cast_lt.mpr (by omega)))
 
 /-- **The kernel of a positive Hankel form is an ideal:** if the infinite Hankel matrix of `m` is
-positive semidefinite and `L_m (p * p) = 0`, then `L_m (p * q) = 0` for every polynomial `q`. -/
+positive semidefinite and `L_m (p * p) = 0`, then `L_m (p * q) = 0` for every polynomial `q`, so
+the polynomials `p` with `L_m (p * p) = 0` form an ideal. -/
 theorem rieszFunctional_mul_eq_zero_of_posSemidef_hankel {m : ℕ → R}
     (hm : (Matrix.of fun i j : ℕ => m (i + j)).PosSemidef) {p : R[X]}
-    (hpp : rieszFunctional m (p * p) = 0) (q : R[X]) : rieszFunctional m (p * q) = 0 :=
-  rieszFunctional_mul_eq_zero_of_posSemidef_hankelMatrix
-    ((posSemidef_hankel_iff_forall_posSemidef_hankelMatrix m).mp hm _)
-    (degree_lt_max_natDegree_add_one p q).1 (degree_lt_max_natDegree_add_one p q).2 hpp
+    (hpp : rieszFunctional m (p * p) = 0) (q : R[X]) : rieszFunctional m (p * q) = 0 := by
+  have h := sq_rieszFunctional_mul_le_of_posSemidef_hankel hm p q
+  rw [hpp, zero_mul] at h
+  exact pow_eq_zero_iff two_ne_zero |>.mp <| le_antisymm h (sq_nonneg _)
 
 end CauchySchwarz
 
