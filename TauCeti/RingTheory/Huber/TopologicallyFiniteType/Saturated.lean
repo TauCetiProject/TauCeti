@@ -19,9 +19,9 @@ import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Huber.CompleteRankOneBase.FractionRing
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
-import TauCeti.RingTheory.Huber.Restricted.Noetherian
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 import TauCeti.RingTheory.Localization.Finiteness
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Submodule
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
 import TauCeti.Topology.Algebra.Ring.Subring
