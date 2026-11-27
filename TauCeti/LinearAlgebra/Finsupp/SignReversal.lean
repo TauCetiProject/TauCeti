@@ -33,6 +33,8 @@ and keeps the others.
 * `Finsupp.signEquiv_one`, `Finsupp.signEquiv_trans`: the trivial signs give the identity, and
   composing sign changes multiplies the signs.
 * `Finsupp.support_signEquiv`: the sign change keeps the support.
+* `Finsupp.comp_signEquiv_neg_one_pow`: the parity sign change `p ↦ (-1) ^ n p` multiplies a linear
+  map supported in degree `k` by `(-1) ^ k`.
 * `Finsupp.signReversal_single`, `Finsupp.signReversal_apply`,
   `Finsupp.signReversal_signReversal`, `Finsupp.signReversal_symm`,
   `Finsupp.signReversal_trans_self`, `Finsupp.signReversal_empty`,
@@ -124,6 +126,18 @@ variable (R) in
 @[simp]
 theorem signEquiv_one : signEquiv R (1 : α → ℤˣ) = LinearEquiv.refl R (α →₀ A) :=
   LinearEquiv.ext fun c ↦ ext fun q ↦ by simp
+
+/-- **Koszul signs on a homogeneous linear map.** Let `g` be a linear map on `α →₀ A` that vanishes
+on the basis directions `p` with `n p ≠ k`, as a cochain of degree `k` does for the grading `n`.
+Composing `g` with the parity sign change `p ↦ (-1) ^ n p` multiplies it by `(-1) ^ k`. -/
+theorem comp_signEquiv_neg_one_pow {N : Type*} [AddCommGroup N] [Module R N] (n : α → ℕ) (k : ℕ)
+    (g : (α →₀ A) →ₗ[R] N) (hg : ∀ p a, n p ≠ k → g (single p a) = 0) :
+    g ∘ₗ (signEquiv R fun p ↦ (-1) ^ n p).toLinearMap = ((-1 : ℤ) ^ k) • g := by
+  refine lhom_ext fun p a ↦ ?_
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, signEquiv_single, LinearMap.smul_apply]
+  by_cases hp : n p = k
+  · rw [← smul_single, map_zsmul, hp, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
+  · rw [hg p _ hp, hg p a hp, smul_zero]
 
 end SignEquiv
 
