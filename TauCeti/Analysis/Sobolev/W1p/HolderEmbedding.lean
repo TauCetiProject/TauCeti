@@ -322,37 +322,41 @@ theorem W1p0.morreyEmbedding_apply_of_notMem (hp : (finrank ℝ E : ℝ≥0) < p
   exact tendsto_const_nhds
 
 /-- **Morrey's estimate for `W^{1,p}_0(Ω)`.** For `n < p < ∞` there is a constant `C`, depending
-only on `n`, `p` and `mu`, such that Morrey's embedding of every `u ∈ W^{1,p}_0(Ω)` is Hölder of
-exponent `1 - n / p` on the whole space with constant `C ‖∇u‖_{Lᵖ(Ω)}`. No regularity of `Ω` is
-needed, and only the gradient of `u` enters. -/
+only on `n`, `p` and `mu`, such that for every open set `Ω`, Morrey's embedding of every
+`u ∈ W^{1,p}_0(Ω)` is Hölder of exponent `1 - n / p` on the whole space with constant
+`C ‖∇u‖_{Lᵖ(Ω)}`. No regularity of `Ω` is needed, and only the gradient of `u` enters. -/
 theorem W1p0.exists_holderWith_morreyEmbedding (hp : (finrank ℝ E : ℝ≥0) < p) :
-    ∃ C : ℝ≥0, ∀ u : W1p0 mu Omega (p : ℝ≥0∞),
+    ∃ C : ℝ≥0, ∀ (Omega : Opens E) (u : W1p0 mu Omega (p : ℝ≥0∞)),
       HolderWith (C * ‖W1p.gradient (u : W1p mu Omega (p : ℝ≥0∞))‖₊) (1 - finrank ℝ E / p)
         (W1p0.morreyEmbedding hp u) := by
-  refine ⟨Real.toNNReal (2 ^ (finrank ℝ E + 1) / (finrank ℝ E * mu.real (ball 0 1)) *
-    (finrank ℝ E * mu.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^ (1 - 1 / (p : ℝ)) *
-      2 ^ (1 - finrank ℝ E / (p : ℝ))), fun u => ?_⟩
-  have hgrad : ‖W1p.gradient (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞))‖₊ =
-      ‖W1p.gradient (u : W1p mu Omega (p : ℝ≥0∞))‖₊ :=
-    NNReal.eq (W1p0.norm_gradient_extendByZeroL le_top u)
-  have h := W1p.holderWith_morreyRepresentative
-    (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞)) hp
-  rw [hgrad] at h
-  convert h using 1
-  ext x
-  rw [W1p0.morreyEmbedding_apply, W1p.morreyEmbedding_apply_apply]
+  -- The constant is the whole-space Morrey constant; unification with `h` below supplies it.
+  refine ⟨?C, fun Omega u => ?hC⟩
+  case hC =>
+    have hgrad : ‖W1p.gradient (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞))‖₊ =
+        ‖W1p.gradient (u : W1p mu Omega (p : ℝ≥0∞))‖₊ :=
+      NNReal.eq (W1p0.norm_gradient_extendByZeroL le_top u)
+    have h := W1p.holderWith_morreyRepresentative
+      (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞)) hp
+    rw [hgrad] at h
+    have hfun : (W1p0.morreyEmbedding hp u : E → ℝ) =
+        W1p.morreyRepresentative (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞)) hp :=
+      funext fun x => by rw [W1p0.morreyEmbedding_apply, W1p.morreyEmbedding_apply_apply]
+    rw [hfun]
+    exact h
 
 /-- **Decay towards the complement.** For `n < p < ∞` there is a constant `C`, depending only on
-`n`, `p` and `mu`, such that for every `u ∈ W^{1,p}_0(Ω)` and every point `z` outside `Ω`, Morrey's
-embedding of `u` satisfies `|u(x)| ≤ C ‖∇u‖_{Lᵖ(Ω)} |x - z| ^ (1 - n / p)` at every point `x`. -/
+`n`, `p` and `mu`, such that for every open set `Ω`, every `u ∈ W^{1,p}_0(Ω)` and every point `z`
+outside `Ω`, Morrey's embedding of `u` satisfies `|u(x)| ≤ C ‖∇u‖_{Lᵖ(Ω)} |x - z| ^ (1 - n / p)`
+at every point `x`. -/
 theorem W1p0.exists_norm_morreyEmbedding_apply_le (hp : (finrank ℝ E : ℝ≥0) < p) :
-    ∃ C : ℝ≥0, ∀ (u : W1p0 mu Omega (p : ℝ≥0∞)) (x z : E), z ∉ (Omega : Set E) →
+    ∃ C : ℝ≥0, ∀ (Omega : Opens E) (u : W1p0 mu Omega (p : ℝ≥0∞)) (x z : E),
+      z ∉ (Omega : Set E) →
       ‖W1p0.morreyEmbedding hp u x‖ ≤
         C * ‖W1p.gradient (u : W1p mu Omega (p : ℝ≥0∞))‖ *
           dist x z ^ ((1 - finrank ℝ E / p : ℝ≥0) : ℝ) := by
-  obtain ⟨C, hC⟩ := W1p0.exists_holderWith_morreyEmbedding (mu := mu) (Omega := Omega) hp
-  refine ⟨C, fun u x z hz => ?_⟩
-  have h := (hC u).dist_le x z
+  obtain ⟨C, hC⟩ := W1p0.exists_holderWith_morreyEmbedding (mu := mu) hp
+  refine ⟨C, fun Omega u x z hz => ?_⟩
+  have h := (hC Omega u).dist_le x z
   rwa [W1p0.morreyEmbedding_apply_of_notMem hp u hz, dist_zero_right, NNReal.coe_mul,
     coe_nnNorm] at h
 
