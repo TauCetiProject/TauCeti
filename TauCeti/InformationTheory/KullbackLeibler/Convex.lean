@@ -9,6 +9,7 @@ public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
+import TauCeti.MeasureTheory.Measure.LogLikelihoodRatio
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
@@ -60,43 +61,6 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
-private theorem withDensity_ofReal_ac_and_llr {α : Type*} [MeasurableSpace α] (μ : Measure α)
-    {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
-    (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
-    (hfm : AEMeasurable f μ) (hhm : AEMeasurable h μ)
-    [IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (h x))] :
-    let ρ := μ.withDensity fun x ↦ ENNReal.ofReal (f x)
-    let η := μ.withDensity fun x ↦ ENNReal.ofReal (h x)
-    ρ ≪ η ∧ llr ρ η =ᵐ[ρ] fun x ↦ Real.log (f x / h x) := by
-  dsimp only
-  let ρ := μ.withDensity fun x ↦ ENNReal.ofReal (f x)
-  let η := μ.withDensity fun x ↦ ENNReal.ofReal (h x)
-  let d : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (f x / h x)
-  have hdm : AEMeasurable d μ := (hfm.div hhm).ennreal_ofReal
-  have hρμ : ρ ≪ μ := withDensity_absolutelyContinuous μ _
-  have hημ : η ≪ μ := withDensity_absolutelyContinuous μ _
-  have heq : η.withDensity d = ρ := by
-    dsimp [η, ρ]
-    rw [← withDensity_mul₀ hhm.ennreal_ofReal hdm]
-    apply withDensity_congr_ae
-    filter_upwards [hh, hzero] with x hx hz
-    simp only [Pi.mul_apply, d]
-    by_cases hzero' : h x = 0
-    · simp [hzero', hz hzero']
-    · rw [← ENNReal.ofReal_mul hx]
-      congr 1
-      field_simp
-  have hac : ρ ≪ η := by
-    rw [← heq]
-    exact withDensity_absolutelyContinuous _ _
-  have hrn : ρ.rnDeriv η =ᵐ[η] d := by
-    rw [← heq]
-    exact Measure.rnDeriv_withDensity₀ η (hdm.mono_ac hημ)
-  refine ⟨hac, ?_⟩
-  filter_upwards [hac.ae_le hrn, hρμ.ae_le hf, hρμ.ae_le hh] with x hdx hfx hhx
-  dsimp only [ρ, η] at hdx
-  simp only [llr, hdx, d, ENNReal.toReal_ofReal (div_nonneg hfx hhx)]
-
 /-- For `A = ∫ f dμ` and `B = ∫ h dμ`, the log-sum inequality is
 `A log (A / B) ≤ ∫ (f log f - f log h) dμ`. A zero of `h` must also be a zero of `f` almost
 everywhere. Integrability is required for the difference, not for each logarithmic term. -/
@@ -113,27 +77,32 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
   have hhm : AEMeasurable h μ := hhi.aestronglyMeasurable.aemeasurable
   have : IsFiniteMeasure ρ := isFiniteMeasure_withDensity_ofReal hfi.2
   have : IsFiniteMeasure η := isFiniteMeasure_withDensity_ofReal hhi.2
-  have ⟨hac, hllr⟩ := withDensity_ofReal_ac_and_llr μ hf hh hzero hfm hhm
-  have hweight : (fun x ↦ f x * Real.log (f x / h x)) =ᵐ[μ]
-      fun x ↦ f x * Real.log (f x) - f x * Real.log (h x) := by
-    filter_upwards [hzero] with x hz
-    exact Real.mul_log_div (f x) (h x) hz
-  have hweighted : Integrable (fun x ↦ f x * Real.log (f x / h x)) μ :=
-    hdiff.congr hweight.symm
-  have hint_base : Integrable (fun x ↦ Real.log (f x / h x)) ρ := by
+  have hac : ρ ≪ η := by
+    apply Measure.ae_le_iff_absolutelyContinuous.mp
+    intro s hs
+    have hs' := (ae_withDensity_iff' hhm.ennreal_ofReal).mp hs
+    apply (ae_withDensity_iff' hfm.ennreal_ofReal).mpr
+    filter_upwards [hs', hh, hzero] with x hx hnonneg hz hfpos
+    apply hx
+    have hhne : h x ≠ 0 := by
+      intro heq
+      apply hfpos
+      simp [hz heq]
+    exact ne_of_gt (ENNReal.ofReal_pos.mpr (lt_of_le_of_ne hnonneg (Ne.symm hhne)))
+  have hllr := TauCeti.llr_withDensity_ofReal_ae_eq hfm hhm hac
+  have hint_base : Integrable (fun x ↦ Real.log (f x) - Real.log (h x)) ρ := by
     dsimp [ρ]
     apply (TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hfm hf).2
-    simpa only [smul_eq_mul] using hweighted
+    simpa only [smul_eq_mul, mul_sub] using hdiff
   have hint : Integrable (llr ρ η) ρ := hint_base.congr hllr.symm
   have hint_eq : (∫ x, llr ρ η x ∂ρ) =
       ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
     calc
-      _ = ∫ x, Real.log (f x / h x) ∂ρ := integral_congr_ae hllr
-      _ = ∫ x, f x * Real.log (f x / h x) ∂μ := by
-        simpa only [ρ, smul_eq_mul] using
+      _ = ∫ x, Real.log (f x) - Real.log (h x) ∂ρ := integral_congr_ae hllr
+      _ = _ := by
+        simpa only [ρ, smul_eq_mul, mul_sub] using
           (TauCeti.MeasureTheory.integral_withDensity_ofReal hfm hf
-            (fun x ↦ Real.log (f x / h x)))
-      _ = _ := integral_congr_ae hweight
+            (fun x ↦ Real.log (f x) - Real.log (h x)))
   have hmass {g : α → ℝ} (hg : 0 ≤ᵐ[μ] g) (hgm : AEMeasurable g μ) :
       (μ.withDensity fun x ↦ ENNReal.ofReal (g x)).real univ = ∫ x, g x ∂μ := by
     simpa only [Measure.restrict_univ, setIntegral_univ] using
