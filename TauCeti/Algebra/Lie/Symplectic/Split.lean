@@ -90,7 +90,7 @@ theorem lie_apply_of_mem_diagonalSubalgebra {H : sp l R} (hH : H ∈ diagonalSub
     (TauCeti.mem_diagonalCartan_iff_isDiag.mpr (mem_diagonalSubalgebra.mp hH)) _ a b
 
 /-- The element `H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞`. -/
-def diagonalBasisElement (i : l) : diagonalSubalgebra l R :=
+def diagonalSubalgebraElement (i : l) : diagonalSubalgebra l R :=
   ⟨⟨single (.inl i) (.inl i) 1 - single (.inr i) (.inr i) 1,
     single_inl_inl_sub_single_inr_inr_mem_sp i i⟩, by
       simp only [mem_diagonalSubalgebra]
@@ -100,16 +100,16 @@ def diagonalBasisElement (i : l) : diagonalSubalgebra l R :=
 
 /-- The matrix of `H_i = E_(i, i) - E_(n + i, n + i)`. -/
 @[simp]
-theorem coe_diagonalBasisElement (i : l) :
-    ((diagonalBasisElement (R := R) i : sp l R) : Matrix (l ⊕ l) (l ⊕ l) R) =
+theorem coe_diagonalSubalgebraElement (i : l) :
+    ((diagonalSubalgebraElement (R := R) i : sp l R) : Matrix (l ⊕ l) (l ⊕ l) R) =
       single (.inl i) (.inl i) 1 - single (.inr i) (.inr i) 1 :=
   (rfl)
 
 /-- The diagonal entries of `H_i = E_(i, i) - E_(n + i, n + i)`. -/
-theorem diagonalBasisElement_apply (i : l) (a : l ⊕ l) :
-    (((diagonalBasisElement (R := R) i : sp l R) : Matrix (l ⊕ l) (l ⊕ l) R) a a) =
+theorem diagonalSubalgebraElement_apply (i : l) (a : l ⊕ l) :
+    (((diagonalSubalgebraElement (R := R) i : sp l R) : Matrix (l ⊕ l) (l ⊕ l) R) a a) =
       (if a = .inl i then 1 else 0) - if a = .inr i then 1 else 0 := by
-  simp [diagonalBasisElement, Matrix.sub_apply, single_apply, eq_comm]
+  simp [diagonalSubalgebraElement, Matrix.sub_apply, single_apply, eq_comm]
 
 /-- `𝔞` lies in the `-1`-eigenspace `𝔭` of `θ X = -Xᵀ`: diagonal matrices are symmetric. -/
 theorem diagonalSubalgebra_le_cartanP :
@@ -125,23 +125,23 @@ variable {K : Type*} [Field K] [NeZero (2 : K)]
 
 /-- The elements `H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞` separate the indices of `l ⊕ l`:
 for `a ≠ b` some `H_i` has different diagonal entries at `a` and `b`. -/
-theorem exists_diagonalBasisElement_apply_ne {a b : l ⊕ l} (hab : a ≠ b) :
-    ∃ i : l, ((diagonalBasisElement (R := K) i : sp l K) : Matrix (l ⊕ l) (l ⊕ l) K) a a ≠
-      ((diagonalBasisElement (R := K) i : sp l K) : Matrix (l ⊕ l) (l ⊕ l) K) b b := by
+theorem exists_diagonalSubalgebraElement_apply_ne {a b : l ⊕ l} (hab : a ≠ b) :
+    ∃ i : l, ((diagonalSubalgebraElement (R := K) i : sp l K) : Matrix (l ⊕ l) (l ⊕ l) K) a a ≠
+      ((diagonalSubalgebraElement (R := K) i : sp l K) : Matrix (l ⊕ l) (l ⊕ l) K) b b := by
   have h2 : (1 : K) ≠ -1 := fun h ↦ two_ne_zero (α := K) (by linear_combination h)
   rcases a with i | i
   · refine ⟨i, ?_⟩
     rcases b with j | j
-    · simp_all [diagonalBasisElement_apply, eq_comm]
+    · simp_all [diagonalSubalgebraElement_apply, eq_comm]
     · by_cases hij : j = i
-      · subst hij; simpa [diagonalBasisElement_apply] using h2
-      · simp [diagonalBasisElement_apply, hij]
+      · subst hij; simpa [diagonalSubalgebraElement_apply] using h2
+      · simp [diagonalSubalgebraElement_apply, hij]
   · refine ⟨i, ?_⟩
     rcases b with j | j
     · by_cases hij : j = i
-      · subst hij; simpa [diagonalBasisElement_apply] using h2.symm
-      · simp [diagonalBasisElement_apply, hij]
-    · simp_all [diagonalBasisElement_apply, eq_comm]
+      · subst hij; simpa [diagonalSubalgebraElement_apply] using h2.symm
+      · simp [diagonalSubalgebraElement_apply, hij]
+    · simp_all [diagonalSubalgebraElement_apply, eq_comm]
 
 /-- **The centralizer `𝔤_0` of `𝔞` in `𝔰𝔭(2n, K)` is `𝔞` itself**: an element commuting with
 every `H_i` is diagonal. -/
@@ -153,11 +153,11 @@ theorem restrictedRootSpace_zero_diagonalSubalgebra :
   rw [mem_restrictedRootSpace_zero] at hX
   rw [LieSubalgebra.mem_toSubmodule, mem_diagonalSubalgebra]
   intro a b hab
-  obtain ⟨i, hi⟩ := exists_diagonalBasisElement_apply_ne (K := K) hab
+  obtain ⟨i, hi⟩ := exists_diagonalSubalgebraElement_apply_ne (K := K) hab
   have h := congrArg (fun Y : sp l K ↦ (Y : Matrix (l ⊕ l) (l ⊕ l) K) a b)
-    (hX ⟨_, (diagonalBasisElement i).property⟩)
+    (hX ⟨_, (diagonalSubalgebraElement i).property⟩)
   simp only [ZeroMemClass.coe_zero, Matrix.zero_apply] at h
-  rw [lie_apply_of_mem_diagonalSubalgebra (diagonalBasisElement i).property] at h
+  rw [lie_apply_of_mem_diagonalSubalgebra (diagonalSubalgebraElement i).property] at h
   exact (mul_eq_zero.mp h).resolve_left (sub_ne_zero.mpr hi)
 
 /-- **The diagonal matrices are a maximal abelian subspace of `𝔭`** in `𝔰𝔭(2n, K)`, over any field
