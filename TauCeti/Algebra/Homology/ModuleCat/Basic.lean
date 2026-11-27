@@ -51,6 +51,9 @@ class differ by the boundary of an element of degree `c.prev n`
 when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`); where no
 differential enters, such as in degree zero of a cochain complex, a cycle with zero class is zero
 (`HomologicalComplex.moduleCat_eq_zero_of_homologyπ_eq_zero`).
+In the explicit homology `ker d ⧸ range d` of the short complex `K.sc' i n k`, the class of a
+cycle is the quotient class of its underlying element
+(`HomologicalComplex.moduleCatHomologyIso_homologyIsoSc'_homologyπ`).
 When the homology is finitely generated, finitely many cycles generate all cycles modulo
 boundaries (`HomologicalComplex.exists_fin_moduleCat_cycles_generating`).
 Cycles are elements of the kernel of the outgoing differential
@@ -396,6 +399,24 @@ lemma moduleCat_homologyπ_eq_iff {m : ι} (hm : c.prev n = m) (z w : K.cycles n
   rw [← sub_eq_zero, ← map_sub, K.moduleCat_homologyπ_eq_zero_iff hm]
   refine exists_congr fun y ↦ ?_
   rw [← (K.moduleCat_iCycles_injective n).eq_iff, map_sub, moduleCat_iCycles_toCycles_apply]
+
+variable {n} in
+/-- The class of a degree-`n` cycle `z` of a complex of modules, read in the explicit homology
+`ker d ⧸ range d` of the short complex `K.sc' i n k`, is the quotient class of the underlying
+element of `z`. -/
+lemma moduleCatHomologyIso_homologyIsoSc'_homologyπ {i k : ι} (hi : c.prev n = i)
+    (hk : c.next n = k) (z : K.cycles n) :
+    (K.sc' i n k).moduleCatHomologyIso.hom ((K.homologyIsoSc' i n k hi hk).hom (K.homologyπ n z)) =
+      Submodule.Quotient.mk ⟨K.iCycles n z, K.moduleCat_d_iCycles_apply n k z⟩ := by
+  have hπ := ConcreteCategory.congr_hom
+    (K.π_homologyIsoSc'_hom_assoc i n k hi hk (K.sc' i n k).moduleCatHomologyIso.hom) z
+  have hz := ConcreteCategory.congr_hom (K.cyclesIsoSc'_hom_iCycles i n k hi hk) z
+  simp only [ShortComplex.π_moduleCatCyclesIso_hom, ModuleCat.hom_comp, LinearMap.comp_apply] at hπ
+  simp only [← ShortComplex.moduleCatCyclesIso_hom_i, ModuleCat.hom_comp,
+    LinearMap.comp_apply] at hz
+  rw [hπ, ShortComplex.moduleCatLeftHomologyData_π_hom, Submodule.mkQ_apply]
+  congr 1
+  exact Subtype.ext hz
 
 variable {n} in
 /-- An element `x` of `K.X n` killed by the differential `K.d n m` out of degree `n`, as a cycle
