@@ -78,7 +78,7 @@ private theorem dvd_eval_sub_sum {e : ℕ} (a : F) (f : F[X]) (c : ℕ) (A : Fin
   rw [pow_mul', mul_comm, ← mul_sub]
   exact dvd_mul_of_dvd_right (dvd_sub_comm.1 (X_sub_C_pow_natCard_dvd_eval_sub_eval a (A i))) _
 
-/-- If `(X - a) ^ q` divides `Q(f ^ (q - 1))`, where `f(a) ≠ 0`, `deg Q < e` and the coefficients
+/-- If `(X - a) ^ q` divides `Q(f ^ (q - 1))`, where `f ≠ 0`, `deg Q < e` and the coefficients
 of `Q` have degree at most `E` with `E + (e - 1) deg f < q`, then `Q(f(a) / f) = 0` in the
 fraction field. -/
 private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0) {a : F}

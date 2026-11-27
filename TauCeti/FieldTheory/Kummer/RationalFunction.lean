@@ -13,8 +13,9 @@ import TauCeti.FieldTheory.Kummer.Capelli
 /-!
 # Binomials over a rational function field
 
-Let `F` be a field and `K = F(X)` the fraction field of `F[X]`. For `c ∈ F` with `c ≠ 0` and
-`f ∈ F[X]`, the binomial `Tᵉ - c / f` is irreducible over `K` when `f` is not of the form
+Let `F` be a field and `K` a fraction field of `F[X]`, such as `FractionRing F[X]` or `RatFunc F`.
+For `c ∈ F` with `c ≠ 0` and `f ∈ F[X]`, the binomial `Tᵉ - c / f` is irreducible over `K` when
+`f` is not of the form
 `C b * hˡ` for any `ℓ > 1` dividing `e` (`Polynomial.irreducible_X_pow_sub_C_div`).
 
 The proof applies Capelli's theorem (`TauCeti.X_pow_sub_C_irreducible_of_forall_prime`). If
@@ -23,8 +24,7 @@ polynomial `Tˡ - C d⁻¹ * f` over `F[X]`, so `b⁻¹` lies in `F[X]` because 
 closed, and `f = C d * (b⁻¹)ˡ`. The case `-4 b⁴ = c / f` with `4 ∣ e` is the case `ℓ = 4`,
 `d = c / -4`.
 
-This is the irreducibility of `Y^e - f(X)` over `F(X)` that Stepanov's method for `y^e = f(x)`
-uses.
+Stepanov's method for `y^e = f(x)` uses this irreducibility with `c = f(a)`.
 -/
 
 public section
@@ -35,12 +35,12 @@ namespace Polynomial
 
 variable {F : Type*} [Field F]
 
-/-- Over the fraction field of `F[X]`, the binomial `Tᵉ - c / f` is irreducible when `c ≠ 0` and
-`f` is not of the form `C b * hˡ` for any `ℓ > 1` dividing `e`. -/
-theorem irreducible_X_pow_sub_C_div {e : ℕ} (he : e ≠ 0) {f : F[X]} {c : F} (hc : c ≠ 0)
+/-- Over a fraction field `K` of `F[X]`, the binomial `Tᵉ - c / f` is irreducible when `c ≠ 0`
+and `f` is not of the form `C b * hˡ` for any `ℓ > 1` dividing `e`. -/
+theorem irreducible_X_pow_sub_C_div {K : Type*} [Field K] [Algebra F[X] K] [IsFractionRing F[X] K]
+    {e : ℕ} (he : e ≠ 0) {f : F[X]} {c : F} (hc : c ≠ 0)
     (hf : ∀ (b : F) (h : F[X]) (ℓ : ℕ), 1 < ℓ → ℓ ∣ e → f ≠ C b * h ^ ℓ) :
-    Irreducible (X ^ e - C (algebraMap F[X] (FractionRing F[X]) (C c) /
-      algebraMap F[X] (FractionRing F[X]) f)) := by
+    Irreducible (X ^ e - C (algebraMap F[X] K (C c) / algebraMap F[X] K f)) := by
   -- For `f = 0`, the hypothesis forces `e = 1`, and `T - 0` is irreducible.
   rcases eq_or_ne f 0 with rfl | hf₀
   · obtain rfl : e = 1 := by
@@ -48,7 +48,6 @@ theorem irreducible_X_pow_sub_C_div {e : ℕ} (he : e ≠ 0) {f : F[X]} {c : F} 
       exact hf 0 0 e (by lia) dvd_rfl (by simp [he])
     rw [pow_one]
     exact irreducible_X_sub_C _
-  set K := FractionRing F[X]
   have hinj := IsFractionRing.injective F[X] K
   have hfK : algebraMap F[X] K f ≠ 0 := (map_ne_zero_iff _ hinj).2 hf₀
   -- If `b ^ ℓ = d / f` with `d` a nonzero constant, then `b⁻¹ ^ ℓ` is the polynomial
@@ -61,9 +60,8 @@ theorem irreducible_X_pow_sub_C_div {e : ℕ} (he : e ≠ 0) {f : F[X]} {c : F} 
     intro ℓ d hℓ hℓe hd b hb
     have hpow : b⁻¹ ^ ℓ = algebraMap F[X] K (C d⁻¹ * f) := by
       rw [inv_pow, hb, inv_div, map_mul, hCinv, div_eq_inv_mul]
-    have hint : IsIntegral F[X] b⁻¹ :=
-      IsIntegral.of_pow (by lia) (hpow ▸ isIntegral_algebraMap)
-    obtain ⟨g, hg⟩ := IsIntegrallyClosed.algebraMap_eq_of_integral hint
+    obtain ⟨g, hg⟩ := IsIntegrallyClosed.exists_algebraMap_eq_of_isIntegral_pow (by lia)
+      (hpow ▸ isIntegral_algebraMap)
     have hgf : g ^ ℓ = C d⁻¹ * f := hinj (by rw [map_pow, hg, hpow])
     refine hf d g ℓ hℓ hℓe ?_
     rw [hgf, ← mul_assoc, ← C_mul, mul_inv_cancel₀ hd, C_1, one_mul]
