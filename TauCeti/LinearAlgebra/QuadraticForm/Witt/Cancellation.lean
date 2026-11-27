@@ -31,6 +31,8 @@ I.4.5–I.4.7.
   carried by a line spanned by a vector of nonzero value.
 * `TauCeti.equivalent_of_equivalent_prod`: **Witt cancellation** for a regular finite-dimensional
   summand, and `TauCeti.equivalent_of_equivalent_prod_right` on the other side.
+* `TauCeti.isRepresentedBy_of_isRepresentedBy_prod`: the same cancellation for representation of
+  orthogonal sums.
 * `TauCeti.RegularFormClass` is cancellative under orthogonal sum.
 
 ## References
@@ -210,6 +212,41 @@ theorem equivalent_of_equivalent_prod_right [FiniteDimensional K V₀] {Q₀ : Q
   have hcomm₂ : (Q₂.prod Q₀).Equivalent (Q₀.prod Q₂) :=
     ⟨QuadraticMap.IsometryEquiv.prodComm Q₂ Q₀⟩
   exact equivalent_of_equivalent_prod hQ₀ (hcomm₁.trans (h.trans hcomm₂))
+
+/-- **Witt cancellation for representation**: a regular finite-dimensional summand cancels from a
+representation of orthogonal sums. If `Q₀ ⊥ Q₁` is represented by `Q₀ ⊥ Q₂`, then `Q₁` is
+represented by `Q₂`. -/
+theorem isRepresentedBy_of_isRepresentedBy_prod [FiniteDimensional K V₀] {Q₀ : QuadraticForm K V₀}
+    (hQ₀ : Q₀.Nondegenerate) {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
+    (h : (Q₀.prod Q₁).IsRepresentedBy (Q₀.prod Q₂)) : Q₁.IsRepresentedBy Q₂ := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp h
+  -- The image `U` of `Q₀` is a regular subspace isometric to `Q₀`, so the form `T = Q₀ ⊥ Q₂` is
+  -- isometric to `Q₀ ⊥ T|_O` for the orthogonal complement `O` of `U`.
+  let g : V₀ →ₗ[K] V₀ × V₂ := f ∘ₗ LinearMap.inl K V₀ V₁
+  have hg : Function.Injective g := hf.comp LinearMap.inl_injective
+  let U := LinearMap.range g
+  let e₀ : Q₀.IsometryEquiv ((Q₀.prod Q₂).restrict U) :=
+    { toLinearEquiv := LinearEquiv.ofInjective g hg
+      -- The restricted form at `LinearEquiv.ofInjective g hg x` is `T (f (x, 0))` by definition.
+      map_app' x := (hfQ (x, 0)).trans (by simp) }
+  have hcomp := (e₀.nondegenerate_iff.mp hQ₀).isCompl_orthogonal
+  let O := LinearMap.BilinForm.orthogonal (Q₀.prod Q₂).polarBilin U
+  -- Witt cancellation identifies `Q₂` with the restriction of `T` to `O`.
+  have hQ₂ : Q₂.Equivalent ((Q₀.prod Q₂).restrict O) := equivalent_of_equivalent_prod hQ₀
+    ⟨(IsometryEquiv.prodRestrictOrthogonal (Q₀.prod Q₂) U hcomp).symm.trans
+      (e₀.symm.prod (QuadraticMap.IsometryEquiv.refl _))⟩
+  -- The image of `Q₁` is orthogonal to the image of `Q₀`, so `Q₁` embeds in `T|_O`.
+  have hmem (x : V₁) : (f ∘ₗ LinearMap.inr K V₀ V₁) x ∈ O := by
+    rintro _ ⟨a, rfl⟩
+    simp only [g, LinearMap.comp_apply, LinearMap.inl_apply, polarBilin_apply_apply,
+      QuadraticMap.polar, ← map_add, hfQ]
+    simp
+  refine ((isRepresentedBy_iff _ _).mpr ⟨LinearMap.codRestrict O
+    (f ∘ₗ LinearMap.inr K V₀ V₁) hmem, fun x y hxy ↦ ?_, fun x ↦ ?_⟩).trans
+    hQ₂.symm.isRepresentedBy
+  · simpa using hf (congrArg Subtype.val hxy)
+  · -- The restricted form at the corestriction of `f (0, x)` is `T (f (0, x))` by definition.
+    exact (hfQ (0, x)).trans (by simp)
 
 private theorem isLeftCancelAdd_regularFormClass : IsLeftCancelAdd (RegularFormClass K) where
   add_left_cancel x y z h := by

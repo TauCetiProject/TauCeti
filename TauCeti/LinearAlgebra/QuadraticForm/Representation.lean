@@ -32,7 +32,9 @@ bridge from value questions to isotropy questions, following Lam, *Introduction 
 over Fields*, I.2.3 and I.3.5.
 
 A represented regular form splits off from a regular finite-dimensional ambient form as an
-orthogonal summand with regular complement.
+orthogonal summand with regular complement. Representation is compatible with orthogonal sums, a
+zero orthogonal summand of the ambient form does not help to represent a regular form, and the line
+`⟨a⟩` for `a ≠ 0` is represented exactly when the scalar `a` is.
 -/
 
 public section
@@ -98,6 +100,21 @@ theorem IsRepresentedBy.trans
   obtain ⟨f, hf⟩ := h₁₂
   obtain ⟨g, hg⟩ := h₂₃
   exact ⟨g.comp f, hg.comp hf⟩
+
+/-- Representations of the two factors give a representation of their orthogonal products. -/
+theorem IsRepresentedBy.prod
+    {M₁ M₂ M₃ M₄ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
+    [AddCommMonoid M₄] [Module R M₄]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    {Q₃ : QuadraticMap R M₃ N} {Q₄ : QuadraticMap R M₄ N}
+    (h₁₃ : Q₁.IsRepresentedBy Q₃) (h₂₄ : Q₂.IsRepresentedBy Q₄) :
+    (Q₁.prod Q₂).IsRepresentedBy (Q₃.prod Q₄) := by
+  obtain ⟨f, hf⟩ := h₁₃
+  obtain ⟨g, hg⟩ := h₂₄
+  refine ⟨f.prodMap g, fun x y hxy ↦ ?_⟩
+  simp only [Isometry.prodMap_apply, Prod.ext_iff] at hxy ⊢
+  exact ⟨hf hxy.1, hg hxy.2⟩
 
 /-- An equivalent quadratic map is represented by the other map. -/
 theorem Equivalent.isRepresentedBy
@@ -305,6 +322,33 @@ theorem Represents.of_isSquare_div {K V : Type*} [Semifield K] [AddCommMonoid V]
     (h : Represents Q a) (ha : a ≠ 0) (hab : IsSquare (b / a)) : Represents Q b := by
   obtain ⟨r, hr⟩ := hab
   simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
+
+/-- A zero orthogonal summand does not help to represent a regular form: a nondegenerate form
+represented by `Q ⊥ 0` is already represented by `Q`. -/
+theorem IsRepresentedBy.of_prod_zero {R M₁ M₂ M₃ P : Type*} [CommRing R] [AddCommGroup M₁]
+    [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
+    [AddCommGroup P] [Module R P] {Q₁ : QuadraticMap R M₁ P} {Q : QuadraticMap R M₂ P}
+    (hQ₁ : Q₁.Nondegenerate) (h : Q₁.IsRepresentedBy (Q.prod (0 : QuadraticMap R M₃ P))) :
+    Q₁.IsRepresentedBy Q := by
+  obtain ⟨f, -⟩ := h
+  exact ⟨(Isometry.fst M₃ Q).comp f,
+    ((Isometry.fst M₃ Q).comp f).injective_of_radical_eq_bot hQ₁.radical_eq_bot⟩
+
+/-- The line `⟨a⟩`, the form `t ↦ a t²` on `R`, is represented by a quadratic form over a domain
+exactly when the form represents the nonzero scalar `a`. -/
+theorem isRepresentedBy_smul_sq_iff {R V : Type*} [CommRing R] [IsDomain R] [AddCommGroup V]
+    [Module R V] (Q : QuadraticForm R V) {a : R} (ha : a ≠ 0) :
+    (a • sq : QuadraticForm R R).IsRepresentedBy Q ↔ Represents Q a := by
+  refine ⟨fun h ↦ h.represents ⟨1, by simp⟩, fun ⟨x, hx⟩ ↦ ?_⟩
+  refine (isRepresentedBy_iff _ _).mpr
+    ⟨LinearMap.toSpanSingleton R V x, fun s t hst ↦ ?_, fun t ↦ ?_⟩
+  · -- `Q ((s - t) • x) = (s - t)² a` vanishes, and `a ≠ 0`.
+    have h0 : Q ((s - t) • x) = 0 := by
+      rw [sub_smul, ← LinearMap.toSpanSingleton_apply, ← LinearMap.toSpanSingleton_apply, hst,
+        sub_self, map_zero]
+    rwa [QuadraticMap.map_smul, hx, smul_eq_mul, mul_eq_zero, or_iff_left ha, mul_self_eq_zero,
+      sub_eq_zero] at h0
+  · simp [QuadraticMap.map_smul, hx, mul_comm]
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
