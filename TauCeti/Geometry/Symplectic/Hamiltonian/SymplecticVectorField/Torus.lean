@@ -52,6 +52,8 @@ constant field is Hamiltonian, with the linear Hamiltonian `x ↦ ω(v, x)`
 
 ## Main results
 
+* `TauCeti.eval₂_torusConstVectorField`: a constant-coefficient two-form `β` pairs the constant
+  vector field `v` with a tangent vector `w` to `β(v, w)`.
 * `TauCeti.interiorₗ_torusConstVectorField`: the contraction of a constant-coefficient two-form
   with a constant vector field is `∑ j, β(v, e_j) dt_j`.
 * `TauCeti.interiorₗ_torusConstVectorField_eq_fluxForm`: this contraction is the flux form of
@@ -92,28 +94,17 @@ section Constant
 variable {p v} {σ : SmoothTwoForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ i, AddCircle (p i))}
   {β : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ}
 
-/-- An alternating map of `ι → ℝ` expanded in its second argument along the standard basis:
-`β(v, w) = ∑ j, β(v, e_j) w j`. -/
-private theorem apply_vecCons_eq_sum [DecidableEq ι] (β : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) (v w : ι → ℝ) :
-    β ![v, w] = ∑ j, β ![v, Pi.single j 1] * w j := by
-  -- `w ↦ β(v, w)` is the linear map `(β.curryLeft v)` read in degree one.
-  let L := (ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℝ) ℝ (0 : Fin 1)).symm
-    (β.curryLeft v)
-  have hL (u : ι → ℝ) : L u = β ![v, u] := by
-    simp only [L, ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply,
-      ContinuousAlternatingMap.curryLeft_apply_apply]
-    congr 1
-    ext k : 1
-    fin_cases k <;> rfl
-  rw [← hL]
-  refine (LinearMap.pi_apply_eq_sum_univ (L : (ι → ℝ) →ₗ[ℝ] ℝ) w).trans
-    (Finset.sum_congr rfl fun j _ ↦ ?_)
-  have hj : (fun k ↦ if j = k then (1 : ℝ) else 0) = Pi.single j 1 :=
-    funext fun k ↦ by simp [Pi.single_apply, eq_comm]
-  rw [hj, smul_eq_mul, mul_comm, ContinuousLinearMap.coe_coe, hL]
-
 variable (hσ : ∀ x, (σ.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β)
 include hσ
+
+/-- For a two-form `σ` on the torus with constant coefficients `β`, pairing the constant vector
+field `v` with a tangent vector `w` gives `β(v, w)`. -/
+theorem eval₂_torusConstVectorField (x : ∀ i, AddCircle (p i))
+    (w : TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
+    SmoothBundleForm.eval₂ σ x (torusConstVectorField p v x) w = β ![v, w] := by
+  rw [SmoothBundleForm.eval₂_apply, torusConstVectorField_apply, hσ]
+  -- The two sides differ only in that `w` is read in `ι → ℝ` or in the tangent space at `x`.
+  rfl
 
 /-- **The contraction with a constant vector field.** For a two-form `σ` on the torus with constant
 coefficients `β`, the contraction `ι_v σ` of the constant vector field `v` is the constant one-form
@@ -124,9 +115,11 @@ theorem interiorₗ_torusConstVectorField [DecidableEq ι] :
   refine SmoothForm.degreeOneEquiv.injective (ContMDiffSection.ext fun x ↦
     ContinuousLinearMap.ext fun w ↦ ?_)
   rw [SmoothTwoForm.degreeOneEquiv_interiorₗ, SmoothForm.degreeOneEquiv_apply_apply,
-    SmoothTwoForm.flat_apply, SmoothBundleForm.eval₂_apply, torusConstVectorField_apply,
-    sum_smul_torusTimeForm_apply, hσ]
-  exact apply_vecCons_eq_sum β v w
+    SmoothTwoForm.flat_apply, eval₂_torusConstVectorField hσ, sum_smul_torusTimeForm_apply]
+  -- Both sides are `∑ j, β(v, e_j) w j`, with `w` read in `ι → ℝ`.
+  have h (u : ι → ℝ) : β ![v, u] = ∑ j, β ![v, Pi.single j 1] * u j :=
+    (β.apply_vecCons_eq_sum_repr_right (Pi.basisFun ℝ ι) v u).trans (by simp [mul_comm])
+  exact h w
 
 /-- **The contraction with a constant vector field is the flux form of its translations.** For a
 two-form `σ` on the torus with constant coefficients, the contraction `ι_v σ` of the constant
@@ -136,14 +129,11 @@ theorem interiorₗ_torusConstVectorField_eq_fluxForm :
     σ.interiorₗ (torusConstVectorField p v) = (torusTranslationDiffeotopy p v).fluxForm σ := by
   refine SmoothForm.degreeOneEquiv.injective (ContMDiffSection.ext fun x ↦
     ContinuousLinearMap.ext fun w ↦ ?_)
-  rw [SmoothTwoForm.degreeOneEquiv_interiorₗ, SmoothForm.degreeOneEquiv_apply_apply,
-    SmoothTwoForm.flat_apply, SmoothBundleForm.eval₂_apply, torusConstVectorField_apply, hσ,
+  rw [SmoothTwoForm.degreeOneEquiv_interiorₗ, SmoothForm.degreeOneEquiv_apply_apply_vec,
+    SmoothTwoForm.flat_apply, eval₂_torusConstVectorField hσ,
     fluxForm_torusTranslationDiffeotopy_apply p v hσ x]
   -- Both sides evaluate `β` on the pair `(v, w)`.
-  refine (Eq.trans ?_ (ContinuousAlternatingMap.curryLeft_apply_apply β v _).symm)
-  congr 1
-  ext k : 1
-  fin_cases k <;> rfl
+  exact (ContinuousAlternatingMap.curryLeft_apply_apply β v ![w]).symm
 
 /-- **Constant vector fields are symplectic.** For a two-form on the torus with constant
 coefficients, the contraction with a constant vector field is closed. -/
@@ -177,7 +167,7 @@ theorem interiorClass_torusConstVectorField_eq_zero_iff :
   rw [SmoothTwoForm.interiorClass_apply, deRhamCohomology.mk_eq_zero_iff]
   rw [Subtype.coe_mk, interiorₗ_torusConstVectorField hσ, sum_smul_torusTimeForm_mem_exactForms_iff]
   refine ⟨fun h w ↦ ?_, fun h ↦ funext fun j ↦ h _⟩
-  rw [apply_vecCons_eq_sum]
+  rw [β.apply_vecCons_eq_sum_repr_right (Pi.basisFun ℝ ι)]
   simp [show ∀ j, β ![v, Pi.single j 1] = 0 from congrFun h]
 
 /-- **Constant vector fields are not Hamiltonian.** For a two-form `σ` on the torus with constant
@@ -193,7 +183,7 @@ theorem exists_isHamiltonianVectorField_torusConstVectorField_iff :
     ⟨0, SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x w ↦ ?_⟩⟩
   · -- It suffices that `β(v, e_j) = 0` for every coordinate direction `j`.
     suffices hj : ∀ j, β ![v, Pi.single j 1] = 0 from
-      fun w ↦ (apply_vecCons_eq_sum β v w).trans (by simp [hj])
+      fun w ↦ by rw [β.apply_vecCons_eq_sum_repr_right (Pi.basisFun ℝ ι)]; simp [hj]
     intro j
     by_contra hj
     -- Along the `j`-th coordinate circle `γ s = 0 + [s e_j]`, `f` has derivative `β(v, e_j)`.
@@ -203,9 +193,7 @@ theorem exists_isHamiltonianVectorField_torusConstVectorField_iff :
       have hval : mvfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) f (γ s) (Pi.single j 1) =
           β ![v, Pi.single j 1] :=
         (SmoothTwoForm.isHamiltonianVectorField_iff.1 hf (γ s) (Pi.single j 1)).symm.trans
-          ((SmoothBundleForm.eval₂_apply σ (γ s) _ _).trans
-            ((DFunLike.congr_fun (hσ (γ s)) _).trans
-              (congrArg (fun u ↦ β ![u, Pi.single j 1]) (torusConstVectorField_apply p v _))))
+          (eval₂_torusConstVectorField hσ (γ s) _)
       have hγ := isMIntegralCurve_torusConstVectorField p (Pi.single j 1) 0 s
       rw [torusConstVectorField_apply] at hγ
       have hfγ := Manifold.hasDerivAt_comp_curve
@@ -223,8 +211,8 @@ theorem exists_isHamiltonianVectorField_torusConstVectorField_iff :
       · simp [γ, Pi.single_apply, hij]
     simp only [hper, mul_zero, sub_zero, sub_eq_self, mul_eq_zero] at hconst
     exact hconst.elim hj (Fact.out : 0 < p j).ne'
-  · refine (SmoothBundleForm.eval₂_apply σ x _ _).trans ((DFunLike.congr_fun (hσ x) _).trans ?_)
-    rw [torusConstVectorField_apply, mvfderiv_zero]
+  · refine (eval₂_torusConstVectorField hσ x w).trans ?_
+    rw [mvfderiv_zero]
     exact h w
 
 end Constant
@@ -232,12 +220,6 @@ end Constant
 section Area
 
 variable (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)] (v : Fin 2 → ℝ) (A : ℝ)
-
-/-- The area form `A dt_0 ∧ dt_1` has constant coefficients. -/
-private theorem smul_torusVolumeForm_apply_eq_apply_zero (x : ∀ i, AddCircle (p i)) :
-    ((A • torusVolumeForm p).val x : (Fin 2 → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) =
-      (A • torusVolumeForm p).val 0 :=
-  congrArg (A • ·) (torusVolumeForm_apply_eq_apply_zero p x)
 
 /-- **The contraction with a constant vector field on the two-torus.** For the area form
 `A dt_0 ∧ dt_1`, the contraction with the constant vector field `v` is

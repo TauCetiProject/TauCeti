@@ -67,32 +67,16 @@ theorem contMDiff_torusConstVectorField {n : ℕ∞ω} :
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).tangent n
       (fun x ↦ (⟨x, v⟩ : TangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
         (∀ i, AddCircle (p i)))) := by
-  -- The covering map `t ↦ ([t i])ᵢ` is an analytic local diffeomorphism with derivative the
-  -- identity of `ι → ℝ`.
-  let π : (ι → ℝ) → ∀ i, AddCircle (p i) := fun t i ↦ (t i : AddCircle (p i))
-  have hπd (t : ι → ℝ) : HasMFDerivAt 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) π t
-      (ContinuousLinearMap.id ℝ (ι → ℝ)) :=
-    (TauCeti.hasMFDerivAt_pi (M := fun i : ι ↦ AddCircle (p i)) (I := fun _ ↦ 𝓘(ℝ)) (f := π)
-      fun i ↦ (AddCircle.hasMFDerivAt_coe (p i) (t i)).comp t
-        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasMFDerivAt).congr_mfderiv <| by
-      -- The product of the coordinate projections is the identity of `ι → ℝ`.
-      ext w i
-      rfl
-  have hπs : ContMDiff 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ω π :=
-    contMDiff_pi_iff.2 fun i ↦ (AddCircle.contMDiff_coe (p i) ω).comp
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff
-  have hπl : IsLocalDiffeomorph 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ω π :=
-    isLocalDiffeomorph_of_mfderiv_eq hπs le_top fun t ↦
-      ⟨ContinuousLinearEquiv.refl ℝ (ι → ℝ), (hπd t).mfderiv.symm⟩
-  have hsurj : Surjective π := fun x ↦
-    ⟨fun i ↦ (QuotientAddGroup.mk_surjective (x i)).choose,
-      funext fun i ↦ (QuotientAddGroup.mk_surjective (x i)).choose_spec⟩
+  -- The covering map `t ↦ ([t i])ᵢ` is a surjective analytic local diffeomorphism with derivative
+  -- the identity of `ι → ℝ`.
+  have hsurj : Surjective fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i)) :=
+    Surjective.piMap fun _ ↦ QuotientAddGroup.mk_surjective
   -- Through the covering map, the field is the lifted derivative `t ↦ ([t], dπ_t v)`.
-  rw [← hπl.contMDiff_comp_iff hsurj le_top]
-  refine (contMDiffOn_univ.1 ((hπs.contMDiffOn (s := Set.univ)
+  rw [← (AddCircle.isLocalDiffeomorph_coe_pi p ω).contMDiff_comp_iff hsurj le_top]
+  refine (contMDiffOn_univ.1 (((AddCircle.contMDiff_coe_pi p ω).contMDiffOn (s := Set.univ)
     ).contMDiffOn_totalSpaceMk_mfderiv_apply (m := n) le_top isOpen_univ v)).congr fun t ↦ ?_
-  rw [comp_apply, (hπd t).mfderiv]
-  -- Both sides are `⟨π t, v⟩`, the identity map applied to `v` being `v` by definition.
+  rw [comp_apply, AddCircle.mfderiv_coe_pi]
+  -- Both sides are `⟨[t], v⟩`, the identity map applied to `v` being `v` by definition.
   rfl
 
 /-- The **constant vector field** `v` on the torus `∀ i, AddCircle (p i)`, a smooth section of its
@@ -113,15 +97,9 @@ theorem torusConstVectorField_apply (x : ∀ i, AddCircle (p i)) : torusConstVec
 `t ↦ x + [t v]`, defined for all time. -/
 theorem isMIntegralCurve_torusConstVectorField (x : ∀ i, AddCircle (p i)) :
     IsMIntegralCurve (fun t : ℝ ↦ x + fun i ↦ ((t * v i : ℝ) : AddCircle (p i)))
-      (torusConstVectorField p v) := fun t ↦ by
-  -- Each coordinate moves along its circle with speed `v i`.
-  have h (i : ι) : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ)
-      (fun s : ℝ ↦ (x + fun i ↦ ((s * v i : ℝ) : AddCircle (p i))) i) t
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (v i)) :=
-    AddCircle.hasMFDerivAt_add_coe_comp (hasDerivAt_mul_const (v i)) (x i)
-  refine (TauCeti.hasMFDerivAt_pi h).congr_mfderiv ?_
-  -- Both sides send the unit time vector to `v`.
-  ext i
-  exact (one_smul ℝ (v i)).trans (one_smul ℝ (v i)).symm
+      (torusConstVectorField p v) := fun t ↦
+  -- The velocity `v` of the translation orbit is the value of the field.
+  (AddCircle.hasMFDerivAt_pi_add_coe_mul v x t).congr_mfderiv
+    (ContinuousLinearMap.smulRight_one_eq_toSpanSingleton (R₁ := ℝ) (x := v)).symm
 
 end TauCeti

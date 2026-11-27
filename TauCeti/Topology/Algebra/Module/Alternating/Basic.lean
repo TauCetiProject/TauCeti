@@ -44,6 +44,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
 * `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr`,
   `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four`: a two-form in the coordinates of
   a basis, and its six-term form on a four-dimensional space.
+* `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_right`: a two-form in the coordinates of
+  its second argument.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
   `A` and then along `B` is pulling back along `A.comp B`.
 * `ContinuousAlternatingMap.compContinuousLinearMap_fst_add_snd_apply`: the two-form
@@ -164,6 +166,18 @@ theorem apply_vecCons_eq_sum_repr {ι : Type*} [Fintype ι] (b : Module.Basis ι
   have hv (x : M) := h ![x, v] 1 v
   simp only [h₀, h₁] at hu hv
   simp only [hu, hv, Finset.smul_sum, smul_smul]
+
+/-- **A two-form in the coordinates of its second argument.** In the coordinates of a basis `b`, a
+two-form `ω` is `ω(u, v) = ∑ⱼ vⱼ ω(u, bⱼ)`. -/
+theorem apply_vecCons_eq_sum_repr_right {ι : Type*} [Fintype ι] (b : Module.Basis ι R M)
+    (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
+    ω ![u, v] = ∑ j, b.repr v j • ω ![u, b j] := by
+  -- `ω(u, ·)` is linear (`MultilinearMap.toLinearMap`), so expand `v` in `b`.
+  have h (x : M) : Function.update ![u, v] 1 x = ![u, x] := by
+    ext k; fin_cases k <;> simp
+  simpa [b.sum_repr, h] using
+    _root_.map_sum (ω.toMultilinearMap.toLinearMap ![u, v] 1) (fun j ↦ b.repr v j • b j)
+      Finset.univ
 
 end Coordinates
 
