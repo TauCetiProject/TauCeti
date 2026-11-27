@@ -382,13 +382,13 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_is
     (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
     (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
     (h₂ : TendstoUniformlyOn (Function.curry M₂) M atBot (Icc 0 1))
-    (hD₁ : ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).IsFredholm)
-    (hD₂ : ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).IsFredholm) :
+    (hD₁ : ((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).IsFredholm)
+    (hD₂ : ((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).IsFredholm) :
     ∃ S₁ S₂ : Submodule ℝ (Lp W 2 stripMeasure), S₁ ≤ testSectionLp W ∧ S₂ ≤ testSectionLp W ∧
-      S₁.IsTopCompl ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).range ∧
-      S₂.IsTopCompl ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).range ∧
+      S₁.IsTopCompl ((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).range ∧
+      S₂.IsTopCompl ((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).range ∧
       ∃ C R₀ : ℝ, ∀ R ≥ R₀, ∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂),
-        (((jetOperator stripMeasure
+        (((jetOperator 2 stripMeasure
             (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
             (H1 V).subtypeL).coprod (gluedStabilizer S₁.subtypeL S₂.subtypeL R)).comp Q =
             ContinuousLinearMap.id ℝ _ ∧
@@ -416,15 +416,15 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_is
     (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
     (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
     (h₂ : TendstoUniformlyOn (Function.curry M₂) M atBot (Icc 0 1))
-    (hD₁ : ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).IsFredholm)
-    (hD₂ : ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).IsFredholm) :
+    (hD₁ : ((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).IsFredholm)
+    (hD₂ : ((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).IsFredholm) :
     ∃ T, ∃ S₁ S₂ : Submodule ℝ (Lp W 2 stripMeasure),
       S₁ ≤ smoothSectionLp W T ∧ S₂ ≤ smoothSectionLp W T ∧
       FiniteDimensional ℝ S₁ ∧ FiniteDimensional ℝ S₂ ∧
-      IsTopCompl ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).range S₁ ∧
-      IsTopCompl ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).range S₂ ∧
+      IsTopCompl ((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).range S₁ ∧
+      IsTopCompl ((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).range S₂ ∧
       ∃ C R₀ : ℝ, ∀ R ≥ R₀, ∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂),
-        (((jetOperator stripMeasure
+        (((jetOperator 2 stripMeasure
             (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
             (H1 V).subtypeL).coprod (gluedStabilizer S₁.subtypeL S₂.subtypeL R)).comp Q =
             ContinuousLinearMap.id ℝ _ ∧

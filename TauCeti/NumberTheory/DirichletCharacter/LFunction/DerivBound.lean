@@ -47,6 +47,8 @@ to give `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for every real zero `β` of 
   `‖L'(s, χ)‖` when `χ ≠ 1` and `Re(s) > 0`.
 * `DirichletCharacter.norm_deriv_LFunction_le_mul_log_sq`: uniform bound
   `‖L'(σ, χ)‖ ≤ 81 * (log N) ^ 2` for `χ ≠ 1` and `σ ∈ [1 - 1 / log N, 1]`.
+* `DirichletCharacter.one_lt_log_level_of_ne_one`: `1 < log N` for any nonprincipal character of
+  nonzero level `N`.
 * `DirichletCharacter.LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero`:
   unconditional real-zero separation `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for any real zero `β`
   of any nonprincipal character `χ` of nonzero level `N`.
@@ -63,6 +65,13 @@ open Finset Filter MeasureTheory Complex Asymptotics
 open scoped Topology
 
 namespace DirichletCharacter
+
+/-- A nonprincipal Dirichlet character at a nonzero level `N` has `1 < log N`, since `N ≥ 3 > e`
+(`DirichletCharacter.three_le_level_of_ne_one`). -/
+theorem one_lt_log_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 1 < Real.log N := by
+  rw [Real.lt_log_iff_exp_lt (by exact_mod_cast (NeZero.pos N))]
+  exact Real.exp_one_lt_three.trans_le (mod_cast χ.three_le_level_of_ne_one hχ)
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
@@ -275,10 +284,7 @@ theorem LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero
     (χ.LFunction 1).re / (81 * Real.log N ^ 2) ≤ 1 - β := by
   have hβ1 : β < 1 :=
     not_le.mp fun h ↦ χ.LFunction_ne_zero_of_one_le_re (.inl hχ) (by simpa using h) hβ
-  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_level_of_ne_one hχ
-  have hL1 : 1 < Real.log N :=
-    (by linarith [Real.log_three_gt_d9] : (1 : ℝ) < Real.log 3).trans_le
-      (Real.log_le_log (by norm_num) hN3)
+  have hL1 := χ.one_lt_log_level_of_ne_one hχ
   have : 0 < Real.log N := zero_lt_one.trans hL1
   rcases le_or_gt (1 - 1 / Real.log N) β with hnear | hfar
   · -- Near `1`, apply Lagrange's mean value theorem to `σ ↦ Re L(σ, χ)` on `[β, 1]`.

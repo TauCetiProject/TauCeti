@@ -296,6 +296,20 @@ theorem coeFn_positiveEndChartLp (q : Puncture) (h : Lp W 2 StripSobolev.stripMe
   rw [heq]
   exact MemLp.coeFn_toLp _
 
+/-- Multiplication by a function `β` on `S` is, through the `L²` isometry along an end chart,
+multiplication by `β` read in the chart. -/
+theorem positiveEndChartLp_ae_eq_smul (q : Puncture) {β : ℝ × ℝ → ℝ}
+    (g : Lp W 2 (volume.restrict thricePuncturedSphereReal))
+    {f : Lp W 2 StripSobolev.stripMeasure} (hf : f =ᵐ[StripSobolev.stripMeasure]
+      fun ζ ↦ β (positiveEndChart q ζ) • (positiveEndChartLp q).symm g ζ) :
+    positiveEndChartLp q f =ᵐ[volume.restrict thricePuncturedSphereReal] fun z ↦ β z • g z := by
+  filter_upwards [coeFn_positiveEndChartLp q f, (quasiMeasurePreserving_endBandCoord q).ae hf,
+    (quasiMeasurePreserving_endBandCoord q).ae (coeFn_positiveEndChartLp_symm q g),
+    ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z h₁ h₂ h₃ hz
+  have hφ := positiveEndChart_endBandCoord q
+    (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
+  rw [h₁, h₂, h₃, hφ, smul_comm, inv_smul_smul₀ (positiveEndChartScale_pos q _).ne']
+
 end Lp
 
 /-! ### Jets read along an end chart -/
@@ -645,12 +659,12 @@ def endTransfer (q : Puncture) (β : ℝ × ℝ → ℝ) :
     Lp (V × V × V) 2 StripSobolev.stripMeasure →L[ℝ]
       Lp (V × V × V) 2 (volume.restrict thricePuncturedSphereReal) :=
   (positiveEndChartLp (W := V × V × V) q).toContinuousLinearEquiv.toContinuousLinearMap.comp
-    (jetOperator StripSobolev.stripMeasure (endTransferCoeff q β))
+    (jetOperator 2 StripSobolev.stripMeasure (endTransferCoeff q β))
 
 theorem endTransfer_apply (q : Puncture) (β : ℝ × ℝ → ℝ)
     (f : Lp (V × V × V) 2 StripSobolev.stripMeasure) :
     endTransfer q β f =
-      positiveEndChartLp q (jetOperator StripSobolev.stripMeasure (endTransferCoeff q β) f) :=
+      positiveEndChartLp q (jetOperator 2 StripSobolev.stripMeasure (endTransferCoeff q β) f) :=
   (rfl)
 
 /-- The transfer of an `L²` jet along an end chart reads it in the band coordinates. -/
@@ -660,7 +674,7 @@ theorem coeFn_endTransfer (q : Puncture) {β : ℝ × ℝ → ℝ}
     endTransfer q β f =ᵐ[volume.restrict thricePuncturedSphereReal]
       fun z ↦ (positiveEndChartScale q (endBandCoord q z))⁻¹ •
         endTransferCoeff q β (endBandCoord q z) (f (endBandCoord q z)) := by
-  filter_upwards [coeFn_positiveEndChartLp q (jetOperator StripSobolev.stripMeasure
+  filter_upwards [coeFn_positiveEndChartLp q (jetOperator 2 StripSobolev.stripMeasure
       (endTransferCoeff q β) f),
     (quasiMeasurePreserving_endBandCoord q).ae (coeFn_jetOperator hN f)] with z h₁ h₂
   rw [endTransfer_apply, h₁, h₂]
@@ -723,15 +737,15 @@ theorem jetOperator_endTransfer {W : Type*} [NormedAddCommGroup W] [NormedSpace 
     {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ (volume.restrict thricePuncturedSphereReal))
     (f : Lp (V × V × V) 2 StripSobolev.stripMeasure) :
-    jetOperator (volume.restrict thricePuncturedSphereReal) M (endTransfer q β f) =
-      positiveEndChartLp q (jetOperator StripSobolev.stripMeasure
+    jetOperator 2 (volume.restrict thricePuncturedSphereReal) M (endTransfer q β f) =
+      positiveEndChartLp q (jetOperator 2 StripSobolev.stripMeasure
         (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f) := by
   have hMφ : MemLp (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) ∞
       StripSobolev.stripMeasure :=
     (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).clm_comp ∞ hN
   refine Lp.ext ?_
   filter_upwards [coeFn_jetOperator hM (endTransfer q β f), coeFn_endTransfer q hN f,
-    coeFn_positiveEndChartLp q (jetOperator StripSobolev.stripMeasure
+    coeFn_positiveEndChartLp q (jetOperator 2 StripSobolev.stripMeasure
       (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f),
     (quasiMeasurePreserving_endBandCoord q).ae (coeFn_jetOperator hMφ f),
     ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z h₁ h₂ h₃ h₄ hz

@@ -38,6 +38,9 @@ records the derivatives of a section cut off by a function of `s`.
   by a function `β(s)` are `∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`.
 * `TauCeti.Floer.sobolevDensity_add_le`: the density of `ξ₁ + ξ₂` is at most twice the sum of the
   densities of `ξ₁` and `ξ₂`.
+* `TauCeti.Floer.setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity`: on a compact set where a
+  conformal weight `ρ` is at most `B`, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` is at
+  most `B + 1` times the `W^{1,2}` energy.
 * `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
   its integral over a rectangle bounds the `L²` norm.
 * `TauCeti.Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one`: if `β = 1` near every point
@@ -164,5 +167,22 @@ theorem setIntegral_sobolevDensity_le_of_eventuallyEq_one {ξ : ℝ × ℝ → V
   -- Near `s` the cut-off map agrees with `ξ`.
   refine (sobolevDensity_congr_of_eventuallyEq ((hβ1 z hz).mono fun z' h ↦ ?_)).symm
   simp [h]
+
+/-- **The weighted energy on a compact set.** On a compact set `K` where a weight `ρ` is at most
+`B ≥ 0`, the weighted energy `∫_K (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of a `C¹` section is at most `B + 1`
+times its `W^{1,2}` energy on `K`. -/
+theorem setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) {ρ : ℝ × ℝ → ℝ} {B : ℝ} (hB0 : 0 ≤ B) (hB : ∀ z ∈ K, ρ z ≤ B)
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
+    ∫⁻ z in K, ENNReal.ofReal (ρ z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
+        ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) ≤
+      ENNReal.ofReal ((B + 1) * ∫ z in K, sobolevDensity ξ z) := by
+  rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal
+    (((continuous_sobolevDensity hξ).continuousOn.integrableOn_compact hK).const_mul _)
+    (ae_of_all _ fun z ↦ mul_nonneg (by positivity) (sobolevDensity_nonneg ξ z))]
+  refine setLIntegral_mono' hK.measurableSet fun z hz ↦ ENNReal.ofReal_le_ofReal ?_
+  rw [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  nlinarith [mul_le_mul_of_nonneg_right (hB z hz) (sq_nonneg ‖ξ z‖),
+    sq_nonneg ‖fderiv ℝ ξ z (1, 0)‖, sq_nonneg ‖fderiv ℝ ξ z (0, 1)‖, sq_nonneg ‖ξ z‖]
 
 end TauCeti.Floer

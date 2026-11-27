@@ -556,14 +556,17 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) : ⇑(c • f) = c �
 theorem coe_sub (f g : CkHolderSpaceOn k α Ω F) : ⇑(f - g) = f - g := by
   rw [eq_sub_iff_add_eq, ← coe_add, sub_add_cancel]
 
+/-- The underlying function of a finite sum is the sum of the underlying functions. -/
+@[simp]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum (⟨⟨(⇑), coe_zero⟩, coe_add⟩ : CkHolderSpaceOn k α Ω F →+ Ω → F) f s
+
 /-- The value of a finite sum at a point is the sum of the values. -/
 @[simp]
 theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) (x : Ω) :
     (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+  rw [coe_sum, Finset.sum_apply]
 
 /-- The derivative field of order zero has the norm of the underlying function at each point. -/
 theorem norm_iteratedFDeriv_zero (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
@@ -611,6 +614,11 @@ theorem extend_apply_of_notMem (f : CkHolderSpaceOn k α Ω F) {x : E} (hx : x �
 on `Ω`. -/
 theorem contDiffOn_extend (f : CkHolderSpaceOn k α Ω F) : ContDiffOn ℝ k f.extend Ω :=
   f.contDiffOn f.extend_apply
+
+/-- From order one on, the extension by zero is differentiable at each point of `Ω`. -/
+theorem differentiableAt_extend (f : CkHolderSpaceOn (k + 1) α Ω F) {x : E} (hx : x ∈ Ω) :
+    DifferentiableAt ℝ f.extend x :=
+  (f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hx)
 
 /-- The iterated derivatives of the extension by zero at points of `Ω` are the derivative fields. -/
 theorem iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) (x : Ω) :
