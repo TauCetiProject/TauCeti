@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
-import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 import TauCeti.NumberTheory.QuadraticForm.Global.Isotropy
-import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 
 /-!
 # The Hasse–Minkowski theorem for representation and isometry of forms
@@ -17,21 +15,23 @@ Let `Q` be a regular quadratic form and `R` a quadratic form on a finite-dimensi
 both over a number field `K`. This file proves that `Q` admits an injective isometry into `R` if
 and only if it does so at every finite and every real place of `K`
 (`QuadraticForm.LocallyRepresents`), and that `Q` and `R` are isometric if and only if they are
-isometric at every finite and every real place (`QuadraticForm.LocallyEquivalent`). Only `Q` needs
-to be regular: a zero orthogonal summand of `R` does not help to represent a regular form, globally
-or locally, so `R` may be replaced by its regular restriction to a complement of its radical.
+isometric at every finite and every real place (`QuadraticForm.LocallyEquivalent`). For
+representation only `Q` needs to be regular: a zero orthogonal summand of `R` does not help to
+represent a regular form, globally or locally, so in the representation theorem `R` may be replaced
+by its regular restriction to a complement of its radical.
 
 For regular `R`, the representation theorem is proved by induction on the rank of `Q`. A regular
 form of positive rank has a nonzero value `c`; the line `⟨c⟩` is then represented by `Q` and, by the
 Hasse–Minkowski theorem for scalars, by `R`. Splitting it off gives `Q ≅ ⟨c⟩ ⊥ Q'` and
 `R ≅ ⟨c⟩ ⊥ R'` with `Q'` and `R'` regular, and Witt cancellation for representation, applied at
-every place, shows that `Q'` is locally represented by `R'`. The isometry theorem follows, since an
-injective linear map between spaces of the same finite dimension is bijective.
+every finite and every real place, shows that `Q'` is locally represented by `R'`. The isometry
+theorem follows from the representation theorem: local isometry forces `Q` and `R` to have the same
+dimension, so the resulting injective isometry is bijective.
 
 ## Main results
 
-* `QuadraticForm.locallyRepresents_of_locallyRepresents_prod`: a regular summand cancels from a
-  local representation of orthogonal sums.
+* `QuadraticForm.locallyRepresents_of_locallyRepresents_prod`: a regular finite-dimensional summand
+  cancels from a local representation of orthogonal sums.
 * `QuadraticForm.LocallyRepresents.isRepresentedBy`,
   `QuadraticForm.isRepresentedBy_iff_locallyRepresents`: the Hasse–Minkowski theorem for
   representation of regular forms.
@@ -100,7 +100,7 @@ private theorem isRepresentedBy_of_locallyRepresents_of_nondegenerate [FiniteDim
       ((represents_iff_locallyRepresentsScalar R _).mpr
         (h.locallyRepresentsScalar (LocallyRepresentsScalar.of_represents
           ((represents_iff Q _).mpr ⟨x, rfl⟩))))
-    -- Split the line off both forms and cancel it at every place.
+    -- Split the line off both forms and cancel it at every finite and every real place.
     obtain ⟨P, hP, hQP⟩ := hLQ.exists_equivalent_prod hL hQ
     obtain ⟨S, hS, hRS⟩ := hLR.exists_equivalent_prod hL hR
     have hloc := locallyRepresents_of_locallyRepresents_prod hL
@@ -148,7 +148,10 @@ theorem LocallyEquivalent.equivalent {Q : _root_.QuadraticForm K V}
   obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff Q R).mp (h.locallyRepresents.isRepresentedBy hQ)
   have hbij : Function.Bijective f :=
     ⟨hf, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h.finrank_eq).mp hf⟩
-  exact ⟨{ toLinearEquiv := LinearEquiv.ofBijective f hbij, map_app' := hfQ }⟩
+  exact ⟨{ toLinearEquiv := LinearEquiv.ofBijective f hbij
+           map_app' x := by
+             simpa only [LinearEquiv.coe_toLinearMap, LinearMap.toFun_eq_coe,
+               LinearEquiv.ofBijective_apply] using hfQ x }⟩
 
 /-- **The Hasse–Minkowski theorem for isometry** (O'Meara 66:4). A regular form over a number field
 `K` is isometric over `K` to a form on a finite-dimensional space if and only if the two forms are

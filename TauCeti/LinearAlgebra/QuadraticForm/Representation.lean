@@ -32,10 +32,11 @@ bridge from value questions to isotropy questions, following Lam, *Introduction 
 over Fields*, I.2.3 and I.3.5.
 
 An injective isometry identifies its source with the restriction of the target to its image, so
-a finite-dimensional regular form splits off along any injective isometry as an orthogonal summand,
-with regular complement when the ambient form is regular. Representation is compatible with
-orthogonal sums, a zero orthogonal summand of the ambient form does not help to represent a form
-with trivial radical, and the line `⟨a⟩` for `a ≠ 0` is represented exactly when the scalar `a` is.
+over a field in which `2` is invertible a finite-dimensional regular form splits off along any
+isometry as an orthogonal summand, with regular complement when the ambient form is regular.
+Representation is compatible with orthogonal sums, a zero orthogonal summand of the ambient form
+does not help to represent a form with trivial radical, and over a domain the line `⟨a⟩` for
+`a ≠ 0` is represented exactly when the scalar `a` is.
 -/
 
 public section
@@ -78,7 +79,10 @@ theorem Isometry.equivalent_restrict_range {M' : Type*} [AddCommMonoid M'] [Modu
     {Q : QuadraticMap R M N} {Q' : QuadraticMap R M' N} (f : Q →qᵢ Q')
     (hf : Function.Injective f) : Q.Equivalent (Q'.restrict (LinearMap.range f.toLinearMap)) :=
   ⟨{ toLinearEquiv := LinearEquiv.ofInjective f.toLinearMap hf
-     map_app' := f.map_app }⟩
+     map_app' x := by
+       simpa only [QuadraticMap.restrict_apply, LinearEquiv.coe_toLinearMap,
+         LinearMap.toFun_eq_coe, LinearEquiv.ofInjective_apply, Isometry.coe_toLinearMap] using
+         f.map_app x }⟩
 
 /-- The left factor of an orthogonal product is represented by the product. -/
 theorem isRepresentedBy_prod_left (Q₁ : QuadraticMap R M N)
@@ -121,9 +125,8 @@ theorem IsRepresentedBy.prod
     (Q₁.prod Q₂).IsRepresentedBy (Q₃.prod Q₄) := by
   obtain ⟨f, hf⟩ := h₁₃
   obtain ⟨g, hg⟩ := h₂₄
-  refine ⟨f.prodMap g, fun x y hxy ↦ ?_⟩
-  simp only [Isometry.prodMap_apply, Prod.ext_iff] at hxy ⊢
-  exact ⟨hf hxy.1, hg hxy.2⟩
+  exact ⟨f.prodMap g, (funext (Isometry.prodMap_apply f g) : ⇑(f.prodMap g) = Prod.map f g) ▸
+    hf.prodMap hg⟩
 
 /-- An equivalent quadratic map is represented by the other map. -/
 theorem Equivalent.isRepresentedBy
@@ -349,32 +352,30 @@ theorem isRepresentedBy_smul_sq_iff {R V : Type*} [CommRing R] [IsDomain R] [Add
     [Module R V] (Q : QuadraticForm R V) {a : R} (ha : a ≠ 0) :
     (a • sq : QuadraticForm R R).IsRepresentedBy Q ↔ Represents Q a := by
   refine ⟨fun h ↦ h.represents ⟨1, by simp⟩, fun ⟨x, hx⟩ ↦ ?_⟩
-  refine (isRepresentedBy_iff _ _).mpr
-    ⟨LinearMap.toSpanSingleton R V x, fun s t hst ↦ ?_, fun t ↦ ?_⟩
-  · -- `Q ((s - t) • x) = (s - t)² a` vanishes, and `a ≠ 0`.
-    have h0 : Q ((s - t) • x) = 0 := by simpa [sub_smul] using congrArg Q (sub_eq_zero.mpr hst)
-    simpa [QuadraticMap.map_smul, hx, ha, sub_eq_zero] using h0
-  · simp [QuadraticMap.map_smul, hx, mul_comm]
+  -- `t ↦ t • x` is an isometry from `⟨a⟩`, injective because `⟨a⟩` is regular.
+  let f : (a • sq : QuadraticForm R R) →qᵢ Q :=
+    ⟨LinearMap.toSpanSingleton R V x, fun t ↦ by simp [QuadraticMap.map_smul, hx, mul_comm]⟩
+  exact ⟨f, f.injective_of_radical_eq_bot (nondegenerate_smul_sq ha).radical_eq_bot⟩
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
-/-- **A finite-dimensional regular form splits off along an injective isometry.** If `f` is an
-injective isometry from a finite-dimensional regular form `Q₁` into `Q`, then `Q ≅ Q₁ ⊥ Q|_P`,
-where `P` is the orthogonal complement of the image of `f`. -/
+/-- **A finite-dimensional regular form splits off along an isometry.** Over a field in which `2`
+is invertible, if `f` is an isometry from a finite-dimensional regular form `Q₁` into `Q`, then
+`Q ≅ Q₁ ⊥ Q|_P`, where `P` is the orthogonal complement of the image of `f`. -/
 theorem Isometry.equivalent_prod_restrict_orthogonal [Invertible (2 : K)]
     {V₁ : Type*} [AddCommGroup V₁] [Module K V₁] [FiniteDimensional K V₁]
-    {Q : QuadraticForm K V} {Q₁ : QuadraticForm K V₁} (f : Q₁ →qᵢ Q)
-    (hf : Function.Injective f) (hQ₁ : Q₁.Nondegenerate) :
+    {Q : QuadraticForm K V} {Q₁ : QuadraticForm K V₁} (f : Q₁ →qᵢ Q) (hQ₁ : Q₁.Nondegenerate) :
     Q.Equivalent (Q₁.prod (Q.restrict
       (LinearMap.BilinForm.orthogonal Q.polarBilin (LinearMap.range f.toLinearMap)))) := by
-  obtain ⟨e⟩ := f.equivalent_restrict_range hf
+  obtain ⟨e⟩ := f.equivalent_restrict_range (f.injective_of_radical_eq_bot hQ₁.radical_eq_bot)
   exact ⟨(IsometryEquiv.prodRestrictOrthogonal Q _
     (e.nondegenerate_iff.mp hQ₁).isCompl_orthogonal).symm.trans
       (e.symm.prod (IsometryEquiv.refl _))⟩
 
-/-- **A represented finite-dimensional regular form splits off.** If a finite-dimensional regular
-form `Q₁` is represented by a regular form `Q`, then `Q ≅ Q₁ ⊥ Q|_P` for a subspace `P` on which
-`Q` is regular, namely the orthogonal complement of the image of `Q₁`. -/
+/-- **A represented finite-dimensional regular form splits off.** Over a field in which `2` is
+invertible, if a finite-dimensional regular form `Q₁` is represented by a regular form `Q`, then
+`Q ≅ Q₁ ⊥ Q|_P` for a subspace `P` on which `Q` is regular, namely the orthogonal complement of
+the image of `Q₁`. -/
 theorem IsRepresentedBy.exists_equivalent_prod [Invertible (2 : K)]
     {V₁ : Type*} [AddCommGroup V₁] [Module K V₁] [FiniteDimensional K V₁]
     {Q : QuadraticForm K V} {Q₁ : QuadraticForm K V₁} (h : Q₁.IsRepresentedBy Q)
@@ -383,7 +384,7 @@ theorem IsRepresentedBy.exists_equivalent_prod [Invertible (2 : K)]
   obtain ⟨f, hf⟩ := h
   obtain ⟨e⟩ := f.equivalent_restrict_range hf
   exact ⟨_, hQ.nondegenerate_restrict_orthogonal (e.nondegenerate_iff.mp hQ₁),
-    f.equivalent_prod_restrict_orthogonal hf hQ₁⟩
+    f.equivalent_prod_restrict_orthogonal hQ₁⟩
 
 /-- For a quadratic form with trivial radical, every nonzero isotropic vector `x` has an
 isotropic partner `y` with `polar Q x y = 1`, so that `x, y` is a hyperbolic pair. -/
