@@ -40,7 +40,8 @@ product in elementary symmetric polynomials.
   higher degree.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
-  over `a ∈ s` against weights `w(a)`.
+  over `a ∈ s` against weights `w(a)`; `Multiset.sum_map_mul_esymm_erase_map_mul` scales that sum
+  under `s ↦ c s`.
 * `Multiset.esymm_card_eq_prod` and `Multiset.esymm_map_inv_mul_prod`: `e_{card s}(s) = ∏ s`
   and the reversal `e_j(s⁻¹) ∏ s = e_{card s - j}(s)` for `0 ∉ s`.
 * `TauCeti.esymmInt`: the elementary symmetric polynomial `e_m` of an integer degree `m`, which
@@ -186,6 +187,25 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   refine congrArg Multiset.sum (Multiset.map_congr rfl fun k _ ↦ ?_)
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
+
+/-- Scaling a multiset `s` by `c`, with a weight `w` satisfying `w(c a) = d w(a)`, scales
+`∑_{a ∈ s} w(a) eₙ(s ∖ a)` by `cⁿ d`. No condition on `c` is needed. -/
+theorem Multiset.sum_map_mul_esymm_erase_map_mul {R : Type*} [CommRing R] [DecidableEq R]
+    (s : Multiset R) {w : R → R} {c d : R} (hw : ∀ a, w (c * a) = d * w a) (n : ℕ) :
+    ((s.map (c * ·)).map fun a ↦ w a * ((s.map (c * ·)).erase a).esymm n).sum =
+      c ^ n * d * (s.map fun a ↦ w a * (s.erase a).esymm n).sum := by
+  rw [Multiset.sum_map_mul_esymm_erase, Multiset.sum_map_mul_esymm_erase, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  have hkn : k ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)
+  have hesymm : (s.map (c * ·)).esymm (n - k) = c ^ (n - k) * s.esymm (n - k) := by
+    simpa only [smul_eq_mul] using (Multiset.pow_smul_esymm c (n - k) s).symm
+  have hsum : ((s.map (c * ·)).map fun a ↦ a ^ k * w a).sum =
+      c ^ k * d * (s.map fun a ↦ a ^ k * w a).sum := by
+    rw [Multiset.map_map, ← Multiset.sum_map_mul_left]
+    exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by
+      simp only [Function.comp_apply, hw, mul_pow]; ring)
+  rw [hesymm, hsum, ← pow_sub_mul_pow c hkn]
+  ring
 
 /-- The top elementary symmetric function of a multiset is its product: `e_{card s}(s) = ∏ s`. -/
 @[simp]

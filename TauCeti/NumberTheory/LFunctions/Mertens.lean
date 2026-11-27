@@ -206,20 +206,6 @@ private theorem exists_abs_card_idealsLE_sub_le :
   have h := isBigOWith_principal.mp hC y hy
   rwa [Real.norm_eq_abs, Real.norm_of_nonneg (zero_le_one.trans (hpow y hy))] at h
 
-/-- **Chebyshev's upper bound** `ψ_K(t) ≤ D t` on `[1, ∞)`, from the prime ideal theorem. -/
-private theorem exists_primePsi_le :
-    ∃ D, 0 ≤ D ∧ ∀ t, 1 ≤ t → primePsi K Set.univ t ≤ D * t := by
-  have hO := (primeIdealTheorem K).1.isBigO.isBigO_principal_Ici (fun _ ↦ ⟨1, one_pos,
-    fun t ht ↦ ht.1.trans_eq (Real.norm_of_nonneg (zero_le_one.trans ht.1)).symm⟩)
-    fun Y ↦ ⟨primePsi K Set.univ Y, fun t ht ↦ by
-      rw [Real.norm_of_nonneg (primePsi_nonneg _ t)]
-      exact primePsi_mono _ ht.2⟩
-  obtain ⟨D, hD0, hD⟩ := hO.exists_nonneg
-  refine ⟨D, hD0, fun t ht ↦ ?_⟩
-  have h := isBigOWith_principal.mp hD t ht
-  rw [Real.norm_of_nonneg (primePsi_nonneg _ t), Real.norm_of_nonneg (zero_le_one.trans ht)] at h
-  exact h
-
 /-! ### Mertens' first theorem -/
 
 /-- **Abel summation of `log N𝔞`.** If the ideal count differs from `ρ y` by at most
@@ -352,7 +338,7 @@ theorem isBigO_primePowerSummatory_div_sub_log :
         (fun A ↦ primePowerWeight A / Ideal.absNorm (A : Ideal (𝓞 K))) x - Real.log x) =O[atTop]
       fun _ ↦ (1 : ℝ) := by
   obtain ⟨C, hC0, hC⟩ := exists_abs_card_idealsLE_sub_le K
-  obtain ⟨D, hD0, hD⟩ := exists_primePsi_le K
+  obtain ⟨D, hD0, hD⟩ := exists_primePsi_univ_le_mul K
   set ρ := dedekindZeta_residue K
   have hρ : 0 < ρ := dedekindZeta_residue_pos K
   set d : ℝ := (Module.finrank ℚ K : ℝ)
@@ -376,7 +362,8 @@ theorem isBigO_primePowerSummatory_div_sub_log :
       _ = C * d * x := by rw [← Real.rpow_add hx0, sub_add_cancel, Real.rpow_one]
   have h1 := abs_idealSummatory_log_absNorm_sub_le K hC0 hC hx
   rw [idealSummatory_log_absNorm_eq] at h1
-  have h2 := abs_primePowerSummatory_mul_card_sub_le K hC0 hC hD0 hD hx
+  have h2 := abs_primePowerSummatory_mul_card_sub_le K hC0 hC hD0
+    (fun t ht ↦ hD t (zero_le_one.trans ht)) hx
   have key : ρ * x * |W - Real.log x| ≤ (C * d + (ρ + C) + C * D * d) * x := by
     have hdecomp : ρ * x * (W - Real.log x) =
         -(P - ρ * x * W) + (P - Real.log x * (idealsLE K x).card) + E * Real.log x := by

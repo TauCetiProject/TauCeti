@@ -889,6 +889,25 @@ theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E]
       _ = π * C / (2 * K) := div_mul_div_comm _ _ _ _
       _ ≤ ε := by rw [div_le_iff₀ (by positivity)]; linarith
 
+open Real in
+/-- An angle cutoff `θ₀` with gradient at most `ε` that equals `π / 2` near every `t` with
+`R₂ < |t|`, composed with `Φ - s₀` for a differentiable `Φ` with gradient at most one, has
+gradient at most `ε` and equals `π / 2` near every `z` with `R₂ < Φ z - s₀`. -/
+theorem norm_fderiv_comp_sub_le_and_eventuallyEq [NormedSpace ℝ E] {θ₀ : ℝ → ℝ} {Φ : E → ℝ}
+    {ε R₂ : ℝ} (s₀ : ℝ) (hθ₀ : Differentiable ℝ θ₀) (hΦ : Differentiable ℝ Φ)
+    (hθ₀out : ∀ t, R₂ < ‖t‖ → θ₀ =ᶠ[𝓝 t] fun _ ↦ π / 2)
+    (hθ₀d : ∀ t, ‖fderiv ℝ θ₀ t‖ ≤ ε) (hΦd : ∀ z, ‖fderiv ℝ Φ z‖ ≤ 1) :
+    (∀ z, ‖fderiv ℝ (fun t ↦ θ₀ (Φ t - s₀)) z‖ ≤ ε) ∧
+      ∀ z, R₂ < Φ z - s₀ → (fun t ↦ θ₀ (Φ t - s₀)) =ᶠ[𝓝 z] fun _ ↦ π / 2 := by
+  refine ⟨fun z ↦ ?_, fun z hz ↦ ?_⟩
+  · have hd : HasFDerivAt (fun t ↦ θ₀ (Φ t - s₀))
+        ((fderiv ℝ θ₀ (Φ z - s₀)).comp (fderiv ℝ Φ z)) z :=
+      (hθ₀ _).hasFDerivAt.comp z ((hΦ z).hasFDerivAt.sub_const s₀)
+    rw [hd.fderiv]
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    simpa using mul_le_mul (hθ₀d _) (hΦd z) (norm_nonneg _) ((norm_nonneg _).trans (hθ₀d 0))
+  · exact ((hΦ z).sub_const s₀).continuousAt.eventually (hθ₀out _ (hz.trans_le (le_abs_self _)))
+
 /-- **A smooth cutoff of the identity on the line.** For `r < R`, some smooth `k : ℝ → ℝ`
 equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
 For `0 < r` it is `s ↦ χ s * s` for a smooth bump `χ` equal to one on `[-r, r]` and supported in

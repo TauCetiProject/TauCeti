@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients

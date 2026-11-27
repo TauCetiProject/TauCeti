@@ -24,6 +24,9 @@ to the product decomposition, an element `e x + (1 - e) y` has `e`-component `e 
 `(1 - e)`-component `(1 - e) y`, and since `e² = e` and `e (1 - e) = 0` such elements multiply
 componentwise. The same holds in any ring for `x` and `y` commuting with `e`.
 
+If `e` and `e + y` are both idempotents of a (not necessarily unital or associative) ring, expanding
+`(e + y)² = e + y` gives `e y + y e + y y = y`.
+
 For an idempotent `p` of any ring, `2 p - 1` squares to `1`. For a star projection this is the
 self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`. Conversely, for any element
 `u` with `u * u = 1`, `1 + u` squares to `(1 + u) + (1 + u)`, and when `v` anticommutes with `u`
@@ -45,6 +48,8 @@ operator and restricts it to a scalar.
 
 ## Main results
 
+* `IsIdempotentElem.mul_add_mul_add_mul_eq`: if `e` and `e + y` are idempotents, then
+  `e y + y e + y y = y`.
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y`, with `x` and `y`
   commuting with `e`, multiply componentwise.
 * `IsIdempotentElem.mul_add_one_sub_mul_mul_add_one_sub`: `x ↦ p * x + 1 - p` is multiplicative
@@ -75,6 +80,14 @@ operator and restricts it to a scalar.
 public section
 
 namespace IsIdempotentElem
+
+/-- If `e` and `e + y` are idempotents, then `e y + y e + y y = y`. -/
+theorem mul_add_mul_add_mul_eq {R : Type*} [NonUnitalNonAssocRing R] {e y : R}
+    (he : IsIdempotentElem e) (hey : IsIdempotentElem (e + y)) : e * y + y * e + y * y = y := by
+  have h := hey.eq
+  rw [mul_add, add_mul, add_mul, he.eq] at h
+  have h' : e + (e * y + y * e + y * y) = e + y := by rw [← h]; abel
+  exact add_left_cancel h'
 
 section Ring
 

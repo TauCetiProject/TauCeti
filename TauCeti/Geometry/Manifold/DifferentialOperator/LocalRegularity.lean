@@ -229,7 +229,7 @@ theorem IsLocallySobolevAt.of_localOperatorDualCLM (hF' : Module.finrank ℝ F' 
     (hσ : ∀ ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ, ξ ≠ 0 →
       sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n) BoundarylessManifold.isInteriorPoint
         ⟨P, hP⟩ ξ u ≠ 0)
-    (h : IsLocallySobolevAt s (localOperatorDualCLM P
+    (h : IsLocallySobolevAt s (BundleTest.localOperatorDualCLM P
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x) :
     IsLocallySobolevAt (s + r) T x :=
   isLocallySobolevAt_def.2 <| IsLocallyAt.of_localOperatorDualCLM

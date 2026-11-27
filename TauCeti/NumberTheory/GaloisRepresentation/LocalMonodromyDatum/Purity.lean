@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.LinearAlgebra.End.MonodromyFiltration
+public import TauCeti.LinearAlgebra.End.MonodromyFiltration.Basic
 public import TauCeti.NumberTheory.GaloisRepresentation.LocalMonodromyDatum
 public import TauCeti.NumberTheory.WeilNumber.GradedPure
 public import TauCeti.RingTheory.Nilpotent.Log
