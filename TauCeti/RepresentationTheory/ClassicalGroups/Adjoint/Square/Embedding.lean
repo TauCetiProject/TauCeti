@@ -78,7 +78,8 @@ theorem alternatingEmbeddingMap_pairing (x : V) (t : T) :
       (SLAdjoint.traceDualEquiv K n x) (alternatingProductMap K n t) :=
   liftMap_pairing _ x t
 
-local instance : Invertible (Fintype.card (Fin n) : K) :=
+/-- The matrix size is invertible in a field when its cast is nonzero. -/
+local instance invertibleCardFin : Invertible (Fintype.card (Fin n) : K) :=
   invertibleOfNonzero (by simpa only [Fintype.card_fin] using NeZero.ne (n : K))
 
 variable (K n)
