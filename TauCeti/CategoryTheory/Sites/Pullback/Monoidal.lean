@@ -52,6 +52,17 @@ variable {C D : Type*} [Category* C] [Category* D] (u : C ⥤ D) (A : Type*) [Ca
   [HasWeakSheafify J A] [HasWeakSheafify K A] [(J.W (A := A)).IsMonoidal]
   [(K.W (A := A)).IsMonoidal] [u.IsContinuous J K]
 
+/-- The lax monoidal structure on the restriction along `u` of underlying presheaves of sheaves,
+transported from the composite of the lax monoidal `sheafToPresheaf K A` with the strict monoidal
+restriction along `u.op`. It is the auxiliary structure from which
+`sheafPushforwardContinuousLaxMonoidal` is obtained by sheafifying. -/
+@[instance_reducible]
+noncomputable def sheafPushforwardContinuousCompSheafToPresheafLaxMonoidal :
+    letI := (sheafificationAdjunction K A).rightAdjointLaxMonoidal
+    (u.sheafPushforwardContinuous A J K ⋙ sheafToPresheaf J A).LaxMonoidal :=
+  letI := (sheafificationAdjunction K A).rightAdjointLaxMonoidal
+  Functor.LaxMonoidal.transport (u.sheafPushforwardContinuousCompSheafToPresheafIso A J K).symm
+
 /-- The pushforward of sheaves along `u` is lax monoidal. On underlying presheaves it is the
 restriction along `u`, which is strict monoidal, and `sheafToPresheaf J A` is lax monoidal as the
 right adjoint of the monoidal sheafification; sheafifying again recovers `u_*` through
@@ -60,9 +71,7 @@ right adjoint of the monoidal sheafification; sheafifying again recovers `u_*` t
 `toTensorUnit_comp_sheafPushforwardContinuous_ε_hom`. -/
 noncomputable instance sheafPushforwardContinuousLaxMonoidal :
     (u.sheafPushforwardContinuous A J K).LaxMonoidal :=
-  letI := (sheafificationAdjunction K A).rightAdjointLaxMonoidal
-  letI : (u.sheafPushforwardContinuous A J K ⋙ sheafToPresheaf J A).LaxMonoidal :=
-    Functor.LaxMonoidal.transport (u.sheafPushforwardContinuousCompSheafToPresheafIso A J K).symm
+  letI := sheafPushforwardContinuousCompSheafToPresheafLaxMonoidal u A J K
   Functor.LaxMonoidal.transport (F := (u.sheafPushforwardContinuous A J K ⋙ sheafToPresheaf J A) ⋙
       presheafToSheaf J A) (associator _ _ _ ≪≫
     isoWhiskerLeft _ (sheafificationNatIso J A).symm ≪≫ rightUnitor _)
@@ -77,25 +86,14 @@ lemma toTensorObj_comp_sheafPushforwardContinuous_μ_hom (F G : Sheaf K A) :
       (μ (u.sheafPushforwardContinuous A J K) F G).hom =
     Functor.whiskerLeft u.op (Sheaf.toTensorObj F G) := by
   let := (sheafificationAdjunction K A).rightAdjointLaxMonoidal
-  have hS : μ (sheafToPresheaf K A) F G = Sheaf.toTensorObj F G := by
-    have hc (H : Sheaf K A) :
-        (sheafificationAdjunction K A).counit.app H = (sheafificationIso H).inv := by
-      ext1
-      simp
-    rw [Adjunction.rightAdjointLaxMonoidal_μ, Adjunction.homEquiv_unit, hc, hc]
-    simp [Sheaf.toTensorObj_def]
-  let : (u.sheafPushforwardContinuous A J K ⋙ sheafToPresheaf J A).LaxMonoidal :=
-    Functor.LaxMonoidal.transport (u.sheafPushforwardContinuousCompSheafToPresheafIso A J K).symm
+  let := sheafPushforwardContinuousCompSheafToPresheafLaxMonoidal u A J K
   rw [sheafPushforwardContinuousLaxMonoidal, LaxMonoidal.transport_μ, comp_μ,
-    LaxMonoidal.transport_μ, comp_μ, hS]
-  have hN (P : Sheaf J A) : (sheafificationNatIso J A).hom.app P = (sheafificationIso P).hom :=
-    (rfl)
-  have hN' (P : Sheaf J A) : (sheafificationNatIso J A).inv.app P = (sheafificationIso P).inv :=
-    (rfl)
+    sheafPushforwardContinuousCompSheafToPresheafLaxMonoidal, LaxMonoidal.transport_μ, comp_μ,
+    sheafToPresheaf_μ_eq_toTensorObj]
   simp only [Iso.trans_inv, Iso.trans_hom, NatTrans.comp_app, associator_inv_app,
     associator_hom_app, isoWhiskerLeft_inv, isoWhiskerLeft_hom, whiskerLeft_app,
-    rightUnitor_inv_app, rightUnitor_hom_app, Iso.symm_inv, Iso.symm_hom, hN, hN',
-    Category.id_comp, Category.comp_id]
+    rightUnitor_inv_app, rightUnitor_hom_app, Iso.symm_inv, Iso.symm_hom, sheafificationNatIso,
+    NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, Category.id_comp, Category.comp_id]
   rw [Sheaf.toTensorObj_def, Category.assoc, ← ObjectProperty.FullSubcategory.comp_hom]
   -- Restriction along `u.op` is strict monoidal: its tensor map is the identity by definition.
   have hW : μ ((whiskeringLeft Cᵒᵖ Dᵒᵖ A).obj u.op) F.obj G.obj = 𝟙 _ := (rfl)
@@ -117,17 +115,13 @@ lemma toTensorUnit_comp_sheafPushforwardContinuous_ε_hom :
     Sheaf.toTensorUnit J A ≫ (ε (u.sheafPushforwardContinuous A J K)).hom =
       Functor.whiskerLeft u.op (Sheaf.toTensorUnit K A) := by
   let := (sheafificationAdjunction K A).rightAdjointLaxMonoidal
-  have hS : ε (sheafToPresheaf K A) = Sheaf.toTensorUnit K A := by
-    rw [Adjunction.rightAdjointLaxMonoidal_ε, Adjunction.homEquiv_unit]
-    simp [Sheaf.toTensorUnit_def]
-  let : (u.sheafPushforwardContinuous A J K ⋙ sheafToPresheaf J A).LaxMonoidal :=
-    Functor.LaxMonoidal.transport (u.sheafPushforwardContinuousCompSheafToPresheafIso A J K).symm
+  let := sheafPushforwardContinuousCompSheafToPresheafLaxMonoidal u A J K
   rw [sheafPushforwardContinuousLaxMonoidal, LaxMonoidal.transport_ε, comp_ε,
-    LaxMonoidal.transport_ε, comp_ε, hS]
-  have hN' (P : Sheaf J A) : (sheafificationNatIso J A).inv.app P = (sheafificationIso P).inv :=
-    (rfl)
+    sheafPushforwardContinuousCompSheafToPresheafLaxMonoidal, LaxMonoidal.transport_ε, comp_ε,
+    sheafToPresheaf_ε_eq_toTensorUnit]
   simp only [Iso.trans_hom, NatTrans.comp_app, associator_hom_app, isoWhiskerLeft_hom,
-    whiskerLeft_app, rightUnitor_hom_app, Iso.symm_hom, hN', Category.id_comp]
+    whiskerLeft_app, rightUnitor_hom_app, Iso.symm_hom, sheafificationNatIso,
+    NatIso.ofComponents_inv_app, Category.id_comp]
   rw [Sheaf.toTensorUnit_def, Category.assoc, ← ObjectProperty.FullSubcategory.comp_hom]
   -- Restriction along `u.op` is strict monoidal: its unit map is the identity by definition.
   have hW : ε ((whiskeringLeft Cᵒᵖ Dᵒᵖ A).obj u.op) = 𝟙 _ := (rfl)

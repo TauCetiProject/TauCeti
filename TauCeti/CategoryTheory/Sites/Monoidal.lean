@@ -30,6 +30,10 @@ sheaf `𝟙_ A`.
 * `CategoryTheory.Sheaf.toTensorUnit J A`: the canonical map `𝟙_ (Cᵒᵖ ⥤ A) ⟶ (𝟙_ (Sheaf J A)).obj`.
 * `CategoryTheory.Sheaf.tensorUnit_hom_ext`: morphisms of sheaves out of `𝟙_ (Sheaf J A)` agreeing
   after `Sheaf.toTensorUnit J A` are equal.
+* `CategoryTheory.sheafToPresheaf_μ_eq_toTensorObj`,
+  `CategoryTheory.sheafToPresheaf_ε_eq_toTensorUnit`: the lax monoidal structure of
+  `sheafToPresheaf J A`, as the right adjoint of sheafification, has tensor map
+  `Sheaf.toTensorObj` and unit map `Sheaf.toTensorUnit J A`.
 * `CategoryTheory.Sheaf.tensorUnitIsoConstantSheaf`: the unit `𝟙_ (Sheaf J A)` is the constant
   sheaf `𝟙_ A`.
 -/
@@ -110,6 +114,27 @@ lemma tensorUnit_hom_ext {H : Sheaf J A} {f g : 𝟙_ (Sheaf J A) ⟶ H}
     (h : toTensorUnit J A ≫ f.hom = toTensorUnit J A ≫ g.hom) : f = g := by
   refine (cancel_epi (Functor.Monoidal.εIso (presheafToSheaf J A)).inv).1 (Sheaf.hom_ext ?_)
   exact sheafify_hom_ext _ _ _ H.property (by simpa [toTensorUnit_def] using h)
+
+/-- The tensor map of `sheafToPresheaf J A`, lax monoidal as the right adjoint of the monoidal
+sheafification, is `Sheaf.toTensorObj`. -/
+lemma _root_.CategoryTheory.sheafToPresheaf_μ_eq_toTensorObj (F G : Sheaf J A) :
+    letI := (sheafificationAdjunction J A).rightAdjointLaxMonoidal
+    Functor.LaxMonoidal.μ (sheafToPresheaf J A) F G = toTensorObj F G := by
+  have hc (H : Sheaf J A) :
+      (sheafificationAdjunction J A).counit.app H = (sheafificationIso H).inv := by
+    ext1
+    simp
+  rw [Adjunction.rightAdjointLaxMonoidal_μ, Adjunction.homEquiv_unit, hc, hc]
+  simp [toTensorObj_def]
+
+variable (J A) in
+/-- The unit map of `sheafToPresheaf J A`, lax monoidal as the right adjoint of the monoidal
+sheafification, is `Sheaf.toTensorUnit J A`. -/
+lemma _root_.CategoryTheory.sheafToPresheaf_ε_eq_toTensorUnit :
+    letI := (sheafificationAdjunction J A).rightAdjointLaxMonoidal
+    Functor.LaxMonoidal.ε (sheafToPresheaf J A) = toTensorUnit J A := by
+  rw [Adjunction.rightAdjointLaxMonoidal_ε, Adjunction.homEquiv_unit]
+  simp [toTensorUnit_def]
 
 variable (J A) in
 /-- The unit of the tensor product of sheaves, the sheafification of the constant presheaf `𝟙_ A`,
