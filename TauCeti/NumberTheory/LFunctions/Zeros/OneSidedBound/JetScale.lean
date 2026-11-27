@@ -72,32 +72,35 @@ noncomputable def jetScale : ℝ :=
 theorem jetScale_def :
     P.jetScale E = exp P.jetLogCorrection * (2 * π) / NumberField.rootDiscr E := (rfl)
 
+private theorem jetScale_eq_exp :
+    P.jetScale E = exp (P.jetLogCorrection + log (2 * π) - log (NumberField.rootDiscr E)) := by
+  have hd : 0 < NumberField.rootDiscr E := by
+    rw [NumberField.rootDiscr_def, Int.cast_abs]
+    exact rpow_pos_of_pos (abs_pos.mpr (Int.cast_ne_zero.mpr (NumberField.discr_ne_zero E))) _
+  rw [jetScale_def, exp_sub, exp_add, exp_log (by positivity : 0 < 2 * π), exp_log hd]
+
 /-- The archimedean scale is strictly positive. -/
 theorem jetScale_pos : 0 < P.jetScale E := by
-  have hd : (0 : ℝ) < ↑|NumberField.discr E| := by
-    exact_mod_cast abs_pos.mpr (NumberField.discr_ne_zero E)
-  rw [jetScale_def, NumberField.rootDiscr_def]
-  exact div_pos (mul_pos (exp_pos _) (by positivity)) (rpow_pos_of_pos hd _)
+  rw [jetScale_eq_exp]
+  exact exp_pos _
 
 /-- The correction, `log (2π)`, and the log root discriminant contribute additively to
 `log Ω`, with the discriminant contribution subtracted. -/
 theorem log_jetScale :
     log (P.jetScale E) = P.jetLogCorrection + log (2 * π) - log (NumberField.rootDiscr E) := by
-  have hπ : 0 < 2 * π := by positivity
-  have hd : NumberField.rootDiscr E ≠ 0 := by
-    intro h
-    simpa [jetScale_def, h] using P.jetScale_pos E
-  rw [jetScale_def, log_div (mul_pos (exp_pos _) hπ).ne' hd,
-    log_mul (exp_pos _).ne' hπ.ne', log_exp]
+  rw [jetScale_eq_exp, log_exp]
+
+private theorem one_lt_of_jetScale_budget {x : ℕ}
+    (hscale : |P.jetLogCorrection| + log (2 * π) ≤ log (x : ℝ)) : 1 < (x : ℝ) := by
+  have hπ : 0 < log (2 * π) := log_pos (by linarith [Real.two_le_pi])
+  exact (log_pos_iff (by positivity)).mp (by linarith [abs_nonneg P.jetLogCorrection])
 
 /-- If the root discriminant is between `x^10` and `x^12`, the archimedean scale is between
 `x^(-13)` and `1` once the logarithmic correction and the constant `2π` fit in `log x`. -/
 theorem jetScale_mem_Icc {x : ℕ} (hscale : |P.jetLogCorrection| + log (2 * π) ≤ log (x : ℝ))
     (hdiscr : NumberField.rootDiscr E ∈ Icc ((x : ℝ) ^ 10) ((x : ℝ) ^ 12)) :
     P.jetScale E ∈ Icc ((x : ℝ) ^ (-13 : ℤ)) 1 := by
-  have hπ : 0 < log (2 * π) := log_pos (by linarith [Real.two_le_pi])
-  have hxlog : 0 < log (x : ℝ) := by linarith [abs_nonneg P.jetLogCorrection]
-  have hx : 0 < (x : ℝ) := zero_lt_one.trans ((log_pos_iff (by positivity)).1 hxlog)
+  have hx := zero_lt_one.trans (P.one_lt_of_jetScale_budget hscale)
   have hlow := log_le_log (pow_pos hx _) hdiscr.1
   have hhigh := log_le_log ((pow_pos hx 10).trans_le hdiscr.1) hdiscr.2
   norm_num [log_pow] at hlow hhigh
@@ -105,6 +108,7 @@ theorem jetScale_mem_Icc {x : ℕ} (hscale : |P.jetLogCorrection| + log (2 * π)
   · apply (log_le_log_iff (zpow_pos hx _) (P.jetScale_pos E)).mp
     rw [log_zpow, log_jetScale]
     push_cast
+    have hπ : 0 ≤ log (2 * π) := log_nonneg (by linarith [Real.two_le_pi])
     linarith [neg_abs_le P.jetLogCorrection]
   · apply (log_le_log_iff (P.jetScale_pos E) zero_lt_one).mp
     rw [log_jetScale, log_one]
@@ -117,9 +121,7 @@ theorem log_M_div_jetScale_mem_Icc {x b : ℕ} {M : ℝ}
     (hdiscr : NumberField.rootDiscr E ∈ Icc ((x : ℝ) ^ 10) ((x : ℝ) ^ 12))
     (hxb : x ^ 13 ≤ b) (hM : M ∈ Icc ((b : ℝ) ^ 20) ((b : ℝ) ^ 22)) :
     log (M / P.jetScale E) ∈ Icc (20 * log (b : ℝ)) (23 * log (b : ℝ)) := by
-  have hπ : 0 < log (2 * π) := log_pos (by linarith [Real.two_le_pi])
-  have hxlog : 0 < log (x : ℝ) := by linarith [abs_nonneg P.jetLogCorrection]
-  have hx : 0 < (x : ℝ) := zero_lt_one.trans ((log_pos_iff (by positivity)).1 hxlog)
+  have hx := zero_lt_one.trans (P.one_lt_of_jetScale_budget hscale)
   have hxb' : (x : ℝ) ^ 13 ≤ (b : ℝ) := by exact_mod_cast hxb
   have hb := (pow_pos hx 13).trans_le hxb'
   have hMpos := (pow_pos hb 20).trans_le hM.1
