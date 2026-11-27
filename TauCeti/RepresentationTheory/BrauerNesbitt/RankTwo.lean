@@ -9,30 +9,25 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.BaseChange.BrauerNesbitt
 import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
-import TauCeti.RepresentationTheory.Character.Charpoly
 
 /-!
 # The trace form of Brauer–Nesbitt in dimension two
 
 The characteristic polynomial of an endomorphism `f` of a two-dimensional space is
-`X ^ 2 - tr(f) X + det(f)`, and `tr(f²) = tr(f)² - 2 det(f)`. So for two-dimensional
-representations of a monoid, the characters determine the characteristic polynomials at every
-element as soon as `2` is invertible
-(`Representation.charpoly_eq_of_character_eq_of_finrank_eq_two`), and Brauer–Nesbitt
-(`Representation.nonempty_equiv_of_charpoly_eq_of_perfectField`) turns equal characters into an
-equivalence of semisimple representations. This is the case `d = 2`, over a perfect field, of the
-trace form of Brauer–Nesbitt in characteristic `p > d`.
+`X ^ 2 - tr(f) X + det(f)`, and `tr(f²) = tr(f)² - 2 det(f)`. Over a perfect field with `2 ≠ 0`,
+the resulting statement for two-dimensional representations is the case `d = 2` of the trace
+form of Brauer–Nesbitt (`Representation.nonempty_equiv_of_character_eq_of_factorial_ne_zero`).
 
 Over `𝔽₂` the trace of `f²` does not recover `det f`, but for a group the determinant of `ρ g` is a
-unit of `𝔽₂`, hence `1` (`Representation.det_apply_eq_one`): two-dimensional semisimple
-representations of a group over `𝔽₂` with equal characters are again equivalent.
+unit of `𝔽₂`, hence `1` (`Representation.det_apply_eq_one`). So the characteristic polynomials
+agree, and Brauer–Nesbitt (`Representation.nonempty_equiv_of_charpoly_eq_of_perfectField`) shows
+that two-dimensional semisimple representations of a group over `𝔽₂` with equal characters are
+again equivalent.
 
 ## Main results
 
-* `Representation.nonempty_equiv_of_character_eq_of_finrank_eq_two`: over a perfect field with
-  `2 ≠ 0`, two-dimensional semisimple representations with equal characters are equivalent.
-* `Representation.nonempty_equiv_of_character_eq_of_finrank_eq_two_zmod_two`: the same for
-  representations of a group over `𝔽₂`.
+* `Representation.nonempty_equiv_of_character_eq_of_finrank_eq_two_zmod_two`: two-dimensional
+  semisimple representations of a group over `𝔽₂` with equal characters are equivalent.
 
 ## References
 
@@ -50,28 +45,7 @@ open Polynomial Module
 
 namespace Representation
 
-variable {k G V W : Type*} [Field k] [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
-
-section Monoid
-
-variable [Monoid G]
-
-/-- **Brauer–Nesbitt in dimension two, trace form**: over a perfect field in which `2 ≠ 0`, two
-semisimple two-dimensional representations of a monoid with the same character are equivalent. -/
-theorem nonempty_equiv_of_character_eq_of_finrank_eq_two [PerfectField k] (hk : (2 : k) ≠ 0)
-    (ρ : Representation k G V) (σ : Representation k G W) [ρ.IsSemisimpleRepresentation]
-    [σ.IsSemisimpleRepresentation] (hV : finrank k V = 2) (hW : finrank k W = 2)
-    (h : ∀ g, ρ.character g = σ.character g) : Nonempty (ρ.Equiv σ) :=
-  have := Module.finite_of_finrank_eq_succ hV
-  have := Module.finite_of_finrank_eq_succ hW
-  nonempty_equiv_of_charpoly_eq_of_perfectField ρ σ
-    fun g ↦ charpoly_eq_of_character_eq_of_finrank_eq_two hk hV hW (h g) (h (g ^ 2))
-
-end Monoid
-
-section ZModTwo
-
-variable [Group G]
+variable {G : Type*} [Group G]
 
 /-- **Brauer–Nesbitt in dimension two over `𝔽₂`, trace form**: two semisimple two-dimensional
 representations of a group over `𝔽₂` with the same character are equivalent. The determinant of
@@ -88,7 +62,5 @@ theorem nonempty_equiv_of_character_eq_of_finrank_eq_two_zmod_two {V W : Type*} 
   simp only [character] at htr
   rw [LinearMap.charpoly_of_finrank_eq_two hV, LinearMap.charpoly_of_finrank_eq_two hW,
     det_apply_eq_one, det_apply_eq_one, htr]
-
-end ZModTwo
 
 end Representation

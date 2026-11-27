@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Algebra.GroupWithZero.Action.End
 import Mathlib.Algebra.Group.Subgroup.Actions
+import Mathlib.Tactic.Group
 
 /-!
 # Conjugation of subgroups
@@ -37,6 +38,9 @@ subgroup is the conjugate by `g` of the stabilizer of `a`.
   unchanged by conjugation by an element of that subgroup.
 * `MonoidHom.map_conjNormal_eq_of_inv_mul_mem`: composed with conjugation by `g`, such a
   homomorphism depends only on the coset `g N`.
+* `MulAut.conjNormal_pow_conjNormal_pow`: if `x ^ l ∈ N`, conjugating by `x ^ i` and then by
+  `x ^ j` (`i j : Fin l`) agrees with conjugating by `x ^ (i + j)`, up to an inner automorphism of
+  `N` by a power of `x ^ l`.
 * `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
 * `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
 * `Subgroup.mem_conjAct_smul_iff`: membership in a conjugate `g H g⁻¹`.
@@ -94,6 +98,31 @@ theorem map_conjNormal_eq_of_inv_mul_mem (ψ : N →* M) {g₀ g : G} (h : g₀�
   exact (ψ.comp (MulAut.conjNormal g₀).toMonoidHom).map_conjNormal_val a x
 
 end MonoidHom
+
+namespace MulAut
+
+/-- **Powers of `x` conjugate a normal subgroup modulo `x ^ l`.** If `x ^ l ∈ N`, then for
+`i j : Fin l` conjugation by `x ^ j` followed by `x ^ i` is conjugation by `x ^ (i + j)` (the sum
+taken in `Fin l`) followed by the inner automorphism of `N` by `(x ^ l) ^ ((i + j) / l)`. -/
+theorem conjNormal_pow_conjNormal_pow {G : Type*} [Group G] {N : Subgroup G} [N.Normal] {l : ℕ}
+    {x : G} (hx : x ^ l ∈ N) (h : N) (i j : Fin l) :
+    conjNormal (x ^ (i : ℕ)) (conjNormal (x ^ (j : ℕ)) h) =
+      (⟨x ^ l, hx⟩ : N) ^ (((i : ℕ) + j) / l) * conjNormal (x ^ ((i + j : Fin l) : ℕ)) h *
+        ((⟨x ^ l, hx⟩ : N) ^ (((i : ℕ) + j) / l))⁻¹ := by
+  apply Subtype.ext
+  have hpow : x ^ (i : ℕ) * x ^ (j : ℕ) =
+      (x ^ l) ^ (((i : ℕ) + j) / l) * x ^ ((i + j : Fin l) : ℕ) := by
+    rw [← pow_add, ← pow_mul, ← pow_add, Fin.val_add, Nat.div_add_mod]
+  simp only [Subgroup.coe_mul, InvMemClass.coe_inv, SubmonoidClass.coe_pow, conjNormal_apply]
+  calc
+    x ^ (i : ℕ) * (x ^ (j : ℕ) * (h : G) * (x ^ (j : ℕ))⁻¹) * (x ^ (i : ℕ))⁻¹ =
+        (x ^ (i : ℕ) * x ^ (j : ℕ)) * (h : G) * (x ^ (i : ℕ) * x ^ (j : ℕ))⁻¹ := by group
+    _ = ((x ^ l) ^ (((i : ℕ) + j) / l) * x ^ ((i + j : Fin l) : ℕ)) * (h : G) *
+          ((x ^ l) ^ (((i : ℕ) + j) / l) * x ^ ((i + j : Fin l) : ℕ))⁻¹ := by rw [hpow]
+    _ = (x ^ l) ^ (((i : ℕ) + j) / l) * (x ^ ((i + j : Fin l) : ℕ) * (h : G) *
+          (x ^ ((i + j : Fin l) : ℕ))⁻¹) * ((x ^ l) ^ (((i : ℕ) + j) / l))⁻¹ := by group
+
+end MulAut
 
 namespace Subgroup
 

@@ -49,6 +49,8 @@ vectors indexed by `ι`.
   coordinate sum of any finite basis of `U`.
 * `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
   zero coordinate at every basis vector outside the submodule.
+* `Module.Basis.repr_inr_eq_zero_of_mem`: if the basis vectors at the indices `Sum.inl i` form a
+  basis of a submodule `U`, the vectors of `U` have zero coordinates at the indices `Sum.inr j`.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
@@ -249,6 +251,14 @@ theorem repr_eq_zero_of_mem_of_notMem (cb : Basis ι R M) {S : Submodule R M}
     (hz : z ∈ S) : cb.repr z j = 0 := by
   by_contra hn
   exact hj ((cb.mem_span_image.mp (hS ▸ hz)) (Finsupp.mem_support_iff.mpr hn))
+
+/-- If the basis vectors `b (Sum.inl i)` form a basis `e` of a submodule `U`, then the vectors of
+`U` have zero coordinate at every index `Sum.inr j`. -/
+theorem repr_inr_eq_zero_of_mem {κ : Type*} (b : Basis (ι ⊕ κ) R M) {e : Basis ι R U}
+    (hbe : ∀ i, b (Sum.inl i) = e i) {x : M} (hx : x ∈ U) (j : κ) :
+    b.repr x (Sum.inr j) = 0 := by
+  have h : b.coord (Sum.inr j) ∘ₗ U.subtype = 0 := e.ext fun i ↦ by simp [← hbe]
+  simpa using LinearMap.congr_fun h ⟨x, hx⟩
 
 end Submodule
 

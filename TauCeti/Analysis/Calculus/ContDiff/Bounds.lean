@@ -111,6 +111,9 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   is a `C^n` map with bounded derivatives through order `n`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
+* `ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul`: a function
+  `h^n • Q (p, h)` with `Q` of class `C^k` has derivatives in `p` through order `k` bounded by
+  `C |h|^n`, uniformly for `p` in a compact set and `h` in a bounded interval.
 * `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left`,
   `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right`: the Leibniz rule in scaled units. If
   one factor of `g • f` has `hⁱ ‖Dⁱ ·‖ ≤ B` for `i ≤ k`, then
@@ -711,6 +714,30 @@ theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen {P : Typ
     hf.contDiffAt (hW.mem_nhds (hCKW hpx))
   exact ⟨hfpx.comp x (contDiffAt_const.prodMk contDiffAt_id), fun i hi ↦
     (hfpx.norm_iteratedFDeriv_prod_right_le i (mod_cast hi)).trans (hA i hi _ hpx)⟩
+
+/-- **Uniform estimates from a residual identity.** If `f (p, h) = h^n • Q (p, h)` for a `C^k`
+function `Q`, then on every compact set `K` of parameters and for `|h| ≤ h₀`, the derivatives in
+`p` through order `k` of `f (·, h)` are at most `C |h|^n`, with `C` depending only on the order,
+`K` and `h₀`. -/
+theorem ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul {P G : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ∞}
+    {n : ℕ} {f Q : P × ℝ → G} (hQ : ContDiff ℝ k Q) (hfQ : ∀ p h, f (p, h) = h ^ n • Q (p, h))
+    {j : ℕ} (hj : (j : ℕ∞) ≤ k) {K : Set P} (hK : IsCompact K) (h₀ : ℝ) :
+    ∃ C, ∀ p ∈ K, ∀ h : ℝ, |h| ≤ h₀ →
+      ‖iteratedFDeriv ℝ j (fun q ↦ f (q, h)) p‖ ≤ C * |h| ^ n := by
+  have hj' : (j : WithTop ℕ∞) ≤ k := by exact_mod_cast hj
+  -- The full `j`-th derivative of the quotient is bounded on the compact set `K × [-h₀, h₀]`.
+  obtain ⟨C, hC⟩ := (hK.prod isCompact_Icc).exists_bound_of_continuousOn
+    (hQ.continuous_iteratedFDeriv hj').continuousOn (f := fun q ↦ iteratedFDeriv ℝ j Q q)
+      (s := K ×ˢ Set.Icc (-h₀) h₀)
+  refine ⟨C, fun p hp h hh ↦ ?_⟩
+  have hQh : ContDiffAt ℝ j (fun q ↦ Q (q, h)) p :=
+    ((hQ.of_le hj').comp (by fun_prop : ContDiff ℝ j fun q : P ↦ (q, h))).contDiffAt
+  simp_rw [hfQ, iteratedFDeriv_const_smul_apply' hQh, norm_smul, norm_pow, Real.norm_eq_abs]
+  rw [mul_comm]
+  gcongr
+  exact (((hQ.of_le hj').contDiffAt).norm_iteratedFDeriv_prod_left_le j le_rfl).trans
+    (hC (p, h) ⟨hp, abs_le.1 hh⟩)
 
 /-! ### The Leibniz rule in scaled units -/
 

@@ -29,9 +29,10 @@ Coboundary Constant of the Complete Complex Is k/3 for Every k≥4*):
   vanishes identically.
 
 We establish nonnegativity, finite-group attainment of the infimum when a positive-gauge-distance
-cochain exists, invariance under positive rescaling of the norm, independence of the vertex linear
-order and invariance under vertex relabelling when `ℓ` is conjugation invariant, and the degree-2
-comparison `h1Sym X ≤ h1 X (Equiv.Perm.movedNorm (Fin 2))`.
+cochain exists, invariance under positive rescaling of the norm and under norm-preserving
+isomorphisms of the coefficient group (`TauCeti.h1_congr_mulEquiv`), independence of the vertex
+linear order and invariance under vertex relabelling when `ℓ` is conjugation invariant, and the
+degree-2 comparison `h1Sym X ≤ h1 X (Equiv.Perm.movedNorm (Fin 2))`.
 
 ## References
 
@@ -145,6 +146,16 @@ theorem exists_div_eq_h1 [Finite G] {X : TwoComplex V} {ℓ : GroupNorm G}
   refine exists_congr fun α => ?_
   rw [α.gaugeDist_smulOfPos ℓ hr, α.defect_smulOfPos ℓ hr,
     mul_pos_iff_of_pos_left hr, mul_div_mul_left _ _ hr.ne']
+
+/-- `h1 X ℓ` is unchanged under an isomorphism of coefficient groups that carries one norm to the
+other. -/
+theorem h1_congr_mulEquiv {H : Type*} [Group H] (X : TwoComplex V) {ℓ_G : GroupNorm G}
+    {ℓ_H : GroupNorm H} (e : G ≃* H) (he : ∀ g, ℓ_H (e g) = ℓ_G g) : h1 X ℓ_G = h1 X ℓ_H := by
+  have hsurj : Function.Surjective (Cochain.map (X := X) (e : G →* H)) := fun β =>
+    ⟨β.map (e.symm : H →* G), by ext u v _; simp⟩
+  rw [h1_def, h1_def]; congr 1; ext r
+  simp only [Set.mem_ofPred_eq, hsurj.exists, Cochain.gaugeDist_map_mulEquiv he,
+    Cochain.defect_map_eq (φ := (e : G →* H)) he]
 
 end FixedOrder
 

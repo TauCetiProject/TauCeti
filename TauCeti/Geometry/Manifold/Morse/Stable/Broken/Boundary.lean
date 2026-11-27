@@ -56,7 +56,9 @@ moduli spaces (`TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleto
   complement of the boundary, which is open
   (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_isOpenEmbedding_orbitQuotient`). Under
   the Morse–Smale condition this quotient is a manifold of dimension `ind x - ind y - 1`
-  (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_isManifold_orbitQuotient`).
+  (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_isManifold_orbitQuotient`), so the
+  unbroken trajectories form a topological manifold modelled on `ℝ^(ind x - ind y - 1)`
+  (`IsMorseSmale.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary`).
 
 ## Main results
 
@@ -75,6 +77,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `IsMorseSmale.isClosed_morseBrokenTrajectorySpaceBoundary`: their boundaries are closed.
 * `IsMorseSmale.exists_isOpenEmbedding_orbitQuotient`: the unparametrized trajectories form an open
   subspace, the complement of the boundary.
+* `IsMorseSmale.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary`: the unbroken
+  trajectories form a manifold of dimension `ind x - ind y - 1`.
 
 ## References
 
@@ -366,6 +370,44 @@ theorem exists_isOpenEmbedding_orbitQuotient [Countable ι] {x y : criticalPoint
   refine ⟨j, ⟨hemb, ?_⟩, hrange⟩
   rw [hrange, isOpen_compl_iff]
   exact h.isClosed_morseBrokenTrajectorySpaceBoundary hf hc hdense x y
+
+/-- **The unbroken trajectories form a manifold of dimension `ind x - ind y - 1`.** For countably
+many levels, dense between the critical values and none of which is a critical value, the
+interior of the trajectory space `L(x, y)`, the records of its unbroken trajectories, is a
+topological manifold modelled on `ℝᵈ`, `d + ind y + 1 = ind x`: it is a copy of the space of
+unparametrized trajectories from `x` to `y`. When `ind x ≤ ind y` it is empty, and every `d`
+serves. -/
+theorem nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary [Countable ι]
+    {x y : criticalPoints 𝓘(ℝ, E) f} {d : ℕ}
+    (hd : manifoldMorseIndex 𝓘(ℝ, E) f y < manifoldMorseIndex 𝓘(ℝ, E) f x →
+      d + manifoldMorseIndex 𝓘(ℝ, E) f y + 1 = manifoldMorseIndex 𝓘(ℝ, E) f x) :
+    Nonempty (ChartedSpace (EuclideanSpace ℝ (Fin d))
+      ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ) := by
+  by_cases hne : x ≠ y ∧ (hX.flow.unstableSet (x : M) ∩ hX.flow.stableSet (y : M)).Nonempty
+  · obtain ⟨hxy, hne⟩ := hne
+    have hxy' : (x : M) ≠ y := Subtype.coe_injective.ne hxy
+    obtain ⟨L, hL, C, -⟩ := h.exists_isManifold_orbitQuotient hf hxy' hne
+    obtain ⟨j, hj, hrange⟩ := h.exists_isOpenEmbedding_orbitQuotient hf hc hdense hxy
+    have hdL : Module.finrank ℝ L = Module.finrank ℝ (EuclideanSpace ℝ (Fin d)) := by
+      rw [finrank_euclideanSpace_fin]
+      have := hd (by omega)
+      omega
+    -- Change the model of the space of unparametrized trajectories from `L` to `ℝᵈ`, and carry
+    -- its charts to the unbroken trajectories.
+    let := C
+    let : ChartedSpace (EuclideanSpace ℝ (Fin d)) L :=
+      (ContinuousLinearEquiv.ofFinrankEq hdL).toHomeomorph.symm.chartedSpace
+    let := ChartedSpace.comp (EuclideanSpace ℝ (Fin d)) L
+      (Quotient (Flow.connectingOrbitSetoid hX.flow (x : M) y))
+    exact ⟨(hj.isEmbedding.toHomeomorph.trans (Homeomorph.setCongr hrange)).chartedSpace⟩
+  · -- Without trajectories from `x` to `y`, every broken trajectory lies in the boundary.
+    have : IsEmpty ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ := by
+      refine ⟨fun w ↦ hne ⟨fun hxy ↦ ?_, ?_⟩⟩
+      · exact (mem_morseBrokenTrajectorySpace.1 w.val.property).1 (congrArg Subtype.val hxy)
+      · obtain ⟨v, hv, -⟩ :=
+          hX.mem_morseTrajectoryRecords.1 (notMem_morseBrokenTrajectorySpaceBoundary.1 w.property)
+        exact ⟨v, hv⟩
+    exact ⟨ChartedSpace.empty _ _⟩
 
 end IsMorseSmale
 

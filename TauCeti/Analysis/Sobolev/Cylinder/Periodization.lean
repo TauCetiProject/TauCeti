@@ -33,7 +33,7 @@ annihilating an operator on compactly supported test maps. This file passes betw
   ball of the plane sees at most two periods.
 * **Weak annihilators.** Let `M` be a continuous coefficient field of period one in `t`,
   essentially bounded on the strip, so that `x ↦ M x` is a bounded operator
-  `TauCeti.jetOperator stripMeasure M` on `L²` jets. If `η ∈ L²(ℝ × [0, 1], W)` is orthogonal to
+  `TauCeti.jetOperator 2 stripMeasure M` on `L²` jets. If `η ∈ L²(ℝ × [0, 1], W)` is orthogonal to
   `M x` for every `x ∈ W^{1,2}(ℝ × S¹, V)`, then the periodic extension `g` of `η` satisfies
   `∫ ⟪g z, M z (jet ξ z)⟫ = 0` over the whole plane for every compactly supported `C²` map `ξ`
   (`TauCeti.CylinderSobolev.integral_inner_jet_eq_zero_of_forall_inner_jetOperator_eq_zero`).
@@ -160,7 +160,7 @@ supported `C²` map `ξ`. -/
 theorem integral_inner_jet_eq_zero_of_forall_inner_jetOperator_eq_zero
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) (hMc : Continuous M)
     (hMper : ∀ s t, M (s, t + 1) = M (s, t)) {η : Lp W 2 stripMeasure}
-    (hη : ∀ x ∈ H1 V, ⟪η, jetOperator stripMeasure M x⟫_ℝ = 0) {g : ℝ × ℝ → W}
+    (hη : ∀ x ∈ H1 V, ⟪η, jetOperator 2 stripMeasure M x⟫_ℝ = 0) {g : ℝ × ℝ → W}
     (hg : StronglyMeasurable g) (hgper : ∀ s t, g (s, t + 1) = g (s, t))
     (hgη : g =ᵐ[stripMeasure] η) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ)
     (hξc : HasCompactSupport ξ) :

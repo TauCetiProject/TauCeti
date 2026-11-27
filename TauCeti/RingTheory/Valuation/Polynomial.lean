@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Div
+public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.RingTheory.Valuation.LocalSubring
 public import TauCeti.RingTheory.Valuation.Sum
 
@@ -47,6 +48,8 @@ algebra over a field.
 * `Valuation.exists_C_mul_coeff_eq_one`: a nonzero polynomial over a valued field has a scalar
   multiple with all coefficients of value at most `1`, a coefficient equal to `1`, and all
   coefficients of higher degree of value below `1`.
+* `Polynomial.valuation_eval_eq_mul_prod_roots`: for a split polynomial `p`, `v (p.eval x)` equals
+  `v p.leadingCoeff` times the product of `v (x - α)` over the roots `α` of `p`.
 
 ## Uses
 
@@ -245,5 +248,17 @@ theorem valuation_aeval_eq_one (hk : ∀ c : k, algebraMap k F c ∈ A) {x : F}
     _ < 1 := hx
 
 end TauCeti
+
+namespace Polynomial
+
+/-- For a split polynomial `p`, the valuation of `p.eval x` is the valuation of the leading
+coefficient times the product of `v (x - α)` over all roots `α` of `p`. -/
+theorem valuation_eval_eq_mul_prod_roots {R Γ₀ : Type*} [CommRing R] [IsDomain R]
+    [LinearOrderedCommMonoidWithZero Γ₀] (v : Valuation R Γ₀) (p : R[X]) (hp : p.Splits) (x : R) :
+    v (p.eval x) = v p.leadingCoeff * (p.roots.map fun α ↦ v (x - α)).prod := by
+  conv_lhs => rw [hp.eq_prod_roots]
+  simp [eval_multiset_prod, map_multiset_prod]
+
+end Polynomial
 
 end

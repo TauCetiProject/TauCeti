@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Polynomial.Vieta
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Data.Sym.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import TauCeti.RingTheory.Polynomial.Vieta
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
@@ -49,7 +49,7 @@ are separate later steps.
   distinct roots is the monic polynomial of the unordered tuple of those roots.
 * `Sym.toMonic_coeffEquiv_symm`: the inverse chart, read as a polynomial rather than as a
   root multiset, is `TauCeti.Polynomial.monicOfCoeff`, the monic polynomial with prescribed lower
-  coefficients of `TauCeti/RingTheory/Polynomial/Monic/OfCoeff.lean`.
+  coefficients of `TauCeti/RingTheory/Polynomial/Monic/OfCoeff/Basic.lean`.
 * `Sym.monicEquiv`: over an algebraically closed field, taking roots with multiplicity
   inverts `toMonic`, so `Sym K n` is equivalent to the monic polynomials of degree `n`.
 * `Sym.coeffEquiv`: the resulting chart `Sym K n ≃ (Fin n → K)`, with

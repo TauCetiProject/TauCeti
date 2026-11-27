@@ -251,9 +251,8 @@ theorem
     (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) fun _ _ _ ↦ contMDiffAt_const)
     (hω.contDiffOn_hamiltonianVectorFieldInChartAt fun _ _ _ ↦ hH'.contMDiffAt)
     (fun _ _ x ↦ hJt _ x) hc (fun _ _ x v ↦ hJc _ x v)
-    (fun _ _ x ↦ by
-      simp only [hamiltonianVectorField_const, Pi.zero_apply, map_zero]
-      exact norm_zero.trans_le ((norm_nonneg _).trans (hL 0 x)))
+    (fun _ _ x ↦ (norm_mvfderiv_hamiltonianVectorField_zero_le_zero ω e x).trans
+      ((norm_nonneg _).trans (hL 0 x)))
     fun w _ x ↦ hL w.2 x
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE ↦ ?_⟩
   rw [perturbation_eq_positive p H] at hfl hE

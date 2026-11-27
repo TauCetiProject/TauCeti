@@ -25,9 +25,10 @@ point of `f`. Then there is a Morse function `g` within `δ` of `f` that equals 
 bands (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). The values `c` are regular for `g` and
 `g` has the same sublevels `{g ≤ c} = {f ≤ c}`
 (`TauCeti.exists_isMorse_isRegularValue_sublevel_eq`). The Morse inequalities for `g` then give,
-for regular values `a ≤ b` of `f` and a finite-dimensional module `V` over a division ring:
+for regular values `a ≤ b` of `f`:
 
-* `Hₙ(M_b, M_a; V)` is finite-dimensional
+* `Hₙ(M_b, M_a; V)` is finitely generated for every finitely generated module `V` over a
+  noetherian ring, such as `ℤ` or a field
   (`TauCeti.finite_singularHomology_sublevelPair_of_contMDiff`), for instance whenever
   `a < c < b` and `c` is the only possible critical value of `f` in `[a, b]`
   (`TauCeti.finite_singularHomology_sublevelPair_of_criticalValue`);
@@ -37,9 +38,13 @@ for regular values `a ≤ b` of `f` and a finite-dimensional module `V` over a d
 
 Applied to the constant function `0` on a compact manifold, whose sublevels at the regular values
 `-1` and `1` are `∅` and `M`, the first statement shows that the homology `Hₙ(M; V)` of a compact
-boundaryless manifold is finite-dimensional (`TauCeti.finite_singularHomology_of_compactSpace`).
+boundaryless manifold is finite-dimensional over a division ring
+(`TauCeti.finite_singularHomology_of_compactSpace`). Over a noetherian ring, finite generation of
+`Hₙ(M; V)` follows from the finite CW type of `M` (`TauCeti.FiniteCWType.of_isManifold` and
+`TauCeti.finite_singularHomology_of_finiteCWType`); for integral homology see
+`TauCeti.finite_singularHomology_int_of_isManifold`.
 
-These are the hypotheses of the Morse inequalities of a filtration
+Over a division ring, these are the hypotheses of the Morse inequalities of a filtration
 (`TauCeti.AlgebraicTopology.Singular.Sublevel`). Let `M` be compact, so that every smooth `f` is
 proper and bounded. Cut the values of `f` at regular values
 `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with `s 0 < f ≤ s (N + 1)`, write `bᵢ = dim Hᵢ(M; V)` and let
@@ -187,12 +192,13 @@ private theorem exists_isMorse_sublevelPair_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f
 
 /-- **Finiteness of the homology of regular sublevels.** Let `f` be a smooth proper function on a
 boundaryless manifold and `a ≤ b` regular values of `f`. Then the relative singular homology
-`Hₙ({f ≤ b}, {f ≤ a}; V)` with coefficients in a finite-dimensional module `V` is
-finite-dimensional. -/
-theorem finite_singularHomology_sublevelPair_of_contMDiff {k : Type u} [DivisionRing k]
-    (V : ModuleCat.{u} k) [Module.Finite k V] (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
-    {a b : ℝ} (hab : a ≤ b) (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
-    (n : ℕ) : Module.Finite k ((sublevelPair f hab).singularHomology V n : ModuleCat k) := by
+`Hₙ({f ≤ b}, {f ≤ a}; V)` with coefficients in a finitely generated module `V` over a noetherian
+ring is finitely generated. -/
+theorem finite_singularHomology_sublevelPair_of_contMDiff {k : Type u} [Ring k]
+    [IsNoetherianRing k] (V : ModuleCat.{u} k) [Module.Finite k V] (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hp : IsProperMap f) {a b : ℝ} (hab : a ≤ b) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) (n : ℕ) :
+    Module.Finite k ((sublevelPair f hab).singularHomology V n : ModuleCat k) := by
   obtain ⟨g, hg, hcompact, hga, hgb, hgf⟩ := exists_isMorse_sublevelPair_eq hf hp hab ha hb
   rw [← hgf]
   exact hg.finite_singularHomology_sublevelPair V hab hcompact hga hgb n
@@ -220,11 +226,11 @@ theorem finite_singularHomology_of_compactSpace [CompactSpace M] {k : Type u} [D
 /-- **Finiteness of the homology of a band with one critical value.** Let `f` be a smooth proper
 function on a boundaryless manifold and `a < c < b` such that `c` is the only possible critical
 value of `f` in `[a, b]`. Then `a` and `b` are regular values, so the relative singular homology
-`Hₙ({f ≤ b}, {f ≤ a}; V)` with coefficients in a finite-dimensional module `V` is
-finite-dimensional. -/
-theorem finite_singularHomology_sublevelPair_of_criticalValue {k : Type u} [DivisionRing k]
-    (V : ModuleCat.{u} k) [Module.Finite k V] (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
-    {a b c : ℝ} (hac : a < c) (hcb : c < b)
+`Hₙ({f ≤ b}, {f ≤ a}; V)` with coefficients in a finitely generated module `V` over a noetherian
+ring is finitely generated. -/
+theorem finite_singularHomology_sublevelPair_of_criticalValue {k : Type u} [Ring k]
+    [IsNoetherianRing k] (V : ModuleCat.{u} k) [Module.Finite k V] (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hp : IsProperMap f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) (n : ℕ) :
     Module.Finite k ((sublevelPair f (hac.trans hcb).le).singularHomology V n : ModuleCat k) := by
   have hreg {t : ℝ} (ht : t ∈ ({a, b} : Set ℝ)) : IsRegularValue I 𝓘(ℝ) f t :=
