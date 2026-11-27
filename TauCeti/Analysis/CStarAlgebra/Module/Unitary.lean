@@ -15,11 +15,9 @@ This file develops adjointable isometries (`V* ∘ V = id_E`) and unitary equiva
 Hilbert C⋆-modules. For the algebraic adjointable-isometry API (`TauCeti.AdjointableMap`) and the
 bundled unitaries `TauCeti.CStarModuleUnitary`, the coefficient ring `A` only needs to be a
 non-unital star ring with `[Module ℂ A]`, `[StarModule ℂ A]`, `[PartialOrder A]`, and `[Norm A]`.
-The constructors `LinearMap.isometryOfInnerCStarModule` and
-`LinearEquiv.isometryOfInnerCStarModule` do not even require `[StarModule ℂ A]`. By contrast,
-Lance's isometry-to-inner-product theorems require a C⋆-algebra `A`: possibly non-unital for
-complex-linear isometries commuting with the `A`-action, and unital for bundled `A`-linear or
-`Aᵐᵒᵖ`-linear isometries.
+By contrast, Lance's isometry-to-inner-product theorems require a C⋆-algebra `A`: possibly
+non-unital for complex-linear isometries commuting with the `A`-action, and unital for bundled
+`A`-linear or `Aᵐᵒᵖ`-linear isometries.
 
 An adjointable operator `V : TauCeti.AdjointableMap A E F` satisfies `V* ∘ V = id_E` if and only if
 it preserves all `A`-valued inner products (`adjoint_comp_self_eq_id_iff_inner_map_map`),
@@ -61,9 +59,6 @@ is its adjoint if and only if it is surjective and preserves the `A`-valued inne
   (Theorem 3.5) for adjointable operators and for plain functions.
 * `TauCeti.AdjointableMap.mem_unitary_iff`: `U ∈ unitary (AdjointableMap A E E)` iff `U` is
   surjective and preserves the `A`-valued inner product.
-* `LinearMap.isometryOfInnerCStarModule`, `LinearEquiv.isometryOfInnerCStarModule`: construct
-  linear isometries and isometric equivalences from inner-product preservation, without
-  `[StarModule ℂ A]`.
 * `LinearIsometry.inner_map_map_of_map_smul_cstarModule`,
   `LinearIsometryEquiv.inner_map_eq_flip_of_map_smul_cstarModule`: over a (possibly non-unital)
   C⋆-algebra `A`, every complex-linear isometry (not necessarily surjective) commuting with the
@@ -745,49 +740,6 @@ theorem exists_adjoint_comp_eq_id_iff {f : E → F} :
 end AdjointableMap
 
 end TauCeti
-
-namespace LinearMap
-
-variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
-  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
-  (f : E →ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
-
-/-- An `R`-linear map between Hilbert C⋆-modules preserving self-inner products is an `R`-linear
-isometry. -/
-def isometryOfInnerCStarModule : E →ₗᵢ[R] F where
-  toLinearMap := f
-  norm_map' x := CStarModule.norm_eq_of_inner_self_eq (hf x)
-
-@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
-
-@[simp] theorem isometryOfInnerCStarModule_toLinearMap :
-    (f.isometryOfInnerCStarModule hf).toLinearMap = f := (rfl)
-
-end LinearMap
-
-namespace LinearEquiv
-
-variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
-  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
-  (f : E ≃ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
-
-/-- An `R`-linear equivalence between Hilbert C⋆-modules preserving self-inner products is a linear
-isometric equivalence. -/
-def isometryOfInnerCStarModule : E ≃ₗᵢ[R] F where
-  toLinearEquiv := f
-  norm_map' := (f.toLinearMap.isometryOfInnerCStarModule hf).norm_map
-
-@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
-
-@[simp] theorem isometryOfInnerCStarModule_toLinearEquiv :
-    (f.isometryOfInnerCStarModule hf).toLinearEquiv = f := (rfl)
-
-@[simp] theorem coe_symm_isometryOfInnerCStarModule :
-    ⇑(f.isometryOfInnerCStarModule hf).symm = f.symm := (rfl)
-
-end LinearEquiv
 
 namespace LinearIsometry
 

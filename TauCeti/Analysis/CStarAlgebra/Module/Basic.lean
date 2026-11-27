@@ -49,6 +49,9 @@ Riesz theorem.
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
 * `TauCeti.CStarModule.induced`, `Submodule.instCStarModule`: pullback `CStarModule`
   structures along norm-preserving module injections and on `A`-submodules.
+* `LinearMap.isometryOfInnerCStarModule`, `LinearEquiv.isometryOfInnerCStarModule`: construct
+  linear isometries and isometric equivalences from diagonal inner-product preservation, without
+  `[StarModule ℂ A]`.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
@@ -212,6 +215,49 @@ theorem norm_eq_of_inner_self_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SM
 end Algebraic
 
 end CStarModule
+
+namespace LinearMap
+
+variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
+  (f : E →ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
+
+/-- An `R`-linear map between Hilbert C⋆-modules preserving self-inner products is an `R`-linear
+isometry. -/
+def isometryOfInnerCStarModule : E →ₗᵢ[R] F where
+  toLinearMap := f
+  norm_map' x := CStarModule.norm_eq_of_inner_self_eq (hf x)
+
+@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
+
+@[simp] theorem isometryOfInnerCStarModule_toLinearMap :
+    (f.isometryOfInnerCStarModule hf).toLinearMap = f := (rfl)
+
+end LinearMap
+
+namespace LinearEquiv
+
+variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
+  (f : E ≃ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
+
+/-- An `R`-linear equivalence between Hilbert C⋆-modules preserving self-inner products is a linear
+isometric equivalence. -/
+def isometryOfInnerCStarModule : E ≃ₗᵢ[R] F where
+  toLinearEquiv := f
+  norm_map' := (f.toLinearMap.isometryOfInnerCStarModule hf).norm_map
+
+@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
+
+@[simp] theorem isometryOfInnerCStarModule_toLinearEquiv :
+    (f.isometryOfInnerCStarModule hf).toLinearEquiv = f := (rfl)
+
+@[simp] theorem coe_symm_isometryOfInnerCStarModule :
+    ⇑(f.isometryOfInnerCStarModule hf).symm = f.symm := (rfl)
+
+end LinearEquiv
 
 namespace TauCeti.CStarModule
 variable {A M E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
