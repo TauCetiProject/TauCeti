@@ -219,6 +219,16 @@ def contractedProduct : Sheaf J (Type w) :=
 def toContractedProduct : P.sheaf ⊗ X.sheaf ⟶ P.contractedProduct X :=
   ObjectProperty.homMk (toContractedPresheaf P X ≫ toSheafify J (contractedPresheaf P X))
 
+/-- Every section of a contracted product is locally represented by a pair of sections. -/
+instance isLocallySurjective_toContractedProduct [J.WEqualsLocallyBijective (Type w)] :
+    IsLocallySurjective (P.toContractedProduct X) := by
+  have hq : Presheaf.IsLocallySurjective J (toContractedPresheaf P X) :=
+    Presheaf.isLocallySurjective_of_surjective J _ fun U ↦ Quot.mk_surjective
+  have hs : Presheaf.IsLocallySurjective J (toSheafify J (contractedPresheaf P X)) :=
+    (J.W_toSheafify (contractedPresheaf P X)).isLocallySurjective
+  exact Presheaf.isLocallySurjective_comp J (toContractedPresheaf P X)
+    (toSheafify J (contractedPresheaf P X))
+
 variable {P X} in
 /-- The class `[p, x]` in the contracted product of sections `p` of `P` and `x` of `X` over the
 same object. -/

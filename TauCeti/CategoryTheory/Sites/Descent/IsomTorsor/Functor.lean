@@ -51,13 +51,15 @@ An arrow `(e, f)` sends a local isomorphism `p` to `e|_T ≫ p ≫ f|_T`. -/
         let e := (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop
         let g := (F.map T.unop.hom.op.toLoc).toFunctor.map f.2
         refine (congrArg (((F.sheafHomBifunctor J U).map f).hom.app T)
-          (b.sheafHomTorsor_smul (IsGerbe.exists_covering_iso _ _) a h)).trans
-            (Eq.trans ?_ (b.sheafHomTorsor_smul (IsGerbe.exists_covering_iso _ _) a _).symm)
-        exact (F.sheafHomBifunctor_map_hom_app J f T (b.homAct h c)).trans
-          ((congrArg (e ≫ ·) (b.homAct_comp_hom h (asIso g) c)).trans
-            ((b.comp_homAct e (h ≫ g) c).trans
-              (congrArg (fun k ↦ b.homAct k c)
-                (F.sheafHomBifunctor_map_hom_app J f T h).symm))) }
+          (b.sheafHomTorsor_smul (IsGerbe.exists_covering_iso _ _) a h)).trans ?_
+        refine (F.sheafHomBifunctor_map_hom_app J f T (b.homAct h c)).trans ?_
+        have hact : e ≫ b.homAct h c ≫ g = b.homAct (e ≫ h ≫ g) c := by
+          exact (congrArg (e ≫ ·) (b.homAct_comp_hom h (asIso g) c)).trans
+            (b.comp_homAct e (h ≫ g) c)
+        refine hact.trans ?_
+        refine (congrArg (fun k ↦ b.homAct k c)
+          (F.sheafHomBifunctor_map_hom_app J f T h).symm).trans ?_
+        exact (b.sheafHomTorsor_smul (IsGerbe.exists_covering_iso _ _) a _).symm }
   map_id p := by
     apply Sheaf.Torsor.hom_ext
     exact (F.sheafHomBifunctor J U).map_id p
@@ -77,6 +79,7 @@ lemma sheafHomTorsorFunctor_map_hom_app {p q : (F.obj (.mk (op U)))ᵒᵖ ×
     (h : (F.presheafHom p.1.unop p.2).obj T) :
     ((b.sheafHomTorsorFunctor U).map f).hom.hom.app T h =
       (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
-        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2 := (rfl)
+        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2 :=
+  F.sheafHomBifunctor_map_hom_app J f T h
 
 end CategoryTheory.Pseudofunctor.AbelianBanding

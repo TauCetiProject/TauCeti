@@ -68,6 +68,12 @@ abbrev mapFunctor (φ : G ⟶ G') : Torsor G ⥤ Torsor G' where
 lemma mapFunctor_obj (φ : G ⟶ G') (P : Torsor G) :
     (mapFunctor φ).obj P = P.map φ := (rfl)
 
+/-- The canonical maps into an extension commute with equivariant morphisms of torsors. -/
+@[reassoc]
+lemma toMap_mapFunctor_map (φ : G ⟶ G') {P Q : Torsor G} (f : P ⟶ Q) :
+    P.toMap φ ≫ ((mapFunctor φ).map f).hom = f.hom ≫ Q.toMap φ :=
+  toMap_mapLift _ _
+
 /-- On local contracted-product representatives the induced morphism keeps the coefficient. -/
 @[simp]
 lemma mapFunctor_map_hom_app_smul_toMap (φ : G ⟶ G') {P Q : Torsor G} (f : P ⟶ Q)
@@ -76,7 +82,7 @@ lemma mapFunctor_map_hom_app_smul_toMap (φ : G ⟶ G') {P Q : Torsor G} (f : P 
       a • (Q.toMap φ).hom.app U (f.hom.hom.app U p) := by
   exact (((mapFunctor φ).map f).map_smul U a _).trans
     (congrArg (a • ·) (congrArg (fun k ↦ k.hom.app U p)
-      (toMap_mapLift (f.hom ≫ Q.toMap φ) _)))
+      (toMap_mapFunctor_map φ f)))
 
 /-- Extending torsors along the identity homomorphism is naturally isomorphic to the identity.
 The comparison sends `[p, a]` to `a • p`. An explicit equality `hφ` also permits homomorphisms

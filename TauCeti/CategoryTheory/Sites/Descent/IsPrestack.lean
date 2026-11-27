@@ -340,6 +340,23 @@ lemma presheafHomPostcomp_app_apply (M : F.obj (.mk (op S))) {N N' : F.obj (.mk 
   (rfl)
 
 variable (F) in
+/-- Precomposition with `φ : M' ⟶ M` on presheaves of local morphisms. -/
+def presheafHomPrecomp {M M' : F.obj (.mk (op S))} (N : F.obj (.mk (op S))) (φ : M' ⟶ M) :
+    F.presheafHom M N ⟶ F.presheafHom M' N where
+  app T := ↾fun p ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map φ ≫ p
+  naturality T T' g := by
+    ext p
+    dsimp
+    rw [pullHom_comp, pullHom_map]
+
+/-- Precomposition restricts the source arrow before composing with a local morphism. -/
+lemma presheafHomPrecomp_app_apply {M M' : F.obj (.mk (op S))}
+    (N : F.obj (.mk (op S))) (φ : M' ⟶ M) (T : (Over S)ᵒᵖ)
+    (p : (F.presheafHom M N).obj T) :
+    (F.presheafHomPrecomp N φ).app T p =
+      (F.map T.unop.hom.op.toLoc).toFunctor.map φ ≫ p := (rfl)
+
+variable (F) in
 /-- The presheaves of morphisms out of `M`, as a functor of the target: `N ↦ F.presheafHom M N`,
 with `φ : N ⟶ N'` acting by postcomposition (`Pseudofunctor.presheafHomPostcomp`). -/
 @[expose, simps]
@@ -381,26 +398,26 @@ The map on local sections is precomposition and postcomposition by the restricte
 @[expose] def presheafHomBifunctor :
     (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S)) ⥤ (Over S)ᵒᵖ ⥤ Type v' where
   obj p := F.presheafHom p.1.unop p.2
-  map {p q} f :=
-    { app T := ↾fun h ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
-        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2
-      naturality T T' g := by
-        ext h
-        dsimp
-        rw [pullHom_comp _ _ g.unop.left T'.unop.hom T'.unop.hom T'.unop.hom
-          (Over.w g.unop) (Over.w g.unop) (Over.w g.unop),
-          pullHom_comp _ _ g.unop.left T'.unop.hom T'.unop.hom T'.unop.hom
-            (Over.w g.unop) (Over.w g.unop) (Over.w g.unop), pullHom_map, pullHom_map] }
+  map {p q} f := F.presheafHomPrecomp p.2 f.1.unop ≫ F.presheafHomPostcomp q.1.unop f.2
   map_id p := by
     ext T h
-    simp
+    simp [presheafHomPrecomp, presheafHomPostcomp]
   map_comp f g := by
     ext T h
-    simp [Category.assoc]
+    simp [presheafHomPrecomp, presheafHomPostcomp, Category.assoc]
 
 @[simp]
 lemma presheafHomBifunctor_obj (p : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))) :
     (F.presheafHomBifunctor S).obj p = F.presheafHom p.1.unop p.2 := (rfl)
+
+/-- The Hom bifunctor restricts both endpoint arrows before composing. -/
+@[simp]
+lemma presheafHomBifunctor_map_app {p q : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))}
+    (f : p ⟶ q) (T : (Over S)ᵒᵖ) (h : (F.presheafHom p.1.unop p.2).obj T) :
+    ((F.presheafHomBifunctor S).map f).app T h =
+      (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
+        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2 :=
+  Category.assoc _ _ _
 
 variable (F) in
 /-- The sheaves of local morphisms of a prestack, as a functor of both endpoints. -/
@@ -421,7 +438,8 @@ lemma sheafHomBifunctor_map_hom_app (J : GrothendieckTopology C) [F.IsPrestack J
     (T : (Over S)ᵒᵖ) (h : (F.presheafHom p.1.unop p.2).obj T) :
     ((F.sheafHomBifunctor J S).map f).hom.app T h =
       (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
-        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2 := (rfl)
+        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2 :=
+  F.presheafHomBifunctor_map_app f T h
 
 namespace LocallyDiscreteOpToCat
 

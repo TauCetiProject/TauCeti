@@ -109,59 +109,54 @@ lemma toChangeBandHom_homAct {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
       ((J.overPullback AddCommGrpCat.{v'} U).map φ))
     (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj A) T
       (.ofAdd a)) p
-  have hs := (b.sheafHomTorsor_smul (IsGerbe.exists_covering_iso x y)
-    (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj A) T
-      (.ofAdd a)) p).trans (congrArg (b.homAct p)
-        ((abelianSheafToGrpSheafObjEquiv _ T).symm_apply_apply _))
-  have ht := abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv
-    ((J.overPullback AddCommGrpCat.{v'} U).map φ) T (.ofAdd a)
-  exact (congrArg ((b.toChangeBandHom φ x y).hom.app T) hs).symm.trans
-    (h.trans (congrArg (· • (b.toChangeBandHom φ x y).hom.app T p) ht))
+  refine (congrArg ((b.toChangeBandHom φ x y).hom.app T)
+    (b.sheafHomTorsor_smul_ofAdd (IsGerbe.exists_covering_iso x y) a p)).symm.trans ?_
+  refine h.trans ?_
+  exact congrArg (· • (b.toChangeBandHom φ x y).hom.app T p)
+    (abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv
+      ((J.overPullback AddCommGrpCat.{v'} U).map φ) T (.ofAdd a))
 
 /-- The relation defining extension of the structure group: acting on `p` adds the image of
 the acting coefficient to the new coefficient. -/
+@[simp]
 lemma changeBandHomMk_homAct {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p : (F.presheafHom x y).obj T) (a : A.obj.obj (op T.unop.left))
     (c : B.obj.obj (op T.unop.left)) :
     b.changeBandHomMk φ (b.homAct p (.ofAdd a)) c =
       b.changeBandHomMk φ p (c + φ.hom.app (op T.unop.left) a) := by
-  exact (congrArg
-    (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj B) T
-      (.ofAdd c) • ·) (b.toChangeBandHom_homAct φ p a)).trans
-    (b.changeBandHomMk_add φ p c (φ.hom.app (op T.unop.left) a)).symm
+  rw [b.changeBandHomMk_add, changeBandHomMk, b.toChangeBandHom_homAct]
 
 /-- The morphism of sheaves taking `(p, c)` to the representative `[p, c]`. -/
 def changeBandHomPairing (x y : F.obj (.mk (op U))) :
     F.sheafHom J x y ⊗ coefficientSheaf J B U ⟶
       ((b.changeBandHomFunctor φ U).obj (op x, y)).sheaf :=
-  ObjectProperty.homMk
-    { app T := ↾fun p ↦ b.changeBandHomMk φ p.1 p.2
+  let P := b.sheafHomTorsor x y (IsGerbe.exists_covering_iso _ _)
+  let ψ := (abelianSheafToGrpSheaf (J.over U)).map
+    ((J.overPullback AddCommGrpCat.{v'} U).map φ)
+  (F.sheafHom J x y ◁ ObjectProperty.homMk
+    { app T := ↾fun c ↦
+        abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj B) T
+          (.ofAdd c)
       naturality T T' f := by
-        ext p
-        exact (b.changeBandHom_map_mk φ f p.1 p.2).symm }
+        ext c
+        exact (abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv
+          ((J.overPullback AddCommGrpCat.{v'} U).obj B) f (.ofAdd c)).symm }) ≫
+    P.toContractedProduct (Sheaf.MulActionSheaf.mulRight ψ) ≫
+      (P.contractedProductMulRightIso ψ).hom
 
 /-- The pairing takes a pair of sections to its contracted-product representative. -/
 lemma changeBandHomPairing_hom_app (x y : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ)
     (p : (F.presheafHom x y).obj T) (c : B.obj.obj (op T.unop.left)) :
-    (b.changeBandHomPairing φ x y).hom.app T (p, c) = b.changeBandHomMk φ p c := (rfl)
-
-/-- Every section of an extended Hom torsor is locally a representative `[p, c]`. Only local
-nonemptiness of the original Isom torsor is used, so no global isomorphism is chosen. -/
-instance isLocallySurjective_changeBandHomPairing (x y : F.obj (.mk (op U))) :
-    Sheaf.IsLocallySurjective (b.changeBandHomPairing φ x y) := by
-  refine ⟨fun {T} q ↦ (J.over U).superset_covering ?_
-    ((b.sheafHomTorsor x y (IsGerbe.exists_covering_iso _ _)).coversTop T)⟩
-  rintro V f ⟨⟨W, ⟨p⟩⟩, ⟨g⟩⟩
-  let p' := (F.sheafHom J x y).obj.map g.op p
-  obtain ⟨a, ha⟩ := MulAction.exists_smul_eq
-    (((abelianSheafToGrpSheaf (J.over U)).obj
-      ((J.overPullback AddCommGrpCat.{v'} U).obj B)).obj.obj (op V))
-    ((b.toChangeBandHom φ x y).hom.app (op V) p')
-    (((b.changeBandHomFunctor φ U).obj (op x, y)).sheaf.obj.map f.op q)
-  let E := abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj B) (op V)
-  refine ⟨(p', (E.symm a).toAdd), ?_⟩
-  exact (congrArg (· • (b.toChangeBandHom φ x y).hom.app (op V) p')
-    (E.apply_symm_apply a)).trans ha
+    (b.changeBandHomPairing φ x y).hom.app T (p, c) = b.changeBandHomMk φ p c := by
+  let P := b.sheafHomTorsor x y (IsGerbe.exists_covering_iso _ _)
+  let ψ := (abelianSheafToGrpSheaf (J.over U)).map
+    ((J.overPullback AddCommGrpCat.{v'} U).map φ)
+  let a := abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj B) T
+    (.ofAdd c)
+  refine (congrArg ((P.contractedProductMulRightIso ψ).hom.hom.app T)
+    (P.toContractedProduct_hom_app (Sheaf.MulActionSheaf.mulRight ψ) (p, a))).trans ?_
+  exact Sheaf.Torsor.contractedProductMulRightIso_hom_hom_app_contractedProductMk
+    (φ := ψ) (P := P) p a
 
 /-- Maps of sheaves out of an extended Hom torsor are determined on local representatives. -/
 @[ext]
@@ -171,9 +166,38 @@ lemma changeBandHom_hom_ext {x y : F.obj (.mk (op U))} {Q : Sheaf (J.over U) (Ty
       (c : B.obj.obj (op T.unop.left)),
       f.hom.app T (b.changeBandHomMk φ p c) = g.hom.app T (b.changeBandHomMk φ p c)) :
     f = g := by
-  apply (cancel_epi (b.changeBandHomPairing φ x y)).1
-  ext T p
-  exact h T p.1 p.2
+  let P := b.sheafHomTorsor x y (IsGerbe.exists_covering_iso _ _)
+  let ψ := (abelianSheafToGrpSheaf (J.over U)).map
+    ((J.overPullback AddCommGrpCat.{v'} U).map φ)
+  apply (cancel_epi (P.contractedProductMulRightIso ψ).hom).1
+  apply Sheaf.Torsor.contractedProduct_hom_ext
+  ext T ⟨p, a⟩
+  let E := abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj B) T
+  obtain ⟨a, rfl⟩ := E.surjective a
+  have hpair := b.changeBandHomPairing_hom_app φ x y T p a.toAdd
+  exact (congrArg (f.hom.app T) hpair).trans
+    ((h T p a.toAdd).trans (congrArg (g.hom.app T) hpair).symm)
+
+/-- Every section of an extended Hom torsor is locally a representative `[p, c]`. -/
+instance isLocallySurjective_changeBandHomPairing (x y : F.obj (.mk (op U))) :
+    Sheaf.IsLocallySurjective (b.changeBandHomPairing φ x y) := by
+  let P := b.sheafHomTorsor x y (IsGerbe.exists_covering_iso _ _)
+  let ψ := (abelianSheafToGrpSheaf (J.over U)).map
+    ((J.overPullback AddCommGrpCat.{v'} U).map φ)
+  have hq : Sheaf.IsLocallySurjective (P.toContractedProduct (Sheaf.MulActionSheaf.mulRight ψ)) :=
+    Sheaf.Torsor.isLocallySurjective_toContractedProduct P _
+  have hi : Sheaf.IsLocallySurjective (P.contractedProductMulRightIso ψ).hom :=
+    Sheaf.isLocallySurjective_of_iso _
+  have hc := Sheaf.isLocallySurjective_comp
+    (P.toContractedProduct (Sheaf.MulActionSheaf.mulRight ψ))
+    (P.contractedProductMulRightIso ψ).hom
+  dsimp only [changeBandHomPairing]
+  refine @Sheaf.isLocallySurjective_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ ?_ hc
+  apply Presheaf.isLocallySurjective_of_surjective
+  intro T
+  rintro ⟨p, a⟩
+  let E := abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj B) T
+  exact ⟨(p, (E.symm a).toAdd), Prod.ext rfl (E.apply_symm_apply a)⟩
 
 /-- The canonical images of the original Isom sheaves commute with transport in the endpoints. -/
 @[reassoc]
@@ -181,7 +205,7 @@ lemma toChangeBandHom_naturality {p q : (F.obj (.mk (op U)))ᵒᵖ × F.obj (.mk
     (f : p ⟶ q) :
     b.toChangeBandHom φ p.1.unop p.2 ≫ ((b.changeBandHomFunctor φ U).map f).hom =
       ((b.sheafHomTorsorFunctor U).map f).hom ≫ b.toChangeBandHom φ q.1.unop q.2 :=
-  Sheaf.Torsor.toMap_mapLift _ _
+  Sheaf.Torsor.toMap_mapFunctor_map _ _
 
 /-- Transport in either endpoint keeps the new coefficient of a representative. -/
 lemma changeBandHomFunctor_map_mk {p q : (F.obj (.mk (op U)))ᵒᵖ × F.obj (.mk (op U))}
@@ -190,7 +214,12 @@ lemma changeBandHomFunctor_map_mk {p q : (F.obj (.mk (op U)))ᵒᵖ × F.obj (.m
     ((b.changeBandHomFunctor φ U).map f).hom.hom.app T (b.changeBandHomMk φ h c) =
       b.changeBandHomMk φ ((F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
         (F.map T.unop.hom.op.toLoc).toFunctor.map f.2) c := by
-  exact Sheaf.Torsor.mapFunctor_map_hom_app_smul_toMap _ _ _ _ _
+  refine (Sheaf.Torsor.mapFunctor_map_hom_app_smul_toMap
+    ((abelianSheafToGrpSheaf (J.over U)).map
+      ((J.overPullback AddCommGrpCat.{v'} U).map φ))
+    ((b.sheafHomTorsorFunctor U).map f) T h _).trans ?_
+  exact congrArg (fun k ↦ b.changeBandHomMk φ k c)
+    (b.sheafHomTorsorFunctor_map_hom_app f T h)
 
 variable (U)
 
@@ -217,11 +246,8 @@ lemma changeBandHomIdIso_hom_app_mk {x y : F.obj (.mk (op U))} (T : (Over U)ᵒ�
     ((b.changeBandHomIdIso U).hom.app (op x, y)).hom.hom.app T
         (b.changeBandHomMk (𝟙 A) p a) = b.homAct p (.ofAdd a) := by
   let E := abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj A) T
-  have h := congrArg (fun k ↦ k.hom.app T p)
-    (b.toChangeBandHom_changeBandHomIdIso_hom x y)
-  exact (((b.changeBandHomIdIso U).hom.app (op x, y)).map_smul T (E (.ofAdd a)) _).trans
-    ((congrArg (E (.ofAdd a) • ·) h).trans
-      ((b.sheafHomTorsor_smul (IsGerbe.exists_covering_iso x y) (E (.ofAdd a)) p).trans
-        (congrArg (b.homAct p) (E.symm_apply_apply _))))
+  refine (Sheaf.Torsor.mapIdIso_hom_app_smul_toMap (by simp)
+    (b.sheafHomTorsor x y (IsGerbe.exists_covering_iso _ _)) T p (E (.ofAdd a))).trans ?_
+  exact b.sheafHomTorsor_smul_ofAdd (IsGerbe.exists_covering_iso x y) a p
 
 end CategoryTheory.Pseudofunctor.AbelianBanding
