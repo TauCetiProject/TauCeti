@@ -14,6 +14,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.PDE.Vortex.WeightedEstimate
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Function.Lp.Adjoint
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
