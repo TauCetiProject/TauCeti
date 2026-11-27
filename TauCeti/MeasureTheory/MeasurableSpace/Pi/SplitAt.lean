@@ -55,4 +55,14 @@ def piSplitAt {ι : Type*} [DecidableEq ι] (i : ι) (α : ι → Type*)
   simpa only [piSplitAt_apply] using
     congrFun (congrArg Prod.snd ((piSplitAt i α).apply_symm_apply p)) ⟨j, hj⟩
 
+/-- Updating the chosen coordinate of a reconstructed assignment replaces the first component
+of its split. -/
+@[simp] theorem update_piSplitAt_symm {ι : Type*} [DecidableEq ι]
+    {α : ι → Type*} [∀ j, MeasurableSpace (α j)] (i : ι)
+    (p : α i × (∀ j : {j // j ≠ i}, α j)) (t : α i) :
+    Function.update ((piSplitAt i α).symm p) i t = (piSplitAt i α).symm (t, p.2) := by
+  refine Function.update_eq_iff.mpr ⟨(piSplitAt_symm_apply_self i (t, p.2)).symm, ?_⟩
+  intro j hj
+  simp only [piSplitAt_symm_apply_ne i _ j hj]
+
 end MeasurableEquiv

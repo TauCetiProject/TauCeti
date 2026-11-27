@@ -126,15 +126,9 @@ theorem norm_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral_
         linarith
       _ = _ := by simp [Fintype.card_prod, sq]
   let E := (∫ w, ‖w‖ ^ 2 * min (b * c * ‖w‖) 1 ∂μ) + ∫ w, ‖w‖ ^ 2 * min (b * c * ‖w‖) 1 ∂ν
-  have hE : 0 ≤ E :=
-    add_nonneg (integral_nonneg fun _ ↦ by positivity)
-      (integral_nonneg fun _ ↦ by positivity)
   calc
     _ ≤ ‖((2 : ℂ) * (k + 1))⁻¹‖ * (((k + 1 : ℝ) ^ 2 * 2) * b ^ 3 * (2 * a) ^ 2 * E) := by
-      apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
-      exact mul_le_mul_of_nonneg_right
-        (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hsum (by positivity))
-          (sq_nonneg _)) hE
+      gcongr
     _ = (‖((2 : ℂ) * (k + 1))⁻¹‖ * ((k + 1 : ℝ) ^ 2 * 2) * b ^ 3 * (2 * a) ^ 2) * E := by ring
     _ = _ := by rw [normalized_rank_factor k b]
 

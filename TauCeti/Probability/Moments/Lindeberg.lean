@@ -174,16 +174,7 @@ theorem abs_integral_pi_sub_integral_pi_le {ι : Type*} [Fintype ι] [DecidableE
   refine norm_integral_pi_sub_integral_pi_le_of_ae_slice_le (α := fun _ ↦ ℝ) μ ν
     hfi _ (fun _ i _ ↦ ae_of_all _ fun x ↦ ?_)
   let w := (MeasurableEquiv.piSplitAt i (fun _ : ι ↦ ℝ)).symm (0, x)
-  have hslice (t : ℝ) :
-      (MeasurableEquiv.piSplitAt i (fun _ : ι ↦ ℝ)).symm (t, x) = Function.update w i t := by
-    funext j
-    by_cases hj : j = i
-    · subst j
-      simp
-    · rw [Function.update_of_ne hj]
-      simp only [w, MeasurableEquiv.piSplitAt_symm_apply_ne i _ j hj]
-  simp only [hslice]
-  simpa only [← Real.norm_eq_abs] using
+  simpa only [w, MeasurableEquiv.update_piSplitAt_symm, ← Real.norm_eq_abs] using
     abs_integral_sub_integral_le (hsm w i) (hM w i) (hμ i) (hν i) (hmom i)
 
 /-- The Lindeberg replacement inequality for bounded continuous test functions. Boundedness and

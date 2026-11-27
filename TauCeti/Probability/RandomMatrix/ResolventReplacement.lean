@@ -353,20 +353,18 @@ theorem norm_integral_pi_trace_inv_add_sum_smul_add_conj_smul_sub_smul_one_sub_i
   rw [← hf]
   refine TauCeti.norm_integral_pi_sub_integral_pi_le_of_ae_slice_le (α := fun _ ↦ ℂ) μ ν hint _
     (fun _ i _ ↦ ae_of_all _ fun x ↦ ?_)
-  let C := A + ∑ j ∈ univ.erase i, complexPerturbation (B j)
-    (if hj : j ≠ i then x ⟨j, hj⟩ else 0)
+  let w := (MeasurableEquiv.piSplitAt i (fun _ : ι ↦ ℂ)).symm (0, x)
+  let C := A + ∑ j ∈ univ.erase i, complexPerturbation (B j) (w j)
   have hC : C.IsHermitian :=
     hA.add (isSelfAdjoint_sum _ fun j _ ↦ isHermitian_complexPerturbation (B j) _)
   have hsplit (t : ℂ) :
       H ((MeasurableEquiv.piSplitAt i (fun _ : ι ↦ ℂ)).symm (t, x)) =
         C + complexPerturbation (B i) t := by
+    rw [← MeasurableEquiv.update_piSplitAt_symm (α := fun _ ↦ ℂ) i (0, x) t]
     unfold H C
-    rw [← sum_erase_add _ _ (mem_univ i), ← add_assoc, MeasurableEquiv.piSplitAt_symm_apply_self]
+    rw [← sum_erase_add _ _ (mem_univ i), ← add_assoc, Function.update_self]
     congr 2
-    apply sum_congr rfl
-    intro j hj
-    have hji := ne_of_mem_erase hj
-    simp only [dite_eq_left hji, MeasurableEquiv.piSplitAt_symm_apply_ne i _ j hji]
+    exact sum_congr rfl fun j hj ↦ by rw [Function.update_of_ne (ne_of_mem_erase hj)]
   simpa only [f, hsplit, complexPerturbation] using
     hC.norm_integral_trace_inv_add_smul_add_conj_smul_sub_smul_one_sub_integral_le
       (B i) hz (hμ i) (hν i) (hmean i) (hsq i) (habs i)
