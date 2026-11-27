@@ -55,23 +55,33 @@ class Flat (F : ModCat.{w} C) : Prop where
 
 variable {F : ModCat.{w} C}
 
-/-- An isomorphism transports flatness from its source to its target. -/
-theorem Flat.of_iso [F.Flat] {G : ModCat.{w} C} (e : F ≅ G) : G.Flat where
+/-- A module morphism sends a trivial relation to a trivial relation with the same
+coefficient matrix. -/
+theorem IsTrivialRelation.map {F G : ModCat.{w} C} {X : C} {n : ℕ} {Y : Fin n → C}
+    {β : ∀ j, X ⟶ Y j} {y : ∀ j, F.obj.obj (op (Y j))}
+    (h : F.IsTrivialRelation β y) (f : F ⟶ G) :
+    G.IsTrivialRelation β (fun j ↦ f.hom.app (op (Y j)) (y j)) := by
+  obtain ⟨m, Z, z, α, hy, hα⟩ := isTrivialRelation_def.mp h
+  refine isTrivialRelation_def.mpr ⟨m, Z, fun i ↦ f.hom.app (op (Z i)) (z i), α, ?_, hα⟩
+  intro j
+  simpa only [map_sum, f.hom.naturality_apply] using
+    congrArg (f.hom.app (op (Y j))) (hy j)
+
+/-- A retract of a flat module is flat. -/
+theorem Flat.of_retract {F G : ModCat.{w} C} [G.Flat] (e : Retract F G) : F.Flat where
   isTrivialRelation {X n Y} β y h := by
-    let y' (j : Fin n) := e.inv.hom.app (op (Y j)) (y j)
-    have h' : ∑ j, F.obj.map (β j).op (y' j) = 0 := by
-      simpa only [y', map_sum, e.inv.hom.naturality_apply, map_zero] using
-        congrArg (e.inv.hom.app (op X)) h
-    obtain ⟨m, Z, z, α, hy, hα⟩ := isTrivialRelation_def.mp (Flat.isTrivialRelation β y' h')
-    refine isTrivialRelation_def.mpr ⟨m, Z, fun i ↦ e.hom.hom.app (op (Z i)) (z i), α, ?_, hα⟩
-    intro j
-    have hj : e.hom.hom.app (op (Y j)) (y' j) = y j := by
-      let e' := (additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).ι.mapIso e
-      simpa only [e', y', Functor.mapIso_hom, Functor.mapIso_inv, ObjectProperty.ι_map,
-        CategoryTheory.comp_apply, CategoryTheory.id_apply] using
-        ConcreteCategory.congr_hom (e'.inv_hom_id_app (op (Y j))) (y j)
-    simpa only [hj, map_sum, e.hom.hom.naturality_apply] using
-      congrArg (e.hom.hom.app (op (Y j))) (hy j)
+    have hG : ∑ j, G.obj.map (β j).op (e.i.hom.app (op (Y j)) (y j)) = 0 := by
+      simpa only [map_sum, e.i.hom.naturality_apply, map_zero] using
+        congrArg (e.i.hom.app (op X)) h
+    have hFG (j : Fin n) :
+        e.r.hom.app (op (Y j)) (e.i.hom.app (op (Y j)) (y j)) = y j := by
+      have he := congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j))) e.retract
+      exact ConcreteCategory.congr_hom he (y j)
+    simpa only [hFG] using (Flat.isTrivialRelation β _ hG).map e.r
+
+/-- An isomorphism transports flatness from its source to its target. -/
+theorem Flat.of_iso [F.Flat] {G : ModCat.{w} C} (e : F ≅ G) : G.Flat :=
+  Flat.of_retract e.symm.retract
 
 /-- Flatness is invariant under isomorphism. -/
 theorem flat_iff_of_iso {G : ModCat.{w} C} (e : F ≅ G) : F.Flat ↔ G.Flat :=
