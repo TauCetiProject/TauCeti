@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.LinearAlgebra.Pi
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
 /-!
@@ -106,6 +107,28 @@ theorem isRosatiPositive_iff_of_symmetrize [Semiring E] [Module ℝ E] [StarRing
     simp only [star_mul, star_star, hs.star_eq]; rw [← mul_assoc, hcyc, mul_assoc]
   rw [ht', hst]; constructor <;> intro h <;> linarith
 
+/-- On a finite product of star algebras, `IsRosatiPositive t s` holds iff each coordinate `s i`
+is `IsRosatiPositive` for the restricted functional `t.comp (LinearMap.single ℝ B i)`. -/
+theorem isRosatiPositive_pi_iff {ι : Type*} [DecidableEq ι] [Finite ι] {B : ι → Type*}
+    [∀ i, NonUnitalNonAssocSemiring (B i)] [∀ i, Module ℝ (B i)] [∀ i, StarAddMonoid (B i)]
+    (t : (∀ i, B i) →ₗ[ℝ] ℝ) (s : ∀ i, B i) :
+    IsRosatiPositive t s ↔ ∀ i : ι, IsRosatiPositive (t.comp (LinearMap.single ℝ B i)) (s i) := by
+  cases nonempty_fintype ι
+  have hsum (y : ∀ i, B i) :
+      t (s * y * star y) = ∑ i : ι, t (Pi.single i (s i * y i * star (y i))) := by
+    conv_lhs => rw [← LinearMap.sum_single_apply B (s * y * star y)]
+    simp only [Pi.mul_apply, Pi.star_apply, map_sum]
+  have hsa : IsSelfAdjoint s ↔ ∀ i : ι, IsSelfAdjoint (s i) := ⟨fun h i ↦ congrFun h i, funext⟩
+  rw [isRosatiPositive_iff]; simp only [isRosatiPositive_iff, forall_and, ← hsa]
+  refine and_congr_right fun _ ↦ ⟨fun h i a ha ↦ ?_, fun h x hx ↦ ?_⟩
+  · have h1 := h (Pi.single i a) fun h0 ↦ ha (by simpa using congrFun h0 i)
+    rw [hsum, Finset.sum_eq_single i (fun j _ hji ↦ by simp [Pi.single_eq_of_ne hji])
+      (fun hi ↦ absurd (Finset.mem_univ i) hi)] at h1
+    simpa [LinearMap.single_apply] using h1
+  · rw [hsum]; obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hx
+    refine Finset.sum_pos' (fun i _ ↦ ?_) ⟨i₀, Finset.mem_univ i₀, h i₀ (x i₀) hi₀⟩
+    rcases eq_or_ne (x i) 0 with h0 | hne <;> [simp [h0]; exact (h i (x i) hne).le]
+
 end IsRosatiPositive
 
 section InnerProduct
@@ -168,7 +191,7 @@ theorem adjoint_lmul_eq_lmul_star [FiniteDimensional ℝ E] (t : E →ₗ[ℝ] �
 
 /-- The left-regular representation as a faithful star algebra homomorphism from `E` into the
 endomorphisms of the trace inner product space. -/
-@[expose] noncomputable def rosatiRegularRepresentation [FiniteDimensional ℝ E]
+noncomputable def rosatiRegularRepresentation [FiniteDimensional ℝ E]
     (t : E →ₗ[ℝ] ℝ) (hcyc : ∀ x y : E, t (x * y) = t (y * x))
     (hstar : ∀ x : E, t (star x) = t x) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
     letI := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
@@ -183,12 +206,14 @@ endomorphisms of the trace inner product space. -/
 @[simp] theorem rosatiRegularRepresentation_apply [FiniteDimensional ℝ E] (t : E →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y : E, t (x * y) = t (y * x)) (hstar : ∀ x : E, t (star x) = t x)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (s : E) :
-    rosatiRegularRepresentation t hcyc hstar hpos s = Algebra.lmul ℝ E s := rfl
+    rosatiRegularRepresentation t hcyc hstar hpos s = Algebra.lmul ℝ E s := (rfl)
 
 theorem rosatiRegularRepresentation_injective [FiniteDimensional ℝ E] (t : E →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y : E, t (x * y) = t (y * x)) (hstar : ∀ x : E, t (star x) = t x)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
-    Function.Injective (rosatiRegularRepresentation t hcyc hstar hpos) := Algebra.lmul_injective
+    Function.Injective (rosatiRegularRepresentation t hcyc hstar hpos) :=
+  fun _ _ h ↦ Algebra.lmul_injective (R := ℝ) (by
+    simpa only [rosatiRegularRepresentation_apply] using h)
 
 /-- Left multiplication by `s` is symmetric on the trace inner product space iff `s` is
 self-adjoint. -/

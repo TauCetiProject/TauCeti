@@ -58,7 +58,8 @@ theorem isRosatiPositive_comp_traceLinearMap_iff {D : Type*} [NonUnitalNonAssocS
     IsRosatiPositive (Matrix.traceLinearMap n ℝ ℝ) S ↔ S.PosDef := by
   rw [← (LinearMap.id_comp (Matrix.traceLinearMap n ℝ ℝ) :
       (LinearMap.id : ℝ →ₗ[ℝ] ℝ).comp _ = _),
-    isRosatiPositive_comp_traceLinearMap_iff S mul_comm, Matrix.posDef_iff_dotProduct_mulVec]; rfl
+    isRosatiPositive_comp_traceLinearMap_iff S mul_comm, Matrix.posDef_iff_dotProduct_mulVec]
+  simp only [LinearMap.id_apply, star_trivial]
 
 /-- Over `ℂ`, `IsRosatiPositive` for `Complex.reLm.comp (Matrix.traceLinearMap n ℝ ℂ)` agrees
 with `Matrix.PosDef`. -/
@@ -79,6 +80,7 @@ quaternionic reduced trace) agrees with `Matrix.QuatPosDef`. -/
     (S : Matrix n n ℍ[ℝ]) :
     IsRosatiPositive ((QuaternionAlgebra.reₗ (-1) 0 (-1)).comp (Matrix.traceLinearMap n ℝ ℍ[ℝ]))
       S ↔ S.QuatPosDef := by
-  rw [isRosatiPositive_comp_traceLinearMap_iff S Quaternion.re_mul_comm, Matrix.quatPosDef_iff]; rfl
+  rw [isRosatiPositive_comp_traceLinearMap_iff S Quaternion.re_mul_comm, Matrix.quatPosDef_iff]
+  simp only [QuaternionAlgebra.reₗ_apply]
 
 end Matrix

@@ -459,10 +459,12 @@ theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [Is
       (Subalgebra.mem_center_iff.mp (eZ.symm c).property x).symm
     let _ : Algebra ℂ D := f.toRingHom.toAlgebra' hcomm
     have hmap : algebraMap ℂ D = f.toRingHom := RingHom.algebraMap_toAlgebra' f.toRingHom hcomm
-    have hst : IsScalarTower ℝ ℂ D := IsScalarTower.of_algebraMap_eq fun r ↦ by
+    have _ : IsScalarTower ℝ ℂ D := IsScalarTower.of_algebraMap_eq fun r ↦ by
       rw [hmap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f.commutes]
-    have _ : Module.Finite ℂ D :=
-      @Module.Finite.of_restrictScalars_finite ℝ ℂ D _ _ _ Algebra.toModule _ _ hst ‹_›
+    have _ : Module.Finite ℂ D := by
+      -- Pin the `Module ℝ D` instance from `[Algebra ℝ D]` used by `[FiniteDimensional ℝ D]`.
+      let _ : Module ℝ D := Algebra.toModule
+      exact Module.Finite.of_restrictScalars_finite ℝ ℂ D
     have hbij := IsAlgClosed.algebraMap_bijective_of_isIntegral (k := ℂ) (K := D)
     rw [hmap] at hbij; exact ⟨(AlgEquiv.ofBijective f hbij).symm⟩
 

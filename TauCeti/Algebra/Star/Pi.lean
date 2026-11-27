@@ -84,14 +84,20 @@ def coordStarRing (i : ι) (hδ : star (e.symm (Pi.single i 1)) = e.symm (Pi.sin
     StarRing (ULift.{0} (A i)) where
   star x := ULift.up (e (star (e.symm (Pi.single i x.down))) i)
   star_involutive x := ULift.ext <| by
-    dsimp only; rw [e.symm_single_apply_star_single i hδ, star_star, e.apply_symm_apply,
-      Pi.single_eq_same]
+    dsimp only
+    rw [e.symm_single_apply_star_single i hδ, star_star, e.apply_symm_apply, Pi.single_eq_same]
   star_mul x y := ULift.ext <| by
-    change e (star (e.symm (Pi.single i (x.down * y.down)))) i = _
-    rw [e.symm_single_mul, star_mul, map_mul, Pi.mul_apply]; rfl
+    -- Unfold `coordStarRing`'s `star` and `ULift` multiplication (`rfl`) on `.down`.
+    have h : e (star (e.symm (Pi.single i (x.down * y.down)))) i =
+        e (star (e.symm (Pi.single i y.down))) i * e (star (e.symm (Pi.single i x.down))) i := by
+      rw [e.symm_single_mul, star_mul, map_mul, Pi.mul_apply]
+    exact h
   star_add x y := ULift.ext <| by
-    change e (star (e.symm (Pi.single i (x.down + y.down)))) i = _
-    rw [Pi.single_add, map_add, star_add, map_add, Pi.add_apply]; rfl
+    -- Unfold `coordStarRing`'s `star` and `ULift` addition (`rfl`) on `.down`.
+    have h : e (star (e.symm (Pi.single i (x.down + y.down)))) i =
+        e (star (e.symm (Pi.single i x.down))) i + e (star (e.symm (Pi.single i y.down))) i := by
+      rw [Pi.single_add, map_add, star_add, map_add, Pi.add_apply]
+    exact h
 
 @[simp] theorem coordStarRing_down_star (i : ι)
     (hδ : star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1)) (x : ULift.{0} (A i)) :
@@ -108,29 +114,45 @@ variable {R E : Type*} [CommSemiring R] [Semiring E] [Algebra R E] [StarRing E]
 
 /-- Bundled product star-algebra isomorphism `E ≃⋆ₐ[R] ∀ i, ULift.{0} (A i)` induced from
 `e : E ≃ₐ[R] ∀ i, A i` when `star` fixes every coordinate central idempotent. -/
-@[expose] def starPiULift (e : E ≃ₐ[R] ∀ i, A i)
+def starPiULift (e : E ≃ₐ[R] ∀ i, A i)
     (hδ : ∀ i : ι, star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1)) :
     letI : ∀ i, StarRing (ULift.{0} (A i)) := fun i ↦ e.toRingEquiv.coordStarRing i (hδ i)
     E ≃⋆ₐ[R] ∀ i, ULift.{0} (A i) :=
   let _ : ∀ i, StarRing (ULift.{0} (A i)) := fun i ↦ e.toRingEquiv.coordStarRing i (hδ i)
   StarAlgEquiv.ofAlgEquiv (e.trans (AlgEquiv.piCongrRight fun _ ↦ ULift.algEquiv.symm)) fun x ↦
     funext fun i ↦ ULift.ext <| by
-      dsimp only [AlgEquiv.trans_apply, AlgEquiv.piCongrRight_apply, Pi.star_apply]
-      erw [RingEquiv.coordStarRing_down_star, ULift.down_algEquiv_symm_apply (R := R)]
-      exact e.toRingEquiv.apply_star_eq_coord i (hδ i) x
+      -- Both sides evaluate `(ULift.algEquiv.symm (e _ i)).down = e _ i` definitionally.
+      have h : (star (ULift.up (e x i))).down = e (star (e.symm (Pi.single i (e x i)))) i :=
+        RingEquiv.coordStarRing_down_star e.toRingEquiv i (hδ i) (ULift.up (e x i))
+      exact (e.toRingEquiv.apply_star_eq_coord i (hδ i) x).trans h.symm
 
 @[simp] theorem starPiULift_apply_down (e : E ≃ₐ[R] ∀ i, A i)
     (hδ : ∀ i : ι, star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1)) (x : E) (i : ι) :
     letI : ∀ i, StarRing (ULift.{0} (A i)) := fun i ↦ e.toRingEquiv.coordStarRing i (hδ i)
-    (e.starPiULift hδ x i).down = e x i := rfl
+    (e.starPiULift hδ x i).down = e x i := (rfl)
 
 @[simp] theorem starPiULift_symm_apply (e : E ≃ₐ[R] ∀ i, A i)
     (hδ : ∀ i : ι, star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1))
     (x : ∀ i, ULift.{0} (A i)) :
     letI : ∀ i, StarRing (ULift.{0} (A i)) := fun i ↦ e.toRingEquiv.coordStarRing i (hδ i)
-    (e.starPiULift hδ).symm x = e.symm (fun i ↦ (x i).down) := rfl
+    (e.starPiULift hδ).symm x = e.symm (fun i ↦ (x i).down) := (rfl)
 
 end AlgEquiv
+
+namespace LinearMap
+
+/-- Precomposing a linear map strictly positive on `x * star x` with `LinearMap.single R B i`
+yields a linear map strictly positive on `x * star x` in factor `i`. -/
+theorem comp_single_mul_star_pos {R : Type*} [CommSemiring R] {ι : Type*} [DecidableEq ι]
+    {B : ι → Type*} [∀ i, NonUnitalNonAssocSemiring (B i)] [∀ i, Module R (B i)]
+    [∀ i, StarAddMonoid (B i)] {M : Type*} [AddCommMonoid M] [PartialOrder M] [Module R M]
+    (t : (∀ i, B i) →ₗ[R] M) (hpos : ∀ x, x ≠ 0 → 0 < t (x * star x)) (i : ι) (x : B i)
+    (hx : x ≠ 0) :
+    0 < (t.comp (LinearMap.single R B i)) (x * star x) := by
+  simpa only [LinearMap.comp_apply, LinearMap.single_apply, Pi.single_mul, ← Pi.single_star] using
+    hpos (Pi.single i x) fun h0 ↦ hx (by simpa using congrFun h0 i)
+
+end LinearMap
 
 namespace NonUnitalStarAlgHom
 

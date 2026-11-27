@@ -56,7 +56,8 @@ calculus of a Hermitian matrix.
 * `LinearMap.IsSymmetric.norm_cfc_apply_sq_add_norm_cfc_apply_sq`: `‖f(T)x‖² + ‖g(T)x‖² = ‖x‖²`
   when `f² + g² = 1` on the eigenvalues of `T`.
 * `LinearMap.IsSymmetric.exists_aeval_eq_cfc`: every functional calculus value `hT.cfc f` of
-  a symmetric operator is a real polynomial in `T`.
+  a symmetric operator is a real polynomial in `T` (proved via Mathlib's `Lagrange.interpolate`
+  and `Lagrange.eval_interpolate_at_node`).
 
 ## References
 
@@ -271,11 +272,11 @@ theorem isPositive_cfc_iff (hT : T.IsSymmetric) {f : ℝ → ℝ} :
 
 /-- Every functional calculus value `hT.cfc f` of a symmetric operator on a finite-dimensional
 inner product space over an `RCLike` field `𝕜` equals
-`Polynomial.aeval T (p.map (algebraMap ℝ 𝕜))` for a real Lagrange interpolating polynomial `p`
-constructed via `Lagrange.interpolate` and evaluated at the eigenvalues via
-`Lagrange.eval_interpolate_at_node`. -/
+`Polynomial.aeval T (p.map (algebraMap ℝ 𝕜))` for some real polynomial `p`. -/
 theorem exists_aeval_eq_cfc (hT : T.IsSymmetric) (f : ℝ → ℝ) :
     ∃ p : ℝ[X], Polynomial.aeval T (p.map (algebraMap ℝ 𝕜)) = hT.cfc f := by
+  -- Construct `p` by Lagrange interpolation (`Lagrange.interpolate` /
+  -- `Lagrange.eval_interpolate_at_node`) at the eigenvalues of `T`.
   let p : ℝ[X] := Lagrange.interpolate (Finset.univ.image (hT.eigenvalues rfl)) _root_.id f
   refine ⟨p, (hT.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_⟩
   have heval : Polynomial.eval (hT.eigenvalues rfl i) p = f (hT.eigenvalues rfl i) := by

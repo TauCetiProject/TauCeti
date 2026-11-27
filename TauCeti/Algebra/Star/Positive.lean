@@ -37,7 +37,8 @@ theorem starModule_of_trace_mul_star_pos {E : Type*} [Ring E] [Algebra ℝ E] [S
         simpa [Algebra.algebraMap_eq_smul_one, smul_smul, hb.ne'] using congrArg (b⁻¹ • ·) h0
       rw [← Algebra.smul_def, map_smul, smul_eq_mul] at h
       exact pos_of_mul_pos_right (by simpa [f] using h) hb.le).monotone
-    simpa [f, Algebra.algebraMap_eq_smul_one, smul_eq_mul] using f.real_eq_mul_one hmono a
+    simpa [f, Algebra.algebraMap_eq_smul_one, smul_eq_mul] using
+      f.apply_eq_mul_map_one_of_monotone hmono a
   have hstar_alg (r : ℝ) : star (algebraMap ℝ E r) = algebraMap ℝ E r := by
     set u : E := star (algebraMap ℝ E r) - algebraMap ℝ E r
     have hsq : star (algebraMap ℝ E (r * r)) - algebraMap ℝ E (r * r) =

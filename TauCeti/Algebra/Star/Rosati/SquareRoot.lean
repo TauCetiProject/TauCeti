@@ -19,8 +19,9 @@ import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 
 In a finite-dimensional real star algebra `E` with cyclic `t : E →ₗ[ℝ] ℝ` strictly positive on
 `x * star x`, every `IsRosatiPositive` element `s` is a unit and admits a unique
-`IsRosatiPositive` square root `r` with `r, r⁻¹ ∈ ℝ[s]` (`TauCeti.exists_rosatiPositive_sq_eq`),
-via `LinearMap.IsPositive.sqrt` and `LinearMap.IsSymmetric.exists_aeval_eq_cfc`.
+`IsRosatiPositive` square root `r` with `r, r⁻¹ ∈ ℝ[s]` (`TauCeti.rosatiPositiveSquareRoot`),
+via `LinearMap.IsPositive.sqrt`, `LinearMap.IsPositive.sqrt_unique`, and
+`LinearMap.IsSymmetric.exists_aeval_eq_cfc`.
 
 ## References
 
@@ -43,7 +44,7 @@ private theorem hasEigenvalue_lmul_pos {E : Type*} [Ring E] [Algebra ℝ E] [Sta
     smul_mul_assoc, map_smul, smul_eq_mul] at h1
   exact pos_of_mul_pos_left h1 (hpos v hv.2).le
 
-private theorem exists_rosatiPositive_sq_eq_of_star_invariant {E : Type*} [Ring E] [Algebra ℝ E]
+private theorem rosatiPositiveSquareRoot_of_star_invariant {E : Type*} [Ring E] [Algebra ℝ E]
     [StarRing E] [Module.Finite ℝ E] (t : E →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y : E, t (x * y) = t (y * x)) (hstar : ∀ x : E, t (star x) = t x)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (s : E) (hs : IsRosatiPositive t s) :
@@ -91,12 +92,8 @@ private theorem exists_rosatiPositive_sq_eq_of_star_invariant {E : Type*} [Ring 
 /-- **Internal positive square roots.** In a finite-dimensional real star algebra with a cyclic
 linear functional `t : E →ₗ[ℝ] ℝ` strictly positive on `x * star x`, every element `s` with
 `IsRosatiPositive t s` is a unit and admits a unique root `r` with `IsRosatiPositive t r` and
-`r * r = s`. Both `r` and `r⁻¹` lie in `ℝ[s]` and commute with every element commuting with `s`.
-
-Constructed by passing to the star-symmetrized functional, taking the positive operator square
-root `LinearMap.IsPositive.sqrt` (unique by `LinearMap.IsPositive.sqrt_unique`), and expressing
-`sqrt` and its inverse as polynomials via `LinearMap.IsSymmetric.exists_aeval_eq_cfc`. -/
-theorem exists_rosatiPositive_sq_eq {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
+`r * r = s`. Both `r` and `r⁻¹` lie in `ℝ[s]` and commute with every element commuting with `s`. -/
+theorem rosatiPositiveSquareRoot {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
     [Module.Finite ℝ E] (t : E →ₗ[ℝ] ℝ) (hcyclic : ∀ x y : E, t (x * y) = t (y * x))
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (s : E) (hs : IsRosatiPositive t s) :
     IsUnit s ∧ ∃ r : Eˣ, IsRosatiPositive t r ∧ (r : E) * r = s ∧
@@ -104,13 +101,16 @@ theorem exists_rosatiPositive_sq_eq {E : Type*} [Ring E] [Algebra ℝ E] [StarRi
       ((r⁻¹ : Eˣ) : E) ∈ Algebra.adjoin ℝ ({s} : Set E) ∧
       (∀ x : E, Commute x s → Commute x r ∧ Commute x ((r⁻¹ : Eˣ) : E)) ∧
       ∀ r' : E, IsRosatiPositive t r' → r' * r' = s → r' = r := by
+  -- Pass to the star-symmetrized functional `t'`, then take the positive operator square root
+  -- `LinearMap.IsPositive.sqrt` (unique by `LinearMap.IsPositive.sqrt_unique`) and express
+  -- `sqrt` and its inverse as polynomials via `LinearMap.IsSymmetric.exists_aeval_eq_cfc`.
   have : StarModule ℝ E := starModule_of_trace_mul_star_pos t hpos
   let t' : E →ₗ[ℝ] ℝ := (t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)
   have hiff (a : E) : IsRosatiPositive t' a ↔ IsRosatiPositive t a :=
     isRosatiPositive_iff_of_symmetrize
       (fun x ↦ by simpa [t', div_eq_inv_mul] using LinearMap.comp_selfAdjointPart_apply t x) hcyclic
   obtain ⟨hsU, r, hrpos, hrsq, hrmem, hrImem, hcomm, huniq⟩ :=
-    exists_rosatiPositive_sq_eq_of_star_invariant t' (LinearMap.comp_selfAdjointPart_cyclic hcyclic)
+    rosatiPositiveSquareRoot_of_star_invariant t' (LinearMap.comp_selfAdjointPart_cyclic hcyclic)
       (LinearMap.comp_selfAdjointPart_star t)
       (fun _ hx ↦ LinearMap.comp_selfAdjointPart_mul_star_pos hpos hx) s ((hiff s).mpr hs)
   exact ⟨hsU, r, (hiff r).mp hrpos, hrsq, hrmem, hrImem, hcomm,

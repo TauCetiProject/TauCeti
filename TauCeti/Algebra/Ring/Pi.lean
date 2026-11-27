@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Equiv
 public import Mathlib.Algebra.Ring.Pi
 public import Mathlib.Algebra.Ring.Prod
+public import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Factors of a product of rings
@@ -116,3 +117,17 @@ theorem piNontrivial_symm_apply_coe (y : ∀ j : {i // Nontrivial (A i)}, A j)
 end PiNontrivial
 
 end RingEquiv
+
+namespace LinearMap
+
+/-- Precomposing a cyclic `R`-linear map on `∀ i, B i` with `LinearMap.single R B i` yields a
+cyclic `R`-linear map on `B i`. -/
+theorem comp_single_cyclic {R : Type*} [CommSemiring R] {ι : Type*} [DecidableEq ι]
+    {B : ι → Type*} [∀ i, NonUnitalNonAssocSemiring (B i)] [∀ i, Module R (B i)]
+    {M : Type*} [AddCommMonoid M] [Module R M] (t : (∀ i, B i) →ₗ[R] M)
+    (hcyc : ∀ x y, t (x * y) = t (y * x)) (i : ι) (x y : B i) :
+    (t.comp (LinearMap.single R B i)) (x * y) = (t.comp (LinearMap.single R B i)) (y * x) := by
+  simp only [LinearMap.comp_apply, LinearMap.single_apply]
+  rw [Pi.single_mul, Pi.single_mul, hcyc]
+
+end LinearMap

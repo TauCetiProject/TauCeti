@@ -19,7 +19,7 @@ import TauCeti.Algebra.CentralSimple.SkolemNoether
 Refines inner conjugation (`TauCeti.exists_unit_conj_of_algEquiv`) for `α : M ≃ₐ[F] M` when
 `X ↦ α (star X)` is an involution (`TauCeti.exists_unit_conj_star_of_central`), with trivial-star
 (`TauCeti.exists_unit_conj_star_eq_self_or_neg_of_central`) and complex rescaling
-(`TauCeti.exists_isSelfAdjoint_unit_rescale_complex`).
+(`Units.exists_isSelfAdjoint_conj_eq_of_star_eq_smul`).
 -/
 
 public section
@@ -67,10 +67,15 @@ theorem exists_unit_conj_star_eq_self_or_neg_of_central (F : Type*) {M : Type*} 
   rcases mul_self_eq_one_iff.mp (by simpa using hμsq) with rfl | rfl <;>
     exact ⟨u, by simp [huμ], hu⟩
 
-/-- Rescaling a unit `u` satisfying `star (u : M) = μ • (u : M)` (`star μ * μ = 1`) in a
-complex star algebra to a self-adjoint unit `u'` inducing the same inner automorphism. -/
-theorem exists_isSelfAdjoint_unit_rescale_complex {M : Type*} [Ring M] [Algebra ℂ M] [StarRing M]
-    [StarModule ℂ M] (u : Mˣ) (μ : ℂ) (huμ : star (u : M) = μ • (u : M))
+end TauCeti
+
+namespace Units
+
+/-- Given a unit `u` satisfying `star (u : M) = μ • (u : M)` with `star μ * μ = 1` in a complex
+star algebra, there exists a self-adjoint unit `u'` inducing the same inner automorphism
+`X ↦ u * X * u⁻¹`. -/
+theorem exists_isSelfAdjoint_conj_eq_of_star_eq_smul {M : Type*} [Ring M] [Algebra ℂ M]
+    [StarRing M] [StarModule ℂ M] (u : Mˣ) (μ : ℂ) (huμ : star (u : M) = μ • (u : M))
     (hμsq : star μ * μ = 1) :
     ∃ u' : Mˣ, IsSelfAdjoint (u' : M) ∧
       ∀ X : M, (u' : M) * X * (↑u'⁻¹ : M) = (u : M) * X * (↑u⁻¹ : M) := by
@@ -81,11 +86,12 @@ theorem exists_isSelfAdjoint_unit_rescale_complex {M : Type*} [Ring M] [Algebra 
     · exact fun h0 ↦ h (eq_neg_of_add_eq_zero_right h0)
   let u' : Mˣ := ⟨ζ • (u : M), ζ⁻¹ • (↑u⁻¹ : M),
     by simp [smul_smul, inv_mul_cancel₀ hζ0], by simp [smul_smul, mul_inv_cancel₀ hζ0]⟩
+  have hu' : (u' : M) = ζ • (u : M) := Units.val_mk _ _ _ _
   refine ⟨u', ?_, fun X ↦ by simp [u', smul_smul, inv_mul_cancel₀ hζ0]⟩
-  rw [IsSelfAdjoint, show (u' : M) = ζ • (u : M) from rfl, star_smul, huμ, smul_smul]; congr 1
+  rw [IsSelfAdjoint, hu', star_smul, huμ, smul_smul]; congr 1
   by_cases h : μ = -1
   · simp [ζ, h]
   · simp only [ζ, h, ↓reduceIte, star_add, star_one, add_mul, one_mul]
     rw [add_comm 1 μ]; simpa using congrArg (μ + ·) hμsq
 
-end TauCeti
+end Units

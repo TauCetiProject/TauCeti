@@ -14,13 +14,13 @@ import Mathlib.Tactic.Linarith
 # Monotone additive endomorphisms of `ℝ`
 
 A monotone additive endomorphism `f : ℝ →+ ℝ` is `ℝ`-linear: `f r = r * f 1`
-(`AddMonoidHom.real_eq_mul_one`).
+(`AddMonoidHom.apply_eq_mul_map_one_of_monotone`).
 -/
 
 public section
 
 /-- A monotone additive map `ℝ →+ ℝ` is linear: `f r = r * f 1`. -/
-theorem AddMonoidHom.real_eq_mul_one (f : ℝ →+ ℝ) (hf : Monotone f) (r : ℝ) :
+theorem AddMonoidHom.apply_eq_mul_map_one_of_monotone (f : ℝ →+ ℝ) (hf : Monotone f) (r : ℝ) :
     f r = r * f 1 := by
   have hrat (q : ℚ) : f q = (q : ℝ) * f 1 := by
     simpa [smul_eq_mul] using map_ratCast_smul f ℝ ℝ q (1 : ℝ)

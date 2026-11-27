@@ -51,8 +51,10 @@ variable {R E M : Type*} [CommRing R] [StarMul R] [TrivialStar R] [Invertible (2
 theorem comp_selfAdjointPart_apply (x : E) :
     ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x =
       (⅟2 : R) • (t x + t (star x)) := by
-  erw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-    selfAdjointPart_apply_coe]; rw [map_smul, map_add]
+  -- `↥(selfAdjoint.submodule R E)` is defeq to `↥(selfAdjoint E)` (not at reducible transparency).
+  have h : ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x =
+      t (selfAdjointPart R x : E) := rfl
+  rw [h, selfAdjointPart_apply_coe, map_smul, map_add]
 
 /-- The symmetrization `(t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)` is
 star-invariant. -/
@@ -65,8 +67,10 @@ star-invariant. -/
 `(t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)` agrees with `t`. -/
 theorem comp_selfAdjointPart_apply_of_isSelfAdjoint {x : E} (hx : IsSelfAdjoint x) :
     ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x = t x := by
-  erw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-    hx.coe_selfAdjointPart_apply R]
+  -- `↥(selfAdjoint.submodule R E)` is defeq to `↥(selfAdjoint E)` (not at reducible transparency).
+  have h : ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x =
+      t (selfAdjointPart R x : E) := rfl
+  rw [h, hx.coe_selfAdjointPart_apply R]
 
 end
 

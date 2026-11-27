@@ -41,43 +41,6 @@ namespace TauCeti
 
 section FactorAssembly
 
-section InducedPi
-
-variable {ι : Type*} [DecidableEq ι] {B : ι → Type*} [∀ i, Ring (B i)] [∀ i, Algebra ℝ (B i)]
-
-private theorem factorTrace_cyclic (t : (∀ i, B i) →ₗ[ℝ] ℝ)
-    (hcyc : ∀ x y, t (x * y) = t (y * x)) (i : ι) (x y : B i) :
-    (t.comp (LinearMap.single ℝ B i)) (x * y) = (t.comp (LinearMap.single ℝ B i)) (y * x) := by
-  simp only [LinearMap.comp_apply, LinearMap.single_apply]; rw [Pi.single_mul, Pi.single_mul, hcyc]
-
-variable [∀ i, StarRing (B i)]
-
-private theorem factorTrace_pos (t : (∀ i, B i) →ₗ[ℝ] ℝ)
-    (hpos : ∀ x, x ≠ 0 → 0 < t (x * star x)) (i : ι) (x : B i) (hx : x ≠ 0) :
-    0 < (t.comp (LinearMap.single ℝ B i)) (x * star x) := by
-  have hst : star (Pi.single i x) = Pi.single i (star x) :=
-    funext fun j ↦ by rcases eq_or_ne j i with rfl | h <;> [simp; simp [h]]
-  simpa [LinearMap.single_apply, Pi.single_mul, hst] using
-    hpos (Pi.single i x) fun h0 ↦ hx (by simpa using congrFun h0 i)
-
-private theorem isRosatiPositive_pi_iff [Finite ι] (t : (∀ i, B i) →ₗ[ℝ] ℝ) (s : ∀ i, B i) :
-    IsRosatiPositive t s ↔ ∀ i : ι, IsRosatiPositive (t.comp (LinearMap.single ℝ B i)) (s i) := by
-  cases nonempty_fintype ι
-  have hsum (y : ∀ i, B i) :
-      t (s * y * star y) = ∑ i : ι, t (Pi.single i (s i * y i * star (y i))) := by
-    rw [← map_sum, ← LinearMap.sum_single_apply B (s * y * star y)]; rfl
-  have hsa : IsSelfAdjoint s ↔ ∀ i : ι, IsSelfAdjoint (s i) := ⟨fun h i ↦ congrFun h i, funext⟩
-  rw [isRosatiPositive_iff]; simp only [isRosatiPositive_iff, forall_and, ← hsa]
-  refine and_congr_right fun _ ↦ ⟨fun h i a ha ↦ ?_, fun h x hx ↦ ?_⟩
-  · have h1 := h (Pi.single i a) fun h0 ↦ ha (by simpa using congrFun h0 i)
-    rw [hsum, Finset.sum_eq_single i (fun j _ hji ↦ by simp [Pi.single_eq_of_ne hji])
-      (fun hi ↦ absurd (Finset.mem_univ i) hi)] at h1; simpa [LinearMap.single_apply] using h1
-  · rw [hsum]; obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hx
-    refine Finset.sum_pos' (fun i _ ↦ ?_) ⟨i₀, Finset.mem_univ i₀, h i₀ (x i₀) hi₀⟩
-    rcases eq_or_ne (x i) 0 with h0 | hne <;> [simp [h0]; exact (h i (x i) hne).le]
-
-end InducedPi
-
 private inductive FactorNormalForm (A : Type*) [Ring A] [Algebra ℝ A] [StarRing A]
     (t : A →ₗ[ℝ] ℝ) (d : ℕ) where
   | real (e : A ≃⋆ₐ[ℝ] Matrix (Fin d) (Fin d) ℝ)
@@ -93,16 +56,19 @@ private theorem nonempty_factorNormalForm {A D : Type*} [Ring A] [Algebra ℝ A]
     (hcyc : ∀ x y, t (x * y) = t (y * x)) (hpos : ∀ x, x ≠ 0 → 0 < t (x * star x)) :
     Nonempty (FactorNormalForm A t d) := by
   rcases nonempty_algEquiv_real_or_complex_or_quaternion D with ⟨⟨ψ⟩⟩ | ⟨⟨ψ⟩⟩ | ⟨⟨ψ⟩⟩
-  · exact ⟨.real _ ((φ.trans ψ.mapMatrix).exists_star_algEquiv_matrix_real t hcyc hpos).choose_spec⟩
+  · exact ⟨.real _ ((φ.trans ψ.mapMatrix).exists_starAlgEquiv_matrix_real t hcyc hpos).choose_spec⟩
   · exact ⟨.complex _
-      ((φ.trans ψ.mapMatrix).exists_star_algEquiv_matrix_complex t hcyc hpos).choose_spec⟩
+      ((φ.trans ψ.mapMatrix).exists_starAlgEquiv_matrix_complex t hcyc hpos).choose_spec⟩
   · exact ⟨.quaternion _
-      ((φ.trans ψ.mapMatrix).exists_star_algEquiv_matrix_quaternion t hcyc hpos).choose_spec⟩
+      ((φ.trans ψ.mapMatrix).exists_starAlgEquiv_matrix_quaternion t hcyc hpos).choose_spec⟩
 
 section
 variable {A : Type*} [Ring A] [Algebra ℝ A] [StarRing A] {t : A →ₗ[ℝ] ℝ} {d : ℕ}
 private def FactorNormalForm.tag : FactorNormalForm A t d → Fin 3
   | .real .. => 0 | .complex .. => 1 | .quaternion .. => 2
+private theorem FactorNormalForm.tag_eq_two_of_ne {nf : FactorNormalForm A t d}
+    (h0 : nf.tag ≠ 0) (h1 : nf.tag ≠ 1) : nf.tag = 2 := by
+  have := nf.tag.isLt; omega
 private def FactorNormalForm.realEquiv : (nf : FactorNormalForm A t d) → nf.tag = 0 →
     { e : A ≃⋆ₐ[ℝ] Matrix (Fin d) (Fin d) ℝ // ∀ s, IsRosatiPositive t s ↔ (e s).PosDef }
   | .real e hp, _ => ⟨e, hp⟩ | .complex .., h | .quaternion .., h => nomatch h
@@ -118,19 +84,33 @@ section SplitReindex
 
 private abbrev Mat (d : ℕ) (D : Type*) := Matrix (Fin d) (Fin d) D
 
-private theorem cast_sub_apply {n n' : ℕ} {P : Fin n → Prop} (F : Fin n → Type*)
-    (e : Subtype P ≃ Fin n') (f : ∀ k : Fin n', F (e.symm k).val) (j : Fin n')
-    (hT : F (e.symm (e ⟨(e.symm j).val, (e.symm j).property⟩)).val = F (e.symm j).val) :
-    cast hT (f (e ⟨(e.symm j).val, (e.symm j).property⟩)) = f j := by
-  have hk := e.apply_symm_apply j
-  generalize e ⟨(e.symm j).val, (e.symm j).property⟩ = k at hk hT; subst hk; rfl
+private def piSplitTagAlgEquiv {n : ℕ} {A : Fin n → Type*} [∀ i, Ring (A i)]
+    [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)] {t : ∀ i, A i →ₗ[ℝ] ℝ} {d : Fin n → ℕ}
+    (nf : ∀ i, FactorNormalForm (A i) (t i) (d i)) :
+    (∀ i, A i) ≃ₐ[ℝ]
+      ((∀ i : {i // (nf i).tag = 0}, A i.val) ×
+        (∀ i : {i // (nf i).tag = 1}, A i.val) ×
+        (∀ i : {i // (nf i).tag = 2}, A i.val)) where
+  toFun x := (fun i ↦ x i.val, fun i ↦ x i.val, fun i ↦ x i.val)
+  invFun y i :=
+    if h0 : (nf i).tag = 0 then y.1 ⟨i, h0⟩
+    else if h1 : (nf i).tag = 1 then y.2.1 ⟨i, h1⟩
+    else y.2.2 ⟨i, FactorNormalForm.tag_eq_two_of_ne h0 h1⟩
+  left_inv x := funext fun i ↦ by dsimp only; split_ifs <;> rfl
+  right_inv y := Prod.ext (funext fun ⟨i, hi⟩ ↦ by dsimp only; split_ifs <;> rfl)
+    (Prod.ext
+      (funext fun ⟨i, hi⟩ ↦ by dsimp only; split_ifs <;> first | rfl | omega)
+      (funext fun ⟨i, hi⟩ ↦ by dsimp only; split_ifs <;> first | rfl | omega))
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
 
-private theorem sub_cast_apply {n n' : ℕ} {P : Fin n → Prop} (F : Fin n → Type*)
-    (e : Subtype P ≃ Fin n') (g : ∀ k : Subtype P, F k.val) (i : Fin n) (hi : P i)
-    (hT : F (e.symm (e ⟨i, hi⟩)).val = F i) :
-    cast hT (g (e.symm (e ⟨i, hi⟩))) = g ⟨i, hi⟩ := by
-  have hp := e.symm_apply_apply ⟨i, hi⟩
-  generalize e.symm (e ⟨i, hi⟩) = p at hp hT; subst hp; rfl
+private theorem piSplitTagAlgEquiv_apply {n : ℕ} {A : Fin n → Type*} [∀ i, Ring (A i)]
+    [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)] {t : ∀ i, A i →ₗ[ℝ] ℝ} {d : Fin n → ℕ}
+    (nf : ∀ i, FactorNormalForm (A i) (t i) (d i)) (x : ∀ i, A i) :
+    piSplitTagAlgEquiv nf x =
+      (fun i : {i // (nf i).tag = 0} ↦ x i.val, fun i : {i // (nf i).tag = 1} ↦ x i.val,
+        fun i : {i // (nf i).tag = 2} ↦ x i.val) := rfl
 
 private noncomputable def splitReindexEquiv {n nR nC nH : ℕ} {A : Fin n → Type*}
     [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)]
@@ -140,65 +120,61 @@ private noncomputable def splitReindexEquiv {n nR nC nH : ℕ} {A : Fin n → Ty
     (∀ i, A i) ≃⋆ₐ[ℝ]
       ((∀ i : Fin nR, Mat (d (eR.symm i).val) ℝ) ×
         (∀ i : Fin nC, Mat (d (eC.symm i).val) ℂ) ×
-        (∀ i : Fin nH, Mat (d (eH.symm i).val) ℍ[ℝ])) where
-  toFun x :=
-    (fun j ↦ ((nf (eR.symm j).val).realEquiv (eR.symm j).property).val (x (eR.symm j).val),
-     fun j ↦ ((nf (eC.symm j).val).complexEquiv (eC.symm j).property).val (x (eC.symm j).val),
-     fun j ↦ ((nf (eH.symm j).val).quatEquiv (eH.symm j).property).val (x (eH.symm j).val))
-  invFun y i :=
-    if h0 : (nf i).tag = 0 then ((nf i).realEquiv h0).val.symm <|
-      cast (congrArg (fun k ↦ Mat (d k) ℝ) (congrArg Subtype.val (eR.symm_apply_apply ⟨i, h0⟩)))
-        (y.1 (eR ⟨i, h0⟩))
-    else if h1 : (nf i).tag = 1 then ((nf i).complexEquiv h1).val.symm <|
-      cast (congrArg (fun k ↦ Mat (d k) ℂ) (congrArg Subtype.val (eC.symm_apply_apply ⟨i, h1⟩)))
-        (y.2.1 (eC ⟨i, h1⟩))
-    else ((nf i).quatEquiv (by have := (nf i).tag.isLt; omega)).val.symm <|
-      cast (congrArg (fun k ↦ Mat (d k) ℍ[ℝ]) (congrArg Subtype.val
-        (eH.symm_apply_apply ⟨i, by have := (nf i).tag.isLt; omega⟩)))
-        (y.2.2 (eH ⟨i, by have := (nf i).tag.isLt; omega⟩))
-  left_inv x := funext fun i ↦ by
-    dsimp only; by_cases h0 : (nf i).tag = 0
-    · rw [dite_eq_left h0, sub_cast_apply (fun k ↦ Mat (d k) ℝ) eR
-        (fun k ↦ ((nf k.val).realEquiv k.property).val (x k.val)) i h0]
-      exact ((nf i).realEquiv h0).val.symm_apply_apply (x i)
-    · by_cases h1 : (nf i).tag = 1
-      · rw [dite_eq_right h0, dite_eq_left h1, sub_cast_apply (fun k ↦ Mat (d k) ℂ) eC
-          (fun k ↦ ((nf k.val).complexEquiv k.property).val (x k.val)) i h1]
-        exact ((nf i).complexEquiv h1).val.symm_apply_apply (x i)
-      · have h2 : (nf i).tag = 2 := by have := (nf i).tag.isLt; omega
-        rw [dite_eq_right h0, dite_eq_right h1, sub_cast_apply (fun k ↦ Mat (d k) ℍ[ℝ]) eH
-          (fun k ↦ ((nf k.val).quatEquiv k.property).val (x k.val)) i h2]
-        exact ((nf i).quatEquiv h2).val.symm_apply_apply (x i)
-  right_inv y := Prod.ext
-    (funext fun j ↦ by
-      dsimp only; rw [dite_eq_left (eR.symm j).property, StarAlgEquiv.apply_symm_apply]
-      exact cast_sub_apply (fun k ↦ Mat (d k) ℝ) eR y.1 j _)
-    (Prod.ext
+        (∀ i : Fin nH, Mat (d (eH.symm i).val) ℍ[ℝ])) :=
+  let mR := (AlgEquiv.piCongrRight fun i : {i // (nf i).tag = 0} ↦
+      ((nf i.val).realEquiv i.property).val.toAlgEquiv).trans
+    (AlgEquiv.piCongrLeft' ℝ (fun i : {i // (nf i).tag = 0} ↦ Mat (d i.val) ℝ) eR)
+  let mC := (AlgEquiv.piCongrRight fun i : {i // (nf i).tag = 1} ↦
+      ((nf i.val).complexEquiv i.property).val.toAlgEquiv).trans
+    (AlgEquiv.piCongrLeft' ℝ (fun i : {i // (nf i).tag = 1} ↦ Mat (d i.val) ℂ) eC)
+  let mH := (AlgEquiv.piCongrRight fun i : {i // (nf i).tag = 2} ↦
+      ((nf i.val).quatEquiv i.property).val.toAlgEquiv).trans
+    (AlgEquiv.piCongrLeft' ℝ (fun i : {i // (nf i).tag = 2} ↦ Mat (d i.val) ℍ[ℝ]) eH)
+  StarAlgEquiv.ofAlgEquiv ((piSplitTagAlgEquiv nf).trans (mR.prodCongr (mC.prodCongr mH)))
+    fun x ↦ Prod.ext
       (funext fun j ↦ by
-        dsimp only; rw [dite_eq_right (show (nf (eC.symm j).val).tag ≠ 0 by
-            have := (eC.symm j).property; omega),
-          dite_eq_left (eC.symm j).property, StarAlgEquiv.apply_symm_apply]
-        exact cast_sub_apply (fun k ↦ Mat (d k) ℂ) eC y.2.1 j _)
-      (funext fun j ↦ by
-        have hj := (eH.symm j).property; dsimp only
-        rw [dite_eq_right (show (nf (eH.symm j).val).tag ≠ 0 by omega),
-          dite_eq_right (show (nf (eH.symm j).val).tag ≠ 1 by omega),
-          StarAlgEquiv.apply_symm_apply]
-        exact cast_sub_apply (fun k ↦ Mat (d k) ℍ[ℝ]) eH y.2.2 j _))
-  map_mul' _ _ := Prod.ext (funext fun _ ↦ map_mul ..)
-    (Prod.ext (funext fun _ ↦ map_mul ..) (funext fun _ ↦ map_mul ..))
-  map_add' _ _ := Prod.ext (funext fun _ ↦ map_add ..)
-    (Prod.ext (funext fun _ ↦ map_add ..) (funext fun _ ↦ map_add ..))
-  map_smul' _ _ := Prod.ext (funext fun _ ↦ map_smul ..)
-    (Prod.ext (funext fun _ ↦ map_smul ..) (funext fun _ ↦ map_smul ..))
-  map_star' _ := Prod.ext (funext fun _ ↦ map_star ..)
-    (Prod.ext (funext fun _ ↦ map_star ..) (funext fun _ ↦ map_star ..))
+        simp only [mR, AlgEquiv.trans_apply, AlgEquiv.prodCongr_apply, Equiv.prodCongr_apply,
+          EquivLike.coe_coe, Prod.map_fst, AlgEquiv.piCongrLeft'_apply, Equiv.piCongrLeft'_apply,
+          AlgEquiv.piCongrRight_apply, piSplitTagAlgEquiv_apply, Prod.fst_star, Pi.star_apply,
+          StarAlgEquiv.coe_toAlgEquiv, map_star])
+      (Prod.ext
+        (funext fun j ↦ by
+          simp only [mC, AlgEquiv.trans_apply, AlgEquiv.prodCongr_apply, Equiv.prodCongr_apply,
+            EquivLike.coe_coe, Prod.map_snd, Prod.map_fst, AlgEquiv.piCongrLeft'_apply,
+            Equiv.piCongrLeft'_apply, AlgEquiv.piCongrRight_apply, piSplitTagAlgEquiv_apply,
+            Prod.snd_star, Prod.fst_star, Pi.star_apply, StarAlgEquiv.coe_toAlgEquiv, map_star])
+        (funext fun j ↦ by
+          simp only [mH, AlgEquiv.trans_apply, AlgEquiv.prodCongr_apply, Equiv.prodCongr_apply,
+            EquivLike.coe_coe, Prod.map_snd, AlgEquiv.piCongrLeft'_apply, Equiv.piCongrLeft'_apply,
+            AlgEquiv.piCongrRight_apply, piSplitTagAlgEquiv_apply, Prod.snd_star, Pi.star_apply,
+            StarAlgEquiv.coe_toAlgEquiv, map_star]))
 
-private theorem prop_of_sub_eq {n n' : ℕ} {P : Fin n → Prop} (e : Subtype P ≃ Fin n')
-    (Q : ∀ i, P i → Prop) (hQ : ∀ j, Q (e.symm j).val (e.symm j).property)
-    (i : Fin n) (hi : P i) : Q i hi := by
-  have hp := e.symm_apply_apply ⟨i, hi⟩; have h := hQ (e ⟨i, hi⟩)
-  generalize e.symm (e ⟨i, hi⟩) = p at hp h; subst hp; exact h
+private theorem splitReindexEquiv_apply_1 {n nR nC nH : ℕ} {A : Fin n → Type*}
+    [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)]
+    {t : ∀ i, A i →ₗ[ℝ] ℝ} {d : Fin n → ℕ} (nf : ∀ i, FactorNormalForm (A i) (t i) (d i))
+    (eR : {i // (nf i).tag = 0} ≃ Fin nR) (eC : {i // (nf i).tag = 1} ≃ Fin nC)
+    (eH : {i // (nf i).tag = 2} ≃ Fin nH) (x : ∀ i, A i) (j : Fin nR) :
+    (splitReindexEquiv nf eR eC eH x).1 j =
+      ((nf (eR.symm j).val).realEquiv (eR.symm j).property).val (x (eR.symm j).val) := by
+  simp [splitReindexEquiv, piSplitTagAlgEquiv_apply]
+
+private theorem splitReindexEquiv_apply_2_1 {n nR nC nH : ℕ} {A : Fin n → Type*}
+    [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)]
+    {t : ∀ i, A i →ₗ[ℝ] ℝ} {d : Fin n → ℕ} (nf : ∀ i, FactorNormalForm (A i) (t i) (d i))
+    (eR : {i // (nf i).tag = 0} ≃ Fin nR) (eC : {i // (nf i).tag = 1} ≃ Fin nC)
+    (eH : {i // (nf i).tag = 2} ≃ Fin nH) (x : ∀ i, A i) (j : Fin nC) :
+    (splitReindexEquiv nf eR eC eH x).2.1 j =
+      ((nf (eC.symm j).val).complexEquiv (eC.symm j).property).val (x (eC.symm j).val) := by
+  simp [splitReindexEquiv, piSplitTagAlgEquiv_apply]
+
+private theorem splitReindexEquiv_apply_2_2 {n nR nC nH : ℕ} {A : Fin n → Type*}
+    [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)]
+    {t : ∀ i, A i →ₗ[ℝ] ℝ} {d : Fin n → ℕ} (nf : ∀ i, FactorNormalForm (A i) (t i) (d i))
+    (eR : {i // (nf i).tag = 0} ≃ Fin nR) (eC : {i // (nf i).tag = 1} ≃ Fin nC)
+    (eH : {i // (nf i).tag = 2} ≃ Fin nH) (x : ∀ i, A i) (j : Fin nH) :
+    (splitReindexEquiv nf eR eC eH x).2.2 j =
+      ((nf (eH.symm j).val).quatEquiv (eH.symm j).property).val (x (eH.symm j).val) := by
+  simp [splitReindexEquiv, piSplitTagAlgEquiv_apply]
 
 private theorem splitReindexEquiv_pos {n nR nC nH : ℕ} {A : Fin n → Type*}
     [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)]
@@ -210,19 +186,30 @@ private theorem splitReindexEquiv_pos {n nR nC nH : ℕ} {A : Fin n → Type*}
       (∀ i, ((splitReindexEquiv nf eR eC eH x).2.1 i).PosDef) ∧
       (∀ i, ((splitReindexEquiv nf eR eC eH x).2.2 i).QuatPosDef) := by
   refine ⟨fun hx ↦ ⟨
-    fun j ↦ (((nf (eR.symm j).val).realEquiv (eR.symm j).property).property _).mp (hx _),
-    fun j ↦ (((nf (eC.symm j).val).complexEquiv (eC.symm j).property).property _).mp (hx _),
-    fun j ↦ (((nf (eH.symm j).val).quatEquiv (eH.symm j).property).property _).mp (hx _)⟩,
+    fun j ↦ (splitReindexEquiv_apply_1 nf eR eC eH x j).symm ▸
+      (((nf (eR.symm j).val).realEquiv (eR.symm j).property).property _).mp (hx _),
+    fun j ↦ (splitReindexEquiv_apply_2_1 nf eR eC eH x j).symm ▸
+      (((nf (eC.symm j).val).complexEquiv (eC.symm j).property).property _).mp (hx _),
+    fun j ↦ (splitReindexEquiv_apply_2_2 nf eR eC eH x j).symm ▸
+      (((nf (eH.symm j).val).quatEquiv (eH.symm j).property).property _).mp (hx _)⟩,
     fun ⟨hR, hC, hH⟩ i ↦ ?_⟩
+  have hR' : ∀ k : {i // (nf i).tag = 0}, IsRosatiPositive (t k.val) (x k.val) :=
+    eR.symm.surjective.forall.mpr fun j ↦
+      (((nf (eR.symm j).val).realEquiv (eR.symm j).property).property _).mpr
+        (splitReindexEquiv_apply_1 nf eR eC eH x j ▸ hR j)
+  have hC' : ∀ k : {i // (nf i).tag = 1}, IsRosatiPositive (t k.val) (x k.val) :=
+    eC.symm.surjective.forall.mpr fun j ↦
+      (((nf (eC.symm j).val).complexEquiv (eC.symm j).property).property _).mpr
+        (splitReindexEquiv_apply_2_1 nf eR eC eH x j ▸ hC j)
+  have hH' : ∀ k : {i // (nf i).tag = 2}, IsRosatiPositive (t k.val) (x k.val) :=
+    eH.symm.surjective.forall.mpr fun j ↦
+      (((nf (eH.symm j).val).quatEquiv (eH.symm j).property).property _).mpr
+        (splitReindexEquiv_apply_2_2 nf eR eC eH x j ▸ hH j)
   by_cases h0 : (nf i).tag = 0
-  · exact (((nf i).realEquiv h0).property _).mpr
-      (prop_of_sub_eq eR (fun k hk ↦ (((nf k).realEquiv hk).val (x k)).PosDef) hR i h0)
+  · exact hR' ⟨i, h0⟩
   · by_cases h1 : (nf i).tag = 1
-    · exact (((nf i).complexEquiv h1).property _).mpr
-        (prop_of_sub_eq eC (fun k hk ↦ (((nf k).complexEquiv hk).val (x k)).PosDef) hC i h1)
-    · have h2 : (nf i).tag = 2 := by have := (nf i).tag.isLt; omega
-      exact (((nf i).quatEquiv h2).property _).mpr
-        (prop_of_sub_eq eH (fun k hk ↦ (((nf k).quatEquiv hk).val (x k)).QuatPosDef) hH i h2)
+    · exact hC' ⟨i, h1⟩
+    · exact hH' ⟨i, FactorNormalForm.tag_eq_two_of_ne h0 h1⟩
 
 private theorem realRosatiDecomposition_of_starPiEquiv {E : Type*} [Ring E] [Algebra ℝ E]
     [StarRing E] {n : ℕ} {D : Fin n → Type*} [∀ i, DivisionRing (D i)]
@@ -241,8 +228,8 @@ private theorem realRosatiDecomposition_of_starPiEquiv {E : Type*} [Ring E] [Alg
   obtain ⟨nf⟩ :
       Nonempty (∀ i, FactorNormalForm (B i) (tPi.comp (LinearMap.single ℝ B i)) (d i)) :=
     ⟨fun i ↦ Classical.choice (nonempty_factorNormalForm (φ i) (tPi.comp (LinearMap.single ℝ B i))
-      (factorTrace_cyclic tPi (fun x y ↦ by simp [tPi, hcyclic]) i)
-      ((factorTrace_pos tPi fun x hx ↦ by
+      (LinearMap.comp_single_cyclic tPi (fun x y ↦ by simp [tPi, hcyclic]) i)
+      ((LinearMap.comp_single_mul_star_pos tPi fun x hx ↦ by
         simpa [tPi, map_star] using
           hpos (eWrap.symm x) fun h0 ↦ hx (by simpa using congrArg eWrap h0)) i))⟩
   let eR := Fintype.equivFin {i : Fin n // (nf i).tag = 0}
