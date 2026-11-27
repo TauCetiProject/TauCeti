@@ -13,6 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
 
 import Mathlib.Analysis.InnerProductSpace.SingularValues
+import TauCeti.Analysis.CStarAlgebra.Matrix.TraceDuality
 import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 import TauCeti.Analysis.InnerProductSpace.Polar.Finite
 import TauCeti.Analysis.InnerProductSpace.SingularValues
