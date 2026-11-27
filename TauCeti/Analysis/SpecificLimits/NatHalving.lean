@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Nat.Log
 import Mathlib.Algebra.Order.Floor.Semifield
-import Mathlib.Analysis.Normed.Group.Continuity
 import TauCeti.Data.Nat.Log
 
 /-!
