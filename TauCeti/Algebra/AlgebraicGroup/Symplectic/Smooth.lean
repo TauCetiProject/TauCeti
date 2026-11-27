@@ -70,18 +70,8 @@ private instance instFormallySmoothCoordinateHopfAlgebra :
 /-- The coordinate algebra of `Sp_{2m}` is smooth over every commutative ring. -/
 instance instSmoothCoordinateHopfAlgebra :
     Algebra.Smooth R (coordinateHopfAlgebra R m) := by
-  have hfg : (definingHopfIdeal R m).toIdeal.FG := by
-    rw [ConstantForm.definingHopfIdeal_toIdeal]
-    apply Submodule.fg_span
-    let f := fun ij : Fin (m + m) × Fin (m + m) ↦
-      ConstantForm.relationMatrix R (m + m) (JFin m R) ij.1 ij.2
-    refine (Set.finite_range f).subset ?_
-    intro x hx
-    obtain ⟨i, j, hij⟩ :=
-      (ConstantForm.mem_relationSet_iff (R := R) (n := m + m) (C := JFin m R)).mp hx
-    exact ⟨(i, j), hij⟩
   let _ : Algebra.FinitePresentation R (coordinateHopfAlgebra R m) :=
-    Algebra.FinitePresentation.quotient hfg
+    Algebra.FinitePresentation.quotient (ConstantForm.definingHopfIdeal_toIdeal_fg R _ _)
   exact ⟨inferInstance, inferInstance⟩
 
 /-- The finite-type commutative Hopf algebra representing `Sp_{2m}` has smooth coordinate ring. -/

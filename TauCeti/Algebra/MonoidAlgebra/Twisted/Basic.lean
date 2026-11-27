@@ -51,8 +51,9 @@ a basis and the multiplication table above holds on the nose.
   (`TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top`);
 * `TauCeti.TwistedMonoidAlgebra.repr_mul_apply_one_comm`: for a group `G`, the coefficient at the
   identity is a trace on `k_α[G]`;
-* `TauCeti.TwistedMonoidAlgebra.monoidAlgebraEquiv`: for the trivial factor set, `k_α[G]` is the
-  monoid algebra `MonoidAlgebra k G`;
+* `TauCeti.TwistedMonoidAlgebra.monoidAlgebraEquiv`,
+  `TauCeti.TwistedMonoidAlgebra.addMonoidAlgebraEquiv`: for the trivial factor set, `k_α[G]` is
+  the monoid algebra `MonoidAlgebra k G`, and `k_1[Multiplicative L]` is `AddMonoidAlgebra k L`;
 * `TauCeti.TwistedMonoidAlgebra.equivOfCoboundary`: two factor sets related by
   `β g h * c (g * h) = α g h * (c g * c h)` for some `c : G → kˣ` have isomorphic twisted monoid
   algebras. For a group `G` that relation is exactly the statement that `α` and `β` are
@@ -98,7 +99,8 @@ public section
 
 namespace TauCeti
 
-open Module
+open Module Finset
+open scoped Pointwise
 
 /-- A **normalized factor set** on a monoid `G` with values in the units of a commutative semiring
 `k`: a function `α : G → G → kˣ` satisfying the multiplicative `2`-cocycle identity and normalized
@@ -409,6 +411,15 @@ theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
   simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul_sum, smul_mul_smul_comm,
     map_sum, map_smul, basis_apply, of_mul_of, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one]
 
+/-- The support of a product lies in the pointwise product of the supports. -/
+theorem support_repr_mul_subset [DecidableEq G] (f g : twistedMonoidAlgebra k G α) :
+    ((basis k G α).repr (f * g)).support ⊆
+      ((basis k G α).repr f).support * ((basis k G α).repr g).support := by
+  rw [repr_mul]
+  refine Finsupp.support_sum.trans <| biUnion_subset.2 fun a ha ↦ ?_
+  refine Finsupp.support_sum.trans <| biUnion_subset.2 fun b hb ↦ ?_
+  exact Finsupp.support_single_subset.trans (singleton_subset_iff.2 (mul_mem_mul ha hb))
+
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
 theorem algHom_ext {A : Type*} [Semiring A] [Algebra k A]
@@ -550,6 +561,34 @@ noncomputable def monoidAlgebraEquiv :
 theorem monoidAlgebraEquiv_of (g : G) :
     monoidAlgebraEquiv k G (of g) = MonoidAlgebra.single g (1 : k) :=
   toMonoidAlgebra_of k G g
+
+section AddMonoid
+
+variable (L : Type*) [AddMonoid L]
+
+/-- For the trivial factor set `1`, `twistedMonoidAlgebra k (Multiplicative L) 1` is canonically
+isomorphic as a `k`-algebra to `AddMonoidAlgebra k L`. -/
+noncomputable def addMonoidAlgebraEquiv :
+    twistedMonoidAlgebra k (Multiplicative L) (1 : Multiplicative L → Multiplicative L → kˣ) ≃ₐ[k]
+      AddMonoidAlgebra k L :=
+  (monoidAlgebraEquiv k (Multiplicative L)).trans
+    (AddMonoidAlgebra.toMultiplicativeAlgEquiv k k L).symm
+
+@[simp]
+theorem addMonoidAlgebraEquiv_of (m : L) :
+    addMonoidAlgebraEquiv k L (of (Multiplicative.ofAdd m)) = AddMonoidAlgebra.single m 1 := by
+  apply (AddMonoidAlgebra.toMultiplicativeAlgEquiv k k L).injective
+  simp [addMonoidAlgebraEquiv]
+
+@[simp]
+theorem addMonoidAlgebraEquiv_symm_single (m : L) (c : k) :
+    (addMonoidAlgebraEquiv k L).symm (AddMonoidAlgebra.single m c) =
+      c • of (Multiplicative.ofAdd m) := by
+  apply (addMonoidAlgebraEquiv k L).injective
+  rw [AlgEquiv.apply_symm_apply, map_smul, addMonoidAlgebraEquiv_of,
+    AddMonoidAlgebra.smul_single, smul_eq_mul, mul_one]
+
+end AddMonoid
 
 end Trivial
 

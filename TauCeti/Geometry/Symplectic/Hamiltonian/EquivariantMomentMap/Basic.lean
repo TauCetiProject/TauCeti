@@ -293,6 +293,16 @@ theorem isEquivariantMomentMap_iff_momentDefect_eq_zero :
   simp only [momentDefect_eq_zero_iff]
   exact ⟨fun h ↦ ⟨h.toIsMomentMap, h.apply_smul⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
+/-- **Groups with zero Lie algebra.** If the Lie algebra `𝔤` of `G` is zero, as for a discrete
+group, then `𝔤* = 0` and every map `μ : M → 𝔤*` is a group-level moment map. -/
+theorem isEquivariantMomentMap_of_subsingleton [Subsingleton (GroupLieAlgebra I G)]
+    (μ : M → Module.Dual ℝ (GroupLieAlgebra I G)) : σ.IsEquivariantMomentMap μ where
+  contMDiff ξ := by
+    simpa only [Subsingleton.elim ξ 0, map_zero] using contMDiff_const
+  isHamiltonianVectorField ξ := by
+    simpa only [Subsingleton.elim ξ 0, map_zero] using σ.isHamiltonianVectorField_const 0
+  apply_smul _ _ := Subsingleton.elim _ _
+
 namespace IsMomentMap
 
 /-- For a moment map `μ` and an element `g` acting by a symplectomorphism, the map

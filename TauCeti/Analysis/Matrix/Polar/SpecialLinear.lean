@@ -28,7 +28,9 @@ of `SU(n)` (`Matrix.ProjectiveSpecialLinearGroup.polarHomotopy`), and the inclus
 `PSU(n) → PSL(n, 𝕜)` is a homotopy equivalence
 (`Matrix.ProjectiveSpecialLinearGroup.polarHomotopyEquiv`). Continuity of the descended deformation
 holds because `SL(n, 𝕜) → PSL(n, 𝕜)` is an open quotient map, so that its product with the unit
-interval is again a quotient map.
+interval is again a quotient map. The same argument descends every deformation retraction of
+`SL(n, 𝕜)` onto `SU(n)` which ends at the polar retraction and commutes with the center
+(`Matrix.ProjectiveSpecialLinearGroup.descendHomotopyRel`).
 
 For `n = 2` and `𝕜 = ℂ` this deforms the Möbius group of the Riemann sphere onto its rotation group
 `PSU(2)`.
@@ -43,12 +45,17 @@ For `n = 2` and `𝕜 = ℂ` this deforms the Möbius group of the Riemann spher
 * `Matrix.ProjectiveSpecialLinearGroup.polarRetraction`,
   `Matrix.ProjectiveSpecialLinearGroup.polarHomotopy`,
   `Matrix.ProjectiveSpecialLinearGroup.polarHomotopyEquiv`: the same for `PSL(n, 𝕜)` and `PSU(n)`.
+* `Matrix.ProjectiveSpecialLinearGroup.descendHomotopyRel`: the deformation retraction of
+  `PSL(n, 𝕜)` onto `PSU(n)` induced by any deformation retraction of `SL(n, 𝕜)` onto `SU(n)`
+  ending at the polar retraction and commuting with the center.
 
 ## Main results
 
 * `Matrix.SpecialLinearGroup.polarRetraction_toSL_mul`,
   `Matrix.SpecialLinearGroup.polarHomotopy_toSL_mul`: the retraction and the deformation of
   `SL(n, 𝕜)` commute with left multiplication by `SU(n)`.
+* `Matrix.SpecialLinearGroup.coe_polarRetraction_neg`: the retraction is odd when `n` has even
+  cardinality.
 * `Matrix.ProjectiveSpecialLinearGroup.polarHomotopy_mk`: the deformation of `PSL(n, 𝕜)` is induced
   by that of `SL(n, 𝕜)`.
 
@@ -74,6 +81,11 @@ variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
+/-- The determinant of a matrix of `SL(n, R)` has norm one. -/
+theorem norm_det_eq_one {R : Type*} [CommRing R] [Norm R] [NormOneClass R]
+    (g : SpecialLinearGroup n R) : ‖(g : Matrix n n R).det‖ = 1 := by
+  rw [g.property, norm_one]
+
 variable (n 𝕜) in
 /-- **The polar retraction** `SL(n, 𝕜) → SU(n)`, for `𝕜 = ℝ` or `ℂ`: the unitary factor `U` of the
 polar decomposition `g = P * U`, which has determinant one. -/
@@ -90,6 +102,13 @@ def polarRetraction : C(SpecialLinearGroup n 𝕜, specialUnitaryGroup n 𝕜) w
 theorem coe_polarRetraction_apply (g : SpecialLinearGroup n 𝕜) :
     (polarRetraction n 𝕜 g : Matrix n n 𝕜) = (toGL g).polarUnitary :=
   (rfl)
+
+/-- The polar retraction `U` of `g` and the positive factor `√(gᴴ g)` form the right polar
+decomposition `g = U √(gᴴ g)`. -/
+theorem coe_polarRetraction_mul_sqrt_star_mul_self (g : SpecialLinearGroup n 𝕜) :
+    (polarRetraction n 𝕜 g : Matrix n n 𝕜) * CFC.sqrt (star (g : Matrix n n 𝕜) * g) = g := by
+  simpa only [coe_polarRetraction_apply, coe_GL_coe_matrix] using
+    Units.polarUnitary_mul_sqrt_star_mul (toGL g)
 
 /-- The polar retraction fixes the special unitary matrices. -/
 @[simp]
@@ -108,6 +127,32 @@ theorem polarRetraction_toSL_mul (k : specialUnitaryGroup n 𝕜) (g : SpecialLi
   rw [map_one, mul_one, mul_one, ← toGL_toSL, ← map_mul] at h
   rw [coe_polarRetraction_apply, h, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_inclusion,
     coe_polarRetraction_apply]
+
+/-- The polar retraction is odd: when `n` has even cardinality, so that `-g ∈ SL(n, 𝕜)`, the
+unitary factor of `-g = √(g gᴴ) (-U)` is minus the unitary factor `U` of `g`. -/
+theorem coe_polarRetraction_neg [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n 𝕜) :
+    (polarRetraction n 𝕜 (-g) : Matrix n n 𝕜) = -(polarRetraction n 𝕜 g : Matrix n n 𝕜) := by
+  rw [coe_polarRetraction_apply, coe_polarRetraction_apply, toGL_neg, Units.polarUnitary_neg,
+    Unitary.coe_neg]
+
+/-- The matrix `gᴴ g` of `g ∈ SL(n, 𝕜)` has determinant one. -/
+theorem det_star_mul_self (g : SpecialLinearGroup n 𝕜) :
+    (star (g : Matrix n n 𝕜) * g).det = 1 := by
+  rw [det_mul, star_eq_conjTranspose, det_conjTranspose, det_coe, star_one, one_mul]
+
+/-- The positive factor `√(gᴴ g)` of `g ∈ SL(n, 𝕜)` has determinant one. -/
+theorem det_sqrt_star_mul_self (g : SpecialLinearGroup n 𝕜) :
+    (CFC.sqrt (star (g : Matrix n n 𝕜) * g)).det = 1 := by
+  rw [det_sqrt_star_mul, det_coe, norm_one, RCLike.ofReal_one]
+
+/-- Left multiplication by a special unitary matrix `k` fixes `gᴴ g`:
+`(k g)ᴴ (k g) = gᴴ g`. -/
+theorem star_mul_self_toSL_mul (k : specialUnitaryGroup n 𝕜) (g : SpecialLinearGroup n 𝕜) :
+    star ((toSL k * g : SpecialLinearGroup n 𝕜) : Matrix n n 𝕜) *
+        (toSL k * g : SpecialLinearGroup n 𝕜) =
+      star (g : Matrix n n 𝕜) * g := by
+  rw [coe_mul, coe_toSL, star_mul, mul_assoc, ← mul_assoc (star (k : Matrix n n 𝕜)),
+    Unitary.star_mul_self_of_mem (specialUnitaryGroup_le_unitaryGroup k.property), one_mul]
 
 variable (n 𝕜) in
 /-- **`SL(n, 𝕜)` deformation retracts onto `SU(n)`**, for `𝕜 = ℝ` or `ℂ`. The polar deformation
@@ -217,28 +262,83 @@ theorem polarRetraction_toPSL (k : specialUnitaryGroup n 𝕜) :
     polarRetraction n 𝕜 (toPSL k) = toPSL.rangeRestrict k := by
   rw [toPSL_apply, polarRetraction_mk, SpecialLinearGroup.polarRetraction_toSL]
 
-/-- The deformation of `PSL(n, 𝕜)` induced by the polar homotopy of `SL(n, 𝕜)`; it is well
-defined because the latter commutes with the center, which consists of unitary scalars. -/
-private def polarHomotopyAux :
+/-- The deformation of `PSL(n, 𝕜)` induced by a deformation `F` of `SL(n, 𝕜)` which commutes with
+the center; it is well defined because the center consists of unitary scalars. -/
+private def descendHomotopyAux
+    (F : (ContinuousMap.id (SpecialLinearGroup n 𝕜)).HomotopyRel
+      ((⟨toSL, continuous_toSL⟩ : C(specialUnitaryGroup n 𝕜, SpecialLinearGroup n 𝕜)).comp
+        (SpecialLinearGroup.polarRetraction n 𝕜))
+      (Set.range toSL))
+    (hF : ∀ (t : I) (k : specialUnitaryGroup n 𝕜) (g : SpecialLinearGroup n 𝕜),
+      toSL k ∈ Subgroup.center (SpecialLinearGroup n 𝕜) → F (t, toSL k * g) = toSL k * F (t, g)) :
     C(I × ProjectiveSpecialLinearGroup n 𝕜, ProjectiveSpecialLinearGroup n 𝕜) where
   toFun p := Quotient.lift
-    (fun g => ((SpecialLinearGroup.polarHomotopy n 𝕜 (p.1, g) : SpecialLinearGroup n 𝕜) :
-      ProjectiveSpecialLinearGroup n 𝕜))
+    (fun g => ((F (p.1, g) : SpecialLinearGroup n 𝕜) : ProjectiveSpecialLinearGroup n 𝕜))
     (fun g g' h => by
       obtain ⟨k, hk, rfl⟩ := exists_toSL_mul_eq (Quotient.sound h)
-      rw [SpecialLinearGroup.polarHomotopy_toSL_mul, QuotientGroup.mk_mul,
-        (QuotientGroup.eq_one_iff _).mpr hk, one_mul])
+      rw [hF p.1 k g hk, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr hk, one_mul])
     p.2
   -- `I × SL(n, 𝕜) → I × PSL(n, 𝕜)` is an open quotient map, and composed with it this map is the
-  -- class of the polar homotopy of `SL(n, 𝕜)`.
+  -- class of `F`.
   continuous_toFun :=
     (IsOpenQuotientMap.id.prodMap QuotientGroup.isOpenQuotientMap_mk).continuous_comp_iff.mp
-      (QuotientGroup.continuous_mk.comp (SpecialLinearGroup.polarHomotopy n 𝕜).continuous)
+      (QuotientGroup.continuous_mk.comp F.continuous)
 
-private theorem polarHomotopyAux_mk (t : I) (g : SpecialLinearGroup n 𝕜) :
-    polarHomotopyAux (t, (g : ProjectiveSpecialLinearGroup n 𝕜)) =
-      (SpecialLinearGroup.polarHomotopy n 𝕜 (t, g) : SpecialLinearGroup n 𝕜) :=
+private theorem descendHomotopyAux_mk
+    (F : (ContinuousMap.id (SpecialLinearGroup n 𝕜)).HomotopyRel
+      ((⟨toSL, continuous_toSL⟩ : C(specialUnitaryGroup n 𝕜, SpecialLinearGroup n 𝕜)).comp
+        (SpecialLinearGroup.polarRetraction n 𝕜))
+      (Set.range toSL))
+    (hF : ∀ (t : I) (k : specialUnitaryGroup n 𝕜) (g : SpecialLinearGroup n 𝕜),
+      toSL k ∈ Subgroup.center (SpecialLinearGroup n 𝕜) → F (t, toSL k * g) = toSL k * F (t, g))
+    (t : I) (g : SpecialLinearGroup n 𝕜) :
+    descendHomotopyAux F hF (t, (g : ProjectiveSpecialLinearGroup n 𝕜)) =
+      (F (t, g) : SpecialLinearGroup n 𝕜) :=
   (rfl)
+
+/-- **Descent of deformation retractions of `SL(n, 𝕜)` onto `SU(n)`.** A homotopy relative to
+`SU(n)` from the identity of `SL(n, 𝕜)` to the polar retraction, which commutes with left
+multiplication by the central elements of `SL(n, 𝕜)`, induces a homotopy relative to `PSU(n)` from
+the identity of `PSL(n, 𝕜)` to the polar retraction `PSL(n, 𝕜) → PSU(n)`. -/
+def descendHomotopyRel
+    (F : (ContinuousMap.id (SpecialLinearGroup n 𝕜)).HomotopyRel
+      ((⟨toSL, continuous_toSL⟩ : C(specialUnitaryGroup n 𝕜, SpecialLinearGroup n 𝕜)).comp
+        (SpecialLinearGroup.polarRetraction n 𝕜))
+      (Set.range toSL))
+    (hF : ∀ (t : I) (k : specialUnitaryGroup n 𝕜) (g : SpecialLinearGroup n 𝕜),
+      toSL k ∈ Subgroup.center (SpecialLinearGroup n 𝕜) → F (t, toSL k * g) = toSL k * F (t, g)) :
+    (ContinuousMap.id (ProjectiveSpecialLinearGroup n 𝕜)).HomotopyRel
+      ((⟨Subtype.val, continuous_subtypeVal⟩ :
+        C((toPSL : specialUnitaryGroup n 𝕜 →* _).range, ProjectiveSpecialLinearGroup n 𝕜)).comp
+          (polarRetraction n 𝕜))
+      ((toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range) where
+  toFun := descendHomotopyAux F hF
+  continuous_toFun := (descendHomotopyAux F hF).continuous
+  map_zero_left x := by
+    induction x using QuotientGroup.induction_on with | H g => _
+    rw [descendHomotopyAux_mk, F.apply_zero, ContinuousMap.id_apply, ContinuousMap.id_apply]
+  map_one_left x := by
+    induction x using QuotientGroup.induction_on with | H g => _
+    rw [descendHomotopyAux_mk, F.apply_one]
+    simp
+  prop' t := by
+    rintro _ ⟨k, rfl⟩
+    simp only [ContinuousMap.coe_mk, ContinuousMap.id_apply, toPSL_apply]
+    rw [descendHomotopyAux_mk, F.eq_fst t (Set.mem_range_self k), ContinuousMap.id_apply]
+
+/-- The descended homotopy of `PSL(n, 𝕜)` is induced by the homotopy of `SL(n, 𝕜)`. -/
+@[simp]
+theorem descendHomotopyRel_mk
+    (F : (ContinuousMap.id (SpecialLinearGroup n 𝕜)).HomotopyRel
+      ((⟨toSL, continuous_toSL⟩ : C(specialUnitaryGroup n 𝕜, SpecialLinearGroup n 𝕜)).comp
+        (SpecialLinearGroup.polarRetraction n 𝕜))
+      (Set.range toSL))
+    (hF : ∀ (t : I) (k : specialUnitaryGroup n 𝕜) (g : SpecialLinearGroup n 𝕜),
+      toSL k ∈ Subgroup.center (SpecialLinearGroup n 𝕜) → F (t, toSL k * g) = toSL k * F (t, g))
+    (t : I) (g : SpecialLinearGroup n 𝕜) :
+    descendHomotopyRel F hF (t, (g : ProjectiveSpecialLinearGroup n 𝕜)) =
+      (F (t, g) : SpecialLinearGroup n 𝕜) :=
+  descendHomotopyAux_mk F hF t g
 
 variable (n 𝕜) in
 /-- **`PSL(n, 𝕜)` deformation retracts onto `PSU(n)`**, for `𝕜 = ℝ` or `ℂ`: the homotopy
@@ -249,30 +349,16 @@ def polarHomotopy :
       ((⟨Subtype.val, continuous_subtypeVal⟩ :
         C((toPSL : specialUnitaryGroup n 𝕜 →* _).range, ProjectiveSpecialLinearGroup n 𝕜)).comp
           (polarRetraction n 𝕜))
-      ((toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range) where
-  toFun := polarHomotopyAux
-  continuous_toFun := polarHomotopyAux.continuous
-  map_zero_left x := by
-    induction x using QuotientGroup.induction_on with | H g => _
-    rw [polarHomotopyAux_mk, (SpecialLinearGroup.polarHomotopy n 𝕜).apply_zero,
-      ContinuousMap.id_apply, ContinuousMap.id_apply]
-  map_one_left x := by
-    induction x using QuotientGroup.induction_on with | H g => _
-    rw [polarHomotopyAux_mk, (SpecialLinearGroup.polarHomotopy n 𝕜).apply_one]
-    simp
-  prop' t := by
-    rintro _ ⟨k, rfl⟩
-    simp only [ContinuousMap.coe_mk, ContinuousMap.id_apply, toPSL_apply]
-    rw [polarHomotopyAux_mk,
-      (SpecialLinearGroup.polarHomotopy n 𝕜).eq_fst t (Set.mem_range_self k),
-      ContinuousMap.id_apply]
+      ((toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range) :=
+  descendHomotopyRel (SpecialLinearGroup.polarHomotopy n 𝕜)
+    fun t k g _ => SpecialLinearGroup.polarHomotopy_toSL_mul t k g
 
 /-- The polar homotopy of `PSL(n, 𝕜)` is induced by that of `SL(n, 𝕜)`. -/
 @[simp]
 theorem polarHomotopy_mk (t : I) (g : SpecialLinearGroup n 𝕜) :
     polarHomotopy n 𝕜 (t, (g : ProjectiveSpecialLinearGroup n 𝕜)) =
       (SpecialLinearGroup.polarHomotopy n 𝕜 (t, g) : SpecialLinearGroup n 𝕜) :=
-  polarHomotopyAux_mk t g
+  descendHomotopyRel_mk _ _ t g
 
 variable (n 𝕜) in
 /-- **`PSU(n)` is homotopy equivalent to `PSL(n, 𝕜)`**, for `𝕜 = ℝ` or `ℂ`, through the

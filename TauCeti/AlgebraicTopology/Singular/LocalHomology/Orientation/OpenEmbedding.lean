@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
+public import TauCeti.Geometry.Manifold.Boundary.Interior
 public import TauCeti.Geometry.Manifold.Opens
 public import TauCeti.Topology.Category.TopCat.Opens
 
@@ -51,6 +52,9 @@ reverses orientation.
   `TauCeti.HomologicalOrientation.comap_comap`: pullback commutes with reversal and is functorial.
 * `TauCeti.HomologicalOrientation.comap_symm_comap`: pulling back along a homeomorphism and then
   along its inverse is the identity.
+* `TauCeti.HomologicalOrientation.restrictOpens`: an orientation of the interior of a manifold with
+  corners restricts to the interior of each open subset, compatibly with reversal
+  (`TauCeti.HomologicalOrientation.restrictOpens_neg`).
 
 ## References
 
@@ -264,6 +268,34 @@ lemma comap_comap_toTopCat_map (o : HomologicalOrientation N E d)
 lemma comap_symm_comap (o : HomologicalOrientation N E d) (e : M ≃ₜ N) :
     (o.comap e.isOpenEmbedding).comap e.symm.isOpenEmbedding = o := by
   rw [comap_comap, o.comap_congr _ IsOpenEmbedding.id (funext e.apply_symm_apply), comap_id]
+
+section Interior
+
+variable {E H M : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [T2Space M]
+  [ChartedSpace H M] {d : ℕ}
+
+/-- **The restriction of an orientation to an open subset.** An orientation of the interior of a
+manifold with corners `M` restricts to an orientation of the interior of every open subset `u` of
+`M`, by pulling it back along the inclusion of interiors
+(`ModelWithCorners.isOpenEmbedding_interiorOpensInclusion`). -/
+def restrictOpens (o : HomologicalOrientation (I.interior M) E d) (u : TopologicalSpace.Opens M) :
+    HomologicalOrientation (I.interior u) E d :=
+  o.comap (I.isOpenEmbedding_interiorOpensInclusion u)
+
+/-- `restrictOpens` is the pullback along the inclusion of interiors. -/
+theorem restrictOpens_def (o : HomologicalOrientation (I.interior M) E d)
+    (u : TopologicalSpace.Opens M) :
+    o.restrictOpens u = o.comap (I.isOpenEmbedding_interiorOpensInclusion u) :=
+  (rfl)
+
+/-- Restricting the reversed orientation gives the reversed restriction. -/
+@[simp]
+theorem restrictOpens_neg (o : HomologicalOrientation (I.interior M) E d)
+    (u : TopologicalSpace.Opens M) : (-o).restrictOpens u = -o.restrictOpens u :=
+  o.comap_neg _
+
+end Interior
 
 end HomologicalOrientation
 

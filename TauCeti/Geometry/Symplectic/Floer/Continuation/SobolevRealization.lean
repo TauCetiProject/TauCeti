@@ -20,7 +20,7 @@ statement about the linearized operator `D_u` of this datum.
 
 This file realizes `D_u` along a continuation cylinder `u` asymptotic to nondegenerate one-periodic
 orbits `x₋` of `H₋` at `-∞` and `x₊` of `H₊` at `+∞` as the bounded operator
-`TauCeti.SymplecticForm.floerSobolevOperator` from `W^{1,2}(ℝ × S¹, V)` to `L²(ℝ × S¹, V)`, and
+`TauCeti.SymplecticForm.floerSobolevOperator 2` from `W^{1,2}(ℝ × S¹, V)` to `L²(ℝ × S¹, V)`, and
 proves that
 
 * its coefficients are essentially bounded on the cylinder
@@ -136,7 +136,7 @@ theorem finiteDimensional_ker_floerSobolevOperator_continuationHomotopy (ω : Sy
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    FiniteDimensional ℝ (ω.floerSobolevOperator
+    FiniteDimensional ℝ (ω.floerSobolevOperator 2
       (fun w y ↦ (continuationAlmostComplex h₀ Jm Jp hJmt hJpt w y).toLinearMap
         |>.toContinuousLinearMap)
       (fun _ _ ↦ 0) (continuationHomotopy Hm Hp) u).ker :=
@@ -175,7 +175,7 @@ theorem isClosed_range_floerSobolevOperator_continuationHomotopy (ω : Symplecti
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    IsClosed ((ω.floerSobolevOperator
+    IsClosed ((ω.floerSobolevOperator 2
       (fun w y ↦ (continuationAlmostComplex h₀ Jm Jp hJmt hJpt w y).toLinearMap
         |>.toContinuousLinearMap)
       (fun _ _ ↦ 0) (continuationHomotopy Hm Hp) u).range : Set (Lp V 2 stripMeasure)) :=
@@ -224,7 +224,7 @@ theorem isFredholm_floerSobolevOperator_continuationHomotopy (ω : SymplecticFor
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun w y ↦ (continuationAlmostComplex h₀ Jm Jp hJmt hJpt w y).toLinearMap
         |>.toContinuousLinearMap)
       (fun _ _ ↦ 0) (continuationHomotopy Hm Hp) u).IsFredholm :=
@@ -233,8 +233,8 @@ theorem isFredholm_floerSobolevOperator_continuationHomotopy (ω : SymplecticFor
       (hHp.of_le (by norm_num)) u)
     (contDiff_continuationAlmostComplex h₀ hJm hJp) contDiff_const
     (contDiff_uncurry_continuationHomotopy (hHm.of_le (by norm_num)) (hHp.of_le (by norm_num)))
-    (compatible_continuationAlmostComplex h₀ hJmc hJpc) hu hXm hHm hHmper hxm hxmper hndm huxm
-    hδm hXp hHp hHpper hxp hxpper hndp huxp hδp
+    (fun _ _ ↦ compatible_continuationAlmostComplex h₀ (hJmc _ _) (hJpc _ _)) hu hXm hHm hHmper
+    hxm hxmper hndm huxm hδm hXp hHp hHpper hxp hxpper hndp huxp hδp
 
 end Unitary
 

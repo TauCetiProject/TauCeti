@@ -81,15 +81,8 @@ theorem addHaar_withDensity_ofReal_abs_apply_eq (b b' : Basis ι ℝ E)
     b'.addHaar.withDensity (fun x ↦ ENNReal.ofReal |ω x b'|) =
       b.addHaar.withDensity (fun x ↦ ENNReal.ofReal |ω x b|) := by
   classical
-  have hd : ENNReal.ofReal |(b.det b')⁻¹| * ENNReal.ofReal |b.det b'| = 1 := by
-    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b').ne_zero,
-      abs_one, ENNReal.ofReal_one]
-  simp_rw [addHaar_eq_smul_of_basis b b', withDensity_smul_measure,
-    ContinuousAlternatingMap.apply_eq_det_mul (b := b) (v := b'), abs_mul,
+  refine addHaar_withDensity_eq_of_eq_abs_det_mul b b' fun x ↦ ?_
+  rw [ContinuousAlternatingMap.apply_eq_det_mul (b := b) (v := b'), abs_mul,
     ENNReal.ofReal_mul (abs_nonneg _)]
-  have hf : (fun x ↦ ENNReal.ofReal |b.det b'| * ENNReal.ofReal |ω x b|) =
-      ENNReal.ofReal |b.det b'| • fun x ↦ ENNReal.ofReal |ω x b| :=
-    funext fun _ ↦ (smul_eq_mul _ _).symm
-  rw [hf, withDensity_smul' _ _ ENNReal.ofReal_ne_top, smul_smul, hd, one_smul]
 
 end Module.Basis

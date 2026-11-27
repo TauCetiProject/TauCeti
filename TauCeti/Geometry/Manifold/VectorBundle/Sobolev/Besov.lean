@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Lp
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalBesov
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Local
+import TauCeti.Analysis.Normed.Operator.Banach
 
 /-!
 # Besov spaces of distributions on bundle tests
@@ -31,8 +34,12 @@ Littlewood–Paley partition of a bump function `φ`, in the same way as the Sob
   its localizations lie in `B^s_{p,q}(E, ℂ)`. This does not depend on the bump function
   (`TauCeti.SquareChartPartition.MemBesov.of_bump`), it follows the inclusions of the Euclidean
   scale, and every functional lies in some `B^s_{p,q}` for `1 < p` and `q ≠ 0`
-  (`TauCeti.SquareChartPartition.exists_memBesov`). For `p = 2` it is compared with the Sobolev
-  scale: `H^s ⊆ B^s_{2,∞}`, `B^s_{2,1} ⊆ H^s` and `B^s_{2,2} = H^s`
+  (`TauCeti.SquareChartPartition.exists_memBesov`). It is compared with the Bessel-potential
+  scale `TauCeti.SquareChartPartition.MemBesselPotential` for every `1 ≤ p ≤ ∞`:
+  `H^{s,p} ⊆ B^s_{p,∞}` and `B^s_{p,1} ⊆ H^{s,p}`
+  (`TauCeti.SquareChartPartition.MemBesselPotential.memBesov`,
+  `TauCeti.SquareChartPartition.MemBesov.memBesselPotential`). For `p = 2` the comparison with the
+  Sobolev scale closes up: `B^s_{2,2} = H^s`
   (`TauCeti.SquareChartPartition.memBesov_two_two_iff_memSobolev`).
 * The **Besov space** `TauCeti.SquareChartPartition.besovSpace` is the real subspace of the tuples
   `(uᵢⱼ)` of elements of `B^s_{p,q}(E, ℂ)` that are reproduced by localizing their reconstruction,
@@ -48,16 +55,35 @@ The Euclidean comparisons pass to these spaces componentwise, as continuous line
 not change the represented functional: the inclusions `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' ≤ s`,
 `q ≤ q'` and for `s' < s` (`TauCeti.SquareChartPartition.besovInclusion`,
 `TauCeti.SquareChartPartition.besovInclusionOfLT`), the change of bump function
-(`TauCeti.SquareChartPartition.besovBumpEquiv`), and the isomorphism `B^s_{2,2} ≃ H^s` with the
-Sobolev space of the same partition (`TauCeti.SquareChartPartition.besovSpaceEquivSobolevSpace`).
+(`TauCeti.SquareChartPartition.besovBumpEquiv`), the inclusions `H^{s,p} ⊆ B^s_{p,∞}` and
+`B^s_{p,1} ⊆ H^{s,p}` with the Bessel-potential spaces of the same partition
+(`TauCeti.SquareChartPartition.besselPotentialSpaceToBesovSpace`,
+`TauCeti.SquareChartPartition.besovSpaceToBesselPotentialSpace`), and the isomorphism
+`B^s_{2,2} ≃ H^s` with its Sobolev space
+(`TauCeti.SquareChartPartition.besovSpaceEquivSobolevSpace`).
 
-The independence of these spaces from the partition, up to equivalent norms, needs the Besov
-estimates for multiplication by cutoffs and for chart changes, and is not proved here.
+**Independence of the partition.** For `1 ≤ q`, `T` is `B^s_{p,q}` with respect to `A` exactly
+when it is `B^s_{p,q}` near every point of `M`
+(`TauCeti.SquareChartPartition.memBesov_iff_forall_isLocallyMemBesovAt`), in the sense of
+`TauCeti.BundleTest.IsLocallyMemBesovAt`, which does not depend on charts and frames. Indeed,
+`χᵢ Tᵢⱼ ∈ B^s_{p,q}` makes `Tᵢⱼ` locally `B^s_{p,q}` wherever `χᵢ ≠ 0`
+(`Distribution.isLocallyMemBesovAt_iff_exists_ne_zero_memBesov_cutoffTempered`), and every point
+has such an `i` since `∑ᵢ χᵢ² = 1`; conversely, if all `Tᵢⱼ` are locally `B^s_{p,q}` on the
+support of `χᵢ`, then `χᵢ Tᵢⱼ ∈ B^s_{p,q}`. So two square chart partitions of `V` have the same
+`B^s_{p,q}` functionals (`TauCeti.SquareChartPartition.memBesov_iff_memBesov`), and their Besov
+spaces are isomorphic Banach spaces (`TauCeti.SquareChartPartition.besovSpaceCongr`), so that the
+pinned norms are equivalent (`TauCeti.SquareChartPartition.exists_norm_ofMemBesov_le`). As for the
+Sobolev spaces (`TauCeti.SquareChartPartition.sobolevSpaceCongr`), the identification is a linear
+bijection between Banach spaces whose graph is closed, because the represented functional depends
+continuously on an element of either space, test by test, and the closed graph theorem applies.
+This comparison gives no explicit equivalence constants.
 
 ## Main declarations
 
 * `TauCeti.SquareChartPartition.MemBesov`: `B^s_{p,q}` regularity with respect to the partition,
-  with `TauCeti.SquareChartPartition.exists_memBesov` (finite order) and the Sobolev comparisons
+  with `TauCeti.SquareChartPartition.exists_memBesov` (finite order), the Bessel-potential
+  comparisons `TauCeti.SquareChartPartition.MemBesselPotential.memBesov` and
+  `TauCeti.SquareChartPartition.MemBesov.memBesselPotential`, and the Sobolev comparisons
   `TauCeti.SquareChartPartition.MemSobolev.memBesov`,
   `TauCeti.SquareChartPartition.MemBesov.memSobolev` and
   `TauCeti.SquareChartPartition.memBesov_two_two_iff_memSobolev`.
@@ -68,13 +94,23 @@ estimates for multiplication by cutoffs and for chart changes, and is not proved
   `TauCeti.SquareChartPartition.besovSpaceEquiv`: the Besov space represents exactly the
   functionals that are `B^s_{p,q}` with respect to the partition.
 * `TauCeti.SquareChartPartition.besovInclusion`, `TauCeti.SquareChartPartition.besovInclusionOfLT`,
-  `TauCeti.SquareChartPartition.besovBumpEquiv` and
+  `TauCeti.SquareChartPartition.besovBumpEquiv`,
+  `TauCeti.SquareChartPartition.besselPotentialSpaceToBesovSpace`,
+  `TauCeti.SquareChartPartition.besovSpaceToBesselPotentialSpace` and
   `TauCeti.SquareChartPartition.besovSpaceEquivSobolevSpace`.
+* `TauCeti.SquareChartPartition.memBesov_iff_forall_isLocallyMemBesovAt`,
+  `TauCeti.SquareChartPartition.memBesov_iff_memBesov`: `B^s_{p,q}` with respect to a partition is
+  local `B^s_{p,q}` regularity, so it does not depend on the partition.
+* `TauCeti.SquareChartPartition.besovSpaceCongr` and
+  `TauCeti.SquareChartPartition.exists_norm_ofMemBesov_le`: the Besov spaces of two partitions are
+  isomorphic Banach spaces, with equivalent pinned norms.
 
 ## References
 
 * H. Triebel, *Theory of Function Spaces II*, Birkhäuser, 1992, Chapter 7 (function spaces on
   manifolds, defined through localization in charts).
+* H. Triebel, *Theory of Function Spaces*, Birkhäuser, 1983, §3.2.2 (Besov spaces on manifolds
+  and their independence of the charts and the partition of unity).
 * J. Bergh and J. Löfström, *Interpolation Spaces: An Introduction*, Springer, 1976, §6.2 (the
   Euclidean Besov spaces).
 -/
@@ -185,6 +221,17 @@ theorem memBesov_two_two_iff_memSobolev : A.MemBesov φ s 2 2 T ↔ A.MemSobolev
   rw [memSobolev_iff]
   exact forall₂_congr fun _ _ ↦ TemperedDistribution.memBesov_two_two_iff_memSobolev φ
 
+/-- **`H^{s,p} ⊆ B^s_{p,∞}`.** A functional which is `H^{s,p}` with respect to `A` is `B^s_{p,∞}`
+with respect to `A`, for every `1 ≤ p ≤ ∞`. -/
+theorem MemBesselPotential.memBesov (hT : A.MemBesselPotential s p T)
+    (φ : ContDiffBump (0 : E)) : A.MemBesov φ s p ∞ T :=
+  fun i j ↦ (hT.localization i j).memBesov φ
+
+/-- **`B^s_{p,1} ⊆ H^{s,p}`.** A functional which is `B^s_{p,1}` with respect to `A` is `H^{s,p}`
+with respect to `A`, for every `1 ≤ p ≤ ∞`. -/
+theorem MemBesov.memBesselPotential (hT : A.MemBesov φ s p 1 T) : A.MemBesselPotential s p T :=
+  A.memBesselPotential_iff.2 fun i j ↦ (hT i j).memSobolev
+
 variable (A φ p q) in
 /-- **Finite order.** Let `1 < p ≤ ∞` and `q ≠ 0`. Every real functional on bundle tests of `V`,
 for instance every distributional section of a bundle whose dual density bundle is `V`, is
@@ -243,10 +290,7 @@ def besovSpace :
     simp only [Pi.zero_apply, BesovSpace.toDistr_zero]
     rw [← Pi.zero_def, map_zero, map_zero]
   smul_mem' a u hu k := by
-    -- The real action on `B^s_{p,q}(E, ℂ)` is the restriction of the complex one, so
-    -- `BesovSpace.toDistr_smul` applies at `(a : ℂ)`.
-    simp only [Pi.smul_apply, ← Complex.coe_smul, BesovSpace.toDistr_smul]
-    simp only [Complex.coe_smul]
+    simp only [Pi.smul_apply, BesovSpace.toDistr_real_smul]
     rw [← Pi.smul_def, map_smul, map_smul, hu k]
 
 variable {s p q} in
@@ -288,10 +332,7 @@ def besovToDistribution : A.besovSpace φ s p q →ₗ[ℝ] (BundleTest I F V �
     simp only [Submodule.coe_add, Pi.add_apply, BesovSpace.toDistr_add]
     rw [← Pi.add_def, map_add]
   map_smul' a u := by
-    -- As in `besovSpace`, `BesovSpace.toDistr_smul` applies at `(a : ℂ)`.
-    simp only [Submodule.coe_smul, Pi.smul_apply, ← Complex.coe_smul, BesovSpace.toDistr_smul,
-      RingHom.id_apply]
-    simp only [Complex.coe_smul]
+    simp only [Submodule.coe_smul, Pi.smul_apply, BesovSpace.toDistr_real_smul, RingHom.id_apply]
     rw [← Pi.smul_def, map_smul]
 
 variable {s p q}
@@ -663,7 +704,218 @@ theorem besovSpaceEquivSobolevSpace_symm_ofMemSobolev {T : BundleTest I F V →L
       A.ofMemBesov φ ((A.memBesov_two_two_iff_memSobolev φ).2 hT) :=
   A.besovToDistribution_injective φ (by simp)
 
+/-! ### Comparison with the Bessel-potential spaces `H^{s,p}` -/
+
+variable (s p) in
+/-- **The inclusion `H^{s,p} ⊆ B^s_{p,∞}`** of the spaces of `A`, for every `1 ≤ p ≤ ∞`: the
+inclusion `BesselPotentialSpace.toBesovSpace` of `H^{s,p}(E, ℂ)` in `B^s_{p,∞}(E, ℂ)` in every
+component. It represents the same functional on bundle tests
+(`TauCeti.SquareChartPartition.besovToDistribution_besselPotentialSpaceToBesovSpace`). -/
+def besselPotentialSpaceToBesovSpace : A.besselPotentialSpace s p →L[ℝ] A.besovSpace φ s p ∞ :=
+  (((ContinuousLinearMap.pi fun k : ι × Fin (Module.finrank ℝ F) ↦
+      BesselPotentialSpace.toBesovSpace φ ∘L
+        ContinuousLinearMap.proj (R := ℂ) (φ := fun _ ↦ H^{s, p}(E, ℂ)) k).restrictScalars ℝ) ∘L
+    (A.besselPotentialSpace s p).subtypeL).codRestrict (A.besovSpace φ s p ∞) fun u ↦
+    (A.mem_besovSpace φ).2 fun k ↦ by simpa using (A.mem_besselPotentialSpace).1 u.property k
+
+@[simp]
+theorem besselPotentialSpaceToBesovSpace_apply (u : A.besselPotentialSpace s p)
+    (k : ι × Fin (Module.finrank ℝ F)) :
+    (A.besselPotentialSpaceToBesovSpace φ s p u).val k =
+      BesselPotentialSpace.toBesovSpace φ (u.val k) :=
+  (rfl)
+
+/-- The inclusion `H^{s,p} ⊆ B^s_{p,∞}` does not change the represented functional. -/
+@[simp]
+theorem besovToDistribution_besselPotentialSpaceToBesovSpace (u : A.besselPotentialSpace s p) :
+    A.besovToDistribution φ s p ∞ (A.besselPotentialSpaceToBesovSpace φ s p u) =
+      A.besselPotentialToDistribution s p u := by
+  simp [besovToDistribution_apply, besselPotentialToDistribution_apply]
+
+@[simp]
+theorem besselPotentialSpaceToBesovSpace_ofMemBesselPotential {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemBesselPotential s p T) :
+    A.besselPotentialSpaceToBesovSpace φ s p (A.ofMemBesselPotential hT) =
+      A.ofMemBesov φ (hT.memBesov φ) :=
+  A.besovToDistribution_injective φ (by simp)
+
+theorem besselPotentialSpaceToBesovSpace_injective :
+    Function.Injective (A.besselPotentialSpaceToBesovSpace φ s p) := fun u u' huu' ↦
+  A.besselPotentialToDistribution_injective <| by
+    rw [← A.besovToDistribution_besselPotentialSpaceToBesovSpace φ u,
+      ← A.besovToDistribution_besselPotentialSpaceToBesovSpace φ u', huu']
+
+variable (s p) in
+/-- **The inclusion `B^s_{p,1} ⊆ H^{s,p}`** of the spaces of `A`, for every `1 ≤ p ≤ ∞`: the
+inclusion `TauCeti.BesovSpace.toBesselPotentialSpace` of `B^s_{p,1}(E, ℂ)` in `H^{s,p}(E, ℂ)` in
+every component. It represents the same functional on bundle tests
+(`TauCeti.SquareChartPartition.besselPotentialToDistribution_besovSpaceToBesselPotentialSpace`).
+-/
+def besovSpaceToBesselPotentialSpace : A.besovSpace φ s p 1 →L[ℝ] A.besselPotentialSpace s p :=
+  (((ContinuousLinearMap.pi fun k : ι × Fin (Module.finrank ℝ F) ↦
+      BesovSpace.toBesselPotentialSpace ∘L
+        ContinuousLinearMap.proj (R := ℂ) (φ := fun _ ↦ BesovSpace ℂ φ s p 1) k).restrictScalars
+      ℝ) ∘L (A.besovSpace φ s p 1).subtypeL).codRestrict (A.besselPotentialSpace s p) fun u ↦
+    (A.mem_besselPotentialSpace).2 fun k ↦ by simpa using u.property k
+
+@[simp]
+theorem besovSpaceToBesselPotentialSpace_apply (u : A.besovSpace φ s p 1)
+    (k : ι × Fin (Module.finrank ℝ F)) :
+    (A.besovSpaceToBesselPotentialSpace φ s p u).val k =
+      BesovSpace.toBesselPotentialSpace (u.val k) :=
+  (rfl)
+
+/-- The inclusion `B^s_{p,1} ⊆ H^{s,p}` does not change the represented functional. -/
+@[simp]
+theorem besselPotentialToDistribution_besovSpaceToBesselPotentialSpace (u : A.besovSpace φ s p 1) :
+    A.besselPotentialToDistribution s p (A.besovSpaceToBesselPotentialSpace φ s p u) =
+      A.besovToDistribution φ s p 1 u := by
+  simp [besovToDistribution_apply, besselPotentialToDistribution_apply]
+
+@[simp]
+theorem besovSpaceToBesselPotentialSpace_ofMemBesov {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemBesov φ s p 1 T) :
+    A.besovSpaceToBesselPotentialSpace φ s p (A.ofMemBesov φ hT) =
+      A.ofMemBesselPotential hT.memBesselPotential :=
+  A.besselPotentialToDistribution_injective (by simp)
+
+theorem besovSpaceToBesselPotentialSpace_injective :
+    Function.Injective (A.besovSpaceToBesselPotentialSpace φ s p) := fun u u' huu' ↦
+  A.besovToDistribution_injective φ <| by
+    rw [← A.besselPotentialToDistribution_besovSpaceToBesselPotentialSpace φ u,
+      ← A.besselPotentialToDistribution_besovSpaceToBesselPotentialSpace φ u', huu']
+
 end BesovSpace
+
+/-! ### Independence of the partition -/
+
+section Independence
+
+variable {κ : Type*} [Fintype κ] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+
+/-- **`B^s_{p,q}` with respect to a partition is local `B^s_{p,q}` regularity.** A real functional
+`T` on bundle tests is `B^s_{p,q}` with respect to the square chart partition `A` exactly when it is
+`B^s_{p,q}` near every point of `M` (`TauCeti.BundleTest.IsLocallyMemBesovAt`). In particular this
+does not depend on the partition (`TauCeti.SquareChartPartition.memBesov_iff_memBesov`). -/
+theorem memBesov_iff_forall_isLocallyMemBesovAt {T : BundleTest I F V →L_c[ℝ] ℝ} :
+    A.MemBesov φ s p q T ↔ ∀ x, BundleTest.IsLocallyMemBesovAt φ s p q T x :=
+  memBesov_iff.trans <| (A.forall_localization_iff_forall_isLocallyAt
+    (Distribution.isInvariantLocalRegularity_isLocallyMemBesovAt φ p q s)
+    (fun _ _ χ _ hχ hS ↦
+      Distribution.isLocallyMemBesovAt_iff_exists_ne_zero_memBesov_cutoffTempered.2 ⟨χ, hχ, hS⟩)
+    fun _ _ _ ↦ Distribution.memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt).trans <|
+    forall_congr' fun _ ↦ BundleTest.isLocallyMemBesovAt_def.symm
+
+/-- **Independence of the partition.** A real functional on bundle tests is `B^s_{p,q}` with
+respect to one square chart partition of `V` exactly when it is `B^s_{p,q}` with respect to any
+other. -/
+theorem memBesov_iff_memBesov (B : SquareChartPartition κ I F V)
+    {T : BundleTest I F V →L_c[ℝ] ℝ} : A.MemBesov φ s p q T ↔ B.MemBesov φ s p q T := by
+  rw [memBesov_iff_forall_isLocallyMemBesovAt, memBesov_iff_forall_isLocallyMemBesovAt]
+
+variable (s p q)
+
+/-- Two square chart partitions of `V` have the same `B^s_{p,q}` functionals. -/
+theorem memBesovSubmodule_eq (B : SquareChartPartition κ I F V) :
+    A.memBesovSubmodule φ s p q = B.memBesovSubmodule φ s p q :=
+  Submodule.ext fun _ ↦ A.memBesov_iff_memBesov φ B
+
+/-- The value of the functional represented by an element of the Besov space at a fixed bundle
+test depends continuously on the element. -/
+theorem continuous_besovToDistribution_apply (ψ : BundleTest I F V) :
+    Continuous fun u : A.besovSpace φ s p q ↦ A.besovToDistribution φ s p q u ψ := by
+  simp only [besovToDistribution_apply, reconstruction_apply]
+  exact continuous_finsetSum _ fun k _ ↦ continuous_re.comp
+    ((ContinuousEvalConst.continuous_eval_const _).comp
+      (BesovSpace.continuous_toDistr.comp ((continuous_apply k).comp continuous_subtypeVal)))
+
+/-- The identification of the Besov spaces of two square chart partitions as a linear
+equivalence: an element of one goes to the element of the other representing the same
+functional. -/
+private def besovSpaceLinearEquiv (B : SquareChartPartition κ I F V) :
+    A.besovSpace φ s p q ≃ₗ[ℝ] B.besovSpace φ s p q :=
+  (A.besovSpaceEquiv φ s p q).trans
+    ((LinearEquiv.ofEq _ _ (A.memBesovSubmodule_eq φ s p q B)).trans
+      (B.besovSpaceEquiv φ s p q).symm)
+
+private theorem besovToDistribution_besovSpaceLinearEquiv (B : SquareChartPartition κ I F V)
+    (u : A.besovSpace φ s p q) :
+    B.besovToDistribution φ s p q (A.besovSpaceLinearEquiv φ s p q B u) =
+      A.besovToDistribution φ s p q u := by
+  simp [besovSpaceLinearEquiv]
+
+/-- **Equivalence of the Besov spaces of two partitions.** The Besov spaces `B^s_{p,q}` of two
+square chart partitions `A` and `B` of `V` are isomorphic as Banach spaces, through the map sending
+an element of `A.besovSpace φ s p q` to the element of `B.besovSpace φ s p q` representing the
+same functional on bundle tests
+(`TauCeti.SquareChartPartition.besovToDistribution_besovSpaceCongr_apply`). So the pinned norms of
+the two partitions are equivalent (`TauCeti.SquareChartPartition.exists_norm_ofMemBesov_le`).
+Continuity comes from the closed graph theorem. -/
+def besovSpaceCongr (B : SquareChartPartition κ I F V) :
+    A.besovSpace φ s p q ≃L[ℝ] B.besovSpace φ s p q :=
+  (A.besovSpaceLinearEquiv φ s p q B).toContinuousLinearEquivOfContinuous
+    ((A.besovSpaceLinearEquiv φ s p q B).toLinearMap.continuous_of_injective_comp_eq
+      (continuous_pi (A.continuous_besovToDistribution_apply φ s p q))
+      (continuous_pi (B.continuous_besovToDistribution_apply φ s p q))
+      (DFunLike.coe_injective.comp (B.besovToDistribution_injective φ))
+      fun u ↦ congrArg DFunLike.coe (A.besovToDistribution_besovSpaceLinearEquiv φ s p q B u))
+
+variable {s p q}
+
+/-- The identification of the Besov spaces of two partitions preserves the represented
+functional. -/
+@[simp]
+theorem besovToDistribution_besovSpaceCongr_apply (B : SquareChartPartition κ I F V)
+    (u : A.besovSpace φ s p q) :
+    B.besovToDistribution φ s p q (A.besovSpaceCongr φ s p q B u) =
+      A.besovToDistribution φ s p q u :=
+  A.besovToDistribution_besovSpaceLinearEquiv φ s p q B u
+
+/-- The identification sends the tuple of localizations of `T` with respect to `A` to its tuple of
+localizations with respect to `B`. -/
+@[simp]
+theorem besovSpaceCongr_ofMemBesov (B : SquareChartPartition κ I F V)
+    {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemBesov φ s p q T) :
+    A.besovSpaceCongr φ s p q B (A.ofMemBesov φ hT) =
+      B.ofMemBesov φ ((A.memBesov_iff_memBesov φ B).1 hT) :=
+  B.besovToDistribution_injective φ (by simp)
+
+variable (s p q)
+
+/-- The identification of the Besov spaces of a partition with itself is the identity. -/
+@[simp]
+theorem besovSpaceCongr_refl :
+    A.besovSpaceCongr φ s p q A = ContinuousLinearEquiv.refl ℝ (A.besovSpace φ s p q) :=
+  ContinuousLinearEquiv.ext <| funext fun _ ↦ A.besovToDistribution_injective φ (by simp)
+
+/-- The inverse of the identification from `A` to `B` is the identification from `B` to `A`. -/
+@[simp]
+theorem besovSpaceCongr_symm (B : SquareChartPartition κ I F V) :
+    (A.besovSpaceCongr φ s p q B).symm = B.besovSpaceCongr φ s p q A :=
+  ContinuousLinearEquiv.ext <| funext fun _ ↦ (A.besovSpaceCongr φ s p q B).symm_apply_eq.2 <|
+    B.besovToDistribution_injective φ (by simp)
+
+/-- The identifications compose: going from `A` to `B` and then to `C` is going from `A` to
+`C`. -/
+@[simp]
+theorem besovSpaceCongr_trans {ν : Type*} [Fintype ν] (B : SquareChartPartition κ I F V)
+    (C : SquareChartPartition ν I F V) :
+    (A.besovSpaceCongr φ s p q B).trans (B.besovSpaceCongr φ s p q C) =
+      A.besovSpaceCongr φ s p q C :=
+  ContinuousLinearEquiv.ext <| funext fun _ ↦ C.besovToDistribution_injective φ (by simp)
+
+/-- **Equivalence of the pinned norms.** For two square chart partitions `A` and `B` of `V`, the
+`B^s_{p,q}` norm of a functional with respect to `B` is bounded by a constant multiple of its
+`B^s_{p,q}` norm with respect to `A`. -/
+theorem exists_norm_ofMemBesov_le (B : SquareChartPartition κ I F V) :
+    ∃ C, ∀ (T : BundleTest I F V →L_c[ℝ] ℝ) (hA : A.MemBesov φ s p q T)
+      (hB : B.MemBesov φ s p q T), ‖B.ofMemBesov φ hB‖ ≤ C * ‖A.ofMemBesov φ hA‖ :=
+  ⟨‖(A.besovSpaceCongr φ s p q B : A.besovSpace φ s p q →L[ℝ] B.besovSpace φ s p q)‖,
+    fun T hA hB ↦ by
+      simpa using (A.besovSpaceCongr φ s p q B :
+        A.besovSpace φ s p q →L[ℝ] B.besovSpace φ s p q).le_opNorm (A.ofMemBesov φ hA)⟩
+
+end Independence
 
 end SquareChartPartition
 

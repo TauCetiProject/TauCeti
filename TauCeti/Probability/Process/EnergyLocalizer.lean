@@ -76,8 +76,8 @@ that level at `t`. Both endpoints are included. -/
 theorem energyLocalizer_le_iff (C : ℝ≥0) (t : ℝ≥0) (ω : Ω) :
     μ.energyLocalizer H C ω ≤ t ↔
       (C : ℝ≥0∞) ≤ μ.accumulatedEnergy (μ.finiteEnergyCutoff H) t ω := by
-  rw [energyLocalizer_def, isClosed_Ici.hittingAfter_le_iff
-    (μ.continuous_accumulatedEnergy_finiteEnergyCutoff H ω)]
+  rw [energyLocalizer_def, isClosed_Ici.hittingAfter_le_iff_of_isRightContinuous
+    (μ.continuous_accumulatedEnergy_finiteEnergyCutoff H ω).isRightContinuous]
   constructor
   · rintro ⟨s, hs, hC⟩
     exact hC.trans (μ.monotone_accumulatedEnergy _ ω hs.2)

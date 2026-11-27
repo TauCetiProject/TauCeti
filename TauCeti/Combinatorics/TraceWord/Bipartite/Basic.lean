@@ -108,6 +108,36 @@ theorem bipartiteWord_inr (u : Fin k → α) (v : Fin k → β) (t : Fin k) :
     bipartiteWord u v (finSumFinInterleaveEquiv k (.inr t)) = .inr (v t) := by
   simp [bipartiteWord]
 
+/-- The labels available to a bipartite trace word at time `t`: rows at even times and columns
+at odd times. -/
+def bipartiteVertexFinset [Fintype α] [Fintype β] (t : ℕ) : Finset (α ⊕ β) :=
+  if t % 2 = 0 then (univ : Finset α).map .inl else (univ : Finset β).map .inr
+
+/-- The vertex finset is the row finset at an even time and the column finset at an odd time. -/
+theorem bipartiteVertexFinset_def [Fintype α] [Fintype β] (t : ℕ) :
+    bipartiteVertexFinset (α := α) (β := β) t =
+      if t % 2 = 0 then (univ : Finset α).map .inl else (univ : Finset β).map .inr := (rfl)
+
+/-- Membership in the prescribed vertex finset is determined by the parity of the time. -/
+@[simp]
+theorem mem_bipartiteVertexFinset [Fintype α] [Fintype β] {t : ℕ} {x : α ⊕ β} :
+    x ∈ bipartiteVertexFinset t ↔ if t % 2 = 0 then x.isLeft else x.isRight := by
+  cases x <;> by_cases ht : t % 2 = 0 <;> simp [bipartiteVertexFinset_def, ht]
+
+/-- The prescribed vertex finset has the cardinality of the row or column type at that time. -/
+@[simp]
+theorem card_bipartiteVertexFinset [Fintype α] [Fintype β] (t : ℕ) :
+    #(bipartiteVertexFinset (α := α) (β := β) t) =
+      if t % 2 = 0 then Fintype.card α else Fintype.card β := by
+  by_cases ht : t % 2 = 0 <;> simp [bipartiteVertexFinset_def, ht]
+
+/-- A bipartite word visits a label on the prescribed side at each time. -/
+theorem bipartiteWord_mem_bipartiteVertexFinset [Fintype α] [Fintype β]
+    (u : Fin k → α) (v : Fin k → β) (t : Fin (2 * k)) :
+    bipartiteWord u v t ∈ bipartiteVertexFinset t.val := by
+  obtain ⟨a, rfl⟩ := (finSumFinInterleaveEquiv k).surjective t
+  cases a <;> simp
+
 /-- A cyclic bipartite word determines its row and column indices. -/
 @[simp]
 theorem bipartiteWord_inj {u u' : Fin k → α} {v v' : Fin k → β} :
@@ -127,6 +157,17 @@ theorem sym2_bipartiteWord (u : Fin k → α) (v : Fin k → β) (a : Fin k ⊕ 
       bipartiteEdge_inl]
   · simp only [finRotate_finSumFinInterleaveEquiv_inr, bipartiteWord_inl, bipartiteWord_inr,
       bipartiteEdge_inr, Sym2.eq_swap]
+
+/-- If every entry position read by a bipartite word is read at least twice, then each unordered
+edge of its cyclic word is also traversed at least twice. -/
+theorem bipartiteWord_no_singleton_edge {u : Fin k → α} {v : Fin k → β}
+    (h : ∀ a, ∃ b ≠ a, bipartiteEdge u v b = bipartiteEdge u v a) (t : Fin (2 * k)) :
+    ∃ s ≠ t, s(bipartiteWord u v s, bipartiteWord u v (finRotate (2 * k) s)) =
+      s(bipartiteWord u v t, bipartiteWord u v (finRotate (2 * k) t)) := by
+  let e := finSumFinInterleaveEquiv k
+  obtain ⟨a, rfl⟩ := e.surjective t
+  obtain ⟨b, hba, hb⟩ := h a
+  exact ⟨e b, e.injective.ne hba, by simp only [e, sym2_bipartiteWord, hb]⟩
 
 variable [DecidableEq α] [DecidableEq β]
 

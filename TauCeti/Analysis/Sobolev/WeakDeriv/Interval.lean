@@ -13,7 +13,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Convex.Integral
