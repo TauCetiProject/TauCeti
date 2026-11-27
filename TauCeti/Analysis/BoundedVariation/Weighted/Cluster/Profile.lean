@@ -30,14 +30,15 @@ at its own measure vector is a minimizing cluster.
   (`TauCeti.isoperimetricProfile_lt_top_iff`).
 * It is invariant under permuting the coordinates of `v`
   (`TauCeti.isoperimetricProfile_comp_perm`).
-* Grouping cells along `f : Fin p → Fin q` does not increase the perimeter, so the profile at the
-  grouped vector `k ↦ Σ_{f j = k} w_j` is at most the profile at `w`
-  (`TauCeti.isoperimetricProfile_sum_fiber_le`). Two special cases: padding a vector with zero
-  coordinates (`TauCeti.isoperimetricProfile_le_comp`), and, for a finite measure, the vanishing
-  of the profile at the vectors `μ(E) e_i`, the vertices of the simplex when `μ(E) = 1`
-  (`TauCeti.isoperimetricProfile_pi_single`).
-* For two cells and a finite measure, the profile at `(v_1, v_2)` with `v_1 + v_2 = μ(E)` is the
-  infimum of the weighted perimeters of sets of measure `v_1` (`TauCeti.isoperimetricProfile_two`).
+* For a `C¹` weight, grouping cells along `f : Fin p → Fin q` does not increase the perimeter, so
+  for nonnegative `w` the profile at the grouped vector `k ↦ Σ_{f j = k} w_j` is at most the
+  profile at `w` (`TauCeti.isoperimetricProfile_sum_fiber_le`). Two special cases: padding a
+  vector with zero coordinates (`TauCeti.isoperimetricProfile_le_comp`), and, for a finite
+  measure, the vanishing of the profile at the vectors `μ(E) e_i`, the vertices of the simplex
+  when `μ(E) = 1` (`TauCeti.isoperimetricProfile_pi_single`).
+* For two cells, a `C¹` weight and a finite measure, the profile at `(v_1, v_2)` with `0 ≤ v_1`
+  and `v_1 + v_2 = μ(E)` is the infimum of the weighted perimeters of sets of measure `v_1`
+  (`TauCeti.isoperimetricProfile_two`).
 * In dimension at least one, for a `C¹` weight whose measure is finite, every nonnegative `v`
   with `Σ v_i = μ(E)` is the measure vector of a cluster, so the profile is finite there
   (`TauCeti.exists_cluster_weightedMeasure_cell_eq`, `TauCeti.isoperimetricProfile_lt_top`). The
