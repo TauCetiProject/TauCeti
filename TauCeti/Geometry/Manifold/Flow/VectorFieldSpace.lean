@@ -35,12 +35,12 @@ and has no transverse section, so it is never nondegenerate.
 
 * **Compact windows.** For every compact set `S` of pairs `(t, x)`, the `C^k` vector fields all of
   whose closed-orbit solutions `Φ_t(x) = x` in `S` are nondegenerate form an open set
-  (`ContMDiffSection.isOpen_setOf_forall_not_hasEigenvalue_returnDerivative`). A window
+  (`TauCeti.isOpen_setOf_forall_not_hasEigenvalue_returnDerivative`). A window
   `S = [a, b] × K` contains the multiple covers of a closed orbit whose return times lie in
   `[a, b]`, so iterates are included.
 * **Bounded periods.** For every compact set `K ⊆ M` and every `A`, the `C^k` vector fields all of
   whose closed orbits through `K` with return time in `(0, A]` are nondegenerate form an open set
-  (`ContMDiffSection.isOpen_setOf_forall_not_hasEigenvalue_returnDerivative_period_le`). For
+  (`TauCeti.isOpen_setOf_forall_not_hasEigenvalue_returnDerivative_period_le`). For
   `A > 0` such a field has no zero on `K`, so near it the positive return times through `K` are
   bounded below by some `ε > 0` (`TauCeti.exists_pos_eventually_period_le_of_isCompact_param`),
   which reduces this to the window `[ε, A] × K`.
@@ -50,9 +50,9 @@ space of all `C^k` vector fields rather than for a finite-dimensional family of 
 
 ## Main results
 
-* `ContMDiffSection.isOpen_setOf_forall_not_hasEigenvalue_returnDerivative`: the `C^k` vector
+* `TauCeti.isOpen_setOf_forall_not_hasEigenvalue_returnDerivative`: the `C^k` vector
   fields whose closed orbits in a compact window are nondegenerate form an open set.
-* `ContMDiffSection.isOpen_setOf_forall_not_hasEigenvalue_returnDerivative_period_le`: the `C^k`
+* `TauCeti.isOpen_setOf_forall_not_hasEigenvalue_returnDerivative_period_le`: the `C^k`
   vector fields whose closed orbits through a compact set with return time at most `A` are
   nondegenerate form an open set.
 
@@ -68,10 +68,10 @@ public section
 
 noncomputable section
 
-open Bundle Manifold Set Filter TopologicalSpace TauCeti
+open Bundle Manifold Set Filter TopologicalSpace ContMDiffSection
 open scoped ContDiff Manifold Topology
 
-namespace ContMDiffSection
+namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -194,4 +194,4 @@ theorem isOpen_setOf_forall_not_hasEigenvalue_returnDerivative_period_le (hk : 1
     with X hX hwin x hx t ht hfix
   exact hwin (t, x) ⟨⟨hX x hx t ht.1 hfix, ht.2⟩, hx⟩ hfix
 
-end ContMDiffSection
+end TauCeti
