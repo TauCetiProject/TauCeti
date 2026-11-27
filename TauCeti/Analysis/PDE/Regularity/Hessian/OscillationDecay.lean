@@ -35,7 +35,7 @@ that the `L¹` mean oscillation of its weak Hessian `D²u` decays on concentric 
 
 `∫_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R)^(n + 1) ∫_{B_R} ‖D²u - c‖`
 
-for every constant `c`, with `C = 2^(3n + 5) (n + 1)` and `ξᵀ A ξ ≤ Λ ‖ξ‖²`
+for every constant `c`, with `C = 2^(3n + 4) (n + 1)` and `ξᵀ A ξ ≤ Λ ‖ξ‖²`
 (`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero`).
 In averaged form, `⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R) ⨍_{B_R} ‖D²u - c‖`
 (`TauCeti.PDE.setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero`).
@@ -43,11 +43,12 @@ In averaged form, `⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 
 No integrability of `D²u` beyond `L^p` with `p ≥ 1` is assumed, and the right-hand side involves
 only the `L¹` norm. The same decay holds for the mean oscillation in `L^γ`, `1 ≤ γ ≤ p`:
 
-`⨍_{B_ρ} ‖D²u - (D²u)_ρ‖^γ ≤ (C' (Λ / λ)^((n + 1) / 2) (ρ / R))^γ ⨍_{B_R} ‖D²u - c‖^γ`
+`⨍_{B_ρ} ‖D²u - (D²u)_ρ‖^γ ≤ (C (Λ / λ)^((n + 1) / 2) (ρ / R))^γ ⨍_{B_R} ‖D²u - c‖^γ`
 
-with `C' = 2^(3n + 4) (n + 1)` (in the `TauCeti.PDE` namespace,
-`setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_inner_eq_zero`),
-from the pointwise oscillation bound for harmonic functions. This is the decay of the frozen problem
+(in the `TauCeti.PDE` namespace,
+`setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_inner_eq_zero`), whose
+case `γ = 1` is the averaged `L¹` estimate. It comes from the pointwise oscillation bound for
+harmonic functions. This is the decay of the frozen problem
 in the mean oscillation estimates for the `W^{2,q}` theory with coefficients of small mean
 oscillation in the range `1 < q ≤ 2`
 (`TauCeti.PDE.exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le`), where the
@@ -248,7 +249,7 @@ solve `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` almost everywhere on a ball `B_R = b
 constant `c` and every `0 ≤ ρ ≤ R`, the weak Hessian `D²u` satisfies
 
 `∫_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R)^(n + 1) ∫_{B_R} ‖D²u - c‖`
-with `C = 2^(3n + 5) (n + 1)`,
+with `C = 2^(3n + 4) (n + 1)`,
 
 where `(D²u)_ρ` is the average of `D²u` over `B_ρ`. The constant depends only on `n` and the
 ellipticity ratio `Λ / λ`. -/
@@ -261,7 +262,7 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inne
     (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
     ∫ x in ball x₀ ρ,
         ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu ≤
-      2 ^ (3 * Fintype.card ι + 5) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
+      2 ^ (3 * Fintype.card ι + 4) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
         (ρ / R) ^ (Fintype.card ι + 1) *
           ∫ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
   obtain ⟨e, G, hae, hbe, hUe, hU⟩ :=
@@ -277,49 +278,6 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inne
   have hUρ := ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρR) hU
   rwa [average_congr hUρ, integral_congr_ae (hUρ.mono fun x hx => by rw [hx]),
     integral_congr_ae (hU.mono fun x hx => by rw [hx])]
-
-/-- **Decay of the mean oscillation of the Hessian for constant coefficients, averaged form.**
-Under the hypotheses of
-`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero`,
-for `0 ≤ ρ ≤ R`,
-
-`⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R) ⨍_{B_R} ‖D²u - c‖`
-with `C = 2^(3n + 5) (n + 1)`.
-
-This is the scale-invariant form in which the mean oscillation of the frozen problem enters the
-sharp function method. -/
-theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
-    (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) (u : Wkp mu Omega p 2)
-    {x₀ : EuclideanSpace ℝ ι} {ρ R : ℝ} (hball : ball x₀ R ⊆ Omega)
-    (heq : ∀ᵐ x ∂mu.restrict (ball x₀ R), ∑ i, ∑ j, A i j *
-      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0)
-    (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
-    ⨍ x in ball x₀ ρ,
-        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu ≤
-      2 ^ (3 * Fintype.card ι + 5) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
-        (ρ / R) * ⨍ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
-  rcases hρ.eq_or_lt with rfl | hρ
-  · simp
-  have hR : 0 < R := hρ.trans_le hρR
-  have hω : 0 < mu.real (ball (0 : EuclideanSpace ℝ ι) 1) := measureReal_ball_pos mu 0 one_pos
-  have h := setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
-    hlam hA hA' u hball heq c hρ.le hρR
-  rw [setAverage_eq (f := fun x => ‖Wkp.iteratedGradient 1 u x -
-      ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖) mu (ball x₀ ρ),
-    setAverage_eq (f := fun x => ‖Wkp.iteratedGradient 1 u x - c‖) mu (ball x₀ R), smul_eq_mul,
-    smul_eq_mul, mu.addHaar_real_ball_of_pos x₀ hρ, mu.addHaar_real_ball_of_pos x₀ hR,
-    finrank_euclideanSpace]
-  generalize Fintype.card ι = n at h ⊢
-  calc (ρ ^ n * mu.real (ball 0 1))⁻¹ * ∫ x in ball x₀ ρ,
-        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu
-      ≤ (ρ ^ n * mu.real (ball 0 1))⁻¹ * (2 ^ (3 * n + 5) * (n + 1) * √(Lam / lam) ^ (n + 1) *
-          (ρ / R) ^ (n + 1) * ∫ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu) :=
-        mul_le_mul_of_nonneg_left h (by positivity)
-    _ = _ := by
-        simp only [div_pow]
-        field_simp
-        ring
 
 /-- **Decay of the `L^γ` mean oscillation of the Hessian for constant coefficients.** Let `A` be a
 square matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, let `1 ≤ γ` with `γ ≤ p`, and let
@@ -358,6 +316,34 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_
   have hUρ := ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρR) hU
   rwa [average_congr hUρ, average_congr (hUρ.mono fun x hx => by rw [hx]),
     average_congr (hU.mono fun x hx => by rw [hx])]
+
+/-- **Decay of the mean oscillation of the Hessian for constant coefficients, averaged form.**
+Under the hypotheses of
+`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero`,
+for `0 ≤ ρ ≤ R`,
+
+`⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R) ⨍_{B_R} ‖D²u - c‖`
+with `C = 2^(3n + 4) (n + 1)`.
+
+This is the scale-invariant form in which the mean oscillation of the frozen problem enters the
+sharp function method. It is the case `γ = 1` of
+`TauCeti.PDE.setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_inner_eq_zero`.
+-/
+theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
+    (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) (u : Wkp mu Omega p 2)
+    {x₀ : EuclideanSpace ℝ ι} {ρ R : ℝ} (hball : ball x₀ R ⊆ Omega)
+    (heq : ∀ᵐ x ∂mu.restrict (ball x₀ R), ∑ i, ∑ j, A i j *
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0)
+    (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
+    ⨍ x in ball x₀ ρ,
+        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu ≤
+      2 ^ (3 * Fintype.card ι + 4) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
+        (ρ / R) * ⨍ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
+  rcases hρ.eq_or_lt with rfl | hρ
+  · simp
+  simpa using setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_inner_eq_zero
+    hlam hA hA' le_rfl (by simpa using (Fact.out : 1 ≤ p)) u hball heq c hρ hρR
 
 end PDE
 

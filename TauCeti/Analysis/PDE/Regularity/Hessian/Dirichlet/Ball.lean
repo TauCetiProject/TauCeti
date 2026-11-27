@@ -334,8 +334,7 @@ theorem exists_forall_exists_sum_mul_inner_iteratedGradient_eq_and_norm_le_of_ba
   set Ω' : Opens (WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))) :=
     ⟨g ⁻¹' Omega, Omega.isOpen.preimage g.continuous⟩
   have hΩ' : (Ω' : Set (WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n)))) = ball (g.symm x₀) R := by
-    change g ⁻¹' (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = _
-    rw [hΩ, LinearIsometryEquiv.preimage_ball]
+    rw [Opens.coe_mk, hΩ, LinearIsometryEquiv.preimage_ball]
   have hgΩ : MeasurePreserving g (volume.restrict (Ω' : Set _))
       (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     g.measurePreserving.restrict_preimage Omega.isOpen.measurableSet

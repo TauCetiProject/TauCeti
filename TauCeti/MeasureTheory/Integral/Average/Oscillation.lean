@@ -22,8 +22,8 @@ holds for the means of the `γ`-th powers, with factor `2 ^ γ`:
 
 `⨍_s ‖f - f_s‖ ^ γ ≤ 2 ^ γ ⨍_s ‖f - c‖ ^ γ`,
 
-since `‖f_s - c‖ ≤ ⨍_s ‖f - c‖` and Jensen's inequality bounds `(⨍_s ‖f - c‖) ^ γ` by
-`⨍_s ‖f - c‖ ^ γ`.
+the `γ`-th power of the `Lᵖ` comparison at `p = γ`. Jensen's inequality
+`(⨍_s ‖g‖) ^ γ ≤ ⨍_s ‖g‖ ^ γ` is recorded alongside.
 
 ## Main results
 
@@ -75,57 +75,35 @@ theorem rpow_setAverage_norm_le_setAverage_norm_rpow {g : X → F} {γ : ℝ} (h
 
 /-- **The `L^γ` mean oscillation about the average.** For `γ ≥ 1`,
 `⨍_s ‖f - f_s‖ ^ γ ≤ 2 ^ γ ⨍_s ‖f - c‖ ^ γ` for every constant `c` with `‖f - c‖ ^ γ`
-integrable on `s`, where `f_s` is the average of `f` over `s`. -/
+integrable on `s`, where `f_s` is the average of `f` over `s`. This is the `γ`-th power of the
+`Lᵖ` comparison `TauCeti.eLpNorm_sub_setAverage_le` at `p = γ`, divided by `μ s`. -/
 theorem setAverage_norm_sub_setAverage_rpow_le (hf : IntegrableOn f s μ) {γ : ℝ} (hγ : 1 ≤ γ)
     {c : F} (hfc : IntegrableOn (fun x ↦ ‖f x - c‖ ^ γ) s μ) :
     ⨍ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ∂μ ≤ 2 ^ γ * ⨍ x in s, ‖f x - c‖ ^ γ ∂μ := by
-  have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
-  rcases eq_or_ne (μ s) 0 with h0 | h0
-  · simp [Measure.restrict_eq_zero.2 h0]
-  -- On a set of infinite measure every average vanishes.
+  have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
+  have hR : 0 ≤ 2 ^ γ * ⨍ x in s, ‖f x - c‖ ^ γ ∂μ := by
+    have : 0 ≤ ⨍ x in s, ‖f x - c‖ ^ γ ∂μ := average_nonneg fun _ ↦ by positivity
+    positivity
+  -- On a set of infinite measure every average vanishes, and so does the average of a
+  -- non-integrable function.
   rcases eq_or_ne (μ s) ⊤ with hs | hs
   · simp [setAverage_eq, measureReal_def, hs]
-  have hm : 0 < μ.real s := ENNReal.toReal_pos h0 hs
-  set a := ‖(⨍ y in s, f y ∂μ) - c‖
-  set I := ∫ x in s, ‖f x - c‖ ^ γ ∂μ
-  -- The average lies within the mean of `‖f - c‖` of `c`, so Jensen's inequality bounds `a ^ γ`
-  -- by the mean of `‖f - c‖ ^ γ`, that is `μ s * a ^ γ ≤ I`.
-  have ha : a ≤ ⨍ x in s, ‖f x - c‖ ∂μ := by
-    simpa [div_self hm.ne'] using norm_setAverage_sub_le_of_subset subset_rfl h0 hs hf c
-  have haI : μ.real s * a ^ γ ≤ I := by
-    calc μ.real s * a ^ γ ≤ μ.real s * ⨍ x in s, ‖f x - c‖ ^ γ ∂μ := by
-          gcongr
-          exact (Real.rpow_le_rpow (norm_nonneg _) ha hγ0).trans
-            (rpow_setAverage_norm_le_setAverage_norm_rpow hγ hfc)
-      _ = I := by rw [setAverage_eq, smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hm.ne', one_mul]
-  -- Pointwise, `‖f x - f_s‖ ^ γ ≤ 2 ^ (γ - 1) (‖f x - c‖ ^ γ + a ^ γ)`.
-  have hpt : ∀ x, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ≤ 2 ^ (γ - 1) * (‖f x - c‖ ^ γ + a ^ γ) := by
-    intro x
-    have htri : ‖f x - ⨍ y in s, f y ∂μ‖ ≤ ‖f x - c‖ + a := by
-      calc ‖f x - ⨍ y in s, f y ∂μ‖ = ‖(f x - c) - ((⨍ y in s, f y ∂μ) - c)‖ := by
-            congr 1; abel
-        _ ≤ ‖f x - c‖ + a := norm_sub_le _ _
-    exact (Real.rpow_le_rpow (norm_nonneg _) htri hγ0).trans (by
-      exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow ⟨_, norm_nonneg (f x - c)⟩
-        ⟨a, norm_nonneg _⟩ hγ)
-  have hint : IntegrableOn (fun x ↦ 2 ^ (γ - 1) * (‖f x - c‖ ^ γ + a ^ γ)) s μ :=
-    (hfc.add (integrableOn_const hs)).const_mul _
-  have hbound : ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ∂μ ≤ 2 ^ γ * I :=
-    calc ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ∂μ
-        ≤ ∫ x in s, 2 ^ (γ - 1) * (‖f x - c‖ ^ γ + a ^ γ) ∂μ :=
-          integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity) hint (ae_of_all _ hpt)
-      _ = 2 ^ (γ - 1) * (I + μ.real s * a ^ γ) := by
-          rw [integral_const_mul, integral_add hfc (integrableOn_const hs), setIntegral_const,
-            smul_eq_mul]
-      _ ≤ 2 ^ (γ - 1) * (2 * I) := by gcongr; linarith
-      _ = 2 ^ γ * I := by
-          rw [← mul_assoc, ← Real.rpow_add_one two_ne_zero, sub_add_cancel]
-  calc ⨍ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ∂μ
-      = (μ.real s)⁻¹ * ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ∂μ := by
-        rw [setAverage_eq (f := fun x ↦ ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ), smul_eq_mul]
-    _ ≤ (μ.real s)⁻¹ * (2 ^ γ * I) := by gcongr
-    _ = 2 ^ γ * ⨍ x in s, ‖f x - c‖ ^ γ ∂μ := by
-        rw [setAverage_eq (f := fun x ↦ ‖f x - c‖ ^ γ), smul_eq_mul]
-        ring
+  by_cases hi : IntegrableOn (fun x ↦ ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ) s μ
+  swap
+  · rwa [setAverage_eq, integral_undef hi, smul_zero]
+  have h := ENNReal.rpow_le_rpow (eLpNorm_sub_setAverage_le (μ := μ) (f := f) hs
+    (p := ENNReal.ofReal γ) (by simpa using hγ) c) hγ0.le
+  rw [ENNReal.mul_rpow_of_nonneg _ _ hγ0.le,
+    eLpNorm_eq_eLpNorm' (by simpa using hγ0) ENNReal.ofReal_ne_top
+      (f := fun x ↦ f x - ⨍ y in s, f y ∂μ) (hf.1.sub aestronglyMeasurable_const),
+    eLpNorm_eq_eLpNorm' (by simpa using hγ0) ENNReal.ofReal_ne_top
+      (f := fun x ↦ f x - c) (hf.1.sub aestronglyMeasurable_const),
+    ENNReal.toReal_ofReal hγ0.le, ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' hγ0,
+    ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' hγ0] at h
+  rw [← ENNReal.ofReal_le_ofReal_iff hR, ENNReal.ofReal_mul (by positivity),
+    ofReal_setAverage_norm_rpow hγ0.le hi, ofReal_setAverage_norm_rpow hγ0.le hfc,
+    setLAverage_eq, setLAverage_eq, ← ENNReal.ofReal_rpow_of_nonneg zero_le_two hγ0.le,
+    ENNReal.ofReal_ofNat, ← mul_div_assoc]
+  exact ENNReal.div_le_div_right h _
 
 end TauCeti

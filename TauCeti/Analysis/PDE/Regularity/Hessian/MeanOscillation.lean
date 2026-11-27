@@ -424,13 +424,11 @@ private theorem abs_contraction_sub_le_and_memLp {K : ℝ}
   have hdiff : ∀ᵐ x ∂(volume.restrict (ball x₀ r)),
       |Matrix.contraction A (H x) - f x| ≤ (n + 1) * θ x * ‖H x‖ := by
     filter_upwards [heq] with x hx
-    have h : Matrix.contraction A (H x) - f x = Matrix.contraction (A - a x) (H x) := by
-      rw [Matrix.contraction_sub, sub_apply, Matrix.contraction_apply (a x), hx]
-    have hθx : ‖matrixBilinearForm (A - a x)‖ = θ x := by
-      rw [matrixBilinearForm_sub]
-      exact norm_sub_rev (matrixBilinearForm A) (matrixBilinearForm (a x))
-    rw [h, ← hθx]
-    simpa using Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm (A - a x) (H x)
+    rw [← Matrix.contraction_apply] at hx
+    rw [← hx]
+    exact_mod_cast
+      Matrix.abs_contraction_sub_contraction_le_mul_norm_matrixBilinearForm_sub_mul_norm A (a x)
+        (H x)
   -- `f` differs from the square integrable `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` by at most `(n + 1) K ‖D²u‖`.
   have hθH : MemLp (fun x => θ x * ‖H x‖) 2 (volume.restrict (ball x₀ r)) := by
     refine hH2.of_le_mul (c := K) (hθm.mul hH2.aestronglyMeasurable.norm) ?_

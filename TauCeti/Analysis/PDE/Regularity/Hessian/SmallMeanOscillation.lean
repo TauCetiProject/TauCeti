@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.MeanInequalities.Pow
 import TauCeti.Analysis.PDE.Regularity.Hessian.Dirichlet.Ball
 import TauCeti.Analysis.PDE.Regularity.Hessian.OscillationDecay
 import TauCeti.Analysis.PDE.Regularity.SharpFunctionMethod
@@ -16,6 +17,7 @@ import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average.Comparison
 import TauCeti.MeasureTheory.Integral.Average.Oscillation
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Measure.Haar.Average
 import TauCeti.MeasureTheory.Integral.Average
 
 /-!
@@ -106,25 +108,6 @@ variable {n : ℕ}
 
 section Rpow
 
-/-- Freezing the coefficients of `∑ᵢⱼ Mᵢⱼ ∂ᵢ∂ⱼu = y` at `A` changes the right-hand side by at most
-`(n + 1) ‖M - A‖ ‖D²u‖`: `|∑ᵢⱼ Aᵢⱼ Hᵢⱼ| ≤ |y| + (n + 1) ‖M - A‖ ‖H‖` when `∑ᵢⱼ Mᵢⱼ Hᵢⱼ = y`. -/
-private theorem norm_contraction_le_add {A M : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {H : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))} {y : ℝ}
-    (h : Matrix.contraction M H = y) :
-    ‖Matrix.contraction A H‖ ≤
-      ‖y‖ + (n + 1) * ‖matrixBilinearForm M - matrixBilinearForm A‖ * ‖H‖ := by
-  have hsub : Matrix.contraction A H - y = Matrix.contraction (A - M) H := by
-    rw [Matrix.contraction_sub, sub_apply, h]
-  have hθ : ‖matrixBilinearForm (A - M)‖ = ‖matrixBilinearForm M - matrixBilinearForm A‖ := by
-    rw [matrixBilinearForm_sub]
-    exact norm_sub_rev (matrixBilinearForm A) (matrixBilinearForm M)
-  have hb := Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm (A - M) H
-  rw [← hsub, hθ] at hb
-  rw [Real.norm_eq_abs, Real.norm_eq_abs]
-  push_cast at hb
-  have := abs_sub_abs_le_abs_sub (Matrix.contraction A H) y
-  linarith
-
 /-- **The frozen right-hand side in `L^γ`.** Let `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on a ball
 `B_r`, with `D²u ∈ L^{γq}(B_r)` and `f ∈ L^γ(B_r)` for `γ ≥ 1` and Hölder conjugate exponents
 `q, q'`, and let `‖a - A‖ ≤ K` on `B_r` with mean `⨍_{B_r} ‖a - A‖ ≤ δ`. Then the frozen
@@ -150,8 +133,6 @@ private theorem setAverage_abs_contraction_rpow_le {K : ℝ}
       2 ^ (γ - 1) * ((⨍ x in ball c r, ‖f x‖ ^ γ) + (n + 1) ^ γ *
         ((K ^ (γ * q' - 1) * δ) ^ q'⁻¹ * (⨍ x in ball c r, ‖H x‖ ^ (γ * q)) ^ q⁻¹)) := by
   have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
-  have hconv : ∀ {a b : ℝ}, 0 ≤ a → 0 ≤ b → (a + b) ^ γ ≤ 2 ^ (γ - 1) * (a ^ γ + b ^ γ) :=
-    fun {a b} ha hb => by exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow ⟨a, ha⟩ ⟨b, hb⟩ hγ
   have : IsFiniteMeasure (volume.restrict (ball c r)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
@@ -179,10 +160,19 @@ private theorem setAverage_abs_contraction_rpow_le {K : ℝ}
     (hθH.const_mul ((n + 1) ^ γ)) (ae_of_all _ fun x => by positivity) ?_).trans ?_
   · filter_upwards [heq, hθ] with x hx hθx
     rw [← Matrix.contraction_apply] at hx
+    -- Freezing the coefficients at `A` changes the right-hand side by at most `(n + 1) θ ‖D²u‖`.
+    have hfr : |Matrix.contraction A (H x) - f x| ≤ (n + 1) * θ x * ‖H x‖ := by
+      rw [← hx]
+      exact_mod_cast
+        Matrix.abs_contraction_sub_contraction_le_mul_norm_matrixBilinearForm_sub_mul_norm A (a x)
+          (H x)
+    have hle : ‖Matrix.contraction A (H x)‖ ≤ ‖f x‖ + (n + 1) * θ x * ‖H x‖ := by
+      rw [Real.norm_eq_abs, Real.norm_eq_abs]
+      linarith [abs_sub_abs_le_abs_sub (Matrix.contraction A (H x)) (f x)]
     calc ‖Matrix.contraction A (H x)‖ ^ γ ≤ (‖f x‖ + (n + 1) * θ x * ‖H x‖) ^ γ :=
-          Real.rpow_le_rpow (norm_nonneg _) (norm_contraction_le_add hx) hγ0.le
+          Real.rpow_le_rpow (norm_nonneg _) hle hγ0.le
       _ ≤ 2 ^ (γ - 1) * (‖f x‖ ^ γ + ((n + 1) * θ x * ‖H x‖) ^ γ) :=
-          hconv (norm_nonneg _) (by have := hθx.1; positivity)
+          Real.rpow_add_le_mul_rpow_add_rpow (norm_nonneg _) (by have := hθx.1; positivity) hγ
       _ = 2 ^ (γ - 1) * (‖f x‖ ^ γ + (n + 1) ^ γ * (θ x ^ γ * ‖H x‖ ^ γ)) := by
           rw [Real.mul_rpow (by have := hθx.1; positivity) (norm_nonneg _),
             Real.mul_rpow (by positivity) hθx.1, mul_assoc]
@@ -313,8 +303,6 @@ private theorem setAverage_norm_sub_setAverage_rpow_le_of_ae_eq_add {γ : ℝ} (
       ⨍ y in ball c r, ‖Hh y‖ ^ γ ≤
         2 ^ (γ - 1) * ((⨍ y in ball c r, ‖H y‖ ^ γ) + ⨍ y in ball c r, ‖Hw y‖ ^ γ) := by
   have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
-  have hconv : ∀ {a b : ℝ}, 0 ≤ a → 0 ≤ b → (a + b) ^ γ ≤ 2 ^ (γ - 1) * (a ^ γ + b ^ γ) :=
-    fun {a b} ha hb => by exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow ⟨a, ha⟩ ⟨b, hb⟩ hγ
   have : IsFiniteMeasure (volume.restrict (ball c r)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hrp : ∀ {g : EuclideanSpace ℝ (Fin (n + 1)) →
@@ -338,9 +326,8 @@ private theorem setAverage_norm_sub_setAverage_rpow_le_of_ae_eq_add {γ : ℝ} (
           calc ‖Hh x + Hw x - m‖ = ‖(Hh x - m) + Hw x‖ := by congr 1; abel
             _ ≤ _ := norm_add_le _ _
         exact (Real.rpow_le_rpow (norm_nonneg _) htri hγ0.le).trans
-          (hconv (norm_nonneg _) (norm_nonneg _)))
-  have hC1 :=
-    setAverage_ball_le_div_pow_mul volume hρ hρr (hrp hHw) (fun x _ => by positivity)
+          (Real.rpow_add_le_mul_rpow_add_rpow (norm_nonneg _) (norm_nonneg _) hγ))
+  have hC1 := setAverage_ball_le (μ := volume) hρ hρsub (hrp hHw) fun x _ => by positivity
   rw [finrank_euclideanSpace_fin] at hC1
   refine ⟨hA1.trans (by gcongr; exact hB1.trans (by gcongr)),
     setAverage_le_mul_add_of_ae_le (hrp hH) (hrp hHw) (ae_of_all _ fun x => by positivity) ?_⟩
@@ -350,7 +337,7 @@ private theorem setAverage_norm_sub_setAverage_rpow_le_of_ae_eq_add {γ : ℝ} (
     calc ‖Hh x‖ = ‖(Hh x + Hw x) - Hw x‖ := by rw [add_sub_cancel_right]
       _ ≤ _ := norm_sub_le _ _
   exact (Real.rpow_le_rpow (norm_nonneg _) htri hγ0.le).trans
-    (hconv (norm_nonneg _) (norm_nonneg _))
+    (Real.rpow_add_le_mul_rpow_add_rpow (norm_nonneg _) (norm_nonneg _) hγ)
 
 /-- The arithmetic of the one-ball estimate: the decay of the homogeneous part, the `W^{2,γ}`
 estimate and the frozen right-hand side combine into the constants `decayConstRpow` and
@@ -459,10 +446,12 @@ private theorem setAverage_norm_iteratedGradient_sub_rpow_le
     (fun ξ => (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A ξ).trans (by gcongr))
     hγ.le le_rfl h subset_rfl heqh 0 hρ (le_mul_of_one_le_left hρ.le hκ)
   simp only [Fintype.card_fin, sub_zero] at hdec
-  rw [show 2 ^ (3 * (n + 1) + 4) * (((n + 1 : ℕ) : ℝ) + 1) * √(Lam / lam) ^ (n + 1 + 1) =
-      oscConstRpow n lam Lam from rfl, Real.mul_rpow (by simp only [oscConstRpow]; positivity)
-      (by positivity), show ρ / r = κ⁻¹ by rw [hr_def]; field_simp, Real.inv_rpow hκ0.le,
-      ← div_eq_mul_inv] at hdec
+  -- Fold the constant of the decay estimate into `oscConstRpow`.
+  have hO : 2 ^ (3 * (n + 1) + 4) * (((n + 1 : ℕ) : ℝ) + 1) * √(Lam / lam) ^ (n + 1 + 1) =
+      oscConstRpow n lam Lam := by
+    simp only [oscConstRpow]
+  rw [hO, Real.mul_rpow (by simp only [oscConstRpow]; positivity) (by positivity),
+    show ρ / r = κ⁻¹ by rw [hr_def]; field_simp, Real.inv_rpow hκ0.le, ← div_eq_mul_inv] at hdec
   obtain ⟨hT1, hT2⟩ := setAverage_norm_sub_setAverage_rpow_le_of_ae_eq_add hγ.le hρ
     (le_mul_of_one_le_left hρ.le hκ) ((hHp.restrict _).mono_exponent hγp) (Lp.memLp _)
     (Lp.memLp _) hsplit
