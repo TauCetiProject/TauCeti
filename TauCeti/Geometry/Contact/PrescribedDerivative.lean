@@ -7,18 +7,18 @@ module
 
 public import TauCeti.Geometry.Contact.Interpolation
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+import TauCeti.Geometry.Contact.Contactomorphism
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
-import TauCeti.Geometry.Manifold.DifferentialForm.Proportional
-import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
 
 /-!
 # Contact neighbourhood germs with prescribed first-order data
 
 Let `α` be a one-form on a manifold `M` and `β` a one-form on a manifold `N`. This file shows that
-a contactomorphism between neighbourhoods of two submanifolds can be built from its first-order
-data along them, without any isotropy or compactness assumption.
+a partial diffeomorphism between neighbourhoods of two submanifolds which pulls `β` back to a
+positive multiple of `α` can be built from its first-order data along them, without any isotropy
+or compactness assumption.
 
 **Correcting a partial diffeomorphism.** Let `Ψ` be a partial diffeomorphism from `M` to `N`, and
 let `S` be a set of points of its source at which `α` is contact. Suppose that at every `x ∈ S`
@@ -28,8 +28,8 @@ factor `c x`:
 `β(dΨ v) = c x α(v)` for all `v`, and `dβ(dΨ v, dΨ w) = c x dα(v, w)` for `v, w ∈ ker α_x`.
 
 Then `Ψ` can be corrected to a partial diffeomorphism `φ` which agrees with `Ψ` on `S` and pulls
-`β` back to a positive multiple of `α` on its source, so that `φ` is a coorientation-preserving
-contactomorphism of neighbourhoods of `S` and `Ψ(S)`
+`β` back to a positive multiple of `α` on its source, so that its differential carries `ker α` to
+`ker β` and the coorientation given by `α` to the one given by `β`
 (`PartialDiffeomorph.exists_eqOn_mpullback_eq_smul`). On the source of `Ψ` the forms `α` and
 `Ψ^* β` agree to first order on the contact hyperplanes along `S` up to the factor `c`, so relative
 Gray stability for such forms
@@ -37,8 +37,8 @@ Gray stability for such forms
 diffeomorphism `Θ` fixing `S` with `Θ^* Ψ^* β` a positive multiple of `α`, and `φ = Ψ ∘ Θ`.
 Conversely, if a partial diffeomorphism pulls `β` back to `h α` for a pointwise multiplier `h`, then
 at each point where `α` is contact its differential satisfies the second condition with the factor
-`h` (`PartialDiffeomorph.mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul`): the multiplier is smooth
-there, and `d(h α) = dh ∧ α + h dα` restricts to `h dα` on `ker α`.
+`h` (`PartialDiffeomorph.mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul`, in
+`TauCeti.Geometry.Contact.Contactomorphism`).
 
 **Prescribed first-order data along an embedding.** Let `i : Q → M` be a smooth embedding and
 `g : Q → N` a smooth map inducing the topology of `Q`, and let `A q : T_{i q} M → T_{g q} N` be
@@ -56,23 +56,23 @@ The factor `c` is the identification of the contact lines `TM / ker α` and `TN 
 submanifolds read in the trivializations given by `α` and `β`, and the second condition says that
 `A` is conformally symplectic for the Levi forms with respect to it. This is the step of the
 isotropic neighbourhood theorem that turns an identification of the full first-order data along
-the submanifolds into a contactomorphism of neighbourhood germs. Neither `M`, `N` nor `Q` need be
-compact, and `i(Q)` need not be isotropic. These conditions are also necessary, with
-`A q = dφ_{i q}` and `c q` the multiplier at `i q`, so they characterize the maps `g` that extend to
-such a `φ`
-(`TauCeti.SmoothEmbedding.exists_partialDiffeomorph_comp_eq_mpullback_eq_smul_iff`). The
-contactomorphism `φ` is not claimed to have differential `A` along `i(Q)`.
+the submanifolds into a germ of partial diffeomorphisms pulling `β` back to a positive multiple of
+`α`. Neither `M`, `N` nor `Q` need be compact, and `i(Q)` need not be isotropic. These conditions
+are also necessary, with `A q = dφ_{i q}` and `c q` the multiplier at `i q`, so they characterize
+the maps `g` that extend to such a `φ`
+(`TauCeti.SmoothEmbedding.exists_partialDiffeomorph_comp_eq_mpullback_eq_smul_iff`). The map `φ`
+is not claimed to have differential `A` along `i(Q)`.
 
 ## Main results
 
 * `PartialDiffeomorph.exists_eqOn_mpullback_eq_smul`: a partial diffeomorphism whose differential
   carries the first-order contact data of `β` to those of `α` along `S`, up to a positive factor,
-  agrees on `S` with a coorientation-preserving contactomorphism of neighbourhoods of `S`.
-* `PartialDiffeomorph.mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul`: a partial diffeomorphism
-  pulling `β` back to a multiple of `α` is conformally symplectic for the Levi forms.
+  agrees on `S` with a partial diffeomorphism from a neighbourhood of `S` pulling `β` back to a
+  positive multiple of `α`.
 * `TauCeti.SmoothEmbedding.exists_partialDiffeomorph_comp_eq_mpullback_eq_smul`: an identification
   of the first-order contact data along an embedded submanifold, over a map `g`, extends `g` to a
-  coorientation-preserving contactomorphism of neighbourhoods.
+  partial diffeomorphism from a neighbourhood of the submanifold pulling `β` back to a positive
+  multiple of `α`.
 * `TauCeti.SmoothEmbedding.exists_partialDiffeomorph_comp_eq_mpullback_eq_smul_iff`: the maps `g`
   admitting such an extension are characterized by these first-order data.
 
@@ -104,7 +104,7 @@ namespace PartialDiffeomorph
 
 open TauCeti
 
-/-- **Correcting a partial diffeomorphism to a contactomorphism.** Let `Ψ` be a partial
+/-- **Correcting a partial diffeomorphism to a conformal pullback.** Let `Ψ` be a partial
 diffeomorphism from `M` to `N`, with `M` finite-dimensional, boundaryless and Hausdorff, let `S` be
 a set of points of its source at which the one-form `α` is contact, and let `c` be positive on `S`.
 Suppose that at
@@ -163,58 +163,6 @@ theorem exists_eqOn_mpullback_eq_smul (Ψ : PartialDiffeomorph I K M N ∞) {S :
   -- The pullback of `β` along `Ψ` restricted to `U` is `α₁`.
   rw [hφy, ← SmoothForm.coe_mpullback _ hΨU]
   exact hΘy.trans (congrArg (h • ·) (SmoothForm.coe_mpullback_subtype_val_apply α y))
-
-omit [I.Boundaryless] [T2Space M] in
-/-- **The Levi data of a conformal pullback.** Let `φ` be a partial diffeomorphism from `M` to `N`
-which pulls `β` back to a multiple of `α` at every point of its source, and let `α` be contact at
-a point `x` of the source, where `φ^* β = h α`. Then `dβ(dφ v, dφ w) = h dα(v, w)` for `v` and `w`
-in `ker α_x`: the differential of `φ` at `x` is conformally symplectic for the Levi forms, with
-the factor `h`. -/
-theorem mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul (φ : PartialDiffeomorph I K M N ∞)
-    (hφ : ∀ y ∈ φ.source, ∃ h : ℝ, TauCeti.mpullback I K φ β.val y = h • α.val y) {x : M}
-    (hx : x ∈ φ.source) (hαx : IsContactFormAt α.val x) {h : ℝ}
-    (hh : TauCeti.mpullback I K φ β.val x = h • α.val x) {v w : TangentSpace I x}
-    (hv : v ∈ RoughForm.ker α.val x) (hw : w ∈ RoughForm.ker α.val x) :
-    mextDeriv β.val (φ x) ![mfderiv I K φ x v, mfderiv I K φ x w] =
-      h * mextDeriv α.val x ![v, w] := by
-  -- Work on the open set `W` of points of the source of `φ` at which `α` is contact.
-  let W : Opens M := ⟨φ.source ∩ {y | IsContactFormAt α.val y},
-    φ.open_source.inter (SmoothForm.isOpen_setOf_isContactFormAt α)⟩
-  have hφW : ContMDiff I K ∞ (φ ∘ (Subtype.val : W → M)) :=
-    φ.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property.1
-  set αW := SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal α
-  set βW := SmoothForm.mpullback _ hφW β
-  have hαW (z : W) : αW.val z = α.val z := SmoothForm.coe_mpullback_subtype_val_apply α z
-  have hβW (z : W) : βW.val z = TauCeti.mpullback I K φ β.val z :=
-    SmoothForm.coe_mpullback_comp_subtypeVal_apply hφW β z
-  -- On `W`, `φ^* β` is a smooth multiple `f α` of the nowhere-vanishing form `α`.
-  obtain ⟨f, ⟨hf, hfβ⟩, -⟩ := SmoothForm.existsUnique_fun_smul_of_ker_le (α := αW) (β := βW)
-    (fun z ↦ by rw [hαW]; exact z.property.2.ne_zero) fun z u hu ↦ by
-      obtain ⟨c, hc⟩ := hφ z z.property.1
-      have hu' : α.val z ![u] = 0 := by rw [← hαW]; exact RoughForm.mem_ker.1 hu
-      -- The values of `βW` and of `c α` at `z` act on the same model space.
-      exact RoughForm.mem_ker.2 (by rw [hβW, hc]; exact (congrArg (c * ·) hu').trans (mul_zero c))
-  let z₀ : W := ⟨x, hx, hαx⟩
-  have hfz₀ : f z₀ = h := by
-    have hfh := (hfβ z₀).symm.trans (hβW z₀)
-    rw [hαW, hh] at hfh
-    exact smul_left_injective ℝ hαx.ne_zero hfh
-  -- By the Leibniz rule, `d(f α) = f dα` on `ker α_x`.
-  have hLeibniz (a b : TangentSpace I z₀) (ha : αW.val z₀ ![a] = 0) (hb : αW.val z₀ ![b] = 0) :
-      mextDeriv βW.val z₀ ![a, b] = h * mextDeriv αW.val z₀ ![a, b] := by
-    have hd := mextDeriv_fun_smul_apply ((hf z₀).mdifferentiableAt (by simp))
-      (αW.mdifferentiableAt z₀) a b
-    rwa [ha, hb, mul_zero, mul_zero, sub_zero, zero_add, hfz₀, ← funext hfβ] at hd
-  have hd := hLeibniz v w (by rw [hαW]; exact RoughForm.mem_ker.1 hv)
-    (by rw [hαW]; exact RoughForm.mem_ker.1 hw)
-  -- Read both exterior derivatives in `M` and `N`.
-  have hdαW (a b : TangentSpace I z₀) :
-      mextDeriv αW.val z₀ ![a, b] = mextDeriv α.val z₀ ![a, b] := by
-    rw [SmoothForm.mextDeriv_mpullback_apply_two, Manifold.mfderiv_subtype_val_apply,
-      Manifold.mfderiv_subtype_val_apply]
-  -- The base points `z₀` of `W` and `x` of `M` agree, and so do their tangent spaces.
-  exact (SmoothForm.mextDeriv_mpullback_comp_subtypeVal_apply_two hφW β z₀ v w).symm.trans
-    (hd.trans (congrArg (h * ·) (hdαW v w)))
 
 end PartialDiffeomorph
 
