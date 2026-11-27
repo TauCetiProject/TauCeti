@@ -315,12 +315,10 @@ theorem knotInfinityShift_mem_supported_iff {a b : ℤ} {s : Set (H.Generator ×
     {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
     H.knotInfinityShift a b c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s ↔
       c ∈ Finsupp.supported (ZMod 2) (ZMod 2) ((fun g => (g.1, g.2.1 - a, g.2.2 - b)) ⁻¹' s) := by
-  classical
-  rw [Finsupp.mem_supported, Finsupp.mem_supported, knotInfinityShift, Finsupp.domLCongr_apply,
-    Finsupp.domCongr_apply, Finsupp.equivMapDomain_eq_mapDomain,
-    Finsupp.mapDomain_support_of_injective (Equiv.injective _), Finset.coe_image,
-    Set.image_subset_iff]
-  rfl
+  simp only [Finsupp.mem_supported', Prod.forall, Set.mem_preimage, knotInfinityShift_apply]
+  refine forall_congr' fun x => ⟨fun h i j hs => ?_, fun h i j hs => ?_⟩
+  · simpa [hs] using h (i - a) (j - b)
+  · simpa [hs] using h (i + a) (j + b)
 
 /-- Shifting a chain placed at the level `(i, j)` by `(a, b)` places it at the level
 `(i - a, j - b)`. -/
@@ -566,18 +564,13 @@ theorem knotInfinityForget_knotInfinityLift (i j : ℤ)
     H.knotInfinityForget (H.knotInfinityLift i j c) =
       (T (-i) : (ZMod 2)[T;T⁻¹]) • Finsupp.mapRange (fun p => Polynomial.toLaurent (R := ZMod 2)
         (aeval ![(Polynomial.X : Polynomial (ZMod 2)), 1] p)) (by simp) c := by
-  refine LinearMap.congr_fun (f := H.knotInfinityForget ∘ₗ H.knotInfinityLift i j)
-    (g := (T (-i) : (ZMod 2)[T;T⁻¹]) • Finsupp.mapRange.linearMap
-      (Polynomial.toLaurentAlg.comp (aeval ![Polynomial.X, 1])).toLinearMap) ?_ c
-  refine Finsupp.lhom_ext' fun x => linearMap_ext fun m => LinearMap.ext_ring ?_
-  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, LinearMap.smul_apply,
-    Finsupp.mapRange.linearMap_apply, knotInfinityLift_single_monomial, knotInfinityForget_single,
-    Finsupp.mapRange_single, Finsupp.smul_single, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
-    aeval_monomial_fin_two, Polynomial.toLaurentAlg_apply]
-  rw [one_smul, map_one, one_pow, mul_one, one_mul, Polynomial.toLaurent_X_pow, smul_eq_mul,
-    ← T_add]
-  congr 2
-  ring
+  have key : H.knotInfinityForget ∘ₗ H.knotInfinityLift i j =
+      (T (-i) : (ZMod 2)[T;T⁻¹]) • Finsupp.mapRange.linearMap
+        (Polynomial.toLaurentAlg.comp (aeval ![Polynomial.X, 1])).toLinearMap := by
+    refine Finsupp.lhom_ext' fun x => linearMap_ext fun m => LinearMap.ext_ring ?_
+    simp [knotInfinityLift_single_monomial, aeval_monomial_fin_two, Finsupp.smul_single, -T_mul,
+      ← T_add, neg_add_eq_sub]
+  simpa [Function.comp_def] using LinearMap.congr_fun key c
 
 /-- Forgetting the second index turns the shift by `(a, b)` into multiplication by `U ^ a`. -/
 @[simp]
