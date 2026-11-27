@@ -69,7 +69,7 @@ namespace TauCeti
 private lemma choose_four_le {s m : ℕ} (hm : 4 ≤ m) :
     (s + 5) * (s + 4) * (s + 3) * (s + 2) ≤ 24 * (s + 1 + m).choose m := by
   have h24 : 24 * (s + 5).choose 4 = (s + 5) * (s + 4) * (s + 3) * (s + 2) :=
-    Nat.choose_four_mul (s + 1)
+    Nat.twentyFour_mul_choose_four (s + 1)
   have hle : (s + 5).choose (s + 1) ≤ (s + 1 + m).choose (s + 1) :=
     Nat.choose_le_choose _ (by omega)
   rw [show s + 5 = s + 1 + 4 by ring, Nat.choose_symm_add, show s + 1 + 4 = s + 5 by ring,
@@ -92,7 +92,7 @@ private lemma horace_trace_key_le {s t : ℕ} (h : ¬(t = 0 ∧ s ≤ 2)) :
   · -- For `d = 4` use `6 N(r - 1, 3) = (r + 2) (r + 1) r` and `r ≥ 5`.
     obtain ⟨w, rfl⟩ : ∃ w, s = w + 3 := ⟨s - 3, by omega⟩
     have h6 : 6 * (w + 3 + 0 + 4).choose (0 + 3) = (w + 7) * (w + 6) * (w + 5) :=
-      Nat.choose_three_mul (w + 4)
+      Nat.six_mul_choose_three (w + 4)
     have hpoly : 2 * (4 * ((w + 3) ^ 3 + 5 * (w + 3) ^ 2 + 7 * (w + 3) + 4)) ≤
         (w + 4) * ((w + 7) * (w + 6) * (w + 5)) := by
       ring_nf
@@ -209,8 +209,9 @@ theorem horace_quartic_residual_ge {r q : ℕ} (hr : 10 ≤ r)
   have hpascal : (s + 1 + 4).choose 4 = (s + 1 + 3).choose 3 + (s + 1 + 3).choose 4 :=
     Nat.choose_succ_succ' _ _
   have hB : 24 * (s + 1 + 3).choose 4 = (s + 4) * (s + 3) * (s + 2) * (s + 1) :=
-    Nat.choose_four_mul s
-  have hC : 6 * (s + 1 + 3).choose 3 = (s + 4) * (s + 3) * (s + 2) := Nat.choose_three_mul (s + 1)
+    Nat.twentyFour_mul_choose_four s
+  have hC : 6 * (s + 1 + 3).choose 3 = (s + 4) * (s + 3) * (s + 2) :=
+    Nat.six_mul_choose_three (s + 1)
   set B := (s + 1 + 3).choose 4
   set C := (s + 1 + 3).choose 3
   rw [hpascal] at hq'

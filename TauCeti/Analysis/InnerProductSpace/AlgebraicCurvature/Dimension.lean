@@ -327,7 +327,7 @@ private theorem choose_symm_sub_choose_four {n d : ℕ}
   | 0 | 1 | 2 | 3 => norm_num [Nat.choose] at hrk ⊢; omega
   | m + 4 =>
     have hc4 : 24 * (m + 4).choose 4 = (m + 4) * (m + 3) * (m + 2) * (m + 1) :=
-      Nat.choose_four_mul m
+      Nat.twentyFour_mul_choose_four m
     have hc2 : 2 * (m + 4).choose 2 = (m + 4) * (m + 3) := by
       have h := (Nat.descFactorial_eq_factorial_mul_choose (m + 4) 2).symm
       simp [Nat.factorial] at h; linarith
