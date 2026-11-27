@@ -21,7 +21,9 @@ Let `b` be a vector field smooth on an open set `Ω` of Euclidean space, with di
 In terms of energy forms, the drift `b` acting on the test function becomes the drift `-b` and the
 mass `-div b` acting on `u` (`TauCeti.PDE.energyFormH1_drift_ofTestFunctionₗ`). No bound on `b`
 is needed, since `φ` has compact support in `Ω`. A lower-order energy form against a test function
-is the integral `∫_Ω (⟪b, ∇u⟫ + c u) φ` (`TauCeti.PDE.energyFormH1_zero_ofTestFunctionₗ`).
+is the integral `∫_Ω (⟪b, ∇u⟫ + c u) φ` (`TauCeti.PDE.energyFormH1_zero_ofTestFunctionₗ`); for a
+constant drift `e` and two test functions it is `∫_Ω (∂_e f) g`
+(`TauCeti.PDE.energyFormH1_zero_const_ofTestFunctionₗ_ofTestFunctionₗ`).
 -/
 
 public section
@@ -29,7 +31,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Distributions Gradient InnerProductSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace LineDeriv
 
 namespace TauCeti.PDE
 
@@ -48,6 +50,19 @@ theorem energyFormH1_zero_ofTestFunctionₗ (c : EuclideanSpace ℝ ι → ℝ) 
   simp only [Pi.zero_apply, energyIntegrand_apply, matrixBilinearForm_apply, Matrix.zero_mulVec,
     dotProduct_zero, driftForm_apply, jetField_apply, massForm_apply, hx]
   ring
+
+/-- The energy form with only a constant drift `e`, between two test functions `f` and `g`, is
+`∫_Ω (∂_e f) g`. -/
+theorem energyFormH1_zero_const_ofTestFunctionₗ_ofTestFunctionₗ (e : EuclideanSpace ℝ ι)
+    (f g : 𝓓(Omega, ℝ)) :
+    energyFormH1 0 (fun _ ↦ e) 0 (W1p.ofTestFunctionₗ mu Omega 2 f)
+        (W1p.ofTestFunctionₗ mu Omega 2 g) =
+      ∫ x in Omega, (∂_{e} f) x * g x ∂mu := by
+  rw [energyFormH1_zero_ofTestFunctionₗ]
+  refine integral_congr_ae ((gradientTestFunctionLp_apply_ae (mu := mu) 2 f).mono fun x hx ↦ ?_)
+  dsimp only
+  rw [W1p.gradient_ofTestFunctionₗ, hx, real_inner_comm, inner_gradient_left,
+    TestFunction.lineDerivOp_apply_eq_fderiv, Pi.zero_apply, zero_mul, add_zero]
 
 /-- The drift form of a test function against `u`, as an integral over `Ω` involving the
 divergence of `φ b`. -/

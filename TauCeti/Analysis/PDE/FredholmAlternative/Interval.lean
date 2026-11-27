@@ -49,7 +49,12 @@ while the weak solutions of `-u'' - u = sin 2x` are exactly the functions `sin (
 With `κ = 2`, which is not a square of an integer, the problem `-u'' - 2u = ℓ` is uniquely
 solvable for every `ℓ`
 (`TauCeti.PDE.existsUnique_forall_energyFormH1_neg_two_eq_intervalDomain_zero_pi`), although its
-form is not coercive.
+form is not coercive. Gårding's inequality `(1/2) ‖u‖²_{H¹} ≤ ∫ |u'|² - 2 ∫ u² + β ‖u‖²_{L²}`
+holds on `H¹₀(0, π)` exactly for `β ≥ 2`
+(`TauCeti.PDE.isLeast_half_mul_norm_sq_le_energyFormH1_add_intervalDomain_zero_pi`), with
+equality at `β = 2` on `sin x`, whose energy is `π/2 - π = -π/2`
+(`TauCeti.PDE.energyFormH1_neg_two_self_eq_of_value_ae_eq_sin`). So a shift is needed, and the
+shift `5/2` of the general Gårding inequality is not optimal.
 
 ## References
 
@@ -610,6 +615,80 @@ theorem existsUnique_forall_energyFormH1_neg_two_eq_intervalDomain_zero_pi
   have : k ≤ 1 := by nlinarith
   interval_cases k
   norm_num at hk'
+
+/-! ### Gårding's inequality for `-u'' - 2u` on `(0, π)` -/
+
+/-- The energy form of `-u'' - 2u` on `(0, π)` is the Dirichlet energy minus twice the squared
+`L²` norm. -/
+private theorem energyFormH1_neg_two_self_eq (u : W1p volume (intervalDomain 0 π) 2) :
+    energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -2) u u =
+      ‖W1p.gradient u‖ ^ 2 - 2 * ‖W1p.value u‖ ^ 2 := by
+  rw [energyFormH1_one_zero_const, energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
+    real_inner_self_eq_norm_sq]
+  ring
+
+/-- On `(0, π)`, an element of `H¹₀(0, π)` with value `sin x` has Dirichlet energy
+`∫ |u'|² = π/2`. -/
+private theorem norm_gradient_sq_of_value_ae_eq_sin {u : W1p0 volume (intervalDomain 0 π) 2}
+    (hu : W1p.value (u : W1p volume (intervalDomain 0 π) 2)
+      =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x ↦ Real.sin (x 0)) :
+    ‖W1p.gradient (u : W1p volume (intervalDomain 0 π) 2)‖ ^ 2 = π / 2 := by
+  have h := energyFormH1_self_eq_of_value_ae_eq_sin Real.pi_pos (k := 1) one_pos
+    (by simpa only [sin_one_mul_pi_div] using hu)
+  rwa [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq, sq_one_mul_pi_div,
+    one_mul, sub_zero] at h
+
+/-- **The form of `-u'' - 2u` is negative on `sin x`.** On `(0, π)`, an element of `H¹₀(0, π)` with
+value `sin x` has `∫ |u'|² - 2 ∫ u² = π/2 - π = -π/2`. -/
+theorem energyFormH1_neg_two_self_eq_of_value_ae_eq_sin
+    {u : W1p0 volume (intervalDomain 0 π) 2}
+    (hu : W1p.value (u : W1p volume (intervalDomain 0 π) 2)
+      =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x ↦ Real.sin (x 0)) :
+    energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -2) (u : W1p volume (intervalDomain 0 π) 2)
+      (u : W1p volume (intervalDomain 0 π) 2) = -(π / 2) := by
+  rw [energyFormH1_neg_two_self_eq, norm_gradient_sq_of_value_ae_eq_sin hu,
+    norm_value_sq_of_value_ae_eq_sin Real.pi_pos (k := 1) one_pos
+      (by simpa only [sin_one_mul_pi_div] using hu), sub_zero]
+  ring
+
+/-- **The least Gårding shift of `-u'' - 2u` on `(0, π)`.** With the constant `C₀ = 1/2` of
+Gårding's inequality for the lower ellipticity constant `λ = 1`, the least `β` for which
+
+`(1/2) ‖u‖²_{H¹} ≤ ∫ |u'|² - 2 ∫ u² + β ‖u‖²_{L²}` for every `u ∈ H¹₀(0, π)`
+
+is `β = 2`. It is attained by `sin x`, on which the inequality is an equality at `β = 2`
+(`TauCeti.PDE.energyFormH1_neg_two_self_eq_of_value_ae_eq_sin`), and it holds for every `u` by the
+sharp Poincaré inequality `‖u‖_{L²} ≤ ‖u'‖_{L²}` on `(0, π)`. The general shift
+`λ/2 + γ + β₀²/(2λ)` of `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm_of_norm_le`
+is `5/2` here, for the mass bound `γ = 2` and no drift, so it is not optimal, and no shift below
+`2` works. -/
+theorem isLeast_half_mul_norm_sq_le_energyFormH1_add_intervalDomain_zero_pi :
+    IsLeast {β : ℝ | ∀ u : W1p0 volume (intervalDomain 0 π) 2,
+        1 / 2 * ‖(u : W1p volume (intervalDomain 0 π) 2)‖ ^ 2 ≤
+          energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -2) (u : W1p volume (intervalDomain 0 π) 2)
+            (u : W1p volume (intervalDomain 0 π) 2) +
+            β * ‖W1p.value (u : W1p volume (intervalDomain 0 π) 2)‖ ^ 2} 2 := by
+  refine ⟨fun u ↦ ?_, fun β hβ ↦ ?_⟩
+  · -- The sharp Poincaré inequality `‖u‖² ≤ ‖u'‖²` on `(0, π)`.
+    have hP := (isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain Real.pi_pos).1 u
+    rw [sub_zero, div_self Real.pi_ne_zero, one_pow, one_mul, energyFormH1_one_zero_zero_eq_inner,
+      real_inner_self_eq_norm_sq] at hP
+    rw [energyFormH1_neg_two_self_eq, W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+    linarith
+  · -- Test the inequality on `sin x`.
+    obtain ⟨s, hs, -⟩ := exists_value_ae_eq_sin Real.pi_pos 1
+    have hs' : W1p.value (s : W1p volume (intervalDomain 0 π) 2)
+        =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
+          fun x ↦ Real.sin (x 0) := by
+      simpa only [sin_one_mul_pi_div] using hs
+    have h := hβ s
+    rw [energyFormH1_neg_two_self_eq_of_value_ae_eq_sin hs',
+      W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq,
+      norm_value_sq_of_value_ae_eq_sin Real.pi_pos one_pos hs, sub_zero,
+      norm_gradient_sq_of_value_ae_eq_sin hs'] at h
+    nlinarith [Real.pi_pos]
 
 end PDE
 

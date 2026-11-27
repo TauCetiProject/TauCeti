@@ -35,7 +35,8 @@ function that is locally integrable for a measure on `Ω`.
 Every nonempty open subset of the domain also contains a nonnegative integral-one test, for any
 locally finite measure positive on nonempty open sets. The construction normalizes Mathlib's
 `exists_contDiff_tsupport_subset` by its positive integral. These tests recover the coefficient
-of a constant distribution, including on arbitrarily small overlap neighborhoods.
+of a constant distribution, including on arbitrarily small overlap neighborhoods. For such a
+measure, finite on compact sets, a nonzero real test function has positive square integral.
 
 Against an additive Haar measure, the directional derivative of a test function has integral
 zero, by Mathlib's integration by parts against the constant function `1`.
@@ -58,6 +59,8 @@ by these integrals.
 
 * `TestFunction.exists_nonneg_integral_eq_one`: a nonnegative integral-one test supported in any
   nonempty open subset of the domain.
+
+* `TestFunction.setIntegral_sq_pos`: `0 < ∫_Ω φ²` for a nonzero real test function `φ`.
 
 * `TestFunction.norm_integral_le_measureReal_mul_norm`: `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞` for a test
   function `φ` supported in a compact `K ⊆ Ω`.
@@ -267,6 +270,23 @@ theorem exists_nonneg_integral_eq_one {U : Set E} (hU : IsOpen U) (hne : U.Nonem
     exact inv_mul_cancel₀ hpos.ne'
 
 end IntegralOne
+
+section Positivity
+
+variable [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+  [μ.IsOpenPosMeasure]
+
+/-- A nonzero real test function has positive square integral over its domain, for a measure
+finite on compact sets and positive on nonempty open sets. -/
+theorem setIntegral_sq_pos {φ : 𝓓^{n}(Ω, ℝ)} (hφ : φ ≠ 0) : 0 < ∫ x in Ω, φ x ^ 2 ∂μ := by
+  obtain ⟨x, hx⟩ := DFunLike.ne_iff.1 hφ
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+    rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy (φ.tsupport_subset h), sq, mul_zero]]
+  exact (φ.continuous.pow 2).integral_pos_of_hasCompactSupport_nonneg_ne_zero
+    (by simpa only [sq] using φ.hasCompactSupport.mul_right (f' := φ)) (fun y ↦ sq_nonneg _)
+    (pow_ne_zero 2 (by simpa using hx))
+
+end Positivity
 
 section LineDeriv
 
