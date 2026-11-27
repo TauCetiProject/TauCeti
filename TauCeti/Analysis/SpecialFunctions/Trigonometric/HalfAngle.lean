@@ -14,12 +14,15 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 The quantity `1 - cos θ = 2 sin² (θ/2)` is positive for `θ ∈ (0, 2π)`, and
 `1 + cos θ = 2 cos² (θ/2)` is positive for `θ ∈ (-π, π)`. Their quotient
 `(1 - cos θ)/(1 + cos θ) = tan² (θ/2)` maps `(0, π)` bijectively onto `(0, ∞)`. This is the
-substitution that turns integrals over a half-line into integrals over `(0, π)`.
+substitution that turns integrals over a half-line into integrals over `(0, π)`. Divided by
+`sin θ`, the quantity `1 + cos θ` is the half-angle cotangent `cot (θ/2)`.
 
 ## Main declarations
 
 * `TauCeti.cos_half_sq`, `TauCeti.sin_half_sq`: the half-angle identities
   `cos² (θ/2) = (1 + cos θ)/2` and `sin² (θ/2) = (1 - cos θ)/2`.
+* `TauCeti.cot_half`: the half-angle formula `cot (θ/2) = (1 + cos θ)/sin θ`, valid for every
+  real `θ`.
 * `TauCeti.one_sub_cos_pos`, `TauCeti.one_add_cos_pos`: positivity of `1 ∓ cos θ`.
 * `TauCeti.injOn_one_sub_cos_div_one_add_cos`: `θ ↦ (1 - cos θ)/(1 + cos θ)` is injective on
   `[0, π)`.
@@ -41,6 +44,22 @@ theorem cos_half_sq (θ : ℝ) : cos (θ / 2) ^ 2 = (1 + cos θ) / 2 := by
 theorem sin_half_sq (θ : ℝ) : sin (θ / 2) ^ 2 = (1 - cos θ) / 2 := by
   rw [sin_sq, cos_half_sq]
   ring
+
+/-- The half-angle formula for the cotangent, `cot (θ/2) = (1 + cos θ) / sin θ`. It holds for every
+real `θ`: where `sin θ = 0`, both sides are `0` by the convention `x / 0 = 0`. -/
+theorem cot_half (θ : ℝ) : cot (θ / 2) = (1 + cos θ) / sin θ := by
+  have hs : sin θ = 2 * sin (θ / 2) * cos (θ / 2) := by
+    rw [← sin_two_mul]
+    ring_nf
+  have hc : 1 + cos θ = 2 * cos (θ / 2) ^ 2 := by
+    rw [cos_half_sq]
+    ring
+  rw [cot_eq_cos_div_sin, hs, hc]
+  rcases eq_or_ne (cos (θ / 2)) 0 with h | h
+  · simp [h]
+  rcases eq_or_ne (sin (θ / 2)) 0 with h' | h'
+  · simp [h']
+  field_simp
 
 /-- For `θ ∈ (0, 2π)`, `1 - cos θ` is positive. -/
 theorem one_sub_cos_pos {θ : ℝ} (h₀ : 0 < θ) (h₁ : θ < 2 * π) : 0 < 1 - cos θ :=

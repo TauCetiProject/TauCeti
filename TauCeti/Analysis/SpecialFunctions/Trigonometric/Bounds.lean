@@ -13,7 +13,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 # Trigonometric bounds and nonvanishing criteria
 
 The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
-The sine of `π * x` is positive for `0 < x < 1`.
+The sine of `π * x` is positive for `0 < x < 1`. The cotangent is strictly decreasing on `(0, π)`
+(`TauCeti.strictAntiOn_cot`) and lies below `1 / x` there (`TauCeti.cot_lt_inv`).
 The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
 Schwarz–Christoffel turns. The sine exceeds `1/2` on `(π/6, 5π/6)`. The sine is nonpositive
 on `[π, 2π]` and negative on `(π, 2π)`. For real `a < 1` the quantity `1 - a sin² θ` is
@@ -146,6 +147,27 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
 /-- For `0 < x < 1`, the sine of `π * x` is positive. -/
 theorem sin_pi_mul_pos_of_pos_of_lt_one {x : ℝ} (h₀ : 0 < x) (h₁ : x < 1) : 0 < sin (π * x) :=
   sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
+
+/-- The cotangent is strictly decreasing on `(0, π)`: for `0 < x < y < π`,
+`cot x - cot y = sin (y - x) / (sin x * sin y)` is positive. -/
+theorem strictAntiOn_cot : StrictAntiOn cot (Set.Ioo 0 π) := by
+  intro x hx y hy hxy
+  have hs : 0 < sin (y - x) := sin_pos_of_pos_of_lt_pi (by linarith) (by linarith [hy.2, hx.1])
+  rw [cot_eq_cos_div_sin, cot_eq_cos_div_sin,
+    div_lt_div_iff₀ (sin_pos_of_pos_of_lt_pi hy.1 hy.2) (sin_pos_of_pos_of_lt_pi hx.1 hx.2)]
+  rw [sin_sub] at hs
+  linarith
+
+/-- On `(0, π)` the cotangent lies below the reciprocal: `cot x < 1 / x`. On `(0, π / 2)` this is
+`x < tan x`, and on `[π / 2, π)` the cotangent is nonpositive. -/
+theorem cot_lt_inv {x : ℝ} (h₀ : 0 < x) (h₁ : x < π) : cot x < x⁻¹ := by
+  rcases lt_or_ge x (π / 2) with h | h
+  · rw [← tan_inv_eq_cot]
+    exact inv_strictAnti₀ h₀ (lt_tan h₀ h)
+  · refine lt_of_le_of_lt ?_ (inv_pos.2 h₀)
+    rw [cot_eq_cos_div_sin]
+    exact div_nonpos_of_nonpos_of_nonneg (cos_nonpos_of_pi_div_two_le_of_le h (by linarith))
+      (sin_nonneg_of_nonneg_of_le_pi h₀.le h₁.le)
 
 /-- On `(π/6, 5π/6)`, `sin θ > 1/2`. -/
 theorem two_inv_lt_sin_of_mem_Ioo {θ : ℝ} (hθ : θ ∈ Set.Ioo (π / 6) (5 * π / 6)) :
