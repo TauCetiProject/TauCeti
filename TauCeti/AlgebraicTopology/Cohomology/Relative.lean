@@ -77,7 +77,9 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   isomorphism.
 * `TopCat.singularCohomologyComplRestrict`: the restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for
   `S ⊆ T`, with its composition lemma
-  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict`.
+  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict` and its
+  compatibility `TopCat.singularCohomologyπ_singularCohomologyComplRestrict_apply` with the maps to
+  absolute cohomology.
 
 ## References
 
@@ -290,6 +292,22 @@ lemma singularCohomologyMapIso_hom {P P' : TopPair.{w}} (e : P ≅ P') (n : ℕ)
 lemma singularCohomologyMapIso_inv {P P' : TopPair.{w}} (e : P ≅ P') (n : ℕ) :
     (singularCohomologyMapIso R k M e n).inv = TopPair.singularCohomologyMap e.inv n :=
   (rfl)
+
+/-- Two maps of pairs of subspaces that agree on points induce the same map on relative singular
+cohomology, up to the identifications of the pairs along equalities of the subspaces. This is the
+cohomological counterpart of `TopPair.singularHomologyMap_comp_eqToHom_of_eq`. -/
+lemma singularCohomologyMap_comp_eqToHom_of_eq {X Y : TopCat.{w}} {s t s₁ t₁ : Set X}
+    {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h₁ : s₁ ⊆ t₁} {h' : s' ⊆ t'} {h₁' : s₁' ⊆ t₁'}
+    (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφψ : ∀ x : t, (Hom.fst φ x).val = (Hom.fst ψ ⟨x, ht ▸ x.property⟩).val) (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M) φ n ≫
+        eqToHom (congrArg (TopPair.singularCohomology · R k M n) (ofInclusion_congr h h₁ hs ht)) =
+      eqToHom (congrArg (TopPair.singularCohomology · R k M n) (ofInclusion_congr h' h₁' hs' ht')) ≫
+        TopPair.singularCohomologyMap ψ n := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by ext x; exact Subtype.ext (hφψ x))
+  simp
 
 /-- The map induced on relative singular cohomology by a map of topological pairs is the one
 induced on the relative cochains of the associated map of pairs of simplicial sets. -/
@@ -658,5 +676,19 @@ lemma singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict {S T
   rw [← TopPair.singularCohomologyMap_comp_apply,
     TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_id_compl (h.trans h'))
       (Category.id_comp _)]
+
+/-- Restricting from the complement of `S` to the complement of `T` commutes with the maps to
+`Hⁿ(X)`. -/
+@[simp]
+lemma singularCohomologyπ_singularCohomologyComplRestrict_apply {S T : Set X} (h : S ⊆ T)
+    (n : ℕ) (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    (TopPair.ofSubset Tᶜ).singularCohomologyπ R k M n
+        (singularCohomologyComplRestrict R k M h n a) =
+      (TopPair.ofSubset Sᶜ).singularCohomologyπ R k M n a := by
+  rw [← ConcreteCategory.comp_apply,
+    TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ]
+  -- The sides differ only in the ambient spaces `(ofSubset Tᶜ).fst` and `(ofSubset Sᶜ).fst` of the
+  -- two maps to `Hⁿ(X)`; both are `X` by definition.
+  rfl
 
 end TopCat

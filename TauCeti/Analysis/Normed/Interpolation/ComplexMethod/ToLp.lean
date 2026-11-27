@@ -141,16 +141,6 @@ private theorem sum_mul_innerSumCLM_fibre {g : SimpleFunc α E} (hg : Integrable
 
 end Pairing
 
-/-! ### Exponents -/
-
-/-- The interpolation of the boundary bounds: the exponents `βⱼ = 1 + (j - θ) κ` satisfy
-`(1 - θ) β₀ + θ β₁ = 1`, so `(a N ^ β₀) ^ (1 - θ) (a N ^ β₁) ^ θ = a N` for `a, N ≥ 0`. -/
-private theorem rpow_mul_rpow_interp {a N θ κ : ℝ} (ha : 0 ≤ a) (hN : 0 ≤ N) :
-    (a * N ^ (1 + (0 - θ) * κ)) ^ (1 - θ) * (a * N ^ (1 + (1 - θ) * κ)) ^ θ = a * N := by
-  have hsum : (1 + (0 - θ) * κ) * (1 - θ) + (1 + (1 - θ) * κ) * θ = 1 := by ring
-  rw [Real.mul_rpow_one_sub_mul_mul_rpow ha, ← Real.rpow_mul hN, ← Real.rpow_mul hN,
-    ← Real.rpow_add' hN (by rw [hsum]; exact one_ne_zero), hsum, Real.rpow_one]
-
 /-! ### The analytic family -/
 
 section Family
@@ -187,12 +177,8 @@ private theorem norm_conj_coeff_smul_le (w : E) (z : ℂ) :
 private theorem norm_coeff_le (hθ : θ ∈ Icc (0 : ℝ) 1) (a : ℝ) {z : ℂ}
     (hz : z ∈ verticalClosedStrip 0 1) :
     ‖coeff θ κ a z‖ ≤ Real.exp |κ * Real.log a| := by
-  rw [norm_coeff, mul_assoc]
-  refine Real.exp_le_exp.2 ((le_abs_self _).trans ?_)
-  rw [abs_mul]
-  refine mul_le_of_le_one_left (abs_nonneg _) (abs_le.2 ⟨?_, ?_⟩)
-  · linarith [hz.1, hθ.2]
-  · linarith [hz.2, hθ.1]
+  rw [coeff, mul_assoc, ← ofReal_mul]
+  exact Complex.HadamardThreeLines.norm_exp_sub_mul_le hθ _ hz
 
 /-- The scalar analytic family `Φ z = ∑_w ‖w‖ ^ ((z - θ) κ) ∫ ⟪g_w, F z⟫` over the fibres `g_w`
 of an integrable simple function `g`, for a family `F` in `L¹ + L^∞`. -/
@@ -324,8 +310,12 @@ private theorem norm_integral_inner_le_of_isStripFunction {q : ℝ≥0∞} (hθ 
   -- The three-lines theorem at `θ`.
   have h3 := norm_le_interp_of_mem_verticalClosedStrip₀₁' _ (z := θ)
     (by simpa [verticalClosedStrip] using hθ') hd hB ha hb
+  -- The boundary exponents `βⱼ = 1 + (j - θ) κ` interpolate to `(1 - θ) β₀ + θ β₁ = 1`.
+  have hβ : (1 + (0 - θ) * κ) * (1 - θ) + (1 + (1 - θ) * κ) * θ = 1 := by ring
   rw [pairingFamily_ofReal, ofReal_re,
-    rpow_mul_rpow_interp (norm_nonneg _) ENNReal.toReal_nonneg] at h3
+    Real.mul_rpow_mul_mul_rpow_of_add_eq_one (norm_nonneg _) (sub_add_cancel 1 θ),
+    Real.rpow_rpow_mul_rpow_rpow_of_add_eq ENNReal.toReal_nonneg one_ne_zero hβ,
+    Real.rpow_one] at h3
   exact h3
 
 end ThreeLines

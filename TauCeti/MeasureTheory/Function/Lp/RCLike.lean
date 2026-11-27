@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Real and imaginary parts in `Lp` over an `RCLike` field
@@ -90,9 +91,6 @@ theorem norm_apply_le_two_mul_of_compLp_ofRealCLM
     ‖T f‖ ≤ 2 * C * ‖f‖ := by
   let reLp := (RCLike.reCLM (K := 𝕜)).compLp f
   let imLp := (RCLike.imCLM (K := 𝕜)).compLp f
-  have hnorm_I : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by
-    rw [RCLike.norm_I]
-    split_ifs <;> norm_num
   conv_lhs => rw [← Lp.ofRealCLM_compLp_reCLM_add_I_smul_ofRealCLM_compLp_imCLM f]
   rw [map_add, map_smul, hcomm, hcomm]
   calc ‖(RCLike.ofRealCLM (K := 𝕜)).compLp (T₀ reLp) +
@@ -102,6 +100,7 @@ theorem norm_apply_le_two_mul_of_compLp_ofRealCLM
     _ ≤ ‖T₀ reLp‖ + 1 * ‖T₀ imLp‖ := by
         rw [Lp.norm_ofRealCLM_compLp, norm_smul, Lp.norm_ofRealCLM_compLp]
         gcongr
+        exact RCLike.norm_I_le_one
     _ ≤ C * ‖reLp‖ + 1 * (C * ‖imLp‖) := by gcongr <;> exact hC _
     _ ≤ C * ‖f‖ + 1 * (C * ‖f‖) := by
         gcongr

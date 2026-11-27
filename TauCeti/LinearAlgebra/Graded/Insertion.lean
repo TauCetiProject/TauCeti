@@ -438,7 +438,7 @@ theorem oneSlotEquiv_suffix_val (p t : ℕ) (j : Fin t) :
 
 end Fin
 
-namespace TauCeti.MultilinearMap
+namespace MultilinearMap
 
 section Homogeneous
 
@@ -477,10 +477,6 @@ theorem IsHomogeneous.oneSlot {α : Type uα} {β : Type uβ} {γ : Type uγ}
   ac_rfl
 
 end Homogeneous
-
-end TauCeti.MultilinearMap
-
-namespace MultilinearMap
 
 section Signed
 
@@ -540,10 +536,6 @@ end SignedOneSlot
 
 end Signed
 
-end MultilinearMap
-
-namespace TauCeti.MultilinearMap
-
 section SignedHomogeneous
 
 variable {R : Type uR} {M : Type uM} {N : Type uN}
@@ -569,4 +561,4 @@ grind_pattern IsHomogeneous.signedOneSlot =>
 
 end SignedHomogeneous
 
-end TauCeti.MultilinearMap
+end MultilinearMap

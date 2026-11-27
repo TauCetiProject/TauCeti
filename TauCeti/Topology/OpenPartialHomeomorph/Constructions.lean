@@ -31,11 +31,14 @@ Finite products of open partial homeomorphisms commute with inverses and composi
 * `OpenPartialHomeomorph.subtypeCoord` restricts an open partial homeomorphism to a subtype and
   reads its coordinates through a retraction onto the parametrized slice.
 
+* `OpenPartialHomeomorph.subtypeFst` restricts an open partial homeomorphism with values in a
+  product `Y × W` to the subtype it reads as `t × W`, for a subset `t` of the first factor.
+
 ## References
 
 This construction abstracts the concrete subtype charts in the following Tau Ceti formalizations:
 
-* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/Charts.lean`.
+* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/OfHomeomorph.lean`.
 * `TauCeti.levelSetChart` in `TauCeti/Analysis/Fredholm/LevelSet/Basic.lean`.
 -/
 
@@ -164,6 +167,99 @@ theorem coe_subtypeCoord_symm_apply {z : Z} (hz : ι z ∈ e.target) :
   simp [subtypeCoord, hz]
 
 end SubtypeCoord
+
+section SubtypeFst
+
+variable {W : Type*} [TopologicalSpace W] (e : OpenPartialHomeomorph X (Y × W)) {s : Set X}
+  {t : Set Y} (h : ∀ x ∈ e.source, x ∈ s ↔ (e x).1 ∈ t)
+
+include h in
+/-- On the target of `e`, the inverse of `e` sends the part of `t × W` into `s`. -/
+private theorem symm_prodMap_mem_of_mem_target {z : t × W}
+    (hz : Prod.map Subtype.val id z ∈ e.target) : e.symm (Prod.map Subtype.val id z) ∈ s :=
+  (h _ (e.map_target hz)).2 (by rw [e.right_inv hz]; exact z.1.property)
+
+variable [Nonempty t]
+
+include h in
+open Classical in
+/-- On the source of `e`, a point of `s` is read in `t × W` without moving it. -/
+private theorem prodMap_dite_eq {x : X} (hx : x ∈ e.source) (hxs : x ∈ s) :
+    Prod.map Subtype.val id
+      (if hp : (e x).1 ∈ t then (⟨(e x).1, hp⟩ : t) else Classical.arbitrary t, (e x).2) = e x := by
+  simp [(h x hx).1 hxs]
+
+variable [Nonempty s]
+
+open Classical in
+/-- An open partial homeomorphism `e` of `X` with values in `Y × W` restricts to one of a nonempty
+subset `s` of `X` with values in `t × W`, for a nonempty subset `t` of `Y`, when, on the source of
+`e`, a point lies in `s` exactly when its first coordinate lies in `t`. -/
+noncomputable def subtypeFst : OpenPartialHomeomorph s (t × W) :=
+  e.subtypeCoord s inferInstance (Prod.map Subtype.val id)
+    (fun p ↦ (if hp : p.1 ∈ t then ⟨p.1, hp⟩ else Classical.arbitrary t, p.2))
+    (e.symm_prodMap_mem_of_mem_target h) (e.prodMap_dite_eq h)
+    -- The ascription keeps this hypothesis in `LeftInvOn` form, so the `subtypeCoord` lemmas apply.
+    (show LeftInvOn _ _ _ from fun z _ ↦ by simp [z.1.property])
+    (continuous_subtypeVal.prodMap continuous_id)
+    (by
+      refine ContinuousOn.prodMk ?_ continuous_snd.continuousOn
+      rw [IsInducing.subtypeVal.continuousOn_iff]
+      refine continuous_fst.continuousOn.congr fun p hp ↦ ?_
+      obtain ⟨z, rfl⟩ := hp.2
+      simp)
+
+/-- The source of `subtypeFst` is the part of `s` in the source of `e`. -/
+@[simp]
+theorem subtypeFst_source : (e.subtypeFst h).source = Subtype.val ⁻¹' e.source :=
+  (rfl)
+
+/-- The target of `subtypeFst` is the part of `t × W` in the target of `e`. -/
+@[simp]
+theorem subtypeFst_target :
+    (e.subtypeFst h).target = Prod.map Subtype.val id ⁻¹' e.target :=
+  (rfl)
+
+/-- On the source of `e`, `subtypeFst` reads a point of `s` through `e`. -/
+theorem subtypeFst_apply {y : s} (hy : (y : X) ∈ e.source) :
+    e.subtypeFst h y = (⟨(e y).1, (h _ hy).1 y.property⟩, (e y).2) := by
+  rw [subtypeFst, subtypeCoord_apply]
+  simp [(h _ hy).1 y.property]
+
+/-- The second coordinate of `subtypeFst` is that of `e`. -/
+@[simp]
+theorem snd_subtypeFst_apply (y : s) : (e.subtypeFst h y).2 = (e y).2 :=
+  (rfl)
+
+/-- On its target, the inverse of `subtypeFst` is the inverse of `e`. -/
+@[simp]
+theorem coe_subtypeFst_symm_apply {z : t × W} (hz : Prod.map Subtype.val id z ∈ e.target) :
+    ((e.subtypeFst h).symm z : X) = e.symm (Prod.map Subtype.val id z) := by
+  rw [subtypeFst]
+  exact coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hz
+
+variable (c : OpenPartialHomeomorph t Z)
+
+/-- The source of `subtypeFst` composed with a chart `c` of the first factor is the part of `s` in
+the source of `e` whose first coordinate `c` reads. -/
+theorem mem_subtypeFst_trans_prod_refl_source {y : s} :
+    y ∈ ((e.subtypeFst h).trans (c.prod (OpenPartialHomeomorph.refl W))).source ↔
+      ∃ hy : (y : X) ∈ e.source, (⟨(e y).1, (h _ hy).1 y.property⟩ : t) ∈ c.source := by
+  simp only [trans_source, subtypeFst_source, mem_inter_iff, mem_preimage, prod_source,
+    refl_source, mem_prod, mem_univ, and_true]
+  refine ⟨fun ⟨hy, hc⟩ ↦ ⟨hy, ?_⟩, fun ⟨hy, hc⟩ ↦ ⟨hy, ?_⟩⟩
+  · rwa [subtypeFst_apply _ _ hy] at hc
+  · rwa [subtypeFst_apply _ _ hy]
+
+/-- `subtypeFst` composed with a chart `c` of the first factor reads a point through `e` and then
+`c` in the first factor. -/
+theorem subtypeFst_trans_prod_refl_apply {y : s} (hy : (y : X) ∈ e.source) :
+    (e.subtypeFst h).trans (c.prod (OpenPartialHomeomorph.refl W)) y =
+      (c ⟨(e y).1, (h _ hy).1 y.property⟩, (e y).2) := by
+  rw [trans_apply, subtypeFst_apply _ _ hy]
+  simp only [prod_apply, refl_apply, id_eq]
+
+end SubtypeFst
 
 section Pi
 

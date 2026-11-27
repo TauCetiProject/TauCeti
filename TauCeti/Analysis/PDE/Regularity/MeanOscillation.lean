@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 public import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
-import TauCeti.Analysis.MeanInequalities
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -188,58 +187,28 @@ theorem setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinea
                 ⨍ x in ball x₀ r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) ^ q'⁻¹ *
               (⨍ x in ball x₀ r, ‖W1p.gradient u x‖ ^ (2 * q)) ^ q⁻¹) := by
   have hr : 0 < r := hρ.trans_le hρr
-  set μr := volume.restrict (ball x₀ r)
-  set g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := ⇑(W1p.gradient u)
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
     fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
-  have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hK : 0 ≤ K :=
-    (norm_nonneg (matrixBilinearForm (a x₀) - matrixBilinearForm A)).trans
-      (haK x₀ (mem_ball_self hr))
-  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
-  have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K :=
+  have hθm : AEStronglyMeasurable θ (volume.restrict (ball x₀ r)) :=
+    aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
+  have hθ : ∀ᵐ x ∂volume.restrict (ball x₀ r), 0 ≤ θ x ∧ θ x ≤ K :=
     (ae_restrict_mem measurableSet_ball).mono fun x hx =>
       ⟨norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A), haK x hx⟩
-  -- Hölder's inequality with exponents `q'` and `q` bounds the coefficient term `∫ θ² ‖∇u‖²` of
-  -- the frozen comparison.
-  have hΘ := integral_sq_mul_norm_sq_le_of_ae_le hq hθm hθ hgq
-  set Iθ := ∫ x in ball x₀ r, θ x
-  set Ig := ∫ x in ball x₀ r, ‖g x‖ ^ (2 * q)
-  have hIg : 0 ≤ Ig := integral_nonneg fun x => by positivity
   have key :=
     setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_norm_matrixBilinearForm_sub_le
       hA ha haK hu hball hGc hρ hρr
-  -- Pass to averages, using `|B_ρ| = (ρ / r)^(n + 1) |B_r|`.
-  set V : ℝ := volume.real (ball x₀ r)
-  have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
-  have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * V := by
-    simp only [V, Measure.addHaar_real_ball_of_pos _ _ hρ, Measure.addHaar_real_ball_of_pos _ _ hr,
+  rw [← one_mul (∫ x in ball x₀ r, θ x ^ 2 * ‖W1p.gradient u x‖ ^ 2)] at key
+  -- Pass to averages, using `|B_ρ| = (ρ / r)^(n + 1) |B_r|` and Hölder's inequality with
+  -- exponents `q'` and `q` for the coefficient term `∫ θ² ‖∇u‖²` of the frozen comparison.
+  have hV : 0 < volume.real (ball x₀ r) :=
+    ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
+  have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * volume.real (ball x₀ r) := by
+    simp only [Measure.addHaar_real_ball_of_pos _ _ hρ, Measure.addHaar_real_ball_of_pos _ _ hr,
       finrank_euclideanSpace_fin, div_pow]
     field_simp
-  have havg : ∀ (t : ℝ) (f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
-      ⨍ x in ball x₀ t, f x = (volume.real (ball x₀ t))⁻¹ * ∫ x in ball x₀ t, f x :=
-    fun t f => by rw [setAverage_eq, smul_eq_mul]
-  rw [havg ρ (fun x => ‖g x - ⨍ y in ball x₀ ρ, g y‖ ^ 2),
-    havg r (fun x => ‖g x - ⨍ y in ball x₀ r, g y‖ ^ 2), havg r (fun x => ‖G x - c‖ ^ 2),
-    havg r θ, havg r (fun x => ‖g x‖ ^ (2 * q)), hVρ]
-  have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
-      V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
-    rw [mul_left_comm]
-    exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hV.le)
-      (mul_nonneg (Real.rpow_nonneg hK _) (integral_nonneg_of_ae (hθ.mono fun x hx => hx.1))) hIg
-      hq.symm.inv_add_inv_eq_one
-  rw [hsplit]
-  have hs : 0 < ρ / r := div_pos hρ hr
-  refine (mul_le_mul_of_nonneg_left (key.trans (add_le_add le_rfl
-    (mul_le_mul_of_nonneg_left (add_le_add hΘ le_rfl) (by positivity)))) (by positivity)).trans_eq
-    ?_
-  have hlam : lam ≠ 0 := hA.pos.ne'
-  have hV0 : V ≠ 0 := hV.ne'
-  rw [← inv_div ρ r]
-  simp only [g, V] at hV0 ⊢
-  generalize ρ / r = s at hs ⊢
-  rw [inv_pow]
-  field_simp
+  refine (setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq hV (div_pos hρ hr) hVρ
+    (by have := hA.pos; positivity) zero_le_one hq hθm hθ hgq key).trans_eq ?_
+  rw [inv_div]
   ring
 
 end PDE

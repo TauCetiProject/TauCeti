@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -22,8 +23,18 @@ which is what turns a row count into a dimension: over a field, `[I | A]` has as
 dimension of the code it generates, and `[B | I]` has as many rows as the codimension of the code
 it checks.
 
+Sums of partitioned matrices are computed blockwise (`Matrix.fromCols_add`,
+`Matrix.fromRows_add`), as for `Matrix.fromBlocks_add`.
+
 It also identifies the row-partitioned matrix `(0; 1)`, reindexed along an equivalence
 `e : ι ≃ n₁ ⊕ n₂`, with the frame of the standard basis columns `e⁻¹ (inr j)` of `ι`.
+
+Over a field, `A.mulVec` is surjective exactly when the rows of `A` are linearly independent
+(`Matrix.mulVec_surjective_iff_linearIndependent_row`). Stacking one more row `r` under a matrix
+`A` of full row rank therefore keeps the row rank full exactly when `r` is not a combination
+`c ᵥ* A` of the rows of `A`. For a Jacobian matrix this is the transversality test for a
+hyperplane section: the hyperplane `ℓ = 0` is transverse to the zero set exactly where `ℓ` is not
+a combination of the gradients of the equations.
 
 ## Main declarations
 
@@ -33,13 +44,40 @@ It also identifies the row-partitioned matrix `(0; 1)`, reindexed along an equiv
 * `Matrix.linearIndependent_row_one_fromCols`: the rows of `[I | A]` are linearly independent.
 * `Matrix.linearIndependent_row_fromCols_one`: the rows of `[B | I]` are linearly
   independent.
+* `Matrix.fromCols_add` and `Matrix.fromRows_add`: sums of partitioned matrices are blockwise.
 * `Matrix.fromRows_zero_one_submatrix_equiv`: reindexed along `e : ι ≃ n₁ ⊕ n₂`, the matrix
   `(0; 1)` is the frame of the standard basis columns `e⁻¹ (inr j)`.
+* `Matrix.mulVec_surjective_fromRows_replicateRow_iff`: if `A` has full row rank, the matrix
+  `(A; r)` has full row rank exactly when `r` is not of the form `c ᵥ* A`.
 -/
 
 public section
 
 namespace Matrix
+
+/-- The row indexed by `Sum.inr j` in `A.fromRows (a • 1)` is the scaled standard basis vector. -/
+@[simp]
+theorem row_fromRows_smul_one_inr {R r k : Type*} [MulZeroOneClass R] [DecidableEq k]
+    (A : Matrix r k R) (a : R) (j : k) :
+    (A.fromRows (a • (1 : Matrix k k R))).row (.inr j) = a • Pi.single j (1 : R) := by
+  ext i
+  simp [Matrix.one_apply, Pi.single_apply, eq_comm]
+
+section Add
+
+variable {R m m₁ m₂ n n₁ n₂ : Type*} [Add R]
+
+@[simp]
+theorem fromCols_add (A₁ B₁ : Matrix m n₁ R) (A₂ B₂ : Matrix m n₂ R) :
+    fromCols A₁ A₂ + fromCols B₁ B₂ = fromCols (A₁ + B₁) (A₂ + B₂) := by
+  ext i (j | j) <;> rfl
+
+@[simp]
+theorem fromRows_add (A₁ B₁ : Matrix m₁ n R) (A₂ B₂ : Matrix m₂ n R) :
+    fromRows A₁ A₂ + fromRows B₁ B₂ = fromRows (A₁ + B₁) (A₂ + B₂) := by
+  ext (i | i) j <;> rfl
+
+end Add
 
 variable {R m n₁ n₂ : Type*} [Semiring R]
 
@@ -74,5 +112,28 @@ theorem fromRows_zero_one_submatrix_equiv {R ι n₁ n₂ : Type*} [Zero R] [One
   ext i j
   obtain ⟨i, rfl⟩ := e.symm.surjective i
   rcases i with i | i <;> simp [Matrix.one_apply, Function.comp_def, id_eq]
+
+section Field
+
+variable {K m n : Type*} [Field K] [Fintype n]
+
+/-- Stacking a row `r` under a matrix `A` whose `mulVec` is surjective keeps `mulVec` surjective
+exactly when `r` is not a linear combination `c ᵥ* A` of the rows of `A`. -/
+theorem mulVec_surjective_fromRows_replicateRow_iff [Fintype m] {A : Matrix m n K}
+    (hA : A.mulVec.Surjective) (r : n → K) :
+    (A.fromRows (replicateRow Unit r)).mulVec.Surjective ↔ r ∉ Set.range (· ᵥ* A) := by
+  rw [mulVec_surjective_iff_linearIndependent_row] at hA ⊢
+  have hrow : (A.fromRows (replicateRow Unit r)).row = Sum.elim A.row fun _ ↦ r := by
+    ext (i | i) j <;> simp
+  rw [hrow, linearIndependent_sum]
+  simp only [Sum.elim_comp_inl, Sum.elim_comp_inr, Set.range_const, hA, true_and,
+    linearIndependent_unique_iff (v := fun _ : Unit ↦ r)]
+  have hspan : (Set.range fun c : m → K ↦ c ᵥ* A) = Submodule.span K (Set.range A.row) := by
+    rw [← range_vecMulLinear, LinearMap.coe_range, coe_vecMulLinear]
+  rw [hspan, SetLike.mem_coe, Submodule.disjoint_span_singleton]
+  exact ⟨fun ⟨hr, h⟩ hmem ↦ hr (h hmem), fun h ↦ ⟨fun hr ↦ h (hr ▸ zero_mem _),
+    fun hmem ↦ (h hmem).elim⟩⟩
+
+end Field
 
 end Matrix

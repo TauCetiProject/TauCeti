@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.Constructions

@@ -18,7 +18,9 @@ Translate exactness of consecutive pairs of specified differentials to `ExactAt`
 
 In an abelian category, a complex `K` which is exact in positive degrees, with an epimorphic
 augmentation `K.X 0 ⟶ X` exact at `K.X 0`, maps quasi-isomorphically to `X` placed in degree `0`
-(`ChainComplex.quasiIso_toSingle₀Equiv_symm`). A complex whose differentials factor through short
+(`ChainComplex.quasiIso_toSingle₀Equiv_symm`). Its proof is adapted from the quasi-isomorphism
+proof of Mathlib's `CategoryTheory.ProjectiveResolution.of`, by Markus Himmel, Kim Morrison,
+Jakob von Raumer and Joël Riou. A complex whose differentials factor through short
 exact sequences `0 ⟶ A (p + 1) ⟶ K.X p ⟶ A p ⟶ 0` is of this kind
 (`ChainComplex.exactAt_succ_of_shortExact`, `ChainComplex.exact_d_one_zero_of_shortExact`,
 `ChainComplex.quasiIso_toSingle₀Equiv_symm_of_shortExact`).

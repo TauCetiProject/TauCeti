@@ -21,7 +21,10 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 
 For a twice differentiable function on a finite-dimensional Euclidean space, the divergence of
 its normalized gradient is a positive multiple of the nondivergence minimal graph operator.
-This file establishes the equivalence pointwise. No minimality assertion is used here.
+This file establishes the equivalence pointwise. Equal gradients and proportional second
+derivatives give proportional nondivergence operator values
+(`TauCeti.MinimalGraph.nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two`).
+No minimality assertion is used here.
 
 ## References
 
@@ -81,20 +84,6 @@ theorem hasFDerivAt_areaWeight {u : E → ℝ} {x : E}
 theorem differentiableAt_areaWeight {u : E → ℝ} {x : E}
     (hgrad : DifferentiableAt ℝ (∇ u) x) : DifferentiableAt ℝ (areaWeight u) x :=
   (hasFDerivAt_areaWeight hgrad).differentiableAt
-
-/-- The derivative of the normalized gradient is given by the scalar product rule. -/
-theorem hasFDerivAt_areaFlux {u : E → ℝ} {x : E}
-    (hgrad : DifferentiableAt ℝ (∇ u) x) :
-    HasFDerivAt (areaFlux u)
-      (areaWeight u x • fderiv ℝ (∇ u) x +
-        (((-(1 + ‖∇ u x‖ ^ 2) ^ (-(3 / 2 : ℝ)) • innerSL ℝ (∇ u x)).comp
-          (fderiv ℝ (∇ u) x)).smulRight (∇ u x))) x :=
-  (hasFDerivAt_areaWeight hgrad).smul hgrad.hasFDerivAt
-
-/-- The normalized gradient is differentiable wherever the gradient is differentiable. -/
-theorem differentiableAt_areaFlux {u : E → ℝ} {x : E}
-    (hgrad : DifferentiableAt ℝ (∇ u) x) : DifferentiableAt ℝ (areaFlux u) x :=
-  (hasFDerivAt_areaFlux hgrad).differentiableAt
 
 /-- The reciprocal graph area density is at most one. -/
 theorem areaWeight_le_one (u : E → ℝ) (x : E) : areaWeight u x ≤ 1 := by
@@ -219,10 +208,8 @@ theorem fluxDivergence_eq_rpow_mul_nondivergenceOperator {u : E → ℝ} {x : E}
   let s : ℝ := 1 + ‖∇ u x‖ ^ 2
   have hs : 0 < s := by dsimp [s]; positivity
   have hpow : s ^ (-(1 / 2 : ℝ)) = s * s ^ (-(3 / 2 : ℝ)) := by
-    calc
-      _ = s ^ (1 + -(3 / 2 : ℝ)) := by congr 1; ring
-      _ = s ^ 1 * s ^ (-(3 / 2 : ℝ)) := Real.rpow_add hs 1 _
-      _ = _ := by simp
+    rw [mul_comm, ← Real.rpow_add_one hs.ne']
+    norm_num
   rw [fluxDivergence_def, funext (areaFlux_apply u)]
   rw [TauCeti.trace_fderiv_smul (differentiableAt_areaWeight hgrad) hgrad,
     (hasFDerivAt_areaWeight hgrad).fderiv]
@@ -250,5 +237,24 @@ theorem nondivergenceOperator_eq (u : E → ℝ) (x : E) :
   congr 1
   rw [TauCeti.fderiv_gradient, real_inner_comm]
   exact TauCeti.inner_hessianOperator_left u x (∇ u x) (∇ u x)
+
+/-- Equal gradients and proportional second derivatives give proportional values of the
+nondivergence minimal graph operator at the corresponding points. -/
+theorem nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two
+    {u v : E → ℝ} {x y : E} {a : ℝ} (hgrad : ∇ v x = ∇ u y)
+    (hsecond : iteratedFDeriv ℝ 2 v x = a • iteratedFDeriv ℝ 2 u y) :
+    nondivergenceOperator v x = a * nondivergenceOperator u y := by
+  have hlap : Δ v x = a * Δ u y := by
+    rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis v
+      (stdOrthonormalBasis ℝ E),
+      InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis u
+        (stdOrthonormalBasis ℝ E)]
+    simp_rw [hsecond, smul_apply, smul_eq_mul]
+    rw [Finset.mul_sum]
+  have hH := congrArg (fun A : E [×2]→L[ℝ] ℝ ↦ A ![∇ u y, ∇ u y]) hsecond
+  simp only [smul_apply, smul_eq_mul, iteratedFDeriv_two_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one] at hH
+  rw [nondivergenceOperator_eq, nondivergenceOperator_eq, hgrad, hlap, hH]
+  ring
 
 end TauCeti.MinimalGraph

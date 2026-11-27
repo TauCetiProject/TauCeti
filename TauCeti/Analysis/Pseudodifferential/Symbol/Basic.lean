@@ -63,7 +63,8 @@ coefficient vanishing at all large frequencies is smoothing
 vanishes depends on the compact set of positions
 (`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`), while in positive
 dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`); it is a symbol of
-no negative order (`TauCeti.Symbol.not_exists_coefficient_eq_const`).
+no negative order (`TauCeti.Symbol.not_exists_coefficient_eq_const`). On `ℝ⁰`, where the only
+frequency is `0`, every symbol is smoothing (`TauCeti.Symbol.isSmoothing_of_dim_eq_zero`).
 
 The estimates are only required locally uniformly in `x`. The predicate `TauCeti.Symbol.IsUniform`
 asks for constants independent of `x`, and `TauCeti.Symbol.HasCompactSpatialSupport` asks that the
@@ -424,9 +425,8 @@ theorem HasCompactSpatialSupport.neg {a : Symbol n V W m} (ha : a.HasCompactSpat
   exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
 
 theorem HasCompactSpatialSupport.sub {a b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport := by
-  rw [sub_eq_add_neg]
-  exact ha.add hb.neg
+    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport :=
+  sub_eq_add_neg a b ▸ ha.add hb.neg
 
 end Module
 
@@ -740,6 +740,15 @@ theorem frequencyLaplacian_eq_sum (a : Symbol n V W m) :
       ∑ j, inclusion (by linarith) (frequencyDeriv j (frequencyDeriv (m := m) j a)) := by
   simp [frequencyLaplacian]
 
+/-- Mixed derivatives of `Δ_ξ a` are sums of those of `a` with two more frequency derivatives. -/
+@[simp]
+theorem mixedDeriv_frequencyLaplacian (a : Symbol n V W m) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (frequencyLaplacian a).coefficient x ξ =
+      ∑ j, mixedDeriv α (β ++ [j, j]) a.coefficient x ξ := by
+  simp [frequencyLaplacian_eq_sum, coefficient_sum, coefficient_inclusion,
+    mixedDeriv_sum fun _ _ => Symbol.contDiff_coefficient _]
+
 /-- The iterated frequency Laplacian `Δ_ξ^N a` of a symbol of order `m`, a symbol of order
 `m - 2N`. -/
 def frequencyLaplacianPow : (N : ℕ) → {m : ℝ} → Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2 * N)
@@ -759,14 +768,33 @@ theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
     (frequencyLaplacianPow (N + 1) a).coefficient =
       (frequencyLaplacian (frequencyLaplacianPow N a)).coefficient := by
   induction N generalizing m with
-  | zero =>
-    funext ⟨x, ξ⟩
-    simp only [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacian,
-      coefficient_frequencyLaplacianPow_zero]
+  | zero => exact funext fun ⟨x, ξ⟩ => by simp [coefficient_frequencyLaplacianPow_succ]
   | succ N ih =>
     funext ⟨x, ξ⟩
     rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
       coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
+
+/-- **Locality of the frequency Laplacian.** If at a position `x` the coefficients of `a` and `b`
+agree for frequencies near `ξ`, then so do the coefficients of `Δ_ξ^N a` and `Δ_ξ^N b`. -/
+theorem _root_.Filter.EventuallyEq.coefficient_frequencyLaplacianPow {m' : ℝ} {a : Symbol n V W m}
+    {b : Symbol n V W m'} {x ξ : CoordinateSpace n}
+    (h : (fun η => a.coefficient (x, η)) =ᶠ[nhds ξ] fun η => b.coefficient (x, η)) (N : ℕ) :
+    (fun η => (frequencyLaplacianPow N a).coefficient (x, η)) =ᶠ[nhds ξ]
+      fun η => (frequencyLaplacianPow N b).coefficient (x, η) := by
+  induction N with
+  | zero => simpa using h
+  | succ N ih =>
+    filter_upwards [Filter.eventually_all.2 fun j => (ih.coordinateDeriv [j]).coordinateDeriv [j]]
+      with η hη
+    simp [coefficient_frequencyLaplacianPow_succ', hη]
+
+/-- If `a` vanishes at `x` for all frequencies in an open set `U`, then so does `Δ_ξ^N a`. -/
+theorem coefficient_frequencyLaplacianPow_eq_zero_of_isOpen (a : Symbol n V W m)
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U) (x : CoordinateSpace n)
+    (ha : ∀ ξ ∈ U, a.coefficient (x, ξ) = 0) (N : ℕ) {ξ : CoordinateSpace n} (hξ : ξ ∈ U) :
+    (frequencyLaplacianPow N a).coefficient (x, ξ) = 0 := by
+  simpa using (Filter.EventuallyEq.coefficient_frequencyLaplacianPow (b := (0 : Symbol n V W m))
+    (Filter.eventually_of_mem (hU.mem_nhds hξ) fun η hη => by simpa using ha η hη) N).eq_of_nhds
 
 /-- If a symbol vanishes for all frequencies at the position `x`, so does each of its frequency
 derivatives. -/
@@ -1346,42 +1374,39 @@ theorem IsSmoothing.comp_left {a : Symbol n V W m} (ha : a.IsSmoothing) (b : Sym
   obtain ⟨a', ha'⟩ := ha (m'' - m')
   exact ⟨Symbol.inclusion (by linarith) (b.comp a'), funext fun p => by simp [ha']⟩
 
-/-- The symbol estimates of every order `m` for a smooth coefficient that vanishes, on each compact
-set `K` of positions, at all frequencies of norm at least some radius `R_K`. -/
-private theorem exists_bound_of_forall_isCompact_eq_zero
-    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+/-- **Uniform estimates for compact families vanishing at large frequencies.** Smooth `f y`, for `y`
+in a compact `Y`, with jointly continuous jets, vanishing on each compact `K` of positions beyond a
+radius `R_K` independent of `y`, satisfy the estimates of every order on `K`, uniformly in `y`. -/
+theorem exists_bound_of_continuous_iteratedFDeriv_of_eq_zero {Y : Type*} [TopologicalSpace Y]
+    [CompactSpace Y] {f : Y → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
+    (hf : ∀ y, ContDiff ℝ ∞ (f y)) (hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦ iteratedFDeriv ℝ k (f p.1) p.2))
     (hR : ∀ K : Set (CoordinateSpace n), IsCompact K →
-      ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0)
+      ∃ R, ∀ y, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → f y (x, ξ) = 0)
     (m : ℝ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β f x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  -- The radius is taken on the closed `1`-neighbourhood of `K`, so that the coefficient vanishes
-  -- on a neighbourhood of each `(x, ξ)` with `x ∈ K` and `‖ξ‖ > R`; on `K × closedBall 0 R` the
-  -- continuous quotient of the derivative by the weight is bounded.
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ y, ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (f y) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  -- With `R` for the `1`-neighbourhood of `K`, `f y` vanishes near `(x, ξ)` if `x ∈ K`, `‖ξ‖ > R`.
   obtain ⟨R, hR⟩ := hR _ (hK.cthickening (r := 1))
-  have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
-      (1 + ‖p.2‖ ^ 2) ^ ((m - β.length) / 2) :=
-    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
-  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R))
-    |>.exists_bound_of_continuousOn ((hf.mixedDeriv α β).continuous.norm.div
-      hw fun p => (rpow_weight_pos p.2 _).ne').continuousOn
-  refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
+  have hw : Continuous fun p : Y × (CoordinateSpace n × CoordinateSpace n) =>
+      (1 + ‖p.2.2‖ ^ 2) ^ ((m - β.length) / 2) :=
+    (continuous_const.add (continuous_snd.snd.norm.pow 2)).rpow_const fun p =>
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2.2‖ ^ 2).ne'
+  obtain ⟨M, hM⟩ := (isCompact_univ.prod (hK.prod (isCompact_closedBall 0 R)))
+    |>.exists_bound_of_continuousOn ((hjets (α.length + β.length)).norm.div
+      hw fun p => (rpow_weight_pos p.2.2 _).ne').continuousOn
+  refine ⟨max M 0, le_max_right _ _, fun y x hx ξ => ?_⟩
   rcases le_or_gt ‖ξ‖ R with hξ | hξ
-  · have h := hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩
-    rw [Real.norm_eq_abs, Pi.div_apply] at h
-    rw [← div_le_iff₀ (rpow_weight_pos ξ _)]
-    exact (le_abs_self _).trans (h.trans (le_max_left M 0))
-  · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) =ᶠ[nhds x] 0 := by
-      filter_upwards [Metric.ball_mem_nhds x one_pos] with y hy
-      have hyK : y ∈ Metric.cthickening 1 K :=
-        Metric.thickening_subset_cthickening 1 K (Metric.mem_thickening_iff.2 ⟨x, hx, hy⟩)
-      have hy0 : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
-        Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
-          fun η hη => hR y hyK η (le_of_lt hη)
-      rw [(hy0.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
-    rw [mixedDeriv_def, (hzero.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply,
-      norm_zero]
+  · have h := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans
+      (hM (y, x, ξ) ⟨Set.mem_univ _, hx, mem_closedBall_zero_iff.2 hξ⟩))
+    rw [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
+    exact (norm_mixedDeriv_le α β ((hf y).of_le (by simp)) x ξ).trans
+      (h.trans (mul_le_mul_of_nonneg_right (le_max_left M 0) (rpow_weight_pos ξ _).le))
+  · have hzero : f y =ᶠ[nhds (x, ξ)] 0 := by
+      filter_upwards [prod_mem_nhds (mem_nhdsSet_iff_forall.1 (Metric.cthickening_mem_nhdsSet K
+        one_pos) x hx) ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)] with q hq
+      exact hR y q.1 hq.1 q.2 hq.2.le
+    rw [hzero.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
     exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
 
 /-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
@@ -1390,8 +1415,9 @@ def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V 
     (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) : Symbol n V W m where
   coefficient := f
   contDiff_coefficient := hf
-  exists_bound _ hK α β := exists_bound_of_forall_isCompact_eq_zero hf
-    (fun _ _ => ⟨R, fun x _ ξ hξ => hR x ξ hξ⟩) m hK α β
+  exists_bound _ hK α β := (exists_bound_of_continuous_iteratedFDeriv_of_eq_zero (Y := Unit)
+    (fun _ => hf) (fun _ => (hf.continuous_iteratedFDeriv (by simp)).comp continuous_snd)
+    (fun _ _ => ⟨R, fun _ x _ ξ hξ => hR x ξ hξ⟩) m hK α β).imp fun _ h => ⟨h.1, h.2 ()⟩
 
 @[simp]
 theorem coefficient_ofBoundedFrequencySupport
@@ -1415,7 +1441,9 @@ theorem isSmoothing_of_forall_isCompact_coefficient_eq_zero {a : Symbol n V W m}
     (ha : ∀ K : Set (CoordinateSpace n), IsCompact K →
       ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
   isSmoothing_iff_forall_exists_bound.2 fun m' _ hK α β =>
-    exists_bound_of_forall_isCompact_eq_zero a.contDiff_coefficient ha m' hK α β
+    (exists_bound_of_continuous_iteratedFDeriv_of_eq_zero (fun _ : Unit => a.contDiff_coefficient)
+      (fun _ => (a.contDiff_coefficient.continuous_iteratedFDeriv (by simp)).comp continuous_snd)
+      (fun K hK => (ha K hK).imp fun _ h _ => h) m' hK α β).imp fun _ h => ⟨h.1, h.2 ()⟩
 
 /-- A symbol vanishing at every frequency of norm at least `R` is smoothing. -/
 theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
@@ -1446,12 +1474,22 @@ theorem not_exists_coefficient_eq_const [NeZero n] {T : V →L[ℂ] W} (hT : T �
   linarith
 
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
-`-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
+`-2`. On `ℝ⁰` every symbol is smoothing (`TauCeti.Symbol.isSmoothing_of_dim_eq_zero`). -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     (const T : Symbol n V W 0).IsSmoothing ↔ T = 0 := by
   refine ⟨fun h => of_not_not fun hT => ?_, fun h => h ▸ fun _ => ⟨0, by funext p; simp⟩⟩
   have : NeZero n := ⟨hn⟩
   exact not_exists_coefficient_eq_const hT (by norm_num) ((h (-2)).imp fun b hb _ => by simp [hb])
+
+/-- **Symbols on `ℝ⁰` are smoothing.** The only frequency is `0`, where `⟨ξ⟩ = 1`, so the estimates
+of every order hold with the same constants. -/
+theorem isSmoothing_of_dim_eq_zero (hn : n = 0) (a : Symbol n V W m) : a.IsSmoothing := by
+  subst hn
+  refine isSmoothing_iff_forall_exists_bound.2 fun m' K hK α β ↦ ?_
+  obtain rfl : α = [] := List.eq_nil_iff_forall_not_mem.2 fun i ↦ i.elim0
+  obtain rfl : β = [] := List.eq_nil_iff_forall_not_mem.2 fun i ↦ i.elim0
+  obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK [] []
+  exact ⟨C, hC0, fun x hx ξ ↦ by simpa [Subsingleton.elim ξ 0] using hC x hx ξ⟩
 
 end Smoothing
 

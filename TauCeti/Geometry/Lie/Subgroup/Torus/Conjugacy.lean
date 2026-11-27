@@ -38,6 +38,8 @@ cover all of `G` as soon as `lieExp` is known to be surjective, which is a separ
   cover exactly the image of the exponential map.
 * `TauCeti.Lie.IsMaximalTorus.exists_map_conj_le`: a torus is conjugate into any maximal torus.
 * `TauCeti.Lie.IsMaximalTorus.exists_map_conj_eq`: **any two maximal tori are conjugate**.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_map_conj_le_of_le`: a torus contained in a closed
+  subgroup `K` is conjugate into a maximal torus contained in `K` by an element of `K`.
 * `TauCeti.Lie.IsMaximalTorus.exists_mem_map_conj_eq_of_le`: two maximal tori contained in a closed
   subgroup `K` are conjugate by an element of `K`.
 * `TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_map_conj_eq_of_le`: they are even
@@ -140,11 +142,11 @@ theorem IsMaximalTorus.exists_map_conj_eq {S T : Subgroup G} (hS : IsMaximalToru
   obtain ⟨g, hg⟩ := hT.exists_map_conj_le I hS.isTorus
   exact ⟨g, (hS.map_conj g).eq_of_le hT.isTorus hg⟩
 
-/-- Two maximal tori of a compact Lie group that lie in a closed subgroup `K` are conjugate by an
-element of `K`. -/
-theorem IsMaximalTorus.exists_mem_map_conj_eq_of_le {K S T : Subgroup G}
-    (hK : IsClosed (K : Set G)) (hS : IsMaximalTorus S) (hT : IsMaximalTorus T)
-    (hSK : S ≤ K) (hTK : T ≤ K) : ∃ c ∈ K, S.map (MulAut.conj c).toMonoidHom = T := by
+/-- A torus contained in a closed subgroup `K` of a compact Lie group is conjugate into any maximal
+torus contained in `K`, by an element of `K`. -/
+theorem IsMaximalTorus.exists_mem_map_conj_le_of_le {K S T : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hT : IsMaximalTorus T) (hS : IsTorus S)
+    (hSK : S ≤ K) (hTK : T ≤ K) : ∃ c ∈ K, S.map (MulAut.conj c).toMonoidHom ≤ T := by
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation
@@ -157,11 +159,24 @@ theorem IsMaximalTorus.exists_mem_map_conj_eq_of_le {K S T : Subgroup G}
   let _ : ChartedSpace L K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, L) ∞ K := d.lieGroup
   let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
-  obtain ⟨c, hc⟩ := (hS.subgroupOf hSK).exists_map_conj_eq 𝓘(ℝ, L) (hT.subgroupOf hTK)
-  refine ⟨c, c.property, (hS.map_conj c).eq_of_le hT.isTorus ?_⟩
+  -- A maximal torus `S'` of `K` containing `S` is conjugate in `K` to `T`.
+  obtain ⟨S', hS', hSS'⟩ := (hS.subgroupOf hSK).exists_isMaximalTorus_le 𝓘(ℝ, L)
+  obtain ⟨c, hc⟩ := hS'.exists_map_conj_eq 𝓘(ℝ, L) (hT.subgroupOf hTK)
+  refine ⟨c, c.property, ?_⟩
   rintro _ ⟨s, hs, rfl⟩
-  have hmem : MulAut.conj c ⟨s, hSK hs⟩ ∈ T.subgroupOf K := hc ▸ ⟨_, hs, rfl⟩
-  exact hmem
+  have hmem : MulAut.conj c ⟨s, hSK hs⟩ ∈ T.subgroupOf K :=
+    hc ▸ ⟨_, hSS' (Subgroup.mem_subgroupOf.mpr hs), rfl⟩
+  simpa only [Subgroup.mem_subgroupOf, MulAut.conj_apply, Subgroup.coe_mul,
+    InvMemClass.coe_inv, MulEquiv.coe_toMonoidHom] using hmem
+
+/-- Two maximal tori of a compact Lie group that lie in a closed subgroup `K` are conjugate by an
+element of `K`. -/
+theorem IsMaximalTorus.exists_mem_map_conj_eq_of_le {K S T : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hS : IsMaximalTorus S) (hT : IsMaximalTorus T)
+    (hSK : S ≤ K) (hTK : T ≤ K) : ∃ c ∈ K, S.map (MulAut.conj c).toMonoidHom = T := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  obtain ⟨c, hc, hle⟩ := hT.exists_mem_map_conj_le_of_le I hK hS.isTorus hSK hTK
+  exact ⟨c, hc, (hS.map_conj c).eq_of_le hT.isTorus hle⟩
 
 /-- Two maximal tori of a compact Lie group that lie in a closed subgroup `K` are conjugate by an
 element of the identity component of `K`. -/
@@ -171,13 +186,10 @@ theorem IsMaximalTorus.exists_mem_connectedComponentIn_map_conj_eq_of_le {K S T 
     ∃ c ∈ connectedComponentIn (K : Set G) 1, S.map (MulAut.conj c).toMonoidHom = T := by
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   -- The identity component of `K`, as a subgroup of `G`; it is closed because `K` is.
-  let K₀ : Subgroup G := (Subgroup.connectedComponentOfOne K).map K.subtype
-  have hK₀ : (K₀ : Set G) = connectedComponentIn (K : Set G) 1 := by
-    rw [Subgroup.coe_map, Subgroup.coe_connectedComponentOfOne, Subgroup.coe_subtype,
-      connectedComponentIn_eq_image K.one_mem]
-    -- The identity `1 : K` is `⟨1, K.one_mem⟩` by definition.
-    rfl
-  have hK₀closed : IsClosed (K₀ : Set G) := hK₀ ▸ hK.connectedComponentIn
+  let K₀ : Subgroup G := K.ambientConnectedComponentOfOne
+  have hK₀ : (K₀ : Set G) = connectedComponentIn (K : Set G) 1 :=
+    K.coe_ambientConnectedComponentOfOne
+  have hK₀closed : IsClosed (K₀ : Set G) := K.isClosed_ambientConnectedComponentOfOne hK
   -- A torus in `K` is connected and contains `1`, so it lies in `K₀`.
   have hle : ∀ {R : Subgroup G}, IsTorus R → R ≤ K → R ≤ K₀ := fun {R} hR hRK ↦ by
     rw [← SetLike.coe_subset_coe, hK₀]

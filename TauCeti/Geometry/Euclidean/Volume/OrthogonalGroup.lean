@@ -147,29 +147,13 @@ private theorem sphereReflection_last (u : sphere (0 : EuclideanSpace ℝ (Fin (
 last column is `u`. -/
 private def sphereSection (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     Matrix.orthogonalGroup (Fin (n + 1)) ℝ :=
-  ⟨LinearMap.toMatrix (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis
-      (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis (sphereReflection u).toLinearEquiv,
-    (sphereReflection u).toMatrix_mem_unitaryGroup _ _⟩
-
-private theorem toLinearIsometryEquiv_sphereSection
-    (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    Matrix.UnitaryGroup.toLinearIsometryEquiv (sphereSection u) = sphereReflection u := by
-  ext x i
-  have h := congrFun (LinearMap.toMatrix_mulVec_repr
-    (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis
-    (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis
-    ((sphereReflection u).toLinearEquiv : _ →ₗ[ℝ] _) x) i
-  have hrepr : ⇑((EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.repr x) = x.ofLp := by
-    ext j
-    simp
-  rw [hrepr] at h
-  simpa [sphereSection] using h
+  Matrix.UnitaryGroup.ofLinearIsometryEquiv (sphereReflection u)
 
 private theorem sphereSection_mul_self (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     sphereSection u * sphereSection u = 1 := by
-  apply Matrix.UnitaryGroup.toLinearIsometryEquiv_injective
+  apply Matrix.UnitaryGroup.toLinearIsometryEquiv.injective
   ext x : 1
-  simp [toLinearIsometryEquiv_sphereSection, sphereReflection]
+  simp [sphereSection, sphereReflection]
 
 private theorem measurable_sphereSection :
     Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
@@ -183,11 +167,9 @@ private theorem measurable_sphereSection :
         (EuclideanSpace.single j (1 : ℝ)) /
         ‖EuclideanSpace.single (Fin.last n) (1 : ℝ) - u‖ ^ 2 :=
     (hw.inner continuous_const).measurable.div (hw.norm.pow 2).measurable
-  simp only [sphereSection, LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis,
-    OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr,
-    EuclideanSpace.basisFun_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-    sphereReflection, Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply,
-    PiLp.neg_apply, PiLp.sub_apply, PiLp.smul_apply, smul_eq_mul]
+  simp only [sphereSection, Matrix.UnitaryGroup.ofLinearIsometryEquiv_apply, sphereReflection,
+    Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply, PiLp.neg_apply,
+    PiLp.sub_apply, PiLp.smul_apply, smul_eq_mul]
   fun_prop
 
 /-- The trivialization map `Sⁿ × O(n) → O(n + 1)`, `(u, h) ↦ s(u) h`. -/
@@ -232,7 +214,7 @@ private theorem orthogonalGroupLastColumn_decompose
     ((exists_orthogonalBlockSucc_eq_iff_mulVec_single ℝ n _).1 ⟨p.2, rfl⟩)
   apply Subtype.ext
   rw [coe_orthogonalGroupLastColumn, decompose, Matrix.UnitaryGroup.toLinearIsometryEquiv_mul_apply,
-    hfix, toLinearIsometryEquiv_sphereSection]
+    hfix, sphereSection, Matrix.UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv]
   exact sphereReflection_last p.1
 
 /-- The orbit map `O(n + 1) → Sⁿ` is surjective: `O(n + 1)` acts transitively on the unit
@@ -274,7 +256,8 @@ private theorem exists_orthogonalBlockSucc_eq_fibreShift
     rw [← sphereReflection_last (rotateSphere g u), sphereReflection,
       Submodule.reflection_reflection]
   simpa only [fibreShift, Matrix.UnitaryGroup.toLinearIsometryEquiv_mul_apply,
-    toLinearIsometryEquiv_sphereSection, sphereReflection_last,
+    sphereSection, Matrix.UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv,
+    sphereReflection_last,
     ← coe_rotateSphere]
     using hrot
 

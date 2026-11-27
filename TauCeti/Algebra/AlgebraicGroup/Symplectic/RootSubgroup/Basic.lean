@@ -352,20 +352,12 @@ theorem mapPointsFunctor_rootSubgroupCoordinateMap_app
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) root)).app A q = rootSubgroupPoints root q := by
-  let q₀ := toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
-  have hgeneric := congrArg
-    (fun τ => τ.app (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) q₀)
-    (mapPointsFunctor_rootSubgroupCoordinateMap (R := R) root)
-  rw [rootSubgroupPointsMap_app, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    AlgHom.id_comp] at hgeneric
-  -- Expose the monoid hom beneath `GrpCat.ofHom` so naturality can rewrite the point.
-  change toConv (rootSubgroupCoordinateMap (R := R) root).hom.toAlgHom =
-    rootSubgroupPoints root q₀ at hgeneric
-  have h := mapValue_rootSubgroupPoints root q.ofConv q₀
-  rw [← hgeneric] at h
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
-  simp only [AlgHom.mapValue_apply, toConv_ofConv, q₀, AlgHom.comp_id] at h
-  exact h
+  rw [rootSubgroupCoordinateMap, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap_app,
+    rootSubgroupPointsMap_app]
+  -- Applying `GrpCat.ofHom (rootSubgroupPoints root)` is applying `rootSubgroupPoints root`;
+  -- `GrpCat.ofHom_apply` does not fire because the source is spelled `pointsFunctor.obj`.
+  refine (mapValue_rootSubgroupPoints root q.ofConv _).trans ?_
+  rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id, toConv_ofConv]
 
 /-- Over any value algebra, the positive coordinate morphism induces the constructed point
 homomorphism. -/
@@ -483,7 +475,7 @@ coordinate morphism through the symplectic quotient. -/
 theorem coordinateMap_comp_positiveLongRootSubgroupCoordinateMap (i : Fin m) :
     coordinateMap R m ≫ positiveLongRootSubgroupCoordinateMap i =
       GeneralLinear.rootSubgroupCoordinateMap
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) :=
+        (Fin.finSumFinEquiv_inl_ne_inr i i) :=
   coordinateMap_comp_rootSubgroupCoordinateMap_of_hom (.positiveLong i) _ fun A c => by
     rw [GLSymplecticFin.RootSubgroupIndex.hom_positiveLong,
       GLSymplecticFin.positiveLongRootTransvectionHom_apply,
@@ -495,7 +487,7 @@ coordinate morphism through the symplectic quotient. -/
 theorem coordinateMap_comp_negativeLongRootSubgroupCoordinateMap (i : Fin m) :
     coordinateMap R m ≫ negativeLongRootSubgroupCoordinateMap i =
       GeneralLinear.rootSubgroupCoordinateMap
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) :=
+        (Fin.finSumFinEquiv_inr_ne_inl i i) :=
   coordinateMap_comp_rootSubgroupCoordinateMap_of_hom (.negativeLong i) _ fun A c => by
     rw [GLSymplecticFin.RootSubgroupIndex.hom_negativeLong,
       GLSymplecticFin.negativeLongRootTransvectionHom_apply,
@@ -619,7 +611,7 @@ general-linear root subgroup. -/
 theorem positiveLongRootSubgroup_comp_inclusion (i : Fin m) :
     positiveLongRootSubgroup (R := R) i ≫ inclusion R m =
       GeneralLinear.rootSubgroup (R := R)
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) :=
+        (Fin.finSumFinEquiv_inl_ne_inr i i) :=
   rootSubgroup_comp_inclusion_of_coordinateMap (.positiveLong i) _
     (coordinateMap_comp_positiveLongRootSubgroupCoordinateMap i)
 
@@ -629,7 +621,7 @@ general-linear root subgroup. -/
 theorem negativeLongRootSubgroup_comp_inclusion (i : Fin m) :
     negativeLongRootSubgroup (R := R) i ≫ inclusion R m =
       GeneralLinear.rootSubgroup (R := R)
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) :=
+        (Fin.finSumFinEquiv_inr_ne_inl i i) :=
   rootSubgroup_comp_inclusion_of_coordinateMap (.negativeLong i) _
     (coordinateMap_comp_negativeLongRootSubgroupCoordinateMap i)
 

@@ -21,6 +21,8 @@ the smooth Lie functor.
 * `ContinuousMonoidHom.lieMap` is the Lie map of a continuous homomorphism.
 * `ContinuousMonoidHom.lieMap_comp` gives its composition law.
 * `ContinuousMonoidHom.lieMap_injective` gives faithfulness on preconnected sources.
+* `ContinuousMonoidHom.lieMap_apply_eq_of_lieExp`: a real-linear map `φ` with
+  `exp ∘ φ = f ∘ exp` is the Lie map of `f`.
 -/
 
 public section
@@ -113,5 +115,17 @@ theorem lieMap_injective [PreconnectedSpace G] :
   ext x
   simpa only [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism] using
     congrArg (fun k : ContMDiffMonoidMorphism I I' ∞ G G' ↦ k x) hsmooth
+
+/-- **The Lie map is determined by the exponential.** A real-linear map `φ : 𝔤 → 𝔤'` with
+`exp(φ X) = f(exp X)` for every `X` is the Lie map of `f`. -/
+theorem lieMap_apply_eq_of_lieExp [T2Space G] [BoundarylessManifold I G] [T2Space G']
+    [BoundarylessManifold I' G'] (f : G →ₜ* G')
+    (φ : LeftInvariantDerivation I G →ₗ[ℝ] LeftInvariantDerivation I' G')
+    (h : ∀ X, _root_.lieExp (φ X) = f (_root_.lieExp X)) (X : LeftInvariantDerivation I G) :
+    lieMap (I := I) (I' := I') f X = φ X := by
+  apply oneParameterSubgroup_injective (I := I') (G := G')
+  ext t
+  rw [← ofAdd_toAdd t, oneParameterSubgroup_apply, oneParameterSubgroup_apply, ← map_smul,
+    ← map_lieExp, ← map_smul, h]
 
 end ContinuousMonoidHom

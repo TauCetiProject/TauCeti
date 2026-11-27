@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Basic
 public import TauCeti.RingTheory.Norm.Complex
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.Order.Ring.Units
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 
 /-!
@@ -69,10 +70,7 @@ def realBrEquivRelative :
   letI : TopologicalSpace (Additive ℂˣ) := ⊥
   letI : DiscreteTopology (Additive ℂˣ) := ⟨rfl⟩
   letI : ContinuousSMul (ℂ ≃ₐ[ℝ] ℂ) (Additive ℂˣ) := ⟨continuous_of_discreteTopology⟩
-  let φ : (ℂ ≃ₐ[ℝ] ℂ) ≃ₜ* AbsoluteGaloisGroup ℝ :=
-    { eC.autCongr.symm with
-      continuous_toFun := continuous_of_discreteTopology
-      continuous_invFun := continuous_of_discreteTopology }
+  let φ : (ℂ ≃ₐ[ℝ] ℂ) ≃ₜ* AbsoluteGaloisGroup ℝ := IsSepClosure.galEquivAbsoluteGaloisGroup ℝ ℂ
   let e : UnitsCoeff ℝ ≃+ Additive ℂˣ :=
     (Units.mapEquiv eC.toRingEquiv.toMulEquiv).toAdditive
   have he : ∀ (h : ℂ ≃ₐ[ℝ] ℂ) (m : UnitsCoeff ℝ), e (φ h • m) = h • e m := by
@@ -81,9 +79,8 @@ def realBrEquivRelative :
     apply Units.ext
     -- The action on units is evaluation by the field automorphism. After taking values,
     -- `Units.mapEquiv` and the additive type tags reduce to the underlying field map.
-    change eC ((eC.autCongr.symm h) (m.toMul : SeparableClosure ℝ)) =
-      h (eC (m.toMul : SeparableClosure ℝ))
-    simp [AlgEquiv.autCongr_symm, AlgEquiv.autCongr_apply]
+    change eC (φ h (m.toMul : SeparableClosure ℝ)) = h (eC (m.toMul : SeparableClosure ℝ))
+    simp [φ, eC]
   exact (unitsRepH2Equiv ℝ).symm.trans
     ((ContCohomology.explicitMap2Equiv (AbsoluteGaloisGroup ℝ) (UnitsCoeff ℝ)
       (ℂ ≃ₐ[ℝ] ℂ) (Additive ℂˣ) φ e continuous_of_discreteTopology

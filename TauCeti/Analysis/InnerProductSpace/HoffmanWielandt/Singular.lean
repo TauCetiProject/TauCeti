@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
 public import TauCeti.Analysis.InnerProductSpace.KyFan
 

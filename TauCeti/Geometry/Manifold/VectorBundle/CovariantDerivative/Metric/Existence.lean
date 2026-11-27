@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Existence
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 import TauCeti.Analysis.InnerProductSpace.Dual
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
@@ -33,6 +33,8 @@ dimension zero and empty bases are included.
 
 * `CovariantDerivative.metricCorrected`: correction of an arbitrary native connection.
 * `CovariantDerivative.isMetricCompatible_metricCorrected`: metric compatibility.
+* `CovariantDerivative.derivMetricTensor_eq_inner_metricCorrection_add`: the metric defect is the
+  symmetric part of the correction.
 * `CovariantDerivative.IsMetricCompatible.metricCorrected_eq`: exact fixedness.
 * `CovariantDerivative.ContMDiffCovariantDerivative.metricCorrected`: preservation of
   `C^n` regularity for every `n : ℕ∞`, including smoothness.
@@ -179,6 +181,18 @@ theorem isMetricCompatible_metricCorrected (cov : CovariantDerivative I F V) :
     inner_metricCorrection, real_inner_comm (cov.metricCorrection x v X) u,
     hsymm]
   ring
+
+/-- The metric defect of a connection is the symmetric part of its correction `C`:
+`X ⟪u, v⟫ - ⟪∇_X u, v⟫ - ⟪u, ∇_X v⟫ = ⟪C(u, X), v⟫ + ⟪u, C(v, X)⟫`. So a connection is metric
+exactly when its correction is skew-adjoint in every tangent direction. -/
+theorem derivMetricTensor_eq_inner_metricCorrection_add (cov : CovariantDerivative I F V)
+    (x : M) (u v : V x) (X : TangentSpace I x) :
+    cov.derivMetricTensor x u v X =
+      inner ℝ (cov.metricCorrection x u X) v + inner ℝ u (cov.metricCorrection x v X) := by
+  have h := congrArg (fun T ↦ T x u v X)
+    (isMetricCompatible_iff_derivMetricTensor_eq_zero.1 cov.isMetricCompatible_metricCorrected)
+  simp only [metricCorrected, derivMetricTensor_addOneForm, zero_apply] at h
+  linarith
 
 /-- An already metric-compatible connection is unchanged as a native connection, on every
 input section rather than just differentiable sections. -/

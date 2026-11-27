@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Geometry.Symplectic.JHolomorphic.AdaptedChart
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
+import TauCeti.Topology.Separation.Hausdorff
 
 /-!
 # Accumulating coincidences of pseudoholomorphic discs
@@ -32,9 +33,9 @@ is the zero section `a ↦ (a, 0)` of `ℂ × N`, and the structure read in the 
 and differs from `i` by at most `C ‖w‖` at `(a, w)`. Write `u₁ = (φ, b)` in these coordinates.
 
 * The normal component satisfies `‖∂ₛb + i ∂ₜb‖ ≤ C ‖∂ₜ(φ, b)‖ ‖b‖`
-  (`TauCeti.norm_snd_add_I_smul_snd_le`), so by Carleman's similarity principle for this
-  differential inequality (`TauCeti.hasSimilarityFactorizationAt_of_norm_le`) it has a similarity
-  factorization (`TauCeti.hasSimilarityFactorizationAt_snd_of_norm_sub_le`).
+  (`TauCeti.norm_fderiv_snd_add_I_smul_le_of_contDiffOn`), so by Carleman's similarity principle
+  for this differential inequality (`TauCeti.hasSimilarityFactorizationAt_of_norm_le`) it has a
+  similarity factorization (`TauCeti.hasSimilarityFactorizationAt_snd_of_norm_sub_le`).
 * Hence `b` either vanishes near `b₀` or has no zeros in a punctured neighbourhood of `b₀`. A
   coincidence `u₁ ζ = u₀ a` with `a` near `a₀` is a zero of `b`, so `b` vanishes near `b₀`.
 * Then `u₁ ζ = u₀ (φ ζ)`, and along the zero section the structure read in the chart is `i`, so
@@ -87,18 +88,8 @@ theorem hasSimilarityFactorizationAt_snd_of_norm_sub_le {ψ : ℂ → ℂ × N}
     (hA : ∀ ζ ∈ Ω₁, ‖A ζ - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ ≤ C * ‖(ψ ζ).2‖)
     (hCR : ∀ ζ ∈ Ω₁, fderiv ℝ ψ ζ 1 + A ζ (fderiv ℝ ψ ζ I) = 0) {ζ₀ : ℂ} (hζ₀ : ζ₀ ∈ Ω₁) :
     HasSimilarityFactorizationAt (fun ζ ↦ (ψ ζ).2) ζ₀ := by
-  have hDψ : ContinuousOn (fderiv ℝ ψ) Ω₁ := hψ.continuousOn_fderiv_of_isOpen hΩ₁ le_rfl
-  refine hasSimilarityFactorizationAt_of_norm_le (η := fun ζ ↦ (ψ ζ).2)
-    (M := fun ζ ↦ C * ‖fderiv ℝ ψ ζ I‖) hΩ₁ (contDiff_snd.comp_contDiffOn hψ) (fun z hz ↦ ?_)
-    (fun ζ hζ ↦ ?_) hζ₀
-  · -- `C ‖∂ₜψ‖` is continuous, hence locally bounded.
-    have hz : ContinuousAt (fun w ↦ C * ‖fderiv ℝ ψ w I‖) z := continuousAt_const.mul
-      ((hDψ.clm_apply continuousOn_const).continuousAt (hΩ₁.mem_nhds hz)).norm
-    exact ⟨_, (hz.eventually (gt_mem_nhds (lt_add_one _))).mono fun _ h ↦ h.le⟩
-  · rw [((hψ.differentiableOn one_ne_zero ζ hζ).differentiableAt
-      (hΩ₁.mem_nhds hζ)).hasFDerivAt.snd.fderiv]
-    refine (norm_snd_add_I_smul_snd_le (hA ζ hζ) (hCR ζ hζ)).trans_eq ?_
-    ring
+  obtain ⟨hM, hle⟩ := norm_fderiv_snd_add_I_smul_le_of_contDiffOn hΩ₁ hψ hCR hA
+  exact hasSimilarityFactorizationAt_of_norm_le hΩ₁ hψ.snd hM hle hζ₀
 
 /-- **Accumulating coincidences in a prescribed normal frame.** The form of
 `TauCeti.exists_analyticAt_eventuallyEq_comp_of_frequently_mem_image` in which the normal frame
@@ -168,25 +159,6 @@ private theorem exists_analyticAt_eventuallyEq_comp_of_frame [CompleteSpace V] [
 
 end NormalComponent
 
-omit [NormedSpace ℝ V] in
-/-- The coincidences of `u₁` with `u₀` accumulate at `u₁ b₀`, so this point lies on `u₀`. -/
-private theorem eq_of_frequently_mem_image (hu₀ : ContinuousAt u₀ a₀) (hu₁ : ContinuousAt u₁ b₀)
-    (hacc : ∀ S ∈ 𝓝 a₀, ∃ᶠ ζ in 𝓝[≠] b₀, u₁ ζ ∈ u₀ '' S) : u₁ b₀ = u₀ a₀ := by
-  refine eq_of_forall_dist_le fun ε hε ↦ ?_
-  have hS : u₀ ⁻¹' ball (u₀ a₀) (ε / 2) ∈ 𝓝 a₀ := hu₀.preimage_mem_nhds (ball_mem_nhds _ (by
-    positivity))
-  have hev : ∀ᶠ ζ in 𝓝[≠] b₀, u₁ ζ ∈ ball (u₁ b₀) (ε / 2) :=
-    nhdsWithin_le_nhds (hu₁.eventually (ball_mem_nhds _ (half_pos hε)))
-  obtain ⟨ζ, ⟨a, ha, hζa⟩, hζ⟩ := ((hacc _ hS).and_eventually hev).exists
-  calc dist (u₁ b₀) (u₀ a₀) ≤ dist (u₁ b₀) (u₁ ζ) + dist (u₁ ζ) (u₀ a₀) := dist_triangle _ _ _
-    _ ≤ ε / 2 + ε / 2 := by
-        gcongr
-        · rw [dist_comm]
-          exact (mem_ball.1 hζ).le
-        · rw [← hζa]
-          exact (mem_ball.1 ha).le
-    _ = ε := add_halves ε
-
 /-- **Accumulating coincidences factor a pseudoholomorphic disc** (McDuff–Salamon, Lemma 2.4.3).
 Let `J` be of class `C²` on an open set `Ω` of a finite-dimensional real normed space `V`, and let
 `u₀` be a `J`-holomorphic disc of class `C²` on an open `U ∋ a₀` with values in `Ω`, where
@@ -206,7 +178,8 @@ theorem exists_analyticAt_eventuallyEq_comp_of_frequently_mem_image [FiniteDimen
   have := FiniteDimensional.completeSpace ℝ V
   have hub : u₁ b₀ = u₀ a₀ := eq_of_frequently_mem_image
     (hu₀.continuousOn.continuousAt (hU.mem_nhds ha₀))
-    (hu₁.continuousOn.continuousAt (hU₁.mem_nhds hb₀)) hacc
+    (hu₁.continuousOn.continuousAt (hU₁.mem_nhds hb₀))
+    fun S hS ↦ (hacc S hS).filter_mono nhdsWithin_le_nhds
   obtain ⟨n, W, hW, hbij⟩ :=
     exists_euclideanSpace_bijective_coprod
       (ContinuousLinearMap.ext fun v ↦ by simpa using hsq a₀ ha₀ v) (hCR₀ a₀ ha₀) hdu₀

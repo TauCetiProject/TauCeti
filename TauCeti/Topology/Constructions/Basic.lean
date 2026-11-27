@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Topology.Maps.Proper.Basic
 import Mathlib.Topology.SeparatedMap
 
 /-!
@@ -23,16 +24,24 @@ subtype-topology convergence API for continuous maps on subtypes.
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
+* `Setoid.isClosedMap_quotient_mk_of_isClosed`: on a compact space, the quotient map by a relation
+  that is closed in `X × X` is a closed map.
 * `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
   fibre product are continuous.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
   pullback; the projection of a fibre product to one factor is open onto its range when the map
+  from the other factor is.
+* `Function.Pullback.isEmbedding_fst`, `Function.Pullback.isEmbedding_snd`: embeddings are stable
+  under pullback; the projection of a fibre product to one factor is an embedding when the map
   from the other factor is.
 * `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`, `ContinuousMap.mapPullback`,
   `ContinuousMap.mapPullbackSnd`, `Homeomorph.pullbackComm`: bundled projections, functoriality,
   and symmetry of the fibre product.
 * `ContinuousAt.tendsto_comap_val`, `Continuous.tendsto_comap_val`: a continuous function on a
   subtype tends to `f x` along `Filter.comap Subtype.val (𝓝 x.val)`.
+* `Topology.IsQuotientMap.of_comp_eq_comp`: quotient maps are stable under pullback along a
+  continuous injection when the pulled-back inclusion is a closed map, as for the restriction of a
+  quotient map to the preimage of a closed set.
 -/
 
 public section
@@ -76,6 +85,23 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     refine isOpen_image_quotient_mk s (hU.isOpenMap_subtypeVal W hW) ?_
     rintro _ y ⟨x, hx, rfl⟩ hxy
     exact hfix x.property hxy ▸ mem_image_of_mem _ hx
+
+/-- On a compact space, the quotient map by an equivalence relation that is closed in `X × X` is a
+closed map. -/
+theorem isClosedMap_quotient_mk_of_isClosed [CompactSpace X]
+    (hs : IsClosed {p : X × X | s p.1 p.2}) : IsClosedMap (Quotient.mk s) := by
+  intro C hC
+  -- The saturation of `C` is the projection to the second factor of the closed set of pairs
+  -- `(x, y)` with `x ∈ C` and `s x y`; the projection is closed because `X` is compact.
+  have hsat : Quotient.mk s ⁻¹' (Quotient.mk s '' C) =
+      Prod.snd '' (Prod.fst ⁻¹' C ∩ {p : X × X | s p.1 p.2}) := by
+    ext y
+    simp only [mem_preimage, mem_image, mem_inter_iff, mem_ofPred_eq, Prod.exists,
+      exists_eq_right]
+    exact exists_congr fun x => and_congr_right fun _ => Quotient.eq
+  have hq : IsQuotientMap (Quotient.mk s) := isQuotientMap_quotient_mk'
+  rw [← hq.isClosed_preimage, hsat]
+  exact isClosedMap_snd_of_compactSpace _ ((hC.preimage continuous_fst).inter hs)
 
 end Setoid
 
@@ -122,6 +148,22 @@ theorem Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp [TopologicalSp
     obtain ⟨x, hxU, hx⟩ : g (ι q).2 ∈ f '' U := hfU ▸ ⟨hqO, (ι q).1, hfg q⟩
     obtain ⟨q', hq'⟩ : (x, (ι q).2) ∈ range ι := hrange ▸ hx
     exact ⟨q', show ι q' ∈ T from hq' ▸ hUV ⟨hxU, hqV⟩, Subtype.ext (by simp [hq'])⟩
+
+/-- **Embeddings are stable under pullback.** If `g : Z → Y` is an embedding and `f : X → Y` is
+continuous, then the projection `X ×_Y Z → X` is an embedding: the second coordinate of a point of
+the fibre product is recovered continuously from the first through the embedding `g`. -/
+theorem Function.Pullback.isEmbedding_fst [TopologicalSpace Y] (hf : Continuous f)
+    (hg : IsEmbedding g) : IsEmbedding (Pullback.fst : f.Pullback g → X) := by
+  refine ⟨⟨le_antisymm (continuous_iff_le_induced.1 continuous_fst) ?_⟩, fun p q hpq ↦ ?_⟩
+  · -- For the topology induced by the first projection, the second projection is continuous,
+    -- since `g` composed with it is `f` composed with the first projection.
+    let t : TopologicalSpace (f.Pullback g) := .induced Pullback.fst ‹_›
+    have hsnd : Continuous (Pullback.snd : f.Pullback g → Z) := by
+      rw [hg.isInducing.continuous_iff]
+      exact (hf.comp continuous_induced_dom).congr fun p ↦ p.property
+    exact continuous_iff_le_induced.1 (continuous_induced_dom.prodMk hsnd)
+  · exact Subtype.ext (Prod.ext hpq
+      (hg.injective (p.property.symm.trans ((congrArg f hpq).trans q.property))))
 
 variable (f g)
 
@@ -175,6 +217,13 @@ def Homeomorph.pullbackComm : f.Pullback g ≃ₜ g.Pullback f where
     (Homeomorph.pullbackComm g f : C(g.Pullback f, f.Pullback g)).comp
       (Homeomorph.pullbackComm f g : C(f.Pullback g, g.Pullback f)) = .id (f.Pullback g) := by
   ext : 1; rfl
+
+variable {f g} in
+/-- **Embeddings are stable under pullback.** If `f : X → Y` is an embedding and `g : Z → Y` is
+continuous, then the projection `X ×_Y Z → Z` is an embedding. -/
+theorem Function.Pullback.isEmbedding_snd [TopologicalSpace Y] (hf : IsEmbedding f)
+    (hg : Continuous g) : IsEmbedding (Pullback.snd : f.Pullback g → Z) :=
+  (isEmbedding_fst hg hf).comp (Homeomorph.pullbackComm f g).isEmbedding
 
 section MapPullback
 
@@ -253,3 +302,31 @@ theorem Continuous.tendsto_comap_val (hf : Continuous f) (x : Subtype p) :
   hf.continuousAt.tendsto_comap_val
 
 end Subtype
+
+/-- **Quotient maps are stable under closed pullback.** Let `f : X → Y` be a quotient map and
+`j : Y' → Y` a continuous injection. Let `g : X' → Y'` be a continuous surjection lying over `f`
+through a closed map `i : X' → X`, so `f ∘ i = j ∘ g`, whose range contains `f ⁻¹' range j`.
+Then `g` is a quotient map.
+
+The model case is the restriction of `f` over a closed subset `C ⊆ Y`, with `i` and `j` the
+inclusions of `f ⁻¹' C` and `C`: unlike the restriction over an open subset
+(`Topology.IsQuotientMap.restrictPreimage_isOpen`), it needs the closedness of `C`, through `i`. -/
+theorem Topology.IsQuotientMap.of_comp_eq_comp {X X' Y Y' : Type*} [TopologicalSpace X]
+    [TopologicalSpace X'] [TopologicalSpace Y] [TopologicalSpace Y'] {f : X → Y} {g : X' → Y'}
+    {i : X' → X} {j : Y' → Y} (hf : IsQuotientMap f) (hg : Continuous g)
+    (hgs : Function.Surjective g) (hi : IsClosedMap i) (hj : Continuous j)
+    (hji : Function.Injective j) (hcomm : f ∘ i = j ∘ g) (hrange : f ⁻¹' range j ⊆ range i) :
+    IsQuotientMap g := by
+  refine isQuotientMap_iff_isClosed.2 ⟨hgs, fun s ↦ ⟨fun hs ↦ hs.preimage hg, fun hs ↦ ?_⟩⟩
+  have himage : f ⁻¹' (j '' s) = i '' (g ⁻¹' s) := by
+    ext x
+    constructor
+    · rintro ⟨y, hy, hxy⟩
+      obtain ⟨x', rfl⟩ := hrange ⟨y, hxy⟩
+      have hgy : g x' = y := hji ((congrFun hcomm x').symm.trans hxy.symm)
+      exact ⟨x', mem_preimage.2 (hgy ▸ hy), rfl⟩
+    · rintro ⟨x', hx', rfl⟩
+      exact ⟨g x', hx', (congrFun hcomm x').symm⟩
+  have hjs : IsClosed (j '' s) := hf.isCoinducing.isClosed_preimage.1 (himage ▸ hi _ hs)
+  rw [← hji.preimage_image s]
+  exact hjs.preimage hj

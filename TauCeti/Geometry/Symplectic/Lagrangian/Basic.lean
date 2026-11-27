@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Dimension.DirectSum
 
 /-!
 # Isotropic, coisotropic, Lagrangian, and symplectic subspaces of a symplectic form
@@ -46,11 +47,17 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.isLagrangian_iff`: Lagrangian is isotropic and coisotropic.
 * `TauCeti.SymplecticForm.isLagrangian_iff_maximal_isIsotropic`: Lagrangian subspaces are exactly
   the maximal isotropic subspaces, in any dimension.
+* `TauCeti.SymplecticForm.isIsotropic_of_finrank_le_one`: a subspace of dimension at most one is
+  isotropic.
 * `TauCeti.SymplecticForm.isSymplectic_iff_nondegenerate_restrict`: a subspace is symplectic exactly
   when `ω` restricts to it nondegenerately, and in finite dimension
   `isSymplectic_iff_isCompl` identifies this with the splitting `V = L ⊕ L^ω`.
 * `TauCeti.SymplecticForm.Tames.isSymplectic_of_mem_invtSubmodule`: a subspace invariant under
   an almost complex structure tamed by `ω` is symplectic.
+* `TauCeti.SymplecticForm.iSupIndep_of_pairwise_apply_eq_zero`: pairwise `ω`-orthogonal
+  symplectic subspaces are independent, so their dimensions add up to at most that of any subspace
+  containing them (`sum_finrank_le_finrank_of_pairwise_apply_eq_zero`,
+  `card_mul_le_finrank_of_pairwise_apply_eq_zero`).
 * `TauCeti.SymplecticForm.finrank_add_finrank_orthogonal`: `dim L + dim L^ω = dim V`.
 * `TauCeti.SymplecticForm.ker_eq_comap_orthogonal_range`: the kernel of the form `B` pulled back
   along a linear map `ι` is the preimage of the symplectic orthogonal of the image of `ι`, and
@@ -61,6 +68,9 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
   `IsCoisotropic.isLagrangian_of_finrank` are the converses for an isotropic or coisotropic subspace
   of half the dimension. Isotropic subspaces have at most and coisotropic subspaces at least half
   the dimension (`IsIsotropic.two_mul_finrank_le`, `IsCoisotropic.finrank_le_two_mul_finrank`).
+* `TauCeti.SymplecticForm.isCoisotropic_of_finrank_le_finrank_add_one`: a subspace of codimension
+  at most one is coisotropic, since its symplectic orthogonal has dimension at most one and every
+  such subspace is isotropic (`isIsotropic_of_finrank_le_one`).
 * `TauCeti.SymplecticForm.isLagrangian_bot_iff` and `isLagrangian_top_iff`: the zero subspace, or
   the whole space, is Lagrangian exactly when the ambient space is zero.
 * `TauCeti.SymplecticForm.isLagrangian_prod_top_bot` and `isLagrangian_prod_bot_top`: the two
@@ -149,6 +159,19 @@ lemma mem_orthogonal_span_iff {s : Set V} {x : V} :
     x ∈ ω.orthogonal (Submodule.span ℝ s) ↔ ∀ y ∈ s, ω y x = 0 :=
   -- Both sides say that the span, respectively `s`, lies in the kernel of `ω (·, x)`.
   (Submodule.span_le (p := LinearMap.ker (ω.toBilinForm.flip x)))
+
+/-- A subspace of dimension at most one is isotropic: on a line spanned by `u`,
+`ω(a u, b u) = a b ω(u, u) = 0`. -/
+lemma isIsotropic_of_finrank_le_one [Module.Finite ℝ L] (h : finrank ℝ L ≤ 1) :
+    ω.IsIsotropic L := by
+  obtain ⟨u, hu⟩ := finrank_le_one_iff.1 h
+  refine isIsotropic_iff.2 fun v hv w hw ↦ ?_
+  obtain ⟨a, ha⟩ := hu ⟨v, hv⟩
+  obtain ⟨b, hb⟩ := hu ⟨w, hw⟩
+  have hv' : v = a • (u : V) := (congrArg Subtype.val ha).symm
+  have hw' : w = b • (u : V) := (congrArg Subtype.val hb).symm
+  -- `ω(a u, b u) = a b ω(u, u)` vanishes by bilinearity and alternation.
+  simp [hv', hw']
 
 /-- A span is isotropic exactly when `ω` vanishes on pairs of spanning vectors. -/
 lemma isIsotropic_span_iff {s : Set V} :
@@ -274,6 +297,15 @@ lemma Tames.isSymplectic_of_mem_invtSubmodule {J : AlmostComplexStructure V} (hJ
 lemma IsIsotropic.eq_bot_of_isSymplectic (h : ω.IsIsotropic L) (hs : ω.IsSymplectic L) : L = ⊥ :=
   disjoint_self.1 (hs.mono_right h)
 
+/-- **Pairwise orthogonal symplectic subspaces are independent.** If the symplectic subspaces
+`G j` are pairwise `ω`-orthogonal, each meets the sum of the others only in zero. -/
+theorem iSupIndep_of_pairwise_apply_eq_zero {ι : Type*} {G : ι → Submodule ℝ V}
+    (hG : ∀ j, ω.IsSymplectic (G j))
+    (horth : Pairwise fun j k ↦ ∀ v ∈ G j, ∀ w ∈ G k, ω v w = 0) : iSupIndep G := fun j ↦
+  -- The sum of the other subspaces is `ω`-orthogonal to the symplectic subspace `G j`.
+  (isSymplectic_iff_disjoint.1 (hG j)).mono_right <| iSup₂_le fun _ hk w hw ↦
+    mem_orthogonal_iff.2 fun y hy ↦ horth (Ne.symm hk) y hy w hw
+
 /-- A graph is Lagrangian exactly when its defining map is symmetric for a pairing whose
 associated product symplectic form is specified by the hypothesis. -/
 theorem isLagrangian_graph_iff_of_pairing
@@ -347,6 +379,16 @@ lemma finrank_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
 lemma orthogonal_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
     ω.orthogonal (ω.orthogonal L) = L :=
   ω.toBilinForm.orthogonal_orthogonal ω.nondegenerate ω.isRefl L
+
+/-- **A subspace of codimension at most one is coisotropic.** Its symplectic orthogonal has
+dimension at most one, so it is isotropic, and is therefore contained in its own symplectic
+orthogonal, which is the subspace itself. -/
+theorem isCoisotropic_of_finrank_le_finrank_add_one (hL : finrank ℝ V ≤ finrank ℝ L + 1) :
+    ω.IsCoisotropic L := by
+  have h : ω.IsIsotropic (ω.orthogonal L) :=
+    isIsotropic_of_finrank_le_one (by rw [finrank_orthogonal]; omega)
+  rw [isCoisotropic_iff_le]
+  exact (isIsotropic_iff_le.1 h).trans (ω.orthogonal_orthogonal L).le
 
 /-- The complement of an intersection is the sum of the complements. -/
 lemma orthogonal_inf (ω : SymplecticForm V) (L L' : Submodule ℝ V) :
@@ -424,6 +466,26 @@ lemma isSymplectic_orthogonal_iff : ω.IsSymplectic (ω.orthogonal L) ↔ ω.IsS
 /-- The symplectic complement of a symplectic subspace is symplectic. -/
 lemma IsSymplectic.orthogonal (h : ω.IsSymplectic L) : ω.IsSymplectic (ω.orthogonal L) :=
   isSymplectic_orthogonal_iff.2 h
+
+/-- The dimensions of pairwise `ω`-orthogonal symplectic subspaces `G j` of `W` add up to at most
+the dimension of `W`. -/
+theorem sum_finrank_le_finrank_of_pairwise_apply_eq_zero {ι : Type*} [Fintype ι]
+    {G : ι → Submodule ℝ V} (hG : ∀ j, ω.IsSymplectic (G j))
+    (horth : Pairwise fun j k ↦ ∀ v ∈ G j, ∀ w ∈ G k, ω v w = 0) {W : Submodule ℝ V}
+    (hle : ∀ j, G j ≤ W) : ∑ j, finrank ℝ (G j) ≤ finrank ℝ W := by
+  rw [← finrank_iSup_eq_sum_finrank_of_iSupIndep (iSupIndep_of_pairwise_apply_eq_zero hG horth)]
+  exact Submodule.finrank_mono (iSup_le hle)
+
+/-- If pairwise `ω`-orthogonal symplectic subspaces `G j` of `W` each have dimension at least `c`,
+then `W` has dimension at least `c` times their number. -/
+theorem card_mul_le_finrank_of_pairwise_apply_eq_zero {ι : Type*} [Fintype ι]
+    {G : ι → Submodule ℝ V} (hG : ∀ j, ω.IsSymplectic (G j))
+    (horth : Pairwise fun j k ↦ ∀ v ∈ G j, ∀ w ∈ G k, ω v w = 0) {c : ℕ}
+    (hc : ∀ j, c ≤ finrank ℝ (G j)) {W : Submodule ℝ V} (hle : ∀ j, G j ≤ W) :
+    Fintype.card ι * c ≤ finrank ℝ W :=
+  calc Fintype.card ι * c = ∑ _j : ι, c := by simp
+    _ ≤ ∑ j, finrank ℝ (G j) := Finset.sum_le_sum fun j _ ↦ hc j
+    _ ≤ finrank ℝ W := sum_finrank_le_finrank_of_pairwise_apply_eq_zero hG horth hle
 
 end FiniteDimensional
 

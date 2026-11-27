@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
 # The combinatorial Maslov index of a domain
@@ -66,6 +67,8 @@ differential (`TauCeti.LowDimTopology.Heegaard.Nice`).
   over the corners on the two sides of the `β`-arcs.
 * `TauCeti.HeegaardRegionSystem.eulerMeasure_eq_sub_sum_pointMeasure`: the Euler measure is
   `∑ χ(R) D(R) - ∑ₚ n_p(D)`.
+* `sum_alphaArcBoundary_mul_pointMeasure_add_sum_betaArcBoundary_mul_pointMeasure_eq_zero`:
+  pairing `∂(∂D ∩ α)` with the point measures of `E` cancels pairing `∂(∂E ∩ β)` with those of `D`.
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween.generatorPointMeasure_add_generatorPointMeasure`:
   `n_x(E) + n_w(D) = n_y(D) + n_y(E)` for `D` from `x` to `y` and `E` from `y` to `w`.
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween.maslovIndex_add`: the Maslov index is additive
@@ -218,6 +221,23 @@ private theorem sum_cross_add_sum_cross_eq_zero [Fintype Point] (D E : Region �
   rw [← sum_add_distrib]
   exact sum_eq_zero fun q _ => (H.crossingCompatible q).cross_add_cross_eq_zero D E
 
+variable (H) in
+/-- Reciprocity of point measures: for any two domains `D` and `E`, pairing `∂(∂D ∩ α)` with the
+point measures of `E` and `∂(∂E ∩ β)` with those of `D` gives opposite values. Both pairings are a
+corner-averaged intersection number of `∂D ∩ α` with `∂E ∩ β`, computed once along the `α`-curves
+and once along the `β`-curves. -/
+theorem sum_alphaArcBoundary_mul_pointMeasure_add_sum_betaArcBoundary_mul_pointMeasure_eq_zero
+    [Fintype Point] (D E : Region → ℤ) :
+    ∑ q, (H.alphaArcBoundary (H.alphaBoundary D) q : ℚ) * H.pointMeasure E q +
+      ∑ q, (H.betaArcBoundary (H.betaBoundary E) q : ℚ) * H.pointMeasure D q = 0 := by
+  rw [sum_mul_cornerSum_div_four H.alphaNext H.alphaLeft H.alphaRight D E _ _
+      (fun q => by simp only [alphaArcBoundary_apply, alphaBoundary_apply])
+      (fun q => by rw [pointMeasure_apply]; push_cast; ring),
+    sum_mul_cornerSum_div_four H.betaNext H.betaLeft H.betaRight E D _ _
+      (fun q => by simp only [betaArcBoundary_apply, betaBoundary_apply])
+      (fun q => by rw [pointMeasure_apply_beta]; push_cast; ring),
+    ← add_div, ← Int.cast_add, sum_cross_add_sum_cross_eq_zero, Int.cast_zero, zero_div]
+
 variable {x y w : H.Generator} {D E : Region → ℤ}
 
 /-- The point measures of two juxtaposable domains satisfy `n_x(E) + n_w(D) = n_y(D) + n_y(E)`
@@ -227,22 +247,13 @@ theorem IsDomainBetween.generatorPointMeasure_add_generatorPointMeasure
     H.generatorPointMeasure x E + H.generatorPointMeasure w D =
       H.generatorPointMeasure y D + H.generatorPointMeasure y E := by
   let _ : Fintype Point := H.pointFintype
-  -- Along `α`: `n_y(E) - n_x(E)` pairs `∂(∂D ∩ α) = y - x` with the point measures of `E`.
-  have hα := sum_mul_cornerSum_div_four H.alphaNext H.alphaLeft H.alphaRight D E
-    (H.alphaArcBoundary (H.alphaBoundary D)) (H.pointMeasure E)
-    (fun q => by simp only [alphaArcBoundary_apply, alphaBoundary_apply])
-    (fun q => by rw [pointMeasure_apply]; push_cast; ring)
-  -- Along `β`: `n_y(D) - n_w(D)` pairs `∂(∂E ∩ β) = y - w` with the point measures of `D`.
-  have hβ := sum_mul_cornerSum_div_four H.betaNext H.betaLeft H.betaRight E D
-    (H.betaArcBoundary (H.betaBoundary E)) (H.pointMeasure D)
-    (fun q => by simp only [betaArcBoundary_apply, betaBoundary_apply])
-    (fun q => by rw [pointMeasure_apply_beta]; push_cast; ring)
-  rw [(isDomainBetween_iff.mp hD).1] at hα
-  rw [(isDomainBetween_iff.mp hE).2] at hβ
+  -- `∂(∂D ∩ α) = y - x` and `∂(∂E ∩ β) = y - w`, so the pairings are `n_y(E) - n_x(E)` and
+  -- `n_y(D) - n_w(D)`.
+  have h :=
+    H.sum_alphaArcBoundary_mul_pointMeasure_add_sum_betaArcBoundary_mul_pointMeasure_eq_zero D E
+  rw [(isDomainBetween_iff.mp hD).1, (isDomainBetween_iff.mp hE).2] at h
   simp only [Pi.sub_apply, Int.cast_sub, sub_mul, sum_sub_distrib,
-    ← generatorPointMeasure_eq_sum_generatorChain] at hα hβ
-  have h := congrArg (fun z : ℤ => (z : ℚ) / 4) (sum_cross_add_sum_cross_eq_zero (H := H) D E)
-  simp only [Int.cast_add, Int.cast_zero, add_div, zero_div] at h
+    ← generatorPointMeasure_eq_sum_generatorChain] at h
   linarith
 
 /-- A domain whose boundary is a sum of whole curves has the same point measure at any two
@@ -293,10 +304,8 @@ theorem eulerMeasure_eq_sub_sum_pointMeasure (χ : Region → ℤ) (D : Region �
     H.eulerMeasure χ D = ∑ r, (χ r : ℚ) * D r - ∑ p, H.pointMeasure D p := by
   have hcorner : ∑ r, (D r : ℚ) * H.cornerCount r =
       ∑ c : Point × Fin 4, (D (H.cornerRegion c.1 c.2) : ℚ) := by
-    rw [← sum_fiberwise univ (fun c : Point × Fin 4 => H.cornerRegion c.1 c.2)]
-    refine sum_congr rfl fun r _ => ?_
-    rw [sum_congr rfl fun c hc => by rw [(mem_filter.mp hc).2], sum_const, nsmul_eq_mul,
-      cornerCount_eq_card, mul_comm]
+    simp_rw [cornerCount_eq_card, mul_comm (D _ : ℚ), ← nsmul_eq_mul]
+    exact sum_card_filter_nsmul_eq_sum_comp (fun _ _ => mem_univ _) _
   simp only [eulerMeasure_apply, pointMeasure_apply_eq_sum, mul_sub, sum_sub_distrib]
   rw [← sum_div, ← Fintype.sum_prod_type', ← hcorner, sum_div]
   congr 1

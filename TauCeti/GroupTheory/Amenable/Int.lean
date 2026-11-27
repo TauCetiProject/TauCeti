@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Amenable.Additive
+public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.MeasureTheory.Group.Foelner.Int
 
 /-!
