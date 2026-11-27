@@ -49,7 +49,11 @@ theorem adjoin_toInteger_eq_top_of_coprime_discr (hζ : IsPrimitiveRoot ζ n)
   let e : K ≃+* F := ((IsScalarTower.toAlgHom ℚ K E : K →+* E)).rangeRestrictFieldEquiv
   have : IsCyclotomicExtension {n} ℚ C := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
   have : IsGalois ℚ C := IsCyclotomicExtension.isGalois {n} ℚ C
-  obtain ⟨hdiscr, htop⟩ := hζ.isCoprime_discr_adjoin_fieldRange_and_sup_eq_top K hcop
+  have hdiscr := hζ.isCoprime_discr_adjoin_fieldRange K hcop
+  have htop : C ⊔ F = ⊤ :=
+    TauCeti.IntermediateField.adjoin_sup_fieldRange_eq_top ℚ K E
+      (IntermediateField.adjoin_eq_top_of_algebra _ _
+        (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ))
   have hCS : C.toSubalgebra ⊔ F.toSubalgebra = ⊤ := by
     simpa [C, F, IntermediateField.sup_toSubalgebra_of_isAlgebraic_right] using
       congr(IntermediateField.toSubalgebra $htop)
