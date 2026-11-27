@@ -57,11 +57,11 @@ variable {n k : ℕ}
 
 /-- **The partial derivatives of `σ_{k+1}^{1/(k+1)}`** at a point where `σ_{k+1} > 0`:
 `∂_j σ_{k+1}^{1/(k+1)} = (1/(k+1)) σ_{k+1}^{1/(k+1) - 1} σ_{k;j}`. -/
-theorem fderiv_esymm_rpow_single {μ : Fin n → ℝ} (hμ : 0 < eval μ (esymm (Fin n) ℝ (k + 1)))
-    (j : Fin n) :
-    fderiv ℝ (fun ν ↦ eval ν (esymm (Fin n) ℝ (k + 1)) ^ ((k + 1 : ℕ) : ℝ)⁻¹) μ (Pi.single j 1) =
-      ((k + 1 : ℕ) : ℝ)⁻¹ * eval μ (esymm (Fin n) ℝ (k + 1)) ^ (((k + 1 : ℕ) : ℝ)⁻¹ - 1) *
-        eval (Function.update μ j 0) (esymm (Fin n) ℝ k) := by
+theorem fderiv_esymm_rpow_single {ι : Type*} [Fintype ι] [DecidableEq ι] {μ : ι → ℝ}
+    (hμ : 0 < eval μ (esymm ι ℝ (k + 1))) (j : ι) :
+    fderiv ℝ (fun ν ↦ eval ν (esymm ι ℝ (k + 1)) ^ ((k + 1 : ℕ) : ℝ)⁻¹) μ (Pi.single j 1) =
+      ((k + 1 : ℕ) : ℝ)⁻¹ * eval μ (esymm ι ℝ (k + 1)) ^ (((k + 1 : ℕ) : ℝ)⁻¹ - 1) *
+        eval (Function.update μ j 0) (esymm ι ℝ k) := by
   rw [((hasFDerivAt_eval_esymm_succ μ k).rpow_const (Or.inl hμ.ne')).fderiv]
   simp [Pi.single_apply, mul_assoc]
 
@@ -70,10 +70,8 @@ theorem contDiffOn_esymm_rpow (n k : ℕ) {m : WithTop ℕ∞} :
     ContDiffOn ℝ m (fun μ ↦ eval μ (esymm (Fin n) ℝ k) ^ (k : ℝ)⁻¹) (hessianCone n k) := by
   intro μ hμ
   have hpos := eval_esymm_pos_of_mem_hessianCone hμ
-  have hp : ContDiff ℝ m fun ν : Fin n → ℝ ↦ eval ν (esymm (Fin n) ℝ k) := by
-    simpa using (AnalyticOnNhd.eval_continuousLinearMap'
-      (fun i ↦ ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n ↦ ℝ) i)
-      (esymm (Fin n) ℝ k)).contDiff (n := m)
+  have hp : ContDiff ℝ m fun ν : Fin n → ℝ ↦ eval ν (esymm (Fin n) ℝ k) :=
+    (AnalyticOnNhd.eval_mvPolynomial (esymm (Fin n) ℝ k)).contDiff
   exact (hp.contDiffAt.rpow_const_of_ne hpos.ne').contDiffWithinAt
 
 /-- **The Hessian pair** `(σ_k^{1/k}, Γ_k)` is an admissible pair for `1 ≤ k ≤ n`. -/

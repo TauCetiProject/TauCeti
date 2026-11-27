@@ -151,9 +151,9 @@ theorem choose_rpow_mul_prod_rpow_le_eval_esymm_rpow {k : ℕ} {μ : ι → ℝ}
   have hσ : 0 ≤ eval μ (esymm ι ℝ k) := by
     simpa [normalizedEsymm_def, hC.ne'] using mul_nonneg (normalizedEsymm_nonneg hμ k) hC.le
   have hM := normalizedEsymm_rpow_le_of_nonneg hμ hk hkn
-  rw [normalizedEsymm_def, normalizedEsymm_def, Nat.choose_self, Nat.cast_one, div_one,
-    eval_esymm_card, Real.div_rpow hσ hC.le, one_div, one_div] at hM
-  rwa [le_div_iff₀' (Real.rpow_pos_of_pos hC _)] at hM
+  simp only [normalizedEsymm_def, Nat.choose_self, Nat.cast_one, div_one, eval_esymm_card,
+    one_div] at hM
+  rwa [Real.div_rpow hσ hC.le, le_div_iff₀' (Real.rpow_pos_of_pos hC _)] at hM
 
 end Normalized
 
