@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.QuantumMinor.Alternating
-public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.QuantumMinor.Commutator
 
 /-!
@@ -27,21 +26,6 @@ namespace Matrix
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {ι K A : Type*} [DecidableEq ι] [CommRing K] [Ring A] [Algebra K A] {n m : ℕ}
-
-/-- A quantum minor lies in any subalgebra containing the entries selected by its row and
-column tuples. -/
-theorem quantumMinor_mem_subalgebra (E : Matrix ι ι A) (u : K) (a b : Fin n → ι)
-    {S : Subalgebra K A} (hS : ∀ i j, E (a i) (b j) ∈ S) : E.quantumMinor u a b ∈ S := by
-  rw [quantumMinor_eq_columnDet, columnDet_apply]
-  refine S.sum_mem fun σ _ ↦ ?_
-  rw [Units.smul_def]
-  refine S.zsmul_mem (list_prod_mem fun x hx ↦ ?_) _
-  obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hx
-  simp only [of_apply]
-  refine S.add_mem ?_ (hS _ _)
-  split_ifs
-  · exact S.algebraMap_mem _
-  · exact S.zero_mem
 
 /-- A principal quantum minor commutes with entries in its block and in the complementary
 block. Taking `a = id` gives centrality against each entry for the full quantum determinant. -/
