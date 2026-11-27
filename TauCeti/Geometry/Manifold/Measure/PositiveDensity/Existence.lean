@@ -52,20 +52,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 open Classical in
 /-- Coordinate summand attached to a partition of unity `ρ` and chart `x₀`. -/
-private def partitionSummand (ρ : PartitionOfUnity M M univ) (x₀ i : M) (y : E) : ℝ :=
-  if y ∈ (I.extendCoordChange (chartAt H x₀) (chartAt H i)).source then
+private def partitionSummand (ρ : PartitionOfUnity M M univ) (x₀ i : M) : E → ℝ :=
+  (I.extendCoordChange (chartAt H x₀) (chartAt H i)).source.indicator fun y ↦
     |(fderivWithin ℝ (I.extendCoordChange (chartAt H x₀) (chartAt H i)) (range I) y).det| *
       ρ i ((extChartAt I x₀).symm y)
-  else 0
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [IsManifold I 1 M]
   [MeasurableSpace M] [BorelSpace M] in
 private theorem partitionSummand_nonneg (ρ : PartitionOfUnity M M univ) (x₀ i : M) (y : E) :
-    0 ≤ partitionSummand (I := I) ρ x₀ i y := by
-  dsimp only [partitionSummand]
-  split_ifs
-  · exact mul_nonneg (abs_nonneg _) (ρ.nonneg i _)
-  · exact le_rfl
+    0 ≤ partitionSummand (I := I) ρ x₀ i y :=
+  indicator_nonneg (fun _ _ ↦ mul_nonneg (abs_nonneg _) (ρ.nonneg i _)) y
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [IsManifold I 1 M]
   [MeasurableSpace M] [BorelSpace M] in
@@ -78,10 +74,7 @@ private theorem partitionSummand_locallyFinite (ρ : PartitionOfUnity M M univ) 
     (continuousOn_extChartAt_symm x₀ y hy).preimage_mem_nhdsWithin hW, hWfin.subset ?_⟩
   rintro i ⟨z, hzW, hzh⟩
   refine ⟨(extChartAt I x₀).symm z, fun hzero ↦ hzh ?_, hzW⟩
-  dsimp only [partitionSummand]
-  split_ifs
-  · rw [hzero, mul_zero]
-  · rfl
+  exact indicator_apply_eq_zero.2 fun _ ↦ by rw [hzero, mul_zero]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace M]
   [BorelSpace M] in
@@ -93,7 +86,7 @@ private theorem continuousOn_finsum_partitionSummand (ρ : PartitionOfUnity M M 
     continuous_finsum (f := fun i (y : (extChartAt I x₀).target) ↦
         partitionSummand (I := I) ρ x₀ i y.val)
       (fun i ↦ continuousOn_iff_continuous_domRestrict.1
-        ((chartAt H x₀).continuousOn_ite_abs_det_fderivWithin_extendCoordChange_mul (chartAt H i)
+        ((chartAt H x₀).continuousOn_abs_det_fderivWithin_extendCoordChange_mul (chartAt H i)
           I (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i)
           (ρ i).continuous (hρ i))) fun y ↦ ?_
   obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ y.property
@@ -125,7 +118,7 @@ private theorem finsum_partitionSummand_pos (ρ : PartitionOfUnity M M univ)
     exact ⟨(extChartAt I x₀).symm y, ⟨hxe, hρ i (subset_tsupport _ hi_ne)⟩,
       (extChartAt I x₀).right_inv hy⟩
   have hhi_pos : 0 < partitionSummand (I := I) ρ x₀ i y := by
-    simp only [partitionSummand, hyΦ, ↓reduceIte]
+    rw [partitionSummand, indicator_of_mem hyΦ]
     exact mul_pos (I.abs_det_fderivWithin_extendCoordChange_pos
       (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i) hyΦ) hi_pos
   calc (0 : ℝ) < partitionSummand (I := I) ρ x₀ i y := hhi_pos
@@ -218,7 +211,7 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
       (fun y ↦ ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.val y))
       (ν.restrict (A ∩ (extChartAt I x₀).target)) :=
     ((ENNReal.continuous_ofReal.comp_continuousOn
-      ((chartAt H x₀).continuousOn_ite_abs_det_fderivWithin_extendCoordChange_mul (chartAt H i.val)
+      ((chartAt H x₀).continuousOn_abs_det_fderivWithin_extendCoordChange_mul (chartAt H i.val)
         I (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i.val)
         (ρ i.val).continuous (hρ i.val))).aemeasurable hT₀).mono_measure
       (Measure.restrict_mono inter_subset_right le_rfl)

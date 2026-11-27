@@ -18,7 +18,8 @@ import TauCeti.MeasureTheory.Measure.WithDensity
 
 Pulling an additive Haar measure on a real normed space `E` back to a relatively open subset
 `I.symm ⁻¹' U ∩ Set.range I` of the range of a `ModelWithCorners ℝ E H` yields a measure positive
-on nonempty relatively open subsets (`ModelWithCorners.isOpenPosMeasure_comap_range_inter`).
+on nonempty relatively open subsets
+(`ModelWithCorners.isOpenPosMeasure_comap_preimage_inter_range`).
 Consequently, on a finite-dimensional model space, two continuous nonnegative real densities
 presenting the same weighted Haar measure on `I.symm ⁻¹' U ∩ Set.range I` agree pointwise there
 (`ModelWithCorners.eqOn_of_withDensity_ofReal_eq`).

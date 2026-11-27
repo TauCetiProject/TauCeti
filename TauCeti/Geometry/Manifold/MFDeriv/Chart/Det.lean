@@ -25,7 +25,7 @@ the Jacobian determinant with a continuous function supported in the target char
   Jacobian determinant on the overlap source.
 * `ModelWithCorners.abs_det_fderivWithin_extendCoordChange_comp`: chain rule on triple chart
   overlaps.
-* `OpenPartialHomeomorph.continuousOn_ite_abs_det_fderivWithin_extendCoordChange_mul`: continuity
+* `OpenPartialHomeomorph.continuousOn_abs_det_fderivWithin_extendCoordChange_mul`: continuity
   of the extension-by-zero product with a continuous function supported in the target chart.
 -/
 
@@ -145,16 +145,14 @@ open Classical in
 /-- Multiplying the absolute Jacobian determinant of a `C¹` extended coordinate change by a
 continuous function supported in the target chart's source and extending by zero outside the
 overlap gives a function continuous on `(e₀.extend I).target`. -/
-theorem OpenPartialHomeomorph.continuousOn_ite_abs_det_fderivWithin_extendCoordChange_mul
+theorem OpenPartialHomeomorph.continuousOn_abs_det_fderivWithin_extendCoordChange_mul
     (e₀ e₁ : OpenPartialHomeomorph M H) (I : ModelWithCorners ℝ E H)
     (he₀ : e₀ ∈ IsManifold.maximalAtlas I 1 M) (he₁ : e₁ ∈ IsManifold.maximalAtlas I 1 M)
     {f : M → ℝ} (hf : Continuous f) (hsupp : tsupport f ⊆ e₁.source) :
     ContinuousOn
-      (fun y ↦
-        if y ∈ (I.extendCoordChange e₀ e₁).source then
-          |(fderivWithin ℝ (I.extendCoordChange e₀ e₁) (range I) y).det| *
-            f ((e₀.extend I).symm y)
-        else 0)
+      ((I.extendCoordChange e₀ e₁).source.indicator fun y ↦
+        |(fderivWithin ℝ (I.extendCoordChange e₀ e₁) (range I) y).det| *
+          f ((e₀.extend I).symm y))
       (e₀.extend I).target := by
   set Φ := I.extendCoordChange e₀ e₁
   intro y hy
@@ -167,8 +165,8 @@ theorem OpenPartialHomeomorph.continuousOn_ite_abs_det_fderivWithin_extendCoordC
       (I.continuousOn_abs_det_fderivWithin_extendCoordChange he₀ he₁).mul
         (hf.comp_continuousOn (e₀.continuousOn_extend_symm.mono fun _ hz ↦ hz.1))
     refine ((hcont y hyΦ).mono_of_mem_nhdsWithin hmem).congr_of_eventuallyEq
-      (Filter.eventuallyEq_of_mem hmem fun z hz ↦ by simp only [hz, ↓reduceIte])
-      (by simp only [hyΦ, ↓reduceIte])
+      (Filter.eventuallyEq_of_mem hmem fun z hz ↦ Set.indicator_of_mem hz _)
+      (Set.indicator_of_mem hyΦ _)
   · have hnotSupp : (e₀.extend I).symm y ∉ tsupport f := fun hmem ↦ by
       have hxe : (e₀.extend I).symm y ∈ e₀.source :=
         e₀.extend_source (I := I) ▸ (e₀.extend I).map_target hy
@@ -179,11 +177,11 @@ theorem OpenPartialHomeomorph.continuousOn_ite_abs_det_fderivWithin_extendCoordC
       (e₀.continuousOn_extend_symm y hy).preimage_mem_nhdsWithin
         ((isClosed_tsupport f).isOpen_compl.mem_nhds hnotSupp)
     refine (continuousWithinAt_const (b := (0 : ℝ))).congr_of_eventuallyEq
-      (Filter.eventuallyEq_of_mem hmem fun z hz ↦ ?_) (by simp only [hyΦ, ↓reduceIte])
+      (Filter.eventuallyEq_of_mem hmem fun z hz ↦ ?_) (Set.indicator_of_notMem hyΦ _)
     have hf0 : f ((e₀.extend I).symm z) = 0 :=
       (notMem_tsupport_iff_eventuallyEq.1 hz).self_of_nhds
-    split_ifs
-    · rw [hf0, mul_zero]
-    · rfl
+    by_cases hzΦ : z ∈ Φ.source
+    · rw [Set.indicator_of_mem hzΦ, hf0, mul_zero]
+    · exact Set.indicator_of_notMem hzΦ _
 
 end ExtendCoordChangeDet

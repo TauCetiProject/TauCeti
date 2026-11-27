@@ -57,9 +57,8 @@ arbitrary charts of the `C¹` maximal atlas:
 * `TauCeti.IsPositiveDensityMeasure.chartWeight_changeChart`,
   `TauCeti.IsPositiveDensityMeasure.chartWeight_changeChart_modelWithCornersSelf`: Jacobian
   transformation rule for chart weights across overlapping charts of the `C¹` maximal atlas.
-* `TauCeti.IsPositiveDensityMeasure.measure_eq_zero_iff_measure_extend_image_eq_zero`,
-  `TauCeti.IsPositiveDensityMeasure.isNullSet_of_measure_eq_zero`: maximal-atlas chartwise
-  null-set characterization and non-Lindelöf nullity of `μ`-null sets.
+* `TauCeti.IsPositiveDensityMeasure.measure_eq_zero_iff_extend_image_of_subset`:
+  maximal-atlas chartwise null-set characterization.
 -/
 
 public section
@@ -449,69 +448,15 @@ theorem IsPositiveDensityMeasure.chartWeight_changeChart_modelWithCornersSelf
   rw [hfun, modelWithCornersSelf_coe, range_id, fderivWithin_univ] at h
   exact h
 
-private theorem measure_eq_zero_iff_measure_extend_image_eq_zero_of_measurableSet {μ : Measure M}
-    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
-    {s : Set M} (hs : MeasurableSet s) (hsub : s ⊆ e.source) :
-    μ s = 0 ↔ ν (e.extend I '' s) = 0 := by
-  have hmeas := e.measurableSet_image_extend I hs hsub
-  have hsubT : e.extend I '' s ⊆ (e.extend I).target :=
-    (image_mono (by simpa only [e.extend_source] using hsub)).trans
-      (e.extend I).image_source_eq_target.subset
-  rw [hμ.measure_apply_of_subset he ν hs hsub]
-  constructor
-  · intro hz
-    have hae := (lintegral_eq_zero_iff' ((ENNReal.continuous_ofReal.comp_continuousOn
-      ((hμ.continuousOn_chartWeight he ν).mono hsubT)).aemeasurable hmeas)).1 hz
-    have hfalse : ∀ᵐ _ ∂ν.restrict (e.extend I '' s), False := by
-      filter_upwards [ae_restrict_mem hmeas, hae] with y hy hy0
-      exact (ENNReal.ofReal_pos.2 (hμ.chartWeight_pos he ν (hsubT hy))).ne' hy0
-    simpa only [not_false_eq_true, ofPred_true, Measure.restrict_apply_univ] using ae_iff.1 hfalse
-  · intro hz
-    rw [Measure.restrict_zero_set hz, lintegral_zero_measure]
-
 /-- On the source of any chart of the `C¹` maximal atlas, an arbitrary (not necessarily
 measurable) subset has `μ`-measure zero iff its coordinate image has additive Haar measure zero. -/
-theorem IsPositiveDensityMeasure.measure_eq_zero_iff_measure_extend_image_eq_zero
+theorem IsPositiveDensityMeasure.measure_eq_zero_iff_extend_image_of_subset
     {μ : Measure M} (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
     (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
     {s : Set M} (hsub : s ⊆ e.source) :
     μ s = 0 ↔ ν (e.extend I '' s) = 0 := by
-  constructor
-  · intro hz
-    set t := toMeasurable μ s ∩ e.source
-    have hst : s ⊆ t := fun y hy ↦ ⟨subset_toMeasurable μ s hy, hsub hy⟩
-    have htm : MeasurableSet t :=
-      (measurableSet_toMeasurable μ s).inter e.open_source.measurableSet
-    have ht0 : μ t = 0 := measure_mono_null inter_subset_left (by rwa [measure_toMeasurable])
-    exact measure_mono_null (image_mono hst)
-      ((measure_eq_zero_iff_measure_extend_image_eq_zero_of_measurableSet
-        hμ he ν htm inter_subset_right).1 ht0)
-  · intro hz
-    set A := toMeasurable ν (e.extend I '' s)
-    set t : Set M := e.extend I ⁻¹' A ∩ e.source
-    have htm : MeasurableSet t :=
-      e.measurableSet_preimage_extend_inter I (measurableSet_toMeasurable _ _)
-    have hst : s ⊆ t := fun y hy ↦
-      ⟨subset_toMeasurable ν _ (mem_image_of_mem _ hy), hsub hy⟩
-    have hAt : e.extend I '' t ⊆ A := by
-      rintro _ ⟨z, ⟨hzA, _⟩, rfl⟩
-      exact hzA
-    refine measure_mono_null hst
-      ((measure_eq_zero_iff_measure_extend_image_eq_zero_of_measurableSet
-        hμ he ν htm inter_subset_right).2 ?_)
-    exact measure_mono_null hAt (by rwa [measure_toMeasurable])
-
-omit [IsManifold I 1 M] [FiniteDimensional ℝ E] in
-/-- Every `μ`-null set of a positive continuous density measure is chartwise null. No Lindelöf
-assumption on `M` is needed for this direction. -/
-theorem IsPositiveDensityMeasure.isNullSet_of_measure_eq_zero
-    {μ : Measure M} (hμ : IsPositiveDensityMeasure I μ) {s : Set M} (hs : μ s = 0) :
-    IsNullSet I s := by
-  rw [isNullSet_iff]
-  intro x ν _
-  exact (hμ.measure_eq_zero_iff_image_of_subset inter_subset_right ν).1
-    (measure_mono_null inter_subset_left hs)
+  obtain ⟨w, hwc, hwpos, hw⟩ := hμ.exists_density_of_mem_maximalAtlas he ν
+  exact e.measure_eq_zero_iff_image_extend_of_map_restrict_eq I hwc hwpos hw hsub
 
 end ChartWeight
 

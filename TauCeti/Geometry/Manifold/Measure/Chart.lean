@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
@@ -126,9 +127,8 @@ measure of its preimage in the chart source. -/
 theorem map_restrict_extChartAt_source_apply (x : M) {A : Set E} (hA : MeasurableSet A) :
     (μ.restrict (extChartAt I x).source).map (extChartAt I x) A =
       μ ((extChartAt I x) ⁻¹' A ∩ (extChartAt I x).source) := by
-  have hsrc : MeasurableSet (extChartAt I x).source := (isOpen_extChartAt_source x).measurableSet
-  rw [Measure.map_apply_of_aemeasurable ((continuousOn_extChartAt x).aemeasurable hsrc) hA,
-    Measure.restrict_apply' hsrc]
+  rw [extChartAt_source, extChartAt]
+  exact (chartAt H x).map_restrict_extend_apply I μ hA
 
 /-- The pushforward of `μ` restricted to a chart source gives the coordinate image of a measurable
 subset of the source the measure that `μ` gives the subset. -/

@@ -39,6 +39,9 @@ the `C¹` maximal atlas.
   `e.source.domRestrict (e.extend I)`.
 * `OpenPartialHomeomorph.setLIntegral_eq_of_map_restrict_eq`: converting a chart pushforward
   `withDensity` identity into a coordinate Lebesgue integral over measurable subsets of `e.source`.
+* `OpenPartialHomeomorph.measure_eq_zero_iff_image_extend_of_map_restrict_eq`: a subset of
+  `e.source` has `μ`-measure zero iff its extended-chart image has `ν`-measure zero when `μ` has
+  a strictly positive continuous chart density.
 * `OpenPartialHomeomorph.map_restrict_extend_apply_of_subset_extendCoordChange_source`:
   rewriting `((μ.restrict e.source).map (e.extend I)) A` on a subset of a chart overlap as a
   Jacobian-weighted integral of the density in the target chart.
@@ -47,7 +50,7 @@ the `C¹` maximal atlas.
   `OpenPartialHomeomorph.localChartMeasure_apply`, and
   `OpenPartialHomeomorph.map_restrict_localChartMeasure_apply`: support, evaluation, and
   chart-overlap pushforward formula for `OpenPartialHomeomorph.localChartMeasure`.
-* `MeasureTheory.Measure.setLIntegral_extendCoordChange`: change of variables between two charts
+* `ModelWithCorners.setLIntegral_extendCoordChange`: change of variables between two charts
   of the `C¹` maximal atlas for a weighted Haar integral.
 * `ModelWithCorners.eqOn_abs_det_mul_of_map_restrict_eq`: Jacobian transformation law for two
   continuous nonnegative chart weights presenting the same measure on their chart overlap.
@@ -171,6 +174,53 @@ theorem setLIntegral_eq_of_map_restrict_eq [MeasurableSpace E] [BorelSpace E]
     Measure.restrict_restrict hA, inter_eq_left.2 hAT]
   rfl
 
+/-- For a measure whose pushforward along `e.extend I` has a strictly positive continuous density
+`w` on `(e.extend I).target` with respect to `ν`, an arbitrary (not necessarily measurable) subset
+of `e.source` has `μ`-measure zero iff its image under `e.extend I` has `ν`-measure zero. -/
+theorem measure_eq_zero_iff_image_extend_of_map_restrict_eq [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace M] [BorelSpace M] (e : OpenPartialHomeomorph M H)
+    (I : ModelWithCorners 𝕜 E H) {μ : Measure M} {ν : Measure E} {w : E → ℝ}
+    (hw : ContinuousOn w (e.extend I).target)
+    (hwpos : ∀ y ∈ (e.extend I).target, 0 < w y)
+    (hmap : (μ.restrict e.source).map (e.extend I) =
+      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y))
+    {s : Set M} (hsub : s ⊆ e.source) :
+    μ s = 0 ↔ ν (e.extend I '' s) = 0 := by
+  have hsrc : MeasurableSet e.source := e.open_source.measurableSet
+  have htgt : MeasurableSet (e.extend I).target := e.measurableSet_extend_target I
+  have hzero : ∀ A ⊆ (e.extend I).target,
+      (μ.restrict e.source).map (e.extend I) A = 0 ↔ ν A = 0 := fun A hA ↦ by
+    rw [hmap, withDensity_apply_eq_zero' (f := fun y ↦ ENNReal.ofReal (w y))
+      ((ENNReal.continuous_ofReal.comp_continuousOn hw).aemeasurable htgt),
+      Measure.restrict_apply' htgt]
+    congr! 2
+    ext y
+    simp only [mem_inter_iff, mem_ofPred_eq]
+    exact ⟨fun h ↦ h.1.2, fun hy ↦ ⟨⟨(ENNReal.ofReal_pos.2 (hwpos y (hA hy))).ne', hy⟩, hA hy⟩⟩
+  have himage : e.extend I '' s ⊆ (e.extend I).target :=
+    (e.extend I).image_source_eq_target ▸ image_mono (by rwa [e.extend_source])
+  rw [← hzero _ himage]
+  constructor
+  · intro hs
+    let t := toMeasurable μ s ∩ e.source
+    have ht : MeasurableSet t := (measurableSet_toMeasurable μ s).inter hsrc
+    have hst : s ⊆ t := fun y hy ↦ ⟨subset_toMeasurable μ s hy, hsub hy⟩
+    refine measure_mono_null (image_mono hst) ?_
+    rw [e.map_restrict_extend_apply I μ (e.measurableSet_image_extend I ht inter_subset_right),
+      ← e.extend_source (I := I),
+      (e.extend I).injOn.preimage_image_inter (e.extend_source (I := I) ▸ inter_subset_right)]
+    exact measure_mono_null inter_subset_left (by rwa [measure_toMeasurable])
+  · intro hs
+    have hcont : Continuous (e.source.domRestrict (e.extend I)) := by
+      rw [← continuousOn_iff_continuous_domRestrict, ← e.extend_source (I := I)]
+      exact e.continuousOn_extend
+    have hle := Measure.le_map_apply
+      (aemeasurable_restrict_of_measurable_subtype (μ := μ) hsrc hcont.measurable) (e.extend I '' s)
+    rw [hs, nonpos_iff_eq_zero, Measure.restrict_apply' hsrc] at hle
+    have hs' : s ⊆ e.extend I ⁻¹' (e.extend I '' s) ∩ e.source :=
+      fun y hy ↦ ⟨mem_image_of_mem _ hy, hsub hy⟩
+    exact measure_mono_null hs' hle
+
 /-- Pull a measure `ν` on the model space weighted by `ENNReal.ofReal ∘ f ∘ (e.extend I).symm` back
 along the extended chart `e.extend I` to a measure supported on `e.source`. -/
 def localChartMeasure [MeasurableSpace E] [MeasurableSpace M]
@@ -255,12 +305,12 @@ theorem ModelWithCorners.exists_countable_coordChange_cover
   rw [I.extendCoordChange_source, I.image_eq]
   exact ⟨hyi, e.extend_target_subset_range hy⟩
 
-namespace MeasureTheory.Measure
+namespace ModelWithCorners
 
 /-- Change of variables between two charts of the maximal atlas for a weighted Haar integral. -/
 theorem setLIntegral_extendCoordChange {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
     (ν : Measure E) [ν.IsAddHaarMeasure]
     {e e' : OpenPartialHomeomorph M H}
@@ -281,7 +331,7 @@ theorem setLIntegral_extendCoordChange {E : Type*} [NormedAddCommGroup E] [Norme
   exact lintegral_image_eq_lintegral_abs_det_fderiv_mul ν hA hderiv
     ((I.extendCoordChange e e').injOn.mono hAsub) g
 
-end MeasureTheory.Measure
+end ModelWithCorners
 
 end
 
@@ -300,10 +350,9 @@ theorem OpenPartialHomeomorph.map_restrict_localChartMeasure_apply
     (((e₁.localChartMeasure I ν f).restrict e₀.source).map (e₀.extend I)) A =
       ∫⁻ y in A ∩ (e₀.extend I).target,
         ENNReal.ofReal
-          (if y ∈ (I.extendCoordChange e₀ e₁).source then
-            |(fderivWithin ℝ (I.extendCoordChange e₀ e₁) (range I) y).det| *
-              f ((e₀.extend I).symm y)
-          else 0) ∂ν := by
+          ((I.extendCoordChange e₀ e₁).source.indicator
+            (fun y ↦ |(fderivWithin ℝ (I.extendCoordChange e₀ e₁) (range I) y).det| *
+              f ((e₀.extend I).symm y)) y) ∂ν := by
   set Φ := I.extendCoordChange e₀ e₁
   have hΦ_meas := I.measurableSet_extendCoordChange_source e₀ e₁
   have hT₀ : MeasurableSet (e₀.extend I).target := e₀.measurableSet_extend_target I
@@ -311,12 +360,12 @@ theorem OpenPartialHomeomorph.map_restrict_localChartMeasure_apply
     e₀.measurableSet_preimage_extend_inter I hA
   rw [e₀.map_restrict_extend_apply I _ hA, e₁.localChartMeasure_apply I ν f hs_meas,
     e₀.image_extend_preimage_inter e₁ I A,
-    ν.setLIntegral_extendCoordChange (I := I) he₀ he₁ (hA.inter hΦ_meas) inter_subset_right,
+    I.setLIntegral_extendCoordChange ν he₀ he₁ (hA.inter hΦ_meas) inter_subset_right,
     ← lintegral_indicator (hA.inter hΦ_meas), ← lintegral_indicator (hA.inter hT₀)]
   refine lintegral_congr fun y ↦ ?_
   by_cases hy : y ∈ A ∩ Φ.source
   · have hyT : y ∈ A ∩ (e₀.extend I).target := ⟨hy.1, hy.2.1⟩
-    rw [indicator_of_mem hy, indicator_of_mem hyT, ite_eq_left hy.2,
+    rw [indicator_of_mem hy, indicator_of_mem hyT, indicator_of_mem hy.2,
       ENNReal.ofReal_mul (abs_nonneg _)]
     have hxi : (e₀.extend I).symm y ∈ (e₁.extend I).source := hy.2.2
     simp only [Φ, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply]
@@ -324,7 +373,7 @@ theorem OpenPartialHomeomorph.map_restrict_localChartMeasure_apply
     exact (e₁.extend I).left_inv hxi
   · rw [indicator_of_notMem hy]
     by_cases hy' : y ∈ A ∩ (e₀.extend I).target
-    · rw [indicator_of_mem hy', ite_eq_right fun h ↦ hy ⟨hy'.1, h⟩, ENNReal.ofReal_zero]
+    · rw [indicator_of_mem hy', indicator_of_notMem (fun h ↦ hy ⟨hy'.1, h⟩), ENNReal.ofReal_zero]
     · rw [indicator_of_notMem hy']
 
 /-- On a measurable subset `A ⊆ (I.extendCoordChange e e').source` of a chart overlap, the
@@ -357,7 +406,7 @@ theorem OpenPartialHomeomorph.map_restrict_extend_apply_of_subset_extendCoordCha
   have h := e'.setLIntegral_eq_of_map_restrict_eq I hw' hmap' hs_meas hse' (fun _ ↦ 1)
   simp only [mul_one, setLIntegral_one] at h
   rw [e.map_restrict_extend_apply I μ hA, h, him,
-    ν.setLIntegral_extendCoordChange (I := I) he he' hA hAsub]
+    I.setLIntegral_extendCoordChange ν he he' hA hAsub]
   exact setLIntegral_congr_fun hA fun y _ ↦ (ENNReal.ofReal_mul (abs_nonneg _)).symm
 
 namespace ModelWithCorners
