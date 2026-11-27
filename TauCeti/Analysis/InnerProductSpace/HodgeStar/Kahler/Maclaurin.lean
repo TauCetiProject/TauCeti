@@ -7,36 +7,42 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Esymm
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.TopPower
-import TauCeti.Analysis.MeanInequalities
+public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.HermitianForm
+import TauCeti.Analysis.MvPolynomial.NewtonMaclaurin
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # The Maclaurin inequality for wedge powers of a positive (1,1)-form
 
 Let `E` be a complex inner product space of dimension `n`, with `ω` the Kähler form of
 multiplication by `i`, and let `β` be a positive real two-form of type (1,1): `β(u, i u) ≥ 0` for
-every `u`. For `1 ≤ k ≤ n` the wedge powers satisfy the **Maclaurin form inequality**
+every `u`. For `1 ≤ k ≤ m ≤ n` the mixed wedge powers satisfy the **Maclaurin form inequality**
 
-`(β ^ n / ω ^ n) ^ (1 / n) ≤ (β ^ k ∧ ω ^ (n - k) / ω ^ n) ^ (1 / k)`
+`(β ^ m ∧ ω ^ (n - m) / ω ^ n) ^ (1 / m) ≤ (β ^ k ∧ ω ^ (n - k) / ω ^ n) ^ (1 / k)`,
 
-(`TauCeti.AlmostComplexStructure.wedgePow_div_rpow_le_wedge_wedgePow_div_rpow`). The quotients
-of top-degree forms are taken on any tuple `v` of `2 n` vectors with `ω ^ n (v) ≠ 0`; they do not
-depend on `v`.
+and in particular, for `m = n`,
+
+`(β ^ n / ω ^ n) ^ (1 / n) ≤ (β ^ k ∧ ω ^ (n - k) / ω ^ n) ^ (1 / k)`.
+
+The quotients of top-degree forms are taken on any tuple `v` of `2 n` vectors; they do not depend
+on `v` when `ω ^ n (v) ≠ 0`, and both sides vanish when `ω ^ n (v) = 0`.
 
 By the form identity `β ^ k ∧ ω ^ l = (k! l! / n!) σ_k(λ[β]) ω ^ n` for `k + l = n`
 (`TauCeti.AlmostComplexStructure.wedge_wedgePow_wedgePow_ofComplexModule`) and its top case
 `β ^ n = (∏ⱼ λⱼ[β]) ω ^ n` (`TauCeti.AlmostComplexStructure.wedgePow_ofComplexModule`), the
-quotients are the elementary symmetric means `S_k = σ_k(λ[β]) / binom(n, k)` and `S_n` of the
-eigenvalues `λ[β]` of the Hermitian form of `β`. These eigenvalues are the values `β(uⱼ, i uⱼ)`
-on an eigenbasis, so they are nonnegative, and the inequality is Maclaurin's inequality
-`S_n^{1/n} ≤ S_k^{1/k}` for nonnegative reals (`Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg`).
-For `β = ω` both sides are `1`.
+quotients are the elementary symmetric means `S_k = σ_k(λ[β]) / binom(n, k)`
+(`TauCeti.normalizedEsymm`) of the eigenvalues `λ[β]` of the Hermitian form of `β`. These
+eigenvalues are nonnegative (`ContinuousAlternatingMap.relEigenvalues_hermitianSesqForm_nonneg`),
+and the inequality is Maclaurin's inequality `S_m^{1/m} ≤ S_k^{1/k}` for nonnegative reals
+(`TauCeti.normalizedEsymm_rpow_le_of_nonneg`). For `β = ω` both sides are `1`.
 
 ## Main results
 
-* `TauCeti.AlmostComplexStructure.relEigenvalues_nonneg_of_apply_I_smul_nonneg`: a positive
-  (1,1)-form has nonnegative eigenvalues relative to the inner product.
-* `TauCeti.AlmostComplexStructure.wedgePow_div_rpow_le_wedge_wedgePow_div_rpow`: the Maclaurin
-  form inequality.
+* `TauCeti.AlmostComplexStructure.wedge_wedgePow_div_rpow_le_wedge_wedgePow_div_rpow`: the
+  Maclaurin form inequality between the mixed wedge powers `β ^ m ∧ ω ^ (n - m)` and
+  `β ^ k ∧ ω ^ (n - k)`.
+* `TauCeti.AlmostComplexStructure.wedgePow_div_rpow_le_wedge_wedgePow_div_rpow`: its case
+  `m = n`, against the top power `β ^ n`.
 
 ## References
 
@@ -58,23 +64,56 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDim
   {α : E [⋀^Fin 2]→L[ℝ] ℝ} (hα : ∀ u v : E, α ![I • u, I • v] = α ![u, v])
 include hα
 
-/-- A positive real two-form `α` of type (1,1), `α(u, i u) ≥ 0` for every `u`, has nonnegative
-eigenvalues relative to the inner product: `λⱼ[α] = α(uⱼ, i uⱼ)` on the eigenbasis `u`. -/
-theorem relEigenvalues_nonneg_of_apply_I_smul_nonneg {n : ℕ} (hn : finrank ℂ E = n)
-    (hpos : ∀ u : E, 0 ≤ α ![u, I • u]) (j : Fin n) :
-    0 ≤ (isSymm_hermitianSesqForm hα).relEigenvalues hn j := by
-  have h := apply_relEigenvectorBasis_I_smul hα hn j j
-  simp only [↓reduceIte] at h
-  exact h ▸ hpos _
+/-- On a tuple `v` with `ω ^ n (v) ≠ 0`, the quotient `(α ^ k ∧ ω ^ l)(v) / ω ^ n (v)` is the
+normalized elementary symmetric function `S_k(λ[α])` of the eigenvalues of `α`. -/
+private theorem wedge_wedgePow_wedgePow_div_eq_normalizedEsymm {n k l : ℕ}
+    (hn : finrank ℂ E = n) (hkl : k + l = n) (v : Fin (2 * n) → E)
+    (hv : (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v ≠ 0) :
+    wedge (α.wedgePow k) ((alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow l)
+        (v ∘ Fin.cast (by omega)) /
+      (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v =
+      normalizedEsymm k ((isSymm_hermitianSesqForm hα).relEigenvalues hn) := by
+  rw [wedge_wedgePow_wedgePow_ofComplexModule hα hn hkl, mul_div_assoc, div_self hv, mul_one,
+    normalizedEsymm_def, Fintype.card_fin]
+  have hc : ((n.choose k : ℕ) : ℝ) * k.factorial * l.factorial = n.factorial := by
+    rw [show l = n - k by omega]
+    exact_mod_cast Nat.choose_mul_factorial_mul_factorial (by omega)
+  have : (n.choose k : ℝ) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
+  field_simp
+  rw [← hc]
+  ring
 
 /-- **The Maclaurin form inequality.** On a complex inner product space of dimension `n`, with
 `ω` the Kähler form of multiplication by `i`, a positive real two-form `α` of type (1,1),
-`α(u, i u) ≥ 0`, satisfies `(α ^ n / ω ^ n) ^ (1 / n) ≤ (α ^ k ∧ ω ^ l / ω ^ n) ^ (1 / k)` for
-`k ≥ 1` and `k + l = n`, the quotients being taken on any tuple `v` of `2 n` vectors with
-`ω ^ n (v) ≠ 0`. -/
+`α(u, i u) ≥ 0`, satisfies
+`(α ^ m ∧ ω ^ p / ω ^ n) ^ (1 / m) ≤ (α ^ k ∧ ω ^ l / ω ^ n) ^ (1 / k)` for `1 ≤ k ≤ m`,
+`k + l = n` and `m + p = n`, the quotients being taken on any tuple `v` of `2 n` vectors. -/
+theorem wedge_wedgePow_div_rpow_le_wedge_wedgePow_div_rpow {n k l m p : ℕ}
+    (hn : finrank ℂ E = n) (hpos : ∀ u : E, 0 ≤ α ![u, I • u]) (hk : 1 ≤ k) (hkm : k ≤ m)
+    (hkl : k + l = n) (hmp : m + p = n) (v : Fin (2 * n) → E) :
+    (wedge (α.wedgePow m) ((alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow p)
+          (v ∘ Fin.cast (by omega)) /
+        (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v) ^
+        (1 / (m : ℝ)) ≤
+      (wedge (α.wedgePow k) ((alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow l)
+          (v ∘ Fin.cast (by omega)) /
+        (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v) ^
+        (1 / (k : ℝ)) := by
+  by_cases hv : (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v = 0
+  · rw [hv, div_zero, div_zero, Real.zero_rpow (one_div_ne_zero (by norm_cast; omega)),
+      Real.zero_rpow (one_div_ne_zero (by norm_cast; omega))]
+  rw [wedge_wedgePow_wedgePow_div_eq_normalizedEsymm hα hn hmp v hv,
+    wedge_wedgePow_wedgePow_div_eq_normalizedEsymm hα hn hkl v hv]
+  exact normalizedEsymm_rpow_le_of_nonneg (relEigenvalues_hermitianSesqForm_nonneg hα hn hpos)
+    hk hkm
+
+/-- **The Maclaurin form inequality against the top power.** On a complex inner product space of
+dimension `n`, with `ω` the Kähler form of multiplication by `i`, a positive real two-form `α` of
+type (1,1), `α(u, i u) ≥ 0`, satisfies
+`(α ^ n / ω ^ n) ^ (1 / n) ≤ (α ^ k ∧ ω ^ l / ω ^ n) ^ (1 / k)` for `k ≥ 1` and `k + l = n`, the
+quotients being taken on any tuple `v` of `2 n` vectors. -/
 theorem wedgePow_div_rpow_le_wedge_wedgePow_div_rpow {n k l : ℕ} (hn : finrank ℂ E = n)
-    (hpos : ∀ u : E, 0 ≤ α ![u, I • u]) (hk : 1 ≤ k) (hkl : k + l = n) (v : Fin (2 * n) → E)
-    (hv : (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v ≠ 0) :
+    (hpos : ∀ u : E, 0 ≤ α ![u, I • u]) (hk : 1 ≤ k) (hkl : k + l = n) (v : Fin (2 * n) → E) :
     (α.wedgePow n v /
         (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v) ^ (1 / (n : ℝ)) ≤
       (wedge (α.wedgePow k)
@@ -82,34 +121,20 @@ theorem wedgePow_div_rpow_le_wedge_wedgePow_div_rpow {n k l : ℕ} (hn : finrank
           (v ∘ Fin.cast (by omega)) /
         (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v) ^
         (1 / (k : ℝ)) := by
+  by_cases hv : (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v = 0
+  · rw [hv, div_zero, div_zero, Real.zero_rpow (one_div_ne_zero (by norm_cast; omega)),
+      Real.zero_rpow (one_div_ne_zero (by norm_cast; omega))]
   set μ := (isSymm_hermitianSesqForm hα).relEigenvalues hn
-  set s : Multiset ℝ := Finset.univ.val.map μ
-  have hs : Multiset.card s = n := by simp [s]
-  have hmac := s.esymm_div_choose_rpow_le_rpow_of_nonneg hk (show k ≤ n by omega)
-    (fun a ha ↦ by
-      obtain ⟨j, -, rfl⟩ := Multiset.mem_map.1 ha
-      exact relEigenvalues_nonneg_of_apply_I_smul_nonneg hα hn hpos j)
-  have hesymm (j : ℕ) : MvPolynomial.eval μ (MvPolynomial.esymm (Fin n) ℝ j) = s.esymm j := by
-    rw [← MvPolynomial.coe_aeval_eq_eval]
-    exact MvPolynomial.aeval_esymm_eq_multiset_esymm (Fin n) ℝ j μ
-  have hprod : ∏ j, μ j = s.esymm n := by
-    have h : s.esymm (Multiset.card s) = s.prod := by
-      simp [Multiset.esymm, Multiset.powersetCard_self]
-    rw [hs] at h
-    rw [h, Finset.prod_eq_multiset_prod]
-  rw [wedgePow_ofComplexModule hα hn, wedge_wedgePow_wedgePow_ofComplexModule hα hn hkl,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_div_assoc, div_self hv, mul_one,
-    mul_div_assoc, div_self hv, mul_one, hprod, hesymm]
-  rw [hs, Nat.choose_self, Nat.cast_one, div_one] at hmac
-  convert hmac using 2
-  have hl : l = n - k := by omega
-  have hc := Nat.choose_mul_factorial_mul_factorial (show k ≤ n by omega)
-  rw [← hl] at hc
-  have hc' : ((n.choose k : ℕ) : ℝ) * k.factorial * l.factorial = n.factorial := by
-    exact_mod_cast hc
-  have : (n.choose k : ℝ) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
-  field_simp
-  rw [← hc']
-  ring
+  have htop : normalizedEsymm n μ = ∏ j, μ j := by
+    have h := (Finset.univ.val.map μ).esymm_card_eq_prod
+    rw [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin] at h
+    rw [normalizedEsymm_def, Fintype.card_fin, Nat.choose_self, Nat.cast_one, div_one,
+      Finset.prod_eq_multiset_prod, ← h, ← MvPolynomial.coe_aeval_eq_eval]
+    exact MvPolynomial.aeval_esymm_eq_multiset_esymm (Fin n) ℝ n μ
+  rw [wedgePow_ofComplexModule hα hn, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    mul_div_assoc, div_self hv, mul_one,
+    wedge_wedgePow_wedgePow_div_eq_normalizedEsymm hα hn hkl v hv, ← htop]
+  exact normalizedEsymm_rpow_le_of_nonneg (relEigenvalues_hermitianSesqForm_nonneg hα hn hpos)
+    hk (by omega)
 
 end TauCeti.AlmostComplexStructure
