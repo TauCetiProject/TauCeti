@@ -34,8 +34,8 @@ evaluates `S` as `3 (1 - x²)^(-1/2) (1 - k² x²)^(-1/2) - 3 R_F(1 - x², 1 - k
 * `Complex.hasDerivAt_mul_carlsonRF`: `g′(x) = (1 - x²)^(-1/2) (1 - k² x²)^(-1/2)` on `D_k`.
 * `Complex.analyticOnNhd_mul_carlsonRF`: `g` is holomorphic on `D_k`.
 * `Complex.isOpen_setOf_one_sub_sq_mem_slitPlane_and_one_sub_mul_sq_mem_slitPlane`,
-  `Complex.starConvex_setOf_one_sub_sq_mem_slitPlane_and_one_sub_mul_sq_mem_slitPlane`: `D_k` is
-  open and star-shaped about `0`.
+  `Complex.starConvex_zero_setOf_one_sub_sq_mem_slitPlane_and_one_sub_mul_sq_mem_slitPlane`:
+  `D_k` is open and star-shaped about `0`.
 
 ## References
 
@@ -81,19 +81,15 @@ theorem isOpen_setOf_one_sub_sq_mem_slitPlane_and_one_sub_mul_sq_mem_slitPlane (
 /-- The domain `{x | 1 - x² ∈ slitPlane, 1 - k² x² ∈ slitPlane}` of
 `x ↦ x R_F(1 - x², 1 - k² x², 1)` is star-shaped about `0`: if `x² ∉ [1, ∞)` and
 `k² x² ∉ [1, ∞)`, the same holds for `t x` with `0 ≤ t ≤ 1`. -/
-theorem starConvex_setOf_one_sub_sq_mem_slitPlane_and_one_sub_mul_sq_mem_slitPlane (k : ℂ) :
+theorem starConvex_zero_setOf_one_sub_sq_mem_slitPlane_and_one_sub_mul_sq_mem_slitPlane (k : ℂ) :
     StarConvex ℝ 0 {x : ℂ | 1 - x ^ 2 ∈ slitPlane ∧ 1 - k ^ 2 * x ^ 2 ∈ slitPlane} := by
-  rw [starConvex_zero_iff]
-  rintro x ⟨hx, hkx⟩ t ht₀ ht₁
-  have ht : t ^ 2 ∈ Icc (0 : ℝ) 1 := ⟨sq_nonneg t, pow_le_one₀ ht₀ ht₁⟩
-  have hsq : (t • x) ^ 2 = x ^ 2 * ((t ^ 2 : ℝ) : ℂ) := by
-    rw [real_smul, ofReal_pow]
-    ring
-  refine ⟨?_, ?_⟩
-  · rw [Set.mem_ofPred_eq, hsq]
-    exact one_sub_mul_ofReal_mem_slitPlane hx ht
-  · rw [hsq, ← mul_assoc]
-    exact one_sub_mul_ofReal_mem_slitPlane hkx ht
+  have h := starConvex_zero_setOf_one_sub_pow_mem_slitPlane 2
+  -- The second condition is the first one pulled back along `x ↦ k x`.
+  have hk := StarConvex.linear_preimage ((LinearMap.mulLeft ℂ k).restrictScalars ℝ)
+    (by rwa [map_zero])
+  simp only [preimage, LinearMap.restrictScalars_apply, LinearMap.mulLeft_apply, mul_pow,
+    mem_ofPred_eq] at hk
+  exact h.inter hk
 
 /-- The integral of the first kind as a function of `sin φ`,
 `x ↦ x R_F(1 - x², 1 - k² x², 1)`, is holomorphic on its domain

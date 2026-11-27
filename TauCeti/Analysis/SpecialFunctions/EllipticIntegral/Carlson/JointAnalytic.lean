@@ -163,17 +163,17 @@ theorem HasDerivAt.carlsonRF {f g h : ℂ → ℂ} {f' g' h' x : ℂ} (hf : HasD
     convert Complex.hasDerivAt_carlsonRF_left hfx (Or.inl hgx) hhx using 1
     · funext s
       simp [G, v]
-    · rfl
+    · simp [v]
   have h₁ : L (Pi.single 1 1) = -Complex.carlsonRD (f x) (h x) (g x) / 6 := hpart 1 <| by
     convert Complex.hasDerivAt_carlsonRF_middle (Or.inl hfx) hgx hhx using 1
     · funext s
       simp [G, v]
-    · rfl
+    · simp [v]
   have h₂ : L (Pi.single 2 1) = -Complex.carlsonRD (f x) (g x) (h x) / 6 := hpart 2 <| by
     convert Complex.hasDerivAt_carlsonRF_right (Or.inl hfx) hgx hhx using 1
     · funext s
       simp [G, v]
-    · rfl
+    · simp [v]
   have hγ : HasDerivAt (fun y => ![f y, g y, h y]) ![f', g', h'] x := by
     rw [hasDerivAt_pi]
     intro i
@@ -186,6 +186,5 @@ theorem HasDerivAt.carlsonRF {f g h : ℂ → ℂ} {f' g' h' x : ℂ} (hf : HasD
     funext i
     fin_cases i <;> simp
   refine (hG.comp_hasDerivAt x hγ).congr_deriv ?_
-  rw [hvec, map_add, map_add, map_smul, map_smul, map_smul, h₀, h₁, h₂, smul_eq_mul, smul_eq_mul,
-    smul_eq_mul]
+  simp only [hvec, map_add, map_smul, smul_eq_mul, h₀, h₁, h₂]
   ring
