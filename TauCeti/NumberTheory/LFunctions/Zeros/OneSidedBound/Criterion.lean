@@ -32,14 +32,13 @@ namespace TauCeti.OneSidedBound
 /-- Identify the mean of the Legendre-weighted remainder with the compensated mean of
 individual Dirichlet Riesz expressions. -/
 private theorem logDerivMean_eq_residueClassAux_add {d q : ℕ} [Fact d.Prime] [NeZero q]
-    (hd : d ≠ 2) (hc : q.Coprime d) (w : ℂ) :
+    (hne : ∀ ψ : DirichletCharacter ℂ q, ψ.legendreTwist d ≠ 1) (w : ℂ) :
     logDerivMean d q w = LFunctionResidueClassAux (1 : ZMod q) w +
       (∑ ψ : DirichletCharacter ℂ q, logDeriv (ψ.legendreTwist d).LFunction w) /
         (q.totient : ℂ) - (q.totient : ℂ)⁻¹ := by
   classical
-  let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
   simp only [logDerivMean_def, Finset.sum_sub_distrib, quadraticTwist_eq_legendreTwist,
-    entireLFunction_of_ne_one (legendreTwist_ne_one _ d hd hc)]
+    entireLFunction_of_ne_one (hne _)]
   have hsum := Finset.sum_compl_add_sum ({1} : Finset (DirichletCharacter ℂ q))
     (fun ψ ↦ logDeriv ψ.entireLFunction w)
   rw [← hsum, Finset.sum_singleton, entireLFunction_one]
@@ -60,16 +59,15 @@ theorem hasLaplace_totient_mul_exp_mul_primeRemainder (d q : ℕ) [Fact d.Prime]
       ((∑ ψ : DirichletCharacter ℂ q, rieszRemainderMellin ψ.LFunction s) -
         ∑ ψ : DirichletCharacter ℂ q, rieszRemainderMellin (ψ.legendreTwist d).LFunction s) := by
   classical
-  let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
+  have hne (ψ : DirichletCharacter ℂ q) := ψ.legendreTwist_ne_one d hd hc
   have h := ((hasLaplace_primeRemainder hd hc hs).cexp_mul_smul (w := 1)).fun_const_smul
     (q.totient : ℂ)
   simp only [one_mul, ofReal_mul, ofReal_natCast, ofReal_exp, smul_eq_mul, mul_assoc] at h ⊢
   convert h using 1
   have hq : (q.totient : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.totient_pos.mpr (NeZero.pos q)).ne'
-  have H := sum_sub_rieszRemainderMellin_eq_compensated_mean (fun ψ ↦ ψ.legendreTwist d)
-    (fun ψ ↦ legendreTwist_ne_one ψ d hd hc) hs
+  have H := sum_sub_rieszRemainderMellin_eq_compensated_mean (fun ψ ↦ ψ.legendreTwist d) hne hs
   rw [mul_comm ((q.totient : ℂ)), ← div_eq_iff hq,
-    logDerivMean_eq_residueClassAux_add hd hc, logDerivMean_eq_residueClassAux_add hd hc]
+    logDerivMean_eq_residueClassAux_add hne, logDerivMean_eq_residueClassAux_add hne]
   simpa only [Finset.sum_sub_distrib] using H
 
 /-- A one-sided bound for the signed remainder gives zero exclusion at `ρ`, provided the
@@ -81,7 +79,6 @@ theorem LFunction_ne_zero_of_primeRemainder_le {q d : ℕ} [NeZero q] [Fact d.Pr
     (hR : ∀ᶠ y : ℝ in atTop, primeRemainder d q y ≤ y ^ (β - 1))
     (htwist : ∀ ψ : DirichletCharacter ℂ q, ∀ z : ℂ, β < z.re → z.re < 1 →
       |z.im| ≤ |ρ.im| → (ψ.legendreTwist d).LFunction z ≠ 0) : χ.LFunction ρ ≠ 0 := by
-  let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
   let g := fun u : ℝ ↦ (q.totient : ℝ) * Real.exp u * primeRemainder d q (Real.exp u)
   have hg : ∀ᶠ u : ℝ in atTop, g u ≤ (q.totient : ℝ) * Real.exp (β * u) := by
     filter_upwards [Real.tendsto_exp_atTop.eventually hR] with u hu

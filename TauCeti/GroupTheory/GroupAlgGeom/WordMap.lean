@@ -48,7 +48,9 @@ without solutions, whose coordinate groups are trivial.
   `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_eq_iff`: every coordinate-group
   homomorphism comes from a word map, unique up to agreement on the algebraic set.
 * `TauCeti.GroupAlgGeom.CoordGroup.exists_mulEquiv_iff_exists_equiv_isWordMap`: algebraic sets
-  are isomorphic if and only if their coordinate groups are isomorphic over the coefficients.
+  are isomorphic if and only if their coordinate groups are isomorphic over the coefficients;
+  `TauCeti.GroupAlgGeom.coordGroup_iso_iff_wordMap_iso` is the same criterion with the two
+  morphisms given by tuples of words.
 
 ## References
 
@@ -275,4 +277,34 @@ theorem exists_mulEquiv_iff_exists_equiv_isWordMap :
       (MonoidHom.ext fun x => by simpa using DFunLike.congr_fun h₁ x), φ.map_coeff⟩
 
 end CoordGroup
+
+/-- **Isomorphism of algebraic sets is isomorphism of coordinate groups**, in terms of words: the
+coordinate groups of `S ⊆ G[X]` and `T ⊆ G[Y]` are isomorphic under `G` exactly when there are
+tuples of words `w : Y → G[X]` and `w' : X → G[Y]` whose word maps carry `V_H(S)` and `V_H(T)`
+into each other and are mutually inverse on them. This holds for an arbitrary coefficient
+homomorphism `ι`, empty algebraic sets included. It is
+`CoordGroup.exists_mulEquiv_iff_exists_equiv_isWordMap` with the two morphisms written out by
+their representing words. -/
+theorem coordGroup_iso_iff_wordMap_iso (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y)) :
+    (∃ e : CoordGroup ι T ≃* CoordGroup ι S,
+        e.toMonoidHom.comp (CoordGroup.coeff ι T) = CoordGroup.coeff ι S) ↔
+      ∃ (w : Y → GX G X) (w' : X → GX G Y),
+        Set.MapsTo (wordMap ι w) (V ι S) (V ι T) ∧ Set.MapsTo (wordMap ι w') (V ι T) (V ι S) ∧
+        Set.EqOn (wordMap ι w' ∘ wordMap ι w) id (V ι S) ∧
+        Set.EqOn (wordMap ι w ∘ wordMap ι w') id (V ι T) := by
+  simp only [MonoidHom.ext_iff, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+  rw [CoordGroup.exists_mulEquiv_iff_exists_equiv_isWordMap]
+  constructor
+  · rintro ⟨e, ⟨w, hw⟩, ⟨w', hw'⟩⟩
+    have hS (v : V ι S) : wordMap ι w v = e v := (hw v).symm
+    have hT (v : V ι T) : wordMap ι w' v = e.symm v := (hw' v).symm
+    refine ⟨w, w', fun v hv ↦ hS ⟨v, hv⟩ ▸ (e ⟨v, hv⟩).property,
+      fun v hv ↦ hT ⟨v, hv⟩ ▸ (e.symm ⟨v, hv⟩).property, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
+    · simp only [Function.comp_apply, hS ⟨v, hv⟩, hT, Equiv.symm_apply_apply, id]
+    · simp only [Function.comp_apply, hT ⟨v, hv⟩, hS, Equiv.apply_symm_apply, id]
+  · rintro ⟨w, w', hw, hw', hww', hw'w⟩
+    refine ⟨⟨fun v ↦ ⟨wordMap ι w v, hw v.property⟩, fun v ↦ ⟨wordMap ι w' v, hw' v.property⟩,
+      fun v ↦ Subtype.ext (hww' v.property), fun v ↦ Subtype.ext (hw'w v.property)⟩,
+      ⟨w, fun _ ↦ rfl⟩, ⟨w', fun _ ↦ rfl⟩⟩
+
 end TauCeti.GroupAlgGeom

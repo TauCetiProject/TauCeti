@@ -227,6 +227,22 @@ theorem eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
   (existsUnique_frozen hA hAm hAc hΩ g ℓ hv).unique ⟨hug, hu⟩
     (frozenSolution_spec hA hAm hAc hΩ g ℓ hv)
 
+/-- The frozen solution `S v` depends on `v` only through its values almost everywhere on `Ω`. -/
+theorem frozenSolution_congr_ae
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+    (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
+    {v v' : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hv : AEStronglyMeasurable v (volume.restrict Omega)) (hvv' : v =ᵐ[volume.restrict Omega] v') :
+    frozenSolution A g ℓ v = frozenSolution A g ℓ v' :=
+  eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hA hAm hAc hΩ (hv.congr hvv')
+    (frozenSolution_sub_mem_w1p0Submodule hA hAm hAc hΩ g ℓ hv) fun φ => by
+      rw [← forall_energyFormH1_frozenSolution_eq hA hAm hAc hΩ g ℓ hv φ]
+      exact energyFormH1_congr_ae (hvv'.mono fun x hx => by simp only [hx]) .rfl .rfl _ _
+
 /-- The frozen solution is homogeneous in the data: scaling the boundary values `g` and the
 forcing `ℓ` by `θ` scales the solution of `-div (A(x, v) ∇u) = ℓ`, `u - g ∈ H¹₀(Ω)`, by `θ`. -/
 theorem smul_frozenSolution
