@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex.Basic
 
 /-!
-# Checks: the diagonal of `𝔰𝔩_n(ℝ)` is a Cartan subalgebra and the real diagonal of `𝔰𝔩_n(ℂ)` is not
+# Checks: `𝔰𝔩_n(ℝ)` and `𝔰𝔬(2, 3)` are split; standard `𝔞` in `𝔰𝔩_n(ℂ)`, `𝔰𝔬(2, 4)` are not Cartan
 
 Checks of the criterion `LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`: a maximal abelian
 subspace `𝔞` of `𝔭` is a Cartan subalgebra exactly when `𝔪 = 0`.
@@ -99,8 +99,8 @@ example : ((Orthogonal.so' (Fin 2) (Fin 4) ℝ).restrictNegConjTranspose
       (Orthogonal.splitCartanSubmodule soTwoFourEmbedding) :=
   Orthogonal.isMaximalAbelianInP_splitCartanSubmodule (Fin.castLE_injective _)
 
-/-- `𝔰𝔬(2, 4)` with `𝔞` the span of `H_1`, `H_2`: `𝔪 ≠ 0`, since `E_(2, 3) - E_(3, 2)` in the
-second block lies in it. -/
+/-- `𝔰𝔬(2, 4)` with `𝔞` the span of `H_1`, `H_2`: `𝔪 ≠ 0`, since `E_(3', 4') - E_(4', 3')` in the
+second block lies in it (`3'`, `4'` are the `Fin 4` indices `2`, `3`). -/
 example :
     (Orthogonal.splitCartanSubmodule soTwoFourEmbedding).restrictedRootSpace 0 ⊓
       ((Orthogonal.so' (Fin 2) (Fin 4) ℝ).restrictNegConjTranspose
