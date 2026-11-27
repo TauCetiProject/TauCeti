@@ -162,6 +162,31 @@ theorem leadingCoeff_aeval_C_add_C_mul_X_of_isHomogeneous {p : MvPolynomial σ R
   rw [Polynomial.leadingCoeff, natDegree_aeval_C_add_C_mul_X_of_isHomogeneous hp x ha,
     coeff_aeval_C_add_C_mul_X_of_isHomogeneous hp]
 
+/-- The restriction of a polynomial homogeneous of degree `m` to an affine line in a direction `a`
+with `p(a) ≠ 0` is nonzero. -/
+theorem aeval_C_add_C_mul_X_ne_zero_of_isHomogeneous {p : MvPolynomial σ R} {m : ℕ}
+    (hp : p.IsHomogeneous m) (x : σ → R) {a : σ → R} (ha : eval a p ≠ 0) :
+    aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p ≠ 0 :=
+  Polynomial.leadingCoeff_ne_zero.1 <| by
+    rwa [leadingCoeff_aeval_C_add_C_mul_X_of_isHomogeneous hp x ha]
+
+/-- Mapping the coefficients of the restriction of `p` to the affine line through `x` in the
+direction `a` along `f`, and evaluating at `z`, is evaluating the mapped polynomial at the mapped
+point `f ∘ x + z • f ∘ a`. -/
+theorem eval_map_aeval_C_add_C_mul_X (f : R →+* S) (p : MvPolynomial σ R) (x a : σ → R) (z : S) :
+    Polynomial.eval z (Polynomial.map f
+        (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p)) =
+      eval (f ∘ x + z • f ∘ a) (map f p) := by
+  rw [Polynomial.eval_map, eval_map, aeval_def, ← Polynomial.coe_eval₂RingHom, eval₂_comp_left]
+  congr 1
+  · ext r
+    simp
+  · ext i
+    simp only [Function.comp_apply, Polynomial.coe_eval₂RingHom, Polynomial.eval₂_add,
+      Polynomial.eval₂_mul, Polynomial.eval₂_C, Polynomial.eval₂_X, Pi.add_apply, Pi.smul_apply,
+      smul_eq_mul]
+    ring
+
 /-- The derivative of the restriction of `p` to the affine line through `x` in the direction `a`
 is the restriction of the directional derivative `D_a p = ∑ᵢ aᵢ ∂p/∂Xᵢ` to the same line. -/
 theorem derivative_aeval_C_add_C_mul_X [Fintype σ] (p : MvPolynomial σ R) (x a : σ → R) :

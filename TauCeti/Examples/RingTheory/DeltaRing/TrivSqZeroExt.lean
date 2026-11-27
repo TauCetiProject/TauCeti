@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.TrivSqZeroExt.SymmetricBimodule
 public import TauCeti.RingTheory.DeltaRing.TrivSqZeroExt
 
 /-!
@@ -28,15 +29,8 @@ public section
 
 namespace TauCeti.Examples
 
-open DeltaRing TrivSqZeroExt
-
-/-- The opposite action of `ℤ` on `ZMod 2`, through `ℤᵐᵒᵖ ≃+* ℤ`. -/
-local instance instModuleMulOppositeIntZModTwo : Module ℤᵐᵒᵖ (ZMod 2) :=
-  Module.compHom (ZMod 2) (RingEquiv.toOpposite ℤ).symm.toRingHom
-
-/-- The opposite action of `ℤ` on `ZMod 2` agrees with the integer action. -/
-local instance instIsCentralScalarIntZModTwo : IsCentralScalar ℤ (ZMod 2) :=
-  ⟨fun _ _ => rfl⟩
+open DeltaRing _root_.TrivSqZeroExt
+open scoped TauCeti.TrivSqZeroExt
 
 -- On `ℤ ⊕ ZMod 2 ε`, `δ_c (a, b) = ((a - a ^ 2) / 2, (c - ā) b)`.
 example (c : ZMod 2) (a : ℤ) (b : ZMod 2) :

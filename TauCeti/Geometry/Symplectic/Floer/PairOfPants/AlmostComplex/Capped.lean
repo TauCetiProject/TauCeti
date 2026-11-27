@@ -590,4 +590,36 @@ theorem contMDiff_cappedComparisonAlmostComplex (h₀ : ω.Compatible J₀) {n :
 
 end FamilySmooth
 
+section FamilySmoothNormed
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+  {J : Puncture → ℝ → V → AlmostComplexStructure V}
+
+/-- The comparison family, read in the plane chart, is `C^n` jointly in the family parameter `R`,
+the real coordinates of `ℂ` and the target point, for `C^n` families of structures on the ends. -/
+theorem contDiff_cappedComparisonAlmostComplex (h₀ : ω.Compatible J₀)
+    (hJ : ∀ q t x, ω.Tames (J q t x)) {n : ℕ∞} (hJp : ∀ q, Function.Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ n fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap) :
+    ContDiff ℝ n fun p : ℝ × ((ℝ × ℝ) × V) ↦ (cappedComparisonAlmostComplex h₀ J hJ p.1
+      (Complex.equivRealProdCLM.symm p.2.1) p.2.2).toLinearMap.toContinuousLinearMap := by
+  have hg : ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V))) n
+      fun p : ℝ × ((ℝ × ℝ) × V) ↦ (Complex.equivRealProdCLM.symm p.2.1, (p.1, p.2.2)) :=
+    (Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
+      (contDiff_fst.contMDiff.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
+  exact ((contMDiff_cappedComparisonAlmostComplex h₀ hJp
+    fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff).comp hg).contDiff
+
+/-- A member `R` of the comparison family, read in the plane chart, is `C^n` jointly in the real
+coordinates of `ℂ` and the target point, for `C^n` families of structures on the ends. -/
+theorem contDiff_cappedComparisonAlmostComplex_equivRealProdCLM (h₀ : ω.Compatible J₀)
+    (hJ : ∀ q t x, ω.Tames (J q t x)) {n : ℕ∞} (hJp : ∀ q, Function.Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ n fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (R : ℝ) :
+    ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ (cappedComparisonAlmostComplex h₀ J hJ R
+      (Complex.equivRealProdCLM.symm p.1) p.2).toLinearMap.toContinuousLinearMap :=
+  (contDiff_cappedComparisonAlmostComplex h₀ hJ hJp hJs).comp (contDiff_const.prodMk contDiff_id)
+
+end FamilySmoothNormed
+
 end TauCeti.Floer

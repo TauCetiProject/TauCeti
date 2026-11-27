@@ -98,6 +98,15 @@ theorem whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom (X : C
     associator_inv_naturality_middle_assoc, ← comp_whiskerRight_assoc, braiding_naturality_right,
     comp_whiskerRight_assoc, associator_naturality_left_assoc]
 
+/-- Whiskering `g` on the third factor of `X ⊗ (Y ⊗ Z)` commutes with swapping the first two
+factors via `(α_ X _ _).inv ≫ (β_ X _).hom ▷ _ ≫ (α_ _ X _).hom`. -/
+@[reassoc]
+theorem whiskerLeft_whiskerLeft_comp_associator_inv_braiding_associator_hom (X Y : C)
+    {Z Z' : C} (g : Z ⟶ Z') :
+    X ◁ Y ◁ g ≫ (α_ X Y Z').inv ≫ (β_ X Y).hom ▷ Z' ≫ (α_ Y X Z').hom =
+      (α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom ≫ Y ◁ X ◁ g := by
+  simpa using whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom X (𝟙 Y) g
+
 /-- **Unitors through the braiding with the unit.** The two ways of mapping
 `(𝟙_ C ⊗ X) ⊗ 𝟙_ C` to `X` agree: whiskering the left unitor and applying the right unitor, or
 reassociating, braiding `X` past the unit, reassociating back, and applying the unitors. -/

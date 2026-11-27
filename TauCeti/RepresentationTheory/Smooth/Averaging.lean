@@ -10,8 +10,8 @@ public import TauCeti.RepresentationTheory.RelativeNorm
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.UnitProOrder
+public import TauCeti.RepresentationTheory.Invariants
 import TauCeti.Algebra.Module.NatInt
-import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # The averaging projector onto the invariants of a compact group
@@ -46,6 +46,12 @@ Bernstein's notes onto `V^U`.
   `e_K (σ k v) = e_K v` and `σ k (e_K v) = e_K v`.
 * `Representation.ker_smoothAverage`: the kernel of `e_K` is the span of the vectors `σ k x - x`.
 * `Representation.IntertwiningMap.map_smoothAverage`: `e_K` commutes with intertwining maps.
+* `Representation.map_smoothAverage_of_forall_apply_eq`: a linear map constant on orbits does not
+  see the average.
+* `Representation.isSelfAdjoint_smoothAverage`: `e_K` is self-adjoint
+  (`LinearMap.IsSelfAdjoint`) for every `σ`-invariant sesquilinear form.
+* `Representation.IntertwiningMap.invariantsMap_surjective`: a surjective intertwining map out of
+  a smooth representation is surjective on `K`-invariants, so `K`-invariants are exact.
 * `Representation.smoothAverage_smoothAverage_subgroup`,
   `Representation.smoothAverage_subgroup_smoothAverage`,
   `Representation.smoothAverage_comp_smoothAverage_subgroup`,
@@ -58,6 +64,11 @@ Bernstein's notes onto `V^U`.
 
 * J. Bernstein, *Representations of p-adic groups*, Harvard lectures 1992, written by
   K. Rumelhart, Chapter I, §2.1, p. 11, and Proposition 6(1), p. 14.
+
+`Representation.map_smoothAverage_of_forall_apply_eq` and
+`Representation.isSelfAdjoint_smoothAverage` are adapted from grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC),
+`src/Lib/Adelic/Hecke/ClassSums.lean` (`New.IsUnitary.compactMean_adjoint`).
 -/
 
 public section
@@ -216,6 +227,21 @@ theorem IntertwiningMap.map_smoothAverage {ρ : Representation A K W} [IsSmooth 
     relNorm_apply, map_sum]
   simp only [f.isIntertwining]
 
+variable {σ} in
+include hK in
+/-- **Invariants of invertible pro-order are exact on the right**: a surjective intertwining map
+out of a smooth representation maps `V^K` onto `W^K`, since it commutes with the averaging
+projector `e_K`. -/
+theorem IntertwiningMap.invariantsMap_surjective {ρ : Representation A K W}
+    (f : σ.IntertwiningMap ρ) (hf : Function.Surjective f) :
+    Function.Surjective f.invariantsMap := by
+  have := IsSmooth.of_surjective f hf
+  rintro ⟨w, hw⟩
+  obtain ⟨v, rfl⟩ := hf w
+  refine ⟨⟨σ.smoothAverage hK v, σ.smoothAverage_apply_mem_invariants hK v⟩, Subtype.ext ?_⟩
+  rw [coe_invariantsMap_apply, Subtype.coe_mk, Subtype.coe_mk, map_smoothAverage σ hK,
+    ρ.smoothAverage_apply_of_mem_invariants hK hw]
+
 /-- **Nested averages.** For a compact subgroup `H` of invertible pro-order, averaging over `H` and
 then over `K` is averaging over `K`. -/
 @[simp]
@@ -248,6 +274,41 @@ theorem smoothAverage_subgroup_comp_smoothAverage (H : Subgroup K) [CompactSpace
     (hH : TauCeti.HasUnitProOrder A H) :
     smoothAverage (σ.comp H.subtype) hH ∘ₗ σ.smoothAverage hK = σ.smoothAverage hK :=
   LinearMap.ext (σ.smoothAverage_subgroup_smoothAverage hK H hH)
+
+/-- A linear map that is constant on the orbits of `σ` takes the same value at a vector and at its
+average. -/
+theorem map_smoothAverage_of_forall_apply_eq (φ : V →ₗ[A] W) (hφ : ∀ k v, φ (σ k v) = φ v)
+    (v : V) : φ (σ.smoothAverage hK v) = φ v := by
+  -- `φ` intertwines `σ` with the trivial representation, on which averaging is the identity.
+  let φ' : σ.IntertwiningMap (trivial A K W) :=
+    LinearMap.intertwiningMap_of_isIntertwiningMap σ (trivial A K W) φ fun k v ↦ by
+      simpa using hφ k v
+  have h := IntertwiningMap.map_smoothAverage σ hK φ' v
+  rw [smoothAverage_apply_of_mem_invariants (trivial A K W) hK (v := φ' v) fun _ ↦ by simp] at h
+  simpa only [φ', LinearMap.toIntertwiningMap] using h
+
+/-- **The average is self-adjoint** for every `σ`-invariant sesquilinear form `B`:
+`B (e_K x) y = B x (e_K y)` for all `x y`, stated with `LinearMap.IsSelfAdjoint` for `B.flip`,
+which is linear in its first argument. No positivity of `B` is needed. -/
+theorem isSelfAdjoint_smoothAverage [StarRing A] (B : V →ₗ⋆[A] V →ₗ[A] A)
+    (hB : ∀ k x y, B (σ k x) (σ k y) = B x y) : B.flip.IsSelfAdjoint (σ.smoothAverage hK) := by
+  intro y x
+  rw [LinearMap.flip_apply, LinearMap.flip_apply]
+  symm
+  -- Both sides are `B (e_K x) (e_K y)`: in each variable `B` against an invariant vector is
+  -- constant on orbits. In the first variable pass to the linear map `x ↦ star (B x (e_K y))`.
+  have h_right : B (σ.smoothAverage hK x) (σ.smoothAverage hK y) = B (σ.smoothAverage hK x) y :=
+    σ.map_smoothAverage_of_forall_apply_eq hK (B (σ.smoothAverage hK x)) (fun k z ↦ by
+      conv_lhs => rw [← σ.apply_smoothAverage_apply hK k x]
+      exact hB k _ z) y
+  let ψ : V →ₗ[A] A := (starLinearEquiv A).toLinearMap ∘ₛₗ B.flip (σ.smoothAverage hK y)
+  have hψ (z : V) : ψ z = star (B z (σ.smoothAverage hK y)) := by simp [ψ]
+  have h_left := σ.map_smoothAverage_of_forall_apply_eq hK ψ (fun k z ↦ by
+    rw [hψ, hψ]
+    conv_lhs => rw [← σ.apply_smoothAverage_apply hK k y]
+    rw [hB k z]) x
+  rw [hψ, hψ, star_inj] at h_left
+  rw [← h_right, h_left]
 
 end Compact
 

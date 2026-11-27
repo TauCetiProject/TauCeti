@@ -8,10 +8,14 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
+public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Integral.L2NormSq
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The absolutely continuous characterization of interval Sobolev classes
@@ -31,7 +35,9 @@ such a representative, with weak gradient that function
 continuous function with `Lᵖ` derivative has that function as representative and value, and its
 derivative as weak gradient
 (`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_value_gradient_ae_eq`); every `C¹` function
-is a special case (`TauCeti.W1p.exists_intervalRepresentativeL_eq_of_contDiff`). Integrating by
+and every function Lipschitz on `[a, b]` is a special case
+(`TauCeti.W1p.exists_intervalRepresentativeL_eq_of_contDiff`,
+`TauCeti.W1p.exists_intervalRepresentativeL_eq_of_lipschitzOnWith`). Integrating by
 parts against the flux `F(x) = c - ∫_a^x f` of an integrable `f` gives
 `∫_a^b F v' = F(b) v(b) - F(a) v(a) + ∫_a^b f v` for every Sobolev class `v`
 (`TauCeti.W1p.setIntegral_sub_intervalIntegral_mul_gradient_eq`), so the class with
@@ -42,6 +48,14 @@ For `p = 2` the squared `L²` norms of the value and of the gradient are the int
 the squares of the representative and of its derivative
 (`TauCeti.W1p.norm_value_sq_eq_integral_intervalRepresentativeL`,
 `TauCeti.W1p.norm_gradient_sq_eq_integral_deriv_intervalRepresentativeL`).
+
+A class whose value agrees almost everywhere with a function continuous on `[a,b]` has that
+function as its continuous representative
+(`TauCeti.W1p.intervalRepresentativeL_apply_of_value_ae_eq`), and its trace is the pair of endpoint
+values (`TauCeti.W1p.intervalTraceL_eq_of_value_ae_eq`). By the Hölder bound of the
+representative, that function is Hölder continuous of exponent `1 - 1/p` on `[a,b]` with constant
+`‖u'‖_{Lᵖ(a,b)}`, which is Morrey's embedding on an interval
+(`TauCeti.W1p.holderOnWith_of_value_ae_eq`).
 
 ## References
 
@@ -113,6 +127,42 @@ namespace TauCeti.W1p
 
 variable {a b : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+/-- If the value of a class agrees almost everywhere on `(a,b)` with a function `f` continuous on
+`[a,b]`, then `f` is its continuous representative, including at both endpoints. -/
+theorem intervalRepresentativeL_apply_of_value_ae_eq (hab : a < b) {f : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a b)) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    (hu : value u =ᵐ[volume.restrict (Ioo a b)] f) (t : Icc a b) :
+    intervalRepresentativeL hab u t = f t := by
+  have heq : intervalRepresentativeL hab u = ⟨(Icc a b).domRestrict f, hf.domRestrict⟩ := by
+    apply (intervalRepresentativeL_eq_iff hab u _).2
+    filter_upwards [hu, ae_restrict_mem measurableSet_Ioo] with t ht hmem
+    rw [ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem), domRestrict_apply]
+    exact ht
+  rw [heq, ContinuousMap.coe_mk, domRestrict_apply]
+
+/-- If the value of a class agrees almost everywhere on `(a,b)` with a function `f` continuous on
+`[a,b]`, then its trace is the pair of endpoint values `(f a, f b)`. -/
+theorem intervalTraceL_eq_of_value_ae_eq (hab : a < b) {f : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a b)) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    (hu : value u =ᵐ[volume.restrict (Ioo a b)] f) : intervalTraceL hab u = (f a, f b) := by
+  rw [intervalTraceL_apply, intervalRepresentativeL_apply_of_value_ae_eq hab hf hu,
+    intervalRepresentativeL_apply_of_value_ae_eq hab hf hu]
+
+/-- **Morrey's embedding on an interval.** If the value of `u ∈ W^{1,p}(a, b)` agrees almost
+everywhere on `(a,b)` with a function `f` continuous on `[a,b]`, then `f` is Hölder continuous of
+exponent `1 - 1/p` on `[a,b]` with constant `‖u'‖_{Lᵖ(a,b)}`. At `p = ∞` the exponent is `1`. -/
+theorem holderOnWith_of_value_ae_eq (hab : a < b) {f : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a b)) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    (hu : value u =ᵐ[volume.restrict (Ioo a b)] f) :
+    HolderOnWith ‖gradient u‖₊ (1 - 1 / p.toReal).toNNReal f (Icc a b) := by
+  have hexp : 0 ≤ 1 - 1 / p.toReal := ENNReal.one_sub_one_div_toReal_nonneg Fact.out
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have h := abs_intervalRepresentativeL_sub_le hab u ⟨y, hy⟩ ⟨x, hx⟩
+  rw [intervalRepresentativeL_apply_of_value_ae_eq hab hf hu,
+    intervalRepresentativeL_apply_of_value_ae_eq hab hf hu] at h
+  rw [Real.dist_eq, Real.dist_eq, coe_nnNorm, Real.coe_toNNReal _ hexp, mul_comm]
+  exact h
+
 /-- An absolutely continuous real function with `Lᵖ` derivative is the continuous representative
 of an interval Sobolev class, including at both endpoints, whose value and weak gradient agree
 almost everywhere with the function and its classical derivative. -/
@@ -124,13 +174,8 @@ theorem exists_intervalRepresentativeL_eq_and_value_gradient_ae_eq (hab : a < b)
       value u =ᵐ[volume.restrict (Ioo a b)] f ∧
       gradient u =ᵐ[volume.restrict (Ioo a b)] deriv f := by
   obtain ⟨u, hv, hg⟩ := hf.exists_w1p_value_gradient_ae_eq hdf
-  let w : C(Icc a b, ℝ) := ⟨fun t ↦ f t, (uIcc_of_le hab.le ▸ hf.continuousOn).domRestrict⟩
-  have heq : intervalRepresentativeL hab u = w := by
-    apply (intervalRepresentativeL_eq_iff hab u w).2
-    filter_upwards [hv, ae_restrict_mem measurableSet_Ioo] with t ht hmem
-    rw [projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
-    exact ht
-  exact ⟨u, fun t ↦ congrArg (fun g : C(Icc a b, ℝ) ↦ g t) heq, hv, hg⟩
+  exact ⟨u, intervalRepresentativeL_apply_of_value_ae_eq hab
+    (uIcc_of_le hab.le ▸ hf.continuousOn) hv, hv, hg⟩
 
 /-- Every absolutely continuous real function with `Lᵖ` derivative is the representative of
 exactly one interval Sobolev class. The equality includes both endpoint values. -/
@@ -275,6 +320,21 @@ theorem exists_intervalRepresentativeL_eq_of_contDiff (hab : a < b) {f : ℝ →
     ((hf.continuous_deriv le_rfl).continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc
       measurableSet_Ioo Ioo_subset_Icc_self p)
 
+/-- A function Lipschitz on `[a, b]` is the continuous representative of a Sobolev class on
+`(a, b)`, whose value and weak gradient agree almost everywhere with the function and its
+derivative. -/
+theorem exists_intervalRepresentativeL_eq_of_lipschitzOnWith (hab : a < b) {f : ℝ → ℝ}
+    {K : NNReal} (hf : LipschitzOnWith K f (Icc a b)) :
+    ∃ u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      (∀ t : Icc a b, intervalRepresentativeL hab u t = f t) ∧
+      value u =ᵐ[volume.restrict (Ioo a b)] f ∧
+      gradient u =ᵐ[volume.restrict (Ioo a b)] deriv f :=
+  exists_intervalRepresentativeL_eq_and_value_gradient_ae_eq hab
+    (uIcc_of_le hab.le ▸ hf).absolutelyContinuousOnInterval
+    (MemLp.of_bound (measurable_deriv f).aestronglyMeasurable K
+      (ae_restrict_of_forall_mem measurableSet_Ioo fun _ ht ↦
+        norm_deriv_le_of_lipschitzOn (Icc_mem_nhds ht.1 ht.2) hf))
+
 /-! ### Squared `L²` norms as interval integrals -/
 
 /-- If the value of `u ∈ H¹(a, b)` agrees almost everywhere on `(a, b)` with `g`, then its squared
@@ -282,24 +342,16 @@ theorem exists_intervalRepresentativeL_eq_of_contDiff (hab : a < b) {f : ℝ →
 theorem norm_value_sq_eq_intervalIntegral_of_ae_eq (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} {g : ℝ → ℝ}
     (hg : value u =ᵐ[volume.restrict (Ioo a b)] g) :
-    ‖value u‖ ^ 2 = ∫ t in a..b, g t ^ 2 := by
-  rw [← integral_value_sq_eq_norm_value_sq, intervalIntegral.integral_of_le hab.le,
-    integral_Ioc_eq_integral_Ioo]
-  refine integral_congr_ae ?_
-  filter_upwards [hg] with t ht
-  rw [ht]
+    ‖value u‖ ^ 2 = ∫ t in a..b, g t ^ 2 :=
+  L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le hg
 
 /-- If the gradient of `u ∈ H¹(a, b)` agrees almost everywhere on `(a, b)` with `g`, then its
 squared `L²` norm is the integral of `g²` over `(a, b)`. -/
 theorem norm_gradient_sq_eq_intervalIntegral_of_ae_eq (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} {g : ℝ → ℝ}
     (hg : gradient u =ᵐ[volume.restrict (Ioo a b)] g) :
-    ‖gradient u‖ ^ 2 = ∫ t in a..b, g t ^ 2 := by
-  rw [← integral_norm_gradient_sq_eq_norm_gradient_sq, intervalIntegral.integral_of_le hab.le,
-    integral_Ioc_eq_integral_Ioo]
-  refine integral_congr_ae ?_
-  filter_upwards [hg] with t ht
-  rw [ht, Real.norm_eq_abs, sq_abs]
+    ‖gradient u‖ ^ 2 = ∫ t in a..b, g t ^ 2 :=
+  L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le hg
 
 /-- The squared `L²` norm of the value of `u ∈ H¹(a, b)` is the integral of the square of its
 continuous representative. -/

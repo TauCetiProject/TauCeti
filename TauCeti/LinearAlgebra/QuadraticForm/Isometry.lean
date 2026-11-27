@@ -20,6 +20,7 @@ This file records general properties of quadratic-map isometries.
 
 * `QuadraticMap.Isometry.neg`: an isometry also preserves the negatives of the quadratic maps.
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
+* `QuadraticMap.Isometry.associated_apply`: an isometry preserves the associated bilinear map.
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
 * `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
@@ -76,6 +77,15 @@ theorem _root_.QuadraticMap.Isometry.polar_apply {R : Type u} {M₁ : Type v} {M
     {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (x y : M₁) :
     polar Q₂ (f x) (f y) = polar Q₁ x y := by
   simp only [QuadraticMap.polar, ← map_add f, QuadraticMap.Isometry.map_app]
+
+/-- An isometry preserves the associated bilinear map of a quadratic map. -/
+@[simp]
+theorem _root_.QuadraticMap.Isometry.associated_apply {R : Type u} {M₁ : Type v} {M₂ : Type*}
+    {N : Type w} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] [Invertible (2 : Module.End R N)] {Q₁ : QuadraticMap R M₁ N}
+    {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (x y : M₁) :
+    associated Q₂ (f x) (f y) = associated Q₁ x y := by
+  simp only [QuadraticMap.associated_apply, ← map_add f, QuadraticMap.Isometry.map_app]
 
 /-- A linear map preserving a quadratic form is an isometry of its polar bilinear form. -/
 theorem _root_.QuadraticForm.isIsometry_polarBilin_of_forall_map_app

@@ -48,6 +48,8 @@ its `K`-action has finite multiplicities, `Representation.HasFiniteMultiplicitie
 
 ## Main statements
 
+* `Representation.IsGFinite.lie`: for a finite-dimensional `𝔤` and a covariant representation of
+  `K`, the `K`-finite vectors are stable under `𝔤`.
 * `TauCeti.GKModule.hasFiniteMultiplicities_submodule`,
   `TauCeti.GKModule.hasFiniteMultiplicities_directSum`: admissibility passes to `(𝔤, K)`-submodules
   and to finite direct sums.
@@ -82,6 +84,24 @@ structure GKModule (Ad : Representation k K 𝔤) [IsLieAction Ad] (V : Type v) 
   map_lie (g : K) (x : 𝔤) (v : V) : ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆
   /-- Every vector is `K`-finite. -/
   isGFinite (v : V) : ρ.IsGFinite v
+
+/-- **`K`-finite vectors are stable under `𝔤`.** Let `𝔤` be finite-dimensional and `ρ` a
+representation of `K` on a `𝔤`-module `V`, covariant for `Ad`. If `v` is `K`-finite then so is
+`⁅x, v⁆`: its orbit lies in the span of the brackets of a basis of `𝔤` with the orbit of `v`. -/
+theorem _root_.Representation.IsGFinite.lie [FiniteDimensional k 𝔤] {Ad : Representation k K 𝔤}
+    {V : Type*} [AddCommGroup V] [Module k V] [LieRingModule 𝔤 V] [LieModule k 𝔤 V]
+    {ρ : Representation k K V} (h : ∀ g x v, ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆) {v : V}
+    (hv : ρ.IsGFinite v) (x : 𝔤) : ρ.IsGFinite ⁅x, v⁆ := by
+  let b := Module.finBasis k 𝔤
+  let O := Submodule.span k (Set.range fun g : K ↦ ρ g v)
+  -- The orbit span `O` is finite-dimensional, hence so is the supremum of its images below.
+  have : FiniteDimensional k O := (isGFinite_iff _ _).1 hv
+  refine IsGFinite.of_forall_apply_mem (W := ⨆ j, O.map (LieModule.toEnd k 𝔤 V (b j))) fun g ↦ ?_
+  rw [h, ← b.sum_repr (Ad g x), sum_lie]
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  rw [smul_lie]
+  exact Submodule.smul_mem _ _ (Submodule.mem_iSup_of_mem j
+    (Submodule.mem_map_of_mem (Submodule.subset_span ⟨g, rfl⟩)))
 
 variable {Ad : Representation k K 𝔤} [IsLieAction Ad] {V : Type v} [AddCommGroup V]
   [Module k V] [LieRingModule 𝔤 V] [LieModule k 𝔤 V]
@@ -128,6 +148,53 @@ theorem mem_toLieSubmodule {N : GKSubmodule M} {v : V} : v ∈ N.toLieSubmodule 
 theorem ext {N N' : GKSubmodule M} (h : ∀ v, v ∈ N ↔ v ∈ N') : N = N' :=
   SetLike.ext h
 
+/-- `(𝔤, K)`-submodules are ordered by inclusion. -/
+instance instPartialOrder : PartialOrder (GKSubmodule M) :=
+  PartialOrder.ofSetLike (GKSubmodule M)
+
+/-- The inclusion order on `(𝔤, K)`-submodules is that of their Lie submodules. -/
+@[simp]
+theorem toLieSubmodule_le_toLieSubmodule {N N' : GKSubmodule M} :
+    N.toLieSubmodule ≤ N'.toLieSubmodule ↔ N ≤ N' :=
+  Iff.rfl
+
+/-- The zero `(𝔤, K)`-submodule. -/
+instance instBot : Bot (GKSubmodule M) :=
+  ⟨⟨⊥, fun g v hv ↦ by rw [(LieSubmodule.mem_bot v).1 hv, map_zero]; exact zero_mem _⟩⟩
+
+/-- The whole module as a `(𝔤, K)`-submodule. -/
+instance instTop : Top (GKSubmodule M) :=
+  ⟨⟨⊤, fun _ _ _ ↦ LieSubmodule.mem_top _⟩⟩
+
+@[simp]
+theorem toLieSubmodule_bot : (⊥ : GKSubmodule M).toLieSubmodule = ⊥ :=
+  (rfl)
+
+@[simp]
+theorem toLieSubmodule_top : (⊤ : GKSubmodule M).toLieSubmodule = ⊤ :=
+  (rfl)
+
+@[simp]
+theorem mem_bot {v : V} : v ∈ (⊥ : GKSubmodule M) ↔ v = 0 :=
+  LieSubmodule.mem_bot v
+
+@[simp]
+theorem mem_top (v : V) : v ∈ (⊤ : GKSubmodule M) :=
+  LieSubmodule.mem_top v
+
+/-- `⊥` and `⊤` are the least and greatest `(𝔤, K)`-submodules. -/
+instance instBoundedOrder : BoundedOrder (GKSubmodule M) where
+  bot_le N v hv := by
+    rw [mem_bot.1 hv]
+    exact mem_toLieSubmodule.1 (zero_mem _)
+  le_top _ v _ := mem_top v
+
+/-- A nonzero `(𝔤, K)`-module has `⊥ ≠ ⊤`. -/
+instance instNontrivial [Nontrivial V] : Nontrivial (GKSubmodule M) :=
+  ⟨⟨⊥, ⊤, fun h ↦ by
+    obtain ⟨v, hv⟩ := exists_ne (0 : V)
+    exact hv (mem_bot.1 (h ▸ mem_top v))⟩⟩
+
 /-- The subrepresentation of `K` underlying a `(𝔤, K)`-submodule. -/
 def toSubrepresentation (N : GKSubmodule M) : Subrepresentation M.ρ where
   toSubmodule := N.toLieSubmodule.toSubmodule
@@ -154,8 +221,7 @@ variable (N : GKSubmodule M)
 def submodule : GKModule Ad N.toLieSubmodule where
   ρ := N.toSubrepresentation.toRepresentation
   map_lie g x v := Subtype.ext (M.map_lie g x v)
-  isGFinite v := IsGFinite.of_injective N.toSubrepresentation.subtype
-    N.toSubrepresentation.subtype_injective (by simpa using M.isGFinite v)
+  isGFinite v := (N.toSubrepresentation.isGFinite_toRepresentation_iff v).2 (M.isGFinite v)
 
 @[simp]
 theorem submodule_ρ_apply_coe (g : K) (v : N.toLieSubmodule) :

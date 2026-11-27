@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Inverse
 public import Mathlib.RingTheory.MvPowerSeries.Order
-public import TauCeti.RingTheory.Ideal.Order
+public import TauCeti.RingTheory.Ideal.Order.Basic
 
 /-!
 # Ideals and local order of multivariate power series
