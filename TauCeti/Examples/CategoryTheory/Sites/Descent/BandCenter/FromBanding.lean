@@ -49,8 +49,9 @@ example (a : Multiplicative (A.obj.obj (op U))) {V : C} (f : V ⟶ U) (hf : R f)
 example (ys : ∀ ⦃V : C⦄ (f : V ⟶ U), R f → F.obj (.mk (op V))) (z : IntrinsicBandSections F U)
     {V : C} (f : V ⟶ U) (hf : R f) :
     b.localCoefficient R xs z f hf = b.localCoefficient R ys z f hf := by
-  refine Multiplicative.ofAdd.injective (b.centerFromBanding_injective V ?_)
-  rw [centerFromBanding_localCoefficient, centerFromBanding_localCoefficient]
+  refine Multiplicative.ofAdd.injective ?_
+  rw [← centerFromBandingEquiv_symm_restrict_eq_localCoefficient,
+    ← centerFromBandingEquiv_symm_restrict_eq_localCoefficient]
 
 /-- The inverse sends the unit section to the unit coefficient. -/
 example : (b.centerFromBandingEquiv U).symm 1 = 1 :=

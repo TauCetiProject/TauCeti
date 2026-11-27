@@ -51,9 +51,10 @@ In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 * `centerFromBanding_mulEquiv_symm_evaluation`: `c_b(V)(b(V, x)⁻¹ (ev_(f, x)(z))) = r_f(z)`.
 * `centerFromBanding_localCoefficient`, `localCoefficient_compatible`.
 * `centerFromBandingEquiv_symm_restrict`,
-  `centerFromBandingEquiv_symm_restrict_eq_mulEquiv_symm_evaluation`: the inverse commutes with
+  `centerFromBandingEquiv_symm_restrict_eq_mulEquiv_symm_evaluation`,
+  `centerFromBandingEquiv_symm_restrict_eq_localCoefficient`: the inverse commutes with
   restriction, and its restriction along `f` is the local coefficient at any object over the source
-  of `f`.
+  of `f`, so the local coefficients do not depend on the chosen objects.
 
 ## References
 
@@ -195,5 +196,15 @@ theorem centerFromBandingEquiv_symm_restrict_eq_mulEquiv_symm_evaluation {U V : 
       (b.mulEquiv V x).symm (IntrinsicBandSections.evaluation f x z) := by
   rw [MulEquiv.symm_apply_eq, centerFromBandingEquiv_apply,
     centerFromBanding_mulEquiv_symm_evaluation]
+
+/-- **The inverse restricts to the local coefficient** at every arrow `f ∈ R`, for any choice of
+local objects `xs`; in particular the local coefficients do not depend on that choice. -/
+theorem centerFromBandingEquiv_symm_restrict_eq_localCoefficient {U : C} (R : Sieve U)
+    (xs : ∀ ⦃V : C⦄ (f : V ⟶ U), R f → F.obj (.mk (op V))) (z : IntrinsicBandSections F U)
+    {V : C} (f : V ⟶ U) (hf : R f) :
+    (b.centerFromBandingEquiv V).symm (restrict f z) =
+      Multiplicative.ofAdd (b.localCoefficient R xs z f hf) := by
+  rw [localCoefficient_apply, ofAdd_toAdd,
+    centerFromBandingEquiv_symm_restrict_eq_mulEquiv_symm_evaluation]
 
 end CategoryTheory.Pseudofunctor.AbelianBanding
