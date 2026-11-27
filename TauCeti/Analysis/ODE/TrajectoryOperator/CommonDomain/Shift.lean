@@ -90,6 +90,12 @@ local notation "μ₀" => (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
 variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup H]
   [InnerProductSpace ℝ H] {ι B : D →L[ℝ] H} {μ c : ℝ}
 
+/-- A shift `B - a • ι` is invertible exactly when its negative `a • ι - B` is. -/
+private theorem isInvertible_sub_smul_iff {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {T S : X →L[ℝ] Y} {a : ℝ} :
+    (S - a • T).IsInvertible ↔ (a • T - S).IsInvertible := by
+  rw [← ContinuousLinearMap.isInvertible_neg_iff, neg_sub]
+
 /-! ### The eigenspace at `μ` and its complement -/
 
 /-- The image under `ι` of the eigenspace of `B` at `μ`, the kernel of `μ ι - B`. -/
@@ -102,8 +108,8 @@ private abbrev eigenCompl (ι B : D →L[ℝ] H) (μ : ℝ) : Submodule ℝ D :=
 
 private theorem apply_eq_smul_of_mem_ker {k : D} (hk : k ∈ (μ • ι - B).ker) :
     B k = μ • ι k := by
-  have h : (μ • ι - B) k = 0 := hk
-  simp only [FunLike.coe_sub, FunLike.coe_smul, Pi.sub_apply,
+  have h := LinearMap.mem_ker.1 hk
+  simp only [ContinuousLinearMap.coe_coe, FunLike.coe_sub, FunLike.coe_smul, Pi.sub_apply,
     Pi.smul_apply, sub_eq_zero] at h
   exact h.symm
 
@@ -143,8 +149,8 @@ private theorem inverse_apply_mem_eigenCompl (hsymm : ∀ x y, ⟪B x, ι y⟫_�
     (c • ι - B).inverse y ∈ eigenCompl ι B μ := by
   refine mem_eigenCompl_iff.2 fun k hk ↦ ?_
   rcases eq_or_ne c μ with rfl | hcμ
-  · rw [h₀.injective (by rw [map_zero]; exact hk : (c • ι - B) k = (c • ι - B) 0), map_zero,
-      inner_zero_left]
+  · have hk0 : (c • ι - B) k = (c • ι - B) 0 := by rw [map_zero]; exact LinearMap.mem_ker.1 hk
+    rw [h₀.injective hk0, map_zero, inner_zero_left]
   · have h := inner_apply_smul_sub_apply (c := c) hsymm hk ((c • ι - B).inverse y)
     have hmem : ι k ∈ eigenImage ι B μ := Submodule.mem_map_of_mem hk
     rw [h₀.self_apply_inverse, Submodule.inner_right_of_mem_orthogonal hmem hy] at h
@@ -220,7 +226,8 @@ private theorem injective_smul_complι_sub_complB (hsymm : ∀ x y, ⟪B x, ι y
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ Subtype.ext ?_
   have hker : (x : D) ∈ (μ • ι - B).ker := by
     have := congrArg Subtype.val hx
-    rwa [coe_smul_complι_sub_complB_apply] at this
+    rw [coe_smul_complι_sub_complB_apply] at this
+    exact LinearMap.mem_ker.2 this
   refine eq_zero_of_mem_ker_of_apply_eq_zero h₀ hker ?_
   exact inner_self_eq_zero.1 (mem_eigenCompl_iff.1 x.property _ hker)
 
@@ -345,16 +352,14 @@ private theorem isInvertible_complB_sub_smul_complι (hι : IsCompactOperator ι
     (hsymm : ∀ x y, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) (h₀ : (c • ι - B).IsInvertible) {a : ℝ}
     (ha : a ≠ μ → (B - a • ι).IsInvertible) :
     (complB ι B μ hsymm - a • complι ι B μ).IsInvertible := by
-  rw [← ContinuousLinearMap.isInvertible_neg_iff, neg_sub]
+  rw [isInvertible_sub_smul_iff]
   rcases eq_or_ne a μ with haμ | haμ
   · rw [haμ]
     exact (ContinuousLinearMap.isInvertible_smul_sub_iff_injective (𝕜 := ℝ)
       (ι := complι ι B μ) (A := complB ι B μ hsymm) (c₀ := c) (c := μ)
       (isCompactOperator_complι hι) (isInvertible_smul_complι_sub_complB hsymm h₀)).2
       (injective_smul_complι_sub_complB hsymm h₀)
-  · refine isInvertible_smul_complι_sub_complB hsymm ?_
-    rw [← ContinuousLinearMap.isInvertible_neg_iff, neg_sub]
-    exact ha haμ
+  · exact isInvertible_smul_complι_sub_complB hsymm (isInvertible_sub_smul_iff.1 (ha haμ))
 
 omit [CompleteSpace D] [CompleteSpace H] in
 /-- A path `s ↦ P - f(s) Q` with `f` continuous and bounded has an `L∞` class. -/
@@ -434,9 +439,7 @@ theorem eventually_index_familyDomainTrajectoryOperator_sub_smul_eq_domainSpectr
     ∀ᶠ ab in atBot ×ˢ atTop,
       (familyDomainTrajectoryOperator (p := 2) ι AL).index =
         domainSpectralFlow ι (fun s ↦ B - f s • ι) ab.1 ab.2 := by
-  have hneg {a : ℝ} (ha : (B - a • ι).IsInvertible) : (a • ι - B).IsInvertible := by
-    rwa [← ContinuousLinearMap.isInvertible_neg_iff, neg_sub]
-  have h₀ := hneg hctop
+  have h₀ := isInvertible_sub_smul_iff.1 hctop
   have := ContinuousLinearMap.finiteDimensional_ker_smul_sub hι h₀ μ
   obtain ⟨V, hι', hA'⟩ := exists_conj (μ := μ) hsymm h₀
   obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hf hbot htop
@@ -453,7 +456,7 @@ theorem eventually_index_familyDomainTrajectoryOperator_sub_smul_eq_domainSpectr
       (fun s x y ↦ by simp [real_inner_smul_left, real_inner_smul_right])
       (fun s ↦ inner_complB_sub_smul_complι_apply hsymm (f s))
       (fun s ↦ isInvertible_complB_sub_smul_complι hι hsymm h₀ (hμ s))
-      (isInvertible_smul_one (hneg hcbot)) (isInvertible_smul_one h₀)
+      (isInvertible_smul_one (isInvertible_sub_smul_iff.1 hcbot)) (isInvertible_smul_one h₀)
       (isInvertible_complB_sub_smul_complι hι hsymm h₀ fun _ ↦ hcbot)
       (isInvertible_complB_sub_smul_complι hι hsymm h₀ fun _ ↦ hctop)
       ((tendsto_const_nhds.sub hbot).smul_const _) ((tendsto_const_nhds.sub htop).smul_const _)

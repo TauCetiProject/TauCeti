@@ -105,8 +105,10 @@ private theorem smul_sub_eq_smul_sub_sub (c₀ c : 𝕜) (ι A : D →L[𝕜] H)
 `c • ι - A = (c₀ • ι - A) ∘ (1 - (c₀ - c) • (c₀ • ι - A)⁻¹ ∘ ι)`. -/
 private theorem smul_sub_eq_comp_one_sub (h₀ : (c₀ • ι - A).IsInvertible) (c : 𝕜) :
     c • ι - A = (c₀ • ι - A) ∘L (1 - (c₀ - c) • ((c₀ • ι - A).inverse ∘L ι)) := by
-  rw [comp_sub, comp_smul, ← comp_assoc, h₀.self_comp_inverse, id_comp, one_def, comp_id,
-    smul_sub_eq_smul_sub_sub c₀ c]
+  ext x
+  have hK : (c₀ • ι - A) ((c₀ • ι - A).inverse (ι x)) = ι x := h₀.self_apply_inverse _
+  simp only [comp_apply, sub_apply, one_apply_eq_self, map_sub, map_smul, hK, smul_apply, sub_smul]
+  abel
 
 /-- Away from an invertible shift `c₀ • ι - A`, a vector is killed by the shift `c • ι - A` exactly
 when it is an eigenvector of `(c₀ • ι - A)⁻¹ ∘ ι` with eigenvalue `(c₀ - c)⁻¹`. -/
