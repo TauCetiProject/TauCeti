@@ -310,13 +310,8 @@ lemma toOverHom_homEquivIsMonHom_symm_apply {A B : AbelianScheme S}
 
 /-- Construct an isomorphism of abelian schemes from an isomorphism of the underlying schemes over
 `S` that preserves the group law. -/
-def isoMk {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] : A ≅ B where
-  hom := homMk e.hom (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
-  inv := homMk e.inv (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
-  hom_inv_id := toOverHom_injective ((toOverHom_comp _ _).trans
-    (e.hom_inv_id.trans (toOverHom_id A).symm))
-  inv_hom_id := toOverHom_injective ((toOverHom_comp _ _).trans
-    (e.inv_hom_id.trans (toOverHom_id B).symm))
+def isoMk {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] : A ≅ B :=
+  InducedCategory.isoMk (Grp.mkIso' e)
 
 @[simp]
 lemma toOverHom_isoMk_hom {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] :

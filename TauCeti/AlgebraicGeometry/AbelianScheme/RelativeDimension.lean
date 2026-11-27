@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AbelianScheme.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
-import TauCeti.AlgebraicGeometry.Morphisms.Etale.Section
+import TauCeti.AlgebraicGeometry.Morphisms.Unramified.Section
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral
 
 /-!
@@ -34,8 +34,8 @@ zero for the identity abelian scheme, and it only depends on the underlying sche
 
 Conversely, an abelian scheme of relative dimension zero is canonically the identity abelian scheme:
 its zero section is an isomorphism. Its structure morphism is smooth of relative dimension zero,
-that is étale, with connected fibres, and a section of such a morphism is an isomorphism
-(`AlgebraicGeometry.isIso_of_comp_eq_id_of_etale`).
+that is étale, with connected fibres, and a section of such a morphism (indeed of any unramified
+one) is an isomorphism (`TauCeti.AlgebraicGeometry.isIso_of_comp_eq_id_of_unramified`).
 
 ## Main declarations
 
@@ -167,7 +167,7 @@ theorem isIso_zeroSection_iff (A : AbelianScheme S) :
   rw [← isIso_zeroSection_iff_isIso_hom]
   -- The structure morphism is étale, with connected fibres.
   have : Etale A.toOver.hom := (Etale.iff_smoothOfRelativeDimension_zero _).mpr ‹_›
-  exact isIso_of_comp_eq_id_of_etale A.toOver.hom _ A.zeroSection_comp_toOver_hom
+  exact isIso_of_comp_eq_id_of_unramified A.toOver.hom _ A.zeroSection_comp_toOver_hom
 
 /-- An abelian scheme `A` of relative dimension zero is canonically isomorphic to the identity
 abelian scheme `S`: the isomorphism is the structure morphism of `A`, with inverse the zero
