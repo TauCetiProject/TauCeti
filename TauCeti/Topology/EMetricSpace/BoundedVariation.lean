@@ -276,3 +276,28 @@ theorem exists_monotone_finset_tendsto (f : α → E) (s : Set α) (q : ℕ → 
     (fun n ↦ (mono f (hp n)).trans_eq (eq_iSup_finset f s))
 
 end eVariationOn
+
+section OneSidedLimits
+
+variable {α E : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+  [PseudoEMetricSpace E] [CompleteSpace E] {f : α → E} {s : Set α} {x : α}
+
+/-- A function of bounded variation on a set has its ambient left limit at each interior
+point of the set. -/
+theorem BoundedVariationOn.tendsto_leftLim_of_mem_interior (hf : BoundedVariationOn f s)
+    (hx : x ∈ interior s) :
+    Tendsto f (nhdsWithin x (Iio x)) (nhds (f.leftLim x)) := by
+  apply tendsto_leftLim_of_tendsto
+  rw [← nhdsWithin_inter_of_mem (nhdsWithin_le_nhds (mem_interior_iff_mem_nhds.mp hx))]
+  exact hf.exists_tendsto_left x
+
+/-- A function of bounded variation on a set has its ambient right limit at each interior
+point of the set. -/
+theorem BoundedVariationOn.tendsto_rightLim_of_mem_interior (hf : BoundedVariationOn f s)
+    (hx : x ∈ interior s) :
+    Tendsto f (nhdsWithin x (Ioi x)) (nhds (f.rightLim x)) := by
+  apply tendsto_rightLim_of_tendsto
+  rw [← nhdsWithin_inter_of_mem (nhdsWithin_le_nhds (mem_interior_iff_mem_nhds.mp hx))]
+  exact hf.exists_tendsto_right x
+
+end OneSidedLimits

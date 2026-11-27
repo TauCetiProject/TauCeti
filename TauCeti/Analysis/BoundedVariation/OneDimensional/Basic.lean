@@ -42,6 +42,66 @@ namespace BoundedVariationOn
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {f : ℝ → E}
 
+/-- Integration by parts on a compact interval against a function of bounded variation.
+The boundary term uses the right limit at the upper endpoint. The derivative measure uses
+`(a, b]`, so its atom at the upper endpoint cancels the jump in that boundary term. -/
+theorem intervalIntegral_smul_eq_sub_setIntegral_vectorMeasure
+    (hf : BoundedVariationOn f univ) {a b : ℝ} (hab : a ≤ b)
+    {k : ℝ → ℝ} (hk : IntervalIntegrable k volume a b) :
+    (∫ x in a..b, k x • f x) =
+      (∫ x in a..b, k x) • f.rightLim b -
+        ∫ᵛ y in Ioc a b, (∫ x in a..y, k x) ∂•hf.vectorMeasure := by
+  let μ := volume.restrict (Ioc a b)
+  let ν := hf.vectorMeasure.restrict (Ioc a b)
+  have : IsFiniteMeasure μ := ⟨by simp [μ]⟩
+  have : IsFiniteMeasure ν.variation := by
+    dsimp [ν]
+    rw [VectorMeasure.variation_restrict measurableSet_Ioc]
+    infer_instance
+  have : IsFiniteMeasure μ.toSignedMeasure.variation := by
+    rw [Measure.variation_toSignedMeasure]
+    infer_instance
+  have hkernel : Integrable (Function.uncurry fun x y : ℝ ↦ (Ioi x).indicator (fun _ ↦ k x) y)
+      (μ.prod ν.variation) := by
+    convert (hk.1.comp_fst ν.variation).indicator (measurableSet_lt measurable_fst measurable_snd)
+      using 1
+    exact funext fun _ ↦ rfl
+  have hswap := VectorMeasure.integral_integral_smul_swap
+    (μ := μ.toSignedMeasure) (ν := ν) (B := ContinuousLinearMap.lsmul ℝ ℝ)
+    (f := fun x y : ℝ ↦ (Ioi x).indicator (fun _ ↦ k x) y) (by simpa using hkernel)
+  have hboth : ∫ x, k x • ν (Ioi x) ∂μ =
+      ∫ᵛ y, (∫ x in a..y, k x) ∂•ν := by
+    simp only [VectorMeasure.integral_indicator_const _ measurableSet_Ioi,
+      ContinuousLinearMap.lsmul_apply, VectorMeasure.integral_toSignedMeasure] at hswap
+    rw [hswap]
+    have hflip : (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip =
+        ContinuousLinearMap.lsmul ℝ ℝ := by ext; simp
+    rw [← hflip]
+    apply VectorMeasure.integral_congr_ae
+    rw [show ν.variation = hf.vectorMeasure.variation.restrict (Ioc a b) from
+      VectorMeasure.variation_restrict measurableSet_Ioc]
+    filter_upwards [ae_restrict_mem measurableSet_Ioc] with y hy
+    rw [VectorMeasure.integral_toSignedMeasure]
+    have hfun : (fun x ↦ (Ioi x).indicator (fun _ ↦ k x) y) = (Iio y).indicator k := by
+      ext x
+      simp [indicator]
+    rw [hfun, integral_indicator measurableSet_Iio, Measure.restrict_restrict measurableSet_Iio]
+    have hinter : Iio y ∩ Ioc a b = Ioo a y := by ext x; simp; grind
+    rw [hinter, ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hy.1.le]
+  have hcont : ∀ᵐ x ∂μ, ContinuousAt f x :=
+    ae_restrict_of_ae (ae_iff.mpr (hf.countable_not_continuousAt.measure_zero volume))
+  have heq : (fun x ↦ k x • ν (Ioi x)) =ᵐ[μ] fun x ↦ k x • f.rightLim b - k x • f x := by
+    filter_upwards [hcont, ae_restrict_mem (μ := volume) (measurableSet_Ioc (a := a) (b := b))]
+      with x hx hxab
+    have hinter : Ioi x ∩ Ioc a b = Ioc x b := by ext y; simp; grind
+    rw [VectorMeasure.restrict_apply _ measurableSet_Ioc measurableSet_Ioi, hinter,
+      hf.vectorMeasure_Ioc hxab.2, hx.continuousWithinAt.rightLim_eq, smul_sub]
+  rw [integral_congr_ae heq, integral_sub (hk.1.smul_const _)
+    (by simpa only [Pi.smul_def'] using hk.1.smul_of_top_left (hf.memLp_top (μ := μ))),
+    integral_smul_const] at hboth
+  simp only [intervalIntegral.integral_of_le hab]
+  rw [← hboth, sub_sub_cancel]
+
 /-- The classical derivative measure of a globally bounded-variation function is its
 measure-valued distributional derivative. The test function is only required to be `C¹`.
 Neither continuity of `f` nor integrability of `f` on the whole line is assumed. -/

@@ -220,7 +220,9 @@ private theorem window_mass {R : ℝ} (hR : 0 < R) :
   dsimp only
   field_simp
 
-private theorem kernel_eq {u : ℝ} (hu : u ≠ 0) (T : ℝ) :
+/-- Away from the origin, the sinc kernel for symmetric Fourier inversion is the
+sine quotient. -/
+theorem Real.two_mul_mul_sinc_eq_sin_div {u : ℝ} (hu : u ≠ 0) (T : ℝ) :
     2 * T * Real.sinc (2 * π * T * u) = Real.sin (2 * π * T * u) / (π * u) := by
   by_cases hT : T = 0
   · simp [hT]
@@ -232,7 +234,7 @@ private theorem sinc_kernel_ae_eq (T : ℝ) :
     (fun u : ℝ ↦ (2 * T * Real.sinc (2 * π * T * u) : ℂ)) =ᵐ[volume]
       fun u ↦ (Real.sin (2 * π * T * u) / (π * u) : ℂ) := by
   filter_upwards [compl_mem_ae_iff.mpr (measure_singleton (0 : ℝ))] with u hu
-  exact_mod_cast kernel_eq (by simpa using hu) T
+  exact_mod_cast Real.two_mul_mul_sinc_eq_sin_div (by simpa using hu) T
 
 private theorem integrable_window_kernel (R T : ℝ) :
     Integrable ((Set.Ioc (-R) R).indicator
