@@ -52,7 +52,24 @@ public section
 
 namespace TauCeti.CommHopfAlgCat
 
-universe u
+universe u v
+
+section Quotient
+
+variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{v} k}
+  [Algebra.FiniteType k H] [Algebra.IsGeometricallyReduced k H]
+
+/-- A normal Hopf ideal is recovered from its Hopf subalgebra of coinvariants. -/
+@[simp]
+theorem NormalHopfIdeal.kernelHopfIdeal_coinvariants (I : NormalHopfIdeal H) :
+    I.coinvariants.kernelHopfIdeal = I :=
+  Subtype.ext <| by
+    rw [NormalHopfIdeal.coe_kernelHopfIdeal_coinvariants, kernelHopfIdeal_coinvariantsι_eq]
+
+end Quotient
+
+/-! The subalgebra side uses `faithfullyFlat_iff_injective_of_isGeometricallyReduced`, which is
+stated for Hopf algebras in the universe of the base field. -/
 
 variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{u} k}
   [Algebra.FiniteType k H] [Algebra.IsGeometricallyReduced k H]
@@ -79,13 +96,6 @@ theorem HopfSubalgebra.coinvariants_kernelHopfIdeal (B : HopfSubalgebra H) :
   Subtype.ext <| by
     rw [NormalHopfIdeal.coe_coinvariants, HopfSubalgebra.coe_kernelHopfIdeal,
       coinvariants_kernelHopfIdeal_hopfSubalgebraι_of_isGeometricallyReduced]
-
-/-- A normal Hopf ideal is recovered from its Hopf subalgebra of coinvariants. -/
-@[simp]
-theorem NormalHopfIdeal.kernelHopfIdeal_coinvariants (I : NormalHopfIdeal H) :
-    I.coinvariants.kernelHopfIdeal = I :=
-  Subtype.ext <| by
-    rw [NormalHopfIdeal.coe_kernelHopfIdeal_coinvariants, kernelHopfIdeal_coinvariantsι_eq]
 
 /-- **The Takeuchi correspondence, geometrically reduced case.** For a geometrically reduced
 commutative Hopf algebra `H` of finite type over a field, `B ↦ H·B⁺` is an order isomorphism from
