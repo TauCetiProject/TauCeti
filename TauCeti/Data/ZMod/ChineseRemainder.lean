@@ -68,6 +68,24 @@ theorem unitsChineseRemainder_apply_snd (h : m.Coprime n) (u : (ZMod (m * n))ˣ)
     (unitsChineseRemainder h u).2 = unitsMap (dvd_mul_left n m) u :=
   Units.ext congr(($(chineseRemainder_eq_prod_castHom h) u).2)
 
+/-- A hom out of `(ZMod N)ˣ` into a commutative monoid splits along any identification
+`e : (ZMod N)ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ` whose components are the reductions modulo `m` and
+modulo `n`: it is the product of its restrictions to the two factors, composed with the
+reductions. -/
+theorem eq_mul_comp_unitsMap_of_mulEquiv {N : ℕ} {G : Type*} [CommMonoid G] (hm : m ∣ N)
+    (hn : n ∣ N) (e : (ZMod N)ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ) (he₁ : ∀ u, (e u).1 = unitsMap hm u)
+    (he₂ : ∀ u, (e u).2 = unitsMap hn u) (χ : (ZMod N)ˣ →* G) :
+    χ = ((χ.comp e.symm.toMonoidHom).comp (MonoidHom.inl (ZMod m)ˣ (ZMod n)ˣ)).comp (unitsMap hm) *
+      ((χ.comp e.symm.toMonoidHom).comp (MonoidHom.inr (ZMod m)ˣ (ZMod n)ˣ)).comp
+        (unitsMap hn) := by
+  let χ' := χ.comp e.symm.toMonoidHom
+  refine MonoidHom.ext fun u ↦ ?_
+  have hu := DFunLike.congr_fun (MonoidHom.coprod_unique χ') (e u)
+  calc
+    χ u = χ' (e u) := by simp [χ']
+    _ = (χ'.comp (MonoidHom.inl _ _)) (e u).1 * (χ'.comp (MonoidHom.inr _ _)) (e u).2 := hu.symm
+    _ = _ := by simp only [he₁, he₂, MonoidHom.mul_apply, MonoidHom.comp_apply, χ']
+
 /-- For coprime `m` and `n`, a hom out of `(ZMod (m * n))ˣ` into a commutative monoid splits as the
 product of its restrictions to the Chinese remainder factors modulo `m` and `n`. -/
 theorem eq_mul_comp_unitsMap_of_coprime {G : Type*} [CommMonoid G] (h : m.Coprime n)
@@ -75,17 +93,9 @@ theorem eq_mul_comp_unitsMap_of_coprime {G : Type*} [CommMonoid G] (h : m.Coprim
     χ = ((χ.comp (unitsChineseRemainder h).symm.toMonoidHom).comp
         (MonoidHom.inl (ZMod m)ˣ (ZMod n)ˣ)).comp (unitsMap (dvd_mul_right m n)) *
       ((χ.comp (unitsChineseRemainder h).symm.toMonoidHom).comp
-        (MonoidHom.inr (ZMod m)ˣ (ZMod n)ˣ)).comp (unitsMap (dvd_mul_left n m)) := by
-  let χ' := χ.comp (unitsChineseRemainder h).symm.toMonoidHom
-  refine MonoidHom.ext fun u ↦ ?_
-  have hu := DFunLike.congr_fun (MonoidHom.coprod_unique χ') (unitsChineseRemainder h u)
-  calc
-    χ u = χ' (unitsChineseRemainder h u) := by simp [χ']
-    _ = (χ'.comp (MonoidHom.inl _ _)) (unitsChineseRemainder h u).1 *
-        (χ'.comp (MonoidHom.inr _ _)) (unitsChineseRemainder h u).2 := hu.symm
-    _ = _ := by
-      simp only [unitsChineseRemainder_apply_fst, unitsChineseRemainder_apply_snd,
-        MonoidHom.mul_apply, MonoidHom.comp_apply, χ']
+        (MonoidHom.inr (ZMod m)ˣ (ZMod n)ˣ)).comp (unitsMap (dvd_mul_left n m)) :=
+  eq_mul_comp_unitsMap_of_mulEquiv _ _ _ (unitsChineseRemainder_apply_fst h)
+    (unitsChineseRemainder_apply_snd h) χ
 
 end Units
 

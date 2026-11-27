@@ -14,7 +14,8 @@ For `n ∣ m ∣ d`, reducing a class modulo `d` first modulo `m` and then modul
 modulo `n` directly (`ZMod.cast_cast_of_dvd`, the pointwise form of Mathlib's
 `ZMod.castHom_comp`). Consequently the classes modulo `d` above the classes modulo `m` lying over
 `a : ZMod n` are exactly the classes modulo `d` lying over `a`
-(`ZMod.preimage_cast_setOf_cast_eq`).
+(`ZMod.preimage_cast_setOf_cast_eq`). Reduction is also unchanged by the identification
+`ZMod.ringEquivCongr` of `ZMod m` with `ZMod n` for `m = n` (`ZMod.cast_ringEquivCongr`).
 -/
 
 public section
@@ -33,5 +34,13 @@ theorem preimage_cast_setOf_cast_eq {n m d : ℕ} (hm : n ∣ m) (hd : m ∣ d) 
       {b | (cast b : ZMod n) = a} := by
   ext b
   simp only [Set.mem_preimage, Set.mem_ofPred_eq, cast_cast_of_dvd hm hd]
+
+/-- Reducing a class through the identification `ZMod.ringEquivCongr` of `ZMod m` with `ZMod n`,
+for `m = n`, is reducing it directly. -/
+@[simp]
+theorem cast_ringEquivCongr {m n : ℕ} {R : Type*} [Ring R] (h : m = n) (x : ZMod m) :
+    (cast (ringEquivCongr h x) : R) = cast x := by
+  subst h
+  rw [ringEquivCongr_refl_apply]
 
 end ZMod
