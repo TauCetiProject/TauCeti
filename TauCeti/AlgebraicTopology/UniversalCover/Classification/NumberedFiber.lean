@@ -14,7 +14,7 @@ import TauCeti.Topology.Covering.Clopen
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Monodromy
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 
 /-!
 # Numbered, pointed and bare connected covers of degree `n`

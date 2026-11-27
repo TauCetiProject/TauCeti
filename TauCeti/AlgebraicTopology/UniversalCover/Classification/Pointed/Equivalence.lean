@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFiber
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.RecoveredSubgroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Intermediate
 public import Mathlib.CategoryTheory.Elements

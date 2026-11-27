@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.UniversalCover
 public import TauCeti.Topology.Instances.AddCircle.LocallyPathConnected
 

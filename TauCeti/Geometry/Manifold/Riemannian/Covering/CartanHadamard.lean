@@ -18,7 +18,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
-import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Covering
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Geometry.Manifold.Riemannian.Basic

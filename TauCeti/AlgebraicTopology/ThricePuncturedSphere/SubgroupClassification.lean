@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Intermediate
-import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 
 /-!
 # Marked permutation triples and finite-index subgroups

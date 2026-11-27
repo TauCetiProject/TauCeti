@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Covering
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
 public import TauCeti.Geometry.Manifold.Riemannian.GeometricStructure.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.ModelGeometry.SimplyConnected
