@@ -484,4 +484,3 @@ theorem SimilarityClass.ofEnd_invtQuot_dualAnnihilator {V : Type*} [AddCommGroup
 end Transpose
 
 end TauCeti
-

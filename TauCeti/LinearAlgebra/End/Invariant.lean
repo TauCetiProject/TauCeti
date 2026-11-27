@@ -70,6 +70,11 @@ def Module.End.invtRestrict (g : Module.End R M) {W : Submodule R M}
     (hW : W ∈ g.invtSubmodule) : Module.End R W :=
   g.restrict ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem g).1 hW)
 
+/-- `Module.End.invtRestrict` is `LinearMap.restrict`. -/
+theorem Module.End.invtRestrict_def {W : Submodule R M} (hW : W ∈ g.invtSubmodule) :
+    g.invtRestrict hW = g.restrict ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem g).1 hW) :=
+  (rfl)
+
 /-- The restriction of `g` to `W` acts as `g`. -/
 @[simp]
 theorem Module.End.coe_invtRestrict_apply {W : Submodule R M} (hW : W ∈ g.invtSubmodule)
@@ -102,6 +107,11 @@ variable {R M M' : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M
 def Module.End.invtQuot (g : Module.End R M) {W : Submodule R M}
     (hW : W ∈ g.invtSubmodule) : Module.End R (M ⧸ W) :=
   W.mapQ W g ((Module.End.mem_invtSubmodule g).1 hW)
+
+/-- `Module.End.invtQuot` is `Submodule.mapQ`. -/
+theorem Module.End.invtQuot_def {W : Submodule R M} (hW : W ∈ g.invtSubmodule) :
+    g.invtQuot hW = W.mapQ W g ((Module.End.mem_invtSubmodule g).1 hW) :=
+  (rfl)
 
 /-- The map induced on `M ⧸ W` sends the class of `x` to the class of `g x`. -/
 @[simp]
