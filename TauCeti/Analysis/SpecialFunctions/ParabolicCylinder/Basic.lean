@@ -32,7 +32,7 @@ DLMF 12.4.3–12.4.6, for all complex `a` and `z`.
 
 ## Main results
 
-* `TauCeti.exp_neg_sq_div_four_mul_regularizedHGFun`: Kummer's transformation of
+* `Complex.exp_neg_sq_div_four_mul_regularizedHGFun`: Kummer's transformation of
   `e^{−z²/4} 𝐌(c, b, z²/2)`, shared by the two solutions.
 * `TauCeti.parabolicCylinderEven_eq_exp_mul`, `TauCeti.parabolicCylinderOdd_eq_exp_mul`: the
   Kummer-transformed forms `u₁(a, z) = e^{z²/4} Γ(½) 𝐌(¼ − a/2, ½, −z²/2)` and
@@ -67,6 +67,19 @@ open Complex
 
 open scoped Nat
 
+namespace Complex
+
+/-- Kummer's transformation `𝐌(c, b, w) = e^w 𝐌(b − c, b, −w)` at `w = z²/2`, with the Weber factor
+`e^{−z²/4}`: `e^{−z²/4} 𝐌(c, b, z²/2) = e^{z²/4} 𝐌(b − c, b, −z²/2)`. -/
+theorem exp_neg_sq_div_four_mul_regularizedHGFun (c b z : ℂ) :
+    exp (-z ^ 2 / 4) * regularizedHGFun {c} {b} (z ^ 2 / 2) =
+      exp (z ^ 2 / 4) * regularizedHGFun {b - c} {b} (-(z ^ 2 / 2)) := by
+  -- the exponents: `−z²/4 + z²/2 = z²/4`
+  have he : -z ^ 2 / 4 + z ^ 2 / 2 = z ^ 2 / 4 := by ring
+  rw [regularizedHGFun_singleton_eq_exp_mul, ← mul_assoc, ← exp_add, he]
+
+end Complex
+
 namespace TauCeti
 
 /-- The even solution `u₁(a, z) = e^{−z²/4} M(a/2 + ¼, ½, z²/2)` of Weber's equation
@@ -90,15 +103,6 @@ theorem parabolicCylinderOdd_def (a z : ℂ) :
     parabolicCylinderOdd a z = z * exp (-z ^ 2 / 4) *
       (Gamma (3 / 2) * regularizedHGFun {a / 2 + 3 / 4} {3 / 2} (z ^ 2 / 2)) :=
   (rfl)
-
-/-- Kummer's transformation `𝐌(c, b, w) = e^w 𝐌(b − c, b, −w)` at `w = z²/2`, with the Weber factor
-`e^{−z²/4}`: `e^{−z²/4} 𝐌(c, b, z²/2) = e^{z²/4} 𝐌(b − c, b, −z²/2)`. -/
-theorem exp_neg_sq_div_four_mul_regularizedHGFun (c b z : ℂ) :
-    exp (-z ^ 2 / 4) * regularizedHGFun {c} {b} (z ^ 2 / 2) =
-      exp (z ^ 2 / 4) * regularizedHGFun {b - c} {b} (-(z ^ 2 / 2)) := by
-  -- the exponents: `−z²/4 + z²/2 = z²/4`
-  have he : -z ^ 2 / 4 + z ^ 2 / 2 = z ^ 2 / 4 := by ring
-  rw [regularizedHGFun_singleton_eq_exp_mul, ← mul_assoc, ← exp_add, he]
 
 /-- The Kummer-transformed form of the even solution (DLMF 12.7.12):
 `u₁(a, z) = e^{z²/4} M(¼ − a/2, ½, −z²/2)`. -/

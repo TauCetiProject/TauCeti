@@ -14,7 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 Write `𝐌(a, b, z) = Complex.regularizedHGFun {a} {b} z = ∑ (a)ₖ zᵏ / (k! Γ(b + k))` for Olver's
 regularized Kummer function. At the half-integer lower parameters `b = m + ½`, `m ∈ ℕ`, the
 half-integer values `Γ(n + ½) = (2n)! √π / (4ⁿ n!)` make the coefficients of `Γ(b) 𝐌(a, b, z)`
-rational:
+rational multiples of the rising factorials `(a)ₖ`:
 
 `Γ(m + ½) 𝐌(a, m + ½, z) = ∑ (a)ₖ (4z)ᵏ (2m)! (m + k)! / (m! k! (2(m + k))!)`,
 
