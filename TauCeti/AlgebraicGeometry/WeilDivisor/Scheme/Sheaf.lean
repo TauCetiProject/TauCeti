@@ -46,6 +46,8 @@ submodule.
   through `𝒪_X(D)` for an effective `D`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafOverMulIsoOfCoeffEq`, multiplication by a
   local equation as an isomorphism between restricted divisor sheaves;
+* `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafHomOfMul`, multiplication by a global section
+  `f` of `𝒪_X(E - D)` as a morphism `𝒪_X(D) ⟶ 𝒪_X(E)`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sheafMulIso`, multiplication by a nonzero rational
   function as an isomorphism `𝒪_X(D) ≅ 𝒪_X(D - div g)`, and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.nonempty_iso_sheaf_of_linearlyEquivalent`: linearly
@@ -447,24 +449,26 @@ lemma eqToHom_sheafι {D E : SchemeWeilDivisor X} (h : D = E) :
   subst h
   simp
 
-private lemma rationalFunctionsMul_mem_sections_of_coeffEq
-    (g : Additive X.functionFieldˣ) {D E : SchemeWeilDivisor X} {U V : X.Opens}
-    (hVU : V ≤ U)
-    (h : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      WeilDivisor.coeff D y = WeilDivisor.coeff E y + orderAt y g)
-    {s : Γ(Scheme.rationalFunctions X, V)} (hs : s ∈ sections D V) :
-    Scheme.Modules.Hom.app
-        (Scheme.rationalFunctionsMul X ((Additive.toMul g : X.functionFieldˣ) : X.functionField))
-        V s ∈ sections E V := by
+/-- Multiplying a section of `𝒪_X(D)` over `U` by a rational function `f` which is a section of
+`𝒪_X(E - D)` over `U`, that is, `f = 0` or `ord_y f ≥ D(y) - E(y)` at every codimension-one point
+`y ∈ U`, gives a section of `𝒪_X(E)` over `U`. -/
+lemma rationalFunctionsMul_mem_sections_of_le_ord {D E : SchemeWeilDivisor X}
+    {f : X.functionField} {U : X.Opens}
+    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      f = 0 ∨ -WeilDivisor.coeff (E - D) y ≤ X.ord f y)
+    {s : Γ(Scheme.rationalFunctions X, U)} (hs : s ∈ sections D U) :
+    Scheme.Modules.Hom.app (Scheme.rationalFunctionsMul X f) U s ∈ sections E U := by
   refine mem_sections.mpr fun y hy ↦ ?_
-  have : Nonempty V := ⟨⟨y, hy⟩⟩
+  have : Nonempty U := ⟨⟨y, hy⟩⟩
   rw [Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app]
-  by_cases h0 : Scheme.rationalFunctionsEquiv V s = 0
-  · exact Or.inl (by rw [h0, mul_zero])
+  by_cases h0 : f * Scheme.rationalFunctionsEquiv U s = 0
+  · exact Or.inl h0
   · refine Or.inr ?_
-    have hs' := (mem_sections.mp hs y hy).resolve_left h0
-    have hcoeff := h y (hVU hy)
-    rw [Scheme.ord_mul (Units.ne_zero _) h0, ← orderAt_apply]
+    obtain ⟨hf0, hs0⟩ := mul_ne_zero_iff.mp h0
+    have hfy := (hf y hy).resolve_left hf0
+    have hsy := (mem_sections.mp hs y hy).resolve_left hs0
+    rw [WeilDivisor.coeff_sub] at hfy
+    rw [Scheme.ord_mul hf0 hs0]
     omega
 
 private lemma rationalFunctionsMul_over_mem_sections_of_coeffEq
@@ -479,7 +483,11 @@ private lemma rationalFunctionsMul_over_mem_sections_of_coeffEq
   have hD := submodule_obj_unop D ((Over.forget U).op.obj V)
   have hE := submodule_obj_unop E ((Over.forget U).op.obj V)
   have hs : s.val ∈ sections D V.unop.left := hD ▸ s.property
-  have key := rationalFunctionsMul_mem_sections_of_coeffEq g V.unop.hom.le h hs
+  have key := rationalFunctionsMul_mem_sections_of_le_ord (f := ((Additive.toMul g :
+    X.functionFieldˣ) : X.functionField)) (E := E) (fun y hy ↦ Or.inr <| by
+      have := h y (V.unop.hom.le hy)
+      rw [WeilDivisor.coeff_sub, ← orderAt_apply]
+      omega) hs
   exact hE.symm ▸ key
 
 /-- If the coefficients of `D` and `E` differ on `U` by the orders of a nonzero rational
@@ -565,6 +573,36 @@ lemma sheafOverMulIsoOfCoeffEq_inv_ι
   ext V s
   rfl
 
+/-- Multiplication by a rational function `f` which is a global section of `𝒪_X(E - D)`, as a
+morphism `𝒪_X(D) ⟶ 𝒪_X(E)`. Unlike `SchemeWeilDivisor.sheafMul`, the multiplier may vanish and
+the target need not be `𝒪_X(D - div f)`. -/
+def sheafHomOfMul {D E : SchemeWeilDivisor X} (f : X.functionField)
+    (hf : ∀ y : CodimensionOnePoint X, f = 0 ∨ -WeilDivisor.coeff (E - D) y ≤ X.ord f y) :
+    sheaf D ⟶ sheaf E :=
+  sheafLift E (sheafι D ≫ Scheme.rationalFunctionsMul X f) fun U s ↦ by
+    rw [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]
+    exact rationalFunctionsMul_mem_sections_of_le_ord (fun y _ ↦ hf y) (sheafι_app_mem D U s)
+
+/-- `SchemeWeilDivisor.sheafHomOfMul f` is multiplication by `f` inside `𝒦_X`. -/
+@[reassoc (attr := simp)]
+lemma sheafHomOfMul_ι {D E : SchemeWeilDivisor X} (f : X.functionField)
+    (hf : ∀ y : CodimensionOnePoint X, f = 0 ∨ -WeilDivisor.coeff (E - D) y ≤ X.ord f y) :
+    sheafHomOfMul f hf ≫ sheafι E = sheafι D ≫ Scheme.rationalFunctionsMul X f :=
+  sheafLift_ι _ _ _
+
+/-- If the inclusion of `𝒪_X(D)` into `𝒦_X` followed by multiplication by `c` factors through
+`𝒪_X(E)`, then multiplication by `c` carries the sections of `𝒪_X(D)` into those of `𝒪_X(E)`. -/
+lemma rationalFunctionsMul_app_mem_sections_of_comp_sheafι_eq {D E : SchemeWeilDivisor X}
+    {c : X.functionField} {χ : sheaf D ⟶ sheaf E}
+    (hχ : χ ≫ sheafι E = sheafι D ≫ Scheme.rationalFunctionsMul X c)
+    (U : X.Opens) {t : Γ(Scheme.rationalFunctions X, U)} (ht : t ∈ sections D U) :
+    Scheme.Modules.Hom.app (Scheme.rationalFunctionsMul X c) U t ∈ sections E U := by
+  obtain ⟨s, rfl⟩ := (range_sheafι_app D U).ge ht
+  have key := ConcreteCategory.congr_hom (congrArg (fun η ↦ Scheme.Modules.Hom.app η U) hχ) s
+  simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] at key
+  rw [← key]
+  exact sheafι_app_mem E U _
+
 end LocallyNoetherian
 
 section Mul
@@ -572,34 +610,39 @@ section Mul
 variable [IsNoetherian X]
 variable (g : Additive X.functionFieldˣ)
 
+omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
+/-- The order bound behind multiplying `𝒪_X(D)` into `𝒪_X(D - div g)`: the coefficient of
+`(D - div g) - D` at `y` is `-ord g y`, so the bound holds with equality. -/
+private lemma ord_bound_sheafMul (D : SchemeWeilDivisor X) (y : CodimensionOnePoint X) :
+    ((Additive.toMul g : X.functionFieldˣ) : X.functionField) = 0 ∨
+      -WeilDivisor.coeff ((D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) - D) y ≤
+        X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) y := by
+  refine Or.inr ?_
+  rw [WeilDivisor.coeff_sub, WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
+  omega
+
 /-- Multiplying a section of `𝒪_X(D)` by a nonzero rational function `g` gives a section of
 `𝒪_X(D - div g)`: multiplying by `g` shifts every order of vanishing by `ord g`. -/
 lemma rationalFunctionsMul_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
     {s : Γ(Scheme.rationalFunctions X, U)} (hs : s ∈ sections D U) :
     Scheme.Modules.Hom.app
         (Scheme.rationalFunctionsMul X ((Additive.toMul g : X.functionFieldˣ) : X.functionField))
-        U s ∈ sections (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) U := by
-  apply rationalFunctionsMul_mem_sections_of_coeffEq g le_rfl _ hs
-  intro x _
-  rw [WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
-    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
-  omega
+        U s ∈ sections (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) U :=
+  rationalFunctionsMul_mem_sections_of_le_ord (fun y _ ↦ ord_bound_sheafMul g D y) hs
 
 /-- Multiplication by `g`, as a morphism `𝒪_X(D) ⟶ 𝒪_X(D - div g)`. -/
 def sheafMul (D : SchemeWeilDivisor X) :
     sheaf D ⟶ sheaf (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) :=
-  SheafOfModules.Submodule.lift _
-    (sheafι D ≫ Scheme.rationalFunctionsMul X
-      ((Additive.toMul g : X.functionFieldˣ) : X.functionField))
-    fun U s ↦ rationalFunctionsMul_mem_sections g
-      ((submodule D).toSubmodule.ι_app_mem U s)
+  sheafHomOfMul ((Additive.toMul g : X.functionFieldˣ) : X.functionField)
+    (ord_bound_sheafMul g D)
 
 @[reassoc (attr := simp)]
 lemma sheafMul_ι (D : SchemeWeilDivisor X) :
     sheafMul g D ≫ sheafι _ =
       sheafι D ≫ Scheme.rationalFunctionsMul X
-        ((Additive.toMul g : X.functionFieldˣ) : X.functionField) :=
-  SheafOfModules.Submodule.lift_ι _ _ _
+        ((Additive.toMul g : X.functionFieldˣ) : X.functionField) := by
+  rw [sheafMul, sheafHomOfMul_ι]
 
 omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
 /-- The divisor bookkeeping behind `SchemeWeilDivisor.sheafMulIso`. -/

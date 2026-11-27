@@ -84,7 +84,9 @@ support (`TauCeti.exists_forall_contDiff_cutoff_ball`). With such a cutoff of sm
 angle `θ` rising from `0` to `π / 2` across an annulus gives the IMS-type partition
 `cos² θ + sin² θ = 1` with gradients at most a prescribed `ε`
 (`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth cutoff of the identity equals `s` on
-`[-r, r]` and vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product
+`[-r, r]` and vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`); in any normed space
+with smooth bumps, a smooth map into `ball x ε` is the identity on `closedBall x r` and constant
+outside `ball x ε` (`TauCeti.exists_contDiff_cutoff_self`). On an inner product
 space, a smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and
 vanishes on the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus
 supported in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
@@ -889,6 +891,25 @@ theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E]
       _ = π * C / (2 * K) := div_mul_div_comm _ _ _ _
       _ ≤ ε := by rw [div_le_iff₀ (by positivity)]; linarith
 
+open Real in
+/-- An angle cutoff `θ₀` with gradient at most `ε` that equals `π / 2` near every `t` with
+`R₂ < |t|`, composed with `Φ - s₀` for a differentiable `Φ` with gradient at most one, has
+gradient at most `ε` and equals `π / 2` near every `z` with `R₂ < Φ z - s₀`. -/
+theorem norm_fderiv_comp_sub_le_and_eventuallyEq [NormedSpace ℝ E] {θ₀ : ℝ → ℝ} {Φ : E → ℝ}
+    {ε R₂ : ℝ} (s₀ : ℝ) (hθ₀ : Differentiable ℝ θ₀) (hΦ : Differentiable ℝ Φ)
+    (hθ₀out : ∀ t, R₂ < ‖t‖ → θ₀ =ᶠ[𝓝 t] fun _ ↦ π / 2)
+    (hθ₀d : ∀ t, ‖fderiv ℝ θ₀ t‖ ≤ ε) (hΦd : ∀ z, ‖fderiv ℝ Φ z‖ ≤ 1) :
+    (∀ z, ‖fderiv ℝ (fun t ↦ θ₀ (Φ t - s₀)) z‖ ≤ ε) ∧
+      ∀ z, R₂ < Φ z - s₀ → (fun t ↦ θ₀ (Φ t - s₀)) =ᶠ[𝓝 z] fun _ ↦ π / 2 := by
+  refine ⟨fun z ↦ ?_, fun z hz ↦ ?_⟩
+  · have hd : HasFDerivAt (fun t ↦ θ₀ (Φ t - s₀))
+        ((fderiv ℝ θ₀ (Φ z - s₀)).comp (fderiv ℝ Φ z)) z :=
+      (hθ₀ _).hasFDerivAt.comp z ((hΦ z).hasFDerivAt.sub_const s₀)
+    rw [hd.fderiv]
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    simpa using mul_le_mul (hθ₀d _) (hΦd z) (norm_nonneg _) ((norm_nonneg _).trans (hθ₀d 0))
+  · exact ((hΦ z).sub_const s₀).continuousAt.eventually (hθ₀out _ (hz.trans_le (le_abs_self _)))
+
 /-- **A smooth cutoff of the identity on the line.** For `r < R`, some smooth `k : ℝ → ℝ`
 equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
 For `0 < r` it is `s ↦ χ s * s` for a smooth bump `χ` equal to one on `[-r, r]` and supported in
@@ -913,6 +934,25 @@ theorem exists_contDiff_cutoff_id {r R : ℝ} (hrR : r < R) :
   · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
     exact hsmall x hx.le
+
+open Metric in
+/-- **A smooth cutoff of the identity into a ball.** For `0 < r < ε`, some smooth `c : E → E` maps
+`E` into `ball x ε`, is the identity on `closedBall x r`, and equals `x` outside `ball x ε`. It is
+`y ↦ x + χ y • (y - x)` for a smooth bump `χ` equal to one on `closedBall x r` and supported in
+`closedBall x ε`. -/
+theorem exists_contDiff_cutoff_self [NormedSpace ℝ E] [HasContDiffBump E] (x : E) {r ε : ℝ}
+    (hr : 0 < r) (hrε : r < ε) :
+    ∃ c : E → E, ContDiff ℝ ∞ c ∧ (∀ y, c y ∈ ball x ε) ∧ (∀ y ∈ closedBall x r, c y = y) ∧
+      ∀ y ∉ ball x ε, c y = x := by
+  let χ : ContDiffBump x := ⟨r, ε, hr, hrε⟩
+  have hout (y : E) (hy : y ∉ ball x ε) : χ y = 0 := χ.zero_of_le_dist (not_lt.1 hy)
+  refine ⟨fun y ↦ x + χ y • (y - x),
+    contDiff_const.add (χ.contDiff.smul (contDiff_id.sub contDiff_const)), fun y ↦ ?_,
+    fun y hy ↦ by simp [χ.one_of_mem_closedBall hy], fun y hy ↦ by simp [hout y hy]⟩
+  by_cases hy : y ∈ ball x ε
+  · rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg χ.nonneg]
+    exact (mul_le_of_le_one_left (norm_nonneg _) χ.le_one).trans_lt (mem_ball_iff_norm.1 hy)
+  · simpa [hout y hy] using mem_ball_self (x := x) (hr.trans hrε)
 
 open Metric in
 /-- **A smooth cutoff of an annulus.** For `0 < r` and any `R`, some smooth, even, compactly
