@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.SimpleCoordinates
+import TauCeti.LinearAlgebra.RootSystem.Weyl.TypeA.RankTwo
 import Mathlib.Algebra.DualNumber
 
 /-!
@@ -36,32 +37,31 @@ theorem a1_coordinate {ht : (DynkinType.A 1).Valid} (D : ChevalleyDatum (.A 1) h
 
 variable {ht : (DynkinType.A 2).Valid}
 
-private def topRoot : Fin (DynkinType.A 2).numRoots :=
-  typeAIndexEquiv 2 ⟨(0, 2), by decide⟩
-
 private theorem topRoot_eq_sum :
-    ((DynkinType.A 2).rationalRootSystem ht).root topRoot =
+    ((DynkinType.A 2).rationalRootSystem ht).root typeA2HighestRootIndex =
       ((DynkinType.A 2).rationalRootSystem ht).root ((DynkinType.A 2).simpleIndex ht 0) +
       ((DynkinType.A 2).rationalRootSystem ht).root ((DynkinType.A 2).simpleIndex ht 1) := by
-  ext j
-  rw [Pi.add_apply, (DynkinType.A 2).root_rationalRootSystem ht topRoot j,
-    (DynkinType.A 2).root_rationalRootSystem ht _ j,
-    (DynkinType.A 2).root_rationalRootSystem ht _ j, root_simpleIndex, root_simpleIndex]
-  simp only [topRoot, simplyConnectedRootDatum_A, cartanMatrix_A]
-  -- Normalize the numerical carrier types after rewriting the datum dispatcher.
-  dsimp only [DynkinType.rank, DynkinType.numRoots] at j ⊢
-  have h : ((typeASimplyConnectedRootDatum 2).root
-      (typeAIndexEquiv 2 ⟨(0, 2), by decide⟩) j : ℚ) =
-      (CartanMatrix.A 2 (0 : Fin 2) j : ℚ) + (CartanMatrix.A 2 (1 : Fin 2) j : ℚ) := by
-    rw [root_typeAIndexEquiv]
-    fin_cases j <;> norm_num [CartanMatrix.A]
-  exact h
+  have hs (i : Fin (DynkinType.A 2).rank) :
+      (DynkinType.A 2).simpleIndex ht i = typeASimpleIndex 2 i := by
+    apply Fin.ext
+    exact (val_simpleIndex _ _ _).trans (typeASimpleIndex_val _).symm
+  simpa only [one_nsmul] using
+    ((DynkinType.A 2).root_rationalRootSystem_eq_nsmul_add_iff ht
+      ((DynkinType.A 2).simpleIndex ht 0) ((DynkinType.A 2).simpleIndex ht 1)
+      typeA2HighestRootIndex 1).mpr
+        (by
+          rw [one_nsmul, hs 0, hs 1]
+          -- Normalize both dispatcher carriers before applying the family root relation.
+          dsimp only [DynkinType.rank, DynkinType.numRoots]
+          rw [simplyConnectedRootDatum_A]
+          exact root_typeA2HighestRootIndex)
 
-private theorem topRoot_positive : topRoot ∈
+private theorem topRoot_positive : typeA2HighestRootIndex ∈
     posRoots ((DynkinType.A 2).rationalRootSystem ht) ((DynkinType.A 2).rationalBase ht) :=
   add_mem_posRoots _ _ (simpleIndex_mem_posRoots 0) (simpleIndex_mem_posRoots 1) topRoot_eq_sum
 
-private theorem topRoot_ne_simple (i : Fin 2) : topRoot ≠ (DynkinType.A 2).simpleIndex ht i := by
+private theorem topRoot_ne_simple (i : Fin 2) :
+    typeA2HighestRootIndex ≠ (DynkinType.A 2).simpleIndex ht i := by
   intro h
   have hh := ((DynkinType.A 2).rationalBase ht).height_add topRoot_eq_sum
   rw [h] at hh
@@ -90,10 +90,10 @@ private theorem a2_coordinates (D : ChevalleyDatum (.A 2) ht) (R : Type*) [CommR
           D.rootSubgroupPoints_mem_positivePoints R (simpleIndex_mem_posRoots 1) _⟩) =
       (1, ofAdd a) ∧
     (D.simpleRootCoordinate R 0
-        ⟨D.rootSubgroupPoints topRoot R (ofAdd a),
+        ⟨D.rootSubgroupPoints typeA2HighestRootIndex R (ofAdd a),
           D.rootSubgroupPoints_mem_positivePoints R topRoot_positive _⟩,
       D.simpleRootCoordinate R 1
-        ⟨D.rootSubgroupPoints topRoot R (ofAdd a),
+        ⟨D.rootSubgroupPoints typeA2HighestRootIndex R (ofAdd a),
           D.rootSubgroupPoints_mem_positivePoints R topRoot_positive _⟩) = (1, 1) := by
   have h01 : (DynkinType.A 2).simpleIndex ht 0 ≠ (DynkinType.A 2).simpleIndex ht 1 := by
     intro h
