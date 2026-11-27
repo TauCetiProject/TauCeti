@@ -221,7 +221,8 @@ private theorem cubicalChainModuleLof_leftAct_point (ω : MooreLoopSpace X b) {q
     ContinuousMap.ext fun y ↦ by simp [leftActMap_apply, leftActBy_apply]
   rw [← cubicalChainModuleLof_cast (Nat.zero_add q), NormalizedCubicalChain.leftAct_def,
     ← NormalizedCubicalChain.map_cast, NormalizedCubicalChain.crossProduct_point_left, ← h,
-    NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
+    NormalizedCubicalChain.map_comp]
+  rfl
 
 /-- A path in the based path space from the constant path to the loop `ω` read as a path, by
 truncation of `ω`. Its end points run along `ω`. -/
@@ -235,10 +236,10 @@ private def truncatePath (ω : MooreLoopSpace X b) :
 /-- The end points of the truncations of `ω` run along `ω`. -/
 private theorem endpoint_truncatePath (ω : MooreLoopSpace X b) (t : unitInterval) :
     MoorePathFrom.endpoint X b (truncatePath ω t) = ω.toPath t := by
-  simp only [truncatePath, Path.coe_mk_mk, MoorePathFrom.endpoint_apply,
-    MoorePathFrom.toMoorePath_truncateHomotopy, MoorePath.target_truncate, leftActBy_apply,
-    MoorePathFrom.smul_eq_leftAct, MoorePathFrom.toMoorePath_leftAct,
-    MoorePathFrom.toMoorePath_refl, MoorePath.trans_refl, MooreLoopSpace.toPath_apply, mul_comm]
+  -- The truncation stops at time `t * length`, while `toPath` reads `ω` at time `length * t`.
+  rw [MooreLoopSpace.toPath_apply, mul_comm]
+  simp [truncatePath, leftActBy_apply, MoorePathFrom.smul_eq_leftAct,
+    MoorePathFrom.endpoint_apply, MoorePathFrom.toMoorePath_truncateHomotopy]
 
 /-- **The monodromy of concatenation with a loop.** The end points of the truncations of `ω`,
 read between the fibres at `b`, are the loop `ω` itself. -/
@@ -296,8 +297,8 @@ theorem twistedEndpointPushforward_smul (n : ℕ) (α : loopChainAlgebra X b R)
           simp only [map_smul, LinearMap.smul_apply, op_smul, smul_assoc, hz]
         | ofCube e =>
           rw [SingularCube.eq_point e, cubicalChainModuleLof_leftAct_point,
-            op_smul_eq_classicalAction, classicalAction_lof_point, LinearEquiv.coe_coe,
-            transport_apply]
+            op_smul_eq_classicalAction, classicalAction_lof_point]
+          simp only [LinearEquiv.coe_coe, transport_apply]
           by_cases hq : q = n
           · subst hq
             rw [twistedEndpointPushforward_lof, twistedEndpointPushforward_lof,
@@ -345,9 +346,9 @@ theorem twistedBaseChain_eq_zero {n : ℕ} {x : P} (hn : (n : ℤ) ≠ ind x) :
 theorem boundary_twistedBaseChain (n : ℕ) (x : P) (a : L.obj (FundamentalGroupoid.mk b)) :
     boundary L n (M.twistedBaseChain L (n + 1) x a) =
       (M.cocycle.m x).sum fun y α ↦ M.twistedBaseChain L n y (op α • a) := by
-  rw [twistedBaseChain_def, boundary_twistedEndpointPushforward, ← M.linearCombination_comparison_m,
-    Finsupp.linearCombination_apply, map_finsuppSum, LinearMap.finsupp_sum_apply]
-  simp only [twistedEndpointPushforward_smul, twistedBaseChain_def]
+  rw [twistedBaseChain_def, boundary_twistedEndpointPushforward, ← M.linearCombination_comparison_m]
+  simp [Finsupp.linearCombination_apply, map_finsuppSum, twistedEndpointPushforward_smul,
+    twistedBaseChain_def]
 
 /-- The **twisted base chain map** in dimension `n`: the coefficient vector `∑_x x ⊗ a_x` goes to
 `∑_x e_x^{a_x}`. -/
