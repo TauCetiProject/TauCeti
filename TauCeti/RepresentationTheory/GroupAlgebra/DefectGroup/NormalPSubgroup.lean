@@ -38,6 +38,8 @@ block `r + r²` is `1`.
   a block.
 * `TauCeti.IsBlockIdempotent.zpowers_le_of_isDefectGroup_centralizer`: for a `p`-element `x`,
   `⟨x⟩` lies in every defect group of every block of `k[C_G(x)]`.
+* `TauCeti.IsBlockIdempotent.subgroupOf_le_of_isDefectGroup`: for a `p`-subgroup `P` and
+  `P ≤ H ≤ N_G(P)`, `P` lies in every defect group of every block of `k[H]`.
 
 ## References
 
@@ -117,6 +119,17 @@ theorem zpowers_le_of_isDefectGroup_centralizer {x : G} (hxp : IsPGroup p (Subgr
         Subgroup.centralizer {x})).map (Subgroup.centralizer {x}).subtype) := by
       rwa [MonoidHom.map_zpowers]
     exact hmap.of_equiv (Subgroup.equivMapOfInjective _ _ Subtype.val_injective).symm
+
+/-- **A `p`-subgroup lies in every defect group of every block of a subgroup normalizing it**:
+for a `p`-subgroup `P` of a finite group `G`, a subgroup `H` with `P ≤ H ≤ N_G(P)` and a field
+`k` of characteristic `p`, `P` lies in every defect group of every block of `k[H]`. -/
+theorem subgroupOf_le_of_isDefectGroup {P H : Subgroup G} (hP : IsPGroup p P) (hPH : P ≤ H)
+    (hHN : H ≤ Subgroup.normalizer (P : Set G)) {b : Subalgebra.center k (MonoidAlgebra k H)}
+    (hb : IsBlockIdempotent b) {D : Subgroup H}
+    (hD : IsDefectGroup k p (b : MonoidAlgebra k H) D) : P.subgroupOf H ≤ D :=
+  have : (P.subgroupOf H).Normal := (Subgroup.normal_subgroupOf_iff_le_normalizer hPH).2 hHN
+  hb.le_of_isDefectGroup_of_isPGroup_of_normal (Q := P.subgroupOf H)
+    (hP.comap_of_injective H.subtype H.subtype_injective) hD
 
 end IsBlockIdempotent
 

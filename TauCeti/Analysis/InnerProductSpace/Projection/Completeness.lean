@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+public import Mathlib.RingTheory.Finiteness.Cofinite
+-- Private: closedness of subspaces containing a closed subspace of finite codimension is used only
+-- in a proof.
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Closedness and completeness of projected subspaces
@@ -15,6 +19,12 @@ therefore closed. In a complete ambient inner-product space, such a subspace is 
 Closedness, completeness and existence of an orthogonal projection are equivalent there, so
 the intersection of two such subspaces admits an orthogonal projection
 (`Submodule.HasOrthogonalProjection.inf`).
+
+Every subspace containing a closed subspace `K` of finite codimension is closed, so it is the
+whole space as soon as its orthogonal complement is trivial. Hence `K ⊔ S = ⊤` once the only
+vector orthogonal to both `K` and `S` is zero (`Submodule.sup_eq_top_of_isClosed_of_coFG`): the
+form in which transversality arguments show that a Fredholm range and a space of variations
+together span.
 
 The sum `U ⊔ V` of two orthogonal subspaces admitting orthogonal projections equals
 `(Uᗮ ⊓ Vᗮ)ᗮ` and is therefore closed (`Submodule.IsOrtho.sup_eq_orthogonal_inf_orthogonal`,
@@ -70,6 +80,19 @@ instance HasOrthogonalProjection.inf (U V : Submodule 𝕜 E) [U.HasOrthogonalPr
     [V.HasOrthogonalProjection] : (U ⊓ V).HasOrthogonalProjection :=
   hasOrthogonalProjection_iff_isClosed.mpr
     (U.isClosed_of_hasOrthogonalProjection.inter V.isClosed_of_hasOrthogonalProjection)
+
+/-- **A closed subspace of finite codimension and a subspace span when no nonzero vector is
+orthogonal to both.** In a complete space, the sum `K ⊔ S` contains the closed subspace `K` of
+finite codimension, so it is closed; it is therefore everything once its orthogonal complement
+`Kᗮ ⊓ Sᗮ` is trivial. -/
+theorem sup_eq_top_of_isClosed_of_coFG {K S : Submodule 𝕜 E} (hK : IsClosed (K : Set E))
+    (hKf : K.CoFG) (h : ∀ v ∈ Kᗮ, v ∈ Sᗮ → v = 0) : K ⊔ S = ⊤ := by
+  -- `CoFG` is the finite dimensionality of the quotient; put it in scope as an instance.
+  have : FiniteDimensional 𝕜 (E ⧸ K) := hKf
+  have := hasOrthogonalProjection_iff_isClosed.2
+    (isClosed_mono_of_finiteDimensional_quotient hK (le_sup_left (b := S)))
+  rw [← orthogonal_eq_bot_iff, eq_bot_iff, ← inf_orthogonal]
+  exact fun v hv ↦ h v hv.1 hv.2
 
 end Submodule
 

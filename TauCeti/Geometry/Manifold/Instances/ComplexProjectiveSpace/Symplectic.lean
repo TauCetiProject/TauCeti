@@ -85,6 +85,9 @@ under multiplication by `i`, and `ω_FS(v, i v) = Re H(v', v')` is positive for 
 * `TauCeti.ComplexProjectiveSpace.eval₂_fubiniStudyForm_mfderiv_mk`: its values on images of
   tangent vectors of the sphere.
 * `TauCeti.ComplexProjectiveSpace.isSymplectic_fubiniStudyForm`: it is symplectic.
+* `TauCeti.ComplexProjectiveSpace.isSmoothForm_fubiniStudyForm`,
+  `TauCeti.ComplexProjectiveSpace.mextDeriv_fubiniStudyForm`: it is `C¹` and closed, as the
+  integral over spheres requires.
 * `TauCeti.ComplexProjectiveSpace.eval₂_fubiniStudyForm_mfderiv_mk_eq_im_fubiniStudyHermitian`:
   it is the imaginary part of the homogeneous Fubini–Study Hermitian form.
 * `TauCeti.ComplexProjectiveSpace.eval₂_mpullback_affineParam_fubiniStudyForm`: its expression in

@@ -42,18 +42,19 @@ computes that singularity and the resulting integrability of the derivative.
   `TauCeti.memLp_norm_fderiv_image_add_pow_iff`.
 
 The exponent `p_m = 2 + 2 / m` of the coefficient estimates for `m` sheets has
-`p_m (1 - 1 / m) = 2 - 2 / m² < 2` (`TauCeti.two_add_two_div_mul_one_sub_inv`), so the derivative
-of a branch through a degree-`m` substitution lies in `L^{p_m}`
+`p_m (1 - 1 / m) = 2 - 2 / m² < 2` (`TauCeti.two_add_two_div_mul_one_sub_inv`), hence
+`p_m (1 - 1 / d) < 2` for every `0 < d ≤ m` (`TauCeti.two_add_two_div_mul_one_sub_inv_lt_two`), so
+the derivative of a branch through a substitution of degree `d ≤ m` lies in `L^{p_m}`
 (`TauCeti.memLp_norm_fderiv_image_add_pow_two_add_two_div`). If a distortion factor `K`
 multiplies the exponent, the margin survives exactly when `K (m² - 1) < m²`
 (`TauCeti.mul_two_add_two_div_mul_one_sub_inv_lt_two_iff`).
 
 The branch `u` is only assumed real differentiable, so the statements are not limited to
-holomorphic branches. The root branches of real Cauchy–Riemann equations parametrized after the
-substitution `y = x + ζ ^ m!` in `TauCeti.exists_root_branches_hasWeakConjWirtingerDerivOn` are
-continuously real differentiable away from `ζ = 0`, so they meet the differentiability hypothesis
-on sheets `s` avoiding `0`, with `d = m!`; the bounds on `‖du‖` that the margin also needs are not
-supplied there and must be established separately.
+holomorphic branches. The local branches of the roots of the Newton coefficient equation through a
+collision, parametrized after the substitution `y = x + t ^ k` with `k ≤ m`, are `C¹` across the
+centre when the coefficients of the equation are Hölder, so their derivatives are bounded near the
+centre and the margin applies to them
+(`TauCeti.exists_eq_sum_map_nthRoots_contDiffOn`).
 
 ## References
 
@@ -82,12 +83,16 @@ theorem two_add_two_div_mul_one_sub_inv {m : ℝ} (hm : m ≠ 0) :
   field_simp
   ring
 
-/-- The margin of the exponent `p_m = 2 + 2 / m`: `p_m (1 - 1 / m) < 2`. -/
-theorem two_add_two_div_mul_one_sub_inv_lt_two {m : ℝ} (hm : m ≠ 0) :
-    (2 + 2 / m) * (1 - m⁻¹) < 2 := by
-  rw [two_add_two_div_mul_one_sub_inv hm]
-  have : 0 < 2 / m ^ 2 := by positivity
-  linarith
+/-- The margin of the exponent `p_m = 2 + 2 / m` for branches of at most `m` sheets:
+`p_m (1 - 1 / d) < 2` whenever `0 < d ≤ m`. For `d = m` this is
+`p_m (1 - 1 / m) = 2 - 2 / m² < 2`. -/
+theorem two_add_two_div_mul_one_sub_inv_lt_two {m d : ℝ} (hd : 0 < d) (hdm : d ≤ m) :
+    (2 + 2 / m) * (1 - d⁻¹) < 2 := by
+  have hm : 0 < m := hd.trans_le hdm
+  calc (2 + 2 / m) * (1 - d⁻¹) ≤ (2 + 2 / m) * (1 - m⁻¹) := by gcongr
+    _ = 2 - 2 / m ^ 2 := two_add_two_div_mul_one_sub_inv hm.ne'
+    _ < 2 := by have : 0 < 2 / m ^ 2 := by positivity
+                linarith
 
 /-- A factor `K` multiplying the exponent `p_m (1 - 1 / m)` keeps it below `2` exactly when
 `K (m² - 1) < m²`, that is, when `K < m² / (m² - 1)` for `m² > 1`. -/
@@ -314,20 +319,21 @@ theorem memLp_norm_fderiv_image_add_pow_iff [CompleteSpace E] (hs : IsOpen s)
       (fun z hz ↦ differentiableAt_of_fderiv_ne_zero (norm_pos_iff.1 (hc.trans_le (hcu z hz))))
       hV hM hb hr⟩
 
-/-- **Branch derivatives lie in `L^{p_d}`.** Let `V (x + zᵈ) = u z` on an open set `s`, with `u`
-differentiable on `s` and `‖du‖ ≤ M` there, and let the image of `s` be bounded. Then `‖dV‖` is
-`L^{p_d}` on the image of `s` for the exponent `p_d = 2 + 2 / d` of `d` sheets, by the margin
-`p_d (1 - 1 / d) = 2 - 2 / d² < 2`. -/
-theorem memLp_norm_fderiv_image_add_pow_two_add_two_div [CompleteSpace E] (hs : IsOpen s)
-    (hu : ∀ z ∈ s, DifferentiableAt ℝ u z) (hV : ∀ z ∈ s, V (x + z ^ d) = u z)
+/-- **Branch derivatives lie in `L^{p_m}`.** Let `V (x + zᵈ) = u z` on an open set `s`, with `u`
+differentiable on `s` and `‖du‖ ≤ M` there, and let the image of `s` be bounded. Then for every
+`m ≥ d`, `‖dV‖` is `L^{p_m}` on the image of `s` for the exponent `p_m = 2 + 2 / m` of `m` sheets,
+by the margin `p_m (1 - 1 / d) ≤ p_m (1 - 1 / m) = 2 - 2 / m² < 2`. -/
+theorem memLp_norm_fderiv_image_add_pow_two_add_two_div [CompleteSpace E] {m : ℕ} (hdm : d ≤ m)
+    (hs : IsOpen s) (hu : ∀ z ∈ s, DifferentiableAt ℝ u z) (hV : ∀ z ∈ s, V (x + z ^ d) = u z)
     {M : ℝ} (hM : ∀ z ∈ s, ‖fderiv ℝ u z‖ ≤ M) (hb : IsBounded ((fun z ↦ x + z ^ d) '' s)) :
-    MemLp (fun y ↦ ‖fderiv ℝ V y‖) (ENNReal.ofReal (2 + 2 / d))
+    MemLp (fun y ↦ ‖fderiv ℝ V y‖) (ENNReal.ofReal (2 + 2 / m))
       (volume.restrict ((fun z ↦ x + z ^ d) '' s)) := by
   rcases eq_or_ne d 0 with rfl | hd
   · rw [Measure.restrict_eq_zero.2 ((subsingleton_image_add_pow_zero x s).measure_zero _)]
     exact memLp_measure_zero
   refine memLp_norm_fderiv_image_add_pow hs hu hV hM hb ENNReal.ofReal_ne_top ?_
   rw [ENNReal.toReal_ofReal (by positivity)]
-  exact two_add_two_div_mul_one_sub_inv_lt_two (Nat.cast_ne_zero.2 hd)
+  exact two_add_two_div_mul_one_sub_inv_lt_two (Nat.cast_pos.2 (Nat.pos_of_ne_zero hd))
+    (Nat.cast_le.2 hdm)
 
 end TauCeti
