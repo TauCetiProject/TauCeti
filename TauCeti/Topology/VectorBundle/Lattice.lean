@@ -40,7 +40,10 @@ representation of the fundamental group by automorphisms of the lattice `L x`
 `GL(n, ℤ)` after choosing a basis of `L x`: this is the **linear monodromy** of the lattice family.
 
 A continuous section of `L` along a path is a lift of it, so monodromy carries its value at the
-start to its value at the end (`TauCeti.latticeMonodromy_mk_of_continuousOn`). Consequently a
+start to its value at the end (`TauCeti.latticeMonodromy_mk_of_continuousOn`). More generally,
+transport follows every continuous lift of a path with values in `L`, which may take different
+values over a point that a loop visits twice (`TauCeti.latticeMonodromy_mk_of_continuous`).
+Consequently a
 lattice family spanned by a global continuous frame has trivial monodromy
 (`TauCeti.latticeMonodromyHom_eq_one`).
 
@@ -378,6 +381,22 @@ theorem latticeMonodromyHom_apply (x : B) (γ : FundamentalGroup B x) (a : L x) 
   rw [← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap]
   simp [latticeMonodromyHom]
 
+/-- **Monodromy follows continuous lifts.** If `s` is a continuous path in the total space over a
+path `γ` from `x` to `y` whose values lie in `L`, then transport along `γ` carries its value at
+the start to its value at the end. The lift need not come from a section over the base, so it may
+take two different values over a point which `γ` visits twice, as the transport of a lattice vector
+around a loop does. -/
+theorem latticeMonodromy_mk_of_continuous {x y : B} (γ : Path x y)
+    {s : unitInterval → TotalSpace F E} (hs : Continuous s) (hsγ : ∀ t, (s t).proj = γ t)
+    (hsL : ∀ t, (s t).snd ∈ L (s t).proj) {a : L x} {c : L y} (ha : s 0 = ⟨x, a⟩)
+    (hc : s 1 = ⟨y, c⟩) :
+    latticeMonodromy hL (.mk γ) a = c := by
+  let Γ : C(unitInterval, {v : TotalSpace F E // v.snd ∈ L v.proj}) :=
+    ⟨fun t ↦ ⟨s t, hsL t⟩, hs.subtype_mk _⟩
+  rw [latticeMonodromy_apply, ← Equiv.eq_symm_apply]
+  exact Subtype.ext ((hL.monodromy_eq_apply_one (Γ := Γ) (funext hsγ) (Subtype.ext ha)).trans
+    (Subtype.ext hc))
+
 /-- **Monodromy follows continuous sections.** If a section `s` of `E` is continuous on a set `U`
 and takes values in `L` there, then transport along a path `γ` in `U` carries `s` at the start of
 `γ` to `s` at its end: `t ↦ s (γ t)` is the lift of `γ`. -/
@@ -385,15 +404,10 @@ theorem latticeMonodromy_mk_of_continuousOn {s : ∀ b, E b} {U : Set B}
     (hs : ContinuousOn (fun b ↦ TotalSpace.mk' F b (s b)) U) (hsL : ∀ b ∈ U, s b ∈ L b)
     {x y : B} (γ : Path x y) (hγ : ∀ t, γ t ∈ U) :
     latticeMonodromy hL (.mk γ) ⟨s x, hsL x (γ.source ▸ hγ 0)⟩ =
-      ⟨s y, hsL y (γ.target ▸ hγ 1)⟩ := by
-  let Γ : C(unitInterval, {v : TotalSpace F E // v.snd ∈ L v.proj}) :=
-    ⟨fun t ↦ ⟨⟨γ t, s (γ t)⟩, hsL _ (hγ t)⟩, (hs.comp_continuous γ.continuous hγ).subtype_mk _⟩
-  have hΓ0 : Γ 0 = ((latticeProjFiberEquiv F L x).symm ⟨s x, hsL x (γ.source ▸ hγ 0)⟩ : _) := by
-    rw [latticeProjFiberEquiv_symm_apply]
-    exact Subtype.ext (congrArg (fun z ↦ TotalSpace.mk' F z (s z)) γ.source)
-  rw [latticeMonodromy_apply]
-  exact latticeProjFiberEquiv_eq_of_val_eq _
-    (congrArg Subtype.val (hL.monodromy_eq_apply_one (Γ := Γ) rfl hΓ0)) _
+      ⟨s y, hsL y (γ.target ▸ hγ 1)⟩ :=
+  latticeMonodromy_mk_of_continuous hL γ (hs.comp_continuous γ.continuous hγ) (fun _ ↦ rfl)
+    (fun t ↦ hsL _ (hγ t)) (congrArg (fun z ↦ TotalSpace.mk' F z (s z)) γ.source)
+    (congrArg (fun z ↦ TotalSpace.mk' F z (s z)) γ.target)
 
 /-- **A lattice family spanned by a global continuous frame has trivial monodromy.** -/
 theorem latticeMonodromyHom_eq_one {ι : Type*} [Finite ι] {s : ι → ∀ b, E b}
