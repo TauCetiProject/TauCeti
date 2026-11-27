@@ -30,7 +30,7 @@ surjective because `v` acts by zero on homology.
 A surjection `π : N → P` with kernel `range f` for an injective chain map `f : M → N` makes
 `(a, b) ↦ π b` a quasi-isomorphism from `LinearMap.mappingCone d e f` to `P`
 (`LinearMap.mappingConeProjectionHomologyEquiv`). The underlying bijection on homology
-(`LinearMap.bijective_homologyMap_comp_snd`) allows `π` to be semilinear along a ring homomorphism
+(`LinearMap.homologyMap_comp_snd_bijective`) allows `π` to be semilinear along a ring homomorphism
 `σ : S →+* T`, as for the reduction of coefficients modulo a nonzerodivisor `u` of `S` acting on
 free modules, where `f` is multiplication by `u`. Composing it with the mapping-cone shearing
 isomorphism `LinearMap.mappingConeHomologyEquivOfHomotopy` for a homotopy `e ∘ h + h ∘ d = f₁ - f₂`
@@ -413,7 +413,7 @@ include hinj hπ in
 `0 → M --f--> N --π--> P → 0` is short exact on chains, with `π` possibly semilinear,
 `(a, b) ↦ π b` induces a bijection from the homology of `mappingCone d e f` onto the homology of
 `q`. -/
-theorem bijective_homologyMap_comp_snd :
+theorem homologyMap_comp_snd_bijective :
     Function.Bijective (homologyMap (π ∘ₛₗ snd S M N)
       (mappingCone_comp_self f hd he hf) hq (comp_snd_comp_mappingCone hexact hπe)) := by
   refine ⟨(homologyMap_injective_iff _ _ _ _).mpr fun ⟨a, b⟩ hab ⟨c', hc'⟩ => ?_,
@@ -447,7 +447,7 @@ variable {N P : Type*} [AddCommGroup N] [Module S N] [AddCommGroup P] [Module S 
 isomorphism from the homology of `mappingCone d e f` onto the homology of `q`. -/
 noncomputable def mappingConeProjectionHomologyEquiv :
     (mappingCone d e f).homology (mappingCone_comp_self f hd he hf) ≃ₗ[S] q.homology hq :=
-  LinearEquiv.ofBijective _ (bijective_homologyMap_comp_snd hd he hq hf hinj hπ hexact hπe)
+  LinearEquiv.ofBijective _ (homologyMap_comp_snd_bijective hd he hq hf hinj hπ hexact hπe)
 
 /-- `mappingConeProjectionHomologyEquiv` sends the class of `(a, b)` to the class of `π b`. -/
 @[simp]
