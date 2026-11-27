@@ -63,6 +63,7 @@ conjugation action.
   a class is nonzero in any semiring where the group order is, and
   `ConjClasses.card_carrier_div_card_ne_zero` the nonvanishing of `#C / #G` for a finite group.
 * `ConjClasses.mem_carrier_iff_of_isConj`: conjugate elements lie in the same conjugacy classes.
+* `ConjClasses.mk_out`: the class of the chosen representative of a class is that class.
 * `ConjClasses.pow`: the power operation itself, with `C ^ j` its notation.
 * `ConjClasses.mem_pow_iff`: an element lies in `C ^ j` exactly when it is a
   `j`-th power of a member of `C`, with `ConjClasses.mk_pow` the computation rule.
@@ -383,6 +384,12 @@ theorem one_div_orderOf_div_card_div_card_carrier_mul_orderOf {G : Type*} [Group
 theorem mem_carrier_iff_of_isConj {M : Type*} [Monoid M] {a b : M} {C : ConjClasses M}
     (h : IsConj a b) : a ∈ C.carrier ↔ b ∈ C.carrier := by
   rw [mem_carrier_iff_mk_eq, mem_carrier_iff_mk_eq, mk_eq_mk_iff_isConj.mpr h]
+
+/-- The class of the chosen representative of a conjugacy class is that class. -/
+@[simp]
+theorem mk_out {M : Type*} [Monoid M] (C : ConjClasses M) : ConjClasses.mk C.out = C :=
+  -- `ConjClasses M` is the quotient by `IsConj.setoid M`, whose class map is `ConjClasses.mk`.
+  Quotient.out_eq C
 
 /-! ### Powers of a conjugacy class -/
 
