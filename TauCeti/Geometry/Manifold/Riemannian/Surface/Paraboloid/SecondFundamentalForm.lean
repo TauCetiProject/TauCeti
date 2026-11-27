@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Surface.Paraboloid.Normal
 public import TauCeti.Analysis.InnerProductSpace.SecondFundamentalForm
-public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.InnerProductSpace.Calculus
 
 /-!

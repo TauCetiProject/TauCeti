@@ -54,10 +54,8 @@ theorem paraboloidNormal_apply_two (x : V₂) : paraboloidNormal x 2 = 1 := by
 @[simp]
 theorem norm_paraboloidNormal_sq (x : V₂) :
     ‖paraboloidNormal x‖ ^ 2 = 1 + 4 * ‖x‖ ^ 2 := by
-  rw [← real_inner_self_eq_norm_sq, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
-  simp only [paraboloidNormal, inner_add_left, inner_add_right, real_inner_smul_left,
-    real_inner_smul_right, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
-  norm_num
+  simp only [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three, Fin.sum_univ_two,
+    paraboloidNormal_apply_zero, paraboloidNormal_apply_one, paraboloidNormal_apply_two]
   ring
 
 /-- The upward graph normal never vanishes. -/
@@ -71,10 +69,10 @@ theorem paraboloidNormal_ne_zero (x : V₂) : paraboloidNormal x ≠ 0 := by
 @[simp]
 theorem inner_paraboloidNormal_fderiv_paraboloidGraph (x w : V₂) :
     inner ℝ (paraboloidNormal x) (fderiv ℝ paraboloidGraph x w) = 0 := by
-  simp only [paraboloidNormal, inner_add_left, real_inner_smul_left, EuclideanSpace.basisFun_apply,
-    EuclideanSpace.inner_single_left, fderiv_paraboloidGraph_apply_zero,
+  simp only [PiLp.inner_apply, Fin.sum_univ_three, Fin.sum_univ_two, Real.inner_apply,
+    paraboloidNormal_apply_zero, paraboloidNormal_apply_one, paraboloidNormal_apply_two,
+    fderiv_paraboloidGraph_apply_zero,
     fderiv_paraboloidGraph_apply_one, fderiv_paraboloidGraph_apply_two]
-  simp only [PiLp.inner_apply, Fin.sum_univ_two, Real.inner_apply]
   ring
 
 /-- The upward normal lies in the orthogonal complement of the range of the graph differential. -/
@@ -146,16 +144,12 @@ theorem inner_paraboloidUnitNormal_fderiv_paraboloidGraph (x w : V₂) :
 /-- The upward unit normal lies in the orthogonal complement of the graph differential's range. -/
 theorem paraboloidUnitNormal_mem_orthogonal_range_fderiv_paraboloidGraph (x : V₂) :
     paraboloidUnitNormal x ∈ (fderiv ℝ paraboloidGraph x).rangeᗮ := by
-  rw [Submodule.mem_orthogonal]
-  rintro _ ⟨w, rfl⟩
-  rw [real_inner_comm]
-  exact inner_paraboloidUnitNormal_fderiv_paraboloidGraph x w
+  unfold paraboloidUnitNormal NormedSpace.normalize
+  exact Submodule.smul_mem _ _ (paraboloidNormal_mem_orthogonal_range_fderiv_paraboloidGraph x)
 
 /-- The upward unit normal is smooth at every order, including analytic order. -/
 @[fun_prop]
-theorem contDiff_paraboloidUnitNormal {n : ℕ∞ω} : ContDiff ℝ n paraboloidUnitNormal := by
-  exact contDiff_iff_contDiffAt.2 fun x ↦
-    (NormedSpace.contDiffAt_normalize (paraboloidNormal_ne_zero x)).comp x
-      contDiff_paraboloidNormal.contDiffAt
+theorem contDiff_paraboloidUnitNormal {n : ℕ∞ω} : ContDiff ℝ n paraboloidUnitNormal :=
+  NormedSpace.contDiffOn_normalize.comp_contDiff contDiff_paraboloidNormal paraboloidNormal_ne_zero
 
 end TauCeti.Manifold
