@@ -47,7 +47,11 @@ The exponent `p_m = 2 + 2 / m` of the coefficient estimates for `m` sheets has
 the derivative of a branch through a substitution of degree `d ≤ m` lies in `L^{p_m}`
 (`TauCeti.memLp_norm_fderiv_image_add_pow_two_add_two_div`). If a distortion factor `K`
 multiplies the exponent, the margin survives exactly when `K (m² - 1) < m²`
-(`TauCeti.mul_two_add_two_div_mul_one_sub_inv_lt_two_iff`).
+(`TauCeti.mul_two_add_two_div_mul_one_sub_inv_lt_two_iff`). Its Morrey exponent is
+`1 - 2 / p_m = 1 / (m + 1)` (`TauCeti.one_sub_two_div_two_add_two_div`), and for `0 < k ≤ m`,
+`p_m (1 - 2 / k) ≤ p_m (1 - 2 / m) = 2 - 2 / m - 4 / m² < 2`
+(`TauCeti.two_add_two_div_mul_one_sub_two_div_le`, `TauCeti.two_add_two_div_mul_one_sub_two_div`,
+`TauCeti.two_add_two_div_mul_one_sub_two_div_lt_two`).
 
 The branch `u` is only assumed real differentiable, so the statements are not limited to
 holomorphic branches. The local branches of the roots of the Newton coefficient equation through a
@@ -102,6 +106,35 @@ theorem mul_two_add_two_div_mul_one_sub_inv_lt_two_iff {m : ℝ} (hm : m ≠ 0) 
   rw [two_add_two_div_mul_one_sub_inv hm, ← mul_lt_mul_iff_of_pos_right hm2]
   have : K * (2 - 2 / m ^ 2) * m ^ 2 = 2 * (K * (m ^ 2 - 1)) := by field_simp
   constructor <;> intro h <;> nlinarith
+
+/-- The Morrey exponent of `p_m = 2 + 2 / m` is `1 - 2 / p_m = 1 / (m + 1)`. -/
+theorem one_sub_two_div_two_add_two_div {m : ℝ} (hm : m ≠ 0) (hm₁ : m + 1 ≠ 0) :
+    1 - 2 / (2 + 2 / m) = 1 / (m + 1) := by
+  field_simp
+  ring
+
+/-- The exponent `p_m = 2 + 2 / m` satisfies `p_m (1 - 2 / m) = 2 - 2 / m - 4 / m²`. -/
+theorem two_add_two_div_mul_one_sub_two_div {m : ℝ} (hm : m ≠ 0) :
+    (2 + 2 / m) * (1 - 2 / m) = 2 - 2 / m - 4 / m ^ 2 := by
+  field_simp
+  ring
+
+/-- Monotonicity of the exponent `p_m = 2 + 2 / m` in the degree: for `0 < k ≤ m`,
+`p_m (1 - 2 / k) ≤ p_m (1 - 2 / m)`. -/
+theorem two_add_two_div_mul_one_sub_two_div_le {m k : ℝ} (hk : 0 < k) (hkm : k ≤ m) :
+    (2 + 2 / m) * (1 - 2 / k) ≤ (2 + 2 / m) * (1 - 2 / m) := by
+  have hm : 0 < m := hk.trans_le hkm
+  gcongr
+
+/-- The margin of the exponent `p_m = 2 + 2 / m` in degree `k`: for `0 < k ≤ m`,
+`p_m (1 - 2 / k) < 2`. -/
+theorem two_add_two_div_mul_one_sub_two_div_lt_two {m k : ℝ} (hk : 0 < k) (hkm : k ≤ m) :
+    (2 + 2 / m) * (1 - 2 / k) < 2 := by
+  have hm : 0 < m := hk.trans_le hkm
+  refine (two_add_two_div_mul_one_sub_two_div_le hk hkm).trans_lt ?_
+  rw [two_add_two_div_mul_one_sub_two_div hm.ne']
+  have : 0 < 2 / m + 4 / m ^ 2 := by positivity
+  linarith
 
 /-! ### The branch derivative -/
 
