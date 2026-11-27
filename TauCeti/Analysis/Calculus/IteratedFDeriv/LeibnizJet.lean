@@ -8,7 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Normed.Operator.Mul
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
+import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 
 /-!
 # The Leibniz rule on jets of multilinear maps
@@ -56,6 +60,13 @@ through it by the product rule.
   families of jets.
 * `ContinuousLinearMap.iteratedFDeriv_bilinear_eq_leibnizJet`: the Leibniz rule
   `Dⁿ (B (f, g)) = leibnizJet B E n (D^• f) (D^• g)`.
+* `ContinuousLinearMap.leibnizJet_succ_apply_const_of_forall_lt_eq_zero`: if `J₀ = 0` and the
+  entries of `K` of order below `n` vanish, then on the diagonal
+  `leibnizJet B E (n + 1) J K (h, …, h) = (n + 1) • B (J₁ h) (Kₙ (h, …, h))`.
+* `TauCeti.iteratedFDeriv_prod_smul_apply_const`: a product `f₁ ⋯ fᵣ • u` of `r` functions
+  vanishing at `x` with a map `u` vanishes to order `r` at `x`
+  (`TauCeti.iteratedFDeriv_prod_smul_eq_zero_of_lt`), and its derivative of order `r` there is
+  `r! • (∏ᵢ Dfᵢ(x) h) • u x` on the diagonal `(h, …, h)`.
 -/
 
 public section
@@ -174,6 +185,21 @@ theorem norm_jetShift_apply_apply_le (n : ℕ) (J : (i : Fin (n + 2)) → E [×i
 theorem jetShift_apply_eq_pi (n : ℕ) (J : (i : Fin (n + 2)) → E [×i]→L[𝕜] F) :
     jetShift 𝕜 E F n J = ContinuousLinearMap.pi fun i ↦ (J i.succ).curryLeft :=
   ContinuousLinearMap.ext fun h ↦ funext fun i ↦ by simp
+
+/-- If the entries of `K` of order below `k + 1` vanish, then so do the entries of order below `k`
+of its shift `∂ₕ K`. -/
+theorem jetShift_apply_eq_zero_of_forall_lt {n k : ℕ} {K : (i : Fin (n + 2)) → E [×i]→L[𝕜] F}
+    (hK : ∀ i : Fin (n + 2), i.val < k + 1 → K i = 0) (h : E) {i : Fin (n + 1)}
+    (hi : i.val < k) : jetShift 𝕜 E F n K h i = 0 := by
+  rw [jetShift_apply, hK i.succ (by simpa using hi)]
+  ext
+  simp
+
+/-- The shift of a jet in a direction `h`, at order zero, is its entry of order one at `h`. -/
+theorem jetShift_apply_zero_apply {n : ℕ} (J : (i : Fin (n + 2)) → E [×i]→L[𝕜] F)
+    (h : E) : jetShift 𝕜 E F n J h 0 0 = J 1 fun _ ↦ h := by
+  rw [jetShift_apply, ContinuousMultilinearMap.curryLeft_apply]
+  exact congrArg (J 1) (funext fun i ↦ Fin.cases rfl (fun j ↦ j.elim0) i)
 
 end TauCeti
 
@@ -356,4 +382,111 @@ theorem iteratedFDeriv_bilinear_eq_leibnizJet {n : WithTop ℕ∞} {f : E → F}
     rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, hfun, hD.fderiv]
     exact ContinuousMultilinearMap.uncurry_curryLeft _
 
+/-! ### Jets vanishing below a given order -/
+
+/-- If the entries of `K` of order below `n` vanish, then on the diagonal the Leibniz map of order
+`n` is `B J₀ (Kₙ (h, …, h))`: every other term of the Leibniz rule differentiates `K` fewer than
+`n` times. -/
+theorem leibnizJet_apply_const_of_forall_lt_eq_zero {n : ℕ}
+    (J : (i : Fin (n + 1)) → E [×i]→L[𝕜] F) {K : (i : Fin (n + 1)) → E [×i]→L[𝕜] G}
+    (hK : ∀ i : Fin (n + 1), i.val < n → K i = 0) (h : E) :
+    leibnizJet B E n J K (fun _ ↦ h) = B (J 0 0) (K (Fin.last n) fun _ ↦ h) := by
+  induction n with
+  | zero =>
+    rw [leibnizJet_zero_apply_apply]
+    exact congrArg _ (congrArg _ (Subsingleton.elim (α := Fin 0 → E) _ _))
+  | succ n ih =>
+    have hinit : jetInit 𝕜 E G n K = 0 :=
+      funext fun i ↦ hK i.castSucc (by simp only [Fin.val_castSucc]; exact i.isLt)
+    rw [ContinuousMultilinearMap.apply_const_eq_curryLeft, curryLeft_leibnizJet_succ, hinit,
+      map_zero, zero_add, ih (jetInit 𝕜 E F n J) (K := jetShift 𝕜 E G n K h)
+        (fun i hi ↦ jetShift_apply_eq_zero_of_forall_lt hK h hi)]
+    -- `init J` at order `0` is `J 0`, and `∂ₕ K` at order `n` is `K (n + 1)` curried at `h`.
+    exact congrArg (B (J 0 0)) (ContinuousMultilinearMap.apply_const_eq_curryLeft _ h).symm
+
+/-- **The leading term of the Leibniz rule.** If `J₀ = 0` and the entries of `K` of order below
+`n` vanish, then on the diagonal the Leibniz map of order `n + 1` is
+`(n + 1) • B (J₁ h) (Kₙ (h, …, h))`: the only surviving terms differentiate `J` once and `K`
+`n` times, and there are `n + 1` of them. -/
+theorem leibnizJet_succ_apply_const_of_forall_lt_eq_zero {n : ℕ}
+    {J : (i : Fin (n + 2)) → E [×i]→L[𝕜] F} {K : (i : Fin (n + 2)) → E [×i]→L[𝕜] G}
+    (hJ : J 0 = 0) (hK : ∀ i : Fin (n + 2), i.val < n → K i = 0) (h : E) :
+    leibnizJet B E (n + 1) J K (fun _ ↦ h) =
+      (n + 1) • B (J 1 fun _ ↦ h) (K (Fin.last n).castSucc fun _ ↦ h) := by
+  -- In the recursion, the first term differentiates `J` once and is one copy of the leading term;
+  -- the second term starts from `init J`, whose entry of order zero is `J₀ = 0`, and gives the
+  -- other `n` copies, by induction.
+  induction n with
+  | zero => ?_
+  | succ n ih => ?_
+  all_goals
+    rw [ContinuousMultilinearMap.apply_const_eq_curryLeft, curryLeft_leibnizJet_succ, add_apply,
+      leibnizJet_apply_const_of_forall_lt_eq_zero B _ (K := jetInit 𝕜 E G _ K)
+        (fun i hi ↦ hK i.castSucc hi) h,
+      jetShift_apply_zero_apply, jetInit_apply, succ_nsmul']
+    congr 1
+    -- `init J` at order `0` is `J (Fin.castSucc 0)`, which is `J 0` by definition; rewriting
+    -- along `Fin.castSucc_zero` is blocked because the type of `J i` depends on `i`.
+    have hJ' : jetInit 𝕜 E F _ J 0 = 0 := hJ
+  · rw [leibnizJet_zero_apply_apply, hJ']
+    simp
+  · rw [ih hJ' (fun i hi ↦ jetShift_apply_eq_zero_of_forall_lt hK h hi),
+      jetShift_apply, ← ContinuousMultilinearMap.apply_const_eq_curryLeft]
+    -- `init J` at order `1` is `J (Fin.castSucc 1)`, and `∂ₕ K` at order `n` is
+    -- `K (Fin.last n).castSucc.succ`. These are `J 1` and `K (Fin.last (n + 1)).castSucc` by
+    -- definition; as above, rewriting along `Fin.castSucc_one` and `Fin.succ_castSucc` is blocked
+    -- because the types of `J i` and `K i` depend on `i`.
+    rfl
+
 end ContinuousLinearMap
+
+namespace TauCeti
+
+/-! ### Products of functions vanishing at a point -/
+
+/-- **The first nonvanishing derivative of a product.** If `f x = 0` and the derivatives of `g` of
+order below `n` vanish at `x`, then the derivative of order `n + 1` of `f • g` at `x` is, on the
+diagonal, `(n + 1) • (Df(x) h • Dⁿg(x) (h, …, h))`. -/
+theorem iteratedFDeriv_smul_apply_const_of_eq_zero {n : ℕ} {f : E → 𝕜} {g : E → F}
+    (hf : ContDiff 𝕜 (n + 1) f) (hg : ContDiff 𝕜 (n + 1) g) {x : E} (hfx : f x = 0)
+    (hgx : ∀ i < n, iteratedFDeriv 𝕜 i g x = 0) (h : E) :
+    iteratedFDeriv 𝕜 (n + 1) (fun y ↦ f y • g y) x (fun _ ↦ h) =
+      (n + 1) • (fderiv 𝕜 f x h • iteratedFDeriv 𝕜 n g x fun _ ↦ h) := by
+  have hB := (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] F →L[𝕜] F)
+    |>.iteratedFDeriv_bilinear_eq_leibnizJet hf hg (m := n + 1) (by exact_mod_cast le_rfl) x
+  simp only [ContinuousLinearMap.lsmul_apply] at hB
+  rw [hB, ContinuousLinearMap.leibnizJet_succ_apply_const_of_forall_lt_eq_zero _ (by
+      ext m
+      exact (iteratedFDeriv_zero_apply m).trans hfx)
+    (fun i hi ↦ hgx i hi), Fin.val_one, iteratedFDeriv_one_apply, Fin.val_castSucc, Fin.val_last,
+    ContinuousLinearMap.lsmul_apply]
+
+/-- **The first nonvanishing derivative of a product of vanishing functions.** If `f₁, …, fᵣ`
+vanish at `x`, the derivative of order `r` of `f₁ ⋯ fᵣ • u` at `x` is, on the diagonal,
+`r! • (∏ᵢ Dfᵢ(x) h) • u x`. -/
+theorem iteratedFDeriv_prod_smul_apply_const {r : ℕ} {f : Fin r → E → 𝕜} {u : E → F}
+    (hf : ∀ i, ContDiff 𝕜 r (f i)) (hu : ContDiff 𝕜 r u) {x : E} (hfx : ∀ i, f i x = 0)
+    (h : E) :
+    iteratedFDeriv 𝕜 r (fun y ↦ (∏ i, f i y) • u y) x (fun _ ↦ h) =
+      r.factorial • ((∏ i, fderiv 𝕜 (f i) x h) • u x) := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    have hfun : (fun y ↦ (∏ i, f i y) • u y) =
+        fun y ↦ f 0 y • ((∏ i : Fin r, f i.succ y) • u y) := by
+      funext y
+      rw [Fin.prod_univ_succ, mul_smul]
+    have hle : (r : WithTop ℕ∞) ≤ ((r + 1 : ℕ) : WithTop ℕ∞) := by
+      exact_mod_cast Nat.le_succ r
+    have hrest : ContDiff 𝕜 (r + 1) fun y ↦ (∏ i : Fin r, f i.succ y) • u y := by
+      exact_mod_cast (contDiff_prod fun (i : Fin r) _ ↦ hf i.succ).smul hu
+    rw [hfun, iteratedFDeriv_smul_apply_const_of_eq_zero (by exact_mod_cast hf 0) hrest (hfx 0)
+      (fun i hi ↦ iteratedFDeriv_prod_smul_eq_zero_of_lt (f := fun j ↦ f j.succ)
+        (fun j ↦ ((hf j.succ).of_le hle).contDiffAt) (hu.of_le hle).contDiffAt
+        (fun j ↦ hfx j.succ) hi),
+      ih (f := fun j ↦ f j.succ) (fun j ↦ (hf j.succ).of_le hle) (hu.of_le hle)
+        (fun j ↦ hfx j.succ),
+      Fin.prod_univ_succ, Nat.factorial_succ, mul_smul, mul_smul,
+      smul_comm (fderiv 𝕜 (f 0) x h) r.factorial]
+
+end TauCeti

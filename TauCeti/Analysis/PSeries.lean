@@ -46,6 +46,8 @@ dyadic annuli and compares their contributions with a geometric series.
   an `RCLike` field for an integer exponent `n > 1`.
 * `TauCeti.not_summable_norm_zpow_neg_add_mul` — along a nonvanishing arithmetic progression
   `w + v n` in `ℂ`, the norms of the inverse `k`-th powers are not summable for `k < 2`.
+* `TauCeti.tsum_Ioi_le_of_le_rpow` — a nonnegative sequence bounded by `E (m + n₀) ^ (e - s)`
+  with `e ≤ 0` and `1 < s` has tails `∑_{m > n}` bounded by a multiple of `(n + 1 + n₀) ^ e`.
 -/
 
 public section
@@ -191,6 +193,34 @@ theorem not_summable_norm_zpow_neg_add_mul {k : ℕ} {v : ℂ} (hk : k < 2) {w :
     push_cast
     field_simp
   exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp h3)
+
+/-- **Tails dominated by shifted powers.** If `0 ≤ b m ≤ E * (m + n₀) ^ (e - s)` with `e ≤ 0`
+and `1 < s`, then the tails satisfy `∑_{m > n} b m ≤ E * S * (n + 1 + n₀) ^ e`, where
+`S = ∑ m, (m + n₀) ^ (-s)`. -/
+theorem tsum_Ioi_le_of_le_rpow {b : ℕ → ℝ} {E e s : ℝ} {n₀ : ℕ} (hE : 0 ≤ E) (he : e ≤ 0)
+    (hs : 1 < s) (hb0 : ∀ m, 0 ≤ b m) (hb : ∀ m, b m ≤ E * ((m + n₀ : ℕ) : ℝ) ^ (e - s))
+    (n : ℕ) : ∑' m : Set.Ioi n, b m ≤
+      E * (∑' m : ℕ, ((m + n₀ : ℕ) : ℝ) ^ (-s)) * ((n + 1 + n₀ : ℕ) : ℝ) ^ e := by
+  have hsumm₂ : Summable fun m : ℕ ↦ ((m + n₀ : ℕ) : ℝ) ^ (-s) :=
+    (summable_nat_add_iff n₀).2 (Real.summable_nat_rpow.2 (by linarith))
+  have hbs : Summable b := (((summable_nat_add_iff n₀).2
+    (Real.summable_nat_rpow.2 (by linarith))).mul_left E).of_nonneg_of_le hb0 hb
+  have hbound (m : Set.Ioi n) :
+      b m ≤ E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ((m + n₀ : ℕ) : ℝ) ^ (-s) := by
+    have hm : n < (m : ℕ) := m.property
+    have hX : (0 : ℝ) < ((m + n₀ : ℕ) : ℝ) := by exact_mod_cast (by omega : 0 < (m : ℕ) + n₀)
+    refine (hb m).trans ?_
+    rw [sub_eq_add_neg, Real.rpow_add hX, ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_nonpos (by positivity) (Nat.cast_le.2 (by omega)) he) hE)
+      (by positivity)
+  calc _ ≤ ∑' m : Set.Ioi n, E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ((m + n₀ : ℕ) : ℝ) ^ (-s) :=
+        (hbs.subtype _).tsum_le_tsum hbound ((hsumm₂.subtype _).mul_left _)
+    _ ≤ E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ∑' m : ℕ, ((m + n₀ : ℕ) : ℝ) ^ (-s) := by
+        rw [tsum_mul_left]
+        exact mul_le_mul_of_nonneg_left (hsumm₂.tsum_subtype_le _ _ fun m ↦ by positivity)
+          (by positivity)
+    _ = _ := by ring
 
 end TauCeti
 

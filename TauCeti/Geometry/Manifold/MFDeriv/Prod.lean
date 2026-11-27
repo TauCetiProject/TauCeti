@@ -32,6 +32,8 @@ fields on a product manifold.
   take the corresponding component of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
+* `TauCeti.mvfderiv_apply_eq_of_eventually_forall_eq`: the same for a function that agrees with a
+  function of the first factor only for second coordinates near a point.
 * `TauCeti.mvfderiv_comp_fst_add_comp_snd_apply`: the derivative of a separated sum
   `f ∘ Prod.fst + g ∘ Prod.snd` sends `(u, w)` to `df(u) + dg(w)`.
 * `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff` and
@@ -62,6 +64,8 @@ fields on a product manifold.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
   composing the differential of `Prod.map f g` with a slice inclusion commutes with the
   differential on the varied factor.
+* `TauCeti.mfderiv_prodMap_apply_fst`: the differential of `Prod.map f g` acts on the first
+  component of a tangent vector by the differential of `f`.
 * `TauCeti.mfderiv_extChartAt_prod_apply`: the derivative of a product chart acts on each
   component through the derivative of the chart of that factor.
 * `TauCeti.mfderivWithin_extChartAt_symm_prod_apply`: the derivative of the inverse of a product
@@ -184,6 +188,17 @@ theorem mvfderiv_comp_fst_apply (g : M → F) (p : M × N) (v : TangentSpace (I.
   -- The identifications `NormedSpace.fromTangentSpace` at `(g ∘ Prod.fst) p` and at `g p.1` agree,
   -- as these points are equal by definition.
   rfl
+
+open Topology in
+/-- **The derivative of a function of the first factor near a slice.** If, for second coordinates
+near `p.2`, a function `G` on a product agrees with `g` of the first coordinate, then its derivative
+at `p` is the derivative of `g` at `p.1` applied to the first component. -/
+theorem mvfderiv_apply_eq_of_eventually_forall_eq {G : M × N → F} {g : M → F} {p : M × N}
+    (hG : ∀ᶠ y in 𝓝 p.2, ∀ x, G (x, y) = g x) (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) G p v = mvfderiv I g p.1 v.1 := by
+  have hev : G =ᶠ[𝓝 p] g ∘ Prod.fst :=
+    ((continuous_snd.tendsto p).eventually hG).mono fun z hz ↦ hz z.1
+  rw [hev.mvfderiv_eq, mvfderiv_comp_fst_apply]
 
 /-- The derivative of a vector-valued function of the second factor, read on a product. -/
 theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.prod J) p) :
@@ -429,6 +444,25 @@ theorem mfderiv_prodMap_comp_prodMkRight {f : M → M''} {g : N → N''} {x : M}
       hg (h.comp y hι).snd
     rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hdiff,
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]
+
+/-- The differential of `Prod.map f g` acts on the first component of a tangent vector by the
+differential of `f`. Differentiability is needed only for `g`: when `f` is not differentiable at
+`p.1`, neither is `Prod.map f g` at `p`, so both sides vanish. -/
+theorem mfderiv_prodMap_apply_fst {f : M → M''} {g : N → N''} {p : M × N}
+    (hg : MDifferentiableAt J J'' g p.2) (v : TangentSpace (I.prod J) p) :
+    (mfderiv (I.prod J) (I''.prod J'') (Prod.map f g) p v).1 = mfderiv I I'' f p.1 v.1 := by
+  by_cases hf : MDifferentiableAt I I'' f p.1
+  · rw [mfderiv_prodMap hf hg]
+    -- `ContinuousLinearMap.prodMap` acts componentwise by definition. Its domain, the product of
+    -- the coordinate tangent spaces, is the tangent space of the product only by definition, so
+    -- `ContinuousLinearMap.coe_prodMap'` cannot be rewritten here.
+    rfl
+  · have hfg : ¬MDifferentiableAt (I.prod J) (I''.prod J'') (Prod.map f g) p := fun h ↦
+      hf (h.fst.comp_of_eq p.1 (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
+        (Prod.mk.eta (p := p)))
+    rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfg]
+    -- Both sides are zero, in tangent spaces that are products of model spaces by definition.
+    rfl
 
 end ProdMap
 

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
+public import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
-import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
@@ -26,7 +27,10 @@ rather than restricting scalars, so that no algebra diamond arises.
 
 ## Main results
 
+* `Matrix.opNorm_toEuclideanLin`: the operator-norm unitarily invariant seminorm of
+  `A.toEuclideanLin` equals the scoped `ℓ²` operator norm of `A`.
 * `Matrix.norm_apply_le_l2_opNorm`: an entrywise bound, including rectangular matrices.
+* `Matrix.l2_opNorm_single`: the norm of a rectangular matrix unit.
 * `Matrix.l2_opNorm_one_le`: an identity bound that also applies to empty matrices.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
   trace and normalized trace bounds.
@@ -54,6 +58,15 @@ namespace Matrix
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
 open scoped Matrix.Norms.L2Operator
+
+/-- The operator-norm unitarily invariant seminorm of `A.toEuclideanLin` equals the scoped `ℓ²`
+operator norm of `A`. -/
+theorem opNorm_toEuclideanLin {m : Type*} [Fintype m] (A : Matrix m n 𝕜) :
+    TauCeti.UnitarilyInvariantSeminorm.opNorm 𝕜
+        (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin =
+      ‖A‖ := by
+  rw [TauCeti.UnitarilyInvariantSeminorm.opNorm_apply, Matrix.l2_opNorm_def,
+    LinearEquiv.trans_apply]
 
 /-- Every entry is bounded by the Euclidean operator norm. -/
 theorem norm_apply_le_l2_opNorm {m : Type*} [Fintype m] (A : Matrix m n 𝕜)
@@ -317,5 +330,17 @@ theorem l2_opNorm_map_ofReal (S : Matrix m n ℝ) : ‖S.map ((↑) : ℝ → �
     rw [← hSx, ← hx]
     exact l2_opNorm_mulVec _ xc
 end OfReal
+
+/-- The Euclidean operator norm of a matrix with a single possibly nonzero entry is the norm
+of that entry. -/
+@[simp]
+theorem l2_opNorm_single {m n 𝕜 : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [RCLike 𝕜]
+    (i : m) (j : n) (a : 𝕜) : ‖single i j a‖ = ‖a‖ := by
+  have hs : ‖single i j a‖ * ‖single i j a‖ = ‖a‖ * ‖a‖ := by
+    rw [← l2_opNorm_conjTranspose_mul_self, conjTranspose_single, single_mul_single_same,
+      ← diagonal_single, l2_opNorm_diagonal]
+    rw [Pi.norm_single, norm_mul, norm_star]
+  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp (by simpa [pow_two] using hs)
 
 end Matrix

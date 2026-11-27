@@ -30,6 +30,8 @@ depend on the choice of `X`.
   `TauCeti.IsAdaptedPseudoGradient.unstableSet_sphereHeight_neg`,
   `TauCeti.IsAdaptedPseudoGradient.unstableSet_sphereHeight_self` and
   `TauCeti.IsAdaptedPseudoGradient.stableSet_sphereHeight_neg`: the four sets.
+* `TauCeti.IsAdaptedPseudoGradient.unstableSet_inter_stableSet_inter_setOf_sphereHeight_eq`: every
+  point of height `a ∈ (-1, 1)` lies on a trajectory from the north pole to the south pole.
 
 ## References
 
@@ -69,7 +71,7 @@ north pole `v` is the complement of the south pole `-v`. -/
 @[simp]
 theorem unstableSet_sphereHeight_self (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.unstableSet v = {-v}ᶜ :=
-  hX.unstableSet_eq_compl_of_critical_eq_or_eq (isMorse_sphereHeight v)
+  hX.unstableSet_eq_compl_of_critical_eq_or_eq
     (fun y ↦ (mfderiv_sphereHeight_eq_zero_iff v y).1) (ne_neg_of_mem_unit_sphere ℝ v)
     hX.unstableSet_sphereHeight_neg
 
@@ -78,9 +80,20 @@ pole `-v` is the complement of the north pole `v`. -/
 @[simp]
 theorem stableSet_sphereHeight_neg (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.stableSet (-v) = {v}ᶜ :=
-  hX.stableSet_eq_compl_of_critical_eq_or_eq (isMorse_sphereHeight v)
+  hX.stableSet_eq_compl_of_critical_eq_or_eq
     (fun y ↦ (mfderiv_sphereHeight_eq_zero_iff v y).1) (ne_neg_of_mem_unit_sphere ℝ v)
     hX.stableSet_sphereHeight_self
+
+/-- **Every point off the poles lies on a trajectory from the north pole to the south pole.** For
+`a ∈ (-1, 1)`, the level slice `W^u(v) ∩ W^s(-v) ∩ {h = a}` is the whole parallel `{h = a}`. -/
+theorem unstableSet_inter_stableSet_inter_setOf_sphereHeight_eq
+    (hX : IsAdaptedPseudoGradient (sphereHeight v) X) {a : ℝ} (ha : a ∈ Ioo (-1 : ℝ) 1) :
+    hX.flow.unstableSet v ∩ hX.flow.stableSet (-v) ∩ {x | sphereHeight v x = a} =
+      {x | sphereHeight v x = a} := by
+  refine inter_eq_right.2 fun x (hx : sphereHeight v x = a) ↦ ?_
+  obtain ⟨hxv, hxnv⟩ := sphereHeight_mem_Ioo_iff.1 (hx ▸ ha)
+  rw [unstableSet_sphereHeight_self, stableSet_sphereHeight_neg]
+  exact ⟨hxnv, hxv⟩
 
 end IsAdaptedPseudoGradient
 

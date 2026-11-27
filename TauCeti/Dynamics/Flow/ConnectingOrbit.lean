@@ -28,7 +28,12 @@ A point `y` whose trajectory tends to `p` in backward time and to `q` in forward
 from `p` to `q`, `Flow.connectingPath`: the trajectory `t ↦ φ t y`, read along the
 logit `s ↦ log (s / (1 - s))`, which reparametrises the open unit interval by the real line, and
 completed by its limits at the two ends. Its homotopy class is what parallel transport in a local
-coefficient system needs, for instance for Morse boundaries with twisted coefficients.
+coefficient system needs, for instance for Morse boundaries with twisted coefficients. Reversing
+time reverses this path (`Flow.connectingPath_eq_symm_of_eq_reverse`), which is how transport along
+the trajectories of `-f` compares with transport along those of `f`. Before its end the path stays
+in the unstable set of its start, and after its start in the stable set of its end
+(`Flow.connectingPath_mem_unstableSet`, `Flow.connectingPath_mem_stableSet`), when these sets
+contain the endpoints.
 -/
 
 public section
@@ -100,6 +105,51 @@ theorem connectingPath_apply_half (hp : y ∈ unstableSet φ p) (hq : y ∈ stab
   rw [connectingPath_apply_of_mem_Ioo hp hq
     (by constructor <;> (rw [← Subtype.coe_lt_coe]; norm_num))]
   norm_num
+
+/-- Before its end, the path traced by a connecting trajectory from `p` lies in the unstable set of
+`p`, provided `p` itself does. -/
+theorem connectingPath_mem_unstableSet (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q)
+    (hpp : p ∈ unstableSet φ p) {s : unitInterval} (hs : (s : ℝ) < 1) :
+    connectingPath hp hq s ∈ unstableSet φ p := by
+  rcases eq_or_ne s 0 with rfl | hs0
+  · rwa [Path.source]
+  · rw [connectingPath_apply_of_mem_Ioo hp hq ⟨unitInterval.pos_iff_ne_zero.2 hs0, hs⟩,
+      apply_mem_unstableSet_iff]
+    exact hp
+
+/-- After its start, the path traced by a connecting trajectory to `q` lies in the stable set of
+`q`, provided `q` itself does. -/
+theorem connectingPath_mem_stableSet (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q)
+    (hqq : q ∈ stableSet φ q) {s : unitInterval} (hs : 0 < (s : ℝ)) :
+    connectingPath hp hq s ∈ stableSet φ q := by
+  rcases eq_or_ne s 1 with rfl | hs1
+  · rwa [Path.target]
+  · rw [connectingPath_apply_of_mem_Ioo hp hq ⟨hs, unitInterval.lt_one_iff_ne_one.2 hs1⟩,
+      apply_mem_stableSet_iff]
+    exact hq
+
+/-- **Reversing the flow reverses the connecting path.** If `ψ` is the time reversal of `φ`, a
+point `y` whose `φ`-trajectory runs from `p` to `q` has a `ψ`-trajectory running from `q` to `p`,
+and the path it traces for `ψ` is the reverse of the path it traces for `φ`: the logit
+reparametrization `s ↦ log (s / (1 - s))` changes sign under `s ↦ 1 - s`. -/
+theorem connectingPath_eq_symm_of_eq_reverse {ψ : _root_.Flow ℝ α} (h : ψ = φ.reverse)
+    (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q) (hq' : y ∈ unstableSet ψ q)
+    (hp' : y ∈ stableSet ψ p) :
+    connectingPath hq' hp' = (connectingPath hp hq).symm := by
+  subst h
+  ext s
+  rcases eq_or_ne s 0 with rfl | h0
+  · simp
+  rcases eq_or_ne s 1 with rfl | h1
+  · simp
+  have hs : s ∈ Ioo (0 : unitInterval) 1 :=
+    ⟨unitInterval.pos_iff_ne_zero.2 h0, unitInterval.lt_one_iff_ne_one.2 h1⟩
+  have hs' : unitInterval.symm s ∈ Ioo (0 : unitInterval) 1 :=
+    ⟨unitInterval.pos_iff_ne_zero.2 (mt unitInterval.symm_eq_zero.1 h1),
+      unitInterval.lt_one_iff_ne_one.2 (mt unitInterval.symm_eq_one.1 h0)⟩
+  rw [connectingPath_apply_of_mem_Ioo _ _ hs, Path.symm_apply, Function.comp_apply,
+    connectingPath_apply_of_mem_Ioo _ _ hs', _root_.Flow.reverse_apply, unitInterval.coe_symm_eq,
+    sub_sub_cancel, ← Real.log_inv, inv_div]
 
 end ConnectingPath
 
