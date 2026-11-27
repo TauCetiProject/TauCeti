@@ -393,9 +393,14 @@ theorem latticeMonodromy_mk_of_continuous {x y : B} (γ : Path x y)
     latticeMonodromy hL (.mk γ) a = c := by
   let Γ : C(unitInterval, {v : TotalSpace F E // v.snd ∈ L v.proj}) :=
     ⟨fun t ↦ ⟨s t, hsL t⟩, hs.subtype_mk _⟩
+  have hΓ0 : Γ 0 = ((latticeProjFiberEquiv F L x).symm a : _) := by
+    rw [latticeProjFiberEquiv_symm_apply]
+    exact Subtype.ext ha
+  have hΓ1 : Γ 1 = ((latticeProjFiberEquiv F L y).symm c : _) := by
+    rw [latticeProjFiberEquiv_symm_apply]
+    exact Subtype.ext hc
   rw [latticeMonodromy_apply, ← Equiv.eq_symm_apply]
-  exact Subtype.ext ((hL.monodromy_eq_apply_one (Γ := Γ) (funext hsγ) (Subtype.ext ha)).trans
-    (Subtype.ext hc))
+  exact Subtype.ext ((hL.monodromy_eq_apply_one (Γ := Γ) (funext hsγ) hΓ0).trans hΓ1)
 
 /-- **Monodromy follows continuous sections.** If a section `s` of `E` is continuous on a set `U`
 and takes values in `L` there, then transport along a path `γ` in `U` carries `s` at the start of

@@ -9,11 +9,9 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Monodromy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.ActionAngle
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.LevelSet
-import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.MFDeriv.Opens
-import TauCeti.Topology.VectorBundle.Section
-import TauCeti.Topology.VectorBundle.Smul
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.ModelSpace
 
 /-!
 # The linear monodromy of the spherical pendulum
@@ -45,10 +43,12 @@ the matrix `[[1, 1], [0, 1]]`, whose columns are the transported basis. In parti
 monodromy of the pendulum is nontrivial
 (`TauCeti.latticeMonodromyHom_sphericalPendulum_ne_one`).
 
-The constant covector `γ_J` is a period over every regular value, so it is transported to itself
-along every path. For `γ₂`, the section `b(t) = (T(γ(t)), -L(t))` along the circle, for a
-continuous lift `L` of the rotation angle, is continuous and lies in the period lattices off the
-axis `j = 0`, and it returns as `b(2π) = b(0) + (0, 2π)`
+The constant covector `γ_J` is a period over every regular value and the differential of a linear
+function, so it is transported to itself along every path
+(`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration.latticeMonodromy_mk_mvfderiv`).
+For `γ₂`, the section `b(t) = (T(γ(t)), -L(t))` along the circle, for a continuous lift `L` of
+the rotation angle, is continuous and lies in the period lattices off the axis `j = 0`, and it
+returns as `b(2π) = b(0) + (0, 2π)`
 (`TauCeti.exists_continuousOn_mem_closure_sphericalPendulumPeriod_apply_two_mul_pi_eq_add`).
 The period lattices are known explicitly only off the axis. At the two crossings `(1 ± r, 0)` of
 the axis, `b` still takes values in them: a limit of periods of states over `γ(t)` is a period of
@@ -221,47 +221,6 @@ theorem mem_periodLattice_sphericalPendulum_circle (hr : 0 < r)
       exact hoff s hs hsin)
   exact mem_periodLattice_of_mem_hamiltonianFlowStabilizer hU (b := ⟨_, hγU t⟩) hy₀ hW₀ hα
 
-/-- The covector `v 0 dc₀ + v 1 dc₁` on `U`, for the coordinate functions `c₀` and `c₁`, is
-`w ↦ v ⬝ᵥ w`. -/
-private theorem smul_mvfderiv_add_smul_mvfderiv_apply (v : Fin 2 → ℝ) (b : U)
-    (w : TangentSpace 𝓘(ℝ, Fin 2 → ℝ) b) :
-    (v 0 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 0) b +
-      v 1 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 1) b) w = v ⬝ᵥ w := by
-  have hd (i : Fin 2) :
-      mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) i) b w = (w : Fin 2 → ℝ) i := by
-    rw [show (fun c : U ↦ (c : Fin 2 → ℝ) i) =
-        (ContinuousLinearMap.proj i : (Fin 2 → ℝ) →L[ℝ] ℝ) ∘ Subtype.val from rfl,
-      Manifold.mvfderiv_comp_subtype_val]
-    exact (mvfderiv_eq_fderiv_apply (𝕜 := ℝ) _ _ w).trans
-      (by rw [ContinuousLinearMap.fderiv]; rfl)
-  simp [hd, dotProduct, Fin.sum_univ_two]
-
-/-- The covector `w ↦ v ⬝ᵥ w`, for `v` depending continuously on the point of a path in `U`, is a
-continuous path in the cotangent bundle of `U`: it is `v 0 dc₀ + v 1 dc₁` for the coordinate
-functions `c₀` and `c₁`. -/
-private theorem continuous_totalSpaceMk_smul_mvfderiv_add_smul_mvfderiv {X : Type*}
-    [TopologicalSpace X] {β : X → U} (hβ : Continuous β) {v : X → Fin 2 → ℝ}
-    (hv : Continuous v) :
-    Continuous fun x ↦ TotalSpace.mk' ((Fin 2 → ℝ) →L[ℝ] ℝ)
-      (E := fun b : U ↦ TangentSpace 𝓘(ℝ, Fin 2 → ℝ) b →L[ℝ] ℝ) (β x)
-      (v x 0 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 0) (β x) +
-        v x 1 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 1) (β x)) := by
-  have hd (i : Fin 2) : Continuous fun x ↦ TotalSpace.mk' ((Fin 2 → ℝ) →L[ℝ] ℝ)
-      (E := fun b : U ↦ TangentSpace 𝓘(ℝ, Fin 2 → ℝ) b →L[ℝ] ℝ) (β x)
-      (mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) i) (β x)) := by
-    have hc : ContMDiff 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ) (0 + 1) fun c : U ↦ (c : Fin 2 → ℝ) i :=
-      (ContinuousLinearMap.proj i : (Fin 2 → ℝ) →L[ℝ] ℝ).contMDiff.comp contMDiff_subtypeVal
-    exact hc.contMDiff_totalSpaceMk_mvfderiv.continuous.comp hβ
-  have h0 : Continuous fun x ↦ TotalSpace.mk' ((Fin 2 → ℝ) →L[ℝ] ℝ)
-      (E := fun b : U ↦ TangentSpace 𝓘(ℝ, Fin 2 → ℝ) b →L[ℝ] ℝ) (β x)
-      (v x 0 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 0) (β x)) :=
-    ((continuous_apply 0).comp hv).smul_totalSpace (hd 0)
-  have h1 : Continuous fun x ↦ TotalSpace.mk' ((Fin 2 → ℝ) →L[ℝ] ℝ)
-      (E := fun b : U ↦ TangentSpace 𝓘(ℝ, Fin 2 → ℝ) b →L[ℝ] ℝ) (β x)
-      (v x 1 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 1) (β x)) :=
-    ((continuous_apply 1).comp hv).smul_totalSpace (hd 1)
-  exact Continuous.add_totalSpace ℝ h0 h1
-
 /-- **Transport fixes `γ_J`.** Along every path in an open set `U` of regular values of the
 spherical pendulum, transport of periods fixes the full turn `γ_J : w ↦ (0, 2π) ⬝ᵥ w` of the
 rotation flow, a period over every point of `U`. -/
@@ -273,25 +232,22 @@ theorem latticeMonodromy_sphericalPendulum_rotation (hU : U ≤ sphericalPendulu
           (isSymplectic_sphericalPendulumSymplecticForm.mpullback_subtype_val _).isClosed)
         (.mk ℓ) ⟨α, mem_periodLattice_sphericalPendulum_rotation hU x hα⟩ =
       ⟨α, mem_periodLattice_sphericalPendulum_rotation hU y hα⟩ := by
-  -- The constant covector `γ_J` along `ℓ` is a continuous lift of `ℓ` to the periods.
-  have hcov (b : U) (w : Fin 2 → ℝ) :
-      ((![0, 2 * π] : Fin 2 → ℝ) 0 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 0) b +
-        (![0, 2 * π] : Fin 2 → ℝ) 1 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 1) b)
-        w = α w := by
-    exact (smul_mvfderiv_add_smul_mvfderiv_apply _ b w).trans (hα w).symm
-  refine latticeMonodromy_mk_of_continuous _ ℓ
-    (continuous_totalSpaceMk_smul_mvfderiv_add_smul_mvfderiv (v := fun _ ↦ ![0, 2 * π])
-      ℓ.continuous continuous_const)
-    (fun _ ↦ rfl) (fun s ↦ mem_periodLattice_sphericalPendulum_rotation hU (ℓ s)
-      (smul_mvfderiv_add_smul_mvfderiv_apply _ (ℓ s))) ?_ ?_
-  · rw [ℓ.source]
-    congr 1
+  -- The constant covector `γ_J` is the differential of the linear function `α` on `U`.
+  have hd (b : U) : mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (α ∘ Subtype.val) b = α := by
     ext w
-    exact hcov x w
-  · rw [ℓ.target]
-    congr 1
-    ext w
-    exact hcov y w
+    rw [α.mvfderiv_comp_apply ((contMDiff_subtypeVal (n := 1)).mdifferentiableAt one_ne_zero)]
+    exact congrArg α (Manifold.mvfderiv_subtype_val_apply b w)
+  have h := latticeMonodromy_mk_mvfderiv
+    (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU)
+    (isSymplectic_sphericalPendulumSymplecticForm.mpullback_subtype_val _).isClosed
+    (isCoveringMap_latticeProj_periodLattice
+      (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU)
+      (isSymplectic_sphericalPendulumSymplecticForm.mpullback_subtype_val _).isClosed)
+    (U := univ) (g := α ∘ Subtype.val)
+    (fun _ _ ↦ (α.contMDiff.comp contMDiff_subtypeVal).contMDiffAt)
+    (fun b _ ↦ by rw [hd]; exact mem_periodLattice_sphericalPendulum_rotation hU b hα) ℓ
+    (fun _ ↦ trivial)
+  simpa only [hd] using h
 
 /-- **The transported period `γ₂` along the circle.** Along the circle
 `γ(t) = (1 + r cos t, r sin t)` about `(1, 0)`, there is a continuous `W : ℝ → ℝ²` with `W t` in the
@@ -378,22 +334,21 @@ theorem latticeMonodromy_sphericalPendulum_period (hr : 0 < r)
   have hτ (s : unitInterval) : τ s ∈ Ioo 0 (4 * π) := by
     simp only [τ, mem_Ioo]
     constructor <;> nlinarith [pi_pos, unitInterval.nonneg s, unitInterval.le_one s]
-  set cov : (Fin 2 → ℝ) → U → (Fin 2 → ℝ) →L[ℝ] ℝ := fun v c ↦
-    v 0 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 0) c +
-      v 1 • mvfderiv 𝓘(ℝ, Fin 2 → ℝ) (fun c : U ↦ (c : Fin 2 → ℝ) 1) c
-  have hcov (v : Fin 2 → ℝ) (c : U) (w : Fin 2 → ℝ) : cov v c w = v ⬝ᵥ w :=
-    smul_mvfderiv_add_smul_mvfderiv_apply v c w
+  -- The covector `w ↦ v ⬝ᵥ w`, depending linearly on `v`.
+  set δ : (Fin 2 → ℝ) →ₗ[ℝ] (Fin 2 → ℝ) →L[ℝ] ℝ :=
+    LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ (dotProductEquiv ℝ (Fin 2)).toLinearMap
+  have hδ (v w : Fin 2 → ℝ) : δ v w = v ⬝ᵥ w := by simp [δ, dotProductEquiv]
   have hℓτ (s : unitInterval) : ℓ s = ⟨_, hγU (τ s)⟩ := Subtype.ext (hℓ s)
   refine congrArg Subtype.val (latticeMonodromy_mk_of_continuous _ ℓ
     (c := ⟨α₂ + αJ, add_mem h₂ (mem_periodLattice_sphericalPendulum_rotation hU x₀ hαJ)⟩)
     (s := fun s ↦ TotalSpace.mk' ((Fin 2 → ℝ) →L[ℝ] ℝ)
-      (E := fun b : U ↦ TangentSpace 𝓘(ℝ, Fin 2 → ℝ) b →L[ℝ] ℝ) (ℓ s) (cov (W (τ s)) (ℓ s)))
-    (continuous_totalSpaceMk_smul_mvfderiv_add_smul_mvfderiv ℓ.continuous
-      (hWc.comp (by fun_prop))) (fun _ ↦ rfl)
+      (E := fun b : U ↦ TangentSpace 𝓘(ℝ, Fin 2 → ℝ) b →L[ℝ] ℝ) (ℓ s) (δ (W (τ s))))
+    (CotangentBundle.continuous_totalSpaceMk_opens ℓ.continuous
+      (δ.continuous_of_finiteDimensional.comp (hWc.comp (by fun_prop)))) (fun _ ↦ rfl)
     (fun s ↦ ?_) ?_ ?_)
   · rw [hℓτ s]
     exact mem_periodLattice_sphericalPendulum_circle hr hU hγU hWc.continuousOn hWΛ (hτ s)
-      (hcov _ _)
+      (hδ _)
   -- At the start of the loop, `W(π/2) = b(π/2) = γ₂(1, r)`.
   · have hW0' : W (τ 0) =
         ![sphericalPendulumPeriod 1 r, -sphericalPendulumRotationAngle 1 r] := by
@@ -401,7 +356,7 @@ theorem latticeMonodromy_sphericalPendulum_period (hr : 0 < r)
     rw [ℓ.source]
     congr 1
     ext w
-    rw [hcov, hW0']
+    rw [hδ, hW0']
     exact (hα₂ w).symm
   -- At the end, `W(5π/2) = b(π/2) + (0, 2π) = γ₂(1, r) + γ_J`.
   · have hW1' : W (τ 1) =
@@ -410,7 +365,7 @@ theorem latticeMonodromy_sphericalPendulum_period (hr : 0 < r)
     rw [ℓ.target]
     congr 1
     ext w
-    rw [hcov, hW1', add_dotProduct]
+    rw [hδ, hW1', add_dotProduct]
     exact (congrArg₂ (· + ·) (hα₂ w) (hαJ w)).symm
 
 /-- **The linear monodromy of the spherical pendulum is nontrivial.** Let `U` be an open set of
