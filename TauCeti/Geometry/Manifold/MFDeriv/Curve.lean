@@ -88,8 +88,11 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   named velocity to a `HasMFDerivWithinAt` witness.
 * `TauCeti.Manifold.isMIntegralCurve_iff_curveVelocity_eq`: a curve is an integral curve of a
   vector field exactly when it is differentiable with velocity given by the field at every time.
-* `TauCeti.Manifold.curveVelocityWithin_subset` and
-  `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction and obeys the
+* `TauCeti.Manifold.curveVelocityWithin_subset`,
+  `TauCeti.Manifold.curveVelocityWithin_Icc_eq_of_subset`, and
+  `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction (in particular
+  between a subinterval `[c, d] ⊆ [a, b]` and `[a, b]` for a curve differentiable on `(a, b)`)
+  and obeys the
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
   reparametrizations. `MDifferentiableAt.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero` is the
@@ -314,6 +317,38 @@ theorem curveVelocityWithin_subset {u : Set 𝕜} (hus : u ⊆ s)
     curveVelocityWithin I γ u t = curveVelocityWithin I γ s t := by
   rw [curveVelocityWithin_apply, curveVelocityWithin_apply,
     mfderivWithin_subset hus hu.uniqueMDiffWithinAt hγ]
+
+open Set in
+/-- On a nondegenerate subinterval `[c, d] ⊆ [a, b]`, the velocity of a curve within `[c, d]`
+agrees at every point of `[c, d]` with its velocity within `[a, b]`, provided the curve is
+differentiable at all interior points of `(a, b)`. -/
+theorem curveVelocityWithin_Icc_eq_of_subset
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {γ : ℝ → M} {a b c d x : ℝ}
+    (hcd : c < d) (hac : a ≤ c) (hdb : d ≤ b) (hx : x ∈ Icc c d)
+    (hγ : ∀ t ∈ Ioo a b, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) :
+    curveVelocityWithin I γ (Icc c d) x = curveVelocityWithin I γ (Icc a b) x := by
+  have hxab : x ∈ Icc a b := ⟨hac.trans hx.1, hx.2.trans hdb⟩
+  by_cases hxo : x ∈ Ioo a b
+  · rw [curveVelocityWithin_subset (subset_univ _) (uniqueDiffOn_Icc hcd _ hx)
+        (hγ _ hxo).mdifferentiableWithinAt,
+      curveVelocityWithin_subset (subset_univ _)
+        (uniqueDiffOn_Icc (hac.trans_lt (hcd.trans_le hdb)) _ hxab)
+        (hγ _ hxo).mdifferentiableWithinAt]
+  · have hset : Icc c d =ᶠ[𝓝 x] Icc a b := by
+      rcases hxab.1.eq_or_lt with hax | hax
+      · have hca : c = a := le_antisymm (hax ▸ hx.1) hac
+        rw [← hax, hca]
+        filter_upwards [Iio_mem_nhds (hca ▸ hcd)] with t ht
+        exact ⟨fun h ↦ ⟨h.1, ht.le.trans hdb⟩, fun h ↦ ⟨h.1, ht.le⟩⟩
+      · have hxb : x = b := hxab.2.eq_or_lt.resolve_right fun hlt ↦ hxo ⟨hax, hlt⟩
+        have hdb' : d = b := le_antisymm hdb (hxb ▸ hx.2)
+        rw [hxb, hdb']
+        filter_upwards [Ioi_mem_nhds (hdb' ▸ hcd)] with t ht
+        exact ⟨fun h ↦ ⟨hac.trans ht.le, h.2⟩, fun h ↦ ⟨ht.le, h.2⟩⟩
+    simp only [curveVelocityWithin_apply, mfderivWithin_congr_set hset]
 
 /-- The velocity within `s` of a curve in a normed space, read in its own model, is its derivative
 within `s`. -/
