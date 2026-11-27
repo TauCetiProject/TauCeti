@@ -162,7 +162,12 @@ variable {R b a : Type*} [CommRing R] [Fintype b] [Fintype a]
   [DecidableEq b] [DecidableEq a]
 
 /-- Over a commutative semilocal ring, a matrix is the first columns of an invertible
-matrix if and only if it has a left inverse. -/
+matrix if and only if it has a left inverse.
+
+This is the integral-ring counterpart of [ShortProof], `lsernau/grh-lean` at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`,
+[grh/src/Lib/General/LinearAlgebra/PartnerAlgebra.lean](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh/src/Lib/General/LinearAlgebra/PartnerAlgebra.lean)
+(`New.IsValuationPair.exists_firstCols_iff`). The proof here is independent. -/
 theorem exists_toCols₁_eq_iff [Finite (MaximalSpectrum R)] (y : Matrix (b ⊕ a) b R) :
     (∃ k : GL (b ⊕ a) R, (k : Matrix (b ⊕ a) (b ⊕ a) R).toCols₁ = y) ↔
       ∃ t : Matrix b (b ⊕ a) R, t * y = 1 := by
