@@ -27,6 +27,9 @@ rather than restricting scalars, so that no algebra diamond arises.
 
 ## Main results
 
+* `Matrix.l2_opNorm_map_star`, `Matrix.l2_opNorm_transpose`: entrywise conjugation and
+  transposition preserve the Euclidean operator norm.
+
 * `Matrix.opNorm_toEuclideanLin`: the operator-norm unitarily invariant seminorm of
   `A.toEuclideanLin` equals the scoped `ℓ²` operator norm of `A`.
 * `Matrix.norm_apply_le_l2_opNorm`: an entrywise bound, including rectangular matrices.
@@ -310,6 +313,28 @@ theorem l2_opNorm_sq_le_iff {m : Type*} [Fintype m] {A : Matrix m n 𝕜} {C : �
     rw [EuclideanSpace.norm_sq_eq, EuclideanSpace.norm_sq_eq]
     simpa using h (WithLp.ofLp x)
   exact (Real.le_sqrt (norm_nonneg _) hC).1 hA
+
+/-- Entrywise conjugation preserves the Euclidean operator norm. -/
+@[simp]
+theorem l2_opNorm_map_star {m : Type*} [Fintype m] (A : Matrix m n 𝕜) :
+    ‖A.map (starRingEnd 𝕜)‖ = ‖A‖ := by
+  have h (M : Matrix m n 𝕜) : ‖M.map star‖ ≤ ‖M‖ := by
+    apply (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
+    apply (l2_opNorm_sq_le_iff (sq_nonneg ‖M‖)).mpr
+    intro a
+    have he (i : m) : ‖(M.map star *ᵥ a) i‖ = ‖(M *ᵥ star a) i‖ := by
+      have hi := congrArg norm ((starRingEnd 𝕜).map_mulVec M (star a) i)
+      simpa [Function.comp_def] using hi.symm
+    simpa only [he, Pi.star_apply, norm_star] using M.sum_norm_sq_mulVec_le (star a)
+  apply le_antisymm (h A)
+  simpa [Matrix.map_map, Function.comp_def] using h (A.map star)
+
+/-- Transposition preserves the Euclidean operator norm. -/
+@[simp]
+theorem l2_opNorm_transpose {m : Type*} [Fintype m] [DecidableEq m]
+    (A : Matrix m n 𝕜) : ‖Aᵀ‖ = ‖A‖ := by
+  simpa only [conjTranspose, RCLike.star_def, l2_opNorm_map_star]
+    using l2_opNorm_conjTranspose A
 
 omit [DecidableEq n] in
 /-- **Large-sieve duality.** For a rectangular matrix `A` and `C ≥ 0`, the inequality
