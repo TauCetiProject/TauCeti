@@ -9,6 +9,7 @@ public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Basic
 public import TauCeti.InformationTheory.PartitionEntropy.Mixture
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
+import TauCeti.Dynamics.Ergodic.MeasureEntropy.FinitePartition
 
 /-!
 # Entropy of mixtures of invariant probabilities
@@ -23,14 +24,19 @@ the error disappears, so entropy rates are affine in the measure:
 `h_m(T, ξ) = a h_μ(T, ξ) + (1 - a) h_ν(T, ξ)` when `T` preserves `μ` and `ν`. Taking suprema
 gives `h_m(T) ≤ a h_μ(T) + (1 - a) h_ν(T)`.
 
-The reverse inequality for the Kolmogorov–Sinai entropy needs a single label that is good for
-`μ` and for `ν` at once, and is not proved here.
+The reverse inequality needs a single label that is good for `μ` and for `ν` at once. By the
+finite-partition formula (`TauCeti.measureEntropy_eq_iSup_fin`) it suffices to compare finite
+labels `ξ` and `η`: their join `x ↦ (ξ x, η x)` refines both, so
+`a h_μ(T, ξ) + (1 - a) h_ν(T, η) ≤ a h_μ(T, ξ ∨ η) + (1 - a) h_ν(T, ξ ∨ η) = h_m(T, ξ ∨ η)`.
+Together, the Kolmogorov–Sinai entropy is affine on invariant probabilities.
 
 ## Main results
 
 * `TauCeti.partitionEntropyRate_smul_add_smul`:
   `h_m(T, ξ) = a h_μ(T, ξ) + (1 - a) h_ν(T, ξ)`.
 * `TauCeti.measureEntropy_smul_add_smul_le`: `h_m(T) ≤ a h_μ(T) + (1 - a) h_ν(T)`.
+* `TauCeti.le_measureEntropy_smul_add_smul`: `a h_μ(T) + (1 - a) h_ν(T) ≤ h_m(T)`.
+* `TauCeti.measureEntropy_smul_add_smul`: `h_m(T) = a h_μ(T) + (1 - a) h_ν(T)`.
 
 ## References
 
@@ -104,5 +110,45 @@ theorem measureEntropy_smul_add_smul_le (ha : a ≤ 1) (hμ : MeasurePreserving 
     gcongr
     exact partitionEntropyRate_le_measureEntropy hξ (ENNReal.lt_top_of_mul_ne_top_right
       (ne_top_of_le_ne_top hfin (le_add_left le_rfl |>.trans hlow)) hb0).ne
+
+/-- The Kolmogorov–Sinai entropy of a measure-preserving map of a probability space is the
+supremum of the entropy rates of its measurable finite labels, indexed by a nonempty type. -/
+private theorem measureEntropy_eq_iSup_sigma (hT : MeasurePreserving T μ μ) :
+    measureEntropy μ T =
+      ⨆ p : Σ n : ℕ, {ξ : X → Fin n // Measurable ξ}, partitionEntropyRate μ T p.snd.val := by
+  rw [measureEntropy_eq_iSup_fin hT, iSup_sigma]
+  simp only [iSup_subtype]
+
+/-- **Lower bound for mixtures.** For a map preserving the probability measures `μ` and `ν`,
+`a h_μ(T) + (1 - a) h_ν(T) ≤ h_{a μ + (1 - a) ν}(T)`: rates of finite labels `ξ` for `μ` and `η`
+for `ν` are bounded by the rates of their join, which add up to its rate for the mixture. -/
+theorem le_measureEntropy_smul_add_smul (ha : a ≤ 1) (hμ : MeasurePreserving T μ μ)
+    (hν : MeasurePreserving T ν ν) :
+    a * measureEntropy μ T + (1 - a) * measureEntropy ν T ≤
+      measureEntropy (a • μ + (1 - a) • ν) T := by
+  have : Nonempty (Σ n : ℕ, {ξ : X → Fin n // Measurable ξ}) :=
+    ⟨⟨1, fun _ ↦ 0, measurable_const⟩⟩
+  rw [measureEntropy_eq_iSup_sigma hμ, measureEntropy_eq_iSup_sigma hν, ENNReal.mul_iSup,
+    ENNReal.mul_iSup]
+  refine ENNReal.iSup_add_iSup_le fun ⟨n, ξ, hξ⟩ ⟨k, η, hη⟩ ↦ ?_
+  have hζ : Measurable fun x ↦ (ξ x, η x) := hξ.prodMk hη
+  calc a * partitionEntropyRate μ T ξ + (1 - a) * partitionEntropyRate ν T η
+      ≤ a * partitionEntropyRate μ T (fun x ↦ (ξ x, η x)) +
+          (1 - a) * partitionEntropyRate ν T (fun x ↦ (ξ x, η x)) := by
+        gcongr
+        · exact partitionEntropyRate_comp_le T (fun x ↦ (ξ x, η x)) Prod.fst
+        · exact partitionEntropyRate_comp_le T (fun x ↦ (ξ x, η x)) Prod.snd
+    _ = partitionEntropyRate (a • μ + (1 - a) • ν) T (fun x ↦ (ξ x, η x)) :=
+        (partitionEntropyRate_smul_add_smul ha hμ hν hζ).symm
+    _ ≤ measureEntropy (a • μ + (1 - a) • ν) T :=
+        partitionEntropyRate_le_measureEntropy_of_finite T hζ
+
+/-- **Affinity of the Kolmogorov–Sinai entropy.** For a map preserving the probability measures
+`μ` and `ν` and `a ∈ [0, 1]`, `h_{a μ + (1 - a) ν}(T) = a h_μ(T) + (1 - a) h_ν(T)`. -/
+theorem measureEntropy_smul_add_smul (ha : a ≤ 1) (hμ : MeasurePreserving T μ μ)
+    (hν : MeasurePreserving T ν ν) :
+    measureEntropy (a • μ + (1 - a) • ν) T =
+      a * measureEntropy μ T + (1 - a) * measureEntropy ν T :=
+  (measureEntropy_smul_add_smul_le ha hμ hν).antisymm (le_measureEntropy_smul_add_smul ha hμ hν)
 
 end TauCeti
