@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.Complex.AbelLimit
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
@@ -20,10 +19,6 @@ circle the series converges only conditionally, so the statement is a limit of t
 partial sums. Its proof combines Dirichlet's test, which gives convergence, with Abel's limit
 theorem, which identifies the limit with the radial limit of `-log (1 - r z)`.
 
-Taking imaginary parts at `z = exp (θ i)` gives the classical sawtooth series
-`∑ sin (n θ) / n = (π - θ) / 2` for `0 < θ < 2π`. This is the conditionally convergent input that
-evaluates the Hurwitz and Dirichlet L-functions at `s = 0`.
-
 ## Main results
 
 * `Complex.tendsto_sum_range_taylorSeries_neg_log`: the partial sums of `∑ zⁿ / n` tend to
@@ -31,15 +26,12 @@ evaluates the Hurwitz and Dirichlet L-functions at `s = 0`.
 * `Complex.norm_neg_log_one_sub_sub_sum_Icc_pow_div_le`: the remainder after the terms through
   degree `N` is bounded by `2 / ((N + 1) * ‖z - 1‖)` on the same domain, by
   `Finset.norm_sum_range_smul_le_of_antitoneOn` and the geometric sum bound.
-* `Real.tendsto_sum_Icc_sin_mul_div`: the sawtooth series
-  `∑_{n=1}^N sin (n θ) / n → (π - θ) / 2` for `0 < θ < 2π`, using the argument
-  `Complex.arg_one_sub_exp_mul_I` of `1 - exp (θ i)`.
 -/
 
 public section
 
 open Filter Finset
-open scoped Topology Real
+open scoped Topology
 
 namespace Complex
 
@@ -137,32 +129,3 @@ theorem norm_neg_log_one_sub_sub_sum_Icc_pow_div_le {z : ℂ} (hz : ‖z‖ ≤ 
       field_simp [norm_ne_zero_iff.mpr (sub_ne_zero.mpr hz₁)]
 
 end Complex
-
-namespace Real
-
-/-- **The sawtooth series.** For `0 < θ < 2π`, the ordered partial sums of `∑ sin (n θ) / n`
-tend to `(π - θ) / 2`. The series converges only conditionally. -/
-theorem tendsto_sum_Icc_sin_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
-    Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, sin (n * θ) / n) atTop (𝓝 ((π - θ) / 2)) := by
-  set w : ℂ := Complex.exp (θ * Complex.I) with hw
-  have hnorm : ‖w‖ ≤ 1 := by rw [hw, Complex.norm_exp_ofReal_mul_I]
-  have hw1 : w ≠ 1 := by
-    intro h
-    have hcos : Real.cos θ = 1 := by
-      rw [← Complex.exp_ofReal_mul_I_re, ← hw, h, Complex.one_re]
-    have := (Real.cos_eq_one_iff_of_lt_of_lt (by linarith [hθ.1, Real.pi_pos]) hθ.2).mp hcos
-    linarith [hθ.1]
-  have h := ((Complex.continuous_im.tendsto _).comp
-    (Complex.tendsto_sum_range_taylorSeries_neg_log hnorm hw1)).comp (tendsto_add_atTop_nat 1)
-  rw [Complex.neg_im, Complex.log_im, hw, Complex.arg_one_sub_exp_mul_I hθ,
-    show -((θ - π) / 2) = (π - θ) / 2 by ring] at h
-  refine h.congr fun N ↦ ?_
-  simp only [Function.comp_apply, Complex.im_sum]
-  rw [sum_range_succ', ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, Nat.add_sub_cancel]
-  simp only [CharP.cast_eq_zero, div_zero, Complex.zero_im, add_zero]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [add_comm 1 i, ← Complex.exp_natCast_mul, ← mul_assoc,
-    show ((i + 1 : ℕ) : ℂ) * θ = (((i + 1 : ℕ) * θ : ℝ) : ℂ) by push_cast; ring,
-    Complex.div_natCast_im, Complex.exp_ofReal_mul_I_im]
-
-end Real

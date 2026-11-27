@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 public import Mathlib.NumberTheory.LSeries.ZMod
-import TauCeti.Analysis.SpecialFunctions.Complex.Log.UnitCircle
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.HarmonicSeries
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.Basic
 
 /-!

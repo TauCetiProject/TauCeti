@@ -11,9 +11,13 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 /-!
 # Harmonic sine and cosine series
 
-`Real.tendsto_sum_Icc_cos_mul_div` evaluates the ordered partial-sum limit of
-`∑ cos (j * θ) / j` on `(0, 2π)`, complementing `Real.tendsto_sum_Icc_sin_mul_div`.
-The sine and cosine remainder estimates follow from the joint bound
+On `(0, 2π)`, `Real.tendsto_sum_Icc_cos_mul_div` gives the cosine series limit
+`-log (2 * sin (θ / 2))`. On the same interval, `Real.tendsto_sum_Icc_sin_mul_div` gives the
+sawtooth series limit `(π - θ) / 2` by taking imaginary parts of
+`Complex.tendsto_sum_range_taylorSeries_neg_log` and using `Complex.arg_one_sub_exp_mul_I`.
+
+The remainder estimates `Real.abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le` and
+`Real.abs_neg_log_two_mul_sin_half_sub_sum_Icc_cos_mul_div_le` follow from the joint bound
 `Complex.norm_sub_sum_Icc_exp_mul_I_div_le`, which uses
 `Complex.norm_neg_log_one_sub_sub_sum_Icc_pow_div_le` and the chord length formula
 `Complex.norm_exp_I_mul_ofReal_sub_one`.
@@ -90,6 +94,33 @@ theorem tendsto_sum_Icc_cos_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π))
     exact abs_neg_log_two_mul_sin_half_sub_sum_Icc_cos_mul_div_le hθ N
   · simpa only [div_mul_eq_div_div, zero_div] using
       (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).div_const (sin (θ / 2))
+
+/-- **The sawtooth series.** For `0 < θ < 2π`, the ordered partial sums of `∑ sin (n θ) / n`
+tend to `(π - θ) / 2`. -/
+theorem tendsto_sum_Icc_sin_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
+    Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, sin (n * θ) / n) atTop (𝓝 ((π - θ) / 2)) := by
+  set w : ℂ := Complex.exp (θ * Complex.I) with hw
+  have hnorm : ‖w‖ ≤ 1 := by rw [hw, Complex.norm_exp_ofReal_mul_I]
+  have hw1 : w ≠ 1 := by
+    intro h
+    have hcos : Real.cos θ = 1 := by
+      rw [← Complex.exp_ofReal_mul_I_re, ← hw, h, Complex.one_re]
+    have := (Real.cos_eq_one_iff_of_lt_of_lt (by linarith [hθ.1, Real.pi_pos]) hθ.2).mp hcos
+    linarith [hθ.1]
+  have h := ((Complex.continuous_im.tendsto _).comp
+    (Complex.tendsto_sum_range_taylorSeries_neg_log hnorm hw1)).comp (tendsto_add_atTop_nat 1)
+  have hangle : -((θ - π) / 2) = (π - θ) / 2 := by ring
+  rw [Complex.neg_im, Complex.log_im, hw, Complex.arg_one_sub_exp_mul_I hθ, hangle] at h
+  refine h.congr fun N ↦ ?_
+  simp only [Function.comp_apply, Complex.im_sum]
+  rw [sum_range_succ', ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, Nat.add_sub_cancel]
+  simp only [CharP.cast_eq_zero, div_zero, Complex.zero_im, add_zero]
+  refine sum_congr rfl fun i _ ↦ ?_
+  have hcast : ((i + 1 : ℕ) : ℂ) * θ = (((i + 1 : ℕ) * θ : ℝ) : ℂ) := by
+    push_cast
+    ring
+  rw [add_comm 1 i, ← Complex.exp_natCast_mul, ← mul_assoc, hcast,
+    Complex.div_natCast_im, Complex.exp_ofReal_mul_I_im]
 
 /-- **Sine series remainder bound.** For `0 < θ < 2π`, the sine series beyond the first
 `N` terms has absolute value at most `1 / ((N + 1) * sin (θ / 2))`
