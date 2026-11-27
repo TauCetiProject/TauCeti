@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FiniteKernel
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.FDeriv.Truncation
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation

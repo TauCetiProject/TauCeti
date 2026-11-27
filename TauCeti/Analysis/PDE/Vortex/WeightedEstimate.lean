@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.SoftMin
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.FDeriv.Truncation
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.Normed.Group.Basic

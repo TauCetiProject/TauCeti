@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.InnerProductSpace.WeakSolution
 public import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Calculus.FDeriv.Truncation
 import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.PDE.Vortex.WeightedEstimate

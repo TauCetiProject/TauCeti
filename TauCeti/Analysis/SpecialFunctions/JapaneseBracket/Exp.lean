@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
@@ -22,11 +21,9 @@ For `b > 0`, the weight `exp(c √(b + ‖z‖²))` is smooth on any real inner 
 norm of its derivative is `|c| ‖z‖ / √(b + ‖z‖²)` times the weight, so it is bounded by `|c|`
 times the weight, and by an arbitrarily small multiple of the weight on a fixed ball once `b` is
 large. The usual choice is `b = 1`, and changing `b` changes the weight by at most a constant
-factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are smooth, lie between `0` and
-`min W (1 / ε)`, and have logarithmic gradient at most that of `W`. These facts hold for every
-positive weight `W` (`ContDiff.div_one_add_mul`, `div_one_add_mul_nonneg`,
-`div_one_add_mul_le_self`, `div_one_add_mul_le_one_div`, `norm_fderiv_div_one_add_mul_le`), and a
-logarithmic gradient at most `|c|` gives `‖dV‖² ≤ c² V²` (`norm_fderiv_sq_le_of_norm_fderiv_le`).
+factor. Its truncations `W / (1 + ε W)`, `ε > 0`, are smooth and have logarithmic gradient at most
+that of `W`; this holds for every positive weight `W` and is proved in
+`TauCeti.Analysis.Calculus.FDeriv.Truncation`.
 
 The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are reciprocal, so either can be moved
 across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
@@ -96,64 +93,6 @@ theorem norm_fderiv_exp_mul_sqrt_add_norm_sq_le (c : ℝ) (hb : 0 < b) (z : E) :
       |c| * Real.exp (c * √(b + ‖z‖ ^ 2)) := by
   rw [norm_fderiv_exp_mul_sqrt_add_norm_sq c hb]
   exact mul_le_of_le_one_right (by positivity) (norm_div_sqrt_add_norm_sq_le_one hb.le z)
-
-omit [InnerProductSpace ℝ E] in
-/-- A nonnegative weight whose logarithmic gradient at `z` is at most `g ≤ |c|` satisfies
-`‖dV z‖² ≤ c² V(z)²`. For the radial exponential weight, `g = |c| ‖z‖ / √(b + ‖z‖²)`
-(`norm_div_sqrt_add_norm_sq_le_one`). -/
-theorem norm_fderiv_sq_le_of_norm_fderiv_le [NormedSpace ℝ E] {V : E → ℝ} {z : E} {c g : ℝ}
-    (hg : g ≤ |c|) (hV : 0 ≤ V z) (hdV : ‖fderiv ℝ V z‖ ≤ g * V z) :
-    ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2 := by
-  have h := hdV.trans (mul_le_mul_of_nonneg_right hg hV)
-  simpa only [mul_pow, sq_abs] using pow_le_pow_left₀ (norm_nonneg _) h 2
-
-omit [InnerProductSpace ℝ E] in
-/-- The truncation `W / (1 + ε W)`, `ε ≥ 0`, of a nonnegative `Cⁿ` weight `W` is `Cⁿ`. -/
-theorem _root_.ContDiff.div_one_add_mul [NormedSpace ℝ E] {W : E → ℝ} {n : WithTop ℕ∞}
-    (hW : ContDiff ℝ n W) (hW₀ : ∀ z, 0 ≤ W z) {ε : ℝ} (hε : 0 ≤ ε) :
-    ContDiff ℝ n fun z ↦ W z / (1 + ε * W z) :=
-  hW.div (contDiff_const.add (contDiff_const.mul hW)) fun z ↦ by have := hW₀ z; positivity
-
-/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε ≥ 0`, is nonnegative. -/
-theorem div_one_add_mul_nonneg {w ε : ℝ} (hw : 0 ≤ w) (hε : 0 ≤ ε) : 0 ≤ w / (1 + ε * w) := by
-  positivity
-
-/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε ≥ 0`, is at most `w`. -/
-theorem div_one_add_mul_le_self {w ε : ℝ} (hw : 0 ≤ w) (hε : 0 ≤ ε) : w / (1 + ε * w) ≤ w :=
-  div_le_self hw (le_add_of_nonneg_right (by positivity))
-
-/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε > 0`, is at most `1 / ε`. -/
-theorem div_one_add_mul_le_one_div {w ε : ℝ} (hw : 0 ≤ w) (hε : 0 < ε) :
-    w / (1 + ε * w) ≤ 1 / ε := by
-  rw [div_le_div_iff₀ (by positivity) hε]
-  linarith [mul_comm w ε]
-
-omit [InnerProductSpace ℝ E] in
-/-- **Truncation keeps a bound on the logarithmic gradient.** If a positive weight `W`,
-differentiable at `z`, satisfies `‖dW z‖ ≤ g W z`, then so does its truncation `W / (1 + ε W)`,
-`ε ≥ 0`: `‖d(W / (1 + ε W)) z‖ ≤ g W z / (1 + ε W z)`. -/
-theorem norm_fderiv_div_one_add_mul_le [NormedSpace ℝ E] {W : E → ℝ} {z : E}
-    (hW : DifferentiableAt ℝ W z) (hW₀ : 0 < W z) {ε : ℝ} (hε : 0 ≤ ε) {g : ℝ}
-    (hdW : ‖fderiv ℝ W z‖ ≤ g * W z) :
-    ‖fderiv ℝ (fun t ↦ W t / (1 + ε * W t)) z‖ ≤ g * (W z / (1 + ε * W z)) := by
-  have hd : 0 < 1 + ε * W z := by positivity
-  have hg : 0 ≤ g := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hdW) hW₀
-  -- `W / (1 + ε W)` is `W` composed with `s ↦ s / (1 + ε s)`, of derivative `1 / (1 + ε s)²`.
-  have hs : HasDerivAt (fun s : ℝ ↦ s / (1 + ε * s)) (1 / (1 + ε * W z) ^ 2) (W z) := by
-    have h := (hasDerivAt_id' (W z)).div (((hasDerivAt_id' (W z)).const_mul ε).const_add 1)
-      hd.ne'
-    convert h using 1
-    field_simp
-    ring
-  have hVd : HasFDerivAt (fun t ↦ W t / (1 + ε * W t))
-      ((1 / (1 + ε * W z) ^ 2) • fderiv ℝ W z) z := hs.comp_hasFDerivAt z hW.hasFDerivAt
-  rw [hVd.fderiv, norm_smul, Real.norm_of_nonneg (by positivity)]
-  calc 1 / (1 + ε * W z) ^ 2 * ‖fderiv ℝ W z‖ ≤ 1 / (1 + ε * W z) ^ 2 * (g * W z) := by gcongr
-    _ = g * (W z / (1 + ε * W z)) * (1 / (1 + ε * W z)) := by field_simp
-    _ ≤ g * (W z / (1 + ε * W z)) := by
-      refine mul_le_of_le_one_right (by positivity) ?_
-      rw [div_le_one hd]
-      nlinarith [mul_nonneg hε hW₀.le]
 
 omit [InnerProductSpace ℝ E] in
 /-- Changing the regularization parameter changes the radial exponential weight by at most the
