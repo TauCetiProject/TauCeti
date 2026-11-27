@@ -222,7 +222,7 @@ private theorem associativityPerturbation_eq_right (hL : 0 ≤ L) (hτ : 1 ≤ �
   exact key
 
 /-- For `L ≥ 0` the plumbing factor `e^{-2πL} / 4` lies in `(0, 1 / 3]`. -/
-theorem associativityFactor_mem (hL : 0 ≤ L) :
+theorem exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (hL : 0 ≤ L) :
     0 < Real.exp (-(2 * π * L)) / 4 ∧ 3 * (Real.exp (-(2 * π * L)) / 4) ≤ 1 := by
   have : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   exact ⟨by positivity, by linarith⟩
@@ -253,7 +253,8 @@ theorem associativityPerturbation_cylindricalEndLift_of_pos (hL : 2 < L) (τ : �
     rwa [hvec] at h
   rcases le_or_gt τ 1 with hτ₁ | hτ
   · -- Along the path, this is the input end `i` of the sphere with moving input ends.
-    obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+    obtain ⟨hf₀, hf₃⟩ :=
+      exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (show 0 ≤ L by linarith)
     rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₁⟩]
     exact puncturedSpherePerturbation_cylindricalEndLift_of_pos
       (pairwise_add_le_norm_associativityCenter_sub hf₀.le hf₃ τ)
@@ -288,7 +289,8 @@ theorem associativityPerturbation_cylindricalEndLift_inf_of_le (hL : 2 < L) (τ 
       (Hb := associativityLeftReceiving H Hout G) (q := zero) (by decide) hL (by simpa using hHout)
       (smoothTransition (-τ)) hz x v
   rcases le_or_gt τ 1 with hτ₁ | hτ
-  · obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+  · obtain ⟨hf₀, hf₃⟩ :=
+      exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (show 0 ≤ L by linarith)
     rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₁⟩]
     exact puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
       (norm_associativityCenter_add_le hf₀.le (by linarith) τ) hHout hz x v
@@ -310,7 +312,8 @@ theorem associativityPerturbation_add_mul_cylindricalEndLift_eq_puncturedSphereP
         (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
         (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
           associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z) x := by
-  obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+  obtain ⟨hf₀, hf₃⟩ :=
+    exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (show 0 ≤ L by linarith)
   have hd : associativityScale (Real.exp (-(2 * π * L)) / 4) τ i *
       deriv zero.cylindricalEndLift z ≠ 0 :=
     mul_ne_zero (associativityScale_ne_zero hf₀ τ i) (zero.deriv_cylindricalEndLift_ne_zero z)
@@ -335,7 +338,8 @@ theorem associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePertu
       puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
         (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout (inf.cylindricalEndLift z)
         x := by
-  obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+  obtain ⟨hf₀, hf₃⟩ :=
+    exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (show 0 ≤ L by linarith)
   -- Every tangent vector of the sphere is the image of a tangent vector of the end.
   refine ContinuousLinearMap.ext fun v ↦ ?_
   obtain ⟨v, rfl⟩ : ∃ v', v = deriv inf.cylindricalEndLift z * v' :=
@@ -600,7 +604,8 @@ theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le
       hHouts hG hGs hL hτ hB hBout hBG u
   rcases le_or_gt τ 1 with hτ₁ | hτ
   · -- Along the path, the family is the datum of the moving input ends.
-    obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+    obtain ⟨hf₀, hf₃⟩ :=
+      exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (show 0 ≤ L by linarith)
     rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₁⟩]
     exact (ω.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_associativity_le hH
       hHs hHout hHouts hf₀ hf₃ τ hB hBout u).trans le_self_add

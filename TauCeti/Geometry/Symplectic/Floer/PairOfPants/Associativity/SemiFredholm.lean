@@ -41,16 +41,11 @@ vanish, and `K_τ` is the datum `Σ_τ` of the moving input ends
 (`associativityPerturbation_add_mul_cylindricalEndLift_eq_puncturedSpherePerturbation`,
 `associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePerturbation`, in the
 namespace `TauCeti.Floer`).
-So the end estimates of `D_u` for `Σ_τ`
-(`exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_movingEnds`,
-`exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_movingEnds`)
-are end estimates for `K_τ`, since the linearized operator in the direction of a section depends
-on the data only on the support of the section
-(`TauCeti.SymplecticForm.floerLinearization_congr_data_of_tsupport`). On the compact core, where
-the necks sit, only the smoothness of `K_τ` off the input punctures is used
-(`TauCeti.Floer.contDiffAt_uncurry_associativityPerturbation`), through the patching of end
-estimates on spheres with moving input ends
-(`exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearization_add_of_movingEnds_of_ends`).
+So the estimate is the case of the semi-Fredholm estimate
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds`
+on spheres with moving input ends for Floer data that are `Σ_τ` far out on the ends. On the
+compact core, where the necks sit, only the smoothness of `K_τ` off the input punctures is used
+(`TauCeti.Floer.contDiffAt_uncurry_associativityPerturbation`).
 
 The constants depend on `τ` and `L`; no estimate uniform along the family is made. The Sobolev
 realization of `D_u`, the estimate of its formal adjoint and the Fredholm index are not treated
@@ -118,58 +113,6 @@ private theorem associativityPerturbation_positiveEndChart_inf_eq (hL : 2 < L)
 end Charts
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-section Ends
-
-variable {H : Fin 3 → ℝ → V → ℝ} {Hout G G' : ℝ → V → ℝ} {L : ℝ} {τ : ℝ}
-
-/-- At a point where the associativity family is the datum of the moving input ends, so is the
-perturbed derivative of any map. -/
-private theorem perturbedFDeriv_associativityPerturbation_eq (ω : SymplecticForm V)
-    (u : ℝ × ℝ → V) {z : ℝ × ℝ} (h : associativityPerturbation H Hout G G' L τ
-      (Complex.equivRealProdCLM.symm z) =
-        puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
-          (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
-          (Complex.equivRealProdCLM.symm z)) :
-    ω.perturbedFDeriv
-        (fun z x ↦ associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm z) x
-          1)
-        (fun z x ↦ associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm z) x
-          Complex.I) u z =
-      ω.perturbedFDeriv
-        (fun z x ↦ puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
-          (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
-          (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
-          (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
-          (Complex.equivRealProdCLM.symm z) x Complex.I) u z :=
-  ω.perturbedFDeriv_congr u (by simp only [h]) (by simp only [h])
-
-/-- If the associativity family is the datum of the moving input ends on the support of a section
-`ξ`, then the linearized operators of the two data agree in the direction `ξ`. -/
-private theorem floerLinearization_associativityPerturbation_eq (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → AlmostComplexStructure V) (u : ℝ × ℝ → V) {ξ : ℝ × ℝ → V}
-    (h : ∀ z ∈ tsupport ξ, associativityPerturbation H Hout G G' L τ
-      (Complex.equivRealProdCLM.symm z) =
-        puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
-          (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
-          (Complex.equivRealProdCLM.symm z)) :
-    ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-        (fun z x ↦ associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm z) x
-          1)
-        (fun z x ↦ associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm z) x
-          Complex.I) u ξ =
-      ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-        (fun z x ↦ puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
-          (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
-          (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
-          (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
-          (Complex.equivRealProdCLM.symm z) x Complex.I) u ξ :=
-  ω.floerLinearization_congr_data_of_tsupport u ξ fun z hz ↦
-    ⟨rfl, by simp only [h z hz], by simp only [h z hz]⟩
-
-end Ends
 
 /-- **The semi-Fredholm estimate along the associativity family.** Let the Hamiltonians `H i`,
 `Hout`, `G` and `G'` be jointly `C²` of period one, let `L > 4`, and let `K_τ` be the associativity
@@ -279,57 +222,26 @@ theorem exists_forall_le_mul_integral_floerLinearization_associativityPerturbati
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation
               (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
               (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) (T + 1),
-            ‖ξ z‖ ^ 2) := by
-  set c := associativityCenter (Real.exp (-(2 * π * L)) / 4) τ
-  set a := associativityScale (Real.exp (-(2 * π * L)) / 4) τ
-  obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
-  have ha : ∀ i, a i ≠ 0 := associativityScale_ne_zero hf₀ τ
-  have hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖ :=
-    pairwise_add_le_norm_associativityCenter_sub hf₀.le hf₃ τ
-  have hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π) :=
-    norm_associativityCenter_add_le hf₀.le (by linarith) τ
-  -- Beyond `s = 0` an input end avoids every center, and beyond `s = 1` so does the output end.
-  have hne (i : Fin 3) (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : Fin 3) : Complex.equivRealProdCLM.symm
-      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
-    rw [equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
-  -- Far out on the ends the family is the datum of the moving input ends, so the end estimates
-  -- of that datum are end estimates of the family.
-  choose C R hR hend using fun i ↦
-    exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_movingEnds
-      ω hH hHs hHout hHouts ha hsep hout i (hX i) (hx i) (hnd i) (hJe i) (hJex i) (hJeq i)
-      (fun ζ hζ ↦ hJ _ (hne i ζ (by linarith))) (fun ζ hζ ↦ hu _ (hne i ζ (by linarith)))
-      (fun ζ hζ ↦ by
-        rw [← perturbedFDeriv_associativityPerturbation_eq ω u
-          (associativityPerturbation_realChart_eq (by linarith) hH i (by linarith))]
-        exact hF i ζ hζ) (hux i) (hδ i)
-  obtain ⟨Cout, Rout, hRout, hendOut⟩ :=
-    exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_movingEnds
-      ω hH hHs hHout hHouts ha hout hXout hxout hndout hJout hJoutx hJoutq
-      (fun ζ hζ ↦ hJ _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith)))
-      (fun ζ hζ ↦ hu _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith)))
-      (fun ζ hζ ↦ by
-        rw [← perturbedFDeriv_associativityPerturbation_eq ω u
-          (associativityPerturbation_positiveEndChart_inf_eq (by linarith) hHout (by linarith))]
-        exact hFout ζ hζ) huxout hδout
-  -- Patch the end estimates together; on the core only the smoothness of the family is used.
-  refine
-    exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearization_add_of_movingEnds_of_ends
-      ω ha hsep hout hJ
-      (fun z hz ↦ contDiffAt_uncurry_associativityPerturbation hH hHs hHout hHouts hG hGs hG' hG's
-        hL hz (u z) 1)
-      (fun z hz ↦ contDiffAt_uncurry_associativityPerturbation hH hHs hHout hHouts hG hGs hG' hG's
-        hL hz (u z) Complex.I) hu hc (C := C) (R := R) (fun i ξ hξ hξc hξR ↦ ?_) (Cout := Cout)
-      (Rout := Rout) fun ξ hξ hξc hξR ↦ ?_
-  · rw [floerLinearization_associativityPerturbation_eq ω J u fun z hz ↦ ?_]
-    · exact hend i hξ hξc hξR
-    obtain ⟨ζ, hζ, rfl⟩ := hξR hz
-    exact associativityPerturbation_realChart_eq (by linarith) hH i
-      (by linarith [hR i, hζ.1.out])
-  · rw [floerLinearization_associativityPerturbation_eq ω J u fun z hz ↦ ?_]
-    · exact hendOut hξ hξc hξR
-    obtain ⟨ζ, hζ, rfl⟩ := hξR hz
-    exact associativityPerturbation_positiveEndChart_inf_eq (by linarith) hHout
-      (by linarith [hRout, hζ.1.out])
+            ‖ξ z‖ ^ 2) :=
+  have hf := exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (show 0 ≤ L by linarith)
+  -- Far out on the ends the family is the datum of the moving input ends; on the core only its
+  -- smoothness off the centers is used.
+  exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds
+    ω hH hHs hHout hHouts (associativityScale_ne_zero hf.1 τ)
+    (pairwise_add_le_norm_associativityCenter_sub hf.1.le hf.2 τ)
+    (norm_associativityCenter_add_le hf.1.le (by linarith) τ) hX hx hnd hJe hJex hXout hxout hndout
+    hJout hJoutx hJeq hJoutq
+    (fun i ζ hζ ↦ by
+      rw [associativityPerturbation_realChart_eq (G := G) (G' := G') (L := L) (by linarith) hH i
+        (by linarith)]
+      exact ⟨rfl, rfl⟩)
+    (fun ζ hζ ↦ by
+      rw [associativityPerturbation_positiveEndChart_inf_eq (H := H) (G := G) (G' := G') (L := L)
+        (by linarith) hHout (by linarith)]
+      exact ⟨rfl, rfl⟩) hJ
+    (fun z hz ↦ contDiffAt_uncurry_associativityPerturbation hH hHs hHout hHouts hG hGs hG' hG's
+      hL hz (u z) 1)
+    (fun z hz ↦ contDiffAt_uncurry_associativityPerturbation hH hHs hHout hHouts hG hGs hG' hG's
+      hL hz (u z) Complex.I) hu hc hF hFout hux hδ huxout hδout
 
 end TauCeti.SymplecticForm
