@@ -143,7 +143,9 @@ private theorem transposeEquivExtRegular_op_smul (a : A)
   obtain ⟨φ, rfl⟩ := AuslanderReitenTranspose.mk_surjective S.f.hom t
   rw [← map_smul, transposeEquivExtRegular_mk, transposeEquivExtRegular_mk, op_smul_extRegular,
     Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀]
-  congr 2
+  refine congrArg (fun f : S.X₁ ⟶ of A A ↦ hS.extClass.comp (Ext.mk₀ f) (add_zero 1)) ?_
+  ext b
+  simp
 
 /-- A length-one resolution of `M` by finite projectives makes the canonical evaluation
 `Ext¹_A(M,A) ⊗_A Y → Ext¹_A(M,Y)` bijective. -/
@@ -164,7 +166,9 @@ theorem extRegularTensor_bijective_of_shortExact (hS : S.ShortExact) (Y : Module
     rw [htmul, extRegularTensor_tmul,
       transposeEquivExtRegular_mk, transposeTensorEquivExt_mk,
       Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀]
-    congr 2
+    refine congrArg (fun f : S.X₁ ⟶ Y ↦ hS.extClass.comp (Ext.mk₀ f) (add_zero 1)) ?_
+    ext b
+    simp
   have hb : Function.Bijective ((extRegularTensor k S.X₃ Y 1).comp e.toLinearMap) :=
     he ▸ (transposeTensorEquivExt k hS (LinearEquiv.refl A Y)).bijective
   exact (Function.Bijective.of_comp_iff _ e.bijective).mp hb

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Ext.RegularTensor
 public import TauCeti.RingTheory.MatlisDuality.Basic
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
 import TauCeti.RepresentationTheory.Quiver.PathAlgebra.StandardResolution
+import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
@@ -29,7 +30,7 @@ The formula uses the hereditary property of path algebras and `ModuleCat.extRegu
 
 public section
 
-open CategoryTheory CategoryTheory.Abelian ModuleCat
+open CategoryTheory CategoryTheory.Abelian ModuleCat MulOpposite
 open scoped ModuleCat.Algebra ModuleCat
 
 namespace TauCeti.PathAlgebra
@@ -47,28 +48,19 @@ local notation "DA" => of A (MatlisDual k k A)
 noncomputable def extDualRegularTensorEquiv (M : ModuleCat.{max u v w} A) :
     BalancedTensorProduct k A (Ext DA (of A A) 1) M ≃ₗ[k] Ext DA M 1 := by
   have : IsNoetherianRing A := IsNoetherianRing.of_finite k A
-  have : Module.Finite k (MatlisDual k k A) :=
-    Module.Finite.equiv (MatlisDual.equivLinearMap k k A).symm
+  have : Module.Finite Aᵐᵒᵖ A := Module.Finite.of_restrictScalars_finite k Aᵐᵒᵖ A
   have : Module.Finite A (MatlisDual k k A) :=
-    Module.Finite.of_restrictScalars_finite k A _
+    (isInjectiveEnvelope_quotEquivOfEqBot_jacobson k).finite_matlisDual_of_finite_op
   have : Module.FinitePresentation A (MatlisDual k k A) :=
     Module.finitePresentation_of_finite A _
   exact extRegularTensorEquiv k DA M
 
-/-- The path-algebra comparison takes a tensor with `m` to pushout along `a ↦ a • m`. -/
+/-- The path-algebra equivalence evaluates by `ModuleCat.extRegularTensor`, so its pure-tensor
+formula and naturality follow from the corresponding laws for that map. -/
 @[simp]
-theorem extDualRegularTensorEquiv_tmul {M : ModuleCat.{max u v w} A}
-    (x : Ext DA (of A A) 1) (m : M) :
-    extDualRegularTensorEquiv k Q M (BalancedTensorProduct.tmul k A x m) =
-      x.comp (Ext.mk₀ (ofHom (LinearMap.toSpanSingleton A M m))) (add_zero 1) := by
-  simp [extDualRegularTensorEquiv]
-
-/-- The path-algebra tensor formula commutes with pushforward along a module morphism. -/
-theorem extDualRegularTensorEquiv_naturality {M N : ModuleCat.{max u v w} A} (g : M ⟶ N)
+theorem extDualRegularTensorEquiv_apply {M : ModuleCat.{max u v w} A}
     (x : BalancedTensorProduct k A (Ext DA (of A A) 1) M) :
-    extDualRegularTensorEquiv k Q N (BalancedTensorProduct.lTensor k _ g.hom x) =
-      (extDualRegularTensorEquiv k Q M x).comp (Ext.mk₀ g) (add_zero 1) := by
-  simpa only [extDualRegularTensorEquiv, extRegularTensorEquiv_apply] using
-    extRegularTensor_naturality k g x
+    extDualRegularTensorEquiv k Q M x = extRegularTensor k DA M 1 x := by
+  simp only [extDualRegularTensorEquiv, extRegularTensorEquiv_apply]
 
 end TauCeti.PathAlgebra
