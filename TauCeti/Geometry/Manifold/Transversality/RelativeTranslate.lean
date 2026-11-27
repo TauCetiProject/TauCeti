@@ -99,9 +99,9 @@ theorem addHaar_setOf_not_forall_isTransverseAt_relativeTranslate_eq_zero
     (((extChartAt I a).target ×ˢ (extChartAt J b).target) ×ˢ univ) p}
   have hbad (a : M) (b : N) : μ (bad a b) = 0 := by
     refine addHaar_setOf_not_isRegularIncidenceParameterOn_relativeTranslate_eq_zero μ
-      (fun z hz _ ↦ hf.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.1)
-      (fun z hz _ ↦ hβ.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.1)
-      (fun z hz _ ↦ hj.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.2)
+      (fun z hz _ ↦ hf.contMDiffAt.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.1)
+      (fun z hz _ ↦ hβ.contMDiffAt.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.1)
+      (fun z hz _ ↦ hj.contMDiffAt.contDiffAt_comp_extChartAt_symm_of_mem_target hz.1.2)
       (fun z _ h0 _ ↦ IsLocalMin.fderiv_eq_zero
         (Eventually.of_forall fun _ ↦ h0.trans_le (hnonneg _)))
       (fun z hz h0 heq ↦ ?_) hn

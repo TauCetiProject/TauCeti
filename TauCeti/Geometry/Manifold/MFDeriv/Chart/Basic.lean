@@ -73,7 +73,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   - `TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm`,
     `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`,
     `ContMDiffAt.contDiffAt_comp_extChartAt_symm`,
-    `ContMDiff.contDiffAt_comp_extChartAt_symm_of_mem_target`,
+    `ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_mem_target`,
     `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`, and
     `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: `C^n` and
     differentiability equivalences for maps into a normed space in preferred or maximal-atlas
@@ -518,14 +518,18 @@ theorem ContMDiffAt.contDiffAt_comp_extChartAt_symm {n : WithTop ℕ∞}
     ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
   TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.mp hf
 
-/-- On a boundaryless `C^n` manifold, a `C^n` map into a normed space, read in the extended chart
-at `x`, is `C^n` at every point of the chart target, not only at the chart image of `x`. -/
-theorem ContMDiff.contDiffAt_comp_extChartAt_symm_of_mem_target {n : WithTop ℕ∞}
-    [IsManifold I n M] (hf : ContMDiff I 𝓘(𝕜, F) n f) {w : E}
+/-- On a boundaryless `C^n` manifold, a map into a normed space which is `C^n` at the preimage
+`(extChartAt I x).symm w` of a point `w` of the chart target, read in the extended chart at `x`, is
+`C^n` at `w`, not only at the chart image of `x`. -/
+theorem ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_mem_target {n : WithTop ℕ∞}
+    [IsManifold I n M] {w : E} (hf : ContMDiffAt I 𝓘(𝕜, F) n f ((extChartAt I x).symm w))
     (hw : w ∈ (extChartAt I x).target) :
-    ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) w :=
-  (contMDiffOn_iff_contDiffOn.1 (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x))).contDiffAt
-    ((isOpen_extChartAt_target x).mem_nhds hw)
+    ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) w := by
+  have hsrc := (extChartAt I x).map_target hw
+  rw [extChartAt_source] at hsrc
+  have h := (TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm
+    (IsManifold.chart_mem_maximalAtlas x) hsrc).1 hf
+  rwa [← extChartAt, (extChartAt I x).right_inv hw] at h
 
 /-- On a product of boundaryless manifolds, a map into a normed space which is `C^n` at `(x, x')`
 has a `C^n` coordinate expression in the preferred extended charts at `x` and `x'`, at the pair of
