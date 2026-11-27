@@ -28,7 +28,8 @@ sufficiently high modes. The free boson fields are
   `(z - w)²` (`TauCeti.HeisenbergFockSpace.isLocalOfOrder_bosonField`);
 * generating: the negative modes `h(-(j+1))` build `π` from the vacuum.
 
-So when `π` has unique divisibility, for instance over a `ℚ`-algebra, the reconstruction theorem
+So when `π` has unique divisibility, for instance over a `ℚ`-algebra
+(`SymmetricAlgebra.instHasUniqueDiv`), the reconstruction theorem
 `TauCeti.existsUnique_formalVertexAxioms` gives a unique formal vertex algebra on `π` with vacuum
 `1`, translation `T` and
 
@@ -272,6 +273,7 @@ theorem formalVertexAxiomsHom_id :
   FormalVertexAxioms.Hom.ext fun p ↦ by simp [LinearMap.BilinForm.Isometry.id]
 
 /-- Composites of isometries induce composites of morphisms. -/
+@[simp]
 theorem formalVertexAxiomsHom_comp {H'' : Type*} [AddCommGroup H''] [Module R H'']
     (B'' : LinearMap.BilinForm R H'') [HasUniqueDiv (HeisenbergFockSpace R H'')]
     (hB'' : B''.IsSymm) (f : B →bᵢ B') (g : B' →bᵢ B'') :
@@ -283,12 +285,5 @@ theorem formalVertexAxiomsHom_comp {H'' : Type*} [AddCommGroup H''] [Module R H'
 end Map
 
 end HeisenbergFockSpace
-
-/-- Over a `ℚ`-algebra the Fock space has unique divisibility, so it carries the Heisenberg vertex
-algebra structure `TauCeti.HeisenbergFockSpace.formalVertexAxioms`. -/
-instance {R H : Type*} [CommRing R] [Algebra ℚ R] [AddCommGroup H] [Module R H] :
-    HasUniqueDiv (HeisenbergFockSpace R H) :=
-  letI : Module ℚ (HeisenbergFockSpace R H) := Module.compHom _ (algebraMap ℚ R)
-  HasUniqueDiv.of_module_rat _
 
 end TauCeti

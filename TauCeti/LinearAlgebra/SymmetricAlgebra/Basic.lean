@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Rat
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
@@ -32,6 +33,9 @@ and generators for ring homomorphisms and on generators alone for algebra homomo
 map into a possibly noncommutative algebra lifts to an algebra homomorphism out of
 `SymmetricAlgebra R M` exactly when its values pairwise commute (`SymmetricAlgebra.liftOfCommute`),
 generalizing `SymmetricAlgebra.lift` and its inverse (`SymmetricAlgebra.lift_symm_apply`).
+
+Over a `ℚ`-algebra the symmetric algebra has unique divisibility
+(`SymmetricAlgebra.instHasUniqueDiv`), being a `ℚ`-vector space through its scalars.
 -/
 
 public section
@@ -152,6 +156,13 @@ theorem coe_liftOfCommute_symm_apply {A : Type*} [Semiring A] [Algebra R A]
     (F : SymmetricAlgebra R M →ₐ[R] A) :
     (liftOfCommute.symm F : M →ₗ[R] A) = F.toLinearMap.comp (ι R M) :=
   (rfl)
+
+/-- Over a `ℚ`-algebra the symmetric algebra has unique divisibility: it is a `ℚ`-vector space
+through the scalars `ℚ → R`. -/
+instance instHasUniqueDiv {R M : Type*} [CommRing R] [Algebra ℚ R] [AddCommMonoid M]
+    [Module R M] : HasUniqueDiv (SymmetricAlgebra R M) :=
+  letI : Module ℚ (SymmetricAlgebra R M) := Module.compHom _ (algebraMap ℚ R)
+  HasUniqueDiv.of_module_rat _
 
 end SymmetricAlgebra
 
