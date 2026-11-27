@@ -42,7 +42,8 @@ theorem matrixUnitOfPow_mul (i j k l : Fin s) :
   apply (algEquivMatrixOfPow d s hζ hc hb).injective
   by_cases h : j = k <;> simp [h, Matrix.single_mul_single_of_ne]
 
-/-- The conjugate diagonal units are a complete orthogonal family. -/
+/-- The inverse images of the diagonal matrix units form a complete orthogonal family of
+idempotents. -/
 theorem matrixUnitOfPow_completeOrthogonalIdempotents :
     CompleteOrthogonalIdempotents fun i : Fin s => matrixUnitOfPow d s hζ hc hb i i :=
   CompleteOrthogonalIdempotents.map

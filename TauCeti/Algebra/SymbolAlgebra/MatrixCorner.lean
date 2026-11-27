@@ -114,7 +114,8 @@ theorem toMatrixOfPow_y (hζ : ζ ^ (d * s) = 1) (hζ₀ : ζ ≠ 0) :
 
 variable [NeZero d] [NeZero s]
 
-/-- Simplicity and equal dimensions make the diagonal-and-shift representation bijective. -/
+/-- The diagonal-and-shift representation is bijective for positive `d` and `s` when `ζ`
+is a primitive `(d * s)`-th root of unity and `c` and `b` are nonzero. -/
 theorem bijective_toMatrixOfPow (hζ : IsPrimitiveRoot ζ (d * s)) (hc : c ≠ 0)
     (hb : b ≠ 0) :
     Function.Bijective (toMatrixOfPow d s (c := c) (b := b) hζ.pow_eq_one

@@ -17,8 +17,7 @@ For a specified root `α ^ n = a` in an arbitrary field extension, the degree `d
 minimal polynomial divides `n`. The scalar `c = α ^ d` defines the corresponding smaller
 symbol algebra, and the degree `n` algebra is a matrix algebra over it. The equivalence
 has the prescribed diagonal and forward-shift generator images, including when `d = 1`
-or `n / d = 1`. The degree-one equivalence supplies the base-field convention for
-the selected corner.
+or `n / d = 1`.
 
 ## References
 
