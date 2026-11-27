@@ -115,6 +115,34 @@ theorem homShiftPowEquiv_symm_apply (P M : GradedModuleCat.{v} 𝒜) (d : ℤ)
   rw [homShiftPowEquiv]
   exact (Linear.homCongr_symm_apply k _ _ f).trans (by simp)
 
+/-- Shifting both source and target by `d` gives a `k`-linear equivalence on graded morphism
+spaces. -/
+def shiftObjHomEquiv (M N : GradedModuleCat.{v} 𝒜) (d : ℤ) :
+    (M.shiftObj d ⟶ N.shiftObj d) ≃ₗ[k] (M ⟶ N) where
+  toFun f := ofHom f.hom <|
+    LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+      have hx' : x ∈ (M.shiftObj d).grading.piece (p + d) := by
+        simpa [InternalGrading.shift_piece] using hx
+      simpa [InternalGrading.shift_piece] using map_mem f hx'
+  invFun g := (shiftFunctor d).map g
+  left_inv _ := hom_ext rfl
+  right_inv _ := hom_ext rfl
+  map_add' _ _ := hom_ext rfl
+  map_smul' _ _ := hom_ext rfl
+
+/-- `shiftObjHomEquiv` preserves the underlying `A`-linear map. -/
+@[simp]
+theorem hom_shiftObjHomEquiv_apply (M N : GradedModuleCat.{v} 𝒜) (d : ℤ)
+    (f : M.shiftObj d ⟶ N.shiftObj d) :
+    (shiftObjHomEquiv 𝒜 M N d f).hom = f.hom :=
+  (rfl)
+
+/-- The inverse of `shiftObjHomEquiv` is the action of `shiftFunctor d` on morphisms. -/
+@[simp]
+theorem shiftObjHomEquiv_symm_apply (M N : GradedModuleCat.{v} 𝒜) (d : ℤ) (g : M ⟶ N) :
+    (shiftObjHomEquiv 𝒜 M N d).symm g = (shiftFunctor d).map g :=
+  (rfl)
+
 /-- Forgetting the grading identifies every integer power of the grading shift with the
 identity functor on underlying modules. -/
 def shiftPowCompToModuleCatIso (j : ℤ) :

@@ -98,6 +98,14 @@ theorem gradedVertexProjectiveClassBasis_apply (i : Q) :
   congr 2
   exact (gradedVertexProjective_def k Q i).symm
 
+/-- The coordinate vector of `[kQ eᵢ]` in `TauCeti.PathAlgebra.gradedVertexProjectiveClassBasis`
+is `Finsupp.single i 1`. -/
+@[simp]
+theorem gradedVertexProjectiveClassBasis_repr_gradedVertexProjectiveClass (i : Q) :
+    (gradedVertexProjectiveClassBasis k Q).repr (gradedVertexProjectiveClass k Q i) =
+      Finsupp.single i 1 := by
+  rw [← gradedVertexProjectiveClassBasis_apply, Module.Basis.repr_self]
+
 end Finite
 
 section Fintype

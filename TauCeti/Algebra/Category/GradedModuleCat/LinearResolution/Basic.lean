@@ -14,8 +14,9 @@ public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 A linear graded projective resolution has its term in homological degree `n` generated in
 internal degree `n`. Against a graded module concentrated in degree `j`, that term has no
 nonzero degree-zero map unless `n = j`. Consequently `Extⁿ(M,N)` vanishes off the diagonal.
-In positive diagonal degrees it is naturally the module of graded maps from the corresponding
-resolution term to `N`: both adjacent differentials of the Hom complex vanish.
+In diagonal degrees it is naturally the module of graded maps from the corresponding resolution
+term to `N`: in degree zero, precomposition with the augmentation is an isomorphism once `N₁ = ⊥`,
+and in positive degrees both adjacent differentials of the Hom complex vanish.
 
 For a target concentrated in degree zero, its shift `N{j}` is concentrated in degree `j`.
 Thus the convention here is `Extⁿ(M,N{j}) = 0` for `n ≠ j`. These results require neither a
@@ -82,6 +83,47 @@ theorem IsLinear.subsingleton_ext_shiftObj_of_ne (hr : r.IsLinear)
     (hn : (n : ℤ) ≠ j) : Subsingleton (Ext.{w} M (N.shiftObj j) n) := by
   apply hr.subsingleton_ext_of_piece_eq_bot
   simpa [sub_eq_add_neg] using hN ((n : ℤ) - j) (sub_ne_zero.mpr hn)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- In degree zero, if the degree-one piece of `N` vanishes, a linear resolution identifies
+`Ext⁰(M, N)` with the graded Hom module from `r.termObj 0` to `N` by precomposing with the
+augmentation. -/
+noncomputable def IsLinear.extZeroLinearEquiv (hr : r.IsLinear)
+    (hnext : N.grading.piece 1 = ⊥) :
+    Ext.{w} M N 0 ≃ₗ[k] (r.termObj 0 ⟶ N) :=
+  (Ext.linearEquiv₀ (R := k)).trans <|
+    LinearEquiv.ofBijective (Linear.leftComp k N r.augmentation)
+      ⟨fun _ _ h ↦ (cancel_epi r.augmentation).mp h, fun f ↦ by
+        let c := ShortComplex.mk (r.differential 0) r.augmentation
+          r.differential_zero_comp_augmentation
+        have hc : c.Exact := (GradedModuleCat.exact_iff).mpr r.exact_d_π
+        exact hc.desc' f (hr.hom_eq_zero 1 hnext (r.differential 0 ≫ f))⟩
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- The degree-zero diagonal Ext identification precomposes the representing morphism with the
+augmentation. -/
+@[simp]
+theorem IsLinear.extZeroLinearEquiv_apply (hr : r.IsLinear)
+    (hnext : N.grading.piece 1 = ⊥) (α : Ext.{w} M N 0) :
+    hr.extZeroLinearEquiv hnext α = r.augmentation ≫ Ext.linearEquiv₀ (R := k) α :=
+  (rfl)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- Against a degree-zero target, `Ext⁰(M, N{0})` is `k`-linearly isomorphic to the graded Hom
+module from `r.termObj 0` to `N{0}`. -/
+noncomputable def IsLinear.extZeroLinearEquivShiftObj (hr : r.IsLinear)
+    (hN : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) :
+    Ext.{w} M (N.shiftObj 0) 0 ≃ₗ[k] (r.termObj 0 ⟶ N.shiftObj 0) :=
+  hr.extZeroLinearEquiv (by simpa [sub_eq_add_neg] using hN 1 one_ne_zero)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- The degree-zero shift-diagonal identification precomposes the representing morphism with the
+augmentation. -/
+@[simp]
+theorem IsLinear.extZeroLinearEquivShiftObj_apply (hr : r.IsLinear)
+    (hN : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) (α : Ext.{w} M (N.shiftObj 0) 0) :
+    hr.extZeroLinearEquivShiftObj hN α = r.augmentation ≫ Ext.linearEquiv₀ (R := k) α :=
+  (rfl)
 
 /-- In positive degree, if the two adjacent target pieces vanish, a linear resolution computes
 Ext as the graded Hom module from its corresponding term. -/

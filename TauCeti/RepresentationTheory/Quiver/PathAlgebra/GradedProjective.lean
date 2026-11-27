@@ -27,10 +27,16 @@ Cartan and Ext-Euler matrices for an acyclic quiver.
 
 * `TauCeti.PathAlgebra.gradedVertexProjective`: the graded principal left ideal `kQ e_i`.
 * `TauCeti.PathAlgebra.gradedVertexProjectiveSubtype`: its inclusion into the path algebra.
+* `TauCeti.PathAlgebra.gradedVertexProjectiveGenerator`: the canonical generator `e_i` of
+  `kQ e_i`.
+* `TauCeti.PathAlgebra.gradedVertexProjectiveHomEquiv`: the `k`-linear equivalence
+  `(kQ e_i ⟶ Y) ≃ₗ[k] e_i • Y_0` given by evaluation at `e_i`.
 * `TauCeti.PathAlgebra.gradedVertexProjectiveClass`: its class in `K₀^gr(proj kQ)`.
 
 ## Main results
 
+* `TauCeti.PathAlgebra.isGeneratedInDegree_gradedVertexProjective`: `kQ e_i` is generated in
+  internal degree `0`.
 * `TauCeti.PathAlgebra.coeff_gradedCartanMap_gradedVertexProjectiveClass`: the coefficient in
   degree `n` of the `(i,j)` graded Cartan column is the number of length-`n` paths `j ⟶ i`.
 * `TauCeti.PathAlgebra.coeff_gradedCartanMap_gradedVertexProjectiveClass_of_neg`: the same
@@ -53,6 +59,7 @@ noncomputable section
 namespace TauCeti.PathAlgebra
 
 open CategoryTheory LaurentPolynomial
+open scoped Pointwise
 
 universe u v w
 
@@ -131,6 +138,28 @@ theorem mem_gradedVertexProjective_piece_iff (i : Q) (d : ℤ)
   let _ := integerGradedAlgebra k Q
   exact GradedModuleCat.mem_ofIdeal_piece_iff (isHomogeneous_span_vertexIdempotent k Q i)
 
+/-- The canonical generator `e_i` of the graded vertex projective `kQ e_i`. -/
+noncomputable def gradedVertexProjectiveGenerator (i : Q) :
+    gradedVertexProjective k Q i :=
+  spanSingletonGenerator (vertexIdempotent k i)
+
+/-- The image of `gradedVertexProjectiveGenerator` in the path algebra is the vertex idempotent
+`e_i`. -/
+@[simp]
+theorem gradedVertexProjectiveSubtype_gradedVertexProjectiveGenerator (i : Q) :
+    gradedVertexProjectiveSubtype k Q i (gradedVertexProjectiveGenerator k Q i) =
+      vertexIdempotent k i :=
+  coe_spanSingletonGenerator (vertexIdempotent k i)
+
+/-- The graded vertex projective `kQ e_i` is generated in internal degree `0`. -/
+theorem isGeneratedInDegree_gradedVertexProjective (i : Q) :
+    (gradedVertexProjective k Q i).grading.IsGeneratedInDegree (pathAlgebra k Q) 0 := by
+  let _ := integerGradedAlgebra k Q
+  rw [gradedVertexProjective_def]
+  exact GradedModuleCat.isGeneratedInDegree_ofIdeal_span_singleton
+    (vertexIdempotent_mem_integerGrade_zero k Q i)
+    (isHomogeneous_span_vertexIdempotent k Q i)
+
 /-- A graded vertex projective is a finite graded module with projective underlying module. -/
 theorem gradedFiniteProjectiveModules_gradedVertexProjective (i : Q) :
     gradedFiniteProjectiveModules (integerGrade k Q) (gradedVertexProjective k Q i) := by
@@ -139,6 +168,13 @@ theorem gradedFiniteProjectiveModules_gradedVertexProjective (i : Q) :
     (show IsIdempotentElem (vertexIdempotent k i : pathAlgebra k Q) from
       vertexIdempotent_mul_self i)
     (isHomogeneous_span_vertexIdempotent k Q i)
+
+/-- The underlying module of a graded vertex projective is finitely generated over the path
+algebra. -/
+instance moduleFinite_gradedVertexProjective (i : Q) :
+    Module.Finite (pathAlgebra k Q) (gradedVertexProjective k Q i) :=
+  (gradedFiniteProjectiveModules_iff.1
+    (gradedFiniteProjectiveModules_gradedVertexProjective k Q i)).1
 
 /-- The underlying module of a graded vertex projective is projective over the path algebra. -/
 instance moduleProjective_gradedVertexProjective (i : Q) :
@@ -151,6 +187,38 @@ instance projective_gradedVertexProjective (i : Q) :
     Projective (gradedVertexProjective k Q i) :=
   let _ := integerGradedAlgebra k Q
   GradedModuleCat.projective_of_module_projective _
+
+/-- Graded morphisms out of `kQ e_i` into `Y` are `k`-linearly isomorphic to `e_i • Y_0`, by
+evaluation at `gradedVertexProjectiveGenerator`. -/
+noncomputable def gradedVertexProjectiveHomEquiv (i : Q)
+    (Y : GradedModuleCat.{max u v w} (integerGrade k Q)) :
+    (gradedVertexProjective k Q i ⟶ Y) ≃ₗ[k] ↥(vertexIdempotent k i • Y.grading.piece 0) :=
+  let _ := integerGradedAlgebra k Q
+  GradedModuleCat.ofIdealSpanSingletonHomEquiv
+    (vertexIdempotent_mul_self i : IsIdempotentElem (vertexIdempotent k i : pathAlgebra k Q))
+    (vertexIdempotent_mem_integerGrade_zero k Q i)
+    (isHomogeneous_span_vertexIdempotent k Q i) Y
+
+/-- `gradedVertexProjectiveHomEquiv` evaluates a graded morphism at the generator `e_i`. -/
+@[simp]
+theorem coe_gradedVertexProjectiveHomEquiv_apply (i : Q)
+    {Y : GradedModuleCat.{max u v w} (integerGrade k Q)}
+    (f : gradedVertexProjective k Q i ⟶ Y) :
+    (gradedVertexProjectiveHomEquiv k Q i Y f : Y) =
+      f.hom (gradedVertexProjectiveGenerator k Q i) :=
+  let _ := integerGradedAlgebra k Q
+  GradedModuleCat.coe_ofIdealSpanSingletonHomEquiv_apply _ _ _ f
+
+/-- The inverse of `gradedVertexProjectiveHomEquiv` sends `m ∈ e_i • Y_0` to left action on `m`. -/
+@[simp]
+theorem hom_gradedVertexProjectiveHomEquiv_symm_apply (i : Q)
+    {Y : GradedModuleCat.{max u v w} (integerGrade k Q)}
+    (m : ↥(vertexIdempotent k i • Y.grading.piece 0))
+    (x : gradedVertexProjective k Q i) :
+    ((gradedVertexProjectiveHomEquiv k Q i Y).symm m).hom x =
+      gradedVertexProjectiveSubtype k Q i x • (m : Y) :=
+  let _ := integerGradedAlgebra k Q
+  GradedModuleCat.hom_ofIdealSpanSingletonHomEquiv_symm_apply _ _ _ m x
 
 /-- The class of the vertex projective `kQ e_i` in the Laurent Grothendieck group of finite
 graded projective modules. -/

@@ -33,7 +33,8 @@ infinite linear resolutions.
 
 The coordinate calculation uses `TauCeti.gradedProjectiveExtEulerTarget_eq_mul_invert_repr`
 (cf. `TauCeti.gradedProjectiveExtEuler_simple_eq_mul_invert_repr`) and the linear-resolution Ext
-equivalence `TauCeti.GradedProjectiveResolution.IsLinear.extLinearEquivShiftObj`.
+equivalences `TauCeti.GradedProjectiveResolution.IsLinear.extZeroLinearEquivShiftObj` and
+`TauCeti.GradedProjectiveResolution.IsLinear.extLinearEquivShiftObj`.
 -/
 
 public section
@@ -111,20 +112,8 @@ theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLin
   suffices Module.finrank k (r.termObj n ⟶ (S i).obj.shiftObj n) =
       Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) by rw [this]
   cases n with
-  | zero =>
-      let aug : (M ⟶ (S i).obj.shiftObj 0) ≃ₗ[k]
-          (r.termObj 0 ⟶ (S i).obj.shiftObj 0) :=
-        LinearEquiv.ofBijective (Linear.leftComp k _ r.augmentation) ⟨
-          fun _ _ h ↦ (cancel_epi r.augmentation).mp h, fun f ↦ by
-            let c := ShortComplex.mk (r.differential 0) r.augmentation
-              r.differential_zero_comp_augmentation
-            have hc : c.Exact := (GradedModuleCat.exact_iff).mpr r.exact_d_π
-            exact hc.desc' f (hr.hom_eq_zero 1 (by
-              simpa [sub_eq_add_neg] using hconc 1 (by omega))
-              (r.differential 0 ≫ f))⟩
-      exact (aug.symm.trans (Ext.linearEquiv₀ (R := k)).symm).finrank_eq
-  | succ n =>
-      exact (hr.extLinearEquivShiftObj hconc n).finrank_eq
+  | zero => exact (hr.extZeroLinearEquivShiftObj hconc).symm.finrank_eq
+  | succ n => exact (hr.extLinearEquivShiftObj hconc n).finrank_eq
 
 include he₀ hne hbP in
 /-- Over normalized projective/simple bases, the `i`th coordinate of `Pₙ` is

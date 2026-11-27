@@ -133,6 +133,33 @@ assumption on the index type. -/
 instance projective_directSumObj [∀ j, Projective (M j)] : Projective (directSumObj M) :=
   Projective.of_isColimit_cofan (coproductCofanIsColimit M)
 
+/-- Graded morphisms out of a degreewise direct sum are `k`-linearly equivalent to families of
+graded morphisms out of its summands. -/
+def directSumObjHomEquiv (N : GradedModuleCat.{max w v} 𝒜) :
+    (directSumObj M ⟶ N) ≃ₗ[k] (∀ j, M j ⟶ N) where
+  toFun f j := (coproductCofan M).inj j ≫ f
+  invFun g := coproductDesc M (Cofan.mk N g)
+  left_inv f := (coproductCofanIsColimit M).hom_ext fun ⟨j⟩ ↦
+    coproductCofan_inj_desc M (Cofan.mk N fun b ↦ (coproductCofan M).inj b ≫ f) j
+  right_inv g := funext fun j ↦ coproductCofan_inj_desc M (Cofan.mk N g) j
+  map_add' _ _ := funext fun _ ↦ by simp
+  map_smul' _ _ := funext fun _ ↦ by simp
+
+/-- `directSumObjHomEquiv` restricts a morphism out of the direct sum along each coproduct
+injection. -/
+@[simp]
+theorem directSumObjHomEquiv_apply (N : GradedModuleCat.{max w v} 𝒜)
+    (f : directSumObj M ⟶ N) (j : J) :
+    directSumObjHomEquiv M N f j = (coproductCofan M).inj j ≫ f :=
+  (rfl)
+
+/-- The inverse of `directSumObjHomEquiv` is `coproductDesc` on the associated cofan. -/
+@[simp]
+theorem directSumObjHomEquiv_symm_apply (N : GradedModuleCat.{max w v} 𝒜)
+    (g : ∀ j, M j ⟶ N) :
+    (directSumObjHomEquiv M N).symm g = coproductDesc M (Cofan.mk N g) :=
+  (rfl)
+
 /-- The dimension of graded maps from a finite degreewise direct sum is the sum of the
 Hom dimensions of its summands. The Hom modules must be finite and free over `k`. -/
 theorem finrank_hom_directSumObj [Fintype J] [StrongRankCondition k]
