@@ -53,12 +53,6 @@ open scoped LSeries.notation ComplexConjugate
 
 namespace TauCeti.PrimitiveDirichletCharacter
 
-/-- The trivial primitive character has the Riemann zeta function as its `L`-function. -/
-theorem LFunction_character_one :
-    (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
-  rw [character_one]
-  exact DirichletCharacter.LFunction_modOne_eq
-
 /-- Grouping the ideal von Mangoldt coefficients of a rational primitive ray class character
 by norm gives the twisted von Mangoldt coefficients of the corresponding Dirichlet character. -/
 @[simp] theorem normCoeff_vonMangoldtTransform_toPrimitiveRayClassCharacter
@@ -115,6 +109,12 @@ noncomputable def rieszRemainder (χ : PrimitiveDirichletCharacter) (y : ℝ) : 
     if χ = 1 then
       (y : ℂ) * (1 + (Real.eulerMascheroniConstant : ℂ)) - (y : ℂ) * Real.log y
     else (y : ℂ) * logDeriv χ.character.LFunction 1
+
+/-- The L-function of the trivial bundle is the Riemann zeta function. -/
+theorem LFunction_character_one :
+    (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
+  rw [character_one]
+  exact DirichletCharacter.LFunction_modOne_eq
 
 /-- At conductor one the first Riesz remainder subtracts `y log y - (1 + γ) y` from the
 untwisted sum. -/

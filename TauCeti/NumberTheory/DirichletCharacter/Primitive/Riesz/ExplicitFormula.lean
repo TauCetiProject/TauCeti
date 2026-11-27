@@ -14,13 +14,14 @@ import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 import TauCeti.NumberTheory.LSeries.RiemannZeta.FirstRieszSum
 
 /-!
-# The first Riesz explicit formula for nonprincipal Dirichlet characters
+# The first Riesz explicit formula and remainder bounds for Dirichlet characters
 
 For a primitive nonprincipal character and cutoffs `y ≥ 1`, the smoothed prime remainder is equal to
 the sum over the zeros of the entire completion together with the negative gamma-pole and origin
 corrections. If the L-function has no zeros in `Re s > σ`, the norm of the remainder is bounded by
-`C y ^ max σ (1 / 2)` for `y ≥ 1`, with `C` independent of `σ`. Combined with the zeta
-bound, the same estimate holds for every primitive character, principal or not.
+`C y ^ max σ (1 / 2)` for `y ≥ 1`, with `C` independent of `σ`. Combined with the zeta bound,
+every primitive character, principal or not, satisfies a bound `C y ^ max σ (1 / 2)` with `C`
+depending on `σ`.
 
 The prime-side normalization is that of Levent Alpöge's `Deduction.Gchi`. The formula
 uses `DirichletCharacter.rieszZeroSide`, with the completion and Hadamard expansion
@@ -110,8 +111,9 @@ theorem exists_norm_rieszRemainder_le_of_zeroFreeRightOf (χ : PrimitiveDirichle
   simpa only [add_mul] using norm_add₃_le.trans (add_le_add (add_le_add hZ hG) hE)
 
 /-- For any primitive character, a zero-free half-plane `Re s > σ` bounds the first Riesz
-remainder by `C y ^ max σ (1 / 2)` on `y ≥ 1`. The principal case uses the zeta bound
-`exists_norm_rieszRemainder_one_le_rpow`. -/
+remainder by `C y ^ max σ (1 / 2)` on `y ≥ 1`. Unlike
+`exists_norm_rieszRemainder_le_of_zeroFreeRightOf`, this includes the trivial character, and the
+constant may depend on `σ`. -/
 theorem exists_norm_rieszRemainder_le_rpow_of_zeroFreeRightOf (χ : PrimitiveDirichletCharacter)
     {σ : ℝ} (hσ : ZeroFreeRightOf σ χ.character.LFunction) :
     ∃ C : ℝ, ∀ y ≥ 1, ‖χ.rieszRemainder y‖ ≤ C * y ^ max σ (1 / 2) := by

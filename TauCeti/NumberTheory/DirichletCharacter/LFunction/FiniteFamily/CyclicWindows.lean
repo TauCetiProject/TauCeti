@@ -11,11 +11,12 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.GRH
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.CyclicFamily.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 import Mathlib.Data.Finsupp.Indicator
+import TauCeti.Analysis.Normed.Group.Finsupp
+import TauCeti.Analysis.SpecialFunctions.Pow.Windows.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily.WindowedLandau
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ZeroFree
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ZeroReflection
 import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz.ExplicitFormula
-import TauCeti.NumberTheory.LSeries.RiemannZeta.FirstRieszSum
 
 /-!
 # The generalized Riemann hypothesis and cyclic Riesz windows
@@ -49,18 +50,13 @@ theorem exists_norm_sum_rieszRemainder_re_le_of_zeroFreeRightOf
     (hσ : ∀ χ ∈ w.support, ZeroFreeRightOf (max σ (1 / 2)) χ.character.LFunction) :
     ∃ C : ℝ, ∀ y ≥ 1,
       ‖w.sum fun χ c ↦ c * (χ.rieszRemainder y).re‖ ≤ C * y ^ max σ (1 / 2) := by
-  have hterm (χ : PrimitiveDirichletCharacter) (hχ : χ ∈ w.support) :
-      ∃ C : ℝ, ∀ y ≥ 1, ‖w χ * (χ.rieszRemainder y).re‖ ≤ C * y ^ max σ (1 / 2) := by
-    obtain ⟨C, hC⟩ := χ.exists_norm_rieszRemainder_le_rpow_of_zeroFreeRightOf (hσ χ hχ)
-    refine ⟨‖w χ‖ * C, fun y hy ↦ ?_⟩
-    rw [norm_mul, Real.norm_eq_abs (χ.rieszRemainder y).re, mul_assoc]
-    refine mul_le_mul_of_nonneg_left ((Complex.abs_re_le_norm _).trans ?_) (norm_nonneg _)
-    simpa only [max_eq_left (le_max_right σ (1 / 2))] using hC y hy
-  choose C hC using hterm
-  refine ⟨∑ χ ∈ w.support.attach, C χ χ.property, fun y hy ↦ ?_⟩
-  rw [Finsupp.sum, ← Finset.sum_attach w.support (fun χ ↦ w χ * (χ.rieszRemainder y).re),
-    Finset.sum_mul]
-  exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun χ _ ↦ hC χ χ.property y hy)
+  obtain ⟨C, hC⟩ := w.exists_norm_sum_smul_le_of_forall_mem_support
+    (fun χ y ↦ (χ.rieszRemainder y).re) (· ^ max σ (1 / 2)) (Set.Ici 1) fun χ hχ ↦ by
+      obtain ⟨C, hC⟩ := χ.exists_norm_rieszRemainder_le_rpow_of_zeroFreeRightOf (hσ χ hχ)
+      refine ⟨C, fun y hy ↦ (Complex.abs_re_le_norm _).trans ?_⟩
+      simpa only [max_eq_left (le_max_right σ (1 / 2))] using hC y hy
+  refine ⟨C, fun y hy ↦ ?_⟩
+  simpa only [smul_eq_mul] using hC y hy
 
 /-- Primitive characters in a finite set are all zero-free right of `1 / 2` if and only if,
 for each `ε > 0`, some strictly positive weights give a one-sided Riesz window bound at
