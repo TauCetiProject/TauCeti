@@ -137,7 +137,8 @@ theorem mem_covectorPullback_addSnd_iff {p ζ : WithLp 2 (E × E')}
   refine and_congr_right fun _ ↦ ⟨?_, fun ⟨hmem, h⟩ ↦ ⟨ζ.snd, hmem, ?_⟩⟩
   · rintro ⟨η, hη, rfl⟩
     simpa using hη
-  · rw [h, ← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
+  · rw [WithLp.ext_iff]
+    ext <;> simp [h]
 
 /-- If `Γ` does not meet the normal set of `f` over `x`, the cone `g^* Γ` contains no conormal
 covector `((x, 0), (0, η))` of `E × {0}`: it would come from some `(f x, η) ∈ Γ` with
