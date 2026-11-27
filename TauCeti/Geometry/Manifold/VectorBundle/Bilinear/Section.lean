@@ -15,7 +15,8 @@ public import Mathlib.LinearAlgebra.Projection
 Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function
 (`ContMDiffWithinAt.clm_bundle_apply₂_trivial` and its variant on a set). Interchanging the two
 inputs of a `C^n` family of bilinear bundle maps, over any base map and within a set, preserves
-its regularity (`ContMDiffWithinAt.clm_bundle_flip`); this permits contraction of a smooth tensor
+its regularity (`ContMDiffWithinAt.clm_bundle_flip`, with the variants `ContMDiffAt.clm_bundle_flip`
+and `ContMDiff.clm_bundle_flip`); this permits contraction of a smooth tensor
 in any input slot. Precomposing both inputs of a `C^n` bilinear field with a `C^n` field of
 continuous linear maps gives a `C^n` bilinear field (`ContMDiff.bilinearComp_bundle`).
 
@@ -142,6 +143,28 @@ theorem ContMDiffWithinAt.clm_bundle_flip
       inCoordinates_apply_eq₂ hy.1.1 hy.1.2 hy.2, ContinuousLinearMap.flip_apply]
   exact hflip.congr_of_eventuallyEq (heq.filter_mono (nhdsWithin_mono _ (Set.subset_insert x s)))
     (heq.self_of_nhdsWithin (Set.mem_insert x s))
+
+/-- Interchanging the two inputs of a family of bilinear bundle maps over a base map `b` preserves
+`C^n` regularity at a point. -/
+theorem ContMDiffAt.clm_bundle_flip
+    (hA : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z →L[𝕜] V₃ z) (b y) (A y)) x) :
+    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₂ z →L[𝕜] V₁ z →L[𝕜] V₃ z) (b y) (A y).flip) x :=
+  ContMDiffWithinAt.clm_bundle_flip hA
+
+/-- Interchanging the two inputs of a family of bilinear bundle maps over a base map `b` preserves
+`C^n` regularity. -/
+theorem ContMDiff.clm_bundle_flip
+    (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z →L[𝕜] V₃ z) (b y) (A y))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₂ z →L[𝕜] V₁ z →L[𝕜] V₃ z) (b y) (A y).flip) :=
+  fun x ↦ (hA x).clm_bundle_flip
 
 end Flip
 

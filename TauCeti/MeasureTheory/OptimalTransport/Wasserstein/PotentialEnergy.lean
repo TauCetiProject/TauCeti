@@ -579,12 +579,9 @@ theorem _root_.StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy
   -- The generalized geodesic is the interpolation of the coupling `γ.snd` of `ν₀` and `ν₁`.
   have hπ := hγ.isCoupling_snd
   have : IsProbabilityMeasure γ.snd := hπ.isProbabilityMeasure
-  have hmap : generalizedGeodesic γ t = γ.snd.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
-    rw [generalizedGeodesic_def, Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
-    rfl
   have h₀ := hπ.fst_eq ▸ WassersteinSpace.hasFiniteMoment ν₀
   have h₁ := hπ.snd_eq ▸ WassersteinSpace.hasFiniteMoment ν₁
-  rw [hν, hmap, ← hπ.fst_eq, ← hπ.snd_eq]
+  rw [hν, generalizedGeodesic_eq_map_snd, ← hπ.fst_eq, ← hπ.snd_eq]
   exact hV.potentialEnergy_map_le hVm (potentialEnergy_ne_bot_of_hasFiniteMoment h₀ hVAB)
     (potentialEnergy_ne_bot_of_hasFiniteMoment h₁ hVAB)
     (integrable_norm_sub_sq_of_hasFiniteMoment h₀ h₁) ht

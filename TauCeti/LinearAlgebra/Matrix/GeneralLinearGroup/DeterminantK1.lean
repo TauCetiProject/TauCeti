@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.AlgebraicK1
 
 /-!
 # The determinant of algebraic `K₁` and `K₁` of Euclidean domains
@@ -35,12 +35,15 @@ is its element of order two.
 
 ## Main results
 
-* `TauCeti.AlgebraicK1.det_mk`: the determinant of the class of `u` is the determinant of `u`.
+* `TauCeti.AlgebraicK1.det_mk`, `TauCeti.AlgebraicK1.det_mkOfFintype`: the determinant of the
+  class of `u` is the determinant of `u`, also for `u` indexed by an arbitrary finite type.
 * `TauCeti.AlgebraicK1.det_ofUnits`: the determinant is a retraction of `ofUnits`.
 * `TauCeti.specialAlgebraicK1_eq_bot_of_ker_det_le`: `SK₁(R)` is trivial when every matrix of
   determinant one is elementary.
 * `TauCeti.specialAlgebraicK1_eq_bot_of_euclideanDomain`: `SK₁(R)` is trivial for a Euclidean
   domain `R`.
+* `TauCeti.AlgebraicK1.map_injective_of_specialAlgebraicK1_eq_bot`: an injective ring
+  homomorphism out of a commutative ring with trivial `SK₁` induces an injection of `K₁`.
 * `TauCeti.AlgebraicK1.orderOf_ofUnits_neg_one_int`: the class of `-1` in `K₁(ℤ)` has order two.
 
 ## References
@@ -77,6 +80,13 @@ def det : AlgebraicK1 R →* Rˣ :=
 theorem det_mk (n : ℕ) (u : GL (Fin n) R) :
     det R (mk R n u) = GeneralLinearGroup.det u :=
   lift_mk ..
+
+/-- The determinant of the class of an invertible matrix over a commutative ring is its
+determinant. -/
+@[simp]
+theorem det_mkOfFintype {ι : Type*} [Fintype ι] [DecidableEq ι] (u : GL ι R) :
+    det R (mkOfFintype R ι u) = GeneralLinearGroup.det u := by
+  rw [mkOfFintype_eq_mk_reindexGL (Fintype.equivFin ι), det_mk, Equiv.det_reindexGL]
 
 /-- The determinant of the class of the `1 × 1` matrix `(u)` is `u`. -/
 @[simp]
@@ -175,6 +185,19 @@ namespace AlgebraicK1
 theorem det_injective_of_specialAlgebraicK1_eq_bot (h : specialAlgebraicK1 R = ⊥) :
     Function.Injective (det R) :=
   (MonoidHom.ker_eq_bot_iff _).1 h
+
+/-- An injective homomorphism `f : R →+* S` of commutative rings induces an injective homomorphism
+of algebraic `K₁` when `SK₁(R)` is trivial, for instance when `R` is semilocal: the determinant
+detects the classes of `K₁(R)`, and `f` is injective on units. -/
+theorem map_injective_of_specialAlgebraicK1_eq_bot {S : Type*} [CommRing S]
+    (h : specialAlgebraicK1 R = ⊥) {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (map f) := by
+  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
+  refine det_injective_of_specialAlgebraicK1_eq_bot h ?_
+  have h' := congrArg (det S) hx
+  rw [det_map, map_one] at h'
+  rw [map_one]
+  exact Units.ext (hf (by simpa using congrArg Units.val h'))
 
 /-- When `SK₁(R)` is trivial, as for a Euclidean domain, the determinant is an isomorphism
 `K₁(R) ≃* Rˣ`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.PathELength
 
 /-!
@@ -24,6 +25,9 @@ argument for geodesic completeness.
   has the norm of its initial velocity throughout its interval.
 * `TauCeti.Manifold.pathELength_maximalGeodesic`: its directed length from `s` to `t` is its
   initial speed times `ENNReal.ofReal (t - s)`.
+* `TauCeti.Manifold.pathELength_riemannianExp_smul_of_mem_geodesicInterval`: the radial
+  exponential curve has the same directed length formula whenever `s` and `t` belong to
+  `geodesicInterval`.
 
 ## References
 
@@ -99,6 +103,15 @@ theorem pathELength_maximalGeodesic {s t : ℝ} (hs : s ∈ geodesicInterval I M
   rw [(isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.pathELength_eq
     isPreconnected_geodesicInterval hs ht zero_mem_geodesicInterval, ← ofReal_norm, ← ofReal_norm,
     norm_curveVelocityWithin_maximalGeodesic zero_mem_geodesicInterval]
+
+/-- The directed length from `s` to `t` of the radial exponential curve from `p` with initial
+velocity `v` is `‖v‖ₑ * ENNReal.ofReal (t - s)` whenever `s` and `t` belong to
+`geodesicInterval I M p v`. -/
+theorem pathELength_riemannianExp_smul_of_mem_geodesicInterval {s t : ℝ}
+    (hs : s ∈ geodesicInterval I M p v) (ht : t ∈ geodesicInterval I M p v) :
+    pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) s t =
+      ‖v‖ₑ * ENNReal.ofReal (t - s) := by
+  rw [funext (riemannianExp_smul p v), pathELength_maximalGeodesic hs ht]
 
 end TauCeti.Manifold
 

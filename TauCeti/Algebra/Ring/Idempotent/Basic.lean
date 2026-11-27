@@ -13,6 +13,7 @@ import Mathlib.Algebra.Algebra.Basic
 import Mathlib.RingTheory.Idempotents
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Ring
 
 /-!
@@ -21,7 +22,10 @@ import Mathlib.Tactic.Ring
 An idempotent `e` of a commutative ring `R` splits it as `R ≅ e R × (1 - e) R`. Without reference
 to the product decomposition, an element `e x + (1 - e) y` has `e`-component `e x` and
 `(1 - e)`-component `(1 - e) y`, and since `e² = e` and `e (1 - e) = 0` such elements multiply
-componentwise.
+componentwise. The same holds in any ring for `x` and `y` commuting with `e`.
+
+If `e` and `e + y` are both idempotents of a (not necessarily unital or associative) ring, expanding
+`(e + y)² = e + y` gives `e y + y e + y y = y`.
 
 For an idempotent `p` of any ring, `2 p - 1` squares to `1`. For a star projection this is the
 self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`. Conversely, for any element
@@ -44,8 +48,14 @@ operator and restricts it to a scalar.
 
 ## Main results
 
-* `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y` multiply
-  componentwise.
+* `IsIdempotentElem.mul_add_mul_add_mul_eq`: if `e` and `e + y` are idempotents, then
+  `e y + y e + y y = y`.
+* `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y`, with `x` and `y`
+  commuting with `e`, multiply componentwise.
+* `IsIdempotentElem.mul_add_one_sub_mul_mul_add_one_sub`: `x ↦ p * x + 1 - p` is multiplicative
+  on the elements commuting with `p`.
+* `IsIdempotentElem.isUnit_mul_add_one_sub`: `p * u + 1 - p` is a unit for a unit `u` commuting
+  with `p`.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
 * `IsIdempotentElem.compress_sub_compress_mul_compress`:
   `p x p - (p y p)(p z p) = p (x - y z) p + p y (1 - p) · (1 - p) z p`.
@@ -71,21 +81,46 @@ public section
 
 namespace IsIdempotentElem
 
-section CommRing
-
-variable {R : Type*} [CommRing R] {e : R}
-
-/-- **Componentwise multiplication**: for an idempotent `e` of a commutative ring, elements of the
-form `e x + (1 - e) y` multiply componentwise, as they would in `e R × (1 - e) R`. -/
-theorem mul_add_one_sub_mul (he : IsIdempotentElem e) (x y x' y' : R) :
-    (e * x + (1 - e) * y) * (e * x' + (1 - e) * y') = e * (x * x') + (1 - e) * (y * y') := by
-  linear_combination (x * x' - x * y' - y * x' + y * y') * he.eq
-
-end CommRing
+/-- If `e` and `e + y` are idempotents, then `e y + y e + y y = y`. -/
+theorem mul_add_mul_add_mul_eq {R : Type*} [NonUnitalNonAssocRing R] {e y : R}
+    (he : IsIdempotentElem e) (hey : IsIdempotentElem (e + y)) : e * y + y * e + y * y = y := by
+  have h := hey.eq
+  rw [mul_add, add_mul, add_mul, he.eq] at h
+  have h' : e + (e * y + y * e + y * y) = e + y := by rw [← h]; abel
+  exact add_left_cancel h'
 
 section Ring
 
 variable {R : Type*} [Ring R] {p : R}
+
+/-- **Componentwise multiplication**: for an idempotent `p` commuting with `x` and `y`, elements of
+the form `p x + (1 - p) y` multiply componentwise, as they would in `p R p × (1 - p) R (1 - p)`. -/
+theorem mul_add_one_sub_mul (he : IsIdempotentElem p) {x y : R} (hx : Commute p x)
+    (hy : Commute p y) (x' y' : R) :
+    (p * x + (1 - p) * y) * (p * x' + (1 - p) * y') = p * (x * x') + (1 - p) * (y * y') := by
+  have h1 : p * x * p = p * x := by rw [mul_assoc, ← hx.eq, ← mul_assoc, he.eq]
+  have h2 : y * p = p * y := hy.eq.symm
+  have h3 : p * y * p = p * y := by rw [mul_assoc, h2, ← mul_assoc, he.eq]
+  calc _ = p * x * p * x' + (p * x - p * x * p) * y' + (y * p - p * y * p) * x' +
+        (y - y * p - p * y + p * y * p) * y' := by noncomm_ring
+    _ = _ := by rw [h1, h3, h2]; noncomm_ring
+
+/-- For an idempotent `p` commuting with `x`, the map `x ↦ p * x + 1 - p` is multiplicative:
+`p * x + 1 - p` acts as `x` on the range of `p` and as the identity on the range of `1 - p`. This
+is `IsIdempotentElem.mul_add_one_sub_mul` with second components `1`. -/
+theorem mul_add_one_sub_mul_mul_add_one_sub (hp : IsIdempotentElem p) {x : R} (hx : Commute p x)
+    (y : R) : (p * x + 1 - p) * (p * y + 1 - p) = p * (x * y) + 1 - p := by
+  simpa [add_sub_assoc] using hp.mul_add_one_sub_mul hx (Commute.one_right p) y 1
+
+/-- For an idempotent `p` commuting with a unit `u`, `p * u + 1 - p` is a unit, with inverse
+`p * u⁻¹ + 1 - p`. -/
+theorem isUnit_mul_add_one_sub (hp : IsIdempotentElem p) {u : R} (hu : IsUnit u)
+    (hc : Commute p u) : IsUnit (p * u + 1 - p) := by
+  obtain ⟨u, rfl⟩ := hu
+  refine ⟨⟨p * u + 1 - p, p * ↑u⁻¹ + 1 - p, ?_, ?_⟩, rfl⟩
+  · rw [hp.mul_add_one_sub_mul_mul_add_one_sub hc, Units.mul_inv, mul_one, add_sub_cancel_left]
+  · rw [hp.mul_add_one_sub_mul_mul_add_one_sub hc.units_inv_right, Units.inv_mul, mul_one,
+      add_sub_cancel_left]
 
 /-- For an idempotent `p`, `2 p - 1` squares to `1`. -/
 theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * p - 1) = 1 := by

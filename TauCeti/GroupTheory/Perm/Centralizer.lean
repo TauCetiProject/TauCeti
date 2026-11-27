@@ -31,6 +31,7 @@ action.
   freely on the letters.
 * `Subgroup.card_centralizer_dvd`: the `Nat.card` of that centralizer divides the `Nat.card` of
   the letters.
+* `Equiv.Perm.center_eq_bot`: the permutations of at least three letters have trivial centre.
 
 The counting step is `MulAction.natCard_dvd_natCard_of_isCancelSMul`: every orbit of a free action
 is a copy of the acting group, so the order of the centralizer divides the number of letters.
@@ -73,3 +74,19 @@ theorem card_centralizer_dvd
   MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 end Subgroup
+
+namespace Equiv.Perm
+
+/-- **The permutations of at least three letters have trivial centre.** A permutation `g` moving
+a letter `a` does not commute with the transposition of `g a` and a third letter. -/
+theorem center_eq_bot {α : Type*} (hα : 3 ≤ Cardinal.mk α) : Subgroup.center (Perm α) = ⊥ := by
+  classical
+  refine (Subgroup.eq_bot_iff_forall _).2 fun g hg ↦
+    Equiv.ext fun a ↦ by_contra fun (ha : g a ≠ a) ↦ ?_
+  obtain ⟨c, hca, hcg⟩ := Cardinal.exists_ne_ne_of_three_le hα a (g a)
+  -- `swap (g a) c * g` sends `a` to `c`, but `g * swap (g a) c` sends it to `g a`.
+  have h := congr($(Subgroup.mem_center_iff.mp hg (swap (g a) c)) a)
+  rw [mul_apply, mul_apply, swap_apply_left, swap_apply_of_ne_of_ne (Ne.symm ha) hca.symm] at h
+  exact hcg h
+
+end Equiv.Perm

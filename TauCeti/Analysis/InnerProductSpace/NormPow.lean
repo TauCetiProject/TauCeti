@@ -47,16 +47,21 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 
 ## Main declarations
 
+* `contDiffAt_norm_rpow_of_ne`: an arbitrary real power is smooth away from zero.
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `isBigO_fderiv_norm_rpow_cobounded`: that derivative is `O(‖x‖ ^ (p - 1))` at infinity.
+* `gradient_norm_rpow_of_ne`: the corresponding gradient `p ‖x‖ ^ (p - 2) x`.
 * `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
   everywhere, including at the origin.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
-* `hasFDerivAt_norm_rpow_smul_self_of_ne`, `norm_rpow_smul_id_add_smulRight_le`,
-  `trace_rpow_smul_id_add_smulRight`: the derivative of the radial field `x ↦ ‖x‖ ^ p • x` away
-  from zero, its size `O(‖x‖ ^ p)`, and its trace `(dim E + p) ‖x‖ ^ p`.
+* `hasFDerivAt_norm_rpow_smul_self_of_ne`, `fderiv_norm_rpow_smul_self_of_ne`,
+  `norm_rpow_smul_id_add_smulRight_le`, `trace_rpow_smul_id_add_smulRight`: the derivative of the
+  radial field `x ↦ ‖x‖ ^ p • x` away from zero, its size `O(‖x‖ ^ p)`, and its trace
+  `(dim E + p) ‖x‖ ^ p`.
 * `continuous_norm_rpow_smul_self`: for `p > -1` the radial field is continuous at the origin.
+* `norm_norm_rpow_smul_sub_le`: for `p ≤ 0` the radial field changes by `O(‖a - b‖ ‖b‖ ^ p)`
+  between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `DifferentiableAt.hasFDerivAt_comp_norm`, `ContDiff.comp_norm`: the derivative and the
   smoothness of a radial function `x ↦ ψ ‖x‖` when `ψ` vanishes near `0`.
 * `differentiableAt_comp_norm_iff`: away from the origin, a radial function `x ↦ ψ ‖x‖` is
@@ -120,14 +125,18 @@ private theorem norm_iteratedFDeriv_eq_of_norm_eq
   rw [hcomp, Submodule.reflection_sub hxy] at h
   exact h
 
+/-- Every real power of the norm is smooth away from the origin. -/
+theorem contDiffAt_norm_rpow_of_ne {n : WithTop ℕ∞} (p : ℝ) {x : E} (hx : x ≠ 0) :
+    ContDiffAt ℝ n (fun y : E ↦ ‖y‖ ^ p) x :=
+  (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.2 hx)
+
 /-- Every real power of the norm whose exponent exceeds `k` is `Cᵏ`, including at zero,
 on an arbitrary real inner-product space. -/
 theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
     (hp : (k : ℝ) < p) : ContDiff ℝ k (fun x : E ↦ ‖x‖ ^ p) := by
   have hf : ContDiffOn ℝ k (fun x : E ↦ ‖x‖ ^ p) {0}ᶜ := by
     intro x hx
-    exact ((contDiffAt_norm ℝ hx).rpow_const_of_ne
-      (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
+    exact (contDiffAt_norm_rpow_of_ne p hx).contDiffWithinAt
   apply contDiff_of_iteratedFDeriv_norm_rpow_bound hf
     (by simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']) hp
   intro j _
@@ -165,6 +174,14 @@ theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
 
+/-- Away from the origin, the gradient of `x ↦ ‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
+theorem gradient_norm_rpow_of_ne [CompleteSpace E] (p : ℝ) {x : E} (hx : x ≠ 0) :
+    ∇ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • x := by
+  refine (hasGradientAt_iff_hasFDerivAt.2 ?_).gradient
+  convert hasFDerivAt_norm_rpow_of_ne p hx using 1
+  ext v
+  simp
+
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
 theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x‖ = |p| * ‖x‖ ^ (p - 1) := by
@@ -198,6 +215,13 @@ theorem hasFDerivAt_norm_rpow_smul_self_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
       (‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
         ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).smul (hasFDerivAt_id x)
+
+/-- Away from the origin, the Fréchet derivative of the radial field `x ↦ ‖x‖ ^ p • x` is
+`‖x‖ ^ p id + p ‖x‖ ^ (p - 2) ⟪x, ·⟫ x`. -/
+theorem fderiv_norm_rpow_smul_self_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
+    fderiv ℝ (fun y : E ↦ ‖y‖ ^ p • y) x =
+      ‖x‖ ^ p • ContinuousLinearMap.id ℝ E + ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x :=
+  (hasFDerivAt_norm_rpow_smul_self_of_ne p hx).fderiv
 
 /-- For `p > -1` the radial field `x ↦ ‖x‖ ^ p • x` is continuous, also at the origin, where it
 vanishes. -/
@@ -239,6 +263,45 @@ theorem norm_rpow_smul_id_add_smulRight_le (p : ℝ) (x : E) :
     _ = (1 + |p|) * ‖x‖ ^ p := by
         rw [mul_assoc, ← Real.rpow_add_one hx'.ne', sub_add_cancel]
         ring
+
+/-- **Smoothness of the radial field `x ↦ ‖x‖ ^ p • x`** for `p ≤ 0`: if `2 ‖a - b‖ ≤ ‖b‖`, then
+
+`‖‖a‖ ^ p • a - ‖b‖ ^ p • b‖ ≤ (1 + |p|) 2 ^ (-p) ‖a - b‖ ‖b‖ ^ p`.
+
+For `p = -dim E` the field is a multiple of the gradient of the Newtonian kernel, and this is its
+smoothness estimate as a singular kernel homogeneous of degree `1 - dim E`. -/
+theorem norm_norm_rpow_smul_sub_le {p : ℝ} (hp : p ≤ 0) {a b : E} (hab : 2 * ‖a - b‖ ≤ ‖b‖) :
+    ‖‖a‖ ^ p • a - ‖b‖ ^ p • b‖ ≤ (1 + |p|) * 2 ^ (-p) * ‖a - b‖ * ‖b‖ ^ p := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · obtain rfl : a = 0 := by
+      rw [sub_zero, norm_zero] at hab
+      exact norm_eq_zero.mp (by linarith [norm_nonneg a])
+    simp
+  have hbN : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  -- Every point of the segment from `b` to `a` has norm at least `‖b‖ / 2`.
+  have hseg (z : E) (hz : z ∈ segment ℝ b a) : ‖b‖ / 2 ≤ ‖z‖ := by
+    rw [segment_eq_image'] at hz
+    obtain ⟨t, ht, rfl⟩ := hz
+    have htd : ‖t • (a - b)‖ ≤ ‖a - b‖ := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
+      exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+    linarith [norm_sub_le_norm_add b (t • (a - b))]
+  have hne (z : E) (hz : z ∈ segment ℝ b a) : z ≠ 0 :=
+    norm_pos_iff.mp ((half_pos hbN).trans_le (hseg z hz))
+  have hbound (z : E) (hz : z ∈ segment ℝ b a) :
+      ‖‖z‖ ^ p • ContinuousLinearMap.id ℝ E + ((p * ‖z‖ ^ (p - 2)) • innerSL ℝ z).smulRight z‖ ≤
+        (1 + |p|) * 2 ^ (-p) * ‖b‖ ^ p := by
+    refine (norm_rpow_smul_id_add_smulRight_le p z).trans ?_
+    rw [mul_assoc]
+    gcongr
+    calc ‖z‖ ^ p ≤ (‖b‖ / 2) ^ p := Real.rpow_le_rpow_of_nonpos (by positivity) (hseg z hz) hp
+      _ = 2 ^ (-p) * ‖b‖ ^ p := by
+          rw [Real.div_rpow hbN.le zero_le_two, div_eq_mul_inv, ← Real.rpow_neg zero_le_two,
+            mul_comm]
+  have h := (convex_segment b a).norm_image_sub_le_of_norm_hasFDerivWithin_le
+    (fun z hz => (hasFDerivAt_norm_rpow_smul_self_of_ne p (hne z hz)).hasFDerivWithinAt) hbound
+    (left_mem_segment ℝ b a) (right_mem_segment ℝ b a)
+  linarith
 
 /-- For `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable everywhere, including at the origin,
 with derivative `‖y‖ ^ r • id + (r ‖y‖ ^ (r - 2) ⟨y, ·⟩) y`. At the origin the formula gives `0`
@@ -868,14 +931,8 @@ theorem laplacian_inner_mul_norm_rpow_of_ne (a : E) (p : ℝ) {x : E} (hx : x �
   have hℓd : ∀ y, HasFDerivAt (fun y : E ↦ ⟪a, y⟫_ℝ) (toDual ℝ E a) y :=
     fun y ↦ (toDual ℝ E a).hasFDerivAt
   have hℓ : ContDiffAt ℝ 2 (fun y : E ↦ ⟪a, y⟫_ℝ) x := (toDual ℝ E a).contDiff.contDiffAt
-  have hg : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ p) x :=
-    (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)
-  -- The linear factor has constant derivative, hence vanishing Laplacian.
-  have hΔℓ : Δ (fun y : E ↦ ⟪a, y⟫_ℝ) x = 0 := by
-    rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ (stdOrthonormalBasis ℝ E)) x]
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    rw [iteratedFDeriv_two_apply, funext fun y ↦ (hℓd y).fderiv]
-    simp
+  have hg : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ p) x := contDiffAt_norm_rpow_of_ne p hx
+  have hΔℓ : Δ (fun y : E ↦ ⟪a, y⟫_ℝ) x = 0 := congrFun (toDual ℝ E a : E →L[ℝ] ℝ).laplacian x
   rw [hℓ.laplacian_fun_mul hg, laplacian_norm_rpow_of_ne p hx, hΔℓ,
     (hasGradientAt_iff_hasFDerivAt.mpr (hℓd x)).gradient, inner_gradient_right, conj_trivial,
     fderiv_norm_rpow_of_ne p hx]
@@ -885,7 +942,7 @@ theorem laplacian_inner_mul_norm_rpow_of_ne (a : E) (p : ℝ) {x : E} (hx : x �
 /-- Away from the origin, `x ↦ ‖x‖ ^ (2 - dim E)` is harmonic. -/
 theorem harmonicAt_norm_rpow_two_sub_finrank {x : E} (hx : x ≠ 0) :
     HarmonicAt (fun y : E ↦ ‖y‖ ^ (2 - Module.finrank ℝ E : ℝ)) x := by
-  refine ⟨(contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx), ?_⟩
+  refine ⟨contDiffAt_norm_rpow_of_ne _ hx, ?_⟩
   filter_upwards [eventually_ne_nhds hx] with y hy
   rw [laplacian_norm_rpow_of_ne _ hy, Pi.zero_apply]
   ring
@@ -898,8 +955,7 @@ theorem harmonicOnNhd_norm_sub_rpow_two_sub_finrank (a : E) :
 /-- Away from the origin, the dipole `x ↦ ⟪a, x⟫ ‖x‖ ^ (-dim E)` is harmonic. -/
 theorem harmonicAt_inner_mul_norm_rpow_neg_finrank (a : E) {x : E} (hx : x ≠ 0) :
     HarmonicAt (fun y : E ↦ ⟪a, y⟫_ℝ * ‖y‖ ^ (-(Module.finrank ℝ E : ℝ))) x := by
-  refine ⟨(toDual ℝ E a).contDiff.contDiffAt.mul
-    ((contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)), ?_⟩
+  refine ⟨(toDual ℝ E a).contDiff.contDiffAt.mul (contDiffAt_norm_rpow_of_ne _ hx), ?_⟩
   filter_upwards [eventually_ne_nhds hx] with y hy
   rw [laplacian_inner_mul_norm_rpow_of_ne a _ hy, Pi.zero_apply]
   ring

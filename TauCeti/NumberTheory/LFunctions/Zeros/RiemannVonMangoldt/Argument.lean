@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
@@ -13,6 +12,7 @@ import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Argument.Variation
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
 # The argument of the Riemann zeta function on the critical line: `S(T)`
@@ -213,8 +213,9 @@ theorem riemannZetaS_eq_sub_div_pi
   rcases eq_or_ne T 0 with rfl | hT0
   · exact absurd ⟨θ, hθ, hlift⟩ not_exists_continuousOn_arg_riemannZetaSPath_zero
   have hu : uIcc (0 : ℝ) 2 = Icc 0 2 := uIcc_of_le zero_le_two
-  rw [riemannZetaS_def, TauCeti.Contour.integral_deriv_smul_logDeriv_eq_log_norm_add_I_mul_sub
-    (isPiecewiseC1On_riemannZetaSPath T)
+  rw [riemannZetaS_def,
+    AbsolutelyContinuousOnInterval.integral_deriv_smul_logDeriv_eq_log_norm_add_I_mul_sub
+    (isPiecewiseC1On_riemannZetaSPath T).absolutelyContinuousOnInterval
     (fun t _ ↦ analyticOn_riemannZeta _ (riemannZetaSPath_ne_one hT0 t))
     (fun t ht ↦ riemannZeta_riemannZetaSPath_ne_zero hT (hu ▸ ht).2) (hu ▸ hθ) (hu ▸ hlift)]
   simp [div_eq_inv_mul]

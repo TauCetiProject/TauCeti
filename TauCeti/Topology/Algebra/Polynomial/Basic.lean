@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Degree
 public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.Topology.Instances.Matrix
 
 /-!

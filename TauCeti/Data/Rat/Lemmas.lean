@@ -16,7 +16,8 @@ import Mathlib.Tactic.NormNum
 This module records elementary rational-number lemmas complementing `Mathlib.Data.Rat.Lemmas`:
 the numerator formula `Rat.add_intCast_num` for shifting a rational by an integer (the numerator
 counterpart to Mathlib's `Rat.add_intCast_den`), and the height-one characterization
-`Rat.abs_num_le_one_and_den_le_one_iff`.
+`Rat.abs_num_le_one_and_den_le_one_iff`, and the integrality criterion
+`Rat.intCast_div_intCast_mem_range_iff`.
 -/
 
 public section
@@ -39,5 +40,11 @@ theorem abs_num_le_one_and_den_le_one_iff {q : ℚ} :
     rcases (by omega : q.num = -1 ∨ q.num = 0 ∨ q.num = 1) with h | h | h <;> simp [h]
   · simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (rfl | rfl | rfl) <;> norm_num
+
+/-- A quotient `n / m` of integers with `m ≠ 0` is an integer exactly when `m ∣ n`. -/
+theorem intCast_div_intCast_mem_range_iff {m : ℤ} (hm : m ≠ 0) (n : ℤ) :
+    (n : ℚ) / m ∈ Set.range ((↑) : ℤ → ℚ) ↔ m ∣ n := by
+  rw [← den_div_intCast_eq_one_iff n m hm, den_eq_one_iff]
+  exact ⟨fun ⟨k, hk⟩ ↦ by simp [← hk], fun h ↦ ⟨_, h⟩⟩
 
 end Rat

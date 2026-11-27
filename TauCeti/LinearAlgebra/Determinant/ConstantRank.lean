@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
+public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
 /-!
 # Determinants on finite projective modules of constant rank
@@ -52,8 +53,8 @@ theorem projectiveDet_smul {d : ℕ} (hd : ∀ p, rankAtStalk (R := R) M p = d) 
     (fun P _ ↦ Algebra.linearMap R (Localization.AtPrime P)) _ _ fun P _ ↦ ?_
   let A := Localization.AtPrime P
   have : Module.Free A (A ⊗[R] M) := Module.free_of_flat_of_isLocalRing
-  have hfin : finrank A (A ⊗[R] M) = d := by
-    rw [← rankAtStalk_eq_finrank_tensorProduct (M := M) ⟨P, inferInstance⟩, hd]
+  have hfin : finrank A (A ⊗[R] M) = d :=
+    TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq (funext hd)
   simp only [Algebra.linearMap_apply, map_mul, map_pow, ← projectiveDet_baseChange]
   rw [baseChange_smul, ← algebraMap_smul A, projectiveDet_eq_det, projectiveDet_eq_det, det_smul,
     hfin]
@@ -74,8 +75,8 @@ theorem eq_projectiveDet_smul_id (hM : ∀ p, rankAtStalk (R := R) M p = 1) (f :
     (fun P _ ↦ TensorProduct.mk R (Localization.AtPrime P) M 1) _ _ fun P _ ↦ ?_
   let A := Localization.AtPrime P
   have : Module.Free A (A ⊗[R] M) := Module.free_of_flat_of_isLocalRing
-  have hfin : finrank A (A ⊗[R] M) = 1 := by
-    rw [← rankAtStalk_eq_finrank_tensorProduct (M := M) ⟨P, inferInstance⟩, hM]
+  have hfin : finrank A (A ⊗[R] M) = 1 :=
+    TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq (funext hM)
   -- Over the local ring `A`, the base change of `f` is multiplication by a scalar `c`, which is
   -- its determinant.
   obtain ⟨c, hc, -⟩ := (f.baseChange A).existsUnique_eq_smul_id_of_finrank_eq_one hfin

@@ -67,6 +67,10 @@ theorem mem_chartRel_iff {i j : D.J} {p : D.U i × D.U j} :
     p ∈ D.chartRel i j ↔ D.toGlueData.ι i p.1 = D.toGlueData.ι j p.2 :=
   (D.ι_eq_iff_rel i j p.1 p.2).symm
 
+/-- The relation of a chart with itself is the diagonal: the canonical maps are injective. -/
+theorem chartRel_self (i : D.J) : D.chartRel i i = diagonal (D.U i) :=
+  Set.ext fun _ ↦ D.mem_chartRel_iff.trans (D.ι_isOpenEmbedding i).injective.eq_iff
+
 /-- The map from the disjoint union of the charts to the glued space is an open quotient map. -/
 theorem isOpenQuotientMap_sigma_ι :
     IsOpenQuotientMap fun x : Σ i, D.U i ↦ D.toGlueData.ι x.1 x.2 := {

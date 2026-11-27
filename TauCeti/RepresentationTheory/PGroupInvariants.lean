@@ -11,6 +11,9 @@ public import Mathlib.GroupTheory.PGroup
 -- Non-public: `Representation.IsIrreducible.nontrivial` supplies the nontriviality that the
 -- normal-subgroup corollary needs.
 import TauCeti.RepresentationTheory.Irreducible
+-- Non-public: `TauCeti.Representation.isIrreducible_ofModule'_iff` reads a simple group-algebra
+-- module as an irreducible representation for the module form of the normal-subgroup corollary.
+import TauCeti.RepresentationTheory.OfModule
 -- Non-public: `AddCommMonoid.zmodModule` makes a `p`-torsion additive monoid a `ZMod p`-module
 -- only to build a finite invariant set inside a proof.
 import Mathlib.Algebra.Module.ZMod
@@ -56,7 +59,8 @@ corollary here requires finiteness only of the subgroup.
   has a nonzero fixed vector**, with `Representation.invariants_ne_bot_of_forall_pow_eq_one` its
   invariant-submodule form over a commutative ring.
 * `Representation.IsIrreducible.comp_eq_trivial_of_isPGroup`: a finite normal `p`-subgroup
-  acts trivially on an irreducible representation in characteristic `p`.
+  acts trivially on an irreducible representation in characteristic `p`, with
+  `IsPGroup.of_smul_eq_self_of_isSimpleModule` its form for simple group-algebra modules.
 
 ## References
 
@@ -222,3 +226,23 @@ theorem IsIrreducible.comp_eq_trivial_of_isPGroup {ρ : Representation k G V}
 end NormalSubgroup
 
 end Representation
+
+namespace IsPGroup
+
+open scoped MonoidAlgebra
+
+variable {k : Type*} {G : Type*} [Field k] [Group G] {p : ℕ} [Fact p.Prime] [CharP k p]
+
+/-- **A finite normal `p`-subgroup acts trivially on every simple `k[G]`-module** in
+characteristic `p`: the module form of `Representation.IsIrreducible.comp_eq_trivial_of_isPGroup`.
+The ambient group and the module need not be finite. -/
+theorem of_smul_eq_self_of_isSimpleModule {N : Subgroup G} [N.Normal] [Finite N]
+    (hN : IsPGroup p N) (M : Type*) [AddCommGroup M] [Module k[G] M] [IsSimpleModule k[G] M]
+    {n : G} (hn : n ∈ N) (m : M) : MonoidAlgebra.of k G n • m = m := by
+  let := Module.restrictScalars k k[G] M
+  let := IsScalarTower.restrictScalars k k[G] M
+  have h := Representation.IsIrreducible.comp_eq_trivial_of_isPGroup p
+    ((TauCeti.Representation.isIrreducible_ofModule'_iff (k := k) (G := G) M).2 inferInstance) N hN
+  simpa using LinearMap.congr_fun (congrArg (· ⟨n, hn⟩) h) m
+
+end IsPGroup

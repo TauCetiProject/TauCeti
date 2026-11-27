@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
-import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.Symmetric
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 
 /-!
 # Curvature as an endomorphism of the exterior square
@@ -20,6 +19,8 @@ power of each tangent space, with its Gram inner product. Its convention is
 `⟪Rop(u ∧ v), w ∧ z⟫ = ⟪R(u,v)z,w⟫`, so constant sectional curvature `κ` gives `κ Id`.
 For a metric-compatible torsion-free connection this endomorphism is symmetric. Sectional
 curvature is its Rayleigh quotient on decomposable bivectors, not on arbitrary bivectors.
+Its operator norm controls every curvature pairing and the vector `R(u,v)w`, without a
+curvature-sign hypothesis.
 
 The construction is pointwise; it does not install a new exterior bundle or metric.
 The sign convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, second edition,
@@ -78,6 +79,81 @@ theorem inner_curvatureEndomorphism_ιMulti (x : M) (u v : Fin 2 → TangentSpac
     LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
   rw [IsMetricCompatible.riemannCurvatureTensor_antisymm_last cov hcov,
     neg_neg, riemannCurvatureTensor_apply]
+
+/-- Every curvature pairing is bounded by the operator norm times the norms of its two pure
+bivectors. Metric compatibility suffices; no curvature sign is assumed. -/
+theorem abs_inner_curvatureTensor_le_norm_curvatureEndomorphism_mul_norm_ιMulti
+    (x : M) (u v w z : TangentSpace I x) :
+    |⟪cov.curvatureTensor x u v w, z⟫| ≤
+      ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+        ‖exteriorPower.ιMulti ℝ 2 ![u, v]‖ * ‖exteriorPower.ιMulti ℝ 2 ![z, w]‖ := by
+  let A := LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)
+  let a := exteriorPower.ιMulti ℝ 2 ![u, v]
+  let b := exteriorPower.ιMulti ℝ 2 ![z, w]
+  have hab : |⟪A a, b⟫| ≤ ‖A‖ * ‖a‖ * ‖b‖ :=
+    (abs_real_inner_le_norm _ _).trans <|
+      mul_le_mul_of_nonneg_right (A.le_opNorm a) (norm_nonneg b)
+  simpa only [A, a, b, LinearMap.coe_toContinuousLinearMap',
+    inner_curvatureEndomorphism_ιMulti, Matrix.cons_val_zero, Matrix.cons_val_one] using hab
+
+/-- Every curvature pairing is bounded by the operator norm of the curvature endomorphism times
+all four vector norms. Metric compatibility suffices; no curvature sign is assumed. -/
+theorem abs_inner_curvatureTensor_le_norm_curvatureEndomorphism_mul
+    (x : M) (u v w z : TangentSpace I x) :
+    |⟪cov.curvatureTensor x u v w, z⟫| ≤
+      ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+        ‖u‖ * ‖v‖ * ‖w‖ * ‖z‖ := by
+  calc
+    _ ≤ ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+        ‖exteriorPower.ιMulti ℝ 2 ![u, v]‖ * ‖exteriorPower.ιMulti ℝ 2 ![z, w]‖ :=
+      cov.abs_inner_curvatureTensor_le_norm_curvatureEndomorphism_mul_norm_ιMulti hcov x u v w z
+    _ ≤ ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+        (‖u‖ * ‖v‖) * (‖z‖ * ‖w‖) := by
+      gcongr
+      · exact exteriorPower.norm_ιMulti_two_le u v
+      · exact exteriorPower.norm_ιMulti_two_le z w
+    _ = _ := by ring
+
+/-- The vector `R(u,v)w` is bounded by the curvature operator norm times `‖u ∧ v‖ * ‖w‖`,
+without a curvature-sign hypothesis. -/
+theorem norm_curvatureTensor_le_norm_curvatureEndomorphism_mul_norm_ιMulti
+    (x : M) (u v w : TangentSpace I x) :
+    ‖cov.curvatureTensor x u v w‖ ≤
+      ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+        ‖exteriorPower.ιMulti ℝ 2 ![u, v]‖ * ‖w‖ := by
+  calc
+    ‖cov.curvatureTensor x u v w‖ = ‖innerSL ℝ (cov.curvatureTensor x u v w)‖ :=
+      (innerSL_apply_norm ℝ _).symm
+    _ ≤ _ := by
+      refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun z ↦ ?_
+      calc
+        ‖innerSL ℝ (cov.curvatureTensor x u v w) z‖ ≤
+            ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+              ‖exteriorPower.ιMulti ℝ 2 ![u, v]‖ * ‖exteriorPower.ιMulti ℝ 2 ![z, w]‖ := by
+          simpa only [innerSL_apply_apply, Real.norm_eq_abs] using
+            cov.abs_inner_curvatureTensor_le_norm_curvatureEndomorphism_mul_norm_ιMulti
+              hcov x u v w z
+        _ ≤ ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+            ‖exteriorPower.ιMulti ℝ 2 ![u, v]‖ * (‖z‖ * ‖w‖) := by
+          gcongr
+          exact exteriorPower.norm_ιMulti_two_le z w
+        _ = _ := by ring
+
+/-- The actual vector `R(u,v)w` is bounded by the operator norm of the curvature endomorphism
+multiplied by the three input norms, without a curvature-sign hypothesis. -/
+theorem norm_curvatureTensor_le_norm_curvatureEndomorphism_mul
+    (x : M) (u v w : TangentSpace I x) :
+    ‖cov.curvatureTensor x u v w‖ ≤
+      ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ * ‖u‖ * ‖v‖ * ‖w‖ := by
+  calc
+    _ ≤ ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+        ‖exteriorPower.ιMulti ℝ 2 ![u, v]‖ * ‖w‖ :=
+      cov.norm_curvatureTensor_le_norm_curvatureEndomorphism_mul_norm_ιMulti hcov x u v w
+    _ ≤ ‖LinearMap.toContinuousLinearMap (cov.curvatureEndomorphism hcov x)‖ *
+        (‖u‖ * ‖v‖) * ‖w‖ := by
+      gcongr
+      exact exteriorPower.norm_ιMulti_two_le u v
+    _ = _ := by ring
 
 /-- The pure-wedge pairing uniquely characterizes the curvature endomorphism. -/
 theorem curvatureEndomorphism_eq_iff (x : M)
