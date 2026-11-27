@@ -118,6 +118,16 @@ noncomputable def polyEquiv : MvPolynomial α ℤ ≃+* Poly α :=
 theorem polyEquiv_apply (p : MvPolynomial α ℤ) : polyEquiv α p = toPoly p :=
   RingEquiv.ofBijective_apply _ _ _
 
+/-- `toPoly` sends the polynomial representative of `f : Poly α` back to `f`. -/
+@[simp]
+theorem toPoly_polyEquiv_symm (f : Poly α) : toPoly ((polyEquiv α).symm f) = f := by
+  rw [← polyEquiv_apply, RingEquiv.apply_symm_apply]
+
+/-- The polynomial representative of `toPoly p` is `p` itself. -/
+@[simp]
+theorem polyEquiv_symm_toPoly (p : MvPolynomial α ℤ) : (polyEquiv α).symm (toPoly p) = p := by
+  rw [← polyEquiv_apply, RingEquiv.symm_apply_apply]
+
 /-- The integer polynomial representing `f : Poly α` evaluates to `f` on natural
 assignments. -/
 @[simp]
