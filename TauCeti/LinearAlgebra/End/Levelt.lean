@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Companion
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Basis
 import TauCeti.LinearAlgebra.Charpoly.Quotient
+import TauCeti.LinearAlgebra.LinearMap.Range
+import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.TensorProduct.Range
 
 /-!
@@ -147,7 +149,8 @@ private theorem linearIndependent_powers_of_eq_on_initial_powers (A B : Module.E
       rw [← mul_apply_eq_comp, ← pow_succ']
       by_cases hi : (i : ℕ) + 1 < m
       · exact Submodule.subset_span ⟨⟨(i : ℕ) + 1, hi⟩, rfl⟩
-      · simpa only [show (i : ℕ) + 1 = m by omega] using hlast
+      · have hsucc : (i : ℕ) + 1 = m := by omega
+        simpa only [hsucc] using hlast
     have hB : W ≤ W.comap B := by
       apply Submodule.span_le.mpr
       rintro _ ⟨i, rfl⟩
@@ -225,9 +228,8 @@ theorem exists_eq_smul_id_of_commute_of_isCoprime_charpoly_of_rank_sub_le_one
     le_antisymm hrank (Nat.succ_le_of_lt
       (Module.finrank_pos_iff.mpr (Submodule.nontrivial_iff_ne_bot.mpr hzero)))
   have hTD : Commute T (A - B) := hTA.sub_right hTB
-  have hstable : (A - B).range ≤ (A - B).range.comap T := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨T x, by simpa only [mul_apply_eq_comp] using DFunLike.congr_fun hTD.eq.symm x⟩
+  have hstable : (A - B).range ≤ (A - B).range.comap T :=
+    LinearMap.range_le_comap_range_of_comp_eq hTD.eq
   obtain ⟨a, ha, -⟩ := (T.restrict hstable).existsUnique_eq_smul_id_of_finrank_eq_one hr
   let W := Module.End.eigenspace T a
   have hle : (A - B).range ≤ W := by
@@ -235,12 +237,8 @@ theorem exists_eq_smul_id_of_commute_of_isCoprime_charpoly_of_rank_sub_le_one
     apply Module.End.mem_eigenspace_iff.mpr
     have h := congrArg Subtype.val (DFunLike.congr_fun ha ⟨x, hx⟩)
     exact h
-  have hW (S : Module.End K V) (hTS : Commute T S) : W ≤ W.comap S := by
-    intro x hx
-    apply Module.End.mem_eigenspace_iff.mpr
-    calc
-      T (S x) = S (T x) := by simpa only [mul_apply_eq_comp] using DFunLike.congr_fun hTS.eq x
-      _ = a • S x := by rw [Module.End.mem_eigenspace_iff.mp hx, map_smul]
+  have hW (S : Module.End K V) (hTS : Commute T S) : W ≤ W.comap S :=
+    fun _ hx ↦ Module.End.mapsTo_genEigenspace_of_comm hTS a 1 hx
   have htop := (A.eq_bot_or_eq_top_of_isCoprime_charpoly_of_finrank_range_sub_le_one
     B hcop hrank W (hW A hTA) (hW B hTB)).resolve_left fun h ↦
       hzero (le_bot_iff.mp (h ▸ hle))
@@ -248,6 +246,38 @@ theorem exists_eq_smul_id_of_commute_of_isCoprime_charpoly_of_rank_sub_le_one
   exact Module.End.mem_eigenspace_iff.mp (htop ▸ Submodule.mem_top : x ∈ W)
 
 end LinearMap
+
+namespace Polynomial
+
+/-- **Levelt's irreducibility theorem.** Over any field extension, the companion matrices
+of two coprime monic polynomials of the same degree have no common proper nonzero
+invariant subspace. -/
+theorem levelt_irreducible_field {K : Type*} [Field K] (p q : K[X])
+    (hp : p.Monic) (hq : q.Monic) (hcop : IsCoprime p q) {d : ℕ}
+    (hpdeg : p.natDegree = d) (hqdeg : q.natDegree = d)
+    (L : Type*) [Field L] [Algebra K L] (W : Submodule L (Fin d → L)) :
+    let A := (Matrix.reindex (finCongr hpdeg) (finCongr hpdeg) p.companion).map (algebraMap K L)
+    let B := (Matrix.reindex (finCongr hqdeg) (finCongr hqdeg) q.companion).map (algebraMap K L)
+    W ≤ W.comap A.toLin' → W ≤ W.comap B.toLin' → W = ⊥ ∨ W = ⊤ := by
+  intro A B hA hB
+  apply A.toLin'.eq_bot_or_eq_top_of_isCoprime_charpoly_of_finrank_range_sub_le_one
+    B.toLin' _ _ W hA hB
+  · simpa only [A, B, Matrix.charpoly_toLin', Matrix.charpoly_map, Matrix.charpoly_reindex,
+      charpoly_companion hp, charpoly_companion hq, coe_mapRingHom] using
+      hcop.map (mapRingHom (algebraMap K L))
+  · rw [← map_sub, Matrix.toLin'_apply', Matrix.finrank_range_mulVecLin]
+    -- The companion matrices differ only in the last column, if there is one.
+    cases d with
+    | zero => simp [Subsingleton.elim A B]
+    | succ n =>
+      apply Matrix.rank_sub_le_one_of_col_eq A B (Fin.last n)
+      intro j hj
+      have hj' : (j : ℕ) ≠ n := fun heq ↦
+        hj (Fin.ext (by simpa only [Fin.val_last] using heq))
+      funext i
+      simp [A, B, Matrix.col_apply, Matrix.reindex_apply, hpdeg, hqdeg, hj']
+
+end Polynomial
 
 namespace Matrix
 

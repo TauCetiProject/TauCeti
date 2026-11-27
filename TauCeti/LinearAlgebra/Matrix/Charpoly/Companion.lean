@@ -184,7 +184,8 @@ theorem toMatrix_eq_companion_of_basis_shift (A : Module.End R V) {d : ℕ}
   simp only [finCongr_symm, finCongr_apply, Fin.val_cast]
   by_cases hj : (j : ℕ) + 1 < d
   · rw [hshift j hj, Basis.repr_self, Finsupp.single_apply]
-    simp [Fin.ext_iff, eq_comm, hd, show d ≠ (j : ℕ) + 1 by omega]
+    have hj_ne : d ≠ (j : ℕ) + 1 := by omega
+    simp [Fin.ext_iff, eq_comm, hd, hj_ne]
   -- Cayley–Hamilton determines the last column from the preceding shifts.
   have hlast : (j : ℕ) + 1 = d := by omega
   let v := b ⟨0, by omega⟩
