@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm
-import TauCeti.Algebra.Algebra.Tower
 import TauCeti.Algebra.Module.LinearMap.End
 import TauCeti.LinearAlgebra.Determinant.SMul.TensorProduct
 import TauCeti.RingTheory.NormTrace.BaseChange
@@ -67,15 +66,10 @@ theorem reflexNorm_mul_reflexNorm_star (Φ : CMType E) (hk : Φ.reflexField ≤ 
   · rw [reflexNorm_eq_one_of_not_finiteDimensional hfin,
       reflexNorm_eq_one_of_not_finiteDimensional hfin,
       Algebra.norm_eq_one_of_not_module_finite hfin, mul_one, map_one]
-  -- The representations `V` and `V'` with the type traces of `Φ` and `ιΦ`.
-  obtain ⟨n, ρ, hρ⟩ := Φ.exists_trace_eq_typeTrace hk
-  obtain ⟨n', ρ', hρ'⟩ := (star Φ).exists_trace_eq_typeTrace (reflexField_star Φ ▸ hk)
-  let V := Fin n → k
-  let V' := Fin n' → k
-  let := Module.compHom V ρ
-  have := SMul.comp.smulCommClass (α := V) (β := k) ρ
-  let := Module.compHom V' ρ'
-  have := SMul.comp.smulCommClass (α := V') (β := k) ρ'
+  -- Representations `V` and `V'` with the type traces of `Φ` and `ιΦ`, computing the reflex norms.
+  obtain ⟨V, _, _, _, _, _, _, _, hV, hVfin, hN⟩ := Φ.exists_reflexNorm_eq_smulDet hk
+  obtain ⟨V', _, _, _, _, _, _, _, hV', hV'fin, hN'⟩ :=
+    (star Φ).exists_reflexNorm_eq_smulDet (reflexField_star Φ ▸ hk)
   -- `V ⊕ V'` and `k ⊗_ℚ E` have the same trace `Tr_{E/ℚ}`, so they are isomorphic.
   have htr (c : E) : LinearMap.trace k (V × V') (DistribSMul.toLinearMap k (V × V') c) =
       LinearMap.trace k (k ⊗[ℚ] E) (DistribSMul.toLinearMap k (k ⊗[ℚ] E) c) := by
@@ -85,26 +79,20 @@ theorem reflexNorm_mul_reflexNorm_star (Φ : CMType E) (hk : Φ.reflexField ≤ 
     rw [DistribSMul.toLinearMap_prod, hmul, ← Algebra.trace_apply (R := k) (S := k ⊗[ℚ] E) (1 ⊗ₜ c),
       Algebra.trace_baseChange_tmul]
     ext
-    simp only [LinearMap.trace_prodMap', DistribSMul.toLinearMap_compHom, IntermediateField.coe_add]
-    rw [hρ, hρ', typeTrace_add_typeTrace_star_eq_trace]
+    simp only [LinearMap.trace_prodMap', IntermediateField.coe_add]
+    rw [hV, hV', typeTrace_add_typeTrace_star_eq_trace]
     simp
   obtain ⟨e, he⟩ := exists_linearEquiv_of_trace_eq (R := ℚ) (V := V × V') (W := k ⊗[ℚ] E)
     (Module.toModuleEnd k (S := E) (V × V')).toRatAlgHom
     (Module.toModuleEnd k (S := E) (k ⊗[ℚ] E)).toRatAlgHom fun c ↦ by
-      rw [RingHom.toRatAlgHom_apply, RingHom.toRatAlgHom_apply]
-      exact htr c
+      simpa only [RingHom.toRatAlgHom_apply, Module.toModuleEnd_apply] using htr c
   -- Compare determinants: the product of the reflex norms on `V ⊕ V'`, the norm on `k ⊗_ℚ E`.
-  have : Module.Finite ℚ V := Module.Finite.trans k V
-  have : Module.Finite ℚ V' := Module.Finite.trans k V'
-  have : IsScalarTower ℚ E V := ρ.toRatAlgHom.isScalarTower_compHom
-  have : IsScalarTower ℚ E V' := ρ'.toRatAlgHom.isScalarTower_compHom
-  have : Module.Finite E V := Module.Finite.of_restrictScalars_finite ℚ E V
-  have : Module.Finite E V' := Module.Finite.of_restrictScalars_finite ℚ E V'
+  have := hVfin.2 hfin
+  have := hV'fin.2 hfin
   have he' (c : E) (v : V × V') : e (c • v) = c • e v := by
     simpa only [RingHom.toRatAlgHom_apply, Module.toModuleEnd_apply,
       DistribSMul.toLinearMap_apply] using he c v
-  rw [reflexNorm_eq_smulDet Φ hk V hρ, reflexNorm_eq_smulDet (star Φ) _ V' hρ', ← smulDet_prod,
-    smulDet_congr e he', smulDet_tensorProduct]
+  rw [hN, hN', ← smulDet_prod, smulDet_congr e he', smulDet_tensorProduct]
 
 end Field
 
