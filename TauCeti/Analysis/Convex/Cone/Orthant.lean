@@ -52,8 +52,7 @@ theorem setOf_forall_pos_subset_iff {K : ConvexCone ℝ (ι → ℝ)} (hKo : IsO
       refine Finset.sum_induction _ (· ∈ K.closure) (fun _ _ ha hb ↦ K.closure.add_mem ha hb) hzero
         fun i _ ↦ ?_
       have : Pi.single i (y i) = y i • (Pi.single i 1 : ι → ℝ) := by
-        ext j
-        by_cases hj : j = i <;> simp [hj]
+        simpa using Pi.single_smul' i (y i) (1 : ℝ)
       exact this ▸ K.closure.smul_mem (hy i) (h i)
     have hint : interior (closure (K : Set (ι → ℝ))) = K := by
       rw [K.convex.interior_closure_eq_interior_of_nonempty_interior
