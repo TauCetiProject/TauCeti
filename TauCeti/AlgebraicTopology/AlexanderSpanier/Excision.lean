@@ -16,10 +16,11 @@ cochains of `(B, B ∩ A)`. This is the **excision map**
 `C^*(X, A; M) ⟶ C^*(B, B ∩ A; M)` (`TauCeti.AlexanderSpanier.excisionMap`); in this file the
 subset `B ∩ A` of `B` is written `B ↓∩ A`.
 
-The excision map is an isomorphism of cochain complexes when `A` is closed and the interiors of `A`
-and `B` cover `X` (`TauCeti.AlexanderSpanier.isIso_excisionMap`), so it induces isomorphisms
-`H^n(X, A; M) ≅ H^n(B, B ∩ A; M)` of relative Alexander–Spanier cohomology
-(`TauCeti.AlexanderSpanier.excisionIso`). The two halves hold separately under weaker hypotheses.
+The excision map is an isomorphism of cochain complexes when `B ∩ A` is closed in `B` and the
+interiors of `A` and `B` cover `X` (`TauCeti.AlexanderSpanier.isIso_excisionMap`); this holds in
+particular when `A` is closed. It therefore induces isomorphisms `H^n(X, A; M) ≅ H^n(B, B ∩ A; M)`
+of relative Alexander–Spanier cohomology (`TauCeti.AlexanderSpanier.excisionIso`). The two halves
+hold separately, each under one of the two hypotheses.
 
 * It is injective in every degree as soon as `interior A ∪ interior B = X`
   (`TauCeti.AlexanderSpanier.excisionMap_f_injective`). A function `φ` on `X^{n+1}` whose
@@ -132,22 +133,22 @@ theorem excisionMap_f_surjective (hA : IsClosed (B ↓∩ A)) (n : ℕ) :
     have hyA : ∃ i, (y i : X) ∉ A := ⟨0, hy 0⟩
     simp [φ, hyA]
 
-/-- **Excision for Alexander–Spanier cochains.** If `A` is closed and the interiors of `A` and `B`
-cover `X`, restriction along the inclusion `(B, B ∩ A) → (X, A)` is an isomorphism of relative
-cochain complexes `C^*(X, A; M) ≅ C^*(B, B ∩ A; M)`. -/
-theorem isIso_excisionMap (hA : IsClosed A) (hAB : interior A ∪ interior B = Set.univ) :
+/-- **Excision for Alexander–Spanier cochains.** If `B ∩ A` is closed in `B` (for instance, if `A`
+is closed) and the interiors of `A` and `B` cover `X`, restriction along the inclusion
+`(B, B ∩ A) → (X, A)` is an isomorphism of relative cochain complexes
+`C^*(X, A; M) ≅ C^*(B, B ∩ A; M)`. -/
+theorem isIso_excisionMap (hA : IsClosed (B ↓∩ A)) (hAB : interior A ∪ interior B = Set.univ) :
     IsIso (excisionMap R M A B) :=
   have (n : ℕ) : IsIso ((excisionMap R M A B).f n) :=
     (ConcreteCategory.isIso_iff_bijective _).2
-      ⟨excisionMap_f_injective hAB n,
-        excisionMap_f_surjective (hA.preimage continuous_subtypeVal) n⟩
+      ⟨excisionMap_f_injective hAB n, excisionMap_f_surjective hA n⟩
   HomologicalComplex.Hom.isIso_of_components _
 
 variable (R M) in
-/-- **Excision in Alexander–Spanier cohomology.** If `A` is closed and the interiors of `A` and
-`B` cover `X`, restriction along the inclusion `(B, B ∩ A) → (X, A)` is an isomorphism
-`H^n(X, A; M) ≅ H^n(B, B ∩ A; M)`. -/
-def excisionIso (hA : IsClosed A) (hAB : interior A ∪ interior B = Set.univ) (n : ℕ) :
+/-- **Excision in Alexander–Spanier cohomology.** If `B ∩ A` is closed in `B` (for instance, if
+`A` is closed) and the interiors of `A` and `B` cover `X`, restriction along the inclusion
+`(B, B ∩ A) → (X, A)` is an isomorphism `H^n(X, A; M) ≅ H^n(B, B ∩ A; M)`. -/
+def excisionIso (hA : IsClosed (B ↓∩ A)) (hAB : interior A ∪ interior B = Set.univ) (n : ℕ) :
     relativeCohomology R M A n ≅ relativeCohomology R M (B ↓∩ A) n :=
   have := isIso_excisionMap (R := R) (M := M) hA hAB
   asIso (HomologicalComplex.homologyMap (excisionMap R M A B) n)
@@ -155,7 +156,8 @@ def excisionIso (hA : IsClosed A) (hAB : interior A ∪ interior B = Set.univ) (
 variable (R M) in
 /-- The excision isomorphism is the map induced in relative cohomology by the excision map. -/
 @[simp]
-lemma excisionIso_hom (hA : IsClosed A) (hAB : interior A ∪ interior B = Set.univ) (n : ℕ) :
+lemma excisionIso_hom (hA : IsClosed (B ↓∩ A)) (hAB : interior A ∪ interior B = Set.univ)
+    (n : ℕ) :
     (excisionIso R M hA hAB n).hom = HomologicalComplex.homologyMap (excisionMap R M A B) n :=
   (rfl)
 
