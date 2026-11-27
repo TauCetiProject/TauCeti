@@ -38,6 +38,11 @@ sides: they have the shape `arccos x ≤ y ↔ cos y ≤ x` where the `arcsin` f
 * `Real.le_cos_iff_mem_Icc` — the closed companion: for `x ≤ 1` and `t ∈ [-π, π]`,
   `x ≤ cos t ↔ t ∈ [-arccos x, arccos x]`. On one period centred at `0`, the angles at which `cos`
   reaches a threshold thus form the symmetric interval of half-width `arccos x`.
+* `Real.cos_lt_cos_iff_mem_Ioo` — on the period `[0, 2π]`, for an angle `α ∈ [0, π]`,
+  `cos θ < cos α ↔ θ ∈ (α, 2π - α)`.
+* `Real.lt_iff_lt_cos_arccos`, `Real.lt_iff_cos_arccos_lt` — `arccos` clamps its argument to
+  `[-1, 1]`: for `t ∈ [-1, 1]` other than `cos (arccos x)`, comparing `t` with `x` is comparing it
+  with `cos (arccos x)`.
 * `Real.lt_cos_of_mem_Icc` — the unimodality corollary: `cos` has no interior minimum on
   `[-π, π]`. For `-π ≤ a`, `b ≤ π` and `θ ∈ [a, b]`, if `k < cos a` and `k < cos b` then
   `k < cos θ`; nothing is assumed of `k`.
@@ -145,6 +150,47 @@ theorem le_cos_iff_mem_Icc {x t : ℝ} (hx : x ≤ 1) (ht : t ∈ Icc (-π) π) 
     x ≤ cos t ↔ t ∈ Icc (-arccos x) (arccos x) := by
   rw [← cos_abs, ← le_arccos_iff_le_cos hx ⟨abs_nonneg t, abs_le.mpr ⟨ht.1, ht.2⟩⟩,
     abs_le, mem_Icc]
+
+/-- **The cosine is below `cos α` on an arc.** For `α ∈ [0, π]`, the angles of the period
+`[0, 2π]` at which `Real.cos` is below `cos α` are exactly those of `(α, 2π - α)`. -/
+theorem cos_lt_cos_iff_mem_Ioo {α θ : ℝ} (hα : α ∈ Icc 0 π) (hθ : θ ∈ Icc 0 (2 * π)) :
+    cos θ < cos α ↔ θ ∈ Ioo α (2 * π - α) := by
+  obtain ⟨hθ₀, hθ₂⟩ := hθ
+  rcases le_or_gt θ π with h | h
+  · rw [strictAntiOn_cos.lt_iff_gt ⟨hθ₀, h⟩ hα]
+    exact ⟨fun h' => ⟨h', by linarith [hα.2]⟩, fun h' => h'.1⟩
+  · rw [← cos_two_pi_sub θ, strictAntiOn_cos.lt_iff_gt ⟨by linarith, by linarith⟩ hα]
+    exact ⟨fun h' => ⟨by linarith [hα.2], by linarith⟩, fun h' => by linarith [h'.2]⟩
+
+/-- **`arccos` clamps its argument to `[-1, 1]`.** For `t ∈ [-1, 1]` other than
+`cos (arccos x)`, `t < x` if and only if `t < cos (arccos x)`, where `cos (arccos x)` is `x`
+clamped to `[-1, 1]`. -/
+theorem lt_iff_lt_cos_arccos {x t : ℝ} (ht : t ∈ Icc (-1) 1) (hne : t ≠ cos (arccos x)) :
+    t < x ↔ t < cos (arccos x) := by
+  rcases lt_or_ge x (-1) with h | h
+  · rw [arccos_of_le_neg_one h.le, cos_pi] at hne ⊢
+    have := lt_of_le_of_ne ht.1 (Ne.symm hne)
+    constructor <;> intro <;> linarith
+  rcases le_or_gt x 1 with h' | h'
+  · rw [cos_arccos h h']
+  · rw [arccos_of_one_le h'.le, cos_zero] at hne ⊢
+    have := lt_of_le_of_ne ht.2 hne
+    constructor <;> intro <;> linarith
+
+/-- **`arccos` clamps its argument to `[-1, 1]`.** For `t ∈ [-1, 1]` other than
+`cos (arccos x)`, `x < t` if and only if `cos (arccos x) < t`, where `cos (arccos x)` is `x`
+clamped to `[-1, 1]`. -/
+theorem lt_iff_cos_arccos_lt {x t : ℝ} (ht : t ∈ Icc (-1) 1) (hne : t ≠ cos (arccos x)) :
+    x < t ↔ cos (arccos x) < t := by
+  rcases lt_or_ge x (-1) with h | h
+  · rw [arccos_of_le_neg_one h.le, cos_pi] at hne ⊢
+    have := lt_of_le_of_ne ht.1 (Ne.symm hne)
+    constructor <;> intro <;> linarith
+  rcases le_or_gt x 1 with h' | h'
+  · rw [cos_arccos h h']
+  · rw [arccos_of_one_le h'.le, cos_zero] at hne ⊢
+    have := lt_of_le_of_ne ht.2 hne
+    constructor <;> intro <;> linarith [ht.2]
 
 /-- **The cosine has no interior minimum on `[-π, π]`.** If `k < cos a` and `k < cos b`, with
 `-π ≤ a` and `b ≤ π`, then `k < cos θ` for every `θ ∈ [a, b]`.

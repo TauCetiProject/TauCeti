@@ -46,6 +46,11 @@ roles of `b` and `c` and of `n` and `1 - n`.
   `TauCeti.integral_exp_div_add_of_lt_norm_of_pos`: the four cases above.
 * `TauCeti.integral_inv_add_mul_exp_neg`: `∫₀^{2π} 1 / (b + c e^{−iθ}) dθ = 2π / b` for
   `‖c‖ < ‖b‖`, by the substitution `θ ↦ 2π − θ` in the case `n = 0`.
+* `Complex.sq_norm_ofReal_add_mul_exp`, `Complex.norm_ofReal_add_mul_exp_lt_iff`,
+  `Complex.lt_norm_ofReal_add_mul_exp_iff`: for real `x`, `y`,
+  `‖x + y e^{iθ}‖² = x² + y² + 2 x y cos θ`, so for `x, y, r > 0` which of `‖x + y e^{iθ}‖` and
+  `r` is larger is decided by comparing `cos θ` with `(r² − y² − x²) / (2 y x)`. With `b = r` and
+  `c = x + y e^{iθ}` this decides which of the cases above applies.
 -/
 
 public section
@@ -182,3 +187,33 @@ theorem integral_inv_add_mul_exp_neg {b c : ℂ} (hcb : ‖c‖ < ‖b‖) :
     exp_add, exp_int_mul_two_pi_mul_I, mul_one]
 
 end TauCeti
+
+namespace Complex
+
+/-- `‖x + y e^{iθ}‖² = x² + y² + 2 x y cos θ` for real `x`, `y`. -/
+theorem sq_norm_ofReal_add_mul_exp (x y θ : ℝ) :
+    ‖(x : ℂ) + y * exp (θ * I)‖ ^ 2 = x ^ 2 + y ^ 2 + 2 * x * y * Real.cos θ := by
+  rw [Complex.sq_norm, normSq_apply]
+  simp only [add_re, add_im, mul_re, mul_im, ofReal_re, ofReal_im, exp_ofReal_mul_I_re,
+    exp_ofReal_mul_I_im, zero_mul, sub_zero, add_zero, zero_add]
+  linear_combination y ^ 2 * Real.sin_sq_add_cos_sq θ
+
+/-- For `x, y, r > 0`, `‖x + y e^{iθ}‖ < r` if and only if
+`cos θ < (r² − y² − x²) / (2 y x)`. -/
+theorem norm_ofReal_add_mul_exp_lt_iff {x y r : ℝ} (hx : 0 < x) (hy : 0 < y) (hr : 0 < r)
+    (θ : ℝ) :
+    ‖(x : ℂ) + y * exp (θ * I)‖ < r ↔ Real.cos θ < (r ^ 2 - y ^ 2 - x ^ 2) / (2 * y * x) := by
+  rw [← pow_lt_pow_iff_left₀ (norm_nonneg _) hr.le two_ne_zero, sq_norm_ofReal_add_mul_exp,
+    lt_div_iff₀ (by positivity)]
+  constructor <;> intro h <;> linarith
+
+/-- For `x, y, r > 0`, `r < ‖x + y e^{iθ}‖` if and only if
+`(r² − y² − x²) / (2 y x) < cos θ`. -/
+theorem lt_norm_ofReal_add_mul_exp_iff {x y r : ℝ} (hx : 0 < x) (hy : 0 < y) (hr : 0 < r)
+    (θ : ℝ) :
+    r < ‖(x : ℂ) + y * exp (θ * I)‖ ↔ (r ^ 2 - y ^ 2 - x ^ 2) / (2 * y * x) < Real.cos θ := by
+  rw [← pow_lt_pow_iff_left₀ hr.le (norm_nonneg _) two_ne_zero, sq_norm_ofReal_add_mul_exp,
+    div_lt_iff₀ (by positivity)]
+  constructor <;> intro h <;> linarith
+
+end Complex
