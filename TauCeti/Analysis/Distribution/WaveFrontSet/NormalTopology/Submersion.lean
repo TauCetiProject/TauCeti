@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.FDeriv.Basic
 public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology.LatticeSeries
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Submersion
-import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Analysis.Normed.Module.Cone
 
@@ -58,10 +57,6 @@ topology of `𝓓'(Ω)`, the same holds at `ξ = 0` for the cutoffs in a compact
 * `TauCeti.WaveFrontSpace.pullbackLinearCLM`: the pullback `A^* : 𝓓'_Γ(Ω') →L[ℂ] 𝓓'_{Aᵀ Γ}(Ω)`.
 * `TauCeti.WaveFrontSpace.toDistribution_pullbackLinearCLM`: it is
   `Distribution.compCLMOfSubmersion`.
-* `TauCeti.isOpen_diff_pullbackLinearCone`, `TauCeti.smul_mem_pullbackLinearCone`,
-  `TauCeti.ne_zero_of_mem_pullbackLinearCone`: the target cone `Aᵀ Γ` is again a cone of nonzero
-  covectors, closed in `Ω × (E \ {0})`, so that the pullback composes with further continuous
-  pullbacks in the normal topology.
 
 ## References
 
@@ -83,65 +78,6 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finite
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
 
 namespace TauCeti
-
-/-! ### The cone `Aᵀ Γ` of a surjective linear map -/
-
-section PullbackLinearCone
-
-variable {A : E →L[ℝ] E'} {Γ : Set (E' × E')}
-
-/-- The pullback `Aᵀ Γ` of a cone along a linear map is a cone. -/
-theorem smul_mem_pullbackLinearCone (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ)
-    {p : E × E} (hp : p ∈ pullbackLinearCone A Γ) {t : ℝ} (ht : 0 < t) :
-    (p.1, t • p.2) ∈ pullbackLinearCone A Γ := by
-  obtain ⟨η, hη, hηp⟩ := mem_pullbackLinearCone.1 hp
-  exact mem_pullbackLinearCone.2 ⟨t • η, hcone _ hη t ht, by rw [map_smul, hηp]⟩
-
-/-- Along a surjective linear map `A`, the transpose `Aᵀ` is injective, so `Aᵀ Γ` contains no
-zero covector when `Γ` contains none. -/
-theorem ne_zero_of_mem_pullbackLinearCone (hA : Surjective A) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
-    {p : E × E} (hp : p ∈ pullbackLinearCone A Γ) : p.2 ≠ 0 := by
-  obtain ⟨η, hη, hηp⟩ := mem_pullbackLinearCone.1 hp
-  rw [← hηp]
-  exact (map_ne_zero_iff _
-    (ContinuousLinearMap.adjoint_injective_iff_denseRange.2 hA.denseRange)).2 (hΓ0 _ hη)
-
-/-- **The cone `Aᵀ Γ` is closed.** Let `A` be surjective, mapping `Ω` into `Ω'`, and let `Γ` be a
-set of nonzero covectors over `Ω'`, closed in `Ω' × (E' \ {0})`. Then
-`Aᵀ Γ = {(x, Aᵀ η) | (A x, η) ∈ Γ}` is closed in `Ω × (E \ {0})`. -/
-theorem isOpen_diff_pullbackLinearCone {Ω : Set E} {Ω' : Set E'} (hΩ : IsOpen Ω)
-    (hAΩ : MapsTo A Ω Ω') (hA : Surjective A) (hΓ : IsOpen ((Ω' ×ˢ {0}ᶜ) \ Γ)) :
-    IsOpen ((Ω ×ˢ {0}ᶜ) \ pullbackLinearCone A Γ) := by
-  -- `Aᵀ` is injective, so it has a continuous left inverse `L`; a covector `ζ` lies in the range
-  -- of `Aᵀ` exactly when `Aᵀ (L ζ) = ζ`.
-  obtain ⟨L, hL⟩ := ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional
-    (ContinuousLinearMap.adjoint_injective_iff_denseRange.2 hA.denseRange)
-  have hS : (Ω ×ˢ {0}ᶜ) \ pullbackLinearCone A Γ =
-      Ω ×ˢ {0}ᶜ ∩ ({p : E × E | (A†) (L p.2) ≠ p.2} ∪
-        (fun p : E × E ↦ (A p.1, L p.2)) ⁻¹' ((Ω' ×ˢ {0}ᶜ) \ Γ)) := by
-    ext ⟨x, ζ⟩
-    simp only [Set.mem_sdiff, mem_prod, mem_compl_iff, mem_singleton_iff, mem_pullbackLinearCone,
-      mem_inter_iff, mem_union, mem_ofPred_eq, mem_preimage, not_exists, not_and]
-    constructor
-    · rintro ⟨⟨hx, hζ⟩, hnot⟩
-      refine ⟨⟨hx, hζ⟩, ?_⟩
-      by_cases h : (A†) (L ζ) = ζ
-      · refine Or.inr ⟨⟨hAΩ hx, fun hL0 ↦ hζ ?_⟩, fun hmem ↦ hnot _ hmem h⟩
-        rw [← h, hL0, map_zero]
-      · exact Or.inl h
-    · rintro ⟨⟨hx, hζ⟩, h⟩
-      refine ⟨⟨hx, hζ⟩, fun η hη hηζ ↦ ?_⟩
-      subst hηζ
-      rw [hL η] at h
-      rcases h with h | ⟨-, h⟩
-      · exact h rfl
-      · exact h hη
-  rw [hS]
-  refine (hΩ.prod isOpen_compl_singleton).inter (IsOpen.union ?_ ?_)
-  · exact isOpen_ne_fun ((A†).continuous.comp (L.continuous.comp continuous_snd)) continuous_snd
-  · exact hΓ.preimage ((A.continuous.comp continuous_fst).prodMk (L.continuous.comp continuous_snd))
-
-end PullbackLinearCone
 
 namespace WaveFrontSpace
 

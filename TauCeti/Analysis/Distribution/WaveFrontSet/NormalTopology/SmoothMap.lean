@@ -49,12 +49,13 @@ to be continuous in the normal topology, with fixed cones in between:
 * `ι^* : 𝓓'_{g^* Γ}(W) →L[ℂ] 𝓓'_{ιᵀ g^* Γ}(Ω)` (`TauCeti.WaveFrontSpace.pullbackInlCLM`), with
   `ιᵀ g^* Γ ⊆ f^* Γ`.
 
-Each step needs its source cone closed. For `πᵀ Γ` this holds for every surjective linear map
-(`TauCeti.isOpen_diff_pullbackLinearCone`), since `Aᵀ` has a continuous left inverse. For
-`g^* Γ` it holds since `Dg(x, y)ᵀ η = (Df(x)ᵀ η, η)` recovers `η` as the second component.
+Each step needs its source cone closed. A pulled-back cone is closed when the transposed
+derivatives have continuous left inverses (`TauCeti.isOpen_diff_covectorPullback_of_leftInverse`).
+For `πᵀ Γ` this holds for every surjective linear map (`TauCeti.isOpen_diff_pullbackLinearCone`).
+For `g^* Γ` it holds since `Dg(x, y)ᵀ η = (Df(x)ᵀ η, η)` recovers `η` as the second component.
 The restriction `ι^*` also needs `g^* Γ` to contain no conormal covector `((x, 0), (0, η))` of
 `E × {0}`: such a covector comes from some `(f x, η) ∈ Γ` with `Df(x)ᵀ η = 0`, which the hypothesis
-on the normal set of `f` excludes.
+on the normal set of `f` excludes (`TauCeti.notMem_covectorPullback_addSnd`).
 
 ## Main declarations
 
@@ -87,6 +88,10 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 section Shear
 
 variable {Ω : Opens E} {Ω' : Opens E'} {f : E → E'}
+
+private theorem differentiableAt_of_mem (hf : ContDiffOn ℝ ∞ f Ω) {x : E} (hx : x ∈ Ω) :
+    DifferentiableAt ℝ f x :=
+  (hf.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt (by simp)
 
 /-- The displacement `(x, y) ↦ (0, f x)` of the shear is continuous where `x ∈ Ω`. -/
 private theorem continuousOn_shearDisp (hf : ContinuousOn f Ω) :
@@ -138,8 +143,7 @@ private theorem hasFDerivAt_shear (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (
     (hp : p.fst ∈ Ω) :
     HasFDerivAt (shear hf.continuousOn)
       (ContinuousLinearMap.id ℝ _ + inrL2 ℝ E E' ∘L fderiv ℝ f p.fst ∘L fstL 2 ℝ E E') p := by
-  have hfd : HasFDerivAt f (fderiv ℝ f p.fst) p.fst :=
-    ((hf.contDiffAt (Ω.isOpen.mem_nhds hp)).differentiableAt (by simp)).hasFDerivAt
+  have hfd : HasFDerivAt f (fderiv ℝ f p.fst) p.fst := (differentiableAt_of_mem hf hp).hasFDerivAt
   have h : ⇑(shear hf.continuousOn) = fun q ↦ q + inrL2 ℝ E E' (f q.fst) :=
     funext (shear_apply hf.continuousOn)
   rw [h]
@@ -158,15 +162,17 @@ private theorem sndL_comp_shear (hf : ContinuousOn f Ω) :
   ext p
   simp [shear_apply, add_comm]
 
-private theorem surjective_sndL : Surjective (sndL 2 ℝ E E') := fun z ↦
-  ⟨toLp 2 (0, z), by simp⟩
-
 /-- The open set `E × Ω'` on which `(x, z) ↦ z` maps into `Ω'`. -/
 private def sndPreimage (Ω' : Opens E') : Opens (WithLp 2 (E × E')) :=
   ⟨sndL 2 ℝ E E' ⁻¹' Ω', Ω'.isOpen.preimage (sndL 2 ℝ E E').continuous⟩
 
+@[simp]
+private theorem mem_sndPreimage {p : WithLp 2 (E × E')} :
+    p ∈ sndPreimage Ω' ↔ sndL 2 ℝ E E' p ∈ Ω' :=
+  Iff.rfl
+
 private theorem mapsTo_sndL_sndPreimage :
-    MapsTo (sndL 2 ℝ E E') (sndPreimage (E := E) Ω') Ω' := fun _ hp ↦ hp
+    MapsTo (sndL 2 ℝ E E') (sndPreimage (E := E) Ω') Ω' := fun _ hp ↦ mem_sndPreimage.1 hp
 
 private theorem addSndDomain_subset_shear_source (hf : ContinuousOn f Ω) :
     (addSndDomain hf Ω' : Set (WithLp 2 (E × E'))) ⊆ (shear hf).source := fun _ hp ↦
@@ -175,8 +181,7 @@ private theorem addSndDomain_subset_shear_source (hf : ContinuousOn f Ω) :
 private theorem mapsTo_shear_addSndDomain (hf : ContinuousOn f Ω) :
     MapsTo (shear hf) (addSndDomain hf Ω')
       (sndPreimage (E := E) Ω' : Set (WithLp 2 (E × E'))) := fun p hp ↦ by
-  change sndL 2 ℝ E E' (shear hf p) ∈ Ω'
-  rw [← comp_apply (f := ⇑(sndL 2 ℝ E E')), sndL_comp_shear]
+  rw [SetLike.mem_coe, mem_sndPreimage, ← comp_apply (f := ⇑(sndL 2 ℝ E E')), sndL_comp_shear]
   exact mapsTo_addSnd hf hp
 
 end Shear
@@ -188,96 +193,29 @@ section AddSndCone
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] {Ω : Opens E} {Ω' : Opens E'}
   {f : E → E'} {Γ : Set (E' × E')}
 
-/-- Over `W = {(x, y) | x ∈ Ω, f x + y ∈ Ω'}`, since `Dg(x, y)ᵀ η = (Df(x)ᵀ η, η)`, a covector
-`ζ` lies in `g^* Γ` exactly when `ζ = (Df(x)ᵀ ζ.snd, ζ.snd)` and `(g (x, y), ζ.snd) ∈ Γ`. -/
-private theorem mem_covectorPullback_addSnd_iff (hf : ContDiffOn ℝ ∞ f Ω)
-    {p ζ : WithLp 2 (E × E')} (hp : p ∈ addSndDomain hf.continuousOn Ω') :
-    (p, ζ) ∈ covectorPullback (addSnd f) (addSndDomain hf.continuousOn Ω') Γ ↔
-      ζ = toLp 2 ((fderiv ℝ f p.fst).adjoint ζ.snd, ζ.snd) ∧ (addSnd f p, ζ.snd) ∈ Γ := by
-  have hpΩ := (mem_addSndDomain.1 hp).1
-  simp only [mem_covectorPullback, adjoint_fderiv_addSnd_apply
-    ((hf.differentiableOn (by simp) _ hpΩ).differentiableAt (Ω.isOpen.mem_nhds hpΩ)),
-    SetLike.mem_coe, hp, true_and]
-  constructor
-  · rintro ⟨η, hη, rfl⟩
-    simpa using hη
-  · rintro ⟨h, hmem⟩
-    exact ⟨ζ.snd, hmem, h.symm⟩
+/-- The second component `(x, y) ↦ y` recovers `η` from `Dg(x, y)ᵀ η = (Df(x)ᵀ η, η)`. -/
+private theorem sndL_adjoint_fderiv_addSnd (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (E × E')}
+    (hp : p ∈ addSndDomain hf.continuousOn Ω') (η : E') :
+    sndL 2 ℝ E E' ((fderiv ℝ (addSnd f) p).adjoint η) = η := by
+  simp [adjoint_fderiv_addSnd_apply (differentiableAt_of_mem hf (mem_addSndDomain.1 hp).1)]
 
-/-- **The cone `g^* Γ` is closed** in `W × ((E × E') \ {0})`: by
-`mem_covectorPullback_addSnd_iff`, its complement there is cut out by the continuous conditions
-`ζ ≠ (Df(x)ᵀ ζ.snd, ζ.snd)` or `(g (x, y), ζ.snd) ∉ Γ`. -/
+/-- **The cone `g^* Γ` is closed** in `W × ((E × E') \ {0})`, since the transpose of
+`Dg(x, y)` has the continuous left inverse `(x, y) ↦ y`. -/
 private theorem isOpen_diff_covectorPullback_addSnd (hf : ContDiffOn ℝ ∞ f Ω)
     (hΓ : IsOpen (((Ω' : Set E') ×ˢ {0}ᶜ) \ Γ)) :
     IsOpen (((addSndDomain hf.continuousOn Ω' : Set (WithLp 2 (E × E'))) ×ˢ {0}ᶜ) \
-      covectorPullback (addSnd f) (addSndDomain hf.continuousOn Ω') Γ) := by
-  set W : Set (WithLp 2 (E × E')) := ↑(addSndDomain hf.continuousOn Ω')
-  set S : Set (WithLp 2 (E × E') × WithLp 2 (E × E')) := W ×ˢ {0}ᶜ
-  have hW : IsOpen W := (addSndDomain hf.continuousOn Ω').isOpen
-  have hS : IsOpen S := hW.prod isOpen_compl_singleton
-  -- The covector `Dg(x, y)ᵀ ζ.snd`, continuous over `W`.
-  set G : WithLp 2 (E × E') × WithLp 2 (E × E') → WithLp 2 (E × E') :=
-    fun q ↦ toLp 2 ((fderiv ℝ f q.1.fst).adjoint q.2.snd, q.2.snd)
-  have hderiv : ContinuousOn (fun q : WithLp 2 (E × E') × WithLp 2 (E × E') ↦
-      fderiv ℝ f q.1.fst) S :=
-    (hf.continuousOn_fderiv_of_isOpen Ω.isOpen (by simp)).comp
-      ((fstL 2 ℝ E E').continuous.comp continuous_fst).continuousOn
-      fun q (hq : q ∈ S) ↦ (mem_addSndDomain.1 (mem_prod.1 hq).1).1
-  have hG : ContinuousOn G S :=
-    (prod_continuous_toLp 2 E E').comp_continuousOn
-      ((((adjoint (𝕜 := ℝ) (E := E) (F := E')).continuous.comp_continuousOn hderiv).clm_apply
-        ((sndL 2 ℝ E E').continuous.comp continuous_snd).continuousOn).prodMk
-        ((sndL 2 ℝ E E').continuous.comp continuous_snd).continuousOn)
-  have hgW : ContinuousOn (fun q : WithLp 2 (E × E') × WithLp 2 (E × E') ↦
-      (addSnd f q.1, q.2.snd)) S :=
-    (((contDiffOn_addSnd hf).continuousOn.comp continuous_fst.continuousOn
-      fun q (hq : q ∈ S) ↦ (mem_prod.1 hq).1)).prodMk
-      ((sndL 2 ℝ E E').continuous.comp continuous_snd).continuousOn
-  have hset : (W ×ˢ {0}ᶜ) \ covectorPullback (addSnd f) W Γ =
-      (S ∩ (fun q ↦ (q.2, G q)) ⁻¹' (diagonal (WithLp 2 (E × E')))ᶜ) ∪
-        (S ∩ (fun q ↦ (addSnd f q.1, q.2.snd)) ⁻¹' (((Ω' : Set E') ×ˢ {0}ᶜ) \ Γ)) := by
-    ext ⟨p, ζ⟩
-    simp only [S, mem_sdiff, mem_prod, mem_compl_iff, mem_singleton_iff, mem_inter_iff, mem_union,
-      mem_preimage, mem_diagonal_iff]
-    constructor
-    · rintro ⟨⟨hp, hζ⟩, hnot⟩
-      rw [mem_covectorPullback_addSnd_iff hf hp] at hnot
-      by_cases h : ζ = G (p, ζ)
-      · refine Or.inr ⟨⟨hp, hζ⟩, ⟨mapsTo_addSnd hf.continuousOn hp, fun h0 ↦ hζ ?_⟩,
-          fun hmem ↦ hnot ⟨h, hmem⟩⟩
-        rw [h]
-        simp [G, h0]
-      · exact Or.inl ⟨⟨hp, hζ⟩, h⟩
-    · rintro (⟨⟨hp, hζ⟩, h⟩ | ⟨⟨hp, hζ⟩, -, h⟩)
-      · exact ⟨⟨hp, hζ⟩, fun h' ↦ h ((mem_covectorPullback_addSnd_iff hf hp).1 h').1⟩
-      · exact ⟨⟨hp, hζ⟩, fun h' ↦ h ((mem_covectorPullback_addSnd_iff hf hp).1 h').2⟩
-  rw [hset]
-  exact ((continuous_snd.continuousOn.prodMk hG).isOpen_inter_preimage hS
-    isClosed_diagonal.isOpen_compl).union (hgW.isOpen_inter_preimage hS hΓ)
+      covectorPullback (addSnd f) (addSndDomain hf.continuousOn Ω') Γ) :=
+  isOpen_diff_covectorPullback_of_leftInverse (addSndDomain hf.continuousOn Ω').isOpen
+    (mapsTo_addSnd hf.continuousOn) (contDiffOn_addSnd hf).continuousOn
+    ((contDiffOn_addSnd hf).continuousOn_fderiv_of_isOpen (addSndDomain _ _).isOpen (by simp))
+    (fun _ ↦ sndL 2 ℝ E E') continuousOn_const (fun _ hp ↦ sndL_adjoint_fderiv_addSnd hf hp) hΓ
 
-/-- The cone `g^* Γ` contains no zero covector, since `Dg(x, y)ᵀ η = (Df(x)ᵀ η, η)`. -/
+/-- The cone `g^* Γ` contains no zero covector, since the transpose of `Dg(x, y)` is injective. -/
 private theorem ne_zero_of_mem_covectorPullback_addSnd (hf : ContDiffOn ℝ ∞ f Ω)
     (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {q : WithLp 2 (E × E') × WithLp 2 (E × E')}
-    (hq : q ∈ covectorPullback (addSnd f) (addSndDomain hf.continuousOn Ω') Γ) : q.2 ≠ 0 := by
-  obtain ⟨hp, η, hη, hηq⟩ := mem_covectorPullback.1 hq
-  have hpΩ := (mem_addSndDomain.1 hp).1
-  rw [← hηq, adjoint_fderiv_addSnd_apply
-    ((hf.differentiableOn (by simp) _ hpΩ).differentiableAt (Ω.isOpen.mem_nhds hpΩ))]
-  intro h0
-  exact hΓ0 _ hη (by simpa using congrArg WithLp.snd h0)
-
-/-- If `Γ` does not meet the normal set of `f`, the cone `g^* Γ` contains no conormal covector
-`((x, 0), (0, η))` of `E × {0}` over `Ω`: it would come from some `(f x, η) ∈ Γ` with
-`Df(x)ᵀ η = 0`. -/
-private theorem notMem_covectorPullback_addSnd (hf : ContDiffOn ℝ ∞ f Ω)
-    (hN : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ Γ → (fderiv ℝ f x).adjoint η ≠ 0) :
-    ∀ x ∈ Ω, ∀ η : E', η ≠ 0 → (toLp 2 (x, (0 : E')), toLp 2 ((0 : E), η)) ∉
-      covectorPullback (addSnd f) (addSndDomain hf.continuousOn Ω') Γ := by
-  intro x hx η _ hmem
-  obtain ⟨-, η', hη', hη'q⟩ := mem_covectorPullback.1 hmem
-  rw [adjoint_fderiv_addSnd_apply (p := toLp 2 (x, 0))
-    ((hf.differentiableOn (by simp) x hx).differentiableAt (Ω.isOpen.mem_nhds hx))] at hη'q
-  exact hN x hx η' (by simpa using hη') (by simpa using congrArg WithLp.fst hη'q)
+    (hq : q ∈ covectorPullback (addSnd f) (addSndDomain hf.continuousOn Ω') Γ) : q.2 ≠ 0 :=
+  ne_zero_of_mem_covectorPullback
+    (fun _ hp ↦ LeftInverse.injective (sndL_adjoint_fderiv_addSnd hf hp)) hΓ0 hq
 
 /-- **The chain rule for the cones.** Pulling `Γ` back along the projection `π (x, z) = z` and
 then along the shear `Φ` gives covectors of `g^* Γ`, since `g = π ∘ Φ`. -/
@@ -303,12 +241,11 @@ private theorem pullbackInlCone_covectorPullback_addSnd_subset (hf : ContDiffOn 
     pullbackInlCone (covectorPullback (addSnd f) (addSndDomain hf.continuousOn Ω') Γ) ⊆
       covectorPullback f Ω Γ := by
   rintro ⟨x, ξ⟩ hmem
-  obtain ⟨η', hη'⟩ := mem_pullbackInlCone.1 hmem
-  obtain ⟨hx, η, hη, hηξ⟩ := mem_covectorPullback.1 hη'
-  have hxΩ : x ∈ Ω := by simpa using (mem_addSndDomain.1 hx).1
-  rw [adjoint_fderiv_addSnd_apply (p := toLp 2 (x, 0))
-    ((hf.differentiableOn (by simp) x hxΩ).differentiableAt (Ω.isOpen.mem_nhds hxΩ))] at hηξ
-  exact mem_covectorPullback.2 ⟨hxΩ, η, by simpa using hη, by simpa using congrArg WithLp.fst hηξ⟩
+  obtain ⟨η, hη⟩ := mem_pullbackInlCone.1 hmem
+  have hxΩ : x ∈ Ω := by simpa using (mem_addSndDomain.1 (mem_covectorPullback.1 hη).1).1
+  obtain ⟨-, hΓ, hξ⟩ := (mem_covectorPullback_addSnd_iff (p := toLp 2 (x, 0))
+    (differentiableAt_of_mem hf hxΩ)).1 hη
+  exact mem_covectorPullback.2 ⟨hxΩ, η, by simpa using hΓ, by simpa using hξ⟩
 
 end AddSndCone
 
@@ -330,7 +267,7 @@ private theorem addSndPullback_eq (hf : ContDiffOn ℝ ∞ f Ω) (T : 𝓓'(Ω',
         (mapsTo_shear_addSndDomain hf.continuousOn)
         (Distribution.compCLMOfSubmersion volume volume (sndL 2 ℝ E E')
           (sndL 2 ℝ E E').contDiff.contDiffOn mapsTo_sndL_sndPreimage
-          (fun x _ ↦ surjective_fderiv_of_surjective surjective_sndL x) T) := by
+          (fun x _ ↦ surjective_fderiv_of_surjective (sndL_surjective ℝ E E') x) T) := by
   have hg := sndL_comp_shear hf.continuousOn
   have hgf : ContDiffOn ℝ ∞ (sndL 2 ℝ E E' ∘ shear hf.continuousOn)
       (addSndDomain hf.continuousOn Ω') := hg ▸ contDiffOn_addSnd hf
@@ -372,16 +309,17 @@ def pullbackCLM (f : E → E') (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f �
       (isOpen_diff_covectorPullback_addSnd hf hΓ)
       (fun _ hp _ ht ↦ smul_mem_covectorPullback hcone hp ht)
       (fun _ hp ↦ ne_zero_of_mem_covectorPullback_addSnd hf hΓ0 hp)
-      (notMem_covectorPullback_addSnd hf hN) ∘L
+      (fun x hx η _ ↦
+        notMem_covectorPullback_addSnd (differentiableAt_of_mem hf hx) (hN x hx) η) ∘L
     inclusionCLM (covectorPullback_shear_subset hf) ∘L
     compCLMOfOpenPartialHomeomorph (shear hf.continuousOn) (contDiffOn_shear hf)
       (contDiffOn_shear_symm hf) (addSndDomain_subset_shear_source hf.continuousOn)
       (mapsTo_shear_addSndDomain hf.continuousOn)
       (isOpen_diff_pullbackLinearCone (sndPreimage Ω').isOpen mapsTo_sndL_sndPreimage
-        surjective_sndL hΓ)
+        (sndL_surjective ℝ E E') hΓ)
       (fun _ hp _ ht ↦ smul_mem_pullbackLinearCone hcone hp ht)
-      (fun _ hp ↦ ne_zero_of_mem_pullbackLinearCone surjective_sndL hΓ0 hp) ∘L
-    pullbackLinearCLM (sndL 2 ℝ E E') mapsTo_sndL_sndPreimage surjective_sndL hΓ hcone hΓ0
+      (fun _ hp ↦ ne_zero_of_mem_pullbackLinearCone (sndL_surjective ℝ E E') hΓ0 hp) ∘L
+    pullbackLinearCLM (sndL 2 ℝ E E') mapsTo_sndL_sndPreimage (sndL_surjective ℝ E E') hΓ hcone hΓ0
 
 @[simp]
 theorem toDistribution_pullbackCLM {f : E → E'} (hf : ContDiffOn ℝ ∞ f Ω)
