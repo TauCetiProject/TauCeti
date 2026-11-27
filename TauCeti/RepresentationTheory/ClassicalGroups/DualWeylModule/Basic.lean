@@ -11,7 +11,7 @@ public import Mathlib.Combinatorics.Young.YoungDiagram
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Subst
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.MulLeft
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
@@ -34,9 +34,10 @@ at every matrix over `S`, scaling a column by `c` multiplies a member by `c` to 
 degree of that column, and adding `c` times an earlier column to a later one does not change its
 value.
 
-The group acts on the rows: for an `N' × N` matrix `z`, the substitution of `z * x` for the
-`N' × n` matrix of variables (`Matrix.mvPolynomialMulLeft`) keeps the column degrees and commutes
-with the column operations, so it maps the dual Weyl module in `N'` rows into the one in `N` rows
+The group acts on the rows: for an `N' × N` matrix `z`, replacing the `N' × n` matrix of variables
+by the `N' × n` matrix `z * x`, `x` the `N × n` matrix of variables (`Matrix.mvPolynomialMulLeft`),
+keeps the column degrees and commutes with the column operations, so it maps the dual Weyl module
+in `N'` rows into the one in `N` rows
 (`TauCeti.DualWeylModule.mvPolynomialMulLeft_mem_dualWeylModule`).
 
 The minor of `x` on any `k` rows and the first `k` columns lies in the module of the column degrees
@@ -262,9 +263,9 @@ section RowAction
 
 variable {N' : ℕ}
 
-/-- The substitution of `z * x` commutes with the column operations, which act on the columns:
-`columnOperation` of the image is the image of `columnOperation` under the coefficientwise
-substitution. -/
+/-- Replacing the `N' × n` matrix of variables by `z * x` commutes with the column operations,
+which act on the columns: `columnOperation` of the image is the image of `columnOperation` under
+the coefficientwise substitution. -/
 theorem columnOperation_mvPolynomialMulLeft (z : Matrix (Fin N') (Fin N) R) (s t : Fin n)
     (f : MvPolynomial (Fin N' × Fin n) R) :
     columnOperation R s t (Matrix.mvPolynomialMulLeft z f) =
@@ -278,9 +279,10 @@ theorem columnOperation_mvPolynomialMulLeft (z : Matrix (Fin N') (Fin N) R) (s t
         simp [hp, mul_add, Finset.sum_add_distrib, Finset.sum_mul, mul_assoc]
   exact congr($h f)
 
-/-- **The row action preserves the dual Weyl module.** For every `N' × N` matrix `z`, the
-substitution `f ↦ f (z * x)` maps the dual Weyl module of column degrees `d` in `N'` rows into the
-one in `N` rows: it keeps the column degrees and commutes with the column operations. -/
+/-- **The row action preserves the dual Weyl module.** For every `N' × N` matrix `z`, replacing the
+`N' × n` matrix of variables by `z * x`, `x` the `N × n` matrix of variables, maps the dual Weyl
+module of column degrees `d` in `N'` rows into the one in `N` rows: it keeps the column degrees
+and commutes with the column operations. -/
 theorem mvPolynomialMulLeft_mem_dualWeylModule (z : Matrix (Fin N') (Fin N) R) {d : Fin n → ℕ}
     {f : MvPolynomial (Fin N' × Fin n) R} (hf : f ∈ dualWeylModule R N' d) :
     Matrix.mvPolynomialMulLeft z f ∈ dualWeylModule R N d := by

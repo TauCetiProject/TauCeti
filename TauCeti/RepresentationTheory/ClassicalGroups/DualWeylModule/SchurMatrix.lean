@@ -6,21 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.Combinatorics.Young.FullColumns
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Subst
-public import TauCeti.RepresentationTheory.ClassicalGroups.DualWeylModule.Basis
+public import TauCeti.RepresentationTheory.ClassicalGroups.DualWeylModule.FullColumns
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 import Mathlib.Topology.Algebra.MvPolynomial
-import TauCeti.RingTheory.MvPolynomial.DeterminantalIdeal
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
 
 /-!
 # Schur matrices
 
-Let `R` be a commutative ring, `μ` a Young diagram and `z` an `N' × N` matrix over `R`.
-Substituting `z * y` for the `N' × n` matrix of variables (`Matrix.mvPolynomialMulLeft`) acts on
-the rows and commutes with the column operations, so it maps the dual Weyl module `∇_R(d)` in `N'`
-rows into the one in `N` rows (`TauCeti.DualWeylModule.mvPolynomialMulLeft_mem_dualWeylModule`).
+Let `R` be a commutative ring, `μ` a Young diagram and `z` an `N' × N` matrix over `R`. Replacing
+the `N' × n` matrix of variables by the `N' × n` matrix `z * y`, `y` the `N × n` matrix of
+variables (`Matrix.mvPolynomialMulLeft`), acts on the rows and commutes with the column operations,
+so it maps the dual Weyl module `∇_R(d)` in `N'` rows into the one in `N` rows
+(`TauCeti.DualWeylModule.mvPolynomialMulLeft_mem_dualWeylModule`).
 Expanding the image of a standard bideterminant in the standard basis gives the **Schur matrix**
 `TauCeti.DualWeylModule.schurMatrix μ z`, with rows indexed by the semistandard tableaux of shape
 `μ` in `N'` letters and columns by those in `N` letters:
@@ -32,23 +30,31 @@ Expanding the image of a standard bideterminant in the standard basis gives the 
 The coefficients are unique, since the standard bideterminants are linearly independent over every
 ring, and they do not depend on the number `n ≥ μ.colLen 0` of columns of the matrix of variables.
 Uniqueness gives everything else: base change, `S(g * z) = S(g) * S(z)` by substituting twice,
-and the action of diagonal matrices, under which the standard bideterminants are weight vectors.
-For `N' = N` the Schur matrices form a representation of `GL_N(R)` on `R^{BoundedSSYT N μ}`, read
-as the dual of `∇_R(μ)` through the standard basis. It moves the vector `ev_y` of the values of the
-standard bideterminants at a matrix `y` as `S(g) *ᵥ ev_y = ev_{g * y}`, and its character is the
-Schur polynomial.
+and the action of diagonal matrices, under which the standard bideterminants are weight vectors
+(`TauCeti.DualWeylModule.mvPolynomialMulLeft_diagonal_bideterminant`).
+
+For `N' = N` the Schur matrices form a representation of `GL_N(R)` on `R^{BoundedSSYT N μ}`. Read
+a vector `v` as the linear functional `λ` on `∇_R(μ)` with `λ(b_U) = v U`. Then `S(g) *ᵥ v` is the
+functional `f ↦ λ(f(g * y))`: `S(g)` acts on the linear functionals by precomposition with the
+substitution `f ↦ f(g * y)`, a right action on `∇_R(μ)`, so that `g ↦ S(g)` is a left action on
+the functionals. For instance `S(g)` moves the evaluation at a matrix `y`, whose vector `ev_y`
+holds the values of the standard bideterminants at `y`, to the evaluation at `g * y`:
+`S(g) *ᵥ ev_y = ev_{g * y}`. The character of the representation is the Schur polynomial.
 
 A shape may have columns of the full height `N`, and its tableaux in `N` letters hold
 `0, …, N - 1` in these columns. Let `ν` be a shape `μ` with `d` columns of height `N` prepended,
 both with at most `N` rows. Deleting these columns (`TauCeti.BoundedSSYT.fullColumnsEquiv`, written
 `e`) turns the bideterminant of a tableau of shape `ν` into `Δ(y) ^ d` times that of a tableau of
-shape `μ`, `Δ(y)` the minor of `y` on all rows and the first `N` columns. So the matrix
-`S(z) = (schurMatrix ν z).submatrix id e.symm` is the matrix of the expansion
-`b_T(z * y) = Δ(y) ^ d * ∑ U, S(z) T U • b_U(y)` over the tableaux `U` of the shape `μ` without
-full columns (`TauCeti.DualWeylModule.mvPolynomialMulLeft_bideterminant_eq_pow_mul`), and for
-square `g` the Schur matrix of `ν` is `det g ^ d` times that of `μ`
-(`TauCeti.DualWeylModule.schurMatrix_eq_det_pow_smul_submatrix`), so that
-`S(z * g) = det g ^ d • (S(z) * schurMatrix μ g)`
+shape `μ`, `Δ(y)` the minor of `y` on all rows and the first `N` columns
+(`TauCeti.DualWeylModule.bideterminant_ssytFilling_eq_pow_mul`). So the matrix
+`S(z) = (schurMatrix ν z).submatrix id e.symm` is the unique matrix of the expansion
+`b_T(z * y) = Δ(y) ^ d * ∑ U, S(z) T U • b_U(y)` over the tableaux `U` of the shape `μ` left after
+deleting the first `d` full columns (`TauCeti.DualWeylModule.submatrix_schurMatrix_eq_iff`); `μ`
+has no full column only when `d` is the number of full columns of `ν`. Evaluated at a matrix `y`
+with leading `N × N` block `y₀`, this reads `det y₀ ^ d • (S(z) *ᵥ ev_y) = ev_{z * y}`, the two
+evaluation vectors being those of `μ` and `ν`. For square `g` the Schur matrix of `ν` is
+`det g ^ d` times that of `μ` (`TauCeti.DualWeylModule.schurMatrix_eq_det_pow_smul_submatrix`), so
+that `S(z * g) = det g ^ d • (S(z) * schurMatrix μ g)`
 (`TauCeti.DualWeylModule.submatrix_schurMatrix_mul_eq_det_pow_smul`). A shape with a column taller
 than `N` has no tableau in `N` letters, and then `b_T(z * y) = 0`.
 
@@ -63,6 +69,8 @@ than `N` has no tableau in `N` letters, and then `b_T(z * y) = 0`.
 
 ## Main results
 
+* `TauCeti.DualWeylModule.schurMatrix_apply`: the entries are the coordinates in the standard
+  basis.
 * `TauCeti.DualWeylModule.schurMatrix_eq_iff`: the Schur matrix is the unique matrix of
   coefficients of the expansion.
 * `TauCeti.DualWeylModule.schurMatrix_map` and
@@ -77,10 +85,12 @@ than `N` has no tableau in `N` letters, and then `b_T(z * y) = 0`.
   of the content of each tableau.
 * `TauCeti.DualWeylModule.trace_schurMatrix_diagonal` and
   `TauCeti.DualWeylModule.trace_schurMatrix_diagonal_mul_det`: the character is the Schur
-  polynomial, and Weyl's character formula as a quotient of alternants.
-* `TauCeti.DualWeylModule.bideterminant_ssytFilling_eq_pow_mul`,
-  `TauCeti.DualWeylModule.schurMatrix_eq_det_pow_smul_submatrix`,
-  `TauCeti.DualWeylModule.mvPolynomialMulLeft_bideterminant_eq_pow_mul` and
+  polynomial, and Weyl's character formula in the cross-multiplied form: the character times the
+  alternant `det (x_a ^ (N - 1 - b))` is the alternant `det (x_a ^ (λ_b + N - 1 - b))`.
+* `TauCeti.DualWeylModule.schurMatrix_eq_det_pow_smul_submatrix`,
+  `TauCeti.DualWeylModule.submatrix_schurMatrix_eq_iff`,
+  `TauCeti.DualWeylModule.mvPolynomialMulLeft_bideterminant_eq_pow_mul`,
+  `TauCeti.DualWeylModule.det_pow_smul_submatrix_schurMatrix_mulVec_evalVector` and
   `TauCeti.DualWeylModule.submatrix_schurMatrix_mul_eq_det_pow_smul`: full columns split off as
   powers of the determinant.
 
@@ -118,12 +128,24 @@ coefficients of the expansion `b_T(z * y) = ∑ U, schurMatrix μ z T U • b_U(
 bideterminant of a tableau `T` in `N'` letters, at `z * y`, in the standard bideterminants of the
 tableaux `U` in `N` letters (`TauCeti.DualWeylModule.mvPolynomialMulLeft_bideterminant`). It is
 read off in the matrix of variables with `μ.colLen 0` columns; by
-`TauCeti.DualWeylModule.schurMatrix_eq_iff` any number of columns gives the same matrix. -/
+`TauCeti.DualWeylModule.schurMatrix_eq_iff` any number `n ≥ μ.colLen 0` of columns gives the same
+matrix. -/
 noncomputable def schurMatrix (z : Matrix (Fin N') (Fin N) R) :
     Matrix (BoundedSSYT N' μ) (BoundedSSYT N μ) R :=
   Matrix.of fun T U => (standardBasis R N (n := μ.colLen 0) le_rfl).repr
     ⟨mvPolynomialMulLeft z (bideterminant R μ le_rfl (ssytFilling T)),
       mvPolynomialMulLeft_mem_dualWeylModule z (bideterminant_mem_dualWeylModule R μ le_rfl _)⟩ U
+
+/-- **The entries of the Schur matrix are coordinates in the standard basis.** The entry of the
+Schur matrix of `z` at the tableaux `T` and `U` is the coordinate at `b_U` of `b_T(z * y)` in the
+standard basis of the dual Weyl module of the `N × μ.colLen 0` matrix of variables `y`. -/
+theorem schurMatrix_apply (z : Matrix (Fin N') (Fin N) R) (T : BoundedSSYT N' μ)
+    (U : BoundedSSYT N μ) :
+    schurMatrix μ z T U = (standardBasis R N (n := μ.colLen 0) le_rfl).repr
+      ⟨mvPolynomialMulLeft z (bideterminant R μ le_rfl (ssytFilling T)),
+        mvPolynomialMulLeft_mem_dualWeylModule z (bideterminant_mem_dualWeylModule R μ le_rfl _)⟩
+      U :=
+  (rfl)
 
 /-- The expansion that defines the Schur matrix, in the matrix of variables with `μ.colLen 0`
 columns. -/
@@ -135,6 +157,7 @@ private theorem mvPolynomialMulLeft_bideterminant_colLen (z : Matrix (Fin N') (F
     ⟨mvPolynomialMulLeft z (bideterminant R μ le_rfl (ssytFilling T)),
       mvPolynomialMulLeft_mem_dualWeylModule z (bideterminant_mem_dualWeylModule R μ le_rfl _)⟩)
   simp only [Submodule.coe_sum, Submodule.coe_smul, coe_standardBasis] at h
+  simp only [schurMatrix_apply]
   exact h.symm
 
 /-- **The Schur matrix expands the substituted bideterminants.** For a tableau `T` of shape `μ` in
@@ -281,29 +304,6 @@ theorem schurMatrix_mulVec_evalVector (hμ : μ.colLen 0 ≤ n) (z : Matrix (Fin
 
 /-! ### Diagonal matrices and the character -/
 
-/-- **The torus acts on standard bideterminants by their content.** Substituting `diagonal x * y`,
-that is, rescaling the row `a` of the matrix of variables by `x a`, multiplies the bideterminant of
-a tableau `T` by `∏ a, x a ^ c_a`, `c_a` the number of entries of `T` equal to `a`. -/
-theorem mvPolynomialMulLeft_diagonal_bideterminant (hμ : μ.colLen 0 ≤ n) (T : BoundedSSYT N μ)
-    (x : Fin N → R) :
-    mvPolynomialMulLeft (diagonal x) (bideterminant R μ hμ (ssytFilling T)) =
-      (∏ a, x a ^ BoundedSSYT.weight T a) • bideterminant R μ hμ (ssytFilling T) := by
-  rw [mvPolynomialMulLeft_diagonal]
-  ext m
-  rw [coeff_rescale, smul_eq_C_mul, coeff_C_mul]
-  by_cases hm : (bideterminant R μ hμ (ssytFilling T)).coeff m = 0
-  · rw [hm, mul_zero, mul_zero]
-  congr 1
-  -- The degree of `m` in the row `a` is the number of entries `a` of `T`.
-  have h_row (a : Fin N) : ∑ s, m (a, s) = BoundedSSYT.weight T a := by
-    rw [BoundedSSYT.weight_apply, ← isWeightedHomogeneous_bideterminant hμ T a hm]
-    simp only [Finsupp.weight_apply, rowWeight_apply, smul_eq_mul, mul_ite, mul_one, mul_zero]
-    rw [Finsupp.sum_fintype _ _ (by simp), Fintype.sum_prod_type,
-      Finset.sum_eq_single a (fun b _ hb => by simp [hb]) (by simp)]
-    simp
-  rw [Finsupp.prod_fintype _ _ (fun _ => pow_zero _), Fintype.prod_prod_type]
-  exact Finset.prod_congr rfl fun a _ => by simp only [Finset.prod_pow_eq_pow_sum, h_row]
-
 /-- **Diagonal matrices act diagonally.** The Schur matrix of `diagonal x` is diagonal, with entry
 `∏ a, x a ^ c_a` at the tableau `U`, `c_a` the number of entries of `U` equal to `a`. -/
 theorem schurMatrix_diagonal [DecidableEq (BoundedSSYT N μ)] (x : Fin N → R) :
@@ -311,7 +311,7 @@ theorem schurMatrix_diagonal [DecidableEq (BoundedSSYT N μ)] (x : Fin N → R) 
   rw [schurMatrix_eq_iff μ le_rfl]
   intro T
   rw [mvPolynomialMulLeft_diagonal_bideterminant]
-  simp [diagonal_apply, ite_smul]
+  simp [diagonal_apply, ite_smul, BoundedSSYT.weight_apply]
 
 /-- **Homogeneity.** The Schur matrix of `t • z` is `t ^ |μ|` times that of `z`, `|μ|` the number
 of cells of `μ`. -/
@@ -338,9 +338,9 @@ theorem trace_schurMatrix_diagonal_mul_det (hμ : μ.colLen 0 ≤ N) (x : Fin N 
     trace (schurMatrix μ (diagonal x)) * det (of fun a b : Fin N => x a ^ (N - 1 - (b : ℕ))) =
       det (of fun a b : Fin N => x a ^ (μ.rowLen b + (N - 1 - b))) := by
   have h := congrArg (eval x) (diagramSchurPoly_mul_alternant (R := R) N μ hμ)
-  rw [map_mul, alternant_def, alternant_def, RingHom.map_det, RingHom.map_det] at h
-  rw [trace_schurMatrix_diagonal]
-  convert h using 3 <;> ext a b <;> simp [YoungDiagram.betaNumber_def]
+  rw [map_mul, eval_alternant, eval_alternant] at h
+  simp only [YoungDiagram.betaNumber_def] at h
+  rw [trace_schurMatrix_diagonal, h]
 
 end SchurMatrix
 
@@ -352,44 +352,6 @@ variable {R : Type*} [CommRing R] {N N' n d : ℕ} {μ ν : YoungDiagram}
 
 variable (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N) (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d)
 include hμ hν h
-
-/-- **Full columns split off as a power of the leading minor.** Let `ν` be `μ` with `d` columns of
-the full height `N` prepended, both with at most `N` rows, and `N ≤ n`. The bideterminant of a
-tableau `T` of shape `ν` with entries smaller than `N` is `Δ ^ d` times the bideterminant of the
-tableau of shape `μ` obtained by deleting these columns, `Δ` the minor of the `N × n` matrix of
-variables on all rows and the first `N` columns. -/
-theorem bideterminant_ssytFilling_eq_pow_mul (hN : N ≤ n) (T : BoundedSSYT N ν) :
-    bideterminant R ν (hν.trans hN) (ssytFilling T) =
-      mvPolynomialMinor R id (Fin.castLE hN) ^ d *
-        bideterminant R μ (hμ.trans hN)
-          (ssytFilling (BoundedSSYT.fullColumnsEquiv hμ hν h T)) := by
-  have hK : ν.rowLen 0 ≤ d + μ.rowLen 0 := by
-    rcases Nat.eq_zero_or_pos N with rfl | hN0
-    · rw [YoungDiagram.rowLen_eq_zero_iff.mpr hν]
-      exact Nat.zero_le _
-    · rw [h 0 hN0]
-      omega
-  rw [bideterminant_eq_prod_range R ν _ _ hK, Finset.prod_range_add,
-    bideterminant_eq_prod_range R μ _ _ le_rfl]
-  congr 1
-  · -- The first `d` columns are full, and the tableau holds `0, …, N - 1` in each of them.
-    calc ∏ j ∈ range d, columnMinor R ν (hν.trans hN) (ssytFilling T) j
-        = ∏ _j ∈ range d, mvPolynomialMinor R id (Fin.castLE hN) := by
-          refine Finset.prod_congr rfl fun j hj => ?_
-          have hc := YoungDiagram.colLen_eq_of_rowLen_eq_add hν h (Finset.mem_range.mp hj)
-          rw [columnMinor_def]
-          refine mvPolynomialMinor_castLE_congr hc (fun a => Fin.ext ?_) _ _
-          have ha : (a : ℕ) < N := hc ▸ a.isLt
-          have hc' : (N - 1, j) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr (by omega)
-          simpa using BoundedSSYT.val_eq_of_mem_of_lt T hc' ha
-      _ = _ := by rw [Finset.prod_const, Finset.card_range]
-  · -- The remaining columns are those of `μ`.
-    refine Finset.prod_congr rfl fun j _ => ?_
-    rw [columnMinor_def, columnMinor_def]
-    refine mvPolynomialMinor_castLE_congr
-      (by rw [add_comm]; exact YoungDiagram.colLen_add_of_rowLen_eq_add hμ hν h j)
-      (fun a => Fin.ext ?_) _ _
-    simp [add_comm]
 
 /-- **The full columns of a Schur matrix.** Let `ν` be `μ` with `d` columns of the full height `N`
 prepended, both with at most `N` rows. The Schur matrix of an `N × N` matrix `g` for `ν` is
@@ -408,6 +370,36 @@ theorem schurMatrix_eq_det_pow_smul_submatrix (g : Matrix (Fin N) (Fin N) R) :
     Matrix.submatrix_apply, smul_eq_mul, smul_eq_C_mul, smul_eq_C_mul, map_mul, map_pow]
   ring
 
+/-- **Uniqueness of the Schur matrix with the full columns split off.** Let `ν` be `μ` with `d`
+columns of the full height `N` prepended, both with at most `N` rows, `e` deleting the full
+columns, and `N ≤ n`. For an `N' × N` matrix `z`, `(schurMatrix ν z).submatrix id e.symm` is the
+only matrix `A` with `b_T(z * y) = Δ(y) ^ d * ∑ U, A T U • b_U(y)` for every tableau `T` of shape
+`ν` in `N'` letters, the sum running over the tableaux `U` of shape `μ` in `N` letters and `Δ(y)`
+the minor of `y` on all rows and the first `N` columns. -/
+theorem submatrix_schurMatrix_eq_iff (hN : N ≤ n) {z : Matrix (Fin N') (Fin N) R}
+    {A : Matrix (BoundedSSYT N' ν) (BoundedSSYT N μ) R} :
+    (schurMatrix ν z).submatrix id (BoundedSSYT.fullColumnsEquiv hμ hν h).symm = A ↔
+      ∀ T, mvPolynomialMulLeft z (bideterminant R ν (hν.trans hN) (ssytFilling T)) =
+        mvPolynomialMinor R id (Fin.castLE hN) ^ d *
+          ∑ U, A T U • bideterminant R μ (hμ.trans hN) (ssytFilling U) := by
+  -- Multiplied by `Δ ^ d`, the standard bideterminants of shape `μ` are those of shape `ν`, so the
+  -- expansion is the defining expansion of the Schur matrix of `ν`.
+  have hA (T : BoundedSSYT N' ν) : mvPolynomialMinor R id (Fin.castLE hN) ^ d *
+      ∑ U, A T U • bideterminant R μ (hμ.trans hN) (ssytFilling U) =
+        ∑ V, A.submatrix id (BoundedSSYT.fullColumnsEquiv hμ hν h) T V •
+          bideterminant R ν (hν.trans hN) (ssytFilling V) := by
+    rw [Finset.mul_sum, ← (BoundedSSYT.fullColumnsEquiv hμ hν h).sum_comp]
+    refine Finset.sum_congr rfl fun V _ => ?_
+    rw [bideterminant_ssytFilling_eq_pow_mul hμ hν h hN, submatrix_apply, id, mul_smul_comm]
+  simp only [hA, ← schurMatrix_eq_iff ν (hν.trans hN)]
+  constructor
+  · rintro rfl
+    ext T V
+    simp
+  · intro hS
+    ext T U
+    simp [hS]
+
 /-- **Schur matrices of rectangular matrices with the full columns split off.** Let `ν` be `μ` with
 `d` columns of the full height `N` prepended, both with at most `N` rows, and `N ≤ n`. For an
 `N' × N` matrix `z` and a tableau `T` of shape `ν` in `N'` letters,
@@ -420,10 +412,26 @@ theorem mvPolynomialMulLeft_bideterminant_eq_pow_mul (hN : N ≤ n) (z : Matrix 
       mvPolynomialMinor R id (Fin.castLE hN) ^ d *
         ∑ U, schurMatrix ν z T ((BoundedSSYT.fullColumnsEquiv hμ hν h).symm U) •
           bideterminant R μ (hμ.trans hN) (ssytFilling U) := by
-  rw [mvPolynomialMulLeft_bideterminant ν, ← (BoundedSSYT.fullColumnsEquiv hμ hν h).symm.sum_comp,
-    Finset.mul_sum]
-  refine Finset.sum_congr rfl fun U _ => ?_
-  rw [bideterminant_ssytFilling_eq_pow_mul hμ hν h hN, Equiv.apply_symm_apply, mul_smul_comm]
+  simpa only [submatrix_apply, id] using (submatrix_schurMatrix_eq_iff hμ hν h hN).mp rfl T
+
+/-- **Evaluation vectors with the full columns split off.** Let `ν` be `μ` with `d` columns of the
+full height `N` prepended, both with at most `N` rows, `e` deleting the full columns, and
+`S(z) = (schurMatrix ν z).submatrix id e.symm`. For `N ≤ n`, an `N' × N` matrix `z` and an
+`N × n` matrix `y` with leading `N × N` block `y₀`, `det y₀ ^ d • (S(z) *ᵥ ev_μ(y)) = ev_ν(z * y)`,
+`ev_μ` and `ev_ν` the evaluation vectors of the shapes `μ` and `ν`. -/
+theorem det_pow_smul_submatrix_schurMatrix_mulVec_evalVector (hN : N ≤ n)
+    (z : Matrix (Fin N') (Fin N) R) (y : Matrix (Fin N) (Fin n) R) :
+    (y.submatrix id (Fin.castLE hN)).det ^ d •
+        ((schurMatrix ν z).submatrix id (BoundedSSYT.fullColumnsEquiv hμ hν h).symm *ᵥ
+          evalVector μ (hμ.trans hN) y) =
+      evalVector ν (hν.trans hN) (z * y) := by
+  have hΔ : eval (fun p => y p.1 p.2) (mvPolynomialMinor R id (Fin.castLE hN)) =
+      (y.submatrix id (Fin.castLE hN)).det := by
+    rw [← aeval_eq_eval, aeval_mvPolynomialMinor]
+  ext T
+  rw [evalVector_apply ν, ← eval_mvPolynomialMulLeft,
+    mvPolynomialMulLeft_bideterminant_eq_pow_mul hμ hν h hN, map_mul, map_pow, hΔ, map_sum]
+  simp [mulVec, dotProduct, smul_eval]
 
 /-- **Multiplicativity with the full columns split off.** Let `ν` be `μ` with `d` columns of the
 full height `N` prepended, both with at most `N` rows, and normalise the Schur matrix of an

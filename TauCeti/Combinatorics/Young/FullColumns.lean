@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.Kostka
-import TauCeti.Combinatorics.Young.Diagram
-import TauCeti.Combinatorics.Young.SemistandardTableau
 
 /-!
 # Deleting full columns of a semistandard tableau

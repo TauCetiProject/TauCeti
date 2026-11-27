@@ -12,6 +12,7 @@ import TauCeti.Combinatorics.Young.Diagram
 import TauCeti.Combinatorics.Young.OfRowLens
 import TauCeti.RingTheory.MvPolynomial.DeterminantalIdeal
 import TauCeti.RingTheory.MvPolynomial.MonomialOrder
+import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 
 /-!
 # The standard bideterminant basis of the dual Weyl module
@@ -57,6 +58,9 @@ span. Every subtraction keeps the coefficients in `R`, which is the saturation o
   image of `∇_R`.
 * `TauCeti.DualWeylModule.mem_span_bideterminant_ssytFilling_of_map`: saturation, for an
   injective change of coefficients (for instance a domain in its field of fractions).
+* `TauCeti.DualWeylModule.isWeightedHomogeneous_bideterminant` and
+  `TauCeti.DualWeylModule.mvPolynomialMulLeft_diagonal_bideterminant`: the standard bideterminants
+  are weight vectors, the diagonal matrices acting on them through the content of the tableau.
 
 ## References
 
@@ -311,6 +315,21 @@ theorem isWeightedHomogeneous_bideterminant (hμ : μ.colLen 0 ≤ n) (T : Bound
   exact IsWeightedHomogeneous.prod _ _ _ fun j _ => by
     rw [columnMinor_def]
     exact isWeightedHomogeneous_mvPolynomialMinor R a _ _
+
+/-- **The torus acts on standard bideterminants by their content.** Replacing the `N × n` matrix of
+variables `x` by `diagonal t * x`, that is, rescaling the row `a` of `x` by `t a`, multiplies the
+bideterminant of a tableau `T` by `∏ a, t a ^ c_a`, `c_a = content T a` the number of entries of
+`T` equal to `a`. -/
+theorem mvPolynomialMulLeft_diagonal_bideterminant (hμ : μ.colLen 0 ≤ n) (T : BoundedSSYT N μ)
+    (t : Fin N → R) :
+    Matrix.mvPolynomialMulLeft (Matrix.diagonal t) (bideterminant R μ hμ (ssytFilling T)) =
+      (∏ a, t a ^ SemistandardYoungTableau.content T.val a) •
+        bideterminant R μ hμ (ssytFilling T) := by
+  rw [Matrix.mvPolynomialMulLeft_diagonal]
+  refine IsMultiHomogeneous.rescale_eq_prod_pow_smul
+    (isMultiHomogeneous_iff_forall_isWeightedHomogeneous.mpr fun a => ?_) t
+  rw [← funext (rowWeight_apply (n := n) a)]
+  exact isWeightedHomogeneous_bideterminant hμ T a
 
 end Tableau
 
