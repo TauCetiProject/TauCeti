@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Products.Basic
+public import TauCeti.CategoryTheory.DoubleCategory.Functor
 public import TauCeti.CategoryTheory.DoubleCategory.Transpose
 
 /-!
@@ -612,3 +613,66 @@ end BoundaryChange
 end StrictDoubleCategory
 
 end TauCeti
+
+namespace TauCeti.StrictDoubleFunctor
+
+open CategoryTheory TauCeti.StrictDoubleCategory TauCeti.DoubleCategoryStruct
+
+universe s₁ s₂ s₃ u₁ u₂ u₃ h₁ h₂ h₃ v₁ v₂ v₃
+
+variable {O₁ : Type u₁} {H₁ : Category.{h₁} O₁} {V₁ : Category.{v₁} O₁}
+  {O₂ : Type u₂} {H₂ : Category.{h₂} O₂} {V₂ : Category.{v₂} O₂}
+  {D₁ : StrictDoubleCategory.{s₁} O₁ H₁ V₁} {D₂ : StrictDoubleCategory.{s₂} O₂ H₂ V₂}
+
+/-- A strict double functor acts on horizontal globular hom-categories. Vertical identity
+boundaries are identified using preservation of vertical identities. -/
+-- Exposure lets the boundary types of mapped cells compute.
+@[expose]
+def horizontalGlobularFunctor (F : StrictDoubleFunctor D₁ D₂) (a b : O₁) :
+    D₁.HorizontalGlobular a b ⥤ D₂.HorizontalGlobular (F.obj a) (F.obj b) where
+  obj p := ⟨F.hMap p.edge⟩
+  map α := ⟨(F.map α.cell).cast rfl rfl (F.vMap_id a) (F.vMap_id b)⟩
+  map_id p := by
+    ext
+    simp
+  map_comp α β := by
+    ext
+    simp [HorizontalGlobular.comp_cell]
+
+@[simp]
+theorem horizontalGlobularFunctor_obj_edge (F : StrictDoubleFunctor D₁ D₂) (a b : O₁)
+    (p : D₁.HorizontalGlobular a b) :
+    ((F.horizontalGlobularFunctor a b).obj p).edge = F.hMap p.edge :=
+  (rfl)
+
+@[simp]
+theorem horizontalGlobularFunctor_map_cell (F : StrictDoubleFunctor D₁ D₂) {a b : O₁}
+    {p q : D₁.HorizontalGlobular a b} (α : p ⟶ q) :
+    ((F.horizontalGlobularFunctor a b).map α).cell =
+      (F.map α.cell).cast rfl rfl (F.vMap_id a) (F.vMap_id b) :=
+  (rfl)
+
+/-- The identity double functor acts identically on each globular hom-category. -/
+@[simp]
+theorem id_horizontalGlobularFunctor (a b : O₁) :
+    (StrictDoubleFunctor.id D₁).horizontalGlobularFunctor a b =
+      𝟭 (D₁.HorizontalGlobular a b) :=
+  (rfl)
+
+/-- The action on globular hom-categories preserves composition of double functors. -/
+@[simp]
+theorem comp_horizontalGlobularFunctor {O₃ : Type u₃} {H₃ : Category.{h₃} O₃}
+    {V₃ : Category.{v₃} O₃} {D₃ : StrictDoubleCategory.{s₃} O₃ H₃ V₃}
+    (F : StrictDoubleFunctor D₁ D₂) (G : StrictDoubleFunctor D₂ D₃) (a b : O₁) :
+    (F.comp G).horizontalGlobularFunctor a b =
+      F.horizontalGlobularFunctor a b ⋙ G.horizontalGlobularFunctor (F.obj a) (F.obj b) := by
+  -- Compute the object maps before applying dependent functor extensionality.
+  dsimp only [horizontalGlobularFunctor, StrictDoubleFunctor.comp]
+  refine CategoryTheory.Functor.ext ?_ ?_
+  · intro p
+    rfl
+  · intro p q α
+    apply HorizontalGlobular.hom_ext
+    simp
+
+end TauCeti.StrictDoubleFunctor
