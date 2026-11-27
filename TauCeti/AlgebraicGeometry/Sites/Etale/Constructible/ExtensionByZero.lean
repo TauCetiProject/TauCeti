@@ -28,12 +28,12 @@ stalk is zero and one where it is not.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.constructibleSheaf_smallEtaleExtensionByZero`: extension by zero along
-  a quasi-compact open immersion preserves constructible sheaves.
-* `AlgebraicGeometry.Scheme.not_isLocallyConstantIn_smallEtaleExtensionByZero_constantSheaf` and
-  `AlgebraicGeometry.Scheme.not_isFiniteLisse_smallEtaleExtensionByZero_constantSheaf`: if a point
-  lies in the closure of the image of an open immersion `j` but not in the image, then `j_!` of a
-  nonzero constant sheaf is not locally constant, in particular not finite lisse.
+* `AlgebraicGeometry.Scheme.Hom.constructibleSheaf_smallEtaleExtensionByZero`: extension by
+  zero along a quasi-compact open immersion preserves constructible sheaves.
+* `AlgebraicGeometry.Scheme.Hom.not_isLocallyConstantIn_smallEtaleExtensionByZero_constantSheaf`
+  and `AlgebraicGeometry.Scheme.Hom.not_isFiniteLisse_smallEtaleExtensionByZero_constantSheaf`: if
+  a point lies in the closure of the image of an open immersion `j` but not in the image, then
+  `j_!` of a nonzero constant sheaf is not locally constant, in particular not finite lisse.
 
 ## References
 
@@ -47,7 +47,7 @@ universe u
 
 open CategoryTheory Limits Topology Set.Notation AlgebraicGeometry Scheme
 
-namespace AlgebraicGeometry.Scheme
+namespace AlgebraicGeometry.Scheme.Hom
 
 open CategoryTheory.Sheaf TauCeti.AlgebraicGeometry.Scheme
 
@@ -140,4 +140,4 @@ theorem not_isFiniteLisse_smallEtaleExtensionByZero_constantSheaf (j : Y ⟶ X)
       ((constantSheaf (smallEtaleTopology Y) (ModuleCat.{u} Λ)).obj M)).IsFiniteLisse :=
   not_isLocallyConstantIn_smallEtaleExtensionByZero_constantSheaf j hx hxj M _
 
-end AlgebraicGeometry.Scheme
+end AlgebraicGeometry.Scheme.Hom

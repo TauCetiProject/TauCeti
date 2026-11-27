@@ -62,7 +62,7 @@ lemma origin_mem_closure_range_j : origin k ∈ closure (Set.range (j k)) := by
 /-- `j_! Λ` is constructible, through the stratification `𝔾_m ⊔ {0}`. -/
 theorem constructibleSheaf_extensionByZero :
     (Spec (.of k[X])).constructibleSheaf Λ (extensionByZero k Λ) :=
-  constructibleSheaf_smallEtaleExtensionByZero (j k) (constructibleSheaf_constantSheaf _)
+  (j k).constructibleSheaf_smallEtaleExtensionByZero (constructibleSheaf_constantSheaf _)
 
 /-- The stalk of `j_! Λ` at a geometric point over the origin is zero. -/
 theorem isZero_etaleStalk_extensionByZero_of_origin {Ω : Type u} [Field Ω] [IsSepClosed Ω]
@@ -81,8 +81,8 @@ noncomputable def etaleStalkExtensionByZeroIso {Ω : Type u} [Field Ω] [IsSepCl
 /-- For `Λ ≠ 0`, `j_! Λ` is not locally constant, with values in any property `P` of modules. -/
 theorem not_isLocallyConstantIn_extensionByZero [Nontrivial Λ] (P : ObjectProperty (ModuleCat Λ)) :
     ¬ (extensionByZero k Λ).IsLocallyConstantIn (smallEtaleTopology _) P :=
-  haveI : Nontrivial (ModuleCat.of Λ Λ) := ‹Nontrivial Λ›
-  not_isLocallyConstantIn_smallEtaleExtensionByZero_constantSheaf (j k)
+  haveI : Nontrivial (ModuleCat.of Λ Λ) := inferInstanceAs (Nontrivial Λ)
+  (j k).not_isLocallyConstantIn_smallEtaleExtensionByZero_constantSheaf
     (origin_mem_closure_range_j k) (origin_notMem_range_j k) _ P
 
 end TauCeti.Examples.ExtensionByZeroAffineLine

@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
+public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.Topology.Stratification.Finite
 
 /-!
@@ -25,10 +26,6 @@ This file provides the stratifications themselves and the operations on them nee
 such a condition is stable under pullback and can be checked locally on a quasi-compact
 quasi-separated open:
 
-* `AlgebraicGeometry.Scheme.Hom.sdiffι`: for a morphism `f : Z ⟶ X` and an open `W` of `X`, the
-  reduced closed subscheme of `Z` on the complement of `f ⁻¹ᵁ W`, mapped to `X` by `f`; its image
-  is `Set.range f \ W`, and it is an immersion when `f` is. It provides the strata of the gluing
-  and extension constructions below.
 * `AlgebraicGeometry.Scheme.ConstructibleStratification`: the structure of a constructible
   stratification of an open `U`.
 * `AlgebraicGeometry.Scheme.ConstructibleStratification.single`: the stratification of `U` by the
@@ -78,28 +75,6 @@ open CategoryTheory Limits Topology Set.Notation
 namespace AlgebraicGeometry.Scheme
 
 variable {X Y : Scheme.{u}}
-
-namespace Hom
-
-/-! ### Reduced closed complements of opens -/
-
-variable {Z : Scheme.{u}} (f : Z ⟶ X) (W : X.Opens)
-
-/-- For a morphism `f : Z ⟶ X` and an open `W` of `X`, the reduced closed subscheme of `Z` on the
-complement of `f ⁻¹ᵁ W`, mapped to `X` by `f`. Its image is `Set.range f \ W` (`range_sdiffι`),
-and it is an immersion when `f` is. -/
-noncomputable def sdiffι : (IdealSheafData.vanishingIdeal (f ⁻¹ᵁ W).compl).subscheme ⟶ X :=
-  (IdealSheafData.vanishingIdeal (f ⁻¹ᵁ W).compl).subschemeι ≫ f
-
-instance isImmersion_sdiffι [IsImmersion f] : IsImmersion (f.sdiffι W) := by
-  unfold sdiffι
-  infer_instance
-
-@[simp]
-lemma range_sdiffι : Set.range (f.sdiffι W) = Set.range f \ W := by
-  simp [sdiffι, Set.range_comp, Set.image_compl_preimage]
-
-end Hom
 
 /-- A *constructible stratification* of an open `U` of a scheme `X`: a finite family of immersions
 `f i : Z i ⟶ X` with pairwise disjoint images covering `U`, each image a constructible subset of
@@ -616,7 +591,7 @@ theorem exists_of_iSup_eq {κ : Type*} [Finite κ] {V : κ → X.Opens} (hVU : �
     pairwise_disjoint_range := pairwise_disjoint_range_glueι _
     iUnion_range := iUnion_range_glueι _ hVU'
     isConstructible_range := isConstructible_range_glueι _ hVU' fun m ↦ hV (e.symm m) },
-    fun p ↦ ⟨e.symm p.1, p.2, _, rfl⟩⟩
+    fun p ↦ ⟨e.symm p.1, p.2, _, Hom.subschemeι_comp_eq_sdiffι _ _⟩⟩
 
 end ConstructibleStratification
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 
 /-!
@@ -36,6 +37,9 @@ discrete valuation ring.
   complement of an open `V` consists of the points outside `V`.
 * `Scheme.IdealSheafData.mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff`: the reduced
   closed complement of the range of an open immersion consists of the points outside that range.
+* `Scheme.Hom.sdiffι`: for a morphism `f : Z ⟶ X` and an open `W` of `X`, the reduced closed
+  subscheme of `Z` on the complement of `f ⁻¹ᵁ W`, mapped to `X` by `f`; its image is
+  `Set.range f \ W` (`Scheme.Hom.range_sdiffι`), and it is an immersion when `f` is.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
@@ -231,3 +235,32 @@ theorem comap_vanishingIdeal_closure_singleton_of_isOpenImmersion (j : U ⟶ X) 
   simp [j.isOpenEmbedding.injective.eq_iff]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-! ### Reduced closed complements of opens -/
+
+variable {X Z : Scheme.{u}} (f : Z ⟶ X) (W : X.Opens)
+
+/-- For a morphism `f : Z ⟶ X` and an open `W` of `X`, the reduced closed subscheme of `Z` on the
+complement of `f ⁻¹ᵁ W`, mapped to `X` by `f`. Its image is `Set.range f \ W` (`range_sdiffι`),
+and it is an immersion when `f` is. -/
+noncomputable def sdiffι : (IdealSheafData.vanishingIdeal (f ⁻¹ᵁ W).compl).subscheme ⟶ X :=
+  (IdealSheafData.vanishingIdeal (f ⁻¹ᵁ W).compl).subschemeι ≫ f
+
+/-- `f.sdiffι W` is the inclusion of the reduced closed subscheme on the complement of `f ⁻¹ᵁ W`
+followed by `f`. -/
+@[reassoc]
+lemma subschemeι_comp_eq_sdiffι :
+    (IdealSheafData.vanishingIdeal (f ⁻¹ᵁ W).compl).subschemeι ≫ f = f.sdiffι W :=
+  (rfl)
+
+instance isImmersion_sdiffι [IsImmersion f] : IsImmersion (f.sdiffι W) := by
+  rw [← subschemeι_comp_eq_sdiffι]
+  infer_instance
+
+@[simp]
+lemma range_sdiffι : Set.range (f.sdiffι W) = Set.range f \ W := by
+  simp [← subschemeι_comp_eq_sdiffι, Set.range_comp, Set.image_compl_preimage]
+
+end AlgebraicGeometry.Scheme.Hom
