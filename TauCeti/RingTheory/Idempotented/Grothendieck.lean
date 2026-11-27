@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.Basic
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.RingTheory.Idempotented.NondegMod
 
 /-!
@@ -46,12 +46,6 @@ namespace TauCeti.NondegMod
 variable (A : Type u₁) (H : Type u₂) [CommRing A] [NonUnitalRing H] [Module A H]
   [IsScalarTower A H H] [SMulCommClass A H H] [IsIdempotented H]
 
-/-- Filtered colimits of modules, in any universe `v` and over a ring in any universe, are exact:
-they are computed on underlying abelian groups. -/
-instance hasExactColimitsOfShape_moduleCat (R : Type*) [Ring R] (J : Type v) [Category.{v} J]
-    [IsFiltered J] : HasExactColimitsOfShape J (ModuleCat.{v} R) :=
-  HasExactColimitsOfShape.domain_of_functor J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
-
 /-- Colimits of nondegenerate modules are exact whenever colimits of the same shape are exact
 for modules over the unitization: the inclusion preserves colimits and finite limits. -/
 instance hasExactColimitsOfShape (J : Type*) [Category J]
@@ -66,8 +60,7 @@ instance ab5OfSize : AB5OfSize.{v, v} (NondegMod.{v} A H) where
 
 /-- The unitization `A ⊕ H` is `v`-small when `A` and `H` are. -/
 instance instSmallUnitization [Small.{v} A] [Small.{v} H] : Small.{v} (Unitization A H) :=
-  small_of_injective (f := fun x : Unitization A H ↦ (x.fst, x.snd))
-    fun _ _ h ↦ Unitization.ext (congrArg Prod.fst h) (congrArg Prod.snd h)
+  small_of_injective Unitization.toProd_injective
 
 /-- The nondegenerate part `H • (A ⊕ H)` of the regular module over the unitization, as a
 nondegenerate module (with the underlying type shrunk to the universe `v`). -/
