@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.HeisenbergModel.Fock.Basic
+import TauCeti.Data.Int.Sign
 import TauCeti.LinearAlgebra.Matrix.Determinant.ComplementaryMinor
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
@@ -121,9 +122,10 @@ theorem complexLinearPart_submatrix (u : Matrix ι ι ℂ) :
       fromBlocks ((negBlock ε u).map conj) 0 0 (posBlock ε u) := by
   ext (i | i) (j | j)
   · simp [Equiv.sumCompl, i.property, j.property]
-  · simp [Equiv.sumCompl, i.property, eq_one_of_ne_neg_one j.property]
-  · simp [Equiv.sumCompl, eq_one_of_ne_neg_one i.property, j.property]
-  · simp [Equiv.sumCompl, eq_one_of_ne_neg_one i.property, eq_one_of_ne_neg_one j.property]
+  · simp [Equiv.sumCompl, i.property, Int.units_eq_one_of_ne_neg_one j.property]
+  · simp [Equiv.sumCompl, Int.units_eq_one_of_ne_neg_one i.property, j.property]
+  · simp [Equiv.sumCompl, Int.units_eq_one_of_ne_neg_one i.property,
+      Int.units_eq_one_of_ne_neg_one j.property]
 
 variable [Fintype ι]
 
@@ -179,12 +181,9 @@ theorem det_complexLinearPart (g : unitaryGroup ε) :
 /-- The complex-linear part of every signed unitary matrix has nonzero determinant. -/
 theorem det_complexLinearPart_ne_zero (g : unitaryGroup ε) :
     (complexLinearPart ε ((g : GL ι ℂ) : Matrix ι ι ℂ)).det ≠ 0 := by
-  have hΔ : multiplier ε g ≠ 0 := by
-    have h := cocycle_multiplier (ε := ε) g 1
-    intro hzero
-    simp [HeisenbergDatum.Multiplier.cocycle_def, hzero] at h
   rw [det_complexLinearPart]
-  exact mul_ne_zero (Matrix.GeneralLinearGroup.det_ne_zero (g : GL ι ℂ)) (pow_ne_zero _ hΔ)
+  exact mul_ne_zero (Matrix.GeneralLinearGroup.det_ne_zero (g : GL ι ℂ))
+    (pow_ne_zero _ (multiplier_ne_zero g))
 
 /-- The complex-linear part is invertible, so the inverse polynomial substitution is defined. -/
 theorem isUnit_complexLinearPart (g : unitaryGroup ε) :
@@ -227,8 +226,8 @@ theorem inv_complexLinearPart_apply_of_ne (u : Matrix ι ι ℂ) {i j : ι} (h :
       | inl j =>
         simpa [e, submatrix_apply] using congrFun (congrFun hblocks (Sum.inr i)) (Sum.inl j)
       | inr j =>
-        exact (h ((eq_one_of_ne_neg_one i.property).trans
-          (eq_one_of_ne_neg_one j.property).symm)).elim
+        exact (h ((Int.units_eq_one_of_ne_neg_one i.property).trans
+          (Int.units_eq_one_of_ne_neg_one j.property).symm)).elim
   · rw [nonsing_inv_apply_not_isUnit _ ((isUnit_iff_isUnit_det _).not.mp hu),
       Matrix.zero_apply]
 

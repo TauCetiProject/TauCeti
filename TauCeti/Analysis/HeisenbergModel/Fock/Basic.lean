@@ -9,6 +9,7 @@ public import TauCeti.Analysis.HeisenbergModel.WeilOperators
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Matrix.DeterminantBound.L2OpNorm
+import TauCeti.Data.Int.Sign
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Accretive.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Reproducing
@@ -52,7 +53,8 @@ jointly continuous representation `ω_ε` of `U(ε)` on the Fock space `𝓕(ε)
 
 * `TauCeti.Fock.heisenbergDatum_mul_gaussian`, `TauCeti.Fock.isVacuum_gaussian`: the reproducing
   kernel of the Gaussian, and the Gaussian is a vacuum.
-* `TauCeti.Fock.cocycle_multiplier`: the cocycle of `Δ_∞` is trivial.
+* `TauCeti.Fock.cocycle_multiplier`: the cocycle of `Δ_∞` is trivial, so `Δ_∞` does not vanish
+  (`TauCeti.Fock.multiplier_ne_zero`).
 * `TauCeti.Fock.norm_multiplier_le`, `TauCeti.Fock.norm_weilRep_le`,
   `TauCeti.Fock.continuous_weilRep`: the bounds `|Δ_∞(u)| ≤ ‖u‖^{|ι|}` and
   `‖ω_ε(u)‖ ≤ ‖e‖ ‖u‖^{|ι|}`, and the joint continuity of `ω_ε`.
@@ -325,10 +327,6 @@ instance isVacuum_gaussian : (heisenbergDatum ε).IsVacuum (measure ι) (gaussia
 
 /-! ### The multiplier -/
 
-/-- A sign other than `-1` is `1`. -/
-theorem eq_one_of_ne_neg_one {u : ℤˣ} (h : u ≠ -1) : u = 1 :=
-  (Int.units_eq_one_or u).resolve_right h
-
 variable (ε) in
 /-- The block `u₋₋` of a square matrix on the indices of sign `-1`. -/
 def negBlock (u : Matrix ι ι ℂ) : Matrix {i // ε i = -1} {i // ε i = -1} ℂ :=
@@ -432,7 +430,7 @@ private theorem conjTranspose_posProj : (posProj ε)ᴴ = posProj ε := by
 /-- The determinant of `P₊ + P₋ x` is the minor of `x` on the indices of sign `-1`. -/
 private theorem det_posProjAdd (x : Matrix ι ι ℂ) : (posProjAdd ε x).det = (negBlock ε x).det := by
   let e := Equiv.sumCompl fun i ↦ ε i = -1
-  have h_pos (i : {i // ¬ ε i = -1}) : ε i = 1 := eq_one_of_ne_neg_one i.property
+  have h_pos (i : {i // ¬ ε i = -1}) : ε i = 1 := Int.units_eq_one_of_ne_neg_one i.property
   have h_blocks : (posProjAdd ε x).submatrix e e =
       fromBlocks (negBlock ε x) (x.submatrix Subtype.val Subtype.val) 0 1 := by
     ext (i | i) (j | j)
@@ -616,6 +614,12 @@ theorem cocycle_multiplier (g h : unitaryGroup ε) :
   field_simp
   rw [one_div, inv_pow, inv_pow, ← pow_mul, ← mul_two]
   exact inv_mul_cancel₀ (pow_ne_zero _ (by exact_mod_cast Real.pi_ne_zero))
+
+/-- `Δ_∞(g) ≠ 0` for `g ∈ U(ε)`, since the cocycle of `Δ_∞` is trivial. -/
+theorem multiplier_ne_zero (g : unitaryGroup ε) : multiplier ε g ≠ 0 := by
+  intro hzero
+  have h := cocycle_multiplier (ε := ε) g 1
+  simp [HeisenbergDatum.Multiplier.cocycle_def, hzero] at h
 
 /-! ### The Fock space and the Weil representation -/
 
