@@ -353,6 +353,18 @@ theorem morseIndex_const_add (c : ℝ) (f : E → ℝ) (x : E) :
     morseIndex (fun y ↦ c + f y) x = morseIndex f x := by
   rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_const_add]
 
+/-- Scaling a function by a positive constant does not change its Morse index. -/
+theorem morseIndex_smul_of_pos {a : ℝ} (ha : 0 < a) (f : E → ℝ) (x : E) :
+    morseIndex (a • f) x = morseIndex f x := by
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_smul,
+    QuadraticForm.sigNeg_smul_of_pos _ ha]
+
+/-- Scaling a function by a negative constant gives the Morse index of its negation. -/
+theorem morseIndex_smul_of_neg {a : ℝ} (ha : a < 0) (f : E → ℝ) (x : E) :
+    morseIndex (a • f) x = morseIndex (-f) x := by
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_smul, hessianQuadraticForm_neg,
+    QuadraticForm.sigNeg_smul_of_neg _ ha, sigNeg_neg]
+
 /-- The Morse index is invariant under a `C²` change of coordinates with invertible derivative.
 Criticality is needed because it removes the first-order term from the second-order chain rule. -/
 theorem morseIndex_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))

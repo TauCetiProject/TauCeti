@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.Morse.Prod
 import TauCeti.Analysis.Calculus.Morse.ScalarComposition
 import TauCeti.Analysis.InnerProductSpace.Calculus
@@ -37,6 +38,12 @@ nondegenerate critical point of index `dim E`, in the normalization of a Morse c
 `((u, v), (u', v')) ↦ -2 ⟪u, u'⟫ + 2 ⟪v, v'⟫`, and its Morse index is `dim E` at every point. For
 `E = F = ℝ` this is the saddle `-x² + y²` of the plane, with Hessian `diag(-2, 2)` and index `1`.
 
+More generally, for a profile `g : ℝ × ℝ → ℝ` of class `C²` at the origin with partial derivatives
+`a` and `b` there, the function `(u, v) ↦ g (‖u‖ ^ 2, ‖v‖ ^ 2)` on `E × F` is critical at the
+origin with Hessian `(u, v) ↦ 2 a ‖u‖ ^ 2 + 2 b ‖v‖ ^ 2`, since the squared norms vanish to second
+order. Its Morse index there counts `dim E` when `a < 0` and `dim F` when `b < 0`, and the origin is
+nondegenerate when `a` and `b` are nonzero. The one-norm case is `u ↦ a * ‖u‖ ^ 2`.
+
 ## Main results
 
 * `TauCeti.hessianQuadraticForm_norm_sq`: its Hessian quadratic form is `2 * ‖v‖ ^ 2`.
@@ -53,6 +60,15 @@ nondegenerate critical point of index `dim E`, in the normalization of a Morse c
   `TauCeti.fderiv_fderiv_neg_norm_sq_add_norm_sq_apply` and
   `TauCeti.morseIndex_neg_norm_sq_add_norm_sq`: the critical point, second derivative and Morse
   index of the model `(u, v) ↦ -‖u‖ ^ 2 + ‖v‖ ^ 2`.
+* `TauCeti.hessianQuadraticForm_const_mul_norm_sq`, `TauCeti.morseIndex_const_mul_norm_sq` and
+  `TauCeti.isNondegenerateCriticalPoint_const_mul_norm_sq`: the Hessian, Morse index and
+  nondegeneracy of `u ↦ a * ‖u‖ ^ 2`.
+* `TauCeti.contDiffAt_comp_norm_sq_prod_zero` and `TauCeti.fderiv_comp_norm_sq_prod_zero`: a
+  function `(u, v) ↦ g (‖u‖ ^ 2, ‖v‖ ^ 2)` of two squared norms is `C²` and critical at the
+  origin.
+* `TauCeti.hessianQuadraticForm_comp_norm_sq_prod_zero`, `TauCeti.morseIndex_comp_norm_sq_prod_zero`
+  and `TauCeti.isNondegenerateCriticalPoint_comp_norm_sq_prod_zero`: its Hessian, Morse index and
+  nondegeneracy at the origin, in terms of the partial derivatives of `g`.
 -/
 
 public section
@@ -206,5 +222,162 @@ theorem morseIndex_neg_norm_sq_add_norm_sq [FiniteDimensional ℝ E] [FiniteDime
     morseIndex_norm_sq, add_zero]
 
 end Model
+
+/-! ### Functions of two squared norms -/
+
+section TwoNormSq
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+omit [InnerProductSpace ℝ F] in
+/-- A constant multiple of the squared norm, as a function, is a scalar multiple of the squared
+norm. -/
+private theorem const_mul_norm_sq_eq_smul (a : ℝ) :
+    (fun z : F ↦ a * ‖z‖ ^ 2) = a • fun z ↦ ‖z‖ ^ 2 :=
+  funext fun z ↦ by rw [Pi.smul_apply, smul_eq_mul]
+
+/-- The Hessian quadratic form of `u ↦ a * ‖u‖ ^ 2` is `v ↦ 2 * a * ‖v‖ ^ 2`, at every point. -/
+theorem hessianQuadraticForm_const_mul_norm_sq (a : ℝ) (x v : F) :
+    hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2) x v = 2 * a * ‖v‖ ^ 2 := by
+  rw [const_mul_norm_sq_eq_smul, hessianQuadraticForm_smul, _root_.smul_apply,
+    hessianQuadraticForm_norm_sq, smul_eq_mul]
+  ring
+
+/-- **The Morse index of `u ↦ a * ‖u‖ ^ 2`** is the dimension when `a < 0` and `0` otherwise, at
+every point. -/
+theorem morseIndex_const_mul_norm_sq [FiniteDimensional ℝ F] (a : ℝ) (x : F) :
+    morseIndex (fun z : F ↦ a * ‖z‖ ^ 2) x = if a < 0 then Module.finrank ℝ F else 0 := by
+  rcases lt_trichotomy a 0 with ha | rfl | ha
+  · rw [ite_eq_left ha, const_mul_norm_sq_eq_smul, morseIndex_smul_of_neg ha, Pi.neg_def,
+      morseIndex_neg_norm_sq]
+  · simp
+  · rw [ite_eq_right ha.not_gt, const_mul_norm_sq_eq_smul, morseIndex_smul_of_pos ha,
+      morseIndex_norm_sq]
+
+/-- For `a ≠ 0`, the origin is a nondegenerate critical point of `u ↦ a * ‖u‖ ^ 2`. -/
+theorem isNondegenerateCriticalPoint_const_mul_norm_sq [FiniteDimensional ℝ F] {a : ℝ}
+    (ha : a ≠ 0) : IsNondegenerateCriticalPoint (fun z : F ↦ a * ‖z‖ ^ 2) 0 := by
+  have hφ : ContDiffAt ℝ 2 (fun t : ℝ ↦ a * t) (‖(0 : F)‖ ^ 2) :=
+    (contDiff_const.mul contDiff_id).contDiffAt
+  exact (isNondegenerateCriticalPoint_norm_sq (F := F)).scalar_comp hφ (by simpa using ha)
+
+variable {g : ℝ × ℝ → ℝ} {a b : ℝ}
+
+/-- The map `(u, v) ↦ (‖u‖ ^ 2, ‖v‖ ^ 2)` has vanishing derivative at the origin. -/
+theorem hasFDerivAt_norm_sq_prod_zero :
+    HasFDerivAt (fun p : E × F ↦ (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) (0 : E × F →L[ℝ] ℝ × ℝ) 0 := by
+  have h₁ := (hasFDerivAt_fst (𝕜 := ℝ) (p := (0 : E × F))).norm_sq
+  have h₂ := (hasFDerivAt_snd (𝕜 := ℝ) (p := (0 : E × F))).norm_sq
+  convert h₁.prodMk h₂ using 1
+  ext <;> simp
+
+/-- The map `(u, v) ↦ (‖u‖ ^ 2, ‖v‖ ^ 2)` is `C²`. -/
+private theorem contDiff_norm_sq_prod : ContDiff ℝ 2 (fun p : E × F ↦ (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) :=
+  ((contDiff_norm_sq ℝ).comp contDiff_fst).prodMk ((contDiff_norm_sq ℝ).comp contDiff_snd)
+
+omit [InnerProductSpace ℝ E] [InnerProductSpace ℝ F] in
+/-- A continuous linear functional of `(‖u‖ ^ 2, ‖v‖ ^ 2)` is a separated sum of multiples of the
+two squared norms. -/
+private theorem comp_norm_sq_prod_eq (ℓ : ℝ × ℝ →L[ℝ] ℝ) :
+    (fun p : E × F ↦ ℓ (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) =
+      (fun u : E ↦ ℓ (1, 0) * ‖u‖ ^ 2) ∘ Prod.fst +
+        (fun v : F ↦ ℓ (0, 1) * ‖v‖ ^ 2) ∘ Prod.snd := by
+  ext p
+  have h : ((‖p.1‖ ^ 2, ‖p.2‖ ^ 2) : ℝ × ℝ) = ‖p.1‖ ^ 2 • (1, 0) + ‖p.2‖ ^ 2 • (0, 1) := by
+    ext <;> simp
+  simp only [Pi.add_apply, Function.comp_apply, h, map_add, map_smul, smul_eq_mul]
+  ring
+
+omit [InnerProductSpace ℝ E] [InnerProductSpace ℝ F] in
+/-- The base point of `g` in `(u, v) ↦ g (‖u‖ ^ 2, ‖v‖ ^ 2)` at the origin is the origin. -/
+private theorem norm_sq_prod_zero :
+    ((‖(0 : E × F).1‖ ^ 2, ‖(0 : E × F).2‖ ^ 2) : ℝ × ℝ) = 0 := by
+  ext <;> simp
+
+omit [InnerProductSpace ℝ E] [InnerProductSpace ℝ F] in
+/-- A profile that is `C²` at the origin is `C²` at the image of the origin under
+`(u, v) ↦ (‖u‖ ^ 2, ‖v‖ ^ 2)`. -/
+private theorem contDiffAt_norm_sq_prod_zero_of_contDiffAt (hg : ContDiffAt ℝ 2 g 0) :
+    ContDiffAt ℝ 2 g (‖(0 : E × F).1‖ ^ 2, ‖(0 : E × F).2‖ ^ 2) :=
+  norm_sq_prod_zero (E := E) (F := F) ▸ hg
+
+/-- **A function of two squared norms is `C²` at the origin** when its profile `g` is `C²` at the
+origin of `ℝ × ℝ`. -/
+theorem contDiffAt_comp_norm_sq_prod_zero (hg : ContDiffAt ℝ 2 g 0) :
+    ContDiffAt ℝ 2 (fun p : E × F ↦ g (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) 0 :=
+  (contDiffAt_norm_sq_prod_zero_of_contDiffAt hg).comp (0 : E × F) contDiff_norm_sq_prod.contDiffAt
+
+/-- At the origin, the Hessian of `(u, v) ↦ g (‖u‖ ^ 2, ‖v‖ ^ 2)` is that of the separated sum of
+multiples of the squared norms by the partial derivatives `a` and `b` of `g`. -/
+private theorem hessianQuadraticForm_comp_norm_sq_prod_zero_eq (hg : ContDiffAt ℝ 2 g 0)
+    (ha : HasDerivAt (fun x ↦ g (x, 0)) a 0) (hb : HasDerivAt (fun y ↦ g (0, y)) b 0) :
+    hessianQuadraticForm (fun p : E × F ↦ g (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) 0 =
+      hessianQuadraticForm ((fun u : E ↦ a * ‖u‖ ^ 2) ∘ Prod.fst +
+        (fun v : F ↦ b * ‖v‖ ^ 2) ∘ Prod.snd) 0 := by
+  have hd := hg.differentiableAt two_ne_zero
+  obtain rfl := hd.fderiv_apply_eq_of_hasDerivAt_add_smul (v := (1, 0)) ha (by simp)
+  obtain rfl := hd.fderiv_apply_eq_of_hasDerivAt_add_smul (v := (0, 1)) hb (by simp)
+  have h := hessianQuadraticForm_comp_eq_fderiv_comp (x := 0)
+    (φ := fun p : E × F ↦ (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) (contDiffAt_norm_sq_prod_zero_of_contDiffAt hg)
+    contDiff_norm_sq_prod.contDiffAt hasFDerivAt_norm_sq_prod_zero.fderiv
+  simp only [Function.comp_def, norm_sq_prod_zero] at h
+  rw [h, comp_norm_sq_prod_eq]
+
+/-- **A function of two squared norms is critical at the origin.** For `g` differentiable at the
+origin of `ℝ × ℝ`, the function `(u, v) ↦ g (‖u‖ ^ 2, ‖v‖ ^ 2)` has vanishing derivative at the
+origin of `E × F`. -/
+theorem fderiv_comp_norm_sq_prod_zero (hg : DifferentiableAt ℝ g 0) :
+    fderiv ℝ (fun p : E × F ↦ g (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) 0 = 0 := by
+  have hg' : HasFDerivAt g (fderiv ℝ g 0) (‖(0 : E × F).1‖ ^ 2, ‖(0 : E × F).2‖ ^ 2) := by
+    rw [norm_sq_prod_zero]
+    exact hg.hasFDerivAt
+  exact (hg'.comp (0 : E × F) hasFDerivAt_norm_sq_prod_zero).fderiv.trans
+    (ContinuousLinearMap.comp_zero _)
+
+/-- **The Hessian of a function of two squared norms at the origin.** Let `g` be of class `C²` at
+the origin of `ℝ × ℝ`, with partial derivatives `a` and `b` there. The Hessian quadratic form of
+`(u, v) ↦ g (‖u‖ ^ 2, ‖v‖ ^ 2)` at the origin of `E × F` is `(u, v) ↦ 2 a ‖u‖ ^ 2 + 2 b ‖v‖ ^ 2`.
+Only the first derivative of `g` enters, because the squared norms vanish to second order. -/
+theorem hessianQuadraticForm_comp_norm_sq_prod_zero (hg : ContDiffAt ℝ 2 g 0)
+    (ha : HasDerivAt (fun x ↦ g (x, 0)) a 0) (hb : HasDerivAt (fun y ↦ g (0, y)) b 0)
+    (v : E × F) :
+    hessianQuadraticForm (fun p : E × F ↦ g (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) 0 v =
+      2 * a * ‖v.1‖ ^ 2 + 2 * b * ‖v.2‖ ^ 2 := by
+  rw [hessianQuadraticForm_comp_norm_sq_prod_zero_eq hg ha hb, ← Prod.mk_zero_zero,
+    hessianQuadraticForm_comp_fst_add_comp_snd (contDiff_const.mul (contDiff_norm_sq ℝ)).contDiffAt
+      (contDiff_const.mul (contDiff_norm_sq ℝ)).contDiffAt, QuadraticMap.prod_apply,
+    hessianQuadraticForm_const_mul_norm_sq, hessianQuadraticForm_const_mul_norm_sq]
+
+/-- **The Morse index of a function of two squared norms at the origin.** Let `g` be of class `C²`
+at the origin of `ℝ × ℝ`, with partial derivatives `a` and `b` there. The Morse index of
+`(u, v) ↦ g (‖u‖ ^ 2, ‖v‖ ^ 2)` at the origin counts `dim E` when `a < 0` and `dim F` when
+`b < 0`. -/
+theorem morseIndex_comp_norm_sq_prod_zero [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+    (hg : ContDiffAt ℝ 2 g 0) (ha : HasDerivAt (fun x ↦ g (x, 0)) a 0)
+    (hb : HasDerivAt (fun y ↦ g (0, y)) b 0) :
+    morseIndex (fun p : E × F ↦ g (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) 0 =
+      (if a < 0 then Module.finrank ℝ E else 0) + (if b < 0 then Module.finrank ℝ F else 0) := by
+  rw [morseIndex_def, hessianQuadraticForm_comp_norm_sq_prod_zero_eq hg ha hb, ← morseIndex_def,
+    ← Prod.mk_zero_zero, morseIndex_comp_fst_add_comp_snd
+      (contDiff_const.mul (contDiff_norm_sq ℝ)).contDiffAt
+      (contDiff_const.mul (contDiff_norm_sq ℝ)).contDiffAt,
+    morseIndex_const_mul_norm_sq, morseIndex_const_mul_norm_sq]
+
+/-- **A function of two squared norms has a nondegenerate critical point at the origin** when
+both partial derivatives `a` and `b` of its `C²` profile `g` at the origin are nonzero. -/
+theorem isNondegenerateCriticalPoint_comp_norm_sq_prod_zero [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] (hg : ContDiffAt ℝ 2 g 0) (ha : HasDerivAt (fun x ↦ g (x, 0)) a 0)
+    (hb : HasDerivAt (fun y ↦ g (0, y)) b 0) (ha₀ : a ≠ 0) (hb₀ : b ≠ 0) :
+    IsNondegenerateCriticalPoint (fun p : E × F ↦ g (‖p.1‖ ^ 2, ‖p.2‖ ^ 2)) 0 := by
+  have hm := (isNondegenerateCriticalPoint_const_mul_norm_sq (F := E) ha₀).comp_fst_add_comp_snd
+    (isNondegenerateCriticalPoint_const_mul_norm_sq (F := F) hb₀)
+  rw [Prod.mk_zero_zero] at hm
+  refine isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate.2
+    ⟨contDiffAt_comp_norm_sq_prod_zero hg,
+      fderiv_comp_norm_sq_prod_zero (hg.differentiableAt two_ne_zero), ?_⟩
+  rw [hessianQuadraticForm_comp_norm_sq_prod_zero_eq hg ha hb]
+  exact hm.hessianQuadraticForm_nondegenerate
+
+end TwoNormSq
 
 end TauCeti
