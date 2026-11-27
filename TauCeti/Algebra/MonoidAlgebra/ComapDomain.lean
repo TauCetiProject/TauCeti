@@ -28,6 +28,9 @@ statement about completed group algebras.
 ## Main results
 
 * `MonoidAlgebra.comapDomain_smul`: `comapDomain` commutes with scalar multiplication.
+* `MonoidAlgebra.comapDomainLinearMap`: along an injective monoid homomorphism, `comapDomain` as
+  an `R`-linear map, with its coefficients, `MonoidAlgebra.comapDomainLinearMap_id`,
+  `MonoidAlgebra.comapDomainLinearMap_comp` and `MonoidAlgebra.comapDomainLinearMap_one`.
 * `MonoidAlgebra.comapDomain_mapDomain`: `comapDomain f` is a retraction of `mapDomain f`.
 * `MonoidAlgebra.mapDomain_comapDomain_eq_comapDomain_mapDomain`: `comapDomain` commutes with
   `mapDomain` along a commutative square in which every point mapped into the range of one
@@ -94,6 +97,50 @@ theorem mapDomain_comapDomain_eq_comapDomain_mapDomain {M₂ N₂ : Type*} {f₁
         comapDomain_single_of_notMem_range (mt (hrange n) hn)]
 
 end Map
+
+section LinearMap
+
+variable {G H : Type*} [Monoid G] [Monoid H]
+
+/-- The **restriction of coefficients** `R[G] → R[H]` along an injective homomorphism
+`f : H →* G`, as an `R`-linear map: the coefficient of `comapDomainLinearMap f hf x` at `h` is
+that of `x` at `f h`. For a subgroup `H ≤ G` it sends `z` to `z_H`, which keeps the coefficients
+on `H`. -/
+noncomputable def comapDomainLinearMap (f : H →* G) (hf : Function.Injective f) :
+    MonoidAlgebra R G →ₗ[R] MonoidAlgebra R H where
+  toFun := comapDomain f hf
+  map_add' := comapDomain_add _ _
+  map_smul' := comapDomain_smul f hf
+
+/-- The coefficient of `comapDomainLinearMap f hf x` at `h` is the coefficient of `x` at `f h`. -/
+@[simp]
+theorem coeff_comapDomainLinearMap (f : H →* G) (hf : Function.Injective f) (x : MonoidAlgebra R G)
+    (h : H) : (comapDomainLinearMap f hf x).coeff h = x.coeff (f h) := by
+  simp [comapDomainLinearMap]
+
+/-- Restriction of coefficients along the identity is the identity. -/
+@[simp]
+theorem comapDomainLinearMap_id (x : MonoidAlgebra R G) :
+    comapDomainLinearMap (MonoidHom.id G) Function.injective_id x = x := by
+  ext
+  simp
+
+/-- Restriction of coefficients along a composite is the composite of the restrictions. -/
+theorem comapDomainLinearMap_comp {K : Type*} [Monoid K] (f₂ : H →* G) (hf₂ : Function.Injective f₂)
+    (f₁ : K →* H) (hf₁ : Function.Injective f₁) (x : MonoidAlgebra R G) :
+    comapDomainLinearMap (f₂.comp f₁) (hf₂.comp hf₁) x =
+      comapDomainLinearMap f₁ hf₁ (comapDomainLinearMap f₂ hf₂ x) := by
+  ext
+  simp
+
+/-- The restriction of `1` is `1`. -/
+@[simp]
+theorem comapDomainLinearMap_one (f : H →* G) (hf : Function.Injective f) :
+    comapDomainLinearMap f hf (1 : MonoidAlgebra R G) = 1 := by
+  ext h
+  simpa [one_def] using Finsupp.single_apply_left hf (1 : H) h (1 : R)
+
+end LinearMap
 
 section Group
 

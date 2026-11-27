@@ -37,6 +37,9 @@ counterpart of `TauCeti.LFunctions.PrimitiveRayClassCharacter`, built on Mathlib
   `TauCeti.PrimitiveDirichletCharacter.of_changeLevel`,
   `TauCeti.PrimitiveDirichletCharacter.of_one`, `TauCeti.PrimitiveDirichletCharacter.of_inv`: the
   bundle of the character of a bundle, of a lift, of a principal character and of an inverse.
+* `TauCeti.PrimitiveDirichletCharacter.of_injective`,
+  `TauCeti.PrimitiveDirichletCharacter.of_zpow`: at a fixed level `of` is injective, and the bundle
+  of a power depends only on the bundle of the base.
 -/
 
 public section
@@ -129,6 +132,11 @@ theorem of_eq_iff [NeZero N] {χ : DirichletCharacter ℂ N} {ψ : PrimitiveDiri
     exact ⟨level_of_dvd χ, changeLevel_character_of χ⟩
   · rw [changeLevel_character_of, hψ]
 
+/-- At a fixed level, different characters have different bundles. -/
+theorem of_injective [NeZero N] : Function.Injective (of (N := N)) := fun χ χ' h ↦ by
+  obtain ⟨_, hχ'⟩ := of_eq_iff.mp h
+  exact hχ'.symm.trans (changeLevel_character_of χ')
+
 /-- The bundle of the character of a bundle is that bundle. -/
 @[simp]
 theorem of_character (ψ : PrimitiveDirichletCharacter) : of ψ.character = ψ :=
@@ -144,6 +152,12 @@ theorem of_changeLevel [NeZero N] (h : M ∣ N) (χ : DirichletCharacter ℂ M) 
   have : NeZero M := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne N) h⟩
   exact of_eq_iff.2 ⟨(level_of_dvd χ).trans h, by
     rw [changeLevel_trans _ (level_of_dvd χ) h, changeLevel_character_of]⟩
+
+/-- The bundle of an integer power of `χ` is the bundle of the same power of the character of
+the bundle of `χ`. -/
+theorem of_zpow [NeZero N] (χ : DirichletCharacter ℂ N) (l : ℤ) :
+    of (χ ^ l) = of ((of χ).character ^ l) := by
+  rw [← of_changeLevel (level_of_dvd χ), map_zpow, changeLevel_character_of]
 
 /-- The trivial bundle: the character modulo `1`. -/
 noncomputable instance : One PrimitiveDirichletCharacter :=
