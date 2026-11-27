@@ -7,10 +7,9 @@ module
 
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import TauCeti.Analysis.Asymptotics.DifferenceEquation.FormalSolution
-import Mathlib.Algebra.Order.Field.GeomSum
-import Mathlib.Analysis.PSeries
-import Mathlib.Analysis.SpecificLimits.Normed
+import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.ContinuedFractions.ReductionOfOrder
+import TauCeti.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -91,11 +90,8 @@ private lemma norm_casoratian_le {𝕜 : Type*} [NormedField 𝕜] {f g w v : �
   | zero => simp
   | succ k ih =>
     obtain ⟨h₁, h₂, hg⟩ := h (n₁ + k) (by omega)
-    have hrec : w (n₁ + (k + 1)) * v (n₁ + (k + 1) + 1) - w (n₁ + (k + 1) + 1) * v (n₁ + (k + 1)) =
-        g (n₁ + k) * (w (n₁ + k) * v (n₁ + k + 1) - w (n₁ + k + 1) * v (n₁ + k)) := by
-      rw [← add_assoc]
-      linear_combination w (n₁ + k + 1) * h₂ - v (n₁ + k + 1) * h₁
-    rw [hrec, norm_mul, pow_succ, mul_right_comm]
+    rw [← add_assoc, casoratian_add_one_of_difference_eq_zero h₁ h₂, norm_mul, pow_succ,
+      mul_right_comm]
     exact mul_le_mul hg ih (norm_nonneg _) hγ0 |>.trans_eq (by ring)
 
 /-- **Small solutions are exponentially small.** Let `‖g n‖ ≤ γ` for large `n`, and let `w` and
@@ -268,8 +264,9 @@ private theorem exists_solution_of_forward_bounds {f g u : ℕ → ℂ} {φ : �
   have hq : 0 ≤ q := le_of_mul_le_mul_right (by simpa using
     (mul_nonneg (norm_nonneg (g 0)) (norm_nonneg (u 0))).trans (hgu 0)) (norm_pos_iff.2 (hu 2))
   -- the increments `δ k = x (k + 1) - x k` are at most `D φ k`, so `x` tends to `L ≠ 0`
+  have hx0 : x 0 = 1 := by simp [hx_def, hv_def, forwardSolution, div_self (hu 0)]
   have hδφ : ∀ k, ‖x (k + 1) - x k‖ ≤ D * φ k :=
-    norm_sub_le_of_forward_bound (by simp [hx_def, hv_def, forwardSolution, div_self (hu 0)])
+    norm_sub_le_of_forward_bound hx0
       (by simp [hx_def, hv_def, forwardSolution, div_self (hu 1)])
       (norm_div_sub_div_le hu hv hgu hr) hφ0 hφθ hφ hq hqθ hB hsmall
   set δ : ℕ → ℂ := fun k ↦ x (k + 1) - x k
@@ -284,7 +281,6 @@ private theorem exists_solution_of_forward_bounds {f g u : ℕ → ℂ} {φ : �
     rw [norm_one, norm_neg, sub_neg_eq_add, ← hL_def] at h₂
     linarith
   have hxL (k : ℕ) : x k - L = -∑' j, δ (j + k) := by
-    have hx0 : x 0 = 1 := by simp [hx_def, hv_def, forwardSolution, div_self (hu 0)]
     rw [← sub_add_cancel (x k) (x 0), ← sum_range_sub x k, hx0, hL_def,
       ← hδs.sum_add_tsum_nat_add k]
     ring
@@ -305,24 +301,6 @@ private theorem exists_solution_of_forward_bounds {f g u : ℕ → ℂ} {φ : �
           ring
       _ ≤ 4 * B / (θ - q) * ‖u k‖ * (∑' j, φ (j + k)) * ‖L‖ := by
           gcongr
-
-/-- The tails of `∑ k^{-(N + 2)}` are `O(k^{-N})`: for `k ≥ 1`,
-`∑ᵢ (i + k)^{-(N + 2)} ≤ (∑ᵢ (i + 1)^{-2}) k^{-N}`. -/
-private lemma tsum_inv_pow_add_le (N : ℕ) {k : ℕ} (hk : 1 ≤ k) :
-    ∑' i : ℕ, (((i + k : ℕ) : ℝ) ^ (N + 2))⁻¹ ≤
-      (∑' i : ℕ, (((i : ℝ) + 1) ^ 2)⁻¹) * ((k : ℝ) ^ N)⁻¹ := by
-  have hS : Summable fun i : ℕ ↦ (((i : ℝ) + 1) ^ 2)⁻¹ := by
-    simpa using (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
-  rw [← tsum_mul_right]
-  refine Summable.tsum_le_tsum (fun i ↦ ?_) ((summable_nat_add_iff k).2
-    (Real.summable_nat_pow_inv.2 (by omega))) (hS.mul_right _)
-  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  rw [← mul_inv, Nat.cast_add]
-  refine inv_anti₀ (by positivity) ?_
-  calc ((i : ℝ) + 1) ^ 2 * (k : ℝ) ^ N ≤ ((i : ℝ) + k) ^ 2 * ((i : ℝ) + k) ^ N := by
-        gcongr
-        linarith
-    _ = ((i : ℝ) + k) ^ (N + 2) := by ring
 
 /-- Undoing a shift: the hypotheses of `exists_solution_of_forward_bounds`, for the weight
 `φ k = k^{-(N + 2)}`, holding for large `k` give a solution for large `n` with
@@ -367,7 +345,7 @@ private theorem exists_eventually_solution_near {f g u : ℕ → ℂ} {q θ B : 
     simp only [show j + n₀ = n₀ + j by omega, add_assoc] at hj
     simp only [show n₀ + j - n₀ = j by omega, norm_mul, norm_norm, norm_inv, norm_pow,
       Real.norm_natCast]
-    have hT := tsum_inv_pow_add_le N (k := n₀ + j) (by have := (hkj j).2; omega)
+    have hT := tsum_inv_natCast_add_pow_le N (k := n₀ + j) (by have := (hkj j).2; omega)
     have hB' : 0 ≤ 4 * B / (θ - q) * ‖u (n₀ + j)‖ := by positivity
     calc ‖v j - u (n₀ + j)‖ ≤ 4 * B / (θ - q) * ‖u (n₀ + j)‖ * ∑' i, φ (i + (n₀ + j)) := hj
       _ ≤ 4 * B / (θ - q) * ‖u (n₀ + j)‖ *
@@ -378,34 +356,11 @@ private theorem exists_eventually_solution_near {f g u : ℕ → ℂ} {q θ B : 
 
 /-! ### Solutions to a given order -/
 
-/-- If `u n ∼ ρⁿ n^α` with `ρ ≠ 0`, then `‖u n‖ / (|ρ|ⁿ n^{Re α}) → 1`. -/
-private lemma tendsto_norm_div_of_isEquivalent {u : ℕ → ℂ} {ρ α : ℂ} (hρ : ρ ≠ 0)
-    (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) :
-    Tendsto (fun n : ℕ ↦ ‖u n‖ / (‖ρ‖ ^ n * (n : ℝ) ^ α.re)) atTop (𝓝 1) := by
-  have hz : ∀ᶠ n : ℕ in atTop, ρ ^ n * (n : ℂ) ^ α ≠ 0 := by
-    filter_upwards [eventually_ge_atTop 1] with n hn
-    have hn' : (0 : ℝ) < n := by exact_mod_cast hn
-    refine norm_ne_zero_iff.1 ?_
-    rw [norm_pow_mul_cpow ρ α (by omega)]
-    exact mul_ne_zero (pow_ne_zero _ (norm_ne_zero_iff.2 hρ)) (Real.rpow_pos_of_pos hn' _).ne'
-  have h := ((isEquivalent_iff_tendsto_one hz).1 hu).norm
-  rw [norm_one] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_ge_atTop 1] with n hn
-  rw [Pi.div_apply, norm_div, norm_pow_mul_cpow ρ α (by omega)]
-
-/-- If `u n ∼ ρⁿ n^α` with `ρ ≠ 0`, then `u` is eventually nonzero. -/
-private lemma eventually_norm_pos_of_isEquivalent {u : ℕ → ℂ} {ρ α : ℂ} (hρ : ρ ≠ 0)
-    (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) : ∀ᶠ k in atTop, 0 < ‖u k‖ := by
-  filter_upwards [(tendsto_norm_div_of_isEquivalent hρ hu).eventually (lt_mem_nhds one_pos)]
-    with k hk
-  exact (norm_nonneg _).lt_of_ne fun h ↦ by rw [← h, zero_div] at hk; exact lt_irrefl _ hk
-
 /-- If `u n ∼ ρⁿ n^α` with `ρ ≠ 0`, then `|ρ|ᵏ k^{Re α} / ‖u (k + 2)‖ → |ρ|⁻²`. -/
 private lemma tendsto_div_norm_add_two {u : ℕ → ℂ} {ρ α : ℂ} (hρ : ρ ≠ 0)
     (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) :
     Tendsto (fun k : ℕ ↦ ‖ρ‖ ^ k * (k : ℝ) ^ α.re / ‖u (k + 2)‖) atTop (𝓝 (‖ρ‖ ^ 2)⁻¹) := by
-  have he := (tendsto_norm_div_of_isEquivalent hρ hu).comp (tendsto_add_atTop_nat 2)
+  have he := (tendsto_norm_div_of_isEquivalent_pow_mul_cpow hρ hu).comp (tendsto_add_atTop_nat 2)
   have hc : Tendsto (fun k : ℕ ↦ ((k : ℝ) / (k + 2)) ^ α.re) atTop (𝓝 1) := by
     simpa using (tendsto_natCast_div_add_atTop (2 : ℝ)).rpow_const (Or.inl one_ne_zero)
   have h := (hc.div he one_ne_zero).div_const (‖ρ‖ ^ 2)
@@ -430,17 +385,18 @@ private lemma eventually_norm_mul_norm_le {g u : ℕ → ℂ} {ρ α g₀ : ℂ}
     (hq : ‖g₀‖ < q * ‖ρ‖ ^ 2) : ∀ᶠ k in atTop, ‖g k‖ * ‖u k‖ ≤ q * ‖u (k + 2)‖ := by
   have hlim : ‖g₀‖ * 1 * (‖ρ‖ ^ 2)⁻¹ < q := by
     rwa [mul_one, ← div_eq_mul_inv, div_lt_iff₀ (pow_pos (norm_pos_iff.2 hρ) 2)]
-  have h := (hg.norm.mul (tendsto_norm_div_of_isEquivalent hρ hu)).mul
+  have h := (hg.norm.mul (tendsto_norm_div_of_isEquivalent_pow_mul_cpow hρ hu)).mul
     (tendsto_div_norm_add_two hρ hu)
   filter_upwards [h.eventually (eventually_lt_nhds hlim), eventually_ge_atTop 1,
-    (tendsto_add_atTop_nat 2).eventually (eventually_norm_pos_of_isEquivalent hρ hu)]
+    (tendsto_add_atTop_nat 2).eventually
+      (hu.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ))]
     with k hk hk1 hu₂
   have hP : 0 < ‖ρ‖ ^ k * (k : ℝ) ^ α.re :=
     mul_pos (pow_pos (norm_pos_iff.2 hρ) k) (Real.rpow_pos_of_pos (by exact_mod_cast hk1) _)
   have hlt : ‖g k‖ * ‖u k‖ / ‖u (k + 2)‖ < q := by
     refine lt_of_eq_of_lt ?_ hk
-    field_simp [hP.ne', hu₂.ne']
-  exact ((div_lt_iff₀ hu₂).1 hlt).le
+    field_simp [hP.ne', norm_ne_zero_iff.2 hu₂]
+  exact ((div_lt_iff₀ (norm_pos_iff.2 hu₂)).1 hlt).le
 
 /-- If `u n ∼ ρⁿ n^α` and `r k = O(|ρ|ᵏ k^{Re α} φ k)` with `φ ≥ 0`, then
 `‖r k‖ ≤ B φ k ‖u (k + 2)‖` for some `B ≥ 0` and all large `k`. -/
@@ -452,29 +408,16 @@ private lemma exists_eventually_norm_le_mul_norm {u r : ℕ → ℂ} {φ : ℕ �
   refine ⟨C * (‖ρ‖ ^ 2)⁻¹ + 1, by positivity, ?_⟩
   have hs := (tendsto_div_norm_add_two hρ hu).const_mul C
   filter_upwards [hC.bound, hs.eventually (eventually_le_nhds (lt_add_one _)),
-    (tendsto_add_atTop_nat 2).eventually (eventually_norm_pos_of_isEquivalent hρ hu)]
+    (tendsto_add_atTop_nat 2).eventually
+      (hu.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ))]
     with k hk hsk hu₂
   rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (hφ k))] at hk
   calc ‖r k‖ ≤ C * (‖ρ‖ ^ k * (k : ℝ) ^ α.re * φ k) := hk
     _ = C * (‖ρ‖ ^ k * (k : ℝ) ^ α.re / ‖u (k + 2)‖) * φ k * ‖u (k + 2)‖ := by
-        field_simp
+        field_simp [norm_ne_zero_iff.2 hu₂]
     _ ≤ (C * (‖ρ‖ ^ 2)⁻¹ + 1) * φ k * ‖u (k + 2)‖ := by
         gcongr
         exact hφ k
-
-/-- For `θ < 1` and large `k`, `θ k^{-(N + 2)} ≤ (k + 1)^{-(N + 2)}`. -/
-private lemma eventually_mul_inv_pow_le {θ : ℝ} (hθ : θ < 1) (N : ℕ) :
-    ∀ᶠ k : ℕ in atTop, θ * ((k : ℝ) ^ (N + 2))⁻¹ ≤ (((k + 1 : ℕ) : ℝ) ^ (N + 2))⁻¹ := by
-  have h := (tendsto_natCast_div_add_atTop (1 : ℝ)).pow (N + 2)
-  rw [one_pow] at h
-  filter_upwards [h.eventually (lt_mem_nhds hθ), eventually_ge_atTop 1] with k hk hk1
-  have hk' : (k : ℝ) ^ (N + 2) ≠ 0 := pow_ne_zero _ (by exact_mod_cast (show k ≠ 0 by omega))
-  calc θ * ((k : ℝ) ^ (N + 2))⁻¹ ≤ ((k : ℝ) / (k + 1)) ^ (N + 2) * ((k : ℝ) ^ (N + 2))⁻¹ := by
-        gcongr
-    _ = (((k + 1 : ℕ) : ℝ) ^ (N + 2))⁻¹ := by
-        rw [div_pow]
-        push_cast
-        field_simp [hk']
 
 /-- **Bounds for the root of larger modulus.** Let `u n ∼ ρⁿ n^α`, let `g n → g₀` with
 `‖g₀‖ < ‖ρ‖²`, and let the residual of `u` be `O(|ρ|ⁿ n^{Re α - N - 2})`. Then for some `q < θ`
@@ -505,10 +448,10 @@ private lemma exists_eventually_forward_bounds {f g u : ℕ → ℂ} {ρ α g₀
   obtain ⟨B, hB, hrB⟩ := exists_eventually_norm_le_mul_norm hρ hu (fun k ↦ by positivity) hr'
   have hθ : θ < 1 := (div_lt_one (by positivity)).2 (by linarith)
   refine ⟨q, θ, B, div_lt_div_of_pos_right (by linarith) (by positivity), hB, ?_⟩
-  filter_upwards [eventually_norm_pos_of_isEquivalent hρ hu,
-    eventually_norm_mul_norm_le hρ hu hg hq, hrB, eventually_mul_inv_pow_le hθ N]
-    with k h₁ h₂ h₃ h₄
-  exact ⟨norm_pos_iff.1 h₁, h₂, h₃, h₄⟩
+  filter_upwards [hu.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ),
+    eventually_norm_mul_norm_le hρ hu hg hq, hrB,
+    eventually_mul_inv_pow_le_inv_add_one_pow hθ (N + 2)] with k h₁ h₂ h₃ h₄
+  exact ⟨h₁, h₂, h₃, h₄⟩
 
 /-- **A solution to a given order.** For every `N`, there is a solution for large `n` whose
 difference from each truncation `ρⁿ n^α ∑_{s < N'} aₛ n⁻ˢ` with `N' ≤ N` is
@@ -558,31 +501,6 @@ private theorem exists_eventually_solution_isBigO_of_norm_sq_gt {f g fs gs : ℕ
 
 /-! ### The dominant solution -/
 
-/-- If `w n ∼ ρⁿ n^α` with `ρ ≠ 0` and `v n / w n = O(θⁿ)` with `0 ≤ θ < 1`, then
-`v n = O(|ρ|ⁿ n^{Re α - N})` for every `N`. -/
-private lemma isBigO_of_isBigO_div_pow {w v : ℕ → ℂ} {ρ α : ℂ} {θ : ℝ} (hρ : ρ ≠ 0) (hθ0 : 0 ≤ θ)
-    (hθ1 : θ < 1) (hw : w ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α)
-    (hvw : (fun n ↦ v n / w n) =O[atTop] fun n ↦ θ ^ n) (N : ℕ) :
-    v =O[atTop] fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - N) := by
-  have h₁ : v =O[atTop] fun n ↦ θ ^ n * ‖ρ ^ n * (n : ℂ) ^ α‖ :=
-    (hvw.mul hw.isBigO.norm_right).congr' (by
-      filter_upwards [eventually_norm_pos_of_isEquivalent hρ hw] with n hn
-      exact div_mul_cancel₀ (v n) (norm_pos_iff.1 hn)) EventuallyEq.rfl
-  refine h₁.trans (IsBigO.of_bound 1 ?_)
-  have hθ : |θ| < 1 := by rwa [abs_of_nonneg hθ0]
-  filter_upwards [eventually_ge_atTop 1, (tendsto_pow_const_mul_const_pow_of_abs_lt_one N
-    hθ).eventually (eventually_le_nhds one_pos)] with n hn hθn
-  have hn' : (0 : ℝ) < n := by exact_mod_cast hn
-  have hθn' : θ ^ n ≤ 1 / (n : ℝ) ^ N := by
-    rw [le_div_iff₀ (by positivity), mul_comm]
-    exact hθn
-  rw [norm_pow_mul_cpow ρ α (by omega), one_mul, Real.norm_of_nonneg
-    (mul_nonneg (pow_nonneg hθ0 n) (by positivity)), Real.norm_of_nonneg (by positivity),
-    Real.rpow_sub hn', Real.rpow_natCast]
-  calc θ ^ n * (‖ρ‖ ^ n * (n : ℝ) ^ α.re) ≤ 1 / (n : ℝ) ^ N * (‖ρ‖ ^ n * (n : ℝ) ^ α.re) :=
-        mul_le_mul_of_nonneg_right hθn' (by positivity)
-    _ = ‖ρ‖ ^ n * ((n : ℝ) ^ α.re / (n : ℝ) ^ N) := by ring
-
 /-- Two solutions for large `n` that are both asymptotic to `ρⁿ n^α`, where `g n → g₀` with
 `‖g₀‖ < ‖ρ‖²`, differ by `O(|ρ|ⁿ n^{Re α - N})` for every `N`: their difference is `o(ρⁿ n^α)`,
 hence exponentially small by `TauCeti.isBigO_div_pow_of_tendsto_div`. -/
@@ -612,8 +530,9 @@ private lemma isBigO_sub_of_isEquivalent_of_norm_sq_gt {f g w w' : ℕ → ℂ} 
   have hvw : (fun n ↦ w' n - w n) =o[atTop] w :=
     ((hw'e.isLittleO.sub hwe.isLittleO).congr_left fun n ↦ by simp).trans_isBigO
       hwe.symm.isBigO
-  exact isBigO_of_isBigO_div_pow (norm_pos_iff.1 hR) (div_nonneg ((norm_nonneg _).trans hγ₁.le)
-    (by positivity)) ((div_lt_one (by positivity)).2 hγr) hwe (isBigO_div_pow_of_tendsto_div hγr
+  exact isBigO_norm_pow_mul_rpow_of_isBigO_div_pow (norm_pos_iff.1 hR)
+    (div_nonneg ((norm_nonneg _).trans hγ₁.le) (by positivity))
+    ((div_lt_one (by positivity)).2 hγr) hwe (isBigO_div_pow_of_tendsto_div hγr
       (hg.norm.eventually (eventually_le_nhds hγ₁)) hw hv hrw hvw.tendsto_div_nhds_zero) N
 
 /-- **The dominant solution of a difference equation, for large `n`** (DLMF 2.9.8). Let

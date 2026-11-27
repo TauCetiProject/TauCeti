@@ -53,7 +53,11 @@ Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real
 (`Asymptotics.IsBigO.trans_ofReal_cpow_rpow`). For natural `n ≠ 0`,
 `‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α` and
 `‖ρ ^ n * n ^ α * n⁻ᴹ‖ = ‖ρ‖ ^ n * n ^ (Re α - M)`. As `n → ∞`, `ρ ^ n * n ^ α = o(r ^ n)` whenever
-`‖ρ‖ < r`, and `‖ρ‖ ^ n * n ^ β = o(ρ ^ n * n ^ α)` whenever `β < Re α`.
+`‖ρ‖ < r`, `r ^ n = o(ρ ^ n * n ^ α)` whenever `‖r‖ < ‖ρ‖`, `ρ ^ n * n ^ α` is eventually nonzero
+whenever `ρ ≠ 0`, and `‖ρ‖ ^ n * n ^ β = o(ρ ^ n * n ^ α)`
+whenever `β < Re α`. If `u n ∼ ρ ^ n * n ^ α` with `ρ ≠ 0`, then `‖u n‖ / (‖ρ‖ ^ n * n ^ Re α) → 1`,
+and a sequence `v` with `v n / u n = O(θ ^ n)` for some `0 ≤ θ < 1` is
+`O(‖ρ‖ ^ n * n ^ (Re α - N))` for every `N`. For `θ < 1`, `θ k⁻ᵐ ≤ (k + 1)⁻ᵐ` for large `k`.
 
 ## Families bounded by integer powers
 
@@ -194,8 +198,7 @@ theorem isLittleO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h
 theorem isLittleO_pow_pow_mul_cpow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h : ‖r‖ < ‖ρ‖) :
     (fun n : ℕ ↦ r ^ n) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α := by
   set k := ⌈-α.re⌉₊
-  have hlo := isLittleO_pow_const_mul_const_pow_const_pow_of_norm_lt (R := ℝ) k
-    (show ‖r‖ < ‖ρ‖ from h)
+  have hlo := isLittleO_pow_const_mul_const_pow_const_pow_of_norm_lt (R := ℝ) k h
   refine IsLittleO.of_bound fun ε hε ↦ ?_
   filter_upwards [hlo.bound hε, eventually_ge_atTop 1] with n hn hn1
   have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn1
@@ -208,6 +211,61 @@ theorem isLittleO_pow_pow_mul_cpow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h
   calc ‖r‖ ^ n = ((n : ℝ) ^ k * ‖r‖ ^ n) * ((n : ℝ) ^ k)⁻¹ := by field_simp
     _ ≤ (ε * ‖ρ‖ ^ n) * (n : ℝ) ^ α.re := mul_le_mul hn hpow (by positivity) (by positivity)
     _ = ε * (‖ρ‖ ^ n * (n : ℝ) ^ α.re) := by ring
+
+/-- For `ρ ≠ 0`, `ρⁿ n^α` is eventually nonzero; it vanishes only at `n = 0` when `α ≠ 0`. -/
+theorem eventually_pow_mul_cpow_ne_zero {ρ : ℂ} (α : ℂ) (hρ : ρ ≠ 0) :
+    ∀ᶠ n : ℕ in atTop, ρ ^ n * (n : ℂ) ^ α ≠ 0 :=
+  (eventually_ne_atTop 0).mono fun n hn ↦ by simp [hρ, hn]
+
+/-- If `u n ∼ ρⁿ n^α` with `ρ ≠ 0`, then `‖u n‖ / (‖ρ‖ⁿ n^{Re α}) → 1`. -/
+theorem tendsto_norm_div_of_isEquivalent_pow_mul_cpow {u : ℕ → ℂ} {ρ α : ℂ} (hρ : ρ ≠ 0)
+    (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) :
+    Tendsto (fun n : ℕ ↦ ‖u n‖ / (‖ρ‖ ^ n * (n : ℝ) ^ α.re)) atTop (𝓝 1) := by
+  have h := ((isEquivalent_iff_tendsto_one (eventually_pow_mul_cpow_ne_zero α hρ)).1 hu).norm
+  rw [norm_one] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  rw [Pi.div_apply, norm_div, norm_pow_mul_cpow ρ α hn]
+
+/-- If `w n ∼ ρⁿ n^α` with `ρ ≠ 0` and `v n / w n = O(θⁿ)` with `0 ≤ θ < 1`, then
+`v n = O(‖ρ‖ⁿ n^{Re α - N})` for every `N`: a geometric factor `θⁿ` beats every power of `n`. -/
+theorem isBigO_norm_pow_mul_rpow_of_isBigO_div_pow {w v : ℕ → ℂ} {ρ α : ℂ} {θ : ℝ}
+    (hρ : ρ ≠ 0) (hθ0 : 0 ≤ θ) (hθ1 : θ < 1) (hw : w ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α)
+    (hvw : (fun n ↦ v n / w n) =O[atTop] fun n ↦ θ ^ n) (N : ℕ) :
+    v =O[atTop] fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - N) := by
+  have h₁ : v =O[atTop] fun n ↦ θ ^ n * ‖ρ ^ n * (n : ℂ) ^ α‖ :=
+    (hvw.mul hw.isBigO.norm_right).congr' (by
+      filter_upwards [hw.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ)] with n hn
+      exact div_mul_cancel₀ (v n) hn) EventuallyEq.rfl
+  refine h₁.trans (IsBigO.of_bound 1 ?_)
+  have hθ : |θ| < 1 := by rwa [abs_of_nonneg hθ0]
+  filter_upwards [eventually_ge_atTop 1, (tendsto_pow_const_mul_const_pow_of_abs_lt_one N
+    hθ).eventually (eventually_le_nhds one_pos)] with n hn hθn
+  have hn' : (0 : ℝ) < n := by exact_mod_cast hn
+  have hθn' : θ ^ n ≤ 1 / (n : ℝ) ^ N := by
+    rw [le_div_iff₀ (by positivity), mul_comm]
+    exact hθn
+  rw [norm_pow_mul_cpow ρ α (by omega), one_mul, Real.norm_of_nonneg
+    (mul_nonneg (pow_nonneg hθ0 n) (by positivity)), Real.norm_of_nonneg (by positivity),
+    Real.rpow_sub hn', Real.rpow_natCast]
+  calc θ ^ n * (‖ρ‖ ^ n * (n : ℝ) ^ α.re) ≤ 1 / (n : ℝ) ^ N * (‖ρ‖ ^ n * (n : ℝ) ^ α.re) :=
+        mul_le_mul_of_nonneg_right hθn' (by positivity)
+    _ = ‖ρ‖ ^ n * ((n : ℝ) ^ α.re / (n : ℝ) ^ N) := by ring
+
+/-- For `θ < 1` and every exponent `m`, `θ k⁻ᵐ ≤ (k + 1)⁻ᵐ` for large natural `k`, since
+`(k / (k + 1))ᵐ → 1`. -/
+theorem eventually_mul_inv_pow_le_inv_add_one_pow {θ : ℝ} (hθ : θ < 1) (m : ℕ) :
+    ∀ᶠ k : ℕ in atTop, θ * ((k : ℝ) ^ m)⁻¹ ≤ (((k + 1 : ℕ) : ℝ) ^ m)⁻¹ := by
+  have h := (tendsto_natCast_div_add_atTop (1 : ℝ)).pow m
+  rw [one_pow] at h
+  filter_upwards [h.eventually (lt_mem_nhds hθ), eventually_ne_atTop 0] with k hk hk0
+  have hk' : (k : ℝ) ^ m ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.2 hk0)
+  calc θ * ((k : ℝ) ^ m)⁻¹ ≤ ((k : ℝ) / (k + 1)) ^ m * ((k : ℝ) ^ m)⁻¹ := by
+        gcongr
+    _ = (((k + 1 : ℕ) : ℝ) ^ m)⁻¹ := by
+        rw [div_pow]
+        push_cast
+        field_simp [hk']
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 

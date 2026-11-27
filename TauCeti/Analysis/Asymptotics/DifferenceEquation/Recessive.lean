@@ -436,7 +436,7 @@ theorem exists_eventuallyEq_const_mul_of_isBigO_pow {𝕜 : Type*} [NormedField 
     (hw₁0 : ∀ᶠ n in atTop, w₁ n ≠ 0) (hw₁r : w₁ =O[atTop] fun n ↦ r ^ n)
     (hwr : w =O[atTop] fun n ↦ r ^ n) :
     ∃ c : 𝕜, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
-  set C : ℕ → 𝕜 := fun n ↦ w₁ n * w (n + 1) - w₁ (n + 1) * w n with hC_def
+  set C : ℕ → 𝕜 := fun n ↦ w₁ n * w (n + 1) - w₁ (n + 1) * w n
   have hγ0 : 0 < γ := (sq_nonneg r).trans_lt hrγ
   -- the Casoratian is `o(γ ^ n)`
   have hshift {v : ℕ → 𝕜} (hv : v =O[atTop] fun n ↦ r ^ n) :
@@ -449,10 +449,8 @@ theorem exists_eventuallyEq_const_mul_of_isBigO_pow {𝕜 : Type*} [NormedField 
     exact hCO.trans_isLittleO (isLittleO_pow_pow_of_lt_left (sq_nonneg r) hrγ)
   -- beyond `n₁` the Casoratian is multiplied by `g n` with `‖g n‖ ≥ γ`
   obtain ⟨n₁, hn₁⟩ := eventually_atTop.1 (hw₁.and (hw.and hgγ))
-  have hCrec (n : ℕ) (hn : n₁ ≤ n) : C (n + 1) = g n * C n := by
-    obtain ⟨h₁, h₂, -⟩ := hn₁ n hn
-    simp only [hC_def]
-    linear_combination w₁ (n + 1) * h₂ - w (n + 1) * h₁
+  have hCrec (n : ℕ) (hn : n₁ ≤ n) : C (n + 1) = g n * C n :=
+    casoratian_add_one_of_difference_eq_zero (hn₁ n hn).1 (hn₁ n hn).2.1
   have hCgrowth (n : ℕ) (hn : n₁ ≤ n) (k : ℕ) : γ ^ k * ‖C n‖ ≤ ‖C (n + k)‖ := by
     induction k with
     | zero => simp
