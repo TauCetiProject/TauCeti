@@ -17,7 +17,7 @@ measure space to statements about pieces of finite measure.
 The first is an induction principle for measurable sets. Let `P` be a property of sets that holds
 for every null set, is stable under countable disjoint unions of measurable sets, and is such that
 every measurable set of positive measure contains a measurable subset of positive measure with
-`P`. Then `P` holds for every measurable set (`MeasureTheory.Measure.induction_on_exhaustion`). On a
+`P`. Then `P` holds for every measurable set (`MeasureTheory.Measure.induction_exhaustion`). On a
 finite measure space, choose greedily disjoint measurable subsets of a given set `s` with `P`, each
 of at least half the largest measure still available. Their measures are summable, so what remains
 of `s` contains no subset of positive measure with `P` and is therefore null. For an s-finite
@@ -35,7 +35,7 @@ on `L¹` by vector-valued densities from finite to σ-finite measure spaces.
 
 ## Main results
 
-* `MeasureTheory.Measure.induction_on_exhaustion`: a property of sets holding on null sets, stable
+* `MeasureTheory.Measure.induction_exhaustion`: a property of sets holding on null sets, stable
   under countable disjoint unions and found inside every set of positive measure holds for all
   measurable sets, for an s-finite measure.
 * `MeasureTheory.Measure.exists_monotone_restrict_le_smul_restrict`: for σ-finite `ν ≪ μ`, an
@@ -121,8 +121,8 @@ private theorem exists_disjoint_subsets_measure_diff_eq_zero (μ : Measure α) [
       ⟨hts.trans (sdiff_subset_sdiff_right (hUA n)), ht, hPt⟩).trans (hcδ _)
   exact hμt (le_antisymm (ge_of_tendsto' hA_tendsto hle) bot_le)
 
-/-- The finite measure case of `MeasureTheory.Measure.induction_on_exhaustion`. -/
-private theorem induction_on_exhaustion_of_isFiniteMeasure (μ : Measure α) [IsFiniteMeasure μ]
+/-- The finite measure case of `MeasureTheory.Measure.induction_exhaustion`. -/
+private theorem induction_exhaustion_of_isFiniteMeasure (μ : Measure α) [IsFiniteMeasure μ]
     (hnull : ∀ s, MeasurableSet s → μ s = 0 → P s)
     (hpos : ∀ s, MeasurableSet s → μ s ≠ 0 → ∃ t ⊆ s, MeasurableSet t ∧ μ t ≠ 0 ∧ P t)
     (hunion : ∀ f : ℕ → Set α, (∀ n, MeasurableSet (f n)) → Pairwise (Function.onFun Disjoint f) →
@@ -151,13 +151,13 @@ private theorem induction_on_exhaustion_of_isFiniteMeasure (μ : Measure α) [Is
 holds for every measurable null set, holds for countable disjoint unions of measurable sets with
 `P`, and such that every measurable set of positive measure contains a measurable subset of
 positive measure with `P`. Then every measurable set has `P`. -/
-theorem induction_on_exhaustion (μ : Measure α) [SFinite μ]
+theorem induction_exhaustion (μ : Measure α) [SFinite μ]
     (hnull : ∀ s, MeasurableSet s → μ s = 0 → P s)
     (hpos : ∀ s, MeasurableSet s → μ s ≠ 0 → ∃ t ⊆ s, MeasurableSet t ∧ μ t ≠ 0 ∧ P t)
     (hunion : ∀ f : ℕ → Set α, (∀ n, MeasurableSet (f n)) → Pairwise (Function.onFun Disjoint f) →
       (∀ n, P (f n)) → P (⋃ n, f n))
     {s : Set α} (hs : MeasurableSet s) : P s := by
-  refine induction_on_exhaustion_of_isFiniteMeasure μ.toFinite
+  refine induction_exhaustion_of_isFiniteMeasure μ.toFinite
     (fun s hs h ↦ hnull s hs (toFinite_apply_eq_zero_iff.1 h)) (fun s hs h ↦ ?_) hunion hs
   obtain ⟨t, hts, ht, hμt, hPt⟩ := hpos s hs (mt toFinite_apply_eq_zero_iff.2 h)
   exact ⟨t, hts, ht, mt toFinite_apply_eq_zero_iff.1 hμt, hPt⟩

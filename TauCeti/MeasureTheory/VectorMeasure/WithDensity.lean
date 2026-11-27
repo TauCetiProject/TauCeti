@@ -49,9 +49,11 @@ Densities glue along countable measurable covers. If a vector measure `m` restri
 measurable set `s` is `(ν.restrict s).withDensityᵥ f` for an `f` integrable on `s`, then
 `m t = ∫ x in t, f x ∂ν` and `|m| t = ∫⁻ x in t, ‖f x‖ₑ ∂ν` for measurable `t ⊆ s`.
 Consequently, a vector measure of finite variation that has a density on each set `S n` of a
-countable measurable cover of `X` has a single integrable density on `X`. It is assembled from
-the given densities on the disjoint pieces `S n \ (S 0 ∪ ⋯ ∪ S (n - 1))`, and its norm integrates
-to the total variation of `m`. This is how densities obtained on pieces of finite measure combine
+countable measurable cover of `X` has a single integrable density on `X`. A local density that
+is not integrable on `S n` gives the zero vector measure there, so it is first replaced by `0`.
+The resulting integrable local densities are glued on the disjoint pieces
+`S n \ (S 0 ∪ ⋯ ∪ S (n - 1))`, and the norm of the glued density integrates to the total
+variation of `m`. This is how densities obtained on pieces of finite measure combine
 on a σ-finite measure space.
 
 ## Main declarations
