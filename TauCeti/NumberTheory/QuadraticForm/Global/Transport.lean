@@ -221,13 +221,9 @@ theorem finiteHasse_eq_of_semilinearEquiv
     {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
     (hvw : w.asIdeal =
       Ideal.map (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v.asIdeal) :
-    Q'.finiteHasse hQ' w = Q.finiteHasse hQ v := by
-  let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
-  rw [finiteHasse_eq_localHasse_baseChange, finiteHasse_eq_localHasse_baseChange,
-    formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf]
-  exact RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv
-    (RingHomInvPair.toRingEquiv σ σ') hvw (formClass Q hQ)
+    Q'.finiteHasse hQ' w = Q.finiteHasse hQ v :=
+  finiteHasse_eq_of_semilinearEquiv_of_valuation_eq hQ hQ' f hf
+    (valuation_mapRingEquiv v w (RingHomInvPair.toRingEquiv σ σ') hvw)
 
 /-- Specialization of `finiteHasse_eq_of_semilinearEquiv` when the place of `L` is the image of `v`
 under `HeightOneSpectrum.equivOfRingEquiv` along `RingHomInvPair.toRingEquiv σ σ'`. -/

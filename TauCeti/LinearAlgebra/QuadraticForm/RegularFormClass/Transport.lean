@@ -477,24 +477,16 @@ theorem formClass_eq_mapRingEquiv_of_semilinearEquiv
       RegularFormClass.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ') (formClass Q hQ) := by
   let e : K ≃+* L := RingHomInvPair.toRingEquiv σ σ'
   obtain ⟨p, ⟨g⟩⟩ := exists_presentedForm_equivalent Q hQ
-  let hAdd : W ≃+ (Fin p.1 → L) :=
-    (f.symm.toAddEquiv.trans g.toLinearEquiv.toAddEquiv).trans
-      (AddEquiv.piCongrRight fun _ ↦ e.toAddEquiv)
+  have : RingHomCompTriple σ' (e : K →+* L) (RingHom.id L) := ⟨by ext x; simp [e]⟩
+  have : RingHomCompTriple (e.symm : L →+* K) σ (RingHom.id L) := ⟨by ext x; simp [e]⟩
   let hL : W ≃ₗ[L] (Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) :=
-    ({ hAdd with
-      map_smul' := fun c w ↦ by
-        ext i
-        have hsymm : f.symm (c • w) = σ' c • f.symm w := f.symm.map_smulₛₗ c w
-        simp [hAdd, e, hsymm] } : W ≃ₗ[L] (Fin p.1 → L)).trans
-      (LinearEquiv.funCongrLeft L L (finCongr (RegularFormPresentation.fst_equivOfRingEquiv e p)))
+    (f.symm.trans g.toLinearEquiv).trans (p.coordEquivOfRingEquiv e)
   have hEquiv : Q'.Equivalent
       (presentedForm (RegularFormPresentation.equivOfRingEquiv e p)) := by
     refine ⟨{ toLinearEquiv := hL, map_app' := fun w ↦ ?_ }⟩
     obtain ⟨v, rfl⟩ := f.surjective w
-    have hfv : f.symm (f v) = v := f.symm_apply_apply v
     have hcoord : hL (f v) = p.coordEquivOfRingEquiv e (g v) := by
-      ext i
-      simp [hL, hAdd, hfv]
+      simp [hL]
     rw [LinearEquiv.toFun_eq_coe, hcoord, presentedForm_equivOfRingEquiv p e (g v),
       g.map_app v, RingHomInvPair.toRingEquiv_apply, hf v]
   rw [formClass_mk Q hQ p ⟨g⟩, RegularFormClass.mapRingEquiv_mk,
