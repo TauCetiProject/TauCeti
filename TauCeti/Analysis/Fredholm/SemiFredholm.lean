@@ -33,6 +33,10 @@ connected family of such operators Fredholmness and the index propagate from a s
   (`ContinuousLinearMap.exists_projection_norm_le`), survives the perturbation as
   `‖x‖ ≤ 2 C ‖S x‖ + 2 ‖P x‖` as soon as `C ‖S - T‖ ≤ 1 / 2`; the finite-rank projection `P` is
   compact, so Peetre's argument applies to `S`, and `P` is injective on `ker S`.
+* **Fredholm from the orthogonal complement.** If `F` is a Hilbert space, an operator with
+  closed range and finite-dimensional kernel is Fredholm as soon as the orthogonal complement of
+  its range is finite-dimensional
+  (`ContinuousLinearMap.isFredholm_of_isClosed_range_of_finiteDimensional_orthogonal`).
 * **Fredholmness is locally constant.** If moreover `F` is a Hilbert space, then every `S` near
   `T` is Fredholm exactly when `T` is (`ContinuousLinearMap.eventually_nhds_isFredholm_iff`).
   Mathlib proves one direction for all Banach spaces
@@ -167,6 +171,16 @@ private theorem eq_zero_of_mem_orthogonal_range_of_mem_map {T S : E →L[𝕜] F
   have h0 : ‖S x‖ ^ 2 ≤ 0 := by nlinarith [sq_nonneg ‖S x‖]
   simpa using h0
 
+/-- An operator into a Hilbert space with finite-dimensional kernel, closed range and
+finite-dimensional orthogonal complement of the range is Fredholm: the orthogonal complement is
+a complement of the closed range, so it is isomorphic to the cokernel. -/
+theorem isFredholm_of_isClosed_range_of_finiteDimensional_orthogonal {T : E →L[𝕜] F}
+    (hker : FiniteDimensional 𝕜 T.ker) (hrange : IsClosed (T.range : Set F))
+    (hcoker : FiniteDimensional 𝕜 T.rangeᗮ) : IsFredholm T := by
+  have : CompleteSpace T.range := hrange.completeSpace_coe
+  exact IsFredholm.of_finite_ker_coker T hker
+    (Module.Finite.equiv (Submodule.quotientEquivOfIsCompl _ _ T.range.isCompl_orthogonal).symm)
+
 /-- **Fredholmness is locally constant on the upper semi-Fredholm operators** into a Hilbert space.
 Near an operator `T` with closed range and finite-dimensional kernel, an operator is Fredholm
 exactly when `T` is. -/
@@ -198,12 +212,8 @@ theorem eventually_nhds_isFredholm_iff {T : E →L[𝕜] F} [FiniteDimensional �
     refine Subtype.ext (eq_zero_of_mem_orthogonal_range_of_mem_map hS
         (fun x hx ↦ ?_) m.property hmM)
     simpa [hx] using hSx x
-  have : FiniteDimensional 𝕜 T.rangeᗮ := Module.Finite.of_injective _ hinj
-  have : CompleteSpace T.range := hrange.completeSpace_coe
-  have hcoker : FiniteDimensional 𝕜 (F ⧸ T.range) :=
-    Module.Finite.equiv
-      (Submodule.quotientEquivOfIsCompl _ _ T.range.isCompl_orthogonal).symm
-  exact IsFredholm.of_finite_ker_coker T inferInstance hcoker
+  exact isFredholm_of_isClosed_range_of_finiteDimensional_orthogonal inferInstance hrange
+    (Module.Finite.of_injective _ hinj)
 
 end Hilbert
 

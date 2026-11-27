@@ -116,6 +116,13 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {J : ℝ × ℝ → V → AlmostComplexStructure V}
   {J₀ : AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {T : ℝ}
 
+omit [FiniteDimensional ℝ V] in
+/-- If the structures are `J₀` on `‖w‖ ≥ T` and compatible along `u`, then `J₀` is compatible: it
+is the structure at a point far out. -/
+theorem compatible_of_eq_base (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
+    (hc : ∀ z, ω.Compatible (J z (u z))) : ω.Compatible J₀ :=
+  hJ₀ (|T|, 0) (by simp [Prod.norm_def, le_abs_self]) (u (|T|, 0)) ▸ hc (|T|, 0)
+
 /-- Where the data are `J₀` and `0`, and in particular on sections vanishing elsewhere, the
 linearized operator is the Cauchy–Riemann operator `∂s + J₀ ∂t` of `J₀`. -/
 private theorem floerLinearization_eq_of_eq_base
@@ -313,9 +320,7 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
         C * ((∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
             Ks Kt u ξ z‖ ^ 2) + ∫ z in closedBall 0 R, ‖ξ z‖ ^ 2) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  -- `J₀` is the compatible structure `J` takes at a point far out.
-  have h₀ : ω.Compatible J₀ :=
-    hJ₀ (|T|, 0) (by simp [Prod.norm_def, le_abs_self]) (u (|T|, 0)) ▸ hc (|T|, 0)
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base hJ₀ hc
   set R : ℝ := max T 1
   -- A cutoff `ψ`, equal to `1` near the disc `|w| ≤ 2 R` and to `0` near `|w| ≥ 2 R + 1`.
   obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ :=
@@ -724,7 +729,7 @@ private theorem
         (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _)
 
 /-- Where `2 T < |w|`, so that `T < ‖w‖`, the structures are `J₀` near `w`. -/
-private theorem eventuallyEq_const_of_eq_base (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
+theorem eventuallyEq_const_of_eq_base (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
     {w : ℝ × ℝ} (hw : 2 * T < ‖Complex.equivRealProdCLM.symm w‖) :
     (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) =ᶠ[𝓝 w]
       fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap := by
@@ -837,9 +842,7 @@ private theorem
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in closedBall 0 (a + 1), ‖η z‖ ^ 2) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  -- `J₀` is the compatible structure `J` takes at a point far out.
-  have h₀ : ω.Compatible J₀ :=
-    hJ₀ (|T|, 0) (by simp [Prod.norm_def, le_abs_self]) (u (|T|, 0)) ▸ hc (|T|, 0)
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base hJ₀ hc
   set K₁ : Set (ℝ × ℝ) := {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a + 1}
   have hK₁ : IsCompact K₁ := isCompact_setOf_norm_equivRealProdCLM_symm_le (a + 1)
   -- A cutoff `β = 1 - ψ`, equal to `0` near the disc `|w| ≤ a` and to `1` near `|w| ≥ a + 1`.
