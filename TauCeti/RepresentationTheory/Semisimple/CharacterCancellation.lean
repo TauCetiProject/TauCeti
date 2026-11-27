@@ -123,24 +123,8 @@ theorem weightSpace_ne_bot_of_character_sub_sum_eq [CharZero k] [FiniteDimension
     (σ₁ := directSum fun j ↦ ofLinearCharacter (ψ₁ j)) (funext fun g ↦ ?_) ?_ ?_
   · simp only [Pi.add_apply, char_directSum, char_ofLinearCharacter]
     linear_combination h g
-  · -- the vector `1` in the summand of `ψ₀ i` has weight `ψ₀ i`
-    refine Submodule.ne_bot_iff _ |>.mpr ⟨DirectSum.lof k _ _ i 1,
-      (mem_weightSpace_directSum _).mpr fun j ↦ ?_, fun h0 ↦ ?_⟩
-    · by_cases hj : j = i
-      · subst hj
-        rw [DirectSum.lof_apply, weightSpace_ofLinearCharacter_self]
-        exact Submodule.mem_top
-      · rw [DirectSum.lof_eq_of, DirectSum.of_eq_of_ne _ _ _ hj]
-        exact Submodule.zero_mem _
-    · have h0i := DFunLike.congr_fun h0 i
-      rw [DirectSum.lof_apply, DirectSum.zero_apply] at h0i
-      exact one_ne_zero h0i
-  · -- no summand of `D ψ₁` has weight `ψ₀ i`
-    refine eq_bot_iff.mpr fun x hx ↦ (Submodule.mem_bot k).mpr <| DirectSum.ext fun j ↦ ?_
-    have hxj := (mem_weightSpace_directSum _).mp hx j
-    rw [weightSpace_ofLinearCharacter_eq_bot (hψ i j).symm] at hxj
-    rw [DirectSum.zero_apply]
-    exact (Submodule.mem_bot k).mp hxj
+  · exact weightSpace_directSum_ofLinearCharacter_ne_bot ψ₀ i
+  · exact weightSpace_directSum_ofLinearCharacter_eq_bot fun j ↦ (hψ i j).symm
 
 /-- **Cancellation of linear characters.** Let `ρ₀` and `ρ₁` be finite-dimensional representations
 over a field of characteristic zero, with `ρ₀` semisimple, and let `ψ₀ i` and `ψ₁ j` be finite

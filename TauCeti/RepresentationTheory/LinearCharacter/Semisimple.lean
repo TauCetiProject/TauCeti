@@ -44,7 +44,8 @@ theorem exists_equiv_prod_ofLinearCharacter {ρ : Representation k G V}
   let f : IntertwiningMap (ofLinearCharacter χ) ρ :=
     (LinearMap.toSpanSingleton k V v).intertwiningMap_of_isIntertwiningMap _ _ fun g t ↦ by
       simp [ofLinearCharacter_apply, mem_weightSpace.mp hv g, smul_smul, mul_comm]
-  have hf : Function.Injective f := fun s t hst ↦ smul_left_injective k hv0 hst
+  have hf : Function.Injective f := fun s t hst ↦
+    smul_left_injective k hv0 (by simpa [f] using hst)
   obtain ⟨σ, hσ⟩ := exists_isCompl f.range
   exact ⟨σ, ⟨(Subrepresentation.equivProdOfIsCompl hσ.symm).trans
     ((Equiv.refl _).prodCongr

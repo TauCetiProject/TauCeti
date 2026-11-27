@@ -26,6 +26,10 @@ detects which characters occur.
   weight `χ`.
 * `Representation.weightSpace_ofLinearCharacter_eq_bot`: the line of `ψ` has no nonzero vector on
   which `G` acts through a different linear character.
+* `Representation.weightSpace_directSum_ofLinearCharacter_ne_bot`: a direct sum of lines has a
+  nonzero vector of weight each of its characters.
+* `Representation.weightSpace_directSum_ofLinearCharacter_eq_bot`: a direct sum of lines has no
+  nonzero vector of weight a linear character other than its characters.
 -/
 
 public section
@@ -56,5 +60,35 @@ theorem weightSpace_ofLinearCharacter_self [CommSemiring k] (χ : G →* kˣ) :
     (ofLinearCharacter χ).weightSpace ((Units.coeHom k).comp χ) = ⊤ :=
   eq_top_iff.mpr fun x _ ↦ mem_weightSpace.mpr fun g ↦ by
     simp [ofLinearCharacter_apply, mul_comm]
+
+/-- In the direct sum of the lines of a family `ψ` of linear characters, `G` acts through each
+`ψ i` on some nonzero vector: the vector `1` of the summand of `ψ i`. -/
+theorem weightSpace_directSum_ofLinearCharacter_ne_bot [CommSemiring k] [Nontrivial k]
+    {ι : Type*} (ψ : ι → G →* kˣ) (i : ι) :
+    (directSum fun j ↦ ofLinearCharacter (ψ j)).weightSpace ((Units.coeHom k).comp (ψ i)) ≠ ⊥ := by
+  classical
+  refine Submodule.ne_bot_iff _ |>.mpr ⟨DirectSum.lof k _ _ i 1,
+    (mem_weightSpace_directSum _).mpr fun j ↦ ?_, fun h0 ↦ ?_⟩
+  · by_cases hj : j = i
+    · subst hj
+      rw [DirectSum.lof_apply, weightSpace_ofLinearCharacter_self]
+      exact Submodule.mem_top
+    · rw [DirectSum.lof_eq_of, DirectSum.of_eq_of_ne _ _ _ hj]
+      exact Submodule.zero_mem _
+  · have h0i := DFunLike.congr_fun h0 i
+    rw [DirectSum.lof_apply, DirectSum.zero_apply] at h0i
+    exact one_ne_zero h0i
+
+/-- In the direct sum of the lines of a family `ψ` of linear characters, `G` acts through a linear
+character `χ` different from every `ψ j` on no nonzero vector. -/
+@[simp]
+theorem weightSpace_directSum_ofLinearCharacter_eq_bot [CommRing k] [NoZeroDivisors k]
+    {ι : Type*} {ψ : ι → G →* kˣ} {χ : G →* kˣ} (h : ∀ j, ψ j ≠ χ) :
+    (directSum fun j ↦ ofLinearCharacter (ψ j)).weightSpace ((Units.coeHom k).comp χ) = ⊥ := by
+  refine eq_bot_iff.mpr fun x hx ↦ (Submodule.mem_bot k).mpr <| DirectSum.ext fun j ↦ ?_
+  have hxj := (mem_weightSpace_directSum _).mp hx j
+  rw [weightSpace_ofLinearCharacter_eq_bot (h j)] at hxj
+  rw [DirectSum.zero_apply]
+  exact (Submodule.mem_bot k).mp hxj
 
 end Representation
