@@ -822,6 +822,29 @@ theorem symmL_coord {i : Fin A.n} {y : E} (hb : (A.chart i).symm y ∈ (A.triv i
     (A.triv i).symmL ℝ ((A.chart i).symm y) (A.coord i s y) = s ((A.chart i).symm y) := by
   rw [coord_def, Trivialization.symmL_apply _ hb, Trivialization.symm_apply_apply_mk _ hb]
 
+/-- At a point of the chart source and the base set of bundle chart `i`, a section is recovered
+from its reading at the chart point by the inverse of the trivialization. -/
+theorem symmL_coord_chart {i : Fin A.n} {x : M} (hx : x ∈ (A.chart i).source)
+    (hb : x ∈ (A.triv i).baseSet) (s : ∀ x, V x) :
+    (A.triv i).symmL ℝ x (A.coord i s (A.chart i x)) = s x := by
+  have hxy : (A.chart i).symm (A.chart i x) = x := (A.chart i).left_inv hx
+  have h := A.symmL_coord (i := i) (hxy.symm ▸ hb) s
+  rwa [hxy] at h
+
+/-- At the points read from the base set of bundle chart `i`, the reading of a section is the
+trivialization at the point applied to its value. -/
+theorem coord_eq_continuousLinearMapAt {i : Fin A.n} {y : E}
+    (hb : (A.chart i).symm y ∈ (A.triv i).baseSet) (s : ∀ x, V x) :
+    A.coord i s y = (A.triv i).continuousLinearMapAt ℝ ((A.chart i).symm y)
+      (s ((A.chart i).symm y)) := by
+  rw [coord_def, (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) hb]
+
+/-- At the points read from the base set of bundle chart `i`, the section given by a constant
+vector in the trivialization reads as that vector. -/
+theorem coord_symmL {i : Fin A.n} {y : E} (hb : (A.chart i).symm y ∈ (A.triv i).baseSet)
+    (v : F) : A.coord i (fun x ↦ (A.triv i).symmL ℝ x v) y = v := by
+  rw [coord_def, Trivialization.symmL_apply _ hb, Trivialization.apply_mk_symm _ hb]
+
 /-- At a point over the domain of chart `i` of `A` and the base set of bundle chart `i'` of another
 atlas `A'`, the reading of a section in chart `i'` of `A'` is the coordinate change of the bundle
 applied to its reading in chart `i` of `A`. -/
