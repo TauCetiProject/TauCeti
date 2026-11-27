@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.MatsumotoGroup.OrderedField
-public import TauCeti.RingTheory.MilnorK.DegreeTwo
+public import TauCeti.RingTheory.MilnorK.DegreeTwo.Basic
 public import TauCeti.RingTheory.MilnorK.Sign
 
 /-!
