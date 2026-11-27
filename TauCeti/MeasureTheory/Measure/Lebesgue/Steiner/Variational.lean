@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
-import TauCeti.Analysis.BoundedVariation.Slicing.Excess
+import TauCeti.Analysis.BoundedVariation.Slicing.Equality
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
@@ -120,7 +120,7 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
     simpa only [Real.norm_eq_abs, sq_abs] using
       ρ.norm_normed_convolution_sq_add_norm_normed_convolution_sq_le
         (μ := volume) (f₁ := B) (f₂ := d) (M := 1)
-        (fun y => by
+        (.of_forall fun y => by
           rw [hB_def, Real.norm_eq_abs, sq_abs]
           exact norm_sq_slabBoundaryAvg_le_one e he ψ₀ hψ1 hLρ_s y) z
   have hφ1 (z : (ℝ ∙ e)ᗮ) : ‖φ z‖ ≤ 1 := by
@@ -281,7 +281,7 @@ theorem perimeter_steinerSymmetrization_eq_iSup (e : E) (he : ‖e‖ = 1) {s : 
           ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) +
         ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
           volume.real {t : ℝ | (y : E) + t • e ∈ s}) := by
-  refine le_antisymm ?_ (iSup₂_le fun φ hφ => ?_)
+  refine le_antisymm ?_ ?_
   · set D : Set (ℝ ∙ e)ᗮ := {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}}
     rcases eq_or_ne (volume D) ⊤ with hDtop | hDfin
     · refine le_top.trans
@@ -299,11 +299,9 @@ theorem perimeter_steinerSymmetrization_eq_iSup (e : E) (he : ‖e‖ = 1) {s : 
         ofReal_setIntegral_steinerSymmetrization_le_iSup e he hs hfin hDfin ψ₀ hψ1
   · have hfinS : volume (steinerSymmetrization e he s) ≠ ⊤ := by
       rwa [volume_steinerSymmetrization e he hs]
-    have hle := two_mul_setLIntegral_add_two_mul_setLIntegral_add_ofReal_integral_le_perimeter
-      (nullMeasurableSet_steinerSymmetrization e he hs) hfinS e he .empty
-      (.of_forall fun _ h => False.elim h) φ hφ
-    simp only [measureReal_def, volume_lineSection_steinerSymmetrization] at hle ⊢
-    exact (add_le_add le_self_add le_rfl).trans hle
+    simpa only [measureReal_def, volume_lineSection_steinerSymmetrization] using
+      iSup_two_mul_setLIntegral_add_ofReal_integral_le_perimeter
+        (nullMeasurableSet_steinerSymmetrization e he hs) hfinS e he
 
 end SmoothSymmetricSlab
 

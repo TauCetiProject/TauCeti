@@ -475,24 +475,25 @@ theorem ContDiffBump.norm_normed_convolution_le {G F : Type*} [NormedAddCommGrou
     TauCeti.norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed
       ((μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM)
 
-/-- Convolution with a nonnegative normalized bump preserves a uniform `L²`-product bound
+/-- Convolution with a nonnegative normalized bump preserves an almost-everywhere `L²`-product bound
 `‖f₁ y‖² + ‖f₂ y‖² ≤ M`. -/
 theorem ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_le
     {G F₁ F₂ : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
     [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsAddHaarMeasure]
     [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
     {f₁ : G → F₁} {f₂ : G → F₂} (ρ : ContDiffBump (0 : G)) {M : ℝ}
-    (hM : ∀ y, ‖f₁ y‖ ^ 2 + ‖f₂ y‖ ^ 2 ≤ M) (x : G) :
+    (hM : ∀ᵐ y ∂μ, ‖f₁ y‖ ^ 2 + ‖f₂ y‖ ^ 2 ≤ M) (x : G) :
     ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x‖ ^ 2 + ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x‖ ^ 2 ≤ M := by
-  have hM0 : 0 ≤ M := (add_nonneg (sq_nonneg _) (sq_nonneg _)).trans (hM x)
+  obtain ⟨y₀, hy₀⟩ := hM.exists
+  have hM0 : 0 ≤ M := (add_nonneg (sq_nonneg _) (sq_nonneg _)).trans hy₀
   set A := ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x‖
   set B := ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x‖
   have hA0 : 0 ≤ A := norm_nonneg _
   have hB0 : 0 ≤ B := norm_nonneg _
-  have hf₁ (y : G) : ‖f₁ y‖ ≤ √M :=
-    Real.le_sqrt_of_sq_le (by linarith [hM y, sq_nonneg ‖f₂ y‖])
-  have hf₂ (y : G) : ‖f₂ y‖ ≤ √M :=
-    Real.le_sqrt_of_sq_le (by linarith [hM y, sq_nonneg ‖f₁ y‖])
+  have hf₁ : ∀ᵐ y ∂μ, ‖f₁ y‖ ≤ √M :=
+    hM.mono fun y hy => Real.le_sqrt_of_sq_le (by linarith [hy, sq_nonneg ‖f₂ y‖])
+  have hf₂ : ∀ᵐ y ∂μ, ‖f₂ y‖ ≤ √M :=
+    hM.mono fun y hy => Real.le_sqrt_of_sq_le (by linarith [hy, sq_nonneg ‖f₁ y‖])
   by_cases h1 : Integrable (fun t => ρ.normed μ t • f₁ (x - t)) μ
   · by_cases h2 : Integrable (fun t => ρ.normed μ t • f₂ (x - t)) μ
     · have h1n : Integrable (fun t => ρ.normed μ t * ‖f₁ (x - t)‖) μ := by
@@ -520,24 +521,26 @@ theorem ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_l
               ← integral_add (h1n.const_mul c) (h2n.const_mul s)]
             exact integral_congr_ae (.of_forall fun t => by ring)
         _ ≤ ∫ t, ρ.normed μ t * √M ∂μ := by
-            refine integral_mono (((h1n.const_mul c).add (h2n.const_mul s)).congr
+            have hMx : ∀ᵐ t ∂μ, ‖f₁ (x - t)‖ ^ 2 + ‖f₂ (x - t)‖ ^ 2 ≤ M :=
+              (μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM
+            refine integral_mono_ae (((h1n.const_mul c).add (h2n.const_mul s)).congr
               (.of_forall fun t => by simp only [Pi.add_apply]; ring))
-              (ρ.integrable_normed.mul_const √M) fun t =>
+              (ρ.integrable_normed.mul_const √M) (hMx.mono fun t ht =>
                 mul_le_mul_of_nonneg_left
                   ((TauCeti.sq_add_sq_le_sq_iff_forall_mul_add_mul_le (norm_nonneg _)
                     (norm_nonneg _) (Real.sqrt_nonneg M)).1
-                      ((hM (x - t)).trans_eq (Real.sq_sqrt hM0).symm) c s hc0 hs0 hcs)
-                  (ρ.nonneg_normed t)
+                      (ht.trans_eq (Real.sq_sqrt hM0).symm) c s hc0 hs0 hcs)
+                  (ρ.nonneg_normed t))
         _ = √M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
     · have hB : B = 0 := by
         simp only [B, convolution_def, lsmul_apply, integral_undef h2, norm_zero]
       rw [hB, zero_pow two_ne_zero, add_zero]
-      exact (pow_le_pow_left₀ hA0 (ρ.norm_normed_convolution_le (.of_forall hf₁) x) 2).trans_eq
+      exact (pow_le_pow_left₀ hA0 (ρ.norm_normed_convolution_le hf₁ x) 2).trans_eq
         (Real.sq_sqrt hM0)
   · have hA : A = 0 := by
       simp only [A, convolution_def, lsmul_apply, integral_undef h1, norm_zero]
     rw [hA, zero_pow two_ne_zero, zero_add]
-    exact (pow_le_pow_left₀ hB0 (ρ.norm_normed_convolution_le (.of_forall hf₂) x) 2).trans_eq
+    exact (pow_le_pow_left₀ hB0 (ρ.norm_normed_convolution_le hf₂ x) 2).trans_eq
       (Real.sq_sqrt hM0)
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,

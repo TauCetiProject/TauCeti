@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Analysis.BoundedVariation.Slicing.Excess
+import TauCeti.Analysis.BoundedVariation.Slicing.Equality
 import TauCeti.Analysis.BoundedVariation.Slicing.Measurability
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Perimeter
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Variational
@@ -22,7 +22,7 @@ null-measurable set of finite volume with Steiner symmetral `S_e s = steinerSymm
 1. **Scaled perimeter bound and Pythagorean noninterval excess.** Combining the exact transverse
    variational formula for `P(S_e s)` (`TauCeti.perimeter_steinerSymmetrization_eq_iSup` in
    `TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Variational`) with the localized
-   noninterval-excess slicing inequality of `TauCeti.Analysis.BoundedVariation.Slicing.Excess` at
+   noninterval-excess slicing inequality of `TauCeti.Analysis.BoundedVariation.Slicing.Equality` at
    rescaled test fields `(1 - δ) • φ` for `δ ∈ [0, 1]` shows that every family `A ⊆ (ℝ ∙ e)ᗮ` of
    sections that, for almost every `y ∈ A`, do not agree almost everywhere with any interval
    (`OrdConnected` set) satisfies
@@ -34,12 +34,13 @@ null-measurable set of finite volume with Steiner symmetral `S_e s = steinerSymm
    particular for the full family of noninterval sections up to null sets
    (`TauCeti.perimeter_steinerSymmetrization_sq_add_four_mul_volume_noninterval_sq_le`).
 
-2. **Steiner equality forces interval sections.** When `P(s) < ∞` and `P(S_e s) = P(s)`, the excess
-   term `4 |A|²` vanishes, so for almost every `y ∈ (ℝ ∙ e)ᗮ` the line section
-   `{t | y + t • e ∈ s}` agrees almost everywhere with an order-connected set (an interval, possibly
-   empty; `TauCeti.ae_exists_ordConnected_lineSection_ae_eq_of_perimeter_steinerSymmetrization_eq`).
-   Finiteness of `P(s)` is essential: both `P(s)` and `P(S_e s)` can be `∞` even when noninterval
-   sections have positive transverse measure.
+2. **Steiner equality forces interval sections.** When `P(s) < ∞` and `P(S_e s) = P(s)`, almost
+   every line section `{t | y + t • e ∈ s}` agrees almost everywhere with an order-connected set (an
+   interval, possibly empty;
+   `TauCeti.ae_exists_ordConnected_lineSection_ae_eq_of_perimeter_steinerSymmetrization_eq`),
+   following directly from `TauCeti.ae_lineSection_ordConnected_of_perimeter_le_iSup` and
+   `TauCeti.perimeter_steinerSymmetrization_eq_iSup`. Finiteness of `P(s)` is essential: both
+   `P(s)` and `P(S_e s)` can be `∞` even when noninterval sections have positive transverse measure.
 
 ## References
 
@@ -62,63 +63,6 @@ section SteinerEqualityRigidity
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-
-/-- Rescaling any `φ` (`‖φ‖ ≤ 1`) to `(1 - δ) • φ` (`0 ≤ δ ≤ 1`) scales the main variational
-functional by at least `1 - δ` while gaining `2 √(2 δ - δ²) |A|` on any null-measurable family `A`
-of noninterval sections. -/
-private theorem mul_variational_add_excess_le_perimeter (e : E) (he : ‖e‖ = 1)
-    {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ⊤)
-    {A : Set (ℝ ∙ e)ᗮ} (hA : NullMeasurableSet A volume)
-    (hbad : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, y ∈ A →
-      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I)
-    {δ : ℝ} (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1)
-    (φ : 𝓓(⊤, (ℝ ∙ e)ᗮ)) (hφ : ∀ y, ‖φ y‖ ≤ 1) :
-    ENNReal.ofReal (1 - δ) *
-        (2 * (∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
-          ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) +
-        ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
-          volume.real {t : ℝ | (y : E) + t • e ∈ s})) +
-      2 * ENNReal.ofReal √(2 * δ - δ ^ 2) * volume A ≤
-      perimeter volume ⊤ s := by
-  have h1δ : 0 ≤ 1 - δ := sub_nonneg.2 hδ1
-  have hφ' (y : (ℝ ∙ e)ᗮ) : ‖((1 - δ) • φ) y‖ ≤ 1 := by
-    rw [FunLike.coe_smul, Pi.smul_apply, norm_smul, Real.norm_of_nonneg h1δ]
-    exact (mul_le_of_le_one_right h1δ (hφ y)).trans (by linarith)
-  have hex := two_mul_setLIntegral_add_two_mul_setLIntegral_add_ofReal_integral_le_perimeter
-    hs hfin e he hA hbad ((1 - δ) • φ) hφ'
-  have hD_le : ENNReal.ofReal (1 - δ) *
-      (2 * ∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
-        ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) ≤
-      2 * ∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
-        ENNReal.ofReal √(1 - ‖((1 - δ) • φ) y‖ ^ 2) := by
-    rw [mul_left_comm (ENNReal.ofReal (1 - δ)) 2,
-      ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    gcongr 2 * ?_
-    refine lintegral_mono fun y => ?_
-    have hrhs : ENNReal.ofReal √((1 - δ) ^ 2 * (1 - ‖φ y‖ ^ 2)) =
-        ENNReal.ofReal (1 - δ) * ENNReal.ofReal √(1 - ‖φ y‖ ^ 2) := by
-      rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq h1δ, ENNReal.ofReal_mul h1δ]
-    rw [← hrhs, FunLike.coe_smul, Pi.smul_apply, norm_smul, Real.norm_of_nonneg h1δ]
-    refine ENNReal.ofReal_le_ofReal (Real.sqrt_le_sqrt ?_)
-    have hsq1 : (1 - δ) ^ 2 ≤ 1 := by nlinarith
-    nlinarith [sq_nonneg ‖φ y‖]
-  have hB_eq : ENNReal.ofReal (1 - δ) * ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
-        volume.real {t : ℝ | (y : E) + t • e ∈ s}) =
-      ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM ((1 - δ) • φ) y *
-        volume.real {t : ℝ | (y : E) + t • e ∈ s}) := by
-    rw [← ENNReal.ofReal_mul h1δ, ← integral_const_mul]
-    congr 1; refine integral_congr_ae (.of_forall fun y => ?_)
-    simp only [map_smul, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, mul_assoc]
-  have hA_le : 2 * ENNReal.ofReal √(2 * δ - δ ^ 2) * volume A ≤
-      2 * ∫⁻ y in A, ENNReal.ofReal √(1 - ‖((1 - δ) • φ) y‖ ^ 2) := by
-    rw [mul_assoc, ← setLIntegral_const A (ENNReal.ofReal √(2 * δ - δ ^ 2))]
-    gcongr 2 * ?_
-    refine lintegral_mono fun y => ?_
-    rw [FunLike.coe_smul, Pi.smul_apply, norm_smul, Real.norm_of_nonneg h1δ, mul_pow]
-    have hsq : ‖φ y‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) (hφ y)
-    exact ENNReal.ofReal_le_ofReal (Real.sqrt_le_sqrt (by nlinarith [sq_nonneg (1 - δ)]))
-  rw [mul_add, hB_eq, add_right_comm]
-  exact (add_le_add (add_le_add hD_le hA_le) le_rfl).trans hex
 
 /-- **Scaled Steiner perimeter and noninterval excess bound.** For any null-measurable set `s` of
 finite volume, a unit vector `e`, any family `A ⊆ (ℝ ∙ e)ᗮ` of sections that, for almost every
@@ -146,7 +90,7 @@ theorem ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter
       ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} := hbad
   refine (add_le_add le_rfl (mul_le_mul_right (measure_mono_ae hAB) _)).trans ?_
   rw [hsup, ENNReal.mul_iSup, ENNReal.iSup_add]
-  exact iSup_le fun p => mul_variational_add_excess_le_perimeter e he hs hfin
+  exact iSup_le fun p => one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter hs hfin e he
     (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ => id)
     hδ0 hδ1 p.val p.property
 
@@ -221,23 +165,8 @@ theorem ae_exists_ordConnected_lineSection_ae_eq_of_perimeter_steinerSymmetrizat
     (heq : perimeter volume ⊤ (steinerSymmetrization e he s) = perimeter volume ⊤ s) :
     ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, ∃ I : Set ℝ, I.OrdConnected ∧
       {t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I := by
-  set A : Set (ℝ ∙ e)ᗮ := {y : (ℝ ∙ e)ᗮ |
-    ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I}
-  have hpyth :=
-    perimeter_steinerSymmetrization_sq_add_four_mul_volume_noninterval_sq_le e he hs hfin
-  rw [heq] at hpyth
-  have hP2_fin : perimeter volume ⊤ s ^ 2 ≠ ⊤ := ENNReal.pow_ne_top hPfin
-  have h0 : 4 * volume A ^ 2 = 0 := by
-    have hadd : perimeter volume ⊤ s ^ 2 + 4 * volume A ^ 2 = perimeter volume ⊤ s ^ 2 + 0 :=
-      le_antisymm (hpyth.trans_eq (add_zero _).symm) (by simp)
-    exact (ENNReal.add_right_inj hP2_fin).1 hadd
-  have hA0 : volume A = 0 := by
-    rcases mul_eq_zero.1 h0 with h4 | hsq
-    · norm_num at h4
-    · exact sq_eq_zero_iff.1 hsq
-  filter_upwards [compl_mem_ae_iff.2 hA0] with y hy
-  by_contra! hbad
-  exact hy hbad
+  refine ae_lineSection_ordConnected_of_perimeter_le_iSup hs hfin hPfin e he ?_
+  rw [← perimeter_steinerSymmetrization_eq_iSup e he hs hfin, heq]
 
 end SteinerEqualityRigidity
 

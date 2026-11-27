@@ -244,13 +244,13 @@ theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E) (he : 
         LinearMap.trace ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
           (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((z : E) + t • e))) y :
           (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ) := by
-    change (∫ u in (-1 : ℝ)..1,
-        (ℓ y / 2) * LinearMap.trace ℝ (ℝ ∙ e)ᗮ
-          (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z ((ℓ y / 2) * u)) y : (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)) = _
+    dsimp only [a, A]
     rw [intervalIntegral.integral_const_mul, ← smul_eq_mul,
       intervalIntegral.smul_integral_comp_mul_left
         (f := fun t => LinearMap.trace ℝ (ℝ ∙ e)ᗮ
-          (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z t) y : (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)),
+          (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
+            (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((z : E) + t • e))) y :
+            (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)),
       mul_neg_one, mul_one]
   have hp2_eq (y : (ℝ ∙ e)ᗮ) : (∫ u in (-1 : ℝ)..1,
       deriv (fun s : ℝ => fderiv ℝ a y (s • A y (a y * s))) u) =
