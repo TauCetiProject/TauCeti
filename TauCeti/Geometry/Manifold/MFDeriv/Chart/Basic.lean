@@ -82,6 +82,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   - `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`,
     `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`,
     `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero`,
+    `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`,
     `TauCeti.mvfderiv_comp_tangentSpaceCastModel_symm`,
     `TauCeti.mvfderiv_apply_eq_fderiv_comp_extChartAt_symm`,
     `TauCeti.range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm`, and
@@ -517,6 +518,16 @@ theorem mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
   -- `NormedSpace.fromTangentSpace` is definitionally the identity on `E`, and
   -- `TangentSpace 𝓘(𝕜, E) _` unfolds to `E`.
   exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ L
+
+/-- On a boundaryless `C¹` manifold, the differential of a map into a normed space vanishes at a
+point `y` of the source of the preferred extended chart at `x` exactly when the derivative of the
+coordinate expression in that chart vanishes at the chart image of `y`. -/
+theorem mvfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero [IsManifold I 1 M] {y : M}
+    (hy : y ∈ (extChartAt I x).source) :
+    mvfderiv I f y = 0 ↔ fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y) = 0 :=
+  -- `extChartAt I x` is by definition `(chartAt H x).extend I`.
+  mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero (IsManifold.chart_mem_maximalAtlas x)
+    (by rwa [extChartAt_source] at hy)
 
 end TauCeti
 
