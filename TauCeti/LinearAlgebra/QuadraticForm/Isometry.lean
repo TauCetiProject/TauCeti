@@ -30,7 +30,8 @@ This file records general properties of quadratic-map isometries.
   bilinear form of the target back to that of the source.
 * `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence maps polar
   orthogonal complements to polar orthogonal complements.
-* `QuadraticMap.Isometry.equivalent_restrict_map`: an injective isometry identifies the
+* `QuadraticMap.Isometry.equivalent_restrict_map`,
+  `QuadraticMap.IsometryEquiv.equivalent_restrict_map`: an injective isometry identifies the
   restriction to a submodule with the restriction to its image.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
@@ -173,6 +174,15 @@ theorem _root_.QuadraticMap.Isometry.equivalent_restrict_map {R : Type u} {M₁ 
     (Q₁.restrict W).Equivalent (Q₂.restrict (W.map f.toLinearMap)) :=
   ⟨{ toLinearEquiv := Submodule.equivMapOfInjective f.toLinearMap hf W
      map_app' w := f.map_app w }⟩
+
+/-- An isometric equivalence `e` identifies the restriction of `Q₁` to a submodule `W` with the
+restriction of `Q₂` to the image of `W`. -/
+theorem _root_.QuadraticMap.IsometryEquiv.equivalent_restrict_map {R : Type u} {M₁ : Type v}
+    {M₂ : Type*} {N : Type w} [CommSemiring R] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid N] [Module R N] {Q₁ : QuadraticMap R M₁ N}
+    {Q₂ : QuadraticMap R M₂ N} (e : Q₁.IsometryEquiv Q₂) (W : Submodule R M₁) :
+    (Q₁.restrict W).Equivalent (Q₂.restrict (W.map e.toLinearMap)) :=
+  e.toIsometry.equivalent_restrict_map e.injective W
 
 /-- The restriction of an isometric equivalence to the kernels of polarization against
 corresponding vectors. -/

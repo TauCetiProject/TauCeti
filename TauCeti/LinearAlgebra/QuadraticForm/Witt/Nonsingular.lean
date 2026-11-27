@@ -31,7 +31,8 @@ nondegenerate; and decomposition of every finite-dimensional form with trivial r
 
 The basic object is a *hyperbolic pair* `e, f`: isotropic vectors with `polar Q e f = 1`. Its span
 is a copy of `ℍ` and splits off orthogonally, with no hypothesis on the ambient form
-(`QuadraticForm.equivalent_binaryQuadraticForm_zero_prod_restrict_orthogonal`). The orthogonal
+(`QuadraticForm.equivalent_binaryQuadraticForm_zero_prod_restrict_orthogonal`, in
+`TauCeti/LinearAlgebra/QuadraticForm/Hyperbolic.lean`). The orthogonal
 complement of the span depends, up to isometry, only on `Q`
 (`QuadraticForm.equivalent_restrict_orthogonal_span_pair`). For pairs `e, f` and `e, f'` sharing
 their first vector, `u ↦ u - polar Q f' u • e` maps one complement isometrically onto the other. If
@@ -54,14 +55,13 @@ form (`TauCeti.eq_and_equivalent_of_equivalent_pi_binaryQuadraticForm_zero_prod`
 
 ## Main results
 
-* `QuadraticForm.isCompl_span_pair_orthogonal_of_polar_eq_one`: the span of a hyperbolic pair is
-  complementary to its polar orthogonal complement.
-* `QuadraticForm.equivalent_binaryQuadraticForm_zero_prod_restrict_orthogonal`: a hyperbolic pair
-  splits `Q` as `ℍ` plus the orthogonal complement of its span.
 * `QuadraticForm.equivalent_restrict_orthogonal_span_pair`: the orthogonal complements of any two
   hyperbolic pairs are isometric.
 * `QuadraticForm.exists_equivalent_binaryQuadraticForm_zero_prod`: a form with trivial radical and
   a nonzero isotropic vector splits as `ℍ` plus a form with trivial radical.
+* `TauCeti.equivalent_of_equivalent_binaryQuadraticForm_zero_prod` and
+  `TauCeti.equivalent_of_equivalent_pi_binaryQuadraticForm_zero_prod`: `ℍ` and `m ℍ` cancel from
+  orthogonal sums of arbitrary quadratic forms, in every characteristic.
 * `TauCeti.equivalent_of_equivalent_prod_of_nondegenerate_polarBilin`: **Witt cancellation** of a
   finite-dimensional nonsingular summand, over every field.
 * `QuadraticForm.exists_equivalent_pi_binaryQuadraticForm_zero_prod` and
@@ -84,57 +84,8 @@ universe u v v₀ v₁ v₂
 
 namespace QuadraticForm
 
-section CommRing
-
-variable {R : Type u} [CommRing R] {V : Type v} [AddCommGroup V] [Module R V]
-  {Q : QuadraticForm R V} {e f : V}
-
-/-- The span of a hyperbolic pair `e, f` (isotropic vectors with `polar Q e f = 1`) is
-complementary to its polar orthogonal complement, with no hypothesis on `Q`. The component of `u`
-in the span is `polar Q u f • e + polar Q u e • f`. -/
-theorem isCompl_span_pair_orthogonal_of_polar_eq_one (he : Q e = 0) (hf : Q f = 0)
-    (hef : polar Q e f = 1) :
-    IsCompl (Submodule.span R {e, f})
-      (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span R {e, f})) := by
-  have hfe : polar Q f e = 1 := by rw [polar_comm, hef]
-  refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ ↦ ?_,
-    codisjoint_iff.2 (eq_top_iff.2 fun u _ ↦ ?_)⟩
-  · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hv
-    obtain ⟨h₁, h₂⟩ := LinearMap.BilinForm.mem_orthogonal_span_pair_iff.1 hv'
-    simp only [polarBilin_apply_apply, polar_add_right, polar_smul_right, polar_self, he, hf, hef,
-      hfe, smul_eq_mul, smul_zero, mul_zero, mul_one, zero_add, add_zero] at h₁ h₂
-    simp [h₁, h₂]
-  · refine Submodule.mem_sup.2 ⟨polar Q u f • e + polar Q u e • f,
-      Submodule.mem_span_pair.2 ⟨_, _, rfl⟩, u - (polar Q u f • e + polar Q u e • f),
-      LinearMap.BilinForm.mem_orthogonal_span_pair_iff.2 ⟨?_, ?_⟩, add_sub_cancel _ _⟩ <;>
-    simp [polar_sub_right, polar_add_right, polar_smul_right, polar_self, he, hf, hef, hfe,
-      polar_comm Q u]
-
-end CommRing
-
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {e f e' f' : V}
-
-/-- A hyperbolic pair `e, f` splits `Q` as the orthogonal sum of the hyperbolic plane `[0, 0]`,
-spanned by `e` and `f`, and the polar orthogonal complement of their span, in every characteristic
-and with no hypothesis on `Q`. -/
-theorem equivalent_binaryQuadraticForm_zero_prod_restrict_orthogonal (he : Q e = 0)
-    (hf : Q f = 0) (hef : polar Q e f = 1) :
-    Q.Equivalent ((TauCeti.binaryQuadraticForm K 0 0).prod
-      (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {e, f})))) := by
-  set W := Submodule.span K {e, f}
-  have hli := linearIndependent_pair_of_polar_eq_one he hf hef
-  have hW : finrank K W = 2 := by
-    rw [show W = Submodule.span K (Set.range ![e, f]) by
-      rw [Matrix.range_cons_cons_empty], finrank_span_eq_card hli, Fintype.card_fin]
-  have hH : (Q.restrict W).Equivalent (TauCeti.binaryQuadraticForm K 0 0) :=
-    QuadraticForm.equivalent_binaryQuadraticForm_zero_of_polar_eq_one (Q.restrict W) hW
-      (w := ⟨e, Submodule.subset_span (by simp)⟩) (f := ⟨f, Submodule.subset_span (by simp)⟩)
-      he hf hef
-  exact QuadraticMap.Equivalent.trans
-    ⟨(IsometryEquiv.prodRestrictOrthogonal Q W
-      (isCompl_span_pair_orthogonal_of_polar_eq_one he hf hef)).symm⟩
-    (hH.prod (QuadraticMap.Equivalent.refl _))
 
 /-- For hyperbolic pairs `e, f` and `e, f'`, the map `u ↦ u - polar Q f' u • e` sends the
 orthogonal complement of the span of `e` and `f` into that of `e` and `f'`. -/
@@ -299,16 +250,15 @@ private theorem equivalent_restrict_orthogonal_span_pair_single (Q₁ : Quadrati
 
 /-- **Witt cancellation of the hyperbolic plane**, in every characteristic and for arbitrary
 quadratic forms: if `[0, 0] ⊥ Q₁ ≅ [0, 0] ⊥ Q₂`, then `Q₁ ≅ Q₂`. -/
-private theorem equivalent_of_equivalent_binaryQuadraticForm_zero_prod {Q₁ : QuadraticForm K V₁}
+theorem equivalent_of_equivalent_binaryQuadraticForm_zero_prod {Q₁ : QuadraticForm K V₁}
     {Q₂ : QuadraticForm K V₂}
     (h : ((binaryQuadraticForm K 0 0).prod Q₁).Equivalent
       ((binaryQuadraticForm K 0 0).prod Q₂)) : Q₁.Equivalent Q₂ := by
   obtain ⟨σ⟩ := h
-  have hmap := σ.toIsometry.equivalent_restrict_map σ.injective
+  have hmap := σ.equivalent_restrict_map
     (LinearMap.BilinForm.orthogonal ((binaryQuadraticForm K 0 0).prod Q₁).polarBilin
       (Submodule.span K {(Pi.single 0 1, 0), (Pi.single 1 1, 0)}))
-  rw [show σ.toIsometry.toLinearMap = σ.toLinearEquiv.toLinearMap from rfl,
-    σ.map_orthogonal_polarBilin, Submodule.map_span, Set.image_pair] at hmap
+  rw [σ.map_orthogonal_polarBilin, Submodule.map_span, Set.image_pair] at hmap
   simp only [LinearEquiv.coe_coe, IsometryEquiv.coe_toLinearEquiv] at hmap
   refine (equivalent_restrict_orthogonal_span_pair_single Q₁).symm.trans (hmap.trans
     ((QuadraticForm.equivalent_restrict_orthogonal_span_pair ?_ ?_ ?_
@@ -319,31 +269,19 @@ private theorem equivalent_of_equivalent_binaryQuadraticForm_zero_prod {Q₁ : Q
   · rw [σ.map_app, prod_apply_single_zero]
   · rw [σ.polar_apply, polar_prod_single_zero_single_one]
 
-/-- Splitting off the first hyperbolic plane of `m + 1` hyperbolic planes. -/
-private theorem equivalent_pi_succ_prod (m : ℕ) (A : QuadraticForm K V₁) :
-    ((QuadraticMap.pi fun _ : Fin (m + 1) ↦ binaryQuadraticForm K 0 0).prod A).Equivalent
-      ((binaryQuadraticForm K 0 0).prod
-        ((QuadraticMap.pi fun _ : Fin m ↦ binaryQuadraticForm K 0 0).prod A)) :=
-  ⟨((IsometryEquiv.consPi fun _ : Fin (m + 1) ↦ binaryQuadraticForm K 0 0).symm.prod
-    (IsometryEquiv.refl A)).trans (IsometryEquiv.prodAssoc _ _ _)⟩
-
-/-- No hyperbolic planes: the orthogonal sum with the zero-dimensional form. -/
-private theorem equivalent_pi_zero_prod (A : QuadraticForm K V₁) :
-    ((QuadraticMap.pi fun _ : Fin 0 ↦ binaryQuadraticForm K 0 0).prod A).Equivalent A :=
-  ⟨IsometryEquiv.uniqueProd _ A⟩
-
 /-- Witt cancellation of `m` hyperbolic planes, in every characteristic and for arbitrary
 quadratic forms. -/
-private theorem equivalent_of_equivalent_pi_binaryQuadraticForm_zero_prod {m : ℕ}
+theorem equivalent_of_equivalent_pi_binaryQuadraticForm_zero_prod {m : ℕ}
     {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
     (h : ((QuadraticMap.pi fun _ : Fin m ↦ binaryQuadraticForm K 0 0).prod Q₁).Equivalent
       ((QuadraticMap.pi fun _ : Fin m ↦ binaryQuadraticForm K 0 0).prod Q₂)) :
     Q₁.Equivalent Q₂ := by
   induction m with
-  | zero => exact (equivalent_pi_zero_prod Q₁).symm.trans (h.trans (equivalent_pi_zero_prod Q₂))
+  | zero =>
+    exact (equivalent_pi_zero_prod _ Q₁).symm.trans (h.trans (equivalent_pi_zero_prod _ Q₂))
   | succ m ih =>
     exact ih (equivalent_of_equivalent_binaryQuadraticForm_zero_prod
-      ((equivalent_pi_succ_prod m Q₁).symm.trans (h.trans (equivalent_pi_succ_prod m Q₂))))
+      ((equivalent_pi_succ_prod _ Q₁).symm.trans (h.trans (equivalent_pi_succ_prod _ Q₂))))
 
 /-- **Witt cancellation** (Elman–Karpenko–Merkurjev, Theorem 8.4) over every field: a
 finite-dimensional summand whose polar bilinear form is nondegenerate cancels from an orthogonal
@@ -391,7 +329,7 @@ theorem exists_equivalent_pi_binaryQuadraticForm_zero_prod [FiniteDimensional K 
   · refine ⟨0, ⊤, fun x hx ↦ Subtype.ext (ha x hx), ?_⟩
     exact QuadraticMap.Equivalent.trans
       ⟨{ toLinearEquiv := Submodule.topEquiv.symm, map_app' _ := rfl }⟩
-      (TauCeti.equivalent_pi_zero_prod _).symm
+      (equivalent_pi_zero_prod _ _).symm
   obtain ⟨W, hW, hQW⟩ := Q.exists_equivalent_binaryQuadraticForm_zero_prod hQ ha
   have hlt : finrank K W < n := by
     have := hQW.some.toLinearEquiv.finrank_eq
@@ -404,7 +342,8 @@ theorem exists_equivalent_pi_binaryQuadraticForm_zero_prod [FiniteDimensional K 
   exact ⟨m + 1, W'.map W.subtype, hmap.anisotropic_iff.mp hW', hQW.trans
     (((QuadraticMap.Equivalent.refl _).prod
       (hQW'.trans ((QuadraticMap.Equivalent.refl _).prod hmap))).trans
-      (TauCeti.equivalent_pi_succ_prod m _).symm)⟩
+      (equivalent_pi_succ_prod (fun _ : Fin (m + 1) ↦ TauCeti.binaryQuadraticForm K 0 0)
+        _).symm)⟩
 
 end QuadraticForm
 
@@ -413,11 +352,6 @@ namespace TauCeti
 variable {K : Type u} [Field K]
   {V₁ : Type v₁} [AddCommGroup V₁] [Module K V₁]
   {V₂ : Type v₂} [AddCommGroup V₂] [Module K V₂]
-
-/-- An orthogonal sum with a hyperbolic plane is isotropic. -/
-private theorem not_anisotropic_binaryQuadraticForm_zero_prod (A : QuadraticForm K V₁) :
-    ¬((binaryQuadraticForm K 0 0).prod A).Anisotropic :=
-  fun h ↦ not_anisotropic_binaryQuadraticForm_zero (anisotropic_of_prod h).1
 
 /-- **Witt decomposition**, uniqueness (Elman–Karpenko–Merkurjev, Theorem 8.5), in every
 characteristic and for arbitrary anisotropic forms: if `m₁ [0, 0] ⊥ A₁ ≅ m₂ [0, 0] ⊥ A₂` with `A₁`
@@ -433,20 +367,21 @@ theorem eq_and_equivalent_of_equivalent_pi_binaryQuadraticForm_zero_prod
   | zero =>
     cases m₂ with
     | zero =>
-      exact ⟨rfl, (equivalent_pi_zero_prod A₁).symm.trans (h.trans (equivalent_pi_zero_prod A₂))⟩
+      exact ⟨rfl,
+        (equivalent_pi_zero_prod _ A₁).symm.trans (h.trans (equivalent_pi_zero_prod _ A₂))⟩
     | succ m₂ =>
-      exact absurd (((equivalent_pi_zero_prod A₁).symm.trans
-        (h.trans (equivalent_pi_succ_prod m₂ A₂))).anisotropic_iff.mp hA₁)
+      exact absurd (((equivalent_pi_zero_prod _ A₁).symm.trans
+        (h.trans (equivalent_pi_succ_prod _ A₂))).anisotropic_iff.mp hA₁)
         (not_anisotropic_binaryQuadraticForm_zero_prod _)
   | succ m₁ ih =>
     cases m₂ with
     | zero =>
-      exact absurd (((equivalent_pi_zero_prod A₂).symm.trans
-        (h.symm.trans (equivalent_pi_succ_prod m₁ A₁))).anisotropic_iff.mp hA₂)
+      exact absurd (((equivalent_pi_zero_prod _ A₂).symm.trans
+        (h.symm.trans (equivalent_pi_succ_prod _ A₁))).anisotropic_iff.mp hA₂)
         (not_anisotropic_binaryQuadraticForm_zero_prod _)
     | succ m₂ =>
       obtain ⟨hm, hA⟩ := ih (equivalent_of_equivalent_binaryQuadraticForm_zero_prod
-        ((equivalent_pi_succ_prod m₁ A₁).symm.trans (h.trans (equivalent_pi_succ_prod m₂ A₂))))
+        ((equivalent_pi_succ_prod _ A₁).symm.trans (h.trans (equivalent_pi_succ_prod _ A₂))))
       exact ⟨congrArg (· + 1) hm, hA⟩
 
 end TauCeti
