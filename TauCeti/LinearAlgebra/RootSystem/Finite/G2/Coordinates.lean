@@ -29,15 +29,16 @@ public section
 
 namespace RootPairing.EmbeddedG2
 
-variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y] [Finite ι]
-  (P : RootPairing ι ℤ X Y) [P.EmbeddedG2]
+variable {ι R X Y : Type*} [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y] [Finite ι]
+  (P : RootPairing ι R X Y) [P.EmbeddedG2]
 
 /-- A linear combination of the distinguished short and long roots is a root precisely
 when its two integral coefficients occur in the G₂ table. Other components are allowed. -/
 theorem smul_add_smul_mem_range_root_iff (a b : ℤ) :
     a • shortRoot P + b • longRoot P ∈ Set.range P.root ↔ ![a, b] ∈ allCoeffs := by
   classical
-  have hli := linearIndependent_short_long P
+  have hli := (linearIndependent_short_long P).restrict_scalars' ℤ
   have hcomb (v : Fin 2 → ℤ) :
       Fintype.linearCombination ℤ ![shortRoot P, longRoot P] v =
         v 0 • shortRoot P + v 1 • longRoot P := by
@@ -48,9 +49,15 @@ theorem smul_add_smul_mem_range_root_iff (a b : ℤ) :
     have hm : P.root k ∈ allRoots P := by
       by_contra hn
       obtain ⟨hs, hl⟩ := isOrthogonal_short_and_long P hn
-      have h₁ := P.pairing_eq_add_of_root_eq_smul_add_smul (j := short P) hk
-      have h₂ := P.pairing_eq_add_of_root_eq_smul_add_smul (j := long P) hk
-      simp only [hs.1, hl.1, P.pairing_same, pairing_long_short, pairing_short_long,
+      have hs' : P.pairingIn ℤ k (short P) = 0 := by
+        apply FaithfulSMul.algebraMap_injective ℤ R
+        simpa only [P.algebraMap_pairingIn, map_zero] using hs.1
+      have hl' : P.pairingIn ℤ k (long P) = 0 := by
+        apply FaithfulSMul.algebraMap_injective ℤ R
+        simpa only [P.algebraMap_pairingIn, map_zero] using hl.1
+      have h₁ := P.pairingIn_eq_add_of_root_eq_smul_add_smul (S := ℤ) (j := short P) hk
+      have h₂ := P.pairingIn_eq_add_of_root_eq_smul_add_smul (S := ℤ) (j := long P) hk
+      simp only [hs', hl', P.pairingIn_same, pairingIn_long_short, pairingIn_short_long,
         smul_eq_mul] at h₁ h₂
       have ha : a = 0 := by omega
       have hb : b = 0 := by omega
@@ -71,8 +78,9 @@ end RootPairing.EmbeddedG2
 
 namespace RootPairing
 
-variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y] [Finite ι]
-  (P : RootPairing ι ℤ X Y) [P.IsReduced]
+variable {ι R X Y : Type*} [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y] [Finite ι]
+  (P : RootPairing ι R X Y) [P.IsCrystallographic] [P.IsReduced]
 
 /-- Three consecutive positive steps in a root string force the G₂ Cartan integer `-3`.
 This does not require irreducibility of the ambient root pairing. -/

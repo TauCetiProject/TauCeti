@@ -17,8 +17,9 @@ public import Mathlib.Algebra.Lie.BaseChange
 
 The two exceptional G₂ divided-power collection rules hold in the rational enveloping
 algebra of the integral Chevalley algebra on the whole cocharacter lattice. The hypotheses
-are local root equations, excluded root sums and descending string lengths. Neither
-irreducibility nor spanning by the coroots is required.
+are only the local root equations; excluded root sums and descending string lengths are
+derived from them inside the ambient root pairing. Neither irreducibility nor spanning by
+the coroots is required.
 
 The integer coefficients retain the actual signs of the supplied Chevalley table, including
 the highest-root sign. The associative identities are
@@ -76,7 +77,7 @@ private theorem g2_triple_data [P.IsReduced] {α β γ δ ε ζ : ι}
       ![(a : ℤ), (b : ℤ)] ∈ EmbeddedG2.allCoeffs := by
     simpa only [EmbeddedG2.shortRoot, EmbeddedG2.longRoot, EmbeddedG2.short,
       EmbeddedG2.long, g, natCast_zsmul] using
-      @EmbeddedG2.smul_add_smul_mem_range_root_iff ι X Y _ _ _ P g (a : ℤ) (b : ℤ)
+      EmbeddedG2.smul_add_smul_mem_range_root_iff P (a : ℤ) (b : ℤ)
   rw [he]
   simp only [mem_insert, mem_singleton, Prod.mk.injEq] at hab
   rcases hab with h | h | h | h | h | h | h <;> rcases h with ⟨rfl, rfl⟩ <;> decide
@@ -269,6 +270,24 @@ theorem dividedPower_root_mul_of_g2_short_pair {α β γ δ ε : ι}
   have hβ : P.root β = P.root α + P.root η := by rw [hη]; module
   exact g2_short_pair_in_triple c hβ hγ hδ hε m n
 
+private theorem chainG2Index_degree_lt {m n : ℕ} {p : ℕ × ℕ × ℕ × ℕ}
+    (hp : p ∈ (chainG2Index m n).erase 0) :
+    (n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2) + p.1 + p.2.1 + p.2.2.1 + p.2.2.2 +
+      (m - p.1 - 2 * p.2.1 - 3 * p.2.2.1 - 3 * p.2.2.2) < m + n := by
+  obtain ⟨hne, hp⟩ := mem_erase.mp hp
+  have hb := mem_chainG2Index.mp hp
+  simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
+  omega
+
+private theorem g2ShortPairIndex_degree_lt {m n : ℕ} {p : ℕ × ℕ × ℕ}
+    (hp : p ∈ (g2ShortPairIndex m n).erase 0) :
+    (n - p.1 - p.2.1 - 2 * p.2.2) + p.1 + p.2.1 + p.2.2 +
+      (m - p.1 - 2 * p.2.1 - p.2.2) < m + n := by
+  obtain ⟨hne, hp⟩ := mem_erase.mp hp
+  have hb := mem_g2ShortPairIndex.mp hp
+  simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
+  omega
+
 /-- The swapped product is the leading term; every correction has strictly smaller total
 sum of divided-power exponents. All correction coefficients are integers. -/
 theorem dividedPower_root_mul_eq_swap_add_of_g2_triple {α β γ δ ε ζ : ι}
@@ -296,13 +315,10 @@ theorem dividedPower_root_mul_eq_swap_add_of_g2_triple {α β γ δ ε ζ : ι}
   classical
   constructor
   · rw [dividedPower_root_mul_of_g2_triple c hγ hδ hε hζ]
-    simp
-  · rintro ⟨i, j, k, l⟩ hp
-    obtain ⟨hne, hp⟩ := mem_erase.mp hp
-    have hb := mem_chainG2Index.mp hp
-    simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
-    dsimp only at hb ⊢
-    omega
+    rw [← Finset.add_sum_erase (chainG2Index m n) _ (a := 0) (by simp)]
+    simp only [Prod.fst_zero, Prod.snd_zero, pow_zero, mul_one,
+      mul_zero, tsub_zero, dividedPower_zero, one_smul]
+  · exact fun _ hp ↦ chainG2Index_degree_lt hp
 
 /-- The swapped product is the leading term; every correction has strictly smaller total
 sum of divided-power exponents. All correction coefficients are integers. -/
@@ -327,13 +343,10 @@ theorem dividedPower_root_mul_eq_swap_add_of_g2_short_pair {α β γ δ ε : ι}
   classical
   constructor
   · rw [dividedPower_root_mul_of_g2_short_pair c hγ hδ hε]
-    simp
-  · rintro ⟨i, j, k⟩ hp
-    obtain ⟨hne, hp⟩ := mem_erase.mp hp
-    have hb := mem_g2ShortPairIndex.mp hp
-    simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
-    dsimp only at hb ⊢
-    omega
+    rw [← Finset.add_sum_erase (g2ShortPairIndex m n) _ (a := 0) (by simp)]
+    simp only [Prod.fst_zero, Prod.snd_zero, pow_zero, mul_one, zero_add,
+      mul_zero, tsub_zero, dividedPower_zero, one_smul]
+  · exact fun _ hp ↦ g2ShortPairIndex_degree_lt hp
 
 /-- Collection in the opposite orientation of the triple string. The factor order reverses,
 and the sum-root and third-string coefficients change sign. -/
@@ -375,11 +388,8 @@ theorem dividedPower_root_mul_of_g2_reverse_triple {α β γ δ ε ζ : ι}
     (-c.structConst α β) (-(c.structConst α γ).sign)
     (-(c.structConst α δ).sign) (-(c.structConst δ γ).sign)
     h₁' h₂' h₃' h₄' h₅.op h₆.op h₇.op h₈.op h₉.op h₁₀.op h₁₁.op m n
-  have hpow (k : ℕ) (u : Uᵐᵒᵖ) :
-      MulOpposite.unop (dividedPower k u) = dividedPower k (MulOpposite.unop u) := by
-    simp only [dividedPower_def, MulOpposite.unop_smul, MulOpposite.unop_pow]
   simpa only [MulOpposite.unop_mul, Finset.unop_sum, MulOpposite.unop_smul,
-    MulOpposite.unop_op, hpow, mul_assoc, neg_mul_neg, mul_neg,
+    MulOpposite.unop_op, unop_dividedPower, mul_assoc, neg_mul_neg, mul_neg,
     neg_mul, neg_sq, neg_neg] using congrArg MulOpposite.unop h
 
 /-- The short-pair collection formula in the reverse orientation. The two double-root factors
@@ -432,12 +442,11 @@ theorem dividedPower_root_mul_eq_swap_add_of_g2_reverse_triple {α β γ δ ε �
   classical
   constructor
   · rw [dividedPower_root_mul_of_g2_reverse_triple c hγ hδ hε hζ]
-    simp
-  · rintro ⟨i, j, k, l⟩ hp
-    obtain ⟨hne, hp⟩ := mem_erase.mp hp
-    have hb := mem_chainG2Index.mp hp
-    simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
-    dsimp only at hb ⊢
+    rw [← Finset.add_sum_erase (chainG2Index m n) _ (a := 0) (by simp)]
+    simp only [Prod.fst_zero, Prod.snd_zero, pow_zero, mul_one,
+      mul_zero, tsub_zero, dividedPower_zero, one_smul]
+  · intro p hp
+    have := chainG2Index_degree_lt hp
     omega
 
 /-- Reverse collection with the leading swapped product isolated and every correction
@@ -462,12 +471,10 @@ theorem dividedPower_root_mul_eq_swap_add_of_g2_reverse_short_pair {α β γ δ 
   classical
   constructor
   · rw [dividedPower_root_mul_of_g2_reverse_short_pair c hγ hδ hε]
-    simp
-  · rintro ⟨i, j, k⟩ hp
-    obtain ⟨hne, hp⟩ := mem_erase.mp hp
-    have hb := mem_g2ShortPairIndex.mp hp
-    simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
-    dsimp only at hb ⊢
-    omega
+    rw [← Finset.add_sum_erase (g2ShortPairIndex n m) _ (a := 0) (by simp)]
+    simp only [Prod.fst_zero, Prod.snd_zero, pow_zero, mul_one, zero_add,
+      mul_zero, tsub_zero, dividedPower_zero, one_smul]
+  · intro p hp
+    simpa only [add_comm m n] using g2ShortPairIndex_degree_lt hp
 
 end RootPairing.ChevalleyLieAlgebra

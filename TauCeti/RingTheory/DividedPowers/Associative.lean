@@ -78,6 +78,18 @@ noncomputable def dividedPower (n : ℕ) (x : A) : A :=
 theorem dividedPower_def (n : ℕ) (x : A) :
     dividedPower n x = (n.factorial : ℚ)⁻¹ • x ^ n := (rfl)
 
+/-- Taking the multiplicative opposite commutes with divided powers. -/
+@[simp]
+theorem op_dividedPower (n : ℕ) (x : A) :
+    MulOpposite.op (dividedPower n x) = dividedPower n (MulOpposite.op x) := by
+  simp only [dividedPower_def, MulOpposite.op_smul, MulOpposite.op_pow]
+
+/-- Removing the multiplicative opposite commutes with divided powers. -/
+@[simp]
+theorem unop_dividedPower (n : ℕ) (x : Aᵐᵒᵖ) :
+    MulOpposite.unop (dividedPower n x) = dividedPower n (MulOpposite.unop x) := by
+  simp only [dividedPower_def, MulOpposite.unop_smul, MulOpposite.unop_pow]
+
 @[simp]
 theorem dividedPower_zero (x : A) : dividedPower 0 x = 1 := by
   simp [dividedPower_def]
