@@ -47,6 +47,8 @@ extensions has the product of their norm subgroups
   Artin map of the local class formation.
 * `TauCeti.ClassFieldTheory.index_localNormSubgroup`: `[Kˣ : N_{L/K}(Lˣ)] = [L : K]` for an
   abelian layer.
+* `TauCeti.ClassFieldTheory.index_localNormSubgroup_dvd_degree`: `[Kˣ : N_{L/K}(Lˣ)]` divides
+  `[L : K]` for every finite Galois layer.
 * `TauCeti.ClassFieldTheory.localNormSubgroup_inf_of_isAbelian`: the norm subgroup of the
   compositum of a finite Galois extension with a finite abelian extension is the intersection of
   their norm subgroups.
@@ -157,6 +159,17 @@ theorem index_localNormSubgroup (hV : V.IsAbelianClassFieldLayer) :
     (localNormSubgroup K V).index = (ofOpenNormal V).degree := by
   rw [Subgroup.index_eq_card, degree_eq_natCard_gal,
     Nat.card_congr (localAbelianGaloisEquiv K hV).toEquiv]
+
+variable (V) in
+/-- **The norm index divides the degree**: for every finite Galois extension `L/K`, abelian or
+not, `[Kˣ : N_{L/K}(Lˣ)]` divides `[L : K]`. By norm limitation the index is the degree of the
+maximal abelian subextension. -/
+theorem index_localNormSubgroup_dvd_degree :
+    (localNormSubgroup K V).index ∣ (ofOpenNormal V).degree := by
+  rw [← localNormSubgroup_maximalAbelianLayer,
+    index_localNormSubgroup (V.isAbelianClassFieldLayer_maximalAbelianLayer)]
+  simp only [degree_eq_relIndex, top_ofOpenNormal, ground_ofOpenNormal]
+  exact Subgroup.relIndex_dvd_of_le_left _ V.le_maximalAbelianLayer
 
 end Reciprocity
 
