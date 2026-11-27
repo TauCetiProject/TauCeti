@@ -196,16 +196,22 @@ theorem isProperOnSupport_delta (x : X) (ℓ : V x →L[ℝ] W) (f : X → Y) :
 
 end Delta
 
-/-- Near a point mapped off the support of a test `s` of a bundle `V` over `Y`, the composite
-`s ∘ f` vanishes. -/
-theorem eventually_apply_comp_eq_zero {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {V : Y → Type*} [∀ y, AddCommGroup (V y)] [∀ y, Module ℝ (V y)]
-    [∀ y, TopologicalSpace (V y)] [TopologicalSpace (TotalSpace F V)]
-    [FiberBundle F V] [VectorBundle ℝ F V] {f : X → Y} (hf : Continuous f)
-    (s : BundleTest J F V) {x : X} (hfx : f x ∉ closure {y | s y ≠ 0}) :
-    ∀ᶠ z in 𝓝 x, s (f z) = 0 :=
-  eventually_of_mem (hf.continuousAt.preimage_mem_nhds (isClosed_closure.isOpen_compl.mem_nhds hfx))
-    fun _ hz ↦ Bundle.apply_eq_zero_of_notMem_closure hz
+section ExistsCutoff
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : X → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [FiniteDimensional ℝ E] [IsManifold I ∞ X] [T2Space X]
+  {W : Type*} [Zero W] {T : BundleTest I F V → W} {f : X → Y}
+
+/-- If `f` is proper on the support of `T`, there is a smooth compactly supported function equal
+to one near the part of the support of `T` over a compact set `K`. -/
+theorem IsProperOnSupport.exists_eventually_eq_one (hT : IsProperOnSupport T f) {K : Set Y}
+    (hK : IsCompact K) :
+    ∃ χ : C^∞⟮I, X; ℝ⟯, HasCompactSupport χ ∧ ∀ᶠ x in 𝓝ˢ (dsupport T ∩ f ⁻¹' K), χ x = 1 :=
+  (hT.isCompact hK).exists_contMDiffMap_one_nhds_hasCompactSupport I
+
+end ExistsCutoff
 
 section Cutoff
 
@@ -646,14 +652,6 @@ section Pushforward
 
 variable [T2Space X] {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
   {T : BundleTest I G (Trivial X G) →L_c[ℝ] W} {f : C^∞⟮I, X; J, Y⟯}
-
-omit [FiniteDimensional ℝ E'] [IsManifold J ∞ Y] in
-/-- A smooth compactly supported function equal to one near the part of the support of `T` over a
-compact set `K`. -/
-private theorem IsProperOnSupport.exists_eventually_eq_one (hT : IsProperOnSupport ⇑T f)
-    {K : Set Y} (hK : IsCompact K) :
-    ∃ χ : C^∞⟮I, X; ℝ⟯, HasCompactSupport χ ∧ ∀ᶠ x in 𝓝ˢ (dsupport ⇑T ∩ f ⁻¹' K), χ x = 1 :=
-  (hT K hK).exists_contMDiffMap_one_nhds_hasCompactSupport I
 
 /-- The pairing of `T` with a cutoff pullback of `s` is its pairing with any test agreeing with
 `s ∘ f` near each point of the support of `T`. -/
