@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.Intertwining.DirectSum
+public import Mathlib.RepresentationTheory.Semisimple
 
 /-!
 # The group-algebra module of a direct sum of representations
@@ -44,6 +45,8 @@ group algebra, are in `TauCeti.RepresentationTheory.Intertwining.DirectSum`.
   family of intertwining maps.
 * `Representation.directSumAsModuleEquiv_directSumEquivCongrLeft`: the comparison commutes with
   reindexing the family.
+* `Representation.isSemisimpleRepresentation_directSum`: a direct sum of semisimple
+  representations is semisimple.
 -/
 
 public section
@@ -151,5 +154,17 @@ theorem directSumAsModuleEquiv_directSumEquivCongrLeft (x : (directSum ρ).asMod
     DFinsupp.comapDomain'_apply, directSumAsModuleEquiv_apply]
 
 end Reindex
+
+/-- **A direct sum of semisimple representations is semisimple.** Through
+`Representation.directSumAsModuleEquiv` this is the semisimplicity of a direct sum of semisimple
+modules over the group algebra. -/
+instance isSemisimpleRepresentation_directSum {k G ι : Type*} [Field k] [Monoid G]
+    {V : ι → Type*} [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
+    (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsSemisimpleRepresentation] :
+    (directSum ρ).IsSemisimpleRepresentation := by
+  have (i : ι) :=
+    (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule (ρ i)).mp inferInstance
+  exact (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mpr
+    (IsSemisimpleModule.congr (directSumAsModuleEquiv ρ))
 
 end Representation
