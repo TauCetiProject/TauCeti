@@ -420,6 +420,16 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
 
+/-- An upper-triangular matrix keeps a column vector zero from an index on: if `w` vanishes at
+every index `≥ j`, then so does `A *ᵥ w` at `j`. -/
+theorem IsUpperTriangular.mulVec_apply_eq_zero (hA : A.IsUpperTriangular) {w : n → R} {j : n}
+    (hw : ∀ k, j ≤ k → w k = 0) : (A *ᵥ w) j = 0 := by
+  simp only [mulVec, dotProduct]
+  refine Finset.sum_eq_zero fun k _ ↦ ?_
+  rcases lt_or_ge k j with hkj | hjk
+  · rw [hA hkj, zero_mul]
+  · rw [hw k hjk, mul_zero]
+
 /-- An entry of a product of lower- and upper-triangular matrices only involves the indices
 `k ≤ min i j`. -/
 theorem mul_apply_eq_sum_Iic_of_isLowerTriangular_of_isUpperTriangular

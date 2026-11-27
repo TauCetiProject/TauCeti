@@ -87,6 +87,11 @@ Marcinkiewicz interpolation at the height `t / 2` produces the constant
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
 
+For a nonzero real `y` and every real exponent `s`, the extended norm of `|y| ^ s` is
+`‖y‖ₑ ^ s`. This complements Mathlib's `Real.eNorm_rpow_of_nonneg`, which needs a nonnegative
+exponent; for a negative exponent `y ≠ 0` is needed, since `|0| ^ s = 0` in `ℝ` while
+`‖0‖ₑ ^ s = ∞` in `ℝ≥0∞`.
+
 On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every positive exponent `a`.
 
 ## Main declarations
@@ -139,6 +144,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   `ofReal (p * 2⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) = ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
+* `Real.eNorm_abs_rpow_of_ne_zero`: `‖|y| ^ s‖ₑ = ‖y‖ₑ ^ s` for `y ≠ 0` and any real `s`.
 * `TauCeti.tendsto_const_mul_nnnorm_rpow_nhds_zero`: `c * ‖x‖₊ ^ a → 0` as `x → 0` for `0 < a`.
 -/
 
@@ -573,6 +579,15 @@ lemma max_two_mul_le_toNNReal {α C M ρ : ℝ≥0} {C₀ D N R : ℝ} (hα1 : (
         exact le_max_right _ _
 
 end NNReal
+
+namespace Real
+
+/-- For `y ≠ 0` and any real exponent `s`, the extended norm of `|y| ^ s` is `‖y‖ₑ ^ s`. -/
+theorem eNorm_abs_rpow_of_ne_zero {y : ℝ} (hy : y ≠ 0) (s : ℝ) : ‖|y| ^ s‖ₑ = ‖y‖ₑ ^ s := by
+  rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _), Real.eNorm_eq_ofReal_abs,
+    ENNReal.ofReal_rpow_of_pos (abs_pos.2 hy)]
+
+end Real
 
 namespace TauCeti
 

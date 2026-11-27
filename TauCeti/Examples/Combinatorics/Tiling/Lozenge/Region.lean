@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Region
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Basic
 
 /-!
 # Regression examples: regions of the triangular lattice

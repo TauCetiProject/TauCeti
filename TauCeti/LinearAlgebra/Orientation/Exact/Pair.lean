@@ -79,7 +79,7 @@ private def exchangeEquiv : ((K × A') × B') ≃ₗ[K] ((K × B') × A') :=
 omit [LinearOrder K] [IsStrictOrderedRing K] in
 private theorem exchangeEquiv_apply (t : K) (v : A') (u : B') :
     exchangeEquiv K A' B' ((t, v), u) = ((-t, u), v) := by
-  simp [exchangeEquiv, LinearEquiv.symm_apply_eq]
+  simp [exchangeEquiv]
 
 /-- Reversing the line and exchanging the two blocks behind it, before any reassociation,
 multiplies the product orientation `[K]([A'][B'])` by `-(-1) ^ (a' * b')`. -/
