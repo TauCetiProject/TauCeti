@@ -136,16 +136,7 @@ lemma singularHomologyπ_comp_absoluteSingularCap (P : TopPair.{w}) (k : Type*) 
     (P.singularChainComplexπ S) (P.singularChainComplexπ N)
     (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h α
-  -- `cap_naturality` types this map between `linearYonedaObj` complexes, so state it that way
-  -- for `rw` to find it; the identity morphism's type is matched only up to unfolding
-  -- `linearYonedaFunctor`, which `exact` performs.
-  have hid : HomologicalComplex.homologyMap
-      (K := ((TopCat.toSSet.obj P.fst).chainComplex R).linearYonedaObj k M)
-      (L := ((TopCat.toSSet.obj P.fst).chainComplex R).linearYonedaObj k M)
-      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 _).op) p = 𝟙 _ := by
-    rw [op_id, CategoryTheory.Functor.map_id]
-    exact HomologicalComplex.homologyMap_id _ _
-  rw [hid, ModuleCat.id_apply] at this
+  rw [ChainComplex.homologyMap_linearYonedaFunctor_map_id, ModuleCat.id_apply] at this
   rw [TopCat.singularCap_def, absoluteSingularCap_def]
   exact this.symm
 
@@ -173,13 +164,8 @@ lemma absoluteSingularCap_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ri
     ((Category.id_comp _).trans
       (alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ P u).symm)
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h β
-  have hid : HomologicalComplex.homologyMap
-      (K := (P.singularChainComplex R).linearYonedaObj k M)
-      (L := (P.singularChainComplex R).linearYonedaObj k M)
-      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 _).op) p = 𝟙 _ := by
-    rw [op_id, CategoryTheory.Functor.map_id]
-    exact HomologicalComplex.homologyMap_id _ _
-  rw [hid, ModuleCat.id_apply, HomologicalComplex.homologyMap_id, Category.id_comp] at h₂
+  rw [ChainComplex.homologyMap_linearYonedaFunctor_map_id, ModuleCat.id_apply,
+    HomologicalComplex.homologyMap_id, Category.id_comp] at h₂
   rw [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_id, Category.comp_id,
     Category.id_comp] at h₁
   rw [absoluteSingularCap_def, singularCap_def]
