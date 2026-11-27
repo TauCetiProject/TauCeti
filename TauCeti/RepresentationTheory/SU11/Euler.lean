@@ -116,13 +116,15 @@ theorem continuous_euler : Continuous (fun p : ℝ × ℝ × ℝ ↦ euler p.1 p
   fun_prop
 
 /-- The upper-left entry in Euler coordinates has phase `(α + γ)/2`. -/
+@[simp]
 theorem entryA_euler (α t γ : ℝ) :
     (euler α t γ).entryA = (cosh (t / 2) : ℂ) * (Circle.exp ((α + γ) / 2) : ℂ) := by
   simp only [euler_def, entryA_mul, entryA_rotation, entryB_rotation, star_zero, mul_zero,
     zero_mul, add_zero, entryA_boost, add_div, Circle.exp_add, Circle.coe_mul]
   ring
 
-/-- The upper-right entry in Euler coordinates has phase `(α - γ)/2`. -/
+/-- The upper-right entry is the unit complex factor at angle `(α - γ)/2`
+scaled by the signed amplitude `sinh (t / 2)`. -/
 theorem entryB_euler (α t γ : ℝ) :
     (euler α t γ).entryB = (sinh (t / 2) : ℂ) * (Circle.exp ((α - γ) / 2) : ℂ) := by
   have hconj : star (Circle.exp (γ / 2) : ℂ) = (↑((Circle.exp (γ / 2))⁻¹) : ℂ) :=
@@ -133,6 +135,7 @@ theorem entryB_euler (α t γ : ℝ) :
   ring
 
 /-- The absolute size of the upper-right entry is determined by the boost parameter. -/
+@[simp]
 theorem norm_entryB_euler (α t γ : ℝ) : ‖(euler α t γ).entryB‖ = |sinh (t / 2)| := by
   simp only [entryB_euler, norm_mul, Complex.norm_real, Real.norm_eq_abs, Circle.norm_coe, mul_one]
 
@@ -168,10 +171,7 @@ theorem exists_euler_eq (g : SU11) :
   let u := Circle.exp (Complex.arg g.entryA)
   let v := Circle.exp (Complex.arg g.entryB)
   have hexp (l : ℝ) (z : Circle) : z ∈ Circle.exp '' Ico l (l + 2 * π) := by
-    let x := toIcoMod two_pi_pos l (Complex.arg z)
-    obtain ⟨hx, k, hk⟩ := (toIcoMod_eq_iff (hp := two_pi_pos)).mp
-      (rfl : toIcoMod two_pi_pos l (Complex.arg z) = x)
-    have heq := Circle.exp_eq_exp.mpr ⟨k, by simpa only [zsmul_eq_mul] using hk⟩
+    obtain ⟨x, hx, heq⟩ := Circle.periodic_exp.exists_mem_Ico two_pi_pos (Complex.arg z) l
     exact ⟨x, hx, heq.symm.trans (Circle.exp_arg z)⟩
   obtain ⟨α, hα, hαphase⟩ := hexp 0 (u * v)
   obtain ⟨δ, hδ, hδphase⟩ := hexp (-π) (u / Circle.exp (α / 2))

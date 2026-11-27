@@ -145,6 +145,20 @@ theorem entryB_mul (g h : SU11) :
   rw [entryB_def, hmul, coe_eq_matrix g, coe_eq_matrix h]
   simp [Matrix.mul_apply, Fin.sum_univ_two]
 
+/-- Inversion conjugates the upper-left entry. -/
+@[simp]
+theorem entryA_inv (g : SU11) : (g⁻¹).entryA = star g.entryA := by
+  rw [entryA_def, Subgroup.coe_inv, Matrix.SpecialLinearGroup.coe_inv, coe_eq_matrix,
+    adjugate_fin_two_of]
+  simp
+
+/-- Inversion negates the upper-right entry. -/
+@[simp]
+theorem entryB_inv (g : SU11) : (g⁻¹).entryB = -g.entryB := by
+  rw [entryB_def, Subgroup.coe_inv, Matrix.SpecialLinearGroup.coe_inv, coe_eq_matrix,
+    adjugate_fin_two_of]
+  simp
+
 /-- The subspace topology on `SU(1,1)` is determined by the two top-row entries. -/
 theorem continuous_iff_entryA_entryB {X : Type*} [TopologicalSpace X] {f : X → SU11} :
     Continuous f ↔ Continuous (fun x ↦ (f x).entryA) ∧ Continuous (fun x ↦ (f x).entryB) := by
