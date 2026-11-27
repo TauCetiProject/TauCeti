@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.AdicCompletion.Principal
 public import TauCeti.RingTheory.Perfection
+import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 
 /-!
 # Adic completeness and change-of-ideal isomorphisms of ring perfections and tilts
@@ -27,6 +28,14 @@ both sides are isomorphic to `Perfection A p` through `Perfection.quotientMulEqu
 (or has a positive power dividing `p`) and makes `A` `ϖ`-adically complete shows that `PreTilt A p`
 is `ϖ♭`-adically complete.
 
+The same change of ideal works for monoid maps out of a commutative monoid `M` on which `x ↦ x ^ p`
+is bijective, and it allows a larger ideal that is not a defining ideal. If `A` is `I`-adically
+complete with `p ∈ I`, monoid maps `M →* A` correspond to monoid maps `M →* A ⧸ I` through
+`Perfection.liftMonoidHom` and `Perfection.quotientMulEquiv`; and if `I ≤ J` with `x ^ p ∈ I` for
+every `x ∈ J`, monoid maps `M →* A ⧸ I` correspond to monoid maps `M →* A ⧸ J`, since Frobenius
+factors through `A ⧸ J → A ⧸ I` (`Ideal.bijective_factor_comp_monoidHom`). The main example of
+such a `J` is the ideal of elements with divided powers of a `p`-adically complete ring.
+
 ## Main definitions
 
 * `Perfection.quotientRingEquiv`: `Perfection (A ⧸ I) p ≃+* Perfection (A ⧸ J) p` for `I ≤ J` when
@@ -39,6 +48,9 @@ is `ϖ♭`-adically complete.
 * `PreTilt.isAdicComplete_span_singleton`,
   `PreTilt.isAdicComplete_span_singleton_of_pow_dvd`: `PreTilt A p` is `(ϖ♭)`-adically complete when
   `ϖ♭.untilt ∣ p` (or `ϖ♭.untilt ^ k ∣ p` for `k ≠ 0`) and `A` is `(ϖ♭.untilt)`-adically complete.
+* `IsAdicComplete.bijective_mk_comp_monoidHom`: for `A` complete along `I ∋ p` and `J ⊇ I` with
+  `x ^ p ∈ I` for `x ∈ J`, every monoid map `M →* A ⧸ J` from a monoid on which `x ↦ x ^ p` is
+  bijective lifts uniquely to a monoid map `M →* A`.
 
 ## References
 
@@ -221,5 +233,49 @@ theorem isAdicComplete_span_singleton_of_pow_dvd {ϖ : PreTilt A p} {k : ℕ} [N
   isAdicComplete_span_singleton ((dvd_pow_self _ (NeZero.ne k)).trans hdvd)
 
 end PreTilt
+
+namespace IsAdicComplete
+
+variable {p : ℕ} [hp : Fact p.Prime] {S : Type*} [CommRing S] {I J : Ideal S} [IsAdicComplete I S]
+  {M : Type*} [CommMonoid M] [PerfectRing M p]
+
+/-- The case `J = I` of `IsAdicComplete.bijective_mk_comp_monoidHom`: through
+`Perfection.liftMonoidHom`, it is Mathlib's `Perfection.quotientMulEquiv`. -/
+private theorem bijective_mk_comp_monoidHom_self (hpI : (p : S) ∈ I) :
+    Function.Bijective fun f : M →* S ↦ (Ideal.Quotient.mk I : S →* S ⧸ I).comp f := by
+  rcases subsingleton_or_nontrivial S with hS | hS
+  · -- Over the zero ring, both sets of monoid maps are singletons.
+    have : Subsingleton (S ⧸ I) := Ideal.Quotient.mk_surjective.subsingleton
+    exact ⟨fun f g _ ↦ MonoidHom.ext fun _ ↦ Subsingleton.elim _ _,
+      fun ψ ↦ ⟨1, MonoidHom.ext fun _ ↦ Subsingleton.elim _ _⟩⟩
+  have hI : I ≠ ⊤ := (Ideal.ne_top_iff_one I).mpr fun h ↦ not_isUnit_of_mem h isUnit_one
+  have : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
+  have : CharP (S ⧸ I) p := (CharP.charP_iff_prime_eq_zero hp.out).mpr <| by
+    rwa [← map_natCast (Ideal.Quotient.mk I), Ideal.Quotient.eq_zero_iff_mem]
+  let e : (M →* S) ≃ (M →* S ⧸ I) :=
+    ((Perfection.liftMonoidHom p M S).toEquiv.trans
+      (MulEquiv.monoidHomCongrRightEquiv (Perfection.quotientMulEquiv p I))).trans
+      (Perfection.liftMonoidHom p M (S ⧸ I)).symm.toEquiv
+  convert e.bijective using 1
+  funext f
+  ext x
+  simp [e]
+
+/-- **Monoid maps out of a perfect monoid into a complete ring.** Let `S` be `I`-adically complete
+with `p ∈ I`, and let `J ⊇ I` be an ideal with `x ^ p ∈ I` for every `x ∈ J`. For a commutative
+monoid `M` on which `x ↦ x ^ p` is bijective, composition with `S → S ⧸ J` is a bijection from
+monoid maps `M →* S` to monoid maps `M →* S ⧸ J`: every monoid map `M →* S ⧸ J` has exactly one
+multiplicative lift to `S`. For `J = I` the lift takes values in Teichmüller representatives
+(`Perfection.teichmuller₀`). -/
+theorem bijective_mk_comp_monoidHom (hpI : (p : S) ∈ I) (hIJ : I ≤ J)
+    (hJ : ∀ x ∈ J, x ^ p ∈ I) :
+    Function.Bijective fun f : M →* S ↦ (Ideal.Quotient.mk J : S →* S ⧸ J).comp f := by
+  convert (Ideal.bijective_factor_comp_monoidHom hpI hJ hIJ).comp
+    (bijective_mk_comp_monoidHom_self (M := M) hpI) using 1
+  funext f
+  ext x
+  simp
+
+end IsAdicComplete
 
 end

@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 
 import Mathlib.LinearAlgebra.SModEq.Pow
 import TauCeti.Algebra.CharP.Quotient
+import TauCeti.RingTheory.AdicCompletion.Pow
+import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 import TauCeti.RingTheory.Perfect.Basic
 
@@ -42,6 +44,14 @@ representative `[x]` it is the limit of the powers `aₙ ^ p ^ n` of lifts `aₙ
 multiplicative Teichmüller map `Perfection.teichmuller₀`
 (`TauCeti.WittVector.adicLift_teichmuller`).
 
+The ideal `I` may be enlarged to an ideal `J ⊇ I` with `x ^ p ∈ I` for every `x ∈ J`: ring maps
+`k →+* A ⧸ I` correspond to ring maps `k →+* A ⧸ J`, since Frobenius factors through
+`A ⧸ I → A ⧸ J` (`Ideal.bijective_factor_comp_ringHom`). So every ring homomorphism
+`k →+* A ⧸ J` still has exactly one lift `𝕎 k →+* A`
+(`TauCeti.WittVector.existsUnique_mk_comp_eq_comp_constantCoeff`). Here `p ∈ I` is not needed:
+`p ∈ J`, so `p ^ p ∈ I`, and `A` is also complete along `I ⊔ (p)`.
+For `I = (p)`, an example of such a `J` is the ideal of elements with divided powers.
+
 Uniqueness holds under the weaker hypothesis that `A` is `I`-adically Hausdorff: two ring
 homomorphisms `𝕎 k →+* A` which agree modulo `I` agree on `[x] = [x ^ (1 / p ^ n)] ^ p ^ n` modulo
 `I ^ (n + 1)`, and Teichmüller expansions then show that they agree modulo `I ^ (n + 1)` everywhere
@@ -62,6 +72,8 @@ homomorphisms `𝕎 k →+* A` which agree modulo `I` agree on `[x] = [x ^ (1 / 
   Hausdorff ring are determined by their reductions modulo `I`.
 * `TauCeti.WittVector.comp_adicLift`, `TauCeti.WittVector.adicLift_comp_map`: naturality in `A`
   and in `k`.
+* `TauCeti.WittVector.existsUnique_mk_comp_eq_comp_constantCoeff`: existence and uniqueness of a
+  lift `𝕎 k →+* A` of a ring homomorphism `k →+* A ⧸ J`, for `J ⊇ I` with `x ^ p ∈ I` for `x ∈ J`.
 * `TauCeti.WittVector.existsUnique_comp_eq_constantCoeff`: existence and uniqueness of a ring
   homomorphism `𝕎 k →+* A` over `k`, for `A` complete along the kernel of `π : A →+* k`.
 
@@ -302,6 +314,48 @@ theorem adicLift_comp_map {k' : Type*} [CommRing k'] [CharP k' p] [PerfectRing k
     (adicLift I φ).comp (map ψ) = adicLift I (φ.comp ψ) := by
   refine eq_adicLift _ (RingHom.ext fun x ↦ ?_)
   simp [map_coeff]
+
+/-- The case `p ∈ I` of `existsUnique_mk_comp_eq_comp_constantCoeff`. -/
+private theorem existsUnique_mk_comp_eq_comp_constantCoeff_of_mem (hpI : (p : A) ∈ I)
+    {J : Ideal A} (hIJ : I ≤ J) (hJ : ∀ x ∈ J, x ^ p ∈ I) (φ : k →+* A ⧸ J) :
+    ∃! g : 𝕎 k →+* A, (Ideal.Quotient.mk J).comp g = φ.comp constantCoeff := by
+  have hbij := Ideal.bijective_factor_comp_ringHom (k := k) hpI hJ hIJ
+  obtain ⟨ψ, hψ : (Ideal.Quotient.factor hIJ).comp ψ = φ⟩ := hbij.2 φ
+  refine ⟨adicLift I ψ, ?_, fun g hg ↦ ?_⟩
+  · beta_reduce
+    rw [← Ideal.Quotient.factor_comp_mk hIJ, RingHom.comp_assoc, mk_comp_adicLift,
+      ← RingHom.comp_assoc, hψ]
+  -- The reductions of `g` and of `adicLift I ψ` modulo `I` both lift `φ` along `A ⧸ I → A ⧸ J`.
+  rw [← (adicLiftEquiv I hpI).apply_symm_apply g, adicLiftEquiv_apply]
+  congr 1
+  refine hbij.1 ?_
+  beta_reduce
+  rw [hψ]
+  ext x
+  have hx := congr($hg (teichmuller p x))
+  simp only [RingHom.comp_apply, constantCoeff_apply, teichmuller_coeff_zero] at hx
+  simp [hx]
+
+/-- **Lifting modulo an ideal killed by Frobenius.** Let `A` be `I`-adically complete, and let
+`J ⊇ I` be an ideal with `x ^ p ∈ I` for every `x ∈ J`. For a perfect ring `k` of characteristic
+`p`, every ring homomorphism `φ : k →+* A ⧸ J` has exactly one lift `g : 𝕎 k →+* A` whose reduction
+modulo `J` is `φ` applied to the `0`-th Witt coordinate. For `J = I` the lift is `adicLift I φ`. -/
+theorem existsUnique_mk_comp_eq_comp_constantCoeff {J : Ideal A} (hIJ : I ≤ J)
+    (hJ : ∀ x ∈ J, x ^ p ∈ I) (φ : k →+* A ⧸ J) :
+    ∃! g : 𝕎 k →+* A, (Ideal.Quotient.mk J).comp g = φ.comp constantCoeff := by
+  -- `p ∈ J` because `k` has characteristic `p`, so `p ^ p ∈ I`, and `A` is also complete along
+  -- `I ⊔ (p)`, which contains `p`.
+  have hpJ : (p : A) ∈ J := Ideal.natCast_mem_of_ringHom_charP p φ
+  have : IsAdicComplete (I ⊔ Ideal.span {(p : A)}) A :=
+    IsAdicComplete.of_pow_le_of_pow_le (I := I) (k := 1 + p) (l := 1)
+      (Ideal.sup_pow_add_le_pow_sup_pow.trans <| sup_le (pow_one I).le <| by
+        rw [Ideal.span_singleton_pow, Ideal.span_le, Set.singleton_subset_iff]
+        exact hJ _ hpJ)
+      ((pow_one I).le.trans le_sup_left)
+  exact existsUnique_mk_comp_eq_comp_constantCoeff_of_mem
+    (Ideal.mem_sup_right (Ideal.mem_span_singleton_self _))
+    (sup_le hIJ (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hpJ)))
+    (fun x hx ↦ Ideal.mem_sup_left (hJ x hx)) φ
 
 /-- **The `𝕎 k`-algebra structure over `k`**: if `π : A →+* k` is surjective and `A` is complete
 for the ideal `ker π` (for instance, a complete local ring with residue field `k` and residue map
