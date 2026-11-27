@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.C2HolderBoundary.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Operator
+import TauCeti.Analysis.Convex.Segment
 import TauCeti.Analysis.Holder.C2HolderBoundary.Extension
 import TauCeti.Analysis.Holder.Coefficient
 import TauCeti.Analysis.Matrix.QuadraticBounds
@@ -225,8 +226,7 @@ private theorem exists_forall_norm_le_lineMap (hα₀ : 0 < α)
   -- The closed ball of radius `1 + K` is convex, so it contains the segments of coefficients.
   have hball {y z : HolderSpace α Ω ℝ} (hy : ‖y‖ ≤ 1 + K) (hz : ‖z‖ ≤ 1 + K) :
       ‖AffineMap.lineMap y z t‖ ≤ 1 + K :=
-    mem_closedBall_zero_iff.1 ((convex_closedBall 0 _).lineMap_mem
-      (mem_closedBall_zero_iff.2 hy) (mem_closedBall_zero_iff.2 hz) ht)
+    norm_lineMap_le_of_norm_le hy hz ht
   have hK : (K : ℝ) ≤ 1 + K := le_add_of_nonneg_left zero_le_one
   have h0 : ‖(0 : HolderSpace α Ω ℝ)‖ ≤ 1 + K := by
     rw [norm_zero]
@@ -360,9 +360,8 @@ theorem forall_exists_nonDivergenceOperatorL_eq_iff (hα₀ : 0 < α)
     (lt_min hlam₀ hlam₁) ⟨M, hM0⟩
   -- The convex combinations of the coefficients satisfy the same bounds.
   have hnorm {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) {f₀ f₁ : HolderSpace α Ω ℝ} (h₀ : f₀ ∈ S)
-      (h₁ : f₁ ∈ S) : ‖AffineMap.lineMap f₀ f₁ t‖ ≤ M := by
-    simpa using (convex_closedBall (0 : HolderSpace α Ω ℝ) M).lineMap_mem
-      (by simpa using hS h₀) (by simpa using hS h₁) ht
+      (h₁ : f₁ ∈ S) : ‖AffineMap.lineMap f₀ f₁ t‖ ≤ M :=
+    norm_lineMap_le_of_norm_le (hS h₀) (hS h₁) ht
   -- The operators restricted to the elements vanishing on `∂Ω`.
   set T : (Fin (n + 1) → Fin (n + 1) → HolderSpace α Ω ℝ) → (Fin (n + 1) → HolderSpace α Ω ℝ) →
       HolderSpace α Ω ℝ → V →L[ℝ] HolderSpace α Ω ℝ :=

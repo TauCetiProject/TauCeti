@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.GCD.BigOperators
 import TauCeti.Algebra.GroupWithZero.Divisibility
 import TauCeti.Data.Nat.GCD
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Dirichlet character conductors
@@ -31,6 +32,9 @@ that level.
 * `DirichletCharacter.IsPrimitive.eq_one_iff`, `DirichletCharacter.primitiveCharacter_eq_one_iff`:
   a primitive character at nonzero level is principal iff the level is `1`, and
   `χ.primitiveCharacter = 1 ↔ χ = 1`.
+* `DirichletCharacter.three_le_conductor_of_ne_one`, `DirichletCharacter.conductor_le_level`: a
+  nonprincipal character at a nonzero level has conductor at least `3`, and the conductor is at
+  most a nonzero level.
 * `DirichletCharacter.primitiveCharacter_apply_prime_eq_zero`: `χ.primitiveCharacter p = 0` when
   `p` is prime and `p ∣ χ.conductor`.
 * `DirichletCharacter.factorsThrough_iff_not_dvd_conductor`: for `n = p ^ k * m` with `p` prime and
@@ -82,6 +86,16 @@ theorem primitiveCharacter_eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : �
     rw [← (hinj χ.conductor_dvd_level (conductor_eq_zero_iff_level_eq_zero.mpr rfl)).eq_iff,
       χ.changeLevel_primitiveCharacter, map_one]
   · exact χ.primitiveCharacter_isPrimitive.eq_one_iff.trans χ.eq_one_iff_conductor_eq_one.symm
+
+/-- Any nonprincipal Dirichlet character at a nonzero level has conductor at least `3`. -/
+theorem three_le_conductor_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ χ.conductor :=
+  three_le_level_of_ne_one ((primitiveCharacter_eq_one_iff χ).not.mpr hχ)
+
+/-- The conductor of a Dirichlet character at a nonzero level is at most the level. -/
+theorem conductor_le_level {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter R N) : χ.conductor ≤ N :=
+  Nat.le_of_dvd (NeZero.pos N) χ.conductor_dvd_level
 
 /-- The primitive character associated to `χ` vanishes at every prime dividing `χ.conductor`. -/
 theorem primitiveCharacter_apply_prime_eq_zero {R : Type*} [CommMonoidWithZero R] {n p : ℕ}
