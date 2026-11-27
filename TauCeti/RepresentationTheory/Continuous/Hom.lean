@@ -85,6 +85,11 @@ theorem coe_toUnitsContinuousMonoidHom [TopologicalSpace G] [ContinuousInv G]
     ⇑(π.toUnitsContinuousMonoidHom hπ) = π.toMonoidHom.toHomUnits :=
   (rfl)
 
+/-- On a zero space every group element acts trivially. -/
+theorem ker_eq_top_of_subsingleton [Subsingleton V] (π : ContRepresentation 𝕜 G V) :
+    π.toMonoidHom.ker = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ MonoidHom.mem_ker.mpr (Subsingleton.elim _ _)
+
 end TopologicalVectorSpace
 
 section NormedSpace
