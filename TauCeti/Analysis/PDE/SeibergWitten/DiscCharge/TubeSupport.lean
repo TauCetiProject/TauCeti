@@ -32,7 +32,7 @@ of `Z` attached to a root may lie on a neighbouring slice.
   (`TauCeti.SeibergWitten.exists_forall_mem_rootGraph_exists_dist_le`).
 * **No ghost core.** A point `(x, w₀)` enclosed by a vacuum circle of radius `ρ₁` in its slice,
   around which `α` has positive winding number, lies within `ρ₁ + ε` of the root graph
-  (`TauCeti.SeibergWitten.exists_forall_exists_mem_rootGraph_dist_lt`).
+  (`TauCeti.SeibergWitten.exists_forall_exists_mem_rootGraph_dist_lt_of_windingNumber`).
 * **The two-sided estimate.** If every point of `Z` is enclosed in this way by a circle of radius
   at most `ρ`, the Hausdorff distance between `Z` and the root graph is at most
   `max (ε + K h) (ρ + ε)` (`TauCeti.SeibergWitten.exists_hausdorffEDist_rootGraph_le`).
@@ -45,7 +45,8 @@ compact and the coefficients converge uniformly on `s` to those of monic polynom
 continuous coefficients, then by the continuity of roots the sets `Z` converge to the root graph
 of `q`, a finite closed multigraph
 (`TauCeti.SeibergWitten.tendsto_hausdorffEDist_rootGraph_of_tendstoUniformlyOn`), and every limit
-of points of the tube at which `|α|² ≤ 1 / 2`, such as marked points of small `|α|`, lies on it
+of points of the tube at which `|α|² ≤ σ` for a fixed `σ < 1`, such as marked points of small
+`|α|`, lies on it
 (`TauCeti.SeibergWitten.mem_rootGraph_of_tendsto_of_normSq_le`).
 
 The inputs that the coupled equations have to supply are hypotheses here, as in
@@ -124,7 +125,8 @@ that over every base point of `s` the normalized slice on the closed disc of rad
 of radius `ρ₁ ≥ 0` about `w₀` lies in that disc, with boundary circle in the vacuum
 `χ(|α|²) = 1` of the slice over `x` and positive winding number of `α` around it, then `(x, w₀)`
 lies within distance `ρ₁ + ε` of a point of the root graph of the Newton polynomials over `s`. -/
-theorem exists_forall_exists_mem_rootGraph_dist_lt (m : ℕ) (R : ℝ) {ε : ℝ} (hε : 0 < ε) :
+theorem exists_forall_exists_mem_rootGraph_dist_lt_of_windingNumber (m : ℕ) (R : ℝ) {ε : ℝ}
+    (hε : 0 < ε) :
     ∃ δ > 0, ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace ℝ X] {χ : ℝ → ℝ}
       {b : X × ℂ → (X × ℂ) [⋀^Fin 1]→L[ℝ] ℝ} {α : X × ℂ → ℂ} (s : Set X),
       ContDiff ℝ 2 α → ContDiff ℝ 1 b → ContDiff ℝ 1 χ → χ =ᶠ[𝓝 0] 0 →
@@ -187,7 +189,8 @@ theorem exists_hausdorffEDist_rootGraph_le (m : ℕ) (R : ℝ) {ε : ℝ} (hε :
         ENNReal.ofReal (max (ε + K * h) (ρ + ε)) := by
   obtain ⟨δ₁, hδ₁, K, r₀, hr₀, hroot⟩ :=
     exists_forall_mem_rootGraph_exists_dist_le.{u} m R hε C c c₀ hc
-  obtain ⟨δ₂, hδ₂, hcore⟩ := exists_forall_exists_mem_rootGraph_dist_lt.{u} m R hε
+  obtain ⟨δ₂, hδ₂, hcore⟩ :=
+    exists_forall_exists_mem_rootGraph_dist_lt_of_windingNumber.{u} m R hε
   refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, K, r₀, hr₀, ?_⟩
   intro X _ _ χ b α s Z r h ρ hα hb hχ hχ₀ hχ₁ hr hh hmass hneg hvar hbound hZ
   refine hausdorffEDist_le_of_mem_edist (fun z hz ↦ ?_) fun y hy ↦ ?_
@@ -311,9 +314,9 @@ theorem tendsto_hausdorffEDist_rootGraph_of_tendstoUniformlyOn {ι : Type*} {l :
 
 /-- **Retention of marked points.** Under the hypotheses of
 `TauCeti.SeibergWitten.tendsto_hausdorffEDist_rootGraph_of_tendstoUniformlyOn`, let `y i` be
-points of the tube `s × closedBall 0 R` at which eventually `|α i (y i)|² ≤ 1 / 2`, such as
-marked points at which `α i` is small. If `y i → y₀`, then `y₀` lies on the root graph of `q`
-over `s`. -/
+points of the tube `s × closedBall 0 R` at which eventually `|α i (y i)|² ≤ σ`, for some
+`σ < 1`, such as marked points at which `α i` is small. If `y i → y₀`, then `y₀` lies on the
+root graph of `q` over `s`. -/
 theorem mem_rootGraph_of_tendsto_of_normSq_le {ι : Type*} {l : Filter ι} [l.NeBot]
     {X : Type u} [NormedAddCommGroup X] [NormedSpace ℝ X] {m : ℕ} {R C c c₀ : ℝ} (hc : 0 < c)
     {χ : ℝ → ℝ} {b : ι → X × ℂ → (X × ℂ) [⋀^Fin 1]→L[ℝ] ℝ} {α : ι → X × ℂ → ℂ} {s : Set X}
@@ -345,11 +348,11 @@ theorem mem_rootGraph_of_tendsto_of_normSq_le {ι : Type*} {l : Filter ι} [l.Ne
         ∫ w, w ^ k ∂posSliceMeasure (sliceDensity χ (b i) (α i) (Prod.mk x)) R -
         ∫ w, w ^ k ∂negSliceMeasure (sliceDensity χ (b i) (α i) (Prod.mk x)) R) m).coeff j)
       (fun x ↦ (q x).coeff j) l s)
-    {y : ι → X × ℂ} (hy : ∀ᶠ i in l, y i ∈ s ×ˢ closedBall (0 : ℂ) R ∧ normSq (α i (y i)) ≤ 1 / 2)
+    {σ : ℝ} (hσ : σ < 1)
+    {y : ι → X × ℂ} (hy : ∀ᶠ i in l, y i ∈ s ×ˢ closedBall (0 : ℂ) R ∧ normSq (α i (y i)) ≤ σ)
     {y₀ : X × ℂ} (hy₀ : Tendsto y l (𝓝 y₀)) :
     y₀ ∈ rootGraph q s := by
-  obtain ⟨K, r₀, -, hK⟩ := exists_forall_exists_dist_le_of_le.{u} C c c₀ hc (σ := 1 / 2)
-    (by norm_num)
+  obtain ⟨K, r₀, -, hK⟩ := exists_forall_exists_dist_le_of_le.{u} C c c₀ hc hσ
   -- Pick, whenever there is one, a point `z i ∈ Z i` within `K h i` of `y i`.
   have hpick (i : ι) : ∃ z : X × ℂ, (∃ w ∈ Z i, dist (y i) w ≤ K * h i) →
       z ∈ Z i ∧ dist (y i) z ≤ K * h i := by
