@@ -103,7 +103,8 @@ theorem fderiv_diagonalParameterMap_apply (a : ℝ) :
 theorem bijective_fderiv_diagonalParameterMap (a : ℝ) :
     Bijective (fderiv ℝ (diagonalParameterMap a) 0) := by
   rw [fderiv_levelSetParameterMap]
-  refine ⟨fun v w h ↦ ?_, parameterProj_surjective_of_surjective _ _ fun y ↦ ⟨y, rfl⟩⟩
+  refine ⟨fun v w h ↦ ?_,
+    parameterProj_surjective_of_surjective _ _ fun y ↦ ⟨y, one_apply_eq_self y⟩⟩
   obtain ⟨⟨x, p⟩, hv⟩ := v
   obtain ⟨⟨y, q⟩, hw⟩ := w
   simp only [parameterProj_apply] at h
@@ -126,7 +127,7 @@ theorem index_fderiv_diagonalParameterMap (a : ℝ) :
 theorem isRegularParameter_fst_sub_snd (p : ℝ) :
     IsRegularParameter (fun z : ℝ × ℝ ↦ z.1 - z.2) 0 p := isRegularParameter_iff.2 fun x _ ↦ by
   rw [(hasStrictFDerivAt_fst_sub_snd (x, p)).hasFDerivAt.fderiv, coprod_comp_inl]
-  exact fun y ↦ ⟨y, rfl⟩
+  exact fun y ↦ ⟨y, one_apply_eq_self y⟩
 
 /-! ### The equation `p = 0` -/
 
@@ -155,18 +156,13 @@ noncomputable abbrev axisParameterMap (a : ℝ) : ((0 : ℝ →L[ℝ] ℝ).copro
   levelSetParameterMap (hasStrictFDerivAt_snd (a, 0)) surjective_zero_coprod_one
     (Submodule.ClosedComplemented.of_finiteDimensional _) rfl
 
-/-- The zero map `ℝ → ℝ` is not onto. -/
-private theorem not_surjective_zero : ¬ Surjective (0 : ℝ →L[ℝ] ℝ) := fun h ↦ by
-  obtain ⟨x, hx⟩ := h 1
-  simp at hx
-
 /-- **The projection from the axis is not onto at the derivative level**: at every solution
 `(a, 0)` of `p = 0`, the derivative of the local parameter map is not onto, although the total
 derivative is. -/
 theorem not_surjective_fderiv_axisParameterMap (a : ℝ) :
     ¬ Surjective (fderiv ℝ (axisParameterMap a) 0) := by
   rw [surjective_fderiv_levelSetParameterMap_iff]
-  exact not_surjective_zero
+  exact fun h ↦ by simpa using h 1
 
 /-- The derivative of the projection from the axis has a kernel of dimension `1`, the tangent line
 of the axis. -/
@@ -199,7 +195,7 @@ theorem isRegularParameter_snd_iff {p : ℝ} :
   subst hp
   have h0 := isRegularParameter_iff.1 h 0 rfl
   rw [(hasStrictFDerivAt_snd (0, 0)).hasFDerivAt.fderiv, coprod_comp_inl] at h0
-  exact not_surjective_zero h0
+  simpa using h0 1
 
 /-- The regular parameters of `p = 0` are the nonzero reals. -/
 theorem setOf_isRegularParameter_snd :
@@ -224,8 +220,7 @@ theorem mem_residual_setOf_isRegularParameter_snd :
 /-- The total derivative of `s (x, p) = 0` is not onto. -/
 theorem not_surjective_fderiv_zero (z : ℝ × ℝ) :
     ¬ Surjective (fderiv ℝ (fun _ : ℝ × ℝ ↦ (0 : ℝ)) z) := fun h ↦ by
-  obtain ⟨v, hv⟩ := h 1
-  simp at hv
+  simpa using h 1
 
 /-- The kernel of the total derivative of `s (x, p) = 0` has dimension `2`: it is the tangent
 space of the zero set, which is the whole plane. -/
@@ -247,7 +242,7 @@ theorem not_isRegularParameter_zero (p : ℝ) :
     ¬ IsRegularParameter (fun _ : ℝ × ℝ ↦ (0 : ℝ)) 0 p := fun h ↦ by
   have h0 := isRegularParameter_iff.1 h 0 rfl
   rw [fderiv_const_apply, zero_comp] at h0
-  exact not_surjective_zero h0
+  simpa using h0 1
 
 /-- **The total derivative must be onto in the parametric transversality theorem.** The equation
 `s (x, p) = 0` is smooth, and its fixed-parameter derivative `0 : ℝ → ℝ` is Fredholm of index `0`,
