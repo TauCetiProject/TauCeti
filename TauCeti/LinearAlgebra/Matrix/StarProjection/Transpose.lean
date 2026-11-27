@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.StarOrthogonal
+public import Mathlib.Algebra.Star.Orthogonal
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Transposition of star projections
 
 Over commutative coefficients, transposition of square matrices preserves both star projections
-and star orthogonality. It acts on the projections as an orthogonality-preserving involution.
+and star orthogonality. For self-adjoint matrices it preserves zero products without assuming
+associative multiplication of the coefficients. On star projections it is an involution.
 -/
 
 public section
@@ -26,6 +28,25 @@ theorem Matrix.isStarProjection_transpose_iff {n R : Type*} [Fintype n] [AddComm
     IsStarProjection pᵀ ↔ IsStarProjection p := by
   simp only [isStarProjection_iff, isIdempotentElem_iff, ← Matrix.transpose_mul,
     Matrix.transpose_inj, ← Matrix.isHermitian_iff_isSelfAdjoint, Matrix.isHermitian_transpose_iff]
+
+/-- Over commutative coefficients, transposing two square matrices preserves star orthogonality
+in both directions. -/
+@[simp]
+theorem Matrix.isStarOrtho_transpose_iff {n R : Type*} [Fintype n]
+    [NonUnitalCommSemiring R] [StarRing R] (p q : Matrix n n R) :
+    IsStarOrtho pᵀ qᵀ ↔ IsStarOrtho p q := by
+  simp only [isStarOrtho_iff, Matrix.star_eq_conjTranspose,
+    Matrix.conjTranspose_transpose_eq_transpose_conjTranspose, ← Matrix.transpose_mul,
+    Matrix.transpose_eq_zero, and_comm]
+
+/-- Transposition preserves and reflects zero products of self-adjoint square matrices over
+commutative coefficients. -/
+theorem Matrix.transpose_mul_eq_zero_iff_of_isSelfAdjoint {n R : Type*} [Fintype n]
+    [NonUnitalNonAssocCommSemiring R] [StarRing R] (p q : Matrix n n R)
+    (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q) : pᵀ * qᵀ = 0 ↔ p * q = 0 := by
+  rw [← Matrix.transpose_mul, Matrix.transpose_eq_zero,
+    ← Matrix.conjTranspose_eq_zero (M := q * p), Matrix.conjTranspose_mul,
+    hp.isHermitian.eq, hq.isHermitian.eq]
 
 namespace Matrix
 
