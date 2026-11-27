@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Operations
+public import TauCeti.Order.Superfluous
 public import TauCeti.RingTheory.Jacobson.Module
 
 import Mathlib.LinearAlgebra.Quotient.Basic
@@ -18,23 +19,14 @@ generating `M`: whenever `N ⊔ K = ⊤` for a submodule `K`, already `K = ⊤`.
 are the dual notion to essential submodules, and an epimorphism `P ↠ M` is a projective cover
 exactly when `P` is projective and its kernel is superfluous in `P`.
 
-Mathlib has neither this predicate nor projective covers. This file supplies the predicate with
-its lattice API and identifies it, on the modules where the comparison is available, with being
-contained in the radical `Module.jacobson`.
-
-## Main definitions
-
-* `TauCeti.IsSuperfluous`: `N ⊔ K = ⊤` forces `K = ⊤`.
+The lattice definition and its order-theoretic properties are in
+`TauCeti.Order.Superfluous`. Here superfluousness is transported along linear maps and
+characterized by containment in the radical when the submodule lattice is coatomic.
 
 ## Main results
 
-* `TauCeti.isSuperfluous_iff`: the definition, restated so that superfluity can be proved
-  downstream.
-* `TauCeti.isSuperfluous_bot`, `TauCeti.IsSuperfluous.mono`, `TauCeti.isSuperfluous_sup_iff`: the
-  superfluous submodules of `M` are closed downwards and under binary suprema, and contain `⊥`.
-* `TauCeti.isSuperfluous_iSup_iff` and `TauCeti.isSuperfluous_pi_univ_iff`: finite suprema and
-  finite products of submodules are superfluous exactly when each member is.
-* `TauCeti.isSuperfluous_top_iff`: `⊤` is superfluous exactly for the zero module.
+* `TauCeti.isSuperfluous_pi_univ_iff`: a finite product of submodules is superfluous exactly
+  when each factor is.
 * `TauCeti.IsSuperfluous.map`: the image of a superfluous submodule under any linear map is
   superfluous; `TauCeti.isSuperfluous_map_equiv_iff` records that along an equivalence this is an
   equivalence.
@@ -74,110 +66,11 @@ section Semiring
 variable {R : Type u} {M : Type v} {M₂ : Type w}
   [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R M₂]
 
-/-- A submodule `N` of `M` is **superfluous** (or *small*) when it is dispensable for generating
-`M`: any submodule `K` with `N ⊔ K = ⊤` is already `⊤`. -/
-def IsSuperfluous (N : Submodule R M) : Prop :=
-  ∀ K : Submodule R M, N ⊔ K = ⊤ → K = ⊤
-
-/-- Superfluity, restated: this is the introduction rule for `TauCeti.IsSuperfluous`, whose body is
-not exposed outside this module. -/
-theorem isSuperfluous_iff {N : Submodule R M} :
-    IsSuperfluous N ↔ ∀ K : Submodule R M, N ⊔ K = ⊤ → K = ⊤ :=
-  (Iff.rfl)
-
-/-- The defining property of a superfluous submodule, in the shape it is consumed in. -/
-theorem IsSuperfluous.eq_top_of_sup_eq_top {N K : Submodule R M} (hN : IsSuperfluous N)
-    (h : N ⊔ K = ⊤) : K = ⊤ :=
-  hN K h
-
-/-- A superfluous direct summand is zero. -/
-theorem IsSuperfluous.eq_bot_of_isCompl {N K : Submodule R M} (hN : IsSuperfluous N)
-    (hNK : IsCompl N K) : N = ⊥ := by
-  have hK := hN.eq_top_of_sup_eq_top hNK.sup_eq_top
-  simpa only [hK, inf_top_eq] using hNK.inf_eq_bot
-
-/-- The zero submodule is superfluous. -/
-@[simp]
-theorem isSuperfluous_bot : IsSuperfluous (⊥ : Submodule R M) := by
-  intro K hK
-  simpa using hK
-
-/-- A submodule of a superfluous submodule is superfluous. -/
-theorem IsSuperfluous.mono {N N' : Submodule R M} (hN' : IsSuperfluous N') (h : N ≤ N') :
-    IsSuperfluous N := by
-  intro K hK
-  refine hN'.eq_top_of_sup_eq_top (top_le_iff.mp ?_)
-  rw [← hK]
-  exact sup_le_sup_right h K
-
-/-- The supremum of two superfluous submodules is superfluous. -/
-theorem IsSuperfluous.sup {N N' : Submodule R M} (hN : IsSuperfluous N) (hN' : IsSuperfluous N') :
-    IsSuperfluous (N ⊔ N') := by
-  intro K hK
-  refine hN'.eq_top_of_sup_eq_top (hN.eq_top_of_sup_eq_top ?_)
-  rwa [← sup_assoc]
-
-/-- A supremum of two submodules is superfluous exactly when both of them are. -/
-@[simp]
-theorem isSuperfluous_sup_iff {N N' : Submodule R M} :
-    IsSuperfluous (N ⊔ N') ↔ IsSuperfluous N ∧ IsSuperfluous N' :=
-  ⟨fun h => ⟨h.mono le_sup_left, h.mono le_sup_right⟩, fun h => h.1.sup h.2⟩
-
-/-- A finite supremum of superfluous submodules is superfluous. -/
-theorem isSuperfluous_iSup {ι : Sort*} [Finite ι] {N : ι → Submodule R M}
-    (hN : ∀ i, IsSuperfluous (N i)) : IsSuperfluous (⨆ i, N i) := by
-  have := Fintype.ofFinite (PLift ι)
-  rw [← iSup_plift_down, ← Finset.sup_univ_eq_iSup]
-  exact Finset.sup_induction isSuperfluous_bot (fun _ ha _ hb ↦ ha.sup hb) fun i _ ↦ hN i.down
-
-/-- A finite supremum of submodules is superfluous exactly when each of them is. -/
-@[simp]
-theorem isSuperfluous_iSup_iff {ι : Sort*} [Finite ι] {N : ι → Submodule R M} :
-    IsSuperfluous (⨆ i, N i) ↔ ∀ i, IsSuperfluous (N i) :=
-  ⟨fun h i ↦ h.mono (le_iSup N i), isSuperfluous_iSup⟩
-
-/-- The whole module is superfluous in itself exactly when it is zero: superfluity of `⊤` says
-precisely that `⊥ = ⊤`. -/
-@[simp]
-theorem isSuperfluous_top_iff : IsSuperfluous (⊤ : Submodule R M) ↔ Subsingleton M := by
-  refine ⟨fun h => (Submodule.subsingleton_iff R).mp (subsingleton_iff_bot_eq_top.mp ?_),
-    fun _ K _ => Subsingleton.elim K ⊤⟩
-  exact h.eq_top_of_sup_eq_top (by simp)
-
-/-- The whole module is not superfluous in a nonzero module. -/
-theorem not_isSuperfluous_top [Nontrivial M] : ¬ IsSuperfluous (⊤ : Submodule R M) := fun h =>
-  not_subsingleton M (isSuperfluous_top_iff.mp h)
-
-/-- A superfluous submodule of a nonzero module is proper. -/
-theorem IsSuperfluous.ne_top [Nontrivial M] {N : Submodule R M} (hN : IsSuperfluous N) : N ≠ ⊤ := by
-  rintro rfl
-  exact not_isSuperfluous_top hN
-
 /-- Transport along a linear equivalence both preserves and reflects superfluity. -/
 @[simp]
 theorem isSuperfluous_map_equiv_iff {N : Submodule R M} (e : M ≃ₗ[R] M₂) :
-    IsSuperfluous (N.map (e : M →ₗ[R] M₂)) ↔ IsSuperfluous N := by
-  -- Superfluity mentions only `⊔` and `⊤`, both of which `e` preserves and reflects.
-  have key : ∀ K : Submodule R M,
-      N.map (e : M →ₗ[R] M₂) ⊔ K.map (e : M →ₗ[R] M₂) = ⊤ ↔ N ⊔ K = ⊤ := fun K => by
-    rw [← Submodule.map_sup, Submodule.map_eq_top_iff]
-  refine ⟨fun h K hK => Submodule.map_eq_top_iff.mp (h _ ((key K).mpr hK)), fun h K hK => ?_⟩
-  have hcomap : K.comap (e : M →ₗ[R] M₂) = ⊤ := by
-    refine h _ ((key _).mp ?_)
-    rwa [Submodule.map_comap_eq_of_surjective e.surjective]
-  rw [← Submodule.map_comap_eq_of_surjective e.surjective K, hcomap]
-  exact Submodule.map_eq_top_iff.mpr rfl
-
-/-- A superfluous submodule is contained in every maximal submodule. -/
-theorem IsSuperfluous.le_coatom {N m : Submodule R M} (hN : IsSuperfluous N) (hm : IsCoatom m) :
-    N ≤ m := by
-  by_contra hle
-  -- Otherwise `N ⊔ m` strictly exceeds the coatom `m`, so is `⊤`, forcing `m = ⊤`.
-  have hlt : m < N ⊔ m := by
-    refine lt_of_le_of_ne le_sup_right fun heq => hle ?_
-    rw [heq]
-    exact le_sup_left
-  exact hm.1 (hN.eq_top_of_sup_eq_top (hm.2 _ hlt))
+    IsSuperfluous (N.map (e : M →ₗ[R] M₂)) ↔ IsSuperfluous N :=
+  (Submodule.orderIsoMapComap e).isSuperfluous_iff N
 
 /-- **Nakayama's lemma for a nilpotent ideal.** If `I` is a nilpotent ideal then `I • M` is
 superfluous in `M`.
@@ -189,7 +82,7 @@ conclusion for an arbitrary module: a submodule `K` with `I • M ⊔ K = ⊤` a
 theorem isSuperfluous_smul_top_of_isNilpotent {I : Ideal R} (hI : IsNilpotent I) :
     IsSuperfluous (I • (⊤ : Submodule R M)) := by
   obtain ⟨m, hm⟩ := hI
-  intro K hK
+  refine isSuperfluous_iff.mpr fun K hK ↦ ?_
   -- Multiplying `hK` by `I ^ k` trades the `k`-th power of `I` for the `(k + 1)`-st.
   have step : ∀ k : ℕ, I ^ k • (⊤ : Submodule R M) ≤ K ⊔ I ^ (k + 1) • (⊤ : Submodule R M) := by
     intro k
@@ -218,7 +111,7 @@ variable {R : Type u} {M : Type v} {M₂ : Type w}
 /-- The image of a superfluous submodule under a linear map is superfluous. -/
 theorem IsSuperfluous.map {N : Submodule R M} (hN : IsSuperfluous N) (f : M →ₗ[R] M₂) :
     IsSuperfluous (N.map f) := by
-  intro K hK
+  refine isSuperfluous_iff.mpr fun K hK ↦ ?_
   -- Pulling `K` back gives a complement of `N` upstairs, so the preimage of `K` is everything.
   have hsup : Submodule.map f (N ⊔ K.comap f) ⊔ K = ⊤ := by
     rw [eq_top_iff, ← hK]
@@ -237,7 +130,7 @@ is superfluous. This is what makes projective covers compose. -/
 theorem IsSuperfluous.comap {K : Submodule R M₂} (hK : IsSuperfluous K) {f : M →ₗ[R] M₂}
     (hf : Function.Surjective f) (hker : IsSuperfluous (LinearMap.ker f)) :
     IsSuperfluous (K.comap f) := by
-  intro L hL
+  refine isSuperfluous_iff.mpr fun L hL ↦ ?_
   -- Pushing the complement `L` forward makes it a complement of `K` downstairs, ...
   have hmapL : L.map f = ⊤ := by
     refine hK.eq_top_of_sup_eq_top ?_
@@ -273,7 +166,8 @@ theorem isSuperfluous_ker_iff_forall_surjective {f : M →ₗ[R] M₂} (hf : Fun
   constructor
   · intro hker _ _ _ h hfh
     exact hker.surjective_of_surjective_comp hfh
-  · intro H K hK
+  · intro H
+    refine isSuperfluous_iff.mpr fun K hK ↦ ?_
     have hmapK : Submodule.map f K = ⊤ := by
       have hall : Submodule.map f (LinearMap.ker f ⊔ K) = ⊤ := by
         rw [hK, Submodule.map_top, LinearMap.range_eq_top.mpr hf]
@@ -317,7 +211,7 @@ theorem IsSuperfluous.le_jacobson {N : Submodule R M} (hN : IsSuperfluous N) :
 radical is superfluous. -/
 theorem isSuperfluous_of_le_jacobson [IsCoatomic (Submodule R M)] {N : Submodule R M}
     (h : N ≤ Module.jacobson R M) : IsSuperfluous N := by
-  intro K hK
+  refine isSuperfluous_iff.mpr fun K hK ↦ ?_
   -- This is the nongenerating property of the order radical of a coatomic lattice.
   refine Order.radical_nongenerating (top_le_iff.mp ?_)
   rw [← hK, ← Module.jacobson_eq_radical]
