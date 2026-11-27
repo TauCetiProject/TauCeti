@@ -37,6 +37,8 @@ the principal block, over every field (`TauCeti.eq_centerAugmentation`).
   `λ_B(e) = 0` for every `e` with `e_B e = 0`.
 * `TauCeti.IsBlockIdempotent.eq_centralCharacter_iff`: `λ_B` is the only `k`-algebra
   homomorphism `Z(k[G]) → k` taking the value `1` at `e_B`.
+* `TauCeti.IsBlockIdempotent.apply_eq_zero_of_ne`: an `R`-algebra homomorphism `Z(R[G]) → R`
+  with value `1` at a block idempotent vanishes at every other block idempotent.
 * `TauCeti.eq_centerAugmentation`: a `k`-algebra homomorphism `Z(k[G]) → k` taking the value `1`
   at the principal block idempotent is the augmentation.
 * `TauCeti.IsBlockIdempotent.centralCharacter_principalBlockIdempotent`: over an algebraically
@@ -54,6 +56,15 @@ public section
 noncomputable section
 
 namespace TauCeti
+
+/-- A character `φ : Z(R[G]) → R` with value `1` at a block idempotent `e_B` vanishes at every
+other block idempotent. -/
+theorem IsBlockIdempotent.apply_eq_zero_of_ne {R G : Type*} [CommRing R] [Monoid G]
+    {φ : Subalgebra.center R (MonoidAlgebra R G) →ₐ[R] R}
+    {b b' : Subalgebra.center R (MonoidAlgebra R G)} (hb : IsBlockIdempotent b)
+    (hb' : IsBlockIdempotent b') (hφ : φ b = 1) (h : b ≠ b') : φ b' = 0 := by
+  have := congrArg φ (hb.mul_eq_zero_of_ne hb' (Commute.all _ _) h)
+  rwa [map_mul, hφ, one_mul, map_zero] at this
 
 variable {k G : Type*} [Field k] [Monoid G] [Finite G]
 

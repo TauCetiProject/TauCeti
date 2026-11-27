@@ -43,6 +43,8 @@ a defect class (`TauCeti.IsBlockIdempotent.exists_isDefectClass`).
 * `TauCeti.IsBlockIdempotent.mem_relTraceIdeal_of_apply_classSumCenter_ne_zero`: if
   `λ_B(K_C) ≠ 0` for the class `C` of `x`, then `e_B ∈ Tr_S^G(k[G]^S)` for every Sylow
   `p`-subgroup `S` of `C_G(x)`.
+* `TauCeti.IsBlockIdempotent.apply_eq_zero_of_brauerProjection_eq_zero`: `φ` vanishes at every
+  central element with no coefficient on the centralizer of a defect group.
 * `TauCeti.IsDefectClass.isDefectGroup_map_sylow`: for `x` in a defect class, every Sylow
   `p`-subgroup of `C_G(x)` is a defect group.
 * `TauCeti.IsDefectClass.isDefectGroup_iff`: for a defect class `C`, the defect groups are exactly
@@ -127,6 +129,51 @@ theorem IsBlockIdempotent.mem_relTraceIdeal_of_apply_classSumCenter_ne_zero [Dec
     rw [← map_mul, ← mul_assoc, hz, hι]
   rw [hb']
   exact Ideal.mul_mem_right _ _ hK
+
+omit [Fintype G] in
+/-- **Central characters only see the centralizer of a defect group.** Let `e_B` be a block
+idempotent of `k[G]`, `k` a field of characteristic `p`, `φ : Z(k[G]) → k` a `k`-algebra
+homomorphism with `φ(e_B) = 1` and `D` a defect group of `e_B`. If `w ∈ Z(k[G])` has
+`Br_D(w) = 0`, that is no coefficient on `C_G(D)`, then `φ(w) = 0`. -/
+theorem IsBlockIdempotent.apply_eq_zero_of_brauerProjection_eq_zero [Finite G]
+    {φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k}
+    {b : Subalgebra.center k (MonoidAlgebra k G)} (hb : IsBlockIdempotent b) (hφ : φ b = 1)
+    {D : Subgroup G} (hD : IsDefectGroup k p (b : MonoidAlgebra k G) D)
+    {w : Subalgebra.center k (MonoidAlgebra k G)}
+    (hw : brauerProjection D (w : MonoidAlgebra k G) = 0) : φ w = 0 := by
+  classical
+  have := Fintype.ofFinite G
+  -- Write `w = ∑_C a_w(C) K_C` in the class sums; each term with `φ(K_C) ≠ 0` vanishes.
+  rw [brauerProjection_eq_zero_iff] at hw
+  rw [← classSumBasis.sum_repr w, map_sum]
+  refine Finset.sum_eq_zero fun C _ ↦ ?_
+  obtain ⟨x, rfl⟩ := ConjClasses.mk_surjective C
+  rw [map_smul, classSumBasis_apply, smul_eq_mul]
+  by_cases hx : φ (classSumCenter (ConjClasses.mk x)) = 0
+  · rw [hx, mul_zero]
+  -- `e_B ∈ Tr_S^G(k[G]^S)` for a Sylow `p`-subgroup `S` of `C_G(x)`, so `D` lies in a conjugate
+  -- of `S`.
+  obtain ⟨S⟩ := Sylow.nonempty (p := p) (G := Subgroup.centralizer {x})
+  have hmem := hb.mem_relTraceIdeal_of_apply_classSumCenter_ne_zero hφ hx S
+  obtain ⟨g, hg⟩ := exists_le_conj_of_mem_relTraceIdeal hmem hD.isPGroup
+    hD.brauerProjection_ne_zero
+  -- `D` centralizes `y = g x g⁻¹`, so `a_w(C) = w_y = 0`.
+  have hy : g * x * g⁻¹ ∈ Subgroup.centralizer (D : Set G) := by
+    rw [Subgroup.mem_centralizer_iff]
+    intro d hd
+    obtain ⟨s, -, hs⟩ := Subgroup.mem_pointwise_smul_iff_inv_smul_mem.1 (hg hd)
+    have hds : d = g * s * g⁻¹ := by
+      simp only [Subgroup.coe_subtype] at hs
+      rw [hs]
+      simp [MulAut.smul_def, mul_assoc]
+    have hcomm : (s : G) * x = x * s := (Subgroup.mem_centralizer_singleton_iff.1 s.property).eq
+    rw [hds]
+    calc g * s * g⁻¹ * (g * x * g⁻¹) = g * (s * x) * g⁻¹ := by group
+      _ = g * (x * s) * g⁻¹ := by rw [hcomm]
+      _ = g * x * g⁻¹ * (g * s * g⁻¹) := by group
+  have h0 := hw _ hy
+  rw [center_coeff_eq_of_isConj w (isConj_iff.2 ⟨g, rfl⟩).symm] at h0
+  rw [classSumBasis_repr_apply, centerToConjClasses_mk, h0, zero_mul]
 
 /-- **Sylow subgroups of centralizers of a defect class are defect groups.** Let `e_B` be a block
 idempotent of `k[G]`, `k` a field of characteristic `p`, and `φ : Z(k[G]) → k` a `k`-algebra
