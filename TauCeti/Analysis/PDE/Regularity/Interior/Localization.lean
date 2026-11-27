@@ -93,8 +93,9 @@ end HigherOrderLocalization
 section HigherOrderExtension
 local notation "E" => EuclideanSpace ℝ ι
 
-/-- Localizing a weak solution and extending it by zero to any larger open domain preserves
-the Sobolev order of the forcing. -/
+/-- Let `ψ` be a smooth compactly supported cutoff with `ψ u ∈ H¹₀(Ω)` and
+`tsupport ψ ∩ H ⊆ Ω`, where `Ω ⊆ H`. Its zero extension is a Dirichlet solution in `H¹₀(H)`
+with forcing in `H^k(H)`, and agrees with `ψ u` on `Ω`. -/
 theorem exists_isWeakSolutionDirichlet_value_ae_eq_indicator {H : Opens E} {M : ℝ} {L : ℝ≥0}
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
     (hL : LipschitzWith L (fun x ↦ matrixBilinearForm (a x)))
