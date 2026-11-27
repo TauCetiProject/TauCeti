@@ -289,13 +289,16 @@ theorem starAlgHom_ext {C : Type*} [NonUnitalCStarAlgebra C]
   | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
 
 /-- Continuous linear maps out of `CStarTensorProduct N` into a Hausdorff space are determined by
-their values on `A ⊗[ℂ] B`. -/
+their values on the elementary tensors `a ⊗ b`. -/
 @[ext]
 theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
-    [Module ℂ E] {f g : CStarTensorProduct N →L[ℂ] E} (h : ∀ x, f (of N x) = g (of N x)) :
-    f = g :=
-  ContinuousLinearMap.ext fun u ↦
-    induction_on u (isClosed_eq (map_continuous f) (map_continuous g)) h
+    [Module ℂ E] {f g : CStarTensorProduct N →L[ℂ] E}
+    (h : ∀ a b, f (of N (a ⊗ₜ b)) = g (of N (a ⊗ₜ b))) : f = g := by
+  refine ContinuousLinearMap.ext fun u ↦ induction_on u (isClosed_eq (map_continuous f)
+    (map_continuous g)) fun x ↦ ?_
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => exact h a b
+  | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
 
 /-- A star homomorphism `A ⊗[ℂ] B → C` into a C*-algebra that is bounded by `N` extends to
 `CStarTensorProduct N`. -/

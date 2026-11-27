@@ -194,11 +194,11 @@ theorem norm_rTensorCP_le (φ : A →CP A') :
 
 @[simp]
 theorem rTensorCP_id : rTensorCP B (CompletelyPositiveMap.id A) = .id ℂ _ :=
-  continuousLinearMap_ext fun x ↦ by simp
+  continuousLinearMap_ext fun a b ↦ by simp
 
 theorem rTensorCP_comp (θ : A' →CP A'') (φ : A →CP A') :
     rTensorCP B (θ.comp φ) = rTensorCP B θ ∘L rTensorCP B φ :=
-  continuousLinearMap_ext fun x ↦ by simp [LinearMap.rTensor_comp]
+  continuousLinearMap_ext fun a b ↦ by simp
 
 end RTensor
 
@@ -233,11 +233,11 @@ theorem norm_lTensorCP_le (ψ : B →CP B') :
 
 @[simp]
 theorem lTensorCP_id : lTensorCP A (CompletelyPositiveMap.id B) = .id ℂ _ :=
-  continuousLinearMap_ext fun x ↦ by simp
+  continuousLinearMap_ext fun a b ↦ by simp
 
 theorem lTensorCP_comp (θ : B' →CP B'') (ψ : B →CP B') :
     lTensorCP A (θ.comp ψ) = lTensorCP A θ ∘L lTensorCP A ψ :=
-  continuousLinearMap_ext fun x ↦ by simp [LinearMap.lTensor_comp]
+  continuousLinearMap_ext fun a b ↦ by simp
 
 end LTensor
 
@@ -272,18 +272,16 @@ theorem norm_mapCP_le (φ : A →CP A') (ψ : B →CP B') :
 
 /-- `φ ⊗ ψ = (φ ⊗ id) ∘ (id ⊗ ψ)` on the minimal tensor product. -/
 theorem mapCP_eq_rTensorCP_comp_lTensorCP (φ : A →CP A') (ψ : B →CP B') :
-    mapCP φ ψ = rTensorCP B' φ ∘L lTensorCP A ψ := by
-  refine continuousLinearMap_ext fun x ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, lTensorCP_of, rTensorCP_of, mapCP_of,
-    ← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor]
+    mapCP φ ψ = rTensorCP B' φ ∘L lTensorCP A ψ :=
+  continuousLinearMap_ext fun a b ↦ by simp
 
 @[simp]
 theorem mapCP_id : mapCP (CompletelyPositiveMap.id A) (CompletelyPositiveMap.id B) = .id ℂ _ :=
-  continuousLinearMap_ext fun x ↦ by simp
+  continuousLinearMap_ext fun a b ↦ by simp
 
 theorem mapCP_comp (φ' : A' →CP A'') (ψ' : B' →CP B'') (φ : A →CP A') (ψ : B →CP B') :
     mapCP (φ'.comp φ) (ψ'.comp ψ) = mapCP φ' ψ' ∘L mapCP φ ψ :=
-  continuousLinearMap_ext fun x ↦ by simp [TensorProduct.map_comp]
+  continuousLinearMap_ext fun a b ↦ by simp
 
 /-- For a star homomorphism, `φ ⊗ ψ` is `TauCeti.MinTensorProduct.map`. -/
 @[simp]
