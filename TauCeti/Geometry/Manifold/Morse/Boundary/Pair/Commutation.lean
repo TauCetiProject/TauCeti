@@ -368,8 +368,7 @@ theorem signedPairMap_signedMorseBoundary_single_apply {R : Type*} [Ring R]
     (fun a har ↦ ?_) (fun _ ↦ signedPairCoeff_eq_zero_of_morseIndex_ne)]
   · exact finsum_mem_congr rfl fun x hx ↦ by
       rw [sourceBrokenPairSign_of_morseIndex_eq hx.1 hx.2.1, dite_eq_left hx.1, dite_eq_left hx.2.1]
-  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpa, signedTrajectoryCount_def]
-    exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpa]
+  · exact signedMorseBoundaryCoeff_eq_finsum_mem hpa
   · rw [signedPairCoeff_of_morseIndex_eq har, signedPairCount_def]
     exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left har]
 
@@ -407,8 +406,7 @@ theorem signedMorseBoundary_signedPairMap_single_apply {R : Type*} [Ring R]
         dite_eq_left hx.2.1]
   · rw [signedPairCoeff_of_morseIndex_eq hpb, signedPairCount_def]
     exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpb]
-  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hbr, signedTrajectoryCount_def]
-    exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hbr]
+  · exact signedMorseBoundaryCoeff_eq_finsum_mem hbr
 
 /-- **The signed pair map is a chain map exactly when broken configurations cancel.** The signed
 pair map with coefficients in a ring `R` commutes with the Morse boundaries, `∂₁ ∘ Φ = Φ ∘ ∂₀`,

@@ -219,20 +219,14 @@ the Morse chains of `f₁` and a linear form `b` on those of `f₂` is the linea
 `a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` on the Morse chains of `f₀`, for the Morse diagonal `Δ` of `S` and the
 multiplication `μ` of `ZMod 2`. Its value at a critical point `p` is the sum, over the pairs
 `(q, r)` with `ind q + ind r = ind p`, of the number of points of `S p q r` modulo two times
-`a q * b r`, an infinite slice counting `0` (`TauCeti.morseCupProduct_apply_single`). It is
-bilinear in `a` and `b`. -/
+`a q * b r`, an infinite slice counting `0` (`TauCeti.morseCupProduct_apply_single`). It is the
+bilinear cup product `LinearMap.cupProduct` along the diagonal. -/
 noncomputable def morseCupProduct (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf₂ : IsMorse 𝓘(ℝ, E) f₂)
     (S : M → M → M → Set α) :
     ((criticalPoints 𝓘(ℝ, E) f₁ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2) →ₗ[ZMod 2]
       ((criticalPoints 𝓘(ℝ, E) f₂ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2) →ₗ[ZMod 2]
         ((criticalPoints 𝓘(ℝ, E) f₀ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2) :=
-  LinearMap.mk₂ (ZMod 2)
-    (fun a b ↦ LinearMap.mul' (ZMod 2) (ZMod 2) ∘ₗ TensorProduct.map a b ∘ₗ
-      morseDiagonalMap f₀ hf₁ hf₂ S)
-    (fun a a' b ↦ by rw [TensorProduct.map_add_left, LinearMap.add_comp, LinearMap.comp_add])
-    (fun c a b ↦ by rw [TensorProduct.map_smul_left, LinearMap.smul_comp, LinearMap.comp_smul])
-    (fun a b b' ↦ by rw [TensorProduct.map_add_right, LinearMap.add_comp, LinearMap.comp_add])
-    (fun c a b ↦ by rw [TensorProduct.map_smul_right, LinearMap.smul_comp, LinearMap.comp_smul])
+  (morseDiagonalMap f₀ hf₁ hf₂ S).cupProduct
 
 /-- The cup product `a ∪ b` is `μ ∘ (a ⊗ b) ∘ Δ`. -/
 theorem morseCupProduct_apply (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf₂ : IsMorse 𝓘(ℝ, E) f₂)
@@ -241,7 +235,7 @@ theorem morseCupProduct_apply (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf₂ : IsMor
     morseCupProduct f₀ hf₁ hf₂ S a b =
       LinearMap.mul' (ZMod 2) (ZMod 2) ∘ₗ TensorProduct.map a b ∘ₗ
         morseDiagonalMap f₀ hf₁ hf₂ S :=
-  (rfl)
+  LinearMap.cupProduct_apply _ a b
 
 /-- **The cup product on a critical point.** The value of `a ∪ b` at a critical point `p` of `f₀`
 is the sum, over the critical points `q` of `f₁` and `r` of `f₂`, of the coefficient
@@ -255,8 +249,7 @@ theorem morseCupProduct_apply_single [Fintype (criticalPoints 𝓘(ℝ, E) f₁)
       ∑ x : criticalPoints 𝓘(ℝ, E) f₁ × criticalPoints 𝓘(ℝ, E) f₂,
         morseDiagonalCoeff f₀ f₁ f₂ S p x.1 x.2 *
           (a (Finsupp.single x.1 1) * b (Finsupp.single x.2 1)) := by
-  rw [morseCupProduct_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearMap.mul'_map_apply_eq_sum]
+  rw [morseCupProduct, LinearMap.cupProduct_apply_eq_sum]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [finsuppTensorFinsupp'_morseDiagonalMap_single_apply, one_mul]
 
@@ -563,9 +556,8 @@ theorem morseCupProduct_comp_morseBoundary_eq_iff_morseDiagonalMap_comp_morseBou
             morseCupProduct f₀ hf₁ hf₂ S a (b ∘ₗ h₂.morseBoundary hf₂)) ↔
       morseDiagonalMap f₀ hf₁ hf₂ S ∘ₗ h₀.morseBoundary hf₀ =
         ((h₁.morseBoundary hf₁).rTensor _ + (h₂.morseBoundary hf₂).lTensor _) ∘ₗ
-          morseDiagonalMap f₀ hf₁ hf₂ S := by
-  simpa only [morseCupProduct_apply, LinearMap.comp_assoc] using
-    LinearMap.mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp _ _ _ _
+          morseDiagonalMap f₀ hf₁ hf₂ S :=
+  LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp _ _ _ _
 
 include h₀ hf₀ h₁ h₂ in
 /-- **The Leibniz rule of the Morse cup product holds exactly when the broken Y-flow lines come in

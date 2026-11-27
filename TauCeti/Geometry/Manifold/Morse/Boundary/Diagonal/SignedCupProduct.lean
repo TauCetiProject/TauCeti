@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Diagonal.Signed
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 import TauCeti.Data.Set.Card
@@ -50,10 +49,10 @@ one-dimensional spaces of Y-flow lines so that these sums vanish, is not proved 
 
 **The integral cup product.** Dualizing `Δ` gives the `R`-bilinear cup product of linear forms on
 the Morse chains with coefficients in a commutative ring `R`
-(`TauCeti.IsAdaptedPseudoGradient.signedMorseCupProduct`), `a ∪ b = (a ⊗ b) ∘ Δ` through
-`TensorProduct.dualDistrib`. Its value at a critical point `p` is the sum, over the pairs `(q, r)`,
-of the signed count of the Y-slice times `a q * b r`. For the coboundary `δa = a ∘ ∂`, the
-Leibniz rule
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseCupProduct`), the cup product
+`a ∪ b = (a ⊗ b) ∘ Δ` along `Δ` (`LinearMap.cupProduct`). Its value at a critical point `p` is the
+sum, over the pairs `(q, r)`, of the signed count of the Y-slice times `a q * b r`. For the
+coboundary `δa = a ∘ ∂`, the Leibniz rule
 
 `δ(a ∪ b) = δa ∪ b + (a ∘ ε₁) ∪ δb`
 
@@ -80,13 +79,13 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `finsuppTensorFinsupp'_signedMorseDiagonalMap_signedMorseBoundary_single_apply`,
   `finsuppTensorFinsupp'_rTensor_signedMorseBoundary_signedMorseDiagonalMap_single_apply`,
-  `finsuppTensorFinsupp'_map_signedMorseBoundary_signedMorseDiagonalMap_single_apply`: the three
-  terms of the chain-map identity count broken Y-flow lines with signs.
+  `finsuppTensorFinsupp'_map_signEquiv_signedMorseBoundary_signedMorseDiagonalMap_single_apply`:
+  the three terms of the chain-map identity count broken Y-flow lines with signs.
 * `signedMorseDiagonalMap_comp_signedMorseBoundary_eq_iff`: the integral diagonal is a chain map
   for the Koszul tensor differential exactly when the signed counts of broken Y-flow lines vanish.
 * `signedMorseCupProduct_apply`, `signedMorseCupProduct_apply_single`: the cup product.
-* `signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_comp_eq`: the Leibniz rule holds exactly
-  when the diagonal is a chain map.
+* `signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq`: the
+  Leibniz rule holds exactly when the diagonal is a chain map.
 * `signedMorseCupProduct_comp_signedMorseBoundary_eq_iff`: the Leibniz rule holds exactly when the
   signed counts of broken Y-flow lines vanish.
 * `signedMorseCupProduct_comp_signedMorseBoundary_eq_add_neg_one_pow_smul`: the graded Leibniz
@@ -279,20 +278,6 @@ private theorem signedMorseDiagonalCoeff_eq_finsum_mem {p : criticalPoints 𝓘(
   rw [signedMorseDiagonalCoeff_eq_signedMorseYCount hpqr, signedMorseYCount_def]
   exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpqr]
 
-/-- When `ind p = ind q + 1`, the coefficient of the integral Morse boundary is the sum of the
-signs over the trajectory slice, written with the index condition inside. -/
-private theorem signedMorseBoundaryCoeff_eq_finsum_mem {f : M → ℝ}
-    {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {hX : IsAdaptedPseudoGradient f X}
-    {𝔬 : MorseOrientation f X} {p q : criticalPoints 𝓘(ℝ, E) f}
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
-    hX.signedMorseBoundaryCoeff 𝔬 p q =
-      ∑ᶠ z ∈ hX.morseTrajectorySlice p q,
-        if h : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 then
-          hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) h z
-        else 0 := by
-  rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def]
-  exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpq]
-
 include h₀ hS in
 /-- **`Δ ∘ ∂₀` counts Y-flow lines broken at the root with signs.** When the Y-slices with
 `ind p' = ind q + ind r` are finite, the `(q, r)`-coefficient of the integral Morse diagonal of the
@@ -367,7 +352,7 @@ include h₂ hS in
 Y-slices with `ind p = ind q + ind r'` are finite, the `(q, r)`-coefficient of `(ε₁ ⊗ ∂₂) (Δ p)`,
 for the Koszul sign `ε₁ : q ↦ (-1) ^ ind q • q`, is `(-1) ^ ind q` times the sum of the signs of
 the Y-flow lines from `p` to `q` and `r` broken at the second leaf. -/
-theorem finsuppTensorFinsupp'_map_signedMorseBoundary_signedMorseDiagonalMap_single_apply
+theorem finsuppTensorFinsupp'_map_signEquiv_signedMorseBoundary_signedMorseDiagonalMap_single_apply
     (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁)
     (r : criticalPoints 𝓘(ℝ, E) f₂) :
     finsuppTensorFinsupp' R _ _ (TensorProduct.map
@@ -453,8 +438,8 @@ theorem signedMorseDiagonalMap_comp_signedMorseBoundary_eq_iff :
         hS,
       finsuppTensorFinsupp'_rTensor_signedMorseBoundary_signedMorseDiagonalMap_single_apply h₁ hf₁
         hf₂ hS,
-      finsuppTensorFinsupp'_map_signedMorseBoundary_signedMorseDiagonalMap_single_apply hf₁ h₂ hf₂
-        hS]
+      finsuppTensorFinsupp'_map_signEquiv_signedMorseBoundary_signedMorseDiagonalMap_single_apply
+        hf₁ h₂ hf₂ hS]
     push_cast
     constructor <;> intro h <;> linear_combination h
   refine ⟨fun h p q r ↦ (hcoeff p q r).1 (by rw [h]), fun h ↦
@@ -474,8 +459,8 @@ variable (hX₀ : IsAdaptedPseudoGradient f₀ X₀) (hX₁ : IsAdaptedPseudoGra
 
 /-- **The integral Morse cup product** with coefficients in a commutative ring `R`: the product of
 a linear form `a` on the Morse chains of `f₁` and a linear form `b` on those of `f₂` is the linear
-form `a ∪ b = (a ⊗ b) ∘ Δ` on the Morse chains of `f₀`, for the integral Morse diagonal `Δ` and
-the evaluation `TensorProduct.dualDistrib` of `a ⊗ b` on tensors. Its value at a critical point
+form `a ∪ b = (a ⊗ b) ∘ Δ` on the Morse chains of `f₀`, the cup product `LinearMap.cupProduct`
+along the integral Morse diagonal `Δ`. Its value at a critical point
 `p` is the sum, over the pairs `(q, r)` with `ind q + ind r = ind p`, of the number of points of the
 Y-slice from `p` to `q` and `r` counted with signs times `a q * b r`
 (`TauCeti.IsAdaptedPseudoGradient.signedMorseCupProduct_apply_single`). -/
@@ -484,9 +469,7 @@ noncomputable def signedMorseCupProduct (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf�
     ((criticalPoints 𝓘(ℝ, E) f₁ →₀ R) →ₗ[R] R) →ₗ[R]
       ((criticalPoints 𝓘(ℝ, E) f₂ →₀ R) →ₗ[R] R) →ₗ[R]
         ((criticalPoints 𝓘(ℝ, E) f₀ →₀ R) →ₗ[R] R) :=
-  (TensorProduct.mk R _ _).compr₂
-    ((hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R).dualMap ∘ₗ
-      TensorProduct.dualDistrib R _ _)
+  (hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R).cupProduct
 
 variable (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf₂ : IsMorse 𝓘(ℝ, E) f₂)
   {R : Type*} [CommRing R]
@@ -496,11 +479,8 @@ theorem signedMorseCupProduct_apply (a : (criticalPoints 𝓘(ℝ, E) f₁ →�
     (b : (criticalPoints 𝓘(ℝ, E) f₂ →₀ R) →ₗ[R] R) :
     hX₀.signedMorseCupProduct hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R a b =
       LinearMap.mul' R R ∘ₗ TensorProduct.map a b ∘ₗ
-        hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R := by
-  have h : TensorProduct.dualDistrib R _ _ (a ⊗ₜ b) = LinearMap.mul' R R ∘ₗ TensorProduct.map a b :=
-    TensorProduct.ext' fun _ _ ↦ by simp
-  rw [signedMorseCupProduct, LinearMap.compr₂_apply, TensorProduct.mk_apply, LinearMap.comp_apply,
-    h, LinearMap.dualMap_apply', LinearMap.comp_assoc]
+        hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R :=
+  LinearMap.cupProduct_apply _ a b
 
 /-- **The integral cup product on a critical point.** The value of `a ∪ b` at a critical point `p`
 of `f₀` is the sum, over the critical points `q` of `f₁` and `r` of `f₂`, of the coefficient
@@ -512,8 +492,7 @@ theorem signedMorseCupProduct_apply_single [Fintype (criticalPoints 𝓘(ℝ, E)
       ∑ x : criticalPoints 𝓘(ℝ, E) f₁ × criticalPoints 𝓘(ℝ, E) f₂,
         (hX₀.signedMorseDiagonalCoeff hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ p x.1 x.2 : R) *
           (a (Finsupp.single x.1 1) * b (Finsupp.single x.2 1)) := by
-  rw [signedMorseCupProduct_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearMap.mul'_map_apply_eq_sum]
+  rw [signedMorseCupProduct, LinearMap.cupProduct_apply_eq_sum]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [finsuppTensorFinsupp'_signedMorseDiagonalMap_single_apply, one_mul]
 
@@ -545,7 +524,7 @@ chain map.** For the coboundaries `δa = a ∘ ∂`, the integral cup product sa
 `δ(a ∪ b) = δa ∪ b + (a ∘ ε₁) ∪ δb` for all linear forms `a` and `b` on the Morse chains, where
 `ε₁ : q ↦ (-1) ^ ind q • q` is the Koszul sign, exactly when the integral Morse diagonal satisfies
 `Δ ∘ ∂₀ = (∂₁ ⊗ 1 + ε₁ ⊗ ∂₂) ∘ Δ`. -/
-theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_comp_eq :
+theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq :
     (∀ (a : (criticalPoints 𝓘(ℝ, E) f₁ →₀ R) →ₗ[R] R)
         (b : (criticalPoints 𝓘(ℝ, E) f₂ →₀ R) →ₗ[R] R),
         hX₀.signedMorseCupProduct hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R a b ∘ₗ
@@ -561,9 +540,8 @@ theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_comp_eq :
           (Finsupp.signEquiv (A := R) R fun q : criticalPoints 𝓘(ℝ, E) f₁ ↦
             (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f₁ q).toLinearMap
           (hX₂.signedMorseBoundary 𝔬₂ hf₂ R)) ∘ₗ
-          hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R := by
-  simpa only [signedMorseCupProduct_apply, LinearMap.comp_assoc] using
-    LinearMap.mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_map_comp _ _ _ _ _
+          hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R :=
+  LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp _ _ _ _ _
 
 include h₀ h₁ h₂ in
 /-- **The Leibniz rule of the integral cup product holds exactly when the signed counts of broken
@@ -597,8 +575,8 @@ theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_iff
           (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f₁ q *
             ∑ᶠ x ∈ morseSecondLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₁ hX₂) hX₂ p q r,
               hX₀.morseSecondLeafBrokenDiagonalSign hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ p q r x : ℤ) : R) = 0 :=
-  (signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_comp_eq hf₀ hf₁ hf₂).trans
-    (signedMorseDiagonalMap_comp_signedMorseBoundary_eq_iff h₀ hf₀ h₁ hf₁ h₂ hf₂ hS)
+  (signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq hf₀ hf₁
+    hf₂).trans (signedMorseDiagonalMap_comp_signedMorseBoundary_eq_iff h₀ hf₀ h₁ hf₁ h₂ hf₂ hS)
 
 /-- **The graded Leibniz rule of the integral cup product.** If the integral Morse diagonal is a
 chain map, `Δ ∘ ∂₀ = (∂₁ ⊗ 1 + ε₁ ⊗ ∂₂) ∘ Δ` for the Koszul sign `ε₁ : q ↦ (-1) ^ ind q • q`, then
@@ -623,8 +601,9 @@ theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_add_neg_one_pow_smul
           (a ∘ₗ hX₁.signedMorseBoundary 𝔬₁ hf₁ R) b +
         ((-1 : ℤ) ^ k) • hX₀.signedMorseCupProduct hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R a
           (b ∘ₗ hX₂.signedMorseBoundary 𝔬₂ hf₂ R) := by
-  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_comp_eq hf₀ hf₁ hf₂).2 hΔ a b,
-    Finsupp.comp_signEquiv_neg_one_pow _ k a ha, map_zsmul, LinearMap.smul_apply]
+  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq hf₀
+      hf₁ hf₂).2 hΔ a b, Finsupp.comp_signEquiv_neg_one_pow _ k a ha, map_zsmul,
+    LinearMap.smul_apply]
 
 end CupProduct
 
