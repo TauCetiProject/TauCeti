@@ -299,7 +299,7 @@ private theorem translateFiniteLevel_eval (a : C^∞⟮I, M; I, M⟯) (y : F)
 
 section Translation
 
-variable [Group M] [ContMDiffMul I ∞ M]
+variable [Monoid M] [ContMDiffMul I ∞ M]
 
 /-- Right translation of a family at level `J` has level `y_f J y_f⁻¹`. -/
 def rightTranslateLevel (y : M × F) (J : CompactOpenSubgroup F) :
@@ -350,7 +350,7 @@ theorem rightTranslate_mul (y z : M × F) :
   intro x
   simp [mul_assoc]
 
-/-- Right translations as a complex linear representation of the product group. -/
+/-- Right translations as a complex linear representation of the product monoid. -/
 def rightTranslation : Representation ℂ (M × F) (AdelicSmoothFunction I M F) :=
   AlgHom.toEnd.comp
     { toFun := rightTranslate
@@ -411,8 +411,9 @@ instance : (finiteRightTranslation (I := I) (M := M) (F := F)).IsSmooth where
     have hf := (mem_finiteRightTranslation_invariants_iff J f).mpr hJ
     exact Representation.mem_stabilizer.mpr ((Representation.mem_invariants _ _).mp hf ⟨x, hx⟩)
 
-/-- On a smooth group, finite right translation is the restriction of product right translation. -/
-theorem finiteRightTranslation_eq_comp_inr [Group M] [ContMDiffMul I ∞ M] :
+/-- For a smooth archimedean monoid, finite right translation is the restriction of
+product right translation. -/
+theorem finiteRightTranslation_eq_comp_inr [Monoid M] [ContMDiffMul I ∞ M] :
     finiteRightTranslation (I := I) (M := M) (F := F) =
       rightTranslation.comp (MonoidHom.inr M F) := by
   apply MonoidHom.ext
