@@ -47,47 +47,8 @@ open IsDiscreteValuationRing Module
 namespace Submodule
 
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
-
-/-- In a torsion module over a discrete valuation ring, every element is killed by a power of a
-uniformizer. -/
-private theorem exists_pow_smul_eq_zero {Y : Type*} [AddCommGroup Y] [Module O Y] {ϖ : O}
-    (hϖ : Irreducible ϖ) (hY : Module.IsTorsion O Y) (y : Y) : ∃ k : ℕ, ϖ ^ k • y = 0 := by
-  obtain ⟨r, hr⟩ := @hY y
-  obtain ⟨m, u, hu⟩ := eq_unit_mul_pow_irreducible (nonZeroDivisors.ne_zero r.property) hϖ
-  refine ⟨m, ?_⟩
-  have h : (u : O) • ϖ ^ m • y = 0 := by
-    rw [smul_smul, ← hu]
-    exact hr
-  simpa [smul_smul] using congr_arg ((↑u⁻¹ : O) • ·) h
-
-variable {R F : Type*} [CommRing R] [Algebra O R] [AddCommGroup F] [Module R F] [Module O F]
+  {R F : Type*} [CommRing R] [Algebra O R] [AddCommGroup F] [Module R F] [Module O F]
   [IsScalarTower O R F]
-
-omit [IsDomain O] [IsDiscreteValuationRing O] in
-/-- Adjoining to `N` an element `u` of `P` outside `N` lowers by one the length of the image
-of `P`. -/
-private theorem length_map_mkQ_sup_span_singleton_le {N : Submodule R F} {P : Submodule O F}
-    {n : ℕ} (hP : length O (P.map (N.restrictScalars O).mkQ) ≤ n + 1) {u : F} (huP : u ∈ P)
-    (huN : u ∉ N) :
-    length O (P.map ((N ⊔ R ∙ u).restrictScalars O).mkQ) ≤ n := by
-  rw [TauCeti.length_map_mkQ] at hP ⊢
-  have hle : (N.restrictScalars O).comap P.subtype ≤ ((N ⊔ R ∙ u).restrictScalars O).comap
-      P.subtype := fun x hx ↦ by
-    simp only [mem_comap, subtype_apply, restrictScalars_mem] at hx ⊢
-    exact mem_sup_left hx
-  rw [TauCeti.length_quotient_eq_length_quotient_comap_subtype_add hle] at hP
-  -- The class of `u` is a nonzero element of the first factor.
-  have hpos : 1 ≤ length O (↥(((N ⊔ R ∙ u).restrictScalars O).comap P.subtype) ⧸
-      ((N.restrictScalars O).comap P.subtype).comap
-        (((N ⊔ R ∙ u).restrictScalars O).comap P.subtype).subtype) := by
-    rw [Order.one_le_iff_ne_zero, ← pos_iff_ne_zero, length_pos_iff]
-    refine nontrivial_of_ne (Quotient.mk ⟨⟨u, huP⟩, ?_⟩) 0 ?_
-    · exact (restrictScalars_mem O _ _).2 (mem_sup_right (mem_span_singleton_self u))
-    · rw [ne_eq, Quotient.mk_eq_zero]
-      simpa using huN
-  have h := (add_le_add_left hpos _).trans hP
-  rw [add_comm (n : ℕ∞)] at h
-  exact (WithTop.add_le_add_iff_left ENat.one_ne_top).1 h
 
 /-- **Adjoining relations of finite length.** Let `O` be a discrete valuation ring with uniformizer
 `ϖ`, `R` an `O`-algebra and `N` an `R`-submodule of `F`. If the image of an `O`-submodule `P` of
@@ -119,7 +80,7 @@ theorem pow_mul_mem_minorsIdeal_of_length_map_mkQ_le {ϖ : O} (hϖ : Irreducible
     obtain ⟨m, hy0, hϖy⟩ := TauCeti.exists_pow_smul_ne_zero_and_smul_eq_zero
       (w := (⟨_, mem_map_of_mem hu₀P⟩ : P.map (N.restrictScalars O).mkQ))
       (fun h ↦ hu₀N <| by simpa [Quotient.mk_eq_zero] using congrArg Subtype.val h)
-      (exists_pow_smul_eq_zero hϖ htors _)
+      ((isTorsion'_powers_iff ϖ).1 ((isTorsion_iff_isTorsion'_powers hϖ).1 htors) _)
     generalize ϖ ^ m • (⟨_, mem_map_of_mem hu₀P⟩ : P.map (N.restrictScalars O).mkQ) = y
       at hy0 hϖy
     obtain ⟨y, hyP⟩ := y
@@ -127,15 +88,19 @@ theorem pow_mul_mem_minorsIdeal_of_length_map_mkQ_le {ϖ : O} (hϖ : Irreducible
     have huN : u ∉ N := fun h ↦ hy0 <| Subtype.ext <| by
       simpa [Quotient.mk_eq_zero] using h
     have hϖu : ϖ • u ∈ N := by
-      have h := congrArg Subtype.val hϖy
-      rw [SetLike.val_smul, ← map_smul, ZeroMemClass.coe_zero, mkQ_apply,
-        Quotient.mk_eq_zero] at h
-      simpa using h
+      simpa [← Quotient.mk_smul, Quotient.mk_eq_zero] using congrArg Subtype.val hϖy
     -- Adjoin `u`, at the cost of one factor `ϖ`.
     have hu : R ∙ u ≤ span R (P : Set F) := (span_singleton_le_iff_mem _ _).2 (subset_span huP)
     have hsup : N ⊔ R ∙ u ⊔ span R (P : Set F) = N ⊔ span R (P : Set F) := by
       rw [sup_assoc, sup_eq_right.2 hu]
-    have h₁ := ih (length_map_mkQ_sup_span_singleton_le hP huP huN) (hsup ▸ hd)
+    -- The image of `P` modulo `N ⊔ R ∙ u` is shorter by one.
+    have hlen : length O (P.map ((N ⊔ R ∙ u).restrictScalars O).mkQ) ≤ n := by
+      have h := (TauCeti.length_map_mkQ_add_one_le (P := P)
+        (fun x hx ↦ (mem_sup_left hx : x ∈ N ⊔ R ∙ u)) huP
+        ((restrictScalars_mem O _ _).2 (mem_sup_right (mem_span_singleton_self u)))
+        (by simpa using huN)).trans hP
+      exact (WithTop.add_le_add_iff_right ENat.one_ne_top).1 (by exact_mod_cast h)
+    have h₁ := ih hlen (hsup ▸ hd)
     have hcolon : algebraMap O R ϖ ∈ N.colon {u} := mem_colon_singleton.2 (by
       rwa [algebraMap_smul])
     have h₂ := colon_mul_minorsIdeal_sup_span_singleton_le N u k (Ideal.mul_mem_mul hcolon h₁)

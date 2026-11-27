@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
+public import TauCeti.Algebra.Module.FunctionModule
 public import TauCeti.RingTheory.FittingIdeal.Length
 import Mathlib.Algebra.MvPolynomial.Eval
 import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
@@ -17,45 +18,43 @@ import TauCeti.RingTheory.Length
 
 Let `O` be a discrete valuation ring with valuation `v`, `R = O[X_j : j ∈ J]` for a linear order
 `J`, and `N ⊆ R^ι` a module of relations, `ι` finite. Fix an `O`-linear map `Φ : V → R^ι`, a map
-`z : G → V` from a set `G`, and `p ∈ O`. The *module of functions* of `N` is the `O`-module of the
-functions `g ↦ Ψ (z g)` on `G`, for the `O`-linear `Ψ : V → O ⧸ (p)` vanishing on `Φ⁻¹(N)`. When
-`G` is a group and `N` contains cocycle relations, these functions are cocycles with values in
-`O ⧸ (p)`; the definition uses no structure on `G`, so it stands in for a module of cocycles over
-any group.
+`z : G → V` from a set `G`, and `p ∈ O`. The *module of functions* of `N`
+(`Submodule.functionModule`) is the `O`-module of the functions `g ↦ Ψ (z g)` on `G`, for the
+`O`-linear `Ψ : V → O ⧸ (p)` vanishing on `Φ⁻¹(N)`; it stands in for a module of cocycles with
+values in `O ⧸ (p)`.
 
 The relations `Φ (z (τ j)) ≡ X_j Φ (z (φ j))` and `Φ (z (τ' j)) ≡ X_j Φ (z (φ' j))` tie the
 variable `X_j` to elements of `G`. A module `Z` of functions has *triangle cost* `(I, C, b)`, for a
-finite `I ⊆ J`, if after the functions are made to vanish on some `A ⊆ G`, the equality of the
-values at `τ j` and `τ' j` is forced, up to `C` and for each `j ∈ I` in turn, by the equalities at
-the earlier variables, and what is left has length at most `b` modulo `C`-torsion. The main theorem
+finite `I ⊆ J`, if for some `A ⊆ G`, with `Z₀` the members of `Z` vanishing on `A`, the equality
+in `Z₀` of the values at `τ j` and `τ' j` is forced, up to `C` and for each `j ∈ I` in turn, by the
+equalities at the earlier variables, and the length of `Z ⧸ Z₀` plus the length modulo `C`-torsion
+of any submodule of `Z₀` whose members vanish at all `τ j`, `τ' j` and agree at `φ j`, `φ' j` for
+`j ∈ I` is at most `b`. The main theorem
 (`Submodule.exists_mul_prod_X_mem_minorsIdeal_of_hasTriangleCost`) produces from a triangle cost an
 element of the Fitting ideal of `R^ι ⧸ N` divisible by `∏_{j ∈ I} X_j`: some `F ∈ R` with
 `F ∏_{j ∈ I} X_j` in the Fitting ideal has `v(F(0)) ≤ b + (#I + #ι) v(C)`. In Ribet's method to
 first order, this bounds the contribution of the characters without counting their cocycles.
 
 The proof enlarges `N` in three stages. First by the relations `Φ (z a)`, `a ∈ A`, which costs
-the length of their image in `R^ι ⧸ N`, at most the length of `Z ⧸ Z₀` by duality with values
-in `O ⧸ (p)` (`Submodule.pow_mul_mem_minorsIdeal_of_length_map_mkQ_le`). Then by the relations
+the length of their image in `R^ι ⧸ N` (`Submodule.pow_mul_mem_minorsIdeal_of_length_map_mkQ_le`),
+at most the length of `Z ⧸ Z₀` by duality with values in `O ⧸ (p)`
+(`Submodule.length_map_mkQ_span_image_le`). Then by the relations
 `Φ (z (φ j)) - Φ (z (φ' j))`, `j ∈ I`, in increasing order of `j`: the triangle condition makes
 `C X_j` multiply each into the module reached before it
 (`Submodule.prod_colon_mul_minorsIdeal_sup_span_image_le`). Finally the Fitting ideal is read at
 `X = 0` (`Submodule.exists_mem_minorsIdeal_addVal_eq_length`), where the colength of the relations
-is the length of their module of functions, bounded by a length modulo `C`-torsion.
+is the length of their module of functions (`Submodule.length_functionModule`), bounded by a
+length modulo `C`-torsion because that module is detected by finitely many points
+(`Submodule.functionModule_isDetectedBy_range`, `Submodule.IsDetectedBy.length_le`).
 
 ## Main definitions
 
-* `Submodule.functionModule N Φ z p`: the module of functions of `N`.
-* `Submodule.IsDetectedBy Z s`: the only member of `Z` vanishing on `s` is zero.
 * `Submodule.HasTriangleCost Z τ τ' φ φ' I C b`: `Z` has triangle cost `(I, C, b)`.
 
 ## Main results
 
-* `Submodule.length_functionModule`, `Submodule.functionModule_isDetectedBy_range`: for a module
-  of relations in `O^ι` in which `Φ (z (gen i)) ≡ e_i`, the module of functions has the length of
-  `O^ι ⧸ N` and is detected by the `gen i`.
-* `Submodule.IsDetectedBy.length_le`: a module of functions detected by a finite set `s` has
-  length at most that of its quotient by its `C`-torsion plus `#s` times that of the `C`-torsion
-  of the values.
+* `Submodule.hasTriangleCost_iff`, `Submodule.HasTriangleCost.mono`: unfolding a triangle cost, and
+  raising its bound.
 * `Submodule.exists_mul_prod_X_mem_minorsIdeal_of_hasTriangleCost`: the Fitting ideal of a module
   of relations whose module of functions has a triangle cost.
 
@@ -79,169 +78,10 @@ open IsDiscreteValuationRing Module MvPolynomial
 
 namespace Submodule
 
-section FunctionModule
-
-variable {O R F V G : Type*} [CommRing O] [Semiring R] [AddCommMonoid F] [Module O F]
-  [Module R F] [SMul O R] [IsScalarTower O R F] [AddCommGroup V] [Module O V]
-
-/-- The *module of functions* of a submodule `N ⊆ F` along `Φ : V → F` and `z : G → V`, with
-values in `O ⧸ (p)`: the `O`-module of the functions `g ↦ Ψ (z g)` on `G`, for the `O`-linear maps
-`Ψ : V → O ⧸ (p)` vanishing on `Φ⁻¹(N)` (`Submodule.mem_functionModule`). -/
-def functionModule (N : Submodule R F) (Φ : V →ₗ[O] F) (z : G → V) (p : O) :
-    Submodule O (G → O ⧸ Ideal.span {p}) :=
-  LinearMap.range <| LinearMap.pi fun g ↦
-    LinearMap.applyₗ (((N.restrictScalars O).comap Φ).mkQ (z g))
-
-variable {N : Submodule R F} {Φ : V →ₗ[O] F} {z : G → V} {p : O}
-
-/-- A linear map vanishing at the `v` with `Φ v ∈ N` vanishes on `Φ⁻¹(N)`. -/
-private theorem comap_le_ker {M : Type*} [AddCommGroup M] [Module O M] {Ψ : V →ₗ[O] M}
-    (hΨ : ∀ v, Φ v ∈ N → Ψ v = 0) : (N.restrictScalars O).comap Φ ≤ LinearMap.ker Ψ :=
-  fun v hv ↦ LinearMap.mem_ker.2 (hΨ v (by simpa using hv))
-
-/-- The members of the module of functions of `N` are the functions `g ↦ Ψ (z g)` for the
-`O`-linear `Ψ : V → O ⧸ (p)` vanishing on `Φ⁻¹(N)`. -/
-@[simp]
-theorem mem_functionModule {c : G → O ⧸ Ideal.span {p}} :
-    c ∈ N.functionModule Φ z p ↔
-      ∃ Ψ : V →ₗ[O] O ⧸ Ideal.span {p}, (∀ v, Φ v ∈ N → Ψ v = 0) ∧ ∀ g, Ψ (z g) = c g := by
-  constructor
-  · rintro ⟨Ψ, rfl⟩
-    refine ⟨Ψ ∘ₗ ((N.restrictScalars O).comap Φ).mkQ, fun v hv ↦ ?_, fun g ↦ by simp⟩
-    rw [LinearMap.comp_apply, mkQ_apply, (Quotient.mk_eq_zero _).2 (by simpa using hv), map_zero]
-  · rintro ⟨Ψ, hΨ, hc⟩
-    exact ⟨((N.restrictScalars O).comap Φ).liftQ Ψ (comap_le_ker hΨ), funext fun g ↦ by simp [hc]⟩
-
-/-- More relations give fewer functions: if `Φ v ∈ N` implies `Φ' v ∈ N'`, every function of `N'`
-along `Φ'` is a function of `N` along `Φ`. -/
-theorem functionModule_le_functionModule {R' F' : Type*} [Semiring R'] [AddCommMonoid F']
-    [Module O F'] [Module R' F'] [SMul O R'] [IsScalarTower O R' F'] {N' : Submodule R' F'}
-    {Φ' : V →ₗ[O] F'} (h : ∀ v, Φ v ∈ N → Φ' v ∈ N') :
-    N'.functionModule Φ' z p ≤ N.functionModule Φ z p := fun c hc ↦ by
-  obtain ⟨Ψ, hΨ, hc⟩ := mem_functionModule.1 hc
-  exact mem_functionModule.2 ⟨Ψ, fun v hv ↦ hΨ v (h v hv), hc⟩
-
-end FunctionModule
-
-section IsDetectedBy
-
-variable {O G B : Type*} [CommRing O] [AddCommGroup B] [Module O B]
-
-/-- A module `Z` of functions on `G` is *detected* by `s ⊆ G` if its only member vanishing on `s`
-is zero. -/
-def IsDetectedBy (Z : Submodule O (G → B)) (s : Set G) : Prop :=
-  ∀ c ∈ Z, (∀ g ∈ s, c g = 0) → c = 0
-
-/-- Unfolding `Submodule.IsDetectedBy`. -/
-theorem isDetectedBy_iff {Z : Submodule O (G → B)} {s : Set G} :
-    Z.IsDetectedBy s ↔ ∀ c ∈ Z, (∀ g ∈ s, c g = 0) → c = 0 :=
-  Iff.rfl
-
-/-- A module `Z` of functions detected by a finite set `s` has length at most that of its quotient
-by its `C`-torsion plus `#s` times the length of the `C`-torsion of the values. -/
-theorem IsDetectedBy.length_le {Z : Submodule O (G → B)} {s : Finset G}
-    (hZ : Z.IsDetectedBy s) (C : O) :
-    length O Z ≤ length O (Z ⧸ torsionBy O Z C) + s.card • length O (torsionBy O B C) := by
-  rw [length_eq_add_of_exact _ _ (torsionBy O Z C).injective_subtype
-    (torsionBy O Z C).mkQ_surjective (LinearMap.exact_subtype_mkQ _), add_comm]
-  gcongr
-  -- Restriction to `s` embeds the `C`-torsion of `Z` in the functions from `s` to that of `B`.
-  let ρ : torsionBy O Z C →ₗ[O] (s → torsionBy O B C) := LinearMap.pi fun g ↦
-    LinearMap.codRestrict _ (LinearMap.proj (g : G) ∘ₗ Z.subtype ∘ₗ (torsionBy O Z C).subtype)
-      fun x ↦ by
-        have hx := congr_fun (congrArg Subtype.val ((mem_torsionBy_iff _ _).1 x.property)) g
-        rw [coe_smul, Pi.smul_apply, ZeroMemClass.coe_zero, Pi.zero_apply] at hx
-        rwa [mem_torsionBy_iff]
-  have hρ : Function.Injective ρ := fun x y hxy ↦ by
-    have h0 := hZ _ (sub_mem (x : Z).property (y : Z).property) fun g hg ↦
-      sub_eq_zero.2 (congrArg Subtype.val (congr_fun hxy ⟨g, hg⟩))
-    exact Subtype.ext (Subtype.ext (sub_eq_zero.1 h0))
-  calc length O (torsionBy O Z C) ≤ length O (s → torsionBy O B C) :=
-        length_le_of_injective ρ hρ
-    _ = s.card • length O (torsionBy O B C) := by simp [nsmul_eq_mul]
-
-end IsDetectedBy
-
 section Coordinates
 
 variable {O V G ι : Type*} [CommRing O] [AddCommGroup V] [Module O V] [DecidableEq ι]
   {N : Submodule O (ι → O)} {Φ : V →ₗ[O] ι → O} {z : G → V} {gen : ι → G}
-
-/-- If `Φ (z (gen i)) ≡ e_i` modulo `N`, every `y ∈ O^ι` is congruent to `∑ i, y i • Φ (z (gen i))`
-modulo `N`. -/
-private theorem sub_sum_smul_mem [Fintype ι] (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N)
-    (y : ι → O) :
-    y - ∑ i, y i • Φ (z (gen i)) ∈ N := by
-  have hy : y - ∑ i, y i • Φ (z (gen i)) = ∑ i, y i • (Pi.single i 1 - Φ (z (gen i))) := by
-    simp_rw [smul_sub, Finset.sum_sub_distrib]
-    congr 1
-    ext j
-    simp [Finset.sum_apply, Pi.single_apply]
-  rw [hy]
-  exact sum_mem fun i _ ↦ smul_mem _ _ (by simpa using neg_mem (h i))
-
-/-- If `Φ (z (gen i)) ≡ e_i` modulo `N`, the classes of the `z (gen i)` span `V ⧸ Φ⁻¹(N)`. -/
-private theorem span_range_mkQ_eq_top [Finite ι]
-    (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N) :
-    span O (Set.range fun i ↦ ((N.restrictScalars O).comap Φ).mkQ (z (gen i))) = ⊤ := by
-  have := Fintype.ofFinite ι
-  refine eq_top_iff.2 fun q _ ↦ ?_
-  obtain ⟨v, rfl⟩ := ((N.restrictScalars O).comap Φ).mkQ_surjective q
-  have hv : ((N.restrictScalars O).comap Φ).mkQ v =
-      ∑ i, Φ v i • ((N.restrictScalars O).comap Φ).mkQ (z (gen i)) := by
-    simp_rw [← map_smul, ← map_sum]
-    refine (Quotient.eq _).2 ?_
-    simpa using sub_sum_smul_mem h (Φ v)
-  rw [hv]
-  exact sum_mem fun i _ ↦ smul_mem _ _ (subset_span ⟨i, rfl⟩)
-
-/-- If `Φ (z (gen i)) ≡ e_i` modulo a submodule `N ⊆ O^ι`, the module of functions of `N` is
-detected by the `gen i`. -/
-theorem functionModule_isDetectedBy_range [Finite ι]
-    (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N) (p : O) :
-    (N.functionModule Φ z p).IsDetectedBy (Set.range gen) := by
-  intro c hc hcs
-  obtain ⟨Ψ, hΨ, hc⟩ := mem_functionModule.1 hc
-  have hΨ' : ((N.restrictScalars O).comap Φ).liftQ Ψ (comap_le_ker hΨ) = 0 :=
-    LinearMap.ext_on_range (span_range_mkQ_eq_top h) fun i ↦ by
-      rw [LinearMap.zero_apply, mkQ_apply, liftQ_apply, hc]
-      exact hcs _ ⟨i, rfl⟩
-  funext g
-  rw [← hc g, Pi.zero_apply]
-  have := congr($hΨ' (((N.restrictScalars O).comap Φ).mkQ (z g)))
-  rwa [mkQ_apply, liftQ_apply, LinearMap.zero_apply] at this
-
-/-- If `Φ (z (gen i)) ≡ e_i` and `Φ (p • v) ≡ 0` modulo a submodule `N ⊆ O^ι` over a discrete
-valuation ring, with `p ≠ 0`, the module of functions of `N` has the length of `O^ι ⧸ N`. -/
-theorem length_functionModule [Finite ι] [IsDomain O] [IsDiscreteValuationRing O] {p : O}
-    (hp : p ≠ 0) (hpN : ∀ v, Φ (p • v) ∈ N) (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N) :
-    length O (N.functionModule Φ z p) = length O ((ι → O) ⧸ N) := by
-  have := Fintype.ofFinite ι
-  set W := (N.restrictScalars O).comap Φ
-  let r : (V ⧸ W →ₗ[O] O ⧸ Ideal.span {p}) →ₗ[O] G → O ⧸ Ideal.span {p} :=
-    LinearMap.pi fun g ↦ LinearMap.applyₗ (W.mkQ (z g))
-  have hr : Function.Injective r := (injective_iff_map_eq_zero r).2 fun Ψ hΨ ↦
-    LinearMap.ext_on_range (span_range_mkQ_eq_top h) fun i ↦ congr_fun hΨ (gen i)
-  have hQ (q : V ⧸ W) : p • q = 0 := by
-    obtain ⟨v, rfl⟩ := W.mkQ_surjective q
-    rw [← map_smul, mkQ_apply, Quotient.mk_eq_zero]
-    simpa [W] using hpN v
-  -- `Φ` induces an isomorphism `V ⧸ Φ⁻¹(N) ≃ O^ι ⧸ N`.
-  have hW : W ≤ N.comap Φ := fun v hv ↦ by simpa [W] using hv
-  have hinj : Function.Injective (W.mapQ N Φ hW) := by
-    refine (injective_iff_map_eq_zero _).2 fun q hq ↦ ?_
-    obtain ⟨v, rfl⟩ := W.mkQ_surjective q
-    rw [mkQ_apply, mapQ_apply, Quotient.mk_eq_zero] at hq
-    rw [mkQ_apply, Quotient.mk_eq_zero]
-    simpa [W] using hq
-  have hsurj : Function.Surjective (W.mapQ N Φ hW) := fun y ↦ by
-    obtain ⟨y, rfl⟩ := N.mkQ_surjective y
-    refine ⟨W.mkQ (∑ i, y i • z (gen i)), (Quotient.eq _).2 ?_⟩
-    simpa using neg_mem (sub_sum_smul_mem h y)
-  calc length O (N.functionModule Φ z p) = length O (V ⧸ W →ₗ[O] O ⧸ Ideal.span {p}) :=
-        (LinearEquiv.ofInjective r hr).length_eq.symm
-    _ = length O (V ⧸ W) := length_linearMap_quotient_span_singleton_right hp hQ
-    _ = length O ((ι → O) ⧸ N) := (LinearEquiv.ofBijective _ ⟨hinj, hsurj⟩).length_eq
 
 /-- If `Φ (z (gen i)) ≡ e_i` and `Φ (p • v) ≡ 0` modulo a submodule `N ⊆ O^ι` over a discrete
 valuation ring, with `p ≠ 0`, the colength of `N` is at most the length of its module of functions
@@ -302,64 +142,6 @@ theorem HasTriangleCost.mono (h : Z.HasTriangleCost τ τ' φ φ' I C b) {b' : �
 
 end TriangleCost
 
-section DiscreteValuationRing
-
-variable {O R F : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] [CommRing R]
-  [Algebra O R] [AddCommGroup F] [Module R F] [Module O F] [IsScalarTower O R F]
-
-/-- **The cost of the relations `Φ (z a)`.** If `Φ (p • v) ∈ N` for all `v` with `p ≠ 0`, the
-image in `F ⧸ N` of the relations `Φ (z a)`, `a ∈ A`, is no longer than the quotient of the module
-of functions of `N` by its members vanishing on `A`. -/
-private theorem length_map_mkQ_span_image_le {V G : Type*} [AddCommGroup V] [Module O V]
-    {N : Submodule R F} {Φ : V →ₗ[O] F} {z : G → V} {p : O} (hp : p ≠ 0)
-    (hpN : ∀ v, Φ (p • v) ∈ N) (A : Set G) :
-    length O ((span O (Φ '' (z '' A))).map (N.restrictScalars O).mkQ) ≤
-      length O (N.functionModule Φ z p ⧸
-        (pi A fun _ ↦ ⊥).comap (N.functionModule Φ z p).subtype) := by
-  -- Both are dual to the span `QA` of the classes of the `z a` in `V ⧸ Φ⁻¹(N)`.
-  set W := (N.restrictScalars O).comap Φ
-  set Z := N.functionModule Φ z p
-  have hQ (q : V ⧸ W) : p • q = 0 := by
-    obtain ⟨v, rfl⟩ := W.mkQ_surjective q
-    rw [← map_smul, mkQ_apply, Quotient.mk_eq_zero]
-    simpa [W] using hpN v
-  set QA := span O (W.mkQ '' (z '' A))
-  -- The image of the relations is the image of `QA` under `V ⧸ Φ⁻¹(N) → F ⧸ N`.
-  have hmap : (span O (Φ '' (z '' A))).map (N.restrictScalars O).mkQ =
-      QA.map (W.mapQ (N.restrictScalars O) Φ le_rfl) := by
-    simp only [QA, map_span, Set.image_image, mkQ_apply, mapQ_apply]
-  -- Restriction to `QA` is onto the dual of `QA`, and kills what vanishes on `A`.
-  let ρ := LinearMap.lcomp O (O ⧸ Ideal.span {p}) QA.subtype
-  have hρ : Function.Surjective ρ := fun θ ↦
-    exists_linearMap_quotient_span_singleton_comp_eq hp hQ QA.injective_subtype θ
-  let r : (V ⧸ W →ₗ[O] O ⧸ Ideal.span {p}) →ₗ[O] Z :=
-    LinearMap.codRestrict Z (LinearMap.pi fun g ↦ LinearMap.applyₗ (W.mkQ (z g))) fun Ψ ↦
-      mem_functionModule.2 ⟨Ψ ∘ₗ W.mkQ, fun v hv ↦ by
-        rw [LinearMap.comp_apply, mkQ_apply, (Quotient.mk_eq_zero _).2 (by simpa [W] using hv),
-          map_zero], fun g ↦ by simp⟩
-  have hr : Function.Surjective r := fun c ↦ by
-    obtain ⟨Ψ, hΨ, hc⟩ := mem_functionModule.1 c.property
-    exact ⟨W.liftQ Ψ (comap_le_ker hΨ), Subtype.ext (funext fun g ↦ by simp [r, hc])⟩
-  let ψ := ((pi A fun _ ↦ ⊥).comap Z.subtype).mkQ ∘ₗ r
-  have hψ : Function.Surjective ψ := (mkQ_surjective _).comp hr
-  have hker : LinearMap.ker ψ ≤ LinearMap.ker ρ := fun Ψ hΨ ↦ by
-    rw [LinearMap.mem_ker, LinearMap.comp_apply, mkQ_apply, Quotient.mk_eq_zero, mem_comap,
-      mem_pi] at hΨ
-    have hQA : QA ≤ LinearMap.ker Ψ := span_le.2 <| by
-      rintro _ ⟨_, ⟨a, ha, rfl⟩, rfl⟩
-      exact (mem_bot O).1 (hΨ a ha)
-    exact LinearMap.ext fun x ↦ hQA x.property
-  calc length O ((span O (Φ '' (z '' A))).map (N.restrictScalars O).mkQ)
-      ≤ length O QA := hmap ▸ length_le_of_surjective _ (LinearMap.submoduleMap_surjective _ _)
-    _ = length O (QA →ₗ[O] O ⧸ Ideal.span {p}) :=
-        (length_linearMap_quotient_span_singleton_right hp fun x ↦ Subtype.ext (hQ x)).symm
-    _ = length O (LinearMap.range ρ) := by rw [LinearMap.range_eq_top.2 hρ, length_top]
-    _ ≤ length O ((V ⧸ W →ₗ[O] O ⧸ Ideal.span {p}) ⧸ LinearMap.ker ψ) :=
-        TauCeti.length_range_le_length_quotient ρ hker
-    _ = length O (Z ⧸ (pi A fun _ ↦ ⊥).comap Z.subtype) := (ψ.quotKerEquivOfSurjective hψ).length_eq
-
-end DiscreteValuationRing
-
 section Main
 
 variable {O J G V ι : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
@@ -396,12 +178,8 @@ private theorem C_mul_X_mem_colon (hp : p ≠ 0) {A : Set G}
   have key : Φ (C • (z (τ j) - z (τ' j))) ∈ Nj := by
     by_contra hx
     set Wj := (Nj.restrictScalars O).comap Φ
-    have hQ (q : V ⧸ Wj) : p • q = 0 := by
-      obtain ⟨v, rfl⟩ := Wj.mkQ_surjective q
-      rw [← map_smul, mkQ_apply, Quotient.mk_eq_zero]
-      simpa [Wj] using hN (hpN v)
-    obtain ⟨Ψ, hΨ⟩ := IsDiscreteValuationRing.exists_linearMap_quotient_span_singleton_apply_ne_zero
-      hp hQ (x := Wj.mkQ (C • (z (τ j) - z (τ' j)))) (by
+    obtain ⟨Ψ, hΨ⟩ := exists_linearMap_quotient_span_singleton_apply_ne_zero hp
+      (smul_quotient_comap_eq_zero fun v ↦ hN (hpN v)) (x := Wj.mkQ (C • (z (τ j) - z (τ' j)))) (by
         rw [ne_eq, mkQ_apply, Quotient.mk_eq_zero]
         simpa [Wj] using hx)
     have hvan (v : V) (hv : Φ v ∈ Nj) : Ψ (Wj.mkQ v) = 0 := by
@@ -411,7 +189,7 @@ private theorem C_mul_X_mem_colon (hp : p ≠ 0) {A : Set G}
       rw [← sub_eq_zero, ← map_sub, ← map_sub]
       exact hvan _ (by rwa [map_sub])
     have hc : (fun g ↦ Ψ (Wj.mkQ (z g))) ∈ N.functionModule Φ z p ⊓ pi A (fun _ ↦ ⊥) := by
-      refine ⟨mem_functionModule.2 ⟨Ψ ∘ₗ Wj.mkQ, fun v hv ↦ hvan v (hN hv), fun g ↦ by simp⟩,
+      refine ⟨functionModule_le_functionModule (fun v hv ↦ hN hv) (apply_mkQ_mem_functionModule Ψ),
         mem_pi.2 fun a ha ↦ (mem_bot O).2 (hvan _ ?_)⟩
       exact mem_sup_left (mem_sup_right (subset_span (subset_span ⟨z a, ⟨a, ha, rfl⟩, rfl⟩)))
     refine hΨ ?_
