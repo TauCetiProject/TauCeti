@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 import TauCeti.Analysis.Normed.Group.Basic
 
@@ -47,7 +48,12 @@ in a complete normed algebra yields a `HasFPowerSeriesOnBall` expansion around `
 convergence radius is positive (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`); in
 particular the scalar sum `∑ cₙ zⁿ` has its series as power series on every disc about the origin
 of positive radius at most the radius of convergence
-(`TauCeti.hasFPowerSeriesOnBall_tsum_mul_pow`). Shifting also yields
+(`TauCeti.hasFPowerSeriesOnBall_tsum_mul_pow`). Over `ℝ` or `ℂ`, dividing the coefficients by
+their index does not decrease the radius (`TauCeti.radius_le_radius_ofScalars_div_natCast`), so the
+termwise antiderivative `∑_{n ≥ 1} cₙ zⁿ / n` has its series as power series on the same discs
+(`TauCeti.hasFPowerSeriesOnBall_tsum_div_mul_pow_succ`), with derivative `(∑ cₙ zⁿ - c₀) / z` at
+every nonzero point of the disc of convergence (`TauCeti.hasDerivAt_tsum_div_mul_pow_succ`).
+Shifting also yields
 analyticity on the shifted open ball of convergence unconditionally, even when that ball is empty
 (`TauCeti.analyticOnNhd_ofScalarsSum_sub`).
 -/
@@ -419,6 +425,64 @@ theorem hasFPowerSeriesOnBall_tsum_mul_pow {𝕜 : Type*} [NontriviallyNormedFie
       (FormalMultilinearSeries.ofScalars 𝕜 c) 0 r := by
   simpa [FormalMultilinearSeries.ofScalars_sum_eq] using
     (hasFPowerSeriesOnBall_ofScalarsSum_sub c (0 : 𝕜) (hr.trans_le hc)).mono hr hc
+
+/-- Over `ℝ` or `ℂ`, dividing the coefficients of a scalar series by their index does not decrease
+the radius of convergence. -/
+theorem radius_le_radius_ofScalars_div_natCast {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) :
+    (FormalMultilinearSeries.ofScalars 𝕜 c).radius ≤
+      (FormalMultilinearSeries.ofScalars 𝕜 fun n ↦ c n / n).radius := by
+  refine FormalMultilinearSeries.le_radius_ofScalars_of_summable _ fun y _ hy ↦ ?_
+  refine .of_norm_bounded (FormalMultilinearSeries.summable_norm_mul_pow_of_lt_radius c hy)
+    fun n ↦ ?_
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  rw [div_mul_eq_mul_div, norm_div, RCLike.norm_natCast]
+  exact div_le_self (norm_nonneg _) (Nat.one_le_cast.2 hn)
+
+/-- **The termwise antiderivative of a scalar power series.** Over `ℝ` or `ℂ`, the sum
+`∑_{n ≥ 1} cₙ zⁿ / n` has the series `∑ (cₙ / n) zⁿ` as power series on every disc about the origin
+of positive radius at most the radius of convergence of `∑ cₙ zⁿ`. -/
+theorem hasFPowerSeriesOnBall_tsum_div_mul_pow_succ {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜)
+    {r : ℝ≥0∞} (hr : 0 < r) (hc : r ≤ (FormalMultilinearSeries.ofScalars 𝕜 c).radius) :
+    HasFPowerSeriesOnBall (fun z ↦ ∑' n : ℕ, c (n + 1) / (n + 1) * z ^ (n + 1))
+      (FormalMultilinearSeries.ofScalars 𝕜 fun n ↦ c n / n) 0 r := by
+  -- the `(n + 1)`-indexed series is the series of `cₙ / n`, whose term of index `0` vanishes
+  have h : (fun z ↦ ∑' n : ℕ, c (n + 1) / (n + 1) * z ^ (n + 1)) =
+      fun z ↦ ∑' n : ℕ, c n / n * z ^ n := by
+    funext z
+    by_cases hz : Summable fun n : ℕ ↦ c (n + 1) / (n + 1 : ℕ) * z ^ (n + 1)
+    · rw [tsum_eq_zero_add' (f := fun n : ℕ ↦ c n / n * z ^ n) hz]
+      simp
+    · rw [tsum_eq_zero_of_not_summable, tsum_eq_zero_of_not_summable]
+      · exact fun h ↦ hz ((summable_nat_add_iff 1).2 h)
+      · simpa using hz
+  rw [h]
+  exact hasFPowerSeriesOnBall_tsum_mul_pow _ hr
+    (hc.trans (radius_le_radius_ofScalars_div_natCast c))
+
+/-- **The derivative of the termwise antiderivative of a scalar power series.** Over `ℝ` or `ℂ`, at
+a point `z ≠ 0` of the disc of convergence of `∑ cₙ zⁿ = F`, the sum `∑_{n ≥ 1} cₙ zⁿ / n` has
+derivative `(F - c₀) / z`. -/
+theorem hasDerivAt_tsum_div_mul_pow_succ {𝕜 : Type*} [RCLike 𝕜] {c : ℕ → 𝕜} {z F : 𝕜}
+    (hz0 : z ≠ 0) (hz : ‖z‖ₑ < (FormalMultilinearSeries.ofScalars 𝕜 c).radius)
+    (hF : HasSum (fun n ↦ c n * z ^ n) F) :
+    HasDerivAt (fun z ↦ ∑' n : ℕ, c (n + 1) / (n + 1) * z ^ (n + 1)) ((F - c 0) / z) z := by
+  have hS := hasFPowerSeriesOnBall_tsum_div_mul_pow_succ c (zero_le.trans_lt hz) le_rfl
+  -- the Euler operator `z Φ'` has the coefficients `n (cₙ / n) = cₙ` for `n ≥ 1`
+  have h1 := hS.hasSum_mul_deriv_ofScalars hz
+  have h2 : HasSum (fun n : ℕ ↦ (n : 𝕜) * (c n / n) * z ^ n) (F - c 0) := by
+    convert hF.sub (hasSum_ite_eq 0 (c 0)) using 1
+    ext n
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    · have : (n : 𝕜) ≠ 0 := by exact_mod_cast hn
+      simp only [hn, ↓reduceIte, sub_zero]
+      field_simp
+  have hd := (hS.differentiableOn.differentiableAt
+    (Metric.isOpen_eball.mem_nhds (mem_eball_zero_iff.mpr hz))).hasDerivAt
+  convert hd using 1
+  rw [h2.unique h1]
+  field_simp
 
 /-- A shifted scalar power series `z ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀)` is analytic
 on its open ball of convergence around `z₀`. -/

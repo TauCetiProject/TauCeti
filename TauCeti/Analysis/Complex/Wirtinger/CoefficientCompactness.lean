@@ -62,9 +62,11 @@ where `R₀(z)` is the multiset of the `m` roots of `Wᵐ - c₁ Wᵐ⁻¹ + ⋯
 (`TauCeti.exists_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm`). This is the
 equation of the elementary symmetric functions of `m` solutions of `D`, which the root branches of
 `TauCeti.Analysis.Complex.Wirtinger.Root.Branch` and their normalization across collisions take
-as input, there for `C¹` coefficients solving it classically; the regularity of the limits that
-this requires is not treated here. The zeroth-order term `∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)` is
-a continuous function of the unordered tuple `R ∈ Sym ℂ m`
+as input, there for `C¹` coefficients solving it classically; when the limit forms `ν₀` and `μ₀`
+are Hölder of exponent `(1 - 2 / p) / m` on compact sets, that the limits have this regularity is
+`TauCeti.exists_strictMono_contDiffOn_of_esymm`, in
+`TauCeti.Analysis.Complex.Wirtinger.Regularity.CoefficientEquation`. The zeroth-order term
+`∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)` is a continuous function of the unordered tuple `R ∈ Sym ℂ m`
 (`TauCeti.continuous_sum_map_conj_mul_esymm_erase`), hence of the coefficients, through the
 elementary symmetric chart `Sym.coeffHomeomorph`; so it converges
 locally uniformly with them (`TauCeti.tendstoLocallyUniformlyOn_sum_map_conj_mul_esymm_erase`).
@@ -80,6 +82,8 @@ the limiting equation (`TauCeti.exists_strictMono_hasWeakConjWirtingerDerivOn_of
   a subsequence of the coefficients, with Hölder continuous limits of exponent `1 - 2 / p`.
 * `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq`: the same for
   `p = 2 + 2 / m`, with Hölder exponent `1 / (m + 1)`.
+* `TauCeti.norm_sum_map_conj_mul_esymm_erase_le`: the zeroth-order term of the equation is
+  bounded by the roots.
 * `TauCeti.continuous_sum_map_conj_mul_esymm_erase`: the zeroth-order term of the equation is
   continuous on `Sym ℂ m`.
 * `TauCeti.continuousOn_sum_map_conj_mul_esymm_erase`,
@@ -103,6 +107,24 @@ open MeasureTheory Set Filter
 
 namespace TauCeti
 
+/-- **The zeroth-order term is bounded by the roots.** If a multiset `s` has at most `m` elements,
+all of norm at most `ρ`, then `‖∑_{w ∈ s} \bar w e_k(s ∖ w)‖ ≤ m ρ C(m, k) ρᵏ`. -/
+theorem norm_sum_map_conj_mul_esymm_erase_le {m k : ℕ} {ρ : ℝ} (hρ0 : 0 ≤ ρ) {s : Multiset ℂ}
+    (hcard : Multiset.card s ≤ m) (hρ : ∀ w ∈ s, ‖w‖ ≤ ρ) :
+    ‖(s.map fun w ↦ conj w * (s.erase w).esymm k).sum‖ ≤ m * ρ * (m.choose k * ρ ^ k) := by
+  refine (norm_multiset_sum_le _).trans ?_
+  rw [Multiset.map_map]
+  refine (Multiset.sum_le_card_nsmul _ (ρ * (m.choose k * ρ ^ k)) fun r hr ↦ ?_).trans ?_
+  · obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.1 hr
+    rw [Function.comp_apply, norm_mul, Complex.norm_conj]
+    -- the elementary symmetric functions of `s ∖ w` are bounded by the roots
+    refine mul_le_mul (hρ w hw) ((Multiset.norm_esymm_le (fun v hv ↦
+      hρ v (Multiset.mem_of_mem_erase hv)) k).trans ?_) (norm_nonneg _) hρ0
+    gcongr
+    exact Multiset.card_erase_le.trans hcard
+  · rw [Multiset.card_map, nsmul_eq_mul, mul_assoc]
+    gcongr
+
 /-- The zeroth-order terms of the equation of the elementary symmetric functions are bounded by
 the roots: if `R` has at most `m` elements, all of norm at most `ρ`, `b z = e_j(R)` with
 `1 ≤ j ≤ m`, and `‖ν‖, ‖μ‖ ≤ Λ`, then `\bar∂b` differs from
@@ -114,22 +136,7 @@ private theorem norm_conjWirtingerDeriv_sub_le_of_esymm {m j : ℕ} {ρ Λ : ℝ
     ‖conjWirtingerDeriv b z 1 - (conjWirtingerDeriv b z + (j * b z) • ν +
       (R.map fun w ↦ conj w * (R.erase w).esymm (j - 1)).sum • μ) 1‖ ≤
         j * (m.choose j * ρ ^ j) * Λ + m * ρ * (m.choose (j - 1) * ρ ^ (j - 1)) * Λ := by
-  -- The elementary symmetric functions of submultisets of `R` are bounded by the roots.
-  have hE : ∀ S : Multiset ℂ, Multiset.card S ≤ m → (∀ w ∈ S, ‖w‖ ≤ ρ) → ∀ k,
-      ‖S.esymm k‖ ≤ m.choose k * ρ ^ k := fun S hS hSρ k ↦
-    (Multiset.norm_esymm_le hSρ k).trans (by gcongr)
-  have hsum : ‖(R.map fun w ↦ conj w * (R.erase w).esymm (j - 1)).sum‖ ≤
-      m * ρ * (m.choose (j - 1) * ρ ^ (j - 1)) := by
-    refine (norm_multiset_sum_le _).trans ?_
-    rw [Multiset.map_map]
-    refine (Multiset.sum_le_card_nsmul _ ((ρ : ℝ) * (m.choose (j - 1) * ρ ^ (j - 1)))
-      fun r hr ↦ ?_).trans ?_
-    · obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.1 hr
-      rw [Function.comp_apply, norm_mul, Complex.norm_conj]
-      exact mul_le_mul (hρ w hw) (hE _ (Multiset.card_erase_le.trans hcard)
-        (fun v hv ↦ hρ v (Multiset.mem_of_mem_erase hv)) _) (norm_nonneg _) ρ.coe_nonneg
-    · rw [Multiset.card_map, nsmul_eq_mul, mul_assoc]
-      gcongr
+  have hsum := norm_sum_map_conj_mul_esymm_erase_le (k := j - 1) ρ.coe_nonneg hcard hρ
   have hν1 : ‖ν 1‖ ≤ Λ := by simpa using ν.le_opNorm 1 |>.trans (by simpa using hν)
   have hμ1 : ‖μ 1‖ ≤ Λ := by simpa using μ.le_opNorm 1 |>.trans (by simpa using hμ)
   calc ‖conjWirtingerDeriv b z 1 - (conjWirtingerDeriv b z + (j * b z) • ν +
@@ -142,7 +149,7 @@ private theorem norm_conjWirtingerDeriv_sub_le_of_esymm {m j : ℕ} {ρ Λ : ℝ
         refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
         · rw [norm_mul, norm_mul, Complex.norm_natCast, hbR]
           gcongr
-          exact hE R hcard hρ j
+          exact (Multiset.norm_esymm_le hρ j).trans (by gcongr)
         · rw [norm_mul]
           gcongr
 

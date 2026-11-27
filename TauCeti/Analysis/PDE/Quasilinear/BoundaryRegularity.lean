@@ -220,7 +220,8 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear {α : ℝ≥0
   by_cases hqn : (n : ℝ≥0∞) + 1 < q
   swap
   · exact ⟨1, one_pos, fun hβ _ _ _ hβq =>
-      absurd (natCast_add_one_lt_of_le_one_sub_div hβ (zero_lt_two.trans_le hq).ne' hβq) hqn⟩
+      absurd (natCast_add_one_lt_of_le_one_sub_div (NNReal.coe_pos.2 hβ)
+        (zero_lt_two.trans_le hq).ne' hβq) hqn⟩
   -- The exponents of the global Hölder estimate: `f ∈ Lʳ` with `n + 1 < r < q`, and the bounded
   -- field `F` in `L^{n + 3}`.
   obtain ⟨r, hnr, hrq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hqn

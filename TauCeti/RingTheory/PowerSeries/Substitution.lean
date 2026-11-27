@@ -101,6 +101,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
+* `PowerSeries.hasSubst_subst_X` and `PowerSeries.coeff_subst_subst_X_of_le_order`: the family
+  `i ↦ g(Xᵢ)` can be substituted, and for `g = c X + ⋯` the coefficient of `D(g(X₁), g(X₂), …)` in
+  a degree `m` at most the order of `D` is `cᵐ` times that of `D`.
 * `PowerSeries.coeff_subst_eq_sum_range_degree`: the coefficient of `X^d` in `f (a)`, for `a` of
   zero constant coefficient, is the finite sum `∑_{n ≤ |d|} fₙ [X^d] aⁿ`.
 * `PowerSeries.coeff_subst_mem`: if `f` and `a` have coefficients in a subring, so does `f (a)`.
@@ -480,6 +483,40 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
   simp only [add_zero, mul_one] at hmul hpow
   rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
   simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
+
+/-- The family `i ↦ g(Xᵢ)` of a series `g` of zero constant coefficient can be substituted into
+series in finitely many variables. -/
+theorem hasSubst_subst_X {σ : Type*} [Finite σ] {g : R⟦X⟧} (hg : constantCoeff g = 0) :
+    MvPowerSeries.HasSubst fun i : σ ↦ g.subst (MvPowerSeries.X i : MvPowerSeries σ S) :=
+  MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦
+    constantCoeff_subst_eq_zero (MvPowerSeries.constantCoeff_X (R := S) i) g hg
+
+/-- **Low-degree coefficients of `D(g(X₁), g(X₂), …)`.** Let `g = c X + ⋯` have zero constant
+coefficient. In every degree `m` at most the order of `D`, the coefficient of
+`D(g(X₁), g(X₂), …)` is `cᵐ` times that of `D`. -/
+theorem coeff_subst_subst_X_of_le_order {σ : Type*} [Finite σ] {g : R⟦X⟧}
+    (hg : constantCoeff g = 0) {D : MvPowerSeries σ S} {e : σ →₀ ℕ}
+    (he : (e.degree : ℕ∞) ≤ D.order) :
+    MvPowerSeries.coeff e (D.subst fun i ↦ g.subst (MvPowerSeries.X i : MvPowerSeries σ S)) =
+      algebraMap R S (coeff 1 g) ^ e.degree * MvPowerSeries.coeff e D := by
+  -- the linear part of `g(Xᵢ)` is `c Xᵢ`, and the degree-`m` part of the substitution only sees
+  -- the degree-`m` part of `D` and these linear parts
+  have hlin : (fun i ↦ MvPowerSeries.homogeneousComponent 1
+      (g.subst (MvPowerSeries.X i : MvPowerSeries σ S))) =
+      Function.const σ (algebraMap R S (coeff 1 g)) • MvPowerSeries.X := by
+    funext i
+    rw [homogeneousComponent_subst_of_le_order (MvPowerSeries.constantCoeff_X i)
+      (order_ne_zero_iff_constCoeff_eq_zero.mpr hg |> Order.one_le_iff_ne_zero.mpr),
+      MvPowerSeries.homogeneousComponent_one_X, pow_one, Pi.smul_apply', Function.const_apply,
+      MvPowerSeries.smul_eq_C_mul]
+  have h := congrArg (MvPowerSeries.coeff e)
+    (MvPowerSeries.homogeneousComponent_subst_of_le_order he (hasSubst_subst_X hg)
+      fun i ↦ constantCoeff_subst_eq_zero (MvPowerSeries.constantCoeff_X (R := S) i) g hg)
+  rw [MvPowerSeries.coeff_homogeneousComponent, ite_eq_left rfl, hlin,
+    ← MvPowerSeries.rescale_eq_subst, MvPowerSeries.coeff_rescale,
+    MvPowerSeries.coeff_homogeneousComponent, ite_eq_left rfl] at h
+  simp only [h, Finsupp.prod, Function.const_apply, Finset.prod_pow_eq_pow_sum,
+    Finsupp.degree_apply]
 
 /-- The coefficient of `X^d` in `f (a)`, for `a` of zero constant coefficient, is the finite sum
 `∑_{n ≤ |d|} fₙ [X^d] aⁿ`: the powers `aⁿ` with `n > |d|` have order greater than `|d|`. This is the

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Calculus.FDeriv.Homothety
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Hessian
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -42,6 +43,8 @@ and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity o
   exponent `q`.
 * `TauCeti.Wkp.norm_iteratedGradient_compL_le_ae`: the pointwise bound
   `‖D²(u ∘ Φ)‖ ≤ L² ‖D²u(Φ ·)‖ + L ‖∇u(Φ ·)‖` for the weak Hessian.
+* `TauCeti.Wkp.iteratedGradient_compL_smul_add_const_ae`: the weak Hessian under a homothety
+  `Φ y = R y + a` is `R² D²u ∘ Φ`.
 * `TauCeti.Wkp.exists_value_eq_value_restrictL_of_w1pCompL`: if `u ∘ Φ` is `W^{k,p}` near a
   point, then so is `u` near its image.
 * `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL`: zero boundary values
@@ -277,6 +280,20 @@ theorem norm_iteratedGradient_compL_le_ae (h : IsChangeOfVariables 2 U V Φ L c)
         exact h.norm_fderiv_fderiv_le (k := 0) x hxU
       _ = L * ‖G‖ := mul_comm _ _
   linarith
+
+/-- **The Hessian under a homothety.** For a homothety `Φ y = R y + a` and `1 ≤ p < ∞`, the weak
+Hessian of `u ∘ Φ` is `D²(u ∘ Φ) = R² D²u ∘ Φ` almost everywhere on `U`. -/
+theorem iteratedGradient_compL_smul_add_const_ae (hp : p ≠ ⊤) {R : ℝ} {a : E}
+    (h : IsChangeOfVariables 2 U V (fun y => R • y + a) L c) (u : Wkp mu V p 2) :
+    iteratedGradient 1 (compL h u) =ᵐ[mu.restrict U]
+      fun y => R ^ 2 • iteratedGradient 1 u (R • y + a) := by
+  filter_upwards [inner_iteratedGradient_compL_ae h hp u] with y hy
+  refine ContinuousLinearMap.ext fun f => ext_inner_right ℝ fun g => ?_
+  rw [hy, fderiv_smul_add_const]
+  simp only [fderiv_fun_const, Pi.zero_apply, zero_apply, inner_zero_right,
+    add_zero, smul_apply, ContinuousLinearMap.id_apply, map_smul,
+    inner_smul_left, inner_smul_right, RCLike.conj_to_real]
+  ring
 
 /-- **Pushing `W^{k,p}` forward along a change of variables.** Let `Φ` be a change of variables
 from `Ω'` into `D ⊆ Ω`, and `Ψ` one of order `k` from `Ω ∩ V ⊆ D` into `Ω' ∩ V''` with

@@ -39,13 +39,19 @@ the identity, and the change of coordinates flattening `f` is built from its squ
 naturality makes that change of coordinates independent of the linear coordinates in which it is
 computed. Nothing here is a substitute for the continuous functional calculus: `CFC.sqrt` computes
 the *positive* square root of a positive element of a C⋆-algebra, whereas what is needed here is a
-square root near `1` in a bare Banach algebra, with smooth dependence on the element.
+square root near `1` in a bare Banach algebra, with smooth dependence on the element. On the reals
+it is the usual square root on `(0, 2)` (`TauCeti.sqrtNearOne_real_eq_sqrt`), and on the nonnegative
+elements of the unit ball about `1` in an algebra with an isometric continuous functional calculus
+it is `CFC.sqrt` (`CFC.sqrt_eq_sqrtNearOne`, in
+`TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Analytic`), which is how the
+analyticity of `CFC.sqrt` at strictly positive elements is proved.
 
 ## Main declarations
 
 * `TauCeti.sqrtNearOne`: the binomial-series square root near the identity.
 * `TauCeti.mul_self_sqrtNearOne`: it is a square root on the open unit ball about `1`.
 * `TauCeti.analyticOnNhd_sqrtNearOne`: it is analytic on the open unit ball about `1`.
+* `TauCeti.sqrtNearOne_real_eq_sqrt`: on the reals it is the usual square root.
 * `TauCeti.eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two`: uniqueness of
   square roots near `1`.
 * `TauCeti.eventually_mul_self_sqrtNearOne`, `TauCeti.eventually_sqrtNearOne_mul_self`: near `1`
@@ -144,6 +150,17 @@ theorem analyticOnNhd_sqrtNearOne : AnalyticOnNhd ℝ (sqrtNearOne A) (Metric.ba
       (mem_eball_binomialSeries_radius hx _)
   have hsub : AnalyticAt ℝ (fun z : A ↦ z - 1) x := analyticAt_id.sub analyticAt_const
   simpa only [Function.comp_def, ← sqrtNearOne_def] using hsum.comp_of_eq hsub rfl
+
+/-- **On the reals, the square root near the identity is the usual square root**: `√t` for
+`0 < t < 2`. -/
+theorem sqrtNearOne_real_eq_sqrt {t : ℝ} (ht : |t - 1| < 1) : sqrtNearOne ℝ t = √t := by
+  have hmem : t - 1 ∈ Metric.eball (0 : ℝ) 1 := by
+    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one,
+      Real.norm_eq_abs]
+  -- Mathlib's real binomial series of `(1 + y) ^ (1 / 2)`, evaluated at `y = t - 1`.
+  have h := (Real.one_add_rpow_hasFPowerSeriesOnBall_zero (a := 2⁻¹)).hasSum hmem
+  rw [zero_add, add_sub_cancel] at h
+  rw [sqrtNearOne_def, FormalMultilinearSeries.sum, h.tsum_eq, Real.sqrt_eq_rpow, one_div]
 
 /-- The square root near the identity is analytic at the identity.  This gives a single
 neighborhood on which it is smooth to every finite order. -/

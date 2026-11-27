@@ -69,11 +69,16 @@ algebra is Hausdorff when `ι` is nonempty and is complete when `R` is complete.
   `TauCeti.PowerSeries.GaussFamily.continuousSMul`, `TauCeti.PowerSeries.GaussFamily.t2Space`, and
   `TauCeti.PowerSeries.GaussFamily.completeSpace`: the nonarchimedean ring structure, scalar-action
   continuity, separation (for nonempty `ι`), and completeness of the Gauss topology.
+* `TauCeti.PowerSeries.GaussFamily.norm_restrict`: the norm of a restriction is the Gauss norm at
+  that radius.
 * `TauCeti.PowerSeries.GaussFamily.hasProd_iff`,
   `TauCeti.PowerSeries.GaussFamily.multipliable_iff`,
-  `TauCeti.PowerSeries.GaussFamily.restrict_tprod` and
-  `TauCeti.PowerSeries.GaussFamily.constantCoeff_tprod`: convergence and evaluation at `0` of
-  unconditional infinite products over commutative coefficients.
+  `TauCeti.PowerSeries.GaussFamily.restrict_tprod`,
+  `TauCeti.PowerSeries.GaussFamily.hasProd_constantCoeff`,
+  `TauCeti.PowerSeries.GaussFamily.constantCoeff_tprod` and
+  `TauCeti.PowerSeries.GaussFamily.tendsto_gaussNorm_sub_prod`: convergence, constant-coefficient
+  preservation, and Gauss-norm convergence of partial products for unconditional infinite products
+  over commutative coefficients.
 * `TauCeti.PowerSeries.GaussFamily.not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem`,
   `TauCeti.PowerSeries.GaussFamily.not_isBounded_of_mem_nhds_zero`,
   `TauCeti.PowerSeries.GaussFamily.not_exists_ringSeminorm_toTopologicalSpace_eq`,
@@ -106,6 +111,11 @@ noncomputable def restrict (i : ι) : T →+* IsRestricted.subring (R := R) (ρ 
 @[simp]
 theorem coe_restrict (i : ι) (f : T) : (restrict hT i f : R⟦X⟧) = f :=
   Subring.coe_inclusion _ f
+
+/-- The norm of the restriction of a series in `T` to `ρ i` is its Gauss norm at `ρ i`. -/
+theorem norm_restrict (i : ι) [Fact (0 < ρ i)] (f : T) :
+    ‖restrict hT i f‖ = (f : R⟦X⟧).gaussNorm norm (ρ i) := by
+  rw [TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict]
 
 omit [IsUltrametricDist R] in
 /-- Inclusion of constant power series into `T`. -/
@@ -903,15 +913,40 @@ theorem restrict_tprod {κ : Type*} {f : κ → T} (hf : Multipliable f) (i : ι
     restrict hT i (∏' j, f j) = ∏' j, restrict hT i (f j) :=
   (((hasProd_iff hu).mp hf.hasProd i).tprod_eq).symm
 
-/-- For a nonempty family of radii, the constant coefficient of a convergent infinite product in
-`T` is the infinite product of the constant coefficients. -/
-theorem constantCoeff_tprod [Nonempty ι] {κ : Type*} {f : κ → T} (hf : Multipliable f) :
-    constantCoeff ((∏' j, f j : T) : R⟦X⟧) = ∏' j, constantCoeff (f j : R⟦X⟧) := by
-  have := t2Space hu
+/-- For a nonempty family of radii, taking constant coefficients commutes with `HasProd` in `T`. -/
+theorem hasProd_constantCoeff [Nonempty ι] {κ : Type*} {f : κ → T} {g : T} (hf : HasProd f g) :
+    HasProd (fun j ↦ constantCoeff (f j : R⟦X⟧)) (constantCoeff (g : R⟦X⟧)) := by
   have hcont : Continuous (constantCoeff.comp T.subtype) := by
     simpa only [RingHom.coe_comp, Function.comp_def, Subring.coe_subtype,
       coeff_zero_eq_constantCoeff] using (uniformContinuous_coeff hu 0).continuous
-  exact (hf.hasProd.map (constantCoeff.comp T.subtype) hcont).tprod_eq.symm
+  exact hf.map (constantCoeff.comp T.subtype) hcont
+
+/-- For a nonempty family of radii, the constant coefficient of a convergent infinite product in
+`T` is the infinite product of the constant coefficients. -/
+theorem constantCoeff_tprod [Nonempty ι] {κ : Type*} {f : κ → T} (hf : Multipliable f) :
+    constantCoeff ((∏' j, f j : T) : R⟦X⟧) = ∏' j, constantCoeff (f j : R⟦X⟧) :=
+  (hasProd_constantCoeff hu hf.hasProd).tprod_eq.symm
+
+/-- If a `HasProd` limit converges in `T`, then the partial products converge in the Gauss norm at
+every nonnegative radius `s` dominated by some family radius `ρ i`. -/
+theorem tendsto_gaussNorm_sub_prod {κ : Type*} {f : κ → T} {g : T} (hf : HasProd f g)
+    {s : ℝ} (hs : 0 ≤ s) {i : ι} (hi : s ≤ ρ i) :
+    Tendsto (fun t : Finset κ ↦ ((g : R⟦X⟧) - ∏ j ∈ t, (f j : R⟦X⟧)).gaussNorm norm s)
+      atTop (𝓝 0) := by
+  have := isUniformAddGroup hu
+  have h0 : Tendsto (fun t : Finset κ ↦ g - ∏ j ∈ t, f j) atTop (𝓝 0) := by
+    simpa only [sub_self, SummationFilter.unconditional_filter] using
+      (tendsto_const_nhds (x := g)).sub hf
+  have hlim : Tendsto (fun t : Finset κ ↦ ‖restrict hT i (g - ∏ j ∈ t, f j)‖) atTop (𝓝 0) := by
+    simpa only [map_zero, norm_zero] using ((tendsto_iff hu).mp h0 i).norm
+  have hsub (t : Finset κ) :
+      (g : R⟦X⟧) - ∏ j ∈ t, (f j : R⟦X⟧) = ((g - ∏ j ∈ t, f j : T) : R⟦X⟧) := by
+    simp [AddSubgroupClass.coe_sub]
+  simp_rw [hsub]
+  refine squeeze_zero (fun _ ↦ PowerSeries.gaussNorm_nonneg norm s _ norm_nonneg) (fun t ↦ ?_) hlim
+  rw [norm_restrict]
+  exact TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le norm_nonneg hs hi
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted ((hT _).mp (g - ∏ j ∈ t, f j).property i))
 
 end NormedCommRing
 
