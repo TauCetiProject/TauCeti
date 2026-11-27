@@ -54,6 +54,8 @@ right action is constant on the fibres, because each fibre is a single orbit.
   `∀ b, E b → E' b`, with no continuity assumed. It represents bundle maps over a fixed base.
 * `TauCeti.ManifoldTotalSpace.instSMul` and `TauCeti.ManifoldTotalSpace.instMulAction`: the
   fibrewise scalar and monoid actions on the charted total space induced by actions on the fibres.
+* `TauCeti.ManifoldTotalSpace.fiberCoord F E b₀`: the fibre coordinate in the trivialization of
+  the atlas at `b₀`.
 * `TauCeti.ManifoldTotalSpace.diffeomorphProd`: the canonical `C^n` diffeomorphism identifying
   `ManifoldTotalSpace F (Bundle.Trivial B F)` with `B × F`.
 
@@ -79,6 +81,8 @@ right action is constant on the fibres, because each fibre is a single orbit.
   fibres is the composite of a unique `C^n` map of the base with the projection.
 * `TauCeti.ManifoldTotalSpace.contMDiffAt_trivializationAt_snd`: near each point, the fibre
   coordinate in the trivialization at its base point is `C^n`.
+* `TauCeti.ManifoldTotalSpace.contMDiffAt_fiberCoord`: over the base set of a trivialization of
+  the atlas, the fibre coordinate in it is `C^n`.
 * `TauCeti.ManifoldTotalSpace.contMDiffOn_trivialization` and `contMDiffOn_trivialization_symm`:
   the trivializations of the atlas are `C^n` with `C^n` inverses.
 * `TauCeti.ManifoldTotalSpace.contMDiff_homeomorph` and `contMDiff_homeomorph_symm`: for a normed
@@ -613,6 +617,32 @@ theorem existsUnique_contMDiff_comp_proj_eq [Nonempty F] {g : ManifoldTotalSpace
     obtain ⟨x, rfl⟩ := hπ b
     rw [hh', hh]
 
+/-! #### Fibre coordinates in a fixed trivialization -/
+
+variable (F E) in
+/-- The **fibre coordinate** of a point `x` of the charted total space in the trivialization of the
+atlas at `b₀`: the second component of `trivializationAt F E b₀` at `x`. Unlike the fibre coordinate
+in the trivialization at the base point of `x`, this is one function on the whole total space. It
+is `C^n` over the base set of that trivialization
+(`TauCeti.ManifoldTotalSpace.contMDiffAt_fiberCoord`). -/
+noncomputable def fiberCoord (b₀ : B) (x : ManifoldTotalSpace F E) : F :=
+  (trivializationAt F E b₀ ((homeomorph F E).symm x)).2
+
+/-- The fibre coordinate of a point transported from the original total space is the second
+component of the trivialization at `b₀`. -/
+@[simp]
+theorem fiberCoord_homeomorph (b₀ : B) (p : TotalSpace F E) :
+    fiberCoord F E b₀ (homeomorph F E p) = (trivializationAt F E b₀ p).2 := by
+  rw [fiberCoord, Homeomorph.symm_apply_apply]
+
+/-- If the base point of `x` lies in the base set of the trivialization at `b₀`, so do the base
+points of all points near `x`. -/
+theorem eventually_mem_baseSet_trivializationAt {b₀ : B} {x : ManifoldTotalSpace F E}
+    (hx : ((homeomorph F E).symm x).proj ∈ (trivializationAt F E b₀).baseSet) :
+    ∀ᶠ y in 𝓝 x, ((homeomorph F E).symm y).proj ∈ (trivializationAt F E b₀).baseSet :=
+  ((FiberBundle.continuous_proj F E).comp (homeomorph F E).symm.continuous).continuousAt
+    |>.preimage_mem_nhds ((trivializationAt F E b₀).open_baseSet.mem_nhds hx)
+
 variable [ContMDiffFiberBundle n F E IB IF]
 
 /-- A trivialization of the atlas of a `C^n` fibre bundle is `C^n` on its source, as a map from the
@@ -651,6 +681,16 @@ theorem contMDiffOn_trivialization_snd_comp (e : Trivialization F (π F E))
     ContMDiffOn IM IF n (fun x ↦ (e ((homeomorph F E).symm (f x))).2) s :=
   contMDiff_snd.comp_contMDiffOn
     ((contMDiffOn_trivialization e).comp hf fun x hx ↦ e.mem_source.2 (hfe x hx))
+
+/-- Over the base set of its trivialization, the fibre coordinate of a `C^n` fibre bundle is
+`C^n`. This is the analogue of `TauCeti.ManifoldTotalSpace.contMDiffAt_trivializationAt_snd` for a
+trivialization at any base point whose base set contains the projection of `x`. -/
+theorem contMDiffAt_fiberCoord {b₀ : B} {x : ManifoldTotalSpace F E}
+    (hx : ((homeomorph F E).symm x).proj ∈ (trivializationAt F E b₀).baseSet) :
+    ContMDiffAt (IB.prod IF) IF n (fiberCoord F E b₀) x :=
+  (contMDiffOn_trivialization_snd_comp (trivializationAt F E b₀)
+    (s := {y | ((homeomorph F E).symm y).proj ∈ (trivializationAt F E b₀).baseSet})
+    contMDiffOn_id fun _ hy ↦ hy).contMDiffAt (eventually_mem_baseSet_trivializationAt hx)
 
 /-- The inverse of a trivialization of the atlas of a `C^n` fibre bundle is `C^n` on its target,
 as a map from the product manifold `B × F` to the total space. -/
