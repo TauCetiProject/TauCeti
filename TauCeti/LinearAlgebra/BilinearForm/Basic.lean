@@ -37,6 +37,7 @@ maps valued in an arbitrary module.
 
 ## Main results
 
+* `LinearMap.BilinForm.IsAlt.add_flip_eq_zero`: an alternating form and its flip sum to zero.
 * `TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt`: a symmetric alternating form over a commutative
   semiring in which `2` is regular is zero.
 * `TauCeti.BilinForm.nondegenerate_smul_iff`: scalar multiplication by a regular element
@@ -118,6 +119,15 @@ theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommMonoid M] [
 end LinearMap.IsAlt
 
 namespace LinearMap.BilinForm
+
+/-- An alternating bilinear form is skew-symmetric, `B + B.flip = 0`, over any commutative
+semiring (Mathlib's `LinearMap.IsAlt.neg` needs additive inverses). -/
+theorem IsAlt.add_flip_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {B : LinearMap.BilinForm R M} (hB : B.IsAlt) : B + B.flip = 0 := by
+  ext x y
+  have := hB (x + y)
+  simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
+  simpa [add_comm] using this
 
 /-- Restriction to a submodule is pullback along its inclusion in both arguments. -/
 theorem restrict_eq_compl₁₂ {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
