@@ -10,8 +10,6 @@ public import TauCeti.Algebra.Colimit.Abelianization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-
 /-!
 # The stable general linear group and algebraic `K₁`
 
@@ -42,8 +40,6 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 
 * `TauCeti.stabilizeGL`: the stabilization homomorphism `GL (Fin m) A →* GL (Fin n) A`,
   `u ↦ u ⊕ 1`, for `m ≤ n`.
-* `TauCeti.stabilizeSL`: the stabilization homomorphism `SL (Fin m) R →* SL (Fin n) R`,
-  `u ↦ u ⊕ 1`, for `m ≤ n`.
 * `TauCeti.StableGeneralLinearGroup`: the direct limit `GL_∞(A)` of the groups `GL (Fin n) A`.
 * `TauCeti.StableGeneralLinearGroup.of`: the canonical homomorphism `GL (Fin n) A →* GL_∞(A)`.
 * `TauCeti.StableGeneralLinearGroup.lift`: the universal property of `GL_∞(A)`, for families of
@@ -69,8 +65,6 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 
 * `TauCeti.stabilizeGL_apply`, `TauCeti.coe_stabilizeGL_apply`: block and entry formulas for a
   stabilized matrix.
-* `TauCeti.toGL_stabilizeSL`, `TauCeti.coe_stabilizeSL_apply`: compatibility of `SL` stabilization
-  with `toGL` and matrix entries.
 * `TauCeti.stabilizeGL_mul_transpose`: stabilization preserves orthogonality.
 * `TauCeti.coe_stabilizeGL_mem_unitary`: stabilization preserves unitary matrices.
 * `Function.Embedding.extendGL_castLEEmb`: stabilization is extension by the identity along the
@@ -232,49 +226,6 @@ commutative ring. -/
 theorem det_stabilizeGL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) R) :
     GeneralLinearGroup.det (stabilizeGL R h u) = GeneralLinearGroup.det u := by
   rw [← Function.Embedding.extendGL_castLEEmb, Function.Embedding.det_extendGL]
-
-/-- The **stabilization homomorphism** `g ↦ g ⊕ 1` from `SpecialLinearGroup (Fin m) R` to
-`SpecialLinearGroup (Fin n) R`, for `m ≤ n`: the image of `g` agrees with `g` on the first `m`
-rows and columns and with the identity matrix elsewhere. -/
-def stabilizeSL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n) :
-    SpecialLinearGroup (Fin m) R →* SpecialLinearGroup (Fin n) R where
-  toFun g :=
-    SpecialLinearGroup.mk (stabilizeGL R h (SpecialLinearGroup.toGL g) : Matrix (Fin n) (Fin n) R)
-      (by
-        have hdet := congrArg Units.val
-          (det_stabilizeGL (R := R) h (SpecialLinearGroup.toGL g))
-        rw [GeneralLinearGroup.val_det_apply, GeneralLinearGroup.val_det_apply] at hdet
-        exact hdet.trans g.property)
-  map_one' := Subtype.ext (by simp)
-  map_mul' g₁ g₂ := Subtype.ext <| by
-    have hmul := congrArg Units.val
-      (map_mul ((stabilizeGL R h).comp SpecialLinearGroup.toGL) g₁ g₂)
-    simpa only [MonoidHom.comp_apply, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mk,
-      Units.val_mul] using hmul
-
-/-- Viewing `stabilizeSL h g` in `GL (Fin n) R` agrees with stabilizing `g.toGL`. -/
-@[simp]
-theorem toGL_stabilizeSL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n)
-    (g : SpecialLinearGroup (Fin m) R) :
-    SpecialLinearGroup.toGL (stabilizeSL h g) =
-      stabilizeGL R h (SpecialLinearGroup.toGL g) :=
-  Units.ext rfl
-
-/-- The matrix underlying `stabilizeSL h g` is the matrix underlying `stabilizeGL R h g.toGL`. -/
-theorem coe_stabilizeSL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n)
-    (g : SpecialLinearGroup (Fin m) R) :
-    (stabilizeSL h g : Matrix (Fin n) (Fin n) R) =
-      (stabilizeGL R h (SpecialLinearGroup.toGL g) : Matrix (Fin n) (Fin n) R) :=
-  (rfl)
-
-/-- The entries of a stabilized determinant-one matrix: those of `g` in the first `m` rows and
-columns, and those of the identity matrix elsewhere. -/
-theorem coe_stabilizeSL_apply {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n)
-    (g : SpecialLinearGroup (Fin m) R) (i j : Fin n) :
-    (stabilizeSL h g : Matrix (Fin n) (Fin n) R) i j =
-      if hij : (i : ℕ) < m ∧ (j : ℕ) < m then g ⟨i, hij.1⟩ ⟨j, hij.2⟩
-      else (1 : Matrix (Fin n) (Fin n) R) i j :=
-  coe_stabilizeGL_apply h (SpecialLinearGroup.toGL g) i j
 
 private theorem coe_stabilizeGL_transpose_eq_inv {m n : ℕ} (h : m ≤ n)
     {u : GL (Fin m) A} (hu : (u : Matrix (Fin m) (Fin m) A)ᵀ = ↑u⁻¹) :
@@ -792,17 +743,6 @@ theorem stabilizeGL_map {m n : ℕ} (h : m ≤ n) (f : A →+* B) (u : GL (Fin m
       Units.map (f.mapMatrix (m := Fin n)).toMonoidHom (stabilizeGL A h u) := by
   ext i j
   simp [coe_stabilizeGL_apply, apply_dite f, apply_ite f, Matrix.one_apply]
-
-/-- Stabilization of determinant-one matrices commutes with applying a ring homomorphism to the
-entries. -/
-theorem stabilizeSL_map {R S : Type*} [CommRing R] [CommRing S] {m n : ℕ} (h : m ≤ n)
-    (f : R →+* S) (g : SpecialLinearGroup (Fin m) R) :
-    stabilizeSL h (SpecialLinearGroup.map f g) =
-      SpecialLinearGroup.map f (stabilizeSL h g) := by
-  apply SpecialLinearGroup.toGL_injective
-  rw [toGL_stabilizeSL, SpecialLinearGroup.toGL_map, SpecialLinearGroup.toGL_map,
-    toGL_stabilizeSL]
-  exact stabilizeGL_map h f (SpecialLinearGroup.toGL g)
 
 namespace StableGeneralLinearGroup
 
