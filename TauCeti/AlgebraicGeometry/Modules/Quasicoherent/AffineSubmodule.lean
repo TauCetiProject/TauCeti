@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 
 import Mathlib.Algebra.Module.LocalizedModule.Away
 import TauCeti.Algebra.Category.ModuleCat.Presheaf.Submodule
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
 
 /-!
 # Quasi-coherent submodules from submodules of sections over affine opens
@@ -302,13 +303,9 @@ instance isQuasicoherent_sheaf : D.sheaf.IsQuasicoherent := by
       (D.sections_eq ⟨X.basicOpen f, hU.basicOpen f⟩).le (D.ι_app_mem _ y)
     obtain ⟨m, hm, n, hmn⟩ := (D.mem_submodule_basicOpen_iff U f).1 hy
     refine ⟨n, D.sectionMk m ((D.sections_eq U).ge hm), D.ι_app_injective _ ?_⟩
-    rw [Scheme.Modules.basicOpenRestrict_apply]
-    -- On both sides `f ^ n` acts on sections over `D(f)` through its restriction to `D(f)`, and
-    -- `ι` includes sections of the submodule as the underlying sections of `M`, so it commutes
-    -- with this action and with restriction; the restriction of `sectionMk m` is included as the
-    -- restriction of `m`.
-    change f ^ n • D.ι.app _ y = M.presheaf.map _ m
-    rw [← M.basicOpenRestrict_apply, hmn]
+    rw [Scheme.Modules.basicOpenRestrict_apply, D.sheaf.basicOpen_smul_def,
+      Scheme.Modules.Hom.app_smul, ← M.basicOpen_smul_def, Scheme.Modules.Hom.naturality_apply,
+      ι_app_sectionMk, ← M.basicOpenRestrict_apply, hmn]
   · -- a section of the submodule vanishing on `D(f)` is killed by a power of `f`
     have hx' : M.basicOpenRestrict f (D.ι.app U x) = M.basicOpenRestrict f 0 := by
       have := congrArg (D.ι.app _) hx

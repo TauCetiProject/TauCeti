@@ -46,6 +46,8 @@ cokernel of its inclusion.
 
 ## Main results
 
+* `Module.Grassmannian.range_sectionsFunctor_map_schemeUniversalKernelι`: over every affine open
+  `U`, the sections of the universal kernel are `N_U`.
 * `Module.Grassmannian.isColimitSchemeUniversalQuotient`: the universal quotient is the cokernel of
   the universal kernel.
 * `Module.Grassmannian.isFiniteLocallyFree_schemeUniversalQuotient`: the universal quotient is
@@ -127,7 +129,8 @@ theorem schemeUniversalKernelData_submodule (U : (scheme R M k).affineOpens) :
 
 variable (R) in
 /-- The **universal kernel** on the Grassmannian scheme `G(k, M)`: the quasi-coherent submodule of
-`π^* M~` whose sections over each affine open `U` are the point `N_U` classified by `U`. -/
+`π^* M~` whose sections over each affine open `U` are the point `N_U` classified by `U`
+(`Module.Grassmannian.range_sectionsFunctor_map_schemeUniversalKernelι`). -/
 def schemeUniversalKernel : (scheme R M k).Modules :=
   (schemeUniversalKernelData R M k).sheaf
 
@@ -135,6 +138,12 @@ variable (R) in
 /-- The inclusion of the universal kernel into `π^* M~`. -/
 def schemeUniversalKernelι : schemeUniversalKernel R M k ⟶ pullbackTilde R M k :=
   (schemeUniversalKernelData R M k).ι
+
+/-- Over an affine open `U`, the image of the inclusion of the universal kernel is `N_U`. -/
+theorem range_sectionsFunctor_map_schemeUniversalKernelι (U : (scheme R M k).affineOpens) :
+    LinearMap.range ((Scheme.Modules.sectionsFunctor (U : (scheme R M k).Opens)).map
+      (schemeUniversalKernelι R M k)).hom = sectionsKernel M k U :=
+  (schemeUniversalKernelData R M k).range_sectionsFunctor_map_ι U
 
 instance : Mono (schemeUniversalKernelι R M k) :=
   inferInstanceAs (Mono (schemeUniversalKernelData R M k).ι)
@@ -145,9 +154,10 @@ instance isQuasicoherent_schemeUniversalKernel : (schemeUniversalKernel R M k).I
 
 variable (R) in
 /-- The **universal quotient** on the Grassmannian scheme `G(k, M)`: the quotient of `π^* M~` by
-the universal kernel, whose sections over each affine open `U` are the point `N_U` classified by
-`U`. It is finite locally free (`Module.Grassmannian.isFiniteLocallyFree_schemeUniversalQuotient`),
-of rank `k` (`Module.Grassmannian.rankAtStalk_sectionsSchemeUniversalQuotient`). -/
+the universal kernel. Its sections over each affine open `U` are `(Γ(G(k, M), U) ⊗[R] M) ⧸ N_U`
+(`Module.Grassmannian.sectionsSchemeUniversalQuotientEquiv`). It is finite locally free
+(`Module.Grassmannian.isFiniteLocallyFree_schemeUniversalQuotient`), of rank `k`
+(`Module.Grassmannian.rankAtStalk_sectionsSchemeUniversalQuotient`). -/
 def schemeUniversalQuotient : (scheme R M k).Modules :=
   (schemeUniversalKernelData R M k).quotient
 
@@ -197,10 +207,9 @@ theorem sectionsSchemeUniversalQuotientEquiv_π_app (U : (scheme R M k).affineOp
       Submodule.Quotient.mk x := by
   have h := (schemeUniversalKernelData R M k).sectionsQuotientEquiv_π_app U
     ((toSpec R M k).pullbackTildeSectionsEquiv M U.property x)
-  -- `Submodule.Quotient.equiv` sends the class of `y` to the class of the image of `y`
-  -- (`Submodule.Quotient.equiv_apply` and `Submodule.mapQ_apply`, both by definition)
-  exact (congrArg (Submodule.Quotient.equiv _ _ _ (sectionsKernel_map_symm M k U)) h).trans
-    (congrArg Submodule.Quotient.mk (LinearEquiv.symm_apply_apply _ x))
+  refine ((LinearEquiv.trans_apply _).trans (congrArg _ h)).trans ?_
+  refine ((Submodule.Quotient.equiv_apply _ _ _ _ _).trans (Submodule.mapQ_apply _ _ _ _)).trans ?_
+  exact congrArg Submodule.Quotient.mk (LinearEquiv.symm_apply_apply _ x)
 
 /-- **The universal quotient is finite locally free**: over every affine open `U` its sections are
 the quotient of `Γ(G(k, M), U) ⊗[R] M` by a point of the Grassmannian, which is finitely generated
