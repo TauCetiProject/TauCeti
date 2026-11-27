@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.Basic.Finite.Defs
 import Mathlib.Algebra.Group.Subgroup.Finite
+import Mathlib.Algebra.GroupWithZero.Units.Fintype
+import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 import Mathlib.GroupTheory.Index
-import TauCeti.FieldTheory.Galois.Hilbert90
+import TauCeti.Algebra.Ring.Involution
 
 /-!
 # The norm of an involution of a finite field is onto the fixed field
