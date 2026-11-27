@@ -133,9 +133,15 @@ def slice (f : AdelicSmoothFunction I M F) (x : F) : C^∞⟮I, M; 𝓘(ℝ, ℂ
 def eval (f : AdelicSmoothFunction I M F) (x : M × F) : ℂ :=
   f.slice x.2 x.1
 
-@[simp]
-theorem slice_apply (f : AdelicSmoothFunction I M F) (x : M × F) :
-    f.slice x.2 x.1 = f.eval x := by rfl
+/-- Evaluation at a product point is evaluation of its finite slice. -/
+theorem eval_def (f : AdelicSmoothFunction I M F) (x : M × F) :
+    f.eval x = f.slice x.2 x.1 := by rfl
+
+/-- Evaluate at a pair by applying the finite slice to the archimedean coordinate. -/
+@[simp low]
+theorem eval_mk (f : AdelicSmoothFunction I M F) (m : M) (x : F) :
+    f.eval (m, x) = f.slice x m :=
+  eval_def f (m, x)
 
 @[ext]
 theorem ext {f g : AdelicSmoothFunction I M F} (h : ∀ x, f.eval x = g.eval x) : f = g :=
@@ -193,6 +199,12 @@ def ofLevel (J : CompactOpenSubgroup F) :
 theorem ofLevel_slice (J : CompactOpenSubgroup F) (f : level I M J.toSubgroup) (x : F) :
     (ofLevel J f).slice x = f.val x := by rfl
 
+/-- The level inclusion preserves the value at every product point. -/
+@[simp]
+theorem eval_ofLevel (J : CompactOpenSubgroup F) (f : level I M J.toSubgroup) (x : M × F) :
+    (ofLevel J f).eval x = f.val x.2 x.1 := by
+  rw [eval_def, ofLevel_slice]
+
 /-- Inclusion at a smaller level uses the same function. -/
 theorem ofLevel_inclusion {J K : CompactOpenSubgroup F} (h : K ≤ J)
     (f : level I M J.toSubgroup) :
@@ -247,7 +259,7 @@ theorem continuous_eval
   let d := (quotientLevelEquiv J.toSubgroup).symm a
   have heval (x : M × F) :
       (ofLevel J a).eval x = d (QuotientGroup.mk x.2) x.1 := by
-    simp only [d, eval, ofLevel_slice, quotientLevelEquiv_symm_apply_mk]
+    simp only [d, eval_ofLevel, quotientLevelEquiv_symm_apply_mk]
   let : DiscreteTopology (F ⧸ J.toSubgroup) := QuotientGroup.discreteTopology J.isOpen
   rw [funext heval]
   have hd : Continuous fun x : M × (F ⧸ J.toSubgroup) ↦ d x.2 x.1 :=
@@ -269,8 +281,8 @@ private theorem translateSlices_apply (a : C^∞⟮I, M; I, M⟯) (y : F)
 
 omit [TopologicalSpace F] [SeparatelyContinuousMul F] in
 private theorem translateSlices_eval (a : C^∞⟮I, M; I, M⟯) (y : F)
-    (f : F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M × F) :
-    translateSlices a y f x.2 x.1 = f (x.2 * y) (a x.1) := by
+    (f : F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : F) (m : M) :
+    translateSlices a y f x m = f (x * y) (a m) := by
   rw [translateSlices_apply, ContMDiffMap.comp_apply]
 
 omit [Nonempty (CompactOpenSubgroup F)] in
@@ -295,7 +307,7 @@ private def translateFiniteLevel (a : C^∞⟮I, M; I, M⟯) (y : F) :
 private theorem translateFiniteLevel_eval (a : C^∞⟮I, M; I, M⟯) (y : F)
     (f : AdelicSmoothFunction I M F) (x : M × F) :
     (translateFiniteLevel a y f).eval x = f.eval (a x.1, x.2 * y) :=
-  translateSlices_eval a y f.val x
+  translateSlices_eval a y f.val x.2 x.1
 
 section Translation
 
@@ -310,9 +322,9 @@ def rightTranslateLevel (y : M × F) (J : CompactOpenSubgroup F) :
 omit [Nonempty (CompactOpenSubgroup F)] in
 @[simp]
 theorem rightTranslateLevel_apply (y : M × F) (J : CompactOpenSubgroup F)
-    (f : level I M J.toSubgroup) (x : M × F) :
-    (rightTranslateLevel y J f).val x.2 x.1 = f.val (x.2 * y.2) (x.1 * y.1) :=
-  translateSlices_eval (smoothRightMul I y.1) y.2 f.val x
+    (f : level I M J.toSubgroup) (x : F) (m : M) :
+    (rightTranslateLevel y J f).val x m = f.val (x * y.2) (m * y.1) :=
+  translateSlices_eval (smoothRightMul I y.1) y.2 f.val x m
 
 /-- Right translation `R(y)f(x) = f(xy)` as a complex algebra endomorphism. -/
 def rightTranslate (y : M × F) :
@@ -330,8 +342,8 @@ theorem rightTranslate_ofLevel (y : M × F) (J : CompactOpenSubgroup F)
     rightTranslate y (ofLevel J f) =
       ofLevel (ContinuousAut.conj y.2 • J) (rightTranslateLevel y J f) := by
   ext x
-  rw [rightTranslate_eval, eval, ofLevel_slice, eval, ofLevel_slice, rightTranslateLevel_apply]
-  rfl
+  simp only [rightTranslate_eval, eval_ofLevel, rightTranslateLevel_apply, Prod.fst_mul,
+    Prod.snd_mul]
 
 @[simp]
 theorem rightTranslate_one :
