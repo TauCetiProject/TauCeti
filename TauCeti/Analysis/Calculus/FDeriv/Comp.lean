@@ -46,6 +46,8 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
   differentiable along its orbit.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
   when `φ b` is a critical point of `f`, if the differential of `φ` at `b` is invertible.
+* `TauCeti.ker_fderiv_comp_of_injective`: postcomposing `f` with a map whose differential at
+  `f x` is injective does not change the kernel of the differential of `f` at `x`.
 * `TauCeti.exists_norm_fderiv_comp_le_mul_norm_fderiv`: near a point where `φ` is `C¹`, the
   differential of `f ∘ φ` is at most a fixed multiple of that of `f`.
 * `ContinuousLinearMap.fderiv_comp_right_of_rightInverse`,
@@ -110,6 +112,15 @@ theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b 
   -- `e`, so one vanishes exactly when the other does.
   rw [fderiv_comp (x := b) hf hφ, ← he]
   exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ e
+
+/-- **Reparametrizing the values keeps the kernel.** If `g` is differentiable at `f x` with
+injective differential there, the differential of `g ∘ f` at `x` has the same kernel as that of
+`f`. -/
+theorem ker_fderiv_comp_of_injective {g : F → G} {f : E → F} {x : E}
+    (hg : DifferentiableAt 𝕜 g (f x)) (hD : Function.Injective (fderiv 𝕜 g (f x)))
+    (hf : DifferentiableAt 𝕜 f x) : (fderiv 𝕜 (g ∘ f) x).ker = (fderiv 𝕜 f x).ker := by
+  rw [fderiv_comp x hg hf]
+  exact LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 hD)
 
 /-- **A change of coordinates distorts the differential by a locally bounded factor.** If `g`
 agrees near `x` with `f ∘ φ`, where `φ` is differentiable near `x` with derivative continuous at

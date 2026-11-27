@@ -39,6 +39,11 @@ A continuous linear injection of a space into a finite-dimensional space of stri
 dimension over a complete field has a continuous left inverse and a nonzero continuous covector
 annihilating its range (`ContinuousLinearMap.exists_leftInverse_ne_zero_comp_eq_zero`).
 
+The chosen continuous linear left inverse `P` of `L` satisfies `P ∘ L = id`
+(`ContinuousLinearMap.HasLeftInverse.leftInverse_comp`), so every continuous linear map `ℓ` out of
+the source of `L` factors through `L` as `ℓ = (ℓ ∘ P) ∘ L`
+(`ContinuousLinearMap.HasLeftInverse.comp_leftInverse_comp`).
+
 A space with a continuous linear map into a complete space that has a continuous linear left
 inverse is complete (`ContinuousLinearMap.HasLeftInverse.completeSpace`), as a retract of a
 complete space; this needs uniform additive groups, but no separation and no norm.
@@ -80,6 +85,28 @@ theorem HasLeftInverse.completeSpace [CompleteSpace F] {L : E →L[R] F} (hL : L
     hL.leftInverse.continuous L.uniformContinuous
 
 end Uniform
+
+section Comp
+
+variable {R E F G : Type*} [Semiring R]
+  [TopologicalSpace E] [AddCommMonoid E] [Module R E]
+  [TopologicalSpace F] [AddCommMonoid F] [Module R F]
+  [TopologicalSpace G] [AddCommMonoid G] [Module R G]
+
+/-- The chosen continuous linear left inverse of `L`, composed with `L`, is the identity. -/
+@[simp]
+theorem HasLeftInverse.leftInverse_comp {L : E →L[R] F} (hL : L.HasLeftInverse) :
+    hL.leftInverse.comp L = .id R E :=
+  ext hL.leftInverse_leftInverse
+
+/-- Every continuous linear map `ℓ` out of the source of `L` factors as `(ℓ ∘ P) ∘ L` through `L`,
+where `P` is the chosen continuous linear left inverse of `L`. -/
+@[simp]
+theorem HasLeftInverse.comp_leftInverse_comp {L : E →L[R] F} (hL : L.HasLeftInverse)
+    (ℓ : E →L[R] G) : (ℓ.comp hL.leftInverse).comp L = ℓ := by
+  rw [comp_assoc, hL.leftInverse_comp, comp_id]
+
+end Comp
 
 section FiniteDimensional
 
