@@ -67,18 +67,22 @@ associated three-point cover. -/
 @[expose] def ribbonGraph : BipartiteRibbonGraph := t.σ0.bipartiteRibbonGraph t.σ1
 
 /-- The cyclic order of the sheets around a black vertex is `σ0`. -/
-@[simp] theorem rotB_ribbonGraph : t.ribbonGraph.rotB = t.σ0 := (rfl)
+@[simp] theorem rotB_ribbonGraph : t.ribbonGraph.rotB = t.σ0 :=
+  t.σ0.rotB_bipartiteRibbonGraph t.σ1
 
 /-- The cyclic order of the sheets around a white vertex is `σ1`. -/
-@[simp] theorem rotW_ribbonGraph : t.ribbonGraph.rotW = t.σ1 := (rfl)
+@[simp] theorem rotW_ribbonGraph : t.ribbonGraph.rotW = t.σ1 :=
+  t.σ0.rotW_bipartiteRibbonGraph t.σ1
 
 /-- The black end of a sheet is its cycle under `σ0`. -/
 @[simp] theorem blackEnd_ribbonGraph (i : Fin n) :
-    t.ribbonGraph.blackEnd i = Quotient.mk (SameCycle.setoid t.σ0) i := (rfl)
+    t.ribbonGraph.blackEnd i = Quotient.mk (SameCycle.setoid t.σ0) i :=
+  t.σ0.blackEnd_bipartiteRibbonGraph t.σ1 i
 
 /-- The white end of a sheet is its cycle under `σ1`. -/
 @[simp] theorem whiteEnd_ribbonGraph (i : Fin n) :
-    t.ribbonGraph.whiteEnd i = Quotient.mk (SameCycle.setoid t.σ1) i := (rfl)
+    t.ribbonGraph.whiteEnd i = Quotient.mk (SameCycle.setoid t.σ1) i :=
+  t.σ0.whiteEnd_bipartiteRibbonGraph t.σ1 i
 
 -- After the rewrites, the remaining goal mentions `t.ribbonGraph.E` where the cited lemma
 -- mentions `Fin n`, so `exact` closes it on the reduction `@[expose]` supplies; the same holds

@@ -90,7 +90,7 @@ attribute [instance] fintypeE fintypeB fintypeW decidableEqE decidableEqB decida
 
 /-- The graph on `α` whose black and white vertices are the cycle quotients of `σ` and `τ`.
 Its projections compute so that the finite invariants can be evaluated. -/
-abbrev _root_.Equiv.Perm.bipartiteRibbonGraph {α : Type u} [Fintype α] [DecidableEq α]
+@[expose] def _root_.Equiv.Perm.bipartiteRibbonGraph {α : Type u} [Fintype α] [DecidableEq α]
     (σ τ : Perm α) : BipartiteRibbonGraph :=
   let decσ : DecidableRel (Perm.SameCycle σ) := inferInstance
   let decτ : DecidableRel (Perm.SameCycle τ) := inferInstance
@@ -111,6 +111,32 @@ abbrev _root_.Equiv.Perm.bipartiteRibbonGraph {α : Type u} [Fintype α] [Decida
     whiteEnd_surjective := Quotient.mk_surjective
     isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk σ
     isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk τ }
+
+section
+
+variable {α : Type u} [Fintype α] [DecidableEq α] (σ τ : Perm α)
+
+/-- The edges of the graph of two permutations are the elements they permute. -/
+@[simp] theorem _root_.Equiv.Perm.E_bipartiteRibbonGraph : (σ.bipartiteRibbonGraph τ).E = α :=
+  (rfl)
+
+/-- The black rotation of the graph of two permutations is the first permutation. -/
+@[simp] theorem _root_.Equiv.Perm.rotB_bipartiteRibbonGraph : (σ.bipartiteRibbonGraph τ).rotB = σ :=
+  (rfl)
+
+/-- The white rotation of the graph of two permutations is the second permutation. -/
+@[simp] theorem _root_.Equiv.Perm.rotW_bipartiteRibbonGraph : (σ.bipartiteRibbonGraph τ).rotW = τ :=
+  (rfl)
+
+/-- The black endpoint of an edge is its cycle under the first permutation. -/
+@[simp] theorem _root_.Equiv.Perm.blackEnd_bipartiteRibbonGraph (x : α) :
+    (σ.bipartiteRibbonGraph τ).blackEnd x = Quotient.mk (Perm.SameCycle.setoid σ) x := (rfl)
+
+/-- The white endpoint of an edge is its cycle under the second permutation. -/
+@[simp] theorem _root_.Equiv.Perm.whiteEnd_bipartiteRibbonGraph (x : α) :
+    (σ.bipartiteRibbonGraph τ).whiteEnd x = Quotient.mk (Perm.SameCycle.setoid τ) x := (rfl)
+
+end
 
 variable (Γ : BipartiteRibbonGraph.{u})
 
@@ -377,6 +403,27 @@ theorem comp_assoc (h : Θ.Hom Ξ) (g : Δ.Hom Θ) (f : Γ.Hom Δ) :
   ext
   rfl
 
+/-- An edge map intertwining both rotations induces a morphism on their cycle quotients. -/
+noncomputable def ofEdge (e : Γ.E → Δ.E) (hB : Function.Semiconj e Γ.rotB Δ.rotB)
+    (hW : Function.Semiconj e Γ.rotW Δ.rotW) : Γ.Hom Δ where
+  edge := e
+  black := Δ.blackEnd ∘ e ∘ Function.surjInv Γ.blackEnd_surjective
+  white := Δ.whiteEnd ∘ e ∘ Function.surjInv Γ.whiteEnd_surjective
+  map_blackEnd x := by
+    simp only [Function.comp_apply, Δ.blackEnd_eq_blackEnd_iff]
+    exact (Γ.blackEnd_eq_blackEnd_iff.mp
+      (Function.surjInv_eq Γ.blackEnd_surjective _).symm).map hB
+  map_whiteEnd x := by
+    simp only [Function.comp_apply, Δ.whiteEnd_eq_whiteEnd_iff]
+    exact (Γ.whiteEnd_eq_whiteEnd_iff.mp
+      (Function.surjInv_eq Γ.whiteEnd_surjective _).symm).map hW
+  map_rotB := hB
+  map_rotW := hW
+
+/-- The morphism induced by an edge map has that map on edges. -/
+@[simp] theorem ofEdge_edge (e : Γ.E → Δ.E) (hB : Function.Semiconj e Γ.rotB Δ.rotB)
+    (hW : Function.Semiconj e Γ.rotW Δ.rotW) : (ofEdge e hB hW).edge = e := (rfl)
+
 end Hom
 
 /-- An isomorphism of bipartite ribbon graphs is an equivalence on edges and on each colour of
@@ -634,51 +681,39 @@ theorem trans_assoc (f : Γ.Iso Δ) (g : Δ.Iso Θ) (h : Θ.Iso Ξ) :
   ext
   rfl
 
-/-- Two edges share their black end exactly when their images under an edge bijection intertwining
-the black rotations do. -/
-private theorem blackEnd_eq_blackEnd_iff_of_semiconj (φ : Γ.E ≃ Δ.E)
-    (hB : Function.Semiconj φ Γ.rotB Δ.rotB) (e e' : Γ.E) :
-    Γ.blackEnd e = Γ.blackEnd e' ↔ Δ.blackEnd (φ e) = Δ.blackEnd (φ e') := by
-  have hperm : φ.permCongr Γ.rotB = Δ.rotB :=
-    Equiv.ext fun x ↦ by rw [Equiv.permCongr_apply, hB, φ.apply_symm_apply]
-  rw [blackEnd_eq_blackEnd_iff, blackEnd_eq_blackEnd_iff, ← hperm, Perm.sameCycle_permCongr]
-
-/-- Two edges share their white end exactly when their images under an edge bijection intertwining
-the white rotations do. -/
-private theorem whiteEnd_eq_whiteEnd_iff_of_semiconj (φ : Γ.E ≃ Δ.E)
-    (hW : Function.Semiconj φ Γ.rotW Δ.rotW) (e e' : Γ.E) :
-    Γ.whiteEnd e = Γ.whiteEnd e' ↔ Δ.whiteEnd (φ e) = Δ.whiteEnd (φ e') := by
-  have hperm : φ.permCongr Γ.rotW = Δ.rotW :=
-    Equiv.ext fun x ↦ by rw [Equiv.permCongr_apply, hW, φ.apply_symm_apply]
-  rw [whiteEnd_eq_whiteEnd_iff, whiteEnd_eq_whiteEnd_iff, ← hperm, Perm.sameCycle_permCongr]
-
-/-- An edge bijection intertwining both rotations is the edge map of an isomorphism. The vertex
-maps are forced, the vertices of each colour being the cycles of the corresponding rotation. -/
+/-- An edge bijection intertwining both rotations induces an isomorphism, with vertex
+equivalences on the black and white cycle quotients. -/
 noncomputable def ofEdge (φ : Γ.E ≃ Δ.E) (hB : Function.Semiconj φ Γ.rotB Δ.rotB)
-    (hW : Function.Semiconj φ Γ.rotW Δ.rotW) : Γ.Iso Δ where
-  edge := φ
-  black := (Setoid.quotientKerEquivOfSurjective _ Γ.blackEnd_surjective).symm.trans <|
-    (Quotient.congr φ (blackEnd_eq_blackEnd_iff_of_semiconj φ hB)).trans
-      (Setoid.quotientKerEquivOfSurjective _ Δ.blackEnd_surjective)
-  white := (Setoid.quotientKerEquivOfSurjective _ Γ.whiteEnd_surjective).symm.trans <|
-    (Quotient.congr φ (whiteEnd_eq_whiteEnd_iff_of_semiconj φ hW)).trans
-      (Setoid.quotientKerEquivOfSurjective _ Δ.whiteEnd_surjective)
-  map_blackEnd e := by
-    -- `Setoid.quotientKerEquivOfSurjective f _ ⟦x⟧` is `f x` by definition (it is `kerLift f`),
-    -- and Mathlib states no lemma evaluating it.
-    have h : (Setoid.quotientKerEquivOfSurjective _ Γ.blackEnd_surjective).symm (Γ.blackEnd e) =
-        ⟦e⟧ := (Equiv.symm_apply_eq _).2 rfl
-    rw [Equiv.trans_apply, Equiv.trans_apply, h, Quotient.congr_mk]
-    rfl
-  map_whiteEnd e := by
-    -- `Setoid.quotientKerEquivOfSurjective f _ ⟦x⟧` is `f x` by definition (it is `kerLift f`),
-    -- and Mathlib states no lemma evaluating it.
-    have h : (Setoid.quotientKerEquivOfSurjective _ Γ.whiteEnd_surjective).symm (Γ.whiteEnd e) =
-        ⟦e⟧ := (Equiv.symm_apply_eq _).2 rfl
-    rw [Equiv.trans_apply, Equiv.trans_apply, h, Quotient.congr_mk]
-    rfl
-  map_rotB := hB
-  map_rotW := hW
+    (hW : Function.Semiconj φ Γ.rotW Δ.rotW) : Γ.Iso Δ := by
+  let f := Hom.ofEdge φ hB hW
+  let g := Hom.ofEdge φ.symm (hB.inverse_left φ.left_inv φ.right_inv)
+    (hW.inverse_left φ.left_inv φ.right_inv)
+  have hgf : g.comp f = Hom.id Γ := by
+    apply Hom.ext
+    funext x
+    simp only [Hom.comp_edge_apply, Hom.id_edge_apply, f, g, Hom.ofEdge_edge,
+      Equiv.symm_apply_apply]
+  have hfg : f.comp g = Hom.id Δ := by
+    apply Hom.ext
+    funext x
+    simp only [Hom.comp_edge_apply, Hom.id_edge_apply, f, g, Hom.ofEdge_edge,
+      Equiv.apply_symm_apply]
+  exact
+    { edge := φ
+      black :=
+        { toFun := f.black
+          invFun := g.black
+          left_inv := fun x ↦ congrFun (congrArg Hom.black hgf) x
+          right_inv := fun x ↦ congrFun (congrArg Hom.black hfg) x }
+      white :=
+        { toFun := f.white
+          invFun := g.white
+          left_inv := fun x ↦ congrFun (congrArg Hom.white hgf) x
+          right_inv := fun x ↦ congrFun (congrArg Hom.white hfg) x }
+      map_blackEnd := f.map_blackEnd
+      map_whiteEnd := f.map_whiteEnd
+      map_rotB := hB
+      map_rotW := hW }
 
 /-- The isomorphism built from an edge bijection has that bijection as its edge map. -/
 @[simp] theorem ofEdge_edge (φ : Γ.E ≃ Δ.E) (hB : Function.Semiconj φ Γ.rotB Δ.rotB)
