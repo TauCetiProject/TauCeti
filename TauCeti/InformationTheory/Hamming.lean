@@ -50,9 +50,11 @@ meets every closed ball of radius `D`
 (`TauCeti.exists_finset_pairwise_lt_hammingDist_forall_exists`). Both are adapted from the
 lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
 `CKSD/Nonparametric/LowerBounds/Testing.lean` (`CKSD.sum_pow_hammingDist_eq`,
-`CKSD.exists_hamming_packing`). For a finite code `C`, the sum of the distances over the ordered
-pairs of words plus `∑_i ∑_a m_{i,a}²` is `n |C|²`, where `m_{i,a}` is the number of words with
-letter `a` at `i` (`Finset.sum_sum_hammingDist_add_sum_sum_sq`); the Plotkin bound uses it.
+`CKSD.exists_hamming_packing`). Two words agree in `n - d(x, y)` coordinates
+(`TauCeti.card_filter_eq_add_hammingDist`). For a finite code `C`, the sum of the distances over the
+ordered pairs of words plus `∑_i ∑_a m_{i,a}²` is `n |C|²`, where `m_{i,a}` is the number of words
+with letter `a` at `i` and `a` ranges over any finite set of letters that contains the letters of
+`C` at `i` (`Finset.sum_sum_hammingDist_add_sum_sum_sq`); the Plotkin bound uses it.
 -/
 
 public section
@@ -337,24 +339,33 @@ theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : �
   · obtain ⟨x, hx, hxy⟩ := hcover (Set.mem_univ y)
     exact ⟨x, by simpa using hx, hxy⟩
 
+/-- The coordinates where two words agree, together with the coordinates where they differ,
+number `n`. -/
+theorem card_filter_eq_add_hammingDist {ι : Type*} {β : ι → Type*} [Fintype ι]
+    [∀ i, DecidableEq (β i)] (x y : ∀ i, β i) :
+    #{i | x i = y i} + hammingDist x y = Fintype.card ι := by
+  rw [hammingDist, ← card_univ]
+  exact card_filter_add_card_filter_not _
+
 /-- The sum of the distances over the ordered pairs of words of a code `C`, plus the number of
 pairs that agree in each coordinate, summed over the coordinates, is `n |C|²`. The pairs that agree
-in the coordinate `i` number `∑_a m_{i,a}²`, where `m_{i,a}` is the number of words with letter
-`a` at `i`. -/
+in the coordinate `i` number `∑_{a ∈ A i} m_{i,a}²`, where `m_{i,a}` is the number of words with
+letter `a` at `i`, for any finite sets `A i` that contain the letters of `C` at `i`. -/
 theorem _root_.Finset.sum_sum_hammingDist_add_sum_sum_sq {ι : Type*} {β : ι → Type*} [Fintype ι]
-    [∀ i, Fintype (β i)] [∀ i, DecidableEq (β i)] (C : Finset (∀ i, β i)) :
-    ∑ x ∈ C, ∑ y ∈ C, hammingDist x y + ∑ i, ∑ a : β i, #{x ∈ C | x i = a} ^ 2 =
+    [∀ i, DecidableEq (β i)] (C : Finset (∀ i, β i)) {A : ∀ i, Finset (β i)}
+    (hA : ∀ x ∈ C, ∀ i, x i ∈ A i) :
+    ∑ x ∈ C, ∑ y ∈ C, hammingDist x y + ∑ i, ∑ a ∈ A i, #{x ∈ C | x i = a} ^ 2 =
       Fintype.card ι * #C ^ 2 := by
   have hpair (x y : ∀ i, β i) :
       hammingDist x y + ∑ i, (if x i = y i then 1 else 0) = Fintype.card ι := by
-    rw [sum_boole, Nat.cast_id, hammingDist, add_comm, ← card_univ]
-    exact card_filter_add_card_filter_not _
+    rw [sum_boole, Nat.cast_id, add_comm]
+    exact card_filter_eq_add_hammingDist x y
   have hswap : ∑ i, ∑ x ∈ C, ∑ y ∈ C, (if x i = y i then 1 else 0) =
       ∑ x ∈ C, ∑ y ∈ C, ∑ i, (if x i = y i then 1 else 0 : ℕ) :=
-    sum_comm.trans (sum_congr rfl fun _ _ ↦ sum_comm)
+    sum_comm_cycle.symm
   have hfib (i : ι) : ∑ x ∈ C, ∑ y ∈ C, (if x i = y i then 1 else 0) =
-      ∑ a : β i, #{x ∈ C | x i = a} ^ 2 :=
-    sum_sum_ite_eq_sum_card_filter_sq C fun x ↦ x i
+      ∑ a ∈ A i, #{x ∈ C | x i = a} ^ 2 :=
+    sum_sum_ite_eq_sum_card_filter_sq C (fun x ↦ x i) fun x hx ↦ hA x hx i
   simp_rw [← hfib]
   rw [hswap, ← sum_add_distrib]
   simp_rw [← sum_add_distrib, hpair, sum_const, smul_eq_mul]

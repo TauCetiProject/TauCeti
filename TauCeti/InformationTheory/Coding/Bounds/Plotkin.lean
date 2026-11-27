@@ -71,7 +71,7 @@ theorem card_le_plotkin (C : Finset (ι → α)) {d : ℕ}
     have := sq_sum_le_card_mul_sum_sq (s := (univ : Finset α))
       (f := fun a ↦ (#{x ∈ C | x i = a} : ℝ))
     rwa [card_univ, ← Nat.cast_sum, ← card_eq_sum_card_fiberwise fun _ _ ↦ mem_univ _] at this
-  have hsum := sum_sum_hammingDist_add_sum_sum_sq C
+  have hsum := sum_sum_hammingDist_add_sum_sum_sq C fun _ _ _ ↦ mem_univ _
   rw [← hT] at hsum
   have hsum' : (T : ℝ) + ∑ i, ∑ a, (#{x ∈ C | x i = a} : ℝ) ^ 2 = n * c ^ 2 := by
     simp only [n, c]
