@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.Algebra.Lie.GeneralLinear.QuantumMinor.Alternating
 import Mathlib.LinearAlgebra.Basis.Bilinear
-import Mathlib.LinearAlgebra.Matrix.StdBasis
 import TauCeti.Data.Matrix.Basis
 
 /-!
@@ -34,12 +33,6 @@ namespace Matrix.HasMatrixUnitLieRelations
 variable {ι K A : Type*} [Fintype ι] [DecidableEq ι] [CommRing K] [Ring A] [Algebra K A]
   {E : Matrix ι ι A}
 
--- The linear extension of a family along the matrix-unit basis takes its prescribed values.
-private theorem constr_single (E : Matrix ι ι A) (i j : ι) :
-    (stdBasis K ι ι).constr K (fun i ↦ E i.1 i.2) (single i j 1) = E i j := by
-  rw [← stdBasis_eq_single]
-  exact (stdBasis K ι ι).constr_basis K (fun i ↦ E i.1 i.2) (i, j)
-
 /-- Extend a family satisfying the matrix-unit relations to the general linear Lie algebra. -/
 noncomputable def toLieHom (hE : E.HasMatrixUnitLieRelations) : Matrix ι ι K →ₗ⁅K⁆ A where
   __ := (stdBasis K ι ι).constr K fun i ↦ E i.1 i.2
@@ -53,7 +46,7 @@ noncomputable def toLieHom (hE : E.HasMatrixUnitLieRelations) : Matrix ι ι K �
       rintro ⟨i, j⟩ ⟨k, l⟩
       simp only [bracket₁, bracket₂, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
         LieHom.coe_toLinearMap, LieAlgebra.ad_apply, b, stdBasis_eq_single, Ring.lie_def,
-        single_mul_single_eq_ite, mul_one, map_sub, apply_ite, map_zero, f, constr_single]
+        single_mul_single_eq_ite, mul_one, map_sub, apply_ite, map_zero, f, stdBasis_constr_single]
       by_cases hli : l = i <;>
         simpa only [hli, ite_true, ite_false] using
           ((hasMatrixUnitLieRelations_iff E).mp hE i j k l).symm
@@ -68,7 +61,7 @@ private theorem toLieHom_toLinearMap (hE : E.HasMatrixUnitLieRelations) :
 /-- The extension sends each matrix unit to its prescribed value. -/
 @[simp] theorem toLieHom_single (hE : E.HasMatrixUnitLieRelations) (i j : ι) :
     hE.toLieHom (K := K) (single i j 1) = E i j := by
-  rw [← LieHom.coe_toLinearMap, toLieHom_toLinearMap, constr_single]
+  rw [← LieHom.coe_toLinearMap, toLieHom_toLinearMap, stdBasis_constr_single]
 
 /-- The extension is the linear combination of the family with the input matrix's entries. -/
 theorem toLieHom_apply (hE : E.HasMatrixUnitLieRelations) (X : Matrix ι ι K) :

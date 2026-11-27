@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+public import Mathlib.LinearAlgebra.Matrix.StdBasis
 
 /-!
 # Products of matrix units
@@ -18,8 +19,10 @@ Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_sin
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
 and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
-expands a linear map on matrices along the matrix units, and
-`Matrix.submodule_eq_top_of_single_one_mem` shows that the matrix units span all matrices.
+expands a linear map on matrices along the matrix units,
+`Matrix.submodule_eq_top_of_single_one_mem` shows that the matrix units span all matrices, and
+`Matrix.stdBasis_constr_single` evaluates a linear extension along the matrix units on a matrix
+unit.
 
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
 algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
@@ -82,6 +85,15 @@ public theorem Matrix.submodule_eq_top_of_single_one_mem {m n R : Type*} [Finite
   refine S.sum_mem fun i _ => S.sum_mem fun j _ => ?_
   rw [← mul_one (A i j), ← smul_eq_mul, ← Matrix.smul_single]
   exact S.smul_mem _ (h i j)
+
+/-- The linear extension of `f` along the standard basis of matrices sends the matrix unit
+`single i j 1` to `f (i, j)`. -/
+@[simp] public theorem Matrix.stdBasis_constr_single {m n R S M : Type*} [Fintype m] [Finite n]
+    [DecidableEq m] [DecidableEq n] [Semiring R] [Semiring S] [AddCommMonoid M] [Module R M]
+    [Module S M] [SMulCommClass R S M] (f : m × n → M) (i : m) (j : n) :
+    (Matrix.stdBasis R m n).constr S f (Matrix.single i j 1) = f (i, j) := by
+  rw [← Matrix.stdBasis_eq_single]
+  exact (Matrix.stdBasis R m n).constr_basis S f (i, j)
 
 /-- Transposition does not preserve all products of square matrices over a nontrivial semiring
 when there are at least two indices. -/
