@@ -50,9 +50,9 @@ here by duality.
 
 For `1 < p < 2` let `p' > 2` be the Hölder conjugate exponent, and let `Φ` be bounded and vanish
 off a set of finite measure. The adjoint problem `-∂ᵢ((aᵀ)ⁱʲ ∂ⱼv) = -div Φ` has a finite-energy
-solution `v`. The transposed coefficients are uniformly elliptic with the same constants and their
-BMO seminorm is at most twice that of `a`, since transposition is the adjoint of operators, an
-isometry (`TauCeti.bmoSeminorm_toEuclideanCLM_conjTranspose_le`). So the whole-space regularity
+solution `v`. The transposed coefficients are uniformly elliptic with the same constants and have
+the same BMO seminorm as `a`, since transposition is the adjoint of operators, an `ℝ`-linear
+isometry (`TauCeti.bmoSeminorm_toEuclideanCLM_conjTranspose`). So the whole-space regularity
 theorem for `p' > 2` gives `‖∇v‖_{L^{p'}} ≤ C ‖Φ‖_{L^{p'}}`. Testing the equation of `v` with `u`
 and that of `u` with `v` gives `∫ ⟨∇u, Φ⟩ = ∫ ⟨G, ∇v⟩`
 (`TauCeti.PDE.integral_inner_eq_integral_inner_of_forall_transpose`), which Hölder's inequality
@@ -136,15 +136,13 @@ theorem exists_memLp_gradient_and_eLpNorm_le_of_bmoSeminorm_le_of_lt_two
       (ENNReal.add_lt_add_left ENNReal.one_ne_top (ENNReal.one_lt_inv.2 h1))
   obtain ⟨C, δ, hδ, hreg⟩ := exists_memLp_gradient_and_eLpNorm_le_of_bmoSeminorm_le (n := n) hq2
     ((ENNReal.HolderConjugate.lt_top_iff_one_lt q p).2 hp).ne lam Lam
-  refine ⟨C, δ / 2, half_pos hδ, fun {a} ha hell hbmo u G hu hG2 hGp => ?_⟩
+  refine ⟨C, δ, hδ, fun {a} ha hell hbmo u G hu hG2 hGp => ?_⟩
   have haT : AEStronglyMeasurable (fun x => (a x)ᵀ) volume :=
     continuous_id.matrix_transpose.comp_aestronglyMeasurable ha
-  -- Transposing the coefficients at most doubles the BMO seminorm.
+  -- Transposing the coefficients does not change the BMO seminorm.
   have hbmoT : bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)ᵀ) volume ≤ ENNReal.ofReal δ := by
-    simp_rw [← conjTranspose_eq_transpose_of_trivial]
-    refine (bmoSeminorm_toEuclideanCLM_conjTranspose_le ha).trans
-      ((mul_le_mul_right hbmo 2).trans_eq ?_)
-    rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two]; ring_nf
+    simpa only [← conjTranspose_eq_transpose_of_trivial,
+      bmoSeminorm_toEuclideanCLM_conjTranspose] using hbmo
   have hg2 : MemLp (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
       (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
         Set (EuclideanSpace ℝ (Fin (n + 1)))))) 2 volume := by
