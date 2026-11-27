@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 public import TauCeti.Geometry.Manifold.Sobolev.Completion
+import TauCeti.Geometry.Manifold.Measure.CutoffPullback
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
@@ -43,7 +44,8 @@ range of `L` satisfies `⟨v, f⟩ = 0` for every smooth solution `v` of `Q v = 
 not a function.
 
 The pairings with smooth functions determine the elements of `H^s(M)`
-(`TauCeti.eq_of_forall_chartSobolevPairing_eq`), so `H^s(M)` is a space of distributions on `M`.
+(`TauCeti.eq_of_forall_chartSobolevPairing_eq`): an element `x` is determined by the
+conjugate-linear functional `v ↦ ⟨v, x⟩` on smooth functions.
 For the `i`-th component of `x ∈ H^s(M)` and a Schwartz function `h`, the `L²` pairing of `h` with
 that component is the pairing of `x` with the smooth function `(ρᵢ⁻¹ ψᵢ h) ∘ eᵢ`, extended by `0`,
 and these `L²` pairings with Schwartz functions separate the points of `H^s(ℝⁿ)`
@@ -93,58 +95,41 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
 section Chart
 
 variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-
-omit [MeasurableSpace M] in
-/-- A function on `M` vanishing wherever the reading `ψ ∘ e` of a cutoff vanishes has compact
-support inside the chart source. -/
-private theorem hasCompactSupport_and_tsupport_subset_source (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    {f : M → ℂ} (hf : ∀ x, e.cutoffPullback he ψ 1 x = 0 → f x = 0) :
-    HasCompactSupport f ∧ tsupport f ⊆ e.source := by
-  have hK : tsupport f ⊆ e.symm '' tsupport ψ := by
-    rw [← tsupport_cutoffPullback_one he ψ]
-    exact closure_mono fun x hx h ↦ hx (hf x h)
-  refine ⟨(e.isCompact_symm_image_tsupport ψ).of_isClosed_subset (isClosed_tsupport f) hK,
-    hK.trans ?_⟩
-  rintro _ ⟨y, hy, rfl⟩
-  exact e.map_target (ψ.tsupport_subset hy)
-
-omit [ChartedSpace (CoordinateSpace n) M] [T2Space M] [MeasurableSpace M] in
-/-- The integrand of a chart integral vanishes off the support of the cutoff `ψ`, hence off the
-chart target, so the integral over `ℝⁿ` is the integral over the chart target. -/
-private theorem setIntegral_target_eq_integral (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    {F : CoordinateSpace n → ℂ} (hF : ∀ y, ψ y = 0 → F y = 0) :
-    ∫ y in e.target, F y = ∫ y, F y :=
-  setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦
-    hF y (image_eq_zero_of_notMem_tsupport fun h ↦ hy (ψ.tsupport_subset h))
-
-variable {ρ : CoordinateSpace n → ℝ}
+  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) {ρ : CoordinateSpace n → ℝ}
   (hint : ∀ f : M → ℂ, Continuous f → HasCompactSupport f → tsupport f ⊆ e.source →
     ∫ x, f x ∂μ = ∫ y in e.target, (ρ y : ℂ) * f (e.symm y))
 
 include he hint
 
-/-- **A cut-off integral in a chart.** Let `ρ` be the density of `μ` in the chart `e`, and `θ` a
-cutoff equal to `ρ` on the support of the cutoff `ψ`. Pairing a smooth function `v` with `u` cut
-off by `ψ ∘ e` is pairing the readings `θ · (v ∘ e⁻¹)` and `ψ · (u ∘ e⁻¹)` on `ℝⁿ`. -/
-private theorem integral_inner_mul_cutoffPullback_eq (ψ θ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (hθ : ∀ y ∈ tsupport ψ, θ y = ρ y) (u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+/-- **A cut-off integral in a chart.** Let `ρ` be the density of `μ` in the chart `e`, and `χ` and
+`θ` cutoffs equal to `1` and to `ρ` on the support of the cutoff `ψ`. Pairing a smooth function `v`
+with `u` cut off by `ψ ∘ e` is pairing the readings `θ · (v ∘ e⁻¹)` and `ψ · (u ∘ e⁻¹)` on
+`ℝⁿ`. -/
+private theorem integral_inner_mul_cutoffPullback_eq (ψ χ θ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (hχ : ∀ y ∈ tsupport ψ, χ y = 1) (hθ : ∀ y ∈ tsupport ψ, θ y = ρ y)
+    (u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     ∫ x, ⟪v x, (e.cutoffPullback he ψ 1 x : ℂ) * u x⟫_ℂ ∂μ =
       ∫ y, ⟪e.cutoffPushforwardSchwartz he θ v y, e.cutoffPushforwardSchwartz he ψ u y⟫_ℂ := by
-  obtain ⟨hc, hs⟩ := hasCompactSupport_and_tsupport_subset_source he ψ
-    (f := fun x ↦ ⟪v x, (e.cutoffPullback he ψ 1 x : ℂ) * u x⟫_ℂ) fun x hx ↦ by simp [hx]
-  rw [hint (fun x ↦ ⟪v x, (e.cutoffPullback he ψ 1 x : ℂ) * u x⟫_ℂ) ?_ hc hs,
-    ← setIntegral_target_eq_integral ψ fun y hy ↦ by simp [hy]]
-  swap
-  · exact v.contMDiff.continuous.inner ((Complex.continuous_ofReal.comp
-      (e.cutoffPullback he ψ 1).contMDiff.continuous).mul u.contMDiff.continuous)
-  refine setIntegral_congr_fun e.open_target.measurableSet fun y hy ↦ ?_
-  simp only [cutoffPullback_one_apply_of_mem he _ (e.map_target hy), e.right_inv hy,
-    cutoffPushforwardSchwartz_apply, RCLike.inner_apply, Complex.real_smul, map_mul,
-    Complex.conj_ofReal]
+  -- `u` cut off by `ψ ∘ e` is the pullback by `ψ` of the reading `χ · (u ∘ e⁻¹)` of `u`.
+  have hu (x : M) : (e.cutoffPullback he ψ 1 x : ℂ) * u x =
+      e.complexCutoffPullback he ψ (e.complexCutoffPushforward he χ u) x := by
+    by_cases hx : x ∈ e.source
+    · rw [cutoffPullback_one_apply_of_mem he _ hx, complexCutoffPullback_apply_of_mem he _ _ hx,
+        complexCutoffPushforward_apply, e.left_inv hx]
+      by_cases hψx : ψ (e x) = 0
+      · simp [hψx]
+      · simp [hχ _ (subset_tsupport _ hψx), Complex.real_smul]
+    · simp [cutoffPullback_apply_of_notMem he _ _ hx,
+        complexCutoffPullback_apply_of_notMem he _ _ hx]
+  simp_rw [hu]
+  rw [integral_inner_complexCutoffPullback he hint ψ _ v.contMDiff.continuous]
+  refine integral_congr_ae (.of_forall fun y ↦ ?_)
+  simp only [complexCutoffPushforward_apply, cutoffPushforwardSchwartz_apply, RCLike.inner_apply,
+    Complex.real_smul, map_mul, Complex.conj_ofReal]
   by_cases hψy : ψ y = 0
   · simp [hψy]
-  · rw [hθ y (subset_tsupport _ hψy)]
+  · rw [hθ y (subset_tsupport _ hψy), hχ y (subset_tsupport _ hψy)]
+    push_cast
     ring
 
 /-- **The pullback of a function on the chart.** Let `ρ` be the density of `μ` in the chart `e`,
@@ -155,21 +140,17 @@ private theorem integral_inner_complexCutoffPullback_eq (ψ θ : 𝓓(⟨e.targe
       𝓘(ℝ, ℂ), ℂ⟯) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     ∫ x, ⟪e.complexCutoffPullback he θ f x, u x⟫_ℂ ∂μ =
       ∫ y, ⟪f y, e.cutoffPushforwardSchwartz he ψ u y⟫_ℂ := by
-  obtain ⟨hc, hs⟩ := hasCompactSupport_and_tsupport_subset_source he θ
-    (f := fun x ↦ ⟪e.complexCutoffPullback he θ f x, u x⟫_ℂ) fun x hx ↦ by
-      by_cases hxs : x ∈ e.source
-      · rw [cutoffPullback_one_apply_of_mem he _ hxs] at hx
-        simp [complexCutoffPullback_apply_of_mem he _ _ hxs, hx]
-      · simp [complexCutoffPullback_apply_of_notMem he _ _ hxs]
-  rw [hint (fun x ↦ ⟪e.complexCutoffPullback he θ f x, u x⟫_ℂ)
-      ((e.complexCutoffPullback he θ f).contMDiff.continuous.inner u.contMDiff.continuous) hc hs,
-    ← setIntegral_target_eq_integral ψ fun y hy ↦ by simp [hy]]
-  refine setIntegral_congr_fun e.open_target.measurableSet fun y hy ↦ ?_
-  simp only [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hy), e.right_inv hy,
-    cutoffPushforwardSchwartz_apply, RCLike.inner_apply, Complex.real_smul, map_mul,
-    Complex.conj_ofReal, ← hθ y hy]
-  push_cast
-  ring
+  rw [integral_inner_complexCutoffPullback_left he hint θ f u.contMDiff.continuous]
+  refine integral_congr_ae (.of_forall fun y ↦ ?_)
+  by_cases hy : y ∈ e.target
+  · simp only [cutoffPushforwardSchwartz_apply, ← hθ y hy, RCLike.inner_apply,
+      Complex.real_smul]
+    push_cast
+    ring
+  · -- Off the chart target both cutoffs vanish.
+    have h0 (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) : φ y = 0 :=
+      image_eq_zero_of_notMem_tsupport fun h ↦ hy (φ.tsupport_subset h)
+    simp [cutoffPushforwardSchwartz_apply, h0 θ, h0 ψ]
 
 end Chart
 
@@ -207,10 +188,11 @@ theorem exists_norm_integral_inner_le_norm_chartReading
   choose ρ hρ _ hint using fun i ↦ hasSmoothPositiveDensity_iff.1 hμ (e i) (he i)
   choose χ hχ _ using fun i ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
     (ψ i).hasCompactSupport.isCompact (ψ i).tsupport_subset
+  have hχ' (i : ι) (y : CoordinateSpace n) (hy : y ∈ tsupport (ψ i)) : χ i y = 1 :=
+    ((hχ i).filter_mono (nhds_le_nhdsSet hy)).self_of_nhds
   set θ := fun i ↦ TestFunction.smulLeftCLMOfContDiffOn (hρ i) (χ i)
   have hθ (i : ι) (y : CoordinateSpace n) (hy : y ∈ tsupport (ψ i)) : θ i y = ρ i y := by
-    simp [θ, TestFunction.smulLeftCLMOfContDiffOn_apply,
-      ((hχ i).filter_mono (nhds_le_nhdsSet hy)).self_of_nhds]
+    simp [θ, TestFunction.smulLeftCLMOfContDiffOn_apply, hχ' i y hy]
   -- The readings `θᵢ · (v ∘ eᵢ⁻¹)` of `v`, measured in `H^{-s}(ℝⁿ)`.
   set g := fun i ↦ (e i).cutoffPushforwardSchwartz (he i) (θ i) v
   refine ⟨∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM (-s) 2 (g i)‖, fun u ↦ ?_⟩
@@ -226,7 +208,7 @@ theorem exists_norm_integral_inner_le_norm_chartReading
       u.contMDiff.continuous)).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
   rw [hu, integral_finsetSum _ hint', Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-  rw [integral_inner_mul_cutoffPullback_eq (he i) (hint i) (ψ i) (θ i) (hθ i)]
+  rw [integral_inner_mul_cutoffPullback_eq (he i) (hint i) (ψ i) (χ i) (θ i) (hχ' i) (hθ i)]
   refine (SchwartzMap.norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm s _ _).trans
     (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
   rw [← chartReading_apply]
@@ -360,7 +342,8 @@ private theorem exists_chartSobolevPairing_eq_inner (s : ℝ) (i : ι) (b : 𝓢
 /-- **The pairings determine the elements of `H^s(M)`.** On a compact manifold read through cutoffs
 `ψᵢ` in charts `eᵢ` whose readings add up to `1`, with a finite measure `μ` having a smooth positive
 density, two elements of `H^s(M)` with the same pairings with every smooth function are equal, for
-every real order `s`. So `H^s(M)` is a space of distributions on `M`. -/
+every real order `s`. So an element `x` of `H^s(M)` is determined by the conjugate-linear
+functional `v ↦ ⟨v, x⟩` on smooth functions. -/
 theorem eq_of_forall_chartSobolevPairing_eq {s : ℝ} {x y : chartSobolevSpace he ψ s}
     (h : ∀ v, chartSobolevPairing μ he ψ v s x = chartSobolevPairing μ he ψ v s y) : x = y := by
   rw [← sub_eq_zero]

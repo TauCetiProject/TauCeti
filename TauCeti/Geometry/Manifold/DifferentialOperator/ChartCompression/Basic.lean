@@ -556,6 +556,16 @@ theorem tsupport_complexCutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_tar
     tsupport (e.complexCutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
   (tsupport_complexCutoffPullback_subset_inter he ψ f).trans (image_mono inter_subset_left)
 
+omit he [ChartedSpace E M] [T2Space M] in
+/-- A function on `M` supported in the image of the support of a cutoff `ψ` under the inverse of
+the chart `e`, such as a function supported in that of a pullback `(ψ f) ∘ e`, has compact support
+inside the chart source. -/
+theorem hasCompactSupport_and_tsupport_subset_source_of_subset {G : Type*} [Zero G] {g : M → G}
+    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hg : tsupport g ⊆ e.symm '' tsupport ψ) :
+    HasCompactSupport g ∧ tsupport g ⊆ e.source :=
+  ⟨(e.isCompact_symm_image_tsupport ψ).of_isClosed_subset (isClosed_tsupport g) hg,
+    hg.trans (e.symm_image_tsupport_subset_source ψ)⟩
+
 /-- If a cutoff `χ` in a chart `e` is `1` near the support of a cutoff `ρ`, then on `M` the
 supports of `ρ` and of `1 - χ`, read through the chart, are disjoint. -/
 theorem disjoint_tsupport_complexCutoffPullback_one_sub {ρ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}

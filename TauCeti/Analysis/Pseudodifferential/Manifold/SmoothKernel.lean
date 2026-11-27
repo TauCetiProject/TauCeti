@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 import TauCeti.Analysis.Pseudodifferential.SmoothKernel
 import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Basic
+import TauCeti.Geometry.Manifold.Measure.CutoffPullback
 import TauCeti.Topology.Algebra.Support
 
 /-!
@@ -56,7 +57,7 @@ operator itself (`TauCeti.smoothKernelOperator`).
 
 public section
 
-open MeasureTheory Set Filter
+open MeasureTheory Set Filter ComplexConjugate
 open scoped ContDiff Manifold Distributions SchwartzMap Topology
 
 namespace TauCeti
@@ -212,27 +213,12 @@ private theorem integral_mul_complexCutoffPullback {c : OpenPartialHomeomorph M 
     (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
     ∫ y, K (x, y) * c.complexCutoffPullback hc θ g y ∂μ =
       ∫ w, ((θ w * ρ w : ℝ) : ℂ) * K (x, c.symm w) * g w := by
-  set v := c.complexCutoffPullback hc θ g
-  -- The integrand on `M` is supported in the compact set `c⁻¹ (supp θ)` inside the chart source.
-  have hS : IsCompact (c.symm '' tsupport θ) := θ.hasCompactSupport.isCompact.image_of_continuousOn
-    (c.continuousOn_symm.mono θ.tsupport_subset)
-  have hv : ∀ y, y ∉ c.symm '' tsupport θ → K (x, y) * v y = 0 := fun y hy ↦ by
-    rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy
-      (OpenPartialHomeomorph.tsupport_complexCutoffPullback_subset hc θ g h), mul_zero]
-  have hsupp : tsupport (fun y ↦ K (x, y) * v y) ⊆ c.source :=
-    (closure_minimal (Function.support_subset_iff'.2 hv) hS.isClosed).trans
-      (image_subset_iff.2 fun y hy ↦ c.map_target (θ.tsupport_subset hy))
-  rw [hint (fun y ↦ K (x, y) * v y)
-      ((hK.comp (continuous_const.prodMk continuous_id)).mul v.contMDiff.continuous)
-      (HasCompactSupport.intro hS hv) hsupp,
-    setIntegral_congr_fun c.open_target.measurableSet fun w hw ↦ by
-      rw [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem hc _ _ (c.map_target hw),
-        c.right_inv hw],
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun w hw ↦ by
-      rw [image_eq_zero_of_notMem_tsupport fun h ↦ hw (θ.tsupport_subset h)]
-      simp]
+  -- Pair the pullback with the conjugate of `K(x, ·)`.
+  have h := integral_inner_complexCutoffPullback hc hint θ g (F := fun y ↦ conj (K (x, y)))
+    (Complex.continuous_conj.comp (hK.comp (continuous_const.prodMk continuous_id)))
+  simp only [RCLike.inner_apply', Complex.conj_conj] at h
+  rw [h]
   refine integral_congr_ae (.of_forall fun w ↦ ?_)
-  simp only [Complex.real_smul]
   push_cast
   ring
 
