@@ -38,7 +38,7 @@ variable {d q : ℕ} [Fact d.Prime] [NeZero q]
 
 omit [NeZero q] in
 /-- Match the twist used to define the compensated mean with the Legendre twist API. -/
-private theorem quadraticTwist_eq_legendreTwist (ψ : DirichletCharacter ℂ q) :
+theorem quadraticTwist_eq_legendreTwist (ψ : DirichletCharacter ℂ q) :
     quadraticTwist d ψ = ψ.legendreTwist d := by
   apply MulChar.ext
   intro a
