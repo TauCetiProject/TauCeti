@@ -84,17 +84,23 @@ theorem IsRegressionFunction.map_restrict_prod_eq_withDensity (hη : IsRegressio
     simp [prod_inter_prod]
   rw [Measure.map_apply measurable_fst hA, Measure.restrict_apply (measurable_fst hA), hinter,
     withDensity_apply _ hA]
-  cases b
-  · have hInt : Integrable (fun x ↦ 1 - η x) (P.map Prod.fst) :=
-      (integrable_const 1).sub hη.integrable
-    simp only [Bool.false_eq_true, ite_false]
-    rw [← ofReal_integral_eq_lintegral_ofReal hInt.integrableOn
-      (ae_of_all _ fun x ↦ sub_nonneg.mpr (hη.mem_Icc x).2), ← hη.measureReal_prod_false hA,
-      ofReal_measureReal]
-  · simp only [ite_true]
-    rw [← ofReal_integral_eq_lintegral_ofReal hη.integrable.integrableOn
-      (ae_of_all _ fun x ↦ (hη.mem_Icc x).1), ← hη.measureReal_prod_true hA,
-      ofReal_measureReal]
+  have hmass : P.real (A ×ˢ {b}) =
+      ∫ x in A, (if b then η x else 1 - η x) ∂(P.map Prod.fst) := by
+    cases b
+    · simpa only [Bool.false_eq_true, ite_false] using hη.measureReal_prod_false hA
+    · simpa only [ite_true] using hη.measureReal_prod_true hA
+  have hInt : Integrable (fun x ↦ if b then η x else 1 - η x) (P.map Prod.fst) := by
+    cases b
+    · simpa only [Bool.false_eq_true, ite_false] using (integrable_const 1).sub' hη.integrable
+    · simpa only [ite_true] using hη.integrable
+  have hnonneg : 0 ≤ᵐ[(P.map Prod.fst).restrict A]
+      (fun x ↦ if b then η x else 1 - η x) := ae_of_all _ fun x ↦ by
+    simp only [Pi.zero_apply]
+    split
+    · exact (hη.mem_Icc x).1
+    · exact sub_nonneg.mpr (hη.mem_Icc x).2
+  rw [← ofReal_integral_eq_lintegral_ofReal hInt.integrableOn hnonneg, ← hmass,
+    ofReal_measureReal]
 
 /-- A measurable, unit-interval-valued modification on a marginal null set is still a regression
 function. -/
@@ -123,7 +129,7 @@ theorem isRegressionFunction_compProd (μ : Measure X) [IsFiniteMeasure μ] (κ 
     [IsMarkovKernel κ] : TauCeti.IsRegressionFunction (μ ⊗ₘ κ) (fun x ↦ (κ x).real {true}) := by
   have hm := κ.measurable_coe (measurableSet_singleton true)
   refine ⟨hm.ennreal_toReal, fun x ↦ ⟨measureReal_nonneg, measureReal_le_one⟩, fun A hA ↦ ?_⟩
-  have hfst : (μ ⊗ₘ κ).map Prod.fst = μ := Measure.fst_compProd μ κ
+  have hfst : (μ ⊗ₘ κ).map Prod.fst = μ := by rw [← Measure.fst, Measure.fst_compProd]
   rw [hfst, measureReal_def, Measure.compProd_apply_prod hA (measurableSet_singleton true)]
   exact (integral_toReal hm.aemeasurable
     (ae_of_all _ fun x ↦ measure_lt_top (κ x) {true})).symm
