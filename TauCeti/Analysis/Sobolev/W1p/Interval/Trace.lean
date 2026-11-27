@@ -28,7 +28,9 @@ on `ℝ` has the test function itself as continuous representative on `[a,b]`
 
 A class with zero endpoint values is bounded by half the `L¹` norm of its weak gradient,
 `|u(t)| ≤ (1/2) ∫_a^b |u'|` (`W1p.abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero`),
-which is the one-dimensional embedding of `W^{1,1}_0(a,b)` into the bounded functions.
+which is the one-dimensional embedding of `W^{1,1}_0(a,b)` into the bounded functions. In norm
+form, `|u(t)| ≤ ‖u'‖_{L¹(a,b)} / 2` for `u ∈ W^{1,1}_0(a,b)`
+(`W1p.abs_intervalRepresentativeL_le_norm_gradient_div_two_of_mem_w1p0Submodule`).
 
 ## References
 
@@ -265,5 +267,20 @@ theorem abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero (hab : a < b)
       (intervalIntegrable_gradient u t.property hb).abs,
       intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo]
   linarith
+
+/-- In `W^{1,1}(a, b)` the norm of the weak gradient is the integral of its absolute value. -/
+theorem norm_gradient_eq_setIntegral_abs (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 1) :
+    ‖gradient u‖ = ∫ s in Ioo a b, |gradient u s| := by
+  simp only [L1.norm_eq_integral_norm, Real.norm_eq_abs, TopologicalSpace.Opens.coe_mk]
+
+/-- **The embedding of `W^{1,1}_0(a, b)` into the bounded functions.** For
+`u ∈ W^{1,1}_0(a, b)` the continuous representative satisfies `|u(t)| ≤ ‖u'‖_{L¹(a,b)} / 2` for
+every `t ∈ [a, b]`. -/
+theorem abs_intervalRepresentativeL_le_norm_gradient_div_two_of_mem_w1p0Submodule (hab : a < b)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 1} (hu : u ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ 1)
+    (t : Icc a b) : |intervalRepresentativeL hab u t| ≤ ‖gradient u‖ / 2 := by
+  rw [norm_gradient_eq_setIntegral_abs]
+  exact abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero hab
+    (intervalTraceL_eq_zero_of_mem_w1p0Submodule hab hu) t
 
 end TauCeti.W1p

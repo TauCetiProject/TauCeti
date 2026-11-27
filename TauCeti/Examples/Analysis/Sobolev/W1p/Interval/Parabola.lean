@@ -181,23 +181,18 @@ private theorem integral_abs_one_sub_two_mul :
       (hc.intervalIntegrable _ _) (hc.intervalIntegrable _ _), h₁, h₂]
   norm_num
 
-/-- In `W^{1,1}(0, 1)` the norm of the weak gradient is the integral of its absolute value. -/
-private theorem norm_gradient_eq_setIntegral_abs (u : W1p volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ 1) :
-    ‖gradient u‖ = ∫ s in Ioo (0 : ℝ) 1, |gradient u s| := by
-  simp only [L1.norm_eq_integral_norm, Real.norm_eq_abs, TopologicalSpace.Opens.coe_mk]
-
 /-- **The sharp constant of `W^{1,1}_0(0, 1)` in `L^∞`.** The least `C` with
 `|u(t)| ≤ C ‖u'‖_{L¹(0,1)}` for every `u ∈ W^{1,1}_0(0, 1)` and every `t ∈ [0, 1]` is `1/2`. The
-bound holds by `TauCeti.W1p.abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero`, and the
+bound holds by
+`TauCeti.W1p.abs_intervalRepresentativeL_le_norm_gradient_div_two_of_mem_w1p0Submodule`, and the
 parabola `x (1 - x)`, with `u(1/2) = 1/4` and `‖u'‖_{L¹} = 1/2`, attains it. -/
 theorem isLeast_abs_intervalRepresentativeL_le_mul_norm_gradient :
     IsLeast {C : ℝ | ∀ u ∈ w1p0Submodule volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ 1,
       ∀ t : Icc (0 : ℝ) 1, |intervalRepresentativeL zero_lt_one u t| ≤ C * ‖gradient u‖}
       (1 / 2) := by
   refine ⟨fun u hu t => ?_, fun C hC => ?_⟩
-  · rw [norm_gradient_eq_setIntegral_abs, one_div_mul_eq_div]
-    exact abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero zero_lt_one
-      (intervalTraceL_eq_zero_of_mem_w1p0Submodule zero_lt_one hu) t
+  · rw [one_div_mul_eq_div]
+    exact abs_intervalRepresentativeL_le_norm_gradient_div_two_of_mem_w1p0Submodule zero_lt_one hu t
   · obtain ⟨u, hrep, -, hg⟩ := exists_intervalRepresentativeL_eq 1
     have hgrad : ‖gradient u‖ = 1 / 2 := by
       rw [norm_gradient_eq_setIntegral_abs, ← integral_abs_one_sub_two_mul]

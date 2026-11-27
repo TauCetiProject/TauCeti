@@ -8,11 +8,13 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
+public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Integral.L2NormSq
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The absolutely continuous characterization of interval Sobolev classes
@@ -47,7 +49,10 @@ the squares of the representative and of its derivative
 A class whose value agrees almost everywhere with a function continuous on `[a,b]` has that
 function as its continuous representative
 (`TauCeti.W1p.intervalRepresentativeL_apply_of_value_ae_eq`), and its trace is the pair of endpoint
-values (`TauCeti.W1p.intervalTraceL_eq_of_value_ae_eq`).
+values (`TauCeti.W1p.intervalTraceL_eq_of_value_ae_eq`). By the Hölder bound of the
+representative, that function is Hölder continuous of exponent `1 - 1/p` on `[a,b]` with constant
+`‖u'‖_{Lᵖ(a,b)}`, which is Morrey's embedding on an interval
+(`TauCeti.W1p.holderOnWith_of_value_ae_eq`).
 
 ## References
 
@@ -139,6 +144,25 @@ theorem intervalTraceL_eq_of_value_ae_eq (hab : a < b) {f : ℝ → ℝ}
     (hu : value u =ᵐ[volume.restrict (Ioo a b)] f) : intervalTraceL hab u = (f a, f b) := by
   rw [intervalTraceL_apply, intervalRepresentativeL_apply_of_value_ae_eq hab hf hu,
     intervalRepresentativeL_apply_of_value_ae_eq hab hf hu]
+
+/-- **Morrey's embedding on an interval.** If the value of `u ∈ W^{1,p}(a, b)` agrees almost
+everywhere on `(a,b)` with a function `f` continuous on `[a,b]`, then `f` is Hölder continuous of
+exponent `1 - 1/p` on `[a,b]` with constant `‖u'‖_{Lᵖ(a,b)}`. At `p = ∞` the exponent is `1`. -/
+theorem holderOnWith_of_value_ae_eq (hab : a < b) {f : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a b)) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    (hu : value u =ᵐ[volume.restrict (Ioo a b)] f) :
+    HolderOnWith ‖gradient u‖₊ (1 - 1 / p.toReal).toNNReal f (Icc a b) := by
+  have hexp : 0 ≤ 1 - 1 / p.toReal := by
+    rcases eq_or_ne p ⊤ with rfl | hp
+    · simp
+    · exact sub_nonneg.2 (div_le_one_of_le₀
+        (ENNReal.toReal_one ▸ ENNReal.toReal_mono hp Fact.out) ENNReal.toReal_nonneg)
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have h := abs_intervalRepresentativeL_sub_le hab u ⟨y, hy⟩ ⟨x, hx⟩
+  rw [intervalRepresentativeL_apply_of_value_ae_eq hab hf hu,
+    intervalRepresentativeL_apply_of_value_ae_eq hab hf hu] at h
+  rw [Real.dist_eq, Real.dist_eq, coe_nnNorm, Real.coe_toNNReal _ hexp, mul_comm]
+  exact h
 
 /-- An absolutely continuous real function with `Lᵖ` derivative is the continuous representative
 of an interval Sobolev class, including at both endpoints, whose value and weak gradient agree
