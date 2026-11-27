@@ -716,7 +716,7 @@ theorem linearMove_last_of_mem_coneSpan (j : Fin (d + 1)) {y : Fin (d + 2) → �
   ring
 
 /-- Each unaccelerated linear move maps `orderedCone d` into itself. -/
-theorem linearMove_mapsTo_orderedCone (j : Fin (d + 1)) :
+theorem mapsTo_linearMove_orderedCone (j : Fin (d + 1)) :
     MapsTo (linearMove j) (orderedCone d) (orderedCone d) := fun y hy => by
   have hpos := pos_last_of_mem_orderedCone hy
   have hpen := linearMove_penultimate j y
@@ -791,7 +791,7 @@ theorem unaccelBranchMap_mem_orderedSimplex (j : Fin (d + 1)) {x : Fin d → ℝ
     rw [simplexChart_linearMove j (simplexLift_mem_orderedCone hx), simplexChart_simplexLift]
   rw [h]
   exact simplexChart_mem_orderedSimplex
-    (linearMove_mapsTo_orderedCone j (simplexLift_mem_orderedCone hx))
+    (mapsTo_linearMove_orderedCone j (simplexLift_mem_orderedCone hx))
 
 /-- Each unaccelerated branch maps the ordered simplex into itself. -/
 theorem mapsTo_unaccelBranchMap (j : Fin (d + 1)) :
@@ -997,7 +997,7 @@ theorem branchDelay_simplexChart (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ} (h
     mul_div_cancel_left₀ _ (pos_last_of_mem_orderedCone hy).ne', branchDelay_def]
 
 /-- Each accelerated move maps `orderedCone d` into itself. -/
-theorem accelMove_mapsTo_orderedCone (a : ℕ × Fin d) :
+theorem mapsTo_accelMove_orderedCone (a : ℕ × Fin d) :
     MapsTo (accelMove a) (orderedCone d) (orderedCone d) := fun _ hy => by
   have hx := simplexChart_mem_orderedSimplex hy
   have hq := branchDenom_pos_of_mem_orderedSimplex a hx

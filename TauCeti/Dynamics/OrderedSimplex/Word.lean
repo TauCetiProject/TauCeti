@@ -74,11 +74,10 @@ linear maps.
   `γ_{u ++ v} = γ_v γ_u`.
 * `TauCeti.contDiffOn_wordMap`, `TauCeti.contDiffOn_wordDelay`: smoothness on `orderedSimplex d`.
 * `TauCeti.wordMove_of_mem_orderedCone`, `TauCeti.wordDelay_simplexChart`,
-  `TauCeti.wordCount_simplexChart_smul`, `TauCeti.wordMove_mem_coneSpan`,
-  `TauCeti.unaccelWordMove_mem_coneSpan`, `TauCeti.wordMoveConeSpan_append`,
-  `TauCeti.unaccelWordMoveConeSpan_append`: the homogeneous identity
-  `γ_u y = y_n e^{T_u (w)} (F_u (w), 1)`, `T_u (w) = log ((γ_u y)_n / y_n)`, scale invariance,
-  and preservation of `coneSpan d` with its restricted action.
+  `TauCeti.wordMove_mem_coneSpan`, `TauCeti.unaccelWordMove_mem_coneSpan`,
+  `TauCeti.wordMoveConeSpan_append`, `TauCeti.unaccelWordMoveConeSpan_append`: the homogeneous
+  identity `γ_u y = y_n e^{T_u (w)} (F_u (w), 1)`, `T_u (w) = log ((γ_u y)_n / y_n)`, and
+  preservation of `coneSpan d` with its restricted action.
 * `TauCeti.length_mul_log_le_wordDelay`, `TauCeti.fst_add_three_le_two_mul_exp_wordDelay`: on the
   simplex `T_u (w) ≥ |u| log (3 / 2)`, and every letter `(A, j)` of `u` has
   `A + 3 ≤ 2 e^{T_u (w)}`.
@@ -322,14 +321,14 @@ theorem unaccelWordMove_append (js₁ js₂ : List (Fin (d + 1))) :
   | cons j js₁ ih => simp [ih, mul_assoc]
 
 /-- Every unaccelerated linear word move preserves `orderedCone d`. -/
-theorem unaccelWordMove_mapsTo_orderedCone (js : List (Fin (d + 1))) :
+theorem mapsTo_unaccelWordMove_orderedCone (js : List (Fin (d + 1))) :
     MapsTo (unaccelWordMove js) (orderedCone d) (orderedCone d) := by
   induction js with
   | nil => exact mapsTo_id _
   | cons j _ ih =>
     intro y hy
     rw [unaccelWordMove_cons_apply]
-    exact ih (linearMove_mapsTo_orderedCone j hy)
+    exact ih (mapsTo_linearMove_orderedCone j hy)
 
 /-- Every unaccelerated linear word move preserves the hyperplane `coneSpan d`. -/
 theorem unaccelWordMove_mem_coneSpan (js : List (Fin (d + 1))) {y : Fin (d + 2) → ℝ}
@@ -341,7 +340,7 @@ theorem unaccelWordMove_mem_coneSpan (js : List (Fin (d + 1))) {y : Fin (d + 2) 
     exact linearMove_mem_coneSpan j _
 
 /-- Every unaccelerated linear word move maps `coneSpan d` into itself. -/
-theorem unaccelWordMove_mapsTo_coneSpan (js : List (Fin (d + 1))) :
+theorem mapsTo_unaccelWordMove_coneSpan (js : List (Fin (d + 1))) :
     MapsTo (unaccelWordMove js) (coneSpan d) (coneSpan d) :=
   fun _ hy => unaccelWordMove_mem_coneSpan js hy
 
@@ -418,7 +417,7 @@ theorem wordMove_mem_orderedCone (u : List (ℕ × Fin d)) {y : Fin (d + 2) → 
     (mul_pos (pos_last_of_mem_orderedCone hy) (Real.exp_pos _))
 
 /-- Every accelerated linear word move preserves `orderedCone d`. -/
-theorem wordMove_mapsTo_orderedCone (u : List (ℕ × Fin d)) :
+theorem mapsTo_wordMove_orderedCone (u : List (ℕ × Fin d)) :
     MapsTo (wordMove u) (orderedCone d) (orderedCone d) :=
   fun _ hy => wordMove_mem_orderedCone u hy
 
@@ -432,7 +431,7 @@ theorem wordMove_mem_coneSpan (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ
     exact accelMove_mem_coneSpan a _
 
 /-- Every accelerated linear word move maps `coneSpan d` into itself. -/
-theorem wordMove_mapsTo_coneSpan (u : List (ℕ × Fin d)) :
+theorem mapsTo_wordMove_coneSpan (u : List (ℕ × Fin d)) :
     MapsTo (wordMove u) (coneSpan d) (coneSpan d) :=
   fun _ hy => wordMove_mem_coneSpan u hy
 
@@ -496,29 +495,25 @@ theorem wordMap_mem_interior_orderedSimplex (u : List (ℕ × Fin d)) {x : Fin d
 theorem eq_of_wordMap_eq_of_wordDelay_eq {u v : List (ℕ × Fin d)} {x : Fin d → ℝ}
     (hx : x ∈ interior (orderedSimplex d)) (hmap : wordMap u x = wordMap v x)
     (hdelay : wordDelay u x = wordDelay v x) : u = v := by
-  have hpos (w : List (ℕ × Fin d)) (hw : w ≠ []) : 0 < wordDelay w x :=
-    (mul_pos (Nat.cast_pos.mpr (List.length_pos_iff.mpr hw)) (Real.log_pos (by norm_num))).trans_le
-      (length_mul_log_le_wordDelay w (interior_subset hx))
   induction u using List.reverseRecOn generalizing v with
   | nil =>
     rcases eq_or_ne v [] with rfl | hv
     · rfl
-    · exact absurd hdelay (by simpa using (hpos v hv).ne)
+    · exact absurd hdelay (by simpa using (wordDelay_pos_of_ne_nil hv (interior_subset hx)).ne)
   | append_singleton u a ih =>
     rcases List.eq_nil_or_concat' v with rfl | ⟨v, b, rfl⟩
-    · exact absurd hdelay (by simpa using (hpos (u ++ [a]) (by simp)).ne')
+    · exact absurd hdelay (by
+        simpa using (wordDelay_pos_of_ne_nil (u := u ++ [a]) (by simp) (interior_subset hx)).ne')
     · simp only [wordMap_append, wordMap_cons, wordMap_nil] at hmap
       obtain ⟨rfl, hm⟩ := (branchMap_eq_branchMap_iff (wordMap_mem_interior_orderedSimplex u hx)
         (wordMap_mem_orderedSimplex v (interior_subset hx))).mp hmap
       simp only [wordDelay_append, wordDelay_cons, wordDelay_nil, add_zero, hm] at hdelay
       rw [ih hm (add_right_cancel hdelay)]
 
-/-- **Freeness.** The accelerated generators `γ_{n-1}^A γ_j` freely generate the semigroup
-`Γ'`: distinct words have distinct linear maps `γ_u`. -/
-theorem wordMove_injective :
-    Function.Injective (wordMove : List (ℕ × Fin d) → Module.End ℝ (Fin (d + 2) → ℝ)) := by
-  intro u v h
-  obtain ⟨x, hx⟩ := interior_orderedSimplex_nonempty d
+/-- At an interior point `x` of the simplex, `γ_u (x, 1)` uniquely determines the word `u`. -/
+private theorem eq_of_wordMove_simplexLift_eq {u v : List (ℕ × Fin d)} {x : Fin d → ℝ}
+    (hx : x ∈ interior (orderedSimplex d))
+    (h : wordMove u (simplexLift x) = wordMove v (simplexLift x)) : u = v := by
   have hy := simplexLift_mem_orderedCone (interior_subset hx)
   refine eq_of_wordMap_eq_of_wordDelay_eq hx ?_ ?_
   · have hu := simplexChart_wordMove u hy
@@ -529,6 +524,14 @@ theorem wordMove_injective :
     have hv := wordDelay_simplexChart v hy
     rw [simplexChart_simplexLift] at hu hv
     rw [hu, hv, h]
+
+/-- **Freeness.** The accelerated generators `γ_{n-1}^A γ_j` freely generate the semigroup
+`Γ'`: distinct words have distinct linear maps `γ_u`. -/
+theorem wordMove_injective :
+    Function.Injective (wordMove : List (ℕ × Fin d) → Module.End ℝ (Fin (d + 2) → ℝ)) := by
+  intro u v h
+  obtain ⟨x, hx⟩ := interior_orderedSimplex_nonempty d
+  exact eq_of_wordMove_simplexLift_eq hx (by rw [h])
 
 /-- **Freeness.** Two words have the same linear map exactly when they are equal. -/
 @[simp]
@@ -546,11 +549,6 @@ noncomputable def wordCount (d : ℕ) (x : Fin d → ℝ) (r : ℝ) : ℕ :=
 theorem wordCount_def (d : ℕ) (x : Fin d → ℝ) (r : ℝ) :
     wordCount d x r = {u : List (ℕ × Fin d) | wordDelay u x ≤ r}.ncard :=
   (rfl)
-
-/-- Scale invariance of the renewal count under nonzero scaling of a homogeneous vector. -/
-theorem wordCount_simplexChart_smul {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) → ℝ) (r : ℝ) :
-    wordCount d (simplexChart (c • y)) r = wordCount d (simplexChart y) r := by
-  rw [simplexChart_smul y hc]
 
 /-- On the simplex only finitely many words have delay at most `r`: such a word has length at
 most `r / log (3 / 2)`, and each of its letters `(A, j)` has `A + 3 ≤ 2 e^r`. -/
@@ -616,14 +614,6 @@ theorem wordCount_eventuallyEq_nhdsGE {x : Fin d → ℝ} (hx : x ∈ orderedSim
   have : Northcott (fun u => wordDelay u x) := ⟨finite_setOf_wordDelay_le hx⟩
   exact (Northcott.eventuallyEq_setOf_le_nhdsGE (fun u => wordDelay u x) r).mono
     fun _ h => congrArg Set.ncard h
-
-/-- The renewal count `r ↦ wordCount d x r` is locally constant on the right at every `r : ℝ`. -/
-theorem eventually_wordCount_eq_of_Ici {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
-    ∃ δ > 0, ∀ r' ∈ Ico r (r + δ), wordCount d x r' = wordCount d x r := by
-  rcases mem_nhdsGE_iff_exists_Ico_subset.1 (wordCount_eventuallyEq_nhdsGE hx r) with
-    ⟨b, hrb, hb⟩
-  refine ⟨b - r, sub_pos.2 hrb, fun r' hr' => hb ?_⟩
-  rwa [add_sub_cancel] at hr'
 
 /-- The renewal count is right-continuous in time: it is locally constant to the right of each
 `r`, since only finitely many delays lie in `(r, r + 1]`. -/
@@ -1020,17 +1010,14 @@ theorem range_expandWord (d : ℕ) :
 (freeness of the restricted accelerated semigroup). -/
 theorem wordMoveConeSpan_injective (d : ℕ) :
     Function.Injective (wordMoveConeSpan (d := d)) := by
-  cases d with
-  | zero =>
-    rintro (_ | ⟨a, _⟩) (_ | ⟨b, _⟩) _
-    · rfl
-    · exact Fin.elim0 b.2
-    · exact Fin.elim0 a.2
-    · exact Fin.elim0 a.2
-  | succ d =>
-    intro u₁ u₂ h
-    exact expandWord_injective <| unaccelWordMoveConeSpan_injective (Nat.succ_pos d) <| by
-      rw [unaccelWordMoveConeSpan_expandWord, unaccelWordMoveConeSpan_expandWord, h]
+  intro u v h
+  obtain ⟨x, hx⟩ := interior_orderedSimplex_nonempty d
+  have hy : simplexLift x ∈ coneSpan d :=
+    orderedCone_subset_coneSpan d (simplexLift_mem_orderedCone (interior_subset hx))
+  refine eq_of_wordMove_simplexLift_eq hx ?_
+  simpa only [coe_wordMoveConeSpan_apply] using
+    congrArg (fun f : Module.End ℝ (coneSpan d) =>
+      (f ⟨simplexLift x, hy⟩ : Fin (d + 2) → ℝ)) h
 
 /-- The range of `wordMove` is the submonoid of endomorphisms generated by `accelMove`. -/
 theorem range_wordMove (d : ℕ) :
