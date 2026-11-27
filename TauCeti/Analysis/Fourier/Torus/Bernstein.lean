@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.IntegerPoints
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Convolution.Young
+import TauCeti.Analysis.Distribution.SchwartzSpace.Bernstein
+import TauCeti.Analysis.Distribution.SchwartzSpace.Dilation
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Convolution
@@ -47,6 +50,17 @@ periodic Littlewood–Paley decomposition with frequencies of size `2 ^ j` behav
 the single scale `2 ^ (-j)`, so that each derivative costs a factor `2 ^ j` and passing from `Lᵖ`
 to `L^q` costs `2 ^ (j d (1/p - 1/q))`.
 
+Conversely, on an annulus the derivatives control the function. The **reverse Bernstein
+inequality** says that there is `C`, depending only on `d` and `θ`, such that for `1 ≤ p ≤ ∞`
+every integrable `f` with Fourier coefficients vanishing outside the annulus `R ≤ ‖n‖ ≤ θ R`,
+`R > 0`, for the Euclidean norm of `n`, satisfies
+
+`‖f‖_p ≤ C R⁻¹ ∑ᵢ ‖∂ᵢ f‖_p`
+
+(`TauCeti.UnitAddTorus.exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq`), where `∂ᵢ f`
+is any integrable function with Fourier coefficients `2πi nᵢ f̂(n)`. Its whole-space
+counterpart is `OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`.
+
 ## The argument
 
 The proof follows the whole-space one, convolution with a reproducing kernel, with Poisson
@@ -70,12 +84,26 @@ For a derivative along `v`, the symbol `2πi ⟪n, v⟫ ∏ j, χ (n j / R)` is 
 one derivative at a fixed exponent. Derivatives of higher order follow by iteration through
 intermediate trigonometric polynomials, and the gain of integrability is applied last.
 
+For the reverse inequality, there are Schwartz symbols `σᵢ` on `ℝᵈ` with `∑ i, σᵢ(ξ) 2πi ξ i = 1`
+on the annulus `1 ≤ ‖ξ‖ ≤ θ` (`OrthonormalBasis.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le`,
+whose symbols are built from `ξ i / (2πi ‖ξ‖²)`). Hence
+`f = R⁻¹ ∑ᵢ Kᵢ ⋆ ∂ᵢ f` for the periodic kernels `Kᵢ` of the dilated symbols `σᵢ (· / R)`, and
+Young's inequality for these kernels (`SchwartzMap.eLpNorm_periodicKernel_convolution_le`) bounds
+each term by `∫ ‖𝓕⁻ σᵢ‖`, for every `R > 0`. This is the periodic counterpart of the whole-space
+proof in `TauCeti/Analysis/Distribution/SchwartzSpace/Bernstein.lean`
+(`SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`), with the same
+symbols. The reverse Bernstein inequality for `Lᵖ` functions on a Euclidean space,
+`OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`, is proved through tempered
+distributions with different, explicitly cut off symbols.
+
 ## Main declarations
 
 * `TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm`: Nikol'skii's
   inequality.
 * `TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul`: Bernstein's
   inequalities for derivatives of every order.
+* `TauCeti.UnitAddTorus.exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq`: the reverse
+  Bernstein inequality on an annulus.
 
 ## References
 
@@ -90,7 +118,7 @@ intermediate trigonometric polynomials, and the gain of integrability is applied
 public section
 
 open MeasureTheory Set FourierTransform
-open scoped ENNReal NNReal ContDiff Convolution
+open scoped ENNReal NNReal ContDiff Convolution SchwartzMap
 
 /-! The kernels below take a point of the torus as an explicit argument, so they live in the
 root `UnitAddTorus` namespace. -/
@@ -597,5 +625,137 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul :
         · exact le_max_right _ _
 
 end Bernstein
+
+/-! ### The reverse Bernstein inequality -/
+
+section ReverseBernstein
+
+universe u
+
+variable {d : Type*} [Fintype d]
+
+/-- The periodic kernel of a Schwartz symbol dilated by `R > 0`, `ξ ↦ σ (R⁻¹ • ξ)`. -/
+private noncomputable def dilatedKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {R : ℝ} (hR : 0 < R) :
+    C(UnitAddTorus d, ℂ) :=
+  (SchwartzMap.compSMulCLM ℂ (Units.mk0 R⁻¹ (inv_ne_zero hR.ne')) σ).periodicKernel
+
+private theorem mFourierCoeff_dilatedKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {R : ℝ} (hR : 0 < R)
+    (n : d → ℤ) : mFourierCoeff (dilatedKernel σ hR) n = σ (R⁻¹ • latticePoint n) := by
+  simp [dilatedKernel, Units.smul_def]
+
+/-- **Young's inequality for the dilated kernels**, uniformly in the scale: convolution with
+`dilatedKernel σ hR` is bounded on `Lᵖ(𝕋ᵈ; E)`, `1 ≤ p ≤ ∞`, by `∫ ‖𝓕⁻ σ‖`. -/
+private theorem eLpNorm_dilatedKernel_convolution_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {R : ℝ} (hR : 0 < R) {p : ℝ≥0∞}
+    (hp : 1 ≤ p) {g : UnitAddTorus d → E} (hg : AEStronglyMeasurable g) :
+    eLpNorm (⇑(dilatedKernel σ hR) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] g) p volume ≤
+      ENNReal.ofReal (∫ y, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) y‖) * eLpNorm g p volume := by
+  have h : ⇑(SchwartzMap.compSMulCLM ℂ (Units.mk0 R⁻¹ (inv_ne_zero hR.ne')) σ) =
+      fun ξ ↦ σ (R⁻¹ • ξ) := funext fun ξ ↦ by simp [Units.smul_def]
+  rw [volume_eq_pi_haarAddCircle, ← integral_norm_fourierInv_comp_smul _ (inv_ne_zero hR.ne'),
+    ← h]
+  exact SchwartzMap.eLpNorm_periodicKernel_convolution_le _ hp
+    (by rwa [volume_eq_pi_haarAddCircle] at hg)
+
+/-- **Reproducing formula on an annulus.** If the symbols `σᵢ` invert the partial derivatives on
+the annulus `1 ≤ ‖ξ‖ ≤ θ`, `f` has spectrum in the annulus `R ≤ ‖n‖ ≤ θ R` and `ĝᵢ(n) =
+2πi nᵢ f̂(n)`, then `f = R⁻¹ ∑ᵢ Kᵢ ⋆ gᵢ` almost everywhere, for the kernels `Kᵢ` of the symbols
+`σᵢ` dilated by `R`. -/
+private theorem ae_eq_sum_smul_dilatedKernel_convolution {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {θ : ℝ} {σ : d → 𝓢(EuclideanSpace ℝ d, ℂ)}
+    (hσ : ∀ ξ : EuclideanSpace ℝ d, 1 ≤ ‖ξ‖ → ‖ξ‖ ≤ θ →
+      ∑ i, σ i ξ * (2 * Real.pi * Complex.I * ξ i) = 1)
+    {R : ℝ} (hR : 0 < R) {f : UnitAddTorus d → E} {g : d → UnitAddTorus d → E}
+    (hf : Integrable f) (hg : ∀ i, Integrable (g i))
+    (hspec : ∀ n, (‖latticePoint n‖ < R ∨ θ * R < ‖latticePoint n‖) → mFourierCoeff f n = 0)
+    (hfg : ∀ i n, mFourierCoeff (g i) n = (2 * Real.pi * Complex.I * n i) • mFourierCoeff f n) :
+    f =ᵐ[volume] ∑ i, ((R⁻¹ : ℝ) : ℂ) •
+      (⇑(dilatedKernel (σ i) hR) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] g i) := by
+  classical
+  -- The spectrum of `f`, and the trigonometric polynomials representing `f` and the `gᵢ`.
+  set S := (finite_setOf_norm_latticePoint_le (ι := d) (θ * R)).toFinset
+  have hS (n : d → ℤ) (hn : n ∉ S) : mFourierCoeff f n = 0 :=
+    hspec n (Or.inr (by simpa [S] using hn))
+  have hgS (i : d) (n : d → ℤ) (hn : n ∉ S) : mFourierCoeff (g i) n = 0 := by
+    rw [hfg, hS n hn, smul_zero]
+  filter_upwards [hf.ae_eq_sum_mFourier_smul_mFourierCoeff hS] with x hx
+  simp only [Finset.sum_apply, Pi.smul_apply]
+  -- Each `Kᵢ ⋆ gᵢ` is the trigonometric polynomial with coefficients `K̂ᵢ(n) ĝᵢ(n)`.
+  have hconv (i : d) : (⇑(dilatedKernel (σ i) hR) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] g i) x =
+      ∑ n ∈ S, (σ i (R⁻¹ • latticePoint n) * mFourier n x) • mFourierCoeff (g i) n := by
+    rw [convolution_congr _ (Filter.EventuallyEq.refl _ _)
+      ((hg i).ae_eq_sum_mFourier_smul_mFourierCoeff (hgS i)),
+      ((dilatedKernel (σ i) hR).continuous.integrable_of_hasCompactSupport
+        (.of_compactSpace _)).convolution_sum_mFourier_smul_apply]
+    simp only [mFourierCoeff_dilatedKernel]
+  simp_rw [hconv, Finset.smul_sum, smul_smul]
+  rw [hx, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  simp_rw [hfg, smul_smul, ← Finset.sum_smul]
+  by_cases hn : mFourierCoeff f n = 0
+  · simp [hn]
+  congr 1
+  -- On the annulus the dilated symbols invert the derivatives.
+  have hRn : R ≤ ‖latticePoint n‖ ∧ ‖latticePoint n‖ ≤ θ * R := by
+    by_contra h
+    rw [not_and_or, not_le, not_le] at h
+    exact hn (hspec n h)
+  have hnorm : ‖R⁻¹ • latticePoint n‖ = ‖latticePoint n‖ / R := by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hR.le), ← div_eq_inv_mul]
+  have h1 := hσ _ (by rw [hnorm, le_div_iff₀ hR, one_mul]; exact hRn.1)
+    (by rw [hnorm, div_le_iff₀ hR]; exact hRn.2)
+  simp only [PiLp.smul_apply, latticePoint_apply, smul_eq_mul] at h1
+  conv_lhs => rw [← mul_one (mFourier n x), ← h1, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  push_cast
+  ring
+
+/-- **The reverse Bernstein inequality on the torus.** For every `θ` there is `C`, depending only
+on `d` and `θ`, with the following property for every complex Banach space `E` and `1 ≤ p ≤ ∞`.
+Let `f : (ℝ / ℤ)^d → E` be integrable with Fourier coefficients vanishing outside the annulus
+`R ≤ ‖n‖ ≤ θ R`, `R > 0`, for the Euclidean norm of `n ∈ ℤᵈ`, and let `gᵢ` be integrable with
+Fourier coefficients `2πi nᵢ f̂(n)`, so that `gᵢ` agrees almost everywhere with the `i`-th partial
+derivative of the trigonometric polynomial representing `f`. Then
+
+`‖f‖_p ≤ C R⁻¹ ∑ᵢ ‖gᵢ‖_p`.
+
+Together with Bernstein's inequality
+`TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul`, this says that on an
+annulus of radius `R` a derivative costs exactly a factor of order `R`, in both directions. -/
+theorem exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq (θ : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+      {p : ℝ≥0∞}, 1 ≤ p → ∀ {R : ℝ}, 0 < R →
+      ∀ {f : UnitAddTorus d → E} {g : d → UnitAddTorus d → E}, Integrable f →
+      (∀ i, Integrable (g i)) →
+      (∀ n, (‖latticePoint n‖ < R ∨ θ * R < ‖latticePoint n‖) → mFourierCoeff f n = 0) →
+      (∀ i n, mFourierCoeff (g i) n = (2 * Real.pi * Complex.I * n i) • mFourierCoeff f n) →
+      eLpNorm f p volume ≤ ENNReal.ofReal (C / R) * ∑ i, eLpNorm (g i) p volume := by
+  -- Schwartz symbols inverting the partial derivatives on the annulus `1 ≤ ‖ξ‖ ≤ θ`.
+  obtain ⟨σ, hσ⟩ := (EuclideanSpace.basisFun d ℝ).exists_sum_mul_eq_one_of_one_le_norm_of_norm_le θ
+  simp only [EuclideanSpace.inner_basisFun_real] at hσ
+  set A : d → ℝ := fun i ↦ ∫ y, ‖𝓕⁻ (σ i : EuclideanSpace ℝ d → ℂ) y‖
+  have hA (i : d) : 0 ≤ A i := integral_nonneg fun _ ↦ norm_nonneg _
+  refine ⟨∑ i, A i, Finset.sum_nonneg fun i _ ↦ hA i, ?_⟩
+  intro E _ _ _ p hp R hR f g hf hg hspec hfg
+  rw [eLpNorm_congr_ae (ae_eq_sum_smul_dilatedKernel_convolution hσ hR hf hg hspec hfg)]
+  refine (eLpNorm_sum_le hp).trans ?_
+  simp only [eLpNorm_const_smul]
+  have hRe : ‖(((R⁻¹ : ℝ) : ℂ))‖ₑ = ENNReal.ofReal R⁻¹ := by
+    rw [← ofReal_norm, Complex.norm_real, Real.norm_of_nonneg (inv_nonneg.2 hR.le)]
+  calc ∑ i, ‖(((R⁻¹ : ℝ) : ℂ))‖ₑ *
+        eLpNorm (⇑(dilatedKernel (σ i) hR) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] g i) p volume
+      ≤ ∑ i, ENNReal.ofReal R⁻¹ * (ENNReal.ofReal (∑ i, A i) * eLpNorm (g i) p volume) :=
+        Finset.sum_le_sum fun i _ ↦ by
+          rw [hRe]
+          gcongr
+          refine (eLpNorm_dilatedKernel_convolution_le (σ i) hR hp
+            (hg i).aestronglyMeasurable).trans ?_
+          gcongr
+          exact Finset.single_le_sum (fun j _ ↦ hA j) (Finset.mem_univ i)
+    _ = ENNReal.ofReal R⁻¹ * ENNReal.ofReal (∑ i, A i) * ∑ i, eLpNorm (g i) p volume := by
+        simp only [Finset.mul_sum, mul_assoc]
+    _ = _ := by rw [← ENNReal.ofReal_mul (inv_nonneg.2 hR.le), inv_mul_eq_div]
+
+end ReverseBernstein
 
 end TauCeti.UnitAddTorus

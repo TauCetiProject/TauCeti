@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
+public import Mathlib.Algebra.Module.Torsion.Field
 public import Mathlib.Algebra.Order.Field.Rat
 public import TauCeti.GroupTheory.DoubleCoset.WeightedPairing
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
@@ -44,6 +46,9 @@ finite, and for `J' ≤ J` of finite index the index formula reads `mass J' = [J
 ## Main definitions
 
 * `TauCeti.orbitMass G α`: the mass `∑_x 1 / c(x)` of the orbit space of `G` acting on `α`.
+* `TauCeti.orbitSum G α F`: the weighted orbit sum `∑_x c(x)⁻¹ F(x)` of a function on the orbit
+  space with values in a `ℚ`-vector space; `TauCeti.orbitSum_one` identifies it with the mass for
+  `F = 1`.
 
 ## Main results
 
@@ -53,6 +58,8 @@ finite, and for `J' ≤ J` of finite index the index formula reads `mass J' = [J
 * `TauCeti.natCard_mul_orbitMass`: for a finite group, `|G| · mass = |α|`.
 * `TauCeti.finsum_mem_inv_cardStabilizerOnOrbit_preimage`: the orbits above one orbit carry
   `[U : V]` times its mass.
+* `TauCeti.orbitSum_comp_map_of_le`: the index formula for weighted orbit sums,
+  `∑_{V \ α} c_V⁻¹ F = [U : V] ∑_{U \ α} c_U⁻¹ F` for `F` pulled back from the `U`-orbits.
 * `TauCeti.orbitMass_eq_relIndex_mul_of_le`: **the index formula**
   `mass(V, α) = [U : V] mass(U, α)`.
 * `TauCeti.orbitMass_eq_natCard_of_mackeySubgroup_eq_bot`: with trivial stabilisers `Γ_i` the
@@ -137,6 +144,35 @@ theorem natCard_mul_orbitMass [Finite G] : (Nat.card G : ℚ) * orbitMass G α =
   rw [card_eq_finsum_card_group_div_cardStabilizerOnOrbit G α ℚ, orbitMass_def, mul_finsum]
   simp only [div_eq_mul_inv]
 
+variable (G α) in
+/-- **The weighted orbit sum** of a function `F` on the orbit space of `G` acting on `α`, with
+values in a `ℚ`-vector space: `∑_x c(x)⁻¹ F(x)`, where `c(x)` is the order of the stabiliser of
+the orbit `x` (`cardStabilizerOnOrbit`). An orbit with infinite stabiliser has weight `0`, and the
+sum is `0` when its summand has infinite support. For `F = 1` it is the mass
+(`TauCeti.orbitSum_one`). -/
+noncomputable def orbitSum {W : Type*} [AddCommGroup W] [Module ℚ W]
+    (F : orbitRel.Quotient G α → W) : W :=
+  ∑ᶠ x, (cardStabilizerOnOrbit x : ℚ)⁻¹ • F x
+
+variable (G α) in
+theorem orbitSum_def {W : Type*} [AddCommGroup W] [Module ℚ W] (F : orbitRel.Quotient G α → W) :
+    orbitSum G α F = ∑ᶠ x, (cardStabilizerOnOrbit x : ℚ)⁻¹ • F x :=
+  (rfl)
+
+/-- The weighted orbit sum of the constant function `1` is the mass. -/
+theorem orbitSum_one : orbitSum G α (fun _ ↦ (1 : ℚ)) = orbitMass G α := by
+  simp [orbitSum_def, orbitMass_def]
+
+/-- **The weighted orbit sum is invariant under an equivariant equivalence.** An equivalence
+`e : α ≃ β` carrying the action of `G` to that of `H` along `φ : G ≃* H` preserves weighted orbit
+sums. -/
+theorem orbitSum_congr {H β W : Type*} [Group H] [MulAction H β] [AddCommGroup W] [Module ℚ W]
+    (φ : G ≃* H) (e : α ≃ β) (he : ∀ (g : G) (a : α), e (g • a) = φ g • e a)
+    (F : orbitRel.Quotient H β → W) :
+    orbitSum G α (F ∘ MulAction.orbitRelQuotientCongr φ e he) = orbitSum H β F := by
+  rw [orbitSum_def, orbitSum_def, ← finsum_comp_equiv (MulAction.orbitRelQuotientCongr φ e he)]
+  simp only [Function.comp_apply, cardStabilizerOnOrbit_orbitRelQuotientCongr]
+
 end Orbit
 
 section LevelTrace
@@ -167,25 +203,29 @@ theorem finsum_mem_inv_cardStabilizerOnOrbit_preimage {V U : Subgroup G} (hle : 
     rw [levelTrace_one] at h
     simpa [mul_comm] using h.symm
 
-/-- **The index formula for the mass.** For `V ≤ U` of finite index,
-`mass(V, α) = [U : V] · mass(U, α)`. No finiteness of the orbit spaces or of the stabilisers is
-assumed. -/
-theorem orbitMass_eq_relIndex_mul_of_le {V U : Subgroup G} (hle : V ≤ U) [V.IsFiniteRelIndex U] :
-    orbitMass V α = V.relIndex U * orbitMass U α := by
-  -- Orbit by orbit this is `finsum_mem_inv_cardStabilizerOnOrbit_preimage`. The `V`-orbits with
-  -- finite stabiliser are the orbits lying over the `U`-orbits with finite stabiliser, finitely
-  -- many above each, so when there are infinitely many of either kind both masses are `0`.
-  rw [orbitMass_def, orbitMass_def]
+/-- **The index formula for weighted orbit sums.** For `V ≤ U` of finite index and a function `F`
+on the `U`-orbits with values in a `ℚ`-vector space, the weighted sum over the `V`-orbits of `F`
+pulled back is `[U : V]` times the weighted sum over the `U`-orbits:
+`∑_{y ∈ V \ α} c_V(y)⁻¹ F(U y) = [U : V] ∑_{x ∈ U \ α} c_U(x)⁻¹ F(x)`. No finiteness of the orbit
+spaces or of the stabilisers is assumed. -/
+theorem orbitSum_comp_map_of_le {W : Type*} [AddCommGroup W] [Module ℚ W] {V U : Subgroup G}
+    (hle : V ≤ U) [V.IsFiniteRelIndex U] (F : orbitRel.Quotient U α → W) :
+    orbitSum V α (F ∘ Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le hle)) =
+      V.relIndex U • orbitSum U α F := by
+  -- Orbit by orbit this is `finsum_mem_inv_cardStabilizerOnOrbit_preimage`. The `V`-orbits in the
+  -- support are the orbits lying over the `U`-orbits in the support, finitely many above each, so
+  -- when there are infinitely many of either kind both sums are `0`.
   set π := Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (X := α) hle)
-  set fV : orbitRel.Quotient V α → ℚ := fun q ↦ (cardStabilizerOnOrbit q : ℚ)⁻¹
-  set fU : orbitRel.Quotient U α → ℚ := fun p ↦ (cardStabilizerOnOrbit p : ℚ)⁻¹
+  simp only [orbitSum_def, Function.comp_apply]
+  set fV : orbitRel.Quotient V α → W := fun q ↦ (cardStabilizerOnOrbit q : ℚ)⁻¹ • F (π q)
+  set fU : orbitRel.Quotient U α → W := fun p ↦ (cardStabilizerOnOrbit p : ℚ)⁻¹ • F p
   -- a `V`-orbit has finite stabiliser exactly when the `U`-orbit below it has
   have hsupp : Function.support fV = π ⁻¹' Function.support fU := by
     ext q
     induction q using Quotient.inductionOn' with | h x => ?_
     simp only [Function.mem_support, Set.mem_preimage, fV, fU, π, TauCeti.Setoid.map_of_le_mk,
-      cardStabilizerOnOrbit_mk, ne_eq, inv_eq_zero, Nat.cast_eq_zero]
-    exact natCard_stabilizer_ne_zero_iff_of_le hle x
+      cardStabilizerOnOrbit_mk, ne_eq, smul_eq_zero, inv_eq_zero, Nat.cast_eq_zero, not_or]
+    exact and_congr_left' (natCard_stabilizer_ne_zero_iff_of_le hle x)
   have hπ : Function.Surjective π := fun p ↦ by
     induction p using Quotient.inductionOn' with | h x => exact ⟨Quotient.mk'' x, rfl⟩
   have hfib (p : orbitRel.Quotient U α) : (π ⁻¹' {p}).Finite :=
@@ -193,13 +233,32 @@ theorem orbitMass_eq_relIndex_mul_of_le {V U : Subgroup G} (hle : V ≤ U) [V.Is
   by_cases hfin : (Function.support fU).Finite
   · rw [← finsum_mem_support fV, ← finsum_mem_support fU, hsupp,
       ← Set.biUnion_preimage_singleton,
-      finsum_mem_biUnion (Set.pairwiseDisjoint_fiber π _) hfin fun p _ ↦ hfib p, mul_finsum_mem]
-    exact finsum_mem_congr rfl fun p _ ↦ finsum_mem_inv_cardStabilizerOnOrbit_preimage hle p
-  · -- infinitely many `U`-orbits with finite stabiliser, hence infinitely many such `V`-orbits
+      finsum_mem_biUnion (Set.pairwiseDisjoint_fiber π _) hfin fun p _ ↦ hfib p,
+      smul_finsum_mem hfin]
+    refine finsum_mem_congr rfl fun p _ ↦ ?_
+    have h_fib : ∑ᶠ q ∈ π ⁻¹' {p}, fV q =
+        (∑ᶠ q ∈ π ⁻¹' {p}, (cardStabilizerOnOrbit q : ℚ)⁻¹) • F p := by
+      rw [finsum_mem_def, finsum_mem_def, finsum_smul]
+      refine finsum_congr fun q ↦ ?_
+      by_cases hq : q ∈ π ⁻¹' {p}
+      · have hπq : π q = p := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hq
+        simp only [Set.indicator_of_mem hq, fV, hπq]
+      · simp only [Set.indicator_of_notMem hq, zero_smul]
+    rw [h_fib, finsum_mem_inv_cardStabilizerOnOrbit_preimage hle p, mul_smul,
+      Nat.cast_smul_eq_nsmul]
+  · -- infinitely many `U`-orbits in the support, hence infinitely many `V`-orbits
     have hinf : (Function.support fV).Infinite := fun h ↦ hfin (by
       rw [← Set.image_preimage_eq (Function.support fU) hπ, ← hsupp]
       exact h.image π)
-    rw [finsum_of_infinite_support hinf, finsum_of_infinite_support hfin, mul_zero]
+    rw [finsum_of_infinite_support hinf, finsum_of_infinite_support hfin, smul_zero]
+
+/-- **The index formula for the mass.** For `V ≤ U` of finite index,
+`mass(V, α) = [U : V] · mass(U, α)`. No finiteness of the orbit spaces or of the stabilisers is
+assumed. -/
+theorem orbitMass_eq_relIndex_mul_of_le {V U : Subgroup G} (hle : V ≤ U) [V.IsFiniteRelIndex U] :
+    orbitMass V α = V.relIndex U * orbitMass U α := by
+  simpa [orbitSum_one, nsmul_eq_mul, Function.comp_def] using
+    orbitSum_comp_map_of_le (α := α) hle fun _ ↦ (1 : ℚ)
 
 end LevelTrace
 

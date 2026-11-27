@@ -82,6 +82,14 @@ theorem affineOpenPartialHomeomorph_mem_atlas (i : Fin (n + 1)) :
     affineOpenPartialHomeomorph i ∈ atlas (Fin n → 𝕜) (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
   mem_range_self i
 
+/-- The preferred chart at the coordinate point `[eᵢ]` is the standard affine chart of `i`, the only
+one containing it. -/
+theorem chartAt_mk_single (i : Fin (n + 1)) :
+    chartAt (Fin n → 𝕜) (mk 𝕜 (Pi.single i 1) (by simp)) = affineOpenPartialHomeomorph i := by
+  have h := (exists_mem_affineOpen (K := 𝕜) (mk 𝕜 (Pi.single i 1) (by simp))).choose_spec
+  rw [mk_single_mem_affineOpen_iff] at h
+  exact congrArg affineOpenPartialHomeomorph h
+
 /-- The transition maps between the standard affine charts of projective space are `C^r` for
 every `r`, including the analytic order `ω`. -/
 theorem contDiffOn_affineChart_symm_trans (i j : Fin (n + 1)) (r : ℕ∞ω) :

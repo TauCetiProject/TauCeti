@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Normed.Lp.Basis
 public import TauCeti.Analysis.Normed.Lp.Dual
 public import TauCeti.Analysis.Normed.Module.Bases.Basic
 public import TauCeti.Analysis.Normed.Module.Bases.Reflexive
-public import TauCeti.Topology.Algebra.Module.WeakSpace
+public import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basis
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 
