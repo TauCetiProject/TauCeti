@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.Topology.Algebra.Order.Floor
 
@@ -60,14 +61,21 @@ argument follow the Morse analogue
   (`ae_eq_zero_of_integral_floerLinearization_of_integral_floerOperator_add_sub` in the namespace
   `TauCeti.SymplecticForm`), so `h = 0`.
 
-The closed range of finite codimension is a hypothesis. It holds whenever `D_u` is Fredholm: for
-compatible Floer data cylindrical near the ends and nondegenerate asymptotic orbits by
-`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible`, and along a
-map asymptotic to nondegenerate orbits for the data `(J_t, 0, H_t)` of a Floer trajectory by
-`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_compatible`. In the latter case, for
-`J` and `u` of class `C²`, the surjectivity is
-`range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_compatible`, in the namespace
-`TauCeti.SymplecticForm`.
+The closed range of finite codimension is a hypothesis. It holds whenever `D_u` is Fredholm, as it
+is for compatible Floer data cylindrical near the ends (`TauCeti.Floer.IsCylindricalNearEnds`)
+along a map asymptotic to nondegenerate orbits
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible`). For such
+data, with `J` and `u` of class `C²` and `K_s`, `K_t` of class `C³`, the surjectivity holds with no
+further hypothesis
+(`range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_cylindrical_of_compatible`),
+and finitely many variations suffice
+(`exists_finset_subset_hamiltonianVariations_range_sup_span_eq_top_of_cylindrical_of_compatible`),
+both in the namespace `TauCeti.SymplecticForm`. These data include continuation cylinders and the
+pair of pants capped at an input, whose cases are in
+`TauCeti.Geometry.Symplectic.Floer.Continuation.Transversality` and
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder.Transversality`, and the
+`s`-independent data `(J_t, 0, H_t)` of a Floer trajectory
+(`range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_compatible`).
 
 ## References
 
@@ -324,6 +332,118 @@ section Compatible
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
   {U : Set (ℝ × ℝ)}
 
+/-- **The universal linearized Floer operator of data cylindrical near the ends is onto.** Let `F`
+be a finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, and
+let the Floer data `(J, K_s, K_t)` be compatible with `ω`, with `J` of class `C²` and `K_s`, `K_t`
+of class `C³` on the whole cylinder, and cylindrical near the ends: equal to `(J₋_t, 0, H₋_t)` for
+`s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`. Let `H±` be one-periodic, jointly `C³`
+time-dependent Hamiltonians whose suspended vector fields are globally Lipschitz, with one-periodic
+orbits `x±` whose initial points are nondegenerate fixed points of the time-one maps. Let `u` be a
+`C²` map whose loops converge uniformly to `x₋` at `-∞` and to `x₊` at `+∞`, with slice defects
+`∂t u - X_{H±_t}(u)` tending uniformly to zero at the corresponding end. Then for a nonempty open
+subset `U` of the open strip `ℝ × (0, 1)` and a neighbourhood `W` of the graph of `u` over `U`,
+every element of `L²(ℝ × S¹, F)` is `D_u ξ` plus a finite linear combination of Hamiltonian
+variations in `W`. This covers continuation cylinders and the cylinders obtained by gluing a plane
+into an end of a pair of pants. -/
+theorem
+    range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_cylindrical_of_compatible
+    (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    {J : ℝ × ℝ → F → AlmostComplexStructure F} {Ks Kt : ℝ × ℝ → F → ℝ} {Hm Hp : ℝ → F → ℝ}
+    {Jm Jp : ℝ → F → AlmostComplexStructure F} {R : ℝ} {u : ℝ × ℝ → F}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 2 fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 3 (uncurry Ks)) (hKt : ContDiff ℝ 3 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 2 u)
+    {Km : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
+    (hHm : ContDiff ℝ 3 (uncurry Hm)) (hHmper : Periodic Hm 1) {xm : ℝ → F}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t) (hxmper : Periodic xm 1)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    {Kp : ℝ≥0} (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
+    (hHp : ContDiff ℝ 3 (uncurry Hp)) (hHpper : Periodic Hp 1) {xp : ℝ → F}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t) (hxpper : Periodic xp 1)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1)
+    {W : Set ((ℝ × ℝ) × F)} (hW : ∀ z ∈ U, W ∈ 𝓝 (z, u z)) :
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u).range ⊔
+      Submodule.span ℝ (ω.hamiltonianVariations
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u W) = ⊤ := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have hJ₁ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap :=
+    hJ.of_le (by norm_num)
+  -- The realization of the linearized operator is Fredholm.
+  have hD := ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω hcyl hJ₁
+    (hKs.of_le (by norm_num)) (hKt.of_le (by norm_num)) hJc (hu.of_le (by norm_num)) hXm hHm
+    hHmper hxm hxmper hndm huxm hδm hXp hHp hHpper hxp hxpper hndp huxp hδp
+  -- The structures of the ends are those of the cylinder at `s = ∓R`, so they are `C¹`.
+  have hJm : ContDiff ℝ 1 fun p : ℝ × F ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap := by
+    rw [show Jm = fun t ↦ J (-R, t) from
+      funext fun t ↦ (hcyl.almostComplex_eq_of_le_neg (-R, t) le_rfl).symm]
+    exact contDiff_comp_prodMap_prodMk_right hJ₁ (-R)
+  have hJp : ContDiff ℝ 1 fun p : ℝ × F ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap := by
+    rw [show Jp = fun t ↦ J (R, t) from
+      funext fun t ↦ (hcyl.almostComplex_eq_of_le (R, t) le_rfl).symm]
+    exact contDiff_comp_prodMap_prodMk_right hJ₁ R
+  exact range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
+    (fun _ _ ↦ hJ.contDiffAt) (fun _ _ ↦ by ext v; simp) (fun _ _ ↦ hKs.contDiffAt)
+    (fun _ _ ↦ hKt.contDiffAt) (fun _ _ ↦ hu.contDiffAt)
+    (ω.memLp_floerJetCoeff_of_cylindrical hcyl (hu.of_le (by norm_num)) (hHm.of_le (by norm_num))
+      hJm huxm hδm (hHp.of_le (by norm_num)) hJp huxp hδp)
+    hD.isClosed_range hD.finite_coker hU hUne hUΩ hW
+
+/-- **Finitely many Hamiltonian variations make the linearized Floer operator of data cylindrical
+near the ends onto.** Under the hypotheses of
+`range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_cylindrical_of_compatible`,
+there are finitely many Hamiltonian variations `y₁, …, y_N` in `W` such that every element of
+`L²(ℝ × S¹, F)` is `D_u ξ + ∑ cᵢ yᵢ`. -/
+theorem
+    exists_finset_subset_hamiltonianVariations_range_sup_span_eq_top_of_cylindrical_of_compatible
+    (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    {J : ℝ × ℝ → F → AlmostComplexStructure F} {Ks Kt : ℝ × ℝ → F → ℝ} {Hm Hp : ℝ → F → ℝ}
+    {Jm Jp : ℝ → F → AlmostComplexStructure F} {R : ℝ} {u : ℝ × ℝ → F}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 2 fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 3 (uncurry Ks)) (hKt : ContDiff ℝ 3 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 2 u)
+    {Km : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
+    (hHm : ContDiff ℝ 3 (uncurry Hm)) (hHmper : Periodic Hm 1) {xm : ℝ → F}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t) (hxmper : Periodic xm 1)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    {Kp : ℝ≥0} (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
+    (hHp : ContDiff ℝ 3 (uncurry Hp)) (hHpper : Periodic Hp 1) {xp : ℝ → F}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t) (hxpper : Periodic xp 1)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1)
+    {W : Set ((ℝ × ℝ) × F)} (hW : ∀ z ∈ U, W ∈ 𝓝 (z, u z)) :
+    ∃ t : Finset (Lp F 2 stripMeasure), (t : Set _) ⊆ ω.hamiltonianVariations
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u W ∧
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u).range ⊔ Submodule.span ℝ t = ⊤ := by
+  have := (ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω hcyl
+    (hJ.of_le (by norm_num)) (hKs.of_le (by norm_num)) (hKt.of_le (by norm_num)) hJc
+    (hu.of_le (by norm_num)) hXm hHm hHmper hxm hxmper hndm huxm hδm hXp hHp hHpper hxp hxpper
+    hndp huxp hδp).finite_coker
+  exact Submodule.exists_finset_subset_sup_span_eq_top
+    (range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_cylindrical_of_compatible
+      ω hω hcyl hJ hKs hKt hJc hu hXm hHm hHmper hxm hxmper hndm huxm hδm hXp hHp hHpper hxp hxpper
+      hndp huxp hδp hU hUne hUΩ hW)
+
 /-- **The universal linearized Floer operator along a Floer trajectory is onto.** Let `F` be a
 finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, let
 `J_t(y)` be a `C²` family of `ω`-compatible almost complex structures, and let `H` be a
@@ -361,20 +481,14 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_comp
       Submodule.span ℝ (ω.hamiltonianVariations
         (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u
         W) = ⊤ := by
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hJ₁ : ContDiff ℝ 1 fun p : ℝ × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap :=
-    hJ.of_le (by norm_num)
+  -- The data `(J_t, 0, H_t)` are cylindrical near the ends, with end data `(J, H)` at both ends.
   have hg : ContDiff ℝ ⊤ fun p : (ℝ × ℝ) × F ↦ (p.1.2, p.2) := contDiff_fst.snd.prodMk contDiff_snd
-  -- The realization of the linearized operator is Fredholm.
-  have hD := ω.isFredholm_floerSobolevOperator_of_compatible hω hJ₁ hJc hX hH hHper hxm hxmper hndm
-    hxp hxpper hndp (hu.of_le (by norm_num)) huxm hδm huxp hδp
-  exact range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
-    (fun _ _ ↦ (hJ.comp (hg.of_le le_top)).contDiffAt) (fun _ _ ↦ by ext v; simp)
-    (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ (hH.comp (hg.of_le le_top)).contDiffAt)
-    (fun _ _ ↦ hu.contDiffAt)
-    (ω.memLp_floerJetCoeff (hH.of_le (by norm_num)) hJ₁ (hu.of_le (by norm_num)) huxm huxp hδm
-      hδp)
-    hD.isClosed_range hD.finite_coker hU hUne hUΩ hW
+  exact
+    range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_cylindrical_of_compatible ω
+    hω (Floer.isCylindricalNearEnds_comp_snd (hJ.of_le (by norm_num)) (hH.of_le (by norm_num))
+      (R := 0) u)
+    (hJ.comp (hg.of_le le_top)) contDiff_const (hH.comp (hg.of_le le_top)) (fun z ↦ hJc z.2) hu hX
+    hH hHper hxm hxmper hndm huxm hδm hX hH hHper hxp hxpper hndp huxp hδp hU hUne hUΩ hW
 
 end Compatible
 
