@@ -13,6 +13,7 @@ import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Schwartz
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.MeasureTheory.Function.Lp.Duality
@@ -469,6 +470,8 @@ theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
     HasDerivAt (fun t ↦ ∫ x, ⟪ψ x, U t x⟫_ℂ)
       (∑' j, ∫ x, ⟪ψ x, waveCosPropagator ℂ t (g.block j) x⟫_ℂ) t := by
   have := (ENNReal.HolderConjugate.conjExponent (Fact.out : (1 : ℝ≥0∞) ≤ r)).symm
+  have hpair (h : Lp ℂ 2 (volume : Measure E)) : ∫ x, ⟪ψ x, h x⟫_ℂ = ⟪ψ.toLp 2, h⟫_ℂ :=
+    (L2.toLp_inner_of_ae_eq (ψ.memLp 2 volume) .rfl).symm
   -- At every time the pairing of `U(τ)` is the sum of the pairings of the pieces.
   have hsum (τ : ℝ) : HasSum (fun j ↦ ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ)
       (∫ x, ⟪ψ x, U τ x⟫_ℂ) := by
@@ -478,7 +481,7 @@ theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
     rw [HasSum, tendsto_iff_edist_tendsto_0]
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
       fun s ↦ ?_
-    rw [← inner_sum, ← ψ.integral_inner_eq_inner_toLp, edist_comm, eDist_eq_eNorm_sub,
+    rw [← inner_sum, ← hpair, edist_comm, eDist_eq_eNorm_sub,
       ← integral_sub ((ψ.memLp (ENNReal.conjExponent r) volume).integrable_inner_of_holderConjugate
         (Lp.memLp (U τ)))
       ((ψ.memLp 2 volume).integrable_inner_of_holderConjugate (Lp.memLp _))]
@@ -494,7 +497,7 @@ theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
   have heq : (fun τ ↦ ∫ x, ⟪ψ x, U τ x⟫_ℂ) =
       fun τ ↦ ∑' j, ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ :=
     funext fun τ ↦ (hsum τ).tsum_eq.symm
-  rw [heq, tsum_congr fun j ↦ ψ.integral_inner_eq_inner_toLp (waveCosPropagator ℂ t (g.block j))]
+  rw [heq, tsum_congr fun j ↦ hpair (waveCosPropagator ℂ t (g.block j))]
   exact hasDerivAt_tsum hu hder hK (hsum 0).summable t
 
 /-- **The `D⁻¹ sin(tD)` evolution of Besov data attains its initial velocity.** Let `σ ≤ n / 2`, let
@@ -530,7 +533,8 @@ theorem hasDerivAt_integral_mul_of_tendsto_sum_waveSinPropagator_block
   obtain ⟨u, hu, hK⟩ := φ.exists_summable_norm_inner_waveCosPropagator_block_le hσ χ g
   have hsummable : Summable fun j ↦ ∫ x, ⟪χ x, g.block j x⟫_ℂ := by
     refine Summable.of_norm_bounded hu fun j ↦ ?_
-    rw [χ.integral_inner_eq_inner_toLp]
+    rw [← (L2.toLp_inner_of_ae_eq (χ.memLp 2 volume) .rfl :
+      ⟪χ.toLp 2, g.block j⟫_ℂ = ∫ x, ⟪χ x, g.block j x⟫_ℂ)]
     simpa using hK j 0
   have htsum : Tendsto (fun s : Finset ℤ ↦ ∑ j ∈ s, ∫ x, ⟪χ x, g.block j x⟫_ℂ) atTop
       (𝓝 (∑' j, ∫ x, ⟪χ x, g.block j x⟫_ℂ)) :=
