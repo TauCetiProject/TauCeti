@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Grassmannian.StiefelFibration.SpecialUnitary
+import TauCeti.Analysis.Matrix.UnitaryGroup.Connected
 
 /-!
 # The sphere bundle `SU(n) → SU(1 + n) → S^(2n+1)`
@@ -15,7 +16,8 @@ vector `e₀` gives the map `SU(1 + n) → S`, `A ↦ A e₀` (`TauCeti.specialU
 unit sphere `S` of `EuclideanSpace 𝕜 (Fin (1 + n))`. Over `ℂ` this sphere is `S^(2n+1)`. The
 fibre of the map over `e₀` is the block subgroup `diag(1, SU(n))`, the image of
 `Matrix.specialUnitaryGroup.fromBlocksOne 𝕜 1 n`. For `n ≥ 1` the map is surjective and a locally
-trivial bundle with fibre `SU(n)`, and hence a Serre fibration. For `n = 2` and `𝕜 = ℂ` this is the
+trivial bundle with fibre `SU(n)`, and hence a Serre fibration. Over `ℂ` its fibres are path
+connected, since `SU(n)` is. For `n = 2` and `𝕜 = ℂ` this is the
 bundle `SU(2) → SU(3) → S⁵`, with the block inclusion `B ↦ diag(1, B)` and the projection to the
 first column. Over `ℝ` it is the bundle `SO(n) → SO(1 + n) → Sⁿ` of
 `TauCeti.Topology.Grassmannian.SphereBundle.Basic`.
@@ -40,6 +42,8 @@ surjective: `SU(1)` is trivial, while the unit sphere of `𝕜` is not a point.
 * `TauCeti.exists_trivialization_specialUnitarySphereMap`: a chart with fibre `SU(n)` around each
   point of the sphere.
 * `TauCeti.specialUnitarySphereMap_mem_serreFibrations`: `SU(1 + n) → S` is a Serre fibration.
+* `TauCeti.isPathConnected_specialUnitarySphereMap_preimage_singleton`: over `ℂ`, the fibres
+  are path connected.
 
 ## References
 
@@ -152,6 +156,31 @@ theorem fromBlocksOne_specialUnitarySphereFiberHomeomorph_symm_apply
 theorem specialUnitarySphereFiberHomeomorph_one :
     specialUnitarySphereFiberHomeomorph 𝕜 n 1 = ⟨1, rfl⟩ :=
   Subtype.ext (by simp)
+
+/-- Over `ℂ`, every nonempty fibre of `A ↦ A e₀` is path connected: the fibre through `A` is the
+left translate by `A` of the fibre over `e₀`, which is a copy of the path-connected group
+`SU(n)`. -/
+theorem isPathConnected_specialUnitarySphereMap_preimage_singleton
+    (A : specialUnitaryGroup (Fin (1 + n)) ℂ) :
+    IsPathConnected (specialUnitarySphereMap n ⁻¹' {specialUnitarySphereMap n A}) := by
+  -- Left multiplication preserves the relation of having the same first column.
+  have key (X Y Z : specialUnitaryGroup (Fin (1 + n)) ℂ)
+      (h : specialUnitarySphereMap n Y = specialUnitarySphereMap n Z) :
+      specialUnitarySphereMap n (X * Y) = specialUnitarySphereMap n (X * Z) :=
+    Subtype.ext (WithLp.ofLp_injective 2 (by
+      rw [ofLp_specialUnitarySphereMap_mul, ofLp_specialUnitarySphereMap_mul, h]))
+  have h₁ := isPathConnected_range
+    (continuous_subtypeVal.comp (specialUnitarySphereFiberHomeomorph ℂ n).continuous)
+  rw [range_comp, Homeomorph.range_coe, image_univ, Subtype.range_coe_subtype] at h₁
+  convert h₁.image (continuous_const_mul A) using 1
+  ext B
+  simp only [mem_preimage, mem_singleton_iff, mem_image, mem_ofPred_eq]
+  constructor
+  · intro hB
+    refine ⟨A⁻¹ * B, ?_, mul_inv_cancel_left A B⟩
+    rw [key A⁻¹ B A hB, inv_mul_cancel]
+  · rintro ⟨C, hC, rfl⟩
+    rw [key A C 1 hC, mul_one]
 
 /-! ### Local triviality -/
 

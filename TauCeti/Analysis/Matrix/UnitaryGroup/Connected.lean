@@ -23,6 +23,11 @@ Its continuity and the path connectedness of the real vector space of Hermitian 
 `PathConnectedSpace (Matrix.unitaryGroup n ℂ)`, and hence connectedness. No nonemptiness
 assumption on the finite index type is needed.
 
+The complex special unitary group is path connected as well
+(`Matrix.specialUnitaryGroup.instPathConnectedSpace`): multiplying a unitary matrix `U` by the
+diagonal matrix `diag(conj (det U), 1, …, 1)` is a continuous map onto the special unitary group
+which fixes the special unitary matrices.
+
 ## References
 
 * Brian C. Hall, *Lie Groups, Lie Algebras, and Representations*, second edition,
@@ -78,3 +83,34 @@ instance instPathConnectedSpace : PathConnectedSpace (unitaryGroup n ℂ) :=
     selfAdjoint.continuous_expUnitary
 
 end Matrix.UnitaryGroup
+
+namespace Matrix.specialUnitaryGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The complex special unitary matrix group is path connected, including in dimension zero. -/
+instance instPathConnectedSpace : PathConnectedSpace (specialUnitaryGroup n ℂ) := by
+  rcases isEmpty_or_nonempty n with _ | ⟨⟨i₀⟩⟩
+  · -- Over an empty index type there is only one matrix.
+    have : Subsingleton (specialUnitaryGroup n ℂ) :=
+      ⟨fun A B ↦ Subtype.ext (Subsingleton.elim _ _)⟩
+    exact Function.Surjective.pathConnectedSpace (f := fun _ : unitaryGroup n ℂ ↦ 1)
+      (fun A ↦ ⟨1, Subsingleton.elim _ _⟩) continuous_const
+  -- Multiply `U` by `diag(conj (det U), 1, …, 1)`, which corrects its determinant to `1`.
+  let d (U : unitaryGroup n ℂ) : n → ℂ := Function.update 1 i₀ (star (U : Matrix n n ℂ).det)
+  have hd (U : unitaryGroup n ℂ) : diagonal (d U) ∈ unitaryGroup n ℂ := by
+    have hU := Unitary.mem_iff.1 (det_of_mem_unitary U.property)
+    refine diagonal_mem_unitary.2 (Unitary.mem_iff.2 ⟨funext fun i ↦ ?_, funext fun i ↦ ?_⟩) <;>
+      rcases eq_or_ne i i₀ with rfl | hi <;> simp_all [d]
+  have hdet (U : unitaryGroup n ℂ) : ((U : Matrix n n ℂ) * diagonal (d U)).det = 1 := by
+    rw [det_mul, det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i₀)]
+    simpa using (Unitary.mem_iff.1 (det_of_mem_unitary U.property)).2
+  refine Function.Surjective.pathConnectedSpace
+    (f := fun U : unitaryGroup n ℂ ↦ (⟨(U : Matrix n n ℂ) * diagonal (d U),
+      mem_specialUnitaryGroup_iff.2 ⟨mul_mem U.property (hd U), hdet U⟩⟩ :
+        specialUnitaryGroup n ℂ))
+    (fun A ↦ ⟨⟨A, (mem_specialUnitaryGroup_iff.1 A.property).1⟩, Subtype.ext ?_⟩) ?_
+  · simp [d, (mem_specialUnitaryGroup_iff.1 A.property).2]
+  · fun_prop
+
+end Matrix.specialUnitaryGroup
