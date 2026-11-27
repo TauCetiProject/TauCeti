@@ -27,9 +27,9 @@ into the opcycles is injective and the projection of `K.X n` onto the opcycles i
 (`HomologicalComplex.moduleCat_homologyι_injective`,
 `HomologicalComplex.moduleCat_pOpcycles_surjective`).  Chain maps commute with the differentials
 and the square of the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
-`HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
-(`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
-`c.next i` is killed by every differential out of degree `i`
+`HomologicalComplex.d_comp_d_apply`) and as linear maps (`HomologicalComplex.hom_d_comp_hom_d`),
+cycles have zero boundary, on elements (`HomologicalComplex.iCycles_d_apply`), and an element
+killed by the differential to degree `c.next i` is killed by every differential out of degree `i`
 (`HomologicalComplex.d_apply_eq_zero_of_d_next_apply_eq_zero`).  Conversely, an element of
 `K.X n` killed by the differential is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This
 constructor directly returns an element of `K.cycles n` for modules over a ring in any universe,
@@ -149,6 +149,13 @@ theorem d_comp_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
     K.d j l (K.d i j x) = 0 := by
   rw [← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
   rfl
+
+/-- In a complex of modules the composite of two consecutive differentials vanishes, as linear
+maps. -/
+theorem hom_d_comp_hom_d {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat R) c) {i j k : ι} :
+    (K.d j k).hom ∘ₗ (K.d i j).hom = 0 := by
+  rw [← ModuleCat.hom_comp, K.d_comp_d, ModuleCat.hom_zero]
 
 /-- In a complex of modules a cycle has zero boundary, on elements. -/
 theorem iCycles_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
