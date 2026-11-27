@@ -28,6 +28,9 @@ may move between the two conventions without choosing representatives.
 * `TauCeti.MultiplicativeSquareClassGroup`: the literal quotient `Kˣ ⧸ (Kˣ)²`.
 * `TauCeti.multiplicativeSquareClassEquiv`: its canonical multiplicative equivalence with
   `Multiplicative (SquareClassGroup K)`.
+* `TauCeti.quotientRangePowMonoidHomEquiv`: the same comparison for the quotient
+  `Kˣ ⧸ (powMonoidHom 2).range` used by Mathlib's Selmer groups, with
+  `TauCeti.quotientRangePowMonoidHom_mk_eq_mk_iff` comparing classes of units.
 * `TauCeti.elementaryTwoQuotientEquivSquareClassGroup`: the `ZMod 2`-linear comparison with the
   generic elementary-two quotient.
 * `TauCeti.natCard_multiplicativeSquareClassGroup`: equality of the cardinalities of the two
@@ -119,6 +122,31 @@ theorem squareClassHom_eq_iff (u v : Kˣ) :
   rw [← multiplicativeSquareClassEquiv.injective.eq_iff]
   simp only [squareClassHom_apply, multiplicativeSquareClassEquiv_mk]
   exact Multiplicative.ofAdd.injective.eq_iff
+
+/-- The canonical equivalence from the quotient `Kˣ ⧸ (powMonoidHom 2).range`, the form of
+`Kˣ ⧸ (Kˣ)²` used by Mathlib's `IsDedekindDomain.selmerGroup`, to the multiplicative form of the
+square-class group. -/
+noncomputable def quotientRangePowMonoidHomEquiv :
+    Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range ≃* Multiplicative (SquareClassGroup K) :=
+  (QuotientGroup.quotientMulEquivOfEq square_eq_range_powMonoidHom.symm).trans
+    multiplicativeSquareClassEquiv
+
+/-- The equivalence `quotientRangePowMonoidHomEquiv` sends the class of a unit to its square
+class. -/
+@[simp]
+theorem quotientRangePowMonoidHomEquiv_mk (u : Kˣ) :
+    quotientRangePowMonoidHomEquiv (QuotientGroup.mk u) = Multiplicative.ofAdd (squareClass u) := by
+  rw [quotientRangePowMonoidHomEquiv, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, multiplicativeSquareClassEquiv_mk]
+
+/-- Two units have the same class in `Kˣ ⧸ (powMonoidHom 2).range` exactly when they have the
+same square class. -/
+@[simp]
+theorem quotientRangePowMonoidHom_mk_eq_mk_iff (u w : Kˣ) :
+    (QuotientGroup.mk u : Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) = QuotientGroup.mk w ↔
+      squareClass u = squareClass w := by
+  rw [← quotientRangePowMonoidHomEquiv.injective.eq_iff, quotientRangePowMonoidHomEquiv_mk,
+    quotientRangePowMonoidHomEquiv_mk, Multiplicative.ofAdd.injective.eq_iff]
 
 /-- The generic elementary-two quotient of the unit group is canonically `ZMod 2`-linearly
 equivalent to the square-class group. -/

@@ -148,7 +148,7 @@ theorem exists_mem_pow_sub_mem_pow_succ {I : Ideal R} {J : Ideal S} (f : R →+*
       refine Ideal.add_mem _ ?_ ?_
       · rw [pow_succ]
         exact Ideal.mul_mem_mul hau hb
-      · have hfu : f u ∈ J ^ (n + 1) := Ideal.pow_le_comap_pow hf (n + 1) hu
+      · have hfu : f u ∈ J ^ (n + 1) := Ideal.pow_le_comap_pow_of_le_comap f hf (n + 1) hu
         have hpow : J ^ (n + 1) * J ^ 2 = J ^ (n + 3) := by
           rw [← pow_add]
         rw [← hpow]
@@ -168,7 +168,8 @@ theorem quotientMap_pow_surjective {I : Ideal R} {J : Ideal S} (f : R →+* S)
     (hf : I ≤ J.comap f)
     (hquot : Function.Surjective (Ideal.quotientMap J f hf))
     (hcot : ∀ y ∈ J, ∃ x ∈ I, y - f x ∈ J ^ 2) (n : ℕ) :
-    Function.Surjective (Ideal.quotientMap (J ^ n) f (Ideal.pow_le_comap_pow hf n)) := by
+    Function.Surjective
+      (Ideal.quotientMap (J ^ n) f (Ideal.pow_le_comap_pow_of_le_comap f hf n)) := by
   have hstep : ∀ k : ℕ, ∀ y : S, ∃ x : R, y - f x ∈ J ^ k := by
     intro k
     induction k with

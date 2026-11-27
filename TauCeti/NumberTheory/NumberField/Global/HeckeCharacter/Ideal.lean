@@ -167,7 +167,8 @@ theorem idealCharacter_apply_prime (χ : HeckeCharacter K)
   let x := IdeleGroup.ofAdicCompletion (𝓞 K) K v u
   have hideal : toFractionalIdeal (IdeleGroup.toFiniteIdele (𝓞 K) K x) =
       (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) := by
-    rw [toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one v hu]
+    rw [IdeleGroup.toFiniteIdele_ofAdicCompletion,
+      toFractionalIdeal_unitsOfAdicCompletion_of_valued_eq_exp_neg_one v hu]
     exact Units.ext ((HeightOneSpectrum.coe_unitOfPrime v K).trans hI.symm)
   let a : finiteIdelesAway K 𝔣.support := ⟨IdeleGroup.toFiniteIdele (𝓞 K) K x, by
     rw [mem_finiteIdelesAway_iff]

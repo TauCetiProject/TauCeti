@@ -57,7 +57,7 @@ theorem injective_of_iInf_pow_eq_bot_of_surjective_quotient_of_surjective_cotang
   refine (injective_iff_map_eq_zero f).mpr fun x hx => ?_
   rw [← Ideal.mem_bot, ← hsep, Ideal.mem_iInf]
   intro n
-  have hpow : I ^ n ≤ (I ^ n).comap f := Ideal.pow_le_comap_pow hfI n
+  have hpow : I ^ n ≤ (I ^ n).comap f := Ideal.pow_le_comap_pow_of_le_comap f hfI n
   have hinj := (Ideal.quotientMap (I ^ n) f hpow).injective_of_surjective
     (f.quotientMap_pow_surjective hfI hquot hcot n)
   have hzero : Ideal.quotientMap (I ^ n) f hpow (Ideal.Quotient.mk (I ^ n) x) = 0 := by

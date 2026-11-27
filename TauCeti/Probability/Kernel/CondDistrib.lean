@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Kernel.CondDistrib
 import Mathlib.Probability.HasCondDistrib
+import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.Probability.Kernel.Composition.KernelLemmas
 
 /-!
@@ -27,12 +28,17 @@ over the posterior predictive distribution of the missing data, the identity beh
 imputation.
 
 Conditioning on a constant random variable gives the law of `Z`, normalised by the total mass.
+Conditioning on a random variable with countably many values evaluates, on atoms, to a ratio of
+masses.
 
 ## Main statements
 
 * `ProbabilityTheory.condDistrib_ae_eq_comp` — the identity above.
 * `ProbabilityTheory.condDistrib_const_right_apply` — the conditional distribution given a
   constant is the normalised law.
+* `ProbabilityTheory.condDistrib_apply_singleton_ae_eq` — for a countable label `X`, almost
+  everywhere the conditional probability of the atom of `Z` given `X = X ω` is the ratio of the
+  masses of the cell and of the atom of `X`.
 -/
 
 public section
@@ -80,5 +86,20 @@ theorem condDistrib_const_right_apply {μ : Measure Ω} [IsFiniteMeasure μ] [Ne
       (by simp [Measure.map_const, NeZero.ne μ]),
     Measure.map_apply (measurable_const.prodMk hZ') ((measurableSet_singleton b).prod hs)]
   simp [Measure.map_const, Set.mk_preimage_prod, Measure.map_apply hZ' hs]
+
+/-- **Conditional probabilities of atoms.** For a measurable `Z` with values in a nonempty
+standard Borel space and a measurable `X` with values in a countable type, almost everywhere the
+conditional probability of the atom `{Z ω}` given `X = X ω` is
+`μ (Z ⁻¹' {Z ω} ∩ X ⁻¹' {X ω}) / μ (X ⁻¹' {X ω})`. -/
+theorem condDistrib_apply_singleton_ae_eq {μ : Measure Ω} [IsFiniteMeasure μ] [Countable β]
+    [MeasurableSingletonClass β] {Z : Ω → δ} {X : Ω → β} (hZ : Measurable Z) (hX : Measurable X) :
+    ∀ᵐ ω ∂μ, condDistrib Z X μ (X ω) {Z ω} =
+      (μ (X ⁻¹' {X ω}))⁻¹ * μ (Z ⁻¹' {Z ω} ∩ X ⁻¹' {X ω}) := by
+  filter_upwards [TauCeti.ae_measureReal_preimage_ne_zero (μ := μ) (b := X)] with ω hω
+  replace hω : μ (X ⁻¹' {X ω}) ≠ 0 := (measureReal_eq_zero_iff (measure_ne_top _ _)).not.1 hω
+  have hmap : μ.map X {X ω} = μ (X ⁻¹' {X ω}) := Measure.map_apply hX (measurableSet_singleton _)
+  rw [condDistrib_apply_of_ne_zero hX hZ (X ω) (hmap ▸ hω), hmap,
+    Measure.map_apply (hX.prodMk hZ) ((measurableSet_singleton _).prod (measurableSet_singleton _)),
+    Set.mk_preimage_prod, Set.inter_comm]
 
 end ProbabilityTheory

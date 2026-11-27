@@ -44,6 +44,8 @@ the induction becomes a representation `WeilGroupReal.induceRepresentation χ` o
   continuous character is continuous.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.induceCharacter_comp_star`: the induction of `χ ∘ conj`
   is the conjugate of the induction of `χ` by the image of `j`.
+* `TauCeti.ClassFieldTheory.WeilGroupReal.nonempty_equiv_induceRepresentation_comp_star`: the
+  inductions of `χ ∘ conj` and of `χ` are isomorphic as representations.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.induceRepresentation_includeComplex`,
   `TauCeti.ClassFieldTheory.WeilGroupReal.induceRepresentation_j`: the actions of `ℂˣ` and of `j`
   on `ℂ²`.
@@ -181,6 +183,24 @@ theorem induceRepresentation_j (v : Fin 2 → ℂ) :
     induceRepresentation χ j v = ![(χ (-1) : ℂ) * v 1, v 0] := by
   ext i
   fin_cases i <;> simp [induceRepresentation_apply, mulVec, dotProduct, Fin.sum_univ_two]
+
+/-- **The induction of the conjugate character.** The inductions of `χ ∘ conj` and of `χ` are
+isomorphic. -/
+theorem nonempty_equiv_induceRepresentation_comp_star :
+    Nonempty ((induceRepresentation
+        (χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom)).Equiv
+      (induceRepresentation χ)) := by
+  let J := induceCharacter χ j
+  have h (w : WeilGroupReal) :
+      J⁻¹ * induceCharacter (χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom) w =
+        induceCharacter χ w * J⁻¹ := by
+    rw [induceCharacter_comp_star]
+    simp [J, mul_assoc]
+  refine ⟨.mk (Matrix.GeneralLinearGroup.toLin J⁻¹).toLinearEquiv
+    fun w ↦ LinearMap.ext fun v ↦ ?_⟩
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.GeneralLinearGroup.coe_toLinearEquiv, Matrix.GeneralLinearGroup.toLin_apply,
+    Matrix.mulVecLin_apply, induceRepresentation_apply, Matrix.mulVec_mulVec, ← Units.val_mul, h]
 
 end WeilGroupReal
 

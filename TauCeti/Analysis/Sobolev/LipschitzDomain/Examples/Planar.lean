@@ -32,6 +32,9 @@ constant, is centred there.
 * `TauCeti.openUnitSquare`, `TauCeti.slitUnitDisc`, `TauCeti.sqrtAbsCusp`: the three planar sets,
   with membership lemmas `TauCeti.mem_openUnitSquare`, `TauCeti.mem_slitUnitDisc` and
   `TauCeti.mem_sqrtAbsCusp`.
+* `TauCeti.openUnitSquareOpens`: the square as an open subset, and
+  `TauCeti.measurePreserving_toLp_openUnitSquare`: Lebesgue measure on the square is the product
+  of Lebesgue measures on `(0, 1)`.
 * `TauCeti.slitUnitDisc_eq_ball_inter`: the slit disc is the open unit disc minus the closed ray
   `[0, ∞) × {0}`; hence `TauCeti.isOpen_slitUnitDisc` (it is open) and
   `TauCeti.slitUnitDisc_ae_eq_ball` (it is a.e. equal to the open unit disc).
@@ -81,6 +84,35 @@ theorem mem_openUnitSquare {x : WithLp 2 (ℝ × ℝ)} :
 theorem isOpen_openUnitSquare : IsOpen openUnitSquare :=
   (isOpen_Ioo.preimage (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst).inter
     (isOpen_Ioo.preimage (WithLp.prod_continuous_ofLp 2 ℝ ℝ).snd)
+
+/-- The open unit square `(0, 1)²` as an open subset of the Euclidean plane, the domain of Sobolev
+spaces and boundary value problems on the square. -/
+def openUnitSquareOpens : TopologicalSpace.Opens (WithLp 2 (ℝ × ℝ)) :=
+  ⟨openUnitSquare, isOpen_openUnitSquare⟩
+
+@[simp]
+theorem coe_openUnitSquareOpens :
+    (openUnitSquareOpens : Set (WithLp 2 (ℝ × ℝ))) = openUnitSquare :=
+  (rfl)
+
+/-- Membership in the open unit square as an open subset. -/
+@[simp]
+theorem mem_openUnitSquareOpens {x : WithLp 2 (ℝ × ℝ)} :
+    x ∈ openUnitSquareOpens ↔ x.fst ∈ Ioo 0 1 ∧ x.snd ∈ Ioo 0 1 :=
+  Iff.rfl
+
+/-- Lebesgue measure on the open unit square of the Euclidean plane is the image under
+`WithLp.toLp 2` of the product of Lebesgue measures on `(0, 1)`, so integrals over the square may
+be computed by Fubini's theorem on `(0, 1) × (0, 1)`. -/
+theorem measurePreserving_toLp_openUnitSquare :
+    MeasurePreserving (MeasurableEquiv.toLp 2 (ℝ × ℝ))
+      ((volume.restrict (Ioo (0 : ℝ) 1)).prod (volume.restrict (Ioo (0 : ℝ) 1)))
+      (volume.restrict openUnitSquare) := by
+  have hpre : WithLp.toLp 2 ⁻¹' openUnitSquare = Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 := by
+    ext y
+    simp [Set.mem_prod]
+  rw [Measure.prod_restrict, ← Measure.volume_eq_prod, ← hpre, MeasurableEquiv.coe_toLp]
+  exact (WithLp.volume_preserving_toLp ℝ ℝ).restrict_preimage isOpen_openUnitSquare.measurableSet
 
 /-- The frontier of the open unit square lies in the closed square. -/
 theorem mem_Icc_of_mem_frontier_openUnitSquare {x : WithLp 2 (ℝ × ℝ)}

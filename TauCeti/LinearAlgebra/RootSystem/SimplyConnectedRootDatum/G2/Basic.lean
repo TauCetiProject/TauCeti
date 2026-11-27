@@ -35,7 +35,8 @@ also make the reflection-stability axioms of `RootPairing` decidable finite calc
 ## Main definitions and results
 
 * `TauCeti.DynkinType.g2SimplyConnectedRootDatum` is the pinned twelve-root datum, with `g2Root`
-  and `g2Coroot` its coordinate tables, `g2Root_apply` and `g2Coroot_apply` their entries, and
+  and `g2Coroot` its coordinate tables, `g2Root_apply` and `g2Coroot_apply` their entries,
+  `g2Root_addNat` the negation symmetry of the root table, and
   `g2SimplyConnectedRootDatum_root`,
   `g2SimplyConnectedRootDatum_coroot`, `g2SimplyConnectedRootDatum_toLinearMap` and
   `g2SimplyConnectedRootDatum_pairing` the lemmas that expose them.
@@ -105,6 +106,10 @@ the cocharacter lattice. -/
 @[simp] lemma g2Coroot_castAdd (i : Fin 2) :
     g2Coroot (Fin.castAdd 10 i) = Pi.single i 1 := by
   fin_cases i <;> decide
+
+/-- The root at index `i + 6` is the negative of the root at index `i`. -/
+@[simp] lemma g2Root_addNat (i : Fin 6) :
+    g2Root (Fin.addNat i 6) = -g2Root (Fin.castAdd 6 i) := by fin_cases i <;> decide
 
 /-- The simple-root coordinates of the twelve roots of the pinned `G2` datum, in the index order
 of `g2Root`: the positive roots are `alpha1, alpha2, alpha1 + alpha2, 2 alpha1 + alpha2,
