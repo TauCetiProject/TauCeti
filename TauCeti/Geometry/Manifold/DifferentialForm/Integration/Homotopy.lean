@@ -18,6 +18,8 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Instances.Icc
+import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # Integrals of two-forms over rectangles and their homotopy invariance
@@ -91,6 +93,8 @@ contracts with `∂ₜ` first.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
 * `TauCeti.rectangleIntegral_const`: the integral over a constant map vanishes.
+* `TauCeti.rectangleIntegral_comp_eq_zero_of_sq_add_sq_eq`: the integral over a map factoring
+  through a circle of the plane vanishes.
 * `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
 * `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate,
   and `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` change of parameter.
@@ -301,6 +305,57 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
 theorem rectangleIntegral_const (φ : RoughForm I M F 2) (x : M) (a b : ℝ × ℝ) :
     rectangleIntegral φ (fun _ ↦ x) a b = 0 :=
   rectangleIntegral_comp_fst φ (fun _ ↦ x) a b
+
+/-- The integral of a two-form over `u ∘ v` vanishes when `v` maps the plane into a circle
+`x² + y² = r` about the origin of `ℝ × ℝ`, and `u` is differentiable along it: both partial
+derivatives of `v` are then tangent to the circle, hence parallel, and a two-form vanishes on
+parallel vectors. -/
+theorem rectangleIntegral_comp_eq_zero_of_sq_add_sq_eq (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    {v : ℝ × ℝ → ℝ × ℝ} {r : ℝ} (hv : Differentiable ℝ v)
+    (hr : ∀ z, (v z).1 ^ 2 + (v z).2 ^ 2 = r)
+    (hu : ∀ z, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (v z)) (a b : ℝ × ℝ) :
+    rectangleIntegral φ (u ∘ v) a b = 0 := by
+  have h (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ v) φ z ![(1, 0), (0, 1)] = 0 := by
+    have hA := (hv z).hasFDerivAt
+    set A := fderiv ℝ v z
+    -- Every derivative of `v` is tangent to the circle: `⟨v z, A w⟩ = 0`.
+    have htan (w : ℝ × ℝ) : (v z).1 * (A w).1 + (v z).2 * (A w).2 = 0 := by
+      have h₁ := (hasFDerivAt_fst (p := v z)).comp z hA
+      have h₂ := (hasFDerivAt_snd (p := v z)).comp z hA
+      have hc : HasFDerivAt (fun y ↦ (v y).1 * (v y).1 + (v y).2 * (v y).2)
+          (0 : ℝ × ℝ →L[ℝ] ℝ) z := by
+        simpa only [← sq, hr] using hasFDerivAt_const r z
+      have := congrArg (· w) (((h₁.mul h₁).add (h₂.mul h₂)).unique hc)
+      simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', smul_eq_mul, zero_apply,
+        Function.comp_apply] at this
+      linear_combination this / 2
+    -- Hence the two partial derivatives are parallel: their determinant vanishes.
+    have hdet : (A (1, 0)).1 * (A (0, 1)).2 - (A (1, 0)).2 * (A (0, 1)).1 = 0 := by
+      rcases eq_or_ne r 0 with h0 | h0
+      · -- On the circle of radius `0`, `v` is constant, so its derivative vanishes.
+        have hv0 : v = fun _ ↦ 0 := funext fun y ↦ by
+          have h₁ : (v y).1 ^ 2 = 0 := by nlinarith [hr y, sq_nonneg (v y).1, sq_nonneg (v y).2]
+          have h₂ : (v y).2 ^ 2 = 0 := by nlinarith [hr y, sq_nonneg (v y).1, sq_nonneg (v y).2]
+          exact Prod.ext (pow_eq_zero_iff two_ne_zero |>.1 h₁) (pow_eq_zero_iff two_ne_zero |>.1 h₂)
+        have : A = 0 := by simp only [A, hv0, fderiv_const_apply]
+        simp [this]
+      · refine (mul_eq_zero.1 ?_).resolve_right h0
+        rw [← hr z]
+        linear_combination ((v z).1 * (A (0, 1)).2 - (v z).2 * (A (0, 1)).1) * htan (1, 0) -
+          ((v z).1 * (A (1, 0)).2 - (v z).2 * (A (1, 0)).1) * htan (0, 1)
+    -- A two-form on `ℝ × ℝ` is the determinant times its value on the standard basis.
+    rw [mpullback_comp_apply_of_hasFDerivAt hA (hu z)]
+    let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (v z)
+    refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
+    have hw : (A ∘ ![((1 : ℝ), (0 : ℝ)), (0, 1)]) = ![A (1, 0), A (0, 1)] := by
+      funext i
+      fin_cases i <;> simp
+    have hψ := congrArg (· ![A (1, 0), A (0, 1)])
+      (ψ.toAlternatingMap.eq_basis_det_smulRight (Module.Basis.finTwoProd ℝ))
+    rw [AlternatingMap.smulRight_apply, Module.Basis.det_finTwoProd_apply, hdet, zero_smul] at hψ
+    exact (congrArg ψ hw).trans hψ
+  simp [rectangleIntegral_def, h]
 
 /-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
 `u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/
