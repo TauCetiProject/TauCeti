@@ -27,23 +27,6 @@ namespace Matrix
 
 variable {m n R : Type*} [Fintype n] [Semiring R]
 
-/-- Taking coefficient `d+1` after right multiplication by the pencil `A + X B`
-combines coefficient `d+1` of the input with `A` and coefficient `d` with `B`. -/
-@[simp] theorem map_coeff_mul_map_C_add_X_smul (P : Matrix m n R[X])
-    (A B : Matrix n n R) (d : ℕ) :
-    (P * (A.map C + (X : R[X]) • B.map C)).map (fun p ↦ p.coeff (d + 1)) =
-      P.map (fun p ↦ p.coeff (d + 1)) * A + P.map (fun p ↦ p.coeff d) * B := by
-  classical
-  have hX : (X : R[X]) • B.map C = B.map C * diagonal (fun _ ↦ (X : R[X])) := by
-    apply Matrix.ext
-    intro i j
-    rw [Matrix.smul_apply, smul_eq_mul, mul_diagonal]
-    exact (commute_X ((B.map C) i j)).eq
-  rw [hX, Matrix.mul_add, ← Matrix.mul_assoc, ← map_coeff_mul_map_C, ← map_coeff_mul_map_C]
-  apply Matrix.ext
-  intro i j
-  simp only [Matrix.map_apply, Matrix.add_apply, coeff_add, mul_diagonal, coeff_mul_X]
-
 /-- If the linear coefficient of a matrix pencil is right regular, then so is the pencil.
 No commutativity or absence of zero divisors in the coefficient ring is required. -/
 theorem isRightRegular_map_C_add_X_smul [IsLeftCancelAdd R] (A B : Matrix n n R)
