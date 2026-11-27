@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.LocallyConstant.Basic
 
 import Mathlib.RingTheory.AdicCompletion.Topology
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 import TauCeti.Topology.Discrete
@@ -54,6 +55,8 @@ import TauCeti.Topology.Discrete
 
 * `TauCeti.CycloCompletion.hasBasis_nhds_zero`, `TauCeti.CycloCompletion.hasBasis_nhds_zero_span`:
   neighborhood basis of `0` given by `RingHom.ker (proj f)` / `Ideal.span {fromPoly R S f}`.
+* `TauCeti.CycloCompletion.summable_iff_forall_eventually_proj_eq_zero`: a family is summable
+  exactly when, modulo each index, all but finitely many of its members vanish.
 * `TauCeti.CycloCompletion.exists_ker_proj_le_ker_of_continuous`,
   `TauCeti.CycloCompletion.exists_aeval_eq_zero_of_continuous`: a continuous ring map to a discrete
   ring kills `RingHom.ker (proj f)` for some index `f`, so under a continuous algebra map to a
@@ -185,6 +188,13 @@ theorem exists_aeval_eq_zero_of_continuous {B : Type*} [Semiring B] [Algebra R B
     rw [RingHom.mem_ker, proj_fromPoly, AdjoinRoot.mk_self]
   rw [aeval_algHom_apply, aeval_algHom_apply, aeval_X_left_apply]
   exact hf hmem
+
+/-- **Summability in the cyclotomic completion.** A family in `R[q]^S` is summable exactly when,
+for every index `f`, all but finitely many of its members vanish modulo `f`. -/
+theorem summable_iff_forall_eventually_proj_eq_zero {α : Type*} {x : α → CycloCompletion R S} :
+    Summable x ↔ ∀ f : cycloIndex R S, ∀ᶠ a in cofinite, proj f (x a) = 0 := by
+  simp [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    (hasBasis_nhds_zero R S).tendsto_right_iff, RingHom.mem_ker]
 
 end InverseLimitTopology
 

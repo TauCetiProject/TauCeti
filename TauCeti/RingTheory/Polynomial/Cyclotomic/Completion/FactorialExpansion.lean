@@ -37,6 +37,8 @@ digit of `x` is the `n`th digit of any polynomial representing `x` modulo `P_{n 
   converge to `x`.
 * `TauCeti.CycloCompletion.existsUnique_factorialExpansion`: existence and uniqueness of the
   normalized factorial expansion.
+* `TauCeti.CycloCompletion.ext_factorialIndex`: an element is determined by its residues modulo
+  the factorial polynomials.
 * `TauCeti.CycloCompletion.factorialDigit_injective`: an element is determined by its digits.
 * `TauCeti.CycloCompletion.factorialDigit_add`, `TauCeti.CycloCompletion.factorialDigit_smul`,
   `TauCeti.CycloCompletion.factorialDigit_neg`, `TauCeti.CycloCompletion.factorialDigit_sub`,
@@ -153,14 +155,17 @@ theorem existsUnique_factorialExpansion (x : CycloCompletion R {n | 0 < n}) :
   ⟨x.factorialDigit, ⟨x.degree_factorialDigit_le, x.eventually_mk_sum_factorialDigit_eq_proj⟩,
     fun _ ha ↦ (factorialDigit_eq_of_eventually ha.1 fun _ ↦ ha.2 _).symm⟩
 
-/-- An element of the full completion is determined by its factorial digits. -/
-theorem factorialDigit_injective :
-    Function.Injective (factorialDigit : CycloCompletion R {n | 0 < n} → ℕ → R[X]) := by
-  intro x y h
+/-- Two elements of the full completion are equal if they agree modulo every `P_N`. -/
+theorem ext_factorialIndex {x y : CycloCompletion R {n | 0 < n}}
+    (h : ∀ N, proj (factorialIndex R N) x = proj (factorialIndex R N) y) : x = y := by
   ext f
   obtain ⟨N, hN⟩ := (eventually_dvd_factorialIndex f).exists
-  rw [proj_eq_mk_of_dvd hN (proj_factorialIndex x N),
-    proj_eq_mk_of_dvd hN (proj_factorialIndex y N), h]
+  rw [← algHomOfDvd_proj hN x, ← algHomOfDvd_proj hN y, h N]
+
+/-- An element of the full completion is determined by its factorial digits. -/
+theorem factorialDigit_injective :
+    Function.Injective (factorialDigit : CycloCompletion R {n | 0 < n} → ℕ → R[X]) :=
+  fun x y h ↦ ext_factorialIndex fun N ↦ by rw [proj_factorialIndex, proj_factorialIndex, h]
 
 /-- Factorial digits are additive. -/
 @[simp]
