@@ -64,9 +64,10 @@ that `H₂(X; ℤ)` is finitely generated, and that the periods of these forms h
 extension. Given both, only finitely many curve classes have area at most `R`, torsion parts
 included (`TauCeti.IsComassBounded.finite_setOf_area_le`), their areas are bounded below by a
 positive constant, and the total multiplicity of a cycle of curve classes in a given class is
-bounded. Both inputs hold for compact `X`: the integral homology of a compact manifold is finitely
-generated, and by de Rham's theorem the periods of closed two-forms whose classes span `H²(X; ℝ)`
-have injective real extension. Neither is available here.
+bounded. Both inputs hold for compact `X`. The integral homology of a compact boundaryless
+manifold is finitely generated (`TauCeti.finite_singularHomology_int_of_isManifold`), and by
+de Rham's theorem the periods of closed two-forms whose classes span `H²(X; ℝ)` have injective
+real extension; the second is not available here.
 
 ## References
 
