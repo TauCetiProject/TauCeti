@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.ModEq
 public import Mathlib.Order.Directed
@@ -30,6 +31,8 @@ import TauCeti.Data.Nat.Periodic.Basic
   times the first factor gives consecutive monomial exponents.
 * `TauCeti.eq_mul_zpow_sub_iff_mul_zpow_eq`: in a group, `a = b * h ^ (n - m)` if and only if
   `a * h ^ m = b * h ^ n`.
+* `TauCeti.ite_inv_zpow_ite_mul_pos`: rescaling a nonzero scalar preserves its sign-dependent
+  group power when negative scaling inverts the base.
 * `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
   powers of an `n`-th root of `a`.
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
@@ -88,6 +91,18 @@ theorem mul_pow_mul_eq_pow_succ_mul_pow {M : Type*} [CommMonoid M] (a b : M) (n 
 theorem eq_mul_zpow_sub_iff_mul_zpow_eq {G : Type*} [Group G] {a b h : G} {m n : ℤ} :
     a = b * h ^ (n - m) ↔ a * h ^ m = b * h ^ n := by
   rw [zpow_sub, ← mul_assoc, eq_mul_inv_iff_mul_eq]
+
+/-- Nonzero rescaling preserves the group power with exponent `-1` for positive values and `1`
+for negative values, provided negative rescaling inverts the group element. -/
+theorem ite_inv_zpow_ite_mul_pos {S G : Type*} [Ring S] [LinearOrder S] [IsStrictOrderedRing S]
+    [Group G] {v r : S} (hv : v ≠ 0) (hr : r ≠ 0) (g : G) :
+    (if 0 < r then g else g⁻¹) ^ (if 0 < r * v then -1 else 1 : ℤ) =
+      g ^ (if 0 < v then -1 else 1 : ℤ) := by
+  rcases lt_or_gt_of_ne hr with hneg | hpos
+  · rcases lt_or_gt_of_ne hv with hvneg | hvpos
+    · simp [hneg.not_gt, hvneg.not_gt, mul_pos_of_neg_of_neg hneg hvneg]
+    · simp [hneg.not_gt, hvpos, (mul_neg_of_neg_of_pos hneg hvpos).not_gt]
+  · simp [hpos, mul_pos_iff_of_pos_left hpos]
 
 /-- **Carries under scaling, in a monoid.** If `α ^ n = a` and `n = m d`, then for `p, q < d` the
 product `α ^ (m p) * α ^ (m q)` is `α ^ ((m p + m q) % n)` times `a` when `p + q` carries

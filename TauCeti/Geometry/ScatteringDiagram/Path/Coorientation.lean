@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Geometry.ScatteringDiagram.Path.Product
+import TauCeti.Algebra.Group.Pow
 
 /-!
 # Changes of coorientation for wall transport
@@ -29,7 +30,7 @@ variable {V ι G : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     affineSpan ℝ (W j) → Commute (label i) (label j))
 
 include hcomm in
-/-- Inverting any subset of the labels preserves commutation of labels on coplanar walls. -/
+/-- Inverting any subset of the labels preserves commutation for walls with equal affine spans. -/
 theorem commute_coorientationLabels (r : ι → ℝ) (i j : ι)
     (h : affineSpan ℝ (W i) = affineSpan ℝ (W j)) :
     Commute (if 0 < r i then label i else (label i)⁻¹)
@@ -42,15 +43,6 @@ theorem commute_coorientationLabels (r : ι → ℝ) (i j : ι)
 
 variable [Finite ι]
 
-private theorem signedLabel_smul {v r : ℝ} (hv : v ≠ 0) (hr : r ≠ 0) (g : G) :
-    (if 0 < r then g else g⁻¹) ^ (if 0 < r * v then -1 else 1 : ℤ) =
-      g ^ (if 0 < v then -1 else 1 : ℤ) := by
-  rcases lt_or_gt_of_ne hr with hneg | hpos
-  · rcases lt_or_gt_of_ne hv with hvneg | hvpos
-    · simp [hneg.not_gt, hvneg.not_gt, mul_pos_of_neg_of_neg hneg hvneg]
-    · simp [hneg.not_gt, hvpos, (mul_neg_of_neg_of_pos hneg hvpos).not_gt]
-  · simp [hpos, mul_pos_iff_of_pos_left hpos]
-
 variable {x y : WallComplement W}
 
 /-- Independent nonzero rescalings preserve a simultaneous crossing product when the labels of
@@ -62,25 +54,17 @@ theorem crossingEventProduct_smul_coorientation
     crossingEventProduct (fun i => r i • ν i) (fun i => if 0 < r i then label i else (label i)⁻¹)
         (commute_coorientationLabels label hcomm r) e t =
       crossingEventProduct ν label hcomm e t := by
-  have hpairwise (μ : ι → V →ₗ[ℝ] ℝ) (a : ι → G)
-      (ha : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (a i) (a j)) :
-      (crossingWalls x y t : Set ι).Pairwise fun i j =>
-        Commute (a i ^ (if 0 < μ i (y.val - x.val) then -1 else 1 : ℤ))
-          (a j ^ (if 0 < μ j (y.val - x.val) then -1 else 1 : ℤ)) := by
-    intro i hi j hj _
-    exact (ha i j (affineSpan_eq_of_mem_crossingWalls e hi hj)).zpow_zpow _ _
   rw [crossingEventProduct_eq_crossingWalls
     (fun i => r i • ν i) (fun i => if 0 < r i then label i else (label i)⁻¹)
-      (commute_coorientationLabels label hcomm r) e t
-      (hpairwise _ _ (commute_coorientationLabels label hcomm r)),
-    crossingEventProduct_eq_crossingWalls ν label hcomm e t (hpairwise ν label hcomm)]
+    (commute_coorientationLabels label hcomm r) e t,
+    crossingEventProduct_eq_crossingWalls ν label hcomm e t]
   refine Finset.noncommProd_congr rfl (fun i hi => ?_) _
   obtain ⟨ht, hm⟩ := (mem_crossings x y i t).mp ((mem_crossingWalls x y t i).mp hi)
   have hv : ν i (y.val - x.val) ≠ 0 := by
     intro hz
     apply e.down.transverse i ⟨t, ht, hm⟩
-    exact hν i hz
-  simpa only [LinearMap.smul_apply, smul_eq_mul] using signedLabel_smul hv (hr i) (label i)
+    exact hν i (LinearMap.mem_ker.mpr hz)
+  simpa only [LinearMap.smul_apply, smul_eq_mul] using ite_inv_zpow_ite_mul_pos hv (hr i) (label i)
 
 /-- Independent nonzero rescalings preserve segment transport when each negatively rescaled wall
 carries the inverse label and each normal's kernel lies in its wall's affine-span direction. -/
