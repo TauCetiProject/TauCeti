@@ -242,23 +242,20 @@ theorem fittingIdeal_kaehlerDifferential_quotient_span_range {ι σ : Type*} [Fi
   let φ : (ι → A) →ₗ[A] Ω[A⁄K] := mapBaseChange K P A ∘ₗ bA.equivFun.symm.toLinearMap
   have hφ : Function.Surjective φ :=
     (mapBaseChange_surjective K P A Ideal.Quotient.mk_surjective).comp bA.equivFun.symm.surjective
-  let J : Matrix ι σ A := Matrix.of fun i j ↦ Ideal.Quotient.mk _ (b.coord i (D K P (g j)))
+  let J₀ : Matrix ι σ P := Matrix.of fun i j ↦ b.coord i (D K P (g j))
+  let J : Matrix ι σ A := J₀.map (Ideal.Quotient.mk _)
   have hker : LinearMap.ker φ = LinearMap.range J.mulVecLin := by
     rw [LinearMap.ker_comp, ker_mapBaseChange_quotient_span, Submodule.comap_equiv_eq_map_symm,
       LinearEquiv.symm_symm, Submodule.map_span, J.range_mulVecLin, ← Set.range_comp,
       ← Set.range_comp]
     congr 2
     funext j i
-    simp only [bA, J, LinearEquiv.coe_coe, Module.Basis.equivFun_apply, Function.comp_apply,
+    simp only [bA, J, J₀, LinearEquiv.coe_coe, Module.Basis.equivFun_apply, Function.comp_apply,
       Algebra.TensorProduct.basis_repr_tmul, one_smul, Finsupp.mapRange_apply, Matrix.col_apply,
-      Matrix.of_apply, Module.Basis.coord_apply]
+      Matrix.map_apply, Matrix.of_apply, Module.Basis.coord_apply]
     rw [Ideal.Quotient.algebraMap_eq]
   rw [fittingIdeal_eq_minorsIdeal_ker hφ, Module.finrank_fintype_fun_eq_card, hker,
-    J.minorsIdeal_range_eq_span_det_submatrix, Ideal.map_span, ← Set.range_comp]
-  congr 2
-  ext rc
-  rw [Function.comp_apply, RingHom.map_det]
-  exact congrArg Matrix.det (Matrix.ext fun i j ↦ by simp [J])
+    Matrix.minorsIdeal_range_map_mulVecLin, Matrix.minorsIdeal_range_eq_span_det_submatrix]
 
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
 

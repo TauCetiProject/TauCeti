@@ -183,14 +183,11 @@ coordinates of `f.symm x` in `b`. -/
 theorem mapₛₗ_repr (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (x : M') (i : ι) :
     (b.mapₛₗ f).repr x i = σ (b.repr (f.symm x) i) := by
   classical
-  have hx : x = Finsupp.linearCombination S (b.mapₛₗ f)
-      ((b.repr (f.symm x)).mapRange σ σ.map_zero) := by
-    rw [Finsupp.linearCombination_apply, Finsupp.sum_mapRange_index (by simp)]
-    conv_lhs => rw [← f.apply_symm_apply x, ← b.linearCombination_repr (f.symm x),
-      Finsupp.linearCombination_apply]
-    simp [map_finsuppSum, map_smulₛₗ]
-  conv_lhs => rw [hx, Basis.repr_linearCombination]
-  simp
+  refine (b.mapₛₗ f).repr_apply_eq (fun y j ↦ σ (b.repr (f.symm y) j))
+    (fun x y ↦ funext fun j ↦ by simp)
+    (fun c x ↦ funext fun j ↦ by simp [map_smulₛₗ])
+    (fun k ↦ funext fun j ↦ ?_) x i
+  simp [Finsupp.single_apply, apply_ite σ]
 
 end Map
 

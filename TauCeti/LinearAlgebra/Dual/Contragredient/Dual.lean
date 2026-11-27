@@ -250,10 +250,10 @@ theorem ofDualOppositeLinearEquiv_symm_apply (φ : ContragredientDual σ M) :
   (rfl)
 
 /-- Precomposition with `f : M →ₗ[R] N` as an `S`-linear map between contragredient duals. -/
-def map (σ : S ≃+* R) (f : M →ₗ[R] N) : ContragredientDual σ N →ₗ[S] ContragredientDual σ M :=
-  haveI := RingHomInvPair.of_ringEquiv σ
-  haveI := RingHomInvPair.of_ringEquiv_symm σ
-  ((toDualLinearEquiv σ N).arrowCongr (toDualLinearEquiv σ M)).symm f.dualMap
+def map (σ : S ≃+* R) (f : M →ₗ[R] N) : ContragredientDual σ N →ₗ[S] ContragredientDual σ M where
+  toFun φ := ofDual (φ.toDual.comp f)
+  map_add' φ ψ := by ext x; simp
+  map_smul' s φ := by ext x; simp [smul_apply]
 
 @[simp]
 theorem map_apply (f : M →ₗ[R] N) (φ : ContragredientDual σ N) (x : M) :
@@ -273,12 +273,12 @@ theorem map_ofDual (f : M →ₗ[R] N) (φ : Module.Dual R N) :
 @[simp]
 theorem map_id : map σ (LinearMap.id : M →ₗ[R] M) = LinearMap.id := by
   ext φ x
-  rfl
+  simp
 
 theorem map_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
     map σ (g.comp f) = (map σ f).comp (map σ g) := by
   ext φ x
-  rfl
+  simp
 
 @[simp]
 protected theorem map_zero : map σ (0 : M →ₗ[R] N) = 0 := by
@@ -296,7 +296,7 @@ theorem toDualLinearEquiv_comp_map (f : M →ₗ[R] N) :
     (toDualLinearEquiv σ M).toLinearMap.comp (map σ f) =
       f.dualMap.comp (toDualLinearEquiv σ N).toLinearMap := by
   ext φ x
-  rfl
+  simp
 
 /-- `ofDualOppositeLinearEquiv` intertwines `LinearMap.lcomp Rᵐᵒᵖ R` with
 `ContragredientDual.map`. -/
@@ -307,7 +307,9 @@ theorem ofDualOppositeLinearEquiv_comp_lcomp (f : M →ₗ[R] N) :
     (ofDualOppositeLinearEquiv σ M).toLinearMap.comp (f.lcomp Rᵐᵒᵖ R) =
       (map σ f).comp (ofDualOppositeLinearEquiv σ N).toLinearMap := by
   ext φ x
-  rfl
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    ofDualOppositeLinearEquiv_apply, ofDualOppositeLinearEquiv_apply]
+  simp [LinearMap.lcomp_apply]
 
 /-- `toDualLinearEquiv` transports the range of `ContragredientDual.map σ f` to the range of
 `f.dualMap`. -/
@@ -347,8 +349,11 @@ theorem congr_apply (e : M ≃ₗ[R] N) (φ : ContragredientDual σ N) (x : M) :
   (rfl)
 
 @[simp]
-theorem congr_symm (e : M ≃ₗ[R] N) : (congr σ e).symm = congr σ e.symm :=
-  (rfl)
+theorem congr_symm (e : M ≃ₗ[R] N) : (congr σ e).symm = congr σ e.symm := by
+  refine LinearEquiv.ext fun φ ↦ ?_
+  rw [LinearEquiv.symm_apply_eq]
+  ext x
+  simp
 
 end CommSemiring
 

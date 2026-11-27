@@ -360,18 +360,16 @@ theorem quadraticPresentation_gen_apply (σ : S ≃+* R) (P : QuadraticPresentat
           PresentationTranspose σ (Matrix.toLin' P.rel)) := by
   have hcoord (i : Fin P.size) : (Pi.basisFun R (Fin P.size)).coord i = LinearMap.proj i :=
     LinearMap.ext fun x ↦ by simp [Module.Basis.coord_apply]
-  have h (w : Fin P.size → S) :
+  have hgen : (quadraticPresentation σ P).gen v =
       (LinearMap.range (ContragredientDual.map σ (Matrix.toLin' P.rel))).mkQ
-        (((Pi.basisFun R (Fin P.size)).contragredientDual σ).equivFun.symm w) =
-        ∑ i : Fin P.size, w i •
-          (Submodule.Quotient.mk (ContragredientDual.ofDual (LinearMap.proj i)) :
-            PresentationTranspose σ (Matrix.toLin' P.rel)) := by
-    rw [Module.Basis.equivFun_symm_apply, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [map_smul, Module.Basis.contragredientDual_apply, Submodule.mkQ_apply, hcoord]
-  -- `(quadraticPresentation σ P).size` is definitionally `P.size`.
-  refine (h v).trans (Finset.sum_congr rfl fun i _ ↦ congrArg (fun c ↦ c • _) ?_)
-  exact congrArg v (Fin.ext (by simp [finCongr_apply]))
+        (((Pi.basisFun R (Fin P.size)).contragredientDual σ).equivFun.symm
+          (v ∘ (finCongr (quadraticPresentation_size σ P)).symm)) := by
+    simp only [quadraticPresentation, QuadraticPresentation.ofExact_gen]
+    rfl
+  rw [hgen, Module.Basis.equivFun_symm_apply, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [map_smul, Module.Basis.contragredientDual_apply, Submodule.mkQ_apply, hcoord,
+    Function.comp_apply]
 
 /-- **Fitting ideal of a transposed quadratic presentation** (Dasgupta–Kakde, Lemma 6.1): for a
 quadratic presentation `P` of an `R`-module `M`,
@@ -383,13 +381,20 @@ theorem fittingIdeal_eq_of_quadraticPresentation (σ : S ≃+* R) (P : Quadratic
   rw [(quadraticPresentation σ P).fittingIdeal_eq, P.fittingIdeal_eq,
     det_quadraticPresentation_rel, Ideal.map_span, Set.image_singleton]
 
+private theorem fittingIdeal_eq_minorsIdeal_of_exact {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [Module.Finite R M] {m n : ℕ} (A : Matrix (Fin m) (Fin n) R)
+    {q : (Fin m → R) →ₗ[R] M} (hq : Function.Surjective q) (hex : Function.Exact A.mulVecLin q)
+    (k : ℕ) :
+    TauCeti.fittingIdeal R M k = (LinearMap.range A.mulVecLin).minorsIdeal (m - k) := by
+  nontriviality R
+  rw [TauCeti.fittingIdeal_eq_minorsIdeal_ker hq k, Module.finrank_fin_fun, hex.linearMap_ker_eq]
+
 /-- For an `m × t` matrix `A` over `R`, the zeroth Fitting ideal over `S` of the transpose of
 `Matrix.toLin' A : (Fin t → R) →ₗ[R] (Fin m → R)` is the ideal of `t × t` minors of the transposed
 matrix `Aᵀ.map σ.symm`. -/
 theorem fittingIdeal_toLin'_eq_minorsIdeal (σ : S ≃+* R) {m t : ℕ} (A : Matrix (Fin m) (Fin t) R) :
     TauCeti.fittingIdeal S (PresentationTranspose σ (Matrix.toLin' A)) 0 =
       (LinearMap.range (Aᵀ.map σ.symm).mulVecLin).minorsIdeal t := by
-  nontriviality S
   let d₀ := (Pi.basisFun R (Fin m)).contragredientDual σ
   let d₁ := (Pi.basisFun R (Fin t)).contragredientDual σ
   let q : (Fin t → S) →ₗ[S] PresentationTranspose σ (Matrix.toLin' A) :=
@@ -402,8 +407,7 @@ theorem fittingIdeal_toLin'_eq_minorsIdeal (σ : S ≃+* R) {m t : ℕ} (A : Mat
   have hex₁ : Function.Exact (Aᵀ.map σ.symm).mulVecLin q := by
     rw [← ContragredientDual.toMatrix_map_toLin' σ A]
     exact hex₀.toMatrix_mulVecLin d₀ d₁
-  rw [TauCeti.fittingIdeal_eq_minorsIdeal_ker hq 0, Module.finrank_fin_fun, Nat.sub_zero,
-    hex₁.linearMap_ker_eq]
+  rw [fittingIdeal_eq_minorsIdeal_of_exact (Aᵀ.map σ.symm) hq hex₁ 0, Nat.sub_zero]
 
 /-- For an `m × t` matrix `A` over `R`, the zeroth Fitting ideal over `S` of the transpose of
 `Matrix.toLin' A` is the image along `σ⁻¹` of the ideal of `t × t` minors of `A`. -/
@@ -411,13 +415,9 @@ theorem fittingIdeal_toLin'_eq_map_minorsIdeal (σ : S ≃+* R) {m t : ℕ}
     (A : Matrix (Fin m) (Fin t) R) :
     TauCeti.fittingIdeal S (PresentationTranspose σ (Matrix.toLin' A)) 0 =
       Ideal.map σ.symm ((LinearMap.range A.mulVecLin).minorsIdeal t) := by
-  rw [fittingIdeal_toLin'_eq_minorsIdeal,
-    ← Matrix.minorsIdeal_range_mulVecLin_transpose A t,
-    Matrix.minorsIdeal_range_eq_span_det_submatrix,
-    Matrix.minorsIdeal_range_eq_span_det_submatrix,
-    Ideal.map_span, ← Set.range_comp]
-  refine congrArg Ideal.span (congrArg Set.range (funext fun rc ↦ ?_))
-  exact ((σ.symm : R →+* S).map_det_submatrix Aᵀ rc.1 rc.2).symm
+  rw [fittingIdeal_toLin'_eq_minorsIdeal]
+  exact (Matrix.minorsIdeal_range_map_mulVecLin (σ.symm : R →+* S) Aᵀ t).trans
+    (by rw [Matrix.minorsIdeal_range_mulVecLin_transpose, Ideal.map_coe])
 
 /-- **Free form of the excess-generators Fitting-ideal identity**: if `P₁ →f P₀ →π M → 0` is an
 exact sequence of `R`-modules with `P₁` and `P₀` finite free of ranks `t` and `t + s`, then
@@ -442,8 +442,8 @@ theorem fittingIdeal_eq_of_free (σ : S ≃+* R) {t s : ℕ}
   have hex : Function.Exact A.mulVecLin π' :=
     (LinearMap.exact_iff.2 hf.symm).toMatrix_mulVecLin b₁ b₀
   rw [TauCeti.fittingIdeal_congr (congr σ b₁.equivFun b₀.equivFun hcomm) 0,
-    fittingIdeal_toLin'_eq_map_minorsIdeal, TauCeti.fittingIdeal_eq_minorsIdeal_ker hπ' s,
-    Module.finrank_fin_fun, Nat.add_sub_cancel, hex.linearMap_ker_eq]
+    fittingIdeal_toLin'_eq_map_minorsIdeal, fittingIdeal_eq_minorsIdeal_of_exact A hπ' hex s,
+    Nat.add_sub_cancel]
 
 /-- **Higher Fitting ideals and transposes with excess generators** (Dasgupta–Kakde, equation (171),
 proof of Lemma B.4): if `P₁ →f P₀ →π M → 0` is an exact sequence of `R`-modules in which `P₁` and
@@ -487,9 +487,10 @@ theorem fittingIdeal_eq_of_projective (σ : S ≃+* R) {t s : ℕ}
       (auslanderReitenTransposeEquiv (RingEquiv.refl T) (f.baseChange T)).symm
   have hfree := fittingIdeal_eq_of_free (RingEquiv.refl T) (f.baseChange T) (π.baseChange T)
     hsurj hexact hrank₁ hrank₀
-  rw [RingEquiv.symm_refl, ← Ideal.map_coe, RingEquiv.toRingHom_refl, Ideal.map_id] at hfree
   rw [← TauCeti.fittingIdeal_baseChange (AuslanderReitenTranspose f) T 0,
     ← TauCeti.fittingIdeal_baseChange M T s, TauCeti.fittingIdeal_congr eT 0, hfree]
+  ext x
+  simp [Ideal.mem_map_iff_of_surjective _ (RingEquiv.surjective _)]
 
 end PresentationTranspose
 
