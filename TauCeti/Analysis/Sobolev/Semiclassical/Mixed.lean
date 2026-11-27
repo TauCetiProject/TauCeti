@@ -77,7 +77,8 @@ mixed norms with constants independent of `h`:
   real-valued `f`, `g` (`Submodule.exists_mixedSemiclassicalSobolevNorm_mul_le`);
 * **multipliers**: multiplication by a scalar function `g` with the mixed bounds
   `h ^ (n - a) ‖∂^{a, n - a} g‖ ≤ B` for `a ≤ n ≤ j`, such as a cutoff varying on the scale `h`
-  in the normal directions and on the scale one along them, is bounded,
+  in the normal directions and on the scale one in the horizontal directions (along the tube), is
+  bounded,
   `‖g • f‖_{j,h,V} ≤ (j + 1)² 8ʲ B ‖f‖_{j,h,V}`, in every dimension and for every `j`
   (`Submodule.mixedSemiclassicalSobolevNorm_smul_le_of_le_left`), and so is an operator-valued
   multiplier with such bounds, such as a change of frame
@@ -541,10 +542,9 @@ theorem exists_mixedSemiclassicalSobolevNorm_mul_le {j : ℕ} (hj : finrank ℝ 
   obtain ⟨hfD, hfle⟩ := hδ hf hfm
   obtain ⟨hgD, hgle⟩ := hδ hg hgm
   obtain ⟨hfgD, hfgle⟩ := hCfg 1 one_pos _ _ (hf.comp δ.contDiff) (hg.comp δ.contDiff) hfD hgD
-  have hcomp : (f * g) ∘ δ = (f ∘ δ) * (g ∘ δ) := rfl
   refine ⟨fun n hn a _ ↦ (V.memLp_mixedIteratedFDeriv_comp_normalDilation_iff n a (f * g)
-    hh.ne').1 (hcomp ▸ V.memLp_mixedIteratedFDeriv (hfgD n hn) a), ?_⟩
-  rw [V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j _ hh, hcomp,
+    hh.ne').1 (Pi.mul_comp f g δ ▸ V.memLp_mixedIteratedFDeriv (hfgD n hn) a), ?_⟩
+  rw [V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j _ hh, Pi.mul_comp,
     V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j f hh,
     V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j g hh]
   have h4 : (4 : ℝ) ^ j = 2 ^ j * 2 ^ j := by rw [← mul_pow]; norm_num
@@ -600,9 +600,9 @@ variable {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace
 /-- **Multipliers with mixed semiclassical bounds.** Let `g` be a scalar function of class `Cʲ`
 whose mixed derivatives satisfy `h ^ (n - a) ‖∂^{a, n - a} g‖ ≤ B` everywhere for `a ≤ n ≤ j`,
 such as a cutoff or a gauge transformation varying on the scale `h` in the normal directions and on
-the scale one along them. For `h > 0` and `f` of class `Cʲ` whose mixed derivatives through total
-order `j` are square integrable, the mixed derivatives of `g • f` through total order `j` are
-square integrable and
+the scale one in the horizontal directions (along the tube). For `h > 0` and `f` of class `Cʲ`
+whose mixed derivatives through total order `j` are square integrable, the mixed derivatives of
+`g • f` through total order `j` are square integrable and
 
 `‖g • f‖_{j,h,V} ≤ (j + 1)² 8ʲ B ‖f‖_{j,h,V}`.
 
@@ -621,7 +621,8 @@ theorem mixedSemiclassicalSobolevNorm_smul_le_of_le_left {g : E → 𝕜} {f : E
       (hg.comp (V.normalDilation h).contDiff) (hf.comp (V.normalDilation h).contDiff) hD one_pos
       fun i hi x ↦ by
         rw [one_pow, one_mul]
-        exact V.norm_iteratedFDeriv_comp_normalDilation_le hg hh.le hB hi x
+        exact (V.norm_iteratedFDeriv_comp_normalDilation_le (hg.of_le (by exact_mod_cast hi)) hh.le
+          (hB i hi) x).trans (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hi) hB0)
 
 /-- **Operator-valued multipliers with mixed semiclassical bounds.** Let `A : E → F →L[ℝ] G` be of
 class `Cʲ` with `h ^ (n - a) ‖∂^{a, n - a} A‖ ≤ B` everywhere for `a ≤ n ≤ j`, such as a change of
@@ -645,7 +646,8 @@ theorem mixedSemiclassicalSobolevNorm_clm_apply_le_of_le_left {G : Type*} [Norme
       (hA.comp (V.normalDilation h).contDiff) (hf.comp (V.normalDilation h).contDiff) hD one_pos
       fun i hi x ↦ by
         rw [one_pow, one_mul]
-        exact V.norm_iteratedFDeriv_comp_normalDilation_le hA hh.le hB hi x
+        exact (V.norm_iteratedFDeriv_comp_normalDilation_le (hA.of_le (by exact_mod_cast hi)) hh.le
+          (hB i hi) x).trans (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hi) hB0)
 
 end Multiplier
 

@@ -42,8 +42,8 @@ the mixed derivative of order `(a, n - a)` gains the factor `t ^ (n - a)`: each 
 contributes a factor `t`, each horizontal one none
 (`Submodule.mixedIteratedFDeriv_comp_normalDilation`, and
 `Submodule.mixedIteratedFDeriv_comp_normalDilation_of_ne_zero`, which needs no smoothness). So
-bounds `h ^ (n - a) ‖∂^{a, n - a} g‖ ≤ B` at the scale `h` become, after the normal dilation by
-`h`, unscaled bounds `‖Dⁱ (g ∘ normalDilation V h)‖ ≤ 2ʲ B` for `i ≤ j`
+bounds `h ^ (i - a) ‖∂^{a, i - a} g‖ ≤ B` at the scale `h` become, after the normal dilation by
+`h`, unscaled bounds `‖Dⁱ (g ∘ normalDilation V h)‖ ≤ 2ⁱ B`
 (`Submodule.norm_iteratedFDeriv_comp_normalDilation_le`).
 
 **Linearity.** Mixed derivatives commute with negation and scalar multiplication, and with sums
@@ -190,9 +190,8 @@ theorem norm_mixedIteratedFDeriv_comp_left {G : Type*} [NormedAddCommGroup G]
     ext m
     simp only [mixedIteratedFDeriv_apply, ContinuousLinearMap.compContinuousMultilinearMap_coe,
       Function.comp_apply]
-    rw [show (g : F → G) = g.toContinuousLinearEquiv from rfl,
-      g.toContinuousLinearEquiv.iteratedFDeriv_comp_left]
-    rfl
+    rw [← g.coe_toContinuousLinearEquiv, g.toContinuousLinearEquiv.iteratedFDeriv_comp_left,
+      ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply]
   rw [hcomp]
   exact LinearIsometry.norm_compContinuousMultilinearMap g.toLinearIsometry _
 
@@ -282,29 +281,24 @@ theorem norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv {n : ℕ}
   simp only [nsmul_eq_mul]
 
 /-- **Mixed bounds at scale `h` are unscaled bounds after the normal dilation.** If `g` is of class
-`Cʲ`, `h ≥ 0` and `h ^ (n - a) ‖∂^{a, n - a} g‖ ≤ B` everywhere for `a ≤ n ≤ j`, then the normally
-dilated function `g ∘ normalDilation V h` satisfies `‖Dⁱ (g ∘ normalDilation V h)‖ ≤ 2ʲ B`
-everywhere for `i ≤ j`. -/
-theorem norm_iteratedFDeriv_comp_normalDilation_le {j : ℕ} {g : E → F} (hg : ContDiff ℝ j g)
+`Cⁱ`, `h ≥ 0` and `h ^ (i - a) ‖∂^{a, i - a} g‖ ≤ B` everywhere for `a ≤ i`, then the normally
+dilated function `g ∘ normalDilation V h` satisfies `‖Dⁱ (g ∘ normalDilation V h)‖ ≤ 2ⁱ B`
+everywhere. -/
+theorem norm_iteratedFDeriv_comp_normalDilation_le {i : ℕ} {g : E → F} (hg : ContDiff ℝ i g)
     {h B : ℝ} (hh : 0 ≤ h)
-    (hB : ∀ n ≤ j, ∀ a ≤ n, ∀ x, h ^ (n - a) * ‖V.mixedIteratedFDeriv n a g x‖ ≤ B) {i : ℕ}
-    (hi : i ≤ j) (x : E) :
-    ‖iteratedFDeriv ℝ i (g ∘ V.normalDilation h) x‖ ≤ 2 ^ j * B := by
-  have hB0 : 0 ≤ B :=
-    (mul_nonneg (pow_nonneg hh _) (norm_nonneg _)).trans (hB 0 (Nat.zero_le _) 0 le_rfl x)
-  have hgi : ContDiff ℝ i g := hg.of_le (by exact_mod_cast hi)
+    (hB : ∀ a ≤ i, ∀ x, h ^ (i - a) * ‖V.mixedIteratedFDeriv i a g x‖ ≤ B) (x : E) :
+    ‖iteratedFDeriv ℝ i (g ∘ V.normalDilation h) x‖ ≤ 2 ^ i * B := by
   refine (V.norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv
-    (hgi.comp (V.normalDilation h).contDiff).contDiffAt).trans ?_
+    (hg.comp (V.normalDilation h).contDiff).contDiffAt).trans ?_
   calc ∑ a ∈ range (i + 1),
         (i.choose a : ℝ) * ‖V.mixedIteratedFDeriv i a (g ∘ V.normalDilation h) x‖
       ≤ ∑ a ∈ range (i + 1), (i.choose a : ℝ) * B := by
         refine sum_le_sum fun a ha ↦ mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
-        rw [V.mixedIteratedFDeriv_comp_normalDilation hgi a h x, norm_smul, norm_pow,
+        rw [V.mixedIteratedFDeriv_comp_normalDilation hg a h x, norm_smul, norm_pow,
           Real.norm_of_nonneg hh]
-        exact hB i hi a (Nat.lt_succ_iff.1 (mem_range.1 ha)) _
+        exact hB a (Nat.lt_succ_iff.1 (mem_range.1 ha)) _
     _ = 2 ^ i * B := by
         rw [← sum_mul, ← Nat.cast_sum, Nat.sum_range_choose, Nat.cast_pow, Nat.cast_ofNat]
-    _ ≤ 2 ^ j * B := mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hi) hB0
 
 /-- **A normal derivative raises the normal order.** For `a ≤ n`, `f` of class `Cⁿ⁺¹` at `x` and a
 normal vector `v ∈ V`, the mixed derivative of order `(a, n - a)` of the derivative of `f` along
