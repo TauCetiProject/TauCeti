@@ -50,8 +50,8 @@ theorem norm_map_det_gram_le_of_norm_inner_sum_smul_le_one
     ‖ι.iso (Matrix.gram ℂ x).det‖ ≤ (ι.prime : ℝ) ^ (a + b) := by
   let P : Matrix m m ℂ := of fun i j ↦ ⟪∑ k, U i k • x k, ∑ k, V j k • x k⟫_ℂ
   have hdet : P.det = star U.det * (Matrix.gram ℂ x).det * V.det := by
-    have hconj : (U.map (starRingEnd ℂ)).det = star U.det :=
-      (det_transpose Uᴴ).trans (det_conjTranspose U)
+    have hconj : (U.map (starRingEnd ℂ)).det = star U.det := by
+      rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, starRingEnd_apply]
     simp only [P, inner_sum_smul_matrix, det_mul, det_transpose, hconj, Matrix.gram]
   have hnorm : ‖ι.iso P.det‖ ≤ 1 := by
     rw [ι.iso.map_det, RingEquiv.mapMatrix_apply]
@@ -97,7 +97,7 @@ theorem norm_map_scaled_det_gram_le (ι : PrimePadicIso) {m n E : Type*}
 /-- If the changes in a completed family cost at most `h ℓ` on each side at each prime `ℓ`,
 then the scaled Gram determinants have height at most twice the total prime-log budget. The
 space containing the vectors may vary with the prime-adic embedding. -/
-theorem heightLe_scaled_gram_det {m n : Type*} [Fintype m] [Fintype n]
+theorem heightLe_scaled_det_gram {m n : Type*} [Fintype m] [Fintype n]
     [DecidableEq m] [DecidableEq n] {E : PrimePadicIso → Type*}
     [∀ ι, SeminormedAddCommGroup (E ι)] [∀ ι, InnerProductSpace ℂ (E ι)]
     (x : ∀ ι, m → E ι) (y : ∀ ι, n → E ι) (γ : PrimePadicIso → ℂ) {h : ℕ → ℝ} {δ : ℝ}
