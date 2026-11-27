@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 
 /-!
 # From the weighted prime count to the unweighted one

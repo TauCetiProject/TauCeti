@@ -56,6 +56,9 @@ zero and one.
 * `TauCeti.integrableOn_Ioi_rpow_mul_log_of_lt` and `TauCeti.integral_Ioi_rpow_mul_log_of_lt`:
   integrability and the closed form `∫ t in Ioi c, t ^ a * log t =
   c ^ (a + 1) * (1 - (a + 1) * log c) / (a + 1) ^ 2` for `a < -1` and `0 < c`.
+* `TauCeti.integrableOn_exp_neg_div_Ioi` and `TauCeti.integrableOn_exp_div_Iic`:
+  tail integrability of `exp (-t) / t` on `(a, ∞)` for `a > 0` and `exp u / u` on `(-∞, y]`
+  for `y < 0`.
 -/
 
 public section
@@ -480,5 +483,25 @@ theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
     ring
   rw [integral_Ioi_of_hasDerivAt_of_tendsto' hd (integrableOn_Ioi_rpow_mul_log_of_lt ha hc) ht]
   ring
+
+/-- `t ↦ exp (-t) / t` is integrable on `(a, ∞)` for every `a > 0`. -/
+theorem integrableOn_exp_neg_div_Ioi {a : ℝ} (ha : 0 < a) :
+    IntegrableOn (fun t : ℝ ↦ Real.exp (-t) / t) (Ioi a) := by
+  refine Integrable.mono' (g := fun t : ℝ ↦ Real.exp (-t) / a)
+    ((integrableOn_exp_neg_Ioi a).div_const a)
+    ((Real.continuous_exp.comp continuous_neg).measurable.div measurable_id).aestronglyMeasurable ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : a < t)
+  rw [Real.norm_eq_abs, abs_div, abs_of_pos (Real.exp_pos _), abs_of_pos (ha.trans ht)]
+  exact div_le_div_of_nonneg_left (Real.exp_pos _).le ha ht.le
+
+/-- `u ↦ exp u / u` is integrable on `(-∞, y]` whenever `y < 0`. -/
+theorem integrableOn_exp_div_Iic {y : ℝ} (hy : y < 0) :
+    IntegrableOn (fun u : ℝ ↦ Real.exp u / u) (Iic y) := by
+  have hcomp := (MeasurePreserving.integrableOn_comp_preimage (Measure.measurePreserving_neg _)
+    (Homeomorph.neg ℝ).measurableEmbedding).mpr (integrableOn_exp_neg_div_Ioi (neg_pos.mpr hy))
+  have hIio : IntegrableOn (fun u : ℝ ↦ Real.exp u / u) (Iio y) := by
+    simpa [Function.comp_def, div_neg] using hcomp.neg
+  rw [integrableOn_Iic_iff_integrableOn_Iio]
+  exact hIio
 
 end TauCeti
