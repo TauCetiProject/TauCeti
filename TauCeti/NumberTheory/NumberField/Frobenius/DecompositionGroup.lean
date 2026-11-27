@@ -61,6 +61,8 @@ prime `τ • Q` gives the other.
   prime is cyclic.
 * `Ideal.zpowers_sup_inertia_eq_stabilizer_of_isArithFrobAt`: at any nonzero prime `Q`, a
   Frobenius element together with the inertia subgroup generates the decomposition group.
+* `Ideal.zpowers_mk_eq_top_of_isArithFrobAt`: the coset of a Frobenius element modulo inertia
+  generates `D(Q) / I(Q)`.
 * `Ideal.stabilizer_le_of_forall_isArithFrobAt_mem`: a subgroup containing every Frobenius
   element at a nonzero prime `Q` contains the decomposition group of `Q`.
 * `Ideal.inertiaDeg_dvd_orderOf_of_isArithFrobAt` and
@@ -329,6 +331,21 @@ theorem zpowers_sup_inertia_eq_stabilizer_of_isArithFrobAt (Q : Ideal (𝓞 L)) 
   rw [Subgroup.map_sup, MonoidHom.map_zpowers, ← Ideal.Quotient.ker_stabilizerHom (P := Q)
     (p := Q.under (𝓞 K)) (G := L ≃ₐ[K] L), Ideal.Quotient.map_ker_stabilizer_subtype,
     ← MonoidHom.range_eq_map, Subgroup.range_subtype] at h
+  exact h
+
+/-- **Frobenius modulo inertia generates `D / I`.** At any prime `Q`, the coset of an arithmetic
+Frobenius `σ` at `Q` generates the quotient `D(Q) / I(Q)` of the decomposition group by the
+inertia subgroup. -/
+theorem zpowers_mk_eq_top_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
+    {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    Subgroup.zpowers (QuotientGroup.mk
+      (s := Q.inertia (MulAction.stabilizer (L ≃ₐ[K] L) Q)) ⟨σ, hσ.mem_stabilizer⟩) = ⊤ := by
+  have h := congrArg
+    (Subgroup.map (QuotientGroup.mk' (Q.inertia (MulAction.stabilizer (L ≃ₐ[K] L) Q))))
+    (zpowers_sup_inertia_eq_top_of_isArithFrobAt Q hσ)
+  rw [Subgroup.map_sup, MonoidHom.map_zpowers, QuotientGroup.mk'_apply,
+    Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _),
+    QuotientGroup.map_mk'_self, sup_bot_eq] at h
   exact h
 
 /-- **The orbit of a point fixed by inertia under the decomposition group is its orbit under a

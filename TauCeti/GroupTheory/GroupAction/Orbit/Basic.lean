@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Actions
+public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.GroupAction.Defs
@@ -45,6 +46,8 @@ the orbit under `Subgroup.zpowers g` consists of the points `g ^ n • x`, `n : 
   of `a` whose fiber lies in `s`, together with a witness set `W ⊆ H` covering `s`.
 * `MulAction.orbit_eq_of_invariant_list`: specialization of `MulAction.orbit_eq_of_invariant` to an
   explicit witness list `ws : List G`.
+* `MulAction.orbit_eq_of_eq_top`: a subgroup equal to `⊤` has the same orbits as the ambient
+  group.
 * `MulAction.minimalPeriod_conj_smul`: minimal periods of actions are invariant under
   simultaneous conjugation of the acting element and translation of the basepoint.
 * `MulAction.orbit_iterateMulAct`: the orbit under `IterateMulAct f` is the forward orbit of `f`.
@@ -103,6 +106,14 @@ theorem orbit_eq_of_invariant_list {G α S : Type*} {β : Sort*} [SetLike S G] [
   orbit_eq_of_invariant f {g | g ∈ ws} hf hs hws fun x hx ↦ by
     obtain ⟨g, hg, rfl⟩ := List.mem_map.mp (hcov x hx)
     exact ⟨g, hg, rfl⟩
+
+/-- If a subgroup `H` equals `⊤`, its orbits coincide with those of the ambient group. -/
+@[to_additive /-- If an additive subgroup `H` equals `⊤`, its orbits coincide with those of the
+ambient group. -/]
+theorem orbit_eq_of_eq_top {G α : Type*} [Group G] [MulAction G α] {H : Subgroup G}
+    (hH : H = ⊤) (a : α) : orbit H a = orbit G a :=
+  Set.Subset.antisymm (orbit_subgroup_subset H a) fun _ ⟨g, hg⟩ ↦
+    ⟨⟨g, hH ▸ Subgroup.mem_top g⟩, hg⟩
 
 /-- **Conjugation invariance of minimal period.** Conjugating an acting group element by `c`
 and translating the point by `c` preserves the minimal period of the action. -/

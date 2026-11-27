@@ -26,6 +26,8 @@ extended ideal `I.map (algebraMap A S)` and any ideal stabilized by `g` map into
   action element.
 * `Ideal.le_comap_toAlgHom_of_mem_stabilizer`: an element of `MulAction.stabilizer G I` maps `I`
   into itself via `MulSemiringAction.toAlgHom`.
+* `Ideal.orbit_inertia_stabilizer`: for any `G`-action, the orbits of the inertia subgroup of
+  `MulAction.stabilizer G Q` coincide with the orbits of `Q.inertia G`.
 -/
 
 public section
@@ -82,5 +84,18 @@ theorem le_comap_toAlgHom_of_mem_stabilizer {A S G : Type*} [CommSemiring A] [Se
   intro s hs
   rw [mem_comap, MulSemiringAction.toAlgHom_apply, ← hg']
   exact smul_mem_pointwise_smul g s I hs
+
+/-- For any action of `G` on `X`, the orbits of the inertia subgroup of the stabilizer of `Q`
+coincide with the orbits of `Q.inertia G`, because `Q.inertia G ≤ MulAction.stabilizer G Q`. -/
+theorem orbit_inertia_stabilizer {G R X : Type*} [Group G] [Ring R] [MulSemiringAction G R]
+    [MulAction G X] (Q : Ideal R) (x : X) :
+    MulAction.orbit (Q.inertia (MulAction.stabilizer G Q)) x = MulAction.orbit (Q.inertia G) x := by
+  ext y
+  simp only [MulAction.mem_orbit_iff, Subgroup.smul_def]
+  constructor
+  · rintro ⟨⟨d, hd⟩, rfl⟩
+    exact ⟨⟨d.val, Ideal.coe_mem_inertia.mpr hd⟩, rfl⟩
+  · rintro ⟨⟨g, hg⟩, rfl⟩
+    exact ⟨⟨⟨g, Q.inertia_le_stabilizer hg⟩, Ideal.coe_mem_inertia.mp hg⟩, rfl⟩
 
 end Ideal
