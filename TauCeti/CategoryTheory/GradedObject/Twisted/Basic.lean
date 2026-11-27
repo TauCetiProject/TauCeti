@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Linear
+public import TauCeti.CategoryTheory.GradedObject
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.DegreeThree
 
 /-!
@@ -21,10 +22,11 @@ Given a normalized `3`-cocycle `ω : I → I → I → Rˣ`, that is a function 
 `ω i₁ 0 i₃ = 1`, the associator may be twisted by multiplying it by `ω i₁ i₂ i₃` on that summand.
 The cocycle identity is exactly what the pentagon axiom requires, and the normalization is what the
 triangle axiom requires, so the result is again a monoidal category, with the same tensor product
-and unitors. The intended example is `I = Additive G` and `C = ModuleCat k` for a field `k`: the
-category of `G`-graded vector spaces with associator twisted by `ω`, where on the one-dimensional
-objects `δ_g` concentrated in a single degree the associator is multiplication by `ω g h j`, and
-whose finite-dimensional, finitely supported objects form the pointed category `Vec^ω_G`.
+and unitors. The intended example is `I = Additive G` and `C = ModuleCat R` for a commutative
+ring `R`: the category of `G`-graded `R`-modules with associator twisted by `ω`, where on the free
+objects of rank one `δ_g` concentrated in a single degree the associator is multiplication by
+`ω g h j`, and whose finitely supported objects with finite projective components form the
+pointed category `Vec^ω_G`.
 
 ## Main definitions
 
@@ -33,7 +35,8 @@ whose finite-dimensional, finitely supported objects form the pointed category `
 * `CategoryTheory.GradedObject.Monoidal.scaleTensorObj₃`: the endomorphism of
   `X₁ ⊗ (X₂ ⊗ X₃)` acting on the summand `X₁ i₁ ⊗ X₂ i₂ ⊗ X₃ i₃` by a scalar `u i₁ i₂ i₃`.
 * `TauCeti.TwistedGradedObject c C`: a type synonym for `GradedObject I C`, carrying the monoidal
-  structure whose associator is twisted by the cocycle `c`.
+  structure whose associator is twisted by the cocycle `c`, and the componentwise preadditive and
+  linear structures of graded objects.
 
 ## Main statements
 
@@ -408,8 +411,8 @@ variable {I : Type*} [AddMonoid I] {R : Type*} [CommSemiring R]
 
 /-- The category of `I`-graded objects of `C`, with the monoidal structure whose associator is
 twisted by the normalized `3`-cocycle `c`. The intended example is `I = Additive G` and
-`C = ModuleCat k` for a field `k`, the category of `G`-graded vector spaces with associator twisted
-by `c`. -/
+`C = ModuleCat R` for a commutative ring `R`, the category of `G`-graded `R`-modules with
+associator twisted by `c`. -/
 @[expose]
 def TwistedGradedObject (_c : GradedObject.TwistingCocycle I R) (C : Type*) : Type _ :=
   GradedObject I C
@@ -419,6 +422,39 @@ namespace TwistedGradedObject
 variable (c : GradedObject.TwistingCocycle I R) (C : Type*) [Category* C]
 
 instance : Category (TwistedGradedObject c C) := inferInstanceAs (Category (GradedObject I C))
+
+/-- Morphisms of cocycle-twisted graded objects are added componentwise, as for graded objects
+(`TauCeti.gradedObjectPreadditive`): the cocycle only affects the associator. -/
+instance instPreadditive [Preadditive C] : Preadditive (TwistedGradedObject c C) :=
+  inferInstanceAs (Preadditive (GradedObject I C))
+
+/-- Morphisms of cocycle-twisted graded objects are scaled componentwise, as for graded objects
+(`TauCeti.gradedObjectLinear`). -/
+instance instLinear (S : Type*) [Semiring S] [Preadditive C] [Linear S C] :
+    Linear S (TwistedGradedObject c C) :=
+  inferInstanceAs (Linear S (GradedObject I C))
+
+variable {c C}
+
+/-- The identity of a cocycle-twisted graded object is the identity in every degree. -/
+@[simp]
+lemma id_apply (X : TwistedGradedObject c C) (i : I) : (𝟙 X : X ⟶ X) i = 𝟙 (X i) :=
+  (rfl)
+
+/-- The sum of two morphisms of cocycle-twisted graded objects is computed in every degree. -/
+@[simp]
+lemma add_apply [Preadditive C] {X Y : TwistedGradedObject c C} (f g : X ⟶ Y) (i : I) :
+    (f + g) i = f i + g i :=
+  (rfl)
+
+/-- A scalar multiple of a morphism of cocycle-twisted graded objects is computed in every
+degree. -/
+@[simp]
+lemma smul_apply {S : Type*} [Semiring S] [Preadditive C] [Linear S C]
+    {X Y : TwistedGradedObject c C} (r : S) (f : X ⟶ Y) (i : I) : (r • f) i = r • f i :=
+  (rfl)
+
+variable (c C)
 
 variable [MonoidalCategory C] [Preadditive C] [Linear R C] [MonoidalPreadditive C]
   [MonoidalLinear R C]
