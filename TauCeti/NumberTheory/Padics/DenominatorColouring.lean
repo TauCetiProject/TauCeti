@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Archimedean.Basic
 public import Mathlib.Data.Rat.Encodable
-public import TauCeti.NumberTheory.Padics.PadicValRat
+public import TauCeti.NumberTheory.Padics.PadicVal.Rat
 public import TauCeti.Order.CountableDenseLinearOrder
 
 /-!

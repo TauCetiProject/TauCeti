@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Height.MvPolynomial
 public import Mathlib.RingTheory.Polynomial.Content
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
-import TauCeti.NumberTheory.Padics.PadicValNat
+import TauCeti.NumberTheory.Padics.PadicVal.Nat
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!

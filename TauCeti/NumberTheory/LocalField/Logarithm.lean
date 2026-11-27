@@ -12,7 +12,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.Analysis.Normed.Algebra.Logarithm.Naturality
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
-import TauCeti.NumberTheory.Padics.PadicValNat
+import TauCeti.NumberTheory.Padics.PadicVal.Nat
 import TauCeti.RingTheory.Valuation.PowSubPow
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum
 import TauCeti.Topology.Algebra.ValuativeRel.Nonarchimedean

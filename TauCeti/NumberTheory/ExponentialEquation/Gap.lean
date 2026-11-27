@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.SmoothNumbers
 import Mathlib.Data.Int.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.AddMulLog
-import TauCeti.NumberTheory.Padics.PadicValNat
+import TauCeti.NumberTheory.Padics.PadicVal.Nat
 import TauCeti.NumberTheory.SmoothNumbers
 
 /-!

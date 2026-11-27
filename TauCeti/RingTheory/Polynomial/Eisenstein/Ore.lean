@@ -42,7 +42,8 @@ fraction field; in equal characteristic with `(n : R) = 0`, taking `j = n * (m -
 * `TauCeti.IsOreAdmissible R n j`: Ore's admissibility predicate for degree `n` and wild
   exponent `j` over a discrete valuation ring `R`.
 * `TauCeti.oreCoefficientDepth R n j h`: the valuation lower bound
-  `max(1, ⌊j / n⌋ + 1 + [h < j % n] - v_R(h))` imposed on the degree-`h` Eisenstein coefficient.
+  `max(1, ⌊j / n⌋ + 1 + [h < j % n] - v_R(h))` imposed on the degree-`h` Eisenstein coefficient
+  for `1 ≤ h < n` (equal to `1` when `(h : R) = 0`).
 
 ## Main results
 
@@ -191,7 +192,8 @@ theorem isOreAdmissible_iff_of_natCast_eq_zero {n j : ℕ} (hnR : (n : R) = 0) :
 
 variable (R) in
 /-- The valuation lower bound `ν_h = max(1, ⌊j / n⌋ + 1 + [h < j % n] - v_R(h))` imposed on the
-degree-`h` Eisenstein coefficient by wild exponent `j` in degree `n`. -/
+degree-`h` Eisenstein coefficient (`1 ≤ h < n`) by wild exponent `j` in degree `n` (equal to `1`
+when `(h : R) = 0`). -/
 def oreCoefficientDepth (n j h : ℕ) : ℕ :=
   max 1 ((((j / n + 1 + if h < j % n then 1 else 0 : ℕ) : ℕ∞) - addVal R (h : R)).toNat)
 

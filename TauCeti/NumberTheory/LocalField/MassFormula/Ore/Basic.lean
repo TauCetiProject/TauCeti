@@ -8,9 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.RingTheory.Polynomial.Eisenstein.Ore
 import Mathlib.FieldTheory.IsSepClosed
-import Mathlib.RingTheory.Valuation.ValuationRing
 import TauCeti.NumberTheory.LocalField.NatCastValuation
-import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
 /-!
 # Ore's realizability theorem for totally ramified extensions of local fields

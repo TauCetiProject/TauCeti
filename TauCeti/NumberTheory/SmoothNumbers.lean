@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.EulerProduct.Basic
 public import Mathlib.NumberTheory.SmoothNumbers
-public import TauCeti.NumberTheory.Padics.PadicValRat
+public import TauCeti.NumberTheory.Padics.PadicVal.Rat
 
 /-!
 # `S`-factored numbers and `p`-adic valuations

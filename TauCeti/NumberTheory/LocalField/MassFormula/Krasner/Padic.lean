@@ -37,8 +37,9 @@ exponent `j`, and sums to `#σ_{ℚ_[p]}(n)` — matching `#σ_{ℚ_[2]}(2) = 2 
 
 ## Main results
 
-* `TauCeti.krasnerCountPadic_eq_zero_iff`, `TauCeti.natCast_krasnerCountPadic`: vanishing criterion
-  and comparison `(krasnerCountPadic p n j : ℚ) = krasnerCount ℚ_[p] n j` for prime `p`.
+* `TauCeti.krasnerCountPadic_def`, `TauCeti.krasnerCountPadic_eq_zero_iff`,
+  `TauCeti.natCast_krasnerCountPadic`: conditional formula, vanishing criterion, and comparison
+  `(krasnerCountPadic p n j : ℚ) = krasnerCount ℚ_[p] n j` for prime `p`.
 * `TauCeti.sum_oreCoefficientDepth_padic_of_mod_eq_zero`,
   `TauCeti.sum_oreCoefficientDepth_padic_of_mod_pos`: closed-form identities for the sum of Ore
   coefficient depths over `𝒪[ℚ_[p]]`.
@@ -77,6 +78,16 @@ holds. -/
       p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
   else 0
 
+/-- Unfolding `TauCeti.krasnerCountPadic`. -/
+theorem krasnerCountPadic_def (p n j : ℕ) :
+    krasnerCountPadic p n j =
+      if IsOreAdmissiblePadic p n j then
+        if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
+        else n * (p - 1) *
+          p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
+      else 0 := by
+  rw [krasnerCountPadic]
+
 /-- For a `p`-adically Ore-admissible pair `(n, j)`, `krasnerCountPadic` evaluates to Pauli and
 Roblot's closed form. -/
 theorem krasnerCountPadic_of_isOreAdmissiblePadic {p n j : ℕ}
@@ -102,7 +113,7 @@ theorem krasnerCountPadic_eq_zero_iff {p : ℕ} [Fact p.Prime] {n j : ℕ} :
   · rw [iff_false_right (not_not.mpr hadm), krasnerCountPadic_of_isOreAdmissiblePadic hadm]
     have hp0 : p ≠ 0 := (Fact.out : p.Prime).ne_zero
     have hp1 : p - 1 ≠ 0 := Nat.sub_ne_zero_of_lt (Fact.out : p.Prime).one_lt
-    split_ifs <;> simp [hadm.1.ne', hp0, hp1]
+    split_ifs <;> simp [((isOreAdmissiblePadic_iff p n j).mp hadm).1.ne', hp0, hp1]
   · exact iff_of_true (krasnerCountPadic_of_not_isOreAdmissiblePadic hadm) hadm
 
 noncomputable section
@@ -196,7 +207,7 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic (
     [Fact p.Prime] (n j : ℕ) :
     {E ∈ totallyRamifiedOfDegree ℚ_[p] n | E.wildExponent = j}.ncard =
       krasnerCountPadic p n j := by
-  rw [krasnerCountPadic]
+  rw [krasnerCountPadic_def]
   by_cases hadm : IsOreAdmissible 𝒪[ℚ_[p]] n j
   · rw [ite_eq_left ((isOreAdmissible_padic_iff p).mp hadm)]
     have hn := hadm.pos
@@ -234,7 +245,7 @@ theorem ncard_totallyRamifiedOfDegree_padic (p : ℕ) [Fact p.Prime] (n : ℕ) :
     (totallyRamifiedOfDegree ℚ_[p] n).ncard =
       ∑ j ∈ Finset.range (n * padicValNat p n + 1), krasnerCountPadic p n j := by
   rcases n.eq_zero_or_pos with rfl | hn
-  · simp [totallyRamifiedOfDegree_zero, krasnerCountPadic, IsOreAdmissiblePadic]
+  · simp [totallyRamifiedOfDegree_zero, krasnerCountPadic_def]
   rw [ncard_totallyRamifiedOfDegree_eq_sum (Nat.cast_ne_zero.mpr hn.ne'),
     _root_.Padic.natCastValuation_eq_padicValNat]
   exact Finset.sum_congr rfl fun j _ ↦
@@ -245,7 +256,7 @@ exponent `1`, `6` of wild exponent `2`, and `9` of wild exponent `3`). -/
 theorem ncard_totallyRamifiedOfDegree_three_padicThree :
     (totallyRamifiedOfDegree ℚ_[3] 3).ncard = 21 := by
   rw [ncard_totallyRamifiedOfDegree_padic 3 3]
-  simp only [krasnerCountPadic, IsOreAdmissiblePadic, Nat.padicValNat_def,
+  simp only [krasnerCountPadic_def, isOreAdmissiblePadic_iff, Nat.padicValNat_def,
     Nat.multiplicity_self (by decide : 1 < 3), Finset.sum_range_succ, Finset.sum_range_zero,
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 3 ∣ 1),
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 3 ∣ 2)]
@@ -260,7 +271,7 @@ theorem ncard_totallyRamifiedOfDegree_four_padicTwo :
     rw [Finset.sum_Icc_succ_top (by decide : 1 ≤ 2), Finset.Icc_self]
     norm_num
   rw [ncard_totallyRamifiedOfDegree_padic 2 4]
-  simp only [krasnerCountPadic, IsOreAdmissiblePadic, Nat.padicValNat_def, hm4,
+  simp only [krasnerCountPadic_def, isOreAdmissiblePadic_iff, Nat.padicValNat_def, hm4,
     Finset.sum_range_succ, Finset.sum_range_zero,
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 1),
     Nat.multiplicity_self (by decide : 1 < 2),

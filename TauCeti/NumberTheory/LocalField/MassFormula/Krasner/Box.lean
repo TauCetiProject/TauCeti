@@ -42,11 +42,13 @@ outside `eisensteinBox K n L.wildExponent`, localizing Serre's root-count integr
 * `TauCeti.mem_eisensteinBox_iff_of_map_eq`: valuation characterization on Eisenstein polynomials.
 * `TauCeti.separable_monicOfCoeff_of_mem_eisensteinBox`,
   `TauCeti.pairwiseDisjoint_eisensteinBox`,
-  `TauCeti.setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox`: the discriminant boxes
-  partition the separable Eisenstein polynomials.
+  `TauCeti.setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox`,
+  `TauCeti.ae_mem_iUnion_eisensteinBox_restrict_eisensteinSet`: the discriminant boxes
+  partition the separable Eisenstein polynomials and almost all of `eisensteinSet K n`.
 * `TauCeti.measurableSet_eisensteinBox`, `TauCeti.measure_eisensteinBox`: measurability and Haar
   volume of `eisensteinBox K n j`.
 * `TauCeti.mem_eisensteinBox_iff_wildExponent_adjoin_eq`,
+  `TauCeti.adjoin_mem_totallyRamifiedOfDegree_and_wildExponent_eq_of_mem_eisensteinBox`,
   `IntermediateField.rootCount_eq_zero_of_notMem_eisensteinBox`,
   `IntermediateField.lintegral_rootCount_eisensteinBox`: localization of `L.rootCount` and its
   integral to `eisensteinBox K n L.wildExponent`.
@@ -391,6 +393,17 @@ section LocalField
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+/-- **Almost-everywhere partition of the Eisenstein region**: for `0 < n` and any additive Haar
+measure `μ` on `Fin n → K`, almost every `a` in `eisensteinSet K n` lies in
+`⋃ j, eisensteinBox K n j`. -/
+theorem ae_mem_iUnion_eisensteinBox_restrict_eisensteinSet {n : ℕ} (hn : 0 < n)
+    [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
+    (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
+    ∀ᵐ a ∂μ.restrict (eisensteinSet K n), a ∈ ⋃ j, eisensteinBox K n j := by
+  filter_upwards [ae_restrict_mem measurableSet_eisensteinSet,
+    ae_separable_monicOfCoeff_restrict_eisensteinSet hn μ] with a ha hsep
+  exact (setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox hn).subset ⟨ha, hsep⟩
+
 /-- **The volume of Krasner's discriminant box**: for an Ore-admissible pair `(n, j)` and a
 left-invariant measure `μ` on `Fin n → K` normalized on the integer box, `eisensteinBox K n j` has
 volume `q ^ (-(1 + ∑_{1 ≤ h < n} ν_h)) * (1 - q⁻¹) * (1 - q⁻¹) ^ [0 < j % n]`. -/
@@ -461,6 +474,20 @@ theorem mem_eisensteinBox_iff_wildExponent_adjoin_eq {n j : ℕ} {a : Fin n → 
   rw [mem_eisensteinBox_iff_of_map_eq hf,
     wildExponent_adjoin_eq_iff_of_eisenstein he hdeg (hf ▸ hx)]
   exact ⟨fun ⟨h₁, _, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, he, h₂, h₃⟩⟩
+
+/-- **Roots of polynomials in `eisensteinBox K n j` generate extensions in `σ_K(n)` of wild
+exponent `j`.** For `a ∈ eisensteinBox K n j` and any root `x : SeparableClosure K` of
+`monicOfCoeff a`, `K⟮x⟯ ∈ totallyRamifiedOfDegree K n` and `(K⟮x⟯).wildExponent = j`. -/
+theorem adjoin_mem_totallyRamifiedOfDegree_and_wildExponent_eq_of_mem_eisensteinBox
+    {n j : ℕ} {a : Fin n → K} (ha : a ∈ eisensteinBox K n j) {x : SeparableClosure K}
+    (hx : aeval x (monicOfCoeff a) = 0) :
+    K⟮x⟯ ∈ totallyRamifiedOfDegree K n ∧ (K⟮x⟯).wildExponent = j := by
+  have ha' := eisensteinBox_subset_eisensteinSet K n j ha
+  obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha'
+  have hdeg : f.natDegree = n :=
+    natDegree_eq_of_map_eq_monicOfCoeff (by simp [he.isUnit_leadingCoeff.ne_zero]) hf
+  exact ⟨adjoin_mem_totallyRamifiedOfDegree_of_eisenstein he hdeg (hf ▸ hx),
+    (mem_eisensteinBox_iff_wildExponent_adjoin_eq ha' hx).mp ha⟩
 
 /-- **Root-count localization**: for `L ∈ σ_K(n)` and `a ∈ eisensteinSet K n`, the root count
 `L.rootCount a` vanishes outside `eisensteinBox K n L.wildExponent`. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Main
-import TauCeti.NumberTheory.LocalField.MassFormula.Total
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
@@ -136,8 +135,8 @@ theorem IsRepresentativeSet.tsum_one_div_natCard_algEquiv_wildExponent_eq {n : �
   rw [hlhs, hrhs] at hf
   exact (ENNReal.eq_div_iff (by exact_mod_cast hn.ne') (ENNReal.natCast_ne_top n)).mpr hf.symm
 
-/-- **Krasner's total count (cardinal form)**: in any characteristic, the extended cardinality of
-`σ_K(n)` is the sum over all wild exponents `j` of the stratum counts. -/
+/-- **Infinite cardinality regrouping across wild-exponent strata**: in any characteristic, the
+extended cardinality of `σ_K(n)` is the sum over all wild exponents `j` of the stratum counts. -/
 theorem tsum_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq (n : ℕ) :
     ∑' j : ℕ, ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) =
       (totallyRamifiedOfDegree K n).encard := by
@@ -151,9 +150,9 @@ theorem tsum_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq (n : ℕ) :
     IntermediateField.wildExponent fun _ ↦ 1
   simpa using h.trans (ENNReal.tsum_set_one _)
 
-/-- **Krasner's total count away from equal characteristic `p ∣ n`**: when `(n : K) ≠ 0`,
-`(totallyRamifiedOfDegree K n).ncard` is the finite sum of the stratum counts for
-`0 ≤ j ≤ n * v_K(n)`. -/
+/-- **Finite cardinality regrouping across wild-exponent strata**: away from equal characteristic
+`p ∣ n` (when `(n : K) ≠ 0`), `(totallyRamifiedOfDegree K n).ncard` is the finite sum of the
+stratum counts for `0 ≤ j ≤ n * v_K(n)`. -/
 theorem ncard_totallyRamifiedOfDegree_eq_sum {n : ℕ} (hnK : (n : K) ≠ 0) :
     (totallyRamifiedOfDegree K n).ncard =
       ∑ j ∈ Finset.range (n * natCastValuation K n hnK + 1),

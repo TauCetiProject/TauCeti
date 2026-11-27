@@ -25,6 +25,8 @@ exponent `j` arises from a totally ramified degree-`n` subextension inside `Sepa
 
 ## Main results
 
+* `TauCeti.isOreAdmissiblePadic_iff`, `TauCeti.not_isOreAdmissiblePadic_zero_left`: arithmetic
+  characterization and degree-zero vanishing for `IsOreAdmissiblePadic`.
 * `TauCeti.isOreAdmissible_padic_iff`: Ore's inequality characterizing admissible wild exponents for
   degree-`n` totally ramified subextensions of `SeparableClosure ℚ_[p]` (Pauli–Roblot,
   Proposition 3.1).
@@ -47,15 +49,29 @@ namespace TauCeti
 on `(p, n, j)`. When `p` is prime, it is equivalent to `IsOreAdmissible 𝒪[ℚ_[p]] n j`
 (`TauCeti.isOreAdmissible_padic_iff`), i.e., to the existence of a totally ramified degree-`n`
 subextension of `SeparableClosure ℚ_[p]` with wild exponent `j`. -/
-@[expose] def IsOreAdmissiblePadic (p n j : ℕ) : Prop :=
+def IsOreAdmissiblePadic (p n j : ℕ) : Prop :=
   0 < n ∧
     (if j % n = 0 then padicValNat p n * n
       else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
       j ≤ padicValNat p n * n
 
-instance (p n j : ℕ) : Decidable (IsOreAdmissiblePadic p n j) := by
-  delta IsOreAdmissiblePadic
-  infer_instance
+/-- Arithmetic characterization of `TauCeti.IsOreAdmissiblePadic`. -/
+theorem isOreAdmissiblePadic_iff (p n j : ℕ) :
+    IsOreAdmissiblePadic p n j ↔
+      0 < n ∧
+        (if j % n = 0 then padicValNat p n * n
+          else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
+          j ≤ padicValNat p n * n := by
+  rw [IsOreAdmissiblePadic]
+
+/-- Degree zero has no `p`-adically Ore-admissible wild exponents. -/
+@[simp]
+theorem not_isOreAdmissiblePadic_zero_left (p j : ℕ) : ¬ IsOreAdmissiblePadic p 0 j := by
+  rw [isOreAdmissiblePadic_iff]
+  simp
+
+instance (p n j : ℕ) : Decidable (IsOreAdmissiblePadic p n j) :=
+  decidable_of_iff _ (isOreAdmissiblePadic_iff p n j).symm
 
 noncomputable section
 
@@ -67,7 +83,7 @@ ramified degree-`n` subextension inside `SeparableClosure ℚ_[p]`) if and only 
 requires `j = v_p(n) * n`. -/
 theorem isOreAdmissible_padic_iff (p : ℕ) [Fact p.Prime] {n j : ℕ} :
     IsOreAdmissible 𝒪[ℚ_[p]] n j ↔ IsOreAdmissiblePadic p n j := by
-  rw [IsOreAdmissiblePadic]
+  rw [isOreAdmissiblePadic_iff]
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
   have hn0 : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'

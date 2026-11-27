@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
-import TauCeti.NumberTheory.Padics.PadicValRat
+import TauCeti.NumberTheory.Padics.PadicVal.Rat
 
 /-!
 # Units at the height-one primes of `ℚ`
