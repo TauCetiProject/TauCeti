@@ -18,9 +18,9 @@ vectors orthogonal to `w`, and let `A` be a matrix with `λ ≤ ⟪A w, w⟫`, `
 component `⟪S w, w⟫` (`ContinuousLinearMap.norm_sub_smul_smulRight_le`), and that component is
 recovered from the contraction `∑ᵢⱼ Aᵢⱼ ⟪S eᵢ, eⱼ⟫` with `A`:
 
-* `TauCeti.PDE.norm_le_sum_norm_apply_sub_add_abs_contraction`:
+* `TauCeti.PDE.norm_le_sum_norm_apply_add_abs_contraction`:
   `‖S‖ ≤ (2 + 2 m ‖A‖ / λ) ∑ⱼ ‖S τⱼ‖ + |∑ᵢⱼ Aᵢⱼ ⟪S eᵢ, eⱼ⟫| / λ`;
-* `TauCeti.PDE.norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq`: its squared form, for
+* `TauCeti.PDE.norm_sq_le_sum_norm_apply_sq_add_contraction_sq`: its squared form, for
   `‖A‖ ≤ Λ`.
 
 For `S` a Hessian at a flat boundary with unit normal `w`, the `S τⱼ` are the tangential columns and
@@ -44,7 +44,7 @@ orthogonal to `w`, and let `A` be a matrix with `λ ≤ ⟪A w, w⟫`. If `S` is
 each `τⱼ`, then `S` is bounded by its values `S τⱼ` and by its contraction `∑ᵢⱼ Aᵢⱼ ⟪S eᵢ, eⱼ⟫`
 with `A`: the component `⟪S w, w⟫`, which the `S τⱼ` do not see, is recovered from the
 contraction. -/
-theorem norm_le_sum_norm_apply_sub_add_abs_contraction
+theorem norm_le_sum_norm_apply_add_abs_contraction
     {A : Matrix (Fin m) (Fin m) ℝ} {lam : ℝ} (hlam : 0 < lam)
     {w : EuclideanSpace ℝ (Fin m)} (hw : ‖w‖ = 1) (hAw : lam ≤ matrixBilinearForm A w w)
     {τ : Fin m → EuclideanSpace ℝ (Fin m)}
@@ -97,9 +97,9 @@ theorem norm_le_sum_norm_apply_sub_add_abs_contraction
         m * ‖matrixBilinearForm A‖ * (2 * Q)) / lam := hSle.trans (by gcongr)
     _ = _ := by field_simp; ring
 
-/-- The squared form of `TauCeti.PDE.norm_le_sum_norm_apply_sub_add_abs_contraction`, with
+/-- The squared form of `TauCeti.PDE.norm_le_sum_norm_apply_add_abs_contraction`, with
 `‖A‖ ≤ Λ`: `‖S‖² ≤ 2 m (2 + 2 m Λ / λ)² ∑ⱼ ‖S τⱼ‖² + 2 / λ² (∑ᵢⱼ Aᵢⱼ ⟪S eᵢ, eⱼ⟫)²`. -/
-theorem norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq
+theorem norm_sq_le_sum_norm_apply_sq_add_contraction_sq
     {A : Matrix (Fin m) (Fin m) ℝ} {lam Lam : ℝ} (hlam : 0 < lam)
     (hΛ : ‖matrixBilinearForm A‖ ≤ Lam)
     {w : EuclideanSpace ℝ (Fin m)} (hw : ‖w‖ = 1) (hAw : lam ≤ matrixBilinearForm A w w)
@@ -114,7 +114,7 @@ theorem norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq
     simpa only [Finset.card_univ, Fintype.card_fin] using
       sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun j => ‖S (τ j)‖)
   have h1 : ‖S‖ ≤ (2 + 2 * m * Lam / lam) * Q + |Matrix.contraction A S| / lam :=
-    (norm_le_sum_norm_apply_sub_add_abs_contraction hlam hw hAw hτ S hS).trans (by gcongr)
+    (norm_le_sum_norm_apply_add_abs_contraction hlam hw hAw hτ S hS).trans (by gcongr)
   calc ‖S‖ ^ 2 ≤ ((2 + 2 * m * Lam / lam) * Q + |Matrix.contraction A S| / lam) ^ 2 :=
         pow_le_pow_left₀ (norm_nonneg _) h1 2
     _ ≤ 2 * ((2 + 2 * m * Lam / lam) * Q) ^ 2 + 2 * (|Matrix.contraction A S| / lam) ^ 2 := by

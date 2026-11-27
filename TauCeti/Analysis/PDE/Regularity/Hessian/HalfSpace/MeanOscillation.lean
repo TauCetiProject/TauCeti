@@ -49,7 +49,7 @@ nothing requires the coefficients near the boundary to be close to a reflection-
 * **The normal-normal entry.** With `w = ν / ‖ν‖` and `τⱼ = eⱼ - ⟪eⱼ, w⟫ w`, a symmetric
   endomorphism `S` is controlled by the `S τⱼ` up to its component `⟪S w, w⟫`, and since
   `⟪A w, w⟫ ≥ λ` that component is recovered from the contraction `∑ᵢⱼ Aᵢⱼ ⟪S eᵢ, eⱼ⟫`
-  (`TauCeti.PDE.norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq`). Applied to
+  (`TauCeti.PDE.norm_sq_le_sum_norm_apply_sq_add_contraction_sq`). Applied to
   `S = D²u - (D²u)_{B_ρ⁺}`, the contraction is `g - g_{B_ρ⁺}`, whose `L²` norm is bounded by that of
   `g = f + ∑ᵢⱼ (A - a)ᵢⱼ ∂ᵢ∂ⱼu` (`TauCeti.PDE.setIntegral_contraction_iteratedGradient_sq_le`).
 
@@ -244,7 +244,7 @@ private theorem ae_norm_iteratedGradient_sub_setAverage_sq_le
       rw [real_inner_comm (Wkp.iteratedGradient 1 u y w) (τ j)]
       exact (hy j).trans (real_inner_comm _ _))
   filter_upwards [hsym] with x hx
-  have key := norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq hlam hΛ hw hAw hτ
+  have key := norm_sq_le_sum_norm_apply_sq_add_contraction_sq hlam hΛ hw hAw hτ
     (Wkp.iteratedGradient 1 u x - ⨍ y in t, Wkp.iteratedGradient 1 u y) fun j => by
       rw [sub_apply, sub_apply, inner_sub_left, inner_sub_left, hx j, hMsym j]
   rw [map_sub, havg] at key
