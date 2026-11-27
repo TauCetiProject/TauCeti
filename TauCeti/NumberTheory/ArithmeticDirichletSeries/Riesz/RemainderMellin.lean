@@ -65,6 +65,11 @@ This is an equality of total functions, including the normal-form values at pole
     map_one, Function.comp_apply, map_div₀, map_mul, map_sub, map_intCast,
     Complex.conj_conj]
 
+/-- The Riesz remainder Mellin expression is meromorphic at every point. -/
+theorem meromorphicAt_rieszRemainderMellin (L : ℂ → ℂ) (z : ℂ) :
+    MeromorphicAt (rieszRemainderMellin L) z :=
+  (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
+
 /-- The quotient defining the Mellin expression, before normalization, describes its
 punctured germ at every point. -/
 theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq {L : ℂ → ℂ}
@@ -220,6 +225,26 @@ theorem _root_.Meromorphic.neg_one_le_meromorphicOrderAt_rieszRemainderMellin {L
   Contour.neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul
     (tendsto_sub_mul_rieszRemainderMellin hL hz₀)
 
+/-- Away from `0`, the difference of two finite sums of Riesz remainder Mellin expressions
+of meromorphic functions has at most a simple pole. -/
+theorem neg_one_le_meromorphicOrderAt_sum_sub_rieszRemainderMellin {ι κ : Type*}
+    {t : Finset ι} {u : Finset κ} {L : ι → ℂ → ℂ} {M : κ → ℂ → ℂ}
+    (hL : ∀ i ∈ t, Meromorphic (L i)) (hM : ∀ i ∈ u, Meromorphic (M i))
+    {z : ℂ} (hz₀ : z ≠ 0) :
+    -1 ≤ meromorphicOrderAt ((∑ i ∈ t, rieszRemainderMellin (L i)) -
+      ∑ i ∈ u, rieszRemainderMellin (M i)) z := by
+  have hmL : ∀ i ∈ t, MeromorphicAt (rieszRemainderMellin (L i)) z :=
+    fun i _ ↦ meromorphicAt_rieszRemainderMellin _ _
+  have hmM : ∀ i ∈ u, MeromorphicAt (rieszRemainderMellin (M i)) z :=
+    fun i _ ↦ meromorphicAt_rieszRemainderMellin _ _
+  rw [sub_eq_add_neg]
+  refine (le_min (le_meromorphicOrderAt_sum hmL ?_) ?_).trans
+    (meromorphicOrderAt_add (MeromorphicAt.sum hmL) (MeromorphicAt.sum hmM).neg)
+  · exact fun i hi ↦ (hL i hi).neg_one_le_meromorphicOrderAt_rieszRemainderMellin hz₀
+  · rw [← meromorphicOrderAt_neg]
+    exact le_meromorphicOrderAt_sum hmM fun i hi ↦
+      (hM i hi).neg_one_le_meromorphicOrderAt_rieszRemainderMellin hz₀
+
 /-- Away from `0`, the residue of the Mellin expression is the order of `L` divided by
 `z * (1 - z)`, taking infinite order as zero. At `1` the expression is analytic, and the
 formula gives zero by division by zero. -/
@@ -228,8 +253,7 @@ theorem _root_.Meromorphic.residue_rieszRemainderMellin {L : ℂ → ℂ}
     Contour.residue (rieszRemainderMellin L) z =
       ((meromorphicOrderAt L z).untop₀ : ℂ) / (z * (1 - z)) :=
   Contour.residue_eq_of_tendsto_sub_mul
-    (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
-    (tendsto_sub_mul_rieszRemainderMellin hL hz₀)
+    (meromorphicAt_rieszRemainderMellin L z) (tendsto_sub_mul_rieszRemainderMellin hL hz₀)
 
 /-- At a point different from `0` and `1` where `L` has finite nonzero order `n`, the Mellin
 expression has a simple pole with residue `n / (z * (1 - z))`. -/
@@ -246,7 +270,7 @@ theorem _root_.Meromorphic.rieszRemainderMellin_simplePole {L : ℂ → ℂ}
   have hrepr : rieszRemainderMellin L =ᶠ[𝓝[≠] z] fun s ↦ (s - z) ^ (-1 : ℤ) • H s := by
     filter_upwards [heq, self_mem_nhdsWithin] with s hs hsz
     rw [zpow_neg_one, smul_eq_mul, ← hs, inv_mul_cancel_left₀ (sub_ne_zero.mpr hsz)]
-  have hm := (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
+  have hm := meromorphicAt_rieszRemainderMellin L z
   refine ⟨?_, (ha.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hH hrepr).trans hval⟩
   exact (meromorphicOrderAt_eq_int_iff hm).mpr ⟨H, ha, hH, hrepr⟩
 
@@ -264,8 +288,7 @@ theorem _root_.Meromorphic.meromorphicOrderAt_rieszRemainderMellin_neg_iff {L : 
     have hord := hH.meromorphicOrderAt_pos_iff_eq_zero.mpr (by simpa [← hn] using hz)
     have hlin : MeromorphicAt (fun s : ℂ ↦ s - z) z :=
       (analyticAt_id.sub analyticAt_const).meromorphicAt
-    have hmul := meromorphicOrderAt_mul hlin
-      (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
+    have hmul := meromorphicOrderAt_mul hlin (meromorphicAt_rieszRemainderMellin L z)
     simp only [Pi.mul_def, meromorphicOrderAt_id_sub_const] at hmul
     rw [← meromorphicOrderAt_congr heq, hmul] at hord
     by_contra! hneg

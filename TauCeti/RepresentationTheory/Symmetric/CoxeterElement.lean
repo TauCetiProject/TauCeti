@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.GroupTheory.Perm.Coxeter
-public import TauCeti.LinearAlgebra.Charpoly.Permutation
+public import TauCeti.RepresentationTheory.OfMulAction.Charpoly
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Standard
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.RingTheory.RootsOfUnity.Complex.Exp

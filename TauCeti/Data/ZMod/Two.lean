@@ -39,6 +39,8 @@ and an isomorphism onto `C₂` is unique, since it must send every non-identity 
 * `ZMod.not_isUnit_two_mul`: `2c` is not a unit in `ℤ/2^{k+1}`.
 * `ZMod.eq_two_mul_or_eq_two_mul_add_one`: every element of `ℤ/n` is even or odd.
 * `Multiplicative.eq_one_or_eq_ofAdd_one`: every element of `C₂` is `1` or `σ`.
+* `AddMonoidHom.exists_eq_one_of_ne_zero`: a nonzero sign character `G →+ ZMod 2` takes the
+  value `1` somewhere.
 * `MulEquiv.apply_eq_ofAdd_one_of_ne_one`: an isomorphism onto `C₂` sends every non-identity
   element to `σ`, so there is at most one such isomorphism.
 * `TauCeti.sum_cyclicTwo`: a sum over `C₂` is the sum of the values at `1` and at `σ`.
@@ -104,6 +106,16 @@ theorem eq_one_or_eq_ofAdd_one (g : Multiplicative (ZMod 2)) :
   decide
 
 end Multiplicative
+
+namespace AddMonoidHom
+
+/-- A nonzero sign character takes the value `1` somewhere. -/
+theorem exists_eq_one_of_ne_zero {G : Type*} [AddZeroClass G] {f : G →+ ZMod 2} (hf : f ≠ 0) :
+    ∃ g, f g = 1 := by
+  obtain ⟨g, hg⟩ := DFunLike.ne_iff.mp hf
+  exact ⟨g, ZMod.ne_zero_iff_eq_one.mp hg⟩
+
+end AddMonoidHom
 
 namespace MulEquiv
 

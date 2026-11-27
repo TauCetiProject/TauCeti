@@ -17,7 +17,8 @@ element in such a group is its unique maximal abelian subgroup containing that e
 particular, commutation is transitive through a nonidentity element: the centralizer of a
 nonidentity element is abelian, every subset of it containing a nonidentity element has the same
 centralizer, and every entry of a list of nonidentity elements in which
-consecutive entries commute commutes with the product of the list. In a torsion-free
+consecutive entries commute commutes with the product of the list. Also, if `a`, `x`, `y`, `b`
+commute in a chain but `a` and `b` do not commute, then `x = 1` or `y = 1`. In a torsion-free
 commutative-transitive group roots are unique, no nonidentity element is conjugate to its
 inverse, and in the nonabelian case every nonidentity conjugacy class is infinite. In a
 torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of different
@@ -305,6 +306,14 @@ theorem IsCSA.eq_one_or_eq_one_iff_commute_conj (hG : IsCSA G) {a b x y : G}
   have hya : Commute y a := hconj y a hy (hT y x _ hx hxy.symm hxa)
   have hyb : Commute y b := hconj y b hy (hT y x _ hx hxy.symm hxb)
   exact hab (hT a y b hy hya.symm hyb)
+
+/-- In a commutative-transitive group, if `a` commutes with `x`, `x` with `y` and `y` with `b`,
+but `a` and `b` do not commute, then `x = 1` or `y = 1`. -/
+theorem IsCommTransitive.eq_one_or_eq_one_of_not_commute (hG : IsCommTransitive G)
+    {a b x y : G} (hab : ¬Commute a b) (hax : Commute a x) (hxy : Commute x y)
+    (hyb : Commute y b) : x = 1 ∨ y = 1 := by
+  by_contra! h
+  exact hab (hG a y b h.2 (hG a x y h.1 hax hxy) hyb)
 
 /-- In a torsion-free commutative-transitive group, a nonidentity element is not conjugate to its
 inverse. -/
