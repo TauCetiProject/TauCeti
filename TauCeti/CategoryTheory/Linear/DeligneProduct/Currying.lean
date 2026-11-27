@@ -50,8 +50,10 @@ component maps have the expected source and target at each pair. -/
       simp [ObjectProperty.homMk, ← Functor.map_comp, ← op_comp, tmul_comp_tmul] }, ⟨by
       intro X Y f g
       ext Z
-      simp [add_tmul]
-      rfl⟩⟩
+      -- Addition of the bundled natural transformations is pointwise.
+      change F.obj.map (tmul (f + g).unop (𝟙 Z.unop)).op =
+        F.obj.map (tmul f.unop (𝟙 Z.unop)).op + F.obj.map (tmul g.unop (𝟙 Z.unop)).op
+      simp only [unop_add, add_tmul, op_add, Functor.map_add]⟩⟩
   map η := ObjectProperty.homMk
     { app X := ObjectProperty.homMk
         { app Y := η.hom.app (op ⟨X.unop, Y.unop⟩)
@@ -106,7 +108,7 @@ private def fullyFaithfulCurryLeft : (curryLeft C D E).FullyFaithful where
   map_preimage η := by ext X Y; rfl
   preimage_map {F G} η := by
     ext P
-    obtain ⟨_, _⟩ := unop P
+    -- Structure eta for `LinearTensor` identifies the pair of projections with `P.unop`.
     rfl
 
 /-- Reverse the arrows in both variables of a curried contravariant functor so
@@ -125,13 +127,26 @@ private instance (F : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E)) : (rightOpBifunctor F).Addi
   map_add := by
     intro X Y f g
     ext Z
-    simp [rightOpBifunctor]
-    rfl
+    -- After taking `unop`, the right-opposite map is evaluation at `op Z`.
+    change (F.obj.map (f + g).op).hom.app (op Z) = _
+    rw [op_add]
+    exact congrArg (fun η ↦ η.hom.app (op Z)) (F.obj.map_add (f := f.op) (g := g.op))
 
 /-- The additive functor obtained by extending the two actions to the tensor category. -/
 private def uncurryLeftObj (F : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E)) :
     (LinearTensor ℤ C D)ᵒᵖ ⥤+ E :=
   AdditiveFunctor.of (lift ℤ (rightOpBifunctor F)).leftOp
+
+private theorem uncurryLeftObj_map_tmul (F : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E))
+    {X X' : C} {Y Y' : D} (f : X ⟶ X') (g : Y ⟶ Y') :
+    (uncurryLeftObj F).obj.map (tmul f g).op =
+      (F.obj.obj (op X')).obj.map g.op ≫ (F.obj.map f.op).hom.app (op Y) := by
+  -- Unbundle the additive functor and evaluate its left-opposite map to use the lift formula.
+  change ((lift ℤ (rightOpBifunctor F)).map (tmul f g)).unop = _
+  rw [lift_map_tmul]
+  -- Evaluate the right-opposite bifunctor so the composite has explicit opposite endpoints.
+  change (((F.obj.map f.op).hom.app (op Y)).op ≫ ((F.obj.obj (op X')).obj.map g.op).op).unop = _
+  rw [← op_comp, Quiver.Hom.unop_op]
 
 private def curryLeftUncurryLeftObjIso (F : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E)) :
     (curryLeft C D E).obj (uncurryLeftObj F) ≅ F :=
@@ -139,19 +154,29 @@ private def curryLeftUncurryLeftObjIso (F : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E)) :
     (fun X ↦ ObjectProperty.isoMk _ (NatIso.ofComponents (fun Y ↦ Iso.refl _) (by
       intro Y Y' g
       -- Evaluating the identity comparison removes the functor and subcategory projections.
-      change (lift ℤ (rightOpBifunctor F)).leftOp.map (tmul (𝟙 X.unop) g.unop).op ≫ 𝟙 _ =
+      change (uncurryLeftObj F).obj.map (tmul (𝟙 X.unop) g.unop).op ≫ 𝟙 _ =
         𝟙 _ ≫ (F.obj.obj X).obj.map g
-      simp only [Functor.leftOp_map, Quiver.Hom.unop_op, lift_map_tmul]
-      simp [rightOpBifunctor]
-      rfl))) (by
+      simp only [Category.comp_id, Category.id_comp]
+      simpa using! uncurryLeftObj_map_tmul F (𝟙 X.unop) g.unop))) (by
     intro X X' f
     ext Y
     -- Evaluate the identity comparison at the second argument.
-    change (lift ℤ (rightOpBifunctor F)).leftOp.map (tmul f.unop (𝟙 Y.unop)).op ≫ 𝟙 _ =
+    change (uncurryLeftObj F).obj.map (tmul f.unop (𝟙 Y.unop)).op ≫ 𝟙 _ =
       𝟙 _ ≫ (F.obj.map f).hom.app Y
-    simp only [Functor.leftOp_map, Quiver.Hom.unop_op, lift_map_tmul]
-    simp [rightOpBifunctor]
-    rfl))
+    simp only [Category.comp_id, Category.id_comp]
+    simpa using! uncurryLeftObj_map_tmul F f.unop (𝟙 Y.unop)))
+
+@[local simp]
+private theorem curryLeftUncurryLeftObjIso_hom_app_app
+    (F : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E)) (X : Cᵒᵖ) (Y : Dᵒᵖ) :
+    ((curryLeftUncurryLeftObjIso F).hom.hom.app X).hom.app Y = 𝟙 ((F.obj.obj X).obj.obj Y) :=
+  rfl
+
+@[local simp]
+private theorem curryLeftUncurryLeftObjIso_inv_app_app
+    (F : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E)) (X : Cᵒᵖ) (Y : Dᵒᵖ) :
+    ((curryLeftUncurryLeftObjIso F).inv.hom.app X).hom.app Y = 𝟙 ((F.obj.obj X).obj.obj Y) :=
+  rfl
 
 variable (C D E)
 
@@ -181,11 +206,9 @@ theorem uncurryLeft_obj_map_tmul (F : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E))
       eqToHom (uncurryLeft_obj_obj F ⟨X', Y'⟩) ≫ (F.obj.obj (op X')).obj.map g.op ≫
         (F.obj.map f.op).hom.app (op Y) ≫ eqToHom (uncurryLeft_obj_obj F ⟨X, Y⟩).symm := by
   -- The object identifications are definitionally reflexive inside the construction.
-  change ((lift ℤ (rightOpBifunctor F)).map (tmul f g)).unop =
+  change (uncurryLeftObj F).obj.map (tmul f g).op =
     𝟙 _ ≫ (F.obj.obj (op X')).obj.map g.op ≫ (F.obj.map f.op).hom.app (op Y) ≫ 𝟙 _
-  rw [lift_map_tmul]
-  simp only [Category.id_comp, Category.comp_id]
-  rfl
+  simpa only [Category.id_comp, Category.comp_id] using uncurryLeftObj_map_tmul F f g
 
 @[simp]
 theorem uncurryLeft_map_app {F G : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E)} (η : F ⟶ G) (P : LinearTensor ℤ C D) :
@@ -197,8 +220,9 @@ theorem uncurryLeft_map_app {F G : Cᵒᵖ ⥤+ (Dᵒᵖ ⥤+ E)} (η : F ⟶ G)
     (curryLeftUncurryLeftObjIso G).inv).hom.app (op P.fst)).hom.app (op P.snd)) =
     𝟙 _ ≫ (η.hom.app (op P.fst)).hom.app (op P.snd) ≫ 𝟙 _
   simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-    Category.comp_id, Category.id_comp]
-  exact (Category.id_comp _).trans (Category.comp_id _)
+    curryLeftUncurryLeftObjIso_hom_app_app, curryLeftUncurryLeftObjIso_inv_app_app]
+  -- Both sides now evaluate to the same composite at the pointwise objects.
+  rfl
 
 private def uncurryLeftCompCurryLeftIso :
     uncurryLeft C D E ⋙ curryLeft C D E ≅ 𝟭 _ :=
