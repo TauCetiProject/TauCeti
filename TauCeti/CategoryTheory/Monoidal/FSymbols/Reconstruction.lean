@@ -98,9 +98,19 @@ theorem hom_ext {X Y : Model P}
     (h : ∀ a b (x : X.basis a) (y : Y.basis b),
       incl P S X a x ≫ f ≫ proj P S Y b y =
         incl P S X a x ≫ g ≫ proj P S Y b y) : f = g := by
-  dsimp only [functor, rawObj] at f g h ⊢
-  ext b y a x : 4
-  simpa [incl, proj, functor, rawObj, Category.assoc] using h a b x y
+  apply biproduct.hom_ext (f := fun b ↦ ⨁ fun _ : Y.basis b ↦ S b)
+  intro b
+  apply biproduct.hom_ext (f := fun _ : Y.basis b ↦ S b)
+  intro y
+  apply biproduct.hom_ext' (f := fun a ↦ ⨁ fun _ : X.basis a ↦ S a)
+  intro a
+  apply biproduct.hom_ext' (f := fun _ : X.basis a ↦ S a)
+  intro x
+  have h' := h a b x y
+  dsimp only [incl, proj] at h'
+  repeat' erw [Category.assoc] at h'
+  repeat' erw [Category.assoc]
+  exact h'
 
 /-- The realized object is the iterated biproduct of the copies of `S a` in each grade. -/
 theorem functor_obj (X : Model P) :
@@ -145,36 +155,33 @@ theorem incl_comp_proj_of_ne (X : Model P) {a b : ι} (h : a ≠ b)
 theorem sum_proj_comp_incl (X : Model P) :
     ∑ a, ∑ x : X.basis a, proj P S X a x ≫ incl P S X a x =
       𝟙 ((functor P S).obj X) := by
+  -- The additive structures in these sums depend on the realized object carriers.
+  dsimp (config := { instances := true }) only [incl, proj, functor, rawObj]
   calc
     _ = ∑ a, biproduct.π (fun a ↦ ⨁ fun _ : X.basis a ↦ S a) a ≫
         (∑ x : X.basis a, biproduct.π (fun _ : X.basis a ↦ S a) x ≫
           biproduct.ι (fun _ : X.basis a ↦ S a) x) ≫
         biproduct.ι (fun a ↦ ⨁ fun _ : X.basis a ↦ S a) a := by
-      simp only [proj, incl, functor, rawObj, Preadditive.comp_sum, Preadditive.sum_comp,
-        Category.assoc]
-      -- Reducing the functor's object to rawObj identifies the additive structures in the sums.
-      rfl
-    _ = _ := by simp [functor, rawObj]
+      simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
+    _ = _ := by simp
 
 /-- Realization acts on a basis inclusion by the corresponding row of its matrix. -/
 @[reassoc]
 theorem incl_comp_functor_map {X Y : Model P} (f : X ⟶ Y) (a : ι) (x : X.basis a) :
     incl P S X a x ≫ (functor P S).map f =
       ∑ y : Y.basis a, f a x y • incl P S Y a y := by
-  simp [incl, functor, rawObj, map, biproduct.lift_eq, Category.assoc, Preadditive.sum_comp,
+  dsimp (config := { instances := true }) only [incl, proj, functor, rawObj]
+  simp [map, biproduct.lift_eq, Category.assoc, Preadditive.sum_comp,
     Linear.smul_comp]
-  -- Reducing the realized object to rawObj identifies the hom-module structures in the sums.
-  rfl
 
 /-- Realization acts on a basis projection by the corresponding column of its matrix. -/
 @[reassoc]
 theorem functor_map_comp_proj {X Y : Model P} (f : X ⟶ Y) (a : ι) (y : Y.basis a) :
     (functor P S).map f ≫ proj P S Y a y =
       ∑ x : X.basis a, f a x y • proj P S X a x := by
-  simp [proj, functor, rawObj, map, biproduct.desc_eq, Category.assoc, Preadditive.comp_sum,
+  dsimp (config := { instances := true }) only [incl, proj, functor, rawObj]
+  simp [map, biproduct.desc_eq, Category.assoc, Preadditive.comp_sum,
     Preadditive.sum_comp, Linear.comp_smul]
-  -- Reducing the realized object to rawObj identifies the hom-module structures in the sums.
-  rfl
 
 instance : (functor P S).Additive where
   map_add {X Y} f g := by
