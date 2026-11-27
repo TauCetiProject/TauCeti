@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Completion
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
 
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
@@ -63,6 +64,9 @@ of `(Pair.powerBounded K).polydisc n` over a nontrivially normed ultrametric fie
 
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletion_ringHom_ext`: continuous ring homomorphisms out
   of `A⟨T₁, …, Tₙ⟩` are determined by their values on constants and coordinates.
+* `TauCeti.Huber.toMvPowerSeries_polydiscVar`: the power series of the coordinate `Tᵢ` is `X i`.
+* `TauCeti.Huber.toMvPowerSeries_apply_eq_rename`: a continuous ring homomorphism between closed
+  polydiscs fixing constants and sending variables to variables renames power series.
 * `TauCeti.Huber.topologicalClosure_map_weightedSubring_le`: for a subring `R` of `A`, the series
   with coefficients in `R` lie in the closure of `R[T₁, …, Tₙ]`; hence for an open `R` that closure
   is open (`TauCeti.Huber.isOpen_topologicalClosure_closure_polydiscVar`).
@@ -110,6 +114,39 @@ theorem restrictedMvPowerSeriesCompletion_ringHom_ext {A : Type*} [CommRing A] [
     (hX : ∀ i, f (Pair.polydiscVar n A i) = g (Pair.polydiscVar n A i)) : f = g :=
   completion_weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight hf hg
     (fun a ↦ by simpa only [algebraMap_completion_weightedRestrictedSubring_apply] using hC a) hX
+
+/-- The power series of the coordinate variable `Tᵢ` of `A⟨T₁, …, Tₙ⟩` is the variable `X i`.
+(Not `@[simp]`: `simp` proves it through `TauCeti.Huber.toMvPowerSeries_coe`.) -/
+theorem toMvPowerSeries_polydiscVar {A : Type*} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [NonarchimedeanRing A] [CompleteSpace A] [T0Space A] {n : ℕ}
+    (i : Fin n) : toMvPowerSeries n A (Pair.polydiscVar n A i) = MvPowerSeries.X i := by
+  rw [toMvPowerSeries_coe, coe_weightedX]
+
+/-- **A continuous ring homomorphism `A⟨T₁, …, Tₖ⟩ → A⟨T₁, …, Tₗ⟩` that fixes the constants and
+sends each variable `Tᵢ` to `T_{e i}` renames power series along `e`**, over a complete Hausdorff
+base: on power series (`TauCeti.Huber.toMvPowerSeries`) it is `MvPowerSeries.rename e`. -/
+theorem toMvPowerSeries_apply_eq_rename {A : Type*} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [NonarchimedeanRing A] [CompleteSpace A] [T0Space A] {k l : ℕ}
+    (e : Fin k ↪ Fin l)
+    {φ : restrictedMvPowerSeriesCompletion k A →+* restrictedMvPowerSeriesCompletion l A}
+    (hφ : Continuous φ) (hC : ∀ a, φ (algebraMap A _ a) = algebraMap A _ a)
+    (hX : ∀ i, φ (Pair.polydiscVar k A i) = Pair.polydiscVar l A (e i))
+    (f : restrictedMvPowerSeriesCompletion k A) :
+    toMvPowerSeries l A (φ f) = MvPowerSeries.rename e (toMvPowerSeries k A f) := by
+  have h : (restrictedMvPowerSeriesCompletionEquiv l A).toRingHom.comp φ =
+      (weightedRename e _ _ fun _ ↦ subset_rfl).comp
+        (restrictedMvPowerSeriesCompletionEquiv k A).toRingHom := by
+    refine restrictedMvPowerSeriesCompletion_ringHom_ext
+      (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv.continuous.comp hφ)
+      ((continuous_weightedRename _ _ _ _).comp
+        uniformContinuous_restrictedMvPowerSeriesCompletionEquiv.continuous) (fun a ↦ ?_)
+      fun i ↦ ?_
+    · simp only [RingHom.comp_apply, hC]
+      simp [algebraMap_completion_weightedRestrictedSubring_apply, weightedRename_weightedC]
+    · simp [hX, weightedRename_weightedX]
+  have h' := congr(($h f : MvPowerSeries (Fin l) A))
+  rw [toMvPowerSeries_apply, toMvPowerSeries_apply]
+  simpa [coe_weightedRename] using h'
 
 /-- Every coordinate variable `Tᵢ` of `A⟨T₁, …, Tₙ⟩` is power-bounded. -/
 theorem Pair.isPowerBounded_polydiscVar (n : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A]

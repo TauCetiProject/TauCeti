@@ -90,13 +90,13 @@ boundary values in `L₀` and `L₁` (`TauCeti.StripSobolev.H1`) to `L²(ℝ × 
 first-order operator `TauCeti.jetOperator` of the constant coefficient field
 `TauCeti.StripSobolev.cauchyRiemannJetCoeff J`, restricted to `H1`. -/
 noncomputable def cauchyRiemann : H1 L₀ L₁ →L[ℝ] Lp V 2 stripMeasure :=
-  (jetOperator stripMeasure fun _ ↦ cauchyRiemannJetCoeff J).comp (H1 L₀ L₁).subtypeL
+  (jetOperator 2 stripMeasure fun _ ↦ cauchyRiemannJetCoeff J).comp (H1 L₀ L₁).subtypeL
 
 /-- The Cauchy--Riemann operator is the first-order operator of its constant coefficient field on
 `L²` jets, restricted to `H1`. -/
 theorem cauchyRiemann_apply (x : H1 L₀ L₁) :
     cauchyRiemann J L₀ L₁ x =
-      jetOperator stripMeasure (fun _ ↦ cauchyRiemannJetCoeff J)
+      jetOperator 2 stripMeasure (fun _ ↦ cauchyRiemannJetCoeff J)
         (x : Lp (V × V × V) 2 stripMeasure) :=
   (rfl)
 
@@ -111,17 +111,17 @@ theorem coeFn_cauchyRiemann (x : H1 L₀ L₁) :
 
 /-- On the jet of a test section `ξ`, the Cauchy--Riemann operator is `∂s ξ + J ∂t ξ`. -/
 theorem cauchyRiemann_jetLp_ae_eq (ξ : testSection L₀ L₁) :
-    cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
+    cauchyRiemann J L₀ L₁ ⟨jetLp 2 (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
       fun z ↦ fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineReal +
         J (fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineImag) := by
   filter_upwards [coeFn_cauchyRiemann (J := J)
-    ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
+    ⟨jetLp 2 (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp 2 ξ] with z h₁ h₂
   rw [h₁, h₂, ← cauchyRiemannJetCoeff_apply, cauchyRiemannJetCoeff_jet]
 
 /-- The squared `L²` norm of the Cauchy--Riemann operator on the jet of a test section `ξ` is the
 integral of `‖∂s ξ + J ∂t ξ‖²` over the strip. -/
 theorem sq_norm_cauchyRiemann_jetLp (ξ : testSection L₀ L₁) :
-    ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖ ^ 2 =
+    ‖cauchyRiemann J L₀ L₁ ⟨jetLp 2 (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖ ^ 2 =
       ∫ z in univ ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineReal +
         J (fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineImag)‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
@@ -193,12 +193,13 @@ independent of `ξ`. -/
 theorem exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
     (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
     ∃ C, ∀ ξ : testSection L₀ L₁,
-      ‖jetLp (testSection L₀ L₁) ξ‖ ≤
-        C * ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖ := by
+      ‖jetLp 2 (testSection L₀ L₁) ξ‖ ≤
+        C * ‖cauchyRiemann J L₀ L₁ ⟨jetLp 2 (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖ := by
   obtain ⟨C, hC, hest⟩ := exists_setIntegral_energy_le_mul_setIntegral_cauchyRiemann hg hL₀ hL₁ hL
   refine ⟨√C, fun ξ ↦ ?_⟩
-  have hsq : ‖jetLp (testSection L₀ L₁) ξ‖ ^ 2 ≤
-      (√C * ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖) ^ 2 := by
+  have hsq : ‖jetLp 2 (testSection L₀ L₁) ξ‖ ^ 2 ≤
+      (√C * ‖cauchyRiemann J L₀ L₁
+        ⟨jetLp 2 (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖) ^ 2 := by
     rw [mul_pow, Real.sq_sqrt hC.le, sq_norm_cauchyRiemann_jetLp, stdComplexLineReal_eq,
       stdComplexLineImag_eq]
     exact (sq_norm_jetLp_le_integral ξ
@@ -365,7 +366,8 @@ theorem finiteDimensional_ker_jetOperator_cauchyRiemannAddJetCoeff
     (hL : Disjoint L₀ L₁) {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
     FiniteDimensional ℝ
-      ((jetOperator stripMeasure (cauchyRiemannAddJetCoeff J A)).comp (H1 L₀ L₁).subtypeL).ker := by
+      ((jetOperator 2 stripMeasure (cauchyRiemannAddJetCoeff J A)).comp
+        (H1 L₀ L₁).subtypeL).ker := by
   obtain ⟨C, hC⟩ := exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff hg hL₀ hL₁ hL hA hAT
   exact finiteDimensional_ker_jetOperator_comp_subtypeL (memLp_cauchyRiemannAddJetCoeff hA hAT) hC
 
@@ -376,7 +378,8 @@ theorem isClosed_range_jetOperator_cauchyRiemannAddJetCoeff
     (hL : Disjoint L₀ L₁) {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
     IsClosed
-      (((jetOperator stripMeasure (cauchyRiemannAddJetCoeff J A)).comp (H1 L₀ L₁).subtypeL).range :
+      (((jetOperator 2 stripMeasure (cauchyRiemannAddJetCoeff J A)).comp
+        (H1 L₀ L₁).subtypeL).range :
         Set (Lp V 2 stripMeasure)) := by
   obtain ⟨C, hC⟩ := exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff hg hL₀ hL₁ hL hA hAT
   exact isClosed_range_jetOperator_comp_subtypeL (memLp_cauchyRiemannAddJetCoeff hA hAT) hC

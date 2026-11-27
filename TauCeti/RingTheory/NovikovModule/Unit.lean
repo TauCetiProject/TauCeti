@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.Algebra.Homology.SquareZero.Graded
+public import TauCeti.RingTheory.NovikovModule.Regrade
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Unit homotopies of supported kernel products
@@ -50,6 +52,27 @@ Novikov series, where `eᵢ` are the coordinates of `e`, and it gives the same h
 (`NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_right`, and
 `NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_left` for the second input).
 
+**From count functionals in the raw grading.** The boundary count of the unit family is a
+functional whose Koszul signs use the raw degrees `μ` of the generators, while the product is
+applied in the cochain grading `n - μ` of `TauCeti.RingTheory.NovikovModule.Regrade`, with the
+cochain kernel `m(p₁, p₂, p₀) = (-1)^(n μ₁ p₁) t((p₁, p₂), p₀)` of a raw kernel `t` of degree
+`-n`. The unit cycle `e` has raw degree `n`, cochain degree `0`, and is closed. Glued into the
+first input, the family has input `e ⊗ C₂`, of raw degree `n + μ₂` with tensor differential
+`(-1)^n δ₂`. If the boundary of the readout of a kernel `h` raising the raw degree by one is, for
+this input, the readout of the glued composite `∑ₛ e(s) t((s, p₂), ·)` minus `(-1)^n` times the
+readout of `φ`, then `h` is a homotopy for the unit identity of `m`
+(`finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_right`).
+Glued into the second input, the input is `C₁ ⊗ e`, of raw degree `μ₁ + n` with tensor
+differential `δ₁`; the readout of `φ` enters with the sign `(-1)^(n μ₁ p₁)`, and
+`(-1)^(n (μ₁ p₁ - 1)) h` is the homotopy
+(`finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_left`).
+In both cases the sign on `φ` is the twist `(-1)^(n μ₁)` of the cochain kernel at the generator in
+the first input: `(-1)^(n n) = (-1)^n` when that generator is `e`, and `(-1)^(n μ₁ p₁)` when it is
+`p₁`. On a common complex, with `φ` the identity, the class of `e` is then a left and a right
+identity on cohomology
+(`NovikovModule.cohomologyProduct_kernelProduct_unit_mk_of_functionalBoundary_kernelReadout`,
+`NovikovModule.cohomologyProduct_kernelProduct_mk_unit_of_functionalBoundary_kernelReadout`).
+
 ## Main results
 
 * `NovikovModule.kernelProduct_sub_kernelMap_right`,
@@ -64,6 +87,12 @@ Novikov series, where `eᵢ` are the coordinates of `e`, and it gives the same h
 * `NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_right`,
   `NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_left`: the unit homotopy for
   matrices of Novikov series.
+* `finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_right`,
+  `finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_left`:
+  the unit kernel identities of the cochain grading from functionals in the raw grading.
+* `NovikovModule.cohomologyProduct_kernelProduct_unit_mk_of_functionalBoundary_kernelReadout`,
+  `NovikovModule.cohomologyProduct_kernelProduct_mk_unit_of_functionalBoundary_kernelReadout`: the
+  class of the unit cycle is a two-sided identity on cohomology, from such functionals.
 
 ## References
 
@@ -378,6 +407,234 @@ theorem novikovProductOfMatrix_sub_novikovMapOfMatrix_left
           exact Finset.sum_congr rfl fun m _ => Finset.sum_congr rfl fun i _ => by ring
 
 end Matrix
+
+section Readout
+
+variable {n : ℤ} {μ₁ : S₁ → ℤ} {μ₂ : S₂ → ℤ} {μ₀ : S₀ → ℤ}
+
+section Identity
+
+variable {t : S₁ × S₂ → S₀ → R} {m : S₁ → S₂ → S₀ → R} {δ₀ : S₀ → S₀ → R}
+
+/-- **A unit in the first input from a functional in the raw grading.** Let `t` be the raw
+operator kernel of a product and `m(p₁, p₂, p₀) = (-1)^(n μ₁ p₁) t((p₁, p₂), p₀)` its cochain
+kernel, let `e` be a completed combination of cochain degree `0`, that is of raw degree `n`, and
+let `h` be a kernel from the second input to the output raising the raw degree by one. Suppose that
+the boundary of the readout of `h`, taken for the input `e ⊗ C₂` of raw degree `n + μ₂`, whose
+tensor differential is `(-1)^n` times that of `C₂`, is the readout of the glued composite
+`∑ₛ e(s) t((s, p₂), ·)` minus `(-1)^n` times the readout of `φ`. Then `h` is a homotopy for the
+unit kernel identity of the cochain grading,
+`∑ₛ e(s) m(s, p₂, p₀) - φ(p₂, p₀) = (h δ₀ + δ₂ h)(p₂, p₀)`, as consumed by
+`NovikovModule.kernelProduct_sub_kernelMap_right`. The sign `(-1)^n` on `φ` is the twist
+`(-1)^(n μ₁)` of the cochain kernel evaluated at the raw degree `n` of `e`. -/
+theorem finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_right
+    {φ h : S₂ → S₀ → R} {δ₂ : S₂ → S₂ → R}
+    (hmt : ∀ p₁ p₂ p₀, m p₁ p₂ p₀ = negOnePowCast R (n * μ₁ p₁) * t (p₁, p₂) p₀)
+    {e : NovikovModule R F₁} (he : e ∈ gradeBy R F₁ (fun p => n - μ₁ p) 0)
+    (hh : ∀ p₂ p₀, h p₂ p₀ ≠ 0 → μ₀ p₀ = μ₂ p₂ + 1) {p₂ : S₂} {p₀ : S₀}
+    (hψ : functionalBoundary (fun p => n + μ₂ p) μ₀ (negOnePowCast R n • δ₂) δ₀
+        (kernelReadout μ₀ h) p₂ p₀ =
+      kernelReadout μ₀ (fun p₂ p₀ => ∑ᶠ s, e.val s * t (s, p₂) p₀) p₂ p₀ -
+        negOnePowCast R n * kernelReadout μ₀ φ p₂ p₀) :
+    ∑ᶠ s, e.val s * m s p₂ p₀ - φ p₂ p₀ = kernelComp h δ₀ p₂ p₀ + kernelComp δ₂ h p₂ p₀ := by
+  -- On the support of `e` the cochain twist is `(-1)^(n n) = (-1)^n`.
+  have hsum : ∑ᶠ s, e.val s * m s p₂ p₀ = negOnePowCast R n * ∑ᶠ s, e.val s * t (s, p₂) p₀ := by
+    rw [negOnePowCast_mul_finsum]
+    refine finsum_congr fun s => ?_
+    by_cases hs : e.val s = 0
+    · simp [hs]
+    have hμ : μ₁ s = n := by linarith [mem_gradeBy_iff.1 he s hs]
+    rw [hmt, hμ, negOnePowCast_eq_of_even_sub (a := n * n) (b := n)
+      (by rw [show n * n - n = n * (n - 1) by ring]; exact Int.even_mul_pred_self n)]
+    ring
+  -- For the input `e ⊗ C₂` the boundary is `(-1)^n` times the boundary on `C₂ ⊗ C₀^∨`.
+  have hb : functionalBoundary (fun p => n + μ₂ p) μ₀ (negOnePowCast R n • δ₂) δ₀
+      (kernelReadout μ₀ h) p₂ p₀ =
+        negOnePowCast R n * functionalBoundary μ₂ μ₀ δ₂ δ₀ (kernelReadout μ₀ h) p₂ p₀ := by
+    have h₁ : kernelComp (negOnePowCast R n • δ₂) (kernelReadout μ₀ h) p₂ p₀ =
+        negOnePowCast R n * kernelComp δ₂ (kernelReadout μ₀ h) p₂ p₀ :=
+      kernelComp_mul_left (c := fun _ => _) δ₂ _ (isLeftRegular_negOnePowCast n) p₀
+    rw [functionalBoundary_apply, functionalBoundary_apply, h₁, add_assoc, negOnePowCast_add]
+    ring
+  rw [hb, functionalBoundary_kernelReadout (j := 1) hh, kernelReadout_apply, kernelReadout_apply,
+    kernelReadout_apply, show (1 : ℤ) + 1 = 2 * 1 by norm_num, negOnePowCast_two_mul,
+    negOnePowCast_one] at hψ
+  -- Both sides of `hψ` carry the output sign `(-1)^(μ₀ p₀)`, which cancels.
+  have hψ' : negOnePowCast R n * (kernelComp h δ₀ p₂ p₀ + kernelComp δ₂ h p₂ p₀) =
+      ∑ᶠ s, e.val s * t (s, p₂) p₀ - negOnePowCast R n * φ p₂ p₀ :=
+    isLeftRegular_negOnePowCast (μ₀ p₀) (by linear_combination hψ)
+  -- Multiplying by `(-1)^n`, whose square is `1`, turns `hψ'` into the claim.
+  refine isLeftRegular_negOnePowCast n ?_
+  simp only [hsum, hψ', mul_sub, ← mul_assoc, negOnePowCast_mul_self, one_mul]
+
+/-- **A unit in the second input from a functional in the raw grading.** Let `t` be the raw
+operator kernel of a product and `m(p₁, p₂, p₀) = (-1)^(n μ₁ p₁) t((p₁, p₂), p₀)` its cochain
+kernel, let `e` be a completed combination of generators of the second input, and let `h` be a
+kernel from the first input to the output raising the raw degree by one. Suppose that the
+differential `δ₁` lowers the raw degree by one, and that the boundary of the readout of `h`, taken
+for the input `C₁ ⊗ e` of raw degree `μ₁ + n` (for `e` of raw degree `n`), whose tensor
+differential is that of `C₁`, is the readout of the glued composite `∑ₛ e(s) t((p₁, s), ·)` minus
+`(-1)^(n μ₁ p₁)` times the readout of `φ`. Then `k = (-1)^(n (μ₁ p₁ - 1)) h` is a homotopy for
+the unit kernel identity of the cochain grading,
+`∑ₛ e(s) m(p₁, s, p₀) - φ(p₁, p₀) = (k δ₀ + δ₁ k)(p₁, p₀)`, as consumed by
+`NovikovModule.kernelProduct_sub_kernelMap_left`. The sign on `φ` is the twist `(-1)^(n μ₁)` of
+the cochain kernel at the first input, and `k` carries the twist `(-1)^(n (μ₁ - 1))` of the
+exchange homotopy of
+`NovikovModule.sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout`.
+No degree condition on `e` is needed for the identity itself. -/
+theorem finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_left
+    {φ h k : S₁ → S₀ → R} {δ₁ : S₁ → S₁ → R}
+    (hmt : ∀ p₁ p₂ p₀, m p₁ p₂ p₀ = negOnePowCast R (n * μ₁ p₁) * t (p₁, p₂) p₀)
+    (hkh : ∀ p₁ p₀, k p₁ p₀ = negOnePowCast R (n * (μ₁ p₁ - 1)) * h p₁ p₀)
+    (hh : ∀ p₁ p₀, h p₁ p₀ ≠ 0 → μ₀ p₀ = μ₁ p₁ + 1)
+    (hδ₁deg : ∀ p q, δ₁ p q ≠ 0 → μ₁ q = μ₁ p - 1) (e : NovikovModule R F₂) {p₁ : S₁} {p₀ : S₀}
+    (hψ : functionalBoundary (fun p => μ₁ p + n) μ₀ δ₁ δ₀ (kernelReadout μ₀ h) p₁ p₀ =
+      kernelReadout μ₀ (fun p₁ p₀ => ∑ᶠ s, e.val s * t (p₁, s) p₀) p₁ p₀ -
+        negOnePowCast R (n * μ₁ p₁) * kernelReadout μ₀ φ p₁ p₀) :
+    ∑ᶠ s, e.val s * m p₁ s p₀ - φ p₁ p₀ = kernelComp k δ₀ p₁ p₀ + kernelComp δ₁ k p₁ p₀ := by
+  set A := negOnePowCast R (n * μ₁ p₁)
+  have hsum : ∑ᶠ s, e.val s * m p₁ s p₀ = A * ∑ᶠ s, e.val s * t (p₁, s) p₀ := by
+    rw [negOnePowCast_mul_finsum]
+    exact finsum_congr fun s => by rw [hmt]; ring
+  -- The homotopy carries the twist of its input, which `δ₁` changes by `(-1)^n`.
+  have hk₀ : kernelComp k δ₀ p₁ p₀ = A * negOnePowCast R n * kernelComp h δ₀ p₁ p₀ := by
+    rw [show A * negOnePowCast R n = negOnePowCast R (n * (μ₁ p₁ - 1)) by
+        rw [show n * (μ₁ p₁ - 1) = n * μ₁ p₁ + -n by ring, negOnePowCast_add, negOnePowCast_neg],
+      show k = fun p q => negOnePowCast R (n * (μ₁ p - 1)) * h p q from funext₂ hkh]
+    exact kernelComp_mul_left h δ₀ (isLeftRegular_negOnePowCast _) p₀
+  have hk₁ : kernelComp δ₁ k p₁ p₀ = A * kernelComp δ₁ h p₁ p₀ := by
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum]
+    refine finsum_congr fun p => ?_
+    by_cases hp : δ₁ p₁ p = 0
+    · simp [hp]
+    rw [hkh, hδ₁deg p₁ p hp, show n * (μ₁ p₁ - 1 - 1) = n * μ₁ p₁ + 2 * -n by ring,
+      negOnePowCast_add, negOnePowCast_two_mul]
+    ring
+  -- Relative to the input `C₁ ⊗ e` of raw degree `μ₁ + n`, the kernel `h` has degree `1 - n`.
+  have hb := functionalBoundary_kernelReadout (d := fun p => μ₁ p + n) (d₀ := μ₀) (δ := δ₁)
+    (δ₀ := δ₀) (j := 1 - n) (t := h) (fun p p₀ hp => by rw [hh p p₀ hp]; ring) p₁ p₀
+  rw [hb, kernelReadout_apply, kernelReadout_apply, kernelReadout_apply,
+    show 1 - n + 1 = n + 2 * (1 - n) by ring, negOnePowCast_add, negOnePowCast_two_mul,
+    show 1 - n = 1 + -n by ring, negOnePowCast_add, negOnePowCast_one, negOnePowCast_neg] at hψ
+  -- Both sides of `hψ` carry the output sign `(-1)^(μ₀ p₀)`, which cancels.
+  have hψ' : negOnePowCast R n * kernelComp h δ₀ p₁ p₀ +
+      negOnePowCast R n * negOnePowCast R n * kernelComp δ₁ h p₁ p₀ =
+      ∑ᶠ s, e.val s * t (p₁, s) p₀ - A * φ p₁ p₀ :=
+    isLeftRegular_negOnePowCast (μ₀ p₀) (by linear_combination hψ)
+  -- With `(-1)^n (-1)^n = 1`, the claim is `A` times `hψ'`, using `A A = 1` on `φ`.
+  rw [negOnePowCast_mul_self, one_mul] at hψ'
+  rw [hsum, hk₀, hk₁]
+  linear_combination -A * hψ' + φ p₁ p₀ * negOnePowCast_mul_self (R := R) (n * μ₁ p₁)
+
+end Identity
+
+section Cohomology
+
+variable {S : Type*} [DecidableEq S] {F : S → ℝ} {μ : S → ℤ} {ε : ℤ}
+  {δ : S → S → R} (hδ : ∀ p q, δ p q ≠ 0 → F q ≤ F p + C₀)
+  (hδfin : ∀ p, δ p ∈ NovikovModule R F)
+  {h : S → S → R} (hk : ∀ p q, h p q ≠ 0 → F q ≤ F p + Ck) (hkfin : ∀ p, h p ∈ NovikovModule R F)
+  (hh : ∀ p q, h p q ≠ 0 → μ q = μ p + 1)
+
+section UnitMk
+
+variable {t : S₁ × S → S → R} {m : S₁ → S → S → R}
+  (hn : ∀ p₁ p p₀, m p₁ p p₀ ≠ 0 → F p₀ ≤ F₁ p₁ + F p + C)
+  (hfin : ∀ p₁ p, m p₁ p ∈ NovikovModule R F)
+  {δ₁ : S₁ → S₁ → R} (hδ₁ : ∀ p q, δ₁ p q ≠ 0 → F₁ q ≤ F₁ p + Cδ)
+  (hδ₁fin : ∀ p, δ₁ p ∈ NovikovModule R F₁)
+  (hdeg : ∀ {i j : ℤ} {a : NovikovModule R F₁} {b : NovikovModule R F},
+    a ∈ gradeBy R F₁ (fun p => n - μ₁ p) i → b ∈ gradeBy R F (fun p => n - μ p) j →
+      kernelProduct hn hfin a b ∈ gradeBy R F (fun p => n - μ p) (i + j + ε))
+  (hL : ∀ {i : ℤ} {a : NovikovModule R F₁}, a ∈ gradeBy R F₁ (fun p => n - μ₁ p) i → ∀ b,
+    kernelMap hδ hδfin (kernelProduct hn hfin a b) =
+      kernelProduct hn hfin (kernelMap hδ₁ hδ₁fin a) b +
+        negOnePowCast R i • kernelProduct hn hfin a (kernelMap hδ hδfin b))
+
+include hk hkfin hh in
+/-- **The unit on cohomology, on the left, from a functional in the raw grading.** Let `⋆` be the
+product of the cochain kernel `m(p₁, p, p₀) = (-1)^(n μ₁ p₁) t((p₁, p), p₀)` of a raw kernel `t`,
+with a common complex as its second input and its output, obeying the Leibniz rule (for instance
+by `NovikovModule.kernelMap_kernelProduct_eq_add_of_functionalBoundary_kernelReadout_eq_zero`)
+and shifting the cochain degree by `ε`. Let `e` be a cocycle of cochain degree `0` of the first
+input and `h` a kernel on the common complex raising the raw degree by one. Suppose that, for the
+input `e ⊗ C`, the boundary of the readout of `h` is the readout of the glued composite
+`∑ₛ e(s) t((s, p), ·)` minus `(-1)^n` times the readout of the identity, as in
+`finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_right`.
+Then the class of `e` is a left identity for the product on cohomology: `[e] ⋆ [b] = [b]` for every
+cocycle `b` of cochain degree `j`. -/
+theorem cohomologyProduct_kernelProduct_unit_mk_of_functionalBoundary_kernelReadout {j : ℤ}
+    (hij : 0 + j + ε = j)
+    (hmt : ∀ p₁ p p₀, m p₁ p p₀ = negOnePowCast R (n * μ₁ p₁) * t (p₁, p) p₀)
+    (e : (kernelMap hδ₁ hδ₁fin).cocycles (gradeBy R F₁ (fun p => n - μ₁ p)) 0)
+    (hψ : ∀ p p₀, functionalBoundary (fun p => n + μ p) μ (negOnePowCast R n • δ) δ
+        (kernelReadout μ h) p p₀ =
+      kernelReadout μ (fun p p₀ => ∑ᶠ s, (e : NovikovModule R F₁).val s * t (s, p) p₀) p p₀ -
+        negOnePowCast R n * kernelReadout μ (fun p q => if p = q then 1 else 0) p p₀)
+    (b : (kernelMap hδ hδfin).cocycles (gradeBy R F (fun p => n - μ p)) j) :
+    LinearMap.cohomologyProduct (kernelProduct hn hfin) hdeg hL hij (Submodule.Quotient.mk e)
+      (Submodule.Quotient.mk b) = Submodule.Quotient.mk b :=
+  cohomologyProduct_kernelProduct_unit_mk hδ hδfin hk hkfin
+    (fun p q hpq => by rw [hh p q hpq]; ring) hn hfin hδ₁ hδ₁fin hdeg hL hij e
+    (fun p p₀ =>
+      finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_right
+        hmt (LinearMap.mem_cocycles_iff.1 e.property).2 hh (hψ p p₀)) b
+
+end UnitMk
+
+section MkUnit
+
+variable {t : S × S₂ → S → R} {m : S → S₂ → S → R}
+  (hn : ∀ p p₂ p₀, m p p₂ p₀ ≠ 0 → F p₀ ≤ F p + F₂ p₂ + C)
+  (hfin : ∀ p p₂, m p p₂ ∈ NovikovModule R F)
+  {δ₂ : S₂ → S₂ → R} (hδ₂ : ∀ p q, δ₂ p q ≠ 0 → F₂ q ≤ F₂ p + Cδ)
+  (hδ₂fin : ∀ p, δ₂ p ∈ NovikovModule R F₂)
+  (hdeg : ∀ {i j : ℤ} {a : NovikovModule R F} {b : NovikovModule R F₂},
+    a ∈ gradeBy R F (fun p => n - μ p) i → b ∈ gradeBy R F₂ (fun p => n - μ₂ p) j →
+      kernelProduct hn hfin a b ∈ gradeBy R F (fun p => n - μ p) (i + j + ε))
+  (hL : ∀ {i : ℤ} {a : NovikovModule R F}, a ∈ gradeBy R F (fun p => n - μ p) i → ∀ b,
+    kernelMap hδ hδfin (kernelProduct hn hfin a b) =
+      kernelProduct hn hfin (kernelMap hδ hδfin a) b +
+        negOnePowCast R i • kernelProduct hn hfin a (kernelMap hδ₂ hδ₂fin b))
+
+include hk hkfin hh in
+/-- **The unit on cohomology, on the right, from a functional in the raw grading.** Let `⋆` be the
+product of the cochain kernel `m(p, p₂, p₀) = (-1)^(n μ p) t((p, p₂), p₀)` of a raw kernel `t`,
+with a common complex as its first input and its output, obeying the Leibniz rule and shifting the
+cochain degree by `ε`. Let `e` be a cocycle of cochain degree `0` of the second input and `h` a
+kernel on the common complex raising the raw degree by one, and suppose that the differential
+lowers the raw degree by one. Suppose that, for the input `C ⊗ e`, the boundary of the readout of
+`h` is the readout of the glued composite `∑ₛ e(s) t((p, s), ·)` minus `(-1)^(n μ p)` times the
+readout of the identity, as in
+`finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_left`.
+Then the class of `e` is a right identity for the product on cohomology: `[a] ⋆ [e] = [a]` for
+every cocycle `a` of cochain degree `i`. -/
+theorem cohomologyProduct_kernelProduct_mk_unit_of_functionalBoundary_kernelReadout {i : ℤ}
+    (hij : i + 0 + ε = i)
+    (hmt : ∀ p p₂ p₀, m p p₂ p₀ = negOnePowCast R (n * μ p) * t (p, p₂) p₀)
+    (hδdeg : ∀ p q, δ p q ≠ 0 → μ q = μ p - 1)
+    (a : (kernelMap hδ hδfin).cocycles (gradeBy R F (fun p => n - μ p)) i)
+    (e : (kernelMap hδ₂ hδ₂fin).cocycles (gradeBy R F₂ (fun p => n - μ₂ p)) 0)
+    (hψ : ∀ p p₀, functionalBoundary (fun p => μ p + n) μ δ δ (kernelReadout μ h) p p₀ =
+      kernelReadout μ (fun p p₀ => ∑ᶠ s, (e : NovikovModule R F₂).val s * t (p, s) p₀) p p₀ -
+        negOnePowCast R (n * μ p) * kernelReadout μ (fun p q => if p = q then 1 else 0) p p₀) :
+    LinearMap.cohomologyProduct (kernelProduct hn hfin) hdeg hL hij (Submodule.Quotient.mk a)
+      (Submodule.Quotient.mk e) = Submodule.Quotient.mk a :=
+  cohomologyProduct_kernelProduct_mk_unit hδ hδfin
+    (k := fun p q => negOnePowCast R (n * (μ p - 1)) * h p q)
+    (fun p q hpq => hk p q (right_ne_zero_of_mul hpq))
+    (fun p => (NovikovModule R F).smul_mem (negOnePowCast R (n * (μ p - 1))) (hkfin p))
+    (fun p q hpq => by rw [hh p q (right_ne_zero_of_mul hpq)]; ring) hn hfin hδ₂ hδ₂fin hdeg hL
+    hij a e
+    (fun p p₀ =>
+      finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout_left
+        hmt (fun _ _ => rfl) hh hδdeg _ (hψ p p₀))
+
+end MkUnit
+
+end Cohomology
+
+end Readout
 
 end NovikovModule
 

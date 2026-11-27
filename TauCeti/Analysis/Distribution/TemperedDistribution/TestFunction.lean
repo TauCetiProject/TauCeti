@@ -20,6 +20,9 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 Two complex-linear tempered distributions agree if they agree on real-valued smooth,
 compactly supported functions, embedded in complex Schwartz space. This connects the real
 test functions used to define weak derivatives with the complex tests used in Fourier analysis.
+On the Fourier side, they agree if they agree on the band-limited Schwartz functions, those whose
+Fourier transform has compact support, since these are the inverse Fourier transforms of the
+compactly supported ones.
 
 Since test functions are Schwartz functions (`TestFunction.toSchwartzMapCLM`), a tempered
 distribution `u` restricts to a distribution on every open set `Ω`, whose value on a real test
@@ -34,6 +37,9 @@ The density input is Mathlib's `SchwartzMap.dense_hasCompactSupport`.
 
 * `TemperedDistribution.ext_real`: tempered distributions are determined by their values on real
   compactly supported Schwartz functions.
+* `TemperedDistribution.eq_zero_of_forall_hasCompactSupport_fourier`: dually, a tempered
+  distribution vanishing on every Schwartz function whose Fourier transform has compact support is
+  zero.
 * `TemperedDistribution.toDistribution`: the restriction of a tempered distribution to the test
   functions on an open set, as a complex-linear map `𝓢'(E, F) →ₗ[ℂ] 𝓓'(Ω, F)`.
 * `TemperedDistribution.toDistribution_injective`: the restriction to all of `E` is injective.
@@ -82,6 +88,28 @@ theorem ext_real {u v : 𝓢'(E, F)}
   simp only [map_add, map_smul, hreal]
 
 end Ext
+
+section Fourier
+
+open scoped FourierTransform
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **Band-limited Schwartz functions determine a tempered distribution.** A tempered distribution
+that vanishes on every Schwartz function whose Fourier transform has compact support is zero: its
+inverse Fourier transform vanishes on the compactly supported Schwartz functions. -/
+theorem eq_zero_of_forall_hasCompactSupport_fourier {u : 𝓢'(E, F)}
+    (hu : ∀ φ : 𝓢(E, ℂ), HasCompactSupport ((𝓕 φ : 𝓢(E, ℂ)) : E → ℂ) → u φ = 0) : u = 0 := by
+  have h : (𝓕⁻ u : 𝓢'(E, F)) = 0 := ext_real fun φ hφ ↦ by
+    rw [fourierInv_apply, zero_apply]
+    refine hu _ ?_
+    rw [FourierTransform.fourier_fourierInv_eq, SchwartzMap.coe_postcompCLM]
+    exact hφ.comp_left Complex.ofRealCLM.map_zero
+  calc u = 𝓕 (𝓕⁻ u : 𝓢'(E, F)) := (FourierTransform.fourier_fourierInv_eq u).symm
+    _ = 0 := by rw [h, FourierTransform.fourier_zero]
+
+end Fourier
 
 /-! ### Tempered distributions as distributions -/
 

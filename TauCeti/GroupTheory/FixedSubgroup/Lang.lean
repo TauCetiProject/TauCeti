@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.GroupTheory.FixedPointFree
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Surjective Lang maps and fixed lifts
@@ -34,14 +35,6 @@ section CommGroup
 
 variable {T : Type*} [CommGroup T]
 
-/-- The Lang map of the product of the first `m` iterates telescopes to the Lang map
-of the `m`-th iterate. -/
-theorem commutatorMap_prod_range (F : T →* T) (m : ℕ) (t : T) :
-    commutatorMap F (∏ i ∈ Finset.range m, (⇑F)^[i] t) = t / (⇑F)^[m] t := by
-  simp only [commutatorMap_apply, map_prod, ← Finset.prod_div_distrib,
-    ← Function.iterate_succ_apply']
-  exact Finset.prod_range_div' (fun i ↦ (⇑F)^[i] t) m
-
 /-- On a commutative group, surjectivity of the Lang map of any iterate implies
 surjectivity of the Lang map of the original endomorphism. -/
 theorem surjective_commutatorMap_of_iterate (F : T →* T) (m : ℕ)
@@ -49,7 +42,9 @@ theorem surjective_commutatorMap_of_iterate (F : T →* T) (m : ℕ)
     Function.Surjective (commutatorMap F) := by
   intro a
   obtain ⟨t, ht⟩ := h a
-  exact ⟨∏ i ∈ Finset.range m, (⇑F)^[i] t, (F.commutatorMap_prod_range m t).trans ht⟩
+  refine ⟨∏ i ∈ Finset.range m, (⇑F)^[i] t, Eq.trans ?_ ht⟩
+  simpa only [commutatorMap_apply, inv_div] using
+    congrArg Inv.inv (TauCeti.map_prod_iterate_div F m t)
 
 /-- If an iterate of `F` is the `Q`-th power map, and every element has a
 `(Q - 1)`-st root, then the Lang map of `F` is surjective. -/
@@ -79,16 +74,18 @@ variable {T G : Type*} [Group T] [Group G]
 
 /-- Correct an element to a fixed element by left multiplication from an invariant
 subgroup with surjective Lang map. The defect must lie in the subgroup's image. -/
+@[to_additive exists_fixed_neg_add_of_surjective_id_sub
+  /-- Correct an element to a fixed element by adding an element from an invariant subgroup
+  on which the difference map `t ↦ t - f t` is surjective. -/]
 theorem exists_fixed_inv_mul_of_surjective_commutatorMap (ι : T →* G)
     (f : T →* T) (F : G →* G) (hι : ∀ t, F (ι t) = ι (f t))
-    (hf : Function.Surjective (commutatorMap f)) {n : G}
+    (hf : Function.Surjective (fun t ↦ t / f t)) {n : G}
     (hn : n / F n ∈ ι.range) :
     ∃ t : T, F ((ι t)⁻¹ * n) = (ι t)⁻¹ * n := by
   obtain ⟨d, hd⟩ := hn
-  obtain ⟨t, ht⟩ := hf d
-  simp only [commutatorMap_apply] at ht
+  obtain ⟨t, rfl⟩ := hf d
   have hc : ι t / F (ι t) = n / F n := by
-    rw [hι, ← map_div, ht, hd]
+    simpa only [hι, map_div] using hd
   refine ⟨t, ?_⟩
   apply mul_left_cancel (a := ι t)
   calc
@@ -97,23 +94,39 @@ theorem exists_fixed_inv_mul_of_surjective_commutatorMap (ι : T →* G)
     _ = (n / F n) * F n := by rw [hc]
     _ = ι t * ((ι t)⁻¹ * n) := by simp
 
-/-- An equivariant surjection admits fixed lifts if its kernel is parametrized by an
+/-- Fixed points in the image of an equivariant map lift if its kernel is parametrized by an
 invariant group with surjective Lang map. The parametrization need not be injective. -/
+@[to_additive exists_fixed_lift_of_surjective_id_sub
+  /-- A fixed point in the image lifts to a fixed point when the difference map
+  `t ↦ t - f t` is surjective on a group parametrizing the kernel. -/]
 theorem exists_fixed_lift_of_surjective_commutatorMap {H : Type*} [Group H]
-    (ψ : G →* H) (j : T →* G) (hker : j.range = ψ.ker)
+    (ψ : G →* H) (j : T →* G) (hex : Function.MulExact j ψ)
     (f : T →* T) (F : G →* G) (F' : H →* H)
     (hψ : ∀ x, ψ (F x) = F' (ψ x)) (hj : ∀ t, F (j t) = j (f t))
-    (hsurj : Function.Surjective ψ) (hf : Function.Surjective (commutatorMap f))
-    {y : H} (hy : F' y = y) :
+    (hf : Function.Surjective (fun t ↦ t / f t)) {y : H} (hy_range : y ∈ Set.range ψ)
+    (hy : F' y = y) :
     ∃ x : G, F x = x ∧ ψ x = y := by
-  obtain ⟨n, hn⟩ := hsurj y
+  obtain ⟨n, hn⟩ := hy_range
   have hd : n / F n ∈ j.range := by
-    rw [hker, mem_ker, map_div, hψ, hn, hy, div_self']
+    apply (hex _).mp
+    rw [map_div, hψ, hn, hy, div_self']
   obtain ⟨t, ht⟩ := j.exists_fixed_inv_mul_of_surjective_commutatorMap f F hj hf hd
   refine ⟨(j t)⁻¹ * n, ht, ?_⟩
-  have htker : ψ (j t) = 1 := mem_ker.mp (hker ▸ ⟨t, rfl⟩)
-  simp [htker, hn]
+  simp [hex.apply_apply_eq_one, hn]
 
 end Group
 
 end MonoidHom
+
+/-- Fixed points in the image of an equivariant additive homomorphism lift when the difference map
+`t ↦ f t - t` is surjective on a group parametrizing its kernel. -/
+theorem AddMonoidHom.exists_fixed_lift_of_surjective_sub_id {T G H : Type*}
+    [AddGroup T] [AddGroup G] [AddGroup H] (ψ : G →+ H) (j : T →+ G)
+    (hex : Function.Exact j ψ) (f : T →+ T) (F : G →+ G) (F' : H →+ H)
+    (hψ : ∀ x, ψ (F x) = F' (ψ x)) (hj : ∀ t, F (j t) = j (f t))
+    (hf : Function.Surjective (fun t => f t - t)) {y : H} (hy_range : y ∈ Set.range ψ)
+    (hy : F' y = y) : ∃ x : G, F x = x ∧ ψ x = y := by
+  apply ψ.exists_fixed_lift_of_surjective_id_sub j hex f F F' hψ hj _ hy_range hy
+  intro t
+  obtain ⟨s, hs⟩ := hf (-t)
+  exact ⟨s, by simpa only [neg_sub, neg_neg] using congrArg Neg.neg hs⟩

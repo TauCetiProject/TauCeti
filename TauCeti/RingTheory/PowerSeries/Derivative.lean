@@ -91,6 +91,10 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`.
 * `PowerSeries.X_pow_dvd_X_mul_derivative_sub`: `X * d⁄dX` preserves congruence modulo
   `X ^ (n + 1)`.
+* `PowerSeries.coeff_X_mul_derivative_sub_C_mul`,
+  `PowerSeries.X_pow_dvd_X_mul_derivative_sub_C_mul`: the shifted Euler operator
+  `A ↦ X * d⁄dX A - C c * A` multiplies the `n`-th coefficient by `n - c` and preserves
+  divisibility by `X ^ n`.
 * `PowerSeries.xLogDeriv`, `PowerSeries.toAdd_xLogDeriv`: `X` times the logarithmic derivative,
   `u ↦ X * u' * u⁻¹`, as a homomorphism from the units of `R⟦X⟧` to the additive group of `R⟦X⟧`,
   over any commutative ring.
@@ -337,6 +341,21 @@ theorem X_pow_dvd_X_mul_derivative_sub {a b : R⟦X⟧} {n : ℕ} (h : X ^ (n + 
     Nat.add_sub_cancel]
   push_cast
   ring
+
+/-- The coefficients of `X * d⁄dX A - C c * A`, the shifted Euler operator `θ - c` applied to `A`,
+are `(n - c) * coeff n A`. -/
+theorem coeff_X_mul_derivative_sub_C_mul (c : R) (A : R⟦X⟧) (n : ℕ) :
+    coeff n (X * d⁄dX A - C c * A) = (n - c) * coeff n A := by
+  rw [map_sub, coeff_X_mul_derivative, coeff_C_mul, sub_mul]
+
+/-- The shifted Euler operator `θ - c`, `A ↦ X * d⁄dX A - C c * A`, preserves divisibility by
+`X ^ n`. -/
+theorem X_pow_dvd_X_mul_derivative_sub_C_mul {n : ℕ} {A : R⟦X⟧} (hA : X ^ n ∣ A) (c : R) :
+    X ^ n ∣ X * d⁄dX A - C c * A := by
+  refine dvd_sub ?_ (dvd_mul_of_dvd_right hA _)
+  rcases n with _ | n
+  · exact one_dvd _
+  · simpa using X_pow_dvd_X_mul_derivative_sub (a := A) (b := 0) (by rwa [sub_zero])
 
 /-- `X` times the logarithmic derivative, `u ↦ X * u' * u⁻¹`, turns products of units into
 sums. Unlike the logarithmic derivative over a `ℚ`-algebra it is defined over every commutative

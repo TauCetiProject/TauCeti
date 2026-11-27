@@ -285,6 +285,23 @@ theorem coeff_pow_nsmul_of_forall_le [Semiring R] {x : HahnSeries Γ R} {a : Γ}
     rw [pow_succ, succ_nsmul, coeff_mul_add_of_forall_le (nsmul_le_of_mem_support_pow hx n) hx,
       ih, pow_succ]
 
+/-- Two Hahn series commute if each coefficient of one commutes with each coefficient of
+the other. -/
+theorem commute_of_coeff_commute [NonUnitalNonAssocSemiring R] (x y : HahnSeries Γ R)
+    (h : ∀ i j, Commute (x.coeff i) (y.coeff j)) : Commute x y := by
+  ext n
+  rw [coeff_mul, coeff_mul]
+  exact Finset.sum_equiv (Equiv.prodComm _ _) (fun _ ↦ Finset.swap_mem_antidiagonal.symm)
+    fun ij _ ↦ (h ij.1 ij.2).eq
+
+/-- A monomial with coefficient one commutes with every Hahn series. -/
+theorem commute_single_one [NonAssocSemiring R] (x : HahnSeries Γ R) (a : Γ) :
+    Commute x (single a 1) := by
+  classical
+  apply x.commute_of_coeff_commute
+  intro i j
+  by_cases h : j = a <;> simp [h]
+
 /-- A Hahn series commutes with the constant series `C c` exactly when each of its coefficients
 commutes with `c`. -/
 theorem commute_C_iff [NonAssocSemiring R] {x : HahnSeries Γ R} {c : R} :

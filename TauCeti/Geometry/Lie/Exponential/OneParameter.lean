@@ -34,6 +34,8 @@ the two.
 * `TauCeti.eq_of_forall_exp_smul_eq`: agreeing exponential lines have equal generators.
 * `TauCeti.mem_of_forall_exp_smul_mem`: a closed real subspace containing a whole exponential line
   contains its generator.
+* `TauCeti.forall_commute_exp_smul_iff`: an element commutes with a whole exponential line exactly
+  when it commutes with its generator.
 * `TauCeti.forall_expUnit_smul_mem_range_iff_eq_zero`: an exponential line lies in the range of
   a trivial group exactly when its generator vanishes.
 * `TauCeti.existsUnique_eq_expUnitHom`: a continuous one-parameter subgroup of `Rˣ` whose
@@ -161,6 +163,18 @@ theorem mem_of_forall_exp_smul_mem {S : Submodule ℝ R} (hS : IsClosed (S : Set
     simpa using hasDerivAt_exp_smul_const x (0 : ℝ)
   simpa using hderiv.hasFDerivAt.apply_mem_of_eventually_sub_mem hS
     (.of_forall fun t ↦ S.sub_mem (h t) (h 0)) 1
+
+/-- **An element commutes with an exponential line exactly when it commutes with its generator.**
+The elements commuting with `a` form a closed real subspace, which contains the generator of every
+exponential line it contains. -/
+theorem forall_commute_exp_smul_iff {a x : R} :
+    (∀ t : ℝ, Commute a (NormedSpace.exp (t • x))) ↔ Commute a x := by
+  refine ⟨fun h ↦ ?_, fun h t ↦ (h.smul_right t).exp_right⟩
+  have hS : IsClosed ((Subalgebra.centralizer ℝ {a}).toSubmodule : Set R) := by
+    simpa using Set.isClosed_centralizer {a}
+  simpa [Subalgebra.mem_centralizer_iff, Commute, SemiconjBy] using
+    mem_of_forall_exp_smul_mem hS fun t ↦ by
+      simpa [Subalgebra.mem_centralizer_iff, Commute, SemiconjBy] using h t
 
 /-- **An exponential line lies in the range of a trivial group exactly when it is constant.** For
 a homomorphism `f` from a trivial group into `Rˣ`, the line `t ↦ expUnit (t • x)` lies in the

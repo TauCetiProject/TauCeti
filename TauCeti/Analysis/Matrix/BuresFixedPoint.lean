@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isome
 import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
 import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.Matrix.Order
-import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Basic
 
 /-!
 # Positive-definite solutions of the Bures–Wasserstein fixed-point equation

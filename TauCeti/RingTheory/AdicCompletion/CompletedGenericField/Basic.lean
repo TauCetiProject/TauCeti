@@ -95,12 +95,23 @@ theorem exists_sub_algebraMap_mem_maximalIdeal_completedGenericIntegers
     (fg_maximalIdeal_genericLocalRing π)] at hy
   exact ⟨y, hy⟩
 
+/-- The completed generic ring is separated and complete for its maximal ideal. -/
+instance isAdicComplete_maximalIdeal_completedGenericIntegers :
+    IsAdicComplete (maximalIdeal (completedGenericIntegers π)) (completedGenericIntegers π) :=
+  _root_.AdicCompletion.isAdicComplete_of_fg (fg_maximalIdeal_genericLocalRing π)
+
+/-- The completed generic ring is separated and complete for the maximal ideal of the generic
+local ring, as a module over the generic local ring. -/
+instance isAdicComplete_maximalIdeal_genericLocalRing :
+    IsAdicComplete (maximalIdeal (genericLocalRing π)) (completedGenericIntegers π) :=
+  _root_.AdicCompletion.isAdicComplete (fg_maximalIdeal_genericLocalRing π)
+
 /-- The completed generic ring is separated and complete for its `π`-adic filtration. -/
 theorem isAdicComplete_completedGenericIntegers :
     IsAdicComplete (Ideal.span {algebraMap A (completedGenericIntegers π) π})
       (completedGenericIntegers π) := by
   rw [← maximalIdeal_completedGenericIntegers]
-  exact _root_.AdicCompletion.isAdicComplete_of_fg (fg_maximalIdeal_genericLocalRing π)
+  exact isAdicComplete_maximalIdeal_completedGenericIntegers π
 
 /-- The residue field of the completed generic ring is the function field of the original
 special fibre. -/

@@ -228,12 +228,7 @@ theorem exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one {θ : 𝓞 K} {d : �
     exact zero_ne_one hleg
   have hsplit : ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = finrank ℚ K :=
     (ncard_primesOver_quadratic_iff hmin hgen hodd hcop).mpr hleg
-  obtain ⟨⟨𝔮, h𝔮, hlo⟩⟩ :=
-    (inferInstance : Nonempty ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
-  -- `h𝔮` and `hlo` are the prime and lies-over hypotheses of the norm computation; pass them
-  -- explicitly rather than installing them as anonymous local instances.
-  exact ⟨𝔮, h𝔮, hlo,
-    @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p 𝔮 h𝔮 hlo hsplit⟩
+  exact TauCeti.exists_isPrime_and_absNorm_eq_of_ncard_primesOver_eq_finrank hsplit
 
 /-! ### The prime `2` for `d ≡ 1 (mod 4)` -/
 

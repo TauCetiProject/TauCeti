@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Hodge.Tate.Twist
-public import TauCeti.Geometry.Hodge.WeightOne.Lattice
+public import TauCeti.Geometry.Hodge.WeightOne.Lattice.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Smul
 
 /-!

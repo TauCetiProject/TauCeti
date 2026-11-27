@@ -174,6 +174,16 @@ theorem coefficient_eq_of_forall_quantizeSchwartzValue_eq {a : Symbol n V W m}
   exact eq_of_forall_quantizeSchwartzValue_eq (a.continuous_coefficient_slice x)
     (b.continuous_coefficient_slice x) (hC x rfl) (hC' x rfl) (fun u hu ↦ congrFun (h u hu) x) ξ
 
+/-- **Smoothing symbols via quantization.** A symbol is smoothing exactly when, for every real
+order `m'`, some symbol of order `m'` has the same quantization on compactly supported Schwartz
+functions. -/
+theorem isSmoothing_iff_forall_exists_quantizeSchwartzValue_eq {a : Symbol n V W m} :
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : Symbol n V W m', ∀ u : 𝓢(CoordinateSpace n, V),
+      HasCompactSupport u →
+        quantizeSchwartzValue b.coefficient u = quantizeSchwartzValue a.coefficient u :=
+  isSmoothing_iff.trans <| forall_congr' fun _ ↦ exists_congr fun _ ↦
+    ⟨fun hb _ _ ↦ by rw [hb], coefficient_eq_of_forall_quantizeSchwartzValue_eq⟩
+
 /-- **A symbol is determined by its quantization on test functions.** If two symbols, possibly of
 different orders, have the same quantization on test functions, their coefficients are equal. -/
 theorem coefficient_eq_of_forall_testFunction_quantizeSchwartzValue_eq {a : Symbol n V W m}

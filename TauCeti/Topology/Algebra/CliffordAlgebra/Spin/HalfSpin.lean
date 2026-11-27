@@ -33,6 +33,8 @@ These results concern topology, not a smooth manifold structure on the quotient 
 * `CliffordAlgebra.spinCGroupHalfSpinContinuousHom`: the descended representation as a continuous
   monoid homomorphism into continuous complex-linear endomorphisms.
 * `CliffordAlgebra.continuous_spinCGroupHalfSpinRep_apply`: joint continuity of the action.
+* `CliffordAlgebra.isClosed_stabilizer_spinCGroupHalfSpinRep`: the stabilizer of a fixed spinor
+  in `Spinᶜ(4)` is closed, with no topology assumed on `W`.
 * `CliffordAlgebra.continuous_halfSpinCliffordMul`: operator norm continuity of the odd action.
 
 ## References
@@ -49,6 +51,8 @@ noncomputable section
 namespace CliffordAlgebra
 
 open Module Module.End
+
+section Normed
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [Fact (finrank ℝ V = 4)] {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4))
@@ -149,5 +153,62 @@ theorem continuous_halfSpinCliffordMul_apply :
     Continuous (fun p : V × eigenspace (ρ (chirality Q o)) ε ↦
       halfSpinCliffordMul o ρ ε p.1 p.2) :=
   ((continuous_halfSpinCliffordMul o ρ ε).comp continuous_fst).clm_apply continuous_snd
+
+end Normed
+
+section Stabilizer
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [Fact (finrank ℝ V = 4)] {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4))
+  {W : Type*} [AddCommGroup W] [Module ℂ W]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
+
+/-- The stabilizer of a fixed half-spinor `ψ` under the `Spinᶜ(Q)` half-spin representation is
+closed in `spinCGroup Q hQ₀`, with no topology assumed on the spinor module `W`. -/
+theorem isClosed_stabilizer_spinCGroupHalfSpinRep (hQ₀ : Q ≠ 0)
+    (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    IsClosed {x : spinCGroup Q hQ₀ | spinCGroupHalfSpinRep o ρ ε hQ₀ x ψ = ψ} := by
+  have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+  rw [← (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ₀)).isClosed_preimage]
+  let bA := Module.finBasis ℝ (CliffordAlgebra Q)
+  let U : Submodule ℂ W := Submodule.span ℂ (Set.range fun i ↦ ρ (bA i) ψ)
+  have hmem (a : CliffordAlgebra Q) : ρ a ψ ∈ U := by
+    rw [← bA.sum_repr a, map_sum, LinearMap.sum_apply]
+    refine Submodule.sum_mem U fun i _ ↦ ?_
+    rw [map_smul, LinearMap.smul_apply]
+    exact U.smul_mem (bA.repr a i : ℂ) (Submodule.subset_span ⟨i, rfl⟩)
+  have : FiniteDimensional ℂ U := FiniteDimensional.span_of_finite ℂ (Set.finite_range _)
+  let bU := Module.finBasis ℂ U
+  let f : CliffordAlgebra Q →ₗ[ℝ] (Fin (finrank ℂ U) → ℂ) :=
+    { toFun a := bU.equivFun ⟨ρ a ψ, hmem a⟩
+      map_add' a b := by
+        rw [← map_add]
+        congr 1
+        exact Subtype.ext (by simp)
+      map_smul' r a := by
+        have h : (⟨ρ (r • a) ψ, hmem (r • a)⟩ : U) = (r : ℂ) • ⟨ρ a ψ, hmem a⟩ :=
+          Subtype.ext (by simp)
+        rw [h, map_smul, RingHom.id_apply]
+        ext i
+        simp [Complex.real_smul] }
+  have hg : Continuous (fun p : spinGroup Q × Circle ↦ (p.2 : ℂ) • f p.1.val) :=
+    (continuous_subtypeVal.comp continuous_snd).smul
+      ((IsModuleTopology.continuous_of_linearMap f).comp
+        (continuous_subtypeVal.comp continuous_fst))
+  have hpre : (QuotientGroup.mk : spinGroup Q × Circle → spinCGroup Q hQ₀) ⁻¹'
+      {x | spinCGroupHalfSpinRep o ρ ε hQ₀ x ψ = ψ} =
+      {p : spinGroup Q × Circle | (p.2 : ℂ) • f p.1.val = f 1} := by
+    ext ⟨s, z⟩
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, ← spinCGroup.mk_apply,
+      spinCGroupHalfSpinRep_mk, Subtype.ext_iff, spinCHalfSpinRep_apply, LinearMap.smul_apply,
+      Submodule.coe_smul, coe_halfSpinRep_apply]
+    have h1 : f 1 = bU.equivFun ⟨ψ, by simpa using hmem 1⟩ := by simp [f]
+    have h2 : (z : ℂ) • f s.val = bU.equivFun ⟨(z : ℂ) • ρ s.val ψ, U.smul_mem _ (hmem s.val)⟩ :=
+      (bU.equivFun.map_smul (z : ℂ) ⟨ρ s.val ψ, hmem s.val⟩).symm
+    rw [h1, h2, bU.equivFun.injective.eq_iff, Subtype.ext_iff]
+  rw [hpre]
+  exact isClosed_eq hg continuous_const
+
+end Stabilizer
 
 end CliffordAlgebra

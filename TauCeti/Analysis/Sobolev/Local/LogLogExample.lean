@@ -164,7 +164,8 @@ private theorem hasWeakFDerivOn_logLogInterior_ball :
   have hlog : MemWkpLoc 1 (⊤ : Opens ℂ) 1 (fun z : ℂ => Real.log ‖z‖) :=
     (memWkpLoc_one_log_norm_iff (by simp)).2 (by norm_num)
   have hBc : IsCompact (closure (B : Set ℂ)) := isCompact_closure_ball
-  obtain ⟨v, hvv, hvg⟩ := hlog.exists_w1p (hasWeakFDerivOn_log_norm ⊤) hBc (subset_univ _)
+  obtain ⟨v, hvv, hvg⟩ := (memWkpLoc_one_iff_memW1pLoc.1 hlog).exists_w1p
+    (hasWeakFDerivOn_log_norm ⊤) hBc (subset_univ _)
   -- `a = log 4 - log ‖z‖`, bounded below by `log 4` on `B`.
   set a : W1p volume B 1 := W1p.const (Real.log 4) - v
   have hav : W1p.value a =ᵐ[volume.restrict B] fun z => Real.log 4 - Real.log ‖z‖ := by
