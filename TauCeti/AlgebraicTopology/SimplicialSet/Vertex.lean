@@ -31,7 +31,6 @@ monotone along the vertices of every simplex.
   `x` is the degenerate edge at `x`, and every constant map at `x` sends `1`-simplices to it.
 * `SSet.lift_id_const_app_one`: the graph `W ⟶ W ⊗ X` of a constant map at `x` sends a
   `1`-simplex `e` to the pair of `e` and the degenerate edge at `x`.
-* `SSet.stdSimplex.map_const`: simplicial operators fix the constant simplices of `Δ[n]`.
 -/
 
 public section
@@ -105,13 +104,5 @@ lemma lift_id_const_app_one {W : SSet.{u}} (x : X _⦋0⦌) (e : W _⦋1⦌) :
     (lift (𝟙 W) (const x)).app _ e = (e, (Edge.id x).edge) :=
   -- A simplex of `W ⊗ X` is a pair, and the first component of the graph is the identity.
   Prod.ext rfl (const_app_one x e)
-
-/-- Simplicial operators fix the constant simplices of `Δ[n]`: the image of the simplex
-concentrated in the vertex `k` is again concentrated in `k`. -/
-@[simp]
-lemma stdSimplex.map_const (n : ℕ) (k : Fin (n + 1)) {m m' : SimplexCategoryᵒᵖ} (f : m ⟶ m') :
-    Δ[n].map f (stdSimplex.const n k m) = stdSimplex.const n k m' :=
-  -- `Δ[n].map f` precomposes with `f.unop`, and a constant map precomposed is constant.
-  rfl
 
 end SSet

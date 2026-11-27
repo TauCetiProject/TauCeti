@@ -39,7 +39,11 @@ is a right fibration, which reflects equivalences
 `TauCeti.AlgebraicTopology.Quasicategory.RightFibration.Basic`.
 
 Conversely, filling the horns `Λ[2, 0]` and `Λ[3, 0]` with initial edge `e` produces a right
-inverse of `e` and shows that it is also a left inverse. Reversing simplices via
+inverse of `e` and shows that it is also a left inverse. These two fillings are stated relative to
+a map `p : C ⟶ S` (`SSet.Edge.exists_compStruct_of_exists_lift_horn_zero` and
+`SSet.Edge.exists_compStruct_id_of_exists_lift_horn_zero`), so that they also apply to the
+coCartesian edges of
+`TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Uniqueness`. Reversing simplices via
 `SSet.horn.opIsoLast` transports both directions to `Λ[n + 2, Fin.last (n + 2)]`.
 
 ## Main results
@@ -260,75 +264,109 @@ namespace Edge
 
 variable {C : SSet.{u}} {x y : C _⦋0⦌}
 
-/-- If every horn `Λ[2, 0]` with initial edge `e : x ⟶ y` can be filled, `e` has a right inverse
-up to a `2`-simplex: filling the horn with faces `e` (from `0` to `1`) and `id x` (from `0`
-to `2`) gives an edge `g` with `e ≫ g = id x`. -/
-private lemma exists_compStruct_id_of_hornFilling_zero (e : Edge x y)
+/-- **Factoring an edge through an edge along which horns `Λ[2, 0]` lift.** Let `p : C ⟶ S` be
+a map and `τ` a `2`-simplex of `S`, and let `f : x ⟶ y` and `f' : x ⟶ y'` be edges of `C` lying
+over the faces `2` and `1` of `τ`. If every horn `Λ[2, 0]` over `τ` whose initial edge is `f`
+lifts to a `2`-simplex over `τ`, then filling the horn with faces `f` (from `0` to `1`) and `f'`
+(from `0` to `2`) gives an edge `g : y ⟶ y'` and a `2`-simplex over `τ` exhibiting `f'` as a
+composite of `f` and `g`. For `p` the map to `Δ[0]` and `f' = id x`, this produces a right
+inverse of `f`. -/
+lemma exists_compStruct_of_exists_lift_horn_zero {S : SSet.{u}} (p : C ⟶ S) (τ : S _⦋2⦌)
+    {y' : C _⦋0⦌} (f : Edge x y) (f' : Edge x y') (hτ₂ : S.δ 2 τ = p.app _ f.edge)
+    (hτ₁ : S.δ 1 τ = p.app _ f'.edge)
     (H : ∀ σ₀ : (Λ[2, 0] : SSet) ⟶ C,
-      σ₀.app _ (horn.edge 2 0 0 1 (Fin.zero_le _) (by simp)) = e.edge →
-        ∃ σ : Δ[2] ⟶ C, σ₀ = Λ[2, 0].ι ≫ σ) :
-    ∃ g : Edge y x, Nonempty (CompStruct e g (id x)) := by
-  let f : ∀ j : Fin 3, j ≠ 0 → (Δ[1] ⟶ C) := fun j _ ↦
-    ![yonedaEquiv.symm e.edge, yonedaEquiv.symm (id x).edge, yonedaEquiv.symm e.edge] j
-  have hf : horn.IsCompatible f := by
+      σ₀.app _ (horn.edge 2 0 0 1 (Fin.zero_le _) (by simp)) = f.edge →
+        σ₀ ≫ p = Λ[2, 0].ι ≫ yonedaEquiv.symm τ →
+          ∃ σ : Δ[2] ⟶ C, Λ[2, 0].ι ≫ σ = σ₀ ∧ σ ≫ p = yonedaEquiv.symm τ) :
+    ∃ (g : Edge y y') (c : CompStruct f g f'), p.app _ c.simplex = τ := by
+  let F : ∀ j : Fin 3, j ≠ 0 → (Δ[1] ⟶ C) := fun j _ ↦
+    ![yonedaEquiv.symm f.edge, yonedaEquiv.symm f'.edge, yonedaEquiv.symm f.edge] j
+  have hF : horn.IsCompatible F := by
     rw [horn.isCompatible_iff]
     intro j k hj hk hjk
     fin_cases j <;> fin_cases k <;> simp at hj hk hjk ⊢
-    simp [f, stdSimplex.δ_comp_yonedaEquiv_symm, -id_edge]
-  obtain ⟨σ, hσ⟩ := H hf.desc (by
-    rw [horn.edge_two_zero_eq_ι_app, hf.desc_app_ι_app, ← yonedaEquiv_comp, Category.id_comp]
-    exact yonedaEquiv.apply_symm_apply _)
-  have hw₁ : C.δ 1 (yonedaEquiv σ) = (id x).edge := by
-    simpa [f, -id_edge] using hf.δ_yonedaEquiv_of_desc_eq hσ 1 (by decide)
-  have hw₂ : C.δ 2 (yonedaEquiv σ) = e.edge := by
-    simpa [f] using hf.δ_yonedaEquiv_of_desc_eq hσ 2 (by decide)
+    simp [F, stdSimplex.δ_comp_yonedaEquiv_symm]
+  obtain ⟨σ, hσ, hσp⟩ := H hF.desc (by
+      rw [horn.edge_two_zero_eq_ι_app, hF.desc_app_ι_app, ← yonedaEquiv_comp, Category.id_comp]
+      exact yonedaEquiv.apply_symm_apply _)
+    (horn.hom_ext' fun j hj ↦ by
+      rw [hF.ι_desc_assoc, horn.ι_ι_assoc, stdSimplex.δ_comp_yonedaEquiv_symm]
+      fin_cases j
+      · exact absurd rfl hj
+      · simp [F, yonedaEquiv_symm_comp, hτ₁]
+      · simp [F, yonedaEquiv_symm_comp, hτ₂])
+  have hw₁ : C.δ 1 (yonedaEquiv σ) = f'.edge := by
+    simpa [F] using hF.δ_yonedaEquiv_of_desc_eq hσ.symm 1 (by decide)
+  have hw₂ : C.δ 2 (yonedaEquiv σ) = f.edge := by
+    simpa [F] using hF.δ_yonedaEquiv_of_desc_eq hσ.symm 2 (by decide)
   have hsrc : C.δ 1 (C.δ 0 (yonedaEquiv σ)) = y := by
-    rw [← e.tgt_eq, ← hw₂]
+    rw [← f.tgt_eq, ← hw₂]
     exact (δ_comp_δ_apply (i := 0) (j := 1) (by decide) _).symm
-  have htgt : C.δ 0 (C.δ 0 (yonedaEquiv σ)) = x := by
-    rw [← (id x).tgt_eq, ← hw₁]
+  have htgt : C.δ 0 (C.δ 0 (yonedaEquiv σ)) = y' := by
+    rw [← f'.tgt_eq, ← hw₁]
     exact δ_comp_δ_self_apply (i := 0) _
-  exact ⟨.mk _ hsrc htgt, ⟨.mk _ hw₂ rfl hw₁⟩⟩
+  refine ⟨.mk _ hsrc htgt, .mk _ hw₂ rfl hw₁, ?_⟩
+  -- The `2`-simplex of the structure just built is `yonedaEquiv σ`, by definition of
+  -- `CompStruct.mk` (here `simp only [CompStruct.mk_simplex]` makes no progress).
+  change p.app _ (yonedaEquiv σ) = _
+  rw [← yonedaEquiv_comp, hσp, Equiv.apply_symm_apply]
 
-/-- If every horn `Λ[3, 0]` with initial edge `e : x ⟶ y` can be filled, a right inverse `g` of
-`e` is also a left inverse: filling the horn with faces given by `id x ≫ e = e` (on `0, 2, 3`),
-`e ≫ id y = e` (on `0, 1, 3`) and `e ≫ g = id x` (on `0, 1, 2`), the remaining face exhibits
-`g ≫ e = id y`. -/
-private lemma nonempty_compStruct_id_of_hornFilling_zero {e : Edge x y} {g : Edge y x}
-    (c : CompStruct e g (id x))
+/-- **Composites with an edge along which horns `Λ[3, 0]` lift.** Let `p : C ⟶ S` be a map and
+`τ` a `3`-simplex of `S`. Let `f : x ⟶ y` be an edge of `C`, and let `c` and `c'` be
+`2`-simplices exhibiting `f' = f ≫ g` and `f = f' ≫ g'`, lying over the faces `3` and `1` of `τ`,
+whose face `2` is the image of the `2`-simplex `f ≫ id y = f`. If every horn `Λ[3, 0]` over `τ`
+whose initial edge is `f` lifts to a `3`-simplex over `τ`, then filling the horn with faces `c'`
+(on `0, 2, 3`), `f ≫ id y = f` (on `0, 1, 3`) and `c` (on `0, 1, 2`), the remaining face, over the
+face `0` of `τ`, exhibits `g ≫ g' = id y`. For `p` the map to `Δ[0]`, `f' = id x` and `g' = f`,
+this shows that a right inverse `g` of `f` is also a left inverse. -/
+lemma exists_compStruct_id_of_exists_lift_horn_zero {S : SSet.{u}} (p : C ⟶ S) (τ : S _⦋3⦌)
+    {y' : C _⦋0⦌} {f : Edge x y} {f' : Edge x y'} {g : Edge y y'} {g' : Edge y' y}
+    (c : CompStruct f g f') (c' : CompStruct f' g' f) (hτ₁ : S.δ 1 τ = p.app _ c'.simplex)
+    (hτ₂ : S.δ 2 τ = p.app _ (CompStruct.compId f).simplex) (hτ₃ : S.δ 3 τ = p.app _ c.simplex)
     (H : ∀ σ₀ : (Λ[3, 0] : SSet) ⟶ C,
-      σ₀.app _ (horn.edge 3 0 0 1 (Fin.zero_le _) (by simp)) = e.edge →
-        ∃ σ : Δ[3] ⟶ C, σ₀ = Λ[3, 0].ι ≫ σ) :
-    Nonempty (CompStruct g e (id y)) := by
-  let f : ∀ j : Fin 4, j ≠ 0 → (Δ[2] ⟶ C) := fun j _ ↦
-    ![yonedaEquiv.symm c.simplex, yonedaEquiv.symm (CompStruct.idComp e).simplex,
-      yonedaEquiv.symm (CompStruct.compId e).simplex, yonedaEquiv.symm c.simplex] j
-  have hf : horn.IsCompatible f := by
+      σ₀.app _ (horn.edge 3 0 0 1 (Fin.zero_le _) (by simp)) = f.edge →
+        σ₀ ≫ p = Λ[3, 0].ι ≫ yonedaEquiv.symm τ →
+          ∃ σ : Δ[3] ⟶ C, Λ[3, 0].ι ≫ σ = σ₀ ∧ σ ≫ p = yonedaEquiv.symm τ) :
+    ∃ d : CompStruct g g' (id y), p.app _ d.simplex = S.δ 0 τ := by
+  let F : ∀ j : Fin 4, j ≠ 0 → (Δ[2] ⟶ C) := fun j _ ↦
+    ![yonedaEquiv.symm c.simplex, yonedaEquiv.symm c'.simplex,
+      yonedaEquiv.symm (CompStruct.compId f).simplex, yonedaEquiv.symm c.simplex] j
+  have hF : horn.IsCompatible F := by
     have h₂ : Fin.castPred (2 : Fin 4) (by decide) = 2 := rfl
     rw [horn.isCompatible_iff]
     intro j k hj hk hjk
     fin_cases j <;> fin_cases k <;> simp at hj hk hjk ⊢ <;>
-      simp [f, h₂, stdSimplex.δ_comp_yonedaEquiv_symm, -id_edge,
-        -CompStruct.idComp_simplex, -CompStruct.compId_simplex]
-  obtain ⟨σ, hσ⟩ := H hf.desc (by
-    rw [horn.edge_three_zero_eq_ι_app, hf.desc_app_ι_app, ← yonedaEquiv_comp]
-    simp [f, stdSimplex.δ_comp_yonedaEquiv_symm, c.d₂])
-  have hw₁ : C.δ 1 (yonedaEquiv σ) = (CompStruct.idComp e).simplex := by
-    simpa [f, -CompStruct.idComp_simplex] using hf.δ_yonedaEquiv_of_desc_eq hσ 1 (by decide)
-  have hw₂ : C.δ 2 (yonedaEquiv σ) = (CompStruct.compId e).simplex := by
-    simpa [f, -CompStruct.compId_simplex] using hf.δ_yonedaEquiv_of_desc_eq hσ 2 (by decide)
+      simp [F, h₂, stdSimplex.δ_comp_yonedaEquiv_symm, -CompStruct.compId_simplex]
+  obtain ⟨σ, hσ, hσp⟩ := H hF.desc (by
+      rw [horn.edge_three_zero_eq_ι_app, hF.desc_app_ι_app, ← yonedaEquiv_comp]
+      simp [F, stdSimplex.δ_comp_yonedaEquiv_symm, c.d₂])
+    (horn.hom_ext' fun j hj ↦ by
+      rw [hF.ι_desc_assoc, horn.ι_ι_assoc, stdSimplex.δ_comp_yonedaEquiv_symm]
+      fin_cases j
+      · exact absurd rfl hj
+      · simp [F, yonedaEquiv_symm_comp, hτ₁]
+      · simp [F, yonedaEquiv_symm_comp, hτ₂, -CompStruct.compId_simplex]
+      · simp [F, yonedaEquiv_symm_comp, hτ₃])
+  have hw₁ : C.δ 1 (yonedaEquiv σ) = c'.simplex := by
+    simpa [F] using hF.δ_yonedaEquiv_of_desc_eq hσ.symm 1 (by decide)
+  have hw₂ : C.δ 2 (yonedaEquiv σ) = (CompStruct.compId f).simplex := by
+    simpa [F, -CompStruct.compId_simplex] using hF.δ_yonedaEquiv_of_desc_eq hσ.symm 2 (by decide)
   have hw₃ : C.δ 3 (yonedaEquiv σ) = c.simplex := by
-    simpa [f] using hf.δ_yonedaEquiv_of_desc_eq hσ 3 (by decide)
+    simpa [F] using hF.δ_yonedaEquiv_of_desc_eq hσ.symm 3 (by decide)
   have h₂ : C.δ 2 (C.δ 0 (yonedaEquiv σ)) = g.edge := by
     rw [← c.d₀, ← hw₃]
     exact (δ_comp_δ_apply (i := 0) (j := 2) (by decide) _).symm
-  have h₀ : C.δ 0 (C.δ 0 (yonedaEquiv σ)) = e.edge := by
-    rw [← (CompStruct.idComp e).d₀, ← hw₁]
+  have h₀ : C.δ 0 (C.δ 0 (yonedaEquiv σ)) = g'.edge := by
+    rw [← c'.d₀, ← hw₁]
     exact δ_comp_δ_self_apply (i := 0) _
   have h₁ : C.δ 1 (C.δ 0 (yonedaEquiv σ)) = (id y).edge := by
-    rw [← (CompStruct.compId e).d₀, ← hw₂]
+    rw [← (CompStruct.compId f).d₀, ← hw₂]
     exact (δ_comp_δ_apply (i := 0) (j := 1) (by decide) _).symm
-  exact ⟨.mk _ h₂ h₀ h₁⟩
+  refine ⟨.mk _ h₂ h₀ h₁, ?_⟩
+  -- The `2`-simplex of the structure just built is `C.δ 0 (yonedaEquiv σ)`, by definition of
+  -- `CompStruct.mk`.
+  change p.app _ (C.δ 0 (yonedaEquiv σ)) = _
+  rw [δ_naturality_apply, ← yonedaEquiv_comp, hσp, Equiv.apply_symm_apply]
 
 /-- **Joyal's characterization of equivalences by special outer horns** (HTT Proposition
 1.2.4.3): an edge `e` of a quasicategory is an equivalence exactly when every horn
@@ -339,8 +377,20 @@ theorem isEquivalence_iff_hornFilling_zero [Quasicategory C] (e : Edge x y) :
         ∃ σ : Δ[n + 2] ⟶ C, σ₀ = Λ[n + 2, 0].ι ≫ σ := by
   refine ⟨fun he n σ₀ h ↦ Quasicategory.hornFilling_zero σ₀
     ((isEquivalence_iff_of_edge_eq (e := mk' _) (e' := e) h).2 he), fun H ↦ ?_⟩
-  obtain ⟨g, ⟨c₁⟩⟩ := exists_compStruct_id_of_hornFilling_zero e (H 0)
-  obtain ⟨c₂⟩ := nonempty_compStruct_id_of_hornFilling_zero c₁ (H 1)
+  -- Over `Δ[0]`, horn filling is lifting along `C ⟶ Δ[0]`.
+  let q := stdSimplex.isTerminalObj₀.from C
+  have hΔ {n : ℕ} (a b : (Δ[0] : SSet.{u}) _⦋n⦌) : a = b :=
+    yonedaEquiv.symm.injective (stdSimplex.isTerminalObj₀.hom_ext _ _)
+  have hH (n : ℕ) (τ : (Δ[0] : SSet.{u}) _⦋n + 2⦌) (σ₀ : (Λ[n + 2, 0] : SSet) ⟶ C)
+      (h : σ₀.app _ (horn.edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)) = e.edge) :
+      ∃ σ : Δ[n + 2] ⟶ C, Λ[n + 2, 0].ι ≫ σ = σ₀ ∧ σ ≫ q = yonedaEquiv.symm τ :=
+    let ⟨σ, hσ⟩ := H n σ₀ h
+    ⟨σ, hσ.symm, stdSimplex.isTerminalObj₀.hom_ext _ _⟩
+  -- A right inverse `g` of `e`, from a horn `Λ[2, 0]`, is a left inverse, by a horn `Λ[3, 0]`.
+  obtain ⟨g, c₁, -⟩ := exists_compStruct_of_exists_lift_horn_zero q (stdSimplex.const 0 0 _) e
+    (id x) (hΔ _ _) (hΔ _ _) fun σ₀ h _ ↦ hH 0 _ σ₀ h
+  obtain ⟨c₂, -⟩ := exists_compStruct_id_of_exists_lift_horn_zero q (stdSimplex.const 0 0 _) c₁
+    (CompStruct.idComp e) (hΔ _ _) (hΔ _ _) (hΔ _ _) fun σ₀ h _ ↦ hH 1 _ σ₀ h
   exact InvStruct.isEquivalence { inv := g, homInvId := c₁, invHomId := c₂ }
 
 /-- **Joyal's dual characterization of equivalences by special outer horns** (HTT Proposition

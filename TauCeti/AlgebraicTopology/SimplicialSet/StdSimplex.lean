@@ -29,6 +29,7 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
   simplices.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
   to the constant simplex at that vertex.
+* `SSet.stdSimplex.map_const`: simplicial operators fix the constant simplices of `Δ[n]`.
 * `SSet.stdSimplex.asOrderHom_monotone_functor_eq_const`: a simplex of `Δ[n]` all of whose
   vertices are `b` is, as a functor of finite linear orders, the constant functor at `b`.
 * `SSet.stdSimplex.δ_objMk_orderEmbOfFin`: the faces of the increasing enumeration of a set of
@@ -134,6 +135,14 @@ lemma yonedaEquiv_id_apply (n : ℕ) (j : Fin (n + 1)) : yonedaEquiv (𝟙 (Δ[n
 @[simp]
 lemma const_apply (n : ℕ) (k : Fin (n + 1)) (d : ℕ) (t : Fin (d + 1)) :
     stdSimplex.const n k (op ⦋d⦌) t = k :=
+  (rfl)
+
+/-- Simplicial operators fix the constant simplices of `Δ[n]`: the image of the simplex
+concentrated in the vertex `k` is again concentrated in `k`. -/
+@[simp]
+lemma map_const (n : ℕ) (k : Fin (n + 1)) {m m' : SimplexCategoryᵒᵖ} (f : m ⟶ m') :
+    Δ[n].map f (stdSimplex.const n k m) = stdSimplex.const n k m' :=
+  -- `Δ[n].map f` precomposes with `f.unop`, and a constant map precomposed is constant.
   (rfl)
 
 /-- The vertices of the image of a simplex `x` of `Δ[n]` under a simplicial operator `f` are the

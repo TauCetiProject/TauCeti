@@ -59,7 +59,9 @@ Joyal's theorem on special outer horns and is proved in
   invariant under reversing edges, and the opposite of the core is the core of the opposite.
 * `SSet.Edge.isEquivalence_tensor_iff`, `SSet.core_tensor`: an edge of a product is an
   equivalence exactly when both of its projections are, so the core of a product is the product
-  of the cores. This makes the cores of function complexes closed under composition.
+  of the cores. This makes the cores of function complexes closed under composition. The same
+  criterion holds for arbitrary products
+  (`SSet.Edge.isEquivalence_iff_forall_isEquivalence_map_π`).
 * `SSet.hasLiftingProperty_horn_ι_core_ι`: the inclusion of the core of a quasicategory is an
   inner fibration, so `SSet.core.quasicategory`: the core of a quasicategory is a quasicategory.
 * `CategoryTheory.nerve.mem_core_iff`: a simplex of the nerve of a category lies in the core
@@ -465,6 +467,44 @@ lemma Edge.isEquivalence_tensor_iff {p₀ p₁ : (X ⊗ Y) _⦋0⦌} (e : Edge p
       invHomId := CompStruct.mk (X := X ⊗ Y) (I₁.invHomId.simplex, I₂.invHomId.simplex)
         (Prod.ext I₁.invHomId.d₂ I₂.invHomId.d₂) (Prod.ext I₁.invHomId.d₀ I₂.invHomId.d₀)
         (Prod.ext I₁.invHomId.d₁ I₂.invHomId.d₁) }
+
+open Limits in
+/-- An edge of a product `∏ᶜ B` of simplicial sets is an equivalence exactly when all of its
+projections are. -/
+lemma Edge.isEquivalence_iff_forall_isEquivalence_map_π {ι : Type*} {B : ι → SSet.{u}}
+    [HasProduct B] {p₀ p₁ : (∏ᶜ B) _⦋0⦌} (e : Edge p₀ p₁) :
+    e.IsEquivalence ↔ ∀ i, (e.map (Pi.π B i)).IsEquivalence := by
+  refine ⟨fun h i ↦ h.map _, fun h ↦ ?_⟩
+  let I := fun i ↦ (h i).invStruct
+  -- A family of simplices of the factors is a simplex of the product, determined by its
+  -- projections, so the inverse and the `2`-simplices witnessing it are formed componentwise.
+  let mk {n : ℕ} (c : ∀ i, (B i) _⦋n⦌) : (∏ᶜ B) _⦋n⦌ :=
+    yonedaEquiv (Pi.lift fun i ↦ yonedaEquiv.symm (c i))
+  have hmk {n : ℕ} (c : ∀ i, (B i) _⦋n⦌) (i : ι) : (Pi.π B i).app _ (mk c) = c i := by
+    rw [← yonedaEquiv_comp, limit.lift_π, Fan.mk_π_app, Equiv.apply_symm_apply]
+  have hext {n : ℕ} {z z' : (∏ᶜ B) _⦋n⦌} (hz : ∀ i, (Pi.π B i).app _ z = (Pi.π B i).app _ z') :
+      z = z' :=
+    yonedaEquiv.symm.injective (Pi.hom_ext _ _ fun i ↦ by
+      rw [yonedaEquiv_symm_comp, yonedaEquiv_symm_comp, hz])
+  exact ⟨{ inv := Edge.mk (mk fun i ↦ (I i).inv.edge)
+             (hext fun i ↦ by rw [δ_naturality_apply, hmk, (I i).inv.src_eq])
+             (hext fun i ↦ by rw [δ_naturality_apply, hmk, (I i).inv.tgt_eq])
+           homInvId := CompStruct.mk (mk fun i ↦ (I i).homInvId.simplex)
+             (hext fun i ↦ by rw [δ_naturality_apply, hmk, (I i).homInvId.d₂, Edge.map_edge])
+             (hext fun i ↦ by
+               rw [δ_naturality_apply, hmk, (I i).homInvId.d₀]
+               exact (hmk (fun i ↦ (I i).inv.edge) i).symm)
+             (hext fun i ↦ by
+               rw [δ_naturality_apply, hmk, (I i).homInvId.d₁]
+               exact (σ_naturality_apply _ _ _).symm)
+           invHomId := CompStruct.mk (mk fun i ↦ (I i).invHomId.simplex)
+             (hext fun i ↦ by
+               rw [δ_naturality_apply, hmk, (I i).invHomId.d₂]
+               exact (hmk (fun i ↦ (I i).inv.edge) i).symm)
+             (hext fun i ↦ by rw [δ_naturality_apply, hmk, (I i).invHomId.d₀, Edge.map_edge])
+             (hext fun i ↦ by
+               rw [δ_naturality_apply, hmk, (I i).invHomId.d₁]
+               exact (σ_naturality_apply _ _ _).symm) }⟩
 
 variable (X Y) in
 /-- The core of a product is the product of the cores. -/

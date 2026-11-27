@@ -52,9 +52,13 @@ the full faithfulness of `f`.
 * `SSet.QCat.IsCategoricalEquivalence.exists_isEquivalence`: a categorical equivalence is
   essentially surjective, every vertex of the target being joined by an equivalence to a vertex of
   the image.
-* `SSet.QCat.homEquiv_eq_mk`, `SSet.QCat.exists_isEquivalence_of_iso`: the objects of the
-  hom-categories are the vertices of `Fun(X, Y)`, and their isomorphisms are classes of
-  equivalences of `Fun(X, Y)`.
+* `SSet.QCat.homEquiv_eq_mk`, `SSet.QCat.exists_isEquivalence_of_iso`,
+  `SSet.QCat.nonempty_iso_iff_exists_isEquivalence`: the objects of the hom-categories are the
+  vertices of `Fun(X, Y)`, and two of them are isomorphic exactly when they are joined by an
+  equivalence of `Fun(X, Y)`.
+* `SSet.QCat.IsCategoricalEquivalence.of_iso`,
+  `SSet.QCat.IsCategoricalEquivalence.of_isEquivalence`: categorical equivalences are invariant
+  under invertible `2`-morphisms, that is under equivalences of `Fun(X, Y)`.
 * `SSet.QCat.isFullyFaithful_iff_of_iso`: isomorphic `1`-morphisms are fully faithful together.
 * `SSet.QCat.IsCategoricalEquivalence.isFullyFaithful`: **a categorical equivalence is fully
   faithful.**
@@ -144,6 +148,23 @@ lemma exists_isEquivalence_of_iso {f g : X ⟶ Y} (e : f ≅ g) :
       eqToIso (homEquiv_eq_mk g)
   exact HomotopyCategory.nonempty_iso_mk_iff.1 ⟨φ⟩
 
+/-- **Invertible `2`-morphisms are equivalences of functors.** Two `1`-morphisms `f` and `g` of
+the bicategory of quasicategories are isomorphic in the hom-category, the homotopy category of
+`Fun(X, Y)`, exactly when the vertices of `Fun(X, Y)` corresponding to `f` and `g` are joined by
+an equivalence. -/
+lemma nonempty_iso_iff_exists_isEquivalence {f g : X ⟶ Y} :
+    Nonempty (f ≅ g) ↔ ∃ α : Edge ((ihomObj₀Equiv X.obj Y.obj).symm f.hom)
+      ((ihomObj₀Equiv X.obj Y.obj).symm g.hom), α.IsEquivalence := by
+  refine ⟨fun ⟨e⟩ ↦ exists_isEquivalence_of_iso e, fun h ↦ ?_⟩
+  have := Y.property
+  obtain ⟨φ⟩ := HomotopyCategory.nonempty_iso_mk_iff.2 h
+  let β : CatEnrichedOrdinary.homEquiv f ≅ CatEnrichedOrdinary.homEquiv g :=
+    eqToIso (homEquiv_eq_mk f) ≪≫ φ ≪≫ eqToIso (homEquiv_eq_mk g).symm
+  exact ⟨{ hom := .mk β.hom
+           inv := .mk β.inv
+           hom_inv_id := CatEnrichedOrdinary.Hom.ext _ _ β.hom_inv_id
+           inv_hom_id := CatEnrichedOrdinary.Hom.ext _ _ β.inv_hom_id }⟩
+
 /-- Isomorphic `1`-morphisms of the bicategory of quasicategories induce weak homotopy
 equivalences of right mapping spaces together. -/
 private lemma isWeakHomotopyEquivalence_map_of_iso {f g : X ⟶ Y} (e : f ≅ g) (x y : X.obj _⦋0⦌)
@@ -194,6 +215,20 @@ lemma comp {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsCategoricalEquivalence f)
 /-- An isomorphism of quasicategories is a categorical equivalence. -/
 lemma of_isIso (f : X ⟶ Y) [IsIso f] : IsCategoricalEquivalence f :=
   ⟨inv f, ⟨eqToIso (IsIso.hom_inv_id f).symm⟩, ⟨eqToIso (IsIso.inv_hom_id f)⟩⟩
+
+/-- Categorical equivalences are invariant under invertible `2`-morphisms: a map isomorphic in
+the hom-category to a categorical equivalence is a categorical equivalence. -/
+lemma of_iso {f g : X ⟶ Y} (hf : IsCategoricalEquivalence f) (e : f ≅ g) :
+    IsCategoricalEquivalence g :=
+  let ⟨h, ⟨η⟩, ⟨ε⟩⟩ := hf
+  ⟨h, ⟨η ≪≫ Bicategory.whiskerRightIso e h⟩, ⟨(Bicategory.whiskerLeftIso h e).symm ≪≫ ε⟩⟩
+
+/-- A map of quasicategories joined to a categorical equivalence by an equivalence of the functor
+quasicategory `Fun(X, Y)` is a categorical equivalence. -/
+lemma of_isEquivalence {f g : X ⟶ Y} (hf : IsCategoricalEquivalence f)
+    (α : Edge ((ihomObj₀Equiv X.obj Y.obj).symm f.hom) ((ihomObj₀Equiv X.obj Y.obj).symm g.hom))
+    (hα : α.IsEquivalence) : IsCategoricalEquivalence g :=
+  hf.of_iso (nonempty_iso_iff_exists_isEquivalence.2 ⟨α, hα⟩).some
 
 /-- A categorical equivalence of quasicategories induces an equivalence of homotopy
 categories. -/

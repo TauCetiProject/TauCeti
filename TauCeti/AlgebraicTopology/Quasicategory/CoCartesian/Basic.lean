@@ -195,31 +195,6 @@ attribute [reassoc (attr := simp)] ι₀_homotopy ι₁_homotopy homotopy_comp
 
 variable {X S : SSet.{u}}
 
-section
-
-variable {p : X ⟶ S} {s t : S _⦋0⦌} {e : Edge s t}
-
-/-- The homotopy of a transport starts at the inclusion of the fiber: its restriction along the
-vertex `0` of `Δ[1]` is `X_s ⊗ Δ[0] ⟶ X_s ⟶ X`. -/
-lemma whiskerLeft_δ_one_homotopy (U : CoCartesianTransport p e) :
-    (fiber p s : SSet) ◁ stdSimplex.δ 1 ≫ U.homotopy = fst _ Δ[0] ≫ (fiber p s).ι := by
-  rw [← U.ι₀_homotopy, ← Category.assoc]
-  congr 1
-  exact CartesianMonoidalCategory.hom_ext _ _ (by simp [ι₀])
-    (by simp [ι₀, stdSimplex.δ_one_eq_const])
-
-/-- The homotopy of a transport ends at its functor: its restriction along the vertex `1` of
-`Δ[1]` is `X_s ⊗ Δ[0] ⟶ X_s ⟶ X_t ⟶ X`. -/
-lemma whiskerLeft_δ_zero_homotopy (U : CoCartesianTransport p e) :
-    (fiber p s : SSet) ◁ stdSimplex.δ 0 ≫ U.homotopy =
-      fst _ Δ[0] ≫ U.functor ≫ (fiber p t).ι := by
-  rw [← U.ι₁_homotopy, ← Category.assoc]
-  congr 1
-  exact CartesianMonoidalCategory.hom_ext _ _ (by simp [ι₁])
-    (by simp [ι₁, stdSimplex.δ_zero_eq_const])
-
-end
-
 /-- Along an isomorphism `p`, every edge `e` of the base has a coCartesian transport: the
 fibers are terminal, and the homotopy is `e` lifted along the inverse of `p`. -/
 noncomputable def ofIsIso (p : X ⟶ S) [IsIso p] {s t : S _⦋0⦌} (e : Edge s t) :
