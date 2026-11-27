@@ -25,6 +25,9 @@ continuous dual of `UCB G`, and evaluation at a point of `G` is a mean, so this 
 
 * `TauCeti.Mean G`, `TauCeti.AddMean A`: a positive normalized linear functional on `UCB G` (or
   `AddUCB A`).
+* `TauCeti.Mean.equivNormalizedPositiveLinearMap`,
+  `TauCeti.AddMean.equivNormalizedPositiveLinearMap`: the bijection between means and normalized
+  positive linear functionals.
 * `TauCeti.Mean.toContinuousLinearMap`, `TauCeti.AddMean.toContinuousLinearMap`: the continuous
   linear functional underlying a mean.
 * `TauCeti.Mean.eval`, `TauCeti.AddMean.eval`: evaluation at a point, as a mean.
@@ -128,6 +131,30 @@ def mk₀ (φ : UCB G →ₗ[ℝ] ℝ) (hφ : ∀ f, 0 ≤ f → 0 ≤ φ f) (h�
 @[to_additive (attr := simp)]
 theorem mk₀_apply (φ : UCB G →ₗ[ℝ] ℝ) (hφ : ∀ f, 0 ≤ f → 0 ≤ φ f) (h₁ : φ 1 = 1) (f : UCB G) :
     mk₀ φ hφ h₁ f = φ f :=
+  (rfl)
+
+variable (G) in
+/-- Means on `UCB G` correspond bijectively to normalized positive linear functionals on
+`UCB G`. -/
+@[to_additive
+  /-- Additive means on `AddUCB G` correspond bijectively to normalized positive linear
+  functionals on `AddUCB G`. -/]
+def equivNormalizedPositiveLinearMap : Mean G ≃ {m : UCB G →ₚ[ℝ] ℝ // m 1 = 1} where
+  toFun m := ⟨m.toPositiveLinearMap, m.map_one⟩
+  invFun m := mk₀ m.val.toLinearMap (fun _ hf => map_nonneg m.val hf) m.property
+  left_inv _ := ext fun _ => rfl
+  right_inv _ :=
+    Subtype.ext <| PositiveLinearMap.toLinearMap_injective <| LinearMap.ext fun _ => rfl
+
+@[to_additive (attr := simp)]
+theorem equivNormalizedPositiveLinearMap_apply (m : Mean G) (f : UCB G) :
+    (equivNormalizedPositiveLinearMap G m).val f = m f :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem equivNormalizedPositiveLinearMap_symm_apply
+    (m : {m : UCB G →ₚ[ℝ] ℝ // m 1 = 1}) (f : UCB G) :
+    (equivNormalizedPositiveLinearMap G).symm m f = m.val f :=
   (rfl)
 
 variable (m : Mean G)

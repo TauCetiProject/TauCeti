@@ -362,6 +362,14 @@ theorem coe_inf (f g : UCB G) : ((f ⊓ g : UCB G) : G →ᵇ ℝ) = (f : G →�
 theorem coe_abs (f : UCB G) : ((|f| : UCB G) : G →ᵇ ℝ) = |(f : G →ᵇ ℝ)| :=
   rfl
 
+/-- Evaluating the constant function `1` in `UCB G` at a point gives `1`. -/
+-- `simp↓`: fire before `OneMemClass.coe_one` rewrites `↑1` to `1 : G →ᵇ ℝ`, which would introduce
+-- `BoundedContinuousFunction.instOne` and break `@[to_additive]`.
+@[to_additive (attr := simp↓) _root_.TauCeti.AddUCB.coe_one_apply
+  /-- Evaluating the constant function `1` in `AddUCB G` at a point gives `1`. -/]
+theorem coe_one_apply (x : G) : ((1 : UCB G) : G →ᵇ ℝ) x = 1 :=
+  rfl
+
 /-- Two elements of `UCB G` are equal when they agree at every point. -/
 @[to_additive (attr := ext)
   /-- Two elements of `AddUCB G` are equal when they agree at every point. -/]

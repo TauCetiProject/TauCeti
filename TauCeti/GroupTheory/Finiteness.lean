@@ -38,9 +38,10 @@ lying in a finitely generated subgroup.
   has a torsion-free subgroup of finite index.
 * `TauCeti.CommGroup.fg_iff_exists_fin_zpowersPiHom_surjective`,
   `TauCeti.AddCommGroup.fg_iff_exists_fin_zmultiplesPiHom_surjective`,
-  `TauCeti.CommGroup.fg_iff_exists_fin_monoidHom_surjective`, and
-  `TauCeti.AddCommGroup.fg_iff_exists_fin_addMonoidHom_surjective`: a commutative group is finitely
-  generated exactly when it admits a surjective homomorphism from a finite power of `ℤ`.
+  `TauCeti.CommGroup.fg_iff_exists_fin_monoidHom_surjective`,
+  `TauCeti.AddCommGroup.fg_iff_exists_fin_addMonoidHom_surjective`, and
+  `Subgroup.fg_iff_exists_fin_monoidHom`: finite-generation characterizations via homomorphisms from
+  finite powers of `ℤ` or `Multiplicative ℤ`.
 
 * `AddSubgroup.fg_of_addCommGroup` and `Subgroup.fg_of_commGroup`: a subgroup of a finitely
   generated commutative group is finitely generated. The argument is Noetherianity of `ℤ`, so the
@@ -369,6 +370,17 @@ theorem CommGroup.fg_iff_exists_fin_monoidHom_surjective {G : Type*} [CommGroup 
         Multiplicative.ofAdd.surjective)
 
 end TauCeti
+
+/-- A subgroup of a commutative group is finitely generated if and only if it is the range of a
+homomorphism out of `Fin n → Multiplicative ℤ` for some `n`. This is the multiplicative counterpart
+of `AddSubgroup.fg_iff_exists_fin_addMonoidHom`. -/
+theorem Subgroup.fg_iff_exists_fin_monoidHom {G : Type*} [CommGroup G] {H : Subgroup G} :
+    H.FG ↔ ∃ (n : ℕ) (f : (Fin n → Multiplicative ℤ) →* G), f.range = H := by
+  refine ⟨fun hH => ?_, fun ⟨_, f, hf⟩ => hf ▸ (Group.fg_iff_subgroup_fg f.range).1 inferInstance⟩
+  have : Group.FG H := (Group.fg_iff_subgroup_fg H).2 hH
+  obtain ⟨n, f, hf⟩ := TauCeti.CommGroup.fg_iff_exists_fin_monoidHom_surjective.1 this
+  refine ⟨n, H.subtype.comp f, ?_⟩
+  rw [MonoidHom.range_comp, MonoidHom.range_eq_top.2 hf, Subgroup.map_top, H.range_subtype]
 
 /-- **One exponent brings every root of `E` inside a finitely generated subgroup back to `E`.**
 If `H` is a finitely generated subgroup of a commutative group and `E` is any subgroup, there is a
