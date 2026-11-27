@@ -48,28 +48,39 @@ variable {C D : Type*} [Category* C] [Category* D]
 
 attribute [local instance] Functor.preservesInitialObject_of_preservesZeroMorphisms
 
+-- These instances bridge the graded tensor and explicit antidiagonal presentations
+-- for this comparison and its summand computation rule.
+private instance hasCoproductCochainTensor (K L : CochainComplex C ℤ) (n : ℤ) :
+    HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+      K.X pq.val.1 ⊗ L.X pq.val.2) :=
+  (inferInstance : GradedObject.HasTensor K.X L.X) n
+
+private instance hasCoproductMapCochainTensor (K L : CochainComplex C ℤ) (n : ℤ) :
+    HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+      F.obj (K.X pq.val.1) ⊗ F.obj (L.X pq.val.2)) :=
+  (inferInstance : GradedObject.HasTensor
+    (fun p ↦ F.obj (K.X p)) (fun q ↦ F.obj (L.X q))) n
+
+private def mapCochainTensorSummandsIso (K L : CochainComplex C ℤ) (n : ℤ) :
+    Discrete.functor (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+      F.obj (K.X pq.val.1) ⊗ F.obj (L.X pq.val.2)) ≅
+    Discrete.functor (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+      F.obj (K.X pq.val.1 ⊗ L.X pq.val.2)) :=
+  Discrete.natIso (fun pq ↦ Monoidal.μIso F (K.X pq.as.val.1) (L.X pq.as.val.2))
+
+private instance hasCoproductMappedCochainTensor (K L : CochainComplex C ℤ) (n : ℤ) :
+    HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+      F.obj (K.X pq.val.1 ⊗ L.X pq.val.2)) :=
+  hasColimit_of_iso (F.mapCochainTensorSummandsIso K L n).symm
+
 /-- The degreewise tensor comparison for an additive monoidal functor, formed by applying
 its tensor isomorphism to every summand of the tensor product. -/
 def mapCochainTensorXIso (K L : CochainComplex C ℤ) (n : ℤ) :
     (((F.mapHomologicalComplex (.up ℤ)).obj K) ⊗
-      ((F.mapHomologicalComplex (.up ℤ)).obj L)).X n ≅ F.obj ((K ⊗ L).X n) := by
-  haveI hC : HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      K.X pq.val.1 ⊗ L.X pq.val.2) :=
-    (inferInstance : GradedObject.HasTensor K.X L.X) n
-  haveI hD : HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      F.obj (K.X pq.val.1) ⊗ F.obj (L.X pq.val.2)) :=
-    (inferInstance : GradedObject.HasTensor
-      (fun p ↦ F.obj (K.X p)) (fun q ↦ F.obj (L.X q))) n
-  let e : Discrete.functor (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      F.obj (K.X pq.val.1) ⊗ F.obj (L.X pq.val.2)) ≅
-      Discrete.functor (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-        F.obj (K.X pq.val.1 ⊗ L.X pq.val.2)) :=
-    Discrete.natIso (fun pq ↦ Monoidal.μIso F (K.X pq.as.val.1) (L.X pq.as.val.2))
-  haveI hF : HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      F.obj (K.X pq.val.1 ⊗ L.X pq.val.2)) := hasColimit_of_iso e.symm
-  -- Supply the individual coproduct instances explicitly across the graded-object
-  -- and antidiagonal presentations, which do not unify during instance synthesis.
-  exact (@HasColimit.isoOfNatIso _ _ _ _ _ _ hD hF e) ≪≫
+      ((F.mapHomologicalComplex (.up ℤ)).obj L)).X n ≅ F.obj ((K ⊗ L).X n) :=
+  (@HasColimit.isoOfNatIso _ _ _ _ _ _
+    (hasCoproductMapCochainTensor F K L n) (hasCoproductMappedCochainTensor F K L n)
+    (F.mapCochainTensorSummandsIso K L n)) ≪≫
     (PreservesCoproduct.iso F
       (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦ K.X pq.val.1 ⊗ L.X pq.val.2)).symm
 
@@ -81,36 +92,22 @@ lemma ι_mapCochainTensorXIso_hom (K L : CochainComplex C ℤ) (p q n : ℤ)
     ιTensorObj ((F.mapHomologicalComplex (.up ℤ)).obj K)
         ((F.mapHomologicalComplex (.up ℤ)).obj L) p q n h ≫
         (F.mapCochainTensorXIso K L n).hom =
-      (Monoidal.μIso F (K.X p) (L.X q)).hom ≫ F.map (ιTensorObj K L p q n h) := by
-  have : HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      K.X pq.val.1 ⊗ L.X pq.val.2) :=
-    (inferInstance : GradedObject.HasTensor K.X L.X) n
-  have : HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      F.obj (K.X pq.val.1) ⊗ F.obj (L.X pq.val.2)) :=
-    (inferInstance : GradedObject.HasTensor
-      (fun p ↦ F.obj (K.X p)) (fun q ↦ F.obj (L.X q))) n
-  let e : Discrete.functor (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      F.obj (K.X pq.val.1) ⊗ F.obj (L.X pq.val.2)) ≅
-      Discrete.functor (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-        F.obj (K.X pq.val.1 ⊗ L.X pq.val.2)) :=
-    Discrete.natIso (fun pq ↦ Monoidal.μIso F (K.X pq.as.val.1) (L.X pq.as.val.2))
-  have : HasCoproduct (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      F.obj (K.X pq.val.1 ⊗ L.X pq.val.2)) := hasColimit_of_iso e.symm
+      LaxMonoidal.μ F (K.X p) (L.X q) ≫ F.map (ιTensorObj K L p q n h) := by
   -- Express both tensor inclusions over the explicit antidiagonal: rewriting across
   -- the complex-shape index and its definitionally equal subtype otherwise fails.
   change Sigma.ι
       (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
         F.obj (K.X pq.val.1) ⊗ F.obj (L.X pq.val.2)) ⟨(p, q), h⟩ ≫
-      ((HasColimit.isoOfNatIso e).hom ≫
+      ((HasColimit.isoOfNatIso (F.mapCochainTensorSummandsIso K L n)).hom ≫
         (PreservesCoproduct.iso F
           (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
             K.X pq.val.1 ⊗ L.X pq.val.2)).inv) =
-      (Monoidal.μIso F (K.X p) (L.X q)).hom ≫ F.map (Sigma.ι
+      LaxMonoidal.μ F (K.X p) (L.X q) ≫ F.map (Sigma.ι
         (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
           K.X pq.val.1 ⊗ L.X pq.val.2) ⟨(p, q), h⟩)
   rw [PreservesCoproduct.iso_inv, HasColimit.ι_isoOfNatIso_hom_assoc,
     ι_comp_sigmaComparison]
-  rfl
+  simp only [mapCochainTensorSummandsIso, Discrete.natIso_hom_app, Monoidal.μIso_hom]
 
 /-- On the image of a homogeneous summand the inverse comparison uses the inverse
 monoidal tensor comparison. -/
@@ -118,7 +115,7 @@ monoidal tensor comparison. -/
 lemma map_ι_mapCochainTensorXIso_inv (K L : CochainComplex C ℤ) (p q n : ℤ)
     (h : p + q = n) :
     F.map (ιTensorObj K L p q n h) ≫ (F.mapCochainTensorXIso K L n).inv =
-      (Monoidal.μIso F (K.X p) (L.X q)).inv ≫
+      OplaxMonoidal.δ F (K.X p) (L.X q) ≫
         ιTensorObj ((F.mapHomologicalComplex (.up ℤ)).obj K)
           ((F.mapHomologicalComplex (.up ℤ)).obj L) p q n h := by
   rw [Iso.comp_inv_eq, Category.assoc, ι_mapCochainTensorXIso_hom]
@@ -136,7 +133,7 @@ private lemma mapCochainTensorXIso_hom_comm (K L : CochainComplex C ℤ) (n : �
   simp only [F.map_add, F.map_units_smul, F.map_comp,
     Preadditive.comp_add, Linear.comp_units_smul, Preadditive.add_comp,
     Linear.units_smul_comp, Category.assoc, ι_mapCochainTensorXIso_hom,
-    mapHomologicalComplex_obj_d, mapHomologicalComplex_obj_X, Monoidal.μIso_hom,
+    mapHomologicalComplex_obj_d, mapHomologicalComplex_obj_X,
     LaxMonoidal.μ_natural_left_assoc, LaxMonoidal.μ_natural_right_assoc]
 
 /-- An additive strong monoidal functor preserving the antidiagonal coproducts commutes
@@ -178,7 +175,7 @@ lemma mapCochainTensorIso_hom_naturality {K₁ K₂ L₁ L₂ : CochainComplex C
     mapHomologicalComplex_map_f, ι_mapBifunctorMap_assoc,
     ι_mapCochainTensorXIso_hom, ι_mapCochainTensorXIso_hom_assoc,
     ← F.map_comp, ι_mapBifunctorMap]
-  simp [Monoidal.μIso_hom, LaxMonoidal.μ_natural_left_assoc,
+  simp [LaxMonoidal.μ_natural_left_assoc,
     LaxMonoidal.μ_natural_right_assoc]
 
 /-- The tensor comparison as a natural isomorphism of bifunctors on unbounded cochain
