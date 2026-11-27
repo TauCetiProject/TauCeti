@@ -48,6 +48,7 @@ in explicit prime-counting estimates.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
+* `Real.log_sub_one_div_le_log`: `log a - 1 / m ≤ log m` for `0 ≤ m` and `0 ≤ a ≤ m + 1`.
 -/
 
 public section
@@ -145,5 +146,22 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
   · exact (mul_nonpos_of_nonneg_of_nonpos ha
       (log_nonpos (div_nonneg (Nat.cast_nonneg p) (Nat.cast_nonneg q)) (le_of_not_ge h))).trans
       (log_natCast_nonneg N)
+
+/-- The logarithm grows by at most `1 / m` over a step of length one: for `0 ≤ m` and
+`0 ≤ a ≤ m + 1`, `log a - 1 / m ≤ log m`. At `m = 0` this reads `log a ≤ 0`. -/
+theorem log_sub_one_div_le_log {a m : ℝ} (ha : 0 ≤ a) (hm : 0 ≤ m) (h : a ≤ m + 1) :
+    log a - 1 / m ≤ log m := by
+  rcases hm.eq_or_lt with rfl | hm
+  · simpa using log_nonpos ha (by linarith)
+  rcases ha.eq_or_lt with rfl | ha
+  · have h1 := one_sub_inv_le_log_of_pos hm
+    rw [log_zero, one_div]
+    linarith [inv_pos.2 hm]
+  have h1 := log_le_sub_one_of_pos (div_pos ha hm)
+  rw [log_div ha.ne' hm.ne'] at h1
+  have h2 : a / m - 1 ≤ 1 / m := by
+    rw [div_sub_one hm.ne', div_le_div_iff_of_pos_right hm]
+    linarith
+  linarith
 
 end Real
