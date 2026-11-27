@@ -116,7 +116,7 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
   and `1 ≤ r`.
 * `Real.tendsto_sqrt_nhds_zero_iff`: an eventually nonnegative function tends to `0` exactly when
   its square root does.
-* `Real.nat_sqrt_floor_le_real_sqrt`, `Real.real_sqrt_lt_nat_sqrt_floor_succ`,
+* `Real.nat_sqrt_floor_le_real_sqrt`, `Real.real_sqrt_lt_nat_sqrt_floor_add_one`,
   `Real.nat_floor_real_sqrt_eq_nat_sqrt_floor`: for every real `x`, the natural square root of
   `⌊x⌋₊` satisfies `Nat.sqrt ⌊x⌋₊ ≤ √x < Nat.sqrt ⌊x⌋₊ + 1`, so `⌊√x⌋₊ = Nat.sqrt ⌊x⌋₊`.
 * `TauCeti.sum_range_inv_sqrt_add_one_le`: the sum of the reciprocal square roots of `1` through
@@ -830,10 +830,10 @@ theorem nat_sqrt_floor_le_real_sqrt (x : ℝ) : ((⌊x⌋₊.sqrt : ℕ) : ℝ) 
 
 /-- For every real `x`, `√x` is less than the natural square root of `⌊x⌋₊` plus one. This
 extends Mathlib's `Real.real_sqrt_lt_nat_sqrt_succ` from natural to real `x`. -/
-theorem real_sqrt_lt_nat_sqrt_floor_succ (x : ℝ) : √x < (⌊x⌋₊.sqrt : ℕ) + 1 := by
+theorem real_sqrt_lt_nat_sqrt_floor_add_one (x : ℝ) : √x < (⌊x⌋₊.sqrt : ℕ) + 1 := by
   rw [sqrt_lt' (by positivity)]
   have h : ((⌊x⌋₊ + 1 : ℕ) : ℝ) ≤ ((⌊x⌋₊.sqrt + 1) ^ 2 : ℕ) :=
-    Nat.cast_le.2 (Nat.succ_le_of_lt (Nat.lt_succ_sqrt' _))
+    Nat.cast_le.2 (Nat.add_one_le_iff.2 (Nat.sqrt_lt'.1 (Nat.lt_add_one _)))
   push_cast at h
   linarith [Nat.lt_floor_add_one x]
 
@@ -842,7 +842,7 @@ Mathlib's `Real.nat_floor_real_sqrt_eq_nat_sqrt` from natural to real `x`. -/
 @[simp]
 theorem nat_floor_real_sqrt_eq_nat_sqrt_floor (x : ℝ) : ⌊√x⌋₊ = ⌊x⌋₊.sqrt :=
   (Nat.floor_eq_iff (sqrt_nonneg x)).2
-    ⟨nat_sqrt_floor_le_real_sqrt x, real_sqrt_lt_nat_sqrt_floor_succ x⟩
+    ⟨nat_sqrt_floor_le_real_sqrt x, real_sqrt_lt_nat_sqrt_floor_add_one x⟩
 
 end Real
 

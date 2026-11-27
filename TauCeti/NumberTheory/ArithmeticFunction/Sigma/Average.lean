@@ -61,8 +61,8 @@ private theorem card_filter_mul_le_of_sqrt_lt {N a : ℕ} (ha : N.sqrt < a) :
     simp only [mem_filter, mem_Ioc, Nat.le_div_iff_mul_le ha0, mul_comm a b]
     refine ⟨fun ⟨⟨hb0, _⟩, h⟩ ↦ ⟨hb0, h⟩, fun ⟨hb0, h⟩ ↦ ⟨⟨hb0, ?_⟩, h⟩⟩
     by_contra hb
-    exact absurd ((Nat.mul_le_mul (Nat.succ_le_of_lt (not_le.1 hb)) (Nat.succ_le_of_lt ha)).trans h)
-      (not_le.2 (Nat.lt_succ_sqrt N))
+    have hN : N < (N.sqrt + 1) * (N.sqrt + 1) := Nat.sqrt_lt.1 (Nat.lt_add_one N.sqrt)
+    nlinarith
   rw [h, Nat.card_Ioc, Nat.sub_zero]
 
 /-- For `b ≥ 1`, the `a` in `(√N, N]` with `a b ≤ N` are those in `(√N, N / b]`. -/
@@ -141,7 +141,7 @@ theorem abs_sum_Ioc_sigma_zero_sub_le {x : ℝ} (hx : 0 ≤ x) :
   have hM : 0 < ⌊x⌋₊.sqrt := Nat.sqrt_pos.2 (Nat.floor_pos.2 hx1)
   have hM1 : (1 : ℝ) ≤ (⌊x⌋₊.sqrt : ℕ) := by exact_mod_cast hM
   have hMs := nat_sqrt_floor_le_real_sqrt x
-  have hsM := real_sqrt_lt_nat_sqrt_floor_succ x
+  have hsM := real_sqrt_lt_nat_sqrt_floor_add_one x
   have hxs : x = √x * √x := (mul_self_sqrt hx).symm
   -- The hyperbola identity, with the terms `⌊N / a⌋` compared with `x / a`.
   have hid : ∑ n ∈ Ioc 0 ⌊x⌋₊, (σ 0 n : ℝ) + (⌊x⌋₊.sqrt : ℕ) ^ 2 =
