@@ -69,8 +69,7 @@ theorem hasSum_coeff_coe_mul_rescale_exp {Q : K[X]} {ψ y : K}
   have hQ := TauCeti.PowerSeries.isRestricted_polynomial (c := ‖y‖) Q
   have he := isRestricted_rescale_exp (norm_nonneg y) (by rwa [← norm_mul])
   have hQe : ((Q : K⟦X⟧) * rescale ψ (exp K)).IsRestricted ‖y‖ := hQ.mul he
-  have h := hQe.hasSum_evalAt (A := K) le_rfl
-  rwa [hQ.evalAt_mul he le_rfl, evalAt_coe, evalAt_rescale, evalAt_exp, smul_eq_mul,
-    Polynomial.coe_aeval_eq_eval] at h
+  simpa [hQ.evalAt_mul he le_rfl, evalAt_coe, evalAt_rescale, evalAt_exp,
+    Polynomial.coe_aeval_eq_eval] using hQe.hasSum_evalAt (A := K) le_rfl
 
 end TauCeti

@@ -36,9 +36,9 @@ theorem iterate_derivative_coe_mul_rescale_exp {R : Type*} [CommRing R] [Algebra
   induction m with
   | zero => simp
   | succ m ih =>
-    rw [Function.iterate_succ_apply', ih, Derivation.leibniz, derivative_rescale, derivative_exp,
-      derivative_coe, Polynomial.expTwistDeriv_succ, Polynomial.coe_add, Polynomial.smul_eq_C_mul,
-      Polynomial.coe_mul, Polynomial.coe_C, smul_eq_mul, smul_eq_mul]
+    rw [Function.iterate_succ_apply', ih]
+    simp [Derivation.leibniz, derivative_rescale, derivative_exp, derivative_coe,
+      Polynomial.expTwistDeriv_succ, Polynomial.smul_eq_C_mul]
     ring
 
 end PowerSeries

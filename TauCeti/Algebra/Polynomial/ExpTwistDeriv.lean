@@ -20,8 +20,9 @@ Since `d/dX` commutes with multiplication by the constant `c`, the binomial theo
 operator as `∑_{j ≤ m} C(m, j) c^{m - j} P^{(j)}` (`Polynomial.expTwistDeriv_eq_sum`). In
 particular `expTwistDeriv c m` never raises the degree (`Polynomial.natDegree_expTwistDeriv_le`),
 and it is the `m`-th iterate of `q ↦ q' + c q` (`Polynomial.expTwistDeriv_eq_iterate`), whose
-degree and kernel are described by `Polynomial.natDegree_iterate_derivative_add_C_mul` and
-`Polynomial.iterate_derivative_add_C_mul_eq_zero_iff` when `c ≠ 0`.
+degree and kernel are described, over a semiring without zero divisors and when `c ≠ 0`, by
+`Polynomial.natDegree_iterate_derivative_add_C_mul` and
+`Polynomial.iterate_derivative_add_C_mul_eq_zero_iff`.
 
 Auxiliary functions in the method of linear forms in logarithms are sums of terms
 `P(X) e^{ψ X}`; their derivatives of every order are again of this shape, with the polynomial
@@ -95,8 +96,8 @@ theorem expTwistDeriv_eq_sum (c : R) (m : ℕ) (P : R[X]) :
 theorem expTwistDeriv_C (c : R) (m : ℕ) (a : R) : expTwistDeriv c m (C a) = C (c ^ m * a) := by
   induction m with
   | zero => simp
-  | succ m ih => rw [expTwistDeriv_succ, ih, derivative_C, zero_add, smul_C, smul_eq_mul, pow_succ',
-      mul_assoc]
+  | succ m ih => simp only [expTwistDeriv_succ, ih, derivative_C, zero_add, smul_C, smul_eq_mul,
+      pow_succ', mul_assoc]
 
 /-- On the constant polynomial `1`, `E_{c, m} 1 = C (c ^ m)`. -/
 @[simp]
