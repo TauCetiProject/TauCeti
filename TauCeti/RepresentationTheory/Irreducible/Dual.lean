@@ -10,8 +10,8 @@ public import TauCeti.RepresentationTheory.Irreducible
 /-!
 # Irreducibility of contragredient representations
 
-For finite-dimensional group representations over a field, annihilators exchange
-subrepresentations of a representation and of its contragredient.
+The contragredient of a finite-dimensional irreducible group representation over a field is
+irreducible. The proof uses the annihilator correspondence for subrepresentations.
 -/
 
 public section

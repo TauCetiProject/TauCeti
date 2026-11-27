@@ -34,6 +34,8 @@ variable {ι : Type*} {n : ℕ}
 the coefficient representation of the pointwise dual weight. -/
 theorem nonempty_equiv_dual_coefficientRep [Finite ι] (a : EmbeddingWeight ι n) :
     Nonempty (a.coefficientRep.dual.Equiv a.dual.coefficientRep) := by
+  -- The tensor equivalences need dependent families of instances. Typeclass search finds
+  -- the instances for individual Weyl modules, so assemble the families pointwise.
   let _ : ∀ i, AddCommGroup (weylModuleOfShape ℂ n (a i).detShiftShape).toSubmodule :=
     fun _ ↦ inferInstance
   let _ : ∀ i, AddCommGroup (weylModuleOfShape ℂ n (a.dual i).detShiftShape).toSubmodule :=
@@ -46,6 +48,8 @@ theorem nonempty_equiv_dual_coefficientRep [Finite ι] (a : EmbeddingWeight ι n
       (rationalWeylRep ℂ n (a.dual i))) := by
     rw [EmbeddingWeight.dual_apply]
     exact nonempty_equiv_dual_rationalWeylRep (a i)
+  -- The tensor and coefficient spaces use the same additive group construction from the
+  -- complex module structure, so the duals agree after rewriting the representations.
   rw [coefficientRep_eq, coefficientRep_eq]
   exact ⟨(Representation.piExternalTensorDualEquiv
     (fun i ↦ rationalWeylRep ℂ n (a i))).symm.trans

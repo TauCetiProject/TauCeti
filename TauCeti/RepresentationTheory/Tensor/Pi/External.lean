@@ -24,6 +24,11 @@ tensor product of a finite family of finite-dimensional irreducibles is irreduci
 uses Burnside density on the factors and the canonical comparison of the tensor product of the
 endomorphism spaces with the endomorphism space of the tensor product.
 
+Factorwise equivariant equivalences induce an equivalence of external tensor products
+(`Representation.Equiv.piExternalTensor`). For a finite family of finite free modules,
+the external tensor product of the contragredients is equivalent to the contragredient
+of the external tensor product (`Representation.piExternalTensorDualEquiv`).
+
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Springer GTM 129 (1991),

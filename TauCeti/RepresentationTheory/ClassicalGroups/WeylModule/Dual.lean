@@ -56,26 +56,17 @@ private theorem sum_le_sum_of_weightSpace_dual_rationalWeylRep_ne_bot
   have ha' := (weightSpace_dual_rationalWeylRep_ne_bot_iff l a).mp ha
   have hsum := sum_eq_sum_of_weightSpace_ne_bot ha'
     (weightSpace_rationalWeylRep_self_ne_bot ℂ l)
-  have hbound := sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot ha' (n - min m n)
+  have hbound := sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot ha' (n - m)
   rw [← prefixSum_def, ← prefixSum_def] at hbound
   have htotal : (∑ i, a i) = ∑ i, l.dual.val i := by
     have hrev : (∑ i : Fin n, a i.rev) = ∑ i, a i := Equiv.sum_comp Fin.revPerm a
     rw [Finset.sum_neg_distrib, hrev] at hsum
     rw [DominantWeight.sum_dual, ← neg_eq_iff_eq_neg, hsum]
-  have hprefix (x : Fin n → ℤ) :
-      prefixSum (n - min m n) (fun i ↦ -x i.rev) = prefixSum (min m n) x - ∑ i, x i := by
-    have hk : n - min m n ≤ n := Nat.sub_le _ _
-    rw [prefixSum_comp_rev (x := fun i ↦ -x i) hk, Nat.sub_sub_self (Nat.min_le_right _ _),
-      Finset.sum_neg_distrib, prefixSum_def]
-    have hsplit := Finset.sum_filter_add_sum_filter_not Finset.univ
-      (fun i : Fin n ↦ i.val < min m n) x
-    simp only [not_lt] at hsplit
-    omega
   have hl : (fun i ↦ -l.dual.val i.rev) = l.val := by
     funext i
     simp
-  rw [← hl, hprefix, hprefix, htotal, sub_le_sub_iff_right, prefixSum_min,
-    prefixSum_min] at hbound
+  rw [← hl, prefixSum_sub_neg_comp_rev, prefixSum_sub_neg_comp_rev, htotal,
+    sub_le_sub_iff_right] at hbound
   exact hbound
 
 /-- The contragredient of `V_λ` for `GLₙ(ℂ)` is the rational Weyl module

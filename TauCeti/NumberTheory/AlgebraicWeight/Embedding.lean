@@ -122,6 +122,16 @@ theorem dual_apply (a : EmbeddingWeight ι n) (τ : ι) : a.dual τ = (a τ).dua
 theorem dual_dual (a : EmbeddingWeight ι n) : a.dual.dual = a :=
   funext fun τ ↦ by simp
 
+/-- Pointwise contragredient duality is an involution on embedding-indexed weights. -/
+theorem dual_involutive : Function.Involutive (dual (ι := ι) (n := n)) := dual_dual
+
+/-- An embedding-indexed weight is determined by its dual. -/
+theorem dual_injective : Function.Injective (dual (ι := ι) (n := n)) := dual_involutive.injective
+
+@[simp]
+theorem dual_inj {a b : EmbeddingWeight ι n} : a.dual = b.dual ↔ a = b :=
+  dual_injective.eq_iff
+
 /-! ### Base change -/
 
 section BaseChange
