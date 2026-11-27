@@ -83,7 +83,7 @@ theorem isReductiveCartanInvolution_iff_of_intertwine (e : L ≃ₗ⁅K⁆ L')
 
 /-- Conjugating a Lie automorphism preserves the reductive Cartan-involution property. -/
 theorem isReductiveCartanInvolution_conj (e : L ≃ₗ⁅K⁆ L') (θ : L ≃ₗ⁅K⁆ L) :
-    ((e.symm.trans θ).trans e).IsReductiveCartanInvolution ↔ θ.IsReductiveCartanInvolution :=
+    (e.conj θ).IsReductiveCartanInvolution ↔ θ.IsReductiveCartanInvolution :=
   isReductiveCartanInvolution_iff_of_intertwine e fun x ↦ by simp
 
 /-- On `L = Z(L) ⊕ [L, L]`, an automorphism built from `(θZ, θD)` is a reductive Cartan involution
@@ -107,11 +107,6 @@ theorem involutive (hθ : θ.IsReductiveCartanInvolution) : Function.Involutive 
 theorem isCartanInvolution_derivedSeries (hθ : θ.IsReductiveCartanInvolution) :
     (θ.derivedSeriesCongr 1).IsCartanInvolution :=
   hθ.2
-
-/-- The restriction of a reductive Cartan involution to the centre is involutive. -/
-theorem involutive_centerCongr (hθ : θ.IsReductiveCartanInvolution) :
-    Function.Involutive θ.centerCongr :=
-  LieEquiv.involutive_centerCongr hθ.1
 
 /-- The derived algebra `[L, L]` has nondegenerate Killing form. -/
 theorem isKilling_derivedSeries (hθ : θ.IsReductiveCartanInvolution) :

@@ -137,24 +137,12 @@ omit [IsStrictOrderedRing K] in
 property. -/
 theorem isCartanInvolution_conj {L' : Type*} [LieRing L'] [LieAlgebra K L']
     (e : L ≃ₗ⁅K⁆ L') (θ : L ≃ₗ⁅K⁆ L) :
-    ((e.symm.trans θ).trans e).IsCartanInvolution ↔ θ.IsCartanInvolution :=
+    (e.conj θ).IsCartanInvolution ↔ θ.IsCartanInvolution :=
   isCartanInvolution_iff_of_intertwine e fun x ↦ by simp
 
 namespace IsCartanInvolution
 
 variable {θ : L ≃ₗ⁅K⁆ L}
-
-omit [IsStrictOrderedRing K] in
-/-- `B_θ(x, x) > 0` for every nonzero `x`. -/
-theorem twistedKillingForm_self_pos (hθ : θ.IsCartanInvolution) {x : L} (hx : x ≠ 0) :
-    0 < θ.twistedKillingForm x x :=
-  hθ.posDef_twistedKillingForm x hx
-
-omit [IsStrictOrderedRing K] in
-/-- `B_θ(x, x) ≥ 0` for every `x`. -/
-theorem twistedKillingForm_self_nonneg (hθ : θ.IsCartanInvolution) (x : L) :
-    0 ≤ θ.twistedKillingForm x x :=
-  hθ.posDef_twistedKillingForm.nonneg x
 
 omit [IsStrictOrderedRing K] in
 /-- A Cartan involution is its own inverse. -/
@@ -297,13 +285,12 @@ theorem cartanP_eq_bot_iff (hθ : θ.IsCartanInvolution) :
   · by_contra hx₀
     exact (hθ.killingForm_apply_self_pos_of_mem_cartanP hx hx₀).not_gt (h x hx₀)
 
+omit [IsStrictOrderedRing K] in
 variable {L' : Type*} [LieRing L'] [LieAlgebra K L'] in
 /-- The transport `e ∘ θ ∘ e⁻¹` of a Cartan involution along an isomorphism `e` is a Cartan
 involution. -/
-theorem conj (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅K⁆ L') : (e.conj θ).IsCartanInvolution := by
-  refine isCartanInvolution_iff.mpr ⟨involutive_conj hθ.involutive, fun x hx ↦ ?_⟩
-  rw [conj_apply, ← e.apply_symm_apply x, killingForm_of_equiv_apply, e.symm_apply_apply]
-  exact hθ.killingForm_apply_apply_neg (by simpa using hx)
+theorem conj (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅K⁆ L') : (e.conj θ).IsCartanInvolution :=
+  (isCartanInvolution_conj e θ).mpr hθ
 
 /-! ### The fixed subalgebra `𝔨` -/
 

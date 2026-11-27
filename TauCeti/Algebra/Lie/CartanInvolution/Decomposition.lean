@@ -261,13 +261,8 @@ variable {e : L ≃ₗ⁅R⁆ L'}
 /-- The `-1`-eigenspace of `e ∘ θ ∘ e⁻¹` is the image under `e` of that of `θ`. -/
 @[simp]
 theorem cartanP_conj :
-    (e.conj θ).cartanP = θ.cartanP.map (e.toLinearEquiv : L →ₗ[R] L') := by
-  ext x
-  refine ⟨fun hx ↦ ⟨e.symm x, ?_, by simp⟩, ?_⟩
-  · rw [mem_cartanP, conj_apply] at hx
-    simpa using congrArg e.symm hx
-  · rintro ⟨y, hy, rfl⟩
-    simp [mem_cartanP.mp hy]
+    (e.conj θ).cartanP = θ.cartanP.map (e.toLinearEquiv : L →ₗ[R] L') :=
+  (map_cartanP e fun x ↦ by simp).symm
 
 end Conj
 

@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.Orientation.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Sign
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.LocalHomeomorph
 public import TauCeti.Geometry.Manifold.Orientation.Cover.FundamentalClass
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character.Basic
 
 /-!
 # The homological orientation character is the orientation character of the tangent bundle

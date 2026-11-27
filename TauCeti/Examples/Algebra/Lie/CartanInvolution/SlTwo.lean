@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
 import TauCeti.Algebra.Lie.GeneralLinear.Radical
 import TauCeti.Algebra.Lie.Sl2.Killing
+import TauCeti.Algebra.Lie.SpecialLinear.Cartan.Killing
 
 /-!
 # Cartan involutions of `𝔰𝔩₂(ℝ)` and of an abelian Lie algebra
@@ -79,10 +80,8 @@ example {X : sl (Fin 2) ℝ} (hX : X ≠ 0) :
 /-- **`θ = 1` is not a Cartan involution of `𝔰𝔩₂(ℝ)`**: for `H = diag(1, -1)`,
 `B_θ(H, H) = -B(H, H) = -8 < 0`. -/
 theorem not_isCartanInvolution_refl_slFinTwo :
-    ¬ (LieEquiv.refl : sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ sl (Fin 2) ℝ).IsCartanInvolution := fun h ↦ by
-  have := h.killingForm_apply_apply_neg ((slFinTwoBasis ℝ).ne_zero 2)
-  rw [LieEquiv.refl_apply, killingForm_slFinTwoBasis] at this
-  norm_num at this
+    ¬ (LieEquiv.refl : sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ sl (Fin 2) ℝ).IsCartanInvolution :=
+  SpecialLinear.not_isCartanInvolution_refl (by simp)
 
 /-- **No involution of the abelian Lie algebra `ℝ` is a Cartan involution**: its Killing form
 vanishes. -/

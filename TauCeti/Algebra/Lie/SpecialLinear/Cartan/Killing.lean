@@ -98,8 +98,8 @@ theorem not_isCartanInvolution_refl (hn : 1 < Fintype.card n) :
   have hpos : 0 < killingForm K (sl n K) H H :=
     isCartanInvolution_cartanInvolution.killingForm_apply_self_pos_of_mem_cartanP hH_symm hH0
   have hneg : killingForm K (sl n K) H H < 0 := by
-    simpa only [LieEquiv.twistedKillingForm_refl, LinearMap.neg_apply, neg_pos] using
-      hθ.twistedKillingForm_self_pos hH0
+    simpa only [LinearMap.BilinMap.toQuadraticMap_apply, LieEquiv.twistedKillingForm_refl,
+      LinearMap.neg_apply, neg_pos] using hθ.posDef_twistedKillingForm H hH0
   exact lt_asymm hpos hneg
 
 end OrderedField

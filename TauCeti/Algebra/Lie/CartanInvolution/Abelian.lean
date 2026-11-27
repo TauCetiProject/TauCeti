@@ -13,22 +13,20 @@ import TauCeti.Algebra.Lie.Killing.Basic
 # Cartan involutions on abelian Lie algebras
 
 Every involutive automorphism of an abelian Lie algebra is a reductive Cartan involution, since
-its derived ideal is `⊥` (`LieEquiv.isReductiveCartanInvolution_iff_of_isLieAbelian`), whereas no
-automorphism of a nontrivial abelian Lie algebra is a (semisimple) Cartan involution, because its
-Killing form vanishes identically (`LieEquiv.not_isCartanInvolution_of_isLieAbelian`).
+its derived ideal is `⊥` (`LieEquiv.isReductiveCartanInvolution_iff_of_isLieAbelian`), whereas by
+`LieEquiv.IsCartanInvolution.not_isLieAbelian` no automorphism of a nontrivial abelian Lie algebra
+is a (semisimple) Cartan involution.
 
 In particular, on `ℝ` with the commutator bracket, `LieEquiv.refl` is a reductive Cartan involution
-(`LieEquiv.isReductiveCartanInvolution_refl_real`) but not a Cartan involution
-(`LieEquiv.not_isCartanInvolution_refl_real`).
+(`LieEquiv.isReductiveCartanInvolution_refl_real`), contrasting with
+`TauCeti.not_isCartanInvolution_real`.
 
 ## Main results
 
 * `LieEquiv.isReductiveCartanInvolution_iff_of_isLieAbelian`: on an abelian Lie algebra, an
   automorphism is a reductive Cartan involution iff it is involutive.
-* `LieEquiv.not_isCartanInvolution_of_isLieAbelian`: no automorphism of a nontrivial abelian Lie
-  algebra is a Cartan involution.
-* `LieEquiv.isReductiveCartanInvolution_refl_real` and `LieEquiv.not_isCartanInvolution_refl_real`:
-  `LieEquiv.refl` on `ℝ` is a reductive Cartan involution but not a Cartan involution.
+* `LieEquiv.isReductiveCartanInvolution_refl_real`: `LieEquiv.refl` on `ℝ` is a reductive Cartan
+  involution.
 -/
 
 public section
@@ -53,13 +51,6 @@ theorem isReductiveCartanInvolution_iff_of_isLieAbelian [IsLieAbelian L] (θ : L
   have hx' : (x : L) ∈ (⊥ : LieIdeal K L) := hbot ▸ x.property
   exact False.elim (hx (Subtype.ext hx'))
 
-/-- No automorphism of a nontrivial abelian Lie algebra is a (semisimple) Cartan involution, since
-the Killing form vanishes identically. -/
-theorem not_isCartanInvolution_of_isLieAbelian [Nontrivial L] [IsLieAbelian L] (θ : L ≃ₗ⁅K⁆ L) :
-    ¬ θ.IsCartanInvolution := fun hθ ↦
-  have := hθ.isKilling
-  not_subsingleton L (TauCeti.subsingleton_of_isKilling_of_isLieAbelian K L)
-
 end Abelian
 
 section Real
@@ -72,11 +63,6 @@ local instance : IsLieAbelian ℝ := isMulCommutative_iff_isLieAbelian.mp inferI
 theorem isReductiveCartanInvolution_refl_real :
     (LieEquiv.refl : ℝ ≃ₗ⁅ℝ⁆ ℝ).IsReductiveCartanInvolution :=
   (isReductiveCartanInvolution_iff_of_isLieAbelian LieEquiv.refl).mpr fun _ ↦ rfl
-
-/-- On `ℝ` with the commutator bracket, the identity is not a (semisimple) Cartan involution. -/
-theorem not_isCartanInvolution_refl_real :
-    ¬ (LieEquiv.refl : ℝ ≃ₗ⁅ℝ⁆ ℝ).IsCartanInvolution :=
-  not_isCartanInvolution_of_isLieAbelian LieEquiv.refl
 
 end Real
 
