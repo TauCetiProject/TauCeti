@@ -334,32 +334,24 @@ private theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperato
         E →L[ℝ] ℝ) ≠ 0 := by
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
-  have hy : c x ∈ c.target := c.map_source hx
   set η := (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x))
+  -- The coordinate along `b 0` is injective on the line `F'`, and `χ (c x) = 1`.
   let b := Module.finBasisOfFinrankEq ℝ F' hF'
-  -- The principal symbol of the entry is the `b 0` coordinate of `σ(P)(⟪η, ·⟫ ∘ dc)` applied to
-  -- the vector with coefficients `v`, and `b 0` spans the model fibre of `W`.
-  intro h0
-  have h1 :=
-    (OpenPartialHomeomorph.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators
-      he tV hV tW hW χ χ (LinearMap.toContinuousLinearMap (b.coord 0)) v ⟨P, hP⟩ hy
-      (innerSL ℝ η : E →L[ℝ] ℝ)).symm.trans h0
-  simp only [hχ, one_mul, LinearMap.coe_toContinuousLinearMap'] at h1
-  have h2 := b.forall_coord_eq_zero_iff.1 fun i ↦ Subsingleton.elim i 0 ▸ h1
-  have h3 := (tW.symmL_continuousLinearMapAt (R := ℝ) (hW (c.map_target hy)) _).symm.trans
-    ((congrArg (tW.symmL ℝ (c.symm (c x))) h2).trans (map_zero _))
+  have hℓ : Function.Injective (LinearMap.toContinuousLinearMap (b.coord 0)) := fun w w' h ↦
+    b.ext_elem fun i ↦ by simpa [Subsingleton.elim i 0] using h
+  refine (c.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero_iff he tV
+    hV tW hW hℓ v ⟨P, hP⟩ (c.map_source hx) (by simp [hχ]) (by simp [hχ]) _).2 ?_
   -- Read at `x`, the covector `⟪η, ·⟫ ∘ dc` is `ξ`.
-  rw [c.left_inv hx] at h3
-  have hcov : (innerSL ℝ η : E →L[ℝ] ℝ).comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c x) = ξ := by
-    ext u
-    have hd := congr($((OpenPartialHomeomorph.MDifferentiable.symm_comp_deriv
-      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx)) u)
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at hd
-    -- `⟪η, dc u⟫ = ξ (dc⁻¹ (dc u)) = ξ u`. Rewriting cannot see through the identification of the
-    -- tangent spaces of the chart target with `E`, so the two equalities are composed as terms.
-    exact (toDual_symm_apply (𝕜 := ℝ) (E := E) (x := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c x u)).trans
-      (congrArg ξ hd)
-  exact hσ (hcov ▸ h3)
+  rw [c.left_inv hx]
+  convert hσ using 3
+  ext u
+  have hd := congr($((OpenPartialHomeomorph.MDifferentiable.symm_comp_deriv
+    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx)) u)
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at hd
+  -- `⟪η, dc u⟫ = ξ (dc⁻¹ (dc u)) = ξ u`. Rewriting cannot see through the identification of the
+  -- tangent spaces of the chart target with `E`, so the two equalities are composed as terms.
+  exact (toDual_symm_apply (𝕜 := ℝ) (E := E) (x := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c x u)).trans
+    (congrArg ξ hd)
 
 /-- **Microlocal elliptic regularity in a chart.** Let `P : Γ(V) → Γ(W)` be a differential operator
 into a bundle `W` of rank one, and `c` a chart of the maximal atlas at `x` with frames `tV` and `tW`

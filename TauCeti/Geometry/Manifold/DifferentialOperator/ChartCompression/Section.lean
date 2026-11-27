@@ -362,6 +362,28 @@ theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators
   simp only [map_smul, smul_eq_mul] at h
   linear_combination -h
 
+/-- **Entries of a chart compression into a line.** Let `ℓ` be an injective functional on the model
+fibre of `W`, which then has rank at most one, and let `x` be a point of the chart target with
+`φ x ≠ 0` and `ψ x ≠ 0`. The `(ℓ, v)` entry of the chart compression of `P` has nonzero principal
+symbol at `x` at a covector `η` exactly when the principal symbol of `P` at `e⁻¹ x` at the covector
+`η ∘ de` does not kill the vector of `V` with coefficients `v` in the frame `tV`. -/
+theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero_iff
+    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {ℓ : F' →L[ℝ] ℝ} (hℓ : Function.Injective ℓ) (v : F)
+    {m : ℕ} (P : differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ m)
+    {x : E} (hx : x ∈ e.target) (hφ : φ x ≠ 0) (hψ : ψ x ≠ 0) (η : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint
+        (e.sectionChartCompressionDifferentialOperators he tV hV tW hW φ ψ ℓ v m P) η ≠ 0 ↔
+      sectionPrincipalSymbol 𝓘(ℝ, E) (x := e.symm x) BoundarylessManifold.isInteriorPoint P
+        (η.comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e (e.symm x))) (tV.symmL ℝ (e.symm x) v) ≠ 0 := by
+  rw [smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators he tV hV tW hW φ ψ ℓ v P
+    hx η, mul_ne_zero_iff, and_iff_right (mul_ne_zero hφ hψ), not_iff_not]
+  -- `ℓ` is injective, and so is the frame `tW` over its base set.
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero, map_zero]⟩
+  rw [← map_zero ℓ] at h
+  rw [← tW.symmL_continuousLinearMapAt (R := ℝ) (hW (e.map_target hx)) (sectionPrincipalSymbol _ _
+    _ _ _), hℓ h, map_zero]
+
 end PrincipalSymbol
 
 end OpenPartialHomeomorph
