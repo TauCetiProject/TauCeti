@@ -141,7 +141,7 @@ def halfTwistFrames (k : ℤ) : LocalFrames ℂ 𝕔𝔻 1 where
           (Fin 1 → ℂ) →L[ℂ] (Fin 1 → ℂ))) =
         fun z : halfTwistDomain i ↦
           exp (halfTwistExponent k i z) • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) :=
-      funext fun _ ↦ ContinuousLinearEquiv.coe_smulLeft _
+      funext fun _ ↦ (ContinuousLinearEquiv.coe_smulLeft _).trans (Units.smul_def _ _)
     rw [h]
     exact (continuous_exp.comp ((continuousOn_iff_continuous_domRestrict.1
       (continuousOn_halfTwistExponent k i)))).smul continuous_const
@@ -154,7 +154,7 @@ def halfTwistFrames (k : ℤ) : LocalFrames ℂ 𝕔𝔻 1 where
 theorem coe_halfTwistFrames_frame (k : ℤ) (i : 𝕔𝔻) (z : (halfTwistFrames k).domain i) :
     ((halfTwistFrames k).frame i z : (Fin 1 → ℂ) →L[ℂ] (Fin 1 → ℂ)) =
       exp (halfTwistExponent k i z) • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) := by
-  rw [← Units.val_mk0 (exp_ne_zero (halfTwistExponent k i z))]
+  rw [← Units.val_mk0 (exp_ne_zero (halfTwistExponent k i z)), ← Units.smul_def]
   exact ContinuousLinearEquiv.coe_smulLeft _
 
 /-- The inverse of the half-twisted frame at `i` over `z` is multiplication by
@@ -162,7 +162,8 @@ theorem coe_halfTwistFrames_frame (k : ℤ) (i : 𝕔𝔻) (z : (halfTwistFrames
 theorem coe_halfTwistFrames_frame_symm (k : ℤ) (i : 𝕔𝔻) (z : (halfTwistFrames k).domain i) :
     (((halfTwistFrames k).frame i z).symm : (Fin 1 → ℂ) →L[ℂ] (Fin 1 → ℂ)) =
       (exp (halfTwistExponent k i z))⁻¹ • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) := by
-  rw [← Units.val_mk0 (exp_ne_zero (halfTwistExponent k i z)), ← Units.val_inv_eq_inv_val]
+  rw [← Units.val_mk0 (exp_ne_zero (halfTwistExponent k i z)), ← Units.val_inv_eq_inv_val,
+    ← Units.smul_def]
   exact ContinuousLinearEquiv.coe_smulLeft_symm _
 
 /-- The half-twisted frame at `i` over `z` applied to a vector. -/
