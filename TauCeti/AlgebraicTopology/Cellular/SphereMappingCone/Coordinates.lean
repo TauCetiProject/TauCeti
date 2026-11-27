@@ -62,29 +62,13 @@ lemma cellularIncidence_sphereMappingCone_eq_degree_mul (m : ℤ)
       (m : R) * sphereMappingConeOrientationUnit h R b i :=
   (exists_cellularIncidence_sphereMappingCone_eq_mul h R b i).choose_spec f m hf
 
-private lemma subsingleton_sphereCell :
-    letI := sphereMappingConeCWComplex h f
-    Subsingleton (cell (sphereMappingCone f) (n + 1)) := by
-  let := sphereMappingConeCWComplex h f
-  have hc := nat_card_cell_sphereMappingConeCWComplex h f (n + 1)
-  have hc' : Nat.card (cell (sphereMappingCone f) (n + 1)) = 1 := by
-    simpa using hc
-  exact (Nat.card_eq_one_iff_unique.mp hc').1
-
-private lemma subsingleton_topCell :
-    letI := sphereMappingConeCWComplex h f
-    Subsingleton (cell (sphereMappingCone f) (n + 1 + 1)) := by
-  let := sphereMappingConeCWComplex h f
-  exact ⟨fun a c ↦ (eq_sphereMappingConeTopCell h f a).trans
-    (eq_sphereMappingConeTopCell h f c).symm⟩
-
 /-- The coordinate of the top cell of the sphere mapping cone, with its characteristic-map
 orientation unchanged. -/
 def sphereMappingConeTopCoord :
     letI := sphereMappingConeCWComplex h f
     (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).X (n + 1 + 1) ≃ₗ[R] R := by
   letI := sphereMappingConeCWComplex h f
-  letI := subsingleton_topCell h f
+  letI := uniqueTopCellSphereMappingConeCWComplex h f
   exact cellularChainCoord (sphereMappingCone f) R (sphereMappingConeTopCell h f)
 
 /-- The coordinate of the sphere cell of the mapping cone, normalized to the orientation
@@ -93,7 +77,7 @@ def sphereMappingConeSphereCoord :
     letI := sphereMappingConeCWComplex h f
     (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).X (n + 1) ≃ₗ[R] R := by
   letI := sphereMappingConeCWComplex h f
-  letI := subsingleton_sphereCell h f
+  letI := uniqueCellSphereMappingConeCWComplex h f n.succ_ne_zero
   exact (cellularChainCoord (sphereMappingCone f) R (sphereMappingConeSphereCell h f i)).trans
     ((sphereMappingConeOrientationUnit h R b i)⁻¹.mulRightLinearEquiv R)
 
@@ -106,7 +90,7 @@ lemma sphereMappingConeTopCoord_basis :
         ((cellularChainGroupIso (sphereMappingCone f) (ModuleCat.of R R) (n + 1 + 1)).inv
           (Limits.Sigma.ι (fun _ ↦ ModuleCat.of R R) (sphereMappingConeTopCell h f) 1))) = 1 := by
   let := sphereMappingConeCWComplex h f
-  let := subsingleton_topCell h f
+  let := uniqueTopCellSphereMappingConeCWComplex h f
   rw [sphereMappingConeTopCoord]
   simpa only [cellularChainBasis_apply] using
     cellularChainCoord_cellularChainBasis (sphereMappingCone f) R (sphereMappingConeTopCell h f)
@@ -122,7 +106,7 @@ lemma sphereMappingConeSphereCoord_basis :
           (Limits.Sigma.ι (fun _ ↦ ModuleCat.of R R) (sphereMappingConeSphereCell h f i) 1))) =
       ↑(sphereMappingConeOrientationUnit h R b i)⁻¹ := by
   let := sphereMappingConeCWComplex h f
-  let := subsingleton_sphereCell h f
+  let := uniqueCellSphereMappingConeCWComplex h f n.succ_ne_zero
   rw [sphereMappingConeSphereCoord, LinearEquiv.trans_apply,
     Units.mulRightLinearEquiv_apply, ← cellularChainBasis_apply,
     cellularChainCoord_cellularChainBasis, one_mul]
@@ -136,7 +120,7 @@ lemma sphereMappingConeTopCoord_symm_apply (r : R) :
         (r • cellularChainBasis (sphereMappingCone f) R (n + 1 + 1)
           (sphereMappingConeTopCell h f)) := by
   let := sphereMappingConeCWComplex h f
-  let := subsingleton_topCell h f
+  let := uniqueTopCellSphereMappingConeCWComplex h f
   exact cellularChainCoord_symm_apply _ _ _ _
 
 /-- Inverse lower coordinates are multiples of the orientation-normalized sphere generator. -/
@@ -149,7 +133,7 @@ lemma sphereMappingConeSphereCoord_symm_apply (r : R) :
           cellularChainBasis (sphereMappingCone f) R (n + 1)
             (sphereMappingConeSphereCell h f i)) := by
   let := sphereMappingConeCWComplex h f
-  let := subsingleton_sphereCell h f
+  let := uniqueCellSphereMappingConeCWComplex h f n.succ_ne_zero
   simp only [sphereMappingConeSphereCoord, LinearEquiv.symm_trans_apply,
     Units.mulRightLinearEquiv_apply, Units.symm_mulRightLinearEquiv,
     inv_inv, cellularChainCoord_symm_apply]
@@ -169,8 +153,8 @@ theorem sphereMappingConeSphereCoord_d (m : ℤ)
             (n + 1 + 1) (n + 1) x) =
         sphereMappingConeTopCoord h R f x * (m : R) := by
   let := sphereMappingConeCWComplex h f
-  let := subsingleton_sphereCell h f
-  let := subsingleton_topCell h f
+  let := uniqueCellSphereMappingConeCWComplex h f n.succ_ne_zero
+  let := uniqueTopCellSphereMappingConeCWComplex h f
   intro x
   rw [sphereMappingConeSphereCoord, LinearEquiv.trans_apply,
     Units.mulRightLinearEquiv_apply, cellularChainCoord_d,

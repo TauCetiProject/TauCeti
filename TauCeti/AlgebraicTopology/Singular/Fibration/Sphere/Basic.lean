@@ -147,12 +147,8 @@ def uniqueCellSphereRelCWComplex (hn : 1 ≤ n) :
     Unique (cell (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n) :=
   letI := sphereCWComplex h
   letI := sphereRelCWComplex h
-  have hcard : Nat.card (cell (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n) = 1 := by
-    rw [Nat.card_congr (sphereRelCWComplexCellEquiv h n), nat_card_cell_sphereCWComplex h n]
-    simp [show n ≠ 0 by omega]
-  have := (Nat.card_eq_one_iff_unique.1 hcard).1
-  have := (Nat.card_eq_one_iff_unique.1 hcard).2
-  uniqueOfSubsingleton (Classical.arbitrary _)
+  letI := uniqueCellSphereCWComplex h (by omega)
+  (sphereRelCWComplexCellEquiv h n).unique
 
 /-- The centre of the `n`-cell of the CW structure on the sphere is
 `TauCeti.sphereTopCellCenter h`. -/
