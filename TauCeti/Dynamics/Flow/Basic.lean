@@ -22,6 +22,7 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.apply_comm`: the maps of a flow by a commutative time monoid commute.
 * `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
   and conversely.
+* `Flow.apply_eq_self_of_forall_pos`: a point fixed at every positive time is fixed at every time.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
 * `Flow.orbit_eq_iff`: two points have the same orbit exactly when one lies on the orbit of the
   other.
@@ -31,6 +32,9 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.prod`: the product of two flows with the same time.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
   set all meet an open set, they all meet it before a common time.
+* `Flow.homotopic_of_eq_apply`: maps sending each point to two times of its flow line are homotopic.
+* `Flow.homotopic_id_restrict`: on a forward invariant set, each forward time map is homotopic to
+  the identity.
 -/
 
 public section
@@ -60,6 +64,15 @@ theorem map_neg_apply_map [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ
 @[simp]
 theorem map_apply_map_neg [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ t (ϕ (-t) x) = x := by
   rw [← ϕ.map_add, add_neg_cancel, ϕ.map_zero_apply]
+
+/-- A point fixed by the flow at every positive time is fixed at every time. -/
+theorem apply_eq_self_of_forall_pos [AddCommGroup τ] [LinearOrder τ] [IsOrderedAddMonoid τ]
+    {ϕ : Flow τ α} {x : α} (h : ∀ t, 0 < t → ϕ t x = x) (t : τ) : ϕ t x = x := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · conv_lhs => rw [← h (-t) (neg_pos.2 ht)]
+    exact map_apply_map_neg ϕ t x
+  · exact map_zero_apply ϕ x
+  · exact h t ht
 
 /-- All points of an orbit have the same orbit. -/
 @[simp]
@@ -145,5 +158,16 @@ theorem homotopic_of_eq_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpa
     exact ϕ.continuous (by fun_prop) (hp.comp continuous_snd)
   · exact hι.injective ((hG (0, y)).trans (by simp [hF₀]))
   · exact hι.injective ((hG (1, y)).trans (by simp [hF₁]))
+
+/-- On a forward invariant set, the time-`t` map of the flow with `t ≥ 0` is homotopic to the
+identity, through the time-`u t` maps with `u ∈ [0, 1]`. -/
+theorem homotopic_id_restrict {ϕ : Flow ℝ α} {s : Set α} (hs : IsForwardInvariant ϕ s) {t : ℝ}
+    (ht : 0 ≤ t) :
+    (ContinuousMap.id s).Homotopic
+      ⟨(hs ht).restrict (ϕ t) s s, (ϕ.continuous_toFun t).restrict (hs ht)⟩ :=
+  ϕ.homotopic_of_eq_apply Topology.IsEmbedding.subtypeVal continuous_subtypeVal
+    continuous_const continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ t)
+    (fun x ↦ by simp) (fun _ ↦ rfl) fun x u hu ↦
+      ⟨⟨ϕ (u * t) x, hs (mul_nonneg hu.1 ht) x.property⟩, by simp⟩
 
 end Flow

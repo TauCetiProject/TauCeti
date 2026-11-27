@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.Algebra.Polynomial.Splits
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import Mathlib.RingTheory.Prime
 
@@ -28,13 +29,19 @@ and scalar extension.
   factors all have degree at most one splits.
 * `Polynomial.Splits.eval₂_eq_prod_roots`: evaluated along any ring homomorphism, a split
   polynomial is its leading coefficient times the product of the linear factors over its roots.
+* `Polynomial.Splits.eval_root_derivative_eq_leadingCoeff_mul`: at a root `x`, the derivative of a
+  split polynomial is its leading coefficient times the product of `x - a` over the other roots.
 * `Polynomial.Splits.eq_C_mul_prod_roots_of_coeff_zero_ne_zero`: a split polynomial with nonzero
   constant coefficient is that coefficient times the product of the factors `1 - α⁻¹ X` over its
   roots `α`.
 * `Polynomial.Splits.eq_prod_roots_of_coeff_zero_eq_one`: the case of constant coefficient `1`,
   where the polynomial is the product of the factors `1 - α⁻¹ X` alone.
+* `Polynomial.Splits.eval_nonpos_of_forall_mem_erase_le`: over an ordered domain, a split
+  polynomial with nonnegative leading coefficient is nonpositive between its largest root and the
+  remaining ones.
 * `Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map`: descent up to a unit constant of divisors
   of mapped split polynomials whose mapped leading coefficient is a unit.
+* `Units.exists_pow_eq_of_splits`: a unit `a` is an `m`-th power of a unit when `Xᵐ - a` splits.
 -/
 
 public section
@@ -62,6 +69,15 @@ theorem Splits.eval₂_eq_prod_roots {R S : Type*} [CommRing R] [IsDomain R] [Co
   conv_lhs => rw [hf.eq_prod_roots]
   simp [eval₂_multiset_prod]
 
+/-- **The derivative of a split polynomial at a root** `x` is the leading coefficient times the
+product of `x - a` over the other roots `a`, the multiplicity of `x` reduced by one. This is
+`Polynomial.Splits.eval_root_derivative` without the hypothesis that `f` is monic. -/
+theorem Splits.eval_root_derivative_eq_leadingCoeff_mul {R : Type*} [CommRing R] [IsDomain R]
+    [DecidableEq R] {f : R[X]} (hf : f.Splits) {x : R} (hx : x ∈ f.roots) :
+    f.derivative.eval x = f.leadingCoeff * ((f.roots.erase x).map (x - ·)).prod := by
+  conv_lhs => rw [hf.eq_prod_roots]
+  rw [derivative_C_mul, eval_mul, eval_C, eval_multiset_prod_X_sub_C_derivative hx]
+
 /-- **A split polynomial with nonzero constant coefficient** is that coefficient times the product
 of the factors `1 - α⁻¹ X` over its roots `α`, counted with multiplicity. This is the
 normalisation of `Polynomial.Splits.eq_prod_roots` at `0` rather than at the leading
@@ -87,6 +103,25 @@ theorem Splits.eq_C_mul_prod_roots_of_coeff_zero_ne_zero {f : K[X]} (hf : f.Spli
 theorem Splits.eq_prod_roots_of_coeff_zero_eq_one {f : K[X]} (hf : f.Splits)
     (h0 : f.coeff 0 = 1) : f = (f.roots.map fun α ↦ 1 - C α⁻¹ * X).prod := by
   simpa [h0] using hf.eq_C_mul_prod_roots_of_coeff_zero_ne_zero (by simp [h0])
+
+section Order
+
+variable {R : Type*} [CommRing R] [IsDomain R] [PartialOrder R] [IsOrderedRing R] {f : R[X]}
+  {x : R}
+
+/-- **Sign between the two largest roots.** A split polynomial with nonnegative leading
+coefficient is nonpositive at every point `x` that lies below one of its roots `a` and above all
+the other roots, `a` itself counted once less. -/
+theorem Splits.eval_nonpos_of_forall_mem_erase_le [DecidableEq R] (hf : f.Splits)
+    (hlc : 0 ≤ f.leadingCoeff) {a : R} (ha : a ∈ f.roots) (hxa : x ≤ a)
+    (hx : ∀ b ∈ f.roots.erase a, b ≤ x) : f.eval x ≤ 0 := by
+  rw [hf.eval_eq_prod_roots, ← Multiset.cons_erase ha, Multiset.map_cons, Multiset.prod_cons]
+  refine mul_nonpos_of_nonneg_of_nonpos hlc
+    (mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 hxa) (Multiset.prod_nonneg fun c hc ↦ ?_))
+  obtain ⟨b, hb, rfl⟩ := Multiset.mem_map.1 hc
+  exact sub_nonneg.2 (hx b hb)
+
+end Order
 
 end Polynomial
 
@@ -124,3 +159,16 @@ theorem Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map
   · rw [hf]
     exact (Finset.prod_dvd_prod_of_subset t Finset.univ _ (Finset.subset_univ t)).mul_left _
   · simpa only [Polynomial.map_prod, Polynomial.map_sub, map_X, map_C, IsUnit.unit_spec] using hp
+
+/-- **Roots of units from splitting.** If `m ≠ 0` and `Xᵐ - a` splits for a unit `a` of a
+commutative ring, then `a` is the `m`-th power of a unit. -/
+theorem Units.exists_pow_eq_of_splits {R : Type*} [CommRing R] {m : ℕ} (hm : m ≠ 0) {a : Rˣ}
+    (h : (X ^ m - C (a : R)).Splits) : ∃ v : Rˣ, v ^ m = a := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact ⟨1, Subsingleton.elim _ _⟩
+  obtain ⟨c, hc⟩ := h.exists_eval_eq_zero (by
+    rw [degree_X_pow_sub_C (Nat.pos_of_ne_zero hm)]
+    exact_mod_cast hm)
+  rw [eval_sub, eval_pow, eval_X, eval_C, sub_eq_zero] at hc
+  obtain ⟨v, rfl⟩ := (isUnit_pow_iff hm).1 (hc ▸ a.isUnit)
+  exact ⟨v, Units.ext (by simpa using hc)⟩

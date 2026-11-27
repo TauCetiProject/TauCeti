@@ -50,6 +50,8 @@ of `r ↦ r^n ω`.
 * `TauCeti.perimeter_ball`: `P(ball c r) = n r^(n-1) μ (ball 0 1)` for `r > 0`.
 * `TauCeti.perimeter_ball_eq_ofReal_div_mul`: `P(ball c r) = (n / r) μ (ball c r)`.
 * `TauCeti.perimeter_closedBall`: the same formula for closed balls.
+* `TauCeti.forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top`: the indicator of a
+  ball has locally finite total variation, a hypothesis of the Gauss–Green and De Giorgi theorems.
 * `TauCeti.perimeter_ball_pow`: `P(ball c r)^n = n^n μ (ball 0 1) μ (ball c r)^(n-1)`.
 * `TauCeti.perimeter_ball_sdiff_closedBall`, `TauCeti.perimeter_ball_sdiff_closedBall_of_pos`: the
   perimeter of an annulus.
@@ -198,6 +200,15 @@ theorem perimeter_ball_eq_ofReal_div_mul :
   · rw [ball_eq_empty.2 (not_lt.1 hr), perimeter_empty, measure_empty, mul_zero]
   rw [perimeter_ball_eq_ofReal hr, ← μ.finrank_div_mul_addHaar_real_ball c hr,
     ENNReal.ofReal_mul (by positivity), ofReal_measureReal measure_ball_lt_top.ne]
+
+/-- A ball has locally finite perimeter in the whole space: every compact set lies in an open set
+(the whole space) on which the indicator of the ball has finite total variation. -/
+theorem forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top :
+    ∀ K, IsCompact K → K ⊆ (⊤ : Opens E) → ∃ U : Opens E, K ⊆ (U : Set E) ∧
+      totalVariationOn μ U ((ball c r).indicator 1) ≠ ∞ := fun K _ _ => by
+  refine ⟨⊤, by simp, ?_⟩
+  rw [← perimeter_def, perimeter_ball_eq_ofReal_div_mul]
+  exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne
 
 /-- **The perimeter of a closed ball.** A closed ball of radius `r > 0` has the same perimeter
 `n r^(n-1) μ (ball 0 1)` as the open ball, since they differ by a null set. -/

@@ -8,8 +8,11 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
-public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham
+public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
+import Mathlib.Algebra.Category.Grp.Injective
+import Mathlib.Algebra.Category.ModuleCat.Injective
+import TauCeti.Algebra.Module.Equiv.IntLinear
 
 /-!
 # The de Rham homomorphism into singular cohomology
@@ -36,9 +39,16 @@ representative (the smoothing theorem again), so this computes the pairing of a 
 every real singular homology class. It is the comparison through which periods of closed forms on
 singular homology classes, such as cross products and fundamental classes, are computed.
 
+With coefficients in the divisible, hence injective, group `ℝ/ℤ`, the smoothing isomorphism
+followed by the Kronecker pairing (`TauCeti.ChainComplex.kroneckerEquiv`) gives the universal
+coefficient equivalence `Hᵏ(M; ℝ/ℤ) ≃ Hom(H_k(M; ℤ), ℝ/ℤ)` with smooth singular homology
+(`TauCeti.singularCohomologyUnitAddCircleAddEquiv`).
+
 ## Main definitions
 
 * `TauCeti.deRhamHom I M k`: the de Rham homomorphism `H^k_dR(M) →ₗ[ℝ] Hᵏ(M; ℝ)`.
+* `TauCeti.singularCohomologyUnitAddCircleAddEquiv I M k`: the universal coefficient equivalence
+  `Hᵏ(M; ℝ/ℤ) ≃+ Hom(H_k(M; ℤ), ℝ/ℤ)`.
 
 ## Main results
 
@@ -64,6 +74,48 @@ open CategoryTheory
 open scoped Manifold ContDiff
 
 namespace TauCeti
+
+section UnitAddCircle
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] (I : ModelWithCorners ℝ E H) (M : Type) [TopologicalSpace M]
+  [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] (k : ℕ)
+
+/-- The **universal coefficient theorem for `ℝ/ℤ`-coefficients** on a smooth manifold:
+`Hᵏ(M; ℝ/ℤ) ≃ Hom(H_k(M; ℤ), ℝ/ℤ)`, with homology the smooth singular homology. It is the smoothing
+isomorphism from singular cohomology to the cohomology of the smooth singular cochains, followed by
+the Kronecker pairing, which is an equivalence because `ℝ/ℤ` is divisible, hence injective. -/
+def singularCohomologyUnitAddCircleAddEquiv :
+    (TopCat.of M).singularCohomology (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle) k ≃+
+      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homology k →+
+        UnitAddCircle) :=
+  -- `ℝ/ℤ` is divisible, hence an injective `ℤ`-module.
+  haveI := (Module.Baer.of_divisible UnitAddCircle).injective
+  haveI := Module.injective_object_of_injective_module ℤ UnitAddCircle
+  (smoothSingularCohomologyIso I M (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle)
+      k).toLinearEquiv.toAddEquiv.trans <|
+    (ChainComplex.kroneckerEquiv ℤ _ (ModuleCat.of ℤ UnitAddCircle) k).toAddEquiv.trans <|
+      -- The homology carries the `ℤ`-module structure of `ModuleCat`, which is not
+      -- definitionally the canonical one that Mathlib's `addMonoidHomLequivInt` uses.
+      ModuleCat.homAddEquiv.trans intLinearMapAddEquivAddMonoidHom
+
+/-- The universal coefficient equivalence evaluates a singular cohomology class on a smooth
+singular homology class by the Kronecker pairing of its smooth singular representative. -/
+theorem singularCohomologyUnitAddCircleAddEquiv_apply
+    (x : (TopCat.of M).singularCohomology (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle) k)
+    (y : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homology k) :
+    singularCohomologyUnitAddCircleAddEquiv I M k x y =
+      (ChainComplex.kronecker ℤ _ (ModuleCat.of ℤ UnitAddCircle) k
+        ((smoothSingularCohomologyIso I M (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle)
+          k).hom x)).hom y := by
+  have := (Module.Baer.of_divisible UnitAddCircle).injective
+  have := Module.injective_object_of_injective_module ℤ UnitAddCircle
+  simp only [singularCohomologyUnitAddCircleAddEquiv, AddEquiv.trans_apply,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    intLinearMapAddEquivAddMonoidHom_apply_apply]
+  rw [ChainComplex.kroneckerEquiv_apply, Iso.toLinearEquiv_apply, ModuleCat.homAddEquiv_apply]
+
+end UnitAddCircle
 
 variable {E H : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] (I : ModelWithCorners ℝ E H) (M : Type) [TopologicalSpace M]

@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.UniversallyOpen
 import TauCeti.AlgebraicGeometry.Pullback.Over
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic

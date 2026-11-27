@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.KnotEulerCharacteristic
+public import TauCeti.LowDimTopology.Heegaard.Knot.Homology
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Qify
@@ -102,6 +102,9 @@ with the absolute grading of `HF̂(S³)`, is not formalized here.
   `T - 1 + T⁻¹`.
 * `TauCeti.HeegaardRegionSystem.eq_trefoilAlexanderGrading_of_isKnotGrading`: the symmetric
   Alexander grading is unique.
+* `TauCeti.HeegaardRegionSystem.finrank_hatHomology_trefoil` and
+  `TauCeti.HeegaardRegionSystem.finsum_finrank_hatHomologyGrading_piece_smul_trefoil`: `HFK̂` has
+  rank three and graded Euler characteristic `T - 1 + T⁻¹`.
 * `TauCeti.HeegaardRegionSystem.isAlexanderFunction_trefoil`: the Alexander gradings `1`, `-1`,
   `0` satisfy the hypothesis of the Alexander filtration
   of the hat complex of the diagram pointed at `w`.
@@ -517,6 +520,35 @@ theorem eq_trefoilAlexanderGrading_of_isKnotGrading {M A : (trefoil ![1, 2]).Gen
   · rw [gradedEulerChar_trefoil]
     simp only [map_add, map_sub, invert_T, map_one, neg_neg]
     abel
+
+/-! ### Hat knot Floer homology -/
+
+/-- The hat knot Floer differential of the trefoil diagram squares to zero, since it vanishes. -/
+theorem hatDifferential_trefoil_comp_self_eq_zero (χ : Fin 3 → ℤ) :
+    (trefoil ![1, 2]).hatDifferential χ ∘ₗ (trefoil ![1, 2]).hatDifferential χ = 0 := by
+  rw [hatDifferential_trefoil, LinearMap.zero_comp]
+
+/-- **`HFK̂` of the trefoil diagram has rank three.** The hat knot Floer differential vanishes, so
+the homology is the chain group, spanned by the three generators. -/
+theorem finrank_hatHomology_trefoil (χ : Fin 3 → ℤ) :
+    Module.finrank (ZMod 2)
+      ((trefoil ![1, 2]).hatHomology χ (hatDifferential_trefoil_comp_self_eq_zero χ)) = 3 := by
+  rw [(((trefoil ![1, 2]).hatDifferential χ).homologyEquivOfEqZero _
+      (hatDifferential_trefoil χ)).finrank_eq,
+    Module.finrank_finsupp_self, Fintype.card_congr (trefoilGeneratorEquiv _).symm,
+    Fintype.card_fin]
+
+/-- **The graded Euler characteristic of `HFK̂` of the trefoil diagram is `T - 1 + T⁻¹`.** For the
+bigrading of hat knot Floer homology by the Maslov gradings `0`, `-2`, `-1` and the Alexander
+gradings `1`, `-1`, `0` of `x₀`, `x₁`, `x₂`, the Laurent polynomial
+`∑_{m, a} (-1)^m dim HFK̂_m(a) T^a` is the symmetrized Alexander polynomial of the trefoil. -/
+theorem finsum_finrank_hatHomologyGrading_piece_smul_trefoil :
+    ∑ᶠ p : ℤ × ℤ, Module.finrank (ZMod 2)
+        ((isKnotGrading_trefoil.hatHomologyGrading
+          (hatDifferential_trefoil_comp_self_eq_zero 1)).piece p) •
+        (p.1.negOnePow • T p.2 : ℤ[T;T⁻¹]) =
+      T 1 - 1 + T (-1) := by
+  rw [IsKnotGrading.finsum_finrank_hatHomologyGrading_piece_smul, gradedEulerChar_trefoil]
 
 end KnotEulerCharacteristic
 

@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdjoinRoot
-public import Mathlib.RingTheory.Jacobson.Ideal
 import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.Derivative
-import TauCeti.RingTheory.Idempotents.Jacobson
+import TauCeti.RingTheory.Idempotents.Nakayama
 import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
@@ -122,8 +121,7 @@ theorem exists_isRoot_of_isIdempotentElem {I : Ideal R} {f : R[X]} (hf : f.Monic
   have : Module.Finite R (AdjoinRoot f) := hf.finite_adjoinRoot
   set x := AdjoinRoot.root f
   have hσ : ∀ y : AdjoinRoot f, ∃ σ : R, σ • e = e * y :=
-    he.exists_smul_eq_mul_of_mul_sub_smul_mem (by simpa only [Ideal.jacobson_bot] using hjac)
-      fun y ↦ by
+    he.exists_smul_eq_mul_of_mul_sub_smul_mem hjac (Submodule.fg_range _) fun y ↦ by
         induction y using AdjoinRoot.induction_on with | ih p =>
         refine ⟨p.eval a₀, ?_⟩
         rw [← AdjoinRoot.aeval_eq, Algebra.smul_def, mul_comm e, ← sub_mul]

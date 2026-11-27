@@ -75,28 +75,22 @@ relative twisted chains of the summands, with their restricted coefficient syste
 def isColimitCofanTwistedChainComplex :
     IsColimit (Cofan.mk ((sigma P).twistedChainComplex L)
       (fun i ↦ twistedChainComplexMap (sigmaι P i) L)) := by
-  -- State the cokernel cocones through their quotient maps, using their public characterization.
-  have hc (Q : TopPair.{v}) (K : TauCeti.LocalCoefficientSystem.{u, v, max v w} R Q.fst) :
-      IsColimit (CokernelCofork.ofπ (Q.twistedChainComplexπ K)
-        (Q.twistedChainComplexMap_comp_twistedChainComplexπ K)) := by
-    rw [← cokernelCoforkTwistedChainComplex_def]
-    exact Q.isColimitCokernelCoforkTwistedChainComplex K
   exact TauCeti.isColimitCofanMkCokernelCofork
-    (fun i ↦ hc (P i) ((TauCeti.LocalCoefficientSystem.pullback (Hom.fst (sigmaι P i)).hom).obj L))
+    (fun i ↦ (P i).isColimitCokernelCoforkTwistedChainComplexπ
+      ((TauCeti.LocalCoefficientSystem.pullback (Hom.fst (sigmaι P i)).hom).obj L))
     (isColimitCofanTwistedSubspaceChainComplex P L)
     (TauCeti.LocalCoefficientSystem.isColimitCofanTwistedChainComplex
       (fun i ↦ (P i).fst) L)
     (fun i ↦ (twistedChainComplexMap_naturality_pair (sigmaι P i) L).symm)
-    (hc (sigma P) L) _
+    ((sigma P).isColimitCokernelCoforkTwistedChainComplexπ L) _
     (fun i ↦ twistedChainComplexπ_comp_twistedChainComplexMap (sigmaι P i) L)
 
 /-- Relative twisted homology of a disjoint union of pairs is the coproduct of their relative
 twisted homologies. This holds for arbitrary rings and local systems in every degree. -/
 def isColimitCofanTwistedHomology (k : ℕ) :
     IsColimit (Cofan.mk ((sigma P).twistedHomology L k)
-      (fun i ↦ twistedHomologyMap (sigmaι P i) L k)) := by
-  have : AB4OfSize.{v} (ModuleCat.{max v w} R) := AB4OfSize_shrink.{v, w} _
-  exact isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ k) _ _
+      (fun i ↦ twistedHomologyMap (sigmaι P i) L k)) :=
+  isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ k) _ _
     (isColimitCofanTwistedChainComplex P L)
 
 end TopPair

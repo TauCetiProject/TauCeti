@@ -75,10 +75,23 @@ def almostComplexStructureAt (J : ContMDiffAlmostComplexStructure I n M) (x : M)
     ext v
     exact congrArg (fun A : TangentSpace I x →L[ℝ] TangentSpace I x ↦ A v) (J.square_neg x)
 
+/-- The defining identity `J² = -1`, as a product in the ring of endomorphisms of a fibre. -/
+@[simp]
+theorem toEndomorphism_mul_self (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
+    J.toEndomorphism x * J.toEndomorphism x = -1 := by
+  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def]
+  exact J.square_neg x
+
 @[simp]
 theorem almostComplexStructureAt_toLinearMap (J : ContMDiffAlmostComplexStructure I n M)
     (x : M) :
     (J.almostComplexStructureAt x).toLinearMap = (J.toEndomorphism x).toLinearMap := (rfl)
+
+/-- The defining identity `J² = -1`, as a product of the underlying linear maps of a fibre. -/
+@[simp]
+theorem coe_toEndomorphism_mul_self (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
+    ((J.toEndomorphism x : TangentSpace I x →ₗ[ℝ] TangentSpace I x)) * J.toEndomorphism x = -1 := by
+  simpa using (J.almostComplexStructureAt x).toLinearMap_mul_self
 
 /-- Evaluating the fibrewise structure agrees with evaluating the bundled section. -/
 theorem almostComplexStructureAt_apply (J : ContMDiffAlmostComplexStructure I n M) (x : M)
@@ -190,6 +203,15 @@ theorem toContMDiff_toEndomorphism_apply (J : SmoothAlmostComplexStructure I M) 
 /-- Changing the regularity of a smooth structure leaves its pointwise action unchanged. -/
 theorem toContMDiff_apply (J : SmoothAlmostComplexStructure I M) (n : ℕ∞) (x : M)
     (v : TangentSpace I x) : J.toContMDiff n x v = J x v := (rfl)
+
+/-- Changing the regularity of a smooth structure leaves its pointwise almost complex structures
+unchanged. -/
+@[simp]
+theorem toContMDiff_almostComplexStructureAt (J : SmoothAlmostComplexStructure I M) (n : ℕ∞) :
+    (J.toContMDiff n).almostComplexStructureAt = J.almostComplexStructureAt := by
+  ext x v
+  rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+    almostComplexStructureAt_toLinearMap, toContMDiff_toEndomorphism_apply]
 
 @[simp]
 theorem toContMDiff_ofLE (J : SmoothAlmostComplexStructure I M) {m n : ℕ∞} (h : m ≤ n) :

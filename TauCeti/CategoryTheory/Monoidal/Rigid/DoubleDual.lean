@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Closed
+import TauCeti.CategoryTheory.Monoidal.Closed.Basic
 
 /-!
 # The double-dual map in a closed braided monoidal category
@@ -35,13 +36,17 @@ instance, for example a finite projective module.
 * `TauCeti.doubleDualMap`: the canonical map `Y ⟶ ((Y ⟶[C] 𝟙_ C) ⟶[C] 𝟙_ C)`, characterized by
   `TauCeti.whiskerLeft_doubleDualMap_comp_ev`;
 * `TauCeti.doubleDualMap_naturality`: its naturality in `Y`;
+* `TauCeti.isIso_doubleDualMap_of_iso`: invertibility of the double-dual map transports along
+  isomorphisms;
 * `TauCeti.doubleDualMap_comp_pre_doubleDualMap`: in a symmetric monoidal category, the triangle
   identity relating the double-dual maps of `Y` and of `Yᵛ`;
 * `TauCeti.doubleDualMap_comp_pre_ihomUnitIso_inv_app`: its form for a chosen left dual `D`, the
   transpose of the braided pairing `D ⊗ Y ⟶ 𝟙_ C`;
 * `TauCeti.isIso_doubleDualMap_of_exactPairing`, `TauCeti.isIso_doubleDualMap` and
   `TauCeti.isIso_doubleDualMap_of_hasRightDual`: it is an isomorphism for an object with a left or
-  a right dual.
+  a right dual;
+* `TauCeti.isIso_doubleDualMap_ihomUnit`: in a symmetric monoidal category, if the double-dual map
+  of `Y` is an isomorphism, so is that of `Yᵛ`.
 
 ## References
 
@@ -99,6 +104,17 @@ theorem doubleDualMap_naturality {Y Y' : C} [Closed Y] [Closed (Y ⟶[C] 𝟙_ C
   rw [uncurry_natural_left, uncurry_pre_app, uncurry_doubleDualMap, uncurry_doubleDualMap,
     braiding_naturality_right_assoc, braiding_naturality_left_assoc, id_tensor_pre_app_comp_ev]
 
+/-- Invertibility of the double-dual map transports along isomorphisms: by naturality, the
+double-dual map of `Y'` is that of `Y` conjugated by `e` and its double transpose. -/
+theorem isIso_doubleDualMap_of_iso {Y Y' : C} [Closed Y] [Closed (Y ⟶[C] 𝟙_ C)] [Closed Y']
+    [Closed (Y' ⟶[C] 𝟙_ C)] (e : Y ≅ Y') [IsIso (doubleDualMap Y)] :
+    IsIso (doubleDualMap Y') := by
+  have h : doubleDualMap Y' =
+      e.inv ≫ doubleDualMap Y ≫ (pre ((pre e.hom).app (𝟙_ C))).app (𝟙_ C) := by
+    rw [← doubleDualMap_naturality, Iso.inv_hom_id_assoc]
+  rw [h]
+  infer_instance
+
 section IsIso
 
 variable {Y : C} [Closed Y] [Closed (Y ⟶[C] 𝟙_ C)]
@@ -153,5 +169,17 @@ theorem doubleDualMap_comp_pre_doubleDualMap [SymmetricCategory C] (Y : C) [Clos
   apply uncurry_injective
   rw [uncurry_pre_app, uncurry_doubleDualMap, braiding_naturality_left_assoc,
     whiskerLeft_doubleDualMap_comp_ev, SymmetricCategory.symmetry_assoc, uncurry_id_eq_ev]
+
+/-- In a symmetric monoidal category, if the double-dual map of `Y` is an isomorphism then so is
+that of its dual `Yᵛ`: by the triangle identity it is the inverse of the dual of the double-dual
+map of `Y`. -/
+instance isIso_doubleDualMap_ihomUnit [SymmetricCategory C] (Y : C) [Closed Y]
+    [Closed (Y ⟶[C] 𝟙_ C)] [Closed ((Y ⟶[C] 𝟙_ C) ⟶[C] 𝟙_ C)] [IsIso (doubleDualMap Y)] :
+    IsIso (doubleDualMap (Y ⟶[C] 𝟙_ C)) := by
+  have h : doubleDualMap (Y ⟶[C] 𝟙_ C) = inv ((pre (doubleDualMap Y)).app (𝟙_ C)) := by
+    rw [← cancel_mono ((pre (doubleDualMap Y)).app (𝟙_ C)), doubleDualMap_comp_pre_doubleDualMap,
+      IsIso.inv_hom_id]
+  rw [h]
+  infer_instance
 
 end TauCeti

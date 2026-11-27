@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
-import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 /-!

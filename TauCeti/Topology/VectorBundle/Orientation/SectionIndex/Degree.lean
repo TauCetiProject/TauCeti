@@ -104,9 +104,8 @@ theorem fiberCoord_apply {U : Set M} (hUe : U ⊆ e.baseSet) (x : U) :
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
 /-- The fibre coordinate vanishes exactly where the section does. -/
 theorem fiberCoord_eq_zero_iff {U : Set M} (hUe : U ⊆ e.baseSet) (x : U) :
-    fiberCoord hs e hUe x = 0 ↔ s x.val = 0 := by
-  have := e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' F x.val (s x.val)) (hUe x.property)
-  exact not_iff_not.1 this
+    fiberCoord hs e hUe x = 0 ↔ s x.val = 0 :=
+  e.snd_apply_eq_zero_iff ℝ (v := TotalSpace.mk' F x.val (s x.val)) (hUe x.property)
 
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
 /-- On a neighbourhood containing no other zero of `s`, the fibre coordinate is a map of pairs
@@ -253,7 +252,7 @@ theorem sectionIndex_eq_localIndex_fiberCoord [FiniteDimensional ℝ F] {z : M}
     -- Restricting the fibre coordinate from `U` to `V` does not change its local index.
     have hincl : IsOpenEmbedding (fun x : V ↦ (⟨x.val, hVU x.property⟩ : U)) :=
       (IsOpenEmbedding.of_comp_iff _ U.isOpenEmbedding').1 V.isOpenEmbedding'
-    have h := HomologicalOrientation.localIndex_comap hF (oM.comap U.isOpenEmbedding') oF hincl
+    have h := (oM.comap U.isOpenEmbedding').localIndex_comap oF hF hincl
       IsOpenEmbedding.id (f := fiberCoord hs e hVe) (g := fiberCoord hs e hUe) (x := ⟨z, hzV⟩)
       (.of_forall fun _ ↦ rfl)
     rw [HomologicalOrientation.comap_comap, HomologicalOrientation.comap_id,

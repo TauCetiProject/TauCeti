@@ -12,6 +12,8 @@ import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Ideal.Pure
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Henselian.Idempotent
+import TauCeti.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.Idempotents.Nakayama
 import TauCeti.RingTheory.QuasiFinite.ZariskisMainTheorem
 
 /-!
@@ -217,8 +219,8 @@ private theorem exists_isIdempotentElem_smul_eq_mul [HenselianRing S J]
   obtain ⟨e, he, heγ⟩ := HenselianRing.exists_isIdempotentElem_sub_mem_map J hγ
     fun x ↦ (hP x).imp fun _ h ↦ h.2
   refine ⟨e, he, heγ,
-    he.exists_smul_eq_mul_of_mul_sub_smul_mem (show J ≤ Ideal.jacobson ⊥ by
-      simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))) fun x ↦ ?_⟩
+    he.exists_smul_eq_mul_of_mul_sub_smul_mem (HenselianRing.jac (I := J)) (Submodule.fg_range _)
+      fun x ↦ ?_⟩
   obtain ⟨σ, -, h2⟩ := hP x
   refine ⟨σ, ?_⟩
   convert sub_mem (add_mem (Ideal.mul_mem_right x _ heγ) h2)

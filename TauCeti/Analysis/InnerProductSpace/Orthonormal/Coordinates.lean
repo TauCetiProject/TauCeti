@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 
 /-!
 # Orthonormal coordinates
 
 This module describes coordinates in an orthonormal basis of an inner product space over
-`𝕜 = ℝ` or `ℂ`: coordinates adapted to a given vector, and rotated real coordinates in a complex
+`𝕜 = ℝ` or `ℂ`: coordinates adapted to a given vector, rotated real coordinates in a complex
+inner product space, and complex coordinates in an orthonormal frame of an even-dimensional real
 inner product space.
 
 For an orthonormal basis `b`, the `i`-th coordinate functional of the underlying basis is the
@@ -31,11 +33,19 @@ Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quad
 
 * `OrthonormalBasis.rotatedRealCoords`: the real and imaginary parts of the rotated coordinates
   `conj (ω j) ⟪b j, v⟫`, as a real linear equivalence `E ≃ₗ[ℝ] (ι ⊕ ι → ℝ)`.
+* `OrthonormalBasis.complexCoords`: for an orthonormal basis `b` of a real inner product space of
+  dimension `2 * n`, the complex coordinates `⟪b (2 * j), v⟫ + ⟪b (2 * j + 1), v⟫ i`, as a real
+  linear equivalence `V ≃ₗ[ℝ] ℂⁿ`. In dimension four these are
+  `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, v⟫ i)` (`OrthonormalBasis.complexCoords_two_apply`).
+  They preserve norms (`OrthonormalBasis.norm_toLp_complexCoords`) and are natural under linear
+  isometries (`OrthonormalBasis.complexCoords_map_apply`).
 
 ## Main statements
 
 * `OrthonormalBasis.toBasis_coord`: the coordinate functional `b.toBasis.coord i` is
   `innerₛₗ 𝕜 (b i)`.
+* `OrthonormalBasis.toContinuousLinearMap_toBasis_coord`: as a continuous linear map on a
+  finite-dimensional space, `b.toBasis.coord i` is `innerSL 𝕜 (b i)`.
 * `OrthonormalBasis.toLinearMapₛₗ₂_one_eq_innerₛₗ`: the sesquilinear form making `b.toBasis`
   orthonormal is `innerₛₗ 𝕜`.
 * `OrthonormalBasis.exists_clm_norm_le_one_and_repr_eq`: each coordinate of a real orthonormal
@@ -46,6 +56,8 @@ Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quad
   the coordinates of `S x` are those of `x` scaled by the eigenvalues.
 * `OrthonormalBasis.toBasis_equiv_refl`: for two finite orthonormal bases over the same index type,
   `Basis.equiv` along `Equiv.refl` agrees with `d₀.repr.trans c.repr.symm`.
+* `LinearMap.toMatrix_orthonormalBasis_apply`: the entries of the matrix of a linear map in
+  orthonormal bases `(bⱼ)` and `(cᵢ)` are `⟪cᵢ, T bⱼ⟫`.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
@@ -58,20 +70,18 @@ open scoped InnerProductSpace
 namespace TauCeti
 
 /-- Choose orthonormal coordinates in which the inner product with `v` is its norm times the
-prescribed coordinate. This also holds for `v = 0`. For `v ≠ 0` the coordinates are those of an
-orthonormal basis whose `i`-th vector is `‖v‖⁻¹ • v`, obtained by extending this unit vector with
-Mathlib's `Orthonormal.exists_orthonormalBasis_extension_of_card_eq`. -/
+prescribed coordinate `i`. This also holds for `v = 0`. For `v ≠ 0`, coordinate `i` is
+therefore the inner product with the unit vector `‖v‖⁻¹ • v`. -/
 theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (v : E) (i : Fin (Module.finrank 𝕜 E)) :
     ∃ f : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)),
       ∀ x, ⟪v, x⟫_𝕜 = ‖v‖ * f x i := by
   -- In infinite dimension `finrank = 0`, so there is no coordinate `i`.
-  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by
-    have := i.isLt
-    omega)
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (Fin.pos i)
   rcases eq_or_ne v 0 with rfl | hv
   · exact ⟨(stdOrthonormalBasis 𝕜 E).repr, by simp⟩
-  -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis whose `i`-th vector it is.
+  -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis whose `i`-th vector it is, by
+  -- Mathlib's `Orthonormal.exists_orthonormalBasis_extension_of_card_eq`.
   obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq
     (Fintype.card_fin _).symm (v := fun _ ↦ (‖v‖⁻¹ : 𝕜) • v) (s := {i})
     (orthonormal_subsingleton_iff.mpr fun _ ↦ norm_smul_inv_norm (𝕜 := 𝕜) hv)
@@ -99,6 +109,13 @@ theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
     b.toBasis.coord i = innerₗ F (b i) := by
   ext v
   simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
+
+/-- As a continuous linear map on a finite-dimensional inner product space, the `i`-th coordinate
+functional of an orthonormal basis `b` is `innerSL 𝕜 (b i)`. -/
+theorem toContinuousLinearMap_toBasis_coord [FiniteDimensional 𝕜 E]
+    (b : OrthonormalBasis ι 𝕜 E) (i : ι) :
+    LinearMap.toContinuousLinearMap (b.toBasis.coord i) = innerSL 𝕜 (b i) := by
+  ext v; simp
 
 /-- The sesquilinear form making the underlying basis of an orthonormal basis orthonormal is the
 inner product `innerₛₗ 𝕜`. -/
@@ -194,3 +211,94 @@ theorem rotatedRealCoords_symm_apply (b : OrthonormalBasis ι ℂ E) (ω : ι �
   rfl
 
 end OrthonormalBasis
+
+namespace OrthonormalBasis
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- **Complex coordinates in a frame.** For an orthonormal basis `b` of a real inner product space
+of dimension `2 * n`, the complex coordinates `⟪b (2 * j), v⟫ + ⟪b (2 * j + 1), v⟫ i` of a vector
+`v`. They identify `V` with `ℂⁿ`, turning the complex structure `b (2 * j) ↦ b (2 * j + 1)` into
+multiplication by `i`. They are the frame coordinates `b.repr` read through the inverse of the
+interleaved real coordinates `TauCeti.complexEuclideanRealLinearIsometryEquiv n` of `ℂⁿ`. -/
+noncomputable def complexCoords (n : ℕ) (b : OrthonormalBasis (Fin (2 * n)) ℝ V) :
+    V ≃ₗ[ℝ] (Fin n → ℂ) :=
+  (b.repr.trans (TauCeti.complexEuclideanRealLinearIsometryEquiv n).symm).toLinearEquiv.trans
+    (WithLp.linearEquiv 2 ℝ (Fin n → ℂ))
+
+/-- The `j`-th complex coordinate of `v` is `⟪b (2 * j), v⟫ + ⟪b (2 * j + 1), v⟫ i`. -/
+@[simp]
+theorem complexCoords_apply {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V) (v : V)
+    (j : Fin n) :
+    b.complexCoords n v j =
+      inner ℝ (b (Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j, 0)))) v +
+        inner ℝ (b (Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j, 1)))) v * Complex.I := by
+  simp only [complexCoords, LinearEquiv.trans_apply, LinearIsometryEquiv.coe_toLinearEquiv,
+    LinearIsometryEquiv.trans_apply, WithLp.coe_linearEquiv]
+  rw [TauCeti.complexEuclideanRealLinearIsometryEquiv_symm_apply, b.repr_apply_apply,
+    b.repr_apply_apply]
+
+/-- The inverse of `complexCoords` sends `z` to `∑ⱼ (re zⱼ) b (2 * j) + (im zⱼ) b (2 * j + 1)`. -/
+theorem complexCoords_symm_apply {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V)
+    (z : Fin n → ℂ) :
+    (b.complexCoords n).symm z =
+      ∑ j, ((z j).re • b (Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j, 0))) +
+        (z j).im • b (Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j, 1)))) := by
+  rw [LinearEquiv.symm_apply_eq]
+  ext j : 1
+  rw [complexCoords_apply]
+  apply Complex.ext <;>
+    simp [inner_sum, inner_add_right, real_inner_smul_right, b.inner_eq_ite,
+      finProdFinEquiv.injective.eq_iff]
+
+/-- In dimension four, the complex coordinates are `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, v⟫ i)`. -/
+@[simp]
+theorem complexCoords_two_apply (b : OrthonormalBasis (Fin 4) ℝ V) (v : V) :
+    b.complexCoords 2 v =
+      ![inner ℝ (b 0) v + inner ℝ (b 1) v * Complex.I,
+        inner ℝ (b 2) v + inner ℝ (b 3) v * Complex.I] := by
+  ext i : 1
+  rw [complexCoords_apply]
+  -- The frame indices `Fin.cast _ (finProdFinEquiv (i, a))` evaluate to numerals.
+  fin_cases i <;> rfl
+
+/-- The complex coordinates preserve norms: `v ↦ toLp (b.complexCoords n v)` is a real isometry
+from `V` onto `EuclideanSpace ℂ (Fin n)`. -/
+@[simp]
+theorem norm_toLp_complexCoords {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V) (v : V) :
+    ‖WithLp.toLp 2 (b.complexCoords n v)‖ = ‖v‖ :=
+  (b.repr.trans (TauCeti.complexEuclideanRealLinearIsometryEquiv n).symm).norm_map v
+
+/-- In dimension four, the inverse of the complex coordinates sends `z` to
+`(re z₀) b₀ + (im z₀) b₁ + (re z₁) b₂ + (im z₁) b₃`. -/
+@[simp]
+theorem complexCoords_two_symm_apply (b : OrthonormalBasis (Fin 4) ℝ V) (z : Fin 2 → ℂ) :
+    (b.complexCoords 2).symm z =
+      (z 0).re • b 0 + (z 0).im • b 1 + (z 1).re • b 2 + (z 1).im • b 3 := by
+  rw [complexCoords_symm_apply, Fin.sum_univ_two, ← add_assoc]
+  -- The frame indices `Fin.cast _ (finProdFinEquiv (j, a))` evaluate to numerals.
+  rfl
+
+/-- The complex coordinates are natural under linear isometries: those of `f v` in the frame
+`b.map f` are those of `v` in the frame `b`. -/
+@[simp]
+theorem complexCoords_map_apply {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V']
+    {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V) (f : V ≃ₗᵢ[ℝ] V') (v : V) :
+    (b.map f).complexCoords n (f v) = b.complexCoords n v := by
+  ext j
+  simp [OrthonormalBasis.map_apply, LinearIsometryEquiv.inner_map_map]
+
+end OrthonormalBasis
+
+namespace LinearMap
+
+/-- The `(i, j)` entry of the matrix of `T : V → W` with respect to orthonormal bases `(bⱼ)` of
+`V` and `(cᵢ)` of `W` is `⟪cᵢ, T bⱼ⟫`. -/
+theorem toMatrix_orthonormalBasis_apply {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] [Fintype κ] (b : OrthonormalBasis ι 𝕜 V)
+    (c : OrthonormalBasis κ 𝕜 W) (T : V →ₗ[𝕜] W) (i : κ) (j : ι) :
+    toMatrix b.toBasis c.toBasis T i j = ⟪c i, T (b j)⟫_𝕜 := by
+  simp [toMatrix_apply, OrthonormalBasis.repr_apply_apply]
+
+end LinearMap

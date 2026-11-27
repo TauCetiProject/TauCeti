@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.RowSubset
 import TauCeti.Data.Finset.Sort
 

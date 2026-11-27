@@ -160,6 +160,12 @@ theorem isHomeomorph_assoc : IsHomeomorph (assoc A B C D) :=
       inr A B (CompletedTensor A C D) (inr A C D d) := by
   simp [assoc, assocHom]
 
+/-- The associator fixes the image of the base ring. -/
+@[simp] theorem assoc_algebraMap (a : A) :
+    assoc A B C D (algebraMap A (CompletedTensor A (CompletedTensor A B C) D) a) =
+      algebraMap A (CompletedTensor A B (CompletedTensor A C D)) a := by
+  rw [← inl_algebraMap, ← inl_algebraMap, assoc_inl_inl, inl_algebraMap]
+
 /-- The inverse associator preserves the first coprojection. -/
 @[simp] theorem assoc_symm_inl (b : B) :
     (assoc A B C D).symm (inl A B (CompletedTensor A C D) b) =
@@ -177,6 +183,12 @@ theorem isHomeomorph_assoc : IsHomeomorph (assoc A B C D) :=
     (assoc A B C D).symm (inr A B (CompletedTensor A C D) (inr A C D d)) =
       inr A (CompletedTensor A B C) D d := by
   simp [assoc, assocInv, assocRight]
+
+/-- The inverse associator fixes the image of the base ring. -/
+@[simp] theorem assoc_symm_algebraMap (a : A) :
+    (assoc A B C D).symm (algebraMap A (CompletedTensor A B (CompletedTensor A C D)) a) =
+      algebraMap A (CompletedTensor A (CompletedTensor A B C) D) a := by
+  rw [RingEquiv.symm_apply_eq, assoc_algebraMap]
 
 /-- On pure tensors the associator sends `(b ⊗ c) ⊗ d` to `b ⊗ (c ⊗ d)`. -/
 theorem assoc_tmul (b : B) (c : C) (d : D) :

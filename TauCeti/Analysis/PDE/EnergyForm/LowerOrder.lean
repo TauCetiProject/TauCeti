@@ -24,10 +24,16 @@ between the two sides of a weak equation.
   coefficients the energy form is that of its principal part plus the `L²` pairing of
   `⟪b, ∇u⟫ + c u` with `v`; `TauCeti.PDE.memLp_inner_gradient` and
   `TauCeti.PDE.memLp_lowerOrder`: `⟪b, ∇u⟫ ∈ L²(Ω)` and `⟪b, ∇u⟫ + c u ∈ L²(Ω)`.
+* `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner`: with bounded lower-order
+  coefficients the energy form is that of the operator without drift plus the pairing
+  `∫_Ω ⟪b, ∇u⟫ v`.
 * `TauCeti.PDE.lowerOrderL`: the lower-order part `u ↦ ⟪b, ∇u⟫ + c u` as a bounded operator
-  `H¹(Ω) → L²(Ω)`, and `TauCeti.PDE.energyFormH1_eq_principal_add_inner_lowerOrderL`: tested
-  against `H¹₀(Ω)`, the energy form is that of its principal part plus the `L²` pairing of
-  `TauCeti.PDE.lowerOrderL` with the value.
+  `H¹(Ω) → L²(Ω)`, with norm at most `(‖b‖_∞ + ‖c‖_∞) ‖J‖` for the jet map `J`
+  (`TauCeti.PDE.norm_lowerOrderL_le_eLpNorm`), hence at most `(|β| + |γ|) ‖J‖` for bounds
+  `‖b‖ ≤ β`, `|c| ≤ γ` (`TauCeti.PDE.norm_lowerOrderL_le`), and
+  `TauCeti.PDE.energyFormH1_eq_principal_add_inner_lowerOrderL`: tested against `H¹₀(Ω)`, the
+  energy form is that of its principal part plus the `L²` pairing of `TauCeti.PDE.lowerOrderL`
+  with the value.
 * `TauCeti.PDE.energyFormH1_principal_eq_setIntegral_sub` and
   `TauCeti.PDE.exists_forcing_energyFormH1_principal_eq`: a weak equation with bounded
   lower-order coefficients gives a weak equation for its principal part with the `L²` forcing
@@ -59,7 +65,6 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
-open scoped InnerProductSpace in
 /-- A bounded drift paired with the gradient of an `H¹` function is square integrable. -/
 theorem memLp_inner_gradient {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     (hb : MemLp b ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2) :
@@ -67,7 +72,6 @@ theorem memLp_inner_gradient {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ �
   MemLp.of_bilin (inner ℝ) 1 hb (Lp.memLp _) continuous_inner
     (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient u x))
 
-open scoped InnerProductSpace in
 /-- With bounded lower-order coefficients, `⟪b, ∇u⟫ + c u` is square integrable. -/
 theorem memLp_lowerOrder {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {c : EuclideanSpace ℝ ι → ℝ} (hb : MemLp b ⊤ (mu.restrict Omega))
@@ -75,7 +79,6 @@ theorem memLp_lowerOrder {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x) 2 (mu.restrict Omega) :=
   (memLp_inner_gradient hb u).add (hc.fun_mul (Lp.memLp _))
 
-open scoped InnerProductSpace in
 /-- With bounded lower-order coefficients, the forcing `f - ⟪b, ∇u⟫ - c u` of the principal
 equation is square integrable. -/
 private theorem memLp_forcing_principal {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
@@ -86,7 +89,6 @@ private theorem memLp_forcing_principal {b : EuclideanSpace ℝ ι → Euclidean
   ((Lp.memLp f).sub (memLp_lowerOrder hb hc u)).ae_eq
     (.of_forall fun _ => sub_add_eq_sub_sub _ _ _)
 
-open scoped InnerProductSpace in
 /-- **Splitting off the lower-order terms.** With an essentially bounded principal energy density
 and bounded lower-order coefficients, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u` is that of
 its principal part plus the `L²` pairing of `⟪b, ∇u⟫ + c u` with `v`:
@@ -104,8 +106,7 @@ theorem energyFormH1_eq_principal_add_setIntegral {a : EuclideanSpace ℝ ι →
   have hv := Lp.memLp (W1p.value v)
   have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x)
       (mu.restrict Omega) := (memLp_inner_gradient hb u).integrable_mul hv
-  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
-    hc.fun_mul (Lp.memLp _)
+  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) := hc.fun_mul (Lp.memLp _)
   have hCv : Integrable (fun x => (c x * W1p.value u x) * W1p.value v x) (mu.restrict Omega) :=
     hC.integrable_mul hv
   -- The drift and mass densities are integrable, so the energy form splits into its pieces.
@@ -132,7 +133,33 @@ theorem energyFormH1_eq_principal_add_setIntegral {a : EuclideanSpace ℝ ι →
     ← integral_add hBv hCv]
   simp only [add_mul]
 
-open scoped InnerProductSpace in
+/-- **Splitting off the drift.** With an essentially bounded principal energy density and bounded
+lower-order coefficients, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼ·) + bⁱ ∂ᵢ + c` is that of
+`-∂ᵢ(aⁱʲ ∂ⱼ·) + c` plus the drift pairing:
+
+`a_{b,c}(u, v) = a_{0,c}(u, v) + ∫_Ω ⟪b, ∇u⟫ v`. -/
+theorem energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    energyFormH1 a b c u v = energyFormH1 a 0 c u v +
+      ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x ∂mu := by
+  have hv := Lp.memLp (W1p.value v)
+  have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x) (mu.restrict Omega) :=
+    (memLp_inner_gradient hb u).integrable_mul hv
+  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) := hc.fun_mul (Lp.memLp _)
+  have hCv : Integrable (fun x => c x * W1p.value u x * W1p.value v x) (mu.restrict Omega) :=
+    hC.integrable_mul hv
+  rw [energyFormH1_eq_principal_add_setIntegral ha hb hc,
+    energyFormH1_eq_principal_add_setIntegral ha MemLp.zero hc, add_assoc]
+  congr 1
+  rw [← integral_add (hCv.congr (ae_of_all _ fun x => by simp)) hBv]
+  refine integral_congr_ae (ae_of_all _ fun x => ?_)
+  simp only [Pi.zero_apply, inner_zero_left, zero_add]
+  ring
+
 /-- **Moving the lower-order terms to the right-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`, with an essentially bounded principal energy density,
 bounded lower-order coefficients and `f ∈ L²(Ω)`, then `u` is a weak solution of the principal
@@ -166,7 +193,6 @@ theorem energyFormH1_principal_eq_setIntegral_sub {a : EuclideanSpace ℝ ι →
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   ring
 
-open scoped InnerProductSpace in
 /-- **Moving the lower-order terms to the left-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
 the principal equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - ⟪b, ∇u⟫ - c u` in `Ω`, with an essentially bounded
 principal energy density, bounded lower-order coefficients and `f ∈ L²(Ω)`, then `u` is a weak
@@ -197,7 +223,6 @@ theorem energyFormH1_eq_setIntegral_of_principal_eq_sub {a : EuclideanSpace ℝ 
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   ring
 
-open scoped InnerProductSpace in
 /-- **The size of the forcing of the principal equation.** For `f ∈ L²(Ω)`, `u ∈ H¹(Ω)` and
 essentially bounded `b, c`, the forcing `f - ⟪b, ∇u⟫ - c u` of the principal equation satisfies
 
@@ -221,7 +246,6 @@ theorem eLpNorm_sub_inner_gradient_sub_mul_value_le {b : EuclideanSpace ℝ ι �
   refine (eLpNorm_sub_le one_le_two).trans (add_le_add ((eLpNorm_sub_le one_le_two).trans
     (add_le_add le_rfl (h2.trans_eq (by rw [ENNReal.coe_one, one_mul])))) h3)
 
-open scoped InnerProductSpace in
 /-- A weak equation with an essentially bounded principal energy density and bounded
 lower-order coefficients admits an `L²` forcing `g` for its principal part alone, with
 
@@ -311,12 +335,46 @@ def lowerOrderL (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.res
             · exact le_max_right _ _
             · exact le_max_left _ _
 
+/-- The operator norm of the lower-order operator is at most `(‖b‖_∞ + ‖c‖_∞) ‖J‖`, where
+`J = TauCeti.PDE.jetLpL` sends an `H¹` function to its value-gradient jet in `L²`: this is the
+bound `TauCeti.PDE.lowerOrderL` is built with. -/
+theorem norm_lowerOrderL_le_eLpNorm (hb : MemLp b ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) :
+    ‖lowerOrderL hb hc‖ ≤
+      ((eLpNorm b ⊤ (mu.restrict Omega)).toReal + (eLpNorm c ⊤ (mu.restrict Omega)).toReal) *
+        ‖(jetLpL : W1p mu Omega 2 →L[ℝ] Lp (ℝ × EuclideanSpace ℝ ι) 2 (mu.restrict Omega))‖ :=
+  LinearMap.mkContinuous_norm_le _ (by positivity) _
+
 /-- The lower-order operator is almost everywhere `⟪b, ∇u⟫ + c u`. -/
 theorem lowerOrderL_apply_ae (hb : MemLp b ⊤ (mu.restrict Omega))
     (hc : MemLp c ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2) :
     lowerOrderL hb hc u =ᵐ[mu.restrict Omega]
       fun x => ⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x :=
   (memLp_lowerOrder hb hc u).coeFn_toLp
+
+/-- The operator norm of the lower-order operator is at most `(|β| + |γ|) ‖J‖` when `‖b‖ ≤ β` and
+`|c| ≤ γ` almost everywhere on `Ω`, where `J = TauCeti.PDE.jetLpL` sends an `H¹` function to its
+value-gradient jet in `L²`. -/
+theorem norm_lowerOrderL_le (hb : MemLp b ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) {beta gamma : ℝ}
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) :
+    ‖lowerOrderL hb hc‖ ≤ (|beta| + |gamma|) *
+      ‖(jetLpL : W1p mu Omega 2 →L[ℝ] Lp (ℝ × EuclideanSpace ℝ ι) 2 (mu.restrict Omega))‖ := by
+  -- An almost everywhere bound `|f| ≤ r` bounds the essential supremum of `f`; it is applied to
+  -- the pointwise norms of `b` and `c`, which have the same `L^∞` norms.
+  have hsup {f : EuclideanSpace ℝ ι → ℝ} {r : ℝ} (hf : AEStronglyMeasurable f (mu.restrict Omega))
+      (hr : ∀ᵐ x ∂mu.restrict Omega, ‖f x‖ ≤ r) :
+      (eLpNorm f ⊤ (mu.restrict Omega)).toReal ≤ |r| := by
+    rw [eLpNorm_exponent_top hf]
+    exact ENNReal.toReal_le_of_le_ofReal (abs_nonneg _)
+      (eLpNormEssSup_le_of_ae_bound (hr.mono fun x hx => hx.trans (le_abs_self _)))
+  have hb' := hsup hb.aestronglyMeasurable.norm (by simpa using hb_bound)
+  have hc' := hsup hc.aestronglyMeasurable.norm (by simpa using hc_bound)
+  rw [eLpNorm_norm b hb.aestronglyMeasurable] at hb'
+  rw [eLpNorm_norm c hc.aestronglyMeasurable] at hc'
+  exact (norm_lowerOrderL_le_eLpNorm hb hc).trans
+    (mul_le_mul_of_nonneg_right (add_le_add hb' hc') (ContinuousLinearMap.opNorm_nonneg _))
 
 /-- Paired with the value of a function in `H¹₀(Ω)`, the lower-order operator gives the
 lower-order terms of the energy form. -/

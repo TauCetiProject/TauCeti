@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.ODE.Wronskian
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.SpecialFunctions.Airy.Equation
 
 /-!
 # Antiderivatives of products of solutions of Airy's equation
@@ -22,12 +23,12 @@ for the products `f g`, `f g'`, `f' g'`, `z f g`, `z f g'` and `z f' g'` (DLMF 9
 For the quotient `g / f` there is a substitution formula (DLMF 9.11.11): if `𝒲 ≠ 0`, `f(z) ≠ 0`
 and `F` has derivative `F'` at `g(z) / f(z)`, then `F(g / f) / 𝒲` has derivative `F' / f(z)²` at
 `z`. In the statements the Wronskian is written out at the origin as
-`f 0 * deriv g 0 - deriv f 0 * g 0`; its constancy is `TauCeti.wronskian_eq_of_hasDerivAt`.
+`f 0 * deriv g 0 - deriv f 0 * g 0`; its constancy is `TauCeti.wronskian_eq_of_airy_ode`.
+For `f = Ai`, `g = Bi`, whose Wronskian is `1/π`, it gives antiderivatives of `1/Ai²` and
+`1/(Ai Bi)`; a direct computation gives one of `Ai Bi/(Ai² + Bi²)²` (DLMF 9.11.12–9.11.14).
 
 ## Main results
 
-* `TauCeti.hasDerivAt_deriv_of_airy_ode`: the derivative of an entire solution `w` has
-  derivative `z w(z)`;
 * `TauCeti.hasDerivAt_antiderivative_mul_of_airy_ode`: `-f' g' + z f g` is an antiderivative
   of `f g` (DLMF 9.11.5);
 * `TauCeti.hasDerivAt_antiderivative_mul_deriv_of_airy_ode`: `(f g + 𝒲 z) / 2` is an
@@ -43,37 +44,31 @@ and `F` has derivative `F'` at `g(z) / f(z)`, then `F(g / f) / 𝒲` has derivat
   (DLMF 9.11.10);
 * `TauCeti.hasDerivAt_comp_div_div_wronskian_of_airy_ode`: if `𝒲 ≠ 0`, `f(z) ≠ 0` and `F` has
   derivative `F'` at `g(z) / f(z)`, then `F(g / f) / 𝒲` has derivative `F' / f(z)²` at `z`
-  (DLMF 9.11.11).
+  (DLMF 9.11.11);
+* `TauCeti.hasDerivAt_antiderivative_inv_airyAi_sq`: where `Ai(z) ≠ 0`, `π Bi/Ai` is an
+  antiderivative of `1/Ai²` (DLMF 9.11.12);
+* `TauCeti.hasDerivAt_antiderivative_inv_airyAi_mul_airyBi`: where `Bi(z)/Ai(z)` lies in the slit
+  plane, `π log(Bi/Ai)` is an antiderivative of `1/(Ai Bi)` (DLMF 9.11.13);
+* `TauCeti.hasDerivAt_antiderivative_airyAi_mul_airyBi_div_sq`: where `Ai(z)² + Bi(z)² ≠ 0`,
+  `(π/2) Bi²/(Ai² + Bi²)` is an antiderivative of `Ai Bi/(Ai² + Bi²)²` (DLMF 9.11.14).
 
 ## References
 
 * NIST Digital Library of Mathematical Functions, §9.11(iv), <https://dlmf.nist.gov/9.11.iv>.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
-`DLMF/Airy/Products.lean`.
+`DLMF/Airy/Products.lean` (for DLMF 9.11.12–9.11.14: `airyAi_recip_sq_antiderivative`,
+`airyAiBi_recip_antiderivative` and `airy_modulus_rational_antiderivative`).
 -/
 
 public section
 
+open Complex
+open scoped Real
+
 namespace TauCeti
 
 variable {f g : ℂ → ℂ}
-
-/-- For an entire solution `w` of Airy's equation, `w'` has derivative `z w(z)` at `z`. -/
-theorem hasDerivAt_deriv_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable ℂ w)
-    (hw' : ∀ z, deriv^[2] w z = z * w z) (z : ℂ) : HasDerivAt (deriv w) (z * w z) z := by
-  rw [← hw' z, Function.iterate_succ_apply, Function.iterate_one]
-  exact (hw.deriv z).hasDerivAt
-
-/-- The Wronskian of two entire solutions of Airy's equation equals its value at the origin. -/
-private theorem wronskian_eq_wronskian_zero_of_airy_ode (hf : Differentiable ℂ f)
-    (hg : Differentiable ℂ g) (hf' : ∀ z, deriv^[2] f z = z * f z)
-    (hg' : ∀ z, deriv^[2] g z = z * g z) (z : ℂ) :
-    f z * deriv g z - deriv f z * g z = f 0 * deriv g 0 - deriv f 0 * g 0 := by
-  have h := wronskian_eq_of_hasDerivAt (q := fun t => t) (fun t => (hg t).hasDerivAt)
-    (hasDerivAt_deriv_of_airy_ode hg hg') (fun t => (hf t).hasDerivAt)
-    (hasDerivAt_deriv_of_airy_ode hf hf') z 0
-  linear_combination h
 
 /-- For entire solutions `f`, `g` of Airy's equation, `-f' g' + z f g` is an antiderivative of
 `f g` (DLMF 9.11.5). -/
@@ -95,7 +90,7 @@ theorem hasDerivAt_antiderivative_mul_deriv_of_airy_ode (hf : Differentiable ℂ
       (f z * deriv g z) z := by
   have h := (((hf z).hasDerivAt.mul (hg z).hasDerivAt).add
     ((hasDerivAt_id z).mul_const (f 0 * deriv g 0 - deriv f 0 * g 0))).div_const 2
-  have hW := wronskian_eq_wronskian_zero_of_airy_ode hf hg hf' hg' z
+  have hW := wronskian_eq_of_airy_ode hf hg hf' hg' z 0
   exact h.congr_deriv (by linear_combination -hW / 2)
 
 /-- For entire solutions `f`, `g` of Airy's equation, `(f g' + f' g + z f' g' - z² f g) / 3` is an
@@ -139,7 +134,7 @@ theorem hasDerivAt_antiderivative_id_mul_mul_deriv_of_airy_ode (hf : Differentia
   have h := (((hasDerivAt_deriv_of_airy_ode hf hf' z).mul
     (hasDerivAt_deriv_of_airy_ode hg hg' z)).div_const 2).add
       (((hasDerivAt_pow 2 z).mul_const (f 0 * deriv g 0 - deriv f 0 * g 0)).div_const 4)
-  have hW := wronskian_eq_wronskian_zero_of_airy_ode hf hg hf' hg' z
+  have hW := wronskian_eq_of_airy_ode hf hg hf' hg' z 0
   exact h.congr_deriv (by linear_combination -(z / 2) * hW)
 
 /-- For entire solutions `f`, `g` of Airy's equation,
@@ -174,7 +169,49 @@ theorem hasDerivAt_comp_div_div_wronskian_of_airy_ode (hf : Differentiable ℂ f
   have h := (hF.comp z ((hg z).hasDerivAt.div (hf z).hasDerivAt hfz)).div_const
     (f 0 * deriv g 0 - deriv f 0 * g 0)
   have he : deriv g z * f z - g z * deriv f z = f 0 * deriv g 0 - deriv f 0 * g 0 := by
-    linear_combination wronskian_eq_wronskian_zero_of_airy_ode hf hg hf' hg' z
+    linear_combination wronskian_eq_of_airy_ode hf hg hf' hg' z 0
   exact h.congr_deriv (by rw [he]; field_simp)
+
+/-- Where `Ai(z) ≠ 0`, `π Bi/Ai` is an antiderivative of `1/Ai²` (DLMF 9.11.12). -/
+theorem hasDerivAt_antiderivative_inv_airyAi_sq {z : ℂ} (hz : airyAi z ≠ 0) :
+    HasDerivAt (fun t => π * airyBi t / airyAi t) (airyAi z ^ 2)⁻¹ z := by
+  -- DLMF 9.11.11 with `F = id`, since `𝒲{Ai, Bi} = 1/π`.
+  have h := hasDerivAt_comp_div_div_wronskian_of_airy_ode differentiable_airyAi
+    differentiable_airyBi airyAi_ode airyBi_ode (hasDerivAt_id _) hz
+    (by rw [wronskian_airyAi_airyBi]; simp)
+  simp only [id, wronskian_airyAi_airyBi, one_div] at h
+  exact h.congr_of_eventuallyEq (.of_eq (funext fun t => by field_simp))
+
+/-- Where `Bi(z)/Ai(z)` lies in the slit plane, `π log(Bi/Ai)` is an antiderivative of
+`1/(Ai Bi)` (DLMF 9.11.13). The slit-plane condition forces `Ai(z) ≠ 0` and `Bi(z) ≠ 0`. -/
+theorem hasDerivAt_antiderivative_inv_airyAi_mul_airyBi {z : ℂ}
+    (hz : airyBi z / airyAi z ∈ slitPlane) :
+    HasDerivAt (fun t => π * log (airyBi t / airyAi t)) (airyAi z * airyBi z)⁻¹ z := by
+  obtain ⟨-, ha⟩ := div_ne_zero_iff.mp (slitPlane_ne_zero hz)
+  -- DLMF 9.11.11 with `F = log`, since `𝒲{Ai, Bi} = 1/π`.
+  have h := hasDerivAt_comp_div_div_wronskian_of_airy_ode differentiable_airyAi
+    differentiable_airyBi airyAi_ode airyBi_ode (hasDerivAt_log hz) ha
+    (by rw [wronskian_airyAi_airyBi]; simp)
+  simp only [wronskian_airyAi_airyBi] at h
+  refine (h.congr_of_eventuallyEq (.of_eq (funext fun t => by
+    rw [div_inv_eq_mul, mul_comm]))).congr_deriv ?_
+  field_simp
+
+/-- Where `Ai(z)² + Bi(z)² ≠ 0`, `(π/2) Bi²/(Ai² + Bi²)` is an antiderivative of
+`Ai Bi/(Ai² + Bi²)²` (DLMF 9.11.14). -/
+theorem hasDerivAt_antiderivative_airyAi_mul_airyBi_div_sq {z : ℂ}
+    (hz : airyAi z ^ 2 + airyBi z ^ 2 ≠ 0) :
+    HasDerivAt (fun t => π / 2 * airyBi t ^ 2 / (airyAi t ^ 2 + airyBi t ^ 2))
+      (airyAi z * airyBi z / (airyAi z ^ 2 + airyBi z ^ 2) ^ 2) z := by
+  have hA := (differentiable_airyAi z).hasDerivAt
+  have hB := (differentiable_airyBi z).hasDerivAt
+  have h := ((hB.pow 2).const_mul (π / 2 : ℂ)).div ((hA.pow 2).add (hB.pow 2)) hz
+  simp only [Pi.pow_apply, Pi.add_apply] at h
+  refine h.congr_deriv ?_
+  have hW : (π : ℂ) * (airyAi z * deriv airyBi z - deriv airyAi z * airyBi z) = 1 := by
+    rw [wronskian_airyAi_airyBi]
+    exact mul_inv_cancel₀ (ofReal_ne_zero.mpr Real.pi_ne_zero)
+  field_simp
+  linear_combination 2 * airyAi z * airyBi z * hW
 
 end TauCeti

@@ -13,13 +13,18 @@ public import TauCeti.Algebra.Lie.Dual
 
 A bilinear form `Φ` on a Lie module `M` is invariant when `Φ ⁅x, y⁆ z = -Φ y ⁅x, z⁆`
 (`LinearMap.BilinForm.lieInvariant`). On a Lie algebra, a symmetric invariant form satisfies the
-cyclic identity `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. This file collects the invariant symmetric forms into the
+cyclic identity `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`, and for commuting `p` and `X` any invariant form makes
+`(A, C) ↦ Φ ⁅A, p⁆ ⁅C, X⁆` symmetric. This file collects the invariant symmetric forms into the
 submodule `TauCeti.LieModule.invariantForms R L M` and shows that on a finite-dimensional
 irreducible module over an algebraically closed field there is at most one invariant form up to
 scalars.
 
 For a right-separating invariant form on a Lie algebra, the orthogonal complement of its
-derived ideal is its centre. This criterion needs no positivity or finite-dimensionality.
+derived ideal is its centre. This criterion needs no positivity or finite-dimensionality. For every
+invariant form, commuting ideals `I`, `J` have `⁅I, I⁆` orthogonal to `J`, since
+`B Z ⁅X, Y⁆ = -B ⁅X, Z⁆ Y`; a non-abelian atom of the ideals is its own bracket `⁅I, I⁆`, so it is
+orthogonal to every ideal meeting it trivially, and distinct simple ideals of a semisimple Lie
+algebra are orthogonal.
 
 The irreducible-module uniqueness result follows from Schur's lemma. Invariance of `Φ` says
 exactly that `Φ`, read as a linear map
@@ -40,14 +45,22 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 * `LinearMap.BilinForm.orthogonal_derivedSeries_one_eq_center`: for a right-separating invariant
   form, the orthogonal complement of the derived ideal is the centre.
+* `LinearMap.BilinForm.lie_le_orthogonal_of_lie_eq_bot`: if `⁅I, J⁆ = 0` then `⁅I, I⁆ ⊥ J`.
+* `LinearMap.BilinForm.le_orthogonal_of_isAtom`: a non-abelian atom of the ideals is orthogonal to
+  every ideal meeting it trivially.
+* `LinearMap.BilinForm.le_orthogonal_of_isAtom_of_ne`: distinct atoms of the ideals of a semisimple
+  Lie algebra are orthogonal.
 * `LinearMap.BilinForm.lieInvariant.compl₁₂`: pullback along a Lie homomorphism preserves
   invariance.
+* `LinearMap.BilinMap.compl₁₂_lieInvariant`: the same for bilinear maps with values in a module.
 * `LinearMap.BilinForm.lieInvariant_of_isTrivial`: every form on a trivial Lie module is
   invariant.
 * `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
   `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
 * `LinearMap.BilinForm.lieInvariant.lie_apply_eq`: an invariant form intertwines a Lie module with
   its dual, `⁅x, Φ y⁆ = Φ ⁅x, y⁆`.
+* `LinearMap.BilinForm.lieInvariant.mem_lieAnnihilator_iff`: `x` stabilizes `Φ y` exactly when
+  `Φ ⁅x, y⁆ = 0`.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
   the Killing form, is an invariant symmetric form on the Lie algebra.
 * `TauCeti.LieModule.invariantForms_le_maxTrivSubmodule`: invariant symmetric forms lie in the
@@ -71,14 +84,23 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 public section
 
+/-- The pullback `B(φ ·, φ ·)` of a bilinear map `B` invariant under the adjoint action along a
+Lie algebra morphism `φ` is again invariant. This is the version of
+`LinearMap.BilinForm.lieInvariant.compl₁₂` for bilinear maps with values in a module `M`. -/
+theorem LinearMap.BilinMap.compl₁₂_lieInvariant {R L L' M : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] [AddCommGroup M] [Module R M]
+    {B : LinearMap.BilinMap R L M} (hB : ∀ x y z : L, B ⁅x, y⁆ z = -B y ⁅x, z⁆)
+    (φ : L' →ₗ⁅R⁆ L) (x y z : L') :
+    B.compl₁₂ φ.toLinearMap φ.toLinearMap ⁅x, y⁆ z =
+      -B.compl₁₂ φ.toLinearMap φ.toLinearMap y ⁅x, z⁆ := by
+  simp [hB]
+
 /-- Pullback along a Lie homomorphism preserves invariance of a bilinear form. -/
 theorem LinearMap.BilinForm.lieInvariant.compl₁₂ {R L L' : Type*} [CommRing R]
     [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
     {B : LinearMap.BilinForm R L} (hB : B.lieInvariant L) (f : L' →ₗ⁅R⁆ L) :
-    LinearMap.BilinForm.lieInvariant L' (B.compl₁₂ f.toLinearMap f.toLinearMap) := by
-  intro x y z
-  simpa only [LinearMap.compl₁₂_apply, LieHom.map_lie, LieHom.coe_toLinearMap] using
-    hB (f x) (f y) (f z)
+    LinearMap.BilinForm.lieInvariant L' (B.compl₁₂ f.toLinearMap f.toLinearMap) :=
+  LinearMap.BilinMap.compl₁₂_lieInvariant hB f
 
 /-- Every bilinear form on a trivial Lie module, for instance on an abelian Lie algebra, is
 invariant: both brackets in the invariance identity vanish. -/
@@ -101,6 +123,20 @@ theorem apply_lie_cyclic (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a b c : L
     Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c := by
   rw [hΦ, ← lie_skew a b, map_neg, LinearMap.neg_apply, hΦs.eq]
 
+/-- For an invariant form on a Lie algebra and commuting `p` and `X`, the form
+`(A, C) ↦ Φ ⁅A, p⁆ ⁅C, X⁆` is symmetric. No symmetry of `Φ` is needed. -/
+theorem apply_lie_lie_comm (hΦ : Φ.lieInvariant L) {p X : L} (hXp : ⁅X, p⁆ = 0) (A C : L) :
+    Φ ⁅A, p⁆ ⁅C, X⁆ = Φ ⁅C, p⁆ ⁅A, X⁆ := by
+  -- By invariance and the Jacobi identity the difference is `Φ ⁅⁅C, A⁆, p⁆ X = -Φ ⁅X, p⁆ ⁅C, A⁆`.
+  have h₁ := hΦ C ⁅A, p⁆ X
+  have h₂ := hΦ A ⁅C, p⁆ X
+  have h₃ := hΦ ⁅C, A⁆ p X
+  have h₄ := hΦ X p ⁅C, A⁆
+  rw [leibniz_lie, map_add, LinearMap.add_apply] at h₁
+  rw [← lie_skew ⁅C, A⁆ X, map_neg] at h₃
+  rw [hXp, map_zero, LinearMap.zero_apply] at h₄
+  linear_combination h₁ - h₂ - h₃ - h₄
+
 end LinearMap.BilinForm.lieInvariant
 
 /-! ### Invariant forms intertwine a module with its dual -/
@@ -118,6 +154,12 @@ for a nondegenerate form on a finite-dimensional module this is the bracket comp
 theorem lie_apply_eq (hΦ : Φ.lieInvariant L) (x : L) (y : M) : ⁅x, Φ y⁆ = Φ ⁅x, y⁆ := by
   ext z
   rw [Module.Dual.lie_apply, hΦ]
+
+/-- For an invariant form, `x` stabilizes `Φ y` under the dual action exactly when
+`Φ ⁅x, y⁆ = 0`. -/
+theorem mem_lieAnnihilator_iff (hΦ : Φ.lieInvariant L) {x : L} {y : M} :
+    x ∈ TauCeti.lieAnnihilator R L (Φ y) ↔ Φ ⁅x, y⁆ = 0 := by
+  rw [TauCeti.mem_lieAnnihilator, hΦ.lie_apply_eq]
 
 end LinearMap.BilinForm.lieInvariant
 
@@ -149,6 +191,36 @@ theorem orthogonal_derivedSeries_one_eq_center (B : LinearMap.BilinForm K L)
       rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, hinv, hz x,
         map_zero, neg_zero]
     simpa only [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply] using hker hd
+
+/-- If the ideals `I` and `J` commute, `⁅I, J⁆ = 0`, then `⁅I, I⁆` is orthogonal to `J` for every
+invariant form: `B Z ⁅X, Y⁆ = -B ⁅X, Z⁆ Y = 0` for `X, Y ∈ I` and `Z ∈ J`. -/
+theorem lie_le_orthogonal_of_lie_eq_bot (B : LinearMap.BilinForm K L) (hinv : B.lieInvariant L)
+    {I J : LieIdeal K L} (hIJ : ⁅I, J⁆ = ⊥) :
+    ⁅I, I⁆ ≤ LieAlgebra.InvariantForm.orthogonal B hinv J := by
+  rw [LieSubmodule.lie_le_iff]
+  intro x hx y _
+  rw [LieAlgebra.InvariantForm.mem_orthogonal]
+  intro z hz
+  rw [← neg_eq_zero, ← hinv x z y, (LieSubmodule.lie_eq_bot_iff _ _).mp hIJ x hx z hz,
+    map_zero, LinearMap.zero_apply]
+
+/-- A non-abelian atom `I` of the ideals is orthogonal, for every invariant form, to each ideal
+`J` meeting it trivially. In particular distinct simple ideals of a Lie algebra are orthogonal for
+every invariant form. -/
+theorem le_orthogonal_of_isAtom (B : LinearMap.BilinForm K L) (hinv : B.lieInvariant L)
+    {I J : LieIdeal K L} (hI : IsAtom I) (hIab : ¬IsLieAbelian I) (hIJ : Disjoint I J) :
+    I ≤ LieAlgebra.InvariantForm.orthogonal B hinv J := by
+  rw [← lie_eq_self_of_isAtom_of_nonabelian I hI hIab]
+  exact lie_le_orthogonal_of_lie_eq_bot B hinv
+    (le_bot_iff.mp ((LieSubmodule.lie_le_inf I J).trans hIJ.le_bot))
+
+/-- In a semisimple Lie algebra distinct atoms of the ideals, the simple ideals, are orthogonal
+for every invariant form. -/
+theorem le_orthogonal_of_isAtom_of_ne [LieAlgebra.IsSemisimple K L] (B : LinearMap.BilinForm K L)
+    (hinv : B.lieInvariant L) {I J : LieIdeal K L} (hI : IsAtom I) (hJ : IsAtom J) (hIJ : I ≠ J) :
+    I ≤ LieAlgebra.InvariantForm.orthogonal B hinv J :=
+  le_orthogonal_of_isAtom B hinv hI (LieAlgebra.IsSemisimple.non_abelian_of_isAtom I hI)
+    (hI.disjoint_of_ne hJ hIJ)
 
 end LinearMap.BilinForm
 

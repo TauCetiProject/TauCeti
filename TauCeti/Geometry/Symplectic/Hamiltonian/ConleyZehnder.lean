@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.ConleyZehnder
+public import TauCeti.Geometry.Symplectic.ConleyZehnder.Parity
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
@@ -36,7 +36,9 @@ of the time-one map, the return map `Ψ(1)` has no eigenvector for the eigenvalu
 (`TauCeti.SymplecticForm.eigenspace_linearizedFlowPath_one_eq_bot`), and so its matrix in any
 basis has no eigenvalue `1`
 (`TauCeti.SymplecticForm.finrank_eigenspace_toLin'_toMatrix_linearizedFlowPath_one_eq_zero`). This
-is the endpoint condition that makes the orbit nondegenerate.
+is the endpoint condition that makes the orbit nondegenerate, and under it the index of the orbit
+is an integer `k` with `(-1) ^ (n - k) = sign det (1 - Ψ(1))`, `2n = dim V`
+(`TauCeti.SymplecticForm.exists_int_orbitConleyZehnderIndex_eq`).
 
 ## Main definitions
 
@@ -133,5 +135,23 @@ theorem finrank_eigenspace_toLin'_toMatrix_linearizedFlowPath_one_eq_zero
       (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt) 1 : V →ₗ[ℝ] V))) 1) = 0 := by
   rw [LinearMap.finrank_eigenspace_toLin'_toMatrix,
     ω.eigenspace_linearizedFlowPath_one_eq_bot hH hX hx hnd, finrank_bot]
+
+/-- **The Conley–Zehnder index of a nondegenerate orbit is an integer.** For a one-periodic orbit
+`x` of a jointly `C²` time-dependent Hamiltonian on a symplectic vector space of dimension `2n`,
+whose suspended vector field is globally Lipschitz, if `x(0)` is a nondegenerate fixed point of the
+time-one map, then the Conley–Zehnder index of `x` is an integer `k` whose parity is that of the
+return map `Ψ(1)`: `(-1) ^ (n - k) = sign det (1 - Ψ(1))`. -/
+theorem exists_int_orbitConleyZehnderIndex_eq (hH : ContDiff ℝ 2 (uncurry H)) {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    ∃ k : ℤ, ω.orbitConleyZehnderIndex hH
+        (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt) = k ∧
+      ((((finrank ℝ V / 2 : ℕ) : ℤ) - k).negOnePow : ℤ) =
+        SignType.sign (LinearMap.det (1 - (ω.linearizedFlowPath hH
+          (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt) 1 : V →ₗ[ℝ] V))) := by
+  have hB := ω.eigenspace_linearizedFlowPath_one_eq_bot hH hX hx hnd
+  rw [Path.target] at hB ⊢
+  exact ω.exists_int_conleyZehnderIndex_eq_of_one _ _ hB
 
 end TauCeti.SymplecticForm

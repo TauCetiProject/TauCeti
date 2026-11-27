@@ -43,6 +43,13 @@ space used in the definition of a triangulation (`TauCeti.IsTriangulable`).
 * `mem_realization_iff`: a finitely supported function belongs to the polyhedron exactly when it
   lies in the convex hull of the coordinate image of some abstract face.
 * `faceBarycenter_mem`: a face barycenter belongs to its closed simplex.
+* `Finset.range_linearCombination_standardSimplex`: the combinations of a family with weights in
+  a closed coordinate simplex form its convex hull.
+* `mem_range_faceInclusion_carrier`, `iUnion_range_faceInclusion`: closed faces cover the
+  realization, with each point in the face of its carrier.
+* `isQuotientMap_sigma_faceInclusion`: the closed faces present the realization as a quotient.
+* `isClosedMap_of_locallyFinite_faceInclusion`: a continuous map into a Hausdorff space is closed
+  when the images of the closed simplices form a locally finite family.
 * `vertex`: the canonical point of the realization corresponding to a vertex.
 * `realizationBotHomeomorph`: the realization of the bottom complex is its discrete vertex space.
 -/
@@ -105,6 +112,26 @@ theorem faceBarycenter_apply (K : AbstractSimplicialComplex ι) (σ : Face K) (v
   rw [Finset.card_image_of_injOn hinj.injOn, Finset.sum_image hinj.injOn]
   simp [Finsupp.single_apply]
 
+/-- The support of the barycenter of a face is that face. -/
+@[simp]
+theorem support_faceBarycenter (K : AbstractSimplicialComplex ι) (σ : Face K) :
+    (faceBarycenter K σ).support = σ.val := by
+  ext v
+  by_cases hv : v ∈ σ.val
+  · have hcard : (σ.val.card : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Finset.card_ne_zero_of_mem hv)
+    simp [Finsupp.mem_support_iff, hv, hcard]
+  · simp [Finsupp.mem_support_iff, hv]
+
+/-- The coordinates of the barycenter of a face `σ` sum to one over every finite set containing
+`σ`. -/
+theorem sum_faceBarycenter_eq_one_of_subset (K : AbstractSimplicialComplex ι) (σ : Face K)
+    {s : Finset ι} (hσs : σ.val ⊆ s) : ∑ v ∈ s, faceBarycenter K σ v = 1 := by
+  have hcard : (σ.val.card : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (K.isRelLowerSet_faces.prop_of_mem σ.property).card_pos.ne'
+  simp only [faceBarycenter_apply]
+  rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr hσs, Finset.sum_const, nsmul_eq_mul,
+    mul_inv_cancel₀ hcard]
+
 /-- The topology induced by the coordinatewise topology on `ι → ℝ`. These are the domain
 topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
@@ -145,6 +172,18 @@ theorem mem_standardGeometricComplex_faces_iff (K : AbstractSimplicialComplex ι
     Geometry.SimplicialComplex.ofAffineIndependent, PreAbstractSimplicialComplex.map,
     Set.mem_image]
   aesop
+
+/-- The underlying precomplex of the standard geometric complex is the coordinate relabeling
+of the original precomplex. -/
+theorem toPreAbstractSimplicialComplex_standardGeometricComplex [DecidableEq (ι →₀ ℝ)]
+    (K : AbstractSimplicialComplex ι) :
+    K.standardGeometricComplex.toPreAbstractSimplicialComplex =
+      K.toPreAbstractSimplicialComplex.map (fun v => Finsupp.single v (1 : ℝ)) := by
+  apply SetLike.ext
+  intro τ
+  simpa only [PreAbstractSimplicialComplex.mem_faces, PreAbstractSimplicialComplex.mem_map_iff,
+    mem_toPreAbstractSimplicialComplex,
+    ← Finset.coe_inj, Finset.coe_image] using mem_standardGeometricComplex_faces_iff K τ
 
 /-- Include the realization of a face into the whole polyhedron. -/
 noncomputable def faceInclusion (K : AbstractSimplicialComplex ι) (σ : Face K) :
@@ -305,6 +344,28 @@ theorem mem_standardSimplex_iff {σ : Finset ι} {x : ι →₀ ℝ} :
     rw [Finset.coe_image] at hx
     exact hx
 
+/-- The range of the map from the closed coordinate simplex sending barycentric coordinates to the
+corresponding linear combination of a family `p` is the convex hull of `p`. -/
+theorem _root_.Finset.range_linearCombination_standardSimplex {E : Type*} [AddCommMonoid E]
+    [Module ℝ E] {σ : Finset ι} (p : σ → E) :
+    range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.val a) =
+      convexHull ℝ (range p) := by
+  -- Extend `p` by zero; on the closed simplex the combination only involves the vertices of `σ`.
+  let q : ι → E := fun v => if h : v ∈ σ then p ⟨v, h⟩ else 0
+  have hy (y : StandardSimplex σ) :
+      Fintype.linearCombination ℝ p (fun a => y.val a) = Finsupp.linearCombination ℝ q y.val := by
+    rw [Fintype.linearCombination_apply,
+      Finsupp.linearCombination_apply_of_mem_supported ℝ (StandardSimplex.support_subset y),
+      ← Finset.sum_coe_sort σ]
+    exact Finset.sum_congr rfl fun a _ => by simp only [q, a.property, dite_true]
+  simp_rw [hy]
+  rw [← image_eq_range, LinearMap.image_convexHull, Finset.coe_image, ← image_comp]
+  congr 1
+  ext x
+  simp only [mem_image, Finset.mem_coe, Function.comp_apply, Finsupp.linearCombination_single,
+    one_smul, mem_range, Subtype.exists]
+  constructor <;> rintro ⟨v, hv, rfl⟩ <;> exact ⟨v, hv, by simp only [q, hv, dite_true]⟩
+
 /-- A point of a standard simplex lies in the simplex spanned by its support. -/
 theorem StandardSimplex.mem_convexHull_support {σ : Finset ι} (x : StandardSimplex σ) :
     x.val ∈ convexHull ℝ
@@ -372,6 +433,19 @@ theorem StandardSimplex.lineMap_same {σ : Finset ι} (b : StandardSimplex σ) (
     StandardSimplex.lineMap b b t = b :=
   Subtype.ext (by simp)
 
+/-- The coordinates of a point of a segment in a closed simplex. -/
+theorem StandardSimplex.lineMap_apply {σ : Finset ι} (b x : StandardSimplex σ) (t : unitInterval)
+    (w : ι) : (StandardSimplex.lineMap b x t : ι →₀ ℝ) w = (1 - t) * b.val w + t * x.val w := by
+  simp [AffineMap.lineMap_apply_module]
+
+/-- The segment between two points of a closed coordinate simplex is continuous in its
+parameter. -/
+theorem StandardSimplex.continuous_lineMap {σ : Finset ι} (b x : StandardSimplex σ) :
+    Continuous (StandardSimplex.lineMap b x) := by
+  refine continuous_induced_rng.2 (continuous_pi fun w ↦ ?_)
+  simp only [Function.comp_apply, StandardSimplex.lineMap_apply]
+  fun_prop
+
 /-- The support of a realization point is an abstract face. -/
 theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.val.support ∈ K := by
   obtain ⟨σ, hσ, hx⟩ := mem_realization_iff.1 x.property
@@ -392,6 +466,12 @@ theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.v
 /-- The minimal abstract face carrying a point of the realization. -/
 noncomputable def carrier (K : AbstractSimplicialComplex ι) (x : Realization K) : Face K :=
   ⟨x.val.support, support_mem K x⟩
+
+/-- A face of `K` is the support of a point of `|K|`, namely its barycenter. -/
+theorem exists_support_eq {K : AbstractSimplicialComplex ι} {σ : Finset ι} (hσ : σ ∈ K) :
+    ∃ x : Realization K, x.val.support = σ :=
+  ⟨⟨faceBarycenter K ⟨σ, hσ⟩, mem_realization_iff.2 ⟨σ, hσ, faceBarycenter_mem K ⟨σ, hσ⟩⟩⟩,
+    support_faceBarycenter K ⟨σ, hσ⟩⟩
 
 /-- The vertices of the carrier are exactly the nonzero barycentric coordinates. -/
 @[simp]
@@ -418,6 +498,27 @@ theorem Realization.sum_eq_one (K : AbstractSimplicialComplex ι) (x : Realizati
     x.val.sum (fun _ r => r) = 1 :=
   StandardSimplex.sum_eq_one ⟨x.val, mem_convexHull_carrier K x⟩
 
+/-- The barycentric coordinates of a realization point sum to one over every finite set containing
+its support. -/
+theorem Realization.sum_eq_one_of_support_subset (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {s : Finset ι} (hx : x.val.support ⊆ s) : ∑ v ∈ s, x.val v = 1 := by
+  rw [← Realization.sum_eq_one K x, Finsupp.sum_of_support_subset _ hx _ fun _ _ => rfl]
+
+/-- The segment between two points of `|K|` whose supports together span a face of `K` lies
+in `|K|`. -/
+theorem lineMap_mem_realization [DecidableEq ι] {K : AbstractSimplicialComplex ι}
+    {x y : Realization K} (h : x.val.support ∪ y.val.support ∈ K) (t : unitInterval) :
+    AffineMap.lineMap x.val y.val (t : ℝ) ∈ (standardGeometricComplex K).space := by
+  have hmem (z : Realization K) (hz : z.val.support ⊆ x.val.support ∪ y.val.support) :
+      z.val ∈ convexHull ℝ ((fun v => Finsupp.single v (1 : ℝ)) ''
+        ((x.val.support ∪ y.val.support : Finset ι) : Set ι)) :=
+    mem_standardSimplex_iff.2 ⟨Realization.nonneg K z, Realization.sum_eq_one K z, hz⟩
+  refine mem_realization_iff.2 ⟨_, h, ?_⟩
+  convert (convex_convexHull ℝ _).lineMap_mem (hmem x Finset.subset_union_left)
+    (hmem y Finset.subset_union_right) t.property using 2
+  ext
+  simp
+
 /-- Every barycentric coordinate of a realization point is at most one. -/
 theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K) (v : ι) :
     x.val v ≤ 1 :=
@@ -428,6 +529,74 @@ theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K
 theorem Realization.pos_of_mem_support (K : AbstractSimplicialComplex ι) (x : Realization K)
     {v : ι} (hv : v ∈ x.val.support) : 0 < x.val v :=
   (Realization.nonneg K x v).lt_of_ne' (Finsupp.mem_support_iff.mp hv)
+
+/-- A realization point lies in the closed simplex of every finite vertex set containing its
+support. -/
+theorem Realization.mem_convexHull_of_support_subset (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {σ : Finset ι} (hx : x.val.support ⊆ σ) :
+    x.val ∈ convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ)) := by
+  rw [Finset.coe_image]
+  exact mem_standardSimplex_iff.mpr ⟨Realization.nonneg K x, Realization.sum_eq_one K x, hx⟩
+
+/-- A realization point lying in the closed simplex of a face is the image under the face
+inclusion of its own barycentric coordinates. With `mem_convexHull_carrier`, every point lies in
+the closed simplex of its carrier. -/
+@[simp]
+theorem faceInclusion_mk_val (K : AbstractSimplicialComplex ι) (σ : Face K) (x : Realization K)
+    (hx : x.val ∈ convexHull ℝ (σ.val.image (fun v => Finsupp.single v (1 : ℝ)) :
+      Set (ι →₀ ℝ))) :
+    faceInclusion K σ ⟨x.val, hx⟩ = x :=
+  Subtype.ext (faceInclusion_val K σ _)
+
+/-- A point lies in a closed face exactly when its barycentric support lies in that face. -/
+theorem mem_range_faceInclusion_iff (K : AbstractSimplicialComplex ι) (σ : Face K)
+    (x : Realization K) :
+    x ∈ Set.range (faceInclusion K σ) ↔ x.val.support ⊆ σ.val := by
+  constructor
+  · rintro ⟨y, rfl⟩
+    rw [faceInclusion_val]
+    exact StandardSimplex.support_subset y
+  · intro hx
+    exact ⟨_, faceInclusion_mk_val K σ x (Realization.mem_convexHull_of_support_subset K x hx)⟩
+
+/-- Every point of the realization lies in the closed simplex of its carrier. -/
+theorem mem_range_faceInclusion_carrier (K : AbstractSimplicialComplex ι) (x : Realization K) :
+    x ∈ range (faceInclusion K (carrier K x)) :=
+  ⟨_, faceInclusion_mk_val K _ x (mem_convexHull_carrier K x)⟩
+
+/-- The closed simplices cover the realization. -/
+theorem iUnion_range_faceInclusion (K : AbstractSimplicialComplex ι) :
+    ⋃ σ : Face K, range (faceInclusion K σ) = univ := by
+  apply eq_univ_of_forall
+  intro x
+  exact mem_iUnion.mpr ⟨carrier K x, mem_range_faceInclusion_carrier K x⟩
+
+/-- The closed simplices present the weak realization as a quotient of their disjoint union. -/
+theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
+    Topology.IsQuotientMap
+      (fun p : Σ σ : Face K, StandardSimplex σ.val => faceInclusion K p.1 p.2) := by
+  apply Topology.isQuotientMap_iff_isClosed.mpr
+  refine ⟨?_, fun s => ?_⟩
+  · intro x
+    obtain ⟨y, hy⟩ := mem_range_faceInclusion_carrier K x
+    exact ⟨⟨carrier K x, y⟩, hy⟩
+  · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
+    simp only [preimage_preimage]
+
+/-- A continuous map from the realization into a Hausdorff space is closed when the images of the
+closed simplices form a locally finite family: the image of a closed set is the locally finite
+union of the compact images of its traces on the closed simplices. -/
+theorem isClosedMap_of_locallyFinite_faceInclusion {K : AbstractSimplicialComplex ι}
+    {Y : Type*} [TopologicalSpace Y] [T2Space Y] {f : Realization K → Y} (hf : Continuous f)
+    (hK : LocallyFinite fun σ : Face K => range (f ∘ faceInclusion K σ)) : IsClosedMap f := by
+  intro C hC
+  have hC' : f '' C = ⋃ σ : Face K, (f ∘ faceInclusion K σ) '' (faceInclusion K σ ⁻¹' C) := by
+    simp only [image_comp, image_preimage_eq_range_inter, ← image_iUnion, ← iUnion_inter,
+      iUnion_range_faceInclusion, univ_inter]
+  rw [hC']
+  exact (hK.subset fun σ => image_subset_range _ _).isClosed_iUnion fun σ =>
+    ((isClosed_iff_faceInclusion.mp hC σ).isCompact.image
+      (hf.comp (continuous_faceInclusion K σ))).isClosed
 
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}

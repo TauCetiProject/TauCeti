@@ -27,7 +27,9 @@ suspension leaves the underlying module unchanged and reindexes its homogeneous 
 
 ## Main results
 
-* `TauCeti.LinearMap.isHomogeneous_shift_piece_iff`: shifting both gradings preserves degrees.
+* `TauCeti.InternalGrading.mem_shift_piece_neg_of_mem_zero`: a degree-zero element has degree `-c`
+  after shifting by `c`.
+* `LinearMap.isHomogeneous_shift_piece_iff`: shifting both gradings preserves degrees.
 
 ## References
 
@@ -80,6 +82,11 @@ theorem shift_shift (G : InternalGrading R M ι) (c d : ι) :
   ext p
   simp [add_assoc]
 
+/-- An element of degree zero has degree `-c` after shifting the grading by `c`. -/
+theorem mem_shift_piece_neg_of_mem_zero (G : InternalGrading R M ι) (c : ι) {x : M}
+    (hx : x ∈ G.piece 0) : x ∈ (G.shift c).piece (-c) := by
+  rwa [shift_piece, neg_add_cancel]
+
 /-- A Koszul twist preserves the original degree, expressed in any shifted grading. -/
 theorem koszulTwist_mem_shift_piece {R : Type u} {M : Type v}
     [CommRing R] [AddCommMonoid M] [Module R M] (G : InternalGrading R M ℤ)
@@ -112,7 +119,7 @@ end InternalGrading
 
 /-- Shifting the source and the target internal grading by the same amount leaves the degree of a
 homogeneous linear map unchanged. -/
-theorem LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semiring R]
+theorem _root_.LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semiring R]
     {ι : Type*} [DecidableEq ι] [AddCommGroup ι]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {G : InternalGrading R M ι}
     {H : InternalGrading R N ι} {f : M →ₗ[R] N} {c q : ι} :
