@@ -36,8 +36,9 @@ the configuration at `τ`. Here `ψ_i` is the chart `z ↦ c_i + a_i φ₀(z)` o
 that configuration, `φ'_∞` the positive end chart of the output end and `Σ_T` the truncation
 `TauCeti.ThricePuncturedSphere.puncturedSphereTruncation` at height `T`.
 
-On the part `s > 0` of every input end and the part `s ≥ 1` of the output end the neck data
-vanish, and `K_τ` is the datum `Σ_τ` of the moving input ends
+On the part `s > 0` of every input end and the part `s ≥ 1` of the output end in its positive end
+chart `φ'_∞` (the part `s ≤ -1` along its end lift `φ_∞`, where `φ'_∞(s, t) = φ_∞(-s, -t)`) the
+neck data vanish, and `K_τ` is the datum `Σ_τ` of the moving input ends
 (`associativityPerturbation_add_mul_cylindricalEndLift_eq_puncturedSpherePerturbation`,
 `associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePerturbation`, in the
 namespace `TauCeti.Floer`).
