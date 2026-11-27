@@ -17,7 +17,8 @@ import TauCeti.Topology.Homeomorph.Quotient
 # Continuous maps from group quotients and compact orbit spaces
 
 This file records continuity results for maps out of group quotients that do not require
-transitivity of an action, and a compactness criterion for orbit spaces.
+transitivity of an action, continuity of the residual action of a quotient group on an orbit space,
+and a compactness criterion for orbit spaces.
 
 The orbit space of an action is compact as soon as some compact set meets every orbit, since the
 orbit space is then the image of that set under the continuous orbit projection. When the action
@@ -52,6 +53,10 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 * `QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`: its specialization to the right
   action of a subgroup `Γ`: in a weakly locally compact group with separately continuous
   multiplication, `G ⧸ Γ` is compact exactly when `K * Γ = G` for a compact set `K`.
+* `MulAction.orbitRel.Quotient.continuousSMul_quotientGroup`: if `G` acts continuously on `X` and
+  `N` is a normal subgroup, the residual action of `G ⧸ N` on `X ⧸ N`, `[g] • [x] = [g • x]`, is
+  continuous: both projections are open quotient maps, so their product is a quotient map, and on
+  representatives the residual action is the action of `G` followed by the projection.
 * `TauCeti.AddAction.orbitRelQuotientHomeomorphMultiplicative` and
   `TauCeti.MulAction.orbitRelQuotientHomeomorphAdditive`: canonical homeomorphisms identifying the
   orbit space of an action of `G` with that of `Multiplicative G` or `Additive G`.
@@ -343,3 +348,28 @@ theorem orbitRelQuotientHomeomorph_symm_apply (hq : IsQuotientMap q)
     (hq.orbitRelQuotientHomeomorph_mk h e).symm
 
 end Topology.IsQuotientMap
+
+namespace MulAction.orbitRel.Quotient
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
+  (N : Subgroup G) [N.Normal]
+
+/-- **The residual action is continuous.** If a group `G` with separately continuous
+multiplication acts continuously on `X`, then for a normal subgroup `N` the quotient group `G ⧸ N`
+acts continuously on the orbit space `X ⧸ N` by `[g] • [x] = [g • x]`. -/
+@[to_additive /-- **The residual action is continuous.** If an additive group `G` with separately
+continuous addition acts continuously on `X`, then for a normal subgroup `N` the quotient group
+`G ⧸ N` acts continuously on the orbit space `X ⧸ N` by `[g] +ᵥ [x] = [g +ᵥ x]`. -/]
+instance continuousSMul_quotientGroup [SeparatelyContinuousMul G] [ContinuousSMul G X] :
+    ContinuousSMul (G ⧸ N) (orbitRel.Quotient N X) where
+  continuous_smul := by
+    rw [← (QuotientGroup.isOpenQuotientMap_mk.prodMap
+      MulAction.isOpenQuotientMap_quotientMk).continuous_comp_iff]
+    -- On representatives the residual action is the action of `G` followed by the projection.
+    have hcomp : (fun p : (G ⧸ N) × orbitRel.Quotient N X ↦ p.1 • p.2) ∘
+        Prod.map QuotientGroup.mk (Quotient.mk _) = Quotient.mk _ ∘ fun p : G × X ↦ p.1 • p.2 :=
+      funext fun p ↦ mk_smul_mk N p.1 p.2
+    rw [hcomp]
+    exact continuous_quot_mk.comp continuous_smul
+
+end MulAction.orbitRel.Quotient

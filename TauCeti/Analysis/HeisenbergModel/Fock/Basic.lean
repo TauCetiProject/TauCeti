@@ -56,6 +56,8 @@ jointly continuous representation `ω_ε` of `U(ε)` on the Fock space `𝓕(ε)
 * `TauCeti.Fock.norm_multiplier_le`, `TauCeti.Fock.norm_weilRep_le`,
   `TauCeti.Fock.continuous_weilRep`: the bounds `|Δ_∞(u)| ≤ ‖u‖^{|ι|}` and
   `‖ω_ε(u)‖ ≤ ‖e‖ ‖u‖^{|ι|}`, and the joint continuity of `ω_ε`.
+* `TauCeti.Fock.weilRep_vacuum_apply_zero`: the overlap of `ω_ε(u) e` with the vacuum is
+  `(ω_ε(u) e)(0) = det(u₋₋)⁻¹`.
 
 ## Provenance
 
@@ -64,7 +66,8 @@ PBC), file `src/Lib/Weil/Fock/Basic.lean` (`New.Fock.realHeisenberg`, `New.Fock.
 `New.Fock.posProj`, `New.Fock.holomorphicCoord`, `New.Fock.principalMinor_sign_eq_det`,
 `New.Fock.realMultiplier`, `New.Fock.norm_realMultiplier_le`, `New.Fock.beta_mul_realVac`,
 `New.Fock.isVacuum_realVac`, `New.Fock.realMultiplier_mul_integral_eq_one`, `New.Fock.realAction`,
-`New.Fock.fockSpace`, `New.Fock.realWeil`), with `New.Fock.norm_realWeil_le` from
+`New.Fock.fockSpace`, `New.Fock.realWeil`), with `New.Fock.realWeil_vacVector_apply_zero` from
+`src/Lib/Weil/Fock/PolynomialVectors.lean` and `New.Fock.norm_realWeil_le` from
 `src/Lib/Weil/Fock/OscillatorPair.lean`. The vacuum identity uses Tau Ceti's Gaussian reproducing
 formula in place of the source's accretive Gaussian integral.
 
@@ -630,5 +633,15 @@ theorem norm_weilRep_le (g : unitaryGroup ε) :
 theorem continuous_weilRep :
     Continuous fun p : unitaryGroup ε × FockSpace ε ↦ weilRep ε p.1 p.2 :=
   ReproducingModel.continuous_weilRep _ _
+
+/-- The overlap of `ω_ε(u) e` with the vacuum is the inverse of the determinant of the block
+`u₋₋` of `u` on the coordinates of sign `-1`. -/
+@[simp]
+theorem weilRep_vacuum_apply_zero (u : unitaryGroup ε) :
+    weilRep ε u ReproducingModel.vacuum 0 = (negBlock ε ((u : GL ι ℂ) : Matrix ι ι ℂ)).det⁻¹ := by
+  have h := ReproducingModel.conj_mul_weilRep_vacuum_apply_zero (multiplier ε) u
+    cocycle_multiplier
+  rw [multiplier_apply, conj_conj] at h
+  exact eq_inv_of_mul_eq_one_right h
 
 end TauCeti.Fock

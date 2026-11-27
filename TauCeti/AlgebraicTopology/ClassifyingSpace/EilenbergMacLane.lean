@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
 
 /-!
