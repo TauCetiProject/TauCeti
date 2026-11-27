@@ -26,8 +26,9 @@ attaching spheres.
 In the dimension `n + 1` of the cells, if `Hₙ₊₁(X; R)` and `Hₙ(X; R)` vanish, then `Hₙ₊₁(Y; R)` is
 free on the attached cells (`TauCeti.nonempty_singularHomology_cellAttachment_iso_sigma`). If only
 `Hₙ₊₁(X; R)` vanishes, `Hₙ₊₁(Y; R)` still embeds into the free module on the cells
-(`TauCeti.exists_mono_singularHomology_cellAttachment_sigma`). Over a division ring and for finitely
-many cells, `Hₙ₊₁(Y)` is then finite-dimensional, of dimension at most the number of cells
+(`TauCeti.exists_mono_singularHomology_cellAttachment_sigma`). For finitely many cells,
+`Hₙ₊₁(Y; R)` is then finitely generated over a Noetherian ring `R`, and its `finrank` is at most
+the number of cells over a ring with the strong rank condition
 (`TauCeti.finite_singularHomology_cellAttachment`,
 `TauCeti.finrank_singularHomology_cellAttachment_le`).
 
@@ -47,8 +48,8 @@ the relative homology `Hₙ₊₁(Y, X)`, the cellular chain group of the cells.
   `Hₙ₊₁(Y)` is free on the cells.
 * `TauCeti.exists_mono_singularHomology_cellAttachment_sigma`: if `Hₙ₊₁(X)` vanishes, `Hₙ₊₁(Y)`
   embeds into the free module on the cells.
-* `TauCeti.finrank_singularHomology_cellAttachment_le`: over a division ring, if `Hₙ₊₁(X)`
-  vanishes, the dimension of `Hₙ₊₁(Y)` is at most the number of cells.
+* `TauCeti.finrank_singularHomology_cellAttachment_le`: over a ring with the strong rank
+  condition, if `Hₙ₊₁(X)` vanishes, the `finrank` of `Hₙ₊₁(Y)` is at most the number of cells.
 
 ## References
 
@@ -252,45 +253,45 @@ theorem exists_mono_singularHomology_cellAttachment_sigma
   exact ⟨_, @mono_comp _ _ _ _ _ (H.mapIso (skeletonIso φ)).inv inferInstance _
     (@mono_comp _ _ _ _ _ _ hmono e.hom inferInstance)⟩
 
-/-- With coefficients in a division ring `K`, if `Hₙ₊₁(X; K)` vanishes, then `Hₙ₊₁(Y; K)` embeds
-linearly into the functions on the finitely many attached cells. -/
-private lemma exists_injective_singularHomology_cellAttachment [Finite ι] (K : Type w)
-    [DivisionRing K]
-    (h₁ : IsZero (((singularHomologyFunctor (ModuleCat.{w} K) (n + 1)).obj
-      (ModuleCat.of K K)).obj X)) :
-    ∃ g : (((singularHomologyFunctor (ModuleCat.{w} K) (n + 1)).obj (ModuleCat.of K K)).obj
-      (cellAttachment φ)) →ₗ[K] ι → K, Function.Injective g := by
+/-- If `Hₙ₊₁(X; R)` vanishes, then `Hₙ₊₁(Y; R)` embeds linearly into the functions on the finitely
+many attached cells. -/
+private lemma exists_injective_singularHomology_cellAttachment [Finite ι]
+    (h₁ : IsZero (((singularHomologyFunctor (ModuleCat.{w} R) (n + 1)).obj
+      (ModuleCat.of R R)).obj X)) :
+    ∃ g : (((singularHomologyFunctor (ModuleCat.{w} R) (n + 1)).obj (ModuleCat.of R R)).obj
+      (cellAttachment φ)) →ₗ[R] ι → R, Function.Injective g := by
   have := Fintype.ofFinite ι
   classical
-  obtain ⟨f, hf⟩ := exists_mono_singularHomology_cellAttachment_sigma φ K h₁
-  let g := f ≫ (ModuleCat.coprodIsoDirectSum fun _ : ι ↦ ModuleCat.of K K).hom
+  obtain ⟨f, hf⟩ := exists_mono_singularHomology_cellAttachment_sigma φ R h₁
+  let g := f ≫ (ModuleCat.coprodIsoDirectSum fun _ : ι ↦ ModuleCat.of R R).hom
   have hg : Function.Injective g.hom := (ModuleCat.mono_iff_injective g).1 inferInstance
-  -- The carrier of `ModuleCat.of K (DirectSum ι fun _ ↦ K)` is the direct sum itself.
-  exact ⟨(DirectSum.linearEquivFunOnFintype K ι fun _ ↦ K).toLinearMap ∘ₗ g.hom,
-    (DirectSum.linearEquivFunOnFintype K ι fun _ ↦ K).injective.comp hg⟩
+  -- The carrier of `ModuleCat.of R (DirectSum ι fun _ ↦ R)` is the direct sum itself.
+  exact ⟨(DirectSum.linearEquivFunOnFintype R ι fun _ ↦ R).toLinearMap ∘ₗ g.hom,
+    (DirectSum.linearEquivFunOnFintype R ι fun _ ↦ R).injective.comp hg⟩
 
 /-- **Attaching finitely many `(n + 1)`-cells to a space without homology in degree `n + 1`.**
-With coefficients in a division ring `K`, if `Hₙ₊₁(X; K)` vanishes, then `Hₙ₊₁(Y; K)` is
-finite-dimensional. -/
-theorem finite_singularHomology_cellAttachment [Finite ι] (K : Type w) [DivisionRing K]
-    (h₁ : IsZero (((singularHomologyFunctor (ModuleCat.{w} K) (n + 1)).obj
-      (ModuleCat.of K K)).obj X)) :
-    Module.Finite K (((singularHomologyFunctor (ModuleCat.{w} K) (n + 1)).obj
-      (ModuleCat.of K K)).obj (cellAttachment φ)) := by
-  obtain ⟨g, hg⟩ := exists_injective_singularHomology_cellAttachment φ K h₁
+With coefficients in a Noetherian ring `R`, for instance `ℤ` or a field, if `Hₙ₊₁(X; R)` vanishes,
+then `Hₙ₊₁(Y; R)` is a finitely generated `R`-module. -/
+theorem finite_singularHomology_cellAttachment [Finite ι] [IsNoetherianRing R]
+    (h₁ : IsZero (((singularHomologyFunctor (ModuleCat.{w} R) (n + 1)).obj
+      (ModuleCat.of R R)).obj X)) :
+    Module.Finite R (((singularHomologyFunctor (ModuleCat.{w} R) (n + 1)).obj
+      (ModuleCat.of R R)).obj (cellAttachment φ)) := by
+  obtain ⟨g, hg⟩ := exists_injective_singularHomology_cellAttachment φ R h₁
   exact Module.Finite.of_injective g hg
 
 /-- **Attaching finitely many `(n + 1)`-cells to a space without homology in degree `n + 1`.**
-With coefficients in a division ring `K`, if `Hₙ₊₁(X; K)` vanishes, then `Hₙ₊₁(Y; K)` has
-dimension at most the number of attached cells. -/
-theorem finrank_singularHomology_cellAttachment_le [Finite ι] (K : Type w) [DivisionRing K]
-    (h₁ : IsZero (((singularHomologyFunctor (ModuleCat.{w} K) (n + 1)).obj
-      (ModuleCat.of K K)).obj X)) :
-    Module.finrank K (((singularHomologyFunctor (ModuleCat.{w} K) (n + 1)).obj
-      (ModuleCat.of K K)).obj (cellAttachment φ)) ≤ Nat.card ι := by
+With coefficients in a ring `R` with the strong rank condition, for instance `ℤ` or a division
+ring, if `Hₙ₊₁(X; R)` vanishes, then `Hₙ₊₁(Y; R)` has `finrank` at most the number of attached
+cells. -/
+theorem finrank_singularHomology_cellAttachment_le [Finite ι] [StrongRankCondition R]
+    (h₁ : IsZero (((singularHomologyFunctor (ModuleCat.{w} R) (n + 1)).obj
+      (ModuleCat.of R R)).obj X)) :
+    Module.finrank R (((singularHomologyFunctor (ModuleCat.{w} R) (n + 1)).obj
+      (ModuleCat.of R R)).obj (cellAttachment φ)) ≤ Nat.card ι := by
   have := Fintype.ofFinite ι
-  obtain ⟨g, hg⟩ := exists_injective_singularHomology_cellAttachment φ K h₁
+  obtain ⟨g, hg⟩ := exists_injective_singularHomology_cellAttachment φ R h₁
   refine (LinearMap.finrank_le_finrank_of_injective hg).trans_eq ?_
-  exact (Module.finrank_fintype_fun_eq_card K).trans Nat.card_eq_fintype_card.symm
+  exact (Module.finrank_fintype_fun_eq_card R).trans Nat.card_eq_fintype_card.symm
 
 end TauCeti

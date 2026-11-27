@@ -27,7 +27,7 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
 Let a finite group `G` act freely and continuously on the sphere `Sⁿ`, `n ≥ 2`. This file shows
 that for every division ring `k`, for instance every field, the homology `Hₙ₊₁(BG; k)` of the
 classifying space of `G` has dimension at most one
-(`TauCeti.finrank_classifyingSpace_singularHomology_le_one`). Since `H_d(B(ℤ/p × ℤ/p); 𝔽_p)` has
+(`TauCeti.rank_classifyingSpace_singularHomology_le_one`). Since `H_d(B(ℤ/p × ℤ/p); 𝔽_p)` has
 dimension `d + 1`, it follows that no continuous action of `ℤ/p × ℤ/p` on `Sⁿ` is free: some
 nonidentity element fixes a point
 (`TauCeti.exists_ne_one_smul_eq_self_sphere`, which also covers `S⁰` by counting points). No
@@ -66,7 +66,7 @@ the circle are cyclic.
 
 ## Main results
 
-* `TauCeti.finrank_classifyingSpace_singularHomology_le_one`: if a finite group `G` acts freely and
+* `TauCeti.rank_classifyingSpace_singularHomology_le_one`: if a finite group `G` acts freely and
   continuously on `Sⁿ`, `n ≥ 2`, then `dim Hₙ₊₁(BG; k) ≤ 1` for every division ring `k`.
 * `TauCeti.exists_ne_one_smul_eq_self_sphere`: for every prime `p` and `n ≠ 1`, every
   continuous action of `ℤ/p × ℤ/p` on `Sⁿ` has a nonidentity element fixing a point.
@@ -75,7 +75,7 @@ the circle are cyclic.
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 4.2, Exercise 28 (free actions of `ℤ/p × ℤ/p` on spheres), Section 4.1 (attaching cells
-  to kill homotopy groups) and Proposition 1B.9 (uniqueness of `K(G, 1)` spaces).
+  to kill homotopy groups) and Theorem 1B.8 (uniqueness of `K(G, 1)` spaces).
 -/
 
 public section
@@ -141,7 +141,7 @@ private lemma exists_normalClosure_eq_top (hE : finrank ℝ E = n + 3) (x : sphe
     rw [map_zpow, MulEquiv.apply_symm_apply]
     apply Additive.ofMul.injective
     apply f.injective
-    rw [ofMul_zpow, ofMul_toMul, map_zsmul, AddEquiv.apply_symm_apply, smul_eq_mul, mul_one]
+    simp
   rw [hb, ← hp]
   exact Subgroup.zpow_mem _ (Subgroup.subset_normalClosure rfl) _
 
@@ -193,21 +193,16 @@ group on `Sⁿ⁺²` is path connected. -/
 private lemma pathConnectedSpace_cellAttachment_orbit (hE : finrank ℝ E = n + 3) :
     PathConnectedSpace (cellAttachment fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) := by
   have := Module.finite_of_finrank_eq_succ hE
-  have : PathConnectedSpace (sphere (0 : E) 1) := by
-    have := subsingleton_homotopyGroup_sphere_of_lt (n := n + 2) hE (N := Fin 0) (by simp) x
-    exact pathConnectedSpace_iff_zerothHomotopy.2
-      ⟨⟨⟦x⟧⟩, (HomotopyGroup.pi0EquivZerothHomotopy (x := x)).symm.subsingleton⟩
+  have : PathConnectedSpace (sphere (0 : E) 1) := isPathConnected_iff_pathConnectedSpace.1 <|
+    isPathConnected_sphere (by rw [← finrank_eq_rank, hE]; norm_cast; omega) 0 zero_le_one
   have : PathConnectedSpace (orbitRel.Quotient G (sphere (0 : E) 1)) :=
     (Quotient.mk_surjective.pathConnectedSpace continuous_quotient_mk')
-  have hsurj := (bijective_homotopyGroupMap_cellAttachmentIncl (n := n + 2)
-    (fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) (N := Fin 0) (by simp) (Quotient.mk _ x)).2
-  have : Subsingleton (π_ 0 (orbitRel.Quotient G (sphere (0 : E) 1)) (Quotient.mk _ x)) :=
-    HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
-  have := hsurj.subsingleton
-  exact pathConnectedSpace_iff_zerothHomotopy.2
-    ⟨⟨⟦cellAttachmentIncl (fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) (Quotient.mk _ x)⟧⟩,
-      (HomotopyGroup.pi0EquivZerothHomotopy (x := cellAttachmentIncl
-      (fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) (Quotient.mk _ x))).symm.subsingleton⟩
+  have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero
+    (Quotient.mk _ x : orbitRel.Quotient G (sphere (0 : E) 1))).1 inferInstance
+  exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero _).2
+    (bijective_homotopyGroupMap_cellAttachmentIncl (n := n + 2)
+      (fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) (N := Fin 0) (by simp)
+      (Quotient.mk _ x)).2.subsingleton
 
 /-- After attaching an `(n + 3)`-cell along a generator of `πₙ₊₂` of the orbit space of a free
 action of a finite group `G` on `Sⁿ⁺²`, killing the homotopy groups from degree `n + 3` on gives
@@ -242,13 +237,14 @@ end OrbitSpace
 /-- **A finite group acting freely on `Sⁿ⁺²` has at most one-dimensional `Hₙ₊₃(BG; k)`.** Let a
 finite group `G` act freely and continuously on the unit sphere `Sⁿ⁺²` of an `(n + 3)`-dimensional
 real inner product space. Then for every division ring `k`, the singular homology `Hₙ₊₃(BG; k)`
-of the classifying space of `G` has dimension at most one. -/
-theorem finrank_classifyingSpace_singularHomology_le_one {E : Type} [NormedAddCommGroup E]
+of the classifying space of `G` has dimension (`Module.rank`) at most one; in particular it is
+finite-dimensional. -/
+theorem rank_classifyingSpace_singularHomology_le_one {E : Type} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 3) {G : Type} [Group G] [Finite G]
     [MulAction G (sphere (0 : E) 1)] [ContinuousConstSMul G (sphere (0 : E) 1)]
     [IsCancelSMul G (sphere (0 : E) 1)] (k : Type) [DivisionRing k] :
-    finrank k (((singularHomologyFunctor (ModuleCat.{0} k) (n + 3)).obj (ModuleCat.of k k)).obj
-      (TopCat.of (classifyingSpace G))) ≤ 1 := by
+    Module.rank k (((singularHomologyFunctor (ModuleCat.{0} k) (n + 3)).obj
+      (ModuleCat.of k k)).obj (TopCat.of (classifyingSpace G))) ≤ 1 := by
   have := Module.finite_of_finrank_eq_succ hE
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
   obtain ⟨x⟩ : Nonempty (sphere (0 : E) 1) :=
@@ -262,18 +258,18 @@ theorem finrank_classifyingSpace_singularHomology_le_one {E : Type} [NormedAddCo
   obtain ⟨f, hf⟩ := (isEilenbergMacLaneSpaceOne_killHomotopyGroups_cellAttachment p hE hp)
     |>.exists_isWeakHomotopyEquivalence_classifyingSpace
   have := hf.isIso_singularHomologyMap (ModuleCat.of k k) (n + 3)
-  rw [(asIso (H.map (TopCat.ofHom f))).toLinearEquiv.finrank_eq]
+  rw [(asIso (H.map (TopCat.ofHom f))).toLinearEquiv.rank_eq]
   -- The `K(G, 1)` is obtained from `Y = M ∪ eⁿ⁺³` by attaching cells of dimension at least
   -- `n + 4`, so it receives a surjection from `Hₙ₊₃(Y; k)`, which has dimension at most one.
   have hM := isZero_singularHomology_orbitRelQuotient (G := G) hE k
   have := finite_singularHomology_cellAttachment φ k hM
   have hepi := (isNConnected_killHomotopyGroupsIncl (n + 3) (cellAttachment φ) y)
     |>.epi_singularHomologyMap k le_rfl
-  calc _ ≤ finrank k (H.obj (cellAttachment φ)) :=
-        LinearMap.finrank_le_finrank_of_surjective
-          ((ModuleCat.epi_iff_surjective _).1 hepi)
-    _ ≤ Nat.card PUnit := finrank_singularHomology_cellAttachment_le φ k hM
-    _ = 1 := Nat.card_unique
+  calc _ ≤ Module.rank k (H.obj (cellAttachment φ)) :=
+        LinearMap.rank_le_of_surjective _ ((ModuleCat.epi_iff_surjective _).1 hepi)
+    _ = finrank k (H.obj (cellAttachment φ)) := (finrank_eq_rank _ _).symm
+    _ ≤ 1 := by
+        exact_mod_cast (finrank_singularHomology_cellAttachment_le φ k hM).trans_eq Nat.card_unique
 
 /-! ### Free actions of `ℤ/p × ℤ/p` -/
 
@@ -300,8 +296,9 @@ private lemma exists_ne_one_smul_eq_self_of_two_le {E : Type} [NormedAddCommGrou
       by_contra hg
       exact hfree (e g) (by simpa using hg) x hx
   have hcard : (Nat.card (Multiplicative (ZMod p)) : ZMod p) = 0 := by simp
-  have h := finrank_classifyingSpace_singularHomology_le_one hE
-    (G := Multiplicative (ZMod p) × Multiplicative (ZMod p)) (ZMod p)
+  have h := finrank_le_of_rank_le (n := 1) <| by
+    exact_mod_cast rank_classifyingSpace_singularHomology_le_one hE
+      (G := Multiplicative (ZMod p) × Multiplicative (ZMod p)) (ZMod p)
   rw [← TopCat.finrank_singularCohomology,
     finrank_classifyingSpace_prod_singularCohomology_of_natCast_card_eq_zero (ZMod p) hcard
       hcard] at h
@@ -319,12 +316,12 @@ private lemma exists_ne_one_smul_eq_self_of_finrank_eq_one {E : Type} [NormedAdd
   obtain ⟨x⟩ : Nonempty (sphere (0 : E) 1) :=
     (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   -- The orbit map of `x` is injective, as the action is free.
-  have hinj : Function.Injective fun g : Multiplicative (ZMod p × ZMod p) ↦ g • x := by
-    intro g h hgh
-    by_contra hne
-    refine hfree (h⁻¹ * g) (by rwa [ne_eq, inv_mul_eq_one, eq_comm]) x ?_
-    rw [mul_smul]
-    exact inv_smul_eq_iff.2 hgh
+  have : IsCancelSMul (Multiplicative (ZMod p × ZMod p)) (sphere (0 : E) 1) :=
+    isCancelSMul_iff_eq_one_of_smul_eq.2 fun g x hx ↦ by
+      by_contra hg
+      exact hfree g hg x hx
+  have hinj : Function.Injective fun g : Multiplicative (ZMod p × ZMod p) ↦ g • x :=
+    fun g h hgh ↦ IsCancelSMul.right_cancel g h x hgh
   -- The sphere `S⁰` has at most two points.
   have hS : Nat.card (sphere (0 : E) 1) ≤ 2 := by
     rw [sphere_eq_pair_of_finrank_eq_one hE x.property, Nat.card_coe_set_eq]
