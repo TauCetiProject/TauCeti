@@ -313,8 +313,9 @@ omit [FiniteDimensional ℝ E'] [IsManifold J 1 S] [FiniteDimensional ℝ P] in
 the negative and positive normal spaces for `g` intertwines `p` with the projection onto the
 negative normal space along the positive one. -/
 private theorem apply_eq_negativeNormalProjection_of_isIdempotentElem [IsManifold I 2 M]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
-    {s : S} {p : P →ₗ[ℝ] P} (hp : IsIdempotentElem p) (L : P →ₗ[ℝ] i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f)
+    (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
+    {s : S} {p : P →ₗ[ℝ] P} (hp : IsIdempotentElem p) (L : P →ₗ[ℝ] i.isImmersion.NormalSpace s hn)
     (hrange : ∀ x ∈ LinearMap.range p, L x ∈ h.negativeNormalSpace hn g s)
     (hker : ∀ x ∈ LinearMap.ker p, L x ∈ h.positiveNormalSpace hn g s) (u : P) :
     L (p u) = h.negativeNormalProjection hn g s (L u) := by
@@ -334,7 +335,8 @@ negative normal spaces for `g` along the positive normal spaces for `g`. The ran
 Morse index of `f` at `i s`, and its nullity is the Morse index of `-f`. This identifies the family
 of `exists_contMDiffOn_relativeNegativeSpectralProjection` for the fibre metric `g`. -/
 theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I (k + 2) M]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f)
+    (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
     (hk : k ≤ n) (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S)
     {U : Set S} {G : S → P →L[ℝ] P →L[ℝ] ℝ}
@@ -370,9 +372,10 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
   obtain ⟨hidem, hrange, hker, -, -, -, -, hrank, hnull⟩ := hprop s hs
   -- Pulled back along the inverse trivialization, the metric is `G s`.
   set L := (e.linearEquivAt ℝ s hs.2).symm
-  have hL : (L : P →ₗ[ℝ] i.NormalSpace s hn) = e.symmₗ ℝ s := e.coe_linearEquivAt_symm ℝ hs.2
-  have hgL : (g.inner s).toBilinForm.compl₁₂ (L : P →ₗ[ℝ] i.NormalSpace s hn)
-      (L : P →ₗ[ℝ] i.NormalSpace s hn) = (G s).toBilinForm := by
+  have hL : (L : P →ₗ[ℝ] i.isImmersion.NormalSpace s hn) = e.symmₗ ℝ s :=
+    e.coe_linearEquivAt_symm ℝ hs.2
+  have hgL : (g.inner s).toBilinForm.compl₁₂ (L : P →ₗ[ℝ] i.isImmersion.NormalSpace s hn)
+      (L : P →ₗ[ℝ] i.isImmersion.NormalSpace s hn) = (G s).toBilinForm := by
     ext u v
     rw [LinearMap.compl₁₂_apply, ContinuousLinearMap.toBilinForm_apply,
       ContinuousLinearMap.toBilinForm_apply, hGg s hs, LinearEquiv.coe_coe,
@@ -402,7 +405,8 @@ at `s₀`, and let `G` be a fibre metric `g` read in `e`. Then the negative spec
 `Q` relative to `G` reads, through `e`, the projection of the normal space onto the negative normal
 space for `g` along the positive normal space for `g`. -/
 theorem normalSpaceTrivialization_symm_negativeSpectralProjection_apply [IsManifold I 2 M]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f)
+        (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') {s₀ s : S}
     (hs : s ∈ (i.normalSpaceTrivialization hn hdim s₀).baseSet) {Q G : P →L[ℝ] P →L[ℝ] ℝ}
     (hQ : ∀ u v, h.normalHessian hn s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
@@ -436,7 +440,7 @@ theorem normalSpaceTrivialization_symm_negativeSpectralProjection_apply [IsManif
   -- `G` and `Q` are the fibre metric and the normal Hessian pulled back along `L.symm`, so `L.symm`
   -- carries their relative spectral subspaces onto those of the normal space.
   have hmap (Ω : Set ℝ) : (G.toBilinForm.relativeSpectralSubspace Q.toBilinForm Ω).map
-      (L.symm : P →ₗ[ℝ] i.NormalSpace s hn) =
+      (L.symm : P →ₗ[ℝ] i.isImmersion.NormalSpace s hn) =
         (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) Ω := by
     rw [← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L.symm]
     congr 2 <;> ext w w' <;> simp [hG', hQ']

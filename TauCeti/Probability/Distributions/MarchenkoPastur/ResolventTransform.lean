@@ -7,7 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Basic
+import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Real
 import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 
 /-!
@@ -29,6 +31,12 @@ For `y < 1`, the origin lies outside the support `[(1 - √y)², (1 + √y)²]`,
 quadratic equation at `z = 0` yields `m(0) = (1 - y)⁻¹`, that is,
 `∫ x⁻¹ d(marchenkoPastur y)(x) = (1 - y)⁻¹`.
 
+At real points `x` off the support, the real-valued transform satisfies the same quadratic
+equation. Above the upper edge `(1 + √y)²` it is the root to the right of the midpoint of the two
+roots, `2 y x m(x) + (x + y - 1) = √((x + y - 1)² - 4 y x)`: the left-hand side squares to the
+discriminant, which is positive there, so it cannot change sign, and it is positive far above the
+edge because `m(x)` is bounded below by `-(x - (1 + √y)²)⁻¹`.
+
 ## Main results
 
 * `TauCeti.Probability.hasSum_resolventTransform_marchenkoPastur`: the Laurent expansion
@@ -46,6 +54,11 @@ quadratic equation at `z = 0` yields `m(0) = (1 - y)⁻¹`, that is,
   `∫ x⁻¹ dMP_y = (1 - y)⁻¹`.
 * `TauCeti.Probability.resolventTransform_marchenkoPastur_one_one_add_I_div_two`: for `MP_1` at
   `z = (1 + i) / 2`, `m((1 + i) / 2) = i`.
+* `TauCeti.Probability.resolventTransform_marchenkoPastur_real_quadratic_eq_zero`: the quadratic
+  equation of the real transform at real points off the support.
+* `TauCeti.Probability.two_mul_mul_resolventTransform_marchenkoPastur_add_pos`,
+  `TauCeti.Probability.two_mul_mul_resolventTransform_marchenkoPastur_add_eq_sqrt`: the choice of
+  root above the upper edge, which gives the closed form of the real transform there.
 
 ## Implementation notes
 
@@ -251,5 +264,99 @@ theorem resolventTransform_marchenkoPastur_one_one_add_I_div_two :
   refine ((eq_resolventTransform_marchenkoPastur_iff (by simp)).2 ⟨by simp, ?_⟩).symm
   push_cast
   linear_combination ((1 + I) / 2 + 1 / 2) * I_sq
+
+section Real
+
+variable {x : ℝ}
+
+/-- Off the support of `MP_y`, its real resolvent transform `m` satisfies the quadratic equation
+`y * x * (m * m) + (x + y - 1) * m + 1 = 0`. -/
+theorem resolventTransform_marchenkoPastur_real_quadratic_eq_zero
+    (hx : x ∉ (marchenkoPastur y).support) :
+    y * x * (resolventTransform (marchenkoPastur y) x * resolventTransform (marchenkoPastur y) x) +
+      (x + y - 1) * resolventTransform (marchenkoPastur y) x + 1 = 0 := by
+  have hz : (x : ℂ) ∉ ((↑) : ℝ → ℂ) '' (marchenkoPastur y).support := by
+    rintro ⟨t, ht, htx⟩
+    exact hx (Complex.ofReal_injective htx ▸ ht)
+  have h := resolventTransform_marchenkoPastur_quadratic_eq_zero hz
+  rw [Measure.resolventTransform_ofReal] at h
+  exact_mod_cast h
+
+/-- Off the support of `MP_y`, the square of `2 y x m(x) + (x + y - 1)` is the discriminant
+`(x + y - 1)² - 4 y x` of the quadratic equation of its real resolvent transform `m`. -/
+private lemma two_mul_mul_resolventTransform_add_sq (hx : x ∉ (marchenkoPastur y).support) :
+    (2 * y * x * resolventTransform (marchenkoPastur y) x + (x + y - 1)) ^ 2 =
+      (x + y - 1) ^ 2 - 4 * y * x := by
+  linear_combination (4 * y * x) * resolventTransform_marchenkoPastur_real_quadratic_eq_zero hx
+
+/-- The discriminant `(x + y - 1)² - 4 y x` is positive above the upper edge of `MP_y`. -/
+private lemma discr_pos (hx : (1 + √(y : ℝ)) ^ 2 < x) : 0 < (x + y - 1) ^ 2 - 4 * y * x := by
+  have hr := Real.sq_sqrt y.coe_nonneg
+  have hr0 := Real.sqrt_nonneg (y : ℝ)
+  have hfac : (x + y - 1) ^ 2 - 4 * y * x =
+      (x - (1 + √(y : ℝ)) ^ 2) * (x - (1 - √(y : ℝ)) ^ 2) := by
+    linear_combination (2 * x + 2 - y - √(y : ℝ) ^ 2) * hr
+  rw [hfac]
+  exact mul_pos (by linarith) (by nlinarith)
+
+/-- Far above the upper edge of `MP_y`, at `x ≥ 2 (1 + √y)² + 3 y + 1`, the quantity
+`2 y x m(x) + (x + y - 1)` is positive. -/
+private lemma two_mul_mul_resolventTransform_add_pos_of_far
+    (hx : 2 * (1 + √(y : ℝ)) ^ 2 + 3 * y + 1 ≤ x) :
+    0 < 2 * y * x * resolventTransform (marchenkoPastur y) x + (x + y - 1) := by
+  set e := (1 + √(y : ℝ)) ^ 2
+  have he : 1 ≤ e := by nlinarith [Real.sqrt_nonneg (y : ℝ)]
+  have hy := y.coe_nonneg
+  have hb : ∀ᵐ t ∂marchenkoPastur y, t ≤ e := by
+    filter_upwards [ae_mem_Icc_zero_marchenkoPastur y] with t ht using ht.2
+  have hex : e < x := by linarith
+  set m := resolventTransform (marchenkoPastur y) x
+  have hm0 : m ≤ 0 := resolventTransform_nonpos_of_ae_le hb hex
+  have hlow : -(x - e)⁻¹ ≤ m := by
+    simpa [div_eq_mul_inv] using neg_div_sub_le_resolventTransform_of_ae_le hb hex
+  have hd : 0 < x - e := sub_pos.2 hex
+  have hmd : -1 ≤ m * (x - e) := by
+    have := mul_le_mul_of_nonneg_right hlow hd.le
+    rwa [neg_mul, inv_mul_cancel₀ hd.ne'] at this
+  have hxd : x - 2 * (x - e) ≤ 0 := by linarith
+  nlinarith [mul_nonneg hy (mul_nonneg_of_nonpos_of_nonpos hxd hm0),
+    mul_le_mul_of_nonneg_left hmd hy]
+
+/-- Above the upper edge of `MP_y`, its real resolvent transform `m` lies strictly to the right of
+the midpoint of the two roots of its quadratic equation: `0 < 2 y x m(x) + (x + y - 1)`. -/
+theorem two_mul_mul_resolventTransform_marchenkoPastur_add_pos (hx : (1 + √(y : ℝ)) ^ 2 < x) :
+    0 < 2 * y * x * resolventTransform (marchenkoPastur y) x + (x + y - 1) := by
+  set φ : ℝ → ℝ := fun x ↦ 2 * y * x * resolventTransform (marchenkoPastur y) x + (x + y - 1)
+  have hcont : ContinuousOn φ (Ioi ((1 + √(y : ℝ)) ^ 2)) := by
+    have hm : ContinuousOn (resolventTransform (marchenkoPastur y) : ℝ → ℝ)
+        (Ioi ((1 + √(y : ℝ)) ^ 2)) := fun x hx ↦
+      (hasDerivAt_resolventTransform x (by simpa using notMem_support_marchenkoPastur_of_lt hx))
+        |>.continuousAt.continuousWithinAt
+    fun_prop
+  -- `φ` is positive far above the edge and, squaring to the positive discriminant, has no zero
+  -- above the edge, so it is positive everywhere above the edge.
+  have hfar : 2 * (1 + √(y : ℝ)) ^ 2 + 3 * y + 1 ∈ Ioi ((1 + √(y : ℝ)) ^ 2) := by
+    have : 0 ≤ (1 + √(y : ℝ)) ^ 2 := sq_nonneg _
+    simp only [mem_Ioi]
+    linarith [y.coe_nonneg]
+  by_contra! hneg
+  obtain ⟨x', hx', h0⟩ := isPreconnected_Ioi.intermediate_value hx hfar hcont
+    ⟨hneg, (two_mul_mul_resolventTransform_add_pos_of_far le_rfl).le⟩
+  have hsq := two_mul_mul_resolventTransform_add_sq (notMem_support_marchenkoPastur_of_lt hx')
+  simp only [φ] at h0
+  rw [h0] at hsq
+  linarith [discr_pos (y := y) hx']
+
+/-- Above the upper edge of `MP_y`, its real resolvent transform `m` is the root of
+`y x m² + (x + y - 1) m + 1 = 0` given by `2 y x m + (x + y - 1) = √((x + y - 1)² - 4 y x)`: for
+`y > 0` this is `m(x) = (√((x + y - 1)² - 4 y x) - (x + y - 1)) / (2 y x)`. -/
+theorem two_mul_mul_resolventTransform_marchenkoPastur_add_eq_sqrt
+    (hx : (1 + √(y : ℝ)) ^ 2 < x) :
+    2 * y * x * resolventTransform (marchenkoPastur y) x + (x + y - 1) =
+      √((x + y - 1) ^ 2 - 4 * y * x) := by
+  rw [← two_mul_mul_resolventTransform_add_sq (notMem_support_marchenkoPastur_of_lt hx),
+    Real.sqrt_sq (two_mul_mul_resolventTransform_marchenkoPastur_add_pos hx).le]
+
+end Real
 
 end TauCeti.Probability

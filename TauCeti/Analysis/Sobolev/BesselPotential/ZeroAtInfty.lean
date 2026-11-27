@@ -26,7 +26,8 @@ when `s > k + n / 2` (`TemperedDistribution.MemSobolev.exists_zeroAtInftyContinu
 bounded operators.
 
 * `BesselPotentialSpace.toZeroAtInfty`: the **Sobolev embedding** `H^s(E, F) →L[ℂ] C₀(E, F)` for
-  `s > n / 2`, sending `u` to its continuous representative. Its image is `C^k` for
+  `s > n / 2`, sending `u` to its continuous representative, and `BesselPotentialSpace.toBCF` is
+  the same embedding into the bounded continuous functions. Its image is `C^k` for
   `s > k + n / 2`, with derivatives of order at most `k` bounded by a constant times `‖u‖_{H^s}`.
   It turns multiplication by a Schwartz function `φ` into pointwise multiplication
   (`BesselPotentialSpace.toZeroAtInfty_smulLeftCLM_apply`). A continuous function representing
@@ -45,7 +46,9 @@ Along a `Cⁿ` family `U : P → H^s(E, F)` with `s > n + dim E / 2`, the contin
 are `Cⁿ` jointly in the parameter and the point: `p ↦ u_p (g p)` is `Cⁿ` for every `Cⁿ` map `g`
 (`ContDiff.toZeroAtInfty_apply`). This follows from the regularity of evaluation on spaces of
 `C^n` functions with derivatives bounded by the norm
-(`TauCeti.contDiffOn_apply_of_forall_norm_iteratedFDeriv_le`).
+(`TauCeti.contDiffOn_apply_of_forall_norm_iteratedFDeriv_le`). The parameter derivative of the
+continuous representatives of a real family differentiable in `H^s` again lies in `H^s`
+(`BesselPotentialSpace.fderiv_apply_mem_realSobolevFunctions`).
 
 ## References
 
@@ -58,7 +61,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module Set TemperedDistribution Filter TopologicalSpace
-open scoped SchwartzMap BesselPotentialSpace ZeroAtInfty Distributions
+open scoped SchwartzMap BesselPotentialSpace ZeroAtInfty Distributions BoundedContinuousFunction
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
@@ -139,6 +142,19 @@ theorem norm_le_norm_toZeroAtInfty_of_ae_eq (h0 : 0 ≤ s) {u : H^{s}(E, F)} {g 
     (Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs u).continuous hg).1
       ((coeFn_inclusionLp_ae_eq_toZeroAtInfty h0 u).symm.trans hu)
   exact h ▸ ZeroAtInftyContinuousMap.norm_coe_le_norm (toZeroAtInfty hs u) x
+
+variable (hs) in
+/-- The **Sobolev embedding** of `H^s(E, F)`, `s > dim E / 2`, into the bounded continuous
+functions: `toZeroAtInfty` followed by the inclusion of `C₀(E, F)` into `E →ᵇ F`. -/
+def toBCF : H^{s}(E, F) →L[ℂ] E →ᵇ F :=
+  (ZeroAtInftyContinuousMap.toBCFₗᵢ ℂ).toContinuousLinearMap.comp (toZeroAtInfty hs)
+
+/-- The Sobolev embedding into bounded continuous functions is the continuous representative given
+by `toZeroAtInfty`. -/
+@[simp]
+theorem coe_toBCF (u : H^{s}(E, F)) : ⇑(toBCF hs u) = ⇑(toZeroAtInfty hs u) := by
+  ext x
+  simp [toBCF]
 
 /-- The tempered distribution `u ∈ H^s`, `s > dim E / 2`, is integration against its Sobolev
 embedding. -/
@@ -314,5 +330,38 @@ theorem _root_.ContDiff.toZeroAtInfty_apply {P : Type*} [NormedAddCommGroup P] [
   convert h.comp (hU.prodMk hg) using 1
   ext p
   simp [Φ]
+
+/-- **Parameter derivatives of a family of Sobolev functions.** Let `s > dim E / 2`, let
+`U : P → H^s(E)` be differentiable at `p`, and let the continuous representatives of `U q` be the
+real functions `g q`. Then for every direction `v` the parameter derivative
+`x ↦ ∂_v g_p (x)` lies in `H^s(E)`. -/
+theorem fderiv_apply_mem_realSobolevFunctions {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {p : P} (hs : finrank ℝ E < 2 * s) {U : P → H^{s}(E)}
+    (hU : DifferentiableAt ℝ U p) {g : P → E → ℝ}
+    (hg : ∀ q x, toZeroAtInfty hs (U q) x = (g q x : ℂ)) (v : P) :
+    (fun x ↦ fderiv ℝ (fun q ↦ g q x) p v) ∈ realSobolevFunctions E s 2 := by
+  have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
+  -- At each point, evaluation of the continuous representative is a bounded functional on `H^s`.
+  have hev (x : E) :
+      toZeroAtInfty hs (fderiv ℝ U p v) x = (fderiv ℝ (fun q ↦ g q x) p v : ℂ) := by
+    set Φ : H^{s}(E) →L[ℝ] ℂ :=
+      (ZeroAtInftyContinuousMap.evalCLM ℝ x).comp ((toZeroAtInfty hs).restrictScalars ℝ)
+    have h1 : HasFDerivAt (fun q ↦ (g q x : ℂ)) (Φ.comp (fderiv ℝ U p)) p := by
+      convert Φ.hasFDerivAt.comp p hU.hasFDerivAt using 1
+      ext q
+      simp [Φ, hg]
+    have h2 : DifferentiableAt ℝ (fun q ↦ g q x) p := by
+      simpa [Function.comp_def] using (Complex.reCLM.hasFDerivAt.comp p h1).differentiableAt
+    -- Both `Φ ∘ ∂U` and the real derivative of `q ↦ g q x` differentiate `q ↦ g q x`.
+    have h3 : HasFDerivAt (fun q ↦ (g q x : ℂ))
+        (Complex.ofRealCLM.comp (fderiv ℝ (fun q ↦ g q x) p)) p := by
+      simpa only [Function.comp_def, Complex.ofRealCLM_apply] using
+        Complex.ofRealCLM.hasFDerivAt.comp p h2.hasFDerivAt
+    simpa only [Φ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+      ZeroAtInftyContinuousMap.evalCLM_apply, Complex.ofRealCLM_apply] using
+      congrArg (· v) (h1.unique h3)
+  rw [mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq h0]
+  exact ⟨fderiv ℝ U p v,
+    (coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 _).trans (.of_forall hev)⟩
 
 end BesselPotentialSpace

@@ -40,6 +40,8 @@ approximation from indicator functions to all of `Lᵖ`.
 * `MeasureTheory.Lp.dense_setOf_continuous_hasCompactSupport` and
   `CompactlySupportedContinuousMap.denseRange_toLp`: the classes of compactly supported continuous
   functions are dense in `Lᵖ`, `p < ∞`.
+* `CompactlySupportedContinuousMap.exists_hasSum_toLp`: every `Lᵖ` class (`p < ∞`) is the sum of
+  an absolutely norm-summable series of compactly supported continuous functions.
 
 ## References
 
@@ -156,5 +158,28 @@ theorem denseRange_toLp [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace X]
   rintro u ⟨f, hfc, hfs, hfu⟩
   let f' : C_c(X, E) := ⟨⟨f, hfc⟩, hfs⟩
   exact ⟨f', Lp.ext ((coeFn_toLp 𝕜 f').trans hfu.symm)⟩
+
+/-- Every `Lᵖ` class (`p < ∞`) on a weakly locally compact `R₁` space is the sum of an
+absolutely norm-summable series of compactly supported continuous functions. -/
+theorem exists_hasSum_toLp [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace X]
+    [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) (μ : Measure X)
+    [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
+    (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (v : Lp E p μ) :
+    ∃ ψ : ℕ → C_c(X, E),
+      HasSum (fun n => toLp p μ 𝕜 (ψ n)) v ∧ Summable fun n => ‖toLp p μ 𝕜 (ψ n)‖ := by
+  let S : AddSubgroup (Lp E p μ) := (toLp (X := X) (E := E) p μ 𝕜).toAddMonoidHom.range
+  have hmem : v ∈ closure (S : Set (Lp E p μ)) := by
+    simpa [S, AddMonoidHom.coe_range] using
+      (denseRange_toLp (X := X) (E := E) hp μ 𝕜).closure_range ▸ Set.mem_univ v
+  obtain ⟨w, hw_lim, hw_mem, -, hw⟩ :=
+    controlled_sum_of_mem_closure hmem (b := fun n : ℕ => (1 / 2 : ℝ) ^ n) fun _ => by positivity
+  choose ψ hψ using hw_mem
+  have hψ' (n : ℕ) : toLp p μ 𝕜 (ψ n) = w n := hψ n
+  have hnorm : Summable fun n => ‖toLp p μ 𝕜 (ψ n)‖ := by
+    refine (summable_nat_add_iff 1).1 (.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_)
+      (summable_geometric_two.comp_injective (add_left_injective 1)))
+    simpa only [hψ', Function.comp_apply, add_comm] using (hw (n + 1) n.succ_pos).le
+  refine ⟨ψ, (hasSum_iff_tendsto_nat_of_summable_norm hnorm).2 ?_, hnorm⟩
+  simpa only [hψ'] using (tendsto_add_atTop_iff_nat 1).1 hw_lim
 
 end CompactlySupportedContinuousMap

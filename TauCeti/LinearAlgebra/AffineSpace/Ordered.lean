@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Codex
 module
 
 public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Basic.Sign.Basic
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Interval.Set.Defs
 public import TauCeti.LinearAlgebra.AffineSpace.AffineMap
@@ -31,6 +32,12 @@ Finitely many affine functions of a nonnegative parameter, all initially positiv
 one decreasing, have a common positive exit parameter. All functions are nonnegative exactly
 up to that parameter and strictly positive exactly before it. The proof uses
 `Finset.exists_min_image` on the times at which decreasing functions vanish.
+
+Along a segment `t ↦ lineMap a b t` of the line, the sign at `t ∈ (0, 1]` is the sign of `b` once
+the sign of `a` is `0` or the sign of `b` (`AffineMap.sign_lineMap_eq_sign_right`). Conversely, a
+constant sign `σ` on `(0, 1]` forces the sign of `a` to be `0` or `σ`
+(`AffineMap.sign_eq_zero_or_of_forall_sign_lineMap`), and a segment with no zero on `[s, t]` has
+the same sign at `s` and `t` (`AffineMap.sign_lineMap_eq_of_forall_ne_zero`).
 
 ## Main results
 
@@ -164,6 +171,80 @@ theorem exists_orderEmbedding_fin_forall_lineMap_ne_zero {V : Type*} [AddCommGro
     have h1 : (j : ℕ) < (i : ℕ) := c.lt_iff_lt.mp (hi.symm ▸ ht.left)
     have h2 : (i : ℕ) < (j : ℕ) + 1 := c.lt_iff_lt.mp (hi.symm ▸ ht.right)
     omega
+
+/-- On the segment from `a` to `b`, the points other than `a` have the sign of `b`, provided the
+sign of `a` is `0` or the sign of `b`. -/
+theorem sign_lineMap_eq_sign_right {a b t : k}
+    (h : SignType.sign a = 0 ∨ SignType.sign a = SignType.sign b) (ht : t ∈ Ioc 0 1) :
+    SignType.sign (lineMap a b t) = SignType.sign b := by
+  obtain ⟨ht0, ht1⟩ := ht
+  rw [lineMap_apply_ring']
+  rcases lt_trichotomy a 0 with ha | ha | ha <;> rcases lt_trichotomy b 0 with hb | hb | hb
+  · rw [sign_neg hb, sign_neg (by nlinarith)]
+  · simp [sign_neg ha, hb] at h
+  · simp [sign_neg ha, sign_pos hb] at h
+  · rw [sign_neg hb, sign_neg (by simp [ha]; nlinarith)]
+  · simp [ha, hb]
+  · rw [sign_pos hb, sign_pos (by simp [ha]; nlinarith)]
+  · simp [sign_pos ha, sign_neg hb] at h
+  · simp [sign_pos ha, hb] at h
+  · rw [sign_pos hb, sign_pos (by nlinarith)]
+
+/-- A segment which vanishes nowhere between the parameters `s ≤ t` has the same sign at both
+ends. -/
+theorem sign_lineMap_eq_of_forall_ne_zero {a b s t : k} (hst : s ≤ t)
+    (h : ∀ r ∈ Icc s t, lineMap a b r ≠ 0) :
+    SignType.sign (lineMap a b s) = SignType.sign (lineMap a b t) := by
+  have hs := h s (left_mem_Icc.mpr hst)
+  have ht := h t (right_mem_Icc.mpr hst)
+  -- When the signs at `s` and `t` differ, the segment vanishes at `a / (a - b) ∈ [s, t]`.
+  have hzero (hab : a - b ≠ 0) : lineMap a b (a / (a - b)) = 0 := by
+    rw [lineMap_apply_ring']
+    field_simp
+    ring
+  simp only [lineMap_apply_ring'] at hs ht ⊢
+  rcases hs.lt_or_gt with hs' | hs' <;> rcases ht.lt_or_gt with ht' | ht'
+  · rw [sign_neg hs', sign_neg ht']
+  · have hab : a - b < 0 := by nlinarith
+    refine absurd (hzero hab.ne) (h _ ⟨?_, ?_⟩)
+    · rw [le_div_iff_of_neg hab]; nlinarith
+    · rw [div_le_iff_of_neg hab]; nlinarith
+  · have hab : 0 < a - b := by nlinarith
+    refine absurd (hzero hab.ne') (h _ ⟨?_, ?_⟩)
+    · rw [le_div_iff₀ hab]; nlinarith
+    · rw [div_le_iff₀ hab]; nlinarith
+  · rw [sign_pos hs', sign_pos ht']
+
+/-- If the points of the segment from `a` to `b` other than `a` all have the sign `σ`, the sign
+of `a` is `0` or `σ`. -/
+theorem sign_eq_zero_or_of_forall_sign_lineMap {a b : k} {σ : SignType}
+    (h : ∀ t ∈ Ioc (0 : k) 1, SignType.sign (lineMap a b t) = σ) :
+    SignType.sign a = 0 ∨ SignType.sign a = σ := by
+  have h1 := h 1 ⟨one_pos, le_rfl⟩
+  rw [lineMap_apply_one] at h1
+  subst h1
+  -- If `a ≠ 0` and `b` does not have the sign of `a`, the point at parameter
+  -- `a / (2 (a - b)) ∈ (0, 1]` has value `a / 2`, of the sign of `a`.
+  have hmid (hab : a - b ≠ 0) : lineMap a b (a / (2 * (a - b))) = a / 2 := by
+    rw [lineMap_apply_ring']
+    field_simp
+    ring
+  rcases lt_trichotomy a 0 with ha | ha | ha
+  · rcases lt_or_ge b 0 with hb | hb
+    · exact Or.inr (by rw [sign_neg ha, sign_neg hb])
+    · have hab : a - b < 0 := by linarith
+      have ht := h _ ⟨div_pos_of_neg_of_neg ha (by linarith),
+        (div_le_one_of_neg (show 2 * (a - b) < 0 by linarith)).mpr (by linarith)⟩
+      rw [hmid hab.ne, sign_neg (by linarith)] at ht
+      exact absurd (sign_eq_neg_one_iff.mp ht.symm) hb.not_gt
+  · exact Or.inl (by simp [ha])
+  · rcases le_or_gt b 0 with hb | hb
+    · have hab : 0 < a - b := by linarith
+      have ht := h _ ⟨div_pos ha (by linarith),
+        (div_le_one (show 0 < 2 * (a - b) by linarith)).mpr (by linarith)⟩
+      rw [hmid hab.ne', sign_pos (by linarith)] at ht
+      exact absurd (sign_eq_one_iff.mp ht.symm) hb.not_gt
+    · exact Or.inr (by rw [sign_pos ha, sign_pos hb])
 
 end AffineMap
 

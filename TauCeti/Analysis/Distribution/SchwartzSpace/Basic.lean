@@ -57,6 +57,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
   `A x = ∑ i ∈ s, c i x • L i` is `∑ i ∈ s, L i (c i f)`.
+* `SchwartzMap.smulLeftCLM_pow_apply`: the `k`-th power of multiplication by `g` multiplies by
+  `g ^ k`.
 * `SchwartzMap.bilinLeftCLM_eq_sum_smulLeftCLM`: the expansion of `x ↦ B (u x) (g x)` in a basis
   of `G` as a finite sum of scalar multiplications.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
@@ -139,6 +141,22 @@ theorem one_add_norm_smul_sq_rpow_mul_norm_le (c m : ℝ) (k : ℕ) (f : 𝓢(E,
     _ = _ := by ring
 
 end Weight
+
+section SmulLeftPow
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- The `k`-th power of multiplication by a function `g` of temperate growth is multiplication
+by `g ^ k`. -/
+theorem smulLeftCLM_pow_apply {g : E → 𝕜} (hg : g.HasTemperateGrowth) (k : ℕ) (f : 𝓢(E, F))
+    (x : E) : (smulLeftCLM F g ^ k) f x = g x ^ k • f x := by
+  induction k generalizing f with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', mul_apply_eq_comp, smulLeftCLM_apply_apply hg, ih, smul_smul, ← pow_succ']
+
+end SmulLeftPow
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]

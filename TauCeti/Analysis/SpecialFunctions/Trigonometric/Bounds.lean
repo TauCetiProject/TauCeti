@@ -15,9 +15,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
 The sine of `π * x` is positive for `0 < x < 1`.
 The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
-Schwarz–Christoffel turns. The sine is nonpositive on `[π, 2π]` and negative on `(π, 2π)`. For
-real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
-`a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
+Schwarz–Christoffel turns. The sine exceeds `1/2` on `(π/6, 5π/6)`. The sine is nonpositive
+on `[π, 2π]` and negative on `(π, 2π)`. For real `a < 1` the quantity `1 - a sin² θ` is
+positive, a bound `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Jordan's inequality gives `θ ≤ π / 2 * sin θ` on
 `[0, π / 2]`. Cosine is positive strictly between two
 angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`). On
@@ -33,6 +33,11 @@ hyperbolic scale in the matrix representations of triangle groups.
 A circle of positive perimeter `2πR` has positive radius `R`
 (`Real.pos_of_fact_two_pi_mul_pos`), under the instance `Fact (0 < 2 * Real.pi * R)` that makes
 `AddCircle (2 * Real.pi * R)` usable.
+
+For `|x| ≤ 1` the Taylor polynomials of degree `6` of the cosine and of degree `7` of the sine
+approximate them within `|x| ^ 8 / 35840` and `|x| ^ 9 / 326592` (`TauCeti.cos_bound_six`,
+`TauCeti.sin_bound_seven`); these refine Mathlib's `Real.cos_bound` and `Real.sin_bound` enough to
+locate the roots of trigonometric equations to three decimal places.
 -/
 
 public section
@@ -45,6 +50,38 @@ theorem Real.pos_of_fact_two_pi_mul_pos {R : ℝ} [Fact (0 < 2 * Real.pi * R)] :
   pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
 
 namespace TauCeti
+
+/-- The Taylor polynomial of degree `6` approximates the cosine within `|x| ^ 8 / 35840` for
+`|x| ≤ 1`. -/
+theorem cos_bound_six {x : ℝ} (hx : |x| ≤ 1) :
+    |cos x - (1 - x ^ 2 / 2 + x ^ 4 / 24 - x ^ 6 / 720)| ≤ |x| ^ 8 / 35840 := by
+  have h := Complex.exp_bound (x := x * Complex.I) (by simpa using hx) (n := 8) (by norm_num)
+  have hre : (Complex.exp (x * Complex.I) -
+      ∑ m ∈ Finset.range 8, (x * Complex.I) ^ m / m.factorial).re =
+      cos x - (1 - x ^ 2 / 2 + x ^ 4 / 24 - x ^ 6 / 720) := by
+    simp [Finset.sum_range_succ, Nat.factorial, pow_succ, Complex.mul_re, Complex.mul_im]
+    ring
+  rw [← hre]
+  refine (Complex.abs_re_le_norm _).trans (h.trans_eq ?_)
+  simp only [Complex.norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]
+  norm_num [Nat.factorial]
+  ring
+
+/-- The Taylor polynomial of degree `7` approximates the sine within `|x| ^ 9 / 326592` for
+`|x| ≤ 1`. -/
+theorem sin_bound_seven {x : ℝ} (hx : |x| ≤ 1) :
+    |sin x - (x - x ^ 3 / 6 + x ^ 5 / 120 - x ^ 7 / 5040)| ≤ |x| ^ 9 / 326592 := by
+  have h := Complex.exp_bound (x := x * Complex.I) (by simpa using hx) (n := 9) (by norm_num)
+  have him : (Complex.exp (x * Complex.I) -
+      ∑ m ∈ Finset.range 9, (x * Complex.I) ^ m / m.factorial).im =
+      sin x - (x - x ^ 3 / 6 + x ^ 5 / 120 - x ^ 7 / 5040) := by
+    simp [Finset.sum_range_succ, Nat.factorial, pow_succ, Complex.mul_re, Complex.mul_im]
+    ring
+  rw [← him]
+  refine (Complex.abs_im_le_norm _).trans (h.trans_eq ?_)
+  simp only [Complex.norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]
+  norm_num [Nat.factorial]
+  ring
 
 /-- The point `(a + b) / 2 + (b - a) / 2 · sin θ` of the substitution lies in `[a, b]`. -/
 theorem mem_Icc_add_mul_sin {a b : ℝ} (hab : a ≤ b) (θ : ℝ) :
@@ -146,6 +183,17 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
 /-- For `0 < x < 1`, the sine of `π * x` is positive. -/
 theorem sin_pi_mul_pos_of_pos_of_lt_one {x : ℝ} (h₀ : 0 < x) (h₁ : x < 1) : 0 < sin (π * x) :=
   sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
+
+/-- On `(π/6, 5π/6)`, `sin θ > 1/2`. -/
+theorem two_inv_lt_sin_of_mem_Ioo {θ : ℝ} (hθ : θ ∈ Set.Ioo (π / 6) (5 * π / 6)) :
+    2⁻¹ < sin θ := by
+  have hs : 0 < sin ((θ - π / 6) / 2) :=
+    sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2, pi_pos])
+  have hc : 0 < cos ((θ + π / 6) / 2) :=
+    cos_pos_of_mem_Ioo ⟨by linarith [hθ.1, pi_pos], by linarith [hθ.2]⟩
+  have := sin_sub_sin θ (π / 6)
+  rw [sin_pi_div_six] at this
+  nlinarith [mul_pos hs hc]
 
 /-- For a real denominator greater than one, the sine of `π / x` is positive. -/
 theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=

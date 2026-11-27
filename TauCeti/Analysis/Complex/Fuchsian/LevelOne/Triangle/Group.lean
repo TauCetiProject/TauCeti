@@ -367,6 +367,24 @@ theorem modularEquiv_z :
     modularEquiv (TriangleGroup.z 3 2 0) = (_root_.ModularGroup.T : PSL(2, ℤ)) := by
   exact modularHom_z
 
+/-- The inverse of the presentation `modularEquiv : Δ(3, 2, ∞) ≃* PSL(2, ℤ)` sends `U = S T⁻¹`
+to `x`. -/
+@[simp]
+theorem modularEquiv_symm_U : modularEquiv.symm (U : PSL(2, ℤ)) = TriangleGroup.x 3 2 0 :=
+  (MulEquiv.symm_apply_eq _).2 modularEquiv_x.symm
+
+/-- The inverse of the presentation `modularEquiv : Δ(3, 2, ∞) ≃* PSL(2, ℤ)` sends `S` to `y`. -/
+@[simp]
+theorem modularEquiv_symm_S :
+    modularEquiv.symm (_root_.ModularGroup.S : PSL(2, ℤ)) = TriangleGroup.y 3 2 0 :=
+  (MulEquiv.symm_apply_eq _).2 modularEquiv_y.symm
+
+/-- The inverse of the presentation `modularEquiv : Δ(3, 2, ∞) ≃* PSL(2, ℤ)` sends `T` to `z`. -/
+@[simp]
+theorem modularEquiv_symm_T :
+    modularEquiv.symm (_root_.ModularGroup.T : PSL(2, ℤ)) = TriangleGroup.z 3 2 0 :=
+  (MulEquiv.symm_apply_eq _).2 modularEquiv_z.symm
+
 /-- **The elliptic orbits of the modular group**, from its triangle: the effective level-one group
 has exactly two elliptic orbits, one for each finite vertex `ρ` and `i` of the modular
 triangle. -/

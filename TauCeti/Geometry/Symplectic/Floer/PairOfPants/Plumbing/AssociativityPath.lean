@@ -69,7 +69,11 @@ datum of `(a ⋆ b) ⋆ c` with the neck switched off
 
 Concatenated with the families `λ ↦ K_λ` that switch the neck Hamiltonian back on at either end
 (`TauCeti.Floer.plumbedPerturbation_update_smul`), this path joins the plumbed data of the two
-compositions through Floer data with the same end Hamiltonians.
+compositions through Floer data with the same end Hamiltonians. The end data of the two pairs of
+pants of each composition, read off from the input, output and neck data, are
+`TauCeti.Floer.associativityLeftInserted`, `TauCeti.Floer.associativityLeftReceiving`,
+`TauCeti.Floer.associativityRightInserted` and `TauCeti.Floer.associativityRightReceiving`; they
+take values in any type, such as Hamiltonians or almost complex structures.
 
 ## References
 
@@ -639,7 +643,115 @@ theorem puncturedSpherePerturbation_associativity_of_one_le (hτ : 1 ≤ τ) (hL
   congr 1
   exact (Fintype.sum_equiv (finRotate 3) _ _ fun i => by fin_cases i <;> simp).symm
 
+/-- The centers of the associativity path with the plumbing factor `exp (-2πL) / 4` are
+continuous jointly in the neck length `L` and the parameter `τ`. -/
+theorem continuous_associativityCenter_apply (i : Fin 3) :
+    Continuous fun q : ℝ × ℝ =>
+      associativityCenter (Real.exp (-(2 * π * q.1)) / 4) q.2 i :=
+  (continuous_apply i).comp ((contDiff_uncurry_associativityCenter (n := 0)).continuous.comp
+    ((by fun_prop : Continuous fun L : ℝ => Real.exp (-(2 * π * L)) / 4).comp continuous_fst
+      |>.prodMk continuous_snd))
+
 end Ends
+
+/-! ### The end data of the two compositions -/
+
+section Compositions
+
+variable {α : Type*}
+
+/-- The end data of the inserted pair of pants of `(x₁ x₂) x₃`: the data `A 0` and `A 1` of the
+first two inputs on its inputs, and the neck datum `G` on its output. -/
+def associativityLeftInserted (A : Fin 3 → α) (G : α) : Puncture → α
+  | zero => A 0
+  | one => A 1
+  | inf => G
+
+/-- The end data of the receiving pair of pants of `(x₁ x₂) x₃`: the neck datum `G` on its input
+`0`, the datum `A 2` of the third input on its input `1`, and the output datum `Aout`. -/
+def associativityLeftReceiving (A : Fin 3 → α) (Aout G : α) : Puncture → α
+  | zero => G
+  | one => A 2
+  | inf => Aout
+
+/-- The end data of the inserted pair of pants of `x₁ (x₂ x₃)`: the data `A 1` and `A 2` of the
+last two inputs on its inputs, and the neck datum `G'` on its output. -/
+def associativityRightInserted (A : Fin 3 → α) (G' : α) : Puncture → α
+  | zero => A 1
+  | one => A 2
+  | inf => G'
+
+/-- The end data of the receiving pair of pants of `x₁ (x₂ x₃)`: the datum `A 0` of the first
+input on its input `0`, the neck datum `G'` on its input `1`, and the output datum `Aout`. -/
+def associativityRightReceiving (A : Fin 3 → α) (Aout G' : α) : Puncture → α
+  | zero => A 0
+  | one => G'
+  | inf => Aout
+
+variable (A : Fin 3 → α) (Aout G : α)
+
+@[simp] theorem associativityLeftInserted_zero : associativityLeftInserted A G zero = A 0 := (rfl)
+
+@[simp] theorem associativityLeftInserted_one : associativityLeftInserted A G one = A 1 := (rfl)
+
+@[simp] theorem associativityLeftInserted_inf : associativityLeftInserted A G inf = G := (rfl)
+
+@[simp] theorem associativityLeftReceiving_zero : associativityLeftReceiving A Aout G zero = G :=
+  (rfl)
+
+@[simp] theorem associativityLeftReceiving_one :
+    associativityLeftReceiving A Aout G one = A 2 := (rfl)
+
+@[simp] theorem associativityLeftReceiving_inf :
+    associativityLeftReceiving A Aout G inf = Aout := (rfl)
+
+@[simp] theorem associativityRightInserted_zero : associativityRightInserted A G zero = A 1 :=
+  (rfl)
+
+@[simp] theorem associativityRightInserted_one : associativityRightInserted A G one = A 2 := (rfl)
+
+@[simp] theorem associativityRightInserted_inf : associativityRightInserted A G inf = G := (rfl)
+
+@[simp] theorem associativityRightReceiving_zero :
+    associativityRightReceiving A Aout G zero = A 0 := (rfl)
+
+@[simp] theorem associativityRightReceiving_one :
+    associativityRightReceiving A Aout G one = G := (rfl)
+
+@[simp] theorem associativityRightReceiving_inf :
+    associativityRightReceiving A Aout G inf = Aout := (rfl)
+
+variable {S : Set α} {A Aout G}
+
+/-- The end data of the inserted pair of pants of `(x₁ x₂) x₃` lie in any set containing the
+input data and the neck datum. -/
+theorem associativityLeftInserted_mem (hA : ∀ i, A i ∈ S) (hG : G ∈ S) (p : Puncture) :
+    associativityLeftInserted A G p ∈ S := by
+  cases p
+  exacts [hA 0, hA 1, hG]
+
+/-- The end data of the receiving pair of pants of `(x₁ x₂) x₃` lie in any set containing the
+input, output and neck data. -/
+theorem associativityLeftReceiving_mem (hA : ∀ i, A i ∈ S) (hAout : Aout ∈ S) (hG : G ∈ S)
+    (p : Puncture) : associativityLeftReceiving A Aout G p ∈ S := by
+  cases p
+  exacts [hG, hA 2, hAout]
+
+/-- The end data of the inserted pair of pants of `x₁ (x₂ x₃)` lie in any set containing the
+input data and the neck datum. -/
+theorem associativityRightInserted_mem (hA : ∀ i, A i ∈ S) (hG : G ∈ S) (p : Puncture) :
+    associativityRightInserted A G p ∈ S := by
+  cases p
+  exacts [hA 1, hA 2, hG]
+
+/-- The end data of the receiving pair of pants of `x₁ (x₂ x₃)` lie in any set containing the
+input, output and neck data. -/
+theorem associativityRightReceiving_mem (hA : ∀ i, A i ∈ S) (hAout : Aout ∈ S) (hG : G ∈ S)
+    (p : Puncture) : associativityRightReceiving A Aout G p ∈ S := by
+  cases p
+  exacts [hA 0, hG, hAout]
+
+end Compositions
 
 /-! ### The family of data along the path -/
 

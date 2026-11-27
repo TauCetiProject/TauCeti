@@ -58,7 +58,8 @@ coefficient rings here may have nilpotents.
 ## Main results
 
 * `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`; in particular
-  `PowerSeries.evalAt_X_sub_C`: the value of `X - a` at `b` is `b - a`.
+  `PowerSeries.evalAt_X_sub_C`: the value of `X - a` at `b` is `b - a`, and
+  `PowerSeries.evalAt_one_sub_C_mul_X`: the value of `1 - c X` at `b` is `1 - c • b`.
 * `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
   coefficient of its Taylor expansion at `a`.
 * `PowerSeries.evalAt_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - a) ^ m` at `a`.
@@ -237,6 +238,15 @@ omit [IsTopologicalAddGroup A] [T2Space A] in
 theorem evalAt_X_sub_C (a : R) (b : A) : (X - C a : R⟦X⟧).evalAt b = b - algebraMap R A a := by
   rw [← Polynomial.coe_X, ← Polynomial.coe_C, ← Polynomial.coe_sub, evalAt_coe]
   simp
+
+omit [IsTopologicalAddGroup A] [T2Space A] in
+/-- The value of `1 - c X` at `b` is `1 - c • b`. -/
+@[simp]
+theorem evalAt_one_sub_C_mul_X (c : R) (b : A) :
+    (1 - C c * X : R⟦X⟧).evalAt b = 1 - c • b := by
+  rw [← (by simp : ((1 - Polynomial.C c * Polynomial.X : Polynomial R) : R⟦X⟧) = 1 - C c * X),
+    evalAt_coe]
+  simp [Algebra.smul_def]
 
 /-- The Hasse derivative of order `i` of `(X - a) ^ m` is `1` at `a` if `i = m`, and `0`
 otherwise. -/

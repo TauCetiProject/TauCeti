@@ -177,6 +177,15 @@ theorem continuous (h : IsFramedTube f τ) : Continuous f :=
 theorem isClosed_range [CompactSpace S] [T2Space M] (h : IsFramedTube f τ) : IsClosed (range f) :=
   (isCompact_range h.continuous).isClosed
 
+/-- A map of the ambient spaces carrying the tube `τ'` to the tube `τ` fibrewise carries the core
+of `τ'` into the core of `τ`. -/
+lemma mapsTo_range_of_apply_eq {B' S' : Type*} [TopologicalSpace B'] [TopologicalSpace S']
+    {f' : S' → B'} {τ' : S' × V → B'} (hτ : IsFramedTube f τ) (hτ' : IsFramedTube f' τ')
+    {s : B' → M} {φ : S' → S} (hs : ∀ x v, s (τ' (x, v)) = τ (φ x, v)) :
+    MapsTo s (range f') (range f) := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨φ x, by rw [← hτ.apply_zero, ← hs, hτ'.apply_zero]⟩
+
 end IsFramedTube
 
 variable [TopologicalSpace S] [TopologicalSpace M] [TopologicalSpace V]
