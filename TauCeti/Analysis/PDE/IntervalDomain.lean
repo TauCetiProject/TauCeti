@@ -36,7 +36,9 @@ endpoint values.
   interval, with the value, derivative, integral, boundary part and Dirichlet form transferred by
   `TauCeti.PDE.value_intervalDomainEquivL_ae`, `TauCeti.PDE.gradient_intervalDomainEquivL_ae`,
   their inverse forms `TauCeti.PDE.value_intervalDomainEquivL_symm_ae` and
-  `TauCeti.PDE.gradient_intervalDomainEquivL_symm_ae`,
+  `TauCeti.PDE.gradient_intervalDomainEquivL_symm_ae`, the transfers of an a.e. formula for the
+  value `TauCeti.PDE.value_intervalDomainEquivL_ae_comp` and
+  `TauCeti.PDE.value_intervalDomainEquivL_symm_ae_comp`,
   `TauCeti.PDE.setIntegral_value_intervalDomainEquivL`,
   `TauCeti.PDE.intervalDomainEquivL_mem_w1p0Submodule_iff`,
   `TauCeti.PDE.intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff`,
@@ -231,6 +233,17 @@ theorem value_intervalDomainEquivL_ae (u : W1p volume (intervalDomain a b) p) :
     coe_Ioo_eq_preimage_intervalDomain u] with t ht
   rw [intervalDomainEquivL_apply, ht, LinearIsometryEquiv.coe_toAffineIsometryEquiv]
 
+/-- If the value of `u` is `f` almost everywhere on the interval domain, then the value of its
+transfer to the real interval is `f ∘ TauCeti.PDE.lineEquiv` almost everywhere on `(a, b)`. -/
+theorem value_intervalDomainEquivL_ae_comp {u : W1p volume (intervalDomain a b) p}
+    {f : EuclideanSpace ℝ (Fin 1) → ℝ}
+    (hu : W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))] f) :
+    W1p.value (intervalDomainEquivL a b p u) =ᵐ[volume.restrict (Ioo a b)]
+      fun t => f (lineEquiv t) := by
+  filter_upwards [value_intervalDomainEquivL_ae u,
+    measurePreserving_lineEquiv_restrict.quasiMeasurePreserving.ae hu] with t h1 h2
+  rw [h1, h2]
+
 /-- The weak derivative of the transfer of `u` to the real interval is the coordinate of the weak
 gradient of `u` along `TauCeti.PDE.lineEquiv`. -/
 theorem gradient_intervalDomainEquivL_ae (u : W1p volume (intervalDomain a b) p) :
@@ -252,6 +265,18 @@ theorem value_intervalDomainEquivL_symm_ae (w : W1p volume ⟨Ioo a b, isOpen_Io
     coe_intervalDomain_eq_preimage_Ioo w] with x hx
   rw [intervalDomainEquivL_symm_apply, hx, LinearIsometryEquiv.coe_toAffineIsometryEquiv_symm,
     lineEquiv_symm_apply]
+
+/-- If the value of `w` is `f` almost everywhere on `(a, b)`, then the value of its transfer back
+to the interval domain is `f (x 0)` almost everywhere. -/
+theorem value_intervalDomainEquivL_symm_ae_comp {w : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    {f : ℝ → ℝ} (hw : W1p.value w =ᵐ[volume.restrict (Ioo a b)] f) :
+    W1p.value ((intervalDomainEquivL a b p).symm w)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x => f (x 0) := by
+  filter_upwards [value_intervalDomainEquivL_symm_ae w,
+    measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae hw] with x h1 h2
+  rw [h1]
+  simpa using h2
 
 /-- The weak gradient of the transfer of `w` back to the interval domain is the weak derivative
 of `w` at the coordinate `x 0`, embedded in the line by `TauCeti.PDE.lineEquiv`. -/

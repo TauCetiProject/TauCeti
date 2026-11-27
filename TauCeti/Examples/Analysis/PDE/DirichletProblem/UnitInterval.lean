@@ -75,10 +75,7 @@ private theorem exists_solution (k : ℝ) :
     (f := fun t : ℝ => k * t - t ^ 2 / 2) (by fun_prop)
   rw [hd] at hg
   refine ⟨(intervalDomainEquivL 0 1 2).symm w, ?_, ?_, fun v hv => ?_⟩
-  · filter_upwards [value_intervalDomainEquivL_symm_ae w,
-      measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae hw] with x h1 h2
-    rw [h1]
-    simpa using h2
+  · exact value_intervalDomainEquivL_symm_ae_comp hw
   · rw [ContinuousLinearEquiv.apply_symm_apply,
       W1p.intervalTraceL_eq_of_value_ae_eq zero_lt_one (by fun_prop) hw]
     norm_num
@@ -173,13 +170,9 @@ the interval domain. -/
 theorem exists_value_ae_eq_coord :
     ∃ g : W1p volume (intervalDomain 0 1) 2,
       W1p.value g =ᵐ[volume.restrict (intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x => x 0 := by
-  refine ⟨(intervalDomainEquivL 0 1 2).symm (W1p.intervalCoord (p := 2)), ?_⟩
-  filter_upwards [value_intervalDomainEquivL_symm_ae (W1p.intervalCoord (p := 2)),
-    measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae
-      (W1p.value_intervalCoord (a := 0) (b := 1) (p := 2))] with x h1 h2
-  rw [h1]
-  simpa using h2
+        fun x => x 0 :=
+  ⟨(intervalDomainEquivL 0 1 2).symm (W1p.intervalCoord (p := 2)),
+    value_intervalDomainEquivL_symm_ae_comp (W1p.value_intervalCoord (a := 0) (b := 1) (p := 2))⟩
 
 /-- **The Dirichlet problem `-u'' = 1` on `(0, 1)` with the lifting `g = x`.** For any
 `g ∈ H¹(0, 1)` equal to `x`, an element `u ∈ H¹(0, 1)` of the interval domain satisfies
@@ -196,9 +189,8 @@ theorem sub_mem_w1p0Submodule_and_forall_energyFormH1_eq_iff
         fun x => x 0 * (1 - x 0) / 2 + x 0 := by
   have hgtr : W1p.intervalTraceL zero_lt_one (intervalDomainEquivL 0 1 2 g) = (0, 1) := by
     refine W1p.intervalTraceL_eq_of_value_ae_eq zero_lt_one (f := id) continuousOn_id ?_
-    filter_upwards [value_intervalDomainEquivL_ae g,
-      measurePreserving_lineEquiv_restrict.quasiMeasurePreserving.ae hg] with t h1 h2
-    rw [h1, h2, lineEquiv_apply_zero, id]
+    filter_upwards [value_intervalDomainEquivL_ae_comp hg] with t ht
+    rw [ht, lineEquiv_apply_zero, id]
   rw [← intervalTraceL_eq_iff_sub_mem, hgtr]
   exact intervalTraceL_eq_and_forall_energyFormH1_eq_iff
 
