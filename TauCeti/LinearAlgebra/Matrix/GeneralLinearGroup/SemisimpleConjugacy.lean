@@ -55,9 +55,6 @@ theorem isConj_map_iff_charpoly_eq_of_isSemisimple {g h : GL n K}
   refine ⟨fun hconj ↦ ?_,
     fun hpoly ↦ (map i).map_isConj ((isConj_iff_charpoly_eq_of_isSemisimple hg hh).mpr hpoly)⟩
   apply Polynomial.map_injective i i.injective
-  have hmap (x : GL n K) : ((map i x : GL n S) : Matrix n n S) = (x : Matrix n n K).map i := by
-    ext r c
-    exact GeneralLinearGroup.map_apply i r c x
-  simpa only [hmap, Matrix.charpoly_map] using hconj.charpoly_eq
+  simpa only [val_map_apply, Matrix.charpoly_map] using hconj.charpoly_eq
 
 end Matrix.GeneralLinearGroup

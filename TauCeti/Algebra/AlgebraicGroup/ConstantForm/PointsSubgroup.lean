@@ -80,10 +80,7 @@ preserving `C.map f`. -/
 theorem map_mem_pointsSubgroup {A B : Type*} [CommRing A] [CommRing B] (f : A →+* B)
     {C : Matrix ι ι A} {g : GL ι A} (hg : g ∈ pointsSubgroup C) :
     Matrix.GeneralLinearGroup.map f g ∈ pointsSubgroup (C.map f) := by
-  have hcoe : (Matrix.GeneralLinearGroup.map f g : Matrix ι ι B) = (g : Matrix ι ι A).map f := by
-    ext i j
-    exact Matrix.GeneralLinearGroup.map_apply f i j g
-  rw [mem_pointsSubgroup_iff, hcoe, ← transpose_map, ← Matrix.map_mul, ← Matrix.map_mul,
-    (mem_pointsSubgroup_iff g).mp hg]
+  rw [mem_pointsSubgroup_iff, Matrix.GeneralLinearGroup.val_map_apply, ← transpose_map,
+    ← Matrix.map_mul, ← Matrix.map_mul, (mem_pointsSubgroup_iff g).mp hg]
 
 end TauCeti.ConstantForm
