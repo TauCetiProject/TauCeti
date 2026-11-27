@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.NotSimplyConnected
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Inner
@@ -67,8 +67,8 @@ theorem notMem_serreFibrations_inclusionOne :
   let t : I := ⟨1 / 2, by norm_num, by norm_num⟩
   have ht : 2 * Real.pi * t = Real.pi := by simp only [t]; ring
   have h := congrFun hΓ t
-  rw [Function.comp_apply, inclusionOne_apply, (Γ t).property, Path.cast_coe, expLoop_apply, ht,
-    exp_pi] at h
+  rw [Function.comp_apply, inclusionOne_apply, Set.mem_singleton_iff.1 (Γ t).property,
+    Path.cast_coe, expLoop_apply, ht, exp_pi] at h
   have h1 := congrArg (fun z : Circle ↦ (z : ℂ).re) h
   norm_num at h1
 
@@ -81,9 +81,9 @@ theorem not_surjective_homotopyGroupMap_inclusionOne (e : inclusionOne.fiber 1) 
       (HomotopyGroup.map (N := Option (Fin 0)) inclusionOne.hom
         (Set.mem_singleton_iff.1 e.property)) := by
   intro h
+  have := nontrivial_fundamentalGroup 1
   have : Nontrivial (HomotopyGroup (Option (Fin 0)) (TopCat.of Circle) 1) :=
-    ((homotopyGroupEquivFundamentalGroupOfUnique (Option (Fin 0))).trans
-      (fundamentalGroupMulEquiv 1).toEquiv).nontrivial
+    (homotopyGroupEquivFundamentalGroupOfUnique (Option (Fin 0))).nontrivial
   exact not_subsingleton _ h.subsingleton
 
 /-- **The homotopy sequence of `{1} → S¹` is not exact at `π₁(S¹)`.** For every map
