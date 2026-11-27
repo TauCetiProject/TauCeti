@@ -11,8 +11,13 @@ import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.ContDiffStructur
 import TauCeti.Analysis.Complex.CauchyRiemann.Similarity.Weak
 import TauCeti.Geometry.Symplectic.JHolomorphic.UniqueContinuation
 import TauCeti.Analysis.RCLike.OperatorNorm
+import TauCeti.Analysis.Calculus.FDeriv.OfReal
+import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.VariableStructure
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Complex.Convex
 
 /-!
 # Isolated critical points of J-holomorphic curves
@@ -77,6 +82,22 @@ computation for the equation `∂ₛu + A ∂ₜu = 0` on `ℝ × ℝ` is
 the `C¹` theorems of `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure`,
 and still assumes `u` of class `C²`.
 
+**Totally real boundary values.** Isolated critical points and unique continuation also hold up to
+the boundary of a half-disc with totally real boundary values, the local model of a
+pseudoholomorphic strip or disc with boundary on a totally real submanifold: `u` of class `C²` up
+to the real axis on the closed upper part `Ω ∩ {0 ≤ im}` of an open set, solving `∂ₜu = A ∂ₛu`
+off the axis, and a real-linear automorphism `R` of `E` which fixes the boundary values `u(s)` and
+anticommutes with `A(s)` on `Ω ∩ ℝ`. In coordinates where the totally real submanifold is
+`ℝⁿ ⊆ ℂⁿ` and the almost complex structure is `i` along it, `R` is complex conjugation. The
+critical points are the zeros of the derivative of `u` within the closed upper half-plane. Since
+the boundary values are fixed by `R`, so is their derivative `ξ = ∂ₛu` on the axis, and `ξ` is a
+weak solution of the linearized equation up to the axis. The similarity principle for a variable
+structure up to a totally real boundary
+(`TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.VariableStructure`), proved by reflection
+across the axis, then shows that the critical points of a nonconstant `u` are isolated in
+`Ω ∩ {0 ≤ im}`, also at the points of the axis
+(`TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`).
+
 ## Main results
 
 * `TauCeti.cauchyRiemann_fderiv_one`: `∂ₛu` solves the linearized Cauchy–Riemann equation.
@@ -93,11 +114,21 @@ and still assumes `u` of class `C²`.
 * `TauCeti.finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp`: for
   compact `K, K' ⊆ Ω`, a nonconstant J-holomorphic curve has finitely many points of `K` over the
   values of `u` at its critical points in `K'`.
+* `TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg` and
+  `TauCeti.finite_inter_setOf_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg`: the critical
+  points of a nonconstant solution with totally real boundary values are isolated in
+  `Ω ∩ {0 ≤ im}`, and finitely many lie in each of its compact subsets, also near the real axis;
+  the theorems with the suffix `_comp` state them for `A = J ∘ u`.
+* `TauCeti.eqOn_const_of_cauchyRiemann_inter_im_nonneg_of_forall_fderivWithin_isBigO` and
+  `TauCeti.eqOn_const_of_cauchyRiemann_inter_im_nonneg_of_eventually_fderivWithin_eq_zero`: a
+  solution with totally real boundary values whose differential vanishes to infinite order, or
+  near one point, possibly on the real axis, is constant.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Lemma 2.4.1 and its proof via the similarity principle, Theorem 2.3.5.
+  Lemma 2.4.1 and its proof via the similarity principle, Theorem 2.3.5, with the reflection
+  across a totally real boundary of Appendix B.4.
 -/
 
 public section
@@ -359,6 +390,300 @@ theorem finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_
     hK'Ω).biUnion fun c hc ↦ hfib c (hK'Ω hc.1)).subset ?_
   rintro z ⟨hzK, c, hc, hcz⟩
   exact mem_biUnion hc ⟨hzK, hcz.symm⟩
+
+/-! ### Critical points up to a totally real boundary -/
+
+omit [FiniteDimensional ℝ E] in
+/-- A map of class `C¹` up to the real axis on `Ω ∩ {0 ≤ im}`, solving `∂ₜu = A ∂ₛu` off the axis,
+whose derivative `∂ₛu` within the closed upper half-plane vanishes on a preconnected
+`Ω ∩ {0 ≤ im}`, is constant there. -/
+private theorem eqOn_const_of_cauchyRiemann_of_eqOn_zero_inter_im_nonneg (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im})) (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (h₀ : EqOn (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1) 0 (Ω ∩ {z | 0 ≤ z.im}))
+    (hz₀ : z₀ ∈ Ω ∩ {z | 0 ≤ z.im}) : EqOn u (fun _ ↦ u z₀) (Ω ∩ {z | 0 ≤ z.im}) := by
+  have hS := hΩ.uniqueDiffOn_inter_setOf_im_nonneg
+  -- off the axis the derivative within `Ω ∩ {0 ≤ im}` is the classical one, and vanishes
+  have hint : EqOn (fderivWithin ℝ u (Ω ∩ {z | 0 ≤ z.im})) 0 (Ω ∩ {z | 0 < z.im}) := by
+    intro z hz
+    have hzS : Ω ∩ {z | 0 ≤ z.im} ∈ 𝓝 z :=
+      inter_mem (hΩ.mem_nhds hz.1) (setOfPred_le_im_mem_nhds hz.2)
+    have h1 : fderiv ℝ u z 1 = 0 := by
+      have h : fderivWithin ℝ u {z | 0 ≤ z.im} z 1 = 0 := h₀ ⟨hz.1, hz.2.out.le⟩
+      rwa [← fderivWithin_inter (hΩ.mem_nhds hz.1), inter_comm, fderivWithin_of_mem_nhds hzS]
+        at h
+    rw [fderivWithin_of_mem_nhds hzS]
+    exact (ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq (K := ℂ)
+      (hCR z hz.1 hz.2)).2 h1
+  -- by continuity it vanishes up to the axis
+  have hzero : EqOn (fderivWithin ℝ u (Ω ∩ {z | 0 ≤ z.im})) 0 (Ω ∩ {z | 0 ≤ z.im}) :=
+    hint.of_subset_closure (hu.continuousOn_fderivWithin hS le_rfl) continuousOn_const
+      (fun z hz ↦ ⟨hz.1, hz.2.out.le⟩)
+      (interior_inter_setOf_im_nonneg hΩ ▸ subset_closure_interior_inter_setOf_im_nonneg hΩ)
+  exact fun z hz ↦ (convex_halfSpace_im_ge 0).is_const_of_fderivWithin_inter_eq_zero hΩ hΩc
+    (hu.differentiableOn one_ne_zero) hzero hz hz₀
+
+omit [FiniteDimensional ℝ E] in
+/-- Off the real axis, the derivative `ξ = ∂ₛu` within the closed upper half-plane of a `C²`
+solution of `∂ₜu = A ∂ₛu` is a weak solution of `∂ₛξ + A ∂ₜξ - A (∂ₛA) ξ = 0` on
+`Ω ∩ {0 < im}`, by the classical computation `TauCeti.cauchyRiemann_fderiv_one`. -/
+private theorem isWeakLinearCauchyRiemannOn_fderivWithin_one_inter_im_pos [CompleteSpace E]
+    (hΩ : IsOpen Ω) (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hξ : ContDiffOn ℝ 1 (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1) (Ω ∩ {z | 0 ≤ z.im})) :
+    IsWeakLinearCauchyRiemannOn 3 (Ω ∩ {z | 0 < z.im}) A
+      (fun z ↦ -(A z ∘L fderivWithin ℝ A {z | 0 ≤ z.im} z 1))
+      (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1) := by
+  -- off the axis, derivatives within the half-plane are classical derivatives
+  have hDIu {z : ℂ} (hz : 0 < z.im) : fderivWithin ℝ u {z | 0 ≤ z.im} z = fderiv ℝ u z :=
+    fderivWithin_of_mem_nhds (setOfPred_le_im_mem_nhds hz)
+  have hDIA {z : ℂ} (hz : 0 < z.im) : fderivWithin ℝ A {z | 0 ≤ z.im} z = fderiv ℝ A z :=
+    fderivWithin_of_mem_nhds (setOfPred_le_im_mem_nhds hz)
+  have hOo : IsOpen (Ω ∩ {z | 0 < z.im}) := hΩ.inter (isOpen_lt continuous_const continuous_im)
+  have hOS : Ω ∩ {z | 0 < z.im} ⊆ Ω ∩ {z | 0 ≤ z.im} := fun w hw ↦ ⟨hw.1, hw.2.out.le⟩
+  refine isWeakCauchyRiemannOn_of_contDiffOn (Ω := ⟨_, hOo⟩) (hξ.mono hOS)
+    fun z (hz : z ∈ Ω ∩ {z | 0 < z.im}) ↦ ?_
+  -- near `z`, `ξ` is the classical derivative `∂ₛu`
+  have hξz : (fun w ↦ fderivWithin ℝ u {z | 0 ≤ z.im} w 1) =ᶠ[𝓝 z] fun w ↦ fderiv ℝ u w 1 :=
+    Filter.eventually_of_mem (hOo.mem_nhds hz) fun w hw ↦ by simp only [hDIu hw.2]
+  have h := cauchyRiemann_fderiv_one hOo ((hA.mono hOS).differentiableOn one_ne_zero)
+    (hu.mono hOS) (fun w hw ↦ hCR w hw.1 hw.2) hz (hAA z (hOS hz))
+  beta_reduce
+  rw [hξz.fderiv_eq, hDIA hz.2, hDIu hz.2, ← sub_eq_zero, sub_neg_eq_add]
+  exact h
+
+/-- **The linearized equation up to the boundary.** For `u` of class `C²` up to the real axis
+solving `∂ₜu = A ∂ₛu` off the axis, with boundary values fixed by `R`, the derivative
+`ξ = ∂ₛu` within the closed upper half-plane satisfies the hypotheses of the boundary similarity
+principle at the exponent `3`: `A ∈ W^{1,3}_loc` up to the axis, the coefficient `-A ∘ ∂ₛA` is
+locally `L³` up to the axis, `ξ` is a weak solution of `∂ₛξ + A ∂ₜξ - A (∂ₛA) ξ = 0` on
+`Ω ∩ {0 ≤ im}`, and `R ξ(s) = ξ(s)` on the axis. -/
+private theorem linearized_inter_im_nonneg {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω)
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) :
+    MemWkpLoc 3 (Ω ∩ {z | 0 ≤ z.im}) 1 A ∧
+      MemLpLoc 3 (Ω ∩ {z | 0 ≤ z.im})
+        (fun z ↦ -(A z ∘L fderivWithin ℝ A {z | 0 ≤ z.im} z 1)) ∧
+      IsWeakLinearCauchyRiemannOn 3 (Ω ∩ {z | 0 ≤ z.im}) A
+        (fun z ↦ -(A z ∘L fderivWithin ℝ A {z | 0 ≤ z.im} z 1))
+        (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1) ∧
+      ∀ x : ℝ, (x : ℂ) ∈ Ω →
+        R (fderivWithin ℝ u {z | 0 ≤ z.im} x 1) = fderivWithin ℝ u {z | 0 ≤ z.im} x 1 := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have hS := hΩ.uniqueDiffOn_inter_setOf_im_nonneg
+  -- derivatives within `Ω ∩ {0 ≤ im}` are derivatives within the half-plane
+  have hDSu {z : ℂ} (hz : z ∈ Ω) :
+      fderivWithin ℝ u (Ω ∩ {z | 0 ≤ z.im}) z = fderivWithin ℝ u {z | 0 ≤ z.im} z := by
+    rw [inter_comm, fderivWithin_inter (hΩ.mem_nhds hz)]
+  have hDSA {z : ℂ} (hz : z ∈ Ω) :
+      fderivWithin ℝ A (Ω ∩ {z | 0 ≤ z.im}) z = fderivWithin ℝ A {z | 0 ≤ z.im} z := by
+    rw [inter_comm, fderivWithin_inter (hΩ.mem_nhds hz)]
+  have hξ : ContDiffOn ℝ 1 (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1)
+      (Ω ∩ {z | 0 ≤ z.im}) :=
+    ((hu.fderivWithin hS (by norm_num)).clm_apply (contDiffOn_const (c := (1 : ℂ)))).congr
+      fun z hz ↦ by rw [hDSu hz.1]
+  have hDA : ContinuousOn (fun z ↦ fderivWithin ℝ A {z | 0 ≤ z.im} z) (Ω ∩ {z | 0 ≤ z.im}) :=
+    (hA.continuousOn_fderivWithin hS le_rfl).congr fun z hz ↦ (hDSA hz.1).symm
+  refine ⟨hA.memWkpLoc_of_uniqueDiffOn hS,
+    (hA.continuousOn.clm_comp (hDA.clm_apply continuousOn_const)).neg.memLpLoc,
+    isWeakCauchyRiemannOn_iff_continuousOn_memWkpLoc_interior.2
+      ⟨hξ.continuousOn, hξ.memWkpLoc_of_uniqueDiffOn hS, ?_⟩, fun x hx ↦ ?_⟩
+  · rw [interior_inter_setOf_im_nonneg hΩ]
+    exact isWeakLinearCauchyRiemannOn_fderivWithin_one_inter_im_pos hΩ hA hAA hu hCR hξ
+  · -- on the axis, `∂ₛu` is the derivative of the boundary values `s ↦ u s`, fixed by `R`
+    have hT : ofReal ⁻¹' Ω ∈ 𝓝 x := (hΩ.preimage continuous_ofReal).mem_nhds hx
+    have hd := HasFDerivWithinAt.hasDerivAt_comp_ofReal
+      ((hu.differentiableOn two_ne_zero) x ⟨hx, by simp⟩).hasFDerivWithinAt
+      (Filter.mem_of_superset hT fun t ht ↦ ⟨ht, by simp⟩)
+    have hR := ((R : E →L[ℝ] E).hasFDerivAt.comp_hasDerivAt x hd).congr_of_eventuallyEq
+      (Filter.mem_of_superset hT fun t ht ↦ (hbd t ht).symm)
+    rw [← hDSu hx]
+    exact hR.unique hd
+
+/-- **Reduction to a conjugation-invariant domain.** Under the hypotheses of the boundary
+critical-point theorems there is a conjugation-invariant open set `Ω'` with the same closed upper
+part `Ω' ∩ {0 ≤ im} = Ω ∩ {0 ≤ im}`, on which `u` still solves `∂ₜu = A ∂ₛu` off the axis, `R`
+still anticommutes with `A` on the axis, and `ξ = ∂ₛu` satisfies the hypotheses of the boundary
+similarity principle given by `linearized_inter_im_nonneg`. -/
+private theorem exists_mapsTo_conj_linearized_inter_im_nonneg {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω)
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) :
+    ∃ Ω' : Set ℂ, IsOpen Ω' ∧ MapsTo (starRingEnd ℂ) Ω' Ω' ∧
+      Ω' ∩ {z | 0 ≤ z.im} = Ω ∩ {z | 0 ≤ z.im} ∧
+      (∀ z ∈ Ω', 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1)) ∧
+      (∀ x : ℝ, (x : ℂ) ∈ Ω' → ∀ v, R (A x v) = -A x (R v)) ∧
+      MemWkpLoc 3 (Ω' ∩ {z | 0 ≤ z.im}) 1 A ∧
+      MemLpLoc 3 (Ω' ∩ {z | 0 ≤ z.im})
+        (fun z ↦ -(A z ∘L fderivWithin ℝ A {z | 0 ≤ z.im} z 1)) ∧
+      IsWeakLinearCauchyRiemannOn 3 (Ω' ∩ {z | 0 ≤ z.im}) A
+        (fun z ↦ -(A z ∘L fderivWithin ℝ A {z | 0 ≤ z.im} z 1))
+        (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1) ∧
+      ∀ x : ℝ, (x : ℂ) ∈ Ω' →
+        R (fderivWithin ℝ u {z | 0 ≤ z.im} x 1) = fderivWithin ℝ u {z | 0 ≤ z.im} x 1 := by
+  obtain ⟨Ω', hΩ', hΩs, heq⟩ := exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq hΩ
+  have hsub {z : ℂ} (hz : z ∈ Ω') (h : 0 ≤ z.im) : z ∈ Ω := (heq.subset ⟨hz, h⟩).1
+  have hCR' : ∀ z ∈ Ω', 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1) :=
+    fun z hz h ↦ hCR z (hsub hz h.le) h
+  rw [← heq] at hA hAA hu
+  exact ⟨Ω', hΩ', hΩs, heq, hCR', fun x hx ↦ hAR x (hsub hx (by simp)),
+    linearized_inter_im_nonneg hΩ' hA hAA hu hCR' fun x hx ↦ hbd x (hsub hx (by simp))⟩
+
+/-- **Isolated critical points up to a totally real boundary.** Let `R` be a real-linear
+automorphism of a finite-dimensional real normed space `E`, such as complex conjugation on `ℂⁿ`.
+Let `Ω` be open with `Ω ∩ {0 ≤ im}` preconnected, and `u` a map of class `C²` up to the real
+axis on `Ω ∩ {0 ≤ im}`, solving `∂ₜu = A ∂ₛu` off the axis, for a field `A` of class `C¹` up to
+the axis with `A(z)² = -1`. Assume the totally real boundary condition: `R` fixes the boundary
+values `u(s)` and anticommutes with `A(s)` on `Ω ∩ ℝ`. If `u` is not constant on `Ω ∩ {0 ≤ im}`,
+the points where its derivative within the closed upper half-plane vanishes form a discrete
+subset of `Ω ∩ {0 ≤ im}`, also near the real axis. -/
+theorem setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg
+    {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x)
+    (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, ∃ w ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ u w) :
+    {z | fderivWithin ℝ u {z | 0 ≤ z.im} z ≠ 0} ∈ codiscreteWithin (Ω ∩ {z | 0 ≤ z.im}) := by
+  -- pass to a conjugation-invariant open set with the same closed upper part
+  obtain ⟨Ω', hΩ', hΩs, heq, hCR', hAR', hAw, hC, hξ, hξR⟩ :=
+    exists_mapsTo_conj_linearized_inter_im_nonneg hΩ hA hAA hAR hu hCR hbd
+  rw [← heq] at hΩc hA hAA hu hne ⊢
+  -- `∂ₛu` does not vanish identically, since `u` is not constant
+  have hξne : ∃ z ∈ Ω' ∩ {z | 0 ≤ z.im}, fderivWithin ℝ u {z | 0 ≤ z.im} z 1 ≠ 0 := by
+    by_contra! h
+    obtain ⟨z, hz, w, hw, hzw⟩ := hne
+    have hc := eqOn_const_of_cauchyRiemann_of_eqOn_zero_inter_im_nonneg hΩ' hΩc
+      (hu.of_le one_le_two) hCR' h hz
+    exact hzw (hc hw).symm
+  refine Filter.mem_of_superset
+    (setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg
+      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hAw hA.continuousOn hAA hAR' hC hξ hξR hξne)
+    fun z hz h₀ ↦ hz (by simp [h₀])
+
+/-- **Unique continuation for critical points of infinite order, up to a totally real
+boundary.** Let `Ω`, `u`, `A` and `R` be as in
+`TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`. If
+the derivative of `u` within the closed upper half-plane is `O(‖z - z₀‖ⁿ)` within `{0 ≤ im}` for
+every `n`, at a point `z₀ ∈ Ω ∩ {0 ≤ im}` possibly on the real axis, then `u` is constant on
+`Ω ∩ {0 ≤ im}`. -/
+theorem eqOn_const_of_cauchyRiemann_inter_im_nonneg_of_forall_fderivWithin_isBigO
+    {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) (hz₀ : z₀ ∈ Ω ∩ {z | 0 ≤ z.im})
+    (h₀ : ∀ n : ℕ, (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z) =O[𝓝[{z | 0 ≤ z.im}] z₀]
+      fun z ↦ (z - z₀) ^ n) :
+    EqOn u (fun _ ↦ u z₀) (Ω ∩ {z | 0 ≤ z.im}) := by
+  obtain ⟨Ω', hΩ', hΩs, heq, hCR', hAR', hAw, hC, hξ, hξR⟩ :=
+    exists_mapsTo_conj_linearized_inter_im_nonneg hΩ hA hAA hAR hu hCR hbd
+  rw [← heq] at hΩc hA hAA hu hz₀ ⊢
+  exact eqOn_const_of_cauchyRiemann_of_eqOn_zero_inter_im_nonneg hΩ' hΩc (hu.of_le one_le_two)
+    hCR' (eqOn_zero_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg_of_forall_isBigO
+      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hAw hA.continuousOn hAA hAR' hC hξ hξR hz₀
+      fun n ↦ ((ContinuousLinearMap.apply ℝ E (1 : ℂ)).isBigO_comp _ _).trans (h₀ n)) hz₀
+
+/-- **Unique continuation for critical points up to a totally real boundary.** Let `Ω`, `u`,
+`A` and `R` be as in
+`TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`. If
+the derivative of `u` within the closed upper half-plane vanishes at the points of `{0 ≤ im}`
+near a point `z₀ ∈ Ω ∩ {0 ≤ im}`, possibly on the real axis, then `u` is constant on
+`Ω ∩ {0 ≤ im}`. -/
+theorem eqOn_const_of_cauchyRiemann_inter_im_nonneg_of_eventually_fderivWithin_eq_zero
+    {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) (hz₀ : z₀ ∈ Ω ∩ {z | 0 ≤ z.im})
+    (h₀ : ∀ᶠ z in 𝓝[{z | 0 ≤ z.im}] z₀, fderivWithin ℝ u {z | 0 ≤ z.im} z = 0) :
+    EqOn u (fun _ ↦ u z₀) (Ω ∩ {z | 0 ≤ z.im}) :=
+  eqOn_const_of_cauchyRiemann_inter_im_nonneg_of_forall_fderivWithin_isBigO hΩ hΩc hA hAA hAR
+    hu hCR hbd hz₀ fun _ ↦ (isBigO_zero _ _).congr' (h₀.mono fun _ h ↦ h.symm) .rfl
+
+/-- **Finitely many critical points on compact sets, up to a totally real boundary.** Let `Ω`,
+`u`, `A` and `R` be as in
+`TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`, with
+`u` not constant on `Ω ∩ {0 ≤ im}`. Each compact subset of `Ω ∩ {0 ≤ im}`, which may meet the
+real axis, contains finitely many points where the derivative of `u` within the closed upper
+half-plane vanishes. -/
+theorem finite_inter_setOf_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg
+    {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x)
+    (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, ∃ w ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ u w) {K : Set ℂ}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω ∩ {z | 0 ≤ z.im}) :
+    (K ∩ {z | fderivWithin ℝ u {z | 0 ≤ z.im} z = 0}).Finite := by
+  have h := hK.finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono hKΩ
+    (setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg hΩ hΩc hA
+      hAA hAR hu hCR hbd hne))
+  convert h using 1
+  ext z
+  simp
+
+/-- **Isolated critical points of J-holomorphic curves up to a totally real boundary.** Let `R`
+be a real-linear automorphism of a finite-dimensional real normed space `E`, and `J` a field of
+endomorphisms of `E`. Let `Ω` be open with `Ω ∩ {0 ≤ im}` preconnected, and `u` a map of class
+`C²` up to the real axis on `Ω ∩ {0 ≤ im}`, solving `∂ₜu = J(u) ∂ₛu` off the axis, with `J` of
+class `C¹` near the image of `u` and `J(u)² = -1` along it. Assume that `R` fixes the boundary
+values `u(s)` and anticommutes with `J(u(s))` on `Ω ∩ ℝ`; in coordinates where a totally real
+submanifold is `ℝⁿ ⊆ ℂⁿ` and `J = i` along it, `R` is complex conjugation. If `u` is not constant
+on `Ω ∩ {0 ≤ im}`, its critical points form a discrete subset of `Ω ∩ {0 ≤ im}`. -/
+theorem setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg_comp
+    {R : E ≃L[ℝ] E} {J : E → E →L[ℝ] E} (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hJ : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, ContDiffAt ℝ 1 J (u z))
+    (hJJ : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E)
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J (u x) v) = -J (u x) (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x)
+    (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, ∃ w ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ u w) :
+    {z | fderivWithin ℝ u {z | 0 ≤ z.im} z ≠ 0} ∈ codiscreteWithin (Ω ∩ {z | 0 ≤ z.im}) :=
+  setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg
+    (A := fun z ↦ J (u z)) hΩ hΩc
+    (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z ((hu z hz).of_le one_le_two)) hJJ hJR hu hCR
+    hbd hne
+
+/-- **Finitely many critical points of J-holomorphic curves on compact sets, up to a totally real
+boundary.** Let `Ω`, `u`, `J` and `R` be as in
+`TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg_comp`,
+with `u` not constant on `Ω ∩ {0 ≤ im}`. Each compact subset of `Ω ∩ {0 ≤ im}`, which may meet
+the real axis, contains finitely many critical points of `u`. -/
+theorem finite_inter_setOf_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg_comp
+    {R : E ≃L[ℝ] E} {J : E → E →L[ℝ] E} (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hJ : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, ContDiffAt ℝ 1 J (u z))
+    (hJJ : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E)
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J (u x) v) = -J (u x) (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x)
+    (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, ∃ w ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ u w) {K : Set ℂ}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω ∩ {z | 0 ≤ z.im}) :
+    (K ∩ {z | fderivWithin ℝ u {z | 0 ≤ z.im} z = 0}).Finite :=
+  finite_inter_setOf_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg
+    (A := fun z ↦ J (u z)) hΩ hΩc
+    (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z ((hu z hz).of_le one_le_two)) hJJ hJR hu hCR
+    hbd hne hK hKΩ
 
 end FiniteDimensional
 
