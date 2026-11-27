@@ -313,49 +313,6 @@ open Metric
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   {ν : F} {c : ℝ} {v : F → ℝ}
 
-omit [FiniteDimensional ℝ F] in
-/-- The odd reflection of a function continuous on the closed upper half of a ball centred on the
-hyperplane and zero on the hyperplane is continuous on the closed ball and odd under `ρ`. -/
-private theorem continuousOn_ite_neg_comp_hyperplaneReflection (hν : ν ≠ 0) {x : F}
-    (hx : ⟪x, ν⟫_ℝ = c) {r : ℝ} (hvc : ContinuousOn v (closedBall x r ∩ {y | c ≤ ⟪y, ν⟫_ℝ}))
-    (hv0 : ∀ y ∈ closedBall x r, ⟪y, ν⟫_ℝ = c → v y = 0) :
-    ContinuousOn (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (hyperplaneReflection ν c y))
-        (closedBall x r) ∧
-      ∀ y ∈ closedBall x r,
-        (if c ≤ ⟪hyperplaneReflection ν c y, ν⟫_ℝ then v (hyperplaneReflection ν c y)
-          else -v (hyperplaneReflection ν c (hyperplaneReflection ν c y))) =
-        -(if c ≤ ⟪y, ν⟫_ℝ then v y else -v (hyperplaneReflection ν c y)) := by
-  set ρ := hyperplaneReflection ν c
-  have hρν : ∀ y, ⟪ρ y, ν⟫_ℝ = 2 * c - ⟪y, ν⟫_ℝ := inner_hyperplaneReflection hν c
-  have hinner : Continuous fun y : F ↦ ⟪y, ν⟫_ℝ := continuous_id.inner continuous_const
-  refine ⟨?_, fun y hy ↦ ?_⟩
-  · -- Above the hyperplane the reflection is `v`, below it `-v ∘ ρ`, and both are `0` on it.
-    have hup : ContinuousOn (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (ρ y))
-        (closedBall x r ∩ {y | c ≤ ⟪y, ν⟫_ℝ}) :=
-      hvc.congr fun y hy ↦ by simp [show c ≤ ⟪y, ν⟫_ℝ from hy.2]
-    have hdown : ContinuousOn (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (ρ y))
-        (closedBall x r ∩ {y | ⟪y, ν⟫_ℝ ≤ c}) := by
-      refine (hvc.comp ρ.continuous.continuousOn
-        fun y (hy : y ∈ closedBall x r ∩ {y | ⟪y, ν⟫_ℝ ≤ c}) ↦
-          ⟨(hyperplaneReflection_mem_closedBall_iff hx).2 hy.1, ?_⟩).neg.congr
-        fun y (hy : y ∈ closedBall x r ∩ {y | ⟪y, ν⟫_ℝ ≤ c}) ↦ ?_
-      · change c ≤ ⟪ρ y, ν⟫_ℝ
-        rw [hρν]
-        linarith [show ⟪y, ν⟫_ℝ ≤ c from hy.2]
-      · rcases (show ⟪y, ν⟫_ℝ ≤ c from hy.2).lt_or_eq with h | h
-        · simp [not_le.2 h]
-        · simp [h.ge, hyperplaneReflection_eq_self_of_inner_eq h, hv0 y hy.1 h, ρ]
-    refine (hup.union_of_isClosed hdown (isClosed_closedBall.inter
-      (isClosed_le continuous_const hinner)) (isClosed_closedBall.inter
-      (isClosed_le hinner continuous_const))).mono fun y hy ↦ ?_
-    rcases le_total c ⟪y, ν⟫_ℝ with h | h
-    · exact Or.inl ⟨hy, h⟩
-    · exact Or.inr ⟨hy, h⟩
-  · rcases lt_trichotomy ⟪y, ν⟫_ℝ c with h | h | h
-    · simp [show c ≤ ⟪ρ y, ν⟫_ℝ by rw [hρν]; linarith, not_le.2 h, ρ]
-    · simp [hyperplaneReflection_eq_self_of_inner_eq h, h.ge, hv0 y hy h, ρ]
-    · simp [show ¬c ≤ ⟪ρ y, ν⟫_ℝ by rw [hρν]; linarith, h.le, ρ]
-
 /-- **An odd harmonic function with odd boundary values.** For boundary values `w` continuous on a
 closed ball centred on the hyperplane and odd under `ρ`, the Dirichlet problem on the ball has a
 solution that is odd under `ρ`. -/
@@ -410,9 +367,10 @@ private theorem harmonicOnNhd_ite_neg_comp_hyperplaneReflection_ball (hν : ν �
   have hinner : Continuous fun y : F ↦ ⟪y, ν⟫_ℝ := continuous_id.inner continuous_const
   -- The Dirichlet problem with the boundary values of `w` has an odd solution `H`, which
   -- therefore vanishes on the hyperplane.
-  obtain ⟨hwc, hodd⟩ := continuousOn_ite_neg_comp_hyperplaneReflection hν hx hvc hv0
-  obtain ⟨H, hH, hHc, hHw, hHodd⟩ :=
-    exists_harmonicOnNhd_ball_eqOn_sphere_of_odd hν hx hr hwc hodd
+  obtain ⟨H, hH, hHc, hHw, hHodd⟩ := exists_harmonicOnNhd_ball_eqOn_sphere_of_odd hν hx hr
+    (continuousOn_ite_neg_comp_hyperplaneReflection hν
+      (fun y hy ↦ (hyperplaneReflection_mem_closedBall_iff hx).2 hy) hvc hv0)
+    fun y hy ↦ ite_neg_comp_hyperplaneReflection_apply_hyperplaneReflection hν (hv0 y hy)
   have hH0 : ∀ y ∈ closedBall x r, ⟪y, ν⟫_ℝ = c → H y = 0 := fun y hy h ↦ by
     have := hHodd y hy
     rw [hyperplaneReflection_eq_self_of_inner_eq h] at this

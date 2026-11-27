@@ -99,6 +99,10 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 /-- The first coordinate vector `e₀`, the inner normal of the half-space `0 < x 0`. -/
 local notation "e₀" => (EuclideanSpace.single (0 : Fin (n + 1)) (1 : ℝ) : E)
 
+/-- The inner product with `e₀` is the first coordinate. -/
+private theorem inner_e₀ (y : E) : ⟪y, e₀⟫ = y 0 :=
+  EuclideanSpace.real_inner_single_one_right y 0
+
 /-- The first coordinate, the height above the hyperplane `x 0 = 0`. -/
 local notation "ℓ₀" => (EuclideanSpace.proj (0 : Fin (n + 1)) : E →L[ℝ] ℝ)
 
@@ -205,8 +209,7 @@ private theorem exists_holderOnWith_oddExtension {α : ℝ≥0} (hα : 0 < α) (
       ∀ y ∈ closedBall x r,
         oddExtension φ g (hyperplaneReflection e₀ 0 y) = -oddExtension φ g y := by
   obtain ⟨KΨ, hΨ⟩ := exists_holderOnWith_correctorHessian hα hα1 hgb hgH hx r
-  have hinner : ∀ y : E, ⟪y, e₀⟫ = y 0 := fun y ↦ EuclideanSpace.real_inner_single_one_right y 0
-  have hx' : ⟪x, e₀⟫ = 0 := by rw [hinner, hx]
+  have hx' : ⟪x, e₀⟫ = 0 := by rw [inner_e₀, hx]
   have hψ : HolderOnWith (‖traceHessian (n := n)‖₊ * KΨ) α
       (fun y ↦ traceHessian (correctorHessian g y)) (closedBall x r ∩ {y | 0 ≤ y 0}) :=
     HolderOnWith.of_dist_le fun y hy y' hy' ↦ by
@@ -217,22 +220,24 @@ private theorem exists_holderOnWith_oddExtension {α : ℝ≥0} (hα : 0 < α) (
     intro y hy hy0
     rw [correctorHessian_of_apply_eq_zero g hy0, map_smul, ← laplacian_eq_traceHessian,
       laplacian_halfSq, smul_eq_mul, mul_one, hφg y hy hy0, sub_self]
-  have hinS : {y : E | 0 ≤ ⟪y, e₀⟫} = {y | 0 ≤ y 0} := by simp_rw [hinner]
+  have hinS : {y : E | 0 ≤ ⟪y, e₀⟫} = {y | 0 ≤ y 0} := by simp_rw [inner_e₀]
   refine ⟨_, holderOnWith_ite_neg_comp_hyperplaneReflection (by simp) (convex_closedBall x r)
     (fun y hy ↦ (hyperplaneReflection_mem_closedBall_iff hx').2 hy) (by rw [hinS]; exact hφ.sub hψ)
-    (fun y hy hy0 ↦ hφ0 y hy (by rwa [hinner] at hy0)), fun y hy ↦ ?_⟩
-  have hρ : ⟪hyperplaneReflection e₀ 0 y, e₀⟫ = -⟪y, e₀⟫ := by
-    rw [inner_hyperplaneReflection (by simp)]
-    ring
-  rcases lt_trichotomy ⟪y, e₀⟫ 0 with h | h | h
-  · have h1 : 0 ≤ ⟪hyperplaneReflection e₀ 0 y, e₀⟫ := by rw [hρ]; linarith
-    simp only [oddExtension, h1, not_le.2 h, ↓reduceIte, neg_neg]
-  · simp only [oddExtension, hyperplaneReflection_eq_self_of_inner_eq h, h, le_refl, ↓reduceIte,
-      hφ0 y hy (by rwa [hinner] at h), neg_zero]
-  · have h1 : ¬0 ≤ ⟪hyperplaneReflection e₀ 0 y, e₀⟫ := by rw [hρ]; linarith
-    simp only [oddExtension, h1, h.le, ↓reduceIte, hyperplaneReflection_hyperplaneReflection]
+    (fun y hy hy0 ↦ hφ0 y hy (by rwa [inner_e₀] at hy0)), fun y hy ↦ ?_⟩
+  exact ite_neg_comp_hyperplaneReflection_apply_hyperplaneReflection
+    (v := fun y ↦ φ y - traceHessian (correctorHessian g y)) (by simp)
+    fun h ↦ hφ0 y hy (by rwa [inner_e₀] at h)
 
 /-! ### Solutions continuous up to the hyperplane -/
+
+/-- A point on or above the hyperplane in an open set `O` is a limit of points of `O` above the
+hyperplane. -/
+private theorem mem_closure_inter_pos {O : Set E} (hO : IsOpen O) {y : E} (hyO : y ∈ O)
+    (hy : 0 ≤ y 0) : y ∈ closure (O ∩ {z | 0 < z 0}) := by
+  have h := mem_closure_setOf_lt_inner_inter (ν := e₀) (c := 0) (by simp) (by rwa [inner_e₀]) hO
+    hyO
+  simp_rw [inner_e₀] at h
+  rwa [inter_comm] at h
 
 /-- **Extension to the hyperplane.** A function `α`-Hölder on the part of a ball above the
 hyperplane agrees there with a function `α`-Hölder, with the same constant, on the part of the ball
@@ -243,11 +248,7 @@ private theorem exists_holderOnWith_eqOn_of_holderOnWith_inter_pos {α : ℝ≥0
     ∃ f : E → ℝ, EqOn f φ (ball x r ∩ {y | 0 < y 0}) ∧
       HolderOnWith K₀ α f (ball x r ∩ {y | 0 ≤ y 0}) := by
   obtain ⟨f, heq, hH⟩ := hφ.exists_eqOn_holderOnWith_closure hα
-  refine ⟨f, heq, hH.mono fun y hy ↦ ?_⟩
-  have h := mem_closure_setOf_lt_inner_inter (ν := e₀) (c := 0) (by simp)
-    (by rw [EuclideanSpace.real_inner_single_one_right]; exact hy.2) isOpen_ball hy.1
-  simp_rw [EuclideanSpace.real_inner_single_one_right] at h
-  rwa [inter_comm] at h
+  exact ⟨f, heq, hH.mono fun y hy ↦ mem_closure_inter_pos isOpen_ball hy.1 hy.2⟩
 
 /-- **An odd solution of Poisson's equation.** If `h` is `α`-Hölder on a closed ball centred on
 the hyperplane and odd under the reflection in it, then `ΔW = h` has a solution `W` that is `C²` on
@@ -260,7 +261,7 @@ private theorem exists_laplacian_eq_of_odd {α : ℝ≥0} (hα : 0 < α) (hα1 :
   set R : E ≃ₗᵢ[ℝ] E := (ℝ ∙ e₀)ᗮ.reflection
   have hR : ∀ y, R y = hyperplaneReflection e₀ 0 y := fun y ↦ by
     simp [R, hyperplaneReflection_eq_reflection_add]
-  have hx' : ⟪x, e₀⟫ = 0 := by rw [EuclideanSpace.real_inner_single_one_right, hx]
+  have hx' : ⟪x, e₀⟫ = 0 := by rw [inner_e₀, hx]
   have hRB : MapsTo R (ball x s) (ball x s) := fun y hy ↦ by
     rw [hR]
     exact (hyperplaneReflection_mem_ball_iff hx').2 hy
@@ -274,13 +275,13 @@ private theorem exists_laplacian_eq_of_odd {α : ℝ≥0} (hα : 0 < α) (hα1 :
   refine ⟨W₁ - W₁ ∘ R, hW₁.sub hW₁R, fun y hy ↦ ?_, fun y _ hy0 ↦ ?_⟩
   · rw [(hW₁.contDiffAt (isOpen_ball.mem_nhds hy)).laplacian_sub
       (hW₁R.contDiffAt (isOpen_ball.mem_nhds hy)), laplacian_comp_linearIsometryEquiv_right,
-      Function.comp_apply, hΔW₁ y hy, hΔW₁ _ (hRB hy), Pi.smul_apply, Pi.smul_apply, hR,
-      hodd y hy, smul_eq_mul, smul_eq_mul]
+      Function.comp_apply, hΔW₁ y hy, hΔW₁ _ (hRB hy)]
+    simp [hR, hodd y hy]
     ring
   · have hRy : R y = y := by
       rw [hR]
       exact hyperplaneReflection_eq_self_of_inner_eq
-        (by rw [EuclideanSpace.real_inner_single_one_right, hy0])
+        (by rw [inner_e₀, hy0])
     simp [hRy]
 
 /-- **The harmonic remainder.** Let `u` be `C²` on the part of `B(x, s)` above the hyperplane,
@@ -298,8 +299,7 @@ private theorem exists_harmonicOnNhd_eq_sub_corrector_sub {α : ℝ≥0} (hα : 
     ∃ H : E → ℝ, HarmonicOnNhd H (ball x s) ∧
       ∀ y ∈ ball x s, 0 < y 0 → H y = u y - corrector g y - W y := by
   obtain ⟨C, -, hP⟩ := exists_corrector_bounds hα hα1 hgb hgH
-  have hinner : ∀ y : E, ⟪y, e₀⟫ = y 0 := fun y ↦ EuclideanSpace.real_inner_single_one_right y 0
-  have hx' : ⟪x, e₀⟫ = 0 := by rw [hinner, hx]
+  have hx' : ⟪x, e₀⟫ = 0 := by rw [inner_e₀, hx]
   set v := u - corrector g - W with hv_def
   have hupper : IsOpen (ball x s ∩ {y : E | 0 < y 0}) :=
     isOpen_ball.inter (EuclideanSpace.isOpen_setOf_pos_apply 0)
@@ -309,7 +309,7 @@ private theorem exists_harmonicOnNhd_eq_sub_corrector_sub {α : ℝ≥0} (hα : 
       hW.contDiffAt (isOpen_ball.mem_nhds hy.1)⟩
   -- `v = u - P - W` is harmonic above the hyperplane, continuous up to it and zero on it.
   have hv : HarmonicOnNhd v (ball x s ∩ {y | 0 < ⟪y, e₀⟫}) := by
-    simp_rw [hinner]
+    simp_rw [inner_e₀]
     intro y hy
     obtain ⟨h1, h2, h3⟩ := hd y hy
     refine ⟨(h1.sub h2).sub h3, eventually_of_mem (hupper.mem_nhds hy) fun z hz ↦ ?_⟩
@@ -318,17 +318,17 @@ private theorem exists_harmonicOnNhd_eq_sub_corrector_sub {α : ℝ≥0} (hα : 
       h1.laplacian_sub h2, hΔ z hz.1 hz.2, Pi.zero_apply]
     ring
   have hvc : ContinuousOn v (ball x s ∩ {y | 0 ≤ ⟪y, e₀⟫}) := by
-    simp_rw [hinner]
+    simp_rw [inner_e₀]
     refine (huc.sub fun y hy ↦ ?_).sub (hW.continuousOn.mono inter_subset_left)
     rcases (show 0 ≤ y 0 from hy.2).lt_or_eq with h | h
     · exact (hP y h).1.continuousAt.continuousWithinAt
     · exact (continuousWithinAt_corrector hα hα1 hgb hgH h.symm).mono inter_subset_right
   have hv0 : ∀ y ∈ ball x s, ⟪y, e₀⟫ = 0 → v y = 0 := fun y hy h ↦ by
-    rw [hinner] at h
+    rw [inner_e₀] at h
     simp [hv_def, h0 y hy h, corrector_eq_zero g h, hW0 y hy h]
   refine ⟨_, harmonicOnNhd_ite_neg_comp_hyperplaneReflection (by simp) isOpen_ball
     (fun y hy ↦ (hyperplaneReflection_mem_ball_iff hx').2 hy) hv hvc hv0, fun y _ hy0 ↦ ?_⟩
-  simp [hinner, hy0.le, hv_def]
+  simp [inner_e₀, hy0.le, hv_def]
 
 /-- **The boundary case for solutions continuous up to the hyperplane.** At a point `x` of the
 hyperplane, a function `C²` above the hyperplane, continuous up to it and zero on it, whose
@@ -358,7 +358,7 @@ private theorem exists_mem_nhds_holderOnWith_inter_pos_of_apply_zero_eq_zero {α
     (hu.mono (inter_subset_inter_left _ hBU)) (huc.mono (inter_subset_inter_left _ hBU))
     (fun y hy ↦ h0 y (hBU hy)) hW hW0 fun y hy hy0 ↦ by
       rw [hΔW y hy, laplacian_eq_traceHessian (corrector g), ← correctorHessian_of_pos g hy0]
-      simp only [oddExtension, EuclideanSpace.real_inner_single_one_right, hy0.le, ↓reduceIte]
+      simp only [oddExtension, inner_e₀, hy0.le, ↓reduceIte]
       rw [hfeq ⟨hsr (ball_subset_closedBall hy), hy0⟩]
       ring
   -- `Z = W + H` is `C²` on the ball with Hölder Laplacian, so `D²Z` is Hölder near `x`.
@@ -448,12 +448,8 @@ theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_two_inter_of_laplacian {α :
   refine ⟨interior T ∩ U, inter_mem (interior_mem_nhds.2 hT) (hU.mem_nhds hx), K,
     hK.of_subset_closure (fun y hy ↦ ?_) fun y hy ↦
       (hc.continuousAt (hU.mem_nhds hy.1.2)).continuousWithinAt⟩
-  have h := mem_closure_setOf_lt_inner_inter (ν := e₀) (c := 0) (by simp)
-    (by rw [EuclideanSpace.real_inner_single_one_right]; exact hy.2)
-    (isOpen_interior.inter hU) hy.1
-  simp_rw [EuclideanSpace.real_inner_single_one_right] at h
-  exact closure_mono (t := T ∩ {z : E | 0 < z 0})
-    (fun z (hz : z ∈ {z : E | 0 < z 0} ∩ (interior T ∩ U)) ↦ ⟨interior_subset hz.2.1, hz.1⟩) h
+  exact closure_mono (inter_subset_inter_left _ (inter_subset_left.trans interior_subset))
+    (mem_closure_inter_pos (isOpen_interior.inter hU) hy.1 hy.2)
 
 end PDE
 
