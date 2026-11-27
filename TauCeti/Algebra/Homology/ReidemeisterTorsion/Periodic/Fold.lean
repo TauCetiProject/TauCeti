@@ -24,8 +24,8 @@ Over a field, give each `C.X j` a basis `c j`, and the term of parity `r` of the
 of the bases `c j` of the degrees of parity `r`, in an order `e r` (`ChainComplex.parityFoldBasis`).
 Then the torsion `HomologicalComplex.parityTorsion` of the based two-periodic complex is, up to
 sign, the Reidemeister torsion `HomologicalComplex.reidemeisterTorsion` of `C`
-(`ChainComplex.homologicalComplex_parityTorsion_parityFold_eq_or_eq_neg`). Both torsions are
-made of the same brackets: the torsion of `C` is the alternating product
+(`ChainComplex.homologicalComplex_parityTorsion_parityFold_eq_reidemeisterTorsion_or_eq_neg`).
+Both torsions are made of the same brackets: the torsion of `C` is the alternating product
 `∏ⱼ [bⱼ sⱼ₋₁ / cⱼ] ^ ((-1) ^ (j + 1))`, the brackets of odd degrees in the numerator, and the
 torsion of the fold is the bracket of its odd term over the bracket of its even term. Taking the
 bases of the boundaries and the lifts of the fold to be those of `C`, each concentrated in its
@@ -45,8 +45,8 @@ changes the torsion of the fold by the signs of the permutations
 
 ## Main results
 
-* `ChainComplex.homologicalComplex_parityTorsion_parityFold_eq_or_eq_neg`: the torsion of the
-  based parity fold is, up to sign, the Reidemeister torsion of `C`.
+* `ChainComplex.homologicalComplex_parityTorsion_parityFold_eq_reidemeisterTorsion_or_eq_neg`:
+  the torsion of the based parity fold is, up to sign, the Reidemeister torsion of `C`.
 
 ## References
 
@@ -404,7 +404,8 @@ based by `c` and vanishing outside the finite set of degrees `S`, and give each 
 fold the basis made of the bases of the terms of `C` of that parity, in any order `e`. Then the
 torsion of the parity fold is, up to sign, the Reidemeister torsion of `C`. Both vanish when `C` is
 not acyclic. -/
-theorem homologicalComplex_parityTorsion_parityFold_eq_or_eq_neg (hS : ∀ j ∉ S, n j = 0) :
+theorem homologicalComplex_parityTorsion_parityFold_eq_reidemeisterTorsion_or_eq_neg
+    (hS : ∀ j ∉ S, n j = 0) :
     (C.parityFold S).parityTorsion (parityFoldBasis S c e) = C.reidemeisterTorsion c ∨
       (C.parityFold S).parityTorsion (parityFoldBasis S c e) = -C.reidemeisterTorsion c := by
   have hS' : ∀ j ∉ S, IsZero (C.X j) := fun j hj ↦ by
