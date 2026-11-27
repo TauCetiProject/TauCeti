@@ -57,6 +57,10 @@ space is continuous exactly when its restriction to every fixed-support space is
 * `TauCeti.LieTestFunction.fixedSupportSeminorm_le_of_tsupport_subset`: on test functions
   supported in `C`, the fixed-support seminorm is bounded by any bound on `C`; with
   `TauCeti.LieTestFunction.norm_leftDerivWord_le`, it is the supremum over `C`.
+* `TauCeti.LieTestFunction.FixedSupport.instT1Space`: the fixed-support seminorms separate
+  points, so the fixed-support topology is `T₁`, hence Hausdorff as that of a topological group.
+* `TauCeti.LieTestFunction.FixedSupport.instLocallyConvexSpace`: the fixed-support topology is
+  locally convex.
 * `TauCeti.LieTestFunction.FixedSupport.continuous_inclusion`: the inclusions of the
   fixed-support spaces are continuous.
 * `TauCeti.LieTestFunction.continuous_iff_continuous_comp`: the continuity criterion for linear
@@ -350,6 +354,19 @@ instance : IsTopologicalAddGroup (FixedSupport I G C) :=
 
 instance : ContinuousSMul ℂ (FixedSupport I G C) :=
   (withSeminorms I G C).continuousSMul
+
+/-- **The fixed-support seminorms separate points**: the seminorm of the empty word is the
+supremum norm. -/
+instance instT1Space : T1Space (FixedSupport I G C) := by
+  refine (withSeminorms I G C).T1_of_separating fun a ha ↦ ⟨[], fun h0 ↦ ha ?_⟩
+  refine ext (LieTestFunction.ext fun g ↦ ?_)
+  have hg := norm_leftDerivWord_le [] (inclusion I G C a) g
+  rw [← seminormFamily_apply, h0] at hg
+  simpa using norm_le_zero_iff.mp hg
+
+/-- **The fixed-support topology is locally convex.** -/
+instance instLocallyConvexSpace : LocallyConvexSpace ℝ (FixedSupport I G C) :=
+  (withSeminorms I G C).toLocallyConvexSpace
 
 end FixedSupport
 

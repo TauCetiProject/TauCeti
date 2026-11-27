@@ -57,6 +57,10 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
   `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
   pseudoholomorphic.
+* `TauCeti.isPseudoholomorphic_equivRealProdCLM`: the identification of `ℂ` with the standard
+  complex line `ℝ × ℝ` is pseudoholomorphic.
+* `TauCeti.mfderiv_symm_apply_I_of_mem_maximalAtlas`: for a holomorphic chart of a complex curve,
+  the coordinate vector `∂ₜ` is `j ∂ₛ`.
 * `MDifferentiableAt.mfderiv_ofComplexManifold_apply`: the real differential of a holomorphic map
   commutes with the almost complex structures.
 * `TauCeti.mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply`: a real differentiable complex
@@ -299,6 +303,40 @@ theorem _root_.MDifferentiableAt.mfderiv_ofComplexManifold_apply
   (isPseudoholomorphicAt_ofComplexManifold_iff.2 hf).mfderiv_apply_commute v
 
 end Pseudoholomorphic
+
+/-- The identification `Complex.equivRealProdCLM` of `ℂ` with `ℝ × ℝ` is pseudoholomorphic from
+the complex structure of `ℂ` to the standard structure `(a, b) ↦ (-b, a)` of `ℝ × ℝ`
+(`SmoothAlmostComplexStructure.product ℝ`). -/
+theorem isPseudoholomorphic_equivRealProdCLM :
+    IsPseudoholomorphic (ofComplexManifold ℂ ℂ) (SmoothAlmostComplexStructure.product ℝ)
+      Complex.equivRealProdCLM := isPseudoholomorphic_iff.2 fun z ↦
+  isPseudoholomorphicAt_of_hasMFDerivAt
+    (Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ).hasMFDerivAt fun v ↦ by
+      -- The tangent spaces are the model spaces `ℂ` and `ℝ × ℝ`, on which the structures are
+      -- multiplication by `i` and `(a, b) ↦ (-b, a)`. `simp` does not see through `TangentSpace`,
+      -- so the coordinate identity `h₃` is stated on `ℂ` and applied to `v`.
+      have h₁ := SmoothAlmostComplexStructure.ofComplexManifold_apply (E := ℂ) (M := ℂ) z v
+      have h₂ := SmoothAlmostComplexStructure.product_apply (V := ℝ) (Complex.equivRealProdCLM z)
+        (Complex.equivRealProdCLM v)
+      beta_reduce at h₁ h₂ ⊢
+      rw [h₁]
+      refine Eq.trans ?_ h₂.symm
+      have h₃ (w : ℂ) : Complex.equivRealProdCLM (Complex.I • w) =
+          (-(Complex.equivRealProdCLM w).2, (Complex.equivRealProdCLM w).1) := by
+        ext <;> simp
+      exact h₃ v
+
+/-- **Coordinate vectors of a holomorphic chart.** For a holomorphic chart `φ` of a complex curve
+`X` and a point `z` of its target, the coordinate vector `∂ₜ = dφ⁻¹ i` is `j ∂ₛ`, where
+`∂ₛ = dφ⁻¹ 1` and `j` is the almost complex structure of `X`. -/
+theorem mfderiv_symm_apply_I_of_mem_maximalAtlas {X : Type*} [TopologicalSpace X]
+    [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X] {φ : OpenPartialHomeomorph X ℂ}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ φ.target) :
+    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z Complex.I =
+      ofComplexManifold ℂ X (φ.symm z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ)) := by
+  have h := (mdifferentiableAt_symm_of_mem_maximalAtlas hφ hz).mfderiv_ofComplexManifold_apply
+    (1 : ℂ)
+  rwa [ofComplexManifold_apply (M := ℂ), smul_eq_mul, mul_one] at h
 
 /-- A real differentiable complex valued function on a complex manifold is holomorphic at a point
 exactly when its real differential there is complex linear: it takes `j v` to `i` times its value

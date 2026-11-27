@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
-# Strong measurability: continuous maps with compact range and descent along local homeomorphisms
+# Strong measurability and finite-support approximation
 
 A continuous function from a space with the Borel `σ`-algebra to a pseudo-metrizable space is
 strongly measurable as soon as its range lies in a compact set, since the range is then separable.
@@ -21,6 +21,9 @@ homeomorphism is. Extending an `mΩ`-strongly measurable function by zero outsid
 an `mProd`-strongly measurable function on `ι × Ω` whenever `T ×ˢ A` is `mProd`-measurable for all
 `mΩ`-measurable `A`.
 
+Finite-support approximation transfers between strongly measurable functions whenever
+convergence of the constant zero sequence to the first implies convergence to the second.
+
 ## Main results
 
 * `Continuous.stronglyMeasurable_of_range_subset_isCompact`: a continuous function whose range
@@ -30,11 +33,15 @@ an `mProd`-strongly measurable function on `ι × Ω` whenever `T ×ˢ A` is `mP
 * `MeasureTheory.StronglyMeasurable.indicator_prod`: extending an `mΩ`-strongly measurable
   function by zero outside a set `T` preserves strong measurability on `ι × Ω` when measurable
   rectangles `T ×ˢ A` are `mProd`-measurable.
+* `MeasureTheory.FinStronglyMeasurable.of_tendsto_const_zero`: transfer finite-support
+  approximation using convergence of constant zero sequences.
 -/
 
 public section
 
 open MeasureTheory TopologicalSpace
+
+open scoped Topology
 
 /-- A continuous function whose range lies in a compact set is strongly measurable, without any
 countability assumption on the domain. -/
@@ -75,5 +82,50 @@ theorem MeasureTheory.StronglyMeasurable.indicator_prod
     simp [S, p.property.1]
   simpa [S, Set.indicator_apply] using
     (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+
+namespace MeasureTheory
+
+open Filter Set
+
+/-- A strongly measurable function is finitely strongly measurable if convergence of the
+constant zero sequence to a finitely strongly measurable function implies convergence to it.
+This transfers finite-support approximation without any separation assumption on the spaces. -/
+theorem FinStronglyMeasurable.of_tendsto_const_zero {α X G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [TopologicalSpace X] [TopologicalSpace G] [Zero X] [Zero G]
+    {u : α → X} (hu : FinStronglyMeasurable u μ) {v : α → G}
+    (hv : StronglyMeasurable v)
+    (hzero : ∀ t, Tendsto (fun _ : ℕ ↦ (0 : X)) atTop (𝓝 (u t)) →
+      Tendsto (fun _ : ℕ ↦ (0 : G)) atTop (𝓝 (v t))) :
+    FinStronglyMeasurable v μ := by
+  classical
+  -- Outside the union of the approximants’ supports, zero converges to the input.
+  let s := ⋃ n, Function.support (hu.approx n)
+  have hs : MeasurableSet s := .iUnion fun n ↦ (hu.approx n).measurableSet_support
+  have hμs : SigmaFinite (μ.restrict s) := by
+    refine ⟨⟨⟨fun n ↦ sᶜ ∪ Function.support (hu.approx n), fun _ ↦ trivial,
+      fun n ↦ ?_, ?_⟩⟩⟩
+    · rw [Measure.restrict_apply' hs, Set.union_inter_distrib_right,
+        Set.compl_inter_self s, Set.empty_union]
+      exact (measure_mono Set.inter_subset_left).trans_lt (hu.fin_support_approx n)
+    · rw [← Set.union_iUnion]
+      exact Set.compl_union_self s
+  have hv' := (hv.indicator hs).finStronglyMeasurable_of_set_sigmaFinite hs
+    (fun t ht ↦ Set.indicator_of_notMem ht _) hμs
+  refine ⟨fun n ↦ (hv'.approx n).restrict s, fun n ↦ ?_, fun t ↦ ?_⟩
+  · refine (measure_mono ?_).trans_lt (hv'.fin_support_approx n)
+    intro t ht
+    by_cases hts : t ∈ s
+    · simpa [SimpleFunc.restrict_apply _ hs, hts, Function.mem_support] using ht
+    · simp [SimpleFunc.restrict_apply _ hs, hts, Function.mem_support] at ht
+  · by_cases hts : t ∈ s
+    · simpa [SimpleFunc.restrict_apply _ hs, hts] using hv'.tendsto_approx t
+    · have hut : ∀ n, hu.approx n t = 0 := by
+        intro n
+        by_contra hn
+        exact hts (Set.mem_iUnion.2 ⟨n, hn⟩)
+      have ht := hzero t (by simpa only [hut] using hu.tendsto_approx t)
+      simpa [SimpleFunc.restrict_apply _ hs, hts] using ht
+
+end MeasureTheory
 
 end

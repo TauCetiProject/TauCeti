@@ -32,6 +32,8 @@ the weights of a Frobenius module are defined.
   characteristic roots, counted with multiplicity, is the rank of the module.
 * `LinearMap.finrank_maxGenEigenspace_baseChange_eq`: the multiplicity of a characteristic root
   `μ ∈ L` is the dimension of the maximal generalized eigenspace of `f ⊗ L` at `μ`.
+* `LinearMap.finrank_maxGenEigenspace_baseChange_algebraMap`: over a field, the algebraic
+  multiplicity of an eigenvalue does not change under an extension of fields.
 * `Module.End.hasEigenvalue_baseChange_iff`: the eigenvalues of `f ⊗ L` are the characteristic
   roots of `f` in `L`.
 
@@ -69,6 +71,17 @@ theorem finrank_maxGenEigenspace_baseChange_eq [DecidableEq L] (μ : L) :
     finrank L (Module.End.maxGenEigenspace (f.baseChange L) μ) =
       (f.charpoly.aroots L).count μ := by
   rw [finrank_maxGenEigenspace_eq, charpoly_baseChange, aroots_def, count_roots]
+
+/-- **Algebraic multiplicities do not change under an extension of fields.** For an endomorphism
+`g` of a finite-dimensional space over a field `K`, the maximal generalized eigenspace of `g ⊗ L`
+at the image of `μ ∈ K` has the same dimension over `L` as that of `g` at `μ` over `K`. -/
+@[simp]
+theorem finrank_maxGenEigenspace_baseChange_algebraMap {K V : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] [Algebra K L] (g : Module.End K V) (μ : K) :
+    finrank L (Module.End.maxGenEigenspace (g.baseChange L) (algebraMap K L μ)) =
+      finrank K (g.maxGenEigenspace μ) := by
+  rw [finrank_maxGenEigenspace_eq, finrank_maxGenEigenspace_eq, charpoly_baseChange,
+    ← eq_rootMultiplicity_map (algebraMap K L).injective]
 
 end LinearMap
 

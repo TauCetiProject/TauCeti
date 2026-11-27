@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Connected.LocallyPathConnected
+public import TauCeti.Topology.ContinuousMap.CodRestrict
 public import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -20,8 +21,11 @@ gives local path connectedness of the subspace.
 
 * `TauCeti.homotopic_pathComponent_of_map_subtypeVal_homotopic`: path homotopies reflect along
   the inclusion of a path component.
-* Instances making `↥(pathComponent x₀)` path connected and locally path connected.
+* Instances making `↥(pathComponent x₀)` and `↥Set.univ` path connected, and `↥(pathComponent x₀)`
+  locally path connected.
 * `TauCeti.pathComponentSelf`: a point viewed in its own path component.
+* `Homeomorph.pathComponentOfPathConnectedSpace`: a path-connected space is homeomorphic to the
+  path component of any of its points.
 * `ZerothHomotopy.mk_eq_mk_iff`: two points have the same path component exactly when they are
   joined by a path.
 * `Joined.eq_of_totallyDisconnectedSpace` and
@@ -34,9 +38,12 @@ gives local path connectedness of the subspace.
   points of its component (`TauCeti.PathComponentBasepoints.joined_point_mk`).
 * `Continuous.pathComponent_subset_preimage`: the preimage of a union of path components under a
   continuous map is a union of path components.
+* `IsClopen.pathComponent_subset`: a clopen set is a union of path components.
 * `Path.subtypeHomeomorphOfPathComponentSubset`: paths in a subspace containing the path component
   of their source are the paths in the ambient space. In particular the loop space of a path
   component, at any of its points, is the loop space of the ambient space at that point.
+* `ContinuousMap.codRestrictPathComponent`: corestriction of a continuous map out of a
+  path-connected space to the path component of the image of a basepoint.
 -/
 
 public section
@@ -79,11 +86,34 @@ instance instPathConnectedSpaceSubtypePathComponent :
     PathConnectedSpace (pathComponent x₀) :=
   isPathConnected_iff_pathConnectedSpace.mp isPathConnected_pathComponent
 
+omit x₀ in
+/-- The universal set of a path-connected space is path connected as a subspace. -/
+instance instPathConnectedSpaceSubtypeUniv [PathConnectedSpace X] :
+    PathConnectedSpace (Set.univ : Set X) :=
+  isPathConnected_iff_pathConnectedSpace.mp isPathConnected_univ
+
 /-- In a locally path connected space the path components are open, hence locally path connected
 as subspaces. -/
 instance instLocallyPathConnectedSpaceSubtypePathComponent [LocallyPathConnectedSpace X] :
     LocallyPathConnectedSpace (pathComponent x₀) :=
   (IsOpen.pathComponent x₀).locallyPathConnectedSpace
+
+/-- In a path-connected space, the path component of any point is the whole space: the
+inclusion of the path component of `x₀` is a homeomorphism onto `X`, and this is its inverse. -/
+def _root_.Homeomorph.pathComponentOfPathConnectedSpace [PathConnectedSpace X] :
+    X ≃ₜ pathComponent x₀ :=
+  (Homeomorph.Set.univ X).symm.trans <|
+    Homeomorph.setCongr (Set.eq_univ_of_forall (PathConnectedSpace.joined x₀)).symm
+
+@[simp]
+theorem _root_.Homeomorph.coe_pathComponentOfPathConnectedSpace_apply [PathConnectedSpace X]
+    (x : X) : (Homeomorph.pathComponentOfPathConnectedSpace x₀ x : X) = x :=
+  (rfl)
+
+@[simp]
+theorem _root_.Homeomorph.coe_pathComponentOfPathConnectedSpace_symm_apply [PathConnectedSpace X]
+    (y : pathComponent x₀) : ((Homeomorph.pathComponentOfPathConnectedSpace x₀).symm y : X) = y :=
+  (rfl)
 
 /-- The basepoint of `X`, viewed as a point of its own path component. -/
 abbrev pathComponentSelf : (pathComponent x₀ : Set X) :=
@@ -176,6 +206,12 @@ theorem Continuous.pathComponent_subset_preimage {X Y : Type*} [TopologicalSpace
     pathComponent x ⊆ f ⁻¹' t :=
   fun _ hz ↦ ht _ hx (hf.mapsTo_pathComponent x hz)
 
+/-- **A clopen set is a union of path components.** A clopen set contains the connected component,
+hence the path component, of each of its points. -/
+theorem IsClopen.pathComponent_subset {Y : Type*} [TopologicalSpace Y] {S : Set Y}
+    (hS : IsClopen S) : ∀ y ∈ S, pathComponent y ⊆ S := fun _ hy ↦
+  (pathComponent_subset_component _).trans (hS.connectedComponent_subset hy)
+
 namespace Path
 
 variable {X : Type*} [TopologicalSpace X]
@@ -214,3 +250,36 @@ theorem coe_subtypeHomeomorphOfPathComponentSubset_symm_apply {S : Set X} {a b :
   codRestrict_coe γ _ t
 
 end Path
+
+namespace ContinuousMap
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [PathConnectedSpace X]
+
+/-- Corestrict a continuous map `f : C(X, Y)` out of a path-connected space, sending `x₀` to `y₀`,
+to `pathComponent y₀`. -/
+def codRestrictPathComponent (f : C(X, Y)) {x₀ : X} {y₀ : Y} (hf : f x₀ = y₀) :
+    C(X, pathComponent y₀) :=
+  f.codRestrict (pathComponent y₀) fun x ↦
+    hf ▸ (PathConnectedSpace.joined x₀ x).map f.continuous
+
+/-- The values of `f.codRestrictPathComponent hf` in `Y` are those of `f`. -/
+@[simp]
+theorem coe_codRestrictPathComponent_apply (f : C(X, Y)) {x₀ : X} {y₀ : Y} (hf : f x₀ = y₀)
+    (x : X) : (f.codRestrictPathComponent hf x : Y) = f x :=
+  f.coe_codRestrict_apply _ _ x
+
+/-- Composing `f.codRestrictPathComponent hf` with the inclusion of `pathComponent y₀` recovers
+`f`. -/
+@[simp]
+theorem subtypeVal_comp_codRestrictPathComponent (f : C(X, Y)) {x₀ : X} {y₀ : Y}
+    (hf : f x₀ = y₀) :
+    (subtypeVal (pathComponent y₀)).comp (f.codRestrictPathComponent hf) = f :=
+  f.subtypeVal_comp_codRestrict _ _
+
+/-- `f.codRestrictPathComponent hf` sends `x₀` to `TauCeti.pathComponentSelf y₀`. -/
+@[simp]
+theorem codRestrictPathComponent_apply_self (f : C(X, Y)) {x₀ : X} {y₀ : Y} (hf : f x₀ = y₀) :
+    f.codRestrictPathComponent hf x₀ = TauCeti.pathComponentSelf y₀ :=
+  Subtype.ext ((f.coe_codRestrictPathComponent_apply hf x₀).trans hf)
+
+end ContinuousMap

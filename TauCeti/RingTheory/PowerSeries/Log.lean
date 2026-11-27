@@ -56,6 +56,8 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
   at `x`, which vanishes in degree zero.
 * `PowerSeries.subst_exp_logOf` and `PowerSeries.logOf_subst_exp`: `exp (log f) = f` and
   `log (exp g) = g`.
+* `PowerSeries.subst_exp_inj`: substitution into `exp` is injective on series without constant
+  term.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
 * `PowerSeries.map_logOf`: the formal logarithm commutes with ring homomorphisms between
   `ℚ`-algebras.
@@ -202,6 +204,12 @@ theorem logOf_subst_exp {g : A⟦X⟧} (hg : constantCoeff g = 0) :
 theorem logOf_inj {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : constantCoeff g = 1) :
     logOf f = logOf g ↔ f = g :=
   ⟨fun h ↦ by rw [← subst_exp_logOf hf, h, subst_exp_logOf hg], congrArg logOf⟩
+
+/-- Substitution into the formal exponential is injective on power series without constant
+term. -/
+theorem subst_exp_inj {f g : A⟦X⟧} (hf : constantCoeff f = 0) (hg : constantCoeff g = 0) :
+    (exp A).subst f = (exp A).subst g ↔ f = g :=
+  ⟨fun h ↦ by rw [← logOf_subst_exp hf, h, logOf_subst_exp hg], fun h ↦ h ▸ rfl⟩
 
 /-- The formal logarithm turns products into sums: `log (f g) = log f + log g` when `f` and `g`
 have constant coefficient one. -/

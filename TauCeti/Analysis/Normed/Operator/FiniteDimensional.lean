@@ -21,10 +21,14 @@ dense range. On a finite-dimensional domain over a locally compact field, such a
 
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
+* `ContinuousLinearMap.tendsto_opNorm_zero_of_forall_tendsto_zero`: on a finite-dimensional
+  domain, pointwise convergence to zero gives operator-norm convergence to zero.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional domain over a locally compact field.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
   the operators sending a neighbourhood of `0` into a compact set form a compact set.
+* `LinearMap.norm_toContinuousLinearMap_pos`: a nonzero linear map out of a finite-dimensional
+  space has positive operator norm.
 * `LinearMap.norm_toContinuousLinearMap_linearIsometry_comp`,
   `LinearMap.norm_toContinuousLinearMap_comp_linearIsometryEquiv`: the operator norm of a linear
   map out of a finite-dimensional space is unchanged by a linear isometry on the left and an
@@ -58,6 +62,23 @@ theorem denseRange_comp {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E
           simpa [Module.Basis.constrL_basis, ← dist_eq_norm] using (hy i).le
     _ = r / 2 := by field_simp
     _ < r := half_lt_self hr
+
+open Filter Topology in
+/-- On a finite-dimensional space, operators that tend to zero at every point tend to zero in
+operator norm: pointwise smallness at the finitely many vectors of a basis is uniform smallness on
+the unit ball (`Module.Basis.exists_opNorm_le`). -/
+theorem tendsto_opNorm_zero_of_forall_tendsto_zero {F ι : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {l : Filter ι} {T : ι → V →L[𝕜] F}
+    (h : ∀ x, Tendsto (fun i ↦ T i x) l (𝓝 0)) :
+    Tendsto (fun i ↦ ‖T i‖) l (𝓝 0) := by
+  set v := Module.finBasis 𝕜 V
+  obtain ⟨C, -, hC⟩ := v.exists_opNorm_le (F := F)
+  have hsum : Tendsto (fun i ↦ C * ∑ j, ‖T i (v j)‖) l (𝓝 0) := by
+    simpa using (tendsto_finsetSum _ fun j _ ↦ (h (v j)).norm).const_mul C
+  refine squeeze_zero (fun i ↦ norm_nonneg _)
+    (fun i ↦ hC (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) fun j ↦ ?_) hsum
+  exact Finset.single_le_sum (f := fun j ↦ ‖T i (v j)‖) (fun _ _ ↦ norm_nonneg _)
+    (Finset.mem_univ j)
 
 section StrictNorm
 
@@ -141,6 +162,12 @@ namespace LinearMap
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A nonzero linear map out of a finite-dimensional space has positive operator norm. -/
+theorem norm_toContinuousLinearMap_pos {A : E →ₗ[𝕜] F} (hA : A ≠ 0) :
+    0 < ‖toContinuousLinearMap A‖ := by
+  rw [norm_pos_iff]
+  exact (map_ne_zero_iff _ toContinuousLinearMap.injective).mpr hA
 
 /-- Composing a linear map out of a finite-dimensional space on the left with a linear isometry
 leaves its operator norm unchanged. -/

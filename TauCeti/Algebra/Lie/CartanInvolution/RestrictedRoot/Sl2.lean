@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Vector
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.LinearAlgebra.Reflection
 
 /-!
 # The `𝔰𝔩₂` triple of a restricted root and integrality
@@ -38,8 +39,12 @@ directions, the multiples of a restricted root that are restricted roots are amo
 ## Main results
 
 * `LieEquiv.IsCartanInvolution.apply_restrictedCoroot`: `λ(H'_λ) = 2` for `λ ≠ 0`.
+* `LieEquiv.IsCartanInvolution.restrictedCoroot_injective`: distinct functionals have distinct
+  coroots.
 * `LieEquiv.IsCartanInvolution.isSl2Triple_restrictedCoroot`: `(H'_λ, E, c θE)` is an `𝔰𝔩₂`
   triple for nonzero `E ∈ 𝔤_λ`.
+* `LieEquiv.IsCartanInvolution.exists_isSl2Triple_restrictedCoroot`: some `F ∈ 𝔤_{-λ}` completes
+  `(H'_λ, E)` to an `𝔰𝔩₂` triple.
 * `LieEquiv.IsCartanInvolution.exists_isSl2Triple_neg_apply`: over `ℝ`, a positive multiple `E'`
   of `E` gives the `𝔰𝔩₂` triple `(H'_λ, E', -θE')`.
 * `LieEquiv.IsCartanInvolution.exists_int_apply_restrictedCoroot`: `ν(H'_λ) ∈ ℤ` for every `ν`
@@ -85,6 +90,15 @@ theorem apply_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
   rw [restrictedCoroot_def, map_smul, smul_eq_mul,
     div_mul_cancel₀ _ (hθ.apply_killingEquivDual_symm_pos h𝔞 hμ).ne']
 
+/-- The reflection `s_λ ν = ν - ν(H'_λ) λ` is an involution of `𝔞*`: `s_λ (s_λ ν) = ν`. This is
+Mathlib's `Module.involutive_reflection` for the reflection in `λ` along evaluation at `H'_λ`. -/
+theorem sub_smul_sub_smul_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) (ν : Dual K 𝔞) :
+    (ν - ν (hθ.restrictedCoroot h𝔞 μ) • μ) -
+        (ν - ν (hθ.restrictedCoroot h𝔞 μ) • μ) (hθ.restrictedCoroot h𝔞 μ) • μ = ν := by
+  have h2 : Dual.eval K 𝔞 (hθ.restrictedCoroot h𝔞 μ) μ = 2 := by
+    simpa only [Dual.eval_apply] using hθ.apply_restrictedCoroot h𝔞 hμ
+  simpa only [reflection_apply, Dual.eval_apply] using involutive_reflection h2 ν
+
 /-- The restricted coroot of a nonzero functional is nonzero. -/
 theorem restrictedCoroot_ne_zero {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
     hθ.restrictedCoroot h𝔞 μ ≠ 0 := by
@@ -111,6 +125,26 @@ theorem restrictedCoroot_smul (μ : Dual K 𝔞) (c : K) :
 theorem restrictedCoroot_neg (μ : Dual K 𝔞) :
     hθ.restrictedCoroot h𝔞 (-μ) = -hθ.restrictedCoroot h𝔞 μ := by
   rw [← neg_one_smul K μ, restrictedCoroot_smul, inv_neg, inv_one, neg_one_smul]
+
+/-- A functional is recovered from its coroot: `λ = (2 / B(H'_λ, H'_λ)) B(H'_λ, ·)`. -/
+theorem eq_smul_killingEquivDual_restrictedCoroot (μ : Dual K 𝔞) :
+    μ = (2 / killingForm K L (hθ.restrictedCoroot h𝔞 μ) (hθ.restrictedCoroot h𝔞 μ)) •
+      hθ.killingEquivDual h𝔞 (hθ.restrictedCoroot h𝔞 μ) := by
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · simp [restrictedCoroot_def]
+  have hm := (hθ.apply_killingEquivDual_symm_pos h𝔞 hμ).ne'
+  rw [← hθ.killingEquivDual_apply_apply h𝔞]
+  simp only [restrictedCoroot_def, map_smul, LinearEquiv.apply_symm_apply, LinearMap.smul_apply,
+    smul_eq_mul, smul_smul]
+  conv_lhs => rw [← one_smul K μ]
+  congr 1
+  field_simp
+
+/-- **Distinct functionals have distinct coroots.** -/
+theorem restrictedCoroot_injective : Function.Injective (hθ.restrictedCoroot h𝔞) :=
+  fun μ ν h ↦ by
+    rw [hθ.eq_smul_killingEquivDual_restrictedCoroot h𝔞 μ,
+      hθ.eq_smul_killingEquivDual_restrictedCoroot h𝔞 ν, h]
 
 /-- On the restricted root space `𝔤_ν`, the coroot `H'_λ` acts by `ν(H'_λ)`. -/
 theorem restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace {ν : Dual K 𝔞} (μ : Dual K 𝔞)
@@ -151,6 +185,15 @@ theorem isSl2Triple_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) {E : L}
       hθ.restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace h𝔞.le_cartanP μ hθE]
     simp only [LinearMap.neg_apply, h2, two_nsmul]
     module
+
+/-- For a nonzero `E` in the root space `𝔤_λ` of a nonzero `λ`, some `F ∈ 𝔤_{-λ}` completes
+`(H'_λ, E)` to an `𝔰𝔩₂` triple. -/
+theorem exists_isSl2Triple_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) {E : L}
+    (hE : E ∈ 𝔞.restrictedRootSpace μ) (hE0 : E ≠ 0) :
+    ∃ F ∈ 𝔞.restrictedRootSpace (-μ),
+      IsSl2Triple (hθ.restrictedCoroot h𝔞.le_cartanP μ : L) E F :=
+  ⟨_, Submodule.smul_mem _ _ (apply_mem_restrictedRootSpace_neg h𝔞.le_cartanP hE),
+    hθ.isSl2Triple_restrictedCoroot h𝔞 hμ hE hE0⟩
 
 /-- **The symmetric `𝔰𝔩₂` triple of a restricted root**, over `ℝ`: for a nonzero `E ∈ 𝔤_λ`,
 `λ ≠ 0`, some positive multiple `E'` of `E` gives the `𝔰𝔩₂` triple `(H'_λ, E', -θE')`

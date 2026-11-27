@@ -91,6 +91,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   of the second iterated Fréchet derivative.
 * `TauCeti.laplacian_fun_sum`, `TauCeti.laplacian_sum`: the Laplacian of a finite sum of `C²`
   functions is the sum of their Laplacians.
+* `ContinuousLinearMap.laplacian`: the Laplacian of a continuous linear map vanishes.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
   differences are bounded by `dim E` times the second derivative and its differences;
   `TauCeti.norm_laplacian_le_norm_iteratedFDeriv_two` states the first bound with the second
@@ -167,6 +168,13 @@ theorem laplacian_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
   rw [Finset.sum_fn]
   exact laplacian_fun_sum hf
 
+/-- The Laplacian of a continuous linear map vanishes: its derivative is constant. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.laplacian (L : E →L[ℝ] F) : Δ (L : E → F) = 0 := by
+  funext x
+  rw [laplacian_eq_traceL, show fderiv ℝ (L : E → F) = fun _ ↦ L from funext fun _ ↦ L.fderiv]
+  simp
+
 /-- The Laplacian is bounded by the dimension times the second Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
 theorem norm_laplacian_le (f : E → F) (x : E) :
@@ -212,6 +220,13 @@ theorem _root_.ContDiff.laplacian {n m : WithTop ℕ∞} {f : E → F}
   have hΔ : Δ f = traceL ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
   rw [hΔ]
   exact traceL.contDiff.comp hD
+
+/-- **The Laplacian in an orthonormal frame**: `Δ f x = ∑ᵢ D²f x (vᵢ, vᵢ)` is the sum of the second
+derivative of `f` at `x` on the pairs `(vᵢ, vᵢ)` of an orthonormal basis. -/
+theorem laplacian_eq_sum_fderiv_fderiv_orthonormalBasis {ι : Type*} [Fintype ι]
+    (v : OrthonormalBasis ι ℝ E) (f : E → F) (x : E) :
+    Δ f x = ∑ i, fderiv ℝ (fderiv ℝ f) x (v i) (v i) := by
+  simp [laplacian_eq_iteratedFDeriv_orthonormalBasis f v, iteratedFDeriv_two_apply]
 
 /-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
 if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/

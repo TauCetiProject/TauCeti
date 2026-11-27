@@ -67,6 +67,9 @@ relating the Barraud–Cornea cocycles of two choices of data.
 
 * `TauCeti.continuationChainSum_eq_zero_of_le` and `TauCeti.parametrizedChainSum_eq_zero_of_lt`:
   the continuation and parametrized sums of graded families vanish for degree reasons.
+* `TauCeti.continuationChainSum_eq_sum_subtype` and `TauCeti.parametrizedChainSum_eq_sum_subtype`:
+  only the `z` in the index ranges of the faces of `N x y`, respectively `H x y`, contribute to the
+  continuation, respectively parametrized, sum.
 * `TauCeti.continuationChainSum_congr` and `TauCeti.parametrizedChainSum_congr`: the continuation
   and parametrized sums of `(x, y)` only depend on the continuation, respectively parametrized,
   chains of the pairs of smaller dimension.
@@ -150,6 +153,40 @@ theorem continuationChainSum_eq_zero_of_le
     eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega)
       (cubicalChainSumPairing_mem _ (hν x z) (hs' z y))
   simp [continuationChainSum_def, h₁, h₂]
+
+/-- Only the `z ∈ P` with `indQ y ≤ ind z < ind x` and the `z ∈ Q` with `indQ y < indQ z ≤ ind x`
+contribute to the continuation sum of families of chains of cohomological degrees
+`ind y - ind x + 1`, `indQ y - indQ x + 1` and `indQ y - ind x`. -/
+theorem continuationChainSum_eq_sum_subtype
+    (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1))
+    (hs' : ∀ x y, s' x y ∈ cubicalChainGrading (M' x y) R (indQ y - indQ x + 1))
+    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x)) (x : P) (y : Q) :
+    continuationChainSum ind indQ κ κ' R s s' ν x y =
+      ∑ z : {z // indQ y ≤ ind z ∧ ind z < ind x},
+          cubicalChainSumPairing R (κ x z.val y) (s x z.val) (ν z.val y) +
+        ∑ z : {z // indQ y < indQ z ∧ indQ z ≤ ind x}, (ind x - indQ z.val - 1).negOnePow •
+          cubicalChainSumPairing R (κ' x z.val y) (ν x z.val) (s' z.val y) := by
+  rw [continuationChainSum_def,
+    ← Finset.sum_filter_of_ne (p := fun z ↦ indQ y ≤ ind z ∧ ind z < ind x) fun z _ hz ↦ ?_,
+    Finset.sum_subtype (p := fun z ↦ indQ y ≤ ind z ∧ ind z < ind x) _ (by simp),
+    ← Finset.sum_filter_of_ne (p := fun z ↦ indQ y < indQ z ∧ indQ z ≤ ind x) fun z _ hz ↦ ?_,
+    Finset.sum_subtype (p := fun z ↦ indQ y < indQ z ∧ indQ z ≤ ind x) _ (by simp)]
+  -- Outside these ranges one of the two factors has positive cohomological degree, so vanishes.
+  · by_contra hz'
+    rcases le_or_gt (indQ z) (indQ y) with hzy | hyz
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' z y), map_zero,
+        smul_zero] at hz
+      exact hz rfl
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν x z), map_zero,
+        LinearMap.zero_apply, smul_zero] at hz
+      exact hz rfl
+  · by_contra hz'
+    rcases le_or_gt (ind x) (ind z) with hxz | hzx
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
+        LinearMap.zero_apply] at hz
+      exact hz rfl
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν z y), map_zero] at hz
+      exact hz rfl
 
 /-- The continuation sum of `(x, y)` only depends on the chains `ν z y` with `ind z < ind x` and
 `ν x z` with `indQ y < indQ z`. -/
@@ -563,6 +600,43 @@ theorem parametrizedChainSum_eq_zero_of_lt
   simp [parametrizedChainSum_def, h₁, h₂,
     eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν₀ x y),
     eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν₁ x y)]
+
+/-- Only the `z ∈ P` with `indQ y ≤ ind z + 1` and `ind z < ind x` and the `z ∈ Q` with
+`indQ y < indQ z ≤ ind x + 1` contribute to the two sums of the parametrized sum of families of
+chains of cohomological degrees `ind y - ind x + 1`, `indQ y - indQ x + 1` and
+`indQ y - ind x - 1`. -/
+theorem parametrizedChainSum_eq_sum_subtype
+    (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1))
+    (hs' : ∀ x y, s' x y ∈ cubicalChainGrading (M' x y) R (indQ y - indQ x + 1))
+    (hh : ∀ x y, h x y ∈ cubicalChainGrading (H x y) R (indQ y - ind x - 1)) (x : P) (y : Q) :
+    parametrizedChainSum ind indQ κH κH' j₀ j₁ R s s' ν₀ ν₁ h x y =
+      cubicalChainSumMap R (j₁ x y) (ν₁ x y) - cubicalChainSumMap R (j₀ x y) (ν₀ x y) +
+        ∑ z : {z // indQ y ≤ ind z + 1 ∧ ind z < ind x}, (ind x - ind z.val).negOnePow •
+          cubicalChainSumPairing R (κH x z.val y) (s x z.val) (h z.val y) +
+        ∑ z : {z // indQ y < indQ z ∧ indQ z ≤ ind x + 1}, (ind x - indQ z.val).negOnePow •
+          cubicalChainSumPairing R (κH' x z.val y) (h x z.val) (s' z.val y) := by
+  rw [parametrizedChainSum_def,
+    ← Finset.sum_filter_of_ne (p := fun z ↦ indQ y ≤ ind z + 1 ∧ ind z < ind x) fun z _ hz ↦ ?_,
+    Finset.sum_subtype (p := fun z ↦ indQ y ≤ ind z + 1 ∧ ind z < ind x) _ (by simp),
+    ← Finset.sum_filter_of_ne (p := fun z ↦ indQ y < indQ z ∧ indQ z ≤ ind x + 1) fun z _ hz ↦ ?_,
+    Finset.sum_subtype (p := fun z ↦ indQ y < indQ z ∧ indQ z ≤ ind x + 1) _ (by simp)]
+  -- Outside these ranges one of the two factors has positive cohomological degree, so vanishes.
+  · by_contra hz'
+    rcases le_or_gt (indQ z) (indQ y) with hzy | hyz
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' z y), map_zero,
+        smul_zero] at hz
+      exact hz rfl
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hh x z), map_zero,
+        LinearMap.zero_apply, smul_zero] at hz
+      exact hz rfl
+  · by_contra hz'
+    rcases le_or_gt (ind x) (ind z) with hxz | hzx
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
+        LinearMap.zero_apply, smul_zero] at hz
+      exact hz rfl
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hh z y), map_zero,
+        smul_zero] at hz
+      exact hz rfl
 
 /-- The parametrized sum of `(x, y)` only depends on the chains `ν₀ x y` and `ν₁ x y`, and on the
 chains `h z y` with `ind z < ind x` and `h x z` with `indQ y < indQ z`. -/

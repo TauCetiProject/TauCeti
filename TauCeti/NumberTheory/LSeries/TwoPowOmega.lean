@@ -112,9 +112,7 @@ theorem LSeries_two_pow_cardDistinctFactors_eulerProduct_hasProd {s : ℂ} (hs :
 theorem riemannZeta_sq_eq_mul_LSeries_two_pow_cardDistinctFactors {s : ℂ} (hs : 1 < s.re) :
     riemannZeta s ^ 2 = riemannZeta (2 * s) *
       _root_.LSeries (fun n ↦ (2 : ℂ) ^ ω n) s := by
-  have hs2 : 1 < (2 * s).re := by
-    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-    linarith
+  have hs2 := one_lt_re_two_mul hs
   have hfactor (p : Nat.Primes) :
       (1 - (p : ℂ) ^ (-(2 * s)))⁻¹ *
           ((1 + (p : ℂ) ^ (-s)) / (1 - (p : ℂ) ^ (-s))) =
@@ -140,9 +138,7 @@ theorem riemannZeta_sq_eq_mul_LSeries_two_pow_cardDistinctFactors {s : ℂ} (hs 
 product of the series `ζ(s) / ζ(2s)` of `μ²` with `ζ(s)`. -/
 theorem LSeriesHasSum_two_pow_cardDistinctFactors {s : ℂ} (hs : 1 < s.re) :
     LSeriesHasSum (fun n ↦ (2 : ℂ) ^ ω n) s (riemannZeta s ^ 2 / riemannZeta (2 * s)) := by
-  have hs2 : 1 < (2 * s).re := by
-    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-    linarith
+  have hs2 := one_lt_re_two_mul hs
   have hconv := ((LSeriesSummable_moebius_sq_iff.mpr hs).LSeriesHasSum).convolution
     (LSeriesHasSum_one hs)
   rw [LSeriesHasSum_congr s _ fun hn ↦ (moebius_sq_convolution_one_apply hn).symm]
