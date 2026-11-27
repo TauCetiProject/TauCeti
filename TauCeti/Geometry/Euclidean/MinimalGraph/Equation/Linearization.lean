@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Ellipticity
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
-public import TauCeti.Analysis.Calculus.Gradient
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -74,8 +73,7 @@ private theorem fluxJacobian_eq (p : E) :
     smul_eq_mul]
   rw [principalOperator_apply, smul_sub, smul_smul,
     ← Real.rpow_add_one (by positivity : 1 + ‖p‖ ^ 2 ≠ 0)]
-  norm_num
-  simp only [mul_smul, sub_eq_add_neg]
+  norm_num [mul_smul, sub_eq_add_neg]
 
 /-- The radial unit-ball map has derivative given by the graph flux Jacobian. -/
 theorem hasFDerivAt_univUnitBall_fluxJacobian (p : E) :
@@ -117,6 +115,14 @@ private theorem areaFlux_eq_univUnitBall (u : E → ℝ) :
   funext x
   rw [areaFlux_apply, areaWeight_eq_inv_sqrt, OpenPartialHomeomorph.univUnitBall_apply]
 
+/-- The inverse radial unit-ball map recovers the gradient from the graph area flux. -/
+@[simp]
+theorem univUnitBall_symm_comp_areaFlux (u : E → ℝ) :
+    OpenPartialHomeomorph.univUnitBall.symm ∘ areaFlux u = ∇ u := by
+  funext y
+  rw [Function.comp_apply, areaFlux_eq_univUnitBall]
+  exact OpenPartialHomeomorph.univUnitBall.left_inv (Set.mem_univ (∇ u y))
+
 /-- The derivative of the graph area flux is the Jacobian composed with the gradient derivative. -/
 theorem hasFDerivAt_areaFlux {u : E → ℝ} {x : E}
     (hgrad : DifferentiableAt ℝ (∇ u) x) :
@@ -130,23 +136,26 @@ theorem differentiableAt_areaFlux {u : E → ℝ} {x : E}
     (hgrad : DifferentiableAt ℝ (∇ u) x) : DifferentiableAt ℝ (areaFlux u) x :=
   (hasFDerivAt_areaFlux hgrad).differentiableAt
 
+/-- The graph area flux is differentiable exactly where the gradient is differentiable. -/
+@[simp]
+theorem differentiableAt_areaFlux_iff {u : E → ℝ} {x : E} :
+    DifferentiableAt ℝ (areaFlux u) x ↔ DifferentiableAt ℝ (∇ u) x := by
+  refine ⟨fun h ↦ ?_, differentiableAt_areaFlux⟩
+  have hx : areaFlux u x ∈ Metric.ball (0 : E) 1 :=
+    mem_ball_zero_iff.2 (norm_areaFlux_lt_one u x)
+  have hd := (OpenPartialHomeomorph.contDiffOn_univUnitBall_symm (n := 1)
+    (E := E)).contDiffAt (Metric.isOpen_ball.mem_nhds hx)
+  simpa only [univUnitBall_symm_comp_areaFlux] using
+    (hd.differentiableAt one_ne_zero).comp x h
+
 /-- Differentiating the actual minimal graph area flux gives the normalized Jacobian. -/
 theorem fderiv_areaFlux (u : E → ℝ) (x : E) :
     fderiv ℝ (areaFlux u) x =
       (fluxJacobian (∇ u x)).comp (fderiv ℝ (∇ u) x) := by
   by_cases hu : DifferentiableAt ℝ (∇ u) x
   · exact (hasFDerivAt_areaFlux hu).fderiv
-  have hflux : ¬ DifferentiableAt ℝ (areaFlux u) x := by
-    intro h
-    have hx : areaFlux u x ∈ Metric.ball (0 : E) 1 :=
-      mem_ball_zero_iff.2 (norm_areaFlux_lt_one u x)
-    have hd := (OpenPartialHomeomorph.contDiffOn_univUnitBall_symm (n := 1)
-      (E := E)).contDiffAt (Metric.isOpen_ball.mem_nhds hx)
-    have he : OpenPartialHomeomorph.univUnitBall.symm ∘ areaFlux u = ∇ u := by
-      funext y
-      rw [Function.comp_apply, areaFlux_eq_univUnitBall]
-      exact OpenPartialHomeomorph.univUnitBall.left_inv (Set.mem_univ (∇ u y))
-    exact hu (he ▸ (hd.differentiableAt one_ne_zero).comp x h)
+  have hflux : ¬ DifferentiableAt ℝ (areaFlux u) x :=
+    mt differentiableAt_areaFlux_iff.mp hu
   rw [fderiv_zero_of_not_differentiableAt hflux, fderiv_zero_of_not_differentiableAt hu,
     ContinuousLinearMap.comp_zero]
 
@@ -156,6 +165,7 @@ theorem contDiffOn_areaFlux {n : WithTop ℕ∞} {u : E → ℝ} {Ω : Set E} (h
   have hgrad : ContDiffOn ℝ n (∇ u) Ω := by
     exact (toDual ℝ E).symm.toContinuousLinearEquiv.contDiff.comp_contDiffOn
       (hu.fderiv_of_isOpen hΩ le_rfl)
+  -- Mathlib's unit-ball smoothness covers ℕ∞; the bracket-power lemma also covers analytic order.
   have hflux : ContDiff ℝ n (fun p : E ↦ (1 + ‖p‖ ^ 2) ^ (-(1 / 2 : ℝ)) • p) :=
     (TauCeti.contDiff_one_add_norm_sq_rpow _).smul contDiff_id
   convert hflux.comp_contDiffOn hgrad using 1
