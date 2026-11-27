@@ -28,11 +28,11 @@ the forms, so this is a canonical jointly smooth family of primitives.
 
 The proof combines two smooth constructions. The smooth selection of primitives
 (`TauCeti.exists_contMDiff_eventuallyEq_sub`) gives a `C^r` function `F` on `M × P` which on each
-slice differs from `S α_p` by a locally constant function. Subtracting from `F` its average over
-the connected component of each point, which is `C^r` in the point and the parameter
-(`ContMDiff.setAverage_connectedComponent`), gives a `C^r` function each of whose slices is still a
-primitive of `α_p`, now with integral zero over every component. By the characterization of the
-mean-zero primitive (`TauCeti.eq_meanZeroPrimitive_iff`) its slices are the `S α_p`.
+slice differs from `S α_p` by a locally constant function, so its slices are differentiable
+primitives of the `α_p`. Subtracting from `F` its average over the connected component of each
+point, which is `C^r` in the point and the parameter (`ContMDiff.setAverage_connectedComponent`),
+gives a `C^r` function whose slices are the `S α_p`, by
+`TauCeti.meanZeroPrimitive_apply_eq_sub_setAverage`.
 
 Normalizing primitives in this way gives jointly smooth, componentwise normalized Hamiltonians
 for smooth families of exact symplectic vector fields.
