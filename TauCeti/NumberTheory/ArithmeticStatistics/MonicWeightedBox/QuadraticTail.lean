@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.SquareDivisorTail
 import Mathlib.Analysis.PSeries
 import TauCeti.Data.Int.CardIntervalMod
 import TauCeti.Data.Int.Interval
-import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 
 /-!
 # Square-divisor tails of monic quadratics
