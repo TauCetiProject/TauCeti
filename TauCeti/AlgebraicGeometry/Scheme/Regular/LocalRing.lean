@@ -17,7 +17,8 @@ import TauCeti.RingTheory.RegularLocalRing.Flat
 On an affine open with Noetherian ring of sections, regularity of that ring is equivalent to
 regularity of the local rings at every point of the open. In particular, a Noetherian ring is
 regular exactly when the local rings of its spectrum are regular. Open immersions identify local
-rings, so they preserve and reflect their regularity.
+rings, so they preserve and reflect their regularity, and so does a morphism at a point over an
+open on which it restricts to an open immersion.
 
 More generally, a flat, formally unramified morphism `f : X ⟶ Y` locally of finite type (for
 instance an étale morphism) induces at each point `x` a flat local homomorphism
@@ -36,6 +37,7 @@ Noetherian local rings such a homomorphism both preserves and reflects regularit
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isOpenImmersion`
+* `AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_isOpenImmersion_morphismRestrict`
 * `AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified`
 -/
 
@@ -110,6 +112,22 @@ end TauCeti
 
 namespace AlgebraicGeometry.Scheme.Hom
 
+/-- If `f : X ⟶ Y` restricts to an open immersion over an open `V` containing `f x`, for instance
+to an isomorphism, the local ring of `X` at `x` is regular exactly when the local ring of `Y` at
+`f x` is. -/
+theorem isRegularLocalRing_stalk_iff_of_isOpenImmersion_morphismRestrict {X Y : Scheme.{u}}
+    (f : X ⟶ Y) (V : Y.Opens) [IsOpenImmersion (f ∣_ V)] {x : X} (hx : f x ∈ V) :
+    IsRegularLocalRing (X.presheaf.stalk x) ↔ IsRegularLocalRing (Y.presheaf.stalk (f x)) := by
+  -- The stalk map of `f` at `x` is isomorphic to that of the open immersion `f ∣_ V`. Instance
+  -- search does not find the stalk-map instance of `f ∣_ V` here, so it is named.
+  have : IsIso (f.stalkMap x) :=
+    (Arrow.isIso_iff_isIso_of_isIso (morphismRestrictStalkMap f V ⟨x, hx⟩).hom).mp
+      (IsOpenImmersion.instIsIsoCommRingCatStalkMap (f ∣_ V) ⟨x, hx⟩)
+  let e := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
+  exact ⟨fun _ ↦ .of_ringEquiv e.symm, fun _ ↦ .of_ringEquiv e⟩
+
+section Flat
+
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] [FormallyUnramified f] [LocallyOfFiniteType f]
   (x : X)
 
@@ -126,5 +144,7 @@ theorem isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified :
   -- Ascent needs the local ring of `X` at `x` to be Noetherian, which it inherits from `Y`.
   have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mp inferInstance
   exact TauCeti.IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq h
+
+end Flat
 
 end AlgebraicGeometry.Scheme.Hom

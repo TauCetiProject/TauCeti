@@ -43,6 +43,8 @@ theory of finitely generated modules over such rings, for instance over the Iwas
 
 ## Main results
 
+* `TauCeti.IsRegularLocalRing.isRegular_of_span_pair_eq_maximalIdeal`: a pair generating the
+  maximal ideal is a regular sequence.
 * `TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular`: a finite module on which a pair
   generating the maximal ideal is weakly regular is free.
 * `TauCeti.IsRegularLocalRing.isPrincipal_of_ne_maximalIdeal`: a prime ideal other than the
@@ -89,6 +91,14 @@ theorem exists_span_pair_eq_maximalIdeal (hdim : ringKrullDim A = 2) :
   obtain ⟨x, y, _, rfl⟩ :=
     Finset.card_eq_two.mp (hcard.trans (spanFinrank_maximalIdeal_eq_two hdim))
   exact ⟨x, y, by simpa using hspan⟩
+
+/-- A pair generating the maximal ideal of a two-dimensional regular local ring is a regular
+sequence. -/
+theorem isRegular_of_span_pair_eq_maximalIdeal (hdim : ringKrullDim A = 2) {x y : A}
+    (hxy : span {x, y} = maximalIdeal A) : IsRegular A [x, y] :=
+  isRegular_of_ofList_eq_maximalIdeal
+    (by simpa [ofList_cons, ofList_singleton, ← span_insert] using hxy)
+    (by simp [spanFinrank_maximalIdeal_eq_two hdim])
 
 /-- Over a regular local ring, a finite module is free as soon as some pair generating the
 maximal ideal is a weakly regular sequence on it. The ring then has dimension two, unless the
@@ -216,10 +226,8 @@ theorem free_dual (hdim : ringKrullDim A ≤ 2) (N : Type*) [AddCommGroup N] [Mo
   · have := valuationRing_of_ringKrullDim_le_one (Order.le_of_lt_succ hlt)
     infer_instance
   obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
-  have hreg : IsRegular A [x, y] := isRegular_of_ofList_eq_maximalIdeal
-    (by simpa [ofList_cons, ofList_singleton, ← span_insert] using hxy)
-    (by simp [spanFinrank_maximalIdeal_eq_two hdim])
-  exact free_of_isWeaklyRegular hxy (hreg.toIsWeaklyRegular.linearMap (by simp))
+  exact free_of_isWeaklyRegular hxy
+    ((isRegular_of_span_pair_eq_maximalIdeal hdim hxy).toIsWeaklyRegular.linearMap (by simp))
 
 /-- **Reflexive modules are free in dimension two.** Over a regular local ring of dimension at
 most two, a finite reflexive module is free, being isomorphic to the dual of its dual. -/

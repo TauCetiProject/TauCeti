@@ -64,6 +64,8 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   `f` and `g` are coprime.
 * `AdjoinRoot.exists_of_pow_mul_eq_of_C_mul_X_sub_C`: for any `a, g ∈ R`, a power of `a` carries
   every element of `R[X]/(aX - g)` to the class of a constant, since `aX = g` there.
+* `AdjoinRoot.quotSpanOfEquivPolynomialQuot`: for any `a, g ∈ R`, the quotient of
+  `R[X]/(aX - g)` by `a` is the polynomial ring `(R ⧸ (a, g))[X]`, the root going to `X`.
 * `AdjoinRoot.isUnit_mk_mul_sub_iff_isCoprime`: modulo a product `p * q`, the class of `p - q` is
   a unit exactly when `p` and `q` are coprime.
 * `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
@@ -346,6 +348,38 @@ theorem exists_of_pow_mul_eq_of_C_mul_X_sub_C {a g : R} (x : AdjoinRoot (C a * X
     simp only [map_mul, map_pow, AdjoinRoot.mk_C, AdjoinRoot.mk_X]
     rw [← hroot]
     ring
+
+/-- Modulo `a`, the relation `aX - g` becomes `-g`, so the quotient of `R[X] ⧸ (aX - g)` by `a` is
+the polynomial ring `(R ⧸ (a, g))[X]`. -/
+noncomputable def quotSpanOfEquivPolynomialQuot (a g : R) :
+    AdjoinRoot (C a * X - C g) ⧸ Ideal.span {of (C a * X - C g) a} ≃+*
+      (R ⧸ Ideal.span {a, g})[X] :=
+  let I := Ideal.span {a}
+  have hmap : I.map (of (C a * X - C g)) = Ideal.span {of (C a * X - C g) a} := by
+    rw [Ideal.map_span, Set.image_singleton]
+  have hrel : Ideal.span {(C a * X - C g).map (Ideal.Quotient.mk I)} =
+      (Ideal.span {Ideal.Quotient.mk I g}).map C := by
+    have ha : Ideal.Quotient.mk I a = 0 :=
+      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self a)
+    simp [ha, Ideal.map_span, Ideal.span_singleton_neg]
+  -- `(R ⧸ (a)) ⧸ (g) = R ⧸ (a, g)`
+  have h₁ : Ideal.span {Ideal.Quotient.mk I g} = (Ideal.span {g}).map (Ideal.Quotient.mk I) := by
+    rw [Ideal.map_span, Set.image_singleton]
+  have h₂ : I ⊔ Ideal.span {g} = Ideal.span {a, g} := by
+    rw [← Ideal.span_insert]
+  (Ideal.quotEquivOfEq hmap.symm).trans <|
+    (quotAdjoinRootEquivQuotPolynomialQuot I _).trans <|
+      (Ideal.quotEquivOfEq hrel).trans <|
+        (Ideal.polynomialQuotientEquivQuotientPolynomial _).symm.trans <|
+          mapEquiv <| (Ideal.quotEquivOfEq h₁).trans <|
+            (DoubleQuot.quotQuotEquivQuotSup I (Ideal.span {g})).trans (Ideal.quotEquivOfEq h₂)
+
+/-- The isomorphism `(R[X] ⧸ (aX - g)) ⧸ (a) ≃+* (R ⧸ (a, g))[X]` sends the class of the root to
+`X`. -/
+@[simp]
+theorem quotSpanOfEquivPolynomialQuot_mk_root (a g : R) :
+    quotSpanOfEquivPolynomialQuot a g (Ideal.Quotient.mk _ (root (C a * X - C g))) = X := by
+  simp [quotSpanOfEquivPolynomialQuot, ← mk_X]
 
 /-- Modulo a product `p * q`, the class of the difference `p - q` is a unit exactly when `p` and
 `q` are coprime. For a relator `p * (X - C x)` with a linear factor, `p - (X - C x)` is the
