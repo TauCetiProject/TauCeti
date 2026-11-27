@@ -16,9 +16,7 @@ import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.PDE.Regularity.Interior.Estimate
 import TauCeti.Analysis.Sobolev.Wkp.BoundedMultiplication
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
-import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
-import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Interior `Hᵏ` regularity and estimates
@@ -97,8 +95,10 @@ there is a constant `C`, depending on `k`, `V`, `Ω` and the coefficients, with
   continuous and injective (`ContinuousLinearMap.exists_norm_le_of_range_le_range`).
 * **Removing the gradient.** Caccioppoli's inequality with lower-order terms, on a set at positive
   distance `δ` from `∂Ω` (`TauCeti.PDE.exists_toReal_eLpNorm_gradient_le_of_thickening`), bounds
-  `‖∇u‖_{L²(W)}` by `δ ‖F‖_{L²(Ω)} / λ + ‖u‖_{L²(Ω)} / δ`, since the coefficients are bounded on a
-  compact neighbourhood of `closure W` in `Ω`.
+  `‖∇u‖_{L²(W)}` by `C (δ ‖F‖_{L²(Ω)} / λ + ‖u‖_{L²(Ω)} / δ)`, with `C` depending on the dimension
+  and the bounds of the coefficients on a compact neighbourhood of `closure W` in `Ω`, where they
+  are bounded. Hence `‖u‖_{H¹(W)} ≤ C (‖F‖_{L²(Ω)} + ‖u‖_{L²(Ω)})`
+  (`TauCeti.PDE.UniformlyEllipticOn.exists_norm_restrictL_le_of_continuousOn`).
 
 ## Main declarations
 
@@ -729,69 +729,6 @@ private theorem UniformlyEllipticOn.exists_norm_le_norm_add_norm_of_value_eq_val
   rw [← Submodule.norm_coe, Prod.norm_def]
   exact max_le (le_add_of_nonneg_left (norm_nonneg F))
     ((Wkp.norm_restrictL_le hWΩ k F).trans (le_add_of_nonneg_right (norm_nonneg _)))
-
-/-- Caccioppoli's inequality on a compactly contained set: for `a` uniformly elliptic and measurable
-on `Ω` and `b`, `c` continuous on `Ω`, the `H¹(W)` norm of a weak solution `u ∈ H¹(Ω)` of
-`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f`, on an open `W` whose closure is compact and contained in `Ω`,
-is at most `C (‖f‖_{L²(Ω)} + ‖u‖_{L²(Ω)})`. -/
-private theorem UniformlyEllipticOn.exists_norm_restrictL_le_of_continuousOn [DecidableEq ι]
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
-    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ham : AEStronglyMeasurable a (mu.restrict Omega))
-    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
-    (hb : ContinuousOn b Omega) (hc : ContinuousOn c Omega)
-    {W : Opens (EuclideanSpace ℝ ι)} (hW : IsCompact (closure (W : Set (EuclideanSpace ℝ ι))))
-    (hWΩ : closure (W : Set (EuclideanSpace ℝ ι)) ⊆ Omega) :
-    ∃ C, 0 ≤ C ∧ ∀ (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2),
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
-        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
-      ‖W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hWΩ)) u‖ ≤
-        C * (‖f‖ + ‖W1p.value u‖) := by
-  -- A thickening `T` of `W` inside a compact subset `closure W₂` of `Ω`.
-  obtain ⟨W₂, hW₂, hWW₂, hW₂Ω, hW₂c⟩ :=
-    exists_open_between_and_isCompact_closure hW Omega.isOpen hWΩ
-  obtain ⟨δ, hδ, hδW⟩ := hW.exists_thickening_subset_open hW₂ hWW₂
-  set T := Metric.thickening δ (W : Set (EuclideanSpace ℝ ι))
-  have hTW₂ : T ⊆ closure W₂ :=
-    ((Metric.thickening_subset_of_subset δ subset_closure).trans hδW).trans subset_closure
-  have hTΩ : T ⊆ Omega := hTW₂.trans hW₂Ω
-  have hmT : MeasurableSet T := Metric.isOpen_thickening.measurableSet
-  have hTm : mu.restrict T ≤ mu.restrict Omega := Measure.restrict_mono hTΩ le_rfl
-  -- The lower-order coefficients are bounded on `closure W₂`.
-  obtain ⟨β, hβ⟩ := hW₂c.exists_bound_of_continuousOn (hb.mono hW₂Ω)
-  obtain ⟨γ, hγ⟩ := hW₂c.exists_bound_of_continuousOn (hc.mono hW₂Ω)
-  have hlam := ha.pos
-  obtain ⟨C₂, hC₂, hgrad⟩ := exists_toReal_eLpNorm_gradient_le_of_thickening (ι := ι)
-    (max (Lam / lam) (max (δ * β / lam) (δ ^ 2 * γ / lam)))
-  refine ⟨1 + C₂ * δ / lam + C₂ / δ, by positivity, fun f u hu => ?_⟩
-  have hWΩ' : (W : Set (EuclideanSpace ℝ ι)) ⊆ Omega := subset_closure.trans hWΩ
-  -- Caccioppoli's inequality at distance `δ` from `∂Ω` bounds the gradient on `W`.
-  have hgradW := hgrad mu hδ hTΩ (ha.mono_set hTΩ) (ham.mono_measure hTm)
-    ((hb.mono hTΩ).aestronglyMeasurable hmT) ((hc.mono hTΩ).aestronglyMeasurable hmT)
-    (ae_restrict_of_forall_mem hmT fun x hx => hβ x (hTW₂ hx))
-    (ae_restrict_of_forall_mem hmT fun x hx => (Real.norm_eq_abs _).symm.trans_le (hγ x (hTW₂ hx)))
-    (by rw [← div_le_iff₀ hlam]; exact le_max_left _ _)
-    (by rw [← div_le_iff₀ hlam]; exact (le_max_left _ _).trans (le_max_right _ _))
-    (by rw [← div_le_iff₀ hlam]; exact (le_max_right _ _).trans (le_max_right _ _)) hu
-  set A := ‖f‖
-  set B := ‖W1p.value u‖
-  have hval : ‖W1p.value (W1p.restrictL (SetLike.coe_subset_coe.mp hWΩ') u)‖ ≤ B := by
-    rw [Lp.norm_def, eLpNorm_congr_ae (W1p.value_restrictL_ae _ u)]
-    exact Lp.toReal_eLpNorm_restrict_le_norm _ hWΩ'
-  have hgrad' : ‖W1p.gradient (W1p.restrictL (SetLike.coe_subset_coe.mp hWΩ') u)‖ ≤
-      C₂ * (δ * A / lam + B / δ) := by
-    rw [Lp.norm_def, eLpNorm_congr_ae (W1p.gradient_restrictL_ae _ u)]
-    refine hgradW.trans (mul_le_mul_of_nonneg_left (add_le_add ?_ ?_) hC₂)
-    · exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left
-        (Lp.toReal_eLpNorm_restrict_le_norm _ hTΩ) hδ.le) hlam.le
-    · exact div_le_div_of_nonneg_right (Lp.toReal_eLpNorm_restrict_le_norm _ hTΩ) hδ.le
-  have e : (1 + C₂ * δ / lam + C₂ / δ) * (A + B) =
-      B + C₂ * (δ * A / lam + B / δ) + A + C₂ * δ / lam * B + C₂ / δ * A := by ring
-  have h₁ : 0 ≤ C₂ * δ / lam * B := by positivity
-  have h₂ : 0 ≤ C₂ / δ * A := by positivity
-  have h₃ : 0 ≤ A := norm_nonneg _
-  have := (W1p.norm_le_norm_value_add_norm_gradient _).trans (add_le_add hval hgrad')
-  linarith
 
 /-- **The interior `H^{k+2}` estimate** (Evans, §6.3.1, Theorem 2). Let `a` be uniformly elliptic
 on `Ω`, with entries of class `C^{k+1}` on `Ω`, let the drift `b` and the mass `c` be of class `Cᵏ`
