@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
@@ -54,7 +55,8 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   part of `g` applied to `∇u (g x)`, so the `Lᵖ` norm of the gradient is unchanged
   (`TauCeti.W1p.norm_gradient_compAffineIsometryEquivL`), and it does not increase the norm. It
   preserves and reflects zero boundary values
-  (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
+  (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`), and it commutes with restriction
+  to smaller open sets (`TauCeti.W1p.restrictL_compAffineIsometryEquivL`).
 * `TauCeti.W1p.eLpNorm_value_compAffineIsometryEquivL_sub` and
   `TauCeti.W1p.setAverage_value_compAffineIsometryEquivL`: precomposition with an affine isometry
   preserves the `Lᵖ` distance of the value from a constant, and the mean over a subset of the
@@ -394,6 +396,23 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
     W1p.compAffineIsometryEquivL g.symm hVU (W1p.compAffineIsometryEquivL g hUV u) = u :=
   W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
     (fun x _ => g.apply_symm_apply x) u
+
+/-- Precomposition with an affine isometry commutes with restriction: for `U = g⁻¹(V)` and
+`U₀ = g⁻¹(V₀)` with `U₀ ⊆ U`, `V₀ ⊆ V`, restricting `u ∘ g` to `U₀` gives `(u|_{V₀}) ∘ g`. -/
+theorem W1p.restrictL_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V)
+    {U₀ : Opens F} {V₀ : Opens F'} (hU₀ : U₀ ≤ U) (hV₀ : V₀ ≤ V)
+    (hUV₀ : (U₀ : Set F) = g ⁻¹' V₀) (u : W1p volume V p) :
+    W1p.restrictL hU₀ (W1p.compAffineIsometryEquivL g hUV u) =
+      W1p.compAffineIsometryEquivL g hUV₀ (W1p.restrictL hV₀ u) := by
+  have hmp : MeasurePreserving g (volume.restrict (U₀ : Set F)) (volume.restrict (V₀ : Set F')) :=
+    hUV₀ ▸ g.measurePreserving.restrict_preimage V₀.isOpen.measurableSet
+  refine W1p.ext_value (Lp.ext ?_)
+  filter_upwards [W1p.value_restrictL_ae hU₀ (W1p.compAffineIsometryEquivL g hUV u),
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.mpr hU₀)
+      (W1p.value_compAffineIsometryEquivL_ae g hUV u),
+    W1p.value_compAffineIsometryEquivL_ae g hUV₀ (W1p.restrictL hV₀ u),
+    hmp.quasiMeasurePreserving.ae (W1p.value_restrictL_ae hV₀ u)] with x h1 h2 h3 h4
+  rw [h1, h2, h3, h4]
 
 /-- **Zero boundary values are invariant under rigid changes of coordinates.** For
 `U = g⁻¹(V)`, the function `u ∘ g` lies in `W^{1,p}_0(U)` exactly when `u` lies in
