@@ -16,8 +16,7 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 Constant-vector holomorphic contraction and its anticommutation with `∂bar` apply to smooth
 forms on complex normed spaces and their open subsets, in arbitrary dimension. The
 anticommutation of the ambient contraction `SmoothForm.holInterior` is the case of the whole
-space. The final comparison identifies coordinate differentiation on open subsets of
-finite-dimensional coordinate spaces.
+space.
 -/
 
 public section
@@ -199,33 +198,5 @@ theorem delBar_holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
   rfl
 
 end Opens
-
-section Coordinates
-
-open Metric TopologicalSpace
-open scoped Finset
-
-variable {ι : Type*} [Fintype ι]
-
-/-- On an open subset of `ι → ℂ`, evaluations of `∂bar φ` on increasing tuples of coordinate
-vectors are obtained by `TauCeti.delBarCoeff` from the corresponding evaluations of an ambient
-representative. For forms of type `(0,k)`, these evaluations are the antiholomorphic coframe
-coefficients. -/
-theorem delBar_val_apply_orderEmbOfFin_of_opens [LinearOrder ι] {U : Opens (ι → ℂ)}
-    {k : ℕ} {φ : SmoothForm 𝓘(ℝ, ι → ℂ) U F k} {φ₀ : (ι → ℂ) → (ι → ℂ) [⋀^Fin k]→L[ℝ] F}
-    (hφ₀ : ∀ x : U, φ.val x = φ₀ x) {a : Finset ι → (ι → ℂ) → F}
-    (ha : ∀ J (hJ : #J = k), ∀ y ∈ U, a J y = φ₀ y fun i ↦ Pi.single (J.orderEmbOfFin hJ i) 1)
-    (z : U) {I : Finset ι} (hI : #I = k + 1) :
-    ((ofComplexManifold (ι → ℂ) U).delBar φ).val z
-      (fun i ↦ Pi.single (I.orderEmbOfFin hI i) 1) = delBarCoeff a I z := by
-  have hc := (isSmoothForm_opens_iff hφ₀).1 φ.isSmoothForm
-  rw [delBar_eq_alternatizeUncurryFin_of_opens φ hφ₀]
-  exact (delBarCoeff_eq_alternatizeUncurryFin
-    ((hc.contDiffAt (U.isOpen.mem_nhds z.property)).differentiableAt (by simp)) hI
-    fun J hJ ↦ by
-      filter_upwards [U.isOpen.mem_nhds z.property] with y hy
-      rw [ha J hJ y hy, ContinuousAlternatingMap.conjCoeff_of_card_eq _ hJ]).symm
-
-end Coordinates
 
 end TauCeti.SmoothForm

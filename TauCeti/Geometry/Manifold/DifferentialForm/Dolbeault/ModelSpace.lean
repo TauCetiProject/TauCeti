@@ -46,6 +46,8 @@ that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_
 * `TauCeti.SmoothForm.conjCoeff`: the coefficients of a form on `ι → ℂ`.
 * `TauCeti.SmoothForm.conjCoeff_delBar`: coordinate evaluation intertwines `∂bar` with
   `TauCeti.delBarCoeff`.
+* `TauCeti.SmoothForm.delBar_val_apply_orderEmbOfFin_of_opens`: the same comparison on open
+  subsets of `ι → ℂ`, through an ambient representative.
 * `TauCeti.SmoothForm.IsOfType.apply_eq_of_conjCoeff_eq`,
   `TauCeti.SmoothForm.IsOfType.ext_conjCoeff`: `(0,k)`-forms are determined by their
   coefficients.
@@ -210,6 +212,25 @@ theorem conjCoeff_delBar {q : ℕ} (η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι �
       omega
     rw [η.conjCoeff_of_card_ne hcard, conjWirtingerDeriv_apply]
     simp
+
+/-- On an open subset of `ι → ℂ`, evaluations of `∂bar φ` on increasing tuples of coordinate
+vectors are obtained by `TauCeti.delBarCoeff` from the corresponding evaluations of an ambient
+representative. For forms of type `(0,k)`, these evaluations are the antiholomorphic coframe
+coefficients. -/
+theorem delBar_val_apply_orderEmbOfFin_of_opens {U : TopologicalSpace.Opens (ι → ℂ)}
+    {φ : SmoothForm 𝓘(ℝ, ι → ℂ) U F k} {φ₀ : (ι → ℂ) → (ι → ℂ) [⋀^Fin k]→L[ℝ] F}
+    (hφ₀ : ∀ x : U, φ.val x = φ₀ x) {a : Finset ι → (ι → ℂ) → F}
+    (ha : ∀ J (hJ : #J = k), ∀ y ∈ U, a J y = φ₀ y fun i ↦ Pi.single (J.orderEmbOfFin hJ i) 1)
+    (z : U) {I : Finset ι} (hI : #I = k + 1) :
+    ((ofComplexManifold (ι → ℂ) U).delBar φ).val z
+      (fun i ↦ Pi.single (I.orderEmbOfFin hI i) 1) = delBarCoeff a I z := by
+  have hc := (isSmoothForm_opens_iff hφ₀).1 φ.isSmoothForm
+  rw [delBar_eq_alternatizeUncurryFin_of_opens φ hφ₀]
+  exact (delBarCoeff_eq_alternatizeUncurryFin
+    ((hc.contDiffAt (U.isOpen.mem_nhds z.property)).differentiableAt (by simp)) hI
+    fun J hJ ↦ by
+      filter_upwards [U.isOpen.mem_nhds z.property] with y hy
+      rw [ha J hJ y hy, ContinuousAlternatingMap.conjCoeff_of_card_eq _ hJ]).symm
 
 /-- Two smooth forms of type `(0,k)` on `ι → ℂ` agree at a point where all their coefficients
 agree. -/
