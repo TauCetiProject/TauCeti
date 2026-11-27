@@ -71,9 +71,8 @@ variable {K : Type*} [Field K]
 private noncomputable def absoluteGaloisGroupEquivReal (w : InfinitePlace K) (hw : w.IsReal) :
     AbsoluteGaloisGroup w.Completion ≃* (ℂ ≃ₐ[ℝ] ℂ) := by
   letI : IsAlgClosure ℝ ℂ := ⟨inferInstance, inferInstance⟩
-  let eC := IsSepClosure.equiv ℝ (SeparableClosure ℝ) ℂ
-  exact (Completion.ringEquivRealOfIsReal hw).absoluteGaloisGroupCongr.symm.toMulEquiv.trans
-    eC.autCongr
+  exact ((Completion.ringEquivRealOfIsReal hw).absoluteGaloisGroupCongr.symm.trans
+    (IsSepClosure.galEquivAbsoluteGaloisGroup ℝ ℂ).symm).toMulEquiv
 
 /-- The absolute Galois group of a real infinite completion has order two. -/
 theorem natCard_absoluteGaloisGroup_of_isReal (w : InfinitePlace K) (hw : w.IsReal) :

@@ -59,8 +59,9 @@ followed by the bijection of critical points `Φ⁻¹ q ↦ q`
 
 The map is defined for every diffeomorphism `Φ`. For all sufficiently negative `a` and sufficiently
 positive `b`, the transition diffeomorphisms of a continuation give the same mod-two map, namely
-`TauCeti.morseContinuationMap`; independence of the integral map from `a` and `b` is not proved
-here.
+`TauCeti.morseContinuationMap`; that they give the same integral map too is
+`TauCeti.IsContinuationField.eventually_signedContinuationMap_continuationTransition_eq`, in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Endpoints`.
 
 ## Main definitions
 

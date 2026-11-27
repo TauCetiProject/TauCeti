@@ -126,7 +126,7 @@ theorem totalVariationOn_comp_le (f : E ≃ᵃⁱ[ℝ] E')
     simpa [W, ← hfx x] using hVO hx
   have hWΩ : MapsTo (· + f 0) W Ω := fun _ hy => Opens.mem_comap.mp hy
   -- Transport `φ` along the linear part `L` to `W`, then translate by `f 0` to `Ω`.
-  let ψ₁ : 𝓓(W, E') := postcompCLM (L : E →L[ℝ] E') (L.transportTestFunction hVW φ)
+  let ψ₁ : 𝓓(W, E') := postcompCLM (L : E →L[ℝ] E') (L.transportTestFunction ℝ hVW φ)
   let ψ : 𝓓(Ω, E') := ψ₁.translateOfMapsTo (hWΩ.mono_left ψ₁.tsupport_subset)
   have hdiv (y : E') : divergenceCLM ψ y = divergenceCLM φ (f.symm y) := by
     simp only [ψ, ψ₁, divergenceCLM_translateOfMapsTo, translateOfMapsTo_apply,

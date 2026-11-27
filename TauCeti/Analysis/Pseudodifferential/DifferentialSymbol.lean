@@ -98,6 +98,16 @@ theorem differentialSymbol_add (s : Finset ι) (v : ∀ i, Fin (k i) → E)
       differentialSymbol s v b p + differentialSymbol s v c p := by
   simp [differentialSymbol, smul_add, Finset.sum_add_distrib]
 
+/-- The symbol of a differential expression of order at most `N` is the sum over `j ≤ N` of the
+symbols of its summands of order `j`. -/
+theorem differentialSymbol_eq_sum_range_filter (N : ℕ) (s : Finset ι)
+    (v : ∀ i, Fin (k i) → E) (b : ι → E → V →L[ℂ] W) (hk : ∀ i ∈ s, k i ≤ N) (p : E × E) :
+    differentialSymbol s v b p =
+      ∑ j ∈ Finset.range (N + 1), differentialSymbol {i ∈ s | k i = j} v b p := by
+  simp only [differentialSymbol_def]
+  exact (Finset.sum_fiberwise_of_maps_to
+    (fun i hi => Finset.mem_range_succ_iff.2 (hk i hi)) _).symm
+
 @[simp]
 theorem differentialSymbol_smul (s : Finset ι) (v : ∀ i, Fin (k i) → E)
     (z : ℂ) (b : ι → E → V →L[ℂ] W) :

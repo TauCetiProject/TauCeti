@@ -8,6 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.Boundary.LinearAlgebra
 public import TauCeti.Geometry.Manifold.Boundary.TransitionNormal
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Tangent maps of boundary charts
@@ -20,7 +23,7 @@ public section
 
 noncomputable section
 
-open Set Filter
+open Bundle Set Filter
 open scoped Manifold Topology
 
 namespace TauCeti
@@ -184,5 +187,43 @@ theorem exists_pos_det_tangentCoordChange_boundary {α β x : (𝓡∂ (n + 1)).
   refine ⟨a, ha, ?_⟩
   rw [tangentCoordChange_boundary hα hβ]
   exact ContinuousLinearMap.det_eq_normal_mul_boundary _ hA
+
+/-- The boundary inclusion differential sends the standard boundary chart frame at `α` to the last
+`n` ambient standard frame vectors. -/
+theorem mfderiv_subtypeVal_boundary_basisAt_stdBasis
+    (α q : (𝓡∂ (n + 1)).boundary M)
+    (hq : q ∈ (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) α).source)
+    (hq_base : q ∈ (trivializationAt (EuclideanSpace ℝ (Fin n))
+      (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) α).baseSet)
+    (hq'_base : (q : M) ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) (α : M)).baseSet)
+    (i : Fin n) :
+    mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q
+        ((trivializationAt (EuclideanSpace ℝ (Fin n))
+          (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) α).basisAt
+          (EuclideanSpace.basisFun (Fin n) ℝ).toBasis hq_base i) =
+      (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+        (TangentSpace (𝓡∂ (n + 1))) (α : M)).basisAt
+        (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis hq'_base i.succ := by
+  have hq_chart : q ∈ (chartAt (EuclideanSpace ℝ (Fin n)) α).source :=
+    (extChartAt_source (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) α) ▸ hq
+  have hq'_chart : (q : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) (α : M)).source := by
+    simpa only [boundaryChartedSpace_chartAt_source, mem_preimage] using hq_chart
+  have hparam : euclideanHalfSpaceBoundaryParam n
+      ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis i) =
+      (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis i.succ := by
+    ext k
+    refine Fin.cases ?_ (fun j ↦ ?_) k <;>
+      simp [euclideanHalfSpaceBoundaryParam_apply_zero,
+        euclideanHalfSpaceBoundaryParam_apply_succ, Fin.succ_inj]
+  have htcc := congrArg (· ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis i))
+    (tangentCoordChange_boundaryParam hq (mem_extChartAt_source q))
+  simp only [ContinuousLinearMap.comp_apply, hparam] at htcc
+  rw [Manifold.basisAt_apply, Manifold.basisAt_apply,
+    TangentBundle.symmL_trivializationAt_eq_core hq_chart,
+    TangentBundle.symmL_trivializationAt_eq_core hq'_chart, tangentBundleCore_coordChange_achart,
+    tangentBundleCore_coordChange_achart, mfderiv_subtypeVal_boundary]
+  exact htcc.symm
 
 end TauCeti

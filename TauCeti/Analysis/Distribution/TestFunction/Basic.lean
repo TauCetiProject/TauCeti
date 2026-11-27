@@ -37,6 +37,8 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   open set does not change the underlying function.
 * `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
   open set is the extension by zero of a test function on that set.
+* `TestFunction.exists_coe_eq_of_tsupport_subset`: a `C^n` function supported in the support of a
+  test function on `Ω` is a test function on `Ω`.
 * `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a `C^n` test function on `Ω`
   with a function `C^n` on `Ω` is a `C^n` test function on `Ω`.
 * `TestFunction.bilinOfContDiffOn`, `TestFunction.smulOfContDiffOn`: pairing a `C^n` test
@@ -44,6 +46,8 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   multiplication.
 * `TestFunction.tsupport_subset_inter_of_apply_eq_smul`: a test function with values `g x • φ x`
   is supported in the supports of `g` and of `φ`.
+* `TestFunction.sdiff_tsupport_nonempty_of_not_isCompact`: on a noncompact domain `Ω`, a test
+  function vanishes on the nonempty set `Ω ∖ tsupport φ`.
 * `TestFunction.eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space every test
   function is zero.
 * `TestFunction.postcompCLM_postcompCLM`: postcomposing with `L₁` and then with `L₂` is
@@ -56,6 +60,8 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   to `ψ • v`.
 * `OpenPartialHomeomorph.isCompact_symm_image_tsupport`: the image `e⁻¹(supp φ)` of the support of
   a test function on the target of `e` is compact.
+* `OpenPartialHomeomorph.symm_image_tsupport_subset_source`: the image `e⁻¹(supp φ)` lies in the
+  source of `e`.
 * `OpenPartialHomeomorph.tsupport_subset_symm_image_tsupport`: a function on `M` vanishing off the
   source of `e` and wherever `φ ∘ e` vanishes is supported in `e⁻¹(supp φ)`.
 * `TestFunction.compOfIsProperMap`: the composite of a test function with a smooth proper map,
@@ -100,6 +106,14 @@ function on `Ω'`. -/
 theorem exists_monoCLM_eq_of_tsupport_subset {Ω' : Opens E} (h : Ω' ≤ Ω) {φ : 𝓓^{n}(Ω, F)}
     (hφ : tsupport φ ⊆ Ω') : ∃ ψ : 𝓓^{n}(Ω', F), monoCLM ℝ ψ = φ :=
   ⟨⟨φ, φ.contDiff, φ.hasCompactSupport, hφ⟩, TestFunction.ext fun x ↦ by simp [h]⟩
+
+/-- A `C^n` function supported in the support of a test function on `Ω` is a `C^n` test function
+on `Ω`. -/
+theorem exists_coe_eq_of_tsupport_subset {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {m : ℕ∞} {f : E → F} (hf : ContDiff ℝ n f) {φ : 𝓓^{m}(Ω, G)} (h : tsupport f ⊆ tsupport φ) :
+    ∃ ψ : 𝓓^{n}(Ω, F), ⇑ψ = f :=
+  ⟨⟨f, hf, φ.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) h,
+    h.trans φ.tsupport_subset⟩, rfl⟩
 
 /-- **A test function times a function `C^n` on `Ω` is a test function.** If `g` is `C^n` on
 `Ω`, with no condition off `Ω`, and `φ ∈ 𝓓^{n}(Ω, F)`, then `x ↦ g x • φ x` is again a `C^n` test
@@ -206,6 +220,14 @@ theorem tsupport_subset_inter_of_apply_eq_smul {Ω' : Opens E} {m : ℕ∞} {g :
     tsupport ψ ⊆ tsupport g ∩ tsupport φ := by
   rw [show ⇑ψ = g • ⇑φ from funext h]
   exact Set.subset_inter (tsupport_smul_subset_left g φ) (tsupport_smul_subset_right g φ)
+
+/-- **A test function vanishes somewhere in a noncompact domain.** If `Ω` is not compact, then the
+part `Ω ∖ tsupport φ` of `Ω` outside the support of a test function `φ` on `Ω` is nonempty, since
+otherwise `Ω` would be the compact support of `φ`. -/
+theorem sdiff_tsupport_nonempty_of_not_isCompact (φ : 𝓓^{n}(Ω, F))
+    (hΩ : ¬IsCompact (Ω : Set E)) : ((Ω : Set E) \ tsupport φ).Nonempty :=
+  Set.sdiff_nonempty.2 fun h ↦
+    hΩ (Set.Subset.antisymm h φ.tsupport_subset ▸ φ.hasCompactSupport.isCompact)
 
 /-- On an infinite-dimensional space every test function is zero: a nonzero continuous function
 with compact support forces finite dimension (Riesz,
@@ -440,6 +462,12 @@ compact. -/
 theorem isCompact_symm_image_tsupport (φ : 𝓓^{n}(⟨e.target, e.open_target⟩, F)) :
     IsCompact (e.symm '' tsupport φ) :=
   φ.hasCompactSupport.isCompact.image_of_continuousOn (e.continuousOn_symm.mono φ.tsupport_subset)
+
+/-- The image of the support of a test function on the target of `e` under the inverse of `e` lies
+in the source of `e`. -/
+theorem symm_image_tsupport_subset_source (φ : 𝓓^{n}(⟨e.target, e.open_target⟩, F)) :
+    e.symm '' tsupport φ ⊆ e.source :=
+  (e.mapsTo_symm.mono_left φ.tsupport_subset).image_subset
 
 /-- A function on `M` vanishing off the source of `e` and at the points `x` with `φ (e x) = 0` is
 supported in the image of the support of `φ` under the inverse of `e`. -/

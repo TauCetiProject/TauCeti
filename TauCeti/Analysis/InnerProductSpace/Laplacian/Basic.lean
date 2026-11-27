@@ -224,6 +224,13 @@ theorem _root_.ContDiff.laplacian {n m : WithTop ℕ∞} {f : E → F}
   rw [hΔ]
   exact traceL.contDiff.comp hD
 
+/-- **The Laplacian in an orthonormal frame**: `Δ f x = ∑ᵢ D²f x (vᵢ, vᵢ)` is the sum of the second
+derivative of `f` at `x` on the pairs `(vᵢ, vᵢ)` of an orthonormal basis. -/
+theorem laplacian_eq_sum_fderiv_fderiv_orthonormalBasis {ι : Type*} [Fintype ι]
+    (v : OrthonormalBasis ι ℝ E) (f : E → F) (x : E) :
+    Δ f x = ∑ i, fderiv ℝ (fderiv ℝ f) x (v i) (v i) := by
+  simp [laplacian_eq_iteratedFDeriv_orthonormalBasis f v, iteratedFDeriv_two_apply]
+
 /-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
 if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/
 theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]

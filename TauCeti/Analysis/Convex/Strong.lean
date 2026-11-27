@@ -34,8 +34,9 @@ negative, in which case the paraboloid opens downwards. In an inner product spac
 by the gradient, this is the inequality that makes the gradient of a strongly convex potential a
 subgradient of its potential energy on the Wasserstein space.
 
-Uniform concavity is preserved by translation. Restriction to an affine line rescales a signed
-strong modulus by the squared direction norm. At a point where the derivative is differentiable,
+Adding a convex function preserves strong convexity. Uniform concavity is preserved by
+translation. Restriction to an affine line rescales a signed strong modulus by the squared
+direction norm. At a point where the derivative is differentiable,
 strong concavity and convexity bound the diagonal second derivative; differentiability of the
 original function is needed only in a neighbourhood, not continuity of its second derivative.
 
@@ -50,6 +51,8 @@ original function is needed only in a neighbourhood, not continuity of its secon
   convexity, for a line derivative.
 * `StrongConvexOn.add_add_le_of_hasFDerivWithinAt`: the first-order condition for strong convexity,
   for a Fréchet derivative.
+* `StrongConvexOn.add_convexOn`: a strongly convex function plus a convex function is strongly
+  convex with the same modulus.
 * `ConvexOn.add_le_of_hasFDerivWithinAt`: a convex function lies above its tangent hyperplanes.
 * `ConcaveOn.le_add_of_hasFDerivWithinAt`: a concave function lies below its tangent hyperplanes.
 * `ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous`: for a concave function that is positively
@@ -76,6 +79,21 @@ nonrec theorem StrongConvexOn.neg (hf : StrongConvexOn s m f) : StrongConcaveOn 
 /-- Negation turns signed strong concavity into signed strong convexity. -/
 nonrec theorem StrongConcaveOn.neg (hf : StrongConcaveOn s m f) : StrongConvexOn s m (-f) :=
   hf.neg
+
+/-- A strongly convex function plus a convex function is strongly convex with the same
+modulus. -/
+theorem StrongConvexOn.add_convexOn {g : E → ℝ} (hf : StrongConvexOn s m f)
+    (hg : ConvexOn ℝ s g) : StrongConvexOn s m (f + g) := by
+  -- `StrongConvexOn` is uniform convexity with a quadratic modulus, and a convex function is
+  -- uniformly convex with modulus zero.
+  have h := UniformConvexOn.add hf hg.uniformConvexOn_zero
+  rwa [add_zero] at h
+
+/-- A convex function plus a strongly convex function is strongly convex with the same
+modulus. -/
+theorem ConvexOn.add_strongConvexOn {g : E → ℝ} (hf : ConvexOn ℝ s f)
+    (hg : StrongConvexOn s m g) : StrongConvexOn s m (f + g) :=
+  add_comm g f ▸ hg.add_convexOn hf
 
 /-- **The first-order condition for strong convexity**, for a line derivative. If `f` is
 `m`-strongly convex on `s` and has line derivative `d` within `s` at a point `x ∈ s` in the

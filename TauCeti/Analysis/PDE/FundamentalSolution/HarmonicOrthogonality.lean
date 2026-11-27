@@ -365,16 +365,16 @@ private theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_linearIsometryEq
       HarmonicOnNhd H' Ω' → ((ψ' : E' → ℝ) =ᶠ[𝓝ˢ K'] H') → T' ψ' = 0 := by
     intro H' ψ' hH' hψ'
     rw [transportCLM_apply]
-    refine hT (H' ∘ e) (e_cle.transportTestFunction hmaps ψ')
+    refine hT (H' ∘ e) (e_cle.transportTestFunction ℝ hmaps ψ')
       (fun x hx ↦ (harmonicAt_comp_linearIsometryEquiv_right_iff e).2 (hH' (e x) ⟨x, hx, rfl⟩)) ?_
-    have hcoe : ((e_cle.transportTestFunction hmaps ψ' : 𝓓(Ω, ℝ)) : E → ℝ) = ψ' ∘ e :=
+    have hcoe : ((e_cle.transportTestFunction ℝ hmaps ψ' : 𝓓(Ω, ℝ)) : E → ℝ) = ψ' ∘ e :=
       funext fun _ ↦ by simp [e_cle]
     rw [hcoe]
     exact hψ'.comp_tendsto (e.continuous.tendsto_nhdsSet (mapsTo_image e K))
   have hh' : HarmonicOnNhd (h ∘ e.symm) K' := by
     rintro _ ⟨x, hx, rfl⟩
     simpa using (harmonicAt_comp_linearIsometryEquiv_right_iff e.symm).2 (by simpa using hh x hx)
-  let ψ' : 𝓓(Ω', ℝ) := e_cle.symm.transportTestFunction hmaps_symm ψ
+  let ψ' : 𝓓(Ω', ℝ) := e_cle.symm.transportTestFunction ℝ hmaps_symm ψ
   have hψ' : (ψ' : E' → ℝ) =ᶠ[𝓝ˢ K'] (h ∘ e.symm) := by
     have hcoe : (ψ' : E' → ℝ) = ψ ∘ e.symm := funext fun _ ↦ by simp [ψ', e_cle]
     rw [hcoe]
