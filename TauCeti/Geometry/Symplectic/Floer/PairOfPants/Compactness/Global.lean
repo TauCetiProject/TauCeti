@@ -14,6 +14,7 @@ import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.BubblingSet
+import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence.Compact
 

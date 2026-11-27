@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Global
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LeftCapping.Closed
 import TauCeti.MeasureTheory.Measure.BubblingSet
+import TauCeti.Topology.Compactness.LocallyCompact
 
 /-!
 # Compactness of the input-exchange family capped at `0` on the whole capped domain

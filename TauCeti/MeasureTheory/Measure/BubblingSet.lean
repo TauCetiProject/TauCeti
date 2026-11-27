@@ -55,10 +55,7 @@ For energy densities `gₙ ≥ 0` on `S = ⋃ᵢ Uᵢ` with `∫_S gₙ ≤ E`, 
 (`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_setIntegral_le`). For maps
 `uₙ` into a compact space `M`, such as a closed manifold, read through a continuous injection
 `e : M → α`, the limit is read back in `M`
-(`TauCeti.exists_tendstoLocallyUniformlyOn_comp_subseq_off_finset_iUnion_of_setIntegral_le`). On
-a window in a locally compact space, bounds on its compact subsets off the bubbling points are
-bounds near each of their points
-(`TauCeti.forall_exists_mem_nhds_eventually_forall_le_of_isCompact`).
+(`TauCeti.exists_tendstoLocallyUniformlyOn_comp_subseq_off_finset_iUnion_of_setIntegral_le`).
 
 The subsequence is the diagonal of the subsequences chosen successively on the windows. Energy
 concentration and locally uniform convergence along a filter pass to finer filters, so the diagonal
@@ -271,17 +268,6 @@ end Windows
 section Densities
 
 open Metric
-
-/-- **Local bounds from bounds on compact sets.** On an open subset `O` of a locally compact
-space, if functions `gᵢ` are eventually bounded above on every compact subset of `O` along `l`,
-then they are eventually bounded above on a neighbourhood of every point of `O`. -/
-theorem forall_exists_mem_nhds_eventually_forall_le_of_isCompact {X ι β : Type*}
-    [TopologicalSpace X] [LocallyCompactSpace X] [Preorder β] {O : Set X} (hO : IsOpen O)
-    {l : Filter ι} {g : ι → X → β}
-    (hbd : ∀ K, IsCompact K → K ⊆ O → ∃ A, ∀ᶠ i in l, ∀ y ∈ K, g i y ≤ A) :
-    ∀ y ∈ O, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ i in l, ∀ x ∈ N, g i x ≤ A := fun y hy ↦ by
-  obtain ⟨N, hN, hNO, hNc⟩ := local_compact_nhds (hO.mem_nhds hy)
-  exact ⟨N, hN, hbd N hNc hNO⟩
 
 variable {X α : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [UniformSpace α] [T2Space α]
