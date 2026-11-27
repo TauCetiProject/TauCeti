@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
 public import TauCeti.RepresentationTheory.Smooth.Colimits
 public import TauCeti.RepresentationTheory.Smooth.Invariants
 import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
-import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+import Mathlib.CategoryTheory.Filtered.Final
 import Mathlib.CategoryTheory.Limits.Types.Filtered
 
 /-!
@@ -58,70 +58,9 @@ variable {A : Type u} [CommRing A] {G : Type v} [Group G] [TopologicalSpace G]
 section Elements
 
 variable {J : Type u} [SmallCategory J] [IsFiltered J] {F : J ⥤ SmoothRep.{u} A G}
-  {c : Cocone F} (hc : IsColimit c)
+  {c : Cocone F} (hc : IsColimit c) (U : Subgroup G) [CompactSpace U]
 
 include hc
-
-/-- Every vector of a filtered colimit of smooth representations comes from some stage. -/
-theorem exists_apply_eq_of_isColimit (x : c.pt.obj.V) :
-    ∃ (j : J) (y : (F.obj j).obj.V), (c.ι.app j).hom.hom y = x := by
-  obtain ⟨j, y, h⟩ := Concrete.isColimit_exists_rep (F ⋙ ι A G ⋙ forget₂ (Rep A G) (ModuleCat A))
-    (isColimitOfPreserves (ι A G ⋙ forget₂ (Rep A G) (ModuleCat A)) hc) x
-  exact ⟨j, y, h⟩
-
-/-- Two vectors at stages `i` and `j` of a filtered colimit of smooth representations have the
-same image exactly when they agree at some later stage. -/
-theorem apply_eq_apply_iff_of_isColimit {i j : J} (x : (F.obj i).obj.V) (y : (F.obj j).obj.V) :
-    (c.ι.app i).hom.hom x = (c.ι.app j).hom.hom y ↔
-      ∃ (k : J) (f : i ⟶ k) (g : j ⟶ k), (F.map f).hom.hom x = (F.map g).hom.hom y :=
-  Concrete.isColimit_rep_eq_iff_exists (F ⋙ ι A G ⋙ forget₂ (Rep A G) (ModuleCat A))
-    (isColimitOfPreserves (ι A G ⋙ forget₂ (Rep A G) (ModuleCat A)) hc) (i := i) (j := j) x y
-
-/-- Two vectors at the same stage with the same image agree after a single map to a later stage. -/
-theorem exists_map_eq_of_isColimit {j : J} {x y : (F.obj j).obj.V}
-    (h : (c.ι.app j).hom.hom x = (c.ι.app j).hom.hom y) :
-    ∃ (k : J) (f : j ⟶ k), (F.map f).hom.hom x = (F.map f).hom.hom y := by
-  obtain ⟨k, f, g, hfg⟩ := (apply_eq_apply_iff_of_isColimit hc x y).mp h
-  refine ⟨IsFiltered.coeq f g, f ≫ IsFiltered.coeqHom f g, ?_⟩
-  have h₁ : (F.map (f ≫ IsFiltered.coeqHom f g)).hom.hom x =
-      (F.map (IsFiltered.coeqHom f g)).hom.hom ((F.map f).hom.hom x) := by
-    rw [F.map_comp]
-    rfl
-  have h₂ : (F.map (g ≫ IsFiltered.coeqHom f g)).hom.hom y =
-      (F.map (IsFiltered.coeqHom f g)).hom.hom ((F.map g).hom.hom y) := by
-    rw [F.map_comp]
-    rfl
-  rw [h₁, hfg, ← h₂, IsFiltered.coeq_condition]
-
-omit hc [SeparatelyContinuousMul G] in
-/-- Finitely many pairs of vectors at a stage `j`, each pair agreeing after some map out of `j`,
-all agree after a single map out of `j`. -/
-theorem exists_map_eq_of_finset {ι : Type*} (s : Finset ι) {j : J} (x y : ι → (F.obj j).obj.V)
-    (h : ∀ i ∈ s, ∃ (k : J) (f : j ⟶ k), (F.map f).hom.hom (x i) = (F.map f).hom.hom (y i)) :
-    ∃ (k : J) (f : j ⟶ k), ∀ i ∈ s, (F.map f).hom.hom (x i) = (F.map f).hom.hom (y i) := by
-  classical
-  -- agreement after `f` persists after any `f ≫ g`
-  have hcomp : ∀ {k k' : J} (f : j ⟶ k) (g : k ⟶ k') {a b : (F.obj j).obj.V},
-      (F.map f).hom.hom a = (F.map f).hom.hom b →
-        (F.map (f ≫ g)).hom.hom a = (F.map (f ≫ g)).hom.hom b := by
-    intro k k' f g a b hab
-    rw [F.map_comp]
-    change (F.map g).hom.hom ((F.map f).hom.hom a) = (F.map g).hom.hom ((F.map f).hom.hom b)
-    rw [hab]
-  induction s using Finset.induction_on with
-  | empty => exact ⟨j, 𝟙 j, by simp⟩
-  | insert i s hi ih =>
-    obtain ⟨k, f, hf⟩ := ih fun i' hi' ↦ h i' (Finset.mem_insert_of_mem hi')
-    obtain ⟨k', f', hf'⟩ := h i (Finset.mem_insert_self i s)
-    let a := f ≫ IsFiltered.leftToMax k k'
-    let b := f' ≫ IsFiltered.rightToMax k k'
-    refine ⟨IsFiltered.coeq a b, a ≫ IsFiltered.coeqHom a b, fun i' hi' ↦ ?_⟩
-    rcases Finset.mem_insert.mp hi' with rfl | hi'
-    · rw [IsFiltered.coeq_condition]
-      exact hcomp _ _ (hcomp _ _ hf')
-    · exact hcomp _ _ (hcomp _ _ (hf i' hi'))
-
-variable (U : Subgroup G) [CompactSpace U]
 
 /-- **A `U`-invariant vector of a filtered colimit comes from a `U`-invariant vector** at some
 stage, for `U` compact. -/
@@ -131,7 +70,14 @@ theorem exists_mem_invariants_of_isColimit {x : c.pt.obj.V}
       y ∈ Representation.invariants ((F.obj k).obj.ρ.comp U.subtype) ∧
         (c.ι.app k).hom.hom y = x := by
   classical
-  obtain ⟨j, y, rfl⟩ := exists_apply_eq_of_isColimit hc x
+  -- Filtered colimits of smooth representations are computed on underlying sets, where they are
+  -- described elementwise.
+  let hT := isColimitOfPreserves (ι A G ⋙ forget₂ (Rep A G) (ModuleCat A) ⋙ forget _) hc
+  obtain ⟨j, y, hy⟩ := Types.jointly_surjective_of_isColimit hT x
+  -- The underlying function of a morphism of smooth representations, after the forgetful
+  -- functors, is its `hom.hom` by definition.
+  replace hy : (c.ι.app j).hom.hom y = x := hy
+  subst hy
   let ρ := (F.obj j).obj.ρ
   have : Representation.IsSmooth ρ := (F.obj j).property
   have : SeparatelyContinuousMul U :=
@@ -143,24 +89,33 @@ theorem exists_mem_invariants_of_isColimit {x : c.pt.obj.V}
     (Representation.IsSmooth.isOpen_stabilizer (ρ := ρ) y).preimage continuous_subtypeVal
   have := S.quotient_finite_of_isOpen hS
   have := Fintype.ofFinite (U ⧸ S)
-  -- each coset representative fixes the image of `y` after some map out of `j`
-  obtain ⟨k, f, hf⟩ := exists_map_eq_of_finset (F := F) Finset.univ
-    (fun q : U ⧸ S ↦ ρ (q.out : G) y) (fun _ ↦ y) fun q _ ↦ exists_map_eq_of_isColimit hc <| by
+  -- For each coset representative `q.out` the vectors `q.out • y` and `y` have the same image, so
+  -- they agree at a later stage, recorded as an object of the filtered category `Under j`.
+  have hq (q : U ⧸ S) : ∃ X : Under j,
+      (F.map X.hom).hom.hom (ρ (q.out : G) y) = (F.map X.hom).hom.hom y := by
+    have h : (c.ι.app j).hom.hom (ρ (q.out : G) y) = (c.ι.app j).hom.hom y := by
       rw [Rep.hom_comm_apply]
       exact hx q.out
-  refine ⟨k, (F.map f).hom.hom y, fun u ↦ ?_, ?_⟩
+    obtain ⟨k, f, hf⟩ := (Types.FilteredColimit.isColimit_eq_iff' hT _ _).1 h
+    exact ⟨Under.mk f, hf⟩
+  choose X hX using hq
+  obtain ⟨T, hXT⟩ := IsFiltered.sup_objs_exists (Finset.univ.image X)
+  refine ⟨T.right, (F.map T.hom).hom.hom y, fun u ↦ ?_, ?_⟩
   · obtain ⟨s, hs⟩ := QuotientGroup.mk_out_eq_mul S u
     have hu : (u : G) = ((QuotientGroup.mk u : U ⧸ S).out : G) * ((s : U)⁻¹ : U) := by
       rw [hs, Subgroup.coe_mul, Subgroup.coe_inv, mul_inv_cancel_right]
     have hsy : ρ (((s : U)⁻¹ : U) : G) y = y :=
       Representation.mem_stabilizer.mp (Subgroup.mem_subgroupOf.mp (S.inv_mem s.property))
-    change (F.obj k).obj.ρ (u : G) ((F.map f).hom.hom y) = _
-    rw [← Rep.hom_comm_apply]
-    change (F.map f).hom.hom (ρ (u : G) y) = _
-    rw [hu, map_mul, mul_apply_eq_comp, hsy]
-    exact hf _ (Finset.mem_univ _)
-  · change ((F.map f ≫ c.ι.app k).hom.hom y) = _
-    rw [c.w f]
+    obtain ⟨m⟩ := hXT (Finset.mem_image_of_mem X (Finset.mem_univ (QuotientGroup.mk u)))
+    rw [MonoidHom.comp_apply, Subgroup.subtype_apply, ← Rep.hom_comm_apply, hu, map_mul,
+      mul_apply_eq_comp, hsy, ← Under.w m, Functor.map_comp]
+    simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp,
+      Representation.IntertwiningMap.comp_apply]
+    exact congrArg (F.map m.right).hom.hom (hX _)
+  · -- The image of `F.map T.hom y` in the colimit is that of `y`, by naturality of `c`.
+    rw [← c.w T.hom]
+    simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp,
+      Representation.IntertwiningMap.comp_apply]
 
 /-- **Invariants commute with filtered colimits**: for `U` compact, the functor of `U`-invariants
 on smooth representations preserves filtered colimits. -/
@@ -172,7 +127,8 @@ theorem isColimit_mapCocone_invariantsFunctor :
   refine Types.FilteredColimit.isColimitOf _ _ (fun x ↦ ?_) fun i j xi xj h ↦ ?_
   · obtain ⟨k, y, hy, hyx⟩ := exists_mem_invariants_of_isColimit hc U x.property
     exact ⟨k, ⟨y, hy⟩, Subtype.ext hyx.symm⟩
-  · obtain ⟨k, f, g, hfg⟩ := (apply_eq_apply_iff_of_isColimit hc xi.val xj.val).mp
+  · obtain ⟨k, f, g, hfg⟩ := (Types.FilteredColimit.isColimit_eq_iff _
+      (isColimitOfPreserves (ι A G ⋙ forget₂ (Rep A G) (ModuleCat A) ⋙ forget _) hc)).1
       (congrArg Subtype.val h)
     exact ⟨k, f, g, Subtype.ext hfg⟩
 
