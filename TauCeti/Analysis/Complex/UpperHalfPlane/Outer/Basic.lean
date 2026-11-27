@@ -63,6 +63,7 @@ theorem upperHalfPlaneOuter_def (h : ℝ → ℝ) (z : ℂ) :
   (rfl)
 
 /-- **Outer functions are zero-free.** -/
+@[simp]
 theorem upperHalfPlaneOuter_ne_zero (h : ℝ → ℝ) (z : ℂ) : upperHalfPlaneOuter h z ≠ 0 :=
   exp_ne_zero _
 
