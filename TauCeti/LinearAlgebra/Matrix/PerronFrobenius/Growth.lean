@@ -54,8 +54,8 @@ theorem expGrowthSup_sum_pow_mulVec_le (M : Matrix n n ℝ) :
       (Fintype.card n : ℝ≥0∞) * (‖N ^ k‖₊ : ℝ≥0∞) := by
     have hrow (i : n) : (M ^ k *ᵥ 1) i ≤ ‖N ^ k‖ := by
       have hk : (N ^ k *ᵥ 1) i = ((M ^ k *ᵥ 1) i : ℂ) := by
-        rw [show N = M.map Complex.ofRealHom by ext; simp [N], ← Matrix.map_pow]
-        simp [mulVec, dotProduct]
+        rw [show N = M.map Complex.ofRealHom by ext; simp [N], ← Matrix.map_pow,
+          ← Complex.ofRealHom_eq_coe, RingHom.map_mulVec, map_comp_one]
       calc (M ^ k *ᵥ 1) i ≤ ‖(N ^ k *ᵥ 1) i‖ := by
             rw [hk, Complex.norm_real, Real.norm_eq_abs]
             exact le_abs_self _

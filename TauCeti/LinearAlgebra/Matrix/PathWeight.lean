@@ -49,6 +49,12 @@ theorem pathWeight_def (M : Matrix α α R) {n : ℕ} (w : Fin (n + 1) → α) :
     M.pathWeight w = ∏ k : Fin n, M (w k.castSucc) (w k.succ) :=
   (rfl)
 
+/-- A word of length `1` has no transitions, so its path weight is the empty product `1`. -/
+@[simp]
+theorem pathWeight_fin_one (M : Matrix α α R) (w : Fin 1 → α) : M.pathWeight w = 1 := by
+  simp [pathWeight_def]
+
+@[simp]
 theorem pathWeight_cons (M : Matrix α α R) {n : ℕ} (i : α) (w : Fin (n + 1) → α) :
     M.pathWeight (Fin.cons i w : Fin (n + 2) → α) = M i (w 0) * M.pathWeight w := by
   simp only [pathWeight_def, Fin.prod_univ_succ, Fin.castSucc_zero, Fin.cons_zero,
@@ -62,7 +68,7 @@ variable [Fintype α] [DecidableEq α] [CommSemiring R]
 theorem sum_pathWeight_cons (M : Matrix α α R) (n : ℕ) (i : α) :
     ∑ w : Fin n → α, M.pathWeight (Fin.cons i w : Fin (n + 1) → α) = (M ^ n *ᵥ 1) i := by
   induction n generalizing i with
-  | zero => simp [pathWeight_def]
+  | zero => simp
   | succ n ih =>
     rw [pow_succ', ← mulVec_mulVec, mulVec, dotProduct, ← (Fin.consEquiv fun _ ↦ α).sum_comp,
       Fintype.sum_prod_type]
