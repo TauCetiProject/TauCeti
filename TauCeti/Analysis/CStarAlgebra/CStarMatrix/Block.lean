@@ -34,8 +34,9 @@ standard corner/diagonal `⋆`-algebra embeddings for `CStarMatrix`:
 * `CStarMatrix.blockDiagNonUnitalStarAlgHom`: `⋆`-algebra embedding `(M, N) ↦ fromBlocks M 0 0 N`.
 * `CStarMatrix.inl`, `CStarMatrix.inr`, `CStarMatrix.singleNonUnitalStarAlgHom`: isometric
   `⋆`-algebra corner embeddings.
-* `CStarMatrix.fromBlocks_diagonal`, `CStarMatrix.norm_diagonal`: block-diagonal compatibility and
-  exact operator norm for `CStarMatrix.diagonal`.
+* `CStarMatrix.diagonal`, `CStarMatrix.piDiagonalNonUnitalStarAlgHom`,
+  `CStarMatrix.fromBlocks_diagonal`, `CStarMatrix.norm_diagonal`: diagonal matrices, their
+  `⋆`-algebra embedding, block-diagonal compatibility, and exact operator norm.
 * `CStarMatrix.norm_fromBlocks_zero₁₂_zero₂₁`, `CStarMatrix.norm_fromBlocks_zero₁₁_zero₂₂`: exact
   operator-norm formulas `max ‖M‖ ‖N‖` for diagonal and anti-diagonal `2 × 2` block matrices.
 
@@ -355,6 +356,69 @@ theorem singleNonUnitalStarAlgHom_injective [Fintype n] [DecidableEq n] [Semirin
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (i : n) :
     Function.Injective (singleNonUnitalStarAlgHom (R := R) (A := A) i) := fun a b h ↦ by
   simpa using congrArg (fun M : CStarMatrix n n A ↦ M i i) h
+
+/-- Diagonal `CStarMatrix` with diagonal entries `d : n → A`. -/
+def diagonal [DecidableEq n] [Zero A] (d : n → A) : CStarMatrix n n A :=
+  ofMatrix (Matrix.diagonal d)
+
+@[simp]
+theorem ofMatrix_symm_diagonal [DecidableEq n] [Zero A] (d : n → A) :
+    ofMatrix.symm (diagonal d) = Matrix.diagonal d := (rfl)
+
+theorem diagonal_apply [DecidableEq n] [Zero A] (d : n → A) (i j : n) :
+    diagonal d i j = if i = j then d i else 0 := (rfl)
+
+@[simp]
+theorem diagonal_apply_eq [DecidableEq n] [Zero A] (d : n → A) (i : n) :
+    diagonal d i i = d i := Matrix.diagonal_apply_eq d i
+
+@[simp]
+theorem diagonal_apply_ne [DecidableEq n] [Zero A] (d : n → A) {i j : n} (h : i ≠ j) :
+    diagonal d i j = 0 := Matrix.diagonal_apply_ne d h
+
+@[simp]
+theorem diagonal_zero [DecidableEq n] [Zero A] :
+    diagonal (0 : n → A) = 0 := Matrix.diagonal_zero
+
+@[simp]
+theorem diagonal_one [DecidableEq n] [Zero A] [One A] :
+    diagonal (1 : n → A) = 1 := Matrix.diagonal_one
+
+@[simp]
+theorem diagonal_add [DecidableEq n] [AddZeroClass A] (d₁ d₂ : n → A) :
+    diagonal d₁ + diagonal d₂ = diagonal (d₁ + d₂) := Matrix.diagonal_add d₁ d₂
+
+@[simp]
+theorem diagonal_mul [Fintype n] [DecidableEq n] [NonUnitalNonAssocSemiring A] (d₁ d₂ : n → A) :
+    diagonal d₁ * diagonal d₂ = diagonal (fun i ↦ d₁ i * d₂ i) :=
+  congrArg ofMatrix (Matrix.diagonal_mul_diagonal d₁ d₂)
+
+@[simp]
+theorem star_diagonal [DecidableEq n] [AddMonoid A] [StarAddMonoid A] (d : n → A) :
+    star (diagonal d) = diagonal (star d) :=
+  congrArg ofMatrix (Matrix.diagonal_conjTranspose d)
+
+/-- Diagonal non-unital `⋆`-homomorphism `(n → A) →⋆ₙₐ[R] CStarMatrix n n A`. -/
+def piDiagonalNonUnitalStarAlgHom [Fintype n] [DecidableEq n] [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] :
+    (n → A) →⋆ₙₐ[R] CStarMatrix n n A where
+  toFun := diagonal
+  map_smul' c d := congrArg ofMatrix (Matrix.diagonal_smul c d)
+  map_zero' := diagonal_zero
+  map_add' d₁ d₂ := (diagonal_add d₁ d₂).symm
+  map_mul' d₁ d₂ := (diagonal_mul d₁ d₂).symm
+  map_star' d := (star_diagonal d).symm
+
+@[simp]
+theorem piDiagonalNonUnitalStarAlgHom_apply [Fintype n] [DecidableEq n] [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] (d : n → A) :
+    (piDiagonalNonUnitalStarAlgHom : (n → A) →⋆ₙₐ[R] CStarMatrix n n A) d = diagonal d := (rfl)
+
+theorem piDiagonalNonUnitalStarAlgHom_injective [Fintype n] [DecidableEq n] [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] :
+    Function.Injective (piDiagonalNonUnitalStarAlgHom (n := n) (R := R) (A := A)) :=
+  fun _ _ h ↦ by
+    ext i; simpa using congrArg (fun M : CStarMatrix n n A ↦ M i i) h
 
 @[simp] theorem fromBlocks_diagonal [DecidableEq l] [DecidableEq m] [Zero A]
     (d₁ : l → A) (d₂ : m → A) :

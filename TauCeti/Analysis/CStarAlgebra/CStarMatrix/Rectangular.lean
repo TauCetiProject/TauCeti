@@ -62,6 +62,12 @@ variable {k l m n o p q R A B : Type*}
 @[simp] theorem of_mul_of [Fintype m] [Mul A] [AddCommMonoid A] (M : Matrix l m A)
     (N : Matrix m n A) : ofMatrix M * ofMatrix N = ofMatrix (M * N) := (rfl)
 
+/-- Transporting a `CStarMatrix` product identity to ordinary `Matrix` multiplication. -/
+lemma ofMatrix_symm_mul_eq [Fintype m] [Mul A] [AddCommMonoid A]
+    {M : CStarMatrix l m A} {N : CStarMatrix m n A} {P : CStarMatrix l n A} (h : M * N = P) :
+    ofMatrix.symm M * ofMatrix.symm N = ofMatrix.symm P :=
+  h ▸ (ofMatrix_symm_mul M N).symm
+
 /-- `ofMatrix` commutes with conjugate transposition. -/
 @[simp] theorem conjTranspose_of [Star A] (M : Matrix m n A) :
     (ofMatrix M).conjTranspose = ofMatrix Mᴴ := (rfl)
