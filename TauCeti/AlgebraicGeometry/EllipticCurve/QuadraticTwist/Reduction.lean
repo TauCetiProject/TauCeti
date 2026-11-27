@@ -13,8 +13,6 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.PotentialGoodReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.SplitMultiplicative
-import TauCeti.FieldTheory.IntermediateField.Quadratic
-import TauCeti.FieldTheory.Separable.PrimeDegree
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Quadratic
 
 /-!
@@ -121,9 +119,8 @@ private theorem IsQuadraticTwistBy.forall_mem_inertiaSubgroup_eq_one
   obtain ⟨C, hC⟩ := exists_smul_eq_quadraticTwistOf_of_j_eq_of_hasMultiplicativeReduction
     𝒪[K] (E := E₁) (E' := W) ((j_minimal 𝒪[K] E).trans h.j_eq).symm
   have hc : E₁.a₁ ^ 2 - 4 * n ≠ 0 := by
-    rw [← integralModel_a₁_eq 𝒪[K] E₁, ← hn₀, ← map_pow, ← map_ofNat (algebraMap 𝒪[K] K) 4,
-      ← map_mul, ← map_sub]
-    exact (map_ne_zero_iff _ (IsFractionRing.injective 𝒪[K] K)).mpr hD.ne_zero
+    have := (map_ne_zero_iff _ (IsFractionRing.injective 𝒪[K] K)).mpr hD.ne_zero
+    simpa [hn₀, integralModel_a₁_eq, map_ofNat] using this
   -- `η` is the character of a square root `a` of the discriminant of the node quadratic
   obtain ⟨a, ha⟩ :=
     IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) (E₁.a₁ ^ 2 - 4 * n)) two_pos
@@ -135,26 +132,21 @@ private theorem IsQuadraticTwistBy.forall_mem_inertiaSubgroup_eq_one
     (.intro (Units.mk0 _ hc) ha hη' (C₀⁻¹ * C⁻¹ * C₁)
       (by rw [mul_smul, mul_smul, Units.val_mk0, hC₁, ← hC, inv_smul_smul, ← hC₀,
         inv_smul_smul])) h
-  intro (g : Gal(AlgebraicClosure K/K)) hg
   have ha0 : a ≠ 0 := (pow_ne_zero_iff _root_.two_ne_zero).mp (ha ▸ (map_ne_zero _).mpr hc)
-  refine TauCeti.eq_one_of_apply_eq_zsmul_of_apply_eq_self ha0 h2Ω (hη' g) ?_
+  refine (forall_mem_eq_one_iff_le_fixingSubgroup_adjoin ha0 h2Ω hη').mpr ?_
   by_cases haK : a ∈ (⊥ : IntermediateField K (AlgebraicClosure K))
-  · obtain ⟨x, rfl⟩ := mem_bot.mp haK
-    exact g.commutes x
-  have hfin := TauCeti.IntermediateField.finrank_adjoin_simple_eq_two_of_notMem_bot ha haK
-  have := Algebra.isSeparable_of_finrank_eq_two h2 hfin
+  · rw [adjoin_simple_eq_bot_iff.mpr haK, fixingSubgroup_bot]
+    exact le_top
   -- `θ = (a - a₁) / 2` is a root of the node quadratic in `K⟮a⟯`
   set θ := (a - algebraMap K _ E₁.a₁) / 2
   have hθ : 2 * θ + algebraMap K _ E₁.a₁ = a := by rw [mul_div_cancel₀ _ h2Ω, sub_add_cancel]
-  refine (mem_fixingSubgroup_iff _ _).mp
-    ((inertiaSubgroup_le_fixingSubgroup_iff_exists_sq_add_mul_add_eq_zero _ hfin).mpr
-      ⟨_, _, hD, θ,
-        div_mem (sub_mem (mem_adjoin_simple_self K a) (IntermediateField.algebraMap_mem _ _))
-          (ofNat_mem _ 2),
-        fun ⟨x, hx⟩ ↦ haK (mem_bot.mpr ⟨2 * x + E₁.a₁, by
-          rw [map_add, map_mul, map_ofNat, hx, hθ]⟩),
-        ?_⟩ hg) a
-    (mem_adjoin_simple_self K a)
+  refine (inertiaSubgroup_le_fixingSubgroup_adjoin_iff_exists_sq_add_mul_add_eq_zero h2 ha haK).mpr
+    ⟨_, _, hD, θ,
+      div_mem (sub_mem (mem_adjoin_simple_self K a) (IntermediateField.algebraMap_mem _ _))
+        (ofNat_mem _ 2),
+      fun ⟨x, hx⟩ ↦ haK (mem_bot.mpr ⟨2 * x + E₁.a₁, by
+        rw [map_add, map_mul, map_ofNat, hx, hθ]⟩),
+      ?_⟩
   rw [← Algebra.algebraMap_ofSubsemiring_apply, integralModel_a₁_eq,
     ← Algebra.algebraMap_ofSubsemiring_apply, hn₀]
   have hq := (quadratic_eq_zero_iff_discrim_eq_sq (b := algebraMap K _ E₁.a₁)
@@ -174,20 +166,16 @@ private theorem IsQuadraticTwistBy.hasMultiplicativeReduction_minimal
   have h2 := h.two_ne_zero
   have h2Ω := h.two_ne_zero_algebraicClosure
   obtain ⟨d, a, ha, hη, -⟩ := isQuadraticTwistBy_iff.mp h
+  have ha0 : a ≠ 0 := (pow_ne_zero_iff _root_.two_ne_zero).mp (ha ▸ (map_ne_zero _).mpr d.ne_zero)
   by_cases haK : a ∈ (⊥ : IntermediateField K (AlgebraicClosure K))
   · -- `a ∈ K` is fixed by every automorphism, so `η` is trivial and the reduction is split
-    have ha0 : a ≠ 0 := (pow_ne_zero_iff _root_.two_ne_zero).mp (ha ▸ (map_ne_zero _).mpr d.ne_zero)
     obtain rfl : η = 1 := TauCeti.continuousMonoidHom_eq_of_apply_eq_zsmul ha0 h2Ω hη
       fun g ↦ by obtain ⟨x, rfl⟩ := mem_bot.mp haK; simp
     exact ((h.hasSplitMultiplicativeReduction_minimal_iff 𝒪[K]).mpr
       rfl).toHasMultiplicativeReduction
-  have hfin := TauCeti.IntermediateField.finrank_adjoin_simple_eq_two_of_notMem_bot ha haK
-  have := Algebra.isSeparable_of_finrank_eq_two h2 hfin
   obtain ⟨t, n, hD, θ, hθa, hθK, hroot⟩ :=
-    (inertiaSubgroup_le_fixingSubgroup_iff_exists_sq_add_mul_add_eq_zero _ hfin).mp
-      ((le_fixedField_iff_le_fixingSubgroup _ _).mp (adjoin_simple_le_iff.mpr
-        ((mem_fixedField_iff _ _).mpr fun g hg ↦ by
-          rw [hη g, hI g hg, Units.val_one, one_smul])))
+    (inertiaSubgroup_le_fixingSubgroup_adjoin_iff_exists_sq_add_mul_add_eq_zero h2 ha haK).mp
+      ((forall_mem_eq_one_iff_le_fixingSubgroup_adjoin ha0 h2Ω hη).mp hI)
   -- `2θ + t` is a square root of `t² - 4n` in `K⟮a⟯`, so `E` is the twist by `(t, n)`
   have hDK : (t : K) ^ 2 - 4 * n ≠ 0 := fun h0 ↦ hD.ne_zero (Subtype.ext (by push_cast; exact h0))
   have hb := discrim_eq_sq_of_quadratic_eq_zero (a := (1 : AlgebraicClosure K))
