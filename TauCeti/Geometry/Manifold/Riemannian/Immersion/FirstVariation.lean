@@ -92,6 +92,22 @@ variable [IsManifold I 2 M] [IsManifold J 2 N]
 
 /-! ### The variation of the induced metric -/
 
+/-- The coordinate reading of `t ↦ dΦ_t v` along `t ↦ Φ t x` is differentiable at `t₀`. -/
+theorem differentiableAt_sectionCoord_mfderiv_family
+    (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x)) (hx : I.IsInteriorPoint x)
+    (v : TangentSpace I x) (y : N) (hy : Φ t₀ x ∈ (trivializationAt F (TangentSpace J) y).baseSet) :
+    DifferentiableAt ℝ (sectionCoord ℝ (F := F) (fun t ↦ Φ t x)
+      (fun t ↦ mfderiv I J (Φ t) x v) y) t₀ := by
+  obtain ⟨c, hc0, hc, hcv⟩ := exists_contMDiffAt_curveVelocity_eq (n := 2) x hx v (0 : ℝ)
+  subst hc0 hcv
+  have hc1 : MDifferentiableAt 𝓘(ℝ, ℝ) I c 0 := hc.mdifferentiableAt (by norm_num)
+  have hσ := contMDiffAt_surface_family hΦ hc
+  have hd := ContMDiffAt.differentiableAt_sectionCoord_curveVelocity_snd
+    (f := fun t s ↦ Φ t (c s)) hσ hy
+  refine hd.congr_of_eventuallyEq ?_
+  filter_upwards [eventually_mfderiv_family_apply_curveVelocity hΦ two_ne_zero hc1] with t ht
+  simp only [sectionCoord_apply, ht]
+
 variable [FiniteDimensional ℝ F] {cov : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)}
 
 /-- **The `t`-derivative of `dΦ_t v`.** For a family which is `C²` at `(t₀, x)`, with `x` an
