@@ -112,6 +112,14 @@ theorem apply_eq_abs_det_mul (μ : Density V m) (b : Module.Basis (Fin m) ℝ V)
     μ v = μ ((b.constr ℝ v : V → V) ∘ b) := congrArg μ hv.symm
     _ = |b.det v| * μ b := by rw [comp_apply, hd]
 
+/-- A top-dimensional density does not see the order of the vectors of a tuple: reordering
+changes the determinant only by a sign. The basis `b` only witnesses that `m` is the dimension
+of `V`; in other dimensions densities need not be symmetric. -/
+theorem apply_comp_perm (μ : Density V m) (b : Module.Basis (Fin m) ℝ V)
+    (σ : Equiv.Perm (Fin m)) (v : Fin m → V) : μ (v ∘ σ) = μ v := by
+  rw [apply_eq_abs_det_mul μ b, apply_eq_abs_det_mul μ b v, b.det.map_perm, Units.smul_def,
+    zsmul_eq_mul, abs_mul, abs_unit_intCast, one_mul]
+
 /-- A density is zero exactly when its value on a basis is zero. -/
 @[simp]
 theorem apply_basis_eq_zero_iff (μ : Density V m) (b : Module.Basis (Fin m) ℝ V) :
