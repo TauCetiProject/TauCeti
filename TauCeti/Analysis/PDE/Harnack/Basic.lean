@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Compactness.LocalComparison
 
 /-!
 # Harnack's inequality in every dimension
@@ -54,7 +55,7 @@ public section
 
 namespace TauCeti
 
-open InnerProductSpace MeasureTheory Metric Module Set Topology
+open Filter InnerProductSpace MeasureTheory Metric Module Set Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {x y c : E} {r s : ℝ}
@@ -102,75 +103,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.le_three_pow_mul_of_nonneg
     (fun z hz ↦ hnonneg z (hsub (ball_subset_closedBall hz))) hr hxy
   rwa [mul_div_cancel_right₀ 3 hr.ne'] at this
 
-/-- `IsHarnackPair U a b C`: every function harmonic and nonnegative on `U` has
-`u a ≤ C * u b`. -/
-private def IsHarnackPair (U : Set E) (a b : E) (C : ℝ) : Prop :=
-  ∀ u : E → ℝ, HarmonicOnNhd u U → (∀ z ∈ U, 0 ≤ u z) → u a ≤ C * u b
-
-private lemma IsHarnackPair.trans {U : Set E} {a b d : E} {C C' : ℝ} (hC : 0 ≤ C)
-    (hab : IsHarnackPair U a b C) (hbd : IsHarnackPair U b d C') :
-    IsHarnackPair U a d (C * C') := fun u hu h0 ↦ by
-  rw [mul_assoc]
-  exact (hab u hu h0).trans (mul_le_mul_of_nonneg_left (hbd u hu h0) hC)
-
-private lemma IsHarnackPair.mono {U : Set E} {a b : E} {C C' : ℝ} (hb : b ∈ U) (hC : C ≤ C')
-    (hab : IsHarnackPair U a b C) : IsHarnackPair U a b C' :=
-  fun u hu h0 ↦ (hab u hu h0).trans (mul_le_mul_of_nonneg_right hC (h0 b hb))
-
-/-- Near each point `a` of an open set `U`, the values of every nonnegative harmonic function on
-`U` are within the factor `3 ^ n` of its value at `a`. -/
-private lemma eventually_isHarnackPair {U : Set E} (hU : IsOpen U) {a : E} (ha : a ∈ U) :
-    ∀ᶠ z in 𝓝 a,
-      IsHarnackPair U z a (3 ^ finrank ℝ E) ∧ IsHarnackPair U a z (3 ^ finrank ℝ E) := by
-  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU a ha
-  have hball : ball a (4 * (ε / 4)) ⊆ U := by rwa [mul_div_cancel₀ _ four_ne_zero]
-  have ha' : a ∈ ball a (ε / 4) := mem_ball_self (by positivity)
-  filter_upwards [ball_mem_nhds a (by positivity : 0 < ε / 4)] with z hz
-  exact ⟨fun u hu h0 ↦ (hu.mono hball).le_three_pow_mul_of_nonneg (fun w hw ↦ h0 w (hball hw))
-      hz ha',
-    fun u hu h0 ↦ (hu.mono hball).le_three_pow_mul_of_nonneg (fun w hw ↦ h0 w (hball hw)) ha' hz⟩
-
-/-- On a preconnected open set, the values of nonnegative harmonic functions at any two points are
-comparable, by chaining the local estimate along the set. -/
-private lemma exists_isHarnackPair {U : Set E} (hU : IsOpen U) (hUc : IsPreconnected U) {a b : E}
-    (ha : a ∈ U) (hb : b ∈ U) : ∃ C, 0 ≤ C ∧ IsHarnackPair U a b C := by
-  refine hUc.induction₂' (fun a b ↦ ∃ C, 0 ≤ C ∧ IsHarnackPair U a b C) (fun a ha ↦ ?_)
-    (fun a b d _ _ _ ⟨C, hC, hab⟩ ⟨C', hC', hbd⟩ ↦
-      ⟨C * C', mul_nonneg hC hC', hab.trans hC hbd⟩) ha hb
-  filter_upwards [nhdsWithin_le_nhds (eventually_isHarnackPair hU ha)] with z hz
-  exact ⟨⟨_, by positivity, hz.2⟩, ⟨_, by positivity, hz.1⟩⟩
-
-/-- On a compact subset `K` of a preconnected open set `U`, every point is comparable with a fixed
-point `x₀ ∈ K`, with one constant for all of `K`. -/
-private lemma exists_forall_isHarnackPair {K U : Set E} (hK : IsCompact K) (hU : IsOpen U)
-    (hUc : IsPreconnected U) (hKU : K ⊆ U) {x₀ : E} (hx₀ : x₀ ∈ K) :
-    ∃ C, 0 ≤ C ∧ ∀ z ∈ K, IsHarnackPair U z x₀ C ∧ IsHarnackPair U x₀ z C := by
-  -- Compactness, for the property of `t ∩ U` rather than of `t`: the union step enlarges the
-  -- constants, which needs `u ≥ 0` at the points compared.
-  suffices ∃ C, 0 ≤ C ∧ ∀ z ∈ K ∩ U, IsHarnackPair U z x₀ C ∧ IsHarnackPair U x₀ z C by
-    obtain ⟨C, hC, h⟩ := this
-    exact ⟨C, hC, fun z hz ↦ h z ⟨hz, hKU hz⟩⟩
-  have hx₀U := hKU hx₀
-  refine hK.induction_on
-    (p := fun t ↦ ∃ C, 0 ≤ C ∧ ∀ z ∈ t ∩ U, IsHarnackPair U z x₀ C ∧ IsHarnackPair U x₀ z C)
-    ⟨0, le_rfl, by simp⟩ (fun t t' htt' ⟨C, hC, h⟩ ↦ ⟨C, hC, fun z hz ↦ h z ⟨htt' hz.1, hz.2⟩⟩)
-    (fun t t' ⟨C, hC, h⟩ ⟨C', _, h'⟩ ↦ ⟨max C C', le_max_of_le_left hC, ?_⟩) (fun z hz ↦ ?_)
-  · rintro w ⟨hw | hw, hwU⟩
-    · exact ⟨(h w ⟨hw, hwU⟩).1.mono hx₀U (le_max_left _ _),
-        (h w ⟨hw, hwU⟩).2.mono hwU (le_max_left _ _)⟩
-    · exact ⟨(h' w ⟨hw, hwU⟩).1.mono hx₀U (le_max_right _ _),
-        (h' w ⟨hw, hwU⟩).2.mono hwU (le_max_right _ _)⟩
-  -- Near `z ∈ K`, compare with `z` by the local estimate and then `z` with `x₀`.
-  have hzU := hKU hz
-  obtain ⟨C₁, hC₁, h₁⟩ := exists_isHarnackPair hU hUc hzU hx₀U
-  obtain ⟨C₂, _, h₂⟩ := exists_isHarnackPair hU hUc hx₀U hzU
-  refine ⟨_, nhdsWithin_le_nhds (eventually_isHarnackPair hU hzU),
-    3 ^ finrank ℝ E * max C₁ C₂, by positivity, fun w ⟨hw, _⟩ ↦
-      ⟨(hw.1.trans (by positivity) h₁).mono hx₀U ?_, ?_⟩⟩
-  · exact mul_le_mul_of_nonneg_left (le_max_left _ _) (by positivity)
-  · rw [mul_comm]
-    exact (h₂.mono hzU (le_max_right _ _)).trans (le_max_of_le_left hC₁) hw.2
-
 /-- **Harnack's inequality.** Let `K` be a compact subset of a preconnected open set `U`. There
 is a constant `C`, depending only on `K` and `U`, such that every function `u` harmonic and
 nonnegative on `U` satisfies `u x ≤ C * u y` for all `x, y ∈ K`; that is,
@@ -181,8 +113,26 @@ theorem _root_.IsCompact.harnack_inequality {K U : Set E} (hK : IsCompact K) (hU
       ∀ x ∈ K, ∀ y ∈ K, u x ≤ C * u y := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
   · exact ⟨0, le_rfl, by simp⟩
-  obtain ⟨C, hC, h⟩ := exists_forall_isHarnackPair hK hU hUc hKU hx₀
-  exact ⟨C * C, mul_nonneg hC hC, fun u hu h0 x hx y hy ↦
-    ((h x hx).1.trans hC (h y hy).2) u hu h0⟩
+  let F := {u : E → ℝ // HarmonicOnNhd u U ∧ ∀ z ∈ U, 0 ≤ u z}
+  have hlocal (a : E) (ha : a ∈ U) : ∃ V ∈ 𝓝[U] a, ∃ C : ℝ, 0 < C ∧
+      ∀ᶠ u : F in ⊤, ∀ z ∈ V, u.val z ≤ C * u.val a ∧ u.val a ≤ C * u.val z := by
+    obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU a ha
+    have hball : ball a (4 * (ε / 4)) ⊆ U := by rwa [mul_div_cancel₀ _ four_ne_zero]
+    have hr : 0 < ε / 4 := by positivity
+    refine ⟨ball a (ε / 4), nhdsWithin_le_nhds (ball_mem_nhds a hr),
+      3 ^ finrank ℝ E, by positivity, eventually_top.2 fun u z hz ↦ ?_⟩
+    have hu := u.property.1.mono hball
+    have h0 := fun w hw ↦ u.property.2 w (hball hw)
+    exact ⟨hu.le_three_pow_mul_of_nonneg h0 hz (mem_ball_self hr),
+      hu.le_three_pow_mul_of_nonneg h0 (mem_ball_self hr) hz⟩
+  obtain ⟨C, hC, h⟩ := hUc.exists_eventually_forall_le_mul_of_locally
+    (u := fun u : F ↦ u.val) (l := ⊤) hK hKU (hKU hx₀)
+    (eventually_top.2 fun u ↦ u.property.2 x₀ (hKU hx₀)) hlocal
+  have hC₀ := zero_le_one.trans hC
+  refine ⟨C * C, mul_nonneg hC₀ hC₀, ?_⟩
+  intro u hu h0 x hx y hy
+  have hu' := eventually_top.1 h (⟨u, hu, h0⟩ : F)
+  rw [mul_assoc]
+  exact (hu' x hx).1.trans (mul_le_mul_of_nonneg_left (hu' y hy).2 hC₀)
 
 end TauCeti
