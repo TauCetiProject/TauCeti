@@ -12,9 +12,9 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import TauCeti.Analysis.InnerProductSpace.UnitVector
 import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
-import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Metric
+import TauCeti.GroupTheory.PositiveDefinite.Schoenberg
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvexHull
 
 /-!
@@ -212,9 +212,7 @@ private theorem summable_mul_one_sub_of_exhaustion {A : ℕ → Finset Γ}
   rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity), norm_sub_rev]
   calc (k + 1 : ℝ) * ‖φ k g - 1‖
       ≤ (k + 1 : ℝ) * (1 / ((k + 1 : ℝ) * (2 : ℝ) ^ (k + 1))) := by gcongr
-    _ = (1 / 2 : ℝ) ^ (k + 1) := by
-        rw [one_div, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul, ← inv_pow,
-          ← one_div]
+    _ = (1 / 2 : ℝ) ^ (k + 1) := by rw [div_pow, one_pow]; field_simp
 
 /-- Double-translate separation bound for the Jolissaint–Anantharaman–Popa step: if a normalized
 positive-definite function `φ : Γ → ℂ` satisfies `‖φ a - 1‖ ≤ ε ^ 2 / 32`,
@@ -276,36 +274,15 @@ private theorem tendsto_cexp_neg_tsum_mul_zero {A : ℕ → Finset Γ}
       exact (mul_le_mul_of_nonneg_left hre_ge (by positivity)).trans <|
         hsumm_re.le_tsum n fun k _ ↦ mul_nonneg (by positivity)
           ((hpd k).one_sub_re_nonneg (h1 k) _)
-    rw [Complex.norm_exp, show (-(t : ℂ) * ψ (a⁻¹ * s n * b)).re =
-        -t * (ψ (a⁻¹ * s n * b)).re by simp]
-    exact Real.exp_le_exp.mpr (by nlinarith)
+    rw [Complex.norm_exp]
+    refine Real.exp_le_exp.mpr ?_
+    simp only [neg_mul, Complex.neg_re, Complex.re_ofReal_mul]
+    nlinarith
   have hexp0 : Tendsto (fun n : ℕ ↦ Real.exp (-(t * (ε₀ ^ 2 / 8)) * (n + 1 : ℝ))) atTop (𝓝 0) :=
     Real.tendsto_exp_atBot.comp <|
       (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).const_mul_atTop_of_neg
         (by nlinarith [sq_pos_of_pos hε₀])
   exact squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hbound hexp0
-
-/-- Positive semidefiniteness of `g ↦ exp (-t * ∑' k, w k * (1 - φ k g))` for nonnegative
-weights `w` and positive-definite functions `φ k`, via `CondNegSemidef.tsum_of_summable` and
-Schoenberg's theorem. -/
-private theorem posSemidef_cexp_neg_tsum_mul {φ : ℕ → Γ → ℂ}
-    (hpd : ∀ k, (Matrix.of fun a b : Γ ↦ φ k (a⁻¹ * b)).PosSemidef)
-    {w : ℕ → ℝ} (hw : ∀ k, 0 ≤ w k)
-    (hsumm : ∀ g, Summable fun k : ℕ ↦ (w k : ℂ) * (1 - φ k g))
-    {t : ℝ} (ht : 0 ≤ t) :
-    (Matrix.of fun a b : Γ ↦
-      Complex.exp (-(t : ℂ) * ∑' k : ℕ, (w k : ℂ) * (1 - φ k (a⁻¹ * b)))).PosSemidef := by
-  let Ψ : Matrix Γ Γ ℂ :=
-    Matrix.of fun a b : Γ ↦ ∑' k : ℕ, (w k : ℂ) * (1 - φ k (a⁻¹ * b))
-  have hΨ : Ψ.CondNegSemidef := by
-    refine Matrix.CondNegSemidef.tsum_of_summable
-      (f := fun (k : ℕ) (a b : Γ) ↦ (w k : ℂ) * (1 - φ k (a⁻¹ * b)))
-      (fun a b ↦ hsumm (a⁻¹ * b)) fun k ↦ ?_
-    convert ((hpd k).const_sub_condNegSemidef (star_one ℂ)).smul
-      (a := (w k : ℂ)) (by exact_mod_cast hw k) using 1
-    ext a b
-    simp
-  simpa [Ψ] using hΨ.posSemidef_cexp_neg_mul ht
 
 omit [Group Γ] in
 /-- For a finite set `F₀` and `ε > 0`, there exists `t > 0` such that `exp (-t * ψ g)` lies within
@@ -353,7 +330,7 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
     0 < δ₀ ^ 2 / 2)
   let Φ (g : Γ) : ℂ := Complex.exp (-(t : ℂ) * ψ g)
   have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef :=
-    posSemidef_cexp_neg_tsum_mul hpd (fun k ↦ by positivity) hsumm ht.le
+    TauCeti.posSemidef_cexp_neg_tsum_mul hpd (fun k ↦ by positivity) hsumm ht.le
   have hΦ1 : Φ 1 = 1 := by simp [Φ, ψ, h1]
   -- Its GNS vector `gnsVector 1` is `(F₀, δ₀)`-invariant, giving a nonzero `Λ`-invariant `v`.
   obtain ⟨v, hv0, hvΛ⟩ := (isKazhdanPair_def Λ F₀ δ₀).mp hK
