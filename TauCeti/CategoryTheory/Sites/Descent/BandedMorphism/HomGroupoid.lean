@@ -38,6 +38,7 @@ In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
   `groupoid_comp_inv`, `groupoid_inv_comp`.
 * `componentIso`, `componentIso_hom`, `componentIso_inv`, `componentIso_id`, `componentIso_comp`,
   `componentIso_homIso_inv`.
+* `componentFunctor bF bG U x`: evaluation `X ↦ X_U x` of band-preserving transformations.
 
 ## References
 
@@ -232,5 +233,18 @@ theorem componentIso_homIso_inv {X Y : HomCategory bF bG} (m : X ⟶ Y) (U : C)
     componentIso (homIso m).inv U x = (componentIso m U x).symm := by
   ext
   simp [componentIso]
+
+variable (bF bG) in
+omit hG in
+/-- **Evaluation at `x`**: the functor from band-preserving transformations to the fibre of `G`
+over `U` sending `X` to `X_U x` and an arrow `m` to its component `m_U x`, the forward arrow of
+`componentIso m U x` when the fibres of `G` are groupoids. -/
+@[expose, simps]
+def componentFunctor (U : C) (x : F.obj (.mk (op U))) :
+    HomCategory bF bG ⥤ G.obj (.mk (op U)) where
+  obj X := (X.obj.app (.mk (op U))).toFunctor.obj x
+  map m := (m.hom.as.app (.mk (op U))).toNatTrans.app x
+  map_id _ := rfl
+  map_comp _ _ := rfl
 
 end CategoryTheory.Pseudofunctor.BandedMorphism
