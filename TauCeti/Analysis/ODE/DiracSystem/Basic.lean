@@ -181,15 +181,24 @@ private theorem diracFundamentalMatrix_mulVec_eq (q : ℝ → ℂ) (t : ℝ) (z 
         t 0 (WithLp.toLp 2 v)) := by
   rw [← toEuclideanCLM_diracFundamentalMatrix, ofLp_toEuclideanCLM]
 
-/-- `t ↦ M_q(t, z) v` is continuous on `[0, T]` when `q` is integrable there. -/
-theorem continuousOn_diracFundamentalMatrix_mulVec (hq : IntegrableOn q (Icc 0 T)) (z : ℂ)
-    (v : Fin 2 → ℂ) : ContinuousOn (fun t ↦ diracFundamentalMatrix q t z *ᵥ v) (Icc 0 T) := by
-  rcases lt_or_ge T 0 with hT | hT
-  · simp [Icc_eq_empty_of_lt hT]
+/-- `t ↦ M_q(t, z) v` is continuous on a closed interval containing `0` when `q` is
+integrable there. -/
+theorem continuousOn_diracFundamentalMatrix_mulVec (hq : IntegrableOn q (Icc a b))
+    (h0 : 0 ∈ Icc a b) (z : ℂ) (v : Fin 2 → ℂ) :
+    ContinuousOn (fun t ↦ diracFundamentalMatrix q t z *ᵥ v) (Icc a b) := by
   simp_rw [diracFundamentalMatrix_mulVec_eq]
   exact (PiLp.continuous_ofLp 2 _).comp_continuousOn
-    ((continuousOn_propagator_left (integrableOn_toEuclideanCLM_diracCoeff hq z)
-      (left_mem_Icc.2 hT)).clm_apply continuousOn_const)
+    ((continuousOn_propagator_left (integrableOn_toEuclideanCLM_diracCoeff hq z) h0).clm_apply
+      continuousOn_const)
+
+/-- Each entry of the fundamental matrix is continuous in time on a closed interval containing
+`0` on which the potential is integrable. -/
+theorem continuousOn_diracFundamentalMatrix_apply (hq : IntegrableOn q (Icc a b))
+    (h0 : 0 ∈ Icc a b) (z : ℂ) (i j : Fin 2) :
+    ContinuousOn (fun t ↦ diracFundamentalMatrix q t z i j) (Icc a b) := by
+  simpa only [Function.comp_def, mulVec_single_one, col_apply] using
+    (continuous_apply i).comp_continuousOn
+      (continuousOn_diracFundamentalMatrix_mulVec hq h0 z (Pi.single j 1))
 
 /-- **The integral equation of the fundamental matrix.** If `q` is integrable on an interval
 `[a, b]` containing `0` and `t`, then
@@ -236,8 +245,10 @@ theorem isDiracSolution_diracFundamentalMatrix_mulVec (hq : LocallyIntegrableOn 
   · have hmem : Icc 0 (t + 1) ∈ 𝓝[Ici 0] t := by
       rw [← Ici_inter_Iic]
       exact inter_mem_nhdsWithin _ (Iic_mem_nhds (by linarith))
-    exact ((continuousOn_diracFundamentalMatrix_mulVec (hqT (t + 1)) z v) t
-      ⟨ht, by linarith⟩).mono_of_mem_nhdsWithin hmem
+    have ht' : t ∈ Icc 0 (t + 1) := ⟨ht, by linarith⟩
+    have h0 := left_mem_Icc.2 (ht'.1.trans ht'.2)
+    exact (continuousOn_diracFundamentalMatrix_mulVec (hqT (t + 1)) h0 z v t ht')
+      |>.mono_of_mem_nhdsWithin hmem
   · simpa using diracFundamentalMatrix_mulVec_eq_add_integral (hqT t) (left_mem_Icc.2 ht)
       (right_mem_Icc.2 ht) z v
 
@@ -319,10 +330,7 @@ theorem integral_norm_sq_diracFundamentalMatrix_pos (hq : IntegrableOn q (Icc 0 
     (z : ℂ) (j : Fin 2) :
     0 < ∫ s in (0 : ℝ)..t,
       (‖diracFundamentalMatrix q s z 0 j‖ ^ 2 + ‖diracFundamentalMatrix q s z 1 j‖ ^ 2) := by
-  have hc (i : Fin 2) : ContinuousOn (fun s ↦ diracFundamentalMatrix q s z i j) (Icc 0 t) := by
-    have := (continuous_apply i).comp_continuousOn
-      (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single j 1))
-    simpa [Function.comp_def, mulVec_single] using this
+  have hc (i : Fin 2) := continuousOn_diracFundamentalMatrix_apply hq (left_mem_Icc.2 ht.le) z i j
   refine intervalIntegral.intervalIntegral_pos_of_pos_on ?_ (fun s hs ↦ ?_) ht
   · refine ContinuousOn.intervalIntegrable ?_
     rw [uIcc_of_le ht.le]
