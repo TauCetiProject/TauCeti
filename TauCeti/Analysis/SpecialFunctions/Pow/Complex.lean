@@ -979,7 +979,8 @@ theorem norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace 
   have hmul : ‖((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)‖ ≤
       (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))) * (1 + |y|) ^ (1 : ℝ) *
         Real.exp (α' * |y|) := by
-    simpa [Real.rpow_one, mul_assoc] using
+    simpa only [add_re, ofReal_re, mul_I_re, neg_zero, add_zero, add_im, ofReal_im, mul_I_im,
+      zero_add, Real.rpow_one, mul_assoc] using
       norm_mul_cpow_sub_one_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I)
   rw [norm_smul]
   refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _)
@@ -1053,8 +1054,7 @@ theorem one_sub_mul_cpow_eq_one_sub_cpow_mul {z s : ℂ} {t : ℝ} (ht1 : t < 1)
     push_cast
     field_simp [h1t_ne]
     ring
-  simpa [hfact] using
-    TauCeti.ofReal_mul_cpow h1t.le (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) s
+  rw [hfact, TauCeti.ofReal_mul_cpow h1t.le, ofReal_sub, ofReal_one]
 
 /-- Power-splitting for `t / (1 - t)` on `(0, 1)`:
 `t ^ u * (1 - t) ^ v * ((t / (1 - t)) * w) ^ s = t ^ (u + s) * (1 - t) ^ (v - s) * w ^ s`. -/
