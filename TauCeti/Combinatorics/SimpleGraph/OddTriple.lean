@@ -319,7 +319,7 @@ theorem card_oddTripleFinset_add_sum_degree_sq (hG : G.CliqueFree 3) :
       rw [Nat.choose_two_right, Nat.mul_div_cancel' (Nat.even_mul_pred_self d).two_dvd]
       cases d with
       | zero => simp
-      | succ n => simp [sq]; ring
+      | succ n => rw [Nat.succ_sub_one]; ring
     have hsum_sq : ∑ v : V, G.degree v ^ 2 =
         2 * #G.edgeFinset + 2 * ∑ v : V, (G.degree v).choose 2 := by
       simp_rw [hsq, sum_add_distrib, ← mul_sum, G.sum_degrees_eq_twice_card_edges]

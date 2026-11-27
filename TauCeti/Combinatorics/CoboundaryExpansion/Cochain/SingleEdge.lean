@@ -64,23 +64,8 @@ theorem cost_singleEdge_one {X : TwoComplex V} (ℓ : GroupNorm G) {u₀ v₀ : 
   have hmem : (a, b) ∈ univ.filter fun p : V × V =>
       p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges := by
     simp [hab, hedge]
-  rw [cost_def, ← sum_erase_add _ _ hmem]
-  have hzero :
-      ∑ p ∈ (univ.filter fun p : V × V =>
-          p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges).erase (a, b),
-        ℓ (((1 : V → G) p.1)⁻¹ * singleEdge X u₀ v₀ g p.1 p.2 * (1 : V → G) p.2) =
-        0 := by
-    refine sum_eq_zero fun ⟨u, v⟩ hp => ?_
-    obtain ⟨hne, hflt⟩ := mem_erase.mp hp
-    have hlt : u < v := (mem_filter.mp hflt).2.1
-    have h₁ : ¬ (u = u₀ ∧ v = v₀) := by
-      rintro ⟨rfl, rfl⟩; exact hne (Prod.ext (min_eq_left hlt.le).symm (max_eq_right hlt.le).symm)
-    have h₂ : ¬ (u = v₀ ∧ v = u₀) := by
-      rintro ⟨rfl, rfl⟩; exact hne (Prod.ext (min_eq_right hlt.le).symm (max_eq_left hlt.le).symm)
-    simp [h₁, h₂]
-  have hterm :
-      ℓ (((1 : V → G) a)⁻¹ * singleEdge X u₀ v₀ g a b * (1 : V → G) b) = ℓ g := by
-    simp only [Pi.one_apply, inv_one, one_mul, mul_one]
+  rw [cost_def, sum_eq_single_of_mem (a, b) hmem fun ⟨u, v⟩ hp hne => ?_]
+  · simp only [Pi.one_apply, inv_one, one_mul, mul_one]
     rcases lt_or_gt_of_ne huv with hlt | hlt
     · have ha : a = u₀ := min_eq_left hlt.le
       have hb : b = v₀ := max_eq_right hlt.le
@@ -88,7 +73,12 @@ theorem cost_singleEdge_one {X : TwoComplex V} (ℓ : GroupNorm G) {u₀ v₀ : 
     · have ha : a = v₀ := min_eq_right hlt.le
       have hb : b = u₀ := max_eq_left hlt.le
       rw [ha, hb, singleEdge_apply_swap h, map_inv_eq_map]
-  rw [hzero, zero_add, hterm]
+  · have hlt : u < v := (mem_filter.mp hp).2.1
+    have h₁ : ¬ (u = u₀ ∧ v = v₀) := by
+      rintro ⟨rfl, rfl⟩; exact hne (Prod.ext (min_eq_left hlt.le).symm (max_eq_right hlt.le).symm)
+    have h₂ : ¬ (u = v₀ ∧ v = u₀) := by
+      rintro ⟨rfl, rfl⟩; exact hne (Prod.ext (min_eq_right hlt.le).symm (max_eq_left hlt.le).symm)
+    simp [h₁, h₂]
 
 /-- Under the trivial gauge `1`, the cost of `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`)
 equals `ℓ g` for any group norm `ℓ`. -/
@@ -122,16 +112,8 @@ private theorem holonomy_singleEdge_norm_eq {X : TwoComplex V} {u₀ v₀ a b c 
         ((a = u₀ ∧ b = v₀) ∨ (a = v₀ ∧ b = u₀)) ∨
         ((b = u₀ ∧ c = v₀) ∨ (b = v₀ ∧ c = u₀)) ∨
         ((c = u₀ ∧ a = v₀) ∨ (c = v₀ ∧ a = u₀)) := by
-      rcases hu with rfl | rfl | rfl <;> rcases hv with rfl | rfl | rfl
-      · exact (h.ne rfl).elim
-      · exact Or.inl (Or.inl ⟨rfl, rfl⟩)
-      · exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl⟩))
-      · exact Or.inl (Or.inr ⟨rfl, rfl⟩)
-      · exact (h.ne rfl).elim
-      · exact Or.inr (Or.inl (Or.inl ⟨rfl, rfl⟩))
-      · exact Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩))
-      · exact Or.inr (Or.inl (Or.inr ⟨rfl, rfl⟩))
-      · exact (h.ne rfl).elim
+      rcases hu with rfl | rfl | rfl <;> rcases hv with rfl | rfl | rfl <;>
+        first | exact (h.ne rfl).elim | tauto
     rcases hcases with hm | hm | hm
     · obtain ⟨hbc1, hca1⟩ := hother hac.symm hbc.symm hm
       rw [holonomy_def, hbc1, hca1, mul_one, mul_one, hmatch hm]

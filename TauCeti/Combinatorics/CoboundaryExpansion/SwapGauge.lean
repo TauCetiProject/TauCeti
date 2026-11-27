@@ -196,11 +196,11 @@ theorem _root_.SimpleGraph.gaugeDist_movedNorm_toCochain_eq_fin_two
     (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) =
       (simpleGraphEquivPermFinTwo V G).gaugeDist (Equiv.Perm.movedNorm (Fin 2)) := by
   classical
-  have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one
   obtain ⟨s, hs⟩ := G.exists_finset_isCutMinimal_symmDiff_top_between
   rw [simpleGraphEquivPermFinTwo_eq_toCochain,
     G.gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff ht hs,
-    G.gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff hswap hs]
+    G.gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff
+      Equiv.Perm.isSwap_swap_zero_one_fin_two hs]
 
 /-- **Cut-minimality via binary gauge distance**: a finite ordered graph `G` is cut-minimal if and
 only if the `Equiv.Perm (Fin 2)` gauge distance of `simpleGraphEquivPermFinTwo V G` equals
@@ -211,8 +211,7 @@ theorem _root_.SimpleGraph.isCutMinimal_iff_gaugeDist_movedNorm_fin_two_eq
       (simpleGraphEquivPermFinTwo V G).gaugeDist (Equiv.Perm.movedNorm (Fin 2)) =
         2 * #G.edgeFinset := by
   rw [simpleGraphEquivPermFinTwo_eq_toCochain]
-  exact G.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq
-    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1))
+  exact G.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq Equiv.Perm.isSwap_swap_zero_one_fin_two
 
 /-- **Binary edge-set cost bridge**: for any `Equiv.Perm (Fin 2)`-valued `1`-cochain `α` on
 `TwoComplex.complete V` and gauge `β`, `α.cost (Equiv.Perm.movedNorm (Fin 2)) β` equals twice the
@@ -222,11 +221,11 @@ theorem Cochain.cost_movedNorm_fin_two {V : Type*} [Fintype V] [LinearOrder V]
     α.cost (Equiv.Perm.movedNorm (Fin 2)) β =
       2 * #(α.supportGraph ∆
         (⊤ : SimpleGraph V).between {w | β w ≠ 1} {w | β w ≠ 1}ᶜ).edgeFinset := by
-  have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one
   have hβ : β = fun v ↦ if v ∈ {w | β w ≠ 1} then Equiv.swap 0 1 else 1 :=
     funext fun v ↦ Equiv.Perm.eq_ite_ne_one_fin_two (β v)
   conv_lhs => rw [← α.toCochain_supportGraph, hβ]
-  exact α.supportGraph.cost_movedNorm_toCochain_ite_mem hswap {w | β w ≠ 1}
+  exact α.supportGraph.cost_movedNorm_toCochain_ite_mem
+    Equiv.Perm.isSwap_swap_zero_one_fin_two {w | β w ≠ 1}
 
 /-- **Binary odd-triple defect bridge**: for any `Equiv.Perm (Fin 2)`-valued `1`-cochain `α` on
 `TwoComplex.complete V`, `α.defect (Equiv.Perm.movedNorm (Fin 2))` equals twice the number of odd
@@ -236,8 +235,7 @@ theorem Cochain.defect_movedNorm_fin_two {V : Type*} [Fintype V] [LinearOrder V]
     α.defect (Equiv.Perm.movedNorm (Fin 2)) =
       2 * #α.supportGraph.oddTripleFinset := by
   conv_lhs => rw [← α.toCochain_supportGraph]
-  exact α.supportGraph.defect_movedNorm_toCochain
-    (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one)
+  exact α.supportGraph.defect_movedNorm_toCochain Equiv.Perm.isSwap_swap_zero_one_fin_two
 
 /-- **Binary cut-minimality characterization**: the support graph of
 `α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))` is cut-minimal if and only if
