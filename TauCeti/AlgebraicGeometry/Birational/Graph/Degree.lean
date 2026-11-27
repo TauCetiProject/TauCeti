@@ -85,15 +85,6 @@ theorem topologicalDegree_graphFst : (graphFst f).toRationalMap.topologicalDegre
 
 variable [IsIntegral Y] [f.IsDominant]
 
-/-- **The second projection of the graph of a dominant rational map is dominant**: it is `f`
-after the dominant `π_1`, as rational maps. -/
-instance isDominant_graphSnd : IsDominant (graphSnd f) := by
-  have : Nonempty X := IsIntegral.nonempty
-  have h : (graphSnd f).toRationalMap.IsDominant := by
-    rw [toRationalMap_graphSnd]
-    infer_instance
-  exact (Hom.isDominant_toRationalMap_iff _).1 h
-
 /-- **The topological degree of the second projection.** For a dominant rational map `f : X ⤏ Y` of
 integral schemes, with `Γ_f` integral, `Y` separated and the inclusion of the domain of
 definition quasi-compact, the second projection `π_2 : Γ_f → Y` has topological degree `e(f)`. -/

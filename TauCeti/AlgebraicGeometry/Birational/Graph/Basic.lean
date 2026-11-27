@@ -92,7 +92,9 @@ Noetherian and `Y` separated, so all the hypotheses above hold.
   separated base `S`, `π_1` is proper when `Y` is proper over `S`, an isomorphism over the domain
   of definition of `f` when `Y` is separated and the inclusion of that domain is quasi-compact,
   and a modification when `Y` is proper over `S` and that inclusion is quasi-compact.
-* `AlgebraicGeometry.Scheme.RationalMap.isDominant_graphFst`: `π_1` is dominant.
+* `AlgebraicGeometry.Scheme.RationalMap.isDominant_graphFst` and
+  `AlgebraicGeometry.Scheme.RationalMap.isDominant_graphSnd`: `π_1` is dominant, and so is `π_2`
+  when `f` is dominant.
 * `AlgebraicGeometry.Scheme.RationalMap.comp_graphSnd_eq_of_comp_graphFst`: a morphism into
   `Γ_f` whose composite with `π_1` lands in the domain of definition of `f` has composite with
   `π_2` given by `f` on that domain.
@@ -372,6 +374,15 @@ instance isDominant_graphFst : IsDominant (graphFst f) := by
     rw [toGraphClosure_graphClosureFst]
     infer_instance
   exact IsDominant.of_comp (toGraph f) (graphFst f)
+
+omit [IsReduced X] in
+/-- The second projection `π_2 : Γ_f → Y` of the graph of a dominant rational map is dominant:
+after the factorization of `γ_f` through `Γ_f` it is the dominant representative of `f`. -/
+instance isDominant_graphSnd [f.IsDominant] : IsDominant (graphSnd f) := by
+  have : IsDominant (toGraph f ≫ graphSnd f) := by
+    rw [toGraphClosure_graphClosureSnd]
+    infer_instance
+  exact IsDominant.of_comp (toGraph f) (graphSnd f)
 
 /-- **The dimension of the graph.** Over a field `K`, for `X` reduced and irreducible, `Y`
 separated and `f : X ⤏ Y` a `K`-rational map with `X` and `Y` locally of finite type over `K`,
