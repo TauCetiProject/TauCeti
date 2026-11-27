@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Analysis.Fredholm.Criteria
+public import TauCeti.Analysis.Pseudodifferential.Manifold.ContinuousQuantization
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Fredholm
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
@@ -70,6 +71,17 @@ rules for this index of Atiyah and Singer, §6:
   `(1 - t) σ_m(P) + t σ_m(Q)` of symbols invertible off the zero section have the same index
   (`TauCeti.index_chartSobolevExtension_eq_of_segment`), which is (6.2) of Atiyah and Singer for
   straight-line homotopies.
+* **The index is invariant under homotopies of elliptic symbols.** Let `y ↦ σ_y` be a family of
+  principal symbols, nonzero off the zero section, whose chart readings depend continuously on `y`
+  as homogeneous symbols. For any operators `P_y` of order `m` with principal symbols `σ_y`, the
+  index of `P_y` is a locally constant function of `y`
+  (`TauCeti.isLocallyConstant_index_chartSobolevExtension_of_classicalPrincipalSymbol_eq`); no
+  continuity of `y ↦ P_y` is assumed. Indeed the continuous linear quantization `Q` of principal
+  symbols (`TauCeti.exists_linearMap_classicalPrincipalSymbol_eq_and_continuous`) gives a family
+  `Q(σ_y)` with the same principal symbols, hence the same indices, and with extensions continuous
+  in `y` in operator norm. So two elliptic operators whose principal symbols are joined by such a
+  family over a preconnected space, for instance over `[0, 1]`, have the same index
+  (`TauCeti.index_chartSobolevExtension_eq_of_homotopy`), which is (6.2) of Atiyah and Singer.
 
 ## Main results
 
@@ -95,6 +107,9 @@ rules for this index of Atiyah and Singer, §6:
   such an operator keeps the index.
 * `TauCeti.IsClassicalElliptic.exists_index_chartSobolevExtension_eq`: the index of an elliptic
   operator is the index of an elliptic operator of any prescribed real order.
+* `TauCeti.isLocallyConstant_index_chartSobolevExtension_of_classicalPrincipalSymbol_eq`,
+  `TauCeti.index_chartSobolevExtension_eq_of_homotopy`: the index is locally constant along
+  continuous families of elliptic principal symbols, so it is invariant under their homotopies.
 
 ## References
 
@@ -464,5 +479,86 @@ theorem IsClassicalElliptic.exists_index_chartSobolevExtension_eq
   rw [show t - (k - m) - m = t - k by ring] at h
   rw [h, ← hPe.index_chartSobolevExtension_eq hP hψ hφ s (t - (k - m)),
     show t - (k - m) - m = t - k by ring]
+
+/-! ### Homotopies of principal symbols -/
+
+section Homotopy
+
+variable {X : Type*} [TopologicalSpace X] {σ : X → homogeneousCotangentSymbols n M m}
+
+omit [CompactSpace M] in
+/-- **The index is locally constant along continuous families of elliptic symbols.** On a compact
+manifold, let `y ↦ σ y` be a family of smooth positively homogeneous functions of degree `m` on the
+cotangent bundle, nonzero at every nonzero covector, whose readings in every chart of the maximal
+atlas, localized by every cutoff, depend continuously on `y` as homogeneous symbols. If the `P y`
+are classical pseudodifferential operators of order `m` with principal symbols `σ y`, then the
+index of the extension of `P y` to `H^s(M) → H^{s - m}(M)` is a locally constant function of `y`.
+No continuity of `y ↦ P y` is assumed. -/
+theorem isLocallyConstant_index_chartSobolevExtension_of_classicalPrincipalSymbol_eq
+    (hσ : ∀ (e : OpenPartialHomeomorph M (CoordinateSpace n))
+      (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+      (θ : 𝓓(⟨e.target, e.open_target⟩, ℝ)),
+      Continuous fun y ↦ e.chartHomogeneousSymbol he θ (σ y).property)
+    (hσe : ∀ y x ξ, ξ ≠ 0 →
+      (σ y : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ) x ξ ≠ 0)
+    {P : X → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : ∀ y, P y ∈ classicalPseudodifferentialOperators m)
+    (hPσ : ∀ y, classicalPrincipalSymbol m (P y) = σ y)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
+    IsLocallyConstant fun y ↦ (chartSobolevExtension hc ψ hc' φ (P y) s (s - m)).index := by
+  have := compactSpace_of_forall_sum_cutoffPullback_eq_one hc ψ hψ
+  -- Compare `P y` with `Q (σ y)` for a continuous linear quantization `Q` of principal symbols.
+  obtain ⟨Q, hQ, hQσ, hQc⟩ :=
+    exists_linearMap_classicalPrincipalSymbol_eq_and_continuous (n := n) (M := M) (m := m)
+  have hQe (y : X) : IsClassicalElliptic m (Q (σ y)) :=
+    isClassicalElliptic_iff.2 fun x ↦ isClassicalEllipticAt_iff.2 fun ξ hξ ↦ by
+      rw [hQσ]
+      exact hσe y x ξ hξ
+  have hindex : (fun y ↦ (chartSobolevExtension hc ψ hc' φ (P y) s (s - m)).index) =
+      fun y ↦ (chartSobolevExtension hc ψ hc' φ (Q (σ y)) s (s - m)).index :=
+    funext fun y ↦ (hQe y).index_chartSobolevExtension_eq_of_classicalPrincipalSymbol_eq (hQ _)
+      (hP y) (fun x ξ ↦ by rw [hPσ, hQσ]) hψ hφ s
+  rw [hindex]
+  exact Continuous.isLocallyConstant_index (hQc hψ le_rfl hσ) fun y ↦
+    (hQe y).isFredholm_chartSobolevExtension (hQ _) hψ hφ s
+
+omit [CompactSpace M] in
+/-- **Homotopy invariance of the index** (Atiyah–Singer, (6.2)). On a compact manifold, let
+`y ↦ σ y` be a family over a preconnected space, for instance the unit interval, of smooth
+positively homogeneous functions of degree `m` on the cotangent bundle, nonzero at every nonzero
+covector, whose readings in every chart of the maximal atlas, localized by every cutoff, depend
+continuously on `y` as homogeneous symbols. If classical pseudodifferential operators `P` and `Q`
+of order `m` have principal symbols `σ y₀` and `σ y₁`, then their extensions to
+`H^s(M) → H^{s - m}(M)` have the same index. -/
+theorem index_chartSobolevExtension_eq_of_homotopy [PreconnectedSpace X]
+    (hσ : ∀ (e : OpenPartialHomeomorph M (CoordinateSpace n))
+      (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+      (θ : 𝓓(⟨e.target, e.open_target⟩, ℝ)),
+      Continuous fun y ↦ e.chartHomogeneousSymbol he θ (σ y).property)
+    (hσe : ∀ y x ξ, ξ ≠ 0 →
+      (σ y : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ) x ξ ≠ 0)
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m) {y₀ y₁ : X}
+    (hPσ : classicalPrincipalSymbol m P = σ y₀) (hQσ : classicalPrincipalSymbol m Q = σ y₁)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
+    (chartSobolevExtension hc ψ hc' φ P s (s - m)).index =
+      (chartSobolevExtension hc ψ hc' φ Q s (s - m)).index := by
+  have := compactSpace_of_forall_sum_cutoffPullback_eq_one hc ψ hψ
+  -- Lift `σ` to a continuous family `A` of operators with `A y₀ = P`, and compare `A y₁` with `Q`.
+  obtain ⟨A, hA, hAσ, hA₀, hAc⟩ :=
+    exists_classicalPrincipalSymbol_eq_and_continuous_chartSobolevExtension hσ y₀ hP hPσ
+  have hAe (y : X) : IsClassicalElliptic m (A y) :=
+    isClassicalElliptic_iff.2 fun x ↦ isClassicalEllipticAt_iff.2 fun ξ hξ ↦ by
+      rw [hAσ]
+      exact hσe y x ξ hξ
+  rw [← hA₀, (hAc hψ le_rfl).index_eq_of_preconnectedSpace
+    (fun y ↦ (hAe y).isFredholm_chartSobolevExtension (hA y) hψ hφ s) y₀ y₁]
+  exact (hAe y₁).index_chartSobolevExtension_eq_of_classicalPrincipalSymbol_eq (hA y₁) hQ
+    (fun x ξ ↦ by rw [hAσ, hQσ]) hψ hφ s |>.symm
+
+end Homotopy
 
 end TauCeti
