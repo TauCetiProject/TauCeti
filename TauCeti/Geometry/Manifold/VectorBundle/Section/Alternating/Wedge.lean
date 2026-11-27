@@ -150,10 +150,10 @@ theorem evalSection_wedge (s : Fin (k + l) → Cₛ^n⟮I; F, V⟯) :
 @[simp] theorem wedge_neg_right : φ.wedge (-ψ) = -(φ.wedge ψ) := by
   rw [← neg_one_smul ℝ ψ, wedge_smul_right, neg_one_smul ℝ (φ.wedge ψ)]
 
-theorem wedge_sub_left : (φ₁ - φ₂).wedge ψ = φ₁.wedge ψ - φ₂.wedge ψ := by
+@[simp] theorem wedge_sub_left : (φ₁ - φ₂).wedge ψ = φ₁.wedge ψ - φ₂.wedge ψ := by
   rw [sub_eq_add_neg, wedge_add_left, wedge_neg_left, ← sub_eq_add_neg]
 
-theorem wedge_sub_right : φ.wedge (ψ₁ - ψ₂) = φ.wedge ψ₁ - φ.wedge ψ₂ := by
+@[simp] theorem wedge_sub_right : φ.wedge (ψ₁ - ψ₂) = φ.wedge ψ₁ - φ.wedge ψ₂ := by
   rw [sub_eq_add_neg, wedge_add_right, wedge_neg_right, ← sub_eq_add_neg]
 
 /-- **Graded commutativity** of the scalar wedge product, evaluated on fibre vectors. -/

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Lie.Cohomology.LieRinehart
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge
 import TauCeti.Algebra.Ring.Parity
@@ -27,7 +28,7 @@ equivalence yields the Lie derivative `A.lieDeriv` and Chevalley–Eilenberg dif
 `A.extDeriv`, satisfying the invariant Chevalley–Eilenberg formula, `d_A ∘ d_A = 0`, Cartan
 calculus with `ContMDiffSection.curryLeft`, and graded Leibniz rules for `ContMDiffSection.wedge`.
 For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior derivative
-`mextDeriv`.
+`mextDeriv`, and `ContMDiffSection.wedge` agrees with `SmoothForm.wedge`.
 
 ## Main definitions
 
@@ -45,7 +46,9 @@ For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior de
   formula on sections and `d_A ∘ d_A = 0`.
 * `TauCeti.LieAlgebroid.curryLeft_extDeriv_succ`, `lieDeriv_wedge`, `extDeriv_wedge`: Cartan's
   homotopy formula and graded Leibniz rules for `ContMDiffSection.wedge`.
-* `TauCeti.LieAlgebroid.tangent_extDeriv_apply`: `(tangent I M).extDeriv` agrees with `mextDeriv`.
+* `TauCeti.LieAlgebroid.tangent_extDeriv_apply`, `tangentCochainEquivSmoothForm_extDeriv`,
+  `tangentCochainEquivSmoothForm_wedge`: comparison of `(tangent I M).extDeriv` and
+  `ContMDiffSection.wedge` with `mextDeriv` and `SmoothForm.wedge`.
 
 ## References
 
@@ -579,6 +582,18 @@ def tangentCochainEquivSmoothForm (k : ℕ) :
 @[simp] theorem tangentCochainEquivSmoothForm_symm_apply {k : ℕ}
     (ψ : SmoothForm I M ℝ k) (x : M) : (tangentCochainEquivSmoothForm I M k).symm ψ x = ψ.val x :=
   SmoothForm.toContMDiffSection_apply ψ x
+
+/-- `tangentCochainEquivSmoothForm` intertwines `ContMDiffSection.wedge` with `SmoothForm.wedge`. -/
+@[simp] theorem tangentCochainEquivSmoothForm_wedge {k l : ℕ}
+    (φ : (tangent I M).Cochain k) (ψ : (tangent I M).Cochain l) :
+    tangentCochainEquivSmoothForm I M (k + l) (φ.wedge ψ) =
+      SmoothForm.wedge (tangentCochainEquivSmoothForm I M k φ)
+        (tangentCochainEquivSmoothForm I M l ψ) := by
+  refine SmoothForm.toContMDiffSection_injective ?_
+  ext x v
+  simp only [SmoothForm.toContMDiffSection_apply, tangentCochainEquivSmoothForm_apply,
+    ContMDiffSection.wedge_apply, SmoothForm.coe_wedge, RoughForm.wedge_def,
+    RoughForm.wedgeWith_apply']
 
 private theorem evalSection_removeNth_coeFn {m : ℕ} (φ : (tangent I M).Cochain (m + 1))
     (s : Fin (m + 2) → Cₛ^∞⟮I; E, TangentSpace I⟯) (i : Fin (m + 2)) :
