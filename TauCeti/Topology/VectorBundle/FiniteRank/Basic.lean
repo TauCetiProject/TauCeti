@@ -184,6 +184,28 @@ theorem fiberMap_eqToIso_hom_comp_inv_apply {Y₁ Y₂ Z₁ Z₂ : FiniteRankBun
   simp only [eqToIso_refl, Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id,
     Fin.cast_refl, Function.comp_id, id_eq]
 
+/-- Evaluating a total-space homeomorphism `Φ : A.core.TotalSpace ≃ₜ T` transported along a core
+equality `h : A = D` agrees with evaluating `Φ` at any point of `A.core.TotalSpace` having the
+same base projection and heterogeneous fibre coordinate. -/
+theorem totalSpaceHomeomorph_transport_apply {T : Type*} [TopologicalSpace T]
+    {A D : FiniteRankBundleCore 𝕜 B} (h : A = D) (Φ : A.core.TotalSpace ≃ₜ T)
+    (q : D.core.TotalSpace) (q' : A.core.TotalSpace)
+    (hp : q.proj = q'.proj) (hs : HEq q.snd q'.snd) :
+    (h ▸ Φ) q = Φ q' := by
+  subst h
+  exact congrArg Φ (TotalSpace.ext hp hs)
+
+/-- Evaluating the inverse of a total-space homeomorphism `Φ : A.core.TotalSpace ≃ₜ T` transported
+along a core equality `h : A = D` yields any point `y : D.core.TotalSpace` whose base projection and
+heterogeneous fibre coordinate match those of `Φ.symm t`. -/
+theorem totalSpaceHomeomorph_transport_symm_apply {T : Type*} [TopologicalSpace T]
+    {A D : FiniteRankBundleCore 𝕜 B} (h : A = D) (Φ : A.core.TotalSpace ≃ₜ T)
+    (t : T) (y : D.core.TotalSpace)
+    (hp : y.proj = (Φ.symm t).proj) (hs : HEq y.snd (Φ.symm t).snd) :
+    (h ▸ Φ).symm t = y := by
+  subst h
+  exact (TotalSpace.ext hp hs).symm
+
 /-- Each point lies in the chart labelled by itself. -/
 theorem mem_baseSet_self (A : FiniteRankBundleCore 𝕜 B) (x : B) : x ∈ A.core.baseSet x := by
   simpa only [A.indexAt_eq] using A.core.mem_baseSet_at x

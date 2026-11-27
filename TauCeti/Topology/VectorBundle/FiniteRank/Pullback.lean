@@ -547,10 +547,9 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   dsimp only [pullback, ofBundle]
   congr
   · funext x
-    change f ⁻¹' ((ofBundle 𝕜 e E).core.localTriv (f x)).baseSet =
-      ((ofBundle 𝕜 e ((⇑f) *ᵖ E)).core.localTriv x).baseSet
-    rw [localTriv_baseSet_ofBundle, localTriv_baseSet_ofBundle,
-      htriv x, Trivialization.pullback_baseSet]
+    rw [baseSet_congrModel, baseSet_congrModel, VectorBundleCore.baseSet_at,
+      VectorBundleCore.baseSet_at, pointIndexedCore_localTriv_baseSet,
+      pointIndexedCore_localTriv_baseSet, htriv x, Trivialization.pullback_baseSet]
   · funext x
     exact ((indexAt_congrModel (pointIndexedCore 𝕜 F ((⇑f) *ᵖ E)) e x).trans
       (pointIndexedCore_indexAt 𝕜 F ((⇑f) *ᵖ E) x)).symm
@@ -591,15 +590,9 @@ noncomputable def pullbackOfBundleHomeomorph :
     (p : ((ofBundle 𝕜 e E).pullback f).core.TotalSpace) :
     pullbackOfBundleHomeomorph e E f p =
       ⟨p.proj, ofBundleFiberEquiv e E (f p.proj) p.snd⟩ := by
-  have htrans : ∀ {C₁ C₂ : FiniteRankBundleCore 𝕜 X} (h : C₁ = C₂)
-      (Φ : C₂.core.TotalSpace ≃ₜ TotalSpace F ((⇑f) *ᵖ E))
-      (q : C₁.core.TotalSpace) (q' : C₂.core.TotalSpace),
-      q.proj = q'.proj → HEq q.snd q'.snd → (h.symm ▸ Φ) q = Φ q' := by
-    rintro C₁ _ rfl Φ q q' hp hs
-    have : q = q' := TotalSpace.ext hp hs
-    subst this; rfl
-  rw [pullbackOfBundleHomeomorph, htrans (pullback_ofBundle e E f)
-    (ofBundleTotalSpaceHomeomorph e ((⇑f) *ᵖ E)) p ⟨p.proj, p.snd⟩ rfl HEq.rfl,
+  rw [pullbackOfBundleHomeomorph,
+    totalSpaceHomeomorph_transport_apply (pullback_ofBundle e E f).symm
+      (ofBundleTotalSpaceHomeomorph e ((⇑f) *ᵖ E)) p ⟨p.proj, p.snd⟩ rfl HEq.rfl,
     ofBundleTotalSpaceHomeomorph_apply, ofBundleFiberEquiv_pullback]
   rfl
 
@@ -607,13 +600,7 @@ noncomputable def pullbackOfBundleHomeomorph :
     (p : TotalSpace F ((⇑f) *ᵖ E)) :
     (pullbackOfBundleHomeomorph e E f).symm p =
       ⟨p.proj, (ofBundleFiberEquiv e E (f p.proj)).symm p.snd⟩ := by
-  have htrans : ∀ {C₁ C₂ : FiniteRankBundleCore 𝕜 X} (h : C₁ = C₂)
-      (Φ : C₂.core.TotalSpace ≃ₜ TotalSpace F ((⇑f) *ᵖ E))
-      (q : TotalSpace F ((⇑f) *ᵖ E)) (y : C₁.core.TotalSpace),
-      y.proj = (Φ.symm q).proj → HEq y.snd (Φ.symm q).snd → (h.symm ▸ Φ).symm q = y := by
-    rintro C₁ _ rfl Φ q y hp hs
-    exact (TotalSpace.ext hp hs).symm
-  refine htrans (pullback_ofBundle e E f)
+  refine totalSpaceHomeomorph_transport_symm_apply (pullback_ofBundle e E f).symm
     (ofBundleTotalSpaceHomeomorph e ((⇑f) *ᵖ E)) p
     ⟨p.proj, (ofBundleFiberEquiv e E (f p.proj)).symm p.snd⟩ ?_ ?_ <;>
     rw [ofBundleTotalSpaceHomeomorph_symm_apply, ofBundleFiberEquiv_pullback]

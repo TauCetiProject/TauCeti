@@ -53,10 +53,11 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TangentBundle.chartFrame`: the canonical tangent trivialization of the intrinsic chart source
   at its centre, which covers the whole source
   (`TangentBundle.trivializationAt_chartSource_baseSet`).
-* `TangentBundle.trivializationAt_snd_eq_tangentCoordChange`: the fibre coordinate at `x` of a
-  vector at `y` is the tangent coordinate change from the chart at `y` to the chart at `x`, applied
-  to that vector, and `TangentBundle.coe_chartAt_snd` is the same statement for the chart of the
-  tangent bundle at a vector.
+* `TangentBundle.trivializationAt_snd_eq_tangentCoordChange` and
+  `TangentBundle.trivializationAt_apply_self`: the fibre coordinate at `x` of a vector at `y` is
+  the tangent coordinate change from the chart at `y` to the chart at `x`, applied to that vector
+  (and at `x` itself it is that vector), and `TangentBundle.coe_chartAt_snd` is the same
+  statement for the chart of the tangent bundle at a vector.
 * `TangentBundle.mdifferentiableAt_trivializationAt_symm_apply` and
   `TangentBundle.trivializationAt_symm_apply_self`: a vector field with constant coordinates in
   the canonical trivialization at `x` is differentiable at `x` and takes the value `u` there.
@@ -187,6 +188,12 @@ theorem trivializationAt_snd_eq_tangentCoordChange [IsManifold I 1 M] {x y : M}
   rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
   rfl
 
+/-- A tangent vector at `x` is its own coordinate vector in the preferred trivialization at `x`. -/
+@[simp] theorem trivializationAt_apply_self [IsManifold I 1 M] (x : M) (v : TangentSpace I x) :
+    (trivializationAt E (TangentSpace I) x ⟨x, v⟩).2 = v :=
+  (trivializationAt_snd_eq_tangentCoordChange (I := I) v).trans
+    (tangentCoordChange_self (I := I) (mem_extChartAt_source x))
+
 /-- A point of the source of the extended chart at `x` lies in the base set of the canonical
 tangent-bundle trivialization at `x`. -/
 theorem mem_trivializationAt_baseSet_of_mem_extChartAt_source [IsManifold I 1 M] {x y : M}
@@ -283,10 +290,7 @@ theorem _root_.TangentBundle.extChartAt_self (z : TangentBundle I M) :
     PartialEquiv.prod_coe, PartialEquiv.refl_coe, id_eq,
     OpenPartialHomeomorph.coe_toPartialEquiv, Trivialization.coe_coe,
     TangentBundle.trivializationAt_fst]
-  refine Prod.ext rfl ?_
-  exact ((trivializationAt E (TangentSpace I) z.proj).continuousLinearMapAt_apply_of_mem (R := 𝕜)
-    (FiberBundle.mem_baseSet_trivializationAt' z.proj) z.snd).symm.trans
-    (continuousLinearMapAt_trivializationAt_self z.proj z.snd)
+  exact Prod.ext rfl (TangentBundle.trivializationAt_apply_self z.proj z.snd)
 
 /-- The inverse form of `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self`: over its
 own base point, the inverse of the canonical trivialization is the identity. -/
@@ -350,12 +354,8 @@ theorem _root_.TangentBundle.trivializationAt_symm_apply_self (x : M) (u : E) :
 constant coordinates `w` in the canonical trivialization of the tangent bundle at `x`. -/
 theorem extend_eq_trivializationAt_symm {x : M} (w : TangentSpace I x) :
     FiberBundle.extend E w = fun y ↦ (trivializationAt E (TangentSpace I) x).symm y w := by
-  have hw : (trivializationAt E (TangentSpace I) x ⟨x, w⟩).2 = w := by
-    rw [← (trivializationAt E (TangentSpace I) x).continuousLinearMapAt_apply_of_mem (R := 𝕜)
-      (FiberBundle.mem_baseSet_trivializationAt' x)]
-    exact continuousLinearMapAt_trivializationAt_self x w
   funext y
-  simp only [FiberBundle.extend, hw]
+  simp only [FiberBundle.extend, TangentBundle.trivializationAt_apply_self]
 
 /-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
 `x` is differentiable at `x`. -/

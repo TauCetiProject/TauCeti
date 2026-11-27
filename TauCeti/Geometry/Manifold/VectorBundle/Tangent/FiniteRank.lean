@@ -109,15 +109,6 @@ theorem tangentFiniteRankCoreTotalSpaceDiffeomorph_single (b : Basis (Fin r) �
   (tangentFiniteRankCoreTotalSpaceDiffeomorph_apply b n ⟨x, (Pi.single i 1 : Fin r → 𝕜)⟩).trans <|
     congrArg (TotalSpace.mk' E x) (Basis.equivFun_symm_single b i)
 
-omit [CompleteSpace 𝕜] in
-/-- A tangent vector at `x` has itself as its coordinate vector in the preferred trivialization at
-`x`. -/
-@[simp]
-theorem _root_.TangentBundle.trivializationAt_apply_self (x : M) (v : TangentSpace I x) :
-    (trivializationAt E (TangentSpace I) x ⟨x, v⟩).2 = v :=
-  (TangentBundle.trivializationAt_snd_eq_tangentCoordChange (I := I) v).trans
-    (tangentCoordChange_self (I := I) (mem_extChartAt_source x))
-
 @[simp]
 theorem tangentFiniteRankCoreTotalSpaceDiffeomorph_symm_apply (b : Basis (Fin r) 𝕜 E) (n : ℕ∞ω)
     (p : TangentBundle I M) :
