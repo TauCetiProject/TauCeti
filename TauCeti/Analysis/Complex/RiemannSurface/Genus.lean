@@ -28,12 +28,6 @@ Given `χ = 2 - 2 · genus` on both sides, the branched-cover formula
 `2 genus X - 2 = deg f · (2 genus Y - 2) + R(f)`
 (`TauCeti.RiemannSurface.FiniteHolomorphicMap.two_mul_genus_sub_two_eq_of_eulerChar_eq`).
 
-Since `deg f ≥ 1` and `R(f) ≥ 0`, this compares the genera of the two surfaces:
-
-* `deg f · (genus Y - 1) ≤ genus X - 1`, with equality exactly when `f` is unramified;
-* `genus Y ≤ genus X`, with equality exactly when `deg f = 1`, or `genus Y = 1` and `f` is
-  unramified, or `genus Y = 0` and `R(f) = 2 deg f - 2`.
-
 Every compact connected Hausdorff Riemann surface satisfies `χ(X) = 2 - 2 · genus X`
 (`TauCeti.RiemannSurface.eulerChar_eq_two_sub_two_mul_genus`). For `X : Type` this is read off a
 canonical divisor `K`: `deg K = -χ(X)` by the topological Riemann–Hurwitz formula over the sphere,
@@ -44,6 +38,18 @@ finite holomorphic map of compact connected Riemann surfaces
 (`TauCeti.RiemannSurface.riemannHurwitz`), and the first rational Betti number of a compact
 connected Riemann surface, `2 - χ(X)`, is even
 (`TauCeti.RiemannSurface.even_finrank_singularHomology_one`).
+
+Since `deg f ≥ 1` and `R(f) ≥ 0`, Riemann–Hurwitz compares the genera of the two surfaces, for
+every finite holomorphic map `f : X → Y` from a compact Riemann surface to a connected one:
+
+* `deg f · (genus Y - 1) ≤ genus X - 1`, with equality exactly when `f` is unramified;
+* `genus Y ≤ genus X`, with equality exactly when `deg f = 1`, or `genus Y = 1` and `f` is
+  unramified, or `genus Y = 0` and `R(f) = 2 deg f - 2`.
+
+The two inequalities hold for a disconnected source as well: there `χ(X)` need not be
+`2 - 2 · genus X`, but `2 genus X ≥ 1 - χ(X)` always holds, which is enough. The equality cases
+need `X` connected; two disjoint spheres over a sphere are an unramified cover of genus `0`
+over genus `0` with `deg f · (genus Y - 1) = -2 ≠ -1 = genus X - 1`.
 
 In analytic genus zero, Riemann–Roch gives a finite holomorphic map `X → ℙ¹` of degree one
 (`TauCeti.RiemannSurface.exists_finiteHolomorphicMap_degree_eq_one_of_analyticGenus_eq_zero`).
@@ -121,88 +127,6 @@ theorem two_mul_genus_sub_two_eq_of_eulerChar_eq (hX : eulerChar X = 2 - 2 * gen
   linear_combination -f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree + hX -
     (degree f : ℤ) * hY
 
-section FiniteCWType
-
-variable [FiniteCWType Y]
-
-/-- Riemann–Hurwitz in genus form, stated with the given instance `FiniteCWType Y`. -/
-private theorem two_mul_genus_sub_two_eq (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 2 - 2 * genus Y) :
-    2 * (genus X : ℤ) - 2 = degree f * (2 * (genus Y : ℤ) - 2) + ramificationDegree f :=
-  f.two_mul_genus_sub_two_eq_of_eulerChar_eq hX hY
-
-/-- **The multiplicity bound** of Riemann–Hurwitz: `deg f · (genus Y - 1) ≤ genus X - 1`, for
-surfaces satisfying `χ = 2 - 2 · genus`. When `genus Y ≥ 2` this bounds the degree of a finite
-holomorphic map out of `X` by `(genus X - 1) / (genus Y - 1)`. -/
-theorem degree_mul_genus_sub_one_le (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 2 - 2 * genus Y) :
-    (degree f : ℤ) * (genus Y - 1) ≤ genus X - 1 := by
-  linarith [f.two_mul_genus_sub_two_eq hX hY]
-
-/-- The multiplicity bound `deg f · (genus Y - 1) ≤ genus X - 1` is an equality exactly when `f`
-is unramified. -/
-theorem degree_mul_genus_sub_one_eq_iff (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 2 - 2 * genus Y) :
-    (degree f : ℤ) * (genus Y - 1) = genus X - 1 ↔ ramificationDegree f = 0 := by
-  have := f.two_mul_genus_sub_two_eq hX hY
-  constructor <;> intro h <;> linarith
-
-include f in
-/-- **The genus does not increase under finite holomorphic maps**: if `f : X → Y` is a finite
-holomorphic map of compact Riemann surfaces satisfying `χ = 2 - 2 · genus`, then
-`genus Y ≤ genus X`. -/
-theorem genus_le_genus (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 2 - 2 * genus Y) : genus Y ≤ genus X := by
-  have h := f.degree_mul_genus_sub_one_le hX hY
-  have hd : (1 : ℤ) ≤ degree f := by exact_mod_cast degree_pos f
-  rcases Nat.eq_zero_or_pos (genus Y) with h0 | h0
-  · omega
-  · have : (1 : ℤ) * (genus Y - 1) ≤ degree f * (genus Y - 1) :=
-      mul_le_mul_of_nonneg_right hd (by omega)
-    omega
-
-/-- **The equality case of `genus Y ≤ genus X`.** A finite holomorphic map `f : X → Y` of compact
-Riemann surfaces satisfying `χ = 2 - 2 · genus` preserves the genus exactly when it has degree
-one, or `Y` has genus one and `f` is unramified, or `Y` has genus zero and the ramification
-degree is `2 deg f - 2`. -/
-theorem genus_eq_genus_iff (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 2 - 2 * genus Y) :
-    genus X = genus Y ↔ degree f = 1 ∨ genus Y = 1 ∧ ramificationDegree f = 0 ∨
-      genus Y = 0 ∧ ramificationDegree f + 2 = 2 * degree f := by
-  have h := f.two_mul_genus_sub_two_eq hX hY
-  have hd : (1 : ℤ) ≤ degree f := by exact_mod_cast degree_pos f
-  constructor
-  · intro hg
-    rw [hg] at h
-    rcases lt_trichotomy (genus Y) 1 with h0 | h1 | h2
-    · refine Or.inr (Or.inr ⟨by omega, ?_⟩)
-      rw [show genus Y = 0 by omega] at h
-      push_cast at h
-      omega
-    · refine Or.inr (Or.inl ⟨h1, ?_⟩)
-      rw [h1] at h
-      push_cast at h
-      omega
-    · refine Or.inl ?_
-      -- `(deg f - 1) (2 genus Y - 2) + R = 0` with both summands nonnegative.
-      have hpos : (0 : ℤ) < 2 * genus Y - 2 := by omega
-      have : ((degree f : ℤ) - 1) * (2 * genus Y - 2) ≤ 0 := by linarith
-      have : (degree f : ℤ) - 1 ≤ 0 := nonpos_of_mul_nonpos_left this hpos
-      omega
-  · rintro (h1 | ⟨h1, hR⟩ | ⟨h0, hR⟩)
-    · rw [h1, ramificationDegree_eq_zero_of_degree_eq_one h1] at h
-      push_cast at h
-      omega
-    · rw [h1, hR] at h
-      push_cast at h
-      omega
-    · rw [h0] at h ⊢
-      have : (ramificationDegree f : ℤ) + 2 = 2 * degree f := by exact_mod_cast hR
-      push_cast at h
-      omega
-
-end FiniteCWType
-
 end FiniteHolomorphicMap
 
 /-- **The Riemann sphere has genus `0`**: its Euler characteristic is `2`. -/
@@ -276,6 +200,89 @@ theorem riemannHurwitz {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   have : ConnectedSpace Y := { toNonempty := ⟨f (Classical.arbitrary X)⟩ }
   exact f.two_mul_genus_sub_two_eq_of_eulerChar_eq (eulerChar_eq_two_sub_two_mul_genus X)
     (eulerChar_eq_two_sub_two_mul_genus Y)
+
+namespace FiniteHolomorphicMap
+
+variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
+  [TopologicalSpace Y] [ChartedSpace ℂ Y]
+  [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y] [FiniteCWType Y]
+  (f : FiniteHolomorphicMap X Y)
+
+/-- **The multiplicity bound** of Riemann–Hurwitz: `deg f · (genus Y - 1) ≤ genus X - 1` for a
+finite holomorphic map `f : X → Y` from a compact Riemann surface to a connected one. When
+`genus Y ≥ 2` this bounds the degree of a finite holomorphic map out of `X` by
+`(genus X - 1) / (genus Y - 1)`. The source `X` need not be connected. -/
+theorem degree_mul_genus_sub_one_le : (degree f : ℤ) * (genus Y - 1) ≤ genus X - 1 := by
+  have := f.compactSpace_codomain
+  have : ConnectedSpace Y := { toNonempty := ⟨f f.nonconstant.choose⟩ }
+  -- `genus X ≥ (1 - χ(X)) / 2`, and `χ(X) = deg f · (2 - 2 genus Y) - R(f)`
+  have hX := genus_def X
+  have hY := eulerChar_eq_two_sub_two_mul_genus Y
+  have h := f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree
+  have hd : (degree f : ℤ) * (2 - 2 * genus Y) = -2 * ((degree f : ℤ) * (genus Y - 1)) := by ring
+  rw [hY, hd] at h
+  omega
+
+/-- The multiplicity bound `deg f · (genus Y - 1) ≤ genus X - 1` is an equality exactly when `f`
+is unramified, for a compact connected source `X`. -/
+theorem degree_mul_genus_sub_one_eq_iff [ConnectedSpace X] :
+    (degree f : ℤ) * (genus Y - 1) = genus X - 1 ↔ ramificationDegree f = 0 := by
+  have := riemannHurwitz f
+  constructor <;> intro h <;> linarith
+
+include f in
+/-- **The genus does not increase under finite holomorphic maps**: if `f : X → Y` is a finite
+holomorphic map from a compact Riemann surface to a connected one, then `genus Y ≤ genus X`. The
+source `X` need not be connected. -/
+theorem genus_le_genus : genus Y ≤ genus X := by
+  have h := f.degree_mul_genus_sub_one_le
+  have hd : (1 : ℤ) ≤ degree f := by exact_mod_cast degree_pos f
+  rcases Nat.eq_zero_or_pos (genus Y) with h0 | h0
+  · omega
+  · have : (1 : ℤ) * (genus Y - 1) ≤ degree f * (genus Y - 1) :=
+      mul_le_mul_of_nonneg_right hd (by omega)
+    omega
+
+/-- **The equality case of `genus Y ≤ genus X`.** A finite holomorphic map `f : X → Y` of compact
+connected Riemann surfaces preserves the genus exactly when it has degree one, or `Y` has genus one
+and `f` is unramified, or `Y` has genus zero and the ramification degree is `2 deg f - 2`. -/
+theorem genus_eq_genus_iff [ConnectedSpace X] :
+    genus X = genus Y ↔ degree f = 1 ∨ genus Y = 1 ∧ ramificationDegree f = 0 ∨
+      genus Y = 0 ∧ ramificationDegree f + 2 = 2 * degree f := by
+  have h := riemannHurwitz f
+  have hd : (1 : ℤ) ≤ degree f := by exact_mod_cast degree_pos f
+  constructor
+  · intro hg
+    rw [hg] at h
+    rcases lt_trichotomy (genus Y) 1 with h0 | h1 | h2
+    · refine Or.inr (Or.inr ⟨by omega, ?_⟩)
+      rw [show genus Y = 0 by omega] at h
+      push_cast at h
+      omega
+    · refine Or.inr (Or.inl ⟨h1, ?_⟩)
+      rw [h1] at h
+      push_cast at h
+      omega
+    · refine Or.inl ?_
+      -- `(deg f - 1) (2 genus Y - 2) + R = 0` with both summands nonnegative.
+      have hpos : (0 : ℤ) < 2 * genus Y - 2 := by omega
+      have : ((degree f : ℤ) - 1) * (2 * genus Y - 2) ≤ 0 := by linarith
+      have : (degree f : ℤ) - 1 ≤ 0 := nonpos_of_mul_nonpos_left this hpos
+      omega
+  · rintro (h1 | ⟨h1, hR⟩ | ⟨h0, hR⟩)
+    · rw [h1, ramificationDegree_eq_zero_of_degree_eq_one h1] at h
+      push_cast at h
+      omega
+    · rw [h1, hR] at h
+      push_cast at h
+      omega
+    · rw [h0] at h ⊢
+      have : (ramificationDegree f : ℤ) + 2 = 2 * degree f := by exact_mod_cast hR
+      push_cast at h
+      omega
+
+end FiniteHolomorphicMap
 
 /-- **The first Betti number of a compact Riemann surface is even.** The first rational Betti
 number `dim H₁(X; ℚ)` of a compact connected Hausdorff Riemann surface `X` is even. -/

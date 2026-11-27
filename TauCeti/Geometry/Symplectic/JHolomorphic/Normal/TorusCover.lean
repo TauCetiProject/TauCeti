@@ -31,9 +31,9 @@ projection is an unbranched covering map of `C`
 inequality `2 g - 2 + 2 δ ≤ 0` matters for this conclusion
 (`FiniteHolomorphicMap.isCoveringMap_and_genus_eq_one_and_singularity_eq_zero_of_le_zero`).
 
-The adjunction formula, the computation of the class and the Euler characteristics are inputs
-here; the intersection form `B` and the canonical class `κ` are an arbitrary integral bilinear
-form and linear functional on an abelian group `H`, as in
+The adjunction formula, the computation of the class and the Euler characteristic of the target
+are inputs here; the intersection form `B` and the canonical class `κ` are an arbitrary integral
+bilinear form and linear functional on an abelian group `H`, as in
 `TauCeti.Geometry.Symplectic.JHolomorphic.GoodCycle`.
 
 ## Main results
@@ -68,29 +68,29 @@ variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [FiniteCWType X] [FiniteCWType Y]
   (f : FiniteHolomorphicMap X Y)
 
-/-- Let `f : X → Y` be a finite holomorphic map from a compact Riemann surface with
-`χ(X) = 2 - 2 · genus X` to a surface `Y` with `χ(Y) = 0`. If `2 genus X - 2 + 2 δ ≤ 0`, then `f`
-is a covering map, `X` has genus one and `δ = 0`. -/
-theorem isCoveringMap_and_genus_eq_one_and_singularity_eq_zero_of_le_zero
-    (hX : eulerChar X = 2 - 2 * genus X) (hY : eulerChar Y = 0) {δ : ℕ}
-    (hadj : 2 * (genus X : ℤ) - 2 + 2 * δ ≤ 0) :
+/-- Let `f : X → Y` be a finite holomorphic map from a compact connected Riemann surface to a
+surface `Y` with `χ(Y) = 0`. If `2 genus X - 2 + 2 δ ≤ 0`, then `f` is a covering map, `X` has
+genus one and `δ = 0`. -/
+theorem isCoveringMap_and_genus_eq_one_and_singularity_eq_zero_of_le_zero [ConnectedSpace X]
+    (hY : eulerChar Y = 0) {δ : ℕ} (hadj : 2 * (genus X : ℤ) - 2 + 2 * δ ≤ 0) :
     IsCoveringMap f ∧ genus X = 1 ∧ δ = 0 := by
+  have hX := eulerChar_eq_two_sub_two_mul_genus X
   have hR := f.eulerChar_eq_neg_ramificationDegree hY
   rw [f.isCoveringMap_iff_ramificationDegree_eq_zero]
   omega
 
 /-- **Curves over a square-zero torus.** Let `f : X → Y` be a finite holomorphic map from a
-compact Riemann surface with `χ(X) = 2 - 2 · genus X` to a surface `Y` with `χ(Y) = 0`, and let
+compact connected Riemann surface to a surface `Y` with `χ(Y) = 0`, and let
 `A` be a class with `B A A = 0` and `κ A = 0`. If `δ` satisfies the adjunction formula
 `2 genus X - 2 + 2 δ = B c c + κ c` for a class `c = n • A`, such as `c = deg f • A`, then `f` is
 a covering map, `X` has genus one and `δ = 0`. -/
 theorem isCoveringMap_and_genus_eq_one_and_singularity_eq_zero {H : Type*} [AddCommGroup H]
-    {B : LinearMap.BilinForm ℤ H} {κ : H →ₗ[ℤ] ℤ} {A : H} (hA : B A A = 0) (hκA : κ A = 0)
-    (hX : eulerChar X = 2 - 2 * genus X) (hY : eulerChar Y = 0) {n δ : ℕ}
+    {B : LinearMap.BilinForm ℤ H} {κ : H →ₗ[ℤ] ℤ} {A : H} [ConnectedSpace X] (hA : B A A = 0)
+    (hκA : κ A = 0) (hY : eulerChar Y = 0) {n δ : ℕ}
     (hadj : 2 * (genus X : ℤ) - 2 + 2 * δ = B (n • A) (n • A) + κ (n • A)) :
     IsCoveringMap f ∧ genus X = 1 ∧ δ = 0 := by
   simp only [map_nsmul, LinearMap.smul_apply, hA, hκA, smul_zero, add_zero] at hadj
-  exact f.isCoveringMap_and_genus_eq_one_and_singularity_eq_zero_of_le_zero hX hY hadj.le
+  exact f.isCoveringMap_and_genus_eq_one_and_singularity_eq_zero_of_le_zero hY hadj.le
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
 

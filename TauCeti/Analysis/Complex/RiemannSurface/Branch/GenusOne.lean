@@ -24,8 +24,9 @@ surface of genus zero admits no nonconstant holomorphic map to a surface of genu
 `f` is unramified exactly when `χ(X) = 0`, and a finite holomorphic map with compact source is
 unramified exactly when it is a covering map
 (`TauCeti.RiemannSurface.FiniteHolomorphicMap.isCoveringMap_iff_ramificationDegree_eq_zero`).
-When `χ(X) = 2 - 2 · genus X` this reads `R(f) = 2 genus X - 2`, and `f` is a covering map exactly
-when `X` has genus one.
+When `X` is connected, `χ(X) = 2 - 2 · genus X`
+(`TauCeti.RiemannSurface.eulerChar_eq_two_sub_two_mul_genus`), so this reads
+`R(f) = 2 genus X - 2`, and `f` is a covering map exactly when `X` has genus one.
 
 This is the Riemann–Hurwitz step in the analysis of curves near a pseudoholomorphic torus: a
 compact holomorphic curve projecting with positive degree onto a torus, and of genus at most one,
@@ -86,11 +87,11 @@ theorem isCoveringMap_iff_eulerChar_eq_zero (hY : eulerChar Y = 0) :
   rw [f.isCoveringMap_iff_ramificationDegree_eq_zero, f.eulerChar_eq_neg_ramificationDegree hY]
   omega
 
-/-- A finite holomorphic map from a compact Riemann surface with `χ(X) = 2 - 2 · genus X` to a
-surface of Euler characteristic zero is a covering map exactly when `X` has genus one. -/
-theorem isCoveringMap_iff_genus_eq_one (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 0) : IsCoveringMap f ↔ genus X = 1 := by
-  rw [f.isCoveringMap_iff_eulerChar_eq_zero hY, hX]
+/-- A finite holomorphic map from a compact connected Riemann surface to a surface of Euler
+characteristic zero is a covering map exactly when `X` has genus one. -/
+theorem isCoveringMap_iff_genus_eq_one [ConnectedSpace X] (hY : eulerChar Y = 0) :
+    IsCoveringMap f ↔ genus X = 1 := by
+  rw [f.isCoveringMap_iff_eulerChar_eq_zero hY, eulerChar_eq_two_sub_two_mul_genus X]
   omega
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
