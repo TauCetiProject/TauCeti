@@ -115,10 +115,13 @@ def hermitianGram (Y : Matrix l m ℂ) : selfAdjoint.submodule ℝ (Matrix m m �
     Continuous (hermitianGram : Matrix l m ℂ → _) :=
   (Continuous.matrix_mul (by fun_prop) continuous_id).subtype_mk _
 
-/-- The Gram map is measurable. -/
-@[fun_prop] theorem measurable_hermitianGram [Finite m] :
-    Measurable (hermitianGram : Matrix l m ℂ → _) :=
-  continuous_hermitianGram.measurable
+/-- The Gram map is measurable: each entry of `Yᴴ Y` is a finite sum of products of entries of
+`Y`. -/
+@[fun_prop] theorem measurable_hermitianGram :
+    Measurable (hermitianGram : Matrix l m ℂ → _) := by
+  refine Measurable.subtype_mk (.of_eval fun a ↦ .of_eval fun b ↦ ?_)
+  simp only [Matrix.mul_apply, Matrix.conjTranspose_apply]
+  exact Finset.measurable_sum _ fun i _ ↦ by fun_prop
 
 end Matrix
 
