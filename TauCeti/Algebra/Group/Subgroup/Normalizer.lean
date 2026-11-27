@@ -31,6 +31,13 @@ conjugates of `U` by elements of its normal closure already generate that normal
 An element normalizes the range of a group homomorphism when its conjugation action is induced
 by a surjective change of parameters.
 
+The normalizer of a normal subgroup is the whole group, so the group is isomorphic to it by the
+identity on underlying elements.
+
+## Main definitions
+
+* `Subgroup.normalizerEquivOfNormal`: the isomorphism `G ≃* N_G(D)` for a normal subgroup `D`.
+
 ## Main results
 
 * `Subgroup.normal_of_le_normalizer_of_sup_eq_top`: a subgroup normalized by a subgroup that joins
@@ -127,6 +134,26 @@ theorem _root_.Subgroup.normalClosure_subgroupOf_normalClosure_eq_top {U : Subgr
     Subtype.ext (by simp only [coe_mul, coe_inv]; group)
   rw [heq]
   exact (normalClosure_normal).conj_mem _ (subset_normalClosure (mem_subgroupOf.mpr hsu)) _
+
+/-- A group is isomorphic to the normalizer of a normal subgroup, by the identity on underlying
+elements: the normalizer is everything (`Subgroup.normalizer_eq_top`). -/
+@[to_additive /-- An additive group is isomorphic to the normalizer of a normal additive
+subgroup, by the identity on underlying elements. -/]
+noncomputable def _root_.Subgroup.normalizerEquivOfNormal (D : Subgroup G) [D.Normal] :
+    G ≃* normalizer (D : Set G) :=
+  topEquiv.symm.trans (MulEquiv.subgroupCongr (normalizer_eq_top D).symm)
+
+/-- `G ≃* N_G(D)` is the identity on underlying elements. -/
+@[to_additive (attr := simp) /-- `G ≃+ N_G(D)` is the identity on underlying elements. -/]
+theorem _root_.Subgroup.coe_normalizerEquivOfNormal (D : Subgroup G) [D.Normal] (g : G) :
+    (normalizerEquivOfNormal D g : G) = g := by
+  simp [normalizerEquivOfNormal]
+
+/-- The inverse of `G ≃* N_G(D)` is the inclusion `N_G(D) → G`. -/
+@[to_additive (attr := simp) /-- The inverse of `G ≃+ N_G(D)` is the inclusion `N_G(D) → G`. -/]
+theorem _root_.Subgroup.normalizerEquivOfNormal_symm_apply (D : Subgroup G) [D.Normal]
+    (n : normalizer (D : Set G)) : (normalizerEquivOfNormal D).symm n = n := by
+  simp [normalizerEquivOfNormal]
 
 end TauCeti
 

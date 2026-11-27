@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block.Defect.Symmetric
-public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.DomCongr
+public import TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Correspondent
 
 /-!
 # Examples: the Brauer correspondent at `D = 1`
 
-The `D = 1` Check of ModularCharactersAndBlocks §7.1 on `𝔽₂[S₃]`: `N_{S₃}(1) = S₃`, the Brauer
-projection at `1` is the identity, and the Brauer correspondent of the defect-zero block `ρ + ρ²`
-(`ρ` a `3`-cycle) is a block of `𝔽₂[N_{S₃}(1)]` of defect zero.
+The Brauer correspondent at the trivial subgroup on `𝔽₂[S₃]`: `N_{S₃}(1) = S₃`, the Brauer
+correspondent at `1` keeps every coefficient, and the Brauer correspondent of the defect-zero block
+`ρ + ρ²` (`ρ` a `3`-cycle) is a block of `𝔽₂[N_{S₃}(1)]` of defect zero.
 -/
 
 public section
@@ -24,11 +24,11 @@ open _root_.MonoidAlgebra TauCeti.GroupAlgebraBlockExamples TauCeti.Examples.Blo
 
 -- `N_{S₃}(1) = S₃`.
 example : Subgroup.normalizer ((⊥ : Subgroup S₃) : Set S₃) = ⊤ :=
-  normalizer_bot_eq_top
+  Subgroup.normalizer_eq_top ⊥
 
 -- The Brauer correspondent at `1` keeps every coefficient.
 example (x : MonoidAlgebra (ZMod 2) S₃) (g : S₃) :
-    (brauerCorrespondent ⊥ x).coeff (normalizerBotEquiv g) = x.coeff g := by
+    (brauerCorrespondent ⊥ x).coeff (Subgroup.normalizerEquivOfNormal ⊥ g) = x.coeff g := by
   rw [brauerCorrespondent_bot, coeff_domCongr, MulEquiv.symm_apply_apply]
 
 -- The Brauer correspondent of the defect-zero block `ρ + ρ²` is a block of `𝔽₂[N_{S₃}(1)]`.
