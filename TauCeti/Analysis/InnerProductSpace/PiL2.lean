@@ -54,6 +54,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.isBigO_apply_div_norm`: a real Euclidean coordinate divided by the norm,
   `x j / ‖x‖`, is `O(1)` along any filter.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
+* `EuclideanSpace.toDual_symm_proj`: the Riesz representative of the coordinate projection
+  `x ↦ xᵢ` is the basis vector `eᵢ`.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.norm_fin_one`: the norm on `ℝ¹` is the absolute value of the coordinate.
@@ -332,6 +334,15 @@ theorem basisFun_repr_symm_apply (x : EuclideanSpace 𝕜 ι) : (basisFun ι �
   ext i
   exact (basisFun_repr ι 𝕜 x i).symm
 
+/-- The Riesz representative of the coordinate projection `x ↦ xᵢ` is the basis vector `eᵢ`. -/
+@[simp]
+theorem toDual_symm_proj [DecidableEq ι] (i : ι) :
+    (InnerProductSpace.toDual 𝕜 (EuclideanSpace 𝕜 ι)).symm (EuclideanSpace.proj i) =
+      EuclideanSpace.single i 1 := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext y
+  simp [EuclideanSpace.inner_single_left]
+
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
 equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean
@@ -370,6 +381,62 @@ theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1
 theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
     ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
   simp [consEquivL_symm_apply, Fin.tail]
+
+@[simp]
+theorem consEquivL_symm_single_zero {n : ℕ} (a : 𝕜) :
+    (consEquivL 𝕜 n).symm (EuclideanSpace.single 0 a) = (a, 0) := by
+  ext i
+  · simp
+  · simp
+
+@[simp]
+theorem consEquivL_symm_single_succ {n : ℕ} (j : Fin n) (a : 𝕜) :
+    (consEquivL 𝕜 n).symm (EuclideanSpace.single j.succ a) = (0, EuclideanSpace.single j a) := by
+  ext i
+  · simp
+  · simp [Fin.succ_inj]
+
+/-- The inner product of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the sum of the inner products of the factors. -/
+theorem inner_consEquivL {n : ℕ} (z w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    inner 𝕜 (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) = inner 𝕜 z.1 w.1 + inner 𝕜 z.2 w.2 := by
+  simp [PiLp.inner_apply, Fin.sum_univ_succ]
+
+/-- The squared norm of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the sum of the squared norms of the factors. -/
+theorem norm_consEquivL_sq {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    ‖consEquivL 𝕜 n z‖ ^ 2 = ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 := by
+  simp [EuclideanSpace.norm_sq_eq, Fin.sum_univ_succ]
+
+/-- The distance of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the `ℓ²` combination of the distances of the factors. -/
+theorem dist_consEquivL_sq {n : ℕ} (z w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    dist (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) ^ 2 = dist z.1 w.1 ^ 2 + dist z.2 w.2 ^ 2 := by
+  rw [dist_eq_norm, dist_eq_norm, dist_eq_norm, ← map_sub, norm_consEquivL_sq, Prod.fst_sub,
+    Prod.snd_sub]
+
+/-- A ball of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` lies in the product of the balls of the same radius. -/
+theorem preimage_consEquivL_ball_subset {n : ℕ} (w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) (s : ℝ) :
+    consEquivL 𝕜 n ⁻¹' Metric.ball (consEquivL 𝕜 n w) s ⊆
+      Metric.ball w.1 s ×ˢ Metric.ball w.2 s := by
+  intro z hz
+  rw [Set.mem_preimage, Metric.mem_ball] at hz
+  have h := dist_consEquivL_sq z w
+  have hs : 0 ≤ s := dist_nonneg.trans hz.le
+  have hs2 : dist (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) ^ 2 < s ^ 2 :=
+    pow_lt_pow_left₀ hz dist_nonneg two_ne_zero
+  exact ⟨lt_of_pow_lt_pow_left₀ 2 hs (by nlinarith [sq_nonneg (dist z.2 w.2)]),
+    lt_of_pow_lt_pow_left₀ 2 hs (by nlinarith [sq_nonneg (dist z.1 w.1)])⟩
+
+/-- The product of the balls of half the radius lies in a ball of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ`. -/
+theorem ball_prod_ball_subset_preimage_consEquivL_ball {n : ℕ}
+    (w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) {s : ℝ} (hs : 0 < s) :
+    Metric.ball w.1 (s / 2) ×ˢ Metric.ball w.2 (s / 2) ⊆
+      consEquivL 𝕜 n ⁻¹' Metric.ball (consEquivL 𝕜 n w) s := by
+  rintro z ⟨h1, h2⟩
+  rw [Metric.mem_ball] at h1 h2
+  rw [Set.mem_preimage, Metric.mem_ball]
+  have h := dist_consEquivL_sq z w
+  have h3 := pow_lt_pow_left₀ h1 dist_nonneg two_ne_zero
+  have h4 := pow_lt_pow_left₀ h2 dist_nonneg two_ne_zero
+  exact lt_of_pow_lt_pow_left₀ 2 hs.le (by nlinarith)
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × (Fin n → 𝕜)`: the continuous
