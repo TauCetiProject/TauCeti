@@ -45,7 +45,8 @@ an equivalence preserves and reflects being an isomorphism
 (`TauCeti.isIso_biproductDesc_iff_of_equiv`, `TauCeti.isIso_biproductLift_iff_of_equiv`). A
 biproduct over an empty index type is zero (`TauCeti.isZero_biproduct_of_isEmpty`). The comparison
 isomorphism between the points of two limit bicones of one family carries inclusions to inclusions
-(`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`).
+(`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`), and the point of a bilimit
+bicone whose summands are all zero is zero (`CategoryTheory.Limits.Bicone.IsBilimit.isZero_pt`).
 An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`), and its comparison
@@ -861,5 +862,10 @@ theorem ι_comp_conePointUniqueUpToIso_hom {c d : Bicone F} (hc : IsLimit c.toCo
     (hd : IsLimit d.toCone) (j : J) : c.ι j ≫ (hc.conePointUniqueUpToIso hd).hom = d.ι j :=
   hd.hom_ext fun ⟨k⟩ => by
     simpa [Bicone.ι_π] using c.ι j ≫= hc.conePointUniqueUpToIso_hom_comp hd ⟨k⟩
+
+/-- The point of a bilimit bicone whose summands are all zero objects is a zero object. -/
+theorem IsBilimit.isZero_pt {b : Bicone F} (hb : b.IsBilimit) (h : ∀ j, IsZero (F j)) :
+    IsZero b.pt :=
+  (IsZero.iff_id_eq_zero _).2 <| hb.isLimit.hom_ext fun ⟨j⟩ ↦ (h j).eq_of_tgt _ _
 
 end CategoryTheory.Limits.Bicone

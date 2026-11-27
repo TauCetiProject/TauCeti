@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Cohomology
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Čech cohomology of split bundles `⨁ₗ 𝒪(k l)` on complex projective space
@@ -26,6 +27,11 @@ On the projective line, `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`). This
 is the vanishing used for holomorphic spheres `u` whose pullback bundle `u* TX` splits in this
 way, such as a line in `ℂℙⁿ`, along which `u* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`.
+
+The bicone, its bilimit and the cohomology isomorphism are the finite-family version of the binary
+`TauCeti.holomorphicSectionSheaf.prodBicone`, `TauCeti.holomorphicSectionSheaf.prodBiconeIsBilimit`
+and `TauCeti.holomorphicSectionCechCohomology.prodIso`, and follow their construction. A separate
+version is needed because the model fibre of `⨁ₗ 𝒪(k l)` is `κ → ℂ` rather than an iterated `×ᵇ`.
 
 ## Main declarations
 
@@ -210,13 +216,10 @@ theorem isZero_holomorphicSectionCechCohomology_twistSumCore {p : ℕ}
     IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) (κ → ℂ)
       (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber p) := by
   classical
-  refine (IsZero.iff_id_eq_zero _).2 ?_
-  -- The identity is the sum of the maps through the summands, which all vanish.
-  let F := sheafToPresheaf (Opens.grothendieckTopology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ)))) _ ⋙
-    Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) (ModuleCat.{0} ℂ) p
-  exact (IsBilimit.total (isBilimitOfPreserves F (twistSumSheafBiconeIsBilimit k))).symm.trans <|
-    Finset.sum_eq_zero fun l _ ↦ by
-      rw [(h l).eq_zero_of_tgt ((F.mapBicone (twistSumSheafBicone k)).π l), zero_comp]
+  exact (isBilimitOfPreserves (sheafToPresheaf (Opens.grothendieckTopology
+      (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ)))) _ ⋙
+    Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) (ModuleCat.{0} ℂ) p)
+      (twistSumSheafBiconeIsBilimit k)).isZero_pt h
 
 /-- **`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.** The first Čech cohomology of the sheaf of
 holomorphic sections of the split bundle `⨁ₗ 𝒪(k l)` on the complex projective line vanishes as
