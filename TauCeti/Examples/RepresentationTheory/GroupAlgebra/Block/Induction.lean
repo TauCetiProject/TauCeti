@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block.Basic
+public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.BrauerProjection
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Induction
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.PGroup
@@ -58,30 +59,23 @@ theorem normalizer_D : Subgroup.normalizer (D : Set S₃) = D := by
   revert g
   decide
 
-/-- `ρ` does not centralize `D`. -/
-private theorem ρ_notMem : ρ ∉ Subgroup.centralizer (D : Set S₃) :=
-  mt Subgroup.mem_centralizer_zpowers_iff.1 (by decide)
-
-/-- `ρ²` does not centralize `D`. -/
-private theorem ρ_sq_notMem : ρ ^ 2 ∉ Subgroup.centralizer (D : Set S₃) :=
-  mt Subgroup.mem_centralizer_zpowers_iff.1 (by decide)
+/-- **The block of defect zero vanishes under `Br_D`**: `Br_D(ρ + ρ²) = 0`. This is the
+computation `Br_P(r + r²) = 0` of `TauCeti.Examples.BrauerProjectionS3.brauerProjection_x`. -/
+theorem brauerCorrespondent_blockTwoS₃ :
+    brauerCorrespondent centralizer_D.le (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) = 0 := by
+  rw [brauerCorrespondent_eq_zero_iff, coe_blockTwoS₃, of_apply, of_apply, pow_two]
+  exact Examples.BrauerProjectionS3.brauerProjection_x _
 
 /-- **The Brauer correspondent of the principal block**: `Br_D(1 + ρ + ρ²) = 1` in `𝔽₂[D]`. -/
 theorem brauerCorrespondent_blockOneS₃ :
     brauerCorrespondent centralizer_D.le (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) = 1 := by
-  simp [coe_blockOneS₃, of_apply, brauerCorrespondent_single_of_notMem _ ρ_notMem,
-    brauerCorrespondent_single_of_notMem _ ρ_sq_notMem]
+  rw [coe_blockOneS₃, add_assoc, ← coe_blockTwoS₃, map_add, brauerCorrespondent_one,
+    brauerCorrespondent_blockTwoS₃, add_zero]
 
 /-- `Br_D(1 + ρ + ρ²) = 1` in the centre of `𝔽₂[D]`. -/
 theorem centerBrauerCorrespondent_blockOneS₃ :
     centerBrauerCorrespondent centralizer_D.le Subgroup.le_normalizer blockOneS₃ = 1 :=
   Subtype.ext (by simpa using brauerCorrespondent_blockOneS₃)
-
-/-- **The block of defect zero vanishes under `Br_D`**: `Br_D(ρ + ρ²) = 0`. -/
-theorem brauerCorrespondent_blockTwoS₃ :
-    brauerCorrespondent centralizer_D.le (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) = 0 := by
-  simp [coe_blockTwoS₃, of_apply, brauerCorrespondent_single_of_notMem _ ρ_notMem,
-    brauerCorrespondent_single_of_notMem _ ρ_sq_notMem]
 
 /-- `2` is not a unit of `𝔽₂`. -/
 private theorem not_isUnit_two : ¬IsUnit ((2 : ℕ) : ZMod 2) := by

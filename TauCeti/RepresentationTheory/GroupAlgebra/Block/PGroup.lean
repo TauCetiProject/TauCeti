@@ -35,11 +35,8 @@ variable {R : Type*} [CommRing R] [IsLocalRing R] {p : ℕ} [Fact p.Prime] {G : 
 theorem isBlockIdempotent_one_of_isPGroup (hp : ¬IsUnit (p : R)) (hG : IsPGroup p G) :
     IsBlockIdempotent (1 : Subalgebra.center R (MonoidAlgebra R G)) := by
   have := (MonoidAlgebra.isLocalRing_iff_isPGroup hp).2 hG
-  refine isPrimitiveIdempotent_one_iff.2 fun f hf ↦ ?_
-  rcases (hf.map (Subalgebra.center R (MonoidAlgebra R G)).val).eq_zero_or_eq_one_of_isLocalRing
-    with h | h
-  · exact Or.inl (Subtype.ext h)
-  · exact Or.inr (Subtype.ext h)
+  exact .of_map (Subalgebra.center R (MonoidAlgebra R G)).val Subtype.val_injective
+    (by simpa using (isPrimitiveIdempotent_one : IsPrimitiveIdempotent (1 : MonoidAlgebra R G)))
 
 /-- **`1` is the only block idempotent of the group algebra of a `p`-group**, for a local ring `R`
 in which `p` is not a unit and a finite `p`-group `G`. -/
