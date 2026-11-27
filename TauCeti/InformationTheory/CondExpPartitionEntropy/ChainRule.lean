@@ -7,7 +7,9 @@ module
 
 public import TauCeti.InformationTheory.CondExpPartitionEntropy
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.Data.Set.Prod
 import TauCeti.MeasureTheory.MeasurableSpace.Sup
 
 /-!
@@ -57,21 +59,6 @@ namespace TauCeti
 
 variable {X ι κ : Type*} {m mX : MeasurableSpace X} {μ : Measure X}
 
-/-- The atoms of the join `P ∨ Q`, labelled by the pair `(a, b)`, are the intersections of the
-atoms of `P` and `Q`. -/
-private theorem preimage_pair_singleton (a : X → ι) (b : X → κ) (i : ι) (j : κ) :
-    (fun x ↦ (a x, b x)) ⁻¹' {(i, j)} = a ⁻¹' {i} ∩ b ⁻¹' {j} := by
-  rw [← singleton_prod_singleton, mk_preimage_prod]
-
-/-- Summing the indicators of the atoms of `a`, each carrying its own function, picks out the
-function of the atom containing the point. -/
-private theorem sum_indicator_preimage_singleton_apply [Fintype ι] {M : Type*} [AddCommMonoid M]
-    (a : X → ι) (f : ι → X → M) (x : X) :
-    ∑ i, (a ⁻¹' {i}).indicator (f i) x = f (a x) x := by
-  rw [Finset.sum_eq_single (a x) (fun i _ hi ↦ ?_) (by simp)]
-  · simp
-  · simp [Ne.symm hi]
-
 section Finite
 
 variable [IsFiniteMeasure μ]
@@ -81,7 +68,7 @@ variable [IsFiniteMeasure μ]
 theorem condAtomProb_pair_le {a : X → ι} {b : X → κ} {i : ι} (j : κ)
     (ha : NullMeasurableSet (a ⁻¹' {i}) μ) (hb : NullMeasurableSet (b ⁻¹' {j}) μ) :
     condAtomProb μ m (fun x ↦ (a x, b x)) (i, j) ≤ᵐ[μ] condAtomProb μ m a i := by
-  rw [condAtomProb_def, condAtomProb_def, preimage_pair_singleton]
+  rw [condAtomProb_def, condAtomProb_def, preimage_prodMk_singleton]
   refine condExp_mono ((integrable_const 1).indicator₀ (ha.inter hb))
     ((integrable_const 1).indicator₀ ha) (Eventually.of_forall fun x ↦ ?_)
   exact indicator_le_indicator_of_subset inter_subset_left (fun _ ↦ zero_le_one) x
@@ -95,8 +82,8 @@ theorem sum_condAtomProb_pair_ae_eq [Fintype κ] {a : X → ι} {b : X → κ} {
       (a ⁻¹' {i}).indicator 1 := by
     ext x
     simp_rw [Finset.sum_apply, inter_comm (a ⁻¹' {i}), ← indicator_indicator]
-    exact sum_indicator_preimage_singleton_apply b (fun _ ↦ (a ⁻¹' {i}).indicator 1) x
-  simp_rw [condAtomProb_def, preimage_pair_singleton]
+    exact Finset.sum_indicator_preimage_singleton_apply b (fun _ ↦ (a ⁻¹' {i}).indicator 1) x
+  simp_rw [condAtomProb_def, preimage_prodMk_singleton]
   refine (condExp_finsetSum (fun j _ ↦ (integrable_const 1).indicator₀ (ha.inter (hb j)))
     m).symm.trans (EventuallyEq.of_eq ?_)
   exact congrArg (fun f ↦ μ[f | m]) hsum
@@ -198,7 +185,7 @@ theorem setIntegral_inter_condAtomRatio (hm : m ≤ mX) {a : X → ι} {b : X �
           with x hx hx' _
         rw [hx, Pi.mul_apply, hx']
     _ = ∫ x in E, (a ⁻¹' {i}).indicator ((b ⁻¹' {j}).indicator 1) x ∂μ := by
-        rw [condAtomProb_def, preimage_pair_singleton, setIntegral_condExp hm hABint hE]
+        rw [condAtomProb_def, preimage_prodMk_singleton, setIntegral_condExp hm hABint hE]
         refine setIntegral_congr_fun (hm _ hE) fun x _ ↦ ?_
         by_cases hx : x ∈ a ⁻¹' {i} <;> by_cases hx' : x ∈ b ⁻¹' {j} <;> simp_all
     _ = ∫ x in E ∩ a ⁻¹' {i}, (b ⁻¹' {j}).indicator 1 x ∂μ :=
@@ -224,7 +211,7 @@ theorem condAtomProb_sup_comap_ae_eq [Finite ι] {a : X → ι} {b : X → κ}
   set g : X → ℝ := fun x ↦ condAtomRatio μ m a b (a x) j x with hg
   have hg_sum : g = ∑ i, (a ⁻¹' {i}).indicator (condAtomRatio μ m a b i j) := by
     ext x
-    rw [Finset.sum_apply, sum_indicator_preimage_singleton_apply]
+    rw [Finset.sum_apply, Finset.sum_indicator_preimage_singleton_apply]
   have hgm : StronglyMeasurable[m ⊔ MeasurableSpace.comap a ⊤] g := by
     rw [hg_sum]
     refine Finset.stronglyMeasurable_sum _ fun i _ ↦ ?_
@@ -326,7 +313,7 @@ theorem condExpPartitionEntropy_pair_eq_add [Fintype ι] [Fintype κ] {a : X →
       fun i _ ↦ integrable_indicator_sum_negMulLog_condAtomRatio (ha i).nullMeasurableSet hb]
     congr 1
     ext x
-    rw [sum_indicator_preimage_singleton_apply a
+    rw [Finset.sum_indicator_preimage_singleton_apply a
       (fun i x ↦ ∑ j, negMulLog (condAtomRatio μ m a b i j x))]
   rw [h1, Finset.sum_congr rfl fun i _ ↦
       integral_indicator_sum_negMulLog_condAtomRatio (ha i).nullMeasurableSet hb,
