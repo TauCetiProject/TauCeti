@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Algebra.Ring.Subgroup
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Quotient
 public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Operations
 
 import TauCeti.RingTheory.Regular.Pair
@@ -36,6 +38,9 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   whole of the target of any surjective linear map out of it, for instance of every factor of a
   product.
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
+* `Ideal.smul_top_pow_eq_comap`, `Ideal.mem_smul_top_pow_iff`, and
+  `Ideal.powQuotientComapEquivSmulTop`: the action of `I` on `I ^ n` identifies `I ^ (n + 1)` and
+  gives the canonical equivalence `I ^ n ⧸ (I ^ n ∩ I ^ (n + 1)) ≃+ I ^ n ⧸ (I • ⊤)`.
 * `Ideal.image_fintypeLinearCombination_pi`: linear combinations with coefficients in an ideal
   give precisely the ideal multiple of the span.
 * `Ideal.pow_card_mul_prod_induction`: a property of pairs of an ideal and an element, stable
@@ -203,6 +208,19 @@ theorem smul_top_eq_comap_mul (I J : Ideal R) :
   simp only [Submodule.mem_smul_top_iff, Submodule.mem_comap, Submodule.coe_subtype,
     Ideal.smul_eq_mul, mul_comm J I]
 
+/-- The `(n + 1)`-st power of `I`, viewed as a submodule of `I ^ n`, is the action of `I` on
+`I ^ n`. -/
+theorem smul_top_pow_eq_comap (I : Ideal R) (n : ℕ) :
+    (I • ⊤ : Submodule R (I ^ n : Ideal R)) =
+      Submodule.comap (I ^ n).subtype (I ^ (n + 1)) := by
+  rw [Ideal.smul_top_eq_comap_mul, ← pow_succ]
+
+/-- An element of `I ^ n` lies in `I • ⊤` precisely when its underlying element lies in
+`I ^ (n + 1)`. -/
+theorem mem_smul_top_pow_iff {I : Ideal R} {n : ℕ} {z : (I ^ n : Ideal R)} :
+    z ∈ (I • ⊤ : Submodule R (I ^ n : Ideal R)) ↔ (z : R) ∈ I ^ (n + 1) := by
+  rw [smul_top_pow_eq_comap, Submodule.mem_comap, Submodule.coe_subtype]
+
 /-- If `I * I = I`, then `I • ⊤ = ⊤` for the module `⊤ : Submodule R I`: every element of `I` is a
 sum of products of two elements of `I`, so `I` expands itself. -/
 theorem smul_top_eq_top_of_isIdempotentElem {I : Ideal R} (hI : IsIdempotentElem I) :
@@ -250,6 +268,20 @@ theorem eq_one_of_sq_eq_one_of_sub_one_mem {I : Ideal R} (hI : I ^ 2 = ⊥)
   apply sub_eq_zero.mp
   apply h2.mul_left_cancel
   linear_combination hx2 - hsq
+
+/-- The canonical additive equivalence identifying `I ^ n ⧸ (I ^ n ∩ I ^ (n + 1))` with the
+graded piece `I ^ n ⧸ (I • ⊤)`. -/
+def powQuotientComapEquivSmulTop (I : Ideal R) (n : ℕ) :
+    ↥(I ^ n) ⧸ Submodule.comap (I ^ n).subtype (I ^ (n + 1)) ≃+
+      ↥(I ^ n) ⧸ (I • ⊤ : Submodule R (I ^ n : Ideal R)) :=
+  (Submodule.quotEquivOfEq _ _ (smul_top_pow_eq_comap I n).symm).toAddEquiv
+
+/-- Evaluating `powQuotientComapEquivSmulTop` on a quotient class preserves the underlying
+representative. -/
+@[simp]
+theorem powQuotientComapEquivSmulTop_mk (I : Ideal R) (n : ℕ) (x : (I ^ n : Ideal R)) :
+    powQuotientComapEquivSmulTop I n (Submodule.Quotient.mk x) = Submodule.Quotient.mk x :=
+  Submodule.quotEquivOfEq_mk _ _ (smul_top_pow_eq_comap I n).symm x
 
 end CommRing
 

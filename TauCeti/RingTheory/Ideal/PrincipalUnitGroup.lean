@@ -304,25 +304,6 @@ theorem principalUnitGroupPowQuotientEquiv_mk {I : Ideal R} (hI : I ≤ jacobson
       .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, mem_principalUnitGroup.mp u.property⟩) :=
   principalUnitGroupQuotientEquiv_mk _ _ u
 
-private theorem smul_top_pow_eq_comap (I : Ideal R) (n : ℕ) :
-    (I • ⊤ : Submodule R (I ^ n : Ideal R)) =
-      Submodule.comap (I ^ n).subtype (I ^ (n + 1)) := by
-  rw [Ideal.smul_top_eq_comap_mul, ← pow_succ]
-
-/-- The canonical additive equivalence identifying `I ^ n ⧸ (I ^ n ∩ I ^ (n + 1))` with the
-graded piece `I ^ n ⧸ (I • ⊤)`. -/
-def powQuotientComapEquivSmulTop (I : Ideal R) (n : ℕ) :
-    ↥(I ^ n) ⧸ Submodule.comap (I ^ n).subtype (I ^ (n + 1)) ≃+
-      ↥(I ^ n) ⧸ (I • ⊤ : Submodule R (I ^ n : Ideal R)) :=
-  (Submodule.quotEquivOfEq _ _ (smul_top_pow_eq_comap I n).symm).toAddEquiv
-
-/-- Evaluating `powQuotientComapEquivSmulTop` on a quotient class preserves the underlying
-representative. -/
-@[simp]
-theorem powQuotientComapEquivSmulTop_mk (I : Ideal R) (n : ℕ) (x : (I ^ n : Ideal R)) :
-    powQuotientComapEquivSmulTop I n (Submodule.Quotient.mk x) = Submodule.Quotient.mk x :=
-  Submodule.quotEquivOfEq_mk _ _ (smul_top_pow_eq_comap I n).symm x
-
 end CommRing
 
 end Ideal

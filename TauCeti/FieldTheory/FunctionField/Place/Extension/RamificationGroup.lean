@@ -127,20 +127,6 @@ theorem ramificationGroup_def (i : ℕ) :
       IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i :=
   (rfl)
 
-/-- The `0`-th ramification group of a place is the `0`-th local-ring ramification group of its
-valuation ring under the decomposition group. -/
-theorem ramificationGroup_zero_def :
-    ramificationGroup F P 0 =
-      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 :=
-  (rfl)
-
-/-- The `1`-st ramification group of a place is the `1`-st local-ring ramification group of its
-valuation ring under the decomposition group. -/
-theorem ramificationGroup_one_def :
-    ramificationGroup F P 1 =
-      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 1 :=
-  (rfl)
-
 /-- **Membership in the `i`-th ramification group** (Stichtenoth, Definition 3.8.4): an
 automorphism lies in `G_i(P)` exactly when it moves every function integral at `P` by something of
 order at least `i + 1`. -/
@@ -209,22 +195,6 @@ theorem exists_forall_ramificationGroup_eq_bot [Finite (ramificationGroup F P 0)
 
 end Defs
 
-section Uniformizer
-
-variable {k : Type u} {F' : Type v'} [Field k] [Field F'] [Algebra k F']
-
-/-- A function of order `1` at `P` is integral at `P`. -/
-theorem mem_integers_of_ord_eq_one (P : Place k F') {t : F'} (ht : P.ord t = 1) :
-    t ∈ P.integers :=
-  P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)
-
-/-- A function of order `1` at `P` is irreducible in the valuation ring `P.integers`. -/
-theorem irreducible_of_ord_eq_one (P : Place k F') {t : F'} (ht : P.ord t = 1) :
-    Irreducible (⟨t, mem_integers_of_ord_eq_one P ht⟩ : P.integers) :=
-  P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
-
-end Uniformizer
-
 section Residue
 
 variable (F) (P : Place k F') {t : F'}
@@ -235,7 +205,7 @@ private noncomputable def ramificationResidueCoord (ht : P.ord t = 1) (i : ℕ) 
         (IsLocalRing.maximalIdeal P.integers • ⊤ : Submodule P.integers
           (IsLocalRing.maximalIdeal P.integers ^ (i + 2) : Ideal P.integers)) :=
   residueFieldEquivMaximalIdealGradedOfUniformizer
-    ⟨t, mem_integers_of_ord_eq_one P ht⟩ (irreducible_of_ord_eq_one P ht) (i + 2)
+    ⟨t, P.mem_integers_of_ord_eq_one ht⟩ (P.irreducible_of_ord_eq_one ht) (i + 2)
 
 /-- **The ramification residue** (Stichtenoth, Proposition 3.8.5): for a uniformizer `t` at `P`,
 the map sending an automorphism `σ` of `G_{i+1}(P)` to the function `z ↦ ((σ z - z)/t^{i+2})(P)`
@@ -247,7 +217,8 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
   ((AddEquiv.piCongrRight fun _ ↦
     (ramificationResidueCoord P ht i).symm.toAddEquiv).toMultiplicative.toMonoidHom.comp
     (IsLocalRing.displacementHom (P.integers.decompositionSubgroup F) P.integers i)).comp
-    (MulEquiv.subgroupCongr (ramificationGroup_def F P (i + 1))).toMonoidHom
+    (MulEquiv.subgroupCongr
+      (by rw [ramificationGroup_def, Nat.cast_add, Nat.cast_one])).toMonoidHom
 
 /-- The value of the ramification residue at a function `x` integral at `P`, computed on any
 representative `y` of `(σ x - x)/t^{i+2}` in `𝒪_P`. -/
@@ -277,7 +248,7 @@ Proposition 3.8.5): so `G_{i+1}(P) / G_{i+2}(P)` embeds into the additive group 
 theorem ker_ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     (ramificationResidueHom F P ht i).ker =
       (ramificationGroup F P (i + 2)).subgroupOf (ramificationGroup F P (i + 1)) := by
-  have hidx : ((i + 2 : ℕ) : ℤ) = ((i + 1 : ℕ) : ℤ) + 1 := by omega
+  have hidx : ((i + 2 : ℕ) : ℤ) = (i : ℤ) + 1 + 1 := by omega
   rw [ramificationResidueHom, ← MonoidHom.comap_ker,
     MonoidHom.ker_comp_of_injective _ _
       (AddEquiv.piCongrRight fun _ ↦

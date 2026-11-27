@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.StrictHenselization.Local
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Etale.StandardEtale
-import TauCeti.RingTheory.LocalRing.Monogenic
+import TauCeti.RingTheory.LocalRing.ResidueField.Lift
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!

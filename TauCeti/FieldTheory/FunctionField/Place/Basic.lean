@@ -442,6 +442,16 @@ theorem irreducible_of_isUniformizer {t : P.integers}
   rw [IsDiscreteValuationRing.irreducible_iff_uniformizer]
   exact ht.is_generator
 
+/-- An element of order `1` at `P` is integral at `P`. -/
+theorem mem_integers_of_ord_eq_one {t : F} (ht : P.ord t = 1) :
+    t ∈ P.integers :=
+  P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)
+
+/-- An element of order `1` at `P` is irreducible in the valuation ring `P.integers`. -/
+theorem irreducible_of_ord_eq_one {t : F} (ht : P.ord t = 1) :
+    Irreducible (⟨t, P.mem_integers_of_ord_eq_one ht⟩ : P.integers) :=
+  P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
+
 theorem isUnit_iff_valuation_eq_one {x : P.integers} : IsUnit x ↔ P.valuation (x : F) = 1 :=
   Valuation.Integers.isUnit_iff_valuation_eq_one (Valuation.valuationSubring.integers P.valuation)
 

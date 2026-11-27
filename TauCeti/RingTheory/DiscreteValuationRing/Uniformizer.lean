@@ -30,11 +30,11 @@ residue field.
 
 The explicit principal-power equivalence below follows the construction of Mathlib's
 `Ideal.quotEquivPowQuotPowSucc`, retaining a specified generator in order to expose the
-change-of-uniformizer formula.  The positive-depth principal-unit coordinate
-`TauCeti.maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer` adapts
-`TauCeti.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer` from
-`TauCeti/NumberTheory/LocalField/UnitFiltration/Uniformizer.lean` to arbitrary discrete valuation
-rings.
+change-of-uniformizer formula.  The local-field coordinate
+`TauCeti.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer` in
+`TauCeti/NumberTheory/LocalField/UnitFiltration/Uniformizer.lean` transports
+`TauCeti.maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer` to the unit
+filtration of a nonarchimedean local field.
 
 ## Main results
 

@@ -74,11 +74,6 @@ of `G_0`. These are the local-field cases of the general local-ring statements i
 * `TauCeti.ker_ramificationGroupToUnitFiltrationGraded` and
   `TauCeti.ramificationGroupGradedToUnitFiltrationGraded_injective`: the kernel is exactly
   `G_{i+1}`, and `θ_i` is injective.
-* `TauCeti.ramificationGroupGradedToPrincipalUnitGroupGraded_injective`,
-  `TauCeti.ker_tameCharacter_of_irreducible`,
-  `TauCeti.tameCharacterGraded_injective_of_irreducible`, and
-  `TauCeti.ramificationGroupGradedToResidueField_injective_of_irreducible`: exactness and
-  injectivity of the DVR graded maps over local fields without a base ring.
 * `TauCeti.isCyclic_ramificationGroupGraded_zero` and
   `TauCeti.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`: the tame quotient
   is cyclic, of order dividing `q - 1`.
@@ -432,43 +427,6 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible {ϖ' : �
     IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded_eq_of_irreducible
       i hϖ hϖ']
 
-/-! ### Exactness and injectivity of the DVR graded maps over local fields -/
-
-/-- Over a nonarchimedean local field, the DVR graded embedding
-`G_i / G_{i+1} →* (1 + 𝔪 ^ i) / (1 + 𝔪 ^ (i + 1))` is injective without requiring a
-separable base extension. -/
-theorem ramificationGroupGradedToPrincipalUnitGroupGraded_injective (hϖ : Irreducible ϖ) :
-    Function.Injective
-      (IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded
-        (G := G) i hϖ) := by
-  have hinj := ramificationGroupGradedToUnitFiltrationGraded_injective (G := G) (i := i) hϖ
-  rw [ramificationGroupGradedToUnitFiltrationGraded, MonoidHom.coe_comp,
-    MulEquiv.coe_toMonoidHom] at hinj
-  exact Function.Injective.of_comp hinj
-
-/-- **The kernel of the tame character is the wild inertia group `G_1`**, viewed inside `G_0`. -/
-@[simp]
-theorem ker_tameCharacter_of_irreducible (hϖ : Irreducible ϖ) :
-    (IsDiscreteValuationRing.tameCharacter (G := G) hϖ).ker =
-      (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) := by
-  ext σ
-  rw [IsDiscreteValuationRing.mem_ker_tameCharacter_iff hϖ, Subgroup.mem_subgroupOf]
-  exact (mem_ramificationGroup_natCast_iff_smul_sub_mem hϖ σ.property (n := 1)).symm
-
-/-- **The tame character is injective on `G_0 / G_1`.** -/
-theorem tameCharacterGraded_injective_of_irreducible (hϖ : Irreducible ϖ) :
-    Function.Injective (IsDiscreteValuationRing.tameCharacterGraded (G := G) hϖ) :=
-  IsDiscreteValuationRing.tameCharacterGraded_injective_of_injective hϖ
-    (ramificationGroupGradedToPrincipalUnitGroupGraded_injective hϖ)
-
-/-- The positive-depth ramification quotient embeds in the additive residue field. -/
-theorem ramificationGroupGradedToResidueField_injective_of_irreducible (n : ℕ) (π : 𝒪[L])
-    (hπ : Irreducible π) :
-    Function.Injective
-      (IsDiscreteValuationRing.ramificationGroupGradedToResidueField (G := G) n hπ) :=
-  IsDiscreteValuationRing.ramificationGroupGradedToResidueField_injective_of_injective n hπ
-    (ramificationGroupGradedToPrincipalUnitGroupGraded_injective hπ)
-
 /-! ### The tame quotient -/
 
 variable (G L) in
@@ -531,11 +489,8 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
     Nat.card (ramificationGroup G 𝒪[L] 1) =
       p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  rw [← Sylow.card_eq_multiplicity
-    (IsLocalRing.ramificationGroupOneSylow G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p),
-    IsLocalRing.ramificationGroupOneSylow_coe]
-  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-    (ramificationGroup_antitone G 𝒪[L] (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
+  exact IsLocalRing.natCard_ramificationGroup_one_of_not_dvd_index G 𝒪[L] p
+    (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
