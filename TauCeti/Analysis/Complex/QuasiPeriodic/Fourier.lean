@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
-import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.Laurent.Periodic
 import TauCeti.Analysis.Complex.Periodic
@@ -211,21 +210,8 @@ theorem summable_norm_thetaFourierCoeff {α : ℝ} {s : ℂ → ℂ} (hs : Diffe
 filter on `ℤ` (by the Riemann–Lebesgue lemma). -/
 theorem tendsto_thetaFourierCoeff_zero (α : ℝ) (s : ℂ → ℂ) :
     Tendsto (thetaFourierCoeff α s) cofinite (𝓝 0) := by
-  let f : ℝ → ℂ := Set.indicator (Ioc (0 : ℝ) 1) fun t => cexp (-2 * π * I * α * t) * s t
-  have htend : Tendsto (fun m : ℤ => (m : ℝ)) cofinite (cocompact ℝ) := by
-    simpa [Filter.cocompact_eq_cofinite] using Int.isClosedEmbedding_coe_real.tendsto_cocompact
-  refine ((Real.tendsto_integral_exp_smul_cocompact f).comp htend).congr fun m => ?_
-  dsimp only [Function.comp_def, f]
-  rw [thetaFourierCoeff_eq_integral, intervalIntegral.integral_of_le zero_le_one,
-    ← MeasureTheory.integral_indicator measurableSet_Ioc]
-  refine MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
-  by_cases ht : t ∈ Ioc (0 : ℝ) 1
-  · simp only [Set.indicator_of_mem ht, Circle.smul_def, Real.fourierChar_apply, smul_eq_mul,
-      ← mul_assoc, ← Complex.exp_add]
-    congr 2
-    push_cast
-    ring
-  · simp [Set.indicator_of_notMem ht]
+  simpa only [funext (thetaFourierCoeff_def α s)] using
+    tendsto_fourierCoeffOn_zero zero_lt_one (fun t : ℝ => cexp (-2 * π * I * α * t) * s t)
 
 /-- An entire function whose twisted Fourier coefficients all vanish is identically zero. -/
 theorem eq_zero_of_thetaFourierCoeff_eq_zero {α : ℝ} {s : ℂ → ℂ} (hs : Differentiable ℂ s)

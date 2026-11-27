@@ -23,8 +23,8 @@ complex torus `ℂ / (ℤ + τℤ)`. They form the complex vector space `TauCeti
 ## Main results
 
 * `TauCeti.mem_thetaSections_iff`: membership criterion in `thetaSections`.
-* `TauCeti.add_int_add_int_mul_tau_of_mem_thetaSections` and
-  `TauCeti.mem_thetaSections_iff_forall_add_int_add_int_mul_tau`: bridging `thetaSections` with
+* `TauCeti.add_eq_thetaFactor_mul_of_mem_thetaSections` and
+  `TauCeti.mem_thetaSections_iff_forall_add_eq_thetaFactor_mul`: bridging `thetaSections` with
   full `ℤ²`-automorphy via `thetaFactor`.
 * `TauCeti.thetaSections_add_int` and `TauCeti.mul_mem_thetaSections`: integer characteristic
   invariance and level-additive multiplication of theta sections.
@@ -68,7 +68,7 @@ theorem mem_thetaSections_iff : s ∈ thetaSections k τ α β ↔ Differentiabl
 
 /-- Full lattice automorphy law for a holomorphic theta section under any translation
 `z ↦ z + m + n * τ`. -/
-theorem add_int_add_int_mul_tau_of_mem_thetaSections
+theorem add_eq_thetaFactor_mul_of_mem_thetaSections
     (hs : s ∈ thetaSections k τ α β) (m n : ℤ) (z : ℂ) :
     s (z + m + n * τ) = thetaFactor k τ α β m n z * s z := by
   rcases mem_thetaSections_iff.mp hs with ⟨_, h1, hτ⟩
@@ -76,7 +76,7 @@ theorem add_int_add_int_mul_tau_of_mem_thetaSections
 
 /-- Membership in `thetaSections` is equivalent to being entire and satisfying the full
 `ℤ²`-automorphy law with factor `thetaFactor`. -/
-theorem mem_thetaSections_iff_forall_add_int_add_int_mul_tau :
+theorem mem_thetaSections_iff_forall_add_eq_thetaFactor_mul :
     s ∈ thetaSections k τ α β ↔
       Differentiable ℂ s ∧
         ∀ m n : ℤ, ∀ z : ℂ, s (z + m + n * τ) = thetaFactor k τ α β m n z * s z := by

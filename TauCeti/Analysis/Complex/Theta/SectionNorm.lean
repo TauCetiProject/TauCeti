@@ -43,12 +43,12 @@ theorem thetaMetric_mul_norm_sq_add_int_add_int_mul_tau {k : ℕ} {τ : ℂ}
       thetaMetric k τ z * ‖s z‖ ^ 2 := by
   by_cases hτ : τ.im = 0
   · rcases Nat.eq_zero_or_pos k with rfl | hk
-    · rw [add_int_add_int_mul_tau_of_mem_thetaSections hs m n z, norm_mul, mul_pow,
+    · rw [add_eq_thetaFactor_mul_of_mem_thetaSections hs m n z, norm_mul, mul_pow,
         norm_thetaFactor]
       simp [thetaMetric_def]
     · rw [thetaSections_eq_bot_of_im_nonpos k hk τ hτ.le α β, Submodule.mem_bot] at hs
       simp [hs]
   · exact thetaMetric_add_mul_norm_sq hτ
-      (add_int_add_int_mul_tau_of_mem_thetaSections hs m n z)
+      (add_eq_thetaFactor_mul_of_mem_thetaSections hs m n z)
 
 end TauCeti

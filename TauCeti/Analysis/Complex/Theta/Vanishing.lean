@@ -13,7 +13,8 @@ import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 /-!
 # Boundary vanishing and level-0 classification of theta sections
 
-Using the twisted Fourier expansion and shift-by-`k` recurrence from
+Using the twisted Fourier expansion and Fourier uniqueness from
+`TauCeti.Analysis.Complex.QuasiPeriodic.Fourier` together with the shift-by-`k` recurrence from
 `TauCeti.Analysis.Complex.Theta.Fourier`, this file classifies the section space
 `thetaSections k τ α β` at the boundary `τ.im ≤ 0` and at level `k = 0`:
 
@@ -54,7 +55,7 @@ private lemma norm_thetaFourierCoeff_add_level {k : ℕ} {τ : ℂ} {α β : ℝ
     (hs : s ∈ thetaSections k τ α β) (n : ℤ) :
     ‖thetaFourierCoeff α s (n + k)‖ =
       Real.exp (-2 * π * ((n : ℝ) + α + (k : ℝ) / 2) * τ.im) * ‖thetaFourierCoeff α s n‖ := by
-  rw [thetaFourierCoeff_add_of_mem_thetaSections hs n, norm_mul, Complex.norm_exp]
+  rw [thetaFourierCoeff_add_natCast_of_mem_thetaSections hs n, norm_mul, Complex.norm_exp]
   congr 2
   have hexp : 2 * π * I * ((n : ℂ) + α) * τ - 2 * π * I * β + π * I * k * τ =
       (↑(2 * π * ((n : ℝ) + α + (k : ℝ) / 2)) * τ - ↑(2 * π * β)) * I := by
@@ -111,7 +112,7 @@ theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ
 private lemma thetaFourierCoeff_zero_level_eq_zero_of_ne {τ : ℂ} (hτ : τ.im ≠ 0) {α β : ℝ}
     {s : ℂ → ℂ} (hs : s ∈ thetaSections 0 τ α β) {m : ℤ} (hm : thetaFourierCoeff α s m ≠ 0) :
     (m : ℝ) + α = 0 ∧ ∃ b : ℤ, (b : ℝ) = β := by
-  have hrec := thetaFourierCoeff_add_of_mem_thetaSections hs m
+  have hrec := thetaFourierCoeff_add_natCast_of_mem_thetaSections hs m
   simp only [Nat.cast_zero, add_zero, mul_zero, zero_mul] at hrec
   have hexp : cexp (2 * π * I * (m + α) * τ - 2 * π * I * β) = 1 :=
     mul_right_cancel₀ hm (by simpa only [one_mul] using hrec.symm)

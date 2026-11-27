@@ -24,10 +24,10 @@ level `k : ℤ` is equivalent to the shift-by-`k` recurrence
 
 * `TauCeti.thetaFourierCoeff_eq_mul_thetaFourierCoeff_add`: shift-by-`k` coefficient recurrence
   from `τ`-automorphy at integer level `k : ℤ`.
-* `TauCeti.forall_add_tau_iff_forall_thetaFourierCoeff_add`: exact equivalence between
+* `TauCeti.forall_add_tau_iff_forall_thetaFourierCoeff_add_eq_mul`: exact equivalence between
   `τ`-automorphy and the Fourier coefficient recurrence.
-* `TauCeti.thetaFourierCoeff_add_of_mem_thetaSections`: specialization to `thetaSections`.
-* `TauCeti.thetaFourierCoeff_add_eq_zero_iff` and
+* `TauCeti.thetaFourierCoeff_add_natCast_of_mem_thetaSections`: specialization to `thetaSections`.
+* `TauCeti.thetaFourierCoeff_add_natCast_eq_zero_iff` and
   `TauCeti.thetaFourierCoeff_add_int_mul_eq_zero_iff`: propagation of vanishing along residue
   classes modulo `k`.
 
@@ -46,9 +46,9 @@ open scoped Real
 
 namespace TauCeti
 
-/-- Moving the line of integration from `ℝ` to `ℝ + τ` turns the second automorphy law at integer
-level `k : ℤ` into the shift-by-`k` recurrence
-`c m = exp (2πiβ - πikτ - 2πi(m + α)τ) * c (m + k)` for the twisted Fourier coefficients. -/
+/-- For an entire function `s` satisfying `s (z + 1) = exp (2πiα) * s z` and the second automorphy
+law at integer level `k : ℤ`, its twisted Fourier coefficients satisfy the shift-by-`k` recurrence
+`c m = exp (2πiβ - πikτ - 2πi(m + α)τ) * c (m + k)`. -/
 theorem thetaFourierCoeff_eq_mul_thetaFourierCoeff_add {k : ℤ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
     (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z)
     (hτ : ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z)
@@ -69,7 +69,7 @@ theorem thetaFourierCoeff_eq_mul_thetaFourierCoeff_add {k : ℤ} {τ : ℂ} {α 
   push_cast
   ring
 
-private lemma thetaFourierCoeff_add_of_add_tau {k : ℤ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+private lemma thetaFourierCoeff_add_eq_mul_of_add_tau {k : ℤ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
     (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z)
     (hτ : ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z)
     (m : ℤ) :
@@ -86,13 +86,13 @@ private lemma thetaFourierCoeff_add_of_add_tau {k : ℤ} {τ : ℂ} {α β : ℝ
 `s (z + τ) = exp (2πiβ - πikτ - 2πikz) * s z` holds for all `z ∈ ℂ` if and only if its twisted
 Fourier coefficients satisfy `c (m + k) = exp (2πi(m + α)τ - 2πiβ + πikτ) * c m` for all
 `m ∈ ℤ`. -/
-theorem forall_add_tau_iff_forall_thetaFourierCoeff_add {k : ℤ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) :
+theorem forall_add_tau_iff_forall_thetaFourierCoeff_add_eq_mul {k : ℤ} {τ : ℂ} {α β : ℝ}
+    {s : ℂ → ℂ} (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) :
     (∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z) ↔
       ∀ m : ℤ, thetaFourierCoeff α s (m + k) =
         cexp (2 * π * I * (m + α) * τ - 2 * π * I * β + π * I * k * τ) *
           thetaFourierCoeff α s m := by
-  refine ⟨fun hτ m => thetaFourierCoeff_add_of_add_tau hs h1 hτ m, fun hrec z => ?_⟩
+  refine ⟨fun hτ m => thetaFourierCoeff_add_eq_mul_of_add_tau hs h1 hτ m, fun hrec z => ?_⟩
   have hL := hasSum_thetaFourierCoeff hs h1 (z + τ)
   have hR := (hasSum_thetaFourierCoeff hs h1 z).mul_left
     (cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z))
@@ -119,21 +119,21 @@ theorem forall_add_tau_iff_forall_thetaFourierCoeff_add {k : ℤ} {τ : ℂ} {α
 
 /-- The twisted Fourier coefficients of a level-`k` theta section satisfy the shift-by-`k`
 recurrence `c (m + k) = exp (2πi(m + α)τ - 2πiβ + πikτ) * c m`. -/
-theorem thetaFourierCoeff_add_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : s ∈ thetaSections k τ α β) (m : ℤ) :
+theorem thetaFourierCoeff_add_natCast_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ}
+    {s : ℂ → ℂ} (hs : s ∈ thetaSections k τ α β) (m : ℤ) :
     thetaFourierCoeff α s (m + k) =
       cexp (2 * π * I * (m + α) * τ - 2 * π * I * β + π * I * k * τ) *
         thetaFourierCoeff α s m := by
   rcases mem_thetaSections_iff.mp hs with ⟨hd, h1, hτ⟩
-  exact thetaFourierCoeff_add_of_add_tau (k := (k : ℤ)) hd h1
+  exact thetaFourierCoeff_add_eq_mul_of_add_tau (k := (k : ℤ)) hd h1
     (by simpa only [Int.cast_natCast] using hτ) m
 
 /-- For a level-`k` theta section, vanishing of the `m`-th twisted Fourier coefficient is
 equivalent to vanishing of the `(m + k)`-th coefficient. -/
-theorem thetaFourierCoeff_add_eq_zero_iff {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+theorem thetaFourierCoeff_add_natCast_eq_zero_iff {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
     (hs : s ∈ thetaSections k τ α β) (m : ℤ) :
     thetaFourierCoeff α s (m + k) = 0 ↔ thetaFourierCoeff α s m = 0 := by
-  rw [thetaFourierCoeff_add_of_mem_thetaSections hs m, mul_eq_zero,
+  rw [thetaFourierCoeff_add_natCast_of_mem_thetaSections hs m, mul_eq_zero,
     or_iff_right (Complex.exp_ne_zero _)]
 
 /-- For a level-`k` theta section, vanishing of twisted Fourier coefficients is invariant under
@@ -142,7 +142,7 @@ theorem thetaFourierCoeff_add_int_mul_eq_zero_iff {k : ℕ} {τ : ℂ} {α β : 
     (hs : s ∈ thetaSections k τ α β) (n q : ℤ) :
     thetaFourierCoeff α s (n + q * k) = 0 ↔ thetaFourierCoeff α s n = 0 := by
   have hper : Function.Periodic (fun m : ℤ => thetaFourierCoeff α s m = 0) (k : ℤ) :=
-    fun m => propext (thetaFourierCoeff_add_eq_zero_iff hs m)
+    fun m => propext (thetaFourierCoeff_add_natCast_eq_zero_iff hs m)
   exact iff_of_eq (hper.int_mul q n)
 
 end TauCeti

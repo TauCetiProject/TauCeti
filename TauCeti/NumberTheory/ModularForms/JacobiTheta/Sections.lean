@@ -25,7 +25,8 @@ For `k > 0` and `0 < τ.im`, integrating the theta series termwise
 (`TauCeti.integral_cexp_mul_jacobiTheta₂_mul_add`) computes all twisted Fourier coefficients of
 `θ_r`: they vanish off the congruence class `r + kℤ` and are explicit Gaussian exponentials on
 `r + kℤ`, yielding `thetaFourierCoeff α θ_r r' = δ_{rr'}` for `r, r' : Fin k`. Combined with
-the shift-by-`k` recurrence and Fourier uniqueness from `TauCeti.Analysis.Complex.Theta.Fourier`,
+the shift-by-`k` recurrence from `TauCeti.Analysis.Complex.Theta.Fourier` and Fourier uniqueness
+from `TauCeti.Analysis.Complex.QuasiPeriodic.Fourier`,
 `s ↦ (thetaFourierCoeff α s 0, …, thetaFourierCoeff α s (k - 1))` is a linear isomorphism onto
 `Fin k → ℂ`, giving the basis `TauCeti.thetaSectionsBasis` and the dimension formula
 `TauCeti.finrank_thetaSections`.
