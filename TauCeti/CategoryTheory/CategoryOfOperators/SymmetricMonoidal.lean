@@ -390,8 +390,25 @@ instance (n : FinPointed.{w}) : (ι C n).Faithful where
 variable (C) in
 /-- The inclusion of the families over `⟨n⟩`, as a functor `C^n ⥤ (C^⊗)_⟨n⟩` to the fiber
 of `toFinPointed C` over `⟨n⟩`. It is an equivalence (`fiberEquivalence`). -/
+@[expose]
 noncomputable def toFiber (n : FinPointed.{w}) : (Fin n.len → C) ⥤ (toFinPointed C).Fiber n :=
   Functor.Fiber.inducedFunctor (ι_comp_toFinPointed n)
+
+/-- Forgetting the fiber condition recovers the inclusion of families. -/
+lemma toFiber_comp_fiberInclusion (n : FinPointed.{w}) :
+    toFiber C n ⋙ Functor.Fiber.fiberInclusion = ι C n :=
+  Functor.Fiber.inducedFunctor_comp _
+
+@[simp]
+lemma toFiber_comp_fiberInclusion_obj {n : FinPointed.{w}} (Y : Fin n.len → C) :
+    Functor.Fiber.fiberInclusion.obj ((toFiber C n).obj Y) = (ι C n).obj Y :=
+  rfl
+
+@[simp]
+lemma toFiber_comp_fiberInclusion_map {n : FinPointed.{w}} {Y Y' : Fin n.len → C}
+    (φ : Y ⟶ Y') :
+    Functor.Fiber.fiberInclusion.map ((toFiber C n).map φ) = (ι C n).map φ :=
+  rfl
 
 instance (n : FinPointed.{w}) : (toFiber C n).Faithful :=
   Functor.Faithful.of_comp_eq (Functor.Fiber.inducedFunctor_comp _)
@@ -426,6 +443,11 @@ equivalent to `C^n`, by the inclusion of the families over `⟨n⟩`. -/
 noncomputable def fiberEquivalence (n : FinPointed.{w}) :
     (Fin n.len → C) ≌ (toFinPointed C).Fiber n :=
   (toFiber C n).asEquivalence
+
+@[simp]
+lemma fiberEquivalence_functor (n : FinPointed.{w}) :
+    (fiberEquivalence C n).functor = toFiber C n :=
+  (rfl)
 
 end CategoryOfOperators
 
