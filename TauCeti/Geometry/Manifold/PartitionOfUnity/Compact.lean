@@ -18,7 +18,8 @@ import TauCeti.Geometry.Manifold.BumpFunction
 On a Hausdorff manifold modelled on a finite-dimensional real space, a compact set `K` inside an
 open set `W` has a smooth cutoff function: a smooth `σ : M → [0, 1]`, equal to `1` on a
 neighbourhood of `K`, whose support is a compact subset of `W`
-(`IsCompact.exists_contMDiff_one_nhds_tsupport_subset`).
+(`IsCompact.exists_contMDiff_one_nhds_tsupport_subset`), also as a bundled smooth map
+(`IsCompact.exists_contMDiffMap_one_nhds_hasCompactSupport`).
 
 Mathlib's smooth Urysohn lemma `exists_contMDiffMap_one_nhds_of_subset_interior` gives such a
 function for a closed set, but assumes the manifold σ-compact and does not make the support
@@ -86,6 +87,16 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : 
   refine Real.smoothTransition.one_of_one_le ?_
   have := Finset.single_le_sum (fun j _ ↦ (ρ j).nonneg) hi (f := fun j ↦ ρ j y)
   rwa [(interior_subset hyi : ρ i y = 1)] at this
+
+variable (I) in
+/-- **A bundled smooth cutoff around a compact set.** A compact subset `K` of a Hausdorff manifold
+modelled on a finite-dimensional space has a smooth compactly supported function `χ : C^∞(M, ℝ)`
+equal to `1` on a neighbourhood of `K`. -/
+theorem IsCompact.exists_contMDiffMap_one_nhds_hasCompactSupport {K : Set M} (hK : IsCompact K) :
+    ∃ χ : C^∞⟮I, M; ℝ⟯, HasCompactSupport χ ∧ ∀ᶠ x in 𝓝ˢ K, χ x = 1 := by
+  obtain ⟨χ, hχ, h1, hc, -, -⟩ :=
+    hK.exists_contMDiff_one_nhds_tsupport_subset I isOpen_univ (subset_univ _)
+  exact ⟨⟨χ, hχ⟩, hc, h1⟩
 
 end
 

@@ -180,9 +180,29 @@ theorem isProperOnSupport_id (T : BundleTest I F V → W) : IsProperOnSupport T 
 
 end IsProperOnSupport
 
-/-- Near a point mapped off the support of a test `s` on `Y`, the composite `s ∘ f` vanishes. -/
-private theorem eventually_apply_comp_eq_zero {f : X → Y} (hf : Continuous f)
-    (s : BundleTest J G (Trivial Y G)) {x : X} (hfx : f x ∉ closure {y | s y ≠ 0}) :
+section Delta
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : X → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ X]
+  [T2Space X] {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
+
+/-- Every map is proper on the support of a point mass. -/
+theorem isProperOnSupport_delta (x : X) (ℓ : V x →L[ℝ] W) (f : X → Y) :
+    IsProperOnSupport ⇑(delta (I := I) (F := F) x ℓ) f := fun _ _ ↦
+  ((finite_singleton x).subset (inter_subset_left.trans
+    (dsupport_delta_subset (I := I) (F := F) x ℓ))).isCompact
+
+end Delta
+
+/-- Near a point mapped off the support of a test `s` of a bundle `V` over `Y`, the composite
+`s ∘ f` vanishes. -/
+theorem eventually_apply_comp_eq_zero {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {V : Y → Type*} [∀ y, AddCommGroup (V y)] [∀ y, Module ℝ (V y)]
+    [∀ y, TopologicalSpace (V y)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle ℝ F V] {f : X → Y} (hf : Continuous f)
+    (s : BundleTest J F V) {x : X} (hfx : f x ∉ closure {y | s y ≠ 0}) :
     ∀ᶠ z in 𝓝 x, s (f z) = 0 :=
   eventually_of_mem (hf.continuousAt.preimage_mem_nhds (isClosed_closure.isOpen_compl.mem_nhds hfx))
     fun _ hz ↦ Bundle.apply_eq_zero_of_notMem_closure hz
@@ -628,20 +648,12 @@ variable [T2Space X] {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpa
   {T : BundleTest I G (Trivial X G) →L_c[ℝ] W} {f : C^∞⟮I, X; J, Y⟯}
 
 omit [FiniteDimensional ℝ E'] [IsManifold J ∞ Y] in
-/-- A smooth compactly supported function equal to one near a compact set. -/
-private theorem exists_contMDiffMap_eventually_eq_one {L : Set X} (hL : IsCompact L) :
-    ∃ χ : C^∞⟮I, X; ℝ⟯, HasCompactSupport χ ∧ ∀ᶠ x in 𝓝ˢ L, χ x = 1 := by
-  obtain ⟨χ, hχ, h1, hc, -, -⟩ :=
-    hL.exists_contMDiff_one_nhds_tsupport_subset I isOpen_univ (subset_univ _)
-  exact ⟨⟨χ, hχ⟩, hc, h1⟩
-
-omit [FiniteDimensional ℝ E'] [IsManifold J ∞ Y] in
 /-- A smooth compactly supported function equal to one near the part of the support of `T` over a
 compact set `K`. -/
 private theorem IsProperOnSupport.exists_eventually_eq_one (hT : IsProperOnSupport ⇑T f)
     {K : Set Y} (hK : IsCompact K) :
     ∃ χ : C^∞⟮I, X; ℝ⟯, HasCompactSupport χ ∧ ∀ᶠ x in 𝓝ˢ (dsupport ⇑T ∩ f ⁻¹' K), χ x = 1 :=
-  exists_contMDiffMap_eventually_eq_one (hT K hK)
+  (hT K hK).exists_contMDiffMap_one_nhds_hasCompactSupport I
 
 /-- The pairing of `T` with a cutoff pullback of `s` is its pairing with any test agreeing with
 `s ∘ f` near each point of the support of `T`. -/
@@ -806,8 +818,8 @@ theorem pushforward_add {S : BundleTest I G (Trivial X G) →L_c[ℝ] W}
     pushforward (S + T) f hST = pushforward S f hS + pushforward T f hT := by
   ext s
   -- One cutoff serves `S`, `T` and `S + T`.
-  obtain ⟨χ, hc, h1⟩ := exists_contMDiffMap_eventually_eq_one (I := I)
-    ((hS _ s.isCompact_tsupport).union (hT _ s.isCompact_tsupport))
+  obtain ⟨χ, hc, h1⟩ := ((hS _ s.isCompact_tsupport).union
+    (hT _ s.isCompact_tsupport)).exists_contMDiffMap_one_nhds_hasCompactSupport I
   have hsub {U : BundleTest I G (Trivial X G) →L_c[ℝ] W}
       (hU : dsupport ⇑U ⊆ dsupport ⇑S ∪ dsupport ⇑T) :
       ∀ᶠ x in 𝓝ˢ (dsupport ⇑U ∩ f ⁻¹' closure {y | s y ≠ 0}), χ x = 1 :=
@@ -853,9 +865,9 @@ theorem pushforward_pushforward [T2Space Y] {E'' H'' Z : Type*} [NormedAddCommGr
   -- The part `L` of the support of `T` over `supp s` is compact, and so is its image in `Y`.
   set L := dsupport ⇑T ∩ (g.comp f) ⁻¹' closure {z | s z ≠ 0}
   have hL : IsCompact L := hgfT _ s.isCompact_tsupport
-  obtain ⟨χ, hχc, hχ⟩ := exists_contMDiffMap_eventually_eq_one (I := I) hL
-  obtain ⟨χ', hχc', hχ'⟩ := exists_contMDiffMap_eventually_eq_one (I := J)
-    (hL.image f.contMDiff.continuous)
+  obtain ⟨χ, hχc, hχ⟩ := hL.exists_contMDiffMap_one_nhds_hasCompactSupport I
+  obtain ⟨χ', hχc', hχ'⟩ :=
+    (hL.image f.contMDiff.continuous).exists_contMDiffMap_one_nhds_hasCompactSupport J
   -- `f (supp T) ∩ g⁻¹(supp s)` is the image of `L`.
   have hfL : f '' dsupport ⇑T ∩ g ⁻¹' closure {z | s z ≠ 0} = f '' L := by
     rw [← image_inter_preimage, preimage_preimage]
@@ -874,14 +886,6 @@ theorem pushforward_pushforward [T2Space Y] {E'' H'' Z : Type*} [NormedAddCommGr
 
 /-! ### Point masses -/
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold J ∞ Y] [IsTopologicalAddGroup W]
-  [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W] in
-/-- Every map is proper on the support of a point mass. -/
-theorem isProperOnSupport_delta (x : X) (ℓ : G →L[ℝ] W) (f : X → Y) :
-    IsProperOnSupport ⇑(delta (I := I) (F := G) (V := Trivial X G) x ℓ) f := fun _ _ ↦
-  ((finite_singleton x).subset (inter_subset_left.trans
-    (dsupport_delta_subset (I := I) (F := G) (V := Trivial X G) x ℓ))).isCompact
-
 /-- **The pushforward of a point mass** is the point mass at the image point:
 `f_* δ_x ℓ = δ_{f x} ℓ`. -/
 @[simp]
@@ -890,7 +894,7 @@ theorem pushforward_delta (x : X) (ℓ : G →L[ℝ] W)
     pushforward (delta x ℓ) f h = delta (I := J) (F := G) (V := Trivial Y G) (f x) ℓ := by
   ext s
   obtain ⟨χ, hχc, hχ⟩ :=
-    exists_contMDiffMap_eventually_eq_one (I := I) (isCompact_singleton (x := x))
+    (isCompact_singleton (x := x)).exists_contMDiffMap_one_nhds_hasCompactSupport I
   rw [pushforward_apply_eq_cutoffCompCLM h s hχc (hχ.filter_mono (nhdsSet_mono
     (inter_subset_left.trans (dsupport_delta_subset (I := I) (F := G) (V := Trivial X G) x ℓ))))]
   simp [hχ.self_of_nhdsSet x (mem_singleton x)]

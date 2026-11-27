@@ -193,6 +193,40 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   rw [Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
   rfl
 
+/-- Pulling native sections back along a `C^n` map `g : N → M` is continuous into the topology
+induced by the pulled-back frames over the preimages of the frame domains. No covering hypothesis
+is needed. In each frame the coefficients of the pullback are those of the section composed
+with `g`. -/
+theorem continuous_pullback_frameTopology {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [LocallyCompactSpace E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' n N]
+    (g : C^n⟮I', N; I, M⟯) :
+    let eN := fun i ↦ (e i).pullback (g : C(N, M))
+    let UN := fun i ↦ Opens.comap (g : C(N, M)) (U i)
+    let hUN : ∀ i, (UN i : Set N) ⊆ (eN i).baseSet := fun i _ hx ↦ hU i hx
+    let _ := frameTopology (I := I) (n := n) e U hU
+    let _ := frameTopology (I := I') (n := n) eN UN hUN
+    Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s.pullback g) := by
+  let eN := fun i ↦ (e i).pullback (g : C(N, M))
+  let UN := fun i ↦ Opens.comap (g : C(N, M)) (U i)
+  let hUN : ∀ i, (UN i : Set N) ⊆ (eN i).baseSet := fun i _ hx ↦ hU i hx
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := frameTopology (I := I') (n := n) eN UN hUN
+  apply (continuous_frameTopology_iff_frameCoordinates eN UN hUN).mpr
+  intro i
+  let j : C^n⟮I', UN i; I, U i⟯ :=
+    ⟨fun x ↦ ⟨g x, x.property⟩, (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp
+      (g.contMDiff.comp contMDiff_subtypeVal)⟩
+  have h := ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
+    ((continuous_frameCoordinates e U hU i).prodMk (continuous_const (y := j)))
+  apply h.congr
+  intro s
+  ext x
+  simp only [Function.comp_apply, ContMDiffMap.comp_apply,
+    Bundle.Trivialization.frameCoordinates_apply]
+  rw [Bundle.Trivialization.pullback_apply, ContMDiffSection.pullback_apply]
+  rfl
+
 omit [LocallyCompactSpace E] in
 /-- Multiplication of sections by a fixed smooth scalar function is continuous for the frame
 topology. In each frame it multiplies the coefficients by the restricted function. -/
