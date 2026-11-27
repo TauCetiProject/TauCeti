@@ -34,8 +34,10 @@ import TauCeti.Topology.Algebra.Module.Determinant
 # Changes of variables in higher-order Sobolev spaces `W^{k,p}`
 
 This file develops changes of variables in the weak Sobolev spaces `TauCeti.Wkp` on open subsets
-of a finite-dimensional real inner product space `E`. Linear changes of variables in `W^{2,p}` are
-in `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear`.
+of a finite-dimensional real inner product space `E`. Linear and affine precomposition
+(`TauCeti.Wkp.compAffineEquiv`) is in `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine`,
+while linear Hessian-estimate transfer in `W^{2,p}` is in
+`TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear`.
 
 1. **General `Cᵏ` changes of variables in `W^{k,p}`** (`1 ≤ p ≤ ∞`): if `Φ` is a change of
    variables of order `k` from `U` into `V` (`TauCeti.Wkp.IsChangeOfVariables`) — `Cᵏ`,

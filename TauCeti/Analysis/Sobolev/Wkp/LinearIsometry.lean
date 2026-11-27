@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
-public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 
 /-!
 # Transport of `W^{k,p}` along linear isometries
@@ -41,8 +40,8 @@ follows by induction on `k` from measure preservation of `e` and
 ## Main declarations
 
 * `TauCeti.Wkp.compLinearIsometryEquiv`: precomposition with `e` on `W^{k,p}`.
-* `TauCeti.Wkp.compAffineL_eq_compLinearIsometryEquiv`: `compAffineL` with zero translation agrees
-  with `compLinearIsometryEquiv`.
+* `TauCeti.Wkp.compAffineL_apply_eq_compLinearIsometryEquiv`: `compAffineL` with zero translation
+  agrees with `compLinearIsometryEquiv`.
 * `TauCeti.Wkp.value_compLinearIsometryEquiv_ae`,
   `TauCeti.Wkp.iteratedGradient_compLinearIsometryEquiv_ae`: its value and highest derivative.
 * `TauCeti.Wkp.compLinearIsometryEquiv_mem_wkp0Submodule_iff`: zero boundary values are preserved
@@ -111,7 +110,7 @@ theorem compLinearIsometryEquiv_apply (he : MeasurePreserving e μ ν)
 
 /-- For a measure-preserving linear isometry `e`, `compAffineL` with zero translation agrees with
 `TauCeti.Wkp.compLinearIsometryEquiv`. -/
-theorem compAffineL_eq_compLinearIsometryEquiv {μ : Measure E} [μ.IsAddHaarMeasure]
+theorem compAffineL_apply_eq_compLinearIsometryEquiv {μ : Measure E} [μ.IsAddHaarMeasure]
     (e : E ≃ₗᵢ[ℝ] E') (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ)
     (u : Wkp ν W p k) :
     compAffineL μ e.toContinuousLinearEquiv 0

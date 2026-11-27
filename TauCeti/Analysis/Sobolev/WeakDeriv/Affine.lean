@@ -19,10 +19,10 @@ with no measure-preservation or inner-product hypothesis.
 
 ## Main declarations
 
-* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`: weak chain rule along an invertible
-  affine map `x ↦ e x + b`.
-* `ContinuousLinearEquiv.hasWeakFDerivOn_comp_add_iff`: characterization of weak derivatives on the
-  preimage of an open set under `x ↦ e x + b`.
+* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add_of_isAddHaarMeasure`: weak chain rule
+  along an invertible affine map `x ↦ e x + b`.
+* `ContinuousLinearEquiv.hasWeakFDerivOn_comp_add_iff_of_isAddHaarMeasure`: characterization of
+  weak derivatives on the preimage of an open set under `x ↦ e x + b`.
 -/
 
 public section
@@ -45,7 +45,8 @@ variable {E E' F : Type*}
 derivative `D` on `V` with respect to `ν`, `e : E ≃L[ℝ] E'` is a continuous linear equivalence,
 `b : E'`, and `x ↦ e x + b` maps `U` into `V`, then `x ↦ u (e x + b)` has weak derivative
 `x ↦ D (e x + b) ∘L e` on `U` with respect to any additive Haar measure `μ` on `E`. -/
-theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add {ν : Measure E'} [ν.IsAddHaarMeasure]
+theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add_of_isAddHaarMeasure
+    {ν : Measure E'} [ν.IsAddHaarMeasure]
     (h : HasWeakFDerivOn ν V u D) (μ : Measure E) [μ.IsAddHaarMeasure] (e : E ≃L[ℝ] E') (b : E')
     (hUV : MapsTo (fun x ↦ e x + b) U V) :
     HasWeakFDerivOn μ U (fun x ↦ u (e x + b)) fun x ↦ (D (e x + b)).comp (e : E →L[ℝ] E') := by
@@ -59,13 +60,13 @@ theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add {ν : Measure E'} [ν.IsA
 `x ↦ u (e x + b)` has weak derivative `x ↦ D (e x + b) ∘L e` on `U` with respect to an additive Haar
 measure `μ` if and only if `u` has weak derivative `D` on `V` with respect to an additive Haar
 measure `ν`. -/
-theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_add_iff
+theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_add_iff_of_isAddHaarMeasure
     (e : E ≃L[ℝ] E') (μ : Measure E) [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure]
     (b : E') (hUV : (U : Set E) = (fun x ↦ e x + b) ⁻¹' V) :
     HasWeakFDerivOn μ U (fun x ↦ u (e x + b)) (fun x ↦ (D (e x + b)).comp (e : E →L[ℝ] E')) ↔
       HasWeakFDerivOn ν V u D := by
   refine ⟨fun h ↦ ?_,
-    fun h ↦ h.comp_continuousLinearEquiv_add μ e b (hUV ▸ mapsTo_preimage _ _)⟩
+    fun h ↦ h.comp_continuousLinearEquiv_add_of_isAddHaarMeasure μ e b (hUV ▸ mapsTo_preimage _ _)⟩
   have hinv : ∀ y, e (e.symm y + -e.symm b) + b = y := fun y ↦ by
     rw [map_add, map_neg, e.apply_symm_apply, e.apply_symm_apply, neg_add_cancel_right]
   have hVU : MapsTo (fun y ↦ e.symm y + -e.symm b) V U := fun y hy ↦ by
@@ -73,7 +74,7 @@ theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_add_iff
     exact hy
   simpa only [hinv, ContinuousLinearMap.comp_assoc, e.coe_comp_coe_symm,
     ContinuousLinearMap.comp_id] using
-    h.comp_continuousLinearEquiv_add ν e.symm (-e.symm b) hVU
+    h.comp_continuousLinearEquiv_add_of_isAddHaarMeasure ν e.symm (-e.symm b) hVU
 
 end Affine
 

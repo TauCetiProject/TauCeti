@@ -57,9 +57,9 @@ continuous extended norm.
 * `MeasureTheory.Lp.compContinuousLinearEquivAddRestrict`,
   `MeasureTheory.Lp.coeFn_compContinuousLinearEquivAddRestrict`: restricted additive Haar `Lᵖ`
   precomposition along an invertible affine map `x ↦ B x + b`.
-* `MeasureTheory.Lp.norm_le_mul_det_inv_of_ae_le`,
-  `MeasureTheory.Lp.norm_eq_mul_det_inv_of_ae_eq`: affine `Lᵖ` norm comparison and exact identity
-  on arbitrary sets.
+* `MeasureTheory.Lp.norm_le_mul_abs_det_inv_rpow_of_ae_le`,
+  `MeasureTheory.Lp.norm_eq_mul_abs_det_inv_rpow_of_ae_eq`: affine `Lᵖ` norm comparison and exact
+  identity on arbitrary sets.
 -/
 
 public section
@@ -326,8 +326,8 @@ open scoped ENNReal
 `g ∈ Lᵖ(μ.restrict t)` satisfy `‖f x‖ ≤ M * ‖g (B x + b)‖` for `μ.restrict s`-a.e. `x`, where
 `x ↦ B x + b` maps `s` into `t` for a linear automorphism `B : E ≃L[ℝ] E` and `0 ≤ M`, then
 `‖f‖ ≤ M * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖`. -/
-theorem norm_le_mul_det_inv_of_ae_le {E G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+theorem norm_le_mul_abs_det_inv_rpow_of_ae_le {E G H : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
     {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} {s t : Set E}
     [NormedAddCommGroup G] [NormedAddCommGroup H]
     (B : E ≃L[ℝ] E) (b : E) (hst : Set.MapsTo (fun x ↦ B x + b) s t)
@@ -355,8 +355,8 @@ theorem norm_le_mul_det_inv_of_ae_le {E G H : Type*} [NormedAddCommGroup E] [Nor
 `g ∈ Lᵖ(μ.restrict t)` satisfy `f =ᵐ c • g (B · + b)` on `s = (fun x ↦ B x + b) ⁻¹' t` for a
 linear automorphism `B : E ≃L[ℝ] E` and scalar `c`, then
 `‖f‖ = ‖c‖ * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖`. -/
-theorem norm_eq_mul_det_inv_of_ae_eq {E G 𝕜 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+theorem norm_eq_mul_abs_det_inv_rpow_of_ae_eq {E G 𝕜 : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
     {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} {s t : Set E}
     [NormedAddCommGroup G] [NormedDivisionRing 𝕜] [Module 𝕜 G] [NormSMulClass 𝕜 G]
     (B : E ≃L[ℝ] E) (b : E) (hst : s = (fun x ↦ B x + b) ⁻¹' t)
