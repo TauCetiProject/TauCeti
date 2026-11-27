@@ -85,10 +85,7 @@ theorem sphereHopfMap_sphereJoinMap_mk
     (y : sphere (0 : F) 1) (t : I) :
     sphereHopfMap μ (sphereJoinMap (Join.mk _ _ (x, y, t))) =
       sphereUnreducedSuspensionMap (UnreducedSuspension.mk _ (μ (x, y), t)) := by
-  have h : (sphereJoinHomeomorph E F).symm (sphereJoinMap (Join.mk _ _ (x, y, t))) =
-      Join.mk _ _ (x, y, t) := by
-    rw [← coe_sphereJoinHomeomorph, Homeomorph.symm_apply_apply]
-  simp [sphereHopfMap, h]
+  simp [sphereHopfMap]
 
 /-- **The Hopf map in coordinates.** The Hopf map of `μ` sends a unit vector `(a, b)` of
 `WithLp 2 (E × F)` to `(2 ‖a‖ ‖b‖ • μ (a / ‖a‖, b / ‖b‖), ‖a‖² - ‖b‖²)`, where the directions of

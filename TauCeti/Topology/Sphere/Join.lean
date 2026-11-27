@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
 public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.Constructions.Join
 
@@ -26,7 +27,8 @@ the sphere is Hausdorff, so this bijection is a homeomorphism. For Euclidean sph
   `Join (sphere (0 : E) 1) (sphere (0 : F) 1) → sphere (0 : WithLp 2 (E × F)) 1`.
 * `TauCeti.sphereJoinMap_injective`, `TauCeti.sphereJoinMap_surjective`: it is bijective.
 * `TauCeti.sphereJoinHomeomorph`: for finite-dimensional `E` and `F`, the homeomorphism of the
-  join of the unit spheres with the unit sphere of `WithLp 2 (E × F)`.
+  join of the unit spheres with the unit sphere of `WithLp 2 (E × F)`; its inverse is given by
+  `TauCeti.sphereJoinHomeomorph_symm_apply`.
 * `TauCeti.euclideanSphereJoinHomeomorph`: the homeomorphism `Sⁿ * Sᵐ ≃ₜ Sⁿ⁺ᵐ⁺¹` of unit spheres
   in Euclidean spaces, splitting the coordinates of `ℝⁿ⁺ᵐ⁺²` as `ℝⁿ⁺¹ × ℝᵐ⁺¹`.
 
@@ -104,20 +106,6 @@ theorem sphereJoinMap_injective :
   · refine smul_right_injective F (Real.sqrt_ne_zero'.2 ?_) hy
     exact lt_of_le_of_ne (nonneg s) fun h => hs (Subtype.ext h.symm)
 
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-/-- The squared norms of the two components of a unit vector of the `L²` product add up to `1`. -/
-theorem sq_norm_fst_add_sq_norm_snd_eq_one (p : sphere (0 : WithLp 2 (E × F)) 1) :
-    ‖(p : WithLp 2 (E × F)).fst‖ ^ 2 + ‖(p : WithLp 2 (E × F)).snd‖ ^ 2 = 1 := by
-  rw [← prod_norm_sq_eq_of_L2, norm_eq_of_mem_sphere, one_pow]
-
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-/-- The squared norm of the second component of a unit vector of the `L²` product lies in the unit
-interval. -/
-theorem sq_norm_snd_mem_unitInterval (p : sphere (0 : WithLp 2 (E × F)) 1) :
-    ‖(p : WithLp 2 (E × F)).snd‖ ^ 2 ∈ I := by
-  have hn := sq_norm_fst_add_sq_norm_snd_eq_one p
-  exact ⟨by positivity, by nlinarith [sq_nonneg ‖(p : WithLp 2 (E × F)).fst‖]⟩
-
 /-- A unit vector `(a, b)` of the `L²` product is the image of the point
 `[a / ‖a‖, b / ‖b‖, ‖b‖²]` of the join, where the directions of `a` and `b` are
 `TauCeti.sphereDirection` with any fallback unit vectors `e` and `e'`. -/
@@ -158,6 +146,21 @@ def sphereJoinHomeomorph :
 
 @[simp]
 theorem coe_sphereJoinHomeomorph : ⇑(sphereJoinHomeomorph E F) = sphereJoinMap := (rfl)
+
+@[simp]
+theorem sphereJoinHomeomorph_symm_sphereJoinMap (z : Join (sphere (0 : E) 1) (sphere (0 : F) 1)) :
+    (sphereJoinHomeomorph E F).symm (sphereJoinMap z) = z :=
+  (sphereJoinHomeomorph E F).symm_apply_apply z
+
+/-- The inverse of `TauCeti.sphereJoinHomeomorph` sends a unit vector `(a, b)` to the point
+`[a / ‖a‖, b / ‖b‖, ‖b‖²]` of the join, where the directions of `a` and `b` are
+`TauCeti.sphereDirection` with any fallback unit vectors `e` and `e'`. -/
+theorem sphereJoinHomeomorph_symm_apply (e : sphere (0 : E) 1) (e' : sphere (0 : F) 1)
+    (p : sphere (0 : WithLp 2 (E × F)) 1) :
+    (sphereJoinHomeomorph E F).symm p =
+      Join.mk _ _ (sphereDirection e (p : WithLp 2 (E × F)).fst,
+        sphereDirection e' (p : WithLp 2 (E × F)).snd, ⟨_, sq_norm_snd_mem_unitInterval p⟩) :=
+  (sphereJoinHomeomorph E F).symm_apply_eq.2 (sphereJoinMap_mk_sphereDirection e e' p).symm
 
 /-- **The join `Sⁿ * Sᵐ` is `Sⁿ⁺ᵐ⁺¹`.** The homeomorphism sends `[x, y, t]` to the unit vector of
 `ℝⁿ⁺ᵐ⁺²` whose first `n + 1` coordinates are those of `√(1 - t) • x` and whose last `m + 1`

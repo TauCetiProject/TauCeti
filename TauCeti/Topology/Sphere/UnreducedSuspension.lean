@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
+public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.Constructions.UnreducedSuspension
-
-import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # The unreduced suspension of a sphere is a sphere
@@ -33,7 +33,8 @@ these squared norms (`TauCeti.coe_sphereHopfMap`).
 * `TauCeti.sphereUnreducedSuspensionMap_injective`,
   `TauCeti.sphereUnreducedSuspensionMap_surjective`: it is bijective.
 * `TauCeti.sphereUnreducedSuspensionHomeomorph`: for finite-dimensional `E`, the homeomorphism of
-  the unreduced suspension of the unit sphere with the unit sphere of `WithLp 2 (E × ℝ)`.
+  the unreduced suspension of the unit sphere with the unit sphere of `WithLp 2 (E × ℝ)`; its
+  inverse is given by `TauCeti.sphereUnreducedSuspensionHomeomorph_symm_apply`.
 * `TauCeti.euclideanSphereUnreducedSuspensionHomeomorph`: the homeomorphism `SSⁿ ≃ₜ Sⁿ⁺¹` of unit
   spheres in Euclidean spaces.
 
@@ -107,19 +108,30 @@ theorem sphereUnreducedSuspensionMap_injective :
   exact mul_pos (lt_of_le_of_ne (nonneg s) fun h => hs₀ (Subtype.ext h.symm))
     (sub_pos.2 (lt_of_le_of_ne (le_one s) fun h => hs₁ (Subtype.ext h)))
 
-/-- The map from the unreduced suspension of the unit sphere of a nontrivial space to the sphere
-of the `L²` product with `ℝ` is surjective. -/
-theorem sphereUnreducedSuspensionMap_surjective [Nontrivial E] :
-    Function.Surjective (sphereUnreducedSuspensionMap (E := E)) := by
-  rintro ⟨p, hp⟩
-  have hn : ‖p.fst‖ ^ 2 + p.snd ^ 2 = 1 := by
-    rw [← sq_abs p.snd, ← Real.norm_eq_abs, ← prod_norm_sq_eq_of_L2,
-      mem_sphere_zero_iff_norm.1 hp, one_pow]
-  obtain ⟨e⟩ := (NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one |>.coe_sort
-  -- The suspension coordinate is `t = (1 - c) / 2`, where `c` is the last coordinate.
-  have ht : (1 - p.snd) / 2 ∈ I := ⟨by nlinarith [sq_nonneg ‖p.fst‖, sq_nonneg (p.snd + 1)],
-    by nlinarith [sq_nonneg ‖p.fst‖, sq_nonneg (p.snd - 1)]⟩
-  refine ⟨UnreducedSuspension.mk _ (sphereDirection e p.fst, ⟨_, ht⟩), Subtype.ext ?_⟩
+omit [NormedSpace ℝ E] in
+/-- The suspension coordinate `(1 - c) / 2` of a unit vector `(a, c)` of the `L²` product with `ℝ`
+lies in the unit interval. -/
+theorem one_sub_snd_div_two_mem_unitInterval (p : sphere (0 : WithLp 2 (E × ℝ)) 1) :
+    (1 - (p : WithLp 2 (E × ℝ)).snd) / 2 ∈ I := by
+  have hn := sq_norm_fst_add_sq_norm_snd_eq_one p
+  rw [Real.norm_eq_abs, sq_abs] at hn
+  exact ⟨by nlinarith [sq_nonneg ‖(p : WithLp 2 (E × ℝ)).fst‖,
+      sq_nonneg ((p : WithLp 2 (E × ℝ)).snd + 1)],
+    by nlinarith [sq_nonneg ‖(p : WithLp 2 (E × ℝ)).fst‖,
+      sq_nonneg ((p : WithLp 2 (E × ℝ)).snd - 1)]⟩
+
+/-- A unit vector `(a, c)` of the `L²` product with `ℝ` is the image of the point
+`[a / ‖a‖, (1 - c) / 2]` of the unreduced suspension, where the direction of `a` is
+`TauCeti.sphereDirection` with any fallback unit vector `e`. -/
+theorem sphereUnreducedSuspensionMap_mk_sphereDirection (e : sphere (0 : E) 1)
+    (p : sphere (0 : WithLp 2 (E × ℝ)) 1) :
+    sphereUnreducedSuspensionMap (UnreducedSuspension.mk _
+      (sphereDirection e (p : WithLp 2 (E × ℝ)).fst,
+        ⟨_, one_sub_snd_div_two_mem_unitInterval p⟩)) = p := by
+  obtain ⟨p, hp⟩ := p
+  have hn := sq_norm_fst_add_sq_norm_snd_eq_one ⟨p, hp⟩
+  rw [Real.norm_eq_abs, sq_abs] at hn
+  ext1
   rw [coe_sphereUnreducedSuspensionMap_mk]
   have h2 : 2 * √((1 - p.snd) / 2 * (1 - (1 - p.snd) / 2)) = ‖p.fst‖ := by
     rw [show (1 - p.snd) / 2 * (1 - (1 - p.snd) / 2) = (‖p.fst‖ / 2) ^ 2 by
@@ -128,6 +140,13 @@ theorem sphereUnreducedSuspensionMap_surjective [Nontrivial E] :
   simp only [h2, norm_smul_sphereDirection, show 1 - 2 * ((1 - p.snd) / 2) = p.snd by ring]
   -- `toLp 2 (p.fst, p.snd) = p` is the eta law of the product and of `WithLp`.
   rfl
+
+/-- The map from the unreduced suspension of the unit sphere of a nontrivial space to the sphere
+of the `L²` product with `ℝ` is surjective. -/
+theorem sphereUnreducedSuspensionMap_surjective [Nontrivial E] :
+    Function.Surjective (sphereUnreducedSuspensionMap (E := E)) := by
+  obtain ⟨e⟩ := (NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one |>.coe_sort
+  exact fun p => ⟨_, sphereUnreducedSuspensionMap_mk_sphereDirection e p⟩
 
 theorem sphereUnreducedSuspensionMap_bijective [Nontrivial E] :
     Function.Bijective (sphereUnreducedSuspensionMap (E := E)) :=
@@ -147,6 +166,23 @@ def sphereUnreducedSuspensionHomeomorph :
 @[simp]
 theorem coe_sphereUnreducedSuspensionHomeomorph :
     ⇑(sphereUnreducedSuspensionHomeomorph E) = sphereUnreducedSuspensionMap := (rfl)
+
+@[simp]
+theorem sphereUnreducedSuspensionHomeomorph_symm_sphereUnreducedSuspensionMap
+    (z : UnreducedSuspension (sphere (0 : E) 1)) :
+    (sphereUnreducedSuspensionHomeomorph E).symm (sphereUnreducedSuspensionMap z) = z :=
+  (sphereUnreducedSuspensionHomeomorph E).symm_apply_apply z
+
+/-- The inverse of `TauCeti.sphereUnreducedSuspensionHomeomorph` sends a unit vector `(a, c)` to
+the point `[a / ‖a‖, (1 - c) / 2]` of the unreduced suspension, where the direction of `a` is
+`TauCeti.sphereDirection` with any fallback unit vector `e`. -/
+theorem sphereUnreducedSuspensionHomeomorph_symm_apply (e : sphere (0 : E) 1)
+    (p : sphere (0 : WithLp 2 (E × ℝ)) 1) :
+    (sphereUnreducedSuspensionHomeomorph E).symm p =
+      UnreducedSuspension.mk _ (sphereDirection e (p : WithLp 2 (E × ℝ)).fst,
+        ⟨_, one_sub_snd_div_two_mem_unitInterval p⟩) :=
+  (sphereUnreducedSuspensionHomeomorph E).symm_apply_eq.2
+    (sphereUnreducedSuspensionMap_mk_sphereDirection e p).symm
 
 /-- **The unreduced suspension `SSⁿ` is `Sⁿ⁺¹`.** The homeomorphism sends `[x, t]` to the unit
 vector of `ℝⁿ⁺²` whose first `n + 1` coordinates are those of `2 √(t (1 - t)) • x` and whose last
