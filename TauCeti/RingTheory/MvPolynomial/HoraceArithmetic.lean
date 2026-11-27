@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Order.Floor.Div
 public import Mathlib.Data.Nat.Choose.Basic
 import TauCeti.Algebra.Order.Floor.Div
 import Mathlib.Tactic.IntervalCases
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
@@ -38,7 +37,7 @@ they use only `e < r`, not `0 ≤ e`.
 * `TauCeti.horace_trace_size_le`: for `q ≤ ⌈N(r, d) / (r + 1)⌉`, the part of the residual scheme
   on `H` has length at most the dimension of the forms of degree `d - 1` on `H`:
   `r * e + u ≤ N(r - 1, d - 1)`.
-* `TauCeti.horace_residual_size_le`: for the same `q`, the `q - u - e` double points off `H` have
+* `TauCeti.horace_residual_size_ge`: for the same `q`, the `q - u - e` double points off `H` have
   total length at least the dimension of the forms of degree `d - 2`:
   `N(r, d - 2) ≤ (q - u - e) * (r + 1)`.
 * `TauCeti.horace_quartic_residual_ge`: for quartics in dimension `r ≥ 10` there are at least
@@ -64,30 +63,39 @@ public section
 
 namespace TauCeti
 
+/-- The closed form `24 (n + 4).choose 4 = (n + 4) (n + 3) (n + 2) (n + 1)`. -/
+private lemma choose_four_mul (n : ℕ) :
+    24 * (n + 4).choose 4 = (n + 4) * (n + 3) * (n + 2) * (n + 1) := by
+  rw [show (24 : ℕ) = (4 : ℕ).factorial from rfl, ← Nat.descFactorial_eq_factorial_mul_choose]
+  simp [Nat.descFactorial_succ]
+  ring
+
+/-- The closed form `6 (n + 3).choose 3 = (n + 3) (n + 2) (n + 1)`. -/
+private lemma choose_three_mul (n : ℕ) :
+    6 * (n + 3).choose 3 = (n + 3) * (n + 2) * (n + 1) := by
+  rw [show (6 : ℕ) = (3 : ℕ).factorial from rfl, ← Nat.descFactorial_eq_factorial_mul_choose]
+  simp [Nat.descFactorial_succ]
+  ring
+
 /-- For `m ≥ 4`, the binomial coefficient `(s + 1 + m).choose m` is at least
 `(s + 5).choose 4`, whose `24`-fold multiple is `(s + 5) (s + 4) (s + 3) (s + 2)`. -/
 private lemma choose_four_le {s m : ℕ} (hm : 4 ≤ m) :
     (s + 5) * (s + 4) * (s + 3) * (s + 2) ≤ 24 * (s + 1 + m).choose m := by
-  have h24 : 24 * (s + 5).choose 4 = (s + 5) * (s + 4) * (s + 3) * (s + 2) := by
-    rw [show (24 : ℕ) = (4 : ℕ).factorial from rfl, ← Nat.descFactorial_eq_factorial_mul_choose]
-    simp [Nat.descFactorial_succ, show s + 5 - 1 = s + 4 by omega,
-      show s + 5 - 2 = s + 3 by omega, show s + 5 - 3 = s + 2 by omega]
-    ring
+  have h24 : 24 * (s + 5).choose 4 = (s + 5) * (s + 4) * (s + 3) * (s + 2) :=
+    choose_four_mul (s + 1)
   have hle : (s + 5).choose (s + 1) ≤ (s + 1 + m).choose (s + 1) :=
     Nat.choose_le_choose _ (by omega)
   rw [show s + 5 = s + 1 + 4 by ring, Nat.choose_symm_add, show s + 1 + 4 = s + 5 by ring,
     Nat.choose_symm_add] at hle
   omega
 
-/-- Pascal's rule in the form `N(r, d - 1) = N(r - 1, d - 1) + N(r, d - 2)`. -/
-private lemma choose_pred_eq {r d : ℕ} (hr : 1 ≤ r) (hd : 2 ≤ d) :
-    (r + (d - 1)).choose (d - 1) =
-      (r - 1 + (d - 1)).choose (d - 1) + (r + (d - 2)).choose (d - 2) := by
+/-- Pascal's rule in the form `N(r, d) = N(r, d - 1) + N(r - 1, d)`. -/
+private lemma choose_add_eq_pred {r d : ℕ} (hr : 1 ≤ r) (hd : 1 ≤ d) :
+    (r + d).choose d = (r + (d - 1)).choose (d - 1) + (r - 1 + d).choose d := by
   obtain ⟨r, rfl⟩ : ∃ r', r = r' + 1 := ⟨r - 1, by omega⟩
-  obtain ⟨d, rfl⟩ : ∃ d', d = d' + 2 := ⟨d - 2, by omega⟩
-  rw [show r + 1 + (d + 2 - 1) = r + d + 1 + 1 by omega, show d + 2 - 1 = d + 1 by omega,
-    show r + 1 - 1 + (d + 1) = r + d + 1 by omega, show r + 1 + (d + 2 - 2) = r + d + 1 by omega,
-    show d + 2 - 2 = d by omega, Nat.choose_succ_succ', add_comm]
+  obtain ⟨d, rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega⟩
+  rw [Nat.add_sub_cancel, Nat.add_sub_cancel, show r + 1 + (d + 1) = r + 1 + d + 1 by ring,
+    show r + (d + 1) = r + 1 + d by ring, Nat.choose_succ_succ']
 
 /-- With `r = s + 2` and `d = t + 4`, outside `d = 4, r ≤ 4`, the binomial estimate
 `d (r³ - r² - r + 2) ≤ (r - 1) (d - 1) N(r - 1, d - 1)`. -/
@@ -96,10 +104,8 @@ private lemma horace_trace_key_le {s t : ℕ} (h : ¬(t = 0 ∧ s ≤ 2)) :
   rcases Nat.eq_zero_or_pos t with rfl | ht
   · -- For `d = 4` use `6 N(r - 1, 3) = (r + 2) (r + 1) r` and `r ≥ 5`.
     obtain ⟨w, rfl⟩ : ∃ w, s = w + 3 := ⟨s - 3, by omega⟩
-    have h6 : 6 * (w + 3 + 0 + 4).choose (0 + 3) = (w + 7) * (w + 6) * (w + 5) := by
-      rw [show (6 : ℕ) = (3 : ℕ).factorial from rfl, ← Nat.descFactorial_eq_factorial_mul_choose]
-      simp [Nat.descFactorial_succ, Nat.factorial]
-      ring
+    have h6 : 6 * (w + 3 + 0 + 4).choose (0 + 3) = (w + 7) * (w + 6) * (w + 5) :=
+      choose_three_mul (w + 4)
     have hpoly : 2 * (4 * ((w + 3) ^ 3 + 5 * (w + 3) ^ 2 + 7 * (w + 3) + 4)) ≤
         (w + 4) * ((w + 7) * (w + 6) * (w + 5)) := by
       ring_nf
@@ -188,14 +194,15 @@ theorem horace_trace_size_le {r d q : ℕ} (hr : 2 ≤ r) (hd : 4 ≤ d)
 /-- **Horace residual-size inequality.** Under the hypotheses of `horace_trace_size_le`, the
 `q - u - e` double points left off the hyperplane, each of length `r + 1`, have total length at
 least the dimension of the forms of degree `d - 2`: `N(r, d - 2) ≤ (q - u - e) * (r + 1)`. -/
-theorem horace_residual_size_le {r d q : ℕ} (hr : 2 ≤ r) (hd : 4 ≤ d)
+theorem horace_residual_size_ge {r d q : ℕ} (hr : 2 ≤ r) (hd : 4 ≤ d)
     (hq : q ≤ (r + d).choose d ⌈/⌉ (r + 1)) {u e : ℤ}
     (hdiv : r * u + e = q * (r + 1) - ((r + (d - 1)).choose (d - 1) : ℕ)) (her : e < r) :
     (((r + (d - 2)).choose (d - 2) : ℕ) : ℤ) ≤ (q - u - e) * (r + 1) := by
   have htrace := horace_trace_size_le hr hd hq hdiv her
   have hpascal : (((r + (d - 1)).choose (d - 1) : ℕ) : ℤ) =
-      ((r - 1 + (d - 1)).choose (d - 1) : ℕ) + ((r + (d - 2)).choose (d - 2) : ℕ) := by
-    exact_mod_cast choose_pred_eq (by omega) (by omega)
+      ((r + (d - 2)).choose (d - 2) : ℕ) + ((r - 1 + (d - 1)).choose (d - 1) : ℕ) := by
+    rw [show d - 2 = d - 1 - 1 by omega]
+    exact_mod_cast choose_add_eq_pred (by omega) (by omega)
   -- `(q - u - e) (r + 1) = N(r, d - 1) - (r e + u)`.
   linarith
 
@@ -214,16 +221,9 @@ theorem horace_quartic_residual_ge {r q : ℕ} (hr : 10 ≤ r)
   obtain ⟨s, rfl⟩ : ∃ s, r = s + 1 := ⟨r - 1, by omega⟩
   have hpascal : (s + 1 + 4).choose 4 = (s + 1 + 3).choose 3 + (s + 1 + 3).choose 4 :=
     Nat.choose_succ_succ' _ _
-  have hB : 24 * (s + 1 + 3).choose 4 = (s + 4) * (s + 3) * (s + 2) * (s + 1) := by
-    rw [show (24 : ℕ) = (4 : ℕ).factorial from rfl, ← Nat.descFactorial_eq_factorial_mul_choose]
-    simp [Nat.descFactorial_succ, show s + 1 + 3 - 1 = s + 3 by omega,
-      show s + 1 + 3 - 2 = s + 2 by omega, show s + 1 + 3 - 3 = s + 1 by omega]
-    ring
-  have hC : 6 * (s + 1 + 3).choose 3 = (s + 4) * (s + 3) * (s + 2) := by
-    rw [show (6 : ℕ) = (3 : ℕ).factorial from rfl, ← Nat.descFactorial_eq_factorial_mul_choose]
-    simp [Nat.descFactorial_succ, show s + 1 + 3 - 1 = s + 3 by omega,
-      show s + 1 + 3 - 2 = s + 2 by omega]
-    ring
+  have hB : 24 * (s + 1 + 3).choose 4 = (s + 4) * (s + 3) * (s + 2) * (s + 1) :=
+    choose_four_mul s
+  have hC : 6 * (s + 1 + 3).choose 3 = (s + 4) * (s + 3) * (s + 2) := choose_three_mul (s + 1)
   set B := (s + 1 + 3).choose 4
   set C := (s + 1 + 3).choose 3
   rw [hpascal] at hq'
@@ -258,11 +258,12 @@ theorem horace_critical_bounds {r d q : ℕ} (hr : 2 ≤ r) (hd : 4 ≤ d)
     (hdiv : r * u + e = q * (r + 1) - ((r + (d - 1)).choose (d - 1) : ℕ)) (he : 0 ≤ e)
     (her : e < r) :
     r - 1 ≤ u ∧ u ≤ q ∧ 0 ≤ q - u - e := by
-  have hres := horace_residual_size_le hr hd hqc hdiv her
+  have hres := horace_residual_size_ge hr hd hqc hdiv her
   have hqf' : (r + d).choose d ≤ q * (r + 1) + r := by
     have := (Nat.div_le_iff_le_mul_add_pred (by omega : 0 < r + 1)).1 hqf
     rw [Nat.add_sub_cancel, mul_comm] at this
     exact this
+  have hpascal := choose_add_eq_pred (r := r) (d := d) (by omega) (by omega)
   have hpos : 0 ≤ (q : ℤ) - u - e := by
     by_contra! h
     nlinarith [hres, (by positivity : (0 : ℤ) ≤ ((r + (d - 2)).choose (d - 2) : ℕ))]
@@ -270,11 +271,7 @@ theorem horace_critical_bounds {r d q : ℕ} (hr : 2 ≤ r) (hd : 4 ≤ d)
   -- `r u + e ≥ N(r, d) - r - N(r, d - 1) = N(r - 1, d) - r ≥ r² - r`.
   obtain ⟨s, rfl⟩ : ∃ s, r = s + 2 := ⟨r - 2, by omega⟩
   obtain ⟨t, rfl⟩ : ∃ t, d = t + 4 := ⟨d - 4, by omega⟩
-  have hpascal : (s + 2 + (t + 4)).choose (t + 4) =
-      (s + 2 + (t + 4 - 1)).choose (t + 4 - 1) + (s + 1 + (t + 4)).choose (t + 4) := by
-    rw [show s + 2 + (t + 4) = s + t + 5 + 1 by ring, show t + 4 = t + 3 + 1 by ring,
-      Nat.choose_succ_succ', show s + 2 + (t + 3 + 1 - 1) = s + t + 5 by omega,
-      show t + 3 + 1 - 1 = t + 3 by omega, show s + 1 + (t + 3 + 1) = s + t + 5 by ring]
+  rw [show s + 2 - 1 = s + 1 by omega] at hpascal
   have h24 := choose_four_le (s := s) (m := t + 4) (by omega)
   have hpoly : 24 * (s + 2) ^ 2 ≤ (s + 5) * (s + 4) * (s + 3) * (s + 2) := by
     ring_nf
