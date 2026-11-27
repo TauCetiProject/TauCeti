@@ -11,7 +11,6 @@ import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.TangentialDerivative
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
-import TauCeti.MeasureTheory.Measure.InterBall
 
 /-!
 # Mean oscillation of the Hessian at a flat boundary
@@ -36,8 +35,10 @@ real `t`
 `  + C ‖τ‖² (∫_{B_r⁺} f² + ∫_{B_r⁺} θ² ‖D²u‖²)`,
 
 where `p_ρ` is the multiple of `ν` closest to `D²u τ` in `L²(B_ρ⁺)`. These are
-`exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le` for constant coefficients,
-`a = A`, and `exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le_add` in general.
+`exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le`
+for constant coefficients, `a = A`, and
+`exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le_add`
+in general.
 If `θ ≤ K` on `B_r⁺` and `D²u ∈ L^{2q}(B_r⁺)` for Hölder conjugate exponents `q, q'`, the
 coefficient term becomes a mean deviation of `a`, and the estimate takes the scale-invariant form
 
@@ -45,10 +46,10 @@ coefficient term becomes a mean deviation of `a`, and the estimate takes the sca
 `  + C ‖τ‖² (r / ρ)^(n + 1) (⨍_{B_r⁺} f² + E)`
 
 with `E = (K^(2q' - 1) ⨍_{B_r⁺} θ)^(1/q') (⨍_{B_r⁺} ‖D²u‖^(2q))^(1/q)`
-(`exists_setAverage_ball_inter_norm_iteratedGradient_apply_sub_sq_le`). The frozen matrix `A` is
-arbitrary: nothing requires the coefficients near the boundary to be close to a matrix invariant
-under the reflection in the hyperplane, which coefficients of vanishing mean oscillation need not
-be.
+(`exists_setAverage_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le`).
+The frozen matrix `A` is arbitrary: nothing requires the coefficients near the boundary to be
+close to a matrix invariant under the reflection in the hyperplane, which coefficients of vanishing
+mean oscillation need not be.
 
 These are the estimates on half-balls that Krylov's sharp function method needs for the `W^{2,p}`
 estimate up to a flat boundary. Only the tangential columns are compared with constants: their
@@ -147,8 +148,9 @@ constants `λ`, `Λ`, and let `u ∈ W^{2,2}(H)`, with first-order part in `H¹�
 where `p_ρ = (⟪(D²u τ)_{B_ρ⁺}, ν⟫ / ‖ν‖²) ν` is the multiple of `ν` closest to `D²u τ` in
 `L²(B_ρ⁺)`. Here `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, and
 `∂ᵢ∂ⱼu = ⟪D²u eᵢ, eⱼ⟫`. -/
-theorem exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le {lam Lam : ℝ}
-    (hlam : 0 < lam) :
+theorem
+    exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le
+    {lam Lam : ℝ} (hlam : 0 < lam) :
     ∃ C : ℝ, 0 < C ∧ ∀ {H : Opens E} {u : Wkp volume H 2 2}
       {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {f : E → ℝ} {ν z τ : E} {c₀ r ρ : ℝ},
       UniformlyEllipticOn (ball z r) (fun _ => A) lam Lam → ν ≠ 0 →
@@ -212,8 +214,9 @@ attached bilinear forms. Let `u ∈ W^{2,2}(H)`, with first-order part in `H¹�
 
 where `p_ρ` is the multiple of `ν` closest to `D²u τ` in `L²(B_ρ⁺)`. Neither continuity nor
 symmetry of `a` is assumed. -/
-theorem exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le_add {lam Lam : ℝ}
-    (hlam : 0 < lam) :
+theorem
+  exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le_add
+    {lam Lam : ℝ} (hlam : 0 < lam) :
     ∃ C : ℝ, 0 < C ∧ ∀ {H : Opens E} {u : Wkp volume H 2 2}
       {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
       {f : E → ℝ} {ν z τ : E} {c₀ r ρ K : ℝ},
@@ -234,7 +237,8 @@ theorem exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le_add 
             ∫ x in ball z r ∩ H, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ^ 2 *
               ‖Wkp.iteratedGradient 1 u x‖ ^ 2) := by
   obtain ⟨C, hC, hest⟩ :=
-    exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le (n := n) (Lam := Lam) hlam
+    exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le
+      (n := n) (Lam := Lam) hlam
   refine ⟨2 * (n + 1) ^ 2 * C, by positivity, ?_⟩
   intro H u a A f ν z τ c₀ r ρ K hA ha haK hν hH hzc hτ hu0 heq hρ hρr t
   -- Freeze the coefficients at `A`: the right-hand side becomes `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`.
@@ -276,8 +280,8 @@ conjugate exponents `q, q'`. Then for every tangential direction `τ`, `⟪τ, �
 with `E = (K^(2q' - 1) ⨍_{B_r⁺} θ)^(1/q') (⨍_{B_r⁺} ‖D²u‖^(2q))^(1/q)`, where `p_ρ` is the
 multiple of `ν` closest to `D²u τ` in `L²(B_ρ⁺)`. Every average is invariant under dilations about
 `z`, and the coefficients enter only through the mean deviation `⨍_{B_r⁺} θ`. -/
-theorem exists_setAverage_ball_inter_norm_iteratedGradient_apply_sub_sq_le {lam Lam : ℝ}
-    (hlam : 0 < lam) :
+theorem exists_setAverage_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le
+    {lam Lam : ℝ} (hlam : 0 < lam) :
     ∃ C : ℝ, 0 < C ∧ ∀ {H : Opens E} {u : Wkp volume H 2 2}
       {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
       {f : E → ℝ} {ν z τ : E} {c₀ r ρ K q q' : ℝ},
@@ -301,8 +305,8 @@ theorem exists_setAverage_ball_inter_norm_iteratedGradient_apply_sub_sq_le {lam 
                 ⨍ x in ball z r ∩ H, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) ^ q'⁻¹ *
               (⨍ x in ball z r ∩ H, ‖Wkp.iteratedGradient 1 u x‖ ^ (2 * q)) ^ q⁻¹) := by
   obtain ⟨C, hC, hest⟩ :=
-    exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le_add (n := n) (Lam := Lam)
-      hlam
+  exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le_add
+      (n := n) (Lam := Lam) hlam
   refine ⟨C, hC, ?_⟩
   intro H u a A f ν z τ c₀ r ρ K q q' hA ha haK hν hH hzc hτ hu0 heq hq hHq hρ hρr t
   have hr : 0 < r := hρ.trans_le hρr
