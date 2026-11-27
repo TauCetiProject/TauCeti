@@ -108,13 +108,6 @@ theorem gaussianMellin_eq_Gammaℝ_div_two {s : ℂ} (hs : -(j.val : ℝ) < s.re
   simpa only [gaussianMellin_def, gaussianMonomial] using
     (hasMellin_pow_mul_exp_neg_pi_mul_sq j.val (s := s) (by linarith)).2
 
-/-- The Mellin transform of the parity-`j` Gaussian in its half-plane of convergence. -/
-theorem gaussianMellin_eq {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
-    gaussianMellin j s =
-      (1 / 2 : ℂ) * (π : ℂ) ^ (-(s + j.val) / 2) * Complex.Gamma ((s + j.val) / 2) := by
-  rw [gaussianMellin_eq_Gammaℝ_div_two hs, Complex.Gammaℝ_def]
-  ring
-
 /-- The unnormalized Gaussian theta series is measurable in the scale. -/
 @[fun_prop] theorem measurable_gaussianTheta : Measurable (gaussianTheta j c) := by
   rw [funext (gaussianTheta_def j c)]
