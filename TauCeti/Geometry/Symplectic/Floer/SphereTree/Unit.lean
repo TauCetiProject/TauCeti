@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.SphereTree.Comparison
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -210,8 +209,8 @@ one. Such a stratum with a tree of simple spheres attached has nonnegative expec
 exactly when it has no nonconstant sphere bubble and at most `h 0 - 2n + μ - μ₀ + 2 c₁(A') + p`
 trajectories and cylinders have broken off in total. So the rigid counts of the unit homotopy, of
 index `-1` at interior parameters, come from unbroken capped cylinders without bubbles, and its
-one-dimensional problem, of index `0`, meets at interior parameters only the strata with a single
-broken-off trajectory or cylinder. -/
+one-dimensional problem, of index `0`, meets at interior parameters only the unbroken strata and
+those with a single broken-off trajectory or cylinder. -/
 theorem sphereTreeDimension_unitCoreDimension_add_nonneg_iff (n : ℤ) (c : G →+ ℤ) {k l l₀ : ℕ}
     (h : Fin (k + 1) → ℤ) (g : Fin (l + 1) → ℤ) (g₀ : Fin (l₀ + 1) → ℤ) (C : Fin l → G)
     (C₀ : Fin l₀ → G) (A : G) (p : ℤ) {B : ι → G} {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ}
