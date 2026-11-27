@@ -139,6 +139,8 @@ theorem normOneLatticeVectors_mul_integral (g : GL ι 𝔸ᶠ[E])
     rw [mem_normOneLatticeVectors_iff] at hx ⊢
     refine ⟨hx.1, fun i ↦ ?_⟩
     simp only [_root_.mul_inv_rev, ← map_inv, coe_mul, ← mulVec_mulVec]
+    rw [Matrix.mulVec, dotProduct]
+    simp only [GeneralLinearGroup.map_apply]
     exact Subalgebra.sum_mem _ fun j _ ↦
       Subalgebra.mul_mem _ ((b⁻¹ : GL ι (integralAdeles (𝓞 E) E)).val i j).property (hx.2 j)
   ext x

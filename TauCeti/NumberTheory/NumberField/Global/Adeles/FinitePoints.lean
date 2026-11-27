@@ -49,8 +49,8 @@ theorem finite_setOf_infinitePlace_le_and_finiteAdele_mem {s : Set 𝔸ᶠ[K]}
     have hset : {a : w.Completion | ‖a‖ ≤ B} =
         InfinitePlace.Completion.extensionEmbedding w ⁻¹' Metric.closedBall 0 B := by
       ext a
-      rw [Set.mem_preimage, mem_closedBall_zero_iff, hi.norm_map_of_map_zero (map_zero _)]
-      rfl
+      rw [Set.mem_ofPred_eq, Set.mem_preimage, mem_closedBall_zero_iff,
+        hi.norm_map_of_map_zero (map_zero _)]
     rw [hset]
     exact hi.isClosedEmbedding.isCompact_preimage (isCompact_closedBall 0 B)
   have h := finite_preimage_algebraMap_adeleRing (ht.prod hs)
