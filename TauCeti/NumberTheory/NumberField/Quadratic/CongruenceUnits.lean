@@ -77,7 +77,8 @@ theorem ker_unitsMap_ringOfIntegers_quotient_span_natCast [NumberField K] [IsTot
       if N = 1 then ⊤ else if N = 2 then Subgroup.zpowers (-1) else ⊥ := by
   obtain ⟨e⟩ := exists_ringOfIntegers_periodAlgEquiv hK
   exact ker_unitsMap_ringOfIntegers_quotient_span_natCast_of_algEquiv e
-    ((discr_neg_periodCoeff (discr K) (discr_emod_four_eq_zero_or_one K)).symm ▸
-      IsTotallyComplex.discr_lt_zero hK) hN
+    (by
+      rw [QuadraticAlgebra.discr_ediv_emod (discr_emod_four_eq_zero_or_one K)]
+      exact IsTotallyComplex.discr_lt_zero hK) hN
 
 end TauCeti.NumberField
