@@ -23,8 +23,7 @@ isomorphism of the corner `e₀₀`, and `K₀(ℂ)` with `ℤ` by the rank
   sends `[1]` to `2`, so it induces multiplication by `2` on `ℤ` and is not an isomorphism: the
   stability isomorphism needs a rank-one corner.
 
-These are the finite-matrix forms of the OperatorKTheory K2.2 Check on the corners of `ℂ` in the
-compact operators.
+These are finite-matrix analogues of the corresponding statements for the compact operators.
 -/
 
 public section
@@ -59,24 +58,24 @@ example : ProjectionKZero.map (singleNonUnitalStarRingHom ℂ (0 : Fin 2)) class
   ProjectionKZero.map_of_mk _ _
 
 /-- **The rank-one corner induces the identity of `ℤ`.** Under the stability isomorphism of the
-corner `e₀₀` and the rank, the corner `λ ↦ λ e₀₀` sends `n` to `n`. -/
-example (x : ProjectionKZero ℂ) :
-    ProjectionKZero.rankAddEquiv ℂ ((ProjectionKZero.cornerEquiv (0 : Fin 2)).symm
-      (ProjectionKZero.map (singleNonUnitalStarRingHom ℂ (0 : Fin 2)) x)) =
-      ProjectionKZero.rankAddEquiv ℂ x := by
-  rw [← ProjectionKZero.cornerEquiv_apply, AddEquiv.symm_apply_apply]
+corner `e₀₀` and the rank, the image `[e₀₀]` of `[1]` corresponds to the generator `1`. -/
+example : ProjectionKZero.rankAddEquiv ℂ ((ProjectionKZero.cornerEquiv (0 : Fin 2)).symm
+    (GrothendieckAddGroup.of (ProjectionMonoid.mk cornerOne isStarProjection_cornerOne))) = 1 := by
+  rw [ProjectionKZero.cornerEquiv_symm_of, ProjectionMonoid.cornerEquiv_symm_mk,
+    ProjectionKZero.rankAddEquiv_of_mk]
+  have h : comp (Fin 1) (Fin 1) (Fin 2) (Fin 2) ℂ cornerOne = single (0, 0) (0, 0) 1 := by
+    ext ⟨i, k⟩ ⟨j, l⟩
+    simp [Subsingleton.elim i 0, Subsingleton.elim j 0, single_apply]
+  rw [h, ← diagonal_single, rank_diagonal]
+  simp
 
 /-- The unital corner `λ ↦ λ 1` of the rank-two projection `1 = e₀₀ + e₁₁` of `M₂(ℂ)`. -/
-noncomputable def rankTwoCorner : ℂ →⋆ₙ+* Matrix (Fin 2) (Fin 2) ℂ where
-  toFun c := c • 1
-  map_mul' a b := by rw [smul_mul_smul_comm, one_mul]
-  map_zero' := zero_smul _ _
-  map_add' a b := add_smul _ _ _
-  map_star' c := by rw [star_smul, star_one]
+noncomputable def rankTwoCorner : ℂ →⋆ₙ+* Matrix (Fin 2) (Fin 2) ℂ :=
+  NonUnitalStarRingHom.ofClass (StarAlgHom.ofId ℂ (Matrix (Fin 2) (Fin 2) ℂ))
 
 /-- The rank-two corner is `λ ↦ λ 1`. -/
 theorem rankTwoCorner_apply (c : ℂ) : rankTwoCorner c = c • 1 :=
-  (rfl)
+  Algebra.algebraMap_eq_smul_one c
 
 /-- The rank-two corner, read through the stability isomorphism of the corner `e₀₀` and the
 rank, as an endomorphism of `ℤ`. -/
@@ -94,9 +93,7 @@ theorem rankTwoCornerInt_one : rankTwoCornerInt 1 = 2 := by
     ProjectionMonoid.cornerEquiv_symm_mk, ProjectionKZero.rankAddEquiv_of_mk]
   have h1 : comp (Fin 1) (Fin 1) (Fin 2) (Fin 2) ℂ
       ((1 : Matrix (Fin 1) (Fin 1) ℂ).map rankTwoCorner) = 1 := by
-    ext ⟨i, k⟩ ⟨j, l⟩
-    obtain rfl := Subsingleton.elim i j
-    simp [Matrix.one_apply, rankTwoCorner_apply]
+    rw [Matrix.map_one rankTwoCorner (map_zero _) (map_one (StarAlgHom.ofId ℂ _)), comp_one]
   rw [h1, rank_one]
   simp
 
