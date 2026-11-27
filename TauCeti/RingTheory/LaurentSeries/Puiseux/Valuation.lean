@@ -57,6 +57,8 @@ has them all in its support.
 * `TauCeti.puiseuxField.isIntegral_powerSeries_iff`,
   `TauCeti.puiseuxField.isIntegral_powerSeries_iff_addVal_nonneg`: a Puiseux series is integral
   over `K⟦X⟧` if and only if it lies in the valuation ring.
+* `TauCeti.puiseuxField.exists_levelEmbedding_powerSeries_of_addVal_nonneg`: a Puiseux series of
+  nonnegative additive valuation is the level-`N` image of a power series `f ∈ K⟦X⟧`.
 * `TauCeti.puiseuxField.addVal_sub_algebraMap_coeff_zero_pos_of_addVal_nonneg`: subtracting the
   constant term from a series of nonnegative order gives strictly positive order.
 * `TauCeti.puiseuxField.cauchySeq_sum_single`: partial sums of monomials with exponents tending to
@@ -283,6 +285,20 @@ theorem isIntegral_powerSeries_iff {x : puiseuxField K} :
 theorem isIntegral_powerSeries_iff_addVal_nonneg {x : puiseuxField K} :
     IsIntegral K⟦X⟧ x ↔ 0 ≤ addVal K x := by
   rw [isIntegral_powerSeries_iff, valuation_le_one_iff]
+
+/-- A Puiseux series of nonnegative additive valuation is the level-`N` image of a formal power
+series `f ∈ K⟦X⟧`. -/
+theorem exists_levelEmbedding_powerSeries_of_addVal_nonneg {x : puiseuxField K}
+    (hx : 0 ≤ addVal K x) :
+    ∃ (N : ℕ+) (f : K⟦X⟧), x = levelEmbedding K N (f : K⸨X⸩) := by
+  obtain ⟨N, hn⟩ := exists_mem_range_levelEmbedding x
+  obtain ⟨g, rfl⟩ := (AlgHom.mem_range _).mp hn
+  have hord : (0 : WithTop ℤ) ≤ g.orderTop :=
+    (div_le_addVal_levelEmbedding_iff N g 0).mp (by simpa using hx)
+  obtain ⟨f, rfl⟩ : g ∈ Set.range (ofPowerSeries ℤ K) :=
+    TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff.mpr fun k hk ↦
+      coeff_eq_zero_of_lt_orderTop ((WithTop.coe_lt_coe.mpr hk).trans_le hord)
+  exact ⟨N, f, rfl⟩
 
 /-- Subtracting the constant term from a Puiseux series of nonnegative additive valuation yields a
 series of strictly positive additive valuation. -/

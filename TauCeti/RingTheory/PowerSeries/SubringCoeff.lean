@@ -36,11 +36,15 @@ unchanged when it is read in a power of `q`, for instance at a multiple of the c
   coefficients in `R`, then so does `F`.
 * `PowerSeries.forall_coeff_expand_mem_iff`: `expand p φ` has coefficients in `R` if and only if
   `φ` does.
+* `PowerSeries.coeff_mem_subring_of_eq_X_mul_aeval`: if `u = X * P(X, u)` with `P` having
+  coefficients in a subring `R`, then all coefficients of `u` lie in `R`.
 -/
 
 public section
 
 namespace PowerSeries
+
+section Ring
 
 variable {S : Type*} [Ring S] {R : Subring S}
 
@@ -73,6 +77,8 @@ theorem coeff_mem_of_coeff_mul_mem {m : ℕ} {F D : S⟦X⟧} (hD : ∀ i < m, c
   · rw [hD _ (by omega), mul_zero]
     exact R.zero_mem
 
+end Ring
+
 /-- **Expansion preserves and reflects coefficients in a subring.** The coefficients of
 `expand p φ`, the power series `φ` with `Xᵖ` substituted for `X`, all lie in a subring `R` if and
 only if those of `φ` do. -/
@@ -84,5 +90,40 @@ theorem forall_coeff_expand_mem_iff {S : Type*} [CommRing S] {R : Subring S} {p 
   split_ifs
   · exact h _
   · exact R.zero_mem
+
+/-- If `u ∈ S⟦X⟧` satisfies `u = X * P(X, u)` for a bivariate polynomial `P ∈ S[X][Y]` whose
+coefficients all lie in a subring `R ⊆ S`, then every coefficient of `u` lies in `R`. -/
+theorem coeff_mem_subring_of_eq_X_mul_aeval {S : Type*} [CommRing S] {R : Subring S}
+    {u : S⟦X⟧} {P : Polynomial (Polynomial S)} (hu : u = X * Polynomial.aeval u P)
+    (hP : ∀ j i, (P.coeff j).coeff i ∈ R) (n : ℕ) : coeff n u ∈ R := by
+  have hpow : ∀ m, (∀ k ≤ m, coeff k u ∈ R) → ∀ j k, k ≤ m → coeff k (u ^ j) ∈ R := by
+    intro m hm j
+    induction j with
+    | zero =>
+      intro k _
+      rw [pow_zero, coeff_one]
+      split_ifs
+      exacts [R.one_mem, R.zero_mem]
+    | succ j ih =>
+      intro k hk
+      rw [pow_succ, coeff_mul]
+      refine R.sum_mem fun p hp ↦ ?_
+      exact R.mul_mem (ih p.1 ((Finset.HasAntidiagonal.antidiagonal.fst_le hp).trans hk))
+        (hm p.2 ((Finset.HasAntidiagonal.antidiagonal.snd_le hp).trans hk))
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    rcases n with _ | m
+    · rw [hu, coeff_zero_eq_constantCoeff_apply, map_mul, constantCoeff_X, zero_mul]
+      exact R.zero_mem
+    · have hcoeff := congrArg (coeff (m + 1)) hu
+      rw [coeff_succ_X_mul, Polynomial.aeval_eq_sum_range, map_sum] at hcoeff
+      rw [hcoeff]
+      refine R.sum_mem fun j _ ↦ ?_
+      rw [Algebra.smul_def, PowerSeries.algebraMap_apply', Algebra.algebraMap_self, map_id, id_eq,
+        coeff_mul]
+      refine R.sum_mem fun p hp ↦ ?_
+      rw [Polynomial.coeff_coe]
+      exact R.mul_mem (hP j p.1)
+        (hpow m (fun k hk ↦ ih k (by omega)) j p.2 (Finset.HasAntidiagonal.antidiagonal.snd_le hp))
 
 end PowerSeries

@@ -73,6 +73,8 @@ derivative `f' / f` is the order of `f`.
   preserves the valuation.
 * `PowerSeries.order_coe`, `PowerSeries.orderTop_coe` and `PowerSeries.orderTop_coe_of_ne_zero`:
   the order of a power series in `R⸨X⸩` agrees with its power series order.
+* `PowerSeries.coe_aeval_polynomial_powerSeries`: bivariate polynomial evaluation commutes with
+  coercing `R⟦X⟧` into `R⸨X⸩`.
 * `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
   derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
@@ -138,6 +140,13 @@ theorem order_coe {R : Type*} [Semiring R] (f : R⟦X⟧) :
   · have hf' : (f : R⸨X⸩) ≠ 0 := (map_ne_zero_iff _ ofPowerSeries_injective).mpr hf
     exact WithTop.coe_inj.mp
       ((order_eq_orderTop_of_ne_zero hf').trans (orderTop_coe_of_ne_zero hf))
+
+/-- Lifting bivariate evaluation `R[X][Y] → R⟦X⟧` into `R⸨X⸩`. -/
+theorem coe_aeval_polynomial_powerSeries {R : Type*} [CommSemiring R] (f : R⟦X⟧)
+    (P : Polynomial (Polynomial R)) :
+    ((Polynomial.aeval f P : R⟦X⟧) : R⸨X⸩) = Polynomial.aeval (f : R⸨X⸩) P := by
+  rw [Polynomial.aeval_def, Polynomial.aeval_def, Polynomial.hom_eval₂,
+    HahnSeries.ofPowerSeries_comp_algebraMap]
 
 end PowerSeries
 

@@ -31,6 +31,8 @@ coefficients `map f` acts on the constant coefficient.
   `(1 - X) H_a = H_c - X H_b`.
 * `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
+* `PowerSeries.algebraMap_polynomial_powerSeries`: `algebraMap R[X] R⟦X⟧` is the canonical
+  polynomial-to-power-series coercion.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
 -/
@@ -121,6 +123,11 @@ theorem coeff_mul_of_ne_zero (f g : R⟦X⟧) {k : ℕ} (hk : k ≠ 0) :
   simp [add_right_comm]
 
 end Coeff
+
+/-- Rewriting `algebraMap R[X] R⟦X⟧` as the canonical polynomial-to-power-series coercion. -/
+theorem algebraMap_polynomial_powerSeries {R : Type*} [CommSemiring R] (p : Polynomial R) :
+    algebraMap (Polynomial R) R⟦X⟧ p = (p : R⟦X⟧) := by
+  simp [PowerSeries.algebraMap_apply']
 
 end PowerSeries
 

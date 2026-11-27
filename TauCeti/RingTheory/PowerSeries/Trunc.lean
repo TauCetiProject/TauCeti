@@ -57,6 +57,8 @@ This file collects facts used to compare power series to a finite order `m`:
   one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
   the truncation below `n` evaluates like any polynomial with the same coefficients below `n`.
+* `PowerSeries.eval_trunc_coeff`: low coefficients of `Q.eval (trunc N f)` agree with those of
+  `Polynomial.aeval f Q`.
 -/
 
 public section
@@ -284,6 +286,29 @@ theorem mk_span_X_pow_eq_sum (n : ℕ) (p : R⟦X⟧) :
   simp only [Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, Ideal.mem_span_singleton, X_pow_dvd_iff]
   intro m hm
   simp [Fin.sum_univ_eq_sum_range (fun k ↦ coeff k p • (X ^ k : R⟦X⟧)), coeff_X_pow, hm]
+
+/-- Low coefficients of `Q.eval (trunc N f)` agree with those of `Polynomial.aeval f Q` for
+`i < N`. -/
+theorem eval_trunc_coeff (Q : Polynomial (Polynomial R)) (f : R⟦X⟧) {N i : ℕ} (hi : i < N) :
+    (Q.eval (trunc N f)).coeff i = coeff i (Polynomial.aeval f Q) := by
+  let b : Polynomial R := trunc N f
+  let g : R⟦X⟧ := mk fun n ↦ coeff (n + N) f
+  have hfb : X ^ N ∣ f - (b : R⟦X⟧) :=
+    ⟨g, by rw [PowerSeries.eq_X_pow_mul_shift_add_trunc N f]; ring⟩
+  obtain ⟨w, hw⟩ :=
+    Polynomial.sub_dvd_eval_sub f (b : R⟦X⟧) (Q.map (algebraMap (Polynomial R) R⟦X⟧))
+  obtain ⟨v, hv⟩ := hfb.trans ⟨w, by
+    simpa only [Polynomial.aeval_def, Polynomial.eval_map] using hw⟩
+  have hQb_eval : Polynomial.aeval (b : R⟦X⟧) Q = ((Q.eval b : Polynomial R) : R⟦X⟧) := by
+    rw [Polynomial.aeval_def]
+    symm
+    rw [← Polynomial.coeToPowerSeries.ringHom_apply, ← Polynomial.eval₂_id,
+      Polynomial.hom_eval₂, RingHom.comp_id, Polynomial.coeToPowerSeries.ringHom_apply]
+    congr 1
+  have hci := congrArg (coeff i) hv
+  rw [map_sub, coeff_X_pow_mul', ite_eq_right (not_le.mpr hi), sub_eq_zero,
+    ← Polynomial.aeval_def, ← Polynomial.aeval_def, hQb_eval, Polynomial.coeff_coe] at hci
+  exact hci.symm
 
 end CommRing
 

@@ -18,12 +18,17 @@ exponential characteristic of `K`.  Transporting the first degree along the iden
 `K(X)` with `K⟮x⟯` gives `[K(x) : K(x ^ n)] = n` for an arbitrary transcendental element `x` of an
 extension of `K`.
 
+## Main definitions
+
+* `TauCeti.expandRatFunc`: the ring endomorphism `K(X) →+* K(X)` substituting `X ↦ X ^ N`.
+
 ## Main results
 
 * `TauCeti.RatFunc.finrank_adjoin_X_pow`: `[K(X) : K(X ^ n)] = n`.
 * `TauCeti.RatFunc.isPurelyInseparable_adjoin_X_pow`: `K(X) / K(X ^ q)` is purely inseparable
   for `q` the exponential characteristic of `K`.
 * `Transcendental.relfinrank_adjoin_pow_adjoin`: `[K(x) : K(x ^ n)] = n` for `x` transcendental.
+* `TauCeti.expandRatFunc_algebraMap`: action of `TauCeti.expandRatFunc` on polynomial elements.
 
 ## Mathematical context
 
@@ -68,6 +73,37 @@ instance isPurelyInseparable_adjoin_X_pow (K : Type*) [Field K] (q : ℕ) [ExpCh
   exact (_root_.RatFunc.IntermediateField.adjoinXEquiv E).isPurelyInseparable
 
 end TauCeti.RatFunc
+
+namespace TauCeti
+
+open scoped nonZeroDivisors
+
+/-- Composition with `X ^ N` preserves non-zero-divisors in `K[X]`. -/
+private lemma expandRatFunc_mem_nonZeroDivisors (K : Type*) [CommRing K] [IsDomain K] (N : ℕ+) :
+    K[X]⁰ ≤ K[X]⁰.comap (Polynomial.compRingHom (Polynomial.X ^ (N : ℕ))) :=
+  fun _ hp ↦ mem_nonZeroDivisors_of_ne_zero fun hcomp ↦ nonZeroDivisors.ne_zero hp <| by
+    rcases Polynomial.comp_eq_zero_iff.mp hcomp with rfl | hdeg
+    · rfl
+    · exfalso
+      have h := congrArg Polynomial.natDegree hdeg.2
+      simp [ite_eq_right N.ne_zero.symm] at h
+
+/-- Substitution `X ↦ X ^ N` as a ring endomorphism of `K(X)`. -/
+noncomputable def expandRatFunc (K : Type*) [CommRing K] [IsDomain K] (N : ℕ+) :
+    _root_.RatFunc K →+* _root_.RatFunc K :=
+  _root_.RatFunc.mapRingHom (Polynomial.compRingHom (Polynomial.X ^ (N : ℕ)))
+    (expandRatFunc_mem_nonZeroDivisors K N)
+
+/-- Action of `TauCeti.expandRatFunc` on polynomial elements of `K(X)`. -/
+theorem expandRatFunc_algebraMap {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) (p : K[X]) :
+    expandRatFunc K N (algebraMap K[X] (_root_.RatFunc K) p) =
+      algebraMap K[X] (_root_.RatFunc K) (p.comp (Polynomial.X ^ (N : ℕ))) := by
+  rw [expandRatFunc, _root_.RatFunc.coe_mapRingHom_eq_coe_map,
+    ← div_one (algebraMap K[X] (_root_.RatFunc K) p),
+    ← (algebraMap K[X] (_root_.RatFunc K)).map_one, _root_.RatFunc.map_apply_div, map_one,
+    map_one, div_one, Polynomial.coe_compRingHom_apply]
+
+end TauCeti
 
 open scoped IntermediateField
 
