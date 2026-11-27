@@ -289,7 +289,7 @@ theorem Complex.exists_eqOn_add_ofReal_of_forall_mem_frontier_im_eq {u v : ℂ �
   have hdiff (z : ℂ) (hz : z ∈ closure U \ F) : (u z).im = (v z).im := by
     have h1 := hside I (.inl rfl) z hz
     have h2 := hside (-I) (.inr rfl) z hz
-    simp at h1 h2
+    simp only [mul_re, I_re, I_im, neg_re, neg_im, sub_re, sub_im] at h1 h2
     linarith
   -- the imaginary parts agree on `U`, since `U \ F` is dense in `U`
   have hcont : ContinuousOn (fun z => (u z).im - (v z).im) U :=

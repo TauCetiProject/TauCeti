@@ -295,8 +295,8 @@ private theorem inter_preimage_log_sub_mul_sub_div_sub_div_pi {p q r : ℝ}
       linear_combination hQ
     have hw : 0 < w.im := (im_sub_mul_sub_div_sub_pos_iff hq (sub_ne_zero.mp hwq)).mp (hG ▸ hη)
     refine ⟨hw, ?_⟩
-    rw [hG, log_exp (by simp; nlinarith [Real.pi_pos, hζ.1])
-      (by simp; nlinarith [Real.pi_pos, hζ.2]), mul_div_cancel_left₀ _ hπ]
+    rw [hG, log_exp (by rw [im_ofReal_mul]; nlinarith [Real.pi_pos, hζ.1])
+      (by rw [im_ofReal_mul]; nlinarith [Real.pi_pos, hζ.2]), mul_div_cancel_left₀ _ hπ]
 
 /-- A root `w₁` of the quadratic of `inter_preimage_log_sub_mul_sub_div_sub_div_pi` is a double
 root, `w₁ = (p + r + exp (π ζ)) - w₁`, exactly when `ζ` is the image of the branch point
