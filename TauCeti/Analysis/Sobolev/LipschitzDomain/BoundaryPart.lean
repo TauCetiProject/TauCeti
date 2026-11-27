@@ -94,7 +94,8 @@ coordinates the trace of `U` is the model-space trace
 ## References
 
 * S. Bauer, D. Pauly, M. Schomburg, *The Maxwell compactness property in bounded weak Lipschitz
-  domains with mixed boundary conditions*, SIAM J. Math. Anal. 48 (2016), Theorem 4.8 (the
+  domains with mixed boundary conditions*, SIAM J. Math. Anal. 48 (2016), Lemma 3.1 (the trace
+  characterization of `W^{1,p}_Γ` for `p = 2` in dimension three) and Theorem 4.8 (the
   Poincaré–Friedrichs inequality for `p = 2` in dimension three).
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §5.8.1, Theorem 1 (the compactness
   argument for Poincaré inequalities).
