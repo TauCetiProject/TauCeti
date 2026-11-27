@@ -269,9 +269,7 @@ theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → NovikovModule 
 
 instance : T2Space (NovikovModule R F) :=
   IsTopologicalAddGroup.t2Space_of_zero_sep fun a ha => by
-    obtain ⟨s, hs⟩ : ∃ s, a.val s ≠ 0 := by
-      by_contra! h
-      exact ha (Subtype.ext (funext h))
+    obtain ⟨s, hs⟩ := ne_zero_iff.1 ha
     exact ⟨_, potentialFiltration_mem_nhds_zero (F s - 1), fun ha' =>
       hs (ha' s (sub_one_lt _))⟩
 

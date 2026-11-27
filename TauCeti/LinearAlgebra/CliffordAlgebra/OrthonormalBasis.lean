@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
--- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
+-- Private: the Clifford multiplication and ordered-product formulas are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
+import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
@@ -38,6 +39,8 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   a Clifford module, `c(bᵢ)² = -1`, and `c(bᵢ)` and `c(bⱼ)` anticommute for `i ≠ j`.
 * `OrthonormalBasis.map_ι_eq_sum`, `OrthonormalBasis.map_ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)`,
   in any real algebra receiving the Clifford algebra and applied in a Clifford module.
+* `OrthonormalBasis.sum_smul_map_ι_apply_eq_add`: for a complex-valued covector `L` whose real and
+  imaginary parts are represented by `g₁` and `p`, `∑ᵢ L(bᵢ) c(bᵢ) ψ = c(g₁) ψ + i c(p) ψ`.
 * `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
@@ -146,6 +149,23 @@ theorem map_ι_apply_eq_sum {S W : Type*} [Semiring S] [SMul ℝ S] [AddCommGrou
   rw [b.map_ι_eq_sum ρ v, LinearMap.sum_apply]
   simp only [LinearMap.smul_apply]
 
+omit hQ in
+/-- Clifford multiplication by a complex-valued covector, expanded in an orthonormal basis: if `g₁`
+and `p` represent the real and imaginary parts of `L : V → ℂ`, then
+`∑ᵢ L(bᵢ) c(bᵢ) ψ = c(g₁) ψ + i c(p) ψ`. In particular the sum does not depend on the basis. -/
+theorem sum_smul_map_ι_apply_eq_add {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
+    [IsScalarTower ℝ ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) {L : V → ℂ} {g₁ p : V}
+    (h₁ : ∀ v, ⟪g₁, v⟫ = (L v).re) (h₂ : ∀ v, ⟪p, v⟫ = (L v).im) (ψ : W) :
+    ∑ i, L (b i) • ρ (CliffordAlgebra.ι Q (b i)) ψ =
+      ρ (CliffordAlgebra.ι Q g₁) ψ + Complex.I • ρ (CliffordAlgebra.ι Q p) ψ := by
+  rw [b.map_ι_apply_eq_sum ρ g₁, b.map_ι_apply_eq_sum ρ p, Finset.smul_sum,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [real_inner_comm, h₁, real_inner_comm, h₂, RCLike.real_smul_eq_coe_smul (K := ℂ),
+    RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul]
+  conv_lhs => rw [← Complex.re_add_im (L (b i))]
+  simp [add_smul, mul_comm]
+
 section Module
 
 variable {K W : Type*} [Semiring K] [AddCommGroup W] [Module K W] [Algebra ℝ (Module.End K W)]
@@ -167,6 +187,14 @@ theorem map_ι_apply_map_ι_apply_comm {i j : ι} (hij : i ≠ j) (ψ : W) :
     congrArg (fun x ↦ ρ x ψ) (CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij))
 
 end Module
+
+/-- Clifford multiplication by two orthonormal frame vectors preserves nonvanishing. -/
+theorem map_ι_apply_map_ι_apply_ne_zero {W : Type*} [AddCommGroup W] [Module ℂ W]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (i j : ι) {ψ : W} (hψ : ψ ≠ 0) :
+    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b j)) ψ) ≠ 0 := by
+  have hinj (k : ι) := CliffordAlgebra.map_ι_injective ρ (v := b k)
+    (by simp [hQ, b.orthonormal.1 k])
+  exact fun heq ↦ hψ <| ((hinj i).comp (hinj j)) (by simpa using heq)
 
 end OrthonormalBasis
 

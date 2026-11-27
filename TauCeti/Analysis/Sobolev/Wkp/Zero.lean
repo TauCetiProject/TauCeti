@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 

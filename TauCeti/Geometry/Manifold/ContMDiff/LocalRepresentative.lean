@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.Compactness.Lindelof
+import TauCeti.MeasureTheory.Function.Gluing
 
 /-!
 # Gluing local `Cⁿ` representatives on a manifold
@@ -15,9 +16,8 @@ public import Mathlib.Topology.Compactness.Lindelof
 A function on a manifold that agrees almost everywhere near each point with a `Cⁿ` function
 agrees almost everywhere with a single globally `Cⁿ` function. Two local representatives are
 continuous and agree almost everywhere on their common open domain, so for a measure that charges
-every nonempty open set they agree everywhere there (`MeasureTheory.Measure.eqOn_open_of_ae_eq`).
-The value at `y` of any representative near `y` therefore defines the glued function, and the
-Lindelöf property turns the local almost everywhere equalities into a global one.
+every nonempty open set they agree everywhere there, and on the Lindelöf manifold they glue to one
+representative (`IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn`).
 
 This is how regularity proved in charts, for instance by Euclidean elliptic regularity, becomes
 regularity of one representative on the whole manifold. The case `n = 0` glues continuous
@@ -65,26 +65,10 @@ theorem exists_contMDiff_ae_eq_of_locally
     exact ⟨interior U, isOpen_interior, mem_interior_iff_mem_nhds.2 hU, g,
       hg.mono interior_subset, ae_restrict_of_ae_restrict_of_subset interior_subset hug⟩
   choose U hUo hxU g hg hug using h'
-  -- Two representatives are continuous and agree almost everywhere on their common open domain,
-  -- hence agree everywhere there; so the representative at `y` agrees with the one near `x`.
-  have hG (x : M) : EqOn (fun y ↦ g y y) (g x) (U x) := fun y hy ↦
-    Measure.eqOn_open_of_ae_eq (f := g y) (g := g x)
-      ((EventuallyEq.symm <| ae_restrict_of_ae_restrict_of_subset inter_subset_left
-        (hug y)).trans (ae_restrict_of_ae_restrict_of_subset inter_subset_right (hug x)))
-      ((hUo y).inter (hUo x)) ((hg y).continuousOn.mono inter_subset_left)
-      ((hg x).continuousOn.mono inter_subset_right) ⟨hxU y, hy⟩
-  refine ⟨fun y ↦ g y y, fun x ↦ ((hg x).congr (hG x)).contMDiffAt ((hUo x).mem_nhds (hxU x)),
-    ?_⟩
-  -- Near `x` the glued function is `g x`, which equals `u` almost everywhere on `U x`; countably
-  -- many of the sets `U x` cover `M`.
-  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover U fun x ↦ (hUo x).mem_nhds (hxU x)
-  rw [EventuallyEq, ae_iff]
-  have hsub : {y | u y ≠ g y y} ⊆ ⋃ x ∈ t, U x ∩ {y | u y ≠ g x y} := by
-    intro y hy
-    obtain ⟨x, hxt, hyU⟩ := mem_iUnion₂.1 (hcover ▸ mem_univ y)
-    exact mem_iUnion₂.2 ⟨x, hxt, hyU, fun h ↦ hy (h.trans (hG x hyU).symm)⟩
-  refine measure_mono_null hsub ((measure_biUnion_null_iff ht).2 fun x _ ↦ ?_)
-  rw [inter_comm]
-  exact nonpos_iff_eq_zero.1 ((Measure.le_restrict_apply _ _).trans (ae_iff.1 (hug x)).le)
+  -- The continuous local representatives agree on overlaps and glue to one representative.
+  obtain ⟨G, huG, hG⟩ := isLindelof_univ.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn
+    (μ := μ) (fun x _ ↦ hUo x) (fun x _ ↦ hxU x) (fun x _ ↦ (hg x).continuousOn) fun x _ ↦ hug x
+  exact ⟨G, fun x ↦ ((hg x).congr fun y hy ↦ hG x trivial ⟨hy, trivial⟩).contMDiffAt
+    ((hUo x).mem_nhds (hxU x)), huG⟩
 
 end TauCeti

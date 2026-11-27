@@ -42,6 +42,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   coset of `B` gives a bijection `G ⧸ ψ⁻¹(B) ≃ H ⧸ B`, namely `mapComap`.
 * `TauCeti.QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection
   whose kernel lies in the subgroup.
+* `MonoidHom.subgroupOrderEmbedding`: the order embedding of subgroup lattices induced by an
+  injective group homomorphism.
 
 ## Main results
 
@@ -87,6 +89,32 @@ public section
 namespace TauCeti
 
 variable {G H : Type*} [Group G] [Group H]
+
+/-- An injective group homomorphism embeds the subgroup lattice of its domain into that of its
+codomain by taking images. -/
+def _root_.MonoidHom.subgroupOrderEmbedding (f : G →* H) (hf : Function.Injective f) :
+    Subgroup G ↪o Subgroup H :=
+  OrderEmbedding.ofMapLEIff (Subgroup.map f)
+    (fun _ _ ↦ Subgroup.map_le_map_iff_of_injective hf)
+
+/-- The subgroup order embedding induced by an injective homomorphism takes subgroup images. -/
+@[simp]
+theorem _root_.MonoidHom.subgroupOrderEmbedding_apply (f : G →* H)
+    (hf : Function.Injective f) (K : Subgroup G) :
+    f.subgroupOrderEmbedding hf K = K.map f := by
+  rfl
+
+/-- The descending chain condition on subgroups passes along an injective homomorphism from its
+codomain to its domain. -/
+theorem _root_.MonoidHom.wellFoundedLT_subgroup [WellFoundedLT (Subgroup H)] (f : G →* H)
+    (hf : Function.Injective f) : WellFoundedLT (Subgroup G) :=
+  (f.subgroupOrderEmbedding hf).wellFoundedLT
+
+/-- The ascending chain condition on subgroups passes along an injective homomorphism from its
+codomain to its domain. -/
+theorem _root_.MonoidHom.wellFoundedGT_subgroup [WellFoundedGT (Subgroup H)] (f : G →* H)
+    (hf : Function.Injective f) : WellFoundedGT (Subgroup G) :=
+  (f.subgroupOrderEmbedding hf).wellFoundedGT
 
 /-- The centre of a group lies in the kernel of every surjection onto a centreless group.
 

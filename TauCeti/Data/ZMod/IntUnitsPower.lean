@@ -129,6 +129,10 @@ theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * h
   ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm.map_mul
     (Multiplicative.ofAdd x) (Multiplicative.ofAdd y))
 
+/-- Adding `1` to a mod-two invariant flips its sign. -/
+theorem hilbertSign_add_one (x : ZMod 2) : hilbertSign (x + 1) = -hilbertSign x := by
+  rw [hilbertSign_add, hilbertSign_one, mul_neg_one]
+
 /-- The sign dictionary turns a finite sum of mod-two invariants into the product of their
 signs. -/
 theorem hilbertSign_sum {ι : Type*} (s : Finset ι) (f : ι → ZMod 2) :

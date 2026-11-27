@@ -55,6 +55,19 @@ instance finiteProjectiveModulesSymmetricCategory :
 
 namespace FiniteProjectiveModules
 
+/-- The underlying module of the tensor unit of finite projective modules is `R`, by definition.
+Mathlib's simp normal form is instead the tensor unit of `ModuleCat R`. -/
+theorem tensorUnit_obj :
+    (𝟙_ (finiteProjectiveModules R).FullSubcategory).obj = ModuleCat.of R R :=
+  rfl
+
+/-- The underlying module of a tensor product of finite projective modules is the tensor product
+of the underlying modules, by definition. Mathlib's simp normal form is instead the tensor
+product in `ModuleCat R`. -/
+theorem tensorObj_obj (M N : (finiteProjectiveModules R).FullSubcategory) :
+    (M ⊗ N).obj = ModuleCat.of R (TensorProduct R M.obj N.obj) :=
+  rfl
+
 /-- The linear dual of a finite projective module is finite projective. -/
 @[expose] def dual (M : (finiteProjectiveModules R).FullSubcategory) :
     (finiteProjectiveModules R).FullSubcategory :=

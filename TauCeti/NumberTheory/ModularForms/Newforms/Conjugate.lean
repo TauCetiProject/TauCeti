@@ -34,8 +34,8 @@ multiplicity one the conjugate newform is the newform itself.
 
 * `TauCeti.conj_mem_cuspFormsOld`, `TauCeti.conj_mem_cuspFormsNew`: `f ↦ f_ρ` preserves the
   old and the new subspaces.
-* `HeckeRing.GL2.Newform.qExpansion_conj`: the coefficients of `f_ρ` are the conjugates of those
-  of `f`.
+* `HeckeRing.GL2.Newform.qExpansion_conj`, `HeckeRing.GL2.Newform.qExpansion_coeff_conj`: the
+  coefficients of `f_ρ` are the conjugates of those of `f`.
 * `HeckeRing.GL2.Newform.conj_conj`: `f ↦ f_ρ` is an involution on newforms.
 * `HeckeRing.GL2.Newform.conj_eq_self_of_χ_eq_one`: a newform of trivial nebentypus is its own
   conjugate.
@@ -141,6 +141,13 @@ the newform. -/
 theorem qExpansion_conj (f : Newform N k) :
     qExpansion 1 f.conj.toCuspForm = PowerSeries.map (starRingEnd ℂ) (qExpansion 1 f.toCuspForm) :=
   CuspForm.qExpansion_conj one_pos (one_mem_strictPeriods_Gamma1_map N) _ _
+
+/-- The `n`-th `q`-expansion coefficient of the conjugate newform is the complex conjugate of the
+`n`-th coefficient of the newform. -/
+theorem qExpansion_coeff_conj (f : Newform N k) (n : ℕ) :
+    (qExpansion 1 f.conj.toCuspForm).coeff n =
+      starRingEnd ℂ ((qExpansion 1 f.toCuspForm).coeff n) := by
+  rw [qExpansion_conj, PowerSeries.coeff_map]
 
 /-- Conjugating a newform twice gives it back. -/
 @[simp]

@@ -71,7 +71,8 @@ tangent inequality `f(ν) ≤ ∑_j ν_j ∂_j f(μ)` of a concave homogeneous f
   concave admissible pair from a lower bound on `Γ_n` (Guo–Phong–Tong, Lemma 4).
 * `TauCeti.isAdmissiblePair_sum`, `TauCeti.hasStructuralConstant_sum`: the Laplace pair.
 * `TauCeti.isAdmissiblePair_prod_rpow`, `TauCeti.hasStructuralConstant_prod_rpow`: the
-  Monge–Ampère pair, which is concave by `Real.concaveOn_prod_rpow`.
+  Monge–Ampère pair, which is concave by `Real.concaveOn_prod_rpow`; its partial derivatives are
+  `TauCeti.fderiv_prod_rpow_apply_single`.
 
 ## References
 
@@ -364,6 +365,21 @@ theorem hasStructuralConstant_sum (Γ : Set (ι → ℝ)) :
 
 /-! ### The Monge–Ampère pair -/
 
+/-- The partial derivatives of the Monge–Ampère function `(∏_i μ_i)^{1/n}` on `Γ_n`, where
+`n = card ι`: `∂_j f(μ) = n⁻¹ (∏_i μ_i)^{1/n} / μ_j`. -/
+theorem fderiv_prod_rpow_apply_single {μ : ι → ℝ} (hμ : ∀ i, 0 < μ i) (j : ι) :
+    fderiv ℝ (fun ν : ι → ℝ ↦ (∏ i, ν i) ^ (Fintype.card ι : ℝ)⁻¹) μ (Pi.single j 1) =
+      (Fintype.card ι : ℝ)⁻¹ * (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ / μ j := by
+  have hP : 0 < ∏ i, μ i := prod_pos fun i _ ↦ hμ i
+  have hj : μ j ≠ 0 := (hμ j).ne'
+  -- `.differentiableAt.hasFDerivAt` restates the derivative of `ν ↦ ∏ i, ν i` as its `fderiv`,
+  -- the form that `fderiv_prod_apply_single` evaluates on `Pi.single j 1`.
+  rw [((hasFDerivAt_finsetProd (u := univ) (x := μ)).differentiableAt.hasFDerivAt.rpow_const
+    (Or.inl hP.ne')).fderiv, smul_apply, fderiv_prod_apply_single, smul_eq_mul,
+    Real.rpow_sub_one hP.ne']
+  field_simp
+  rw [← mul_prod_erase univ μ (mem_univ j), mul_comm (μ j)]
+
 /-- **The Monge–Ampère pair** `((∏_i μ_i)^{1/n}, Γ_n)`, `n = card ι`, is an admissible pair. -/
 theorem isAdmissiblePair_prod_rpow [Nonempty ι] :
     IsAdmissiblePair {μ : ι → ℝ | ∀ i, 0 < μ i}
@@ -374,11 +390,9 @@ theorem isAdmissiblePair_prod_rpow [Nonempty ι] :
   apply_comp_perm σ μ _ := by simp only [Function.comp_apply, Equiv.prod_comp σ μ]
   apply_smul ht μ hμ := by simpa using Real.prod_mul_rpow_inv_card ht.le fun i ↦ (hμ i).le
   fderiv_single_pos {μ} hμ j := by
-    have hP : 0 < ∏ i, μ i := prod_pos fun i _ ↦ hμ i
-    rw [((hasFDerivAt_finsetProd (u := univ) (x := μ)).differentiableAt.hasFDerivAt.rpow_const
-      (Or.inl hP.ne')).fderiv, smul_apply, fderiv_prod_apply_single, smul_eq_mul]
-    exact mul_pos (mul_pos (inv_pos.2 (Nat.cast_pos.2 Fintype.card_pos))
-      (Real.rpow_pos_of_pos hP _)) (prod_pos fun i _ ↦ hμ i)
+    rw [fderiv_prod_rpow_apply_single hμ]
+    exact div_pos (mul_pos (inv_pos.2 (Nat.cast_pos.2 Fintype.card_pos))
+      (Real.rpow_pos_of_pos (prod_pos fun i _ ↦ hμ i) _)) (hμ j)
 
 /-- The Monge–Ampère pair satisfies the structural condition with constant `n⁻ⁿ`, where
 `n = card ι`. -/
