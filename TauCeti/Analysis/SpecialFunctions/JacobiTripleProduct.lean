@@ -281,13 +281,17 @@ theorem hasSum_zpow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
   have h := hasSum_neg_one_pow_mul_zpow_sq (q := -q) (by rwa [norm_neg])
   simp only [one_sub_neg_pow_odd, neg_sq] at h
   refine h.congr_fun fun k ↦ ?_
-  obtain ⟨m, hm⟩ := Int.even_mul_pred_self (-k)
-  have hpow : k ^ 2 = ((k.natAbs ^ 2 : ℕ) : ℤ) := by
-    rw [Int.natCast_pow, Int.natCast_natAbs, sq_abs]
-  rw [hpow, zpow_natCast, zpow_natCast, neg_pow, ← mul_assoc, ← zpow_natCast (-1 : 𝕜),
-    ← zpow_add₀ (by norm_num : (-1 : 𝕜) ≠ 0), ← hpow]
-  have heven : k + k ^ 2 = 2 * m := by linear_combination hm
-  rw [heven, zpow_mul, zpow_ofNat, neg_one_sq, one_zpow, one_mul]
+  have heven : Even (k + k ^ 2) := by
+    obtain ⟨m, hm⟩ := Int.even_mul_pred_self (-k)
+    exact ⟨m, by linear_combination hm⟩
+  symm
+  calc (-1 : 𝕜) ^ k * (-q) ^ (k ^ 2)
+      = ((-1 : 𝕜) ^ k * (-1 : 𝕜) ^ (k ^ 2)) * q ^ (k ^ 2) := by
+        rw [neg_eq_neg_one_mul q, mul_zpow, mul_assoc]
+    _ = (-1 : 𝕜) ^ (k + k ^ 2) * q ^ (k ^ 2) := by
+        rw [← zpow_add₀ (by norm_num : (-1 : 𝕜) ≠ 0)]
+    _ = q ^ (k ^ 2) := by
+        rw [heven.neg_one_zpow, one_mul]
 
 /-- For `‖q‖ < 1`,
 `∑' k : ℤ, q ^ (k ^ 2) =`

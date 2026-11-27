@@ -261,18 +261,6 @@ theorem thetaAutomorphy_inv_smul (γ : SL(2, ℤ)) (z : ℍ) :
     thetaAutomorphy γ⁻¹ (γ • z) = (thetaAutomorphy γ z)⁻¹ := by
   rw [thetaAutomorphy_def, thetaAutomorphy_def, inv_smul_smul, inv_div]
 
-private theorem prod_divisors_four {M : Type*} [CommMonoid M] (f : ℕ → M) :
-    ∏ δ ∈ (4 : ℕ).divisors, f δ = f 1 * f 2 * f 4 := by
-  have hdiv : (4 : ℕ).divisors = {1, 2, 4} := by decide
-  rw [hdiv, Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton,
-    mul_assoc]
-
-private theorem sum_divisors_four {M : Type*} [AddCommMonoid M] (f : ℕ → M) :
-    ∑ δ ∈ (4 : ℕ).divisors, f δ = f 1 + f 2 + f 4 := by
-  have hdiv : (4 : ℕ).divisors = {1, 2, 4} := by decide
-  rw [hdiv, Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
-    add_assoc]
-
 /-- The level-4 eta-quotient exponent vector `r(1) = -2`, `r(2) = 5`, `r(4) = -2` for
 `θ(z) = jacobiTheta (2 * z) = η(2z)⁵ / (η(z)² η(4z)²)`. -/
 def thetaEtaExp : ℕ → ℤ := fun δ ↦ if δ = 2 then 5 else -2
@@ -290,9 +278,12 @@ theorem sum_thetaEtaExp : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ = 1 := b
 `ModularForm.etaQuotient 4 thetaEtaExp τ`. -/
 theorem jacobiTheta_two_mul_eq_etaQuotient {τ : ℂ} (hτ : 0 < τ.im) :
     jacobiTheta (2 * τ) = ModularForm.etaQuotient 4 thetaEtaExp τ := by
-  rw [jacobiTheta_two_mul_eq_eta_div hτ, ModularForm.etaQuotient_apply, prod_divisors_four]
-  simp only [thetaEtaExp_def, Nat.cast_one, Nat.cast_ofNat, one_mul]
-  norm_num
+  rw [jacobiTheta_two_mul_eq_eta_div hτ, ModularForm.etaQuotient_apply,
+    show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.prod_divisors_prime_pow Nat.prime_two,
+    Finset.prod_range_succ, Finset.prod_range_succ, Finset.prod_range_one]
+  simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_def,
+    show (1 : ℕ) ≠ 2 by decide, show (4 : ℕ) ≠ 2 by decide, ↓reduceIte,
+    Nat.cast_one, Nat.cast_ofNat, one_mul, zpow_neg, zpow_ofNat, div_eq_mul_inv, mul_inv]
   ring
 
 private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
@@ -322,44 +313,54 @@ private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
     rw [ModularForm.e24_congr he, ModularForm.e24_add, ModularForm.e24_twelve_mul, he24_6]
     simp [show d % 2 ≠ 0 by omega, h, show d % 4 ≠ 1 by omega]
 
-private theorem prod_kroneckerSym_thetaEtaExp {t d : ℤ} (ht : 0 ≤ t) (hd : Odd d)
-    (hcop : IsCoprime (4 * t) d) :
+private theorem prod_kroneckerSym_thetaEtaExp (t d : ℤ) :
     ∏ δ ∈ (4 : ℕ).divisors, (kroneckerSym ((4 / δ : ℕ) * t) d : ℂ) ^ thetaEtaExp δ =
       kroneckerSym 2 d * kroneckerSym (4 * t) d := by
-  rw [prod_divisors_four]
-  simp only [thetaEtaExp_def, show (4 / 1 : ℕ) = 4 from rfl, show (4 / 2 : ℕ) = 2 from rfl,
-    show (4 / 4 : ℕ) = 1 from rfl, Nat.cast_ofNat, Nat.cast_one, one_mul,
-    show (1 : ℕ) ≠ 2 by decide, show (4 : ℕ) ≠ 2 by decide, ↓reduceIte]
-  simp only [show (-2 : ℤ) = -(2 : ℕ) from rfl, show (5 : ℤ) = (5 : ℕ) from rfl,
-    zpow_neg, zpow_natCast]
-  have hcop4 : (4 * t).gcd d = 1 := Int.isCoprime_iff_gcd_eq_one.mp hcop
-  have hcopt : t.gcd d = 1 :=
-    Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left (dvd_mul_left t 4))
-  have hcop2 : (2 * t).gcd d = 1 :=
-    Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left ⟨2, by ring⟩)
-  have h4sq : (kroneckerSym (4 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop4
-  have htsq : (kroneckerSym t d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcopt
-  have h2pow : (kroneckerSym (2 * t) d : ℂ) ^ 5 = (kroneckerSym (2 * t) d : ℂ) := by
-    have hsq : (kroneckerSym (2 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop2
-    rw [show (5 : ℕ) = 2 * 2 + 1 from rfl, pow_add, pow_mul, hsq, one_pow, pow_one, one_mul]
-  simp only [h4sq, htsq, h2pow, inv_one, one_mul]
-  rcases eq_or_ne d (-1) with rfl | hd1
-  · simp [kroneckerSym_neg_one_right, show ¬(4 * t < 0) by omega,
-      show ¬(2 * t < 0) by omega]
-  · have h2t : kroneckerSym (2 * t) d = kroneckerSym 2 d * kroneckerSym t d :=
-      kroneckerSym_mul_left_of_ne_neg_one hd1 2 t
-    have h4t : kroneckerSym (4 * t) d = kroneckerSym t d := by
-      have h4_eq : 4 * t = t * 2 ^ 2 := by ring
-      have hcop2d : (2 : ℤ).gcd d = 1 := Nat.coprime_two_left.mpr (Int.natAbs_odd.mpr hd)
-      rw [h4_eq, kroneckerSym_mul_sq two_ne_zero hcop2d]
-    rw [h2t, h4t, Int.cast_mul, mul_one]
+  rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.prod_divisors_prime_pow Nat.prime_two,
+    Finset.prod_range_succ, Finset.prod_range_succ, Finset.prod_range_one]
+  simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_def, Nat.reduceDiv,
+    show (1 : ℕ) ≠ 2 by decide, show (4 : ℕ) ≠ 2 by decide, ↓reduceIte,
+    Nat.cast_one, Nat.cast_ofNat, one_mul, zpow_neg, zpow_ofNat]
+  by_cases hcop : IsCoprime (4 * t) d
+  · have hcop4 : (4 * t).gcd d = 1 := Int.isCoprime_iff_gcd_eq_one.mp hcop
+    have hcopt : t.gcd d = 1 :=
+      Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left (dvd_mul_left t 4))
+    have hcop2 : (2 * t).gcd d = 1 :=
+      Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left ⟨2, by ring⟩)
+    have hcop2d : (2 : ℤ).gcd d = 1 :=
+      Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left ⟨2 * t, by ring⟩)
+    have h4sq : (kroneckerSym (4 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop4
+    have htsq : (kroneckerSym t d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcopt
+    have h2pow : (kroneckerSym (2 * t) d : ℂ) ^ 5 = (kroneckerSym (2 * t) d : ℂ) := by
+      have hsq : (kroneckerSym (2 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop2
+      calc (kroneckerSym (2 * t) d : ℂ) ^ 5
+          = ((kroneckerSym (2 * t) d : ℂ) ^ 2) ^ 2 * (kroneckerSym (2 * t) d : ℂ) := by ring
+        _ = (kroneckerSym (2 * t) d : ℂ) := by rw [hsq, one_pow, one_mul]
+    simp only [h4sq, htsq, h2pow, inv_one, one_mul]
+    rcases eq_or_ne d (-1) with rfl | hd1
+    · have h4_neg : 4 * t < 0 ↔ 2 * t < 0 := by omega
+      simp [kroneckerSym_neg_one_right, h4_neg]
+    · have h2t : kroneckerSym (2 * t) d = kroneckerSym 2 d * kroneckerSym t d :=
+        kroneckerSym_mul_left_of_ne_neg_one hd1 2 t
+      have h4t : kroneckerSym (4 * t) d = kroneckerSym t d := by
+        rw [show 4 * t = t * 2 ^ 2 by ring, kroneckerSym_mul_sq two_ne_zero hcop2d]
+      rw [h2t, h4t, Int.cast_mul, mul_one]
+  · have hnot2 : ¬ IsCoprime (2 * t) d := fun h ↦
+      hcop (by
+        have h2d : IsCoprime 2 d := h.of_isCoprime_of_dvd_left (dvd_mul_right 2 t)
+        simpa [show 2 * (2 * t) = 4 * t by ring] using h2d.mul_left h)
+    have h4z : kroneckerSym (4 * t) d = 0 :=
+      kroneckerSym_eq_zero_iff.mpr (mt Int.isCoprime_iff_gcd_eq_one.mpr hcop)
+    have h2z : kroneckerSym (2 * t) d = 0 :=
+      kroneckerSym_eq_zero_iff.mpr (mt Int.isCoprime_iff_gcd_eq_one.mpr hnot2)
+    simp [h4z, h2z]
 
 private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 4) (hc : 0 ≤ γ 1 0) :
     ModularForm.etaQuotientMultiplier 4 thetaEtaExp ⟨γ, hγ⟩ =
       (thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) := by
   obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
-  norm_num at ht
+  have ht' : γ 1 0 = 4 * t := by simpa using ht
   have ht0 : 0 ≤ t := by omega
   have hdo : Odd (γ 1 1) := γ.odd_apply_one_of_even_apply_zero ⟨2 * t, by omega⟩
   let E : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((4 / δ : ℕ) * t) -
@@ -369,35 +370,20 @@ private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
       ModularForm.etaMultiplier
         (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym ((4 / δ : ℕ) * t) (γ 1 1) : ℂ) * ModularForm.e24 (E δ) := by
-    have hcδ : γ 1 0 = (δ : ℤ) * ((4 / δ : ℕ) * t) := by
-      have hdvd : (δ : ℤ) * (4 / δ : ℕ) = 4 := by
-        exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
-      rw [ht, ← mul_assoc, hdvd]
-    have hδ0 : (δ : ℤ) ≠ 0 := by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne'
-    have h00 : conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 0 0 = γ 0 0 := by simp
-    have h01 : conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 0 1 = γ 0 1 * δ := by
-      simp [mul_comm]
-    have h10 : conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 1 0 =
-        (4 / δ : ℕ) * t := by
-      simp [hcδ, Int.mul_ediv_cancel_left _ hδ0]
-    have h11 : conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 1 1 = γ 1 1 := by simp
+    obtain ⟨h00, h01, h10, h11⟩ :=
+      conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
     rw [ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
       (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact hdo),
       h00, h01, h10, h11, ModularForm.e24_def]
-  have hmult : ModularForm.etaQuotientMultiplier 4 thetaEtaExp ⟨γ, hγ⟩ =
-      ∏ δ ∈ (4 : ℕ).divisors,
-        ((kroneckerSym ((4 / δ : ℕ) * t) (γ 1 1) : ℂ) * ModularForm.e24 (E δ)) ^
-          thetaEtaExp δ := by
-    rw [ModularForm.etaQuotientMultiplier_def,
-      ← Finset.prod_attach (4 : ℕ).divisors (fun δ ↦ _ ^ thetaEtaExp δ)]
-    exact Finset.prod_congr rfl fun δ _ ↦ by rw [hε δ δ.property]
   have hE : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ * E δ = 3 * γ 1 1 - 3 := by
-    rw [sum_divisors_four]
-    simp only [thetaEtaExp_def, E]
-    norm_num
+    rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.sum_divisors_prime_pow Nat.prime_two,
+      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
+    simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_def, E, Nat.reduceDiv,
+      show (1 : ℕ) ≠ 2 by decide, show (4 : ℕ) ≠ 2 by decide, ↓reduceIte,
+      Nat.cast_one, Nat.cast_ofNat]
     ring
-  rw [hmult, ModularForm.prod_mul_e24_zpow, hE,
-    prod_kroneckerSym_thetaEtaExp ht0 hdo (ht ▸ γ.isCoprime_row 1), ← ht,
+  rw [ModularForm.etaQuotientMultiplier_eq_prod thetaEtaExp ⟨γ, hγ⟩ hε,
+    ModularForm.prod_mul_e24_zpow, hE, prod_kroneckerSym_thetaEtaExp t (γ 1 1), ← ht',
     mul_comm (kroneckerSym 2 (γ 1 1) : ℂ), mul_assoc,
     mul_comm (kroneckerSym (γ 1 0) (γ 1 1) : ℂ), kroneckerSym_two_mul_e24 hdo]
 
@@ -441,11 +427,15 @@ theorem thetaAutomorphy_eq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 
     have hsym_sq : (kroneckerSym (-1) (γ 1 1) : ℂ) ^ 2 = 1 :=
       sq_intCast_kroneckerSym_eq_one (by simp)
     rw [hmain, inv_thetaMultiplierPhase_neg, kroneckerSym_neg_neg_of_neg hc, Int.cast_mul, hsqrt]
-    linear_combination
-      (-(thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
-          Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1) * (kroneckerSym (-1) (γ 1 1) : ℂ) ^ 2) * I_sq +
-        ((thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
-          Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1)) * hsym_sq
+    calc -I * (kroneckerSym (-1) (γ 1 1) : ℂ) * (thetaMultiplierPhase (γ 1 1))⁻¹ *
+          ((kroneckerSym (-1) (γ 1 1) : ℂ) * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ)) *
+          (I * Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1))
+        = -(I * I) * (kroneckerSym (-1) (γ 1 1) : ℂ) ^ 2 *
+            ((thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
+              Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1)) := by ring
+      _ = (thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
+            Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1) := by
+          rw [I_mul_I, neg_neg, hsym_sq, one_mul, one_mul]
 
 /-- Variant of `thetaAutomorphy_eq_of_mem_Gamma0` expressing the transformation directly in terms
 of `jacobiTheta (2 * z)`. -/

@@ -473,6 +473,15 @@ theorem etaQuotientMultiplier_def (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N) :
       ∏ δ ∈ N.divisors.attach,
         etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ) ^ r δ := (rfl)
 
+/-- The multiplier `∏_δ ε(γ_δ) ^ r δ`, from the values `F δ` of the eta multipliers at the
+conjugates `γ_δ`. -/
+theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) (γ : Gamma0 N) {F : ℕ → ℂ}
+    (hF : ∀ δ (hδ : δ ∈ N.divisors),
+      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) γ) = F δ) :
+    etaQuotientMultiplier N r γ = ∏ δ ∈ N.divisors, F δ ^ r δ := by
+  rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
+  exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
+
 /-- **The transformation of an eta quotient under `Γ₀(N)`**: for `γ = (a b; c d) ∈ Γ₀(N)`,
 `f(γ τ) = (∏_{δ ∣ N} ε(γ_δ) ^ {r δ}) · √(c τ + d) ^ {∑_{δ ∣ N} r δ} · f(τ)` on the upper
 half-plane, with the principal square root. -/
@@ -592,3 +601,22 @@ theorem etaQuotientMultiplier_mul (N : ℕ) (r : ℕ → ℤ) (hr : Even (∑ δ
   exact mul_right_cancel₀ (etaQuotient_ne_zero N r (by simp)) hI
 
 end TauCeti.ModularForm
+
+namespace TauCeti
+
+/-- The entries of `conjScaleGamma0 hδ γ = (a, δ b; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
+lemma conjScaleGamma0_apply_of_eq {N δ : ℕ} (hδ : δ ∣ N) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ CongruenceSubgroup.Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) :
+    conjScaleGamma0 hδ ⟨γ, hγ⟩ 0 0 = γ 0 0 ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 0 1 = γ 0 1 * δ ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 0 = (N / δ : ℕ) * t ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 1 = γ 1 1 := by
+  rcases eq_or_ne δ 0 with rfl | hδ0
+  · obtain rfl := Nat.eq_zero_of_zero_dvd hδ
+    simp [ht]
+  · have hmul : (δ : ℤ) * (N / δ : ℕ) = N := by exact_mod_cast Nat.mul_div_cancel' hδ
+    have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by rw [ht, ← mul_assoc, hmul]
+    refine ⟨by simp, by simp [mul_comm],
+      by simp [hc, Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr hδ0)], by simp⟩
+
+end TauCeti
