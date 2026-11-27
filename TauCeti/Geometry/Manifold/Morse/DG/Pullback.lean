@@ -105,11 +105,19 @@ section Target
 variable {Y Y' : Type*} [TopologicalSpace Y] [TopologicalSpace Y'] {θ : C(M, Y)} {y₀ : Y}
   {y₁ : Y'} (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀) (g : C(Y, Y')) (hg : g y₀ = y₁)
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+include hθ hg in
+/-- If `θ` sends every critical point to `y₀` and `g` sends `y₀` to `y₁`, then `g ∘ θ` sends every
+critical point to `y₁`. -/
+theorem _root_.TauCeti.comp_apply_criticalPoints_eq (x : criticalPoints 𝓘(ℝ, E) f) :
+    g.comp θ x = y₁ := by
+  rw [ContinuousMap.comp_apply, hθ, hg]
+
 /-- **The evaluation into Moore loops is natural in the target**: evaluating the broken
 trajectories through `g ∘ θ` is evaluating them through `θ` and then applying `Ωg`. -/
 theorem morseLoopEvaluation_comp (x y : criticalPoints 𝓘(ℝ, E) f) :
     hX.morseLoopEvaluation hf hdense (θ := g.comp θ)
-        (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) x y =
+        (comp_apply_criticalPoints_eq hθ g hg) x y =
       (MooreLoopSpace.map g hg).toContinuousMap.comp (hX.morseLoopEvaluation hf hdense hθ x y) :=
   ContinuousMap.ext fun _ ↦ MooreLoopSpace.ext <| by simp [MoorePath.map_map]
 
@@ -122,7 +130,7 @@ theorem map_loopChainMap_barraudCorneaCocycle {ind : criticalPoints 𝓘(ℝ, E)
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
     (hX.barraudCorneaCocycle hf hdense hθ hc S).map (loopChainMap R g hg) =
       hX.barraudCorneaCocycle hf hdense (θ := g.comp θ)
-        (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc S :=
+        (comp_apply_criticalPoints_eq hθ g hg) hc S :=
   TwistingCocycle.ext fun x y ↦ by
     rw [TwistingCocycle.map_m, barraudCorneaCocycle_m, barraudCorneaCocycle_m, loopChainMap_apply,
       ← LinearMap.comp_apply, ← cubicalChainSumMap_comp,
@@ -136,7 +144,7 @@ theorem loopChainMap_barraudCorneaContinuationCocycle_ν
     (x y : criticalPoints 𝓘(ℝ, E) f) :
     loopChainMap R g hg ((hX.barraudCorneaContinuationCocycle hf hdense hθ hc T).ν x y) =
       (hX.barraudCorneaContinuationCocycle hf hdense (θ := g.comp θ)
-        (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc T).ν x y := by
+        (comp_apply_criticalPoints_eq hθ g hg) hc T).ν x y := by
   rw [barraudCorneaContinuationCocycle_ν, barraudCorneaContinuationCocycle_ν, map_add,
     loopChainMap_apply R g hg (cubicalChainSumMap R _ _), ← LinearMap.comp_apply,
     ← cubicalChainSumMap_comp, hX.morseLoopEvaluation_comp hf hdense hθ g hg,
@@ -156,7 +164,7 @@ on the critical points (`twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_h
 def dgMorseComplexPullbackIso (𝓖 : DGLocalSystem.{uM} Y' y₁ R) :
     hX.dgMorseComplex hf hdense hθ hc S ((DGLocalSystem.pullback R g hg).obj 𝓖) ≅
       hX.dgMorseComplex hf hdense (θ := g.comp θ)
-        (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc S 𝓖 :=
+        (comp_apply_criticalPoints_eq hθ g hg) hc S 𝓖 :=
   (hX.dgMorseComplexFunctor hf hdense hθ hc S).mapIso
       (DGRightModuleCat.restrictScalarsObjIso (loopChainMap R g hg) 𝓖) ≪≫
     (hX.barraudCorneaCocycle hf hdense hθ hc S).twistedCochainComplexRestrictScalarsIso
@@ -172,9 +180,9 @@ theorem twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_hom_f
     (a : (hX.dgMorseComplex hf hdense hθ hc S ((DGLocalSystem.pullback R g hg).obj 𝓖)).X n) :
     (twistedCochainComplexXEquiv
         (hX.barraudCorneaCocycle hf hdense (θ := g.comp θ)
-          (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc S).mem_graded
+          (comp_apply_criticalPoints_eq hθ g hg) hc S).mem_graded
         (hX.barraudCorneaCocycle hf hdense (θ := g.comp θ)
-          (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc S).twisting
+          (comp_apply_criticalPoints_eq hθ g hg) hc S).twisting
         𝓖.isDGRightModule n
         (((hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S 𝓖).hom.f n).hom a) :
           criticalPoints 𝓘(ℝ, E) f → 𝓖) =
@@ -208,13 +216,40 @@ theorem twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_hom_f
   rw [Function.comp_apply, DGRightModuleCat.restrictScalarsObjIso_hom_apply] at h'
   exact congrArg DGRightModule.RestrictScalars.val h'
 
+/-- The inverse of `dgMorseComplexPullbackIso` is the identity of the underlying functions on the
+critical points. -/
+@[simp]
+theorem twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_inv_f
+    (𝓖 : DGLocalSystem.{uM} Y' y₁ R) (n : ℤ)
+    (a : (hX.dgMorseComplex hf hdense (θ := g.comp θ)
+      (comp_apply_criticalPoints_eq hθ g hg) hc S 𝓖).X n) :
+    (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+        (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting
+        ((DGLocalSystem.pullback R g hg).obj 𝓖).isDGRightModule n
+        (((hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S 𝓖).inv.f n).hom a) :
+          criticalPoints 𝓘(ℝ, E) f → (DGLocalSystem.pullback R g hg).obj 𝓖) =
+      fun x ↦ (DGRightModuleCat.restrictScalarsEquiv (loopChainMap R g hg) 𝓖).symm
+        ((twistedCochainComplexXEquiv
+          (hX.barraudCorneaCocycle hf hdense (θ := g.comp θ)
+            (comp_apply_criticalPoints_eq hθ g hg) hc S).mem_graded
+          (hX.barraudCorneaCocycle hf hdense (θ := g.comp θ)
+            (comp_apply_criticalPoints_eq hθ g hg) hc S).twisting
+          𝓖.isDGRightModule n a).val x) := by
+  have h := hX.twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_hom_f hf hdense hθ g hg hc S
+    𝓖 n (((hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S 𝓖).inv.f n).hom a)
+  rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, Iso.inv_hom_id,
+    HomologicalComplex.id_f, ModuleCat.id_apply] at h
+  funext x
+  rw [h]
+  exact ((DGRightModuleCat.restrictScalarsEquiv (loopChainMap R g hg) 𝓖).symm_apply_apply _).symm
+
 /-- **The pulled-back DG Morse complexes are natural in the coefficients**: the isomorphisms
 `dgMorseComplexPullbackIso` form an isomorphism between the DG Morse complex functor for `θ`
 precomposed with the pullback along `g` and the DG Morse complex functor for `g ∘ θ`. -/
 def dgMorseComplexFunctorPullbackIso :
     DGLocalSystem.pullback.{uM} R g hg ⋙ hX.dgMorseComplexFunctor hf hdense hθ hc S ≅
       hX.dgMorseComplexFunctor hf hdense (θ := g.comp θ)
-        (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc S :=
+        (comp_apply_criticalPoints_eq hθ g hg) hc S :=
   NatIso.ofComponents (hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S) fun {𝓖 𝓗} φ ↦
     TwistingCocycle.twistedCochainComplex_hom_ext _ _ fun n a ↦ by
       have h₁ := hX.twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_hom_f hf hdense hθ g hg
@@ -224,7 +259,7 @@ def dgMorseComplexFunctorPullbackIso :
         _ _ (hX.barraudCorneaCocycle hf hdense hθ hc S) ((DGLocalSystem.pullback R g hg).map φ) n a
       have h₃ := TwistingCocycle.twistedCochainComplexXEquiv_twistedCochainComplexMap_f_apply
         _ _ (hX.barraudCorneaCocycle hf hdense (θ := g.comp θ)
-          (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc S)
+          (comp_apply_criticalPoints_eq hθ g hg) hc S)
         φ n (((hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S 𝓖).hom.f n).hom a)
       have h₄ := hX.twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_hom_f hf hdense hθ g hg
         hc S 𝓖 n a
@@ -256,14 +291,14 @@ theorem dgMorseComplexPullbackIso_hom_comp_dgMorseComplexIsoOfHomotopy_hom
     (T : S.Homotopy S') (𝓖 : DGLocalSystem.{uM} Y' y₁ R) :
     (hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S 𝓖).hom ≫
         (hX.dgMorseComplexIsoOfHomotopy hf hdense (θ := g.comp θ)
-          (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc hMS T 𝓖).hom =
+          (comp_apply_criticalPoints_eq hθ g hg) hc hMS T 𝓖).hom =
       (hX.dgMorseComplexIsoOfHomotopy hf hdense hθ hc hMS T
           ((DGLocalSystem.pullback R g hg).obj 𝓖)).hom ≫
         (hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S' 𝓖).hom := by
   rw [dgMorseComplexIsoOfHomotopy_hom, dgMorseComplexIsoOfHomotopy_hom]
   refine TwistingCocycle.twistedCochainComplex_hom_ext _ _ fun n a ↦ ?_
   have h₁ := (hX.barraudCorneaContinuationCocycle hf hdense (θ := g.comp θ)
-    (fun x ↦ by rw [ContinuousMap.comp_apply, hθ, hg]) hc T).continuationHom_f_apply
+    (comp_apply_criticalPoints_eq hθ g hg) hc T).continuationHom_f_apply
       𝓖.isDGRightModule n
         (((hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S 𝓖).hom.f n).hom a)
   have h₂ := (hX.barraudCorneaContinuationCocycle hf hdense hθ hc T).continuationHom_f_apply
@@ -312,7 +347,11 @@ theorem quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_comp {E
   quasiIso_comp _ _
     (hφ := hX.quasiIso_dgMorseComplexFunctor_map hf hdense hθ hc S
       (isQuasiIso_fibrationLocalSystemSquareMap hp hp' h g hsq hg e he))
-    (hφ' := @quasiIso_of_isIso _ _ _ _ _ _ _ _ (Iso.isIso_hom _) _ _)
+    -- Elaborated without the expected type: there the source of the isomorphism is an object of
+    -- `dgMorseComplexFunctor`, which is `dgMorseComplex` only after unfolding the functor, so
+    -- instance search does not see that its `hom` is an isomorphism.
+    (hφ' := (quasiIso_of_isIso
+      (hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S (fibrationLocalSystem R p' y₁)).hom :))
 
 /-- **DG Morse homology of a pulled-back fibration**: for a Hurewicz fibration `p' : E' → Y'` and
 a based map `g : (Y, y₀) → (Y', y₁)`, the DG Morse complex for `θ` with coefficients in the chains
@@ -331,7 +370,10 @@ theorem quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_pullbac
   exact quasiIso_comp _ _
     (hφ := hX.quasiIso_dgMorseComplexFunctor_map hf hdense hθ hc S
       (isQuasiIso_fibrationLocalSystemSquareMap_pullbackSnd hp' g y₀))
-    (hφ' := @quasiIso_of_isIso _ _ _ _ _ _ _ _ (Iso.isIso_hom _) _ _)
+    -- Elaborated without the expected type, as in
+    -- `quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_comp`.
+    (hφ' := (quasiIso_of_isIso
+      (hX.dgMorseComplexPullbackIso hf hdense hθ g rfl hc S (fibrationLocalSystem R p' _)).hom :))
 
 end Fibration
 
