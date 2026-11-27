@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.RingTheory.AdicCompletion.Completeness
 public import Mathlib.RingTheory.AdicCompletion.Functoriality
+import TauCeti.RingTheory.AdicCompletion.Basic
 import TauCeti.RingTheory.AdicCompletion.Exactness
 
 /-!
@@ -26,7 +27,7 @@ map to an `I`-adically complete algebra extends uniquely
 (`AdicCompletion.bijective_algHom_comp_of_map_bijective`). The extension of an algebra map is the
 extension of its underlying linear map, which is multiplicative by uniqueness of linear extensions,
 applied once in each variable. For `I` finitely generated, the canonical map `M → AdicCompletion I
-M` is bijective on completions (`AdicCompletion.map_of_bijective`).
+M` is bijective on completions (`AdicCompletion.bijective_map_of`).
 
 This is the form in which `p`-adic completions are compared with each other: a map of
 `p`-torsion-free algebras that is an isomorphism modulo `p`, or the inclusion of an algebra into
@@ -41,7 +42,7 @@ its completion, does not change the maps into `p`-adically complete algebras.
   `I`-adically complete `P`.
 * `AdicCompletion.bijective_algHom_comp_of_map_bijective`: the same for algebra maps along an
   algebra map `κ : A →ₐ[R] B`, into an `I`-adically complete `R`-algebra.
-* `AdicCompletion.map_of_bijective`: for `I` finitely generated, `M → AdicCompletion I M` induces a
+* `AdicCompletion.bijective_map_of`: for `I` finitely generated, `M → AdicCompletion I M` induces a
   bijection of completions.
 
 ## References
@@ -73,14 +74,6 @@ private theorem exists_mem_pow_smul_top_map_eq_of (hf : Function.Surjective (map
     obtain ⟨w₂, hw₂, h₂⟩ := ih₂
     exact ⟨w₁ + w₂, add_mem hw₁ hw₂, by rw [map_add, map_add, h₁, h₂]⟩
 
-/-- If `of I M x` lies in `Iⁿ` times the completion, then `x ∈ Iⁿ M`: the `n`-th coordinate of
-`of I M x` is the class of `x` modulo `Iⁿ M`, and it vanishes on `Iⁿ` times the completion. -/
-private theorem mem_pow_smul_top_of_of_mem {n : ℕ} {x : M}
-    (hx : of I M x ∈ (I ^ n • ⊤ : Submodule R (AdicCompletion I M))) :
-    x ∈ (I ^ n • ⊤ : Submodule R M) := by
-  have := pow_smul_top_le_ker_eval I n hx
-  rwa [LinearMap.mem_ker, eval_of, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at this
-
 /-- **Bijectivity on completions, tested before completing.** The map of `I`-adic completions
 induced by `f : M →ₗ[R] N` is bijective if and only if `f` is onto modulo `I` and `f x ∈ Iⁿ N`
 implies `x ∈ Iⁿ M` for every `n`. For `I = (p)`: `f` is onto modulo `p`, and `pⁿ ∣ f x` implies
@@ -103,7 +96,7 @@ theorem map_bijective_iff :
     obtain ⟨w, hw, hwx⟩ := exists_mem_pow_smul_top_map_eq_of hf.2 hx
     rw [← map_of] at hwx
     obtain rfl := hf.1 hwx
-    exact mem_pow_smul_top_of_of_mem hw
+    exact of_mem_pow_smul_top_iff.mp hw
 
 /-- **Linear maps into a complete module extend uniquely along a map bijective on completions.**
 If `f : M →ₗ[R] N` induces a bijection of `I`-adic completions and `P` is `I`-adically complete,
@@ -155,7 +148,7 @@ theorem bijective_algHom_comp_of_map_bijective {A B C : Type*} [Ring A] [Ring B]
 the canonical map `M → AdicCompletion I M` induces a bijection of `I`-adic completions. Hence, by
 `AdicCompletion.bijective_comp_of_map_bijective`, linear maps from `M` to `I`-adically complete
 modules extend uniquely to its completion. -/
-theorem map_of_bijective (hI : I.FG) : Function.Bijective (map I (of I M)) := by
+theorem bijective_map_of (hI : I.FG) : Function.Bijective (map I (of I M)) := by
   refine map_bijective_iff.mpr ⟨fun z ↦ ?_, fun n x hx ↦ ?_⟩
   · obtain ⟨z, rfl⟩ := Submodule.mkQ_surjective _ z
     obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ (z.val 1)
@@ -165,6 +158,6 @@ theorem map_of_bijective (hI : I.FG) : Function.Bijective (map I (of I M)) := by
         Submodule.mkQ_apply, sub_self]
     rw [pow_one] at hmem
     simpa only [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.eq] using hmem
-  · exact mem_pow_smul_top_of_of_mem hx
+  · exact of_mem_pow_smul_top_iff.mp hx
 
 end AdicCompletion

@@ -34,7 +34,8 @@ complete with `p ∈ I`, monoid maps `M →* A` correspond to monoid maps `M →
 `Perfection.liftMonoidHom` and `Perfection.quotientMulEquiv`; and if `I ≤ J` with `x ^ p ∈ I` for
 every `x ∈ J`, monoid maps `M →* A ⧸ I` correspond to monoid maps `M →* A ⧸ J`, since Frobenius
 factors through `A ⧸ J → A ⧸ I` (`Ideal.bijective_factor_comp_monoidHom`). Here `p ∈ J` suffices
-in place of `p ∈ I`: then `p ^ p ∈ I`, and `A` is also complete along `I ⊔ (p)`. The main example
+in place of `p ∈ I`: then `p ^ p ∈ I`, and `A` is also complete along `I ⊔ (p)`
+(`IsAdicComplete.sup_span_singleton_of_pow_mem`). The main example
 of such a `J` is the ideal of elements with divided powers of a `p`-adically complete ring.
 
 ## Main definitions
@@ -272,9 +273,7 @@ theorem bijective_mk_comp_monoidHom (hpJ : (p : S) ∈ J) (hIJ : I ≤ J)
     (hJ : ∀ x ∈ J, x ^ p ∈ I) :
     Function.Bijective fun f : M →* S ↦ (Ideal.Quotient.mk J : S →* S ⧸ J).comp f := by
   -- `p ^ p ∈ I`, so `S` is also complete along `I ⊔ (p)`, which contains `p` and lies in `J`.
-  have : IsAdicComplete (I ⊔ span {(p : S)}) S := .sup_of_pow_le (k := p) <| by
-    rw [span_singleton_pow, span_singleton_le_iff_mem]
-    exact hJ _ hpJ
+  have : IsAdicComplete (I ⊔ span {(p : S)}) S := .sup_span_singleton_of_pow_mem (hJ _ hpJ)
   have hpI : (p : S) ∈ I ⊔ span {(p : S)} := mem_sup_right (mem_span_singleton_self _)
   convert (Ideal.bijective_factor_comp_monoidHom hpI (fun x hx ↦ mem_sup_left (hJ x hx))
     (sup_le hIJ ((span_singleton_le_iff_mem _).mpr hpJ))).comp
