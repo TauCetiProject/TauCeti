@@ -74,9 +74,7 @@ private theorem integral_norm_sq_tailVec_le {ι Y : Type*} [Fintype ι]
       (gaussianSumCLM y).summingENorm_two_le_of_hasGaussianCotype (EuclideanSpace.basisFun ι ℝ) hY
   have hCG : 0 ≤ (C : ℝ) * gaussianSecondMoment y :=
     mul_nonneg C.property (gaussianSecondMoment_nonneg y)
-  have hmem : MemLp (EuclideanSpace.tailVec (ι := ι) t) 2 (stdGaussian (EuclideanSpace ℝ ι)) := by
-    simpa only [ContinuousLinearMap.id_apply] using
-      (ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)).memLp_comp_tailVec t (by simp)
+  have hmem := TauCeti.Probability.memLp_tailVec (ι := ι) t (p := 2) (by simp)
   have hs : MeasurableSet {r : ℝ | t < |r|} :=
     measurableSet_lt measurable_const continuous_abs.measurable
   have hpietsch := (gaussianSumCLM y).integral_norm_apply_rpow_le_of_summingENorm_le (p := 2)

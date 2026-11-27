@@ -26,6 +26,9 @@ coordinate has second moment equal to the one-dimensional Gaussian tail second m
 
 ## Main declarations
 
+* `TauCeti.Probability.memLp_coordIndicator`, `TauCeti.Probability.memLp_truncVec`,
+  `TauCeti.Probability.memLp_tailVec`: finite `Lᵖ` membership of coordinate masks under
+  `stdGaussian`.
 * `ContinuousLinearMap.memLp_comp_coordIndicator`, `ContinuousLinearMap.memLp_comp_truncVec`,
   `ContinuousLinearMap.memLp_comp_tailVec`: finite `Lᵖ` membership of bounded linear images of
   coordinate masks under `stdGaussian`.
@@ -45,6 +48,35 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 open scoped BigOperators ENNReal InnerProductSpace
 
+namespace TauCeti.Probability
+
+variable {ι : Type*} [Fintype ι]
+
+/-- Under the standard Gaussian measure on `EuclideanSpace ℝ ι`, a measurable coordinate mask
+`PiLp.coordIndicator s` belongs to every finite `Lᵖ` space. -/
+theorem memLp_coordIndicator {s : Set ℝ} (hs : MeasurableSet s) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (PiLp.coordIndicator s : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) p
+      (stdGaussian (EuclideanSpace ℝ ι)) :=
+  (IsGaussian.memLp_id (stdGaussian (EuclideanSpace ℝ ι)) p hp).of_le
+    (PiLp.measurable_coordIndicator hs).aestronglyMeasurable
+    (Filter.Eventually.of_forall (PiLp.norm_coordIndicator_le s))
+
+/-- Under the standard Gaussian measure on `EuclideanSpace ℝ ι`, coordinate truncation
+`EuclideanSpace.truncVec t` belongs to every finite `Lᵖ` space. -/
+theorem memLp_truncVec (t : ℝ) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (EuclideanSpace.truncVec (ι := ι) t) p (stdGaussian (EuclideanSpace ℝ ι)) := by
+  rw [funext (EuclideanSpace.truncVec_def t)]
+  exact memLp_coordIndicator (measurableSet_le continuous_abs.measurable measurable_const) hp
+
+/-- Under the standard Gaussian measure on `EuclideanSpace ℝ ι`, coordinate tail masking
+`EuclideanSpace.tailVec t` belongs to every finite `Lᵖ` space. -/
+theorem memLp_tailVec (t : ℝ) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (EuclideanSpace.tailVec (ι := ι) t) p (stdGaussian (EuclideanSpace ℝ ι)) := by
+  rw [funext (EuclideanSpace.tailVec_def t)]
+  exact memLp_coordIndicator (measurableSet_lt measurable_const continuous_abs.measurable) hp
+
+end TauCeti.Probability
+
 namespace ContinuousLinearMap
 
 variable {ι : Type*} [Fintype ι]
@@ -56,27 +88,23 @@ theorem memLp_comp_coordIndicator {Y : Type*} [NormedAddCommGroup Y] [NormedSpac
     {p : ℝ≥0∞} (hp : p ≠ ∞) :
     MemLp (fun g : EuclideanSpace ℝ ι ↦ U (PiLp.coordIndicator s g)) p
       (stdGaussian (EuclideanSpace ℝ ι)) :=
-  U.comp_memLp' ((IsGaussian.memLp_id (stdGaussian (EuclideanSpace ℝ ι)) p hp).of_le
-    (PiLp.measurable_coordIndicator hs).aestronglyMeasurable
-    (Filter.Eventually.of_forall (PiLp.norm_coordIndicator_le s)))
+  U.comp_memLp' (TauCeti.Probability.memLp_coordIndicator hs hp)
 
 /-- Composing a bounded linear map `U` on real Euclidean space with coordinate truncation belongs
 to every finite `Lᵖ` space under the standard Gaussian measure. -/
 theorem memLp_comp_truncVec {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (U : EuclideanSpace ℝ ι →L[ℝ] Y) (t : ℝ) {p : ℝ≥0∞} (hp : p ≠ ∞) :
     MemLp (fun g : EuclideanSpace ℝ ι ↦ U (EuclideanSpace.truncVec t g)) p
-      (stdGaussian (EuclideanSpace ℝ ι)) := by
-  simpa only [← EuclideanSpace.truncVec_def] using
-    U.memLp_comp_coordIndicator (measurableSet_le continuous_abs.measurable measurable_const) hp
+      (stdGaussian (EuclideanSpace ℝ ι)) :=
+  U.comp_memLp' (TauCeti.Probability.memLp_truncVec t hp)
 
 /-- Composing a bounded linear map `U` on real Euclidean space with coordinate tail masking belongs
 to every finite `Lᵖ` space under the standard Gaussian measure. -/
 theorem memLp_comp_tailVec {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (U : EuclideanSpace ℝ ι →L[ℝ] Y) (t : ℝ) {p : ℝ≥0∞} (hp : p ≠ ∞) :
     MemLp (fun g : EuclideanSpace ℝ ι ↦ U (EuclideanSpace.tailVec t g)) p
-      (stdGaussian (EuclideanSpace ℝ ι)) := by
-  simpa only [← EuclideanSpace.tailVec_def] using
-    U.memLp_comp_coordIndicator (measurableSet_lt measurable_const continuous_abs.measurable) hp
+      (stdGaussian (EuclideanSpace ℝ ι)) :=
+  U.comp_memLp' (TauCeti.Probability.memLp_tailVec t hp)
 
 end ContinuousLinearMap
 
@@ -102,9 +130,7 @@ theorem integrable_tailVec_mul (t : ℝ) (i j : ι) :
     Integrable (fun g : EuclideanSpace ℝ ι ↦
         EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j)
       (stdGaussian (EuclideanSpace ℝ ι)) := by
-  have hmem : MemLp (EuclideanSpace.tailVec (ι := ι) t) 2 (stdGaussian (EuclideanSpace ℝ ι)) := by
-    simpa only [ContinuousLinearMap.id_apply] using
-      (ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)).memLp_comp_tailVec t (by simp)
+  have hmem := memLp_tailVec (ι := ι) t (p := 2) (by simp)
   have : ENNReal.HolderConjugate 2 2 := ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
   exact (hmem.eval_piLp i).integrable_mul (hmem.eval_piLp j)
 
@@ -168,9 +194,7 @@ theorem integral_sq_apply_tailVec (f : StrongDual ℝ (EuclideanSpace ℝ ι)) (
       f v = ∑ i, v i * f (EuclideanSpace.basisFun ι ℝ i) := by
     conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr v]
     simp only [map_sum, map_smul, smul_eq_mul, EuclideanSpace.basisFun_repr]
-  have hmem : MemLp (EuclideanSpace.tailVec (ι := ι) t) 2 (stdGaussian (EuclideanSpace ℝ ι)) := by
-    simpa only [ContinuousLinearMap.id_apply] using
-      (ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)).memLp_comp_tailVec t (by simp)
+  have hmem := TauCeti.Probability.memLp_tailVec (ι := ι) t (p := 2) (by simp)
   let X : ι → EuclideanSpace ℝ ι → ℝ :=
     fun i g ↦ EuclideanSpace.tailVec t g i * f (EuclideanSpace.basisFun ι ℝ i)
   have hX (i : ι) (_ : i ∈ Finset.univ) : MemLp (X i) 2 (stdGaussian (EuclideanSpace ℝ ι)) :=

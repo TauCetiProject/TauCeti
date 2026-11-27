@@ -64,8 +64,8 @@ theorem HasGaussianCotype.gaussianSecondMoment_le (h : HasGaussianCotype Y 2 C) 
         1 / 2 :=
     mul_sqrt_setIntegral_sq_tail_le ht (by
       rw [show (C : ℝ) * √3 / (2 * √3 * (C : ℝ)) = 1 / 2 by field_simp])
-  simpa only [mul_assoc] using
-    (gaussianSecondMoment_le_two_mul_rademacherSecondMoment h htail y).trans_eq (by ring)
+  refine (gaussianSecondMoment_le_two_mul_rademacherSecondMoment h htail y).trans_eq ?_
+  ring
 
 /-- **Gaussian sums under cotype `2`.** If `Y` has Rademacher cotype `2` with constant `C`,
 then `G₂(y) ≤ 4 √3 C R₂(y)` for every finite family `y`. -/
