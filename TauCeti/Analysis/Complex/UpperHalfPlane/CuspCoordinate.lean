@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.PuncturedManifold
 public import Mathlib.Topology.Maps.Strict.Basic
+import TauCeti.Topology.LimUnder
 
 /-!
 # The local coordinate at a cusp
@@ -149,7 +150,7 @@ theorem eqOn_cuspFunction_of_lt_im {f g : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
     exact hne hq0 (mem_ball_zero_iff.mp hqA)
   rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne,
     Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
-  exact congrArg lim (Filter.map_congr heq)
+  exact Filter.limUnder_congr heq
 
 /-- **The q-extension of a function periodic above a height is holomorphic at the q-parameter of
 every point above that height at which the function is holomorphic.** -/

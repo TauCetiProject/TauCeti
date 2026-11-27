@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.DGAlgebra
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
-import TauCeti.Order.WellFounded.Basic
 
 /-!
 # Relative classes in the algebra of cubical chains
@@ -273,36 +272,6 @@ variable {P Q : Type*} [Finite P] [Finite Q] {N : P → Q → TopCat.{u}} {k : T
     ∀ x y, normalizedCubicalChainAlgebra (N x y) k}
   {μ : ∀ x y, ((TopPair.ofSubset (A x y)).cubicalChainComplex k).homology (n x y)}
 
-/-- Families of chains of prescribed degrees are built one degree at a time, downwards from the
-largest, when the condition `V s x y c` on the chain `c` of the pair `(x, y)` only depends on the
-chains of `s` at the pairs of larger degree and can be met there once it holds at those pairs. -/
-private theorem exists_forall_of_forall_exists_of_lt
-    (V : (∀ x y, normalizedCubicalChainAlgebra (N x y) k) → ∀ x y,
-      normalizedCubicalChainAlgebra (N x y) k → Prop)
-    (hV : ∀ (s s' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y c,
-      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
-      (∀ x y, s' x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
-      (∀ x' y', deg x y < deg x' y' → s x' y' = s' x' y') → V s x y c → V s' x y c)
-    (hex : ∀ (s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y,
-      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
-      (∀ x' y', deg x y < deg x' y' → V s x' y' (s x' y')) →
-      ∃ c ∈ cubicalChainGrading (N x y) k (deg x y), V s x y c) :
-    ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
-      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧ ∀ x y, V s x y (s x y) := by
-  -- Recursion along the relation `q` precedes `p` when `q` has the larger degree, which is
-  -- well-founded on the finite type of pairs; the chains are taken in the graded pieces.
-  let r : P × Q → P × Q → Prop := fun q p ↦ deg p.1 p.2 < deg q.1 q.2
-  have : IsTrans (P × Q) r := ⟨fun _ _ _ h₁ h₂ ↦ h₂.trans h₁⟩
-  have : Std.Irrefl r := ⟨fun _ ↦ lt_irrefl _⟩
-  obtain ⟨G, hG⟩ := (Finite.wellFounded_of_trans_of_irrefl r).exists_forall_of_forall_exists
-    (X := fun p ↦ cubicalChainGrading (N p.1 p.2) k (deg p.1 p.2))
-    (fun G p c ↦ V (fun x y ↦ G (x, y)) p.1 p.2 c)
-    (fun p _ G G' hGG' ↦ hV _ _ p.1 p.2 _ (fun x y ↦ (G (x, y)).property)
-      (fun x y ↦ (G' (x, y)).property) fun x' y' h ↦ congrArg Subtype.val (hGG' (x', y') h))
-    fun p G hG ↦ (hex _ p.1 p.2 (fun x y ↦ (G (x, y)).property) fun x' y' h ↦ hG (x', y') h).elim
-      fun c hc ↦ ⟨⟨c, hc.1⟩, hc.2⟩
-  exact ⟨fun x y ↦ G (x, y), fun x y ↦ (G (x, y)).property, fun x y ↦ hG (x, y)⟩
-
 /-- **Families of chains with prescribed boundaries representing prescribed classes.** Let
 `deg x y` be the cohomological degree of the chain of the pair `(x, y)`, so that it is a chain of
 dimension `-deg x y`, and let `μ x y` be a class of the relative cubical homology
@@ -334,7 +303,7 @@ theorem exists_forall_cubicalChainDifferential_eq_and_isRepresentingChain
       (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧
       ∀ x y, cubicalChainDifferential (N x y) k (s x y) = F s x y ∧
         (deg x y ≤ 0 → IsRepresentingChain (s x y) (μ x y)) := by
-  refine exists_forall_of_forall_exists_of_lt
+  refine exists_forall_mem_cubicalChainGrading_of_forall_exists
     (fun s x y c ↦ cubicalChainDifferential (N x y) k c = F s x y ∧
       (deg x y ≤ 0 → IsRepresentingChain c (μ x y)))
     (fun s s' x y c hs hs' hss' hc ↦ by rwa [← hF s s' x y hs hs' hss']) fun s x y hs hd ↦ ?_
@@ -390,7 +359,7 @@ theorem exists_forall_cubicalChainDifferential_eq_of_injective
     ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
       (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧
       ∀ x y, cubicalChainDifferential (N x y) k (s x y) = F s x y := by
-  refine exists_forall_of_forall_exists_of_lt
+  refine exists_forall_mem_cubicalChainGrading_of_forall_exists
     (fun s x y c ↦ cubicalChainDifferential (N x y) k c = F s x y)
     (fun s s' x y c hs hs' hss' hc ↦ hc.trans (hF s s' x y hs hs' hss')) fun s x y hs hd ↦ ?_
   by_cases h₀ : 0 ≤ deg x y

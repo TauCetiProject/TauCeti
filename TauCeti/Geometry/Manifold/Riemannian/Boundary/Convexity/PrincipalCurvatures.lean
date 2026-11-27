@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Convexity.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten.Basic
 
 /-!
 # Convexity of the boundary through the principal curvatures
