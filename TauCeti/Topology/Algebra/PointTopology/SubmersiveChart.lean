@@ -243,19 +243,17 @@ theorem IsStandardSmooth.exists_openPartialHomeomorph_points [IsStandardSmooth K
   let := Fintype.ofFinite ↥(Set.range P.map)ᶜ
   obtain ⟨e, hx, he, ha⟩ := P.exists_openPartialHomeomorph_pointCoords x
   let c := Fintype.equivFin ↥(Set.range P.map)ᶜ
-  refine ⟨_, e.transHomeomorph (Homeomorph.piCongrLeft (Y := fun _ ↦ K) c),
-    fun i ↦ P.val (c.symm i), hx, fun y i ↦ ?_, ?_⟩
+  let q := ContinuousLinearEquiv.piCongrLeft K (fun _ : Fin _ ↦ K) c
+  refine ⟨_, e.transHomeomorph q.toHomeomorph, fun i ↦ P.val (c.symm i), hx, fun y i ↦ ?_, ?_⟩
   · obtain ⟨i, rfl⟩ := c.surjective i
-    rw [OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
-      Homeomorph.piCongrLeft_apply_apply, he, SubmersivePresentation.pointCoords_apply]
-    simp only [c.symm_apply_apply]
+    simp [OpenPartialHomeomorph.transHomeomorph_apply, q, ContinuousLinearEquiv.piCongrLeft,
+      he, SubmersivePresentation.pointCoords_apply]
   · intro b z hz
-    let q := ContinuousLinearEquiv.piCongrLeft K (fun _ : Fin _ ↦ K) c
-    have hq : ⇑(Homeomorph.piCongrLeft (Y := fun _ ↦ K) c).symm = ⇑q.symm := (rfl)
     have hz' : q.symm z ∈ e.target := by
-      simpa only [OpenPartialHomeomorph.transHomeomorph_target, Set.mem_preimage, hq] using hz
-    simpa only [OpenPartialHomeomorph.transHomeomorph_symm_apply, Function.comp_apply, hq] using
-      (ha b _ hz').fun_comp (q.symm.analyticAt z)
+      simpa only [OpenPartialHomeomorph.transHomeomorph_target, Set.mem_preimage,
+        ContinuousLinearEquiv.coe_symm_toHomeomorph] using hz
+    simpa only [OpenPartialHomeomorph.transHomeomorph_symm_apply, Function.comp_apply,
+      ContinuousLinearEquiv.coe_symm_toHomeomorph] using (ha b _ hz').fun_comp (q.symm.analyticAt z)
 
 /-- **Local charts on the points of a smooth algebra.** Every point `x` of a smooth `K`-algebra
 has a chart: an open partial homeomorphism from the points, with their evaluation topology, to

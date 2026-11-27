@@ -34,7 +34,7 @@ theorem analyticAt_eval_convMul {K E A H : Type*} [NontriviallyNormedField K]
     have h := (ℛ K a).convMul_apply
       (toConv (f z).ofConv.toLinearMap) (toConv (g z).ofConv.toLinearMap)
     rw [← AlgHom.toLinearMap_convMul] at h
-    exact h
+    simpa only [ofConv_toConv, AlgHom.toLinearMap_apply] using h
   simp_rw [heq]
   exact Finset.analyticAt_fun_sum _ fun i _ ↦ (hf _).mul (hg _)
 

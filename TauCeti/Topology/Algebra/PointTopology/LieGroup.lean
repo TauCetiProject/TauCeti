@@ -113,7 +113,7 @@ private theorem contMDiff_eval_chartedSpaceOfOne (b : H) : letI := chartedSpaceO
   apply contMDiffAt_iff.2
   refine ⟨(continuous_eval_ofConv b).continuousAt, ?_⟩
   simp only [mfld_simps]
-  have hp : p ∈ (translatedChart e p).source := by simpa using h₁
+  have hp := e.mem_translatedChart_source_self h₁ p
   exact (analyticAt_eval_translatedChart_symm ha ((translatedChart e p).map_source hp)
     b).contDiffAt.contDiffWithinAt
 
@@ -125,15 +125,15 @@ private theorem contMDiff_mul_chartedSpaceOfOne : letI := chartedSpaceOfOne e h�
   apply contMDiffAt_iff.2
   refine ⟨continuous_mul.continuousAt, ?_⟩
   simp only [mfld_simps]
-  have hp₁ : p.1 ∈ (translatedChart e p.1).source := by simpa using h₁
-  have hp₂ : p.2 ∈ (translatedChart e p.2).source := by simpa using h₁
+  have hp₁ := e.mem_translatedChart_source_self h₁ p.1
+  have hp₂ := e.mem_translatedChart_source_self h₁ p.2
   have hz₁ := (translatedChart e p.1).map_source hp₁
   have hz₂ := (translatedChart e p.2).map_source hp₂
   have hx : (translatedChart e p.1).symm (translatedChart e p.1 p.1) *
       (translatedChart e p.2).symm (translatedChart e p.2 p.2) ∈
         (translatedChart e (p.1 * p.2)).source := by
     rw [(translatedChart e p.1).left_inv hp₁, (translatedChart e p.2).left_inv hp₂]
-    simpa using h₁
+    exact e.mem_translatedChart_source_self h₁ _
   let z₀ : V × V := (translatedChart e p.1 p.1, translatedChart e p.2 p.2)
   let f : V × V → G := fun z ↦ (translatedChart e p.1).symm z.1
   let g : V × V → G := fun z ↦ (translatedChart e p.2).symm z.2
@@ -161,12 +161,12 @@ private theorem contMDiff_inv_chartedSpaceOfOne : letI := chartedSpaceOfOne e h�
   apply contMDiffAt_iff.2
   refine ⟨continuous_inv.continuousAt, ?_⟩
   simp only [mfld_simps]
-  have hp : p ∈ (translatedChart e p).source := by simpa using h₁
+  have hp := e.mem_translatedChart_source_self h₁ p
   have hz := (translatedChart e p).map_source hp
   have hx : ((translatedChart e p).symm (translatedChart e p p))⁻¹ ∈
       (translatedChart e p⁻¹).source := by
     rw [(translatedChart e p).left_inv hp]
-    simpa using h₁
+    exact e.mem_translatedChart_source_self h₁ _
   have hinv (b : H) : AnalyticAt K
       (fun z : V ↦ (((translatedChart e p).symm z)⁻¹).ofConv b)
       (translatedChart e p p) := by

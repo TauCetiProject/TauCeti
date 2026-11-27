@@ -44,6 +44,11 @@ theorem mem_translatedChart_source_iff (p q : G) :
     q ∈ (e.translatedChart p).source ↔ p⁻¹ * q ∈ e.source := by
   simp [translatedChart, Homeomorph.coe_mulLeft]
 
+/-- If the original chart contains the identity, each translate contains its translating point. -/
+theorem mem_translatedChart_source_self (h₁ : (1 : G) ∈ e.source) (p : G) :
+    p ∈ (e.translatedChart p).source := by
+  simpa using h₁
+
 /-- The target of a translated chart is the original target. -/
 @[simp]
 theorem translatedChart_target (p : G) : (e.translatedChart p).target = e.target := by
@@ -54,7 +59,7 @@ theorem translatedChart_target (p : G) : (e.translatedChart p).target = e.target
 def chartedSpaceOfOne (h₁ : (1 : G) ∈ e.source) : ChartedSpace V G where
   atlas := Set.range e.translatedChart
   chartAt := e.translatedChart
-  mem_chart_source p := by simpa using h₁
+  mem_chart_source p := e.mem_translatedChart_source_self h₁ p
   chart_mem_atlas p := Set.mem_range_self p
 
 /-- The chart at each point in the translated atlas is the left translate by that point. -/
