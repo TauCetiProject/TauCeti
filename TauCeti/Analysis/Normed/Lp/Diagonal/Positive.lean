@@ -14,9 +14,9 @@ public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 
 On `ℓ²(ι, 𝕜)` over `RCLike 𝕜`, the bounded diagonal operator `lp.diagonalCLM d` acts by
 coordinatewise multiplication in the standard Hilbert-sum inner product `⟪x, y⟫ = ∑' i, ⟪x i, y i⟫`.
-It is self-adjoint precisely when every coefficient `d i` is fixed by conjugation, positive
-precisely when `0 ≤ d i` for every `i`, and monotone in the Loewner order with respect to the
-pointwise order on `ℓ^∞(ι, 𝕜)`.
+Its Hilbert-space adjoint (and `⋆`-operation) is `lp.diagonalCLM (star d)`. It is self-adjoint
+precisely when every coefficient `d i` is fixed by conjugation, positive precisely when `0 ≤ d i`
+for every `i`, and monotone in the Loewner order with respect to the pointwise order on `ℓ^∞(ι, 𝕜)`.
 
 For nonnegative coefficients `0 ≤ d i`, the finite coordinate truncations
 `lp.diagonalTruncation d s` form an increasing family of positive finite-rank operators converging
@@ -26,6 +26,8 @@ order (`lp.isLUB_range_diagonalTruncation`, and along `Finset.range n` on `ℓ²
 
 ## Main declarations
 
+* `lp.adjoint_diagonalCLM`, `lp.star_diagonalCLM`: the Hilbert-space adjoint and `⋆`-operation on
+  `ℓ²` send `lp.diagonalCLM d` to `lp.diagonalCLM (star d)`.
 * `lp.isSelfAdjoint_diagonalCLM_iff`: `lp.diagonalCLM d` on `ℓ²` is self-adjoint iff
   `∀ i, star (d i) = d i`.
 * `lp.isPositive_diagonalCLM_iff`, `lp.diagonalCLM_le_diagonalCLM_iff`,
@@ -42,11 +44,31 @@ order (`lp.isLUB_range_diagonalTruncation`, and along `Finset.range n` on `ℓ²
 public section
 
 open Filter
-open scoped lp ENNReal NNReal Topology InnerProductSpace ComplexConjugate ComplexOrder
+open scoped lp ENNReal NNReal Topology InnerProduct InnerProductSpace ComplexConjugate ComplexOrder
 
 namespace lp
 
 variable {ι 𝕜 : Type*} [RCLike 𝕜]
+
+/-- The Hilbert-space adjoint of a bounded diagonal operator on `ℓ²(ι, 𝕜)` is the diagonal operator
+of the conjugated coefficient family. -/
+@[simp]
+theorem adjoint_diagonalCLM (d : ℓ^∞(ι, 𝕜)) :
+    (diagonalCLM (p := 2) d)† = diagonalCLM (p := 2) (star d) := by
+  symm
+  rw [ContinuousLinearMap.eq_adjoint_iff]
+  intro x y
+  simp only [lp.inner_eq_tsum, diagonalCLM_apply, lp.star_apply]
+  refine tsum_congr fun i ↦ ?_
+  rw [← smul_eq_mul, ← smul_eq_mul, inner_smul_left, inner_smul_right, RCLike.star_def,
+    starRingEnd_self_apply]
+
+/-- The `⋆`-operation on `ℓ²(ι, 𝕜) →L[𝕜] ℓ²(ι, 𝕜)` sends `lp.diagonalCLM d` to
+`lp.diagonalCLM (star d)`. -/
+@[simp]
+theorem star_diagonalCLM (d : ℓ^∞(ι, 𝕜)) :
+    star (diagonalCLM (p := 2) d) = diagonalCLM (p := 2) (star d) := by
+  rw [ContinuousLinearMap.star_eq_adjoint, adjoint_diagonalCLM]
 
 /-- A bounded diagonal operator on `ℓ²(ι, 𝕜)` is self-adjoint if and only if each diagonal entry is
 fixed by conjugation. -/

@@ -41,6 +41,7 @@ Riesz theorem.
   `CStarModule.inner_map_map_iff_forall_inner_map_map_self`: complex-linear endomorphisms are
   determined by diagonal inner products `⟪x, T x⟫_A`, and a complex-linear map preserves all inner
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
+* `CStarModule.inner_self_eq_norm_sq_complex`: over `ℂ`, `⟪x, x⟫_ℂ = (‖x‖ ^ 2 : ℂ)`.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
@@ -198,6 +199,19 @@ theorem norm_eq_of_inner_self_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SM
   rw [norm_eq_sqrt_norm_inner_self (A := A), norm_eq_sqrt_norm_inner_self (A := A) (x := y), h]
 
 end Algebraic
+
+section Complex
+
+open scoped ComplexOrder
+
+variable {E : Type*} [AddCommGroup E] [Module ℂ E] [Norm E] [CStarModule ℂ E]
+
+/-- For a Hilbert C⋆-module over `ℂ`, the self inner product `⟪x, x⟫_ℂ` equals `(‖x‖ ^ 2 : ℂ)`. -/
+theorem inner_self_eq_norm_sq_complex (x : E) :
+    inner ℂ x x = ((‖x‖ ^ 2 : ℝ) : ℂ) := by
+  rw [norm_sq_eq ℂ, Complex.norm_of_nonneg' inner_self_nonneg]
+
+end Complex
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 

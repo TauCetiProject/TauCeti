@@ -23,7 +23,9 @@ coordinate evaluation (`lp.evalCLM_apply`, `lp.evalCLM_comp_singleContinuousLine
 `lp.leftInverse_evalCLM_singleContinuousLinearMap`, `lp.evalCLM_surjective`) let users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
-extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Sequences whose
+extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Similarly, a
+sequence lies in `ℓ²` exactly when its squared coordinate norms are summable (`memℓp_two_iff`),
+and its squared `ℓ²` norm is their sum (`lp.norm_sq_eq_tsum`). Sequences whose
 coordinates have the same norms have the same `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq`); in
 particular the sequence `i ↦ ‖f i‖` of coordinate norms of `f ∈ ℓᵖ` (`lp.normSeq`) has `ℓᵖ` norm
 `‖f‖` (`lp.norm_normSeq`). For Hölder conjugate exponents `p` and `q`, including `1` and `∞`,
@@ -41,7 +43,10 @@ nonzero multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or
 linearly independent, and vectors in the span of single-coordinate vectors vanish outside the
 corresponding indices. These algebraic facts hold over normed rings at every exponent; over a ring
 with the strong rank condition, for instance a field, `lp` over an infinite index type is therefore
-not a finite module (`lp.not_finite`). Finite sums of single-coordinate vectors over a finset `s`
+not a finite module (`lp.not_finite`). Single-coordinate vectors commute with `star`
+(`lp.star_single`), and in `ℓ^∞` their pointwise product multiplies entries at equal indices and
+vanishes at distinct indices (`lp.single_mul_single`, `lp.single_mul_single_of_ne`). Finite sums of
+single-coordinate vectors over a finset `s`
 along a map `g` evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g` is injective on `s`
 (`lp.sum_single_apply_of_injOn_of_mem`) and vanish at coordinates not equal to any `g i` (`i ∈ s`)
 (`lp.sum_single_apply_eq_zero_of_forall_ne`). For distinct indices `i ≠ j`, the norm of a difference
@@ -146,6 +151,12 @@ theorem Memℓp.countable_dsupport {ι : Type*} {E : ι → Type*} [∀ i, Norme
     refine (hf.summable hpr).countable_support.mono fun i hi ↦ ?_
     exact (Real.rpow_pos_of_pos (norm_pos_iff.2 hi) p.toReal).ne'
 
+/-- A dependent family lies in `ℓ²` if and only if the squares of its coordinate norms are
+summable. -/
+theorem memℓp_two_iff {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
+    {f : ∀ i, E i} : Memℓp f 2 ↔ Summable fun i ↦ ‖f i‖ ^ 2 := by
+  simpa using memℓp_gen_iff (p := 2) (by norm_num) (f := f)
+
 namespace lp
 
 variable {ι 𝕜 : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
@@ -159,6 +170,10 @@ theorem evalCLM_apply [Fact (1 ≤ p)] (i : ι) (x : lp E p) : evalCLM 𝕜 E p 
 /-- The ℓ¹ norm is the sum of the norms of the coordinates. -/
 theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := by
   simpa using lp.hasSum_norm (p := 1) (by simp) y
+
+/-- The square of the `ℓ²` norm is the sum of the squared norms of the coordinates. -/
+theorem norm_sq_eq_tsum (x : lp E 2) : ‖x‖ ^ 2 = ∑' i, ‖x i‖ ^ 2 := by
+  simpa using lp.norm_rpow_eq_tsum (p := 2) (by norm_num) x
 
 /-- **The `ℓᵖ` norms decrease in the exponent.** For `0 < p ≤ q`, a sequence `f ∈ ℓᵖ` lies in
 `ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. More generally, the
@@ -258,6 +273,31 @@ theorem sum_norm_mul_norm_le {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)
 section Single
 
 variable [DecidableEq ι]
+
+/-- Conjugating a single-coordinate vector conjugates its entry. -/
+@[simp]
+protected theorem star_single [∀ i, StarAddMonoid (E i)] [∀ i, NormedStarGroup (E i)]
+    (p : ℝ≥0∞) (i : ι) (a : E i) :
+    star (lp.single p i a) = lp.single p i (star a) :=
+  lp.ext <| Pi.star_single i a
+
+/-- Multiplying two single-coordinate vectors in `ℓ^∞` at the same index multiplies their
+entries. -/
+@[simp]
+protected theorem single_mul_single {B : ι → Type*} [∀ i, NonUnitalNormedRing (B i)]
+    (i : ι) (a b : B i) :
+    lp.single ∞ i a * lp.single ∞ i b = lp.single ∞ i (a * b) :=
+  lp.ext <| (Pi.single_mul i a b).symm
+
+/-- Multiplying two single-coordinate vectors in `ℓ^∞` at distinct indices gives zero. -/
+@[simp]
+protected theorem single_mul_single_of_ne {B : ι → Type*} [∀ i, NonUnitalNormedRing (B i)]
+    {i j : ι} (hij : i ≠ j) (a : B i) (b : B j) :
+    lp.single ∞ i a * lp.single ∞ j b = 0 := by
+  ext k
+  by_cases hki : k = i
+  · subst k; simp [Pi.single_eq_of_ne hij]
+  · simp [Pi.single_eq_of_ne hki]
 
 /-- The scalar coordinate vectors in `lp` are linearly independent. -/
 theorem linearIndependent_single_one :
