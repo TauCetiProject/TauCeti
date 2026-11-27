@@ -107,7 +107,9 @@ are carried by the zero mode alone.
 * `TauCeti.WeakDerivStep.exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le`: the test path
   `sech (s + R)` has `‖D_R u‖ ≤ 2 exp (-2 R) ‖u‖`.
 * `TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`:
-  hence every bound `‖u‖ ≤ C ‖D_R u‖` has `C ≥ exp (2 R) / 2`.
+  hence every bound `‖u‖ ≤ C ‖D_R u‖` has `C ≥ exp (2 R) / 2`; so does every bound
+  `‖u‖_{L²} ≤ C ‖D_R u‖` on the values alone
+  (`exp_div_two_le_of_forall_norm_prev_le_mul_norm_trajectoryOperator_neckCoeff`).
 * `TauCeti.WeakDerivStep.norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`,
   `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id` and
   `TauCeti.WeakDerivStep.range_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`: for
@@ -181,6 +183,12 @@ theorem neckCoeff_le_one {R : ℝ} (hR : 0 ≤ R) (s : ℝ) : neckCoeff R s ≤ 
 /-- For `R ≥ 0` the neck coefficient satisfies `|a_R| ≤ 1`. -/
 theorem abs_neckCoeff_le_one {R : ℝ} (hR : 0 ≤ R) (s : ℝ) : |neckCoeff R s| ≤ 1 :=
   abs_le.2 ⟨(neg_one_lt_neckCoeff R s).le, neckCoeff_le_one hR s⟩
+
+/-- The neck coefficient satisfies `|a_R| ≤ 3` for every `R`. -/
+theorem abs_neckCoeff_le_three (R s : ℝ) : |neckCoeff R s| ≤ 3 := by
+  refine abs_le.2 ⟨by linarith [neg_one_lt_neckCoeff R s], ?_⟩
+  rw [neckCoeff_def]
+  linarith [tanh_lt_one (s - R), neg_one_lt_tanh (s + R)]
 
 /-- Since `a_R = 1 - 2 sinh (2 R) / (cosh (2 s) + cosh (2 R))`, the coefficient tends to `1`
 along any filter on which `cosh (2 s)` tends to infinity. -/
@@ -690,6 +698,33 @@ theorem exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le (R : ℝ) {e : F
             (continuous_neckTestPath R e).aestronglyMeasurable
             (Measure.measurePreserving_neg volume))
 
+/-- **The values of the inverse of the glued operator are not uniformly bounded.** If
+`‖u‖_{L²} ≤ C ‖D_R u‖` for every `u ∈ W^{1,2}(ℝ, F)`, with `F ≠ 0`, then `C ≥ exp (2 R) / 2`. The
+test path is `sech (s + R) • e`
+(`TauCeti.WeakDerivStep.exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le`). -/
+theorem exp_div_two_le_of_forall_norm_prev_le_mul_norm_trajectoryOperator_neckCoeff
+    [Nontrivial F] (R : ℝ) (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ F) {C : ℝ}
+    (hC : ∀ u, ‖prev _ u‖ ≤ C * ‖trajectoryOperator (p := 2) AL u‖) :
+    exp (2 * R) / 2 ≤ C := by
+  obtain ⟨e, he⟩ := exists_ne (0 : F)
+  obtain ⟨u, hu0, hu⟩ := exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le R he AL hAL
+  have hp : 0 < ‖prev _ u‖ := norm_pos_iff.2 hu0
+  have hle : ‖prev _ u‖ ≤ C * ‖trajectoryOperator (p := 2) AL u‖ := hC u
+  have hC0 : 0 < C := by
+    by_contra h
+    exact absurd (hle.trans (mul_nonpos_of_nonpos_of_nonneg (not_lt.1 h) (norm_nonneg _)))
+      (not_le.2 hp)
+  have h1 : ‖prev _ u‖ ≤ C * (2 * exp (-(2 * R))) * ‖prev _ u‖ := by
+    calc ‖prev _ u‖ ≤ C * ‖trajectoryOperator (p := 2) AL u‖ := hle
+      _ ≤ C * (2 * exp (-(2 * R)) * ‖prev _ u‖) := by gcongr
+      _ = _ := by ring
+  have h2 : 1 ≤ C * (2 * exp (-(2 * R))) := by
+    nlinarith
+  have h3 : exp (2 * R) * exp (-(2 * R)) = 1 := by rw [← exp_add]; simp
+  nlinarith [exp_pos (2 * R), exp_pos (-(2 * R))]
+
 /-- **The inverse of the glued operator has norm at least `exp (2 R) / 2`.** If
 `‖u‖ ≤ C ‖D_R u‖` for every `u ∈ W^{1,2}(ℝ, F)`, with `F ≠ 0`, then `C ≥ exp (2 R) / 2`. So the
 bounded inverse of `D_R` (which exists by
@@ -704,24 +739,9 @@ theorem exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ F) {C : ℝ}
     (hC : ∀ u, ‖u‖ ≤ C * ‖trajectoryOperator (p := 2) AL u‖) :
-    exp (2 * R) / 2 ≤ C := by
-  obtain ⟨e, he⟩ := exists_ne (0 : F)
-  obtain ⟨u, hu0, hu⟩ := exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le R he AL hAL
-  have hp : 0 < ‖prev _ u‖ := norm_pos_iff.2 hu0
-  have hle : ‖prev _ u‖ ≤ C * ‖trajectoryOperator (p := 2) AL u‖ :=
-    (norm_prev_le _ u).trans (hC u)
-  have hC0 : 0 < C := by
-    by_contra h
-    exact absurd (hle.trans (mul_nonpos_of_nonpos_of_nonneg (not_lt.1 h) (norm_nonneg _)))
-      (not_le.2 hp)
-  have h1 : ‖prev _ u‖ ≤ C * (2 * exp (-(2 * R))) * ‖prev _ u‖ := by
-    calc ‖prev _ u‖ ≤ C * ‖trajectoryOperator (p := 2) AL u‖ := hle
-      _ ≤ C * (2 * exp (-(2 * R)) * ‖prev _ u‖) := by gcongr
-      _ = _ := by ring
-  have h2 : 1 ≤ C * (2 * exp (-(2 * R))) := by
-    nlinarith
-  have h3 : exp (2 * R) * exp (-(2 * R)) = 1 := by rw [← exp_add]; simp
-  nlinarith [exp_pos (2 * R), exp_pos (-(2 * R))]
+    exp (2 * R) / 2 ≤ C :=
+  exp_div_two_le_of_forall_norm_prev_le_mul_norm_trajectoryOperator_neckCoeff R AL hAL
+    fun u ↦ (norm_prev_le _ u).trans (hC u)
 
 end Banach
 

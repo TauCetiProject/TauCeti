@@ -41,6 +41,8 @@ while by this file the inverses of all the other modes are bounded by `1`.
 ## Main declarations
 
 * `TauCeti.fourierModeCoeff`: the coefficient `c(s) + 2πk` of the `k`-th Fourier mode.
+* `TauCeti.exists_ae_eq_neg_smul_id`: a continuous bounded `c` gives an `L∞` class of
+  `-c(s) • id`, the coefficient of `d/ds - c(s)`.
 * `TauCeti.WeakDerivStep.norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_smul_id`: for
   `k ≠ 0`, `‖u‖ ≤ ‖u' - (c + 2πk) u‖` on `W^{1,2}(ℝ, E)`.
 * `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_fourierModeCoeff_smul_id` and
@@ -101,6 +103,26 @@ theorem two_mul_pi_mul_abs_sub_one_le_abs_fourierModeCoeff {c : ℝ → ℝ} {s 
   rw [abs_mul, abs_of_pos two_pi_pos, abs_neg, sub_neg_eq_add, add_comm] at h
   rw [fourierModeCoeff_def]
   linarith
+
+/-! ### The coefficient of a scalar operator -/
+
+/-- **An `L∞` class of `-c(s) • id`.** A continuous coefficient `c` with `|c(s)| ≤ a` has an
+`L∞` class of `s ↦ -c(s) • id`, the coefficient `A` of the trajectory operator
+`D_A u = u' + A u = u' - c u`. -/
+theorem exists_ae_eq_neg_smul_id {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {c : ℝ → ℝ} (hc : Continuous c) {a : ℝ} (hca : ∀ s, |c s| ≤ a) :
+    ∃ AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
+      AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+        fun s ↦ -c s • ContinuousLinearMap.id ℝ F := by
+  have hm : AEStronglyMeasurable (fun s ↦ -c s • ContinuousLinearMap.id ℝ F)
+      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+    (hc.neg.smul continuous_const).aestronglyMeasurable
+  have hL : MemLp (fun s ↦ -c s • ContinuousLinearMap.id ℝ F) ∞
+      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+    memLp_top_of_bound (E := F →L[ℝ] F) hm a (.of_forall fun s ↦ by
+      rw [norm_smul, norm_neg, Real.norm_eq_abs]
+      exact (mul_le_of_le_one_right (abs_nonneg _) ContinuousLinearMap.norm_id_le).trans (hca s))
+  exact ⟨hL.toLp _, hL.coeFn_toLp⟩
 
 end TauCeti
 

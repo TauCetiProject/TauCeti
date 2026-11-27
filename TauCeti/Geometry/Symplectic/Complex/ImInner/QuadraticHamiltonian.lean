@@ -116,9 +116,8 @@ private theorem hamiltonianVectorField_imInnerSymplecticForm_mul_norm_sq_eq_smul
     (imInnerSymplecticForm G).hamiltonianVectorField (fun y ↦ a * ‖y‖ ^ 2) =
       ⇑((-(2 * a)) •
         (AlmostComplexStructure.ofComplexModule G).toLinearMap.toContinuousLinearMap) := by
-  have hg := (imInnerSymplecticForm G).apply_ofComplexModule_eq_inner
-    fun v w ↦ imInnerSymplecticForm_apply v w
-  have h := SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq hg (2 * a)
+  have h := SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq
+    (imInnerSymplecticForm_apply_ofComplexModule_eq_inner (E := G)) (2 * a)
   have hH : (fun y : G ↦ 2 * a / 2 * ‖y‖ ^ 2) = fun y ↦ a * ‖y‖ ^ 2 := by
     funext y
     ring
