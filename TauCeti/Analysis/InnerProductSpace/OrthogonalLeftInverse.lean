@@ -57,7 +57,8 @@ classes, and `R` inverts an injective elliptic operator on its range.
 * `ContinuousLinearMap.comp_orthogonalLeftInverse_eq_starProjection`,
   `ContinuousLinearMap.id_sub_comp_orthogonalLeftInverse_eq_starProjection_orthogonal`: `L ∘ R` is
   the orthogonal projection onto the range of `L`, and `1 - L ∘ R` the orthogonal projection onto
-  its orthogonal complement.
+  its orthogonal complement; the range admits this projection by
+  `ContinuousLinearMap.HasLeftInverse.hasOrthogonalProjection_range`.
 * `ContinuousLinearMap.contDiffAt_orthogonalLeftInverse`: over `ℝ`, `R` is a `C^n` function of
   `L`.
 
@@ -237,7 +238,16 @@ theorem ker_orthogonalLeftInverse : L.orthogonalLeftInverse.ker = L.rangeᗮ := 
   refine ⟨fun hf x ↦ ?_, orthogonalLeftInverse_apply_eq_zero h⟩
   simpa [hf] using inner_apply_sub_apply_orthogonalLeftInverse_eq_zero h x f
 
-/-- **`L ∘ R` is the orthogonal projection onto the range of `L`.** -/
+/-- The range of an operator into a Hilbert space with a continuous left inverse is closed, so it
+admits an orthogonal projection. This supplies the instance argument of
+`comp_orthogonalLeftInverse_eq_starProjection` and
+`id_sub_comp_orthogonalLeftInverse_eq_starProjection_orthogonal`. -/
+theorem HasLeftInverse.hasOrthogonalProjection_range : L.range.HasOrthogonalProjection :=
+  have : CompleteSpace L.range := h.isClosed_range.completeSpace_coe
+  inferInstance
+
+/-- **`L ∘ R` is the orthogonal projection onto the range of `L`.** The instance argument is
+`HasLeftInverse.hasOrthogonalProjection_range`. -/
 theorem comp_orthogonalLeftInverse_eq_starProjection [L.range.HasOrthogonalProjection] :
     L ∘L L.orthogonalLeftInverse = L.range.starProjection := by
   ext f

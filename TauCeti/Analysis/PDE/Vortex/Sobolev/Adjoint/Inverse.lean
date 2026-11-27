@@ -81,10 +81,10 @@ theorem id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse
       ((sobolevGaugeFixedOperator a).ker.map sobolevFieldValues.toLinearMap).starProjection := by
   set K := (sobolevGaugeFixedOperator a).ker.map sobolevFieldValues.toLinearMap
   have hrange := range_sobolevGaugeFixedAdjoint hx hsol hlim hax
-  have : (sobolevGaugeFixedAdjoint a).range.HasOrthogonalProjection := hrange ▸ inferInstance
+  have h := hasLeftInverse_sobolevGaugeFixedAdjoint hx hsol hlim hax
+  have := h.hasOrthogonalProjection_range
   have hK : (sobolevGaugeFixedAdjoint a).rangeᗮ = K := by rw [hrange, K.orthogonal_orthogonal]
-  rw [id_sub_comp_orthogonalLeftInverse_eq_starProjection_orthogonal
-    (hasLeftInverse_sobolevGaugeFixedAdjoint hx hsol hlim hax)]
+  rw [id_sub_comp_orthogonalLeftInverse_eq_starProjection_orthogonal h]
   -- The orthogonal complement of the range `Kᗮ` is `K` (`hK`).
   congr
 
