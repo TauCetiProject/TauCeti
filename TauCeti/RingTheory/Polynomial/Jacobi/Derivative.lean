@@ -123,7 +123,7 @@ private theorem raising_jacobiSum (α β : R) (n : ℕ) :
           ((X - 1) ^ p.1 * (X + 1) ^ p.2) := by
     rw [jacobiSum, mul_sum, ← sum_add_distrib]
     refine sum_congr rfl fun p hp => ?_
-    have h : ((p.1 + p.2 : ℕ) : R[X]) = n + 1 := by rw [mem_antidiagonal.1 hp]; push_cast; rfl
+    have h : ((p.1 + p.2 : ℕ) : R[X]) = n + 1 := by rw [mem_antidiagonal.1 hp]; push_cast; ring
     rw [← h]
     simp only [map_mul, map_natCast, Nat.cast_add]
     ring

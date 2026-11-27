@@ -146,36 +146,36 @@ theorem hasDerivAt_iteratedDeriv_one_sub_rpow_mul_one_add_rpow (a b : ℝ) (j : 
 identity of real functions on `(-1, 1)`:
 `Pₙ^{(α,β)}(x) = (-1)ⁿ / (2ⁿ n!) * (1 - x) ^ (-α) * (1 + x) ^ (-β) *
 dⁿ/dxⁿ ((1 - x) ^ (n + α) * (1 + x) ^ (n + β))`. -/
-theorem jacobi_rodrigues (α β : ℝ) (n : ℕ) {x : ℝ} (hx : x ∈ Ioo (-1) 1) :
+theorem jacobi_rodrigues (α β : ℝ) (n : ℕ) {x : ℝ} (hx₁ : -1 < x) (hx₂ : x < 1) :
     (jacobi α β n).eval x =
       (-1) ^ n / (2 ^ n * n.factorial) * (1 - x) ^ (-α) * (1 + x) ^ (-β) *
         iteratedDeriv n (fun t : ℝ => (1 - t) ^ ((n : ℝ) + α) * (1 + t) ^ ((n : ℝ) + β)) x := by
-  have h₁ : 0 < 1 - x := by linarith [hx.2]
-  have h₂ : 0 < 1 + x := by linarith [hx.1]
-  rw [iteratedDeriv_one_sub_rpow_mul_one_add_rpow_eq_mul_eval_jacobi _ _ n hx, add_sub_cancel_left,
-    add_sub_cancel_left, rpow_neg h₁.le, rpow_neg h₂.le]
+  have h₁ : 0 < 1 - x := by linarith
+  have h₂ : 0 < 1 + x := by linarith
+  rw [iteratedDeriv_one_sub_rpow_mul_one_add_rpow_eq_mul_eval_jacobi _ _ n ⟨hx₁, hx₂⟩,
+    add_sub_cancel_left, add_sub_cancel_left, rpow_neg h₁.le, rpow_neg h₂.le]
   have h₃ : (1 - x) ^ α ≠ 0 := (rpow_pos_of_pos h₁ α).ne'
   have h₄ : (1 + x) ^ β ≠ 0 := (rpow_pos_of_pos h₂ β).ne'
   have h₅ : (n.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
   have h₆ : ((-1 : ℝ) ^ n) * (-2) ^ n = 2 ^ n := by rw [← mul_pow]; norm_num
   field_simp
-  rw [mul_assoc, h₆]
+  linear_combination -(jacobi α β n).eval x * h₆
 
 /-- The boundary terms of the Jacobi orthogonality relation: for `-1 < α`, `-1 < β` and `j < n`,
 the `j`-th derivative of `(1 - t) ^ (n + α) * (1 + t) ^ (n + β)` agrees on `(-1, 1)` with a
 function that is continuous on `[-1, 1]` and vanishes at `-1` and at `1`. -/
 theorem exists_continuousOn_iteratedDeriv_jacobiWeight {α β : ℝ} (hα : -1 < α) (hβ : -1 < β)
     {j n : ℕ} (hj : j < n) :
-    ∃ g : ℝ → ℝ, ContinuousOn g (Icc (-1) 1) ∧
-      EqOn (iteratedDeriv j fun t : ℝ => (1 - t) ^ ((n : ℝ) + α) * (1 + t) ^ ((n : ℝ) + β)) g
-        (Ioo (-1) 1) ∧ g (-1) = 0 ∧ g 1 = 0 := by
+    ∃ g : ℝ → ℝ, ContinuousOn g (Icc (-1) 1) ∧ g (-1) = 0 ∧ g 1 = 0 ∧
+      EqOn g (iteratedDeriv j
+        (fun t : ℝ => (1 - t) ^ ((n : ℝ) + α) * (1 + t) ^ ((n : ℝ) + β))) (Ioo (-1) 1) := by
   have hjn : (j : ℝ) + 1 ≤ n := by exact_mod_cast hj
   have ha : 0 < (n : ℝ) + α - j := by linarith
   have hb : 0 < (n : ℝ) + β - j := by linarith
   refine ⟨fun t => (-2) ^ j * j.factorial * ((1 - t) ^ ((n : ℝ) + α - j) *
     (1 + t) ^ ((n : ℝ) + β - j)) * (jacobi ((n : ℝ) + α - j) ((n : ℝ) + β - j) j).eval t,
-    Continuous.continuousOn ?_, fun t ht =>
-      iteratedDeriv_one_sub_rpow_mul_one_add_rpow_eq_mul_eval_jacobi _ _ j ht, ?_, ?_⟩
+    Continuous.continuousOn ?_, ?_, ?_, fun t ht =>
+      (iteratedDeriv_one_sub_rpow_mul_one_add_rpow_eq_mul_eval_jacobi _ _ j ht).symm⟩
   · exact (continuous_const.mul (((continuous_const.sub continuous_id).rpow_const
       fun _ => Or.inr ha.le).mul ((continuous_const.add continuous_id).rpow_const
         fun _ => Or.inr hb.le))).mul (Polynomial.continuous _)
