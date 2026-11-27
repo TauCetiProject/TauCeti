@@ -33,7 +33,8 @@ In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 
 * `selfHomSheafTransportIso X e` and `selfHomSheafTransport X e`, with
   `selfHomSheafTransport_hom_app`, `selfHomSheafTransport_hom`,
-  `selfHomSheafTransportIso_inv`, `selfHomSheafTransport_id`,
+  `selfHomSheafTransportIso_inv`, `selfHomSheafTransportIso_refl`,
+  `selfHomSheafTransportIso_trans`, `selfHomSheafTransport_id`,
   `selfHomSheafTransport_comp` and `selfHomSheafTransport_equivariant`.
 * `selfHomSheafTransportNatIso e`, with `selfHomSheafTransportNatIso_app`,
   `selfHomSheafTransportNatIso_refl` and `selfHomSheafTransportNatIso_trans`.
@@ -97,22 +98,32 @@ theorem selfHomSheafTransportIso_inv (X : HomCategory b b) {x x' : F.obj (.mk (o
     (e : x ≅ x') : (selfHomSheafTransportIso X e).inv = selfHomSheafTransport X e.symm :=
   (rfl)
 
+/-- **Transport along the identity** is the identity isomorphism. -/
+@[simp]
+theorem selfHomSheafTransportIso_refl (X : HomCategory b b) (x : F.obj (.mk (op U))) :
+    selfHomSheafTransportIso X (Iso.refl x) = Iso.refl _ := by
+  rw [selfHomSheafTransportIso, Functor.mapIso_refl]
+  exact F.sheafHomIso_refl J _ _
+
+/-- **Transport along a composite** is the composite of the transport isomorphisms. -/
+theorem selfHomSheafTransportIso_trans (X : HomCategory b b) {x x' x'' : F.obj (.mk (op U))}
+    (e : x ≅ x') (f : x' ≅ x'') :
+    selfHomSheafTransportIso X (e ≪≫ f) =
+      selfHomSheafTransportIso X e ≪≫ selfHomSheafTransportIso X f := by
+  rw [selfHomSheafTransportIso, Functor.mapIso_trans]
+  exact F.sheafHomIso_trans J _ _ _ _
+
 /-- **Transport along the identity** is the identity. -/
 @[simp]
 theorem selfHomSheafTransport_id (X : HomCategory b b) (x : F.obj (.mk (op U))) :
     selfHomSheafTransport X (Iso.refl x) = 𝟙 _ := by
-  refine Sheaf.hom_ext ((selfHomSheafTransport_hom X (Iso.refl x)).trans ?_)
-  rw [Iso.refl_inv, Iso.refl_hom, CategoryTheory.Functor.map_id, presheafHomMap_id]
-  exact (ObjectProperty.FullSubcategory.id_hom _ ((fiberHomSheafFunctor b b J U x x).obj X)).symm
+  rw [selfHomSheafTransport, selfHomSheafTransportIso_refl, Iso.refl_hom]
 
 /-- **Transport along a composite** is the composite of the transports. -/
 theorem selfHomSheafTransport_comp (X : HomCategory b b) {x x' x'' : F.obj (.mk (op U))}
     (e : x ≅ x') (f : x' ≅ x'') :
     selfHomSheafTransport X (e ≪≫ f) = selfHomSheafTransport X e ≫ selfHomSheafTransport X f := by
-  refine Sheaf.hom_ext ((selfHomSheafTransport_hom X (e ≪≫ f)).trans ?_)
-  rw [ObjectProperty.FullSubcategory.comp_hom, selfHomSheafTransport_hom,
-    selfHomSheafTransport_hom, Iso.trans_inv, Iso.trans_hom, CategoryTheory.Functor.map_comp]
-  exact presheafHomMap_comp F _ _ _ _
+  rw [selfHomSheafTransport, selfHomSheafTransportIso_trans, Iso.trans_hom]
 
 /-- **Transport commutes with the action of the band**: for a section `p` over `t : T ⟶ U`,
 transporting `p` acted on by `a ∈ A(T)` is acting by `a` on the transport of
