@@ -241,6 +241,14 @@ lemma stackificationOfIsStack_hom :
     (stackificationOfIsStack.{w, v', u'} J F).hom = toStackification.{w, v', u'} J F :=
   (rfl)
 
+/-- The inverse components of `stackificationOfIsStack` are the chosen quasi-inverses of
+`Stackification.Obj.toObjFunctor`. -/
+@[simp]
+lemma stackificationOfIsStack_inv_app_toFunctor (a : LocallyDiscrete Cᵒᵖ) :
+    ((stackificationOfIsStack.{w, v', u'} J F).inv.app a).toFunctor =
+      (toObjFunctor.{w} J F a.as.unop).inv :=
+  (rfl)
+
 end
 
 end TauCeti.Stack

@@ -119,10 +119,9 @@ through the inverse of the equivalence `Stackification.Obj.toObjFunctor`. -/
 lemma stackificationLift_app_toFunctor (ψ : F ⟶ G) (a : LocallyDiscrete Cᵒᵖ) :
     ((stackificationLift.{w, v', u'} J ψ).app a).toFunctor =
       mapFunctor.{w} J ψ a.as.unop ⋙ (toObjFunctor.{w} J G a.as.unop).inv := by
-  simp only [stackificationLift, stackificationOfIsStack, StrongTrans.comp_app,
-    Cat.Hom.comp_toFunctor, equivalenceOfIsEquivalence_inv_app,
-    stackificationMap_app_toFunctor, Functor.toCatHom_toFunctor, toStackification_app_toFunctor]
-  -- The inverse functors agree definitionally after identifying the unit components.
+  simp only [stackificationLift, StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
+    stackificationOfIsStack_inv_app_toFunctor, stackificationMap_app_toFunctor]
+  -- The composite functors have definitionally equal object types after these rewrites.
   rfl
 
 /-- The extension `stackificationLift ψ` restricts to `ψ` along the unit of the stackification,
