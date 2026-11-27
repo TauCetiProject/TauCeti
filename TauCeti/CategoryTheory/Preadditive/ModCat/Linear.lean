@@ -48,8 +48,12 @@ on identities in the source. -/
 def valueModule (X : D) : Module R (F.obj.obj X) :=
   Module.compHom (F.obj.obj X) (R := AddMonoid.End (F.obj.obj X))
     { toFun r := ((smulEnd R r F).hom.app X).hom
-      map_one' := by rw [smulEnd_one]; rfl
-      map_zero' := by rw [smulEnd_zero]; rfl
+      map_one' := by
+        -- The identity of additive functors is pointwise the identity endomorphism.
+        rw [smulEnd_one]; rfl
+      map_zero' := by
+        -- The zero morphism of additive functors is pointwise the zero endomorphism.
+        rw [smulEnd_zero]; rfl
       map_add' r s :=
         congrArg (fun t : F ⟶ F ↦ (t.hom.app X).hom) (smulEnd_add R r s F)
       map_mul' r s :=
@@ -130,6 +134,7 @@ def liftToModuleCatForgetIso :
   NatIso.ofComponents (fun X ↦ Iso.refl (F.obj.obj X)) (by
     intro X Y f
     simp only [Functor.comp_map, Iso.refl_hom]
+    -- Forgetting a lifted map retains its original additive map by definition.
     rfl)
 
 -- Simplify the application before simp rewrites the objects in its type.
@@ -179,9 +184,9 @@ instance (F : D ⥤+ AddCommGrpCat.{w}) :
     (F.liftToModuleCat R).Linear R :=
   (Functor.linear_iff R _).2 fun X r ↦ by
     ext x
-    simp only [ModuleCat.hom_smul, LinearMap.smul_apply, ModuleCat.hom_id, LinearMap.id_apply]
-    exact (AdditiveFunctor.liftToModuleCat_map_apply R F (r • 𝟙 X) x).trans
-      (AdditiveFunctor.liftToModuleCat_smul R F X r x).symm
+    -- The lifted value and the original group have the same underlying type.
+    simp
+    rfl
 
 variable (R D) in
 /-- The object property of being an additive and `R`-linear functor to `R`-modules. -/
@@ -193,16 +198,20 @@ def linearModuleFunctor : ObjectProperty (D ⥤ ModuleCat.{w} R) :=
 theorem linearModuleFunctor_iff (F : D ⥤ ModuleCat.{w} R) :
     linearModuleFunctor R D F ↔ F.Additive ∧ F.Linear R := Iff.rfl
 
+local instance (F : (linearModuleFunctor.{w} R D).FullSubcategory) : F.obj.Additive :=
+  ((linearModuleFunctor_iff F.obj).1 F.property).1
+
+local instance (F : (linearModuleFunctor.{w} R D).FullSubcategory) : F.obj.Linear R :=
+  ((linearModuleFunctor_iff F.obj).1 F.property).2
+
 variable (R D) in
 /-- Forget scalar multiplication in each value of an additive linear functor. -/
 abbrev linearModuleFunctorForget :
     (linearModuleFunctor R D).FullSubcategory ⥤ (D ⥤+ AddCommGrpCat.{w}) :=
   ObjectProperty.lift _ ((linearModuleFunctor R D).ι ⋙
       (Functor.whiskeringRight D _ _).obj (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}))
-    fun F ↦ by
-      let : F.obj.Additive := (linearModuleFunctor_iff F.obj).1 F.property |>.1
-      exact (additiveFunctor_iff _).2
-        (inferInstanceAs (F.obj ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}).Additive)
+    fun F ↦ (additiveFunctor_iff _).2
+      (inferInstanceAs (F.obj ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}).Additive)
 
 variable (R D) in
 /-- Equip additive abelian-group-valued functors and their morphisms with the canonical scalars. -/
@@ -240,6 +249,7 @@ def linearModuleFunctorEquiv :
         intro X Y f
         apply ModuleCat.hom_ext
         ext x
+        -- The comparison is the identity on elements, and the lifted map uses the original map.
         rfl)
   CategoryTheory.Equivalence.mk (linearModuleFunctorLift R D) (linearModuleFunctorForget R D)
     (NatIso.ofComponents (fun F ↦
@@ -248,12 +258,10 @@ def linearModuleFunctorEquiv :
       intro F G α
       apply ObjectProperty.hom_ext
       ext X x
+      -- Taking the preimage of the forgetful comparison preserves its identity components.
       rfl))
     (NatIso.ofComponents (fun F ↦
-      (linearModuleFunctor R D).fullyFaithfulι.preimageIso (by
-        let : F.obj.Additive := (linearModuleFunctor_iff F.obj).1 F.property |>.1
-        let : F.obj.Linear R := (linearModuleFunctor_iff F.obj).1 F.property |>.2
-        exact liftForgetIso F.obj)) (by
+      (linearModuleFunctor R D).fullyFaithfulι.preimageIso (liftForgetIso F.obj)) (by
       intro F G α
       apply ObjectProperty.hom_ext
       ext X x
@@ -306,10 +314,11 @@ instance _root_.CategoryTheory.AdditiveFunctor.liftToModuleCatFunctor_linear :
   map_smul {F G} α r := by
     ext X x
     simp only [NatTrans.app_smul, ModuleCat.hom_smul, LinearMap.smul_apply]
-    refine (AdditiveFunctor.liftToModuleCatFunctor_map_app_apply R (r • α) X x).trans ?_
-    have h := AdditiveFunctor.sourceLinear_smul_hom_app R r α X
-    refine (ConcreteCategory.congr_hom h x).trans ?_
-    exact (AdditiveFunctor.liftToModuleCat_smul R G X r (α.hom.app X x)).symm
+    rw [AdditiveFunctor.liftToModuleCatFunctor_map_app_apply R (r • α) X x,
+      AdditiveFunctor.liftToModuleCatFunctor_map_app_apply R α X x]
+    -- Match the bundled functor's values with their definitionally equal lifted modules.
+    simpa only [AdditiveFunctor.sourceLinear_smul_hom_app] using!
+      (AdditiveFunctor.liftToModuleCat_smul R G X r (α.hom.app X x)).symm
 
 /-- The scalar lift into the full subcategory of linear functors preserves scalar multiplication. -/
 instance linearModuleFunctorLift_linear : (linearModuleFunctorLift.{w} R D).Linear R where
