@@ -203,13 +203,6 @@ variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
   {he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
   {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {a : ClassicalSymbol n ℂ ℂ m}
 
-omit [ChartedSpace (CoordinateSpace n) M] [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
-/-- The cutoffs `φ ψ` are supported in the chart target, so they can only be jointly nonzero
-there. -/
-private theorem mem_target_of_mul_ne_zero {y : CoordinateSpace n} (h : φ y * ψ y ≠ 0) :
-    y ∈ e.target :=
-  φ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul h))
-
 /-- **Ellipticity in a chart.** Let `a` be the symbol of the chart compression
 `u ↦ φ · (P ((ψ u) ∘ e)) ∘ e⁻¹` of a classical pseudodifferential operator `P` of order `m`. At a
 point `x` of the chart source where `φ ψ` does not vanish, `P` is elliptic exactly when the
@@ -246,7 +239,7 @@ theorem isElliptic_restrict_iff_forall_isClassicalEllipticAt
     (ClassicalSymbol.restrict U a).IsElliptic ↔ ∀ y ∈ U, IsClassicalEllipticAt m P (e.symm y) := by
   rw [ClassicalSymbol.isElliptic_restrict_iff]
   refine forall₂_congr fun y hy ↦ ?_
-  have hU := mem_target_of_mul_ne_zero (hφψ y hy)
+  have hU := OpenPartialHomeomorph.mem_target_of_mul_ne_zero (hφψ y hy)
   have hy' := e.right_inv hU
   rw [isClassicalEllipticAt_iff_forall_isInvertible hP ha (e.map_target hU)
     (hy'.symm ▸ hφψ y hy), hy']
@@ -272,30 +265,8 @@ theorem IsClassicalEllipticAt.eventually {x : M} (hPx : IsClassicalEllipticAt m 
   obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he χ χ
   have hinv := (isClassicalEllipticAt_iff_forall_isInvertible hP ha hx
     (by simp [hχ.self_of_nhds])).1 hPx
-  -- The principal symbol of `a` is nonzero at `(z, η)` for `z` near `e x` and `‖η‖ = 1`.
-  have hS : ∀ᶠ z in 𝓝 (e x), ∀ η ∈ Metric.sphere (0 : CoordinateSpace n) 1,
-      a.principal.coefficient (z, η) ≠ 0 := by
-    refine (isCompact_sphere _ _).eventually_forall_of_forall_eventually fun η hη ↦ ?_
-    have hη0 : η ≠ 0 := Metric.ne_of_mem_sphere hη one_ne_zero
-    have hcont : ContinuousAt a.principal.coefficient (e x, η) :=
-      a.principal.continuousOn_coefficient.continuousAt
-        ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hη0)
-    exact hcont.eventually_ne (ContinuousLinearMap.isInvertible_iff_ne_zero.1 (hinv η hη0))
-  -- By homogeneity it is invertible at every nonzero frequency.
-  have hall : ∀ᶠ z in 𝓝 (e x), χ z = 1 ∧ ∀ η : CoordinateSpace n, η ≠ 0 →
-      (a.principal.coefficient (z, η)).IsInvertible := by
-    filter_upwards [hχ, hS] with z hz1 hz
-    refine ⟨hz1, fun η hη ↦ ?_⟩
-    have hn : 0 < ‖η‖ := norm_pos_iff.2 hη
-    have hu : ‖η‖⁻¹ • η ∈ Metric.sphere (0 : CoordinateSpace n) 1 := by
-      simp [norm_smul, hn.ne']
-    have hscal : a.principal.coefficient (z, η) =
-        ((‖η‖ ^ m : ℝ) : ℂ) • a.principal.coefficient (z, ‖η‖⁻¹ • η) := by
-      rw [Complex.coe_smul, ← a.principal.homogeneous z _ _ hn, smul_inv_smul₀ hn.ne']
-    rw [hscal, ContinuousLinearMap.isInvertible_smul_iff
-      (Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos hn m).ne'),
-      ContinuousLinearMap.isInvertible_iff_ne_zero]
-    exact hz _ hu
+  -- The principal symbol of `a` is invertible near `e x` at every nonzero frequency.
+  have hall := hχ.and (a.principal.eventually_forall_isInvertible_coefficient hinv)
   filter_upwards [e.open_source.mem_nhds hx, (e.continuousAt hx).eventually hall] with y hy hy'
   exact (isClassicalEllipticAt_iff_forall_isInvertible hP ha hy (by simp [hy'.1])).2 hy'.2
 
@@ -319,18 +290,23 @@ theorem IsClassicalElliptic.inv_classicalPrincipalSymbol_mem_homogeneousCotangen
 
 /-! ### Local inverse symbols -/
 
-omit he a in
-/-- The points where the cutoffs `φ ψ` do not vanish and over which `P` is elliptic form an open
-set. -/
-private theorem isOpen_setOf_ellipticChart (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
-    IsOpen {y | φ y * ψ y ≠ 0 ∧ IsClassicalEllipticAt m P (e.symm y)} :=
-  isOpen_iff_mem_nhds.2 fun y ⟨hyφψ, hyP⟩ ↦ by
-    filter_upwards [
-      ((φ.contDiff.continuous.mul ψ.contDiff.continuous).continuousAt (x := y)).eventually_ne
-        hyφψ,
-      (e.continuousAt_symm (mem_target_of_mul_ne_zero hyφψ)).eventually hyP.eventually]
-      with z hzφψ hzP
-    exact ⟨hzφψ, hzP⟩
+/-- The chart symbol of `P` is elliptic on an open set containing a set `K` at whose points `φ ψ`
+does not vanish and over which `P` is elliptic. -/
+private theorem exists_isElliptic_restrict_of_forall_isClassicalEllipticAt
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
+    {K : Set (CoordinateSpace n)} (hKφψ : ∀ y ∈ K, φ y * ψ y ≠ 0)
+    (hKP : ∀ y ∈ K, IsClassicalEllipticAt m P (e.symm y)) :
+    ∃ U : TopologicalSpace.Opens (CoordinateSpace n), K ⊆ U ∧
+      (ClassicalSymbol.restrict U a).IsElliptic := by
+  set U : TopologicalSpace.Opens (CoordinateSpace n) :=
+    ⟨{y | φ y * ψ y ≠ 0 ∧ IsClassicalEllipticAt m P (e.symm y)},
+      e.isOpen_setOf_mul_ne_zero_and_symm_mem φ ψ (isOpen_setOf_isClassicalEllipticAt m P)⟩
+  exact ⟨U, fun y hy ↦ ⟨hKφψ y hy, hKP y hy⟩,
+    (isElliptic_restrict_iff_forall_isClassicalEllipticAt (U := U) hP ha fun _ hy ↦ hy.1).2
+      fun _ hy ↦ hy.2⟩
 
 /-- **Ellipticity of a chart symbol over a compact set.** Let `a` be the symbol of the chart
 compression of `P` by `φ`, `ψ` in a chart `e`, and `K` a compact set at whose points `φ ψ` does not
@@ -345,15 +321,8 @@ theorem exists_isEllipticOn_of_forall_isClassicalEllipticAt
     {K : Set (CoordinateSpace n)} (hK : IsCompact K)
     (hKφψ : ∀ y ∈ K, φ y * ψ y ≠ 0) (hKP : ∀ y ∈ K, IsClassicalEllipticAt m P (e.symm y)) :
     ∃ R, a.toSymbol.IsEllipticOn {p | p.1 ∈ K ∧ R ≤ ‖p.2‖} := by
-  -- The open set `U` where `φ ψ ≠ 0` and `P` is elliptic contains `K`.
-  set U : TopologicalSpace.Opens (CoordinateSpace n) :=
-    ⟨{y | φ y * ψ y ≠ 0 ∧ IsClassicalEllipticAt m P (e.symm y)}, isOpen_setOf_ellipticChart φ ψ⟩
-  have hKU : K ⊆ U := fun y hy ↦ ⟨hKφψ y hy, hKP y hy⟩
-  have hUa : (ClassicalSymbol.restrict U a).IsElliptic :=
-    (isElliptic_restrict_iff_forall_isClassicalEllipticAt (U := U) hP ha
-      fun _ hy ↦ hy.1).2 fun _ hy ↦ hy.2
-  exact hUa.exists_isEllipticOn hKU hK fun y hy ξ ↦ by
-    rw [ClassicalSymbol.toLocalSymbol_restrict, Symbol.coefficient_restrict_of_mem _ (hKU hy)]
+  obtain ⟨U, hKU, hUa⟩ := exists_isElliptic_restrict_of_forall_isClassicalEllipticAt hP ha hKφψ hKP
+  exact ClassicalSymbol.exists_isEllipticOn_of_isElliptic_restrict hUa hKU hK
 
 /-- **Local inverse symbols of an elliptic operator.** Let `a` be the symbol of the chart
 compression of `P` by `φ`, `ψ` in a chart `e`, and `K` a compact set at whose points `φ ψ` does not
@@ -369,13 +338,8 @@ theorem exists_comp_eq_id_of_forall_isClassicalEllipticAt
     ∃ (b : Symbol n ℂ ℂ (-m)) (R : ℝ), ∀ᶠ y in 𝓝ˢ K, ∀ ξ, R ≤ ‖ξ‖ →
       b.coefficient (y, ξ) ∘L a.toSymbol.coefficient (y, ξ) = .id ℂ ℂ ∧
         a.toSymbol.coefficient (y, ξ) ∘L b.coefficient (y, ξ) = .id ℂ ℂ := by
-  -- The same conditions hold on a compact neighbourhood `L` of `K`.
-  obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between hK (isOpen_setOf_ellipticChart φ ψ)
-    fun y hy ↦ ⟨hKφψ y hy, hKP y hy⟩
-  obtain ⟨R, hR⟩ := exists_isEllipticOn_of_forall_isClassicalEllipticAt hP ha hL
-    (fun y hy ↦ (hLU hy).1) fun y hy ↦ (hLU hy).2
-  exact (Symbol.exists_mem_nhdsSet_isEllipticOn_iff hK).1
-    ⟨L, subset_interior_iff_mem_nhdsSet.1 hKL, R, hR⟩
+  obtain ⟨U, hKU, hUa⟩ := exists_isElliptic_restrict_of_forall_isClassicalEllipticAt hP ha hKφψ hKP
+  exact ClassicalSymbol.exists_comp_eq_id_of_isElliptic_restrict hUa hKU hK
 
 /-! ### Differential operators -/
 
