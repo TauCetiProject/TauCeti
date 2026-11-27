@@ -84,6 +84,13 @@ degree. -/
 def IsExtComparisonBijective (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N) : Prop :=
   ∀ n : ℕ, Function.Bijective (extComparison.{t, t'} φ β α n)
 
+/-- A comparison is bijective along `α` exactly when its comparison maps are bijective in every
+degree. -/
+lemma isExtComparisonBijective_iff (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N) :
+    IsExtComparisonBijective.{t, t'} φ β α ↔
+      ∀ n : ℕ, Function.Bijective (extComparison.{t, t'} φ β α n) :=
+  Iff.rfl
+
 /-- For the identity functor the comparison map is push-forward along `β` followed by pull-back
 along `α`. -/
 lemma extComparison_id_apply (β : F ⟶ G) (α : M ⟶ N) (x : Ext.{t} N F n) :

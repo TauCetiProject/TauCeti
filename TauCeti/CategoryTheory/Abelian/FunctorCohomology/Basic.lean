@@ -35,6 +35,8 @@ general notion of a morphism inducing bijections on `Extⁿ(-, F)`
   preimage under every map `y : R ⟶ Y` from a corepresentable functor gives an equivalence
   `ℤ[y⁻¹ U] ⟶ ℤ[R]` for `F`; and `CategoryTheory.IsCoverFor F p`: a map `p : E ⟶ Y` is a *cover
   for `F`* if the inclusion of its image gives an equivalence for `F`.
+* `CategoryTheory.free_hom_ext`: maps out of `ℤ[Y]` are determined by their values on the
+  generators.
 * `CategoryTheory.Functor.CorepresentableBy.freeHomAddEquiv`: the additive Yoneda lemma: if `Y`
   is corepresented by `A`, morphisms `ℤ[Y] ⟶ F` are the elements of `F(A)`. Hence `ℤ[Y]` is
   projective, so its cohomology vanishes in positive degrees (`Ext.eq_zero_of_projective`).
@@ -73,6 +75,22 @@ lemma Subfunctor.shortExact_free {Y : C ⥤ Type w} (U : Subfunctor Y) :
       (cokernel.π (Functor.whiskerRight U.ι AddCommGrpCat.free))
       (cokernel.condition _)).ShortExact :=
   ShortComplex.ShortExact.mk' (ShortComplex.exact_cokernel _) inferInstance inferInstance
+
+/-- Two maps out of a free abelian functor `ℤ[Y]` agree if they agree on the generators. -/
+lemma free_hom_ext {Y : C ⥤ Type w} {F : C ⥤ AddCommGrpCat.{w}}
+    {f g : Y ⋙ AddCommGrpCat.free ⟶ F}
+    (h : ∀ (c : C) (y : Y.obj c),
+      f.app c (FreeAddCommGroup.of y) = g.app c (FreeAddCommGroup.of y)) :
+    f = g :=
+  NatTrans.ext (funext fun c ↦ AddCommGrpCat.hom_ext (FreeAddCommGroup.lift_ext _ _ (h c)))
+
+/-- `ℤ[a]` sends the generator of `y` to the generator of `a y`. Not a `simp` lemma: `simp`
+rewrites the types in its left-hand side through `Functor.comp_obj`. -/
+lemma whiskerRight_free_app_of {Y Y' : C ⥤ Type w} (a : Y ⟶ Y') (c : C) (y : Y.obj c) :
+    (Functor.whiskerRight a AddCommGrpCat.free).app c
+        (FreeAddCommGroup.of y : (Y ⋙ AddCommGrpCat.free).obj c) =
+      (FreeAddCommGroup.of (a.app c y) : (Y' ⋙ AddCommGrpCat.free).obj c) :=
+  FreeAddCommGroup.map_of_apply _
 
 /-! ### The additive Yoneda lemma -/
 
