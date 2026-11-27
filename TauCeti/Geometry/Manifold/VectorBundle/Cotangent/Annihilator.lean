@@ -68,7 +68,8 @@ hyperplane `D x = ker α` the annihilator is the line spanned by `α`
 A vector field `V` on `M` determines the function `F_V(z) = z(V x)` on the annihilators
 (`TauCeti.CotangentBundle.annihilatorPairing`). It is linear on each fibre
 (`TauCeti.CotangentBundle.annihilatorPairing_mk_smul`), smooth for smooth `V` and `D`
-(`TauCeti.CotangentBundle.contMDiff_annihilatorPairing`), and depends exactly on `V` modulo `D`:
+(`TauCeti.CotangentBundle.contMDiff_annihilatorPairing`, pointwise
+`TauCeti.CotangentBundle.contMDiffAt_annihilatorPairing`), and depends exactly on `V` modulo `D`:
 `F_V = F_W` if and only if `V - W` is tangent to `D`
 (`TauCeti.CotangentBundle.annihilatorPairing_eq_annihilatorPairing_iff`).
 
@@ -547,6 +548,26 @@ section Smooth
 variable [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] {n : ℕ∞ω} {k r : ℕ}
   [IsManifold I 1 M] [IsManifold I (n + 1) M]
 
+/-- **Pointwise smoothness of fibre-linear functions.** For a `C^n` distribution `D` of rank `k`
+on a manifold of dimension `k + r`, the function on the annihilator bundle of `D` of a vector field
+`V` that is `C^n` at the base point of `z` is `C^n` at `z`. -/
+theorem contMDiffAt_annihilatorPairing (hD : IsContMDiffDistribution I n k D)
+    (hk : k + r = Module.finrank 𝕜 E) {V : Π x : M, TangentSpace I x}
+    {z : TotalSpace (Fin r → 𝕜) fun x ↦ annihilatorSpace I D x}
+    (hV : ContMDiffAt I I.tangent n (T% V) z.proj) :
+    letI := hD.annihilatorFiberBundle hk
+    ContMDiffAt (I.prod 𝓘(𝕜, Fin r → 𝕜)) 𝓘(𝕜) n
+      (annihilatorPairing (P := Fin r → 𝕜) (D := D) V) z :=
+  letI := hD.annihilatorFiberBundle hk
+  by
+  have hj := hD.contMDiff_annihilatorInclusion hk
+  -- The inclusion into `T*M` is the covector field `z ↦ z` along the bundle projection.
+  rw [show annihilatorInclusion I D (Fin r → 𝕜) = fun z ↦ ⟨z.proj, z.snd⟩ from
+    funext (annihilatorInclusion_apply I D _)] at hj
+  exact ContMDiffAt.clm_bundle_apply_scalar (V := TangentSpace I)
+    (b := fun w : TotalSpace (Fin r → 𝕜) (fun x ↦ annihilatorSpace I D x) ↦ w.proj)
+    (hj z) (hV.comp z (Bundle.contMDiff_proj fun x ↦ annihilatorSpace I D x).contMDiffAt)
+
 /-- **Smoothness of fibre-linear functions.** For a `C^n` distribution `D` of rank `k` on a
 manifold of dimension `k + r`, the function of a `C^n` vector field `V` on the annihilator bundle
 of `D` is `C^n`. -/
@@ -556,15 +577,7 @@ theorem contMDiff_annihilatorPairing (hD : IsContMDiffDistribution I n k D)
     letI := hD.annihilatorFiberBundle hk
     ContMDiff (I.prod 𝓘(𝕜, Fin r → 𝕜)) 𝓘(𝕜) n
       (annihilatorPairing (P := Fin r → 𝕜) (D := D) V) :=
-  letI := hD.annihilatorFiberBundle hk
-  by
-  have hj := hD.contMDiff_annihilatorInclusion hk
-  -- The inclusion into `T*M` is the covector field `z ↦ z` along the bundle projection.
-  rw [show annihilatorInclusion I D (Fin r → 𝕜) = fun z ↦ ⟨z.proj, z.snd⟩ from
-    funext (annihilatorInclusion_apply I D _)] at hj
-  exact fun z ↦ ContMDiffAt.clm_bundle_apply_scalar (V := TangentSpace I)
-    (b := fun w : TotalSpace (Fin r → 𝕜) (fun x ↦ annihilatorSpace I D x) ↦ w.proj)
-    (hj z) ((hV.comp (Bundle.contMDiff_proj fun x ↦ annihilatorSpace I D x)) z)
+  fun _ ↦ contMDiffAt_annihilatorPairing hD hk (hV _)
 
 end Smooth
 
