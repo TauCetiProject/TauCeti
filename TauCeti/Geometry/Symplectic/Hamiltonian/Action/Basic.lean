@@ -34,7 +34,8 @@ and `C¹` maps it obeys the following laws.
   `γ₁` and a cap `v` of `γ₁`,
   `A_H(γ₀, w # v) - A_H(γ₁, v) = ∫ w^* σ - ∫₀¹ H(t, γ₀(t)) dt + ∫₀¹ H(t, γ₁(t)) dt`
   (`TauCeti.cylinderAction_rectangleTrans_sub`), which identifies the energy of a Floer cylinder
-  with the drop of the capped action.
+  with the drop of the capped action. Gluing the stationary cylinder `(s, t) ↦ γ(t)` in front of
+  a map does not change the action (`TauCeti.cylinderAction_rectangleTrans_comp_snd`).
 * **Recapping.** Two caps `u`, `v` of the same loop differ by a sphere, obtained by running
   backwards through `u` and then through `v`, and `A_H(γ, v) - A_H(γ, u)` is the area of this
   sphere (`TauCeti.cylinderAction_sub_cylinderAction`).
@@ -190,6 +191,24 @@ theorem cylinderAction_rectangleTrans_sub (hσ : IsSmoothForm I 0 σ) (H : ℝ �
       rectangleIntegral σ w (0, 0) (1, 1) - (∫ t in 0..1, H t (w (0, t))) +
         ∫ t in 0..1, H t (w (1, t)) := by
   simp only [cylinderAction_rectangleTrans hσ H hw hv h, cylinderAction_def, h]
+  ring
+
+/-- **Gluing a stationary cylinder.** For a continuous form and a `C¹` map `v` with initial
+loop `x = v (0, ·)`, gluing the stationary cylinder `(s, t) ↦ x t` in front of `v` does not change
+the action: the stationary cylinder has zero area, and it starts and ends at the same loop. -/
+theorem cylinderAction_rectangleTrans_comp_snd (hσ : IsSmoothForm I 0 σ) (H : ℝ → M → ℝ)
+    {x : ℝ → M} {v : ℝ × ℝ → M} (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (h : ∀ t, v (0, t) = x t) :
+    cylinderAction σ H (rectangleTrans (fun w ↦ x w.2) v) = cylinderAction σ H v := by
+  -- `x = v (0, ·)` is `C¹` because `v` is.
+  have hx : ContMDiff 𝓘(ℝ) I 1 x := by
+    rw [show x = fun t ↦ v (0, t) from funext fun t ↦ (h t).symm]
+    exact hv.comp (contDiff_const.prodMk contDiff_id).contMDiff
+  -- The stationary cylinder is `x ∘ Prod.snd`, whose area vanishes.
+  have h₀ : rectangleIntegral σ (fun w : ℝ × ℝ ↦ x w.2) (0, 0) (1, 1) = 0 :=
+    rectangleIntegral_comp_snd σ x _ _
+  rw [cylinderAction_rectangleTrans (u := fun w ↦ x w.2) hσ H (hx.comp contDiff_snd.contMDiff) hv
+    fun t ↦ (h t).symm, cylinderAction_def, cylinderAction_def, h₀]
+  simp only [h]
   ring
 
 /-- **Recapping.** For a continuous form and two `C¹` maps `u` and `v` starting at the same loop,
