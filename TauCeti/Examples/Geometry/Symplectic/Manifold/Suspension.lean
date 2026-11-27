@@ -175,8 +175,8 @@ theorem lefschetzZeta_id_pi_addCircle (p : ℝ) [NeZero p] (k : Type) [Field k] 
     (ContinuousMap.id (Fin 2 → AddCircle p)).lefschetzZeta k = 1 := by
   have hid : ((1 : Matrix (Fin 2) (Fin 2) ℤ).smulVecHom (AddCircle p) :
       C(Fin 2 → AddCircle p, Fin 2 → AddCircle p)) = ContinuousMap.id _ := by
-    rw [Matrix.smulVecHom_one]
-    rfl
+    ext x i
+    simp [Matrix.smulVecHom_one]
   have hchar : ((1 : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom k)).charpolyRev =
       (1 - Polynomial.X) ^ 2 := by
     simp [Matrix.charpolyRev, Matrix.det_fin_two, sq]
