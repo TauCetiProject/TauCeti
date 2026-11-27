@@ -89,18 +89,21 @@ namespace TauCeti
 variable (S : Submonoid ℤ)
 
 /-- The first possible homotopy group: the homotopy group `πₙ₊₂` of an `(n + 1)`-connected space
-with the homology of a point over a localization `k` of `ℤ` at `S` is `S`-torsion. Through the
-Hurewicz isomorphism it is `Hₙ₊₂(Z; ℤ)`, which is `S`-torsion since `Hₙ₊₂(Z; k)` vanishes. -/
+whose `k`-homology vanishes in degree `n + 2` (for a localization `k` of `ℤ` at `S`; the unused
+degree-`n + 3` vanishing hypothesis matches `prop_homotopyGroup_of_subsingleton_singularHomology`)
+is `S`-torsion. Through the Hurewicz isomorphism it is `Hₙ₊₂(Z; ℤ)`, which is `S`-torsion since
+`Hₙ₊₂(Z; k)` vanishes. -/
 private theorem isTorsion'_homotopyGroup_of_connected (k : Type) [CommRing k] [Algebra ℤ k]
     [IsLocalization S k] {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ)
     (hZ : ∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j Z z))
-    (hZk : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (i + 1))) :
+    (hZk : Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (n + 2)))
+    (_ : Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (n + 3))) :
     Module.IsTorsion' (Additive (π_ (n + 2) Z z)) S := by
   have hZ' (j : ℕ) (hj : j < n + 2) : Subsingleton (HomotopyGroup (Fin j) Z z) := by
     rcases eq_or_ne j 0 with rfl | hj0
     · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
     · exact hZ j hj0 hj
-  have hH := (isTorsion'_singularChains_int_homology_iff S k (TopCat.of Z) (n + 2)).2 (hZk (n + 1))
+  have hH := (isTorsion'_singularChains_int_homology_iff S k (TopCat.of Z) (n + 2)).2 hZk
   exact (HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv hZ').isTorsion'_iff.2 hH
 
 /-- **Serre's theorem modulo `S`-torsion, with localized coefficients.** Let `S` be a submonoid of
@@ -118,7 +121,8 @@ theorem isTorsion'_homotopyGroup_of_subsingleton_singularHomology (k : Type) [Co
     (fun hA _ _ _ _ _ hX ↦
       IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf k
         (hA.isUnit_addOrderOf fun s hs ↦ by simpa using IsLocalization.map_units k ⟨s, hs⟩) hX)
-    hY y n
+    y (HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.2 inferInstance) n
+    fun q _ ↦ hY (q + 1)
 
 /-- **Serre's theorem modulo `S`-torsion.** Let `S` be a submonoid of `ℤ`. If every class of the
 positive-degree integral homology of a simply connected space `Y` is killed by an element of `S`,
