@@ -307,12 +307,9 @@ point `z`, the null space of the pullback `p^* η` is the kernel of the derivati
 theorem isNondegenerate_iff_forall_ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p)
     (hsurj : Surjective p) (hdp : ∀ z, Surjective (mfderiv I J p z)) :
     η.IsNondegenerate ↔ ∀ z, LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) =
-      (mfderiv I J p z).ker := by
-  simp only [ker_bilinFormAt_mpullback hp η (hdp _), ← Submodule.comap_bot,
-    isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot]
-  refine ⟨fun h z ↦ by rw [h], fun h y ↦ ?_⟩
-  obtain ⟨z, rfl⟩ := hsurj y
-  exact Submodule.comap_injective_of_surjective (hdp z) (h z)
+      (mfderiv I J p z).ker :=
+  hsurj.forall.trans
+    (forall_congr' fun z ↦ nondegenerate_bilinFormAt_iff_ker_bilinFormAt_mpullback hp (hdp z))
 
 /-- **Symplectic forms through a smooth surjection.** If `p` is a surjective smooth map with
 surjective derivatives and `p^* η = σ`, then `η` is symplectic exactly when `σ` is closed and its

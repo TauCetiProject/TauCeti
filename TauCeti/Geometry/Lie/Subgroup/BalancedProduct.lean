@@ -82,7 +82,8 @@ compared with reduction at zero of the shifted moment map on the product with th
   `K.RightTranslation` has identity differential.
 * `Subgroup.RightTranslation.fundamentalVectorField_eq_mulInvariantVectorField_neg`: the
   fundamental vector field of `ξ ∈ 𝔨` for right translation `h • g = g h⁻¹` is the left-invariant
-  vector field of `-ξ`.
+  vector field of `-ξ`; `Subgroup.RightTranslation.fundamentalVectorField_prod_apply` is the same
+  for the action `h • (g, z) = (g h⁻¹, h • z)` on `K.RightTranslation × Z`.
 * `TauCeti.BalancedProduct.contMDiff_iff_rightTranslation`: a map out of `G ×_K Z` is smooth
   exactly when its composite with the projection is.
 * `TauCeti.BalancedProduct.contMDiff_orbitProj_rightTranslation`: the projection onto `Z ⧸ K` is
@@ -194,6 +195,20 @@ theorem fundamentalVectorField_eq_mulInvariantVectorField_neg [LieGroup I 1 G]
   erw [GroupLieAlgebra.mfderiv_inv_one_apply] at h
   rw [GroupLieAlgebra.mulInvariantVectorField_apply]
   exact h
+
+/-- **The fundamental vector field of the balanced action.** For the action
+`h • (g, z) = (g h⁻¹, h • z)` of a subgroup `K` on `K.RightTranslation × Z`, the fundamental vector
+field of `ξ ∈ 𝔨` at `(g, z)` is `((-ι ξ)^L(g), ξ_Z(z))`, where `ι ξ` is the image of `ξ` in `𝔤`. -/
+theorem fundamentalVectorField_prod_apply [LieGroup I 1 G] [ContMDiffSMul IK I 1 K G]
+    {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace 𝕜 EZ] [TopologicalSpace HZ]
+    {IZ : ModelWithCorners 𝕜 EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z] [MulAction K Z]
+    [ContMDiffSMul IK IZ 1 K Z] (ξ : GroupLieAlgebra IK K) (x : K.RightTranslation × Z) :
+    (fundamentalVectorField (I.prod IZ) ξ x : TangentSpace I x.1 × TangentSpace IZ x.2) =
+      (mulInvariantVectorField (-K.subtype.groupLieAlgebraMap IK I ξ)
+        (K.toRightTranslation.symm x.1), fundamentalVectorField IZ ξ x.2) := by
+  rw [fundamentalVectorField_prod]
+  exact Prod.ext (by rw [Manifold.prodVectorField_fst,
+    fundamentalVectorField_eq_mulInvariantVectorField_neg]) (Manifold.prodVectorField_snd _ _ _)
 
 end Subgroup.RightTranslation
 

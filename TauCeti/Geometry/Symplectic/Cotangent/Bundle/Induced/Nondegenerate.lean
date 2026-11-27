@@ -101,12 +101,9 @@ private theorem fundamental_toRightTranslation_one (κ : GroupLieAlgebra 𝓘(�
     (InfinitesimalAction.fundamental 𝓘(ℝ, F) K (I.prod IN) (K.RightTranslation × N) κ
       (K.toRightTranslation 1, n) : GroupLieAlgebra I G × TangentSpace IN n) =
       (-K.subtype.groupLieAlgebraMap 𝓘(ℝ, F) I κ, fundamentalVectorField IN κ n) := by
-  rw [InfinitesimalAction.fundamental_prod, InfinitesimalAction.prod_apply]
-  refine Prod.ext ?_ ?_
-  · rw [prodVectorField_fst, InfinitesimalAction.fundamental_apply,
-      Subgroup.RightTranslation.fundamentalVectorField_eq_mulInvariantVectorField_neg,
-      Equiv.symm_apply_apply, mulInvariantVectorField_one]
-  · rw [prodVectorField_snd, InfinitesimalAction.fundamental_apply]
+  rw [InfinitesimalAction.fundamental_apply,
+    Subgroup.RightTranslation.fundamentalVectorField_prod_apply, Equiv.symm_apply_apply,
+    mulInvariantVectorField_one]
 
 variable [I.Boundaryless] [IsClosed (K : Set G)] [IN.Boundaryless] [T2Space N]
   {hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f}
