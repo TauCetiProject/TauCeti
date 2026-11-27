@@ -149,39 +149,6 @@ lemma singularHomologyπ_comp_absoluteSingularCap (P : TopPair.{w}) (k : Type*) 
   rw [TopCat.singularCap_def, absoluteSingularCap_def]
   exact this.symm
 
-/-- The relative Alexander–Whitney diagonal followed by the quotient map on its second factor is
-the right relative one followed by the quotient map on its first factor: both are descents of the
-Alexander–Whitney diagonal of `X` followed by the quotient maps on both factors. -/
-private lemma alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ (P : TopPair.{w})
-    (u : T ⟶ R ⊗ S) :
-    P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
-      P.rightAlexanderWhitneyDiagonal u ≫
-        (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
-  -- The two quotient maps act on different factors, so they commute.
-  have hx : (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S) ≫
-      (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
-        ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S) ≫
-          (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
-    -- Both whiskers are totalizations `HomologicalComplex.mapBifunctorMap` with an identity
-    -- factor, so both sides are the totalization of the two quotient maps.
-    refine (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _).symm.trans <|
-      Eq.trans ?_ (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _)
-    congr 1
-    · exact (Category.comp_id (P.singularChainComplexπ R)).trans
-        (Category.id_comp (P.singularChainComplexπ R)).symm
-    · exact (Category.id_comp (P.singularChainComplexπ S)).trans
-        (Category.comp_id (P.singularChainComplexπ S)).symm
-  rw [← cancel_epi (P.singularChainComplexπ T)]
-  -- The subspace chains of `toSSetPair.obj P` agree with those of `P.fst` only up to unfolding, so
-  -- the two descent identities are combined by `Eq.trans` rather than rewritten.
-  have h := (congrArg (· ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S))
-    (singularChainComplexπ_alexanderWhitneyDiagonal P u)).trans <| (Category.assoc _ _ _).trans <|
-      (congrArg (P.fst.alexanderWhitneyDiagonal u ≫ ·) hx).trans <|
-        (Category.assoc _ _ _).symm.trans <|
-          congrArg (· ≫ (P.singularChainComplexπ R ▷ P.singularChainComplex S))
-            (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u).symm
-  exact (Category.assoc _ _ _).symm.trans (h.trans (Category.assoc _ _ _))
-
 /-- **Compatibility of the cap products with the map from relative to absolute cohomology**: for a
 class `β` of `Hᵖ(X, A)` with image `j^*β` in `Hᵖ(X)` and a class `x` of `Hₙ(X, A)`, capping `x`
 with `j^*β` is the image of the relative cap product `x ⌢ β ∈ H_q(X)` under

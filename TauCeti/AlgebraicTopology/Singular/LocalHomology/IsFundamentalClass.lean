@@ -97,8 +97,9 @@ map this multiple is the degree of the map with coefficients in `K`, the mod `2`
 * `TauCeti.HomologicalOrientation.ofIsFundamentalClass`: the orientation given by the local images
   of an integral fundamental class, and
   `TauCeti.HomologicalOrientation.fundamentalClass_ofIsFundamentalClass`: on a compact manifold,
-  its fundamental class is the class itself. So the integral fundamental classes of a compact
-  manifold are exactly the fundamental classes of its orientations.
+  its fundamental class is the class itself. Conversely, the orientation of the fundamental class
+  of `o` is `o` (`TauCeti.HomologicalOrientation.ofIsFundamentalClass_fundamentalClass`). So the
+  integral fundamental classes of a compact manifold correspond exactly to its orientations.
 
 ## References
 
@@ -577,12 +578,22 @@ theorem isFundamentalClass_rationalFundamentalClass [ConnectedSpace M] :
 manifold, the fundamental class of the orientation
 `TauCeti.HomologicalOrientation.ofIsFundamentalClass` determined by an integral fundamental class
 `μ` is `μ` itself. -/
+@[simp]
 theorem fundamentalClass_ofIsFundamentalClass
     {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
       ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ) :
     (ofIsFundamentalClass (E := E) hμ).fundamentalClass hn = μ :=
   ((ofIsFundamentalClass hμ).eq_fundamentalClass hn fun x ↦
     (coe_ofIsFundamentalClass_apply hμ x).symm).symm
+
+/-- **The orientation of the fundamental class.** On a compact manifold, the orientation
+`TauCeti.HomologicalOrientation.ofIsFundamentalClass` determined by the fundamental class of an
+orientation `o` is `o` itself. -/
+@[simp]
+theorem ofIsFundamentalClass_fundamentalClass :
+    ofIsFundamentalClass (o.isFundamentalClass_fundamentalClass hn) = o :=
+  HomologicalOrientation.ext fun x ↦ Subtype.ext <| by
+    rw [coe_ofIsFundamentalClass_apply, singularHomologyToLocalHomology_fundamentalClass]
 
 end HomologicalOrientation
 
