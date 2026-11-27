@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -67,5 +67,14 @@ def continuousAd : NormedModel L →ₗ⁅ℝ⁆ (NormedModel L →L[ℝ] Normed
 @[simp]
 theorem continuousAd_apply (x y : NormedModel L) : continuousAd x y = ⁅x, y⁆ :=
   (rfl)
+
+/-- The continuous adjoint is injective when the Lie algebra has trivial center. -/
+theorem injective_continuousAd_of_center_eq_bot
+    (h : LieAlgebra.center ℝ (NormedModel L) = ⊥) :
+    Function.Injective (continuousAd (L := L)) := by
+  have had : Function.Injective (LieAlgebra.ad ℝ (NormedModel L)) := by
+    rw [← LieHom.ker_eq_bot, LieAlgebra.ad_ker_eq_self_module_ker,
+      LieAlgebra.self_module_ker_eq_center, h]
+  exact (Module.End.toContinuousLinearMap (NormedModel L)).injective.comp had
 
 end TauCeti.Lie

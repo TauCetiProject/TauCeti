@@ -199,13 +199,17 @@ private theorem lieExp_image_adjointRange :
       Set.range (fun x : V ↦ expUnit (adV x)) := by
   ext g
   constructor
-  · rintro ⟨X, ⟨x, hx⟩, rfl⟩
+  · rintro ⟨X, hX, rfl⟩
+    simp only [SetLike.mem_coe, adjointRange, LieSubalgebra.mem_comap, LieEquiv.coe_toLieHom,
+      LieHom.mem_range] at hX
+    obtain ⟨x, hx⟩ := hX
     refine ⟨x, ?_⟩
     rw [lieExp_eq_expUnit, ← unitsLieAlgebraLieEquiv_apply]
-    exact congrArg expUnit (show adV x = unitsLieAlgebraLieEquiv X from hx)
+    exact congrArg expUnit hx
   · rintro ⟨x, rfl⟩
     refine ⟨unitsLieAlgebraLieEquiv.symm (adV x), ?_, ?_⟩
-    · exact ⟨x, (LieEquiv.apply_symm_apply unitsLieAlgebraLieEquiv _).symm⟩
+    · simp only [SetLike.mem_coe, adjointRange, LieSubalgebra.mem_comap, LieEquiv.coe_toLieHom,
+        LieEquiv.apply_symm_apply, LieHom.mem_range_self]
     · rw [lieExp_eq_expUnit, ← unitsLieAlgebraLieEquiv_apply, LieEquiv.apply_symm_apply]
 
 variable [LieAlgebra.IsKilling ℝ L]
@@ -249,9 +253,7 @@ theorem innerAutomorphismSubgroup_eq_ambientConnectedComponentOfOne :
   have hRange : d.lieMapSubtypeVal.range = adjointRange (L := L) := by
     rw [d.range_lieMapSubtypeVal_eq]
     ext X
-    -- Read membership in the adjoint range in operator coordinates.
-    change X ∈ lieSubalgebraOfSubgroup (I := 𝓘(ℝ, End)) A ↔
-      unitsLieAlgebraLieEquiv X ∈ (adV).range
+    simp only [adjointRange, LieSubalgebra.mem_comap, LieEquiv.coe_toLieHom]
     rw [← hLie, Subgroup.mem_linearLieSubalgebra, LieEquiv.symm_apply_apply]
   have hGen := d.subtypeVal.range_eq_closure_lieExp_image
   have hMap : lieMap d.subtypeVal = d.lieMapSubtypeVal :=
@@ -325,14 +327,9 @@ private theorem coe_adjointRangeEquiv
 /-- For a Lie algebra with nondegenerate Killing form, the adjoint map identifies the original
 Lie algebra with the Lie algebra of its analytic inner automorphism group. -/
 def adjointLieEquivInnerAutomorphismSubgroup :
-    L ≃ₗ⁅ℝ⁆ LeftInvariantDerivation 𝓘(ℝ, IntModel) (innerAutomorphismSubgroup L) := by
-  have had : Function.Injective adV := by
-    intro x y h
-    apply LieDerivation.injective_ad_of_center_eq_bot (R := ℝ) (L := V) (by simp)
-    ext z
-    simpa using DFunLike.congr_fun h z
-  exact NormedModel.lieEquiv.symm.trans <|
-    ((adV).equivRangeOfInjective had).trans <|
+    L ≃ₗ⁅ℝ⁆ LeftInvariantDerivation 𝓘(ℝ, IntModel) (innerAutomorphismSubgroup L) :=
+  NormedModel.lieEquiv.symm.trans <|
+    ((adV).equivRangeOfInjective (injective_continuousAd_of_center_eq_bot (by simp))).trans <|
       adjointRangeEquiv.symm.trans
         (innerAutomorphismSubgroupData L).lieEquivLieSubalgebraOfSubgroup.symm
 
