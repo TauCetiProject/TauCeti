@@ -144,28 +144,18 @@ private theorem contMDiff_orbitRelQuotientCylinderEquiv_symm :
     (Function.Surjective.piMap fun _ ↦ QuotientAddGroup.mk_surjective).prodMap
       Function.surjective_id
   refine (hq.contMDiff_comp_iff hqs le_rfl).1 ?_
-  -- The vector with coordinates `(t, y)` is `∑ᵢ tᵢ B (inl i) + ∑ₖ yₖ B (inr k)`.
+  -- The vector with coordinates `(t, y)` is their image under a linear equivalence.
   have h : ⇑(B.orbitRelQuotientCylinderEquiv hL).symm ∘
         Prod.map (fun t : ι → ℝ ↦ fun i ↦ (t i : UnitAddCircle)) (id : (κ → ℝ) → κ → ℝ) =
-      Quotient.mk (AddAction.orbitRel L E) ∘ fun p ↦
-        B.equivFun.symm.toContinuousLinearMap.comp
-            (ContinuousLinearMap.pi fun j ↦ Sum.elim (ContinuousLinearMap.proj (R := ℝ) ·)
-              (fun _ ↦ 0) j) p.1 +
-          B.equivFun.symm.toContinuousLinearMap.comp
-            (ContinuousLinearMap.pi fun j ↦ Sum.elim (fun _ ↦ 0)
-              (ContinuousLinearMap.proj (R := ℝ) ·) j) p.2 := by
+      Quotient.mk (AddAction.orbitRel L E) ∘
+        ⇑(((ContinuousLinearEquiv.sumPiEquivProdPi ℝ ι κ fun _ ↦ ℝ).symm.trans
+          B.equivFun.toContinuousLinearEquiv.symm : (ι → ℝ) × (κ → ℝ) →L[ℝ] E)) := by
     funext p
-    refine (B.orbitRelQuotientCylinderEquiv_symm_apply hL p.1 p.2).trans
-      (congrArg (Quotient.mk _) ?_)
-    simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
-      LinearEquiv.coe_coe, ← map_add]
-    congr 1
-    funext j
-    cases j <;> simp
+    exact B.orbitRelQuotientCylinderEquiv_symm_apply hL p.1 p.2
   rw [h]
+  -- `(fst, snd)` passes from the product model to the model of the product vector space.
   exact (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℝ, E)) (n := n)).contMDiff.comp
-    ((ContinuousLinearMap.contMDiff _ |>.comp contMDiff_fst).add
-      (ContinuousLinearMap.contMDiff _ |>.comp contMDiff_snd))
+    ((ContinuousLinearMap.contMDiff _).comp (contMDiff_fst.prodMk_space contMDiff_snd))
 
 omit [FiniteDimensional ℝ E] in
 /-- **Cylinder coordinates are a `C^n` diffeomorphism.** If `L` is the integer span of the vectors
