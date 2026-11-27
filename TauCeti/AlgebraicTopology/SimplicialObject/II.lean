@@ -16,9 +16,6 @@ Gabriel–Zisman's cut map `SimplexCategory.II.map'` and `SimplexCategory.II.map
 
 * `SimplexCategory.II.val_map'_eq_card`: `(SimplexCategory.II.map' α x : ℕ)` equals the
   cardinality of `{i | (α i).castSucc < x}`.
-* `SimplexCategory.II.map'_le_castSucc_iff`:
-  `SimplexCategory.II.map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc`, showing that
-  `SimplexCategory.II.map' α` is left adjoint to `α` across the `castSucc` embedding.
 * `SimplexCategory.II_map_unop_toOrderHom_apply`:
   `(SimplexCategory.II.map α).unop.toOrderHom t = SimplexCategory.II.map' α.toOrderHom t`.
 -/
@@ -46,22 +43,6 @@ theorem val_map'_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fi
   · rw [hx, Fin.val_last]
     rw [map'_eq_last_iff] at hx
     rw [Finset.filter_eq_self.mpr (fun i _ ↦ hx i), Finset.card_univ, Fintype.card_fin]
-
-/-- Galois characterization of `SimplexCategory.II.map'`:
-`II.map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc`. -/
-theorem map'_le_castSucc_iff {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2))
-    (y : Fin (k + 1)) :
-    map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc := by
-  constructor
-  · intro h
-    have hmem := Finset.min'_mem (finset α x) (nonempty_finset α x)
-    rcases (mem_finset_iff α x (map' α x)).mp hmem with hlast | ⟨hne, hx⟩
-    · exact absurd (hlast ▸ h) (Fin.castSucc_lt_last y).not_ge
-    · have hle : (map' α x).castPred hne ≤ y :=
-        Fin.castSucc_le_castSucc_iff.mp (by simpa [Fin.castSucc_castPred] using h)
-      exact hx.trans (Fin.castSucc_le_castSucc_iff.mpr (α.monotone hle))
-  · intro h
-    exact Finset.min'_le (finset α x) y.castSucc ((castSucc_mem_finset_iff α x y).mpr h)
 
 end SimplexCategory.II
 

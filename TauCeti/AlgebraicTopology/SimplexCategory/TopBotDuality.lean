@@ -122,6 +122,9 @@ theorem botPreservingToTopPreservingOp_map_δ {n : ℕ} (i : Fin (n + 1)) :
     botPreservingToTopPreservingOp.map (BotPreserving.δ i) = (TopPreserving.σ i).op :=
   Quiver.Hom.unop_inj <| TopPreserving.hom_ext' <| by
     rw [botPreservingToTopPreservingOp_map_toOrderHom]
+    -- `((TopPreserving.σ i).op).unop` has implicit endpoints
+    -- `botPreservingToTopPreservingOp.obj _`, which must be unfolded to `op _` before
+    -- `Quiver.Hom.unop_op` can match.
     dsimp only [botPreservingToTopPreservingOp]
     rw [Quiver.Hom.unop_op, TopPreserving.σ_hom]
     refine OrderHom.rightAdjoint_eq_of_galoisConnection _ ?_
@@ -135,6 +138,7 @@ theorem botPreservingToTopPreservingOp_map_σ {n : ℕ} (i : Fin (n + 1)) :
     botPreservingToTopPreservingOp.map (BotPreserving.σ i) = (TopPreserving.δ i).op :=
   Quiver.Hom.unop_inj <| TopPreserving.hom_ext' <| by
     rw [botPreservingToTopPreservingOp_map_toOrderHom]
+    -- Same object-endpoint unfolding as in `botPreservingToTopPreservingOp_map_δ`.
     dsimp only [botPreservingToTopPreservingOp]
     rw [Quiver.Hom.unop_op, TopPreserving.δ_hom]
     refine OrderHom.rightAdjoint_eq_of_galoisConnection _ ?_
