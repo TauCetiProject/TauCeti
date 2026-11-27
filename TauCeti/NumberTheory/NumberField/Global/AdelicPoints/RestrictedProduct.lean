@@ -294,10 +294,7 @@ theorem map_sIntegralAdelicPoints (M : IntegralModel R K H S) (hS : S.Finite)
           AdelicPoints.FiniteAdelicPoints R K H →* RestrictedProductGroup M.level) =
       integralSubgroupOf M.level (fun v ↦ if v ∈ T then ⊤ else M.level v) := by
   ext y
-  change y ∈ (M.sIntegralAdelicPoints T hST).map
-      (M.finiteAdelicPointsContinuousMulEquiv hS :
-        AdelicPoints.FiniteAdelicPoints R K H ≃* RestrictedProductGroup M.level).toMonoidHom ↔ _
-  rw [Subgroup.mem_map_equiv, mem_integralSubgroupOf,
+  rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, mem_integralSubgroupOf,
     M.mem_sIntegralAdelicPoints_iff_forall_localPoints hST]
   have hy (v : HeightOneSpectrum R) :
       AdelicPoints.finiteLocalProjection R K H v
