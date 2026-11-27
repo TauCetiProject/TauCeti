@@ -70,8 +70,9 @@ In the namespace `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra`:
   epimorphism in every degree.
 * `isConeAlgebra_iff_epi_gradedSymmetricAlgebraLift`: the characterization of cone algebras as
   graded quotients of `Sym A₁`.
-* `isClosedImmersion_relativeSpec_map_toQuasicoherentAlgebra_map`: a graded quotient, surjective
-  in positive degrees, gives a closed subscheme of relative spectra, and
+* `isClosedImmersion_relativeSpec_map_toQuasicoherentAlgebra_map`: a morphism of graded algebras
+  `A ⟶ B` that is an epimorphism in positive degrees, with the unit `𝒪_X ⟶ B₀` an epimorphism,
+  gives a closed immersion of relative spectra, and
   `IsConeAlgebra.isClosedImmersion_relativeSpec_map_gradedSymmetricAlgebraLift`: a cone is a
   closed subscheme of its abelian hull.
 
