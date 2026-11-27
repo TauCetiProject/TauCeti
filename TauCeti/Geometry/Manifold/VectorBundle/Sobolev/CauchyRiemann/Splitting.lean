@@ -35,10 +35,12 @@ sums (`TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_prod`). All Sobolev sp
 the charts of `A` (`TauCeti.FiniteBundleAtlas.ofBaseSet`), which for the trivial bundle needs no
 condition on the chart domains.
 
-Together with the splitting `V ≅ ℂⁿ⁻¹ ⊕ L` of a bundle of rank `n` over a surface
-(`TauCeti.exists_trivialProdLineSubbundle_diffeomorph`), this reduces the Riemann–Roch formula
-`ind D = n χ(Σ) + 2 c₁(V)[Σ]` to line bundles: the line bundle case gives
-`ind D_L = χ(Σ) + 2 c₁(L)[Σ]`, the trivial line bundle `ind ∂bar = χ(Σ)`, and `c₁(L) = c₁(V)`.
+This is the index half of the reduction of the Riemann–Roch formula
+`ind D = n χ(Σ) + 2 c₁(V)[Σ]` to line bundles. Once the splitting `V ≅ ℂⁿ⁻¹ ⊕ L` of a bundle of
+rank `n` over a surface (`TauCeti.exists_trivialProdLineSubbundle_diffeomorph`) is available as a
+smooth fibrewise complex linear isomorphism, and `L` carries a smooth real Cauchy–Riemann operator,
+the line bundle case `ind D_L = χ(Σ) + 2 c₁(L)[Σ]`, the trivial line bundle `ind ∂bar = χ(Σ)` and
+`c₁(L) = c₁(V)` give the formula for `V`.
 
 ## Main results
 
@@ -98,38 +100,6 @@ local instance instVectorBundleRealSplitting₂ : VectorBundle ℝ F₂ V₂ :=
 variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] [ContMDiffVectorBundle ∞ F₁ V₁ 𝓘(ℝ, ℂ)]
   [ContMDiffVectorBundle ∞ F₂ V₂ 𝓘(ℝ, ℂ)]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-section TrivialHom
-
-variable {G G₁ G₂ : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G₁]
-  [NormedSpace ℝ G₁] [NormedAddCommGroup G₂] [NormedSpace ℝ G₂]
-
-omit [IsManifold 𝓘(ℂ) ∞ M] [T2Space M] in
-/-- A constant linear map is a smooth section of the Hom bundle between two trivial bundles. -/
-private theorem contMDiff_trivial_hom_const (L : G →L[ℝ] G₁) :
-    ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, G →L[ℝ] G₁)) ∞ fun x : M ↦
-      TotalSpace.mk' (G →L[ℝ] G₁) (E := fun x ↦ Trivial M G x →L[ℝ] Trivial M G₁ x) x L := by
-  refine fun x ↦ contMDiffAt_hom_bundle _ |>.2 ⟨contMDiffAt_id, ?_⟩
-  -- Read in the trivializations of the trivial bundles, the section is the constant `L`.
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
-    ContinuousLinearMap.comp_id, ContinuousLinearMap.id_comp]
-  exact contMDiffAt_const
-
-omit [IsManifold 𝓘(ℂ) ∞ M] [T2Space M] in
-/-- A constant linear map is a smooth section of the Hom bundle from a trivial bundle to a direct
-sum of two trivial bundles. -/
-private theorem contMDiff_trivialProd_hom_const (L : G →L[ℝ] G₁ × G₂) :
-    ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, G →L[ℝ] G₁ × G₂)) ∞ fun x : M ↦
-      TotalSpace.mk' (G →L[ℝ] G₁ × G₂)
-        (E := fun x ↦ Trivial M G x →L[ℝ] (Trivial M G₁ ×ᵇ Trivial M G₂) x) x L := by
-  have h₁ := contMDiff_trivial_hom_const (M := M) ((ContinuousLinearMap.fst ℝ G₁ G₂).comp L)
-  have h₂ := contMDiff_trivial_hom_const (M := M) ((ContinuousLinearMap.snd ℝ G₁ G₂).comp L)
-  have h := contMDiffOn_univ.1 (h₁.contMDiffOn.clm_bundle_prod h₂.contMDiffOn)
-  convert h using 3
-  ext <;> simp
-
-end TrivialHom
 
 namespace IsRealCauchyRiemannOperator
 
@@ -192,8 +162,8 @@ private theorem index_sobolevL_trivial_succ {m : ℕ}
         volume p).index := by
   let e : (Fin (m + 1) → ℂ) ≃L[ℂ] ℂ × (Fin m → ℂ) :=
     (Fin.consLinearEquiv ℂ fun _ : Fin (m + 1) ↦ ℂ).symm.toContinuousLinearEquiv
-  have hΦ := contMDiff_trivialProd_hom_const (M := M) (G := Fin (m + 1) → ℂ) (G₁ := ℂ)
-    (G₂ := Fin m → ℂ) (e.restrictScalars' ℝ)
+  have hΦ := contMDiff_const_trivialProdHom (B := M) (IB := 𝓘(ℝ, ℂ)) (n := ∞)
+    (F₁ := Fin (m + 1) → ℂ) (F₂ := ℂ) (F₃ := Fin m → ℂ) (e.restrictScalars' ℝ)
   have := index_sobolevL_eq_add_of_bundleEquiv (V₁ := Trivial M ℂ) (V₂ := Trivial M (Fin m → ℂ))
     B (fun _ ↦ subset_univ _) (fun _ ↦ subset_univ _) (Φ := fun _ ↦ e) hΦ hD hDs
     (ofComplexManifold ℂ M).isRealCauchyRiemannOperator_dbarFunction
@@ -223,8 +193,8 @@ theorem index_sobolevL_trivial_pi (m : ℕ)
     -- The fibre `ℂ⁰` is isomorphic to `ℂ⁰ × ℂ⁰`, so the index is twice itself.
     let e : (Fin 0 → ℂ) ≃L[ℂ] (Fin 0 → ℂ) × (Fin 0 → ℂ) :=
       (LinearEquiv.ofSubsingleton _ _).toContinuousLinearEquiv
-    have hΦ := contMDiff_trivialProd_hom_const (M := M) (G := Fin 0 → ℂ) (G₁ := Fin 0 → ℂ)
-      (G₂ := Fin 0 → ℂ) (e.restrictScalars' ℝ)
+    have hΦ := contMDiff_const_trivialProdHom (B := M) (IB := 𝓘(ℝ, ℂ)) (n := ∞)
+      (F₁ := Fin 0 → ℂ) (F₂ := Fin 0 → ℂ) (F₃ := Fin 0 → ℂ) (e.restrictScalars' ℝ)
     -- `B.ofBaseSet _` is `B` itself, by eta for structures.
     have h : (hD.sobolevL B hDs volume p).index =
         (hD.sobolevL B hDs volume p).index + (hD.sobolevL B hDs volume p).index :=
