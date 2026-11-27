@@ -288,8 +288,9 @@ theorem coe_equivUnderHom_symm (f : Under.mk (GrpCat.ofHom ιH) ⟶ Under.mk (Gr
     ⇑(equivUnderHom.symm f) = f.right.hom :=
   (rfl)
 
-/-- The underlying homomorphism of the morphism under `G` of a `G`-homomorphism. -/
-@[simp]
+/-- The underlying homomorphism of the morphism under `G` of a `G`-homomorphism. Not a `simp`
+lemma: `simp` first rewrites the coercion of `(equivUnderHom φ).right.hom` to one in `H →* K`,
+where this left-hand side no longer matches. -/
 theorem equivUnderHom_apply_right_hom (φ : GHom ιH ιK) :
     ⇑(equivUnderHom φ).right.hom = φ :=
   (rfl)
