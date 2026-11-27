@@ -245,7 +245,7 @@ theorem joinedEuler_some (χ : Region → ℤ) (s : {r : Region // r ∉ Set.ran
     H.joinedEuler χ (some s) = χ s :=
   (rfl)
 
-/-- **The joined regions assemble a surface of genus `g + b - 1`.** When the basepoints lie in
+/-- **The total Euler characteristic of the joined regions.** When the basepoints lie in
 distinct regions, the sum of the joined Euler characteristics is that of the original ones minus
 `2 (b - 1)`. -/
 theorem sum_joinedEuler [Fintype Region] (hinj : Injective H.basepoint) (χ : Region → ℤ) :
@@ -338,6 +338,7 @@ theorem coe_joinBasepointsPeriodicDomainsEquiv_apply (P : H.joinBasepoints.perio
 
 /-- The joined system is weakly admissible exactly when `H` is: the pullback of a periodic domain
 is nonnegative, or zero, exactly when the periodic domain is. -/
+@[simp]
 theorem weaklyAdmissible_joinBasepoints_iff :
     H.joinBasepoints.WeaklyAdmissible ↔ H.WeaklyAdmissible := by
   simp only [weaklyAdmissible_iff]
