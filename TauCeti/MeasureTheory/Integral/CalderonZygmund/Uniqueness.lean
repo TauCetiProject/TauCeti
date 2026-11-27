@@ -18,7 +18,7 @@ of `f`. This file shows that the kernel and the operator determine each other ex
 this description cannot see.
 
 * **The operator determines the kernel off the diagonal.** If `T` has the standard kernels `K`
-  and `K'`, then `K x y = K' x y` whenever `x ≠ y`, for nonzero `F`
+  and `K'`, then `K x y = K' x y` whenever `x ≠ y`, for nonzero complete `F`
   (`TauCeti.HasStandardKernel.unique`). Testing `T` on `1_{B(y, r)} e` for a vector `e ≠ 0` gives
   equal averages of `K x ·` and `K' x ·` over `B(y, r)` at almost every `x` near a point `x₀ ≠ y`,
   and both kernels are continuous off the diagonal
@@ -30,8 +30,9 @@ this description cannot see.
   (`TauCeti.HasStandardKernel.add_multiplicationOperator`). Conversely, when `F` is
   finite-dimensional, two operators with the same kernel differ by multiplication by a strongly
   measurable field `m : V → (F →L[ℂ] F)` of essential supremum at most the norm of their
-  difference (`TauCeti.HasStandardKernel.hasStandardKernel_iff_exists_ae_eq_add`), since their
-  difference is local (`ContinuousLinearMap.exists_forall_ae_eq_add_of_forall_isCompact`). For
+  difference (`TauCeti.HasStandardKernel.hasStandardKernel_iff_exists_ae_eq_add`), by the general
+  statement for operators given by a common kernel
+  (`ContinuousLinearMap.exists_forall_ae_eq_add_of_ae_eq_integral`). For
   scalar functions, `F = ℂ`, the operators with the standard kernel `K` are exactly the
   `T + M_a`, `a ∈ L^∞(V)`
   (`TauCeti.HasStandardKernel.hasStandardKernel_iff_exists_eq_add_multiplicationOperator`).
@@ -71,6 +72,7 @@ variable {T T' : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure 
 lies in a compact set avoiding `x`. -/
 private theorem integrableOn_of_isCompact (h : HasStandardKernel T K C δ) {x : V} {s t : Set V}
     (ht : IsCompact t) (hst : s ⊆ t) (hxt : x ∉ t) : IntegrableOn (K x) s :=
+  -- Membership of `(x, y)` in the off-diagonal `{p | p.1 ≠ p.2}` is `x ≠ y` by definition.
   ((h.continuousOn_uncurry.comp (Continuous.prodMk_right x).continuousOn
     fun y hy ↦ show x ≠ y from fun hxy ↦ hxt (hxy ▸ hy)).integrableOn_compact ht).mono_set hst
 
@@ -123,8 +125,9 @@ private theorem exists_integral_sub_eq_zero [Nontrivial F] [CompleteSpace F]
   rw [integral_sub hK hK', smul_left_injective ℂ he (hxe hxr), sub_self]
 
 /-- **The operator determines its kernel off the diagonal.** If a Calderón–Zygmund operator `T` on
-`L²(V, F)`, `F ≠ 0`, has the standard kernels `K` and `K'`, then `K x y = K' x y` for all
-`x ≠ y`. Nothing is claimed on the diagonal, where the definition asks nothing of the kernel. -/
+`L²(V, F)`, `F` nonzero and complete, has the standard kernels `K` and `K'`, then `K x y = K' x y`
+for all `x ≠ y`. Nothing is claimed on the diagonal, where the definition asks nothing of the
+kernel. -/
 theorem unique [Nontrivial F] [CompleteSpace F] (h : HasStandardKernel T K C δ)
     (h' : HasStandardKernel T K' C' δ') {x₀ y₀ : V} (hxy : x₀ ≠ y₀) : K x₀ y₀ = K' x₀ y₀ := by
   set D : V → V → ℂ := fun x y ↦ K x y - K' x y
@@ -180,7 +183,8 @@ theorem add_multiplicationOperator (h : HasStandardKernel T K C δ)
   h.of_forall_ae_eq fun f s _ hf ↦ by
     filter_upwards [Lp.coeFn_add (T f) (Lp.multiplicationOperator a f),
       Lp.multiplicationOperator_ae a f, hf] with x h₁ h₂ h₃ hx
-    rw [add_apply, h₁, Pi.add_apply, h₂, h₃ hx, smul_zero, add_zero]
+    rw [add_apply, h₁, Pi.add_apply, h₂, h₃ hx]
+    simp
 
 /-- **Operators with the same kernel differ by a multiplication operator.** Let `T` be a
 Calderón–Zygmund operator with standard kernel `K` on `L²(V, F)` for finite-dimensional `F`.
@@ -192,13 +196,11 @@ theorem hasStandardKernel_iff_exists_ae_eq_add [FiniteDimensional ℂ F]
     HasStandardKernel T' K C δ ↔ ∃ m : V → F →L[ℂ] F, StronglyMeasurable m ∧
       (∀ᵐ x, ‖m x‖ ≤ ‖T' - T‖) ∧ ∀ f, T' f =ᵐ[volume] fun x ↦ T f x + m x (f x) := by
   have : ProperSpace F := FiniteDimensional.proper_rclike ℂ F
-  refine ⟨fun h' ↦ T'.exists_forall_ae_eq_add_of_forall_isCompact ENNReal.ofNat_ne_top T
-    fun f s hs hf ↦ ?_, fun ⟨m, _, _, hm⟩ ↦ h.of_forall_ae_eq fun f s _ hf ↦ ?_⟩
-  · filter_upwards [h.ae_apply_eq_integral f s hs hf, h'.ae_apply_eq_integral f s hs hf]
-      with x h₁ h₂ hx
-    rw [h₁ hx, h₂ hx]
-  · filter_upwards [hm f, hf] with x h₁ h₂ hx
-    rw [h₁, h₂ hx, map_zero, add_zero]
+  refine ⟨fun h' ↦ T'.exists_forall_ae_eq_add_of_ae_eq_integral ENNReal.ofNat_ne_top T
+    (fun x y ↦ ContinuousLinearMap.lsmul ℂ ℂ (K x y)) h'.ae_apply_eq_integral
+    h.ae_apply_eq_integral, fun ⟨m, _, _, hm⟩ ↦ h.of_forall_ae_eq fun f s _ hf ↦ ?_⟩
+  filter_upwards [hm f, hf] with x h₁ h₂ hx
+  rw [h₁, h₂ hx, map_zero, add_zero]
 
 /-- **The scalar Calderón–Zygmund operators with a given kernel.** Let `T` be a Calderón–Zygmund
 operator on `L²(V)` with standard kernel `K`. An operator `T'` on `L²(V)` has the standard kernel
@@ -220,8 +222,9 @@ theorem hasStandardKernel_iff_exists_eq_add_multiplicationOperator
   refine ⟨ha.toLp _, ContinuousLinearMap.ext fun f ↦ Lp.ext ?_⟩
   filter_upwards [hTm f, Lp.coeFn_add (T f) (Lp.multiplicationOperator (ha.toLp _) f),
     Lp.multiplicationOperator_ae (ha.toLp _) f, ha.coeFn_toLp] with x h₁ h₂ h₃ h₄
-  rw [h₁, add_apply, h₂, Pi.add_apply, h₃, h₄, smul_eq_mul, mul_comm,
-    ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+  -- `m x` is `ℂ`-linear on `ℂ`, so `m x (f x) = f x • m x 1`.
+  rw [h₁, add_apply, h₂, Pi.add_apply, h₃, h₄]
+  simpa [mul_comm] using (m x).map_smul (f x) 1
 
 end HasStandardKernel
 
