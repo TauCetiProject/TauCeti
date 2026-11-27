@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Topology.Codiscrete
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Legendrian curves in the standard contact space and their fronts
@@ -80,8 +81,10 @@ theorem range_mfderiv_le_kerDistribution_innerProductContactForm_iff
   -- The tangent image of `c` is `c • (q', p', z')`, read in the model space. Here and below a
   -- real number `c` is a tangent vector of `ℝ`, whose tangent spaces are `ℝ` by definition.
   have hv (c : ℝ) :
-      mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, V × V × ℝ) (fun s ↦ (q s, p s, z s)) t c = c • (q', p', z') :=
-    hγ.hasFDerivAt.mfderiv_apply c
+      mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, V × V × ℝ) (fun s ↦ (q s, p s, z s)) t c = c • (q', p', z') := by
+    rw [Manifold.mfderiv_apply_eq_smul_curveVelocity, Manifold.curveVelocity_eq_deriv, hγ.deriv]
+    -- The two sides differ only in that the velocity is typed as a tangent vector.
+    rfl
   rw [LinearMap.range_le_iff_comap, Submodule.eq_top_iff']
   simp only [Submodule.mem_comap, ContinuousLinearMap.coe_coe]
   refine ⟨fun h ↦ ?_, fun h (c : ℝ) ↦ (mem_kerDistribution_innerProductContactForm V).2 ?_⟩
@@ -127,23 +130,16 @@ theorem isLegendrianImmersion_innerProductContactForm_real_iff (hq : ContDiff �
       ∀ t, deriv z t = p t * deriv q t ∧ (deriv q t ≠ 0 ∨ deriv p t ≠ 0) := by
   have hor := isHorizontalMap_innerProductContactForm_real_iff (hq.differentiable (by simp))
     (hp.differentiable (by simp)) (hz.differentiable (by simp))
-  -- The tangent map at `t` sends `c` to `c • (q', p', z')`, so it is injective exactly when the
-  -- velocity is nonzero. A real number `c` is a tangent vector of `ℝ`, whose tangent spaces are
-  -- `ℝ` by definition.
   have hinj (t : ℝ) : Injective (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s ↦ (q s, p s, z s)) t) ↔
       (deriv q t, deriv p t, deriv z t) ≠ 0 := by
     have hγ : HasDerivAt (fun s ↦ (q s, p s, z s)) (deriv q t, deriv p t, deriv z t) t :=
       ((hq.differentiable (by simp) t).hasDerivAt.prodMk
         ((hp.differentiable (by simp) t).hasDerivAt.prodMk
           (hz.differentiable (by simp) t).hasDerivAt))
-    have hv (c : ℝ) : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s ↦ (q s, p s, z s)) t c =
-        c • (deriv q t, deriv p t, deriv z t) :=
-      hγ.hasFDerivAt.mfderiv_apply c
-    refine ⟨fun h h0 ↦ ?_, fun h c₁ c₂ hc ↦ ?_⟩
-    · exact one_ne_zero (α := ℝ)
-        (h (a₁ := (1 : ℝ)) (a₂ := (0 : ℝ)) (by rw [hv, hv, h0, smul_zero, smul_zero]))
-    · rw [hv c₁, hv c₂] at hc
-      exact smul_left_injective ℝ h hc
+    rw [Manifold.injective_mfderiv_iff_curveVelocity_ne_zero, Manifold.curveVelocity_eq_deriv,
+      hγ.deriv]
+    -- As in `hv` above, the two sides differ only in that the velocity is a tangent vector.
+    rfl
   have hγ : ContDiff ℝ ∞ (fun t ↦ (q t, p t, z t)) := hq.prodMk (hp.prodMk hz)
   refine ⟨fun h t ↦ ⟨hor.1 h.isHorizontalMap t, ?_⟩, fun h ↦ ⟨?_, ?_, hor.2 fun t ↦ (h t).1, ?_⟩⟩
   · have hne := (hinj t).1 (h.isImmersion.mfderiv_injective (by simp) t)
