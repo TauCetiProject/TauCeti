@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Probability.Cdf
+public import TauCeti.Probability.Cdf.TotalVariation
+import TauCeti.MeasureTheory.Measure.Interval
 
 /-!
 # The Kolmogorov distance
@@ -17,13 +18,12 @@ values in `[0, 1]` for every measure, so the family is bounded and the supremum 
 supremum with values in `[0, 1]`. For probability measures `cdf μ t = μ.real (Iic t)`, and the
 distance vanishes exactly when the two measures are equal.
 
-For probability measures the distance is at most half the total variation distance `tvDist`, it
-is unchanged by an increasing reparametrization of the line and by reflection, and it is at least
-half the mass of any atom of one law at which the distribution function of the other is
-continuous. By right
-continuity of distribution functions the supremum may be taken over rational points, so the
-Kolmogorov distance between two random laws is measurable as soon as their distribution functions
-are measurable at each rational point.
+For probability measures the distance is at most half the total variation distance `tvDist` and
+is unchanged by an increasing reparametrization of the line and by reflection. It is at least half
+the mass of any atom of a probability measure at a point where the distribution function of the
+other measure is continuous. By right continuity of distribution functions the supremum may be
+taken over rational points, so the Kolmogorov distance between two random laws is measurable as
+soon as their distribution functions are measurable at each rational point.
 
 The definitions and lemmas below make no probability hypothesis unless they need one: for a
 measure that is not a probability measure, Mathlib's `cdf` is a junk Stieltjes function, and the
@@ -49,18 +49,22 @@ distance is then the uniform distance between these junk functions.
   distribution functions agree, which for probability measures means that the measures agree;
 * `ProbabilityTheory.kolmogorovDist_le_tvDist_div_two`: for probability measures the Kolmogorov
   distance is at most half the total variation distance;
-* `ProbabilityTheory.kolmogorovDist_eq_iSup_rat` and `ProbabilityTheory.measurable_kolmogorovDist`:
-  the supremum may be taken over rational points, hence measurability of the distance between
-  random laws;
+* `ProbabilityTheory.kolmogorovDist_eq_iSup_rat`: the supremum may be taken over rational points;
+* `ProbabilityTheory.measurable_kolmogorovDist`: the distance between two random laws is
+  measurable when both have measurable distribution function evaluations at every rational point;
 * `ProbabilityTheory.kolmogorovDist_map_orderIso`, `ProbabilityTheory.kolmogorovDist_neg` and
-  `ProbabilityTheory.kolmogorovDist_map_mul_add`: invariance under increasing homeomorphisms of
-  `ℝ`, under the reflection `x ↦ -x`, and under `x ↦ a * x + b` with `a ≠ 0`;
-* `ProbabilityTheory.kolmogorovDist_eq_iSup_measureReal_Iio`: for probability measures the
-  supremum may be taken over the masses of open rays, the left limits of the distribution
-  functions;
+  `ProbabilityTheory.kolmogorovDist_map_mul_add`: for two probability measures, the distance is
+  invariant under increasing homeomorphisms of `ℝ`, under the reflection `x ↦ -x`, and under
+  `x ↦ a * x + b` with `a ≠ 0`;
+* `ProbabilityTheory.abs_leftLim_cdf_sub_leftLim_cdf_le_kolmogorovDist` and
+  `ProbabilityTheory.kolmogorovDist_eq_iSup_leftLim_cdf`: the supremum may be taken over the left
+  limits of the distribution functions, which for probability measures are the masses of open rays
+  (`ProbabilityTheory.abs_measureReal_Iio_sub_le_kolmogorovDist`,
+  `ProbabilityTheory.kolmogorovDist_eq_iSup_measureReal_Iio`);
 * `ProbabilityTheory.abs_measureReal_singleton_sub_le_two_mul_kolmogorovDist` and
   `ProbabilityTheory.measureReal_singleton_div_two_le_kolmogorovDist`: the jump bound, which gives
-  `kolmogorovDist μ ν ≥ μ {x} / 2` when `cdf ν` is continuous at `x`.
+  `μ.real {x} / 2 ≤ kolmogorovDist μ ν` for a probability measure `μ` when `cdf ν` is continuous
+  at `x`.
 
 ## References
 
@@ -69,7 +73,7 @@ distance is then the uniform distance between these junk functions.
 
 public section
 
-open Filter MeasureTheory Set
+open Filter Function MeasureTheory Set
 open scoped Topology
 
 namespace ProbabilityTheory
@@ -162,13 +166,6 @@ theorem kolmogorovDist_eq_zero_iff {μ ν : Measure ℝ} [IsProbabilityMeasure �
     [IsProbabilityMeasure ν] : kolmogorovDist μ ν = 0 ↔ μ = ν := by
   rw [kolmogorovDist_eq_zero_iff_cdf_eq, Measure.cdf_eq_iff]
 
-/-- For probability measures, the discrepancy of the distribution functions at each point is at
-most half the total variation distance. -/
-theorem abs_cdf_sub_cdf_le_tvDist_div_two (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (t : ℝ) : |cdf μ t - cdf ν t| ≤ tvDist μ ν / 2 := by
-  rw [cdf_eq_real, cdf_eq_real]
-  exact abs_measureReal_sub_le_tvDist_div_two (by simp) (Iic t)
-
 /-- For probability measures, the Kolmogorov distance is at most half the total variation
 distance. -/
 theorem kolmogorovDist_le_tvDist_div_two (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
@@ -207,38 +204,46 @@ theorem kolmogorovDist_map_orderIso (μ ν : Measure ℝ) [IsProbabilityMeasure 
   simp only [kolmogorovDist_def, Measure.cdf_map_orderIso]
   exact f.symm.surjective.iSup_comp fun t ↦ |cdf μ t - cdf ν t|
 
+/-- The Kolmogorov distance dominates the discrepancy of the left limits of the distribution
+functions at each point. -/
+theorem abs_leftLim_cdf_sub_leftLim_cdf_le_kolmogorovDist (μ ν : Measure ℝ) (x : ℝ) :
+    |leftLim (cdf μ) x - leftLim (cdf ν) x| ≤ kolmogorovDist μ ν :=
+  le_of_tendsto (((cdf μ).mono.tendsto_leftLim x).sub ((cdf ν).mono.tendsto_leftLim x)).abs
+    (eventually_nhdsWithin_of_forall fun t _ ↦ abs_cdf_sub_cdf_le_kolmogorovDist μ ν t)
+
+/-- The supremum defining the Kolmogorov distance may be taken over the left limits of the
+distribution functions. -/
+theorem kolmogorovDist_eq_iSup_leftLim_cdf (μ ν : Measure ℝ) :
+    kolmogorovDist μ ν = ⨆ x, |leftLim (cdf μ) x - leftLim (cdf ν) x| := by
+  have hbdd : BddAbove (range fun x ↦ |leftLim (cdf μ) x - leftLim (cdf ν) x|) :=
+    ⟨kolmogorovDist μ ν, by
+      rintro _ ⟨x, rfl⟩
+      exact abs_leftLim_cdf_sub_leftLim_cdf_le_kolmogorovDist μ ν x⟩
+  refine le_antisymm (kolmogorovDist_le fun t ↦ ?_)
+    (ciSup_le (abs_leftLim_cdf_sub_leftLim_cdf_le_kolmogorovDist μ ν))
+  -- `cdf ρ` is the cdf of the probability measure `(cdf ρ).measure`, whose open-ray masses
+  -- `leftLim (cdf ρ) s` tend to `cdf ρ t` as `s → t⁺`.
+  have key : ∀ ρ : Measure ℝ, Tendsto (fun s ↦ leftLim (cdf ρ) s) (𝓝[>] t) (𝓝 (cdf ρ t)) := by
+    intro ρ
+    rw [← cdf_measure_stieltjesFunction (cdf ρ) (tendsto_cdf_atBot ρ) (tendsto_cdf_atTop ρ)]
+    simp only [Measure.leftLim_cdf, cdf_eq_real]
+    exact tendsto_measureReal_Iio_nhdsGT t
+  exact le_of_tendsto ((key μ).sub (key ν)).abs (Eventually.of_forall fun s ↦ le_ciSup hbdd s)
+
 /-- For probability measures, the Kolmogorov distance dominates `|μ (Iio x) - ν (Iio x)|` at each
 point `x`: these masses are the left limits of the distribution functions. -/
 theorem abs_measureReal_Iio_sub_le_kolmogorovDist (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (x : ℝ) :
     |μ.real (Iio x) - ν.real (Iio x)| ≤ kolmogorovDist μ ν := by
   rw [← Measure.leftLim_cdf, ← Measure.leftLim_cdf]
-  exact le_of_tendsto (((cdf μ).mono.tendsto_leftLim x).sub ((cdf ν).mono.tendsto_leftLim x)).abs
-    (eventually_nhdsWithin_of_forall fun t _ ↦ abs_cdf_sub_cdf_le_kolmogorovDist μ ν t)
+  exact abs_leftLim_cdf_sub_leftLim_cdf_le_kolmogorovDist μ ν x
 
 /-- For probability measures, the supremum defining the Kolmogorov distance may be taken over the
 masses of the open rays `Iio x`, that is, over the left limits of the distribution functions. -/
 theorem kolmogorovDist_eq_iSup_measureReal_Iio (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] :
     kolmogorovDist μ ν = ⨆ x, |μ.real (Iio x) - ν.real (Iio x)| := by
-  have hbdd : BddAbove (range fun x ↦ |μ.real (Iio x) - ν.real (Iio x)|) :=
-    ⟨kolmogorovDist μ ν, by
-      rintro _ ⟨x, rfl⟩
-      exact abs_measureReal_Iio_sub_le_kolmogorovDist μ ν x⟩
-  refine le_antisymm (kolmogorovDist_le fun t ↦ ?_)
-    (ciSup_le (abs_measureReal_Iio_sub_le_kolmogorovDist μ ν))
-  -- For `s > t`, `ρ (Iio s)` lies between `cdf ρ t` and `cdf ρ s`, so it tends to `cdf ρ t`.
-  have key : ∀ ρ : Measure ℝ, [IsProbabilityMeasure ρ] →
-      Tendsto (fun s ↦ ρ.real (Iio s)) (𝓝[>] t) (𝓝 (cdf ρ t)) := fun ρ _ ↦
-    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-      (((cdf ρ).right_continuous t).tendsto.mono_left (nhdsWithin_mono t Ioi_subset_Ici_self))
-      (eventually_nhdsWithin_of_forall fun s hs ↦ by
-        rw [cdf_eq_real]
-        exact measureReal_mono (Iic_subset_Iio.2 hs))
-      (eventually_nhdsWithin_of_forall fun s _ ↦ by
-        rw [cdf_eq_real]
-        exact measureReal_mono Iio_subset_Iic_self)
-  exact le_of_tendsto ((key μ).sub (key ν)).abs (Eventually.of_forall fun s ↦ le_ciSup hbdd s)
+  simp only [kolmogorovDist_eq_iSup_leftLim_cdf, Measure.leftLim_cdf]
 
 /-- The Kolmogorov distance between probability measures is invariant under the reflection
 `x ↦ -x`. -/
@@ -251,6 +256,7 @@ theorem kolmogorovDist_neg (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsPr
 
 /-- The Kolmogorov distance between probability measures is invariant under the affine map
 `x ↦ a * x + b` for `a ≠ 0`. -/
+@[simp]
 theorem kolmogorovDist_map_mul_add (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] {a : ℝ} (ha : a ≠ 0) (b : ℝ) :
     kolmogorovDist (μ.map fun x ↦ a * x + b) (ν.map fun x ↦ a * x + b) = kolmogorovDist μ ν := by
@@ -274,34 +280,29 @@ theorem kolmogorovDist_map_mul_add (μ ν : Measure ℝ) [IsProbabilityMeasure �
   · exact hpos a ha b
 
 /-- For probability measures, the masses of a point differ by at most twice the Kolmogorov
-distance: the mass of `{x}` is the jump `μ (Iic x) - μ (Iio x)` of the distribution function. -/
+distance: the mass of `{x}` is the jump `cdf μ x - leftLim (cdf μ) x` of the distribution
+function. -/
 theorem abs_measureReal_singleton_sub_le_two_mul_kolmogorovDist (μ ν : Measure ℝ)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (x : ℝ) :
     |μ.real {x} - ν.real {x}| ≤ 2 * kolmogorovDist μ ν := by
-  have hjump : ∀ ρ : Measure ℝ, [IsProbabilityMeasure ρ] →
-      ρ.real {x} = ρ.real (Iic x) - ρ.real (Iio x) := fun ρ _ ↦ by
-    rw [← Iio_union_right, measureReal_union (disjoint_singleton_right.2 (lt_irrefl x))
-      (measurableSet_singleton x)]
-    ring
-  rw [hjump μ, hjump ν, two_mul]
-  calc |μ.real (Iic x) - μ.real (Iio x) - (ν.real (Iic x) - ν.real (Iio x))|
-      = |(μ.real (Iic x) - ν.real (Iic x)) - (μ.real (Iio x) - ν.real (Iio x))| := by
-        congr 1
-        ring
-    _ ≤ |μ.real (Iic x) - ν.real (Iic x)| + |μ.real (Iio x) - ν.real (Iio x)| := abs_sub _ _
-    _ ≤ kolmogorovDist μ ν + kolmogorovDist μ ν :=
-      add_le_add (abs_measureReal_Iic_sub_le_kolmogorovDist μ ν x)
-        (abs_measureReal_Iio_sub_le_kolmogorovDist μ ν x)
+  rw [Measure.measureReal_singleton_eq_cdf_sub_leftLim,
+    Measure.measureReal_singleton_eq_cdf_sub_leftLim, sub_sub_sub_comm, two_mul]
+  exact (abs_sub _ _).trans (add_le_add (abs_cdf_sub_cdf_le_kolmogorovDist μ ν x)
+    (abs_leftLim_cdf_sub_leftLim_cdf_le_kolmogorovDist μ ν x))
 
 /-- **The jump bound.** If a probability measure `μ` has an atom of mass `a` at `x` and the
-distribution function of the probability measure `ν` is continuous at `x`, then the Kolmogorov
-distance between `μ` and `ν` is at least `a / 2`. -/
+distribution function of `ν` is continuous at `x`, then the Kolmogorov distance between `μ` and
+`ν` is at least `a / 2`. -/
 theorem measureReal_singleton_div_two_le_kolmogorovDist (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] {x : ℝ} (hν : ContinuousAt (cdf ν) x) :
+    {x : ℝ} (hν : ContinuousAt (cdf ν) x) :
     μ.real {x} / 2 ≤ kolmogorovDist μ ν := by
-  have h := abs_measureReal_singleton_sub_le_two_mul_kolmogorovDist μ ν x
-  rw [measureReal_def ν, (Measure.continuousAt_cdf_iff ν x).1 hν, ENNReal.toReal_zero, sub_zero,
-    abs_of_nonneg measureReal_nonneg] at h
+  have hl : leftLim (cdf ν) x = cdf ν x := by
+    rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim.1 hν,
+      ((cdf ν).right_continuous x).rightLim_eq]
+  have h₁ := (abs_le.1 (abs_cdf_sub_cdf_le_kolmogorovDist μ ν x)).2
+  have h₂ := (abs_le.1 (abs_leftLim_cdf_sub_leftLim_cdf_le_kolmogorovDist μ ν x)).1
+  rw [hl] at h₂
+  rw [Measure.measureReal_singleton_eq_cdf_sub_leftLim]
   linarith
 
 end ProbabilityTheory

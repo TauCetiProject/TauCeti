@@ -211,9 +211,9 @@ theorem abs_measureReal_sub_le_tvDist_div_two (h : μ univ = ν univ) (s : Set �
       μ.real s ≤ ν.real s + tvDist μ ν / 2 := by
     intro μ ν _ _ h
     -- Each measurable excess is at most half the distance, hence so is the excess on `s`.
-    have h2 : μ s ≤ ν s + etvDist μ ν / 2 := measure_le_add_of_iSup_sub_le (iSup₂_le fun A hA ↦
-      tsub_le_iff_left.2 ((etvDist_le_two_mul_iff h).1
-        (by rw [ENNReal.mul_div_cancel two_ne_zero ENNReal.ofNat_ne_top]) A hA)) s
+    have h2 : μ s ≤ ν s + etvDist μ ν / 2 := measure_le_add_of_iSup_sub_le (by
+      rw [etvDist_eq_two_mul_iSup_sub h, mul_div_assoc,
+        ENNReal.mul_div_cancel two_ne_zero ENNReal.ofNat_ne_top]) s
     have hc : etvDist μ ν / 2 ≠ ∞ := ENNReal.div_ne_top (etvDist_ne_top μ ν) two_ne_zero
     have h3 := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨measure_ne_top ν s, hc⟩) h2
     rwa [ENNReal.toReal_add (measure_ne_top ν s) hc, ENNReal.toReal_div, ENNReal.toReal_ofNat,
