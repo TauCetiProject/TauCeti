@@ -81,7 +81,7 @@ theorem coe_lieInvariantsCenterEquiv_apply (p : lieInvariants R L L) :
 theorem coe_lieInvariantsCenterEquiv_symm_apply (z : Subalgebra.center R U) :
     ((lieInvariantsCenterEquiv R L).symm z : SymmetricAlgebra R L) =
       (pbwSymmetrizationEquiv R L).symm z :=
-  (rfl)
+  LinearEquiv.ofSubmodules_symm_apply _ _ _
 
 /-- **The averaging formula**: on an invariant written as a product of `m` generators, the
 equivalence is `1/m!` times the sum of the products in all `m!` orders. -/
