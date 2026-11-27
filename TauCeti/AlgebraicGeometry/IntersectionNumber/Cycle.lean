@@ -45,6 +45,23 @@ namespace TauCeti.AlgebraicGeometry
 
 open Chow
 
+namespace Chow
+
+/-- The reduced closure of a point of dimension `d` is a closed subscheme of Krull
+dimension `d`. -/
+theorem topologicalKrullDim_subscheme_vanishingIdeal_closure_of_mem_pointsOfDimension
+    {X : Scheme.{u}} {d : ℕ} {x : X} (hx : x ∈ pointsOfDimension X d) :
+    topologicalKrullDim (vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subscheme = d := by
+  obtain ⟨n, hn, hn'⟩ := mem_pointsOfDimension.mp hx
+  obtain rfl : n = d := by omega
+  let I := vanishingIdeal (⟨closure {x}, isClosed_closure⟩ : Closeds X)
+  have h := I.subschemeι.height_apply_eq_height (genericPoint I.subscheme)
+  rw [subschemeι_genericPoint_vanishingIdeal_closure_singleton, hn] at h
+  rw [← (genericPoint_spec I.subscheme).height_eq_topologicalKrullDim, ← h]
+  norm_cast
+
+end Chow
+
 namespace LineBundleClass
 
 variable (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
@@ -73,18 +90,9 @@ def cycleIntersectionNumber :
         intro x
         simp only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_toIntLinearMap,
           Module.Basis.constr_basis, toMul_add, AddMonoidHom.add_apply]
-        have hdim : topologicalKrullDim
-            (vanishingIdeal ⟨closure {(x : X)}, isClosed_closure⟩).subscheme = 1 := by
-          obtain ⟨n, hn, hn'⟩ := mem_pointsOfDimension.mp x.property
-          have hn1 : n = 1 := by omega
-          subst n
-          let I := vanishingIdeal (⟨closure {(x : X)}, isClosed_closure⟩ : Closeds X)
-          have h := I.subschemeι.height_apply_eq_height (genericPoint I.subscheme)
-          rw [subschemeι_genericPoint_vanishingIdeal_closure_singleton, hn] at h
-          rw [← (genericPoint_spec I.subscheme).height_eq_topologicalKrullDim, ← h]
-          norm_cast
         exact intersectionNumber_mul_of_isClosedImmersion k _ (comp_over _ _)
-          hdim _ _ }
+          (topologicalKrullDim_subscheme_vanishingIdeal_closure_of_mem_pointsOfDimension
+            (d := 1) x.property) _ _ }
 
 /-- The pairing on a prime one-cycle is the degree on the reduced closure of its point. -/
 @[simp]
@@ -183,8 +191,7 @@ theorem cycleIntersectionNumber_cyclesMap_of_isClosedImmersion
     apply Subtype.ext
     rw [coe_cyclesMap, coe_cyclesOfDimensionBasis, coe_cyclesOfDimensionBasis,
       AlgebraicCycle.map_height_single k]
-    simp only [Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks, Nat.cast_one, mul_one]
-    rfl
+    simp only [Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks, Nat.cast_one, mul_one, y]
   simp only [AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.comp_apply, hmap]
   rw [cycleIntersectionNumber_basis_of_isClosedImmersion k X
     ((vanishingIdeal ⟨closure {(x : Y)}, isClosed_closure⟩).subschemeι ≫ i) y
