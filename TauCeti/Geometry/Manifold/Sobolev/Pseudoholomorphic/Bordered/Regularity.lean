@@ -17,7 +17,9 @@ import TauCeti.Geometry.Manifold.Complex.TotallyReal.Examples
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Atlas
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Atlas.Higher
+import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Morrey
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Locality
+import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Bordered.Comparison
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 
 /-!
@@ -31,7 +33,10 @@ pseudoholomorphic map
 (`TauCeti.IsWeakPseudoholomorphicOnBordered`), for `J₀` regarded as a family independent of the
 domain point and the zero inhomogeneous term, which maps the boundary points of `s` into `ι (N)`,
 lies in `W^{m,p}_loc` up to the boundary for every `m ≤ ℓ` and finite `p > 2`. For `ℓ ≥ 2` this is
-the conclusion `W^{ℓ,p}` of McDuff–Salamon, Theorem B.4.1.
+the conclusion `W^{ℓ,p}` of McDuff–Salamon, Theorem B.4.1. By Morrey's embedding up to the boundary
+(`TauCeti.MemWkpLocMapOnBordered.contMDiffOn`) such a map is of class `C^(ℓ-1)` up to the
+boundary, and smooth up to the boundary when `J₀` and `ι` are smooth; these conclusions hold for
+`p = ∞` as well, since a weak solution for `p` is one for every finite exponent in `(2, p]`.
 
 The proof is local. Near an interior point of `X` the coordinate expression of `u` solves the
 planar equation for the structure `J₀` read in a chart of `M`, which is `C^ℓ`, and the interior
@@ -52,8 +57,21 @@ pushed-forward structure is only `C^(ℓ-1)`. Moving back along the inverse tran
 * `TauCeti.IsWeakPseudoholomorphicOnBordered.memWkpLocMapOnBordered_of_mapsTo`,
   `TauCeti.IsWeakPseudoholomorphicBordered.memWkpLocMapBordered_of_mapsBoundaryInto`:
   **regularity up to a totally real boundary**, `W^{m,p}_loc` up to the boundary for `m ≤ ℓ`.
+* `TauCeti.IsWeakPseudoholomorphicOnBordered.contMDiffOn_of_mapsTo`,
+  `TauCeti.IsWeakPseudoholomorphicBordered.contMDiff_of_mapsBoundaryInto`: `C^(ℓ-1)` up to the
+  boundary.
+* `TauCeti.IsWeakPseudoholomorphicOnBordered.contMDiffOn_infty_of_mapsTo`,
+  `TauCeti.IsWeakPseudoholomorphicBordered.contMDiff_infty_of_mapsBoundaryInto`: smoothness up to
+  the boundary for a smooth structure and a smooth totally real embedding.
+* `TauCeti.IsPseudoholomorphicOn.contMDiffOn_of_mapsTo`,
+  `TauCeti.IsPseudoholomorphic.contMDiff_of_mapsBoundaryInto`: a pseudoholomorphic map of class
+  `C¹` for a smooth structure, sending the boundary into the image of a `C^k` totally real
+  embedding with `ℓ + 1 ≤ k`, is `C^(ℓ-1)` up to the boundary; the `_infty` versions give
+  smoothness up to the boundary for a smooth embedding. These are the weak statements read
+  through the comparison `TauCeti.isWeakPseudoholomorphicOnBordered_iff_isPseudoholomorphicOn`.
 * Check: the inclusion of the closed upper half-plane into `ℂ`, with boundary in the totally real
-  line `ℝ`, satisfies the hypotheses for every `ℓ`.
+  line `ℝ`, satisfies the hypotheses for every `ℓ`, and the smooth case and the `C¹` criterion
+  apply to it.
 
 ## Implementation notes
 
@@ -327,14 +345,154 @@ theorem IsWeakPseudoholomorphicBordered.memWkpLocMapBordered_of_mapsBoundaryInto
     ((isWeakPseudoholomorphicOnBordered_univ.2 h).memWkpLocMapOnBordered_of_mapsTo isOpen_univ hp
       hp' hι hk (hb.mapsTo.mono_left inter_subset_right) hm)
 
+/-- **`C^(ℓ-1)` up to a totally real boundary** (McDuff–Salamon, Theorem B.4.1). Let `2 < p`,
+possibly `p = ∞`, let `J₀` be an almost complex structure on `M` of class `C^ℓ`, regarded as a
+family independent of the domain point, and let `ι : N → M` be a `C^k` totally real embedding for
+`J₀` with `ℓ + 1 ≤ k`. A weak pseudoholomorphic map up to the boundary on an open set `s`, for `J₀`
+and the zero inhomogeneous term, which maps the boundary points of `X` in `s` into `ι (N)`, is of
+class `C^(ℓ-1)` on `s` up to the boundary; for `ℓ = ∞` it is smooth there. For a finite exponent
+`q ∈ (2, p]` it is `W^{m+1,q}_loc` up to the boundary for `m + 1 ≤ ℓ`, hence `Cᵐ` by Morrey's
+embedding up to the boundary (`TauCeti.MemWkpLocMapOnBordered.contMDiffOn`). -/
+theorem IsWeakPseudoholomorphicOnBordered.contMDiffOn_of_mapsTo [IsManifold I' k N]
+    (h : IsWeakPseudoholomorphicOnBordered (ContMDiffAlmostComplexStructureFamily.const J₀) 0 p u
+      s)
+    (hs : IsOpen s) (hp : 2 < p)
+    (hι : IsTotallyRealEmbedding I' I k J₀.almostComplexStructureAt ι) (hk : (ℓ : ℕ∞ω) + 1 ≤ k)
+    (hb : MapsTo u (s ∩ closedUpperHalfPlaneModel.boundary X) (range ι)) :
+    ContMDiffOn closedUpperHalfPlaneModel I (ℓ - 1 : ℕ∞) u s := by
+  -- A weak solution for `p` is one for the finite exponent `min p 3 > 2`.
+  have hq : 2 < min p 3 := lt_min hp (by norm_num)
+  have hq' : min p 3 ≠ ⊤ := ne_top_of_le_ne_top (by norm_num) (min_le_right p 3)
+  replace h := h.mono_exponent (min_le_left p 3)
+  have hm : ∀ m : ℕ, (m : ℕ∞) ≤ ℓ - 1 → ContMDiffOn closedUpperHalfPlaneModel I m u s := by
+    rintro (_ | m) hm
+    · exact contMDiffOn_zero_iff.2 h.continuousOn
+    -- From `1 ≤ m + 1 ≤ ℓ - 1` we get `1 ≤ ℓ`, so `m + 2 ≤ ℓ`.
+    have hℓ : (1 : ℕ∞) ≤ ℓ := le_trans (by exact_mod_cast Nat.le_add_left 1 m)
+      (hm.trans tsub_le_self)
+    refine (h.memWkpLocMapOnBordered_of_mapsTo hs hq hq' hι hk hb (m := m + 1 + 1) ?_).contMDiffOn
+      hq hs
+    exact_mod_cast add_le_of_le_tsub_right_of_le hℓ hm
+  by_cases htop : ℓ - 1 = ⊤
+  · rw [htop]
+    exact contMDiffOn_infty.2 fun m ↦ hm m (htop ▸ le_top)
+  · obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 htop
+    rw [← hn]
+    exact hm n hn.le
+
+/-- **`C^(ℓ-1)` up to a totally real boundary on the whole surface** (McDuff–Salamon,
+Theorem B.4.1). For `2 < p`, possibly `p = ∞`, a weak pseudoholomorphic map up to the boundary
+for a `C^ℓ` almost complex structure `J₀` independent of the domain point and the zero
+inhomogeneous term, mapping the boundary of `X` into the image of a `C^k` totally real embedding
+for `J₀` with `ℓ + 1 ≤ k`, is of class `C^(ℓ-1)` up to the boundary; for `ℓ = ∞` it is smooth. -/
+theorem IsWeakPseudoholomorphicBordered.contMDiff_of_mapsBoundaryInto [IsManifold I' k N]
+    (h : IsWeakPseudoholomorphicBordered (ContMDiffAlmostComplexStructureFamily.const J₀) 0 p u)
+    (hp : 2 < p) (hι : IsTotallyRealEmbedding I' I k J₀.almostComplexStructureAt ι)
+    (hk : (ℓ : ℕ∞ω) + 1 ≤ k) (hb : MapsBoundaryInto closedUpperHalfPlaneModel u ι) :
+    ContMDiff closedUpperHalfPlaneModel I (ℓ - 1 : ℕ∞) u :=
+  contMDiffOn_univ.1
+    ((isWeakPseudoholomorphicOnBordered_univ.2 h).contMDiffOn_of_mapsTo isOpen_univ hp hι hk
+      (hb.mapsTo.mono_left inter_subset_right))
+
+/-- **Smoothness up to a totally real boundary** (McDuff–Salamon, Theorem B.4.1, smooth case). For
+`2 < p`, possibly `p = ∞`, a weak pseudoholomorphic map up to the boundary on an open set `s`, for
+a smooth almost complex structure `J` independent of the domain point and the zero inhomogeneous
+term, mapping the boundary points of `X` in `s` into the image of a `C^k` totally real embedding
+for `J` with `k ≥ ∞`, is smooth on `s` up to the boundary. -/
+theorem IsWeakPseudoholomorphicOnBordered.contMDiffOn_infty_of_mapsTo [IsManifold I' k N]
+    {J : ContMDiffAlmostComplexStructure I ⊤ M}
+    (h : IsWeakPseudoholomorphicOnBordered (ContMDiffAlmostComplexStructureFamily.const J) 0 p u
+      s)
+    (hs : IsOpen s) (hp : 2 < p)
+    (hι : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι) (hk : ∞ ≤ k)
+    (hb : MapsTo u (s ∩ closedUpperHalfPlaneModel.boundary X) (range ι)) :
+    ContMDiffOn closedUpperHalfPlaneModel I ∞ u s := by
+  simpa using h.contMDiffOn_of_mapsTo hs hp hι (by simpa using hk) hb
+
+/-- **Smoothness up to a totally real boundary on the whole surface** (McDuff–Salamon,
+Theorem B.4.1, smooth case). For `2 < p`, possibly `p = ∞`, a weak pseudoholomorphic map up to
+the boundary for a smooth almost complex structure `J` independent of the domain point and the
+zero inhomogeneous term, mapping the boundary of `X` into the image of a `C^k` totally real
+embedding for `J` with `k ≥ ∞`, is smooth up to the boundary. -/
+theorem IsWeakPseudoholomorphicBordered.contMDiff_infty_of_mapsBoundaryInto [IsManifold I' k N]
+    {J : ContMDiffAlmostComplexStructure I ⊤ M}
+    (h : IsWeakPseudoholomorphicBordered (ContMDiffAlmostComplexStructureFamily.const J) 0 p u)
+    (hp : 2 < p) (hι : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι)
+    (hk : ∞ ≤ k) (hb : MapsBoundaryInto closedUpperHalfPlaneModel u ι) :
+    ContMDiff closedUpperHalfPlaneModel I ∞ u := by
+  simpa using h.contMDiff_of_mapsBoundaryInto hp hι (by simpa using hk) hb
+
+/-- **`C¹` pseudoholomorphic maps are `C^(ℓ-1)` up to a totally real boundary** (McDuff–Salamon,
+Theorem B.4.1 and Remark B.4.3). Let `J` be a smooth almost complex structure on `M` and
+`ι : N → M` a `C^k` totally real embedding for `J` with `ℓ + 1 ≤ k`. A map `u` of class `C¹` on an
+open set `s` of a Riemann surface with boundary `X`, pseudoholomorphic on `s` for the structure of
+`X` and `J`, which maps the boundary points of `X` in `s` into `ι (N)`, is of class `C^(ℓ-1)` on
+`s` up to the boundary. -/
+theorem IsPseudoholomorphicOn.contMDiffOn_of_mapsTo [IsManifold I' k N]
+    {J : SmoothAlmostComplexStructure I M}
+    (h : IsPseudoholomorphicOn (SmoothAlmostComplexStructure.ofBorderedHolomorphic X) J u s)
+    (hs : IsOpen s) (hu : ContMDiffOn closedUpperHalfPlaneModel I 1 u s)
+    (hι : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι) (hk : (ℓ : ℕ∞ω) + 1 ≤ k)
+    (hb : MapsTo u (s ∩ closedUpperHalfPlaneModel.boundary X) (range ι)) :
+    ContMDiffOn closedUpperHalfPlaneModel I (ℓ - 1 : ℕ∞) u s :=
+  ((isWeakPseudoholomorphicOnBordered_iff_isPseudoholomorphicOn (ℓ := ℓ) (p := 3) J hs hu).2
+    h).contMDiffOn_of_mapsTo hs (by norm_num)
+      (by rwa [SmoothAlmostComplexStructure.toContMDiff_almostComplexStructureAt]) hk hb
+
+/-- **`C¹` pseudoholomorphic maps are `C^(ℓ-1)` up to a totally real boundary, on the whole
+surface** (McDuff–Salamon, Theorem B.4.1 and Remark B.4.3). A map of class `C¹` from a Riemann
+surface with boundary `X`, pseudoholomorphic for the structure of `X` and a smooth almost complex
+structure `J` on `M`, which maps the boundary of `X` into the image of a `C^k` totally real
+embedding for `J` with `ℓ + 1 ≤ k`, is of class `C^(ℓ-1)` up to the boundary. -/
+theorem IsPseudoholomorphic.contMDiff_of_mapsBoundaryInto [IsManifold I' k N]
+    {J : SmoothAlmostComplexStructure I M}
+    (h : IsPseudoholomorphic (SmoothAlmostComplexStructure.ofBorderedHolomorphic X) J u)
+    (hu : ContMDiff closedUpperHalfPlaneModel I 1 u)
+    (hι : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι) (hk : (ℓ : ℕ∞ω) + 1 ≤ k)
+    (hb : MapsBoundaryInto closedUpperHalfPlaneModel u ι) :
+    ContMDiff closedUpperHalfPlaneModel I (ℓ - 1 : ℕ∞) u :=
+  contMDiffOn_univ.1 ((isPseudoholomorphicOn_univ.2 h).contMDiffOn_of_mapsTo isOpen_univ
+    hu.contMDiffOn hι hk (hb.mapsTo.mono_left inter_subset_right))
+
+/-- **`C¹` pseudoholomorphic maps are smooth up to a totally real boundary** (McDuff–Salamon,
+Theorem B.4.1 and Remark B.4.3, smooth case). A map of class `C¹` on an open set `s` of a Riemann
+surface with boundary `X`, pseudoholomorphic on `s` for the structure of `X` and a smooth almost
+complex structure `J` on `M`, which maps the boundary points of `X` in `s` into the image of a
+`C^k` totally real embedding for `J` with `k ≥ ∞`, is smooth on `s` up to the boundary. -/
+theorem IsPseudoholomorphicOn.contMDiffOn_infty_of_mapsTo [IsManifold I' k N]
+    {J : SmoothAlmostComplexStructure I M}
+    (h : IsPseudoholomorphicOn (SmoothAlmostComplexStructure.ofBorderedHolomorphic X) J u s)
+    (hs : IsOpen s) (hu : ContMDiffOn closedUpperHalfPlaneModel I 1 u s)
+    (hι : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι) (hk : ∞ ≤ k)
+    (hb : MapsTo u (s ∩ closedUpperHalfPlaneModel.boundary X) (range ι)) :
+    ContMDiffOn closedUpperHalfPlaneModel I ∞ u s := by
+  simpa using h.contMDiffOn_of_mapsTo (ℓ := ⊤) hs hu hι (by simpa using hk) hb
+
+/-- **`C¹` pseudoholomorphic maps are smooth up to a totally real boundary, on the whole
+surface** (McDuff–Salamon, Theorem B.4.1 and Remark B.4.3, smooth case). A map of class `C¹` from
+a Riemann surface with boundary `X`, pseudoholomorphic for the structure of `X` and a smooth
+almost complex structure `J` on `M`, which maps the boundary of `X` into the image of a `C^k`
+totally real embedding for `J` with `k ≥ ∞`, is smooth up to the boundary. -/
+theorem IsPseudoholomorphic.contMDiff_infty_of_mapsBoundaryInto [IsManifold I' k N]
+    {J : SmoothAlmostComplexStructure I M}
+    (h : IsPseudoholomorphic (SmoothAlmostComplexStructure.ofBorderedHolomorphic X) J u)
+    (hu : ContMDiff closedUpperHalfPlaneModel I 1 u)
+    (hι : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι) (hk : ∞ ≤ k)
+    (hb : MapsBoundaryInto closedUpperHalfPlaneModel u ι) :
+    ContMDiff closedUpperHalfPlaneModel I ∞ u := by
+  simpa using h.contMDiff_of_mapsBoundaryInto (ℓ := ⊤) hu hι (by simpa using hk) hb
+
 end Regularity
 
 /-! ### Checks -/
 
 /-- The inclusion of the closed upper half-plane into `ℂ` is weakly pseudoholomorphic up to the
 boundary for the complex structure of `ℂ`, and maps the boundary into the real line, which is
-totally real for it; so it lies in `W^{k,3}_loc` up to the boundary for every `k`. -/
-example (k : ℕ) : MemWkpLocMapBordered 𝓘(ℝ, ℂ) 3 k ((↑) : ClosedUpperHalfPlane → ℂ) := by
+totally real for it; so it lies in `W^{k,3}_loc` up to the boundary for every `k`, and is smooth
+up to the boundary. Being `C¹` and pseudoholomorphic, it is also smooth by the `C¹` criterion. -/
+example : (∀ k : ℕ, MemWkpLocMapBordered 𝓘(ℝ, ℂ) 3 k ((↑) : ClosedUpperHalfPlane → ℂ)) ∧
+    ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) ∞ ((↑) : ClosedUpperHalfPlane → ℂ) ∧
+    ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) ∞ ((↑) : ClosedUpperHalfPlane → ℂ) := by
   have hι : IsTotallyRealEmbedding 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) ⊤
       ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ⊤).almostComplexStructureAt
       ((↑) : ℝ → ℂ) := by
@@ -345,7 +503,14 @@ example (k : ℕ) : MemWkpLocMapBordered 𝓘(ℝ, ℂ) 3 k ((↑) : ClosedUpper
       SmoothAlmostComplexStructure.toContMDiff_toEndomorphism_apply]
     exact (AlmostComplexStructure.ofComplexModule_apply v).trans
       (SmoothAlmostComplexStructure.ofComplexManifold_apply (M := ℂ) (x : ℂ) v).symm
-  exact (isWeakPseudoholomorphicBordered_coe (ℓ := ⊤)).memWkpLocMapBordered_of_mapsBoundaryInto
-    (by norm_num) (by norm_num) hι le_top mapsBoundaryInto_coe_ofReal le_top
+  have h := isWeakPseudoholomorphicBordered_coe (ℓ := ⊤) (p := 3)
+  exact ⟨fun k ↦ h.memWkpLocMapBordered_of_mapsBoundaryInto (by norm_num) (by norm_num) hι le_top
+    mapsBoundaryInto_coe_ofReal le_top, h.contMDiff_infty_of_mapsBoundaryInto (by norm_num) hι
+      le_top mapsBoundaryInto_coe_ofReal,
+    IsPseudoholomorphic.contMDiff_infty_of_mapsBoundaryInto
+      SmoothAlmostComplexStructure.isPseudoholomorphic_coe_ofBorderedHolomorphic
+        ClosedUpperHalfPlane.contMDiff_coe
+        (by rwa [SmoothAlmostComplexStructure.toContMDiff_almostComplexStructureAt] at hι) le_top
+        mapsBoundaryInto_coe_ofReal⟩
 
 end TauCeti

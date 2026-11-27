@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.Perfect
+public import Mathlib.Basic.Countable.Small
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -19,7 +20,7 @@ between charted spaces, and how punctured neighbourhoods are carried by the inve
 are the facts needed to read a local notion of one variable (meromorphy, orders, ...) on a
 charted space in its preferred charts and to check that it is well behaved. Some global properties
 of the model space also pass to the charted space: having no isolated points, being Hausdorff
-locally, and, for a Lindelöf charted space, second countability.
+locally, and, for a Lindelöf charted space, second countability and smallness.
 
 ## Main results
 
@@ -39,11 +40,15 @@ locally, and, for a Lindelöf charted space, second countability.
   Hausdorff.
 * `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space over a second-countable
   model space is second countable.
+* `ChartedSpace.small_of_lindelof`: a Lindelöf charted space over a `v`-small model space is
+  `v`-small, so it has a homeomorphic copy `Shrink.{v} X` in `Type v`.
 -/
 
 public section
 
 open Filter Topology
+
+universe v
 
 namespace TauCeti
 
@@ -134,3 +139,21 @@ theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace
   obtain ⟨s, hsc, hsU⟩ := LindelofSpace.elim_nhds_subcover (fun x : X ↦ (chartAt H x).source)
     fun x ↦ chart_source_mem_nhds H x
   exact ChartedSpace.secondCountable_of_countable_cover H hsU hsc
+
+/-- A Lindelöf charted space over a `v`-small model space is `v`-small: countably many chart domains
+cover it, and each chart domain injects into the model space. -/
+theorem ChartedSpace.small_of_lindelof (H X : Type*) [TopologicalSpace H] [Small.{v} H]
+    [TopologicalSpace X] [ChartedSpace H X] [LindelofSpace X] : Small.{v} X := by
+  obtain ⟨s, hsc, hsU⟩ := LindelofSpace.elim_nhds_subcover (fun x : X ↦ (chartAt H x).source)
+    fun x ↦ chart_source_mem_nhds H x
+  have := hsc.to_subtype
+  -- Read each point in a chart of the countable cover whose domain contains it.
+  choose c hc hxc using fun x : X ↦
+    Set.mem_iUnion₂.1 (hsU.symm ▸ Set.mem_univ x : x ∈ ⋃ y ∈ s, (chartAt H y).source)
+  refine small_of_injective (f := fun x : X ↦ ((⟨c x, hc x⟩ : s), chartAt H (c x) x)) ?_
+  intro x y hxy
+  simp only [Prod.mk.injEq, Subtype.mk.injEq] at hxy
+  obtain ⟨h₁, h₂⟩ := hxy
+  have hy := hxc y
+  rw [← h₁] at hy h₂
+  exact (chartAt H (c x)).injOn (hxc x) hy h₂

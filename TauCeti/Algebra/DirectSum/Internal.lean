@@ -47,9 +47,12 @@ agree as soon as they agree on the homogeneous singles `Finsupp.single x c`,
 `Finsupp.addHom_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
-`DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types, and
-`DirectSum.IsInternal.nat_cons_bot` prepends the zero submodule to a natural-number-indexed
-internal decomposition.
+`DirectSum.IsInternal.comp_equiv` and `DirectSum.Decomposition.compEquiv` reindex one along an
+equivalence of the index types (with `DirectSum.decompose_compEquiv` computing the reindexed
+decomposition), `DirectSum.IsInternal.nat_cons_bot` prepends the zero submodule to a
+natural-number-indexed internal decomposition, and `DirectSum.IsInternal.of_algebraMap_surjective`
+lifts an internal decomposition along a surjective algebra map via
+`Submodule.orderIsoOfAlgebraMapSurjective`.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
 submodule that contains the canonical components of each of its elements,
@@ -63,8 +66,9 @@ terms are equal at every index of that `Finset` (`DirectSum.IsInternal.eq_of_fin
 `DirectSum.support_decompose_nonempty_iff` and `DirectSum.mem_support_decompose_iff` characterize
 nonemptiness and membership in `(DirectSum.decompose ℳ x).support` in terms of nonvanishing of `x`
 and its homogeneous components `(DirectSum.decompose ℳ x i : M)`.
-`DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
-action on a homogeneous element when the scalar and module decompositions are compatible.
+`DirectSum.coe_decompose_smul_add_of_right_mem`, `DirectSum.decompose_smul_eq_zero_of_lt`, and
+`DirectSum.decompose_smul_of_le` compute the components of a scalar action on a homogeneous
+element when the scalar and module decompositions are compatible.
 When the ambient carrier is an additive commutative group, `DirectSum.coe_decompose_neg` shows that
 homogeneous projections commute with negation even when the summand type carries only
 `AddSubmonoidClass` (such as submodules over a semiring), giving closure of each summand under
@@ -502,13 +506,70 @@ theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R 
   rw [← LinearMap.range_eq_top, range_coeLinearMap, iSup_comm]
   simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
 
-/-- An internal direct sum of submodules can be reindexed along an equivalence of the index
-types. -/
-theorem comp_equiv {R M κ κ' : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [DecidableEq κ] [DecidableEq κ'] {A : κ' → Submodule R M} (hA : IsInternal A)
+end DirectSum.IsInternal
+
+namespace DirectSum
+
+/-- Reindexing an internal direct sum along an equivalence of index types commutes with the
+canonical recomposition map `DirectSum.coeAddMonoidHom`. -/
+@[simp]
+theorem coeAddMonoidHom_equivCongrLeft {M S κ κ' : Type*} [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] [DecidableEq κ] [DecidableEq κ']
+    (A : κ' → S) (e : κ ≃ κ') (x : ⨁ k, A k) :
+    DirectSum.coeAddMonoidHom (A ∘ e) (equivCongrLeft e.symm x) =
+      DirectSum.coeAddMonoidHom A x := by
+  have h :
+      (DirectSum.coeAddMonoidHom (A ∘ e)).comp (equivCongrLeft e.symm).toAddMonoidHom =
+        DirectSum.coeAddMonoidHom A := by
+    refine DirectSum.addHom_ext fun k y ↦ ?_
+    obtain ⟨i, rfl⟩ := e.surjective k
+    have heq : equivCongrLeft e.symm (of (fun k ↦ A k) (e i) y) =
+        of (fun i ↦ (A ∘ e) i) i y := by
+      simpa using equivCongrLeft_of (β := fun k ↦ A k) e.symm i y
+    rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, heq,
+      DirectSum.coeAddMonoidHom_of, DirectSum.coeAddMonoidHom_of]
+  exact DFunLike.congr_fun h x
+
+end DirectSum
+
+namespace DirectSum.IsInternal
+
+/-- An internal direct sum can be reindexed along an equivalence of the index types. -/
+theorem comp_equiv {M S κ κ' : Type*} [AddCommMonoid M] [SetLike S M] [AddSubmonoidClass S M]
+    [DecidableEq κ] [DecidableEq κ'] {A : κ' → S} (hA : IsInternal A)
     (e : κ ≃ κ') : IsInternal (A ∘ e) := by
-  convert hA.iSup_fiber e.symm with k
-  simp [Equiv.symm_apply_eq]
+  have hcomp : DirectSum.coeAddMonoidHom (A ∘ e) ∘ equivCongrLeft e.symm =
+      DirectSum.coeAddMonoidHom A :=
+    funext (coeAddMonoidHom_equivCongrLeft A e)
+  have hA' : Function.Bijective (DirectSum.coeAddMonoidHom A) := hA
+  rw [← hcomp] at hA'
+  exact (Function.Bijective.of_comp_iff _ (equivCongrLeft e.symm).bijective).mp hA'
+
+end DirectSum.IsInternal
+
+namespace DirectSum
+
+/-- Transport a `DirectSum.Decomposition` along an equivalence of the index types. -/
+@[instance_reducible]
+noncomputable def Decomposition.compEquiv {M S κ κ' : Type*} [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] [DecidableEq κ] [DecidableEq κ']
+    (A : κ' → S) [Decomposition A] (e : κ ≃ κ') : Decomposition (A ∘ e) :=
+  ((Decomposition.isInternal A).comp_equiv e).chooseDecomposition
+
+/-- Decomposing an element with respect to a reindexed family `A ∘ e` is reindexing its
+`A`-decomposition along `e.symm`. -/
+@[simp]
+theorem decompose_compEquiv {M S κ κ' : Type*} [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] [DecidableEq κ] [DecidableEq κ']
+    (A : κ' → S) [Decomposition A] (e : κ ≃ κ') [Decomposition (A ∘ e)] (x : M) :
+    decompose (A ∘ e) x = equivCongrLeft e.symm (decompose A x) := by
+  apply (decompose (A ∘ e)).symm.injective
+  exact ((decompose (A ∘ e)).left_inv x).trans
+    ((coeAddMonoidHom_equivCongrLeft A e (decompose A x)).trans ((decompose A).left_inv x)).symm
+
+end DirectSum
+
+namespace DirectSum.IsInternal
 
 /-- Transporting an internal direct sum of submodules along a linear equivalence gives an internal
 direct sum. -/
@@ -556,6 +617,19 @@ theorem iSup_inf_eq_of_component_mem
   exact Submodule.sum_mem _ fun i _ ↦
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).property⟩
 
+/-- Lifting an internal direct sum of `R`-submodules along a surjective algebra map `R → S`
+(via `Submodule.orderIsoOfAlgebraMapSurjective`) yields an internal direct sum of
+`S`-submodules. -/
+theorem of_algebraMap_surjective {R S M ι : Type*} [CommRing R] [Ring S] [Algebra R S]
+    [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M] [DecidableEq ι]
+    (hsurj : Function.Surjective (algebraMap R S)) {ℳ : ι → Submodule R M}
+    (hℳ : IsInternal ℳ) :
+    IsInternal fun i ↦ (Submodule.orderIsoOfAlgebraMapSurjective hsurj).symm (ℳ i) := by
+  let e := (Submodule.orderIsoOfAlgebraMapSurjective (R := R) (S := S) (M := M) hsurj).symm
+  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+    (hℳ.submodule_iSupIndep.map_orderIso e) ?_
+  rw [← map_iSup e, hℳ.submodule_iSup_eq_top, map_top]
+
 /-- **Finite sums in an internal direct sum are compared termwise.** If two sums over the same
 `Finset` `s`, each taking its `i`-th term from the `i`-th summand, are equal, then their terms are
 equal at every index in `s`. -/
@@ -602,6 +676,41 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
 end DirectSum
 
 namespace DirectSum
+
+/-- For a `ℤ`-graded module over an `ℕ`-graded semiring, the degree-`d` component of `b • m`
+vanishes whenever `m ∈ ℳ j` and `d < j`. -/
+theorem decompose_smul_eq_zero_of_lt {A B M : Type*} [Semiring A] [Semiring B]
+    [Module A B] (ℬ : ℕ → Submodule A B) [Decomposition ℬ]
+    [AddCommMonoid M] [Module A M] [Module B M] (ℳ : ℤ → Submodule A M)
+    [Decomposition ℳ]
+    (hgraded : ∀ (i : ℕ) (j : ℤ) (b : B), b ∈ ℬ i → ∀ m ∈ ℳ j, b • m ∈ ℳ (j + i))
+    {j d : ℤ} (hdj : d < j) (b : B) {m : M} (hm : m ∈ ℳ j) :
+    (decompose ℳ (b • m) d : M) = 0 := by
+  induction b using Decomposition.inductionOn ℬ with
+  | zero => simp
+  | @homogeneous i b => exact decompose_of_mem_ne ℳ (hgraded i j b b.property m hm) (by omega)
+  | add b₁ b₂ hb₁ hb₂ => simp [add_smul, hb₁, hb₂]
+
+/-- For a `ℤ`-graded module over an `ℕ`-graded semiring, the degree-`d` component of `b • m` for
+`m ∈ ℳ j` with `j ≤ d` equals the degree-`(d - j)` component of `b` acting on `m`. -/
+theorem decompose_smul_of_le {A B M : Type*} [Semiring A] [Semiring B]
+    [Module A B] (ℬ : ℕ → Submodule A B) [Decomposition ℬ]
+    [AddCommMonoid M] [Module A M] [Module B M] (ℳ : ℤ → Submodule A M)
+    [Decomposition ℳ]
+    (hgraded : ∀ (i : ℕ) (j : ℤ) (b : B), b ∈ ℬ i → ∀ m ∈ ℳ j, b • m ∈ ℳ (j + i))
+    {j d : ℤ} (hjd : j ≤ d) (b : B) {m : M} (hm : m ∈ ℳ j) :
+    (decompose ℳ (b • m) d : M) = (decompose ℬ b (d - j).toNat : B) • m := by
+  induction b using Decomposition.inductionOn ℬ with
+  | zero => simp
+  | @homogeneous i b =>
+    have hmem : (b : B) • m ∈ ℳ (j + i) := hgraded i j b b.property m hm
+    by_cases hi : i = (d - j).toNat
+    · subst hi
+      rw [decompose_of_mem_same ℬ b.property]
+      rw [Int.toNat_of_nonneg (sub_nonneg.mpr hjd), add_sub_cancel] at hmem
+      exact decompose_of_mem_same ℳ hmem
+    · rw [decompose_of_mem_ne ℳ hmem (by omega), decompose_of_mem_ne ℬ b.property hi, zero_smul]
+  | add b₁ b₂ hb₁ hb₂ => simp [add_smul, hb₁, hb₂]
 
 section Support
 
