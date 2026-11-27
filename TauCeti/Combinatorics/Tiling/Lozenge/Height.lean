@@ -31,6 +31,7 @@ is a bijection from the height functions vanishing at `0` onto the plane tilings
   height cochain vanishing at `0`.
 * `TauCeti.IsHeightFunction H`: the increments of `H` along `e₁`, `e₂`, `e₃` lie in `{0, 1}`.
 * `TauCeti.tilingOfHeight H`: the set of edges along which the increment of `H` is not neutral.
+* `TauCeti.gorinHeight M`: Gorin's height `x + y − 3 H_M(x, y)`.
 
 ## Main statements
 
@@ -39,13 +40,24 @@ is a bijection from the height functions vanishing at `0` onto the plane tilings
 * `TauCeti.IsTiling.tilingHeight_target_sub_v`, `TauCeti.tilingHeight_zero`,
   `TauCeti.IsTiling.eq_tilingHeight`: `H_M` has the increments of the height cochain, vanishes at
   `0`, and is the only such function.
+* `TauCeti.IsTiling.card_filter_range_eq_tilingHeight_add_nsmul_sub`: the number of edges of
+  direction `e₁` (resp. `e₂`) of a plane tiling on a segment of that direction is the increase of
+  `H_M` along it.
 * `TauCeti.tilingOfHeight_bijOn`: `tilingOfHeight` is a bijection from the height functions
   vanishing at `0` onto the plane tilings, with inverse `tilingHeight`
   (`TauCeti.IsTiling.tilingOfHeight_tilingHeight`,
   `TauCeti.IsHeightFunction.tilingHeight_tilingOfHeight`).
-* `TauCeti.IsTiling.tilingHeight_vadd`: `H_{τ_w M}(v) = H_M(v − w) − H_M(−w)`.
+* `TauCeti.IsTiling.tilingHeight_vadd`: `H_{τ_w M}(v) = H_M(v − w) − H_M(−w)`, and
+  `TauCeti.IsTiling.tilingHeight_add_sub_of_vadd_eq`: if `M` is invariant under the translation
+  by `w`, then `H_M(v + w) − H_M(v) = H_M(w)`.
 * `TauCeti.IsHeightFunction.sub_le_max`, `TauCeti.IsTiling.tilingHeight_sub_le_max`: the Lipschitz
   bound `H(u + (a, b)) − H(u) ≤ max(a, b, 0)`.
+* `TauCeti.IsTiling.tilingHeight_rot`: `H_{ρM}(w) = H_M(ρ⁻¹ w) + w₁`; for height functions,
+  `TauCeti.IsHeightFunction.comp_latticeRot_symm_add_fst` and
+  `TauCeti.tilingOfHeight_comp_latticeRot_symm_add_fst`.
+* `TauCeti.IsTiling.gorinHeight_target_sub_v_of_mem`,
+  `TauCeti.IsTiling.gorinHeight_target_sub_v_of_notMem`: Gorin's height increases by `1` or `−2`
+  along `e₁` and `e₂`, and by `−1` or `2` along `e₃`, according as the edge is off or on `M`.
 
 ## References
 
@@ -146,6 +158,35 @@ theorem tilingHeight_target_sub_v (h : IsTiling Set.univ M) (e : TriEdge) :
     tilingHeight M e.target - tilingHeight M e.v = heightCochain M e :=
   (isCochainPrimitiveOn_univ_iff.1 h.isCochainPrimitiveOn_tilingHeight e).symm
 
+open Classical in
+/-- Along `e₁` and `e₂`, `H_M` increases by `1` on the edges of `M` and by `0` on the others. -/
+theorem tilingHeight_add_latticeDir_sub_of_ne_two (h : IsTiling Set.univ M) (v : ℤ × ℤ)
+    {k : Fin 3} (hk : k ≠ 2) :
+    tilingHeight M (v + latticeDir k) - tilingHeight M v =
+      if (⟨v, k⟩ : TriEdge) ∈ M then 1 else 0 := by
+  have hc : neutralIncrement ⟨v, k⟩ = 0 := by simp [neutralIncrement_def, hk]
+  have := h.tilingHeight_target_sub_v ⟨v, k⟩
+  rw [TriEdge.target_mk] at this
+  split_ifs with hM <;> simp_all
+
+open Classical in
+/-- **Lozenges on a segment**: for `k` the direction `e₁` or `e₂`, the number of edges
+`(v + i e_k, k)` of a plane tiling with `i < n` is `H_M(v + n e_k) − H_M(v)`. -/
+theorem card_filter_range_eq_tilingHeight_add_nsmul_sub (h : IsTiling Set.univ M) (v : ℤ × ℤ)
+    {k : Fin 3} (hk : k ≠ 2) (n : ℕ) :
+    (((Finset.range n).filter fun i : ℕ => (⟨v + i • latticeDir k, k⟩ : TriEdge) ∈ M).card : ℤ) =
+      tilingHeight M (v + n • latticeDir k) - tilingHeight M v := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hstep := h.tilingHeight_add_latticeDir_sub_of_ne_two (v + n • latticeDir k) hk
+    rw [Finset.range_add_one, Finset.filter_insert, succ_nsmul, ← add_assoc]
+    split_ifs at hstep ⊢
+    · rw [Finset.card_insert_of_notMem (by simp)]
+      push_cast
+      omega
+    · omega
+
 /-- **Uniqueness of the height function**: a primitive of the height cochain of a plane tiling
 vanishing at `0` is `H_M`. -/
 theorem eq_tilingHeight (h : IsTiling Set.univ M)
@@ -190,17 +231,17 @@ theorem heightCochain_tilingOfHeight (hH : IsHeightFunction H) (e : TriEdge) :
   by_cases he : e ∈ tilingOfHeight H
   · rw [heightCochain_of_mem he, mem_tilingOfHeight.1 he]
   · rw [heightCochain_of_notMem he]
-    rw [mem_tilingOfHeight] at he
-    rcases hH e with h | h <;> rcases neutralIncrement_eq_zero_or_eq_one e with h' | h' <;>
-      omega
+    exact ((ne_one_sub_neutralIncrement_iff (hH e)).1 he).symm
 
-/-- **The tiling of a height function is a plane tiling**: round every face the increments of `H`
-along the edges of directions `e₁`, `e₂`, `e₃` are `(0, 0, 0)`, `(1, 0, 1)` or `(0, 1, 1)`, and
-exactly one edge is selected. -/
-theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
-    IsTiling Set.univ (tilingOfHeight H) := by
-  rw [isTiling_univ_iff]
-  intro f
+end IsHeightFunction
+
+/-- Round a face along whose three edges the increments of `H` lie in `{0, 1}`, exactly one edge
+has the non-neutral increment: the increments along the edges of directions `e₁`, `e₂`, `e₃` are
+`(0, 0, 0)`, `(1, 0, 1)` or `(0, 1, 1)`. -/
+theorem TriFace.existsUnique_mem_tilingOfHeight_edges (f : TriFace)
+    (hH : ∀ k, H (f.edge k).target - H (f.edge k).v = 0 ∨
+      H (f.edge k).target - H (f.edge k).v = 1) :
+    ∃! e, e ∈ tilingOfHeight H ∧ e ∈ f.edges := by
   rw [TriFace.existsUnique_mem_edges_iff]
   have hcl := isClosedCochainOn_def.1 (isClosedCochainOn_coboundary Set.univ H) f (Set.mem_univ f)
   have hmem : ∀ k, f.edge k ∈ tilingOfHeight H ↔
@@ -208,9 +249,9 @@ theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
     intro k
     rw [mem_tilingOfHeight, f.neutralIncrement_edge]
   simp only [hmem]
-  have h0 := hH (f.edge 0)
-  have h1 := hH (f.edge 1)
-  have h2 := hH (f.edge 2)
+  have h0 := hH 0
+  have h1 := hH 1
+  have h2 := hH 2
   obtain ⟨d, hd⟩ : ∃ d : Fin 3 → ℤ, ∀ k, H (f.edge k).target - H (f.edge k).v = d k :=
     ⟨_, fun _ => rfl⟩
   simp only [hd] at hcl h0 h1 h2 ⊢
@@ -223,6 +264,14 @@ theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
   · exact ⟨1, by simp; omega, fun k hk => huniq 1 (by simp; omega) k hk⟩
   · exact ⟨0, by simp; omega, fun k hk => huniq 0 (by simp; omega) k hk⟩
   · omega
+
+namespace IsHeightFunction
+
+/-- **The tiling of a height function is a plane tiling**: round every face exactly one edge has
+the non-neutral increment (`TriFace.existsUnique_mem_tilingOfHeight_edges`). -/
+theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
+    IsTiling Set.univ (tilingOfHeight H) :=
+  isTiling_univ_iff.2 fun f => f.existsUnique_mem_tilingOfHeight_edges fun _ => hH _
 
 /-- The height function of the tiling of a height function vanishing at `0` is the height
 function itself. -/
@@ -275,6 +324,17 @@ theorem IsTiling.tilingHeight_vadd (h : IsTiling Set.univ M) (w v : ℤ × ℤ) 
     simp only [TriEdge.target_vadd, TriEdge.vadd_v]
     abel_nf
   exact congrFun (hw.eq_tilingHeight hg (by simp)).symm v
+
+/-- **Heights of invariant tilings**: if a plane tiling is invariant under the translation by
+`w`, its height function increases by `H_M(w)` between `v` and `v + w`. -/
+theorem IsTiling.tilingHeight_add_sub_of_vadd_eq (h : IsTiling Set.univ M) {w : ℤ × ℤ}
+    (hw : w +ᵥ M = M) (v : ℤ × ℤ) :
+    tilingHeight M (v + w) - tilingHeight M v = tilingHeight M w := by
+  have hv := h.tilingHeight_vadd w (v + w)
+  have h0 := h.tilingHeight_vadd w w
+  rw [hw, add_sub_cancel_right] at hv
+  rw [hw, sub_self, tilingHeight_zero] at h0
+  omega
 
 /-! ### The Lipschitz bound -/
 
@@ -332,5 +392,76 @@ end IsHeightFunction
 theorem IsTiling.tilingHeight_sub_le_max (h : IsTiling Set.univ M) (u : ℤ × ℤ) (a b : ℤ) :
     tilingHeight M (u + (a, b)) - tilingHeight M u ≤ max a (max b 0) :=
   h.isHeightFunction_tilingHeight.sub_le_max u a b
+
+/-! ### The rotation -/
+
+/-- The increment of `w ↦ H(ρ⁻¹ w) + w₁` along `ρ e` is that of `H` along `e` for `e` of direction
+`e₁`, and its complement `1 − (H(v + e_k) − H(v))` for the other two directions, whose images
+under `ρ` point backwards. -/
+theorem comp_latticeRot_symm_add_fst_target_sub_v (H : ℤ × ℤ → ℤ) (e : TriEdge) :
+    (H (latticeRot.symm (TriEdge.rot e).target) + (TriEdge.rot e).target.1) -
+        (H (latticeRot.symm (TriEdge.rot e).v) + (TriEdge.rot e).v.1) =
+      if e.k = 0 then H e.target - H e.v else 1 - (H e.target - H e.v) := by
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  fin_cases k <;> simp <;> ring_nf
+
+/-- Rotating a height function: if `H` is a height function, so is `w ↦ H(ρ⁻¹ w) + w₁`. -/
+theorem IsHeightFunction.comp_latticeRot_symm_add_fst (hH : IsHeightFunction H) :
+    IsHeightFunction fun w => H (latticeRot.symm w) + w.1 := by
+  intro e'
+  obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e'
+  have hinc := hH e
+  rw [comp_latticeRot_symm_add_fst_target_sub_v]
+  split_ifs <;> omega
+
+/-- The tiling of the rotated function `w ↦ H(ρ⁻¹ w) + w₁` is `ρ` applied to the tiling of `H`. -/
+theorem tilingOfHeight_comp_latticeRot_symm_add_fst (H : ℤ × ℤ → ℤ) :
+    tilingOfHeight (fun w => H (latticeRot.symm w) + w.1) = TriEdge.rot '' tilingOfHeight H := by
+  ext e'
+  obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e'
+  rw [TriEdge.rot.injective.mem_set_image, mem_tilingOfHeight, mem_tilingOfHeight,
+    comp_latticeRot_symm_add_fst_target_sub_v, neutralIncrement_rot]
+  split_ifs <;> omega
+
+/-- **Heights of rotated tilings**: `H_{ρM}(w) = H_M(ρ⁻¹ w) + w₁`. -/
+theorem IsTiling.tilingHeight_rot (h : IsTiling Set.univ M) (w : ℤ × ℤ) :
+    tilingHeight (TriEdge.rot '' M) w = tilingHeight M (latticeRot.symm w) + w.1 := by
+  conv_lhs => rw [← h.tilingOfHeight_tilingHeight, ← tilingOfHeight_comp_latticeRot_symm_add_fst,
+    h.isHeightFunction_tilingHeight.comp_latticeRot_symm_add_fst.tilingHeight_tilingOfHeight
+      (by simp only [map_zero, Prod.fst_zero, add_zero, tilingHeight_zero])]
+
+/-! ### Gorin's height -/
+
+/-- Gorin's height of a set of edges, `x + y − 3 H_M(x, y)`. -/
+noncomputable def gorinHeight (M : Set TriEdge) (v : ℤ × ℤ) : ℤ :=
+  v.1 + v.2 - 3 * tilingHeight M v
+
+theorem gorinHeight_def (M : Set TriEdge) (v : ℤ × ℤ) :
+    gorinHeight M v = v.1 + v.2 - 3 * tilingHeight M v := (rfl)
+
+@[simp] theorem gorinHeight_zero (M : Set TriEdge) : gorinHeight M 0 = 0 := by
+  simp [gorinHeight_def]
+
+/-- **The increments of Gorin's height** on a tile edge of a plane tiling: along `e₁` and `e₂` it
+increases by `−2`, and along `e₃` by `2`. -/
+theorem IsTiling.gorinHeight_target_sub_v_of_mem (h : IsTiling Set.univ M) {e : TriEdge}
+    (he : e ∈ M) :
+    gorinHeight M e.target - gorinHeight M e.v = if e.k = 2 then 2 else -2 := by
+  have hinc := h.tilingHeight_target_sub_v e
+  rw [heightCochain_of_mem he] at hinc
+  simp only [gorinHeight_def]
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  fin_cases k <;> simp at hinc ⊢ <;> omega
+
+/-- **The increments of Gorin's height** off the tile edges of a plane tiling: along `e₁` and `e₂`
+it increases by `1`, and along `e₃` by `−1`. -/
+theorem IsTiling.gorinHeight_target_sub_v_of_notMem (h : IsTiling Set.univ M) {e : TriEdge}
+    (he : e ∉ M) :
+    gorinHeight M e.target - gorinHeight M e.v = if e.k = 2 then -1 else 1 := by
+  have hinc := h.tilingHeight_target_sub_v e
+  rw [heightCochain_of_notMem he] at hinc
+  simp only [gorinHeight_def]
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  fin_cases k <;> simp at hinc ⊢ <;> omega
 
 end TauCeti

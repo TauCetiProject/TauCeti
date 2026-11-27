@@ -42,7 +42,11 @@ along `A` (`TauCeti.FiniteRankBundleCore.GluingData.isRealAlong_glue_pullback`).
   is isomorphic, by a real `C^n` isomorphism commuting with conjugation over the boundary, to a
   bundle pair with real `C^n` transitions whose doubled bundle has real `C^n` transitions.
 
-Not treated here: independence of the doubled bundle of the choices made, up to isomorphism.
+The isomorphism `G ≅ C` commutes with conjugation over the boundary, so it doubles to an
+isomorphism of the doubled bundle of `G` with the topological double of `C`, compatibly with the
+lifted involutions (`TauCeti.FiniteRankBundleCore.doubleAlongIso`). Up to isomorphism the doubled
+bundle is therefore independent of the choices made here, and so is the Maslov index
+(`TauCeti.FiniteRankBundleCore.maslovIndex_eq_of_iso`).
 
 ## References
 

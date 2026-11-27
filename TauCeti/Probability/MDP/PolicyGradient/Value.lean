@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Stochastic
 public import TauCeti.Probability.MDP.Basic
 import TauCeti.Algebra.Ring.Invertible
+import TauCeti.Analysis.Matrix.Stochastic
 import TauCeti.Probability.ProbabilityMassFunction.Finite
 
 /-!
@@ -35,7 +36,8 @@ This gives the identities used to study policy gradients.
 
 ## Main results
 
-* `MDP.policyValue_eq_meanReward_add`: the evaluation equation `V^π = r^π + γ P^π V^π`, and
+* `MDP.policyValue_eq_meanReward_add`: the evaluation equation `V^π = r^π + γ P^π V^π`,
+  `MDP.hasSum_policyValue`: its Neumann series `V^π = ∑ₖ γ ^ k (P^π) ^ k r^π`, and
   `MDP.sum_mul_advantage_eq_zero`: the advantage has `π`-mean zero at every state.
 * `MDP.visitation_nonneg`, `MDP.sum_visitation`, `MDP.smul_le_visitation`: for `μ ≥ 0` the
   visitation vector is nonnegative, has total mass `∑ s, μ s` (for every `μ`), and dominates
@@ -192,6 +194,24 @@ theorem policyValue_eq_meanReward_add (hγ : γ < 1) (hπ : IsPolicy π) :
   conv_lhs =>
     rw [policyValue_def, Ring.inverse_one_sub_eq (isUnit_one_sub_smul_transMatrix hγ hπ)]
   rw [add_mulVec, one_mulVec, smul_mul_assoc, smul_mulVec, ← mulVec_mulVec, ← policyValue_def]
+
+/-- At a policy and for `γ < 1`, the value is the sum of the discounted mean rewards after `k`
+steps, the Neumann series `V^π = ∑ₖ γ ^ k (P^π) ^ k r^π`. -/
+theorem hasSum_policyValue (hγ : γ < 1) (hπ : IsPolicy π) :
+    HasSum (fun k ↦ (γ : ℝ) ^ k • (M.transMatrix π ^ k *ᵥ M.meanReward π))
+      (M.policyValue γ π) := by
+  have hγ' : |(γ : ℝ)| < 1 := by
+    rw [abs_of_nonneg γ.coe_nonneg]
+    exact_mod_cast hγ
+  have h := (hasSum_pow_smul_of_mem_rowStochastic
+    (transMatrix_mem_rowStochastic (M := M) hπ) hγ').map (mulVec.addMonoidHomLeft (M.meanReward π))
+    (continuous_id.matrix_mulVec continuous_const)
+  rw [policyValue_def]
+  convert h using 1
+  · ext k s
+    simp only [Function.comp_apply, mulVec.addMonoidHomLeft_apply, smul_pow, smul_mulVec]
+  · ext s
+    simp only [mulVec.addMonoidHomLeft_apply]
 
 /-- At a policy and for `γ < 1`, the `π`-mean of the Q-function is the value. -/
 theorem sum_mul_policyQ_eq_policyValue (hγ : γ < 1) (hπ : IsPolicy π) (s : S) :
