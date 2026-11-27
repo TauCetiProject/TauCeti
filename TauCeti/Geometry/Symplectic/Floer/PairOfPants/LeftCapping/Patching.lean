@@ -73,6 +73,10 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- The capped surface `ℂ ∖ {1}`, in real coordinates. -/
 private def cappedDomain : Set (ℝ × ℝ) := {z | Complex.equivRealProdCLM.symm z ≠ 1}
 
+private theorem mem_cappedDomain {z : ℝ × ℝ} :
+    z ∈ cappedDomain ↔ Complex.equivRealProdCLM.symm z ≠ 1 :=
+  Iff.rfl
+
 private theorem isOpen_cappedDomain : IsOpen cappedDomain :=
   isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
 
@@ -131,10 +135,7 @@ private theorem cappedEndCoord_true_le_iff {r : ℝ} {z : ℝ × ℝ} (hz : z �
 /-- A point lies beyond the height `0` on at most one end of the capped surface. -/
 private theorem cappedEndCoord_nonpos_of_ne (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {e e' : Bool}
     (hee' : e ≠ e') {z : ℝ × ℝ} (h : 0 < cappedEndCoord c e z) : cappedEndCoord c e' z ≤ 0 := by
-  have hc : ‖(1 : ℂ) - c‖ ≤ 1 := by
-    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_of_nonneg
-      (by linarith)]
-    linarith
+  have hc := norm_one_sub_ofReal_le_one hc₀ hc₁
   cases e <;> cases e' <;> simp only [ne_eq, not_true_eq_false] at hee'
   · -- Beyond `0` on the output end, `‖w - c‖ > 2`, so `‖w - 1‖ > 1`.
     have h₁ := two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub h
@@ -443,7 +444,7 @@ private theorem continuous_sobolevDensity_covectorPullback_cappedEndChart
 private theorem exists_forall_cappedEndCoord_le {K : Set (ℝ × ℝ)} (hK : IsCompact K)
     (hKU : K ⊆ cappedDomain) (e : Bool) : ∃ N, ∀ z ∈ K, cappedEndCoord c e z ≤ N := by
   cases e
-  · exact exists_forall_fst_positiveEndCoord_inf_sub_le hK
+  · simpa only [cappedEndCoord] using exists_forall_fst_positiveEndCoord_inf_sub_le hK
   · obtain ⟨N, hN⟩ := hK.exists_bound_of_continuousOn (f := cappedEndCoord c true)
       fun z hz ↦ (contDiffAt_cappedEndCoord_true (hKU hz) (n := 0)).continuousAt.continuousWithinAt
     exact ⟨N, fun z hz ↦ (Real.le_norm_self _).trans (hN z hz)⟩
@@ -530,27 +531,13 @@ private theorem setIntegral_sobolevDensity_covectorPullback_le_of_cappedEndCutof
           exact ⟨hzU, hRe.trans_le hzR⟩
     _ ≤ _ := (mul_le_mul_of_nonneg_right (le_max_left _ _) hD₀).trans
         (mul_le_mul_of_nonneg_left
-          (ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le_of_isOpen
+          (ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
           isOpen_cappedDomain hJ hKs hKt hu (isCompact_cappedCore c (R₀ + 1))
           (fun z hz ↦ contDiffAt_cappedEndCutoff (by linarith) e hz)
           (fun z _ ↦ abs_le.2 ⟨by linarith [cappedEndCutoff_nonneg (c := c) R₀ e z],
             cappedEndCutoff_le_one R₀ e z⟩)
           (fun z hz ↦ mem_cappedCore_of_fderiv_cappedEndCutoff_ne_zero hc₀ hc₁ (by linarith) hz)
-          hM hB hw hwc hΛ₀ hΛ hη hηc hηU) (le_max_right _ _))
-
-/-- A weight `w ≥ 0` that is continuous and positive on the capped surface is bounded above and
-below on the core `Σ_T`: both `w` and `w⁻¹` are at most some `Λ` there. -/
-private theorem exists_forall_le_and_inv_le_capped {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z)
-    (hwc : ContinuousOn w cappedDomain) (hwS : ∀ z ∈ cappedDomain, 0 < w z) (T : ℝ) :
-    ∃ Λ, 0 ≤ Λ ∧ ∀ z ∈ cappedCore c T, w z ≤ Λ ∧ (w z)⁻¹ ≤ Λ := by
-  have hKU := cappedCore_subset c T
-  obtain ⟨Λ, hΛ⟩ := (isCompact_cappedCore c T).exists_bound_of_continuousOn
-    ((hwc.add (hwc.inv₀ fun z hz ↦ (hwS z hz).ne')).mono hKU)
-  refine ⟨max Λ 0, le_max_right _ _, fun z hz ↦ ?_⟩
-  have h : w z + (w z)⁻¹ ≤ max Λ 0 :=
-    (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left Λ 0))
-  have h₀ := hw z
-  exact ⟨by linarith [inv_nonneg.2 h₀], by linarith⟩
+          hM hB hw hwc hΛ₀ hΛ (hη.of_le one_le_two) hηc hηU) (le_max_right _ _))
 
 /-- **The core estimate of the adjoint.** If `D^*` satisfies the `L²` estimate `hint` on covector
 fields supported in `K = Σ_{R₀ + 1}`, and the weight `w`, positive on the capped surface,
@@ -659,7 +646,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_capped_aux
   obtain ⟨M, hMe, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun e z hz ↦ contDiffAt_cappedEndCutoff (by linarith) e (hKU hz))
     fun z hz ↦ fderiv_cappedCoreCutoff (by linarith) (hKU hz)
-  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_inv_le_capped (c := c) hw hwc hwS (R₀ + 1)
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_inv_le hK (hwc.mono hKU) fun z hz ↦ hwS z (hKU hz)
   -- The estimate on the compact core.
   obtain ⟨C₀, hC₀, hint⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK
@@ -684,12 +671,12 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_capped_aux
     (ω.setIntegral_sobolevDensity_le_of_cappedCoreCutoff hc₀ hc₁ (J := J') hJ hKs hKt hu hR₀ hC₀
       hint hw hwc hwS hΛ₀ (fun z hz ↦ (hΛ z hz).2) hη hηU).trans (by
       gcongr
-      exact ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le_of_isOpen
+      exact ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
         (J := J') isOpen_cappedDomain hJ hKs hKt hu hK
         (fun z hz ↦ contDiffAt_cappedCoreCutoff (by linarith) hz)
         (fun z _ ↦ abs_cappedCoreCutoff_le_one hc₀ hc₁ (by linarith) z)
         (fun z hz ↦ mem_cappedCore_of_fderiv_cappedCoreCutoff_ne_zero hc₀ hc₁ (by linarith) hz)
-        hMc hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) hη hηc hηU)
+        hMc hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) (hη.of_le one_le_two) hηc hηU)
   -- Summing the pieces.
   refine (add_le_add (Finset.sum_le_sum fun e (_ : e ∈ Finset.univ) ↦ hends e) hcore).trans ?_
   rw [← Finset.sum_mul]
@@ -759,7 +746,9 @@ theorem
           ∫ z in {z | Real.exp (-(2 * π * (T + 1))) / 2 ≤ ‖Complex.equivRealProdCLM.symm z - 1‖ ∧
             ‖Complex.equivRealProdCLM.symm z - c‖ ≤ 2 * Real.exp (2 * π * (T + 1))},
             ‖η z‖ ^ 2) := by
-  -- Index the ends by `Bool`, with `true` the input end at `1`.
+  -- Index the ends by `Bool`, with `true` the input end at `1`. Membership in `cappedDomain` is
+  -- by definition `Complex.equivRealProdCLM.symm z ≠ 1` (`mem_cappedDomain`), so the hypotheses
+  -- on the capped surface apply as stated.
   let Ce : Bool → ℝ := fun e ↦ if e then Cin else Cout
   let Re : Bool → ℝ := fun e ↦ if e then Rin else Rout
   have hend (e : Bool) ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄ (hη : ContDiff ℝ 2 η)
@@ -770,8 +759,11 @@ theorem
         Ce e * ∫ z, w z * ‖ω.floerLinearizationAdjoint
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 := by
     cases e
-    · exact hendOut hη hηc hηR
-    · exact hendIn hη hηc hηR
+    · simpa only [Ce, cappedEndChart, Bool.false_eq_true, ↓reduceIte] using hendOut hη hηc
+        (by simpa only [Re, mem_cappedDomain, cappedEndCoord, Bool.false_eq_true, ↓reduceIte]
+          using hηR)
+    · simpa only [Ce, cappedEndChart, ↓reduceIte] using hendIn hη hηc
+        (by simpa only [Re, mem_cappedDomain, cappedEndCoord, ↓reduceIte] using hηR)
   obtain ⟨C', hC', T, hT, hest⟩ := exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
     (K := cappedCore c) (isCompact_cappedCore c) (cappedCore_mono c) (r := 1)
     (S := cappedDomain) (R := Re)
@@ -780,8 +772,6 @@ theorem
       ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_capped_aux hc₀ hc₁ hJ hKs hKt hu hc
         hw hwc hwS hend hR₀ hR
   refine ⟨C', hC', T, hT, fun η hη hηc hηU ↦ ?_⟩
-  have h := hest hη hηc hηU
-  rw [Fintype.sum_bool] at h
-  exact h
+  simpa only [Fintype.sum_bool, cappedEndChart, cappedCore] using hest hη hηc hηU
 
 end TauCeti.SymplecticForm

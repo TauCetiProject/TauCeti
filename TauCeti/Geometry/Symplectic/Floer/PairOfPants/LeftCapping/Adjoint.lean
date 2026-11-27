@@ -78,9 +78,9 @@ private theorem equivRealProdCLM_symm_positiveEndChart_inf_add_ne_one (hc₀ : 0
   intro h1
   rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero] at h1
   have hn := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
-  rw [Prod.mk.eta, eq_sub_of_add_eq h1, ← Complex.ofReal_one, ← Complex.ofReal_sub,
-    Complex.norm_real, Real.norm_of_nonneg (by linarith)] at hn
-  linarith [Real.one_lt_exp_iff.2 (by positivity : 0 < 2 * π * ζ.1)]
+  rw [Prod.mk.eta, eq_sub_of_add_eq h1] at hn
+  linarith [norm_one_sub_ofReal_le_one hc₀ hc₁,
+    Real.one_lt_exp_iff.2 (by positivity : 0 < 2 * π * ζ.1)]
 
 /-- Beyond the height `0` of the input end, a point of the capped surface lies in the pair of
 pants `S = ℂ ∖ {0, 1}`. -/
@@ -146,10 +146,7 @@ private theorem norm_sub_sq_le_inv_cappedCylindricalWeight (hc₀ : 0 ≤ c) (hc
   set v := Complex.equivRealProdCLM.symm z
   have hd : 2 < ‖v - c‖ := two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub h
   have hc : ‖(c : ℂ)‖ ≤ 1 := by rw [Complex.norm_real, Real.norm_of_nonneg hc₀]; exact hc₁
-  have h1c : ‖(1 : ℂ) - c‖ ≤ 1 := by
-    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
-      Real.norm_of_nonneg (by linarith)]
-    linarith
+  have h1c := norm_one_sub_ofReal_le_one hc₀ hc₁
   -- Both `|w|` and `|w - 1|` are at least `|w - c| / 2`.
   have hv : ‖v - c‖ / 2 ≤ ‖v‖ := by linarith [norm_sub_le v (c : ℂ)]
   have hv1 : ‖v - c‖ / 2 ≤ ‖v - 1‖ := by

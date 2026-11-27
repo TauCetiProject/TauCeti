@@ -647,43 +647,6 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
 
 /-! ### The formal adjoint -/
 
-/-- **The weighted `L²` norm of the formal adjoint on a cut-off covector field.** Let `f` be smooth
-on `S` with `|f| ≤ 1`, with derivative supported in a compact set `K ⊆ S` and bounded by `M`
-there, let `‖J‖ ≤ B` along `u` and let the weight `w ≥ 0`, continuous on `S`, satisfy `w ≤ Λ` on
-`K`. Then for a `C²` covector field `η` with compact support in `S`,
-`∫ w ‖D^* (f η)‖² ≤ 2 ∫ w ‖D^* η‖² + 2 (M (1 + B))² Λ ∫_K ‖η‖²`. -/
-private theorem integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
-    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {K : Set (ℝ × ℝ)}
-    (hK : IsCompact K) {f : ℝ × ℝ → ℝ}
-    (hf : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 f z) (hf₁ : ∀ z, |f z| ≤ 1)
-    (hfK : ∀ z ∈ thricePuncturedSphereReal, fderiv ℝ f z ≠ 0 → z ∈ K) {M B Λ : ℝ}
-    (hM : ∀ z ∈ K, ‖fderiv ℝ f z‖ ≤ M) (hB : ∀ z ∈ K, ‖J z (u z)‖ ≤ B) {w : ℝ × ℝ → ℝ}
-    (hw : ∀ z, 0 ≤ w z) (hwc : ContinuousOn w thricePuncturedSphereReal) (hΛ₀ : 0 ≤ Λ)
-    (hΛ : ∀ z ∈ K, w z ≤ Λ) {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
-    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
-    ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ^ 2 ≤
-      2 * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
-        2 * (M * (1 + B)) ^ 2 * Λ * ∫ z in K, ‖η z‖ ^ 2 := by
-  refine integral_mul_norm_fun_smul_sq_le (D := ω.floerLinearizationAdjoint J Ks Kt u)
-    (b := fun z ↦ ‖J z (u z)‖) hw hK hfK hM hB
-    hΛ₀ hΛ hη.continuous (fun z hzS _ _ hM' hB' ↦ ?_)
-    (fun z hzS ↦ floerLinearizationAdjoint_of_notMem_tsupport fun h ↦
-      hzS (hηS (tsupport_smul_subset_right _ _ h)))
-    (ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal hJ hKs hKt
-      hu hwc (hη.of_le one_le_two) subset_rfl hηc hηS)
-    (ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal hJ hKs hKt
-      hu hwc ((contDiff_smul_of_tsupport_subset hf hη hηS).of_le one_le_two)
-      (tsupport_smul_subset_right _ _) hηc hηS)
-  exact ω.norm_floerLinearizationAdjoint_fun_smul_sq_le (Ks := Ks) (Kt := Kt)
-    ((hf z hzS).differentiableAt two_ne_zero) (hη.differentiable two_ne_zero z)
-    (((hJ z hzS).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
-      (differentiableAt_id.prodMk ((hu z hzS).differentiableAt one_ne_zero))) (hf₁ z) hM' hB'
-
 /-- **The end estimate of the adjoint on a cut-off covector field.** If `D^*` controls the energy
 of the pulled-back form, in the positive end chart of `q`, of covector fields supported in the part
 `±s > R_q` of the end, against a weight `w`, then for `R_q < R₀` the energy of a covector field
@@ -720,27 +683,11 @@ private theorem setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff (ω 
       integrableOn_sobolevDensity_covectorPullback_positiveEndChart hJ hu hθ hθc hθS q 0)
     hRq (A := univ) (fun _ h₁ h₂ h₃ ↦ hend h₁ h₂ fun _ hz ↦ ⟨(h₃ hz).1, (h₃ hz).2.2⟩) hη hηc hηS
     (subset_univ _) (integral_nonneg fun z ↦ by have := hw z; positivity)
-    (ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
+    (ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le isOpen_thricePuncturedSphereReal
       hJ hKs hKt hu (isCompact_preimage_truncation _) (fun z hz ↦ contDiffAt_endCutoff R₀ q hz)
-      (fun z ↦ abs_le.2 ⟨by linarith [endCutoff_nonneg R₀ q z], endCutoff_le_one R₀ q z⟩)
+      (fun z _ ↦ abs_le.2 ⟨by linarith [endCutoff_nonneg R₀ q z], endCutoff_le_one R₀ q z⟩)
       (fun z hz ↦ mem_preimage_truncation_of_fderiv_endCutoff_ne_zero hR₀ hz) hM hB hw hwc hΛ₀
-      hΛ hη hηc hηS)
-
-/-- A weight `w ≥ 0` that is continuous and positive on `S` is bounded above and below on the
-truncation `S_{R₀ + 1}`: both `w` and `w⁻¹` are at most some `Λ` there. -/
-private theorem exists_forall_le_and_inv_le {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z)
-    (hwc : ContinuousOn w thricePuncturedSphereReal)
-    (hwS : ∀ z ∈ thricePuncturedSphereReal, 0 < w z) (R₀ : ℝ) :
-    ∃ Λ, 0 ≤ Λ ∧ ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
-      w z ≤ Λ ∧ (w z)⁻¹ ≤ Λ := by
-  have hKS := preimage_truncation_subset_thricePuncturedSphereReal (R₀ + 1)
-  obtain ⟨Λ, hΛ⟩ := (isCompact_preimage_truncation (R₀ + 1)).exists_bound_of_continuousOn
-    ((hwc.add (hwc.inv₀ fun z hz ↦ (hwS z hz).ne')).mono hKS)
-  refine ⟨max Λ 0, le_max_right _ _, fun z hz ↦ ?_⟩
-  have h : w z + (w z)⁻¹ ≤ max Λ 0 :=
-    (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left Λ 0))
-  have h₀ := hw z
-  exact ⟨by linarith [inv_nonneg.2 h₀], by linarith⟩
+      hΛ (hη.of_le one_le_two) hηc hηS)
 
 /-- **The core estimate of the adjoint.** If `D^*` satisfies the `L²` estimate `hint` on covector
 fields supported in `K = S_{R₀ + 1}`, and the weight `w`, positive on `S`, satisfies `w⁻¹ ≤ Λ` on
@@ -843,7 +790,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
       (hu z (hKS hz)).continuousAt).continuousWithinAt
   obtain ⟨M, hMq, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun q z hz ↦ contDiffAt_endCutoff R₀ q (hKS hz)) fun z hz ↦ fderiv_coreCutoff R₀ (hKS hz)
-  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_inv_le hw hwc hwS R₀
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_inv_le hK (hwc.mono hKS) fun z hz ↦ hwS z (hKS hz)
   -- The estimate on the compact core `K`.
   obtain ⟨C₀, hC₀, hint⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK
@@ -869,10 +816,10 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
     (by linarith) hC₀ hint hw hwc hwS hΛ₀ (fun z hz ↦ (hΛ z hz).2) hη hηS).trans (by
       gcongr
       exact ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
-        (J := J') hJ hKs hKt hu hK (fun z hz ↦ contDiffAt_coreCutoff R₀ hz)
-        (abs_coreCutoff_le_one (by linarith))
+        (J := J') isOpen_thricePuncturedSphereReal hJ hKs hKt hu hK
+        (fun z hz ↦ contDiffAt_coreCutoff R₀ hz) (fun z _ ↦ abs_coreCutoff_le_one (by linarith) z)
         (fun z hz ↦ mem_preimage_truncation_of_fderiv_coreCutoff_ne_zero (by linarith) hz) hMc
-        hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) hη hηc hηS)
+        hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) (hη.of_le one_le_two) hηc hηS)
   -- Summing the pieces.
   refine (add_le_add (Finset.sum_le_sum fun q (_ : q ∈ Finset.univ) ↦ hends q) hcore).trans ?_
   rw [← Finset.sum_mul]
