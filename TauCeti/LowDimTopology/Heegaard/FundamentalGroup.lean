@@ -69,9 +69,11 @@ surjectivity from `π₁(Hᵢ)`.
 * `TauCeti.HeegaardSplitting.rank_fundamentalGroup_le_genus`: its rank is at most the genus of the
   splitting.
 * `TauCeti.rank_fundamentalGroup_le_heegaardGenus`: its rank is at most the Heegaard genus.
-* `TauCeti.HeegaardSplitting.isPathConnected_left_inter_right` and
-  `TauCeti.HeegaardSplitting.pathConnectedSpace`: the Heegaard surface and the manifold are path
-  connected.
+* `TauCeti.HeegaardSplitting.pathConnectedSpace_left`,
+  `TauCeti.HeegaardSplitting.pathConnectedSpace_right`,
+  `TauCeti.HeegaardSplitting.isPathConnected_left_inter_right` and
+  `TauCeti.HeegaardSplitting.pathConnectedSpace`: the two handlebodies, the Heegaard surface and
+  the manifold are path connected.
 * `TauCeti.HeegaardSplitting.fundamentalGroup_map_inclusion_inter_left_surjective` and
   `TauCeti.HeegaardSplitting.fundamentalGroup_map_inclusion_inter_right_surjective`: the Heegaard
   surface carries the fundamental group of either handlebody.
@@ -160,37 +162,6 @@ theorem fundamentalGroup_map_inclusion_inter_right_surjective (hE : finrank ℝ 
   exact fundamentalGroup_map_inclusion_frontier_surjective inter_subset_right eR
     (fun p ↦ (and_iff_left p.property).trans (s.coe_mem_left_iff hE eR p)) x
 
-
-/-- **The Heegaard surface is path connected.** For a Heegaard splitting of a manifold without
-boundary charted on a three-dimensional real normed space, the Heegaard surface `H₁ ∩ H₂` is path
-connected: it corresponds to the boundary surface of the standard handlebody. -/
-theorem isPathConnected_left_inter_right (hE : finrank ℝ E = 3) :
-    IsPathConnected (s.left ∩ s.right) := by
-  obtain ⟨eL⟩ := s.nonempty_homeomorph_left
-  have h : s.left ∩ s.right =
-      (↑) '' (eL.symm '' ((↑) ⁻¹' frontier (handlebody s.genus))) := by
-    ext p
-    constructor
-    · rintro ⟨hpL, hpR⟩
-      exact ⟨⟨p, hpL⟩, ⟨eL ⟨p, hpL⟩, (s.coe_mem_right_iff hE eL ⟨p, hpL⟩).1 hpR, by simp⟩, rfl⟩
-    · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-      exact ⟨(eL.symm y).property, (s.coe_mem_right_iff hE eL _).2 (by simpa using hy)⟩
-  rw [h]
-  exact (((isPathConnected_frontier_handlebody s.genus).preimage_coe
-    (isClosed_handlebody s.genus).frontier_subset).image eL.symm.continuous).image
-    continuous_subtypeVal
-
-include s in
-/-- **A Heegaard-split manifold is path connected.** This holds for a manifold without boundary
-charted on a three-dimensional real normed space: the two handlebodies are path connected and
-meet in the Heegaard surface. -/
-theorem pathConnectedSpace (hE : finrank ℝ E = 3) : PathConnectedSpace M := by
-  have hL : IsPathConnected s.left := isPathConnected_iff_pathConnectedSpace.2
-    s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
-  have hR : IsPathConnected s.right := isPathConnected_iff_pathConnectedSpace.2
-    s.nonempty_homeomorph_right.some.symm.toHomotopyEquiv.pathConnectedSpace
-  rw [pathConnectedSpace_iff_univ, ← s.union_eq_univ]
-  exact hL.union hR (s.isPathConnected_left_inter_right hE).nonempty
 
 /-! ### Deforming collars of the Heegaard surface -/
 
@@ -332,6 +303,46 @@ private theorem fundamentalGroup_map_inclusion_bijective_of_homotopyEquiv {S T :
     Function.Bijective (FundamentalGroup.map (ContinuousMap.inclusion hST) y) :=
   he ▸ e.fundamentalGroup_map_bijective y
 
+/-! ### Path connectedness -/
+
+/-- The first handlebody of a Heegaard splitting is path connected, being homeomorphic to the
+standard handlebody. -/
+theorem pathConnectedSpace_left : PathConnectedSpace s.left :=
+  s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
+
+/-- The second handlebody of a Heegaard splitting is path connected, being homeomorphic to the
+standard handlebody. -/
+theorem pathConnectedSpace_right : PathConnectedSpace s.right :=
+  s.nonempty_homeomorph_right.some.symm.toHomotopyEquiv.pathConnectedSpace
+
+/-- **The Heegaard surface is path connected.** For a Heegaard splitting of a manifold without
+boundary charted on a three-dimensional real normed space, the Heegaard surface `H₁ ∩ H₂` is path
+connected: it corresponds to the boundary surface of the standard handlebody. -/
+theorem isPathConnected_left_inter_right (hE : finrank ℝ E = 3) :
+    IsPathConnected (s.left ∩ s.right) := by
+  obtain ⟨eL⟩ := s.nonempty_homeomorph_left
+  have h : s.left ∩ s.right = (↑) '' (eL ⁻¹' ((↑) ⁻¹' frontier (handlebody s.genus))) := by
+    ext p
+    constructor
+    · rintro ⟨hpL, hpR⟩
+      exact ⟨⟨p, hpL⟩, (s.coe_mem_right_iff hE eL ⟨p, hpL⟩).1 hpR, rfl⟩
+    · rintro ⟨q, hq, rfl⟩
+      exact ⟨q.property, (s.coe_mem_right_iff hE eL q).2 hq⟩
+  rw [h]
+  exact isPathConnected_image_preimage eL
+    ((isPathConnected_frontier_handlebody s.genus).preimage_coe
+      (isClosed_handlebody s.genus).frontier_subset)
+
+include s in
+/-- **A Heegaard-split manifold is path connected.** This holds for a manifold without boundary
+charted on a three-dimensional real normed space: the two handlebodies are path connected and
+meet in the Heegaard surface. -/
+theorem pathConnectedSpace (hE : finrank ℝ E = 3) : PathConnectedSpace M := by
+  rw [pathConnectedSpace_iff_univ, ← s.union_eq_univ]
+  exact (isPathConnected_iff_pathConnectedSpace.2 s.pathConnectedSpace_left).union
+    (isPathConnected_iff_pathConnectedSpace.2 s.pathConnectedSpace_right)
+    (s.isPathConnected_left_inter_right hE).nonempty
+
 /-! ### The fundamental group as an amalgamated product -/
 
 /-- **The thickened Heegaard surface deformation retracts onto it.** Let `F` deform an open
@@ -454,8 +465,8 @@ theorem isPushout_fundamentalGroup (hE : finrank ℝ E = 3) {x : M} (hxL : x ∈
       ((inter_comm s.left s.right).subset.trans
         (inter_subset_image eR (s.coe_mem_left_iff hE eR) hSV))).ge.trans
       (union_subset_union_right _ (interior_mono subset_union_left))
-  have : PathConnectedSpace s.left := eL.symm.toHomotopyEquiv.pathConnectedSpace
-  have : PathConnectedSpace s.right := eR.symm.toHomotopyEquiv.pathConnectedSpace
+  have := s.pathConnectedSpace_left
+  have := s.pathConnectedSpace_right
   have hvk := TauCeti.isPushout_fundamentalGroup hcover
     (isPathConnected_iff_pathConnectedSpace.2 eA.pathConnectedSpace)
     (isPathConnected_iff_pathConnectedSpace.2 eB.pathConnectedSpace)
@@ -538,8 +549,7 @@ theorem fundamentalGroup_map_left_surjective (hE : finrank ℝ E = 3) (x : s.lef
   -- There, loops in the manifold come from the Heegaard surface, hence from the first handlebody.
   have h := s.fundamentalGroup_map_inter_surjective hE hyL (eR.symm y).property
   rw [← s.fundamentalGroup_map_subtypeVal_comp_inclusion_inter_left hyL (eR.symm y).property] at h
-  have : PathConnectedSpace s.left :=
-    s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
+  have := s.pathConnectedSpace_left
   exact FundamentalGroup.map_surjective_of_path _ (PathConnectedSpace.somePath ⟨_, hyL⟩ x)
     (Function.Surjective.of_comp h)
 

@@ -29,6 +29,8 @@ The statement is the abelianization of the presentation of `π₁(M, x)` as the 
 (`TauCeti.HeegaardSplitting.fundamentalGroup_map_inter_surjective`,
 `TauCeti.HeegaardSplitting.ker_fundamentalGroup_map_inter`). All four spaces are path connected
 (`TauCeti.HeegaardSplitting.isPathConnected_left_inter_right`,
+`TauCeti.HeegaardSplitting.pathConnectedSpace_left`,
+`TauCeti.HeegaardSplitting.pathConnectedSpace_right`,
 `TauCeti.HeegaardSplitting.pathConnectedSpace`), and all three maps out of `π₁(Σ, x)` are
 surjective, so the degree-one Hurewicz theorem turns each statement about fundamental groups into
 the corresponding one about first homology
@@ -73,15 +75,6 @@ variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [To
 
 variable (R : Type u) [Ring R]
 
-/-- The Heegaard surface and the two handlebodies of a splitting are path connected: the inputs of
-the Hurewicz comparison besides the path connectedness of the manifold. -/
-private theorem pathConnectedSpace_inter_left_right (hE : finrank ℝ E = 3) :
-    PathConnectedSpace ↥(s.left ∩ s.right) ∧ PathConnectedSpace s.left ∧
-      PathConnectedSpace s.right :=
-  ⟨isPathConnected_iff_pathConnectedSpace.1 (s.isPathConnected_left_inter_right hE),
-    s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace,
-    s.nonempty_homeomorph_right.some.symm.toHomotopyEquiv.pathConnectedSpace⟩
-
 /-- **The Heegaard surface carries the first homology of the manifold.** For a Heegaard splitting
 of a manifold without boundary charted on a three-dimensional real normed space, the inclusion of
 the Heegaard surface `H₁ ∩ H₂` induces a surjection on first singular homology with integer
@@ -89,21 +82,23 @@ coefficients, read through a ring `R ≃+* ℤ`. -/
 theorem singularHomologyMap_subtypeVal_inter_surjective (hE : finrank ℝ E = 3) (e : R ≃+* ℤ) :
     Function.Surjective (singularHomologyMap R 1 (subtypeVal (s.left ∩ s.right))) := by
   obtain ⟨x, hxL, hxR⟩ := (s.isPathConnected_left_inter_right hE).nonempty
-  obtain ⟨_, -, -⟩ := s.pathConnectedSpace_inter_left_right hE
+  have := isPathConnected_iff_pathConnectedSpace.1 (s.isPathConnected_left_inter_right hE)
   have := s.pathConnectedSpace hE
   exact singularHomologyMap_one_surjective e _ (s.fundamentalGroup_map_inter_surjective hE hxL hxR)
 
-/-- **The first homology of a Heegaard-split manifold is a quotient of that of the Heegaard
-surface.** For a Heegaard splitting of a manifold without boundary charted on a three-dimensional
-real normed space, a first homology class of the Heegaard surface `H₁ ∩ H₂`, with integer
-coefficients read through a ring `R ≃+* ℤ`, vanishes in the manifold exactly when it is the sum of
-a class vanishing in the first handlebody and a class vanishing in the second. -/
+/-- **The kernel of the Heegaard surface on first homology.** For a Heegaard splitting of a
+manifold without boundary charted on a three-dimensional real normed space, a first homology class
+of the Heegaard surface `H₁ ∩ H₂`, with integer coefficients read through a ring `R ≃+* ℤ`,
+vanishes in the manifold exactly when it is the sum of a class vanishing in the first handlebody
+and a class vanishing in the second. -/
 theorem ker_singularHomologyMap_subtypeVal_inter (hE : finrank ℝ E = 3) (e : R ≃+* ℤ) :
     LinearMap.ker (singularHomologyMap R 1 (subtypeVal (s.left ∩ s.right))) =
       LinearMap.ker (singularHomologyMap R 1 (inclusion (inter_subset_left (s := s.left)))) ⊔
         LinearMap.ker (singularHomologyMap R 1 (inclusion (inter_subset_right (s := s.left)))) := by
   obtain ⟨x, hxL, hxR⟩ := (s.isPathConnected_left_inter_right hE).nonempty
-  obtain ⟨_, _, _⟩ := s.pathConnectedSpace_inter_left_right hE
+  have := isPathConnected_iff_pathConnectedSpace.1 (s.isPathConnected_left_inter_right hE)
+  have := s.pathConnectedSpace_left
+  have := s.pathConnectedSpace_right
   have := s.pathConnectedSpace hE
   apply Submodule.toAddSubgroup_injective
   rw [Submodule.sup_toAddSubgroup, toAddSubgroup_ker_singularHomologyMap_one e _

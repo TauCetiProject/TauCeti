@@ -211,11 +211,9 @@ theorem toAddSubgroup_ker_singularHomologyMap_one
         (hurewiczHomologyAddEquiv (X := TopCat.of Y) y e).toAddMonoidHom := by
   ext c
   obtain ⟨b, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of Y) y e).surjective c
-  rw [AddSubgroup.mem_map_equiv, AddEquiv.symm_apply_apply, Additive.mem_toAddSubgroup,
-    Group.Abelianization.map_ker_eq_ker_map _ hg, MonoidHom.mem_ker, Submodule.mem_toAddSubgroup,
-    LinearMap.mem_ker, singularHomologyMap, homologyMap_hurewiczHomologyAddEquiv (TopCat.ofHom g) e,
-    AddEquivClass.map_eq_zero_iff, ofMul_eq_zero]
-  simp only [TopCat.hom_ofHom]
+  rw [Submodule.mem_toAddSubgroup, LinearMap.mem_ker, singularHomologyMap,
+    homologyMap_hurewiczHomologyAddEquiv (TopCat.ofHom g) e]
+  simp [Group.Abelianization.map_ker_eq_ker_map _ hg]
 
 end Surjective
 
