@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Convex.Segment
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 
@@ -182,8 +183,7 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
   -- The closed ball of radius `1 + K` is convex, so it contains the segments of coefficients.
   have hball {x y : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
       (hx : ‖x‖ ≤ 1 + K) (hy : ‖y‖ ≤ 1 + K) : ‖AffineMap.lineMap x y s‖ ≤ 1 + K :=
-    mem_closedBall_zero_iff.1 ((convex_closedBall 0 _).lineMap_mem
-      (mem_closedBall_zero_iff.2 hx) (mem_closedBall_zero_iff.2 hy) hs)
+    norm_lineMap_le_of_norm_le hx hy hs
   have hK : (K : ℝ) ≤ 1 + K := le_add_of_nonneg_left zero_le_one
   have h := hC T hT hTT₀ (AffineMap.lineMap heatCoeff a s) (AffineMap.lineMap 0 b s)
     (AffineMap.lineMap 0 c s) (fun p ξ ↦ (lineMap_heatCoeff_ellipticity ha ha' hs p ξ).1)

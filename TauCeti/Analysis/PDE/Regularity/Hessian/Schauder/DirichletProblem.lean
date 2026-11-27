@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.C2HolderBoundary.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Operator
+import TauCeti.Analysis.Convex.Segment
 import TauCeti.Analysis.Holder.C2HolderBoundary.Extension
 import TauCeti.Analysis.Holder.Coefficient
 import TauCeti.Analysis.Matrix.QuadraticBounds
@@ -288,22 +289,17 @@ theorem surjOn_nonDivergenceOperatorL_iff (hα₀ : 0 < α) (hα₁ : α < 1)
       (vanishingOnFrontierSubmodule 2 α Ω ℝ).subtypeL) fun t ht u ↦ ?_
   rw [lineMap_comp_subtypeL]
   -- The closed ball of radius `K` is convex, so it contains the segments of coefficients.
-  have hball {x y : HolderSpace α Ω ℝ} (hx : ‖x‖ ≤ K) (hy : ‖y‖ ≤ K) :
-      ‖AffineMap.lineMap x y t‖ ≤ K :=
-    mem_closedBall_zero_iff.1 ((convex_closedBall 0 _).lineMap_mem
-      (mem_closedBall_zero_iff.2 hx) (mem_closedBall_zero_iff.2 hy) ht)
   refine hC _ _ _ (fun x ξ ↦ ?_) (fun x ↦ ?_)
-    (fun i j ↦ hball (hK _ (by simp)) (hK _ (by simp)))
-    (fun i ↦ hball (hK _ (by simp)) (hK _ (by simp))) (hball (hK _ (by simp)) (hK _ (by simp)))
-    u u.property
+    (fun i j ↦ norm_lineMap_le_of_norm_le (hK _ (by simp)) (hK _ (by simp)) ht)
+    (fun i ↦ norm_lineMap_le_of_norm_le (hK _ (by simp)) (hK _ (by simp)) ht)
+    (norm_lineMap_le_of_norm_le (hK _ (by simp)) (hK _ (by simp)) ht) u u.property
   · -- Ellipticity is preserved by convex combinations.
     have hmat : (Matrix.of fun i j ↦ AffineMap.lineMap (a₀ i j) (a₁ i j) t x) =
         (1 - t) • (Matrix.of fun i j ↦ a₀ i j x) + t • Matrix.of fun i j ↦ a₁ i j x := by
       ext i j
       simp [AffineMap.lineMap_apply_module, HolderSpace.add_apply, HolderSpace.smul_apply]
-    rw [hmat, Matrix.toQuadraticForm'_add, Matrix.toQuadraticForm'_smul,
-      Matrix.toQuadraticForm'_smul, _root_.add_apply, _root_.smul_apply, _root_.smul_apply,
-      smul_eq_mul, smul_eq_mul]
+    simp only [hmat, Matrix.toQuadraticForm'_add, Matrix.toQuadraticForm'_smul,
+      _root_.add_apply, _root_.smul_apply, smul_eq_mul]
     nlinarith [ha₀ x ξ, ha₁ x ξ, ht.1, ht.2]
   · -- So is the sign of the potential.
     simp only [AffineMap.lineMap_apply_module, HolderSpace.add_apply, HolderSpace.smul_apply,
