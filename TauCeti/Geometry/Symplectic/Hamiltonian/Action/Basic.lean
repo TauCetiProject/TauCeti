@@ -193,13 +193,16 @@ theorem cylinderAction_rectangleTrans_sub (hσ : IsSmoothForm I 0 σ) (H : ℝ �
   simp only [cylinderAction_rectangleTrans hσ H hw hv h, cylinderAction_def, h]
   ring
 
-/-- **Gluing a stationary cylinder.** For a continuous form, a `C¹` loop `x` and a `C¹` map `v`
-with `v (0, ·) = x`, gluing the stationary cylinder `(s, t) ↦ x t` in front of `v` does not change
+/-- **Gluing a stationary cylinder.** For a continuous form and a `C¹` map `v` with initial
+loop `x = v (0, ·)`, gluing the stationary cylinder `(s, t) ↦ x t` in front of `v` does not change
 the action: the stationary cylinder has zero area, and it starts and ends at the same loop. -/
 theorem cylinderAction_rectangleTrans_comp_snd (hσ : IsSmoothForm I 0 σ) (H : ℝ → M → ℝ)
-    {x : ℝ → M} {v : ℝ × ℝ → M} (hx : ContMDiff 𝓘(ℝ) I 1 x)
-    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (h : ∀ t, v (0, t) = x t) :
+    {x : ℝ → M} {v : ℝ × ℝ → M} (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (h : ∀ t, v (0, t) = x t) :
     cylinderAction σ H (rectangleTrans (fun w ↦ x w.2) v) = cylinderAction σ H v := by
+  -- `x = v (0, ·)` is `C¹` because `v` is.
+  have hx : ContMDiff 𝓘(ℝ) I 1 x := by
+    rw [show x = fun t ↦ v (0, t) from funext fun t ↦ (h t).symm]
+    exact hv.comp (contDiff_const.prodMk contDiff_id).contMDiff
   -- The stationary cylinder is `x ∘ Prod.snd`, whose area vanishes.
   have h₀ : rectangleIntegral σ (fun w : ℝ × ℝ ↦ x w.2) (0, 0) (1, 1) = 0 :=
     rectangleIntegral_comp_snd σ x _ _

@@ -154,8 +154,8 @@ private theorem hoferPlus_sub_add_const [Nonempty M] (H : ℝ → M → ℝ) (c 
 
 variable [IsManifold I 1 M] {σ : RoughForm I M ℝ 2}
 
-/-- **The action shift of a stationary cylinder.** Let `σ` be a continuous two-form, `x` a `C¹`
-loop, `v` a `C¹` map with `v (0, ·) = x`, and `G(s, t) = H_t + f(s, t)` for a function `f` of the
+/-- **The action shift of a stationary cylinder.** Let `σ` be a continuous two-form, `v` a `C¹`
+map with initial loop `x = v (0, ·)`, and `G(s, t) = H_t + f(s, t)` for a function `f` of the
 domain coordinates. Along the stationary cylinder `u(s, t) = x t` the action changes only through
 `f`: the action of `x` for `G(b, ·)` measured against `v` is its action for `G(a, ·)` measured
 against `w # v`, minus `∫₀¹ (f(b, t) - f(a, t)) dt`. Here `w # v` (`TauCeti.rectangleTrans`) glues
@@ -163,7 +163,7 @@ against `w # v`, minus `∫₀¹ (f(b, t) - f(a, t)) dt`. Here `w # v` (`TauCeti
 cylinders. In particular the action does not change when `f(a, ·) = f(b, ·)`, however large `f`
 is in between: the shift is not the integral of the homotopy. -/
 theorem cylinderAction_add_eq_cylinderAction_add_sub_integral (hσ : IsSmoothForm I 0 σ)
-    (hx : ContMDiff 𝓘(ℝ) I 1 x) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = x t)
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = x t)
     (f : ℝ × ℝ → ℝ) (hH : IntervalIntegrable (fun t ↦ H t (x t)) volume 0 1)
     (ha : IntervalIntegrable (fun t ↦ f (a, t)) volume 0 1)
     (hb : IntervalIntegrable (fun t ↦ f (b, t)) volume 0 1) :
@@ -177,7 +177,7 @@ theorem cylinderAction_add_eq_cylinderAction_add_sub_integral (hσ : IsSmoothFor
       (fun t ↦ H t (rectangleTrans (fun w ↦ x w.2) v (0, t))) volume 0 1 := by
     simpa only [rectangleTrans_apply_zero] using hH
   rw [comp_snd_comp_prodMap, cylinderAction_add_const _ _ hHv hb,
-    cylinderAction_add_const _ _ hHw ha, cylinderAction_rectangleTrans_comp_snd hσ H hx hv hv₀,
+    cylinderAction_add_const _ _ hHw ha, cylinderAction_rectangleTrans_comp_snd hσ H hv hv₀,
     intervalIntegral.integral_sub hb ha]
   ring
 
@@ -193,14 +193,14 @@ of `H`, which solve the Floer equation of `G`
 nondecreasing `ε` the homotopy is monotone and lowers the action by `ε(b) - ε(a) ≥ 0`; replacing
 `ε` by `-ε` raises it by the same amount. -/
 theorem cylinderAction_add_eq_cylinderAction_add_setIntegral_neg_deriv (hσ : IsSmoothForm I 0 σ)
-    (hx : ContMDiff 𝓘(ℝ) I 1 x) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = x t)
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = x t)
     (hH : IntervalIntegrable (fun t ↦ H t (x t)) volume 0 1) {ε : ℝ → ℝ} (hε : ContDiff ℝ 1 ε)
     (hab : a ≤ b) :
     cylinderAction σ (fun t y ↦ H t y + ε b) v =
       cylinderAction σ (fun t y ↦ H t y + ε a)
           (rectangleTrans ((fun w ↦ x w.2) ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) +
         ∫ s in Icc a b, -deriv ε s := by
-  have h := cylinderAction_add_eq_cylinderAction_add_sub_integral (a := a) (b := b) hσ hx hv hv₀
+  have h := cylinderAction_add_eq_cylinderAction_add_sub_integral (a := a) (b := b) hσ hv hv₀
     (fun z ↦ ε z.1) hH (by simp) (by simp)
   have hint : ∫ s in Icc a b, -deriv ε s = ε a - ε b := by
     rw [integral_neg, integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
@@ -211,8 +211,8 @@ theorem cylinderAction_add_eq_cylinderAction_add_setIntegral_neg_deriv (hσ : Is
   simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul, one_mul] at h
   linarith
 
-/-- **The bound by `E⁺(H₀ - H₁)` is attained.** Let `σ` be a continuous two-form, `x` a `C¹` loop
-and `v` a `C¹` map with `v (0, ·) = x`, and glue the stationary cylinder `u(s, t) = x t` over
+/-- **The bound by `E⁺(H₀ - H₁)` is attained.** Let `σ` be a continuous two-form and `v` a `C¹`
+map with initial loop `x = v (0, ·)`, and glue the stationary cylinder `u(s, t) = x t` over
 `[a, b]` to `v` as `w # v`. For `H₀ = H` and `H₁ = H + c(t)`, the action of `x` for `H₁` measured
 against `v` is exactly its action for `H₀` measured against `w # v` plus
 `E⁺(H₀ - H₁) = ∫₀¹ max_y (H₀ - H₁)(t, y) dt = -∫₀¹ c` (`TauCeti.hoferPlus`). When `x` is a
@@ -224,7 +224,7 @@ the bound of
 For `c = δ > 0` the homotopy is monotone and the action drops by exactly `δ`; for `c = -δ < 0` it
 rises by exactly `δ`. -/
 theorem cylinderAction_add_const_eq_cylinderAction_add_hoferPlus [Nonempty M]
-    (hσ : IsSmoothForm I 0 σ) (hx : ContMDiff 𝓘(ℝ) I 1 x) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (hσ : IsSmoothForm I 0 σ) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
     (hv₀ : ∀ t, v (0, t) = x t) (hH : IntervalIntegrable (fun t ↦ H t (x t)) volume 0 1)
     {c : ℝ → ℝ} (hc : IntervalIntegrable c volume 0 1) :
     cylinderAction σ (fun t y ↦ H t y + c t) v =
@@ -233,26 +233,27 @@ theorem cylinderAction_add_const_eq_cylinderAction_add_hoferPlus [Nonempty M]
         hoferPlus (H - fun t y ↦ H t y + c t) := by
   have hHv : IntervalIntegrable (fun t ↦ H t (v (0, t))) volume 0 1 := by
     simpa only [hv₀] using hH
-  rw [comp_snd_comp_prodMap, cylinderAction_rectangleTrans_comp_snd hσ H hx hv hv₀,
+  rw [comp_snd_comp_prodMap, cylinderAction_rectangleTrans_comp_snd hσ H hv hv₀,
     cylinderAction_add_const _ _ hHv hc, hoferPlus_sub_add_const]
   ring
 
 /-- **The Hofer norm does not bound the action shift.** For `H₀ = H` and `H₁ = H + c(t)` with
-`∫₀¹ c < 0`, the stationary cylinder over a `C¹` loop `x`, a solution of the continuation equation
+`∫₀¹ c < 0`, the stationary cylinder over the initial loop `x = v (0, ·)` of a
+`C¹` map `v`, a solution of the continuation equation
 from `H₀` to `H₁` when `x` is a `1`-periodic orbit of `H`, raises the action of `x` by
 `-∫₀¹ c > 0`, although `H₀ - H₁` is constant in space and has Hofer norm `0`
 (`TauCeti.hoferNorm_const`). So the estimate
 `TauCeti.SmoothTwoForm.IsNondegenerate.cylinderAction_le_cylinderAction_add_hoferNorm` fails
 without its hypothesis that `H₀ ≤ H₁` somewhere at each time; the action estimate is one-sided. -/
 theorem not_cylinderAction_add_const_le_cylinderAction_add_hoferNorm [Nonempty M]
-    (hσ : IsSmoothForm I 0 σ) (hx : ContMDiff 𝓘(ℝ) I 1 x) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (hσ : IsSmoothForm I 0 σ) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
     (hv₀ : ∀ t, v (0, t) = x t) (hH : IntervalIntegrable (fun t ↦ H t (x t)) volume 0 1)
     {c : ℝ → ℝ} (hc : IntervalIntegrable c volume 0 1) (hneg : ∫ t in 0..1, c t < 0) :
     ¬ cylinderAction σ (fun t y ↦ H t y + c t) v ≤
       cylinderAction σ H
           (rectangleTrans ((fun w ↦ x w.2) ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) +
         hoferNorm (H - fun t y ↦ H t y + c t) := by
-  rw [cylinderAction_add_const_eq_cylinderAction_add_hoferPlus hσ hx hv hv₀ hH hc,
+  rw [cylinderAction_add_const_eq_cylinderAction_add_hoferPlus hσ hv hv₀ hH hc,
     hoferPlus_sub_add_const, sub_add_const_eq, hoferNorm_const]
   linarith
 
