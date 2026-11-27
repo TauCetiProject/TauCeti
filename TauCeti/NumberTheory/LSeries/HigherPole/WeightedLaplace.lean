@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.LaplaceTransform.Basic
 public import TauCeti.NumberTheory.LSeries.HigherPole.DelangeWeight
 public import TauCeti.NumberTheory.LSeries.HigherPole.SquaredSinc
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.LaplaceTransform.Elementary
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Weighted and smoothed Laplace transforms in Delange's Tauberian theorem
@@ -68,36 +68,7 @@ open scoped Nat Real Topology
 
 namespace TauCeti.HigherPoleTauberian
 
-/-- Fubini domination used twice below: if `P` is continuous and bounded by `1` on
-`uIoc b c × (0, ∞)` and `h` is integrable on `(0, ∞)`, then `(u, t) ↦ P u t * h t` is integrable
-on the product. -/
-private theorem integrable_uncurry_mul_of_norm_le_one {P : ℝ → ℝ → ℂ} {h : ℝ → ℂ} {b c : ℝ}
-    (hP : Continuous (Function.uncurry P))
-    (hP_le : ∀ u ∈ uIoc b c, ∀ t ∈ Ioi (0 : ℝ), ‖P u t‖ ≤ 1)
-    (hh : Integrable h (volume.restrict (Ioi 0))) :
-    Integrable (Function.uncurry fun u t ↦ P u t * h t)
-      ((volume.restrict (uIoc b c)).prod (volume.restrict (Ioi 0))) := by
-  have : IsFiniteMeasure (volume.restrict (uIoc b c)) :=
-    isFiniteMeasure_restrict.mpr measure_Ioc_lt_top.ne
-  refine Integrable.mono' (hh.norm.comp_snd _)
-    (hP.aestronglyMeasurable.mul hh.aestronglyMeasurable.comp_snd) ?_
-  rw [Measure.prod_restrict, ae_restrict_iff' (measurableSet_uIoc.prod measurableSet_Ioi)]
-  refine .of_forall fun ⟨u, t⟩ hp ↦ ?_
-  obtain ⟨hu, ht⟩ := mem_prod.mp hp
-  simp only [Function.uncurry_apply_pair, norm_mul]
-  exact mul_le_of_le_one_left (norm_nonneg _) (hP_le u hu t ht)
-
 /-! ### Multiplication by Delange's weight -/
-
-/-- On the open half-plane `Re s > a` where `G` is the transform of `f`, the derivative of `G` is
-the transform of `t ↦ -t * f t`. -/
-private theorem hasLaplace_neg_mul_deriv {f : ℝ → ℂ} {G : ℂ → ℂ} {a : ℝ}
-    (hG : ∀ s : ℂ, a < s.re → HasLaplace f s (G s)) {s : ℂ} (hs : a < s.re) :
-    HasLaplace (fun t : ℝ ↦ -(t : ℂ) * f t) s (deriv G s) := by
-  have hev : ∀ᶠ w in 𝓝 s, HasLaplace f w (G w) :=
-    ((isOpen_lt continuous_const continuous_re).eventually_mem hs).mono fun w hw ↦ hG w hw
-  simpa only [pow_one, iteratedDeriv_one, smul_eq_mul] using
-    hasLaplace_neg_pow_smul_iteratedDeriv hev 1
 
 /-- The `u`-integral defining Delange's weight, cast to `ℂ` and multiplied by `t`, is the weight:
 `t * ∫ u in 0..1, exp (-u t) * (u ^ k / k!) = w_k(t)`. -/
@@ -137,11 +108,13 @@ theorem hasLaplace_delangeWeight_mul {f : ℝ → ℂ} {G : ℂ → ℂ} {a : �
   -- `Φ u t = exp (-u t) * (u ^ k / k!) * h t` is the integrand of the double integral over
   -- `(u, t) ∈ (0, 1] × (0, ∞)`.
   set h : ℝ → ℂ := fun t ↦ cexp (-s * t) * (-(t : ℂ) * f t) with h_def
-  have hh : Integrable h (volume.restrict (Ioi 0)) := (hasLaplace_neg_mul_deriv hG hs).integrable
+  have hh : Integrable h (volume.restrict (Ioi 0)) :=
+    (hasLaplace_neg_smul_deriv_of_re_gt hG hs).integrable
   set Φ : ℝ → ℝ → ℂ := fun u t ↦ cexp (-(u : ℂ) * t) * ((u ^ k / k ! : ℝ) : ℂ) * h t with Φ_def
   have hΦ : Integrable (Function.uncurry Φ)
       ((volume.restrict (uIoc (0 : ℝ) 1)).prod (volume.restrict (Ioi 0))) :=
-    integrable_uncurry_mul_of_norm_le_one (by fun_prop)
+    integrable_uncurry_mul_of_norm_le measurableSet_uIoc measurableSet_Ioi measure_Ioc_lt_top.ne
+      (Continuous.aestronglyMeasurable (by fun_prop))
       (fun _ hu _ ht ↦ norm_cexp_mul_pow_div_factorial_le_one k hu ht) hh
   -- For each `t`, the `u`-integral of `Φ` is `-exp (-s t) * (w_k(t) * f t)`.
   have hinner (t : ℝ) : ∫ u in (0 : ℝ)..1, Φ u t =
@@ -157,7 +130,7 @@ theorem hasLaplace_delangeWeight_mul {f : ℝ → ℂ} {G : ℂ → ℂ} {a : �
     have hsu : a < (s + u).re := by
       rw [add_re, ofReal_re]
       linarith [hu.1]
-    have hD := (hasLaplace_neg_mul_deriv hG hsu).integral_eq
+    have hD := (hasLaplace_neg_smul_deriv_of_re_gt hG hsu).integral_eq
     simp only [smul_eq_mul] at hD
     have hΦ_shift (t : ℝ) : Φ u t = cexp (-(s + u) * t) * (-(t : ℂ) * f t) *
         ((u ^ k / k ! : ℝ) : ℂ) := by
@@ -229,7 +202,8 @@ theorem integral_cexp_mul_squaredSinc_sub {g : ℝ → ℂ} {G : ℂ → ℂ} {s
     ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * ((T - t : ℝ) : ℂ)) * q t with Ψ_def
   have hΨ : Integrable (Function.uncurry Ψ)
       ((volume.restrict (uIoc (-(2 * ell)) (2 * ell))).prod (volume.restrict (Ioi 0))) := by
-    refine integrable_uncurry_mul_of_norm_le_one (by fun_prop) (fun y hy t _ ↦ ?_) hq
+    refine integrable_uncurry_mul_of_norm_le (C := 1) measurableSet_uIoc measurableSet_Ioi
+      measure_Ioc_lt_top.ne (Continuous.aestronglyMeasurable (by fun_prop)) (fun y hy t _ ↦ ?_) hq
     have hphase : I * y * ((T - t : ℝ) : ℂ) = ((y * (T - t) : ℝ) : ℂ) * I := by
       push_cast
       ring

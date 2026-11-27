@@ -39,6 +39,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.integrable_prod_restrict_of_continuous`: a continuous function on `α × β` vanishing on
   `(α \ K) × D` for compact `K` and `D` is integrable for `μ × ν|_D`, the integrability needed to
   apply Fubini's theorem to a compactly supported integrand over a compact parameter set.
+* `TauCeti.integrable_uncurry_mul_of_norm_le`: a kernel `P x y` bounded on `s ×ˢ t`, with
+  `μ s < ∞`, times a function `h y` integrable on `t` is integrable for `μ|_s × ν|_t`, the
+  domination needed to apply Fubini's theorem to `∫_s ∫_t P x y * h y dy dx`.
 * `TauCeti.setIntegral_eq_zero_of_forall_prod` is the binary-product specialization of the Dynkin
   (π-λ) step for Bochner integrals: a function whose integral vanishes on every measurable rectangle
   has vanishing integral on every measurable set. Rectangles are a π-system generating the product
@@ -319,6 +322,21 @@ theorem integrable_prod_restrict_of_continuous [TopologicalSpace α] [Topologica
   refine IntegrableOn.of_forall_sdiff_eq_zero (hG.continuousOn.integrableOn_compact (hK.prod hD))
     (MeasurableSet.univ.prod hD.measurableSet) fun q hq ↦ ?_
   exact hGK q.1 q.2 hq.1.2 fun h ↦ hq.2 ⟨h, hq.1.2⟩
+
+/-- If `P` is a.e.-strongly measurable and bounded in norm by `C` on `s ×ˢ t`, `μ s` is finite, and
+`h` is integrable on `t`, then `(x, y) ↦ P x y * h y` is integrable for `μ|_s × ν|_t`. This is the
+domination used to exchange the order of integration in `∫_s ∫_t P x y * h y dy dx`. -/
+theorem integrable_uncurry_mul_of_norm_le [SFinite μ] [SFinite ν] {𝕜 : Type*} [NormedRing 𝕜]
+    {P : α → β → 𝕜} {h : β → 𝕜} {s : Set α} {t : Set β} {C : ℝ} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμs : μ s ≠ ∞)
+    (hP : AEStronglyMeasurable (Function.uncurry P) ((μ.restrict s).prod (ν.restrict t)))
+    (hP_le : ∀ x ∈ s, ∀ y ∈ t, ‖P x y‖ ≤ C) (hh : IntegrableOn h t ν) :
+    Integrable (Function.uncurry fun x y ↦ P x y * h y) ((μ.restrict s).prod (ν.restrict t)) := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.mpr hμs
+  have hb : ∀ᵐ p ∂(μ.restrict s).prod (ν.restrict t), ‖Function.uncurry P p‖ ≤ C := by
+    rw [Measure.prod_restrict, ae_restrict_iff' (hs.prod ht)]
+    exact .of_forall fun p hp ↦ hP_le p.1 hp.1 p.2 hp.2
+  exact (hh.comp_snd (μ.restrict s)).bdd_mul hP hb
 
 /-- If an almost everywhere nonnegative measurable function `G : α × β → ℝ` has integrable
 `ν`-slices bounded above by an integrable majorant `H : α → ℝ` for `μ`-almost every `x`, then `G`

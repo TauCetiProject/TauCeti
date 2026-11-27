@@ -43,7 +43,8 @@ the integral to `z`.
   `exists_hasLaplace_neg_smul_and_hasDerivAt`, `hasDerivAt_of_hasLaplace`,
   `differentiableOn_of_hasLaplace`, and `differentiableOn_of_hasLaplace_re_gt` (holomorphic
   differentiation under the integral sign with respect to `s`, producing the transform of
-  `t ↦ -(t : ℂ) • f t`).
+  `t ↦ -(t : ℂ) • f t`); `hasLaplace_neg_smul_deriv` and `hasLaplace_neg_smul_deriv_of_re_gt`
+  state that `F'(s)` is that transform.
 * Higher derivatives: `hasLaplace_neg_pow_smul_iteratedDeriv` (the `n`-th derivative is the
   transform of `t ↦ (-t) ^ n • f t`) and `hasLaplace_pow_div_factorial_smul_iteratedDeriv` (the
   normalised coefficient `(-1) ^ n / n ! • F⁽ⁿ⁾` is the transform of `t ↦ (t ^ n / n !) • f t`).
@@ -519,6 +520,24 @@ theorem differentiableOn_of_hasLaplace_re_gt {E : Type*}
     (hF : ∀ s : ℂ, a < s.re → HasLaplace f s (F s)) :
     DifferentiableOn ℂ F {s : ℂ | a < s.re} :=
   differentiableOn_of_hasLaplace (isOpen_lt continuous_const Complex.continuous_re) hF
+
+/-- **The derivative of a Laplace transform.** If `F` is the one-sided Laplace transform of `f`
+near `s`, then `F'(s)` is the Laplace transform of `t ↦ -(t : ℂ) • f t` at `s`. -/
+theorem hasLaplace_neg_smul_deriv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {F : ℂ → E} {s : ℂ} (hF : ∀ᶠ w in 𝓝 s, HasLaplace f w (F w)) :
+    HasLaplace (fun t : ℝ ↦ -(t : ℂ) • f t) s (deriv F s) := by
+  obtain ⟨_, hz', hder⟩ := exists_hasLaplace_neg_smul_and_hasDerivAt hF
+  rwa [hder.deriv]
+
+/-- **The derivative of a Laplace transform on a half-plane.** If `F` is the one-sided Laplace
+transform of `f` on the open half-plane `Re s > a`, then at every point of that half-plane `F'(s)`
+is the Laplace transform of `t ↦ -(t : ℂ) • f t`. -/
+theorem hasLaplace_neg_smul_deriv_of_re_gt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {F : ℂ → E} {a : ℝ} (hF : ∀ s : ℂ, a < s.re → HasLaplace f s (F s)) {s : ℂ}
+    (hs : a < s.re) :
+    HasLaplace (fun t : ℝ ↦ -(t : ℂ) • f t) s (deriv F s) :=
+  hasLaplace_neg_smul_deriv
+    (((isOpen_lt continuous_const Complex.continuous_re).eventually_mem hs).mono hF)
 
 /-- **Derivatives of a Laplace transform.** If `F` is the one-sided Laplace transform of `f` near
 `s`, then the `n`-th derivative of `F` at `s` is the Laplace transform of `u ↦ (-u) ^ n • f u`. -/
