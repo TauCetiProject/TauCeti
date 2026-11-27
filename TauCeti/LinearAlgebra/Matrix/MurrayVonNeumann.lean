@@ -9,11 +9,11 @@ public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Algebra.Star.PartialIsometry
+public import TauCeti.Data.Matrix.Basis
 public import TauCeti.Data.Matrix.Block
 public import TauCeti.Data.Matrix.Composition
 public import TauCeti.LinearAlgebra.Matrix.StarProjection
 public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
-import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
@@ -39,8 +39,6 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
 
 * `Matrix.IsMurrayVonNeumannEquivalent p q`: the matrix projections `p` and `q` are
   Murray–von Neumann equivalent.
-* `TauCeti.cornerStarRingHom R i`: the corner embedding `R → M_n(R)`, `r ↦ r eᵢᵢ`, as a nonunital
-  star ring homomorphism.
 
 ## Main statements
 
@@ -78,12 +76,11 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes are
   equivalent, and over a commutative star ring with the strong rank condition equivalent
   projections have equal rank.
-* `Matrix.isStarProjection_comp_iff` and `Matrix.isMurrayVonNeumannEquivalent_comp_iff`: the
-  flattening `M_k(M_n(R)) ≅ M_{k × n}(R)` of Mathlib's `Matrix.comp` preserves and reflects
-  projections and their equivalence.
-* `Matrix.isMurrayVonNeumannEquivalent_comp_map_cornerStarRingHom`: the flattening of the image of
-  a projection `p` under the corner embedding `TauCeti.cornerStarRingHom R i`, `r ↦ r eᵢᵢ`, is
-  equivalent to `p`.
+* `Matrix.isMurrayVonNeumannEquivalent_comp_iff`: the flattening `M_k(M_n(R)) ≅ M_{k × n}(R)` of
+  Mathlib's `Matrix.comp` preserves and reflects equivalence of projections.
+* `Matrix.isMurrayVonNeumannEquivalent_comp_map_singleNonUnitalStarRingHom`: the flattening of the
+  image of a projection `p` under the corner embedding `Matrix.singleNonUnitalStarRingHom R i`,
+  `r ↦ r eᵢᵢ`, is equivalent to `p`.
 
 ## References
 
@@ -507,38 +504,12 @@ theorem IsMurrayVonNeumannEquivalent.rank_eq [CommSemiring R] [StarRing R]
 
 end Matrix
 
-namespace TauCeti
-
-variable (R : Type*) [NonUnitalNonAssocSemiring R] [StarRing R] {n : Type*} [Fintype n]
-  [DecidableEq n]
-
-/-- The **corner embedding** `R → M_n(R)`, `r ↦ r eᵢᵢ`, as a nonunital star ring homomorphism. -/
-def cornerStarRingHom (i : n) : R →⋆ₙ+* Matrix n n R where
-  __ := (Matrix.singleAddMonoidHom i i : R →+ Matrix n n R)
-  map_mul' r s := (Matrix.single_mul_single_same r i i i s).symm
-  map_star' r := (Matrix.conjTranspose_single i i r).symm
-
-variable {R}
-
-@[simp]
-theorem cornerStarRingHom_apply (i : n) (r : R) : cornerStarRingHom R i r = Matrix.single i i r :=
-  (rfl)
-
-end TauCeti
-
 namespace Matrix
 
 section Flattening
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] {I K L : Type*} [Fintype I] [Fintype K]
   [Fintype L]
-
-/-- Flattening preserves and reflects star projections. -/
-@[simp]
-theorem isStarProjection_comp_iff {p : Matrix I I (Matrix L L R)} :
-    IsStarProjection (comp I I L L R p) ↔ IsStarProjection p := by
-  simp only [isStarProjection_iff, IsIdempotentElem, ← isHermitian_iff_isSelfAdjoint,
-    isHermitian_comp_iff, ← comp_mul, (comp I I L L R).injective.eq_iff]
 
 /-- **Flattening and Murray–von Neumann equivalence.** Projections over `M_n(R)` are equivalent
 exactly when their flattenings over `R` are. -/
@@ -563,9 +534,9 @@ theorem isMurrayVonNeumannEquivalent_comp_iff {p : Matrix I I (Matrix L L R)}
 
 /-- The flattening of the entrywise corner image of a projection `p` over `R` is equivalent to
 `p`: it is `p` placed on the rows and columns `(a, i)`. -/
-theorem isMurrayVonNeumannEquivalent_comp_map_cornerStarRingHom [DecidableEq L]
+theorem isMurrayVonNeumannEquivalent_comp_map_singleNonUnitalStarRingHom [DecidableEq L]
     {p : Matrix I I R} (hp : IsStarProjection p) (i : L) :
-    IsMurrayVonNeumannEquivalent p (comp I I L L R (p.map (cornerStarRingHom R i))) := by
+    IsMurrayVonNeumannEquivalent p (comp I I L L R (p.map (singleNonUnitalStarRingHom R i))) := by
   -- The witness is `p` placed on the rows `(b, i)`.
   let v : Matrix (I × L) I R := of fun b a ↦ if b.2 = i then p b.1 a else 0
   have hpH : pᴴ = p := by rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq]
@@ -576,13 +547,14 @@ theorem isMurrayVonNeumannEquivalent_comp_map_cornerStarRingHom [DecidableEq L]
     ext a a'
     conv_rhs => rw [← hHp]
     simp [v, Matrix.mul_apply, conjTranspose_apply, Fintype.sum_prod_type, apply_ite (star : R → R)]
-  have hvq : v * vᴴ = comp I I L L R (p.map (cornerStarRingHom R i)) := by
+  have hvq : v * vᴴ = comp I I L L R (p.map (singleNonUnitalStarRingHom R i)) := by
     ext ⟨b, y⟩ ⟨b', y'⟩
     by_cases hy : y = i
     · subst hy
       by_cases hy' : y' = y
       · subst hy'
-        conv_rhs => rw [comp_apply, map_apply, cornerStarRingHom_apply, single_apply_same, ← hpH']
+        conv_rhs =>
+          rw [comp_apply, map_apply, singleNonUnitalStarRingHom_apply, single_apply_same, ← hpH']
         simp [v, Matrix.mul_apply, conjTranspose_apply]
       · simp [v, Matrix.mul_apply, comp_apply, conjTranspose_apply, hy', Ne.symm hy']
     · simp [v, Matrix.mul_apply, comp_apply, conjTranspose_apply, hy, Ne.symm hy]
