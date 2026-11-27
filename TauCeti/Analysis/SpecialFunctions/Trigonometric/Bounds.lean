@@ -8,13 +8,19 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 
 /-!
 # Trigonometric bounds and nonvanishing criteria
 
 The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
 The sine of `π * x` is positive for `0 < x < 1`. The cotangent is strictly decreasing on `(0, π)`
-(`TauCeti.strictAntiOn_cot`) and lies below `1 / x` there (`TauCeti.cot_lt_inv`).
+(`TauCeti.strictAntiOn_cot`) and lies below `1 / x` there (`TauCeti.cot_lt_inv`). By the
+half-angle formula, `1 / sin x + cot x = cot (x / 2)` and `1 / sin y - cot y = cot ((π - y) / 2)`,
+so these are bounded by `cot (a / 2)` for `a ≤ x < π` and by `cot (b / 2)` for `0 < y ≤ π - b`
+(`TauCeti.inv_sin_add_cot_le_cot_half`, `TauCeti.inv_sin_sub_cot_le_cot_half`), and
+`cot (a / 2) + cot (b / 2) ≥ 2` for `a, b > 0` with `a + b ≤ π`
+(`TauCeti.two_le_cot_half_add_cot_half`).
 The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
 Schwarz–Christoffel turns. The sine exceeds `1/2` on `(π/6, 5π/6)`. The sine is nonpositive
 on `[π, 2π]` and negative on `(π, 2π)`. For real `a < 1` the quantity `1 - a sin² θ` is
@@ -168,6 +174,41 @@ theorem cot_lt_inv {x : ℝ} (h₀ : 0 < x) (h₁ : x < π) : cot x < x⁻¹ := 
     rw [cot_eq_cos_div_sin]
     exact div_nonpos_of_nonpos_of_nonneg (cos_nonpos_of_pi_div_two_le_of_le h (by linarith))
       (sin_nonneg_of_nonneg_of_le_pi h₀.le h₁.le)
+
+/-- For `0 < a ≤ x < π`, `1 / sin x + cot x ≤ cot (a / 2)`: by the half-angle formula the left side
+is `cot (x / 2)`, and the cotangent decreases on `(0, π)`. -/
+theorem inv_sin_add_cot_le_cot_half {a x : ℝ} (ha : 0 < a) (hax : a ≤ x) (hx : x < π) :
+    (sin x)⁻¹ + cot x ≤ cot (a / 2) := by
+  have hs : 0 < sin x := sin_pos_of_pos_of_lt_pi (by linarith) hx
+  have h : (sin x)⁻¹ + cot x = cot (x / 2) := by
+    rw [cot_half, cot_eq_cos_div_sin]
+    field_simp
+  rw [h]
+  exact strictAntiOn_cot.antitoneOn ⟨by linarith, by linarith [pi_pos]⟩
+    ⟨by linarith, by linarith [pi_pos]⟩ (by linarith)
+
+/-- For `0 < y ≤ π - b` with `0 < b`, `1 / sin y - cot y ≤ cot (b / 2)`: by the half-angle formula
+the left side is `cot ((π - y) / 2)`, and the cotangent decreases on `(0, π)`. -/
+theorem inv_sin_sub_cot_le_cot_half {b y : ℝ} (hb : 0 < b) (hy : 0 < y) (hyb : y ≤ π - b) :
+    (sin y)⁻¹ - cot y ≤ cot (b / 2) := by
+  have hs : 0 < sin y := sin_pos_of_pos_of_lt_pi hy (by linarith)
+  have h : (sin y)⁻¹ - cot y = cot ((π - y) / 2) := by
+    rw [cot_half, sin_pi_sub, cos_pi_sub, cot_eq_cos_div_sin]
+    field_simp
+    ring
+  rw [h]
+  exact strictAntiOn_cot.antitoneOn ⟨by linarith, by linarith [pi_pos]⟩
+    ⟨by linarith, by linarith [pi_pos]⟩ (by linarith)
+
+/-- For `a, b > 0` with `a + b ≤ π`, `2 ≤ cot (a / 2) + cot (b / 2)`. Equality holds for
+`a = b = π / 2`. -/
+theorem two_le_cot_half_add_cot_half {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (hab : a + b ≤ π) :
+    2 ≤ cot (a / 2) + cot (b / 2) := by
+  have h₁ := inv_sin_add_cot_le_cot_half ha le_rfl (by linarith)
+  have h₂ := inv_sin_sub_cot_le_cot_half hb ha (by linarith)
+  have hs : 0 < sin a := sin_pos_of_pos_of_lt_pi ha (by linarith)
+  have h₃ : 1 ≤ (sin a)⁻¹ := (one_le_inv₀ hs).2 (sin_le_one a)
+  linarith
 
 /-- On `(π/6, 5π/6)`, `sin θ > 1/2`. -/
 theorem two_inv_lt_sin_of_mem_Ioo {θ : ℝ} (hθ : θ ∈ Set.Ioo (π / 6) (5 * π / 6)) :

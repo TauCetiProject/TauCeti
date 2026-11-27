@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ExponentialSum.Interval
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 
 /-!
 # The Kusmin–Landau inequality
@@ -29,11 +28,12 @@ The sum over the integers of `[a, b]` is `TauCeti.intervalExpSum f a b`: a half-
 
 The proof is Abel summation. With `ψₙ = f(n + 1) - f(n)` and `cₙ = (e(ψₙ) - 1)⁻¹`, every term is
 `e(f(n)) = cₙ (e(f(n + 1)) - e(f(n)))`, and `cₙ = -(1 + i cot (πψₙ)) / 2`
-(`TauCeti.inv_expTwoPiI_sub_one`). Summation by parts bounds the sum by the norms of the first and
-last `cₙ` plus `∑ ‖cₙ₊₁ - cₙ‖`. The real parts of the `cₙ` are all `-1/2`, and by the mean value
-theorem the increments `ψₙ` are values of `f'`, hence monotone, so their cotangents are monotone
-and the last sum telescopes. The half-angle formula `(1 + cos x) / sin x = cot (x/2)`
-(`TauCeti.cot_half`) turns the result into the displayed constant.
+(`TauCeti.inv_expTwoPiI_sub_one`). Summation by parts (`Finset.sum_range_by_parts`) bounds the sum
+by the norms of the first and last `cₙ` plus `∑ ‖cₙ₊₁ - cₙ‖`. The real parts of the `cₙ` are all
+`-1/2`, and by the mean value theorem the increments `ψₙ` are values of `f'`, hence monotone, so
+their cotangents are monotone and the last sum telescopes. By the half-angle formula the two
+boundary terms are at most `cot (πα/2)/2` and `cot (πβ/2)/2`
+(`TauCeti.inv_sin_add_cot_le_cot_half`, `TauCeti.inv_sin_sub_cot_le_cot_half`).
 
 ## Main results
 
@@ -68,82 +68,37 @@ private theorem norm_sum_range_expTwoPiI_le_of_mul_sub_one {φ : ℕ → ℝ} {c
     (hc : ∀ j ≤ N, c j * (expTwoPiI (φ (j + 1) - φ j) - 1) = 1) :
     ‖∑ j ∈ range (N + 2), expTwoPiI (φ j)‖ ≤
       ‖c 0‖ + ‖c N‖ + ∑ j ∈ range N, ‖c (j + 1) - c j‖ := by
-  have key (j : ℕ) (hj : j ≤ N) :
-      c j * expTwoPiI (φ (j + 1)) = (1 + c j) * expTwoPiI (φ j) := by
+  obtain ⟨u, hu⟩ : ∃ u : ℕ → ℂ, ∀ j, expTwoPiI (φ j) = u j := ⟨_, fun _ ↦ rfl⟩
+  have hu₁ (j : ℕ) : ‖u j‖ = 1 := by rw [← hu, norm_expTwoPiI]
+  -- every term but the last is `cⱼ (uⱼ₊₁ - uⱼ)`
+  have key (j : ℕ) (hj : j ≤ N) : u j = c j • (u (j + 1) - u j) := by
     have h := expTwoPiI_add (φ j) (φ (j + 1) - φ j)
-    rw [add_sub_cancel] at h
-    rw [h]
-    linear_combination expTwoPiI (φ j) * hc j hj
-  -- the partial sums, corrected by a boundary term, change by `(cₙ₊₁ - cₙ) e(φ(n + 1))`
-  have hR (n : ℕ) (hn : n ≤ N) :
-      ‖∑ j ∈ range (n + 1), expTwoPiI (φ j) - c n * expTwoPiI (φ (n + 1))‖ ≤
-        ‖c 0‖ + ∑ j ∈ range n, ‖c (j + 1) - c j‖ := by
-    induction n with
-    | zero =>
-      rw [zero_add, sum_range_one, key 0 hn, sum_range_zero, add_zero, ← one_sub_mul,
-        sub_add_cancel_left, neg_mul, norm_neg, norm_mul, norm_expTwoPiI, mul_one]
-    | succ n ih =>
-      rw [sum_range_succ, sum_range_succ (fun j ↦ ‖c (j + 1) - c j‖), ← add_assoc]
-      calc ‖∑ j ∈ range (n + 1), expTwoPiI (φ j) + expTwoPiI (φ (n + 1)) -
-              c (n + 1) * expTwoPiI (φ (n + 1 + 1))‖
-          = ‖(∑ j ∈ range (n + 1), expTwoPiI (φ j) - c n * expTwoPiI (φ (n + 1))) -
-              (c (n + 1) - c n) * expTwoPiI (φ (n + 1))‖ := by
-            rw [key (n + 1) hn]
-            ring_nf
-        _ ≤ _ := by
-            refine (norm_sub_le _ _).trans (add_le_add (ih (by omega)) ?_)
-            rw [norm_mul, norm_expTwoPiI, mul_one]
-  have h1 : 1 + c N = c N * expTwoPiI (φ (N + 1) - φ N) := by
-    linear_combination -(hc N le_rfl)
-  rw [sum_range_succ]
-  calc ‖∑ j ∈ range (N + 1), expTwoPiI (φ j) + expTwoPiI (φ (N + 1))‖
-      = ‖(∑ j ∈ range (N + 1), expTwoPiI (φ j) - c N * expTwoPiI (φ (N + 1))) +
-          (1 + c N) * expTwoPiI (φ (N + 1))‖ := by ring_nf
-    _ ≤ ‖c 0‖ + ∑ j ∈ range N, ‖c (j + 1) - c j‖ + ‖c N‖ := by
-      refine (norm_add_le _ _).trans (add_le_add (hR N le_rfl) ?_)
-      rw [norm_mul, norm_expTwoPiI, mul_one, h1, norm_mul, norm_expTwoPiI, mul_one]
-    _ = _ := by ring
-
-/-! ### The constant -/
-
-/-- The boundary terms: for `α ≤ x ≤ y ≤ 1 - β`,
-`1/(2 sin (πx)) + 1/(2 sin (πy)) + (cot (πx) - cot (πy))/2 ≤ (cot (πα/2) + cot (πβ/2))/2`. The
-left side is `(cot (πx/2) + cot (π(1 - y)/2))/2` by the half-angle formula. -/
-private theorem inv_two_mul_sin_add_inv_two_mul_sin_add_le {α β x y : ℝ} (hα : 0 < α)
-    (hβ : 0 < β) (hx : α ≤ x) (hxy : x ≤ y) (hy : y ≤ 1 - β) :
-    (2 * sin (π * x))⁻¹ + (2 * sin (π * y))⁻¹ + (cot (π * x) - cot (π * y)) / 2 ≤
-      (cot (π * α / 2) + cot (π * β / 2)) / 2 := by
-  have hsx : 0 < sin (π * x) := sin_pi_mul_pos_of_pos_of_lt_one (by linarith) (by linarith)
-  have hsy : 0 < sin (π * y) := sin_pi_mul_pos_of_pos_of_lt_one (by linarith) (by linarith)
-  have h₁ : (sin (π * x))⁻¹ + cot (π * x) = cot (π * x / 2) := by
-    rw [cot_half, cot_eq_cos_div_sin]
-    field_simp
-  have h₂ : (sin (π * y))⁻¹ - cot (π * y) = cot (π * (1 - y) / 2) := by
-    rw [cot_half, mul_one_sub, sin_pi_sub, cos_pi_sub, cot_eq_cos_div_sin]
-    field_simp
+    rw [add_sub_cancel, hu, hu] at h
+    rw [smul_eq_mul, h]
+    linear_combination -u j * hc j hj
+  -- summation by parts; the partial sums of `uⱼ₊₁ - uⱼ` telescope to `uₖ - u₀`
+  have hS : ∑ j ∈ range (N + 2), u j =
+      (1 + c N) * u (N + 1) - c 0 * u 0 - ∑ j ∈ range N, (c (j + 1) - c j) * u (j + 1) := by
+    rw [sum_range_succ, sum_congr rfl fun j hj ↦ key j (Nat.lt_add_one_iff.1 (mem_range.1 hj)),
+      sum_range_by_parts, Nat.add_sub_cancel]
+    simp only [sum_range_sub, smul_eq_mul]
+    simp only [mul_sub, sum_sub_distrib]
+    rw [← sum_mul, sum_range_sub]
     ring
-  have h₃ : cot (π * x / 2) ≤ cot (π * α / 2) := strictAntiOn_cot.antitoneOn
-    ⟨by positivity, by nlinarith [pi_pos]⟩ ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
-    (by gcongr)
-  have h₄ : cot (π * (1 - y) / 2) ≤ cot (π * β / 2) := strictAntiOn_cot.antitoneOn
-    ⟨by positivity, by nlinarith [pi_pos]⟩ ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
-    (by gcongr; linarith)
-  calc (2 * sin (π * x))⁻¹ + (2 * sin (π * y))⁻¹ + (cot (π * x) - cot (π * y)) / 2
-      = ((sin (π * x))⁻¹ + cot (π * x)) / 2 + ((sin (π * y))⁻¹ - cot (π * y)) / 2 := by
-        rw [mul_inv, mul_inv]
+  have hN : ‖1 + c N‖ = ‖c N‖ := by
+    have h : 1 + c N = c N * expTwoPiI (φ (N + 1) - φ N) := by
+      linear_combination -(hc N le_rfl)
+    rw [h, norm_mul, norm_expTwoPiI, mul_one]
+  simp only [hu]
+  rw [hS]
+  calc ‖(1 + c N) * u (N + 1) - c 0 * u 0 - ∑ j ∈ range N, (c (j + 1) - c j) * u (j + 1)‖
+      ≤ ‖1 + c N‖ + ‖c 0‖ + ∑ j ∈ range N, ‖c (j + 1) - c j‖ := by
+        refine (norm_sub_le _ _).trans (add_le_add ((norm_sub_le _ _).trans_eq ?_) ?_)
+        · rw [norm_mul, norm_mul, hu₁, hu₁, mul_one, mul_one]
+        · exact (norm_sum_le _ _).trans_eq (sum_congr rfl fun j _ ↦ by rw [norm_mul, hu₁, mul_one])
+    _ = _ := by
+        rw [hN]
         ring
-    _ ≤ _ := by
-        rw [h₁, h₂]
-        linarith
-
-/-- The constant `(cot (πα/2) + cot (πβ/2))/2` is at least `1`, the norm of a single term. -/
-private theorem one_le_cot_add_cot_div_two {α β : ℝ} (hα : 0 < α) (hβ : 0 < β)
-    (hαβ : α + β ≤ 1) : 1 ≤ (cot (π * α / 2) + cot (π * β / 2)) / 2 := by
-  have h := inv_two_mul_sin_add_inv_two_mul_sin_add_le hα hβ le_rfl le_rfl (by linarith)
-  have hs := sin_pi_mul_pos_of_pos_of_lt_one hα (by linarith)
-  have h₁ : 1 ≤ (sin (π * α))⁻¹ := (one_le_inv₀ hs).2 (sin_le_one _)
-  rw [sub_self, zero_div, add_zero, mul_inv] at h
-  linarith
 
 /-! ### The discrete inequality -/
 
@@ -154,13 +109,16 @@ private theorem norm_sum_range_expTwoPiI_le_of_monotoneOn {φ : ℕ → ℝ} {N 
     (hlow : ∀ j < N, k + α ≤ φ (j + 1) - φ j) (hup : ∀ j < N, φ (j + 1) - φ j ≤ k + 1 - β) :
     ‖∑ j ∈ range (N + 1), expTwoPiI (φ j)‖ ≤ (cot (π * α / 2) + cot (π * β / 2)) / 2 := by
   rcases N with _ | n
-  · simpa [norm_expTwoPiI] using one_le_cot_add_cot_div_two hα hβ hαβ
+  · have h := two_le_cot_half_add_cot_half (a := π * α) (b := π * β) (by positivity)
+      (by positivity) (by nlinarith [pi_pos])
+    have h' : (1 : ℝ) ≤ (cot (π * α / 2) + cot (π * β / 2)) / 2 := by linarith
+    simpa [norm_expTwoPiI] using h'
   -- the increments, shifted by `k`, lie in `[α, 1 - β] ⊆ (0, 1)`
   set d : ℕ → ℝ := fun j ↦ φ (j + 1) - φ j - k with hd
   have hdα (j : ℕ) (hj : j ≤ n) : α ≤ d j := by linarith [hlow j (by omega)]
   have hdβ (j : ℕ) (hj : j ≤ n) : d j ≤ 1 - β := by linarith [hup j (by omega)]
   have hle (i j : ℕ) (hj : j ≤ n) (hij : i ≤ j) : d i ≤ d j := by
-    have := hmono (show i < n + 1 by omega) (show j < n + 1 by omega) hij
+    have := hmono (Set.mem_Iio.2 (by omega)) (Set.mem_Iio.2 (by omega)) hij
     simp only [hd]
     linarith
   have hs (j : ℕ) (hj : j ≤ n) : 0 < sin (π * d j) :=
@@ -171,7 +129,8 @@ private theorem norm_sum_range_expTwoPiI_le_of_monotoneOn {φ : ℕ → ℝ} {N 
   -- Abel summation against the coefficients `(e(d j) - 1)⁻¹ = -(1 + i cot (π d j)) / 2`
   have hcd (j : ℕ) (hj : j ≤ n) :
       (expTwoPiI (d j) - 1)⁻¹ * (expTwoPiI (φ (j + 1) - φ j) - 1) = 1 := by
-    rw [show φ (j + 1) - φ j = d j + k by simp [hd], expTwoPiI_add_intCast]
+    have h : φ (j + 1) - φ j = d j + k := by simp [hd]
+    rw [h, expTwoPiI_add_intCast]
     exact inv_mul_cancel₀ (hne j hj)
   have hnorm (j : ℕ) (hj : j ≤ n) : ‖(expTwoPiI (d j) - 1)⁻¹‖ = (2 * sin (π * d j))⁻¹ := by
     rw [norm_inv, norm_expTwoPiI_sub_one, abs_of_pos (hs j hj)]
@@ -183,18 +142,19 @@ private theorem norm_sum_range_expTwoPiI_le_of_monotoneOn {φ : ℕ → ℝ} {N 
       ⟨by nlinarith [pi_pos, hdα j hj'.le], by nlinarith [pi_pos, hdβ j hj'.le]⟩
       ⟨by nlinarith [pi_pos, hdα (j + 1) hj'], by nlinarith [pi_pos, hdβ (j + 1) hj']⟩
       (by gcongr; exact hle j (j + 1) hj' (by omega))
-    rw [inv_expTwoPiI_sub_one (sub_ne_zero.1 (hne (j + 1) hj')),
-      inv_expTwoPiI_sub_one (sub_ne_zero.1 (hne j hj'.le)),
-      show -(1 + (cot (π * d (j + 1)) : ℂ) * Complex.I) / 2 -
-        -(1 + (cot (π * d j) : ℂ) * Complex.I) / 2 =
-        (((cot (π * d j) - cot (π * d (j + 1))) / 2 : ℝ) : ℂ) * Complex.I by push_cast; ring,
-      norm_mul, Complex.norm_I, mul_one, Complex.norm_real, norm_eq_abs,
-      abs_of_nonneg (by linarith)]
+    rw [norm_inv_expTwoPiI_sub_one_sub_inv_expTwoPiI_sub_one (sub_ne_zero.1 (hne j hj'.le))
+      (sub_ne_zero.1 (hne (j + 1) hj')), abs_of_nonneg (by linarith)]
   refine (norm_sum_range_expTwoPiI_le_of_mul_sub_one hcd).trans ?_
   rw [hnorm 0 (Nat.zero_le n), hnorm n le_rfl, sum_congr rfl hdiff, ← sum_div,
     sum_range_sub' (fun j ↦ cot (π * d j))]
-  exact inv_two_mul_sin_add_inv_two_mul_sin_add_le hα hβ (hdα 0 (Nat.zero_le n))
-    (hle 0 n le_rfl (Nat.zero_le n)) (hdβ n le_rfl)
+  -- the boundary terms, by the half-angle formula
+  have h₀ := inv_sin_add_cot_le_cot_half (a := π * α) (x := π * d 0) (by positivity)
+    (mul_le_mul_of_nonneg_left (hdα 0 (Nat.zero_le n)) pi_pos.le)
+    (by nlinarith [pi_pos, hdβ 0 (Nat.zero_le n)])
+  have h₁ := inv_sin_sub_cot_le_cot_half (b := π * β) (y := π * d n) (by positivity)
+    (by nlinarith [pi_pos, hdα n le_rfl]) (by nlinarith [pi_pos, hdβ n le_rfl])
+  rw [mul_inv, mul_inv]
+  linarith
 
 /-- **The Kusmin–Landau inequality, discrete form.** Let `φ(0), …, φ(N)` be real phases whose
 increments `φ(j + 1) - φ(j)` form a monotone sequence (increasing or decreasing) in
@@ -232,12 +192,14 @@ theorem norm_intervalExpSum_le_cot_add_cot {f f' : ℝ → ℝ} {a b α β : ℝ
     ‖intervalExpSum f a b‖ ≤ (cot (π * α / 2) + cot (π * β / 2)) / 2 := by
   rcases lt_or_ge ⌊b⌋ ⌈a⌉ with hba | hab
   · refine (norm_intervalExpSum_le_toNat f a b).trans ?_
-    rw [show (⌊b⌋ + 1 - ⌈a⌉).toNat = 0 by omega, Nat.cast_zero]
-    linarith [one_le_cot_add_cot_div_two hα hβ hαβ]
+    have h : (⌊b⌋ + 1 - ⌈a⌉).toNat = 0 := by omega
+    rw [h, Nat.cast_zero]
+    linarith [two_le_cot_half_add_cot_half (a := π * α) (b := π * β) (by positivity)
+      (by positivity) (by nlinarith [pi_pos])]
   obtain ⟨N, hN⟩ : ∃ N : ℕ, ⌊b⌋ = ⌈a⌉ + N := ⟨(⌊b⌋ - ⌈a⌉).toNat, by omega⟩
   have hsum : intervalExpSum f a b = ∑ j ∈ range (N + 1), expTwoPiI (f (⌈a⌉ + j)) := by
-    rw [intervalExpSum_def, Int.Icc_eq_finset_map, sum_map,
-      show (⌊b⌋ + 1 - ⌈a⌉).toNat = N + 1 by omega]
+    have h : (⌊b⌋ + 1 - ⌈a⌉).toNat = N + 1 := by omega
+    rw [intervalExpSum_def, Int.Icc_eq_finset_map, sum_map, h]
     simp
   rw [hsum]
   -- by the mean value theorem, each increment is a value of `f'` on its unit interval
@@ -270,9 +232,8 @@ theorem norm_intervalExpSum_le_cot_add_cot {f f' : ℝ → ℝ} {a b α β : ℝ
   refine norm_sum_range_expTwoPiI_le_cot_add_cot (k := k) hα hβ hαβ
     (hmono.imp (fun h i _ j hj hij ↦ ?_) (fun h i _ j hj hij ↦ ?_)) (fun j hj ↦ ?_)
     (fun j hj ↦ ?_)
-  · obtain ⟨ξ, hξ, ξ', hξ', hle, h₁, h₂⟩ := key i j hj hij
-    simpa only [← h₁, ← h₂] using h hξ hξ' hle
-  · obtain ⟨ξ, hξ, ξ', hξ', hle, h₁, h₂⟩ := key i j hj hij
+  iterate 2
+    obtain ⟨ξ, hξ, ξ', hξ', hle, h₁, h₂⟩ := key i j (Set.mem_Iio.1 hj) hij
     simpa only [← h₁, ← h₂] using h hξ hξ' hle
   · obtain ⟨ξ, hξ, -, -, h⟩ := hmvt j hj
     simpa [h] using hlow ξ hξ
@@ -336,8 +297,8 @@ example : ‖intervalExpSum (fun x ↦ x / 2) 0 2‖ ≤ cot (π * (1 / 2) / 2) 
 `e(0) + e(1/2) + e(1) = 1 - 1 + 1 = 1 = cot (π/4)`. -/
 example : ‖intervalExpSum (fun x ↦ x / 2) 0 2‖ = cot (π * (1 / 2) / 2) := by
   have hcot : cot (π * (1 / 2) / 2) = 1 := by
-    rw [show π * (1 / 2) / 2 = π / 4 by ring, cot_eq_cos_div_sin, cos_pi_div_four,
-      sin_pi_div_four, div_self (by positivity)]
+    have h : π * (1 / 2) / 2 = π / 4 := by ring
+    rw [h, cot_eq_cos_div_sin, cos_pi_div_four, sin_pi_div_four, div_self (by positivity)]
   have h : expTwoPiI 2⁻¹ = -1 := by
     rw [expTwoPiI_def, ← Complex.exp_pi_mul_I]
     congr 1

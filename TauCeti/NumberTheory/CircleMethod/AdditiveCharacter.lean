@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Group.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 
 /-!
 # The additive character `e(α) = exp(2πiα)` and geometric sums
@@ -20,7 +21,9 @@ This file sets up the additive toolkit of the Hardy–Littlewood circle method o
   the coercion of Mathlib's `Real.fourierChar` to `ℂ` (`TauCeti.expTwoPiI_eq_fourierChar`); the
   file records its algebraic API (additivity, inverses, conjugation, powers, periodicity, the
   kernel `ℤ`) in the form used by exponential sums, and the identity
-  `(e(α) - 1)⁻¹ = -(1 + i cot (πα)) / 2` off the integers (`TauCeti.inv_expTwoPiI_sub_one`).
+  `(e(α) - 1)⁻¹ = -(1 + i cot (πα)) / 2` off the integers (`TauCeti.inv_expTwoPiI_sub_one`), with
+  its consequence `‖(e(β) - 1)⁻¹ - (e(α) - 1)⁻¹‖ = |cot (πα) - cot (πβ)| / 2`
+  (`TauCeti.norm_inv_expTwoPiI_sub_one_sub_inv_expTwoPiI_sub_one`).
 * `TauCeti.integral_expTwoPiI_intCast`: orthogonality, `∫₀¹ e(mα) dα = 1_{m = 0}` for `m : ℤ`.
   This is what turns a count of solutions of an additive equation into an integral over `[0, 1]`.
 * `TauCeti.distInt α = ‖α‖ = |α - round α|`, the distance from `α` to the nearest integer. It is
@@ -156,26 +159,24 @@ theorem norm_expTwoPiI_sub_one (α : ℝ) : ‖expTwoPiI α - 1‖ = 2 * |Real.s
 always `-1/2`, and its imaginary part is `-cot (πα) / 2`. -/
 theorem inv_expTwoPiI_sub_one {α : ℝ} (hα : expTwoPiI α ≠ 1) :
     (expTwoPiI α - 1)⁻¹ = -(1 + Real.cot (π * α) * I) / 2 := by
-  have hs : (Real.sin (π * α) : ℂ) ≠ 0 := by
-    refine ofReal_ne_zero.2 fun h ↦ hα ?_
-    rw [← sub_eq_zero, ← norm_eq_zero, norm_expTwoPiI_sub_one, h, abs_zero, mul_zero]
-  have hsc : (Real.sin (π * α) : ℂ) ^ 2 + (Real.cos (π * α) : ℂ) ^ 2 = 1 := by
-    exact_mod_cast Real.sin_sq_add_cos_sq (π * α)
-  -- `e(α) = (cos (πα) + i sin (πα))²`
-  have he : expTwoPiI α = ((Real.cos (π * α) : ℂ) + Real.sin (π * α) * I) ^ 2 := by
-    rw [expTwoPiI_def, ofReal_cos, ofReal_sin, ← exp_mul_I, sq, ← Complex.exp_add]
+  have h₁ : expTwoPiI α - 1 ≠ 0 := sub_ne_zero.2 hα
+  have h₂ : 1 - expTwoPiI α ≠ 0 := sub_ne_zero.2 (Ne.symm hα)
+  -- `cot (πα) = (e(α) + 1) / (i (1 - e(α)))`
+  rw [ofReal_cot, ofReal_mul, cot_pi_eq_exp_ratio, ← expTwoPiI_def]
+  field_simp
+  ring
+
+/-- Off the integers, `‖(e(β) - 1)⁻¹ - (e(α) - 1)⁻¹‖ = |cot (πα) - cot (πβ)| / 2`: the real parts of
+both inverses are `-1/2`. -/
+theorem norm_inv_expTwoPiI_sub_one_sub_inv_expTwoPiI_sub_one {α β : ℝ} (hα : expTwoPiI α ≠ 1)
+    (hβ : expTwoPiI β ≠ 1) :
+    ‖(expTwoPiI β - 1)⁻¹ - (expTwoPiI α - 1)⁻¹‖ = |Real.cot (π * α) - Real.cot (π * β)| / 2 := by
+  have h : -(1 + (Real.cot (π * β) : ℂ) * I) / 2 - -(1 + (Real.cot (π * α) : ℂ) * I) / 2 =
+      (((Real.cot (π * α) - Real.cot (π * β)) / 2 : ℝ) : ℂ) * I := by
     push_cast
-    ring_nf
-  apply inv_eq_of_mul_eq_one_left
-  rw [he, Real.cot_eq_cos_div_sin, ofReal_div]
-  generalize (Real.sin (π * α) : ℂ) = s at hs hsc ⊢
-  generalize (Real.cos (π * α) : ℂ) = c at hsc ⊢
-  have h : (c + s * I) ^ 2 - 1 = 2 * s * (-s + c * I) := by
-    linear_combination s ^ 2 * I_sq + hsc
-  calc -(1 + c / s * I) / 2 * ((c + s * I) ^ 2 - 1) = -((s + c * I) * (-s + c * I)) := by
-        rw [h]
-        field_simp
-    _ = 1 := by linear_combination (-c ^ 2) * I_sq + hsc
+    ring
+  rw [inv_expTwoPiI_sub_one hβ, inv_expTwoPiI_sub_one hα, h, norm_mul, norm_I, mul_one, norm_real,
+    Real.norm_eq_abs, abs_div, abs_two]
 
 /-- **Orthogonality** on `ℝ / ℤ`: `∫₀¹ e(mα) dα = 1` if `m = 0` and `0` otherwise. -/
 theorem integral_expTwoPiI_intCast (m : ℤ) :
