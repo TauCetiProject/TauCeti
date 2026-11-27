@@ -73,11 +73,8 @@ private theorem trivializationAt_restrictScalarsEquiv (x : M)
     (p : TangentBundle 𝓘(𝕜', E) M) (hp : p.proj ∈ (chartAt E x).source) :
     trivializationAt E (TangentSpace 𝓘(𝕜, E)) x (restrictScalarsEquiv 𝕜 M p) =
       trivializationAt E (TangentSpace 𝓘(𝕜', E)) x p := by
-  have : IsManifold (𝓘(𝕜', E).restrictScalars 𝕜) 1 M := by
-    rwa [modelWithCornersSelf_restrictScalars]
-  have h := 𝓘(𝕜', E).tangentCoordChange_restrictScalars 𝕜
-    (x := p.proj) (y := x) ⟨mem_chart_source E p.proj, hp⟩
-  simp only [modelWithCornersSelf_restrictScalars] at h
+  have h := TauCeti.tangentCoordChange_modelWithCornersSelf_restrictScalars_apply 𝕜 (𝕜' := 𝕜')
+    ⟨mem_chart_source E p.proj, hp⟩ (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd)
   rw [TangentBundle.trivializationAt_apply, TangentBundle.trivializationAt_apply]
   -- The carrier equivalence is defined through the model casts; the coordinate changes
   -- below act on the resulting vectors in E.
@@ -86,7 +83,6 @@ private theorem trivializationAt_restrictScalarsEquiv (x : M)
     (p.proj, tangentCoordChange 𝓘(𝕜', E) p.proj x p.proj
       (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd))
   rw [h]
-  rfl
 
 private theorem continuous_restrictScalarsEquiv :
     Continuous (restrictScalarsEquiv 𝕜 (𝕜' := 𝕜') (E := E) M) := by

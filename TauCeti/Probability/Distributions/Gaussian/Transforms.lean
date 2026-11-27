@@ -43,6 +43,8 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
   directional
   functional of a multivariate Gaussian.
 * `TauCeti.Probability.map_inner_multivariateGaussian` identifies scalar linear projections.
+* `ProbabilityTheory.HasLaw.inner_multivariateGaussian` gives the corresponding `HasLaw` statement
+  for an inner-product projection of a multivariate Gaussian random vector.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
 * `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real logarithm, the quadratic
   polynomial determined by the directional mean and variance.
@@ -293,3 +295,16 @@ theorem cgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
   rw [cgf, mgf_inner_multivariateGaussian m θ hS t, Real.log_exp]
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+/-- A directional inner-product projection of a multivariate Gaussian random vector has the
+corresponding scalar Gaussian law. -/
+theorem HasLaw.inner_multivariateGaussian {Ω ι : Type*} [MeasurableSpace Ω]
+    [Fintype ι] [DecidableEq ι] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ ι}
+    {m : EuclideanSpace ℝ ι} {S : Matrix ι ι ℝ}
+    (hX : HasLaw X (multivariateGaussian m S) P) (hS : S.PosSemidef) (q : EuclideanSpace ℝ ι) :
+    HasLaw (fun ω ↦ ⟪q, X ω⟫) (gaussianReal ⟪q, m⟫ (⟪q, S.toEuclideanLin q⟫).toNNReal) P :=
+  (HasLaw.mk (by fun_prop) (TauCeti.Probability.map_inner_multivariateGaussian m q hS)).fun_comp hX
+
+end ProbabilityTheory

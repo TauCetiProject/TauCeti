@@ -45,9 +45,17 @@ The two steps are glued by the locality of the planar equation,
 
 ## Main results
 
+* `TauCeti.IsWeakCauchyRiemannOn.symm_trans_comp`: the coordinate equation under a change of
+  target chart, for charts into possibly different normed spaces, and its case
+  `TauCeti.IsWeakCauchyRiemannOn.chartPushforward_symm_trans_comp` for a structure independent of
+  the domain point and the zero term.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas`,
   `TauCeti.isWeakPseudoholomorphic_iff_of_subset_maximalAtlas`: **chart independence**, testing
   families of charts covering `s` and `u '' s`.
+* `TauCeti.isWeakPseudoholomorphicOn_of_forall_exists_chart`: it suffices that, for each chart `ψ`
+  of a family covering `u '' s`, every point has some holomorphic chart around it in which the
+  equation holds; the holomorphic chart may depend on `ψ`. This is used for product targets, whose
+  product charts are tested against their own first factor.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_atlas`, `TauCeti.isWeakPseudoholomorphic_iff_atlas`:
   it suffices to test the atlases of `X` and `M`.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_chartAt`, `TauCeti.isWeakPseudoholomorphic_iff_chartAt`:
@@ -83,7 +91,8 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(
 
 section Transport
 
-variable {p : ENNReal} {ψ₁ ψ₂ : OpenPartialHomeomorph M G}
+variable {p : ENNReal} {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G']
+  {ψ₁ : OpenPartialHomeomorph M G} {ψ₂ : OpenPartialHomeomorph M G'}
 
 /-- **The coordinate equation under a change of holomorphic chart.** A solution `g` of the
 coordinate equation read in the holomorphic chart `φ` and a chart `ψ` of `M` gives, composed with
@@ -112,10 +121,8 @@ private theorem IsWeakCauchyRiemannOn.comp_symm_trans_of_mem_maximalAtlas
   have h' := h.comp_differentiableOn (φ'.symm.trans φ).open_source hτ hU
     ((φ'.symm.trans φ).injOn.mono hU) hderiv hmaps fun z hz ↦ by
       have hx := hg (hmaps (interior_subset hz))
-      ext v
-      rw [mul_apply_eq_comp, ContMDiffAlmostComplexStructureFamily.chartField_apply,
-        (J.freeze _).chartPushforward_apply_chartPushforward_apply ψ hx (hdiff _ hx).1
-          (hdiff _ hx).2 v, neg_apply, one_apply_eq_self]
+      rw [ContMDiffAlmostComplexStructureFamily.chartField_apply]
+      exact (J.freeze _).chartPushforward_mul_self ψ hx (hdiff _ hx).1 (hdiff _ hx).2
   refine (isWeakCauchyRiemannOn_congr_ae ?_ ?_).1 h' <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Eventually.of_forall fun z hz ↦ ?_)
   · have hz' : φ'.symm z ∈ φ.source := (by simpa using hU (interior_subset hz) :
@@ -128,13 +135,13 @@ private theorem IsWeakCauchyRiemannOn.comp_symm_trans_of_mem_maximalAtlas
 /-- **The coordinate equation under a change of target chart.** A solution `g` of the coordinate
 equation read in the holomorphic chart `φ` and a chart `ψ₁` of `M` gives, after the transition
 `ψ₂ ∘ ψ₁⁻¹`, a solution of the coordinate equation read in `φ` and `ψ₂`, when both charts are
-`C¹` with `C¹` inverses. -/
-private theorem IsWeakCauchyRiemannOn.symm_trans_comp [CompleteSpace G]
+`C¹` with `C¹` inverses. The two charts may take values in different normed spaces. -/
+theorem IsWeakCauchyRiemannOn.symm_trans_comp [CompleteSpace G']
     (φ : OpenPartialHomeomorph X ℂ)
     (hψ₁ : ContMDiffOn I 𝓘(ℝ, G) 1 ψ₁ ψ₁.source)
     (hψ₁s : ContMDiffOn 𝓘(ℝ, G) I 1 ψ₁.symm ψ₁.target)
-    (hψ₂ : ContMDiffOn I 𝓘(ℝ, G) 1 ψ₂ ψ₂.source)
-    (hψ₂s : ContMDiffOn 𝓘(ℝ, G) I 1 ψ₂.symm ψ₂.target) {U : Set ℂ} {g : ℂ → G}
+    (hψ₂ : ContMDiffOn I 𝓘(ℝ, G') 1 ψ₂ ψ₂.source)
+    (hψ₂s : ContMDiffOn 𝓘(ℝ, G') I 1 ψ₂.symm ψ₂.target) {U : Set ℂ} {g : ℂ → G}
     (h : IsWeakCauchyRiemannOn p U (J.chartField φ ψ₁) (ν.chartTerm φ ψ₁) g)
     (hg : MapsTo g U (ψ₁.symm.trans ψ₂).source) :
     IsWeakCauchyRiemannOn p U (J.chartField φ ψ₂) (ν.chartTerm φ ψ₂)
@@ -147,7 +154,7 @@ private theorem IsWeakCauchyRiemannOn.symm_trans_comp [CompleteSpace G]
       (hψ₂.comp (hψ₁s.mono fun q hq ↦ (hsrc q hq).1) fun q hq ↦ (hsrc q hq).2)
   have hdiff : ∀ q ∈ (ψ₁.symm.trans ψ₂).source,
       MDifferentiableAt I 𝓘(ℝ, G) ψ₁ (ψ₁.symm q) ∧
-        MDifferentiableAt 𝓘(ℝ, G) I ψ₂.symm (ψ₁.symm.trans ψ₂ q) ∧
+        MDifferentiableAt 𝓘(ℝ, G') I ψ₂.symm (ψ₁.symm.trans ψ₂ q) ∧
           DifferentiableAt ℝ (ψ₁.symm.trans ψ₂) q := fun q hq ↦
     ⟨(hψ₁.mdifferentiableOn one_ne_zero).mdifferentiableAt
         (ψ₁.open_source.mem_nhds (ψ₁.map_target (hsrc q hq).1)),
@@ -161,6 +168,30 @@ private theorem IsWeakCauchyRiemannOn.symm_trans_comp [CompleteSpace G]
     exact J.chartField_symm_trans_comp_fderiv φ z (hg (interior_subset hz)) h1 h2 h3
   · obtain ⟨h1, -, h3⟩ := hdiff _ (hg (interior_subset hz))
     exact ν.chartTerm_symm_trans_apply φ z (hg (interior_subset hz)) h1 h3
+
+omit [IsManifold 𝓘(ℂ) ∞ X] in
+/-- **The homogeneous equation for a structure independent of the domain point, under a change of
+target chart.** For an almost complex structure `J₀` on `M` and charts `ψ₁`, `ψ₂` of `M` into
+normed spaces, both `C¹` with `C¹` inverses, a weak solution `g` of `∂ₛg + ψ₁_* J₀(g) ∂ₜg = 0` on
+`U` with values in the source of `Θ = ψ₂ ∘ ψ₁⁻¹` gives the weak solution `Θ ∘ g` of
+`∂ₛg + ψ₂_* J₀(g) ∂ₜg = 0`. This is `IsWeakCauchyRiemannOn.symm_trans_comp` for the
+domain-independent family on `ℂ` and the zero term. -/
+theorem IsWeakCauchyRiemannOn.chartPushforward_symm_trans_comp [CompleteSpace G'] {n : ℕ∞}
+    {J₀ : ContMDiffAlmostComplexStructure I n M}
+    (hψ₁ : ContMDiffOn I 𝓘(ℝ, G) 1 ψ₁ ψ₁.source)
+    (hψ₁s : ContMDiffOn 𝓘(ℝ, G) I 1 ψ₁.symm ψ₁.target)
+    (hψ₂ : ContMDiffOn I 𝓘(ℝ, G') 1 ψ₂ ψ₂.source)
+    (hψ₂s : ContMDiffOn 𝓘(ℝ, G') I 1 ψ₂.symm ψ₂.target) {U : Set ℂ} {g : ℂ → G}
+    (h : IsWeakCauchyRiemannOn p U (fun _ v ↦ J₀.chartPushforward ψ₁ v) (fun _ _ ↦ 0) g)
+    (hg : MapsTo g U (ψ₁.symm.trans ψ₂).source) :
+    IsWeakCauchyRiemannOn p U (fun _ v ↦ J₀.chartPushforward ψ₂ v) (fun _ _ ↦ 0)
+      (fun z ↦ ψ₁.symm.trans ψ₂ (g z)) := by
+  have key := IsWeakCauchyRiemannOn.symm_trans_comp (X := ℂ) (p := p) (U := U) (g := g)
+    (J := ContMDiffAlmostComplexStructureFamily.const J₀) (ν := 0)
+    (OpenPartialHomeomorph.refl ℂ) hψ₁ hψ₁s hψ₂ hψ₂s
+  simp only [ContMDiffAlmostComplexStructureFamily.chartField_const,
+    InhomogeneousTerm.chartTerm_zero] at key
+  exact key h hg
 
 end Transport
 
@@ -183,23 +214,23 @@ private theorem contMDiffOn_extendTrans_refl {ψ : OpenPartialHomeomorph M H}
     (ψ.contMDiffOn_extendTrans_symm hψ (Ψ := Homeomorph.refl E) contDiff_id).of_le
       (by exact_mod_cast le_top)⟩
 
-/-- **Chart independence of the weak pseudoholomorphic equation.** A map is weakly
-pseudoholomorphic on `s` exactly when it is continuous on `s` and its coordinate expressions solve
-the coordinate equation for the charts of a family `A` of holomorphic charts covering `s` and a
-family `B` of charts of `M` covering `u '' s`. -/
-theorem isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas
+/-- **Testing holomorphic charts near each point.** A map continuous on `s` is weakly
+pseudoholomorphic on `s` once, for a family `B` of charts of `M` covering `u '' s`, every chart
+`ψ` of `B` and every point `x` of `s` with `u x` in the source of `ψ` admit a holomorphic chart `φ`
+of a family `A` around `x` in which the coordinate expression solves the coordinate equation. The
+holomorphic chart may depend on `ψ` and on `x`. -/
+theorem isWeakPseudoholomorphicOn_of_forall_exists_chart
     {A : Set (OpenPartialHomeomorph X ℂ)} (hA : A ⊆ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
-    (hAs : ∀ x ∈ s, ∃ φ ∈ A, x ∈ φ.source)
     {B : Set (OpenPartialHomeomorph M H)} (hB : B ⊆ IsManifold.maximalAtlas I ∞ M)
-    (hBs : ∀ x ∈ s, ∃ ψ ∈ B, u x ∈ ψ.source) :
-    IsWeakPseudoholomorphicOn J ν p u s ↔ ContinuousOn u s ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
+    (hBs : ∀ x ∈ s, ∃ ψ ∈ B, u x ∈ ψ.source) (hc : ContinuousOn u s)
+    (h : ∀ ψ ∈ B, ∀ x ∈ s, u x ∈ ψ.source → ∃ φ ∈ A, x ∈ φ.source ∧
       IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
         (J.chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
         (ν.chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
-        (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm) := by
-  refine ⟨fun h ↦ ⟨h.continuousOn, fun φ hφ ψ hψ ↦ h.isWeakCauchyRiemannOn_chart (hA hφ) (hB hψ)⟩,
-    fun ⟨hc, h⟩ ↦ isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn.2
-      ⟨hc, fun φ' hφ' ψ' hψ' ↦ ?_⟩⟩
+        (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm)) :
+    IsWeakPseudoholomorphicOn J ν p u s := by
+  refine isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn.2
+    ⟨hc, fun φ' hφ' ψ' hψ' ↦ ?_⟩
   -- Change the holomorphic chart, for each chart of `B`.
   have h1 : ∀ ψ ∈ B, IsWeakCauchyRiemannOn p (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
       (J.chartField φ' (ψ.extendTrans I (Homeomorph.refl E)))
@@ -208,10 +239,10 @@ theorem isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas
     intro ψ hψ
     obtain ⟨hψ₁, hψ₁s⟩ := contMDiffOn_extendTrans_refl (hB hψ)
     refine isWeakCauchyRiemannOn_iff_locally.2 fun z hz ↦ ?_
-    obtain ⟨φ, hφA, hxφ⟩ := hAs _ hz.2.1
+    obtain ⟨φ, hφA, hxφ, hφψ⟩ := h ψ hψ _ hz.2.1 hz.2.2
     have hzτ : z ∈ (φ'.symm.trans φ).source := by simpa using ⟨hz.1, hxφ⟩
     refine ⟨_, inter_mem_nhdsWithin _ ((φ'.symm.trans φ).open_source.mem_nhds hzτ), ?_⟩
-    refine ((h φ hφA ψ hψ).comp_symm_trans_of_mem_maximalAtlas (hA hφA) hφ'
+    refine (hφψ.comp_symm_trans_of_mem_maximalAtlas (hA hφA) hφ'
       (hψ₁.mdifferentiableOn one_ne_zero) (hψ₁s.mdifferentiableOn one_ne_zero) inter_subset_right
       (fun w hw ↦ ?_) (fun w hw ↦ ?_)).congr fun w hw ↦ ?_
     · have hw' : w ∈ φ'.target ∧ φ'.symm w ∈ φ.source := by simpa using hw.2
@@ -237,6 +268,24 @@ theorem isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas
     simpa [(ψ.extendTrans I (Homeomorph.refl E)).left_inv (by simpa using hu), hu] using hw.1.2.2
   · have hu : u (φ'.symm w) ∈ ψ.source := hw.2
     simp [ψ.left_inv hu]
+
+/-- **Chart independence of the weak pseudoholomorphic equation.** A map is weakly
+pseudoholomorphic on `s` exactly when it is continuous on `s` and its coordinate expressions solve
+the coordinate equation for the charts of a family `A` of holomorphic charts covering `s` and a
+family `B` of charts of `M` covering `u '' s`. -/
+theorem isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas
+    {A : Set (OpenPartialHomeomorph X ℂ)} (hA : A ⊆ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hAs : ∀ x ∈ s, ∃ φ ∈ A, x ∈ φ.source)
+    {B : Set (OpenPartialHomeomorph M H)} (hB : B ⊆ IsManifold.maximalAtlas I ∞ M)
+    (hBs : ∀ x ∈ s, ∃ ψ ∈ B, u x ∈ ψ.source) :
+    IsWeakPseudoholomorphicOn J ν p u s ↔ ContinuousOn u s ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
+      IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
+        (J.chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
+        (ν.chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
+        (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm) :=
+  ⟨fun h ↦ ⟨h.continuousOn, fun _ hφ _ hψ ↦ h.isWeakCauchyRiemannOn_chart (hA hφ) (hB hψ)⟩,
+    fun ⟨hc, h⟩ ↦ isWeakPseudoholomorphicOn_of_forall_exists_chart hA hB hBs hc
+      fun ψ hψ x hx _ ↦ (hAs x hx).imp fun φ ⟨hφ, hxφ⟩ ↦ ⟨hφ, hxφ, h φ hφ ψ hψ⟩⟩
 
 /-- **Chart independence on the whole surface.** A map is weakly pseudoholomorphic exactly when
 it is continuous and its coordinate expressions solve the coordinate equation for the charts of a

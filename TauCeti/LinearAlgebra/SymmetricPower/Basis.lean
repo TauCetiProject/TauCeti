@@ -43,6 +43,8 @@ orderings of an unordered tuple differ by a permutation.
 * `SymmetricPower.finrank_eq`: for free `M`, the rank of `Sym[R]^n M` is
   `Nat.multichoose (finrank R M) n`; for finite free `M` this counts the unordered `n`-tuples of
   basis indices.
+* `SymmetricPower.finrank_eq_choose`: the same rank as the binomial coefficient
+  `binom(finrank R M + n - 1, n)`.
 * `Module.Basis.trace_map_symmetricPower_of_apply`: the trace on `Sym[R]^n M` of an endomorphism
   that is diagonal in a basis is the sum, over the unordered `n`-tuples of basis indices, of the
   product of the corresponding eigenvalues. This is the complete homogeneous symmetric polynomial
@@ -210,6 +212,12 @@ theorem finrank_eq [StrongRankCondition R] [Module.Free R M] :
     Module.finrank R (Sym[R]^n M) = Nat.multichoose (Module.finrank R M) n := by
   rw [Module.finrank_eq_nat_card_basis ((Module.Free.chooseBasis R M).symmetricPower n),
     Sym.natCard_sym_eq_multichoose, Module.finrank_eq_nat_card_basis (Module.Free.chooseBasis R M)]
+
+/-- The rank of a symmetric power of a free module, as a binomial coefficient: `Sym[R]^n M` has
+rank `binom(finrank R M + n - 1, n)`. -/
+theorem finrank_eq_choose [StrongRankCondition R] [Module.Free R M] :
+    Module.finrank R (Sym[R]^n M) = (Module.finrank R M + n - 1).choose n := by
+  rw [finrank_eq, Nat.multichoose_eq]
 
 /-! ### Traces -/
 

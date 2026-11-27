@@ -136,10 +136,7 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M]
 /-- The norm of `eᵗ z` is `eᵗ` for a unit covector `z`. -/
 private theorem norm_snd_radial (p : ℝ × cosphereBundle I M) :
     ‖(radial p).snd‖ = Real.exp p.1 := by
-  -- This is `norm_smul`; instance search does not find `NormSMulClass` for covectors of the
-  -- Riemannian fibre norm, so it is supplied from the `NormedSpace` instance.
-  rw [radial, expSMul_apply, ((NormedSpace.toNormSMulClass (𝕜 := ℝ)
-      (E := TangentSpace I p.2.val.proj →L[ℝ] ℝ)).norm_smul (Real.exp p.1) p.2.val.snd),
+  rw [radial, expSMul_apply, norm_smul_snd (Real.exp p.1) p.2.val,
     mem_cosphereBundle.1 p.2.property, mul_one, Real.norm_of_nonneg (Real.exp_pos p.1).le]
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless]

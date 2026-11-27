@@ -347,18 +347,11 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ex
   have hΩS : Ω ⊆ S := hΩD.trans hDS
   -- The Floer energy over `Ω` is at most the energy over `S`, which exceeds the topological energy
   -- by at most `B₀ + B₁ + B_∞`.
-  have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x Complex.I) (u k) z ≤
-        A + ∑ q, B q := by
-    have habs := hω.abs_integral_floerEnergyDensity_exchangePerturbation_sub_le hH
-      (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
-      ((hu k).of_le (by norm_num)) (hx k) (hxinf k) (hint k) (harea k)
-    refine (hω.setIntegral_floerEnergyDensity_mono_set hΩS
-      isOpen_thricePuncturedSphereReal.measurableSet (hint k) (fun z hz ↦ hJt _ (hcC k) z hz _)
-      (hfl k)).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, htop k]
   exact hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
-    (fun k ↦ (hint k).mono_set hΩS) hE
+    (fun k ↦ (hint k).mono_set hΩS) fun k ↦
+      hω.setIntegral_floerEnergyDensity_exchangePerturbation_le hH
+        (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
+        ((hu k).of_le (by norm_num)) (hx k) (hxinf k) (hint k) (harea k)
+        (fun z hz ↦ hJt _ (hcC k) z hz _) (hfl k) (htop k) hΩS
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

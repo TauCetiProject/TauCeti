@@ -34,6 +34,8 @@ homomorphism from `V(R)` to an abelian group extends uniquely along the class ma
 * `TauCeti.ProjectionKZero R`: the group `K₀(R)`, the Grothendieck group of `V(R)`.
 * `TauCeti.ProjectionKZero.map f`: the homomorphism `K₀(R) →+ K₀(S)` induced entrywise by a star
   ring homomorphism `f : R →⋆ₙ+* S`, unital or not.
+* `TauCeti.ProjectionKZero.mapEquiv e`: the isomorphism `K₀(R) ≃+ K₀(S)` induced by a star ring
+  isomorphism `e : R ≃⋆+* S`.
 
 ## Main statements
 
@@ -74,10 +76,6 @@ abbrev ProjectionKZero : Type _ :=
 namespace ProjectionKZero
 
 variable {R} {m n m' n' : Type*} [Fintype m] [Fintype n] [Fintype m'] [Fintype n']
-
-/-- Over the zero ring every matrix projection is zero, so `K₀` is trivial. -/
-instance [Subsingleton R] : Subsingleton (ProjectionKZero R) :=
-  (AddLocalization.addMonoidOf _).subsingleton_of_subsingleton
 
 /-- **Generation by differences.** Every element of `K₀(R)` is `[p] - [q]` for matrix
 projections `p` and `q`. -/
@@ -207,6 +205,36 @@ theorem map_comp (g : S →⋆ₙ+* T) (f : R →⋆ₙ+* S) :
   GrothendieckAddGroup.addHom_ext fun x ↦ by
     rw [AddMonoidHom.comp_apply, map_of, map_of, map_of, ProjectionMonoid.map_comp,
       AddMonoidHom.comp_apply]
+
+/-- Applying the homomorphisms induced by `f` and then by `g` on `K₀` is applying the
+homomorphism induced by their composite. -/
+theorem map_map (g : S →⋆ₙ+* T) (f : R →⋆ₙ+* S) (x : ProjectionKZero R) :
+    map g (map f x) = map (g.comp f) x := by
+  rw [map_comp, AddMonoidHom.comp_apply]
+
+/-- If a star ring homomorphism vanishes, so does the homomorphism it induces on `K₀`. -/
+theorem map_eq_zero_of_forall_eq_zero {f : R →⋆ₙ+* S} (hf : ∀ r, f r = 0) : map f = 0 :=
+  GrothendieckAddGroup.addHom_ext fun x ↦ by
+    rw [map_of, ProjectionMonoid.map_eq_zero_of_forall_eq_zero hf, map_zero,
+      AddMonoidHom.zero_apply]
+
+/-- **Invariance under isomorphism.** A star ring isomorphism `e : R ≃⋆+* S` induces an
+isomorphism `K₀(R) ≃+ K₀(S)`, with inverse induced by `e.symm`. -/
+noncomputable def mapEquiv (e : R ≃⋆+* S) : ProjectionKZero R ≃+ ProjectionKZero S :=
+  AddMonoidHom.toAddEquiv (map e) (map e.symm)
+    (by rw [← map_comp, ← map_id]; exact congrArg map (NonUnitalStarRingHom.ext e.symm_apply_apply))
+    (by rw [← map_comp, ← map_id]; exact congrArg map (NonUnitalStarRingHom.ext e.apply_symm_apply))
+
+/-- The isomorphism induced by `e : R ≃⋆+* S` is `TauCeti.ProjectionKZero.map e`. -/
+@[simp]
+theorem mapEquiv_apply (e : R ≃⋆+* S) (x : ProjectionKZero R) : mapEquiv e x = map e x :=
+  (rfl)
+
+/-- The inverse of the isomorphism induced by `e : R ≃⋆+* S` is induced by `e.symm`. -/
+@[simp]
+theorem mapEquiv_symm_apply (e : R ≃⋆+* S) (x : ProjectionKZero S) :
+    (mapEquiv e).symm x = map e.symm x :=
+  (rfl)
 
 end map
 

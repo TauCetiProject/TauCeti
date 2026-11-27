@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.IntegrableExpMul
-public import Mathlib.Probability.Moments.Variance
 public import Mathlib.Probability.Distributions.Pareto
+public import Mathlib.Probability.HasLaw
 
 import TauCeti.Probability.Moments.IntegrableExpMul
+import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Distributions.Pareto.PDF
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
@@ -35,11 +36,24 @@ bases are positive, so Mathlib's improper-integral criterion for real powers app
   real density.
 * `TauCeti.Probability.integrable_rpow_paretoMeasure_iff` and
   `TauCeti.Probability.integral_rpow_paretoMeasure` give the sharp moment criterion and value.
+* `TauCeti.Probability.integrable_pow_paretoMeasure_iff` and
+  `TauCeti.Probability.integral_pow_paretoMeasure` specialize the criterion and value to natural
+  powers.
 * `TauCeti.Probability.integral_id_paretoMeasure` and
   `TauCeti.Probability.variance_id_paretoMeasure` compute the mean and variance.
 * `TauCeti.Probability.cdf_paretoMeasure_eq` computes the cdf.
 * `TauCeti.Probability.integrableExpSet_id_paretoMeasure` identifies the exponential-moment
   domain as `Set.Iic 0`.
+* `ProbabilityTheory.HasLaw.integrable_rpow_paretoMeasure_iff`,
+  `ProbabilityTheory.HasLaw.integral_rpow_paretoMeasure`,
+  `ProbabilityTheory.HasLaw.integrable_pow_paretoMeasure_iff`,
+  `ProbabilityTheory.HasLaw.integral_pow_paretoMeasure`,
+  `ProbabilityTheory.HasLaw.integrable_paretoMeasure_iff`,
+  `ProbabilityTheory.HasLaw.integral_paretoMeasure`,
+  `ProbabilityTheory.HasLaw.variance_paretoMeasure`,
+  `ProbabilityTheory.HasLaw.integrable_exp_mul_paretoMeasure_iff`, and
+  `ProbabilityTheory.HasLaw.integrableExpSet_paretoMeasure` transfer these results to Pareto
+  random variables.
 
 ## References
 
@@ -155,6 +169,21 @@ theorem integral_rpow_paretoMeasure (ht : 0 < t) (hr : 0 < r) (hq : q < r) :
   field_simp [hqr_ne, hrq_ne]
   ring
 
+/-- A natural power is integrable under a nondegenerate Pareto law exactly when its exponent is
+below the shape parameter. -/
+@[simp]
+theorem integrable_pow_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) (n : ℕ) :
+    Integrable (fun x : ℝ ↦ x ^ n) (paretoMeasure t r) ↔ (n : ℝ) < r := by
+  simpa only [Real.rpow_natCast] using
+    integrable_rpow_paretoMeasure_iff ht hr (n : ℝ)
+
+/-- The `n`-th natural moment of a Pareto law below the shape parameter. -/
+theorem integral_pow_paretoMeasure (ht : 0 < t) {n : ℕ} (hn : (n : ℝ) < r) :
+    ∫ x : ℝ, x ^ n ∂paretoMeasure t r = r * t ^ n / (r - n) := by
+  have hr : 0 < r := (Nat.cast_nonneg n).trans_lt hn
+  simpa only [Real.rpow_natCast] using
+    integral_rpow_paretoMeasure (q := (n : ℝ)) ht hr hn
+
 /-- The mean of a Pareto law is `r * t / (r - 1)` when `1 < r`. -/
 theorem integral_id_paretoMeasure (ht : 0 < t) (hr : 1 < r) :
     ∫ x : ℝ, x ∂paretoMeasure t r = r * t / (r - 1) := by
@@ -175,22 +204,10 @@ theorem not_integrable_id_paretoMeasure (ht : 0 < t) (hr : 0 < r) (h : r ≤ 1) 
   rw [integrable_id_paretoMeasure_iff ht hr]
   exact not_lt.mpr h
 
-/-- The second raw moment of a Pareto law is `r * t² / (r - 2)` when `2 < r`. -/
-theorem integral_sq_paretoMeasure (ht : 0 < t) (hr : 2 < r) :
-    ∫ x : ℝ, x ^ 2 ∂paretoMeasure t r = r * t ^ 2 / (r - 2) := by
-  have h := integral_rpow_paretoMeasure (q := (2 : ℝ)) ht (by linarith) hr
-  simpa [Real.rpow_two] using h
-
-/-- Squaring is integrable under a Pareto law exactly when the shape exceeds `2`. -/
-@[simp]
-theorem integrable_sq_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) :
-    Integrable (fun x : ℝ => x ^ 2) (paretoMeasure t r) ↔ 2 < r := by
-  simpa [Real.rpow_two] using integrable_rpow_paretoMeasure_iff ht hr 2
-
 /-- At or below shape `2`, the second raw moment of a nondegenerate Pareto law diverges. -/
 theorem not_integrable_sq_paretoMeasure (ht : 0 < t) (hr : 0 < r) (h : r ≤ 2) :
     ¬ Integrable (fun x : ℝ => x ^ 2) (paretoMeasure t r) := by
-  rw [integrable_sq_paretoMeasure_iff ht hr]
+  rw [integrable_pow_paretoMeasure_iff ht hr 2]
   exact not_lt.mpr h
 
 /-- The variance of a Pareto law is `r * t² / ((r - 1)² * (r - 2))` when `2 < r`. -/
@@ -200,10 +217,11 @@ theorem variance_id_paretoMeasure (ht : 0 < t) (hr : 2 < r) :
     isProbabilityMeasure_paretoMeasure ht (by linarith)
   have hmem : MemLp id 2 (paretoMeasure t r) := by
     rw [memLp_two_iff_integrable_sq measurable_id.aestronglyMeasurable]
-    simpa [id_eq] using (integrable_sq_paretoMeasure_iff ht (by linarith)).mpr hr
+    simpa only [id_eq] using (integrable_pow_paretoMeasure_iff ht (by linarith) 2).mpr hr
   rw [variance_eq_sub hmem]
   simp only [Pi.pow_apply, id_eq]
-  rw [integral_id_paretoMeasure ht (by linarith), integral_sq_paretoMeasure ht hr]
+  rw [integral_id_paretoMeasure ht (by linarith),
+    integral_pow_paretoMeasure (n := 2) ht (by norm_num; linarith)]
   have hr1_ne : r - 1 ≠ 0 := by linarith
   have hr2_ne : r - 2 ≠ 0 := by linarith
   field_simp [hr1_ne, hr2_ne]
@@ -283,6 +301,82 @@ theorem integrableExpSet_id_paretoMeasure (ht : 0 < t) (hr : 0 < r) :
   simpa [integrableExpSet, id_eq] using integrable_exp_mul_id_paretoMeasure_iff ht hr u
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {t r q : ℝ} {n : ℕ} {Ω : Type*} [MeasurableSpace Ω]
+  {P : Measure Ω} {X : Ω → ℝ}
+
+/-- A real power of a Pareto random variable is integrable exactly below the shape parameter. -/
+theorem integrable_rpow_paretoMeasure_iff (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hr : 0 < r) (q : ℝ) :
+    Integrable (fun ω ↦ X ω ^ q) P ↔ q < r := by
+  simpa only [Function.comp_def] using
+    (integrable_comp_iff hX (f := fun x : ℝ ↦ x ^ q) (by fun_prop)).trans
+      (TauCeti.Probability.integrable_rpow_paretoMeasure_iff ht hr q)
+
+/-- The real-power moment of a Pareto random variable below the shape parameter. -/
+theorem integral_rpow_paretoMeasure (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hr : 0 < r) (hq : q < r) :
+    ∫ ω, X ω ^ q ∂P = r * t ^ q / (r - q) := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ q), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_rpow_paretoMeasure ht hr hq]
+
+/-- A natural power of a Pareto random variable is integrable exactly when its exponent is below
+the shape parameter. -/
+theorem integrable_pow_paretoMeasure_iff (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hr : 0 < r) (n : ℕ) :
+    Integrable (fun ω ↦ X ω ^ n) P ↔ (n : ℝ) < r := by
+  simpa only [Real.rpow_natCast] using
+    hX.integrable_rpow_paretoMeasure_iff ht hr (n : ℝ)
+
+/-- The natural moments of a Pareto random variable below the shape parameter. -/
+theorem integral_pow_paretoMeasure (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hn : (n : ℝ) < r) :
+    ∫ ω, X ω ^ n ∂P = r * t ^ n / (r - n) := by
+  have hr : 0 < r := (Nat.cast_nonneg n).trans_lt hn
+  simpa only [Real.rpow_natCast] using hX.integral_rpow_paretoMeasure ht hr hn
+
+/-- A Pareto random variable is integrable exactly when the shape exceeds one. -/
+theorem integrable_paretoMeasure_iff (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hr : 0 < r) :
+    Integrable X P ↔ 1 < r := by
+  simpa only [pow_one, Nat.cast_one] using hX.integrable_pow_paretoMeasure_iff ht hr 1
+
+/-- The expectation of a Pareto random variable above shape one. -/
+theorem integral_paretoMeasure (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hr : 1 < r) :
+    ∫ ω, X ω ∂P = r * t / (r - 1) := by
+  have hr' : ((1 : ℕ) : ℝ) < r := by simpa only [Nat.cast_one] using hr
+  simpa only [pow_one, Nat.cast_one] using
+    hX.integral_pow_paretoMeasure (n := 1) ht hr'
+
+/-- The variance of a Pareto random variable above shape two. -/
+theorem variance_paretoMeasure (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hr : 2 < r) :
+    variance X P = r * t ^ 2 / ((r - 1) ^ 2 * (r - 2)) := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_paretoMeasure ht hr]
+
+/-- A Pareto random variable has a finite exponential moment exactly at nonpositive rates. -/
+theorem integrable_exp_mul_paretoMeasure_iff (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hr : 0 < r) (u : ℝ) :
+    Integrable (fun ω ↦ Real.exp (u * X ω)) P ↔ u ≤ 0 := by
+  simpa only [Function.comp_def] using
+    (integrable_comp_iff hX (f := fun x : ℝ ↦ Real.exp (u * x)) (by fun_prop)).trans
+      (TauCeti.Probability.integrable_exp_mul_id_paretoMeasure_iff ht hr u)
+
+/-- The exponential-integrability domain of a Pareto random variable is the nonpositive
+half-line. -/
+theorem integrableExpSet_paretoMeasure (hX : HasLaw X (paretoMeasure t r) P)
+    (ht : 0 < t) (hr : 0 < r) :
+    integrableExpSet X P = Set.Iic 0 := by
+  ext u
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_Iic] using
+    hX.integrable_exp_mul_paretoMeasure_iff ht hr u
+
+end ProbabilityTheory.HasLaw
 
 end
 

@@ -44,6 +44,12 @@ lemma iCycles_app_toCycles_app (i j : ι) [K.HasHomology j] {U : C} (x : ToType 
 
 end Concrete
 
+/-- Restriction of a functor-valued cocycle along any source morphism is again a cocycle. -/
+lemma d_app_map_eq_zero (K : HomologicalComplex (C ⥤ AddCommGrpCat) c) {i j : ι}
+    {U V : C} (f : U ⟶ V) (s : (K.X i).obj U) (hs : (K.d i j).app U s = 0) :
+    (K.d i j).app V ((K.X i).map f s) = 0 := by
+  rw [NatTrans.naturality_apply, hs, map_zero]
+
 /-- An element of a complex of functors to abelian groups that is killed by the differential comes
 from a cycle. -/
 lemma exists_iCycles_app_eq (K : HomologicalComplex (C ⥤ AddCommGrpCat) c) {i : ι} (j : ι)

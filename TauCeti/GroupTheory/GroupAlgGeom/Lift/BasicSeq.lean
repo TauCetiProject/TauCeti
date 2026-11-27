@@ -76,7 +76,9 @@ with `γ₁ ^ p₁` and last with `γ_j ^ p_j` (`twistPoint_concat`).
   (`map_toMulAut_basicWordSeqData`, `map_toMulAut_basicSeqData`), with one equation per
   orientable form (`basicSeqData_orientable`, `basicSeqData_orientableCoeff_of_eq_zero`,
   `basicSeqData_orientableCoeff_of_ne_zero`); their substitutions fix the equation
-  (`twistHom_toWord_of_mem_basicSeqData`).
+  (`twistHom_toWord_of_mem_basicSeqData`) and map its radical into itself
+  (`mapsTo_twistHom_Rad_of_mem_basicSeqData`, also for `J` rounds:
+  `mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData`).
 
 ## Main results
 
@@ -96,6 +98,10 @@ with `γ₁ ^ p₁` and last with `γ_j ^ p_j` (`twistPoint_concat`).
   with period the length of the basic sequence.
 * `TauCeti.GroupAlgGeom.Lift.twistPoint_mem_V_iff`: the point `φ_{j,p} v` is a solution of the
   equation exactly when `v` is.
+* `TauCeti.GroupAlgGeom.Lift.eval_wordMap_phi`, `TauCeti.GroupAlgGeom.Lift.wordMap_phi_mem_V`:
+  for the products `φ_{L,p}` of the twists of any list of twist data, evaluating at the point
+  `φ_{L,p} v` is evaluating at `v` after applying `φ_{L,p}`, and if the twists map the radical of
+  a system into itself, the points `φ_{L,p} v` of a solution `v` are solutions.
 
 ## References
 
@@ -219,6 +225,21 @@ theorem apply_inl_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈ basic
   · exact basicX_inl inj i g
   · exact basicComm_inl inj i i' g
 
+/-- Every automorphism of the basic sequence fixes the variables other than the `xᵢ`, `yᵢ` and
+`zⱼ`. -/
+theorem apply_inr_of_of_mem_basicWordSeq_of_ne {γ : MulAut (GX G X)}
+    (hγ : γ ∈ basicWordSeq inj c) {v : X} (hv : ∀ a, Sum.elim (Sum.elim x y) z a ≠ v) :
+    γ (inr (.of v)) = inr (.of v) := by
+  obtain ⟨j, j', -, rfl⟩ | ⟨j, i, -, -, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, i', -, rfl⟩ :=
+    (mem_basicWordSeq_iff inj c).1 hγ
+  · exact basicCoeff_inr_of_of_ne inj c j j' (hv (.inr j)).symm (hv (.inr j')).symm
+  · exact basicLink_inr_of_of_ne inj c j i (hv (.inr j)).symm (hv (.inl (.inl i))).symm
+      (hv (.inl (.inr i))).symm
+  · exact basicY_inr_of_of_ne inj i (hv (.inl (.inr i))).symm
+  · exact basicX_inr_of_of_ne inj i (hv (.inl (.inl i))).symm
+  · exact basicComm_inr_of_of_ne inj i i' (hv (.inl (.inl i))).symm (hv (.inl (.inr i))).symm
+      (hv (.inl (.inl i'))).symm (hv (.inl (.inr i'))).symm
+
 end Seq
 
 /-! ### The products `φ_{j,p}` -/
@@ -320,22 +341,30 @@ theorem phi_cons_cons (γ : M) (k : ℕ) {p : List ℕ} (hp : p.length ≤ Γ.le
 
 end Phi
 
-/-- For a sequence of automorphisms of `H`, the automorphisms `φ_{j,p}` fix every element fixed by
-all the automorphisms of the sequence. -/
-theorem phi_apply_of_forall_mem {H : Type*} [Mul H] {Γ : List (MulAut H)} {w : H}
-    (h : ∀ γ ∈ Γ, γ w = w) (p : List ℕ) : phi Γ p w = w := by
-  have hpow (γ : MulAut H) (hγ : γ w = w) (e : ℕ) : (γ ^ e) w = w := by
+/-- For a sequence of automorphisms of `H`, the automorphisms `φ_{j,p}` map into itself every set
+that all the automorphisms of the sequence map into itself. -/
+theorem mapsTo_phi {H : Type*} [Mul H] {Γ : List (MulAut H)} {s : Set H}
+    (h : ∀ γ ∈ Γ, Set.MapsTo γ s s) (p : List ℕ) : Set.MapsTo ⇑(phi Γ p) s s := by
+  have hpow (γ : MulAut H) (hγ : Set.MapsTo γ s s) (e : ℕ) : Set.MapsTo ⇑(γ ^ e) s s := by
     induction e with
-    | zero => simp
-    | succ e ih => rw [pow_succ, MulAut.mul_apply, hγ, ih]
+    | zero => simpa using Set.mapsTo_id s
+    | succ e ih => simpa only [pow_succ, MulAut.coe_mul] using ih.comp hγ
   induction p using List.reverseRecOn with
-  | nil => simp
+  | nil => simpa using Set.mapsTo_id s
   | append_singleton p e ih =>
-    rw [phi_concat, MulAut.mul_apply, hpow _ ?_, ih]
+    rw [phi_concat, MulAut.coe_mul]
+    refine ih.comp (hpow _ ?_ e)
     obtain hlt | hle := lt_or_ge (p.length % Γ.length) Γ.length
     · rw [List.getD_eq_getElem _ _ hlt]
       exact h _ (List.getElem_mem hlt)
-    · rw [List.getD_eq_default _ _ hle, MulAut.one_apply]
+    · rw [List.getD_eq_default _ _ hle, MulAut.coe_one]
+      exact Set.mapsTo_id s
+
+/-- For a sequence of automorphisms of `H`, the automorphisms `φ_{j,p}` fix every element fixed by
+all the automorphisms of the sequence. -/
+theorem phi_apply_of_forall_mem {H : Type*} [Mul H] {Γ : List (MulAut H)} {w : H}
+    (h : ∀ γ ∈ Γ, γ w = w) (p : List ℕ) : phi Γ p w = w :=
+  Set.mapsTo_singleton.1 (mapsTo_phi (fun γ hγ => Set.mapsTo_singleton.2 (h γ hγ)) p)
 
 /-- For a sequence of automorphisms of `H`, the inverses of the automorphisms `φ_{j,p}` fix every
 element fixed by all the automorphisms of the sequence. -/
@@ -523,9 +552,8 @@ permutes the solutions of `S = 1`: a point `v` is a solution exactly when the po
 `x ↦ (γ x)(v)` is. -/
 theorem wordMap_mem_V_iff_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) (v : X → H) :
     wordMap ι (fun x => γ (inr (.of x))) v ∈ V ι {S.toWord} ↔ v ∈ V ι {S.toWord} := by
-  have h := DFunLike.congr_fun
-    (eval_wordMap (ι := ι) (.ofMulEquiv γ fun g => apply_inl_of_mem_basicSeq hS hγ g) v) S.toWord
-  simp_all [apply_toWord_of_mem_basicSeq hS hγ]
+  simp [eval_wordMap_mulEquiv γ (apply_inl_of_mem_basicSeq hS hγ),
+    apply_toWord_of_mem_basicSeq hS hγ]
 
 /-- The automorphisms `φ_{j,p}` of a standard orientable quadratic equation `S = 1` preserve the
 radical of `S`: an element vanishes on every solution of `S` exactly when its image under
@@ -596,10 +624,8 @@ theorem twistPoint_replicate_zero (v : X → H) (j : ℕ) :
 /-- Evaluating at the point `φ_{j,p} v` is evaluating at `v` after applying `φ_{j,p}`. -/
 @[simp]
 theorem eval_twistPoint (v : X → H) (p : List ℕ) (w : GX G X) :
-    eval ι (twistPoint ι S hS v p) w = eval ι v (phi (basicSeq S hS) p w) := by
-  have h := DFunLike.congr_fun
-    (eval_wordMap (ι := ι) (.ofMulEquiv (phi (basicSeq S hS) p) (phi_basicSeq_inl hS p)) v) w
-  simpa [twistPoint_def] using h
+    eval ι (twistPoint ι S hS v p) w = eval ι v (phi (basicSeq S hS) p w) :=
+  eval_wordMap_mulEquiv _ (phi_basicSeq_inl hS p) v w
 
 /-- The point `φ_{j+1,p} v` is the point `φ_{j,p} v` composed with `γ_{j+1} ^ p_{j+1}`, the
 indices of the basic sequence being read modulo its length: on points, `γ₁ ^ p₁` acts first. -/
@@ -645,6 +671,47 @@ theorem twistPoint_mem_V {v : X → H} (hv : v ∈ V ι {S.toWord}) (p : List �
   (twistPoint_mem_V_iff hS p).2 hv
 
 end TwistPoint
+
+/-! ### Twist points of lists of twist data -/
+
+section TwistDataPoint
+
+variable {H : Type*} [Group H]
+
+/-- The automorphisms `φ_{L,p}` of a list of twist data fix the coefficients. -/
+@[simp]
+theorem phi_map_toMulAut_inl (l : List (TwistData G X)) (p : List ℕ) (g : G) :
+    phi (l.map TwistData.toMulAut) p (inl g) = inl g :=
+  phi_apply_of_forall_mem (List.forall_mem_map.2 fun d _ => by simp [twistHom_inl]) p
+
+/-- If the substitutions of the twist data of `l` map a set of words into itself, so do the
+automorphisms `φ_{L,p}`. -/
+theorem mapsTo_phi_map_toMulAut {l : List (TwistData G X)} {s : Set (GX G X)}
+    (hs : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) s s) (p : List ℕ) :
+    Set.MapsTo ⇑(phi (l.map TwistData.toMulAut) p) s s :=
+  mapsTo_phi (List.forall_mem_map.2 fun d hd x hx => by
+    rw [TwistData.toMulAut_apply]
+    exact hs d hd hx) p
+
+/-- Evaluating at the point `φ_{L,p} v`, whose coordinates are the values at `v` of the words
+`φ_{L,p}(x)`, is evaluating at `v` after applying `φ_{L,p}`. -/
+theorem eval_wordMap_phi (ι : G →* H) (l : List (TwistData G X)) (p : List ℕ) (v : X → H)
+    (w : GX G X) :
+    eval ι (wordMap ι (fun x => phi (l.map TwistData.toMulAut) p (inr (.of x))) v) w =
+      eval ι v (phi (l.map TwistData.toMulAut) p w) :=
+  eval_wordMap_mulEquiv _ (phi_map_toMulAut_inl l p) v w
+
+/-- If the substitutions of the twist data of `l` map the radical of a system `S` into itself, the
+points `φ_{L,p} v` obtained from a solution `v` of `S` are solutions of `S`. -/
+theorem wordMap_phi_mem_V {ι : G →* H} {l : List (TwistData G X)} {S : Set (GX G X)}
+    (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad ι S) (Rad ι S)) {v : X → H}
+    (hv : v ∈ V ι S) (p : List ℕ) :
+    wordMap ι (fun x => phi (l.map TwistData.toMulAut) p (inr (.of x))) v ∈ V ι S :=
+  mem_V.2 fun s hs => by
+    rw [eval_wordMap_phi]
+    exact mem_Rad.1 (mapsTo_phi_map_toMulAut hS p (subset_Rad S hs)) v hv
+
+end TwistDataPoint
 
 /-! ### Examples -/
 
@@ -800,6 +867,28 @@ theorem twistHom_toWord_of_mem_basicSeqData {S : Standard G X} (hS : S.IsOrienta
     {d : TwistData G X} (hd : d ∈ basicSeqData S hS) : twistHom d.A d.e S.toWord = S.toWord :=
   (d.toMulAut_apply _).symm.trans <| apply_toWord_of_mem_basicSeq hS <|
     map_toMulAut_basicSeqData S hS ▸ List.mem_map_of_mem hd
+
+/-- The substitution of each twist datum of the basic sequence of a standard orientable quadratic
+equation `S = 1` maps the radical of `S` into itself. -/
+theorem mapsTo_twistHom_Rad_of_mem_basicSeqData {H : Type*} [Group H] (ι : G →* H)
+    {S : Standard G X} (hS : S.IsOrientable) {d : TwistData G X} (hd : d ∈ basicSeqData S hS) :
+    Set.MapsTo (twistHom d.A d.e) (Rad ι {S.toWord}) (Rad ι {S.toWord}) := fun u hu => by
+  -- The twist fixes the coefficients and the equation, so it maps the radical into itself.
+  simpa using Rad_preimage_le_comap ι
+    (.ofMulEquiv d.toMulAut fun g => (d.toMulAut_apply _).trans (twistHom_inl d.A d.e g))
+    {S.toWord} (Rad_monotone ι (fun s hs => by
+      simp [Set.mem_singleton_iff.1 hs, twistHom_toWord_of_mem_basicSeqData hS hd]) hu)
+
+/-- The substitution of each twist datum of `J` rounds of the basic sequence of a standard
+orientable quadratic equation `S = 1` maps the radical of `S` into itself: the hypothesis of
+`twistTowerGHom` (in `Lift/Twist/Discrimination.lean`) for the basic tower. -/
+theorem mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData {H : Type*} [Group H] (ι : G →* H)
+    {S : Standard G X} (hS : S.IsOrientable) {J : ℕ} {d : TwistData G X}
+    (hd : d ∈ (List.replicate J (basicSeqData S hS)).flatten) :
+    Set.MapsTo (twistHom d.A d.e) (Rad ι {S.toWord}) (Rad ι {S.toWord}) := by
+  obtain ⟨_, hl, hdl⟩ := List.mem_flatten.1 hd
+  obtain rfl := List.eq_of_mem_replicate hl
+  exact mapsTo_twistHom_Rad_of_mem_basicSeqData ι hS hdl
 
 end StandardData
 
