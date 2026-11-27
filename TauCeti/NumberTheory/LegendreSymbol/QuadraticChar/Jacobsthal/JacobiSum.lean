@@ -11,6 +11,8 @@ public import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Jacobsthal.Basic
 public import TauCeti.NumberTheory.MulChar.Duality
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.NumberTheory.JacobiSum.Basic
+import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import TauCeti.NumberTheory.MulChar.Orthogonality
 
 /-!
@@ -40,16 +42,15 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
 
-/-- The substitution `u = -a t`: `∑_u χ(u) η(u + a) = η(a) χ(-a) J(χ, η)` for `a ≠ 0`. -/
+/-- `MulChar.sum_mul_apply_add_eq_mul_jacobiSum` for the complex quadratic character `η`:
+`∑_u χ(u) η(u + a) = η(a) χ(-a) J(χ, η)` for `a ≠ 0`. -/
 private lemma sum_mul_quadraticChar_add (χ : MulChar F ℂ) {a : F} (ha : a ≠ 0) :
     ∑ u : F, χ u * (quadraticChar F (u + a) : ℂ) = quadraticChar F a *
       (χ (-a) * jacobiSum χ ((quadraticChar F).ringHomComp (Int.castRingHom ℂ))) := by
-  rw [jacobiSum, mul_sum, mul_sum]
-  refine (Fintype.sum_bijective ((-a) * ·) (mulLeft_bijective₀ _ (neg_ne_zero.mpr ha)) _ _
-    fun t ↦ ?_).symm
-  simp only [MulChar.ringHomComp_apply, eq_intCast]
-  rw [map_mul χ, show -a * t + a = a * (1 - t) by ring, map_mul (quadraticChar F), Int.cast_mul]
-  ring
+  have h := MulChar.sum_mul_apply_add_eq_mul_jacobiSum χ
+    ((quadraticChar F).ringHomComp (Int.castRingHom ℂ)) (Units.mk0 a ha)
+  simp only [Units.val_mk0, MulChar.ringHomComp_apply, eq_intCast] at h
+  rw [h, mul_assoc]
 
 /-- **The Jacobi-sum expansion of `ψ_n`**: for `n ≠ 0` and `a ≠ 0` in odd characteristic,
 `ψ_n(a) = η(a) ∑_{χ^n = 1, χ ≠ 1} χ(-a) J(χ, η)`, the sum over the nontrivial complex characters
@@ -66,8 +67,7 @@ theorem jacobsthalPsi_eq_sum_jacobiSum [DecidableEq (MulChar F ℂ)] (hF : ringC
     rw [← card_pow_eq_eq_one_add_sum_filter_mulChar hn, Nat.card_eq_fintype_card,
       Fintype.card_subtype]
   have h0 : ∑ u : F, (quadraticChar F (u + a) : ℂ) = 0 := by
-    exact_mod_cast (Fintype.sum_equiv (Equiv.addRight a) (fun u ↦ quadraticChar F (u + a)) _
-      fun _ ↦ rfl).trans (quadraticChar_sum_zero hF)
+    exact_mod_cast sum_quadraticChar_add hF a
   calc (jacobsthalPsi n a : ℂ)
       = ∑ u : F, (#{x : F | x ^ n = u} : ℂ) * quadraticChar F (u + a) := by
         rw [jacobsthalPsi_def, Int.cast_sum, ← sum_fiberwise univ (fun x : F ↦ x ^ n)]

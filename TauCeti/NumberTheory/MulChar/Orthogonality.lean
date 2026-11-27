@@ -249,9 +249,7 @@ theorem sum_filter_mulChar_pow_eq_one_apply_eq_card_pow_eq (d : ℕ)
 /-- **Twisted sums over `d`-th roots.** With enough roots of unity in `R` for the exponent of
 `Mˣ`, for a character `ρ` of a finite commutative monoid `M`, `d : ℕ` and `a ∈ M`, the values at
 `a` of the characters `χ` with `χ ^ d = ρ` sum to `∑_{x ^ d = a} ρ x`. For `ρ = 1` and a unit `a`
-the right side counts the `d`-th roots of `a` in `Mˣ`. At a nonunit `a` both sides vanish. At a
-unit, multiply by `#Mˣ`, expand the indicator of `x ^ d = a` by
-`Units.sum_inv_mul_mulChar_apply_eq_ite`, and sum `ρ ψ ^ d` over `M` by `MulChar.sum_eq_ite`. -/
+the right side counts the `d`-th roots of `a` in `Mˣ`. At a nonunit `a` both sides vanish. -/
 theorem sum_filter_mulChar_pow_eq_apply_eq_sum_filter_pow_eq [Fintype M] [DecidableEq M]
     [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)] (ρ : MulChar M R) (d : ℕ) (a : M)
     [DecidablePred fun χ : MulChar M R ↦ χ ^ d = ρ] :

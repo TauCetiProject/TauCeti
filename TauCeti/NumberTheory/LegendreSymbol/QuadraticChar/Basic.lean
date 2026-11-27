@@ -22,7 +22,9 @@ Jacobi sum `∑ᵤ χ(u (c - u))` is `χ(-1) (q - 1)` at `c = 0` (through
 ## Main results
 
 * `TauCeti.sum_comp_mul_sq`: `∑ₜ g(a t²) = ∑ᵤ (1 + χ(a u)) • g(u)` for `a ≠ 0`.
-* `TauCeti.sum_quadraticChar_mul`: `∑ᵤ χ(a u) = 0`.
+* `TauCeti.sum_quadraticChar_mul`, `TauCeti.sum_quadraticChar_add`: `∑ᵤ χ(a u) = 0` and
+  `∑ᵤ χ(u + a) = 0`.
+* `TauCeti.sum_quadraticChar_sq`: `∑ᵤ χ(u)² = q - 1`.
 * `TauCeti.sum_quadraticChar_mul_sub`: the quadratic Jacobi sum `∑ᵤ χ(u (c - u))` is
   `χ(-1) (q - 1)` at `c = 0` and `-χ(-1)` otherwise.
 -/
@@ -56,6 +58,21 @@ theorem sum_quadraticChar_mul (hF : ringChar F ≠ 2) (a : F) :
   · simp
   rw [Fintype.sum_bijective (a * ·) (mulLeft_bijective₀ a ha) _ (quadraticChar F) fun _ ↦ rfl,
     quadraticChar_sum_zero hF]
+
+/-- The quadratic character sums to zero against any translation. -/
+theorem sum_quadraticChar_add (hF : ringChar F ≠ 2) (a : F) :
+    ∑ u : F, quadraticChar F (u + a) = 0 :=
+  (Equiv.sum_comp (Equiv.addRight a) (quadraticChar F)).trans (quadraticChar_sum_zero hF)
+
+/-- The square of the quadratic character sums to `q - 1`, since it is `1` away from `0`. -/
+theorem sum_quadraticChar_sq : ∑ x : F, quadraticChar F x ^ 2 = Fintype.card F - 1 := by
+  have h := MulChar.sum_one_eq_card_units (R := F) (R' := ℤ)
+  rw [Fintype.card_units, Nat.cast_sub Fintype.card_pos, Nat.cast_one] at h
+  rw [← h]
+  refine sum_congr rfl fun x _ ↦ ?_
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [MulChar.map_nonunit (1 : MulChar F ℤ) not_isUnit_zero]
+  · rw [quadraticChar_sq_one hx, MulChar.one_apply (IsUnit.mk0 x hx)]
 
 /-- **The quadratic Jacobi sum**: in a finite field of odd characteristic, `∑ᵤ χ(u (c - u))` is
 `χ(-1) (q - 1)` for `c = 0` and `-χ(-1)` otherwise. -/

@@ -28,13 +28,16 @@ The Jacobi-sum expansions of `ψ_n` and `φ_n` are in
 ## Main results
 
 * `TauCeti.jacobsthalPhi_def`, `TauCeti.jacobsthalPsi_def`: the defining formulas.
-* `TauCeti.jacobsthalPhi_one`, `TauCeti.jacobsthalPsi_two`: `φ_1(a) = ψ_2(a) = -1` for `a ≠ 0`.
+* `TauCeti.jacobsthalPhi_one`, `TauCeti.jacobsthalPsi_two`: `φ_1(a) = ψ_2(a) = -1` for `a ≠ 0`, in
+  odd characteristic.
 * `TauCeti.jacobsthalPhi_zero_right_of_even`, `TauCeti.jacobsthalPhi_zero_right_of_odd`:
-  `φ_n(0)` is `0` for even `n` and `q - 1` for odd `n`.
+  `φ_n(0)` is `0` for even `n` in odd characteristic, and `q - 1` for odd `n`.
 * `TauCeti.jacobsthalPhi_mul_pow`: `φ_n(a sⁿ) = η(s)^(n + 1) φ_n(a)` for `s ≠ 0`, and
-  `TauCeti.jacobsthalPhi_two_mul_sq`: `φ_2(a s²) = η(s) φ_2(a)` for every `s`.
-* `TauCeti.jacobsthalPhi_two_eq_zero`: `φ_2(a) = 0` when `η(-1) = -1`.
-* `TauCeti.sum_jacobsthalPhi_two_sq`: `∑_e φ_2(e)² = q (q - 1) (1 + η(-1))`.
+  `TauCeti.jacobsthalPhi_two_mul_sq`: `φ_2(a s²) = η(s) φ_2(a)` for every `s`, in odd
+  characteristic.
+* `TauCeti.jacobsthalPhi_eq_zero_of_even`: `φ_n(a) = 0` for even `n` when `η(-1) = -1`.
+* `TauCeti.sum_jacobsthalPhi_two_sq`: `∑_e φ_2(e)² = q (q - 1) (1 + η(-1))` in odd
+  characteristic.
 * `TauCeti.jacobsthalPhi_two_sq_add_sq`: **Jacobsthal's two-squares identity**. If
   `q ≡ 1 (mod 4)` and `r` is not a square, then `q = (φ_2(1) / 2)² + (φ_2(r) / 2)²`.
 
@@ -72,16 +75,6 @@ theorem jacobsthalPsi_def (n : ℕ) (a : F) :
     jacobsthalPsi n a = ∑ x : F, quadraticChar F (x ^ n + a) :=
   (rfl)
 
-/-- The sum of `η(x)²` over a finite field is `q - 1`. -/
-private lemma sum_quadraticChar_sq : ∑ x : F, quadraticChar F x ^ 2 = Fintype.card F - 1 := by
-  have h := MulChar.sum_one_eq_card_units (R := F) (R' := ℤ)
-  rw [Fintype.card_units, Nat.cast_sub Fintype.card_pos, Nat.cast_one] at h
-  rw [← h]
-  refine sum_congr rfl fun x _ ↦ ?_
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [MulChar.map_nonunit (1 : MulChar F ℤ) not_isUnit_zero]
-  · rw [quadraticChar_sq_one hx, MulChar.one_apply (IsUnit.mk0 x hx)]
-
 /-- `φ_1(a) = ∑_x η(x (x + a)) = -1` for `a ≠ 0` in odd characteristic. -/
 theorem jacobsthalPhi_one (hF : ringChar F ≠ 2) {a : F} (ha : a ≠ 0) :
     jacobsthalPhi 1 a = -1 := by
@@ -89,7 +82,7 @@ theorem jacobsthalPhi_one (hF : ringChar F ≠ 2) {a : F} (ha : a ≠ 0) :
   have h := sum_quadraticChar_mul_sub hF (-a)
   rw [ite_eq_right (neg_ne_zero.mpr ha)] at h
   have hη : quadraticChar F (-1) * quadraticChar F (-1) = 1 := by
-    rw [← map_mul, neg_one_mul, neg_neg, map_one]
+    rw [← sq, quadraticChar_sq_one (neg_ne_zero.mpr one_ne_zero)]
   calc jacobsthalPhi 1 a
       = ∑ x : F, quadraticChar F (-1) * quadraticChar F (x * (-a - x)) := by
         refine sum_congr rfl fun x _ ↦ ?_
@@ -104,10 +97,7 @@ theorem jacobsthalPsi_two (hF : ringChar F ≠ 2) {a : F} (ha : a ≠ 0) :
   -- Group `x` by `u = x²`: `ψ_2(a) = ∑_u (1 + η(u)) η(u + a) = ∑_u η(u + a) + φ_1(a)`.
   have h := sum_comp_mul_sq hF one_ne_zero fun u ↦ quadraticChar F (u + a)
   simp only [one_mul, smul_eq_mul, add_mul, sum_add_distrib] at h
-  have h0 : ∑ u : F, quadraticChar F (u + a) = 0 := by
-    rw [Fintype.sum_equiv (Equiv.addRight a) (fun u ↦ quadraticChar F (u + a)) _ fun _ ↦ rfl,
-      quadraticChar_sum_zero hF]
-  rw [jacobsthalPsi, h, h0, zero_add]
+  rw [jacobsthalPsi, h, sum_quadraticChar_add hF a, zero_add]
   simpa [jacobsthalPhi] using jacobsthalPhi_one hF ha
 
 /-- `φ_n(0) = ∑_x η(x)^(n + 1) = 0` for even `n` in odd characteristic. -/
@@ -148,15 +138,13 @@ theorem jacobsthalPhi_two_mul_sq (hF : ringChar F ≠ 2) (a s : F) :
     exact jacobsthalPhi_zero_right_of_even hF even_two
   · rw [jacobsthalPhi_mul_pow 2 a hs, pow_succ, quadraticChar_sq_one hs, one_mul]
 
-/-- `φ_2(a) = 0` when `-1` is not a square, since `x ↦ -x` changes the sign of every term. -/
-theorem jacobsthalPhi_two_eq_zero (h : quadraticChar F (-1) = -1) (a : F) :
-    jacobsthalPhi 2 a = 0 := by
-  have hneg : jacobsthalPhi 2 a = -jacobsthalPhi 2 a := by
-    rw [jacobsthalPhi, ← sum_neg_distrib]
-    refine Fintype.sum_equiv (Equiv.neg F) _ _ fun x ↦ ?_
-    rw [Equiv.neg_apply, neg_sq, ← neg_one_mul x, map_mul, h]
-    ring
-  omega
+/-- `φ_n(a) = 0` for even `n` when `-1` is not a square, since `x ↦ -x` changes the sign of every
+term: `η(x) η(xⁿ + a) = η(x (xⁿ + a))`, and `x ↦ x (xⁿ + a)` is odd. -/
+theorem jacobsthalPhi_eq_zero_of_even {n : ℕ} (hn : Even n) (h : quadraticChar F (-1) = -1)
+    (a : F) : jacobsthalPhi n a = 0 := by
+  simp_rw [jacobsthalPhi, ← map_mul]
+  exact quadraticChar_sum_comp_eq_zero_of_odd (quadraticChar_neg_one_iff_not_isSquare.mp h)
+    fun x ↦ by rw [hn.neg_pow]; ring
 
 /-- The inner sum of the second moment: `∑_e η(x² + e) η(y² + e)` is `q - 1` if `x² = y²` and
 `-1` otherwise. -/
@@ -166,7 +154,7 @@ private lemma sum_quadraticChar_sq_add_mul_sq_add (hF : ringChar F ≠ 2) (x y :
   -- Shift `u = x² + e`: then `(x² + e) (y² + e) = -(u (c - u))` with `c = x² - y²`.
   have h := sum_quadraticChar_mul_sub hF (x ^ 2 - y ^ 2)
   have hη : quadraticChar F (-1) * quadraticChar F (-1) = 1 := by
-    rw [← map_mul, neg_one_mul, neg_neg, map_one]
+    rw [← sq, quadraticChar_sq_one (neg_ne_zero.mpr one_ne_zero)]
   calc ∑ e : F, quadraticChar F (x ^ 2 + e) * quadraticChar F (y ^ 2 + e)
       = ∑ u : F, quadraticChar F (-1) * quadraticChar F (u * (x ^ 2 - y ^ 2 - u)) := by
         refine Fintype.sum_equiv (Equiv.addLeft (x ^ 2)) _ _ fun e ↦ ?_
