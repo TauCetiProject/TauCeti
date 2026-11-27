@@ -22,10 +22,12 @@ Galois actions on stalks, and the stalk Frobenius:
   `Gal(ℂ/ℝ)` (`ofOverComplexRealAutMulEquiv`), and complex conjugation acts on the two-element
   stalk of `Spec ℂ ⟶ Spec ℝ` as a fixed-point-free involution.
 * **The quadratic extension `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`**: the stalk at `kbar` has cardinality `2`
-  and `stalkFrobenius` exchanges its two points, coinciding with `stalkArithmeticFrobenius`.
+  and `stalkGeometricFrobenius` exchanges its two points, coinciding with
+  `stalkArithmeticFrobenius`.
 * **Fifth roots of unity `μ_5` over `Spec 𝔽_2`**: the stalk at `kbar` is `rootsOfUnity 5 kbar`,
-  `stalkFrobenius` acts by `ζ ↦ ζ ^ 3` (since `3 · 2 ≡ 1 [MOD 5]`), `stalkArithmeticFrobenius`
-  acts by `ζ ↦ ζ ^ 2`, and the two automorphisms are distinct on this stalk.
+  `stalkGeometricFrobenius` acts by `ζ ↦ ζ ^ 3` (since `3 · 2 ≡ 1 [MOD 5]`),
+  `stalkArithmeticFrobenius` acts by `ζ ↦ ζ ^ 2`, and the two automorphisms are distinct on this
+  stalk.
 * **Rational function fields `K(X)`**: the morphism `algClosureToSepClosure` from
   `Spec (AlgebraicClosure (RatFunc K))` to `Spec (SeparableClosure (RatFunc K))` is an isomorphism
   in `GeometricPoint` if and only if `CharZero K` (in particular, it is not an isomorphism for
@@ -117,37 +119,39 @@ theorem natCard_galoisField_two_stalk :
 
 variable [PerfectField kbar]
 
-/-- On the two-element stalk of `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`, `stalkFrobenius` has no fixed points. -/
-theorem stalkFrobenius_galoisField_two_ne_self
+/-- On the two-element stalk of `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`, `stalkGeometricFrobenius` has no fixed
+points. -/
+theorem stalkGeometricFrobenius_galoisField_two_ne_self
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of (ZMod p)))) kbar).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
         ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
           (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :
-    (stalkFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
+    (stalkGeometricFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
           ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
             (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2))))) z ≠
       z :=
-  stalkFrobenius_ne_self_of_one_lt_finrank (ZMod p) (GaloisField p 2) kbar
+  stalkGeometricFrobenius_ne_self_of_one_lt_finrank (ZMod p) (GaloisField p 2) kbar
     (by rw [GaloisField.finrank p (by decide)]; decide) z
 
-/-- On the two-element stalk of `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`, `stalkFrobenius` is an involution. -/
-theorem stalkFrobenius_galoisField_two_involutive :
-    Function.Involutive ((stalkFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
+/-- On the two-element stalk of `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`, `stalkGeometricFrobenius` is an
+involution. -/
+theorem stalkGeometricFrobenius_galoisField_two_involutive :
+    Function.Involutive ((stalkGeometricFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
         ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
           (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :=
-  stalkFrobenius_involutive_of_finrank_eq_two (ZMod p) (GaloisField p 2) kbar
+  stalkGeometricFrobenius_involutive_of_finrank_eq_two (ZMod p) (GaloisField p 2) kbar
     (GaloisField.finrank p (by decide))
 
-/-- On the two-element stalk of `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`, `stalkFrobenius` coincides with
+/-- On the two-element stalk of `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`, `stalkGeometricFrobenius` coincides with
 `stalkArithmeticFrobenius`. -/
-theorem stalkFrobenius_eq_stalkArithmeticFrobenius_galoisField_two
+theorem stalkGeometricFrobenius_eq_stalkArithmeticFrobenius_galoisField_two
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of (ZMod p)))) kbar).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
         ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
           (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :
-    (stalkFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
+    (stalkGeometricFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
           ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
             (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2))))) z =
@@ -155,8 +159,8 @@ theorem stalkFrobenius_eq_stalkArithmeticFrobenius_galoisField_two
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
           ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
             (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2))))) z :=
-  stalkFrobenius_eq_stalkArithmeticFrobenius_of_finrank_eq_two (ZMod p) (GaloisField p 2) kbar
-    (GaloisField.finrank p (by decide)) z
+  stalkGeometricFrobenius_eq_stalkArithmeticFrobenius_of_finrank_eq_two
+    (ZMod p) (GaloisField p 2) kbar (GaloisField.finrank p (by decide)) z
 
 end QuadraticFiniteField
 
@@ -165,22 +169,22 @@ section FifthRootsOverF2
 variable (kbar : Type) [Field kbar] [Algebra (ZMod 2) kbar] [PerfectField kbar] [IsSepClosed kbar]
 
 /-- **Stalk Frobenius on `μ_5` over `Spec 𝔽_2`.** Under the identification of the stalk of the
-degree-`5` Kummer cover over `1` with `rootsOfUnity 5 kbar`, `stalkFrobenius` acts by
+degree-`5` Kummer cover over `1` with `rootsOfUnity 5 kbar`, `stalkGeometricFrobenius` acts by
 `ζ ↦ ζ ^ 3`. -/
-theorem kummerCoverStalkEquivRootsOfUnity_stalkFrobenius_zmod_two_five
+theorem kummerCoverStalkEquivRootsOfUnity_stalkGeometricFrobenius_zmod_two_five
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of (ZMod 2)))) kbar).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
         (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
           (isUnit_iff_ne_zero.mpr (by decide))))) :
     kummerCoverStalkEquivRootsOfUnity (ZMod 2) kbar (1 : (CommRingCat.of (ZMod 2))ˣ) 5
         (isUnit_iff_ne_zero.mpr (by decide)) (map_one _)
-        ((stalkFrobenius (𝟙 (Spec (.of (ZMod 2)))) kbar).asIso.hom.app
+        ((stalkGeometricFrobenius (𝟙 (Spec (.of (ZMod 2)))) kbar).asIso.hom.app
           ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
             (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
               (isUnit_iff_ne_zero.mpr (by decide)))) z) =
       (kummerCoverStalkEquivRootsOfUnity (ZMod 2) kbar (1 : (CommRingCat.of (ZMod 2))ˣ) 5
         (isUnit_iff_ne_zero.mpr (by decide)) (map_one _) z) ^ 3 :=
-  kummerCoverStalkEquivRootsOfUnity_stalkFrobenius_of_mul_modEq (ZMod 2) kbar
+  kummerCoverStalkEquivRootsOfUnity_stalkGeometricFrobenius_of_mul_modEq (ZMod 2) kbar
     (1 : (CommRingCat.of (ZMod 2))ˣ) 5 (isUnit_iff_ne_zero.mpr (by decide)) (map_one _)
     (by rw [Nat.card_zmod]; decide) z
 
@@ -203,10 +207,10 @@ theorem kummerCoverStalkEquivRootsOfUnity_stalkArithmeticFrobenius_zmod_two_five
     kummerCoverStalkEquivRootsOfUnity_stalkArithmeticFrobenius (ZMod 2) kbar
       (1 : (CommRingCat.of (ZMod 2))ˣ) 5 (isUnit_iff_ne_zero.mpr (by decide)) (map_one _) z
 
-/-- On `μ_5` over `Spec 𝔽_2`, `stalkFrobenius` (`ζ ↦ ζ ^ 3`) and `stalkArithmeticFrobenius`
+/-- On `μ_5` over `Spec 𝔽_2`, `stalkGeometricFrobenius` (`ζ ↦ ζ ^ 3`) and `stalkArithmeticFrobenius`
 (`ζ ↦ ζ ^ 2`) are distinct automorphisms of the stalk. -/
-theorem stalkFrobenius_ne_stalkArithmeticFrobenius_zmod_two_five :
-    (stalkFrobenius (𝟙 (Spec (.of (ZMod 2)))) kbar).asIso.hom.app
+theorem stalkGeometricFrobenius_ne_stalkArithmeticFrobenius_zmod_two_five :
+    (stalkGeometricFrobenius (𝟙 (Spec (.of (ZMod 2)))) kbar).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
           (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
             (isUnit_iff_ne_zero.mpr (by decide)))) ≠
@@ -220,7 +224,7 @@ theorem stalkFrobenius_ne_stalkArithmeticFrobenius_zmod_two_five :
   have hone (ζ : rootsOfUnity 5 kbar) : ζ = 1 := by
     have h32 : ζ ^ 3 = ζ ^ 2 := by
       have hstep := congrArg e (congrArg (fun g ↦ g (e.symm ζ)) heq)
-      rw [kummerCoverStalkEquivRootsOfUnity_stalkFrobenius_zmod_two_five,
+      rw [kummerCoverStalkEquivRootsOfUnity_stalkGeometricFrobenius_zmod_two_five,
         kummerCoverStalkEquivRootsOfUnity_stalkArithmeticFrobenius_zmod_two_five,
         Equiv.apply_symm_apply] at hstep
       exact hstep
