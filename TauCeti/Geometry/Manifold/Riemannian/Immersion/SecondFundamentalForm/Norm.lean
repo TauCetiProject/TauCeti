@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Tangent
 import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 
 /-!
@@ -63,12 +64,8 @@ omit [FiniteDimensional ℝ E] in
 private theorem tensorialAt_immersionSecondFundamentalForm_right
     (hf : ContMDiffAt I J 2 f x) (X : Π y : M, TangentSpace I y) :
     TensorialAt I E (fun Y ↦ immersionSecondFundamentalForm cov f X Y x) x := by
-  have coord {W : Π y : M, TangentSpace I y} (hW : MDiffAt (T% W) x) :
-      MDifferentiableAt I 𝓘(ℝ, F)
-        (sectionCoord ℝ (F := F) f (fun y ↦ mfderiv I J f y (W y)) (f x)) x := by
-    have h := hf.contMDiffAt_tangentMap (X := (W x : TangentBundle I M)) (m := 1) (by norm_num)
-    exact mdifferentiableAt_sectionCoord f _ ((h.mdifferentiableAt one_ne_zero).comp
-      x hW) (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f x))
+  have coord {W : Π y : M, TangentSpace I y} (hW : MDiffAt (T% W) x) :=
+    hf.mdifferentiableAt_sectionCoord_mfderiv_of_mdifferentiableAt le_rfl hW
   exact ⟨fun {g Y} hg hY ↦ immersionSecondFundamentalForm_smul_right X Y g hg (coord hY),
     fun {Y Z} hY hZ ↦ immersionSecondFundamentalForm_add_right X Y Z (coord hY) (coord hZ)⟩
 
