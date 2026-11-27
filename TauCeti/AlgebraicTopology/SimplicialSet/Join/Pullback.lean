@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
-public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
+public import TauCeti.AlgebraicTopology.SimplicialSet.Subcomplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.Fiber
 
 /-!
@@ -39,41 +38,13 @@ variable {K L K' L' : SSet.{u}}
 
 /-- The square formed by a map of joins and its left inclusion is a pullback. -/
 lemma isPullback_inl_map (f : K ⟶ K') (g : L ⟶ L') :
-    IsPullback f (inl K L) (inl K' L') (map f g) := by
-  apply IsPullback.of_forall_isPullback_app
-  intro n
-  rw [Types.isPullback_iff]
-  refine ⟨NatTrans.congr_app (inl_map f g).symm n, ?_, ?_⟩
-  · intro x y h
-    exact ((mono_iff_injective ((inl K L).app n)).1 inferInstance) h.2
-  · intro y x h
-    have hx : (map f g).app n x ∈ (Subcomplex.range (inl K' L')).obj n := ⟨y, h⟩
-    have hx' : x ∈ (Subcomplex.range (inl K L)).obj n := by
-      rwa [← preimage_range_inl_map f g]
-    obtain ⟨z, hz⟩ := hx'
-    refine ⟨z, ?_, hz⟩
-    apply (mono_iff_injective ((inl K' L').app n)).1 inferInstance
-    exact (ConcreteCategory.congr_hom (NatTrans.congr_app (inl_map f g).symm n) z).trans
-      ((congrArg ((map f g).app n) hz).trans h.symm)
+    IsPullback f (inl K L) (inl K' L') (map f g) :=
+  isPullback_of_preimage_range _ _ _ _ (inl_map f g).symm (preimage_range_inl_map f g)
 
 /-- The square formed by a map of joins and its right inclusion is a pullback. -/
 lemma isPullback_inr_map (f : K ⟶ K') (g : L ⟶ L') :
-    IsPullback g (inr K L) (inr K' L') (map f g) := by
-  apply IsPullback.of_forall_isPullback_app
-  intro n
-  rw [Types.isPullback_iff]
-  refine ⟨NatTrans.congr_app (inr_map f g).symm n, ?_, ?_⟩
-  · intro x y h
-    exact ((mono_iff_injective ((inr K L).app n)).1 inferInstance) h.2
-  · intro y x h
-    have hx : (map f g).app n x ∈ (Subcomplex.range (inr K' L')).obj n := ⟨y, h⟩
-    have hx' : x ∈ (Subcomplex.range (inr K L)).obj n := by
-      rwa [← preimage_range_inr_map f g]
-    obtain ⟨z, hz⟩ := hx'
-    refine ⟨z, ?_, hz⟩
-    apply (mono_iff_injective ((inr K' L').app n)).1 inferInstance
-    exact (ConcreteCategory.congr_hom (NatTrans.congr_app (inr_map f g).symm n) z).trans
-      ((congrArg ((map f g).app n) hz).trans h.symm)
+    IsPullback g (inr K L) (inr K' L') (map f g) :=
+  isPullback_of_preimage_range _ _ _ _ (inr_map f g).symm (preimage_range_inr_map f g)
 
 section pullback
 
@@ -111,11 +82,11 @@ private lemma pullbackData_ext (hK : IsPullback a₀ a₁ f₀ f₁)
   obtain rfl : p = q := by simpa only [JoinData.postcomp_p] using congrArg JoinData.p h₀
   rw [JoinData.postcomp_mk, JoinData.postcomp_mk] at h₀ h₁
   have hl : l = l' := hK.hom_ext
-    (by ext n ⟨x, hx⟩; exact JoinData.congr_left_app h₀ x hx hx)
-    (by ext n ⟨x, hx⟩; exact JoinData.congr_left_app h₁ x hx hx)
+    (eq_of_heq (JoinData.mk.inj h₀).2.1)
+    (eq_of_heq (JoinData.mk.inj h₁).2.1)
   have hr : r = r' := hL.hom_ext
-    (by ext n ⟨x, hx⟩; exact JoinData.congr_right_app h₀ x hx hx)
-    (by ext n ⟨x, hx⟩; exact JoinData.congr_right_app h₁ x hx hx)
+    (eq_of_heq (JoinData.mk.inj h₀).2.2)
+    (eq_of_heq (JoinData.mk.inj h₁).2.2)
   subst hl hr
   rfl
 

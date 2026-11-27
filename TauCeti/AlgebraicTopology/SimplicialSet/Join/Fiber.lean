@@ -51,23 +51,13 @@ noncomputable def postcompEquiv (f : K ⟶ K') (g : L ⟶ L') (d : JoinData X K'
   refine (Equiv.ofBijective assemble ⟨?_, ?_⟩).symm
   · intro ab cd h
     have hd := congrArg Subtype.val h
-    have hl : ab.1.val = cd.1.val := by
-      ext n ⟨x, hx⟩
-      exact congr_left_app hd x hx hx
-    have hr : ab.2.val = cd.2.val := by
-      ext n ⟨x, hx⟩
-      exact congr_right_app hd x hx hx
-    exact Prod.ext (Subtype.ext hl) (Subtype.ext hr)
+    obtain ⟨_, hl, hr⟩ := mk.inj hd
+    exact Prod.ext (Subtype.ext (eq_of_heq hl)) (Subtype.ext (eq_of_heq hr))
   · rintro ⟨⟨q, a, b⟩, h⟩
     obtain rfl : q = p := by simpa only [postcomp_p] using congrArg JoinData.p h
     rw [postcomp_mk] at h
-    have ha : a ≫ f = l := by
-      ext n ⟨x, hx⟩
-      exact congr_left_app h x hx hx
-    have hb : b ≫ g = r := by
-      ext n ⟨x, hx⟩
-      exact congr_right_app h x hx hx
-    exact ⟨(⟨a, ha⟩, ⟨b, hb⟩), Subtype.ext rfl⟩
+    obtain ⟨_, ha, hb⟩ := mk.inj h
+    exact ⟨(⟨a, eq_of_heq ha⟩, ⟨b, eq_of_heq hb⟩), Subtype.ext rfl⟩
 
 @[simp]
 lemma postcompEquiv_symm_coe (f : K ⟶ K') (g : L ⟶ L') (d : JoinData X K' L')
@@ -84,23 +74,20 @@ lemma postcompEquiv_precomp (f : K ⟶ K') (g : L ⟶ L') (d : JoinData X K' L')
       ⟨e.val.precomp h, by rw [← precomp_postcomp, e.property]⟩ =
       (⟨(joinFiber d.p 0).fromPreimage h ≫ (postcompEquiv f g d e).1.val,
           by
-            -- Normalize the common source: the fibre of a composite is a preimage.
-            simpa only [precomp, joinFiber, Subcomplex.preimage_comp] using
-              (Category.assoc ((joinFiber d.p 0).fromPreimage h) _ f).trans
-                (congrArg (((joinFiber d.p 0).fromPreimage h) ≫ ·)
-                  (postcompEquiv f g d e).1.property)⟩,
+            exact (Category.assoc ((joinFiber d.p 0).fromPreimage h) _ f).trans
+              ((congrArg (((joinFiber d.p 0).fromPreimage h) ≫ ·)
+                (postcompEquiv f g d e).1.property).trans (precomp_left d h).symm)⟩,
         ⟨(joinFiber d.p 1).fromPreimage h ≫ (postcompEquiv f g d e).2.val,
           by
-            -- Normalize the common source: the fibre of a composite is a preimage.
-            simpa only [precomp, joinFiber, Subcomplex.preimage_comp] using
-              (Category.assoc ((joinFiber d.p 1).fromPreimage h) _ g).trans
-                (congrArg (((joinFiber d.p 1).fromPreimage h) ≫ ·)
-                  (postcompEquiv f g d e).2.property)⟩) := by
+            exact (Category.assoc ((joinFiber d.p 1).fromPreimage h) _ g).trans
+              ((congrArg (((joinFiber d.p 1).fromPreimage h) ≫ ·)
+                (postcompEquiv f g d e).2.property).trans (precomp_right d h).symm)⟩) := by
   obtain ⟨ab, rfl⟩ := (postcompEquiv f g d).symm.surjective e
   apply (postcompEquiv f g (d.precomp h)).symm.injective
   apply Subtype.ext
-  simp only [Equiv.symm_apply_apply, Equiv.apply_symm_apply, postcompEquiv_symm_coe]
-  rfl
+  simp only [Equiv.symm_apply_apply, Equiv.apply_symm_apply, postcompEquiv_symm_coe,
+    precomp_mk]
+  exact JoinData.ext (precomp_p d h).symm (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
 
 /-- The relative universal property commutes with maps of the two lifted factors. -/
 lemma postcompEquiv_postcomp {A B : SSet.{u}} (a : K ⟶ A) (b : L ⟶ B)

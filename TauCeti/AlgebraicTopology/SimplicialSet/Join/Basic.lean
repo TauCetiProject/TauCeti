@@ -296,6 +296,26 @@ def precomp (d : JoinData X K L) (g : Y ⟶ X) : JoinData Y K L where
   left := (joinFiber d.p 0).fromPreimage g ≫ d.left
   right := (joinFiber d.p 1).fromPreimage g ≫ d.right
 
+/-- Restricting explicit join data pulls back the two fibres and restricts their maps. -/
+@[simp]
+lemma precomp_mk (p : X ⟶ Δ[1]) (l : (joinFiber p 0 : SSet) ⟶ K)
+    (r : (joinFiber p 1 : SSet) ⟶ L) (g : Y ⟶ X) :
+    (mk p l r).precomp g =
+      mk (g ≫ p) ((joinFiber p 0).fromPreimage g ≫ l)
+        ((joinFiber p 1).fromPreimage g ≫ r) :=
+  (rfl)
+
+-- Keep projections intact so the application-level simp lemmas below can apply.
+/-- The left component of restricted join data is the restriction of its left component. -/
+lemma precomp_left (d : JoinData X K L) (g : Y ⟶ X) :
+    (d.precomp g).left = (joinFiber d.p 0).fromPreimage g ≫ d.left :=
+  (rfl)
+
+/-- The right component of restricted join data is the restriction of its right component. -/
+lemma precomp_right (d : JoinData X K L) (g : Y ⟶ X) :
+    (d.precomp g).right = (joinFiber d.p 1).fromPreimage g ≫ d.right :=
+  (rfl)
+
 @[simp]
 lemma precomp_left_app (d : JoinData X K L) (g : Y ⟶ X) {n : SimplexCategoryᵒᵖ} (y : Y.obj n)
     (hy : y ∈ (joinFiber (d.precomp g).p 0).obj n) :
