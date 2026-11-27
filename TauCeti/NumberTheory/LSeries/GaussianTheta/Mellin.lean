@@ -17,8 +17,8 @@ import TauCeti.Analysis.MellinTransform.Series
 In the region of absolute convergence of a Dirichlet series, the Mellin transform of its
 Gaussian theta kernel is the Dirichlet series times the Mellin transform of one Gaussian.
 For a character's Möbius-twisted coefficients the Dirichlet series is the reciprocal of its
-L-function. This identity is the starting point for truncating that Mellin integral to
-construct a mollifier.
+L-function. Cutting the integral off at a positive point removes the singular endpoint, so the
+truncated transform of bounded coefficients is entire.
 
 The normalization follows `New.mellin_thetaSeries` and `New.mellin_thetaSeries_moebius`
 in `grh/src/Lib/Analytic/DirichletTheta.lean` of [grh-lean], commit `72fead1`.
@@ -28,8 +28,8 @@ in `grh/src/Lib/Analytic/DirichletTheta.lean` of [grh-lean], commit `72fead1`.
 
 public section
 
-open Complex Set
-open scoped ArithmeticFunction.Moebius
+open Asymptotics Complex Filter MeasureTheory Set
+open scoped ArithmeticFunction.Moebius Topology
 
 namespace TauCeti
 
@@ -76,6 +76,63 @@ theorem hasMellin_gaussianThetaSeries (j : Fin 2) {c : ℕ → ℂ} {s : ℂ}
     exact h.1
   · rw [mellin_cpow_smul, sub_add_cancel]
     exact h.2
+
+private theorem cut_gaussianTheta_bounds (j : Fin 2) {c : ℕ → ℂ} {M : ℝ}
+    (hc : ∀ n : ℕ+, ‖c n‖ ≤ M) {r : ℝ} (hr : 0 < r) :
+    let f := (Ioi r).indicator (gaussianTheta j c)
+    IntegrableOn f (Ioi 0) ∧ (f =O[atTop] fun t ↦ Real.exp (-1 * t)) := by
+  intro f
+  let B := max 1 M
+  have hB : 0 < B := zero_lt_one.trans_le (le_max_left ..)
+  let d (n : ℕ) := c n / (B : ℂ)
+  have hd (n : ℕ+) : ‖d n‖ ≤ 1 := by
+    simpa only [d, norm_div, norm_real, Real.norm_eq_abs, abs_of_pos hB, div_le_one hB] using
+      (hc n).trans (le_max_right 1 M)
+  have hscale (u : ℝ) : gaussianTheta j c u = (B : ℂ) * gaussianTheta j d u := by
+    have hB₀ : (B : ℂ) ≠ 0 := ofReal_ne_zero.mpr hB.ne'
+    simp only [gaussianTheta_def, d, ← tsum_mul_left, ← mul_assoc, ← mul_div_assoc,
+      mul_div_cancel_left₀ _ hB₀]
+  have hbound (u : ℝ) : ‖f u‖ ≤ (B * 3 / r) * Real.exp (-u) := by
+    by_cases hu : r < u
+    · dsimp only [f]
+      rw [indicator_of_mem (mem_Ioi.mpr hu), hscale, norm_mul, norm_real, Real.norm_eq_abs,
+        abs_of_pos hB]
+      calc
+        _ ≤ B * (3 * Real.exp (-u) / u) := by
+          gcongr
+          exact norm_gaussianTheta_le hd (hr.trans hu)
+        _ ≤ B * (3 * Real.exp (-u) / r) := by gcongr
+        _ = _ := by ring
+    · dsimp only [f]
+      rw [indicator_of_notMem (fun hz ↦ hu (mem_Ioi.mp hz)), norm_zero]
+      positivity
+  refine ⟨((integrableOn_exp_neg_Ioi 0).const_mul (B * 3 / r)).mono' ?_ (ae_of_all _ hbound),
+    IsBigO.of_bound (B * 3 / r) (Eventually.of_forall fun u ↦ ?_)⟩
+  · exact (measurable_gaussianTheta.indicator measurableSet_Ioi).aestronglyMeasurable
+  · simpa only [neg_one_mul, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hbound u
+
+private theorem cut_gaussianTheta_isBigO_zero (j : Fin 2) (c : ℕ → ℂ) {r : ℝ} (hr : 0 < r)
+    (b : ℝ) : (Ioi r).indicator (gaussianTheta j c) =O[𝓝[>] 0] (fun t ↦ t ^ (-b)) := by
+  refine IsBigO.of_bound 0 ((eventually_lt_nhds hr).filter_mono nhdsWithin_le_nhds |>.mono ?_)
+  intro t ht
+  rw [indicator_of_notMem ht.not_gt, norm_zero, zero_mul]
+
+/-- The Mellin integral of the Gaussian theta sum above a positive cutoff converges absolutely
+for every complex parameter. -/
+theorem mellinConvergent_indicator_Ioi_gaussianTheta (j : Fin 2) {c : ℕ → ℂ} {M : ℝ}
+    (hc : ∀ n : ℕ+, ‖c n‖ ≤ M) {r : ℝ} (hr : 0 < r) (s : ℂ) :
+    MellinConvergent ((Ioi r).indicator (gaussianTheta j c)) s := by
+  obtain ⟨hi, htop⟩ := cut_gaussianTheta_bounds j hc hr
+  exact mellinConvergent_of_isBigO_rpow_exp one_pos hi.locallyIntegrableOn htop
+    (cut_gaussianTheta_isBigO_zero j c hr (s.re - 1)) (sub_lt_self _ one_pos)
+
+/-- The Mellin transform of the Gaussian theta sum cut off below a positive point is entire. -/
+theorem differentiable_mellin_indicator_Ioi_gaussianTheta (j : Fin 2) {c : ℕ → ℂ} {M : ℝ}
+    (hc : ∀ n : ℕ+, ‖c n‖ ≤ M) {r : ℝ} (hr : 0 < r) :
+    Differentiable ℂ (mellin ((Ioi r).indicator (gaussianTheta j c))) := by
+  obtain ⟨hi, htop⟩ := cut_gaussianTheta_bounds j hc hr
+  exact fun s ↦ mellin_differentiableAt_of_isBigO_rpow_exp one_pos hi.locallyIntegrableOn htop
+    (cut_gaussianTheta_isBigO_zero j c hr (s.re - 1)) (sub_lt_self _ one_pos)
 
 end TauCeti
 

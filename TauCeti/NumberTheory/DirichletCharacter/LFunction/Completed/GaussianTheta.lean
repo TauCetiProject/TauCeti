@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
+public import TauCeti.NumberTheory.LSeries.GaussianTheta
 import TauCeti.Analysis.MellinTransform
-import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.Analysis.MellinTransform.Uniqueness
 import TauCeti.NumberTheory.LSeries.HurwitzZeta.Basic
 
 /-!
@@ -118,5 +119,43 @@ theorem hasMellin_gaussianTheta_residue_sum {N : ℕ} [NeZero N] (χ : Dirichlet
   refine (TauCeti.hasMellin_congr (fun u _ ↦ ?_)).mp hm
   simp only [F, mul_comm u (N : ℝ), Real.rpow_two, cpow_natCast, ofReal_pow]
   ring
+
+/-- The normalized Gaussian theta series of a nonprincipal character, at its matching
+parity, has absolutely convergent Mellin transform `Λ(s, χ) / 2` at `s - 1/2`. -/
+theorem hasMellin_gaussianThetaSeries_completedLFunction {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) (hχ : χ ≠ 1) {j : Fin 2}
+    (hpar : χ (-1) = (-1) ^ j.val) (s : ℂ) :
+    HasMellin (TauCeti.gaussianThetaSeries j (fun n ↦ χ n)) (s - 1 / 2)
+      (χ.completedLFunction s / 2) := by
+  let G (u : ℝ) := ((((N : ℝ) * u) ^ j.val : ℝ) : ℂ) / 2 *
+    ∑ a : ZMod N, χ a * ((if j.val = 0 then evenKernel else oddKernel)
+      (ZMod.toAddCircle a) ((N * u) ^ 2) : ℂ)
+  have hj : (j.val = 0 ∧ χ.Even) ∨ (j.val = 1 ∧ χ.Odd) := by
+    fin_cases j
+    · exact Or.inl ⟨rfl, by simpa [Even] using hpar⟩
+    · exact Or.inr ⟨rfl, by simpa [Odd] using hpar⟩
+  have hG (z : ℂ) : HasMellin G z (χ.completedLFunction z / 2) :=
+    χ.hasMellin_gaussianTheta_residue_sum hχ hj z
+  have hθ {z : ℂ} (hz : 1 < z.re) :
+      HasMellin (TauCeti.gaussianTheta j (fun n ↦ χ n)) z (χ.completedLFunction z / 2) := by
+    rw [funext (TauCeti.gaussianTheta_eq_gaussianDirichletTheta j _)]
+    have hΓ : Gammaℝ (z + j.val) = χ.gammaFactor z := by
+      rcases hj with ⟨h, he⟩ | ⟨h, ho⟩
+      · simp [h, he.gammaFactor_def]
+      · simp [h, ho.gammaFactor_def]
+    have h := TauCeti.hasMellin_gaussianDirichletTheta j.val (χ.LSeriesSummable_of_one_lt_re hz)
+      (by linarith [Nat.cast_nonneg (α := ℝ) j.val])
+    rw [hΓ, ← mul_div_assoc, mul_comm (_root_.LSeries (fun n ↦ χ n) z),
+      ← χ.completedLFunction_eq_gammaFactor_mul_LSeries hz] at h
+    exact h
+  -- Compare on an absolutely convergent line, then transfer the entire Mellin representation.
+  have hae := (hθ (z := 2) (by norm_num)).1.ae_eq_of_mellin_eq_on_verticalLine (c := 2)
+    (by simpa using (hG 2).1) fun z hz ↦
+      (hθ (by rw [mem_ofPred_eq.mp hz]; norm_num)).2.trans (hG z).2.symm
+  have h := HasMellin.cpow_smul (s := s - 1 / 2) (a := 1 / 2)
+    (by rw [sub_add_cancel]; exact (TauCeti.hasMellin_congr_ae hae).mpr (hG s))
+  refine (TauCeti.hasMellin_congr (fun u (hu : 0 < u) ↦ ?_)).mp h
+  simp only [TauCeti.gaussianThetaSeries_def, smul_eq_mul, Real.sqrt_eq_rpow,
+    ofReal_cpow hu.le, ofReal_div, ofReal_one, ofReal_ofNat]
 
 end DirichletCharacter

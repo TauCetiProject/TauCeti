@@ -60,6 +60,13 @@ theorem gaussianMollifier_def {N : ℕ} (χ : DirichletCharacter ℂ N)
     ∫ t : ℝ in Ioi r, (t : ℂ) ^ (s - 1) *
       gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t := (rfl)
 
+/-- The coefficients of the Möbius-twisted Dirichlet character have norm at most one. -/
+theorem norm_mul_moebius_le_one {N : ℕ} (χ : DirichletCharacter ℂ N) (n : ℕ) :
+    ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
+  rw [norm_mul]
+  have hμ : ‖(μ n : ℂ)‖ ≤ 1 := by exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
+  exact (mul_le_of_le_one_right (norm_nonneg _) hμ).trans (χ.norm_le_one n)
+
 /-- On `Re s = 2`, the completed product of a Dirichlet L-function and its Gaussian
 mollifier differs from the square of the half-gamma factor by at most `C r`. The constant
 depends only on the degree `j` of the monomial weight. -/
@@ -91,10 +98,6 @@ theorem norm_LFunction_mul_gaussianMollifier_sub (j : ℕ) :
     dsimp only [G]
     gcongr
     simpa only [hσ'] using norm_Gamma_le_Gamma_re (s := (s + j) / 2) (by rw [hσ']; positivity)
-  have hcoeff (n : ℕ) (_ : n ≠ 0) : ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
-    rw [norm_mul]
-    refine (mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one n)).trans ?_
-    exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
   let γ := Gammaℝ (s + j) / 2
   have hinv : χ.LFunction s * LSeries (fun n ↦ χ n * (μ n : ℂ)) s = 1 := by
     rw [LFunction_eq_LSeries χ hs₁]
@@ -113,7 +116,8 @@ theorem norm_LFunction_mul_gaussianMollifier_sub (j : ℕ) :
       gcongr
       · exact hχ.trans (by linarith)
       · rw [gaussianMollifier_def]
-        exact norm_integral_gaussianDirichletTheta_sub j hcoeff hr hs
+        exact norm_integral_gaussianDirichletTheta_sub j (fun n _ ↦ χ.norm_mul_moebius_le_one n)
+          hr hs
     _ = _ := by ring
 
 end DirichletCharacter

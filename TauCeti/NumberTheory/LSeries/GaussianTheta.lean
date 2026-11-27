@@ -248,6 +248,13 @@ theorem gaussianDirichletTheta_def (j : ℕ) (a : ℕ → ℂ) (t : ℝ) :
       (((n + 1 : ℕ) * t) ^ j * Real.exp (-Real.pi * ((n + 1 : ℕ) * t) ^ 2) : ℝ) :=
   (rfl)
 
+/-- At parity degrees, the positive-natural and successor-indexed theta sums agree. -/
+theorem gaussianTheta_eq_gaussianDirichletTheta (j : Fin 2) (a : ℕ → ℂ) (t : ℝ) :
+    gaussianTheta j a t = gaussianDirichletTheta j.val a t := by
+  rw [gaussianTheta_def, gaussianDirichletTheta_def]
+  simpa only [gaussianMonomial, PNat.mk_coe] using
+    (tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ a n * (gaussianMonomial j (n * t) : ℂ)))
+
 /-- The theta sum with the zero coefficient sequence vanishes. -/
 @[simp] theorem gaussianDirichletTheta_zero (j : ℕ) (t : ℝ) :
     gaussianDirichletTheta j 0 t = 0 := by
