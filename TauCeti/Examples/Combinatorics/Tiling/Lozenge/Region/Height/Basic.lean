@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Height
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Height.Basic
 public import TauCeti.Combinatorics.Tiling.Lozenge.Flip
 
 /-!
