@@ -92,6 +92,11 @@ private abbrev energyLevelLocalizer (H : ℝ≥0 → Ω → ℝ) (n : ℕ) : Ω 
 private abbrev energyLevelCutoff (H : ℝ≥0 → Ω → ℝ) (n : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
   if (t : WithTop ℝ≥0) ≤ energyLevelLocalizer H n ω then nnvolume.finiteEnergyCutoff H t ω else 0
 
+private theorem brownianIntegrable_energyLevelCutoff [IsFiniteMeasure P]
+    (hH : LocallyBrownianIntegrable ℱ P H) (n : ℕ) :
+    BrownianIntegrable ℱ P (energyLevelCutoff H n) :=
+  hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1)
+
 private theorem energyLevelLocalizer_mono (H : ℝ≥0 → Ω → ℝ) {n m : ℕ} (hnm : n ≤ m) (ω : Ω) :
     energyLevelLocalizer H n ω ≤ energyLevelLocalizer H m ω :=
   nnvolume.monotone_energyLocalizer H ω (add_le_add (Nat.cast_le.mpr hnm) le_rfl)
@@ -108,8 +113,7 @@ private theorem isItoIntegral_of_localized_stages
     IsItoIntegral ℱ P W H I := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   have hloc := hH.isLocalizingSequence_energyLocalizer
-  have hHloc (n : ℕ) :=
-    hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer (P := P) ((n : ℝ≥0) + 1)
+  have hHloc := brownianIntegrable_energyLevelCutoff hH
   refine ⟨hH.isStronglyPredictable, hIcont, fun t ↦ ?_⟩
   -- Step 1: approximate each localized stage `energyLevelCutoff H n` in `L²` by an elementary
   -- integrand within `(n + 1)⁻¹`, and transfer convergence to the integrals via isometry.
@@ -194,8 +198,7 @@ private theorem exists_isItoIntegral_aux
         (stoppedProcess I (energyLevelLocalizer H n)) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   have hloc := hH.isLocalizingSequence_energyLocalizer
-  have hHloc (n : ℕ) :=
-    hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer (P := P) ((n : ℝ≥0) + 1)
+  have hHloc := brownianIntegrable_energyLevelCutoff hH
   -- Step 1: build the localized `L²` martingale Itô integrals `U n` for each cutoff stage.
   choose U hUito hUpred hUmart using fun n ↦
     (hHloc n).exists_isItoIntegral hW hcont
@@ -205,9 +208,7 @@ private theorem exists_isItoIntegral_aux
     have hstop := hW.isItoIntegral_stoppedProcess_of_brownianIntegrable hcont (hHloc m) (hUito m)
       (hloc.isStoppingTime n)
     have hEq : (fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ energyLevelLocalizer H n ω then
-        energyLevelCutoff H m t ω else 0) =
-        fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω then
-          nnvolume.finiteEnergyCutoff H t ω else 0 := by
+        energyLevelCutoff H m t ω else 0) = energyLevelCutoff H n := by
       ext t ω; dsimp only [energyLevelCutoff]
       by_cases ht : (t : WithTop ℝ≥0) ≤ energyLevelLocalizer H n ω
       · simp only [ht, ht.trans (energyLevelLocalizer_mono H hnm ω), ite_true]
@@ -325,13 +326,14 @@ private theorem eLpNorm_ite_Ioc_mul_sub_le (ℱ : Filtration ℝ≥0 mΩ) (P : M
   have hpred : IsStronglyPredictable ℱ (fun u ω ↦
       (if s < u ∧ u ≤ t then ξ ω * G u ω else 0) -
         if s < u ∧ u ≤ t then ξ ω * H u ω else 0) := by
-    rw [show (fun u ω ↦ (if s < u ∧ u ≤ t then ξ ω * G u ω else 0) -
+    have hdiff : (fun u ω ↦
+        (if s < u ∧ u ≤ t then ξ ω * G u ω else 0) -
           if s < u ∧ u ≤ t then ξ ω * H u ω else 0) =
-        (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * G u ω else 0) -
-          fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * H u ω else 0 from
-      funext fun _ ↦ funext fun _ ↦ (Pi.sub_apply _ _ _).symm]
-    rw [ite_Ioc_mul_eq_mul_indicator, ite_Ioc_mul_eq_mul_indicator]
-    exact (hG.mul hΞ).sub (hH.mul hΞ)
+        fun u ω ↦ (G u ω - H u ω) * (Set.Ioc s t).indicator (fun _ ↦ ξ ω) u := by
+      ext u ω
+      by_cases hu : s < u ∧ u ≤ t <;> simp [hu, ← mul_sub, mul_comm]
+    rw [hdiff]
+    exact (hG.sub hH).mul hΞ
   have hfm : AEStronglyMeasurable (fun p : ℝ≥0 × Ω ↦
       (if s < p.1 ∧ p.1 ≤ t then ξ p.2 * G p.1 p.2 else 0) -
         if s < p.1 ∧ p.1 ≤ t then ξ p.2 * H p.1 p.2 else 0) ((timeMeasure T).prod P) :=
@@ -443,7 +445,7 @@ private theorem isItoIntegral_of_stoppedProcess_min_energyLevelLocalizer
         stoppedProcess_stoppedProcess'.symm
       rw [hRHS_eq]
       exact hW.isItoIntegral_stoppedProcess_of_brownianIntegrable hcont
-        (hK.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1))
+        (brownianIntegrable_energyLevelCutoff hK n)
         (hJstop n) (hH.isLocalizingSequence_energyLocalizer.isStoppingTime n)
     refine hW.itoIntegral_local_congr (hLHS n) hRHS_ito fun T ↦ ?_
     filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure T) (ν := P)).ae
@@ -481,7 +483,7 @@ theorem isItoIntegral_stoppedProcess (hW : IsFilteredPreBrownianReal ℱ W P)
       congr 1; ext ω; ac_rfl
     rw [hLHS_eq]
     exact hW.isItoIntegral_stoppedProcess_of_brownianIntegrable hcont
-      (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1))
+      (brownianIntegrable_energyLevelCutoff hH n)
       (hIstop n) (hσ.min (hHσ.isLocalizingSequence_energyLocalizer.isStoppingTime n))
   · simp only [energyLevelCutoff, nnvolume.finiteEnergyCutoff_eqOn hfinH hu,
       nnvolume.finiteEnergyCutoff_eqOn hfinHσ hu, Hσ, le_min_iff]
@@ -563,7 +565,7 @@ theorem isItoIntegral_ite_Ioc_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     have hM_n_ito : IsItoIntegral ℱ P W
         (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * energyLevelCutoff H n u ω else 0) M_n :=
       hW.isItoIntegral_ite_Ioc_mul_of_brownianIntegrable hcont
-        (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1))
+        (brownianIntegrable_energyLevelCutoff hH n)
         (hIstop n) hst hξ hCξ
     have hM_n_eq : M_n = (fun _ ↦ ξ) *
         (stoppedProcess (stoppedProcess I (energyLevelLocalizer H n)) stopT -
@@ -583,8 +585,7 @@ theorem isItoIntegral_ite_Ioc_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     have hK_n : BrownianIntegrable ℱ P
         (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * energyLevelCutoff H n u ω else 0) := by
       rw [ite_Ioc_mul_eq_mul_indicator]
-      exact (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer
-        (P := P) ((n : ℝ≥0) + 1)).mul_of_bound hΞ_pred (max Cξ 0) hΞ_bound
+      exact (brownianIntegrable_energyLevelCutoff hH n).mul_of_bound hΞ_pred (max Cξ 0) hΞ_bound
     rw [hLHS_eq]
     exact hW.isItoIntegral_stoppedProcess_of_brownianIntegrable hcont
       hK_n hM_n_ito (hK.isLocalizingSequence_energyLocalizer.isStoppingTime n)

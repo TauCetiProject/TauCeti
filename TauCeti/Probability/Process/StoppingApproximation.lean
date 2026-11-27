@@ -321,15 +321,21 @@ on horizon `T` (when `s ≤ T`): summing the indicator-weighted increments over 
 telescopes to `c * (f (min t (min T σ).untopA) - f (min s (min T σ).untopA))`. -/
 theorem sum_dyadicProjIcc_telescope {s t T : ℝ≥0} (hst : s ≤ t) (hsT : s ≤ T)
     (k : ℕ) (u : WithTop ℝ≥0) (c : ℝ) (f : ℝ≥0 → ℝ) :
-    let b : ℝ≥0 := min t T
-    let hsb : s ≤ b := le_min hst hsT
-    let p : ℕ → ℝ≥0 := dyadicProjIcc s b hsb k
-    let σ : WithTop ℝ≥0 := dyadicCeilTime k u
-    ∑ j ∈ Finset.range (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1),
-        (if (p j : WithTop ℝ≥0) < σ then c else 0) * (f (min (p (j + 1)) T) - f (min (p j) T)) =
-      c * (f (min t (min (T : WithTop ℝ≥0) σ).untopA) -
-        f (min s (min (T : WithTop ℝ≥0) σ).untopA)) := by
-  intro b hsb p σ
+    ∑ j ∈ Finset.range (⌊min t T * (2 : ℝ≥0) ^ k⌋₊ + 1),
+        (if (dyadicProjIcc s (min t T) (le_min hst hsT) k j : WithTop ℝ≥0) < dyadicCeilTime k u
+          then c else 0) *
+          (f (min (dyadicProjIcc s (min t T) (le_min hst hsT) k (j + 1)) T) -
+            f (min (dyadicProjIcc s (min t T) (le_min hst hsT) k j) T)) =
+      c * (f (min t (min (T : WithTop ℝ≥0) (dyadicCeilTime k u)).untopA) -
+        f (min s (min (T : WithTop ℝ≥0) (dyadicCeilTime k u)).untopA)) := by
+  let b : ℝ≥0 := min t T
+  have hsb : s ≤ b := le_min hst hsT
+  let p : ℕ → ℝ≥0 := dyadicProjIcc s b hsb k
+  let σ : WithTop ℝ≥0 := dyadicCeilTime k u
+  change ∑ j ∈ Finset.range (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1),
+      (if (p j : WithTop ℝ≥0) < σ then c else 0) * (f (min (p (j + 1)) T) - f (min (p j) T)) =
+    c * (f (min t (min (T : WithTop ℝ≥0) σ).untopA) -
+      f (min s (min (T : WithTop ℝ≥0) σ).untopA))
   have hbT : b ≤ T := min_le_right t T
   have hp0 : p 0 = s := dyadicProjIcc_zero hsb k
   have hp_end : p (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1) = b := dyadicProjIcc_end hsb k

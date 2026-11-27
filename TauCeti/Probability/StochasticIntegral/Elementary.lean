@@ -116,6 +116,17 @@ theorem bounded_positions (j : ℕ) : ∃ C : ℝ, ∀ ω, |K.positions j ω| �
   · simpa [positions, hj] using K.bounded_height ⟨j, hj⟩
   · exact ⟨0, fun ω ↦ by simp [positions, hj]⟩
 
+/-- All extended positions of an elementary integrand share one deterministic bound. -/
+theorem exists_bound_positions : ∃ C : ℝ, ∀ j ω, ‖K.positions j ω‖ ≤ C := by
+  choose C hC using K.bounded_positions
+  refine ⟨∑ i ∈ range K.n, max (C i) 0, fun j ω ↦ ?_⟩
+  by_cases hj : j < K.n
+  · rw [Real.norm_eq_abs]
+    exact (hC j ω).trans ((le_max_left _ _).trans
+      (single_le_sum (fun _ _ ↦ le_max_right _ _) (mem_range.mpr hj)))
+  · rw [K.positions_of_le (not_lt.mp hj), Pi.zero_apply, norm_zero]
+    exact sum_nonneg fun _ _ ↦ le_max_right _ _
+
 /-- On a finite measure space, every extended position `K.positions j` belongs to `Lᵖ(P)`. -/
 theorem memLp_positions (P : Measure Ω) [IsFiniteMeasure P] (p : ℝ≥0∞) (j : ℕ) :
     MemLp (K.positions j) p P := by
@@ -425,15 +436,15 @@ theorem exists_toProcess_add_integral_add (K L : ElementaryIntegrand ℱ) :
     · exact L.measurable_positions j hj
   obtain ⟨n, τ, b, -, hτ, -, -, hb_meas, -, hb_bdd, hhold, hgain⟩ :=
     Finance.exists_simpleHolding_simpleGains_eq_sum ℱ s l u a ha
-  choose CK hCK using K.bounded_positions
-  choose CL hCL using L.bounded_positions
+  obtain ⟨CK, hCK⟩ := K.exists_bound_positions
+  obtain ⟨CL, hCL⟩ := L.exists_bound_positions
   have hb_unif : ∀ j < n, ∃ C : ℝ, ∀ ω, |b j ω| ≤ C := fun j hj ↦ by
-    refine ⟨(∑ i ∈ range K.n, CK i) + (∑ i ∈ range L.n, CL i), fun ω ↦ ?_⟩
+    refine ⟨(K.n : ℝ) * CK + (L.n : ℝ) * CL, fun ω ↦ ?_⟩
     refine (hb_bdd j hj ω).trans ?_
     simp only [s, a, sum_disjSum, Sum.elim_inl, Sum.elim_inr]
     exact add_le_add
-      (sum_le_sum fun i _ ↦ by simpa [Real.norm_eq_abs] using hCK i ω)
-      (sum_le_sum fun i _ ↦ by simpa [Real.norm_eq_abs] using hCL i ω)
+      ((sum_le_sum fun i _ ↦ hCK i ω).trans_eq (by simp [nsmul_eq_mul]))
+      ((sum_le_sum fun i _ ↦ hCL i ω).trans_eq (by simp [nsmul_eq_mul]))
   refine ⟨ofSimpleHolding hτ.monotoneOn (fun j _ ↦ hb_meas j) hb_unif, ?_, fun X ↦ ?_⟩
   · ext t ω
     rw [toProcess_ofSimpleHolding, hhold t ω, sum_disjSum]
@@ -457,11 +468,12 @@ def clipIocMul {s t : ℝ≥0} (hst : s ≤ t)
       (K.monotone_dates.monotoneOn _))
     (Finance.stronglyMeasurable_clip_Ioc_mul ℱ K.measurable_positions hst hξ)
     fun j _ ↦ by
-      obtain ⟨C, hC⟩ := K.bounded_positions j
+      obtain ⟨C, hC⟩ := K.exists_bound_positions
       refine ⟨max Cξ 0 * max C 0, fun ω ↦ ?_⟩
       split_ifs
       · rw [abs_mul]
-        exact mul_le_mul ((hCξ ω).trans (le_max_left _ _)) ((hC ω).trans (le_max_left _ _))
+        exact mul_le_mul ((hCξ ω).trans (le_max_left _ _))
+          ((Real.norm_eq_abs _ ▸ hC j ω).trans (le_max_left _ _))
           (abs_nonneg _) (le_max_right _ _)
       · rw [abs_zero]
         exact mul_nonneg (le_max_right _ _) (le_max_right _ _)

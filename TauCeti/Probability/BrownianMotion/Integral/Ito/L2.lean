@@ -97,8 +97,6 @@ theorem eLpNorm_simpleGains_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W
     (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
     (ha₂ : ∀ j < n, MemLp (a j) 2 P) (t : ℝ≥0) {H : ℝ≥0 → Ω → ℝ}
     (hHp : IsStronglyPredictable ℱ H) (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
-    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
-    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
     eLpNorm (fun ω ↦ Finance.simpleGains τ n a W t ω -
         hW.l2Integral t
           (((ℱ.memLp_predictableMeasure_iff P hHp t 2).mpr hH).toLp (Function.uncurry H)) ω) 2 P =
@@ -118,8 +116,6 @@ every Itô integral at time `t` agrees almost surely with `hW.l2Integral t`. -/
 theorem ae_eq_l2Integral_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     {H I : ℝ≥0 → Ω → ℝ} {t : ℝ≥0} (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
     (hI : IsItoIntegral ℱ P W H I) :
-    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
-    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
     I t =ᵐ[P] hW.l2Integral t
       (((ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).mpr hH).toLp
         (Function.uncurry H)) := by

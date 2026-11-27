@@ -29,6 +29,7 @@ constructs the Itô integral of `H` against `W` and proves the Itô isometry.
   martingale.
 * `TauCeti.Probability.IsItoIntegral.memLp`, `TauCeti.Probability.IsItoIntegral.eLpNorm_eq`,
   `TauCeti.Probability.IsItoIntegral.integral_sq`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_isometry`,
   `TauCeti.Probability.IsItoIntegral.eLpNorm_sub_eq`,
   `TauCeti.Probability.IsItoIntegral.integral_sub_sq`, and
   `TauCeti.Probability.IsItoIntegral.continuous_toLp`: every Itô integral `I` of `H` is square
@@ -75,7 +76,7 @@ processes for Lebesgue time on `(0,t]` times `P`. -/
 private theorem eLpNorm_elementaryIntegrand_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     (K L : ElementaryIntegrand ℱ) (t : ℝ≥0) :
     eLpNorm (K.integral W t - L.integral W t) 2 P =
-      eLpNorm (fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2 - L.toProcess p.1 p.2) 2
+      eLpNorm ((fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2) - fun p ↦ L.toProcess p.1 p.2) 2
         ((timeMeasure t).prod P) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨N, ρ, c, -, hρ, hc, hhold, hgain⟩ :=
@@ -98,10 +99,10 @@ private theorem eLpNorm_elementaryIntegrand_sub (hW : IsFilteredPreBrownianReal 
     funext fun ω ↦ by
       simpa only [Pi.sub_apply, ElementaryIntegrand.integral_eq_simpleGains] using
         (hgain W t ω).symm
-  have hK : (fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2 - L.toProcess p.1 p.2) =
+  have hK : ((fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2) - fun p ↦ L.toProcess p.1 p.2) =
       Function.uncurry (Finance.simpleHolding ρ N c) :=
     funext fun ⟨t, ω⟩ ↦ by
-      rw [ElementaryIntegrand.toProcess_eq_simpleHolding,
+      rw [Pi.sub_apply, ElementaryIntegrand.toProcess_eq_simpleHolding,
         ElementaryIntegrand.toProcess_eq_simpleHolding, ← hhold t ω]
       simp only [Function.uncurry_apply_pair]
   rw [hG, hK]
@@ -147,10 +148,6 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_elementaryIntegrand_cau
       dist ((hK k t).toLp _) ((hK l t).toLp _) := by
     rw [dist_eq_norm, dist_eq_norm, ← MemLp.toLp_sub, ← MemLp.toLp_sub, Lp.norm_toLp,
       Lp.norm_toLp, eLpNorm_elementaryIntegrand_sub hW (K k) (K l) t]
-    rw [show (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - (K l).toProcess p.1 p.2) =
-        (fun p ↦ (K k).toProcess p.1 p.2) - (fun p ↦ (K l).toProcess p.1 p.2) from
-      funext fun p ↦ (Pi.sub_apply (fun q : ℝ≥0 × Ω ↦ (K k).toProcess q.1 q.2)
-        (fun q : ℝ≥0 × Ω ↦ (K l).toProcess q.1 q.2) p).symm]
   have hcau := hconv.cauchySeq
   rw [Metric.cauchySeq_iff] at hcau ⊢
   intro ε hε
@@ -264,6 +261,17 @@ theorem IsItoIntegral.integral_sq (hI : IsItoIntegral ℱ P W H I)
   simp only [← integral_norm_sq_eq_toReal_eLpNorm_sq (hI.memLp hW hH t).aestronglyMeasurable,
     ← integral_norm_sq_eq_toReal_eLpNorm_sq hH₂, Real.norm_eq_abs, sq_abs] at h
   exact h
+
+/-- **Martingale property and Itô isometry.** Against a filtered pre-Brownian motion `W`, every
+adapted Itô integral `I` of a `BrownianIntegrable` integrand `H` is a martingale satisfying
+`E[I_t²] = E ∫_(0,t] H_s² ds` at every time `t`. -/
+theorem IsFilteredPreBrownianReal.itoIntegral_isometry
+    (hW : IsFilteredPreBrownianReal ℱ W P) {H I : ℝ≥0 → Ω → ℝ}
+    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
+    (hIa : StronglyAdapted ℱ I) :
+    Martingale I ℱ P ∧
+      ∀ t : ℝ≥0, ∫ ω, I t ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P :=
+  ⟨hI.martingale hW hH hIa, fun t ↦ hI.integral_sq hW hH t⟩
 
 /-- **The Itô increment isometry**, in `L²` norms. For `s ≤ t`, the `L²(P)` norm of `I t - I s`
 equals the `L²` norm of the integrand for Lebesgue time on `(s, t]` times `P`. -/

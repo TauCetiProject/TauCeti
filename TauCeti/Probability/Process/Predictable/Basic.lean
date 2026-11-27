@@ -35,8 +35,7 @@ The time projection is measurable for the predictable sigma-algebra, so determin
 time dependence can be combined with predictable processes. A predictably measurable function
 remains strongly predictable when extended by zero outside a measurable set of times.
 
-Fixed-sample sections `t ↦ H t ω` of a strongly predictable process are strongly measurable, and
-`t ↦ ‖H t ω‖ₑ ^ n` is measurable (`stronglyMeasurable_section`, `measurable_eNorm_pow`).
+For a strongly predictable process, `t ↦ ‖H t ω‖ₑ ^ n` is measurable (`measurable_eNorm_pow`).
 
 ## References
 
@@ -422,14 +421,6 @@ theorem Measurable.isStronglyPredictable_ite_zero {ι Ω E : Type*}
     IsStronglyPredictable ℱ (fun t ω => if P t then f (t, ω) else 0) :=
   (hf.ite (hP.preimage ℱ.measurable_fst_predictable) measurable_const).stronglyMeasurable
 
-/-- Every sample path `t ↦ H t ω` of a strongly predictable process is strongly measurable. -/
-theorem MeasureTheory.IsStronglyPredictable.stronglyMeasurable_section {ι Ω E : Type*}
-    {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
-    [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
-    [TopologicalSpace E] {ℱ : Filtration ι m} {H : ι → Ω → E}
-    (hH : IsStronglyPredictable ℱ H) (ω : Ω) : StronglyMeasurable (fun t ↦ H t ω) :=
-  (hH.mono ℱ.predictable_le_prod).comp_measurable (measurable_id.prodMk measurable_const)
-
 /-- Every sample path `t ↦ ‖H t ω‖ₑ ^ n` of a strongly predictable process is measurable. -/
 theorem MeasureTheory.IsStronglyPredictable.measurable_eNorm_pow {ι Ω E : Type*}
     {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
@@ -437,4 +428,4 @@ theorem MeasureTheory.IsStronglyPredictable.measurable_eNorm_pow {ι Ω E : Type
     [TopologicalSpace E] [ContinuousENorm E] {ℱ : Filtration ι m} {H : ι → Ω → E}
     (hH : IsStronglyPredictable ℱ H) (ω : Ω) (n : ℕ) : Measurable (fun t ↦ ‖H t ω‖ₑ ^ n) :=
   (continuous_eNorm.comp_stronglyMeasurable
-    (hH.stronglyMeasurable_section ω)).measurable.pow_const n
+    ((hH.mono ℱ.predictable_le_prod).of_uncurry_right)).measurable.pow_const n

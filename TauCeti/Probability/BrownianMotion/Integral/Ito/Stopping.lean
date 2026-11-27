@@ -57,13 +57,7 @@ theorem stoppedProcess_ae_eq_l2Integral
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨K, hKlim, hunif⟩ :=
     hW.exists_seq_elementaryIntegrand_tendstoUniformlyOn hcont hH hI
-  have hbm (m : ℕ) : ∃ C : ℝ, ∀ j < (K m).n, ∀ ω, ‖(K m).positions j ω‖ ≤ C := by
-    choose C hC using (K m).bounded_positions
-    refine ⟨∑ j ∈ Finset.range (K m).n, max (C j) 0, fun j hj ω ↦ ?_⟩
-    rw [Real.norm_eq_abs]
-    exact (hC j ω).trans ((le_max_left _ _).trans
-      (Finset.single_le_sum (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.mpr hj)))
-  choose C hC using hbm
+  choose C hC using fun m ↦ (K m).exists_bound_positions
   -- Step 1: prove the identity for every dyadic approximation `σ k := dyadicCeilTime k ∘ τ`.
   have hdyad (k : ℕ) :
       stoppedProcess I (fun ω ↦ dyadicCeilTime k (τ ω)) T =ᵐ[P]
@@ -74,7 +68,8 @@ theorem stoppedProcess_ae_eq_l2Integral
     have hσ : IsStoppingTime ℱ σ := hτ.dyadicCeilTime k
     choose N' p' ζ' C' hp' hζ' hC' hK'P hK'I using fun m ↦
       Finance.exists_simpleHolding_simpleGains_dyadicCeilTime
-        ((K m).monotone_dates.monotoneOn _) (K m).measurable_positions (hC m) hτ k T
+        ((K m).monotone_dates.monotoneOn _) (K m).measurable_positions
+        (fun j _ ω ↦ hC m j ω) hτ k T
     have hlim_ae : TendstoInMeasure P (fun m ↦ Finance.simpleGains (p' m) (N' m) (ζ' m) W T)
         atTop (stoppedProcess I σ T) := tendstoInMeasure_of_tendsto_ae (fun m ↦
       ((Finance.stronglyAdapted_simpleGains (hp' m) (hζ' m) hW.adapted.stronglyAdapted T).mono

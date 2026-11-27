@@ -44,18 +44,20 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime_Ioc
     {s t : ℝ≥0} (hst : s ≤ t) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ)
     {C : ℝ} (hC : ∀ ω, ‖ξ ω‖ ≤ C) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ)
     (k : ℕ) (T : ℝ≥0) :
-    let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (τ ω)
     ∃ (N : ℕ) (p : ℕ → ℝ≥0) (ζ : ℕ → Ω → ℝ) (C' : ℝ),
       MonotoneOn p (Set.Iic N) ∧
       (∀ j < N, StronglyMeasurable[ℱ (p j)] (ζ j)) ∧
       (∀ j < N, ∀ ω, ‖ζ j ω‖ ≤ C') ∧
       (∀ u ≤ T, ∀ ω, simpleHolding p N ζ u ω =
-        if (u : WithTop ℝ≥0) ≤ σ ω then (Ioc s t).indicator (fun _ ↦ ξ ω) u else 0) ∧
+        if (u : WithTop ℝ≥0) ≤ dyadicCeilTime k (τ ω) then
+          (Ioc s t).indicator (fun _ ↦ ξ ω) u else 0) ∧
       ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), simpleGains p N ζ X T ω =
-        stoppedProcess (fun u ω ↦ ξ ω * (X (min t u) ω - X (min s u) ω)) σ T ω := by
-  intro σ
+        stoppedProcess (fun u ω ↦ ξ ω * (X (min t u) ω - X (min s u) ω))
+          (fun ω ↦ dyadicCeilTime k (τ ω)) T ω := by
+  let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (τ ω)
   by_cases hsT : s ≤ T
-  · let b : ℝ≥0 := min t T
+  · -- Case `s ≤ T`: subdivide `[s, min t T]` by `dyadicProjIcc` so `σ` never splits a subinterval.
+    let b : ℝ≥0 := min t T
     have hsb : s ≤ b := le_min hst hsT
     let N : ℕ := ⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1
     let p : ℕ → ℝ≥0 := dyadicProjIcc s b hsb k
@@ -71,7 +73,8 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime_Ioc
     refine ⟨N, p, ζ, max C 0, hp_mono.monotoneOn _, hζ_meas, fun _ _ ω ↦ by
         dsimp only [ζ]; split_ifs <;> first | exact (hC ω).trans (le_max_left _ _) | simp,
       fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
-    · by_cases hu : u ∈ Ioc s b
+    · -- Holding identity on `[0, T]`: inside `(s, b]` use the unique active subinterval.
+      by_cases hu : u ∈ Ioc s b
       · obtain ⟨j₀, hj₀, hju⟩ :=
           exists_lt_mem_Ioc_of_mem_Ioc (τ := p) (n := N) (by simpa only [hp0, hp_end] using hu)
         rw [simpleHolding_of_mem_Ioc (hp_mono.monotoneOn _) hj₀ hju,
@@ -79,13 +82,15 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime_Ioc
         have hiff : (p j₀ : WithTop ℝ≥0) < σ ω ↔ (u : WithTop ℝ≥0) ≤ σ ω :=
           ⟨fun h ↦ (WithTop.coe_le_coe.mpr hju.2).trans (dyadicProjIcc_le_dyadicCeilTime hsb h),
             lt_of_lt_of_le (WithTop.coe_lt_coe.mpr hju.1)⟩
-        simp only [ζ, hiff]
+        simp only [ζ, hiff, σ]
       · rw [simpleHolding_of_notMem_Ioc (hp_mono.monotoneOn _)
             (by simpa only [hp0, hp_end] using hu),
           indicator_of_notMem (fun h : u ∈ Ioc s t ↦ hu ⟨h.1, le_min h.2 huT⟩), ite_self]
-    · rw [simpleGains_def]
+    · -- Gain identity at `T`: telescope over the projected dyadic grid.
+      rw [simpleGains_def]
       exact sum_dyadicProjIcc_telescope hst hsT k (τ ω) (ξ ω) (X · ω)
-  · have hTs : T < s := lt_of_not_ge hsT
+  · -- Case `T < s`: the interval `(s, t]` lies past the horizon `T`, so the zero strategy works.
+    have hTs : T < s := lt_of_not_ge hsT
     refine ⟨0, fun _ ↦ 0, fun _ _ ↦ 0, 0,
       fun _ _ _ _ _ ↦ le_rfl,
       fun _ hj ↦ (Nat.not_lt_zero _ hj).elim, fun _ hj ↦ (Nat.not_lt_zero _ hj).elim,
@@ -104,16 +109,17 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime
     (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
     (hb : ∀ j < n, ∀ ω, ‖a j ω‖ ≤ C)
     {σ₀ : Ω → WithTop ℝ≥0} (hσ₀ : IsStoppingTime ℱ σ₀) (k : ℕ) (T : ℝ≥0) :
-    let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (σ₀ ω)
     ∃ (N : ℕ) (p : ℕ → ℝ≥0) (ζ : ℕ → Ω → ℝ) (C' : ℝ),
       MonotoneOn p (Set.Iic N) ∧
       (∀ j < N, StronglyMeasurable[ℱ (p j)] (ζ j)) ∧
       (∀ j < N, ∀ ω, ‖ζ j ω‖ ≤ C') ∧
       (∀ u ≤ T, ∀ ω, simpleHolding p N ζ u ω =
-        if (u : WithTop ℝ≥0) ≤ σ ω then simpleHolding τ n a u ω else 0) ∧
+        if (u : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ₀ ω) then
+          simpleHolding τ n a u ω else 0) ∧
       ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), simpleGains p N ζ X T ω =
-        stoppedProcess (simpleGains τ n a X) σ T ω := by
-  intro σ
+        stoppedProcess (simpleGains τ n a X) (fun ω ↦ dyadicCeilTime k (σ₀ ω)) T ω := by
+  let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (σ₀ ω)
+  -- Step 1: realize the stopped strategy on each elementary interval `i < n` (0 for `i ≥ n`).
   have hsingle (i : ℕ) : ∃ (N : ℕ) (p : ℕ → ℝ≥0) (ζ : ℕ → Ω → ℝ) (C' : ℝ),
       MonotoneOn p (Set.Iic N) ∧
       (∀ j < N, StronglyMeasurable[ℱ (p j)] (ζ j)) ∧
@@ -133,16 +139,19 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime
         fun _ hj ↦ (Nat.not_lt_zero _ hj).elim, fun _ hj ↦ (Nat.not_lt_zero _ hj).elim,
         fun h ↦ (hi h).elim, fun h ↦ (hi h).elim⟩
   choose N p ζ C' hp hζ hC' hhold hgain using hsingle
+  -- Step 2: refine the per-interval stopped strategies onto a single common grid.
   let s : Finset (Σ _ : ℕ, ℕ) := (range n).sigma fun i ↦ range (N i)
   obtain ⟨M, ρ, c, -, hρ, -, -, hc, -, hbound, hH, hG⟩ :=
     exists_simpleHolding_simpleGains_eq_sum ℱ s (fun q ↦ p q.1 q.2) (fun q ↦ p q.1 (q.2 + 1))
       (fun q ↦ ζ q.1 q.2) (fun q hq ↦ hζ q.1 q.2 (mem_range.mp (mem_sigma.mp hq).2))
   refine ⟨M, ρ, c, ∑ i ∈ range n, ∑ _ ∈ range (N i), C' i, hρ.monotoneOn, fun j _ ↦ hc j,
     fun j hj ω ↦ (hbound j hj ω).trans ?_, fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
-  · dsimp only [s]
+  · -- Step 3a: uniform bound on the refined heights.
+    dsimp only [s]
     rw [Finset.sum_sigma]
     exact sum_le_sum fun i _ ↦ sum_le_sum fun j hj ↦ hC' i j (mem_range.mp hj) ω
-  · rw [hH]
+  · -- Step 3b: holding identity on `[0, T]` by summing the per-interval holdings.
+    rw [hH]
     dsimp only [s]
     rw [Finset.sum_sigma]
     calc ∑ i ∈ range n, ∑ j ∈ range (N i),
@@ -154,7 +163,8 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime
           sum_congr rfl fun i hi ↦ hhold i (mem_range.mp hi) u huT ω
       _ = if (u : WithTop ℝ≥0) ≤ σ ω then simpleHolding τ n a u ω else 0 := by
           rw [simpleHolding_def]; split_ifs <;> simp
-  · rw [hG]
+  · -- Step 3c: gain identity at `T` by summing the per-interval stopped gains.
+    rw [hG]
     dsimp only [s]
     rw [Finset.sum_sigma]
     calc ∑ i ∈ range n, ∑ j ∈ range (N i),
