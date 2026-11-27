@@ -438,6 +438,9 @@ private noncomputable def windingQuasiUnitary : CStarSuspension ℂ :=
   ofConeEqZero (CStarCone.ofPathEqZero windingQuasiUnitaryPath windingQuasiUnitaryPath_zero)
     (by simp [windingQuasiUnitaryPath_one])
 
+private theorem toLoopPath_injective : Function.Injective toLoopPath :=
+  CStarCone.toPath_injective.comp toCone_injective
+
 private theorem toLoopPath_windingQuasiUnitary :
     toLoopPath windingQuasiUnitary = windingQuasiUnitaryPath := by
   simp [toLoopPath, windingQuasiUnitary]
@@ -445,13 +448,11 @@ private theorem toLoopPath_windingQuasiUnitary :
 private theorem windingQuasiUnitary_relation :
     star windingQuasiUnitary + windingQuasiUnitary +
       star windingQuasiUnitary * windingQuasiUnitary = 0 := by
-  apply CStarCone.toPath_injective.comp toCone_injective
-  have hcomp_eq : (CStarCone.toPath (A := ℂ) ∘ toCone) = toLoopPath := rfl
-  rw [hcomp_eq, map_add, map_add, map_mul, map_star, map_zero, toLoopPath_windingQuasiUnitary]
+  apply toLoopPath_injective
+  rw [map_add, map_add, map_mul, map_star, map_zero, toLoopPath_windingQuasiUnitary]
   ext s
   set u : Circle := AddCircle.homeomorphCircle one_ne_zero (AddCircle.zsmulLoop (1 : ℝ) 0 1 s)
-  have hu : star (u : ℂ) * (u : ℂ) = 1 := by
-    rw [mul_comm, RCLike.star_def, Complex.mul_conj, Complex.normSq_eq_norm_sq, u.norm_coe]; simp
+  have hu : star (u : ℂ) * (u : ℂ) = 1 := by simp [mul_comm, Complex.mul_conj]
   simp only [ContinuousMap.add_apply, ContinuousMap.mul_apply, ContinuousMap.star_apply,
     ContinuousMap.zero_apply, windingQuasiUnitaryPath, ContinuousMap.coe_mk]
   rw [star_sub, star_one]; linear_combination hu

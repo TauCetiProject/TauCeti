@@ -42,6 +42,18 @@ open scoped ZeroAtInfty
 
 namespace ZeroAtInftyContinuousMap
 
+section Ext
+
+/-- Two functions in `C₀(Y, R)` agreeing at every `e x` and vanishing outside `Set.range e` are
+equal. -/
+theorem eq_of_apply_eq_of_notMem {X : Sort*} {Y R : Type*} [TopologicalSpace Y] [TopologicalSpace R]
+    [Zero R] (e : X → Y) {g₁ g₂ : C₀(Y, R)} (h₁ : ∀ x, g₁ (e x) = g₂ (e x))
+    (h₂ : ∀ y ∉ range e, g₁ y = 0) (h₃ : ∀ y ∉ range e, g₂ y = 0) : g₁ = g₂ :=
+  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e (funext h₁)
+    fun y hy => (h₂ y hy).trans (h₃ y hy).symm
+
+end Ext
+
 section Topological
 
 variable {X Y R : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace R]
@@ -103,8 +115,8 @@ theorem extendByZero_injective (he : IsOpenEmbedding e) :
 
 @[simp] theorem extendByZero_zero (he : IsOpenEmbedding e) :
     extendByZero he (0 : C₀(X, R)) = 0 :=
-  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e
-    (funext fun _ => by simp) fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ _ => rfl
 
 @[simp] theorem extendByZero_eq_zero_iff (he : IsOpenEmbedding e) {f : C₀(X, R)} :
     extendByZero he f = 0 ↔ f = 0 := by rw [← extendByZero_zero he, extendByZero_inj]
@@ -146,9 +158,7 @@ theorem restrictOfEqZero_extendByZero [R1Space Y] (he : IsOpenEmbedding e) (f : 
 @[simp] theorem extendByZero_restrictOfEqZero [R1Space Y] (he : IsOpenEmbedding e) (g : C₀(Y, R))
     (hg : ∀ y ∉ range e, g y = 0) :
     extendByZero he (restrictOfEqZero he.isEmbedding g hg) = g :=
-  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e
-    (funext (extendByZero_apply_mem he _)) fun y hy => by
-      rw [extendByZero_apply_of_notMem he _ hy, hg y hy]
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _) hg
 
 theorem range_extendByZero [R1Space Y] (he : IsOpenEmbedding e) :
     range (extendByZero (R := R) he) = {g : C₀(Y, R) | ∀ y ∉ range e, g y = 0} :=
@@ -163,36 +173,36 @@ variable [R1Space Y] {e : X → Y}
 
 @[simp] theorem extendByZero_add [AddZeroClass R] [ContinuousAdd R] (he : IsOpenEmbedding e)
     (f g : C₀(X, R)) : extendByZero he (f + g) = extendByZero he f + extendByZero he g :=
-  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e
-    (funext fun _ => by simp) fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
 
 @[simp] theorem extendByZero_neg [AddGroup R] [IsTopologicalAddGroup R] (he : IsOpenEmbedding e)
     (f : C₀(X, R)) : extendByZero he (-f) = -extendByZero he f :=
-  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e
-    (funext fun _ => by simp) fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
 
 @[simp] theorem extendByZero_sub [AddGroup R] [IsTopologicalAddGroup R] (he : IsOpenEmbedding e)
     (f g : C₀(X, R)) : extendByZero he (f - g) = extendByZero he f - extendByZero he g :=
-  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e
-    (funext fun _ => by simp) fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
 
 @[simp] theorem extendByZero_mul [MulZeroClass R] [ContinuousMul R] (he : IsOpenEmbedding e)
     (f g : C₀(X, R)) : extendByZero he (f * g) = extendByZero he f * extendByZero he g :=
-  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e
-    (funext fun _ => by simp) fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
 
 @[simp]
 theorem extendByZero_smul {S : Type*} [Zero R] [SMulZeroClass S R] [ContinuousConstSMul S R]
     (he : IsOpenEmbedding e) (c : S) (f : C₀(X, R)) :
     extendByZero he (c • f) = c • extendByZero he f :=
-  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e
-    (funext fun _ => by simp) fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
 
 @[simp] theorem extendByZero_star [AddMonoid R] [StarAddMonoid R] [ContinuousStar R]
     (he : IsOpenEmbedding e) (f : C₀(X, R)) :
     extendByZero he (star f) = star (extendByZero he f) :=
-  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e
-    (funext fun _ => by simp) fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
 
 end Algebraic
 

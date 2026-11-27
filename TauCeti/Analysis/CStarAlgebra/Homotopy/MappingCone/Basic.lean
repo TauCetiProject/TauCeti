@@ -341,9 +341,7 @@ private def sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →ₗ[ℂ] Mappin
   map_add' a₁ a₂ := by refine ext rfl ?_; ext t; simp [map_add, smul_add]
   map_smul' c a := by
     refine ext rfl ?_; ext t
-    simp only [RingHom.id_apply, snd_mk, snd_smul, smul_apply, CStarCone.linearPath_apply, map_smul,
-      ← Complex.coe_smul]
-    exact (smul_comm c ((t : ℝ) : ℂ) (φ a)).symm
+    simpa [Complex.coe_smul] using smul_comm ((t : ℝ) : ℂ) c (φ a)
 
 @[simp] private theorem fst_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     (sectionLinearMap φ a).fst = a := (rfl)
@@ -399,14 +397,19 @@ private def sqrtConePath (b : B) : CStarCone B :=
       (Real.continuous_sqrt.comp continuous_subtypeVal).smul continuous_const⟩
     (by simp)
 
-@[simp] private theorem sqrtConePath_apply (b : B) (t : Ioc (0 : ℝ) 1) :
+private theorem sqrtConePath_apply (b : B) (t : Ioc (0 : ℝ) 1) :
     sqrtConePath b t = Real.sqrt (t : ℝ) • b := by simp [sqrtConePath]
 
-private theorem evalOne_sqrtConePath (b : B) : CStarCone.evalOne (sqrtConePath b) = b := by simp
+private theorem evalOne_sqrtConePath (b : B) : CStarCone.evalOne (sqrtConePath b) = b := by
+  simp [sqrtConePath_apply]
 
-private theorem map_star_mul_self_sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) {k : ℕ}
+private theorem star_sqrtConePath_mul_sqrtConePath_apply (b₁ b₂ : B) (t : Ioc (0 : ℝ) 1) :
+    star (sqrtConePath b₁ t) * sqrtConePath b₂ t = (t : ℝ) • (star b₁ * b₂) := by
+  simp [sqrtConePath_apply, smul_mul_smul_comm, Real.mul_self_sqrt t.property.1.le]
+
+private theorem map_star_mul_self_sectionCLM (φ : A →⋆ₙₐ[ℂ] B) {k : ℕ}
     (R : CStarMatrix (Fin k) (Fin k) A) :
-    (star R * R).map (sectionLinearMap φ) =
+    (star R * R).map (sectionCLM φ).toLinearMap =
       star (CStarMatrix.ofMatrix fun l j =>
         mk φ (R l j) (sqrtConePath (φ (R l j))) (evalOne_sqrtConePath _).symm) *
       (CStarMatrix.ofMatrix fun l j =>
@@ -420,13 +423,8 @@ private theorem map_star_mul_self_sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) 
   refine ext ?_ ?_
   · simp [CStarMatrix.mul_apply, CStarMatrix.star_apply, hS]
   · ext t
-    simp only [CStarMatrix.map_apply, snd_sectionLinearMap_apply, CStarCone.linearPath_apply,
-      CStarMatrix.mul_apply, CStarMatrix.star_apply, hS, map_sum, map_mul, map_star, snd_sum,
-      snd_mul, snd_star, snd_mk, FunLike.coe_sum, Finset.sum_apply]
-    refine Finset.sum_congr rfl fun l _ => ?_
-    simp only [mul_apply, ZeroAtInftyContinuousMap.star_apply, sqrtConePath_apply,
-      ← Complex.coe_smul, star_smul, Complex.star_def, Complex.conj_ofReal, smul_mul_smul_comm,
-      ← Complex.ofReal_mul, Real.mul_self_sqrt t.property.1.le]
+    simp [CStarMatrix.mul_apply, CStarMatrix.star_apply, hS,
+      star_sqrtConePath_mul_sqrtConePath_apply, map_star]
 
 /-- Completely positive contractive (in fact, isometric) linear section
 `a ↦ (a, t ↦ t • φ a)` of `fstHom φ : MappingCone φ →⋆ₙₐ[ℂ] A`. -/
@@ -434,14 +432,11 @@ def sectionCP [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) 
     A →CP MappingCone φ where
   toLinearMap := (sectionCLM φ).toLinearMap
   map_cstarMatrix_nonneg' k M hM := by
-    have hmem := StarOrderedRing.nonneg_iff.mp hM
-    have hmapₗ (X : CStarMatrix (Fin k) (Fin k) A) :
-        X.map (sectionCLM φ).toLinearMap = CStarMatrix.mapₗ (sectionCLM φ).toLinearMap X := rfl
-    rw [hmapₗ]
-    refine AddSubmonoid.closure_induction (hx := hmem) ?_ ?_ ?_
+    rw [← CStarMatrix.mapₗ_apply]
+    refine AddSubmonoid.closure_induction (hx := StarOrderedRing.nonneg_iff.mp hM) ?_ ?_ ?_
     · rintro _ ⟨R, rfl⟩
-      rw [← hmapₗ]
-      exact (map_star_mul_self_sectionLinearMap φ R).symm ▸ star_mul_self_nonneg _
+      rw [CStarMatrix.mapₗ_apply]
+      exact (map_star_mul_self_sectionCLM φ R).symm ▸ star_mul_self_nonneg _
     · rw [map_zero]
     · intro X Y _ _ hX hY; rw [map_add]; exact add_nonneg hX hY
 
@@ -459,15 +454,14 @@ theorem sectionCLM_map_mul_eq_iff (φ : A →⋆ₙₐ[ℂ] B) (a b : A) :
   constructor
   · intro h
     let half : Ioc (0 : ℝ) 1 := ⟨2⁻¹, by norm_num, by norm_num⟩
-    have hhalf := DFunLike.congr_fun (congrArg snd h) half
-    simp only [snd_sectionCLM_apply, snd_mul, mul_apply,
-      CStarCone.linearPath_apply, half, ← Complex.coe_smul, smul_mul_smul_comm, ← map_mul] at hhalf
-    have hsub : (((2⁻¹ : ℝ) : ℂ) - ((2⁻¹ : ℝ) : ℂ) * ((2⁻¹ : ℝ) : ℂ)) • φ (a * b) = 0 := by
+    have hhalf : (2⁻¹ : ℝ) • φ (a * b) = ((2⁻¹ : ℝ) * (2⁻¹ : ℝ)) • φ (a * b) := by
+      simpa [half, smul_mul_smul_comm, ← map_mul] using DFunLike.congr_fun (congrArg snd h) half
+    have hsub : ((2⁻¹ : ℝ) - (2⁻¹ : ℝ) * (2⁻¹ : ℝ)) • φ (a * b) = 0 := by
       rw [sub_smul, hhalf, sub_self]
     exact (smul_eq_zero.mp hsub).resolve_left (by norm_num)
   · intro hab
     refine ext rfl ?_; ext t
-    simp [hab, ← Complex.coe_smul, smul_mul_smul_comm, ← map_mul]
+    simp [hab, smul_mul_smul_comm, ← map_mul]
 
 end ExactSequence
 
