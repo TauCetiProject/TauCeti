@@ -8,11 +8,10 @@ module
 public import TauCeti.RepresentationTheory.Semisimplification
 public import TauCeti.RepresentationTheory.OfGL
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-import TauCeti.RingTheory.MvPolynomial.TraceNewton
+import TauCeti.LinearAlgebra.Matrix.Charpoly.IntegralNewton
 import TauCeti.RingTheory.Semisimple.Trace.Realization
 import TauCeti.LinearAlgebra.LinearIndependent.Evaluation
 import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -33,10 +32,14 @@ then realizes the trace, and semisimplification supplies native representation s
 ## Provenance
 
 The reconstruction adapts `New.exists_rep_of_trace_identities`, `New.linearExtension`,
-`New.pairingKernel` and `New.finite_quotient_pairingKernel` in
+`New.eval_linearExtension_eq_zero`, `New.pairingKernel` and
+`New.finite_quotient_pairingKernel` in
 `src/Lib/GaloisRep/Pseudocharacter/Pseudorepresentations.lean` in grh-lean
 (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
-Copyright 2026 Anthropic, PBC). The native semisimplification interface is new here.
+Copyright 2026 Anthropic, PBC). `isSemisimpleRing_traceQuotient` adapts the radical argument
+of `New.exists_wedderburn` in
+`src/Lib/GaloisRep/Pseudocharacter/SemisimpleRepresentations.lean` in the same source.
+The native semisimplification interface is new here.
 
 ## References
 
@@ -116,17 +119,6 @@ private lemma finite_quotient_pairingKernel (t : k[G] →ₗ[k] k)
       (h_dep ρ) (ρ ∘ b)
   simpa [det_apply, Function.flip_def] using h_det_zero
 
-
-private lemma traceNewtonPolynomial_vanishes [IsAlgClosed k] (A : Matrix n n k) :
-    eval (fun i : ℕ ↦ (A ^ i).trace) (traceNewtonPolynomial (Fintype.card n + 1) 1) = 0 := by
-  have hp (i : ℕ) : (A ^ i).trace = (A.charpoly.roots.map fun a ↦ a ^ i).sum := by
-    simpa using trace_aeval_eq_sum_roots_charpoly_of_splits
-      (IsAlgClosed.splits A.charpoly) (Polynomial.X ^ i)
-  simp_rw [hp]
-  rw [Multiset.eval_traceNewtonPolynomial]
-  simp [Multiset.esymm_of_card_lt, IsAlgClosed.card_roots_eq_natDegree,
-    charpoly_natDegree_eq_dim]
-
 private lemma isSemisimpleRing_traceQuotient (t : k[G] →ₗ[k] k)
     (t_comm : ∀ x y : k[G], t (x * y) = t (y * x))
     [hI : (pairingKernel t t_comm).IsTwoSided]
@@ -181,11 +173,12 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
       ∃ j : ℕ, τ x = j * l := by
     obtain ⟨x, rfl⟩ := mk_surjective (I := I) x
     have hz : eval t (rename (fun i : ℕ ↦ x ^ i)
-        (traceNewtonPolynomial (Fintype.card n + 1) 1)) = 0 := by
+        (integralNewtonPolynomial (Fintype.card n + 1) 1)) = 0 := by
       refine h_alg _ fun ρ ↦ ?_
-      simpa [eval_rename, Function.comp_def] using traceNewtonPolynomial_vanishes (ρ x)
+      simpa [eval_rename, Function.comp_def] using
+        (ρ x).eval_integralNewtonPolynomial_trace_pow_eq_zero_of_splits (IsAlgClosed.splits _)
     rw [eval_rename] at hz
-    exact τ.exists_nat_mul_of_traceNewtonPolynomial_eq_zero hx hz
+    exact τ.exists_nat_mul_of_integralNewtonPolynomial_eq_zero hx hz
   have : Module.Finite k (k[G] ⧸ I) := finite_quotient_pairingKernel t t_comm h_alg
   have : IsSemisimpleRing (k[G] ⧸ I) :=
     isSemisimpleRing_traceQuotient t t_comm τ hτ τ_nat

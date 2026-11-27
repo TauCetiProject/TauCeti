@@ -7,9 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Algebra.Algebra.Pi
-import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
+import TauCeti.LinearAlgebra.Matrix.Trace.Pi
 
 /-!
 # Realizing an integral tracial form by matrices
@@ -40,32 +40,9 @@ noncomputable section
 
 open Matrix Fintype Finset LinearMap
 
-attribute [local ext] Matrix.ext_linearMap
-
 namespace LinearMap
 
 variable {k : Type*} [CommRing k]
-
-private lemma trace_eq_sum_blocks {m : ℕ} {d : Fin m → ℕ} [∀ i, NeZero (d i)]
-    (τ : (Π i, Matrix (Fin (d i)) (Fin (d i)) k) →ₗ[k] k)
-    (hcomm : ∀ x y, τ (x * y) = τ (y * x))
-    (c : Fin m → ℕ) (hc : ∀ i, τ (Pi.single i (Matrix.single 0 0 1)) = c i)
-    (z : Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
-    τ z = ∑ i, c i * (z i).trace := by
-  classical
-  have hunit (i : Fin m) (a b : Fin (d i)) :
-      τ (Pi.single i (Matrix.single a b 1)) = if a = b then (c i : k) else 0 := by
-    have h := hcomm (Pi.single i (Matrix.single a 0 1))
-      (Pi.single i (Matrix.single 0 b 1))
-    split_ifs with hab
-    · simpa [hab, hc, ← Pi.single_mul] using h
-    · simpa [Ne.symm hab, ← Pi.single_mul] using h
-  have hτ : τ = lsum k _ k fun i : Fin m ↦ c i • traceLinearMap (Fin (d i)) k k := by
-    ext i a b
-    have ht : (Matrix.single a b (1 : k)).trace = if a = b then 1 else 0 := by
-      split_ifs with hab <;> simp [hab]
-    simpa [-lsum_apply, lsum_piSingle, ht] using hunit i a b
-  simp [hτ]
 
 /-- A tracial form on a finite product of matrix algebras is the trace of an algebra
 homomorphism if its values on one diagonal matrix unit in each block are natural numbers.
@@ -84,9 +61,12 @@ theorem exists_algHom_trace_eq_pi_matrix [CharZero k] {m : ℕ} {d : Fin m → �
       Matrix ι ι k := AlgHom.mk' (blockDiagonal'RingHom _ k) (fun c x ↦ blockDiagonal'_smul c x)
   let blocks : (Π i, Matrix (Fin (d i)) (Fin (d i)) k) →ₐ[k] Matrix ι ι k :=
     diag.comp (AlgHom.pi fun p ↦ Pi.evalAlgHom k _ p.1)
+  have hτ (z : Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
+      τ z = ∑ i, c i * (z i).trace := by
+    simpa only [hc] using τ.apply_eq_sum_mul_trace_of_map_mul_comm hcomm (fun _ ↦ 0) z
   have htrace (z : Π i, Matrix (Fin (d i)) (Fin (d i)) k) : (blocks z).trace = τ z := by
     simp +instances [blocks, diag, AlgHom.mk', ι, trace_blockDiagonal',
-      trace_eq_sum_blocks τ hcomm c hc, Fintype.sum_sigma]
+      hτ, Fintype.sum_sigma]
   have hcard : Fintype.card ι = n := by
     apply Nat.cast_injective (R := k)
     rw [← hone, ← htrace, map_one, Matrix.trace_one]
