@@ -50,8 +50,13 @@ McDuff–Salamon reduce to by reflection in Appendix B.4; the structure `i` was 
   holomorphic on the whole disc.
 * `TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg_of_forall_isBigO`: unique
   continuation from a zero of infinite order, also at a point of the real axis.
+* `TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg_of_eqOn_zero`: unique
+  continuation from a nonempty open subset of `Ω⁺`.
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg`:
   the zeros of a solution that is not identically zero are isolated in `Ω⁺`, also near the axis.
+* `TauCeti.exists_isTheta_pow_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg`: each zero in `Ω⁺`,
+  also on the axis, has a finite positive order `m`, with `‖ξ z‖` comparable to `‖z - z₀‖ ^ m`
+  within `Ω⁺`.
 
 The reflection rests on `ContinuousOn.ite_conj`, `TauCeti.HasWeakFDerivOn.ite_conj` and
 `TauCeti.MemWkpLoc.ite_conj`: continuity and weak derivatives glue across the axis for a map
@@ -266,5 +271,64 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn_inter_
     (hC'.mono_set hWΩ) (hξ'.mono hWΩ) ⟨z₁, hW hz₁, by simpa [hz₁.2.out] using hξz₁⟩
   filter_upwards [codiscreteWithin_mono hW h, self_mem_codiscreteWithin _] with z hz hzΩ
   simpa [hzΩ.2.out] using hz
+
+/-- **Unique continuation from an open set, up to a totally real boundary.** Let `V` be
+finite-dimensional, `2 < p ≤ ∞`, `Ω` conjugation invariant with `Ω ∩ {0 ≤ im}` preconnected, and
+let `J`, `C`, `ξ` and `R` be as in
+`TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg`. If `ξ` vanishes on a
+nonempty open subset of `Ω ∩ {0 ≤ im}`, it vanishes on `Ω ∩ {0 ≤ im}`, also on the real axis. -/
+theorem eqOn_zero_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg_of_eqOn_zero
+    [FiniteDimensional ℝ V] (hp : 2 < p) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hΩc : IsPreconnected ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hJ : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 J)
+    (hJc : ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hJ2 : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, J z ∘L J z = -ContinuousLinearMap.id ℝ V)
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J x v) = -J x (R v))
+    (hC : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) C)
+    (hξ : IsWeakLinearCauchyRiemannOn p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) J C ξ)
+    (hξR : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (ξ x) = ξ x) {U : Set ℂ} (hU : IsOpen U)
+    (hUne : U.Nonempty) (hUΩ : U ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (h₀ : EqOn ξ 0 U) :
+    EqOn ξ 0 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
+  obtain ⟨hJ', hJc', hJ2', hC', hξ'⟩ := reflection_hypotheses (one_le_two.trans hp.le) hΩ hJ
+    hJc hJ2 hJR hC hξ hξR
+  obtain ⟨W, hWΩ, hWo, hWc, hW⟩ :=
+    exists_isPreconnected_isOpen_superset_inter_im_nonneg_of_symmetric Ω.isOpen hΩ hΩc
+  have h := eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_eqOn_zero (Ω := ⟨W, hWo⟩) hp hWc
+    (hJ'.mono hWΩ) (hJc'.mono hWΩ) (fun z hz ↦ hJ2' z (hWΩ hz)) (hC'.mono_set hWΩ)
+    (hξ'.mono hWΩ) hU hUne (hUΩ.trans hW) fun z hz ↦ by simpa [(hUΩ hz).2.out] using h₀ hz
+  intro z hz
+  simpa [hz.2.out] using h (hW hz)
+
+open Asymptotics Topology in
+/-- **Positive orders up to a totally real boundary.** Let `V` be finite-dimensional,
+`2 < p ≤ ∞`, `Ω` conjugation invariant with `Ω ∩ {0 ≤ im}` preconnected, and let `J`, `C`, `ξ`
+and `R` be as in `TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg`, with
+`ξ` not identically zero on `Ω ∩ {0 ≤ im}`. Then each zero `z₀ ∈ Ω ∩ {0 ≤ im}` of `ξ`, possibly on
+the real axis, has a finite positive order `m`: `‖ξ z‖` is comparable to `‖z - z₀‖ ^ m` for `z`
+near `z₀` in `{0 ≤ im}`. -/
+theorem exists_isTheta_pow_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg
+    [FiniteDimensional ℝ V] (hp : 2 < p) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hΩc : IsPreconnected ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hJ : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 J)
+    (hJc : ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hJ2 : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, J z ∘L J z = -ContinuousLinearMap.id ℝ V)
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J x v) = -J x (R v))
+    (hC : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) C)
+    (hξ : IsWeakLinearCauchyRiemannOn p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) J C ξ)
+    (hξR : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (ξ x) = ξ x)
+    (hne : ∃ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, ξ z ≠ 0) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (hξ₀ : ξ z₀ = 0) :
+    ∃ m : ℕ, 0 < m ∧ ξ =Θ[𝓝[{z | 0 ≤ z.im}] z₀] fun z ↦ (z - z₀) ^ m := by
+  obtain ⟨hJ', hJc', hJ2', hC', hξ'⟩ := reflection_hypotheses (one_le_two.trans hp.le) hΩ hJ
+    hJc hJ2 hJR hC hξ hξR
+  obtain ⟨W, hWΩ, hWo, hWc, hW⟩ :=
+    exists_isPreconnected_isOpen_superset_inter_im_nonneg_of_symmetric Ω.isOpen hΩ hΩc
+  obtain ⟨z₁, hz₁, hξz₁⟩ := hne
+  obtain ⟨m, hm, hθ⟩ := exists_isTheta_pow_of_isWeakLinearCauchyRiemannOn
+    (Ω := ⟨W, hWo⟩) hp hWc (hJ'.mono hWΩ) (hJc'.mono hWΩ) (fun z hz ↦ hJ2' z (hWΩ hz))
+    (hC'.mono_set hWΩ) (hξ'.mono hWΩ) ⟨z₁, hW hz₁, by simpa [hz₁.2.out] using hξz₁⟩ (hW hz₀)
+    (by simpa [hz₀.2.out] using hξ₀)
+  exact ⟨m, hm, EventuallyEq.trans_isTheta
+    (eventually_nhdsWithin_of_forall fun z hz ↦ by simp [hz.out]) (hθ.mono nhdsWithin_le_nhds)⟩
 
 end TauCeti

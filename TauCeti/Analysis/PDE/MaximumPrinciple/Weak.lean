@@ -154,7 +154,7 @@ theorem value_nonpos_of_energyFormH1_nonpos {u : W1p mu Omega 2}
     rw [W1p.value_posPart]
     exact Lp.coeFn_posPart (W1p.value u)
   have hnonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (w : W1p mu Omega 2) x :=
-    hvalue.mono fun x hx ↦ hx.symm ▸ le_max_right _ _
+    W1p.value_posPart_nonneg_ae (by norm_num) u
   have henergy := hu w hnonneg
   dsimp only [w] at henergy
   rw [energyFormH1_posPart_right] at henergy

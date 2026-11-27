@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import TauCeti.AlgebraicGeometry.ResidueField
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 
 /-!
 # Nisnevich coverings and the Nisnevich topology
@@ -50,6 +51,8 @@ it is subcanonical.
   form a Nisnevich covering, and a sieve covers if and only if it contains such a family.
 * `AlgebraicGeometry.Scheme.smallNisnevichTopology_le_smallEtaleTopology`: the small Nisnevich
   topology is coarser than the small étale topology.
+* `AlgebraicGeometry.Scheme.smallNisnevichTopology_subcanonical`: the small Nisnevich topology is
+  subcanonical.
 
 ## References
 
@@ -317,5 +320,11 @@ theorem smallNisnevichTopology_le_smallEtaleTopology (X : Scheme.{u}) :
   exact Precoverage.toGrothendieck_mono <| Precoverage.comap_monotone <|
     GrothendieckTopology.toPrecoverage_monotone fun _ _ hR ↦
       nisnevichTopology_le_etaleTopology _ hR
+
+/-- Representable presheaves on the small étale site of a scheme are sheaves for the small
+Nisnevich topology, because it is coarser than the subcanonical small étale topology. -/
+instance smallNisnevichTopology_subcanonical (X : Scheme.{u}) :
+    X.smallNisnevichTopology.Subcanonical :=
+  .of_le (smallNisnevichTopology_le_smallEtaleTopology X)
 
 end AlgebraicGeometry.Scheme

@@ -20,7 +20,9 @@ base. This packages Mathlib's `Scheme.Hom.finrank_comp_left_of_isIso` for object
 base, incorporating its commuting triangle. It compares an affine group scheme with the Hopf
 spectrum of its coordinate algebra, and also transports rank through isomorphisms with Cartier
 duals. Composing with an isomorphism of targets instead moves the point at which the rank is
-evaluated (`AlgebraicGeometry.Scheme.Hom.finrank_comp_right_of_isIso`).
+evaluated (`AlgebraicGeometry.Scheme.Hom.finrank_comp_right_of_isIso`). Over an affine open `U` of
+the target, the rank is that of the spectrum of the map of coordinate rings `Γ(Y, U) ⟶ Γ(X, f⁻¹ U)`
+(`AlgebraicGeometry.Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE`).
 
 For finite flat morphisms `f : X ⟶ Y` and `g : Y ⟶ S`, if `f` has constant rank `n`, then
 `(f ≫ g).finrank s = n * g.finrank s` (`AlgebraicGeometry.Scheme.Hom.finrank_comp`): degrees of
@@ -52,6 +54,9 @@ over `K` of the intersection as the sum of the local intersection multiplicities
   is invariant under isomorphism over `S`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp_right_of_isIso`: the rank of `f ≫ e` at `e y` is the
   rank of `f` at `y`, for an isomorphism `e`.
+* `AlgebraicGeometry.Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE`: over an affine open
+  `U` of the target, the rank of a finite flat morphism is that of the spectrum of its map of
+  coordinate rings over `U`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp`: the rank of a composite whose first factor has
   constant rank.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp_of_fiber`: the rank of a composite whose first factor
@@ -118,6 +123,18 @@ rank of `f ≫ e` at `e y` is the rank of `f` at `y`. -/
 theorem Scheme.Hom.finrank_comp_right_of_isIso (f : X ⟶ Y) (e : Y ⟶ S) [IsIso e] [Flat f]
     [IsFinite f] (y : Y) : (f ≫ e).finrank (e y) = f.finrank y :=
   (finrank_of_isPullback (𝟙 X) f (f ≫ e) e (.of_horiz_isIso ⟨by simp⟩) y).symm
+
+/-- Over an affine open `U` of `Y`, a finite flat morphism `f : X ⟶ Y` is the spectrum of the map
+of coordinate rings `Γ(Y, U) ⟶ Γ(X, f⁻¹ U)`, so the rank of `f` at the point of `U` given by a
+prime `p` of `Γ(Y, U)` is the rank of that spectrum at `p`. -/
+theorem Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE (f : X ⟶ Y) [IsFinite f] [Flat f]
+    {U : Y.Opens} (hU : IsAffineOpen U) (p : PrimeSpectrum Γ(Y, U)) :
+    f.finrank (hU.fromSpec p) = (Spec.map (f.appLE U (f ⁻¹ᵁ U) le_rfl)).finrank p := by
+  have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
+  have H : IsPullback (Spec.map (f.appLE U (f ⁻¹ᵁ U) le_rfl)) hV.fromSpec hU.fromSpec f :=
+    IsOpenImmersion.isPullback _ _ _ _ (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl).symm
+      (by rw [hU.opensRange_fromSpec, hV.opensRange_fromSpec])
+  exact (finrank_of_isPullback _ _ _ _ H.flip p).symm
 
 /-- **The rank vanishes exactly off the image.** A finite flat morphism `f : X ⟶ Y` has rank `0`
 at `y` if and only if `y` is not in the image of `f`. -/
