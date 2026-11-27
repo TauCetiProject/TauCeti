@@ -9,8 +9,8 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
 public import TauCeti.RepresentationTheory.Smooth.Colimits
 public import TauCeti.RepresentationTheory.Smooth.Invariants
 import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
-import Mathlib.CategoryTheory.Filtered.Final
 import Mathlib.CategoryTheory.Limits.Types.Filtered
+import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Invariants of smooth representations commute with filtered colimits
@@ -78,42 +78,24 @@ theorem exists_mem_invariants_of_isColimit {x : c.pt.obj.V}
   -- functors, is its `hom.hom` by definition.
   replace hy : (c.ι.app j).hom.hom y = x := hy
   subst hy
-  let ρ := (F.obj j).obj.ρ
-  have : Representation.IsSmooth ρ := (F.obj j).property
-  have : SeparatelyContinuousMul U :=
-    ⟨(continuous_const_mul _ |>.comp continuous_subtypeVal).subtype_mk _,
-      (continuous_mul_const _ |>.comp continuous_subtypeVal).subtype_mk _⟩
-  -- the stabilizer of `y` in `U` is open, hence of finite index
-  let S : Subgroup U := (ρ.stabilizer y).subgroupOf U
-  have hS : IsOpen (S : Set U) :=
-    (Representation.IsSmooth.isOpen_stabilizer (ρ := ρ) y).preimage continuous_subtypeVal
-  have := S.quotient_finite_of_isOpen hS
+  have : Representation.IsSmooth (F.obj j).obj.ρ := (F.obj j).property
+  have : SeparatelyContinuousMul U := U.toSubmonoid.separatelyContinuousMul
+  -- The stabilizer of `y` in `U` is open, hence of finite index.
+  let S := Representation.stabilizer ((F.obj j).obj.ρ.comp U.subtype) y
   have := Fintype.ofFinite (U ⧸ S)
-  -- For each coset representative `q.out` the vectors `q.out • y` and `y` have the same image, so
-  -- they agree at a later stage, recorded as an object of the filtered category `Under j`.
-  have hq (q : U ⧸ S) : ∃ X : Under j,
-      (F.map X.hom).hom.hom (ρ (q.out : G) y) = (F.map X.hom).hom.hom y := by
-    have h : (c.ι.app j).hom.hom (ρ (q.out : G) y) = (c.ι.app j).hom.hom y := by
-      rw [Rep.hom_comm_apply]
-      exact hx q.out
-    obtain ⟨k, f, hf⟩ := (Types.FilteredColimit.isColimit_eq_iff' hT _ _).1 h
-    exact ⟨Under.mk f, hf⟩
-  choose X hX using hq
-  obtain ⟨T, hXT⟩ := IsFiltered.sup_objs_exists (Finset.univ.image X)
-  refine ⟨T.right, (F.map T.hom).hom.hom y, fun u ↦ ?_, ?_⟩
-  · obtain ⟨s, hs⟩ := QuotientGroup.mk_out_eq_mul S u
-    have hu : (u : G) = ((QuotientGroup.mk u : U ⧸ S).out : G) * ((s : U)⁻¹ : U) := by
+  -- After some map `f` out of `j`, the image of `y` is fixed by every coset representative.
+  obtain ⟨k, f, hf⟩ := Rep.exists_map_apply_eq_of_isColimit (isColimitOfPreserves (ι A G) hc) y
+    (Finset.univ.image fun q : U ⧸ S ↦ (q.out : G)) (Finset.forall_mem_image.2 fun q _ ↦ hx q.out)
+  refine ⟨k, (F.map f).hom.hom y, fun u ↦ ?_, ?_⟩
+  · -- It is also fixed by `S`, by naturality, so by `U = (U ⧸ S).out * S`.
+    obtain ⟨s, hs⟩ := QuotientGroup.mk_out_eq_mul S u
+    have hu : (u : G) = ((QuotientGroup.mk u : U ⧸ S).out : G) * ((s⁻¹ : U) : G) := by
       rw [hs, Subgroup.coe_mul, Subgroup.coe_inv, mul_inv_cancel_right]
-    have hsy : ρ (((s : U)⁻¹ : U) : G) y = y :=
-      Representation.mem_stabilizer.mp (Subgroup.mem_subgroupOf.mp (S.inv_mem s.property))
-    obtain ⟨m⟩ := hXT (Finset.mem_image_of_mem X (Finset.mem_univ (QuotientGroup.mk u)))
-    rw [MonoidHom.comp_apply, Subgroup.subtype_apply, ← Rep.hom_comm_apply, hu, map_mul,
-      mul_apply_eq_comp, hsy, ← Under.w m, Functor.map_comp]
-    simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp,
-      Representation.IntertwiningMap.comp_apply]
-    exact congrArg (F.map m.right).hom.hom (hX _)
-  · -- The image of `F.map T.hom y` in the colimit is that of `y`, by naturality of `c`.
-    rw [← c.w T.hom]
+    rw [MonoidHom.comp_apply, Subgroup.subtype_apply, ← Representation.mem_stabilizer, hu]
+    exact mul_mem (hf _ (Finset.mem_image_of_mem _ (Finset.mem_univ _)))
+      ((F.map f).hom.hom.stabilizer_le y (S.inv_mem s.property))
+  · -- The image of `F.map f y` in the colimit is that of `y`, by naturality of `c`.
+    rw [← c.w f]
     simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp,
       Representation.IntertwiningMap.comp_apply]
 
