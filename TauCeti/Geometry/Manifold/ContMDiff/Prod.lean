@@ -192,7 +192,7 @@ theorem eventually_mdifferentiableAt_family {EP HP P : Type*} [NormedAddCommGrou
   have hcont : ContinuousAt (fun p : P ↦ (p, x)) p₀ := by fun_prop
   filter_upwards [hcont.eventually ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1
     (hΦ.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn)))] with p hp
-  exact (hp.comp x (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero
+  exact hp.curry_right.mdifferentiableAt one_ne_zero
 
 /-- A jointly `C^n` family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly `C^n` at the base point and time zero, by

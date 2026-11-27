@@ -119,7 +119,7 @@ theorem contMDiffAt_familyVariationField
   have hv : ContMDiffAt I 𝓘(ℝ).tangent 1
       (fun _ : M ↦ (⟨t₀, (1 : ℝ)⟩ : TangentBundle 𝓘(ℝ) ℝ)) x := contMDiffAt_const
   have hb : ContMDiffAt I J 1 (fun y ↦ Φ t₀ y) x :=
-    (hΦ.comp x (contMDiffAt_const.prodMk contMDiffAt_id)).of_le (by norm_num)
+    hΦ.curry_right.of_le (by norm_num)
   have := ContMDiffAt.clm_apply_of_inCoordinates hϕ hv hb
   simpa only [familyVariationField, curveVelocity_apply] using this
 

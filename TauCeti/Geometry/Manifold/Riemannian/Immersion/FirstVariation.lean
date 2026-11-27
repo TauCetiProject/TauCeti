@@ -146,7 +146,7 @@ theorem hasDerivAt_inner_mfderiv_family
         ⟪mfderiv I J (Φ t₀) x v, cov.alongMap I (Φ t₀) (familyVariationField J Φ t₀) x w⟫_ℝ)
       t₀ := by
   have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) J (fun t ↦ Φ t x) t₀ :=
-    (hΦ.comp t₀ (contMDiffAt_id.prodMk contMDiffAt_const)).mdifferentiableAt (by norm_num)
+    hΦ.curry_left.mdifferentiableAt (by norm_num)
   have hbase := FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (Φ t₀ x)
   have h := hcov.hasDerivAt_inner_alongCurve hγ
     (differentiableAt_sectionCoord_mfderiv_family hΦ hx v _ hbase)
@@ -233,8 +233,7 @@ theorem hasDerivAt_relativeVolumeDensity_pullback_family_of_normal
     refine (hΦ (t₀, x)).of_le ?_
     calc (2 : ℕ∞ω) = 1 + 1 := by norm_num
       _ ≤ n + 1 := by gcongr
-  have hf : ContMDiffAt I J 2 (Φ t₀) x :=
-    hΦ₂.comp x (contMDiffAt_const.prodMk contMDiffAt_id)
+  have hf : ContMDiffAt I J 2 (Φ t₀) x := hΦ₂.curry_right
   let e := stdOrthonormalBasis ℝ (TangentSpace I x)
   have hb : ∀ i j, ⟪mfderiv I J (Φ t₀) x (e.toBasis i), mfderiv I J (Φ t₀) x (e.toBasis j)⟫_ℝ =
       if i = j then 1 else 0 := fun i j ↦ by
