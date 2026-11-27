@@ -32,9 +32,10 @@ discrete lattice by the scaling instances of `TauCeti.Algebra.Module.ZLattice.Sc
 
 For lattices `L`, `L'` and `a ∈ ℂ`, multiplication by `a` is an **isogeny of degree `N`** from `L`
 to `L'` (`ZLattice.IsIsogeny`) if `a L ⊆ L'` and `|a|² covolume (L) = N covolume (L')`. Every
-nonzero `a` with `a L ⊆ L'` is an isogeny, of degree the index `[L' : a L]`
-(`ZLattice.isIsogeny_relIndex`, `ZLattice.IsIsogeny.degree_eq_relIndex`), and degrees multiply
-under composition (`ZLattice.IsIsogeny.mul`).
+`a` with `a L ⊆ L'` is an isogeny, of degree the index `[L' : a L]`
+(`ZLattice.isIsogeny_relIndex`, `ZLattice.IsIsogeny.degree_eq_relIndex`); for `a = 0` both are
+`0`, as `0` has infinite index in `L'`. Degrees multiply under composition
+(`ZLattice.IsIsogeny.mul`).
 
 ## Main results
 
@@ -47,7 +48,7 @@ under composition (`ZLattice.IsIsogeny.mul`).
   `‖c‖ ^ 2`.
 * `ZLattice.IsIsogeny`: multiplication by `a` is an isogeny of degree `N`.
 * `ZLattice.isIsogeny_relIndex`, `ZLattice.IsIsogeny.degree_eq_relIndex`: the degree of an
-  isogeny by `a ≠ 0` is the index `[L' : a L]`.
+  isogeny by `a` is the index `[L' : a L]`.
 
 ## Provenance
 
@@ -115,8 +116,8 @@ theorem covolume_complex_smul [DiscreteTopology L] [IsZLattice ℝ L] (c : ℂ) 
 /-! ### Isogenies -/
 
 /-- Multiplication by `a ∈ ℂ` is an **isogeny of degree `N`** from the lattice `L` to the lattice
-`L'` if `a L ⊆ L'` and `|a|² covolume (L) = N covolume (L')`. For `a ≠ 0` the degree is the index
-`[L' : a L]` (`ZLattice.IsIsogeny.degree_eq_relIndex`). -/
+`L'` if `a L ⊆ L'` and `|a|² covolume (L) = N covolume (L')`. The degree is the index `[L' : a L]`
+(`ZLattice.IsIsogeny.degree_eq_relIndex`). -/
 structure IsIsogeny (L L' : Submodule ℤ ℂ) (a : ℂ) (N : ℕ) : Prop where
   /-- Multiplication by `a` maps `L` into `L'`. -/
   smul_le : a • L ≤ L'
@@ -132,27 +133,40 @@ theorem isIsogeny_iff :
 
 variable [DiscreteTopology L] [IsZLattice ℝ L] [DiscreteTopology L'] [IsZLattice ℝ L']
 
+/-- The zero submodule `0 M` has index `0`, that is infinite index, in a lattice `L'`. -/
+private theorem relIndex_zero_smul (M : Submodule ℤ ℂ) :
+    ((0 : ℂ) • M).toAddSubgroup.relIndex L'.toAddSubgroup = 0 := by
+  have : Nontrivial L' := Module.nontrivial_of_finrank_pos (R := ℤ) (by
+    rw [ZLattice.rank ℝ L', Complex.finrank_real_complex]
+    norm_num)
+  have : Infinite L' := Module.Free.infinite ℤ L'
+  have h0 : (0 : ℂ) • M = ⊥ := by
+    ext
+    simp
+  simp [h0, Nat.card_eq_zero_of_infinite]
+
 variable (L) in
-/-- **A nonzero multiplier into a lattice is an isogeny of degree the index**: if `a ≠ 0` and
-`a L ⊆ L'`, then `|a|² covolume (L) = [L' : a L] covolume (L')`. -/
-theorem isIsogeny_relIndex (ha : a ≠ 0) (h : a • L ≤ L') :
+/-- **A multiplier into a lattice is an isogeny of degree the index**: if `a L ⊆ L'`, then
+`|a|² covolume (L) = [L' : a L] covolume (L')`. For `a = 0` both sides are `0`. -/
+theorem isIsogeny_relIndex (h : a • L ≤ L') :
     IsIsogeny L L' a ((a • L).toAddSubgroup.relIndex L'.toAddSubgroup) := by
-  have : NeZero a := ⟨ha⟩
   refine ⟨h, ?_⟩
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [relIndex_zero_smul, norm_zero]
+    simp
+  have : NeZero a := ⟨ha⟩
   rw [← covolume_complex_smul, ← covolume_div_covolume_eq_relIndex' _ _ h]
   exact (div_mul_cancel₀ _ (covolume_pos L').ne').symm
 
 variable (L) in
 /-- If multiplication by `a` maps `L` into `L'`, it is an isogeny of some degree. -/
-theorem exists_isIsogeny (h : a • L ≤ L') : ∃ N : ℕ, IsIsogeny L L' a N := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · exact ⟨0, h, by simp⟩
-  · exact ⟨_, isIsogeny_relIndex L ha h⟩
+theorem exists_isIsogeny (h : a • L ≤ L') : ∃ N : ℕ, IsIsogeny L L' a N :=
+  ⟨_, isIsogeny_relIndex L h⟩
 
-/-- The degree of an isogeny by `a ≠ 0` is the index `[L' : a L]`. -/
-theorem IsIsogeny.degree_eq_relIndex (hN : IsIsogeny L L' a N) (ha : a ≠ 0) :
+/-- The degree of an isogeny by `a` is the index `[L' : a L]`. -/
+theorem IsIsogeny.degree_eq_relIndex (hN : IsIsogeny L L' a N) :
     N = (a • L).toAddSubgroup.relIndex L'.toAddSubgroup := by
-  have h₂ := (isIsogeny_relIndex L ha hN.smul_le).norm_sq_mul_covolume
+  have h₂ := (isIsogeny_relIndex L hN.smul_le).norm_sq_mul_covolume
   rw [hN.norm_sq_mul_covolume] at h₂
   exact Nat.cast_injective (R := ℝ) (mul_right_cancel₀ (covolume_pos L').ne' h₂)
 
