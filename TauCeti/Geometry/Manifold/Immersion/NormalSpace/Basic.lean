@@ -27,8 +27,10 @@ restricts to a continuous linear equivalence onto `Manifold.IsImmersion.tangentR
 is Hausdorff. In finite dimensions it has the expected codimension
 (`Manifold.IsImmersion.finrank_normalSpace`, `Manifold.IsImmersion.finrank_normalSpace_eq_one`).
 The quotient map `Manifold.IsImmersion.normalClass` characterizes exactly which
-ambient tangent vectors represent zero normal vectors, so `0 → T_x M → T_{f x} N → N_x → 0` is
-exact (`Manifold.IsImmersion.exact_mfderiv_normalClass`), and linear and continuous linear maps
+ambient tangent vectors represent zero normal vectors, so the differential and the normal projection
+are exact at `T_{f x} N` (`Manifold.IsImmersion.exact_mfderiv_normalClass`). With
+`Manifold.IsImmersion.mfderiv_injective` and `Manifold.IsImmersion.normalClass_surjective` this
+gives the short exact sequence `0 → T_x M → T_{f x} N → N_x → 0`. Linear and continuous linear maps
 vanishing on the tangent range descend to the normal space (`Manifold.IsImmersion.normalLift`,
 `Manifold.IsImmersion.normalLiftL`), uniquely.
 
@@ -181,7 +183,8 @@ theorem normalClass_surjective (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
     Function.Surjective (hf.normalClass x hn) :=
   (hf.tangentRange x hn).mkQ_surjective
 
-/-- The differential of an immersion followed by the normal projection is a short exact sequence
+/-- The differential of an immersion and the normal projection are exact at `T_{f x} N`. Together
+with `mfderiv_injective` and `normalClass_surjective` they give the short exact sequence
 `0 → T_x M → T_{f x} N → N_x → 0`. -/
 theorem exact_mfderiv_normalClass (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0) :
     Function.Exact (mfderiv I J f x).toLinearMap (hf.normalClass x hn) := by
