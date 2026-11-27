@@ -80,7 +80,8 @@ degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the sam
   group laws have multiplication series of the same order.
 * `TauCeti.FormalGroupHom.height_eq` and `TauCeti.FormalGroupIso.height_eq`: formal group laws
   related by a nonzero homomorphism, in particular isomorphic ones, have the same height.
-* `FormalGroup.height_smul`: the height is unchanged by a change of coordinate.
+* `FormalGroup.order_nsmulSeries_smul` and `FormalGroup.height_smul`: the order of `[n]_F` and
+  the height are unchanged by a change of coordinate.
 * `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow`: a homomorphism `u T + ⋯` relates
   the leading coefficients `a` of `[p]_F` and `b` of `[p]_G` by `b u ^ (p ^ h) = u a`; over a
   ring, `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order` gives the same
@@ -213,6 +214,11 @@ noncomputable def height (p : ℕ) : ℕ∞ :=
 theorem height_eq_top_iff : F.height p = ⊤ ↔ F.nsmulSeries p = 0 := by
   unfold height
   split_ifs with h <;> simp [h]
+
+/-- Every formal group law over a field has infinite `0`-height, since `[0]_F = 0`. -/
+@[simp]
+theorem height_zero : F.height 0 = ⊤ :=
+  F.height_eq_top_iff.mpr (F.nsmulSeries_zero)
 
 /-- A commutative formal group law over a field of characteristic `p` has height `h` exactly when
 the first nonzero term of `[p]_F(T)` has degree `p ^ h`. -/
@@ -414,6 +420,13 @@ theorem FormalGroupIso.height_eq {K : Type*} [Field K] {F G : FormalGroup K}
 end TauCeti
 
 namespace FormalGroup
+
+/-- The order of `[n]_F` is unchanged by a change of coordinate `φ • F`. -/
+@[simp]
+theorem order_nsmulSeries_smul {R : Type*} [CommRing R] (φ : TauCeti.FormalCoordinate R)
+    (F : FormalGroup R) (n : ℕ) :
+    ((φ • F).nsmulSeries n).order = (F.nsmulSeries n).order :=
+  ((smulIso φ F).order_nsmulSeries_eq n).symm
 
 /-- The height is unchanged by a change of coordinate `φ • F`. -/
 @[simp]
