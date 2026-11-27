@@ -157,13 +157,20 @@ variable [CharZero L] [NumberField K] [Algebra.IsAlgebraic K L] [Algebra.IsInvar
 /-- **Frobenius elements exist at finite places of algebraic extensions of number fields.** Let
 `L/K` be algebraic, `K` a number field, and let a profinite group `G` act continuously on `L`
 (discrete) by `K`-automorphisms with fixed field `K`. If the finite place `w` of `L` lies above
-the nonzero prime `p = {r ∈ 𝓞 K | w r < 1}`, some `σ` in the decomposition group of `w` satisfies
-`w (σ • x - x ^ #(𝓞 K ⧸ p)) < 1` whenever `w x ≤ 1`. -/
+the prime `p = {r ∈ 𝓞 K | w r < 1}`, some `σ` in the decomposition group of `w` satisfies
+`w (σ • x - x ^ #(𝓞 K ⧸ p)) < 1` whenever `w x ≤ 1`. The prime `p` is nonzero, as it contains the
+rational prime below `w`. -/
 theorem exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one_of_numberField (w : Place L)
     (hw : IsNonarchimedean w.val) {p : Ideal (𝓞 K)}
-    (hp : ∀ r : 𝓞 K, r ∈ p ↔ w.val (algebraMap (𝓞 K) L r) < 1) (hp0 : p ≠ ⊥) :
+    (hp : ∀ r : 𝓞 K, r ∈ p ↔ w.val (algebraMap (𝓞 K) L r) < 1) :
     ∃ σ : G, σ ∈ stabilizer G w ∧
       ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ Nat.card (𝓞 K ⧸ p)) < 1 := by
+  obtain ⟨q, hq, hwq⟩ := (isNonarchimedean_iff w).mp hw
+  have hp0 : p ≠ ⊥ := fun h ↦ hq.out.ne_zero <| (Nat.cast_eq_zero (R := 𝓞 K)).mp <|
+    (Submodule.mem_bot _).mp <| h ▸ (hp q).mpr <| by
+      rw [map_natCast, ← map_natCast (algebraMap ℚ L), ← AbsoluteValue.under_apply, hwq,
+        Rat.AbsoluteValue.padic_eq_padicNorm]
+      exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
   obtain ⟨σ, hσ, h⟩ :=
     AbsoluteValue.exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one_of_numberField (G := G)
       hw hp hp0
