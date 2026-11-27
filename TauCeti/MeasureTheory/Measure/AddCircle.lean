@@ -34,7 +34,9 @@ half line (`AddCircle.lintegral_comp_norm_le`).
 
 Mathlib's translation action of `ℝ` on `AddCircle T`, `t +ᵥ x = t + x` (`AddCircle.vadd_eq_add`),
 is jointly measurable and preserves every additively left-invariant measure, such as circle
-volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`).
+volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`). For the
+normalized Haar measure, the Fourier mode `fourier n` has integral `1` for `n = 0` and `0`
+otherwise (`AddCircle.integral_fourier_haarAddCircle`).
 -/
 
 public section
@@ -65,6 +67,13 @@ instance instVAddInvariantMeasureReal {T : ℝ} {μ : Measure (AddCircle T)}
     simpa only [AddCircle.vadd_eq_add] using measure_preimage_add μ (t : AddCircle T) s⟩
 
 variable {T : ℝ} [hT : Fact (0 < T)]
+
+/-- The integral of the Fourier mode `fourier n` for the normalized Haar measure is `1` for
+`n = 0` and `0` otherwise. -/
+theorem integral_fourier_haarAddCircle (n : ℤ) :
+    ∫ x, fourier n x ∂(haarAddCircle (T := T)) = if n = 0 then 1 else 0 := by
+  simpa [fourierCoeff, fourier_zero, Pi.single_apply, eq_comm] using
+    congrFun (fourierCoeff_fourier (T := T) n) 0
 
 /-- Reading a circle point in `[a, a + T)` sends circle volume to Lebesgue measure
 restricted to that interval. -/

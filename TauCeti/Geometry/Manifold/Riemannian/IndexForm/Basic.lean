@@ -45,8 +45,8 @@ without requiring the normal component of `D_t V(a) + u` to vanish.
 * `TauCeti.Manifold.indexFormIntegrandWithin` and
   `TauCeti.Manifold.indexForm_eq_integral_indexFormIntegrandWithin`: computation using derivatives
   within a parameter set, including at closed interval endpoints.
-* `TauCeti.Manifold.indexForm_congr`: invariance under curves and fields agreeing on the open
-  segment.
+* `TauCeti.Manifold.indexForm_congr` and `TauCeti.Manifold.indexForm_congr_of_totalSpaceMk_eq`:
+  invariance under curves and fields (or tangent-bundle lifts) agreeing on the open segment.
 * `TauCeti.Manifold.indexForm_eq_of_forall_notMem_Icc_eq_zero_left` and
   `TauCeti.Manifold.indexForm_eq_of_forall_notMem_Icc_eq_zero_right`: restriction to `[u, v] ⊆
   [a, b]` when one field vanishes outside `[u, v]`.
@@ -197,6 +197,16 @@ theorem indexForm_congr {δ : ℝ → M} {P Q : ∀ t, TangentSpace I (δ t)}
     (eventually_of_mem hmem hγ) (hγ ht)
     (eventually_of_mem hmem hV) (hV t ht)
     (eventually_of_mem hmem hW) (hW t ht)
+
+/-- The index form depends only on the tangent-bundle lifts of the two fields on the open
+parameter interval. -/
+theorem indexForm_congr_of_totalSpaceMk_eq {δ : ℝ → M} {P Q : ∀ t, TangentSpace I (δ t)}
+    (hV : ∀ t ∈ uIoo a b, TotalSpace.mk' E (γ t) (V t) = TotalSpace.mk' E (δ t) (P t))
+    (hW : ∀ t ∈ uIoo a b, TotalSpace.mk' E (γ t) (W t) = TotalSpace.mk' E (δ t) (Q t)) :
+    indexForm I γ V W a b = indexForm I δ P Q a b :=
+  indexForm_congr (fun t ht ↦ (Bundle.TotalSpace.ext_iff.mp (hV t ht)).1)
+    (fun t ht ↦ (Bundle.TotalSpace.ext_iff.mp (hV t ht)).2)
+    (fun t ht ↦ (Bundle.TotalSpace.ext_iff.mp (hW t ht)).2)
 
 /-! ### Symmetry and bilinearity -/
 
