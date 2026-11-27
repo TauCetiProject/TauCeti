@@ -121,4 +121,18 @@ theorem isClopen_specialOrthogonalGroup :
     IsClopen (specialOrthogonalGroup V : Set (unitary (V →L[ℝ] V))) :=
   ⟨isClosed_specialOrthogonalGroup, isOpen_specialOrthogonalGroup⟩
 
+variable (V) in
+/-- The special orthogonal transformations of `V` fixing a vector `v₀`. For a unit vector of an
+oriented three-dimensional space this is the circle group of rotations about the axis `ℝ v₀`; it
+is the structure group of the frames adapted to an oriented plane field. -/
+@[expose] def specialOrthogonalStabilizer (v₀ : V) : Subgroup (unitary (V →L[ℝ] V)) :=
+  MulAction.stabilizer (unitary (V →L[ℝ] V)) v₀ ⊓ specialOrthogonalGroup V
+
+/-- An orthogonal transformation lies in the special orthogonal stabilizer of `v₀` exactly when it
+fixes `v₀` and has determinant `1`. -/
+@[simp]
+theorem mem_specialOrthogonalStabilizer_iff {v₀ : V} {g : unitary (V →L[ℝ] V)} :
+    g ∈ specialOrthogonalStabilizer V v₀ ↔ (g : V →L[ℝ] V) v₀ = v₀ ∧ (g : V →L[ℝ] V).det = 1 :=
+  Subgroup.mem_inf.trans (and_congr Iff.rfl mem_specialOrthogonalGroup_iff)
+
 end TauCeti

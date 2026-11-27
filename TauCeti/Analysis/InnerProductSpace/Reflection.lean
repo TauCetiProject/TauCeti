@@ -395,6 +395,22 @@ theorem exists_det_eq_one_apply_eq_neg (hF : 2 ≤ Module.finrank ℝ F) (v : F)
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hw
     rwa [real_inner_comm]
 
+/-- In dimension at least two, every vector `v` is fixed by a linear isometry of determinant
+`-1`: the reflection in the hyperplane orthogonal to a nonzero vector orthogonal to `v`. -/
+theorem exists_det_eq_neg_one_apply_eq_self (hF : 2 ≤ Module.finrank ℝ F) (v : F) :
+    ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = -1 ∧ r v = v := by
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := (ℝ ∙ v)ᗮ) fun h ↦ by
+    have := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ v)
+    rw [h, finrank_bot] at this
+    have := finrank_span_le_card (R := ℝ) ({v} : Set F)
+    simp only [Set.toFinset_singleton, Finset.card_singleton] at this
+    omega
+  refine ⟨(ℝ ∙ w)ᗮ.reflection, linearEquiv_det_reflection_orthogonal_singleton hw0,
+    reflection_orthogonal_singleton_eq_self_of_inner_eq_zero ?_⟩
+  rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hw
+  rwa [real_inner_comm]
+
 /-- A nontrivial finite-dimensional real inner product space has a linear isometry of
 determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vector. -/
 theorem exists_det_eq_neg_one [Nontrivial F] [FiniteDimensional ℝ F] :
