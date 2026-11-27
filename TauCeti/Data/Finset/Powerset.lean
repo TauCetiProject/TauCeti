@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Finset.Prod
 
 /-!
-# Counting subsets by intersection size
+# Subsets of a given size
+
+`Finset.powersetCard_univ_nonempty` records that a finite type has subsets of every size
+`i < Fintype.card ι`.
 
 `Finset.card_filter_powersetCard_card_inter` counts the subsets of a fixed size meeting a
 marked set in exactly a prescribed number of points. Splitting a subset into its marked and
@@ -19,6 +23,11 @@ unmarked parts gives the product of binomial coefficients used in sampling witho
 public section
 
 namespace Finset
+
+/-- A finite type has subsets of every size `i < Fintype.card ι`. -/
+theorem powersetCard_univ_nonempty {ι : Type*} [Fintype ι] (i : Fin (Fintype.card ι)) :
+    (univ.powersetCard (i : ℕ) : Finset (Finset ι)).Nonempty :=
+  powersetCard_nonempty.mpr (by rw [card_univ]; exact i.isLt.le)
 
 variable {α : Type*} [DecidableEq α]
 

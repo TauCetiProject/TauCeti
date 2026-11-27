@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Data.Fin.Tuple.Sort
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Algebra.Order.BigOperators.Dominance
+public import TauCeti.Data.Finset.Powerset
+import TauCeti.Data.Fin.Tuple.Sort
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Tactic.NormNum
@@ -30,8 +32,9 @@ coordinates is the sum of the first `i` coordinates of the decreasing rearrangem
 `x ∘ Tuple.sortDesc x`, so majorization is the classical comparison of the prefix sums of the
 decreasing rearrangements, which is the dominance order `TauCeti.Dominates` between them.
 
-Majorization is a preorder, invariant under permuting either vector, and two vectors majorize
-each other exactly when one is a permutation of the other. Over a linearly ordered semifield, the
+Majorization is a preorder and invariant under permuting either vector. For values in an ordered
+cancellative additive monoid, two vectors majorize each other exactly when one is a permutation of
+the other. Over a linearly ordered semifield, the
 constant vector with the same total is majorized by every vector.
 
 ## Main definitions
@@ -51,7 +54,6 @@ constant vector with the same total is majorized by every vector.
   `maxSubsetSum i` is monotone, subadditive and positively homogeneous.
 * `TauCeti.le_of_sum_eq_maxSubsetSum`: a set attaining `maxSubsetSum i a` contains the largest
   coordinates of `a`.
-* `Antitone.sum_le_prefixSum`: an antitone tuple has its largest sums on initial segments.
 * `TauCeti.maxSubsetSum_eq_prefixSum_sortDesc`: on `Fin n`, the largest sum of `i` coordinates
   is a prefix sum of the decreasing rearrangement.
 * `TauCeti.majorizes_iff_prefixSum`, `TauCeti.weaklyMajorizes_iff_prefixSum`,
@@ -61,7 +63,8 @@ constant vector with the same total is majorized by every vector.
 * `TauCeti.majorizes_comp_equiv_iff`, `TauCeti.majorizes_comp_perm_left_iff`,
   `TauCeti.majorizes_comp_perm_right_iff`, and the same for `TauCeti.WeaklyMajorizes`:
   invariance under reindexing and under permuting either vector.
-* `TauCeti.majorizes_antisymm_iff`: `a ≺ b` and `b ≺ a` exactly when `a` is a permutation of `b`.
+* `TauCeti.majorizes_antisymm_iff`: in an ordered cancellative additive monoid, `a ≺ b` and
+  `b ≺ a` exactly when `a` is a permutation of `b`.
 * `TauCeti.majorizes_const_sum_div_card`: the constant vector with the total of `b` is majorized
   by `b`.
 
@@ -70,9 +73,10 @@ constant vector with the same total is majorized by every vector.
 * A. W. Marshall, I. Olkin, B. C. Arnold, *Inequalities: Theory of Majorization and Its
   Applications*, 2nd ed., Springer (2011), 1.A.1 (p. 8) and 1.A.2 (p. 12).
 
-The definitions follow the shape of the open Mathlib pull request #41898. The comparison of
-subset sums with the prefix sums of the decreasing rearrangement (`Antitone.sum_le_prefixSum`,
-`TauCeti.maxSubsetSum_eq_prefixSum_sortDesc`) is adapted from `sum_le_sumInitial_of_antitone`
+The definitions follow the shape of Mathlib pull request #41898. The comparison of
+subset sums with the prefix sums of the decreasing rearrangement
+(`TauCeti.maxSubsetSum_eq_prefixSum_sortDesc`, and `Antitone.sum_le_prefixSum` in
+`TauCeti.Algebra.BigOperators.Finset.PartialSum`) is adapted from `sum_le_sumInitial_of_antitone`
 and `sum_le_sumLargest` in `CKMA/Analysis/Convex/Majorization.lean` of the lean-CKMA project.
 -/
 
@@ -89,11 +93,6 @@ variable {ι κ M : Type*} [Fintype ι] [Fintype κ]
 section MaxSubsetSum
 
 variable [AddCommMonoid M] [LinearOrder M] {i : Fin (Fintype.card ι)} {a b : ι → M}
-
-/-- The subsets of size `i < card ι` of a finite type form a nonempty family. -/
-theorem powersetCard_univ_nonempty (i : Fin (Fintype.card ι)) :
-    (univ.powersetCard (i : ℕ) : Finset (Finset ι)).Nonempty :=
-  powersetCard_nonempty.mpr (by rw [card_univ]; exact i.isLt.le)
 
 /-- The largest sum of `i` coordinates of `a`, the maximum of `∑ j ∈ s, a j` over the subsets
 `s` of size `i`. -/
@@ -128,6 +127,7 @@ theorem exists_sum_eq_maxSubsetSum (i : Fin (Fintype.card ι)) (a : ι → M) :
   exact ⟨s, (mem_powersetCard.mp hs).2, by rw [maxSubsetSum_def, h]⟩
 
 /-- The largest sum of no coordinates is `0`. -/
+@[simp]
 theorem maxSubsetSum_of_val_eq_zero (hi : (i : ℕ) = 0) : maxSubsetSum i a = 0 := by
   obtain ⟨s, hs, h⟩ := exists_sum_eq_maxSubsetSum i a
   rw [← h, card_eq_zero.mp (hs.trans hi), sum_empty]
@@ -189,32 +189,7 @@ end MaxSubsetSum
 
 section Sorted
 
-variable {n : ℕ} [AddCommMonoid M]
-
-/-- The sum of an antitone tuple over a set of indices is at most its prefix sum of the same
-length. -/
-theorem _root_.Antitone.sum_le_prefixSum [Preorder M] [IsOrderedAddMonoid M] {f : Fin n → M}
-    (hf : Antitone f) (s : Finset (Fin n)) : ∑ i ∈ s, f i ≤ prefixSum #s f := by
-  have hk : #s ≤ n := by simpa using s.card_le_univ
-  let e := s.orderEmbOfFin rfl
-  -- The `j`-th smallest element of `s` has at least `j` elements of `s` below it.
-  have hle (j : Fin #s) : Fin.castLE hk j ≤ e j := by
-    have hsub : (Iio j).map e.toEmbedding ⊆ Iio (e j) := fun a ha ↦ by
-      obtain ⟨b, hb, rfl⟩ := mem_map.mp ha
-      exact mem_Iio.mpr (e.strictMono (mem_Iio.mp hb))
-    simpa [Fin.le_iff_val_le_val, card_map, Fin.card_Iio] using card_le_card hsub
-  calc ∑ i ∈ s, f i = ∑ j : Fin #s, f (e j) := by
-        conv_lhs => rw [← map_orderEmbOfFin_univ s rfl, sum_map]
-        rfl
-    _ ≤ ∑ j : Fin #s, f (Fin.castLE hk j) := sum_le_sum fun j _ ↦ hf (hle j)
-    _ = prefixSum #s f := (prefixSum_eq_sum_castLE hk f).symm
-
-/-- The sum of the decreasing rearrangement of a tuple is its sum. -/
-theorem sum_comp_sortDesc [LinearOrder M] (x : Fin n → M) :
-    ∑ i, (x ∘ Tuple.sortDesc x) i = ∑ i, x i :=
-  Equiv.sum_comp (Tuple.sortDesc x) x
-
-variable [LinearOrder M] [IsOrderedAddMonoid M]
+variable {n : ℕ} [AddCommMonoid M] [LinearOrder M] [IsOrderedAddMonoid M]
 
 /-- For an antitone tuple, the largest sum of `i` coordinates is the sum of the first `i`. -/
 theorem _root_.Antitone.maxSubsetSum_eq_prefixSum {x : Fin n → M} (hx : Antitone x)
@@ -261,7 +236,7 @@ theorem weaklyMajorizes_iff :
   ⟨fun h ↦ ⟨h.sum_le, h.sums⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 /-- Majorization is reflexive. -/
-@[refl]
+@[refl, simp]
 theorem Majorizes.refl (a : ι → M) : Majorizes a a :=
   ⟨rfl, fun _ ↦ le_rfl⟩
 
@@ -279,7 +254,7 @@ theorem Majorizes.weaklyMajorizes (h : Majorizes a b) : WeaklyMajorizes a b :=
   ⟨h.sum.le, h.sums⟩
 
 /-- Weak majorization is reflexive. -/
-@[refl]
+@[refl, simp]
 theorem WeaklyMajorizes.refl (a : ι → M) : WeaklyMajorizes a a :=
   ⟨le_rfl, fun _ ↦ le_rfl⟩
 
@@ -371,7 +346,8 @@ theorem majorizes_iff_prefixSum (x y : Fin n → M) :
   refine and_congr_left fun hsum ↦ ⟨fun h k ↦ ?_, fun h k _ ↦ h k⟩
   rcases lt_or_ge k n with hk | hk
   · exact h k hk
-  · rw [prefixSum_of_le hk, prefixSum_of_le hk, sum_comp_sortDesc, sum_comp_sortDesc, hsum]
+  · rw [prefixSum_of_le hk, prefixSum_of_le hk, Tuple.sum_comp_sortDesc, Tuple.sum_comp_sortDesc,
+      hsum]
 
 /-- For antitone tuples, `x ≺_w y` exactly when every prefix sum of `x` is at most that of `y`. -/
 theorem weaklyMajorizes_iff_prefixSum_of_antitone {x y : Fin n → M} (hx : Antitone x)
@@ -396,8 +372,8 @@ theorem weaklyMajorizes_iff_prefixSum (x y : Fin n → M) :
 the dominance order. -/
 theorem majorizes_iff_dominates (x y : Fin n → M) :
     Majorizes x y ↔ Dominates (x ∘ Tuple.sortDesc x) (y ∘ Tuple.sortDesc y) := by
-  rw [majorizes_iff_prefixSum, dominates_iff_forall_prefixSum_le, sum_comp_sortDesc,
-    sum_comp_sortDesc, and_comm, eq_comm]
+  rw [majorizes_iff_prefixSum, dominates_iff_forall_prefixSum_le, Tuple.sum_comp_sortDesc,
+    Tuple.sum_comp_sortDesc, and_comm, eq_comm]
 
 end Ordered
 
