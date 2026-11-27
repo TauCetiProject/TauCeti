@@ -175,12 +175,8 @@ theorem commutatorElement_mem_of_g2_of_root_eq_add {ht : G2.Valid} {α β γ : F
   have hmem (δ : Fin G2.numRoots) (j k : ℕ) (hj : 0 < j) (hk : 0 < k)
       (hδ : (G2.simplyConnectedRootDatum ht).root δ =
         j • (G2.simplyConnectedRootDatum ht).root α + k • (G2.simplyConnectedRootDatum ht).root β)
-      (w : A) : PresentedGroup.mk (G2.steinbergRelators ht A) (steinbergRoot δ w) ∈ H := by
-    refine hH δ j k hj hk (funext fun l => ?_) w
-    simp only [Pi.add_apply, Pi.smul_apply, root_rationalRootSystem, hδ]
-    simp only [nsmul_eq_mul]
-    push_cast
-    ring
+      (w : A) : PresentedGroup.mk (G2.steinbergRelators ht A) (steinbergRoot δ w) ∈ H :=
+    hH δ j k hj hk ((G2.root_rationalRootSystem_eq_nsmul_add_nsmul_iff ht α β δ j k).mpr hδ) w
   rcases g2Length_eq_one_or_eq_three γ with hγs | hγl
   · exact g2_commutatorElement_mem_of_short_sum hγs hγ hmem u v
   · -- A long sum: neither `2α + β = α + γ` nor `α + 2β = β + γ` is a root, so the one-factor

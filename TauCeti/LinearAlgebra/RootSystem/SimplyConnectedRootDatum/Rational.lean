@@ -123,6 +123,19 @@ theorem root_rationalRootSystem_eq_nsmul_add_iff (a c d : Fin t.numRoots) (n : �
   simpa only [Int.cast_natCast, Nat.cast_smul_eq_nsmul, natCast_zsmul, add_comm] using
     t.root_rationalRootSystem_eq_add_zsmul_iff ht a c d n
 
+/-- Rational base change preserves and reflects integral root relations `d = j a + k b` with
+natural coefficients `j` and `k`. -/
+theorem root_rationalRootSystem_eq_nsmul_add_nsmul_iff (a b d : Fin t.numRoots) (j k : ℕ) :
+    (t.rationalRootSystem ht).root d =
+        j • (t.rationalRootSystem ht).root a + k • (t.rationalRootSystem ht).root b ↔
+      (t.simplyConnectedRootDatum ht).root d =
+        j • (t.simplyConnectedRootDatum ht).root a +
+          k • (t.simplyConnectedRootDatum ht).root b := by
+  refine funext_iff.trans (Iff.trans (forall_congr' fun _ => ?_) funext_iff.symm)
+  simp only [Pi.add_apply, Pi.smul_apply, root_rationalRootSystem]
+  simp only [nsmul_eq_mul]
+  norm_cast
+
 @[simp] theorem coroot_rationalRootSystem (i : Fin t.numRoots) (k : Fin t.rank) :
     (t.rationalRootSystem ht).coroot i k = ((t.simplyConnectedRootDatum ht).coroot i k : ℚ) := by
   rw [rationalRootSystem, coroot_rootPairingBaseChange, piAlgebraMap_apply]

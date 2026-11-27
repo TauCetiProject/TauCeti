@@ -134,17 +134,10 @@ private theorem max_lt_degree_of_root_eq_nsmul_add (degree : (Fin t.rank → ℤ
     max (degree ((t.simplyConnectedRootDatum ht).root α))
         (degree ((t.simplyConnectedRootDatum ht).root β)) <
       degree ((t.simplyConnectedRootDatum ht).root δ) := by
-  -- The relation `δ = jα + kβ` among rational roots holds among the integral ones.
-  have hδR : (t.simplyConnectedRootDatum ht).root δ =
-      j • (t.simplyConnectedRootDatum ht).root α + k • (t.simplyConnectedRootDatum ht).root β := by
-    funext i
-    have h := congrFun hδ i
-    simp only [Pi.add_apply, Pi.smul_apply, root_rationalRootSystem] at h ⊢
-    simp only [nsmul_eq_mul] at h ⊢
-    exact_mod_cast h
   have hj' : (1 : ℚ) ≤ j := by exact_mod_cast hj
   have hk' : (1 : ℚ) ≤ k := by exact_mod_cast hk
-  rw [hδR, map_add, map_nsmul, map_nsmul, nsmul_eq_mul, nsmul_eq_mul, max_lt_iff]
+  rw [(t.root_rationalRootSystem_eq_nsmul_add_nsmul_iff ht α β δ j k).mp hδ, map_add, map_nsmul,
+    map_nsmul, nsmul_eq_mul, nsmul_eq_mul, max_lt_iff]
   constructor <;> nlinarith
 
 /-- **Ordered products in a root-set subgroup of Steinberg's presented group.** If `S` is the set
