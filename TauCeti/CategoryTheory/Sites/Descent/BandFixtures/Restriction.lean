@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.EquivalenceGroupAddGroup
-public import Mathlib.Algebra.Category.Grp.ForgetCorepresentable
 public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Glue
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
@@ -118,9 +117,11 @@ theorem singleCenter_app (g : G) (x : SingleObj G) :
     (singleCenter g).app x = (g : SingleObj.star G ⟶ SingleObj.star G) :=
   (rfl)
 
+@[simp]
 theorem singleCenter_mul (g h : G) : singleCenter (g * h) = singleCenter g * singleCenter h :=
   CatCenter.ext _ _ fun _ ↦ rfl
 
+@[simp]
 theorem singleCenter_one : singleCenter (1 : G) = 1 :=
   CatCenter.ext _ _ fun _ ↦ rfl
 
@@ -156,13 +157,17 @@ variable (P : Cᵒᵖ ⥤ CommGrpCat.{w})
 
 /-- The compatible central section of a coefficient `g ∈ P(U)`, as a function; see
 `groupSection`. -/
-def groupSectionFun (U : C) (g : P.obj (op U)) : IntrinsicBandSections (groupDiagram P) U :=
+private def groupSectionFun (U : C) (g : P.obj (op U)) :
+    IntrinsicBandSections (groupDiagram P) U :=
   ofCompatible (fun V f ↦ singleCenterUnit (G := P.obj (op V)) (P.map f.op g))
     ((isPullbackCompatible_iff _).2 fun V W f h x ↦ by
+      -- The fibre of `groupDiagram P` over `V` is `SingleObj P(V)` only after unfolding
+      -- `MonCat.toCat`, so `singleCenter_app` and `groupDiagram_map_map` do not match
+      -- syntactically; both sides are the coefficients they denote by definition.
       change P.map h.op (P.map f.op g) = P.map (h ≫ f).op g
       rw [op_comp, Functor.map_comp, ConcreteCategory.comp_apply])
 
-theorem val_groupSectionFun (U : C) (g : P.obj (op U)) {V : C} (f : V ⟶ U) :
+private theorem val_groupSectionFun (U : C) (g : P.obj (op U)) {V : C} (f : V ⟶ U) :
     (groupSectionFun P U g).val V f = singleCenterUnit (G := P.obj (op V)) (P.map f.op g) :=
   val_ofCompatible _ _ V f
 
@@ -171,8 +176,11 @@ theorem val_groupSectionFun (U : C) (g : P.obj (op U)) {V : C} (f : V ⟶ U) :
 `P(U) →* ZF(U)`. -/
 def groupSection (U : C) : P.obj (op U) →* IntrinsicBandSections (groupDiagram P) U where
   toFun := groupSectionFun P U
+  -- In both fields the two sides are units of the centres of `SingleObj P(V)` and of the fibre
+  -- of `groupDiagram P` over `V`, which agree only after unfolding `MonCat.toCat`; after the
+  -- rewrites they are syntactically equal up to that unfolding.
   map_one' := Subtype.ext (funext₂ fun V f ↦ by
-    rw [val_groupSectionFun, map_one, singleCenterUnit_one]
+    rw [val_groupSectionFun, map_one, singleCenterUnit_one, val_one]
     rfl)
   map_mul' g h := Subtype.ext (funext₂ fun V f ↦ by
     rw [val_groupSectionFun, map_mul, singleCenterUnit_mul, val_mul, val_groupSectionFun,
@@ -201,11 +209,13 @@ def groupSectionsEquiv (U : C) : P.obj (op U) ≃* IntrinsicBandSections (groupD
   toFun := groupSection P U
   invFun s := ((s.val U (𝟙 U)).val.app (SingleObj.star (P.obj (op U))) : P.obj (op U))
   left_inv g := by
-    simp only [val_groupSection, op_id, Functor.map_id, CommGrpCat.id_apply]
-    rfl
+    simp only [val_groupSection, op_id, Functor.map_id, CommGrpCat.id_apply,
+      val_singleCenterUnit, singleCenter_app]
   right_inv s := IntrinsicBandSections.ext fun V f x ↦ by
     have h := IntrinsicBandSections.map_app s (𝟙 U) f (SingleObj.star (P.obj (op U)))
     rw [Category.comp_id] at h
+    -- As in `groupSection`, the component of `groupSection P U g` at `f` is the pullback of `g`
+    -- along `f` only after unfolding `MonCat.toCat`, so `h` closes the goal up to definition.
     exact (congrArg (fun z : (CatCenter _)ˣ ↦ z.val.app x) (val_groupSection P U _ f)).trans h
   map_mul' := (groupSection P U).map_mul
 
@@ -257,11 +267,24 @@ theorem groupSectionsPresheafIso_hom_app_apply (U : Bᵒᵖ)
       Additive.ofMul (groupSection P U.unop (Additive.toMul g)) :=
   (rfl)
 
+theorem groupSectionsPresheafIso_inv_app_apply (U : Bᵒᵖ)
+    (s : (IntrinsicBandSections.presheaf (groupDiagram P)).obj U) :
+    (groupSectionsPresheafIso P).inv.app U s =
+      Additive.ofMul ((s.toMul.val U.unop (𝟙 _)).val.app (SingleObj.star (P.obj U)) :
+        P.obj U) :=
+  (rfl)
+
 /-- The **sheaf of intrinsic central sections** of `groupDiagram P` for the bottom topology, on a
 small base. -/
 @[expose]
 def groupBandSheaf : Sheaf (⊥ : GrothendieckTopology B) AddCommGrpCat.{w} :=
   ⟨IntrinsicBandSections.presheaf (groupDiagram P), Presheaf.isSheaf_bot _⟩
+
+/-- The underlying presheaf of `groupBandSheaf P` is the presheaf of intrinsic central sections. -/
+@[simp]
+theorem groupBandSheaf_obj :
+    (groupBandSheaf P).obj = IntrinsicBandSections.presheaf (groupDiagram P) :=
+  (rfl)
 
 /-- Over a small category, the **coefficient sheaf of `P` for the bottom topology is the sheaf of
 intrinsic central sections** of `groupDiagram P`. -/
@@ -273,6 +296,11 @@ def groupBandSheafIso :
 @[simp]
 theorem groupBandSheafIso_hom_hom :
     (groupBandSheafIso P).hom.hom = (groupSectionsPresheafIso P).hom :=
+  (rfl)
+
+@[simp]
+theorem groupBandSheafIso_inv_hom :
+    (groupBandSheafIso P).inv.hom = (groupSectionsPresheafIso P).inv :=
   (rfl)
 
 end Small

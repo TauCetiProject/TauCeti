@@ -79,18 +79,18 @@ theorem chainPresheaf_map_f₀₁ (g : ZMod 4) :
 
 /-- Restriction sends the section of the generator over `U₀` to the section of the generator over
 `U₁`. -/
-example : restrict f₀₁ (groupSection chainPresheaf U₀ (c₄ 1)) =
+theorem chain_generator_restrict : restrict f₀₁ (groupSection chainPresheaf U₀ (c₄ 1)) =
     groupSection chainPresheaf U₁ (c₂ 1) := by
   rw [restrict_groupSection, chainPresheaf_map_f₀₁, map_one]
 
 /-- Successive restrictions along `U₂ ⟶ U₁ ⟶ U₀` agree with restriction along the composite. -/
-example : restrict f₁₂ (restrict f₀₁ (groupSection chainPresheaf U₀ (c₄ 1))) =
+theorem chain_generator_comp :
+    restrict f₁₂ (restrict f₀₁ (groupSection chainPresheaf U₀ (c₄ 1))) =
     restrict (f₁₂ ≫ f₀₁) (groupSection chainPresheaf U₀ (c₄ 1)) :=
   restrict_comp _ _ _
 
 /-- Restriction along `U₁ ⟶ U₀` kills the section of the coefficient `2` of `C₄`. -/
-theorem restrict_groupSection_two :
-    restrict f₀₁ (groupSection chainPresheaf U₀ (c₄ 2)) = 1 := by
+theorem chain_two_killed : restrict f₀₁ (groupSection chainPresheaf U₀ (c₄ 2)) = 1 := by
   rw [restrict_groupSection, chainPresheaf_map_f₀₁]
   exact map_one _
 
@@ -104,21 +104,25 @@ theorem groupSection_two_ne_one : groupSection chainPresheaf U₀ (c₄ 2) ≠ 1
   exact absurd (congrArg Multiplicative.toAdd this : (2 : ZMod 4) = 0) (by decide)
 
 /-- Restriction of compatible central sections along `U₁ ⟶ U₀` is not injective. -/
-example : ¬ Function.Injective (restrict (F := chainF) f₀₁) := fun h ↦
-  groupSection_two_ne_one (h (restrict_groupSection_two.trans (map_one _).symm))
+theorem chain_restrict_not_injective : ¬ Function.Injective (restrict (F := chainF) f₀₁) :=
+  fun h ↦ groupSection_two_ne_one (h (chain_two_killed.trans (map_one _).symm))
 
 /-- There are four compatible central sections over the `C₄` object. -/
-example : Nat.card (IntrinsicBandSections chainF U₀) = 4 := by
+theorem chain_source_card : Nat.card (IntrinsicBandSections chainF U₀) = 4 := by
   rw [← Nat.card_congr (groupSectionsEquiv chainPresheaf U₀).toEquiv]
   exact (Nat.card_congr Multiplicative.toAdd).trans (Nat.card_zmod 4)
 
 /-- There are two compatible central sections over a `C₂` object. -/
-example : Nat.card (IntrinsicBandSections chainF U₁) = 2 := by
+theorem chain_target_card : Nat.card (IntrinsicBandSections chainF U₁) = 2 := by
   rw [← Nat.card_congr (groupSectionsEquiv chainPresheaf U₁).toEquiv]
   exact (Nat.card_congr Multiplicative.toAdd).trans (Nat.card_zmod 2)
 
+/-- The chain diagram is a stack for the bottom topology. -/
+theorem chain_stack : chainF.IsStack ⊥ :=
+  inferInstance
+
 /-- The chain diagram is a gerbe for the bottom topology. -/
-example : chainF.IsGerbe ⊥ :=
+theorem chain_gerbe : chainF.IsGerbe ⊥ :=
   inferInstance
 
 /-! ### Two disjoint chains -/
@@ -131,20 +135,25 @@ abbrev twoChainPresheaf : TwoChainSiteᵒᵖ ⥤ CommGrpCat :=
   unopUnop (Fin 3 ⊕ Fin 3) ⋙ chainGroups.sum' chainGroups
 
 /-- The site of two disjoint chains has no terminal object. -/
-example (X : TwoChainSite) : IsEmpty (Limits.IsTerminal X) := by
+theorem twoChains_no_terminal (X : TwoChainSite) : IsEmpty (Limits.IsTerminal X) := by
   refine ⟨fun hX ↦ ?_⟩
   obtain ⟨x | x⟩ := X
   · exact (hX.from (op (Sum.inr 0))).unop.elim
   · exact (hX.from (op (Sum.inl 0))).unop.elim
 
 /-- At every object of the two-chain site, the compatible central sections are the coefficients. -/
-example (U : TwoChainSite) :
-    twoChainPresheaf.obj (op U) ≃* IntrinsicBandSections (groupDiagram twoChainPresheaf) U :=
-  groupSectionsEquiv twoChainPresheaf U
+theorem twoChains_sections_equiv (U : TwoChainSite) :
+    Nonempty (twoChainPresheaf.obj (op U) ≃*
+      IntrinsicBandSections (groupDiagram twoChainPresheaf) U) :=
+  ⟨groupSectionsEquiv twoChainPresheaf U⟩
+
+/-- The two-chain diagram is a stack for the bottom topology. -/
+theorem twoChains_stack : (groupDiagram twoChainPresheaf).IsStack ⊥ :=
+  inferInstance
 
 /-- The two-chain diagram is a gerbe for the bottom topology, although its site has no terminal
 object. -/
-example : (groupDiagram twoChainPresheaf).IsGerbe ⊥ :=
+theorem twoChains_gerbe : (groupDiagram twoChainPresheaf).IsGerbe ⊥ :=
   inferInstance
 
 end TauCeti.Examples.RestrictionBandFixtures
