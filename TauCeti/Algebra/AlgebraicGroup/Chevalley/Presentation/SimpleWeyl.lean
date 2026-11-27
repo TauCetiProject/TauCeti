@@ -249,7 +249,8 @@ private theorem commutatorElement_mem_of_root_add_notMem_range {i : Fin t.rank}
 
 /-- If `β + γ` is a root `δ ≠ αᵢ` that is positive while `2β + γ` and `β + 2γ` are not roots, the
 one-factor relation puts the commutator of the generators at `β` and `γ` in `Û⁽ⁱ⁾`. -/
-private theorem commutatorElement_mem_of_root_eq_add {i : Fin t.rank} {β γ δ : Fin t.numRoots}
+private theorem commutatorElement_mem_punctured_of_root_eq_add {i : Fin t.rank}
+    {β γ δ : Fin t.numRoots}
     (hδmem : δ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i})
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
       (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ)
@@ -342,8 +343,8 @@ private theorem g2_commutatorElement_natAdd_zero_mem {ht : G2.Valid} {k : Fin 6}
       (root_natAdd_add_root_castAdd_ne_zero_g2 ht (by decide)) u v
   · -- `-α₀ + (α₀ + α₁) = α₁`, with a string of length two.
     have hstring := two_nsmul_natAdd_add_notMem_range_root_g2 ht 0 2 (by decide)
-    exact commutatorElement_mem_of_root_eq_add (g2_castAdd_mem_posRoots_diff (l := 1) (by decide))
-      hneg.1 hstring.1 hstring.2 u v
+    exact commutatorElement_mem_punctured_of_root_eq_add
+      (g2_castAdd_mem_posRoots_diff (l := 1) (by decide)) hneg.1 hstring.1 hstring.2 u v
   · -- `-α₀` and `2α₀ + α₁`, both short with short sum `α₀ + α₁`.
     rw [commutatorElement_eq_of_isSteinbergRelator (IsSteinbergRelator.g2_short_pair (ht := ht)
       (i := Fin.natAdd 6 (0 : Fin 6)) (j := Fin.castAdd 6 (3 : Fin 6))
@@ -407,8 +408,8 @@ private theorem g2_commutatorElement_natAdd_one_mem {ht : G2.Valid} {k : Fin 6} 
       (root_natAdd_add_root_castAdd_ne_zero_g2 ht (by decide)) u v
   · -- `-α₁ + (3α₀ + 2α₁) = 3α₀ + α₁`, with a string of length two.
     have hstring := two_nsmul_natAdd_add_notMem_range_root_g2 ht 1 5 (by decide)
-    exact commutatorElement_mem_of_root_eq_add (g2_castAdd_mem_posRoots_diff (l := 4) (by decide))
-      hneg.2.2.2.2 hstring.1 hstring.2 u v
+    exact commutatorElement_mem_punctured_of_root_eq_add
+      (g2_castAdd_mem_posRoots_diff (l := 4) (by decide)) hneg.2.2.2.2 hstring.1 hstring.2 u v
 
 /-- In type `G₂`, the commutator of a generator at `-αᵢ` with one at a positive root `γ ≠ αᵢ` lies
 in `Û⁽ⁱ⁾`. Of the ten pairs, five commute, two use the one-factor relation and three the `G₂`

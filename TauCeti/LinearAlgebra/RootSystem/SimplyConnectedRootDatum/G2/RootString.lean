@@ -40,6 +40,11 @@ The short–long root-string calculations also identify the lengths of `2α + β
 root-subgroup straightening formula with four correction factors at
 `α + β`, `2α + β`, `3α + β` and `3α + 2β`.
 
+Finally, a sum of two long roots that is a root is long, and the roots `2α + β`, `α + 2β` (for
+two short roots with short sum) and `2α + β`, `3α + β`, `3α + 2β` (for `α` short and `β` long
+with `α + β` a root) exist. Together with the long-sum statement, these sort every pair of roots
+whose sum is a root into one of the shapes of the `G₂` Chevalley commutator relations.
+
 ## Main results
 
 * `TauCeti.DynkinType.three_dvd_g2_pairing_of_long_short`: a long root pairs with a short coroot by
@@ -64,6 +69,11 @@ root-subgroup straightening formula with four correction factors at
   sums outside the short–long positive-root configuration are neither roots nor zero.
 * `TauCeti.DynkinType.g2_chainBotCoeff_of_short_add_long_eq_root`: the four bottom
   root-string coefficients in the short–long configuration are `0`, `1`, `2` and `2`.
+* `TauCeti.DynkinType.g2Length_eq_three_of_long_add_long_eq_root`: a sum of two long roots
+  that is a root is long.
+* `TauCeti.DynkinType.g2_exists_root_eq_add_of_short_add_short_eq_short` and
+  `TauCeti.DynkinType.g2_exists_root_eq_add_of_short_add_long_eq_root`: the roots `iα + jβ`
+  occurring in the three- and four-factor `G₂` commutator relations exist.
 
 ## References
 
@@ -307,5 +317,53 @@ theorem g2_chainBotCoeff_of_short_add_long_eq_root (i j k l o : Fin 12)
     g2_chainBotCoeff_eq_two_of_short_add_short_eq_long l k o hklen holen
       (ho.trans (add_comm _ _))
   exact ⟨hbot, hbotk, hbotl, hbotlk⟩
+
+/-- A root obtained by adding two long roots in the pinned `G₂` datum is long: the long roots
+form a closed subsystem of type `A₂`. -/
+theorem g2Length_eq_three_of_long_add_long_eq_root (i j k : Fin 12)
+    (hi : g2Length i = 3) (hj : g2Length j = 3)
+    (hadd : g2SimplyConnectedRootDatum.root k =
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :
+    g2Length k = 3 := by
+  simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hadd
+  rw [g2Length_apply] at hi hj ⊢
+  revert i j k
+  decide +kernel
+
+/-- If two short roots of the pinned `G₂` datum add to a short root `k`, then `2i + j = i + k`
+and `i + 2j = k + j` are roots: the three-term configuration of the short-pair commutator
+relation. -/
+theorem g2_exists_root_eq_add_of_short_add_short_eq_short (i j k : Fin 12)
+    (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
+    (hadd : g2SimplyConnectedRootDatum.root k =
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :
+    ∃ l m : Fin 12,
+      g2SimplyConnectedRootDatum.root l =
+          g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root k ∧
+        g2SimplyConnectedRootDatum.root m =
+          g2SimplyConnectedRootDatum.root k + g2SimplyConnectedRootDatum.root j := by
+  simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hadd ⊢
+  rw [g2Length_apply] at hi hj hk
+  revert i j k
+  decide +kernel
+
+/-- If a short root `i` and a long root `j` of the pinned `G₂` datum add to a root `k`, then
+`2i + j = i + k`, `3i + j` and `3i + 2j` are roots: the configuration of the four-factor
+short–long commutator relation. -/
+theorem g2_exists_root_eq_add_of_short_add_long_eq_root (i j k : Fin 12)
+    (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hadd : g2SimplyConnectedRootDatum.root k =
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :
+    ∃ l m o : Fin 12,
+      g2SimplyConnectedRootDatum.root l =
+          g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root k ∧
+        g2SimplyConnectedRootDatum.root m =
+          g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root l ∧
+        g2SimplyConnectedRootDatum.root o =
+          g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root k := by
+  simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hadd ⊢
+  rw [g2Length_apply] at hi hj
+  revert i j k
+  decide +kernel
 
 end TauCeti.DynkinType
