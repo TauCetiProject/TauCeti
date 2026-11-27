@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.ProperAction.CompactlyGenerated
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.Topology.Algebra.GroupAction.Quotient
 import TauCeti.Topology.Compactness.LocallyCompact
 
 /-!
@@ -16,23 +17,21 @@ import TauCeti.Topology.Compactness.LocallyCompact
 Let a group `G` with separately continuous multiplication act on a space `X`, and let `N` be a
 normal subgroup of `G`. The quotient group `G ⧸ N` acts on the orbit space `X ⧸ N` by
 `[g] • [x] = [g • x]` (`MulAction.orbitRel.Quotient.instMulActionQuotientGroup`). This file shows
-that this residual action inherits continuity and properness from the action of `G`.
+that this residual action inherits properness from the action of `G`. Its continuity
+(`MulAction.orbitRel.Quotient.continuousSMul_quotientGroup`) is proved in
+`TauCeti.Topology.Algebra.GroupAction.Quotient`.
 
-* **Continuity.** If `G` acts continuously, so does `G ⧸ N`
-  (`MulAction.orbitRel.Quotient.continuousSMul_quotientGroup`): both projections `G → G ⧸ N` and
-  `X → X ⧸ N` are open quotient maps, so their product is a quotient map, and on representatives
-  the residual action is the action of `G` followed by the projection.
-* **Properness.** If `G` acts properly on a weakly locally compact space `X` and `N` is closed, then
-  `G ⧸ N` acts properly on `X ⧸ N` (`MulAction.orbitRel.Quotient.properSMul_quotientGroup`). The
-  orbit space is Hausdorff, since the closed subgroup `N` acts properly
-  (`t2Space_quotient_mulAction_of_properSMul`), and weakly locally compact, so properness is tested
-  on compact sets (`MulAction.properSMul_iff_isCompact_setOfPred_inter_nonempty`). Every compact
-  set `U'` of `X ⧸ N` is the image of a compact set `U` of `X`, the intersection of the preimage of
-  `U'` with a compact set whose image covers `U'` (`IsOpenMap.exists_isCompact_image_eq`). For
-  compact sets `U` and `V` of `X` with images `U'` and `V'`, the elements `[g]` with
-  `[g] • U' ∩ V' ≠ ∅` are the images of the elements `h` with `h • U ∩ V ≠ ∅`: if `n • g • u = v`
-  with `n ∈ N`, then `h = n g` has the same image as `g`. These form a compact set because `G`
-  acts properly, so their image in `G ⧸ N` is compact.
+If `G` acts properly on a weakly locally compact space `X` and `N` is closed, then
+`G ⧸ N` acts properly on `X ⧸ N` (`MulAction.orbitRel.Quotient.properSMul_quotientGroup`). The
+orbit space is Hausdorff, since the closed subgroup `N` acts properly
+(`t2Space_quotient_mulAction_of_properSMul`), and weakly locally compact, so properness is tested
+on compact sets (`MulAction.properSMul_iff_isCompact_setOfPred_inter_nonempty`). Every compact
+set `U'` of `X ⧸ N` is the image of a compact set `U` of `X`, the intersection of the preimage of
+`U'` with a compact set whose image covers `U'` (`IsOpenMap.exists_isCompact_image_eq`). For
+compact sets `U` and `V` of `X` with images `U'` and `V'`, the elements `[g]` with
+`[g] • U' ∩ V' ≠ ∅` are the images of the elements `h` with `h • U ∩ V ≠ ∅`: if `n • g • u = v`
+with `n ∈ N`, then `h = n g` has the same image as `g`. These form a compact set because `G`
+acts properly, so their image in `G ⧸ N` is compact.
 
 This is the topological input for reduction in stages: a Lie group acting properly on a regular
 level, reduced first by a closed normal subgroup, leaves a proper action of the quotient group on
@@ -41,7 +40,6 @@ for the second stage; freeness and smoothness of the residual action are supplie
 
 ## Main results
 
-* `MulAction.orbitRel.Quotient.continuousSMul_quotientGroup`: the residual action is continuous.
 * `MulAction.orbitRel.Quotient.properSMul_quotientGroup`: the residual action is proper.
 
 ## References
@@ -60,24 +58,6 @@ namespace MulAction.orbitRel.Quotient
 
 variable {G X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
   (N : Subgroup G) [N.Normal]
-
-/-- **The residual action is continuous.** If a group `G` with separately continuous
-multiplication acts continuously on `X`, then for a normal subgroup `N` the quotient group `G ⧸ N`
-acts continuously on the orbit space `X ⧸ N` by `[g] • [x] = [g • x]`. -/
-@[to_additive /-- **The residual action is continuous.** If an additive group `G` with separately
-continuous addition acts continuously on `X`, then for a normal subgroup `N` the quotient group
-`G ⧸ N` acts continuously on the orbit space `X ⧸ N` by `[g] +ᵥ [x] = [g +ᵥ x]`. -/]
-instance continuousSMul_quotientGroup [SeparatelyContinuousMul G] [ContinuousSMul G X] :
-    ContinuousSMul (G ⧸ N) (orbitRel.Quotient N X) where
-  continuous_smul := by
-    rw [← (QuotientGroup.isOpenQuotientMap_mk.prodMap
-      MulAction.isOpenQuotientMap_quotientMk).continuous_comp_iff]
-    -- On representatives the residual action is the action of `G` followed by the projection.
-    have hcomp : (fun p : (G ⧸ N) × orbitRel.Quotient N X ↦ p.1 • p.2) ∘
-        Prod.map QuotientGroup.mk (Quotient.mk _) = Quotient.mk _ ∘ fun p : G × X ↦ p.1 • p.2 :=
-      funext fun p ↦ mk_smul_mk N p.1 p.2
-    rw [hcomp]
-    exact continuous_quot_mk.comp continuous_smul
 
 /-- **The residual action is proper.** If a group `G` with separately continuous multiplication
 acts properly on a weakly locally compact space `X`, then for a closed normal subgroup `N` the
