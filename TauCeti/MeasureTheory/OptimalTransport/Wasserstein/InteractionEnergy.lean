@@ -90,6 +90,8 @@ is the inequality that makes `ξ` a Wasserstein subgradient of the interaction e
   measurable.
 * `TauCeti.memLp_interactionGradient`: the interaction gradient at a law with finite second moment
   is square integrable.
+* `TauCeti.integrable_comp_sub_of_norm_gradient_le`: a differentiable kernel `w (x - y)` with
+  gradient of linear growth is integrable over two copies of a law with finite second moment.
 * `StrongConvexOn.interactionEnergy_add_le`: the first-order inequality of the interaction energy
   along a coupling.
 
@@ -530,6 +532,15 @@ theorem memLp_interactionGradient [IsFiniteMeasure μ]
   rw [hint] at this
   linarith
 
+/-- For a differentiable `w` whose gradient grows at most linearly, `‖∇w z‖ ≤ C (1 + ‖z‖)`, the
+difference kernel `w (x - y)` is integrable over two independent copies of a finite measure with
+finite second moment. -/
+theorem integrable_comp_sub_of_norm_gradient_le [IsFiniteMeasure μ] (hwd : Differentiable ℝ w)
+    (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖)) (hμ : HasFiniteMoment 2 μ) :
+    Integrable (fun z : E × E ↦ w (z.1 - z.2)) (μ.prod μ) :=
+  integrable_comp_of_norm_gradient_le hwd hw'
+    ((hμ.memLp_id.comp_fst μ).sub (hμ.memLp_id.comp_snd μ))
+
 omit [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] in
 /-- The first-order condition of the `m`-strong convexity of `w` at `x - x'` towards `y - y'`, for
 two pairs `p = ((x, y), (x', y'))`, with the linear term split along the two pairs. -/
@@ -597,12 +608,10 @@ theorem _root_.StrongConvexOn.interactionEnergy_add_le (hw : StrongConvexOn univ
       interactionEnergy (fun z ↦ w (z.1 - z.2)) ν := by
   have : IsFiniteMeasure μ := by rw [← hγ.fst_eq]; infer_instance
   have : IsFiniteMeasure ν := by rw [← hγ.snd_eq]; infer_instance
-  rw [interactionEnergy_eq_integral_prod (W := fun z ↦ w (z.1 - z.2))
-      (integrable_comp_of_norm_gradient_le hwd hw'
-        ((hμ.memLp_id.comp_fst μ).sub (hμ.memLp_id.comp_snd μ))) hγ.measurePreserving_fst,
-    interactionEnergy_eq_integral_prod (W := fun z ↦ w (z.1 - z.2))
-      (integrable_comp_of_norm_gradient_le hwd hw'
-        ((hν.memLp_id.comp_fst ν).sub (hν.memLp_id.comp_snd ν))) hγ.measurePreserving_snd,
+  rw [interactionEnergy_eq_integral_prod (integrable_comp_sub_of_norm_gradient_le hwd hw' hμ)
+      hγ.measurePreserving_fst,
+    interactionEnergy_eq_integral_prod (integrable_comp_sub_of_norm_gradient_le hwd hw' hν)
+      hγ.measurePreserving_snd,
     ← EReal.coe_add, EReal.coe_le_coe_iff]
   -- Integrability over `γ ⊗ γ` of every term of the first-order condition.
   set P := γ.prod γ

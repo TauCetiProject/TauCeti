@@ -485,8 +485,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy
       ((ρ : ProbabilityMeasure E) : Measure E) = ((∫ z, w (z.1 - z.2) ∂
         ((ρ : ProbabilityMeasure E) : Measure E).prod ((ρ : ProbabilityMeasure E) : Measure E)) /
           2 : ℝ) :=
-    interactionEnergy_of_integrable (integrable_comp_of_norm_gradient_le hwd hw'
-      ((ρ.hasFiniteMoment.memLp_id.comp_fst _).sub (ρ.hasFiniteMoment.memLp_id.comp_snd _)))
+    interactionEnergy_of_integrable
+      (integrable_comp_sub_of_norm_gradient_le hwd hw' ρ.hasFiniteMoment)
   -- Along an optimal coupling the remainder of the first-order inequality of the interaction
   -- energy is at least `(min m 0 / 2) W₂(μ, ν)²`, since its double integral is twice the variance
   -- of the displacement.
