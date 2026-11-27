@@ -175,6 +175,42 @@ theorem liftToModuleCatFunctor_map_app_apply {F G : D ⥤+ AddCommGrpCat.{w}} (�
 
 end CategoryTheory.AdditiveFunctor
 
+namespace CategoryTheory.Functor
+
+variable {R : Type*} [CommRing R]
+variable {D : Type*} [Category* D] [Preadditive D] [CategoryTheory.Linear R D]
+variable (G : D ⥤ ModuleCat.{w} R) [G.Additive] [G.Linear R]
+
+/-- Lifting an additive linear functor after forgetting its scalars recovers the original
+module-valued functor. -/
+def liftToModuleCatForgetLinearIso :
+    (AdditiveFunctor.of (G ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})).liftToModuleCat R ≅ G :=
+  let F := AdditiveFunctor.of (G ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
+  NatIso.ofComponents (fun X ↦
+    ModuleCat.isoMk ((F.liftToModuleCatForgetIso R).app X) (fun r ↦ by
+      ext x
+      -- The underlying comparison is the identity, so compatibility is the scalar-action formula.
+      have h : G.map (r • 𝟙 X) = r • 𝟙 (G.obj X) := by simp
+      exact ((AdditiveFunctor.liftToModuleCat_smul R F X r x).trans
+        (ConcreteCategory.congr_hom h x)).symm)) (by
+    intro X Y f
+    apply ModuleCat.hom_ext
+    ext x
+    -- The lifted map uses the original map, and the comparison acts as the identity on elements.
+    rfl)
+
+/-- The comparison with the original linear functor acts as the identity on elements. -/
+@[simp↓]
+theorem liftToModuleCatForgetLinearIso_hom_app_apply (X : D) (x : G.obj X) :
+    (G.liftToModuleCatForgetLinearIso.hom.app X) x = x := (rfl)
+
+/-- The inverse comparison with the original linear functor acts as the identity on elements. -/
+@[simp↓]
+theorem liftToModuleCatForgetLinearIso_inv_app_apply (X : D) (x : G.obj X) :
+    (G.liftToModuleCatForgetLinearIso.inv.app X) x = x := (rfl)
+
+end CategoryTheory.Functor
+
 namespace TauCeti
 
 variable {R : Type*} [CommRing R]
@@ -229,28 +265,6 @@ equal underlying types in downstream modules. -/
 @[expose]
 def linearModuleFunctorEquiv :
     (D ⥤+ AddCommGrpCat.{w}) ≌ (linearModuleFunctor R D).FullSubcategory :=
-  let forgetScalars := forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}
-  let liftForgetIso (G : D ⥤ ModuleCat.{w} R) [G.Additive] [G.Linear R] :
-      (AdditiveFunctor.of (G ⋙ forgetScalars)).liftToModuleCat R ≅ G :=
-    NatIso.ofComponents (fun X ↦
-      let F := AdditiveFunctor.of (G ⋙ forgetScalars)
-      let e : (F.liftToModuleCat R).obj X ≃ₗ[R] G.obj X :=
-        { toFun := fun x ↦ x
-          invFun := fun x ↦ x
-          left_inv := fun _ ↦ rfl
-          right_inv := fun _ ↦ rfl
-          map_add' := fun _ _ ↦ rfl
-          map_smul' := fun r x ↦ by
-            have h : G.map (r • 𝟙 X) = r • 𝟙 (G.obj X) := by simp
-            exact (AdditiveFunctor.liftToModuleCat_smul R F X r x).trans
-              (ConcreteCategory.congr_hom h x) }
-      e.toModuleIso)
-      (by
-        intro X Y f
-        apply ModuleCat.hom_ext
-        ext x
-        -- The comparison is the identity on elements, and the lifted map uses the original map.
-        rfl)
   CategoryTheory.Equivalence.mk (linearModuleFunctorLift R D) (linearModuleFunctorForget R D)
     (NatIso.ofComponents (fun F ↦
       (additiveFunctor D AddCommGrpCat).fullyFaithfulι.preimageIso
@@ -261,7 +275,7 @@ def linearModuleFunctorEquiv :
       -- Taking the preimage of the forgetful comparison preserves its identity components.
       rfl))
     (NatIso.ofComponents (fun F ↦
-      (linearModuleFunctor R D).fullyFaithfulι.preimageIso (liftForgetIso F.obj)) (by
+      (linearModuleFunctor R D).fullyFaithfulι.preimageIso F.obj.liftToModuleCatForgetLinearIso) (by
       intro F G α
       apply ObjectProperty.hom_ext
       ext X x
@@ -295,13 +309,15 @@ theorem linearModuleFunctorEquiv_unitIso_inv_app_apply (F : D ⥤+ AddCommGrpCat
 @[simp↓]
 theorem linearModuleFunctorEquiv_counitIso_hom_app_apply
     (F : (linearModuleFunctor.{w} R D).FullSubcategory) (X : D) (x : F.obj.obj X) :
-    (((linearModuleFunctorEquiv R D).counitIso.hom.app F).hom.app X) x = x := (rfl)
+    (((linearModuleFunctorEquiv R D).counitIso.hom.app F).hom.app X) x = x :=
+  F.obj.liftToModuleCatForgetLinearIso_hom_app_apply X x
 
 /-- The inverse counit of the scalar lift equivalence acts as the identity on elements. -/
 @[simp↓]
 theorem linearModuleFunctorEquiv_counitIso_inv_app_apply
     (F : (linearModuleFunctor.{w} R D).FullSubcategory) (X : D) (x : F.obj.obj X) :
-    (((linearModuleFunctorEquiv R D).counitIso.inv.app F).hom.app X) x = x := (rfl)
+    (((linearModuleFunctorEquiv R D).counitIso.inv.app F).hom.app X) x = x :=
+  F.obj.liftToModuleCatForgetLinearIso_inv_app_apply X x
 
 section SourceLinear
 
