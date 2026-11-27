@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.EssentiallySmall
+public import TauCeti.CategoryTheory.Preadditive.UnipotentCommutator
 
 import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
@@ -38,9 +39,25 @@ universal property and its two structure maps: the difference map
 Grothendieck group of `C`, and the maps `TauCeti.RelativeK0.map` induced by commuting squares of
 functors.
 
+The presentation uses only direct sums, but when `D` is preadditive with binary biproducts it
+already satisfies the relation for split short exact sequences of triples
+(`TauCeti.RelativeK0.of_eq_add_of_inl_comp_eq_of_comp_snd_eq`): if
+`γ : T (P₁ ⊞ P₂) ≅ T (Q₁ ⊞ Q₂)` is triangular, restricting to `α₁` on the first summand and
+inducing `α₂` on the second, then `(P₁ ⊞ P₂, γ, Q₁ ⊞ Q₂) = (P₁, α₁, Q₁) + (P₂, α₂, Q₂)`, whatever
+its off-diagonal block. That block need not come from a morphism of `C`: the unipotent
+automorphism it defines becomes a commutator after adding a summand
+(`CategoryTheory.Biprod.unipotentLower_biprod_eq_commutatorElement`), and commutators have trivial
+class because the automorphisms of a fixed `T P` contribute additively
+(`TauCeti.RelativeK0.of_trans_commutatorElement_trans`). This is the additivity that Weibel's
+presentation of `K₀(T)` imposes along short exact sequences of triples, for those sequences which
+split, as all short exact sequences of finitely generated projective modules do.
+
 ## Main definitions
 
-* `TauCeti.RelativeK0.tripleBiprod x y`: the direct sum of two triples.
+* `TauCeti.RelativeK0.tripleBiprod x y`: the direct sum of two triples, with its isomorphisms
+  `TauCeti.RelativeK0.tripleBiprodMapIso` (functoriality), `TauCeti.RelativeK0.tripleBiprodComm`,
+  `TauCeti.RelativeK0.tripleBiprodAssoc` and `TauCeti.RelativeK0.tripleBiprodReflIso` (the sum of
+  two identity triples).
 * `TauCeti.RelativeK0 T`: the relative group, with class map `TauCeti.RelativeK0.of`.
 * `TauCeti.RelativeK0.AdditiveInvariant T G`: the functions on triples that factor through
   `K₀(T)`, and `TauCeti.RelativeK0.lift` the homomorphism they induce.
@@ -58,6 +75,11 @@ functors.
   `TauCeti.RelativeK0.of_symm` (`(Q, α⁻¹, P) = -(P, α, Q)`) and `TauCeti.RelativeK0.of_mapIso`
   (`(P, T γ, Q) = 0` for every isomorphism `γ : P ≅ Q`).
 * `TauCeti.RelativeK0.exists_eq_of`: every element of `K₀(T)` is the class of a single triple.
+* `TauCeti.RelativeK0.of_trans_commutatorElement_trans`: commutators of automorphisms have
+  trivial class.
+* `TauCeti.RelativeK0.of_eq_add_of_inl_comp_eq_of_comp_snd_eq`: the relation for triangular
+  isomorphisms, with the unipotent case
+  `TauCeti.RelativeK0.of_eq_zero_of_inl_comp_eq_of_comp_snd_eq`.
 * `TauCeti.RelativeK0.liftEquiv`: the universal property.
 * `TauCeti.RelativeK0.splitK0Map_comp_toSplitK0_eq_zero`: the composite `K₀(T) → K₀(C) → K₀(D)`
   vanishes.
@@ -72,6 +94,8 @@ functors.
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II,
   Definition 2.10 (the relative group `K₀(f)` of a ring map and `K₀(R, I)`) and Exercise 2.17
   (the group `K₀(T)` of a cofinal functor and its exact sequence).
+* Charles A. Weibel, *The K-book*, Chapter III, Lemma 1.3.2 (the commutator identity for
+  elementary matrices behind the triangular relation).
 -/
 
 public section
@@ -131,6 +155,137 @@ lemma tripleBiprod_iso_hom_map_snd (x y : T ⊡ T) :
   dsimp only [tripleBiprod]
   simp only [Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Category.assoc,
     Functor.mapBiprod_inv_map_snd, biprod.map_snd, Functor.mapBiprod_hom, biprod.lift_snd_assoc]
+
+/-! ### Isomorphisms of direct sums of triples
+
+The isomorphism conditions below are proved with `tripleBiprod` unfolded, as in the two
+characteristic lemmas above. The ends `(tripleBiprod T x y).fst` and `x.fst ⊞ y.fst` agree only
+up to unfolding `tripleBiprod`, so `simp` cannot apply the characteristic lemmas to composites
+whose objects are written one way and whose morphisms, such as `biprod.braiding`, the other. -/
+
+/-- The direct sum of isomorphisms of triples `e : x ≅ x'` and `e' : y ≅ y'`, an isomorphism
+`x ⊞ y ≅ x' ⊞ y'` whose two components are the direct sums of the components of `e` and `e'`. -/
+noncomputable def tripleBiprodMapIso {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    tripleBiprod T x y ≅ tripleBiprod T x' y' :=
+  mkIso (biprod.mapIso (asIso e.hom.fst) (asIso e'.hom.fst))
+    (biprod.mapIso (asIso e.hom.snd) (asIso e'.hom.snd)) (by
+      have := preservesBinaryBiproducts_of_preservesBiproducts T
+      dsimp only [tripleBiprod]
+      refine Functor.map_biprod_hom_ext ?_ ?_ <;>
+        simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
+          Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
+          biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc,
+          ← T.map_comp_assoc, ← T.map_comp, asIso_hom] <;>
+        simp only [T.map_comp, Category.assoc, Hom.w, Functor.mapBiprod_inv_map_fst_assoc,
+          Functor.mapBiprod_inv_map_snd_assoc, biprod.map_fst_assoc, biprod.map_snd_assoc,
+          biprod.lift_fst_assoc, biprod.lift_snd_assoc])
+
+@[simp]
+lemma tripleBiprodMapIso_hom_fst {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    (tripleBiprodMapIso e e').hom.fst = biprod.map e.hom.fst e'.hom.fst := (rfl)
+
+@[simp]
+lemma tripleBiprodMapIso_hom_snd {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    (tripleBiprodMapIso e e').hom.snd = biprod.map e.hom.snd e'.hom.snd := (rfl)
+
+@[simp]
+lemma tripleBiprodMapIso_inv_fst {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    (tripleBiprodMapIso e e').inv.fst = biprod.map (inv e.hom.fst) (inv e'.hom.fst) := (rfl)
+
+@[simp]
+lemma tripleBiprodMapIso_inv_snd {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    (tripleBiprodMapIso e e').inv.snd = biprod.map (inv e.hom.snd) (inv e'.hom.snd) := (rfl)
+
+/-- The direct sum of triples is commutative: `x ⊞ y ≅ y ⊞ x` through the braidings of both
+components. -/
+noncomputable def tripleBiprodComm (x y : T ⊡ T) :
+    tripleBiprod T x y ≅ tripleBiprod T y x :=
+  mkIso (biprod.braiding _ _) (biprod.braiding _ _) (by
+    have := preservesBinaryBiproducts_of_preservesBiproducts T
+    dsimp only [tripleBiprod]
+    refine Functor.map_biprod_hom_ext ?_ ?_ <;>
+      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
+        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
+        biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc,
+        ← T.map_comp_assoc, ← T.map_comp, biprod.braiding_hom, biprod.lift_fst, biprod.lift_snd])
+
+@[simp]
+lemma tripleBiprodComm_hom_fst (x y : T ⊡ T) :
+    (tripleBiprodComm x y).hom.fst = (biprod.braiding x.fst y.fst).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodComm_hom_snd (x y : T ⊡ T) :
+    (tripleBiprodComm x y).hom.snd = (biprod.braiding x.snd y.snd).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodComm_inv_fst (x y : T ⊡ T) :
+    (tripleBiprodComm x y).inv.fst = (biprod.braiding x.fst y.fst).inv := (rfl)
+
+@[simp]
+lemma tripleBiprodComm_inv_snd (x y : T ⊡ T) :
+    (tripleBiprodComm x y).inv.snd = (biprod.braiding x.snd y.snd).inv := (rfl)
+
+/-- The direct sum of triples is associative: `(x ⊞ y) ⊞ z ≅ x ⊞ (y ⊞ z)` through the
+associators of both components. -/
+noncomputable def tripleBiprodAssoc (x y z : T ⊡ T) :
+    tripleBiprod T (tripleBiprod T x y) z ≅ tripleBiprod T x (tripleBiprod T y z) :=
+  mkIso (biprod.associator _ _ _) (biprod.associator _ _ _) (by
+    have := preservesBinaryBiproducts_of_preservesBiproducts T
+    dsimp only [tripleBiprod]
+    refine Functor.map_biprod_hom_ext ?_ (Functor.map_biprod_hom_ext ?_ ?_) <;>
+      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
+        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
+        biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc] <;>
+      simp only [← T.map_comp_assoc, ← T.map_comp, biprod.associator_hom, biprod.lift_fst,
+        biprod.lift_snd, biprod.lift_snd_assoc] <;>
+      simp only [Category.assoc, T.map_comp, Functor.mapBiprod_inv_map_fst,
+        Functor.mapBiprod_inv_map_snd, Functor.mapBiprod_inv_map_fst_assoc, biprod.map_fst,
+        biprod.map_snd, biprod.map_fst_assoc, biprod.lift_fst_assoc, biprod.lift_snd_assoc])
+
+@[simp]
+lemma tripleBiprodAssoc_hom_fst (x y z : T ⊡ T) :
+    (tripleBiprodAssoc x y z).hom.fst = (biprod.associator x.fst y.fst z.fst).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodAssoc_hom_snd (x y z : T ⊡ T) :
+    (tripleBiprodAssoc x y z).hom.snd = (biprod.associator x.snd y.snd z.snd).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodAssoc_inv_fst (x y z : T ⊡ T) :
+    (tripleBiprodAssoc x y z).inv.fst = (biprod.associator x.fst y.fst z.fst).inv := (rfl)
+
+@[simp]
+lemma tripleBiprodAssoc_inv_snd (x y z : T ⊡ T) :
+    (tripleBiprodAssoc x y z).inv.snd = (biprod.associator x.snd y.snd z.snd).inv := (rfl)
+
+/-- The direct sum of the identity triples `(S, id, S)` and `(S', id, S')` is the identity triple
+`(S ⊞ S', id, S ⊞ S')`. -/
+noncomputable def tripleBiprodReflIso (S S' : C) :
+    tripleBiprod T ⟨S, S, Iso.refl _⟩ ⟨S', S', Iso.refl _⟩ ≅ ⟨S ⊞ S', S ⊞ S', Iso.refl _⟩ :=
+  mkIso (Iso.refl _) (Iso.refl _) (by
+    have := preservesBinaryBiproducts_of_preservesBiproducts T
+    dsimp only [tripleBiprod]
+    refine Functor.map_biprod_hom_ext ?_ ?_ <;>
+      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Iso.refl_hom,
+        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
+        biprod.map_fst, biprod.map_snd, T.map_id, Category.id_comp, Category.comp_id,
+        biprod.lift_fst, biprod.lift_snd])
+
+@[simp]
+lemma tripleBiprodReflIso_hom_fst (S S' : C) :
+    (tripleBiprodReflIso (T := T) S S').hom.fst = 𝟙 (S ⊞ S') := (rfl)
+
+@[simp]
+lemma tripleBiprodReflIso_hom_snd (S S' : C) :
+    (tripleBiprodReflIso (T := T) S S').hom.snd = 𝟙 (S ⊞ S') := (rfl)
+
+@[simp]
+lemma tripleBiprodReflIso_inv_fst (S S' : C) :
+    (tripleBiprodReflIso (T := T) S S').inv.fst = 𝟙 (S ⊞ S') := (rfl)
+
+@[simp]
+lemma tripleBiprodReflIso_inv_snd (S S' : C) :
+    (tripleBiprodReflIso (T := T) S S').inv.snd = 𝟙 (S ⊞ S') := (rfl)
 
 end RelativeK0
 
@@ -451,6 +606,93 @@ end ZeroTarget
 end RelativeK0
 
 end Triples
+
+section Triangular
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  {D : Type u'} [Category.{v'} D] {T : C ⥤ D}
+
+namespace RelativeK0
+
+section Commutator
+
+variable [HasZeroMorphisms D] [T.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T]
+  [EssentiallySmall.{w} C] [LocallySmall.{w} D]
+
+open scoped commutatorElement in
+/-- The class of a commutator of automorphisms of an object of `D` vanishes, once the object is
+identified with an image `T P`: the automorphisms of a fixed `T P` contribute additively. -/
+theorem of_trans_commutatorElement_trans {P : C} {W : D} (e : T.obj P ≅ W) (a b : Aut W) :
+    (of ⟨P, P, e ≪≫ (⁅a, b⁆ : Aut W).asIso ≪≫ e.symm⟩ : RelativeK0 T) = 0 := by
+  have h (x : Aut W) : (of ⟨P, P, e ≪≫ x⁻¹.asIso ≪≫ e.symm⟩ : RelativeK0 T) =
+      -of ⟨P, P, e ≪≫ x.asIso ≪≫ e.symm⟩ := by
+    rw [← of_symm, show e ≪≫ x⁻¹.asIso ≪≫ e.symm = (e ≪≫ x.asIso ≪≫ e.symm).symm by ext; simp]
+  have h' (x y : Aut W) : (of ⟨P, P, e ≪≫ (x * y).asIso ≪≫ e.symm⟩ : RelativeK0 T) =
+      of ⟨P, P, e ≪≫ x.asIso ≪≫ e.symm⟩ + of ⟨P, P, e ≪≫ y.asIso ≪≫ e.symm⟩ := by
+    rw [add_comm, ← of_trans, show e ≪≫ (x * y).asIso ≪≫ e.symm =
+      (e ≪≫ y.asIso ≪≫ e.symm) ≪≫ (e ≪≫ x.asIso ≪≫ e.symm) by ext; simp]
+  rw [commutatorElement_def, h', h', h', h, h]
+  abel
+
+end Commutator
+
+variable [Preadditive D] [HasBinaryBiproducts D] [T.PreservesZeroMorphisms]
+  [PreservesBiproductsOfShape WalkingPair T] [EssentiallySmall.{w} C] [LocallySmall.{w} D]
+
+open scoped commutatorElement in
+/-- An automorphism of `T (Q₁ ⊞ Q₂)` which fixes `T` of the first inclusion and induces the
+identity along `T` of the second projection has trivial class, whatever its off-diagonal block:
+after adding the identity triple on `Q₂` it becomes a commutator. -/
+theorem of_eq_zero_of_inl_comp_eq_of_comp_snd_eq {Q₁ Q₂ : C}
+    {u : T.obj (Q₁ ⊞ Q₂) ≅ T.obj (Q₁ ⊞ Q₂)}
+    (h₁ : T.map biprod.inl ≫ u.hom = T.map biprod.inl)
+    (h₂ : u.hom ≫ T.map biprod.snd = T.map biprod.snd) :
+    (of ⟨Q₁ ⊞ Q₂, Q₁ ⊞ Q₂, u⟩ : RelativeK0 T) = 0 := by
+  have := preservesBinaryBiproducts_of_preservesBiproducts T
+  set M := T.mapBiprod Q₁ Q₂
+  -- Add the identity triple on `Q₂` and identify `T ((Q₁ ⊞ Q₂) ⊞ Q₂)` with
+  -- `(T Q₁ ⊞ T Q₂) ⊞ T Q₂`, where `u ⊞ 𝟙` becomes a commutator.
+  set E : T.obj ((Q₁ ⊞ Q₂) ⊞ Q₂) ≅ (T.obj Q₁ ⊞ T.obj Q₂) ⊞ T.obj Q₂ :=
+    T.mapBiprod (Q₁ ⊞ Q₂) Q₂ ≪≫ biprod.mapIso M (Iso.refl _)
+  have h : T.mapBiprod (Q₁ ⊞ Q₂) Q₂ ≪≫ biprod.mapIso u (Iso.refl _) ≪≫
+      (T.mapBiprod (Q₁ ⊞ Q₂) Q₂).symm =
+      E ≪≫ (Aut.of (biprod.mapIso (M.symm ≪≫ u ≪≫ M) (Iso.refl _))).asIso ≪≫ E.symm := by
+    have hu : biprod.mapIso u (Iso.refl (T.obj Q₂)) = biprod.mapIso M (Iso.refl _) ≪≫
+        biprod.mapIso (M.symm ≪≫ u ≪≫ M) (Iso.refl _) ≪≫ (biprod.mapIso M (Iso.refl _)).symm := by
+      ext <;> simp
+    rw [hu]
+    simp only [E, Iso.trans_symm, Iso.trans_assoc]
+  have h' : (of ⟨(Q₁ ⊞ Q₂) ⊞ Q₂, (Q₁ ⊞ Q₂) ⊞ Q₂, T.mapBiprod (Q₁ ⊞ Q₂) Q₂ ≪≫
+      biprod.mapIso u (Iso.refl _) ≪≫ (T.mapBiprod (Q₁ ⊞ Q₂) Q₂).symm⟩ : RelativeK0 T) =
+      of ⟨Q₁ ⊞ Q₂, Q₁ ⊞ Q₂, u⟩ + of ⟨Q₂, Q₂, Iso.refl _⟩ :=
+    of_tripleBiprod ⟨Q₁ ⊞ Q₂, Q₁ ⊞ Q₂, u⟩ ⟨Q₂, Q₂, Iso.refl _⟩
+  rw [of_refl, add_zero, h, T.mapBiprod_symm_trans_trans_eq_unipotentLower u h₁ h₂,
+    Biprod.unipotentLower_biprod_eq_commutatorElement, of_trans_commutatorElement_trans] at h'
+  exact h'.symm
+
+/-- The relation for triangular isomorphisms: if `γ : T (P₁ ⊞ P₂) ≅ T (Q₁ ⊞ Q₂)` restricts to
+`α₁` along `T` of the first inclusions and induces `α₂` along `T` of the second projections, then
+`(P₁ ⊞ P₂, γ, Q₁ ⊞ Q₂) = (P₁, α₁, Q₁) + (P₂, α₂, Q₂)`, whatever its off-diagonal block
+`T P₂ ⟶ T Q₁`. This is the relation imposed by a split short exact sequence of triples. -/
+theorem of_eq_add_of_inl_comp_eq_of_comp_snd_eq {P₁ P₂ Q₁ Q₂ : C} {α₁ : T.obj P₁ ≅ T.obj Q₁}
+    {α₂ : T.obj P₂ ≅ T.obj Q₂} {γ : T.obj (P₁ ⊞ P₂) ≅ T.obj (Q₁ ⊞ Q₂)}
+    (h₁ : T.map biprod.inl ≫ γ.hom = α₁.hom ≫ T.map biprod.inl)
+    (h₂ : γ.hom ≫ T.map biprod.snd = T.map biprod.snd ≫ α₂.hom) :
+    (of ⟨P₁ ⊞ P₂, Q₁ ⊞ Q₂, γ⟩ : RelativeK0 T) = of ⟨P₁, Q₁, α₁⟩ + of ⟨P₂, Q₂, α₂⟩ := by
+  have := preservesBinaryBiproducts_of_preservesBiproducts T
+  set δ := T.mapBiprod P₁ P₂ ≪≫ biprod.mapIso α₁ α₂ ≪≫ (T.mapBiprod Q₁ Q₂).symm
+  have hδ : (of ⟨P₁ ⊞ P₂, Q₁ ⊞ Q₂, δ⟩ : RelativeK0 T) = of ⟨P₁, Q₁, α₁⟩ + of ⟨P₂, Q₂, α₂⟩ :=
+    of_tripleBiprod ⟨P₁, Q₁, α₁⟩ ⟨P₂, Q₂, α₂⟩
+  have hδ₁ : T.map biprod.inl ≫ δ.inv = α₁.inv ≫ T.map biprod.inl := by simp [δ]
+  have hδ₂ : δ.inv ≫ T.map biprod.snd = T.map biprod.snd ≫ α₂.inv := by simp [δ]
+  have hγ : γ = δ ≪≫ (δ.symm ≪≫ γ) := by simp
+  rw [hγ, of_trans, hδ, of_eq_zero_of_inl_comp_eq_of_comp_snd_eq (u := δ.symm ≪≫ γ), add_zero]
+  · simp [reassoc_of% hδ₁, h₁]
+  · simp [h₂, reassoc_of% hδ₂]
+
+end RelativeK0
+
+end Triangular
 
 section TripleMap
 

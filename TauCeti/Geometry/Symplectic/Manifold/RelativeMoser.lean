@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
+import TauCeti.Geometry.Manifold.Flow.TimeDependent.Related
 import TauCeti.Geometry.Manifold.Flow.TimeDependent.RestPoint
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
@@ -32,8 +34,16 @@ set, and pulls `σ₁` back to `σ₀` on a neighbourhood of `f(Q)`. Restricted 
 carries `σ₀` on `U` to `σ₁` on `Φ(U)`
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_eq_along`). Both diffeomorphisms fix `f(Q)` to
 first order: their differential at every point of `f(Q)` is the identity of the full ambient
-tangent space. Only the agreement of the full ambient forms along `f(Q)` is used; agreement of
-their pullbacks to `Q` is a weaker condition, which does not give this first-order statement.
+tangent space. This first-order statement needs the agreement of the full ambient forms along
+`f(Q)`; agreement of their pullbacks to `Q` is a weaker condition.
+
+Agreement of the pullbacks still suffices for the rest, provided the affine path
+`σ₀ + s (σ₁ - σ₀)`, `s ∈ [0, 1]`, is nondegenerate at every point of `f(Q)`
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq`).
+The resulting diffeomorphism fixes `f(Q)` pointwise and has identity differential exactly at the
+points where the two forms agree on the full ambient tangent space. Along a coisotropic
+submanifold, for instance, two symplectic forms with the same pullback need not agree on the
+ambient tangent space, while their path can still be nondegenerate there.
 
 The proof is Moser's argument relative to a compact set
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub`).
@@ -60,18 +70,32 @@ common rest point of a field with zero first jet the linearized flow is constant
 (`TauCeti.mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero`), so the differential of `Φ` at `x`
 is the identity.
 
+The construction is natural. With the cut-off `ρ` given rather than chosen
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff`), it only needs
+`dβ = σ₁ - σ₀` on the support of `ρ`, and `Φ` commutes with every diffeomorphism `g` which
+preserves `σ₀`, `σ₁`, `β` and `ρ`: such a `g` carries the Moser field to itself, so it commutes with
+its flow (`MDifferentiable.apply_timeDependentFlowOf`). This is the input of the equivariant
+relative Moser theorem, in `TauCeti.Geometry.Symplectic.Manifold.RelativeMoser.Equivariant`.
+
 For the submanifold version, the relative Poincaré lemma
 (`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`) writes `σ₁ - σ₀`, whose
 pullback along `f` vanishes, as `dβ` on a tubular neighbourhood `W` of `f(Q)`, with `β` vanishing
-along `f(Q)`. Since `σ₁ - σ₀` itself vanishes along `f(Q)` as a full ambient tensor, `β` has zero
-first jet there. Moser's argument on the open submanifold `W` gives a compactly supported
+along `f(Q)`. At the points where `σ₁ - σ₀` itself vanishes as a full ambient tensor, `β` has zero
+first jet. Moser's argument on the open submanifold `W` gives a compactly supported
 diffeomorphism of `W`, which extends by the identity to `M`.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.exists_isOpen_forall_nondegenerate`: a path of two-forms nondegenerate
+  along a compact set stays nondegenerate on a neighbourhood of it.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff`: Moser's theorem
+  with a given primitive and cut-off, commuting with the diffeomorphisms preserving these data.
 * `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub`:
   Moser's theorem relative to a compact set along which a given primitive of `σ₁ - σ₀` vanishes,
   with identity differential wherever the primitive has zero first jet.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq`:
+  the relative Moser theorem for closed two-forms with equal pullbacks to a compact embedded
+  submanifold, joined by a path nondegenerate along it.
 * `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_eventually_mpullback_eq`: the relative
   Moser theorem for closed two-forms agreeing along a compact embedded submanifold, with identity
   differential along it.
@@ -171,6 +195,40 @@ private theorem interior_moserField_eq {σ₀ σ₁ : SmoothTwoForm I M} (β : S
     ext v
     simp
 
+/-- **The Moser field is natural.** A diffeomorphism which preserves `σ₀`, `σ₁`, the primitive
+`β` and the cut-off `ρ` carries the Moser field to itself: `dg (X_t x) = X_t (g x)`. -/
+private theorem mfderiv_moserField {σ₀ σ₁ : SmoothTwoForm I M} {β : SmoothForm I M ℝ 1}
+    {ρ : M → ℝ}
+    (hinv : ∀ t, ∀ x ∈ tsupport ρ,
+      ((σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).flat x).IsInvertible)
+    (g : M ≃ₘ⟮I, I⟯ M) (hg₀ : mpullback I I g σ₀.val = σ₀.val)
+    (hg₁ : mpullback I I g σ₁.val = σ₁.val) (hgβ : mpullback I I g β.val = β.val)
+    (hgρ : ∀ x, ρ (g x) = ρ x) (t : ℝ) (x : M) :
+    mfderiv I I g x (moserField σ₀ σ₁ β ρ t x) = moserField σ₀ σ₁ β ρ t (g x) := by
+  set σ := σ₀ + Real.smoothTransition t • (σ₁ - σ₀)
+  by_cases hx : ρ x = 0
+  · simp [moserField, hx, hgρ]
+  have hA := hinv t x (subset_tsupport _ hx)
+  have hB := hinv t (g x) (subset_tsupport _ (by rwa [Function.mem_support, hgρ]))
+  have hL : (mfderiv I I g x).IsInvertible := g.isInvertible_mfderiv (by simp)
+  -- `g` preserves the slice `σ`, so `σ_(g x) (dg v, dg w) = σ_x (v, w)`.
+  have hgσ : mpullback I I g σ.val = σ.val := by
+    simp only [σ, AddSubgroupClass.coe_sub, Submodule.coe_add, Submodule.coe_smul,
+      mpullback_add, mpullback_smul, mpullback_sub, hg₀, hg₁]
+  have key (v w : TangentSpace I x) :
+      σ.flat (g x) (mfderiv I I g x v) (mfderiv I I g x w) = σ.flat x v w := by
+    rw [flat_apply, flat_apply, SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply,
+      ← mpullback_apply_pair, hgσ]
+  -- Both sides solve `σ♭_(g x) v = β_(g x)`, tested on the vectors `dg w`.
+  have hv : mfderiv I I g x ((σ.flat x).inverse (SmoothForm.degreeOneEquiv β x)) =
+      (σ.flat (g x)).inverse (SmoothForm.degreeOneEquiv β (g x)) := by
+    refine (hB.inverse_apply_self _).symm.trans (congrArg _ (ContinuousLinearMap.ext fun w' ↦ ?_))
+    obtain ⟨w, rfl⟩ := hL.surjective w'
+    rw [key, hA.self_apply_inverse, SmoothForm.degreeOneEquiv_apply_apply_vec,
+      SmoothForm.degreeOneEquiv_apply_apply_vec, ← mpullback_apply_one, hgβ]
+  simp only [moserField, hgρ, map_smul]
+  rw [hv]
+
 /-- In the chart at `x`, the identity `ι_{X_t} σ_t = -ρ c'(t) β` of the Moser field gives the norm
 of the flat map of the coordinate expression `σ'_t` applied to the coordinate expression `X'_t`:
 `‖σ'_t♭(z) (X'_t(z))‖ = ‖ρ c'(t)‖ ‖β'(z)‖` at every point `z` of the chart target. -/
@@ -265,6 +323,18 @@ private theorem exists_isOpen_isInvertible_flat {σ₀ σ₁ : SmoothTwoForm I M
   have h := huN (mk_mem_prod (hu (projIcc (0 : ℝ) 1 zero_le_one t).property) hx)
   simpa only [O, mem_ofPred_eq, Real.smoothTransition.projIcc] using h
 
+/-- If the path `σ₀ + s (σ₁ - σ₀)`, `s ∈ [0, 1]`, is nondegenerate along a compact set `K`, it
+stays nondegenerate on an open neighbourhood of `K`. -/
+theorem exists_isOpen_forall_nondegenerate {σ₀ σ₁ : SmoothTwoForm I M} {K : Set M}
+    (hK : IsCompact K)
+    (hnd : ∀ x ∈ K, ∀ s ∈ Icc (0 : ℝ) 1, ((σ₀ + s • (σ₁ - σ₀)).bilinFormAt x).Nondegenerate) :
+    ∃ N, IsOpen N ∧ K ⊆ N ∧
+      ∀ x ∈ N, ∀ s ∈ Icc (0 : ℝ) 1, ((σ₀ + s • (σ₁ - σ₀)).bilinFormAt x).Nondegenerate := by
+  obtain ⟨N, hN, hKN, hinvN⟩ := exists_isOpen_isInvertible_flat hK hnd
+  refine ⟨N, hN, hKN, fun x hx s hs ↦ ?_⟩
+  obtain ⟨t, -, rfl⟩ := Real.smoothTransition.surjOn_Icc hs
+  exact isInvertible_flat_iff.1 (hinvN t x hx)
+
 /-! ### Moser's equation and the relative Moser theorems -/
 
 variable [I.Boundaryless]
@@ -343,7 +413,8 @@ private theorem hasFDerivAt_mpullbackWithin_moserField
 `∂_t σ_t + L_{X_t} σ_t` of the Moser family vanishes: `∂_t σ_t = c'(t) dβ`, while Cartan's formula
 gives `L_{X_t} σ_t = d (ι_{X_t} σ_t) = -c'(t) dβ`. -/
 private theorem moserRate_eq_zero {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ₀.IsClosed)
-    {β : SmoothForm I M ℝ 1} (hβ : mextDeriv β.val = (σ₁ - σ₀).val) {ρ : M → ℝ}
+    (h₁ : σ₁.IsClosed) {β : SmoothForm I M ℝ 1} {ρ : M → ℝ}
+    (hβ : ∀ x ∈ tsupport ρ, mextDeriv β.val x = (σ₁ - σ₀).val x)
     (hρ : ContMDiff I 𝓘(ℝ) ∞ ρ)
     (hinv : ∀ t, ∀ x ∈ tsupport ρ,
       ((σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).flat x).IsInvertible)
@@ -360,11 +431,9 @@ private theorem moserRate_eq_zero {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ�
       Pi.smul_apply] using
       congrArg (fun β ↦ β.val y) (SmoothForm.mpullback_prodMk_timeDeriv_lineMapFamily σ₀ σ₁
         (Real.smoothTransition.contDiff (n := ⊤)) t)
-  -- The slice at time `t` is closed, since `σ₁ - σ₀ = dβ` is exact.
-  have hclosed : (σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).IsClosed := by
-    refine h₀.add (SmoothForm.IsClosed.smul _ ?_)
-    rw [SmoothForm.isClosed_def, ← hβ]
-    exact SmoothForm.mextDeriv_mextDeriv β
+  -- The slice at time `t` is closed, since `σ₀` and `σ₁` are.
+  have hclosed : (σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).IsClosed :=
+    h₀.add ((h₁.sub h₀).smul _)
   have hXt : MDifferentiableAt I I.tangent
       (fun z ↦ (⟨z, moserField σ₀ σ₁ β ρ t z⟩ : TangentBundle I M)) y :=
     ((contMDiff_moserField β hρ hinv).comp (contMDiff_const.prodMk contMDiff_id)
@@ -382,7 +451,8 @@ private theorem moserRate_eq_zero {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ�
       filter_upwards [hy] with z hz
       have hz' : z ∈ tsupport ρ := subset_tsupport _ (by simp [hz])
       rw [interior_moserField β ρ (hinv t z hz'), hz, one_mul, Pi.smul_apply]
-    rw [mextDeriv_congr_of_eventuallyEq hev, mextDeriv_smul, hβ, Pi.smul_apply]
+    rw [mextDeriv_congr_of_eventuallyEq hev, mextDeriv_smul, Pi.smul_apply,
+      hβ y (subset_tsupport _ (by simp [hy.self_of_nhds]))]
   rw [Pi.add_apply, hvel, mpullback_prodMk_moserFamily_coe, hL, neg_smul, add_neg_cancel]
 
 variable [T2Space M]
@@ -402,6 +472,84 @@ private theorem mfderiv_timeDependentFlowOf_moserField_eq_id {σ₀ σ₁ : Smoo
     ((contMDiff_moserField β hρ hinv).of_le (by simp)) (moserField_eq_zero ρ hβx) fun u _ ↦
       (hasFDerivAt_mpullbackWithin_moserField hρ hinv hx hβx hβ u).fderiv
 
+/-- **Moser's theorem relative to a compact set, with a given primitive and cut-off.** Let `σ₀`,
+`σ₁` be closed two-forms on a boundaryless manifold, let `ρ` be a smooth compactly supported
+function, equal to `1` near a compact set `K`, and let `β` be a smooth one-form with `dβ = σ₁ - σ₀`
+on the support of `ρ`, vanishing along `K`. Suppose the path `σ₀ + s (σ₁ - σ₀)`, `s ∈ [0, 1]`, is
+nondegenerate on the support of `ρ`. Then there is a diffeomorphism `Φ` of the manifold which fixes
+every point of `K` and every point off the support of `ρ`, and pulls `σ₁` back to `σ₀` on a
+neighbourhood of `K`. It fixes to first order every point of `K` at which `β` has zero first jet.
+
+The diffeomorphism is natural: it commutes with every diffeomorphism `g` which preserves `σ₀`,
+`σ₁`, `β` and `ρ`. This is how the equivariant relative Moser theorem is obtained, from invariant
+primitives and cut-offs. -/
+theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff {σ₀ σ₁ : SmoothTwoForm I M}
+    (h₀ : σ₀.IsClosed) (h₁ : σ₁.IsClosed) {β : SmoothForm I M ℝ 1} {ρ : M → ℝ}
+    (hρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (hρc : HasCompactSupport ρ)
+    (hβ : ∀ x ∈ tsupport ρ, mextDeriv β.val x = (σ₁ - σ₀).val x)
+    (hnd : ∀ x ∈ tsupport ρ, ∀ s ∈ Icc (0 : ℝ) 1,
+      ((σ₀ + s • (σ₁ - σ₀)).bilinFormAt x).Nondegenerate)
+    {K : Set M} (hK : IsCompact K) (hβK : ∀ x ∈ K, β.val x = 0) (hρ1 : ∀ᶠ x in 𝓝ˢ K, ρ x = 1) :
+    ∃ Φ : M ≃ₘ⟮I, I⟯ M, (∀ x ∈ K, Φ x = x) ∧ (∀ x ∉ tsupport ρ, Φ x = x) ∧
+      (∀ᶠ x in 𝓝ˢ K, (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x) ∧
+      (∀ x ∈ K, HasFDerivAt (RoughForm.inChartAt β.val x) (0 : E →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ)
+        (extChartAt I x x) → mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x)) ∧
+      ∀ g : M ≃ₘ⟮I, I⟯ M, mpullback I I g σ₀.val = σ₀.val → mpullback I I g σ₁.val = σ₁.val →
+        mpullback I I g β.val = β.val → (∀ x, ρ (g x) = ρ x) → ∀ x, Φ (g x) = g (Φ x) := by
+  have hinv (t : ℝ) (x : M) (hx : x ∈ tsupport ρ) :
+      ((σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).flat x).IsInvertible :=
+    isInvertible_flat_iff.2
+      (hnd x hx _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩)
+  have hX := contMDiff_moserField β hρ hinv
+  have hX₁ := hX.of_le (m := 1) (by simp)
+  have hzero (x : M) (hx : ∀ u, moserField σ₀ σ₁ β ρ u x = 0) (s t : ℝ) :
+      timeDependentFlowOf (moserField σ₀ σ₁ β ρ) s t x = x :=
+    timeDependentFlowOf_eq_self_of_forall_eq_zero hX₁ hx s t
+  have hXρ (u : ℝ) (y : M) (hy : y ∉ tsupport ρ) : moserField σ₀ σ₁ β ρ u y = 0 := by
+    simp [moserField, image_eq_zero_of_notMem_tsupport hy]
+  have hc := isCompleteVectorField_timeDependentSuspensionField hX₁ hρc hXρ
+  let Φ := timeDependentFlowDiffeomorph hc le_top hX 0 1
+  have hΦ : ⇑Φ = timeDependentFlowOf (moserField σ₀ σ₁ β ρ) 0 1 :=
+    funext (timeDependentFlowDiffeomorph_apply hc le_top hX 0 1)
+  have hKρ : K ⊆ tsupport ρ := fun x hx ↦ subset_tsupport _
+    (by simp [(eventually_nhdsSet_iff_forall.1 hρ1 x hx).self_of_nhds])
+  refine ⟨Φ, fun x hx ↦ ?_, fun x hx ↦ ?_, ?_, fun x hx hjet ↦ hΦ ▸
+    mfderiv_timeDependentFlowOf_moserField_eq_id hρ hinv (hKρ hx) (hβK x hx) hjet 0 1,
+    fun g hg₀ hg₁ hgβ hgρ x ↦ ?_⟩
+  · rw [hΦ]
+    exact hzero x (moserField_eq_zero ρ (hβK x hx)) 0 1
+  · rw [hΦ]
+    exact hzero x (fun u ↦ hXρ u x hx) 0 1
+  rotate_left
+  · -- The flow of a natural field commutes with the symmetry.
+    rw [hΦ]
+    exact ((g.mdifferentiable (by simp)).apply_timeDependentFlowOf hX₁ hX₁
+      (mfderiv_moserField hinv g hg₀ hg₁ hgβ hgρ)
+      ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)).symm
+  -- The trajectories starting near `K` stay, up to time `1`, where `ρ = 1` near each point.
+  set V := {y : M | ∀ᶠ z in 𝓝 y, ρ z = 1}
+  have hKV : K ⊆ V := fun x hx ↦ (eventually_nhdsSet_iff_forall.1 hρ1) x hx
+  have hφ : Continuous fun p : ℝ × M ↦ timeDependentFlowOf (moserField σ₀ σ₁ β ρ) 0 p.1 p.2 :=
+    ((contMDiff_timeDependentFlowOf hc le_top hX).comp
+      ((contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd)).continuous
+  have hS : IsOpen {p : ℝ × M | timeDependentFlowOf (moserField σ₀ σ₁ β ρ) 0 p.1 p.2 ∈ V} :=
+    isOpen_setOfPred_eventually_nhds.preimage hφ
+  obtain ⟨u, W, -, hW, hu, hKW, huW⟩ := generalized_tube_lemma isCompact_Icc hK hS
+    fun p hp ↦ by
+      rw [mem_ofPred_eq, hzero p.2 (moserField_eq_zero ρ (hβK p.2 hp.2))]
+      exact hKV hp.2
+  filter_upwards [hW.mem_nhdsSet.2 hKW] with x hx
+  -- Along these trajectories Moser's equation holds, so the flow carries `σ₁` back to `σ₀`.
+  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc
+    (hX.of_le (by simp)) hc (fun _ _ ↦ ((moserFamily σ₀ σ₁).contMDiff.of_le (by simp)).contMDiffAt)
+    fun t ht ↦ moserRate_eq_zero h₀ h₁ hβ hρ hinv t
+      (huW (mk_mem_prod (hu ((uIcc_of_le (zero_le_one' ℝ)).subset ht)) hx))
+  rw [mpullback_prodMk_moserFamily_coe, mpullback_prodMk_moserFamily_coe,
+    Real.smoothTransition.one, Real.smoothTransition.zero, one_smul, zero_smul,
+    add_zero, add_sub_cancel] at h
+  rw [SmoothForm.coe_mpullback, hΦ]
+  exact h
+
 /-- **Moser's theorem relative to a compact set, with a given primitive.** Let `σ₀`, `σ₁` be
 two-forms on a boundaryless manifold, with `σ₀` closed and `σ₁ - σ₀ = dβ` for a smooth one-form
 `β`. Let `K` be a compact set along which `β` vanishes and along which the path
@@ -419,54 +567,88 @@ theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub
       (∀ᶠ x in 𝓝ˢ K, (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x) ∧
       ∀ x ∈ K, HasFDerivAt (RoughForm.inChartAt β.val x) (0 : E →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ)
         (extChartAt I x x) → mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x) := by
+  -- `σ₁ = σ₀ + dβ` is closed.
+  have h₁ : σ₁.IsClosed := by
+    have h : (σ₁ - σ₀).IsClosed := by
+      rw [SmoothForm.isClosed_def, ← hβ]
+      exact SmoothForm.mextDeriv_mextDeriv β
+    simpa using h₀.add h
   -- Cut the Moser field off outside a neighbourhood of `K` on which the path stays nondegenerate.
-  obtain ⟨N, hN, hKN, hinvN⟩ := exists_isOpen_isInvertible_flat hK hnd
+  obtain ⟨N, hN, hKN, hndN⟩ := exists_isOpen_forall_nondegenerate hK hnd
   obtain ⟨ρ, hρ, hρ1, hρc, hρN, -⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I hN hKN
-  have hinv (t : ℝ) (x : M) (hx : x ∈ tsupport ρ) :
-      ((σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).flat x).IsInvertible :=
-    hinvN t x (hρN hx)
-  have hX := contMDiff_moserField β hρ hinv
-  have hX₁ := hX.of_le (m := 1) (by simp)
-  have hzero (x : M) (hx : ∀ u, moserField σ₀ σ₁ β ρ u x = 0) (s t : ℝ) :
-      timeDependentFlowOf (moserField σ₀ σ₁ β ρ) s t x = x :=
-    timeDependentFlowOf_eq_self_of_forall_eq_zero hX₁ hx s t
-  have hXρ (u : ℝ) (y : M) (hy : y ∉ tsupport ρ) : moserField σ₀ σ₁ β ρ u y = 0 := by
-    simp [moserField, image_eq_zero_of_notMem_tsupport hy]
-  have hc := isCompleteVectorField_timeDependentSuspensionField hX₁ hρc hXρ
-  let Φ := timeDependentFlowDiffeomorph hc le_top hX 0 1
-  have hΦ : ⇑Φ = timeDependentFlowOf (moserField σ₀ σ₁ β ρ) 0 1 :=
-    funext (timeDependentFlowDiffeomorph_apply hc le_top hX 0 1)
-  have hKρ : K ⊆ tsupport ρ := fun x hx ↦ subset_tsupport _
-    (by simp [(eventually_nhdsSet_iff_forall.1 hρ1 x hx).self_of_nhds])
-  refine ⟨Φ, fun x hx ↦ ?_, ⟨tsupport ρ, hρc, fun x hx ↦ ?_⟩, ?_, fun x hx hjet ↦ hΦ ▸
-    mfderiv_timeDependentFlowOf_moserField_eq_id hρ hinv (hKρ hx) (hβK x hx) hjet 0 1⟩
-  · rw [hΦ]
-    exact hzero x (moserField_eq_zero ρ (hβK x hx)) 0 1
-  · rw [hΦ]
-    exact hzero x (fun u ↦ hXρ u x hx) 0 1
-  -- The trajectories starting near `K` stay, up to time `1`, where `ρ = 1` near each point.
-  set V := {y : M | ∀ᶠ z in 𝓝 y, ρ z = 1}
-  have hKV : K ⊆ V := fun x hx ↦ (eventually_nhdsSet_iff_forall.1 hρ1) x hx
-  have hφ : Continuous fun p : ℝ × M ↦ timeDependentFlowOf (moserField σ₀ σ₁ β ρ) 0 p.1 p.2 :=
-    ((contMDiff_timeDependentFlowOf hc le_top hX).comp
-      ((contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd)).continuous
-  have hS : IsOpen {p : ℝ × M | timeDependentFlowOf (moserField σ₀ σ₁ β ρ) 0 p.1 p.2 ∈ V} :=
-    isOpen_setOfPred_eventually_nhds.preimage hφ
-  obtain ⟨u, W, -, hW, hu, hKW, huW⟩ := generalized_tube_lemma isCompact_Icc hK hS
-    fun p hp ↦ by
-      rw [mem_ofPred_eq, hzero p.2 (moserField_eq_zero ρ (hβK p.2 hp.2))]
-      exact hKV hp.2
-  filter_upwards [hW.mem_nhdsSet.2 hKW] with x hx
-  -- Along these trajectories Moser's equation holds, so the flow carries `σ₁` back to `σ₀`.
-  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc
-    (hX.of_le (by simp)) hc (fun _ _ ↦ ((moserFamily σ₀ σ₁).contMDiff.of_le (by simp)).contMDiffAt)
-    fun t ht ↦ moserRate_eq_zero h₀ hβ hρ hinv t
-      (huW (mk_mem_prod (hu ((uIcc_of_le (zero_le_one' ℝ)).subset ht)) hx))
-  rw [mpullback_prodMk_moserFamily_coe, mpullback_prodMk_moserFamily_coe,
-    Real.smoothTransition.one, Real.smoothTransition.zero, one_smul, zero_smul,
-    add_zero, add_sub_cancel] at h
-  rw [SmoothForm.coe_mpullback, hΦ]
-  exact h
+  obtain ⟨Φ, hΦK, hΦρ, hΦ, hΦ1, -⟩ := exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff
+    h₀ h₁ hρ hρc (fun x _ ↦ congrFun hβ x) (fun x hx ↦ hndN x (hρN hx)) hK hβK hρ1
+  exact ⟨Φ, hΦK, ⟨tsupport ρ, hρc, hΦρ⟩, hΦ, hΦ1⟩
+
+/-- **The relative Moser theorem for forms with equal pullbacks.** Let `σ₀`, `σ₁` be closed
+two-forms on a boundaryless second-countable Hausdorff manifold `M` whose pullbacks along a compact
+embedded submanifold `f : Q → M` agree, and suppose that the path `σ₀ + s (σ₁ - σ₀)`,
+`s ∈ [0, 1]`, is nondegenerate at every point of `f(Q)`. Then there is a diffeomorphism `Φ` of `M`
+which fixes every point of `f(Q)`, moves only the points of a compact set, and pulls `σ₁` back to
+`σ₀` on a neighbourhood of `f(Q)`. Moreover `Φ` fixes to first order every point `f q` at which
+`σ₁` and `σ₀` agree as bilinear forms on the full ambient tangent space: its differential there is
+the identity. -/
+theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq
+    [SecondCountableTopology M]
+    {E' H' Q : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
+    [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q] [CompactSpace Q]
+    (f : SmoothEmbedding J I ∞ Q M) {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ₀.IsClosed)
+    (h₁ : σ₁.IsClosed)
+    (hf : SmoothForm.mpullback f f.contMDiff σ₁ = SmoothForm.mpullback f f.contMDiff σ₀)
+    (hnd : ∀ q, ∀ s ∈ Icc (0 : ℝ) 1, ((σ₀ + s • (σ₁ - σ₀)).bilinFormAt (f q)).Nondegenerate) :
+    ∃ Φ : M ≃ₘ⟮I, I⟯ M, (∀ q, Φ (f q) = f q) ∧ (∃ C, IsCompact C ∧ ∀ x ∉ C, Φ x = x) ∧
+      (∀ᶠ x in 𝓝ˢ (range f), (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x) ∧
+      ∀ q, σ₁.val (f q) = σ₀.val (f q) →
+        mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
+  have hpull : mpullback J I f (σ₁ - σ₀).val = 0 := by
+    have h := congrArg Subtype.val hf
+    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback] at h
+    rw [AddSubgroupClass.coe_sub, mpullback_sub, h, sub_self]
+  -- The relative Poincaré lemma gives a primitive of `σ₁ - σ₀` on a tubular neighbourhood `W` of
+  -- `f(Q)`, vanishing along `f(Q)`, with zero first jet wherever `σ₁ - σ₀` vanishes.
+  obtain ⟨W, -, hfW, hprim⟩ := f.exists_isSmoothForm_relative_primitive (F := ℝ) isOpen_univ
+    (subset_univ _)
+  obtain ⟨βW, hβW, hdβW, hβW0, hβW1⟩ := hprim (k := 1) (r := ⊤) le_top (σ₁ - σ₀).isSmoothForm
+    ((SmoothForm.isClosed_def _).1 (h₁.sub h₀)) hpull
+  -- Moser's argument runs on the open submanifold `W`, with the restricted forms.
+  let res := SmoothForm.mpullback (I := I) (I' := I) (F := ℝ) (k := 2) (Subtype.val : W → M)
+    contMDiff_subtypeVal
+  let g : Q → W := fun q ↦ ⟨f q, hfW (mem_range_self q)⟩
+  have hgK : IsCompact (range g) :=
+    isCompact_range (f.contMDiff.continuous.subtype_mk fun q ↦ hfW (mem_range_self q))
+  obtain ⟨Ψ, hΨK, ⟨C, hC, hΨC⟩, hΨ, hΨ1⟩ :=
+    exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub (σ₀ := res σ₀)
+      (σ₁ := res σ₁) (h₀.mpullback _ _) (β := ⟨βW, hβW.mem_smoothBundleForms⟩)
+    (by rw [hdβW, ← map_sub]; exact (SmoothForm.coe_mpullback _ _ _).symm) hgK
+    (by rintro _ ⟨q, rfl⟩; exact hβW0 q)
+    (by
+      rintro _ ⟨q, rfl⟩ s hs
+      rw [← map_sub, ← map_smul, ← map_add]
+      exact (nondegenerate_bilinFormAt_mpullback_subtype_val_iff (g q)).2 (hnd q s hs))
+  -- Extend the compactly supported diffeomorphism of `W` by the identity.
+  obtain ⟨Φ, hΦW, hΦC⟩ := Ψ.exists_extend_of_isCompact hC hΨC
+  have hcomp : ⇑Φ ∘ (Subtype.val : W → M) = Subtype.val ∘ ⇑Ψ := funext hΦW
+  -- On `W`, the differential of `Φ` at `f q` is that of `Ψ` at `g q`.
+  have hΦ1 (q : Q) (hq : σ₁.val (f q) = σ₀.val (f q)) :
+      mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
+    have hη : (σ₁ - σ₀).val (f q) = 0 := by
+      rw [AddSubgroupClass.coe_sub, Pi.sub_apply, hq, sub_self]
+    exact ContinuousLinearMap.ext fun v ↦
+      (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I) hcomp.symm v).symm.trans
+        (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q hη)) v)
+  refine ⟨Φ, fun q ↦ (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q))),
+    ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩, ?_, hΦ1⟩
+  -- On `W`, the pullback by `Φ` is the pullback by `Ψ` of the restricted forms.
+  obtain ⟨U, ⟨hU, hKU⟩, hUΨ⟩ := (hasBasis_nhdsSet (range g)).mem_iff.1 hΨ
+  refine mem_of_superset ((W.isOpen.isOpenEmbedding_subtypeVal.isOpenMap U hU).mem_nhdsSet.2 ?_)
+    ?_
+  · rintro _ ⟨q, rfl⟩
+    exact ⟨g q, hKU (mem_range_self q), rfl⟩
+  · rintro _ ⟨z, hz, rfl⟩
+    rw [mem_ofPred_eq, ← SmoothForm.coe_mpullback_subtype_val_apply,
+      SmoothForm.mpullback_mpullback_of_comp_eq _ _ Ψ.contMDiff contMDiff_subtypeVal hcomp]
+    exact (hUΨ hz).trans (SmoothForm.coe_mpullback_subtype_val_apply σ₀ z)
 
 /-- **The relative Moser theorem.** Let `σ₀`, `σ₁` be closed two-forms on a boundaryless
 second-countable Hausdorff manifold `M` which agree, as bilinear forms on the full tangent spaces of
@@ -487,51 +669,13 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
       ∀ q, mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
   have hη (q : Q) : (σ₁ - σ₀).val (f q) = 0 := by
     rw [AddSubgroupClass.coe_sub, Pi.sub_apply, heq q, sub_self]
-  -- The relative Poincaré lemma gives a primitive of `σ₁ - σ₀` on a tubular neighbourhood `W` of
-  -- `f(Q)`, vanishing with its first jet along `f(Q)`.
-  obtain ⟨W, -, hfW, hprim⟩ := f.exists_isSmoothForm_relative_primitive (F := ℝ) isOpen_univ
-    (subset_univ _)
-  obtain ⟨βW, hβW, hdβW, hβW0, hβW1⟩ := hprim (k := 1) (r := ⊤) le_top (σ₁ - σ₀).isSmoothForm
-    ((SmoothForm.isClosed_def _).1 (h₁.sub h₀)) (funext fun q ↦ by
-      ext v
-      simp only [mpullback_apply, hη q, ContinuousAlternatingMap.coe_zero, Pi.zero_apply])
-  -- Moser's argument runs on the open submanifold `W`, with the restricted forms.
-  let res := SmoothForm.mpullback (I := I) (I' := I) (F := ℝ) (k := 2) (Subtype.val : W → M)
-    contMDiff_subtypeVal
-  let g : Q → W := fun q ↦ ⟨f q, hfW (mem_range_self q)⟩
-  have hgK : IsCompact (range g) :=
-    isCompact_range (f.contMDiff.continuous.subtype_mk fun q ↦ hfW (mem_range_self q))
-  obtain ⟨Ψ, hΨK, ⟨C, hC, hΨC⟩, hΨ, hΨ1⟩ :=
-    exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub (σ₀ := res σ₀)
-      (σ₁ := res σ₁) (h₀.mpullback _ _) (β := ⟨βW, hβW.mem_smoothBundleForms⟩)
-    (by rw [hdβW, ← map_sub]; exact (SmoothForm.coe_mpullback _ _ _).symm) hgK
-    (by rintro _ ⟨q, rfl⟩; exact hβW0 q)
-    (by
-      rintro _ ⟨q, rfl⟩ s -
-      rw [← map_sub, ← map_smul, ← map_add]
-      -- Along `f(Q)` the path is constantly `σ₀`.
-      exact (nondegenerate_bilinFormAt_mpullback_subtype_val_iff (g q)).2
-        (bilinFormAt_add_smul_sub_of_eq (hη q) s ▸ hnd q))
-  -- Extend the compactly supported diffeomorphism of `W` by the identity.
-  obtain ⟨Φ, hΦW, hΦC⟩ := Ψ.exists_extend_of_isCompact hC hΨC
-  have hcomp : ⇑Φ ∘ (Subtype.val : W → M) = Subtype.val ∘ ⇑Ψ := funext hΦW
-  -- On `W`, the differential of `Φ` at `f q` is that of `Ψ` at `g q`, the identity.
-  have hΦ1 (q : Q) : mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
-    exact ContinuousLinearMap.ext fun v ↦
-      (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I) hcomp.symm v).symm.trans
-        (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q (hη q))) v)
-  refine ⟨Φ, fun q ↦ (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q))),
-    ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩, ?_, hΦ1⟩
-  -- On `W`, the pullback by `Φ` is the pullback by `Ψ` of the restricted forms.
-  obtain ⟨U, ⟨hU, hKU⟩, hUΨ⟩ := (hasBasis_nhdsSet (range g)).mem_iff.1 hΨ
-  refine mem_of_superset ((W.isOpen.isOpenEmbedding_subtypeVal.isOpenMap U hU).mem_nhdsSet.2 ?_)
-    ?_
-  · rintro _ ⟨q, rfl⟩
-    exact ⟨g q, hKU (mem_range_self q), rfl⟩
-  · rintro _ ⟨z, hz, rfl⟩
-    rw [mem_ofPred_eq, ← SmoothForm.coe_mpullback_subtype_val_apply,
-      SmoothForm.mpullback_mpullback_of_comp_eq _ _ Ψ.contMDiff contMDiff_subtypeVal hcomp]
-    exact (hUΨ hz).trans (SmoothForm.coe_mpullback_subtype_val_apply σ₀ z)
+  -- The forms agree along `f(Q)`, so do their pullbacks, and the path is constantly `σ₀` there.
+  obtain ⟨Φ, hΦf, hΦC, hΦ, hΦ1⟩ :=
+    exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq f h₀ h₁
+      (Subtype.ext (funext fun q ↦ ContinuousAlternatingMap.ext fun v ↦ by
+        rw [SmoothForm.mpullback_apply, SmoothForm.mpullback_apply, heq q]))
+      fun q s _ ↦ bilinFormAt_add_smul_sub_of_eq (hη q) s ▸ hnd q
+  exact ⟨Φ, hΦf, hΦC, hΦ, fun q ↦ hΦ1 q (heq q)⟩
 
 open TopologicalSpace in
 /-- **The relative Moser theorem between neighbourhoods** (Cannas da Silva, Theorem 7.4). Let `σ₀`,

@@ -161,6 +161,13 @@ theorem of_eq_x (p : {p : ι × ι // p.1 ≠ p.2}) (a : R) :
     (PresentedGroup.of (p, a) : IndexedSteinbergGroup ι R) = x p.property a :=
   (rfl)
 
+/-- Congruence for the Steinberg generators in their dependent indices and their parameter: if
+`i = i'`, `j = j'` and `a = a'`, then `x_{ij}(a) = x_{i'j'}(a')`. -/
+theorem x_congr {i j i' j' : ι} {hij : i ≠ j} {hij' : i' ≠ j'} (hi : i = i') (hj : j = j')
+    {a a' : R} (ha : a = a') : x hij a = x hij' a' := by
+  subst hi hj ha
+  rfl
+
 /-! ### Defining relations and algebraic consequences -/
 
 private theorem mk_freeGroup_of (p : {p : ι × ι // p.1 ≠ p.2}) (a : R) :

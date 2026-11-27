@@ -32,7 +32,6 @@ namespace IsLocalRing
 
 /-- A natural number is invertible in a commutative local ring exactly when the residue
 characteristic does not divide it. -/
-@[simp]
 theorem isUnit_natCast_iff_not_dvd {R : Type*} [CommRing R] [IsLocalRing R]
     {n : ℕ} :
     IsUnit (n : R) ↔ ¬ ringChar (IsLocalRing.ResidueField R) ∣ n := by

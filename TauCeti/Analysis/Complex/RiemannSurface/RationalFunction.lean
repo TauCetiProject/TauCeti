@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
+import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Topology.Compactification.OnePoint.Nhds
 
@@ -282,6 +283,44 @@ theorem ratFuncEquiv_apply_coe (r : RatFunc ℂ) {z : ℂ} (hz : r.denom.eval z 
   rw [ratFuncEquiv_apply, ofRatFunc, RatFunc.liftAlgHom_apply, div_eq_mul_inv,
     mul_apply_of_eq_coe hnum (inv_apply_of_eq_coe hden hz), RatFunc.eval, eval₂_id, eval₂_id,
     div_eq_mul_inv]
+
+/-- A meromorphic function on the sphere is a polynomial in the coordinate exactly when it
+has no poles at finite points. -/
+theorem exists_aeval_coordinate_eq_iff (f : MeromorphicFunction (OnePoint ℂ)) :
+    (∃ p : ℂ[X], aeval coordinate p = f) ↔ ∀ z : ℂ, f z ≠ ∞ := by
+  refine ⟨?_, fun hf ↦ ?_⟩
+  · rintro ⟨p, rfl⟩ z
+    rw [aeval_coordinate_apply_coe]
+    exact OnePoint.coe_ne_infty _
+  · let r := ratFuncEquiv.symm f
+    have hr : ratFuncEquiv r = f := ratFuncEquiv.apply_symm_apply f
+    have hmul : aeval coordinate r.num = f * aeval coordinate r.denom := by
+      rw [← hr, ← ratFuncEquiv_algebraMap, ← ratFuncEquiv_algebraMap, ← map_mul]
+      congr 1
+      exact ((div_eq_iff (RatFunc.algebraMap_ne_zero r.denom_ne_zero)).mp r.num_div_denom)
+    have hden (z : ℂ) : r.denom.eval z ≠ 0 := by
+      intro hz
+      have hn : r.num.eval z = 0 := by
+        have h := congrArg (fun g : MeromorphicFunction (OnePoint ℂ) ↦ g z) hmul
+        rw [aeval_coordinate_apply_coe, mul_apply_of_eq_coe (coe_finitePart (hf z)).symm
+          (aeval_coordinate_apply_coe _ _), hz, mul_zero] at h
+        exact OnePoint.coe_injective h
+      simpa [Polynomial.aeval_def, hn, hz] using
+        (Polynomial.aeval_ne_zero_of_isCoprime r.isCoprime_num_denom z)
+    have hdeg : r.denom.degree ≤ 0 := by
+      by_contra h
+      obtain ⟨z, hz⟩ := Complex.exists_root (lt_of_not_ge h)
+      exact hden z hz
+    have hc := Polynomial.eq_C_of_degree_le_zero hdeg
+    refine ⟨r.num * C ((r.denom.coeff 0)⁻¹), ?_⟩
+    calc
+      _ = aeval coordinate r.num / aeval coordinate r.denom := by
+        rw [hc]
+        simp [div_eq_mul_inv]
+      _ = ratFuncEquiv r := by
+        rw [← ratFuncEquiv_algebraMap, ← ratFuncEquiv_algebraMap, ← map_div₀,
+          RatFunc.num_div_denom]
+      _ = f := hr
 
 /-! ### Zeros -/
 

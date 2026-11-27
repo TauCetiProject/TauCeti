@@ -17,7 +17,7 @@ import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Distance
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Exponential convergence of a negative gradient trajectory on a manifold

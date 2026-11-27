@@ -172,13 +172,7 @@ def capFundamentalClassOn {K : Set M} (hK : IsCompact K) (p q : ℕ) (h : p + q 
         (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
         (TopCat.of M) :=
-  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structures of the underlying additive
-  -- groups rather than those of the objects of `ModuleCat ℤ`.
-  let f := (LinearMap.applyₗ (R := ℤ) (o.fundamentalClassOn hn hK)).toAddMonoidHom.comp <|
-    ModuleCat.homAddEquiv.toAddMonoidHom.comp
-      ((TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCap ℤ (ρ_ _).inv
-        (ρ_ L).hom p q n h).toAddMonoidHom
-  ModuleCat.ofHom { f with map_smul' := map_intCast_smul f ℤ ℤ }
+  (TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCapWith L (o.fundamentalClassOn hn hK) p q h
 
 /-- Capping with the fundamental class along `K` evaluates the relative cap product at `μ_K`. -/
 lemma capFundamentalClassOn_apply {K : Set M} (hK : IsCompact K) (p q : ℕ) (h : p + q = n)
@@ -187,7 +181,7 @@ lemma capFundamentalClassOn_apply {K : Set M} (hK : IsCompact K) (p q : ℕ) (h 
     o.capFundamentalClassOn hn L hK p q h α =
       ((TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCap ℤ (ρ_ _).inv
         (ρ_ L).hom p q n h α).hom (o.fundamentalClassOn hn hK) :=
-  (rfl)
+  TopPair.singularCapWith_apply _ L _ p q h α
 
 /-- The maps capping with the fundamental classes are compatible with enlarging the compact set:
 for compact `K ⊆ K'`, capping the restriction to `Hᵖ(M, M ∖ K'; L)` of a class with `μ_K'` is

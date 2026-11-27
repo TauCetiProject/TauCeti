@@ -38,7 +38,8 @@ with `x`.
   of `L` at `x`, where `g` is the reading of `τ` in the chart `(x, true)` of `L(-x)`. Its derivative
   at `φ x` is multiplication by `g (φ x) ≠ 0`, of determinant `|g (φ x)|² > 0` over `ℝ`, so its
   local index is `1` (`TauCeti.sectionIndex_negPointTwist_pointTwistDiv_self`, through
-  `TauCeti.sectionIndex_eq_one_of_hasFDerivAt_smulRight`).
+  `TauCeti.sectionIndex_eq_one_of_hasFDerivAt_smulRight`, the case `D = (u ↦ u c)` of
+  `TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt`).
 
 Summing over zeros gives `⟨e(L_ℝ), [X]⟩ = ⟨e(L(-x)_ℝ), [X]⟩ + 1`
 (`TauCeti.evalFundamentalClass_complexEulerClass_eq_add_one_of_setOf_eq_insert`).
@@ -149,8 +150,7 @@ Its real derivative at `φ x` is multiplication by `g x`. -/
 private theorem hasFDerivAt_negPointTwist_pointTwistDiv_chartAt (x : X)
     {τ : ∀ z, (negPointTwistCore ℂ L x).Fiber z}
     (hτ : Continuous fun z ↦ TotalSpace.mk' ℂ z (τ z)) :
-    HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
-          (pointTwistDiv ℂ L x ((chartAt ℂ x).symm w) (τ ((chartAt ℂ x).symm w))))).2)
+    HasFDerivAt (preferredChartReading ℂ ℂ (fun z ↦ pointTwistDiv ℂ L x z (τ z)) x)
       ((ContinuousLinearMap.id ℝ ℂ).smulRight
         ((trivializationAt ℂ (negPointTwistCore ℂ L x).Fiber x
           (TotalSpace.mk' ℂ x (τ x))).2))
@@ -186,33 +186,14 @@ theorem sectionIndex_negPointTwist_pointTwistDiv_self (x : X)
         (VectorBundleOrientation.complex ℂ L)).sectionIndex
         Complex.finrank_real_complex (complexHomologicalOrientation X)
         (continuous_negPointTwist_pointTwistDiv_section hτ) x = 1 := by
-  classical
-  set φ := chartAt ℂ x
-  set e := trivializationAt ℂ L x
   set eN := trivializationAt ℂ (negPointTwistCore ℂ L x).Fiber x
-  -- The fibre coordinate `g` of `τ` in the chart of `L(-x)` at `x`.
-  set g : X → ℂ := fun z ↦ (eN (TotalSpace.mk' ℂ z (τ z))).2
-  have hxN : x ∈ eN.baseSet := mem_baseSet_trivializationAt ℂ _ x
-  have hgx : g x ≠ 0 := (eN.snd_apply_ne_zero_iff ℂ (v := TotalSpace.mk' ℂ x (τ x)) hxN).2 hτx
-  have heb : ∀ {z}, z ∈ eN.baseSet → z ∈ e.baseSet ∧ z ∈ φ.source := fun hz ↦ by
-    simpa using mem_signedPointTwistCore_baseSet.1
-      (mem_signedPointTwistCore_trivializationAt_baseSet.1 hz)
-  -- The neighbourhood `U` of `x` on which `τ` does not vanish.
-  set U := eN.baseSet ∩ g ⁻¹' {0}ᶜ
-  have hU : IsOpen U :=
-    (eN.continuousOn_snd_apply_mk hτ).isOpen_inter_preimage eN.open_baseSet isOpen_compl_singleton
-  have hxU : x ∈ U := ⟨hxN, hgx⟩
-  have hUz : ∀ y ∈ U, pointTwistDiv ℂ L x y (τ y) = 0 → y = x := fun y hy h0 ↦ by
-    refine ((pointTwistDiv_eq_zero_iff (F := ℂ) (E := L) (τ y)).1 h0).resolve_right fun hτy ↦
-      hy.2 (?_ : g y = 0)
-    -- The coordinate `g y` of the zero vector `τ y` is zero.
-    simp only [g, hτy]
-    exact congrArg Prod.snd (eN.zeroSection ℂ hy.1)
-  have hUφ : U ⊆ φ.source := fun _ hy ↦ (heb hy.1).2
+  have hgx : (eN (TotalSpace.mk' ℂ x (τ x))).2 ≠ 0 :=
+    (eN.snd_apply_ne_zero_iff ℂ (v := TotalSpace.mk' ℂ x (τ x))
+      (mem_baseSet_trivializationAt ℂ _ x)).2 hτx
   exact sectionIndex_eq_one_of_hasFDerivAt_smulRight x
-    (continuous_negPointTwist_pointTwistDiv_section hτ) hU hxU hUz
-    (congrArg (fun f : ℂ →L[ℂ] L x ↦ f (τ x)) (pointTwistDiv_self ℂ L x))
-    (fun _ hy ↦ (heb hy.1).1) hUφ hgx (hasFDerivAt_negPointTwist_pointTwistDiv_chartAt x hτ)
+    (continuous_negPointTwist_pointTwistDiv_section hτ)
+    (congrArg (fun f : ℂ →L[ℂ] L x ↦ f (τ x)) (pointTwistDiv_self ℂ L x)) hgx
+    (hasFDerivAt_negPointTwist_pointTwistDiv_chartAt x hτ)
 
 /-! ### The Euler number of the negative point twist -/
 

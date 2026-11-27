@@ -22,6 +22,8 @@ reading `r` as a non-strict order, `RelCovBy r u v` says that `u < v` and that n
 
 ## Main results
 
+* `TauCeti.RelCovBy.rel`, `TauCeti.RelCovBy.not_rel`, `TauCeti.RelCovBy.ne`: if `v` covers `u`,
+  then `r u v`, not `r v u`, and `u ≠ v`.
 * `TauCeti.relCovBy_le_iff_covBy`: for the order of a preorder, `RelCovBy` is `CovBy`.
 * `TauCeti.relCovBy_comap_equiv`: `RelCovBy` is unchanged by relabelling along an equivalence.
 -/
@@ -42,6 +44,19 @@ def RelCovBy (r : V → V → Prop) (u v : V) : Prop :=
 theorem relCovBy_iff {r : V → V → Prop} {u v : V} :
     RelCovBy r u v ↔ (r u v ∧ ¬ r v u) ∧ ∀ w, ¬ ((r u w ∧ ¬ r w u) ∧ (r w v ∧ ¬ r v w)) :=
   Iff.rfl
+
+/-- If `v` covers `u` for `r`, then `r u v`. -/
+theorem RelCovBy.rel {r : V → V → Prop} {u v : V} (h : RelCovBy r u v) : r u v :=
+  h.1.1
+
+/-- If `v` covers `u` for `r`, then not `r v u`. -/
+theorem RelCovBy.not_rel {r : V → V → Prop} {u v : V} (h : RelCovBy r u v) : ¬ r v u :=
+  h.1.2
+
+/-- If `v` covers `u` for `r`, then `u ≠ v`. -/
+theorem RelCovBy.ne {r : V → V → Prop} {u v : V} (h : RelCovBy r u v) : u ≠ v := by
+  rintro rfl
+  exact h.not_rel h.rel
 
 /-- `RelCovBy` is unchanged by relabelling along an equivalence: `u` is covered by `v` for the
 relation `r` pulled back along `e` exactly when `e u` is covered by `e v` for `r`. -/

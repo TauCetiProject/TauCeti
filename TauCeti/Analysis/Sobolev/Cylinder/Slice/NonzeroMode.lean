@@ -78,7 +78,7 @@ theorem exists_eq_of_sliceAverageLp_eq_zero_of_isPreconnected {X : Type*} [Topol
     exact (continuousOn_iff_continuous_domRestrict.1 hD).clm_comp continuous_const
   -- The restrictions satisfy the a priori estimate uniformly, and `T τ₀` is onto.
   have hH1 : IsClosed (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) :=
-    coe_jetClosure (testSection V) ▸ isClosed_closure
+    coe_jetClosure 2 (testSection V) ▸ isClosed_closure
   have : CompleteSpace E := (hH1.inter (isClosed_ker _)).completeSpace_coe
   have hK : ∀ σ ∈ univ, ∀ x : E, ‖x‖ ≤ C * ‖T σ x‖ := fun σ _ x ↦ hlow σ σ.property (ι x) (hι x)
   have hsurj0 : Function.Surjective (T ⟨τ₀, hτ₀⟩) := fun z ↦ by

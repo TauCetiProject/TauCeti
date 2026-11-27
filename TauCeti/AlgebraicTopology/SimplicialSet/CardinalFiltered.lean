@@ -9,8 +9,8 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.Order.Bounds.Defs
 public import Mathlib.SetTheory.Cardinal.HasCardinalLT
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
-public import TauCeti.AlgebraicTopology.SimplicialSet.Join.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Preorder
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Coslice
+public import TauCeti.CategoryTheory.Presentable.IsCardinalFiltered
 
 /-!
 # Cardinal filtered simplicial sets
@@ -42,6 +42,9 @@ since simplices of the nerve are determined by their vertices; accordingly the n
   `κ`-filtered.
 * `SSet.isCardinalFiltered_nerve_iff`: the nerve of a preorder is `κ`-filtered if and only if its
   subsets with fewer than `κ` elements are bounded above.
+* `SSet.isCardinalFiltered_nerve_iff_isCardinalFiltered`: for a regular cardinal `κ`, the nerve of a
+  preorder is `κ`-filtered if and only if the preorder is a `κ`-filtered category in the sense of
+  Mathlib's `CategoryTheory.IsCardinalFiltered`.
 * `SSet.not_isCardinalFiltered_nerve_discrete`: the nerve of a discrete category with two distinct
   objects is not `κ`-filtered for `κ > 2`.
 
@@ -119,45 +122,7 @@ lemma not_isCardinalFiltered_of_isEmpty (hK : IsEmpty (K _⦋0⦌)) (hκ : κ �
 
 section Preorder
 
-variable {P : Type u} [Preorder P] {Y : SSet.{u}}
-
-open Classical in
-/-- The vertex map of the extension of `f : Y ⟶ nerve P` to the cone `Y ⋆ Δ[0]` which sends the cone
-point to `b`. -/
-private noncomputable def coneVertex (f : Y ⟶ nerve P) (b : P) (v : (join Y Δ[0]) _⦋0⦌) : P :=
-  if hv : v ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _ then
-    nerveEquiv (f.app _ ((join.univ Y Δ[0]).left.app _ ⟨v, hv⟩))
-  else b
-
-private lemma coneVertex_of_mem (f : Y ⟶ nerve P) (b : P) {v : (join Y Δ[0]) _⦋0⦌}
-    (hv : v ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _) :
-    coneVertex f b v = nerveEquiv (f.app _ ((join.univ Y Δ[0]).left.app _ ⟨v, hv⟩)) := by
-  simp only [coneVertex, hv, ↓reduceDIte]
-
-private lemma coneVertex_of_notMem (f : Y ⟶ nerve P) (b : P) {v : (join Y Δ[0]) _⦋0⦌}
-    (hv : v ∉ (joinFiber (join.univ Y Δ[0]).p 0).obj _) : coneVertex f b v = b := by
-  simp only [coneVertex, hv, ↓reduceDIte]
-
-/-- If `b` bounds the vertices of `f : Y ⟶ nerve P`, sending the cone point to `b` is monotone
-along the edges of the cone. -/
-private lemma coneVertex_le (f : Y ⟶ nerve P) {b : P}
-    (hb : ∀ y : Y _⦋0⦌, nerveEquiv (f.app _ y) ≤ b)
-    {v w : (join Y Δ[0]) _⦋0⦌} (e : (join Y Δ[0]).Edge v w) :
-    coneVertex f b v ≤ coneVertex f b w := by
-  by_cases hw : w ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _
-  · -- The edge lies in `Y`, where it is sent to an edge of `nerve P` by `f`.
-    have he := join.edge_mem_joinFiber_zero e hw
-    have hv : v ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _ := by
-      rw [← e.src_eq]
-      exact (joinFiber (join.univ Y Δ[0]).p 0).map (SimplexCategory.δ 1).op he
-    rw [coneVertex_of_mem f b hw, coneVertex_of_mem f b hv]
-    exact nerve.le_of_edge f
-      ((e.toSubcomplex (joinFiber (join.univ Y Δ[0]).p 0) he).map (join.univ Y Δ[0]).left :
-        Y.Edge ((join.univ Y Δ[0]).left.app _ ⟨v, hv⟩) ((join.univ Y Δ[0]).left.app _ ⟨w, hw⟩))
-  · rw [coneVertex_of_notMem f b hw]
-    by_cases hv : v ∈ (joinFiber (join.univ Y Δ[0]).p 0).obj _
-    · exact (coneVertex_of_mem f b hv).trans_le (hb _)
-    · exact (coneVertex_of_notMem f b hv).le
+variable {P : Type u} [Preorder P]
 
 /-- The nerve of a preorder `P` is `κ`-filtered if and only if every subset of `P` with fewer than
 `κ` elements is bounded above. -/
@@ -174,13 +139,16 @@ theorem isCardinalFiltered_nerve_iff :
     ((hY.of_injective (fun y ↦ N.mk y (by simp)) fun _ _ hxy ↦
       (S.ext_iff _ _).1 ((N.ext_iff _ _).1 hxy)).of_surjective _
       Set.rangeFactorization_surjective)
-  -- Send the cone point to the upper bound `b`.
-  refine ⟨nerve.homOfVertex (coneVertex f b) fun _ _ e ↦
-    coneVertex_le f (fun y : Y _⦋0⦌ ↦ hb (Set.mem_range_self y)) e,
-    nerve.hom_ext_of_preorder fun y ↦ ?_⟩
-  rw [comp_app, ConcreteCategory.comp_apply, nerve.nerveEquiv_homOfVertex_app,
-    coneVertex_of_mem f b (join.range_inl_le_joinFiber Y Δ[0] _ ⟨y, rfl⟩),
-    join.univ_left_app_inl_app]
+  -- The cocone under `f` with cone point the upper bound `b`.
+  exact ⟨_, (coslice.objEquiv
+    ((nerve.upperBoundsCosliceIso f).hom.app (op ⦋0⦌) (nerveEquiv.symm ⟨b, hb⟩))).property⟩
+
+/-- For a regular cardinal `κ`, the nerve of a preorder `P` is `κ`-filtered as a simplicial set
+exactly when `P` is a `κ`-filtered category in the sense of Mathlib's
+`CategoryTheory.IsCardinalFiltered`. -/
+theorem isCardinalFiltered_nerve_iff_isCardinalFiltered [Fact κ.IsRegular] :
+    (nerve P).IsCardinalFiltered κ ↔ CategoryTheory.IsCardinalFiltered P κ := by
+  rw [isCardinalFiltered_nerve_iff, isCardinalFiltered_preorder_iff]
 
 end Preorder
 
