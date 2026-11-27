@@ -73,8 +73,9 @@ private theorem ord_norm_eq_finsum_of_prod (f : X ⟶ Y) [IsDominant f] {y : Y}
     intro h0
     rw [h0, map_zero] at H
     exact WithZero.zero_ne_coe H
-  rw [Scheme.ord_eq_iff hy1 hN, ← finsum_set_coe_eq_finsum_mem, ← finsum_comp_equiv e.symm,
-    finsum_eq_sum_of_fintype]
+  -- `ordHom` is the stalk's `ordFrac`, with the dimension bound supplied by `hy1`.
+  rw [Scheme.ord_eq_iff hy1 hN, Scheme.ordHom, ← finsum_set_coe_eq_finsum_mem,
+    ← finsum_comp_equiv e.symm, finsum_eq_sum_of_fintype]
   refine H.trans ?_
   congr 2
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -154,8 +155,10 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
     (K := Y.functionField) (A := Y.presheaf.stalk y) p
     (fun q ↦ X.presheaf.stalk (x q)) hr
   have hord (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : Ring.ordFrac (X.presheaf.stalk (x q)) r =
-      ↑(Multiplicative.ofAdd (X.ord r (x q))) :=
-    (Scheme.ord_eq_iff (hq1 q) hr).mp rfl
+      ↑(Multiplicative.ofAdd (X.ord r (x q))) := by
+    -- Explicitly unfold `ordHom` to the stalk's `ordFrac`, with dimension bound from `hq1`.
+    simpa only [Scheme.ordHom] using
+      (Scheme.ord_eq_iff (hq1 q) hr (n := X.ord r (x q))).mp rfl
   have : Fintype (p.primesOver Γ(X, f ⁻¹ᵁ V)) := (Algebra.QuasiFinite.finite_primesOver p).fintype
   simp only [hord, Scheme.Hom.toNat_length_residueField_eq_residueDegree f (hfx _),
     ← WithZero.coe_pow, ← ofAdd_nsmul, finprod_eq_prod_of_fintype] at H
