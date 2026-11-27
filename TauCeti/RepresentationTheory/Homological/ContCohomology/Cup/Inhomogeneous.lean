@@ -80,6 +80,98 @@ theorem inhomogeneousCup_one_one_apply (f g : C(Fin 1 → G, R)) (a b : G) :
 
 end Product
 
+section Zero
+
+variable [MulZeroClass R] [ContinuousMul R]
+
+@[simp]
+theorem zero_inhomogeneousCup [SMul G R] [ContinuousSMul G R] (g : C(Fin q → G, R)) :
+    (0 : C(Fin p → G, R)).inhomogeneousCup g = 0 := by
+  ext x
+  simp [inhomogeneousCup_apply]
+
+@[simp]
+theorem inhomogeneousCup_zero [SMulZeroClass G R] [ContinuousSMul G R] (f : C(Fin p → G, R)) :
+    f.inhomogeneousCup (0 : C(Fin q → G, R)) = 0 := by
+  ext x
+  simp [inhomogeneousCup_apply]
+
+end Zero
+
+section Add
+
+variable [NonUnitalNonAssocSemiring R] [ContinuousAdd R] [ContinuousMul R]
+
+@[simp]
+theorem add_inhomogeneousCup [SMul G R] [ContinuousSMul G R]
+    (f₁ f₂ : C(Fin p → G, R)) (g : C(Fin q → G, R)) :
+    (f₁ + f₂).inhomogeneousCup g = f₁.inhomogeneousCup g + f₂.inhomogeneousCup g := by
+  ext x
+  simp [inhomogeneousCup_apply, add_mul]
+
+@[simp]
+theorem inhomogeneousCup_add [DistribSMul G R] [ContinuousSMul G R]
+    (f : C(Fin p → G, R)) (g₁ g₂ : C(Fin q → G, R)) :
+    f.inhomogeneousCup (g₁ + g₂) = f.inhomogeneousCup g₁ + f.inhomogeneousCup g₂ := by
+  ext x
+  simp [inhomogeneousCup_apply, smul_add, mul_add]
+
+end Add
+
+section NegSub
+
+variable [NonUnitalNonAssocRing R] [IsTopologicalAddGroup R] [ContinuousMul R]
+
+@[simp]
+theorem neg_inhomogeneousCup [SMul G R] [ContinuousSMul G R]
+    (f : C(Fin p → G, R)) (g : C(Fin q → G, R)) :
+    (-f).inhomogeneousCup g = -(f.inhomogeneousCup g) := by
+  ext x
+  simp [inhomogeneousCup_apply]
+
+@[simp]
+theorem inhomogeneousCup_neg [DistribSMul G R] [ContinuousSMul G R]
+    (f : C(Fin p → G, R)) (g : C(Fin q → G, R)) :
+    f.inhomogeneousCup (-g) = -(f.inhomogeneousCup g) := by
+  ext x
+  simp [inhomogeneousCup_apply]
+
+@[simp]
+theorem sub_inhomogeneousCup [SMul G R] [ContinuousSMul G R]
+    (f₁ f₂ : C(Fin p → G, R)) (g : C(Fin q → G, R)) :
+    (f₁ - f₂).inhomogeneousCup g = f₁.inhomogeneousCup g - f₂.inhomogeneousCup g := by
+  simp only [sub_eq_add_neg, add_inhomogeneousCup, neg_inhomogeneousCup]
+
+@[simp]
+theorem inhomogeneousCup_sub [DistribSMul G R] [ContinuousSMul G R]
+    (f : C(Fin p → G, R)) (g₁ g₂ : C(Fin q → G, R)) :
+    f.inhomogeneousCup (g₁ - g₂) = f.inhomogeneousCup g₁ - f.inhomogeneousCup g₂ := by
+  simp only [sub_eq_add_neg, inhomogeneousCup_add, inhomogeneousCup_neg]
+
+end NegSub
+
+section Scalar
+
+variable {k : Type*} [Mul R] [ContinuousMul R] [SMul G R] [ContinuousSMul G R]
+  [SMul k R] [ContinuousConstSMul k R]
+
+-- Rewrite scalar cups before simp turns integer scalar multiplication into ring multiplication.
+@[simp↓]
+theorem smul_inhomogeneousCup [IsScalarTower k R R]
+    (f : C(Fin p → G, R)) (g : C(Fin q → G, R)) (c : k) :
+    (c • f).inhomogeneousCup g = c • f.inhomogeneousCup g := by
+  ext x
+  simp [inhomogeneousCup_apply, smul_mul_assoc]
+
+@[simp↓]
+theorem inhomogeneousCup_smul [SMulCommClass G k R] [SMulCommClass k R R]
+    (f : C(Fin p → G, R)) (g : C(Fin q → G, R)) (c : k) :
+    f.inhomogeneousCup (c • g) = c • f.inhomogeneousCup g := by
+  ext x
+  simp [inhomogeneousCup_apply, smul_comm _ c, mul_smul_comm]
+
+end Scalar
+
 section LeftUnit
 
 variable [MulOneClass R] [ContinuousMul R] [MulAction G R] [ContinuousSMul G R]
@@ -118,8 +210,8 @@ theorem inhomogeneousCup_assoc (f : C(Fin p → G, R)) (g : C(Fin q → G, R))
     ⟨_, _, Fin.append_castAdd_natAdd⟩
   have ha : (fun j ↦ Fin.append (Fin.append x y) z (Fin.cast (Nat.add_assoc p q r).symm j)) =
       Fin.append x (Fin.append y z) := by
-    rw [Fin.append_assoc x y z]
-    rfl
+    funext j
+    simp [Fin.append_assoc]
   simp [comp_apply, precomp, ha, List.ofFn_fin_append, mul_smul, smul_mul', mul_assoc]
 
 end Monoid
@@ -143,9 +235,19 @@ theorem comp_inhomogeneousCup_piMap (f : C(Fin p → G, R)) (g : C(Fin q → G, 
   simp only [comp_apply, piMap_apply, inhomogeneousCup_apply, Function.comp_def,
     ContinuousMap.coe_ofClass, map_mul]
   rw [List.ofFn_comp' _ φ, ← map_list_prod, hψ]
+  -- The remaining `piMap` applications reduce to applying `φ` coordinatewise.
   rfl
 
 end Naturality
+
+/-- Precomposing with the cast between equal tuple lengths preserves the continuous map
+up to heterogeneous equality. -/
+theorem comp_precomp_fin_cast_heq {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {i j : ℕ} (f : C(Fin j → X, Y)) (e : i = j) :
+    HEq (f.comp (precomp (X := fun _ ↦ X) (Fin.cast e.symm))) f := by
+  subst e
+  -- Casting along reflexivity acts as the identity on tuples.
+  rfl
 
 end ContinuousMap
 
@@ -165,15 +267,13 @@ variable (k : Type*) [CommSemiring k] [Semiring R] [ContinuousAdd R] [Continuous
 def inhomogeneousCupLinearMap (p q : ℕ) :
     C(Fin p → G, R) →ₗ[k] C(Fin q → G, R) →ₗ[k] C(Fin (p + q) → G, R) :=
   LinearMap.mk₂ k inhomogeneousCup
-    (fun _ _ _ ↦ ContinuousMap.ext fun _ ↦ by simp [inhomogeneousCup_apply, add_mul])
-    (fun _ _ _ ↦ ContinuousMap.ext fun _ ↦ by simp [inhomogeneousCup_apply])
-    (fun _ _ _ ↦ ContinuousMap.ext fun _ ↦ by simp [inhomogeneousCup_apply, smul_add, mul_add])
-    (fun c _ _ ↦ ContinuousMap.ext fun _ ↦ by
-      simp [inhomogeneousCup_apply, smul_comm _ c])
+    add_inhomogeneousCup (fun c f g ↦ smul_inhomogeneousCup f g c)
+    inhomogeneousCup_add (fun c f g ↦ inhomogeneousCup_smul f g c)
 
 @[simp]
 theorem inhomogeneousCupLinearMap_apply {p q : ℕ} (f : C(Fin p → G, R)) (g : C(Fin q → G, R)) :
-    inhomogeneousCupLinearMap k p q f g = f.inhomogeneousCup g := (rfl)
+    inhomogeneousCupLinearMap k p q f g = f.inhomogeneousCup g :=
+  LinearMap.mk₂_apply _ _ f g
 
 end Bilinear
 
@@ -183,36 +283,41 @@ variable (G R) [Ring R] [IsTopologicalRing R] [MulSemiringAction G R] [Continuou
 
 /-- The graded ring of continuous inhomogeneous cochains, with the translated cup as
 multiplication and the constant one in degree zero as unit. -/
-abbrev inhomogeneousCochainGRing : DirectSum.GRing (fun n : ℕ ↦ C(Fin n → G, R)) := by
-  have reindex {i j : ℕ} (e : i = j) (f : C(Fin j → G, R)) :
-      HEq (f.comp (precomp (X := fun _ ↦ G) (Fin.cast e.symm))) f := by
-    subst e
-    rfl
-  refine TauCeti.DirectSum.gRingOfMul
+@[expose, instance_reducible]
+def inhomogeneousCochainGRing : DirectSum.GRing (fun n : ℕ ↦ C(Fin n → G, R)) :=
+  TauCeti.DirectSum.gRingOfMul
     (fun p q ↦ LinearMap.toAddMonoidHom'.comp (inhomogeneousCupLinearMap ℤ p q).toAddMonoidHom)
-    (1 : C(Fin 0 → G, R)) (fun {i} f ↦ ?_) (fun {i} f ↦ ?_) (fun {i j k} f g h ↦ ?_)
-  all_goals
-    simp only [GradedMonoid.mk, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply,
-      LinearMap.toAddMonoidHom_coe, inhomogeneousCupLinearMap_apply]
-  · rw [one_inhomogeneousCup]
-    apply Sigma.ext (Nat.zero_add i)
-    simpa only [Fin.natAdd_zero] using reindex (Nat.zero_add i) f
-  · rw [inhomogeneousCup_one]
-    rfl
-  · rw [inhomogeneousCup_assoc]
-    exact Sigma.ext (Nat.add_assoc i j k) (reindex (Nat.add_assoc i j k) _)
+    (1 : C(Fin 0 → G, R))
+    (fun {i} f ↦ by
+      simp only [GradedMonoid.mk, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply,
+        LinearMap.toAddMonoidHom_coe, inhomogeneousCupLinearMap_apply, one_inhomogeneousCup]
+      apply Sigma.ext (Nat.zero_add i)
+      simpa only [Fin.natAdd_zero] using f.comp_precomp_fin_cast_heq (Nat.zero_add i))
+    (fun {i} f ↦ by
+      simp only [GradedMonoid.mk, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply,
+        LinearMap.toAddMonoidHom_coe, inhomogeneousCupLinearMap_apply]
+      exact Sigma.ext (Nat.add_zero i) (inhomogeneousCup_one f).heq)
+    (fun {i j k} f g h ↦ by
+      simp only [GradedMonoid.mk, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply,
+        LinearMap.toAddMonoidHom_coe, inhomogeneousCupLinearMap_apply]
+      rw [inhomogeneousCup_assoc]
+      exact Sigma.ext (Nat.add_assoc i j k) (comp_precomp_fin_cast_heq _ (Nat.add_assoc i j k)))
 
 variable {G R}
 
 /-- Multiplication of homogeneous elements is the cup on cochains. -/
 @[simp]
 theorem inhomogeneousCochainGRing_mul {p q : ℕ} (f : C(Fin p → G, R)) (g : C(Fin q → G, R)) :
-    (inhomogeneousCochainGRing G R).mul f g = f.inhomogeneousCup g := (rfl)
+    (inhomogeneousCochainGRing G R).mul f g = f.inhomogeneousCup g := by
+  simp only [TauCeti.DirectSum.gRingOfMul_gMul,
+    AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply, LinearMap.toAddMonoidHom_coe,
+    inhomogeneousCupLinearMap_apply]
 
 /-- The homogeneous unit is the degree-zero constant one. -/
 @[simp]
 theorem inhomogeneousCochainGRing_one :
-    (inhomogeneousCochainGRing G R).one = (1 : C(Fin 0 → G, R)) := (rfl)
+    (inhomogeneousCochainGRing G R).one = (1 : C(Fin 0 → G, R)) := by
+  simp only [TauCeti.DirectSum.gRingOfMul_gOne]
 
 end Ring
 
