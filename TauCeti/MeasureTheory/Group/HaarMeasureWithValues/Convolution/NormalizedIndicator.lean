@@ -17,9 +17,12 @@ Left and right multiplication by this idempotent characterize
 left and right subgroup invariance, respectively. For nested subgroups the larger subgroup's
 idempotent absorbs the smaller one on either side.
 
-The statements use `LocallyConstant.compactOpenIndicator` and
+The proofs use `LocallyConstant.compactOpenIndicator` and
 `TauCeti.HaarMeasureWithValues.convolution` on `TauCeti.HeckeAlgebra`.
-`Subsemigroup.mem_corner_iff` identifies the corner, whose unit is given by `Corner.val_one`.
+Using `Subsemigroup.mem_corner_iff`, `TauCeti.HeckeAlgebra.mem_corner_normalizedIndicator_iff`
+identifies the convolution corner `e_U * H * e_U` with the algebra of `U`-bi-invariant
+functions. This identification is used to compare smooth representations with modules over
+finite-level Hecke algebras.
 
 ## References
 
@@ -190,7 +193,7 @@ theorem mul_normalizedIndicator_eq_iff (f : HeckeAlgebra μ) :
     rw [hSlice, HaarMeasureWithValues.integral_compactOpenIndicator, μ.apply_smul, smul_eq_mul]
     exact (congrArg (· * _) h.unit_spec.symm).trans (Units.mul_inv_cancel_left h.unit _)
 
-/-- The larger subgroup's normalized indicator absorbs the smaller one's on the left. -/
+/-- For `W ≤ U`, the normalized indicators satisfy `e_U * e_W = e_U`. -/
 @[simp]
 theorem normalizedIndicator_mul_normalizedIndicator_of_ge {W : OpenSubgroup G}
     {hW : IsCompact (W : Set G)} (h' : IsUnit (μ (W.toCompactOpens hW))) (hWU : W ≤ U) :
@@ -200,7 +203,7 @@ theorem normalizedIndicator_mul_normalizedIndicator_of_ge {W : OpenSubgroup G}
   intro g hg x
   exact normalizedIndicator_apply_mul_right h (hWU hg) x
 
-/-- The larger subgroup's normalized indicator absorbs the smaller one's on the right. -/
+/-- For `W ≤ U`, the normalized indicators satisfy `e_W * e_U = e_U`. -/
 @[simp]
 theorem normalizedIndicator_mul_normalizedIndicator_of_le {W : OpenSubgroup G}
     {hW : IsCompact (W : Set G)} (h' : IsUnit (μ (W.toCompactOpens hW))) (hWU : W ≤ U) :
