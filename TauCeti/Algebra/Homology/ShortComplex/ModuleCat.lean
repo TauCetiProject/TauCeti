@@ -19,8 +19,10 @@ For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules, its homology is the ker
 modulo the range of the first.  The projection of Mathlib's explicit left homology data
 `S.moduleCatLeftHomologyData` from the kernel onto the homology is surjective, and identifies two
 elements exactly when their difference is in the range of the first map
-(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  This file also records
-two finiteness consequences of that description:
+(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  When the third term is
+torsion-free, a vector with a regular multiple in that range is a cycle
+(`CategoryTheory.ShortComplex.mem_ker_g_of_smul_mem_range_f`).  This file also records two
+finiteness consequences of that description:
 
 * over a ring for which the middle module is noetherian, the homology is finitely generated;
 * over a ring satisfying the strong rank condition, when the middle term is finite, the
@@ -31,7 +33,10 @@ two finiteness consequences of that description:
 It also defines the `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short
 complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), and shows that the
 dual of a short exact sequence is short exact when every functional on `X₁` extends to `X₂`
-(`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`).
+(`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`). Finally, it identifies the two maps of
+Mathlib's conjugated short complex `ModuleCat.shortComplexOfConj`
+(`ModuleCat.shortComplexOfConj_f`, `ModuleCat.shortComplexOfConj_g`); the first is a monomorphism
+when the original map is injective (`ModuleCat.mono_shortComplexOfConj_f`).
 
 ## References
 
@@ -53,6 +58,17 @@ theorem finite_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k
   have : Module.Finite k S.moduleCatLeftHomologyData.H :=
     inferInstanceAs (Module.Finite k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
   .equiv S.moduleCatHomologyIso.toLinearEquiv.symm
+
+/-- If the next term of a short complex of modules is torsion-free, a vector a regular multiple of
+which is a boundary is a cycle. -/
+theorem mem_ker_g_of_smul_mem_range_f {R : Type u} [Ring R] {S : ShortComplex (ModuleCat.{v} R)}
+    [Module.IsTorsionFree R S.X₃] {x : S.X₂} {r : R} (hr : IsRegular r)
+    (hx : r • x ∈ LinearMap.range S.f.hom) : x ∈ LinearMap.ker S.g.hom := by
+  obtain ⟨y, hy⟩ := hx
+  have : r • S.g.hom x = 0 := by
+    rw [← map_smul, ← hy]
+    exact S.moduleCat_zero_apply y
+  exact hr.smul_eq_zero_iff_right.1 this
 
 variable {k : Type u} [Ring k] [StrongRankCondition k]
 
@@ -142,3 +158,36 @@ theorem ShortExact.moduleCatOpDual (hS : S.ShortExact)
 end OpDual
 
 end CategoryTheory.ShortComplex
+
+namespace ModuleCat
+
+section Conj
+
+variable {R : Type u} [Ring R] {M N L : Type v} [AddCommGroup M] [AddCommGroup N] [AddCommGroup L]
+  [Module R M] [Module R N] [Module R L] {M' N' L' : Type*} [AddCommGroup M'] [AddCommGroup N']
+  [AddCommGroup L'] [Module R M'] [Module R N'] [Module R L'] (eM : M ≃ₗ[R] M') (eN : N ≃ₗ[R] N')
+  (eL : L ≃ₗ[R] L') {f : M' →ₗ[R] N'} {g : N' →ₗ[R] L'}
+
+/-- The first map of `ModuleCat.shortComplexOfConj` is `f` conjugated by the equivalences. -/
+@[simp]
+theorem shortComplexOfConj_f (eq0 : g ∘ₗ f = 0) :
+    (shortComplexOfConj eM eN eL f g eq0).f =
+      ofHom (eN.symm.toLinearMap ∘ₗ f ∘ₗ eM.toLinearMap) :=
+  (rfl)
+
+/-- The second map of `ModuleCat.shortComplexOfConj` is `g` conjugated by the equivalences. -/
+@[simp]
+theorem shortComplexOfConj_g (eq0 : g ∘ₗ f = 0) :
+    (shortComplexOfConj eM eN eL f g eq0).g =
+      ofHom (eL.symm.toLinearMap ∘ₗ g ∘ₗ eN.toLinearMap) :=
+  (rfl)
+
+/-- The first map of `ModuleCat.shortComplexOfConj` is a monomorphism when `f` is injective. -/
+theorem mono_shortComplexOfConj_f (eq0 : g ∘ₗ f = 0) (hf : Function.Injective f) :
+    Mono (shortComplexOfConj eM eN eL f g eq0).f := by
+  rw [shortComplexOfConj_f, ModuleCat.mono_iff_injective]
+  exact eN.symm.injective.comp (hf.comp eM.injective)
+
+end Conj
+
+end ModuleCat

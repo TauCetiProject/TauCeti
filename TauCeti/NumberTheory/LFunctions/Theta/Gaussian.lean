@@ -9,13 +9,15 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 public import TauCeti.NumberTheory.LFunctions.Theta.UnitFundamentalDomain
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # Archimedean Gaussians and the unit-invariant theta kernel
 
 Hecke's theta kernel has one positive parameter per infinite place, not just a radial
 parameter. The Gaussian `archGaussian y x` is `exp (-π ∑ w, y w * |x w|²)`; a complex place
-occurs once in this sum, in accordance with the Euclidean pairing `mixedInner`.
+occurs once in this sum, in accordance with the Euclidean pairing `mixedInner`. At a constant
+parameter `t` it is the one-parameter Gaussian `mixedGaussian K t x = exp (-π t ⟨x, x⟩)`.
 
 For positive parameters, the coordinatewise square-root dilation identifies this Gaussian with
 the standard Euclidean Schwartz Gaussian. Its sum over any discrete lattice converges absolutely,
@@ -66,15 +68,21 @@ theorem archGaussian_re_pos (y : realSpace K) (x : mixedSpace K) :
 theorem archGaussian_im (y : realSpace K) (x : mixedSpace K) :
     (archGaussian y x).im = 0 := (rfl)
 
+/-- Multiplying the argument by `a` scales each Gaussian parameter by the squared local
+absolute value of `a`. -/
+theorem archGaussian_mul (y : realSpace K) (a x : mixedSpace K) :
+    archGaussian y (a * x) = archGaussian (fun w ↦ normAtPlace w a ^ 2 * y w) x := by
+  simp only [archGaussian_apply, map_mul, mul_pow]
+  congr 3
+  exact Finset.sum_congr rfl fun w _ ↦ by ring
+
 /-- Moving a unit from the lattice variable to the parameters squares its absolute values. -/
 theorem archGaussian_unit_smul (u : (𝓞 K)ˣ) (y : realSpace K) (x : mixedSpace K) :
     archGaussian y (u • x) = archGaussian (unitScale u y) x := by
-  rw [archGaussian_apply, archGaussian_apply]
-  congr 3
-  apply Finset.sum_congr rfl
-  intro w _
-  rw [← congrFun (unitScale_sq_normAtPlace u x) w, unitScale_apply, unitScale_apply]
-  ring
+  rw [unitSMul_smul, archGaussian_mul]
+  congr 1
+  ext w
+  simp [unitScale_apply, normAtPlace_apply]
 
 open scoped Classical in
 /-- Coordinatewise dilation by `√(y w)` on the mixed space. Positivity makes it invertible;
@@ -107,15 +115,38 @@ theorem archGaussian_one_archGaussianDilation (y : realSpace K) (hy : ∀ w, 0 <
     (x : mixedSpace K) : archGaussian 1 (archGaussianDilation y hy x) = archGaussian y x := by
   simp only [archGaussian_apply, normAtPlace_archGaussianDilation_sq, Pi.one_apply, one_mul]
 
-/-- At a constant parameter, the Gaussian uses the Euclidean mixed-space pairing. -/
+variable (K) in
+/-- The one-parameter Gaussian `exp (-π t ⟨x, x⟩)` of the Euclidean pairing `mixedInner`. It is
+the archimedean Gaussian at the constant parameter `t` (`archGaussian_const`). -/
+def mixedGaussian (t : ℝ) (x : mixedSpace K) : ℂ :=
+  ↑(Real.exp (-Real.pi * (t * mixedInner K x x)))
+
+theorem mixedGaussian_apply (t : ℝ) (x : mixedSpace K) :
+    mixedGaussian K t x = ↑(Real.exp (-Real.pi * (t * mixedInner K x x))) := (rfl)
+
+@[simp]
+theorem mixedGaussian_zero (t : ℝ) : mixedGaussian K t 0 = 1 := by
+  simp [mixedGaussian_apply, mixedInner_self_eq_sum]
+
+/-- One-parameter Gaussians are positive real-valued. -/
+theorem mixedGaussian_re_pos (t : ℝ) (x : mixedSpace K) :
+    0 < (mixedGaussian K t x).re := Real.exp_pos _
+
+@[simp]
+theorem mixedGaussian_im (t : ℝ) (x : mixedSpace K) :
+    (mixedGaussian K t x).im = 0 := (rfl)
+
+/-- At a constant parameter, the archimedean Gaussian is the one-parameter Gaussian of the
+Euclidean mixed-space pairing. -/
+@[simp]
 theorem archGaussian_const (t : ℝ) (x : mixedSpace K) :
-    archGaussian (fun _ ↦ t) x = ↑(Real.exp (-Real.pi * (t * mixedInner K x x))) := by
-  rw [archGaussian_apply, ← Finset.mul_sum, ← mixedInner_self_eq_sum]
+    archGaussian (fun _ ↦ t) x = mixedGaussian K t x := by
+  rw [archGaussian_apply, mixedGaussian_apply, ← Finset.mul_sum, ← mixedInner_self_eq_sum]
 
 /-- At the constant parameter `1`, the Gaussian uses the Euclidean mixed-space pairing. -/
 theorem archGaussian_one (x : mixedSpace K) :
     archGaussian (1 : realSpace K) x = ↑(Real.exp (-Real.pi * mixedInner K x x)) := by
-  simpa only [Pi.one_def, one_mul] using archGaussian_const (K := K) 1 x
+  simpa only [Pi.one_def, mixedGaussian_apply, one_mul] using archGaussian_const (K := K) 1 x
 
 open scoped Classical in
 /-- The archimedean Gaussian is the standard Euclidean Gaussian after square-root dilation. -/
@@ -161,6 +192,12 @@ theorem summable_norm_archGaussian (L : Submodule ℤ (mixedSpace K)) [DiscreteT
     Summable fun x : L ↦ ‖archGaussian y x‖ :=
   summable_norm_iff.mpr (summable_archGaussian L y hy)
 
+/-- Absolute convergence of the one-parameter Gaussian over a discrete lattice. -/
+theorem summable_mixedGaussian (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    {t : ℝ} (ht : 0 < t) :
+    Summable fun x : L ↦ mixedGaussian K t x := by
+  simpa only [archGaussian_const] using summable_archGaussian L (fun _ ↦ t) fun _ ↦ ht
+
 /-- Increasing the parameters decreases the archimedean Gaussian. -/
 theorem norm_archGaussian_le {y y' : realSpace K} (h : ∀ w, y' w ≤ y w) (x : mixedSpace K) :
     ‖archGaussian y x‖ ≤ ‖archGaussian y' x‖ := by
@@ -184,23 +221,15 @@ theorem latticeTheta_def (L : Submodule ℤ (mixedSpace K)) (y : realSpace K) :
     latticeTheta L y = ∑' x : L, archGaussian y x := (rfl)
 
 /-- The archimedean Gaussian is not summable over a non-discrete lattice: it is continuous with
-value `1` at `0`, but `0` is a limit of other lattice points. -/
+value `1` at `0`, so summability would make `0` isolated
+(`Filter.Tendsto.isOpen_singleton_of_cofinite`). -/
 theorem not_summable_archGaussian_of_not_discreteTopology (L : Submodule ℤ (mixedSpace K))
     (hL : ¬ DiscreteTopology L) (y : realSpace K) : ¬ Summable fun x : L ↦ archGaussian y x := by
   intro hs
-  have hg : Continuous fun x : L ↦ archGaussian y x := by
-    simp only [archGaussian_apply]
-    fun_prop
-  have hne : (nhdsWithin (0 : L) {0}ᶜ).NeBot := by
-    rw [Filter.neBot_iff]
-    intro h
-    exact hL (discreteTopology_iff_isOpen_singleton_zero.2
-      ((isOpen_singleton_iff_punctured_nhds _).2 h))
-  have h1 : Filter.Tendsto (fun x : L ↦ archGaussian y x) (nhdsWithin (0 : L) {0}ᶜ) (nhds 1) := by
-    simpa using (hg.tendsto 0).mono_left nhdsWithin_le_nhds
-  have h2 : Filter.Tendsto (fun x : L ↦ archGaussian y x) (nhdsWithin (0 : L) {0}ᶜ) (nhds 0) :=
-    hs.tendsto_cofinite_zero.mono_left (nhdsNE_le_cofinite 0)
-  exact one_ne_zero (tendsto_nhds_unique h1 h2)
+  refine hL (discreteTopology_iff_isOpen_singleton_zero.2
+    (hs.tendsto_cofinite_zero.isOpen_singleton_of_cofinite ?_ (by simp)))
+  simp only [archGaussian_apply]
+  fun_prop
 
 /-- The theta series of a non-discrete lattice is `0`, by the convention for non-summable
 series. -/

@@ -8,6 +8,9 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
+public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
+public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
+import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 
 /-!
@@ -46,6 +49,11 @@ Galois cohomology.
 * `AlgHom.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`: the case
   `F = K`, for some embedding `τ : Kˢ →ₐ[K] K_vˢ`, every element of the decomposition group of `w`
   is the restriction to `E` of the image of an element of `G_{K_v}`.
+* `IntermediateField.absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport`:
+  away from a finite subextension's ramified support, local inertia fixes that subextension
+  along every embedding of separable closures.
+* `AlgHom.mem_fixingSubgroup_fieldRange_of_forall_apply_algebraMap`: an automorphism over `K_v`
+  fixing the image of a number field `L` under `τ' : L_w →ₐ[K_v] Ω` fixes all of `τ'.fieldRange`.
 
 ## References
 
@@ -156,4 +164,66 @@ theorem exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap
     (hu := ⟨(Ideal.comap_id v.asIdeal).symm⟩)
   exact ⟨τ, fun σ hσ ↦ (hτ σ hσ).imp fun g hg ↦ ι.restrictNormalHom_eq_iff.2 hg⟩
 
+/-- If `g : Ω ≃ₐ[K_v] Ω` fixes the image of the number field `L` under `τ' : L_w →ₐ[K_v] Ω`,
+then `g` lies in the fixing subgroup of `τ'.fieldRange`. -/
+theorem mem_fixingSubgroup_fieldRange_of_forall_apply_algebraMap {K L Ω : Type*} [Field K]
+    [NumberField K] [Field L] [NumberField L] [Algebra K L] {v : HeightOneSpectrum (𝓞 K)}
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] [Field Ω]
+    [Algebra (v.adicCompletion K) Ω] (τ' : w.adicCompletion L →ₐ[v.adicCompletion K] Ω)
+    {g : Ω ≃ₐ[v.adicCompletion K] Ω}
+    (hfixL : ∀ a : L, g (τ' (algebraMap L (w.adicCompletion L) a)) =
+      τ' (algebraMap L (w.adicCompletion L) a)) :
+    g ∈ τ'.fieldRange.fixingSubgroup := by
+  classical
+  rw [IntermediateField.mem_fixingSubgroup_iff]
+  rintro _ ⟨y, rfl⟩
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+  let eSemi := v.adicCompletionSemilocalEquiv K (𝓞 L) L
+  let z : TensorProduct K (v.adicCompletion K) L := eSemi.symm (Pi.single ⟨w, ‹_›⟩ y)
+  have hz : eSemi z ⟨w, ‹_›⟩ = y := by simp [z]
+  rw [← hz]
+  refine TensorProduct.inductionOn z (fun c a ↦ ?_) (fun _ _ h₁ h₂ ↦ by simp [h₁, h₂])
+  have htmul : eSemi (TensorProduct.tmul K c a) ⟨w, ‹_›⟩ =
+      algebraMap (v.adicCompletion K) (w.adicCompletion L) c *
+        algebraMap L (w.adicCompletion L) a := by simp [eSemi]
+  rw [htmul]
+  simp only [map_mul, AlgHom.commutes, AlgEquiv.commutes, hfixL]
+
 end AlgHom
+
+namespace IntermediateField
+
+open TauCeti
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- Away from the ramified support of a finite subextension of `Kˢ/K`, every local inertia
+element fixes that subextension, for any embedding of separable closures. -/
+theorem absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport
+    (E : IntermediateField K (SeparableClosure K)) [NumberField E]
+    (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ NumberField.ramifiedSupport K E)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    {g : AbsoluteGaloisGroup (v.adicCompletion K)}
+    (hg : g ∈ separableClosureInertiaSubgroup (v.adicCompletion K)) :
+    absoluteGaloisGroupMap τ g ∈ E.fixingSubgroup := by
+  obtain ⟨w, hw, τ', hτ⟩ := exists_algHom_adicCompletion_eq E v
+    (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K)))
+  -- Register the instance that `w` lies over `v` for the unramifiedness results below.
+  have hLiesOver : w.asIdeal.LiesOver v.asIdeal := hw
+  have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal :=
+    NumberField.isUnramifiedAway_ramifiedSupport v hv w.asIdeal
+  have : IsUnramified (v.adicCompletion K) (w.adicCompletion E) :=
+    HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt v w
+  have hrange : τ'.fieldRange ≤
+      maximalUnramifiedExtension (v.adicCompletion K)
+        (SeparableClosure (v.adicCompletion K)) := by
+    rw [τ'.fieldRange_eq_unramifiedExtension]
+    exact unramifiedExtension_le_maximalUnramifiedExtension _ _ _
+  have hg' : g ∈ τ'.fieldRange.fixingSubgroup :=
+    IntermediateField.fixingSubgroup_antitone hrange
+      ((separableClosureInertiaSubgroup_eq_fixingSubgroup _).le hg)
+  have hle := E.fixingSubgroup_le_comap_absoluteGaloisGroupMap τ'.fieldRange τ
+    (fun x hx ↦ ⟨algebraMap E (w.adicCompletion E) ⟨x, hx⟩, (hτ ⟨x, hx⟩).symm⟩)
+  exact hle hg'
+
+end IntermediateField

@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.Analysis.Normed.Algebra.Character.Unitization
 public import TauCeti.Analysis.Normed.Algebra.Character.ZeroAtInfty
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.OnePoint
 
+import Mathlib.Algebra.Order.Star.Unitization
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import Mathlib.Topology.ContinuousMap.StarOrdered
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -47,6 +52,12 @@ minimal C⋆-unitization `A⁺¹ = Unitization ℂ A` and the augmentation chara
 * Comparing `TauCeti.nonUnitalGelfandStarTransform` on `C₀(Y, ℂ)` with
   `WeakDual.CharacterSpace.zeroAtInftyHomeoEval Y ℂ` recovers the identity `⋆`-automorphism on
   `C₀(Y, ℂ)`.
+* `TauCeti.nonneg_iff_forall_characterSpace_nonneg`: an element of a commutative C⋆-algebra is
+  positive exactly when every character is nonnegative on it, and
+  `TauCeti.characterSpace_apply_gelfandStarTransform_symm`: a character evaluates the inverse
+  Gelfand transform of `f` to `f` at that character.
+* `WeakDual.CharacterSpace.instStarHomClassOfNonUnitalCommCStarAlgebra`: characters of a
+  nonunital commutative C⋆-algebra commute with `star`.
 
 ## References
 
@@ -94,10 +105,9 @@ theorem map_gelfandStarTransform_inrRange :
   · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
     exact gelfandStarTransform_unitization_inr_apply_augmentation a
   · set u : A⁺¹ := (gelfandStarTransform A⁺¹).symm F
-    have hu : Unitization.augmentation ℂ A u = 0 := by
-      rw [Unitization.augmentation_apply, ← u.gelfandStarTransform_apply_augmentation,
-        StarAlgEquiv.apply_symm_apply, hF]
-    exact ⟨u, ⟨u.snd, Unitization.inr_snd_of_augmentation_eq_zero hu⟩,
+    have hu : u.fst = 0 := by
+      rw [← u.gelfandStarTransform_apply_augmentation, StarAlgEquiv.apply_symm_apply, hF]
+    exact ⟨u, ⟨u.snd, Unitization.inr_snd_of_fst_eq_zero hu⟩,
       (gelfandStarTransform A⁺¹).apply_symm_apply F⟩
 
 private theorem bijective_codRestrict_gelfandStarTransform :
@@ -228,6 +238,19 @@ theorem eq_of_forall_apply_eq {a b : A} (h : ∀ χ : characterSpace ℂ A, χ a
 
 end Separation
 
+section Star
+
+variable {A : Type*} [NonUnitalCommCStarAlgebra A]
+
+/-- Characters of a nonunital commutative C⋆-algebra commute with `star`, as restrictions of
+characters of the unitization; Mathlib's `WeakDual.CharacterSpace.instStarHomClass` covers the
+unital case. -/
+instance instStarHomClassOfNonUnitalCommCStarAlgebra : StarHomClass (characterSpace ℂ A) A ℂ where
+  map_star χ a := by
+    simpa using map_star (unitizationExtend χ).val (a : A⁺¹)
+
+end Star
+
 end WeakDual.CharacterSpace
 
 namespace TauCeti
@@ -272,6 +295,38 @@ theorem isOpen_singleton_augmentation_iff_isUnital (A : Type*) [NonUnitalCommCSt
      fun _ ↦ (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).compactSpace⟩
 
 end UnitalComparison
+
+section Positivity
+
+open WeakDual
+open scoped ComplexOrder
+
+/-- An element of a commutative unital C⋆-algebra is positive exactly when every character is
+nonnegative on it: this is positivity of its Gelfand transform. -/
+private theorem nonneg_iff_forall_characterSpace_nonneg_of_unital {C : Type*} [CommCStarAlgebra C]
+    [PartialOrder C] [StarOrderedRing C] {x : C} : 0 ≤ x ↔ ∀ χ : characterSpace ℂ C, 0 ≤ χ x := by
+  rw [← map_le_map_iff (gelfandStarTransform C), map_zero, ContinuousMap.le_def]
+  simp
+
+/-- An element of a commutative C⋆-algebra is positive exactly when every character is
+nonnegative on it. -/
+theorem nonneg_iff_forall_characterSpace_nonneg {C : Type*} [NonUnitalCommCStarAlgebra C]
+    [PartialOrder C] [StarOrderedRing C] {x : C} : 0 ≤ x ↔ ∀ χ : characterSpace ℂ C, 0 ≤ χ x := by
+  rw [← Unitization.inr_nonneg_iff ℂ, nonneg_iff_forall_characterSpace_nonneg_of_unital]
+  refine ⟨fun h χ => by simpa using h (CharacterSpace.unitizationExtend χ), fun h χ => ?_⟩
+  by_cases hχ : χ = Unitization.augmentation ℂ C
+  · simp [hχ]
+  · simpa using h (CharacterSpace.unitizationRestrict ⟨χ, hχ⟩)
+
+/-- Evaluating the inverse Gelfand transform of `f` at a character `y` gives `f y`. It is not a
+simp lemma: `simp` first rewrites `(gelfandStarTransform A).symm f` by Mathlib's
+`gelfandStarTransform_symm_apply`. -/
+theorem characterSpace_apply_gelfandStarTransform_symm {A : Type*} [CommCStarAlgebra A]
+    (f : C(characterSpace ℂ A, ℂ)) (y : characterSpace ℂ A) :
+    y ((gelfandStarTransform A).symm f) = f y := by
+  simpa using congr($((gelfandStarTransform A).apply_symm_apply f) y)
+
+end Positivity
 
 end TauCeti
 

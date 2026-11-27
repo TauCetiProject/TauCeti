@@ -24,7 +24,8 @@ Sample a free Moore loop `γ` at the `n + 1` times `i L / (n + 1)`, `L` its dura
 that every point of each of the `n + 1` arcs is at distance less than `r` from the initial vertex
 of its arc. The closed broken geodesic through the sampled vertices is then defined
 (`TauCeti.Manifold.sampleBrokenGeodesicLoop`), and it is homotopic to `γ`, continuously in `γ`
-(`TauCeti.Manifold.sampleBrokenGeodesicLoopHomotopy`). The homotopy runs in two stages.
+(`TauCeti.Manifold.sampleBrokenGeodesicLoopHomotopy`), through loops with the same base point
+(`TauCeti.Manifold.basepoint_sampleBrokenGeodesicLoopHomotopy`). The homotopy runs in two stages.
 
 * The arcs of `γ` are straightened, keeping the duration of each arc equal to `L / (n + 1)`
   (`TauCeti.MooreFreeLoopSpace.arcStraightening`). This ends at the broken path through the
@@ -55,8 +56,10 @@ homology of the free loop space.
 
 ## Main results
 
+* `TauCeti.Manifold.basepoint_sampleBrokenGeodesicLoopHomotopy`: the homotopy keeps the base point.
 * `TauCeti.Manifold.exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic`: on a compact family of
-  free loops, every sufficiently fine `geoⁿ ∘ evₙ` is homotopic to the inclusion.
+  free loops, every sufficiently fine `geoⁿ ∘ evₙ` is homotopic to the inclusion, through loops
+  keeping the base point.
 
 ## References
 
@@ -197,6 +200,16 @@ theorem sampleBrokenGeodesicLoop_apply
       brokenGeodesicLoop hr n ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1)) h :=
   (rfl)
 
+/-- The broken geodesic through the samples of a free loop is based at the base point of the loop,
+its first sampled vertex. -/
+@[simp]
+theorem basepoint_sampleBrokenGeodesicLoop
+    (γ : MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :
+    (sampleBrokenGeodesicLoop hr n γ).basepoint = (γ : MooreFreeLoopSpace M).basepoint := by
+  rw [sampleBrokenGeodesicLoop_apply hr n γ
+      (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin γ.property)]
+  simp
+
 /-- The length of the broken geodesic through the samples is the sum of the distances between
 consecutive samples, the last one followed by the first one. -/
 theorem length_sampleBrokenGeodesicLoop
@@ -265,6 +278,28 @@ def sampleBrokenGeodesicLoopHomotopy :
   (MooreFreeLoopSpace.arcStraightening (isPathInterpolation_geodesicInterpolation hr)
     n.succ_pos).trans (brokenPathDurationHomotopy hr n)
 
+/-- The homotopy changing the durations of the arcs keeps the base point: every broken loop of the
+homotopy starts at the first sampled vertex. -/
+@[simp]
+theorem basepoint_brokenPathDurationHomotopy (p : unitInterval ×
+    MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :
+    (brokenPathDurationHomotopy hr n p).basepoint = (p.2 : MooreFreeLoopSpace M).basepoint := by
+  obtain ⟨s, γ⟩ := p
+  rw [← MooreFreeLoopSpace.source_toMoorePath, toMoorePath_brokenPathDurationHomotopy hr n s γ
+      fun i ↦ ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.property i,
+        eq_of_arcDuration_eq_zero n⟩,
+    source_brokenMoorePath, MooreFreeLoopSpace.closedSample_zero]
+
+/-- **The homotopy from a free loop to the broken geodesic through its sampled vertices keeps the
+base point.** So it restricts to the loops based at a point. -/
+@[simp]
+theorem basepoint_sampleBrokenGeodesicLoopHomotopy (p : unitInterval ×
+    MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :
+    (sampleBrokenGeodesicLoopHomotopy hr n p).basepoint =
+      (p.2 : MooreFreeLoopSpace M).basepoint := by
+  rw [sampleBrokenGeodesicLoopHomotopy, ContinuousMap.Homotopy.trans_apply]
+  split_ifs <;> simp
+
 end Duration
 
 /-! ### Compact families -/
@@ -277,41 +312,38 @@ include hr
 family `K` of free Moore loops and `ε > 0` there is `N` such that for every `n ≥ N` and all
 cut-offs `ε ≤ δ i < r`, the sampling `evₙ` at `n + 1` times maps `K` into the distance cut
 `𝓛ⁿM = {q | dist (q i) (q (i - 1)) ≤ δ i}`, and `geoⁿ ∘ evₙ : K → 𝓛M`, with `geoⁿ` the closed
-broken geodesic map, is homotopic to the inclusion of `K`. -/
+broken geodesic map, is homotopic to the inclusion of `K` through loops based at the base point of
+the loop the homotopy starts from. -/
 theorem exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic {K : Set (MooreFreeLoopSpace M)}
     (hK : IsCompact K) {ε : ℝ} (hε : 0 < ε) :
     ∃ N : ℕ, ∀ n ≥ N, ∀ δ : Fin (n + 1) → ℝ, (∀ i, ε ≤ δ i) → ∀ hδ : ∀ i, δ i < r,
-      ∃ e : C(K, cyclicDistanceCut (X := M) δ),
+      ∃ (e : C(K, cyclicDistanceCut (X := M) δ))
+        (G : ((cyclicDistanceCutBrokenGeodesic hr hδ).comp e).Homotopy
+          (ContinuousMap.subtypeVal K)),
         (∀ γ, (e γ : Fin (n + 1) → M) = (γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1)) ∧
-        ((cyclicDistanceCutBrokenGeodesic hr hδ).comp e).Homotopic
-          (ContinuousMap.subtypeVal K) := by
+        ∀ p, (G p).basepoint = (p.2 : MooreFreeLoopSpace M).basepoint := by
   by_cases hr0 : 0 < r
   swap
   · exact ⟨0, fun n _ δ hεδ hδ ↦ absurd ((hε.trans_le (hεδ 0)).trans (hδ 0)) hr0⟩
-  obtain ⟨N₁, -, hN₁⟩ := MoorePath.exists_subset_arcsWithin
-    (hK.image MooreFreeLoopSpace.continuous_toMoorePath) (Metric.dist_mem_uniformity hr0)
-  obtain ⟨N₂, hN₂⟩ := MooreFreeLoopSpace.exists_mapsTo_sample_cyclicDistanceCut hK hε
-  refine ⟨max N₁ N₂, fun n hn δ hεδ hδ ↦ ?_⟩
-  have hKA (γ : K) : (γ : MooreFreeLoopSpace M) ∈
-      MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1) :=
-    MooreFreeLoopSpace.mem_arcsWithin.2
-      (MoorePath.mem_arcsWithin.1 (hN₁ (n + 1) (by omega) ⟨γ, γ.property, rfl⟩))
-  have hmaps := hN₂ n (le_of_max_le_right hn) δ hεδ
+  obtain ⟨N, hN⟩ :=
+    MooreFreeLoopSpace.exists_subset_arcsWithin_mapsTo_sample_cyclicDistanceCut hK hr0 hε
+  refine ⟨N, fun n hn δ hεδ hδ ↦ ?_⟩
+  obtain ⟨hKA, hmaps⟩ := hN n hn
   let ι : C(K, MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :=
-    ⟨fun γ ↦ ⟨γ, hKA γ⟩, continuous_subtypeVal.subtype_mk _⟩
+    ⟨fun γ ↦ ⟨γ, hKA γ.property⟩, continuous_subtypeVal.subtype_mk _⟩
   let e : C(K, cyclicDistanceCut (X := M) δ) :=
-    ⟨fun γ ↦ ⟨_, hmaps γ.property⟩, ((MooreFreeLoopSpace.continuous_sample _).comp
+    ⟨fun γ ↦ ⟨_, hmaps δ hεδ γ.property⟩, ((MooreFreeLoopSpace.continuous_sample _).comp
       continuous_subtypeVal).subtype_mk _⟩
-  refine ⟨e, fun γ ↦ rfl, ?_⟩
   -- On `K`, `geoⁿ ∘ evₙ` is the closed broken geodesic through the sampled vertices.
   have he : (cyclicDistanceCutBrokenGeodesic hr hδ).comp e =
       (sampleBrokenGeodesicLoop hr n).comp ι :=
     ContinuousMap.ext fun γ ↦ by
       simp only [ContinuousMap.comp_apply, cyclicDistanceCutBrokenGeodesic_apply, e, ι,
-        ContinuousMap.coe_mk, sampleBrokenGeodesicLoop_apply hr n ⟨γ, hKA γ⟩
-          (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin (hKA γ))]
-  rw [he]
-  exact ⟨((sampleBrokenGeodesicLoopHomotopy hr n).compContinuousMap ι).symm⟩
+        ContinuousMap.coe_mk, sampleBrokenGeodesicLoop_apply hr n ⟨γ, hKA γ.property⟩
+          (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin (hKA γ.property))]
+  refine ⟨e, ((sampleBrokenGeodesicLoopHomotopy hr n).compContinuousMap ι).symm.cast he.symm
+    (ContinuousMap.ext fun _ ↦ rfl), fun γ ↦ rfl, fun p ↦ ?_⟩
+  simp [ι]
 
 end Compact
 

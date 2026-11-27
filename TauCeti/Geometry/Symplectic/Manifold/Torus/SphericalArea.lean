@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 public import TauCeti.Geometry.Manifold.Degree.Global
-public import TauCeti.Geometry.Symplectic.Manifold.Prod
+public import TauCeti.Geometry.Symplectic.Manifold.Prod.Area
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.Basic
+import TauCeti.Algebra.Order.Ring.IntMul
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
+import TauCeti.AlgebraicTopology.UniversalCover.Torus.HigherHomotopy
 import TauCeti.Geometry.Manifold.DeRham.SimplyConnected
 
 /-!
@@ -33,8 +36,9 @@ positive area there, such as a nonconstant pseudoholomorphic sphere for a tame a
 structure, has area at least `a`.
 
 The area splits as the sum of the areas of the two components `pr₁ ∘ u` and `pr₂ ∘ u`
-(`TauCeti.integralTopForm_mpullback_prod`). The first is `deg(pr₁ ∘ u) · ∫_S σ` by the degree
-formula. The second vanishes because `C` is simply connected
+(`TauCeti.integralTopForm_mpullback_prod`, in
+`TauCeti.Geometry.Symplectic.Manifold.Prod.Area`). The first is `deg(pr₁ ∘ u) · ∫_S σ` by the
+degree formula. The second vanishes because `C` is simply connected
 (`TauCeti.integralTopForm_mpullback_torusSymplecticForm_eq_zero`): the pullbacks of the closed
 one-forms `dt_i` are closed, hence exact on `C`, say `w^* dt_i = d gᵢ`, so each term
 `w^*(dt_i ∧ dt_j) = d (gᵢ w^* dt_j)` is exact
@@ -42,14 +46,22 @@ one-forms `dt_i` are closed, hence exact on `C`, say `w^* dt_i = d gᵢ`, so eac
 a closed manifold. This replaces the homotopy-theoretic input `π₂(T) = 0` by the vanishing of
 `H¹_dR(C)`.
 
+The homotopy-theoretic form of the area gap holds for any homomorphism `ω` from the second
+integral homology group, such as integration of a closed two-form, and is proved for `Sⁿ⁺¹ × Y`
+with `Y` path-connected and `πₙ₊₁(Y)` trivial in
+`TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical`: the value of `ω` on a spherical class is
+an integer multiple of `a = ω [S² × {y}]` (`TauCeti.exists_apply_eq_zsmul_apply_sphereSliceClass`),
+and if `a > 0`, every positive value of `ω` on a spherical class is at least `a`
+(`TauCeti.apply_sphereSliceClass_le`). For a product `Tᵏ` of circles both hypotheses are found by
+instance resolution, the second by `AddCircle.subsingleton_homotopyGroup_pi`, so these statements
+apply to `S² × Tᵏ` directly. The example at the end of this file checks this.
+
 ## Main results
 
 * `TauCeti.mpullback_torusSymplecticForm_mem_exactForms`: the torus form pulls back to an exact
   form on a simply connected manifold.
 * `TauCeti.integralTopForm_mpullback_torusSymplecticForm_eq_zero`: maps from a closed simply
   connected surface to a torus have zero symplectic area.
-* `TauCeti.integralTopForm_mpullback_prod`: the area of a map to a product is the sum of the areas
-  of its components.
 * `TauCeti.integralTopForm_mpullback_prod_torusSymplecticForm_eq_degree_mul`: the area of a map
   to `S × T` is the degree of its first component times `∫_S σ`.
 * `TauCeti.exists_integralTopForm_mpullback_prod_torusSymplecticForm_eq_intCast_mul`,
@@ -75,32 +87,6 @@ namespace TauCeti
 variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace C] [ChartedSpace H C]
   [IsManifold I ∞ C]
-
-/-! ### Maps to a product -/
-
-section Prod
-
-variable {E' H' S F H'' N : Type*}
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H'']
-  {K : ModelWithCorners ℝ F H''} [TopologicalSpace N] [ChartedSpace H'' N] [IsManifold K ∞ N]
-
-/-- **The area of a map to a product is the sum of the areas of its components.** For a smooth
-map `u : C → S × N` from a compact oriented surface and two-forms `σ` on `S` and `τ` on `N`,
-`∫_C u^*(pr₁^*σ + pr₂^*τ) = ∫_C (pr₁ ∘ u)^*σ + ∫_C (pr₂ ∘ u)^*τ`. -/
-theorem integralTopForm_mpullback_prod [CompactSpace C] (o : Manifold.Orientation I C (Fin 2))
-    (σ : SmoothTwoForm J S) (τ : SmoothTwoForm K N) {u : C → S × N}
-    (hu : ContMDiff I (J.prod K) ∞ u) :
-    integralTopForm o (SmoothForm.mpullback u hu (σ.prod τ)).val =
-      integralTopForm o (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) σ).val +
-        integralTopForm o (SmoothForm.mpullback (Prod.snd ∘ u) (contMDiff_snd.comp hu) τ).val := by
-  rw [SmoothTwoForm.prod_def, map_add, SmoothForm.mpullback_mpullback,
-    SmoothForm.mpullback_mpullback, SmoothForm.add_toRoughForm]
-  exact integralTopForm_add_of_compactSpace o ((SmoothForm.isSmoothForm _).of_le (by simp))
-    ((SmoothForm.isSmoothForm _).of_le (by simp))
-
-end Prod
 
 /-! ### Maps to a torus -/
 
@@ -179,10 +165,27 @@ theorem integralTopForm_le_integralTopForm_mpullback_prod_torusSymplecticForm
   obtain ⟨m, hm⟩ :=
     exists_integralTopForm_mpullback_prod_torusSymplecticForm_eq_intCast_mul o o' hσ hu
   rw [hm] at hpos ⊢
-  rcases le_or_gt (integralTopForm o' σ.val) 0 with ha | ha
-  · exact ha.trans hpos.le
-  · have hm0 : (0 : ℤ) < m := by exact_mod_cast pos_of_mul_pos_left hpos ha.le
-    have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast (show (1 : ℤ) ≤ m by omega)
-    exact le_mul_of_one_le_left ha.le hm1
+  exact le_intCast_mul_of_mul_pos hpos
+
+end TauCeti
+
+/-! ### The homological area gap for a torus -/
+
+open CategoryTheory AlgebraicTopology Metric
+
+namespace TauCeti
+
+/-- The area gap applies to `S² × Tᵏ` for every product `Tᵏ` of circles: instance resolution
+finds that the torus is path-connected and has trivial second homotopy group. -/
+example {ι : Type} {p : ι → ℝ} {y : ∀ i, AddCircle (p i)}
+    (area : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 × ∀ i, AddCircle (p i))) →+ ℝ)
+    (ha : 0 < area (sphereSliceClass _ y 1))
+    {c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 × ∀ i, AddCircle (p i)))}
+    (hc : c ∈ sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 × ∀ i, AddCircle (p i)) 1)
+    (hpos : 0 < area c) :
+    area (sphereSliceClass _ y 1) ≤ area c :=
+  apply_sphereSliceClass_le area ha hc hpos
 
 end TauCeti

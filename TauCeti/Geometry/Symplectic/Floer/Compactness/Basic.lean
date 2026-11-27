@@ -14,7 +14,6 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
 import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -125,18 +124,13 @@ Energy bounds for Floer solutions are usually lower Lebesgue integrals over the 
 into the integrability and the bound on the Bochner integral over a window `Ω ⊆ S` that the
 theorems above take.
 
-Over such a window the derivatives converge as well
-(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_parametric`): if smooth solutions for
-parameters `pₙ → p₀` have derivatives bounded on compact sets and converge pointwise, then the
-limit is `C¹` and solves the equation for `p₀`, and the derivatives converge locally uniformly.
-This is `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer` applied to the solutions with
-the parameter adjoined. It applies to the rescaled solutions at a bubbling point, whose equations
-form a family over the centres and scales of the rescaling
-(`TauCeti.Geometry.Symplectic.Floer.Rescaling.Bubble`).
-
-The limit off the bubbling points is only shown to be continuous here; its regularity, the
-rescaled bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling
-point), and breaking along cylindrical ends are not treated in this file.
+For smooth solutions, the convergence off `Z` in the unparametrized coordinate statement is
+upgraded to convergence in `C¹` to a `C¹` solution in `TauCeti.Geometry.Symplectic.Floer.WeakLimit`
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`), by
+`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`. For the Floer energy this upgrade is in
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Limit`; the parametric versions are not upgraded.
+The rescaled bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the
+bubbling point) and breaking along cylindrical ends are not treated in this file.
 
 ## References
 
@@ -531,72 +525,6 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     simpa [← hax, parameterLift] using hx
   · simpa [Function.comp_def, g] using
       (WithLp.sndL 2 ℝ _ V).uniformContinuous.comp_tendstoLocallyUniformlyOn hwlim
-
-/-- **The derivatives of Floer solutions converge over a parameter window.** Let `J_p` and `X_p`
-depend on a parameter `p` in a finite-dimensional real inner product space `P`, jointly `C¹` on an
-open set `W ⊆ P × (ℂ × V)`, and let `Ω ⊆ ℂ` be open. Let `uₙ` be smooth solutions of
-`∂ₜu - X_{pₙ}(z, u) i = J_{pₙ}(z, u)(∂ₛu - X_{pₙ}(z, u) 1)` on `Ω`, along which `J_{pₙ}² = -1`,
-whose derivatives are bounded on each compact subset of `Ω` uniformly in `n`. If `pₙ → p₀` and
-`uₙ → v` pointwise on `Ω`, with `(p₀, z, v z) ∈ W` for `z ∈ Ω`, then `v` is `C¹` on `Ω`,
-`Duₙ → Dv` locally uniformly on `Ω`, and `v` solves the equation for `p₀` on `Ω`. -/
-theorem tendstoLocallyUniformlyOn_fderiv_of_floer_parametric [FiniteDimensional ℝ P]
-    [FiniteDimensional ℝ V] {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V}
-    {W : Set (P × (ℂ × V))} {Ω : Set ℂ} (hW : IsOpen W) (hJ : ContDiffOn ℝ 1 (uncurry J) W)
-    (hX : ContDiffOn ℝ 1 (uncurry X) W) (hΩ : IsOpen Ω) {p : ℕ → P} {p₀ : P} {u : ℕ → ℂ → V}
-    {v : ℂ → V} (hp : Tendsto p atTop (𝓝 p₀)) (hvW : ∀ y ∈ Ω, (p₀, (y, v y)) ∈ W)
-    (hu : ∀ n, ContDiffOn ℝ ∞ (u n) Ω)
-    (hJsq : ∀ n, ∀ y ∈ Ω, ∀ w, J (p n) (y, u n y) (J (p n) (y, u n y) w) = -w)
-    (hCR : ∀ n, ∀ y ∈ Ω, fderiv ℝ (u n) y I - X (p n) (y, u n y) I =
-      J (p n) (y, u n y) (fderiv ℝ (u n) y 1 - X (p n) (y, u n y) 1))
-    (hbd : ∀ C, IsCompact C → C ⊆ Ω → ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n) y‖ ≤ M)
-    (hlim : ∀ y ∈ Ω, Tendsto (fun n ↦ u n y) atTop (𝓝 (v y))) :
-    ContDiffOn ℝ 1 v Ω ∧ TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω ∧
-      ∀ y ∈ Ω, fderiv ℝ v y I - X p₀ (y, v y) I =
-        J p₀ (y, v y) (fderiv ℝ v y 1 - X p₀ (y, v y) 1) := by
-  -- Apply `tendstoLocallyUniformlyOn_fderiv_of_floer` to the solutions `z ↦ ((pₙ, 0), uₙ z)`, whose
-  -- derivatives are those of `uₙ` followed by the inclusion `L` of the second factor.
-  set L : V →L[ℝ] WithLp 2 (WithLp 2 (P × P) × V) :=
-    (WithLp.prodContinuousLinearEquiv 2 ℝ (WithLp 2 (P × P)) V).symm.toContinuousLinearMap ∘L
-      inr ℝ (WithLp 2 (P × P)) V with hL
-  set S : WithLp 2 (WithLp 2 (P × P) × V) →L[ℝ] V := WithLp.sndL 2 ℝ (WithLp 2 (P × P)) V
-  have hSL : S ∘L L = ContinuousLinearMap.id ℝ V := by
-    ext x
-    simp [S, L]
-  have hdL (a : WithLp 2 (P × P)) (f : ℂ → V) (y : ℂ) :
-      fderiv ℝ (fun w ↦ WithLp.toLp 2 (a, f w)) y = L ∘L fderiv ℝ f y :=
-    ContinuousLinearMap.ext fun w ↦ by
-      simp [L, fderiv_toLp_const_prodMk_apply, WithLp.prodContinuousLinearEquiv_symm_apply]
-  set g : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
-    fun n w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p n, 0), u n w) with hg
-  set G : ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
-    fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p₀, 0), v w) with hG
-  have hgL (n : ℕ) (y : ℂ) : fderiv ℝ (g n) y = L ∘L fderiv ℝ (u n) y := hdL _ _ y
-  have hGL (y : ℂ) : fderiv ℝ G y = L ∘L fderiv ℝ v y := hdL _ _ y
-  obtain ⟨hGc, hconv, hsol⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer (J := parameterJ J)
-    (X := parameterX X) (hW.preimage (parameterPoint (P := P) (V := V)).continuous)
-    (contDiffOn_parameterJ hJ) (contDiffOn_parameterX hX) hΩ (u := g) (v := G)
-    (fun y hy ↦ by simpa [hG] using hvW y hy)
-    (fun n ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu n)))
-    (fun n y hy ζ ↦ by
-      simp [hg, WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure, hJsq n y hy])
-    (fun n y hy ↦ by simp [hg, WithLp.ext_iff, hCR n y hy])
-    (fun C hC hCΩ ↦ by
-      obtain ⟨M, hM⟩ := hbd C hC hCΩ
-      exact ⟨‖L‖ * M, fun n y hy ↦ by
-        rw [hgL]
-        exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (hM n y hy) (norm_nonneg _))⟩)
-    (fun y hy ↦ ((WithLp.prod_continuous_toLp 2 _ V).tendsto _).comp
-      (((WithLp.prod_continuous_toLp 2 P P).comp (continuous_id.prodMk continuous_const)).tendsto
-        p₀ |>.comp hp |>.prodMk_nhds (hlim y hy)))
-  refine ⟨?_, ?_, fun y hy ↦ ?_⟩
-  · exact (S.contDiff.comp_contDiffOn hGc).congr fun y _ ↦ by simp [S, hG]
-  · -- `Duₙ = S ∘ Dgₙ` and `Dv = S ∘ DG`.
-    have h := (compL ℝ ℂ _ V S).uniformContinuous.comp_tendstoLocallyUniformlyOn hconv
-    simp only [Function.comp_def, hgL, hGL, compL_apply, ← ContinuousLinearMap.comp_assoc, hSL,
-      ContinuousLinearMap.id_comp] at h
-    exact h
-  · have h := congrArg S (hsol y hy)
-    simpa [S, hG, hGL, hL] using h
 
 end Parameter
 
@@ -1157,7 +1085,9 @@ coordinate: a solution `u` for the parameter `p` is the second component of the 
 `z ↦ ((p, 0), u z)` into `(P × P) × F`, which solves the coordinate Floer equation for the
 structure `(a, b) ↦ (-b, a)` on the parameter block, `J` at the parameter `a` on `F`, and the
 one-form `X` at the parameter `a` with values in `F`. The parameter block has zero derivative, so
-the energy density is unchanged. -/
+the energy density is unchanged. The same device gives the `C¹` convergence of solutions over
+converging parameters
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric`). -/
 
 section Parameter
 
@@ -1165,7 +1095,7 @@ variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
 /-- The point of `(P × (ℝ × ℝ)) × F` read off from a point `(z, ((a, b), x))`: the parameter `a`,
 the domain point `z` and the target point `x`. -/
-private noncomputable def augmentedPoint :
+noncomputable def augmentedPoint :
     (ℝ × ℝ) × ((P × P) × F) →L[ℝ] (P × (ℝ × ℝ)) × F :=
   ((ContinuousLinearMap.fst ℝ P P ∘L ContinuousLinearMap.fst ℝ (P × P) F ∘L
       ContinuousLinearMap.snd ℝ (ℝ × ℝ) ((P × P) × F)).prod
@@ -1173,37 +1103,42 @@ private noncomputable def augmentedPoint :
     (ContinuousLinearMap.snd ℝ (P × P) F ∘L ContinuousLinearMap.snd ℝ (ℝ × ℝ) ((P × P) × F))
 
 omit [FiniteDimensional ℝ F] in
+/-- `augmentedPoint` keeps the first parameter coordinate, the domain point and the target
+point. -/
 @[simp]
-private theorem augmentedPoint_apply (z : ℝ × ℝ) (a b : P) (x : F) :
+theorem augmentedPoint_apply (z : ℝ × ℝ) (a b : P) (x : F) :
     augmentedPoint (z, ((a, b), x)) = ((a, z), x) := (rfl)
 
 /-- The structure on `(P × P) × F` adjoining the parameter: the standard structure
 `(a, b) ↦ (-b, a)` on `P × P` and `J` on `F`. -/
-private noncomputable def augmentedJ (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
+noncomputable def augmentedJ (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) : (P × P) × F →L[ℝ] (P × P) × F :=
   ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) F F
     ((SmoothAlmostComplexStructure.product P).toEndomorphism 0, J (augmentedPoint q))
 
 omit [FiniteDimensional ℝ F] in
+/-- The adjoined structure rotates the parameter block and applies `J` on `F`. -/
 @[simp]
-private theorem augmentedJ_apply (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
+theorem augmentedJ_apply (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) (ζ : (P × P) × F) :
     augmentedJ J q ζ = ((-ζ.1.2, ζ.1.1), J (augmentedPoint q) ζ.2) :=
   Prod.ext (SmoothAlmostComplexStructure.product_apply 0 ζ.1) rfl
 
 /-- The one-form with values in `(P × P) × F` adjoining the parameter. -/
-private noncomputable def augmentedX (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
+noncomputable def augmentedX (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) : ℝ × ℝ →L[ℝ] (P × P) × F :=
   ContinuousLinearMap.inr ℝ (P × P) F ∘L X (augmentedPoint q)
 
 omit [FiniteDimensional ℝ F] in
+/-- The adjoined one-form has no component in the parameter block. -/
 @[simp]
-private theorem augmentedX_apply (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
+theorem augmentedX_apply (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) (v : ℝ × ℝ) :
     augmentedX X q v = (0, X (augmentedPoint q) v) := (rfl)
 
 omit [FiniteDimensional ℝ F] in
-private theorem contDiffOn_augmentedJ {J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F}
+/-- The adjoined structure is as regular as `J`. -/
+theorem contDiffOn_augmentedJ {J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F}
     {W : Set ((P × (ℝ × ℝ)) × F)} {n : WithTop ℕ∞} (hJ : ContDiffOn ℝ n J W) :
     ContDiffOn ℝ n (augmentedJ J) (augmentedPoint ⁻¹' W) :=
   (ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) F F).contDiff.comp_contDiffOn
@@ -1211,7 +1146,8 @@ private theorem contDiffOn_augmentedJ {J : (P × (ℝ × ℝ)) × F → F →L[�
       (mapsTo_preimage _ _)))
 
 omit [FiniteDimensional ℝ F] in
-private theorem contDiffOn_augmentedX {X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F}
+/-- The adjoined one-form is as regular as `X`. -/
+theorem contDiffOn_augmentedX {X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F}
     {W : Set ((P × (ℝ × ℝ)) × F)} {n : WithTop ℕ∞} (hX : ContDiffOn ℝ n X W) :
     ContDiffOn ℝ n (augmentedX X) (augmentedPoint ⁻¹' W) :=
   contDiffOn_const.clm_comp

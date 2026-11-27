@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.UniversalCentralExtension
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Basic
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.RowColumn
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Centrality
 import TauCeti.GroupTheory.Commutator
 
 /-!
@@ -15,26 +14,20 @@ import TauCeti.GroupTheory.Commutator
 
 For an associative unital ring `R`, the canonical homomorphism
 `TauCeti.SteinbergGroup.toStableGL : St(R) →* GL_∞(R)` has image the stable elementary subgroup
-`E_∞(R)`. This file proves the **Kervaire–Steinberg theorem**:
+`E_∞(R)`, and `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Centrality` proves that
+its kernel `ker (toStableGL R)` is central in `St(R)`. This file proves the **universal central
+extension** half of the Kervaire–Steinberg theorem:
 
-1. **Centrality of the kernel (`K₂(R) ≤ Z(St(R))`).** Every element `z ∈ ker(St(R) →* GL_∞(R))`
-   comes from `Stₙ(R)` for some `n`. Inside `St_{n + 1}(R)`, the stabilized subgroup `Stₙ(R)`
-   normalizes the `n`-th column root subgroup `Pₙ = ⟨x_{in}(a) | i < n⟩`, the range of
-   `IndexedSteinbergGroup.colHom`, on which `toGL` is injective
-   (`IndexedSteinbergGroup.toGL_comp_colHom_injective`). Hence `z` centralizes `Pₙ`,
-   and by opposite-ring inverse-transpose duality (`IndexedSteinbergGroup.transposeOp`) it also
-   centralizes the `n`-th row root subgroup `⟨x_{nj}(b) | j < n⟩`, and therefore every generator
-   `x_{pq}(b) = ⁅x_{pn}(b), x_{nq}(1)⁆` with `p, q < n`.
-2. **Universal central extension.** Given an index type `ι` in which any four indices admit a fifth
-   distinct index (in particular `|ι| ≥ 5` or `Infinite ι`), a homomorphism `φ : St_ι(R) →* G`, and
-   a homomorphism `q : E →* G` (with `E` in an arbitrary universe) satisfying `φ.range ≤ q.range`
-   and `q.ker ≤ Z(E)`, commutators `⁅u, v⁆` in `E` depend only on `q(u)` and `q(v)`. Defining
-   `ψ(x_{ij}(a)) = ⁅u_{im}(a), u_{mj}(1)⁆` using a chosen auxiliary index `m` and lifts `u` in `E`,
-   the Hall–Witt commutator-associativity lemma `TauCeti.commutatorElement_assoc_of_commute` shows
-   independence of `m` and establishes all three Steinberg relations in `E`. Since `St_ι(R)` is
-   perfect, the resulting lift `ψ : St_ι(R) →* E` satisfying `q ∘ ψ = φ` is unique. In particular,
-   every central extension out of `St_ι(R)`—including `MonoidHom.id (St_ι(R))` and
-   `SteinbergGroup.toElementarySubgroup R : St(R) →* E_∞(R)`—is a universal central extension.
+Given an index type `ι` in which any four indices admit a fifth distinct index (in particular
+`|ι| ≥ 5` or `Infinite ι`), a homomorphism `φ : St_ι(R) →* G`, and a homomorphism `q : E →* G`
+(with `E` in an arbitrary universe) satisfying `φ.range ≤ q.range` and `q.ker ≤ Z(E)`,
+commutators `⁅u, v⁆` in `E` depend only on `q(u)` and `q(v)`. Defining
+`ψ(x_{ij}(a)) = ⁅u_{im}(a), u_{mj}(1)⁆` using a chosen auxiliary index `m` and lifts `u` in `E`,
+the Hall–Witt commutator-associativity lemma `TauCeti.commutatorElement_assoc_of_commute` shows
+independence of `m` and establishes all three Steinberg relations in `E`. Since `St_ι(R)` is
+perfect, the resulting lift `ψ : St_ι(R) →* E` satisfying `q ∘ ψ = φ` is unique. In particular,
+every central extension out of `St_ι(R)`—including `MonoidHom.id (St_ι(R))` and
+`SteinbergGroup.toElementarySubgroup R : St(R) →* E_∞(R)`—is a universal central extension.
 
 ## Main definitions
 
@@ -44,8 +37,6 @@ For an associative unital ring `R`, the canonical homomorphism
 
 ## Main results
 
-* `TauCeti.SteinbergGroup.ker_toStableGL_le_center`: `ker (toStableGL R)` lies in the center of
-  `St(R)`.
 * `TauCeti.SteinbergGroup.isCentralExtension_toElementarySubgroup`: `toElementarySubgroup R` is a
   central extension.
 * `TauCeti.IndexedSteinbergGroup.existsUnique_comp_eq_of_ker_le_center`,
@@ -58,6 +49,8 @@ For an associative unital ring `R`, the canonical homomorphism
   centrally closed when `|ι| ≥ 5` or `Infinite ι`.
 * `TauCeti.SteinbergGroup.existsUnique_comp_eq_toStableGL`: existence and uniqueness of lifts from
   `St(R)` along any `q : E →* GL_∞(R)` with `E_∞(R) ≤ q.range` and central kernel.
+* `TauCeti.SteinbergGroup.existsUnique_toStableGL_comp_eq`: every homomorphism
+  `GL_∞(A) →* GL_∞(B)` lifts uniquely to `St(A) →* St(B)`.
 * `TauCeti.SteinbergGroup.isUniversalCentralExtension_toElementarySubgroup`:
   `toElementarySubgroup R` satisfies `MonoidHom.IsUniversalCentralExtension`.
 * `TauCeti.steinberg_universalCentralExtension`: the packaged Kervaire–Steinberg universal central
@@ -87,116 +80,6 @@ open scoped commutatorElement
 namespace TauCeti
 
 universe u v
-
-/-! ## Centrality of `ker (toStableGL R)` -/
-
-namespace SteinbergGroup
-
-section Center
-
-variable {R : Type u} [Ring R]
-
-/-- Stabilization `Stₙ(R) →* St_{n + 1}(R)` lands in the normalizer of the column root subgroup at
-the new last index, since every generator `x_{ij}(c)` with `i, j < n` normalizes it
-(`TauCeti.IndexedSteinbergGroup.x_mem_normalizer_range_colHom`). -/
-private theorem range_stabilize_le_normalizer_colHom (n : ℕ) :
-    (stabilize (Nat.le_succ n) (R := R)).range ≤
-      Subgroup.normalizer ((IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range :
-        Set (IndexedSteinbergGroup (Fin (n + 1)) R)) := by
-  have hcastEmb : Fin.castLEEmb (Nat.le_succ n) = Fin.castSuccEmb := by
-    ext p
-    simp
-  rw [IndexedSteinbergGroup.range_le_iff]
-  intro i j hij c
-  simp only [stabilize, hcastEmb, IndexedSteinbergGroup.mapIndex_x, Fin.castSuccEmb_apply]
-  exact IndexedSteinbergGroup.x_mem_normalizer_range_colHom _ (Fin.castSucc_lt_last i).ne
-    (Fin.castSucc_lt_last j).ne c
-
-/-- Any element of `Stₙ(R)` in the kernel of `toGL` commutes, after stabilizing to `St_{n + 1}(R)`,
-with every column generator `x_{p, n}(b)` (`p < n`). -/
-private theorem commute_stabilize_col {n : ℕ} {u : IndexedSteinbergGroup (Fin n) R}
-    (hu : IndexedSteinbergGroup.toGL u = 1) (p : Fin n) (b : R) :
-    Commute (stabilize (Nat.le_succ n) u)
-      (IndexedSteinbergGroup.x (Fin.castSucc_lt_last p).ne b) := by
-  have hinf : (IndexedSteinbergGroup.toGL (ι := Fin (n + 1)) (R := R)).ker ⊓
-      (IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range = ⊥ := by
-    rw [eq_bot_iff]
-    rintro _ ⟨hker, ⟨v, rfl⟩⟩
-    have hv : v = 1 := IndexedSteinbergGroup.toGL_comp_colHom_injective (Fin.last n)
-      (by simpa using hker)
-    rw [hv, map_one, Subgroup.mem_bot]
-  have hle := inf_normalizer_le_centralizer_of_inf_eq_bot Subgroup.le_normalizer_of_normal hinf
-  have hker_u : stabilize (Nat.le_succ n) u ∈
-      (IndexedSteinbergGroup.toGL (ι := Fin (n + 1)) (R := R)).ker := by
-    rw [MonoidHom.mem_ker, IndexedSteinbergGroup.toGL_mapIndex_castLE, hu, map_one]
-  have hmem : stabilize (Nat.le_succ n) u ∈
-      Subgroup.centralizer ((IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range :
-        Set (IndexedSteinbergGroup (Fin (n + 1)) R)) :=
-    hle ⟨hker_u, range_stabilize_le_normalizer_colHom n ⟨u, rfl⟩⟩
-  exact (Subgroup.mem_centralizer_iff.mp hmem _
-    (IndexedSteinbergGroup.x_mem_range_colHom ⟨p.castSucc, (Fin.castSucc_lt_last p).ne⟩ b)).symm
-
-/-- **Milnor's centrality theorem (`K₂(R) ≤ Z(St(R))`).** The kernel of `toStableGL R` lies in the
-center of `SteinbergGroup R`. -/
-theorem ker_toStableGL_le_center :
-    (toStableGL R).ker ≤ Subgroup.center (SteinbergGroup R) := by
-  intro z hz
-  obtain ⟨m, u, rfl⟩ := exists_ofFin z
-  have htop : Subgroup.centralizer {ofFin R m u} = ⊤ := by
-    rw [IndexedSteinbergGroup.subgroup_eq_top_iff]
-    intro p q hpq b
-    let n := max m (max p q + 1)
-    have hmn : m ≤ n := le_max_left _ _
-    have hp : p < n := by omega
-    have hq : q < n := by omega
-    let u' : IndexedSteinbergGroup (Fin n) R := stabilize hmn u
-    have hu' : IndexedSteinbergGroup.toGL u' = 1 := by
-      apply StableGeneralLinearGroup.of_injective n
-      rw [← toStableGL_ofFin, ofFin_stabilize, map_one]
-      exact hz
-    have hu'_op : IndexedSteinbergGroup.toGL (IndexedSteinbergGroup.transposeOp u') = 1 := by
-      apply Units.ext
-      simp [IndexedSteinbergGroup.coe_toGL_transposeOp, hu']
-    have hcp : Commute (stabilize (Nat.le_succ n) u')
-        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨p, hp⟩).ne b) :=
-      commute_stabilize_col hu' ⟨p, hp⟩ b
-    have hcq_op : Commute (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.transposeOp u'))
-        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne (MulOpposite.op (-1 : R))) :=
-      commute_stabilize_col hu'_op ⟨q, hq⟩ (MulOpposite.op (-1))
-    have hcq : Commute (stabilize (Nat.le_succ n) u')
-        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne.symm (1 : R)) := by
-      have h := hcq_op.map (IndexedSteinbergGroup.transposeOp (ι := Fin (n + 1)) (R := R)).symm
-      rw [← IndexedSteinbergGroup.transposeOp_mapIndex, MulEquiv.symm_apply_apply,
-        IndexedSteinbergGroup.transposeOp_symm_x, MulOpposite.unop_op, neg_neg] at h
-      exact h
-    have hcomm_fin : Commute (stabilize (Nat.le_succ n) u')
-        ⁅IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨p, hp⟩).ne b,
-          IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne.symm (1 : R)⁆ := by
-      rw [commutatorElement_def]
-      exact ((hcp.mul_right hcq).mul_right hcp.inv_right).mul_right hcq.inv_right
-    have hpq_fin : (⟨p, hp⟩ : Fin n).castSucc ≠ (⟨q, hq⟩ : Fin n).castSucc := fun h ↦
-      hpq (congrArg Fin.val h)
-    rw [IndexedSteinbergGroup.commutatorElement_x _ _ hpq_fin, mul_one] at hcomm_fin
-    have hcomm := hcomm_fin.map (ofFin R (n + 1))
-    rw [ofFin_stabilize, ofFin_stabilize, ofFin_x] at hcomm
-    simp only [Fin.val_castSucc] at hcomm
-    rw [Subgroup.mem_centralizer_iff]
-    intro _ hw
-    rw [Set.mem_singleton_iff.mp hw]
-    exact hcomm
-  refine Subgroup.mem_center_iff.mpr fun w ↦ ?_
-  have hw : w ∈ Subgroup.centralizer {ofFin R m u} := htop ▸ Subgroup.mem_top w
-  exact (Subgroup.mem_centralizer_iff.mp hw (ofFin R m u) rfl).symm
-
-/-- The canonical projection `St(R) →* E_∞(R)` is a central extension. -/
-theorem isCentralExtension_toElementarySubgroup :
-    (toElementarySubgroup R).IsCentralExtension where
-  surjective := toElementarySubgroup_surjective
-  ker_le_center := ker_toElementarySubgroup (R := R) ▸ ker_toStableGL_le_center
-
-end Center
-
-end SteinbergGroup
 
 /-! ## Universal central extension property -/
 
@@ -480,6 +363,12 @@ section Universal
 
 variable {R : Type u} [Ring R] {E : Type v} [Group E]
 
+/-- The canonical projection `St(R) →* E_∞(R)` is a central extension. -/
+theorem isCentralExtension_toElementarySubgroup :
+    (toElementarySubgroup R).IsCentralExtension where
+  surjective := toElementarySubgroup_surjective
+  ker_le_center := ker_toElementarySubgroup (R := R) ▸ ker_toStableGL_le_center
+
 /-- **Universal property of `St(R)` over `GL_∞(R)`**: for every group `E` (in any universe) and
 homomorphism `q : E →* GL_∞(R)` whose image contains `E_∞(R)` and whose kernel is central, there is
 a unique homomorphism `ψ : St(R) →* E` satisfying `q ∘ ψ = toStableGL R`. -/
@@ -489,6 +378,20 @@ theorem existsUnique_comp_eq_toStableGL (q : E →* StableGeneralLinearGroup R)
     ∃! ψ : SteinbergGroup R →* E, q.comp ψ = toStableGL R :=
   IndexedSteinbergGroup.existsUnique_comp_eq_of_infinite
     (range_toStableGL (R := R) ▸ hq_range) hq_ker
+
+/-- **Homomorphisms of `GL_∞` lift to Steinberg groups.** Every homomorphism
+`Ψ : GL_∞(A) →* GL_∞(B)` lifts uniquely to a homomorphism `ψ : St(A) →* St(B)` over it:
+`St(B) →* GL_∞(B)` after `ψ` is `Ψ` after `St(A) →* GL_∞(A)`. No compatibility with elementary
+matrices is assumed: `Ψ` carries the commutator subgroup `E_∞(A)` into the commutator subgroup
+`E_∞(B)`. -/
+theorem existsUnique_toStableGL_comp_eq {A B : Type*} [Ring A] [Ring B]
+    (Ψ : StableGeneralLinearGroup A →* StableGeneralLinearGroup B) :
+    ∃! ψ : SteinbergGroup A →* SteinbergGroup B, (toStableGL B).comp ψ = Ψ.comp (toStableGL A) := by
+  refine IndexedSteinbergGroup.existsUnique_comp_eq_of_infinite ?_ ker_toStableGL_le_center
+  rw [MonoidHom.range_comp, range_toStableGL, range_toStableGL,
+    StableGeneralLinearGroup.elementarySubgroup_eq_commutator, map_commutator_eq,
+    StableGeneralLinearGroup.elementarySubgroup_eq_commutator]
+  exact Subgroup.commutator_mono le_top le_top
 
 variable (R) in
 /-- **The projection `St(R) →* E_∞(R)` is a universal central extension** in the sense of

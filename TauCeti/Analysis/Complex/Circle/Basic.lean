@@ -23,6 +23,8 @@ import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.RingTheory.IntegralDomain
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -46,15 +48,23 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
   `Circle.coordinate_mem_unitary`.
-* `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
-  `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
-  identity for a point of `sphere (0 : ℂ) 1`.
+* `Circle.conj_coe_mul_mul_coe_mul`: `conj (a z) * (a w) = conj z * w` for `a` on the circle.
+* `Circle.re_sq_add_im_sq`, `Circle.coe_mul_conj` and `Circle.coe_add_inv_coe`:
+  `Re z ^ 2 + Im z ^ 2 = 1`, `z * conj z = 1` and `z + z⁻¹ = 2 Re z` on the circle,
+  and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first identity for a point of
+  `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
   of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
   `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
+* `Circle.coe_mul_conj_self` and `Circle.conj_coe_mul_self`: `z * conj z = 1` and `conj z * z = 1`
+  on the circle, `Circle.add_mul_coe_eq_coe_mul_conj_mul_add`: `p + t u = u (conj u · p + t)`, and
+  `Circle.im_conj_mul_ne_zero_iff`: the line `t ↦ p + t u` avoids `0` iff `conj u · p` is not real.
+* `Circle.im_conj_mul_add_smul` and `Circle.im_conj_mul_smul_I_mul`: `Im (conj e · z)` is constant
+  along the direction `e`, and equals `r` at the point `r i e`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.isSquare`: every point of the circle is a square.
 * `Circle.exp_pow_eq_one_iff`: `exp (i θ)` is an `n`-th root of unity exactly when `θ` is an
   integer multiple of `2π / n`.
 * `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
@@ -72,10 +82,18 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
+* `Circle.sq_exp_mul_inv`: the square of the quotient of `exp(jθ)` by `exp(kθ)` is the power
+  `exp(2θ)^(j - k)`.
+* `Circle.sq_mul_inv_ne_one`: `(d e⁻¹)² ≠ 1` for unit directions `d` and `e` that are not
+  parallel.
+* `Circle.isCyclic_of_finite`: every finite subgroup of the circle is cyclic.
+* `Circle.mem_iff_pow_natCard_eq_one`: a finite subgroup of the circle with `N` elements is the
+  group of `N`-th roots of unity.
 * `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
   differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
+* `Circle.continuous_toUnits`: the inclusion `Circle →* ℂˣ` is continuous.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 * `TauCeti.hasFDerivAt_circleExp_mul_ofReal` and `TauCeti.fderiv_circleExp_mul_ofReal_apply`: the
   differential of a map `e^{iθ} r` in polar form, with real-valued angle `θ` and radius `r`, is
@@ -119,6 +137,11 @@ theorem coe_homeomorphSphere_exp_im (x : ℝ) : (homeomorphSphere (exp x) : ℂ)
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
   simpa [Complex.normSq_apply, sq] using normSq_coe z
 
+/-- A point of the circle times its conjugate is `1`. -/
+@[simp]
+theorem coe_mul_conj (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
+  rw [Complex.mul_conj, normSq_coe, Complex.ofReal_one]
+
 /-- The real and imaginary parts of a point of the unit sphere of `ℂ` satisfy
 `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem _root_.Complex.re_sq_add_im_sq_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1) :
@@ -145,6 +168,13 @@ theorem _root_.Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere {z : ℂ}
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
   rw [← coe_inv, coe_inv_eq_conj, Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat]
+
+/-- Rotating both factors of the Hermitian product `conj z * w` by a point `a` of the circle does
+not change it. In particular the cross product `Im (conj z * w)` is invariant under rotations. -/
+theorem conj_coe_mul_mul_coe_mul (a : Circle) (z w : ℂ) :
+    conj ((a : ℂ) * z) * ((a : ℂ) * w) = conj z * w := by
+  rw [map_mul, mul_mul_mul_comm, ← Complex.normSq_eq_conj_mul_self, normSq_coe,
+    Complex.ofReal_one, one_mul]
 
 /-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
 theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
@@ -253,10 +283,50 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
   push_cast
   rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
 
+/-- Every point of the circle is a square on the circle. -/
+theorem isSquare (z : Circle) : IsSquare z :=
+  (z.exists_pow_nat_eq two_ne_zero).imp fun y hy ↦ by rw [← hy, sq]
+
 /-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
 theorem coe_inv_mul_sub_one (a b : Circle) :
     ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
   rw [mul_sub, ← coe_mul, ← coe_mul, inv_mul_cancel, coe_one]
+
+/-- A point of the unit circle times its conjugate is `1`. -/
+theorem coe_mul_conj_self (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
+  rw [← coe_inv_eq_conj, ← coe_mul, mul_inv_cancel, coe_one]
+
+/-- The conjugate of a point of the unit circle times the point is `1`. -/
+theorem conj_coe_mul_self (z : Circle) : conj (z : ℂ) * z = 1 := by
+  rw [mul_comm, coe_mul_conj_self]
+
+/-- For a point `u` of the unit circle, `p + t u = u (conj u · p + t)`: the point `p + t u` of the
+line through `p` with direction `u`, in coordinates rotated by `u`. -/
+theorem add_mul_coe_eq_coe_mul_conj_mul_add (u : Circle) (p t : ℂ) :
+    p + t * u = u * (conj (u : ℂ) * p + t) := by
+  linear_combination (-p) * conj_coe_mul_self u
+
+/-- The line `t ↦ p + t · u` avoids `0` exactly when `conj u · p` is not real. -/
+theorem im_conj_mul_ne_zero_iff (u : Circle) (p : ℂ) :
+    (conj (u : ℂ) * p).im ≠ 0 ↔ ∀ t : ℝ, p + t * u ≠ 0 := by
+  simp only [add_mul_coe_eq_coe_mul_conj_mul_add, ne_eq, mul_eq_zero, coe_ne_zero, false_or]
+  constructor
+  · intro h t ht
+    apply h
+    simpa using congrArg Complex.im ht
+  · intro h him
+    apply h (-(conj (u : ℂ) * p).re)
+    apply Complex.ext <;> simp [him]
+
+/-- Moving along the direction `e` does not change `Im (conj e · z)`. -/
+theorem im_conj_mul_add_smul (e : Circle) (z : ℂ) (t : ℝ) :
+    (conj (e : ℂ) * (z + t • (e : ℂ))).im = (conj (e : ℂ) * z).im := by
+  simp [Complex.real_smul, mul_add, mul_left_comm, conj_coe_mul_self]
+
+/-- The point `r i e` satisfies `Im (conj e · r i e) = r`. -/
+theorem im_conj_mul_smul_I_mul (e : Circle) (r : ℝ) :
+    (conj (e : ℂ) * (r • (Complex.I * e))).im = r := by
+  simp [Complex.real_smul, mul_left_comm, conj_coe_mul_self]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/
@@ -272,6 +342,14 @@ theorem contDiff_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     ContDiff ℝ n fun w ↦ ((u⁻¹ w : Circle) : ℂ) := by
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.contDiff.comp hu
+
+/-- The pointwise inverse of a circle-valued map that is `Cⁿ` at `z`, as a map into `ℂ`, is `Cⁿ`
+at `z`. -/
+theorem contDiffAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {u : E → Circle} {z : E} (hu : ContDiffAt ℝ n (fun w ↦ (u w : ℂ)) z) :
+    ContDiffAt ℝ n (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.contDiff.contDiffAt.comp z hu
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
@@ -398,6 +476,14 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
 theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
   simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
 
+/-- The inclusion `Circle →* ℂˣ` is continuous for the topology of the unit group. -/
+@[fun_prop]
+theorem continuous_toUnits : Continuous toUnits := by
+  refine Units.continuous_iff.2 ⟨?_, ?_⟩ <;>
+    simp only [Function.comp_def, toUnits_apply, Units.val_mk0]
+  · exact continuous_subtypeVal
+  · exact continuous_subtypeVal.comp (continuous_inv (G := Circle))
+
 /-! ### Elements of order two in powers of the circle -/
 
 /-- In a finite power of the circle only finitely many elements square to `1`: each of their
@@ -422,6 +508,36 @@ theorem infinite_setOf_sq_eq_one_pi {ι : Type*} [Infinite ι] :
   funext i
   rw [Pi.pow_apply, Pi.one_apply, Function.comp_apply]
   split_ifs <;> simp
+
+/-- The square of the quotient of `exp(jθ)` by `exp(kθ)` is the power `exp(2θ)^(j - k)`. -/
+theorem sq_exp_mul_inv (θ : ℝ) (j k : ℤ) :
+    (Circle.exp (j * θ) * (Circle.exp (k * θ))⁻¹) ^ 2 = Circle.exp (2 * θ) ^ (j - k) := by
+  rw [← Circle.exp_neg, ← Circle.exp_add, ← Circle.exp_natCast_mul, ← Circle.exp_intCast_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- The rotation by `(d e⁻¹)²` is not the identity when the directions `d` and `e` are not
+parallel. -/
+theorem sq_mul_inv_ne_one {d e : Circle} (hde : d ≠ e) (hde' : d ≠ -e) : (d * e⁻¹) ^ 2 ≠ 1 := by
+  rw [Ne, sq_eq_one_iff]
+  rintro (h | h)
+  · exact hde (mul_inv_eq_one.1 h)
+  · exact hde' (by rw [mul_inv_eq_iff_eq_mul.1 h, neg_one_mul])
+
+/-- Every finite subgroup of the circle is cyclic: it is a finite group of units of `ℂ`. -/
+instance isCyclic_of_finite (H : Subgroup Circle) [Finite H] : IsCyclic H :=
+  isCyclic_of_injective_ringHom (coeHom.comp H.subtype) fun _ _ h => Subtype.ext (coe_injective h)
+
+/-- **A finite subgroup of the circle consists of roots of unity.** For a finite subgroup `H` of
+`Circle` with `N` elements, `x ∈ H` exactly when `x ^ N = 1`: `H` is the group of `N`-th roots of
+unity. This is `Subgroup.eq_rootsOfUnity_natCard` for the image of `H` in `ℂˣ`. -/
+theorem mem_iff_pow_natCard_eq_one (H : Subgroup Circle) [Finite H] {x : Circle} :
+    x ∈ H ↔ x ^ Nat.card H = 1 := by
+  have hinj : Function.Injective toUnits := unitSphereToUnits_injective
+  have : Finite (H.map toUnits) := .of_equiv H (H.equivMapOfInjective _ hinj)
+  rw [← Subgroup.mem_map_iff_mem hinj, (H.map toUnits).eq_rootsOfUnity_natCard,
+    Subgroup.card_map_of_injective hinj, mem_rootsOfUnity, ← map_pow, map_eq_one_iff _ hinj]
 
 end Circle
 

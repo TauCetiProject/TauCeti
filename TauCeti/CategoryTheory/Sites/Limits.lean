@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.Limits
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.BinaryProducts
 public import Mathlib.CategoryTheory.Limits.Types.Products
+public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.PreservesSheafification
 public import Mathlib.CategoryTheory.Sites.Whiskering
@@ -21,18 +23,23 @@ If a functor `F : A ⥤ B` preserves limits of shape `K`, then so does the induc
 on the underlying presheaves (Mathlib's `CategoryTheory.Sites.Limits`).
 
 Sheafifying sectionwise composition also preserves finite limits when the coefficient functor
-does (`CategoryTheory.Sheaf.preservesFiniteLimits_composeAndSheafify`).
+does (`CategoryTheory.Sheaf.preservesFiniteLimits_composeAndSheafify`), and so does the constant
+sheaf functor when sheafification is left exact
+(`CategoryTheory.Sheaf.preservesFiniteLimits_constantSheaf`). The constant sheaf functor
+preserves all colimits (`CategoryTheory.Sheaf.preservesColimitsOfSize_constantSheaf`).
 
 For sheaves of types, the sections of a binary product `F ⨯ G` over `W` are pairs of sections:
 any sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`
-(`CategoryTheory.Sheaf.exists_fst_eq_snd_eq`).
+(`CategoryTheory.Sheaf.exists_fst_eq_snd_eq`). For sheaves of abelian groups, the sections of the
+point of a limit fan over `U` are the families of sections of the factors over `U`, through the
+projections of the fan (`CategoryTheory.Sheaf.fanSectionsAddEquiv`).
 -/
 
 public section
 
 open CategoryTheory Limits Opposite
 
-universe w
+universe w w' w'' t
 
 namespace CategoryTheory.Sheaf
 
@@ -62,6 +69,17 @@ instance preservesFiniteLimits_composeAndSheafify {A B : Type*} [Category* A] [C
     inferInstanceAs (PreservesLimitsOfShape K
       (sheafToPresheaf J A ⋙ (Functor.whiskeringRight _ _ _).obj F ⋙ presheafToSheaf J B))
 
+/-- The constant sheaf functor preserves finite limits when sheafification is left exact. -/
+instance preservesFiniteLimits_constantSheaf (A : Type*) [Category* A] [HasSheafify J A] :
+    PreservesFiniteLimits (constantSheaf J A) :=
+  comp_preservesFiniteLimits _ _
+
+/-- The constant sheaf functor preserves all colimits: it is the constant presheaf functor, which
+preserves colimits, followed by sheafification, which is a left adjoint. -/
+instance preservesColimitsOfSize_constantSheaf (A : Type*) [Category* A] [HasWeakSheafify J A] :
+    PreservesColimitsOfSize.{w', w''} (constantSheaf J A) :=
+  inferInstanceAs (PreservesColimitsOfSize (Functor.const Cᵒᵖ ⋙ presheafToSheaf J A))
+
 variable {J} in
 /-- Sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`. -/
 theorem exists_fst_eq_snd_eq {F G : Sheaf J (Type w)} {W : C} (a : F.obj.obj (op W))
@@ -75,5 +93,40 @@ theorem exists_fst_eq_snd_eq {F G : Sheaf J (Type w)} {W : C} (a : F.obj.obj (op
       (Types.binaryProductIso_inv_comp_fst_apply _ _ _)
   · exact (ConcreteCategory.congr_hom (PreservesLimitPair.iso_inv_snd E F G) e₀).trans
       (Types.binaryProductIso_inv_comp_snd_apply _ _ _)
+
+section fanSections
+
+variable {J} {I : Type w} {A : I → Sheaf J AddCommGrpCat.{max w t}} {c : Fan A}
+
+/-- The sections over `U` of the point of a limit fan `c` of sheaves of abelian groups are the
+families of sections of the factors over `U`: a section goes to the family of its images under the
+projections of `c`. -/
+noncomputable def fanSectionsAddEquiv (hc : IsLimit c) (U : Cᵒᵖ) :
+    c.pt.obj.obj U ≃+ ∀ i, (A i).obj.obj U :=
+  AddEquiv.ofBijective (AddMonoidHom.pi fun i ↦ ((c.proj i).hom.app U).hom) (by
+    -- Evaluation at `U` preserves the limit and the forgetful functor of `AddCommGrpCat` preserves
+    -- limits, so the projections are jointly injective, and every family of sections is the image
+    -- of the section lifted from the cone on the product of the sections.
+    let hU := isLimitOfPreserves (sheafToPresheaf J _ ⋙ (evaluation _ _).obj U) hc
+    refine ⟨fun s s' h ↦ Concrete.isLimit_ext _ hU s s' fun ⟨i⟩ ↦ congrFun h i, fun a ↦ ?_⟩
+    let P : Cone (Discrete.functor A ⋙ sheafToPresheaf J _ ⋙ (evaluation _ _).obj U) :=
+      ⟨AddCommGrpCat.of (∀ i, (A i).obj.obj U),
+        Discrete.natTrans fun i ↦ AddCommGrpCat.ofHom (Pi.evalAddMonoidHom _ i.as)⟩
+    exact ⟨hU.lift P a, funext fun i ↦ ConcreteCategory.congr_hom (hU.fac P ⟨i⟩) a⟩)
+
+/-- The components of the family of sections of a section are its projections. -/
+@[simp]
+lemma fanSectionsAddEquiv_apply (hc : IsLimit c) (U : Cᵒᵖ) (s : c.pt.obj.obj U) (i : I) :
+    fanSectionsAddEquiv hc U s i = (c.proj i).hom.app U s :=
+  (rfl)
+
+/-- The projections of the section with a given family of sections are the members of the
+family. -/
+@[simp]
+lemma proj_app_fanSectionsAddEquiv_symm (hc : IsLimit c) (U : Cᵒᵖ) (a : ∀ i, (A i).obj.obj U)
+    (i : I) : (c.proj i).hom.app U ((fanSectionsAddEquiv hc U).symm a) = a i := by
+  rw [← fanSectionsAddEquiv_apply, AddEquiv.apply_symm_apply]
+
+end fanSections
 
 end CategoryTheory.Sheaf

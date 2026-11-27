@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SquareZero.CohomologyRing
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Unit
+import TauCeti.Geometry.Symplectic.Floer.Grading
 
 /-!
 # The cohomology ring of class-indexed counts
@@ -50,6 +51,18 @@ algebra in which `of i [a] * of j [b] = of (i + j) [a ⋆ b]`
 associative or unital. It is graded commutative when the input-exchange family exists
 (`TauCeti.Floer.cohomologyGRingOfCounts_of_mul_of_comm`).
 
+The ring does not depend on the auxiliary data of the product. Two choices of perturbation data
+and almost complex structures with the same end data have the same cylinder counts `D`, and a
+one-parameter family of such data with fixed ends joining them has rigid members, counted by `K`,
+whose one-dimensional moduli spaces end at the two products and at the breaking of a Floer cylinder
+at one of the three ends. If the counts satisfy the resulting identity, then the two products
+differ by a coboundary on cocycles
+(`TauCeti.Floer.kernelProduct_sub_kernelProduct_coefficientComparison_mem_coboundaries`), so the
+two choices give the same graded ring (`TauCeti.Floer.cohomologyGRingOfCounts_eq_of_homotopy`). In
+particular their units, the classes of the two PSS cycles, agree
+(`TauCeti.Floer.coordinates_symm_coefficientComparison_sub_mem_coboundaries_zero`), with no family
+of PSS planes joining them.
+
 The construction applies to any capped complex with class-indexed product counts, for instance to
 capped Morse generators with the counts of the Morse quantum product. The energy, compactness,
 index and boundary-count hypotheses are the ones the geometric moduli spaces are to supply; no
@@ -71,7 +84,7 @@ noncomputable section
 
 namespace TauCeti.Floer
 
-open DirectSum NovikovModule NovikovSeries PeriodGroup
+open _root_.DirectSum NovikovModule NovikovSeries PeriodGroup
 
 variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
@@ -155,6 +168,49 @@ theorem kernelProduct_sub_negOnePowCast_smul_kernelProduct_coefficientComparison
   simpa only [novikovProductOfMatrix_eq_kernelProduct hF hF hF r r r _ hnQ] using
     novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem_coboundaries r r r q
       hq hF hF hF hμ hμ Q Q K D D D n hμ hK hC hδ hδ hδ ha hb
+
+/-- **Independence of class-indexed counts from the auxiliary data, on cocycles.** Let `⋆` and
+`⋆'` be the ground-ring bilinear maps of the counts `Q` and `Q'` of rigid pairs of pants with all
+three ends in the same complex, for two choices of perturbation data and almost complex structures
+with the same end data. If some family `K` of counts of rigid members of a one-parameter family of
+such data with fixed ends, which lowers the cochain degree by one, satisfies the identity
+
+`Qᵢⱼₗ - Q'ᵢⱼₗ = ∑ₖ Kᵢⱼₖ Dₖₗ + ∑ₖ Dᵢₖ Kₖⱼₗ + (-1)^(n - μ(r i)) ∑ₖ Dⱼₖ Kᵢₖₗ`
+
+given by the ends of its one-dimensional moduli spaces, then `a ⋆ b - a ⋆' b` is a coboundary of
+the cylinder differential for all cocycles `a` and `b`. -/
+theorem kernelProduct_sub_kernelProduct_coefficientComparison_mem_coboundaries
+    (Q' : ι → ι → ι → NovikovSeries R G ωG) {CQ' : ℝ}
+    (hnQ' : ∀ p₁ p₂ p₀,
+      kernelOfMatrix r r r (fun i j k => coefficientComparison q hq (Q' i j k)) p₁ p₂ p₀ ≠ 0 →
+        F p₀ ≤ F p₁ + F p₂ + CQ')
+    (hpath : ∃ K : ι → ι → ι → NovikovSeries R G ωG,
+      (∀ i j k, ∀ A ∈ (K i j k).support,
+        μ ⟨k, r k⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + μ ⟨j, r j⟩ - n + 1) ∧
+      ∀ i j l, Q i j l - Q' i j l =
+        ∑ k, K i j k * D k l + ∑ k, D i k * K k j l +
+          negOnePowCast R (n - μ ⟨i, r i⟩) • ∑ k, D j k * K i k l)
+    {e f : ℤ} {a b : NovikovModule R F}
+    (ha : a ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+      (gradeBy R F fun p => n - μ p) e)
+    (hb : b ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+      (gradeBy R F fun p => n - μ p) f) :
+    kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a b -
+        kernelProduct hnQ' (kernelOfMatrix_mem hF r r r _) a b ∈
+      (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).coboundaries
+        (gradeBy R F fun p => n - μ p) (e + f) := by
+  classical
+  obtain ⟨K, hK, hP⟩ := hpath
+  -- With the identity matrix as continuation counts on all three ends, the continuation identity
+  -- of `novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries` is
+  -- `hP`, and the continuation maps are the identity.
+  have h := novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries
+    r r r q hq r r r hF hF hF hF hF hF hμ Q Q' (1 : Matrix ι ι (NovikovSeries R G ωG))
+    (1 : Matrix ι ι (NovikovSeries R G ωG)) (1 : Matrix ι ι (NovikovSeries R G ωG)) K D D D n
+    hμ hμ hK (fun i j l => by simpa [Matrix.one_apply] using hP i j l) hδ hδ hδ ha hb
+  simpa only [novikovMapOfMatrix_coefficientComparison_one_apply,
+    novikovProductOfMatrix_eq_kernelProduct hF hF hF r r r _ hnQ,
+    novikovProductOfMatrix_eq_kernelProduct hF hF hF r r r _ hnQ'] using h
 
 end Laws
 
@@ -353,6 +409,111 @@ theorem cohomologyGRingOfCounts_of_mul_of_comm
       hnQ hassoc)
     (kernelProduct_sub_negOnePowCast_smul_kernelProduct_coefficientComparison_mem_coboundaries q hq
       r hF hμ n D hδ Q hnQ hcomm) x y
+
+section Independence
+
+variable (Q' : ι → ι → ι → NovikovSeries R G ωG) {CQ' : ℝ}
+  (hnQ' : ∀ p₁ p₂ p₀,
+    kernelOfMatrix r r r (fun i j k => coefficientComparison q hq (Q' i j k)) p₁ p₂ p₀ ≠ 0 →
+      F p₀ ≤ F p₁ + F p₂ + CQ')
+  (hQ' : ∀ i j k, ∀ A ∈ (Q' i j k).support,
+    μ ⟨k, r k⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + μ ⟨j, r j⟩ - n)
+  (hL' : ∀ i j l, ∑ k, Q' i j k * D k l =
+    ∑ k, D i k * Q' k j l + negOnePowCast R (n - μ ⟨i, r i⟩) • ∑ k, D j k * Q' i k l)
+  (E' : ι → NovikovSeries R G ωG)
+  (hE' : ∀ i, ∀ A ∈ (E' i).support, μ ⟨i, r i⟩ - degree ω c (q A) = n)
+  (hED' : ∀ l, ∑ i, E' i * D i l = 0)
+  (hone_mul' : ∃ K : ι → ι → NovikovSeries R G ωG,
+    (∀ j l, ∀ A ∈ (K j l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨j, r j⟩ + 1) ∧
+    ∀ j l, ∑ i, E' i * Q' i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) j l =
+      ∑ m, K j m * D m l + ∑ m, D j m * K m l)
+  (hmul_one' : ∃ K : ι → ι → NovikovSeries R G ωG,
+    (∀ i l, ∀ A ∈ (K i l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + 1) ∧
+    ∀ i l, ∑ j, E' j * Q' i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) i l =
+      ∑ m, K i m * D m l + ∑ m, D i m * K m l)
+  (hassoc' : ∃ K : ι → ι → ι → ι → NovikovSeries R G ωG,
+    (∀ i j k l, ∀ A ∈ (K i j k l).support,
+      μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + μ ⟨j, r j⟩ + μ ⟨k, r k⟩ - 2 * n + 1) ∧
+    ∀ i j k l, ∑ t, Q' i j t * Q' t k l - ∑ u, Q' j k u * Q' i u l =
+      ∑ m, K i j k m * D m l + ∑ m, D i m * K m j k l +
+        negOnePowCast R (n - μ ⟨i, r i⟩) • ∑ m, D j m * K i m k l +
+        negOnePowCast R (n - μ ⟨i, r i⟩ + (n - μ ⟨j, r j⟩)) • ∑ m, D k m * K i j m l)
+  (hpath : ∃ K : ι → ι → ι → NovikovSeries R G ωG,
+    (∀ i j k, ∀ A ∈ (K i j k).support,
+      μ ⟨k, r k⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + μ ⟨j, r j⟩ - n + 1) ∧
+    ∀ i j l, Q i j l - Q' i j l =
+      ∑ k, K i j k * D k l + ∑ k, D i k * K k j l +
+        negOnePowCast R (n - μ ⟨i, r i⟩) • ∑ k, D j k * K i k l)
+
+include hμ hnQ hE hED hone_mul hnQ' hQ' hL' hE' hED' hmul_one' hpath in
+/-- **The unit of class-indexed counts does not depend on the auxiliary data.** Let `Q`, `E` and
+`Q'`, `E'` be the counts of rigid pairs of pants and of rigid PSS planes constrained by the
+fundamental cycle for two choices of perturbation data and almost complex structures with the same
+end data, each satisfying the hypotheses of `TauCeti.Floer.cohomologyGRingOfCounts`. If the counts
+`K` of a one-parameter family of such data with fixed ends give the homotopy `hpath` between the
+two products, then the two unit cocycles are cohomologous. No family of PSS planes joining the two
+choices is needed: a unit is determined by the product on cohomology. -/
+theorem coordinates_symm_coefficientComparison_sub_mem_coboundaries_zero :
+    (coordinates hF r).symm (fun i => coefficientComparison q hq (E i)) -
+        (coordinates hF r).symm (fun i => coefficientComparison q hq (E' i)) ∈
+      (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).coboundaries
+        (gradeBy R F fun p => n - μ p) 0 :=
+  LinearMap.sub_mem_coboundaries_of_mul_sub_mem_coboundaries
+    (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _)) _
+    (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+      hone_mul)
+    (kernelProduct hnQ' (kernelOfMatrix_mem hF r r r _))
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q' hnQ' hQ')
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q' hnQ' hL') _
+    (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E' hE' hED')
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q' hnQ' E'
+      hmul_one')
+    (kernelProduct_sub_kernelProduct_coefficientComparison_mem_coboundaries q hq r hF hμ n D hδ Q
+      hnQ Q' hnQ' hpath)
+
+include hpath in
+/-- **The cohomology ring of class-indexed counts does not depend on the auxiliary data.** Let
+`Q`, `E` and `Q'`, `E'` be the counts of rigid pairs of pants and of rigid PSS planes constrained
+by the fundamental cycle for two choices of perturbation data and almost complex structures with
+the same end data, so with the same cylinder counts `D`, each satisfying the hypotheses of
+`TauCeti.Floer.cohomologyGRingOfCounts`. Suppose that the counts `K` of the rigid members of a
+one-parameter family of such data with fixed ends, which lower the cochain degree by one, give the
+identity `hpath` of the ends of its one-dimensional moduli spaces,
+
+`Qᵢⱼₗ - Q'ᵢⱼₗ = ∑ₖ Kᵢⱼₖ Dₖₗ + ∑ₖ Dᵢₖ Kₖⱼₗ + (-1)^(n - μ(r i)) ∑ₖ Dⱼₖ Kᵢₖₗ`.
+
+Then the two choices give the same graded ring structure on the degree-wise cohomology: the same
+product and the same unit. -/
+theorem cohomologyGRingOfCounts_eq_of_homotopy :
+    cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one hassoc =
+      cohomologyGRingOfCounts q hq r hF hμ n D hδ Q' hnQ' hQ' hL' E' hE' hED' hone_mul' hmul_one'
+        hassoc' :=
+  LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries
+    (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
+    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+      hone_mul)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q hnQ E
+      hmul_one)
+    (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
+      hnQ hassoc)
+    (kernelProduct hnQ' (kernelOfMatrix_mem hF r r r _))
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q' hnQ' hQ')
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q' hnQ' hL')
+    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E' hE' hED')
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q' hnQ' E'
+      hone_mul')
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q' hnQ' E'
+      hmul_one')
+    (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q'
+      hnQ' hassoc')
+    (kernelProduct_sub_kernelProduct_coefficientComparison_mem_coboundaries q hq r hF hμ n D hδ Q
+      hnQ Q' hnQ' hpath)
+
+end Independence
 
 end CohomologyRing
 

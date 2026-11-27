@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Semigroups.Group.Unitary
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Prod
 
@@ -45,6 +46,9 @@ convergence on the Fourier side, since the difference quotients `t⁻¹ (exp(i t
 symbol are bounded by `|ω|` and tend to `i ω`; for the other, the difference quotients of `f`
 converge in `L²` to `A f`, so on the Fourier side they converge almost everywhere along a sequence
 of times, and the pointwise limit is `i ω 𝓕 f`.
+If the phase is positively homogeneous of degree `k`, as the Schrödinger phase is with `k = 2` and
+the half-wave phases are with `k = 1`, the propagator intertwines the normalized dilations `D_r` of
+`L²` with a rescaling of time: `exp(itω(D)) D_r = D_r exp(i(t / r ^ k)ω(D))`.
 
 ## Main declarations
 
@@ -62,8 +66,12 @@ of times, and the pointwise limit is `i ω 𝓕 f`.
 * `TauCeti.continuous_phasePropagator_apply`, `TauCeti.continuous_phasePropagator_uncurry`: strong
   continuity and joint continuity.
 * `TauCeti.aestronglyMeasurable_phasePropagator_apply`, `TauCeti.integrable_phasePropagator_apply`,
+  `TauCeti.integrable_phasePropagator_apply_iff`,
   `TauCeti.aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub`: measurability and
   integrability of `a ↦ exp(iτ(a)ω(D)) G(a)` and of retarded integrals.
+* `TauCeti.norm_setIntegral_Iio_phasePropagator_sub_le`,
+  `TauCeti.continuous_setIntegral_Iio_phasePropagator_sub`: retarded integrals of integrable
+  `G : ℝ → L²` are bounded by `‖G‖_{L¹}` and continuous in time.
 * `TauCeti.inner_setIntegral_Iio_phasePropagator_sub`,
   `TauCeti.integrable_inner_setIntegral_Iio_phasePropagator_sub`: pairings of retarded integrals.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
@@ -71,6 +79,14 @@ of times, and the pointwise limit is `i ω 𝓕 f`.
 * `TauCeti.coeFn_fourier_complexGenerator_phaseGroup`,
   `TauCeti.complexGenerator_phaseGroup_apply_of_ae_eq`: the generator is `i ω(D)`,
   `𝓕 (A f) = i ω 𝓕 f`.
+* `TauCeti.phasePropagator_dilateLp`: for a phase positively homogeneous of degree `k`, the
+  scaling law `exp(itω(D)) D_r = D_r exp(i(t / r ^ k)ω(D))`, and
+  `TauCeti.eLpNorm_phasePropagator_dilateLp`, its effect on the `Lʳ` norms at a fixed time.
+* `TauCeti.eLpNorm_eLpNorm_phasePropagator_dilateLp`: its effect on the mixed norms
+  `L^q_t L^r_x`, multiplication by `l ^ (n/r - n/2 + k/q)`.
+* `TauCeti.eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le`: the converse, a Strichartz estimate
+  whose data norm is homogeneous of degree `-s` under the dyadic dilations forces
+  `s = n/2 - n/r - k/q`.
 
 ## References
 
@@ -365,6 +381,16 @@ theorem integrable_phasePropagator_apply (hτ : AEStronglyMeasurable τ μ) (hG 
   hG.norm.mono' (aestronglyMeasurable_phasePropagator_apply ω hτ hG.aestronglyMeasurable)
     (ae_of_all _ fun _ ↦ (norm_phasePropagator_apply _ _ _).le)
 
+/-- If the times `τ` are almost everywhere strongly measurable, then `a ↦ exp(iτ(a)ω(D)) G(a)`
+is integrable exactly when the `L²`-valued function `G` is, since
+`G(a) = exp(-iτ(a)ω(D)) exp(iτ(a)ω(D)) G(a)`. -/
+theorem integrable_phasePropagator_apply_iff (hτ : AEStronglyMeasurable τ μ) :
+    Integrable (fun a ↦ phasePropagator F ω (τ a) (G a)) μ ↔ Integrable G μ :=
+  ⟨fun h ↦ by
+    simpa only [Pi.neg_apply, phasePropagator_neg_apply_phasePropagator_apply] using
+      integrable_phasePropagator_apply ω hτ.neg h,
+    integrable_phasePropagator_apply ω hτ⟩
+
 end Measurability
 
 /-- The retarded integral `t ↦ ∫_{s < t} exp(i(t - s)ω(D)) G(s) ds` of an almost everywhere
@@ -387,6 +413,15 @@ theorem inner_setIntegral_Iio_phasePropagator_sub {G : ℝ → Lp F 2 (volume : 
     (continuous_sub_left t).aestronglyMeasurable hG).integrableOn, ← integral_conj]
   simp_rw [inner_conj_symm]
 
+/-- The retarded integral `∫_{s < t} exp(i(t - s)ω(D)) G(s) dμ(s)` of an integrable
+`G : ℝ → L²` is at most `‖G‖_{L¹(μ)}` in norm, since `exp(i(t - s)ω(D))` is unitary. -/
+theorem norm_setIntegral_Iio_phasePropagator_sub_le {μ : Measure ℝ}
+    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : Integrable G μ) (t : ℝ) :
+    ‖∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s) ∂μ‖ ≤ ∫ s, ‖G s‖ ∂μ := by
+  refine (norm_integral_le_integral_norm _).trans ?_
+  simp_rw [norm_phasePropagator_apply]
+  exact setIntegral_le_integral hG.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
+
 /-- For integrable `G, H : ℝ → L²`, the pairing `t ↦ ⟪∫_{s < t} exp(i(t - s)ω(D)) G(s) ds, H(t)⟫`
 is integrable, being at most `‖G‖_{L¹} ‖H(t)‖`. -/
 theorem integrable_inner_setIntegral_Iio_phasePropagator_sub
@@ -395,10 +430,25 @@ theorem integrable_inner_setIntegral_Iio_phasePropagator_sub
   refine (hH.norm.const_mul (∫ s, ‖G s‖)).mono'
     ((aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub ω
       hG.aestronglyMeasurable).inner hH.aestronglyMeasurable) (ae_of_all _ fun t ↦ ?_)
-  refine (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
-  refine (norm_integral_le_integral_norm _).trans ?_
-  simp_rw [norm_phasePropagator_apply]
-  exact setIntegral_le_integral hG.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
+  exact (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right
+    (norm_setIntegral_Iio_phasePropagator_sub_le ω hG t) (norm_nonneg _))
+
+/-- The retarded integral `t ↦ ∫_{s < t} exp(i(t - s)ω(D)) G(s) dμ(s)` of an `L²`-valued `G`
+integrable for a measure `μ` that gives singletons measure zero is continuous in time: it is
+`exp(itω(D))` applied to the primitive `t ↦ ∫_{s < t} exp(-isω(D)) G(s) dμ(s)`. -/
+theorem continuous_setIntegral_Iio_phasePropagator_sub {μ : Measure ℝ} [NullSingletonClass μ]
+    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : Integrable G μ) :
+    Continuous fun t ↦ ∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s) ∂μ := by
+  have hK := integrable_phasePropagator_apply ω continuous_neg.aestronglyMeasurable hG
+  have hprim : Continuous fun t ↦ ∫ s in Set.Iio t, phasePropagator F ω (-s) (G s) ∂μ :=
+    continuous_iff_continuousAt.2 fun t ↦
+      hK.integrableOn.continuousOn_Iic_primitive_Iio.continuousAt
+        (Iic_mem_nhds (lt_add_one t))
+  refine ((continuous_phasePropagator_uncurry ω).comp (continuous_id.prodMk hprim)).congr
+    fun t ↦ ?_
+  dsimp only [Function.comp_apply, id]
+  rw [← ContinuousLinearMap.integral_comp_comm _ hK.integrableOn]
+  simp_rw [sub_eq_add_neg, phasePropagator_add_apply]
 
 /-! ### The generator -/
 
@@ -568,5 +618,113 @@ theorem mem_domain_phaseGroup_iff (f : Lp F 2 (volume : Measure E)) :
     rw [hξ, Pi.smul_apply, smul_smul]
 
 end Generator
+/-! ### Scaling of homogeneous phases -/
+
+section Dilation
+
+open scoped NNReal
+open Measure Module
+
+variable {ω} {k : ℕ}
+
+/-- If the phase `ω` is positively homogeneous of degree `k`, dilating its phase symbol at time `t`
+by `r > 0` gives the phase symbol at time `t / r ^ k`. -/
+theorem dilateLp_toLp_phaseSymbol (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {r : ℝ}
+    (hr : 0 < r) (t : ℝ) :
+    dilateLp volume ℝ ∞ r hr ((memLp_phaseSymbol ω t).toLp _) =
+      (memLp_phaseSymbol ω (t / r ^ k)).toLp _ := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_dilateLp_top_of_ae_eq (𝕜 := ℝ) hr (memLp_phaseSymbol ω t).coeFn_toLp,
+    (memLp_phaseSymbol ω (t / r ^ k)).coeFn_toLp] with ξ h₁ h₂
+  rw [h₁, h₂, phaseSymbol_apply, phaseSymbol_apply, hω _ (inv_pos.2 hr), inv_pow, ← mul_assoc,
+    ← div_eq_mul_inv]
+
+/-- **Scaling of a homogeneous phase propagator.** If the phase `ω` is positively homogeneous of
+degree `k`, then for the normalized dilation `D_r f = r ^ (-n/2) • f (r⁻¹ • ·)` of `L²`, `r > 0`,
+
+`exp(itω(D)) (D_r f) = D_r (exp(i(t / r ^ k)ω(D)) f)`.
+
+This is the scaling symmetry `u(x, t) ↦ u(x / r, t / r ^ k)` of the equation `∂ₜu = iω(D)u`: of
+degree `2` for the Schrödinger equation and of degree `1` for the half-wave equation. -/
+theorem phasePropagator_dilateLp (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {r : ℝ}
+    (hr : 0 < r) (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    phasePropagator F ω t (dilateLp volume ℝ 2 r hr f) =
+      dilateLp volume ℝ 2 r hr (phasePropagator F ω (t / r ^ k) f) := by
+  rw [phasePropagator_def, Lp.fourierMultiplierCLM_dilateLp, dilateLp_toLp_phaseSymbol hω,
+    ← phasePropagator_def]
+
+/-- **Scaling of the `Lʳ` norms of a homogeneous phase propagator.** If the phase `ω` is
+positively homogeneous of degree `k`, the `Lʳ` norm of `exp(itω(D)) (D_l f)` is `l ^ (n/r - n/2)`
+times the `Lʳ` norm of `exp(i(t / l ^ k)ω(D)) f`, where `n / r` is `n / r.toReal`, which is `0`
+for `r = ∞`. -/
+theorem eLpNorm_phasePropagator_dilateLp (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ)
+    {l : ℝ} (hl : 0 < l) (t : ℝ) (f : Lp F 2 (volume : Measure E)) (r : ℝ≥0∞) :
+    eLpNorm (phasePropagator F ω t (dilateLp volume ℝ 2 l hl f)) r volume =
+      ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
+        eLpNorm (phasePropagator F ω (t / l ^ k) f) r volume := by
+  rw [phasePropagator_dilateLp hω, eLpNorm_dilateLp, ENNReal.toReal_ofNat]
+
+/-- **Scaling of the mixed norms of a homogeneous phase propagator.** If the phase `ω` is
+positively homogeneous of degree `k`, then for `q ≠ 0`, dilating the datum by `l` multiplies the
+mixed norm `‖exp(itω(D)) f‖_{L^q_t L^r_x}`, `t ∈ ℝ`, by `l ^ (n/r - n/2 + k/q)`, where `n / r`
+and `k / q` are `n / r.toReal` and `k / q.toReal`, which are `0` for an infinite exponent. -/
+theorem eLpNorm_eLpNorm_phasePropagator_dilateLp
+    (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {l : ℝ} (hl : 0 < l)
+    (f : Lp F 2 (volume : Measure E)) {q : ℝ≥0∞} (hq : q ≠ 0) (r : ℝ≥0∞) :
+    eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t (dilateLp volume ℝ 2 l hl f)) r volume) q
+        volume =
+      ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2 + k / q.toReal)) *
+        eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t f) r volume) q volume := by
+  have h : (fun t ↦ eLpNorm (phasePropagator F ω t (dilateLp volume ℝ 2 l hl f)) r volume) =
+      fun t ↦ ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
+        eLpNorm (phasePropagator F ω ((l ^ k)⁻¹ • t) f) r volume := by
+    funext t
+    rw [eLpNorm_phasePropagator_dilateLp hω hl, smul_eq_mul, inv_mul_eq_div]
+  rw [h, eLpNorm_const_mul_ennreal_of_pos (pos_iff_ne_zero.2 hq),
+    eLpNorm_comp_inv_smul (volume : Measure ℝ)
+      (fun s ↦ eLpNorm (phasePropagator F ω s f) r volume) (pow_ne_zero k hl.ne'),
+    finrank_self, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), abs_of_pos (pow_pos hl k),
+    ← Real.rpow_natCast_mul hl.le, ← Real.rpow_add hl]
+  congr 3
+  ring
+
+/-- **Scaling fixes the regularity of a homogeneous Strichartz estimate.** Let the phase `ω` be
+positively homogeneous of degree `k`, let `q, r ≠ 0`, let `f₀ ∈ L²` be nonzero and let `B < ∞`. If
+the dyadic dilates `D_{2^i} f₀` satisfy
+
+`‖exp(itω(D)) (D_{2^i} f₀)‖_{L^q_t L^r_x} ≤ C 2^{-is} B`
+
+on the whole time line for every `i ∈ ℤ`, then `s = n / 2 - n / r - k / q`, where `1 / r` and
+`1 / q` are `0` for an infinite exponent. This is how a homogeneous estimate
+`‖exp(itω(D)) f‖_{L^q_t L^r_x} ≤ C N f` constrains `s` when `N` is homogeneous of degree `-s` under
+the dyadic dilations, `N (D_{2^i} f) = 2^{-is} N f`, and `N f₀ = B`: the left side scales like
+`2^{i(n/r - n/2 + k/q)}` and is positive, since `exp(itω(D))` is unitary, so the two powers must
+agree. -/
+theorem eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le
+    (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {q r : ℝ≥0∞} (hq : q ≠ 0) (hr : r ≠ 0)
+    {s : ℝ} {f₀ : Lp F 2 (volume : Measure E)} (hf₀ : f₀ ≠ 0) {B : ℝ≥0∞} (hB : B ≠ ∞) {C : ℝ≥0}
+    (h : ∀ i : ℤ, eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t
+        (dilateLp volume ℝ 2 _ (zpow_pos two_pos i) f₀)) r volume) q volume ≤
+      C * (ENNReal.ofReal (((2 : ℝ) ^ i) ^ (-s)) * B)) :
+    s = finrank ℝ E / 2 - finrank ℝ E * (r⁻¹).toReal - k * (q⁻¹).toReal := by
+  set n : ℝ := (finrank ℝ E : ℝ)
+  set Φ : ℝ≥0∞ := eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t f₀) r volume) q volume
+  -- `exp(itω(D))` is unitary, so `exp(itω(D)) f₀ ≠ 0` at every time and `Φ` is positive.
+  have hΦ0 : Φ ≠ 0 := by
+    rw [Ne, eLpNorm_eq_zero_iff hq]
+    intro h0
+    obtain ⟨t, ht⟩ := h0.exists
+    rw [Pi.zero_apply, eLpNorm_eq_zero_iff hr, ← Lp.eq_zero_iff_ae_eq_zero] at ht
+    exact hf₀ (norm_eq_zero.1 (by rw [← norm_phasePropagator_apply ω t f₀, ht, norm_zero]))
+  -- In real terms: `(2^i) ^ e ≤ C B / Φ` for every `i ∈ ℤ`, with `e = n/r - n/2 + k/q + s`.
+  have he := Real.eq_zero_of_forall_zpow_rpow_le one_lt_two (K := C * B.toReal / Φ.toReal)
+    (e := n / r.toReal - n / 2 + k / q.toReal - -s) fun i ↦
+    Real.rpow_sub_le_div_of_ofReal_rpow_mul_le (zpow_pos two_pos i) hΦ0 hB (by
+      simpa only [eLpNorm_eLpNorm_phasePropagator_dilateLp hω _ _ hq] using h i)
+  rw [ENNReal.toReal_inv, ENNReal.toReal_inv]
+  simp only [div_eq_mul_inv n r.toReal, div_eq_mul_inv (k : ℝ) q.toReal] at he
+  linarith
+
+end Dilation
 
 end TauCeti

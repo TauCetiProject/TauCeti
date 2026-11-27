@@ -9,11 +9,13 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.CategoryTheory.Monoidal.Grp.Translation
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.CommGrp
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
-import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.CategoryTheory.Comma.Over.StrictInitial
+import TauCeti.CategoryTheory.Monoidal.Grp.Subobject
 
 /-!
 # Points of exact order `N` on an elliptic curve
@@ -82,6 +84,9 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
   `[P] + ⋯ + [NP]` commutes with base change.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfExactOrder.pointsPullback`: points of exact
   order `N` are stable under base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfExactOrder_pointsPullback_baseChange_iff`: the
+  base change of `P` along `f` has exact order `N` exactly when the base change along `f` of the
+  divisor `[P] + ⋯ + [NP]` is a subgroup scheme of the base change of `E`.
 
 ## References
 
@@ -372,6 +377,62 @@ theorem IsOfExactOrder.pointsPullback {P : 𝟙_ (Over S) ⟶ Over.mk E.structur
   exact key _ (multiplesDivisor_pointsPullback hg h0 P N)
 
 end BaseChange
+
+section BaseChangeOver
+
+variable (E) {T : Scheme.{u}}
+
+open scoped Obj in
+/-- **Exact order after base change.** The base change along `f : T ⟶ S` of an `S`-point `P` of
+`E` has exact order `N` exactly when the base change along `f` of the divisor
+`[P] + [2P] + ⋯ + [NP]` carries a group law for which the base change of its inclusion into `E` is
+a homomorphism, that is, when it is a subgroup scheme of the base change of `E`. -/
+theorem isOfExactOrder_pointsPullback_baseChange_iff (f : T ⟶ S)
+    (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
+    (E.baseChange f).IsOfExactOrder (pointsPullback (E.isPullback_baseChange f) (by simp) P) N ↔
+      ∃ _ : GrpObj ((Over.pullback f).obj
+          (Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap))),
+        IsMonHom ((Over.pullback f).map (Over.homMk (E.multiplesDivisor P N).subschemeι :
+          Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+            Over.mk E.structureMap)) := by
+  set D := E.multiplesDivisor P N
+  set g := (E.baseChangeIso f).hom ≫ pullback.fst E.structureMap f
+  have hg : IsPullback g (E.baseChange f).structureMap E.structureMap f :=
+    E.isPullback_baseChange f
+  have h0 : (E.baseChange f).zero ≫ g = f ≫ E.zero := by simp [g]
+  -- The closed subscheme `V(D.comap g)` of the base change is the base change of `V(D)`.
+  have hD := D.isPullback_subschemeMap_comap E.structureMap hg
+  let ε : Over.mk ((D.comap g).subschemeι ≫ (E.baseChange f).structureMap) ≅
+      (Over.pullback f).obj (Over.mk (D.subschemeι ≫ E.structureMap)) :=
+    Over.isoMk hD.isoPullback (by simp)
+  let e := E.baseChangeOverIso f
+  let i : Over.mk ((D.comap g).subschemeι ≫ (E.baseChange f).structureMap) ⟶
+      Over.mk (E.baseChange f).structureMap := Over.homMk (D.comap g).subschemeι
+  have hε : ε.hom ≫ (Over.pullback f).map
+      (Over.homMk D.subschemeι : Over.mk (D.subschemeι ≫ E.structureMap) ⟶
+        Over.mk E.structureMap) = i ≫ e.hom := by
+    ext1
+    apply pullback.hom_ext <;> simp [ε, e, i, g]
+  rw [← Iso.exists_grpObj_isMonHom_iff ε hε]
+  -- The divisor cannot be rewritten in place, since the types in `IsOfExactOrder` depend on it.
+  have key (D' : (E.baseChange f).carrier.IdealSheafData)
+      (hD' : D' = (E.baseChange f).multiplesDivisor (pointsPullback hg h0 P) N) :
+      (E.baseChange f).IsOfExactOrder (pointsPullback hg h0 P) N ↔
+        ∃ _ : GrpObj (Over.mk (D'.subschemeι ≫ (E.baseChange f).structureMap)),
+          IsMonHom (Over.homMk D'.subschemeι :
+            Over.mk (D'.subschemeι ≫ (E.baseChange f).structureMap) ⟶
+              Over.mk (E.baseChange f).structureMap) := by
+    subst hD'
+    exact isOfExactOrder_def
+  rw [key _ (multiplesDivisor_pointsPullback hg h0 P N).symm]
+  -- Composition with the isomorphism of group schemes `e` does not change the homomorphisms.
+  refine ⟨fun ⟨_, _⟩ ↦ ⟨inferInstance, inferInstance⟩, fun ⟨_, _⟩ ↦ ⟨inferInstance, ?_⟩⟩
+  -- The goal displays the `let`-bound inclusion `i` unfolded; restate it through `i` to rewrite.
+  change IsMonHom i
+  rw [show i = (i ≫ e.hom) ≫ e.inv by simp]
+  infer_instance
+
+end BaseChangeOver
 
 end EllipticCurveGeom
 

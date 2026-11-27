@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 import Mathlib.Algebra.Field.ULift
+import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 import TauCeti.Geometry.Manifold.Topology
 
 /-!
@@ -127,10 +128,12 @@ theorem IsMorse.subsingleton_setOf_isLocalMin_of_manifoldMorseIndex_ne_one (hf :
   have h := hf.criticalCount_zero_le_criticalCount_one_add_one
   rw [(criticalCount_eq_zero_iff 1).2 hd, zero_add, criticalCount_def] at h
   refine fun x hx y hy ↦ encard_le_one_iff.1 h x y ?_ ?_
-  · exact ⟨IsLocalMin.mem_criticalPoints hx,
-      manifoldMorseIndex_eq_zero_of_isLocalMin ((hf.contMDiff x).of_le (by norm_cast)) hx⟩
-  · exact ⟨IsLocalMin.mem_criticalPoints hy,
-      manifoldMorseIndex_eq_zero_of_isLocalMin ((hf.contMDiff y).of_le (by norm_cast)) hy⟩
+  · exact ⟨IsLocalMin.mem_criticalPoints hx BoundarylessManifold.isInteriorPoint,
+      manifoldMorseIndex_eq_zero_of_isLocalMin ((hf.contMDiff x).of_le (by norm_cast))
+        BoundarylessManifold.isInteriorPoint hx⟩
+  · exact ⟨IsLocalMin.mem_criticalPoints hy BoundarylessManifold.isInteriorPoint,
+      manifoldMorseIndex_eq_zero_of_isLocalMin ((hf.contMDiff y).of_le (by norm_cast))
+        BoundarylessManifold.isInteriorPoint hy⟩
 
 /-- **Without critical points of index one a local minimum is global.** On a compact connected
 boundaryless manifold, every local minimum of a Morse function with no critical point of index `1`

@@ -60,6 +60,11 @@ On connected components they are the action of `f` on the homotopy categories. T
 of a product identify the right mapping spaces of `X ⊗ Y` with the products of those of `X` and
 `Y`, and right mapping spaces commute with universe lifts (`SSet.rightMappingSpace.uliftIso`).
 
+For a map `p : X ⟶ S` and an edge `e : p x ⟶ p y` of `S`, the fiber over `e` of
+`Hom^R_X(x, y) ⟶ Hom^R_S(p x, p y)` is the space `Hom^R_X(x, y)_e` of maps lying over `e`
+(`SSet.rightMappingSpaceOver`). When `S` is strict Segal, `Hom^R_S(p x, p y)` is discrete, so a
+map into `Hom^R_X(x, y)` lands in `Hom^R_X(x, y)_e` as soon as its vertices do.
+
 ## Main definitions
 
 * `SSet.rightMappingSpace X x y`: the right mapping space `Hom^R_X(x, y)`.
@@ -78,6 +83,9 @@ of a product identify the right mapping spaces of `X ⊗ Y` with the products of
   projection `X_{/y} ⟶ X` from the slice over `y`.
 * `SSet.rightMappingSpace.uliftIso`: the isomorphism
   `Hom^R_{ulift X}(↑x, ↑y) ≅ ulift Hom^R_X(x, y)`.
+* `SSet.rightMappingSpaceOver p e`: the space `Hom^R_X(x, y)_e` of maps lying over the edge `e`
+  of the base of `p`, and `SSet.rightMappingSpaceOver.map`, the map of these spaces induced by a
+  map over the base.
 
 ## Main results
 
@@ -91,6 +99,10 @@ of a product identify the right mapping spaces of `X ⊗ Y` with the products of
   `Hom^R_X(x, y)` have fillers.
 * `SSet.rightMappingSpace.kanComplex`: the right mapping spaces of a quasicategory are Kan
   complexes.
+* `SSet.rightMappingSpace.hom_ext_of_isStrictSegal`: maps into a right mapping space of a strict
+  Segal simplicial set are determined by their values on vertices.
+* `SSet.rightMappingSpaceOver.range_le_iff`: over a strict Segal base, a map lands in
+  `Hom^R_X(x, y)_e` exactly when its vertices do.
 * `SSet.rightMappingSpace.isIso_map_iff_bijective`: for strict Segal simplicial sets, `f` induces
   an isomorphism of right mapping spaces exactly when it is bijective on edges.
 * `SSet.rightMappingSpace.isIso_map_ι`: a subcomplex containing all simplices of a right mapping
@@ -464,6 +476,16 @@ theorem constEdgeIso_inv_app_zero [X.IsStrictSegal]
   apply obj₀Equiv.symm.injective
   rw [Equiv.symm_apply_apply, ← constEdgeIso_hom_app_zero]
   simp
+
+/-- Maps into a right mapping space `Hom^R_X(x, y)` of a strict Segal simplicial set `X`, such as
+the nerve of a category, are determined by their values on vertices, since that mapping space is
+discrete (`SSet.rightMappingSpace.constEdgeIso`). -/
+theorem hom_ext_of_isStrictSegal [X.IsStrictSegal] {K : SSet.{u}}
+    {φ ψ : K ⟶ (X.rightMappingSpace x y : SSet.{u})}
+    (h : ∀ k : K _⦋0⦌, φ.app _ k = ψ.app _ k) : φ = ψ := by
+  rw [← cancel_mono (rightMappingSpace.constEdgeIso x y).inv]
+  refine (homConstEquiv _ K).injective (funext (π₀.rec fun k ↦ ?_))
+  simp [h k]
 
 end IsStrictSegal
 
@@ -907,5 +929,79 @@ theorem uliftIso_inv_comp_map {Y : SSet.{u}} (f : X ⟶ Y) :
 end ulift
 
 end rightMappingSpace
+
+/-! ### Mapping spaces over an edge of the base -/
+
+section over
+
+variable {Y S : SSet.{u}}
+
+/-- For a map `p : X ⟶ S`, vertices `x` and `y` of `X` and an edge `e : p x ⟶ p y` of `S`, the
+space `Hom^R_X(x, y)_e` of maps from `x` to `y` lying over `e`: the fiber over `e` of the map of
+right mapping spaces `Hom^R_X(x, y) ⟶ Hom^R_S(p x, p y)` induced by `p`. -/
+def rightMappingSpaceOver (p : X ⟶ S) {x y : X _⦋0⦌} (e : Edge (p.app _ x) (p.app _ y)) :
+    (X.rightMappingSpace x y : SSet.{u}).Subcomplex :=
+  fiber (rightMappingSpace.map x y p) (rightMappingSpace.obj₀Equiv.symm e)
+
+/-- `Hom^R_X(x, y)_e` is the fiber over `e` of the map of right mapping spaces induced by `p`. -/
+theorem rightMappingSpaceOver_eq_fiber (p : X ⟶ S) {x y : X _⦋0⦌}
+    (e : Edge (p.app _ x) (p.app _ y)) :
+    rightMappingSpaceOver p e =
+      fiber (rightMappingSpace.map x y p) (rightMappingSpace.obj₀Equiv.symm e) :=
+  (rfl)
+
+namespace rightMappingSpaceOver
+
+variable {p : X ⟶ S}
+
+/-- Along an isomorphism `p`, the spaces of maps lying over an edge are points. -/
+noncomputable def isTerminalOfIsIso (p : X ⟶ S) [IsIso p] {x y : X _⦋0⦌}
+    (e : Edge (p.app _ x) (p.app _ y)) :
+    Limits.IsTerminal (rightMappingSpaceOver p e : SSet.{u}) :=
+  fiber.isTerminalOfIsIso _ _
+
+/-- A vertex of `Hom^R_X(x, y)` lies over `e` exactly when `p` sends the corresponding edge
+to `e`. -/
+lemma mem_obj₀_iff (e : Edge (p.app _ x) (p.app _ y))
+    (s : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
+    s ∈ (rightMappingSpaceOver p e).obj (op ⦋0⦌) ↔ (rightMappingSpace.obj₀Equiv s).map p = e := by
+  rw [rightMappingSpaceOver, mem_fiber_iff, ← Equiv.apply_eq_iff_eq rightMappingSpace.obj₀Equiv]
+  simp [SimplexCategory.const_eq_id]
+
+/-- Over a strict Segal simplicial set, such as the nerve of a category, a map to `Hom^R_X(x, y)`
+lands in `Hom^R_X(x, y)_e` as soon as its vertices do. -/
+lemma range_le_iff [S.IsStrictSegal] {K : SSet.{u}} (g : K ⟶ (X.rightMappingSpace x y : SSet.{u}))
+    (e : Edge (p.app _ x) (p.app _ y)) :
+    Subcomplex.range g ≤ rightMappingSpaceOver p e ↔
+      ∀ k : K _⦋0⦌, (rightMappingSpace.obj₀Equiv (g.app _ k)).map p = e := by
+  refine ⟨fun h k ↦ (mem_obj₀_iff e _).1 (h _ ⟨k, rfl⟩), fun h ↦ ?_⟩
+  refine (range_le_fiber_iff _ _ _).2 (rightMappingSpace.hom_ext_of_isStrictSegal fun k ↦ ?_)
+  have hk := (mem_obj₀_iff e (g.app _ k)).2 (h k)
+  rw [rightMappingSpaceOver, mem_fiber_iff] at hk
+  simpa using hk
+
+/-- A map `F : X ⟶ Y` over `S` sends maps lying over an edge `e` of `S` to maps lying over `e`:
+it restricts the map of right mapping spaces `SSet.rightMappingSpace.map`. The edge `e'` is `e`
+with its endpoints written as images under `q` of vertices of `Y`. -/
+def map {q : Y ⟶ S} (F : X ⟶ Y) (hF : F ≫ q = p) {e : Edge (p.app _ x) (p.app _ y)}
+    {e' : Edge (q.app _ (F.app _ x)) (q.app _ (F.app _ y))} (he : e'.edge = e.edge) :
+    (rightMappingSpaceOver p e : SSet.{u}) ⟶ (rightMappingSpaceOver q e' : SSet.{u}) :=
+  by
+    subst hF
+    obtain rfl : e' = e := Edge.ext he
+    exact fiber.map (rightMappingSpace.map x y F) (rightMappingSpace.map_comp x y F q).symm _
+
+@[reassoc (attr := simp)]
+lemma map_ι {q : Y ⟶ S} (F : X ⟶ Y) (hF : F ≫ q = p) {e : Edge (p.app _ x) (p.app _ y)}
+    {e' : Edge (q.app _ (F.app _ x)) (q.app _ (F.app _ y))} (he : e'.edge = e.edge) :
+    map F hF he ≫ (rightMappingSpaceOver q e').ι =
+      (rightMappingSpaceOver p e).ι ≫ rightMappingSpace.map x y F := by
+  subst hF
+  obtain rfl : e' = e := Edge.ext he
+  exact fiber.map_ι (rightMappingSpace.map x y F) (rightMappingSpace.map_comp x y F q).symm _
+
+end rightMappingSpaceOver
+
+end over
 
 end SSet

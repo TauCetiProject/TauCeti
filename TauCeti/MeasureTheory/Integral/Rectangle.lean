@@ -19,6 +19,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Measure.Haar.Prod
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Integrals over closed rectangles in the plane
@@ -48,6 +49,8 @@ a doubly (twisted) periodic map are used.
   the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_add_prod_eq`: the integral over a translated strip
   `[c + L, d + L] × I` is the integral of the translate `z ↦ f (z + (L, 0))` over `[c, d] × I`.
+* `TauCeti.setIntegral_preimage_prodMap_neg_id`: the reflection `(s, t) ↦ (-s, t)` preserves
+  integrals over arbitrary sets.
 * `TauCeti.setIntegral_Icc_neg_prod_eq`: the integral over a reflected strip `[-d, -c] × I` is
   the integral of the reflection `z ↦ f (-z.1, z.2)` over `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_mul_prod_Icc_mul_eq`: the integral over a dilated rectangle
@@ -192,7 +195,7 @@ theorem setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero {X : Type*} [Measur
 
 /-- The translate by `(L, 0)` of a point lies in the strip `[c + L, d + L] × I` exactly when the
 point lies in `[c, d] × I`. -/
-private theorem preimage_add_fst_Icc_prod (c d L : ℝ) (I : Set ℝ) :
+theorem preimage_add_fst_Icc_prod (c d L : ℝ) (I : Set ℝ) :
     (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) ⁻¹' (Icc (c + L) (d + L) ×ˢ I) = Icc c d ×ˢ I := by
   ext z
   simp only [mem_preimage, mem_prod, mem_Icc, Prod.fst_add, Prod.snd_add, add_zero]
@@ -213,15 +216,20 @@ private theorem preimage_neg_fst_Icc_prod (c d : ℝ) (I : Set ℝ) :
   simp only [mem_preimage, mem_prod, mem_Icc, Prod.map_fst, Prod.map_snd, id_eq]
   constructor <;> rintro ⟨⟨h, h'⟩, h''⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h''⟩
 
+/-- **Integrals under the reflection.** The reflection `(s, t) ↦ (-s, t)` preserves integrals:
+the integral of `f` over a set `K` is the integral of `f` composed with the reflection over the
+preimage of `K`. -/
+theorem setIntegral_preimage_prodMap_neg_id (f : ℝ × ℝ → E) (K : Set (ℝ × ℝ)) :
+    ∫ z in Prod.map Neg.neg id ⁻¹' K, f (Prod.map Neg.neg id z) = ∫ z in K, f z := by
+  rw [← LinearIsometryEquiv.coe_negFst ℝ]
+  exact LinearIsometryEquiv.measurePreserving_negFst.setIntegral_preimage_emb
+    (LinearIsometryEquiv.negFst ℝ ℝ ℝ).toHomeomorph.measurableEmbedding f K
+
 /-- **Integrals over a reflected strip.** The integral of `f` over the strip `[-d, -c] × I` is
 the integral of its reflection `z ↦ f (-z.1, z.2)` over the strip `[c, d] × I`. -/
 theorem setIntegral_Icc_neg_prod_eq (f : ℝ × ℝ → E) (c d : ℝ) (I : Set ℝ) :
     ∫ z in Icc (-d) (-c) ×ˢ I, f z = ∫ z in Icc c d ×ˢ I, f (-z.1, z.2) := by
-  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
-    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
-  rw [← hmp.setIntegral_preimage_emb
-    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) f,
-    preimage_neg_fst_Icc_prod]
+  rw [← setIntegral_preimage_prodMap_neg_id f, preimage_neg_fst_Icc_prod]
   simp [Prod.map]
 
 /-- **Integrals over a dilated rectangle.** For `p, q > 0`, the integral of `f` over the rectangle

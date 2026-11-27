@@ -17,6 +17,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The Cauchy heat potential, its derivatives and its parabolic Hölder estimate
@@ -64,6 +65,8 @@ bounded derivatives `Δu(t, ·)` is the Cauchy potential of `Δg`. If `g` is mor
 * `TauCeti.heatCauchyPotential_of_nonpos`, `TauCeti.heatCauchyPotential_zero`: the initial datum.
 * `TauCeti.heatCauchyPotential_eq_convolution`, `TauCeti.heatCauchyPotential_eq_convolution_fun`:
   agreement with `K_t ⋆ g` for `t > 0`, pointwise and as functions.
+* `TauCeti.heatCauchyPotential_cos_inner`: the heat flow of a cosine plane wave,
+  `exp (-t ‖ξ‖²) cos ⟪ξ, ·⟫`.
 * `TauCeti.norm_heatCauchyPotential_le`: the maximum principle `‖u‖ ≤ sup ‖g‖`.
 * `TauCeti.holderWith_heatCauchyPotential`: the parabolic Hölder estimate.
 * `HolderWith.heatCauchyPotential`: the spatial Hölder estimate of each time slice.
@@ -104,7 +107,7 @@ noncomputable section
 namespace TauCeti
 
 open InnerProductSpace Laplacian MeasureTheory Real ParabolicSpaceTime Set
-open scoped Convolution NNReal
+open scoped Convolution NNReal RealInnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -161,6 +164,15 @@ theorem heatCauchyPotential_eq_convolution (g : E → F) {t : ℝ} (ht : 0 < t) 
 theorem heatCauchyPotential_eq_convolution_fun (g : E → F) {t : ℝ} (ht : 0 < t) :
     heatCauchyPotential g t = heatKernel t ⋆ g :=
   funext <| heatCauchyPotential_eq_convolution g ht
+
+/-- **The heat flow of a cosine plane wave.** For `t ≥ 0`, the Cauchy heat potential of
+`cos ⟪ξ, ·⟫` is `exp (-t ‖ξ‖²) cos ⟪ξ, ·⟫`. -/
+theorem heatCauchyPotential_cos_inner (ξ : E) {t : ℝ} (ht : 0 ≤ t) (x : E) :
+    heatCauchyPotential (fun y ↦ cos ⟪ξ, y⟫) t x = exp (-(t * ‖ξ‖ ^ 2)) * cos ⟪ξ, x⟫ := by
+  rcases ht.eq_or_lt with rfl | ht
+  · rw [heatCauchyPotential_of_nonpos _ le_rfl]
+    simp
+  · rw [heatCauchyPotential_eq_convolution _ ht, heatKernel_convolution_cos_inner ht]
 
 /-- **The maximum principle.** If `‖g‖ ≤ M` everywhere, then `‖u(t, x)‖ ≤ M` for the Cauchy heat
 potential `u` of `g`, at every time `t` and point `x`. -/

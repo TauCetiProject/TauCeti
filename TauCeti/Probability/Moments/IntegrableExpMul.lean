@@ -34,6 +34,8 @@ moments are dominated by those of a measure for which it is finite.
 
 * `TauCeti.integrable_exp_mul_of_ge` — every nonpositive rate is integrable when `X` is bounded
   below;
+* `TauCeti.integrableExpSet_eq_univ_of_mem_Icc` — a bounded real statistic has exponential
+  moments at every rate;
 * `TauCeti.isFiniteMeasure_of_integrable_exp_mul` — a statistic bounded below with an integrable
   exponential at a nonnegative rate lives on a finite measure;
 * `TauCeti.not_integrable_exp_mul_of_not_integrable_rpow` and
@@ -56,6 +58,14 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : Ω → ℝ}
+
+/-- An a.e.-measurable real statistic bounded almost surely in a compact interval has exponential
+moments at every real rate. -/
+theorem integrableExpSet_eq_univ_of_mem_Icc [IsFiniteMeasure μ] {a b : ℝ}
+    (hX : AEMeasurable X μ) (hX_mem : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b) :
+    integrableExpSet X μ = Set.univ := by
+  apply Set.eq_univ_of_forall
+  exact fun _ ↦ integrable_exp_mul_of_mem_Icc hX hX_mem
 
 /-- **A nonpositive exponential rate is integrable when the statistic is bounded below.** On
 `b ≤ X` the integrand `exp (t * X)` is at most `exp (t * b)` for `t ≤ 0`, which a finite measure

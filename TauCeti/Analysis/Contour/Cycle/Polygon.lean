@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Polygon.Basic
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Geometry.Polygon.Simple
-public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.Polygonal
+public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Green.Polygonal.Fan
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 
@@ -39,6 +39,8 @@ become a contour cycle.
 ## Main results
 
 * `Polygon.trace_contourCycle`: the trace is the boundary of the polygon.
+* `Polygon.integral_contourCycle_eq_integral_boundaryParam`: the cycle integral of any function
+  equals the raw contour integral along `Polygon.boundaryParam` over `[0, n]`.
 * `Polygon.integral_contourCycle`: the integral of a function continuous on the boundary is the
   sum of its integrals along the edges.
 * `Polygon.windingNumber_contourCycle`: off the boundary, the winding number is the sum of the
@@ -128,31 +130,31 @@ theorem _root_.Polygon.image_boundaryParam :
 interval `[0, n]`: on `[k, k + 1]` it runs along the edge from vertex `k` to vertex `k + 1`, and
 the last edge returns to vertex `0`. It is the boundary parametrization `poly.boundaryParam`
 restricted to `[0, n]`. -/
-def _root_.Polygon.contourCurve : PiecewiseC1ClosedCurve :=
-  PiecewiseC1ClosedCurve.of poly.boundaryParam
-    poly.isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
+def _root_.Polygon.contourCurve : AbsolutelyContinuousClosedCurve :=
+  AbsolutelyContinuousClosedCurve.of poly.boundaryParam
+    poly.isPolygonalOnInterval_boundaryParam.absolutelyContinuousOnInterval
     (by simpa using (poly.periodic_boundaryParam 0).symm)
 
 /-- The polygonal curve of a polygon is its boundary parametrization, bundled on `[0, n]`. -/
 theorem _root_.Polygon.contourCurve_def :
-    poly.contourCurve = PiecewiseC1ClosedCurve.of poly.boundaryParam
-      poly.isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
+    poly.contourCurve = AbsolutelyContinuousClosedCurve.of poly.boundaryParam
+      poly.isPolygonalOnInterval_boundaryParam.absolutelyContinuousOnInterval
       (by simpa using (poly.periodic_boundaryParam 0).symm) := (rfl)
 
 /-- The polygonal curve starts at the parameter `0`. -/
 @[simp]
 theorem _root_.Polygon.contourCurve_a : poly.contourCurve.a = 0 := by
-  rw [Polygon.contourCurve, PiecewiseC1ClosedCurve.of_a]
+  rw [Polygon.contourCurve, AbsolutelyContinuousClosedCurve.of_a]
 
 /-- The polygonal curve ends at the parameter `n`. -/
 @[simp]
 theorem _root_.Polygon.contourCurve_b : poly.contourCurve.b = n := by
-  rw [Polygon.contourCurve, PiecewiseC1ClosedCurve.of_b]
+  rw [Polygon.contourCurve, AbsolutelyContinuousClosedCurve.of_b]
 
 /-- On `[0, n]` the polygonal curve is the boundary parametrization of the polygon. -/
 theorem _root_.Polygon.contourCurve_apply {t : ℝ} (ht : t ∈ Icc (0 : ℝ) n) :
     poly.contourCurve t = poly.boundaryParam t := by
-  rw [Polygon.contourCurve, PiecewiseC1ClosedCurve.of_apply _ _ _
+  rw [Polygon.contourCurve, AbsolutelyContinuousClosedCurve.of_apply _ _ _
     (by rwa [uIcc_of_le (Nat.cast_nonneg n)])]
 
 /-- The closed polygonal curve of a polygon `poly` with `n ≠ 0` vertices, as a one-generator
@@ -169,16 +171,24 @@ theorem _root_.Polygon.contourCycle_def :
 theorem _root_.Polygon.trace_contourCycle : Cycle.trace poly.contourCycle = poly.boundary ℝ := by
   rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.trace_of_raw, Polygon.image_boundaryParam]
 
+/-- Integrating over the contour cycle of a polygon equals the raw contour integral along its
+boundary parametrization on `[0, n]`. -/
+theorem _root_.Polygon.integral_contourCycle_eq_integral_boundaryParam {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] (f : ℂ → E) :
+    Cycle.integral f poly.contourCycle =
+      ∫ t in (0 : ℝ)..n, deriv poly.boundaryParam t • f (poly.boundaryParam t) := by
+  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.integral_of_raw]
+
 /-- **The integral over a polygon** of a function continuous on its boundary is the sum over the
 edges `[v, w]` of `(w - v) • ∫ t in 0..1, f (v + t (w - v))`. -/
 theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {f : ℂ → E} (hf : ContinuousOn f (poly.boundary ℝ)) :
     Cycle.integral f poly.contourCycle =
       ∑ i, (poly (finRotate n i) - poly i) • ∫ t in (0 : ℝ)..1, f (poly.edgePath ℝ i t) := by
-  have hγ := poly.isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
+  have hγ := poly.isPolygonalOnInterval_boundaryParam.absolutelyContinuousOnInterval
   have hint := hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
     (mapsTo_iff_image_subset.2 poly.image_boundaryParam.subset)
-  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.integral_of_raw]
+  rw [poly.integral_contourCycle_eq_integral_boundaryParam]
   -- Split the integral over `[0, n]` into the integrals over the cells `[i, i + 1]`.
   have hsplit := intervalIntegral.sum_integral_adjacent_intervals (a := fun k : ℕ ↦ (k : ℝ))
     (n := n) (μ := volume) (f := fun t ↦ deriv poly.boundaryParam t • f (poly.boundaryParam t))

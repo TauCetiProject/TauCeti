@@ -16,6 +16,13 @@ range of the base-changed immersion.
 An open immersion `j : U ⟶ X` identifies the stalk of `U` at `u` with the stalk of `X` at `j u`,
 so the former is factorial whenever the latter is
 (`AlgebraicGeometry.Scheme.Hom.uniqueFactorizationMonoid_stalk_of_isOpenImmersion`).
+
+For an open immersion `j : U ⟶ X`, a function on an open `W` of `X` pulls back to zero along `j`
+exactly when it restricts to zero on the image `j ''ᵁ (j ⁻¹ᵁ W)`
+(`AlgebraicGeometry.Scheme.Hom.app_eq_zero_iff`).
+
+An open immersion out of an empty scheme has empty range
+(`AlgebraicGeometry.Scheme.Hom.opensRange_eq_bot_of_isEmpty`).
 -/
 
 public section
@@ -39,5 +46,22 @@ theorem Hom.uniqueFactorizationMonoid_stalk_of_isOpenImmersion {U X : Scheme.{u}
     UniqueFactorizationMonoid (U.presheaf.stalk u) :=
   (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
     inferInstance
+
+/-- For an open immersion `j : U ⟶ X`, a function on an open `W` of `X` pulls back to zero on
+`j ⁻¹ᵁ W` exactly when it restricts to zero on the image `j ''ᵁ (j ⁻¹ᵁ W)`. -/
+theorem Hom.app_eq_zero_iff {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j] (W : X.Opens)
+    (s : Γ(X, W)) :
+    j.app W s = 0 ↔ X.presheaf.map (homOfLE (j.image_preimage_le W)).op s = 0 := by
+  rw [← (ConcreteCategory.bijective_of_isIso (j.appIso (j ⁻¹ᵁ W)).inv).injective.eq_iff,
+    map_zero, ← ConcreteCategory.comp_apply, Scheme.Hom.app_appIso_inv]
+  -- both sides restrict along the inclusion `j ''ᵁ (j ⁻¹ᵁ W) ≤ W`, with different proofs
+  rfl
+
+/-- An open immersion out of an empty scheme has empty range. -/
+@[simp]
+lemma Hom.opensRange_eq_bot_of_isEmpty {U X : Scheme.{u}} [IsEmpty U] (j : U ⟶ X)
+    [IsOpenImmersion j] : j.opensRange = ⊥ := by
+  ext
+  simp [Scheme.Hom.coe_opensRange]
 
 end AlgebraicGeometry.Scheme

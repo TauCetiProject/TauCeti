@@ -37,11 +37,14 @@ input which identifies the connecting morphisms in the proof of the Künneth for
 
 * `HomologicalComplex.tensorLeftShortComplex`: the short complex `K ⊗ S`.
 * `HomologicalComplex.shortExact_tensorLeftShortComplex`,
+  `HomologicalComplex.shortExact_tensorLeftShortComplex_of_degreewise`,
   `HomologicalComplex.shortExact_tensorLeftShortComplex_of_preservesFiniteLimits`: `K ⊗ S` is
-  short exact when `S` is split in each degree, or when tensoring with each term of `K` is exact
-  and the coproducts forming each degree of `K ⊗ S` are exact.
+  short exact when `S` is split in each degree, or when each pairwise tensor product
+  `K.X p ⊗ S.X q` (in particular, when tensoring with each term of `K` is exact) and the
+  coproducts forming each degree of `K ⊗ S` are exact.
 * `HomologicalComplex.tensorRightShortComplex`,
-  `HomologicalComplex.shortExact_tensorRightShortComplex` and
+  `HomologicalComplex.shortExact_tensorRightShortComplex`,
+  `HomologicalComplex.shortExact_tensorRightShortComplex_of_degreewise`, and
   `HomologicalComplex.shortExact_tensorRightShortComplex_of_preservesFiniteLimits`: the
   corresponding short complex `S ⊗ K` is short exact under the same conditions.
 * `HomologicalComplex.homologyCross_comp_δ`: the connecting morphism of `K ⊗ S` on a cross
@@ -110,13 +113,11 @@ lemma shortExact_tensorLeftShortComplex (hS : S.ShortExact) [∀ q, IsSplitMono 
         simpa using congrArg (fun φ ↦ K.X p ◁ φ ≫ ιTensorObj K S.X₂ p q n h) (σ q).id }
 
 variable {S} in
-/-- Tensoring on the left with `K` preserves short exact sequences of complexes when tensoring with
-each term of `K` is exact and the coproducts over the pairs `p + q = n` forming the tensor product
-are exact; for instance for complexes of modules whose terms in `K` are flat, or when each degree
-of the tensor product has finitely many summands. -/
-lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
-    [∀ p, PreservesFiniteLimits (tensorLeft (K.X p))]
-    [∀ p, PreservesFiniteColimits (tensorLeft (K.X p))]
+/-- Tensoring on the left with `K` yields a short exact sequence of complexes when each pairwise
+tensor product `K.X p ⊗ S.X q` is short exact and the coproducts over the pairs `p + q = n`
+forming the tensor product are exact. -/
+lemma shortExact_tensorLeftShortComplex_of_degreewise
+    (h : ∀ p q, ((S.map (eval C c q)).map (tensorLeft (K.X p))).ShortExact)
     [∀ n, HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C]
     [∀ n, HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C] :
     (tensorLeftShortComplex K S).ShortExact := by
@@ -133,8 +134,7 @@ lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortEx
         S.X₃).toGradedObject)
       (fun x ↦ K.X x.1 ◁ S.f.f x.2) (fun x ↦ K.X x.1 ◁ S.g.f x.2)
       (funext fun x ↦ (whiskerLeft_comp _ _ _).symm.trans (by simp [← comp_f]))
-  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦
-    ((shortExact_iff_degreewise_shortExact S).1 hS q).map_of_exact (tensorLeft (K.X p))
+  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦ h p q
   refine ShortComplex.shortExact_of_iso ?_ hT
   -- the summand inclusions of `K ⊗ S` in degree `n` are those of the coproducts over the fibre
   refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
@@ -150,6 +150,20 @@ lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortEx
     refine ((ι_tensorHom _ _ p q n h).trans ?_).trans (GradedObject.ι_mapMap T.g _ (p, q) n h).symm
     simp only [id_f, id_tensorHom]
     rfl
+
+variable {S} in
+/-- Tensoring on the left with `K` preserves short exact sequences of complexes when tensoring with
+each term of `K` is exact and the coproducts over the pairs `p + q = n` forming the tensor product
+are exact; for instance for complexes of modules whose terms in `K` are flat, or when each degree
+of the tensor product has finitely many summands. -/
+lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
+    [∀ p, PreservesFiniteLimits (tensorLeft (K.X p))]
+    [∀ p, PreservesFiniteColimits (tensorLeft (K.X p))]
+    [∀ n, HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C]
+    [∀ n, HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C] :
+    (tensorLeftShortComplex K S).ShortExact :=
+  shortExact_tensorLeftShortComplex_of_degreewise K fun p q ↦
+    ((shortExact_iff_degreewise_shortExact S).1 hS q).map_of_exact (tensorLeft (K.X p))
 
 end ShortComplex
 
@@ -191,12 +205,11 @@ lemma shortExact_tensorRightShortComplex (hS : S.ShortExact) [∀ p, IsSplitMono
         simpa using congrArg (fun φ ↦ φ ▷ K.X q ≫ ιTensorObj S.X₂ K p q n h) (σ p).id }
 
 variable {S} in
-/-- Tensoring on the right with `K` preserves short exact sequences of complexes when tensoring
-with each term of `K` is exact and the coproducts over the pairs `p + q = n` forming the tensor
-product are exact; for instance for complexes of modules whose terms in `K` are flat. -/
-lemma shortExact_tensorRightShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
-    [∀ q, PreservesFiniteLimits (tensorRight (K.X q))]
-    [∀ q, PreservesFiniteColimits (tensorRight (K.X q))]
+/-- Tensoring on the right with `K` yields a short exact sequence of complexes when each pairwise
+tensor product `S.X p ⊗ K.X q` is short exact and the coproducts over the pairs `p + q = n`
+forming the tensor product are exact. -/
+lemma shortExact_tensorRightShortComplex_of_degreewise
+    (h : ∀ p q, ((S.map (eval C c p)).map (tensorRight (K.X q))).ShortExact)
     [∀ n, HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C]
     [∀ n, HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C] :
     (tensorRightShortComplex K S).ShortExact := by
@@ -213,8 +226,7 @@ lemma shortExact_tensorRightShortComplex_of_preservesFiniteLimits (hS : S.ShortE
         K).toGradedObject)
       (fun x ↦ S.f.f x.1 ▷ K.X x.2) (fun x ↦ S.g.f x.1 ▷ K.X x.2)
       (funext fun x ↦ (comp_whiskerRight _ _ _).symm.trans (by simp [← comp_f]))
-  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦
-    ((shortExact_iff_degreewise_shortExact S).1 hS p).map_of_exact (tensorRight (K.X q))
+  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦ h p q
   refine ShortComplex.shortExact_of_iso ?_ hT
   -- the summand inclusions of `S ⊗ K` in degree `n` are those of the coproducts over the fibre
   refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
@@ -230,6 +242,19 @@ lemma shortExact_tensorRightShortComplex_of_preservesFiniteLimits (hS : S.ShortE
     refine ((ι_tensorHom _ _ p q n h).trans ?_).trans (GradedObject.ι_mapMap T.g _ (p, q) n h).symm
     simp only [id_f, tensorHom_id]
     rfl
+
+variable {S} in
+/-- Tensoring on the right with `K` preserves short exact sequences of complexes when tensoring
+with each term of `K` is exact and the coproducts over the pairs `p + q = n` forming the tensor
+product are exact; for instance for complexes of modules whose terms in `K` are flat. -/
+lemma shortExact_tensorRightShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
+    [∀ q, PreservesFiniteLimits (tensorRight (K.X q))]
+    [∀ q, PreservesFiniteColimits (tensorRight (K.X q))]
+    [∀ n, HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C]
+    [∀ n, HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C] :
+    (tensorRightShortComplex K S).ShortExact :=
+  shortExact_tensorRightShortComplex_of_degreewise K fun p q ↦
+    ((shortExact_iff_degreewise_shortExact S).1 hS p).map_of_exact (tensorRight (K.X q))
 
 end TensorRight
 

@@ -9,8 +9,8 @@ public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.RingTheory.Artinian.Module
+public import Mathlib.RingTheory.DualNumber
 import Mathlib.LinearAlgebra.Basis.Prod
-import Mathlib.RingTheory.DualNumber
 import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
@@ -25,11 +25,16 @@ The dual numbers are a finite module over their coefficient ring, so dual number
 Artinian ring are also Artinian, and dual numbers over a finite or free module are again finite
 or free.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
-`1 + inr c` is a unit with inverse `1 - inr c`.
+`1 + inr c` is a unit with inverse `1 - inr c`; these units multiply by adding the
+infinitesimal parts, so the `n`th power of `1 + inr c` is `1 + inr (n • c)`, and `1 + inr c`
+determines `c`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
-their value on `ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
-are neither reduced nor a field. The dual numbers are free of rank two on the basis `1, ε`, so
-linear maps out of them are determined by their values on `1` and `ε`.
+their value on `ε`. In particular an `R`-algebra endomorphism `f` of `R[ε]` multiplies
+`ε`-coefficients by that of `f ε`, and over a reduced semiring `f ε` has zero `R`-component, so
+`f ε = (f ε).snd • ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
+are neither reduced nor a field; over a field, the maximal ideal `(ε)` squares to zero. The dual
+numbers are free of rank two on the basis `1, ε`, so linear maps out of them are determined by
+their values on `1` and `ε`.
 -/
 
 public section
@@ -49,10 +54,50 @@ theorem coe_dualNumberUnit {R : Type*} [Ring R] (c : R) :
     (dualNumberUnit c : DualNumber R) = 1 + TrivSqZeroExt.inr c := (rfl)
 
 /-- The underlying dual number of the inverse of `dualNumberUnit c` is `1 - inr c`. -/
-@[simp]
 theorem coe_dualNumberUnit_inv {R : Type*} [Ring R] (c : R) :
     (((dualNumberUnit c)⁻¹ : (DualNumber R)ˣ) : DualNumber R) =
       1 - TrivSqZeroExt.inr c := (rfl)
+
+/-- `dualNumberUnit` is injective. -/
+theorem dualNumberUnit_injective {R : Type*} [Ring R] :
+    Function.Injective (dualNumberUnit : R → (DualNumber R)ˣ) := fun c d h ↦ by
+  simpa using congr_arg (fun u : (DualNumber R)ˣ ↦ TrivSqZeroExt.snd (u : DualNumber R)) h
+
+/-- `dualNumberUnit c = dualNumberUnit d` exactly when `c = d`. -/
+@[simp]
+theorem dualNumberUnit_inj {R : Type*} [Ring R] {c d : R} :
+    dualNumberUnit c = dualNumberUnit d ↔ c = d :=
+  dualNumberUnit_injective.eq_iff
+
+/-- `dualNumberUnit 0` is the identity unit. -/
+@[simp]
+theorem dualNumberUnit_zero {R : Type*} [Ring R] : dualNumberUnit (0 : R) = 1 := by
+  ext <;> simp
+
+/-- The product of `dualNumberUnit c` and `dualNumberUnit d` is `dualNumberUnit (c + d)`. -/
+@[simp]
+theorem dualNumberUnit_mul {R : Type*} [Ring R] (c d : R) :
+    dualNumberUnit c * dualNumberUnit d = dualNumberUnit (c + d) := by
+  ext <;> simp [TrivSqZeroExt.snd_mul, add_comm]
+
+/-- `dualNumberUnit c` is the identity unit exactly when `c = 0`. -/
+@[simp]
+theorem dualNumberUnit_eq_one_iff {R : Type*} [Ring R] {c : R} : dualNumberUnit c = 1 ↔ c = 0 := by
+  rw [← dualNumberUnit_zero, dualNumberUnit_inj]
+
+/-- The inverse of `dualNumberUnit c` is `dualNumberUnit (-c)`. -/
+@[simp]
+theorem dualNumberUnit_inv {R : Type*} [Ring R] (c : R) :
+    (dualNumberUnit c)⁻¹ = dualNumberUnit (-c) := by
+  rw [inv_eq_iff_mul_eq_one, dualNumberUnit_mul, add_neg_cancel, dualNumberUnit_zero]
+
+/-- The `n`th power of `dualNumberUnit c` is `dualNumberUnit (n • c)`. -/
+@[simp]
+theorem dualNumberUnit_pow {R : Type*} [Ring R] (c : R) (n : ℕ) :
+    dualNumberUnit c ^ n = dualNumberUnit (n • c) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, ih, dualNumberUnit_mul, succ_nsmul]
 
 /-- The scalar projection sends `dualNumberUnit c` to the identity unit. -/
 @[simp]
@@ -112,6 +157,36 @@ end AlgHom
 
 namespace DualNumber
 
+open TrivSqZeroExt
+
+variable {R : Type*} [CommSemiring R] {F : Type*} [FunLike F R[ε] R[ε]] [AlgHomClass F R R[ε] R[ε]]
+
+/-- The `ε`-coefficient of the image of `x` under an endomorphism `f` of the dual numbers is the
+`ε`-coefficient of `x` times that of `f ε`. -/
+theorem snd_apply_eq_snd_mul_snd_apply_eps (f : F) (x : R[ε]) : (f x).snd = x.snd * (f ε).snd := by
+  have h := congrArg snd ((AlgHom.ofClass f).apply_dualNumber x)
+  rw [← algebraMap_eq_inl, AlgHom.commutes, AlgHom.commutes] at h
+  simpa [DualNumber.snd_mul, algebraMap_eq_inl] using h
+
+/-- Over a reduced semiring, an endomorphism of the dual numbers sends `ε` to an element with zero
+`R`-component. -/
+@[simp]
+theorem fst_apply_eps_eq_zero [IsReduced R] (f : F) : (f ε).fst = 0 :=
+  ((isNilpotent_eps.map f).map (fstHom R R R)).eq_zero
+
+/-- A dual number is a multiple of `ε` exactly when its `R`-component vanishes. Applied to the
+image `f ε` of `ε` under an endomorphism `f`, this says that `f ε = (f ε).snd • ε` exactly when
+`(f ε).fst = 0`, which always holds over a reduced semiring
+(`DualNumber.fst_apply_eps_eq_zero`). -/
+theorem eq_snd_smul_eps_iff (x : R[ε]) : x = x.snd • ε ↔ x.fst = 0 := by
+  refine ⟨fun h ↦ by rw [h, fst_smul, fst_eps, smul_zero], fun h ↦ ?_⟩
+  conv_lhs => rw [← inl_fst_add_inr_snd_eq x]
+  rw [h, inl_zero, zero_add, inr_eq_smul_eps]
+
+end DualNumber
+
+namespace DualNumber
+
 variable {R : Type*} [Semiring R] [Nontrivial R]
 
 /-- Over a nontrivial semiring, `ε` is nonzero. -/
@@ -125,6 +200,13 @@ theorem not_isReduced : ¬IsReduced R[ε] := fun _ ↦ eps_ne_zero (R := R) isNi
 theorem not_isField : ¬IsField R[ε] := fun h ↦ by
   have := h.isDomain
   exact not_isReduced (R := R) inferInstance
+
+/-- Over a field `k`, the square of the maximal ideal of the dual numbers `k[ε]` is zero. -/
+@[simp]
+theorem maximalIdeal_sq_eq_bot {k : Type*} [Field k] :
+    IsLocalRing.maximalIdeal (DualNumber k) ^ 2 = ⊥ := by
+  rw [maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_pow, sq, eps_mul_eps,
+    Ideal.span_singleton_zero]
 
 end DualNumber
 

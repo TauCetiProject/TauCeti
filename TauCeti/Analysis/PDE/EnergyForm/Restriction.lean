@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Analysis.PDE.EnergyForm.SmallDrift
 
 /-!
 # The energy form under restriction to a smaller domain
@@ -34,6 +35,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
+* `TauCeti.PDE.energyFormH1_restrictL_max_nonneg`: a weak supersolution that is nonnegative on
+  `U` restricts to a weak supersolution with the mass coefficient `c` replaced by `max c 0`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
@@ -68,6 +71,9 @@ integrability hypotheses on `Ω`.
   `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)} + ⟪f, v⟫_{L²(B)}`.
 * `TauCeti.PDE.energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral`: the
   same equation for the restriction of `u` to `B`, tested against test functions on `B`.
+* `energyFormH1_restrictL_extendByZeroL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral`:
+  the zero extension of a weak solution `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` to an open
+  `W ⊇ Ω`, restricted to `W ∩ Ω`, solves the same equation there, tested against test functions.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
@@ -243,6 +249,38 @@ theorem energyFormH1_restrictL_nonneg {a : EuclideanSpace ℝ ι → Matrix ι �
     (fun v hv => by rw [energyFormH1_smul_left]; linarith [hu v hv]) v hv
   rw [map_smul, energyFormH1_smul_left] at hneg
   linarith
+
+/-- **Dropping the negative part of the mass coefficient.** Let `u ∈ H¹(Ω)` be a weak
+supersolution, `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with an essentially bounded
+energy density for the principal and drift coefficients and an essentially bounded mass
+coefficient `c` on an open `U ⊆ Ω`. If `u ≥ 0` almost everywhere on `U`, then the restriction
+`u|_U` is a weak supersolution in `U` of the equation with mass coefficient `c⁺ = max c 0`. -/
+theorem energyFormH1_restrictL_max_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    (hab : MemLp (fun x => energyIntegrand (a x) (b x) 0) ⊤ (mu.restrict U))
+    (hc : MemLp c ⊤ (mu.restrict U)) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2))
+    (hu0 : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value u x)
+    (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
+    0 ≤ energyFormH1 a b (fun x => max (c x) 0) (W1p.restrictL hU u) (v : W1p mu U 2) := by
+  have hc' : MemLp (fun x => max (c x) 0) ⊤ (mu.restrict U) :=
+    hc.mono (hc.aestronglyMeasurable.sup aestronglyMeasurable_const) (.of_forall fun x => by
+      rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (le_max_right _ _)]
+      exact max_le (le_abs_self _) (abs_nonneg _))
+  have h := energyFormH1_restrictL_nonneg hU hu v hv
+  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral hab hc] at h
+  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral hab hc']
+  have hint {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f ⊤ (mu.restrict U)) :
+      Integrable (fun x => f x * W1p.value (W1p.restrictL hU u) x *
+        W1p.value (v : W1p mu U 2) x) (mu.restrict U) :=
+    (show MemLp (fun x => f x * W1p.value (W1p.restrictL hU u) x) 2 (mu.restrict U) from
+      hf.fun_mul (Lp.memLp _)).integrable_mul (Lp.memLp _)
+  refine h.trans (add_le_add_right (integral_mono_ae (hint hc) (hint hc') ?_) _)
+  filter_upwards [W1p.value_restrictL_ae hU u, hu0, hv] with x h1 h2 h3
+  rw [h1]
+  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_left _ _) h2) h3
 
 /-- **Shifted weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0` for every nonnegative
 `v ∈ H¹₀(Ω)`, for an energy form with no mass term, then for every open `U ⊆ Ω` of finite measure
@@ -600,6 +638,37 @@ theorem energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setInt
   rw [← inner_toLp_gradient_ofTestFunctionₗ hGc φ, ← inner_toLp_value_ofTestFunctionₗ hf φ]
   exact forall_energyFormH1_restrictL_eq_inner_add_inner hB ha hu hGc hf
     ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+
+/-- **Zero extensions of weak solutions.** The zero extension of a weak solution `u ∈ H¹₀(Ω)` of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` to an open `W ⊇ Ω`, restricted to `W ∩ Ω`, solves the same equation
+there, tested against test functions: it is the restriction of `u` itself. Only the integrability
+of the coefficients, of `G - c` (for some constant `c`) and of `f` on `W ∩ Ω` is assumed. This is
+the form of a zero boundary condition, a function vanishing off `Ω` and solving the equation on
+`Ω`, that boundary regularity estimates take. -/
+theorem energyFormH1_restrictL_extendByZeroL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral
+    {W : Opens (EuclideanSpace ℝ ι)} (hΩW : Omega ≤ W) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {f : EuclideanSpace ℝ ι → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict (W ⊓ Omega)))
+    {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict (W ⊓ Omega)))
+    (hf : MemLp f 2 (mu.restrict (W ⊓ Omega))) {u : W1p0 mu Omega 2}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 (u : W1p mu Omega 2)
+        (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu +
+        ∫ x in Omega, f x * φ x ∂mu)
+    (φ : 𝓓(W ⊓ Omega, ℝ)) :
+    energyFormH1 a 0 0 (W1p.restrictL inf_le_left (W1p0.extendByZeroL hΩW u : W1p mu W 2))
+        (W1p.ofTestFunctionₗ mu (W ⊓ Omega) 2 φ) =
+      ∫ x in W ⊓ Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu +
+        ∫ x in W ⊓ Omega, f x * φ x ∂mu := by
+  have hres : W1p.restrictL (inf_le_left : W ⊓ Omega ≤ W)
+      (W1p0.extendByZeroL hΩW u : W1p mu W 2) =
+      W1p.restrictL inf_le_right (u : W1p mu Omega 2) := by
+    conv_rhs => rw [← W1p0.restrictL_extendByZeroL hΩW u]
+    rw [W1p.restrictL_restrictL]
+  rw [hres]
+  exact energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral inf_le_right
+    ha hu hGc hf φ
 
 /-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` on `Ω`, tested against test functions, holds on
 every open `B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`,
