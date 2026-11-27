@@ -60,7 +60,10 @@ complex character that is an integer combination of characters of representation
 * `TauCeti.neg_one_pow_smul_mem_virtualCharacters`: the lattice is closed under multiplication by
   the signs `(-1) ^ n`.
 * `TauCeti.comp_mem_virtualCharacters`: pulling back along a monoid homomorphism preserves virtual
-  characters.
+  characters, and `TauCeti.ClassFunction.comap_mem_virtualCharacters` is its form for class
+  functions.
+* `TauCeti.ClassFunction.ofCharacter_mem_virtualCharacters`: the class function of a
+  representation is a virtual character.
 * `TauCeti.irreducibleCharacters_subset_virtualCharacters`: every irreducible character is a
   virtual character.
 * `TauCeti.virtualCharacters_le_classFunction`: a virtual character is a class function, and
@@ -259,6 +262,32 @@ theorem virtualCharacters_le_classFunction :
     have h : (ClassFunction.ofCharacter V.ρ : G → k) = V.character :=
       funext fun g => ClassFunction.ofCharacter_apply V.ρ g
     exact h ▸ (ClassFunction.ofCharacter V.ρ).property
+
+/-- **The class function of a representation is a virtual character**: for a finite-dimensional
+representation it is the character of `FDRep.of ρ`, and otherwise it is `0`. -/
+@[simp]
+theorem ClassFunction.ofCharacter_mem_virtualCharacters {V : Type u} [AddCommGroup V] [Module k V]
+    (ρ : Representation k G V) :
+    (ClassFunction.ofCharacter ρ : G → k) ∈ virtualCharacters k G := by
+  by_cases hV : FiniteDimensional k V
+  · have h : (ClassFunction.ofCharacter ρ : G → k) = (FDRep.of ρ).character :=
+      funext fun g => by rw [ClassFunction.ofCharacter_apply, FDRep.character_of]
+    exact h ▸ character_mem_virtualCharacters (FDRep.of ρ)
+  · have h : (ClassFunction.ofCharacter ρ : G → k) = 0 :=
+      funext fun g => by
+        rw [ClassFunction.ofCharacter_apply, ρ.character_eq_zero_of_not_finite hV]
+    rw [h]
+    exact zero_mem _
+
+/-- **Pulling a class function back along a group homomorphism preserves virtual characters**:
+`TauCeti.comp_mem_virtualCharacters` for `TauCeti.ClassFunction.comap`. Restriction to a subgroup
+`N` is the case `φ = N.subtype`. -/
+theorem ClassFunction.comap_mem_virtualCharacters {H : Type w} [Group H] (φ : H →* G)
+    {f : ClassFunction k G} (hf : (f : G → k) ∈ virtualCharacters k G) :
+    (ClassFunction.comap φ f : H → k) ∈ virtualCharacters k H := by
+  have h : (ClassFunction.comap φ f : H → k) = (f : G → k) ∘ φ :=
+    funext (ClassFunction.comap_apply φ f)
+  exact h ▸ comp_mem_virtualCharacters φ hf
 
 end ClassFunctions
 
@@ -634,9 +663,7 @@ theorem mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
     have ha₀ : a i₀ = w := hi₀
     rw [← hexp, sum_eq_single i₀ (fun j _ hj => by rw [hzero j hj, zero_smul]) (by simp), ha₀,
       Submodule.coe_smul, Int.cast_smul_eq_zsmul]
-    refine zsmul_mem ?_ w
-    convert irreducibleCharacter_mem_virtualCharacters (k := k) i₀ using 1
-    exact funext fun g => by simp [character_irreducibleRepresentation]
+    exact zsmul_mem (ofCharacter_mem_virtualCharacters _) w
   exact mem_irreducibleCharacters_of_characterPairing_self_eq_one hfv hnorm hd
 
 end Norm

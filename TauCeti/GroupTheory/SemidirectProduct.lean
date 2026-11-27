@@ -23,6 +23,8 @@ normality of `H` in the ambient group (`SemidirectProduct.mulEquivSup`).
 
 ## Main results
 
+* `SemidirectProduct.mul_inl_mul_inv`: conjugating the normal factor by an element `g` applies
+  the action of `g.right` and conjugation by `g.left`.
 * `SemidirectProduct.inr_mul_inl`: moving the acting group past the normal factor applies the
   action.
 * `SemidirectProduct.instFinite`: a semidirect product of finite groups is finite.
@@ -61,6 +63,16 @@ public section
 
 variable {G : Type*} [Group G] {H K : Subgroup G}
 
+namespace SemidirectProduct
+
+/-- **Conjugation of the normal factor**: `g * inl n * g⁻¹ = inl (g.left * φ g.right n * g.left⁻¹)`
+for every element `g` of the semidirect product. -/
+theorem mul_inl_mul_inv {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} (g : N ⋊[φ] Q)
+    (n : N) : g * inl n * g⁻¹ = inl (g.left * φ g.right n * g.left⁻¹) := by
+  ext <;> simp [mul_assoc]
+
+end SemidirectProduct
+
 namespace Subgroup
 
 open SemidirectProduct
@@ -72,9 +84,8 @@ theorem normal_map_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
     (S.map (inl : N →* N ⋊[φ] Q)).Normal := by
   constructor
   rintro _ ⟨n, hn, rfl⟩ x
-  refine ⟨x.left * φ x.right n * x.left⁻¹,
-    ‹S.Normal›.conj_mem _ (hS _ _ hn) _, ?_⟩
-  ext <;> simp [mul_assoc]
+  rw [mul_inl_mul_inv]
+  exact mem_map_of_mem _ (‹S.Normal›.conj_mem _ (hS _ _ hn) _)
 
 end Subgroup
 

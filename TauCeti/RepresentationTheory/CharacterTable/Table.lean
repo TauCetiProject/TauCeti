@@ -66,7 +66,8 @@ take their familiar Hermitian form, because inversion conjugates character value
   `TauCeti.characterPairing_ofCharacter_irreducibleRepresentation_orthonormal` is the same relation
   phrased as orthonormality for the character pairing, and
   `TauCeti.sum_mul_inv_of_mem_irreducibleCharacters` is the same relation for the set of
-  irreducible characters, free of the enumeration and of division.
+  irreducible characters, free of the enumeration and of division, with
+  `TauCeti.characterPairing_self_of_mem_irreducibleCharacters` its normalized diagonal case.
 * `TauCeti.one_mem_irreducibleCharacters`: the trivial character is irreducible;
   `TauCeti.exists_irreducibleCharacter_eq_one`: it is a row of the table, and every other row is
   nonconstant
@@ -576,6 +577,14 @@ theorem sum_mul_inv_self_of_mem_irreducibleCharacters {β : G → k}
     (hβ : β ∈ irreducibleCharacters k G) : ∑ g, β g * β g⁻¹ = Nat.card G := by
   classical
   simpa using sum_mul_inv_of_mem_irreducibleCharacters hβ hβ
+
+/-- Over an algebraically closed field in which `|G|` is nonzero, an irreducible character has
+norm `1`: `⟨f, f⟩ = 1`. -/
+theorem characterPairing_self_of_mem_irreducibleCharacters {f : ClassFunction k G}
+    (hf : (f : G → k) ∈ irreducibleCharacters k G) (hG : (Nat.card G : k) ≠ 0) :
+    ClassFunction.characterPairing f f = 1 := by
+  rw [ClassFunction.characterPairing_apply, sum_mul_inv_self_of_mem_irreducibleCharacters hf,
+    inv_mul_cancel₀ hG]
 
 end Orthonormal
 

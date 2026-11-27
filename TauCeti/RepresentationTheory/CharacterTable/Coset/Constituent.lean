@@ -123,16 +123,9 @@ theorem characterPairing_ne_zero_of_index_not_dvd_of_eq_on_coset (hp : N.index.P
         ← mul_assoc, mul_inv_cancel, one_mul] using hcoset ((⟨x, hx⟩ : N)⁻¹ * n)
     rw [hEq, map_smul, LinearMap.smul_apply, hzero, smul_zero] at hm
     exact hnd (Int.cast_eq_zero.mp hm.symm ▸ dvd_zero _)
-  have hRes : (comap N.subtype X).val ∈ virtualCharacters k N := by
-    have hcomap : (comap N.subtype X).val = X.val ∘ N.subtype := funext (comap_apply _ _)
-    rw [hcomap]
-    exact comp_mem_virtualCharacters N.subtype hX
-  have hInv (g : G) (n : N) : (comap N.subtype X).val (MulAut.conjNormal g n) =
-      (comap N.subtype X).val n := by
-    simpa only [comap_apply, Subgroup.subtype_apply, MulAut.conjNormal_apply] using
-      (ClassFunction.mem_iff.mp X.property n g)
-  obtain ⟨d, hd, hpair⟩ := exists_index_dvd_characterPairing_of_dvd_stable_coefficients hp hRes hY
-    hInv (apply_conjNormal_eq_of_isCoatom Y (N.isCoatom_of_index_prime hp) hx hYx) (by
+  obtain ⟨d, hd, hpair⟩ := exists_index_dvd_characterPairing_of_dvd_stable_coefficients hp
+    (comap_mem_virtualCharacters N.subtype hX) hY (comap_subtype_apply_conjNormal X)
+    (apply_conjNormal_eq_of_isCoatom Y (N.isCoatom_of_index_prime hp) hx hYx) (by
       intro θ hθ hθinv
       by_cases heq : θ = χN
       · subst θ

@@ -100,20 +100,13 @@ private theorem exists_index_mul_characterPairing_eq_intCast (hres : ∀ n : N, 
     ∃ z : ℤ, (N.index : k) *
       characterPairing (ofCharacter (irreducibleRepresentation k i)) F = z := by
   let _ : Fintype N := Fintype.ofFinite N
-  have hχ : (ofCharacter (irreducibleRepresentation k i) : G → k) ∈ virtualCharacters k G := by
-    convert irreducibleCharacter_mem_virtualCharacters (k := k) i using 1
-    exact funext fun g => by simp [character_irreducibleRepresentation]
+  have hχ := ofCharacter_mem_virtualCharacters (irreducibleRepresentation k i)
   -- restrictions of virtual characters to `N` are virtual characters
-  have hres_v {f : ClassFunction k G} (hf : (f : G → k) ∈ virtualCharacters k G) :
-      (comap N.subtype f : N → k) ∈ virtualCharacters k N := by
-    have h : (comap N.subtype f : N → k) = (f : G → k) ∘ N.subtype :=
-      funext fun n => comap_apply ..
-    exact h ▸ comp_mem_virtualCharacters N.subtype hf
-  have hχN := hres_v hχ
+  have hχN := comap_mem_virtualCharacters N.subtype hχ
   obtain ⟨z₁, hz₁⟩ := exists_characterPairing_eq_intCast hχ hΘ
   obtain ⟨z₂, hz₂⟩ := exists_characterPairing_eq_intCast hχN hY
   obtain ⟨z₃, hz₃⟩ := exists_characterPairing_eq_intCast hχN
-    (hres_v hΘ)
+    (comap_mem_virtualCharacters N.subtype hΘ)
   have hi : (N.index : k) ≠ 0 :=
     left_ne_zero_of_mul (by rw [← Nat.cast_mul, N.index_mul_card]; exact Invertible.ne_zero _)
   refine ⟨N.index * z₁ + z₂ - z₃, ?_⟩
@@ -137,13 +130,11 @@ private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
   have hG : (N.index : k) * Nat.card N ≠ 0 := by
     rw [← Nat.cast_mul, N.index_mul_card]
     exact Invertible.ne_zero _
-  have hYY : characterPairing Y Y = 1 := by
-    rw [characterPairing_apply, sum_mul_inv_self_of_mem_irreducibleCharacters hY,
-      inv_mul_cancel₀ (right_ne_zero_of_mul hG)]
+  have hYY := characterPairing_self_of_mem_irreducibleCharacters hY (right_ne_zero_of_mul hG)
   -- `Y` is invariant under `G`, being the restriction of the class function `F`
-  have hinv (g : G) : (Y : N → k) ∘ MulAut.conjNormal g = Y := funext fun n => by
-    rw [Function.comp_apply, ← hres, ← hres, MulAut.conjNormal_apply]
-    exact ClassFunction.mem_iff.mp F.property n g
+  have hFN : comap N.subtype F = Y := Subtype.ext (funext fun n => by simp [hres])
+  have hinv (g : G) : (Y : N → k) ∘ MulAut.conjNormal g = Y :=
+    hFN ▸ funext (comap_subtype_apply_conjNormal F g)
   set c := fun i : Fin (Nat.card (ConjClasses G)) => ofCharacter (irreducibleRepresentation k i)
   have hc (i) : (c i : G → k) = irreducibleCharacter k i :=
     funext fun g => by simp [c, character_irreducibleRepresentation]
@@ -153,7 +144,6 @@ private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
     have h := congrArg (fun f => characterPairing Y (comap N.subtype f))
       (sum_characterPairing_smul_ofCharacter (irreducibleRepresentation k)
         (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) F)
-    have hFN : comap N.subtype F = Y := Subtype.ext (funext fun n => by simp [hres])
     simp only [map_sum, map_smul, smul_eq_mul, hFN, hYY] at h
     obtain ⟨i, -, hi⟩ := exists_ne_zero_of_sum_ne_zero (h ▸ one_ne_zero)
     exact ⟨i, left_ne_zero_of_mul hi, right_ne_zero_of_mul hi⟩
@@ -168,10 +158,8 @@ private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
     exists_restrict_eq_natCast_mul_of_mem_irreducibleCharactersOver hY hinv hmem
   have hcN : comap N.subtype (c i) = (e : k) • Y :=
     Subtype.ext (funext fun n => by simp [comap_apply, hc, he])
-  have hcv : (c i : G → k) ∈ virtualCharacters k G := by
-    rw [hc]
-    exact irreducibleCharacter_mem_virtualCharacters (k := k) (G := G) i
-  obtain ⟨t, ht⟩ := exists_characterPairing_eq_intCast hcv hΘ
+  obtain ⟨t, ht⟩ :=
+    exists_characterPairing_eq_intCast (f₁ := c i) (ofCharacter_mem_virtualCharacters _) hΘ
   have hi : (N.index : k) ≠ 0 := left_ne_zero_of_mul hG
   have hai : characterPairing (c i) F = ((t - e * m : ℤ) : k) := by
     rw [characterPairing_eq_add_inv_index_mul hres hoff, hcN]
@@ -216,9 +204,8 @@ theorem mem_irreducibleCharacters_of_restrict_eq_of_eqOn_compl {Y : ClassFunctio
       rw [hoff hc, hoff hg]
       exact ClassFunction.mem_iff.mp Θ.property g h
   let F : ClassFunction k G := ⟨χ, hcl⟩
-  have hYY : characterPairing Y Y = 1 := by
-    rw [characterPairing_apply, sum_mul_inv_self_of_mem_irreducibleCharacters hY,
-      inv_mul_cancel₀ (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
+  have hYY :=
+    characterPairing_self_of_mem_irreducibleCharacters hY (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   obtain ⟨i₀, w, hw, hi₀⟩ :=
     exists_characterPairing_eq_intCast_ne_zero (F := F) hres hoff hY hΘ h₂
   obtain ⟨d, ρ, -, hρ⟩ := mem_irreducibleCharacters_iff.mp hY
@@ -272,10 +259,8 @@ theorem mem_irreducibleCharacters_semidirectProduct_of_comp_inl_eq {N S : Type*}
     intro g
     funext x
     obtain ⟨n, rfl⟩ := e.surjective x
-    have hconj : g * inl n * g⁻¹ = inl (g.left * φ g.right n * g.left⁻¹) := by
-      ext <;> simp [mul_assoc]
     rw [Function.comp_apply, hY', hY', MulAut.conjNormal_apply]
-    simp only [e, coe_mulEquivKerRightHom_apply, hconj, left_inl]
+    simp only [e, coe_mulEquivKerRightHom_apply, mul_inl_mul_inv, left_inl]
     rw [ClassFunction.mem_iff.mp Y.property]
     exact congrFun (hinv g.right) n
   · rw [hidx, hpair, hcomap]

@@ -17,7 +17,9 @@ their module with the module of functions on `ConjClasses G`, computes its finit
 are finitely many conjugacy classes, pulls class functions back along a group homomorphism,
 twists them by a power map, inverts the group element, changes their coefficients along a ring
 homomorphism, shows that characters of representations are class functions, and evaluates a sum
-over a finite group one conjugacy class at a time. On a normal subgroup that is maximal among
+over a finite group one conjugacy class at a time. The restriction of a class function to a
+normal subgroup is invariant under ambient conjugation
+(`TauCeti.ClassFunction.comap_subtype_apply_conjNormal`). On a normal subgroup that is maximal among
 proper subgroups, a class function invariant under conjugation by one outside element is invariant
 under all ambient conjugations (`TauCeti.ClassFunction.apply_conjNormal_eq_of_isCoatom`).
 
@@ -140,6 +142,13 @@ each factor in turn. -/
 theorem comap_comp {H : Type w} {J : Type w'} [Group H] [Group J] (φ : H →* G) (ψ : J →* H) :
     comap (k := k) (φ.comp ψ) = (comap ψ).comp (comap φ) :=
   (rfl)
+
+/-- The restriction of a class function of `G` to a normal subgroup `N` is invariant under
+conjugation by every element of `G`. -/
+theorem comap_subtype_apply_conjNormal {N : Subgroup G} [N.Normal] (f : ClassFunction k G) (g : G)
+    (n : N) : (comap N.subtype f).val (MulAut.conjNormal g n) = (comap N.subtype f).val n := by
+  rw [comap_apply, comap_apply, Subgroup.subtype_apply, MulAut.conjNormal_apply]
+  exact mem_iff.mp f.property n g
 
 /-- On a normal subgroup that is maximal among proper subgroups, invariance of a class function
 under conjugation by one outside element implies invariance under all ambient conjugations. -/
