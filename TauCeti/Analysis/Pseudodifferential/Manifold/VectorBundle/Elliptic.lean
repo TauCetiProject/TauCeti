@@ -44,8 +44,10 @@ description `TauCeti.coefficient_principal_eq_classicalPrincipalSymbol` of chart
 symbols and the transformation law `TauCeti.classicalPrincipalSymbol_sectionEntry` of the entries
 apply.
 
-Consequently, where `φ ψ` does not vanish, `P` is elliptic at `x` exactly when the matrix
-`a_m(e x, η)` is invertible at every nonzero frequency
+Consequently, where `φ ψ` does not vanish, the matrix `a_m(e x, η)` is invertible exactly when
+`σ_m(P)(x, ⟪η, ·⟫ ∘ de_x)` is bijective
+(`TauCeti.isInvertible_coefficient_principal_iff_bijective_sectionClassicalPrincipalSymbol`), so `P`
+is elliptic at `x` exactly when `a_m(e x, η)` is invertible at every nonzero frequency
 (`TauCeti.isSectionClassicalEllipticAt_iff_forall_isInvertible`), and on an open set `U` where
 `φ ψ ≠ 0` the restriction of `a` to `U` is an elliptic classical symbol exactly when `P` is
 elliptic over `U` (`TauCeti.isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt`).
@@ -64,6 +66,8 @@ The scalar forms of these statements are in
 
 * `TauCeti.coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol`: the principal symbol
   of a chart symbol of `P` is the principal symbol of `P` read in the chart and the frames.
+* `TauCeti.isInvertible_coefficient_principal_iff_bijective_sectionClassicalPrincipalSymbol`: the
+  chart principal symbol is invertible exactly when `σ_m(P)` is bijective.
 * `TauCeti.isSectionClassicalEllipticAt_iff_forall_isInvertible`: ellipticity in a chart.
 * `TauCeti.isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt`: the chart symbol is
   elliptic over an open set exactly when `P` is.
@@ -183,6 +187,35 @@ theorem coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol
     simpa [e.left_inv hx] using hρ (e x) (Or.inl (subset_tsupport _ (left_ne_zero_of_mul hφψ)))
   rw [hρx, mul_one, Complex.ofReal_one, one_mul]
 
+/-- **Invertibility in a chart.** Let `a` be the symbol of the chart compression
+`u ↦ φ · t' (P (t⁻¹ ((ψ u) ∘ e))) ∘ e⁻¹` of a classical pseudodifferential operator `P` of order
+`m` between bundles. At a point `x` of the chart source where `φ ψ` does not vanish, the principal
+symbol of `a` at `(e x, η)` is invertible exactly when the principal symbol of `P` at the covector
+`⟪η, ·⟫ ∘ de_x` is bijective. -/
+theorem isInvertible_coefficient_principal_iff_bijective_sectionClassicalPrincipalSymbol
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hF : e.source ⊆ t'.baseSet)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    {x : M} (hx : x ∈ e.source) (hφψ : φ (e x) * ψ (e x) ≠ 0) (η : CoordinateSpace n) :
+    (a.principal.coefficient (e x, η)).IsInvertible ↔
+      Function.Bijective (sectionClassicalPrincipalSymbol m P x
+        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x))) := by
+  have hc : ((φ (e x) * ψ (e x) : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hφψ
+  set T := t'.continuousLinearEquivAt ℂ x (hF hx)
+  set S := (t.continuousLinearEquivAt ℂ x (hE hx)).symm
+  -- The principal symbol of `a` at `(e x, η)` is `σ_m(P)(x, ξ)` between the frame isomorphisms.
+  have key : (a.principal.coefficient (e x, η) : V → W) =
+      (((φ (e x) * ψ (e x) : ℝ) : ℂ) • ·) ∘ T ∘ sectionClassicalPrincipalSymbol m P x
+        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x)) ∘ S := by
+    rw [t'.coe_continuousLinearEquivAt_eq, t.symm_continuousLinearEquivAt_eq]
+    funext v
+    rw [coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol hP hF ha hx]
+    simp [t.symmL_apply (hE hx)]
+  rw [ContinuousLinearMap.isInvertible_iff_bijective, key, (MulAction.bijective₀ hc).of_comp_iff',
+    T.bijective.of_comp_iff', Function.Bijective.of_comp_iff _ S.bijective]
+
 /-- **Ellipticity in a chart.** Let `a` be the symbol of the chart compression
 `u ↦ φ · t' (P (t⁻¹ ((ψ u) ∘ e))) ∘ e⁻¹` of a classical pseudodifferential operator `P` of order
 `m` between bundles. At a point `x` of the chart source where `φ ψ` does not vanish, `P` is elliptic
@@ -198,26 +231,9 @@ theorem isSectionClassicalEllipticAt_iff_forall_isInvertible
       ∀ η : CoordinateSpace n, η ≠ 0 → (a.principal.coefficient (e x, η)).IsInvertible := by
   have he₁ : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
     IsManifold.maximalAtlas_subset_of_le (by simp) he
-  have hc : ((φ (e x) * ψ (e x) : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hφψ
-  set T := t'.continuousLinearEquivAt ℂ x (hF hx)
-  set S := (t.continuousLinearEquivAt ℂ x (hE hx)).symm
-  have hcb : Function.Bijective fun w : W ↦ ((φ (e x) * ψ (e x) : ℝ) : ℂ) • w :=
-    ⟨smul_right_injective W hc, fun w ↦ ⟨_, smul_inv_smul₀ hc w⟩⟩
-  -- The principal symbol of `a` at `(e x, η)` is `σ_m(P)(x, ξ)` between the frame isomorphisms.
-  have key (η : CoordinateSpace n) : (a.principal.coefficient (e x, η) : V → W) =
-      (fun w ↦ ((φ (e x) * ψ (e x) : ℝ) : ℂ) • w) ∘ T ∘ sectionClassicalPrincipalSymbol m P x
-        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x)) ∘ S := by
-    rw [t'.coe_continuousLinearEquivAt_eq, t.symm_continuousLinearEquivAt_eq]
-    funext v
-    rw [coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol hP hF ha hx]
-    simp [t.symmL_apply (hE hx)]
-  have hbij (η : CoordinateSpace n) : (a.principal.coefficient (e x, η)).IsInvertible ↔
-      Function.Bijective (sectionClassicalPrincipalSymbol m P x
-        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x))) := by
-    rw [ContinuousLinearMap.isInvertible_iff_bijective, key, hcb.of_comp_iff',
-      T.bijective.of_comp_iff', Function.Bijective.of_comp_iff _ S.bijective]
   rw [isSectionClassicalEllipticAt_iff]
-  simp_rw [hbij]
+  simp_rw [isInvertible_coefficient_principal_iff_bijective_sectionClassicalPrincipalSymbol hP hF
+    ha hx hφψ]
   refine ⟨fun h η hη ↦ h _ ((innerSL_comp_mvfderiv_eq_zero_iff he₁ hx).not.2 hη),
     fun h ξ hξ ↦ ?_⟩
   -- The covector `ξ` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`.
