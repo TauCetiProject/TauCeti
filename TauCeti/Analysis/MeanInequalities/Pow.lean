@@ -36,6 +36,8 @@ such a relative separation there is no uniform improvement.
 
 ## Main results
 
+* `Real.rpow_add_le_mul_rpow_add_rpow`: the power mean inequality
+  `(s + t) ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q)` for `1 ≤ q`, `0 ≤ s` and `0 ≤ t`, in `ℝ`.
 * `Real.rpow_lt_mul_rpow_add_rpow_of_le_add_of_ne_or_lt_add`:
   `u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q)` for `1 < q`, `0 ≤ s`, `0 ≤ t` and `0 ≤ u ≤ s + t`, when
   `s ≠ t` or `u < s + t`.
@@ -48,6 +50,13 @@ public section
 
 namespace Real
 
+/-- **The power mean inequality for two reals.** For `1 ≤ q`, `0 ≤ s` and `0 ≤ t`,
+`(s + t) ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q)`. This is `NNReal.rpow_add_le_mul_rpow_add_rpow`
+in `ℝ`. -/
+theorem rpow_add_le_mul_rpow_add_rpow {q s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) (hq : 1 ≤ q) :
+    (s + t) ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q) := by
+  exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow ⟨s, hs⟩ ⟨t, ht⟩ hq
+
 /-- **A strict power mean inequality.** For `1 < q`, `0 ≤ s`, `0 ≤ t` and `0 ≤ u ≤ s + t`,
 `u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q)` unless `s = t` and `u = s + t`. -/
 theorem rpow_lt_mul_rpow_add_rpow_of_le_add_of_ne_or_lt_add (u : ℝ) {q s t : ℝ} (hq : 1 < q)
@@ -57,8 +66,7 @@ theorem rpow_lt_mul_rpow_add_rpow_of_le_add_of_ne_or_lt_add (u : ℝ) {q s t : �
   rcases eq_or_ne s t with rfl | hst
   · -- Equal inputs: then `u < s + s`, and the power mean inequality finishes.
     calc u ^ q < (s + s) ^ q := rpow_lt_rpow hu (hne.resolve_left fun h ↦ h rfl) hq0
-      _ ≤ 2 ^ (q - 1) * (s ^ q + s ^ q) := by
-        exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow ⟨s, hs⟩ ⟨s, hs⟩ hq.le
+      _ ≤ 2 ^ (q - 1) * (s ^ q + s ^ q) := rpow_add_le_mul_rpow_add_rpow hs hs hq.le
   · -- Distinct inputs: strict convexity at the midpoint `(s + t) / 2`.
     have hstrict := (strictConvexOn_rpow hq).2 (Set.mem_Ici.2 hs) (Set.mem_Ici.2 ht) hst
       (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)

@@ -37,8 +37,9 @@ the trace under conjugation by the two exponential weights in either order, whic
 commutative entries; the entrywise effect of conjugating by the exponential line of a real
 diagonal matrix; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
 Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`, and the
-criterion `det (exp K) = 1 ↔ trace K = 0`. Differentiating entrywise at `t = 0`, the entries of
-the exponential line `t ↦ exp (t • X)` determine those of `X`.
+criterion `det (exp K) = 1 ↔ trace K = 0`. For a matrix `X` over a Banach algebra over `ℝ` or `ℂ`,
+the entries of the exponential line `t ↦ exp (t • X)` have derivative the entries of
+`exp (t • X) * X`; differentiating at `t = 0`, they determine those of `X`.
 
 ## The argument
 
@@ -52,21 +53,24 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 
 The rational exponential series converges entrywise over any complete normed rational-algebra
 coefficient ring. In particular, two matrices have the same indicated entry in their
-exponentials whenever all their powers agree at those entries.
+exponentials whenever all their powers agree at those entries, and a column vector killed by a
+matrix is fixed by its exponential.
 
 ## Main results
 
 * `Matrix.exp_series_hasSum_exp_apply`: the rational exponential series at a matrix entry.
 * `Matrix.IsUpperTriangular.exp_submatrix`: restriction to order-connected index sets.
 * `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
+* `Matrix.exp_mulVec_eq_self_of_mulVec_eq_zero`: a column vector killed by a matrix is fixed by its
+  exponential.
 * `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
 * `Matrix.IsUpperTriangular.exp_apply_diag_pos`: real diagonal entries exponentiate to positive
   real diagonal entries.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
-* `Matrix.hasDerivAt_exp_smul_apply`: an entry of `X` is the derivative at `0` of that entry of
-  the exponential line `t ↦ exp (t • X)`.
+* `Matrix.hasDerivAt_exp_smul_apply`: the derivative of an entry of the exponential line
+  `u ↦ exp (u • X)` at `t` is that entry of `exp (t • X) * X`; at `t = 0` it is the entry of `X`.
 * `Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero`: an entry of `X` vanishes if that entry
-  of `exp (t • X)` vanishes for every real `t`.
+  of `exp (t • X)` vanishes for every scalar `t`.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
   `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
   in both orientations.
@@ -118,6 +122,23 @@ theorem exp_apply_eq_of_forall_pow_apply_eq {p q : Type*}
   have h := exp_series_hasSum_exp_apply M i j
   simp only [hp] at h
   exact h.unique (exp_series_hasSum_exp_apply N u v)
+
+/-- A column vector killed by a matrix is fixed by its exponential. -/
+theorem exp_mulVec_eq_self_of_mulVec_eq_zero {l : Type*} [Fintype l] [DecidableEq l]
+    {M : Matrix l l R} {v : l → R} (hM : M *ᵥ v = 0) : exp M *ᵥ v = v := by
+  ext i
+  have h := hasSum_sum fun j (_ : j ∈ Finset.univ) ↦
+    (exp_series_hasSum_exp_apply M i j).mul_right (v j)
+  simp only [smul_mul_assoc, ← Finset.smul_sum] at h
+  simp only [mulVec, dotProduct]
+  refine h.unique ((hasSum_ite_eq 0 (v i)).congr_fun fun k ↦ ?_)
+  cases k with
+  | zero => simpa [mulVec, dotProduct] using congrFun (one_mulVec v) i
+  | succ k =>
+    have hk : (M ^ (k + 1) *ᵥ v) i = 0 := by
+      rw [pow_succ, ← mulVec_mulVec, hM, mulVec_zero, Pi.zero_apply]
+    simp only [mulVec, dotProduct] at hk
+    simp [hk]
 
 /-- On the diagonal, exponentiating an upper-triangular matrix exponentiates each entry. -/
 @[simp]
@@ -212,26 +233,28 @@ theorem det_exp (A : Matrix n n 𝕂) : det (exp A) = exp (trace A) := by
 
 section EntryDerivative
 
-variable {m 𝕜 : Type*} [Fintype m] [DecidableEq m] [RCLike 𝕜]
+variable {m 𝕂 A : Type*} [Fintype m] [DecidableEq m] [RCLike 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
+  [CompleteSpace A]
 
-/-- An entry of `X` is the derivative at `0` of that entry of the exponential line
-`t ↦ exp (t • X)`. -/
-theorem hasDerivAt_exp_smul_apply (X : Matrix m m 𝕜) (i j : m) :
-    HasDerivAt (fun t : ℝ ↦ exp (t • X) i j) (X i j) 0 := by
-  have h := (LinearMap.toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j)).hasFDerivAt.comp_hasDerivAt
-    0 (hasDerivAt_exp_smul_const X (0 : ℝ))
-  rw [zero_smul, exp_zero, one_mul] at h
-  -- `h` is about `entryLinearMap ℝ 𝕜 i j ∘ fun t ↦ exp (t • X)` with derivative
-  -- `entryLinearMap ℝ 𝕜 i j X`; both unfold definitionally to the `(i, j)` entry, so `exact`
-  -- closes the goal by that unfolding (`simpa [entryLinearMap_apply]` leaves the derivative
-  -- `toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j) X` unrewritten).
-  exact h
+/-- **Entries of the exponential line.** At every `t : 𝕂`, the `(i, j)` entry of the exponential
+line `u ↦ exp (u • X)` of a matrix over a Banach `𝕂`-algebra has derivative the `(i, j)` entry of
+`exp (t • X) * X`. -/
+theorem hasDerivAt_exp_smul_apply (X : Matrix m m A) (i j : m) (t : 𝕂) :
+    HasDerivAt (fun u : 𝕂 ↦ exp (u • X) i j) ((exp (t • X) * X) i j) t := by
+  -- Entry evaluation is a continuous linear map, since the operator topology on matrices is the
+  -- entrywise topology.
+  let e : Matrix m m A →L[𝕂] A := ⟨entryLinearMap 𝕂 A i j, continuous_id.matrix_elem i j⟩
+  have he (M : Matrix m m A) : e M = M i j :=
+    (congrFun (ContinuousLinearMap.coe_mk' _ _) M).trans (entryLinearMap_apply 𝕂 A i j M)
+  have h := e.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_exp_smul_const X t)
+  exact (h.congr_deriv (he _)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun u ↦ (he (exp (u • X))).symm)
 
-/-- An entry of `X` vanishes if that entry of `exp (t • X)` vanishes for every real `t`. -/
-theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {X : Matrix m m 𝕜} {i j : m}
-    (h : ∀ t : ℝ, exp (t • X) i j = 0) : X i j = 0 := by
-  have hX := hasDerivAt_exp_smul_apply X i j
-  simp only [h] at hX
+/-- An entry of `X` vanishes if that entry of `exp (t • X)` vanishes for every `t : 𝕂`. -/
+theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {X : Matrix m m A} {i j : m}
+    (h : ∀ t : 𝕂, exp (t • X) i j = 0) : X i j = 0 := by
+  have hX := hasDerivAt_exp_smul_apply X i j (0 : 𝕂)
+  simp only [h, zero_smul, exp_zero, one_mul] at hX
   exact hX.unique (hasDerivAt_const 0 0)
 
 end EntryDerivative

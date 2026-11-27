@@ -79,6 +79,9 @@ hyperplanes are moved by integer amounts.
 * `RootPairing.intCast_lt_root'_apply_iff_of_mem_affineWeylGroup`: over an ordered ring, the
   affine Weyl group preserves the relation of lying on the same side of each affine root
   hyperplane.
+* `RootPairing.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup`: over an ordered ring, the
+  affine Weyl group preserves the set of points at which every root is bounded below by an
+  integer.
 * `RootPairing.root'_apply_ne_intCast_of_exists_root'_apply_eq_add_intCast` and
   `RootPairing.intCast_lt_root'_apply_iff_of_exists_root'_apply_eq_add_intCast`: the same two
   statements for any map permuting the affine roots, shared with the extended affine Weyl group.
@@ -342,6 +345,29 @@ theorem root'_apply_ne_intCast_of_mem_affineWeylGroup [P.IsCrystallographic]
     (hx : ∀ (j : ι) (m : ℤ), P.root' j x ≠ m) (j : ι) (m : ℤ) : P.root' j (f x) ≠ m :=
   P.root'_apply_ne_intCast_of_exists_root'_apply_eq_add_intCast
     (P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf) hx j m
+
+/-- A map that carries every root functional to a root functional plus an integer preserves
+points at which every root is bounded below by an integer, over a preordered ring. -/
+theorem exists_intCast_lt_root'_apply_of_exists_root'_apply_eq_add_intCast [Preorder R]
+    [IsOrderedAddMonoid R] {f : N → N}
+    (hf : ∀ j, ∃ (j' : ι) (m : ℤ), ∀ x, P.root' j (f x) = P.root' j' x + m)
+    {x : N} (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) (j : ι) :
+    ∃ n : ℤ, (n : R) < P.root' j (f x) := by
+  obtain ⟨j', m, hm⟩ := hf j
+  obtain ⟨n, hn⟩ := hx j'
+  refine ⟨n + m, ?_⟩
+  rw [hm x, Int.cast_add]
+  -- Mathlib derives strict monotonicity of addition only over a partial order, so unfold `<`.
+  exact lt_of_le_not_ge (by gcongr) fun h ↦ hn.not_ge (le_of_add_le_add_right h)
+
+/-- For a crystallographic pairing over an ordered ring, the affine Weyl group preserves the set of
+points at which every root is bounded below by an integer. -/
+theorem exists_intCast_lt_root'_apply_of_mem_affineWeylGroup [Preorder R]
+    [IsOrderedAddMonoid R] [P.IsCrystallographic] {f : N ≃ᵃ[R] N} (hf : f ∈ P.affineWeylGroup)
+    {x : N} (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) (j : ι) :
+    ∃ n : ℤ, (n : R) < P.root' j (f x) :=
+  P.exists_intCast_lt_root'_apply_of_exists_root'_apply_eq_add_intCast
+    (P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf) hx j
 
 /-- For a crystallographic pairing over an ordered ring, the affine Weyl group preserves the
 relation of lying on the same side of each affine root hyperplane `αⱼ = m`: if `x` and `y` are on

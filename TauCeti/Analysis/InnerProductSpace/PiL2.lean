@@ -48,6 +48,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.add_sub_smul_single_apply`: the point `x + (t - xᵢ) eᵢ` is `x` with its `i`-th
   coordinate replaced by `t`; the map `t ↦ x + (t - xᵢ) eᵢ` is `1`-Lipschitz
   (`EuclideanSpace.lipschitzWith_add_sub_smul_single`).
+* `EuclideanSpace.toLp_insertNth_eq_add_sub_smul_single`: inserting `t` as the `i`-th coordinate
+  is moving the point with `i`-th coordinate `s` along the `i`-th axis.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
@@ -59,6 +61,7 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.norm_fin_one`: the norm on `ℝ¹` is the absolute value of the coordinate.
+* `EuclideanSpace.norm_sq_fin_two`: the squared norm on `ℝ²` is `x₀² + x₁²`.
 * `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
   of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
@@ -177,6 +180,22 @@ theorem lipschitzWith_add_sub_smul_single {𝕜 ι : Type*} [RCLike 𝕜] [Finty
   LipschitzWith.of_dist_le_mul fun s t ↦ by
     simp [dist_eq_norm, ← sub_smul, norm_smul]
 
+/-- The point with `i`-th coordinate `t` and other coordinates `y` is obtained from the point with
+`i`-th coordinate `s` and the same other coordinates by moving along the `i`-th axis. -/
+theorem toLp_insertNth_eq_add_sub_smul_single {𝕜 : Type*} [RCLike 𝕜] {n : ℕ} (i : Fin (n + 1))
+    (s t : 𝕜) (y : Fin n → 𝕜) :
+    (WithLp.toLp 2 (i.insertNth t y) : EuclideanSpace 𝕜 (Fin (n + 1))) =
+      WithLp.toLp 2 (i.insertNth s y) +
+        (t - (WithLp.toLp 2 (i.insertNth s y) : EuclideanSpace 𝕜 (Fin (n + 1))) i) •
+          EuclideanSpace.single i 1 := by
+  ext j
+  rw [add_sub_smul_single_apply]
+  split_ifs with h
+  · subst h
+    simp
+  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq h
+    simp
+
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
@@ -201,6 +220,10 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
 /-- The Euclidean norm on `ℝ¹` is the absolute value of the coordinate. -/
 theorem norm_fin_one (x : EuclideanSpace ℝ (Fin 1)) : ‖x‖ = |x 0| := by
   rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, Real.sqrt_sq_eq_abs, abs_abs]
+
+/-- The squared Euclidean norm on `ℝ²` is the sum of the squared coordinates. -/
+theorem norm_sq_fin_two (x : EuclideanSpace ℝ (Fin 2)) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
 
 /-- The coordinates of a point of the unit sphere of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`. -/
 theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}

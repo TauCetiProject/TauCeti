@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.LoopAlgebra
 public import TauCeti.Algebra.Homology.DG.Algebra.KoszulTwist
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Basic
+public import TauCeti.Algebra.Homology.DG.Twisted.TwoGenerators
 
 /-!
 # The semi-free module of a cell attached along a cycle of the loops
@@ -39,6 +40,12 @@ module is then a semi-free resolution of `R`. The circle (`CircleResolution.lean
 and `x = [γ] - [1]`) and the spheres of dimension at least two (`SphereResolution.lean`) are
 instances.
 
+Any twisting cocycle `m` over the loop chains on two generators `p` and `q` with `ind q < ind p`,
+such as the Barraud–Cornea cocycle of a Morse function with two critical points, has as twisted
+complex the free module of `TauCeti.cycleCellCocycle R n (m p q)`, with `q` as `e₀` and `p` as
+`e₁`. So its cycles of augmentation zero are boundaries as soon as those of the cell module are
+(`TauCeti.exists_twistedDifferential_eq_of_cycleCellCocycle`).
+
 ## Main definitions
 
 * `TauCeti.cycleCellCocycle R n x`: the twisting cocycle of one `(n + 1)`-cell attached along an
@@ -51,6 +58,8 @@ instances.
 * `TauCeti.exists_cycleCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`: the module
   of a cell attached along `x` resolves the ground ring when right multiplication by `x` behaves
   as for a sphere.
+* `TauCeti.exists_twistedDifferential_eq_of_cycleCellCocycle`: the same then holds for the twisted
+  complex of a twisting cocycle on two generators whose entry is `x`.
 
 ## References
 
@@ -360,5 +369,80 @@ theorem exists_cycleCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero
   abel
 
 end CycleCellResolution
+
+/-! ### A twisting cocycle on two generators -/
+
+section TwoGenerators
+
+variable {B : Type*} [TopologicalSpace B] {b : B} {R : Type*} [CommRing R] {P : Type*}
+  [Fintype P] {ind : P → ℤ}
+
+/-- **A twisting cocycle on two generators is the cocycle of a cell.** Let `m` be a twisting
+cocycle over the loop chains `C_*(Ω_b B; R)` on two generators `p` and `q` with `ind q < ind p`,
+whose entry `x = m p q`, a cycle (`TauCeti.TwistingCocycle.d_m_eq_zero_of_forall_eq_or_eq`), is an
+`n`-chain. Relabelling `q` as `e₀` and `p` as `e₁`, its twisted complex
+`C_*(Ω_b B; R) ⊗ ⟨p, q⟩` is the free module of `TauCeti.cycleCellCocycle R n x`. So if every cycle
+of augmentation zero of the latter is a boundary, then so is every cycle `u` of the twisted complex
+of `m` whose coefficient of `q` has augmentation zero. The Barraud–Cornea cocycle of a Morse
+function with two critical points, such as the height function of a sphere, is an example. -/
+theorem exists_twistedDifferential_eq_of_cycleCellCocycle
+    (m : TwistingCocycle (R := R) (A := loopChainAlgebra B b R)
+      (cubicalChainGrading (MooreLoopSpace B b) R)
+      (cubicalChainDifferential (MooreLoopSpace B b) R) P ind) {p q : P}
+    (hP : ∀ z, z = p ∨ z = q) (hind : ind q < ind p) {n : ℕ}
+    (hx : m.m p q ∈ cubicalChainGrading (MooreLoopSpace B b) R (-(n : ℤ)))
+    (hres : ∀ u : Unit ⊕ Unit →₀ loopChainAlgebra B b R,
+      rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R)
+        (cycleCellCocycle R n (m.m p q) hx (m.d_m_eq_zero_of_forall_eq_or_eq hP)).m u = 0 →
+      loopCellAugmentation B b R u = 0 →
+      ∃ v, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R)
+        (cycleCellCocycle R n (m.m p q) hx (m.d_m_eq_zero_of_forall_eq_or_eq hP)).m v = u)
+    {u : P → loopChainAlgebra B b R}
+    (hu : twistedDifferential m.m (cubicalChainGrading (MooreLoopSpace B b) R)
+      (cubicalChainDifferential (MooreLoopSpace B b) R) u = 0)
+    (hε : loopChainAugmentation B b R (u q) = 0) :
+    ∃ v, twistedDifferential m.m (cubicalChainGrading (MooreLoopSpace B b) R)
+      (cubicalChainDifferential (MooreLoopSpace B b) R) v = u := by
+  classical
+  have hpq : p ≠ q := ne_of_apply_ne ind hind.ne'
+  have hDp := m.twistedDifferential_apply_left_of_forall_eq_or_eq hP
+    (cubicalChainDifferential (MooreLoopSpace B b) R) hind (ℳ := cubicalChainGrading _ R)
+  have hDq (f : P → loopChainAlgebra B b R) := (m.twistedDifferential_apply_right_of_forall_eq_or_eq
+    hP (cubicalChainDifferential (MooreLoopSpace B b) R) f
+      (ℳ := cubicalChainGrading (MooreLoopSpace B b) R)).trans (by rw [op_smul_eq_mul])
+  have hu0 := congrArg (· p) hu
+  have hu1 := congrArg (· q) hu
+  simp only [Pi.zero_apply, hDp, hDq] at hu0 hu1
+  -- Relabelled, `u` is the cycle `u q ⊗ e₀ + u p ⊗ e₁` of augmentation zero.
+  obtain ⟨v, hv⟩ := hres
+    (Finsupp.single (Sum.inl ()) (u q) + Finsupp.single (Sum.inr ()) (u p))
+    (by
+      refine Finsupp.ext fun i ↦ ?_
+      rcases i with ⟨⟨⟩⟩ | ⟨⟨⟩⟩
+      · rwa [cycleCellCocycle_differential_apply_inl, Finsupp.add_apply, Finsupp.add_apply,
+          Finsupp.single_eq_same, Finsupp.single_eq_same, Finsupp.single_eq_of_ne Sum.inl_ne_inr,
+          Finsupp.single_eq_of_ne Sum.inr_ne_inl, add_zero, zero_add, Finsupp.coe_zero,
+          Pi.zero_apply]
+      · rwa [cycleCellCocycle_differential_apply_inr, Finsupp.add_apply, Finsupp.single_eq_same,
+          Finsupp.single_eq_of_ne Sum.inr_ne_inl, zero_add, Finsupp.coe_zero, Pi.zero_apply])
+    (by rwa [loopCellAugmentation_apply, Finsupp.add_apply, Finsupp.single_eq_same,
+      Finsupp.single_eq_of_ne Sum.inl_ne_inr, add_zero])
+  have hv0 := congrArg (· (Sum.inl ())) hv
+  have hv1 := congrArg (· (Sum.inr ())) hv
+  simp only [cycleCellCocycle_differential_apply_inl, cycleCellCocycle_differential_apply_inr,
+    Finsupp.add_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne Sum.inl_ne_inr,
+    Finsupp.single_eq_of_ne Sum.inr_ne_inl, add_zero, zero_add] at hv0 hv1
+  -- Relabelled back, a preimage of `u` is `v e₁ ⊗ p + v e₀ ⊗ q`.
+  refine ⟨Pi.single p (v (Sum.inr ())) + Pi.single q (v (Sum.inl ())), funext fun y ↦ ?_⟩
+  rcases hP y with rfl | rfl
+  · simp only [hDp, Pi.add_apply, Pi.single_eq_same, Pi.single_eq_of_ne hpq, add_zero, hv1]
+  · simp only [hDq, Pi.add_apply, Pi.single_eq_same, Pi.single_eq_of_ne hpq,
+      Pi.single_eq_of_ne hpq.symm, add_zero, zero_add, hv0]
+
+end TwoGenerators
 
 end TauCeti
