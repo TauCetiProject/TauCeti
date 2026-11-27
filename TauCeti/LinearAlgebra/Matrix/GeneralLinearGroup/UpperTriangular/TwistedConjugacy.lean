@@ -11,14 +11,14 @@ public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.Algebra.Order.Archimedean.Basic
 -- `Valued` supplies the valuation topology on `K`, `Matrix m m K`, and `GL m K`.
 public import Mathlib.Topology.Algebra.Valued.ValuationTopology
--- `Matrix.GeneralLinearGroup` topology and `Continuous.generalLinearGroup_map`.
-public import Mathlib.Topology.Algebra.Group.Matrix
--- `TauCeti.mem_map_iwahoriOne_iff` characterizes membership in `I₁` by entry valuations.
+-- `TauCeti.mem_map_iwahoriOne_iff` and `TauCeti.diagGL_mem_map_iwahoriOne_iff`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.IwasawaBruhat
+-- `TauCeti.isOpen_map_iwahoriOne` and `TauCeti.isCompact_map_iwahoriOne`.
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Iwahori
 -- `IsClosed.mem_of_mapClusterPt` and `exists_clusterPt_of_compactSpace`.
 import Mathlib.Topology.Compactness.Compact
--- `Valued.t2Space` or `IsTopologicalAddGroup.t2Space_of_zero_sep`.
-import Mathlib.Topology.Algebra.Valued.ValuedField
+-- `Continuous.generalLinearGroup_map`.
+import Mathlib.Topology.Algebra.Group.Matrix
 
 /-!
 # Twisted conjugacy in pro-`p` Iwahori double cosets of `GL_m`
@@ -29,8 +29,8 @@ ordered index type, and let `I₁ ⊆ GL_m(K)` be the image of the pro-`p` Iwaho
 `TauCeti.iwahoriOne m 𝒪` of `GL_m(𝒪)`: the integral invertible matrices that are upper
 unitriangular modulo the maximal ideal.
 
-Given a continuous ring endomorphism `σ : K →+* K` preserving the valuation and acting surjectively
-on `GL_m(K)` (including `σ = RingHom.id K`), and a diagonal element `t : m → Kˣ` whose diagonal
+Given a surjective ring endomorphism `σ : K →+* K` preserving the valuation (including
+`σ = RingHom.id K` and Frobenius automorphisms), and a diagonal element `t : m → Kˣ` whose diagonal
 entries have strictly increasing valuations `v (t i) < v (t j)` for `i < j`, every element `g` of
 the double coset `I₁ · diag(t) · I₁` is `σ`-conjugate by an element of `I₁` to `diag(t * d)` for
 some diagonal `d` with `diag(d) ∈ I₁`:
@@ -57,10 +57,6 @@ proceeds by successive approximation:
 
 ## Main results
 
-* `TauCeti.diagGL_mem_map_iwahoriOne_iff`: a diagonal matrix lies in `I₁` iff each diagonal entry
-  is congruent to `1` modulo the maximal ideal.
-* `TauCeti.isOpen_map_iwahoriOne` and `TauCeti.isCompact_map_iwahoriOne`: topological properties
-  of `I₁` in `GL_m(K)`.
 * `TauCeti.exists_inv_mul_mul_map_eq_diagGL_mul`: `σ`-conjugacy in `I₁ · diag(t) · I₁` to
   `diag(t * d)` with `diag(d) ∈ I₁`.
 
@@ -86,27 +82,16 @@ variable {K : Type*} [Field K] (A : ValuationSubring K) {m : Type*} [Fintype m] 
 
 /-- The image of the pro-`p` Iwahori subgroup `iwahoriOne m A` inside `GL m K`. -/
 private abbrev mapIwahoriOne : Subgroup (GL m K) :=
-  (iwahoriOne m A).map (Matrix.GeneralLinearGroup.map (algebraMap A K))
+  (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))
 
-/-- A diagonal matrix lies in the pro-`p` Iwahori subgroup of `GL m K` exactly when every diagonal
-entry satisfies `v (t i - 1) < 1`. -/
-theorem diagGL_mem_map_iwahoriOne_iff {t : m → Kˣ} :
-    diagGL t ∈ (iwahoriOne m A).map (Matrix.GeneralLinearGroup.map (algebraMap A K)) ↔
-      ∀ i : m, A.valuation ((t i : K) - 1) < 1 := by
-  rw [mem_map_iwahoriOne_iff]
-  constructor
-  · rintro ⟨-, -, hdiag⟩
-    simpa [diagGL_coe] using hdiag
-  · intro hdiag
-    refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ by simpa [diagGL_coe] using hdiag i⟩
-    · simp only [diagGL_coe, diagonal_apply]
-      split_ifs with hij
-      · subst hij
-        have h1 : A.valuation ((t i : K) - 1 + 1) = A.valuation (1 : K) :=
-          Valuation.map_add_eq_of_lt_right A.valuation (by simpa using hdiag i)
-        simpa using h1.le
-      · simp
-    · simp [hji.ne']
+private lemma val_mul_mul_inv_le {a b c : K} (hb : b ≠ 0)
+    (hab : A.valuation a ≤ A.valuation b) :
+    A.valuation (a * c * b⁻¹) ≤ A.valuation c := by
+  rw [map_mul, map_mul, map_inv₀, mul_right_comm]
+  have hpos : 0 < A.valuation b := pos_iff_ne_zero.mpr (by simp [hb])
+  have hratio : A.valuation a * (A.valuation b)⁻¹ ≤ 1 :=
+    (mul_inv_le_iff₀ hpos).mpr (by simpa using hab)
+  simpa using mul_le_mul_of_nonneg_right hratio zero_le
 
 /-- Conjugating an upper-triangular element of `I₁` by a dominant diagonal matrix keeps it in
 `I₁`. -/
@@ -120,15 +105,8 @@ private lemma diagGL_mul_inv_mem_mapIwahoriOne_of_isUpperTriangular {t : m → K
   · rw [diagGL_mul_mul_inv_apply]
     rcases lt_or_ge j i with hji | hij
     · simp [hutri hji]
-    · rw [Units.val_inv_eq_inv_val, map_mul, map_mul, map_inv₀]
-      have hpos : 0 < A.valuation (t j : K) := pos_iff_ne_zero.mpr (by simp)
-      have hratio : A.valuation (t i : K) * (A.valuation (t j : K))⁻¹ ≤ 1 :=
-        (mul_inv_le_iff₀ hpos).mpr (by simpa using ht hij)
-      calc A.valuation (t i : K) * A.valuation (u i j) * (A.valuation (t j : K))⁻¹
-          = A.valuation (t i : K) * (A.valuation (t j : K))⁻¹ * A.valuation (u i j) :=
-            mul_right_comm _ _ _
-        _ ≤ 1 * 1 := mul_le_mul' hratio (h1 i j)
-        _ = 1 := one_mul 1
+    · rw [Units.val_inv_eq_inv_val]
+      exact (val_mul_mul_inv_le A (Units.ne_zero (t j)) (ht hij)).trans (h1 i j)
   · rw [diagGL_mul_mul_inv_apply, hutri hji]
     simp
   · rw [diagGL_mul_mul_inv_apply]
@@ -143,31 +121,20 @@ private lemma diagGL_inv_mul_mem_mapIwahoriOne_of_isLowerTriangular {t : m → K
   obtain ⟨h1, hlow, hdiag⟩ := (mem_map_iwahoriOne_iff A).mp hl
   have hinv : (diagGL t)⁻¹ = diagGL t⁻¹ := (map_inv diagGL t).symm
   rw [hinv, show diagGL t = (diagGL t⁻¹)⁻¹ by simp, mem_map_iwahoriOne_iff]
+  have hstep (i j : m) (hji : j ≤ i) :
+      A.valuation (((t⁻¹ i : Kˣ) : K) * l i j * ((t⁻¹ j)⁻¹ : Kˣ)) ≤ A.valuation (l i j) := by
+    have heq : ((t⁻¹ i : Kˣ) : K) * l i j * ((t⁻¹ j)⁻¹ : Kˣ) = (t j : K) * l i j * (t i : K)⁻¹ := by
+      simp [Pi.inv_apply, Units.val_inv_eq_inv_val]
+      ring
+    rw [heq]
+    exact val_mul_mul_inv_le A (Units.ne_zero (t i)) (ht hji)
   refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ ?_⟩
   · rw [diagGL_mul_mul_inv_apply]
     rcases lt_or_ge i j with hij | hji
     · simp [hltri hij]
-    · rw [Pi.inv_apply, Pi.inv_apply, inv_inv, Units.val_inv_eq_inv_val, map_mul, map_mul,
-        map_inv₀]
-      have hpos : 0 < A.valuation (t i : K) := pos_iff_ne_zero.mpr (by simp)
-      have hratio : (A.valuation (t i : K))⁻¹ * A.valuation (t j : K) ≤ 1 :=
-        (inv_mul_le_iff₀ hpos).mpr (by simpa using ht hji)
-      calc (A.valuation (t i : K))⁻¹ * A.valuation (l i j) * A.valuation (t j : K)
-          = (A.valuation (t i : K))⁻¹ * A.valuation (t j : K) * A.valuation (l i j) :=
-            mul_right_comm _ _ _
-        _ ≤ 1 * 1 := mul_le_mul' hratio (h1 i j)
-        _ = 1 := one_mul 1
-  · rw [diagGL_mul_mul_inv_apply, Pi.inv_apply, Pi.inv_apply, inv_inv, Units.val_inv_eq_inv_val,
-      map_mul, map_mul, map_inv₀]
-    have hpos : 0 < A.valuation (t i : K) := pos_iff_ne_zero.mpr (by simp)
-    have hratio : (A.valuation (t i : K))⁻¹ * A.valuation (t j : K) ≤ 1 :=
-      (inv_mul_le_iff₀ hpos).mpr (by simpa using ht hji.le)
-    calc (A.valuation (t i : K))⁻¹ * A.valuation (l i j) * A.valuation (t j : K)
-        = (A.valuation (t i : K))⁻¹ * A.valuation (t j : K) * A.valuation (l i j) :=
-          mul_right_comm _ _ _
-      _ ≤ 1 * A.valuation (l i j) := mul_le_mul_of_nonneg_right hratio zero_le
-      _ = A.valuation (l i j) := one_mul _
-      _ < 1 := hlow hji
+    · exact (hstep i j hji).trans (h1 i j)
+  · rw [diagGL_mul_mul_inv_apply]
+    exact (hstep i j hji.le).trans_lt (hlow hji)
   · rw [diagGL_mul_mul_inv_apply]
     simpa [Pi.inv_apply, Units.val_inv_eq_inv_val, mul_comm, mul_assoc] using hdiag i
 
@@ -178,21 +145,12 @@ private lemma exists_upperTriangular_mul_conj_mem_mapIwahoriOne {t : m → Kˣ}
     ∃ u ∈ mapIwahoriOne A, (∀ ⦃i j : m⦄, j < i → (u : Matrix m m K) i j = 0) ∧
       (diagGL t)⁻¹ * (u⁻¹ * x) * diagGL t ∈ mapIwahoriOne A := by
   rcases Subgroup.mem_map.mp hx with ⟨xA, hxA, rfl⟩
-  have hjac : IsLocalRing.maximalIdeal A ≤ Ring.jacobson A := by
-    intro a ha
-    rw [Ring.mem_jacobson_iff]
-    intro y
-    by_contra hnu
-    have h1 : a * y + 1 ∈ IsLocalRing.maximalIdeal A :=
-      (IsLocalRing.mem_maximalIdeal _).mpr hnu
-    have h2 : a * y ∈ IsLocalRing.maximalIdeal A := Ideal.mul_mem_right y _ ha
-    have h3 : (1 : A) ∈ IsLocalRing.maximalIdeal A := by simpa using sub_mem h1 h2
-    exact (IsLocalRing.maximalIdeal.isMaximal A).ne_top (Ideal.eq_top_of_isUnit_mem _ h3 isUnit_one)
   obtain ⟨uA, huA_ut, hlA_lt⟩ :=
-    exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul (m := m) hjac
+    exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul (m := m)
+      (IsLocalRing.ringJacobson_eq_maximalIdeal A).ge
       ((iwahoriOne_le_iwahori : iwahoriOne m A ≤ iwahori m A) hxA)
   have huA_tri := UpperUnitriangularGroup.mem_iff.mp huA_ut
-  let f := Matrix.GeneralLinearGroup.map (n := m) (algebraMap A K)
+  let f := GeneralLinearGroup.map (n := m) (algebraMap A K)
   have huA_I1 : uA ∈ iwahoriOne m A := by
     rw [iwahoriOne, mem_upperUnitriangularCongruenceSubgroup_iff]
     refine ⟨fun i j hji ↦ ?_, fun i ↦ ?_⟩
@@ -204,7 +162,7 @@ private lemma exists_upperTriangular_mul_conj_mem_mapIwahoriOne {t : m → Kˣ}
       rw [← map_inv, ← map_mul]
       exact Subgroup.mem_map_of_mem f (Subgroup.mul_mem _ (Subgroup.inv_mem _ huA_I1) hxA)
     refine diagGL_inv_mul_mem_mapIwahoriOne_of_isLowerTriangular A ht hl_mem fun i j hij ↦ ?_
-    rw [← map_inv, ← map_mul, Matrix.GeneralLinearGroup.map_apply]
+    rw [← map_inv, ← map_mul, GeneralLinearGroup.map_apply]
     simp [hlA_lt hij]
 
 end ValuationSubring
@@ -220,48 +178,31 @@ private abbrev valSubring (K : Type*) [Field K] {Γ₀ : Type*} [LinearOrderedCo
 
 private abbrev I1 (K : Type*) [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
     [Valued K Γ₀] (m : Type*) [Fintype m] [LinearOrder m] : Subgroup (GL m K) :=
-  (iwahoriOne m (valSubring K)).map (Matrix.GeneralLinearGroup.map (algebraMap (valSubring K) K))
-
-private lemma valSubring_le_one_iff {x : K} :
-    (valSubring K).valuation x ≤ 1 ↔ Valued.v x ≤ (1 : Γ₀) :=
-  ValuationSubring.valuation_le_one_iff (valSubring K) x
-
-private lemma valSubring_lt_one_iff {x : K} :
-    (valSubring K).valuation x < 1 ↔ Valued.v x < (1 : Γ₀) := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · have hpos1 : 0 < (valSubring K).valuation x := pos_iff_ne_zero.mpr (by simp [hx])
-    have hpos2 : 0 < Valued.v x := pos_iff_ne_zero.mpr (by simp [hx])
-    have h1 : (valSubring K).valuation x < 1 ↔ ¬ (valSubring K).valuation x⁻¹ ≤ 1 := by
-      rw [map_inv₀, not_le, one_lt_inv₀ hpos1]
-    have h2 : Valued.v x < (1 : Γ₀) ↔ ¬ Valued.v x⁻¹ ≤ (1 : Γ₀) := by
-      rw [map_inv₀, not_le, one_lt_inv₀ hpos2]
-    rw [h1, h2, valSubring_le_one_iff]
+  (iwahoriOne m (valSubring K)).map (GeneralLinearGroup.map (algebraMap (valSubring K) K))
 
 private lemma mem_I1_iff {g : GL m K} :
     g ∈ I1 K m ↔
       (∀ i j, Valued.v (g i j) ≤ 1) ∧ (∀ ⦃i j⦄, j < i → Valued.v (g i j) < 1) ∧
         ∀ i, Valued.v (g i i - 1) < 1 := by
-  simp only [I1, mem_map_iwahoriOne_iff, valSubring_le_one_iff, valSubring_lt_one_iff]
+  have heq := Valuation.isEquiv_valuation_valuationSubring (Valued.v (R := K))
+  simp only [I1, mem_map_iwahoriOne_iff, heq.le_one_iff_le_one.symm, heq.lt_one_iff_lt_one.symm]
 
 /-- The conjugated subgroup `diag(t)⁻ʲ I₁ diag(t)ʲ`. -/
 private abbrev conjI1 (t : m → Kˣ) (j : ℤ) : Subgroup (GL m K) :=
-  (MulAut.conj (diagGL t) ^ j).comapSubgroup (I1 K m)
+  (I1 K m).comap (MulAut.conj (diagGL t) ^ j).toMonoidHom
 
 /-- The shifted twisted conjugate `diag(t)⁻¹ * (k⁻¹ * g * σ(k))`. -/
 private abbrev twistedConj (t : m → Kˣ) (g : GL m K) (σ : K →+* K) (k : I1 K m) : GL m K :=
-  (diagGL t)⁻¹ * ((k : GL m K)⁻¹ * g * Matrix.GeneralLinearGroup.map σ (k : GL m K))
+  (diagGL t)⁻¹ * ((k : GL m K)⁻¹ * g * GeneralLinearGroup.map σ (k : GL m K))
 
 private lemma conjI1_mem_iff {t : m → Kˣ} {j : ℤ} {x : GL m K} :
     x ∈ conjI1 t j ↔ diagGL (t ^ j) * x * (diagGL (t ^ j))⁻¹ ∈ I1 K m := by
-  change (MulAut.conj (diagGL t) ^ j) x ∈ I1 K m ↔ _
-  rw [← map_zpow, MulAut.conj_apply, map_zpow]
+  rw [conjI1, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, ← map_zpow, MulAut.conj_apply, map_zpow]
 
 private lemma map_mem_conjI1_iff {t : m → Kˣ} {σ : K →+* K}
     (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x) {j : ℤ} {x : GL m K} :
-    Matrix.GeneralLinearGroup.map σ x ∈ conjI1 t j ↔ x ∈ conjI1 t j := by
-  simp only [conjI1_mem_iff, mem_I1_iff, diagGL_mul_mul_inv_apply,
-    Matrix.GeneralLinearGroup.map_apply]
+    GeneralLinearGroup.map σ x ∈ conjI1 t j ↔ x ∈ conjI1 t j := by
+  simp only [conjI1_mem_iff, mem_I1_iff, diagGL_mul_mul_inv_apply, GeneralLinearGroup.map_apply]
   have hentry (a b : m) :
       Valued.v (((t ^ j) a : K) * σ (x a b) * (((t ^ j) b)⁻¹ : Kˣ)) =
         Valued.v (((t ^ j) a : K) * x a b * (((t ^ j) b)⁻¹ : Kˣ)) := by
@@ -276,23 +217,35 @@ private lemma map_mem_conjI1_iff {t : m → Kˣ} {σ : K →+* K}
     conv_lhs => rw [← map_one σ, ← map_sub, hσ]
   simp only [hentry, hdiag]
 
-omit [Fintype m] in
-private lemma monotone_valSubring_of_monotone_valued {t : m → Kˣ}
-    (ht : Monotone fun i : m ↦ Valued.v (t i : K)) :
-    Monotone fun i : m ↦ (valSubring K).valuation (t i : K) := by
-  intro i j hij
-  have hdiv : Valued.v ((t i : K) * ((t j : K))⁻¹) ≤ 1 := by
-    rw [map_mul, map_inv₀]
-    exact (mul_inv_le_iff₀ (pos_iff_ne_zero.mpr (by simp))).mpr (by simpa using ht hij)
-  have hdivA : (valSubring K).valuation ((t i : K) * ((t j : K))⁻¹) ≤ 1 :=
-    valSubring_le_one_iff.mpr hdiv
-  rw [map_mul, map_inv₀] at hdivA
-  simpa using (mul_inv_le_iff₀ (pos_iff_ne_zero.mpr (by simp))).mp hdivA
+private lemma continuous_of_valuation_eq {σ : K →+* K}
+    (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x) : Continuous σ := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  rw [ContinuousAt, Filter.tendsto_def]
+  intro s hs
+  rw [Valued.mem_nhds] at hs ⊢
+  obtain ⟨γ, hγ⟩ := hs
+  refine ⟨γ, fun y hy ↦ hγ ?_⟩
+  have hsub : Valued.v (σ y - σ x) = Valued.v (y - x) := by rw [← map_sub, hσ]
+  have hr : (Valued.v (R := K)).restrict (σ y - σ x) = (Valued.v (R := K)).restrict (y - x) :=
+    le_antisymm ((Valuation.restrict_le_iff _).mpr hsub.le)
+      ((Valuation.restrict_le_iff _).mpr hsub.ge)
+  simpa [hr] using hy
+
+private lemma surjective_generalLinearGroup_map {σ : K →+* K}
+    (hσ_surj : Function.Surjective σ) :
+    Function.Surjective (GeneralLinearGroup.map (n := m) σ) := by
+  let e : K ≃+* K := RingEquiv.ofBijective σ ⟨σ.injective, hσ_surj⟩
+  intro g
+  refine ⟨GeneralLinearGroup.map e.symm.toRingHom g, ?_⟩
+  ext i j
+  rw [GeneralLinearGroup.map_apply, GeneralLinearGroup.map_apply]
+  exact e.apply_symm_apply (g i j)
 
 private lemma widen_twistedConj {t : m → Kˣ}
     (htA : Monotone fun i : m ↦ (valSubring K).valuation (t i : K))
     {σ : K →+* K} (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x)
-    (hσ_surj : Function.Surjective (Matrix.GeneralLinearGroup.map (n := m) σ))
+    (hσ_surj : Function.Surjective (GeneralLinearGroup.map (n := m) σ))
     {g : GL m K} (b : ℕ) (k : I1 K m)
     (hk : ∀ j : ℤ, 0 ≤ j → j ≤ b → twistedConj t g σ k ∈ conjI1 t j) :
     ∃ k' : I1 K m, ∀ j : ℤ, 0 ≤ j → j ≤ b + 1 → twistedConj t g σ k' ∈ conjI1 t j := by
@@ -344,7 +297,7 @@ private lemma shift_twistedConj {t : m → Kˣ} {σ : K →+* K}
     have hk1 := (conjI1_mem_iff).mp (hk (j + 1) (by omega) (by omega))
     rw [_root_.zpow_add, zpow_one, MonoidHom.map_mul, _root_.mul_inv_rev] at hk1
     simpa [y, MulAut.conj_apply, mul_assoc] using hk1
-  have hmul : twistedConj t g σ (k * y) = Matrix.GeneralLinearGroup.map σ (y : GL m K) := by
+  have hmul : twistedConj t g σ (k * y) = GeneralLinearGroup.map σ (y : GL m K) := by
     simp [twistedConj, y, MulAut.conj_apply, mul_assoc]
   rw [hmul]
   exact (map_mem_conjI1_iff hσ).mpr hy
@@ -352,11 +305,12 @@ private lemma shift_twistedConj {t : m → Kˣ} {σ : K →+* K}
 private lemma exists_twistedConj_mem_conjI1 {t : m → Kˣ}
     (ht : Monotone fun i : m ↦ Valued.v (t i : K))
     {σ : K →+* K} (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x)
-    (hσ_surj : Function.Surjective (Matrix.GeneralLinearGroup.map (n := m) σ))
+    (hσ_surj : Function.Surjective σ)
     {g : GL m K} (hg : g ∈ DoubleCoset.doubleCoset (diagGL t) (I1 K m) (I1 K m))
     (a b : ℕ) :
     ∃ k : I1 K m, ∀ j : ℤ, -(a : ℤ) ≤ j → j ≤ b → twistedConj t g σ k ∈ conjI1 t j := by
-  have htA := monotone_valSubring_of_monotone_valued ht
+  have htA : Monotone fun i : m ↦ (valSubring K).valuation (t i : K) := fun i j hij ↦
+    (Valuation.isEquiv_valuation_valuationSubring Valued.v).le_iff_le.mp (ht hij)
   have h_start : ∃ k : I1 K m, twistedConj t g σ k ∈ conjI1 t 0 := by
     obtain ⟨k, hk, k', hk', rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
     exact ⟨⟨k, hk⟩, by
@@ -366,7 +320,8 @@ private lemma exists_twistedConj_mem_conjI1 {t : m → Kˣ}
   | succ a ih => exact (ih (b + 1)).elim (shift_twistedConj hσ a b)
   | zero =>
     induction b with
-    | succ b ih => exact ih.elim (widen_twistedConj htA hσ hσ_surj b)
+    | succ b ih =>
+      exact ih.elim (widen_twistedConj htA hσ (surjective_generalLinearGroup_map hσ_surj) b)
     | zero => exact h_start.imp fun k hk j hj₀ hj ↦ by rwa [show j = 0 by omega]
 
 private lemma isDiag_of_forall_mem_conjI1 [MulArchimedean Γ₀ˣ] {t : m → Kˣ}
@@ -391,9 +346,8 @@ private lemma isDiag_of_forall_mem_conjI1 [MulArchimedean Γ₀ˣ] {t : m → K�
         Valued.v (t i : K) ^ n * Valued.v (x i j) * (Valued.v (t j : K) ^ n)⁻¹ := by
       simp [r, u, div_eq_mul_inv, mul_zpow, mul_right_comm]
     exact hru ▸ h
-  have hr_ne : r ≠ 1 := by
-    intro hr1
-    apply hij (ht ((div_eq_one_iff_eq htj).mp (congrArg Units.val hr1)))
+  have hr_ne : r ≠ 1 := fun hr1 ↦
+    hij (ht ((div_eq_one_iff_eq htj).mp (congrArg Units.val hr1)))
   rcases lt_or_gt_of_ne hr_ne with hr_lt | hr_gt
   · obtain ⟨n, hn⟩ := MulArchimedean.arch u⁻¹ (one_lt_inv'.mpr hr_lt)
     have h1 : (1 : Γ₀ˣ) < r ^ (-((n + 1 : ℕ) : ℤ)) * u := by
@@ -406,147 +360,44 @@ private lemma isDiag_of_forall_mem_conjI1 [MulArchimedean Γ₀ˣ] {t : m → K�
       exact lt_of_le_of_lt hn (lt_mul_of_one_lt_right' _ hr_gt)
     exact not_lt_of_ge (hbound ((n + 1 : ℕ) : ℤ)) (by exact_mod_cast h1)
 
-/-- The open unit ball `{x : K | v x < 1}` is open in a valued field. -/
-private lemma isOpen_lt_one : IsOpen {x : K | Valued.v x < (1 : Γ₀)} := by
-  rw [isOpen_iff_mem_nhds]
-  intro x hx
-  rw [Valued.mem_nhds]
-  refine ⟨(1 : (Valued.v (R := K)).ValueGroup₀ˣ), fun y hy ↦ ?_⟩
-  have hsub : Valued.v (y - x) < 1 := by
-    have hy' : (Valued.v (R := K)).restrict (y - x) < (Valued.v (R := K)).restrict 1 := by
-      simpa using hy
-    simpa using (Valuation.restrict_lt_iff (Valued.v (R := K))).mp hy'
-  calc Valued.v y = Valued.v ((y - x) + x) := by rw [sub_add_cancel]
-    _ ≤ max (Valued.v (y - x)) (Valued.v x) := Valued.v.map_add _ _
-    _ < 1 := max_lt hsub hx
-
-/-- The pro-`p` Iwahori subgroup `I₁` is an open subgroup of `GL m K`. -/
-theorem isOpen_map_iwahoriOne :
-    IsOpen ((iwahoriOne m (Valued.v (R := K)).valuationSubring).map
-      (Matrix.GeneralLinearGroup.map (algebraMap _ K)) : Set (GL m K)) := by
-  have hopen_le : IsOpen {x : K | Valued.v x ≤ (1 : Γ₀)} := Valued.isOpen_integer K
-  have hopen_lt : IsOpen {x : K | Valued.v x < (1 : Γ₀)} := isOpen_lt_one
-  have hset : ((I1 K m : Subgroup (GL m K)) : Set (GL m K)) =
-      (⋂ i : m, ⋂ j : m, {g : GL m K | Valued.v (g i j) ≤ 1}) ∩
-      (⋂ i : m, ⋂ j : m, ⋂ (_ : j < i), {g : GL m K | Valued.v (g i j) < 1}) ∩
-      (⋂ i : m, {g : GL m K | Valued.v (g i i - 1) < 1}) := by
-    ext g
-    simp only [SetLike.mem_coe, mem_I1_iff, Set.mem_inter_iff, Set.mem_iInter,
-      Set.mem_ofPred_eq, and_assoc]
-  rw [show ((iwahoriOne m (Valued.v (R := K)).valuationSubring).map
-      (Matrix.GeneralLinearGroup.map (algebraMap _ K)) : Set (GL m K)) = (I1 K m : Set (GL m K))
-      from rfl, hset]
-  have hcont (i j : m) : Continuous fun g : GL m K ↦ (g : Matrix m m K) i j := by fun_prop
-  refine (IsOpen.inter ?_ ?_).inter ?_
-  · refine isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦ ?_
-    exact hopen_le.preimage (hcont i j)
-  · refine isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
-      isOpen_iInter_of_finite fun _ ↦ ?_
-    exact hopen_lt.preimage (hcont i j)
-  · refine isOpen_iInter_of_finite fun i ↦ ?_
-    exact hopen_lt.preimage ((hcont i i).sub continuous_const)
-
-private lemma compactSpace_GL_valSubring [CompactSpace (Valued.v (R := K)).valuationSubring] :
-    CompactSpace (GL m (valSubring K)) := by
-  have : IsTopologicalRing (valSubring K) := Subring.instIsTopologicalRing (valSubring K).toSubring
-  have : CompactSpace (Matrix m m (valSubring K)) := Pi.compactSpace
-  have : CompactSpace (Matrix m m (valSubring K))ᵐᵒᵖ :=
-    isCompact_univ_iff.mp <| by
-      have hsurj : Set.range (MulOpposite.op : Matrix m m (valSubring K) → _) = Set.univ :=
-        Set.range_eq_univ.mpr MulOpposite.op_surjective
-      rw [← hsurj, ← Set.image_univ]
-      exact isCompact_univ.image MulOpposite.continuous_op
-  have hclosed : IsClosed (Set.range (Units.embedProduct (Matrix m m (valSubring K)))) := by
-    have hset : Set.range (Units.embedProduct (Matrix m m (valSubring K))) =
-        {p : Matrix m m (valSubring K) × (Matrix m m (valSubring K))ᵐᵒᵖ |
-          p.1 * MulOpposite.unop p.2 = 1 ∧ MulOpposite.unop p.2 * p.1 = 1} := by
-      ext ⟨M, N⟩
-      refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun ⟨h1, h2⟩ ↦ ⟨⟨M, MulOpposite.unop N, h1, h2⟩, by simp⟩⟩
-      rw [← hg]
-      exact ⟨g.val_inv, g.inv_val⟩
-    rw [hset]
-    have h1 : Continuous fun p : Matrix m m (valSubring K) × (Matrix m m (valSubring K))ᵐᵒᵖ ↦
-        p.1 * MulOpposite.unop p.2 :=
-      continuous_fst.mul (MulOpposite.continuous_unop.comp continuous_snd)
-    have h2 : Continuous fun p : Matrix m m (valSubring K) × (Matrix m m (valSubring K))ᵐᵒᵖ ↦
-        MulOpposite.unop p.2 * p.1 :=
-      (MulOpposite.continuous_unop.comp continuous_snd).mul continuous_fst
-    exact (isClosed_eq h1 continuous_const).inter (isClosed_eq h2 continuous_const)
-  have hcomp_range : IsCompact (Set.range (Units.embedProduct (Matrix m m (valSubring K)))) :=
-    isCompact_univ.of_isClosed_subset hclosed (Set.subset_univ _)
-  exact isCompact_univ_iff.mp
-    ((Units.isInducing_embedProduct (M := Matrix m m (valSubring K))).isCompact_iff.mpr
-      ((Set.image_univ (f := Units.embedProduct (Matrix m m (valSubring K)))).symm ▸ hcomp_range))
-
-/-- When the valuation subring of `K` is compact, the pro-`p` Iwahori subgroup `I₁` is compact in
-`GL m K`. -/
-theorem isCompact_map_iwahoriOne [CompactSpace (Valued.v (R := K)).valuationSubring] :
-    IsCompact ((iwahoriOne m (Valued.v (R := K)).valuationSubring).map
-      (Matrix.GeneralLinearGroup.map (algebraMap _ K)) : Set (GL m K)) := by
-  have : CompactSpace (GL m (valSubring K)) := compactSpace_GL_valSubring
-  have hclosed_I1 : IsClosed (iwahoriOne m (valSubring K) : Set (GL m (valSubring K))) := by
-    have hpre : (iwahoriOne m (valSubring K) : Set (GL m (valSubring K))) =
-        Matrix.GeneralLinearGroup.map (algebraMap (valSubring K) K) ⁻¹'
-          (I1 K m : Set (GL m K)) := by
-      ext g
-      simp only [Set.mem_preimage, SetLike.mem_coe, I1, Subgroup.mem_map]
-      refine ⟨fun hg ↦ ⟨g, hg, rfl⟩, fun ⟨g', hg', hgg'⟩ ↦ ?_⟩
-      have heq : g' = g := Units.ext (Matrix.ext fun i j ↦ Subtype.ext (by
-        have h := congrFun (congrFun (congrArg (fun u : GL m K ↦ (u : Matrix m m K)) hgg') i) j
-        simpa [Matrix.GeneralLinearGroup.map_apply] using h))
-      rwa [← heq]
-    rw [hpre]
-    have hcont : Continuous
-        (Matrix.GeneralLinearGroup.map (n := m) (algebraMap (valSubring K) K)) :=
-      Continuous.generalLinearGroup_map continuous_subtypeVal
-    exact ((I1 K m).isClosed_of_isOpen isOpen_map_iwahoriOne).preimage hcont
-  have hcompact_I1A : IsCompact (iwahoriOne m (valSubring K) : Set (GL m (valSubring K))) :=
-    hclosed_I1.isCompact
-  have hcont : Continuous
-      (Matrix.GeneralLinearGroup.map (n := m) (algebraMap (valSubring K) K)) :=
-    Continuous.generalLinearGroup_map continuous_subtypeVal
-  simpa [I1, Subgroup.coe_map] using hcompact_I1A.image hcont
-
-/-- **Twisted conjugacy in `I₁ · diag(t) · I₁`.** Let `σ : K →+* K` be a continuous ring
-endomorphism preserving the valuation and acting surjectively on `GL_m(K)`, and let `t : m → Kˣ`
-have strictly increasing valuations `v (t i) < v (t j)` for `i < j`. When the valuation subring of
-`K` is compact and the value group is rank one, every `g` in the double coset `I₁ · diag(t) · I₁`
-satisfies `k⁻¹ * g * σ(k) = diag(t * d)` for some `k ∈ I₁` and diagonal `d` with `diag(d) ∈ I₁`. -/
+/-- **Twisted conjugacy in `I₁ · diag(t) · I₁`.** Let `σ : K →+* K` be a surjective ring
+endomorphism preserving the valuation, and let `t : m → Kˣ` have strictly increasing valuations
+`v (t i) < v (t j)` for `i < j`. When the valuation subring of `K` is compact and the value group
+is rank one, every `g` in the double coset `I₁ · diag(t) · I₁` satisfies
+`k⁻¹ * g * σ(k) = diag(t * d)` for some `k ∈ I₁` and diagonal `d` with `diag(d) ∈ I₁`. -/
 theorem exists_inv_mul_mul_map_eq_diagGL_mul [MulArchimedean Γ₀ˣ]
     [CompactSpace (Valued.v (R := K)).valuationSubring]
     {t : m → Kˣ} (ht : StrictMono fun i : m ↦ Valued.v (t i : K))
-    (σ : K →+* K) (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x) (hσ_cont : Continuous σ)
-    (hσ_surj : Function.Surjective (Matrix.GeneralLinearGroup.map (n := m) σ))
+    (σ : K →+* K) (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x) (hσ_surj : Function.Surjective σ)
     {g : GL m K}
     (hg : g ∈ DoubleCoset.doubleCoset (diagGL t)
       ((iwahoriOne m (Valued.v (R := K)).valuationSubring).map
-        (Matrix.GeneralLinearGroup.map (algebraMap _ K)))
+        (GeneralLinearGroup.map (algebraMap _ K)))
       ((iwahoriOne m (Valued.v (R := K)).valuationSubring).map
-        (Matrix.GeneralLinearGroup.map (algebraMap _ K)))) :
+        (GeneralLinearGroup.map (algebraMap _ K)))) :
     ∃ k ∈ (iwahoriOne m (Valued.v (R := K)).valuationSubring).map
-        (Matrix.GeneralLinearGroup.map (algebraMap _ K)),
+        (GeneralLinearGroup.map (algebraMap _ K)),
       ∃ d : m → Kˣ,
         diagGL d ∈ (iwahoriOne m (Valued.v (R := K)).valuationSubring).map
-          (Matrix.GeneralLinearGroup.map (algebraMap _ K)) ∧
-        k⁻¹ * g * Matrix.GeneralLinearGroup.map σ k = diagGL (t * d) := by
+          (GeneralLinearGroup.map (algebraMap _ K)) ∧
+        k⁻¹ * g * GeneralLinearGroup.map σ k = diagGL (t * d) := by
   have : CompactSpace (I1 K m) := isCompact_iff_compactSpace.mp isCompact_map_iwahoriOne
   choose f hf using exists_twistedConj_mem_conjI1 ht.monotone hσ hσ_surj hg
   obtain ⟨k, hk⟩ : ∃ k : I1 K m, ClusterPt k (atTop.map fun n ↦ f n n) :=
     exists_clusterPt_of_compactSpace _
+  have hmap : Continuous (GeneralLinearGroup.map (n := m) σ) :=
+    Continuous.generalLinearGroup_map (continuous_of_valuation_eq hσ)
   have h_all (j : ℤ) : twistedConj t g σ k ∈ conjI1 t j := by
-    have hmap : Continuous (Matrix.GeneralLinearGroup.map (n := m) σ) :=
-      Continuous.generalLinearGroup_map hσ_cont
     have h_cont : Continuous fun x : I1 K m ↦
         diagGL (t ^ j) * twistedConj t g σ x * (diagGL (t ^ j))⁻¹ := by
       refine ((continuous_const.mul ?_).mul continuous_const)
-      refine continuous_const.mul (((continuous_subtypeVal.inv.mul continuous_const).mul
-        (hmap.comp continuous_subtypeVal)))
+      exact continuous_const.mul ((continuous_subtypeVal.inv.mul continuous_const).mul
+        (hmap.comp continuous_subtypeVal))
     have h_closed : IsClosed (twistedConj t g σ ⁻¹' conjI1 t j) := by
       have hpre : twistedConj t g σ ⁻¹' conjI1 t j =
           (fun x : I1 K m ↦ diagGL (t ^ j) * twistedConj t g σ x * (diagGL (t ^ j))⁻¹) ⁻¹'
             (I1 K m : Set (GL m K)) := by
-        ext x
-        exact conjI1_mem_iff
+        ext x; exact conjI1_mem_iff
       rw [hpre]
       exact ((I1 K m).isClosed_of_isOpen isOpen_map_iwahoriOne).preimage h_cont
     refine h_closed.mem_of_mapClusterPt hk ?_
@@ -566,7 +417,8 @@ theorem exists_inv_mul_mul_map_eq_diagGL_mul [MulArchimedean Γ₀ˣ]
   refine ⟨k, k.prop, d, ?_, ?_⟩
   · rw [diagGL_mem_map_iwahoriOne_iff]
     intro i
-    exact valSubring_lt_one_iff.mpr (by simpa [d] using hX_diag i)
+    exact (Valuation.isEquiv_valuation_valuationSubring Valued.v).lt_one_iff_lt_one.mp
+      (by simpa [d] using hX_diag i)
   · rw [map_mul, hX, twistedConj, mul_inv_cancel_left]
 
 end ValuedField

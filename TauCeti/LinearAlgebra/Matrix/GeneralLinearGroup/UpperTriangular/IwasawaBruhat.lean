@@ -118,6 +118,26 @@ theorem mem_map_iwahoriOne_iff {g : GL m K} :
       rw [GeneralLinearGroup.map_apply, GeneralLinearGroup.val_mk'']
       simp [M, ValuationSubring.algebraMap_apply]
 
+/-- A diagonal matrix lies in the pro-`p` Iwahori subgroup of `GL m K` exactly when every diagonal
+entry satisfies `v (t i - 1) < 1`. -/
+theorem diagGL_mem_map_iwahoriOne_iff {t : m → Kˣ} :
+    diagGL t ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) ↔
+      ∀ i : m, A.valuation ((t i : K) - 1) < 1 := by
+  rw [mem_map_iwahoriOne_iff]
+  constructor
+  · rintro ⟨-, -, hdiag⟩
+    simpa [diagGL_coe] using hdiag
+  · intro hdiag
+    refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ by simpa [diagGL_coe] using hdiag i⟩
+    · simp only [diagGL_coe, diagonal_apply]
+      split_ifs with hij
+      · subst hij
+        have h1 : A.valuation ((t i : K) - 1 + 1) = A.valuation (1 : K) :=
+          Valuation.map_add_eq_of_lt_right A.valuation (by simpa using hdiag i)
+        simpa using h1.le
+      · simp
+    · simp [hji.ne']
+
 /-! ### Pivots -/
 
 /-- `p` is the *pivot* of `x`: the entry `x p` is nonzero, and `p` is the first index at which
