@@ -48,7 +48,8 @@ theorem exists_mem_uniformity_disjoint_image {ι : Type*} [Finite ι] {F : ι �
       have himage (A : Set X) : (SetRel.symmetrize V).image A ⊆ ⋃ x ∈ A, SetRel.ball V x :=
         fun b hb ↦ by
           obtain ⟨a, ha, hab⟩ := SetRel.mem_image.1 hb
-          exact mem_iUnion₂.2 ⟨a, ha, SetRel.mem_ball.2 hab.2⟩
+          exact mem_iUnion₂.2
+            ⟨a, ha, SetRel.mem_ball.2 (SetRel.mem_inv.1 (SetRel.symmetrize_subset_inv hab))⟩
       exact ⟨_, symmetrize_mem_uniformity hV, fun _ ↦ hd.mono (himage _) (himage _)⟩
   choose V hV hd using hpair
   refine ⟨⋂ p, V p, Filter.iInter_mem.2 hV, fun i j hij ↦ (hd (i, j) hij).mono ?_ ?_⟩ <;>
