@@ -148,7 +148,7 @@ theorem couponCount_homMk {X Y : S.FreeMonoidal} (f : Hom X.as Y.as) :
 
 @[simp]
 theorem couponCount_id (X : S.FreeMonoidal) : couponCount (𝟙 X) = 0 := by
-  rw [← homMk_id, couponCount_homMk, Hom.coupons_id, List.length_nil]
+  simp [← homMk_id]
 
 @[simp]
 theorem couponCount_eqToHom {X Y : S.FreeMonoidal} (h : X = Y) : couponCount (eqToHom h) = 0 := by
@@ -157,65 +157,63 @@ theorem couponCount_eqToHom {X Y : S.FreeMonoidal} (h : X = Y) : couponCount (eq
 
 @[simp]
 theorem couponCount_coupon (g : S.Coupon) : couponCount (coupon g) = 1 := by
-  rw [← homMk_coupon, couponCount_homMk, Hom.coupons_coupon, List.length_singleton]
+  simp [← homMk_coupon]
 
 @[simp]
 theorem couponCount_associator_hom (X Y Z : S.FreeMonoidal) :
     couponCount (α_ X Y Z).hom = 0 := by
-  rw [← homMk_α_hom, couponCount_homMk, Hom.coupons_α_hom, List.length_nil]
+  simp [← homMk_α_hom]
 
 @[simp]
 theorem couponCount_associator_inv (X Y Z : S.FreeMonoidal) :
     couponCount (α_ X Y Z).inv = 0 := by
-  rw [← homMk_α_inv, couponCount_homMk, Hom.coupons_α_inv, List.length_nil]
+  simp [← homMk_α_inv]
 
 @[simp]
 theorem couponCount_leftUnitor_hom (X : S.FreeMonoidal) :
     couponCount (λ_ X).hom = 0 := by
-  rw [← homMk_l_hom, couponCount_homMk, Hom.coupons_l_hom, List.length_nil]
+  simp [← homMk_l_hom]
 
 @[simp]
 theorem couponCount_leftUnitor_inv (X : S.FreeMonoidal) :
     couponCount (λ_ X).inv = 0 := by
-  rw [← homMk_l_inv, couponCount_homMk, Hom.coupons_l_inv, List.length_nil]
+  simp [← homMk_l_inv]
 
 @[simp]
 theorem couponCount_rightUnitor_hom (X : S.FreeMonoidal) :
     couponCount (ρ_ X).hom = 0 := by
-  rw [← homMk_ρ_hom, couponCount_homMk, Hom.coupons_ρ_hom, List.length_nil]
+  simp [← homMk_ρ_hom]
 
 @[simp]
 theorem couponCount_rightUnitor_inv (X : S.FreeMonoidal) :
     couponCount (ρ_ X).inv = 0 := by
-  rw [← homMk_ρ_inv, couponCount_homMk, Hom.coupons_ρ_inv, List.length_nil]
+  simp [← homMk_ρ_inv]
 
 @[simp]
 theorem couponCount_comp {X Y Z : S.FreeMonoidal} (f : X ⟶ Y) (g : Y ⟶ Z) :
     couponCount (f ≫ g) = couponCount f + couponCount g := by
   obtain ⟨f, rfl⟩ := homMk_surjective f
   obtain ⟨g, rfl⟩ := homMk_surjective g
-  rw [← homMk_comp, couponCount_homMk, couponCount_homMk, couponCount_homMk,
-    Hom.coupons_comp, List.length_append]
+  simp [← homMk_comp]
 
 @[simp]
 theorem couponCount_whiskerLeft (X : S.FreeMonoidal) {Y Z : S.FreeMonoidal} (f : Y ⟶ Z) :
     couponCount (X ◁ f) = couponCount f := by
   obtain ⟨f, rfl⟩ := homMk_surjective f
-  rw [← homMk_whiskerLeft, couponCount_homMk, couponCount_homMk, Hom.coupons_whiskerLeft]
+  simp [← homMk_whiskerLeft]
 
 @[simp]
 theorem couponCount_whiskerRight {X Y : S.FreeMonoidal} (f : X ⟶ Y) (Z : S.FreeMonoidal) :
     couponCount (f ▷ Z) = couponCount f := by
   obtain ⟨f, rfl⟩ := homMk_surjective f
-  rw [← homMk_whiskerRight, couponCount_homMk, couponCount_homMk, Hom.coupons_whiskerRight]
+  simp [← homMk_whiskerRight]
 
 @[simp]
 theorem couponCount_tensorHom {W X Y Z : S.FreeMonoidal} (f : W ⟶ Y) (g : X ⟶ Z) :
     couponCount (f ⊗ₘ g) = couponCount f + couponCount g := by
   obtain ⟨f, rfl⟩ := homMk_surjective f
   obtain ⟨g, rfl⟩ := homMk_surjective g
-  rw [← homMk_tensor, couponCount_homMk, couponCount_homMk, couponCount_homMk,
-    Hom.coupons_tensor, List.length_append]
+  simp [← homMk_tensor]
 
 /-- A coupon in `S.FreeMonoidal` is never equal to an object-equality transport `eqToHom`,
 in particular an endomorphism coupon is never equal to the identity morphism. -/

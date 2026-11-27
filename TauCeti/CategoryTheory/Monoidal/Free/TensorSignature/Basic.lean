@@ -373,6 +373,13 @@ theorem Hom.cast_heq {X X' Y Y' : FreeMonoidalCategory S.Obj} (hX : X = X') (hY 
   subst hX hY
   rfl
 
+/-- Two raw morphism expressions that are heterogeneously equal agree up to an endpoint cast. -/
+theorem Hom.eq_cast_of_heq {X X' Y Y' : FreeMonoidalCategory S.Obj}
+    {f : Hom (S := S) X Y} {f' : Hom X' Y'} (hX : X = X') (hY : Y = Y') (h : f' ≍ f) :
+    f' = f.cast hX hY := by
+  subst hX hY
+  exact (eq_of_heq h).trans (Hom.cast_rfl f).symm
+
 @[simp]
 theorem Hom.cast_cast {X X' X'' Y Y' Y'' : FreeMonoidalCategory S.Obj}
     (hX : X = X') (hX' : X' = X'') (hY : Y = Y') (hY' : Y' = Y'') (f : Hom X Y) :
@@ -1103,6 +1110,20 @@ instance monoidalNatIsoOfEqObj_hom_isMonoidal (hobj : ∀ X, F.obj X = G.obj X)
       eqToHom (hobj ⟨S.src g⟩) ≫ G.map (coupon g)) :
     NatTrans.IsMonoidal (monoidalNatIsoOfEqObj hobj hunit htensor hcoupon).hom :=
   inferInstanceAs (NatTrans.IsMonoidal (monoidalNatIso _).hom)
+
+/-- If `e : lift fo' fc' ≅ lift fo fc` is a natural isomorphism whose components are `eqToHom`s
+along `projectObj_congr h`, then the coupon images `fc'` are the `eqToHom`-conjugates of `fc`. -/
+theorem lift_coupon_eq_of_iso_eqToHom {fo fo' : S.Obj → D}
+    {fc : ∀ g : S.Coupon, projectObj fo (S.src g) ⟶ projectObj fo (S.tgt g)}
+    {fc' : ∀ g : S.Coupon, projectObj fo' (S.src g) ⟶ projectObj fo' (S.tgt g)}
+    (e : lift fo' fc' ≅ lift fo fc) {h : ∀ a, fo' a = fo a}
+    (he : ∀ X : S.FreeMonoidal, e.hom.app X = eqToHom (projectObj_congr h X.as))
+    (g : S.Coupon) :
+    fc' g = eqToHom (projectObj_congr h (S.src g)) ≫ fc g ≫
+      eqToHom (projectObj_congr h (S.tgt g)).symm := by
+  have hnat := e.hom.naturality (coupon g)
+  simp only [he, lift_map_coupon] at hnat
+  exact ((comp_eqToHom_iff _ _ _).mp hnat).trans (Category.assoc _ _ _)
 
 end MonoidalNatIsoOfEqObj
 

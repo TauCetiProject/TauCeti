@@ -20,6 +20,9 @@ and avoid exposing the definitional equality of the objects being transported.
 
 * `TauCeti.eqToHom_self_comp`: transporting along an equality of an object with itself, which may
   only be definitional, leaves a composite unchanged.
+* `TauCeti.eqToHom_comp_eqToHom` and `TauCeti.eqToHom_comp_eqToHom_eq`: composing `eqToHom`
+  transports agrees with transporting directly or along another factorization, even when endpoints
+  or intermediate objects are only definitionally equal.
 * `TauCeti.eqToHom_conjugate_cancel`: transporting a morphism and then transporting it back leaves
   it unchanged.
 * `TauCeti.eqToHom_conj_conj`: composing two successive endpoint transports agrees with
@@ -30,8 +33,6 @@ and avoid exposing the definitional equality of the objects being transported.
 * `TauCeti.eqToHom_conjugate_square`: conjugating every edge preserves and reflects commutativity of
   a square.
 * `TauCeti.eq_of_eqToHom_conjugate`: two morphisms with equal conjugates are equal.
-* `TauCeti.eq_of_heq_id`: two parallel morphisms heterogeneously equal to identities on
-  propositionally equal objects are equal.
 * `TauCeti.eq_of_heq_conj`: two parallel morphisms heterogeneously equal to heterogeneously equal
   morphisms are equal.
 * `TauCeti.eqToHom_conjugate_vertical_square_of_horizontal_square`: commutativity with conjugated
@@ -69,6 +70,22 @@ between objects that are definitionally equal but not syntactically equal, so th
 `eqToHom_refl` does not apply. -/
 theorem eqToHom_self_comp {C : Type*} [Category* C] {Y Z : C} (h : Y = Y) (f : Y ⟶ Z) :
     eqToHom h ≫ f = f := by simp
+
+/-- Composing two `eqToHom` transports equals the direct `eqToHom` transport. This applies when
+the endpoints or intermediate object are only definitionally equal, so `eqToHom_trans` fails to
+rewrite under `simp`. -/
+theorem eqToHom_comp_eqToHom {C : Type*} [Category* C] {X Y Z : C}
+    (p : X = Y) (q : Y = Z) (r : X = Z) :
+    eqToHom p ≫ eqToHom q = eqToHom r := by
+  subst p q
+  simp
+
+/-- Two composites of two `eqToHom` transports between definitionally equal endpoints are equal. -/
+theorem eqToHom_comp_eqToHom_eq {C : Type*} [Category* C] {X Y Y' Z : C}
+    (p₁ : X = Y) (p₂ : Y = Z) (q₁ : X = Y') (q₂ : Y' = Z) :
+    eqToHom p₁ ≫ eqToHom p₂ = eqToHom q₁ ≫ eqToHom q₂ := by
+  subst p₁ p₂ q₁
+  simp
 
 /-- Transporting a morphism along object equalities and then back leaves it unchanged. -/
 theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
@@ -139,13 +156,6 @@ theorem eq_of_eqToHom_conjugate {C : Type*} [Category* C] {X X' Y Y' : C} (hX : 
   (eqToHom_conjugate_cancel hX hY.symm f).symm.trans
     ((congrArg (fun u : X' ⟶ Y' ↦ eqToHom hX.symm ≫ u ≫ eqToHom hY.symm) h).trans
       (eqToHom_conjugate_cancel hX hY.symm g))
-
-/-- Two parallel morphisms `f g : X ⟶ Y` are equal if `f ≍ 𝟙 A` and `g ≍ 𝟙 B` for
-propositionally equal objects `A = B`. -/
-theorem eq_of_heq_id {C : Type*} [Category* C] {X Y A B : C} {f g : X ⟶ Y}
-    (hf : f ≍ 𝟙 A) (hg : g ≍ 𝟙 B) (h : A = B) : f = g := by
-  subst h
-  exact eq_of_heq (hf.trans hg.symm)
 
 /-- Two parallel morphisms `f g : X ⟶ Y` that are heterogeneously equal to morphisms `m` and
 `m'` with `m ≍ m'` are equal. -/
