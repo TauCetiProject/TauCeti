@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.GreenFunction.BoundaryConcentration
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Ball
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Comparison
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
@@ -437,11 +436,8 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere {c : E} {r
   have hψc : Continuous ψ :=
     e.continuous.comp (continuous_const.smul (continuous_id.sub continuous_const))
   refine ⟨u₀ ∘ ψ, ?_, hu₀c.comp hψc.continuousOn fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [← harmonicOnNhd_comp_const_add_smul_ball_iff c hr]
-    have hcomp : (fun y ↦ (u₀ ∘ ψ) (c + r • y)) = u₀ ∘ e := funext fun y ↦ by
-      simp [ψ, smul_smul, hr.ne']
-    have he := (harmonicOnNhd_comp_linearIsometryEquiv_right_iff e).2 hu₀
-    rwa [LinearIsometryEquiv.preimage_ball, map_zero, ← hcomp] at he
+  · have h := (harmonicOnNhd_comp_inv_smul_sub_ball_iff e c hr 1).2 hu₀
+    rwa [mul_one] at h
   · rw [mem_closedBall_zero_iff, hnorm]
     exact inv_mul_le_one_of_le₀ (mem_closedBall.1 hx) hr.le
   · have hψs : ψ x ∈ sphere (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) 1 := by
