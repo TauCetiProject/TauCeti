@@ -44,6 +44,9 @@ covector.
   determined by the operator as soon as some fibre over an interior point is nonzero.
 * `TauCeti.IsSectionLaplaceType.sectionPrincipalSymbol_bijective`: operators of Laplace type are
   elliptic.
+* `TauCeti.IsSectionLaplaceType.lie_mem_differentialOperators`: on a boundaryless manifold, the
+  commutator of an operator of Laplace type with an operator of order at most `k` has order at
+  most `k + 1`.
 * `TauCeti.IsSectionLaplaceType.restrictSectionDifferentialOperators`: the restriction of an
   operator of Laplace type to an open subset, with the inherited metric, is of Laplace type with the
   same constant.
@@ -157,6 +160,18 @@ theorem IsSectionLaplaceType.sectionPrincipalSymbol_bijective (hP : IsSectionLap
   rw [hP.sectionPrincipalSymbol_eq hx]
   exact ⟨fun v w h ↦ smul_right_injective (V x) hc h, fun v ↦ ⟨(-(c * ‖ξ‖ ^ 2))⁻¹ • v, by
     rw [LinearMap.smul_apply, LinearMap.id_apply, smul_smul, mul_inv_cancel₀ hc, one_smul]⟩⟩
+
+/-- **Commutators with an operator of Laplace type lose one order.** On a boundaryless manifold,
+if `P` is of Laplace type, then for every operator `D` of order at most `k` on the smooth sections
+of `V`, the commutator `⁅P, D⁆` has order at most `k + 1` rather than `k + 2`, since the principal
+symbol `-(c ‖ξ‖²) Id` of `P` commutes with every endomorphism. -/
+theorem IsSectionLaplaceType.lie_mem_differentialOperators [BoundarylessManifold I M]
+    (hP : IsSectionLaplaceType P c) {k : ℕ}
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ k) :
+    ⁅(P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯), (D : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯)⁆ ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ (k + 1) :=
+  lie_mem_differentialOperators_of_forall_sectionPrincipalSymbol_eq_smul_id (by omega)
+    (fun _ ξ ↦ ⟨_, hP.sectionPrincipalSymbol_eq _ ξ⟩) D
 
 /-- **Restriction to open subsets.** For the Riemannian metric that an open subset `U` inherits
 from `M`, the restriction to `U` of an operator of Laplace type with constant `c` is of Laplace type

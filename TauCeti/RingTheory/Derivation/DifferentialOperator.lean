@@ -38,6 +38,12 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
 * `differentialOperators_mono` and `comp_mem_differentialOperators`: the orders are increasing
   and add under composition, so the operators on `M` form a filtered ring
   (`SetLike.GradedMonoid`).
+* `lie_mem_differentialOperators_add`: the commutator `⁅P, Q⁆` of operators on `N` of orders at
+  most `m` and `k` has order at most `m + k`, since commutators with multiplication act on it as
+  derivations (`smulCommutator_lie`). For operators on `A` itself it has order at most
+  `m + k - 1` (`lie_mem_differentialOperators`): operators of order zero on `A` are
+  multiplications and commute (`lie_eq_zero_of_mem_differentialOperators_zero`), so the graded
+  ring of the order filtration is commutative.
 * `Derivation.mem_differentialOperators_one` and `differentialOperatorsOneEquiv`: an operator
   `D : A →ₗ[R] M` has order at most one exactly when `D = δ + (· • m)` for a derivation `δ` and
   `m : M`, and this splitting is unique, with `m = D 1`.
@@ -399,6 +405,40 @@ instance : SetLike.GradedMonoid (differentialOperators R A N N) where
   one_mem := LinearMap.restrictScalars_mem_differentialOperators_zero (LinearMap.id : N →ₗ[A] N)
   mul_mem _ _ _ _ hP hQ := comp_mem_differentialOperators hP hQ
 
+/-- The commutator with multiplication by `a` is a derivation of the commutator bracket of
+endomorphisms: `[⁅P, Q⁆, a] = ⁅[P, a], Q⁆ + ⁅P, [Q, a]⁆`. -/
+theorem smulCommutator_lie (a : A) (P Q : N →ₗ[R] N) :
+    smulCommutator R a ⁅P, Q⁆ = ⁅smulCommutator R a P, Q⁆ + ⁅P, smulCommutator R a Q⁆ := by
+  ext x
+  simp only [Ring.lie_def, smulCommutator_apply_apply, LinearMap.add_apply, LinearMap.sub_apply,
+    mul_apply_eq_comp, map_sub]
+  abel
+
+/-- Orders add under commutators: for operators `P` and `Q` on `N` of orders at most `m` and `k`,
+the commutator `⁅P, Q⁆ = P ∘ Q - Q ∘ P` has order at most `m + k`. -/
+theorem lie_mem_differentialOperators_add {P Q : N →ₗ[R] N} {m k : ℕ}
+    (hP : P ∈ differentialOperators R A N N m) (hQ : Q ∈ differentialOperators R A N N k) :
+    ⁅P, Q⁆ ∈ differentialOperators R A N N (m + k) := by
+  -- `R` is only a semiring, so the submodule of operators of order at most `m + k` need not be
+  -- closed under subtraction a priori; argue by induction as for compositions instead.
+  induction h : m + k generalizing m k P Q with
+  | zero =>
+    obtain ⟨rfl, rfl⟩ : m = 0 ∧ k = 0 := by omega
+    rw [mem_differentialOperators_zero_iff] at hP hQ ⊢
+    intro a x
+    simp [Ring.lie_def, hP, hQ, smul_sub]
+  | succ n ih =>
+    rw [mem_differentialOperators_succ_iff]
+    intro a
+    rw [smulCommutator_lie]
+    refine add_mem ?_ ?_
+    · rcases m with _ | m
+      · simp [smulCommutator_eq_zero_of_mem_differentialOperators_zero hP a, Ring.lie_def]
+      · exact ih (smulCommutator_mem_differentialOperators hP a) hQ (by omega)
+    · rcases k with _ | k
+      · simp [smulCommutator_eq_zero_of_mem_differentialOperators_zero hQ a, Ring.lie_def]
+      · exact ih hP (smulCommutator_mem_differentialOperators hQ a) (by omega)
+
 /-- The top iterated commutators of a composition multiply: for `P` of order at most `m` and
 `Q` of order at most `k`, the `(m + k)`-fold commutator of `P ∘ Q` with `a` is
 `(m + k).choose m` times the composition of the `m`-fold commutator of `P` with the `k`-fold
@@ -712,6 +752,67 @@ theorem mem_differentialOperators_one_iff {D : A →ₗ[R] M} :
   exact this ▸ Subtype.prop _
 
 end FirstOrder
+
+/-! ### Commutators of operators on the algebra -/
+
+section Commutator
+
+variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
+
+/-- Operators of order zero on `A` commute: an `A`-linear map `P : A → A` is multiplication by
+`P 1`. -/
+theorem lie_eq_zero_of_mem_differentialOperators_zero {P Q : A →ₗ[R] A}
+    (hP : P ∈ differentialOperators R A A A 0) (hQ : Q ∈ differentialOperators R A A A 0) :
+    ⁅P, Q⁆ = 0 := by
+  rw [mem_differentialOperators_zero_iff] at hP hQ
+  have hP' (y : A) : P y = y * P 1 := by simpa using hP y 1
+  have hQ' (y : A) : Q y = y * Q 1 := by simpa using hQ y 1
+  ext x
+  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hP' (Q x),
+    hQ' (P x), hQ' x, hP' x, LinearMap.zero_apply]
+  ring
+
+/-- **Commutators of operators on the algebra lose one order.** For differential operators `P`
+and `Q` on `A` itself, of orders at most `m` and `k`, the commutator `⁅P, Q⁆` has order at most
+`m + k - 1`: the graded ring associated with the order filtration is commutative. For operators
+on an `A`-module this fails, already in order zero, where `A`-linear endomorphisms need not
+commute; see `TauCeti.lie_mem_differentialOperators_add` for the general bound `m + k`. -/
+theorem lie_mem_differentialOperators {P Q : A →ₗ[R] A} {m k : ℕ}
+    (hP : P ∈ differentialOperators R A A A m) (hQ : Q ∈ differentialOperators R A A A k) :
+    ⁅P, Q⁆ ∈ differentialOperators R A A A (m + k - 1) := by
+  -- Induction on `m + k - 1`, through `[⁅P, Q⁆, a] = ⁅[P, a], Q⁆ + ⁅P, [Q, a]⁆`, which lowers the
+  -- order of one factor; when both factors have order zero their commutator vanishes.
+  induction h : m + k - 1 generalizing m k P Q with
+  | zero =>
+    rw [mem_differentialOperators_zero_iff_smulCommutator]
+    intro a
+    rw [smulCommutator_lie]
+    have h₁ : ⁅smulCommutator R a P, Q⁆ = 0 := by
+      rcases m with _ | m
+      · simp [smulCommutator_eq_zero_of_mem_differentialOperators_zero hP a, Ring.lie_def]
+      · obtain ⟨rfl, rfl⟩ : m = 0 ∧ k = 0 := by omega
+        exact lie_eq_zero_of_mem_differentialOperators_zero
+          (smulCommutator_mem_differentialOperators hP a) hQ
+    have h₂ : ⁅P, smulCommutator R a Q⁆ = 0 := by
+      rcases k with _ | k
+      · simp [smulCommutator_eq_zero_of_mem_differentialOperators_zero hQ a, Ring.lie_def]
+      · obtain ⟨rfl, rfl⟩ : m = 0 ∧ k = 0 := by omega
+        exact lie_eq_zero_of_mem_differentialOperators_zero hP
+          (smulCommutator_mem_differentialOperators hQ a)
+    rw [h₁, h₂, add_zero]
+  | succ n ih =>
+    rw [mem_differentialOperators_succ_iff]
+    intro a
+    rw [smulCommutator_lie]
+    refine add_mem ?_ ?_
+    · rcases m with _ | m
+      · simp [smulCommutator_eq_zero_of_mem_differentialOperators_zero hP a, Ring.lie_def]
+      · exact ih (smulCommutator_mem_differentialOperators hP a) hQ (by omega)
+    · rcases k with _ | k
+      · simp [smulCommutator_eq_zero_of_mem_differentialOperators_zero hQ a, Ring.lie_def]
+      · exact ih hP (smulCommutator_mem_differentialOperators hQ a) (by omega)
+
+end Commutator
 
 /-! ### Powers of a derivation -/
 

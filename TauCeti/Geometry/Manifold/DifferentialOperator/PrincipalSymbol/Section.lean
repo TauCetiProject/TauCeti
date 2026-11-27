@@ -47,6 +47,12 @@ vanishes identically exactly when the operator has order at most `m`, and by pol
 its principal symbol. An operator of order zero is a `C^∞(M)`-linear map, and its principal
 symbol is its fibre map.
 
+The principal symbol of the commutator `⁅P, Q⁆ = P ∘ Q - Q ∘ P` of operators on `Γ(V)` of orders
+at most `m` and `k` is the commutator of their principal symbols. Unlike the scalar symbols of
+operators on functions, these are endomorphisms of the fibres of `V` and need not commute. On a
+boundaryless manifold and for `1 ≤ m + k`, `⁅P, Q⁆` has order at most `m + k - 1` exactly when they
+commute at every covector.
+
 ## Main definitions
 
 * `TauCeti.sectionCommutatorSymbol I hx`: the commutator symbol at an interior point `x`, a real
@@ -97,6 +103,14 @@ symbol is its fibre map.
 * `TauCeti.sectionPrincipalSymbol_comp`: principal symbols multiply under composition.
 * `TauCeti.sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero`: the principal symbols of a
   complex of differential operators form a complex.
+* `TauCeti.sectionPrincipalSymbol_lie`: the principal symbol of `⁅P, Q⁆`, of order at most `m + k`,
+  is the commutator of the principal symbols.
+* `TauCeti.lie_mem_differentialOperators_iff_forall_commute`: on a boundaryless manifold, `⁅P, Q⁆`
+  has order at most `n`, where `m + k = n + 1`, exactly when the principal symbols of `P` and `Q`
+  commute at every covector; one direction holds at each interior point
+  (`TauCeti.commute_sectionPrincipalSymbol_of_lie_mem_differentialOperators`).
+* `TauCeti.lie_mem_differentialOperators_of_forall_sectionPrincipalSymbol_eq_smul_id`: commutators
+  with an operator whose principal symbol is scalar lose one order.
 * `TauCeti.sectionPrincipalSymbol_restrictScalars`: the principal symbol of a `C^∞(M)`-linear map,
   as an operator of order zero, is its fibre map.
 
@@ -577,6 +591,94 @@ theorem sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero (hx : I.IsInt
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F'', U⟯ (m + k)) = 0 :=
     Submodule.coe_eq_zero.1 hPQ
   rw [← sectionPrincipalSymbol_comp, h0, sectionPrincipalSymbol_zero]
+
+/-- **The principal symbol of a commutator.** For operators `P` and `Q` on the smooth sections of
+`V`, of orders at most `m` and `k`, the principal symbol of `⁅P, Q⁆ = P ∘ Q - Q ∘ P`, as an
+operator of order at most `m + k`, is the commutator of the principal symbols. -/
+theorem sectionPrincipalSymbol_lie (hx : I.IsInteriorPoint x) {m k : ℕ}
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ m)
+    (Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ k)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbol I hx
+        ⟨⁅(P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯), (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯)⁆,
+          lie_mem_differentialOperators_add P.property Q.property⟩ ξ =
+      ⁅sectionPrincipalSymbol I hx P ξ, sectionPrincipalSymbol I hx Q ξ⁆ := by
+  have hQP : ((Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯) ∘ₗ
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯)) ∈
+        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ (m + k) := by
+    rw [add_comm]
+    exact comp_mem_differentialOperators Q.property P.property
+  have hlie : (⟨_, lie_mem_differentialOperators_add P.property Q.property⟩ :
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ (m + k)) =
+        ⟨_, comp_mem_differentialOperators P.property Q.property⟩ - ⟨_, hQP⟩ :=
+    -- `⁅P, Q⁆ = P * Q - Q * P`, and the product of `Module.End` is composition.
+    Subtype.ext <| by
+      rw [Submodule.coe_sub]
+      exact Ring.lie_def _ _
+  rw [hlie, sectionPrincipalSymbol_sub, sectionPrincipalSymbol_comp,
+    sectionPrincipalSymbol_congr hx (add_comm m k) (P' := ⟨_, comp_mem_differentialOperators
+      Q.property P.property⟩) rfl, sectionPrincipalSymbol_comp, Ring.lie_def,
+    Module.End.mul_eq_comp, Module.End.mul_eq_comp]
+
+/-- **Commutators that lose one order have commuting principal symbols.** If operators `P` and
+`Q` on the smooth sections of `V`, of orders at most `m` and `k` with `m + k = n + 1`, have a
+commutator `⁅P, Q⁆` of order at most `n`, then their principal symbols commute at every covector at
+every interior point. -/
+theorem commute_sectionPrincipalSymbol_of_lie_mem_differentialOperators
+    (hx : I.IsInteriorPoint x) {m k n : ℕ} (h : m + k = n + 1)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ m)
+    (Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ k)
+    (hPQ : ⁅(P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯), (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯)⁆ ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ n)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    Commute (sectionPrincipalSymbol I hx P ξ) (sectionPrincipalSymbol I hx Q ξ) := by
+  have hmem := lie_mem_differentialOperators_add P.property Q.property
+  rw [h] at hmem
+  rw [commute_iff_lie_eq, ← sectionPrincipalSymbol_lie,
+    sectionPrincipalSymbol_congr hx h (P' := ⟨_, hmem⟩) rfl]
+  exact sectionPrincipalSymbol_eq_zero_of_mem_differentialOperators hx _ hPQ ξ
+
+/-- **Commutators lose one order exactly when the principal symbols commute.** On a boundaryless
+manifold, for operators `P` and `Q` on the smooth sections of `V`, of orders at most `m` and `k`
+with `m + k = n + 1`, the commutator `⁅P, Q⁆` has order at most `n` if and only if the principal
+symbols of `P` and `Q` commute at every covector. For operators between bundles of rank at least
+two the principal symbols, which are matrices, need not commute, and then `⁅P, Q⁆` keeps the order
+`m + k`. -/
+theorem lie_mem_differentialOperators_iff_forall_commute [BoundarylessManifold I M] {m k n : ℕ}
+    (h : m + k = n + 1)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ m)
+    (Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ k) :
+    ⁅(P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯), (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯)⁆ ∈
+        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ n ↔
+      ∀ (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ),
+        Commute (sectionPrincipalSymbol I BoundarylessManifold.isInteriorPoint P ξ)
+          (sectionPrincipalSymbol I BoundarylessManifold.isInteriorPoint Q ξ) := by
+  refine ⟨fun hPQ x ξ ↦
+    commute_sectionPrincipalSymbol_of_lie_mem_differentialOperators _ h P Q hPQ ξ, fun hc ↦ ?_⟩
+  have hmem := lie_mem_differentialOperators_add P.property Q.property
+  rw [h] at hmem
+  refine (forall_sectionPrincipalSymbol_eq_zero_iff ⟨_, hmem⟩).1 fun x ξ ↦ ?_
+  rw [← sectionPrincipalSymbol_congr _ h
+    (P := ⟨_, lie_mem_differentialOperators_add P.property Q.property⟩) rfl,
+    sectionPrincipalSymbol_lie, ← commute_iff_lie_eq]
+  exact hc x ξ
+
+/-- **Commutators with an operator of scalar principal symbol lose one order.** On a boundaryless
+manifold, if the principal symbol of `P`, of order at most `m`, is a multiple of the identity at
+every covector, then for every operator `Q` of order at most `k` on the smooth sections of `V`,
+with `m + k = n + 1`, the commutator `⁅P, Q⁆` has order at most `n`. -/
+theorem lie_mem_differentialOperators_of_forall_sectionPrincipalSymbol_eq_smul_id
+    [BoundarylessManifold I M] {m k n : ℕ} (h : m + k = n + 1)
+    {P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ m}
+    (hP : ∀ (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ), ∃ c : ℝ,
+      sectionPrincipalSymbol I BoundarylessManifold.isInteriorPoint P ξ = c • LinearMap.id)
+    (Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ k) :
+    ⁅(P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯), (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯)⁆ ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ n := by
+  refine (lie_mem_differentialOperators_iff_forall_commute h P Q).2 fun x ξ ↦ ?_
+  obtain ⟨c, hc⟩ := hP x ξ
+  rw [hc, ← Module.End.one_eq_id]
+  exact (Commute.one_left _).smul_left c
 
 end FiniteRank
 
