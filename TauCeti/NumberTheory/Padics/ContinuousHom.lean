@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.TypeTags
 public import TauCeti.Topology.Algebra.ContinuousZModDual
+import TauCeti.NumberTheory.Padics.Module
 
 /-!
 # Continuous characters of the p-adic integers
@@ -40,14 +41,7 @@ variable {p : ℕ} [Fact p.Prime] {A : Type*} [AddCommGroup A] [Module ℤ_[p] A
 scalar multiplication on its value at `1`. -/
 theorem padicInt_apply_eq_smul_apply_one (φ : ℤ_[p] →ₜ+ A) (x : ℤ_[p]) :
     φ x = x • φ 1 := by
-  have hcont : Continuous (fun x : ℤ_[p] ↦ x • φ 1) := continuous_id.smul continuous_const
-  have h := PadicInt.denseRange_intCast.equalizer φ.continuous hcont
-    (funext fun n ↦ by
-      calc
-        φ (n : ℤ_[p]) = φ (n • (1 : ℤ_[p])) := by rw [zsmul_one]
-        _ = n • φ 1 := map_zsmul φ n 1
-        _ = (n : ℤ_[p]) • φ 1 := (Int.cast_smul_eq_zsmul ℤ_[p] n (φ 1)).symm)
-  exact congrFun h x
+  simpa using TauCeti.map_padicInt_smul φ φ.continuous x (1 : ℤ_[p])
 
 end ContinuousAddMonoidHom
 
