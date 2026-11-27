@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
+import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
+import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Exceptional
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
 import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
@@ -63,10 +65,12 @@ reduced crystallographic finite root systems:
   identities for any reduced crystallographic root pairing with a base of valid Cartan type `t`.
 * `TauCeti.DynkinType.mem_exponents_of_coprime`: every natural number `a < h` coprime to `h` is an
   exponent of a valid `DynkinType`.
-* `TauCeti.Coxeter.roots_charpoly_coxeterElement`,
+* `TauCeti.Coxeter.charpoly_of_hasCartanType_of_actsBy`,
+  `TauCeti.Coxeter.roots_charpoly_coxeterElement`,
   `TauCeti.Coxeter.mem_roots_charpoly_coxeterElement_of_coprime`, and
-  `TauCeti.HasCartanType.mem_roots_charpoly_of_actsBy_of_coprime`: complex eigenvalue multisets
-  and primitive-root containment for canonical Cartan Coxeter matrices and `ActsBy` matrices.
+  `TauCeti.HasCartanType.mem_roots_charpoly_of_actsBy_of_coprime`: uniform characteristic
+  polynomials, complex eigenvalue multisets, and primitive-root containment for canonical Cartan
+  Coxeter matrices and `ActsBy` matrices.
 * `RootPairing.Base.orderOf_wordProd_eq_orderOf_wordProd`,
   `RootPairing.Base.two_le_orderOf_wordProd`,
   `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`,
@@ -523,6 +527,36 @@ theorem DynkinType.mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a :
   exact hi ▸ List.getElem_mem _
 
 namespace Coxeter
+
+/-- **Every Coxeter element of a base of Cartan type `t`** has the same characteristic polynomial
+on the simple roots as `Matrix.coxeterElement t.cartanMatrix`. -/
+theorem charpoly_of_hasCartanType_of_actsBy {ι R M N : Type*} [DecidableEq ι] [CommRing R]
+    [CharZero R] [IsDomain R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {P : RootPairing ι R M N} [P.IsCrystallographic] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    W.charpoly = (coxeterElement t.cartanMatrix).charpoly := by
+  have go {A : Matrix (Fin t.rank) (Fin t.rank) ℤ} (ht : t.cartanMatrix = A)
+      {S₀ : List (Fin t.rank)} (hel₀ : List.IsOneDegenerateOrder (fun i j => A i j ≠ 0) S₀)
+      (hperm₀ : S₀.Perm (List.finRange t.rank)) :
+      W.charpoly = (coxeterElement t.cartanMatrix).charpoly :=
+    (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy ht hel₀ hperm₀ h hnd hall
+      hW).trans (by rw [ht])
+  cases t with
+  | A n => exact go (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _)
+  | B n => exact go (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _)
+  | C n => exact go (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _)
+  | D n => exact go (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _)
+  | E6 => exact go DynkinType.cartanMatrix_E6 isOneDegenerateOrder_E6
+            (by decide : ([0, 2, 3, 1, 4, 5] : List (Fin 6)).Perm (List.finRange 6))
+  | E7 => exact go DynkinType.cartanMatrix_E7 isOneDegenerateOrder_E7
+            (by decide : ([0, 2, 3, 1, 4, 5, 6] : List (Fin 7)).Perm (List.finRange 7))
+  | E8 => exact go DynkinType.cartanMatrix_E8 isOneDegenerateOrder_E8
+            (by decide : ([0, 2, 3, 1, 4, 5, 6, 7] : List (Fin 8)).Perm (List.finRange 8))
+  | F4 => exact go DynkinType.cartanMatrix_F4 isOneDegenerateOrder_F4
+            (by decide : ([0, 1, 2, 3] : List (Fin 4)).Perm (List.finRange 4))
+  | G2 => exact go DynkinType.cartanMatrix_G2 isOneDegenerateOrder_G2
+            (by decide : ([0, 1] : List (Fin 2)).Perm (List.finRange 2))
 
 /-- **Complex eigenvalue multiset of the canonical Coxeter matrix `Matrix.coxeterElement
 t.cartanMatrix`** for any valid Dynkin type `t`: counted with multiplicity, the eigenvalues are
