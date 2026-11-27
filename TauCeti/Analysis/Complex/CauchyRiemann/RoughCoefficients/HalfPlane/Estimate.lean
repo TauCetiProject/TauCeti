@@ -52,6 +52,8 @@ Both constants are uniform over coefficients whose reflections are bounded by `M
   `DJ`, `S` locally `Lᵖ` up to the axis (`TauCeti.isSobolevCRCoefficients_crReflection`), and with
   the uniformity bound `M` on the norms of `J` in `W^{1,p}(Ω ∩ {0 ≤ t})` and of `S` in
   `Lᵖ(Ω ∩ {0 ≤ t})`.
+* `TauCeti.eLpNormWkp_inter_le_of_twistedReflection`: an estimate for twisted reflections on the
+  doubled domain gives the estimate up to the real axis.
 * `TauCeti.eLpNormWkp_crReflectionCoeff_le`: under the totally real boundary condition, the
   reflection of `J` has at most twice the `W^{1,p}` norm of `J` up to the axis, and
   `TauCeti.isSobolevCRCoefficients_crReflection_of_le` combines it with
@@ -121,10 +123,13 @@ theorem isSobolevCRCoefficients_crReflection_of_le {J S : ℂ → V →L[ℝ] V}
     (eLpNorm_crReflectionZeroth_le hΩ hp S).trans (by push_cast; gcongr)⟩
 
 omit [CompleteSpace V] in
-/-- An estimate for the twisted reflection of `ξ` on `Ω` gives the estimate up to the real axis,
-with the constant doubled: the left side restricts to `U ∩ {0 ≤ t}`, where the reflection is `ξ`
-off the null axis, and the reflection at most doubles the norms on the right side. -/
-private theorem eLpNormWkp_inter_le_of_twistedReflection (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+/-- **From the doubled domain to the half-plane.** Let `Ω` be invariant under conjugation and `R`
+an isometry, and write `ξ'`, `η'` for the twisted reflections of `ξ`, `η` by `R`. An estimate
+`‖ξ'‖_{W^{1,r}(U)} ≤ C (‖η'‖_{Lʳ(Ω)} + ‖ξ'‖_{L^q(Ω)})` gives
+`‖ξ‖_{W^{1,r}(U ∩ {0 ≤ t})} ≤ 2 C (‖η‖_{Lʳ(Ω ∩ {0 ≤ t})} + ‖ξ‖_{L^q(Ω ∩ {0 ≤ t})})`: on
+`U ∩ {0 ≤ t}` the reflection is `ξ` off the null axis, and the reflection at most doubles the
+norms on the right side. -/
+theorem eLpNormWkp_inter_le_of_twistedReflection (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hq : 1 ≤ q) (hr : 1 ≤ r) {C : ℝ≥0} {ξ η : ℂ → V}
     (h : eLpNormWkp r U 1 (twistedReflection (R : V →L[ℝ] V) ξ) ≤
       C * (eLpNorm (twistedReflection (R : V →L[ℝ] V) η) r (volume.restrict Ω) +
