@@ -180,7 +180,8 @@ private theorem powerMean_lt_of_nonconstant {w x : ι → ℝ} (hw : ∀ i, 0 �
     · exact (hnonpos (lt_of_not_ge hr) le_rfl).trans
         (hnonneg hx hne le_rfl (lt_of_not_ge hs))
 
-/-- A mean whose nonzero-weight entries all equal a nonnegative constant has that value. -/
+/-- For weights of total mass one, if every nonzero-weight entry equals a nonnegative
+constant, the power mean equals that constant. -/
 theorem powerMean_eq_of_eq_on_support {w x : ι → ℝ} (hw1 : ∑ i, w i = 1) {c : ℝ}
     (hc : 0 ≤ c) (hx : ∀ i, w i ≠ 0 → x i = c) (r : ℝ) : powerMean w x r = c := by
   have hterm (i : ι) : x i ^ w i = c ^ w i := by
@@ -243,7 +244,8 @@ theorem powerMean_zero_eq_exp (w : ι → ℝ) {x : ι → ℝ} (hx : ∀ i, 0 <
   intro i _
   rw [Real.rpow_def_of_pos (hx i), mul_comm]
 
-/-- Continuity at exponent zero only requires total weight one; signed weights are allowed. -/
+/-- For positive entries and weights of total mass one, the power mean is continuous
+at exponent zero. Signed weights are allowed. -/
 theorem continuousAt_powerMean_zero {w x : ι → ℝ} (hw1 : ∑ i, w i = 1)
     (hx : ∀ i, 0 < x i) : ContinuousAt (powerMean w x) 0 := by
   have hsum : HasDerivAt (fun r : ℝ ↦ ∑ i, w i * x i ^ r)
