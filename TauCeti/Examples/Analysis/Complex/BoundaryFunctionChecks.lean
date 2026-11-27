@@ -33,7 +33,7 @@ Explicit boundary functions `F*` (`TauCeti.upperHalfPlaneBoundaryFun`).
   (`exp_neg_I_div_eq_upperHalfPlanePoissonIntegralFun`). Its Cayley transform is
   `g(w) = exp(-(1 - w) / (1 + w))` (`exp_neg_I_div_I_mul_one_add_div_one_sub`), with no limit at
   `w = -1` within the disc (`not_tendsto_exp_neg_one_sub_div_one_add_neg_one`) and `log|g| < 0` on
-  the open disc (`log_norm_exp_neg_one_sub_div_one_add_lt_zero`). The logarithmic bound at `i` is
+  the open disc (`log_norm_exp_neg_one_sub_div_one_add_neg`). The logarithmic bound at `i` is
   strict: `log|F(i)| = -1` (`log_norm_exp_neg_I_div_I`) while `P[log|F*|](i) = 0`
   (`upperHalfPlanePoissonIntegralFun_log_norm_exp_neg_I_div`).
 -/
@@ -188,9 +188,8 @@ theorem upperHalfPlaneBoundaryFun_exp_neg_I_div {x : ℝ} (hx : x ≠ 0) :
 theorem exp_neg_I_div_eq_upperHalfPlanePoissonIntegralFun {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
     exp (-I / z) = upperHalfPlanePoissonIntegralFun (fun x : ℝ ↦ exp (-I / x)) z := by
   rw [eq_upperHalfPlanePoissonIntegralFun_upperHalfPlaneBoundaryFun (S := 1)
-    differentiableOn_exp_neg_I_div (fun w hw ↦ norm_exp_neg_I_div_le_one hw) hz,
-    upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonIntegralFun_def]
-  refine integral_congr_ae ?_
+    differentiableOn_exp_neg_I_div (fun w hw ↦ norm_exp_neg_I_div_le_one hw) hz]
+  refine upperHalfPlanePoissonIntegralFun_congr_ae ?_ z
   filter_upwards [volume.ae_ne (0 : ℝ)] with x hx
   rw [upperHalfPlaneBoundaryFun_exp_neg_I_div hx]
 
@@ -220,7 +219,7 @@ theorem not_tendsto_exp_neg_one_sub_div_one_add_neg_one (c : ℂ) :
 
 /-- `log|g| < 0` on the open unit disc for the Cayley transform `g(w) = exp(-(1 - w) / (1 + w))`
 of `e^{-i/z}`; in particular `log|g| ≤ 0` on every circle of radius `r < 1`. -/
-theorem log_norm_exp_neg_one_sub_div_one_add_lt_zero {w : ℂ} (hw : w ∈ Metric.ball 0 1) :
+theorem log_norm_exp_neg_one_sub_div_one_add_neg {w : ℂ} (hw : w ∈ Metric.ball 0 1) :
     Real.log ‖exp (-((1 - w) / (1 + w)))‖ < 0 := by
   obtain ⟨z, hz, rfl⟩ := bijOn_sub_I_div_add_I_upperHalfPlaneSet.surjOn hw
   have hzI : z + I ≠ 0 := add_I_ne_zero_of_im_nonneg (le_of_lt hz)
@@ -240,9 +239,8 @@ theorem log_norm_exp_neg_I_div_I : Real.log ‖exp (-I / I)‖ = -1 := by
 theorem upperHalfPlanePoissonIntegralFun_log_norm_exp_neg_I_div :
     upperHalfPlanePoissonIntegralFun
       (fun x ↦ (Real.log ‖upperHalfPlaneBoundaryFun (fun z ↦ exp (-I / z)) x‖ : ℂ)) I = 0 := by
-  rw [← upperHalfPlanePoissonIntegralFun_const 0 (z := I) (by simp),
-    upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonIntegralFun_def]
-  refine integral_congr_ae ?_
+  rw [← upperHalfPlanePoissonIntegralFun_const 0 (z := I) (by simp)]
+  refine upperHalfPlanePoissonIntegralFun_congr_ae ?_ I
   filter_upwards [volume.ae_ne (0 : ℝ)] with x hx
   rw [upperHalfPlaneBoundaryFun_exp_neg_I_div hx, norm_exp_neg_I_div, Real.log_exp]
   simp

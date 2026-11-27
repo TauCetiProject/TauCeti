@@ -176,10 +176,8 @@ theorem eq_upperHalfPlanePoissonIntegralFun_upperHalfPlaneBoundaryFun
     {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
     F z = upperHalfPlanePoissonIntegralFun (upperHalfPlaneBoundaryFun F) z := by
   obtain ⟨w, -, -, hFw, hw⟩ := exists_ae_eq_upperHalfPlaneBoundaryFun hF hS
-  rw [hFw z hz, upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonIntegralFun_def]
-  refine integral_congr_ae ?_
-  filter_upwards [hw] with x hx
-  rw [hx.1]
+  rw [hFw z hz]
+  exact upperHalfPlanePoissonIntegralFun_congr_ae (hw.mono fun x hx ↦ hx.1.symm) z
 
 /-- On bounded holomorphic functions, `F ↦ F*` is additive almost everywhere. -/
 theorem upperHalfPlaneBoundaryFun_add_ae_eq (hF : DifferentiableOn ℂ F upperHalfPlaneSet)
