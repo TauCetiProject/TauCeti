@@ -40,6 +40,8 @@ The homotopy category is needed: over `[0, 1]` every rank-`k` bundle is trivial,
 
 ## Main results
 
+* `TauCeti.rankClassFunctorRepresentableBy_homEquiv_id`: the universal element is
+  `universalRankClass`.
 * `TauCeti.rankClassFunctorRepresentableBy_homEquiv_homMk`: the bijection sends the class of `f`
   to `classificationEquiv` of the class of `f` followed by the projection from the lift.
 
@@ -138,5 +140,13 @@ theorem rankClassFunctorRepresentableBy_homEquiv_homMk {X : ParacompactHomotopyC
       infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k
         (Quotient.mk _ ((infiniteGrassmannianULiftProj.{u} 𝕜 k).comp f)) :=
   rankClassHomEquiv_homMk 𝕜 k f
+
+/-- The universal element of `rankClassFunctorRepresentableBy` is the class of the universal
+bundle. -/
+@[simp]
+theorem rankClassFunctorRepresentableBy_homEquiv_id :
+    (rankClassFunctorRepresentableBy 𝕜 k).homEquiv (𝟙 _) = universalRankClass.{u} 𝕜 k := by
+  rw [← ParacompactHomotopyCat.homMk_id, rankClassFunctorRepresentableBy_homEquiv_homMk,
+    ContinuousMap.comp_id]
 
 end TauCeti
