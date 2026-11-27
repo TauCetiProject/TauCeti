@@ -126,6 +126,7 @@ variable (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x) {R : Type
 
 /-- **The Barraud–Cornea cocycle is natural in the target**: the cocycle of `S` for `g ∘ θ` is the
 image of the cocycle for `θ` under the morphism `C_*(Ωg)` of chain algebras. -/
+@[simp]
 theorem map_loopChainMap_barraudCorneaCocycle {ind : criticalPoints 𝓘(ℝ, E) f → ℤ}
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
     (hX.barraudCorneaCocycle hf hdense hθ hc S).map (loopChainMap R g hg) =
