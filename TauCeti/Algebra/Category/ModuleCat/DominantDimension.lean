@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Module.Injective.Envelope.ModuleCat
 public import TauCeti.Algebra.Module.Injective.Envelope.Projective
 public import TauCeti.CategoryTheory.Abelian.DominantDimension
+import TauCeti.Algebra.Category.ModuleCat.Kernels
 
 /-!
 # The dominant dimension of modules
@@ -69,9 +70,7 @@ theorem ModuleCat.natCast_le_dominantDimension_iff_of_finite {Γ : Type u} [Ring
     have : Projective E := r.projective
     have := ((isInjectiveEnvelope_iff_injective_and_isEssentialMono ι).2
       ⟨hE, hι⟩).finite_of_projective
-    have : Module.Finite Γ (cokernel ι : ModuleCat.{v} Γ) :=
-      Module.Finite.of_surjective (cokernel.π ι).hom
-        ((ModuleCat.epi_iff_surjective _).1 inferInstance)
+    have := ModuleCat.finite_cokernel ι
     exact ObjectProperty.isSyzygy_succ_iff_exists_mono.2 ⟨E, ι, hι.mono,
       ⟨inferInstance, inferInstance, hE⟩, ih _
       ((hasProjectiveInjectiveCoresolution_iff_isSyzygy.2 h').of_retract r')⟩

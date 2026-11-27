@@ -5,15 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
+public import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
-# Kernels under functors to modules
+# Kernels and cokernels of modules
 
 For a functor `F : C ⥤ ModuleCat R` preserving the kernel of a morphism `f`, the fibre of
 `kernel f` maps onto the kernel of the linear map `F.map f`: every element killed by `F.map f`
 is the image of an element of `F.obj (kernel f)` under `F.map (kernel.ι f)`.
+
+The cokernel of a morphism with finitely generated target is finitely generated.
 
 ## Main results
 
@@ -21,13 +25,19 @@ is the image of an element of `F.obj (kernel f)` under `F.map (kernel.ι f)`.
   fibre of `kernel f`.
 * `CategoryTheory.Functor.map_map_apply_eq_zero`: on values, `F.map g` kills the image of
   `F.map f` when `f ≫ g = 0`.
+* `ModuleCat.finite_cokernel`: a cokernel is finitely generated when the target is.
 -/
 
 public section
 
-namespace CategoryTheory.Functor
+open CategoryTheory.Limits
 
-open Limits
+/-- The cokernel of a module morphism with finitely generated target is finitely generated. -/
+theorem ModuleCat.finite_cokernel {R : Type*} [Ring R] {M N : ModuleCat.{v} R}
+    [Module.Finite R N] (f : M ⟶ N) : Module.Finite R (cokernel f : ModuleCat.{v} R) :=
+  Module.Finite.of_surjective (cokernel.π f).hom ((ModuleCat.epi_iff_surjective _).mp inferInstance)
+
+namespace CategoryTheory.Functor
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] {R : Type*} [Ring R]
 
