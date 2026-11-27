@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -13,12 +14,16 @@ public import Mathlib.Data.ZMod.Basic
 Mathlib defines `ZMod.finEquiv : Fin n ≃+* ZMod n` for `[NeZero n]` and states nothing about
 applying it. This file states the two evaluation rules as `@[simp]` lemmas, so that an argument
 indexed by `Fin n` rewrites into `ZMod n` arithmetic instead of being unfolded at each use.
+Through `ZMod.finEquiv`, for `n > 0`, a sum over the residues modulo `n` of a function of the
+least nonnegative representative is a sum over `range n`.
 
 ## Main results
 
 * `ZMod.finEquiv_apply`: `ZMod.finEquiv n j` is the natural cast of `j.val`.
 * `ZMod.finEquiv_symm_apply_val`: the canonical `Fin n` representative
   `(ZMod.finEquiv n).symm z` of `z : ZMod n` has natural value `z.val`.
+* `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_val_sub_eq_sum_range`: the same for the representatives of a shift `x - c`.
 * `TauCeti.mulModEquiv`: multiplication by `d` modulo `p` as a permutation of `Fin p`, for `d`
   coprime to `p`, with its evaluation rule `TauCeti.mulModEquiv_apply_val`. These take a modulus
   rather than a `ZMod` value, so they are not dot notation on `ZMod` and live in `TauCeti`.
@@ -54,6 +59,20 @@ lemma finEquiv_symm_apply_val {n : ℕ} [NeZero n] (z : ZMod n) :
   -- identifies with `finEquiv` applied to it, that is with `z`.
   rw [← ZMod.val_natCast_of_lt ((ZMod.finEquiv n).symm z).isLt, ← finEquiv_apply,
     RingEquiv.apply_symm_apply]
+
+/-- **Summing over the representatives.** For `n > 0`, a function of the least nonnegative
+representative summed over the residues modulo `n` is its sum over `range n`. -/
+theorem sum_val_eq_sum_range {n : ℕ} {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M) :
+    ∑ x : ZMod n, f x.val = ∑ i ∈ Finset.range n, f i := by
+  rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
+  simp
+
+/-- **Summing over shifted representatives.** For `n > 0`, a function of the representative of
+`x - c` summed over the residues modulo `n` is its sum over `range n`. -/
+theorem sum_val_sub_eq_sum_range {n : ℕ} {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M)
+    (c : ZMod n) : ∑ x : ZMod n, f (x - c).val = ∑ i ∈ Finset.range n, f i := by
+  simpa only [Equiv.subRight_apply] using
+    ((Equiv.subRight c).sum_comp fun x ↦ f x.val).trans (sum_val_eq_sum_range f)
 
 end ZMod
 

@@ -14,15 +14,23 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Basic
 A labelling `τ : Fin k → ℕ` of the indices splits them into blocks. Over a local ring `W`, its
 parahoric subgroup is the preimage of the weight parabolic
 `TauCeti.GeneralLinear.weightParabolicPoints` of `τ` over the residue field: the matrices whose
-entries from a smaller to a larger label lie in the maximal ideal. It contains the Levi subgroup
-`TauCeti.GeneralLinear.leviSubgroup` of `τ`. The labelling `twoBlockLabel r` splits the indices
-into those below `r` and the others.
+entry `(i, j)` lies in the maximal ideal whenever the row label `τ i` is strictly smaller than
+the column label `τ j`. It contains the Levi subgroup `TauCeti.GeneralLinear.leviSubgroup` of `τ`.
+
+The point of the construction: after reduction to the residue field, an element of the parahoric
+subgroup preserves, for every threshold `t`, the span of the standard basis vectors `e b` with
+`τ b ≥ t` (it maps `e j` into the span of the `e i` with `τ i ≥ τ j`). For the two-block
+labelling `TauCeti.GeneralLinear.twoBlockLabel r` with `0 < r < k`, the span of the `e b` with
+`b ≥ r` is the unique nonzero proper threshold subspace; for `r = 0` or `r ≥ k` there is none. In
+the letter matrices of a Frobenius cycle
+(`TauCeti.FrobeniusCycle.p_dvd_letterMatrix_of_mem_parahoricSubgroup`), the entries forced into
+the maximal ideal give divisibility by `p` of the entry `(i, j)` when `τ i < τ j` at an even
+letter, and, since odd letters use the inverse transpose, when `τ j < τ i` at an odd letter.
 
 ## Main definitions
 
 * `TauCeti.GeneralLinear.parahoricSubgroup`: the block-triangular modulo the maximal ideal
   subgroup of a labelling.
-* `TauCeti.GeneralLinear.twoBlockLabel`: the labelling of a split into two blocks.
 
 ## Main results
 
@@ -53,13 +61,19 @@ noncomputable def parahoricSubgroup (τ : Fin k → ℕ) : Subgroup (GL (Fin k) 
 
 variable {W}
 
-/-- Membership in the parahoric subgroup: the entries from a smaller to a larger label lie in
-the maximal ideal. -/
+/-- The parahoric subgroup is the preimage of the weight parabolic of `τ` over the residue
+field. -/
+theorem parahoricSubgroup_def (τ : Fin k → ℕ) :
+    parahoricSubgroup W τ = (weightParabolicPoints ℤ τ (ResidueField W)).comap
+      (Matrix.GeneralLinearGroup.map (residue W)) := (rfl)
+
+/-- Membership in the parahoric subgroup: the entry `(i, j)` lies in the maximal ideal whenever
+the row label `τ i` is strictly smaller than the column label `τ j`. -/
 @[simp]
 theorem mem_parahoricSubgroup_iff (τ : Fin k → ℕ) (g : GL (Fin k) W) :
     g ∈ parahoricSubgroup W τ ↔
       ∀ i j, τ i < τ j → (g : Matrix (Fin k) (Fin k) W) i j ∈ maximalIdeal W := by
-  simp [parahoricSubgroup, Matrix.GeneralLinearGroup.map_apply, residue_eq_zero_iff]
+  simp [parahoricSubgroup_def, Matrix.GeneralLinearGroup.map_apply, residue_eq_zero_iff]
 
 /-- The Levi subgroup of a labelling lies in its parahoric subgroup. -/
 theorem leviSubgroup_le_parahoricSubgroup (τ : Fin k → ℕ) :
@@ -68,29 +82,10 @@ theorem leviSubgroup_le_parahoricSubgroup (τ : Fin k → ℕ) :
     rw [(mem_leviSubgroup_iff τ g).mp hg i j h.ne]
     exact zero_mem _
 
-/-- The labelling `τ_r`: `0` on the indices `b < r` and `1` on the others. -/
-def twoBlockLabel (r : ℕ) (b : Fin k) : ℕ := if (b : ℕ) < r then 0 else 1
-
-/-- `τ_r` is `0` on the indices below `r`. -/
+/-- For a constant labelling, the parahoric subgroup is all of `GL_k(W)`: it contains the Levi
+subgroup, which is all of `GL_k(W)` (`leviSubgroup_const`). -/
 @[simp]
-theorem twoBlockLabel_of_lt {r : ℕ} {b : Fin k} (h : (b : ℕ) < r) : twoBlockLabel r b = 0 := by
-  simp [twoBlockLabel, h]
-
-/-- `τ_r` is `1` on the indices from `r` on. -/
-@[simp]
-theorem twoBlockLabel_of_le {r : ℕ} {b : Fin k} (h : r ≤ (b : ℕ)) : twoBlockLabel r b = 1 := by
-  simp [twoBlockLabel, Nat.not_lt.mpr h]
-
-/-- `τ_r` vanishes exactly on the indices below `r`. -/
-@[simp]
-theorem twoBlockLabel_eq_zero_iff (r : ℕ) (b : Fin k) : twoBlockLabel r b = 0 ↔ (b : ℕ) < r := by
-  simp [twoBlockLabel]
-
-/-- `τ_r` takes the larger value exactly on the indices from `r` on. -/
-@[simp]
-theorem twoBlockLabel_lt_iff (r : ℕ) (b b' : Fin k) :
-    twoBlockLabel r b < twoBlockLabel r b' ↔ (b : ℕ) < r ∧ r ≤ (b' : ℕ) := by
-  unfold twoBlockLabel
-  split_ifs <;> simp_all
+theorem parahoricSubgroup_const (c : ℕ) : parahoricSubgroup W (k := k) (fun _ ↦ c) = ⊤ :=
+  eq_top_iff.mpr ((leviSubgroup_const c).symm.le.trans (leviSubgroup_le_parahoricSubgroup _))
 
 end TauCeti.GeneralLinear

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Basic
 public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Basic
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 

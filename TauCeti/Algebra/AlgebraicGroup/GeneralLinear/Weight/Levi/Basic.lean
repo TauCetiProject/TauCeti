@@ -158,6 +158,11 @@ noncomputable def leviSubgroup (τ : Fin k → ℕ) : Subgroup (GL (Fin k) W) :=
 
 variable {W}
 
+/-- The Levi subgroup is the subgroup of `GL_k(W)` cut out by the weight-Levi Hopf ideal of `τ`. -/
+theorem leviSubgroup_def (τ : Fin k → ℕ) :
+    leviSubgroup W τ =
+      hopfIdealPointsSubgroup k (weightLeviDefiningHopfIdeal ℤ fun i ↦ (τ i : ℤ)) W := (rfl)
+
 /-- Membership in the Levi subgroup: the entries between distinct labels vanish. -/
 @[simp]
 theorem mem_leviSubgroup_iff (τ : Fin k → ℕ) (g : GL (Fin k) W) :
