@@ -398,6 +398,11 @@ private noncomputable def shearCompL (e w : E) (hew : ⟪e, w⟫_ℝ = 0) :
     W1p volume (⊤ : Opens E) 2 →L[ℝ] W1p volume (⊤ : Opens E) 2 :=
   shearCompOnL e w hew fun _ _ => trivial
 
+/-- The whole-space shear operator `shearCompL` is `shearCompOnL` for `U = V = ℝ^{n+1}`. -/
+private theorem shearCompL_eq (e w : E) (hew : ⟪e, w⟫_ℝ = 0) :
+    shearCompL e w hew = shearCompOnL e w hew fun _ _ => trivial :=
+  rfl
+
 /-- The value of `u ∘ Φ`, for the shear `Φ x = x - ⟪e, x⟫ w`. -/
 private theorem value_shearCompOnL_ae {U V : Opens E} {e w : E} (hew : ⟪e, w⟫_ℝ = 0)
     (hmaps : MapsTo (transvectionL e (-w)) U V) (u : W1p volume V 2) :
@@ -462,6 +467,7 @@ private theorem value_shearCompL_ae_eq_zero {H : Opens E} {ν e w : E} {c₀ : �
     (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hνw : ⟪ν, w⟫_ℝ = 0)
     {u : W1p volume (⊤ : Opens E) 2} (hu0 : ∀ᵐ x, x ∉ H → W1p.value u x = 0) :
     ∀ᵐ x, x ∉ H → W1p.value (shearCompL e w hew u) x = 0 := by
+  rw [shearCompL_eq]
   have h := value_shearCompOnL_ae (U := ⊤) hew (fun _ _ => trivial) u
   simp only [Opens.coe_top, Measure.restrict_univ] at h
   filter_upwards [h,
@@ -480,9 +486,9 @@ private theorem gradient_shearCompL_memLp {e w : E} (hew : ⟪e, w⟫_ℝ = 0) {
   have hmp := measurePreserving_transvectionL volume (inner_neg_right_eq_zero hew)
   have hg : W1p.gradient (shearCompL e w hew u) =ᵐ[volume]
       fun x => (transvectionL e (-w)).adjoint (W1p.gradient u (transvectionL e (-w) x)) := by
-    have h := gradient_shearCompOnL_ae (U := ⊤) hew (fun _ _ => trivial) u
-    simp only [Opens.coe_top, Measure.restrict_univ] at h
-    exact h
+    rw [shearCompL_eq]
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      gradient_shearCompOnL_ae (U := ⊤) hew (fun _ _ => trivial) u
   refine ⟨((transvectionL e (-w)).adjoint.comp_memLp' (hgp.comp_measurePreserving hmp)).ae_eq
     hg.symm, ?_⟩
   -- `∇u ∘ Φ = T* ∇(u ∘ Φ)`, since `T* Φ* = (Φ T)* = 1`.
@@ -678,6 +684,7 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_isSymm {p : ℝ≥0
     (shearCompL ν (-s) hνs u) _ (value_shearCompL_ae_eq_zero hH hνs hνs hu0)
     (fun v => by
       have h := energyFormH1_shearCompOnL_eq hνs hmapsH (mapsTo_transvectionL hH hνs) hu v
+      rw [shearCompL_eq]
       rwa [← restrictL_shearCompOnL hνs le_top le_top (fun _ _ => trivial) hmapsH u] at h)
     hgp' hG2' hGp'
   calc eLpNorm (W1p.gradient u : E → E) p volume
