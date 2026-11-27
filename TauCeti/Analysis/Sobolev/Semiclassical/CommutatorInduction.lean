@@ -55,6 +55,9 @@ none at a lower one.
 
 * `TauCeti.semiclassicalSobolevNorm_const_smul_coordinateDeriv_le`: `h ∂ⱼ` is a contraction from
   order `k + 1` to order `k`.
+* `TauCeti.memLp_iteratedFDeriv_const_smul_coordinateDeriv` and
+  `TauCeti.pow_mul_norm_iteratedFDeriv_const_smul_coordinateDeriv_le`: `h ∂ⱼ` preserves square
+  integrability of the derivatives and semiclassical pointwise bounds, losing one order.
 * `TauCeti.semiclassicalSobolevNorm_succ_le_add_sum`: the order `k + 1` from the order `0` and the
   order `k` of the semiclassical partial derivatives, through
   `TauCeti.lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv`.
@@ -101,6 +104,33 @@ theorem semiclassicalSobolevNorm_const_smul_coordinateDeriv_le {k : ℕ} {f : Co
     (lpNorm_iteratedFDeriv_coordinateDeriv_le (hf.of_le (by exact_mod_cast Nat.succ_le_succ hi))
       (hfm i hi) j) (pow_nonneg hh i)) hh
 
+/-- A semiclassical partial derivative `h ∂ⱼ f` of a `C^(k+1)` function whose derivatives of orders
+`1, …, k + 1` are square integrable has square-integrable derivatives through order `k`. -/
+theorem memLp_iteratedFDeriv_const_smul_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → F}
+    (hf : ContDiff ℝ (k + 1) f) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ (i + 1) f) 2) (h : ℝ)
+    (j : Fin n) : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (h • coordinateDeriv [j] f)) 2 := by
+  intro i hi
+  have hfi : ContDiff ℝ (i + 1) f := hf.of_le (by exact_mod_cast Nat.succ_le_succ hi)
+  have hD : iteratedFDeriv ℝ i (h • coordinateDeriv [j] f) =
+      h • iteratedFDeriv ℝ i (coordinateDeriv [j] f) :=
+    funext fun _ ↦ iteratedFDeriv_const_smul_apply
+      (hfi.coordinateDeriv_of_le [j] (by simp)).contDiffAt
+  rw [hD]
+  exact (memLp_iteratedFDeriv_coordinateDeriv hfi (hfm i hi) j).const_smul h
+
+/-- Semiclassical bounds through order `k + 1` on `c` give semiclassical bounds through order `k`
+on `h ∂ⱼ c`, since `hⁱ ‖Dⁱ (h ∂ⱼ c)‖ ≤ h^(i+1) ‖D^(i+1) c‖`. -/
+theorem pow_mul_norm_iteratedFDeriv_const_smul_coordinateDeriv_le {c : CoordinateSpace n → F}
+    {k : ℕ} {h K : ℝ} (hh : 0 ≤ h) (hc : ContDiff ℝ (k + 1) c)
+    (hK : ∀ i ≤ k + 1, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i c x‖ ≤ K) (j : Fin n) :
+    ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i (h • coordinateDeriv [j] c) x‖ ≤ K := by
+  intro i hi x
+  have hci : ContDiff ℝ (i + 1) c := hc.of_le (by exact_mod_cast Nat.succ_le_succ hi)
+  rw [iteratedFDeriv_const_smul_apply (hci.coordinateDeriv_of_le [j] (by simp)).contDiffAt,
+    norm_smul, Real.norm_of_nonneg hh, ← mul_assoc, ← pow_succ]
+  exact (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_coordinateDeriv_le hci j x)
+    (pow_nonneg hh _)).trans (hK (i + 1) (by omega) x)
+
 /-- **The order `k + 1` from the semiclassical partial derivatives.** For `f` of class `C^(k+1)`
 and `h ≥ 0`, `‖f‖_{k+1,h} ≤ ‖f‖_{0,h} + ∑ⱼ ‖h ∂ⱼ f‖_{k,h}`. No integrability is assumed: a
 derivative outside `L²` contributes `0` to the left side. -/
@@ -129,14 +159,9 @@ such a field. -/
 private theorem contDiff_const_smul_coordinateDeriv_and_memLp {u : CoordinateSpace n → F}
     (hu : ContDiff ℝ ∞ u) (hum : ∀ i, MemLp (iteratedFDeriv ℝ i u) 2) (h : ℝ) (j : Fin n) :
     ContDiff ℝ ∞ (h • coordinateDeriv [j] u) ∧
-      ∀ i, MemLp (iteratedFDeriv ℝ i (h • coordinateDeriv [j] u)) 2 := by
-  refine ⟨(hu.coordinateDeriv [j]).const_smul h, fun i ↦ ?_⟩
-  have hD : iteratedFDeriv ℝ i (h • coordinateDeriv [j] u) =
-      h • iteratedFDeriv ℝ i (coordinateDeriv [j] u) :=
-    funext fun x ↦ iteratedFDeriv_const_smul_apply
-      ((hu.coordinateDeriv [j]).of_le (by exact_mod_cast le_top)).contDiffAt
-  rw [hD]
-  exact (memLp_iteratedFDeriv_coordinateDeriv_of_forall hu hum j i).const_smul h
+      ∀ i, MemLp (iteratedFDeriv ℝ i (h • coordinateDeriv [j] u)) 2 :=
+  ⟨(hu.coordinateDeriv [j]).const_smul h, fun i ↦ memLp_iteratedFDeriv_const_smul_coordinateDeriv
+    (hu.of_le (by exact_mod_cast le_top)) (fun i _ ↦ hum _) h j i le_rfl⟩
 
 /-- Constants obeying `C (k + 1) ≥ 1 + n C k (1 + B k C k + C 0)` with `C 0, B k ≥ 0` are
 nonnegative. -/

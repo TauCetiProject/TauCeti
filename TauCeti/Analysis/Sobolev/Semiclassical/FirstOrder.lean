@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Semiclassical.CommutatorInduction
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.CoordinateDeriv.LpNorm
 
 /-!
 # First-order operators with semiclassically bounded coefficients
@@ -162,20 +161,6 @@ theorem const_smul_coordinateDeriv_semiclassicalFirstOrderOperator (ha : ∀ l, 
 
 /-! ### Boundedness on the semiclassical scale -/
 
-/-- A semiclassical partial derivative `h ∂ₗ u` of a `C^(k+1)` function whose derivatives of orders
-`1, …, k + 1` are square integrable has square-integrable derivatives through order `k`. -/
-private theorem memLp_iteratedFDeriv_const_smul_coordinateDeriv {k : ℕ}
-    (hu : ContDiff ℝ (k + 1) u) (hum : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ (i + 1) u) 2) (h : ℝ)
-    (l : Fin n) : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (h • coordinateDeriv [l] u)) 2 := by
-  intro i hi
-  have hui : ContDiff ℝ (i + 1) u := hu.of_le (by exact_mod_cast Nat.succ_le_succ hi)
-  have hD : iteratedFDeriv ℝ i (h • coordinateDeriv [l] u) =
-      h • iteratedFDeriv ℝ i (coordinateDeriv [l] u) :=
-    funext fun _ ↦ iteratedFDeriv_const_smul_apply
-      (hui.coordinateDeriv_of_le [l] (by simp)).contDiffAt
-  rw [hD]
-  exact (memLp_iteratedFDeriv_coordinateDeriv hui (hum i hi) l).const_smul h
-
 /-- **First-order operators lower the semiclassical order by one.** Let `h > 0` and let the
 coefficients be of class `Cᵏ` with `hⁱ ‖Dⁱ aₗ‖ ≤ K` and `hⁱ ‖Dⁱ b‖ ≤ K` everywhere for `i ≤ k`. For
 `u` of class `C^(k+1)` with square-integrable derivatives through order `k + 1`, the derivatives of
@@ -234,20 +219,6 @@ theorem semiclassicalSobolevNorm_semiclassicalFirstOrderOperator_le {k : ℕ} {h
     _ = _ := by
         rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         ring
-
-/-- The coefficient `h ∂ⱼ c` of the commutator has semiclassical bounds through order `k` when `c`
-has them through order `k + 1`: `hⁱ ‖Dⁱ (h ∂ⱼ c)‖ ≤ h^(i+1) ‖D^(i+1) c‖`. -/
-private theorem pow_mul_norm_iteratedFDeriv_const_smul_coordinateDeriv_le {H : Type*}
-    [NormedAddCommGroup H] [NormedSpace ℝ H] {c : CoordinateSpace n → H} {k : ℕ} {h K : ℝ}
-    (hh : 0 ≤ h) (hc : ContDiff ℝ (k + 1) c)
-    (hK : ∀ i ≤ k + 1, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i c x‖ ≤ K) (j : Fin n) :
-    ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i (h • coordinateDeriv [j] c) x‖ ≤ K := by
-  intro i hi x
-  have hci : ContDiff ℝ (i + 1) c := hc.of_le (by exact_mod_cast Nat.succ_le_succ hi)
-  rw [iteratedFDeriv_const_smul_apply (hci.coordinateDeriv_of_le [j] (by simp)).contDiffAt,
-    norm_smul, Real.norm_of_nonneg hh, ← mul_assoc, ← pow_succ]
-  exact (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_coordinateDeriv_le hci j x)
-    (pow_nonneg hh _)).trans (hK (i + 1) (by omega) x)
 
 /-- **The commutators of a first-order operator with `h ∂ⱼ` lose one order.** Let `h > 0` and let
 the coefficients be of class `C^(k+1)` with `hⁱ ‖Dⁱ aₗ‖ ≤ K` and `hⁱ ‖Dⁱ b‖ ≤ K` everywhere for
