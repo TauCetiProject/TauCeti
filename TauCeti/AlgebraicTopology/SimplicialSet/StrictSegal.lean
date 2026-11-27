@@ -52,6 +52,8 @@ an isomorphism, since simplices correspond to their spines.
   strict Segal (`SSet.stdSimplex.isStrictSegal`).
 * `SSet.IsStrictSegal.hom_ext_of_innerHorn`: maps from `Δ[n + 2]` to a strict Segal simplicial
   set agree as soon as they agree on an inner horn.
+* `SSet.IsStrictSegal.hom_ext_of_horn`: maps from `Δ[n + 3]` to a strict Segal simplicial set agree
+  as soon as they agree on any horn.
 * `SSet.innerFibration_of_isStrictSegal`: a map from a quasicategory to a strict Segal simplicial
   set is an inner fibration.
 * `SSet.IsStrictSegal.ext_of_δ_zero_of_δ_last`: a simplex of dimension at least two is determined
@@ -90,6 +92,23 @@ theorem IsStrictSegal.hom_ext_of_innerHorn {n : ℕ} {i : Fin (n + 3)} (h₀ : 0
     -- Both sides are the image under `f` of the edge `mkOfSucc k` of `Δ[n + 2]`.
     rfl
   exact yonedaEquiv.injective ((IsStrictSegal.segal (n + 2)).injective (by rw [key, key, h]))
+
+/-- Two maps from `Δ[n + 3]` to a strict Segal simplicial set agree as soon as they agree on a
+horn, inner or outer: in dimension at least `3`, every horn contains every edge of `Δ[n + 3]`, so
+in particular the spine. -/
+theorem IsStrictSegal.hom_ext_of_horn {n : ℕ} (i : Fin (n + 4)) {f g : Δ[n + 3] ⟶ X}
+    (h : Λ[n + 3, i].ι ≫ f = Λ[n + 3, i].ι ≫ g) : f = g := by
+  have key (f : Δ[n + 3] ⟶ X) (k : Fin (n + 3)) :
+      (X.spine (n + 3) (yonedaEquiv f)).arrow k = (Λ[n + 3, i].ι ≫ f).app _
+        (horn.edge (n + 3) i k.castSucc k.succ (Fin.castSucc_le_succ k)
+          (Finset.card_le_three.trans (by omega))) := by
+    rw [spine_arrow, yonedaEquiv_naturality, yonedaEquiv_comp, NatTrans.comp_app_apply]
+    -- Both sides are the image under `f` of the edge `mkOfSucc k` of `Δ[n + 3]`.
+    congr 1
+    refine stdSimplex.ext _ _ fun j ↦ ?_
+    fin_cases j <;> rfl
+  exact yonedaEquiv.injective ((IsStrictSegal.segal (n + 3)).injective
+    (Path.ext' fun k ↦ by rw [key, key, h]))
 
 /-- A map from a quasicategory to a strict Segal simplicial set is an inner fibration: inner horns
 fill in the source, and the filler lies over the given simplex because simplices of the target

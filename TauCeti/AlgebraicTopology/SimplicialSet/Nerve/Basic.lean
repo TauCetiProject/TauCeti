@@ -56,6 +56,10 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
   `3`-simplex of the nerve given by three composable morphisms.
 * `CategoryTheory.nerveMap_app_nerveEquiv_symm`: the map of nerves induced by a functor sends the
   vertex of an object to the vertex of its image.
+* `CategoryTheory.nerveMap_app_mk₂`: it sends the `2`-simplex of a composable pair to the
+  `2`-simplex of the image pair.
+* `CategoryTheory.nerve.homEquiv_map_nerveMap`: it sends the edge of a morphism to the edge of
+  its image.
 -/
 
 public section
@@ -312,5 +316,34 @@ namespace CategoryTheory
 lemma nerveMap_app_nerveEquiv_symm {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D)
     (X : C) : (nerveMap F).app (Opposite.op ⦋0⦌) (nerveEquiv.symm X) = nerveEquiv.symm (F.obj X) :=
   nerveMap_app_mk₀ F X
+
+/-- The map of nerves induced by a functor `F` sends the `2`-simplex `mk₂ f g` to
+`mk₂ (F.map f) (F.map g)`, as Mathlib's `nerveMap_app_mk₁` does for edges. -/
+@[simp]
+lemma nerveMap_app_mk₂ {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D)
+    {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (nerveMap F).app (Opposite.op ⦋2⦌) (ComposableArrows.mk₂ f g) =
+      ComposableArrows.mk₂ (F.map f) (F.map g) :=
+  ComposableArrows.ext₂_of_arrow rfl rfl
+
+/-- The map of nerves induced by a functor `F` sends an edge given by a morphism `f` to the edge
+given by `F.map f`. -/
+@[simp]
+lemma nerve.homEquiv_map_nerveMap {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D)
+    {x y : (nerve C) _⦋0⦌} (e : (nerve C).Edge x y) :
+    nerve.homEquiv (e.map (nerveMap F)) = F.map (nerve.homEquiv e) := by
+  obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective x
+  obtain ⟨y, rfl⟩ := nerveEquiv.symm.surjective y
+  obtain ⟨f, rfl⟩ := nerve.edgeMk_surjective e
+  rw [nerve.homEquiv_edgeMk]
+  exact nerve.homEquiv_edgeMk_map_nerveMap f F
+
+/-- The `1`-simplex of the image of an edge `e` under the map of nerves induced by `F` is the
+`1`-simplex of the morphism `F.map (nerve.homEquiv e)`. -/
+lemma nerve.edge_map_nerveMap {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D)
+    {x y : (nerve C) _⦋0⦌} (e : (nerve C).Edge x y) :
+    (e.map (nerveMap F)).edge = ComposableArrows.mk₁ (F.map (nerve.homEquiv e)) := by
+  rw [← nerve.homEquiv_map_nerveMap]
+  exact ((nerve.mk₁_homEquiv_apply _).trans (ComposableArrows.mk₁_hom _)).symm
 
 end CategoryTheory

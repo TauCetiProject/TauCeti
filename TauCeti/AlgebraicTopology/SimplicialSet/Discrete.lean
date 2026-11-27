@@ -27,6 +27,9 @@ the number of nondegenerate simplices, such as cardinal filteredness.
 * `SSet.constHomEquiv`: maps from the discrete simplicial set on `ι` are families of vertices.
 * `SSet.isIso_constHomEquiv_symm`: a simplicial set whose simplices are all totally degenerate is
   the discrete simplicial set on its vertices.
+* `SSet.isIso_of_bijective_app_zero`: a map between such simplicial sets is an isomorphism as soon
+  as it is bijective on vertices; subcomplexes and products of such simplicial sets are again such
+  (`SSet.Subcomplex.surjective_map_const`, `SSet.surjective_piObj_map_const`).
 * `SSet.constNEquiv`: the nondegenerate simplices of the discrete simplicial set on `ι` are the
   elements of `ι`.
 * `SSet.kanComplex_const`: discrete simplicial sets are Kan complexes.
@@ -92,6 +95,57 @@ lemma isIso_constHomEquiv_symm {v : ι → X _⦋0⦌} (hv : Function.Bijective 
   · obtain ⟨y, rfl⟩ := h n s
     obtain ⟨i, rfl⟩ := hv.2 y
     exact ⟨i, happ i⟩
+
+/-- The vertex of the totally degenerate simplex at a vertex `w` is `w`. -/
+private lemma map_const_map_const_zero (Z : SSet.{u}) (n : ℕ) (w : Z _⦋0⦌) :
+    Z.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op (Z.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op w) =
+      w := by
+  rw [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim
+    (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0 ≫ SimplexCategory.const ⦋n⦌ ⦋0⦌ 0) (𝟙 _), op_id]
+  simp
+
+/-- A map between simplicial sets all of whose simplices are totally degenerate is an
+isomorphism as soon as it is bijective on vertices: both are the discrete simplicial sets on their
+vertices (`SSet.isIso_constHomEquiv_symm`). -/
+lemma isIso_of_bijective_app_zero {Y : SSet.{u}} (f : X ⟶ Y)
+    (hX : ∀ n : ℕ, Function.Surjective (X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op))
+    (hY : ∀ n : ℕ, Function.Surjective (Y.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op))
+    (hf : Function.Bijective (f.app (op ⦋0⦌))) : IsIso f := by
+  have := isIso_constHomEquiv_symm (ι := X _⦋0⦌) (v := id) Function.bijective_id hX
+  have := isIso_constHomEquiv_symm (ι := X _⦋0⦌) (v := fun x ↦ f.app (op ⦋0⦌) x) hf hY
+  have h : (constHomEquiv _).symm id ≫ f = (constHomEquiv (X _⦋0⦌)).symm (f.app (op ⦋0⦌) ·) :=
+    (constHomEquiv _).injective (funext fun i ↦ by simp)
+  have : IsIso ((constHomEquiv _).symm id ≫ f) := by
+    rw [h]
+    infer_instance
+  exact IsIso.of_isIso_comp_left ((constHomEquiv _).symm id) f
+
+/-- The simplices of a subcomplex of a simplicial set whose simplices are all totally degenerate
+are all totally degenerate. -/
+lemma Subcomplex.surjective_map_const {A : X.Subcomplex}
+    (hX : ∀ n : ℕ, Function.Surjective (X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op)) (n : ℕ) :
+    Function.Surjective ((A : SSet.{u}).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op) := by
+  intro s
+  obtain ⟨v, hv⟩ := hX n s.val
+  -- The vertex `v` is a vertex of the simplex `s`, hence a vertex of `A`.
+  have hv' : v = X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op s.val := by
+    rw [← hv, map_const_map_const_zero]
+  exact ⟨⟨v, hv' ▸ A.map _ s.property⟩, Subtype.ext hv⟩
+
+/-- The simplices of a product of simplicial sets whose simplices are all totally degenerate are
+all totally degenerate. -/
+lemma surjective_piObj_map_const {J : Type*} (Y : J → SSet.{u}) [Limits.HasProduct Y]
+    (hY : ∀ j (n : ℕ), Function.Surjective ((Y j).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op))
+    (n : ℕ) :
+    Function.Surjective ((∏ᶜ Y).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op) := by
+  intro s
+  refine ⟨(∏ᶜ Y).map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op s, yonedaEquiv.symm.injective
+    (Limits.Pi.hom_ext _ _ fun j ↦ yonedaEquiv.injective ?_)⟩
+  rw [yonedaEquiv_comp, yonedaEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply,
+    NatTrans.naturality_apply, NatTrans.naturality_apply]
+  -- The projection of `s` is the totally degenerate simplex at its vertex.
+  obtain ⟨w, hw⟩ := hY j n ((Limits.Pi.π Y j).app _ s)
+  rw [← hw, map_const_map_const_zero]
 
 /-- Every simplex of positive dimension of a discrete simplicial set is degenerate. -/
 @[simp]

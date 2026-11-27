@@ -442,13 +442,19 @@ private theorem eq_map_const_of_isStrictSegal [X.IsStrictSegal] {n : ℕ}
   exact Functor.map_comp_apply X (joinVertex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n))).op
     (joinVertex.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0)).op _
 
+/-- Every simplex of a right mapping space of a strict Segal simplicial set, such as the nerve of a
+category, is the totally degenerate simplex at a vertex. -/
+theorem surjective_map_const_of_isStrictSegal [X.IsStrictSegal] (n : ℕ) :
+    Function.Surjective ((X.rightMappingSpace x y : SSet.{u}).map
+      (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op) :=
+  fun s ↦ ⟨_, (eq_map_const_of_isStrictSegal s).symm⟩
+
 /-- The right mapping spaces of a strict Segal simplicial set, such as the nerve of a category,
 are discrete: sending an edge from `x` to `y` to the totally degenerate simplices at the
 corresponding vertex is an isomorphism from the discrete simplicial set on these edges. -/
 instance isIso_constHomEquiv_symm [X.IsStrictSegal] :
     IsIso ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm) :=
-  SSet.isIso_constHomEquiv_symm obj₀Equiv.symm.bijective fun _ s ↦
-    ⟨_, (eq_map_const_of_isStrictSegal s).symm⟩
+  SSet.isIso_constHomEquiv_symm obj₀Equiv.symm.bijective surjective_map_const_of_isStrictSegal
 
 variable (x y) in
 /-- The right mapping space `Hom^R_X(x, y)` of a strict Segal simplicial set, such as the nerve of
