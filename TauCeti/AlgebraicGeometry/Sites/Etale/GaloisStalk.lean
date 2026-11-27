@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.RationalPoint.Geometric
 public import TauCeti.AlgebraicGeometry.Scheme.SpecAlgHom
 public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
-public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Basic
+public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Galois
 
 /-!
 # The Galois action on stalks of étale sheaves on a field
@@ -89,20 +89,29 @@ noncomputable abbrev galoisGeometricPoint : GeometricPoint (Spec (.of K)) where
 /-- The automorphism `Spec σ` of the geometric point `Spec Ω ⟶ Spec K` given by `σ ∈ Gal(Ω/K)`. -/
 noncomputable def galoisGeometricPointIso (σ : Gal(Ω/K)) :
     galoisGeometricPoint K Ω ≅ galoisGeometricPoint K Ω :=
-  GeometricPoint.isoMk (Scheme.Spec.mapIso σ.toRingEquiv.toCommRingCatIso.op)
-    (Spec.map_algHom_comp_map_algebraMap σ)
+  GeometricPoint.isoOfRingEquiv σ.toRingEquiv (Spec.map_algHom_comp_map_algebraMap σ)
 
 /-- The automorphism of the geometric point given by `σ` is `Spec σ`. -/
 @[simp]
 theorem galoisGeometricPointIso_hom_hom (σ : Gal(Ω/K)) :
     (galoisGeometricPointIso K Ω σ).hom.hom = Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)) :=
-  GeometricPoint.isoMk_hom_hom _ _
+  GeometricPoint.isoOfRingEquiv_hom_hom _ _
 
 /-- The inverse of the automorphism of the geometric point given by `σ` is `Spec σ⁻¹`. -/
 @[simp]
 theorem galoisGeometricPointIso_inv_hom (σ : Gal(Ω/K)) :
     (galoisGeometricPointIso K Ω σ).inv.hom = Spec.map (CommRingCat.ofHom (σ.symm : Ω →+* Ω)) :=
-  GeometricPoint.isoMk_inv_hom _ _
+  GeometricPoint.isoOfRingEquiv_inv_hom _ _
+
+/-- `galoisGeometricPointIso K Ω σ` is `GeometricPoint.isoOfAlgEquiv (𝟙 (Spec (.of K))) σ`
+transported along `GeometricPoint.ofOverIdIso K Ω`. -/
+theorem galoisGeometricPointIso_eq (σ : Gal(Ω/K)) :
+    galoisGeometricPointIso K Ω σ =
+      (GeometricPoint.ofOverIdIso K Ω).symm ≪≫
+        GeometricPoint.isoOfAlgEquiv (𝟙 (Spec (.of K))) σ ≪≫
+          GeometricPoint.ofOverIdIso K Ω := by
+  ext : 2
+  simp
 
 /-- `σ ↦ Spec σ` as a homomorphism from `Gal(Ω/K)` to the automorphisms of the geometric point
 `Spec Ω ⟶ Spec K`. Since `Spec (σ * τ) = Spec σ ≫ Spec τ` and `Aut` multiplies in the order of
@@ -110,15 +119,30 @@ function composition, it lands in the opposite group. -/
 noncomputable def galoisGeometricPointAut : Gal(Ω/K) →* (Aut (galoisGeometricPoint K Ω))ᵐᵒᵖ where
   toFun σ := .op (.of (galoisGeometricPointIso K Ω σ))
   map_one' := by
-    ext1
+    apply GeometricPoint.autOp_ext
+    have h1 : (GeometricPoint.isoOfAlgEquiv (𝟙 (Spec (.of K))) (1 : Gal(Ω/K))).hom = 𝟙 _ := by
+      simpa only [GeometricPoint.unop_autOfAlgEquiv, MulOpposite.unop_one, Aut.one_asIso,
+        Iso.refl_hom] using
+        congrArg (·.unop.asIso.hom) (map_one (GeometricPoint.autOfAlgEquiv (𝟙 (Spec (.of K))) Ω))
     simp only [MulOpposite.unop_op, MulOpposite.unop_one, Aut.one_asIso, Iso.refl_hom,
-      GeometricPoint.id_hom, galoisGeometricPointIso_hom_hom, ← Spec.map_id]
-    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext (AlgEquiv.one_apply (R := K))))
+      GeometricPoint.id_hom]
+    rw [galoisGeometricPointIso_eq, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom,
+      GeometricPoint.comp_hom, GeometricPoint.comp_hom, h1]
+    simp
   map_mul' σ τ := by
-    ext1
+    apply GeometricPoint.autOp_ext
+    have hm : (GeometricPoint.isoOfAlgEquiv (𝟙 (Spec (.of K))) (σ * τ)).hom =
+        (GeometricPoint.isoOfAlgEquiv (𝟙 (Spec (.of K))) σ).hom ≫
+          (GeometricPoint.isoOfAlgEquiv (𝟙 (Spec (.of K))) τ).hom := by
+      simpa only [GeometricPoint.unop_autOfAlgEquiv, MulOpposite.unop_mul, Aut.mul_asIso,
+        Iso.trans_hom] using
+        congrArg (·.unop.asIso.hom)
+          (map_mul (GeometricPoint.autOfAlgEquiv (𝟙 (Spec (.of K))) Ω) σ τ)
     simp only [MulOpposite.unop_mul, MulOpposite.unop_op, Aut.mul_asIso, Iso.trans_hom,
-      GeometricPoint.comp_hom, galoisGeometricPointIso_hom_hom, ← Spec.map_comp]
-    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext (AlgEquiv.mul_apply σ τ)))
+      GeometricPoint.comp_hom]
+    rw [galoisGeometricPointIso_eq, galoisGeometricPointIso_eq, galoisGeometricPointIso_eq,
+      Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, hm]
+    simp
 
 /-- `σ` gives the automorphism `galoisGeometricPointIso K Ω σ` of the geometric point. -/
 @[simp]
@@ -135,6 +159,39 @@ noncomputable def galoisStalkMap (σ : Gal(Ω/K)) :
       (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber :=
   ((GeometricPoint.stalkAction A (galoisGeometricPoint K Ω)).comp
     (galoisGeometricPointAut K Ω) σ).asIso.hom
+
+/-- `galoisStalkMap K Ω A σ` is the conjugation of
+`GeometricPoint.ofOverGaloisStalkAction (𝟙 (Spec (.of K))) Ω σ` along the canonical identification
+`GeometricPoint.ofOverIdIso K Ω`. -/
+theorem galoisStalkMap_eq_ofOverGaloisStalkAction (σ : Gal(Ω/K)) :
+    galoisStalkMap K Ω A σ =
+      (GeometricPoint.stalkIso (GeometricPoint.ofOverIdIso K Ω).hom).hom ≫
+        (GeometricPoint.ofOverGaloisStalkAction (𝟙 (Spec (.of K))) Ω σ).asIso.hom ≫
+          (GeometricPoint.stalkIso (GeometricPoint.ofOverIdIso K Ω).hom).inv := by
+  have hinv : (GeometricPoint.stalkIso (GeometricPoint.ofOverIdIso K Ω).inv (A := A)).hom =
+      (GeometricPoint.stalkIso (GeometricPoint.ofOverIdIso K Ω).hom (A := A)).inv := by
+    have hcomp := GeometricPoint.stalkIso_comp (A := A)
+      (GeometricPoint.ofOverIdIso K Ω).hom (GeometricPoint.ofOverIdIso K Ω).inv
+    rw [Iso.hom_inv_id, GeometricPoint.stalkIso_id] at hcomp
+    have hmul : (GeometricPoint.stalkIso (GeometricPoint.ofOverIdIso K Ω).inv (A := A)).hom ≫
+        (GeometricPoint.stalkIso (GeometricPoint.ofOverIdIso K Ω).hom (A := A)).hom = 𝟙 _ :=
+      congrArg Iso.hom hcomp.symm
+    rw [← Category.comp_id
+        (GeometricPoint.stalkIso (GeometricPoint.ofOverIdIso K Ω).inv (A := A)).hom,
+      ← (GeometricPoint.stalkIso (GeometricPoint.ofOverIdIso K Ω).hom (A := A)).hom_inv_id,
+      ← Category.assoc, hmul, Category.id_comp]
+  have heq : (galoisGeometricPointIso K Ω σ).hom =
+      (GeometricPoint.ofOverIdIso K Ω).inv ≫
+        (GeometricPoint.isoOfAlgEquiv (𝟙 (Spec (.of K))) σ).hom ≫
+          (GeometricPoint.ofOverIdIso K Ω).hom :=
+    congrArg Iso.hom (galoisGeometricPointIso_eq K Ω σ)
+  rw [galoisStalkMap, MonoidHom.coe_comp, Function.comp_apply, GeometricPoint.stalkAction_apply,
+    galoisGeometricPointAut_apply, ← GeometricPoint.stalkIso_hom, heq,
+    GeometricPoint.stalkIso_comp, GeometricPoint.stalkIso_comp, Iso.trans_hom, Iso.trans_hom,
+    hinv, Category.assoc]
+  congr 2
+  rw [GeometricPoint.stalkIso_hom, GeometricPoint.isoOfAlgEquiv_hom,
+    ← GeometricPoint.ofOverGaloisStalkAction_asIso_hom]
 
 /-- The identity of `Gal(Ω/K)` acts trivially on stalks. -/
 @[simp]
@@ -159,10 +216,10 @@ theorem toPresheafFiber_galoisStalkMap_app (σ : Gal(Ω/K))
       (pointSmallEtale _).toPresheafFiber X
         (((GeometricPoint.toPointFunctor _).map (galoisGeometricPointIso K Ω σ).hom).hom.app X t)
         F.obj := by
-  simp only [galoisStalkMap, MonoidHom.coe_comp, Function.comp_apply,
-    GeometricPoint.stalkAction_apply, galoisGeometricPointAut_apply, Functor.whiskerLeft_app,
-    GrothendieckTopology.Point.Hom.presheafFiber_app]
-  exact GrothendieckTopology.Point.toPresheafFiber_presheafFiberDesc _ _ _ _ _
+  rw [galoisStalkMap, MonoidHom.coe_comp, Function.comp_apply, GeometricPoint.stalkAction_apply,
+    galoisGeometricPointAut_apply, GeometricPoint.toPointFunctor_map_hom_app_apply]
+  exact GeometricPoint.toPresheafFiber_toPointFunctor_map_sheafFiber_app
+    (galoisGeometricPointIso K Ω σ).hom F X t
 
 -- `reassoc` and `elementwise` cannot generate these two forms: the germ lands in the presheaf
 -- fiber, while `(galoisStalkMap K Ω A σ).app F` starts at the sheaf fiber, and the two objects
