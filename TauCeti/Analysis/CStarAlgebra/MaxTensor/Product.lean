@@ -37,6 +37,8 @@ representation of `TauCeti.MaxTensorProduct A B`
 * `TauCeti.MaxTensorProduct A B`: its completion, a C*-algebra.
 * `TauCeti.MaxTensorProduct.of`, `TauCeti.MaxTensorProduct.norm_of`,
   `TauCeti.MaxTensorProduct.of_injective`, `TauCeti.MaxTensorProduct.denseRange_of`.
+* `TauCeti.MaxTensorProduct.extend`: the extension of a star homomorphism on `A ⊗[ℂ] B` bounded
+  by the maximal norm.
 * `TauCeti.MaxTensorProduct.lift`: the universal property.
 
 ## References
@@ -309,6 +311,27 @@ theorem starAlgHom_ext {C : Type*} [NonUnitalCStarAlgebra C]
   | tmul a b => exact h a b
   | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
 
+section Extend
+
+variable {C : Type*} [NonUnitalCStarAlgebra C] (f : A ⊗[ℂ] B →⋆ₙₐ[ℂ] C)
+  (hf : ∀ x, ‖f x‖ ≤ maxTensorNorm A B x)
+
+/-- A star homomorphism `f : A ⊗[ℂ] B → C` into a C*-algebra that is bounded by the maximal norm
+extends to the star homomorphism `MaxTensorProduct A B → C` agreeing with `f` on `A ⊗[ℂ] B`
+(`TauCeti.MaxTensorProduct.extend_of`). -/
+def extend : MaxTensorProduct A B →⋆ₙₐ[ℂ] C :=
+  (f.comp (toMaxStarAlgEquiv A B).symm.toNonUnitalStarAlgHom).fromCompletion <|
+    AddMonoidHomClass.continuous_of_bound _ 1 fun x ↦ by simpa [norm_def] using hf (ofMax x)
+
+/-- On `A ⊗[ℂ] B`, the extension is `f`. -/
+@[simp]
+theorem extend_of (x : A ⊗[ℂ] B) : extend f hf (of A B x) = f x := by
+  rw [← coe_toMax_eq_of]
+  -- `extend f hf` is by definition the extension from the completion of `MaxTensorAlgebra A B`.
+  exact (NonUnitalStarAlgHom.fromCompletion_apply_coe _ _ (toMax x)).trans (by simp)
+
+end Extend
+
 variable {C : Type (max u v)} [NonUnitalCStarAlgebra C] (φ : A →⋆ₙₐ[ℂ] C) (ψ : B →⋆ₙₐ[ℂ] C)
   (h : ∀ a b, Commute (φ a) (ψ b))
 
@@ -318,18 +341,14 @@ homomorphism `MaxTensorProduct A B → C` sending `a ⊗ b` to `φ a * ψ b`
 (`TauCeti.MaxTensorProduct.lift_of_tmul`); it is unique by
 `TauCeti.MaxTensorProduct.starAlgHom_ext`. -/
 def lift : MaxTensorProduct A B →⋆ₙₐ[ℂ] C :=
-  ((Algebra.TensorProduct.liftNonUnitalStarAlgHom φ ψ h).comp
-    (toMaxStarAlgEquiv A B).symm.toNonUnitalStarAlgHom).fromCompletion <|
-    AddMonoidHomClass.continuous_of_bound _ 1 fun x ↦ by
-      simpa [norm_def] using norm_liftNonUnitalStarAlgHom_le_maxTensorNorm φ ψ h (ofMax x)
+  extend (Algebra.TensorProduct.liftNonUnitalStarAlgHom φ ψ h)
+    (norm_liftNonUnitalStarAlgHom_le_maxTensorNorm φ ψ h)
 
 /-- On `A ⊗[ℂ] B`, the extension is the integrated form `a ⊗ b ↦ φ a * ψ b`. -/
 @[simp]
 theorem lift_of (x : A ⊗[ℂ] B) :
-    lift φ ψ h (of A B x) = Algebra.TensorProduct.liftNonUnitalStarAlgHom φ ψ h x := by
-  rw [← coe_toMax_eq_of]
-  -- `lift φ ψ h` is by definition the extension from the completion of `MaxTensorAlgebra A B`.
-  exact (NonUnitalStarAlgHom.fromCompletion_apply_coe _ _ (toMax x)).trans (by simp)
+    lift φ ψ h (of A B x) = Algebra.TensorProduct.liftNonUnitalStarAlgHom φ ψ h x :=
+  extend_of _ _ x
 
 /-- The extension sends `a ⊗ b` to `φ a * ψ b`. -/
 theorem lift_of_tmul (a : A) (b : B) : lift φ ψ h (of A B (a ⊗ₜ b)) = φ a * ψ b := by
