@@ -68,6 +68,7 @@ of the unit ideal of a Euclidean domain, by the Euclidean algorithm.
 * `Ideal.IsMennickeSymbol.map_eq_one_of_isUnit_fst`: `[b/a] = 1` when `a` is a unit.
 * `Ideal.IsMennickeSymbol.map_eq_one_of_dvd_fst_sub`,
   `Ideal.IsMennickeSymbol.map_eq_one_of_dvd_snd_sub`: near-unit pairs have trivial symbol.
+* `Ideal.IsMennickeSymbol.map_mul_map_eq_one`: `[b/a] [c/a] = 1` whenever `a d - b c` is a unit.
 * `Ideal.IsMennickeSymbol.map_eq_of_snd_eq_mul_one_sub`: `[b (1 - a) / a] = [b/a]`.
 * `Ideal.IsMennickeSymbol.map_eq_of_snd_eq_mul_of_dvd`: `[b c / a] = [b/a]` for `c ∈ I` with
   `a ≡ 1` modulo `c`.
@@ -336,6 +337,15 @@ theorem map_eq_one_of_dvd_snd_sub (hs : IsMennickeSymbol s) {p : MennickePair I}
   refine hs.map_eq_one_of_dvd_fst_sub isUnit_one ⟨-↑u⁻¹, ?_⟩
   simp only [MennickePair.shiftSnd_fst, MennickePair.shiftSnd_snd]
   linear_combination (1 - p.fst) * u.inv_mul + (↑u⁻¹ : A) * hk
+
+/-- `[b/a] [c/a] = 1` for admissible pairs `(a, b)` and `(a, c)` such that `a d - b c` is a unit
+for some `d`. -/
+theorem map_mul_map_eq_one (hs : IsMennickeSymbol s) {p q : MennickePair I}
+    (hfst : p.fst = q.fst) {d : A} (hd : IsUnit (p.fst * d - p.snd * q.snd)) :
+    s p * s q = 1 := by
+  -- `[b c / a] = 1`, since `b c` is congruent modulo `a` to the unit `-(a d - b c)`
+  rw [← hs.map_mulSnd p q hfst]
+  exact hs.map_eq_one_of_dvd_snd_sub hd.neg ⟨d, by simp⟩
 
 /-- Multiplying the second entry by `1 - a` does not change the symbol: `[b (1 - a) / a] = [b/a]`.
 This is the first Mennicke relation with coefficient `-b ∈ I`. -/

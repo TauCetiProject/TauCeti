@@ -55,6 +55,7 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
 * `Matrix.IsMurrayVonNeumannEquivalent.sum_map_eq`: an additive map `f` with
   `f (a * b) = f (b * a)` has the same diagonal sum on equivalent projections.
 * `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_zero`,
+  `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_iff`,
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm` and
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc`: padding by a zero block, and
   commutativity and associativity of block sums, up to equivalence.
@@ -268,6 +269,16 @@ theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_zero_fromBlocks {p 
         fromBlocks 0 0 0 (p * pᴴ) := by
       ext (i | i) (j | j) <;> simp [Matrix.mul_apply]
     rw [h, hpH, hp.isIdempotentElem.eq]
+
+/-- **Padding to orthogonal projections.** `p ⊕ 0 ∼ 0 ⊕ q` exactly when `p ∼ q`. -/
+theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_iff {p : Matrix m m R}
+    {q : Matrix n n R} (hp : IsStarProjection p) (hq : IsStarProjection q) :
+    IsMurrayVonNeumannEquivalent (fromBlocks p 0 0 (0 : Matrix n n R))
+        (fromBlocks (0 : Matrix m m R) 0 0 q) ↔ IsMurrayVonNeumannEquivalent p q :=
+  ⟨fun h ↦ hp.isMurrayVonNeumannEquivalent_fromBlocks_zero.trans
+      (h.trans hq.isMurrayVonNeumannEquivalent_zero_fromBlocks.symm),
+    fun h ↦ hp.isMurrayVonNeumannEquivalent_fromBlocks_zero.symm.trans
+      (h.trans hq.isMurrayVonNeumannEquivalent_zero_fromBlocks)⟩
 
 /-- **Commutativity of block sums.** For matrix projections `p` and `q`, `p ⊕ q ∼ q ⊕ p`. -/
 theorem isMurrayVonNeumannEquivalent_fromBlocks_comm {p : Matrix m m R} {q : Matrix n n R}

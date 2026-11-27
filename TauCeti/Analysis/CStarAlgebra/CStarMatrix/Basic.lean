@@ -23,6 +23,7 @@ import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
+public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 import TauCeti.LinearAlgebra.Trace.Idempotent
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -453,6 +454,16 @@ lemma isStarProjection_ofMatrix_symm_iff [Fintype n] [NonUnitalSemiring A] [Star
 lemma isStarProjection_ofMatrix_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
     {M : Matrix n n A} : IsStarProjection (ofMatrix M) ↔ IsStarProjection M := by
   rw [← isStarProjection_ofMatrix_symm_iff, Equiv.symm_apply_apply]
+
+/-- An element `v` of `CStarMatrix n n A` with `v⋆v = p` and `vv⋆ = q` makes the underlying
+matrices of the projections `p` and `q` Murray–von Neumann equivalent. -/
+theorem isMurrayVonNeumannEquivalent_of_star_mul_self_eq [Fintype n] [NonUnitalSemiring A]
+    [StarRing A] {p q v : CStarMatrix n n A} (hp : IsStarProjection p) (hq : IsStarProjection q)
+    (h₁ : star v * v = p) (h₂ : v * star v = q) :
+    Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) :=
+  ⟨isStarProjection_ofMatrix_symm_iff.2 hp, isStarProjection_ofMatrix_symm_iff.2 hq,
+    ofMatrix.symm v, by rw [← ofMatrix_symm_star, ← ofMatrix_symm_mul, h₁],
+    by rw [← ofMatrix_symm_star, ← ofMatrix_symm_mul, h₂]⟩
 
 /-- A matrix is self-adjoint exactly when it is self-adjoint as a C⋆-matrix. -/
 @[simp]

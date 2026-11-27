@@ -22,8 +22,10 @@ A space in which every point has a locally compact neighbourhood is locally comp
 (`TauCeti.locallyCompactSpace_of_forall_exists_mem_nhds`).
 
 Along an open map out of a weakly locally compact space, every compact subset of the range lies in
-the image of a compact set (`IsOpenMap.exists_isCompact_subset_image`). This is how a compactness
-statement about a quotient, such as a group modulo a kernel, is pulled back to the group.
+the image of a compact set (`IsOpenMap.exists_isCompact_subset_image`); if the map is continuous,
+every closed compact subset of the range is exactly such an image
+(`IsOpenMap.exists_isCompact_image_eq`). This is how a compactness statement about a quotient, such
+as a group modulo a kernel, is pulled back to the group.
 
 A continuous injection out of a weakly locally compact space into a Hausdorff space is a
 topological embedding on an open neighbourhood of any compact set
@@ -119,6 +121,17 @@ theorem IsOpenMap.exists_isCompact_subset_image {X Y : Type*} [TopologicalSpace 
   refine ⟨⋃ x ∈ t, s x, t.isCompact_biUnion fun x _ ↦ hc x, ht.trans ?_⟩
   rw [image_iUnion₂]
   exact iUnion₂_mono fun x _ ↦ image_mono interior_subset
+
+/-- Along a continuous open map out of a weakly locally compact space, every closed compact subset
+of the range is the image of a compact set: the intersection of its preimage with a compact set
+whose image covers it. -/
+theorem IsOpenMap.exists_isCompact_image_eq {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [WeaklyLocallyCompactSpace X] {f : X → Y} (hf : IsOpenMap f)
+    (hfc : Continuous f) {K : Set Y} (hK : IsCompact K) (hKc : IsClosed K) (hKf : K ⊆ range f) :
+    ∃ L : Set X, IsCompact L ∧ f '' L = K := by
+  obtain ⟨L, hL, hKL⟩ := hf.exists_isCompact_subset_image hK hKf
+  refine ⟨L ∩ f ⁻¹' K, hL.inter_right (hKc.preimage hfc), ?_⟩
+  rw [image_inter_preimage, inter_eq_right.2 hKL]
 
 /-- A continuous injection from a weakly locally compact space into a Hausdorff space restricts
 to a topological embedding on some open neighbourhood of any compact set. -/

@@ -35,6 +35,9 @@ This file records general properties of quadratic-map isometries.
 * `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
   `QuadraticMap.IsometryEquiv.trans_apply`: basic evaluation and involution lemmas for isometric
   equivalences.
+* `QuadraticMap.IsometryEquiv.ofEq`: the identity isometric equivalence between equal quadratic
+  maps, with `QuadraticMap.IsometryEquiv.ofEq_apply`, `QuadraticMap.IsometryEquiv.ofEq_rfl` and
+  `QuadraticMap.IsometryEquiv.ofEq_symm`.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`,
   `QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff`: nondegeneracy of a quadratic map and of
   its polar bilinear form are invariant under isometry.
@@ -217,6 +220,37 @@ theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type 
     {Q₃ : QuadraticMap R M₃ N} (f : Q₁.IsometryEquiv Q₂) (g : Q₂.IsometryEquiv Q₃) (x : M₁) :
     f.trans g x = g (f x) :=
   rfl
+
+/-- The isometry equivalence between equal quadratic maps: the identity of the underlying module.
+-/
+def _root_.QuadraticMap.IsometryEquiv.ofEq {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {Q₁ Q₂ : QuadraticMap R M N} (h : Q₁ = Q₂) : Q₁.IsometryEquiv Q₂ where
+  toLinearEquiv := LinearEquiv.refl R M
+  map_app' _ := by rw [h]; rfl
+
+/-- `QuadraticMap.IsometryEquiv.ofEq` is the identity on the underlying module. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.ofEq_apply {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {Q₁ Q₂ : QuadraticMap R M N} (h : Q₁ = Q₂) (m : M) : IsometryEquiv.ofEq h m = m :=
+  (rfl)
+
+/-- The isometry equivalence of a quadratic map with itself given by `rfl` is the identity. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.ofEq_rfl {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (Q : QuadraticMap R M N) : IsometryEquiv.ofEq (rfl : Q = Q) = IsometryEquiv.refl Q :=
+  DFunLike.ext _ _ fun _ ↦ (rfl)
+
+/-- The inverse of `QuadraticMap.IsometryEquiv.ofEq h` is `QuadraticMap.IsometryEquiv.ofEq` of
+the reversed equality. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.ofEq_symm {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {Q₁ Q₂ : QuadraticMap R M N} (h : Q₁ = Q₂) :
+    (IsometryEquiv.ofEq h).symm = IsometryEquiv.ofEq h.symm :=
+  DFunLike.ext _ _ fun _ ↦ (rfl)
 
 /-- Nondegeneracy of a quadratic map is invariant under an isometric equivalence. -/
 theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff

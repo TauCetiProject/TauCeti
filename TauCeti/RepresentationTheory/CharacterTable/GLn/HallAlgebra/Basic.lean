@@ -46,6 +46,8 @@ subgroups is not proved here.
   annihilators exchange the roles of `W` and `V ⧸ W`.
 * `TauCeti.HallAlgebra.isUnit_constOne`: `𝟙` is invertible, since `(1 - 𝟙)^m` vanishes on the
   classes of size less than `m`, so the geometric series in `1 - 𝟙` is finite on each class.
+* `Module.End.sum_moebius_ofEnd_invtRestrict`: `μ ∗ 𝟙 = 1` at the class of `g` on a
+  `g`-invariant subspace `W`, as `∑_{U ≤ W} μ(g|_U) = [W = 0]` over the `g`-invariant `U`.
 * `TauCeti.HallAlgebra.greenCuspidal_ofEnd`: `C_η` at the class of `g` is the sum of `β_η · μ` at
   the classes of `g` on the `g`-invariant subspaces.
 
@@ -452,6 +454,29 @@ theorem constOne_mul_moebius : (constOne : HallAlgebra k) * moebius = 1 :=
 @[simp]
 theorem moebius_mul_constOne : (moebius : HallAlgebra k) * constOne = 1 :=
   Ring.inverse_mul_cancel _ isUnit_constOne
+
+open scoped Classical in
+/-- For a `g`-invariant subspace `W`, the values of `μ` at the restrictions of `g` to the
+`g`-invariant subspaces `U ≤ W` sum to `1` if `W = 0` and to `0` otherwise. This is `μ ∗ 𝟙 = 1`
+at the class of `g` on `W`. -/
+theorem _root_.Module.End.sum_moebius_ofEnd_invtRestrict (g : Module.End k V)
+    [Fintype g.invtSubmodule] (W : g.invtSubmodule) :
+    ∑ U ∈ Finset.univ.filter (fun U : g.invtSubmodule ↦ U ≤ W),
+      moebius (ofEnd (g.invtRestrict U.prop)) = if W = ⊥ then 1 else 0 := by
+  have : Fintype (g.invtRestrict W.prop).invtSubmodule := Fintype.ofFinite _
+  have h := congrArg (· (ofEnd (g.invtRestrict W.prop))) (moebius_mul_constOne (k := k))
+  simp only [mul_ofEnd_eq_sum, constOne_apply, mul_one, one_apply, dim_ofEnd,
+    Submodule.finrank_eq_zero] at h
+  -- The invariant subspaces of `g` on `W` are the invariant subspaces of `g` inside `W`.
+  rw [← Finset.filter_true_of_mem (s := Finset.univ)
+      (p := fun U' ↦ LinearMap.ker W.val.subtype ≤ U'.val) (by simp),
+    LinearMap.sum_invtSubmodule_comap W.val.subtype (g.coe_invtRestrict_apply W.prop)] at h
+  simp only [Submodule.range_subtype] at h
+  have hW : W = ⊥ ↔ (W : Submodule k V) = ⊥ := Module.End.invtSubmodule.mk_eq_bot_iff g W.prop
+  simp only [hW, ← h]
+  refine Finset.sum_congr rfl fun U hU ↦ ?_
+  rw [ofEnd_invtRestrict_comap _ (g.coe_invtRestrict_apply W.prop) W.val.injective_subtype
+    U.prop (by simpa using (Finset.mem_filter.1 hU).2)]
 
 end Ring
 
