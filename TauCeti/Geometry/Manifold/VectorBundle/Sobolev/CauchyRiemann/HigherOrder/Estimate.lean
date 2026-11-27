@@ -269,7 +269,7 @@ private theorem exists_norm_contMDiffSMulL_component_le (hp : 1 < p) (hp_top : p
   have h₁ := hc₁ hcχ (SobolevSection.chartValueL_contMDiffSMulL_ae_coord hχ
     (SobolevSection.chartValueL_ofContMDiffSection_ae A volume p (k + 1) s) i)
   refine (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 (h₁.trans ?_)
-  calc (c₁ : ℝ≥0∞) * eLpNormWkp p (A.image i) (k + 1) (A.coord i fun x ↦ χ x • s x)
+  calc (c₁ : ℝ≥0∞) * eLpNormWkp p (A.image i) (k + 1) (A.coord i fun x ↦ χ x • s x) volume
       ≤ c₁ * (Cc * (c * (ENNReal.ofReal a + ENNReal.ofReal b))) := by
         gcongr
         exact (hCc s hs).trans (by gcongr; exact hc s hs)

@@ -241,9 +241,11 @@ theorem MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub {G : Type uG} [NormedAddCommG
     huc hunif hlim K hKΩ hK
   have heq (n : ι) : eLpNormWkp p K (k + 1) ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) =
       eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀) := by
-    rw [← eLpNormWkp_linearIsometryEquiv_comp e]
-    refine congrArg _ (funext fun z => ?_)
-    simp
+    have hf : ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) =
+        fun z => e ((g ∘ u n - g ∘ u₀) z) := by
+      ext z
+      simp
+    rw [hf, eLpNormWkp_linearIsometryEquiv_comp]
   simpa only [heq] using h
 
 /-- **Continuity of composition in `W^{k+1,p}_loc` for continuous maps.** Let `p > 2`, let `F`

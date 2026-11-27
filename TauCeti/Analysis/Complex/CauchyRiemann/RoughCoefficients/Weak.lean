@@ -270,7 +270,8 @@ omit [CompleteSpace V] in
 membership from `DJ`. -/
 theorem IsSobolevCRCoefficients.memLpLoc_deriv_apply
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (e : ℂ) : MemLpLoc p Ω (fun z => DJ z e) :=
-  hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
+  MemLpLoc.clm_comp (F := ℂ →L[ℝ] V →L[ℝ] V) (G := V →L[ℝ] V) hc.memLpLoc_deriv
+    (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
 
 omit [CompleteSpace V] in
 /-- Sobolev coefficients on `Ω` are Sobolev coefficients on every open subset of `Ω`. -/

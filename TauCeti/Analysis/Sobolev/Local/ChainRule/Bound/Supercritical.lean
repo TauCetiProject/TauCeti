@@ -115,7 +115,7 @@ private theorem exists_eLpNorm_bilin_comp_le {G V H : Type*} [NormedAddCommGroup
       rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_mul, coe_nnNorm, coe_nnNorm,
         coe_nnNorm]
       exact (B.le_opNorm₂ _ _).trans (by gcongr)
-    _ ≤ ↑(‖B‖₊ * M.toNNReal + 1) * eLpNormWkp p S b v := by
+    _ ≤ ↑(‖B‖₊ * M.toNNReal + 1) * eLpNormWkp p S b v volume := by
       rw [ENNReal.smul_def, smul_eq_mul]
       gcongr
       exact_mod_cast le_self_add
@@ -356,9 +356,12 @@ theorem exists_eLpNormWkp_comp_le_of_two_lt_mul_of_shape (T : Set ℂ → Set �
   calc
     _ ≤ ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ *
         eLpNormWkp p (T U) k (fun z => B (e (g (u z))) (c.symm 1)) := by
-      convert eLpNormWkp_clm_comp_le (e.symm : ULift.{uF} G →L[ℝ] G) using 2
-      ext z
-      simp [B]
+      have hf : (fun z => g (u z)) = (e.symm : ULift.{uF} G →L[ℝ] G) ∘
+          (fun z => B (e (g (u z))) (c.symm 1)) := by
+        ext z
+        simp [B]
+      rw [hf]
+      exact eLpNormWkp_clm_comp_le (e.symm : ULift.{uF} G →L[ℝ] G)
     _ ≤ ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ * (C * (1 + eLpNormWkp p (T Ω) k u) ^ k * Y) := by
       gcongr
       exact (hC u _ (huc.mono hVΩ') (huL.mono_left hVΩ')).trans

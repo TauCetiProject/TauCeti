@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Basic.Real.Sign
 public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.FDeriv.Norm
@@ -48,7 +49,10 @@ wherever `b + ‖x - x₀‖² ≠ 0` (`TauCeti.hasFDerivAt_sqrt_add_norm_sub_sq
 On a finite product `ι → ℝ` equipped with the supremum norm, `‖·‖` is Fréchet differentiable at
 any point `x` where a single nonzero coordinate strictly dominates (`|x j| < |x i|` for all
 `j ≠ i`), with derivative `(SignType.sign (x i) : ℝ) • ContinuousLinearMap.proj i`
-(`TauCeti.hasFDerivAt_pi_norm_of_abs_lt`).
+(`TauCeti.hasFDerivAt_pi_norm_of_abs_lt`). On `ℝ × ℝ` with the supremum norm, the analogous
+derivatives on `{|y.2| < |y.1|}` and `{|y.1| < |y.2|}` are
+`TauCeti.hasFDerivAt_norm_prod_of_abs_snd_lt_abs_fst` and
+`TauCeti.hasFDerivAt_norm_prod_of_abs_fst_lt_abs_snd`.
 -/
 
 public section
@@ -242,5 +246,39 @@ theorem hasFDerivAt_pi_norm_of_abs_lt {ι : Type*} [Fintype ι] {x : ι → ℝ}
       · exact (hy j hj).le
     · simpa [p, Real.norm_eq_abs] using norm_le_pi_norm y i
   exact (p.hasFDerivAt.abs hi).congr_of_eventuallyEq heq
+
+/-- On the open region `{y : ℝ × ℝ | |y.2| < |y.1|}`, the supremum norm `y ↦ max |y.1| |y.2|` has
+Fréchet derivative `Real.sign y.1 • dx₁`. -/
+theorem hasFDerivAt_norm_prod_of_abs_snd_lt_abs_fst {y : ℝ × ℝ} (hy : |y.2| < |y.1|) :
+    HasFDerivAt (fun z : ℝ × ℝ => ‖z‖)
+      (Real.sign y.1 • ContinuousLinearMap.fst ℝ ℝ ℝ) y := by
+  have hy1 : y.1 ≠ 0 := by intro h; simp [h] at hy; linarith [abs_nonneg y.2]
+  have hopen : IsOpen {z : ℝ × ℝ | |z.2| < |z.1|} :=
+    isOpen_lt (continuous_abs.comp continuous_snd) (continuous_abs.comp continuous_fst)
+  have heq : (fun z : ℝ × ℝ => ‖z‖) =ᶠ[𝓝 y] (fun z : ℝ × ℝ => |z.1|) := by
+    filter_upwards [hopen.mem_nhds hy] with z hz
+    rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs, max_eq_left hz.le]
+  refine HasFDerivAt.congr_of_eventuallyEq ?_ heq
+  rcases lt_or_gt_of_ne hy1 with hlt | hgt
+  · exact ((ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.abs_of_neg hlt).congr_fderiv
+      (by ext <;> simp [Real.sign_of_neg hlt])
+  · simpa [Real.sign_of_pos hgt] using (ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.abs_of_pos hgt
+
+/-- On the open region `{y : ℝ × ℝ | |y.1| < |y.2|}`, the supremum norm `y ↦ max |y.1| |y.2|` has
+Fréchet derivative `Real.sign y.2 • dx₂`. -/
+theorem hasFDerivAt_norm_prod_of_abs_fst_lt_abs_snd {y : ℝ × ℝ} (hy : |y.1| < |y.2|) :
+    HasFDerivAt (fun z : ℝ × ℝ => ‖z‖)
+      (Real.sign y.2 • ContinuousLinearMap.snd ℝ ℝ ℝ) y := by
+  have hy2 : y.2 ≠ 0 := by intro h; simp [h] at hy; linarith [abs_nonneg y.1]
+  have hopen : IsOpen {z : ℝ × ℝ | |z.1| < |z.2|} :=
+    isOpen_lt (continuous_abs.comp continuous_fst) (continuous_abs.comp continuous_snd)
+  have heq : (fun z : ℝ × ℝ => ‖z‖) =ᶠ[𝓝 y] (fun z : ℝ × ℝ => |z.2|) := by
+    filter_upwards [hopen.mem_nhds hy] with z hz
+    rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs, max_eq_right hz.le]
+  refine HasFDerivAt.congr_of_eventuallyEq ?_ heq
+  rcases lt_or_gt_of_ne hy2 with hlt | hgt
+  · exact ((ContinuousLinearMap.snd ℝ ℝ ℝ).hasFDerivAt.abs_of_neg hlt).congr_fderiv
+      (by ext <;> simp [Real.sign_of_neg hlt])
+  · simpa [Real.sign_of_pos hgt] using (ContinuousLinearMap.snd ℝ ℝ ℝ).hasFDerivAt.abs_of_pos hgt
 
 end TauCeti

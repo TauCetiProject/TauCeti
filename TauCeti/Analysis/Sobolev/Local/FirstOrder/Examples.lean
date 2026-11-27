@@ -22,11 +22,12 @@ This file records explicit membership, non-membership, and sharpness examples fo
 local Sobolev class `TauCeti.MemW1pLoc`:
 
 * **Bochner measurability vs. scalar weak differentiability.** Without prior Bochner strong
-  measurability, `t ↦ lp.single 2 t 1` into non-separable `ℓ²(ℝ)` satisfies scalar
-  `MemW1pLoc p ⊤` after every continuous linear functional while failing `MemLpLoc p Set.univ`
-  (`TauCeti.forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle`, cf. Arendt–Kreuter), showing
-  that prior `MemLpLoc` hypotheses in `TauCeti.MemLpLoc.memW1pLoc_of_forall_strongDual` cannot be
-  omitted in infinite dimensions.
+  measurability, `t ↦ lp.single 2 t 1` into non-separable `ℓ²(ℝ)` satisfies `ℓ ∘ u =ᵐ[volume] 0`
+  (`StrongDual.comp_lpSingle_ae_eq_zero`), hence scalar `MemW1pLoc p ⊤` after every continuous
+  linear functional, while failing `MemLpLoc p U` whenever `interior U` is nonempty
+  (`TauCeti.not_memLpLoc_lpSingle`, `TauCeti.forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle`,
+  cf. Arendt–Kreuter), showing that prior `MemLpLoc` hypotheses in
+  `TauCeti.MemLpLoc.memW1pLoc_of_forall_strongDual` cannot be omitted in infinite dimensions.
 * **Identity and norm.** The identity belongs to `MemW1pLoc p Ω` (`TauCeti.memW1pLoc_id`) without
   belonging to global `Lᵖ` for `p ≠ 0` on a nontrivial space (`TauCeti.not_memLp_id` in
   `TauCeti.MeasureTheory.Integral.NormRpow`); `x ↦ ‖x‖` belongs to `MemW1pLoc p Ω` for all `p` via
@@ -57,6 +58,50 @@ open scoped ENNReal Topology RealInnerProductSpace
 
 namespace TauCeti
 
+/-- Every continuous linear functional on `ℓ²(ℝ, ℝ)` vanishes almost everywhere when composed with
+`t ↦ lp.single 2 t 1`. -/
+theorem _root_.StrongDual.comp_lpSingle_ae_eq_zero
+    (ℓ : StrongDual ℝ (lp (fun _ : ℝ => ℝ) 2)) :
+    (fun t : ℝ => ℓ (lp.single 2 t (1 : ℝ))) =ᵐ[volume] 0 := by
+  classical
+  let H := lp (fun _ : ℝ => ℝ) 2
+  let w : H := (InnerProductSpace.toDual ℝ H).symm ℓ
+  have hw_eval : ∀ t : ℝ, ℓ (lp.single 2 t (1 : ℝ)) = w t := fun t => by
+    have h1 : ℓ (lp.single 2 t (1 : ℝ)) = ⟪w, lp.single 2 t (1 : ℝ)⟫ := by simp [w]
+    rw [h1, lp.inner_single_right]
+    simp
+  have hcnt : (Function.support fun t : ℝ => (w : ℝ → ℝ) t).Countable := by
+    have hs : Summable fun t : ℝ => ‖(w : ℝ → ℝ) t‖ ^ (2 : ℝ≥0∞).toReal :=
+      (lp.memℓp w).summable (by norm_num : (0 : ℝ) < (2 : ℝ≥0∞).toReal)
+    refine hs.countable_support.mono fun t ht => ?_
+    simp [ht]
+  filter_upwards [compl_mem_ae_iff.2 (hcnt.measure_zero _)] with t ht
+  rw [Pi.zero_apply, hw_eval]
+  exact Function.notMem_support.1 ht
+
+/-- `t ↦ lp.single 2 t 1` fails `MemLpLoc p U` for every exponent `p` (even `p = 0`) on any set
+`U ⊆ ℝ` with nonempty interior, because it sends a compact interval of positive measure inside `U`
+to pairwise `1`-separated vectors. -/
+theorem not_memLpLoc_lpSingle (p : ℝ≥0∞) {U : Set ℝ} (hU : (interior U).Nonempty) :
+    ¬ MemLpLoc p U (fun t : ℝ => lp.single 2 t (1 : ℝ)) := by
+  intro hu
+  obtain ⟨x₀, hx₀⟩ := hU
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 isOpen_interior x₀ hx₀
+  set K : Set ℝ := Icc (x₀ - r / 2) (x₀ + r / 2)
+  have hKU : K ⊆ U := fun x hx =>
+    interior_subset (hball (mem_ball.2
+      (by rw [Real.dist_eq, abs_lt]; constructor <;> linarith [hx.1, hx.2])))
+  refine not_aestronglyMeasurable_restrict_of_pairwise_le_dist (μ := volume)
+    (s := K) (ε := 1)
+    (by simp only [K, Real.volume_Icc, ne_eq, ENNReal.ofReal_eq_zero]; linarith)
+    one_pos (fun x _ y _ hxy => ?_)
+    (memLpLoc_iff.1 hu K hKU isCompact_Icc).aestronglyMeasurable
+  simp only [dist_eq_norm]
+  let d : lp (fun _ : ℝ => ℝ) 2 := lp.single 2 x (1 : ℝ) - lp.single 2 y (1 : ℝ)
+  have hle : |d x| ≤ ‖d‖ := lp.norm_apply_le_norm two_ne_zero d x
+  have heval : d x = 1 := by simp [d, lp.single_apply, hxy]
+  simpa [d, heval] using hle
+
 /-- **Scalar Sobolev regularity does not imply Bochner measurability.** Let
 `u : ℝ → lp (fun _ : ℝ => ℝ) 2` send `t` to the basis vector `lp.single 2 t 1` in non-separable
 `ℓ²(ℝ)`. Every continuous linear functional `ℓ` vanishes on `u t` outside a countable set, so
@@ -66,39 +111,10 @@ uncountable essential range on `[0, 1]`, so `u` fails `MemLpLoc p Set.univ` (and
 theorem forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle (p : ℝ≥0∞) :
     (∀ ℓ : StrongDual ℝ (lp (fun _ : ℝ => ℝ) 2),
       MemW1pLoc p ⊤ (fun t : ℝ => ℓ (lp.single 2 t (1 : ℝ)))) ∧
-    ¬ MemLpLoc p (Set.univ : Set ℝ) (fun t : ℝ => lp.single 2 t (1 : ℝ)) := by
-  classical
-  set H := lp (fun _ : ℝ => ℝ) 2
-  set u : ℝ → H := fun t => lp.single 2 t (1 : ℝ)
-  constructor
-  -- Each `ℓ ∈ H*` is represented by `w ∈ ℓ²(ℝ)` of countable support, so `ℓ ∘ u =ᵐ 0`.
-  · intro ℓ
-    let w : H := (InnerProductSpace.toDual ℝ H).symm ℓ
-    have hw_eval : ∀ t : ℝ, ℓ (u t) = w t := fun t => by
-      have h1 : ℓ (u t) = ⟪w, lp.single 2 t (1 : ℝ)⟫ := by simp [u, w]
-      rw [h1, lp.inner_single_right]
-      simp
-    have hcnt : (Function.support fun t : ℝ => (w : ℝ → ℝ) t).Countable := by
-      have hs : Summable fun t : ℝ => ‖(w : ℝ → ℝ) t‖ ^ (2 : ℝ≥0∞).toReal :=
-        (lp.memℓp w).summable (by norm_num : (0 : ℝ) < (2 : ℝ≥0∞).toReal)
-      refine hs.countable_support.mono fun t ht => ?_
-      simp [ht]
-    have hae : (0 : ℝ → ℝ) =ᵐ[volume.restrict (⊤ : Opens ℝ)] fun t : ℝ => ℓ (u t) := by
-      refine ae_restrict_of_ae ?_
-      filter_upwards [compl_mem_ae_iff.2 (hcnt.measure_zero _)] with t ht
-      rw [Pi.zero_apply, hw_eval]
-      exact (Function.notMem_support.1 ht).symm
-    exact (memW1pLoc_zero (p := p) (Ω := (⊤ : Opens ℝ)) (F := ℝ)).congr_ae hae
-  -- Conversely, `u` sends `[0, 1]` (of positive measure) to pairwise `1`-separated vectors, so `u`
-  -- is not a.e. strongly measurable on `[0, 1]`.
-  · intro hu
-    refine not_aestronglyMeasurable_restrict_of_pairwise_le_dist (μ := volume)
-      (s := Icc (0 : ℝ) 1) (ε := 1) (by simp [Real.volume_Icc]) one_pos (fun x _ y _ hxy => ?_)
-      (memLpLoc_iff.1 hu (Icc 0 1) (subset_univ _) isCompact_Icc).aestronglyMeasurable
-    simp only [dist_eq_norm]
-    have hle : |(u x - u y) x| ≤ ‖u x - u y‖ := lp.norm_apply_le_norm two_ne_zero (u x - u y) x
-    have heval : (u x - u y) x = 1 := by simp [u, lp.single_apply, hxy]
-    simpa [heval] using hle
+    ¬ MemLpLoc p (Set.univ : Set ℝ) (fun t : ℝ => lp.single 2 t (1 : ℝ)) :=
+  ⟨fun ℓ => (memW1pLoc_zero (p := p) (Ω := (⊤ : Opens ℝ)) (F := ℝ)).congr_ae
+      (ae_restrict_of_ae ℓ.comp_lpSingle_ae_eq_zero.symm),
+    not_memLpLoc_lpSingle p (by simp)⟩
 
 /-- The identity map of a finite-dimensional real normed space belongs to `MemW1pLoc p Ω` on every
 open set and for every exponent `p : ℝ≥0∞`. -/

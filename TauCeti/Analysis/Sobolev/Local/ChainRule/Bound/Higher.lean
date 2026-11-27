@@ -174,7 +174,8 @@ private theorem exists_eLpNormWkp_one_comp_le_one_add_of_norm_le {G : Type*}
   calc
     _ ≤ eLpNormWkp p (closure U) 1 (fun z => g (u z)) := eLpNormWkp_mono_set subset_closure
     _ ≤ B * A + ↑(B + 1) * eLpNormWkp p (closure U) 1 u :=
-      eLpNormWkp_one_comp_le isClosed_closure.measurableSet (fun h => absurd h (by positivity))
+      eLpNormWkp_one_comp_le (C₀ := B) (C₁ := B + 1) isClosed_closure.measurableSet
+        (fun h => absurd h (by positivity))
         (huc.mono hUΩ) hW hg (huW.mono_left hUΩ) (fun z hz => ?_) fun z hz => ?_
     _ ≤ B * A * (1 + X) + ↑(B + 1) * (1 + X) :=
       add_le_add (le_mul_of_one_le_right' le_self_add)

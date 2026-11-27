@@ -15,6 +15,7 @@ import TauCeti.Analysis.Complex.Wirtinger.Regularity
 import TauCeti.Analysis.Sobolev.Local.Morrey
 import TauCeti.Analysis.Sobolev.Local.Reflection.Odd
 import Mathlib.Analysis.Complex.ReImTopology
+import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv

@@ -165,8 +165,10 @@ theorem exists_eLpNormWkp_succ_le_of_isWeakCauchyRiemannOn {p : ℝ≥0} (hp : 2
     hc hA2' hA' (by simp [eLpNormWkp_zero_fun])
     (hf.clm_comp (e : V →L[ℝ] E))
   -- Transport the estimate back to `V`.
-  have hf' := eLpNormWkp_clm_comp_le (p := p) (U := Ω) (k := k) (e : V →L[ℝ] E) (f := f)
-  have hu' := eLpNormWkp_clm_comp_le (p := p) (U := Ω) (k := 0) (e : V →L[ℝ] E) (f := u)
+  have hf' :=
+    eLpNormWkp_clm_comp_le (μ := volume) (p := p) (U := Ω) (k := k) (e : V →L[ℝ] E) (f := f)
+  have hu' :=
+    eLpNormWkp_clm_comp_le (μ := volume) (p := p) (U := Ω) (k := 0) (e : V →L[ℝ] E) (f := u)
   rw [eLpNormWkp_zero, eLpNormWkp_zero] at hu'
   calc
     _ = eLpNormWkp p U (k + 1) (fun z => (e.symm : E →L[ℝ] V) (e (u z))) := by simp

@@ -15,6 +15,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Sobolev.Local.Basic
+import TauCeti.Analysis.Sobolev.Local.HalfPlane
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!

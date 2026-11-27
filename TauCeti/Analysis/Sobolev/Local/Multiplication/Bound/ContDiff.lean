@@ -92,7 +92,7 @@ theorem eLpNormWkp_bilin_le (hp : 1 ≤ p) (B : G₁ →L[ℝ] G₂ →L[ℝ] G�
           simpa only [Pi.smul_apply, smul_eq_mul] using hpt x hx l hl
       _ = M * eLpNorm S p (volume.restrict V) := by
           rw [eLpNorm_const_smul, Real.eNorm_of_nonneg M.coe_nonneg, ENNReal.ofReal_coe_nnreal]
-      _ ≤ M * eLpNormWkp p V k f := by gcongr
+      _ ≤ M * eLpNormWkp p V k f volume := by gcongr
   rw [eLpNormWkp_eq_sum_eLpNorm_iteratedFDeriv hU k hBaf]
   calc ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l (fun y ↦ B (a y) (f y))) p
         (volume.restrict U)

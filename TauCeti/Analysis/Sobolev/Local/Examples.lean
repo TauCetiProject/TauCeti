@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.l2Space
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Local.Reflection
 import Mathlib.Analysis.Calculus.Deriv.Abs
@@ -14,13 +16,18 @@ import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Coordinates
+import TauCeti.Analysis.Sobolev.Local.FirstOrder.Examples
+import TauCeti.Analysis.Sobolev.Local.Haar
 import TauCeti.Analysis.Sobolev.Local.Holomorphic
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
+import TauCeti.Analysis.Sobolev.Local.W1p
 import TauCeti.Analysis.Sobolev.WeakDeriv.Hyperplane
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
@@ -32,43 +39,57 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 /-!
 # Membership and non-membership examples for local Sobolev classes
 
-This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
+This file tests `TauCeti.MemWkpLoc` across finite-dimensional real normed domains `E` (including
+`ℂ`, non-inner-product norms, and arbitrary additive Haar measures) and Banach codomains `F`.
 
-* The identity of `ℂ` is in every local Sobolev class, although it is not globally `Lᵖ` for
-  `0 < p`.
-* The map `z ↦ ‖z‖` is in every local `W^{1,p}` class, as a Lipschitz map
-  (`LipschitzWith.memWkpLoc_one`).
-* Polynomials are in every local Sobolev class on every set, as holomorphic maps on the plane
-  (`Differentiable.memWkpLoc`).
-* The map `z ↦ ‖z‖` is in the local class `W^{2,p}` exactly when `p < 2`, on every set whose
-  interior contains the origin: away from the origin its second derivative has norm between
-  `‖z‖⁻¹` and `2 ‖z‖⁻¹`, and `‖z‖ ^ (-p)` is integrable near the origin of the plane exactly when
-  `p < 2`. For `p < 2` the weak second derivative across the origin is that of the unit radial
-  field `z / ‖z‖` (`TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`).
-* By `TauCeti.not_hasWeakFDerivOn_indicator_pos`, the indicator of the half-plane `{z | 0 < z.re}`
-  is in no local `W^{k,p}` class of positive order on any set whose interior meets the imaginary
-  axis (`TauCeti.not_memWkpLoc_indicator_re_pos`), although it lies in every local `Lᵖ` class
-  (`StrongDual.memLpLoc_indicator_pos`).
-* The rotation `z ↦ i z` is not admissible on half-discs: it does not preserve the real axis
-  (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`), and the indicator of the open upper half-plane is
-  in every local Sobolev class on the closed upper half-disc, while its composition with
-  `z ↦ i z`, the indicator of the right half-plane, is in no class of positive order there.
-* On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
-  local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
-  open half-disc it is in that class for every `p`, although it is continuous up to the axis.
-* Using `TauCeti.memLpLoc_norm_inv_iff_lt_finrank`, the components `Re z / ‖z‖²` and `Im z / ‖z‖²`
-  of the gradient of `log ‖z‖` are locally `Lᵖ` near the origin exactly when `p < 2`, and
-  `log ‖z‖` is in the local class `W^{1,p}` there exactly when `p < 2`. These are the exponents of
-  the divergence-form equation `Δ log ‖z‖ = ∂ₛ(Re z / ‖z‖²) + ∂ₜ(Im z / ‖z‖²)`
-  (`TauCeti.integral_log_norm_mul_laplacian`).
-* The even reflection does not extend `u = Im z` from the upper half-disc to a local `W^{2,p}`
-  map, for any exponent: it gives `|Im z|`, whose first derivative jumps across the real axis. The
-  order-two reflection `u(s, -t) = -3 u(s, t) + 4 u(s, t / 2)` gives `Im z` back.
+* **Identity, affine maps, and norm:** on any finite-dimensional real normed space `E` with an
+  additive Haar measure `μ`, the identity (`TauCeti.memWkpLoc_id`) and affine maps
+  (`ContinuousLinearMap.memWkpLoc_affine`) belong to every local Sobolev class, although `id` is
+  not globally `Lᵖ` on a nontrivial space for `p ≠ 0` (`TauCeti.not_memLp_id`). The norm
+  `x ↦ ‖x‖` is in every local `W^{1,p}` class as a Lipschitz map (`TauCeti.memWkpLoc_one_norm`),
+  with weak derivative bounded in operator norm by `1` almost everywhere
+  (`TauCeti.ae_norm_le_one_of_hasWeakFDerivOn_norm`).
+* **Haar scaling and non-inner-product model norm (`ℝ × ℝ` vs `EuclideanSpace ℝ (Fin 2)`):**
+  `example` checks confirm scaling invariance under `(2 : ℝ≥0∞) • μ` for `MemLpLoc` and
+  `MemWkpLoc`. The equivalence `TauCeti.prodEquivEuclideanSpaceFin2` carries `MemLpLoc` and
+  `MemWkpLoc` between `ℝ × ℝ` (with the supremum norm `max |x₁| |x₂|`) and
+  `EuclideanSpace ℝ (Fin 2)` (`TauCeti.memLpLoc_prod_iff_euclideanSpaceFin2`,
+  `TauCeti.memWkpLoc_prod_iff_euclideanSpaceFin2`), while their norm derivatives differ at
+  `(1, 1/2)` in direction `(0, 1)`.
+* **Infinite-dimensional Banach targets without a basis and strong measurability counterexample:**
+  `example` checks verify `x ↦ a x • v` via `MemWkpLoc.smul_const` and
+  `HasWeakFDerivOn.smul_const`. Composing `t ↦ lp.single 2 t 1` with any continuous linear
+  functional on `ℓ²(ℝ)` gives a map in `MemWkpLoc p U k` (`StrongDual.memWkpLoc_comp_lpSingle`),
+  while `t ↦ lp.single 2 t 1` itself lies in no `MemWkpLoc p U k` when `interior U` is nonempty
+  (`TauCeti.not_memWkpLoc_lpSingle`).
+* **Unit radial field and radial power maps:** on a real inner product space `E` of dimension at
+  least `2`, `x ↦ ‖x‖⁻¹ • x` belongs to `MemWkpLoc p U 1 μ` near `0` exactly when
+  `p < Module.finrank ℝ E` (`TauCeti.memWkpLoc_one_unitRadial_iff`). For `α > -1`,
+  `x ↦ ‖x‖ ^ α • x` lies in `MemWkpLoc p U 1 μ` whenever `x ↦ ‖x‖ ^ α` lies in `MemLpLoc p U μ`
+  (`TauCeti.memWkpLoc_one_norm_rpow_smul_id`).
+* **Polynomials:** polynomials are in every local Sobolev class on every set in `ℂ`, as holomorphic
+  maps (`Differentiable.memWkpLoc`).
+* **The norm `z ↦ ‖z‖` at order two:** `z ↦ ‖z‖` is in the local class `W^{2,p}` on `ℂ` exactly
+  when `p < 2` on every set whose interior contains the origin (`TauCeti.memWkpLoc_two_norm_iff`).
+* **Half-space indicators:** for nonzero `ℓ : E →L[ℝ] ℝ`, the indicator of `{x | 0 < ℓ x}` lies in
+  every local `Lᵖ` class (`StrongDual.memLpLoc_indicator_pos`) but in no local `W^{k,p}` class of
+  positive order when `interior U` meets `ker ℓ` (`TauCeti.not_memWkpLoc_indicator_clm_pos`,
+  `TauCeti.not_memWkpLoc_indicator_re_pos`).
+* **The rotation `z ↦ i z` on half-discs:** the indicator of `{z | 0 < z.im}` is in every local
+  Sobolev class on `ball 0 1 ∩ {z | 0 ≤ z.im}`, while its composition with `z ↦ i z` is not.
+* **Square-root profile on the half-disc:** `z ↦ √z.im` is in `W^{1,p}` on the closed upper
+  half-disc exactly when `p < 2`, while on the open half-disc it is in `W^{1,p}` for all `p`.
+* **Logarithmic fundamental solution:** `Re z / ‖z‖²`, `Im z / ‖z‖²`, and `log ‖z‖` are locally
+  `Lᵖ` / `W^{1,p}` near the origin in `ℂ` exactly when `p < 2`.
+* **Reflections:** the even reflection does not extend `Im z` from the upper half-disc to a local
+  `W^{2,p}` map, while the order-two reflection gives `Im z` back.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   Appendix B.1.
+* W. Arendt and M. Kreuter, *Mapping theorems for Sobolev spaces of vector-valued functions*,
+  Studia Math. 240 (2018), §2, pp. 2–3.
 -/
 
 public section
@@ -76,7 +97,7 @@ public section
 noncomputable section
 
 open MeasureTheory Metric Set TopologicalSpace Filter
-open scoped Topology RealInnerProductSpace
+open scoped Topology RealInnerProductSpace ENNReal
 
 namespace TauCeti
 
@@ -84,15 +105,31 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {U
 
 /-! ### The identity and the norm -/
 
-/-- The identity of `ℂ` is in every local Sobolev class on every set, although for `0 < p` it is
-not in `Lᵖ` of the whole plane: the local class imposes no bound at infinity. -/
-theorem memWkpLoc_id (p : ENNReal) (U : Set ℂ) (k : ℕ) : MemWkpLoc p U k (fun z : ℂ => z) :=
-  (contDiff_id.contDiffOn : ContDiffOn ℝ k id ((⊤ : Opens ℂ) : Set ℂ)).memWkpLoc (subset_univ U)
+section IdentityAndNorm
 
-/-- The norm `z ↦ ‖z‖` is in the local class `W^{1,p}` on every set, for every exponent: its
-weak gradient `z / ‖z‖` is bounded. -/
-theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  {q : ENNReal} {S : Set E} {k : ℕ}
+
+/-- The identity map on any finite-dimensional real normed space lies in `MemWkpLoc q S k` for
+every exponent `q`, order `k`, and additive Haar measure `μ`, although for `q ≠ 0` on a
+nontrivial space it is not in global `L^q`: the local class imposes no bound at infinity. -/
+theorem memWkpLoc_id (q : ENNReal) (S : Set E) (k : ℕ) : MemWkpLoc q S k (id : E → E) μ :=
+  (contDiff_id.contDiffOn : ContDiffOn ℝ k id ((⊤ : Opens E) : Set E)).memWkpLoc (subset_univ S)
+
+example [Nontrivial E] (hq : q ≠ 0) : ¬ MemLp (id : E → E) q μ :=
+  not_memLp_id hq
+
+/-- On any finite-dimensional real normed space `E`, the norm `x ↦ ‖x‖` is Lipschitz and therefore
+lies in `MemWkpLoc q S 1` for every exponent `q` and additive Haar measure `μ`. -/
+theorem memWkpLoc_one_norm : MemWkpLoc q S 1 (fun x : E => ‖x‖) μ :=
   lipschitzWith_one_norm.memWkpLoc_one
+
+example {Ω : Opens E} {D : E → E →L[ℝ] ℝ} (hD : HasWeakFDerivOn μ Ω (fun x : E => ‖x‖) D) :
+    ∀ᵐ x ∂μ.restrict Ω, ‖D x‖ ≤ 1 :=
+  ae_norm_le_one_of_hasWeakFDerivOn_norm hD
+
+end IdentityAndNorm
 
 /-! ### Polynomials -/
 
@@ -212,18 +249,29 @@ theorem memWkpLoc_two_norm_iff (h0 : (0 : ℂ) ∈ interior U) :
     MemWkpLoc p U 2 (fun z : ℂ => ‖z‖) ↔ p < 2 :=
   ⟨fun h => not_le.1 fun hp => not_memWkpLoc_two_norm hp h0 h, memWkpLoc_two_norm⟩
 
-/-! ### A jump across a line -/
+/-! ### A jump across a hyperplane or line -/
+
+/-- The indicator of the open half-space `{x : E | 0 < ℓ x}` for a nonzero `ℓ : E →L[ℝ] ℝ` lies in
+no positive-order local Sobolev class `MemWkpLoc q S (k + 1) μ` whenever `interior S` meets
+`ker ℓ`. -/
+theorem not_memWkpLoc_indicator_clm_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+    [μ.IsAddHaarMeasure] {q : ENNReal} {S : Set E} {ℓ : E →L[ℝ] ℝ} (hℓ : ℓ ≠ 0) {k : ℕ}
+    {x₀ : E} (hx₀ : x₀ ∈ interior S) (hker : ℓ x₀ = 0) :
+    ¬ MemWkpLoc q S (k + 1) ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) μ := by
+  intro h
+  obtain ⟨D, hD, -⟩ := h.exists_weakFDeriv
+  exact not_hasWeakFDerivOn_indicator_pos hℓ hx₀ hker D hD
 
 /-- The indicator of the right half-plane is in no local Sobolev class of positive order on a
 set whose interior meets the imaginary axis, although it is locally `Lᵖ` there
 (`StrongDual.memLpLoc_indicator_pos`). -/
 theorem not_memWkpLoc_indicator_re_pos {k : ℕ} {z₀ : ℂ} (hz₀ : z₀ ∈ interior U)
     (hre : z₀.re = 0) :
-    ¬ MemWkpLoc p U (k + 1) ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := fun h => by
-  obtain ⟨-, D, hD, -⟩ := memWkpLoc_succ_iff.1 h
-  have hne : (Complex.reCLM : StrongDual ℝ ℂ) ≠ 0 := fun h0 =>
-    (one_ne_zero : (1 : ℝ) ≠ 0) (by simpa using congrArg (fun f : StrongDual ℝ ℂ => f 1) h0)
-  exact not_hasWeakFDerivOn_indicator_pos (Ω := Opens.interior U) hne hz₀ hre D hD
+    ¬ MemWkpLoc p U (k + 1) ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) :=
+  not_memWkpLoc_indicator_clm_pos (ℓ := Complex.reCLM) (fun h0 =>
+    (one_ne_zero : (1 : ℝ) ≠ 0) (by simpa using congrArg (fun f : StrongDual ℝ ℂ => f 1) h0))
+    hz₀ hre
 
 /-! ### The rotation `z ↦ i z` on the half-disc -/
 
@@ -531,5 +579,201 @@ theorem memWkpLoc_planarReflection_higherReflectionCoeff_two_im (U : Set ℂ) (k
     MemWkpLoc p U k (planarReflection (higherReflectionCoeff 2) fun z => z.im) := by
   rw [planarReflection_higherReflectionCoeff_two_im]
   exact Complex.imCLM.contDiff.memWkpLoc
+
+/-! ### Haar scaling check -/
+
+section HaarScaling
+
+example {α G : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [NormedAddCommGroup G] {μ : Measure α} {q : ENNReal} {S : Set α} {f : α → G} :
+    MemLpLoc q S f ((2 : ENNReal) • μ) ↔ MemLpLoc q S f μ :=
+  memLpLoc_smul_measure_iff (c := 2) two_ne_zero ENNReal.ofNat_ne_top
+
+example {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure E} {q : ENNReal}
+    {S : Set E} {k : ℕ} {f : E → G} :
+    MemWkpLoc q S k f ((2 : ENNReal) • μ) ↔ MemWkpLoc q S k f μ :=
+  memWkpLoc_smul_measure_iff (c := 2) two_ne_zero ENNReal.ofNat_ne_top
+
+end HaarScaling
+
+/-! ### Non-inner-product model norm: `ℝ × ℝ` vs `EuclideanSpace ℝ (Fin 2)` -/
+
+section NonInnerProductModel
+
+/-- Local `Lᵖ` membership on `ℝ × ℝ` (with the supremum norm and product Lebesgue measure) matches
+`EuclideanSpace ℝ (Fin 2)` under `TauCeti.prodEquivEuclideanSpaceFin2`. -/
+theorem memLpLoc_prod_iff_euclideanSpaceFin2 {G : Type*} [NormedAddCommGroup G]
+    {q : ENNReal} {V : Set (EuclideanSpace ℝ (Fin 2))} {u : EuclideanSpace ℝ (Fin 2) → G} :
+    MemLpLoc q (prodEquivEuclideanSpaceFin2 ⁻¹' V) (u ∘ prodEquivEuclideanSpaceFin2) volume ↔
+      MemLpLoc q V u volume := by
+  have : Measure.IsAddHaarMeasure (volume : Measure (ℝ × ℝ)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  exact prodEquivEuclideanSpaceFin2.memLpLoc_comp_right_iff volume volume
+
+/-- Local Sobolev membership on `ℝ × ℝ` (with the supremum norm and product Lebesgue measure)
+matches `EuclideanSpace ℝ (Fin 2)` under `TauCeti.prodEquivEuclideanSpaceFin2`. -/
+theorem memWkpLoc_prod_iff_euclideanSpaceFin2 {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {q : ENNReal} {V : Set (EuclideanSpace ℝ (Fin 2))} {k : ℕ}
+    {u : EuclideanSpace ℝ (Fin 2) → G} :
+    MemWkpLoc q (prodEquivEuclideanSpaceFin2 ⁻¹' V) k (u ∘ prodEquivEuclideanSpaceFin2) volume ↔
+      MemWkpLoc q V k u volume := by
+  have : Measure.IsAddHaarMeasure (volume : Measure (ℝ × ℝ)) :=
+    Measure.prod.instIsAddHaarMeasure _ _
+  exact prodEquivEuclideanSpaceFin2.memWkpLoc_comp_preimage_iff
+
+-- At `(1, 1/2)`, the derivative of the supremum norm on `ℝ × ℝ` in direction `(0, 1)` vanishes,
+-- whereas the Euclidean gradient does not.
+example : fderiv ℝ (fun y : ℝ × ℝ => ‖y‖) (1, (1 / 2 : ℝ)) (0, 1) = 0 := by
+  have h := hasFDerivAt_norm_prod_of_abs_snd_lt_abs_fst (y := (1, (1 / 2 : ℝ))) (by norm_num)
+  rw [h.fderiv]
+  simp
+
+example :
+    fderiv ℝ (fun y : EuclideanSpace ℝ (Fin 2) => ‖y‖)
+      (prodEquivEuclideanSpaceFin2 (1, (1 / 2 : ℝ)))
+      (prodEquivEuclideanSpaceFin2 (0, 1)) ≠ 0 := by
+  set x : EuclideanSpace ℝ (Fin 2) := prodEquivEuclideanSpaceFin2 (1, (1 / 2 : ℝ))
+  set v : EuclideanSpace ℝ (Fin 2) := prodEquivEuclideanSpaceFin2 (0, 1)
+  have hx : x ≠ 0 := by
+    intro h
+    have h0 := congrArg (fun f : EuclideanSpace ℝ (Fin 2) => f 0) h
+    norm_num [x] at h0
+  have hd : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 2) => ‖y‖) (‖x‖⁻¹ • innerSL ℝ x) x :=
+    hasFDerivAt_norm_of_ne hx
+  rw [hd.fderiv, smul_apply, innerSL_apply_apply, smul_eq_mul]
+  have hinner : ⟪x, v⟫ = (1 / 2 : ℝ) := by
+    rw [EuclideanSpace.inner_eq_star_dotProduct]
+    simp [Fin.sum_univ_two, x, v, dotProduct]
+  rw [hinner]
+  exact mul_ne_zero (inv_ne_zero (norm_ne_zero_iff.2 hx)) (by norm_num)
+
+end NonInnerProductModel
+
+/-! ### Infinite-dimensional Banach targets without a basis -/
+
+section BanachTarget
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [OpensMeasurableSpace E] [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+  {μ : Measure E} {q : ENNReal} {S : Set E}
+
+-- Banach-valued scalar products `x ↦ a x • v` need no basis, separability, or inner product on `G`.
+example {a : E → ℝ} (ha : MemWkpLoc q S 1 a μ) (v : G) :
+    MemWkpLoc q S 1 (fun x => a x • v) μ :=
+  ha.smul_const v
+
+example {Ω : Opens E} {a : E → ℝ} {Da : E → E →L[ℝ] ℝ}
+    (hDa : HasWeakFDerivOn μ Ω a Da) (v : G) :
+    HasWeakFDerivOn μ Ω (fun x => a x • v) (fun x => (Da x).smulRight v) :=
+  hDa.smul_const v
+
+-- Specialization to the infinite-dimensional Hilbert space `ℓ²(ℕ, ℝ)`.
+example {a : E → ℝ} {Da : E → E →L[ℝ] ℝ} (ha : MemWkpLoc q S 1 a μ)
+    (hDa : HasWeakFDerivOn μ (Opens.interior S) a Da) (v : lp (fun _ : ℕ => ℝ) 2) :
+    MemWkpLoc q S 1 (fun x => a x • v) μ ∧
+      HasWeakFDerivOn μ (Opens.interior S) (fun x => a x • v)
+        (fun x => (Da x).smulRight v) :=
+  ⟨ha.smul_const v, hDa.smul_const v⟩
+
+end BanachTarget
+
+/-! ### Strong measurability counterexample: weakly zero a.e., not locally `Lᵖ` -/
+
+section WeaklyZeroCounterexample
+
+/-- Every continuous scalar composition of `t ↦ lp.single 2 t 1` lies in `MemWkpLoc q S k` for
+every exponent `q`, set `S`, and order `k`. -/
+theorem _root_.StrongDual.memWkpLoc_comp_lpSingle
+    (ℓ : StrongDual ℝ (lp (fun _ : ℝ => ℝ) 2)) (q : ENNReal) (S : Set ℝ) (k : ℕ) :
+    MemWkpLoc q S k (fun t : ℝ => ℓ (lp.single 2 t (1 : ℝ))) volume :=
+  (memWkpLoc_zero_fun (μ := volume)).congr_ae
+    (ae_restrict_of_ae ℓ.comp_lpSingle_ae_eq_zero.symm)
+
+/-- `t ↦ lp.single 2 t 1` lies in no `MemWkpLoc q S k` for every exponent `q` (even `q = 0`) on
+any set `S ⊆ ℝ` with nonempty interior: weak scalar membership does not imply strong
+measurability. -/
+theorem not_memWkpLoc_lpSingle (q : ENNReal) {S : Set ℝ} (k : ℕ) (hS : (interior S).Nonempty) :
+    ¬ MemWkpLoc q S k (fun t : ℝ => lp.single 2 t (1 : ℝ)) volume :=
+  fun h => not_memLpLoc_lpSingle q hS h.memLpLoc
+
+end WeaklyZeroCounterexample
+
+/-! ### The inverse norm `x ↦ ‖x‖⁻¹` on general finite-dimensional spaces -/
+
+section InverseNorm
+
+-- In dimension `3`, `x ↦ ‖x‖⁻¹` belongs to `MemLpLoc q S volume` near `0` iff `q < 3`.
+example {q : ENNReal} {S : Set (EuclideanSpace ℝ (Fin 3))}
+    (hS : S ∈ 𝓝 (0 : EuclideanSpace ℝ (Fin 3))) :
+    MemLpLoc q S (fun x : EuclideanSpace ℝ (Fin 3) => ‖x‖⁻¹) volume ↔ q < 3 := by
+  simpa [finrank_euclideanSpace_fin] using memLpLoc_norm_inv_iff_lt_finrank (μ := volume) hS
+
+end InverseNorm
+
+/-! ### Unit radial field `x ↦ ‖x‖⁻¹ • x` on inner product spaces of dimension `≥ 2` -/
+
+section UnitRadial
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  {q : ENNReal} {S : Set E}
+
+/-- On a real inner product space `E` of dimension at least `2`, the unit radial field
+`x ↦ ‖x‖⁻¹ • x` belongs to `MemWkpLoc q S 1 μ` for every `q < Module.finrank ℝ E`. -/
+theorem memWkpLoc_one_unitRadial (hd : 1 < Module.finrank ℝ E) (hq : q < Module.finrank ℝ E) :
+    MemWkpLoc q S 1 (fun x : E => ‖x‖⁻¹ • x) μ := by
+  have hd2 : 2 ≤ Module.finrank ℝ E := hd
+  have h1 := memWkpLoc_one_iff_memW1pLoc.2
+    ((memW1pLoc_norm_inv_smul_iff (μ := μ) (Ω := (⊤ : Opens E)) hd2 trivial).2 hq)
+  exact h1.mono (subset_univ S)
+
+/-- On a real inner product space `E` of dimension at least `2`, the unit radial field
+`x ↦ ‖x‖⁻¹ • x` does not belong to `MemWkpLoc q S 1 μ` when `Module.finrank ℝ E ≤ q` and
+`(0 : E) ∈ interior S`. -/
+theorem not_memWkpLoc_one_unitRadial (hd : 1 < Module.finrank ℝ E)
+    (hq : Module.finrank ℝ E ≤ q) (h0 : (0 : E) ∈ interior S) :
+    ¬ MemWkpLoc q S 1 (fun x : E => ‖x‖⁻¹ • x) μ := by
+  intro h
+  have hd2 : 2 ≤ Module.finrank ℝ E := hd
+  have h1 : MemW1pLoc q (Opens.interior S) (fun x : E => ‖x‖⁻¹ • x) μ :=
+    memWkpLoc_one_iff_memW1pLoc.1 (h.mono interior_subset)
+  exact not_lt.2 hq ((memW1pLoc_norm_inv_smul_iff hd2 h0).1 h1)
+
+/-- On a real inner product space `E` of dimension at least `2`, the unit radial field
+`x ↦ ‖x‖⁻¹ • x` belongs to `MemWkpLoc q S 1 μ` on any set whose interior contains `0` exactly when
+`q < Module.finrank ℝ E`. -/
+theorem memWkpLoc_one_unitRadial_iff (hd : 1 < Module.finrank ℝ E) (h0 : (0 : E) ∈ interior S) :
+    MemWkpLoc q S 1 (fun x : E => ‖x‖⁻¹ • x) μ ↔ q < Module.finrank ℝ E :=
+  ⟨fun h => not_le.1 fun hq => not_memWkpLoc_one_unitRadial hd hq h0 h,
+    memWkpLoc_one_unitRadial hd⟩
+
+end UnitRadial
+
+/-! ### Radial power maps `x ↦ ‖x‖ ^ α • x` for `α > -1` -/
+
+section RadialPower
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  {q : ENNReal} {S : Set E}
+
+/-- For `α > -1`, the radial power map `x ↦ ‖x‖ ^ α • x` lies in `MemWkpLoc q S 1 μ` whenever
+`x ↦ ‖x‖ ^ α` belongs to `MemLpLoc q S μ`. -/
+theorem memWkpLoc_one_norm_rpow_smul_id {α : ℝ} (hα : -1 < α)
+    (hp : MemLpLoc q S (fun x : E => ‖x‖ ^ α) μ) :
+    MemWkpLoc q S 1 (fun x : E => ‖x‖ ^ α • x) μ := by
+  refine memWkpLoc_succ_iff.2 ⟨(continuous_norm_rpow_smul_self hα).continuousOn.memLpLoc, _,
+    hasWeakFDerivOn_norm_rpow_smul_self hα _,
+    memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKS hK => ?_)⟩
+  have hbase : MemLp (fun x : E => ‖x‖ ^ α) q (μ.restrict K) := memLpLoc_iff.1 hp K hKS hK
+  refine (hbase.const_mul (1 + |α|)).of_le
+    ((hasWeakFDerivOn_norm_rpow_smul_self (μ := μ) hα
+      (⊤ : Opens E)).locallyIntegrableOn_deriv.mono_set (subset_univ K)).aestronglyMeasurable
+    (Eventually.of_forall fun x => ?_)
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg (norm_nonneg x) _))]
+  exact norm_rpow_smul_id_add_smulRight_le α x
+
+end RadialPower
 
 end TauCeti

@@ -96,17 +96,18 @@ theorem exists_eLpNormWkp_succ_le_of_contDiffOn (hp : 1 < p) (hp_top : p ≠ ⊤
     (hasWeakConjWirtingerDerivOn_of_contDiffOn
       (hue.of_le (by exact_mod_cast Nat.le_add_left 1 k)))
   rw [hdbu] at h₁
-  have h₂ := eLpNormWkp_clm_comp_le (p := p) (U := Ω') (k := 0) (f := u) eℝ
+  have h₂ := eLpNormWkp_clm_comp_le (μ := volume) (p := p) (U := Ω') (k := 0) (f := u) eℝ
   rw [eLpNormWkp_zero, eLpNormWkp_zero] at h₂
-  have hu' : eLpNormWkp p W (k + 1) u = eLpNormWkp p W (k + 1) (fun z ↦ sℝ (ue z)) :=
-    congrArg _ (funext fun z ↦ by simp [sℝ, ue, eℝ])
-  refine hu'.trans_le ((eLpNormWkp_clm_comp_le sℝ).trans ?_)
-  calc ‖sℝ‖ₑ * eLpNormWkp p W (k + 1) ue
-      ≤ ‖sℝ‖ₑ * (C₀ * (‖eℝ‖ₑ * eLpNormWkp p Ω' k (fun z ↦ complexAntilinearPartL
+  have hu' : u = fun z ↦ sℝ (ue z) := funext fun z ↦ by simp [sℝ, ue, eℝ]
+  calc eLpNormWkp p W (k + 1) u
+      = eLpNormWkp p W (k + 1) (fun z ↦ sℝ (ue z)) := by rw [← hu']
+    _ ≤ ‖sℝ‖ₑ * eLpNormWkp p W (k + 1) ue := eLpNormWkp_clm_comp_le sℝ
+    _ ≤ ‖sℝ‖ₑ * (C₀ * (‖eℝ‖ₑ * eLpNormWkp p Ω' k (fun z ↦ complexAntilinearPartL
           (fderiv ℝ u z) 1) + ‖eℝ‖ₑ * eLpNorm u p (volume.restrict Ω'))) := by
         gcongr
         exact h₁.trans (by gcongr _ * ?_; exact add_le_add (eLpNormWkp_clm_comp_le eℝ) h₂)
-    _ = _ := by
+    _ = ↑(‖sℝ‖₊ * C₀ * ‖eℝ‖₊) * (eLpNormWkp p Ω' k (fun z ↦ complexAntilinearPartL
+          (fderiv ℝ u z) 1) + eLpNorm u p (volume.restrict Ω')) := by
         simp only [eNorm_eq_nnNorm]
         push_cast
         ring
@@ -156,7 +157,7 @@ theorem exists_eLpNormWkp_le_of_eqOn_complexAntilinearPartL_add (hp : 1 < p) (hp
   have h₂ : eLpNorm u p (volume.restrict Ω') ≤ Y :=
     (eLpNorm_mono_measure _ (Measure.restrict_mono hΩ'U le_rfl)).trans eLpNorm_le_eLpNormWkp
   calc eLpNormWkp p W (k + 1) u ≤ C₀ * (‖e₁‖ₑ * (X + L * Y) + Y) :=
-        (hC₀ u hu).trans (by gcongr)
+        (hC₀ u hu).trans (mul_le_mul_of_nonneg_left (add_le_add h₁ h₂) zero_le)
     _ ≤ C₀ * (‖e₁‖ₑ * (X + L * Y) + Y + (‖e₁‖ₑ * Y + ‖e₁‖ₑ * L * X + X)) := by
         gcongr _ * ?_
         exact le_self_add

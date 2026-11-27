@@ -100,9 +100,12 @@ theorem exists_bilin_le_halfPlane_of_reflectionCore {p q r : ℝ≥0∞} (hp : 1
     _ = eLpNormWkp r (U ∩ {z | 0 ≤ z.im}) c
           (fun z => B (planarReflection (higherReflectionCoeff a) f z)
             (planarReflection (higherReflectionCoeff b) g z)) :=
-      eLpNormWkp_congr_ae ((planarReflection_ae_eq_inter_setOf_im_nonneg
-        (higherReflectionCoeff a) f U).mp ((planarReflection_ae_eq_inter_setOf_im_nonneg
-          (higherReflectionCoeff b) g U).mono fun z hg hf => by simp only [hf, hg]))
+      eLpNormWkp_congr_ae (μ := volume) (f := fun z => B (f z) (g z))
+        (g := fun z => B (planarReflection (higherReflectionCoeff a) f z)
+          (planarReflection (higherReflectionCoeff b) g z))
+        ((planarReflection_ae_eq_inter_setOf_im_nonneg
+          (higherReflectionCoeff a) f U).mp ((planarReflection_ae_eq_inter_setOf_im_nonneg
+            (higherReflectionCoeff b) g U).mono fun z hg hf => by simp only [hf, hg]))
     _ ≤ C * ‖B‖ₑ *
           eLpNormWkp p Ω.reflectionCore a (planarReflection (higherReflectionCoeff a) f) *
           eLpNormWkp q Ω.reflectionCore b (planarReflection (higherReflectionCoeff b) g) :=
@@ -151,7 +154,7 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one_halfPlane (hp : 2 < p) (hq : 1 �
       exact eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le
         (by exact_mod_cast hq) g
     _ = ↑(C * M.toNNReal) * ‖B‖ₑ * eLpNorm f p (volume.restrict (U ∩ {z | 0 ≤ z.im})) *
-          eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 g := by
+          eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 g volume := by
       rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (higherReflectionBound_ne_top 1 q)]
       ring
 
