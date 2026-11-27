@@ -13,9 +13,10 @@ public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Polynomial
 
 For each frequency index `t`, a polynomial `Q t` in the distinguished coordinate is
 multiplied by an exponential in all coordinates. The series
-`TauCeti.Baker.diagonalAuxiliarySeries` gives the exponential-polynomial formula for the
-mixed derivatives on the diagonal. It allows independent choices of the diagonal frequencies
-`ψ t` and the coordinate multipliers `a t` and `c t i`. For the Baker argument, take these to be
+`TauCeti.Baker.diagonalAuxiliarySeries` is a formal extension of the diagonal mixed derivatives
+that allows the frequencies `ψ t` to vary independently of the coordinate multipliers
+`a t` and `c t i`. When `ψ t = a t + ∑ i, c t i` for every `t`, the series gives the mixed
+derivatives of the multivariate sum restricted to the diagonal. For the Baker argument, take
 `ψ t = ∑ i, t i * λ i`, `a t = t 0 * θ` and `c t i = (t i + t 0 * b i) * λ i`
 for the remaining coordinates.
 
@@ -53,7 +54,9 @@ noncomputable def diagonalAuxiliarySeries (ψ a : T → A) (c : T → ι → A)
         ((Polynomial.expDerivFactor (a t) m₀).comp (LinearMap.proj t))))
 
 -- The full expansion stays out of the simp set so identities for the diagonal series can apply.
-/-- The exponential-polynomial expansion of the mixed derivative on the diagonal. -/
+/-- The exponential-polynomial expansion with frequencies `ψ` independent of `a` and `c`.
+It gives the mixed derivative of Baker's multivariate sum restricted to the diagonal when
+`ψ t = a t + ∑ i, c t i` for every `t`, and is a formal extension for arbitrary `ψ`. -/
 theorem diagonalAuxiliarySeries_apply (ψ a : T → A) (c : T → ι → A) (m₀ : ℕ)
     (m : ι → ℕ) (Q : T → A[X]) :
     diagonalAuxiliarySeries ψ a c m₀ m Q =
