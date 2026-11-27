@@ -80,6 +80,16 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
   termwise derivative of the power series; it is nondecreasing on `[0, 1)` and increases to the
   mean `∫⁻ k, k`, taken in `[0, ∞]`, as the argument increases to `1`, also when the mean is
   infinite; `TauCeti.Probability.ofReal_deriv_pgf_le` bounds it by the mean on `[0, 1)`.
+* `TauCeti.Probability.monotone_iterate_pgf_zero` and `TauCeti.Probability.iterate_pgf_zero_le` —
+  for a probability measure on `ℕ`, the iterates `f^[n] 0` of its generating function `f` increase
+  and lie below every nonnegative fixed point of `f`.
+* `TauCeti.Probability.isLeast_of_tendsto_iterate_pgf_zero` and
+  `TauCeti.Probability.isLeast_iSup_iterate_pgf_zero` — the limit of these iterates is the least
+  fixed point of `f` in `[0, 1]`.
+* `TauCeti.Probability.setOf_pgf_eq_self_eq_pair` — unless `ν {1} = 1`, the fixed points of `f`
+  in `[0, 1]` are the least one and `1`, using `TauCeti.Probability.pgf_lt_self_of_add_lt_one` and
+  `TauCeti.Probability.eq_one_of_pgf_eq_self_of_add_eq_one` for the two cases that
+  `TauCeti.Probability.measure_zero_add_measure_one_le` leaves.
 -/
 
 public section
@@ -771,6 +781,124 @@ theorem ofReal_deriv_pgf_le (ν : Measure ℕ) [IsFiniteMeasure ν] {t : ℝ}
     (monotoneOn_deriv_pgf ν ht ⟨ht.1.trans hu.1.le, hu.2⟩ hu.1.le)
 
 end Shape
+
+/-! ### Fixed points of the generating function on `[0, 1]` -/
+
+section FixedPoint
+
+open Filter Set
+
+variable (ν : Measure ℕ) [IsProbabilityMeasure ν]
+
+/-- The masses of `0` and `1` under a probability measure on `ℕ` add up to at most `1`, so one of
+`strictConvexOn_pgf_of_add_lt_one` and `pgf_eq_of_add_eq_one` applies. -/
+theorem measure_zero_add_measure_one_le : ν {0} + ν {1} ≤ 1 :=
+  (measure_union (by simp) (measurableSet_singleton 1)).symm.trans_le prob_le_one
+
+/-- The iterates `f^[n] 0` of the generating function of a probability measure on `ℕ` lie in
+`[0, 1]`. -/
+private theorem iterate_pgf_zero_mem_Icc (n : ℕ) : (pgf id ν)^[n] 0 ∈ Icc (0 : ℝ) 1 :=
+  (mapsTo_pgf_Icc ν).iterate n ⟨le_rfl, zero_le_one⟩
+
+/-- The iterates `f^[n] 0` of the generating function `f` of a probability measure on `ℕ` form a
+nondecreasing sequence. -/
+theorem monotone_iterate_pgf_zero : Monotone fun n => (pgf id ν)^[n] 0 := by
+  refine monotone_nat_of_le_succ fun n => ?_
+  induction n with
+  | zero => exact (iterate_pgf_zero_mem_Icc ν 1).1
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', Function.iterate_succ_apply' _ (n + 1)]
+    exact monotoneOn_pgf ν (iterate_pgf_zero_mem_Icc ν n) (iterate_pgf_zero_mem_Icc ν (n + 1)) ih
+
+/-- The iterates `f^[n] 0` of the generating function `f` of a probability measure on `ℕ` lie
+below every nonnegative fixed point of `f`. -/
+theorem iterate_pgf_zero_le {s : ℝ} (hs : 0 ≤ s) (hfs : pgf id ν s = s) (n : ℕ) :
+    (pgf id ν)^[n] 0 ≤ s := by
+  induction n with
+  | zero => exact hs
+  | succ n ih =>
+    rcases le_or_gt s 1 with hs1 | hs1
+    · rw [Function.iterate_succ_apply', ← hfs]
+      exact monotoneOn_pgf ν (iterate_pgf_zero_mem_Icc ν n) ⟨hs, hs1⟩ ih
+    · exact (iterate_pgf_zero_mem_Icc ν (n + 1)).2.trans hs1.le
+
+/-- If the iterates `f^[n] 0` of the generating function `f` of a probability measure on `ℕ`
+converge to `q`, then `q` is the least fixed point of `f` in `[0, 1]`. -/
+theorem isLeast_of_tendsto_iterate_pgf_zero {q : ℝ}
+    (hq : Tendsto (fun n => (pgf id ν)^[n] 0) atTop (𝓝 q)) :
+    IsLeast {s : ℝ | 0 ≤ s ∧ s ≤ 1 ∧ pgf id ν s = s} q := by
+  have hmem : q ∈ Icc (0 : ℝ) 1 :=
+    isClosed_Icc.mem_of_tendsto hq (Eventually.of_forall (iterate_pgf_zero_mem_Icc ν))
+  have hcont : ContinuousWithinAt (pgf id ν) (Icc 0 1) q :=
+    ((continuousOn_pgf ν).mono (Icc_subset_Icc (by norm_num) le_rfl)) q hmem
+  have hlim : Tendsto (fun n => pgf id ν ((pgf id ν)^[n] 0)) atTop (𝓝 (pgf id ν q)) :=
+    hcont.tendsto.comp (tendsto_nhdsWithin_iff.2
+      ⟨hq, Eventually.of_forall (iterate_pgf_zero_mem_Icc ν)⟩)
+  have hshift : Tendsto (fun n => pgf id ν ((pgf id ν)^[n] 0)) atTop (𝓝 q) := by
+    simpa only [Function.iterate_succ_apply'] using (tendsto_add_atTop_iff_nat 1).2 hq
+  refine ⟨⟨hmem.1, hmem.2, tendsto_nhds_unique hlim hshift⟩, fun s hs => ?_⟩
+  exact le_of_tendsto' hq (iterate_pgf_zero_le ν hs.1 hs.2.2)
+
+/-- The iterates `f^[n] 0` of the generating function `f` of a probability measure on `ℕ`
+converge to their supremum. -/
+theorem tendsto_iterate_pgf_zero :
+    Tendsto (fun n => (pgf id ν)^[n] 0) atTop (𝓝 (⨆ n, (pgf id ν)^[n] 0)) :=
+  tendsto_atTop_ciSup (monotone_iterate_pgf_zero ν)
+    ⟨1, forall_mem_range.2 fun n => (iterate_pgf_zero_mem_Icc ν n).2⟩
+
+/-- The generating function `f` of a probability measure on `ℕ` has a least fixed point in
+`[0, 1]`, the supremum of the iterates `f^[n] 0`. -/
+theorem isLeast_iSup_iterate_pgf_zero :
+    IsLeast {s : ℝ | 0 ≤ s ∧ s ≤ 1 ∧ pgf id ν s = s} (⨆ n, (pgf id ν)^[n] 0) :=
+  isLeast_of_tendsto_iterate_pgf_zero ν (tendsto_iterate_pgf_zero ν)
+
+/-- If `ν {0} + ν {1} < 1`, the generating function `f` of a probability measure on `ℕ` lies
+strictly below the diagonal between two fixed points in `[0, 1]`. -/
+theorem pgf_lt_self_of_add_lt_one (h : ν {0} + ν {1} < 1) {a b t : ℝ} (ha : 0 ≤ a)
+    (hb : b ≤ 1) (hfa : pgf id ν a = a) (hfb : pgf id ν b = b) (hat : a < t) (htb : t < b) :
+    pgf id ν t < t := by
+  have hab : 0 < b - a := by linarith
+  have hl : 0 < (b - t) / (b - a) := div_pos (by linarith) hab
+  have hr : 0 < (t - a) / (b - a) := div_pos (by linarith) hab
+  have hconv := (strictConvexOn_pgf_of_add_lt_one ν h).2 (⟨ha, by linarith⟩ : a ∈ Icc (0 : ℝ) 1)
+    (⟨by linarith, hb⟩ : b ∈ Icc (0 : ℝ) 1) (sub_pos.1 hab).ne hl hr (by field_simp; ring)
+  have hcomb : (b - t) / (b - a) * a + (t - a) / (b - a) * b = t := by
+    field_simp; ring
+  simpa only [smul_eq_mul, hfa, hfb, hcomb] using hconv
+
+/-- If `ν {0} + ν {1} = 1` and `ν {1} ≠ 1`, the only fixed point of the generating function of a
+probability measure on `ℕ` is `1`. -/
+theorem eq_one_of_pgf_eq_self_of_add_eq_one (h : ν {0} + ν {1} = 1) (h1 : ν {1} ≠ 1)
+    {s : ℝ} (hfs : pgf id ν s = s) : s = 1 := by
+  have hreal : ν.real {0} + ν.real {1} = 1 := by
+    rw [measureReal_def, measureReal_def, ← ENNReal.toReal_add (measure_ne_top ν _)
+      (measure_ne_top ν _), h, ENNReal.toReal_one]
+  have h1' : 1 - ν.real {1} ≠ 0 :=
+    sub_ne_zero.2 fun h' => h1 ((ENNReal.toReal_eq_one_iff _).1 h'.symm)
+  rw [pgf_eq_of_add_eq_one ν h] at hfs
+  have : (1 - ν.real {1}) * (1 - s) = 0 := by linear_combination hfs - hreal
+  linarith [(mul_eq_zero.1 this).resolve_left h1']
+
+/-- Unless every individual has exactly one child, the fixed points in `[0, 1]` of the generating
+function of a probability measure on `ℕ` are its least fixed point `q` there and `1`. -/
+theorem setOf_pgf_eq_self_eq_pair (h1 : ν {1} ≠ 1) {q : ℝ}
+    (hq : IsLeast {s : ℝ | 0 ≤ s ∧ s ≤ 1 ∧ pgf id ν s = s} q) :
+    {s : ℝ | 0 ≤ s ∧ s ≤ 1 ∧ pgf id ν s = s} = {q, 1} := by
+  ext s
+  refine ⟨fun hs => ?_, ?_⟩
+  · rcases hs.2.1.lt_or_eq with hs1 | rfl
+    · left
+      rcases (measure_zero_add_measure_one_le ν).lt_or_eq with h | h
+      · refine (hq.2 hs).antisymm' (not_lt.1 fun hqs => ?_)
+        exact (pgf_lt_self_of_add_lt_one ν h hq.1.1 le_rfl hq.1.2.2 (by simp) hqs hs1).ne
+          hs.2.2
+      · exact absurd (eq_one_of_pgf_eq_self_of_add_eq_one ν h h1 hs.2.2) hs1.ne
+    · exact Or.inr rfl
+  · rintro (rfl | rfl)
+    · exact hq.1
+    · exact ⟨zero_le_one, le_rfl, by simp⟩
+
+end FixedPoint
 
 end Probability
 
