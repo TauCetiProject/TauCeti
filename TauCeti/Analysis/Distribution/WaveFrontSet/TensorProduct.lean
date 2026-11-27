@@ -53,7 +53,9 @@ in the directions `(ξ, 0)` with `ξ ≠ 0`.
 * `Distribution.waveFrontSet_transportCLM_tensorProduct_subset`: the wave front set bound for
   `S ⊗ T`; `Distribution.waveFrontSet_transportCLM_tensorProduct_subset_tensorCone` restates it
   with the cone `TauCeti.tensorCone Γ₁ Γ₂`, which contains `WF(S ⊗ T)` whenever `WF(S) ⊆ Γ₁` and
-  `WF(T) ⊆ Γ₂` and does not depend on `S` and `T`.
+  `WF(T) ⊆ Γ₂` and does not depend on `S` and `T`. It is a closed cone of nonzero covectors
+  when `Γ₁` and `Γ₂` are (`TauCeti.smul_mem_tensorCone`, `TauCeti.isOpen_diff_tensorCone`,
+  `TauCeti.ne_zero_of_mem_tensorCone`).
 * `Distribution.IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_left`,
   `Distribution.IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_right`: if `S ⊗ T` is
   microlocally smooth at `((x, y), (ξ, 0))` and `y ∈ supp T`, then `S` is microlocally smooth at
@@ -438,6 +440,52 @@ theorem mem_tensorCone {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)}
 theorem tensorCone_mono {Γ₁ Γ₁' : Set (E × E)} {Γ₂ Γ₂' : Set (D × D)} (h₁ : Γ₁ ⊆ Γ₁')
     (h₂ : Γ₂ ⊆ Γ₂') : tensorCone Γ₁ Γ₂ ⊆ tensorCone Γ₁' Γ₂' :=
   fun _ ⟨h0, hξ, hη⟩ ↦ ⟨h0, hξ.imp_right (@h₁ _), hη.imp_right (@h₂ _)⟩
+
+/-- The covectors of `tensorCone Γ₁ Γ₂` are nonzero. -/
+theorem ne_zero_of_mem_tensorCone {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)}
+    {q : WithLp 2 (E × D) × WithLp 2 (E × D)} (hq : q ∈ tensorCone Γ₁ Γ₂) : q.2 ≠ 0 :=
+  hq.1
+
+/-- `tensorCone Γ₁ Γ₂` is a cone when `Γ₁` and `Γ₂` are. -/
+theorem smul_mem_tensorCone [Module ℝ E] [Module ℝ D] {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)}
+    (hcone₁ : ∀ p ∈ Γ₁, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₁)
+    (hcone₂ : ∀ p ∈ Γ₂, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₂)
+    {q : WithLp 2 (E × D) × WithLp 2 (E × D)} (hq : q ∈ tensorCone Γ₁ Γ₂) {t : ℝ} (ht : 0 < t) :
+    (q.1, t • q.2) ∈ tensorCone Γ₁ Γ₂ := by
+  obtain ⟨h0, hξ, hη⟩ := hq
+  refine ⟨smul_ne_zero ht.ne' h0, ?_, ?_⟩
+  · rcases hξ with h | h
+    · exact Or.inl (by simp [h])
+    · exact Or.inr (hcone₁ _ h t ht)
+  · rcases hη with h | h
+    · exact Or.inl (by simp [h])
+    · exact Or.inr (hcone₂ _ h t ht)
+
+/-- `tensorCone Γ₁ Γ₂` is closed in `W × ((E × D) \ {0})` when `Γ₁` and `Γ₂` are closed in
+`Ω × (E \ {0})` and `O × (D \ {0})`, and the components of the points of `W` lie in `Ω` and `O`. -/
+theorem isOpen_diff_tensorCone {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)} {Ω : Set E} {O : Set D}
+    {W : Set (WithLp 2 (E × D))} (hW : IsOpen W) (hWΩO : ∀ p ∈ W, p.fst ∈ Ω ∧ p.snd ∈ O)
+    (hΓ₁ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ₁)) (hΓ₂ : IsOpen ((O ×ˢ {0}ᶜ) \ Γ₂)) :
+    IsOpen ((W ×ˢ {0}ᶜ) \ tensorCone Γ₁ Γ₂) := by
+  -- Off `tensorCone Γ₁ Γ₂`, one of the components of the covector is a direction avoiding `Γ₁`
+  -- or `Γ₂`.
+  have h : (W ×ˢ {0}ᶜ) \ tensorCone Γ₁ Γ₂ = W ×ˢ univ ∩
+      ((fun q ↦ (q.1.fst, q.2.fst)) ⁻¹' ((Ω ×ˢ {0}ᶜ) \ Γ₁) ∪
+        (fun q ↦ (q.1.snd, q.2.snd)) ⁻¹' ((O ×ˢ {0}ᶜ) \ Γ₂)) := by
+    ext ⟨p, ζ⟩
+    have hζ₁ : ζ.fst ≠ 0 → ζ ≠ 0 := fun h hζ ↦ h (by simp [hζ])
+    have hζ₂ : ζ.snd ≠ 0 → ζ ≠ 0 := fun h hζ ↦ h (by simp [hζ])
+    simp only [Set.mem_sdiff, mem_prod, mem_compl_iff, mem_singleton_iff, mem_tensorCone,
+      mem_inter_iff, mem_univ, and_true, mem_union, mem_preimage]
+    constructor
+    · rintro ⟨⟨hp, hζ⟩, h⟩
+      have := hWΩO p hp
+      tauto
+    · rintro ⟨hp, h⟩
+      tauto
+  rw [h]
+  exact (hW.prod isOpen_univ).inter
+    ((hΓ₁.preimage (by fun_prop)).union (hΓ₂.preimage (by fun_prop)))
 
 end TauCeti
 

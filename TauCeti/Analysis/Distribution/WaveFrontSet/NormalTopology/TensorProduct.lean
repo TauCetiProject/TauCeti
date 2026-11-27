@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology
 public import TauCeti.Analysis.Distribution.WaveFrontSet.TensorProduct
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Analysis.Convex.Cone.InfDist
 import TauCeti.Analysis.Distribution.TestFunction.DominatedSeries
 import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -124,17 +125,6 @@ private theorem smul_mem_dirSet {Γ : Set (F × F)}
   · simp [dirSet]
   · exact Or.inr (hcone _ hξ t ht)
 
-/-- The distance to a cone is positively homogeneous. -/
-private theorem infDist_smul_of_cone {Z : Set F} (hZ : ∀ t : ℝ, 0 < t → ∀ z ∈ Z, t • z ∈ Z)
-    {t : ℝ} (ht : 0 < t) (a : F) : infDist (t • a) Z = t * infDist a Z := by
-  have hZt : t • Z = Z := by
-    ext z
-    refine ⟨?_, fun hz ↦ ⟨t⁻¹ • z, hZ _ (inv_pos.2 ht) z hz, by simp [smul_smul, ht.ne']⟩⟩
-    rintro ⟨w, hw, rfl⟩
-    exact hZ t ht w hw
-  conv_lhs => rw [← hZt]
-  rw [infDist_smul₀, Real.norm_of_nonneg ht.le]
-
 /-- **A cone of directions avoiding `Γ` at a point avoids it nearby.** If no direction of the
 closed cone `A` is a direction of the closed cone `Γ` at `x₀ ∈ Ω`, then the same holds over a
 neighbourhood of `x₀`. -/
@@ -177,7 +167,7 @@ private theorem exists_nhds_cone_far [ProperSpace F] {Ω : Set F} {Γ : Set (F �
   have hA : IsClosed A :=
     isClosed_le (continuous_const.mul continuous_norm) (continuous_infDist_pt Z)
   have hAc : ∀ t : ℝ, 0 < t → ∀ a ∈ A, t • a ∈ A := fun t ht a ha ↦ by
-    simp only [A, mem_ofPred_eq, infDist_smul_of_cone hZc ht, norm_smul,
+    simp only [A, mem_ofPred_eq, infDist_smul_of_forall_smul_mem hZc ht, norm_smul,
       Real.norm_of_nonneg ht.le] at ha ⊢
     nlinarith
   have hAΓ : ∀ a ∈ A, a ≠ 0 → (x₀, a) ∉ Γ := fun a ha ha0 hmem ↦ by
@@ -207,8 +197,8 @@ private theorem continuous_dirDist (Z₁ : Set E) (Z₂ : Set D) : Continuous (d
 private theorem dirDist_smul {Z₁ : Set E} {Z₂ : Set D}
     (hZ₁ : ∀ t : ℝ, 0 < t → ∀ z ∈ Z₁, t • z ∈ Z₁) (hZ₂ : ∀ t : ℝ, 0 < t → ∀ z ∈ Z₂, t • z ∈ Z₂)
     {t : ℝ} (ht : 0 < t) (ζ : WithLp 2 (E × D)) : dirDist Z₁ Z₂ (t • ζ) = t * dirDist Z₁ Z₂ ζ := by
-  simp only [dirDist, WithLp.smul_fst, WithLp.smul_snd, infDist_smul_of_cone hZ₁ ht,
-    infDist_smul_of_cone hZ₂ ht]
+  simp only [dirDist, WithLp.smul_fst, WithLp.smul_snd, infDist_smul_of_forall_smul_mem hZ₁ ht,
+    infDist_smul_of_forall_smul_mem hZ₂ ht]
   ring
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ D] in
@@ -268,32 +258,16 @@ private theorem exists_mul_norm_le_dirDist [FiniteDimensional ℝ E] [FiniteDime
 private def offRegions (A₁ : Set E) (A₂ : Set D) (c : ℝ) (n : WithLp 2 (E × D)) : Prop :=
   ¬(n.fst ∈ A₁ ∧ c * ‖n.snd‖ ≤ ‖n.fst‖) ∧ ¬(n.snd ∈ A₂ ∧ c * ‖n.fst‖ ≤ ‖n.snd‖)
 
-omit [NormedSpace ℝ E] [NormedSpace ℝ D] in
-/-- Off the region `R₁`, the first component of `n` is within `c ‖n‖` of `Z₁`, when the
-complement of `A₁` is within `c ‖·‖` of `Z₁` and `0 ∈ Z₁`. -/
-private theorem infDist_fst_le {Z₁ A₁ : Set E} (hZ₁0 : (0 : E) ∈ Z₁) {c : ℝ}
-    (hA₁ : ∀ a ∉ A₁, infDist a Z₁ < c * ‖a‖) (hc : 0 ≤ c) {n : WithLp 2 (E × D)}
-    (hn : ¬(n.fst ∈ A₁ ∧ c * ‖n.snd‖ ≤ ‖n.fst‖)) : infDist n.fst Z₁ ≤ c * ‖n‖ := by
-  have h₁ := WithLp.norm_fst_le (x := n)
-  have h₂ := WithLp.norm_snd_le (x := n)
-  have h0 : infDist n.fst Z₁ ≤ ‖n.fst‖ := by
-    simpa using infDist_le_dist_of_mem (x := n.fst) hZ₁0
-  rcases not_and_or.1 hn with hA | hlt
-  · exact (hA₁ _ hA).le.trans (mul_le_mul_of_nonneg_left h₁ hc)
-  · push Not at hlt
-    nlinarith
-
-omit [NormedSpace ℝ E] [NormedSpace ℝ D] in
-/-- Off the region `R₂`, the second component of `n` is within `c ‖n‖` of `Z₂`. -/
-private theorem infDist_snd_le {Z₂ A₂ : Set D} (hZ₂0 : (0 : D) ∈ Z₂) {c : ℝ}
-    (hA₂ : ∀ a ∉ A₂, infDist a Z₂ < c * ‖a‖) (hc : 0 ≤ c) {n : WithLp 2 (E × D)}
-    (hn : ¬(n.snd ∈ A₂ ∧ c * ‖n.fst‖ ≤ ‖n.snd‖)) : infDist n.snd Z₂ ≤ c * ‖n‖ := by
-  have h₁ := WithLp.norm_fst_le (x := n)
-  have h₂ := WithLp.norm_snd_le (x := n)
-  have h0 : infDist n.snd Z₂ ≤ ‖n.snd‖ := by
-    simpa using infDist_le_dist_of_mem (x := n.snd) hZ₂0
-  rcases not_and_or.1 hn with hA | hlt
-  · exact (hA₂ _ hA).le.trans (mul_le_mul_of_nonneg_left h₂ hc)
+omit [NormedSpace ℝ E] in
+/-- Off the region `{a ∈ A, c s ≤ ‖a‖}`, a vector `a` with `‖a‖ ≤ r` and `s ≤ r` is within `c r`
+of `Z`, when the complement of `A` is within `c ‖·‖` of `Z` and `0 ∈ Z`. It is applied to either
+component `a` of a covector `n`, with `s` the norm of the other component and `r = ‖n‖`. -/
+private theorem infDist_le_mul_of_not_and {Z A : Set E} (hZ0 : (0 : E) ∈ Z) {c : ℝ}
+    (hA : ∀ a ∉ A, infDist a Z < c * ‖a‖) (hc : 0 ≤ c) {a : E} {r s : ℝ} (har : ‖a‖ ≤ r)
+    (hsr : s ≤ r) (ha : ¬(a ∈ A ∧ c * s ≤ ‖a‖)) : infDist a Z ≤ c * r := by
+  have h0 : infDist a Z ≤ ‖a‖ := by simpa using infDist_le_dist_of_mem (x := a) hZ0
+  rcases not_and_or.1 ha with hA' | hlt
+  · exact (hA _ hA').le.trans (mul_le_mul_of_nonneg_left har hc)
   · push Not at hlt
     nlinarith
 
@@ -307,8 +281,10 @@ private theorem mul_add_le_norm_sub_of_offRegions {Z₁ A₁ : Set E} {Z₂ A₂
     (hA₁ : ∀ a ∉ A₁, infDist a Z₁ < β / 4 * ‖a‖) (hA₂ : ∀ a ∉ A₂, infDist a Z₂ < β / 4 * ‖a‖)
     {ζ : WithLp 2 (E × D)} (hζ : β * ‖ζ‖ ≤ dirDist Z₁ Z₂ ζ) {n : WithLp 2 (E × D)}
     (hn : offRegions A₁ A₂ (β / 4) n) : β / (12 + β) * (‖ζ‖ + ‖n‖) ≤ ‖ζ - n‖ := by
-  have h₁ := infDist_fst_le hZ₁0 hA₁ (by positivity) hn.1
-  have h₂ := infDist_snd_le hZ₂0 hA₂ (by positivity) hn.2
+  have h₁ := infDist_le_mul_of_not_and hZ₁0 hA₁ (by positivity) (WithLp.norm_fst_le (x := n))
+    (WithLp.norm_snd_le (x := n)) hn.1
+  have h₂ := infDist_le_mul_of_not_and hZ₂0 hA₂ (by positivity) (WithLp.norm_snd_le (x := n))
+    (WithLp.norm_fst_le (x := n)) hn.2
   have hL := dirDist_le_add Z₁ Z₂ ζ n
   have htri : ‖n‖ ≤ ‖ζ‖ + ‖ζ - n‖ := by
     simpa [norm_sub_rev] using norm_le_norm_add_norm_sub' n ζ
@@ -374,21 +350,13 @@ private theorem one_add_norm_le_mul_sub (ζ n : WithLp 2 (E × D)) :
     1 + ‖ζ‖ ≤ (1 + ‖ζ - n‖) * (1 + ‖n‖) := by
   simpa using one_add_norm_add_le (ζ - n) n
 
-/-- On the region `c ‖n.snd‖ ≤ ‖n.fst‖`, `1 + ‖n‖ ≤ (1 + c⁻¹) (1 + ‖n.fst‖)`. -/
-private theorem one_add_norm_le_of_mul_norm_snd_le {c : ℝ} (hc : 0 < c) {n : WithLp 2 (E × D)}
-    (hn : c * ‖n.snd‖ ≤ ‖n.fst‖) : 1 + ‖n‖ ≤ (1 + c⁻¹) * (1 + ‖n.fst‖) := by
-  have h := WithLp.prod_norm_le_norm_fst_add_norm_snd n
-  have h' : ‖n.snd‖ ≤ c⁻¹ * ‖n.fst‖ := by rwa [le_inv_mul_iff₀ hc]
-  have he : (1 + c⁻¹) * (1 + ‖n.fst‖) = 1 + ‖n.fst‖ + c⁻¹ * ‖n.fst‖ + c⁻¹ := by ring
-  have : 0 ≤ c⁻¹ := inv_nonneg.2 hc.le
-  linarith [he]
-
-/-- On the region `c ‖n.fst‖ ≤ ‖n.snd‖`, `1 + ‖n‖ ≤ (1 + c⁻¹) (1 + ‖n.snd‖)`. -/
-private theorem one_add_norm_le_of_mul_norm_fst_le {c : ℝ} (hc : 0 < c) {n : WithLp 2 (E × D)}
-    (hn : c * ‖n.fst‖ ≤ ‖n.snd‖) : 1 + ‖n‖ ≤ (1 + c⁻¹) * (1 + ‖n.snd‖) := by
-  have h := WithLp.prod_norm_le_norm_fst_add_norm_snd n
-  have h' : ‖n.fst‖ ≤ c⁻¹ * ‖n.snd‖ := by rwa [le_inv_mul_iff₀ hc]
-  have he : (1 + c⁻¹) * (1 + ‖n.snd‖) = 1 + ‖n.snd‖ + c⁻¹ * ‖n.snd‖ + c⁻¹ := by ring
+/-- If `r ≤ a + b` and `c b ≤ a`, then `1 + r ≤ (1 + c⁻¹) (1 + a)`. It is applied with `r = ‖n‖`
+and `a`, `b` the norms of the two components of a covector `n`, on the region where the component
+of norm `a` dominates. -/
+private theorem one_add_le_of_le_add_of_mul_le {c : ℝ} (hc : 0 < c) {r a b : ℝ} (hr : r ≤ a + b)
+    (hb : c * b ≤ a) : 1 + r ≤ (1 + c⁻¹) * (1 + a) := by
+  have h' : b ≤ c⁻¹ * a := by rwa [le_inv_mul_iff₀ hc]
+  have he : (1 + c⁻¹) * (1 + a) = 1 + a + c⁻¹ * a + c⁻¹ := by ring
   have : 0 ≤ c⁻¹ := inv_nonneg.2 hc.le
   linarith [he]
 
@@ -402,7 +370,7 @@ private theorem bound_of_mul_norm_snd_le {c : ℝ} (hc : 0 < c) (hn : c * ‖n.s
     (1 + ‖ζ‖) ^ N * ((1 + ‖n‖) ^ P * ‖f (ζ - n) * g n.snd‖) ≤
       B * Cg * (1 + c⁻¹) ^ (N + P + k) * (1 + ‖n.fst‖) ^ (N + P + k) := by
   have hpe := one_add_norm_le_mul_sub ζ n
-  have hnn := one_add_norm_le_of_mul_norm_snd_le hc hn
+  have hnn := one_add_le_of_le_add_of_mul_le hc (WithLp.prod_norm_le_norm_fst_add_norm_snd n) hn
   have hsnd : 1 + ‖n.snd‖ ≤ 1 + ‖n‖ := by gcongr; exact WithLp.norm_snd_le (x := n)
   have hB0 : 0 ≤ B := (by positivity : (0 : ℝ) ≤ (1 + ‖ζ - n‖) ^ N * ‖f (ζ - n)‖).trans hB
   rw [norm_mul]
@@ -423,7 +391,8 @@ private theorem bound_of_mul_norm_fst_le {c : ℝ} (hc : 0 < c) (hn : c * ‖n.f
     (hD : (1 + ‖n.snd‖) ^ (N + P) * ‖g n.snd‖ ≤ Dg) :
     (1 + ‖ζ‖) ^ N * ((1 + ‖n‖) ^ P * ‖f (ζ - n) * g n.snd‖) ≤ B * (1 + c⁻¹) ^ (N + P) * Dg := by
   have hpe := one_add_norm_le_mul_sub ζ n
-  have hnn := one_add_norm_le_of_mul_norm_fst_le hc hn
+  have hnn := one_add_le_of_le_add_of_mul_le hc
+    ((WithLp.prod_norm_le_norm_fst_add_norm_snd n).trans_eq (add_comm _ _)) hn
   have hB0 : 0 ≤ B := (by positivity : (0 : ℝ) ≤ (1 + ‖ζ - n‖) ^ N * ‖f (ζ - n)‖).trans hB
   rw [norm_mul]
   calc (1 + ‖ζ‖) ^ N * ((1 + ‖n‖) ^ P * (‖f (ζ - n)‖ * ‖g n.snd‖))
@@ -543,12 +512,6 @@ private def badCoeff (f : WithLp 2 (E × D) → ℂ) (g : D → ℂ) (ζ : WithL
 
 variable {L A₁}
 
-omit [InnerProductSpace ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The cutoff `χ` as a smooth function supported in its own support. -/
-private def supportedCutoff {Ω : Opens E} (χ : 𝓓(Ω, ℂ)) :
-    𝓓_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩}(E, ℂ) :=
-  ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
-
 variable {Ω : Opens E} {O : Opens D} {V : Opens (E × D)} {W : Opens (WithLp 2 (E × D))}
   (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
   (hW : MapsTo (prodContinuousLinearEquiv 2 ℝ E D) W V)
@@ -565,39 +528,29 @@ private theorem localFourier_tensorProduct_eq_add (S : 𝓓'(Ω, ℂ)) (T : 𝓓
     (hgood : Summable (goodTerm L A₁ (𝓕 (φ : WithLp 2 (E × D) → ℂ)) (S.localFourier χ₁)
       (T.localFourier χ₂) ζ))
     (hbad : Summable fun m ↦ badCoeff L A₁ (𝓕 (φ : WithLp 2 (E × D) → ℂ)) (T.localFourier χ₂) ζ m
-      • (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst) :
+      • χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst) :
     (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
         (S.tensorProduct T hV.subset)).localFourier φ ζ =
       (∑' m, goodTerm L A₁ (𝓕 (φ : WithLp 2 (E × D) → ℂ)) (S.localFourier χ₁)
         (T.localFourier χ₂) ζ m) +
       S.complexPairing (ofSupportedIn χ₁.tsupport_subset (∑' m, badCoeff L A₁
         (𝓕 (φ : WithLp 2 (E × D) → ℂ)) (T.localFourier χ₂) ζ m •
-          (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst)) := by
+          χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst)) := by
   set f : WithLp 2 (E × D) → ℂ := 𝓕 (φ : WithLp 2 (E × D) → ℂ)
   -- The terms with `-m.fst ∉ A₁` sum to the pairing of `S` with the series of modulated cutoffs.
-  have hb : HasSum (fun m : ZLattice.dual L ↦ badCoeff L A₁ f (T.localFourier χ₂) ζ m *
-      S.localFourier χ₁ (-(m : WithLp 2 (E × D)).fst))
-      (S.complexPairing (ofSupportedIn χ₁.tsupport_subset (∑' m, badCoeff L A₁ f
-        (T.localFourier χ₂) ζ m • (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst))) := by
-    have hfun : (fun m : ZLattice.dual L ↦ badCoeff L A₁ f (T.localFourier χ₂) ζ m *
-        S.localFourier χ₁ (-(m : WithLp 2 (E × D)).fst)) =
-        (S.complexPairing.comp (ofSupportedInCLM ℂ χ₁.tsupport_subset)) ∘ fun m ↦
-          badCoeff L A₁ f (T.localFourier χ₂) ζ m •
-            (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst := by
-      ext m
-      rw [Function.comp_apply, map_smul, smul_eq_mul, ContinuousLinearMap.comp_apply,
-        coe_ofSupportedInCLM, localFourier_eq_complexPairing_modulate S χ₁.tsupport_subset
-          (f := supportedCutoff χ₁) (ContDiffMapSupportedIn.coe_of_support_subset _ _), neg_neg]
-    rw [hfun]
-    exact (S.complexPairing.comp (ofSupportedInCLM ℂ χ₁.tsupport_subset)).hasSum hbad.hasSum
+  have hb := hasSum_mul_localFourier_neg S χ₁ hbad
   refine ((hasSum_fourier_add_mul_localFourier _ χ L hL hφ ζ).unique
     ((hgood.hasSum.add hb).congr_fun fun m ↦ ?_))
   rw [localFourier_transportCLM_tensorProduct S T hV hW hχ, WithLp.neg_fst, WithLp.neg_snd,
     add_comm (m : WithLp 2 (E × D)) ζ]
   by_cases hm : -(m : WithLp 2 (E × D)).fst ∈ A₁
-  · simp [goodTerm, badCoeff, hm, f]
+  · rw [goodTerm, badCoeff, indicator_of_mem (s := {m : ZLattice.dual L |
+      -(m : WithLp 2 (E × D)).fst ∈ A₁}) hm, indicator_of_notMem (s := {m : ZLattice.dual L |
+      -(m : WithLp 2 (E × D)).fst ∉ A₁}) (not_not_intro hm), zero_mul, add_zero]
     ring
-  · simp [goodTerm, badCoeff, hm, f]
+  · rw [goodTerm, badCoeff, indicator_of_notMem (s := {m : ZLattice.dual L |
+      -(m : WithLp 2 (E × D)).fst ∈ A₁}) hm, indicator_of_mem (s := {m : ZLattice.dual L |
+      -(m : WithLp 2 (E × D)).fst ∉ A₁}) hm, zero_add]
     ring
 
 /-! ### Estimates for the two parts -/
@@ -709,15 +662,16 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [InnerProductS
 /-- The derivatives of the modulated cutoff grow at most polynomially in the modulation. -/
 private theorem seminorm_modulate_fst_le {Ω : Opens E} (χ₁ : 𝓓(Ω, ℂ)) (k : ℕ)
     (m : WithLp 2 (E × D)) :
-    N[ℂ]_{⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩, k} ((supportedCutoff χ₁).modulate m.fst) ≤
+    N[ℂ]_{⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩, k}
+        (χ₁.toSupportedInTSupport.modulate m.fst) ≤
       ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩ k
-        (supportedCutoff χ₁) * (1 + 2 * π) ^ k * (1 + ‖m‖) ^ k := by
+        χ₁.toSupportedInTSupport * (1 + 2 * π) ^ k * (1 + ‖m‖) ^ k := by
   have hfst := WithLp.norm_fst_le (x := m)
   calc _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩
-        k (supportedCutoff χ₁) * (1 + 2 * π * ‖m.fst‖) ^ k :=
+        k χ₁.toSupportedInTSupport * (1 + 2 * π * ‖m.fst‖) ^ k :=
         ContDiffMapSupportedIn.seminorm_modulate_le _ _ k
     _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩
-        k (supportedCutoff χ₁) * ((1 + 2 * π) * (1 + ‖m‖)) ^ k := by
+        k χ₁.toSupportedInTSupport * ((1 + 2 * π) * (1 + ‖m‖)) ^ k := by
         gcongr
         nlinarith [Real.pi_pos, norm_nonneg m]
     _ = _ := by rw [mul_pow, mul_assoc]
@@ -732,12 +686,12 @@ private theorem one_add_pow_mul_norm_badCoeff_mul_seminorm_le {Ω : Opens E} (χ
       (1 + ‖ζ‖) ^ N * ((1 + ‖n‖) ^ (q + k) * ‖f (ζ - n) * g n.snd‖) ≤ C) (m : ZLattice.dual L) :
     (1 + ‖ζ‖) ^ N * ‖badCoeff L A₁ f g ζ m‖ *
         N[ℂ]_{⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩, k}
-          ((supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst) ≤
+          (χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst) ≤
       ‖(ZLattice.covolume L : ℂ)⁻¹‖ * C * (ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤
-        ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩ k (supportedCutoff χ₁) * (1 + 2 * π) ^ k) *
-          ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹ := by
+        ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩ k χ₁.toSupportedInTSupport *
+          (1 + 2 * π) ^ k) * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹ := by
   set Sk := ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤
-    ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩ k (supportedCutoff χ₁)
+    ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩ k χ₁.toSupportedInTSupport
   have _hSk : 0 ≤ Sk := apply_nonneg _ _
   have h := one_add_pow_mul_norm_badCoeff_le (L := L) (A₁ := A₁) (P := q + k) hC hfg m
   rw [pow_add] at h
@@ -745,7 +699,7 @@ private theorem one_add_pow_mul_norm_badCoeff_mul_seminorm_le {Ω : Opens E} (χ
   rw [le_mul_inv_iff₀ (by positivity)]
   calc (1 + ‖ζ‖) ^ N * ‖badCoeff L A₁ f g ζ m‖ *
         N[ℂ]_{⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩, k}
-          ((supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst) *
+          (χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst) *
           (1 + ‖(m : WithLp 2 (E × D))‖) ^ q
       ≤ (1 + ‖ζ‖) ^ N * ‖badCoeff L A₁ f g ζ m‖ *
           (Sk * (1 + 2 * π) ^ k * (1 + ‖(m : WithLp 2 (E × D))‖) ^ k) *
@@ -762,14 +716,14 @@ private theorem summable_badCoeff_smul_modulate [DiscreteTopology L] [IsZLattice
     (hfg : ∀ P : ℕ, ∃ C, ∀ n : WithLp 2 (E × D), n.fst ∉ A₁ →
       (1 + ‖ζ‖) ^ N * ((1 + ‖n‖) ^ P * ‖f (ζ - n) * g n.snd‖) ≤ C) :
     Summable fun m ↦ badCoeff L A₁ f g ζ m •
-      (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst := by
+      χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst := by
   set q := Module.finrank ℤ (ZLattice.dual L) + 1
   have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
   choose C hC using hfg
   have hζ : 0 < (1 + ‖ζ‖) ^ N := by positivity
   set b : ℕ → ZLattice.dual L → ℝ := fun k m ↦
     ‖(ZLattice.covolume L : ℂ)⁻¹‖ * max (C (q + k)) 0 * (ContDiffMapSupportedIn.supSeminorm ℂ E
-      ℂ ⊤ ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩ k (supportedCutoff χ₁) *
+      ℂ ⊤ ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩ k χ₁.toSupportedInTSupport *
         (1 + 2 * π) ^ k) * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹ / (1 + ‖ζ‖) ^ N
   have hb (k : ℕ) : Summable (b k) := (hq.mul_left _).div_const _
   refine ContDiffMapSupportedIn.summable_smul_of_le hb fun k m ↦ ?_
@@ -813,29 +767,25 @@ private theorem isCompact_insert_range_tsum [DiscreteTopology L] [IsZLattice ℝ
       (1 + ‖ζ‖) ^ N' * ((1 + ‖n‖) ^ P * ‖f (ζ - n) * g n.snd‖) ≤ C) :
     IsCompact (insert 0 (range fun ζ : Λ ↦ ∑' m : ZLattice.dual L,
       ((((1 + ‖(ζ : WithLp 2 (E × D))‖) ^ N : ℝ) : ℂ) * badCoeff L A₁ f g ζ m) •
-        (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst)) := by
+        χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst)) := by
   set q := Module.finrank ℤ (ZLattice.dual L) + 1
   have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
   set K : Compacts E := ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩
   set a := ‖(ZLattice.covolume L : ℂ)⁻¹‖
   choose C hC using hfg
-  set Sk : ℕ → ℝ := fun k ↦ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k (supportedCutoff χ₁)
+  set Sk : ℕ → ℝ := fun k ↦
+    ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ₁.toSupportedInTSupport
   set b : ℕ → ZLattice.dual L → ℝ := fun k m ↦
     a * max (C N (q + k)) 0 * (Sk k * (1 + 2 * π) ^ k) * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹
   have hb (k : ℕ) : Summable (b k) := hq.mul_left _
   set c : Λ → ZLattice.dual L → ℂ := fun ζ m ↦
     (((1 + ‖(ζ : WithLp 2 (E × D))‖) ^ N : ℝ) : ℂ) * badCoeff L A₁ f g ζ m
   have hbound (ζ : Λ) (k : ℕ) (m : ZLattice.dual L) :
-      ‖c ζ m‖ * N[ℂ]_{K, k} ((supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst) ≤
+      ‖c ζ m‖ * N[ℂ]_{K, k} (χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst) ≤
         b k m := by
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
     exact one_add_pow_mul_norm_badCoeff_mul_seminorm_le χ₁ (le_max_right _ _)
       (fun n hn ↦ (hC N (q + k) ζ ζ.property n hn).trans (le_max_left _ _)) m
-  have hb0 (k : ℕ) (m : ZLattice.dual L) : ‖(0 : ℂ)‖ *
-      N[ℂ]_{K, k} ((supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst) ≤ b k m := by
-    rw [norm_zero, zero_mul]
-    have _hSk : 0 ≤ Sk k := apply_nonneg _ _
-    positivity
   -- Each coefficient is continuous in `ζ`.
   have hcont (m : ZLattice.dual L) : Continuous fun ζ : Λ ↦ c ζ m :=
     (Complex.continuous_ofReal.comp ((continuous_const.add
@@ -845,18 +795,7 @@ private theorem isCompact_insert_range_tsum [DiscreteTopology L] [IsZLattice ℝ
   have hlim (m : ZLattice.dual L) : Tendsto (fun ζ : Λ ↦ c ζ m) (cocompact Λ) (𝓝 0) :=
     tendsto_one_add_pow_mul_badCoeff hΛ (le_max_right (C (N + 1) 0) 0)
       (fun ζ hζ n hn ↦ (hC (N + 1) 0 ζ hζ n hn).trans (le_max_left _ _)) m
-  have hF : Continuous fun ζ : Λ ↦ ∑' m, c ζ m •
-      (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst :=
-    continuous_iff_continuousAt.2 fun ζ₀ ↦
-      ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated hb (Eventually.of_forall (hbound ·))
-        (hbound ζ₀) fun m ↦ (hcont m).continuousAt
-  have hF0 : Tendsto (fun ζ : Λ ↦ ∑' m, c ζ m •
-      (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst) (cocompact Λ) (𝓝 0) := by
-    have h := ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated (c₀ := 0) hb
-      (Eventually.of_forall (hbound ·)) hb0 hlim
-    simp only [Pi.zero_apply, zero_smul, tsum_zero] at h
-    exact h
-  exact hF0.isCompact_insert_range_of_cocompact hF
+  exact ContDiffMapSupportedIn.isCompact_insert_range_tsum_smul hb hbound hcont hlim
 
 /-! ### The seminorms of the tensor product -/
 
@@ -871,17 +810,12 @@ private theorem mul_norm_add_complexPairing_tsum_le (S : 𝓓'(Ω, ℂ)) {K : Co
     (hc : Summable fun m ↦ c m • v m) {G : ℂ} {A B : ℝ} (hG : w * ‖G‖ ≤ A)
     (hS : ‖S.complexPairing (ofSupportedIn hK (∑' m, ((w : ℂ) * c m) • v m))‖ ≤ B) :
     w * ‖G + S.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖ ≤ A + B := by
-  have hw' : w * ‖S.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖ =
-      ‖S.complexPairing (ofSupportedIn hK (∑' m, ((w : ℂ) * c m) • v m))‖ := by
-    simp_rw [mul_smul]
-    rw [hc.tsum_const_smul, ← coe_ofSupportedInCLM (𝕜 := ℂ) hK, map_smul, map_smul,
-      smul_eq_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg hw]
   calc w * ‖G + S.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖
       ≤ w * ‖G‖ + w * ‖S.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖ := by
         rw [← mul_add]
         gcongr
         exact norm_add_le _ _
-    _ ≤ A + B := add_le_add hG (hw' ▸ hS)
+    _ ≤ A + B := add_le_add hG (mul_norm_complexPairing_tsum_smul S hK hw hc ▸ hS)
 
 /-- **The seminorm estimate for a product cutoff.** Let `χ (x, y) = χ₁ x χ₂ y` be equal to one on
 the support of `φ`, let `A₁` and `A₂` be closed cones avoiding `Γ₁` over `tsupport χ₁` and
@@ -943,7 +877,7 @@ private theorem exists_seminorm_localFourier_tensorProduct_le_of_cutoff (T : �
   -- The terms off `A₁`: the weighted series lies in the compact set `hQ`.
   have hbadle := hp'le u (ofSupportedIn χ₁.tsupport_subset (∑' m : ZLattice.dual L,
       ((((1 + ‖ζ‖) ^ N : ℝ) : ℂ) * badCoeff L A₁ f g ζ m) •
-        (supportedCutoff χ₁).modulate (m : WithLp 2 (E × D)).fst))
+        χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst))
     (mem_image_of_mem _ (mem_insert_of_mem _ ⟨⟨ζ, hζ⟩, rfl⟩))
   refine (mul_norm_add_complexPairing_tsum_le S χ₁.tsupport_subset (by positivity) hsum
     (A := K₀ * WaveFrontSpace.seminorm i u) (hgoodle.trans_eq (by rw [hK₀def]; ring))
@@ -1036,9 +970,8 @@ private theorem exists_seminorm_localFourier_tensorProduct_le {Γ₂ : Set (D ×
   refine ⟨∑ i, P i, Seminorm.continuous_finsetSum fun i _ ↦ hP i, fun u ζ hζ ↦ ?_⟩
   -- The sum of the seminorms is evaluated termwise.
   have hcoe : (∑ i, P i) u = ∑ i, P i u := by
-    change FunLike.coeAddMonoidHom _ _ _ (∑ i, P i) u = _
-    rw [map_sum, Finset.sum_apply]
-    rfl
+    rw [← FunLike.coeAddMonoidHom_apply]
+    simp [map_sum, Finset.sum_apply]
   rw [hcoe]
   have hR : (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (u.toDistribution.tensorProduct T hV.subset)).localFourier j.cutoff ζ =

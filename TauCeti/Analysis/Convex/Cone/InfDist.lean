@@ -19,7 +19,9 @@ homogeneous:
 
 * `AddSubmonoidClass.infDist_add_le`: `dist(x + y, C) ≤ dist(x, C) + dist(y, C)`, for every
   additive submonoid `C`;
-* `PointedCone.infDist_smul`: `dist(c x, C) = c dist(x, C)` for `c ≥ 0`.
+* `PointedCone.infDist_smul`: `dist(c x, C) = c dist(x, C)` for `c ≥ 0`; for `c > 0` this is
+  `Metric.infDist_smul_of_forall_smul_mem`, which holds for every set closed under multiplication
+  by positive scalars.
 
 Consequently the distance from a nonnegative combination `∑ cᵢ xᵢ` to `C` is at most
 `∑ cᵢ dist(xᵢ, C)`. This is how an estimate on the distance of a sum of two-forms to a cone of
@@ -50,6 +52,17 @@ theorem AddSubmonoidClass.infDist_add_le {T : Type*} [SetLike T E] [AddSubmonoid
   have h₂ : dist (x + y) (z + w) ≤ dist x z + dist y w := dist_add_add_le x y z w
   linarith
 
+/-- **The distance to a set closed under positive scaling is positively homogeneous**:
+`dist(t x, Z) = t dist(x, Z)` for `t > 0`, since then `t • Z = Z`. -/
+theorem Metric.infDist_smul_of_forall_smul_mem [Module ℝ E] [NormSMulClass ℝ E] {Z : Set E}
+    (hZ : ∀ t : ℝ, 0 < t → ∀ z ∈ Z, t • z ∈ Z) {t : ℝ} (ht : 0 < t) (x : E) :
+    infDist (t • x) Z = t * infDist x Z := by
+  have hZt : t • Z = Z := Set.ext fun z ↦ by
+    rw [Set.mem_smul_set_iff_inv_smul_mem₀ ht.ne']
+    exact ⟨fun h ↦ by simpa [smul_inv_smul₀ ht.ne'] using hZ t ht _ h, hZ _ (inv_pos.2 ht) z⟩
+  have h := infDist_smul₀ t Z x
+  rwa [hZt, Real.norm_of_nonneg ht.le] at h
+
 namespace PointedCone
 
 variable [Module ℝ E] [NormSMulClass ℝ E] (C : PointedCone ℝ E)
@@ -60,12 +73,6 @@ theorem infDist_smul {c : ℝ} (hc : 0 ≤ c) (x : E) :
     infDist (c • x) (C : Set E) = c * infDist x (C : Set E) := by
   rcases hc.eq_or_lt with rfl | hc
   · rw [zero_smul, zero_mul, infDist_zero_of_mem C.zero_mem]
-  -- A positive multiple of `C` is `C` itself.
-  have hcC : c • (C : Set E) = C := Set.ext fun z ↦ by
-    rw [Set.mem_smul_set_iff_inv_smul_mem₀ hc.ne']
-    exact ⟨fun h ↦ by simpa [smul_inv_smul₀ hc.ne'] using C.smul_mem hc.le h,
-      C.smul_mem (inv_nonneg.2 hc.le)⟩
-  have h := infDist_smul₀ c (C : Set E) x
-  rwa [hcC, Real.norm_of_nonneg hc.le] at h
+  exact infDist_smul_of_forall_smul_mem (fun _ ht _ hz ↦ C.smul_mem ht.le hz) hc x
 
 end PointedCone

@@ -22,8 +22,8 @@ its sum converges to the sum of the limit series
 
 With the parameter in a topological space, this gives the continuity of such series; with the
 coefficients tending to zero at infinity, it gives a compact set `{0} ∪ {∑ m, c x m • v m}` of
-`C^n` functions supported in `K`, as used for the Fourier series of test functions with modulated
-cutoffs `v m`.
+`C^n` functions supported in `K` (`ContDiffMapSupportedIn.isCompact_insert_range_tsum_smul`), as
+used for the Fourier series of test functions with modulated cutoffs `v m`.
 -/
 
 public section
@@ -85,5 +85,25 @@ theorem tendsto_tsum_smul_of_dominated {X ι : Type*} {l : Filter X} {v : ι →
     rw [map_smul_eq_mul]
     exact hdom hx m
   · simpa only [map_smul_eq_mul] using hxε
+
+/-- **A compact set of dominated series in `𝓓^n_K`.** If the products `‖c x m‖ N_k (v m)` are
+dominated by summable sequences `b k m`, uniformly in `x`, and each coefficient `c x m` depends
+continuously on `x` and tends to zero at infinity, then the series `∑ m, c x m • v m`, together
+with `0`, form a compact set. -/
+theorem isCompact_insert_range_tsum_smul {X ι : Type*} [TopologicalSpace X]
+    {v : ι → 𝓓^{n}_{K}(E, F)} {c : X → ι → 𝕜} {b : ℕ → ι → ℝ} (hb : ∀ k, Summable (b k))
+    (hc : ∀ x k m, ‖c x m‖ * N[𝕜]_{K, n, k} (v m) ≤ b k m) (hcont : ∀ m, Continuous (c · m))
+    (hlim : ∀ m, Tendsto (c · m) (cocompact X) (𝓝 0)) :
+    IsCompact (insert 0 (Set.range fun x ↦ ∑' m, c x m • v m)) := by
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · simp [Set.range_eq_empty]
+  have hc₀ (k : ℕ) (m : ι) : ‖(0 : 𝕜)‖ * N[𝕜]_{K, n, k} (v m) ≤ b k m := by
+    rw [norm_zero, zero_mul]
+    exact (by positivity : 0 ≤ ‖c x₀ m‖ * N[𝕜]_{K, n, k} (v m)).trans (hc x₀ k m)
+  have hF0 := tendsto_tsum_smul_of_dominated (c₀ := 0) hb (Eventually.of_forall hc) hc₀ hlim
+  simp only [Pi.zero_apply, zero_smul, tsum_zero] at hF0
+  exact hF0.isCompact_insert_range_of_cocompact <| continuous_iff_continuousAt.2 fun x ↦
+    tendsto_tsum_smul_of_dominated hb (Eventually.of_forall hc) (hc x) fun m ↦
+      (hcont m).continuousAt
 
 end ContDiffMapSupportedIn

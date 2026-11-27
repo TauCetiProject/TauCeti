@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
+public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.Fourier.PoissonSummation
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.SmoothSeries
@@ -53,6 +54,9 @@ the resulting double series converge.
   `χ` supported in `K` by the character of frequency `w`.
 * `ContDiffMapSupportedIn.modulateCLM`: modulation by a fixed frequency, as a continuous linear
   map.
+* `TestFunction.toSupportedInTSupport`: a test function `χ` on an open set, as a function
+  supported in the compact set `tsupport χ`, whose modulations are the modulated cutoffs of
+  Fourier series with cutoff `χ`.
 
 ## Main results
 
@@ -439,3 +443,22 @@ theorem hasSum_fourier_smul_modulate (φ χ : 𝓓_{K}(E, ℂ))
     (mod_cast le_top), hφ]
 
 end ContDiffMapSupportedIn
+
+namespace TestFunction
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞}
+
+/-- A test function `χ` on `Ω`, as a `C^n` function supported in the compact set `tsupport χ`.
+Its modulations `χ.toSupportedInTSupport.modulate w` are the modulated cutoffs of the Fourier
+series with cutoff `χ`. -/
+def toSupportedInTSupport (χ : 𝓓^{n}(Ω, F)) :
+    𝓓^{n}_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩}(E, F) :=
+  .of_support_subset χ.contDiff (subset_tsupport _)
+
+@[simp]
+theorem coe_toSupportedInTSupport (χ : 𝓓^{n}(Ω, F)) : ⇑χ.toSupportedInTSupport = χ := by
+  rw [toSupportedInTSupport]
+  rfl
+
+end TestFunction

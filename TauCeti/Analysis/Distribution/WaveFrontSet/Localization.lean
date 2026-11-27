@@ -47,7 +47,10 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 
 * `Distribution.localFourier_eq_complexPairing_modulate`,
   `Distribution.localFourier_eq_complexPairing_mul_modulate`: the localized Fourier transform as
-  the pairing with a modulated test function.
+  the pairing with a modulated test function; `Distribution.hasSum_mul_localFourier_neg` pairs
+  `T` with a convergent series of modulated cutoffs termwise, and
+  `Distribution.mul_norm_complexPairing_tsum_smul` moves a weight into the coefficients of such a
+  series.
 * `Distribution.exists_norm_localFourier_le`: the localized Fourier transform of a distribution
   grows at most polynomially, with a degree and a constant that are uniform over the cutoffs
   supported in a fixed compact set with bounded derivatives
@@ -138,6 +141,36 @@ theorem localFourier_eq_complexPairing_modulate (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(
   congr 2
   push_cast
   ring
+
+omit [FiniteDimensional ℝ E] in
+/-- **The pairing with a series of modulated cutoffs.** If the series `∑ m, c m • χ e_{w m}` of
+modulations of the cutoff `χ` converges in `𝓓_{tsupport χ}`, then the pairing of `T` with it is
+the series `∑ m, c m T.localFourier χ (-w m)`. -/
+theorem hasSum_mul_localFourier_neg (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ)) {ι : Type*} {c : ι → ℂ}
+    {w : ι → E} (hc : Summable fun m ↦ c m • χ.toSupportedInTSupport.modulate (w m)) :
+    HasSum (fun m ↦ c m * T.localFourier χ (-w m)) (T.complexPairing
+      (ofSupportedIn χ.tsupport_subset (∑' m, c m • χ.toSupportedInTSupport.modulate (w m)))) := by
+  have hfun : (fun m ↦ c m * T.localFourier χ (-w m)) =
+      (T.complexPairing.comp (ofSupportedInCLM ℂ χ.tsupport_subset)) ∘
+        fun m ↦ c m • χ.toSupportedInTSupport.modulate (w m) := by
+    ext m
+    rw [Function.comp_apply, map_smul, smul_eq_mul, ContinuousLinearMap.comp_apply,
+      coe_ofSupportedInCLM, localFourier_eq_complexPairing_modulate T χ.tsupport_subset
+        (f := χ.toSupportedInTSupport) (congrFun (coe_toSupportedInTSupport χ)), neg_neg]
+  rw [hfun]
+  exact (T.complexPairing.comp (ofSupportedInCLM ℂ χ.tsupport_subset)).hasSum hc.hasSum
+
+omit [FiniteDimensional ℝ E] in
+/-- A weight `w ≥ 0` of the pairing of `T` with a convergent series in `𝓓_K` moves into the
+coefficients of the series. -/
+theorem mul_norm_complexPairing_tsum_smul (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
+    (hK : (K : Set E) ⊆ Ω) {ι : Type*} {c : ι → ℂ} {v : ι → 𝓓_{K}(E, ℂ)} {w : ℝ} (hw : 0 ≤ w)
+    (hc : Summable fun m ↦ c m • v m) :
+    w * ‖T.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖ =
+      ‖T.complexPairing (ofSupportedIn hK (∑' m, ((w : ℂ) * c m) • v m))‖ := by
+  simp_rw [mul_smul]
+  rw [hc.tsum_const_smul, ← coe_ofSupportedInCLM (𝕜 := ℂ) hK, map_smul, map_smul, smul_eq_mul,
+    norm_mul, Complex.norm_real, Real.norm_of_nonneg hw]
 
 omit [FiniteDimensional ℝ E] in
 /-- If the cutoff `ψ` is `φ f` with `f` a test function supported in a compact set `K ⊆ Ω`, the
