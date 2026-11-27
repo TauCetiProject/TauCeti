@@ -75,10 +75,12 @@ and for the third when `X` and `Z` are.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_compositeCorrespondence`: over a
   field, for `X` integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has the dimension
   of `X`.
-* `AlgebraicGeometry.Scheme.RationalMap.surjective_compositeCorrespondenceToGraphYZ`: for `X`, `Z`
-  proper over `S` and `γ_g` quasi-compact, `(q_Y, q_Z)` is surjective: on `U ∩ f⁻¹(V_g)`
+* `AlgebraicGeometry.Scheme.RationalMap.isDominant_compositeCorrespondenceToGraphYZ`: for `γ_g`
+  quasi-compact, `(q_Y, q_Z)` is dominant: on `U ∩ f⁻¹(V_g)`
   (`AlgebraicGeometry.Scheme.RationalMap.compositeDomainYZ`) it is the dominant restriction of `f`
   followed by the dominant inclusion of `V_g` into `Γ_g`.
+* `AlgebraicGeometry.Scheme.RationalMap.surjective_compositeCorrespondenceToGraphYZ`: for `X`, `Z`
+  proper over `S` and `γ_g` quasi-compact, `(q_Y, q_Z)` is surjective, being proper and dominant.
 * `AlgebraicGeometry.Scheme.RationalMap.isProper_compositeCorrespondenceToGraphXY`,
   `AlgebraicGeometry.Scheme.RationalMap.isProper_compositeCorrespondenceToGraphXZ`,
   `AlgebraicGeometry.Scheme.RationalMap.isProper_compositeCorrespondenceToGraphYZ`: the three
@@ -608,20 +610,25 @@ theorem homOfLE_toCompositeCorrespondence_compositeCorrespondenceToGraphYZ :
   rw [← cancel_mono (graphι g)]
   simpa using homOfLE_opensGraph_tripleToYZ sX sY sZ f g
 
-/-- **`(q_Y, q_Z)` is surjective.** For `X` and `Z` proper over `S` and `γ_g` quasi-compact (for
-instance for `Y` Noetherian), `(q_Y, q_Z) : W_{f,g} → Γ_g` is surjective: it is proper, hence
-closed, and dominant, since on `U ∩ f⁻¹(V_g)` it is the dominant restriction of `f` followed by
-the inclusion `V_g → Γ_g`, which is dominant as `γ_g` is quasi-compact. -/
-instance surjective_compositeCorrespondenceToGraphYZ [IsProper sX] [IsProper sZ]
-    [QuasiCompact (graphLift g)] :
-    Surjective (compositeCorrespondenceToGraphYZ sX sY sZ f g) := by
+/-- **`(q_Y, q_Z)` is dominant.** For `γ_g` quasi-compact (for instance for `Y` Noetherian),
+`(q_Y, q_Z) : W_{f,g} → Γ_g` is dominant: on `U ∩ f⁻¹(V_g)` it is the dominant restriction of `f`
+followed by the inclusion `V_g → Γ_g`, which is dominant as `γ_g` is quasi-compact. -/
+instance isDominant_compositeCorrespondenceToGraphYZ [QuasiCompact (graphLift g)] :
+    IsDominant (compositeCorrespondenceToGraphYZ sX sY sZ f g) := by
   have : IsDominant ((X.homOfLE (compositeDomainYZ_le_compositeDomain f g) ≫
       toCompositeCorrespondence sX sY sZ f g) ≫ compositeCorrespondenceToGraphYZ sX sY sZ f g) := by
     rw [Category.assoc, homOfLE_toCompositeCorrespondence_compositeCorrespondenceToGraphYZ]
     infer_instance
-  have := IsDominant.of_comp (X.homOfLE (compositeDomainYZ_le_compositeDomain f g) ≫
+  exact IsDominant.of_comp (X.homOfLE (compositeDomainYZ_le_compositeDomain f g) ≫
       toCompositeCorrespondence sX sY sZ f g) (compositeCorrespondenceToGraphYZ sX sY sZ f g)
-  exact surjective_of_isDominant_of_isClosed_range _ (Scheme.Hom.isClosedMap _).isClosed_range
+
+/-- **`(q_Y, q_Z)` is surjective.** For `X` and `Z` proper over `S` and `γ_g` quasi-compact (for
+instance for `Y` Noetherian), `(q_Y, q_Z) : W_{f,g} → Γ_g` is surjective: it is proper, hence
+closed, and dominant (`isDominant_compositeCorrespondenceToGraphYZ`). -/
+instance surjective_compositeCorrespondenceToGraphYZ [IsProper sX] [IsProper sZ]
+    [QuasiCompact (graphLift g)] :
+    Surjective (compositeCorrespondenceToGraphYZ sX sY sZ f g) :=
+  surjective_of_isDominant_of_isClosed_range _ (Scheme.Hom.isClosedMap _).isClosed_range
 
 end Surjective
 
