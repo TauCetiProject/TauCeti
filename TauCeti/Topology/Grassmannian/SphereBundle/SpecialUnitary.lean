@@ -15,11 +15,11 @@ vector `e₀` gives the map `SU(1 + n) → S`, `A ↦ A e₀` (`TauCeti.specialU
 unit sphere `S` of `EuclideanSpace 𝕜 (Fin (1 + n))`. Over `ℂ` this sphere is `S^(2n+1)`. The
 fibre of the map over `e₀` is the block subgroup `diag(1, SU(n))`, the image of
 `Matrix.specialUnitaryGroup.fromBlocksOne 𝕜 1 n`. For `n ≥ 1` the map is surjective and a locally
-trivial bundle with fibre `SU(n)`, and hence a Serre fibration. Its fibres are path connected
-whenever `SU(n)` is, as over `ℂ` and over `ℝ`. For `n = 2` and `𝕜 = ℂ` this is the
-bundle `SU(2) → SU(3) → S⁵`, with the block inclusion `B ↦ diag(1, B)` and the projection to the
-first column. Over `ℝ` it is the bundle `SO(n) → SO(1 + n) → Sⁿ` of
-`TauCeti.Topology.Grassmannian.SphereBundle.Basic`.
+trivial bundle with fibre `SU(n)`, and hence a Serre fibration. Its nonempty fibres (the fibre
+through each point of `SU(1 + n)`) are path connected whenever `SU(n)` is, as over `ℂ` and over
+`ℝ`. For `n = 2` and `𝕜 = ℂ` this is the bundle `SU(2) → SU(3) → S⁵`, with the block inclusion
+`B ↦ diag(1, B)` and the projection to the first column. Over `ℝ` it is the bundle
+`SO(n) → SO(1 + n) → Sⁿ` of `TauCeti.Topology.Grassmannian.SphereBundle.Basic`.
 
 A unit vector is an orthonormal one-frame (`TauCeti.finiteOrthonormalFrame.sphereHomeomorph`), and
 under this identification `A ↦ A e₀` is the special unitary Stiefel map
@@ -43,8 +43,8 @@ surjective: `SU(1)` is trivial, while the unit sphere of `𝕜` is not a point.
 * `TauCeti.exists_trivialization_specialUnitarySphereMap`: a chart with fibre `SU(n)` around each
   point of the sphere.
 * `TauCeti.specialUnitarySphereMap_mem_serreFibrations`: `SU(1 + n) → S` is a Serre fibration.
-* `TauCeti.isPathConnected_specialUnitarySphereMap_preimage_singleton`: the fibres are path
-  connected whenever `SU(n)` is.
+* `TauCeti.isPathConnected_specialUnitarySphereMap_preimage_singleton`: the fibre through each
+  point of `SU(1 + n)` is path connected whenever `SU(n)` is.
 
 ## References
 
