@@ -75,12 +75,6 @@ theorem inducedMap_mem {T : X → X} {A : Set X} {x : X} (h : positiveReturnTime
     inducedMap T A x ∈ A :=
   iterate_toNat_positiveReturnTime_mem h
 
-/-- **Check.** For the identity map every point of `A` returns at time `1`. -/
-theorem positiveReturnTime_id_of_mem {A : Set X} {x : X} (hx : x ∈ A) :
-    positiveReturnTime id A x = 1 := by
-  rw [← Nat.cast_one, positiveReturnTime_eq_coe_iff one_pos]
-  exact ⟨by simpa using hx, fun i hi hi' ↦ by omega⟩
-
 /-- **Check.** The induced map of the identity is the identity. -/
 @[simp]
 theorem inducedMap_id (A : Set X) : inducedMap id A = id :=
