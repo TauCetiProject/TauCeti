@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AdicSystem
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
@@ -309,6 +310,19 @@ theorem reductionMap_add (u v : M →ₗ[A] N) :
 theorem limMap_reductionMap_toLimReduction (u : M →ₗ[A] N) (x : M) :
     limMap (reductionMap I u) (toLimReduction I M x) = toLimReduction I N (u x) :=
   Subtype.ext <| funext fun n ↦ by simp
+
+/-- `limReductionEquiv` intertwines `limMap` of a reduced linear map with `AdicCompletion.map`. -/
+@[simp]
+theorem limReductionEquiv_limMap_reductionMap (u : M →ₗ[A] N) (y : (reduction I M).lim) :
+    limReductionEquiv I N (limMap (reductionMap I u) y) =
+      AdicCompletion.map I u (limReductionEquiv I M y) := by
+  ext n
+  obtain ⟨m, hm⟩ := quotientsπ_surjective _ _ n ((reduction I M).limπ n y)
+  have hm' : (reduction I N).limπ n (limMap (reductionMap I u) y) = reductionπ I N n (u m) := by
+    rw [← LinearMap.comp_apply, limπ_comp_limMap, LinearMap.comp_apply, ← hm,
+      reductionMap_app_reductionπ]
+  rw [limReductionEquiv_apply_val I N hm', AdicCompletion.map_val_apply,
+    limReductionEquiv_apply_val I M hm.symm, LinearMap.reduceModIdeal_apply]
 
 /-- Reduction along `I` as a functor from `A`-modules to towers. -/
 @[expose, simps]

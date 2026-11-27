@@ -43,6 +43,9 @@ completion, and the computation of the sections holds for every ideal of every c
 * `AlgebraicGeometry.Scheme.formalCompletion.coe_completionFunctorSectionsLimEquiv_symm_of_apply`:
   the image of a global section of `M` in the completion corresponds to the family of its
   restrictions.
+* `AlgebraicGeometry.Scheme.formalCompletion.completionFunctorSectionsLimEquiv_limMap`: the
+  identification is natural in `M`, the completion of `φ : M ⟶ N` acting on the limits of the
+  sections as `AdicCompletion.map` of the map of global sections of `φ`.
 
 ## References
 
@@ -202,6 +205,27 @@ theorem completionFunctorSectionsTowerIso_hom_app_reductionπ (n : ℕ)
         ((toScheme _ _ n).pullbackSections M.obj ⊤ x) :=
   (ModuleTower.quotientsLiftEquiv_quotientsπ _ _ n _ _ _ x).trans (sectionsπ_apply J M n x)
 
+/-- `completionFunctorSectionsTowerIso` is natural in `M`: for a morphism `φ : M ⟶ N` of finitely
+presented modules on `Spec R`, it carries the reduction of the map of global sections of `φ` to the
+tower of global sections of the completion of `φ`. -/
+@[reassoc]
+theorem completionFunctorSectionsTowerIso_hom_naturality
+    {M N : FinitelyPresentedSheaf (Spec (CommRingCat.of R))} (φ : M ⟶ N) :
+    ModuleTower.reductionMap J (moduleSpecΓFunctor.map φ.hom).hom ≫
+        (completionFunctorSectionsTowerIso J N).hom =
+      (completionFunctorSectionsTowerIso J M).hom ≫ (CoherentFormalModule.sectionsTower J).map
+        ((CoherentFormalModule.pullback (specIso J).inv).map ((completionFunctor _ _).map φ)) := by
+  ext ⟨n⟩ x
+  simp only [LinearMap.comp_apply, NatTrans.comp_app, ModuleCat.hom_comp]
+  -- `ext` presents the class of `x` through `quotientsπ`, which only unfolds to the `reductionπ`
+  -- of the lemmas below up to reducible transparency.
+  erw [ModuleTower.reductionMap_app_reductionπ,
+    completionFunctorSectionsTowerIso_hom_app_reductionπ,
+    completionFunctorSectionsTowerIso_hom_app_reductionπ]
+  -- Both sides restrict `x` to the `n`-th level and apply `φ`, in either order.
+  exact ((Scheme.Hom.pullbackSections_naturality _ _ ⊤ _ _).trans
+    (congrArg _ (Scheme.Hom.pullbackSections_naturality _ _ ⊤ φ.hom x))).symm
+
 /-- **The inverse limit of the sections of the completion of `M` is the `J`-adic completion of
 `Γ(M)`** (Stacks, Section 30.23, Equation (30.23.3.1)): for an ideal `J` of `R` and a finitely
 presented module `M` on `Spec R`, the limit of the tower of global sections of the completion of
@@ -232,6 +256,31 @@ theorem coe_completionFunctorSectionsLimEquiv_symm_of_apply (x : moduleSpecΓFun
   rw [completionFunctorSectionsLimEquiv, LinearEquiv.symm_trans_apply,
     ← ModuleTower.limReductionEquiv_toLimReduction, LinearEquiv.symm_apply_apply]
   simpa using completionFunctorSectionsTowerIso_hom_app_reductionπ J M n x
+
+/-- `completionFunctorSectionsLimEquiv` is natural in `M`: on the `J`-adic completions of the global
+sections, the limit of the tower of global sections of the completion of `φ : M ⟶ N` is the
+completion `AdicCompletion.map J Γ(φ)` of the map of global sections of `φ`. -/
+theorem completionFunctorSectionsLimEquiv_limMap
+    {M N : FinitelyPresentedSheaf (Spec (CommRingCat.of R))} (φ : M ⟶ N)
+    (y : ((CoherentFormalModule.sectionsTower J).obj
+        ((CoherentFormalModule.pullback (specIso J).inv).obj
+          ((completionFunctor _ _).obj M))).lim) :
+    completionFunctorSectionsLimEquiv J N (ModuleTower.limMap ((CoherentFormalModule.sectionsTower
+        J).map ((CoherentFormalModule.pullback (specIso J).inv).map
+          ((completionFunctor _ _).map φ))) y) =
+      AdicCompletion.map J (moduleSpecΓFunctor.map φ.hom).hom
+        (completionFunctorSectionsLimEquiv J M y) := by
+  have h : (completionFunctorSectionsTowerIso J M).inv ≫
+      ModuleTower.reductionMap J (moduleSpecΓFunctor.map φ.hom).hom =
+        (CoherentFormalModule.sectionsTower J).map ((CoherentFormalModule.pullback
+          (specIso J).inv).map ((completionFunctor _ _).map φ)) ≫
+            (completionFunctorSectionsTowerIso J N).inv := by
+    rw [Iso.inv_comp_eq, ← Category.assoc, ← completionFunctorSectionsTowerIso_hom_naturality,
+      Category.assoc, Iso.hom_inv_id, Category.comp_id]
+  simp only [completionFunctorSectionsLimEquiv, LinearEquiv.trans_apply,
+    ModuleTower.limEquivOfIso_symm_apply, ← ModuleTower.limReductionEquiv_limMap_reductionMap]
+  rw [← LinearMap.comp_apply, ← ModuleTower.limMap_comp, ← LinearMap.comp_apply,
+    ← ModuleTower.limMap_comp, h]
 
 end
 
