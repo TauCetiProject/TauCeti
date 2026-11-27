@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.QuantumMetric.StateEDist
 public import TauCeti.Analysis.Normed.Order.StateSpace
-import Mathlib.Topology.MetricSpace.Equicontinuity
+import TauCeti.Analysis.Normed.Operator.Dense
 import Mathlib.Topology.Semicontinuity.Basic
 
 /-!
@@ -113,14 +113,12 @@ theorem tendsto_of_stateEDist_tendsto_zero (he : IsOrderUnitNorm e) {ι : Type*}
           ((OrderUnit.apply_eq_one_of_mem_stateSpace (φ i).property).trans
             (OrderUnit.apply_eq_one_of_mem_stateSpace ψ.property).symm) a)
     simpa using ENNReal.Tendsto.const_mul h (a := L a) (Or.inr (L.mem_domain.1 ha))
-  have hcont : Equicontinuous (fun i a => (φ i : WeakDual ℝ E) a) := by
-    apply Metric.equicontinuous_of_continuity_modulus id tendsto_id
-    intro a b i
-    simpa [Real.dist_eq, dist_eq_norm, map_sub] using
-      he.abs_apply_le_of_mem_stateSpace (φ i).property (a - b)
-  have hclosed := hcont.isClosed_setOfPred_tendsto (l := l) (map_continuous (ψ : WeakDual ℝ E))
   apply tendsto_iff_forall_eval_tendsto_topDualPairing.2
-  exact fun a => L.dense_domain.induction hfinite hclosed a
+  intro a
+  exact ContinuousLinearMap.tendsto_apply_of_dense (σ₁₂ := RingHom.id ℝ) (l := l)
+    L.dense_domain (f := fun i => WeakDual.toStrongDual (φ i)) (g := WeakDual.toStrongDual ψ)
+    (C := 1) (.of_forall fun i => (he.norm_toStrongDual_of_mem_stateSpace (φ i).property).le)
+    hfinite a
 
 /-- The inclusion from the state metric topology into the weak-star dual is continuous.
 This expresses that the state metric topology is finer than the weak-star subspace topology. -/
