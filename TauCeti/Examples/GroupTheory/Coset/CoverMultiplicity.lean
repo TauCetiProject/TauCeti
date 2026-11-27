@@ -19,16 +19,16 @@ and the multiplicity is `0` exactly when `J` is infinite.
 
 public section
 
-namespace TauCeti.Examples.CoverMultiplicity
-
 open MulAction
+
+namespace TauCeti.Examples.CoverMultiplicity
 
 /-- For `S = G`, `A = ⊥` and `T = {J}`, the cover multiplicity of the coset `J` is the order of
 `J`. -/
 theorem coverMultiplicity_top_bot_singleton_one {G : Type*} [Group G] (J : Subgroup G) :
     (⊤ : Subgroup G).coverMultiplicity ⊥ {((1 : G) : G ⧸ J)} ((1 : G) : G ⧸ J) = Nat.card J := by
-  rw [Subgroup.coverMultiplicity_eq_relIndex fun s _ ↦ ?_, top_inf_eq, stabilizer_quotient,
+  rw [Subgroup.coverMultiplicity_eq_relIndex ⟨_, rfl, mem_orbit_self _⟩
+    fun x hx ↦ Set.mem_singleton_iff.1 hx.1 ▸ mem_orbit_self _, top_inf_eq, stabilizer_quotient,
     Subgroup.relIndex_bot_left]
-  simp [eq_comm]
 
 end TauCeti.Examples.CoverMultiplicity

@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.Monoid.Defs
 public import TauCeti.GroupTheory.Coset.CoverMultiplicity
-import Mathlib.Tactic.Group
-import Mathlib.Topology.Algebra.Group.Quotient
 import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Cuts with cover multiplicities dividing a power of `q`
@@ -18,8 +17,10 @@ Let `G` be a group with a topology in which multiplication is separately continu
 a topological group), `S` a subgroup and `A`, `J` compact open subgroups, such as levels in the
 finite adelic points of a reductive group. For a finite set `T` of left cosets of `J`, the cover
 multiplicity `Subgroup.coverMultiplicity S A T t` of a coset `t` counts the classes of `r ∈ S`
-modulo `S ∩ A` with `r⁻¹ • t ∈ T`. This file shows that it is a genuine count: only finitely many
-classes qualify, so it vanishes only when no translate of `T` by `S` contains `t`.
+modulo `S ∩ A` having at least one representative `r` with `r⁻¹ • t ∈ T`. This file shows that it
+is a genuine count: only finitely many classes qualify
+(`Subgroup.finite_orbitWeightCosets_subgroupOf`), so it vanishes only when no translate of `T` by
+`S` contains `t`.
 
 Given a compact set `D ⊆ G` such that for every `x ∈ D` and `u ∈ J` some power
 `(x u x⁻¹) ^ q ^ n` lies in `A`, there is a finite set `T` of cosets of `J`, stable under `S ∩ A`
@@ -35,19 +36,14 @@ have a `q`-power power in `A`.
 What the cut guarantees is coverage and divisibility: every coset whose `S`-orbit meets the image
 of `D` lies in a translate `r • T` with `r ∈ S`, so its multiplicity is nonzero and the inverse
 weight `1 / mult(t)` is defined there, and that multiplicity divides a power of `q`, so the weight
-is a unit in any ring where `q` is a unit. These are the properties of the cut that the integral
-formula of ThetaLiftChainsAndTheSeesawIdentity §3.1 (c) of the roadmap uses, but they do not by
-themselves express an integral as a weighted sum over `T`, and that formula is not proved here.
-It is a later application with further hypotheses on the integrand `f`: besides vanishing where
-the multiplicity vanishes, its orbit averages over the Bessel subgroup `R` (with `S = R_f`) must
-factor as an index `[K° : J]` times an archimedean factor times `b(t_f)` whenever `t_f J ∈ T`,
-for a function `b` on the cosets of `J`, and the sum over `T` is then of the values
-`b(t) / mult(t)`, not of raw values of `f`.
+is a unit in any ring where `q` is a unit.
 
 ## Main results
 
-* `Subgroup.coverMultiplicity_ne_zero_iff`: for `A` open, `J` compact and `T` finite, the cover
-  multiplicity of `t` is nonzero exactly when some translate of `T` by `S` contains `t`.
+* `Subgroup.finite_orbitWeightCosets_subgroupOf`: for `A` open, `J` compact and `T` finite, the
+  classes counted by the cover multiplicity form a finite set.
+* `Subgroup.coverMultiplicity_ne_zero_iff`: in that situation, the cover multiplicity of `t` is
+  nonzero exactly when some translate of `T` by `S` contains `t`.
 * `Subgroup.exists_finset_coverMultiplicity_dvd_pow`: the existence of the finite set `T` above.
 * `Subgroup.exists_finset_coverMultiplicity_dvd_pow_of_le`: the same for levels `J ≤ A`, with `T`
   inside a subgroup `B ⊇ A` containing `D`, at the points of `T` and at the points satisfying a
@@ -73,27 +69,37 @@ namespace Subgroup
 variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   {S A J : Subgroup G}
 
+variable (S) in
 /-- **The cover multiplicity is a finite count.** For `A` open, `J` compact and `T` a finite set of
-left cosets of `J`, only finitely many classes of `r ∈ S` modulo `S ∩ A` satisfy `r⁻¹ • t ∈ T`, so
-the cover multiplicity of `t` is nonzero exactly when one does. -/
+left cosets of `J`, only finitely many classes of `r ∈ S` modulo `S ∩ A` have a representative
+`r` with `r⁻¹ • t ∈ T`: the cosets counted by `Subgroup.coverMultiplicity S A T t` form a finite
+set, so the orbit-weight results that assume this, such as
+`Subgroup.orbitWeight_eq_finsum_relIndex`, apply to the cover multiplicity. -/
+theorem finite_orbitWeightCosets_subgroupOf (hA : IsOpen (A : Set G))
+    (hJ : IsCompact (J : Set G)) {T : Set (G ⧸ J)} (hT : T.Finite) (t : G ⧸ J) :
+    ((A.subgroupOf S).orbitWeightCosets T t).Finite := by
+  have : DiscreteTopology (G ⧸ A) := QuotientGroup.discreteTopology hA
+  obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective t
+  -- If `r⁻¹ • xJ = τ`, then `r τ.out` lies in the fibre `x J` of `xJ`, so `r ∈ x J τ.out⁻¹`.
+  have hsub : {r | r ∈ S ∧ r⁻¹ • (x : G ⧸ J) ∈ T} ⊆
+      ⋃ τ ∈ T, (· * τ.out⁻¹) '' (x • (J : Set G)) := by
+    rintro r ⟨-, hr⟩
+    refine Set.mem_biUnion hr ⟨r * (r⁻¹ • (x : G ⧸ J)).out, ?_, mul_inv_cancel_right _ _⟩
+    rw [← QuotientGroup.eq_class_eq_leftCoset, Set.mem_ofPred_eq, ← smul_eq_mul,
+      MulAction.Quotient.coe_smul_out, smul_inv_smul]
+  exact (finite_orbitWeightCosets_subgroupOf_iff S A T _).2 <|
+    ((hT.isCompact_biUnion fun τ _ ↦ (hJ.smul x).image (continuous_mul_const _)).image
+      QuotientGroup.continuous_mk).finite_of_discrete.subset (Set.image_mono hsub)
+
+/-- **Nonvanishing of the cover multiplicity.** For `A` open, `J` compact and `T` a finite set of
+left cosets of `J`, the cover multiplicity of `t` is nonzero exactly when some `r ∈ S` has
+`r⁻¹ • t ∈ T`. -/
 theorem coverMultiplicity_ne_zero_iff (hA : IsOpen (A : Set G)) (hJ : IsCompact (J : Set G))
     {T : Set (G ⧸ J)} (hT : T.Finite) {t : G ⧸ J} :
     S.coverMultiplicity A T t ≠ 0 ↔ ∃ r ∈ S, r⁻¹ • t ∈ T := by
-  have : DiscreteTopology (G ⧸ A) := QuotientGroup.discreteTopology hA
-  obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective t
-  -- The `r` with `r⁻¹ • xJ = yJ` form the compact set `x J y⁻¹`.
-  have hsub : {r | r ∈ S ∧ r⁻¹ • (x : G ⧸ J) ∈ T} ⊆
-      ⋃ τ ∈ T, (fun u ↦ x * u * τ.out⁻¹) '' (J : Set G) := by
-    rintro r ⟨-, hr⟩
-    refine Set.mem_biUnion hr ⟨x⁻¹ * r * (r⁻¹ • (x : G ⧸ J)).out, ?_, by group⟩
-    have := QuotientGroup.eq.1 (QuotientGroup.out_eq' (r⁻¹ • (x : G ⧸ J))).symm
-    simpa [mul_assoc] using this
-  have hfin : (((↑) : G → G ⧸ A) '' {r | r ∈ S ∧ r⁻¹ • (x : G ⧸ J) ∈ T}).Finite :=
-    ((hT.isCompact_biUnion fun τ _ ↦ hJ.image ((continuous_mul_const _).comp
-      (continuous_const_mul x))).image QuotientGroup.continuous_mk).finite_of_discrete.subset
-      (Set.image_mono hsub)
-  rw [coverMultiplicity_def, ← Nat.pos_iff_ne_zero, Set.ncard_pos hfin, Set.image_nonempty,
-    Set.Nonempty]
+  rw [coverMultiplicity_eq_ncard_image, ← Nat.pos_iff_ne_zero, Set.ncard_pos
+    ((finite_orbitWeightCosets_subgroupOf_iff S A T t).1
+      (finite_orbitWeightCosets_subgroupOf S hA hJ hT t)), Set.image_nonempty, Set.Nonempty]
   simp only [Set.mem_ofPred_eq]
 
 -- `S` is explicit: no hypothesis of the next theorem determines it.
@@ -128,15 +134,16 @@ theorem exists_finset_coverMultiplicity_dvd_pow (hA : IsCompact (A : Set G))
     rintro _ ⟨a, ha, ρ, hρ, rfl⟩
     exact Set.mem_biUnion hρ ⟨a * ρ.out, ⟨a, ha.2, rfl⟩,
       by rw [← smul_eq_mul, MulAction.Quotient.coe_smul_out]⟩
-  -- `T` meets the `S`-orbit of `ρ ∈ R` exactly in the `(S ∩ A)`-orbit of `ρ`.
-  have hTorbit : ∀ ρ ∈ R, ∀ s ∈ S, s • ρ ∈ T ↔ ∃ a ∈ S ⊓ A, a • ρ = s • ρ := by
-    refine fun ρ hρ s hs ↦ ⟨fun h ↦ ?_, fun ⟨a, ha, hasρ⟩ ↦ ⟨a, ha, ρ, hρ, hasρ⟩⟩
-    obtain ⟨a, ha, ρ', hρ', hasρ⟩ := Set.mem_smul.1 h
-    refine ⟨a, ha, ?_⟩
-    have hρ'ρ : ρ' ∈ orbit S ρ :=
-      ⟨⟨a⁻¹ * s, mul_mem (inv_mem ha.1) hs⟩, by simp [Subgroup.smul_def, mul_smul, ← hasρ]⟩
+  -- `T` meets the `S`-orbit of `ρ ∈ R` only in the `(S ∩ A)`-orbit of `ρ`.
+  have hTorbit : ∀ ρ ∈ R, T ∩ orbit S ρ ⊆ orbit (S ⊓ A : Subgroup G) ρ := by
+    rintro ρ hρ _ ⟨h, hS⟩
+    obtain ⟨a, ha, ρ', hρ', rfl⟩ := Set.mem_smul.1 h
+    obtain ⟨s, hsρ⟩ := mem_orbit_iff.1 hS
+    have hρ'ρ : ρ' ∈ orbit S ρ := mem_orbit_iff.2
+      ⟨⟨a⁻¹ * s, mul_mem (inv_mem (mem_inf.1 ha).1) s.property⟩, by
+        rw [Subgroup.mk_smul, mul_smul, ← Subgroup.smul_def, hsρ, inv_smul_smul]⟩
     obtain rfl := hR.injOn hρ' hρ (orbit_eq_iff.2 hρ'ρ)
-    exact hasρ
+    exact mem_orbit_iff.2 ⟨⟨a, ha⟩, Subgroup.mk_smul a ha _⟩
   refine ⟨hTfin.toFinset, ?_, ?_, ?_⟩ <;>
     simp only [Set.Finite.mem_toFinset, Set.Finite.coe_toFinset]
   · rintro a ha _ ⟨b, hb, ρ, hρ, rfl⟩
@@ -157,27 +164,26 @@ theorem exists_finset_coverMultiplicity_dvd_pow (hA : IsCompact (A : Set G))
   have hne : S.coverMultiplicity A T ρ ≠ 0 := (coverMultiplicity_ne_zero_iff hAo hJ hTfin).2
     ⟨1, one_mem S, by rw [inv_one, one_smul]; exact ⟨1, one_mem _, ρ, hρ, one_smul G ρ⟩⟩
   refine ⟨hne, exists_coverMultiplicity_dvd_pow (hTorbit ρ hρ) hne fun g hg ↦ ?_⟩
-  -- An element of the stabiliser of `ρ = y J` is `y u y⁻¹` with `u ∈ J`.
+  -- An element `g` of the stabiliser of `ρ = y J` is `y u y⁻¹` with `u = y⁻¹ g y ∈ J`.
   obtain ⟨y, hy, rfl⟩ := hRD hρ
-  obtain ⟨n, hn⟩ := hq y hy (y⁻¹ * g * y) <| by
-    simpa [mul_assoc] using inv_mem (QuotientGroup.eq.1 (mem_stabilizer_iff.1 hg.2))
+  obtain ⟨n, hn⟩ := hq y hy (y⁻¹ * g * y)
+    ((TauCeti.smul_quotientGroup_mk_eq_self_iff J g y).1 (mem_stabilizer_iff.1 hg.2))
   exact ⟨n, by simpa [mul_assoc] using hn⟩
 
 /-- **Cuts for levels `J ≤ A` inside a subgroup `B`.** Let `J ≤ A` be open subgroups of `G` with
 `A` compact, `B` a subgroup containing `A`, `D ⊆ B` compact, and `W` a property such that the
-`S`-orbit of every point satisfying `W` meets `D`. Suppose every `x ∈ D` has an `n` with
-`(x u x⁻¹) ^ q ^ n ∈ A` for all `u ∈ J`. Then there is a finite set `T` of left cosets of `J`,
+`S`-orbit of every point satisfying `W` meets `D`. Suppose that for every `x ∈ D` and `u ∈ J` some
+power `(x u x⁻¹) ^ q ^ n` lies in `A`. Then there is a finite set `T` of left cosets of `J`,
 stable under `S ∩ A`, whose cosets lie in `B`, such that the cover multiplicity of `x J` is
 nonzero and divides a power of `q` whenever `x J ∈ T` or `W x`.
 
 This is the form in which cuts are built in groups of finite adelic points, with `B` the points
 integral at the relevant places; `Subgroup.exists_finset_coverMultiplicity_dvd_pow` is the general
-statement, for compact open `A` and `J` without `B`, `W` or `J ≤ A`, and with `n` allowed to depend
-on `u`. -/
+statement, for compact open `A` and `J` without `B`, `W` or `J ≤ A`. -/
 theorem exists_finset_coverMultiplicity_dvd_pow_of_le (hA : IsCompact (A : Set G))
     (hJo : IsOpen (J : Set G)) (hJA : J ≤ A) {B : Subgroup G} (hAB : A ≤ B) {D : Set G}
     (hD : IsCompact D) (hDB : D ⊆ B) {q : ℕ}
-    (hq : ∀ x ∈ D, ∃ n : ℕ, ∀ u ∈ J, (x * u * x⁻¹) ^ q ^ n ∈ A) {W : G → Prop}
+    (hq : ∀ x ∈ D, ∀ u ∈ J, ∃ n : ℕ, (x * u * x⁻¹) ^ q ^ n ∈ A) {W : G → Prop}
     (hW : ∀ x, W x → ∃ s ∈ S, s * x ∈ D) :
     ∃ T : Finset (G ⧸ J), (∀ a ∈ S ⊓ A, ∀ t ∈ T, a • t ∈ T) ∧
       (∀ x : G, (x : G ⧸ J) ∈ T → x ∈ B) ∧
@@ -185,14 +191,13 @@ theorem exists_finset_coverMultiplicity_dvd_pow_of_le (hA : IsCompact (A : Set G
         S.coverMultiplicity A (T : Set (G ⧸ J)) x ≠ 0 ∧
           ∃ n : ℕ, S.coverMultiplicity A (T : Set (G ⧸ J)) x ∣ q ^ n := by
   obtain ⟨T, hTA, hTD, hT⟩ := S.exists_finset_coverMultiplicity_dvd_pow hA
-    (isOpen_mono hJA hJo) (hA.of_isClosed_subset (J.isClosed_of_isOpen hJo) hJA) hJo hD
-    fun x hx u hu ↦ (hq x hx).imp fun n hn ↦ hn u hu
+    (isOpen_mono hJA hJo) (hA.of_isClosed_subset (J.isClosed_of_isOpen hJo) hJA) hJo hD hq
   refine ⟨T, hTA, fun x hx ↦ ?_, fun x hx ↦ hT x (hx.imp id fun hWx ↦ ?_)⟩
   · -- The coset `x J` is `a y J` with `a ∈ A` and `y ∈ D`.
     obtain ⟨a, ha, y, hy, hay⟩ := hTD _ hx
     rw [MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.eq] at hay
     simpa [mul_assoc] using B.mul_mem (B.mul_mem (hAB ha.2) (hDB hy)) (hAB (hJA hay))
   · obtain ⟨s, hs, hsx⟩ := hW x hWx
-    exact ⟨s, hs, s * x, hsx, rfl⟩
+    exact ⟨s, hs, s * x, hsx, by rw [← smul_eq_mul, MulAction.Quotient.smul_coe]⟩
 
 end Subgroup
