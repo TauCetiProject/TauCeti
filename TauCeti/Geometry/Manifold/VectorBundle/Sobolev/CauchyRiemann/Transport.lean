@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Smooth
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BundleMap
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Atlas
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredholm
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density
 
@@ -46,6 +47,9 @@ Fredholmness and the index.
   transport has the index of the realization of `D`; it is Fredholm for `1 < p < ∞` by
   `TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevL` applied to
   `TauCeti.IsRealCauchyRiemannOperator.transport_of_contMDiff`.
+* `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_sectionTransport_of_atlas`: the same with the
+  realization of the transport built on any finite bundle atlas of `W`, since the index does not
+  depend on the atlas (`TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_eq_of_atlas`).
 
 ## References
 
@@ -278,6 +282,21 @@ theorem index_sobolevL_sectionTransport (hp_top : p ≠ ⊤) :
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       ContinuousLinearEquiv.apply_symm_apply]
   rw [hS, ContinuousLinearMap.index_comp_equiv, ContinuousLinearMap.index_equiv_comp]
+
+/-- **The index is invariant under bundle isomorphisms, for any atlases.** On a closed surface, the
+realization `W^{1,p} → L^p` of a smooth real Cauchy–Riemann operator `D` on `V`, built on a finite
+bundle atlas `A` of `V`, and that of its transport along a smooth bundle isomorphism `Φ : V ≃ W`,
+built on any finite bundle atlas `B` of `W`, have the same index, for every finite `p ≥ 1`. -/
+theorem index_sobolevL_sectionTransport_of_atlas (B : FiniteBundleAtlas ℂ M G W)
+    (hp_top : p ≠ ⊤) :
+    ((hD.transport_of_contMDiff hΦ).sobolevL B (hDs.sectionTransport_of_contMDiff hΦ)
+        μ p).index = (hD.sobolevL A hDs μ p).index := by
+  have := A.compactSpace
+  obtain ⟨A₀, h₀⟩ := FiniteBundleAtlas.exists_closure_dom_subset_baseSet G W (E := ℂ) (F := F)
+    (V := V)
+  rw [(hD.transport_of_contMDiff hΦ).index_sobolevL_eq_of_atlas (A₀.ofBaseSet h₀) B _ μ hp_top,
+    index_sobolevL_sectionTransport μ p hΦ A₀ h₀ hD hDs hp_top,
+    hD.index_sobolevL_eq_of_atlas A A₀ hDs μ hp_top]
 
 end IsRealCauchyRiemannOperator
 
