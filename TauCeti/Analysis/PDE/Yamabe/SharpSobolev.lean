@@ -212,7 +212,7 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
     simpa only [Real.rpow_two] using
       hu.integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le one_le_two
         (by simpa only [Real.rpow_two] using
-          integrable_norm_fderiv_sq_of_lipschitzWith (𝕜 := ℝ) (μ := volume) hu hsupp)
+          hu.integrable_norm_fderiv_sq (𝕜 := ℝ) (μ := volume) hsupp)
   -- Stage 3: Apply the radial sharp Sobolev inequality to `v`.
   rw [← hmass_eq]
   exact (radial_sharp_sobolev hn hv_lip hv_supp (fun _ ↦ ENNReal.toReal_nonneg)

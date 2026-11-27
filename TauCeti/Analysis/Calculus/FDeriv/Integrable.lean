@@ -66,8 +66,8 @@ integrable on the product of a half-line with `V`.
   in two directions.
 * `TauCeti.integrable_norm_fderiv_apply_sq`: integrability of `‖fderiv 𝕜 u z v‖ ^ 2` from
   integrability of `‖fderiv 𝕜 u z‖ ^ 2`.
-* `TauCeti.memLp_norm_fderiv_of_lipschitzWith`,
-  `TauCeti.integrable_norm_fderiv_sq_of_lipschitzWith`: `Lᵖ` and squared-energy integrability of
+* `LipschitzWith.memLp_norm_fderiv`,
+  `LipschitzWith.integrable_norm_fderiv_sq`: `Lᵖ` and squared-energy integrability of
   `‖fderiv 𝕜 u‖` for a compactly supported Lipschitz map.
 * `TauCeti.mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq`: the weighted
   one-dimensional Dirichlet energy of a compactly supported Lipschitz radial function along a unit
@@ -185,7 +185,7 @@ theorem integrable_norm_fderiv_apply_sq [CompleteSpace F] {ν : Measure E} {u : 
 
 /-- The operator norm of the Fréchet derivative of a compactly supported `K`-Lipschitz map into
 a complete space belongs to `Lᵖ` for every `p ∈ [0, ∞]`. -/
-theorem memLp_norm_fderiv_of_lipschitzWith [CompleteSpace F] {p : ℝ≥0∞} {K : ℝ≥0} {u : E → F}
+theorem _root_.LipschitzWith.memLp_norm_fderiv [CompleteSpace F] {p : ℝ≥0∞} {K : ℝ≥0} {u : E → F}
     (hu : LipschitzWith K u) (hsupp : HasCompactSupport u) :
     MemLp (fun x ↦ ‖fderiv 𝕜 u x‖) p μ := by
   borelize (E →L[𝕜] F)
@@ -197,12 +197,12 @@ theorem memLp_norm_fderiv_of_lipschitzWith [CompleteSpace F] {p : ℝ≥0∞} {K
 
 /-- The squared operator norm of the Fréchet derivative of a compactly supported `K`-Lipschitz
 map into a complete space is integrable. -/
-theorem integrable_norm_fderiv_sq_of_lipschitzWith [CompleteSpace F] {K : ℝ≥0} {u : E → F}
+theorem _root_.LipschitzWith.integrable_norm_fderiv_sq [CompleteSpace F] {K : ℝ≥0} {u : E → F}
     (hu : LipschitzWith K u) (hsupp : HasCompactSupport u) :
     Integrable (fun x ↦ ‖fderiv 𝕜 u x‖ ^ 2) μ := by
   borelize (E →L[𝕜] F)
   have hmem : MemLp (fun x ↦ ‖fderiv 𝕜 u x‖) 2 μ :=
-    memLp_norm_fderiv_of_lipschitzWith (𝕜 := 𝕜) hu hsupp
+    hu.memLp_norm_fderiv (𝕜 := 𝕜) hsupp
   simpa only [Real.norm_of_nonneg (norm_nonneg _)] using
     (memLp_two_iff_integrable_sq_norm (measurable_fderiv 𝕜 u).norm.aestronglyMeasurable).1 hmem
 
@@ -224,7 +224,7 @@ theorem mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq
           (deriv (fun r : ℝ ↦ v (r • e₀)) r) ^ 2) ≤
       ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
   set n := Module.finrank ℝ E with hn_def
-  have hv_grad_int := integrable_norm_fderiv_sq_of_lipschitzWith (𝕜 := ℝ) (μ := μ) hv_lip hv_supp
+  have hv_grad_int := hv_lip.integrable_norm_fderiv_sq (𝕜 := ℝ) (μ := μ) hv_supp
   have hgrad_rad : ∀ x y : E, ‖x‖ = ‖y‖ → ‖fderiv ℝ v x‖ ^ 2 = ‖fderiv ℝ v y‖ ^ 2 :=
     fun x y hxy ↦ by rw [norm_fderiv_eq_of_norm_eq hv_rad hxy]
   have hφ_int : IntegrableOn (fun r ↦ r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) (Ioi 0) := by

@@ -20,9 +20,9 @@ is integrable on `(0, ∞)`.
 
 ## Main results
 
-* `TauCeti.integrableOn_pow_mul_norm_deriv_sq_of_lipschitzWith`: `Ioi 0`-integrability of
+* `LipschitzWith.integrableOn_pow_mul_norm_deriv_sq`: `Ioi 0`-integrability of
   `r ^ k * ‖deriv f r‖ ^ 2` for a Lipschitz map vanishing on `[R, ∞)`.
-* `TauCeti.integrableOn_pow_mul_deriv_sq_of_lipschitzWith`: scalar version for `f : ℝ → ℝ`.
+* `LipschitzWith.integrableOn_pow_mul_deriv_sq`: scalar version for `f : ℝ → ℝ`.
 -/
 
 public section
@@ -34,7 +34,7 @@ namespace TauCeti
 
 /-- For a `K`-Lipschitz map `f : ℝ → F` into a complete space vanishing on `[R, ∞)` with
 `0 ≤ R`, the weighted squared derivative `r ↦ r ^ k * ‖deriv f r‖ ^ 2` is integrable on `(0, ∞)`. -/
-theorem integrableOn_pow_mul_norm_deriv_sq_of_lipschitzWith {F : Type*} [NormedAddCommGroup F]
+theorem _root_.LipschitzWith.integrableOn_pow_mul_norm_deriv_sq {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [CompleteSpace F] {k : ℕ} {K : ℝ≥0} {f : ℝ → F} (hf : LipschitzWith K f)
     {R : ℝ} (hR : 0 ≤ R) (hfR : ∀ r ≥ R, f r = 0) :
     IntegrableOn (fun r : ℝ ↦ r ^ k * ‖deriv f r‖ ^ 2) (Ioi 0) := by
@@ -58,10 +58,10 @@ theorem integrableOn_pow_mul_norm_deriv_sq_of_lipschitzWith {F : Type*} [NormedA
 
 /-- For a `K`-Lipschitz real function `f : ℝ → ℝ` vanishing on `[R, ∞)` with `0 ≤ R`, the
 weighted squared derivative `r ↦ r ^ k * (deriv f r) ^ 2` is integrable on `(0, ∞)`. -/
-theorem integrableOn_pow_mul_deriv_sq_of_lipschitzWith {k : ℕ} {K : ℝ≥0} {f : ℝ → ℝ}
+theorem _root_.LipschitzWith.integrableOn_pow_mul_deriv_sq {k : ℕ} {K : ℝ≥0} {f : ℝ → ℝ}
     (hf : LipschitzWith K f) {R : ℝ} (hR : 0 ≤ R) (hfR : ∀ r ≥ R, f r = 0) :
     IntegrableOn (fun r : ℝ ↦ r ^ k * (deriv f r) ^ 2) (Ioi 0) := by
   simpa only [Real.norm_eq_abs, sq_abs] using
-    integrableOn_pow_mul_norm_deriv_sq_of_lipschitzWith (k := k) hf hR hfR
+    hf.integrableOn_pow_mul_norm_deriv_sq (k := k) hR hfR
 
 end TauCeti

@@ -568,7 +568,7 @@ theorem mul_integral_bubbleRadialWeight_le_conformalCoefficient_mul_integral {n 
   obtain ⟨R₀, hR₀, F, hfR₀, hf_pos, hF0, hFR₀, hF_deriv, hF_mem⟩ :=
     exists_support_endpoint_of_antitoneOn hn hf_lip.continuous hf_nonneg hf_anti hR hfR
       (integral_bubbleRadialWeight_pos (by omega)) hnorm
-  have hderiv_int := integrableOn_pow_mul_deriv_sq_of_lipschitzWith (k := n - 1) hf_lip hR.le hfR
+  have hderiv_int := hf_lip.integrableOn_pow_mul_deriv_sq (k := n - 1) hR.le hfR
   set q := 2 * ((n : ℝ) - 1) / ((n : ℝ) - 2)
   set D := ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2
   have hF_cont : Continuous F := continuous_iff_continuousAt.2 fun r ↦ (hF_deriv r).continuousAt
