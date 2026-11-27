@@ -39,9 +39,12 @@ compactified trajectory spaces, whose faces are products. Over a ring in which `
 ## Main definitions
 
 * `TauCeti.cubeBoundaryFace`: the face `∂ᵢᵗ` of `Iᵐ⁺²`, as a singular cube of `∂Iᵐ⁺²`.
+* `TauCeti.cubeBoundaryFaceLocalPair`: the local pair `(∂Iᵐ⁺², ∂Iᵐ⁺² ∖ {∂ᵢᵗ(y)})`.
 
 ## Main results
 
+* `TauCeti.cubicalBoundaryChainOfCube_upCube`: the boundary of the identity cube of `Iᵐ⁺²` is the
+  signed sum `∑ᵢ (-1)ⁱ (∂ᵢ⁰ - ∂ᵢ¹)` of the faces `cubeBoundaryFace`.
 * `TauCeti.homologyMap_cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle_face_zero`,
   `TauCeti.homologyMap_cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle_face_one`: at an interior
   point of the face `∂ᵢᵗ`, the boundary of `[Iᵐ⁺², ∂Iᵐ⁺²]` is `(-1)ⁱ`, respectively `-(-1)ⁱ`, times
@@ -81,29 +84,41 @@ def cubeBoundaryFace : SingularCube (cubeBoundaryPair.{u} (m + 1 + 1)).snd (m + 
       (upCube.{u} (m + 1 + 1) : SingularCube (cubeBoundaryPair.{u} (m + 1 + 1)).fst (m + 1 + 1)))
     (TopPair.face_mem_range_map (mapsTo_upCube_boundary (m + 1 + 1)) i ht)
 
+/-- The face `∂ᵢᵗ` of the identity cube, lifted to the boundary `∂Iᵐ⁺²`, is `cubeBoundaryFace`. -/
+theorem liftSnd_face_upCube
+    (h : ∀ x, SingularCube.face i t (upCube.{u} (m + 1 + 1) :
+      SingularCube (cubeBoundaryPair.{u} (m + 1 + 1)).fst (m + 1 + 1)) x ∈
+        range (cubeBoundaryPair.{u} (m + 1 + 1)).map) :
+    (cubeBoundaryPair.{u} (m + 1 + 1)).liftSnd (SingularCube.face i t
+        (upCube.{u} (m + 1 + 1) : SingularCube (cubeBoundaryPair.{u} (m + 1 + 1)).fst (m + 1 + 1)))
+        h =
+      cubeBoundaryFace m i ht :=
+  (rfl)
+
+/-- Pushed into the cube `Iᵐ⁺²`, the face `cubeBoundaryFace` is the face `∂ᵢᵗ` of the identity
+cube. -/
+theorem map_comp_cubeBoundaryFace :
+    (cubeBoundaryPair.{u} (m + 1 + 1)).map.hom.comp (cubeBoundaryFace m i ht) =
+      SingularCube.face i t
+        (upCube.{u} (m + 1 + 1) :
+          SingularCube (cubeBoundaryPair.{u} (m + 1 + 1)).fst (m + 1 + 1)) := by
+  rw [← liftSnd_face_upCube m i ht (TopPair.face_mem_range_map (mapsTo_upCube_boundary _) i ht)]
+  exact ContinuousMap.ext fun x ↦ TopPair.map_liftSnd (X := cubeBoundaryPair.{u} (m + 1 + 1)) _ _ x
+
 /-- The face `∂ᵢᵗ` sends `x` to the point `i.insertNth t x` of the cube. -/
 @[simp]
 theorem val_cubeBoundaryFace_apply (x : I^(Fin (m + 1))) :
     (cubeBoundaryFace.{u} m i ht x).val = ULift.up (i.insertNth t x) :=
   -- The embedding of `∂Iᵐ⁺²` is the inclusion of the subtype, and the identity cube is `ULift.up`.
-  (TopPair.map_liftSnd (X := cubeBoundaryPair.{u} (m + 1 + 1)) (SingularCube.face i t
-    (upCube.{u} (m + 1 + 1) : SingularCube (cubeBoundaryPair.{u} (m + 1 + 1)).fst (m + 1 + 1)))
-    (TopPair.face_mem_range_map (mapsTo_upCube_boundary (m + 1 + 1)) i ht) x).trans
+  (ContinuousMap.congr_fun (map_comp_cubeBoundaryFace m i ht) x).trans
     (SingularCube.face_apply i t _ x)
 
 /-- The face `∂ᵢᵗ` is injective. -/
-theorem cubeBoundaryFace_injective : Function.Injective (cubeBoundaryFace.{u} m i ht) := by
-  intro x x' h
-  have h' := congrArg (fun z : (cubeBoundaryPair.{u} (m + 1 + 1)).snd ↦ z.val.down) h
-  simp only [val_cubeBoundaryFace_apply] at h'
-  exact funext fun j ↦ by simpa using congrFun h' (i.succAbove j)
+theorem cubeBoundaryFace_injective : Function.Injective (cubeBoundaryFace.{u} m i ht) :=
+  fun _ _ h ↦ by
+    simpa using congrArg (fun z : (cubeBoundaryPair.{u} (m + 1 + 1)).snd ↦ z.val.down) h
 
 variable {m i ht} {y : I^(Fin (m + 1))}
-
-/-- At a point `y` of the interior of `Iᵐ⁺¹`, every coordinate lies strictly between `0` and `1`. -/
-private lemma ne_zero_and_ne_one_of_notMem_boundary (hy : y ∉ Cube.boundary (Fin (m + 1)))
-    (j : Fin (m + 1)) : y j ≠ 0 ∧ y j ≠ 1 :=
-  not_or.1 fun h ↦ hy ⟨j, h⟩
 
 /-- **The other faces miss the interior points of a face.** For `t, s ∈ {0, 1}` and a face `∂ⱼˢ`
 other than `∂ᵢᵗ`, the face `∂ⱼˢ` misses the image under `∂ᵢᵗ` of every interior point of
@@ -119,20 +134,22 @@ theorem cubeBoundaryFace_ne_of_notMem_boundary (hy : y ∉ Cube.boundary (Fin (m
     rw [Fin.insertNth_apply_same] at h'
     exact hji.resolve_left (fun h ↦ h rfl) h'
   · -- In the coordinate `j`, the face `∂ⱼˢ` takes the value `s ∈ {0, 1}`, and `∂ᵢᵗ(y)` a value
-    -- of `y`, strictly between `0` and `1`.
+    -- of `y`, which is neither `0` nor `1` since `y` is not on the boundary.
     obtain ⟨j', rfl⟩ := Fin.exists_succAbove_eq hji'
     rw [Fin.insertNth_apply_succAbove] at h'
-    have := ne_zero_and_ne_one_of_notMem_boundary hy j'
-    rcases hs with rfl | rfl
-    · exact this.1 h'.symm
-    · exact this.2 h'.symm
+    exact hy ⟨j', by rcases hs with rfl | rfl <;> simp [← h']⟩
+
+/-- The local pair `(∂Iᵐ⁺², ∂Iᵐ⁺² ∖ {∂ᵢᵗ(y)})` of the boundary of the cube `Iᵐ⁺²` at the image of a
+point `y` under the face `∂ᵢᵗ`. -/
+abbrev cubeBoundaryFaceLocalPair (i : Fin (m + 2)) (ht : t = 0 ∨ t = 1) (y : I^(Fin (m + 1))) :
+    TopPair.{u} :=
+  TopPair.ofSubset ({cubeBoundaryFace m i ht y}ᶜ : Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)
 
 /-- **The face `∂ᵢᵗ` as a map of pairs.** For a point `y` of the interior of `Iᵐ⁺¹`, the face `∂ᵢᵗ`
 carries the boundary `∂Iᵐ⁺¹` into the complement of `∂ᵢᵗ(y)` in `∂Iᵐ⁺²`. -/
 theorem mapsTo_cubeBoundaryFace (hy : y ∉ Cube.boundary (Fin (m + 1))) :
     MapsTo (cubeBoundaryFace m i ht) (Cube.boundary (Fin (m + 1)))
-      (range (TopPair.ofSubset ({cubeBoundaryFace m i ht y}ᶜ :
-        Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map) :=
+      (range (cubeBoundaryFaceLocalPair.{u} i ht y).map) :=
   fun _ hx ↦ ⟨⟨_, fun h ↦ hy (cubeBoundaryFace_injective m i ht h ▸ hx)⟩, rfl⟩
 
 end Face
@@ -144,18 +161,27 @@ section Boundary
 variable (k : Type u) [Ring k] {m : ℕ} (i : Fin (m + 2)) {t : I} (ht : t = 0 ∨ t = 1)
   {y : I^(Fin (m + 1))} (hy : y ∉ Cube.boundary (Fin (m + 1)))
 
+/-- **The boundary of the identity cube of `Iᵐ⁺²`**, as a chain of `∂Iᵐ⁺²`, is the signed sum
+`∑ᵢ (-1)ⁱ (∂ᵢ⁰ - ∂ᵢ¹)` of its faces. -/
+theorem cubicalBoundaryChainOfCube_upCube (m : ℕ) :
+    TopPair.cubicalBoundaryChainOfCube k _ (mapsTo_upCube_boundary.{u} (m + 1 + 1)) =
+      ∑ i : Fin (m + 2), (-1 : k) ^ (i : ℕ) •
+        (NormalizedCubicalChain.ofCube _ k (cubeBoundaryFace m i (.inl rfl)) -
+          NormalizedCubicalChain.ofCube _ k (cubeBoundaryFace m i (.inr rfl))) :=
+  TopPair.cubicalBoundaryChainOfCube_def k _ _
+
 include hy in
 /-- A face other than `∂ᵢᵗ` vanishes in the relative chains of `(∂Iᵐ⁺², ∂Iᵐ⁺² ∖ {∂ᵢᵗ(y)})`. -/
 private lemma cubicalChainOfCube_cubeBoundaryFace_eq_zero (j : Fin (m + 2)) {s : I}
     (hs : s = 0 ∨ s = 1) (hji : j ≠ i ∨ s ≠ t) :
-    TopPair.cubicalChainOfCube k (P := TopPair.ofSubset ({cubeBoundaryFace m i ht y}ᶜ :
-      Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)) (cubeBoundaryFace m j hs) = 0 := by
-  let P := TopPair.ofSubset
-    ({cubeBoundaryFace m i ht y}ᶜ : Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)
-  have hc : ∀ x, cubeBoundaryFace m j hs x ∈ range P.map := fun x ↦
-    ⟨⟨_, cubeBoundaryFace_ne_of_notMem_boundary hy j hs hji x⟩, rfl⟩
+    TopPair.cubicalChainOfCube k (P := cubeBoundaryFaceLocalPair i ht y)
+      (cubeBoundaryFace m j hs) = 0 := by
+  have hc : ∀ x, cubeBoundaryFace m j hs x ∈ range (cubeBoundaryFaceLocalPair i ht y).map :=
+    fun x ↦ ⟨⟨_, cubeBoundaryFace_ne_of_notMem_boundary hy j hs hji x⟩, rfl⟩
   -- The face is a cube of the subspace `∂Iᵐ⁺² ∖ {∂ᵢᵗ(y)}`, pushed into `∂Iᵐ⁺²`.
-  have hlift : P.map.hom.comp (P.liftSnd (cubeBoundaryFace m j hs) hc) = cubeBoundaryFace m j hs :=
+  have hlift : (cubeBoundaryFaceLocalPair i ht y).map.hom.comp
+      ((cubeBoundaryFaceLocalPair i ht y).liftSnd (cubeBoundaryFace m j hs) hc) =
+        cubeBoundaryFace m j hs :=
     ContinuousMap.ext (TopPair.map_liftSnd _ hc)
   rw [← hlift]
   exact TopPair.cubicalChainOfCube_map_comp_eq_zero k _
@@ -165,33 +191,19 @@ include hy in
 chains of `(∂Iᵐ⁺², ∂Iᵐ⁺² ∖ {∂ᵢᵗ(y)})`, the boundary `∑ⱼ (-1)ʲ (∂ⱼ⁰ - ∂ⱼ¹)` of the identity cube
 of `Iᵐ⁺²` is the term `(-1)ⁱ (∂ᵢ⁰ - ∂ᵢ¹)` of the direction `i` alone. -/
 private lemma cokernel_π_f_cubicalBoundaryChainOfCube_upCube :
-    ((cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset
-        ({cubeBoundaryFace m i ht y}ᶜ : Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)).f
-        (m + 1)).hom
+    ((cokernel.π ((normalizedCubicalChainComplex k).map
+        (cubeBoundaryFaceLocalPair i ht y).map)).f (m + 1)).hom
       (TopPair.cubicalBoundaryChainOfCube k _ (mapsTo_upCube_boundary.{u} (m + 1 + 1))) =
       (-1 : k) ^ (i : ℕ) • (TopPair.cubicalChainOfCube k (cubeBoundaryFace m i (.inl rfl)) -
         TopPair.cubicalChainOfCube k (cubeBoundaryFace m i (.inr rfl))) := by
-  -- Each face of the boundary chain is the relative chain of a `cubeBoundaryFace`.
-  have hface (j : Fin (m + 2)) {s : I} (hs : s = 0 ∨ s = 1) :
-      ((cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset
-          ({cubeBoundaryFace m i ht y}ᶜ : Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)).f
-          (m + 1)).hom
-        (NormalizedCubicalChain.ofCube _ k ((cubeBoundaryPair.{u} (m + 1 + 1)).liftSnd
-          (SingularCube.face j s (upCube.{u} (m + 1 + 1) :
-            SingularCube (cubeBoundaryPair.{u} (m + 1 + 1)).fst (m + 1 + 1)))
-          (TopPair.face_mem_range_map (mapsTo_upCube_boundary (m + 1 + 1)) j hs))) =
-        TopPair.cubicalChainOfCube k (cubeBoundaryFace m j hs) := by
-    -- The face is a cube of `∂Iᵐ⁺²`, the ambient space of the local pair after unfolding
-    -- `TopPair.ofSubset`, which `rw` does not see through.
-    erw [TopPair.cubicalChainOfCube_def, normalizedCubicalChainComplexXEquiv_symm_apply]
-    rfl
   -- The relative chains of the pair are a quotient of the chains of `∂Iᵐ⁺²`, which is the ambient
   -- space of the pair only after unfolding `TopPair.ofSubset`, so the boundary chain is expanded by
   -- terms rather than by `rw`.
-  refine (congrArg _ (TopPair.cubicalBoundaryChainOfCube_def k _ _)).trans
-    ((map_sum _ _ _).trans ?_)
+  refine (congrArg _ (cubicalBoundaryChainOfCube_upCube k m)).trans ((map_sum _ _ _).trans ?_)
   refine (Finset.sum_congr rfl fun j _ ↦ (map_smul _ _ _).trans (congrArg _
-    ((map_sub _ _ _).trans (congrArg₂ _ (hface j (.inl rfl)) (hface j (.inr rfl)))))).trans ?_
+    ((map_sub _ _ _).trans (congrArg₂ _
+      (TopPair.cokernel_π_f_ofCube k (P := cubeBoundaryFaceLocalPair i ht y) _)
+      (TopPair.cokernel_π_f_ofCube k (P := cubeBoundaryFaceLocalPair i ht y) _))))).trans ?_
   rw [Finset.sum_eq_single i (fun j _ hj ↦ ?_) (by simp)]
   rw [cubicalChainOfCube_cubeBoundaryFace_eq_zero k i ht hy j _ (.inl hj),
     cubicalChainOfCube_cubeBoundaryFace_eq_zero k i ht hy j _ (.inl hj), sub_zero, smul_zero]
@@ -201,14 +213,12 @@ include hy in
 `∂ᵢᵗ(y)` is `c` times the image of the fundamental class of `Iᵐ⁺¹` under the face `∂ᵢᵗ`, as soon
 as the same holds for the chains: the boundary of the identity cube is `c` times the face. -/
 private lemma homologyMap_cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle_of_eq_smul (c : k)
-    (hc : ((cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset
-        ({cubeBoundaryFace m i ht y}ᶜ : Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)).f
-        (m + 1)).hom
+    (hc : ((cokernel.π ((normalizedCubicalChainComplex k).map
+        (cubeBoundaryFaceLocalPair i ht y).map)).f (m + 1)).hom
       (TopPair.cubicalBoundaryChainOfCube k _ (mapsTo_upCube_boundary.{u} (m + 1 + 1))) =
       c • TopPair.cubicalChainOfCube k (cubeBoundaryFace m i ht)) :
     (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
-        (TopPair.ofSubset ({cubeBoundaryFace m i ht y}ᶜ :
-          Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)) (m + 1)).hom
+        (cubeBoundaryFaceLocalPair i ht y).map)) (m + 1)).hom
       (((cubeBoundaryPair.{u} (m + 1 + 1)).cubicalHomologyδ k (m + 1 + 1) (m + 1)).hom
         (((cubeBoundaryPair.{u} (m + 1 + 1)).cubicalChainComplex k).homologyπ (m + 1 + 1)
           (cubeBoundaryPairCycle k (m + 1)))) =
@@ -218,31 +228,24 @@ private lemma homologyMap_cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle_of_
             (cubeBoundaryPairCycle k m)) := by
   -- The chain-level identity, on cycles.
   have hcyc : HomologicalComplex.cyclesMap (cokernel.π ((normalizedCubicalChainComplex k).map
-        (TopPair.ofSubset ({cubeBoundaryFace m i ht y}ᶜ :
-          Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)) (m + 1)
-        (cubeBoundaryCycle k (m + 1)) =
+        (cubeBoundaryFaceLocalPair i ht y).map)) (m + 1) (cubeBoundaryCycle k (m + 1)) =
       c • TopPair.cubicalCycleOfCube k (cubeBoundaryFace m i ht) (mapsTo_cubeBoundaryFace hy) := by
     refine HomologicalComplex.moduleCat_iCycles_injective _ _ ?_
     refine (HomologicalComplex.moduleCat_iCycles_cyclesMap_apply _ _ _ _).trans ?_
-    refine ((congrArg _ (iCycles_cubeBoundaryCycle k (m + 1))).trans hc).trans ?_
-    -- As above, the face is read as a cube of the ambient space of the local pair.
-    erw [map_smul, TopPair.iCycles_cubicalCycleOfCube]
+    exact ((congrArg _ (iCycles_cubeBoundaryCycle k (m + 1))).trans hc).trans
+      ((map_smul _ c _).trans (congrArg (c • ·) (TopPair.iCycles_cubicalCycleOfCube k _ _))).symm
   -- The connecting morphism sends the fundamental class to the fundamental cycle of `∂Iᵐ⁺²`, and
   -- the map to the local homology acts on that cycle by the chain-level identity.
   have hnat : (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
-        (TopPair.ofSubset ({cubeBoundaryFace m i ht y}ᶜ :
-          Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)) (m + 1)).hom
+        (cubeBoundaryFaceLocalPair i ht y).map)) (m + 1)).hom
         (((normalizedCubicalChainComplex k).obj (cubeBoundaryPair.{u} (m + 1 + 1)).snd).homologyπ
           (m + 1) (cubeBoundaryCycle k (m + 1))) =
-      ((TopPair.ofSubset ({cubeBoundaryFace m i ht y}ᶜ :
-          Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).cubicalChainComplex k).homologyπ (m + 1)
+      ((cubeBoundaryFaceLocalPair i ht y).cubicalChainComplex k).homologyπ (m + 1)
         (HomologicalComplex.cyclesMap (cokernel.π ((normalizedCubicalChainComplex k).map
-          (TopPair.ofSubset ({cubeBoundaryFace m i ht y}ᶜ :
-            Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)) (m + 1)
-          (cubeBoundaryCycle k (m + 1))) :=
+          (cubeBoundaryFaceLocalPair i ht y).map)) (m + 1) (cubeBoundaryCycle k (m + 1))) :=
     ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality
-      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset
-        ({cubeBoundaryFace m i ht y}ᶜ : Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)) (m + 1))
+      (cokernel.π ((normalizedCubicalChainComplex k).map
+        (cubeBoundaryFaceLocalPair i ht y).map)) (m + 1))
       (cubeBoundaryCycle k (m + 1))
   -- The ambient space of the local pair is `∂Iᵐ⁺²` only after unfolding `TopPair.ofSubset`, so the
   -- steps are chained by terms rather than rewritten.
@@ -259,8 +262,7 @@ fundamental class `[Iᵐ⁺¹, ∂Iᵐ⁺¹]` under the face, read as a map of p
 `(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ (∂Iᵐ⁺², ∂Iᵐ⁺² ∖ {a})`. -/
 theorem homologyMap_cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle_face_zero :
     (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
-        (TopPair.ofSubset ({cubeBoundaryFace m i (.inl rfl) y}ᶜ :
-          Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)) (m + 1)).hom
+        (cubeBoundaryFaceLocalPair i (.inl rfl) y).map)) (m + 1)).hom
       (((cubeBoundaryPair.{u} (m + 1 + 1)).cubicalHomologyδ k (m + 1 + 1) (m + 1)).hom
         (((cubeBoundaryPair.{u} (m + 1 + 1)).cubicalChainComplex k).homologyπ (m + 1 + 1)
           (cubeBoundaryPairCycle k (m + 1)))) =
@@ -285,8 +287,7 @@ fundamental class `[Iᵐ⁺¹, ∂Iᵐ⁺¹]` under the face, read as a map of p
 `(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ (∂Iᵐ⁺², ∂Iᵐ⁺² ∖ {a})`. -/
 theorem homologyMap_cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle_face_one :
     (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
-        (TopPair.ofSubset ({cubeBoundaryFace m i (.inr rfl) y}ᶜ :
-          Set (cubeBoundaryPair.{u} (m + 1 + 1)).snd)).map)) (m + 1)).hom
+        (cubeBoundaryFaceLocalPair i (.inr rfl) y).map)) (m + 1)).hom
       (((cubeBoundaryPair.{u} (m + 1 + 1)).cubicalHomologyδ k (m + 1 + 1) (m + 1)).hom
         (((cubeBoundaryPair.{u} (m + 1 + 1)).cubicalChainComplex k).homologyπ (m + 1 + 1)
           (cubeBoundaryPairCycle k (m + 1)))) =
