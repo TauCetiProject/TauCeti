@@ -26,9 +26,23 @@ already rules out nontrivial biproduct decompositions.
 A full additive functor preserves local endomorphism rings of objects it does not send to zero
 (`CategoryTheory.Functor.isLocalRing_end_obj`), and a fully faithful one both preserves and
 reflects them (`CategoryTheory.Functor.isLocalRing_end_obj_iff`).
+Having a local endomorphism ring is invariant under isomorphism, and an additive equivalence
+restricts to the full subcategories of such objects
+(`CategoryTheory.Equivalence.congrLocalEndFullSubcategory`).
 -/
 
 public section
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits
+
+/-- An object with more than one endomorphism is nonzero. -/
+theorem not_isZero_of_nontrivial_end {C : Type*} [Category* C] {X : C} [Nontrivial (End X)] :
+    ¬ IsZero X :=
+  fun hX ↦ not_subsingleton (End X) ⟨fun f g ↦ End.ext (hX.eq_of_src f.asHom g.asHom)⟩
+
+end TauCeti
 
 namespace CategoryTheory.Functor
 

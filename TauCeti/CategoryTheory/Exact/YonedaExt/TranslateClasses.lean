@@ -51,7 +51,7 @@ variable (τ : E.projectivelyTrivialIdeal.Quotient ≌ E.injectivelyTrivialIdeal
 induces a bijection between the isomorphism classes of indecomposable nonprojectives and
 indecomposable noninjectives. When `τ` comes from an Auslander–Reiten duality, this bijection is
 the Auslander–Reiten translate on classes. -/
-noncomputable def auslanderReitenTranslateEquiv :
+noncomputable def skeletonEquivOfQuotientEquiv :
     Skeleton (ObjectProperty.FullSubcategory fun Z ↦ Indecomposable Z ∧ ¬ E.isProjective Z) ≃
       Skeleton (ObjectProperty.FullSubcategory fun X ↦ Indecomposable X ∧ ¬ E.isInjective X) :=
   haveI : τ.functor.Additive := Functor.additive_of_preserves_binary_products _
@@ -62,10 +62,10 @@ noncomputable def auslanderReitenTranslateEquiv :
 /-- The bijection induced by `τ` sends the class of `Z` to the class of `X` exactly when `τ`
 sends the projectively trivial quotient image of `Z` to an object isomorphic to the
 injectively trivial quotient image of `X`. -/
-theorem auslanderReitenTranslateEquiv_apply_eq_iff {Z X : C}
+theorem skeletonEquivOfQuotientEquiv_apply_eq_iff {Z X : C}
     (hZ : Indecomposable Z) (hZp : ¬ E.isProjective Z)
     (hX : Indecomposable X) (hXi : ¬ E.isInjective X) :
-    E.auslanderReitenTranslateEquiv τ (toSkeleton ⟨Z, hZ, hZp⟩) = toSkeleton ⟨X, hX, hXi⟩ ↔
+    E.skeletonEquivOfQuotientEquiv τ (toSkeleton ⟨Z, hZ, hZp⟩) = toSkeleton ⟨X, hX, hXi⟩ ↔
       Nonempty (τ.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z) ≅
         E.injectivelyTrivialIdeal.quotientFunctor.obj X) := by
   let q := E.projectivelyTrivialIdeal.quotientFunctor
@@ -80,7 +80,7 @@ theorem auslanderReitenTranslateEquiv_apply_eq_iff {Z X : C}
   have htranslate : τ.congrLocalEndFullSubcategory.skeletonIsoCat.objEquiv (toSkeleton Z') =
       toSkeleton (τ.congrLocalEndFullSubcategory.functor.obj Z') :=
     Functor.mapSkeleton_obj_toSkeleton _ _
-  unfold auslanderReitenTranslateEquiv
+  unfold skeletonEquivOfQuotientEquiv
   simp only [Equiv.trans_apply, Equiv.symm_apply_eq, hsource, htranslate]
   have himage : (τ.congrLocalEndFullSubcategory.functor.obj Z').obj = τ.functor.obj (q.obj Z) :=
     τ.congrLocalEndFullSubcategory_functor_obj_obj Z'
@@ -98,18 +98,25 @@ variable {E} {R : Type*} [CommRing R] [Linear R C] {Q : Type w}
   (A : E.AuslanderReitenDuality R Q)
   (hQ : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] Q) = 1)
 
+/-- The Auslander–Reiten translate on isomorphism classes of indecomposable nonprojectives,
+with values in the isomorphism classes of indecomposable noninjectives. -/
+noncomputable def translateEquiv :
+    Skeleton (ObjectProperty.FullSubcategory fun Z ↦ Indecomposable Z ∧ ¬ E.isProjective Z) ≃
+      Skeleton (ObjectProperty.FullSubcategory fun X ↦ Indecomposable X ∧ ¬ E.isInjective X) :=
+  E.skeletonEquivOfQuotientEquiv A.functor.asEquivalence
+
 include hQ in
 /-- For an Auslander–Reiten duality whose module `Q` gives a dual of length one for each simple
 `R`-module (`hQ`), assume `Ext¹_E(Z, Y)` has finite length for every `Y`. The translate sends
 the class of `Z` to the class of `X` exactly when there is an almost-split conflation with left
 end `X` and right end `Z`. -/
-theorem auslanderReitenTranslateEquiv_apply_eq_iff_exists_isAlmostSplit {Z X : C}
+theorem translateEquiv_apply_eq_iff_exists_isAlmostSplit {Z X : C}
     (hZ : Indecomposable Z) (hZp : ¬ E.isProjective Z) (hX : Indecomposable X)
     (hXi : ¬ E.isInjective X) (hfin : ∀ Y, IsFiniteLength R (E.Ext1 Z Y)) :
-    E.auslanderReitenTranslateEquiv A.functor.asEquivalence (toSkeleton ⟨Z, hZ, hZp⟩) =
+    A.translateEquiv (toSkeleton ⟨Z, hZ, hZp⟩) =
       toSkeleton ⟨X, hX, hXi⟩ ↔
       ∃ e : E.Extension Z X, e.shortComplex.IsAlmostSplit := by
-  rw [E.auslanderReitenTranslateEquiv_apply_eq_iff _ hZ hZp hX hXi]
+  rw [translateEquiv, E.skeletonEquivOfQuotientEquiv_apply_eq_iff _ hZ hZp hX hXi]
   refine ⟨?_, fun ⟨e, he⟩ ↦ ⟨(A.isoTranslateOfIsAlmostSplit hQ hfin e he).symm⟩⟩
   rintro ⟨i⟩
   have := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end Z).mp hZ

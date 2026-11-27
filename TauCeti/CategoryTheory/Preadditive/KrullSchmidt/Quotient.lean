@@ -66,9 +66,7 @@ private instance [F.EssSurj] : (F.liftToLocalEndFullSubcategory P hP).EssSurj wh
     have : IsLocalRing (End (F.obj W)) := e.symm.endRingEquiv.isLocalRing
     obtain ⟨X, hX, ⟨i⟩⟩ := IsKrullSchmidt.exists_isLocalRing_end_iso_obj F W
     let j : F.obj X ≅ Y.obj := i.symm ≪≫ e
-    have hPX : ¬ P X := fun h ↦
-      one_ne_zero (α := End Y.obj)
-        (End.ext ((IsZero.iff_id_eq_zero Y.obj).mp (((hP X).mpr h).of_iso j.symm)))
+    have hPX : ¬ P X := fun h ↦ not_isZero_of_nontrivial_end (((hP X).mpr h).of_iso j.symm)
     exact ⟨⟨X, (IsKrullSchmidt.indecomposable_iff_isLocalRing_end X).mpr hX, hPX⟩,
       ⟨(ObjectProperty.ι _).preimageIso j⟩⟩
 

@@ -547,8 +547,7 @@ theorem exists_isAlmostSplit_of_indecomposable_of_not_isProjective {Z : C}
   -- `T` is not injective: in `E/ℐ` it is isomorphic to `τ Z`, which is nonzero.
   intro hTi
   rw [← E.isZero_injectivelyTrivialIdeal_quotientFunctor_obj_iff] at hTi
-  exact one_ne_zero (α := End (E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z)))
-    (End.ext ((hTi.of_iso i).eq_of_src _ _))
+  exact not_isZero_of_nontrivial_end (hTi.of_iso i)
 
 /-- **An Auslander–Reiten duality gives almost-split conflations starting at every indecomposable
 non-injective object `X`** of a Krull–Schmidt category, when every `Ext¹` has finite length. -/
