@@ -318,6 +318,12 @@ private def polyLiftUnit : C(Fin 2 → I, sphere (0 : EuclideanSpace ℂ (Fin (n
   normalizeToSphere (polyLiftVector P d) (continuous_polyLiftVector P d)
     (polyLiftVector_ne_zero hdeg hc hz)
 
+/-- `polyLiftUnit` at `y` is `‖L‖⁻¹ L` for the lift vector `L = polyLiftVector P d y`. -/
+private theorem coe_polyLiftUnit_apply (y : Fin 2 → I) :
+    (polyLiftUnit hdeg hc hz y : EuclideanSpace ℂ (Fin (n + 1))) =
+      ((‖polyLiftVector P d y‖⁻¹ : ℝ) : ℂ) • polyLiftVector P d y := by
+  rw [polyLiftUnit, coe_normalizeToSphere_apply, NormedSpace.normalize, Complex.coe_smul]
+
 /-- **The lift covers the polynomial sphere**: `[polyLiftUnit y]` is the value of `u` at the point
 `riemannSphereSquare y` of the Riemann sphere, for a map `u` which is `[P(z)]` at `z ∈ ℂ` and
 `[p_d]` at `∞`. -/
@@ -332,15 +338,13 @@ private theorem mk_polyLiftUnit {u : OnePoint ℂ → ComplexProjectiveSpace n}
   · rw [riemannSphereSquare_apply_of_mem hy, hinf]
     refine (homeomorphProjectivization_mk_eq_mk_iff n _ _).2
       ⟨((‖polyLiftVector P d y‖⁻¹ : ℝ) : ℂ) * (2 * squareCenterOffset y) ^ d, ?_⟩
-    rw [polyLiftUnit, coe_normalizeToSphere_apply, NormedSpace.normalize,
-      polyLiftVector_of_mem P d hy, WithLp.ofLp_smul, WithLp.ofLp_smul, ← Complex.coe_smul,
+    rw [coe_polyLiftUnit_apply, polyLiftVector_of_mem P d hy, WithLp.ofLp_smul, WithLp.ofLp_smul,
       smul_smul]
   · rw [riemannSphereSquare_apply_of_notMem hy, hfin]
     refine (homeomorphProjectivization_mk_eq_mk_iff n _ _).2
       ⟨((‖polyLiftVector P d y‖⁻¹ : ℝ) : ℂ) * ((√(1 - cubeRadius y ^ 2) : ℝ) : ℂ) ^ d, ?_⟩
-    rw [polyLiftUnit, coe_normalizeToSphere_apply, NormedSpace.normalize,
-      polyLiftVector_of_notMem hdeg hy, WithLp.ofLp_smul, WithLp.ofLp_smul, ← Complex.coe_smul,
-      smul_smul]
+    rw [coe_polyLiftUnit_apply, polyLiftVector_of_notMem hdeg hy, WithLp.ofLp_smul,
+      WithLp.ofLp_smul, smul_smul]
 
 /-- On the boundary of the square the lift is `(c / ‖c‖)^d (p_d / ‖p_d‖)`. -/
 private theorem coe_polyLiftUnit_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.boundary (Fin 2)) :
@@ -427,6 +431,15 @@ private theorem coe_polyLift_of_mem
   push_cast
   ring
 
+/-- On the bottom, top and left edges the lift is `v`. -/
+private theorem polyLift_of_isPhaseEdge
+    (hμ : (μ : ℂ) • NormedSpace.normalize (WithLp.toLp 2 fun j ↦ (P j).coeff d) =
+      (v : EuclideanSpace ℂ (Fin (n + 1)))) {p : I × (Fin 1 → I)}
+    (hp : IsPhaseEdge (squarePoint p)) : polyLift hdeg hc hz μ p = v :=
+  Subtype.ext <| by
+    rw [coe_polyLift_of_mem hdeg hc hz μ hμ hp.mem_boundary, squareTwist_eq_one hp, one_pow,
+      Circle.coe_one, one_smul]
+
 /-- `polyLift` is a boundary lift of the polynomial sphere, read in `I^(Option (Fin 1))`. -/
 private theorem isBoundaryLift_polyLift {u : C(OnePoint ℂ, ComplexProjectiveSpace n)}
     (hinf : homeomorphProjectivization n (u ∞) = Projectivization.mk ℂ _ hc)
@@ -441,15 +454,11 @@ private theorem isBoundaryLift_polyLift {u : C(OnePoint ℂ, ComplexProjectiveSp
     rw [GenLoop.congr_apply, GenLoop.map_apply,
       comp_finSuccEquiv_piOptionEquivProdHomeomorph_symm]
     exact (mk_circle_smul _ _ _).trans (mk_polyLiftUnit hdeg hc hz hinf hfin _)
-  apply_zero t := Subtype.ext <| by
-    rw [coe_polyLift_of_mem hdeg hc hz μ hμ (p := (0, t)) (IsPhaseEdge.mem_boundary (.inl rfl)),
-      squareTwist_eq_one (.inl rfl), one_pow, Circle.coe_one, one_smul]
+  apply_zero t := polyLift_of_isPhaseEdge hdeg hc hz μ hμ (.inl rfl)
   apply_of_mem_boundary s t ht := by
     obtain ⟨i, hi⟩ := ht
     rw [Subsingleton.elim i 0] at hi
-    refine Subtype.ext ?_
-    rw [coe_polyLift_of_mem hdeg hc hz μ hμ (p := (s, t)) (IsPhaseEdge.mem_boundary (.inr hi)),
-      squareTwist_eq_one (.inr hi), one_pow, Circle.coe_one, one_smul]
+    exact polyLift_of_isPhaseEdge hdeg hc hz μ hμ (.inr hi)
 
 /-- A unit vector spanning the line `[p_d]` is a unit complex multiple of `p_d / ‖p_d‖`. -/
 private theorem exists_circle_smul_normalize
