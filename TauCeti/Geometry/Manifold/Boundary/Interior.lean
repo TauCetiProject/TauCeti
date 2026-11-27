@@ -315,6 +315,7 @@ theorem hasMFDerivAt_subtypeVal_interior (x : I.interior M) :
   (hasMFDerivAt_subtypeVal_comp_iff (f := id)).2 (hasMFDerivAt_id x)
 
 /-- The differential of the inclusion of the interior is the identity of `E`. -/
+@[simp]
 theorem mfderiv_subtypeVal_interior (x : I.interior M) :
     mfderiv 𝓘(𝕜, E) I (Subtype.val : I.interior M → M) x = ContinuousLinearMap.id 𝕜 E :=
   (I.hasMFDerivAt_subtypeVal_interior x).mfderiv
