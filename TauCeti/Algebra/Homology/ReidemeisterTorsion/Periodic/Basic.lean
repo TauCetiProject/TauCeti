@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Two
+import Mathlib.Algebra.Homology.HomologySequenceLemmas
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.Periodic.Basic
 public import TauCeti.Algebra.Homology.Periodic.ModuleCat
 public import TauCeti.Algebra.Homology.Periodic.Shift
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
+import TauCeti.Algebra.Homology.ShortComplex.Splitting
 
 /-!
 # The torsion of a based two-periodic complex over a field
@@ -71,6 +73,20 @@ even `k` and of the second kind for odd `k`. Hence an even shift does not change
 `C⟦1⟧` exchanging the even and odd terms, turns it into `(-1) ^ n₀ · τ(C, c)⁻¹`, where `n₀` is the
 dimension of `C₀` (`HomologicalComplex.parityTorsion_shift_of_odd`).
 
+The torsion is multiplicative in short exact sequences
+(`HomologicalComplex.parityTorsion_eq_mul_of_shortExact`), as for `ℤ`-graded complexes: if
+`0 → C₁ → C₂ → C₃ → 0` is a short exact sequence of two-periodic complexes with `C₁` and `C₃`
+acyclic, and the bases of `C₂` are the images of the bases of `C₁` followed by lifts of the bases of
+`C₃`, then `τ(C₂) = ε · τ(C₁) · τ(C₃)`, where
+`ε = (-1) ^ (dim B₃,₁ · dim B₁,₀ + dim B₃,₀ · dim B₁,₁)` is the sign of the exchange, in each
+degree, of the boundaries of `C₃` with the lifts of the boundaries of `C₁`, and `Bₖ,ᵢ ⊆ Cₖ,ᵢ` is
+the image of the differential into degree `i`. Each bracket of `C₂` is computed with boundary bases
+made of the boundaries of `C₁` followed by lifts of the boundaries of `C₃`
+(`HomologicalComplex.torsionBracket_shortExactBoundaryBasis`). When the sequence splits no
+acyclicity is needed (`HomologicalComplex.parityTorsion_eq_mul_of_splitting`), and in particular
+the torsion of a direct sum `C₁ ⊞ C₃`, based by the bases of `C₁` followed by those of `C₃`, is
+`ε · τ(C₁) · τ(C₃)` (`HomologicalComplex.parityTorsion_biprod`).
+
 The torsion is compatible with scalar extension along a homomorphism of fields `φ : F →+* K`
 (`HomologicalComplex.map_parityTorsion`): if `D` is a two-periodic complex over `K` with bases
 `e i` in which the matrices of the differentials are the images under `φ` of those of `C`, then
@@ -102,6 +118,12 @@ torsion of a closed manifold.
   isomorphism of complexes with arbitrary bases.
 * `HomologicalComplex.parityTorsion_shift_of_even`, `HomologicalComplex.parityTorsion_shift_of_odd`:
   the torsion of a shifted complex; the parity shift inverts the torsion up to the sign `(-1) ^ n₀`.
+* `HomologicalComplex.parityTorsion_eq_mul_of_shortExact`: the multiplicativity of the torsion in
+  a based short exact sequence of acyclic two-periodic complexes.
+* `HomologicalComplex.parityTorsion_eq_mul_of_splitting`: the multiplicativity of the torsion in a
+  based split short exact sequence, with no acyclicity hypothesis.
+* `HomologicalComplex.parityTorsion_biprod`: the torsion of a direct sum of based two-periodic
+  complexes.
 * `HomologicalComplex.map_parityTorsion`: the torsion of the scalar extension of a based
   two-periodic complex along a homomorphism of fields is the image of its torsion.
 
@@ -606,5 +628,105 @@ theorem parityTorsion_shift_of_odd {k : ℤ} (hk : Odd k) :
   ring
 
 end Shift
+
+section ShortExact
+
+/-! ### Multiplicativity in short exact sequences -/
+
+variable {S : ShortComplex (HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2)))}
+  {n₁ n₃ : ZMod 2 → ℕ}
+
+/-- **Multiplicativity of the torsion.** Let `0 → C₁ → C₂ → C₃ → 0` be a short exact sequence of
+two-periodic complexes of vector spaces, with `C₁` and `C₃` acyclic, and with compatible bases: the
+basis `c₂ i` of `C₂ᵢ` is the image of the basis `c₁ i` of `C₁ᵢ` followed by lifts of the basis
+`c₃ i` of `C₃ᵢ`. Then `τ(C₂) = ε · τ(C₁) · τ(C₃)`, with the sign
+`ε = (-1) ^ (dim B₃,₁ · dim B₁,₀ + dim B₃,₀ · dim B₁,₁)` given by the dimensions of the boundaries
+`Bₖ,ᵢ ⊆ Cₖ,ᵢ`, the images of the differentials into degree `i`. -/
+theorem parityTorsion_eq_mul_of_shortExact (hS : S.ShortExact) (h₁ : S.X₁.Acyclic)
+    (h₃ : S.X₃.Acyclic) (c₁ : ∀ i, Basis (Fin (n₁ i)) F (S.X₁.X i))
+    (c₃ : ∀ i, Basis (Fin (n₃ i)) F (S.X₃.X i)) (c₂ : ∀ i, Basis (Fin (n₁ i + n₃ i)) F (S.X₂.X i))
+    (hc₁ : ∀ i k, c₂ i (Fin.castAdd (n₃ i) k) = (S.f.f i).hom (c₁ i k))
+    (hc₃ : ∀ i k, (S.g.f i).hom (c₂ i (Fin.natAdd (n₁ i) k)) = c₃ i k) :
+    S.X₂.parityTorsion c₂ =
+      (-1) ^ (finrank F (LinearMap.range (S.X₃.d 0 1).hom) *
+          finrank F (LinearMap.range (S.X₁.d 1 0).hom) +
+        finrank F (LinearMap.range (S.X₃.d 1 0).hom) *
+          finrank F (LinearMap.range (S.X₁.d 0 1).hom)) *
+      (S.X₁.parityTorsion c₁ * S.X₃.parityTorsion c₃) := by
+  have hf := hS.moduleCat_injective_f_f
+  have hfg := hS.moduleCat_exact_f_f
+  have hg := hS.moduleCat_surjective_g_f
+  -- Give the boundaries of `C₂` into degree `j` the basis made of the chosen boundary basis of `C₁`
+  -- followed by the boundaries of lifts `t i j` of the chosen lifts of `C₃` from degree `i`.
+  let t := shortExactBoundaryLift hg c₃
+  have ht := shortExactBoundaryLift_spec hg c₃
+  let β (i j : ZMod 2) (hij : (ComplexShape.up (ZMod 2)).next i = j) :=
+    shortExactBoundaryBasis hf hfg hg hij (h₃ i) (chosenBoundaryBasis S.X₁ c₁ i j)
+      (chosenBoundaryBasis S.X₃ c₃ i j) (t i j) (ht i j)
+  let s (i j : ZMod 2) :=
+    Fin.append (fun k ↦ (S.f.f i).hom (chosenBoundaryLift S.X₁ c₁ i j k)) (t i j)
+  have hs (i j : ZMod 2) (hij) : ∀ k, (S.X₂.d i j).hom (s i j k) = β i j hij k :=
+    d_append_shortExactBoundaryBasis hf hfg hg hij (h₃ i) _ _ _ (ht i j) _
+      (chosenBoundaryLift_spec S.X₁ c₁ i j)
+  rw [parityTorsion_eq (hS.acyclic_X₂ h₁ h₃) (β 1 0 next_zmod_two_one) (β 0 1 next_zmod_two_zero)
+      (s 0 1) (hs 0 1 _) (s 1 0) (hs 1 0 _),
+    parityTorsion_eq h₁ (chosenBoundaryBasis S.X₁ c₁ 1 0) (chosenBoundaryBasis S.X₁ c₁ 0 1)
+      (chosenBoundaryLift S.X₁ c₁ 0 1) (chosenBoundaryLift_spec S.X₁ c₁ 0 1)
+      (chosenBoundaryLift S.X₁ c₁ 1 0) (chosenBoundaryLift_spec S.X₁ c₁ 1 0),
+    parityTorsion_eq h₃ (chosenBoundaryBasis S.X₃ c₃ 1 0) (chosenBoundaryBasis S.X₃ c₃ 0 1)
+      (fun k ↦ (S.g.f 0).hom (t 0 1 k)) (ht 0 1) (fun k ↦ (S.g.f 1).hom (t 1 0 k)) (ht 1 0),
+    torsionBracket_shortExactBoundaryBasis hf hfg hg hc₁ hc₃ prev_zmod_two_one next_zmod_two_one
+      next_zmod_two_zero _ (h₁ 1) (h₃ 0) (h₃ 1) _ _ _ (ht 0 1) _ _ _ (ht 1 0) _
+      (chosenBoundaryLift_spec S.X₁ c₁ 1 0),
+    torsionBracket_shortExactBoundaryBasis hf hfg hg hc₁ hc₃ prev_zmod_two_zero next_zmod_two_zero
+      next_zmod_two_one _ (h₁ 0) (h₃ 1) (h₃ 0) _ _ _ (ht 1 0) _ _ _ (ht 0 1) _
+      (chosenBoundaryLift_spec S.X₁ c₁ 0 1)]
+  -- The two signs are `±1`, so the sign of the even bracket is its own inverse.
+  simp only [mul_inv, pow_add, ← inv_pow, inv_neg, inv_one]
+  ring
+
+/-- **Torsion of a split short exact sequence.** Let `0 → C₁ → C₂ → C₃ → 0` be a split short exact
+sequence of two-periodic complexes of vector spaces, with compatible bases: the basis `c₂ i` of
+`C₂ᵢ` is the image of the basis `c₁ i` of `C₁ᵢ` followed by lifts of the basis `c₃ i` of `C₃ᵢ`.
+Then `τ(C₂) = ε · τ(C₁) · τ(C₃)`, with the sign
+`ε = (-1) ^ (dim B₃,₁ · dim B₁,₀ + dim B₃,₀ · dim B₁,₁)` given by the dimensions of the boundaries
+`Bₖ,ᵢ ⊆ Cₖ,ᵢ`. This holds for all complexes: when `C₁` or `C₃` is not acyclic, neither is `C₂`,
+and both sides are `0`. -/
+theorem parityTorsion_eq_mul_of_splitting (σ : S.Splitting)
+    (c₁ : ∀ i, Basis (Fin (n₁ i)) F (S.X₁.X i)) (c₃ : ∀ i, Basis (Fin (n₃ i)) F (S.X₃.X i))
+    (c₂ : ∀ i, Basis (Fin (n₁ i + n₃ i)) F (S.X₂.X i))
+    (hc₁ : ∀ i k, c₂ i (Fin.castAdd (n₃ i) k) = (S.f.f i).hom (c₁ i k))
+    (hc₃ : ∀ i k, (S.g.f i).hom (c₂ i (Fin.natAdd (n₁ i) k)) = c₃ i k) :
+    S.X₂.parityTorsion c₂ =
+      (-1) ^ (finrank F (LinearMap.range (S.X₃.d 0 1).hom) *
+          finrank F (LinearMap.range (S.X₁.d 1 0).hom) +
+        finrank F (LinearMap.range (S.X₃.d 1 0).hom) *
+          finrank F (LinearMap.range (S.X₁.d 0 1).hom)) *
+      (S.X₁.parityTorsion c₁ * S.X₃.parityTorsion c₃) := by
+  by_cases h : S.X₁.Acyclic ∧ S.X₃.Acyclic
+  · exact parityTorsion_eq_mul_of_shortExact σ.shortExact h.1 h.2 c₁ c₃ c₂ hc₁ hc₃
+  rw [parityTorsion_of_not_acyclic _ _ fun h₂ ↦ h ⟨σ.acyclic_X₁ h₂, σ.acyclic_X₃ h₂⟩]
+  rcases not_and_or.1 h with h | h <;> simp [parityTorsion_of_not_acyclic _ _ h]
+
+variable {C₁ C₃ : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))}
+
+/-- **Torsion of a direct sum.** The torsion of the biproduct `C₁ ⊞ C₃` of two based two-periodic
+complexes, based in each degree by the basis of `C₁` followed by the basis of `C₃`, is
+`τ(C₁ ⊞ C₃) = ε · τ(C₁) · τ(C₃)`, with the sign
+`ε = (-1) ^ (dim B₃,₁ · dim B₁,₀ + dim B₃,₀ · dim B₁,₁)` given by the dimensions of the boundaries
+`Bₖ,ᵢ ⊆ Cₖ,ᵢ`. This holds for all complexes: `C₁ ⊞ C₃` is acyclic exactly when `C₁` and `C₃` both
+are, and both sides are `0` otherwise. -/
+theorem parityTorsion_biprod (c₁ : ∀ i, Basis (Fin (n₁ i)) F (C₁.X i))
+    (c₃ : ∀ i, Basis (Fin (n₃ i)) F (C₃.X i)) :
+    (C₁ ⊞ C₃).parityTorsion (fun i ↦ (biprodXBasis (c₁ i) (c₃ i)).reindex finSumFinEquiv) =
+      (-1) ^ (finrank F (LinearMap.range (C₃.d 0 1).hom) *
+          finrank F (LinearMap.range (C₁.d 1 0).hom) +
+        finrank F (LinearMap.range (C₃.d 1 0).hom) *
+          finrank F (LinearMap.range (C₁.d 0 1).hom)) *
+      (C₁.parityTorsion c₁ * C₃.parityTorsion c₃) :=
+  parityTorsion_eq_mul_of_splitting (ShortComplex.Splitting.ofHasBinaryBiproduct C₁ C₃) c₁ c₃ _
+    (by simp) (by simp [← ModuleCat.comp_apply])
+
+end ShortExact
 
 end HomologicalComplex
