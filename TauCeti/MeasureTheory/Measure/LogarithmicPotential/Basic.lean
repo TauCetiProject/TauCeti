@@ -13,7 +13,6 @@ public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLapl
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.MeasureTheory.Measure.LogarithmicPotential.Kernel
-import TauCeti.Analysis.Complex.UpperHalfPlane.Cpow
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
