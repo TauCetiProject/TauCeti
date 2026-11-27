@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Tiling
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Height
 import TauCeti.Combinatorics.Tiling.Tile
 
 /-!
@@ -30,6 +31,8 @@ Edge directions `1, 2, 3` are the indices `0, 1, 2` of `TriEdge.k`.
 * **A wedge.** For `R = {W(0), W(−e₁)}` and `M = {(0,3), (0,2)}`, `M` is a free tiling of `R` but
   not a tiling: its lozenges `W(0) ∪ B(0)` and `W(−e₁) ∪ B(0)` share the face `B(0) ∉ R`. The
   region `R` is not of the form `Faces(V)`, since the three vertices of `B(0)` are vertices of `R`.
+  The height function of `M` on `R` normalised by `H(0) = 0` is `0` at `0`, `e₁`, `e₃`, `−e₁` and
+  `1` at `e₂`.
 -/
 
 public section
@@ -138,6 +141,11 @@ theorem isTiling_tilingB : IsTiling hexagon tilingB := by
 theorem isTiling_hexagon_iff {M : Set TriEdge} :
     IsTiling hexagon M ↔ M = tilingA ∨ M = tilingB :=
   ⟨eq_tilingA_or_eq_tilingB, by rintro (rfl | rfl); exacts [isTiling_tilingA, isTiling_tilingB]⟩
+
+/-- The two tilings of the unit hexagon are distinct: `(0,1)` lies in `T_b` but not in `T_a`. -/
+theorem tilingA_ne_tilingB : tilingA ≠ tilingB := fun h => by
+  have h₀ : (⟨(0, 0), 0⟩ : TriEdge) ∈ tilingA := h ▸ by simp [tilingB]
+  simp [tilingA] at h₀
 
 /-- Each of `T_a` and `T_b` has one lozenge of each type. -/
 example : (∀ k : Fin 3, ∃! e, e ∈ tilingA ∧ e.k = k) ∧
@@ -303,5 +311,53 @@ theorem wedge_ne_facesOf (V : Set (ℤ × ℤ)) : wedge ≠ facesOf V := by
     rcases hu with rfl | rfl | rfl <;> simp
   rw [← h] at hB
   simp at hB
+
+/-- The height function of `M` on the wedge normalised by `H(0) = 0`: `1` at `e₂` and `0` at the
+other vertices `0`, `e₁`, `e₃`, `−e₁` of the wedge. -/
+def wedgeHeight (v : ℤ × ℤ) : ℤ := if v = (0, 1) then 1 else 0
+
+/-- An edge of the wedge is one of the three edges of `W(0)` or of `W(−e₁)`. -/
+private theorem eq_of_mem_regionEdges_wedge {e : TriEdge} (he : e ∈ regionEdges wedge) :
+    e = ⟨(0, 0), 0⟩ ∨ e = ⟨(1, 0), 1⟩ ∨ e = ⟨(0, 0), 2⟩ ∨ e = ⟨(-1, 0), 0⟩ ∨
+      e = ⟨(0, 0), 1⟩ ∨ e = ⟨(-1, 0), 2⟩ := by
+  obtain ⟨f, hf, he⟩ := mem_regionEdges.1 he
+  rcases hf with rfl | rfl <;>
+    simp only [TriFace.edges_mk_true, Finset.mem_insert, Finset.mem_singleton] at he <;>
+    rcases he with rfl | rfl | rfl <;> norm_num
+
+/-- `wedgeHeight` is a height function on the wedge. -/
+theorem isHeightFunctionOn_wedgeHeight : IsHeightFunctionOn wedge wedgeHeight := by
+  refine isHeightFunctionOn_def.2 fun e he => ?_
+  rcases eq_of_mem_regionEdges_wedge he with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [wedgeHeight]
+
+/-- The free tiling of `wedgeHeight` on the wedge is `M`. -/
+theorem tilingOfHeightOn_wedgeHeight : tilingOfHeightOn wedge wedgeHeight = wedgeConfig := by
+  ext e
+  refine ⟨fun he => ?_, ?_⟩
+  · obtain ⟨hH, he⟩ := mem_tilingOfHeightOn.1 he
+    rcases eq_of_mem_regionEdges_wedge he with rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp_all [wedgeHeight]
+  · rintro (rfl | rfl)
+    · exact mem_tilingOfHeightOn.2 ⟨by simp [wedgeHeight],
+        mem_regionEdges.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩⟩
+    · exact mem_tilingOfHeightOn.2 ⟨by simp [wedgeHeight],
+        mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩⟩
+
+/-- Every height function on the wedge with free tiling `M` and `H(0) = 0` is `0` at `0`, `e₁`,
+`e₃`, `−e₁` and `1` at `e₂`. -/
+theorem heights_of_tilingOfHeightOn_eq_wedgeConfig {H : ℤ × ℤ → ℤ}
+    (hH : IsHeightFunctionOn wedge H) (hT : tilingOfHeightOn wedge H = wedgeConfig)
+    (h₀ : H 0 = 0) :
+    H (1, 0) = 0 ∧ H (1, 1) = 0 ∧ H (-1, 0) = 0 ∧ H (0, 1) = 1 := by
+  have hc := fun (e : TriEdge) (he : e ∈ regionEdges wedge) =>
+    hT ▸ hH.heightCochain_tilingOfHeightOn he
+  have h₁ := hc ⟨(0, 0), 0⟩ (mem_regionEdges.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩)
+  have h₂ := hc ⟨(0, 0), 2⟩ (mem_regionEdges.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩)
+  have h₃ := hc ⟨(-1, 0), 0⟩ (mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩)
+  have h₄ := hc ⟨(0, 0), 1⟩ (mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩)
+  simp [heightCochain_of_mem, heightCochain_of_notMem, Prod.ext_iff] at h₁ h₂ h₃ h₄
+  have h₀' : H (0, 0) = 0 := h₀
+  omega
 
 end TauCeti.Examples.LozengeTiling
