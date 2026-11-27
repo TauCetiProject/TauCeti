@@ -155,10 +155,10 @@ theorem exists_norm_fderiv_comp_le_mul_norm_fderiv {f : E → G} {φ : F → E} 
         rw [mul_comm]
         exact mul_le_mul_of_nonneg_right hKy (norm_nonneg _)
 
-/-- Precomposing a real-valued function with scalar multiplication scales the norm of its
-Fréchet derivative by the absolute value of the scalar. -/
-theorem norm_fderiv_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : E → ℝ} (a : ℝ) (x : E) :
+/-- Precomposing a function between real normed spaces with scalar multiplication scales the
+norm of its Fréchet derivative by the absolute value of the scalar. -/
+theorem norm_fderiv_comp_smul {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (a : ℝ) (x : E) :
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
   rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
 

@@ -11,6 +11,7 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Algebra.Ring.CayleyChart
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -93,6 +94,21 @@ section Rescaling
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
+/-- Rescaling the arguments by `t ≥ 0` multiplies the distance between two derivatives by `t`. -/
+private theorem norm_fderiv_comp_smul_sub_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f g : F → E) {t : ℝ} (ht : 0 ≤ t) (x y : F) :
+    ‖fderiv ℝ (fun x ↦ f (t • x)) x - fderiv ℝ (fun x ↦ g (t • x)) y‖ ≤
+      t * ‖fderiv ℝ f (t • x) - fderiv ℝ g (t • y)‖ := by
+  rw [fderiv_comp_smul, fderiv_comp_smul, ← smul_sub]
+  refine (ContinuousLinearMap.opNorm_smul_le t _).trans_eq ?_
+  rw [Real.norm_of_nonneg ht]
+
+/-- Rescaling by `t ≥ 0` maps the ball of radius `4` into the ball of radius `r ≥ 4 t`. -/
+private theorem smul_mem_closedBall_of_four_mul_le {r t : ℝ} (ht : 0 ≤ t) (htr : 4 * t ≤ r)
+    {x : F} (hx : ‖x‖ ≤ 4) : t • x ∈ closedBall (0 : F) r := by
+  rw [mem_closedBall, dist_zero_right, norm_smul, Real.norm_of_nonneg ht]
+  nlinarith [norm_nonneg x]
+
 /-- Rescaling the argument of a structure by `t` multiplies its derivative by `t` and the
 Lipschitz constant of the derivative by `t²`: bounds `A` and `L` on the ball of radius `r ≥ 4 t`
 with `t A ≤ η` and `t² L ≤ η` give the bounds `η` for `x ↦ J (t x)` on the ball of radius `4`. -/
@@ -106,23 +122,17 @@ private theorem rescale_bounds (J : F → F →L[ℝ] F) {r A L t η : ℝ} (ht 
       (∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ (fun x ↦ J (t • x)) x‖ ≤ η) ∧
       ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
         ‖fderiv ℝ (fun x ↦ J (t • x)) x - fderiv ℝ (fun x ↦ J (t • x)) y‖ ≤ η * ‖x - y‖ := by
-  have hmem : ∀ x ∈ closedBall (0 : F) 4, t • x ∈ closedBall (0 : F) r := fun x hx ↦ by
-    rw [mem_closedBall, dist_zero_right] at hx ⊢
-    rw [norm_smul, Real.norm_of_nonneg ht.le]
-    nlinarith
+  have hmem : ∀ x ∈ closedBall (0 : F) 4, t • x ∈ closedBall (0 : F) r := fun x hx ↦
+    smul_mem_closedBall_of_four_mul_le ht.le htr (mem_closedBall_zero_iff.1 hx)
   refine ⟨fun x hx ↦ (hd _ (hmem x hx)).comp x (differentiableAt_id.const_smul t),
     fun x hx ↦ ?_, fun x hx y hy ↦ ?_⟩
-  · rw [fderiv_comp_smul]
-    refine (ContinuousLinearMap.opNorm_smul_le t _).trans ?_
-    rw [Real.norm_of_nonneg ht.le]
-    calc t * ‖fderiv ℝ J (t • x)‖ ≤ t * A := by gcongr; exact hA _ (hmem x hx)
+  · calc ‖fderiv ℝ (fun x ↦ J (t • x)) x‖ = t * ‖fderiv ℝ J (t • x)‖ := by
+          rw [norm_fderiv_comp_smul, abs_of_pos ht]
+      _ ≤ t * A := by gcongr; exact hA _ (hmem x hx)
       _ ≤ η := htA
-  · rw [fderiv_comp_smul, fderiv_comp_smul]
-    refine (congrArg norm (smul_sub t (fderiv ℝ J (t • x)) (fderiv ℝ J (t • y))).symm).trans_le
-      ((ContinuousLinearMap.opNorm_smul_le t _).trans ?_)
+  · refine (norm_fderiv_comp_smul_sub_le J J ht.le x y).trans ?_
     have hxy := hL _ (hmem x hx) _ (hmem y hy)
     rw [← smul_sub, norm_smul, Real.norm_of_nonneg ht.le] at hxy
-    rw [Real.norm_of_nonneg ht.le]
     calc t * ‖fderiv ℝ J (t • x) - fderiv ℝ J (t • y)‖ ≤ t * (L * (t * ‖x - y‖)) := by gcongr
       _ = t ^ 2 * L * ‖x - y‖ := by ring
       _ ≤ η * ‖x - y‖ := mul_le_mul_of_nonneg_right htL (norm_nonneg _)
@@ -231,6 +241,12 @@ private theorem mul_self_eq_neg_one {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = 
   ext v
   simp [hAA]
 
+/-- An endomorphism acting as multiplication by `i` is `lsmul i`. -/
+private theorem eq_lsmul_I {A : F →L[ℝ] F} (hA : ∀ v, A v = I • v) :
+    A = ContinuousLinearMap.lsmul ℝ ℂ I := by
+  ext v
+  simp [hA]
+
 /-- `(A + i) Q v = (i - A) v` for the Beltrami coefficient `Q` of `A`, when `A² = -1` and `i + A`
 is invertible. -/
 private theorem add_apply_neg_cayleyCoord {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v)
@@ -274,9 +290,7 @@ private theorem eventually_contDiffAt_and_isUnit [CompleteSpace F] {P : Type*}
     ∀ᶠ q in 𝓝 (p, (0 : F)), ContDiffAt ℝ 2 (fun q : P × F ↦ J q.1 q.2) q ∧
       (∀ v, J q.1 q.2 (J q.1 q.2 v) = -v) ∧
       IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J q.1 q.2) := by
-  have hI0 : J p 0 = ContinuousLinearMap.lsmul ℝ ℂ I := by
-    ext v
-    simp [hJ0]
+  have hI0 := eq_lsmul_I hJ0
   have hU : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J p 0) := by
     have h2 := (IsUnit.mk0 (2 : ℝ) two_ne_zero).map (algebraMap ℝ (F →L[ℝ] F))
     rw [map_ofNat] at h2
@@ -467,17 +481,14 @@ private theorem exists_rescale_neg_cayleyCoord [FiniteDimensional ℂ F] {P : Ty
   choose hsq hdiff hbd hlip using hloc
   have : ProperSpace F := FiniteDimensional.proper_rclike ℂ F
   obtain ⟨t, ht, ht1, htr, htA, htK⟩ := exists_rescale hη hr hA hA
-  have hmem : ∀ x : F, ‖x‖ ≤ 4 → t • x ∈ closedBall (0 : F) r := fun x hx ↦ by
-    rw [mem_closedBall, dist_zero_right, norm_smul, Real.norm_of_nonneg ht.le]
-    nlinarith
+  have hmem : ∀ x : F, ‖x‖ ≤ 4 → t • x ∈ closedBall (0 : F) r := fun _ ↦
+    smul_mem_closedBall_of_four_mul_le ht.le htr
   have hT := hS.prod (isCompact_closedBall (0 : F) r)
   refine ⟨t, ht, fun p hp ↦ ?_⟩
   obtain ⟨hdt, hAt, hLt⟩ := rescale_bounds _ ht htr htA htK (hdiff p hp) (hbd p hp) (hlip p hp)
-  have hI0 : J p 0 = ContinuousLinearMap.lsmul ℝ ℂ I := by
-    ext v
-    simp [hJ0 p hp]
-  refine ⟨fun x hx ↦ hsq p hp _ (hmem x hx), by rw [smul_zero, hI0, cayleyCoord_self,
-    neg_zero], hdt, hAt, hLt, fun e he ↦ ?_⟩
+  refine ⟨fun x hx ↦ hsq p hp _ (hmem x hx), by
+    rw [smul_zero, eq_lsmul_I (hJ0 p hp), cayleyCoord_self, neg_zero], hdt, hAt, hLt,
+    fun e he ↦ ?_⟩
   -- Uniform continuity of the coefficient and of its derivative on the compact `S × B(0, r)`.
   obtain ⟨δ₁, hδ₁, h₁⟩ := Metric.uniformContinuousOn_iff.1
     (hT.uniformContinuousOn_of_continuous
@@ -495,12 +506,10 @@ private theorem exists_rescale_neg_cayleyCoord [FiniteDimensional ℂ F] {P : Ty
   have h₂' := h₂ _ ⟨hp', hx'⟩ _ ⟨hp, hx'⟩ (hd.trans_le (min_le_right _ _))
   rw [dist_eq_norm] at h₁' h₂'
   refine ⟨h₁'.le, ?_⟩
-  rw [fderiv_comp_smul (f := fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p' x)),
-    fderiv_comp_smul (f := fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p x))]
-  refine (congrArg norm (smul_sub t _ _).symm).trans_le
-    ((ContinuousLinearMap.opNorm_smul_le t _).trans ?_)
-  rw [Real.norm_of_nonneg ht.le]
-  exact (mul_le_mul ht1 h₂'.le (norm_nonneg _) zero_le_one).trans_eq (one_mul e)
+  exact (norm_fderiv_comp_smul_sub_le
+    (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p' x))
+    (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p x)) ht.le x x).trans
+    ((mul_le_mul ht1 h₂'.le (norm_nonneg _) zero_le_one).trans_eq (one_mul e))
 
 /-- **Beltrami discs for a compact family of rescaled structures.** Under the hypotheses of
 `exists_rescale_neg_cayleyCoord` and for `κ > 0`, there are a factor `t > 0`, a constant `C ≥ 0`
