@@ -40,7 +40,8 @@ and `𝔤₀ = 𝔨 ⊕ 𝔞 ⊕ 𝔫` are in `TauCeti.Algebra.Lie.CartanInvolut
 ## Main results
 
 * `Submodule.positiveRestrictedRootSpace_le_iff`: `𝔫 ≤ N` exactly when `𝔤_λ ≤ N` for every `λ`
-  with `λ(H₀) > 0`.
+  with `λ(H₀) > 0`; `Submodule.apply_mem_of_mem_positiveRestrictedRootSpace` is its form for the
+  image of `𝔫` under a linear map.
 * `Submodule.lie_mem_positiveRestrictedRootSpace`: `[𝔫, 𝔫] ⊆ 𝔫`.
 * `Submodule.lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace`: `[𝔤_μ, 𝔫] ⊆ 𝔫` for
   `μ(H₀) ≥ 0`, in particular for `μ = 0`.
@@ -53,8 +54,8 @@ and `𝔤₀ = 𝔨 ⊕ 𝔞 ⊕ 𝔫` are in `TauCeti.Algebra.Lie.CartanInvolut
 * `Submodule.isNilpotent_ad_of_mem_positiveRestrictedRootSpace`,
   `Submodule.lieModule_isNilpotent_positiveRestrictedRootSubalgebra`,
   `Submodule.lieRing_isNilpotent_positiveRestrictedRootSubalgebra`: if the restricted root spaces
-  span a Noetherian `L` over a linearly ordered field, `ad x` is nilpotent for `x ∈ 𝔫`, `𝔫` acts
-  nilpotently on `L`, and `𝔫` is a nilpotent Lie algebra.
+  span a torsion-free Noetherian `L` over a linearly ordered commutative ring, `ad x` is nilpotent
+  for `x ∈ 𝔫`, `𝔫` acts nilpotently on `L`, and `𝔫` is a nilpotent Lie algebra.
 * `LieEquiv.IsCartanInvolution.lieModule_isNilpotent_positiveRestrictedRootSubalgebra`,
   `LieEquiv.IsCartanInvolution.lieRing_isNilpotent_positiveRestrictedRootSubalgebra`: the same for
   a Cartan involution of a real Lie algebra and an abelian `𝔞 ⊆ 𝔭`.
@@ -109,13 +110,22 @@ theorem positiveRestrictedRootSpace_le_iff {N : Submodule R L} :
   rw [positiveRestrictedRootSpace_eq_iSup]
   exact iSup₂_le_iff
 
+/-- A linear map sends `𝔫` into a submodule `N` when it sends the restricted root space of every
+functional positive at `H₀` into `N`. -/
+theorem apply_mem_of_mem_positiveRestrictedRootSpace {M : Type*} [AddCommGroup M] [Module R M]
+    {N : Submodule R M} (f : L →ₗ[R] M)
+    (hf : ∀ μ : Dual R 𝔞, 0 < μ H₀ → ∀ z ∈ 𝔞.restrictedRootSpace μ, f z ∈ N)
+    (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) : f y ∈ N :=
+  mem_comap.mp <| positiveRestrictedRootSpace_le_iff.mpr
+    (fun μ hμ z hz ↦ mem_comap.mpr (hf μ hμ z hz)) hy
+
 /-- **`𝔞` normalizes `𝔫`**: `[x, y] ∈ 𝔫` for `x ∈ 𝔞` and `y ∈ 𝔫`. -/
 theorem lie_mem_positiveRestrictedRootSpace_of_mem (hx : x ∈ 𝔞)
     (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) :
     ⁅x, y⁆ ∈ 𝔞.positiveRestrictedRootSpace H₀ := by
-  refine (positiveRestrictedRootSpace_le_iff.mpr fun μ hμ z hz ↦ ?_ :
-    𝔞.positiveRestrictedRootSpace H₀ ≤ (𝔞.positiveRestrictedRootSpace H₀).comap (ad R L x)) hy
-  rw [mem_comap, ad_apply, mem_restrictedRootSpace.mp hz ⟨x, hx⟩]
+  rw [← ad_apply R]
+  refine apply_mem_of_mem_positiveRestrictedRootSpace _ (fun μ hμ z hz ↦ ?_) hy
+  rw [ad_apply, mem_restrictedRootSpace.mp hz ⟨x, hx⟩]
   exact smul_mem _ _ (restrictedRootSpace_le_positiveRestrictedRootSpace hμ hz)
 
 /-- The zero subspace has `𝔫 = 0`: it has no restricted roots. -/
@@ -149,9 +159,9 @@ variable {R L : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R] [LieRing 
 theorem lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace (hμ : 0 ≤ μ H₀)
     (hx : x ∈ 𝔞.restrictedRootSpace μ) (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) :
     ⁅x, y⁆ ∈ 𝔞.positiveRestrictedRootSpace H₀ := by
-  refine (positiveRestrictedRootSpace_le_iff.mpr fun ν hν z hz ↦ ?_ :
-    𝔞.positiveRestrictedRootSpace H₀ ≤ (𝔞.positiveRestrictedRootSpace H₀).comap (ad R L x)) hy
-  rw [mem_comap, ad_apply]
+  rw [← ad_apply R]
+  refine apply_mem_of_mem_positiveRestrictedRootSpace _ (fun ν hν z hz ↦ ?_) hy
+  rw [ad_apply]
   refine restrictedRootSpace_le_positiveRestrictedRootSpace ?_ (lie_mem_restrictedRootSpace hx hz)
   rw [LinearMap.add_apply]
   exact add_pos_of_nonneg_of_pos hμ hν
@@ -165,13 +175,10 @@ theorem lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace_zero
 /-- **`𝔫` is closed under the bracket.** -/
 theorem lie_mem_positiveRestrictedRootSpace (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀)
     (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) : ⁅x, y⁆ ∈ 𝔞.positiveRestrictedRootSpace H₀ := by
-  have h : 𝔞.positiveRestrictedRootSpace H₀ ≤
-      (𝔞.positiveRestrictedRootSpace H₀).comap (ad R L y) :=
-    positiveRestrictedRootSpace_le_iff.mpr fun μ hμ z hz ↦ by
-      rw [mem_comap, ad_apply, ← lie_skew]
-      exact neg_mem (lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace hμ.le hz hy)
-  rw [← lie_skew]
-  exact neg_mem (h hx)
+  rw [← lie_skew, neg_mem_iff, ← ad_apply R]
+  refine apply_mem_of_mem_positiveRestrictedRootSpace _ (fun μ hμ z hz ↦ ?_) hx
+  rw [ad_apply, ← lie_skew, neg_mem_iff]
+  exact lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace hμ.le hz hy
 
 variable (𝔞 H₀) in
 /-- The positive restricted root space `𝔫 = ⊕_{λ ∈ Σ⁺} 𝔤_λ` as a Lie subalgebra. -/
@@ -213,9 +220,9 @@ end OrderedRing
 
 /-! ### Nilpotence of `𝔫` -/
 
-section LinearOrderedField
+section LinearOrderedRing
 
-variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+variable {K L : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
   [LieAlgebra K L] {𝔞 : Submodule K L} {H₀ : 𝔞} {ν : Dual K 𝔞} {x z : L}
 
 /-- `ad x`, `x ∈ 𝔫`, carries `𝔤_ν` into the sum of the restricted root spaces of the functionals
@@ -223,21 +230,18 @@ whose value at `H₀` exceeds `ν(H₀)`. -/
 private theorem lie_mem_iSup_lt_of_mem_positiveRestrictedRootSpace
     (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀) (hz : z ∈ 𝔞.restrictedRootSpace ν) :
     ⁅x, z⁆ ∈ ⨆ (μ : Dual K 𝔞) (_ : ν H₀ < μ H₀), 𝔞.restrictedRootSpace μ := by
-  have h : 𝔞.positiveRestrictedRootSpace H₀ ≤ (⨆ (μ : Dual K 𝔞) (_ : ν H₀ < μ H₀),
-      𝔞.restrictedRootSpace μ).comap (ad K L z) :=
-    positiveRestrictedRootSpace_le_iff.mpr fun μ hμ y hy ↦ by
-      have hlt : ν H₀ < (ν + μ) H₀ := by
-        rw [LinearMap.add_apply]
-        exact lt_add_of_pos_right _ hμ
-      rw [mem_comap, ad_apply]
-      exact mem_iSup_of_mem (ν + μ) (mem_iSup_of_mem hlt (lie_mem_restrictedRootSpace hz hy))
-  rw [← lie_skew]
-  exact neg_mem (h hx)
+  rw [← lie_skew, neg_mem_iff, ← ad_apply K]
+  refine apply_mem_of_mem_positiveRestrictedRootSpace _ (fun μ hμ y hy ↦ ?_) hx
+  have hlt : ν H₀ < (ν + μ) H₀ := by
+    rw [LinearMap.add_apply]
+    exact lt_add_of_pos_right _ hμ
+  rw [ad_apply]
+  exact mem_iSup_of_mem (ν + μ) (mem_iSup_of_mem hlt (lie_mem_restrictedRootSpace hz hy))
 
-/-- **`ad x` is nilpotent for `x ∈ 𝔫`.** If the restricted root spaces of `𝔞` span a Noetherian Lie
-algebra `L` over a linearly ordered field, then `ad x` is nilpotent for every `x` in the positive
-restricted root space `𝔫`. -/
-theorem isNilpotent_ad_of_mem_positiveRestrictedRootSpace [IsNoetherian K L]
+/-- **`ad x` is nilpotent for `x ∈ 𝔫`.** If the restricted root spaces of `𝔞` span a torsion-free
+Noetherian Lie algebra `L` over a linearly ordered commutative ring, then `ad x` is nilpotent for
+every `x` in the positive restricted root space `𝔫`. -/
+theorem isNilpotent_ad_of_mem_positiveRestrictedRootSpace [IsTorsionFree K L] [IsNoetherian K L]
     (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤)
     (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀) : IsNilpotent (ad K L x) := by
   have hfin : {μ : Dual K 𝔞 | 𝔞.restrictedRootSpace μ ≠ ⊥}.Finite :=
@@ -273,37 +277,39 @@ theorem isNilpotent_ad_of_mem_positiveRestrictedRootSpace [IsNoetherian K L]
       have hz' := ih (μ H₀) (by have := Finset.card_lt_card hsub; omega)
         (lie_mem_iSup_lt_of_mem_positiveRestrictedRootSpace hx hz)
       rw [LinearMap.mem_ker, pow_succ, mul_apply_eq_comp, ad_apply]
-      exact hz'
+      exact LinearMap.mem_ker.mp hz'
   -- Take `t` below the value at `H₀` of every functional with nonzero restricted root space.
   obtain ⟨b, hb⟩ := (hfin.image fun μ ↦ μ H₀).bddBelow
   refine ⟨(F.filter ((b - 1) < · H₀)).card, LinearMap.ext fun y ↦ ?_⟩
+  rw [LinearMap.zero_apply, ← LinearMap.mem_ker]
   refine key _ (b - 1) le_rfl ?_
   refine (hspan.symm.le.trans (iSup_le fun μ ↦ ?_)) mem_top
   by_cases hbot : 𝔞.restrictedRootSpace μ = ⊥
   · exact hbot.le.trans bot_le
   exact le_iSup₂_of_le μ ((sub_one_lt b).trans_le (hb ⟨μ, hbot, rfl⟩)) le_rfl
 
-/-- **`𝔫` acts nilpotently on `L`.** If the restricted root spaces of `𝔞` span a Noetherian Lie
-algebra `L` over a linearly ordered field, the positive restricted root subalgebra acts nilpotently
-on `L` by Engel's theorem. -/
-theorem lieModule_isNilpotent_positiveRestrictedRootSubalgebra [IsNoetherian K L]
-    (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤) :
+/-- **`𝔫` acts nilpotently on `L`.** If the restricted root spaces of `𝔞` span a torsion-free
+Noetherian Lie algebra `L` over a linearly ordered commutative ring, the positive restricted root
+subalgebra acts nilpotently on `L` by Engel's theorem. -/
+theorem lieModule_isNilpotent_positiveRestrictedRootSubalgebra [IsTorsionFree K L]
+    [IsNoetherian K L] (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤) :
     LieModule.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) L := by
   refine (LieModule.isNilpotent_iff_forall' (R := K)).mpr fun x ↦ ?_
   convert isNilpotent_ad_of_mem_positiveRestrictedRootSpace (K := K) hspan x.property using 1
   ext y
   simp
 
-/-- **`𝔫` is a nilpotent Lie algebra.** If the restricted root spaces of `𝔞` span a Noetherian Lie
-algebra `L` over a linearly ordered field, the positive restricted root subalgebra is nilpotent. -/
-theorem lieRing_isNilpotent_positiveRestrictedRootSubalgebra [IsNoetherian K L]
+/-- **`𝔫` is a nilpotent Lie algebra.** If the restricted root spaces of `𝔞` span a torsion-free
+Noetherian Lie algebra `L` over a linearly ordered commutative ring, the positive restricted root
+subalgebra is nilpotent. -/
+theorem lieRing_isNilpotent_positiveRestrictedRootSubalgebra [IsTorsionFree K L] [IsNoetherian K L]
     (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤) :
     LieRing.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) :=
   LieAlgebra.isNilpotent_iff_forall.mpr fun x ↦
     LieSubalgebra.isNilpotent_ad_of_isNilpotent_ad _
       (isNilpotent_ad_of_mem_positiveRestrictedRootSpace hspan x.property)
 
-end LinearOrderedField
+end LinearOrderedRing
 
 end Submodule
 

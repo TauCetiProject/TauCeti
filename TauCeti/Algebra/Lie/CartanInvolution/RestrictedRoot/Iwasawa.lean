@@ -27,8 +27,8 @@ every `X ∈ 𝔫⁻` is `(X + θ X) - θ X` with `X + θ X ∈ 𝔨` and `θ X 
 `k ∈ 𝔨`, `a ∈ 𝔞`, `n ∈ 𝔫`, applying `θ` gives `θ n = 2a + n ∈ 𝔫⁻ ∩ (𝔤_0 ⊕ 𝔫) = 0`. This is the Lie
 algebra form of the decomposition `G = KAN` of a real semisimple Lie group.
 
-The independence statements need neither regularity nor a Cartan involution, and hold over any
-linearly ordered field.
+The independence statements need neither regularity nor a Cartan involution, and hold for any
+torsion-free Lie algebra over a linearly ordered commutative ring.
 
 ## Main results
 
@@ -55,8 +55,8 @@ namespace LieEquiv
 
 open Submodule
 
-variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
-  [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L} {𝔞 : Submodule K L}
+variable {K L : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+  [LieAlgebra K L] [IsTorsionFree K L] {θ : L ≃ₗ⁅K⁆ L} {𝔞 : Submodule K L}
 
 /-- **`𝔨 ∩ (𝔞 + 𝔫) = 0`.** For an automorphism `θ`, an abelian subspace `𝔞` of its
 `-1`-eigenspace `𝔭` and any `H₀ ∈ 𝔞`, the fixed subalgebra `𝔨` of `θ` meets `𝔞 + 𝔫` trivially. -/
