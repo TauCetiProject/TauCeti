@@ -22,8 +22,9 @@ For a fixed finite set of characters and any further characters with logarithmic
 bounded by `C' * log x` at one, the constant in these last two estimates is independent of
 the choice of the further characters. These are the pointwise inputs to the thick-place
 comparison in Levent Alpöge's `Deduction.CharacterBalanceMoves.one_char` in
-[`ChCore.lean`][ch-core]. The principal and nonprincipal estimates use the Chebyshev Riesz
-bounds in `TauCeti.NumberTheory.Chebyshev.RieszRemainder`.
+[`ChCore.lean`][ch-core]. The principal estimates use the Chebyshev Riesz bounds in
+`TauCeti.NumberTheory.Chebyshev.RieszRemainder`, and the nonprincipal estimates use the bounds in
+`TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Remainder`.
 
 [ch-core]: https://github.com/leanprover-community/riemann-hypothesis/blob/40e56bab026552e089d7afcfeff08d2defb9c005/src/Development/AutomorphicArithmetic/DedekindLFunctions/LandauTheorems/ChCore.lean
 -/
@@ -61,7 +62,7 @@ theorem norm_mul_rieszRemainder_div_sub_le (χ : PrimitiveDirichletCharacter) {a
 
 /-- Between zero and one, the trivial Riesz remainder differs from its value at one by
 at most `(1 + γ) * (1 - y)`. Here the von Mangoldt sum vanishes. -/
-theorem norm_rieszRemainder_one_sub_at_one_le {y : ℝ} (hy₀ : 0 ≤ y) (hy₁ : y ≤ 1) :
+theorem norm_rieszRemainder_one_sub_rieszRemainder_one_le {y : ℝ} (hy₀ : 0 ≤ y) (hy₁ : y ≤ 1) :
     ‖(1 : PrimitiveDirichletCharacter).rieszRemainder y -
       (1 : PrimitiveDirichletCharacter).rieszRemainder 1‖ ≤
       (1 + eulerMascheroniConstant) * (1 - y) := by
@@ -69,7 +70,7 @@ theorem norm_rieszRemainder_one_sub_at_one_le {y : ℝ} (hy₀ : 0 ≤ y) (hy₁
       ((z * (1 + eulerMascheroniConstant) - z * log z : ℝ) : ℂ) := by
     rw [rieszRemainder_one, rieszSum_eq_zero_of_le_one _ hz, zero_add]
     push_cast
-    rfl
+    ring
   rw [hsmall y hy₁, hsmall 1 le_rfl, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs,
     abs_le]
   simp only [one_mul, log_one, sub_zero]
@@ -79,10 +80,39 @@ theorem norm_rieszRemainder_one_sub_at_one_le {y : ℝ} (hy₀ : 0 ≤ y) (hy₁
   · linarith only [mul_log_nonpos hy₀ hy₁]
   · linarith only [self_sub_one_le_mul_log hy₀, hγ, sub_nonneg.mpr hy₁]
 
+/-- At conductor one the Riesz remainder is `(log 4 + 4 + γ)`-Lipschitz against a scale
+`x ≥ 1`, for every `y ≥ 0`. Below one this uses the closed form of the remainder. -/
+theorem norm_rieszRemainder_one_sub_le {x y : ℝ} (hy : 0 ≤ y) (hx : 1 ≤ x) :
+    ‖(1 : PrimitiveDirichletCharacter).rieszRemainder y -
+      (1 : PrimitiveDirichletCharacter).rieszRemainder x‖ ≤
+      (log 4 + 4 + eulerMascheroniConstant) * |y - x| := by
+  set F := (1 : PrimitiveDirichletCharacter).rieszRemainder
+  set A := log 4 + 4 + eulerMascheroniConstant
+  have hsub (z : ℝ) (hz : 1 ≤ z) : ‖F z - F x‖ ≤ A * |z - x| := by
+    simpa only [F, A, rieszRemainder_one_eq_ofReal, ← Complex.ofReal_sub, Complex.norm_real,
+      Real.norm_eq_abs] using
+      Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le hz hx
+  by_cases hy₁ : 1 ≤ y
+  · exact hsub y hy₁
+  have hy₁' : y ≤ 1 := le_of_not_ge hy₁
+  have hA : 1 + eulerMascheroniConstant ≤ A := by
+    have : 0 ≤ log 4 := log_nonneg (by norm_num)
+    dsimp only [A]
+    linarith
+  calc
+    _ ≤ ‖F y - F 1‖ + ‖F 1 - F x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ ≤ (1 + eulerMascheroniConstant) * (1 - y) + A * |1 - x| :=
+      add_le_add (norm_rieszRemainder_one_sub_rieszRemainder_one_le hy hy₁') (hsub 1 le_rfl)
+    _ ≤ A * |y - x| := by
+      rw [abs_of_nonpos (sub_nonpos.mpr hx), abs_of_nonpos (sub_nonpos.mpr (hy₁'.trans hx))]
+      calc
+        _ ≤ A * (1 - y) + A * -(1 - x) := by gcongr
+        _ = _ := by ring
+
 /-- A bound for the nonprincipal logarithmic derivative gives the same error budget for
 freezing the Riesz argument within one unit of `x` and for bounding the remainder at `x`
 after dividing by `x`. At conductor one no logarithmic derivative is needed. -/
-theorem norm_rieszRemainder_near_le (χ : PrimitiveDirichletCharacter) {x y K : ℝ}
+theorem norm_rieszRemainder_sub_le_and_norm_le (χ : PrimitiveDirichletCharacter) {x y K : ℝ}
     (hx : 1 ≤ x) (hy : |y - x| ≤ 1)
     (hK : χ ≠ 1 → ‖logDeriv χ.character.LFunction 1‖ ≤ K) :
     let D := log (x + 1) + (log 4 + 6 + eulerMascheroniConstant) + max K 0
@@ -95,32 +125,11 @@ theorem norm_rieszRemainder_near_le (χ : PrimitiveDirichletCharacter) {x y K : 
   have hlog₀ : 0 ≤ log (x + 1) := log_nonneg (by linarith)
   have hγ : 0 ≤ eulerMascheroniConstant :=
     le_trans (by norm_num) one_half_lt_eulerMascheroniConstant.le
-  have h₄ : 0 ≤ log 4 := log_nonneg (by norm_num)
   have hmax : 0 ≤ max K 0 := le_max_right ..
   rcases eq_or_ne χ 1 with rfl | hχ
-  · let F := (1 : PrimitiveDirichletCharacter).rieszRemainder
-    let A := log 4 + 4 + eulerMascheroniConstant
-    have hsub (z : ℝ) (hz : 1 ≤ z) : ‖F z - F x‖ ≤ A * |z - x| := by
-      simpa only [F, A, rieszRemainder_one_eq_ofReal, ← Complex.ofReal_sub, Complex.norm_real,
-        Real.norm_eq_abs] using
-        Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le hz hx
-    have hvar : ‖F y - F x‖ ≤ A * |y - x| := by
-      by_cases hy₁ : 1 ≤ y
-      · exact hsub y hy₁
-      have hy₁' : y ≤ 1 := le_of_not_ge hy₁
-      calc
-        _ ≤ ‖F y - F 1‖ + ‖F 1 - F x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-        _ ≤ (1 + eulerMascheroniConstant) * (1 - y) + A * |1 - x| :=
-          add_le_add (norm_rieszRemainder_one_sub_at_one_le (by linarith) hy₁') (hsub 1 le_rfl)
-        _ ≤ A * |y - x| := by
-          rw [abs_of_nonpos (sub_nonpos.mpr hx), abs_of_nonpos (sub_nonpos.mpr (hy₁'.trans hx))]
-          have hA : 1 + eulerMascheroniConstant ≤ A := by dsimp only [A]; linarith
-          calc
-            _ ≤ A * (1 - y) + A * -(1 - x) := by gcongr
-            _ = _ := by ring
-    refine ⟨hvar.trans ((mul_le_of_le_one_right (by dsimp only [A]; positivity) hy).trans ?_), ?_⟩
-    · dsimp only [A]
-      linarith
+  · have hvar := norm_rieszRemainder_one_sub_le (y := y) (by linarith) hx
+    refine ⟨hvar.trans ((mul_le_of_le_one_right (by positivity) hy).trans ?_), ?_⟩
+    · linarith
     · rw [rieszRemainder_one_eq_ofReal, Complex.norm_real, Real.norm_eq_abs]
       refine (Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_le hx).trans ?_
       rw [mul_comm _ x]
@@ -140,7 +149,8 @@ uniform hypothesis. A single constant bounds the change from `y` to `x` by `C * 
 and the remainder at `x` by `x * (C * log x)`, for every `x ≥ 2` and `|y - x| ≤ 1`. It also
 works for every nontrivial character with `‖L′/L(1,χ)‖ ≤ C' * log x` at that scale, and for
 the trivial character without any restriction. -/
-theorem exists_norm_rieszRemainder_near_le_log (S : Finset PrimitiveDirichletCharacter) (C' : ℝ) :
+theorem exists_norm_rieszRemainder_sub_le_mul_log_and_norm_le
+    (S : Finset PrimitiveDirichletCharacter) (C' : ℝ) :
     ∃ C > 0, ∀ (χ : PrimitiveDirichletCharacter) ⦃x y : ℝ⦄, 2 ≤ x → |y - x| ≤ 1 →
       (χ ∉ S → χ ≠ 1 → ‖logDeriv χ.character.LFunction 1‖ ≤ C' * log x) →
       ‖χ.rieszRemainder y - χ.rieszRemainder x‖ ≤ C * log x ∧
@@ -179,7 +189,7 @@ theorem exists_norm_rieszRemainder_near_le_log (S : Finset PrimitiveDirichletCha
       _ ≤ _ := mul_le_mul_of_nonneg_left hlogx (by positivity)
     dsimp only [C, K]
     linarith only [hlog, hconst, mul_nonneg (le_max_right C' 0) hlog₀]
-  obtain ⟨hvar, hsize⟩ := χ.norm_rieszRemainder_near_le (by linarith) hy hχK
+  obtain ⟨hvar, hsize⟩ := χ.norm_rieszRemainder_sub_le_and_norm_le (by linarith) hy hχK
   exact ⟨hvar.trans hbudget, hsize.trans (mul_le_mul_of_nonneg_left hbudget (by positivity))⟩
 
 end TauCeti.PrimitiveDirichletCharacter
