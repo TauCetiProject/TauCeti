@@ -35,6 +35,8 @@ No symmetry of `B` is assumed: the dual basis always sits in the first argument 
   dual basis is independent of the basis.
 * `LinearMap.sum_apply_dualBasis_of_isAdjointPair`: an adjoint pair of operators may be moved
   between the two slots of that contraction.
+* `Module.Basis.dualBasis_isUnitSMul_apply`: rescaling a basis by units rescales its dual basis by
+  the inverse units.
 -/
 
 public section
@@ -126,3 +128,23 @@ theorem sum_apply_dualBasis_of_isAdjointPair (b : Basis ι K V) {p q : V →ₗ[
         sum_congr rfl fun i _ ↦ f.sum_apply_smul_apply_dualBasis hB b _ _
 
 end LinearMap
+
+namespace Module.Basis
+
+/-- Rescaling the vectors of a basis `b` by units `w i` rescales the dual basis for a nondegenerate
+bilinear form by the inverse units: the basis dual to `w • b` is `w⁻¹ •` the basis dual to `b`. -/
+@[simp]
+theorem dualBasis_isUnitSMul_apply {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [Finite ι] [DecidableEq ι] (b : Module.Basis ι K V) (B : LinearMap.BilinForm K V)
+    (hB : B.Nondegenerate) {w : ι → K} (hw : ∀ i, IsUnit (w i)) (i : ι) :
+    B.dualBasis hB (b.isUnitSMul hw) i = (w i)⁻¹ • B.dualBasis hB b i := by
+  -- `(w i)⁻¹ • B.dualBasis hB b i` pairs with `w j • b j` to `δᵢⱼ`
+  refine congrFun ((B.dualBasis_eq_iff hB _ fun i ↦ (w i)⁻¹ • B.dualBasis hB b i).mpr
+    fun i j ↦ ?_) i
+  simp only [Module.Basis.isUnitSMul_apply, map_smul, LinearMap.smul_apply, smul_eq_mul,
+    LinearMap.BilinForm.apply_dualBasis_left]
+  split_ifs with hij
+  · rw [hij, mul_one, mul_inv_cancel₀ (hw i).ne_zero]
+  · rw [mul_zero, mul_zero]
+
+end Module.Basis
