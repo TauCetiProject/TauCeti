@@ -11,7 +11,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.WeaklyEtale
 # Base change of weakly étale morphisms
 
 Instances making Mathlib's `CategoryTheory.MorphismProperty.Over.pullback` available for the
-morphism property `@AlgebraicGeometry.WeaklyEtale` along any morphism of schemes, as
+morphism property `@AlgebraicGeometry.WeaklyEtale` along any morphism of schemes
+(`TauCeti.AlgebraicGeometry.weaklyEtale_hasPullbacksAlong` and
+`TauCeti.AlgebraicGeometry.weaklyEtale_isStableUnderBaseChangeAlong`), as
 `TauCeti.AlgebraicGeometry.etale_hasPullbacksAlong` and
 `TauCeti.AlgebraicGeometry.etale_isStableUnderBaseChangeAlong` do for
 `@AlgebraicGeometry.Etale`.
@@ -21,9 +23,9 @@ public section
 
 universe u
 
-open CategoryTheory
+open CategoryTheory _root_.AlgebraicGeometry
 
-namespace AlgebraicGeometry
+namespace TauCeti.AlgebraicGeometry
 
 -- Instance search does not derive these from the general instances for categories with pullbacks
 -- and for properties stable under base change, as for `@Etale` in
@@ -38,4 +40,4 @@ instance weaklyEtale_isStableUnderBaseChangeAlong {X Y : Scheme.{u}} (f : X ⟶ 
     MorphismProperty.IsStableUnderBaseChangeAlong @WeaklyEtale f :=
   ⟨MorphismProperty.IsStableUnderBaseChange.of_isPullback⟩
 
-end AlgebraicGeometry
+end TauCeti.AlgebraicGeometry

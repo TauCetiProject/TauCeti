@@ -39,7 +39,7 @@ along the inclusion and pro-étale sheafification exist.
 * `AlgebraicGeometry.Scheme.toProEt`: the inclusion `X.Etale ⥤ X.ProEt`, fully faithful
   (`AlgebraicGeometry.Scheme.toProEtFullyFaithful`), with `toProEt_comp_forget`.
 * `AlgebraicGeometry.Scheme.isEmpty_proEt_left`: a weakly étale scheme over an empty scheme is
-  empty, as Mathlib's `AlgebraicGeometry.Scheme.isEmpty_etale_left` says for étale schemes.
+  empty, as Tau Ceti's `AlgebraicGeometry.Scheme.isEmpty_etale_left` says for étale schemes.
 * `AlgebraicGeometry.Scheme.preservesFiniteLimits_toProEt` and
   `AlgebraicGeometry.Scheme.isContinuous_toProEt`: the inclusion is a morphism of sites.
 * `AlgebraicGeometry.Scheme.proetalePushforward`, `AlgebraicGeometry.Scheme.proetalePullback`,

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Covering
 public import TauCeti.AlgebraicGeometry.Sites.Proetale.EtaleComparison
-public import TauCeti.AlgebraicGeometry.Sites.Small
 
 /-!
 # The étale and pro-étale sites of the empty scheme

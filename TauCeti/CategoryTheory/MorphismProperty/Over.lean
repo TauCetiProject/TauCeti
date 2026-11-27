@@ -190,9 +190,12 @@ variable {C : Type*} [Category* C] (P Q : MorphismProperty C) {X Y : C} (f : X �
 lemma pullback_map_left_eq_pullback_map {V W : P.Over Q Y} (g : V ⟶ W) :
     ((Over.pullback P Q f).map g).left =
       pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) := by
-  rw [pullback_map_left, pullback.map]
-  congr 1
-  simp
+  rw [pullback_map_left]
+  -- `simp` does not rewrite the left projections with `pullback.lift_fst` and `pullback.lift_snd`
+  -- here, so they are applied by `exact`.
+  apply pullback.hom_ext
+  · exact (pullback.lift_fst _ _ _).trans (by simp)
+  · exact (pullback.lift_snd _ _ _).trans (by simp)
 
 end Pullback
 
