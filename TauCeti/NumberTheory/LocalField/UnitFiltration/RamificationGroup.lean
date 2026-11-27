@@ -352,14 +352,11 @@ ring. -/
 theorem ker_ramificationGroupToUnitFiltrationGraded :
     (ramificationGroupToUnitFiltrationGraded L G i).ker =
       (ramificationGroup G 𝒪[L] ((i : ℤ) + 1)).subgroupOf (ramificationGroup G 𝒪[L] (i : ℤ)) := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  refine le_antisymm (fun σ hσ ↦ ?_) (ramificationGroup_succ_subgroupOf_le_ker L G i)
-  rw [mem_ker_ramificationGroupToUnitFiltrationGraded_iff hϖ] at hσ
-  have hσ₀ : (σ : G) ∈ ramificationGroup G 𝒪[L] 0 :=
-    ramificationGroup_antitone G 𝒪[L] (Int.natCast_nonneg i) σ.property
-  rw [Subgroup.mem_subgroupOf, ← Nat.cast_succ,
-    mem_ramificationGroup_natCast_iff_smul_sub_mem hϖ hσ₀, sub_mem_maximalIdeal_pow_iff hϖ]
-  exact hσ
+  rw [ramificationGroupToUnitFiltrationGraded,
+    MonoidHom.ker_comp_of_injective _ _
+      (principalUnitGroupGradedEquivUnitFiltrationGraded L i).injective]
+  exact IsDiscreteValuationRing.ker_ramificationGroupToPrincipalUnitGroupGraded
+    G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) i
 
 /-! ### The embedding of the graded pieces -/
 
@@ -392,25 +389,13 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_mk_eq_uniformizerRatio
   rw [ramificationGroupGradedToUnitFiltrationGraded_mk,
     ramificationGroupToUnitFiltrationGraded_apply hϖ]
 
-private theorem ramificationGroupGradedToPrincipalUnitGroupGraded_injective :
-    Function.Injective
-      (IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded G 𝒪[L] i) := by
-  rw [IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded_def,
-    QuotientGroup.injective_lift_iff]
-  have hker :
-      (IsDiscreteValuationRing.ramificationGroupToPrincipalUnitGroupGraded G 𝒪[L] i).ker =
-        (ramificationGroupToUnitFiltrationGraded L G i).ker := by
-    rw [ramificationGroupToUnitFiltrationGraded,
-      MonoidHom.ker_comp_of_injective _ _
-        (principalUnitGroupGradedEquivUnitFiltrationGraded L i).injective]
-  rw [hker, ker_ramificationGroupToUnitFiltrationGraded]
-
 variable (L G i) in
 /-- **The quotient embeddings are injective**, without specifying a base ring. -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_injective :
     Function.Injective (ramificationGroupGradedToUnitFiltrationGraded L G i) :=
   (principalUnitGroupGradedEquivUnitFiltrationGraded L i).injective.comp
-    (ramificationGroupGradedToPrincipalUnitGroupGraded_injective (L := L) (G := G) (i := i))
+    (IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded_injective
+      G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) i)
 
 /-- Computing the tame character in fraction-field coordinates: if `(y : L) = σ • ϖ / ϖ`, then
 `tameCharacter G 𝒪[L] σ = residue 𝒪[L] y`. -/
@@ -461,6 +446,9 @@ inertia group `G_1` is a `p`-group. This is the local-field case of
 theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]]
     [Finite (ramificationGroup G 𝒪[L] 0)] {i : ℤ} (hi : 0 < i) :
     IsPGroup p (ramificationGroup G 𝒪[L] i) :=
+  have : Finite (ramificationGroup G 𝒪[L] i) :=
+    Finite.of_injective (Subgroup.inclusion (ramificationGroup_antitone G 𝒪[L] hi.le))
+      (Subgroup.inclusion_injective _)
   IsLocalRing.isPGroup_ramificationGroup G 𝒪[L] p hi
 
 /-! ### Wild inertia as the Sylow subgroup of inertia -/
@@ -484,11 +472,7 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
     Nat.card (ramificationGroup G 𝒪[L] 1) =
       p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  rw [← Sylow.card_eq_multiplicity
-    (IsLocalRing.ramificationGroupOneSylow G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p),
-    IsLocalRing.ramificationGroupOneSylow_coe]
-  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-    (ramificationGroup_antitone G 𝒪[L] (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
+  exact IsLocalRing.natCard_ramificationGroup_one p (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
@@ -501,9 +485,9 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p 
     ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
   have hp : p.Prime := CharP.char_is_prime 𝓀[L] p
   by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
-  · rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G p, pow_eq_one_iff_right hp.ne_one,
-      Nat.factorization_eq_zero_iff]
-    simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
+  · let _ : Fact p.Prime := ⟨hp⟩
+    exact IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_natCard p
+      (not_dvd_index_ramificationGroup_one G p)
   · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
     have hinf := not_finite_iff_infinite.mp hfin
     rw [Nat.card_eq_zero_of_infinite]

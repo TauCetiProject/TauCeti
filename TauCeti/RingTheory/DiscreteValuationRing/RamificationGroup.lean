@@ -32,15 +32,25 @@ Nothing in the construction of these homomorphisms, the conjugation equivariance
 `G_0` requires a base ring, a fraction field, completeness, or residue-field finiteness. In residue
 characteristic zero, any finite-order element of `G_0` that moves a uniformizer by `𝔪 ^ 2` lies in
 `G_1`, so whenever `G` acts faithfully and `G_0` is finite, wild inertia vanishes
-(`TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_of_charZero`), the tame character is injective,
+(`TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`), the tame character is injective,
 and `G_0` is cyclic.
 
 When `G` acts by `R`-algebra automorphisms over a local ring `R` such that the residue extension
 `ResidueField B / ResidueField R` is separable, the uniformizer criterion
 (`TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem`) shows that the kernel of
 the `i`-th quotient homomorphism is `G_{i+1}` and all graded homomorphisms into
-`PrincipalUnitGroupGraded B i` are injective, so every successive quotient `G_i / G_{i+1}` (`i ≥ 0`)
-is commutative and `G_0` acts trivially on `G_0 / G_1` by conjugation.
+`PrincipalUnitGroupGraded B i` are injective, so `G_0 / G_1` is commutative and `G_0` acts
+trivially on `G_0 / G_1` by conjugation (while at positive depth `i = n + 1`, commutativity holds
+base-free via `TauCeti.IsLocalRing.instIsMulCommutativeRamificationGroupGradedNatCastSucc`).
+
+The uniformizer-ratio homomorphism (`uniformizerRatio`,
+`ramificationGroupToPrincipalUnitGroupGradedOf`) and its proof of independence of the uniformizer
+(`ramificationGroupToPrincipalUnitGroupGradedOf_eq`) are adapted from
+`TauCeti/NumberTheory/LocalField/UnitFiltration/RamificationGroup.lean`. The
+conjugation-equivariance formulas (`TauCeti.IsLocalRing.tameCharacter_conj`,
+`TauCeti.IsLocalRing.tameCharacterGraded_ramificationGroupGradedConj`, and
+`TauCeti.IsLocalRing.ramificationGroupGradedToResidueField_conj`) are adapted from
+`TauCeti/NumberTheory/LocalField/UnitFiltration/Conjugation.lean`.
 
 ## Main definitions
 
@@ -74,10 +84,10 @@ is commutative and `G_0` acts trivially on `G_0 / G_1` by conjugation.
   finite `G_0` has injective tame character and cyclic inertia `G_0`.
 * `TauCeti.IsDiscreteValuationRing.ker_ramificationGroupToPrincipalUnitGroupGraded`,
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded_injective`,
-  `TauCeti.IsDiscreteValuationRing.isMulCommutative_ramificationGroupGraded`, and
+  `TauCeti.IsDiscreteValuationRing.isMulCommutative_ramificationGroupGraded_zero`, and
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedConj_zero`: under separable residue
-  extension over `R`, the graded maps into `PrincipalUnitGroupGraded B i` are injective, every
-  `G_i / G_{i+1}` (`i ≥ 0`) is commutative, and `G_0` acts trivially on `G_0 / G_1`.
+  extension over `R`, the graded maps into `PrincipalUnitGroupGraded B i` are injective,
+  `G_0 / G_1` is commutative, and `G_0` acts trivially on `G_0 / G_1`.
 
 ## References
 
@@ -480,9 +490,12 @@ theorem mem_ramificationGroup_one_of_charZero [CharZero (ResidueField B)]
     (hfin : IsOfFinOrder σ) (hϖ2 : σ • ϖ - ϖ ∈ maximalIdeal B ^ 2) :
     σ ∈ ramificationGroup G B 1 := by
   have h1 : σ ∈ (maximalIdeal B ^ 2).inertia G :=
-    mem_inertia_of_forall_mem_maximalIdeal_of_charZero hσ hfin fun w hw ↦
-      smul_sub_mem_maximalIdeal_pow_succ_of_uniformizer hϖ hϖ2
-        (fun y ↦ by simpa only [pow_one] using mem_ramificationGroup_zero_iff.mp hσ y) hw
+    mem_inertia_of_forall_mem_of_pow_mem
+      (Ideal.mem_inertia.mpr (mem_ramificationGroup_zero_iff.mp hσ))
+      (fun w hw ↦ smul_sub_mem_maximalIdeal_pow_succ_of_uniformizer hϖ hϖ2
+        (fun y ↦ by simpa only [pow_one] using mem_ramificationGroup_zero_iff.mp hσ y) hw)
+      (Nat.cast_ne_zero.mpr hfin.orderOf_pos.ne')
+      (by rw [pow_orderOf_eq_one]; exact one_mem _)
   simpa [ramificationGroup_def] using h1
 
 variable (G B) in
@@ -502,7 +515,7 @@ theorem ker_tameCharacter_of_charZero [CharZero (ResidueField B)] [FaithfulSMul 
     Finite.of_injective
       (Subgroup.inclusion (ramificationGroup_antitone G B (by omega : (0 : ℤ) ≤ 1)))
       (Subgroup.inclusion_injective _)
-  rw [ramificationGroup_one_eq_bot_of_charZero G B] at h1
+  rw [ramificationGroup_eq_bot_of_charZero one_pos (iInf_ramificationGroup_eq_bot G B)] at h1
   exact Subtype.ext h1
 
 /-- **Inertia `G_0` is cyclic in residue characteristic zero**, whenever `G` acts faithfully on `B`
@@ -553,24 +566,24 @@ theorem ramificationGroupGradedToPrincipalUnitGroupGraded_injective :
 /-! ### Tame and wild structure of `G_0` and `G_1` -/
 
 variable (G B) in
-/-- Every successive quotient `G_i / G_{i+1}` (`i ≥ 0`) is commutative when the residue extension
-over `R` is separable: it embeds into `PrincipalUnitGroupGraded B i`, a quotient of a subgroup of
-the commutative group `Bˣ`. (For positive depth `i = n + 1`, commutativity holds without `R` or
-DVR hypotheses via `TauCeti.IsLocalRing.instIsMulCommutativeRamificationGroupGradedNatCastSucc`.) -/
-theorem isMulCommutative_ramificationGroupGraded (i : ℕ) :
-    IsMulCommutative (RamificationGroupGraded G B (i : ℤ)) :=
-  let hinj := ramificationGroupGradedToPrincipalUnitGroupGraded_injective G B R i
+/-- The tame quotient `G_0 / G_1` is commutative when the residue extension over `R` is
+separable: it embeds into `PrincipalUnitGroupGraded B 0`, a quotient of `Bˣ`. (At positive depth
+`i = n + 1`, commutativity holds without `R` or DVR hypotheses via
+`TauCeti.IsLocalRing.instIsMulCommutativeRamificationGroupGradedNatCastSucc`.) -/
+theorem isMulCommutative_ramificationGroupGraded_zero :
+    IsMulCommutative (RamificationGroupGraded G B (0 : ℤ)) :=
+  let hinj := ramificationGroupGradedToPrincipalUnitGroupGraded_injective G B R 0
   IsMulCommutative.of_comm fun _ _ ↦
-    hinj (by rw [map_mul, map_mul]; exact mul_comm (G := PrincipalUnitGroupGraded B i) _ _)
+    hinj (by rw [map_mul, map_mul]; exact mul_comm (G := PrincipalUnitGroupGraded B 0) _ _)
 
 /-- Conjugation by an inertia element `σ ∈ G_0` acts trivially on the tame quotient `G_0 / G_1`,
 when the residue extension over `R` is separable. (Not marked `@[simp]` because `R` does not
-appear in the left-hand side; once `isMulCommutative_ramificationGroupGraded G B R 0` is in scope,
-`TauCeti.IsLocalRing.ramificationGroupGradedConj_self` simplifies this automatically.) -/
+appear in the left-hand side; once `isMulCommutative_ramificationGroupGraded_zero G B R` is in
+scope, `TauCeti.IsLocalRing.ramificationGroupGradedConj_self` simplifies this automatically.) -/
 theorem ramificationGroupGradedConj_zero (σ : ramificationGroup G B 0)
     (τ : RamificationGroupGraded G B (0 : ℤ)) :
     ramificationGroupGradedConj G B (σ : G) 0 τ = τ := by
-  have := isMulCommutative_ramificationGroupGraded G B R 0
+  have := isMulCommutative_ramificationGroupGraded_zero G B R
   exact ramificationGroupGradedConj_self G B 0 σ τ
 
 end Separable

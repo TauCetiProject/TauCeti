@@ -38,8 +38,6 @@ that a homomorphism into a pro-`p` group kills their intersection.
 * `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of (additive) `p`-groups is a `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
   `p`-group.
-* `IsPGroup.of_quotient_subgroupOf`: a subgroup at the top of a finite subnormal chain whose
-  successive quotients and bottom term are `p`-groups is itself a `p`-group.
 * `IsPGroup.sSup_of_directedOn`: the supremum of a directed family of `p`-subgroups is a
   `p`-subgroup.
 * `IsPGroup.dvd_index_subgroupOf`, `IsPGroup.natCast_index_subgroupOf_eq_zero`: the index
@@ -112,22 +110,6 @@ theorem _root_.IsPGroup.of_subgroup_of_quotient {N : Subgroup G} [N.Normal]
     (by rwa [QuotientGroup.ker_mk'])
   rw [Subgroup.comap_top] at this
   exact this.of_equiv Subgroup.topEquiv
-
-/-- A subgroup at the top of a finite subnormal chain `f 0, f 1, …, f N` whose successive
-quotients `f n ⧸ (f (n + 1)).subgroupOf (f n)` (`n < N`) and bottom term `f N` are all `p`-groups
-is itself a `p`-group. -/
-theorem _root_.IsPGroup.of_quotient_subgroupOf {f : ℕ → Subgroup G}
-    [∀ n, ((f (n + 1)).subgroupOf (f n)).Normal]
-    {N : ℕ} (hN : IsPGroup p (f N))
-    (hquot : ∀ n < N, IsPGroup p (f n ⧸ (f (n + 1)).subgroupOf (f n))) :
-    IsPGroup p (f 0) := by
-  induction N generalizing f with
-  | zero => exact hN
-  | succ N ih =>
-    have h1 : IsPGroup p (f 1) :=
-      ih (f := fun n ↦ f (n + 1)) hN fun n hn ↦ hquot (n + 1) (Nat.succ_lt_succ hn)
-    exact IsPGroup.of_subgroup_of_quotient (N := (f 1).subgroupOf (f 0)) h1.comap_subtype
-      (hquot 0 (Nat.zero_lt_succ N))
 
 /-- The supremum of a directed family of `p`-subgroups, for instance of a chain, is a
 `p`-subgroup. -/

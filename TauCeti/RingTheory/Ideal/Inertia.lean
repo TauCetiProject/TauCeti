@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Ideal.Span
-import TauCeti.Algebra.Ring.Action.End
 
 /-!
 # Testing the inertia subgroup of an ideal on algebra generators
@@ -27,8 +26,6 @@ generator.
 
 * `TauCeti.Ideal.mem_inertia_iff_of_adjoin_eq_top`: membership in `Ideal.inertia G I` is decided
   on a generating set.
-* `TauCeti.Ideal.smul_sub_mem_mul_of_mem_sq`: an automorphism stabilizing `J` and displacing `J`
-  into `I` displaces `J ^ 2` into `I * J`.
 * `TauCeti.smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top`: for a single generator `ξ`, every
   `σ • x - x` is a multiple of `σ • ξ - ξ`.
 
@@ -70,21 +67,6 @@ theorem mem_inertia_iff_of_adjoin_singleton_eq_top {I : Ideal S} [I.IsTwoSided] 
     (hξ : Algebra.adjoin R {ξ} = ⊤) {σ : G} :
     σ ∈ I.inertia G ↔ σ • ξ - ξ ∈ I := by
   simp [mem_inertia_iff_of_adjoin_eq_top hξ]
-
-/-- If an automorphism `σ` stabilizes an ideal `J` and displaces elements of `J` into `I`, then
-it displaces elements of `J ^ 2` into `I * J`. -/
-theorem smul_sub_mem_mul_of_mem_sq {G : Type*} [Monoid G] {S : Type*} [CommRing S]
-    [MulSemiringAction G S] {I J : Ideal S} {σ : G}
-    (hstab : ∀ x ∈ J, σ • x ∈ J) (hdisp : ∀ x ∈ J, σ • x - x ∈ I)
-    {y : S} (hy : y ∈ J ^ 2) : σ • y - y ∈ I * J := by
-  rw [pow_two] at hy
-  refine Submodule.mul_induction_on hy (fun a ha b hb ↦ ?_) (fun y₁ y₂ hy₁ hy₂ ↦ ?_)
-  · rw [TauCeti.smul_mul_sub_mul]
-    refine add_mem (Submodule.mul_mem_mul (hdisp a ha) (hstab b hb)) ?_
-    rw [mul_comm a]
-    exact Submodule.mul_mem_mul (hdisp b hb) ha
-  · rw [smul_add, add_sub_add_comm]
-    exact add_mem hy₁ hy₂
 
 end TauCeti.Ideal
 
