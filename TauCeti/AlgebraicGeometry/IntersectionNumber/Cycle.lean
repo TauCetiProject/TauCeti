@@ -45,23 +45,6 @@ namespace TauCeti.AlgebraicGeometry
 
 open Chow
 
-namespace Chow
-
-/-- The reduced closure of a point of dimension `d` is a closed subscheme of Krull
-dimension `d`. -/
-theorem topologicalKrullDim_subscheme_vanishingIdeal_closure_of_mem_pointsOfDimension
-    {X : Scheme.{u}} {d : ℕ} {x : X} (hx : x ∈ pointsOfDimension X d) :
-    topologicalKrullDim (vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subscheme = d := by
-  obtain ⟨n, hn, hn'⟩ := mem_pointsOfDimension.mp hx
-  obtain rfl : n = d := by omega
-  let I := vanishingIdeal (⟨closure {x}, isClosed_closure⟩ : Closeds X)
-  have h := I.subschemeι.height_apply_eq_height (genericPoint I.subscheme)
-  rw [subschemeι_genericPoint_vanishingIdeal_closure_singleton, hn] at h
-  rw [← (genericPoint_spec I.subscheme).height_eq_topologicalKrullDim, ← h]
-  norm_cast
-
-end Chow
-
 namespace LineBundleClass
 
 variable (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
