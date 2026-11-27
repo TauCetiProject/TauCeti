@@ -37,9 +37,8 @@ namespace IsAlgebraic
 with an explicit constant and the reduced denominator of the rational. -/
 theorem one_le_mahlerMeasure_mul_pow_mul_norm_sub_ratCast {α : ℂ} (hα : IsAlgebraic ℚ α)
     {r : ℚ} (hne : α ≠ r) :
-    let d := (minpoly ℚ α).natDegree
-    1 ≤ 2 ^ (d - 1) * mahlerMeasure α * ((‖α‖ + 1) * r.den) ^ d * ‖α - r‖ := by
-  dsimp only
+    1 ≤ 2 ^ ((minpoly ℚ α).natDegree - 1) * mahlerMeasure α *
+      ((‖α‖ + 1) * r.den) ^ (minpoly ℚ α).natDegree * ‖α - r‖ := by
   have hM := one_le_mahlerMeasure α
   have hA : 1 ≤ ‖α‖ + 1 := by linarith [norm_nonneg α]
   have hq : (1 : ℝ) ≤ r.den := by exact_mod_cast r.pos
@@ -59,8 +58,8 @@ is at least `1 / (2 ^ (d - 1) * (H(α) * (|α| + 1) * q) ^ d)`, where `H` is the
 multiplicative Weil height. The fraction may be unreduced. -/
 theorem one_le_pow_mul_abs_sub_div {α : ℝ} (hα : IsAlgebraic ℚ α) (p : ℤ) {q : ℕ}
     (hq : 0 < q) (hne : α ≠ p / q) :
-    let d := (minpoly ℚ α).natDegree
-    1 ≤ 2 ^ (d - 1) * absMulHeight₁ α ^ d * ((|α| + 1) * q) ^ d * |α - p / q| := by
+    1 ≤ 2 ^ ((minpoly ℚ α).natDegree - 1) * absMulHeight₁ α ^ (minpoly ℚ α).natDegree *
+      ((|α| + 1) * q) ^ (minpoly ℚ α).natDegree * |α - p / q| := by
   let r : ℚ := p / q
   have hr : (r : ℝ) = p / q := by simp [r]
   have hden : r.den ≤ q := Nat.le_of_dvd hq <| Int.natCast_dvd_natCast.mp <| by
@@ -75,7 +74,6 @@ theorem one_le_pow_mul_abs_sub_div {α : ℝ} (hα : IsAlgebraic ℚ α) (p : �
   have hM : mahlerMeasure (α : ℂ) = mahlerMeasure α := mahlerMeasure_map Complex.ofRealHom α
   have hdist : ‖(α : ℂ) - r‖ = |α - p / q| := by
     rw [← Complex.ofReal_ratCast, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, hr]
-  dsimp only at h ⊢
   rw [hdeg, hM, mahlerMeasure_eq_absMulHeight₁_pow, Complex.norm_real, Real.norm_eq_abs, hdist] at h
   have hH := one_le_absMulHeight₁ α
   exact h.trans (by gcongr)
