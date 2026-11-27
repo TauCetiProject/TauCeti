@@ -32,10 +32,17 @@ the multiplicity is the relative index `A.relIndex H`, the index of `A ∩ H` in
 `H = S ∩ x J x⁻¹` of `x J` in `S` (`Subgroup.coverMultiplicity_eq_relIndex`), all of whose elements
 have a `q`-power power in `A`.
 
-Such a set `T` is what is needed to write an integral over the quotient by `S`, of a function
-supported on points whose `S`-orbit meets `D`, as a sum over `T` weighted by inverse cover
-multiplicities, up to a normalization factor: the multiplicities are then nonzero, so the weights
-are defined, and divide a power of `q`, so the weights are units in any ring where `q` is a unit.
+What the cut guarantees is coverage and divisibility: every coset whose `S`-orbit meets the image
+of `D` lies in a translate `r • T` with `r ∈ S`, so its multiplicity is nonzero and the inverse
+weight `1 / mult(t)` is defined there, and that multiplicity divides a power of `q`, so the weight
+is a unit in any ring where `q` is a unit. These are the properties of the cut that the integral
+formula of ThetaLiftChainsAndTheSeesawIdentity §3.1 (c) of the roadmap uses, but they do not by
+themselves express an integral as a weighted sum over `T`, and that formula is not proved here.
+It is a later application with further hypotheses on the integrand `f`: besides vanishing where
+the multiplicity vanishes, its orbit averages over the Bessel subgroup `R` (with `S = R_f`) must
+factor as an index `[K° : J]` times an archimedean factor times `b(t_f)` whenever `t_f J ∈ T`,
+for a function `b` on the cosets of `J`, and the sum over `T` is then of the values
+`b(t) / mult(t)`, not of raw values of `f`.
 
 ## Main results
 

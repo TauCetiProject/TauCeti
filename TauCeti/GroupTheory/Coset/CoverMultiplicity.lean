@@ -20,13 +20,21 @@ the elements of one class `r (S ∩ A)` agree when `T` is stable under `S ∩ A`
 `r⁻¹ • t ∈ T`, that is the translates of `T` through `t` counted modulo `S ∩ A`; it is `0` when
 there are infinitely many.
 
-Cover multiplicities are the weights used to write an integral over a quotient by `S` as a sum
-over a finite set `T` of cosets of a compact open subgroup. For `T` stable under `S ∩ A`, the
-multiplicity `mult(t)` counts the classes `r (S ∩ A)` of `r ∈ S` with `t ∈ r • T`, and it is
-constant along `S`-orbits, so dividing by it normalizes the translate cover pointwise: at a coset
-`t` of finite, nonzero multiplicity, the sum of `1_T(r⁻¹ • t) / mult(r⁻¹ • t)` over all classes
-`r (S ∩ A)` is `1`. This is distinct from the integral formula, in which the sum of
-`f(t) / mult(t)` over `t ∈ T` gives the integral of `f` only up to a normalization factor.
+For `T` stable under `S ∩ A`, the multiplicity `mult(t)` counts the classes `r (S ∩ A)` of
+`r ∈ S` with `t ∈ r • T`, and it is constant along `S`-orbits (`Subgroup.coverMultiplicity_smul`),
+so dividing by it normalizes the translate cover pointwise: at a coset `t` of finite, nonzero
+multiplicity, the sum of `1_T(r⁻¹ • t) / mult(r⁻¹ • t)` over all classes `r (S ∩ A)` is `1`. This
+identity, a direct consequence of the definition and `Subgroup.coverMultiplicity_smul`, is the
+only statement about the weights `1 / mult(t)` that this file supports.
+
+The integral formula that uses these weights, ThetaLiftChainsAndTheSeesawIdentity §3.1 (c) of the
+roadmap, is a later application and is not proved here. There `S` is the finite part `R_f` of a
+Bessel subgroup `R`, and the integral of a function `f` over `R(F)\U(V)(𝔸)` is a constant times
+the sum of `b(t) / mult(t)` over `t ∈ T` only under further hypotheses on `f`: it vanishes at
+every `g` whose finite part has multiplicity `0`, and its orbit averages `∫_{[R]} f(r t) dr`
+factor as an index `[K° : J]` times an archimedean factor `a(t_∞)` times `b(t_f)` whenever
+`t_f J ∈ T`, for a function `b` on the cosets of `J`. The summands are the values of `b`, which
+descend to `J`-cosets, not raw values of `f`.
 
 When the points of `T` in the `S`-orbit of `t` are exactly the `(S ∩ A)`-orbit of `t`, the
 multiplicity of `t` is the relative index `A.relIndex H`, the index of `A ∩ H` in the stabiliser
