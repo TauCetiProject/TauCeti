@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.AddCircle
+public import Mathlib.Dynamics.SymbolicDynamics.Basic
 public import Mathlib.Dynamics.TopologicalEntropy.NetEntropy
 import Mathlib.Analysis.Real.OfDigits
 import Mathlib.Analysis.Asymptotics.ExpGrowth
 import Mathlib.Dynamics.TopologicalEntropy.Semiconj
+import TauCeti.Analysis.Normed.Group.AddCircle
 import TauCeti.Dynamics.Entropy.FullShift
 
 /-!
@@ -23,11 +25,15 @@ The doubling map `x ↦ 2 • x` of `UnitAddCircle` has topological entropy `log
   semiconjugates the shift to the doubling map, so the entropy is at most that of the full shift,
   `log 2` (`TauCeti.coverEntropy_shift_nat`).
 * Lower bound: the `2^n` points `j / 2^n` form a dynamical net at scale `1/8` and time `n`. For
-  `d ≠ 0` with `2^n • d = 0`, some `2^k • d` with `k < n` has norm at least `1/4`, since doubling
-  a point of norm less than `1/4` doubles its norm.
+  `d ≠ 0` with `2^n • d = 0`, some `2^k • d` with `k < n` has norm at least `1/4`
+  (`AddCircle.exists_le_norm_two_pow_nsmul`), since doubling a point of norm less than `1/4`
+  doubles its norm.
 
 ## Main results
 
+* `TauCeti.binaryExpansion`: the point of the circle with given binary digits, with
+  `TauCeti.continuous_binaryExpansion`, `TauCeti.surjective_binaryExpansion` and
+  `TauCeti.semiconj_binaryExpansion` (it turns the shift into the doubling map).
 * `TauCeti.coverEntropy_two_nsmul_unitAddCircle`,
   `TauCeti.coverEntropyInf_two_nsmul_unitAddCircle`: the doubling map has entropy `log 2`.
 -/
@@ -39,32 +45,25 @@ namespace TauCeti
 open Dynamics Set Filter ExpGrowth
 open scoped ENNReal
 
-/-- The discrete uniform structure on `Fin n`, whose topology is Mathlib's discrete topology on
-`Fin n`. -/
-private abbrev finUniformSpace (n : ℕ) : UniformSpace (Fin n) := ⊥
-
-attribute [local instance] finUniformSpace
-
-/-- Binary expansion, as a map from the one-sided full shift on `Fin 2` to the circle. -/
-private noncomputable def binaryExpansion (x : ℕ → Fin 2) : UnitAddCircle :=
+/-- The point of the circle with binary digits `x`, that is, the class of `Real.ofDigits x`. -/
+noncomputable def binaryExpansion (x : ℕ → Fin 2) : UnitAddCircle :=
   (Real.ofDigits x : UnitAddCircle)
 
-private lemma uniformContinuous_binaryExpansion : UniformContinuous binaryExpansion :=
-  CompactSpace.uniformContinuous_of_continuous
-    ((AddCircle.continuous_mk' 1).comp Real.continuous_ofDigits)
+/-- Binary expansion is continuous for the product of discrete topologies on `ℕ → Fin 2`. -/
+theorem continuous_binaryExpansion : Continuous binaryExpansion :=
+  (AddCircle.continuous_mk' 1).comp Real.continuous_ofDigits
 
-private lemma surjective_binaryExpansion : Function.Surjective binaryExpansion := by
-  intro z
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective z
-  obtain ⟨x, -, hx⟩ := Real.ofDigits_SurjOn (b := 2) one_lt_two
-    ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
-  refine ⟨x, ?_⟩
-  simp only [binaryExpansion, hx]
-  rw [← Int.self_sub_floor, AddCircle.coe_sub, sub_eq_self]
-  exact (AddCircle.coe_eq_zero_iff 1).mpr ⟨⌊t⌋, by simp⟩
+/-- Every point of the circle has a binary expansion. -/
+theorem surjective_binaryExpansion : Function.Surjective binaryExpansion := by
+  rw [← Set.surjOn_univ]
+  have hcoe : SurjOn ((↑) : ℝ → UnitAddCircle) (Icc 0 1) univ := by
+    have := AddCircle.coe_image_Icc_eq (1 : ℝ) 0
+    rw [zero_add] at this
+    exact this.symm.subset
+  exact hcoe.comp (Real.ofDigits_SurjOn one_lt_two)
 
 /-- Binary expansion turns the shift into the doubling map. -/
-private lemma semiconj_binaryExpansion :
+theorem semiconj_binaryExpansion :
     Function.Semiconj binaryExpansion (SymbolicDynamics.FullShift.shift (1 : ℕ))
       (fun z : UnitAddCircle ↦ 2 • z) := by
   intro x
@@ -80,43 +79,16 @@ private lemma semiconj_binaryExpansion :
     ring
   have hzero : ((((x 0 : ℕ) : ℝ)) : UnitAddCircle) = 0 :=
     (AddCircle.coe_eq_zero_iff 1).mpr ⟨((x 0 : ℕ) : ℤ), by simp⟩
-  change (Real.ofDigits (SymbolicDynamics.FullShift.shift (1 : ℕ) x) : UnitAddCircle) =
-    2 • (Real.ofDigits x : UnitAddCircle)
-  rw [← AddCircle.coe_nsmul, nsmul_eq_mul, Nat.cast_ofNat, hx, AddCircle.coe_add, hzero,
-    zero_add]
+  simp [binaryExpansion, ← AddCircle.coe_nsmul, hx, hzero]
 
-/-- Doubling a point of the circle of norm at most `1/4` doubles its norm. -/
-private lemma norm_two_nsmul_of_norm_le {y : UnitAddCircle} (hy : ‖y‖ ≤ 1 / 4) :
-    ‖2 • y‖ = 2 * ‖y‖ := by
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective y
-  have ht : ((t - round t : ℝ) : UnitAddCircle) = (t : UnitAddCircle) := by
-    rw [AddCircle.coe_sub, sub_eq_self]
-    exact (AddCircle.coe_eq_zero_iff 1).mpr ⟨round t, by simp⟩
-  have hnorm : ‖((t : ℝ) : UnitAddCircle)‖ = |t - round t| := UnitAddCircle.norm_eq
-  change ‖((t : ℝ) : UnitAddCircle)‖ ≤ 1 / 4 at hy
-  rw [hnorm] at hy
-  change ‖2 • ((t : ℝ) : UnitAddCircle)‖ = 2 * ‖((t : ℝ) : UnitAddCircle)‖
-  have h1 := (AddCircle.norm_coe_eq_abs_iff (p := (1 : ℝ)) (x := t - round t) one_ne_zero).mpr
-    (by rw [abs_one]; linarith)
-  have h2 := (AddCircle.norm_coe_eq_abs_iff (p := (1 : ℝ)) (x := 2 * (t - round t))
-    one_ne_zero).mpr (by rw [abs_mul, abs_two, abs_one]; linarith)
-  rw [← ht, ← AddCircle.coe_nsmul, nsmul_eq_mul, Nat.cast_ofNat, h1, h2, abs_mul, abs_two]
+/-- The discrete uniform structure on `Fin n`, whose topology is Mathlib's discrete topology on
+`Fin n`. -/
+private abbrev finUniformSpace (n : ℕ) : UniformSpace (Fin n) := ⊥
 
-/-- If `2^n • d = 0` and `d ≠ 0`, some `2^k • d` with `k < n` has norm at least `1/4`. -/
-private lemma exists_le_norm_two_pow_nsmul {d : UnitAddCircle} (hd : d ≠ 0) {n : ℕ}
-    (hn : 2 ^ n • d = 0) : ∃ k < n, 1 / 4 ≤ ‖2 ^ k • d‖ := by
-  by_contra! h
-  have key : ∀ k ≤ n, ‖2 ^ k • d‖ = 2 ^ k * ‖d‖ := by
-    intro k hk
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [pow_succ, mul_nsmul, norm_two_nsmul_of_norm_le (h k (by omega)).le,
-        ih (by omega), pow_succ, mul_comm _ (2 : ℝ), mul_assoc]
-  have := key n le_rfl
-  rw [hn, norm_zero] at this
-  exact hd (norm_eq_zero.mp
-    ((mul_eq_zero.mp this.symm).resolve_left (pow_ne_zero n two_ne_zero)))
+attribute [local instance] finUniformSpace
+
+private lemma uniformContinuous_binaryExpansion : UniformContinuous binaryExpansion :=
+  CompactSpace.uniformContinuous_of_continuous continuous_binaryExpansion
 
 /-- The dyadic points `j / 2^n`, `j < 2^n`. -/
 private noncomputable def dyadicPoint (n : ℕ) (j : ℕ) : UnitAddCircle :=
@@ -129,37 +101,22 @@ private lemma exists_le_dist_dyadicPoint {n i j : ℕ} (hi : i < 2 ^ n) (hj : j 
       dist ((fun z : UnitAddCircle ↦ 2 • z)^[k] (dyadicPoint n i))
         ((fun z : UnitAddCircle ↦ 2 • z)^[k] (dyadicPoint n j)) := by
   set d := dyadicPoint n i - dyadicPoint n j
-  have hiter : ∀ k (z : UnitAddCircle), (fun z : UnitAddCircle ↦ 2 • z)^[k] z = 2 ^ k • z :=
-    fun k z ↦ by
-      induction k generalizing z with
-      | zero => simp
-      | succ k ih => rw [Function.iterate_succ_apply, ih, ← mul_nsmul, ← pow_succ']
   have hn : 2 ^ n • d = 0 := by
     simp only [d, dyadicPoint, ← AddCircle.coe_sub, ← AddCircle.coe_nsmul, nsmul_eq_mul]
     refine (AddCircle.coe_eq_zero_iff 1).mpr ⟨(i : ℤ) - j, ?_⟩
     rw [zsmul_one]
     push_cast
     field_simp
-  have hd : d ≠ 0 := by
-    simp only [d, dyadicPoint, ← AddCircle.coe_sub, ne_eq, AddCircle.coe_eq_zero_iff]
-    rintro ⟨m, hm⟩
-    rw [zsmul_one] at hm
-    have hmr : (m : ℝ) * 2 ^ n = (i : ℝ) - j := by
-      rw [hm]
-      field_simp
-    have hmz : m * 2 ^ n = (i : ℤ) - j := by exact_mod_cast hmr
-    have : (i : ℤ) < 2 ^ n := by exact_mod_cast hi
-    have : (j : ℤ) < 2 ^ n := by exact_mod_cast hj
-    have : (0 : ℤ) < 2 ^ n := by positivity
-    rcases lt_trichotomy m 0 with hm0 | rfl | hm0
-    · have : m * (2 : ℤ) ^ n ≤ -2 ^ n := by nlinarith
-      linarith
-    · exact hij (by omega)
-    · have : (2 : ℤ) ^ n ≤ m * 2 ^ n := by nlinarith
-      linarith
-  obtain ⟨k, hk, hle⟩ := exists_le_norm_two_pow_nsmul hd hn
+  have hmem : ∀ m : ℕ, m < 2 ^ n → (m : ℝ) / 2 ^ n ∈ Ico (0 : ℝ) (0 + 1) := fun m hm ↦
+    ⟨by positivity, by rw [zero_add, div_lt_one (by positivity)]; exact_mod_cast hm⟩
+  have hd : d ≠ 0 := sub_ne_zero.mpr fun h ↦ hij <| by
+    have := AddCircle.injOn_coe_Ico 1 0 (hmem i hi) (hmem j hj) h
+    rw [div_left_inj₀ (by positivity)] at this
+    exact_mod_cast this
+  obtain ⟨k, hk, hle⟩ := AddCircle.exists_le_norm_two_pow_nsmul hd hn
+  rw [abs_one] at hle
   refine ⟨k, hk, ?_⟩
-  rwa [hiter, hiter, dist_eq_norm, ← smul_sub]
+  rwa [smul_iterate_apply, smul_iterate_apply, dist_eq_norm, ← smul_sub]
 
 /-- The `2^n` dyadic points of level `n` form a dynamical net at scale `1/8` and time `n`. -/
 private lemma pow_le_netMaxcard (n : ℕ) :
