@@ -10,9 +10,11 @@ public import TauCeti.MeasureTheory.Measure.Haar.Matrix.SkewAdjoint
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 import TauCeti.MeasureTheory.Measure.Haar.ZeroLocus
 import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
 import Mathlib.MeasureTheory.Group.LIntegral
+import TauCeti.MeasureTheory.Measure.Haar.Matrix.Complex
 
 /-!
 # The Cayley measure is a Haar measure on the unitary group of a Hermitian form
@@ -56,12 +58,16 @@ entries; measures and statements use the topology of entries.
 
 * `Matrix.unitaryGroupOf.lintegral_cayleyMeasure`: integrals for the Cayley measure in Cayley
   coordinates.
+* `Matrix.unitaryGroupOf.ae_isUnit_one_add_cayleyMeasure`: the Cayley measure lives on the image
+  of the chart, the `g` with `1 + g` invertible.
 * `Matrix.unitaryGroupOf.isMulLeftInvariant_cayleyMeasure`,
   `Matrix.unitaryGroupOf.isInvInvariant_cayleyMeasure`,
   `Matrix.unitaryGroupOf.isMulRightInvariant_cayleyMeasure`: for an additive Haar measure `μ`, the
   Cayley measure is invariant under left multiplication, inversion and right multiplication;
   invariance under inversion only needs `μ` to be invariant under negation.
 * `Matrix.unitaryGroupOf.isHaarMeasure_cayleyMeasure`: it is a Haar measure.
+* `Matrix.unitaryGroupOf.measurePreserving_mul_left_volume`: for invertible `A`, left
+  multiplication by an element of `U(A)` preserves Lebesgue measure on matrices.
 
 ## Provenance
 
@@ -340,6 +346,22 @@ theorem lintegral_cayleyMeasure (hA : A.IsHermitian)
   exact lintegral_withDensity_eq_lintegral_mul _ measurable_cayleyDensity
     (hF.comp (measurable_cayleyChartUnitary hA))
 
+/-- **The Cayley measure lives on the image of the chart**: almost every `g` for the Cayley measure
+has `1 + g` invertible. -/
+theorem ae_isUnit_one_add_cayleyMeasure (hA : A.IsHermitian) :
+    ∀ᵐ g : unitaryGroupOf A ∂cayleyMeasure A μ, IsUnit (1 + ((g : GL n ℂ) : Matrix n n ℂ)) := by
+  have hopen : IsOpen {g : unitaryGroupOf A | IsUnit (1 + ((g : GL n ℂ) : Matrix n n ℂ))} :=
+    IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.preimage
+      (continuous_const.add continuous_val)
+  rw [cayleyMeasure_def, ae_map_iff (measurable_cayleyChartUnitary hA).aemeasurable
+    hopen.measurableSet]
+  refine ae_of_all _ fun S ↦ ?_
+  by_cases hS : S ∈ cayleyChartSource A
+  · rw [coe_cayleyChartUnitary hA hS]
+    exact isUnit_one_add_cayleyChart A S
+  · rw [cayleyChartUnitary_of_notMem hS, OneMemClass.coe_one, Units.val_one]
+    simpa using isUnit_one_add_cayleyChart A 0
+
 section Neg
 
 variable [μ.IsNegInvariant]
@@ -521,6 +543,25 @@ theorem isHaarMeasure_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
         _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top hK₀.measure_lt_top
 
 end Invariance
+
+/-- **`U(A)` preserves Lebesgue measure on matrices**: for invertible `A`, left multiplication by
+an element of the unitary group of `A` preserves the product Lebesgue measure on `Matrix n κ ℂ`,
+since its determinant has absolute value one. -/
+theorem measurePreserving_mul_left_volume {κ : Type*} [Fintype κ] {A : Matrix n n ℂ}
+    (hA' : IsUnit A) (g : unitaryGroupOf A) :
+    MeasurePreserving (fun Y : Matrix n κ ℂ ↦ ((g : GL n ℂ) : Matrix n n ℂ) * Y) := by
+  classical
+  have hmeas : Measurable fun Y : Matrix n κ ℂ ↦ ((g : GL n ℂ) : Matrix n n ℂ) * Y :=
+    (continuous_const.matrix_mul continuous_id).measurable
+  have hg : ‖((g : GL n ℂ) : Matrix n n ℂ).det‖ₑ = 1 := by
+    rw [← ofReal_norm, CStarRing.norm_of_mem_unitary
+      (det_mem_unitary_of_mem_unitaryGroupOf hA' g.property), ENNReal.ofReal_one]
+  refine ⟨hmeas, Measure.ext_of_lintegral _ fun K hK ↦ ?_⟩
+  rw [lintegral_map hK hmeas]
+  have h := lintegral_eq_enorm_det_pow_mul_enorm_det_pow_mul_lintegral_comp_matrix_mul_mul
+    ((isUnit_iff_isUnit_det _).1 (g : GL n ℂ).isUnit).ne_zero (det_one (n := κ) (R := ℂ) ▸
+      one_ne_zero) K
+  simpa [hg] using h.symm
 
 end unitaryGroupOf
 end Matrix
