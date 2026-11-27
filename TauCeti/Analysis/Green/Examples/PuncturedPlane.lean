@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-public import TauCeti.Analysis.Green.Basic
-public import TauCeti.Analysis.InnerProductSpace.TwoDim
+public import TauCeti.Analysis.Green.FlatDifferentialForm
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -52,8 +50,8 @@ theorem contDiffOn_oneForm_puncturedPlane (α : ℝ) :
   intro z hz
   have hρ : ContDiffAt ℝ ∞ (fun w : ℂ ↦ normSq w ^ (-α)) z := by
     simp only [normSq_eq_norm_sq]
-    exact (Real.contDiffAt_rpow_const_of_ne (pow_ne_zero 2 (norm_ne_zero_iff.mpr hz))).comp z
-      (contDiff_norm_sq ℝ).contDiffAt
+    exact (contDiff_norm_sq ℝ).contDiffAt.rpow_const_of_ne
+      (pow_ne_zero 2 (norm_ne_zero_iff.mpr hz))
   have hP : ContDiffAt ℝ ∞ (puncturedPlaneP α) z :=
     (reCLM.contDiff.contDiffAt.sub imCLM.contDiff.contDiffAt).mul hρ
   have hQ : ContDiffAt ℝ ∞ (puncturedPlaneQ α) z :=
@@ -61,25 +59,35 @@ theorem contDiffOn_oneForm_puncturedPlane (α : ℝ) :
   rw [oneForm_eq_clm]
   exact ((hP.smul contDiffAt_const).add (hQ.smul contDiffAt_const)).contDiffWithinAt
 
+private theorem hasFDerivAt_puncturedPlaneWeight (α : ℝ) {z : ℂ} (hz : z ≠ 0) :
+    HasFDerivAt (fun w : ℂ ↦ normSq w ^ (-α))
+      ((-α * normSq z ^ (-α - 1)) • ((2 * z.re) • reCLM + (2 * z.im) • imCLM)) z := by
+  have hn : ‖z‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.mpr hz)
+  have hd := (hasStrictFDerivAt_norm_sq z).hasFDerivAt.rpow_const (p := -α) (Or.inl hn)
+  have hcoords : 2 • innerSL ℝ z = (2 * z.re) • reCLM + (2 * z.im) • imCLM := by
+    ext v
+    simp [two_smul, real_inner_eq_re_inner ℂ, RCLike.inner_apply]
+    ring
+  simpa only [normSq_eq_norm_sq, hcoords] using hd
+
 /-- The curl in the positively oriented basis `(1, I)` at a nonzero point. -/
 theorem curl_puncturedPlane (α : ℝ) {z : ℂ} (hz : z ≠ 0) :
     curl (puncturedPlaneP α) (puncturedPlaneQ α) z =
       2 * (1 - α) * normSq z ^ (-α) := by
-  have hn : ‖z‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.mpr hz)
-  have hρ := (hasStrictFDerivAt_norm_sq z).hasFDerivAt.rpow_const (p := -α) (Or.inl hn)
+  have hρ := hasFDerivAt_puncturedPlaneWeight α hz
   have hP := (reCLM.hasFDerivAt.fun_sub imCLM.hasFDerivAt).fun_mul hρ
   have hQ := (reCLM.hasFDerivAt.fun_add imCLM.hasFDerivAt).fun_mul hρ
   simp only [reCLM_apply, imCLM_apply] at hP hQ
   unfold curl puncturedPlaneP puncturedPlaneQ
-  simp only [normSq_eq_norm_sq]
   rw [hP.fderiv, hQ.fderiv]
-  simp only [add_apply, sub_apply, smul_apply, reCLM_apply, imCLM_apply, innerSL_apply_apply,
-    one_re, one_im, I_re, I_im, smul_eq_mul]
-  rw [Real.rpow_sub_one hn]
-  simp [real_inner_eq_re_inner ℂ, RCLike.inner_apply]
-  field_simp
-  rw [← normSq_eq_norm_sq, normSq_apply]
-  ring
+  have hρz : normSq z ≠ 0 := normSq_eq_zero.not.mpr hz
+  calc
+    _ = 2 * normSq z ^ (-α) - 2 * α * (normSq z ^ (-α - 1) * normSq z) := by
+      simp [normSq_apply]
+      ring
+    _ = _ := by
+      rw [← Real.rpow_add_one hρz, sub_add_cancel]
+      ring
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
@@ -94,14 +102,8 @@ theorem extDerivWithin_oneForm_puncturedPlane (α : ℝ) {z : ℂ} (hz : z ≠ 0
   have hd := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := ℂ) (F := ℝ)
     (0 : Fin 1)).differentiableAt.comp z hω
   rw [extDerivWithin_of_mem_nhds (isOpen_compl_singleton.mem_nhds hz)]
-  ext v
-  rw [ContinuousAlternatingMap.apply_eq_apply_one_I_mul_im, ContinuousAlternatingMap.smul_apply,
-    Complex.orientation_volumeFormL_apply, ← curl_puncturedPlane α hz]
-  congr 1
-  simpa only [curl, Function.comp_def, ContinuousAlternatingMap.ofSubsingletonLIE_apply,
-    ContinuousAlternatingMap.ofSubsingleton_apply_apply, oneForm_apply, I_re, I_im, one_re,
-    one_im, mul_zero, mul_one, zero_add, add_zero] using
-    extDeriv_apply_pair_of_differentiableAt hd (1 : ℂ) I
+  simp only [ContinuousAlternatingMap.ofSubsingletonLIE_apply]
+  rw [hd.extDeriv_oneForm_eq_smul_volumeFormL, curl_puncturedPlane α hz]
 
 /-- The member with exponent one is the unique closed form in the family. -/
 theorem eqOn_extDerivWithin_oneForm_puncturedPlane_zero_iff (α : ℝ) :
