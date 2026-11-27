@@ -8,7 +8,7 @@ module
 -- `GL` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `qPochhammer` occurs in the statement of the density identity.
-public import TauCeti.Algebra.Ring.QPochhammer
+public import TauCeti.Algebra.Ring.QPochhammer.Basic
 -- Non-public: `Matrix.card_GL_field` is what the two factorizations below are read off, in the
 -- proofs only.
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card

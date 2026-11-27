@@ -18,7 +18,11 @@ Let `v₀, …, v_(k-1)` be vector fields on a manifold `M`, with flows `ψ^(v i
 (`TauCeti.orderedFlowOf`) runs the last field first. When every field is complete and `C^n`,
 `1 ≤ n`, it is jointly `C^n` in the times and the point
 (`TauCeti.contMDiff_orderedFlowOf_uncurry`), and all times zero give the identity
-(`TauCeti.orderedFlowOf_zero`).
+(`TauCeti.orderedFlowOf_zero`). Running the fields in the reverse order for the negated times,
+`ψ^(v (k-1))_(-s (k-1)) ∘ ⋯ ∘ ψ^(v 0)_(-s 0)`, inverts the ordered flow
+(`TauCeti.orderedFlowOf_rev_neg_orderedFlowOf`, `TauCeti.orderedFlowOf_orderedFlowOf_rev_neg`), so
+the ordered flows of complete smooth fields are diffeomorphisms depending smoothly on the times,
+with inverses depending smoothly on the times as well.
 
 ## Main definitions
 
@@ -28,6 +32,8 @@ Let `v₀, …, v_(k-1)` be vector fields on a manifold `M`, with flows `ψ^(v i
 
 * `TauCeti.orderedFlowOf_zero`: all times zero give the identity.
 * `TauCeti.contMDiff_orderedFlowOf_uncurry`: joint smoothness in the times and the point.
+* `TauCeti.orderedFlowOf_rev_neg_orderedFlowOf`, `TauCeti.orderedFlowOf_orderedFlowOf_rev_neg`:
+  the reversed ordered flow for the negated times is the inverse of the ordered flow.
 
 ## References
 
@@ -69,6 +75,19 @@ theorem orderedFlowOf_succ {k : ℕ} (v : Fin (k + 1) → (x : M) → TangentSpa
       flowOf (v 0) (s 0) ∘ orderedFlowOf (fun i ↦ v i.succ) (fun i ↦ s i.succ) :=
   (rfl)
 
+/-- The ordered flow of `k + 1` fields runs the last field first, and then the first `k` fields,
+in order. -/
+theorem orderedFlowOf_eq_comp_flowOf_last {k : ℕ} (v : Fin (k + 1) → (x : M) → TangentSpace I x)
+    (s : Fin (k + 1) → ℝ) :
+    orderedFlowOf v s = orderedFlowOf (fun i ↦ v i.castSucc) (fun i ↦ s i.castSucc) ∘
+      flowOf (v (Fin.last k)) (s (Fin.last k)) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [orderedFlowOf_succ, ih (fun i ↦ v i.succ) (fun i ↦ s i.succ),
+      orderedFlowOf_succ (fun i ↦ v i.castSucc)]
+    simp only [Fin.succ_last, Fin.castSucc_zero, Fin.succ_castSucc, Function.comp_assoc]
+
 /-- The ordered flow for all times zero is the identity. -/
 @[simp]
 theorem orderedFlowOf_zero {k : ℕ} (v : Fin k → (x : M) → TangentSpace I x) :
@@ -106,5 +125,43 @@ theorem contMDiff_orderedFlowOf_uncurry [CompleteSpace E] [T2Space M] [Boundaryl
     rw [orderedFlowOf_succ, Function.comp_apply,
       flowOf_eq_globalFlow ((hv 0).of_le (by exact_mod_cast hn)) (hc 0)]
     rfl
+
+section Inverse
+
+variable [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M] {k : ℕ}
+  {v : Fin k → (x : M) → TangentSpace I x}
+
+/-- **The reversed ordered flow undoes the ordered flow.** For complete `C¹` vector fields, running
+the fields in the reverse order for the negated times,
+`ψ^(v (k-1))_(-s (k-1)) ∘ ⋯ ∘ ψ^(v 0)_(-s 0)`, undoes the ordered flow
+`ψ^(v 0)_(s 0) ∘ ⋯ ∘ ψ^(v (k-1))_(s (k-1))`. -/
+theorem orderedFlowOf_rev_neg_orderedFlowOf
+    (hv : ∀ i, CMDiff 1 (fun y ↦ (⟨y, v i y⟩ : TangentBundle I M)))
+    (hc : ∀ i, IsCompleteVectorField (v i)) (s : Fin k → ℝ) (x : M) :
+    orderedFlowOf (fun i ↦ v i.rev) (fun i ↦ -s i.rev) (orderedFlowOf v s x) = x := by
+  induction k generalizing x with
+  | zero => rfl
+  | succ k ih =>
+    rw [orderedFlowOf_eq_comp_flowOf_last (fun i ↦ v i.rev), orderedFlowOf_succ v]
+    simp only [Function.comp_apply, Fin.rev_last, Fin.rev_castSucc]
+    rw [flowOf_neg_flowOf (hv 0) ((hc 0).mem_flowDomain _ _)]
+    exact ih (fun i ↦ hv i.succ) (fun i ↦ hc i.succ) (fun i ↦ s i.succ) _
+
+/-- **The ordered flow undoes the reversed ordered flow.** For complete `C¹` vector fields, the
+ordered flow `ψ^(v 0)_(s 0) ∘ ⋯ ∘ ψ^(v (k-1))_(s (k-1))` undoes the reversed ordered flow
+`ψ^(v (k-1))_(-s (k-1)) ∘ ⋯ ∘ ψ^(v 0)_(-s 0)`. -/
+theorem orderedFlowOf_orderedFlowOf_rev_neg
+    (hv : ∀ i, CMDiff 1 (fun y ↦ (⟨y, v i y⟩ : TangentBundle I M)))
+    (hc : ∀ i, IsCompleteVectorField (v i)) (s : Fin k → ℝ) (x : M) :
+    orderedFlowOf v s (orderedFlowOf (fun i ↦ v i.rev) (fun i ↦ -s i.rev) x) = x := by
+  induction k generalizing x with
+  | zero => rfl
+  | succ k ih =>
+    rw [orderedFlowOf_eq_comp_flowOf_last (fun i ↦ v i.rev), orderedFlowOf_succ v]
+    simp only [Function.comp_apply, Fin.rev_last, Fin.rev_castSucc]
+    rw [ih (fun i ↦ hv i.succ) (fun i ↦ hc i.succ) (fun i ↦ s i.succ)]
+    exact flowOf_flowOf_neg (hv 0) (hc 0) (s 0) _
+
+end Inverse
 
 end TauCeti

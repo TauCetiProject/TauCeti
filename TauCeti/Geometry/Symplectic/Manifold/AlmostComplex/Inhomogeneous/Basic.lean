@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Restriction
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
 /-!
@@ -134,6 +134,13 @@ def tangentHom (A : DomainDependentHomSection I M IP P n) (q : P × M) :
 /-- The two tangent-Hom presentations agree on vectors. -/
 theorem tangentHom_apply (A : DomainDependentHomSection I M IP P n) (q : P × M)
     (v : TangentSpace IP q.1) : A.tangentHom q v = A q v := (rfl)
+
+/-- Domain-dependent Hom sections are equal when their readings in the tangent spaces agree. -/
+theorem ext_tangentHom {A B : DomainDependentHomSection I M IP P n}
+    (h : ∀ q, A.tangentHom q = B.tangentHom q) : A = B :=
+  ContMDiffSection.ext fun q ↦ ContinuousLinearMap.ext fun v ↦
+    (tangentHom_apply A q v).symm.trans
+      ((DFunLike.congr_fun (h q) v).trans (tangentHom_apply B q v))
 
 @[simp]
 theorem tangentHom_zero (q : P × M) :

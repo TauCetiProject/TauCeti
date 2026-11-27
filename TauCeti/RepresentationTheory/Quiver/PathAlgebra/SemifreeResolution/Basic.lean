@@ -213,8 +213,8 @@ theorem arrowTensorBimoduleDifferential_smul_arrowTensorDerivation_ofArrow
         TensorProduct.map σ LinearMap.id u • arrowTensorDerivation k Q (d (ofArrow b)) := by
   have hb : (ε j ⊗ₜ[k] op (ε i) : 𝒜ᵉ) • arrowTensorDerivation k Q (ofArrow b) =
       arrowTensorDerivation k Q (ofArrow b) := by
-    rw [← arrowTensorDerivation_vertexIdempotent_mul_mul, vertexIdempotent_mul_ofArrow_self,
-      ofArrow_mul_vertexIdempotent_self]
+    simpa only [arrowTensorIdempotent_def] using
+      arrowTensorIdempotent_smul_arrowTensorDerivation (k := k) (b := ⟨i, j, b⟩)
   have hdb : (ε j ⊗ₜ[k] op (ε i) : 𝒜ᵉ) • arrowTensorDerivation k Q (d (ofArrow b)) =
       arrowTensorDerivation k Q (d (ofArrow b)) := by
     rw [← arrowTensorDerivation_vertexIdempotent_mul_mul,
@@ -291,6 +291,17 @@ theorem vertexTensorBimoduleDifferential_vertexTensorBimoduleDifferential
   ext
   rw [coe_vertexTensorBimoduleDifferential hd hdε, coe_vertexTensorBimoduleDifferential hd hdε,
     envelopeDifferential_envelopeDifferential hd.toIsNonUnitalDGAlgebra, ZeroMemClass.coe_zero]
+
+/-- When `d` kills the vertex idempotents, the generator `∑ᵥ eᵥ ⊗ eᵥ` of `kQ ⊗_{kQ₀} kQ` is a
+cycle. -/
+@[simp]
+theorem vertexTensorBimoduleDifferential_spanSingletonGenerator (hdε : ∀ v, d (ε v) = 0) :
+    vertexTensorBimoduleDifferential wt d (spanSingletonGenerator (vertexTensorIdempotent k Q)) =
+      0 := by
+  apply Subtype.ext
+  rw [coe_vertexTensorBimoduleDifferential_apply, coe_spanSingletonGenerator,
+    vertexTensorIdempotent_def]
+  simp [hdε]
 
 /-- **The multiplication map is a chain map**: it intertwines the differential of
 `kQ ⊗_{kQ₀} kQ` with `d`. -/

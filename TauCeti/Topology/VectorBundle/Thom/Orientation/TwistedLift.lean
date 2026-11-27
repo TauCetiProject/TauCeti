@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Ring.Int.Units
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 public import TauCeti.Topology.VectorBundle.Thom.EquivariantCap
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap
@@ -41,9 +42,9 @@ representation (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`), whic
 which `2` is invertible the twisted Thom isomorphism is proved by a transfer instead
 (`thomPairSingularHomologyEquivTwistedHomology`); the argument here needs no such hypothesis.
 
-The lifted cocycles are those of `TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap`,
-whose index type of orientations lies in `Type`, so the base, the fibres and the ring live in `Type`
-here.
+The base, the fibres and the ring lie in any common universe `w`. The cap product with a
+semi-invariant cocycle needs the acting group in that universe, so the units act through their copy
+`ULift ℤˣ`, and the sign character is `TauCeti.uliftIntUnitsSign : ULift ℤˣ →* Rˣ`.
 
 ## Main results
 
@@ -55,6 +56,9 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   cocycle is a Thom class, so is the class of its lift, read in the cochains of `(E', E'₀)`.
 * `quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap`: the equivariant cap product
   with the lift of a twisted cocycle whose lifted class is a Thom class is a quasi-isomorphism.
+* `exists_isSemiInvariantCocycle_isThomClass`: over every base and every commutative ring, `E'`
+  has a semi-invariant cocycle representing a Thom class, the lift of a cocycle representing the
+  Thom class with coefficients in the orientation system.
 
 ## References
 
@@ -74,10 +78,12 @@ open Bundle CategoryTheory Module Set
 
 namespace TauCeti.VectorBundleOrientationCover
 
-variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+universe w
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type) [CommRing R]
+  {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type w) [CommRing R]
 
 section SemiInvariant
 
@@ -118,18 +124,18 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     (φ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) R
       (ModuleCat.of R R)).cycles n) :
     TopPair.IsSemiInvariantCocycle (P := thomPair F
-        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-      (Units.map (Int.castRingHom R : ℤ →* R))
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) (uliftIntUnitsSign.{w} R)
       (HomologicalComplex.cyclesMap (thomPairSignCochainMap F E hι R R (ModuleCat.of R R)) n
         φ) := by
-  refine (TopPair.isSemiInvariantCocycle_iff _ _).2 fun g ↦ ?_
+  refine (TopPair.isSemiInvariantCocycle_iff _ _).2 fun ⟨g⟩ ↦ ?_
   rw [iCycles_cyclesMap_thomPairSignCochainMap]
   rcases Int.units_eq_one_or g with rfl | rfl
-  · have h1 : TopCat.ofHom ⟨((1 : ℤˣ) • · : (thomPair F
+  · have h1 : TopCat.ofHom ⟨((⟨1⟩ : ULift.{w} ℤˣ) • · : (thomPair F
         ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
-        continuous_const_smul _⟩ = 𝟙 _ := TopCat.ext fun v ↦ one_smul ℤˣ v
-    rw [h1, CategoryTheory.Functor.map_id, HomologicalComplex.id_f, Category.id_comp, map_one,
-      Units.val_one, one_smul]
+        continuous_const_smul _⟩ = 𝟙 _ := TopCat.ext fun v ↦ one_smul (ULift.{w} ℤˣ) v
+    have hχ : (uliftIntUnitsSign.{w} R ⟨1⟩ : R) = 1 := by simp
+    rw [h1, CategoryTheory.Functor.map_id, HomologicalComplex.id_f, Category.id_comp, hχ,
+      one_smul]
     -- The two sides differ only in the instance composing the quotient onto the relative chains:
     -- the category of chain complexes of the singular simplicial set or of `singularChains R`.
     rfl
@@ -143,8 +149,14 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     -- `erw`: the composite in `hd` is formed in the category of chain complexes of the singular
     -- simplicial set, as above.
     erw [HomologicalComplex.comp_f, HomologicalComplex.comp_f] at hd
-    rw [neg_one_smul_eq_deckThomPairMap_fst, show ((Units.map (Int.castRingHom R : ℤ →* R) (-1) :
-      Rˣ) : R) = -1 by simp, neg_one_smul]
+    -- `ULift ℤˣ` acts through `ULift.down`, so `⟨-1⟩` acts as `-1` does.
+    have hδ : TopCat.ofHom ⟨((⟨-1⟩ : ULift.{w} ℤˣ) • · : (thomPair F
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
+        continuous_const_smul _⟩ = TopPair.Hom.fst (deckThomPairMap F E ι) := by
+      simp only [ULift.smul_def]
+      exact neg_one_smul_eq_deckThomPairMap_fst
+    have hχ : (uliftIntUnitsSign.{w} R ⟨-1⟩ : R) = -1 := by simp
+    rw [hδ, hχ, neg_one_smul]
     erw [reassoc_of% hd, reassoc_of% hΛ, Preadditive.neg_comp, Preadditive.comp_neg]
     -- As in the case `1`, the two sides differ only in the instances of the composites.
     rfl
@@ -184,11 +196,35 @@ theorem quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap
           (ModuleCat.of R R)).homologyπ (finrank ℝ F) φ))) :
     QuasiIso (TopPair.singularChainsRepCap
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-      (G := ℤˣ) (p₀ := thomPairProj F _) thomPairProj_smul
-      (Units.map (Int.castRingHom R : ℤ →* R))
+      (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign.{w} R)
       (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R φ) (fun _ _ ↦ rfl)) :=
   quasiIso_singularChainsRepCap_thomPair _ _ _ _
     (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι R hφ)
+
+include hι in
+/-- **A semi-invariant Thom cocycle of the orientation cover.** Over an arbitrary base and for every
+commutative ring `R`, the Thom pair `(E', E'₀)` of the pull-back of `E` to its orientation double
+cover has a relative cocycle of degree `r` which is semi-invariant for the sign character of `ℤˣ`
+(acting through `ULift ℤˣ`) and whose class is a Thom class of `E'`: the lift of a cocycle
+representing the Thom class with coefficients in the orientation system
+(`TauCeti.twistedThomClass`). -/
+theorem exists_isSemiInvariantCocycle_isThomClass [FiniteDimensional ℝ F] :
+    ∃ φ : ((thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+        ).singularCochainComplex (ModuleCat.of R R) R (ModuleCat.of R R)).cycles (finrank ℝ F),
+      TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} R) φ ∧
+      IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+        ((TopPair.singularCochainComplex _ (ModuleCat.of R R) R (ModuleCat.of R R)).homologyπ
+          (finrank ℝ F) φ) := by
+  classical
+  -- An orientation of the model fibre normalizes the Thom class with coefficients in `o(E)`.
+  let ω : Orientation ℝ F ι :=
+    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation
+  obtain ⟨ψ, hψ⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ _
+    (twistedThomClass F E R hι ω)
+  refine ⟨_, isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R ψ,
+    isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι R ?_⟩
+  rw [hψ]
+  exact isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω
 
 end SemiInvariant
 

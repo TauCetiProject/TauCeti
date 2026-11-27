@@ -6,7 +6,7 @@ Authors: Jon Crall, Claude Opus 4.8
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!

@@ -106,6 +106,30 @@ theorem isOutwardPointing_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1)) 1
   exact (smul_neg_iff_of_pos_left ha).symm.trans (iff_of_eq
     (congrArg (fun r : ℝ ↦ r < 0) (hnormal v).symm))
 
+/-- In any tangent-bundle trivialization at `α` containing a boundary point `y`, the image of
+`-e₀` under `symmL` points outward at `y`. -/
+theorem isOutwardPointing_trivializationAt_symmL_neg_single_zero [IsManifold (𝓡∂ (n + 1)) 1 M]
+    {α : M} {y : (𝓡∂ (n + 1)).boundary M}
+    (hy : (y : M) ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) α).baseSet) :
+    IsOutwardPointing (y : M) ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) α).symmL ℝ (y : M) (-EuclideanSpace.single 0 1)) := by
+  let v₀ : EuclideanSpace ℝ (Fin (n + 1)) := -EuclideanSpace.single 0 1
+  have hyc : (y : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hy
+  have hy' : (y : M) ∈ (extChartAt (𝓡∂ (n + 1)) α).source := by rwa [extChartAt_source]
+  rw [isOutwardPointing_iff_tangentCoordChange y.property hy']
+  have hWs : ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) α).symmL ℝ (y : M) v₀ : EuclideanSpace ℝ (Fin (n + 1))) =
+      tangentCoordChange (𝓡∂ (n + 1)) α (y : M) (y : M) v₀ :=
+    congrArg (· v₀) (TangentBundle.symmL_trivializationAt_eq_core (I := 𝓡∂ (n + 1)) hyc)
+  have hcoord : tangentCoordChange (𝓡∂ (n + 1)) (y : M) α (y : M)
+      ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+        (TangentSpace (𝓡∂ (n + 1))) α).symmL ℝ (y : M) v₀) = v₀ := by
+    rw [hWs, tangentCoordChange_comp ⟨⟨hy', mem_extChartAt_source (y : M)⟩, hy'⟩,
+      tangentCoordChange_self hy']
+  rw [hcoord]; simp [v₀]
+
 omit [ChartedSpace (EuclideanHalfSpace (n + 1)) M] in
 /-- The normal coordinate of a chart is the zeroth coordinate of the extended chart. -/
 private theorem normal_eq_proj_comp_extend
@@ -645,6 +669,18 @@ theorem isOutwardPointing (hV : IsOutwardPointingField V) {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
     IsOutwardPointing x (V x) :=
   hV.2 x hx
+
+/-- The negative of an outward-pointing field is smooth. -/
+theorem contMDiff_neg (hV : IsOutwardPointingField V) :
+    ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% (-V)) :=
+  fun x ↦ (hV.contMDiff x).neg_section
+
+/-- The negative of an outward-pointing field points inward along the boundary: the negative of
+its value at every boundary point is outward. This is the boundary hypothesis of the inward flow
+lemmas, applied to the inward field `-V`. -/
+theorem isOutwardPointing_neg_neg (hV : IsOutwardPointingField V) (x : M)
+    (hx : x ∈ (𝓡∂ (n + 1)).boundary M) : IsOutwardPointing x (-(-V) x) := by
+  simpa using hV.isOutwardPointing hx
 
 /-- The sum of two smooth outward-pointing fields is outward-pointing. -/
 theorem add {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}

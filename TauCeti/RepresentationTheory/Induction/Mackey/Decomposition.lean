@@ -111,17 +111,13 @@ noncomputable def mackeyInclusion (s : G) (A : Rep.{u} k H) :
     mackeySummand H K s A ⟶ res K.subtype (ind H.subtype A) :=
   (indResHomEquiv _ _ _).symm <| ofHom
     ⟨IndV.mk H.subtype A.ρ s⁻¹, fun m ↦ LinearMap.ext fun a ↦ by
-      have h := TauCeti.indV_mk_apply_inv H.subtype A.ρ (TauCeti.mackeyToH s H K m)⁻¹ s⁻¹ a
-      rw [inv_inv] at h
       -- The two sides are the restricted actions on `mackeySummand` and on `Rep.res K.subtype`,
       -- both of which are `Representation.ind` by definition of `Rep.res` and `Rep.ind`; `rw`
       -- cannot reach inside those sealed wrappers, so the goal is restated definitionally.
       change IndV.mk H.subtype A.ρ s⁻¹ (A.ρ (TauCeti.mackeyToH s H K m) a) =
         Representation.ind H.subtype A.ρ ((m : K) : G) (IndV.mk H.subtype A.ρ s⁻¹ a)
-      rw [Representation.ind_mk, h]
-      congr 1
-      simp only [Subgroup.coe_subtype, InvMemClass.coe_inv, TauCeti.coe_mackeyToH_apply]
-      group⟩
+      rw [Representation.indV_mk_apply_eq_ind, Subgroup.coe_subtype, TauCeti.coe_mackeyToH_apply]
+      simp [mul_assoc]⟩
 
 -- The public generator-evaluation lemmas in this file deliberately are not simp lemmas: their
 -- `IndV.mk` arguments unfold under simp, so `@[simp]` would violate the `simpNF` linter.

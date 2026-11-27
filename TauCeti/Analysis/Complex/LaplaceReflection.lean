@@ -58,12 +58,16 @@ Laplace equation; it needs no hypothesis on `R`.
 
 ## Main results
 
+* `TauCeti.ite_conj_ae_eq_twistedReflection`: the reflection that keeps the values of `ξ` on the
+  real axis agrees almost everywhere with the twisted reflection.
 * `TauCeti.twistedReflection_starL'_ae_eq_starSchwarzReflection` and
   `TauCeti.twistedReflection_id_ae_eq_evenReflection`: twisted by `star` or by the identity, the
   reflection agrees almost everywhere with `TauCeti.starSchwarzReflection` or
   `TauCeti.evenReflection`.
 * `TauCeti.locallyIntegrableOn_twistedReflection`: the reflection of a function locally integrable
   up to the real axis is locally integrable on the doubled domain.
+* `MeasureTheory.AEStronglyMeasurable.twistedReflection`: the same for almost everywhere strong
+  measurability.
 * `TauCeti.forall_integral_laplacian_smul_twistedReflection_eq_iff`: the reflected triple solves
   the weak Laplace equation on `Ω` if and only if the even and odd half-plane identities hold.
 * `TauCeti.integral_laplacian_smul_twistedReflection_eq`: the direction used for regularity up to
@@ -177,31 +181,37 @@ theorem twistedReflection_conj (hR : Function.Involutive R) (ξ : ℂ → V) (z 
 theorem twistedReflection_ae_eq_restrict (R : V →L[ℝ] V) (ξ : ℂ → V) :
     twistedReflection R ξ =ᵐ[volume.restrict {z : ℂ | 0 ≤ z.im}] ξ := by
   have hm : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
-  have hne : ∀ᵐ z : ℂ, z.im ≠ 0 := measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+  have hne : ∀ᵐ z : ℂ, z.im ≠ 0 := Complex.ae_im_ne_zero
   filter_upwards [ae_restrict_mem hm, ae_restrict_of_ae hne] with z hz hz'
   exact twistedReflection_of_im_pos (lt_of_le_of_ne (mem_ofPred.1 hz) hz'.symm)
+
+/-- The reflection twisted by `R` that keeps the values of `ξ` on the real axis, `ξ` on the closed
+upper half-plane and `R (ξ (conj z))` below it, agrees almost everywhere with
+`TauCeti.twistedReflection R ξ`, which vanishes on the null real axis. -/
+theorem ite_conj_ae_eq_twistedReflection (R : V →L[ℝ] V) (ξ : ℂ → V) :
+    (fun z ↦ if 0 ≤ z.im then ξ z else R (ξ (conj z))) =ᵐ[volume] twistedReflection R ξ := by
+  filter_upwards [Complex.ae_im_ne_zero] with z hz
+  rcases hz.lt_or_gt with hz | hz
+  · simp [twistedReflection_of_im_neg hz, not_le.2 hz]
+  · simp [twistedReflection_of_im_pos hz, hz.le]
 
 /-- Twisted by `star`, the reflection agrees almost everywhere with `starSchwarzReflection`: they
 differ only on the real axis. -/
 theorem twistedReflection_starL'_ae_eq_starSchwarzReflection [StarAddMonoid V] [StarModule ℝ V]
     [ContinuousStar V] (ξ : ℂ → V) :
     twistedReflection ((starL' ℝ : V ≃L[ℝ] V) : V →L[ℝ] V) ξ =ᵐ[volume]
-      starSchwarzReflection ξ := by
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
-  rcases lt_or_gt_of_ne hz with hz | hz
-  · rw [twistedReflection_of_im_neg hz, starSchwarzReflection_of_im_neg hz,
-      ContinuousLinearEquiv.coe_coe, starL'_apply]
-  · rw [twistedReflection_of_im_pos hz, starSchwarzReflection_of_im_nonneg hz.le]
+      starSchwarzReflection ξ :=
+  (ite_conj_ae_eq_twistedReflection _ ξ).symm.trans <|
+    .of_eq <| funext fun z ↦ (starSchwarzReflection_def ξ z).symm
 
 /-- Twisted by the identity, the reflection agrees almost everywhere with `evenReflection`: they
 differ only on the real axis. -/
 theorem twistedReflection_id_ae_eq_evenReflection (ξ : ℂ → V) :
-    twistedReflection (ContinuousLinearMap.id ℝ V) ξ =ᵐ[volume] evenReflection ξ := by
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
-  rcases lt_or_gt_of_ne hz with hz | hz
-  · rw [twistedReflection_of_im_neg hz, evenReflection_of_nonpos hz.le,
-      ContinuousLinearMap.id_apply]
-  · rw [twistedReflection_of_im_pos hz, evenReflection_of_nonneg hz.le]
+    twistedReflection (ContinuousLinearMap.id ℝ V) ξ =ᵐ[volume] evenReflection ξ :=
+  (ite_conj_ae_eq_twistedReflection _ ξ).symm.trans <| .of_eq <| funext fun z ↦ by
+    rcases le_or_gt 0 z.im with hz | hz
+    · rw [ite_eq_left hz, evenReflection_of_nonneg hz]
+    · rw [ite_eq_right hz.not_ge, evenReflection_of_nonpos hz.le, ContinuousLinearMap.id_apply]
 
 /-! ### Local integrability -/
 
@@ -231,6 +241,27 @@ theorem locallyIntegrableOn_twistedReflection {s : Set ℂ} (hs : ∀ z ∈ s, c
     simpa only [conjCLE_apply] using h.comp_continuousLinearEquiv_of_mapsTo conjCLE
       (fun z hz ↦ by simpa only [conjCLE_apply] using hs z hz)
   exact h.add (R.locallyIntegrableOn_comp hc)
+
+/-- **Measurability of the twisted reflection.** If `f` is almost everywhere strongly measurable on
+`s` up to the real axis, its twisted reflection is almost everywhere strongly measurable on the
+conjugation-invariant set `s`. -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.twistedReflection {s : Set ℂ}
+    (hs : ∀ z ∈ s, conj z ∈ s) (R : V →L[ℝ] V)
+    (hf : AEStronglyMeasurable f (volume.restrict (s ∩ {z | 0 ≤ z.im}))) :
+    AEStronglyMeasurable (twistedReflection R f) (volume.restrict s) := by
+  have hsub : upper ∩ s ⊆ s ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hz.2, (mem_ofPred.1 hz.1).le⟩
+  have hg : AEStronglyMeasurable (upper.indicator f) (volume.restrict s) := by
+    refine (aestronglyMeasurable_indicator_iff measurableSet_upper).2 ?_
+    rw [Measure.restrict_restrict measurableSet_upper]
+    exact hf.mono_measure (Measure.restrict_mono hsub le_rfl)
+  have hconj : MeasurePreserving (conjLIE : ℂ → ℂ) (volume.restrict ((conjLIE : ℂ → ℂ) ⁻¹' s))
+      (volume.restrict s) :=
+    conjLIE.measurePreserving.restrict_preimage_emb conjLIE.toHomeomorph.measurableEmbedding s
+  have hgc := ((R.continuous.comp_aestronglyMeasurable hg).comp_measurePreserving
+    hconj).mono_measure (Measure.restrict_mono (fun z hz => by simpa using hs z hz) le_rfl)
+  -- The defining formula: the cutoff plus `R` of the cutoff at the conjugate point.
+  rw [funext (twistedReflection_def R f)]
+  exact hg.add (by simpa only [Function.comp_def, conjLIE_apply] using hgc)
 
 /-! ### The doubled weak Laplace equation -/
 
@@ -491,7 +522,7 @@ theorem integral_laplacian_smul_twistedReflection_conjCLE_id_eq_zero (φ : 𝓓(
     ∫ z, Δ (φ : ℂ → ℝ) z • twistedReflection (conjCLE : ℂ →L[ℝ] ℂ) id z = 0 := by
   have hae : (fun z ↦ Δ (φ : ℂ → ℝ) z • twistedReflection (conjCLE : ℂ →L[ℝ] ℂ) id z) =ᵐ[volume]
       fun z ↦ Δ (φ : ℂ → ℝ) z • id z := by
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_im_eq 0)] with z hz
+    filter_upwards [Complex.ae_im_ne_zero] with z hz
     rw [twistedReflection_conjCLE_id hz, id]
   rw [integral_congr_ae hae]
   have hh : HarmonicOnNhd (id : ℂ → ℂ) Ω := fun x _ ↦ (contDiffAt_id (𝕜 := ℂ)).harmonicAt
