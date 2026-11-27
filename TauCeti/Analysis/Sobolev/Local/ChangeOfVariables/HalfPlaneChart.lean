@@ -138,10 +138,8 @@ theorem MemWkpLoc.comp_partialEquiv_halfPlane [Fact (1 ≤ p)] [FiniteDimensiona
     exact ((ht ▸ e.map_source (hU₁s hz)) : e z ∈ Ω' ∩ {z | 0 ≤ z.im}).2
   have hcomp : MemWkpLoc p (U₁ ∩ {z | 0 ≤ z.im}) k (fun z ↦ u (Φ z)) := by
     rcases Nat.eq_zero_or_pos k with rfl | hk
-    · have hinj : InjOn Φ (U₁ ∩ {z | 0 ≤ z.im}) := fun z hz w hw h ↦
-        e.injOn (hU₁s hz) (hU₁s hw) (by rw [← hΦe₁ hz, ← hΦe₁ hw, h])
-      exact hu.comp_contDiffOn_diffeo zero_le_one hU₁
-        ((hΦ.mono inter_subset_left).of_le (by exact_mod_cast hn)) hinj
+    · exact hu.comp_contDiffOn_diffeo zero_le_one hU₁
+        ((hΦ.mono inter_subset_left).of_le (by exact_mod_cast hn))
         (fun z hz ↦ hdet z hz.1.1) inter_subset_left hmaps
     · exact hu.comp_contDiffOn_halfPlane hk (U := ⟨U₁, hU₁⟩) (V := ⟨V, hV⟩)
         ((hΦ.mono inter_subset_left).of_le (by exact_mod_cast hkn))

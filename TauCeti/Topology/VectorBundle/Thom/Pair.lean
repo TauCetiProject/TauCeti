@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Category.TopPair
-public import TauCeti.Topology.VectorBundle.Subbundle
+public import TauCeti.Topology.FiberBundle.ModelFiber
 public import TauCeti.Topology.VectorBundle.ZeroSection
 
 /-!
@@ -20,12 +20,12 @@ This file collects the structural definitions and functorial maps on Thom pairs 
 the bundle total space and not on singular cohomology or Thom/Euler classes:
 
 * `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
+* `TauCeti.thomPairModelFiberIso`: changing the model-fibre parameter of a Thom pair along an
+  inducing identity of points (`TauCeti.totalSpaceModelFiberHomeomorph`).
 * `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
   base; over the whole base it is `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
 * `TauCeti.thomPairOverMap`: the restriction map `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for
   `W ⊆ W'`.
-* `TauCeti.thomPairModelIso`, `TauCeti.subbundleThomPairModelIso`: changing the phantom model-fibre
-  parameter of a Thom pair (or of a subbundle Thom pair) without changing the total-space topology.
 * `TauCeti.thomPairMapOfNeZero`: a continuous map `f : X → E` taking nonzero values off a set `S`,
   as a map of pairs `(X, X ∖ S) ⟶ (E, E₀)`.
 -/
@@ -50,6 +50,36 @@ variable [TopologicalSpace (TotalSpace F E)]
 section. -/
 abbrev thomPair : TopPair.{w} :=
   TopPair.ofSubset (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E)
+
+variable {F E} in
+/-- The Thom pair of a bundle does not depend on its model fibre: when the topology on the total
+space with model fibre `F'` is induced along the identity of points from the total space with model
+fibre `F`, the identity of points is an isomorphism of Thom pairs `(E, E₀)`
+(`TauCeti.totalSpaceModelFiberHomeomorph`). -/
+def thomPairModelFiberIso {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd) :
+    thomPair F' E ≅ thomPair F E :=
+  TopPair.ofSubsetIso (totalSpaceModelFiberHomeomorph F E h_ind) fun _ ↦ by simp
+
+variable {F E} in
+@[simp]
+theorem thomPairModelFiberIso_hom_fst_apply {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
+    (p : TotalSpace F' E) :
+    TopPair.Hom.fst (thomPairModelFiberIso h_ind).hom p = TotalSpace.mk' F p.proj p.snd := by
+  simp only [thomPairModelFiberIso, TopPair.ofSubsetIso_hom]
+  exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F' E))
+    (B := zeroSectionCompl F' E) _ _ p).trans (totalSpaceModelFiberHomeomorph_apply h_ind p)
+
+variable {F E} in
+@[simp]
+theorem thomPairModelFiberIso_inv_fst_apply {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
+    (p : TotalSpace F E) :
+    TopPair.Hom.fst (thomPairModelFiberIso h_ind).inv p = TotalSpace.mk' F' p.proj p.snd := by
+  simp only [thomPairModelFiberIso, TopPair.ofSubsetIso_inv]
+  exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E))
+    (B := zeroSectionCompl F E) _ _ p).trans (totalSpaceModelFiberHomeomorph_symm_apply h_ind p)
 
 /-- The Thom pair `(E|_W, E₀|_W)` of the restriction of a bundle to a subset `W` of its base: the
 vectors over `W`, relative to the nonzero ones, as subspaces of the total space. -/
@@ -143,137 +173,6 @@ theorem thomPairOverMap_comp_restrictPreimagePairMap {W W' : Set B} (h : W ⊆ W
   TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
     (TopCat.restrictPreimagePairMap_fst_apply _ _ _ _).trans
       (TopCat.restrictPreimagePairMap_fst_apply _ _ _ v).symm)
-
-/-- **Changing the phantom model-fibre parameter of a Thom pair.** If two total-space topologies
-for the same family `E` over `B` (with possibly different model-fibre types `F` and `F'`) make the
-identity map `(b, v) ↦ (b, v)` continuous in both directions, their Thom pairs are isomorphic. -/
-def thomPairModelIso {B : Type w} {F F' : Type*} {E : B → Type w}
-    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
-    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
-    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd) :
-    thomPair F E ≅ thomPair F' E :=
-  TopPair.ofSubsetIso
-    { toFun := fun v ↦ TotalSpace.mk' F' v.proj v.snd
-      invFun := fun v ↦ TotalSpace.mk' F v.proj v.snd
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      continuous_toFun := h₁
-      continuous_invFun := h₂ }
-    fun _ ↦
-      ⟨fun hv ↦ mem_zeroSectionCompl.2 (by exact (mem_zeroSectionCompl (F := F) (E := E)).1 hv),
-       fun hv ↦ mem_zeroSectionCompl.2 (by exact (mem_zeroSectionCompl (F := F') (E := E)).1 hv)⟩
-
-@[simp]
-theorem thomPairModelIso_hom_fst_apply {B : Type w} {F F' : Type*} {E : B → Type w}
-    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
-    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
-    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd)
-    (v : TotalSpace F E) :
-    TopPair.Hom.fst (thomPairModelIso h₁ h₂).hom v = TotalSpace.mk' F' v.proj v.snd := by
-  rw [thomPairModelIso, TopPair.ofSubsetIso_hom]
-  exact TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E)) _ _ v
-
-@[simp]
-theorem thomPairModelIso_hom_snd_apply {B : Type w} {F F' : Type*} {E : B → Type w}
-    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
-    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
-    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd)
-    (v : zeroSectionCompl F E) :
-    (TopPair.Hom.snd (thomPairModelIso h₁ h₂).hom v).val =
-      TotalSpace.mk' F' v.val.proj v.val.snd := by
-  rw [thomPairModelIso, TopPair.ofSubsetIso_hom]
-  exact TopPair.ofSubsetMap_snd_apply (X := TopCat.of (TotalSpace F E)) _ _ v
-
-@[simp]
-theorem thomPairModelIso_inv_fst_apply {B : Type w} {F F' : Type*} {E : B → Type w}
-    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
-    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
-    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd)
-    (v : TotalSpace F' E) :
-    TopPair.Hom.fst (thomPairModelIso h₁ h₂).inv v = TotalSpace.mk' F v.proj v.snd := by
-  rw [thomPairModelIso, TopPair.ofSubsetIso_inv]
-  exact TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F' E)) _ _ v
-
-@[simp]
-theorem thomPairModelIso_inv_snd_apply {B : Type w} {F F' : Type*} {E : B → Type w}
-    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
-    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
-    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd)
-    (v : zeroSectionCompl F' E) :
-    (TopPair.Hom.snd (thomPairModelIso h₁ h₂).inv v).val =
-      TotalSpace.mk' F v.val.proj v.val.snd := by
-  rw [thomPairModelIso, TopPair.ofSubsetIso_inv]
-  exact TopPair.ofSubsetMap_snd_apply (X := TopCat.of (TotalSpace F' E)) _ _ v
-
-/-- **Changing the phantom model-fibre parameter of a subbundle Thom pair.** For a family `V` of
-submodules of `E`, equipping its total space with `subbundleTopology P V` gives the same subspace
-topology from the ambient bundle for any model-fibre parameter `F₁` or `F₂`, so the resulting
-Thom pairs are isomorphic. -/
-def subbundleThomPairModelIso {𝕜 : Type*} (P : Type*) {B : Type w} {E : B → Type w}
-    [Semiring 𝕜] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
-    [TopologicalSpace (TotalSpace P E)] (F₁ F₂ : Type*) (V : ∀ b, Submodule 𝕜 (E b)) :
-    letI := subbundleTopology P (F' := F₁) V
-    letI := subbundleTopology P (F' := F₂) V
-    thomPair F₁ (fun b ↦ V b) ≅ thomPair F₂ (fun b ↦ V b) :=
-  letI := subbundleTopology P (F' := F₁) V
-  letI := subbundleTopology P (F' := F₂) V
-  thomPairModelIso
-    ((isEmbedding_totalSpace_subbundle P F₂ V).continuous_iff.2
-      (isEmbedding_totalSpace_subbundle P F₁ V).continuous)
-    ((isEmbedding_totalSpace_subbundle P F₁ V).continuous_iff.2
-      (isEmbedding_totalSpace_subbundle P F₂ V).continuous)
-
-@[simp]
-theorem subbundleThomPairModelIso_hom_fst_apply {𝕜 : Type*} (P : Type*) {B : Type w}
-    {E : B → Type w} [Semiring 𝕜] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
-    [TopologicalSpace (TotalSpace P E)] (F₁ F₂ : Type*) (V : ∀ b, Submodule 𝕜 (E b))
-    (v : TotalSpace F₁ fun b ↦ V b) :
-    letI := subbundleTopology P (F' := F₁) V
-    letI := subbundleTopology P (F' := F₂) V
-    TopPair.Hom.fst (subbundleThomPairModelIso P F₁ F₂ V).hom v =
-      TotalSpace.mk' F₂ v.proj v.snd :=
-  letI := subbundleTopology P (F' := F₁) V
-  letI := subbundleTopology P (F' := F₂) V
-  thomPairModelIso_hom_fst_apply _ _ v
-
-@[simp]
-theorem subbundleThomPairModelIso_hom_snd_apply {𝕜 : Type*} (P : Type*) {B : Type w}
-    {E : B → Type w} [Semiring 𝕜] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
-    [TopologicalSpace (TotalSpace P E)] (F₁ F₂ : Type*) (V : ∀ b, Submodule 𝕜 (E b))
-    (v : zeroSectionCompl F₁ fun b ↦ V b) :
-    letI := subbundleTopology P (F' := F₁) V
-    letI := subbundleTopology P (F' := F₂) V
-    (TopPair.Hom.snd (subbundleThomPairModelIso P F₁ F₂ V).hom v).val =
-      TotalSpace.mk' F₂ v.val.proj v.val.snd :=
-  letI := subbundleTopology P (F' := F₁) V
-  letI := subbundleTopology P (F' := F₂) V
-  thomPairModelIso_hom_snd_apply _ _ v
-
-@[simp]
-theorem subbundleThomPairModelIso_inv_fst_apply {𝕜 : Type*} (P : Type*) {B : Type w}
-    {E : B → Type w} [Semiring 𝕜] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
-    [TopologicalSpace (TotalSpace P E)] (F₁ F₂ : Type*) (V : ∀ b, Submodule 𝕜 (E b))
-    (v : TotalSpace F₂ fun b ↦ V b) :
-    letI := subbundleTopology P (F' := F₁) V
-    letI := subbundleTopology P (F' := F₂) V
-    TopPair.Hom.fst (subbundleThomPairModelIso P F₁ F₂ V).inv v =
-      TotalSpace.mk' F₁ v.proj v.snd :=
-  letI := subbundleTopology P (F' := F₁) V
-  letI := subbundleTopology P (F' := F₂) V
-  thomPairModelIso_inv_fst_apply _ _ v
-
-@[simp]
-theorem subbundleThomPairModelIso_inv_snd_apply {𝕜 : Type*} (P : Type*) {B : Type w}
-    {E : B → Type w} [Semiring 𝕜] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
-    [TopologicalSpace (TotalSpace P E)] (F₁ F₂ : Type*) (V : ∀ b, Submodule 𝕜 (E b))
-    (v : zeroSectionCompl F₂ fun b ↦ V b) :
-    letI := subbundleTopology P (F' := F₁) V
-    letI := subbundleTopology P (F' := F₂) V
-    (TopPair.Hom.snd (subbundleThomPairModelIso P F₁ F₂ V).inv v).val =
-      TotalSpace.mk' F₁ v.val.proj v.val.snd :=
-  letI := subbundleTopology P (F' := F₁) V
-  letI := subbundleTopology P (F' := F₂) V
-  thomPairModelIso_inv_snd_apply _ _ v
 
 variable {F E} {X : Type w} [TopologicalSpace X]
 

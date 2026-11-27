@@ -182,8 +182,17 @@ theorem isIso_singularHomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ) 
     refine TopPair.hom_ext_of_fst _ ?_
     rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, bandPairInclusion_fst,
       bandCollarPairInclusion_fst]
-    ext x
-    rfl
+    refine TopCat.ext fun x ↦ Subtype.ext ?_
+    have h₁' (y : (sublevelPair f hab).fst) : ((TopPair.Hom.fst ψ₁) y).val = y.val :=
+      congrArg (fun g : T₁.fst ⟶ T₁.fst ↦ (g y).val) (TopTriple.totalToOuter_app_fst (T := T₁))
+    have h₂' (y : (bandPair f hab).fst) : ((TopPair.Hom.fst ψ₂) y).val = y.val :=
+      congrArg (fun g : T₂.fst ⟶ T₂.fst ↦ (g y).val) (TopTriple.totalToOuter_app_fst (T := T₂))
+    refine (congrArg Subtype.val (TopCat.comp_app _ _ x)).trans ?_
+    refine (h₁' _).trans ?_
+    refine (congrArg Subtype.val (TopCat.ofHom_apply _ x)).trans ?_
+    refine (h₂' x).symm.trans ?_
+    refine Eq.symm ((congrArg Subtype.val (TopCat.comp_app _ _ x)).trans ?_)
+    exact congrArg Subtype.val (TopCat.ofHom_apply _ _)
   have h₁₂ : IsIso (TopPair.singularHomologyMap (bandPairInclusion f hab) R n ≫
       TopPair.singularHomologyMap ψ₁ R n) := by
     rw [← TopPair.singularHomologyMap_comp, hsq, TopPair.singularHomologyMap_comp]

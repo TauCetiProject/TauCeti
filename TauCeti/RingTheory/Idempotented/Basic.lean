@@ -33,11 +33,15 @@ unit.
 * `TauCeti.IsIdempotented H`: every finite subset of `H` has an idempotent two-sided local unit.
 * `TauCeti.nondegeneratePart A H M`: the submodule `H • M` spanned by the elements `h • m`.
 * `TauCeti.IsNondegenerate A H M`: the module `M` satisfies `H • M = M`.
+* `TauCeti.IsNondegenerate.module`: over a unital `H`, the `H`-module structure of a
+  nondegenerate module.
 
 ## Main results
 
 * `TauCeti.IsIdempotented.iUnion_corner`: an idempotented ring is the union of its corners `eHe`,
   and these form a directed family (`TauCeti.IsIdempotented.directed_corner`).
+* `TauCeti.IsIdempotented.subsingleton_of_mul_eq_zero`: a nontrivial ring with the zero
+  multiplication is not idempotented.
 * `TauCeti.mem_nondegeneratePart_iff`: over an idempotented `H`, the elements of `H • M` are
   exactly those fixed by some idempotent of `H`.
 * `TauCeti.IsNondegenerate.exists_isIdempotentElem_forall_smul_eq`: finitely many elements of a
@@ -50,6 +54,8 @@ unit.
 * `TauCeti.isNondegenerate_iff_le_nondegeneratePart`: `H • M` is the largest nondegenerate
   submodule of `M`.
 * `TauCeti.isNondegenerate_span_singleton`: the principal left ideals `He` are nondegenerate.
+* `TauCeti.isNondegenerate_iff_one_smul`: over a unital `H`, a module is nondegenerate exactly when
+  `1 ∈ H` acts as the identity.
 
 ## References
 
@@ -106,6 +112,16 @@ theorem directed_corner :
     · rw [← hxl, ← mul_assoc, hl]
     · rw [← hxr, mul_assoc, hr]
   exact ⟨⟨f, hf⟩, key e₁ he₁ (hs e₁ (by simp)), key e₂ he₂ (hs e₂ (by simp))⟩
+
+/-- An idempotented structure with zero multiplication is trivial: every `x` equals `e * x = 0`
+for a local unit `e`. In particular a nonzero ring with the zero multiplication is not
+idempotented. -/
+theorem subsingleton_of_mul_eq_zero {H : Type*} [Mul H] [Zero H] [IsIdempotented H]
+    (h : ∀ x y : H, x * y = 0) : Subsingleton H := by
+  classical
+  refine ⟨fun x y ↦ ?_⟩
+  obtain ⟨e, -, he⟩ := exists_isIdempotentElem {x, y}
+  rw [← (he x (by simp)).1, ← (he y (by simp)).1, h, h]
 
 end IsIdempotented
 
@@ -318,5 +334,54 @@ theorem isNondegenerate_span_singleton (e : H) :
   simpa using inr_smul_mem_nondegeneratePart (A := A) e (1 : Unitization A H)
 
 end Module
+
+section Unital
+
+variable {A H : Type*} [CommSemiring A] [Semiring H] [Algebra A H]
+  {M : Type*} [AddCommMonoid M] [Module (Unitization A H) M]
+
+/-- Over a unital algebra `H`, a module over `A ⊕ H` is nondegenerate exactly when `1 ∈ H` acts
+as the identity. -/
+theorem isNondegenerate_iff_one_smul :
+    IsNondegenerate A H M ↔ ∀ m : M, ((1 : H) : Unitization A H) • m = m := by
+  refine ⟨fun hM m ↦ ?_, fun h ↦ isNondegenerate_iff.2 fun m ↦ ⟨1, .one, h m⟩⟩
+  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 hM m
+  exact inr_smul_eq_of_mul_eq he (one_mul e)
+
+/-- In a nondegenerate module over the unitization of a unital algebra, `1 ∈ H` acts as the
+identity. -/
+theorem IsNondegenerate.one_smul (hM : IsNondegenerate A H M) (m : M) :
+    ((1 : H) : Unitization A H) • m = m :=
+  isNondegenerate_iff_one_smul.1 hM m
+
+/-- In a nondegenerate module over the unitization of a unital algebra, `a ∈ A` acts as
+`a • 1 ∈ H`. -/
+theorem IsNondegenerate.inl_smul (hM : IsNondegenerate A H M) (a : A) (m : M) :
+    (Unitization.inl a : Unitization A H) • m = ((algebraMap A H a : H) : Unitization A H) • m := by
+  rw [inl_smul_eq_inr_smul (hM.one_smul m), Algebra.algebraMap_eq_smul_one]
+
+/-- The `H`-module structure of a nondegenerate module over the unitization `A ⊕ H` of a unital
+algebra `H`: `h` acts as `h ∈ A ⊕ H` (`TauCeti.IsNondegenerate.smul_def`). -/
+abbrev IsNondegenerate.module (hM : IsNondegenerate A H M) : Module H M where
+  smul h m := (h : Unitization A H) • m
+  one_smul := hM.one_smul
+  -- The axioms are those of `A ⊕ H` transported along `Unitization.inr`; each term has the
+  -- type of the field once `h • m` is unfolded to `(h : Unitization A H) • m`.
+  mul_smul h h' m :=
+    (congrArg (fun x : Unitization A H ↦ x • m) (Unitization.inr_mul A h h')).trans (mul_smul _ _ m)
+  smul_zero h := smul_zero (h : Unitization A H)
+  smul_add h := smul_add (h : Unitization A H)
+  add_smul h h' m :=
+    (congrArg (fun x : Unitization A H ↦ x • m) (Unitization.inr_add A h h')).trans (add_smul _ _ m)
+  zero_smul m :=
+    (congrArg (fun x : Unitization A H ↦ x • m) (Unitization.inr_zero A)).trans (zero_smul _ m)
+
+/-- In the `H`-module structure of a nondegenerate module, `h` acts as `h ∈ A ⊕ H`. -/
+theorem IsNondegenerate.smul_def (hM : IsNondegenerate A H M) (h : H) (m : M) :
+    letI := hM.module
+    h • m = (h : Unitization A H) • m :=
+  rfl
+
+end Unital
 
 end TauCeti

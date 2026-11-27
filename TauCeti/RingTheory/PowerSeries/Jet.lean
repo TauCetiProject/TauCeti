@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.RingTheory.Polynomial.Truncated.Basic
 
 /-!
 # Finite jets of power series
@@ -55,9 +56,8 @@ exactly when `f` and `p` have the same coefficients below `N`. -/
 private theorem mk_trunc_eq_mk_iff {N : ℕ} {f : R⟦X⟧} {p : R[X]} :
     AdjoinRoot.mk (Polynomial.X ^ N : R[X]) (trunc N f) = AdjoinRoot.mk _ p ↔
       ∀ d < N, coeff d f = p.coeff d := by
-  rw [AdjoinRoot.mk_eq_mk, Polynomial.X_pow_dvd_iff]
-  refine forall₂_congr fun d hd ↦ ?_
-  rw [Polynomial.coeff_sub, coeff_trunc, ite_eq_left hd, sub_eq_zero]
+  rw [AdjoinRoot.mk_X_pow_eq_mk_iff]
+  exact forall₂_congr fun d hd ↦ by rw [coeff_trunc, ite_eq_left hd]
 
 variable (R) in
 /-- **The `N`-jet of a power series.** The `R`-algebra map `R⟦X⟧ → R[X]/(X ^ N)` sending `f` to

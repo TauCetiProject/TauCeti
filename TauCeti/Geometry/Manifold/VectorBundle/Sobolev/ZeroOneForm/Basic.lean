@@ -361,6 +361,16 @@ theorem chartValueL_zeroOnePartSobolevL_ae (w : SobolevSection A.tangentHom μ p
         fun y ↦ complexAntilinearPartL (A.tangentHom.sectionChartData.chartValueL μ p k i w y) :=
   chartValueL_zeroOnePartEnd_ae w i
 
+/-- The chart data of the zero `(0,1)`-form vanish almost everywhere on the chart image. -/
+theorem chartValueL_zero_zeroOneSobolevSections_ae (i : Fin A.n) :
+    A.tangentHom.sectionChartData.chartValueL μ p k i
+        (((0 : zeroOneSobolevSections A μ p k) : SobolevSection A.tangentHom μ p k) :
+          A.tangentHom.sectionChartData.SobolevData μ p k)
+      =ᵐ[μ.restrict (A.image i)] 0 := by
+  simp only [ZeroMemClass.coe_zero, map_zero]
+  exact (FiniteBundleAtlas.ae_image_tangentHom_iff A μ i).1
+    (Lp.coeFn_zero (ℂ →L[ℝ] F) p (μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ)))
+
 /-- The `(0,1)`-projection of `w` vanishes exactly when the chart data of `w` are complex linear
 almost everywhere on the image of every chart. -/
 theorem zeroOnePartSobolevL_eq_zero_iff {w : SobolevSection A.tangentHom μ p k} :
