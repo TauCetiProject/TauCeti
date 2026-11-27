@@ -80,6 +80,8 @@ every period.
   equal to `|det (1 - A)|`.
 * `AddCircle.finite_fixedPoints_generalLinearGroup_smul_iff`: they are finite exactly when
   `det (1 - A) ≠ 0`.
+* `AddCircle.finite_ptsOfPeriod_generalLinearGroup_smul_iff`: the points of period `n` are finite
+  exactly when `det (1 - Aⁿ) ≠ 0`.
 * `AddCircle.det_id_sub_fixedPointDerivative_generalLinearGroup_smul`: `det (1 - df_x) =
   det (1 - A)` at every fixed point.
 * `AddCircle.isNondegenerateFixedPt_generalLinearGroup_smul_iff`: a fixed point is nondegenerate
@@ -155,6 +157,17 @@ theorem finite_fixedPoints_generalLinearGroup_smul_iff (A : GL ι ℤ) :
     (fixedPoints fun x : ι → AddCircle p ↦ A • x).Finite ↔ (1 - (A : Matrix ι ι ℤ)).det ≠ 0 := by
   rw [fixedPoints_generalLinearGroup_smul_eq_ker, ← Set.finite_coe_iff, SetLike.coe_sort_coe,
     finite_ker_smulVecHom_iff]
+
+/-- **Finitely many points of a given period.** The points of period `n` of the toral automorphism
+`x ↦ A • x`, the fixed points of its `n`-th iterate `x ↦ Aⁿ • x`, are finite exactly when
+`det (1 - Aⁿ) ≠ 0`. -/
+theorem finite_ptsOfPeriod_generalLinearGroup_smul_iff (A : GL ι ℤ) (n : ℕ) :
+    (ptsOfPeriod (fun x : ι → AddCircle p ↦ A • x) n).Finite ↔
+      (1 - (A : Matrix ι ι ℤ) ^ n).det ≠ 0 := by
+  have h : ptsOfPeriod (fun x : ι → AddCircle p ↦ A • x) n = fixedPoints fun x ↦ (A ^ n) • x := by
+    ext x
+    rw [mem_ptsOfPeriod, IsPeriodicPt, smul_iterate, mem_fixedPoints]
+  rw [h, finite_fixedPoints_generalLinearGroup_smul_iff, Units.val_pow_eq_pow_val]
 
 /-- **The number of fixed points of a toral automorphism.** For `p ≠ 0`, the set of fixed points of
 the map `x ↦ A • x` of the torus `ι → AddCircle p` has `Nat.card` equal to `|det (1 - A)|`. When
