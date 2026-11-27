@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Derived
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Comodule
 
@@ -19,11 +20,16 @@ vector fixed, hence fixed by every `k`-point; but the transvection `1 + E₀₁`
 
 Over `ℚ`, the point `diag(2, 1/2)` of `SL₂` (Mathlib's `Matrix.SpecialLinearGroup.diag2`)
 satisfies that `diag(2, 1/2) - 1` is invertible
-(`TauCeti.Examples.UnipotentSpecialLinear.isUnit_diag_two_half_sub_one`); this invertibility is
-all the file proves about this point. Informally (not formalized here), it means this `ℚ`-point
-fixes no nonzero vector of the standard representation `ℚ²`, which would also witness that `SL₂`
-is not unipotent, whereas the absence of nontrivial characters of `SL₂` would not. The theorem
-above is proved with the transvection instead, because that works over every field.
+(`TauCeti.Examples.UnipotentSpecialLinear.isUnit_diag_two_half_sub_one`), so it fixes no nonzero
+vector of the standard representation `ℚ²`
+(`TauCeti.Examples.UnipotentSpecialLinear.eq_zero_of_diag_two_half_mulVec_eq`); this gives a second
+proof that `SL₂` is not unipotent over `ℚ`
+(`TauCeti.Examples.UnipotentSpecialLinear.not_unipotent_specialLinear_two_rat`).
+
+The character test for unipotence is one-way: a connected unipotent group has no nontrivial
+character, but `SL₂` has none either (`TauCeti.SpecialLinear.groupLike_eq_one`, from the
+derived subgroup), and it is not unipotent
+(`TauCeti.Examples.UnipotentSpecialLinear.groupLike_eq_one_and_not_unipotent`).
 -/
 
 public section
@@ -61,18 +67,43 @@ theorem not_unipotent_specialLinear {n : ℕ} (hn : 2 ≤ n) :
   simpa [g, t, Matrix.SpecialLinearGroup.transvection_coe, Matrix.add_mulVec, hij] using
     congrFun hfix i
 
-/-- For the point `diag(2, 1/2)` of `SL₂(ℚ)`, the matrix `diag(2, 1/2) - 1` is invertible.
-
-Informal remark (not formalized here): consequently this `ℚ`-point fixes no nonzero vector of
-the standard representation `ℚ²`, so it too would witness that `SL₂` is not unipotent. -/
+/-- For the point `diag(2, 1/2)` of `SL₂(ℚ)`, the matrix `diag(2, 1/2) - 1` is invertible. -/
 theorem isUnit_diag_two_half_sub_one :
     IsUnit ((Matrix.SpecialLinearGroup.diag2 (2 : ℚ) two_ne_zero : Matrix (Fin 2) (Fin 2) ℚ) -
       1) := by
   rw [Matrix.isUnit_iff_isUnit_det]
   norm_num [Matrix.SpecialLinearGroup.diag2_coe', Matrix.det_fin_two]
 
-/-- `SL₂` is not unipotent over `ℚ`. -/
-example : ¬ unipotentCommHopfAlgProperty ℚ (SpecialLinear.coordinateHopfAlgebra ℚ 2) :=
-  not_unipotent_specialLinear ℚ le_rfl
+/-- The point `diag(2, 1/2)` of `SL₂(ℚ)` fixes no nonzero vector of `ℚ²`. -/
+theorem eq_zero_of_diag_two_half_mulVec_eq {v : Fin 2 → ℚ}
+    (hv : (Matrix.SpecialLinearGroup.diag2 (2 : ℚ) two_ne_zero :
+      Matrix (Fin 2) (Fin 2) ℚ).mulVec v = v) : v = 0 := by
+  have h : ((Matrix.SpecialLinearGroup.diag2 (2 : ℚ) two_ne_zero : Matrix (Fin 2) (Fin 2) ℚ) -
+      1).mulVec v = 0 := by
+    rw [Matrix.sub_mulVec, hv, Matrix.one_mulVec, sub_self]
+  exact (Matrix.mulVec_injective_iff_isUnit.mpr isUnit_diag_two_half_sub_one)
+    (h.trans (Matrix.mulVec_zero _).symm)
+
+/-- **`SL₂` is not unipotent over `ℚ`, through the point `diag(2, 1/2)`**: a unipotent group would
+fix a nonzero vector of the standard representation `ℚ²`, but `diag(2, 1/2)` fixes none. -/
+theorem not_unipotent_specialLinear_two_rat :
+    ¬ unipotentCommHopfAlgProperty ℚ (SpecialLinear.coordinateHopfAlgebra ℚ 2) := by
+  intro hH
+  obtain ⟨v, hv0, hv⟩ := hasNonzeroFixedVector_iff.mp
+    (unipotentCommHopfAlgProperty.hasNonzeroFixedVector
+      (H := SpecialLinear.coordinateHopfAlgebra ℚ 2) (M := Fin 2 → ℚ) hH)
+  let g := (SpecialLinear.pointsMulEquiv (R := ℚ) (A := ℚ) 2).symm
+    (Matrix.SpecialLinearGroup.diag2 (2 : ℚ) two_ne_zero)
+  have hfix := basePointsRepresentation_eq_of_coact_eq_tmul_one (R := ℚ)
+    (H := SpecialLinear.coordinateHopfAlgebra ℚ 2) v hv g
+  rw [SpecialLinear.basePointsRepresentation_eq_mulVec] at hfix
+  exact hv0 (eq_zero_of_diag_two_half_mulVec_eq (by simpa [g] using hfix))
+
+/-- **The character test for unipotence is one-way.** Over every field, `SL₂` has no nontrivial
+character (every group-like element of its coordinate ring is `1`), yet it is not unipotent. -/
+theorem groupLike_eq_one_and_not_unipotent :
+    (∀ x : GroupLike k (SpecialLinear.coordinateHopfAlgebra k 2), x = 1) ∧
+      ¬ unipotentCommHopfAlgProperty k (SpecialLinear.coordinateHopfAlgebra k 2) :=
+  ⟨SpecialLinear.groupLike_eq_one k 2, not_unipotent_specialLinear k le_rfl⟩
 
 end TauCeti.Examples.UnipotentSpecialLinear
