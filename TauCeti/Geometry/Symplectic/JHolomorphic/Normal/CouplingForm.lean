@@ -223,15 +223,24 @@ theorem differentiableAt_normalConnectionForm (hA : DifferentiableAt ℝ A z) :
   unfold normalConnectionForm
   fun_prop
 
+/-- The derivative of the connection form `i A` is `i DA`, acting by multiplication. -/
+theorem fderiv_normalConnectionForm_apply_apply_apply (hA : DifferentiableAt ℝ A z)
+    (v v' : E) (n : ℂ) :
+    fderiv ℝ (normalConnectionForm A) z v v' n = I * fderiv ℝ A z v (fun _ ↦ v') * n := by
+  have hD := (hasFDerivAt_const (ContinuousLinearMap.toSpanSingleton ℝ
+    (ContinuousLinearMap.mul ℝ ℂ I)) z).clm_comp
+      ((ofSubsingletonLIE (0 : Fin 1)).symm.hasFDerivAt.comp z hA.hasFDerivAt)
+  -- `hD` is stated for `z ↦ (toSpanSingleton (mul I)).comp ((ofSubsingletonLIE 0).symm (A z))`,
+  -- the body of `normalConnectionForm A`; `change` restates it for the definition itself.
+  change HasFDerivAt (normalConnectionForm A) _ z at hD
+  simp [hD.fderiv]
+  ring
+
 /-- The curvature of the connection `d + i A` is `i dA`, acting by multiplication. -/
 theorem connectionCurvature_normalConnectionForm_apply (hA : DifferentiableAt ℝ A z)
     (v v' : E) (n : ℂ) :
     connectionCurvature ℝ (normalConnectionForm A) z v v' n = I * extDeriv A z ![v, v'] * n := by
-  have hD := (hasFDerivAt_const (ContinuousLinearMap.toSpanSingleton ℝ
-    (ContinuousLinearMap.mul ℝ ℂ I)) z).clm_comp
-      ((ofSubsingletonLIE (0 : Fin 1)).symm.hasFDerivAt.comp z hA.hasFDerivAt)
-  change HasFDerivAt (normalConnectionForm A) _ z at hD
-  simp [hD.fderiv, extDeriv_apply_pair, Ring.lie_def]
+  simp [fderiv_normalConnectionForm_apply_apply_apply hA, extDeriv_apply_pair, Ring.lie_def]
   ring
 
 /-- The connection `d + i A` is symplectic for the area form of `ℂ`: `i A(v)` lies in its Lie

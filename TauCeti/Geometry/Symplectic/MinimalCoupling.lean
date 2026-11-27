@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -396,8 +395,10 @@ theorem compContinuousLinearMap_minimalCouplingPrimitive_gaugeAction
       minimalCouplingPrimitive σ A (z, w) := by
   have hΦ (x : E × V) : fderiv ℝ (fun p : E × V ↦ (p.1, O p.1 p.2)) (z, w) x =
       (x.1, O z x.2 + fderiv ℝ O z x.1 w) := by
-    simp [(((hO.hasFDerivAt.hasFDerivWithinAt (s := Set.univ)).fst_prodMk_clm_apply_snd
-      (p := (z, w)) (Set.mapsTo_univ _ _)).hasFDerivAt Filter.univ_mem).fderiv]
+    have hD : HasFDerivAt (fun p : E × V ↦ (p.1, O p.1 p.2)) _ (z, w) :=
+      hasFDerivAt_fst.prodMk
+        ((hO.hasFDerivAt.comp (z, w) hasFDerivAt_fst).clm_apply hasFDerivAt_snd)
+    simp [hD.fderiv]
   have hcov (v : E) (n : V) :
       O z n + fderiv ℝ O z v w + gaugeAction ℝ O A z v (O z w) = O z (n + A z v w) := by
     have hinv : (O z)⁻¹ʳ (O z w) = w := by
@@ -445,8 +446,11 @@ theorem compContinuousLinearMap_minimalCouplingForm_gaugeAction [CompleteSpace V
   congr 1
   congr 1
   funext i
-  simp [Φ, (((hO1.hasFDerivAt.hasFDerivWithinAt (s := Set.univ)).fst_prodMk_clm_apply_snd
-    (p := (z, w)) (Set.mapsTo_univ _ _)).hasFDerivAt Filter.univ_mem).fderiv]
+  -- `Φ` fixes the base point, so `fst ∘ Φ` is `Prod.fst` and `fst ∘ DΦ` is `fst`.
+  have hfst : fderiv ℝ Prod.fst (z, w) = (ContinuousLinearMap.fst ℝ E V).comp (fderiv ℝ Φ (z, w)) :=
+    fderiv.fst (hΦc.differentiableAt two_ne_zero)
+  rw [fderiv_fst] at hfst
+  simpa using congr($hfst (u i)).symm
 
 end Gauge
 
