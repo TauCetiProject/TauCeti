@@ -42,6 +42,9 @@ vanishes.
   `π_k(S³) → π_k(S²)` for `k ≥ 3`.
 * `TauCeti.hopfSphere2HomotopyGroupMulEquiv`: the induced isomorphism of homotopy groups.
 * `TauCeti.nonempty_addEquiv_int_homotopyGroup_three_sphere2`: `π₃(S²) ≅ ℤ`.
+* `TauCeti.hopfSphere2Hom_mem_serreFibrations`: the Hopf map `S³ → S²` is a Serre fibration.
+* `TauCeti.hopfSphere2FiberHomeomorph`: its fibres are circles, those of the Hopf fibration
+  `S³ → CP¹` (`TauCeti.preimage_hopfSphere2_singleton`).
 
 ## References
 
@@ -107,5 +110,53 @@ theorem nonempty_addEquiv_int_homotopyGroup_three_sphere2 (x : Sphere2) :
   exact ⟨((hopfSphere2HomotopyGroupMulEquiv (by simp) v).symm.trans
     (HomotopyGroup.homeomorphMulEquiv e v)).toAdditive.trans
       (homotopyGroupSphereAddEquiv (n := 1) (EuclideanSpace.basisFun (Fin 4) ℝ) (e v))⟩
+
+/-! ### The Hopf map as a fibration -/
+
+/-- The Hopf map `S³ → S²` (`TauCeti.hopfSphere2`), as a morphism of topological spaces. -/
+abbrev hopfSphere2Hom : TopCat.of (sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) ⟶ TopCat.of Sphere2 :=
+  TopCat.ofHom hopfSphere2
+
+open CategoryTheory in
+/-- **The Hopf map `S³ → S²` is a Serre fibration**: it is the Hopf fibration `S³ → CP¹` followed
+by the homeomorphism `CP¹ ≃ₜ S²`. -/
+theorem hopfSphere2Hom_mem_serreFibrations : TopCat.serreFibrations hopfSphere2Hom := by
+  have : hopfHom 1 ≫ (TopCat.isoOfHomeo homeomorphSphere2).hom = hopfSphere2Hom := by
+    ext v : 1
+    simp
+  rw [← this]
+  exact MorphismProperty.RespectsIso.postcomp _ _ _ (mk_mem_serreFibrations 1)
+
+/-- The fibre of the Hopf map `S³ → S²` over `x` is the fibre of the Hopf fibration `S³ → CP¹`
+over the point of `CP¹` corresponding to `x` under `CP¹ ≃ₜ S²`. -/
+theorem preimage_hopfSphere2_singleton (x : Sphere2) :
+    hopfSphere2 ⁻¹' {x} = mk 1 ⁻¹' {homeomorphSphere2.symm x} := by
+  ext w
+  simp [homeomorphSphere2.eq_symm_apply]
+
+/-- **The fibres of the Hopf map `S³ → S²` are circles**: the fibre over `x` is homeomorphic to the
+unit circle, through the orbit map `u ↦ u • v` of a point `v` of the fibre. It is the fibre of the
+Hopf fibration `S³ → CP¹` (`TauCeti.ComplexProjectiveSpace.hopfFiberHomeomorph`), carried along
+`CP¹ ≃ₜ S²` (`TauCeti.preimage_hopfSphere2_singleton`). -/
+def hopfSphere2FiberHomeomorph {x : Sphere2} (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1)
+    (hv : hopfSphere2 v = x) : sphere (0 : ℂ) 1 ≃ₜ (hopfSphere2 ⁻¹' {x} : Set _) :=
+  (hopfFiberHomeomorph v).trans (Homeomorph.setCongr (by
+    rw [preimage_hopfSphere2_singleton, ← hv, homeomorphSphere2_symm_hopfSphere2]))
+
+/-- The homeomorphism of the unit circle with a fibre of the Hopf map is the orbit map
+`u ↦ u • v`. -/
+@[simp]
+theorem coe_hopfSphere2FiberHomeomorph_apply {x : Sphere2}
+    (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) (hv : hopfSphere2 v = x)
+    (u : sphere (0 : ℂ) 1) :
+    (hopfSphere2FiberHomeomorph v hv u : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) = u • v :=
+  coe_hopfFiberHomeomorph_apply v u
+
+/-- The unit `1` of the circle corresponds to `v` itself in the fibre of the Hopf map. -/
+@[simp]
+theorem hopfSphere2FiberHomeomorph_one {x : Sphere2}
+    (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) (hv : hopfSphere2 v = x) :
+    hopfSphere2FiberHomeomorph v hv 1 = ⟨v, hv⟩ :=
+  Subtype.ext ((coe_hopfSphere2FiberHomeomorph_apply v hv 1).trans (one_smul _ v))
 
 end TauCeti

@@ -21,9 +21,10 @@ This file collects general results about `iteratedDeriv`:
 * `TauCeti.iteratedDeriv_iteratedDeriv`: iterated derivatives compose additively.
 * `TauCeti.iteratedDeriv_sum_smul`: the iterated derivative of a finite linear combination of
   functions that are `Cⁿ` at a point is the same combination of their iterated derivatives.
-* `TauCeti.iteratedDeriv_eq_of_derivative_tower`, `TauCeti.contDiff_of_derivative_tower`: in a
-  sequence of functions linked by ordinary derivatives, the iterated derivatives of the initial
-  function are the later functions, and the initial function is smooth.
+* `TauCeti.contDiff_of_finite_derivative_tower`, `TauCeti.iteratedDeriv_eq_of_derivative_tower`,
+  `TauCeti.contDiff_of_derivative_tower`: in a finite or infinite sequence of functions linked by
+  ordinary derivatives, the iterated derivatives of the initial function are the later functions,
+  and the initial function is `C^m` or smooth.
 * `ContDiffOn.hasDerivAt_and_hasDerivAt_deriv`: a function that is `C²` on an open set has
   derivative `deriv f` there, and `deriv f` has derivative `iteratedDeriv 2 f` there.
 * `TauCeti.iteratedDeriv_const_pi`: the `k`-th iterated derivative of a constant-across-coordinates
@@ -59,6 +60,26 @@ theorem iteratedDeriv_sum_smul {ι : Type*} {s : Finset ι} {u : ι → 𝕜 →
   rw [iteratedDeriv_sum fun i hi => ?_]
   · simp_rw [iteratedDeriv_const_smul_field]
   · exact (hu i hi).const_smul (c i)
+
+/-- A finite tower of functions up to order `m` with successive ordinary derivatives and
+continuous top level gives a `C^m` zeroth function. -/
+theorem contDiff_of_finite_derivative_tower (F : ℕ → 𝕜 → E) (m : ℕ)
+    (hF : ∀ k < m, ∀ x, HasDerivAt (F k) (F (k + 1) x) x) (hcont : Continuous (F m)) :
+    ContDiff 𝕜 m (F 0) := by
+  have hiter : ∀ k ≤ m, iteratedDeriv k (F 0) = F k := by
+    intro k hk
+    induction k with
+    | zero => exact iteratedDeriv_zero
+    | succ k ih =>
+      rw [iteratedDeriv_succ, ih (Nat.le_of_succ_le hk)]
+      exact funext fun x ↦ (hF k hk x).deriv
+  refine contDiff_nat_iff_iteratedDeriv.2 ⟨fun k hk ↦ ?_, fun k hk ↦ ?_⟩
+  · rw [hiter k hk]
+    rcases hk.eq_or_lt with rfl | hlt
+    · exact hcont
+    · exact Differentiable.continuous fun x ↦ (hF k hlt x).differentiableAt
+  · rw [hiter k hk.le]
+    exact fun x ↦ (hF k hk x).differentiableAt
 
 /-- In a tower of functions with the stated successive ordinary derivatives, the `k`-th iterated
 derivative of the zeroth function is the `k`-th function. -/
