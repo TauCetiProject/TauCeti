@@ -46,7 +46,10 @@ to a point of `K ∩ L`, and updating it there gives a map continuous on the hal
 `SymplecticForm.exists_pos_integrableOn_deriv_radial_inter` (finite length along the real
 radius), `TauCeti.tendsto_norm_sub_mul_norm_fderivWithin_nhdsWithin` (shrinking half-circle
 images) and `TauCeti.exists_continuousOn_update_inter_of_integrableOn_radial_deriv_of_tendsto`.
-This is the flat model of a constant taming form and a linear boundary condition.
+This is the flat model of a constant taming form and a linear boundary condition. When `J` is `C^ℓ`,
+`ℓ ≥ 2`, and also maps `Lᗮ` into `L` along `L`, the filling is `C^ℓ` up to the boundary, the
+puncture included, by `SymplecticForm.exists_contDiffOn_update_inter_of_finite_energy` in
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Boundary`.
 
 This is the continuous part of removal of singularities for pseudoholomorphic curves. That the
 filling solves the Cauchy--Riemann equation weakly across the puncture, and the inverted filling

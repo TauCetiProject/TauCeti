@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
@@ -19,7 +19,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 
 Mathlib's `CliffordAlgebra.ofBaseChangeAux` is the canonical map from a Clifford algebra to the
 Clifford algebra of a scalar extension; it preserves the even part and Clifford conjugation, as
-recorded in `TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange`. It therefore restricts to a
+recorded in `TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic`. It therefore restricts to a
 homomorphism of Spin groups. For the canonical lift of an Eichler transvection, this homomorphism
 sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and `1 ⊗ w`.
 

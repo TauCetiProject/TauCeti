@@ -8,24 +8,27 @@ module
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 public import TauCeti.Geometry.Manifold.Instances.Unitary
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Geometry.Lie.Tangent.Commutator
 
 /-!
 # The Lie algebra of the orthogonal group
 
 Let `V` be a finite-dimensional real inner product space. Its orthogonal group
 `O(V) = unitary (V →L[ℝ] V)` is a Lie group (`TauCeti.Geometry.Manifold.Instances.Unitary`), and
-its Lie algebra is linearly isomorphic to `so(V) = skewAdjointLieSubalgebra (innerₗ V)`, the
-endomorphisms `A` with `⟪A x, y⟫ = -⟪x, A y⟫`: the differential at the identity of the inclusion
-`O(V) → V →L[ℝ] V` is a linear isomorphism onto `so(V)`. It is injective because the inclusion is
-an immersion, and the two spaces have the dimension of the skew-adjoint operators, computed
-through `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint`.
-Only this vector-space identification is constructed here; compatibility with the Lie brackets is
-not proved.
+its Lie algebra is isomorphic to `so(V) = skewAdjointLieSubalgebra (innerₗ V)`, the endomorphisms
+`A` with `⟪A x, y⟫ = -⟪x, A y⟫`, with the commutator bracket: the differential at the identity of
+the inclusion `O(V) → V →L[ℝ] V` is a Lie algebra isomorphism onto `so(V)`. It is injective because
+the inclusion is an immersion, and the two spaces have the dimension of the skew-adjoint operators,
+computed through
+`TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint`. It
+preserves brackets because the inclusion is a smooth multiplicative map into the algebra
+`V →L[ℝ] V`, and the differential at the identity of such a map carries the Lie bracket to the
+commutator (`MonoidHom.mvfderiv_lie`).
 
 ## Main declarations
 
-* `TauCeti.orthogonalLieAlgebraEquiv`: the Lie algebra of `O(V)` is linearly isomorphic to
-  `so(V)`.
+* `TauCeti.orthogonalLieAlgebraEquiv`: the Lie algebra of `O(V)` is isomorphic to `so(V)` as a Lie
+  algebra.
 -/
 
 public section
@@ -35,6 +38,7 @@ noncomputable section
 open Manifold
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 namespace TauCeti
 
@@ -93,17 +97,43 @@ private theorem finrank_orthogonalLieAlgebra :
   rw [hso] at h2
   exact h1.symm.trans h2
 
+private theorem coe_orthogonalLieAlgebraMap_apply
+    (ξ : GroupLieAlgebra (Unitary.model (V →L[ℝ] V)) (unitary (V →L[ℝ] V))) :
+    (orthogonalLieAlgebraMap V ξ : Module.End ℝ V) =
+      ((mvfderiv (Unitary.model (V →L[ℝ] V)) (Subtype.val : unitary (V →L[ℝ] V) → V →L[ℝ] V) 1
+        ξ : V →L[ℝ] V) : Module.End ℝ V) :=
+  -- `mvfderiv` post-composes `mfderiv` with `NormedSpace.fromTangentSpace (Subtype.val 1)`, which
+  -- is defined as `tangentSpaceCastModel 𝓘(ℝ, V →L[ℝ] V) (Subtype.val 1)`, and `Subtype.val 1` is
+  -- `1`; this is the map defining `orthogonalLieAlgebraMap`.
+  (rfl)
+
+/-- The differential at the identity of the inclusion `O(V) → V →L[ℝ] V` carries the Lie bracket
+of the Lie algebra of `O(V)` to the commutator of endomorphisms. -/
+private theorem orthogonalLieAlgebraMap_lie
+    (ξ η : GroupLieAlgebra (Unitary.model (V →L[ℝ] V)) (unitary (V →L[ℝ] V))) :
+    orthogonalLieAlgebraMap V ⁅ξ, η⁆ =
+      ⁅orthogonalLieAlgebraMap V ξ, orthogonalLieAlgebraMap V η⁆ := by
+  -- The map is the differential of the inclusion, which carries the bracket to the commutator,
+  -- followed by the multiplicative coercion to `Module.End ℝ V`.
+  have h := (unitary (V →L[ℝ] V)).subtype.mvfderiv_lie (Unitary.contMDiff_val.of_le (by simp)) ξ η
+  rw [Submonoid.coe_subtype, Ring.lie_def] at h
+  refine Subtype.ext ?_
+  simp only [LieSubalgebra.coe_bracket, coe_orthogonalLieAlgebraMap_apply, h, Ring.lie_def,
+    ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_mul]
+
 variable (V) in
-/-- **The Lie algebra of the orthogonal group is linearly isomorphic to `so(V)`.** For a
-finite-dimensional real inner product space `V`, the differential at the identity of the inclusion
-of the orthogonal group `O(V) = unitary (V →L[ℝ] V)` into `V →L[ℝ] V` is a linear isomorphism from
-its Lie algebra onto the skew-adjoint endomorphisms `so(V) = skewAdjointLieSubalgebra (innerₗ V)`.
-This is an identification of vector spaces; it is not shown here to preserve the brackets. -/
+/-- **The Lie algebra of the orthogonal group is `so(V)`.** For a finite-dimensional real inner
+product space `V`, the differential at the identity of the inclusion of the orthogonal group
+`O(V) = unitary (V →L[ℝ] V)` into `V →L[ℝ] V` is an isomorphism of Lie algebras from its Lie algebra
+onto the skew-adjoint endomorphisms `so(V) = skewAdjointLieSubalgebra (innerₗ V)`, with the
+commutator bracket. -/
 def orthogonalLieAlgebraEquiv :
-    GroupLieAlgebra (Unitary.model (V →L[ℝ] V)) (unitary (V →L[ℝ] V)) ≃ₗ[ℝ]
+    GroupLieAlgebra (Unitary.model (V →L[ℝ] V)) (unitary (V →L[ℝ] V)) ≃ₗ⁅ℝ⁆
       skewAdjointLieSubalgebra (innerₗ V) :=
-  (orthogonalLieAlgebraMap V).linearEquivOfInjective injective_orthogonalLieAlgebraMap
-    finrank_orthogonalLieAlgebra
+  LieEquiv.ofBijective
+    { orthogonalLieAlgebraMap V with map_lie' := orthogonalLieAlgebraMap_lie _ _ }
+    ((orthogonalLieAlgebraMap V).linearEquivOfInjective injective_orthogonalLieAlgebraMap
+      finrank_orthogonalLieAlgebra).bijective
 
 /-- The element of `so(V)` attached to `ξ` is the differential of the inclusion `O(V) → V →L[ℝ] V`
 at the identity, applied to `ξ`. -/

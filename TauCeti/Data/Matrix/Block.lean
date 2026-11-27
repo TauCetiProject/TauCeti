@@ -48,8 +48,15 @@ blocks. Its off-diagonal block is the finite convolution of the powers of the tw
 blocks with the original off-diagonal block. This holds over semirings, including zeroth powers
 and empty blocks.
 
+## Main definitions
+
+* `Matrix.blockDiagonal'AlgHom`: `Matrix.blockDiagonal'` bundled as an `R`-algebra homomorphism.
+
 ## Main results
 
+* `Matrix.blockDiagonal'AlgHom_apply`: evaluation of `Matrix.blockDiagonal'AlgHom`.
+* `Matrix.sum_smul_fromBlocks_zero₁₂_zero₂₁`: a block-diagonal matrix acts separately on the two
+  parts of a family of vectors.
 * `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
 * `Matrix.toBlocks₁₁_add`, `Matrix.toBlocks₁₁_sub`, `Matrix.toBlocks₁₁_smul` and their analogues
@@ -104,6 +111,15 @@ public theorem forall_abs_mul_le_fromBlocks_zero₁₂_zero₂₁_iff {m n p q �
         (∀ i j, i ≠ j → |D (row₂ i) j * D (row₂ j) i| ≤ bound) := by
   have hzero : |(0 : α)| = 0 := by simp [abs]
   simp [Sum.forall, hzero, hbound]
+
+/-- A block-diagonal matrix acts on a sum-indexed family by taking linear combinations separately
+in each block. -/
+public theorem sum_smul_fromBlocks_zero₁₂_zero₂₁ {m n p q R E : Type*}
+    [Fintype p] [Fintype q] [Zero R] [AddCommMonoid E] [SMulWithZero R E]
+    (A : Matrix m p R) (D : Matrix n q R) (x : p → E) (y : q → E) (i : m ⊕ n) :
+    (∑ j, fromBlocks A 0 0 D i j • Sum.elim x y j) =
+      Sum.elim (fun a ↦ ∑ j, A a j • x j) (fun d ↦ ∑ j, D d j • y j) i := by
+  cases i <;> simp [Fintype.sum_sum_type]
 
 section ToBlocksMul
 
@@ -289,6 +305,24 @@ public theorem fromBlocks_zero₂₁_pow {R m n : Type*} [Semiring R]
       have := Finset.mem_range.mp hi
       omega
     rw [Matrix.mul_assoc, ← pow_succ, hidx]
+
+/-- `Matrix.blockDiagonal'` bundled as an `R`-algebra homomorphism on a finite dependent family of
+square matrix algebras over an `R`-algebra `α`. -/
+public def blockDiagonal'AlgHom {o : Type*} (m' : o → Type*) (R α : Type*) [DecidableEq o]
+    [Fintype o] [∀ i, DecidableEq (m' i)] [∀ i, Fintype (m' i)] [CommSemiring R] [Semiring α]
+    [Algebra R α] :
+    (∀ i, Matrix (m' i) (m' i) α) →ₐ[R] Matrix (Σ i, m' i) (Σ i, m' i) α :=
+  { blockDiagonal'RingHom m' α with
+    toFun := blockDiagonal'
+    commutes' _ := by simp [Algebra.algebraMap_eq_smul_one] }
+
+/-- Applying `Matrix.blockDiagonal'AlgHom` yields `Matrix.blockDiagonal'`. -/
+@[simp]
+public theorem blockDiagonal'AlgHom_apply {o : Type*} {m' : o → Type*} {R α : Type*}
+    [DecidableEq o] [Fintype o] [∀ i, DecidableEq (m' i)] [∀ i, Fintype (m' i)]
+    [CommSemiring R] [Semiring α] [Algebra R α] (M : ∀ i, Matrix (m' i) (m' i) α) :
+    blockDiagonal'AlgHom m' R α M = blockDiagonal' M :=
+  (rfl)
 
 /-- The corner embedding `y ↦ fromBlocks y 0 0 0` of `Matrix l l α` into
 `Matrix (l ⊕ m) (l ⊕ m) α`, as a non-unital `⋆`-algebra homomorphism. -/

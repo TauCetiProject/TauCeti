@@ -20,7 +20,9 @@ The boundary condition is `u - g ∈ H¹₀(Ω)`. In particular, the solution de
 class of the lifting modulo `H¹₀(Ω)`, not on its values in the interior. The characterization
 `dirichletSolutionWithLiftingL_eq_iff` allows the operator to be used without unfolding it.
 For zero forcing its action on liftings is an idempotent projection onto weakly homogeneous
-solutions. More generally, a solved lifting can replace the original lifting for any forcing.
+solutions, which fixes every lifting with vanishing gradient when there is no mass term
+(`dirichletSolutionWithLiftingL_eq_self_of_gradient_eq_zero`). More generally, a solved lifting
+can replace the original lifting for any forcing.
 
 For operator-norm expressions, use `open scoped DirichletLifting` together with the usual
 Sobolev normed-space instances and the two `W1p0.instStrongDualNormed*` shortcuts.
@@ -211,6 +213,17 @@ theorem dirichletSolutionWithLiftingL_zero_dirichletForcing (f : Lp ℝ 2 (mu.re
   exact (dirichletSolutionWithLiftingL_eq_iff hcoeff hcoercive).2
     ⟨by rw [sub_zero]; exact (weakSolutionDirichlet hcoeff hcoercive f).property,
       hweak.energyFormH1_eq_dirichletForcing⟩
+
+/-- **A lifting with vanishing gradient is its own solution.** With no mass term and zero forcing,
+a boundary lifting `g` with `∇g = 0`, such as a constant or a function constant on each connected
+component of `Ω`, solves the Dirichlet problem with boundary values `g`. No connectedness of `Ω`
+is needed. -/
+theorem dirichletSolutionWithLiftingL_eq_self_of_gradient_eq_zero
+    (hc : c =ᵐ[mu.restrict Omega] 0) {g : W1p mu Omega 2} (hg : W1p.gradient g = 0) :
+    dirichletSolutionWithLiftingL hcoeff hcoercive (g, 0) = g :=
+  (dirichletSolutionWithLiftingL_eq_iff hcoeff hcoercive).2 ⟨by simp, fun v => by
+    rw [energyFormH1_congr_ae .rfl .rfl hc, energyFormH1_eq_zero_of_gradient_eq_zero a b hg,
+      zero_apply]⟩
 
 variable {C : ℝ} (hC : 0 < C)
   (hlower : ∀ w : W1p0 mu Omega 2,
