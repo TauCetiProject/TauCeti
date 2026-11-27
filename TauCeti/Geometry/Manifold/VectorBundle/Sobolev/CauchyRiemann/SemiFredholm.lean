@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Estimate
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Perturbation
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Perturbation.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Rellich
 

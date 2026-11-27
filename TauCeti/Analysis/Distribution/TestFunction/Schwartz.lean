@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
@@ -40,6 +41,13 @@ compared with distributions on open sets.
   from the Schwartz-space identity.
 * `SchwartzMap.toTestFunction`: a compactly supported Schwartz function as a test function, sent
   back to itself by `TestFunction.toSchwartzMapCLM` (`SchwartzMap.toSchwartzMapCLM_toTestFunction`).
+* `TestFunction.smulSchwartzMap`: the product `ψ • u` of a real test function `ψ` and a Schwartz
+  function `u`, as a test function.
+* `TestFunction.fourierSchwartzCLM`: the Fourier transform of test functions, as a continuous
+  linear map into the Schwartz functions; so `ψ ↦ 𝓕 ψ η` is continuous
+  (`TestFunction.continuous_fourier_apply`), and the Fourier transforms of the test functions of a
+  compact set decay rapidly, uniformly
+  (`TestFunction.exists_forall_one_add_norm_pow_mul_norm_fourier_le`).
 
 ## References
 
@@ -52,7 +60,7 @@ public section
 noncomputable section
 
 open Set TopologicalSpace
-open scoped Distributions ContDiff SchwartzMap LineDeriv
+open scoped Distributions ContDiff SchwartzMap LineDeriv FourierTransform
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
@@ -187,6 +195,19 @@ theorem integral_bilinear_iteratedLineDerivOp_left_eq_neg_one_pow_smul_right [Me
   rw [← toSchwartzMapCLM_iteratedLineDerivOp, ← toSchwartzMapCLM_iteratedLineDerivOp] at h
   simpa only [toSchwartzMapCLM_apply] using h
 
+/-- The test function `ψ • u` on `Ω`, the product of a real test function `ψ` on `Ω` and a Schwartz
+function `u`. -/
+def smulSchwartzMap (ψ : 𝓓(Ω, ℝ)) (u : 𝓢(E, F)) : 𝓓(Ω, F) where
+  toFun x := ψ x • u x
+  contDiff' := ψ.contDiff.smul (u.smooth ⊤)
+  hasCompactSupport' := ψ.hasCompactSupport.smul_right
+  tsupport_subset' := (tsupport_smul_subset_left _ _).trans ψ.tsupport_subset
+
+@[simp]
+theorem smulSchwartzMap_apply (ψ : 𝓓(Ω, ℝ)) (u : 𝓢(E, F)) (x : E) :
+    ψ.smulSchwartzMap u x = ψ x • u x :=
+  (rfl)
+
 end TestFunction
 
 namespace SchwartzMap
@@ -214,3 +235,51 @@ theorem toSchwartzMapCLM_toTestFunction (f : 𝓢(E, F)) (hf : HasCompactSupport
   (rfl)
 
 end SchwartzMap
+
+namespace TestFunction
+
+section Fourier
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {Ω : Opens E}
+
+/-- The Fourier transform of test functions on `Ω`, as a continuous linear map into the Schwartz
+functions. -/
+def fourierSchwartzCLM : 𝓓(Ω, F) →L[ℂ] 𝓢(E, F) :=
+  (FourierTransform.fourierCLM ℂ 𝓢(E, F)).comp (toSchwartzMapCLM ℂ)
+
+@[simp]
+theorem coe_fourierSchwartzCLM (ψ : 𝓓(Ω, F)) : ⇑(fourierSchwartzCLM ψ) = 𝓕 (ψ : E → F) := by
+  simp [fourierSchwartzCLM, SchwartzMap.fourier_coe]
+
+/-- The value `𝓕 ψ η` of the Fourier transform at a fixed frequency depends continuously on the
+test function `ψ`. -/
+theorem continuous_fourier_apply (η : E) : Continuous fun ψ : 𝓓(Ω, F) ↦ 𝓕 (ψ : E → F) η := by
+  have h := (BoundedContinuousFunction.evalCLM ℂ η).continuous.comp
+    ((SchwartzMap.toBoundedContinuousFunctionCLM ℂ E F).continuous.comp
+      (fourierSchwartzCLM (Ω := Ω) (F := F)).continuous)
+  simpa [Function.comp_def] using h
+
+/-- The Fourier transforms of the test functions of a compact set decay rapidly, uniformly: for
+every order `M`, `(1 + ‖η‖) ^ M ‖𝓕 ψ η‖` is bounded uniformly in `η` and in `ψ ∈ Q`. -/
+theorem exists_forall_one_add_norm_pow_mul_norm_fourier_le {Q : Set 𝓓(Ω, F)}
+    (hQ : IsCompact Q) (M : ℕ) :
+    ∃ B, ∀ ψ ∈ Q, ∀ η, (1 + ‖η‖) ^ M * ‖𝓕 (ψ : E → F) η‖ ≤ B := by
+  set p : Seminorm ℂ 𝓢(E, F) := ∑ i ∈ Finset.Iic (M, 0), SchwartzMap.seminorm ℂ i.1 i.2
+  have hp : Continuous p := Seminorm.continuous_finsetSum fun i _ ↦
+    (schwartz_withSeminorms ℂ E F).continuous_seminorm i
+  obtain ⟨C, hC⟩ := hQ.exists_bound_of_continuousOn
+    (hp.comp (fourierSchwartzCLM (Ω := Ω) (F := F)).continuous).continuousOn
+  refine ⟨2 ^ M * C, fun ψ hψ η ↦ ?_⟩
+  have h := SchwartzMap.one_add_le_sup_seminorm_apply (𝕜 := ℂ) (m := (M, 0)) le_rfl le_rfl
+    (fourierSchwartzCLM ψ) η
+  rw [norm_iteratedFDeriv_zero, coe_fourierSchwartzCLM] at h
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  calc ((Finset.Iic (M, 0)).sup fun m ↦ SchwartzMap.seminorm ℂ m.1 m.2) (fourierSchwartzCLM ψ)
+      ≤ p (fourierSchwartzCLM ψ) := Seminorm.finset_sup_le_sum _ _ _
+    _ ≤ C := (Real.le_norm_self _).trans (hC ψ hψ)
+
+end Fourier
+
+end TestFunction

@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.CategoryTheory.Abelian.SerreClass.MorphismProperty
+public import Mathlib.Data.Rat.Init
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.AlgebraicTopology.SerreClass.PowerTorsion
+import Mathlib.Algebra.Category.ModuleCat.Kernels
+import TauCeti.Algebra.Module.Torsion.Localization
 
 /-!
 # The Serre class of torsion abelian groups
@@ -25,6 +30,11 @@ direct sums. Read in `ModuleCat R` through the forgetful functor, they are close
 (`AddCommGrpCat.isClosedUnderColimitsOfShape_discrete_inverseImage_isTorsion`), which is the
 hypothesis on the fibres in the comparison theorem for Serre fibrations modulo a class.
 
+A morphism of `ℤ`-modules is an isomorphism modulo torsion, its kernel and cokernel being torsion
+groups, exactly when it becomes bijective after tensoring with `ℚ`
+(`AddCommGrpCat.isoModSerre_inverseImage_isTorsion_iff`): base change to `ℚ` is exact and kills
+exactly the torsion groups. This turns statements modulo torsion into rational isomorphisms.
+
 ## Main definitions
 
 * `AddCommGrpCat.isTorsion`: the torsion abelian groups, as an object property of
@@ -33,6 +43,8 @@ hypothesis on the fibres in the comparison theorem for Serre fibrations modulo a
   `ModuleCat R` exactly when its underlying group is torsion.
 * `AddCommGrpCat.isClosedUnderColimitsOfShape_discrete_inverseImage_isTorsion`: modules whose
   underlying groups are torsion are closed under coproducts.
+* `AddCommGrpCat.isoModSerre_inverseImage_isTorsion_iff`: the isomorphisms modulo torsion are the
+  morphisms that become bijective after tensoring with `ℚ`.
 
 ## References
 
@@ -104,5 +116,21 @@ instance isClosedUnderColimitsOfShape_discrete_inverseImage_isTorsion (R : Type 
   | zero => exact IsOfFinAddOrder.zero
   | of j a => exact (DirectSum.of (fun j ↦ F.obj ⟨j⟩) j).isOfFinAddOrder (hF ⟨j⟩ a)
   | add x y hx hy => exact hx.add hy
+
+/-- **Isomorphisms modulo torsion are the rational isomorphisms.** A morphism `f` of `ℤ`-modules
+is an isomorphism modulo the Serre class of torsion groups, its kernel and cokernel being torsion,
+exactly when `ℚ ⊗ f` is bijective. -/
+lemma isoModSerre_inverseImage_isTorsion_iff {M N : ModuleCat.{u} ℤ} (f : M ⟶ N) :
+    (isTorsion.inverseImage (forget₂ (ModuleCat.{u} ℤ) AddCommGrpCat.{u})).isoModSerre f ↔
+      Function.Bijective (f.hom.baseChange ℚ) := by
+  rw [LinearMap.baseChange_bijective_iff_isTorsion, ObjectProperty.isoModSerre_iff,
+    ObjectProperty.monoModSerre_iff, ObjectProperty.epiModSerre_iff,
+    ObjectProperty.prop_iff_of_iso (isTorsion.inverseImage (forget₂ (ModuleCat.{u} ℤ) _))
+      (ModuleCat.kernelIsoKer f),
+    ObjectProperty.prop_iff_of_iso (isTorsion.inverseImage (forget₂ (ModuleCat.{u} ℤ) _))
+      (ModuleCat.cokernelIsoRangeQuotient f)]
+  -- The `ℤ`-module structures of `ModuleCat ℤ` agree with the canonical ones, as all do.
+  refine and_congr ?_ ?_ <;>
+    exact isAddTorsion_iff_isTorsion_int.trans (by congr!; exact Subsingleton.elim _ _)
 
 end AddCommGrpCat

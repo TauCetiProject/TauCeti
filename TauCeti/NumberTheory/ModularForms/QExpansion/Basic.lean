@@ -166,13 +166,10 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
 
 /-- The `q`-parameter of width `h` is `h`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
-    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h := by
-  rcases eq_or_ne h 0 with rfl | hh
-  · exact fun x ↦ by simp
-  exact _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
-    simp only [coe_vadd, Function.Periodic.qParam, mul_add, add_div,
-      mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
-      Complex.exp_two_pi_mul_I, one_mul]
+    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h :=
+  _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
+    rw [coe_vadd, add_comm]
+    exact TauCeti.Periodic.periodic_qParam h τ
 
 /-- Twisting an `h`-periodic function by a power of the `q`-parameter of width `h` keeps it
 `h`-periodic, read on `ℂ` through `ofComplex`. -/

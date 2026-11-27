@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
 public import TauCeti.Algebra.Ring.QPochhammer
-public import TauCeti.Analysis.Normed.Ring.InfiniteProd
+public import TauCeti.Analysis.Normed.Ring.InfiniteProd.Basic
 public import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Analysis.Normed.Field.Instances
 import Mathlib.Analysis.Normed.Module.Completion
@@ -49,10 +49,12 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.norm_tprod_one_sub_pow_mul_le`, `TauCeti.norm_qTheta_le`: the bounds
   `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))` and
   `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))` for `‖q‖ < 1`.
-* `TauCeti.norm_tprod_one_sub_pow_mul_sub_one_le`, `TauCeti.norm_tprod_one_add_pow_sub_one_le`:
+* `TauCeti.norm_tprod_one_sub_pow_mul_sub_one_le`,
+  `TauCeti.norm_tprod_one_sub_pow_mul_sub_one_le_div`, `TauCeti.norm_tprod_one_add_pow_sub_one_le`:
   the product is close to `1` for small `q`,
   `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖)) - 1`, and
-  `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)` for `‖q‖ < 1/2`.
+  `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)` for `‖q‖ < 1/2` and `‖w‖ ≤ 1`, in particular
+  `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)`.
 * `TauCeti.multipliable_one_add_pow`, `TauCeti.multipliable_one_sub_pow_odd`,
   `TauCeti.multipliable_one_add_pow_odd`: for `‖q‖ < 1` the products `∏_{n ≥ 1} (1 + qⁿ)` and
   `∏_{n ≥ 0} (1 ∓ q^{2n+1})` converge.
@@ -146,14 +148,15 @@ theorem norm_tprod_one_sub_pow_mul_sub_one_le {q : 𝕜} (hq : ‖q‖ < 1) (w :
     (by simpa only [norm_neg] using summable_norm_pow_succ_mul hq w)
   simpa only [← sub_eq_add_neg, norm_neg, tsum_norm_pow_succ_mul hq] using h
 
-/-- For `‖q‖ < 1/2`, `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)`. -/
-theorem norm_tprod_one_add_pow_sub_one_le {q : 𝕜} (hq : 2 * ‖q‖ < 1) :
-    ‖∏' n : ℕ, (1 + q ^ (n + 1)) - 1‖ ≤ ‖q‖ / (1 - 2 * ‖q‖) := by
+/-- For `‖q‖ < 1/2` and `‖w‖ ≤ 1`, `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)`. -/
+theorem norm_tprod_one_sub_pow_mul_sub_one_le_div {q : 𝕜} (hq : 2 * ‖q‖ < 1) {w : 𝕜}
+    (hw : ‖w‖ ≤ 1) : ‖∏' n : ℕ, (1 - q ^ (n + 1) * w) - 1‖ ≤ ‖q‖ / (1 - 2 * ‖q‖) := by
   set A := ‖q‖
   have hA : 0 ≤ A := norm_nonneg q
   have h₁ : 0 < 1 - 2 * A := by linarith
-  have h := norm_tprod_one_sub_pow_mul_sub_one_le (by linarith : A < 1) (-1)
-  simp only [mul_neg, mul_one, sub_neg_eq_add, norm_neg, norm_one] at h
+  have h := (norm_tprod_one_sub_pow_mul_sub_one_le (by linarith : A < 1) w).trans <|
+    sub_le_sub_right (Real.exp_le_exp.2 <|
+      div_le_div_of_nonneg_right (mul_le_of_le_one_right hA hw) (by linarith)) 1
   -- `e^y ≤ 1 / (1 - y)` with `y = A / (1 - A)`, and `1 / (1 - y) - 1 = A / (1 - 2A)`.
   have hy : A / (1 - A) < 1 := by rw [div_lt_one (by linarith)]; linarith
   have hexp := Real.exp_bound_div_one_sub_of_interval (div_nonneg hA (by linarith)) hy
@@ -164,6 +167,12 @@ theorem norm_tprod_one_add_pow_sub_one_le {q : 𝕜} (hq : 2 * ‖q‖ < 1) :
     rw [h₂, one_div_div, div_sub_one h₁.ne']
     ring
   linarith
+
+/-- For `‖q‖ < 1/2`, `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)`. -/
+theorem norm_tprod_one_add_pow_sub_one_le {q : 𝕜} (hq : 2 * ‖q‖ < 1) :
+    ‖∏' n : ℕ, (1 + q ^ (n + 1)) - 1‖ ≤ ‖q‖ / (1 - 2 * ‖q‖) := by
+  simpa only [mul_neg, mul_one, sub_neg_eq_add] using
+    norm_tprod_one_sub_pow_mul_sub_one_le_div hq (w := -1) (by simp)
 
 /-- The **theta product** `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞`, written as
 `(1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`. The product converges for `‖q‖ < 1`; otherwise the

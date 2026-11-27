@@ -12,10 +12,12 @@ public import Mathlib.Order.Iterate
 # Comparing iterated successors
 
 In a successor order, `succ^[n] a` is the element `n` steps above `a`. This file compares such
-iterates. Without a maximal element, applying the same number of further steps preserves and
-reflects the order, and an element at least `n` steps above `a` lies strictly above every
-iterate `succ^[m] a` with `m < n`. An element `b ≥ a` that is none of
-`a, succ a, …, succ^[n - 1] a` lies at least `n` steps above `a`.
+iterates and characterizes membership in the iterated successor orbit
+`Set.range (fun n => succ^[n] a)`. Without a maximal element, applying the same number of further
+steps preserves and reflects the order, and an element at least `n` steps above `a` lies strictly
+above every iterate `succ^[m] a` with `m < n`. An element `b ≥ a` that is none of
+`a, succ a, …, succ^[n - 1] a` lies at least `n` steps above `a`; consequently the iterated
+successor orbit of `a` is downward closed above `a` and closed under taking predecessors above `a`.
 
 These comparisons measure how far apart two elements of a discrete order are, up to a bound, as in
 the Ehrenfeucht–Fraïssé analysis of discrete linear orders.
@@ -59,3 +61,39 @@ theorem succ_iterate_le_of_forall_ne [PartialOrder α] [SuccOrder α] {a b : α}
     exact succ_le_of_lt ((ih fun k hk => hne k (by omega)).lt_of_ne (hne n n.lt_succ_self))
 
 end Order
+
+namespace TauCeti.Order
+
+open _root_.Order
+
+/-- The iterated successor range of `a` is downward closed above `a`: if `a ≤ b ≤ c` and `c` lies
+in the iterated successor range of `a`, then so does `b`. -/
+theorem mem_range_succ_iterate_of_le_of_mem {α : Type*} [PartialOrder α] [SuccOrder α]
+    {a b c : α} (hab : a ≤ b) (hbc : b ≤ c) (hc : c ∈ Set.range (fun n : ℕ => succ^[n] a)) :
+    b ∈ Set.range (fun n : ℕ => succ^[n] a) := by
+  obtain ⟨n, rfl⟩ := hc
+  rcases eq_or_lt_of_le hbc with rfl | hlt
+  · exact ⟨n, rfl⟩
+  · by_contra hmem
+    exact hlt.not_ge (succ_iterate_le_of_forall_ne hab fun k _ hk => hmem ⟨k, hk⟩)
+
+/-- For `b ≥ a`, `succ b` lies in the iterated successor range of `a` if and only if `b` does. -/
+theorem succ_mem_range_succ_iterate_iff {α : Type*} [PartialOrder α] [SuccOrder α] {a b : α}
+    (hab : a ≤ b) :
+    succ b ∈ Set.range (fun n : ℕ => succ^[n] a) ↔
+      b ∈ Set.range (fun n : ℕ => succ^[n] a) :=
+  ⟨mem_range_succ_iterate_of_le_of_mem hab (le_succ b),
+    fun ⟨n, hn⟩ => ⟨n + 1, hn ▸ Function.iterate_succ_apply' _ _ _⟩⟩
+
+/-- If no iterate `succ^[n] a` is maximal, then the iterated successor range of `a` has no
+greatest element. -/
+theorem not_exists_isGreatest_range_succ_iterate {α : Type*} [Preorder α] [SuccOrder α] {a : α}
+    (h : ∀ n : ℕ, ¬ IsMax (succ^[n] a)) :
+    ¬ ∃ b, IsGreatest (Set.range (fun n : ℕ => succ^[n] a)) b := by
+  rintro ⟨b, ⟨n, rfl⟩, hmax⟩
+  have hlt : succ^[n] a < succ^[n + 1] a := by
+    rw [Function.iterate_succ_apply']
+    exact lt_succ_of_not_isMax (h n)
+  exact hlt.not_ge (hmax ⟨n + 1, rfl⟩)
+
+end TauCeti.Order

@@ -37,8 +37,6 @@ subject only to the hypothesis `A₀ ≤ A⁺` that `spaLocalizationHomeomorph` 
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.completedPlusSubring_eq_completionPlus`: `A_U⁺` is the completion
-  plus ring of `C`.
 * `TauCeti.ValuationSpectrum.spaCompletedLocalizationHomeomorph_apply` and
   `TauCeti.ValuationSpectrum.coe_spaCompletedLocalizationHomeomorph`: the homeomorphism is the
   canonical map `spaLocToRationalSubset`, so it is that map which is a homeomorphism.
@@ -58,27 +56,6 @@ namespace TauCeti.ValuationSpectrum
 open TauCeti.Huber TauCeti.Huber.PairOfDefinition TauCeti.Localization UniformSpace
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-
-/-- **`A_U⁺` is the completion plus ring of `C`.** Both are the closure, in `A⟨T/s⟩`, of the image
-of the integral closure `C` of `A⁺[T/s]` in `A(T/s)`, so the plus ring that `completedPlusSubring`
-puts on the completed localization is the one `completionPlus` builds from `C` — the plus ring of
-Wedhorn's Proposition 7.48. -/
-theorem completedPlusSubring_eq_completionPlus (P : PairOfDefinition A) (Aplus : Subring A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
-    (hden : HasDenominatorPower P T s S) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    completedPlusSubring P Aplus T s S hden = completionPlus (integralClosure ↥(Algebra.adjoin Aplus
-      (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  -- neither `completedPlusSubring` nor `completionPlus` is exposed outside the module that
-  -- introduces it, so neither side unfolds here and the two are compared on their carriers
-  exact SetLike.coe_injective <| by
-    rw [coe_completedPlusSubring, completionPlus_def,
-      Completion.coe_topologicalClosure_map_coeRingHom, Subalgebra.coe_toSubring]
 
 /-- **The adic spectrum of `A⟨T/s⟩` is the rational subset `R(T/s)`** — Wedhorn Proposition
 8.2 (2), first assertion. Pullback along the structure map `A → A⟨T/s⟩` is a homeomorphism onto

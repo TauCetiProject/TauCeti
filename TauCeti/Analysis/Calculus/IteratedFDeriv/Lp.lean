@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
+public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
@@ -17,6 +18,7 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # Iterated derivative seminorms: linear changes of variables and the Euclidean Hessian
@@ -48,7 +50,12 @@ The iterated derivatives of order at most `k` of a compactly supported `C^k` fun
 `ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport`). For a continuous bilinear map `B`,
 the Leibniz rule and Hölder's inequality bound the `Lᵖ` norm of `D^k (B (u, v))` by a binomial sum
 of products of `Lᵠ` norms of `D^i u` and `Lʳ` norms of `D^(k-i) v`
-(`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`).
+(`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`). The derivative of the `k`-th
+derivative has the `Lᵖ` norm of the `(k + 1)`-th derivative, for any function and any measure
+(`TauCeti.eLpNorm_fderiv_iteratedFDeriv`, `TauCeti.lpNorm_fderiv_iteratedFDeriv`), and the zeroth
+derivative has the `Lᵖ` norm of the function and lies in `Lᵖ` exactly when the function does
+(`TauCeti.eLpNorm_iteratedFDeriv_zero`, `TauCeti.lpNorm_iteratedFDeriv_zero`,
+`TauCeti.memLp_iteratedFDeriv_zero_iff`).
 -/
 
 public section
@@ -218,6 +225,49 @@ theorem ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport (hn : n ≤ N)
   (hu.continuous_iteratedFDeriv_apply hn v).memLp_of_hasCompactSupport (hc.iteratedFDeriv_apply v)
 
 end CompactSupport
+
+namespace TauCeti
+
+open MeasureTheory
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The zeroth derivative of a function has its `eLpNorm`, since the two differ by a linear
+isometry equivalence. -/
+@[simp]
+theorem eLpNorm_iteratedFDeriv_zero (f : E → F) (p : ENNReal) (μ : Measure E) :
+    eLpNorm (iteratedFDeriv 𝕜 0 f) p μ = eLpNorm f p μ := by
+  rw [iteratedFDeriv_zero_eq_comp, Function.comp_def]
+  exact LinearIsometryEquiv.eLpNorm_comp _ _ p μ
+
+/-- The zeroth derivative of a function has its `Lᵖ` norm, since the two differ by a linear
+isometry equivalence. -/
+theorem lpNorm_iteratedFDeriv_zero (f : E → F) (p : ENNReal) (μ : Measure E) :
+    lpNorm (iteratedFDeriv 𝕜 0 f) p μ = lpNorm f p μ := by
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_iteratedFDeriv_zero]
+
+/-- The zeroth derivative of a function is in `Lᵖ` exactly when the function is, since the two
+have the same `eLpNorm`. -/
+theorem memLp_iteratedFDeriv_zero_iff {f : E → F} {p : ENNReal} {μ : Measure E} :
+    MemLp (iteratedFDeriv 𝕜 0 f) p μ ↔ MemLp f p μ := by
+  rw [memLp_iff, memLp_iff, eLpNorm_iteratedFDeriv_zero]
+
+/-- The derivative of the `n`-th derivative has the `eLpNorm` of the `(n + 1)`-th derivative:
+`‖D(Dⁿ f)‖_p = ‖Dⁿ⁺¹ f‖_p`, since the two differ by a linear isometry equivalence. -/
+theorem eLpNorm_fderiv_iteratedFDeriv (f : E → F) (n : ℕ) (p : ENNReal) (μ : Measure E) :
+    eLpNorm (fderiv 𝕜 (iteratedFDeriv 𝕜 n f)) p μ = eLpNorm (iteratedFDeriv 𝕜 (n + 1) f) p μ := by
+  rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_def]
+  exact (LinearIsometryEquiv.eLpNorm_comp (F := E →L[𝕜] E [×n]→L[𝕜] F)
+    (G := E [×n.succ]→L[𝕜] F) _ _ p μ).symm
+
+/-- The derivative of the `n`-th derivative has the `Lᵖ` norm of the `(n + 1)`-th derivative:
+`‖D(Dⁿ f)‖_p = ‖Dⁿ⁺¹ f‖_p`, since the two differ by a linear isometry equivalence. -/
+theorem lpNorm_fderiv_iteratedFDeriv (f : E → F) (n : ℕ) (p : ENNReal) (μ : Measure E) :
+    lpNorm (fderiv 𝕜 (iteratedFDeriv 𝕜 n f)) p μ = lpNorm (iteratedFDeriv 𝕜 (n + 1) f) p μ := by
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_fderiv_iteratedFDeriv]
+
+end TauCeti
 
 section Bilinear
 
