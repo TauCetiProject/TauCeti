@@ -61,7 +61,7 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
   {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsIntegral X] [IsNoetherian X]
   [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] [Flat toBase]
   (hX : ∀ x : X, coheight x ≤ 2) (hη : toBase (genericPoint X) ≠ closedPoint R)
-  (hC : toBase.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne)
+  (hC : toBase.SpecialFiberCohomologyFiniteDimensional 1)
   {π : R} (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π)
   (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}))
 

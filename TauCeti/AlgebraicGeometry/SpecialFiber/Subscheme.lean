@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import TauCeti.AlgebraicGeometry.Fibers
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Basic
-import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 
 /-!
 # The special fibre as the zero scheme of the maximal ideal
@@ -375,22 +373,32 @@ instance isProper_reducedSpecialFiber [IsProper toBase] :
   rw [reducedSpecialFiber_over]
   exact isProper_subschemeOverResidueField (specialFiberι R toBase).ker.le_radical
 
+/-- The canonical closed immersion `X_{s,red} ⟶ X_s` is surjective. -/
+instance surjective_reducedSpecialFiberToSpecialFiber :
+    Surjective (reducedSpecialFiberToSpecialFiber R toBase) := ⟨fun y ↦ by
+  have hy : specialFiberι R toBase y ∈ Set.range (reducedSpecialFiberι R toBase) := by
+    rw [range_reducedSpecialFiberι, ← range_specialFiberι R toBase]
+    exact ⟨y, rfl⟩
+  obtain ⟨x, hx⟩ := hy
+  have := isClosedImmersion_specialFiberι R toBase
+  refine ⟨x, (specialFiberι R toBase).isClosedEmbedding.injective ?_⟩
+  rw [← Scheme.Hom.comp_apply, reducedSpecialFiberToSpecialFiber_specialFiberι, hx]⟩
+
 /-- The canonical closed immersion `X_{s,red} ⟶ X_s` is an isomorphism if and only if the
 scheme-theoretic special fibre `X_s` is reduced. -/
 theorem isIso_reducedSpecialFiberToSpecialFiber_iff :
     IsIso (reducedSpecialFiberToSpecialFiber R toBase) ↔
-      IsReduced (specialFiber R toBase).left := by
-  refine ⟨fun _ ↦ (ObjectProperty.prop_iff_of_iso (IsReduced ·)
-    (asIso (reducedSpecialFiberToSpecialFiber R toBase))).mp inferInstance, fun _ ↦ ?_⟩
-  have : Surjective (reducedSpecialFiberToSpecialFiber R toBase) := ⟨fun y ↦ ?_⟩
-  · exact isIso_of_isClosedImmersion_of_surjective (reducedSpecialFiberToSpecialFiber R toBase)
-  · have hy : specialFiberι R toBase y ∈ Set.range (reducedSpecialFiberι R toBase) := by
-      rw [range_reducedSpecialFiberι, ← range_specialFiberι R toBase]
-      exact ⟨y, rfl⟩
-    obtain ⟨x, hx⟩ := hy
-    have := isClosedImmersion_specialFiberι R toBase
-    refine ⟨x, (specialFiberι R toBase).isClosedEmbedding.injective ?_⟩
-    rw [← Scheme.Hom.comp_apply, reducedSpecialFiberToSpecialFiber_specialFiberι, hx]
+      IsReduced (specialFiber R toBase).left :=
+  ⟨fun _ ↦ (ObjectProperty.prop_iff_of_iso (IsReduced ·)
+      (asIso (reducedSpecialFiberToSpecialFiber R toBase))).mp inferInstance,
+    fun _ ↦ isIso_of_isClosedImmersion_of_surjective
+      (reducedSpecialFiberToSpecialFiber R toBase)⟩
+
+/-- When the scheme-theoretic special fibre `X_s` is reduced, `X_{s,red} ⟶ X_s` is an isomorphism.
+-/
+instance isIso_reducedSpecialFiberToSpecialFiber [IsReduced (specialFiber R toBase).left] :
+    IsIso (reducedSpecialFiberToSpecialFiber R toBase) :=
+  (isIso_reducedSpecialFiberToSpecialFiber_iff R toBase).mpr inferInstance
 
 section Subscheme
 

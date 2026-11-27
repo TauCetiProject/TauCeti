@@ -30,9 +30,8 @@ specialization maps into `T.Pic`
 On `X`, the vertical Cartier map `verticalLineBundleLinear` sending `v` to `∏ᵢ [𝒪_X(Cᵢ)] ^ vᵢ` has
 multidegree `v ᵥ* T.weightedIntersection`, yielding the kernel description
 `ker numericalPicLinear = ker specialFiberMultidegree ⊔ range verticalLineBundleLinear`
-([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)) as a consequence of
-`specialFiberMultidegree_comp_verticalLineBundleLinear` and `Submodule.comap_map_eq`, and showing
-that `ker verticalLineBundleLinear` has `ℤ`-rank `1` and is spanned by `T.multiplicity` whenever the
+([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)); furthermore,
+`ker verticalLineBundleLinear` has `ℤ`-rank `1` and is spanned by `T.multiplicity` whenever the
 component multiplicities are coprime (`gcd = 1`, in particular whenever some `m_{i₀} = 1`).
 Uniformizer-free `TauCeti.Model` counterparts for regular models over a discrete valuation ring live
 in `TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Model`.
@@ -52,7 +51,7 @@ open CategoryTheory AlgebraicGeometry IsLocalRing Order Matrix
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
   isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular)
-open LineBundleClass (intersectionNumber pullbackLinearMap)
+open LineBundleClass (intersectionNumber)
 
 universe u
 
@@ -64,7 +63,7 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
   {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [Flat toBase] [IsProper toBase] [IsIntegral X]
   [IsNoetherian X] [TauCeti.AlgebraicGeometry.IsRegular X] (hX : ∀ x : X, coheight x ≤ 2)
   (hη : toBase (genericPoint X) ≠ closedPoint R)
-  (hC : toBase.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne)
+  (hC : toBase.SpecialFiberCohomologyFiniteDimensional 1)
   {π : R} (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π)
   (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}))
 
@@ -83,9 +82,7 @@ private lemma totalDegree_eq_sum_multiplicity_mul (d e : (𝒯).Component → �
 /-- The total degree of `reducedSpecialFiberMultidegree a` in `𝒯` is `∑ⱼ mⱼ (a · Cⱼ)`. -/
 theorem totalDegree_reducedSpecialFiberMultidegree
     (a : Additive (LineBundleClass (reducedSpecialFiber R toBase))) :
-    (𝒯).totalDegree (toBase.reducedSpecialFiberMultidegree hX hη
-        toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one a) =
+    (𝒯).totalDegree (toBase.reducedSpecialFiberMultidegree hX hη hC a) =
       ∑ j : (𝒯).Component, ((𝒯).multiplicity j : ℤ) *
           (letI := subschemeOverResidueField
             (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))
@@ -95,71 +92,67 @@ theorem totalDegree_reducedSpecialFiberMultidegree
             a.toMul) := by
   refine toBase.totalDegree_eq_sum_multiplicity_mul hX hη hC hπ hreg hconn _ _ fun j ↦ ?_
   rw [toBase.specialFiberNumericalType_weight hX hη hC hπ hreg hconn j]
-  exact toBase.reducedSpecialFiberMultidegree_mul_specialFiberWeight hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one a j
+  exact toBase.reducedSpecialFiberMultidegree_mul_specialFiberWeight hX hη hC a j
 
 /-- The total degree of `specialFiberMultidegreeOnFiber a` in `𝒯` is `∑ⱼ mⱼ (a · Cⱼ)`. -/
 theorem totalDegree_specialFiberMultidegreeOnFiber
     (a : Additive (LineBundleClass (specialFiber R toBase).left)) :
-    (𝒯).totalDegree (toBase.specialFiberMultidegreeOnFiber hX hη
-        toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one a) =
+    (𝒯).totalDegree (toBase.specialFiberMultidegreeOnFiber hX hη hC a) =
       ∑ j : (𝒯).Component, ((𝒯).multiplicity j : ℤ) *
           (letI := subschemeOverResidueField
             (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))
           intersectionNumber (ResidueField R) (subschemeToSpecialFiber
             (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j)))
             a.toMul) := by
-  refine toBase.totalDegree_eq_sum_multiplicity_mul hX hη hC hπ hreg hconn _ _ fun j ↦ ?_
-  rw [toBase.specialFiberNumericalType_weight hX hη hC hπ hreg hconn j]
-  exact toBase.specialFiberMultidegreeOnFiber_mul_specialFiberWeight hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one a j
+  rw [←
+    reducedSpecialFiberMultidegree_comp_picardPullbackLinearMap_reducedSpecialFiberToSpecialFiber
+      toBase hX hη hC,
+    LinearMap.comp_apply, toBase.totalDegree_reducedSpecialFiberMultidegree hX hη hC]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  let := subschemeOverResidueField
+    (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))
+  rw [toMul_picardPullbackLinearMap_apply, LineBundleClass.intersectionNumber_pullback,
+    subschemeToReducedSpecialFiber_reducedSpecialFiberToSpecialFiber]
 
 /-- The total degree of `specialFiberMultidegree a` in `𝒯` is `∑ⱼ mⱼ (a · Cⱼ)`. -/
 theorem totalDegree_specialFiberMultidegree (a : Additive (LineBundleClass X)) :
-    (𝒯).totalDegree (toBase.specialFiberMultidegree hX hη
-        toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one a) =
+    (𝒯).totalDegree (toBase.specialFiberMultidegree hX hη hC a) =
       ∑ j : (𝒯).Component, ((𝒯).multiplicity j : ℤ) *
           (letI := subschemeOverResidueField
             (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))
           intersectionNumber (ResidueField R)
             (vanishingIdeal ⟨closure {(j.val : X)}, isClosed_closure⟩).subschemeι a.toMul) := by
-  refine toBase.totalDegree_eq_sum_multiplicity_mul hX hη hC hπ hreg hconn _ _ fun j ↦ ?_
-  rw [toBase.specialFiberNumericalType_weight hX hη hC hπ hreg hconn j]
-  exact toBase.specialFiberMultidegree_mul_specialFiberWeight hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one a j
+  rw [← toBase.reducedSpecialFiberMultidegree_comp_picardPullbackLinearMap_reducedSpecialFiberι
+      hX hη hC,
+    LinearMap.comp_apply, toBase.totalDegree_reducedSpecialFiberMultidegree hX hη hC]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  let := subschemeOverResidueField
+    (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))
+  rw [toMul_picardPullbackLinearMap_apply, LineBundleClass.intersectionNumber_pullback,
+    subschemeToReducedSpecialFiber_reducedSpecialFiberι]
 
 /-! ### Specialization to the numerical Picard group -/
 
 /-- **Numerical Picard specialization on `X_{s,red}`.** -/
 def reducedSpecialFiberNumericalPicLinear :
     Additive (LineBundleClass (reducedSpecialFiber R toBase)) →ₗ[ℤ] (𝒯).Pic :=
-  (𝒯).principalDivisors.mkQ ∘ₗ toBase.reducedSpecialFiberMultidegree hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero
-    hC.finiteDimensional_one
+  (𝒯).principalDivisors.mkQ ∘ₗ toBase.reducedSpecialFiberMultidegree hX hη hC
 
 /-- **Numerical Picard specialization on `X_s`.** -/
 def specialFiberNumericalPicLinear :
     Additive (LineBundleClass (specialFiber R toBase).left) →ₗ[ℤ] (𝒯).Pic :=
-  (𝒯).principalDivisors.mkQ ∘ₗ toBase.specialFiberMultidegreeOnFiber hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero
-    hC.finiteDimensional_one
+  (𝒯).principalDivisors.mkQ ∘ₗ toBase.specialFiberMultidegreeOnFiber hX hη hC
 
 /-- **Numerical Picard specialization on `X`** into `(𝒯).Pic`
 ([Stacks, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H)). -/
 def numericalPicLinear : Additive (LineBundleClass X) →ₗ[ℤ] (𝒯).Pic :=
-  (𝒯).principalDivisors.mkQ ∘ₗ toBase.specialFiberMultidegree hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero
-    hC.finiteDimensional_one
+  (𝒯).principalDivisors.mkQ ∘ₗ toBase.specialFiberMultidegree hX hη hC
 
 /-- `reducedSpecialFiberNumericalPicLinear` sends `a` to the quotient class of its multidegree. -/
 @[simp] lemma reducedSpecialFiberNumericalPicLinear_apply
     (a : Additive (LineBundleClass (reducedSpecialFiber R toBase))) :
     toBase.reducedSpecialFiberNumericalPicLinear hX hη hC hπ hreg hconn a =
-      Submodule.Quotient.mk (toBase.reducedSpecialFiberMultidegree hX hη
-        toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one a) := by
+      Submodule.Quotient.mk (toBase.reducedSpecialFiberMultidegree hX hη hC a) := by
   rw [reducedSpecialFiberNumericalPicLinear]
   exact (LinearMap.comp_apply _ _ _).trans (Submodule.mkQ_apply _ _)
 
@@ -167,54 +160,47 @@ def numericalPicLinear : Additive (LineBundleClass X) →ₗ[ℤ] (𝒯).Pic :=
 lemma specialFiberNumericalPicLinear_apply
     (a : Additive (LineBundleClass (specialFiber R toBase).left)) :
     toBase.specialFiberNumericalPicLinear hX hη hC hπ hreg hconn a =
-      Submodule.Quotient.mk (toBase.specialFiberMultidegreeOnFiber hX hη
-        toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one a) := by
+      Submodule.Quotient.mk (toBase.specialFiberMultidegreeOnFiber hX hη hC a) := by
   rw [specialFiberNumericalPicLinear]
   exact (LinearMap.comp_apply _ _ _).trans (Submodule.mkQ_apply _ _)
 
 /-- `numericalPicLinear` sends `a` to the quotient class of its multidegree. -/
 @[simp] lemma numericalPicLinear_apply (a : Additive (LineBundleClass X)) :
     toBase.numericalPicLinear hX hη hC hπ hreg hconn a =
-      Submodule.Quotient.mk (toBase.specialFiberMultidegree hX hη
-        toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one a) := by
+      Submodule.Quotient.mk (toBase.specialFiberMultidegree hX hη hC a) := by
   rw [numericalPicLinear]
   exact (LinearMap.comp_apply _ _ _).trans (Submodule.mkQ_apply _ _)
 
 /-- `specialFiberNumericalPicLinear` factors through pullback to `X_{s,red}`. -/
 @[simp] lemma
-  reducedSpecialFiberNumericalPicLinear_comp_pullbackLinearMap_reducedSpecialFiberToSpecialFiber :
+  reducedSpecialFiberNumericalPicLinear_comp_picardPullbackLinearMap_toSpecialFiber :
     toBase.reducedSpecialFiberNumericalPicLinear hX hη hC hπ hreg hconn ∘ₗ
-        pullbackLinearMap (reducedSpecialFiberToSpecialFiber R toBase) =
+        (reducedSpecialFiberToSpecialFiber R toBase).picardPullbackLinearMap =
       toBase.specialFiberNumericalPicLinear hX hη hC hπ hreg hconn :=
   (LinearMap.comp_assoc _ _ _).trans <|
     congrArg ((𝒯).principalDivisors.mkQ ∘ₗ ·)
-      (reducedSpecialFiberMultidegree_comp_pullbackLinearMap_reducedSpecialFiberToSpecialFiber
-        toBase hX hη toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one)
+      (reducedSpecialFiberMultidegree_comp_picardPullbackLinearMap_reducedSpecialFiberToSpecialFiber
+        toBase hX hη hC)
 
 /-- `numericalPicLinear` factors through pullback along `X_s ⟶ X`. -/
-@[simp] lemma specialFiberNumericalPicLinear_comp_pullbackLinearMap_specialFiberι :
+@[simp] lemma specialFiberNumericalPicLinear_comp_picardPullbackLinearMap_specialFiberι :
     toBase.specialFiberNumericalPicLinear hX hη hC hπ hreg hconn ∘ₗ
-        pullbackLinearMap (specialFiberι R toBase) =
+        (specialFiberι R toBase).picardPullbackLinearMap =
       toBase.numericalPicLinear hX hη hC hπ hreg hconn :=
   (LinearMap.comp_assoc _ _ _).trans <|
     congrArg ((𝒯).principalDivisors.mkQ ∘ₗ ·)
-      (toBase.specialFiberMultidegreeOnFiber_comp_pullbackLinearMap_specialFiberι hX hη
-        toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one)
+      (toBase.specialFiberMultidegreeOnFiber_comp_picardPullbackLinearMap_specialFiberι hX hη hC)
 
 /-- `numericalPicLinear` factors through pullback along `X_{s,red} ⟶ X`. -/
-@[simp] lemma reducedSpecialFiberNumericalPicLinear_comp_pullbackLinearMap_reducedSpecialFiberι :
+@[simp] lemma
+  reducedSpecialFiberNumericalPicLinear_comp_picardPullbackLinearMap_reducedSpecialFiberι :
     toBase.reducedSpecialFiberNumericalPicLinear hX hη hC hπ hreg hconn ∘ₗ
-        pullbackLinearMap (reducedSpecialFiberι R toBase) =
+        (reducedSpecialFiberι R toBase).picardPullbackLinearMap =
       toBase.numericalPicLinear hX hη hC hπ hreg hconn :=
   (LinearMap.comp_assoc _ _ _).trans <|
     congrArg ((𝒯).principalDivisors.mkQ ∘ₗ ·)
-      (toBase.reducedSpecialFiberMultidegree_comp_pullbackLinearMap_reducedSpecialFiberι hX hη
-        toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.finiteDimensional_one)
+      (toBase.reducedSpecialFiberMultidegree_comp_picardPullbackLinearMap_reducedSpecialFiberι
+        hX hη hC)
 
 /-- The numerical degree of `reducedSpecialFiberNumericalPicLinear a` is `∑ⱼ mⱼ (a · Cⱼ)`. -/
 theorem degree_reducedSpecialFiberNumericalPicLinear
@@ -269,9 +255,7 @@ theorem specialFiberWeightedIntersectionMatrix_eq_weightedIntersection :
 /-- Vertical combinations of special-fibre components map onto `(𝒯).principalDivisors`. -/
 theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
     (LinearMap.range (toBase.verticalLineBundleLinear hX hη)).map
-        (toBase.specialFiberMultidegree hX hη
-          toBase.specialFiberCohomologyFiniteDimensional_zero
-          hC.finiteDimensional_one) = (𝒯).principalDivisors := by
+        (toBase.specialFiberMultidegree hX hη hC) = (𝒯).principalDivisors := by
   rw [← LinearMap.range_comp, toBase.specialFiberMultidegree_comp_verticalLineBundleLinear,
     toBase.specialFiberWeightedIntersectionMatrix_eq_weightedIntersection hX hη hC hπ hreg hconn,
     NumericalType.principalDivisors_eq_range]
@@ -283,14 +267,11 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
 @[simp] theorem numericalPicLinear_comp_verticalLineBundleLinear :
     toBase.numericalPicLinear hX hη hC hπ hreg hconn ∘ₗ
         toBase.verticalLineBundleLinear hX hη = 0 := by
-  refine (LinearMap.comp_assoc _ _ _).trans ?_
-  refine (congrArg ((𝒯).principalDivisors.mkQ ∘ₗ ·)
-    (toBase.specialFiberMultidegree_comp_verticalLineBundleLinear hX hη
-      toBase.specialFiberCohomologyFiniteDimensional_zero
-      hC.finiteDimensional_one)).trans ?_
-  rw [toBase.specialFiberWeightedIntersectionMatrix_eq_weightedIntersection hX hη hC hπ hreg hconn]
-  exact LinearMap.ext fun v ↦ (Submodule.Quotient.mk_eq_zero _).mpr
-    ((𝒯).principalDivisors_eq_range.ge ⟨v, rfl⟩)
+  rw [numericalPicLinear]
+  refine (LinearMap.comp_assoc _ _ _).trans (LinearMap.range_le_ker_iff.mp ?_)
+  exact le_of_eq ((LinearMap.range_comp _ _).trans <|
+    (toBase.map_specialFiberMultidegree_range_verticalLineBundleLinear
+      hX hη hC hπ hreg hconn).trans (Submodule.ker_mkQ _).symm)
 
 /-- Pointwise form of `numericalPicLinear_comp_verticalLineBundleLinear`. -/
 @[simp high] lemma numericalPicLinear_verticalLineBundleLinear (v : (𝒯).Component → ℤ) :
@@ -300,27 +281,22 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
     (toBase.numericalPicLinear_comp_verticalLineBundleLinear hX hη hC hπ hreg hconn) v
 
 /-- **Kernel of `numericalPicLinear`**
-([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)), deduced from the
-vertical multidegree formula and `Submodule.comap_map_eq`:
+([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)):
 `ker numericalPicLinear = ker specialFiberMultidegree ⊔ range verticalLineBundleLinear`. -/
 theorem ker_numericalPicLinear :
     LinearMap.ker (toBase.numericalPicLinear hX hη hC hπ hreg hconn) =
-      LinearMap.ker (toBase.specialFiberMultidegree hX hη
-          toBase.specialFiberCohomologyFiniteDimensional_zero
-          hC.finiteDimensional_one) ⊔
+      LinearMap.ker (toBase.specialFiberMultidegree hX hη hC) ⊔
         LinearMap.range (toBase.verticalLineBundleLinear hX hη) := by
   refine (LinearMap.ker_comp _ _).trans ?_
   rw [Submodule.ker_mkQ]
-  refine (congrArg (Submodule.comap (toBase.specialFiberMultidegree hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero
-    hC.finiteDimensional_one))
+  refine (congrArg (Submodule.comap (toBase.specialFiberMultidegree hX hη hC))
     (toBase.map_specialFiberMultidegree_range_verticalLineBundleLinear
       hX hη hC hπ hreg hconn).symm).trans ?_
   exact (Submodule.comap_map_eq _ _).trans (sup_comm _ _)
 
-/-- **Pointwise kernel characterization of `numericalPicLinear`**, deduced from
-`ker_numericalPicLinear`: a class `a` on `X` maps to `0` in `(𝒯).Pic` iff some vertical twist
-`a * ∏ᵢ [𝒪_X(Cᵢ)] ^ vᵢ` has degree zero on every component `Cⱼ` of the special fibre. -/
+/-- **Pointwise kernel characterization of `numericalPicLinear`**: a class `a` on `X` maps to `0`
+in `(𝒯).Pic` iff some vertical twist `a * ∏ᵢ [𝒪_X(Cᵢ)] ^ vᵢ` has degree zero on every component
+`Cⱼ` of the special fibre. -/
 theorem numericalPicLinear_ofMul_eq_zero_iff (a : LineBundleClass X) :
     toBase.numericalPicLinear hX hη hC hπ hreg hconn (Additive.ofMul a) = 0 ↔
       ∃ v : (𝒯).Component → ℤ, ∀ j : (𝒯).Component,
@@ -360,15 +336,14 @@ theorem numericalPicLinear_ofMul_eq_zero_iff (a : LineBundleClass X) :
 
 /-! ### Kernel of the vertical Cartier homomorphism -/
 
-/-- Every vertical divisor linearly equivalent to zero on `X` lies in `ker T.intersection`. -/
-theorem ker_verticalLineBundleLinear_le_ker_intersection :
+/-- Every vertical divisor linearly equivalent to zero on `X` lies in
+`ker T.intersection.vecMulLinear`. -/
+theorem ker_verticalLineBundleLinear_le_ker_vecMulLinear_intersection :
     LinearMap.ker (toBase.verticalLineBundleLinear hX hη) ≤
       LinearMap.ker (𝒯).intersection.vecMulLinear := by
   intro v hv
   rw [LinearMap.mem_ker] at hv
-  have h1 : (𝒯).weightScaling (toBase.specialFiberMultidegree hX hη
-      toBase.specialFiberCohomologyFiniteDimensional_zero
-      hC.finiteDimensional_one
+  have h1 : (𝒯).weightScaling (toBase.specialFiberMultidegree hX hη hC
       (toBase.verticalLineBundleLinear hX hη v)) = (𝒯).intersection.vecMulLinear v := by
     rw [toBase.specialFiberMultidegree_verticalLineBundleLinear,
       toBase.specialFiberWeightedIntersectionMatrix_eq_weightedIntersection
@@ -385,7 +360,7 @@ theorem multiplicity_mul_eq_of_mem_ker_verticalLineBundleLinear {v : (𝒯).Comp
     (i j : (𝒯).Component) :
     ((𝒯).multiplicity j : ℤ) * v i = ((𝒯).multiplicity i : ℤ) * v j := by
   have hker : (𝒯).intersection.vecMulLinear v = 0 :=
-    toBase.ker_verticalLineBundleLinear_le_ker_intersection hX hη hC hπ hreg hconn hv
+    toBase.ker_verticalLineBundleLinear_le_ker_vecMulLinear_intersection hX hη hC hπ hreg hconn hv
   rw [Matrix.vecMulLinear_apply, NumericalType.vecMul_intersection_eq_zero_iff] at hker
   exact hker i j
 
@@ -398,7 +373,8 @@ theorem finrank_ker_verticalLineBundleLinear :
     .of_fg ((𝒯).ker_vecMulLinear_intersection_eq_span ▸ Submodule.fg_span (Set.finite_singleton _))
   have hle : Module.finrank ℤ (LinearMap.ker (toBase.verticalLineBundleLinear hX hη)) ≤ 1 :=
     (Submodule.finrank_mono (t := LinearMap.ker (𝒯).intersection.vecMulLinear)
-      (toBase.ker_verticalLineBundleLinear_le_ker_intersection hX hη hC hπ hreg hconn)).trans_eq
+      (toBase.ker_verticalLineBundleLinear_le_ker_vecMulLinear_intersection
+        hX hη hC hπ hreg hconn)).trans_eq
       (𝒯).finrank_ker_vecMulLinear_intersection
   refine le_antisymm hle
     (Module.finrank_pos_iff_exists_ne_zero.mpr
@@ -413,7 +389,8 @@ theorem ker_verticalLineBundleLinear_eq_span_of_gcd_eq_one
     LinearMap.ker (toBase.verticalLineBundleLinear hX hη) =
       Submodule.span ℤ {fun i ↦ ((𝒯).multiplicity i : ℤ)} :=
   le_antisymm
-    ((toBase.ker_verticalLineBundleLinear_le_ker_intersection hX hη hC hπ hreg hconn).trans_eq
+    ((toBase.ker_verticalLineBundleLinear_le_ker_vecMulLinear_intersection
+      hX hη hC hπ hreg hconn).trans_eq
       ((𝒯).ker_vecMulLinear_intersection_eq_span_of_gcd_eq_one hgcd))
     (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr <|
       toBase.multiplicity_mem_ker_verticalLineBundleLinear hX hη hπ hreg))

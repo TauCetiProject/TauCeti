@@ -58,6 +58,18 @@ theorem specialFiberMultiplicity_coe
   exact Int.toNat_of_nonneg (Scheme.ord_germToFunctionField_nonneg _ trivial)
 
 omit [IsLocalRing R] [Ring.DimensionLEOne R] in
+/-- The special-fibre multiplicity of `π` at `x` is the valuation order of the stalk image of `π`
+in `𝒪_{X,x}`. -/
+theorem specialFiberMultiplicity_eq_ord_germ (π : R) (x : CodimensionOnePoint X) :
+    toBase.specialFiberMultiplicity π x =
+      (Ring.ord (X.presheaf.stalk x)
+        (X.presheaf.germ ⊤ x trivial (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)))).toNat := by
+  apply Nat.cast_injective (R := ℤ)
+  rw [toBase.specialFiberMultiplicity_coe,
+    ← X.algebraMap_germ_eq_germToFunctionField (U := ⊤) (x := (x : X)) trivial,
+    TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk x.property]
+
+omit [IsLocalRing R] [Ring.DimensionLEOne R] in
 /-- Two generators of the same principal ideal of `R` define the same special-fibre
 multiplicities. -/
 theorem specialFiberMultiplicity_eq_of_span_eq {π π' : R}
@@ -70,14 +82,9 @@ theorem specialFiberMultiplicity_eq_of_span_eq {π π' : R}
     simpa only [Ideal.map_span, Set.image_singleton] using congrArg (Ideal.map φ) hspan
   have hassoc : Associated (φ π) (φ π') :=
     Ideal.span_singleton_eq_span_singleton.mp hφ_span
-  have hord := congrArg ENat.toNat (Ring.ord_eq_of_associated hassoc)
-  apply Nat.cast_injective (R := ℤ)
-  rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe,
-    ← X.algebraMap_germ_eq_germToFunctionField (U := ⊤) (x := (x : X)) trivial,
-    ← X.algebraMap_germ_eq_germToFunctionField (U := ⊤) (x := (x : X)) trivial,
-    TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk x.property,
-    TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk x.property]
-  exact congrArg Nat.cast hord
+  rw [toBase.specialFiberMultiplicity_eq_ord_germ π x,
+    toBase.specialFiberMultiplicity_eq_ord_germ π' x]
+  exact congrArg ENat.toNat (Ring.ord_eq_of_associated hassoc)
 
 omit [IsLocalRing R] [Ring.DimensionLEOne R] in
 /-- Associated elements of the base ring define the same special-fibre multiplicities: multiplying

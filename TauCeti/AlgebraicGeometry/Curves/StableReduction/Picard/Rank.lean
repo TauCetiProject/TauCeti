@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Basic
-import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.LinearAlgebra.Matrix.MulVec
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Rank of the Picard group of a numerical type
@@ -171,7 +171,7 @@ theorem ker_vecMulLinear_intersection_eq_span :
           Finset.univ.gcd (fun j : T.Component ↦ (T.multiplicity j : ℕ)) : ℕ) : ℤ)} := by
   ext v
   rw [LinearMap.mem_ker, Matrix.vecMulLinear_apply, T.vecMul_intersection_eq_zero_iff]
-  exact forall_nat_mul_eq_iff_mem_span_div_gcd (fun i ↦ (T.multiplicity i : ℕ))
+  exact forall_natCast_mul_eq_iff_mem_span_div_gcd (fun i ↦ (T.multiplicity i : ℕ))
     ⟨Classical.choice inferInstance, (T.multiplicity _).ne_zero⟩ v
 
 /-- When the multiplicities of `T` are coprime (`gcd = 1`), the kernel of

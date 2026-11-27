@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
-public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Subscheme
 
@@ -45,12 +44,12 @@ That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the int
 * `AlgebraicGeometry.Scheme.Hom.finiteDimensional_cohomology_zero_subscheme_closure_singleton`:
   `H⁰` of the structure sheaf of a reduced point closure is finite-dimensional under universal
   closedness and local finite type.
-* `AlgebraicGeometry.Scheme.Hom.SpecialFiberCohomologyFiniteDimensional`: every irreducible
-  component of the special fibre has finite-dimensional `H^n(C, 𝒪_C)` over the residue field.
-* `AlgebraicGeometry.Scheme.Hom.specialFiberCohomologyFiniteDimensional_zero`: bundled `H⁰`
-  finiteness under `UniversallyClosed` and `LocallyOfFiniteType`.
-* `AlgebraicGeometry.Scheme.Hom.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne`:
-  the components of the special fibre have finite-dimensional `H¹` of their structure sheaves.
+* `AlgebraicGeometry.Scheme.Hom.SpecialFiberCohomologyFiniteDimensional`: the reduced
+  closure of every codimension-one point of `X` in the special fibre has finite-dimensional
+  `H^n(C, 𝒪_C)` over the residue field.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberCohomologyFiniteDimensional_zero`: `H⁰` finiteness
+  on the reduced closures of codimension-one points in the special fibre under `UniversallyClosed`
+  and `LocallyOfFiniteType`.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_mul_finrank_cohomology_one`:
   `w_C · dim_{κ_C} H¹(C, 𝒪_C) = dim_k H¹(C, 𝒪_C)`.
 
@@ -116,17 +115,16 @@ theorem specialFiberWeight_pos {x : X} (hx : toBase x = closedPoint R)
       Scheme.Modules.finrank_globalSections_cohomology_zero_trivial_eq_one
   exact Module.finrank_pos
 
-/-- For every codimension-one point `η` of `X` in the special fibre, the closure `C` of `η`,
-with its reduced structure, has `H¹(C, 𝒪_C)` finite-dimensional over the residue field of `R`.
-Together with properness, which supplies finiteness of `H⁰(C, 𝒪_C)`, this gives the cohomological
-finiteness hypotheses for the intersection matrix of the special fibre. -/
-structure HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne : Prop where
-  /-- `H¹` of the structure sheaf of every component is finite-dimensional. -/
-  finiteDimensional_one : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
+/-- For every codimension-one point `η` of `X` in the special fibre, the reduced closure `C` of `η`
+has finite-dimensional `n`-th cohomology `H^n(C, 𝒪_C)` over the residue field of `R`. -/
+structure SpecialFiberCohomologyFiniteDimensional (n : ℕ) : Prop where
+  /-- `H^n` of the structure sheaf of the reduced closure of every codimension-one point in the
+  special fibre is finite-dimensional over the residue field of `R`. -/
+  finiteDimensional : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
+    letI :=
+      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
     FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n)
 
 /-- The zeroth cohomology of the structure sheaf of the reduced closure of a point of the
 special fibre of a universally closed, locally finite type scheme is finite-dimensional over
@@ -150,22 +148,14 @@ theorem finiteDimensional_cohomology_zero_subscheme_closure_singleton
   exact Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed
     (ResidueField R) _
 
-/-- Every irreducible component `C` of the special fibre of `toBase` has finite-dimensional
-`n`-th cohomology `H^n(C, 𝒪_C)` over the residue field of `R`. -/
-abbrev SpecialFiberCohomologyFiniteDimensional (n : ℕ) : Prop :=
-  ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI :=
-      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n)
-
-/-- Under `UniversallyClosed` and `LocallyOfFiniteType` (in particular, under `IsProper`), every
-component of the special fibre has finite-dimensional `H⁰` over the residue field. Bundled as a
-named theorem so callers passing it to `SpecialFiberCohomologyFiniteDimensional` binders avoid
-re-comparing `isClosed_closure` inside `Cohomology` in the kernel. -/
+-- Bundled as a named theorem so callers passing it avoid re-comparing `isClosed_closure` inside
+-- `Cohomology` in the kernel.
+/-- For a universally closed, locally finite type scheme `toBase : X ⟶ Spec R`, the reduced
+closure of every codimension-one point of `X` in the special fibre has finite-dimensional `H⁰`
+over the residue field of `R`. -/
 theorem specialFiberCohomologyFiniteDimensional_zero [UniversallyClosed toBase]
     [LocallyOfFiniteType toBase] : toBase.SpecialFiberCohomologyFiniteDimensional 0 :=
-  fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton
+  ⟨fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton⟩
 
 variable [IsProper toBase]
 

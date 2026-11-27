@@ -65,7 +65,7 @@ uniformizer-free `TauCeti.NumericalType` of the special fibre. Both `[M.IsProper
 `[FamilyOfCurves M.toBase]` is in scope. -/
 @[expose] def numericalType (M : Model R K C toK) [M.IsProper] [RelativeDimensionLE 1 M.toBase]
     [IsIntegral M.total] [TauCeti.AlgebraicGeometry.IsRegular M.total]
-    (hC : M.toBase.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne)
+    (hC : M.toBase.SpecialFiberCohomologyFiniteDimensional 1)
     (hconn : _root_.IsPreconnected (M.toBase ⁻¹' {closedPoint R})) : NumericalType.{u} :=
   M.toBase.specialFiberNumericalType M.toBase.coheight_le_succ_of_relativeDimensionLE
     (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
@@ -78,7 +78,7 @@ section ModelAPI
 
 variable (M : Model R K C toK) [M.IsProper] [RelativeDimensionLE 1 M.toBase] [IsIntegral M.total]
   [TauCeti.AlgebraicGeometry.IsRegular M.total]
-  (hC : M.toBase.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne)
+  (hC : M.toBase.SpecialFiberCohomologyFiniteDimensional 1)
   (hconn : _root_.IsPreconnected (M.toBase ⁻¹' {closedPoint R}))
 
 /-- A codimension-one point of `M.total` arises as a component of `M.numericalType` if and only if
@@ -132,12 +132,16 @@ theorem numericalType_adj_iff (i j : (M.numericalType hC hconn).Component) :
 
 /-- For any generator `π` of `maximalIdeal R`, `M.numericalType` equals
 `M.toBase.specialFiberNumericalType`. -/
-theorem numericalType_eq_specialFiberNumericalType (hX : ∀ x : M.total, coheight x ≤ 2)
-    (hη : M.toBase (genericPoint M.total) ≠ closedPoint R) {π : R}
-    (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π) :
+theorem numericalType_eq_specialFiberNumericalType {π : R}
+    (hπ : maximalIdeal R = Ideal.span {π}) :
     M.numericalType hC hconn =
-      M.toBase.specialFiberNumericalType hX hη hC hπ hreg hconn :=
-  M.toBase.specialFiberNumericalType_congr _ _ hC _ _ hconn hπ hreg
+      M.toBase.specialFiberNumericalType M.toBase.coheight_le_succ_of_relativeDimensionLE
+        (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
+        hC hπ
+        (mul_right_injective₀ (M.toBase.ne_zero_of_base_ne_closedPoint
+          (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)) hπ))
+        hconn :=
+  M.toBase.specialFiberNumericalType_congr _ _ hC _ _ hconn hπ
 
 /-- Every component of `M.numericalType` has multiplicity one iff the scheme-theoretic special fibre
 of `M` is reduced. -/
