@@ -89,6 +89,8 @@ vectors lies in `n⁺` and is principal, so `n⁺` contains a regular element
 * `TauCeti.root_apply_twoWeylVector_flip_ne_zero` and
   `TauCeti.eigenspace_ad_twoWeylVector_flip_eq_bot`: no root vanishes at `2ρ^∨`, and the
   eigenvalues of `ad (2ρ^∨)` are even integers.
+* `TauCeti.mem_eigenspace_ad_twoWeylVector_flip_of_mem_rootSpace`: a root vector of `γ` is an
+  eigenvector of `ad (2ρ^∨)` with eigenvalue `2 ht(γ)`.
 * `TauCeti.isSl2Triple_twoWeylVector_flip_sum`: the principal `sl₂` triple built from simple root
   vectors.
 * `TauCeti.exists_mem_negativeNilradical_isSl2Triple_twoWeylVector_flip` and
@@ -193,6 +195,16 @@ theorem eigenspace_ad_twoWeylVector_flip_eq_bot {μ : K} (hμ : ∀ n : ℤ, μ 
     simp [hy]
   rw [genWeightSpaceOf_eq_iSup_genWeightSpace, hbot] at hy'
   simpa using hy'
+
+/-- **A root vector of `γ` is an eigenvector of `ad (2ρ^∨)`, with eigenvalue twice the height of
+`γ`.** -/
+theorem mem_eigenspace_ad_twoWeylVector_flip_of_mem_rootSpace {γ : H.root} {z : L}
+    (hz : z ∈ rootSpace H ((γ : Weight K H L) : H → K)) :
+    z ∈ (ad K L (twoWeylVector (rootSystem H).flip b.flip : H)).eigenspace
+      ((2 * b.height γ : ℤ) : K) := by
+  rw [Module.End.mem_eigenspace_iff, ad_apply, ← LieSubalgebra.coe_bracket_of_module,
+    lie_eq_smul_of_mem_rootSpace hz, root_apply_twoWeylVector_flip_eq_two_mul_height]
+  norm_cast
 
 /-! ### The principal triple -/
 
