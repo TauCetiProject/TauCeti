@@ -24,14 +24,15 @@ This file shows that the component condition cannot be dropped, already for the 
 `SO(2)` and the reflections.
 
 The coadjoint representation of `O(2)` is the determinant: rotations act trivially on `so(2)*`
-and reflections act by `-1` (`TauCeti.coadjointRepresentation_unitary_eq_det_smul`). Let `μ` be a
+and reflections act by `-1`
+(`TauCeti.coadjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two`). Let `μ` be a
 coadjoint-equivariant moment map of a smooth action of `O(2)` on a manifold with a two-form `σ`,
 for instance the moment map of the cotangent lift of the rotations and reflections of `V` to
 `T*V`, and shift it by a constant `ν ∈ so(2)*`. The shifted map `μ + ν` is again a moment map, and:
 
 * it is equivariant under an element `g` exactly when `g` is a rotation or `ν = 0`, since
   `Ad*_g ν = ν` for a rotation and `Ad*_g ν = -ν` for a reflection
-  (`TauCeti.coadjointRepresentation_unitary_eq_self_iff`);
+  (`TauCeti.coadjointRepresentation_unitary_eq_self_iff_of_finrank_eq_two`);
 * in particular it is equivariant under the identity component `SO(2)`, an open subgroup, so its
   cocycle vanishes at every point;
 * but it is coadjoint-equivariant only for `ν = 0`.
@@ -89,7 +90,7 @@ theorem momentCocycle_add_const_eq_zero_of_finrank_eq_two (h : σ.IsEquivariantM
   (h.toIsMomentMap.add_const ν).momentCocycle_eq_zero_of_eventually_apply_smul <|
     Filter.eventually_of_mem (isOpen_specialOrthogonalGroup.mem_nhds (one_mem _)) fun g hg ↦ by
       rw [h.apply_smul, map_add,
-        (coadjointRepresentation_unitary_eq_self_iff hV (ν := ν)).2 (Or.inl hg)]
+        (coadjointRepresentation_unitary_eq_self_iff_of_finrank_eq_two hV (ν := ν)).2 (Or.inl hg)]
 
 /-- **A shifted moment map of `O(2)` is equivariant only without shift.** For a two-dimensional
 real inner product space `V`, a coadjoint-equivariant moment map `μ` of an action of `O(V)` on a
@@ -103,7 +104,8 @@ theorem add_const_iff_eq_zero_of_finrank_eq_two [Nonempty M] (h : σ.IsEquivaria
   rw [h.add_const_iff]
   refine ⟨fun hν ↦ ?_, fun hν g ↦ by rw [hν, map_zero]⟩
   obtain ⟨r, hr⟩ := Unitary.exists_det_eq_neg_one (V := V) (by omega)
-  refine ((coadjointRepresentation_unitary_eq_self_iff hV).1 (hν r)).resolve_left fun hrs ↦ ?_
+  refine ((coadjointRepresentation_unitary_eq_self_iff_of_finrank_eq_two hV).1
+    (hν r)).resolve_left fun hrs ↦ ?_
   rw [mem_specialOrthogonalGroup_iff, hr] at hrs
   norm_num at hrs
 

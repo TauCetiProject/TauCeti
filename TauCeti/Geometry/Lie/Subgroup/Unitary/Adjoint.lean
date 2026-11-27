@@ -30,22 +30,23 @@ coadjoint representations of `O(2)` are the sign of the determinant,
 
 `Ad_g ξ = det g • ξ`, `Ad*_g ν = det g • ν`
 
-(`TauCeti.adjointRepresentation_unitary_eq_det_smul`,
-`TauCeti.coadjointRepresentation_unitary_eq_det_smul`). The rotations, the special orthogonal
-group `SO(2)`, act trivially, and every reflection acts by `-1`. In particular the only
-coadjoint-invariant element of `so(2)*` is `0`
-(`TauCeti.coadjointRepresentation_unitary_eq_self_iff`), although `SO(2)` fixes all of them.
+(`TauCeti.adjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two`,
+`TauCeti.coadjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two`). The rotations, the
+special orthogonal group `SO(2)`, act trivially, and every reflection acts by `-1`. In particular
+the only coadjoint-invariant element of `so(2)*` is `0`
+(`TauCeti.coadjointRepresentation_unitary_eq_self_iff_of_finrank_eq_two`), although `SO(2)` fixes
+all of them.
 
 ## Main results
 
 * `Unitary.tangentSpaceCastModel_mfderiv_val_adjointRepresentation`: the adjoint action of a
   unitary group is conjugation in the ambient algebra.
 * `TauCeti.coe_orthogonalLieAlgebraEquiv_adjointRepresentation`: the same statement on `so(V)`.
-* `TauCeti.adjointRepresentation_unitary_eq_det_smul`,
-  `TauCeti.coadjointRepresentation_unitary_eq_det_smul`: in dimension two, `O(2)` acts on its Lie
-  algebra and on its dual by the determinant.
-* `TauCeti.coadjointRepresentation_unitary_eq_self_iff`: in dimension two, `g` fixes `ν ∈ so(2)*`
-  exactly when `g` is a rotation or `ν = 0`.
+* `TauCeti.adjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two`,
+  `TauCeti.coadjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two`: in dimension two,
+  `O(2)` acts on its Lie algebra and on its dual by the determinant.
+* `TauCeti.coadjointRepresentation_unitary_eq_self_iff_of_finrank_eq_two`: in dimension two, `g`
+  fixes `ν ∈ so(2)*` exactly when `g` is a rotation or `ν = 0`.
 -/
 
 public section
@@ -124,7 +125,8 @@ theorem coe_orthogonalLieAlgebraEquiv_adjointRepresentation (g : O(V)) (ξ : �
 /-- **The adjoint representation of `O(2)` is the determinant.** For a two-dimensional real inner
 product space `V`, every orthogonal transformation `g` acts on the Lie algebra of `O(V)` by
 multiplication by `det g = ±1`. -/
-theorem adjointRepresentation_unitary_eq_det_smul (hV : finrank ℝ V = 2) (g : O(V)) (ξ : 𝔬(V)) :
+theorem adjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two (hV : finrank ℝ V = 2)
+    (g : O(V)) (ξ : 𝔬(V)) :
     Lie.adjointRepresentation ℝ (Unitary.model (V →L[ℝ] V)) O(V) g ξ =
       (g : V →L[ℝ] V).det • ξ := by
   apply (orthogonalLieAlgebraEquiv V).injective
@@ -138,22 +140,23 @@ theorem adjointRepresentation_unitary_eq_det_smul (hV : finrank ℝ V = 2) (g : 
 /-- **The coadjoint representation of `O(2)` is the determinant.** For a two-dimensional real
 inner product space `V`, every orthogonal transformation `g` acts on the dual of the Lie algebra
 of `O(V)` by multiplication by `det g = ±1`: rotations act trivially and reflections by `-1`. -/
-theorem coadjointRepresentation_unitary_eq_det_smul (hV : finrank ℝ V = 2) (g : O(V))
-    (ν : Module.Dual ℝ 𝔬(V)) :
+theorem coadjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two (hV : finrank ℝ V = 2)
+    (g : O(V)) (ν : Module.Dual ℝ 𝔬(V)) :
     Lie.coadjointRepresentation ℝ (Unitary.model (V →L[ℝ] V)) O(V) g ν =
       (g : V →L[ℝ] V).det • ν := by
   ext ξ
   rw [Lie.coadjointRepresentation_apply, ← Lie.adjointRepresentation_apply,
-    adjointRepresentation_unitary_eq_det_smul hV, map_smul, Unitary.det_inv_eq_det,
-    LinearMap.smul_apply]
+    adjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two hV, map_smul,
+    Unitary.det_inv_eq_det, LinearMap.smul_apply]
 
 /-- **The coadjoint fixed points of `O(2)`.** For a two-dimensional real inner product space `V`,
 an orthogonal transformation `g` fixes `ν ∈ so(V)*` exactly when `g` is a rotation or `ν = 0`. -/
-theorem coadjointRepresentation_unitary_eq_self_iff (hV : finrank ℝ V = 2) {g : O(V)}
-    {ν : Module.Dual ℝ 𝔬(V)} :
+theorem coadjointRepresentation_unitary_eq_self_iff_of_finrank_eq_two (hV : finrank ℝ V = 2)
+    {g : O(V)} {ν : Module.Dual ℝ 𝔬(V)} :
     Lie.coadjointRepresentation ℝ (Unitary.model (V →L[ℝ] V)) O(V) g ν = ν ↔
       g ∈ specialOrthogonalGroup V ∨ ν = 0 := by
-  rw [coadjointRepresentation_unitary_eq_det_smul hV, mem_specialOrthogonalGroup_iff]
+  rw [coadjointRepresentation_unitary_eq_det_smul_of_finrank_eq_two hV,
+    mem_specialOrthogonalGroup_iff]
   rcases Unitary.det_eq_one_or_eq_neg_one g with hg | hg
   · simp [hg]
   · have h : (-1 : ℝ) ≠ 1 := by norm_num
