@@ -186,6 +186,18 @@ theorem coe_mul (g h : upperUnitriangularGroup m R) :
       ((g : GL m R) : Matrix m m R) * ((h : GL m R) : Matrix m m R) := by
   rw [Subgroup.coe_mul, Units.val_mul]
 
+/-- The matrices of `g` and `g⁻¹` in `Uₙ(R)` multiply to the identity. -/
+theorem coe_mul_coe_inv (g : upperUnitriangularGroup m R) :
+    ((g : GL m R) : Matrix m m R) *
+        (((g⁻¹ : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) = 1 := by
+  rw [Subgroup.coe_inv, Units.mul_inv]
+
+/-- The matrices of `g⁻¹` and `g` in `Uₙ(R)` multiply to the identity. -/
+theorem coe_inv_mul_coe (g : upperUnitriangularGroup m R) :
+    (((g⁻¹ : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) *
+        ((g : GL m R) : Matrix m m R) = 1 := by
+  rw [Subgroup.coe_inv, Units.inv_mul]
+
 /-- An entry strictly above the diagonal of a product in `Uₙ(R)` is the sum of the two entries and
 of the products through the intermediate indices:
 `(g * h) i j = g i j + h i j + ∑_{i < k < j} g i k * h k j`. -/
@@ -196,6 +208,28 @@ theorem mul_apply_of_lt [LocallyFiniteOrder m] (g h : upperUnitriangularGroup m 
         ∑ k ∈ Finset.Ioo i j,
           ((g : GL m R) : Matrix m m R) i k * ((h : GL m R) : Matrix m m R) k j := by
   rw [coe_mul, (isUpperUnitriangular g).mul_apply_of_lt (isUpperUnitriangular h) hij]
+
+/-- Column `i` of an element of `Uₙ(R)` at a least index `i` is that of the identity, so
+multiplying a row vector by it keeps the entry at `i`. -/
+theorem vecMul_coe_apply_of_isBot (g : upperUnitriangularGroup m R) (u : m → R) {i : m}
+    (hi : IsBot i) : (u ᵥ* ((g : GL m R) : Matrix m m R)) i = u i := by
+  conv_rhs => rw [← Matrix.vecMul_one u]
+  simp only [Matrix.vecMul, dotProduct]
+  refine Finset.sum_congr rfl fun k _ ↦ congrArg (u k * ·) ?_
+  rcases eq_or_ne k i with rfl | hk
+  · rw [apply_diag, Matrix.one_apply_eq]
+  · rw [isUpperTriangular g ((hi k).lt_of_ne hk.symm), Matrix.one_apply_ne hk]
+
+/-- Row `j` of an element of `Uₙ(R)` at a greatest index `j` is that of the identity, so
+multiplying a column vector by it keeps the entry at `j`. -/
+theorem coe_mulVec_apply_of_isTop (g : upperUnitriangularGroup m R) (v : m → R) {j : m}
+    (hj : IsTop j) : (((g : GL m R) : Matrix m m R) *ᵥ v) j = v j := by
+  conv_rhs => rw [← Matrix.one_mulVec v]
+  simp only [Matrix.mulVec, dotProduct]
+  refine Finset.sum_congr rfl fun k _ ↦ congrArg (· * v k) ?_
+  rcases eq_or_ne k j with rfl | hk
+  · rw [apply_diag, Matrix.one_apply_eq]
+  · rw [isUpperTriangular g ((hj k).lt_of_ne hk), Matrix.one_apply_ne hk.symm]
 
 end Ring
 

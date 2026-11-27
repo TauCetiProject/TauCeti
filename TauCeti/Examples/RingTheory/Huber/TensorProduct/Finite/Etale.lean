@@ -47,9 +47,11 @@ example (n : ℕ) :
     (Pair.finiteAlgebra.algebraHom_toRingHom _ _)
     (Pair.finiteAlgebra.isFiniteEtale_algebraHom _ _)
 
+attribute [local instance] CompletedTensor.leftAlgebra in
 /-- The completed base change of the empty cover is still zero. -/
 example : Subsingleton (CompletedTensor ℤ (ZMod 2) (Fin 0 → ℤ)) :=
-  (Pair.finiteAlgebra.baseChangeEquiv ℤ (ZMod 2) (Fin 0 → ℤ)).symm.injective.subsingleton
+  (CompletedTensor.baseChangeEquiv ℤ (ZMod 2) (Fin 0 → ℤ)
+    (IsNaturallyComplete.of_projective (A := ZMod 2) (M := _))).symm.injective.subsingleton
 
 /-- The new base map in these checks is genuinely noninjective. -/
 example : ¬ Function.Injective (algebraMap ℤ (ZMod 2)) := by

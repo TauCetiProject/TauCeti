@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.QuotientGroup
 public import TauCeti.NumberTheory.ModularForms.Norm.Trace
 public import TauCeti.NumberTheory.ModularForms.Norm.Valence
+import TauCeti.GroupTheory.GroupAction.Period
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 /-!
@@ -164,19 +165,6 @@ end Translate
 
 
 section Width
-
-/-- The period of a group element on a point is constant along that element's orbit.
-Mathlib has `MulAction.period` and its divisibility API but not this invariance; it stays
-private rather than planting a general group-theoretic declaration in a modular-forms file. -/
-private lemma minimalPeriod_zpow_smul {G α : Type*} [Group G] [MulAction G α] (g : G) (j : ℤ)
-    (a : α) : minimalPeriod (g • ·) (g ^ j • a) = minimalPeriod (g • ·) a := by
-  have key : ∀ (b : α) (i : ℤ), minimalPeriod (g • ·) (g ^ i • b) ∣ minimalPeriod (g • ·) b :=
-    fun b i ↦ MulAction.pow_smul_eq_iff_minimalPeriod_dvd.mp (by
-      rw [← mul_smul, ← zpow_natCast, ← zpow_add, add_comm, zpow_add, zpow_natCast, mul_smul,
-        MulAction.pow_smul_eq_iff_minimalPeriod_dvd.mpr dvd_rfl])
-  refine Nat.dvd_antisymm (key a j) ?_
-  have h := key (g ^ j • a) (-j)
-  rwa [← mul_smul, ← zpow_add, neg_add_cancel, zpow_zero, one_smul] at h
 
 /-- The **width** of a cusp translation orbit of `𝒢`: the period of the `T`-action. Under
 `[𝒢.IsFiniteRelIndex 𝒮ℒ]`, `minimalPeriod_TSL_dvd_iff` and
@@ -545,6 +533,29 @@ lemma sum_cuspTranslationOrbitWidth [𝒢.IsFiniteRelIndex 𝒮ℒ] :
       Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :=
   ((𝒢.subgroupOf 𝒮ℒ).index_eq_card ▸
     Subgroup.index_eq_sum_minimalPeriod (𝒢.subgroupOf 𝒮ℒ) TSL).symm
+
+/-- **A cusp translation orbit of width `m` contains `m` cosets**, in the form of a sum: weighting
+each coset by the reciprocal width of its orbit, a sum over the cosets is the sum over the
+orbits. -/
+lemma sum_div_cuspTranslationOrbitWidth [𝒢.IsFiniteRelIndex 𝒮ℒ]
+    [Fintype (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)] (G : CuspTranslationOrbit 𝒢 → ℚ) :
+    ∑ q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ,
+        G ⟦q⟧ / cuspTranslationOrbitWidth (⟦q⟧ : CuspTranslationOrbit 𝒢) =
+      ∑ c, G c := by
+  rw [← (Subgroup.quotientEquivSigmaZMod (𝒢.subgroupOf 𝒮ℒ) TSL).symm.sum_comp,
+    Fintype.sum_sigma]
+  refine Fintype.sum_congr _ _ fun c ↦ ?_
+  have hc (x : ZMod (minimalPeriod (TSL • ·) c.out)) :
+      (⟦(Subgroup.quotientEquivSigmaZMod (𝒢.subgroupOf 𝒮ℒ) TSL).symm ⟨c, x⟩⟧ :
+        CuspTranslationOrbit 𝒢) = c := by
+    rw [Subgroup.quotientEquivSigmaZMod_symm_apply]
+    exact (Quotient.sound (orbitRel_apply.mpr (mem_orbit _
+      (⟨TSL ^ (ZMod.cast x : ℤ), Subgroup.zpow_mem_zpowers _ _⟩ : Subgroup.zpowers TSL)))).trans
+      (Quotient.out_eq c)
+  have hw : (cuspTranslationOrbitWidth c : ℚ) ≠ 0 := by
+    exact_mod_cast (cuspTranslationOrbitWidth_pos c).ne'
+  simp only [hc, Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]
+  rw [← cuspTranslationOrbitWidth, mul_div_cancel₀ _ hw]
 
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
   [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]

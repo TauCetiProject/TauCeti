@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.BaseChange
+public import TauCeti.Geometry.Hodge.WeightOne.Lattice.Morphism
 public import TauCeti.Geometry.Hodge.WeightOne.RiemannForm.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Transport
@@ -38,6 +39,8 @@ forms (`TauCeti.AlmostComplexStructure.IsRiemannForm`) and the weight-one Hodge 
   weight-one Hodge structure are `h^{1,0} = h^{0,1} = dim_ℂ E`.
 * `TauCeti.ComplexTorus.isComplexLinearMap_baseChange`: a complex-linear map `f : E → E'` with
   `f(Λ) ⊆ Λ'` is complex linear for the two structures `J` on the realifications.
+* `TauCeti.ComplexTorus.hodgeHom`: such a map is a morphism of the weight-one Hodge structures of
+  the two tori, with identity and composition laws `hodgeHom_id`, `hodgeHom_comp`.
 
 ## References
 
@@ -142,5 +145,51 @@ theorem isComplexLinearMap_baseChange (f : E →ₗ[ℂ] E')
   intro x
   apply (ZLattice.baseChangeEquiv ℝ Λ').injective
   simp [h]
+
+variable {Λℂ Λℂ' : Type*} [AddCommGroup Λℂ] [Module ℂ Λℂ] [AddCommGroup Λℂ'] [Module ℂ Λℂ']
+  {ιℂ : Λ →ₗ[ℤ] Λℂ} {ιℂ' : Λ' →ₗ[ℤ] Λℂ'}
+
+/-- **The Hodge morphism of a map of complex tori**: a complex-linear map `f : E → E'` with
+`f(Λ) ⊆ Λ'` restricts to an integral map `Λ → Λ'`, which is a morphism of the weight-one Hodge
+structures of the tori `E / Λ` and `E' / Λ'`. -/
+noncomputable def hodgeHom (hℂ : IsBaseChange ℂ ιℂ) (hℂ' : IsBaseChange ℂ ιℂ') (f : E →ₗ[ℂ] E')
+    (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') :
+    Hodge.HodgeStructure.Hom ((almostComplexStructure Λ).latticeHodgeStructure hℂ)
+      ((almostComplexStructure Λ').latticeHodgeStructure hℂ') :=
+  AlmostComplexStructure.latticeHodgeHom hℂ hℂ' ((f.restrictScalars ℤ).restrict hf)
+    (isComplexLinearMap_baseChange Λ Λ' f hf)
+
+/-- The integral map underlying the Hodge morphism of a map of tori is its restriction to the
+lattices. -/
+@[simp]
+theorem hodgeHom_toIntLinearMap (hℂ : IsBaseChange ℂ ιℂ) (hℂ' : IsBaseChange ℂ ιℂ')
+    (f : E →ₗ[ℂ] E') (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') :
+    (hodgeHom Λ Λ' hℂ hℂ' f hf).toIntLinearMap = (f.restrictScalars ℤ).restrict hf :=
+  AlmostComplexStructure.latticeHodgeHom_toIntLinearMap _ _ _ _
+
+/-- The Hodge morphism of a map of tori acts on lattice vectors by the map itself. -/
+theorem coe_hodgeHom_toIntLinearMap_apply (hℂ : IsBaseChange ℂ ιℂ) (hℂ' : IsBaseChange ℂ ιℂ')
+    (f : E →ₗ[ℂ] E') (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') (x : Λ) :
+    ((hodgeHom Λ Λ' hℂ hℂ' f hf).toIntLinearMap x : E') = f x := by
+  simp
+
+/-- The identity of `E` gives the identity Hodge morphism. -/
+@[simp]
+theorem hodgeHom_id (hℂ : IsBaseChange ℂ ιℂ) :
+    hodgeHom Λ Λ hℂ hℂ LinearMap.id (fun _ hx ↦ by simpa) = Hodge.HodgeStructure.Hom.id _ :=
+  Hodge.HodgeStructure.Hom.ext fun _ ↦ Subtype.ext (by simp)
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] [FiniteDimensional ℂ E'']
+  (Λ'' : Submodule ℤ E'') [DiscreteTopology Λ''] [IsZLattice ℝ Λ'']
+  {Λℂ'' : Type*} [AddCommGroup Λℂ''] [Module ℂ Λℂ''] {ιℂ'' : Λ'' →ₗ[ℤ] Λℂ''}
+
+/-- The Hodge morphism of a composite of maps of tori is the composite of their Hodge
+morphisms. -/
+theorem hodgeHom_comp (hℂ : IsBaseChange ℂ ιℂ) (hℂ' : IsBaseChange ℂ ιℂ')
+    (hℂ'' : IsBaseChange ℂ ιℂ'') (f : E →ₗ[ℂ] E') (g : E' →ₗ[ℂ] E'')
+    (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') (hg : ∀ x ∈ Λ', g.restrictScalars ℤ x ∈ Λ'') :
+    hodgeHom Λ Λ'' hℂ hℂ'' (g ∘ₗ f) (fun x hx ↦ by simpa using hg _ (hf x hx)) =
+      (hodgeHom Λ' Λ'' hℂ' hℂ'' g hg).comp (hodgeHom Λ Λ' hℂ hℂ' f hf) :=
+  Hodge.HodgeStructure.Hom.ext fun _ ↦ Subtype.ext (by simp)
 
 end TauCeti.ComplexTorus

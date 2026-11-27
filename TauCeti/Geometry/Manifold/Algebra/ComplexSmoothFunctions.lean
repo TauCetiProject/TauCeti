@@ -20,13 +20,22 @@ scalars. Real and imaginary parts identify this real vector space with a pair of
 function spaces, so complex-linear maps out of it are determined on real-valued functions
 (`ContMDiffMap.linearMap_ext_ofReal`), a real-linear map between real-valued functions
 complexifies to a complex-linear map between complex-valued ones
-(`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution.
+(`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution. Conjugating
+the input and output of a complex-linear map, `f ↦ conj (P (conj f))`, gives a complex-linear map
+(`ContMDiffMap.intrinsicConj`); it fixes exactly the complexifications of real-linear maps
+(`ContMDiffMap.intrinsicConj_eq_self_iff`), so every complex-linear map `P` is `A + i B` with `A`
+and `B` complexifications
+(`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`), namely of
+`u ↦ Re (P u)` and `u ↦ Im (P u)` on real-valued functions
+(`ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp`).
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
 For a diffeomorphism it is a complex algebra isomorphism (`Diffeomorph.compRightComplexAlgEquiv`),
 and conjugating by it carries the complex-linear operators on the functions on one manifold to
-those on the other (`Diffeomorph.pushforwardOperator`), functorially in the diffeomorphism.
+those on the other (`Diffeomorph.pushforwardOperator`), functorially in the diffeomorphism. An
+operator is invariant under the pushforward along a self-diffeomorphism exactly when it commutes
+with precomposition by it (`Diffeomorph.pushforwardOperator_eq_self_iff`).
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -186,6 +195,20 @@ theorem ofReal_injective :
   intro f g h
   simpa using congrArg re h
 
+/-- **Splitting by a partition of unity.** If real-valued smooth functions `ρ i` add up to `1` on a
+set `K` containing the support of a complex-valued smooth function `g`, then `g` is the sum of the
+products `ρ i · g`. -/
+theorem eq_sum_mulLeft_ofReal {ι : Type*} (s : Finset ι) (ρ : ι → C^n⟮I, M; ℝ⟯) {K : Set M}
+    {g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} (hg : Function.support g ⊆ K)
+    (hρ : ∀ x ∈ K, ∑ i ∈ s, ρ i x = 1) :
+    g = ∑ i ∈ s, LinearMap.mulLeft ℂ (ofReal (ρ i)) g := by
+  ext x
+  simp only [coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply, coe_mul, Pi.mul_apply,
+    ofReal_apply, ← Finset.sum_mul]
+  by_cases hx : x ∈ K
+  · rw [← Complex.ofReal_sum, hρ x hx, Complex.ofReal_one, one_mul]
+  · rw [Function.notMem_support.1 fun h ↦ hx (hg h), mul_zero]
+
 /-- Real and imaginary parts reconstruct the original smooth function. -/
 theorem ofReal_re_add_I_smul_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     ofReal f.re + Complex.I • ofReal f.im = f := by
@@ -289,6 +312,16 @@ theorem conj_complex_smul (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
 theorem conj_conj (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : conj (conj f) = f := by
   ext x
   simp
+
+/-- Conjugation does not change the support of a function. -/
+@[simp]
+theorem support_conj (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : Function.support (conj f) = Function.support f :=
+  Function.support_comp_eq star star_eq_zero f
+
+/-- Conjugation does not change the topological support of a function. -/
+@[simp]
+theorem tsupport_conj (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : tsupport (conj f) = tsupport f :=
+  tsupport_comp_eq star_eq_zero f
 
 @[simp]
 theorem conj_re (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (conj f).re = f.re := by
@@ -395,6 +428,139 @@ theorem complexifyLinearMap_apply_eq_zero {D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^
     {f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} (hf : ∀ᶠ y in nhds x, f y = 0) :
     complexifyLinearMap D f x = 0 := by
   simp [hD f.re (hf.mono fun y hy ↦ by simp [hy]), hD f.im (hf.mono fun y hy ↦ by simp [hy])]
+
+/-- The **complex conjugate** `f ↦ conj (P (conj f))` of a complex-linear map `P` between
+complex-valued smooth functions, again complex-linear. This is the intrinsic star of linear maps
+(`LinearMap.intrinsicStar`) for pointwise conjugation `ContMDiffMap.conj`, written out because the
+function spaces carry no `Star` instance. Its fixed points are exactly the complexifications of
+real-linear maps between real-valued functions (`ContMDiffMap.intrinsicConj_eq_self_iff`). -/
+def intrinsicConj (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯ where
+  toFun f := conj (P (conj f))
+  map_add' f g := by simp
+  map_smul' z f := by simp
+
+@[simp]
+theorem intrinsicConj_apply (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯)
+    (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    intrinsicConj P f = conj (P (conj f)) :=
+  (rfl)
+
+@[simp]
+theorem intrinsicConj_intrinsicConj (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    intrinsicConj (intrinsicConj P) = P := by
+  ext f x
+  simp
+
+theorem intrinsicConj_injective :
+    Function.Injective
+      (intrinsicConj : (C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) → _) :=
+  Function.LeftInverse.injective intrinsicConj_intrinsicConj
+
+@[simp]
+theorem intrinsicConj_add (P Q : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    intrinsicConj (P + Q) = intrinsicConj P + intrinsicConj Q := by
+  ext f x
+  simp
+
+@[simp]
+theorem intrinsicConj_sub (P Q : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    intrinsicConj (P - Q) = intrinsicConj P - intrinsicConj Q := by
+  ext f x
+  simp
+
+@[simp]
+theorem intrinsicConj_zero :
+    intrinsicConj (0 : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) = 0 := by
+  ext f x
+  simp
+
+@[simp]
+theorem intrinsicConj_neg (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    intrinsicConj (-P) = -intrinsicConj P := by
+  ext f x
+  simp
+
+@[simp]
+theorem intrinsicConj_id : intrinsicConj (LinearMap.id : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] _) =
+    LinearMap.id := by
+  ext f x
+  simp
+
+/-- Conjugation of linear maps is conjugate-linear. -/
+@[simp]
+theorem intrinsicConj_smul (z : ℂ) (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    intrinsicConj (z • P) = star z • intrinsicConj P := by
+  ext f x
+  simp
+
+/-- Conjugation of linear maps respects composition. -/
+theorem intrinsicConj_comp {E'' H'' L : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace L]
+    [ChartedSpace H'' L] (P : C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮K, L; 𝓘(ℝ, ℂ), ℂ⟯)
+    (Q : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    intrinsicConj (P ∘ₗ Q) = intrinsicConj P ∘ₗ intrinsicConj Q := by
+  ext f x
+  simp
+
+/-- The complexification of a real-linear map commutes with conjugation. -/
+@[simp]
+theorem intrinsicConj_complexifyLinearMap (D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, N; ℝ⟯) :
+    intrinsicConj (complexifyLinearMap D) = complexifyLinearMap D :=
+  linearMap_ext_ofReal fun u ↦ by simp
+
+/-- **Real operators.** A complex-linear map between complex-valued smooth functions commutes with
+conjugation exactly when it is the complexification of a real-linear map between real-valued
+functions, namely of `u ↦ Re (P u)`. -/
+theorem intrinsicConj_eq_self_iff {P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯} :
+    intrinsicConj P = P ↔ ∃ D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, N; ℝ⟯, complexifyLinearMap D = P := by
+  refine ⟨fun hP ↦ ⟨re ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap, ?_⟩, ?_⟩
+  · refine linearMap_ext_ofReal fun u ↦ ?_
+    -- `P` maps real functions to real functions, since it commutes with conjugation.
+    have him : (P (ofReal u)).im = 0 := by
+      have h := congrArg im (LinearMap.congr_fun hP (ofReal u))
+      rw [intrinsicConj_apply, conj_ofReal, conj_im] at h
+      ext x
+      simpa using neg_eq_self.1 (congrFun (congrArg DFunLike.coe h) x)
+    rw [complexifyLinearMap_ofReal, ← ofReal_re_add_I_smul_im (P (ofReal u)), him]
+    simp
+  · rintro ⟨D, rfl⟩
+    exact intrinsicConj_complexifyLinearMap D
+
+/-- **Real and imaginary parts of an operator.** Every complex-linear map `P` between
+complex-valued smooth functions is `A + i B` for the complexifications of real-linear maps `A`
+and `B` between real-valued functions, with `A = (P + Pᶜ) / 2` and `B = (P - Pᶜ) / (2 i)` for the
+conjugate `Pᶜ = intrinsicConj P`. -/
+theorem exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq
+    (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ∃ A B : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, N; ℝ⟯,
+      complexifyLinearMap A = (2⁻¹ : ℂ) • (P + intrinsicConj P) ∧
+      complexifyLinearMap B = (2 * Complex.I)⁻¹ • (P - intrinsicConj P) ∧
+      complexifyLinearMap A + Complex.I • complexifyLinearMap B = P := by
+  obtain ⟨A, hA⟩ := (intrinsicConj_eq_self_iff (P := (2⁻¹ : ℂ) • (P + intrinsicConj P))).1 (by
+    rw [intrinsicConj_smul, intrinsicConj_add, intrinsicConj_intrinsicConj, add_comm]
+    simp)
+  have hstar : star (2 * Complex.I)⁻¹ = -(2 * Complex.I)⁻¹ := by
+    rw [star_inv₀, star_mul', Complex.star_def, Complex.conj_I, map_ofNat, mul_neg, inv_neg]
+  obtain ⟨B, hB⟩ := (intrinsicConj_eq_self_iff
+    (P := (2 * Complex.I)⁻¹ • (P - intrinsicConj P))).1 (by
+      rw [intrinsicConj_smul, intrinsicConj_sub, intrinsicConj_intrinsicConj, hstar]
+      module)
+  refine ⟨A, B, hA, hB, ?_⟩
+  have hI : Complex.I * (2 * Complex.I)⁻¹ = 2⁻¹ := by
+    field_simp
+  rw [hA, hB, smul_smul, hI]
+  module
+
+/-- **Real and imaginary parts of an operator, explicitly.** Every complex-linear map `P` between
+complex-valued smooth functions is `A + i B` for the complexifications of the real-linear maps
+`A u = Re (P u)` and `B u = Im (P u)` on real-valued functions `u`. -/
+theorem complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp
+    (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    complexifyLinearMap (re ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) +
+      Complex.I • complexifyLinearMap (im ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) = P :=
+  linearMap_ext_ofReal fun u ↦ by
+    simpa [complexifyLinearMap_ofReal] using ofReal_re_add_I_smul_im (P (ofReal u))
 
 variable {U V : TopologicalSpace.Opens M}
 
@@ -562,5 +728,17 @@ theorem pushforwardOperator_trans {E'' H'' P : Type*} [NormedAddCommGroup E''] [
     pushforwardOperator (Φ.trans Ψ) = (pushforwardOperator Φ).trans (pushforwardOperator Ψ) := by
   ext P u x
   simp [compRightComplexAlgEquiv_trans]
+
+/-- An operator is invariant under the pushforward along `Φ` exactly when it commutes with
+precomposition by `Φ`: `P (u ∘ Φ) = (P u) ∘ Φ` for every `u`. -/
+theorem pushforwardOperator_eq_self_iff (Φ : M ≃ₘ^n⟮I, I⟯ M)
+    {P : Module.End ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} :
+    pushforwardOperator Φ P = P ↔
+      ∀ u, P (compRightComplexAlgEquiv Φ u) = compRightComplexAlgEquiv Φ (P u) := by
+  refine ⟨fun h u ↦ ContMDiffMap.ext fun x ↦ ?_, fun h ↦ LinearMap.ext fun u ↦
+    ContMDiffMap.ext fun y ↦ ?_⟩
+  · conv_rhs => rw [compRightComplexAlgEquiv_apply, ← h, pushforwardOperator_apply_apply,
+      Φ.symm_apply_apply]
+  · rw [pushforwardOperator_apply_apply, h, compRightComplexAlgEquiv_apply, Φ.apply_symm_apply]
 
 end Diffeomorph
