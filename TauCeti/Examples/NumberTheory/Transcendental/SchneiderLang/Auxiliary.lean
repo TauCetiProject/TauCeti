@@ -18,15 +18,7 @@ open TauCeti.SchneiderLang
 
 /-- With cutoff zero the sole term is the constant coefficient. -/
 example (d₀ d₁ n : ℕ) (h : d₀ ≤ n) (x : Fin d₁ → Fin n → ℂ) (c : ℂ) (z : Fin n → ℂ) :
-    auxiliaryFunction h x (Pi.single (0 : AuxiliaryIndex d₀ d₁ 0) c) z = c := by
-  have hτ (v : Fin n) : auxiliaryExponent h (0 : Fin d₀ → Fin 1) v = 0 := by
-    by_cases hv : (v : ℕ) < d₀
-    · let j : Fin d₀ := ⟨v, hv⟩
-      have hj : Fin.castLE h j = v := Fin.ext rfl
-      rw [← hj, auxiliaryExponent_castLE]
-      rfl
-    · exact auxiliaryExponent_eq_zero_of_le h _ (Nat.le_of_not_gt hv)
-  simp [auxiliaryFunction_apply_single, hτ]
+    auxiliaryFunction h x (Pi.single (0 : AuxiliaryIndex d₀ d₁ 0) c) z = c := by simp
 
 /-- The polynomial factor occupies the first coordinate even when the frequency only uses the
 second coordinate. -/

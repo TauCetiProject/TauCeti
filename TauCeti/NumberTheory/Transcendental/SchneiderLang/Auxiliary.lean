@@ -66,6 +66,21 @@ theorem auxiliaryExponent_eq_zero_of_le (h : d₀ ≤ n) (τ : Fin d₀ → Fin 
   rintro ⟨j, rfl⟩
   exact (not_le_of_gt j.isLt) hv
 
+/-- Evaluate the auxiliary exponent at any coordinate of the ambient space. -/
+theorem auxiliaryExponent_apply (h : d₀ ≤ n) (τ : Fin d₀ → Fin (T + 1)) (v : Fin n) :
+    auxiliaryExponent h τ v = if hv : (v : ℕ) < d₀ then (τ ⟨v, hv⟩ : ℕ) else 0 := by
+  by_cases hv : (v : ℕ) < d₀
+  · have hcast : Fin.castLE h ⟨v, hv⟩ = v := Fin.ext rfl
+    rw [dite_eq_left hv, ← auxiliaryExponent_castLE h τ, hcast]
+  · rw [dite_eq_right hv, auxiliaryExponent_eq_zero_of_le h τ (Nat.le_of_not_gt hv)]
+
+/-- The zero monomial exponent vector extends to zero in the ambient space. -/
+@[simp]
+theorem auxiliaryExponent_zero (h : d₀ ≤ n) :
+    auxiliaryExponent h (0 : Fin d₀ → Fin (T + 1)) = 0 := by
+  rw [auxiliaryExponent]
+  exact Function.extend_const (Fin.castLEEmb h) (0 : ℕ)
+
 /-- The total degree after extending a monomial's exponents by zero. -/
 theorem sum_auxiliaryExponent (h : d₀ ≤ n) (τ : Fin d₀ → Fin (T + 1)) :
     ∑ v, auxiliaryExponent h τ v = ∑ j, (τ j : ℕ) :=
