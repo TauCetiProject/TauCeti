@@ -194,12 +194,17 @@ theorem exists_basis_norm_eq_one_and_norm_coord_eq_one {ι 𝕜 E : Type*} [Fint
     isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
   have hball (f : Metric.closedBall (0 : StrongDual 𝕜 E) 1) : ‖(f : StrongDual 𝕜 E)‖ ≤ 1 :=
     mem_closedBall_zero_iff.1 f.property
+  -- Every vector is normed by some form of the unit ball.
+  have hnorm (v : E) :
+      ∃ f : Metric.closedBall (0 : StrongDual 𝕜 E) 1, ‖(f : StrongDual 𝕜 E) v‖ = ‖v‖ := by
+    obtain ⟨g, hg, hgv⟩ := exists_dual_vector'' 𝕜 v
+    exact ⟨⟨g, by simpa using hg⟩, by simp [hgv]⟩
   obtain ⟨a₀, z₀, hdual₀, hle₀⟩ := (RingHom.id 𝕜).exists_auerbachBasis
     (fun f : Metric.closedBall (0 : StrongDual 𝕜 E) 1 => (f : StrongDual 𝕜 E).toLinearMap)
     (fun v => (ContinuousLinearMap.apply 𝕜 𝕜 v).continuous.comp continuous_subtypeVal)
     (fun v hv => by
-      obtain ⟨g, hg, hgv⟩ := exists_dual_vector'' 𝕜 v
-      simpa [hgv] using hv ⟨g, by simpa using hg⟩)
+      obtain ⟨f, hf⟩ := hnorm v
+      exact norm_eq_zero.1 (by rw [← hf]; simpa using hv f))
   -- Reindex the basis and the chosen forms by `ι`.
   let e := Fintype.equivFinOfCardEq hι
   set z : Module.Basis ι 𝕜 E := z₀.reindex e.symm
@@ -212,14 +217,12 @@ theorem exists_basis_norm_eq_one_and_norm_coord_eq_one {ι 𝕜 E : Type*} [Fint
   -- The coordinate functional `z.coord k` is the form `a k` of the unit ball.
   have hak : ∀ k, LinearMap.toContinuousLinearMap (z.coord k) = a k := fun k =>
     ContinuousLinearMap.coe_injective <| z.ext fun j => by
-      rw [LinearMap.coe_toContinuousLinearMap, Module.Basis.coord_apply, Module.Basis.repr_self,
-        ContinuousLinearMap.coe_coe, hdual, Finsupp.single_apply]
-      exact if_congr eq_comm rfl rfl
+      simp [hdual, Finsupp.single_apply, eq_comm]
   have hone : ∀ k, (a k : StrongDual 𝕜 E) (z k) = 1 := fun k => by simp [hdual]
   -- `1 = ‖(a k) (z k)‖ ≤ ‖a k‖ * ‖z k‖`, and both factors are at most `1`.
   have hz : ∀ k, ‖z k‖ ≤ 1 := fun k => by
-    obtain ⟨g, hg, hgv⟩ := exists_dual_vector'' 𝕜 (z k)
-    simpa [hgv] using hle ⟨g, by simpa using hg⟩ k
+    obtain ⟨f, hf⟩ := hnorm (z k)
+    simpa [hf] using hle f k
   have hmul : ∀ k, 1 ≤ ‖(a k : StrongDual 𝕜 E)‖ * ‖z k‖ := fun k => by
     simpa [hone] using (a k : StrongDual 𝕜 E).le_opNorm (z k)
   refine ⟨z, fun k => ⟨le_antisymm (hz k) ?_, ?_⟩⟩
