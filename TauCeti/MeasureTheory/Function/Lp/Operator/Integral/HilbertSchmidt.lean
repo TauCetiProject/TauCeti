@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.L2.Product
 public import TauCeti.Analysis.OperatorIdeal.Family.HilbertSchmidt
+import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 
 /-!
@@ -135,14 +136,6 @@ end HilbertBasis
 
 namespace TauCeti
 
-/-- **Cauchy–Schwarz for the integral pairing**, in extended norms. -/
-theorem enorm_integral_mul_le {g f : β → 𝕜} (hg : AEStronglyMeasurable g ν)
-    (hf : AEStronglyMeasurable f ν) :
-    ‖∫ y, g y * f y ∂ν‖ₑ ≤ eLpNorm g 2 ν * eLpNorm f 2 ν :=
-  calc ‖∫ y, g y * f y ∂ν‖ₑ ≤ ∫⁻ y, ‖g y * f y‖ₑ ∂ν := eNorm_integral_le_lintegral_eNorm _
-    _ = eLpNorm (g • f) 1 ν := by rw [eLpNorm_one_eq_lintegral_eNorm (hg.smul hf)]; rfl
-    _ ≤ _ := eLpNorm_smul_le_mul_eLpNorm hg hf
-
 variable [SFinite ν]
 
 /-- For almost every `x`, the integrand `y ↦ K (x, y) * f y` of the integral operator is
@@ -166,10 +159,9 @@ private theorem memLp_and_eLpNorm_le (K : Lp 𝕜 2 (μ.prod ν)) (f : Lp 𝕜 2
       eLpNorm K 2 (μ.prod ν) * eLpNorm f 2 ν := by
     calc eLpNorm (fun x ↦ ∫ y, K (x, y) * f y ∂ν) 2 μ
         ≤ eLpNorm (fun x ↦ eLpNorm f 2 ν * eLpNorm (fun y ↦ K (x, y)) 2 ν) 2 μ := by
-          refine eLpNorm_mono_eNorm_ae hmeas ?_
-          filter_upwards [hK.prodMk_left] with x hx
+          refine eLpNorm_mono_eNorm_ae hmeas (ae_of_all _ fun x ↦ ?_)
           rw [eNorm_eq_self, mul_comm]
-          exact enorm_integral_mul_le hx hf
+          exact enorm_integral_mul_le (p := 2) (q := 2)
       _ = eLpNorm f 2 ν * eLpNorm K 2 (μ.prod ν) := by
           rw [eLpNorm_const_mul_ennreal hK.eLpNorm_prod_right,
             ← eLpNorm_prod_eq_eLpNorm_eLpNorm hK]
