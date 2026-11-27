@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.WeilDeligne.Rescale
 
-import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Range
 import TauCeti.LinearAlgebra.Eigenspace.ScaledConjugation
 
 /-!
@@ -58,21 +58,6 @@ namespace WeilDeligneParameter
 variable {E W V : Type*} [Field E] [Group W] [TopologicalSpace W]
   [AddCommGroup V] [Module E V] {deg : W →* Multiplicative ℤ} {q : ℕ}
 
-omit [TopologicalSpace W] in
-/-- If the degree map is not trivial, some `Φ` has nonzero degree generating its image. -/
-private theorem exists_deg_generator (hdeg : ∃ w, deg w ≠ 1) :
-    ∃ Φ : W, (deg Φ).toAdd ≠ 0 ∧ ∀ w : W, ∃ k : ℤ, deg w = deg Φ ^ k := by
-  obtain ⟨⟨x, hx⟩, hsurj⟩ := exists_zpow_surjective deg.range
-  obtain ⟨Φ, rfl⟩ := MonoidHom.mem_range.mp hx
-  have hgen (w : W) : ∃ k : ℤ, deg w = deg Φ ^ k := by
-    obtain ⟨k, hk⟩ := hsurj ⟨deg w, w, rfl⟩
-    exact ⟨k, (congrArg Subtype.val hk).symm.trans (by simp)⟩
-  refine ⟨Φ, fun h0 ↦ ?_, hgen⟩
-  obtain ⟨w₀, hw₀⟩ := hdeg
-  obtain ⟨k, hk⟩ := hgen w₀
-  have hΦ : deg Φ = 1 := by rw [← ofAdd_toAdd (deg Φ), h0, ofAdd_zero]
-  exact hw₀ (by rw [hk, hΦ, one_zpow])
-
 /-- **A power of `r(Φ)` commuting with the inertia image.** If the image under `r` of the kernel
 of the degree is finite, then for every `Φ` some nonzero power `r(Φ ^ d)` commutes with every
 `r(i)`, `i ∈ ker deg`. -/
@@ -111,7 +96,17 @@ theorem nonempty_iso_rescale [FiniteDimensional E V] (D : WeilDeligneParameter E
     (hq : ¬IsOfFinOrder (q : E)) (hdeg : ∃ w, deg w ≠ 1)
     (hI : (D.r '' (deg.ker : Set W)).Finite) {a : E} (ha : a ≠ 0) :
     Nonempty (Iso D (D.rescale a)) := by
-  obtain ⟨Φ, hΦ, hgen⟩ := exists_deg_generator hdeg
+  obtain ⟨Φ, hrange⟩ := deg.exists_range_eq_zpowers
+  have hgen (w : W) : ∃ k : ℤ, deg w = deg Φ ^ k := by
+    have hw : deg w ∈ Subgroup.zpowers (deg Φ) := by
+      rw [← hrange]
+      exact MonoidHom.mem_range.mpr ⟨w, rfl⟩
+    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp hw
+    exact ⟨k, hk.symm⟩
+  have hΦ : (deg Φ).toAdd ≠ 0 := fun h0 ↦ by
+    obtain ⟨w₀, hw₀⟩ := hdeg
+    obtain ⟨k, hk⟩ := hgen w₀
+    exact hw₀ (by rw [hk, ← ofAdd_toAdd (deg Φ), h0, ofAdd_zero, one_zpow])
   obtain ⟨d, hd, hcomm⟩ := D.exists_zpow_commute_of_finite hI Φ
   have hFr (w : W) : Commute (D.r (Φ ^ d)) (D.r w) := by
     obtain ⟨k, hk⟩ := hgen w
