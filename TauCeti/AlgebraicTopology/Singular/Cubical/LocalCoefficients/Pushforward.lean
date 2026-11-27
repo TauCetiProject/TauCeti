@@ -21,11 +21,11 @@ Extended to integral normalized cubical chains of `Z`, this is the **twisted pus
 source along maps of simply connected spaces by changing the base point, and is natural in the
 space and in the coefficient system.
 
-The same construction on chains of `Z` with coefficients in the ground ring `R` of `L`, for
-commutative `R`, is `NormalizedTwistedCubicalChain.scalarPushforward L f z₀`: a cube `d` with
-coefficient `r ∈ R` and `a ∈ L(f z₀)` goes to the cube `f ∘ d` with the coefficient `r • a`
-transported to its origin. It commutes with the boundaries as well and changes source in the same
-way.
+For commutative `R`, the `R`-linear extension of the twisted pushforward from the cubes to the
+chains of `Z` with coefficients in the ground ring `R` of `L` is
+`NormalizedTwistedCubicalChain.scalarPushforward L f z₀`: a cube `d` with coefficient `r ∈ R` and
+`a ∈ L(f z₀)` goes to the cube `f ∘ d` with the coefficient `r • a` transported to its origin. It
+commutes with the boundaries as well and changes source in the same way.
 
 ## Main definitions
 
@@ -47,9 +47,10 @@ way.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.map_pushforward`,
   `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.coefficientMap_pushforward`:
   naturality in the space and in the coefficient system.
-* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.boundary_scalarPushforward`,
-  `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.scalarPushforward_map`: the same
-  for coefficients in `R`.
+* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.boundary_scalarPushforward`: the
+  pushforward of chains with coefficients in `R` commutes with the boundaries.
+* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.scalarPushforward_map`: change of
+  the source for chains with coefficients in `R`, with change of base point.
 
 ## References
 
@@ -276,34 +277,23 @@ open TwistedCubicalChain
 /-- The **twisted pushforward with coefficients in the ground ring**: normalized cubical chains of
 a simply connected space `Z` with coefficients in `R` go to the normalized chains of `X` with
 coefficients in `L`, a cube `d` with a coefficient `a ∈ L(f z₀)` going to the cube `f ∘ d` with the
-coefficient transported from `f z₀` to its origin. This is `pushforward` for chains with
-coefficients in `R` rather than in `ℤ`. -/
+coefficient transported from `f z₀` to its origin. It is the `R`-linear extension of the integral
+`pushforward` from the cubes. -/
 def scalarPushforward (n : ℕ) :
     NormalizedCubicalChain Z R n →ₗ[R]
       (L.obj (FundamentalGroupoid.mk (f z₀)) →ₗ[R] L.NormalizedTwistedCubicalChain n) :=
-  Submodule.liftQ _ (Finsupp.linearCombination R
-      fun d ↦ (TwistedCubicalChain.degenerate L n).mkQ ∘ₗ pushCube L f z₀ d) fun y hy ↦ by
-    rw [LinearMap.mem_ker]
-    refine CubicalChain.degenerate_induction R
-      (P := fun y ↦ Finsupp.linearCombination R
-        (fun d ↦ (TwistedCubicalChain.degenerate L n).mkQ ∘ₗ pushCube L f z₀ d) y = 0)
-      (map_zero _) (fun d hd ↦ ?_)
-      (fun y y' hy hy' ↦ by rw [map_add, hy, hy', add_zero])
-      (fun r y hy ↦ by rw [map_smul, hy, smul_zero]) hy
-    ext a
-    rw [Finsupp.linearCombination_single, one_smul, LinearMap.comp_apply,
-      Submodule.mkQ_apply, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
-    exact pushCube_mem_degenerate hd a
+  NormalizedCubicalChain.desc
+    (fun d ↦ pushforward L f z₀ n (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d))
+    fun _ hd ↦ by rw [NormalizedCubicalChain.ofCube_eq_zero _ hd, map_zero]
 
 variable {L f z₀}
 
-/-- The twisted pushforward of the class of a cube, as a class of an unnormalized chain. -/
-theorem scalarPushforward_ofCube_eq_mk {n : ℕ} (d : SingularCube Z n)
-    (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
-    scalarPushforward L f z₀ n (NormalizedCubicalChain.ofCube Z R d) a =
-      Submodule.Quotient.mk (pushCube L f z₀ d a) := by
-  rw [scalarPushforward, NormalizedCubicalChain.ofCube_def, Submodule.liftQ_apply,
-    Finsupp.linearCombination_single, one_smul, LinearMap.comp_apply, Submodule.mkQ_apply]
+/-- On the class of a cube, the twisted pushforward with coefficients in `R` is the integral
+twisted pushforward. -/
+theorem scalarPushforward_ofCube_eq_pushforward {n : ℕ} (d : SingularCube Z n) :
+    scalarPushforward L f z₀ n (NormalizedCubicalChain.ofCube Z R d) =
+      pushforward L f z₀ n (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) :=
+  NormalizedCubicalChain.desc_ofCube _ _ d
 
 /-- The twisted pushforward of the class of a cube is the class of the composite cube, with the
 coefficient transported from `f z₀` to the origin of the cube. -/
@@ -311,9 +301,8 @@ coefficient transported from `f z₀` to the origin of the cube. -/
 theorem scalarPushforward_ofCube {n : ℕ} (d : SingularCube Z n)
     (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
     scalarPushforward L f z₀ n (NormalizedCubicalChain.ofCube Z R d) a =
-      ofCube L (f.comp d) (L.map (f.pathClass z₀ (d 0)) a) :=
-  (scalarPushforward_ofCube_eq_mk d a).trans
-    ((congrArg Submodule.Quotient.mk (pushCube_apply d a)).trans (ofCube_apply _ _).symm)
+      ofCube L (f.comp d) (L.map (f.pathClass z₀ (d 0)) a) := by
+  rw [scalarPushforward_ofCube_eq_pushforward, pushforward_ofCube]
 
 /-- The twisted pushforward with coefficients in the ground ring commutes with the boundaries. -/
 theorem boundary_scalarPushforward {n : ℕ} (y : NormalizedCubicalChain Z R (n + 1))
@@ -323,16 +312,14 @@ theorem boundary_scalarPushforward {n : ℕ} (y : NormalizedCubicalChain Z R (n 
   induction y using NormalizedCubicalChain.induction_on with
   | zero => simp
   | ofCube d =>
-    rw [scalarPushforward_ofCube_eq_mk, boundary_mk, boundary_pushCube,
-      NormalizedCubicalChain.boundary_ofCube]
-    simp only [map_sum, map_smul, map_sub, LinearMap.sum_apply,
-      LinearMap.smul_apply, LinearMap.sub_apply, scalarPushforward_ofCube_eq_mk,
-      ← Submodule.mkQ_apply]
-    -- The boundary of chains with coefficients in `R` carries the signs `(-1 : R) ^ i`, the
-    -- twisted boundary the signs `(-1 : ℤ) ^ i`.
+    rw [scalarPushforward_ofCube_eq_pushforward, boundary_pushforward,
+      NormalizedCubicalChain.boundary_ofCube, NormalizedCubicalChain.boundary_ofCube]
+    simp only [map_sum, map_smul, map_sub, LinearMap.sum_apply, LinearMap.smul_apply,
+      LinearMap.sub_apply, scalarPushforward_ofCube_eq_pushforward]
+    -- The boundary of chains with coefficients in `R` carries the signs `(-1 : R) ^ i`, that of
+    -- integral chains the signs `(-1 : ULift ℤ) ^ i`.
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← Int.cast_smul_eq_zsmul R ((-1 : ℤ) ^ (i : ℕ)), Int.cast_pow, Int.cast_neg,
-      Int.cast_one, map_smul, map_sub]
+    simp [ULift.smul_def, ← Int.cast_smul_eq_zsmul R]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
   | smul r y hy => simp only [map_smul, LinearMap.smul_apply, hy]
 
@@ -347,8 +334,9 @@ theorem scalarPushforward_map {Z' : Type*} [TopologicalSpace Z'] [SimplyConnecte
   induction y using NormalizedCubicalChain.induction_on with
   | zero => simp
   | ofCube d =>
-    rw [NormalizedCubicalChain.map_ofCube, scalarPushforward_ofCube_eq_mk,
-      scalarPushforward_ofCube_eq_mk, pushCube_comp]
+    rw [NormalizedCubicalChain.map_ofCube, scalarPushforward_ofCube_eq_pushforward,
+      scalarPushforward_ofCube_eq_pushforward, ← NormalizedCubicalChain.map_ofCube,
+      pushforward_map]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
   | smul r y hy => simp only [map_smul, LinearMap.smul_apply, hy]
 
