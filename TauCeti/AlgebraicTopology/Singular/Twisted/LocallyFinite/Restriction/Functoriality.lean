@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Restriction.Basic
-public import TauCeti.Topology.Compactness.Compact
+public import TauCeti.Topology.Maps.IsEmbedding
 import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!
