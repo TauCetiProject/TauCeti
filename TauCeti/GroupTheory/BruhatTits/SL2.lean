@@ -13,6 +13,8 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.RankOne
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Order.Interval.Finite
 
 /-!
 # The valued root datum of `SL₂`
@@ -44,7 +46,10 @@ Its (V5) is the computation that `(1 + d E_{b a}) (1 + c E_{a b}) (1 + e E_{b a}
 only if `d c = -1`, so that `ω d = -ω c`. It is compatible with the valuation map of the diagonal
 torus, `diag(t, t⁻¹) ↦ -ω t` (`TauCeti.BruhatTits.Valuation.isCompatible_sl2`), its value sets
 are `ω (Kˣ)`, and the nontriviality of `ω` is necessary
-(`TauCeti.BruhatTits.Valuation.exists_ne_zero_and_map_ne_zero_of_sl2_apply_eq`).
+(`TauCeti.BruhatTits.Valuation.exists_ne_zero_and_map_ne_zero_of_sl2_apply_eq`). It is discrete
+exactly when `ω` is, that is, when the positive values of `ω` are bounded away from `0`
+(`TauCeti.BruhatTits.Valuation.isDiscrete_sl2_iff`): for instance when `ω` takes integer values on
+`Kˣ`, but not when every rational number is a value of `ω`.
 
 ## Main definitions
 
@@ -62,13 +67,15 @@ are `ω (Kˣ)`, and the nontriviality of `ω` is necessary
 * `TauCeti.BruhatTits.Valuation.isCompatible_sl2`: the standard valuation is compatible with the
   valuation map of the diagonal torus.
 * `TauCeti.BruhatTits.Valuation.valueSet_sl2`: both value sets are `ω (Kˣ)`.
+* `TauCeti.BruhatTits.Valuation.isDiscrete_sl2_iff`: the standard valuation is discrete if and
+  only if the positive values of `ω` are bounded away from `0`.
 * `TauCeti.BruhatTits.sl2TorusValuationMap_mul` and `sl2TorusValuationMap_inv`: the valuation map
   of the diagonal torus is a homomorphism.
 
 ## References
 
 * F. Bruhat, J. Tits, *Groupes réductifs sur un corps local. I*, Publ. Math. IHÉS 41 (1972),
-  6.1.3 a), p. 109, and 6.2.3 a), pp. 117–118.
+  6.1.3 a), p. 109, 6.2.3 a), pp. 117–118, and Définition 6.2.21, p. 127.
 -/
 
 public section
@@ -561,6 +568,64 @@ theorem exists_ne_zero_and_map_ne_zero_of_sl2_apply_eq (φ : Valuation (RootDatu
   refine ⟨_, (ω.ne_top_iff).mp (hu ▸ WithTop.coe_ne_top), ?_⟩
   rw [hu]
   exact_mod_cast hr
+
+/-- The standard valuation of `SL₂(K)` is discrete exactly when the value set `ω (Kˣ)` meets
+every closed bounded interval of `ℝ` in a finite set. -/
+private theorem isDiscrete_sl2_iff_finite :
+    (sl2 R ω hω).IsDiscrete ↔
+      ∀ r s : ℝ, ({t : ℝ | ∃ x : K, x ≠ 0 ∧ ω x = t} ∩ Set.Icc r s).Finite := by
+  simp only [isDiscrete_iff, valueSet_sl2]
+  exact ⟨fun h ↦ h ⟨0, by norm_num⟩, fun h _ ↦ h⟩
+
+/-- The standard valuation of `SL₂(K)` is discrete exactly when the positive values of `ω` are
+bounded away from `0`, that is, when `ω` is a discrete valuation of `K`. -/
+theorem isDiscrete_sl2_iff :
+    (sl2 R ω hω).IsDiscrete ↔ ∃ ε : ℝ, 0 < ε ∧ ∀ x : K, 0 < ω x → (ε : WithTop ℝ) ≤ ω x := by
+  rw [isDiscrete_sl2_iff_finite]
+  constructor
+  · -- `ε` is a lower bound of the positive values of `ω`, with `ε > 0`.
+    intro h
+    obtain ⟨ε, hε, hmin⟩ := exists_lt_forall_le_of_finite_inter_Ioo one_pos
+      ((h 0 1).subset (Set.inter_subset_inter_right _ Set.Ioo_subset_Icc_self))
+    refine ⟨ε, hε, fun x hx ↦ ?_⟩
+    rcases eq_or_ne (ω x) ⊤ with h0 | h0
+    · simp [h0]
+    obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp h0
+    rw [← ht] at hx ⊢
+    have hx0 : x ≠ 0 := fun h ↦ by simp [h] at ht
+    exact_mod_cast hmin t ⟨x, hx0, ht.symm⟩ (by exact_mod_cast hx)
+  · -- Two values `a < b` of `ω` differ by the value `b - a = ω (y * x⁻¹)`, so by at least `ε`.
+    rintro ⟨ε, hε, hsep⟩
+    refine finite_inter_Icc_of_forall_le_sub hε ?_
+    rintro a ⟨x, -, hx⟩ b ⟨y, -, hy⟩ hab
+    have hyx : ω (y * x⁻¹) = ((b - a : ℝ) : WithTop ℝ) := by
+      simp [hx, hy, sub_eq_add_neg]
+    have hle := hsep (y * x⁻¹) (by rw [hyx]; exact_mod_cast sub_pos.mpr hab)
+    rwa [hyx, WithTop.coe_le_coe] at hle
+
+/-- If `ω` takes only integer values on `Kˣ`, as a normalized discrete valuation does, then the
+standard valuation of `SL₂(K)` is discrete. -/
+theorem isDiscrete_sl2_of_forall_exists_int
+    (h : ∀ x : K, x ≠ 0 → ∃ n : ℤ, ω x = ((n : ℝ) : WithTop ℝ)) : (sl2 R ω hω).IsDiscrete := by
+  refine (isDiscrete_sl2_iff R ω hω).mpr ⟨1, one_pos, fun x hx ↦ ?_⟩
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
+  obtain ⟨n, hn⟩ := h x hx0
+  rw [hn] at hx ⊢
+  have hn0 : 0 < n := by exact_mod_cast hx
+  exact_mod_cast (by omega : (1 : ℤ) ≤ n)
+
+/-- If every rational number is a value of `ω`, then the standard valuation of `SL₂(K)` is not
+discrete: `ω` takes arbitrarily small positive values. -/
+theorem not_isDiscrete_sl2_of_forall_rat (h : ∀ q : ℚ, ∃ x : K, ω x = ((q : ℝ) : WithTop ℝ)) :
+    ¬(sl2 R ω hω).IsDiscrete := by
+  rw [isDiscrete_sl2_iff]
+  rintro ⟨ε, hε, hsep⟩
+  obtain ⟨q, hq0, hqε⟩ := exists_rat_btwn hε
+  obtain ⟨x, hx⟩ := h q
+  have := hsep x (by rw [hx]; exact_mod_cast hq0)
+  rw [hx, WithTop.coe_le_coe] at this
+  exact hqε.not_ge this
 
 end Valuation
 

@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Holder.Jet.Bounds
+import TauCeti.Analysis.Holder.MeanValue
 
 /-!
 # Bounded `C^{k,α}` maps of every order
@@ -45,6 +46,8 @@ element of the jet space `TauCeti.CkHolderJet` with field domain `E`, shared wit
   `iteratedFDeriv`.
 * `TauCeti.CkHolderSpace.contDiff` and `TauCeti.CkHolderSpace.memHolder_iteratedFDeriv`: the
   regularity of an element; `TauCeti.CkHolderSpace.ofContDiff` is the converse constructor.
+* `TauCeti.CkHolderSpace.exists_coe_eq_of_contDiff`: for `α ≤ 1`, a `C^{k+1}` map with bounded
+  derivatives through order `k + 1` is a bounded `C^{k,α}` map.
 * `TauCeti.CkHolderSpace.norm_eq`: the norm is the sum of the supremum norms of the derivatives
   through order `k` and the `α`-Hölder seminorm of the `k`-th derivative.
 * `TauCeti.CkHolderSpace.norm_le_of_norm_iteratedFDeriv_le_of_holderWith`: the norm is controlled
@@ -675,6 +678,24 @@ theorem coe_ofContDiff (f : E → F) (hf : ContDiff ℝ k f)
   rw [← toFun_eq_coe, toFun, iteratedFDeriv, ofContDiff, toJet_mk, fieldL_jetOf,
     iteratedFDeriv_zero_eq_comp]
   simp
+
+/-- A `C^{k+1}` map on `E` with bounded derivatives through order `k + 1` lies in `C_b^{k,α}`, for
+`α ≤ 1`: its `k`-th derivative has a bounded derivative, so it is `α`-Hölder. -/
+theorem exists_coe_eq_of_contDiff (hα : α ≤ 1) (k : ℕ) {g : E → F}
+    (hg : ContDiff ℝ (k + 1 : ℕ) g)
+    (hbdd : ∀ i ≤ k + 1, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C) :
+    ∃ G : CkHolderSpace k α E F, ⇑G = g := by
+  obtain ⟨N₀, hN₀⟩ := hbdd k (by omega)
+  obtain ⟨N₁, hN₁⟩ := hbdd (k + 1) le_rfl
+  have hH : HolderWith (N₁.toNNReal + 2 * N₀.toNNReal) α (_root_.iteratedFDeriv ℝ k g) :=
+    holderWith_of_norm_le_of_norm_fderiv_le hα
+      (hg.differentiable_iteratedFDeriv (by exact_mod_cast k.lt_succ_self))
+      (fun x ↦ (hN₀ x).trans (Real.le_coe_toNNReal N₀))
+      fun x ↦ by
+        rw [norm_fderiv_iteratedFDeriv]
+        exact (hN₁ x).trans (Real.le_coe_toNNReal N₁)
+  exact ⟨ofContDiff g (hg.of_le (by norm_cast; omega))
+    (fun i hi ↦ hbdd i (by omega)) hH.memHolder, coe_ofContDiff _ _ _ _⟩
 
 /-- The derivative identities are closed under uniform convergence of the fields. -/
 private theorem isClosed_isJetGraph : IsClosed {J : CkHolderJet k α E E F | IsJetGraph J} := by
