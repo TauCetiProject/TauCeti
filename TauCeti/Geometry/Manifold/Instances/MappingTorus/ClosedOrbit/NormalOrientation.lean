@@ -41,8 +41,8 @@ second is not (`TauCeti.Geometry.Manifold.Morse.Bott.Examples.SphereCircle`).
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.apply_eq_of_forall_eq_mk`: the point `x` of a loop `t ↦ [t, x]`
-  parametrized by `ℝ / ℤ` is fixed by `φ`.
+* `TauCeti.SmoothMappingTorus.normalClass_mfderiv_mk_eq_zero_iff`: along a circle `t ↦ [t, x]`,
+  the normal class of a vertical vector `d[t, ·]ₓ w` vanishes only for `w = 0`.
 * `TauCeti.SmoothMappingTorus.continuous_normalClass_mfderiv_mk`: the normal classes of the
   vertical vectors `d[t, ·]ₓ w` along a circle `t ↦ [t, x]` form a continuous path in its normal
   bundle.
@@ -78,15 +78,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable (hn : (∞ : ℕ∞ω) ≠ 0)
   {c : SmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (AddCircle ((1 : ℕ) : ℝ)) (SmoothMappingTorus φ)}
 
-omit [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] in
-/-- The point `x` of a loop `t ↦ [t, x]` in the mapping torus, parametrized by the circle `ℝ / ℤ`,
-is fixed by `φ`, since `[1, x] = [0, x]`. -/
-theorem apply_eq_of_forall_eq_mk {γ : AddCircle ((1 : ℕ) : ℝ) → SmoothMappingTorus φ}
-    (hγ : ∀ t : ℝ, γ t = mk φ t x) : φ x = x :=
-  (mk_add_one_eq_mk_iff φ 0 x).1 (by
-    rw [zero_add, ← hγ, ← hγ]
-    exact congrArg γ (by simp))
-
 /-- The normal classes `w ↦ [d[t, ·]ₓ w]` of the vertical vectors at the point `c t` of a circle `c`
 in the mapping torus, as a linear map from the model space of `M`. -/
 private def verticalNormalMap (t : ℝ) :
@@ -99,12 +90,15 @@ private theorem verticalNormalMap_apply (t : ℝ) (w : E) :
       c.isImmersion.normalClass t hn (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w) :=
   (rfl)
 
-/-- Along a circle `c : t ↦ [t, x]`, a vertical vector `d[t, ·]ₓ w` with `w ≠ 0` is not tangent
-to `c`: the projection to the base circle kills it, and sends the velocity of `c` to `1`. -/
-private theorem injective_verticalNormalMap (hc : ∀ t : ℝ, c t = mk φ t x) (t : ℝ) :
-    Injective (verticalNormalMap (x := x) hn (c := c) t) := by
-  refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
-  obtain ⟨a, ha⟩ := (c.isImmersion.normalClass_eq_zero_iff _ hn _).1 hw
+/-- Along a circle `c : t ↦ [t, x]` in the mapping torus, the normal class of a vertical vector
+`d[t, ·]ₓ w` vanishes only for `w = 0`: the projection to the base circle kills `d[t, ·]ₓ w`, and
+sends the velocity of `c` to `1`, so a nonzero vertical vector is not tangent to `c`. -/
+theorem normalClass_mfderiv_mk_eq_zero_iff (hc : ∀ t : ℝ, c t = mk φ t x) (t : ℝ)
+    (w : TangentSpace I x) :
+    c.isImmersion.normalClass t hn (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w) = 0 ↔ w = 0 := by
+  refine ⟨fun hw ↦ ?_, fun hw ↦ by rw [hw, map_zero]; exact map_zero _⟩
+  obtain ⟨a, ha⟩ := (c.isImmersion.mem_tangentRange_iff _ hn _).1
+    ((c.isImmersion.normalClass_eq_zero_iff _ hn _).1 hw)
   have hper : IsPeriodicPt φ 1 x := IsFixedPt.isPeriodicPt (apply_eq_of_forall_eq_mk hc) 1
   have hcc : ⇑c = closedOrbit φ hper := funext fun s ↦ by
     induction s using QuotientAddGroup.induction_on with | H s => rw [hc, closedOrbit_coe]
@@ -116,13 +110,19 @@ private theorem injective_verticalNormalMap (hc : ∀ t : ℝ, c t = mk φ t x) 
   have h0 : mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (mk φ t x)
       (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w) = 0 :=
     LinearMap.mem_ker.1 (range_mfderiv_mk φ t x ▸ ⟨w, rfl⟩)
-  have ha' : mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) c t a = mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w := ha
   -- So `a = 0`; the tangent spaces at `c t = [t, x]` are all `ℝ × E`.
   have ha0 : a = 0 := h1.symm.trans
     ((congrArg (fun L : ℝ × E →L[ℝ] ℝ ↦ L (mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) c t a))
-      (mfderiv_congr_point (hc t))).trans (by rw [ha']; exact h0))
-  rw [ha0, map_zero] at ha'
-  exact injective_mfderiv_mk φ hn t x (ha'.symm.trans (map_zero _).symm)
+      (mfderiv_congr_point (hc t))).trans (by rw [ha]; exact h0))
+  rw [ha0, map_zero] at ha
+  exact injective_mfderiv_mk φ hn t x (ha.symm.trans (map_zero _).symm)
+
+/-- Along a circle `c : t ↦ [t, x]`, a vertical vector `d[t, ·]ₓ w` with `w ≠ 0` is not tangent
+to `c`. -/
+private theorem injective_verticalNormalMap (hc : ∀ t : ℝ, c t = mk φ t x) (t : ℝ) :
+    Injective (verticalNormalMap (x := x) hn (c := c) t) :=
+  (injective_iff_map_eq_zero _).2 fun w hw ↦
+    (normalClass_mfderiv_mk_eq_zero_iff hn hc t w).1 (by rwa [verticalNormalMap_apply] at hw)
 
 variable [FiniteDimensional ℝ E]
 
@@ -175,20 +175,17 @@ private theorem totalSpaceMk_normalFrame_add_one (hc : ∀ t : ℝ, c t = mk φ 
     (⟨((t + 1 : ℝ) : AddCircle ((1 : ℕ) : ℝ)), normalFrame hn hc b (t + 1) i⟩ :
         TotalSpace P fun s ↦ c.isImmersion.NormalSpace s hn) =
       ⟨(t : AddCircle ((1 : ℕ) : ℝ)), normalFrame hn hc (b.map D) t i⟩ := by
-  -- Normal classes over equal points of the circle with the same representative agree.
-  have hmk {s s' : AddCircle ((1 : ℕ) : ℝ)} (hss : s = s') (u : ℝ × E) :
-      (⟨s, c.isImmersion.normalClass s hn u⟩ :
-        TotalSpace P fun s ↦ c.isImmersion.NormalSpace s hn) =
-        ⟨s', c.isImmersion.normalClass s' hn u⟩ := by
-    subst hss
-    rfl
   have hs : ((t + 1 : ℝ) : AddCircle ((1 : ℕ) : ℝ)) = t := by
     rw [← Nat.cast_one (R := ℝ)]
     exact AddCircle.coe_add_period _ t
   rw [normalFrame_apply, normalFrame_apply, Basis.map_apply, hD]
+  -- Normal classes over equal points of the circle with the same representative agree, and
   -- `[t + 1, ·]` and `[t, φ ·]` have the same differential at the fixed point `x`.
-  exact (hmk hs _).trans (congrArg (fun u : ℝ × E ↦ (⟨(t : AddCircle ((1 : ℕ) : ℝ)),
-    c.isImmersion.normalClass t hn u⟩ : TotalSpace P fun s ↦ c.isImmersion.NormalSpace s hn))
+  exact (congrArg (fun s ↦ (⟨s, c.isImmersion.normalClass s hn
+    (mfderiv I (𝓘(ℝ).prod I) (mk φ (t + 1)) x (b i))⟩ :
+      TotalSpace P fun s ↦ c.isImmersion.NormalSpace s hn)) hs).trans
+    (congrArg (fun u : ℝ × E ↦ (⟨(t : AddCircle ((1 : ℕ) : ℝ)),
+      c.isImmersion.normalClass t hn u⟩ : TotalSpace P fun s ↦ c.isImmersion.NormalSpace s hn))
       (mfderiv_mk_add_one_of_apply_eq φ hn (apply_eq_of_forall_eq_mk hc) t (b i)))
 
 /-- The frames `normalFrame` vary continuously along the circle. -/
@@ -242,7 +239,7 @@ theorem nonempty_vectorBundleOrientation_normalSpace_of_det_pos
   · rw [hF.lift_comp_coe]
     exact VectorBundleOrientationCover.continuous_mk_basis_orientation
       (AddCircle.continuous_mk' (p := ((1 : ℕ) : ℝ))) _ (continuous_normalFrame hn hc hdim b)
-  induction s using QuotientAddGroup.induction_on with | H t => rfl
+  induction s using QuotientAddGroup.induction_on with | H t => rw [hF.lift_coe]
 
 /-- **The normal bundle of a circle in a mapping torus is not orientable when `dφₓ` reverses
 orientation.** Let `c` be an embedded circle `t ↦ [t, x]` in the mapping torus of `φ`, so that `x`

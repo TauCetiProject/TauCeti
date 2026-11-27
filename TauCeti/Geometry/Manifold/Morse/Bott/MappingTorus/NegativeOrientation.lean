@@ -109,13 +109,9 @@ private theorem totalSpaceMk_negativeNormalProjection_one {f : SmoothMappingToru
   have hvec : mfderiv I (𝓘(ℝ).prod I) (mk φ 1) x w = mfderiv I (𝓘(ℝ).prod I) (mk φ 0) x w' := by
     rw [← hw, ← mfderiv_mk_add_one_of_apply_eq φ (by simp) hx, zero_add]
   -- Projected normal classes over equal points of the circle with the same representative agree.
-  have hmk {s s' : AddCircle ((1 : ℕ) : ℝ)} (hss : s = s') (u : ℝ × E) (hu hu') :
-      (⟨s, ⟨hs.negativeNormalProjection hn g s (c.isImmersion.normalClass s hn u), hu⟩⟩ :
-        TotalSpace F' fun s ↦ hs.negativeNormalSpace hn g s) =
-        ⟨s', ⟨hs.negativeNormalProjection hn g s' (c.isImmersion.normalClass s' hn u), hu'⟩⟩ := by
-    subst hss
-    rfl
-  exact (hmk (by simp) _ hu (hs.negativeNormalProjection_apply_mem hn _ _)).trans
+  exact (congrArg (fun s ↦ (⟨s, ⟨hs.negativeNormalProjection hn g s (c.isImmersion.normalClass s hn
+    (mfderiv I (𝓘(ℝ).prod I) (mk φ 1) x w)), hs.negativeNormalProjection_apply_mem hn _ _⟩⟩ :
+      TotalSpace F' fun s ↦ hs.negativeNormalSpace hn g s)) (by simp)).trans
     (congrArg (TotalSpace.mk _) (Subtype.ext
       (congrArg (fun u ↦ hs.negativeNormalProjection hn g _ (c.isImmersion.normalClass _ hn u))
         hvec)))
