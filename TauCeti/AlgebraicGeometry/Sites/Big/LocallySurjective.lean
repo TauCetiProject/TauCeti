@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.CategoryTheory.Sites.LocallySurjective
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
-public import TauCeti.AlgebraicGeometry.Modules.Stalk
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
 
 /-!
