@@ -517,6 +517,25 @@ end LinearMap
 
 namespace Module.Basis
 
+/-- The determinant, in a product basis of a finite dependent product, of a family of vectors each
+concentrated in one factor, `Pi.single i (v i l)`, is the product of the determinants of the
+families `v i` in the factor bases. -/
+public theorem det_pi_single {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*}
+    [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)] (b : ∀ i, Basis (κ i) R (M i))
+    (v : ∀ i, κ i → M i) :
+    (Pi.basis b).det (fun x : Σ i, κ i ↦ Pi.single x.fst (v x.fst x.snd)) =
+      ∏ i, (b i).det (v i) := by
+  have he : (Pi.basis b).toMatrix (fun x : Σ i, κ i ↦ Pi.single x.fst (v x.fst x.snd)) =
+      Matrix.blockDiagonal' fun i ↦ (b i).toMatrix (v i) := by
+    ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
+    simp only [Basis.toMatrix_apply, Pi.basis_repr, Matrix.blockDiagonal'_apply]
+    split_ifs with h
+    · subst h
+      simp
+    · simp [Pi.single_eq_of_ne h]
+  simp only [Basis.det_apply, he, Matrix.det_blockDiagonal']
+
 /-- The determinant of a change between product bases of a finite dependent product is the
 product of the factor change-of-basis determinants. This is the dependent-family version of
 `Module.Basis.det_prod`. -/
@@ -524,15 +543,8 @@ public theorem det_pi {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] 
     [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*} [∀ i, Fintype (κ i)]
     [∀ i, DecidableEq (κ i)] (b b' : ∀ i, Basis (κ i) R (M i)) :
     (Pi.basis b).det (Pi.basis b') = ∏ i, (b i).det (b' i) := by
-  have he : (Pi.basis b).toMatrix (Pi.basis b') =
-      Matrix.blockDiagonal' fun i ↦ (b i).toMatrix (b' i) := by
-    ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
-    simp only [Basis.toMatrix_apply, Pi.basis_apply, Pi.basis_repr, Matrix.blockDiagonal'_apply]
-    split_ifs with h
-    · subst h
-      simp
-    · simp [Pi.single_eq_of_ne h]
-  simp only [Basis.det_apply, he, Matrix.det_blockDiagonal']
+  rw [← det_pi_single b fun i ↦ b' i]
+  exact congrArg _ (funext (Pi.basis_apply b'))
 
 end Module.Basis
 

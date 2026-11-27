@@ -27,6 +27,9 @@ arguments.
   its arguments of sign `1`.
 * `AlternatingMap.map_fin_four_cycle`: an alternating map of four arguments is invariant under a
   cyclic permutation of its last three arguments.
+* `AlternatingMap.exists_map_eq_units_smul`: if every vector of an injective family `w` is a vector
+  of a family `v` indexed by the same finite type, an alternating map takes the same value on `v`
+  and on `w` up to sign.
 -/
 
 public section
@@ -62,5 +65,22 @@ theorem map_fin_four_cycle {N : Type*} [AddCommGroup N] [Module R N] (f : M [⋀
     ext j
     fin_cases j <;> rfl
   rw [e, f.map_perm_of_sign_eq_one _ (by decide)]
+
+/-- If every vector of an injective family `w` is a vector of the family `v`, indexed by the same
+finite type, then `v` is `w` reordered, so an alternating map takes the same value on `v` and on
+`w` up to sign. -/
+theorem exists_map_eq_units_smul {N : Type*} [AddCommGroup N] [Module R N] [Finite ι]
+    (f : M [⋀^ι]→ₗ[R] N) {v w : ι → M} (hw : Function.Injective w)
+    (h : ∀ i, ∃ j, v j = w i) : ∃ ε : ℤˣ, f v = ε • f w := by
+  classical
+  have := Fintype.ofFinite ι
+  choose g hg using h
+  have hg' : g.Injective := fun i i' hii' ↦ hw (by rw [← hg, ← hg, hii'])
+  let σ := Equiv.ofBijective g (Finite.injective_iff_bijective.1 hg')
+  have hvw : v = w ∘ σ.symm := funext fun j ↦ by
+    obtain ⟨i, rfl⟩ := σ.surjective j
+    rw [Function.comp_apply, Equiv.symm_apply_apply]
+    exact hg i
+  exact ⟨Equiv.Perm.sign σ.symm, by rw [hvw, f.map_perm]⟩
 
 end AlternatingMap
