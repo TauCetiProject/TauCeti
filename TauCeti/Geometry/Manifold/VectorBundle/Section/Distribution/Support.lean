@@ -36,6 +36,8 @@ supported exactly at `x` (`TauCeti.BundleTest.dsupport_delta`).
 * `TauCeti.BundleTest.dsupport`: the support of a map on bundle tests, a closed set
   (`TauCeti.BundleTest.isClosed_dsupport`), characterized by
   `TauCeti.BundleTest.notMem_dsupport_iff`.
+* `TauCeti.BundleTest.dsupport_inter_eq_of_forall_tsupport_subset`: maps agreeing on the tests
+  supported in an open set have the same support there.
 * `TauCeti.BundleTest.isVanishingOn_compl_dsupport`: the localization principle, with
   `TauCeti.BundleTest.map_eq_zero_of_disjoint_dsupport` and
   `TauCeti.BundleTest.map_eq_map_of_eventuallyEq`.
@@ -116,6 +118,24 @@ theorem dsupport_zero : dsupport (0 : BundleTest I F V → W) = ∅ :=
 theorem dsupport_subset_dsupport (h : ∀ U, IsOpen U → IsVanishingOn T U → IsVanishingOn T' U) :
     dsupport T' ⊆ dsupport T :=
   compl_subset_compl.2 <| sUnion_subset_sUnion fun U hU ↦ ⟨hU.1, h U hU.1 hU.2⟩
+
+/-- If two maps on bundle tests agree on the tests supported in an open set `U`, their supports
+agree over `U`. -/
+theorem dsupport_inter_eq_of_forall_tsupport_subset (hU : IsOpen U)
+    (h : ∀ s : BundleTest I F V, closure {x | s x ≠ 0} ⊆ U → T s = T' s) :
+    dsupport T ∩ U = dsupport T' ∩ U := by
+  -- Near a point of `U`, an open set on which one map vanishes, cut down to `U`, is one on which
+  -- the other vanishes.
+  have key {A B : BundleTest I F V → W}
+      (hAB : ∀ s : BundleTest I F V, closure {x | s x ≠ 0} ⊆ U → A s = B s) :
+      dsupport A ∩ U ⊆ dsupport B ∩ U := by
+    refine fun x ⟨hx, hxU⟩ ↦ ⟨?_, hxU⟩
+    by_contra hxB
+    obtain ⟨N, hN, hxN, hBN⟩ := notMem_dsupport_iff.1 hxB
+    refine notMem_dsupport_iff.2 ⟨N ∩ U, hN.inter hU, ⟨hxN, hxU⟩, fun s hs ↦ ?_⟩ hx
+    rw [hAB s (hs.trans inter_subset_right)]
+    exact hBN s (hs.trans inter_subset_left)
+  exact (key h).antisymm (key fun s hs ↦ (h s hs).symm)
 
 end Zero
 
