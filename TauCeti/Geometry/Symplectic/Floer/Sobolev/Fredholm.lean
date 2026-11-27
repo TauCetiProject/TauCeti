@@ -194,15 +194,15 @@ private theorem jetCoeffAt_projIcc (ω : SymplecticForm V)
   obtain ⟨hJ, hKs, hKt⟩ := hcyl.eq_projIcc s t
   simp only [jetCoeffAt, hJ, hKs, hKt]
 
-/-- Data of an end of the cylinder that are the values of `C¹` cylinder data at a fixed `s = a`
-(with `C²` Hamiltonians) are `C¹` (with `C²` Hamiltonians). -/
-private theorem contDiff_endData_of_eq {J : ℝ × ℝ → V → AlmostComplexStructure V}
+/-- Data of an end of the cylinder that are the values of `Cⁿ` cylinder data at a fixed `s = a`
+(with `Cᵐ` Hamiltonians) are `Cⁿ` (with `Cᵐ` Hamiltonians). -/
+theorem contDiff_endData_of_eq {n m : WithTop ℕ∞} {J : ℝ × ℝ → V → AlmostComplexStructure V}
     {Kt : ℝ × ℝ → V → ℝ} {Je : ℝ → V → AlmostComplexStructure V} {He : ℝ → V → ℝ} (a : ℝ)
     (hJe : ∀ t, J (a, t) = Je t) (hHe : ∀ t, Kt (a, t) = He t)
-    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hKt : ContDiff ℝ 2 (uncurry Kt)) :
-    (ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap) ∧
-      ContDiff ℝ 2 (uncurry He) := by
+    (hJ : ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKt : ContDiff ℝ m (uncurry Kt)) :
+    (ContDiff ℝ n fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap) ∧
+      ContDiff ℝ m (uncurry He) := by
   obtain rfl : Je = fun t ↦ J (a, t) := funext fun t ↦ (hJe t).symm
   obtain rfl : He = fun t ↦ Kt (a, t) := funext fun t ↦ (hHe t).symm
   exact ⟨contDiff_comp_prodMap_prodMk_right hJ a, contDiff_comp_prodMap_prodMk_right hKt a⟩

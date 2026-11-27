@@ -114,8 +114,7 @@ theorem exists_finset_subset_hamiltonianVariations_range_sup_span_eq_top_cappedC
     hω (isCylindricalNearEnds_cappedCylinderComponent hHb (fun r ↦ (hHbs r).of_le (by norm_num))
       hL (fun _ ↦ (hJ.of_le (by norm_num)).contDiffAt) hJRp hJRm)
     hJ (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL 1)
-    (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL Complex.I) hJc hu hXm (hHbs inf)
-    (hHb inf) hxm hxmper hndm huxm hδm hXp (hHbs zero) (hHb zero) hxp hxpper hndp huxp hδp hU
-    hUne hUΩ hW
+    (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL Complex.I) hJc hu hXm (hHb inf) hxm
+    hxmper hndm huxm hδm hXp (hHb zero) hxp hxpper hndp huxp hδp hU hUne hUΩ hW
 
 end TauCeti.SymplecticForm

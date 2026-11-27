@@ -109,7 +109,7 @@ theorem exists_finset_subset_hamiltonianVariations_range_sup_span_eq_top_continu
       (hJp.of_le (by norm_num)) (hHm.of_le (by norm_num)) (hHp.of_le (by norm_num)) u)
     (contDiff_continuationAlmostComplex h₀ hJm hJp) contDiff_const
     (contDiff_uncurry_continuationHomotopy hHm hHp)
-    (fun _ _ ↦ compatible_continuationAlmostComplex h₀ (hJmc _ _) (hJpc _ _)) hu hXm hHm hHmper
-    hxm hxmper hndm huxm hδm hXp hHp hHpper hxp hxpper hndp huxp hδp hU hUne hUΩ hW
+    (fun _ _ ↦ compatible_continuationAlmostComplex h₀ (hJmc _ _) (hJpc _ _)) hu hXm hHmper hxm
+    hxmper hndm huxm hδm hXp hHpper hxp hxpper hndp huxp hδp hU hUne hUΩ hW
 
 end TauCeti.SymplecticForm
