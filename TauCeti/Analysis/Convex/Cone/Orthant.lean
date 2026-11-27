@@ -48,12 +48,13 @@ theorem setOf_forall_pos_subset_iff {K : ConvexCone ℝ (ι → ℝ)} (hKo : IsO
       Pointed.of_nonempty_of_isClosed (C := K.closure) (by simpa using hKn.closure) isClosed_closure
     -- Every point of the open orthant lies in the closure of `K`, hence in its interior.
     have horth : {x : ι → ℝ | ∀ i, 0 < x i} ⊆ closure K := fun y hy ↦ by
+      refine ConvexCone.mem_closure.1 ?_
       rw [← Finset.univ_sum_single y]
       refine Finset.sum_induction _ (· ∈ K.closure) (fun _ _ ha hb ↦ K.closure.add_mem ha hb) hzero
         fun i _ ↦ ?_
       have : Pi.single i (y i) = y i • (Pi.single i 1 : ι → ℝ) := by
         simpa using Pi.single_smul' i (y i) (1 : ℝ)
-      exact this ▸ K.closure.smul_mem (hy i) (h i)
+      exact this ▸ K.closure.smul_mem (hy i) (ConvexCone.mem_closure.2 (h i))
     have hint : interior (closure (K : Set (ι → ℝ))) = K := by
       rw [K.convex.interior_closure_eq_interior_of_nonempty_interior
         (hKo.interior_eq.symm ▸ hKn), hKo.interior_eq]
