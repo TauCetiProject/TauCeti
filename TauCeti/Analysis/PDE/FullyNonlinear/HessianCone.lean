@@ -9,6 +9,7 @@ public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Garding
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
 public import TauCeti.Analysis.MvPolynomial.NewtonMaclaurin
 public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
+import Mathlib.Analysis.Convex.Topology
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 
 /-!
@@ -25,7 +26,9 @@ from the basic cone API next to the definition, this makes `Γ_k` an admissible 
 `1 ≤ k ≤ n` (`TauCeti.isAdmissibleCone_hessianCone`). The largest index `Γ_n` is the positive
 orthant (`TauCeti.hessianCone_self`). By Gårding's theorem on the convexity of the cones of
 hyperbolic polynomials (`MvPolynomial.IsHyperbolic.convex_gardingCone`), every `Γ_k` is convex
-(`TauCeti.convex_hessianCone`); for `k > n` it is empty, since `σ_{n+1} = 0`.
+(`TauCeti.convex_hessianCone`); for `k > n` it is empty, since `σ_{n+1} = 0`
+(`TauCeti.le_of_mem_hessianCone`). Convexity and openness give `Γ_k + closure Γ_n ⊆ Γ_k`
+(`TauCeti.add_mem_hessianCone_of_nonneg`).
 
 ## Main results
 
@@ -35,6 +38,8 @@ hyperbolic polynomials (`MvPolynomial.IsHyperbolic.convex_gardingCone`), every `
 * `TauCeti.hessianCone_self`: `Γ_n` is the positive orthant.
 * `TauCeti.isAdmissibleCone_hessianCone`: for `1 ≤ k ≤ n`, `Γ_k` is an admissible cone.
 * `TauCeti.convex_hessianCone`: `Γ_k` is convex.
+* `TauCeti.le_of_mem_hessianCone`: `Γ_k` is empty for `k > n`.
+* `TauCeti.add_mem_hessianCone_of_nonneg`: `Γ_k + closure Γ_n ⊆ Γ_k`.
 
 ## References
 
@@ -86,6 +91,16 @@ theorem isAdmissibleCone_hessianCone (hk : 1 ≤ k) (hkn : k ≤ n) :
   mem_of_forall_pos hμ := mem_hessianCone_of_pos hμ hkn
   sum_pos hμ := sum_pos_of_mem_hessianCone hk hμ
 
+/-- The Hessian cone `Γ_k` is empty for `k > n`, since `σ_{n+1}` vanishes on `ℝⁿ`: a point of
+`Γ_k` forces `k ≤ n`. -/
+theorem le_of_mem_hessianCone {μ : Fin n → ℝ} (hμ : μ ∈ hessianCone n k) : k ≤ n := by
+  by_contra! hkn
+  have h := mem_hessianCone.1 hμ (n + 1) (mem_Icc.2 ⟨by omega, hkn⟩)
+  have hzero : esymm (Fin n) ℝ (n + 1) = 0 := by
+    rw [esymm_eq_multiset_esymm]
+    exact Multiset.esymm_of_card_lt (by simp)
+  simp [hzero] at h
+
 /-- **The Hessian cone `Γ_k` is convex** (Gårding). For `k ≤ n` it is the Gårding cone of the
 hyperbolic polynomial `σ_k`; for `k > n` it is empty, since `σ_{n+1}` vanishes on `ℝⁿ`. -/
 theorem convex_hessianCone (n k : ℕ) : Convex ℝ (hessianCone n k) := by
@@ -93,11 +108,19 @@ theorem convex_hessianCone (n k : ℕ) : Convex ℝ (hessianCone n k) := by
   · rw [← gardingCone_esymm_eq_hessianCone]
     exact (isHyperbolic_esymm (σ := Fin n) (by simpa using hkn)).convex_gardingCone
   · convert convex_empty (𝕜 := ℝ) (E := Fin n → ℝ)
-    refine Set.eq_empty_of_forall_notMem fun μ hμ ↦ ?_
-    have h := mem_hessianCone.1 hμ (n + 1) (mem_Icc.2 ⟨by omega, hkn⟩)
-    have hzero : esymm (Fin n) ℝ (n + 1) = 0 := by
-      rw [esymm_eq_multiset_esymm]
-      exact Multiset.esymm_of_card_lt (by simp)
-    simp [hzero] at h
+    exact Set.eq_empty_of_forall_notMem fun μ hμ ↦ (le_of_mem_hessianCone hμ).not_gt hkn
+
+/-- In the Hessian cone `Γ_k`, moving along a vector with nonnegative coordinates stays in the
+cone: `Γ_k + closure Γ_n ⊆ Γ_k`. -/
+theorem add_mem_hessianCone_of_nonneg {μ ν : Fin n → ℝ} (hμ : μ ∈ hessianCone n k)
+    (hν : ∀ i, 0 ≤ ν i) : μ + ν ∈ hessianCone n k := by
+  have hopen := isOpen_hessianCone n k
+  -- `μ / 2 + ν / 2` is a combination of an interior point and a point of the closure.
+  have h := (convex_hessianCone n k).combo_interior_closure_mem_interior
+    (hopen.interior_eq.symm ▸ hμ) (mem_closure_hessianCone_of_nonneg hν (le_of_mem_hessianCone hμ))
+    (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
+  rw [hopen.interior_eq] at h
+  convert smul_mem_hessianCone two_pos h using 1
+  module
 
 end TauCeti
