@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.CMField
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Lattice
 import TauCeti.LinearAlgebra.Matrix.Range
+import TauCeti.NumberTheory.NumberField.CMField.Basic
 
 /-!
 # Discriminants of lattices in the finite adeles of a CM field
@@ -28,6 +29,8 @@ of `M` is `B u` with `[det u] = [L : M]`
 ## Main declarations
 
 * `NumberField.IsCMField.finiteAdeleConj`: complex conjugation on the finite adeles.
+* `NumberField.IsCMField.instStarRingFiniteAdeleRing`: the finite adeles as a `StarRing` for
+  complex conjugation, extending that of `E` (`NumberField.IsCMField.star_algebraMap`).
 * `NumberField.IsCMField.gramDet`: the Gram determinant `det(B^*B)` of an adelic matrix.
 * `NumberField.IsCMField.latticeDiscriminant`: the discriminant of a lattice of rank `r`.
 * `NumberField.IsCMField.latticeDiscriminant_span_col`: the discriminant computed from any basis.
@@ -97,6 +100,26 @@ theorem finiteAdeleConj_finiteAdeleConj (a : 𝔸ᶠ[E]) :
     RingEquiv.ext fun x ↦ complexConj_apply_apply (K := E) x
   rw [finiteAdeleConj_def, ← RingEquiv.trans_apply, finiteAdeleEquiv_trans, h,
     finiteAdeleEquiv_refl, RingEquiv.refl_apply]
+
+/-- The finite adeles of a CM field are a `StarRing` for complex conjugation `finiteAdeleConj`,
+extending the `StarRing` structure of `E` (`NumberField.IsCMField.star_algebraMap`). This is the
+involution in the conjugate transposes `g* = star g` of matrices over `𝔸_f`, for instance in the
+unitary group `{g ∈ GL_n(𝔸_f) : g* g = 1}`. -/
+noncomputable instance instStarRingFiniteAdeleRing : StarRing 𝔸ᶠ[E] where
+  star := finiteAdeleConj E
+  star_involutive := finiteAdeleConj_finiteAdeleConj
+  star_mul a b := by rw [map_mul, mul_comm]
+  star_add := map_add (finiteAdeleConj E)
+
+/-- The involution of the finite adeles of a CM field is complex conjugation. -/
+theorem star_eq_finiteAdeleConj (a : 𝔸ᶠ[E]) : star a = finiteAdeleConj E a :=
+  (rfl)
+
+/-- The involution of the finite adeles extends that of `E`. -/
+@[simp]
+theorem star_algebraMap (x : E) :
+    star (algebraMap E 𝔸ᶠ[E] x) = algebraMap E 𝔸ᶠ[E] (star x) := by
+  rw [star_eq_finiteAdeleConj, finiteAdeleConj_algebraMap, star_eq_complexConj]
 
 /-- Complex conjugation preserves the integral finite adeles. It takes priority over the
 place-by-place unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp` lemma. -/

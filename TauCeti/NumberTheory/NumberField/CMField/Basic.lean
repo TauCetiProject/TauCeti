@@ -46,6 +46,9 @@ Hilbert's Theorem 90, and then `x / bⁿ` is fixed by complex conjugation.
   along field extensions.
 * `NumberField.IsCMField.ringOfIntegersComplexConj_apply_apply`: complex conjugation of the ring of
   integers is an involution.
+* `NumberField.IsCMField.star_eq_complexConj`, `NumberField.IsCMField.complexEmbedding_star`: the
+  `StarRing` structure of `K` is complex conjugation, and every complex embedding intertwines it
+  with that of `ℂ`.
 * `NumberField.IsCMField.div_complexConj_mul_complexConj_div_complexConj_eq_one`: for a unit `x`,
   `u = x / conj x` satisfies `u * conj u = 1`.
 * `NumberField.IsCMField.mul_complexConj_eq_one_of_pow_eq`: `n`-th roots of elements with
@@ -128,6 +131,18 @@ theorem ringOfIntegersComplexConj_apply_apply (x : 𝓞 K) :
     ringOfIntegersComplexConj K (ringOfIntegersComplexConj K x) = x := by
   refine RingOfIntegers.ext ?_
   rw [coe_ringOfIntegersComplexConj, coe_ringOfIntegersComplexConj, complexConj_apply_apply]
+
+variable {K} in
+/-- The involution of the `StarRing` structure of a CM field is complex conjugation. -/
+theorem star_eq_complexConj (x : K) : star x = complexConj K x :=
+  (rfl)
+
+variable {K} in
+/-- Every complex embedding of a CM field intertwines the involutions:
+`φ (star x) = star (φ x)`. -/
+@[simp]
+theorem complexEmbedding_star (φ : K →+* ℂ) (x : K) : φ (star x) = star (φ x) := by
+  rw [star_eq_complexConj, complexEmbedding_complexConj, starRingEnd_apply]
 
 section Pow
 
