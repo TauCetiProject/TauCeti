@@ -17,7 +17,9 @@ public import TauCeti.Analysis.Normed.Lp.ProdLp
 For inner product spaces `E` and `F` over `𝕜` (`[RCLike 𝕜]`), `WithLp.inlL2 𝕜 E F` and
 `WithLp.inrL2 𝕜 E F` are the coordinate embeddings `x ↦ (x, 0)` and `y ↦ (0, y)` into
 `WithLp 2 (E × F)`. These are linear isometries (`WithLp.isometry_inlL2`, `WithLp.isometry_inrL2`)
-of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inrL2`). When `E` and
+of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inrL2`), and right
+inverses of the coordinate projections, which are therefore surjective (`WithLp.fstL_surjective`,
+`WithLp.sndL_surjective`). When `E` and
 `F` are complete, they are the Hilbert-space adjoints of the coordinate projections
 `WithLp.fstL 2 𝕜 E F` and `WithLp.sndL 2 𝕜 E F` (`WithLp.adjoint_fstL`, `WithLp.adjoint_sndL`,
 `WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`). The diagonal embedding `WithLp.diagL2 𝕜 E`,
@@ -62,6 +64,14 @@ def inrL2 : F →L[𝕜] WithLp 2 (E × F) :=
 @[simp] theorem fstL_comp_inlL2 : (WithLp.fstL 2 𝕜 E F).comp (inlL2 𝕜 E F) = 1 := by ext; simp
 
 @[simp] theorem sndL_comp_inrL2 : (WithLp.sndL 2 𝕜 E F).comp (inrL2 𝕜 E F) = 1 := by ext; simp
+
+/-- The projection `WithLp.fstL 2 𝕜 E F` is surjective, with right inverse `WithLp.inlL2 𝕜 E F`. -/
+theorem fstL_surjective : Function.Surjective (WithLp.fstL 2 𝕜 E F) :=
+  fun x ↦ ⟨inlL2 𝕜 E F x, by simp⟩
+
+/-- The projection `WithLp.sndL 2 𝕜 E F` is surjective, with right inverse `WithLp.inrL2 𝕜 E F`. -/
+theorem sndL_surjective : Function.Surjective (WithLp.sndL 2 𝕜 E F) :=
+  fun y ↦ ⟨inrL2 𝕜 E F y, by simp⟩
 
 @[simp] theorem fstL_comp_inrL2 : (WithLp.fstL 2 𝕜 E F).comp (inrL2 𝕜 E F) = 0 := by ext; simp
 

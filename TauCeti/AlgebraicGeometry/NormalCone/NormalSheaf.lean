@@ -54,6 +54,8 @@ direct sums underlying `symmetricAlgebraToNormalConeAlgebra`.
 
 * `AlgebraicGeometry.Scheme.Hom.epi_toQuasicoherentAlgebra_map_symmetricAlgebraToNormalConeAlgebra`:
   the morphism of direct sums `⨁ₙ Symⁿ (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹` is an epimorphism.
+* `AlgebraicGeometry.Scheme.Hom.epi_symmetricAlgebraToNormalConeAlgebra_hom`: so is each
+  homogeneous component `Symⁿ (I/I²) ⟶ Iⁿ/Iⁿ⁺¹`.
 * `AlgebraicGeometry.Scheme.Hom.isClosedImmersion_normalConeToNormalSheaf`: the normal cone is a
   closed subscheme of the normal sheaf.
 * `AlgebraicGeometry.Scheme.Hom.normalConeToNormalSheaf_normalSheafToBase`: the embedding is a
@@ -125,6 +127,21 @@ instance epi_toQuasicoherentAlgebra_map_symmetricAlgebraToNormalConeAlgebra :
     subst e
     exact h
   exact key _
+
+/-- Every homogeneous component `Symⁿ (I/I²) ⟶ Iⁿ/Iⁿ⁺¹` of
+`symmetricAlgebraToNormalConeAlgebra` is an epimorphism: it is a retract of the epimorphism of
+direct sums `⨁ₙ Symⁿ (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹`. -/
+theorem epi_symmetricAlgebraToNormalConeAlgebra_hom (n : ℕ) :
+    Epi (i.symmetricAlgebraToNormalConeAlgebra.hom.hom.hom n) := by
+  -- `πTotal` is typed in `X.Modules` and the components in `SheafOfModules X.ringCatSheaf`, so
+  -- the instances are passed explicitly.
+  have hπ : IsSplitEpi (πTotal i.normalConeAlgebra n) :=
+    .mk' ⟨_, ιTotal_πTotal_self _ n⟩
+  have hc := @epi_comp _ _ _ _ _ _
+    i.epi_toQuasicoherentAlgebra_map_symmetricAlgebraToNormalConeAlgebra _
+    (@IsSplitEpi.epi _ _ _ _ _ hπ)
+  rw [toQuasicoherentAlgebra_map_πTotal] at hc
+  exact @epi_of_epi _ _ _ _ _ _ _ hc
 
 /-- The normal sheaf `N_X Y = Spec_X (Sym (I/I²))` of an immersion `i : X ⟶ Y`, as an affine
 scheme over `X`: the relative spectrum of the symmetric algebra of the conormal sheaf. -/

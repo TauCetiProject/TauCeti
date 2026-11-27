@@ -317,9 +317,9 @@ private theorem isInvertible_complBlock_sub_smul [CompleteSpace D]
     (complBlock ι B V - c • complEmbedding ι V).IsInvertible := by
   -- The second block of the invertible shift at `c₀` is invertible.
   have h₀' : (c₀ • complEmbedding ι V - complBlock ι B V).IsInvertible := by
-    rw [← neg_sub, ContinuousLinearMap.isInvertible_neg_iff]
+    rw [ContinuousLinearMap.isInvertible_sub_comm]
     exact (isInvertible_blocks_sub_smul hV hB hSymm h₀).2
-  rw [← neg_sub, ContinuousLinearMap.isInvertible_neg_iff,
+  rw [ContinuousLinearMap.isInvertible_sub_comm,
     ContinuousLinearMap.isInvertible_smul_sub_iff_injective
       (isCompactOperator_complEmbedding hι) h₀',
     injective_iff_map_eq_zero]
@@ -410,8 +410,7 @@ theorem eventually_index_familyDomainTrajectoryOperator_sub_smul_eq_domainSpectr
       (familyDomainTrajectoryOperator (p := 2) ι AL).index =
         domainSpectralFlow ι (fun s ↦ B - lam s • ι) ab.1 ab.2 := by
   obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hlam hbot htop
-  have h₀ : (cbot • ι - B).IsInvertible := by
-    rwa [← neg_sub, ContinuousLinearMap.isInvertible_neg_iff]
+  have h₀ : (cbot • ι - B).IsInvertible := ContinuousLinearMap.isInvertible_sub_comm.1 hBbot
   -- The values of `λ` lie in `[-M, M]`, which contains finitely many eigenvalues of the pencil.
   have hS := ContinuousLinearMap.finite_inter_setOf_not_isInvertible_smul_sub hι h₀
     (Metric.isBounded_Icc (-M) M)
