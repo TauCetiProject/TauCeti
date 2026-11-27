@@ -71,6 +71,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   `AlgebraicGeometry.Scheme.Hom.functionFieldMap_comp`: functoriality.
 * `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap`: along a dominant morphism whose stalk map
   at the generic point is an isomorphism (for instance an open immersion), `f^*` is an isomorphism.
+* `AlgebraicGeometry.Scheme.Hom.finrank_fieldRange_functionFieldMap_eq_residueDegree`: between
+  integral schemes, the degree `[K(X) : f^* K(Y)]` is the residue degree at the generic point.
 * `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap_iff_isIso_stalkMap`: `f^*` is an
   isomorphism exactly when the stalk map at the generic point is, and
   `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap_of_isOpenImmersion_morphismRestrict`: this
@@ -304,6 +306,43 @@ theorem isIso_functionFieldMap_iff_isIso_stalkMap (f : X ⟶ Y) [IsDominant f] :
       f.stalkMap (genericPoint X) = f.functionFieldMap := by
     rw [TopCat.Presheaf.stalkCongr_hom, functionFieldMap]
   rw [← h, isIso_comp_left_iff]
+
+/-- **The degree of a dominant morphism is its residue degree at the generic point.** For a
+dominant morphism `f : X ⟶ Y` of integral schemes, `[K(X) : f^* K(Y)]` is the residue degree
+`[κ(η_X) : κ(f η_X)]`, both being zero when the extension is infinite: at the generic points the
+stalks are the function fields, which are their own residue fields. -/
+theorem finrank_fieldRange_functionFieldMap_eq_residueDegree {X Y : Scheme.{u}} [IsIntegral X]
+    [IsIntegral Y] (f : X ⟶ Y) [IsDominant f] :
+    Module.finrank f.functionFieldMap.hom.fieldRange X.functionField =
+      f.residueDegree (genericPoint X) := by
+  have hy := f.genericPoint_eq_of_isDominant
+  -- The residue maps at the generic points are isomorphisms, since the stalks there are fields.
+  let ρX : X.functionField ≃+* X.residueField (genericPoint X) :=
+    RingEquiv.ofBijective (X.residue (genericPoint X)).hom
+      ⟨RingHom.injective _, X.residue_surjective _⟩
+  let ρY : Y.functionField ≃+* Y.residueField (f (genericPoint X)) :=
+    (RingEquiv.ofBijective (Y.residue (genericPoint Y)).hom
+      ⟨RingHom.injective _, Y.residue_surjective _⟩).trans
+      (Y.residueFieldCongr hy.symm).commRingCatIsoToRingEquiv
+  -- Under them, the residue-field map of `f` at the generic point becomes `f^*`.
+  have hsq : Y.residue (genericPoint Y) ≫ (Y.residueFieldCongr hy.symm).hom ≫
+      f.residueFieldMap (genericPoint X) = f.functionFieldMap ≫ X.residue (genericPoint X) := by
+    rw [Scheme.residue_residueFieldCongr_assoc, Scheme.residue_residueFieldMap, functionFieldMap,
+      TopCat.Presheaf.stalkCongr_hom, Category.assoc]
+  let := (f.residueFieldMap (genericPoint X)).hom.toAlgebra
+  refine (Algebra.finrank_eq_of_equiv_equiv
+    (ρY.symm.trans f.functionFieldMap.hom.rangeRestrictFieldEquiv) ρX.symm ?_).symm
+  ext c
+  obtain ⟨a, rfl⟩ := ρY.surjective c
+  apply ρX.injective
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    RingEquiv.trans_apply, RingEquiv.symm_apply_apply, RingEquiv.apply_symm_apply,
+    RingHom.algebraMap_toAlgebra]
+  have := congr($hsq a)
+  simp only [CommRingCat.comp_apply] at this
+  -- `ρX`, `ρY` and the range restriction of `f^*` apply the residue maps, the congruence
+  -- isomorphism and `f^*` by definition, and the inclusion of `f^* K(Y)` is the coercion.
+  exact this.symm
 
 /-- The pullback of rational functions along a dominant morphism of irreducible schemes whose stalk
 map at the generic point is an isomorphism, for instance a dominant open immersion, is an

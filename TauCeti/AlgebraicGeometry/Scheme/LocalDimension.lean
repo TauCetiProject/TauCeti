@@ -75,6 +75,9 @@ All in the namespace `TauCeti.AlgebraicGeometry`, except the last, which is in
   the transcendence degree over `k` of the residue field.
 * `finite_preimage_singleton_of_height_eq`: a fibre whose points all have the height of their
   image is finite.
+* `isFinite_of_height_apply_eq`: a proper morphism under which every point keeps its height is
+  finite; in particular a proper dominant morphism of irreducible curves is finite
+  (`isFinite_of_isDominant_of_topologicalKrullDim_eq_one`).
 * `exists_isFinite_morphismRestrict_of_height_add_one`: a proper dominant morphism from an
   irreducible scheme to a scheme of the same finite dimension is finite over a neighbourhood of
   every point of codimension one.
@@ -310,6 +313,44 @@ theorem finite_preimage_singleton_of_height_eq {Y : Scheme.{u}} [Y.Over (Spec (.
   have : T1Space (f.fiber y) := (f.fiberHomeo y).isEmbedding.t1Space
   have : Finite (f.fiber y) := TopologicalSpace.NoetherianSpace.finite_of_t1Space
   exact f.range_fiberι y ▸ Set.finite_range _
+
+/-- **Proper morphisms preserving heights are finite.** Let `f : X ⟶ Y` be a proper morphism of
+schemes over a field `k`, with `X` locally of finite type over `k`, such that every point of `X`
+has the height of its image. Then every fibre is finite, so `f` is quasi-finite and hence finite.
+The hypothesis holds for a dominant morphism of irreducible curves over `k`
+(`isFinite_of_isDominant_of_topologicalKrullDim_eq_one`). -/
+theorem isFinite_of_height_apply_eq {Y : Scheme.{u}} [Y.Over (Spec (.of k))] (f : X ⟶ Y)
+    [f.IsOver (Spec (.of k))] [IsProper f] (h : ∀ x, Order.height (f x) = Order.height x) :
+    IsFinite f := by
+  have : LocallyQuasiFinite f := .of_finite_preimage_singleton f fun y ↦
+    finite_preimage_singleton_of_height_eq k f y fun x hx ↦ hx ▸ (h x).symm
+  exact .of_isProper_of_locallyQuasiFinite f
+
+/-- **Proper dominant morphisms of curves are finite.** A proper dominant morphism `f : X ⟶ Y` of
+one-dimensional schemes over a field `k`, with `X` irreducible and locally of finite type over `k`
+(so that `Y` is irreducible too), is finite: it sends the generic point to the generic point, and
+closed points to closed points. -/
+theorem isFinite_of_isDominant_of_topologicalKrullDim_eq_one {Y : Scheme.{u}}
+    [Y.Over (Spec (.of k))] [IrreducibleSpace X] (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
+    [IsProper f] [IsDominant f] (hX : topologicalKrullDim X = 1)
+    (hY : topologicalKrullDim Y = 1) : IsFinite f := by
+  have : IrreducibleSpace Y := f.irreducibleSpace_of_isDominant
+  have h1 (Z : Scheme.{u}) [IrreducibleSpace Z] (hZ : topologicalKrullDim Z = 1) :
+      Order.height (genericPoint Z) = 1 := by
+    rw [← (genericPoint_spec Z).height_eq_topologicalKrullDim] at hZ
+    exact_mod_cast hZ
+  refine isFinite_of_height_apply_eq k f fun x ↦
+    le_antisymm (f.isClosedMap.specializingMap.height_apply_le_height x) ?_
+  by_cases hx : x = genericPoint X
+  · rw [hx, f.genericPoint_eq_of_isDominant, h1 X hX, h1 Y hY]
+  -- Every other point is a proper specialization of the generic point, so it is closed.
+  have hspec := (genericPoint_spec X).specializes (Set.mem_univ x)
+  have hlt : x < genericPoint X := ⟨hspec, fun h ↦ hx (h.antisymm hspec).eq⟩
+  have htop : Order.height (genericPoint X) < ⊤ := by
+    rw [h1 X hX]; exact ENat.one_lt_top
+  replace hlt := Order.height_strictMono hlt ((Order.height_mono hlt.le).trans_lt htop)
+  rw [h1 X hX, Order.lt_one_iff] at hlt
+  simp [hlt]
 
 /-- **Proper generically finite morphisms are finite in codimension one.** Let `f : X ⟶ Y` be a
 proper dominant morphism of schemes over a field `k`, with `X` irreducible and locally of
