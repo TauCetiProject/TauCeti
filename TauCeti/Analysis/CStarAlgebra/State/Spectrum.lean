@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
+public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Extension
 
@@ -19,8 +20,10 @@ spectral value `z ∈ spectrum ℂ a` of a normal `a` a state sending `star a ^ 
 `star z ^ m * z ^ n`
 (`exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`), hence a state on
 any `0 ≤ a` attaining `‖a‖ ^ n` (`exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
-`exists_positiveContinuousLinearMap_apply_eq_norm`), and a state on any normal `a` with
-`‖ω a‖ = ‖a‖` (`exists_positiveContinuousLinearMap_norm_apply_eq_norm`). Pulling back along
+`exists_positiveContinuousLinearMap_apply_eq_norm`), a state on any normal `a` with
+`‖ω a‖ = ‖a‖` (`exists_positiveContinuousLinearMap_norm_apply_eq_norm`), and, without any order
+instance, a normalized `StarPositiveFunctional` attaining `‖a‖ ^ 2` on `star a * a`
+(`exists_starPositiveFunctional_apply_star_mul_self_eq_norm_sq`). Pulling back along
 `A → 𝓜(ℂ, A)` yields a norm-one positive functional on any nontrivial C⋆-algebra `A` with
 `ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`
 (`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
@@ -105,6 +108,19 @@ theorem exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : M) [IsStarNor
   rw [hωa, ← coe_nnNorm, ← coe_nnNorm, hza]
 
 end Unital
+
+/-- On a nontrivial unital C⋆-algebra, every element `a` admits a normalized
+`StarPositiveFunctional` `φ` satisfying `φ (star a * a) = ‖a‖ ^ 2`. No order instance on `M` is
+required. -/
+theorem exists_starPositiveFunctional_apply_star_mul_self_eq_norm_sq {M : Type*} [CStarAlgebra M]
+    [Nontrivial M] (a : M) :
+    ∃ φ : StarPositiveFunctional M, φ 1 = 1 ∧ φ (star a * a) = (‖a‖ : ℂ) ^ 2 := by
+  let := _root_.CStarAlgebra.spectralOrder M
+  have := _root_.CStarAlgebra.spectralOrderedRing M
+  obtain ⟨ω, h1, -, ha⟩ :=
+    exists_positiveContinuousLinearMap_apply_eq_norm (star_mul_self_nonneg a)
+  refine ⟨StarPositiveFunctional.ofPositiveLinearMap ω.toPositiveLinearMap, by simpa using h1, ?_⟩
+  simpa [CStarRing.norm_star_mul_self, sq] using ha
 
 section NonUnital
 
