@@ -42,8 +42,8 @@ to `p`.
 * `TauCeti.ClassFieldTheory.localClassField_localNormOpenSubgroup`: the class field of the norm
   subgroup of `V` is the maximal abelian sublayer of `V`.
 * `TauCeti.ClassFieldTheory.localClassFieldPrimeToResidueCharacteristic_galoisConnection` and
-  `TauCeti.ClassFieldTheory.localClassFieldPrimeToLayer_localNormOpenSubgroupPrimeTo`:
-  the same statements in the prime-to-residue-characteristic range.
+  `localClassFieldPrimeToResidueCharacteristic_localNormOpenSubgroupPrimeTo`, in the same
+  namespace: the same statements in the prime-to-residue-characteristic range.
 
 ## References
 
@@ -197,14 +197,13 @@ def localClassFieldPrimeToResidueCharacteristicGaloisInsertion :
 prime-to-`p` class field of the norm subgroup of a layer of degree prime to `p` is its maximal
 abelian sublayer. -/
 @[simp]
-theorem localClassFieldPrimeToLayer_localNormOpenSubgroupPrimeTo
+theorem localClassFieldPrimeToResidueCharacteristic_localNormOpenSubgroupPrimeTo
     (V : OpenNormalLayerPrimeTo K p) :
-    (localClassFieldPrimeToLayer p (localNormOpenSubgroupPrimeTo V)).val =
+    (localClassFieldPrimeToResidueCharacteristic p (localNormOpenSubgroupPrimeTo V)).val.val =
       V.val.maximalAbelianLayer :=
   localClassField_unique (localClassFieldPrimeToResidueCharacteristic p _).val.property
     V.val.isAbelianClassFieldLayer_maximalAbelianLayer <| by
-      rw [localClassFieldPrimeToLayer_val,
-        localClassFieldPrimeToResidueCharacteristic_normSubgroup,
+      rw [localClassFieldPrimeToResidueCharacteristic_normSubgroup,
         localNormSubgroup_maximalAbelianLayer, localNormOpenSubgroupPrimeTo_val,
         localNormOpenSubgroup_toSubgroup]
 
