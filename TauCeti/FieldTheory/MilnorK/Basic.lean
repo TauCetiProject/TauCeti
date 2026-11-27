@@ -14,17 +14,15 @@ import TauCeti.FieldTheory.MilnorK.SteinbergPairing
 
 This file complements `TauCeti.RingTheory.MilnorK.Basic` and
 `TauCeti.RingTheory.MilnorK.Permutation` by proving additional field-specific corollaries for
-`TauCeti.MilnorK` over fields: characteristic-`2` and 2-torsion identities for `{a, a}`,
-integer-scalar sign rules for commuting symbols, and vanishing in degrees at least two over finite
-fields. Permutation-sign rules and general repeated-entry torsion live in
-`TauCeti.RingTheory.MilnorK.Permutation`.
+`TauCeti.MilnorK` over fields: characteristic-`2` and 2-torsion identities for `{a, a}`, and
+vanishing in degrees at least two over finite fields. Graded-commutativity sign rules live in
+`TauCeti.RingTheory.MilnorK.Basic`, and permutation-sign rules and general repeated-entry torsion
+live in `TauCeti.RingTheory.MilnorK.Permutation`.
 
 ## Main results
 
 * `TauCeti.MilnorK.two_nsmul_ofUnit_mul_self`, `TauCeti.MilnorK.ofUnit_mul_self_eq_zero_of_charTwo`:
   2-torsion and characteristic-`2` vanishing for `{a, a}`.
-* `TauCeti.MilnorK.ofUnit_mul_symbol`, `TauCeti.MilnorK.symbol_mul_symbol`: integer-scalar sign
-  rules for commuting a degree-one class or a symbol past a symbol.
 * `TauCeti.MilnorK.finiteField_vanishing`: `MilnorK.degree F n` vanishes for finite `F` and
   `2 ≤ n`.
 
@@ -51,26 +49,6 @@ theorem two_nsmul_ofUnit_mul_self (a : Fˣ) : 2 • (ofUnit a * ofUnit a) = 0 :=
 /-- In characteristic `2`, `ofUnit a * ofUnit a = 0`. -/
 theorem ofUnit_mul_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) : ofUnit a * ofUnit a = 0 :=
   isSteinbergPairing_ofUnit_mul.map_self_eq_zero_of_charTwo a
-
-/-- Moving a degree-one class past a length-`n` symbol multiplies by `(-1) ^ n`. -/
-theorem ofUnit_mul_symbol (a : Fˣ) (l : List Fˣ) :
-    ofUnit a * symbol l = ((-1 : ℤ) ^ l.length) • (symbol l * ofUnit a) := by
-  induction l with
-  | nil => simp
-  | cons b l ih =>
-    rw [symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_comm a b, neg_mul, mul_assoc, ih,
-      mul_smul_comm]
-    simp only [List.length_cons, pow_succ', mul_smul, neg_smul, one_smul, mul_assoc]
-
-/-- Multiplying two symbols commutes up to `(-1) ^ (l₁.length * l₂.length)`. -/
-theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
-    symbol l₁ * symbol l₂ = ((-1 : ℤ) ^ (l₁.length * l₂.length)) • (symbol l₂ * symbol l₁) := by
-  induction l₁ with
-  | nil => simp
-  | cons a l₁ ih =>
-    rw [symbol_cons, mul_assoc, ih, mul_smul_comm, ← mul_assoc, ofUnit_mul_symbol]
-    simp only [smul_mul_assoc, smul_smul, mul_assoc, List.length_cons, Nat.add_mul, Nat.one_mul,
-      pow_add]
 
 end FieldIdentities
 
