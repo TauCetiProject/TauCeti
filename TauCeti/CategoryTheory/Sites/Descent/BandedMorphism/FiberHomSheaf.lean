@@ -86,7 +86,7 @@ theorem fiberHomSheafFunctor_obj_obj (X : HomCategory bF bG) :
 /-- An arrow `m : X ⟶ Y` sends a local morphism `p` over `t : T ⟶ U` to `p` followed by the
 pullback of `m_U x` along `t`. -/
 theorem fiberHomSheafFunctor_map_hom_app {X Y : HomCategory bF bG} (m : X ⟶ Y)
-    (T : (Over U)ᵒᵖ) (p : (G.presheafHom y ((X.obj.app (.mk (op U))).toFunctor.obj x)).obj T) :
+    (T : (Over U)ᵒᵖ) (p : ((fiberHomSheafFunctor bF bG J U x y).obj X).obj.obj T) :
     ((fiberHomSheafFunctor bF bG J U x y).map m).hom.app T p =
       p ≫ (G.map T.unop.hom.op.toLoc).toFunctor.map
         ((m.hom.as.app (.mk (op U))).toNatTrans.app x) :=
