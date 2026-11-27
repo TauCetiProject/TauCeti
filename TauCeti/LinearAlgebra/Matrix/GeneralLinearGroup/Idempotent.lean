@@ -28,8 +28,8 @@ endomorphism of `Matrix n n A`, hence induces a group endomorphism `IsIdempotent
 * `IsIdempotentElem.cutGL_mul_cutGL_one_sub`: `g` is the product of its cuts along `e` and
   `1 - e`.
 * `IsIdempotentElem.cutGL_cutGL`: cutting along `f` and then along `e` is cutting along `e * f`.
-* `IsIdempotentElem.map_cutGL`, `IsIdempotentElem.star_cutGL`: cutting commutes with ring homs,
-  and with conjugate transposition along a self-adjoint idempotent.
+* `IsIdempotentElem.star_cutGL`: the conjugate transpose of the cut of `g` along `e` is the cut
+  of the conjugate transpose of `g` along `star e`.
 
 ## References
 
@@ -94,16 +94,11 @@ theorem cutGL_cutGL (he : IsIdempotentElem e) {f : A} (hf : IsIdempotentElem f) 
   simp only [val_cutGL, smul_add, smul_smul]
   module
 
-/-- Cutting along `e` commutes with a ring hom `φ`, which carries `e` to the idempotent `φ e`. -/
-theorem map_cutGL {B : Type*} [CommRing B] (φ : A →+* B) (he : IsIdempotentElem e) (g : GL n A) :
-    GeneralLinearGroup.map φ (he.cutGL g) = (he.map φ).cutGL (GeneralLinearGroup.map φ g) := by
-  ext k l
-  simp [GeneralLinearGroup.map_apply, Matrix.one_apply, apply_ite φ]
-
-/-- Cutting along a self-adjoint idempotent `e` commutes with conjugate transposition. -/
-theorem star_cutGL [StarRing A] (he : IsIdempotentElem e) (hstar : Star.star e = e) (g : GL n A) :
-    Star.star (he.cutGL g) = he.cutGL (Star.star g) := by
+/-- The conjugate transpose of the cut of `g` along an idempotent `e` is the cut of the conjugate
+transpose of `g` along the idempotent `star e`. -/
+theorem star_cutGL [StarRing A] (he : IsIdempotentElem e) (g : GL n A) :
+    Star.star (he.cutGL g) = he.star.cutGL (Star.star g) := by
   ext : 1
-  simp [Matrix.star_eq_conjTranspose, hstar]
+  simp [Matrix.star_eq_conjTranspose]
 
 end IsIdempotentElem

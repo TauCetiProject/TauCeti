@@ -73,6 +73,8 @@ operators; `G(s)` acts on the hermitian spaces with an adelic frame
 
 * `TauCeti.finiteAdelicUnitaryGroup.proj_conjPlace`: the components of `g ∈ G_f` at a finite
   place and at its conjugate.
+* `TauCeti.finiteAdelicUnitaryGroup.ext_proj`: an element of `G_f` is determined by its
+  components at the finite places.
 * `TauCeti.mem_integralAdelicUnitaryGroup_iff_mem_range_integralGL`: `K₀ = G_f ∩ GL_n(Ô)`;
   `TauCeti.mem_integralAdelicUnitaryGroup_iff`: `K₀` is the set of `g ∈ G_f` with integral
   entries, and `TauCeti.mem_integralAdelicUnitaryGroup_iff_forall_place`: the set of `g` with
@@ -188,6 +190,12 @@ theorem finiteAdelicUnitaryGroup.proj_conjPlace (g : finiteAdelicUnitaryGroup E 
   rw [proj_conjPlace_apply, GeneralLinearGroup.coe_inverseTranspose, transpose_apply,
     ← map_inv (GeneralLinearGroup.map _) (finiteAdelicUnitaryGroup.proj E ι w g),
     GeneralLinearGroup.map_apply, RingHom.coe_coe]
+
+/-- An element of `G_f` is determined by its components at the finite places. -/
+theorem finiteAdelicUnitaryGroup.ext_proj {g h : finiteAdelicUnitaryGroup E ι}
+    (H : ∀ w : HeightOneSpectrum (𝓞 E), proj E ι w g = proj E ι w h) : g = h := by
+  refine Subtype.ext <| Units.ext <| Matrix.ext fun i j ↦ FiniteAdeleRing.ext E fun w ↦ ?_
+  rw [← proj_apply, ← proj_apply, H w]
 
 /-! ### The integral subgroup `K₀` -/
 

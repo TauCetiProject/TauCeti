@@ -18,9 +18,9 @@ places if its component `g_w` is `1` at every finite place `w ∉ S`; these elem
 the complement of `S`.
 
 For a set `S` of finite places stable under conjugation `w ↦ conj w`, the **cut**
-`TauCeti.finiteAdelicUnitaryGroup.cut S hS g` of `g ∈ G_f` along `S` is the element with component
-`g_w` at the places `w ∈ S` and `1` elsewhere. It is `e_S • g + (1 - e_S) • 1` for the idempotent
-`e_S ∈ 𝔸_f` with component `1` on `S` and `0` elsewhere
+`TauCeti.finiteAdelicUnitaryGroup.cut E ι S hS g` of `g ∈ G_f` along `S` is the element with
+component `g_w` at the places `w ∈ S` and `1` elsewhere. It is `e_S • g + (1 - e_S) • 1` for the
+idempotent `e_S ∈ 𝔸_f` with component `1` on `S` and `0` elsewhere
 (`IsDedekindDomain.FiniteAdeleRing.indicatorOne`); conjugation fixes `e_S` because `S` is stable,
 so cutting preserves `G_f`. Cutting is a group endomorphism of `G_f`, and `g` is the product of
 its cuts along `S` and along the complement of `S`. Since the components at `w` and `conj w` of an
@@ -35,7 +35,7 @@ its integral subgroup `K₀` and to its elements supported at a single place and
 
 * `TauCeti.finiteAdelicUnitaryGroup.supportedOn E ι S`: the subgroup of the `g ∈ G_f` with
   `g_w = 1` for every finite place `w ∉ S`.
-* `TauCeti.finiteAdelicUnitaryGroup.cut S hS`: for `S` stable under conjugation
+* `TauCeti.finiteAdelicUnitaryGroup.cut E ι S hS`: for `S` stable under conjugation
   (`hS : conjPlace ⁻¹' S = S`), the endomorphism of `G_f` keeping the components on `S` and
   replacing the others by `1`.
 
@@ -78,14 +78,6 @@ namespace TauCeti.finiteAdelicUnitaryGroup
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E] {ι : Type*} [Fintype ι]
   [DecidableEq ι]
-
-/-! ### Components determine the element -/
-
-/-- An element of `G_f` is determined by its components at the finite places. -/
-theorem ext_proj {g h : finiteAdelicUnitaryGroup E ι}
-    (H : ∀ w : HeightOneSpectrum (𝓞 E), proj E ι w g = proj E ι w h) : g = h := by
-  refine Subtype.ext <| Units.ext <| Matrix.ext fun i j ↦ FiniteAdeleRing.ext E fun w ↦ ?_
-  rw [← proj_apply, ← proj_apply, H w]
 
 /-! ### Supports -/
 
@@ -138,7 +130,8 @@ private theorem cutGL_mem {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace
   rw [hS] at hstar
   have hg := g.property
   rw [mem_unitarySubgroup_iff, Unitary.mem_iff] at hg ⊢
-  rw [IsIdempotentElem.star_cutGL _ hstar, ← map_mul, ← map_mul, hg.1, hg.2, map_one]
+  simp only [IsIdempotentElem.star_cutGL, hstar]
+  rw [← map_mul, ← map_mul, hg.1, hg.2, map_one]
   exact ⟨rfl, rfl⟩
 
 variable (E ι) in
@@ -149,6 +142,14 @@ def cut (S : Set (HeightOneSpectrum (𝓞 E))) (hS : conjPlace ⁻¹' S = S) :
     finiteAdelicUnitaryGroup E ι →* finiteAdelicUnitaryGroup E ι :=
   ((FiniteAdeleRing.isIdempotentElem_indicatorOne S).cutGL.comp
     (finiteAdelicUnitaryGroup E ι).subtype).codRestrict _ (cutGL_mem hS)
+
+/-- As an element of `GL_n(𝔸_f)`, the cut of `g` along `S` is the cut of `g` along the indicator
+`e_S` of `S`. -/
+theorem coe_cut (S : Set (HeightOneSpectrum (𝓞 E))) (hS : conjPlace ⁻¹' S = S)
+    (g : finiteAdelicUnitaryGroup E ι) :
+    (cut E ι S hS g : GL ι 𝔸ᶠ[E]) =
+      (FiniteAdeleRing.isIdempotentElem_indicatorOne S).cutGL (g : GL ι 𝔸ᶠ[E]) := by
+  rfl
 
 /-- The underlying matrix of the cut of `g` along `S` is `e_S • g + (1 - e_S) • 1`. -/
 theorem val_cut (S : Set (HeightOneSpectrum (𝓞 E))) (hS : conjPlace ⁻¹' S = S)
@@ -185,11 +186,13 @@ theorem proj_cut_of_notMem {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlac
   rw [proj_cut, ite_eq_right hw]
 
 /-- The cut of `g` along `S` is supported on `S`. -/
+@[simp]
 theorem cut_mem_supportedOn {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' S = S)
     (g : finiteAdelicUnitaryGroup E ι) : cut E ι S hS g ∈ supportedOn E ι S :=
   mem_supportedOn_iff.2 fun _ hw ↦ proj_cut_of_notMem hS g hw
 
 /-- Cutting along `S` fixes exactly the elements supported on `S`. -/
+@[simp]
 theorem cut_eq_self_iff {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' S = S)
     {g : finiteAdelicUnitaryGroup E ι} : cut E ι S hS g = g ↔ g ∈ supportedOn E ι S := by
   refine ⟨fun h ↦ h ▸ cut_mem_supportedOn hS g, fun hg ↦ ext_proj fun w ↦ ?_⟩
@@ -198,6 +201,7 @@ theorem cut_eq_self_iff {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace �
   · rw [proj_cut_of_notMem hS g hw, mem_supportedOn_iff.1 hg w hw]
 
 /-- The image of cutting along `S` is the subgroup of elements supported on `S`. -/
+@[simp]
 theorem range_cut {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' S = S) :
     (cut E ι S hS).range = supportedOn E ι S :=
   le_antisymm (by rintro _ ⟨g, rfl⟩; exact cut_mem_supportedOn hS g)
@@ -208,21 +212,17 @@ theorem cut_cut {S T : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' 
     (hT : conjPlace ⁻¹' T = T) (g : finiteAdelicUnitaryGroup E ι) :
     cut E ι S hS (cut E ι T hT g) =
       cut E ι (S ∩ T) (by rw [Set.preimage_inter, hS, hT]) g := by
-  classical
-  refine ext_proj fun w ↦ ?_
-  rw [proj_cut, proj_cut, proj_cut, Set.mem_inter_iff]
-  by_cases hwS : w ∈ S <;> by_cases hwT : w ∈ T <;> simp [hwS, hwT]
+  refine Subtype.ext ?_
+  simp only [coe_cut, IsIdempotentElem.cutGL_cutGL, FiniteAdeleRing.indicatorOne_mul_indicatorOne]
 
 /-- **Decomposition along a set of places.** An element of `G_f` is the product of its cuts along
 a set `S` of finite places stable under conjugation and along the complement of `S`. -/
 theorem cut_mul_cut_compl {S : Set (HeightOneSpectrum (𝓞 E))} (hS : conjPlace ⁻¹' S = S)
     (g : finiteAdelicUnitaryGroup E ι) :
     cut E ι S hS g * cut E ι Sᶜ (by rw [Set.preimage_compl, hS]) g = g := by
-  refine ext_proj fun w ↦ ?_
-  by_cases hw : w ∈ S
-  · rw [map_mul, proj_cut_of_mem hS g hw, proj_cut_of_notMem _ g (Set.notMem_compl_iff.2 hw),
-      mul_one]
-  · rw [map_mul, proj_cut_of_notMem hS g hw, proj_cut_of_mem _ g (Set.mem_compl hw), one_mul]
+  refine Subtype.ext ?_
+  simp only [Subgroup.coe_mul, coe_cut, ← FiniteAdeleRing.one_sub_indicatorOne,
+    IsIdempotentElem.cutGL_mul_cutGL_one_sub]
 
 /-! ### Cuts and the integral subgroup `K₀` -/
 
