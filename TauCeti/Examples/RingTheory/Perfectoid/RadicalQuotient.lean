@@ -50,6 +50,10 @@ example (I : Ideal R) (T : Type*) [CommRing T] [IsIntegralPerfectoid p T] (f : R
 /-! ### Frobenius-root ideals -/
 
 -- The Frobenius-root ideal of `1` is the unit ideal, so its quotient is the zero ring.
+example : Subsingleton (R ⧸ frobeniusRootIdeal R p 1) :=
+  Ideal.Quotient.subsingleton_iff.mpr frobeniusRootIdeal_one
+
+-- The quotient by the Frobenius-root ideal of any `f` is integral perfectoid, `f = 1` included.
 example : IsIntegralPerfectoid p (R ⧸ frobeniusRootIdeal R p 1) := inferInstance
 
 -- Killing `f` in an integral perfectoid ring kills all its `p ^ n`-th roots.
