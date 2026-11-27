@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.LatticeSum
-import Mathlib.NumberTheory.LSeries.HurwitzZeta
 import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
@@ -257,15 +257,19 @@ theorem summable_periodic_gaussian {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
   refine (mul_le_mul_of_nonneg_right hcoeff (by positivity)).trans_eq ?_
   ring
 
-private theorem tsum_periodic_gaussian_eq_residue_sum {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
+/-- For degrees zero and one, group a bilateral Gaussian sum with periodic coefficients into
+residue classes, expressed using the even or odd Hurwitz theta kernel. -/
+theorem hasSum_periodic_gaussian_residue_sum {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
     {j : ℕ} (hj : j ≤ 1) {t : ℝ} (ht : t ≠ 0) :
-    (∑' n : ℤ, Φ n * W j ((n : ℝ) * t)) =
-      ((N : ℝ) * t : ℂ) ^ j * ∑ a : ZMod N, Φ a *
-        (if j = 0 then (evenKernel (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ)
-          else (oddKernel (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ)) := by
+    HasSum (fun n : ℤ ↦ Φ n * W j ((n : ℝ) * t))
+      (((N : ℝ) * t : ℂ) ^ j * ∑ a : ZMod N, Φ a *
+        ((if j = 0 then evenKernel else oddKernel) (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ)) := by
   have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   have hsq : 0 < ((N : ℝ) * t) ^ 2 := sq_pos_of_ne_zero (mul_ne_zero hN ht)
-  rw [TauCeti.tsum_int_eq_sum_fin_tsum (summable_periodic_gaussian Φ j ht) N]
+  have hsummable := summable_periodic_gaussian Φ j ht
+  convert hsummable.hasSum using 1
+  symm
+  rw [TauCeti.tsum_int_eq_sum_fin_tsum hsummable N]
   rw [mul_sum, ← (finEquiv N).toEquiv.sum_comp]
   have hfin (a : Fin N) : (finEquiv N).toEquiv a = (a.val : ZMod N) := finEquiv_apply a
   simp only [hfin]
@@ -334,8 +338,7 @@ theorem tsum_periodic_gaussian_eq_invDFT {N : ℕ} [NeZero N] (Φ : ZMod N → �
     rw [← Real.rpow_natCast_mul (by positivity)]
     norm_num
   have hkernel (a : ZMod N) :
-      (if j = 0 then (evenKernel (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ)
-        else (oddKernel (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ)) =
+      ((if j = 0 then evenKernel else oddKernel) (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ) =
       ((y : ℂ) ^ (2 * j + 1)) *
         (if j = 0 then (cosKernel (toAddCircle a) (y ^ 2) : ℂ)
           else (sinKernel (toAddCircle a) (y ^ 2) : ℂ)) := by
@@ -348,7 +351,7 @@ theorem tsum_periodic_gaussian_eq_invDFT {N : ℕ} [NeZero N] (Φ : ZMod N → �
       exact congrArg ofReal (by simpa only [y, one_pow] using
         (div_pow (1 : ℝ) ((N : ℝ) * t) 3).symm)
   -- Pass from the residue classes to the dual integer sum using the kernel identities.
-  rw [tsum_periodic_gaussian_eq_residue_sum Φ hj ht.ne']
+  rw [(hasSum_periodic_gaussian_residue_sum Φ hj ht.ne').tsum_eq]
   simp_rw [hkernel, mul_left_comm (Φ _), ← mul_sum,
     ← (hasSum_weighted_fourier_kernel Φ hj hy.ne').tsum_eq]
   simp_rw [← tsum_mul_left]
