@@ -210,9 +210,9 @@ theorem four_dvd_d_add_one : 4 ∣ P.d + 1 := (by norm_num : 4 ∣ 8).trans P.ei
 
 /-- `d ≡ 7 (mod 8)`. -/
 theorem d_mod_eight : P.d % 8 = 7 := by
-  refine Nat.mod_eq_of_modEq ?_ (by decide)
-  exact (P.modEq_div_two_sub_one.of_dvd ((by norm_num : 8 ∣ 18480).trans P.dvd_q₀)).trans
-    (div_two_sub_one_modEq_seven P.q₀_ne_zero P.dvd_q₀)
+  have hd := P.modEq_div_two_sub_one.of_dvd ((by decide : 8 ∣ 18480).trans P.dvd_q₀)
+  have h₇ := div_two_sub_one_modEq_seven P.q₀_ne_zero P.dvd_q₀
+  simp_all [Nat.ModEq]
 
 /-- `d` is odd. -/
 theorem odd_d : Odd P.d := Nat.odd_iff.2 (by have := P.d_mod_eight; omega)
