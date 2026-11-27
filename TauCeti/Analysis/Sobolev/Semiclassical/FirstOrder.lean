@@ -102,6 +102,24 @@ theorem semiclassicalFirstOrderOperator_apply (h : ℝ) (a : Fin n → Coordinat
 variable {a : Fin n → CoordinateSpace n → F →L[ℝ] G} {b : CoordinateSpace n → F →L[ℝ] G}
   {u : CoordinateSpace n → F}
 
+/-- A first-order operator is additive on differentiable functions. -/
+theorem semiclassicalFirstOrderOperator_add {v : CoordinateSpace n → F}
+    (hu : Differentiable ℝ u) (hv : Differentiable ℝ v) (h : ℝ) :
+    semiclassicalFirstOrderOperator h a b (u + v) =
+      semiclassicalFirstOrderOperator h a b u + semiclassicalFirstOrderOperator h a b v := by
+  funext x
+  simp only [semiclassicalFirstOrderOperator_apply, coordinateDeriv_singleton, Pi.add_apply,
+    fderiv_add (hu x) (hv x), add_apply, smul_add, map_add, Finset.sum_add_distrib]
+  abel
+
+/-- A first-order operator commutes with multiplication by real scalars. -/
+theorem semiclassicalFirstOrderOperator_smul (c : ℝ) (h : ℝ) :
+    semiclassicalFirstOrderOperator h a b (c • u) =
+      c • semiclassicalFirstOrderOperator h a b u := by
+  funext x
+  simp only [semiclassicalFirstOrderOperator_apply, coordinateDeriv_const_smul, Pi.smul_apply,
+    smul_comm h c, map_smul, Finset.smul_sum, smul_add]
+
 /-- The operator as a sum of functions: the terms `aₗ (h ∂ₗ u)` and `b u`. -/
 private theorem semiclassicalFirstOrderOperator_eq (h : ℝ) :
     semiclassicalFirstOrderOperator h a b u =
