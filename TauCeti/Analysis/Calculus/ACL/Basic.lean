@@ -43,6 +43,9 @@ normed space. Openness of `Ω` is assumed only for the `C¹` result.
   `TauCeti.lineFunction u x i` is the line function `t ↦ u(x + (t - xᵢ) eᵢ)` of `u` through `x` in
   the `i`-th direction. A box has volume `∏ⱼ ENNReal.ofReal (bⱼ - aⱼ)`
   (`TauCeti.volume_coordinateBox`).
+  A point of `ℝⁿ⁺¹` lies in a box iff its `i`-th coordinate lies in `[aᵢ, bᵢ]` and its other
+  coordinates lie in the face `Π_{j ≠ i} [a_j, b_j]`
+  (`TauCeti.toLp_insertNth_mem_coordinateBox_iff`).
   For `x` in a box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` stays in the box
   (`TauCeti.add_sub_smul_single_mem_coordinateBox`), and the line function depends only on the
   coordinates of `x` other than the `i`-th (`TauCeti.lineFunction_add_smul_single`). Taking line
@@ -190,6 +193,15 @@ theorem coordinateBox_eq_preimage_Icc (a b : Fin n → ℝ) :
     coordinateBox a b = (EuclideanSpace.equiv (Fin n) ℝ) ⁻¹' Icc a b := by
   ext x
   simp [Pi.le_def, forall_and]
+
+/-- The point of `ℝⁿ⁺¹` with `i`-th coordinate `t` and the other coordinates `y` lies in the box
+`Π_j [a_j, b_j]` iff `t ∈ [aᵢ, bᵢ]` and `y` lies in the face `Π_{j ≠ i} [a_j, b_j]`. -/
+theorem toLp_insertNth_mem_coordinateBox_iff {a b : Fin (n + 1) → ℝ} (i : Fin (n + 1))
+    (t : ℝ) (y : Fin n → ℝ) :
+    (WithLp.toLp 2 (i.insertNth t y) : EuclideanSpace ℝ (Fin (n + 1))) ∈ coordinateBox a b ↔
+      t ∈ Icc (a i) (b i) ∧ y ∈ Icc (fun k ↦ a (i.succAbove k)) (fun k ↦ b (i.succAbove k)) := by
+  rw [coordinateBox_eq_preimage_Icc, mem_preimage, PiLp.coe_continuousLinearEquiv,
+    WithLp.ofLp_toLp, Fin.insertNth_mem_Icc]
 
 /-- A closed coordinate box is compact. -/
 theorem isCompact_coordinateBox (a b : Fin n → ℝ) : IsCompact (coordinateBox a b) := by
