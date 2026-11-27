@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredh
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Normal.PhaseFrame
 import TauCeti.Geometry.Manifold.Algebra.Quotient.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial.Quotient
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
@@ -205,20 +206,6 @@ theorem contMDiffCovariantDerivativeOn_torusCauchyRiemannOperator {n : ℕ∞ω}
         ((((ContinuousLinearMap.lsmul ℝ ℂ).flip
           (Complex.conjCLE : ℂ →L[ℝ] ℂ)).contDiff.comp_contMDiff hf) x)
     exact hd.add_section hz
-
-/-- `∂bar` of a function on `ℂ ⧸ Λ`, at the class of `z`, is the conjugate Wirtinger derivative
-of its lift to `ℂ` at `z`. -/
-theorem SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_quotientMk_apply
-    (σ : ℂ ⧸ Λ → ℂ) (z v : ℂ) :
-    (ofComplexManifold ℂ (ℂ ⧸ Λ)).dbarFunction σ z v =
-      conjWirtingerDeriv (fun w : ℂ ↦ σ w) z v := by
-  have hJ : (ofComplexManifold ℂ (ℂ ⧸ Λ)) (z : ℂ ⧸ Λ) v = Complex.I * v :=
-    ofComplexManifold_apply _ v
-  refine ((ofComplexManifold ℂ (ℂ ⧸ Λ)).dbarFunction_apply σ (z : ℂ ⧸ Λ) v).trans ?_
-  rw [hJ, AddSubgroup.mvfderiv_quotientMk_apply, AddSubgroup.mvfderiv_quotientMk_apply,
-    conjWirtingerDeriv_apply]
-  simp [Complex.real_smul]
-  ring
 
 /-- **The operator read on the cover.** At the class of `z`, the value of
 `torusCauchyRiemannOperator` on `σ` is that of `∂bar + ν + μ conj` on the lift `σ ∘ (↑)` at `z`,
