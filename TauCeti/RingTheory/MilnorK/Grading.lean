@@ -153,12 +153,8 @@ theorem mapDegree_degreeEquiv (f : R →+* S) (n : ℕ)
     (f := (mapDegree f n).comp (degreeEquiv R n).toLinearMap)
     (g := (degreeEquiv S n).toLinearMap.comp (mapQuotient f n))
     (quotient_linearMap_ext fun x ↦ Subtype.ext ?_) q
-  have hx : PiTensorProduct.tprod ℤ x =
-      PiTensorProduct.tprod ℤ fun k ↦ Additive.ofMul (Additive.toMul (x k)) := by
-    simp only [ofMul_toMul]
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, mapDegree_apply, coe_degreeEquiv_mk,
-    mapQuotient_mk_tprod]
-  rw [hx, ofTensorPower_tprod, ofTensorPower_tprod, map_symbol]
+    mapQuotient_mk_tprod, ofTensorPower_tprod_toMul, map_symbol]
   congr 1
   simp [List.map_ofFn, Function.comp_def]
 
@@ -173,10 +169,6 @@ end QuotientFunctoriality
 section DegreeTwo
 
 variable (R : Type*) [CommRing R]
-
-private theorem ofMul_vecCons (a b : Rˣ) :
-    (fun k ↦ Additive.ofMul (![a, b] k)) = ![Additive.ofMul a, Additive.ofMul b] :=
-  funext <| Fin.forall_fin_two.mpr (by simp)
 
 @[simp]
 private theorem tensorProductEquivTensorSquare_symm_int_tprod (x : Fin 2 → Additive Rˣ) :
@@ -200,11 +192,9 @@ private theorem map_steinbergRelations_two :
   · rw [MatsumotoGroup.steinbergRelations_def, Submodule.span_le]
     rintro _ ⟨a, b, hab, rfl⟩
     rw [SetLike.mem_coe, Submodule.mem_map]
-    refine ⟨PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b], ?_, ?_⟩
-    · rw [← ofMul_vecCons]
-      exact tprod_mem_steinbergRelations ![a, b] 0 (by omega) (by simpa using hab)
-    · rw [LinearEquiv.coe_coe, tensorProductEquivTensorSquare_symm_int_tprod]
-      simp
+    refine ⟨PiTensorProduct.tprod ℤ fun k ↦ Additive.ofMul (![a, b] k), ?_, ?_⟩
+    · exact tprod_mem_steinbergRelations ![a, b] 0 (by omega) (by simpa using hab)
+    · simp [tensorProductEquivTensorSquare_symm_int_tprod]
 
 /-- The canonical `ℤ`-linear equivalence `MilnorK.degree R 2 ≃ₗ[ℤ] MatsumotoGroup R`, taking
 `MilnorK.symbol [a, b]` to `MatsumotoGroup.symbol a b`. -/
@@ -221,8 +211,8 @@ theorem degreeTwoEquivMatsumotoGroup_degreeEquiv_mk (x : Fin 2 → Additive Rˣ)
     degreeTwoEquivMatsumotoGroup R
         (degreeEquiv R 2 (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x))) =
       MatsumotoGroup.symbol (Additive.toMul (x 0)) (Additive.toMul (x 1)) := by
-  rw [← MatsumotoGroup.mk_tmul, ofMul_toMul, ofMul_toMul]
-  simp [degreeTwoEquivMatsumotoGroup, tensorProductEquivTensorSquare_symm_int_tprod]
+  simpa [degreeTwoEquivMatsumotoGroup, tensorProductEquivTensorSquare_symm_int_tprod] using
+    MatsumotoGroup.mk_tmul (Additive.toMul (x 0)) (Additive.toMul (x 1))
 
 /-- `degreeTwoEquivMatsumotoGroup R` sends the two-entry Milnor symbol `{a, b}` to
 `MatsumotoGroup.symbol a b`. -/
@@ -231,9 +221,8 @@ theorem degreeTwoEquivMatsumotoGroup_symbol_pair (a b : Rˣ) :
       MatsumotoGroup.symbol a b := by
   have hsub : (⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ : degree R 2) =
       degreeEquiv R 2 (Submodule.Quotient.mk
-        (PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b])) := by
-    apply Subtype.ext
-    rw [coe_degreeEquiv_mk, ← ofMul_vecCons, ofTensorPower_tprod]
+        (PiTensorProduct.tprod ℤ fun k ↦ Additive.ofMul (![a, b] k))) := by
+    ext
     simp [List.ofFn_succ]
   rw [hsub, degreeTwoEquivMatsumotoGroup_degreeEquiv_mk]
   simp

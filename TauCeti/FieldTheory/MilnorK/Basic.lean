@@ -84,9 +84,10 @@ theorem ofUnit_mul_ofUnit_eq_zero_of_finite (a b : Fˣ) : ofUnit a * ofUnit b = 
 
 /-- Over a finite field, every symbol of length at least two vanishes. -/
 theorem symbol_eq_zero_of_finite {l : List Fˣ} (hl : 2 ≤ l.length) : symbol l = 0 := by
-  match l with
-  | a :: b :: rest =>
-    rw [symbol_cons, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_eq_zero_of_finite a b, zero_mul]
+  rcases l with _ | ⟨a, _ | ⟨b, rest⟩⟩
+  · simp at hl
+  · simp at hl
+  · rw [symbol_cons, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_eq_zero_of_finite a b, zero_mul]
 
 /-- Milnor K-groups of finite fields vanish in every degree at least two. -/
 theorem finiteField_vanishing (F : Type*) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :

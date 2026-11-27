@@ -439,11 +439,17 @@ theorem degree_induction_on {n : ℕ} {motive : degree R n → Prop} (x : degree
     (smul : ∀ (k : ℤ) (x : degree R n), motive x → motive (k • x)) :
     motive x := by
   rcases x with ⟨v, hv⟩
+  have hv' : v ∈ Submodule.span ℤ (MilnorK.symbol '' {l : List Rˣ | l.length = n}) := by
+    rw [← degree_eq_span]
+    exact hv
   refine Submodule.span_induction
-    (p := fun y hy ↦ motive ⟨y, (degree_eq_span (R := R) n).symm ▸ hy⟩)
-    (fun _ ⟨l, hl, h⟩ ↦ by subst h; exact symbol l hl) zero
-    (fun a b _ _ hma hmb ↦ add ⟨a, _⟩ ⟨b, _⟩ hma hmb)
-    (fun k a _ hma ↦ smul k ⟨a, _⟩ hma) ((degree_eq_span (R := R) n) ▸ hv)
+    (p := fun y hy ↦ motive ⟨y, by rw [degree_eq_span]; exact hy⟩) ?_ zero ?_ ?_ hv'
+  · rintro _ ⟨l, hl, rfl⟩
+    exact symbol l hl
+  · intro a b ha hb hma hmb
+    exact add ⟨a, by rw [degree_eq_span]; exact ha⟩ ⟨b, by rw [degree_eq_span]; exact hb⟩ hma hmb
+  · intro k a ha hma
+    exact smul k ⟨a, by rw [degree_eq_span]; exact ha⟩ hma
 
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 := by
   simpa using symbol_mem_degree [a]

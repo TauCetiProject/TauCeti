@@ -253,6 +253,13 @@ theorem ofTensorPower_tprod {n : ℕ} (f : Fin n → Rˣ) :
   | zero => simp
   | succ n ih => simp [List.ofFn_succ, ← ih (fun i ↦ f i.succ), Function.comp_def]
 
+/-- `ofTensorPower` sends a pure tensor `tprod ℤ x` to the symbol of its entries viewed in
+`Rˣ`. -/
+theorem ofTensorPower_tprod_toMul {n : ℕ} (x : Fin n → Additive Rˣ) :
+    ofTensorPower R n (PiTensorProduct.tprod ℤ x) =
+      symbol (List.ofFn fun k ↦ Additive.toMul (x k)) := by
+  simpa only [ofMul_toMul] using ofTensorPower_tprod (R := R) fun k ↦ Additive.toMul (x k)
+
 /-- `ofTensorPower` turns the multiplication of tensor powers into the product of the Milnor
 K-ring. -/
 @[simp]
