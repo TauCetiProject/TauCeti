@@ -75,14 +75,14 @@ theorem kostantRootSubgroupParam_injective_of_surjective {V : Type} [AddCommGrou
     ← kostantRootSubgroupMatrix_def e h ρ M hM i hnil b,
     ← pointsMulEquiv_kostantRootSubgroupCoordinateMap,
     ← pointsMulEquiv_kostantRootSubgroupCoordinateMap] at hmat
-  have hcomp := congrArg WithConv.ofConv ((GeneralLinear.pointsMulEquiv n).injective (by
-    simpa only [GeneralLinear.pointsMulEquiv_apply] using hmat))
-  have hq : q₁ = q₂ := by
-    apply WithConv.ofConv_injective
-    apply AlgHom.ext
-    intro x
-    obtain ⟨y, rfl⟩ := hsurj x
-    exact congrArg (fun g : GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ] A => g y) hcomp
+  have hq : q₁ = q₂ :=
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
+      (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b) hsurj (CommAlgCat.of ℤ A)
+      (by
+        rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+          CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+        exact (GeneralLinear.pointsMulEquiv n).injective (by
+          simpa only [GeneralLinear.pointsMulEquiv_apply] using hmat))
   exact AdditiveGroup.gaPointsMulEquiv.symm.injective hq
 
 end TauCeti.UniversalEnvelopingAlgebra

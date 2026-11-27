@@ -50,11 +50,41 @@ section
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
-/-- Internal helper for `exists_isPrimitive_kostantRootOperator_of_isSl2Triple`: produces a nonzero
-power of `kostantRootOperator` hitting `N! • b j` for a positive-weight primitive basis vector
-`b j`. Kept private because its return shape is tailored to the prime-adic factorial argument
-below. -/
-private theorem exists_pow_kostantRootOperator_eq_factorial_smul
+/-- Every element of an integral lattice `M` with basis `b` lies in the rational span of `b`. -/
+private theorem coe_mem_span_basis {V η : Type*} [AddCommGroup V] [Module ℚ V]
+    {M : AddSubgroup V} (b : Module.Basis η ℤ M) (m : M) :
+    (m : V) ∈ Submodule.span ℚ (Set.range fun r : η => (b r : V)) := by
+  have hm : m ∈ Submodule.span ℤ (Set.range b) := b.span_eq.symm ▸ trivial
+  induction hm using Submodule.span_induction with
+  | mem _ hx =>
+    obtain ⟨r, rfl⟩ := hx
+    exact Submodule.subset_span ⟨r, rfl⟩
+  | zero => exact Submodule.zero_mem _
+  | add _ _ _ _ hx hy => exact Submodule.add_mem _ hx hy
+  | smul c _ _ hx =>
+    rw [AddSubgroupClass.coe_zsmul, ← Int.cast_smul_eq_zsmul ℚ]
+    exact Submodule.smul_mem _ _ hx
+
+/-- Every Kostant root operator preserves the rational span of an integral basis `b` of `M`. -/
+private theorem root_apply_mem_span_basis
+    {L ι κ V η : Type*} [LieRing L] [LieAlgebra ℚ L] [AddCommGroup V] [Module ℚ V]
+    (e : ι → L) (h : κ → L) (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+    (M : AddSubgroup V) (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
+    (b : Module.Basis η ℤ M) (k : ι) :
+    ∀ x ∈ Submodule.span ℚ (Set.range fun r : η => (b r : V)),
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) x ∈
+        Submodule.span ℚ (Set.range fun r : η => (b r : V)) :=
+  (Submodule.span_le (p := (Submodule.span ℚ (Set.range fun r : η => (b r : V))).comap
+    (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))).mpr <| by
+    rintro _ ⟨r, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_comap, ← coe_kostantRootOperator_apply e h ρ M hM k (b r)]
+    exact coe_mem_span_basis b _
+
+/-- Ambient highest-weight round-trip identity for
+`exists_pow_kostantRootOperator_eq_factorial_smul`: produces a positive integer weight `N = wt j`
+such that `E ^ N (F ^ N (b j)) = (N! * N!) • b j` by restricting the `sl₂` triple to the rational
+span of `b`. -/
+private theorem exists_pow_e_pow_f_eq_factorial_smul
     {L ι κ V η : Type*} [LieRing L] [LieAlgebra ℚ L] [AddCommGroup V] [Module ℚ V]
     (e : ι → L) (h : κ → L) (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
     (M : AddSubgroup V) (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
@@ -65,30 +95,15 @@ private theorem exists_pow_kostantRootOperator_eq_factorial_smul
     {wt : η → ℤ} (hwt : ∀ r, H (b r : V) = (wt r : ℚ) • (b r : V))
     (hwt_ne : ∃ j, wt j ≠ 0)
     (hbdd_below : BddBelow (Set.range wt)) (hbdd_above : BddAbove (Set.range wt)) :
-    ∃ (j : η) (N : ℕ) (m₀ : M),
-      N ≠ 0 ∧ (kostantRootOperator e h ρ M hM i ^ N) m₀ = N.factorial • b j := by
+    ∃ (j : η) (N : ℕ), N ≠ 0 ∧
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ N)
+        ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e opp)) ^ N) (b j : V)) =
+          ((N.factorial : ℚ) * N.factorial) • (b j : V) := by
   let E := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
   let F := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e opp))
   let W : Submodule ℚ V := Submodule.span ℚ (Set.range fun r : η => (b r : V))
-  have hmemW (m : M) : (m : V) ∈ W := by
-    have hm : m ∈ Submodule.span ℤ (Set.range b) := b.span_eq.symm ▸ trivial
-    induction hm using Submodule.span_induction with
-    | mem _ hx =>
-      obtain ⟨r, rfl⟩ := hx
-      exact Submodule.subset_span ⟨r, rfl⟩
-    | zero => exact Submodule.zero_mem _
-    | add _ _ _ _ hx hy => exact Submodule.add_mem _ hx hy
-    | smul c _ _ hx =>
-      rw [AddSubgroupClass.coe_zsmul, ← Int.cast_smul_eq_zsmul ℚ]
-      exact Submodule.smul_mem _ _ hx
-  have hEW : ∀ x ∈ W, E x ∈ W := (Submodule.span_le (p := W.comap E)).mpr <| by
-    rintro _ ⟨r, rfl⟩
-    rw [SetLike.mem_coe, Submodule.mem_comap, ← coe_kostantRootOperator_apply e h ρ M hM i (b r)]
-    exact hmemW _
-  have hFW : ∀ x ∈ W, F x ∈ W := (Submodule.span_le (p := W.comap F)).mpr <| by
-    rintro _ ⟨r, rfl⟩
-    rw [SetLike.mem_coe, Submodule.mem_comap, ← coe_kostantRootOperator_apply e h ρ M hM opp (b r)]
-    exact hmemW _
+  have hEW : ∀ x ∈ W, E x ∈ W := root_apply_mem_span_basis e h ρ M hM b i
+  have hFW : ∀ x ∈ W, F x ∈ W := root_apply_mem_span_basis e h ρ M hM b opp
   let 𝒲 := hsl2.lieSubmoduleOfStable W hEW hFW
   let hv : ∀ r, (b r : V) ∈ 𝒲 := fun r =>
     (hsl2.mem_lieSubmoduleOfStable W hEW hFW).mpr (Submodule.subset_span ⟨r, rfl⟩)
@@ -119,11 +134,33 @@ private theorem exists_pow_kostantRootOperator_eq_factorial_smul
     LinearMap.ext fun x => by rw [LieModule.toEnd_apply_apply, Module.End.lie_apply]
   rw [hsl2.coe_pow_toEnd_lieSubmoduleOfStable W hEW hFW hsl2.e_mem_toLieSubalgebra,
     hsl2.coe_pow_toEnd_lieSubmoduleOfStable W hEW hFW hsl2.f_mem_toLieSubalgebra,
-    htoEnd E, htoEnd F, AddSubmonoidClass.coe_nsmul,
-    ← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_mul] at hpow
+    htoEnd E, htoEnd F, AddSubmonoidClass.coe_nsmul, ← Nat.cast_smul_eq_nsmul ℚ,
+    Nat.cast_mul] at hpow
+  exact ⟨j, N, by omega, by simpa [E, F, v] using hpow⟩
+
+/-- Internal helper for `exists_isPrimitive_kostantRootOperator_of_isSl2Triple`: produces a nonzero
+power of `kostantRootOperator` hitting `N! • b j` for a positive-weight primitive basis vector
+`b j`. Kept private because its return shape is tailored to the prime-adic factorial argument
+below. -/
+private theorem exists_pow_kostantRootOperator_eq_factorial_smul
+    {L ι κ V η : Type*} [LieRing L] [LieAlgebra ℚ L] [AddCommGroup V] [Module ℚ V]
+    (e : ι → L) (h : κ → L) (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+    (M : AddSubgroup V) (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
+    (b : Module.Basis η ℤ M)
+    {i opp : ι} {H : Module.End ℚ V}
+    (hsl2 : IsSl2Triple H (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e opp))))
+    {wt : η → ℤ} (hwt : ∀ r, H (b r : V) = (wt r : ℚ) • (b r : V))
+    (hwt_ne : ∃ j, wt j ≠ 0)
+    (hbdd_below : BddBelow (Set.range wt)) (hbdd_above : BddAbove (Set.range wt)) :
+    ∃ (j : η) (N : ℕ) (m₀ : M),
+      N ≠ 0 ∧ (kostantRootOperator e h ρ M hM i ^ N) m₀ = N.factorial • b j := by
+  obtain ⟨j, N, hN_ne, hpow⟩ :=
+    exists_pow_e_pow_f_eq_factorial_smul e h ρ M hM b hsl2 hwt hwt_ne hbdd_below hbdd_above
+  let F := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e opp))
   let m₀ : M := ⟨(dividedPower N F) (b j : V),
     dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM opp N (b j).property⟩
-  refine ⟨j, N, m₀, by omega, Subtype.ext ?_⟩
+  refine ⟨j, N, m₀, hN_ne, Subtype.ext ?_⟩
   rw [coe_pow_kostantRootOperator, AddSubgroupClass.coe_nsmul, ← Nat.cast_smul_eq_nsmul ℚ]
   simp only [m₀, dividedPower_def, LinearMap.smul_apply]
   rw [map_smul, hpow, ← mul_smul, ← mul_assoc,
