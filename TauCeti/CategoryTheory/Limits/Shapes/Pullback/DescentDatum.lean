@@ -125,6 +125,25 @@ theorem act_comp_hom_comp {X : Over S'} (D : DescentDatum p X) :
     D.act ≫ X.hom ≫ p = pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p := by
   rw [D.act_hom_assoc, pullback.condition]
 
+/-- Acting by `π x` undoes the action by `s`: `π x · (s · x) = x`, where `π = X.hom`. So every
+point of `X` is in the image of the action of any point of `S'` with the same image in `S`. -/
+@[reassoc (attr := simp)]
+theorem lift_act_comp_act {X : Over S'} (D : DescentDatum p X) :
+    pullback.lift (pullback.snd p (X.hom ≫ p) ≫ X.hom) D.act
+        (by rw [Category.assoc, D.act_comp_hom_comp]) ≫ D.act =
+      pullback.snd p (X.hom ≫ p) := by
+  -- Evaluate the cocycle condition at `(π x, (s, x))`.
+  have h := pullback.lift (f := p) (g := pullback.fst p (X.hom ≫ p) ≫ p)
+    (pullback.snd p (X.hom ≫ p) ≫ X.hom) (𝟙 _) (by simp [pullback.condition]) ≫= D.act_assoc
+  simp only [← Category.assoc] at h
+  convert h using 2
+  · exact pullback.hom_ext (by simp) (by simp)
+  · symm
+    calc _ = (pullback.snd p (X.hom ≫ p) ≫ pullback.lift X.hom (𝟙 X.left) (by simp)) ≫ D.act := by
+          congr 1
+          exact pullback.hom_ext (by simp) (by simp)
+      _ = _ := by simp
+
 section Hom
 
 variable {X Y Z : Over S'}
