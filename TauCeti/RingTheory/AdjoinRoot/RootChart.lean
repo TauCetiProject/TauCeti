@@ -30,11 +30,19 @@ invertibility of `n` in `A` is assumed. In the monomial bases, `Θ(tⁱ ⊗ tʲ)
 surjective if and only if `n = 1` or `f` is a unit. For instance over `A = ℤ` with `n = 2` and
 `f = 2`, the comparison is injective but not surjective.
 
+The second group of results computes the invariants of the coaction: for `n ≠ 0` an element `b`
+of `B` satisfies `δ(b) = 1 ⊗ b` exactly when it is a constant from `A`, again over an arbitrary
+commutative ring `A`, for arbitrary `f`, and with `n` possibly divisible by a residue
+characteristic. In the monomial bases `δ(tⁱ) = hⁱ ⊗ tⁱ`, so the coefficient of `tⁱ` in `b` is read
+off at the coordinate `(i, i)` of `δ(b)` and at `(0, i)` of `1 ⊗ b`.
+
 ## Main definitions
 
 * `TauCeti.rootChart`: the affine root chart `A[t]/(tⁿ - f)`.
 * `TauCeti.rootChartCoaction`: the coaction `δ : B → H ⊗[A] B`, `t ↦ h ⊗ t`.
 * `TauCeti.rootChartComparison`: the action comparison `Θ : B ⊗[A] B → H ⊗[A] B`.
+* `TauCeti.rootChartInvariantEquiv`: for `n ≠ 0`, the isomorphism of `A` with the invariant
+  subalgebra, the equalizer of `δ` and `b ↦ 1 ⊗ b`.
 
 ## Main results
 
@@ -48,12 +56,20 @@ surjective if and only if `n = 1` or `f` is a unit. For instance over `A = ℤ` 
   `n = 1` or `f` is a unit.
 * `TauCeti.rootChartComparison_bijective_iff`: for `n ≠ 0`, `Θ` is bijective if and only if
   `n = 1` or `f` is a unit.
+* `TauCeti.rootChartCoaction_repr`: the coordinate of `δ(b)` at `(r, s)` is the coefficient of
+  `tˢ` in `b` when `r = s`, and `0` otherwise.
+* `TauCeti.rootChartCoaction_eq_includeRight_iff_repr`: `δ(b) = 1 ⊗ b` if and only if every
+  coefficient of `b` at a positive power of `t` vanishes.
+* `TauCeti.rootChartCoaction_eq_includeRight_iff`: for `n ≠ 0`, `δ(b) = 1 ⊗ b` if and only if `b`
+  is a constant from `A`.
+* `TauCeti.equalizer_rootChartCoaction_includeRight`: for `n ≠ 0`, the invariant subalgebra is
+  `⊥`.
 
 ## References
 
 * M. Talpo, A. Vistoli, *Infinite root stacks and quasi-coherent sheaves on logarithmic
   schemes*, Proc. Lond. Math. Soc. (3) 116 (2018), arXiv:1410.1164, §3.1: the character grading
-  of the root chart.
+  of the root chart, whose degree-zero part is the coefficient ring.
 * The Stacks Project, Lemma 59.28.3 (Tag 040N): the finite free cover `A[t]/(tⁿ - f)` of
   `Spec A` for a unit `f` and its `μ_n`-action.
 -/
@@ -215,5 +231,121 @@ theorem rootChartComparison_bijective_iff :
   exact ⟨And.right, fun h => ⟨h.imp_right IsUnit.isRegular |>.imp_right IsRegular.left, h⟩⟩
 
 end Criteria
+
+section Invariants
+
+/-! ### The invariants of the coaction
+
+An element `b` of the root chart is invariant under `μ_n` when `δ(b) = 1 ⊗ b`. Writing
+`b = ∑ cᵢ tⁱ` in the monomial basis, the coefficient `cᵢ` sits at the coordinate `(i, i)` of
+`δ(b)` (the character `hⁱ` is attached to `tⁱ`) and at `(0, i)` of `1 ⊗ b`. Comparing the
+diagonal coordinates shows that the invariant elements are exactly the constants. The argument
+reads off character coordinates over `A` itself; it neither divides by `n` nor evaluates at
+field-valued points of `μ_n`, so it holds over the zero ring, with nilpotent `f`, and when `n` is
+divisible by a residue characteristic. -/
+
+variable [NeZero n]
+
+/-- The diagonal character coordinates of the coaction: in the monomial bases, the coordinate of
+`δ(b)` at `(r, s)` is the coefficient of `tˢ` in `b` when `r = s`, and `0` otherwise. -/
+theorem rootChartCoaction_repr [Nontrivial A] (b : rootChart A f n) (r s : Fin n) :
+    ((AdjoinRoot.basisXPowSubC n (1 : A)).tensorProduct (AdjoinRoot.basisXPowSubC n f)).repr
+        (rootChartCoaction A f n b) (r, s) =
+      if r = s then (AdjoinRoot.basisXPowSubC n f).repr b s else 0 := by
+  conv_lhs => rw [← (AdjoinRoot.basisXPowSubC n f).sum_repr b]
+  simp only [map_sum, map_smul, AdjoinRoot.basisXPowSubC_apply, rootChartCoaction_root_pow]
+  by_cases h : r = s <;> simp [h, Finsupp.single_apply]
+
+/-- **Invariant coefficients.** In the monomial basis `1, t, …, tⁿ⁻¹`, an element `b` of the
+affine root chart satisfies `δ(b) = 1 ⊗ b` if and only if its coefficient of `tⁱ` vanishes for
+every `i ≠ 0`. -/
+theorem rootChartCoaction_eq_includeRight_iff_repr [Nontrivial A] (b : rootChart A f n) :
+    rootChartCoaction A f n b = Algebra.TensorProduct.includeRight b ↔
+      ∀ i : Fin n, i ≠ 0 → (AdjoinRoot.basisXPowSubC n f).repr b i = 0 := by
+  -- The coordinate of `1 ⊗ b` at `(r, s)` is the coefficient of `tˢ` when `r = 0`, else `0`.
+  have hb (r s : Fin n) :
+      ((AdjoinRoot.basisXPowSubC n (1 : A)).tensorProduct (AdjoinRoot.basisXPowSubC n f)).repr
+          (Algebra.TensorProduct.includeRight b) (r, s) =
+        if r = 0 then (AdjoinRoot.basisXPowSubC n f).repr b s else 0 := by
+    by_cases h : r = 0 <;> simp [h]
+  refine ⟨fun h i hi => ?_, fun h => ?_⟩
+  · have := congr(((AdjoinRoot.basisXPowSubC n (1 : A)).tensorProduct
+      (AdjoinRoot.basisXPowSubC n f)).repr $h (i, i))
+    simpa [rootChartCoaction_repr, hb, hi] using this
+  · refine Module.Basis.ext_elem
+      ((AdjoinRoot.basisXPowSubC n (1 : A)).tensorProduct (AdjoinRoot.basisXPowSubC n f))
+      fun ⟨r, s⟩ => ?_
+    rw [rootChartCoaction_repr, hb]
+    split_ifs with hrs hr hr
+    · rfl
+    · exact h s (hrs ▸ hr)
+    · exact (h s fun hs => hrs (hr.trans hs.symm)).symm
+    · rfl
+
+/-- **Invariants of the affine root chart.** For `n ≠ 0`, an element `b` of `A[t]/(tⁿ - f)` is
+fixed by the `μ_n`-coaction, `δ(b) = 1 ⊗ b`, if and only if it is a constant from `A`. This holds
+for every commutative ring `A` and every `f ∈ A`, with no reducedness of `A` and no
+invertibility of `n`. -/
+theorem rootChartCoaction_eq_includeRight_iff (b : rootChart A f n) :
+    rootChartCoaction A f n b = Algebra.TensorProduct.includeRight b ↔
+      b ∈ (algebraMap A (rootChart A f n)).range := by
+  cases subsingleton_or_nontrivial A with
+  | inl _ =>
+    have := Module.subsingleton A (rootChart A f n)
+    have := Module.subsingleton A (rootChart A 1 n ⊗[A] rootChart A f n)
+    exact iff_of_true (Subsingleton.elim _ _) ⟨0, Subsingleton.elim _ _⟩
+  | inr _ =>
+    refine ⟨fun h => ⟨(AdjoinRoot.basisXPowSubC n f).repr b 0, ?_⟩, ?_⟩
+    · refine (AdjoinRoot.basisXPowSubC n f).ext_elem fun i => ?_
+      rw [Algebra.algebraMap_eq_smul_one, map_smul, AdjoinRoot.basisXPowSubC_repr_one]
+      by_cases hi : i = 0
+      · simp [hi]
+      · simp [Ne.symm hi,
+          (rootChartCoaction_eq_includeRight_iff_repr A f n b).1 h i hi]
+    · rintro ⟨a, rfl⟩
+      exact rootChartCoaction_algebraMap A f n a
+
+/-- For `n ≠ 0`, the invariant subalgebra of the affine root chart, the equalizer of the coaction
+`δ` and `b ↦ 1 ⊗ b`, is the subalgebra `⊥` of constants. -/
+theorem equalizer_rootChartCoaction_includeRight :
+    AlgHom.equalizer (rootChartCoaction A f n) Algebra.TensorProduct.includeRight = ⊥ := by
+  ext b
+  rw [AlgHom.mem_equalizer, rootChartCoaction_eq_includeRight_iff, Algebra.mem_bot,
+    RingHom.mem_range, Set.mem_range]
+
+/-- For `n ≠ 0`, the coefficient ring `A` is isomorphic, by the structure map, to the invariant
+subalgebra of the affine root chart, the equalizer of the coaction `δ` and `b ↦ 1 ⊗ b`. -/
+noncomputable def rootChartInvariantEquiv :
+    A ≃ₐ[A] AlgHom.equalizer (rootChartCoaction A f n) Algebra.TensorProduct.includeRight :=
+  AlgEquiv.ofBijective ((Algebra.ofId A (rootChart A f n)).codRestrict _ fun a =>
+      (AlgHom.mem_equalizer _ _ _).2 <| (rootChartCoaction_eq_includeRight_iff A f n _).2
+        ⟨a, (Algebra.ofId_apply _ a).symm⟩) <| by
+    refine ⟨fun a a' h => FaithfulSMul.algebraMap_injective A (rootChart A f n)
+      congr(($h : rootChart A f n)), fun ⟨b, hb⟩ => ?_⟩
+    obtain ⟨a, rfl⟩ := (rootChartCoaction_eq_includeRight_iff A f n b).1 hb
+    exact ⟨a, Subtype.ext (Algebra.ofId_apply _ a)⟩
+
+/-- The invariant attached to `a ∈ A` by `TauCeti.rootChartInvariantEquiv` is the constant `a`. -/
+@[simp]
+theorem coe_rootChartInvariantEquiv_apply (a : A) :
+    (rootChartInvariantEquiv A f n a : rootChart A f n) = algebraMap A _ a :=
+  (rfl)
+
+/-- An invariant element of the affine root chart is the constant given by its coefficient under
+`TauCeti.rootChartInvariantEquiv`. Not `@[simp]`: `algebraMap` is not in simp normal form here
+(`AdjoinRoot.algebraMap_eq`). -/
+theorem algebraMap_rootChartInvariantEquiv_symm
+    (x : AlgHom.equalizer (rootChartCoaction A f n) Algebra.TensorProduct.includeRight) :
+    algebraMap A (rootChart A f n) ((rootChartInvariantEquiv A f n).symm x) = x := by
+  rw [← coe_rootChartInvariantEquiv_apply, AlgEquiv.apply_symm_apply]
+
+/-- The coefficient of an invariant element `x` under `TauCeti.rootChartInvariantEquiv` is `a`
+exactly when `x` is the constant `a`. -/
+theorem rootChartInvariantEquiv_symm_eq_iff
+    (x : AlgHom.equalizer (rootChartCoaction A f n) Algebra.TensorProduct.includeRight) (a : A) :
+    (rootChartInvariantEquiv A f n).symm x = a ↔ (x : rootChart A f n) = algebraMap A _ a := by
+  rw [AlgEquiv.symm_apply_eq, ← coe_rootChartInvariantEquiv_apply, Subtype.ext_iff, eq_comm]
+
+end Invariants
 
 end TauCeti
