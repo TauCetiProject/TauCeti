@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Vortex.ParameterDerivative
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
+import TauCeti.Analysis.PDE.Vortex.ParameterDerivative.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
@@ -57,6 +59,13 @@ Sobolev estimates for `Q`, `Q†`, `π'_u` and `(Q†)'_u` then give
 `‖exp(c ρ) (Q†)'' g‖_(H^(k+1)) ≤ K (M₂ + Mv Mw) ‖exp(c ρ) g‖_(H^k)`, where `Mv`, `Mw` and `M₂`
 bound the derivatives through order `k` of `Da(p₀) v`, `Da(p₀) w` and `a''`
 (`exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_adjoint_orthogonalRightInverse_le`).
+
+Along a curve `t ↦ a(t)` of coefficients, `Cⁿ` at `t₀`, the same duality holds at every order: the
+`n`-th derivative of the adjoints is `(Q†)ₙ = (ι ∘ Qₙ)†`
+(`iteratedDeriv_adjoint_orthogonalRightInverse`), so the weighted `L²` estimate for `Qₙ` at the
+rate `-c` of `TauCeti.Analysis.PDE.Vortex.ParameterDerivative.IteratedDeriv` gives
+`‖exp(c ρ) (Q†)ₙ g‖₂ ≤ K Mⁿ ‖exp(c ρ) g‖₂` when `‖aⱼ‖∞ ≤ Mʲ` for `1 ≤ j ≤ n`
+(`exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_adjoint_orthogonalRightInverse_le`).
 -/
 
 public section
@@ -1087,5 +1096,70 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_adjoint_orthogonalRigh
         gcongr
         linarith
     _ = (K₁ + 2 * K₂) * (1 + K₀) * (M₂ + Mv * Mw) * ‖G‖ := by ring
+
+/-! ### The derivatives of every order of the adjoints -/
+
+/-- **The derivatives of every order of the adjoints of the orthogonal right inverses.** Let `x` be
+a smooth plane vortex with the degree-`m` end framing, `a` a curve of `L∞` coefficients, `Cⁿ` at
+`t₀`, with `a t₀` the class of `x`, and `Q t` the right inverse of the realization `L_(a t)` with
+values `L²`-orthogonal to its kernel, read as an operator `ι ∘ Q t` on `L²(ℂ; ℝ⁴)` through the
+values `ι` of the fields. Then the `n`-th derivative of the adjoints at `t₀` is the adjoint of the
+`n`-th derivative of `Q`: `(Q†)ₙ = (ι ∘ Qₙ)†`. -/
+theorem iteratedDeriv_adjoint_orthogonalRightInverse {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    {a : ℝ → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {t₀ : ℝ} (hax : a t₀ =ᵐ[μ⊤] x) {n : ℕ}
+    (ha : ContDiffAt ℝ n a t₀) :
+    iteratedDeriv n (fun t ↦ ContinuousLinearMap.adjoint (sobolevFieldValues ∘L
+      orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a t)))) t₀ =
+      ContinuousLinearMap.adjoint (sobolevFieldValues ∘L iteratedDeriv n (fun t ↦
+        orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a t))) t₀) := by
+  have hQ := (contDiffAt_adjoint_orthogonalRightInverse hx hsol hframe hax ha).1
+  -- The adjoints are the image of `Q` under the real-linear map `R ↦ (ι ∘ R)†`.
+  simpa only [Function.comp_def, ContinuousLinearMap.comp_apply, compL_apply,
+    adjointRealCLM_apply] using
+    (adjointRealCLM.comp (compL ℝ _ _ _ sobolevFieldValues)).iteratedDeriv_comp_left hQ le_rfl
+
+/-- **The weighted estimate for the derivatives of every order of the adjoints of the orthogonal
+right inverses, uniformly over a window of divisors.** For every degree `m`, radius `R₀`, rate
+`|c| < 1/2` and order `n` there is a constant `K` with the following property, where
+`ρ(z) = √(1 + |z|²)`. Let `x` be a smooth plane vortex with the degree-`m` end framing whose zeros
+lie in the closed disc of radius `R₀` and whose coordinates have bounded derivatives of every
+order. Let `a` be a curve of `L∞` coefficients, `Cⁿ` at `t₀`, with `a t₀` the class of `x` and
+`‖aⱼ‖∞ ≤ Mʲ` for `1 ≤ j ≤ n`, where `aⱼ` is the `j`-th derivative of `a` at `t₀`, and let `Q t` be
+the right inverse of the realization `L_(a t)` with values `L²`-orthogonal to its kernel, read as an
+operator on `L²(ℂ; ℝ⁴)` through the values of the fields. Then the `n`-th derivative `(Q†)ₙ` of the
+adjoints at `t₀` satisfies
+
+`‖exp(c ρ) (Q†)ₙ g‖₂ ≤ K Mⁿ ‖exp(c ρ) g‖₂`
+
+for every `g ∈ L²`, where either side may be infinite. -/
+theorem exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_adjoint_orthogonalRightInverse_le
+    (m : ℕ) (R₀ : ℝ) {c : ℝ} (hc : |c| < 1 / 2) (n : ℕ) :
+    ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ (a : ℝ → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (t₀ : ℝ), a t₀ =ᵐ[μ⊤] x →
+      ContDiffAt ℝ n a t₀ → ∀ M : ℝ≥0, (∀ j ∈ Finset.Icc 1 n, ‖iteratedDeriv j a t₀‖₊ ≤ M ^ j) →
+      ∀ g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤,
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+          iteratedDeriv n (fun t ↦ ContinuousLinearMap.adjoint (sobolevFieldValues ∘L
+            orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a t)))) t₀ g z)
+            2 volume ≤
+          K * M ^ n * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 volume := by
+  obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalRightInverse_le
+    m R₀ (c := -c) (by rwa [abs_neg]) n
+  refine ⟨K, fun x D hx hbound hsol hframe hD hD₀ a t₀ hax ha M hb g ↦ ?_⟩
+  -- `(Q†)ₙ = (ι ∘ Qₙ)†`, and `ι ∘ Qₙ` is estimated at the rate `-c`.
+  rw [iteratedDeriv_adjoint_orthogonalRightInverse hx hsol hframe hax ha,
+    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
+    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  have h := hK x D hx hbound hsol hframe hD hD₀ a t₀ hax ha M hb f
+  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
+    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
+  simpa only [ContinuousLinearMap.comp_apply, ENNReal.coe_mul, ENNReal.coe_pow] using h
 
 end TauCeti.Vortex
