@@ -28,7 +28,8 @@ compact pair* `(Ω, K)` (`TauCeti.IsRungeCompactPair Ω K`, in
 `TauCeti.Analysis.Complex.Runge.CompactPair`) when `K` is filled in `Ω`, i.e. no connected component
 of `Ω \ K` is relatively compact in `Ω`. These are precisely the compact subsets on which every
 function holomorphic in a neighbourhood of `K` can be uniformly approximated by functions
-holomorphic on all of `Ω` (Runge's approximation theorem, in
+holomorphic on all of `Ω` (forward approximation in `TauCeti.Analysis.Complex.Runge.Basic`, and
+the domain-relative equivalence `TauCeti.isRungeCompactPair_iff_approximation` in
 `TauCeti.Analysis.Complex.Runge.Approximation`).
 
 Alongside this topological condition sits the *`Ω`-holomorphic hull* `TauCeti.holomorphicHull Ω K`,

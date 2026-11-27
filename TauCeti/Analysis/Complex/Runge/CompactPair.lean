@@ -15,11 +15,9 @@ import Mathlib.Analysis.Normed.Module.Convex
 
 A **Runge compact pair** `TauCeti.IsRungeCompactPair Ω K` consists of an open set `Ω ⊆ ℂ` and a
 compact subset `K ⊆ Ω` that is filled in `Ω` (`TauCeti.IsFilledIn K Ω`, meaning no connected
-component of `Ω \ K` is relatively compact in `Ω`).
-
-Separating the predicate and its elementary projection/empty-set API from
-`TauCeti.Analysis.Complex.Runge.Operator` avoids pulling in the Cauchy–Pompeiu and rational Runge
-approximation stack when only the topological definition is needed.
+component of `Ω \ K` is relatively compact in `Ω`). This predicate packages the domain-relative
+Runge hypothesis used in `TauCeti.Analysis.Complex.Runge.Approximation` and
+`TauCeti.Analysis.Complex.Runge.ZeroFree`, together with its projection and empty-set API.
 
 ## Main declarations
 
