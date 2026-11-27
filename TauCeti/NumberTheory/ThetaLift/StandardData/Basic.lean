@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.LinearAlgebra.Matrix.Determinant.RowCompletion
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UnimodularFrame.Semilocal
+import TauCeti.LinearAlgebra.Matrix.Submatrix
 
 /-!
 # Standard row and column data
@@ -165,21 +166,15 @@ theorem exists_cols_of_standardColDatum_ne_zero [Finite (MaximalSpectrum O)]
     ∃ k : GeneralLinearGroup (b ⊕ a) O,
       (((k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) = y := by
   obtain ⟨y₀, t, hmap, ht⟩ := O.exists_leftInverse_of_standardColDatum_ne_zero χ s hy
-  have hframe : y₀ ∈ TauCeti.unimodularFrames O (b ⊕ a) b := ⟨t, ht⟩
+  have hframe : y₀ ∈ TauCeti.unimodularFrames O (b ⊕ a) b :=
+    TauCeti.mem_unimodularFrames_iff.mpr ⟨t, ht⟩
   rw [← TauCeti.orbit_submatrix_one Sum.inl_injective] at hframe
   obtain ⟨k, hk⟩ := hframe
   refine ⟨k, ?_⟩
-  -- Orbit membership supplies an applied action map; reduce its beta-redex.
-  dsimp only at hk
-  rw [GeneralLinearGroup.smul_def] at hk
-  have hm := mul_submatrix_one (Equiv.refl (b ⊕ a)) Sum.inl
-    (k : Matrix (b ⊕ a) (b ⊕ a) O)
-  simp only [Equiv.refl_symm, Equiv.coe_refl, Function.id_comp] at hm
-  rw [hm] at hk
   have hcols : (k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ = y₀ := by
-    apply Matrix.ext
-    intro i j
-    simpa only [toCols₁_apply, submatrix_apply, id_eq] using congrFun (congrFun hk i) j
+    ext i j
+    simpa [GeneralLinearGroup.smul_def, Matrix.mul_apply, Matrix.one_apply]
+      using congrFun₂ hk i j
   exact (congrArg (fun M ↦ M.map Subtype.val) hcols).trans hmap
 
 /-- Simultaneous right multiplication of the fixed and varying rows scales the datum
@@ -212,9 +207,8 @@ theorem standardColDatum_one :
     O.standardColDatum χ ((1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁)
       (((1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) = 1 := by
   have hcols : (1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁ *
-      (1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ = 1 := by
-    ext i j
-    simp [Matrix.mul_apply, Matrix.one_apply]
+      (1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ = 1 :=
+    submatrix_one_mul_submatrix_one ⟨Sum.inl, Sum.inl_injective⟩
   rw [standardColDatum_map, hcols, det_one, map_one, inv_one]
 
 /-- Partners have support on complementary blocks of integral invertible matrices and
