@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
+-- Unfold `realCliffordBlockSwapIsometry` and `realCliffordMiddleSwapIsometry` in proofs.
+import all TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 import Mathlib.LinearAlgebra.Matrix.Permutation
 
@@ -81,10 +83,7 @@ theorem det_realCliffordBlockSwapIsometry (p q : ℕ) :
       (-1 : ℝ) ^ (p * q) := by
   have hflip : (finAddFlip : Fin (q + p) ≃ Fin (p + q)).symm = finAddFlip := by
     ext i; simp [finAddFlip]
-  have hswap : realCliffordBlockSwapIsometry p q =
-      realCliffordFormZeroReindex (finAddFlip : Fin (q + p) ≃ Fin (p + q)) :=
-    DFunLike.ext _ _ fun _ ↦ funext fun _ ↦ by simp
-  rw [hswap, det_realCliffordFormZeroReindex_trans_congr,
+  rw [realCliffordBlockSwapIsometry, det_realCliffordFormZeroReindex_trans_congr,
     hflip, sign_finAddFlip_trans_finCongr]
   simp
 
@@ -108,7 +107,7 @@ theorem det_realCliffordMiddleSwapIsometry (p q : ℕ) :
     LinearMap.det ((realCliffordMiddleSwapIsometry p q).trans
         (realCliffordFormCongr (add_add_add_comm p p q q) rfl)).toLinearMap =
       (-1 : ℝ) ^ (p * q) := by
-  rw [realCliffordMiddleSwapIsometry_eq_reindex, det_realCliffordFormZeroReindex_trans_congr,
+  rw [realCliffordMiddleSwapIsometry, det_realCliffordFormZeroReindex_trans_congr,
     finSumFinSumFinComm_symm, sign_finSumFinSumFinComm_trans_finCongr]
   simp [mul_comm]
 

@@ -84,7 +84,7 @@ unfolding.
 * `TauCeti.realCliffordFormZeroReindex`, `TauCeti.realCliffordBlockSwapIsometry`, and
   `TauCeti.realCliffordMiddleSwapIsometry`: coordinate reindexing of positive-definite signature
   forms along `Fin m ≃ Fin n`, its specialization to the block swap `finAddFlip`, and the
-  four-block middle-block exchange (`TauCeti.realCliffordMiddleSwapIsometry_eq_reindex`,
+  four-block middle-block exchange (`TauCeti.realCliffordMiddleSwapIsometry_apply`,
   `TauCeti.realCliffordMiddleSwapIsometry_symm`).
 * `TauCeti.realBottSplitIsometry`: the two-coordinate specialization of the same signature
   splitter, separating a hyperbolic plane.
@@ -727,56 +727,6 @@ theorem realCliffordNestedSplitIsometry_symm_eq (a b c d : ℕ) :
       QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.trans_apply]
     simp only [IsometryEquiv.prod_apply, QuadraticMap.IsometryEquiv.apply_symm_apply]
 
--- Not `@[simp]`: `realCliffordNestedSplitIsometry` has domain
--- `realCliffordForm ((a + b) + (c + d)) (0 + 0)` via `realCliffordSplitIsometry`.
-/-- The outer-left, inner-left block of `realCliffordNestedSplitIsometry` consists of the first
-`a` coordinates. -/
-theorem realCliffordNestedSplitIsometry_fst_fst (a b c d : ℕ)
-    (x : Fin ((a + b) + (c + d)) → ℝ) (i : Fin a) :
-    (realCliffordNestedSplitIsometry a b c d x).1.1 i =
-      x (Fin.castAdd (c + d) (Fin.castAdd b i)) := by
-  have h1 := realCliffordSplitIsometry_fst_pos a b 0 0
-    ((realCliffordSplitIsometry (a + b) (c + d) 0 0 x).1) i
-  have h2 := realCliffordSplitIsometry_fst_pos (a + b) (c + d) 0 0 x (Fin.castAdd b i)
-  simp only [Fin.castAdd_zero] at h1 h2
-  exact h1.trans h2
-
-/-- The outer-left, inner-right block of `realCliffordNestedSplitIsometry` consists of the second
-`b` coordinates. -/
-theorem realCliffordNestedSplitIsometry_fst_snd (a b c d : ℕ)
-    (x : Fin ((a + b) + (c + d)) → ℝ) (j : Fin b) :
-    (realCliffordNestedSplitIsometry a b c d x).1.2 j =
-      x (Fin.castAdd (c + d) (Fin.natAdd a j)) := by
-  have h1 := realCliffordSplitIsometry_snd_pos a b 0 0
-    ((realCliffordSplitIsometry (a + b) (c + d) 0 0 x).1) j
-  have h2 := realCliffordSplitIsometry_fst_pos (a + b) (c + d) 0 0 x (Fin.natAdd a j)
-  simp only [Fin.castAdd_zero] at h1 h2
-  exact h1.trans h2
-
-/-- The outer-right, inner-left block of `realCliffordNestedSplitIsometry` consists of the third
-`c` coordinates. -/
-theorem realCliffordNestedSplitIsometry_snd_fst (a b c d : ℕ)
-    (x : Fin ((a + b) + (c + d)) → ℝ) (k : Fin c) :
-    (realCliffordNestedSplitIsometry a b c d x).2.1 k =
-      x (Fin.natAdd (a + b) (Fin.castAdd d k)) := by
-  have h1 := realCliffordSplitIsometry_fst_pos c d 0 0
-    ((realCliffordSplitIsometry (a + b) (c + d) 0 0 x).2) k
-  have h2 := realCliffordSplitIsometry_snd_pos (a + b) (c + d) 0 0 x (Fin.castAdd d k)
-  simp only [Fin.castAdd_zero] at h1 h2
-  exact h1.trans h2
-
-/-- The outer-right, inner-right block of `realCliffordNestedSplitIsometry` consists of the fourth
-`d` coordinates. -/
-theorem realCliffordNestedSplitIsometry_snd_snd (a b c d : ℕ)
-    (x : Fin ((a + b) + (c + d)) → ℝ) (l : Fin d) :
-    (realCliffordNestedSplitIsometry a b c d x).2.2 l =
-      x (Fin.natAdd (a + b) (Fin.natAdd c l)) := by
-  have h1 := realCliffordSplitIsometry_snd_pos c d 0 0
-    ((realCliffordSplitIsometry (a + b) (c + d) 0 0 x).2) l
-  have h2 := realCliffordSplitIsometry_snd_pos (a + b) (c + d) 0 0 x (Fin.natAdd c l)
-  simp only [Fin.castAdd_zero] at h1 h2
-  exact h1.trans h2
-
 /-- On compact forms, `realCliffordNestedSplitIsometry` splits a four-block concatenation into
 `((u, v), (w, z))`. -/
 theorem realCliffordNestedSplitIsometry_append (a b c d : ℕ)
@@ -812,10 +762,14 @@ form `((ℝ^p ⊕ ℝ^p) ⊕ (ℝ^q ⊕ ℝ^q))`, sending `Fin.append (Fin.appen
 def realCliffordMiddleSwapIsometry (p q : ℕ) :
     (realCliffordForm ((p + q) + (p + q)) 0).IsometryEquiv
       (realCliffordForm ((p + p) + (q + q)) 0) :=
-  (realCliffordNestedSplitIsometry p q p q).trans <|
-    (IsometryEquiv.prodProdProdComm (realCliffordForm p 0) (realCliffordForm q 0)
-      (realCliffordForm p 0) (realCliffordForm q 0)).trans
-      (realCliffordNestedSplitIsometry p p q q).symm
+  realCliffordFormZeroReindex (finSumFinSumFinComm p p q q)
+
+/-- `realCliffordMiddleSwapIsometry` reads each coordinate through `finSumFinSumFinComm`. -/
+@[simp]
+theorem realCliffordMiddleSwapIsometry_apply (p q : ℕ)
+    (x : Fin ((p + q) + (p + q)) → ℝ) (i : Fin ((p + p) + (q + q))) :
+    realCliffordMiddleSwapIsometry p q x i = x (finSumFinSumFinComm p p q q i) :=
+  realCliffordFormZeroReindex_apply (finSumFinSumFinComm p p q q) x i
 
 /-- `realCliffordMiddleSwapIsometry` exchanges the middle two blocks of a four-block
 concatenation. -/
@@ -827,38 +781,15 @@ theorem realCliffordMiddleSwapIsometry_append (p q : ℕ)
           (Fin.append u₂ v₂ : Fin (p + q) → ℝ) : Fin ((p + q) + (p + q)) → ℝ) =
       Fin.append (Fin.append u₁ u₂ : Fin (p + p) → ℝ)
         (Fin.append v₁ v₂ : Fin (q + q) → ℝ) := by
-  rw [realCliffordMiddleSwapIsometry, QuadraticMap.IsometryEquiv.trans_apply,
-    realCliffordNestedSplitIsometry_append, QuadraticMap.IsometryEquiv.trans_apply,
-    IsometryEquiv.prodProdProdComm_toFun, realCliffordNestedSplitIsometry_symm_apply]
-
-/-- `realCliffordMiddleSwapIsometry p q` agrees with coordinate reindexing along
-`finSumFinSumFinComm p p q q`. -/
-theorem realCliffordMiddleSwapIsometry_eq_reindex (p q : ℕ) :
-    realCliffordMiddleSwapIsometry p q =
-      realCliffordFormZeroReindex (finSumFinSumFinComm p p q q) := by
   -- `realCliffordForm ((p + p) + (q + q)) 0` lives on `Fin (((p + p) + (q + q)) + 0) → ℝ`,
   -- which is `Fin ((p + p) + (q + q)) → ℝ` by definition.
-  refine DFunLike.ext _ _ fun x ↦ funext fun (i : Fin ((p + p) + (q + q))) ↦ ?_
-  rw [realCliffordMiddleSwapIsometry, QuadraticMap.IsometryEquiv.trans_apply,
-    QuadraticMap.IsometryEquiv.trans_apply, IsometryEquiv.prodProdProdComm_toFun,
-    realCliffordNestedSplitIsometry_symm_apply, realCliffordFormZeroReindex_apply]
+  funext (i : Fin ((p + p) + (q + q)))
   refine Fin.addCases (Fin.addCases (fun a ↦ ?_) (fun a ↦ ?_))
-    (Fin.addCases (fun b ↦ ?_) (fun b ↦ ?_)) i
-  · simp only [Fin.append_left, finSumFinSumFinComm_castAdd_castAdd]
-    exact realCliffordNestedSplitIsometry_fst_fst p q p q x a
-  · simp only [Fin.append_left, Fin.append_right, finSumFinSumFinComm_castAdd_natAdd]
-    exact realCliffordNestedSplitIsometry_snd_fst p q p q x a
-  · simp only [Fin.append_right, Fin.append_left, finSumFinSumFinComm_natAdd_castAdd]
-    exact realCliffordNestedSplitIsometry_fst_snd p q p q x b
-  · simp only [Fin.append_right, finSumFinSumFinComm_natAdd_natAdd]
-    exact realCliffordNestedSplitIsometry_snd_snd p q p q x b
-
-/-- `realCliffordMiddleSwapIsometry` reads each coordinate through `finSumFinSumFinComm`. -/
-@[simp]
-theorem realCliffordMiddleSwapIsometry_apply (p q : ℕ)
-    (x : Fin ((p + q) + (p + q)) → ℝ) (i : Fin ((p + p) + (q + q))) :
-    realCliffordMiddleSwapIsometry p q x i = x (finSumFinSumFinComm p p q q i) := by
-  rw [realCliffordMiddleSwapIsometry_eq_reindex, realCliffordFormZeroReindex_apply]
+    (Fin.addCases (fun b ↦ ?_) (fun b ↦ ?_)) i <;>
+    simp only [realCliffordMiddleSwapIsometry_apply,
+      finSumFinSumFinComm_castAdd_castAdd, finSumFinSumFinComm_castAdd_natAdd,
+      finSumFinSumFinComm_natAdd_castAdd, finSumFinSumFinComm_natAdd_natAdd,
+      Fin.append_left, Fin.append_right]
 
 /-- The inverse of `realCliffordMiddleSwapIsometry p q` is coordinate reindexing along
 `finSumFinSumFinComm p q p q`. -/
@@ -866,7 +797,7 @@ theorem realCliffordMiddleSwapIsometry_apply (p q : ℕ)
 theorem realCliffordMiddleSwapIsometry_symm (p q : ℕ) :
     (realCliffordMiddleSwapIsometry p q).symm =
       realCliffordFormZeroReindex (finSumFinSumFinComm p q p q) := by
-  rw [realCliffordMiddleSwapIsometry_eq_reindex, realCliffordFormZeroReindex_symm,
+  rw [realCliffordMiddleSwapIsometry, realCliffordFormZeroReindex_symm,
     finSumFinSumFinComm_symm]
 
 /-- The coordinate isometry which separates the last positive and negative coordinates of the
