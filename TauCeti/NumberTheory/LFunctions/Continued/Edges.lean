@@ -24,9 +24,9 @@ convexity bound on the strip `-δ ≤ Re s ≤ 1 + δ`.
   takes the value `0` on the strip `1 < Re s < σ`, so `L` vanishes on an open set, hence
   identically, and the bound holds with both sides `0`.
 * **The reflection.** Solving the functional equation of `L` against the dual record gives
-  `L(s) = ε N ^ (1/2 - s) (γ^∨(1 - s) / γ(s)) L^∨(1 - s)` at every point where the right side is
-  continuous (`HasFunctionalEquation.continuedL_eq_of_analyticAt`), including the poles of `γ`,
-  where the quotient takes the value `0`.
+  `L(s) = ε N ^ (1/2 - s) (γ^∨(1 - s) / γ(s)) L^∨(1 - s)` at every point `s` such that `γ^∨` is
+  regular and `L^∨` is analytic at `1 - s` (`HasFunctionalEquation.continuedL_eq_of_analyticAt`).
+  This includes the poles of `γ`, where the quotient takes the value `0`.
 * **The left edge.** On the line `Re s = -δ`, `δ > 0`, the reflection evaluates the dual
   function on the right edge `Re (1 - s) = 1 + δ`, and the dual coefficients have the same
   norms. With the conductor-uniform estimate
@@ -45,7 +45,7 @@ convexity bound on the strip `-δ ≤ Re s ≤ 1 + δ`.
 
 public section
 
-open Complex ComplexConjugate Filter Topology
+open Complex Filter Topology
 
 namespace TauCeti.LFunctions.AnalyticLFunctionData
 
