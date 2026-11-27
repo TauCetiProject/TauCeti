@@ -400,16 +400,8 @@ theorem bdd_mul (hI : IsItoIntegral ℱ P W H I) {ξ : Ω → ℝ}
     fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_enorm_sq_bdd_mul
       (μ := timeMeasure t) (ν := P) hCξ henergy (fun k s ω ↦ ?_) hε,
     (hgains.bdd_smul hCξ).congr (fun k ↦ .of_forall fun ω ↦ by
-      -- Both sides evaluate `ξ` only at `ω`.
-      have hG : Finance.simpleGains (τ k) (n k) (ξ ω • a k) W t ω =
-          Finance.simpleGains (τ k) (n k) (fun i ω' ↦ ξ ω' * a k i ω') W t ω := by
-        simp only [Finance.simpleGains_def, Pi.smul_apply, smul_eq_mul]
-      rw [← hG, Finance.simpleGains_smul, smul_eq_mul]) .rfl⟩
-  -- Both sides evaluate the height only at `ω`.
-  have hH : Finance.simpleHolding (τ k) (n k) (fun i ω' ↦ ξ ω' * a k i ω') s ω =
-      Finance.simpleHolding (τ k) (n k) (ξ ω • a k) s ω := by
-    simp only [Finance.simpleHolding_def, Pi.smul_apply, smul_eq_mul]
-  rw [hH, Finance.simpleHolding_smul, ← mul_sub, eNorm_mul]
+      rw [Finance.simpleGains_mul_left, smul_eq_mul]) .rfl⟩
+  rw [Finance.simpleHolding_mul_left, ← mul_sub, eNorm_mul]
 
 /-- Scaling an integrand by a constant scales its Itô integral. -/
 theorem smul (hI : IsItoIntegral ℱ P W H I) (c : ℝ) :
@@ -488,12 +480,12 @@ theorem indicator_Ioi_bdd_mul (hW : IsFilteredPreBrownianReal ℱ W P)
       ((ha k i hi).mono (ℱ.mono (le_max_left _ _))),
     fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_enorm_sq_bdd_mul
       (μ := timeMeasure t) (ν := P) hCξ henergy (fun k s ω ↦ by
-        rw [Finance.simpleHolding_max_eq u ξ s ω]
+        rw [Finance.simpleHolding_mul_left, Finance.simpleHolding_max_eq]
         by_cases hs : u < s
         · simp [Set.mem_Ioi.mpr hs, ← mul_sub, eNorm_mul]
         · simp [Set.mem_Ioi, hs]) hε,
     ((hgains.sub hgains_min).bdd_smul hCξ).congr (fun k ↦ .of_forall fun ω ↦ by
-      simpa only [smul_eq_mul] using (Finance.simpleGains_max_eq u ξ W t ω).symm) .rfl⟩
+      rw [Finance.simpleGains_mul_left, Finance.simpleGains_max_eq, smul_eq_mul]) .rfl⟩
 
 /-- Restricting an integrand to `(u, ∞)` yields the post-`u` Itô integral
 `t ↦ I t - I (min u t)`, without assuming path continuity of `W`. -/

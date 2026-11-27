@@ -171,6 +171,15 @@ theorem countable_range_dyadicCeilTime {Ω : Type*} (τ : Ω → WithTop ℝ≥0
     rw [dyadicCeilTime_coe]
     exact mem_insert_of_mem _ ⟨⌈t * 2 ^ n⌉₊, by simp only [coe_dyadicNNRat]⟩
 
+/-- If `dyadicCeilTime k v < s`, then `v` is finite and `dyadicCeilTime k v` is the dyadic
+grid point `dyadicNNRat k ⌈u * 2 ^ k⌉₊`. -/
+theorem exists_eq_coe_dyadicCeilTime_of_lt {k : ℕ} {v s : WithTop ℝ≥0}
+    (hv : dyadicCeilTime k v < s) :
+    ∃ u : ℝ≥0, v = u ∧ dyadicCeilTime k v = ((dyadicNNRat k ⌈u * 2 ^ k⌉₊ : ℝ≥0) : WithTop ℝ≥0) := by
+  cases v with
+  | top => rw [dyadicCeilTime_top] at hv; exact (not_top_lt hv).elim
+  | coe u => exact ⟨u, rfl, by rw [dyadicCeilTime_coe, coe_dyadicNNRat]⟩
+
 /-- Clipping the upward dyadic approximation of any random time at a deterministic horizon `T`
 leaves only finitely many values in `ℝ≥0`. -/
 theorem finite_range_untopA_min_dyadicCeilTime {Ω : Type*}
@@ -183,15 +192,12 @@ theorem finite_range_untopA_min_dyadicCeilTime {Ω : Type*}
   rcases le_or_gt (T : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)) with hle | hgt
   · left
     rw [min_eq_left hle, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
-  · cases hτω : τ ω with
-    | top => rw [hτω, dyadicCeilTime_top] at hgt; exact (not_top_lt hgt).elim
-    | coe u =>
-      right
-      rw [hτω] at hgt
-      rw [dyadicCeilTime_coe] at hgt ⊢
-      rw [min_eq_right hgt.le, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
-      exact ⟨⌈u * 2 ^ n⌉₊, Nat.lt_ceil.mpr ((div_lt_iff₀ (by positivity)).mp
-        (WithTop.coe_lt_coe.mp hgt)), coe_dyadicNNRat n _⟩
+  · obtain ⟨u, -, hρ⟩ := exists_eq_coe_dyadicCeilTime_of_lt hgt
+    right
+    rw [min_eq_right hgt.le, hρ, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
+    have hlt : (dyadicNNRat n ⌈u * 2 ^ n⌉₊ : ℝ≥0) < T := WithTop.coe_lt_coe.mp (hρ ▸ hgt)
+    rw [coe_dyadicNNRat] at hlt
+    exact ⟨⌈u * 2 ^ n⌉₊, Nat.lt_ceil.mpr ((div_lt_iff₀ (by positivity)).mp hlt), rfl⟩
 
 /-- Rounding cannot turn a finite time into infinity. -/
 @[simp]

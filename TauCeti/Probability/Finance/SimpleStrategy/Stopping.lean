@@ -96,30 +96,26 @@ private theorem simpleGains_dyadicStopHeight {G : ℝ≥0 → Ω → ℝ} {T s :
       simp only [f, min_eq_right hge,
         min_eq_right (hge.trans ((strictMono_coe_dyadicNNRat k (Nat.lt_succ_self j)).le)),
         sub_self, mul_zero]
-  · cases hτω : τ ω with
-    | top => rw [hτω, dyadicCeilTime_top] at hgt; exact (not_top_lt hgt).elim
-    | coe u =>
-      let r : ℕ := ⌈u * 2 ^ k⌉₊
-      have hρ : dyadicCeilTime k (τ ω) = ((dyadicNNRat k r : ℝ≥0) : WithTop ℝ≥0) := by
-        rw [hτω, dyadicCeilTime_coe, coe_dyadicNNRat]
-      have hrs : (dyadicNNRat k r : ℝ≥0) < s := WithTop.coe_lt_coe.mp (hρ ▸ hgt)
-      have hrM : r ≤ M := ((strictMono_coe_dyadicNNRat k).lt_iff_lt.mp (hrs.trans_le hsM)).le
-      have hfr : f r = MeasureTheory.stoppedProcess G (fun ω ↦ dyadicCeilTime k (τ ω)) s ω := by
-        rw [stoppedProcess_eq_of_ge (τ := fun ω ↦ dyadicCeilTime k (τ ω)) hgt.le, hρ,
-          WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
-        dsimp only [f]
-        rw [min_eq_left hrs.le]
-      have hfilt : (range M).filter (· < r) = range r := by
-        ext j; simp only [mem_filter, Finset.mem_range]; omega
-      have hsum : MeasureTheory.stoppedProcess G (fun ω ↦ dyadicCeilTime k (τ ω)) s ω =
-          ∑ j ∈ range r, (f (j + 1) - f j) := by
-        rw [sum_range_sub, hf0, hfr, sub_zero]
-      rw [hsum, ← hfilt, sum_filter]
-      refine sum_congr rfl fun j _ ↦ ?_
-      have hiff : ((dyadicNNRat k j : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime k (τ ω) ↔ j < r := by
-        rw [hρ, WithTop.coe_lt_coe, (strictMono_coe_dyadicNNRat k).lt_iff_lt]
-      rw [dyadicStopHeight, if_congr hiff rfl rfl]
-      by_cases hjr : j < r <;> simp [hjr, f]
+  · obtain ⟨u, -, hρ⟩ := exists_eq_coe_dyadicCeilTime_of_lt hgt
+    let r : ℕ := ⌈u * 2 ^ k⌉₊
+    have hrs : (dyadicNNRat k r : ℝ≥0) < s := WithTop.coe_lt_coe.mp (hρ ▸ hgt)
+    have hrM : r ≤ M := ((strictMono_coe_dyadicNNRat k).lt_iff_lt.mp (hrs.trans_le hsM)).le
+    have hfr : f r = MeasureTheory.stoppedProcess G (fun ω ↦ dyadicCeilTime k (τ ω)) s ω := by
+      unfold MeasureTheory.stoppedProcess
+      rw [min_eq_right hgt.le, hρ, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
+      dsimp only [f]
+      rw [min_eq_left hrs.le]
+    have hfilt : (range M).filter (· < r) = range r := by
+      ext j; simp only [mem_filter, Finset.mem_range]; omega
+    have hsum : MeasureTheory.stoppedProcess G (fun ω ↦ dyadicCeilTime k (τ ω)) s ω =
+        ∑ j ∈ range r, (f (j + 1) - f j) := by
+      rw [sum_range_sub, hf0, hfr, sub_zero]
+    rw [hsum, ← hfilt, sum_filter]
+    refine sum_congr rfl fun j _ ↦ ?_
+    have hiff : ((dyadicNNRat k j : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime k (τ ω) ↔ j < r := by
+      rw [hρ, WithTop.coe_lt_coe, (strictMono_coe_dyadicNNRat k).lt_iff_lt]
+    rw [dyadicStopHeight, if_congr hiff rfl rfl]
+    by_cases hjr : j < r <;> simp [hjr, f]
 
 /-- Stopping a left-measurable simple strategy on a nondecreasing grid at the dyadic ceiling
 `dyadicCeilTime k ∘ τ` of a stopping time `τ` up to horizon `T` is represented on `(0, T]` by one

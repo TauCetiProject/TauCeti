@@ -79,11 +79,7 @@ private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
   have hstop (X : ℝ≥0 → Ω → ℝ) (ω : Ω) :
       MeasureTheory.stoppedProcess X (fun ω ↦ dyadicCeilTime k (σ ω)) T ω =
         X (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA ω := by
-    rcases le_or_gt (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω)) with hle | hlt
-    · rw [MeasureTheory.stoppedProcess_eq_of_le (τ := fun ω ↦ dyadicCeilTime k (σ ω)) hle,
-        min_eq_left hle, WithTop.untopA, WithTop.untopD_coe]
-    · rw [MeasureTheory.stoppedProcess_eq_of_ge (τ := fun ω ↦ dyadicCeilTime k (σ ω)) hlt.le,
-        min_eq_right hlt.le]
+    unfold MeasureTheory.stoppedProcess; rfl
   exact fun ε hε ↦ tendsto_measure_of_subset_biUnion_finset S (fun s hs ↦ hgains_s hs ε hε)
     fun m ω hω ↦ by
       let s := (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA
