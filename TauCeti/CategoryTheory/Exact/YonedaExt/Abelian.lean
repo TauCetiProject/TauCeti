@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.YonedaExt.Basic
+public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
+public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
 public import TauCeti.Algebra.Homology.Ext.Realization
 public import TauCeti.CategoryTheory.Exact.Abelian
 
@@ -14,17 +15,15 @@ public import TauCeti.CategoryTheory.Exact.Abelian
 
 In an abelian category, the class of a conflation in any exact structure determines a
 Mathlib degree-one Ext class. This comparison is injective and respects base and cobase
-change. Thus computations with derived Ext can detect equality and splitting of Yoneda
-extensions without changing their prescribed endpoints.
+change, the Baer sum and scalar multiplication. Thus computations with derived Ext can detect
+equality and splitting of Yoneda extensions with prescribed endpoints.
 
 For the canonical abelian exact structure the comparison is surjective whenever the final
 object admits a projective presentation. In particular, in a category with enough projectives
-it is an equivalence of pointed sets. This file does not impose enough projectives on the
-comparison map, its injectivity, or its naturality statements.
+it is a linear equivalence.
 
 The construction uses `ShortComplex.ShortExact.extClass` and the realization and equality
-criteria in `TauCeti/Algebra/Homology/Ext/Realization.lean`. No group structure on Yoneda
-extensions is needed here.
+criteria in `TauCeti/Algebra/Homology/Ext/Realization.lean`.
 
 ## References
 
@@ -122,6 +121,18 @@ theorem toExt_eq_zero_iff (ξ : E.Ext1 Z X) : ξ.toExt = (0 : Ext.{w} Z X 1) ↔
   rw [← toExt_zero]
   exact toExt_injective.eq_iff
 
+/-- The derived extension class sends the Baer sum to addition. -/
+@[simp]
+theorem toExt_add (ξ η : E.Ext1 Z X) : (ξ + η).toExt = ξ.toExt + η.toExt := by
+  obtain ⟨θ, rfl, rfl⟩ := exists_pushout_fst_eq_and_pushout_snd_eq ξ η
+  simp only [← pushout_add, toExt_pushout, Ext.mk₀_add, Ext.comp_add]
+
+/-- The derived extension class respects the scalar action. -/
+@[simp]
+theorem toExt_smul {R : Type*} [Ring R] [Linear R C] (r : R) (ξ : E.Ext1 Z X) :
+    (r • ξ).toExt = r • ξ.toExt := by
+  rw [smul_eq_pushout, toExt_pushout, Ext.mk₀_smul, Ext.comp_smul, Ext.comp_mk₀_id]
+
 /-- Every derived degree-one class out of the end of a projective presentation is represented
 by a Yoneda extension for the canonical abelian exact structure. -/
 theorem toExt_surjective_of_shortExact {S : ShortComplex C}
@@ -143,36 +154,32 @@ theorem toExt_surjective [EnoughProjectives C] (Z X : C) :
     infer_instance
   exact toExt_surjective_of_shortExact (kernelSequence_shortExact (Projective.π Z)) X
 
-/-- Yoneda extensions for the abelian exact structure agree with Mathlib's degree-one Ext
-as pointed sets in a category with enough projectives. -/
-noncomputable def abelianEquiv [EnoughProjectives C] (Z X : C) :
-    (ExactStructure.abelian C).Ext1 Z X ≃ Ext.{w} Z X 1 :=
-  Equiv.ofBijective toExt ⟨toExt_injective, toExt_surjective Z X⟩
+variable (R : Type*) [Ring R] [Linear R C]
+
+/-- Yoneda extensions for the abelian exact structure agree linearly with derived degree-one Ext
+in a category with enough projectives. -/
+noncomputable def abelianLinearEquiv [EnoughProjectives C] (Z X : C) :
+    (ExactStructure.abelian C).Ext1 Z X ≃ₗ[R] Ext.{w} Z X 1 :=
+  LinearEquiv.ofBijective
+    ⟨⟨toExt, toExt_add⟩, toExt_smul⟩ ⟨toExt_injective, toExt_surjective Z X⟩
 
 /-- The comparison equivalence sends an extension to its derived class. -/
 @[simp]
-theorem abelianEquiv_apply [EnoughProjectives C] (ξ : (ExactStructure.abelian C).Ext1 Z X) :
-    abelianEquiv Z X ξ = ξ.toExt := (rfl)
+theorem abelianLinearEquiv_apply [EnoughProjectives C] (ξ : (ExactStructure.abelian C).Ext1 Z X) :
+    abelianLinearEquiv R Z X ξ = ξ.toExt := (rfl)
 
 /-- The inverse comparison recovers a Yoneda class from its derived class. -/
 @[simp]
-theorem abelianEquiv_symm_toExt [EnoughProjectives C]
+theorem abelianLinearEquiv_symm_toExt [EnoughProjectives C]
     (ξ : (ExactStructure.abelian C).Ext1 Z X) :
-    (abelianEquiv Z X).symm ξ.toExt = ξ :=
-  (abelianEquiv Z X).symm_apply_apply ξ
+    (abelianLinearEquiv R Z X).symm ξ.toExt = ξ :=
+  (abelianLinearEquiv R Z X).symm_apply_apply ξ
 
 /-- The inverse comparison represents the given derived extension class. -/
 @[simp]
-theorem toExt_abelianEquiv_symm [EnoughProjectives C] (α : Ext.{w} Z X 1) :
-    ((abelianEquiv Z X).symm α).toExt = α :=
-  (abelianEquiv Z X).apply_symm_apply α
-
-/-- The inverse comparison sends zero to the split Yoneda extension. -/
-@[simp]
-theorem abelianEquiv_symm_zero [EnoughProjectives C] :
-    (abelianEquiv Z X).symm (0 : Ext.{w} Z X 1) = 0 := by
-  apply toExt_injective
-  simp
+theorem toExt_abelianLinearEquiv_symm [EnoughProjectives C] (α : Ext.{w} Z X 1) :
+    ((abelianLinearEquiv R Z X).symm α).toExt = α :=
+  (abelianLinearEquiv R Z X).apply_symm_apply α
 
 end Ext1
 
