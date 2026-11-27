@@ -66,7 +66,7 @@ theorem integral_primeDivisibilitySum_empiricalMeasure_add_one :
       ∑ p ∈ P, a p * (((m + 1) / p : ℕ) / (m + 1 : ℝ)) := by
   have h (p : ℕ) : ((m + 1) / p : ℕ) / (m + 1 : ℝ) =
       (m + 1 : ℝ)⁻¹ * ∑ k ∈ range (m + 1), (if p ∣ k + 1 then 1 else 0) := by
-    rw [sum_boole, Nat.card_multiples, div_eq_inv_mul]
+    rw [sum_range_ite_dvd_add_one, div_eq_inv_mul]
   rw [integral_empiricalMeasure_add_one, smul_eq_mul]
   simp_rw [h, primeDivisibilitySum_apply_eq_sum_ite _ _ (Nat.succ_ne_zero _), mul_sum]
   rw [sum_comm]

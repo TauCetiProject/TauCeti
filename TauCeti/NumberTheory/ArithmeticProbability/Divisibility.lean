@@ -49,22 +49,10 @@ namespace TauCeti
 
 namespace Probability
 
-section Integral
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-
-/-- Integrating against the uniform probability measure on `{1, …, m + 1}` is averaging the values
-at `1, …, m + 1`. -/
-theorem integral_empiricalMeasure_add_one (m : ℕ) (f : ℕ → E) :
-    ∫ n, f n ∂(empiricalMeasure (· + 1) m : Measure ℕ) =
-      (m + 1 : ℝ)⁻¹ • ∑ k ∈ range (m + 1), f (k + 1) := by
-  rw [integral_empiricalMeasure .of_discrete, Nat.cast_add_one]
-
-end Integral
-
-/-- The number of `k < m + 1` with `d ∣ k + 1`, as a real sum of indicators, is `⌊(m + 1) / d⌋`. -/
-private lemma sum_range_ite_dvd_add_one (m d : ℕ) :
-    ∑ k ∈ range (m + 1), (if d ∣ k + 1 then (1 : ℝ) else 0) = ((m + 1) / d : ℕ) := by
+/-- The number of `k < n` with `d ∣ k + 1`, as a sum of indicators in any additive monoid with
+one, is `⌊n / d⌋`. -/
+theorem sum_range_ite_dvd_add_one {R : Type*} [AddCommMonoidWithOne R] (n d : ℕ) :
+    ∑ k ∈ range n, (if d ∣ k + 1 then (1 : R) else 0) = (n / d : ℕ) := by
   rw [sum_boole, Nat.card_multiples]
 
 /-- Under the uniform probability measure on `{1, …, N}`, the probability that `d` divides the
