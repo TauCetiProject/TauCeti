@@ -27,7 +27,10 @@ assume instead that the inclusion `φ⁻¹(U) ⟶ S'` is quasi-compact.
   in `S'` is the scheme-theoretic closure of `f⁻¹(U)` mapped to `S'` through `U ≅ φ⁻¹(U)`
   (`map_snd_strictTransform`). For `f` a closed immersion, so that `X ×_S S' ⟶ S'` is one, the
   strict transform is the inverse image of that closure: it is the closure of `X ∩ U` in `S'`
-  (`strictTransform_closedImmersion`).
+  (`strictTransform_closedImmersion`). For the blowup along an ideal sheaf `I` with `U` the
+  complement of its centre, the image of the strict transform in `Bl_I S` is the blowup of `X`
+  along `I.comap f` (`map_snd_strictTransform_blowupToBase`,
+  `strictTransform_closedImmersion_blowupToBase`).
 * **Uniqueness of flat closed subschemes.** If `φ⁻¹(U)` is scheme-theoretically dense in `S'`
   and its inclusion is quasi-compact, a closed subscheme `Z ⊆ X ×_S S'` which is flat over `S'`
   and agrees with `X ×_S S'` over `φ⁻¹(U)` *as closed subschemes* (its ideal sheaf pulls back to
@@ -51,6 +54,9 @@ assume instead that the inclusion `φ⁻¹(U) ⟶ S'` is quasi-compact.
 * `AlgebraicGeometry.Scheme.Hom.map_snd_strictTransform` and
   `AlgebraicGeometry.Scheme.Hom.strictTransform_closedImmersion`: the strict transform as the
   closure of `X ∩ U` in `S'`.
+* `AlgebraicGeometry.Scheme.Hom.map_snd_strictTransform_blowupToBase` and
+  `AlgebraicGeometry.Scheme.Hom.strictTransform_closedImmersion_blowupToBase`: along a blowup, the
+  strict transform of a closed subscheme is its blowup along the inverse image of the centre.
 * `AlgebraicGeometry.Scheme.Hom.strictTransform_unique_of_flat` and
   `AlgebraicGeometry.Scheme.Hom.strictTransform_unique_of_flat_of_dense`: a flat closed
   subscheme agreeing with `X ×_S S'` over `φ⁻¹(U)` is the strict transform.
@@ -102,6 +108,30 @@ theorem strictTransform_closedImmersion [IsClosedImmersion f] (hU : IsIso (φ �
     strictTransform f φ U =
       (f ∣_ U ≫ inv (φ ∣_ U) ≫ (φ ⁻¹ᵁ U).ι).ker.comap (pullback.snd f φ) := by
   rw [← map_snd_strictTransform f φ U hU, IdealSheafData.comap_map_of_isClosedImmersion]
+
+/-- **The image of the strict transform along a blowup.** For the blowup `b : Bl_I S ⟶ S` and
+`U = S ∖ V(I)`, pushing the strict transform of `f : X ⟶ S` forward along
+`X ×_S Bl_I S ⟶ Bl_I S` gives the ideal sheaf of the morphism of blowups
+`Bl_{I.comap f} X ⟶ Bl_I S` (Stacks, Lemma 31.34.2 (080E)). For a closed immersion `f` this
+morphism is a closed immersion (`IdealSheafData.isClosedImmersion_blowupMap`), so the strict
+transform is the blowup of `X` along `X ∩ V(I)`, as a closed subscheme of `Bl_I S`. -/
+@[stacks 080E]
+theorem map_snd_strictTransform_blowupToBase (I : S.IdealSheafData) :
+    (strictTransform f I.blowupToBase I.support.compl).map (pullback.snd f I.blowupToBase) =
+      (I.blowupMap f).ker := by
+  rw [strictTransform_blowupToBase, IdealSheafData.map_ker, IdealSheafData.blowupBaseChangeHom_snd]
+
+/-- **The strict transform of a closed subscheme along a blowup.** For a closed immersion
+`f : X ⟶ S` and the blowup `b : Bl_I S ⟶ S` with `U = S ∖ V(I)`, the strict transform is the
+inverse image in `X ×_S Bl_I S` of the ideal sheaf of the closed immersion
+`Bl_{I.comap f} X ⟶ Bl_I S`: as a closed subscheme of `Bl_I S`, it is the blowup of `X` along
+`X ∩ V(I)` (Stacks, Lemma 31.34.2 (080E)). -/
+@[stacks 080E]
+theorem strictTransform_closedImmersion_blowupToBase [IsClosedImmersion f]
+    (I : S.IdealSheafData) :
+    strictTransform f I.blowupToBase I.support.compl =
+      (I.blowupMap f).ker.comap (pullback.snd f I.blowupToBase) := by
+  rw [← map_snd_strictTransform_blowupToBase, IdealSheafData.comap_map_of_isClosedImmersion]
 
 end ClosedImmersion
 
