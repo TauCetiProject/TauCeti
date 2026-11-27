@@ -25,7 +25,9 @@ theorem Int.exists_eq_smoothPart_mul_pow {t : ℤ} {k ℓ : ℕ} (hℓ : Odd ℓ
       ∀ p ∈ z.natAbs.primeFactors, k ≤ p := by
   obtain ⟨u, hu, hlarge⟩ := Nat.exists_eq_smoothPart_mul_pow (m := t.natAbs) hℓ.pos.ne'
     fun p hp hk ↦ by
-      simpa only [padicValInt, Nat.multiplicity_eq_factorization hp] using hval p hp hk
+      rw [← Nat.multiplicity_eq_factorization hp, Int.multiplicity_natAbs,
+        ← padicValInt.of_ne_one_ne_zero]
+      exact hval p hp hk
   have hcast : (t.natAbs : ℤ) = (t.natAbs.smoothPart k : ℤ) * (u : ℤ) ^ ℓ := by
     exact_mod_cast hu
   rcases t.natAbs_eq with ht | ht

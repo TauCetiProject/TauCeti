@@ -7,20 +7,41 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.Data.Int.Progression
+import Mathlib.RingTheory.Int.Basic
 
 /-!
 # Perfect powers in primitive arithmetic progressions
 
-For a progression of coprime initial term and common difference, a common divisor of two
-terms divides the gap between their indices. Thus a prime at least the length occurs in
-at most one term. If the product is a perfect power, the valuation at such a prime
-in each term is divisible by the exponent.
+A `PrimitiveSolution` is a nontrivial primitive progression whose product is an integer
+power with prime exponent. Its terms are nonzero. A prime at least the progression length
+divides at most one term by `Int.eq_of_dvd_progressionTerm_of_length_le`, so the exponent
+divides each term's valuation at that prime.
 
 See M. Bennett and S. Siksek, *A conjecture of Erdős, supersingular primes and short character
 sums*, Lemma 3.1.
 -/
 
 public section
+
+/-- If only the factor at `i` can contribute to the valuation at a prime, that factor's
+valuation is divisible by the exponent of the perfect-power product. -/
+theorem Finset.dvd_padicValInt_of_prod_eq_pow {ι : Type*} {s : Finset ι} {i : ι}
+    {f : ι → ℤ} {y : ℤ} {ℓ q : ℕ} (hi : i ∈ s) (hp : q.Prime)
+    (hprod : ∏ j ∈ s, f j = y ^ ℓ)
+    (huniq : (q : ℤ) ∣ f i → ∀ j ∈ s, (q : ℤ) ∣ f j → j = i) :
+    ℓ ∣ padicValInt q (f i) := by
+  classical
+  by_cases hqi : (q : ℤ) ∣ f i
+  · have hp' : Prime (q : ℤ) := Int.prime_iff_natAbs_prime.mpr (by simpa using hp)
+    have hval := congrArg (emultiplicity (q : ℤ)) hprod
+    rw [Finset.emultiplicity_prod hp', Finset.sum_eq_single_of_mem i hi] at hval
+    · have hmul : multiplicity (q : ℤ) (f i) = multiplicity (q : ℤ) (y ^ ℓ) :=
+        congrArg ENat.toNat hval
+      rw [padicValInt.of_ne_one_ne_zero, hmul, multiplicity_pow hp']
+      exact dvd_mul_right ..
+    · exact fun j hj hji ↦ emultiplicity_eq_zero.mpr fun hqj ↦ hji (huniq hqi j hj hqj)
+  · rw [padicValInt.eq_zero_of_not_dvd hqi]
+    exact dvd_zero _
 
 namespace TauCeti.ProgressionPowers
 
@@ -37,41 +58,18 @@ structure PrimitiveSolution (n d : ℤ) (k : ℕ) (y : ℤ) (ℓ : ℕ) : Prop w
 variable {n d y : ℤ} {k ℓ i q : ℕ}
 
 /-- Every term of a primitive solution is nonzero. -/
-theorem PrimitiveSolution.term_ne_zero (h : PrimitiveSolution n d k y ℓ) (hi : i < k) :
+theorem PrimitiveSolution.progressionTerm_ne_zero (h : PrimitiveSolution n d k y ℓ) (hi : i < k) :
     n.progressionTerm d i ≠ 0 :=
   Finset.prod_ne_zero_iff.mp (h.prod_eq_pow ▸ pow_ne_zero _ (left_ne_zero_of_mul h.mul_ne_zero))
     i (Finset.mem_range.mpr hi)
 
 /-- At a prime at least the progression length, the full exponent divides the valuation of
 each term. This also holds for a zero product, using the library's zero valuation at zero. -/
-theorem dvd_padicValInt_term (h : n.gcd d = 1)
+theorem dvd_padicValInt_progressionTerm (h : n.gcd d = 1)
     (hprod : ∏ j ∈ Finset.range k, n.progressionTerm d j = y ^ ℓ)
-    (hp : q.Prime) (hq : k ≤ q) (hi : i < k) : ℓ ∣ padicValInt q (n.progressionTerm d i) := by
-  by_cases hqi : (q : ℤ) ∣ n.progressionTerm d i
-  · have eq_index (j : ℕ) (hj : j ∈ Finset.range k) (hqj : (q : ℤ) ∣ n.progressionTerm d j) :
-        j = i :=
-      Int.eq_of_dvd_term_of_length_le h hq (Finset.mem_range.mp hj) hi
-        (by simpa only [Int.progressionTerm_def] using hqj)
-        (by simpa only [Int.progressionTerm_def] using hqi)
-    by_cases hzero : ∏ j ∈ Finset.range k, n.progressionTerm d j = 0
-    · obtain ⟨j, hj, hjzero⟩ := Finset.prod_eq_zero_iff.mp hzero
-      have hji := eq_index j hj (hjzero ▸ dvd_zero _)
-      subst j
-      rw [hjzero, padicValInt.zero]
-      exact dvd_zero _
-    · have hnz := Finset.prod_ne_zero_iff.mp hzero
-      have hnat := congrArg Int.natAbs hprod
-      rw [Int.natAbs_prod, Int.natAbs_pow] at hnat
-      have heq := congrArg (fun m : ℕ ↦ m.factorization q) hnat
-      simp only [Nat.factorization_prod_apply (fun j hj ↦ Int.natAbs_ne_zero.mpr (hnz j hj)),
-        Nat.factorization_pow, Finsupp.smul_apply, smul_eq_mul] at heq
-      rw [Finset.sum_eq_single_of_mem i (Finset.mem_range.mpr hi)] at heq
-      · rw [padicValInt, Nat.multiplicity_eq_factorization hp, heq]
-        exact dvd_mul_right ..
-      · intro j hj hji
-        exact Nat.factorization_eq_zero_of_not_dvd fun hd ↦
-          hji (eq_index j hj (Int.ofNat_dvd_left.mpr hd))
-  · rw [padicValInt.eq_zero_of_not_dvd hqi]
-    exact dvd_zero _
+    (hp : q.Prime) (hq : k ≤ q) (hi : i < k) :
+    ℓ ∣ padicValInt q (n.progressionTerm d i) :=
+  Finset.dvd_padicValInt_of_prod_eq_pow (Finset.mem_range.mpr hi) hp hprod fun hqi _ hj hqj ↦
+    Int.eq_of_dvd_progressionTerm_of_length_le h hq (Finset.mem_range.mp hj) hi hqj hqi
 
 end TauCeti.ProgressionPowers

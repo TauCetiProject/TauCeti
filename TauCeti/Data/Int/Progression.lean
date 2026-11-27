@@ -34,10 +34,10 @@ integers of arbitrarily large absolute value avoid them.
 * `Int.not_dvd_one_add_max_abs_mul`: `d ∤ 1 + max |d| 2 * k` for a non-unit `d`.
 * `IsCoprime.exists_isCoprime_add_mul`: a progression `a + ℤ * b` with `a` and `b` coprime
   contains a term coprime to any nonzero `m : ℤ`.
-* `Int.gcd_term_dvd_dist`: the gcd of two terms of a primitive progression divides the distance
-  between their indices.
-* `Int.eq_of_dvd_term_of_length_le`: a modulus at least the progression length divides at most
-  one term of a primitive progression.
+* `Int.gcd_progressionTerm_dvd_dist`: in a primitive progression, the gcd of two terms
+  divides the distance between their indices.
+* `Int.eq_of_dvd_progressionTerm_of_length_le`: a modulus at least the progression length
+  divides at most one term of a primitive progression.
 -/
 
 public section
@@ -52,7 +52,7 @@ theorem progressionTerm_def (n d : ℤ) (i : ℕ) : n.progressionTerm d i = n + 
 @[simp] theorem progressionTerm_zero (n d : ℤ) : n.progressionTerm d 0 = n := by
   simp [progressionTerm]
 
-theorem progressionTerm_succ (n d : ℤ) (i : ℕ) :
+@[simp] theorem progressionTerm_succ (n d : ℤ) (i : ℕ) :
     n.progressionTerm d (i + 1) = n.progressionTerm d i + d := by
   simp [progressionTerm, add_mul, add_assoc]
 
@@ -98,8 +98,9 @@ theorem not_dvd_one_add_max_abs_mul {d : ℤ} (hd : ¬ IsUnit d) (k : ℤ) :
 /-- The gcd of two terms of a primitive progression divides the distance between their indices.
 See Bennett and Siksek, *A conjecture of Erdős, supersingular primes and short character sums*,
 Lemma 3.1(i). -/
-theorem gcd_term_dvd_dist {n d : ℤ} (h : n.gcd d = 1) (i j : ℕ) :
-    (n + i * d).gcd (n + j * d) ∣ Nat.dist i j := by
+theorem gcd_progressionTerm_dvd_dist {n d : ℤ} (h : n.gcd d = 1) (i j : ℕ) :
+    (n.progressionTerm d i).gcd (n.progressionTerm d j) ∣ Nat.dist i j := by
+  simp only [progressionTerm_def]
   let g := (n + i * d).gcd (n + j * d)
   have hcop : IsCoprime (g : ℤ) d :=
     ((Int.isCoprime_iff_gcd_eq_one.mpr h).add_mul_right_left (i : ℤ)).of_isCoprime_of_dvd_left
@@ -113,12 +114,12 @@ theorem gcd_term_dvd_dist {n d : ℤ} (h : n.gcd d = 1) (i j : ℕ) :
   exact hdist ▸ Int.ofNat_dvd_left.mp (hcop.dvd_of_dvd_mul_right hsub)
 
 /-- A modulus at least the length divides at most one term of a primitive progression. -/
-theorem eq_of_dvd_term_of_length_le {n d : ℤ} {k q i j : ℕ} (h : n.gcd d = 1) (hq : k ≤ q)
-    (hi : i < k) (hj : j < k) (hqi : (q : ℤ) ∣ n + i * d) (hqj : (q : ℤ) ∣ n + j * d) :
-    i = j := by
+theorem eq_of_dvd_progressionTerm_of_length_le {n d : ℤ} {k q i j : ℕ}
+    (h : n.gcd d = 1) (hq : k ≤ q) (hi : i < k) (hj : j < k) (hqi : (q : ℤ) ∣ n.progressionTerm d i)
+    (hqj : (q : ℤ) ∣ n.progressionTerm d j) : i = j := by
   by_contra hne
   have := Nat.le_of_dvd (Nat.dist_pos_of_ne hne)
-    ((Int.dvd_gcd hqi hqj).trans (gcd_term_dvd_dist h i j))
+    ((Int.dvd_gcd hqi hqj).trans (gcd_progressionTerm_dvd_dist h i j))
   unfold Nat.dist at this
   omega
 

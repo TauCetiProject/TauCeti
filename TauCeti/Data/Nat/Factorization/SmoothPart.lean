@@ -13,8 +13,8 @@ import TauCeti.Data.Nat.Factorization.PowMul
 # The smooth part of a natural number
 
 The `k`-smooth part of `m` retains the full prime powers of `m` at primes strictly below `k`.
-If all other prime exponents are multiples of `ℓ`, the complementary divisor is an `ℓ`-th power
-whose root has no prime factor below `k`.
+If all other prime exponents are multiples of a positive `ℓ`, the complement is an `ℓ`-th
+power whose root has no prime factor below `k`.
 -/
 
 public section
@@ -74,7 +74,7 @@ theorem smoothPart_dvd (m k : ℕ) : m.smoothPart k ∣ m :=
   (isExactDivisor_smoothPart m k).dvd
 
 /-- Dividing out the smooth part retains exactly the prime exponents at or above the cutoff. -/
-theorem factorization_div_smoothPart (m k : ℕ) :
+@[simp] theorem factorization_div_smoothPart (m k : ℕ) :
     (m / m.smoothPart k).factorization = m.factorization.filter (k ≤ ·) := by
   rw [factorization_div (smoothPart_dvd m k), factorization_smoothPart]
   simpa only [add_tsub_cancel_left, Nat.not_lt] using
@@ -117,7 +117,7 @@ theorem smoothPart_eq_one_iff {m k : ℕ} :
   rw [← h, primeFactors_smoothPart, Finset.filter_eq_empty_iff]
   simp
 
-/-- There are no primes strictly below a cutoff of at most two. -/
+/-- For a cutoff of at most two, the smooth part is one. -/
 @[simp] theorem smoothPart_eq_one_of_le_two (m : ℕ) {k : ℕ} (hk : k ≤ 2) :
     m.smoothPart k = 1 :=
   smoothPart_eq_one_iff.mpr fun _ hp ↦ hk.trans (prime_of_mem_primeFactors hp).two_le
@@ -141,7 +141,7 @@ theorem exists_eq_smoothPart_mul_pow {m k ℓ : ℕ} (hℓ : ℓ ≠ 0)
   have hu' : b = u ^ ℓ := by simpa [ha'] using hu
   refine ⟨u, hmul.symm.trans (congrArg (m.smoothPart k * ·) hu'), fun p hp ↦ ?_⟩
   have hpb : p ∈ b.primeFactors := by simpa only [hu', primeFactors_pow _ hℓ] using hp
-  change p ∈ (m / m.smoothPart k).primeFactors at hpb
+  dsimp only [b] at hpb
   rw [← support_factorization, factorization_div_smoothPart, Finsupp.support_filter] at hpb
   exact (Finset.mem_filter.mp hpb).2
 
