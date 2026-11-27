@@ -328,16 +328,15 @@ private theorem mk_polyLiftUnit {u : OnePoint ℂ → ComplexProjectiveSpace n}
   refine (homeomorphProjectivization n).injective ?_
   -- The lift is `‖L‖⁻¹ L` for the lift vector `L`, a multiple of `p_d` on the boundary of the
   -- square and of `P(z)` away from it.
-  rw [homeomorphProjectivization_mk]
   by_cases hy : y ∈ Cube.boundary (Fin 2)
   · rw [riemannSphereSquare_apply_of_mem hy, hinf]
-    refine (Projectivization.mk_eq_mk_iff' ℂ _ _ _ _).2
+    refine (homeomorphProjectivization_mk_eq_mk_iff n _ _).2
       ⟨((‖polyLiftVector P d y‖⁻¹ : ℝ) : ℂ) * (2 * squareCenterOffset y) ^ d, ?_⟩
     rw [polyLiftUnit, coe_normalizeToSphere_apply, NormedSpace.normalize,
       polyLiftVector_of_mem P d hy, WithLp.ofLp_smul, WithLp.ofLp_smul, ← Complex.coe_smul,
       smul_smul]
   · rw [riemannSphereSquare_apply_of_notMem hy, hfin]
-    refine (Projectivization.mk_eq_mk_iff' ℂ _ _ _ _).2
+    refine (homeomorphProjectivization_mk_eq_mk_iff n _ _).2
       ⟨((‖polyLiftVector P d y‖⁻¹ : ℝ) : ℂ) * ((√(1 - cubeRadius y ^ 2) : ℝ) : ℂ) ^ d, ?_⟩
     rw [polyLiftUnit, coe_normalizeToSphere_apply, NormedSpace.normalize,
       polyLiftVector_of_notMem hdeg hy, WithLp.ofLp_smul, WithLp.ofLp_smul, ← Complex.coe_smul,
@@ -405,6 +404,14 @@ private def polyLift :
     (continuous_const.mul ((continuous_squarePhase.comp continuous_squarePoint).pow d)).smul
       ((polyLiftUnit hdeg hc hz).continuous.comp continuous_squarePoint)
 
+/-- `polyLift` at `p` is `polyLiftUnit` at `squarePoint p` rotated by `μ λ^d`. -/
+private theorem coe_polyLift_apply (p : I × (Fin 1 → I)) :
+    ((polyLift hdeg hc hz μ p : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
+        EuclideanSpace ℂ (Fin (n + 1))) =
+      ((μ * squarePhase (squarePoint p) ^ d : Circle) : ℂ) •
+        (polyLiftUnit hdeg hc hz (squarePoint p) : EuclideanSpace ℂ (Fin (n + 1))) :=
+  (rfl)
+
 /-- Over the boundary of the square the lift is the `d`-th power of the twisted direction times
 `v`, when `μ` rotates the unit leading vector `p_d / ‖p_d‖` to `v`. -/
 private theorem coe_polyLift_of_mem
@@ -414,10 +421,8 @@ private theorem coe_polyLift_of_mem
     ((polyLift hdeg hc hz μ p : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
         EuclideanSpace ℂ (Fin (n + 1))) =
       ((squareTwist (squarePoint p) ^ d : Circle) : ℂ) • (v : EuclideanSpace ℂ (Fin (n + 1))) := by
-  change ((μ * squarePhase (squarePoint p) ^ d : Circle) : ℂ) •
-    (polyLiftUnit hdeg hc hz (squarePoint p) : EuclideanSpace ℂ (Fin (n + 1))) = _
-  rw [coe_polyLiftUnit_of_mem hdeg hc hz hp, ← hμ, smul_smul, smul_smul, squareTwist,
-    Pi.mul_apply]
+  rw [coe_polyLift_apply, coe_polyLiftUnit_of_mem hdeg hc hz hp, ← hμ, smul_smul, smul_smul,
+    squareTwist, Pi.mul_apply]
   congr 1
   push_cast
   ring
@@ -451,17 +456,11 @@ private theorem exists_circle_smul_normalize
     (h : homeomorphProjectivization n (mk n v) = Projectivization.mk ℂ _ hc) :
     ∃ μ : Circle, (μ : ℂ) • NormedSpace.normalize (WithLp.toLp 2 fun j ↦ (P j).coeff d) =
       (v : EuclideanSpace ℂ (Fin (n + 1))) := by
-  have hw : (WithLp.toLp 2 fun j ↦ (P j).coeff d) ≠ 0 := (WithLp.toLp_eq_zero 2).not.2 hc
-  have hw1 : NormedSpace.normalize (WithLp.toLp 2 fun j ↦ (P j).coeff d) ∈
-      sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 :=
-    mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hw)
-  have hvw : mk n v = mk n ⟨_, hw1⟩ := (homeomorphProjectivization n).injective <| by
-    rw [h, homeomorphProjectivization_mk]
-    refine ((Projectivization.mk_eq_mk_iff' ℂ _ _ _ _).2
-      ⟨(((‖WithLp.toLp 2 fun j ↦ (P j).coeff d‖)⁻¹ : ℝ) : ℂ), ?_⟩).symm
-    rw [Subtype.coe_mk, NormedSpace.normalize, WithLp.ofLp_smul, Complex.coe_smul]
-  obtain ⟨μ, hμ⟩ := (mk_eq_mk_iff_exists_circle_smul n v _).1 hvw
-  exact ⟨μ, by rw [← hμ, Circle.coe_smul_sphere]⟩
+  have hvw := (homeomorphProjectivization n).symm_apply_apply (mk n v)
+  rw [h, homeomorphProjectivization_symm_mk_eq_mk_inv_norm_smul] at hvw
+  obtain ⟨μ, hμ⟩ := (mk_eq_mk_iff_exists_circle_smul n v _).1 hvw.symm
+  refine ⟨μ, ?_⟩
+  rw [← hμ, Circle.coe_smul_sphere, NormedSpace.normalize, ← Complex.coe_smul, Complex.ofReal_inv]
 
 end Boundary
 
@@ -567,9 +566,9 @@ Riemann sphere. -/
 private theorem lineClass_eq_map :
     lineClass n = HomotopyGroup.map (coordinateLine n)
       ((coordinateLine_infty (n := n)).trans (affineParam_def 1 0)) ⟦riemannSphereSquare⟧ := by
-  rw [lineClass_def, HomotopyGroup.map_mk, HomotopyGroup.map_mk]
-  refine congrArg _ (GenLoop.ext _ _ fun y ↦ ?_)
-  rw [GenLoop.map_apply, GenLoop.map_apply, ContinuousMap.id_apply, lineSquare_apply]
+  rw [lineClass_def, mk_lineSquare_eq_map]
+  exact (HomotopyGroup.map_comp_apply _ _ _ _ _).trans
+    (HomotopyGroup.map_congr (ContinuousMap.id_comp _) _ _ _)
 
 open Polynomial in
 /-- The polynomials `(1, X, 0, …, 0)` of the coordinate line. -/
@@ -608,14 +607,14 @@ theorem pi2MulEquivInt_lineClass :
     exact fun h ↦ (one_ne_zero : (1 : ℂ) ≠ 0) (by simpa using congr_fun h (1 : Fin (n + 2)))
   refine pi2MulEquivInt_map_riemannSphereSquare_of_polynomial (P := linePolynomial n) (d := 1)
     _ (fun j ↦ Polynomial.natDegree_linear_le) ⟨hc, ?_⟩ (fun z ↦ ⟨?_, ?_⟩) _ _
-  · rw [coordinateLine_infty, affineParam_def, homeomorphProjectivization_mk]
-    refine (Projectivization.mk_eq_mk_iff' ℂ _ _ _ _).2 ⟨1, ?_⟩
+  · rw [coordinateLine_infty, affineParam_def]
+    refine (homeomorphProjectivization_mk_eq_mk_iff _ _ _).2 ⟨1, ?_⟩
     rw [one_smul, coeff_one_linePolynomial, coe_affineUnitVector_zero]
     simp
   · rw [eval_linePolynomial]
     exact (WithLp.ofLp_eq_zero 2).not.2 (affineVector_ne_zero 0 _)
-  · rw [coordinateLine_coe, affineParam_def, homeomorphProjectivization_mk]
-    refine (Projectivization.mk_eq_mk_iff' ℂ _ _ _ _).2
+  · rw [coordinateLine_coe, affineParam_def]
+    refine (homeomorphProjectivization_mk_eq_mk_iff _ _ _).2
       ⟨((‖affineVector 0 (Pi.single 0 z : Fin (n + 1) → ℂ)‖⁻¹ : ℝ) : ℂ), ?_⟩
     rw [coe_affineUnitVector_apply, WithLp.ofLp_smul, Complex.coe_smul, eval_linePolynomial]
 
