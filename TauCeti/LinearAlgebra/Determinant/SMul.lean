@@ -23,9 +23,19 @@ Let `V` be a module over a commutative ring `E` with a commuting action of a sem
 * `TauCeti.smulDet_congr`: it depends only on the isomorphism class of `V`.
 * `TauCeti.smulDet_eq_pow_of_smul_eq`: if `a` acts on a free module as `c ∈ E`, then
   `det_E(a | V) = c ^ dim_E V`.
+* `TauCeti.smulDet_prod`: the determinant on `V × W` is the product of the determinants, since
+  `a` acts on `V × W` componentwise (`DistribSMul.toLinearMap_prod`).
 -/
 
 public section
+
+/-- The scalar action on a product is the product of the scalar actions on the factors. -/
+theorem DistribSMul.toLinearMap_prod {R S M N : Type*} [Semiring R] [AddCommMonoid M]
+    [AddCommMonoid N] [Module R M] [Module R N] [DistribSMul S M] [DistribSMul S N]
+    [SMulCommClass S R M] [SMulCommClass S R N] (s : S) :
+    DistribSMul.toLinearMap R (M × N) s =
+      (DistribSMul.toLinearMap R M s).prodMap (DistribSMul.toLinearMap R N s) :=
+  LinearMap.ext fun _ ↦ Prod.smul_def _ _
 
 namespace TauCeti
 
@@ -68,5 +78,14 @@ theorem smulDet_congr {W : Type*} [AddCommGroup W] [Module E W] [Module k W]
   congr 1
   ext w
   simp [eE, e.map_smul]
+
+/-- The determinant of the scalar action on a product is the product of the determinants. -/
+theorem smulDet_prod {W : Type*} [AddCommGroup W] [Module E W] [Module k W] [SMulCommClass E k W]
+    [Module.Free E V] [Module.Finite E V] [Module.Free E W] [Module.Finite E W] (a : k) :
+    smulDet E k (V × W) a = smulDet E k V a * smulDet E k W a := by
+  have : SMulCommClass k E V := .symm E k V
+  have : SMulCommClass k E W := .symm E k W
+  rw [smulDet_apply, smulDet_apply, smulDet_apply, DistribSMul.toLinearMap_prod,
+    LinearMap.det_prodMap]
 
 end TauCeti
