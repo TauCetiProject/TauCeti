@@ -22,7 +22,6 @@ public section
 noncomputable section
 
 open CategoryTheory CategoryTheory.Functor CategoryTheory.Limits HomologicalComplex
-open CategoryTheory.Functor.MapDerivedTensorPointwise
 open scoped MonoidalCategory
 
 universe w
@@ -59,12 +58,11 @@ example : IsIso ((𝟭 C).mapDerivedTensorComparison (identityCochainComparison 
   intro K
   obtain ⟨P, f, hf, hP⟩ := K.exists_quasiIso_isKFlat_of_hasLeftResolutions
   refine ⟨P, f, hf, hP, ?_⟩
-  have : P.IsKFlat := hP
   exact CochainComplex.isKFlat_of_iso (K := P)
     ((mapHomologicalComplexIdIso C (.up ℤ)).app P).symm
 
 /-- The structural identity comparison on the derived tensor bifunctor. -/
-def identityDerivedComparison : tensorImages (𝟭 C) ≅ imageTensor (𝟭 C) := by
+def identityDerivedComparison : derivedTensorOfMap (𝟭 C) ≅ mapDerivedTensor (𝟭 C) := by
   let e := mapDerivedCategoryIdIso C
   let T := TauCeti.derivedTensor C
   let W := whiskeringLeft₂ (C₁ := DerivedCategory C) (C₂ := DerivedCategory C)
@@ -86,18 +84,11 @@ example : (𝟭 C).mapDerivedTensorComparison (identityCochainComparison (C := C
     (((mapHomologicalComplexIdIso C (.up ℤ)).hom.app K,
       (mapHomologicalComplexIdIso C (.up ℤ)).hom.app L) : (_, _) ⟶ (K, L))
   dsimp [whiskeringLeft₂HomEquiv] at h₁ h₂
-  simp only [mapDerivedCategoryIdIso_hom_app, comp_obj, id_obj, Category.assoc,
-    whiskeringLeft₂_obj_obj_obj_obj_obj, whiskeringRight_obj_obj,
-    MonoidalCategory.curriedTensor_obj_obj, identityDerivedComparison, Iso.trans_symm,
-    Iso.trans_hom, Iso.app_hom, mapIso_hom, Iso.symm_hom, isoWhiskerLeft_inv, mapIso_inv,
-    NatTrans.comp_app, rightUnitor_inv_app, whiskerLeft_app,
-    whiskeringLeft₂_map_app_app_app_app, map_comp, whiskeringLeft₂_obj_map_app_app_app,
-    NatTrans.id_app, whiskeringRight_map_app_app, Category.id_comp,
-    identityCochainComparison, tensorImagesCounit_app_app, Iso.trans_inv, Iso.symm_inv,
-    MonoidalCategory.curriedTensor_map_app, MonoidalCategory.curriedTensor_obj_map,
-    Iso.inv_hom_id_app_assoc, Iso.inv_hom_id_app_map, Category.comp_id] at h₁ h₂ ⊢
-  rw [h₁]
-  simp only [Iso.inv_hom_id_app_assoc]
-  rw [← NatTrans.naturality_assoc, ← h₂]
+  -- Use naturality of the derived identity isomorphism, then naturality of the
+  -- tensor counit along the cochain identity isomorphism in both variables.
+  simp [identityDerivedComparison, identityCochainComparison,
+    mapDerivedCategoryIdIso_hom_app,
+    derivedTensorOfMapCounit_app_app] at h₁ h₂ ⊢
+  simp_all [← NatTrans.naturality_assoc]
 
 end TauCeti.Examples.DerivedTensorPointwise

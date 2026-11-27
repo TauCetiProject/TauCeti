@@ -57,28 +57,42 @@ namespace CategoryTheory.Functor
 
 variable (F : C ⥤ D) [F.Additive] [PreservesFiniteLimits F] [PreservesFiniteColimits F]
 
-namespace MapDerivedTensorPointwise
-
 /-- Apply the exact derived functor after tensoring. -/
-abbrev imageTensor := TauCeti.derivedTensor C ⋙ (whiskeringRight _ _ _).obj F.mapDerivedCategory
+abbrev mapDerivedTensor :=
+  TauCeti.derivedTensor C ⋙ (whiskeringRight _ _ _).obj F.mapDerivedCategory
 
 /-- Tensor the two images under the exact derived functor. -/
-abbrev tensorImages :=
+abbrev derivedTensorOfMap :=
   (((whiskeringLeft₂ (DerivedCategory D)).obj F.mapDerivedCategory).obj
     F.mapDerivedCategory).obj (TauCeti.derivedTensor D)
 
 /-- The common cochain bifunctor used to compare the two tensor counits. -/
-abbrev cochainImage := MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+abbrev mapDerivedTensorCochain := MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
   (whiskeringRight _ _ _).obj (DerivedCategory.Q ⋙ F.mapDerivedCategory)
 
 /-- The absolute tensor counit after applying the exact derived functor. -/
-def imageTensorCounit :
+def mapDerivedTensorCounit :
     (((whiskeringLeft₂ (DerivedCategory D)).obj DerivedCategory.Q).obj
-      DerivedCategory.Q).obj (imageTensor F) ⟶ cochainImage F :=
+      DerivedCategory.Q).obj (mapDerivedTensor F) ⟶ mapDerivedTensorCochain F :=
   whiskerRight (TauCeti.derivedTensorCounit C)
     ((whiskeringRight _ _ _).obj F.mapDerivedCategory)
 
-instance : (imageTensor F).IsLeftDerivedFunctor₂ (imageTensorCounit F)
+omit [MonoidalCategory D] [MonoidalPreadditive D]
+  [∀ (X₁ X₂ : GradedObject ℤ D), GradedObject.HasTensor X₁ X₂]
+  [∀ X₁, PreservesColimit (Functor.empty.{0} D) ((MonoidalCategory.curriedTensor D).obj X₁)]
+  [∀ X₂, PreservesColimit (Functor.empty.{0} D) ((MonoidalCategory.curriedTensor D).flip.obj X₂)]
+  [∀ (X₁ X₂ X₃ X₄ : GradedObject ℤ D), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+  [∀ (X₁ X₂ X₃ : GradedObject ℤ D), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ (X₁ X₂ X₃ : GradedObject ℤ D), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+  [BraidedCategory D]
+  [(CochainComplex.KFlat.localizerMorphism D).IsLeftDerivabilityStructure] in
+/-- Component formula for the tensor counit after applying the exact derived functor. -/
+@[simp]
+lemma mapDerivedTensorCounit_app_app (K L : CochainComplex C ℤ) :
+    ((F.mapDerivedTensorCounit).app K).app L =
+      F.mapDerivedCategory.map (((TauCeti.derivedTensorCounit C).app K).app L) := (rfl)
+
+instance : (mapDerivedTensor F).IsLeftDerivedFunctor₂ (mapDerivedTensorCounit F)
     (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) :=
   isLeftDerivedFunctor₂_comp_of_isLeftDerivedFunctor₂_tensor DerivedCategory.Q
     (Localization.inverts _ _) (TauCeti.derivedTensorCounit C) F.mapDerivedCategory
@@ -90,10 +104,10 @@ variable (χ : MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
       (MonoidalCategory.curriedTensor (CochainComplex D ℤ)))
 
 /-- The tensor counit of the image category, transported to the same cochain bifunctor
-as `imageTensorCounit`. -/
-def tensorImagesCounit :
+as `mapDerivedTensorCounit`. -/
+def derivedTensorOfMapCounit :
     (((whiskeringLeft₂ (DerivedCategory D)).obj DerivedCategory.Q).obj
-      DerivedCategory.Q).obj (tensorImages F) ⟶ cochainImage F := by
+      DerivedCategory.Q).obj (derivedTensorOfMap F) ⟶ mapDerivedTensorCochain F := by
   let e := F.mapDerivedCategoryFactors.{w₁, w₂}
   let W := whiskeringLeft₂ (C₁ := CochainComplex C ℤ) (C₂ := CochainComplex C ℤ)
     (D₁ := DerivedCategory D) (D₂ := DerivedCategory D) (DerivedCategory D)
@@ -111,29 +125,19 @@ omit [BraidedCategory C]
   [(CochainComplex.KFlat.localizerMorphism C).IsLeftDerivabilityStructure] in
 /-- Component formula for the transported tensor counit. -/
 @[simp]
-lemma tensorImagesCounit_app_app (K L : CochainComplex C ℤ) :
-    ((tensorImagesCounit F χ).app K).app L =
+lemma derivedTensorOfMapCounit_app_app (K L : CochainComplex C ℤ) :
+    ((derivedTensorOfMapCounit F χ).app K).app L =
       ((TauCeti.derivedTensor D).map (F.mapDerivedCategoryFactors.hom.app K)).app _ ≫
       ((TauCeti.derivedTensor D).obj _).map (F.mapDerivedCategoryFactors.hom.app L) ≫
       ((TauCeti.derivedTensorCounit D).app _).app _ ≫
       DerivedCategory.Q.map ((χ.inv.app K).app L) ≫
       F.mapDerivedCategoryFactors.inv.app (K ⊗ L) := (rfl)
 
-end MapDerivedTensorPointwise
-
-open MapDerivedTensorPointwise
-
-variable (χ : MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
-    (whiskeringRight _ _ _).obj (F.mapHomologicalComplex (.up ℤ)) ≅
-  (((whiskeringLeft₂ (CochainComplex D ℤ)).obj (F.mapHomologicalComplex (.up ℤ))).obj
-    (F.mapHomologicalComplex (.up ℤ))).obj
-      (MonoidalCategory.curriedTensor (CochainComplex D ℤ)))
-
 /-- The canonical comparison from the derived tensor of the images to the image of the
 unbounded derived tensor. No compatible K-flat replacement is needed to define it. -/
-def mapDerivedTensorComparison : tensorImages F ⟶ imageTensor F :=
-  leftDerived₂Lift (imageTensor F) (imageTensorCounit F)
-    (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) (tensorImages F) (tensorImagesCounit F χ)
+def mapDerivedTensorComparison : derivedTensorOfMap F ⟶ mapDerivedTensor F :=
+  leftDerived₂Lift (mapDerivedTensor F) (mapDerivedTensorCounit F)
+    (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) (derivedTensorOfMap F) (derivedTensorOfMapCounit F χ)
 
 /-- The canonical comparison intertwines the two tensor counits. -/
 @[reassoc (attr := simp)]
@@ -141,17 +145,17 @@ lemma mapDerivedTensorComparison_fac (K L : CochainComplex C ℤ) :
     ((F.mapDerivedTensorComparison χ).app (DerivedCategory.Q.obj K)).app
       (DerivedCategory.Q.obj L) ≫ F.mapDerivedCategory.map
         (((TauCeti.derivedTensorCounit C).app K).app L) =
-      ((tensorImagesCounit F χ).app K).app L :=
+      ((derivedTensorOfMapCounit F χ).app K).app L :=
   leftDerived₂_fac_app_app _ _ _ _ _ _ K L
 
 /-- The counit equation uniquely determines the canonical comparison. -/
-lemma mapDerivedTensorComparison_unique (γ : tensorImages F ⟶ imageTensor F)
+lemma mapDerivedTensorComparison_unique (γ : derivedTensorOfMap F ⟶ mapDerivedTensor F)
     (hγ : ∀ K L : CochainComplex C ℤ,
       (γ.app (DerivedCategory.Q.obj K)).app (DerivedCategory.Q.obj L) ≫
         F.mapDerivedCategory.map (((TauCeti.derivedTensorCounit C).app K).app L) =
-      ((tensorImagesCounit F χ).app K).app L) : γ = F.mapDerivedTensorComparison χ := by
-  refine leftDerived₂_ext (LF := imageTensor F) (L₁ := DerivedCategory.Q)
-    (L₂ := DerivedCategory.Q) (α := imageTensorCounit F) (W₁ := quasiIso C (.up ℤ))
+      ((derivedTensorOfMapCounit F χ).app K).app L) : γ = F.mapDerivedTensorComparison χ := by
+  refine leftDerived₂_ext (LF := mapDerivedTensor F) (L₁ := DerivedCategory.Q)
+    (L₂ := DerivedCategory.Q) (α := mapDerivedTensorCounit F) (W₁ := quasiIso C (.up ℤ))
     (W₂ := quasiIso C (.up ℤ)) ?_
   ext K L
   exact (hγ K L).trans (F.mapDerivedTensorComparison_fac χ K L).symm
