@@ -39,8 +39,9 @@ pseudofunctor is a prestack, this presheaf of sets is a sheaf.
 * `AlgebraicGeometry.Scheme.Modules.bigSectionsRestrictLE`: the restriction map of local sections
   `Γ(h^* F, U) ⟶ Γ(h'^* F, U')` along a morphism of `S`-schemes, which along the inclusion of an
   open `V` identifies sections over `V` with the global sections of the `S`-scheme `V`.
-* `AlgebraicGeometry.Scheme.Modules.bigOpenEquiv`: for an open `W` of an `S`-scheme `(T, h)`, the
-  sections of `h^* F` over `W` are the global sections of the pullback of `F` to the `S`-scheme `W`.
+* `AlgebraicGeometry.Scheme.Modules.bigOpenAddEquiv`: for an open `W` of an `S`-scheme `(T, h)`,
+  the sections of `h^* F` over `W` are additively the global sections of the pullback of `F` to
+  the `S`-scheme `W`.
 * `AlgebraicGeometry.Scheme.Modules.bigPresheaf`: the presheaf of modules
   `(T, h) ↦ Γ(T, h^* F)` over `bigRingCatSheaf S`.
 * `AlgebraicGeometry.Scheme.bigPresheafFunctor`: `F ↦ bigPresheaf F` as a functor on `𝒪_S`-modules.
@@ -318,25 +319,24 @@ lemma bigSectionsRestrict_pullbackSectionsLE {T T' : Over S} (f : T ⟶ T') (U :
   rw [bigSectionsRestrict_eq_bigSectionsRestrictLE]
   exact bigSectionsRestrictLE_pullbackSectionsLE F f.left (Over.w f) U ⊤ ⊤ hU _ hU' s
 
-/-- For an `S`-scheme `(T, h)` and an open `W` of `T`, the sections of `h^* F` over `W` are the
-global sections of the pullback of `F` to the `S`-scheme `W`. -/
-noncomputable def bigOpenEquiv (T : Over S) (W : T.left.Opens) :
-    Γ((pullback T.hom).obj F, W) ≃ Γ((pullback (W.ι ≫ T.hom)).obj F, ⊤) :=
-  Equiv.ofBijective _ (bijective_bigSectionsRestrictLE_ι F T.hom W rfl)
+/-- For an `S`-scheme `(T, h)` and an open `W` of `T`, the sections of `h^* F` over `W` are
+additively identified with the global sections of the pullback of `F` to the `S`-scheme `W`. -/
+noncomputable def bigOpenAddEquiv (T : Over S) (W : T.left.Opens) :
+    Γ((pullback T.hom).obj F, W) ≃+ Γ((pullback (W.ι ≫ T.hom)).obj F, ⊤) :=
+  AddEquiv.ofBijective (AddMonoidHom.mk' (bigSectionsRestrictLE F W.ι rfl W ⊤ (by simp))
+      fun s s' ↦ by simp only [bigSectionsRestrictLE_apply, map_add])
+    (bijective_bigSectionsRestrictLE_ι F T.hom W rfl)
 
-lemma bigOpenEquiv_apply (T : Over S) (W : T.left.Opens) (s : Γ((pullback T.hom).obj F, W)) :
-    bigOpenEquiv F T W s = bigSectionsRestrictLE F W.ι rfl W ⊤ (by simp) s :=
+lemma bigOpenAddEquiv_apply (T : Over S) (W : T.left.Opens)
+    (s : Γ((pullback T.hom).obj F, W)) :
+    bigOpenAddEquiv F T W s = bigSectionsRestrictLE F W.ι rfl W ⊤ (by simp) s :=
   (rfl)
 
-lemma bigOpenEquiv_add (T : Over S) (W : T.left.Opens) (s s' : Γ((pullback T.hom).obj F, W)) :
-    bigOpenEquiv F T W (s + s') = bigOpenEquiv F T W s + bigOpenEquiv F T W s' := by
-  simp only [bigOpenEquiv_apply, bigSectionsRestrictLE_apply, map_add]
-
-lemma bigOpenEquiv_smul (T : Over S) (W : T.left.Opens) (r : Γ(T.left, W))
+lemma bigOpenAddEquiv_smul (T : Over S) (W : T.left.Opens) (r : Γ(T.left, W))
     (s : Γ((pullback T.hom).obj F, W)) :
-    bigOpenEquiv F T W (r • s) =
-      (W.ι.appLE W ⊤ (by simp)).hom r • bigOpenEquiv F T W s := by
-  simp only [bigOpenEquiv_apply, bigSectionsRestrictLE_apply, map_smulₛₗ, Hom.app_smul]
+    bigOpenAddEquiv F T W (r • s) =
+      (W.ι.appLE W ⊤ (by simp)).hom r • bigOpenAddEquiv F T W s := by
+  simp only [bigOpenAddEquiv_apply, bigSectionsRestrictLE_apply, map_smulₛₗ, Hom.app_smul]
 
 /-- Restricting the section `(h'^* 𝒪_S ≅ 𝒪_{T'})⁻¹ 1` of the big site along `f : T ⟶ T'` gives
 the section `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1`. -/

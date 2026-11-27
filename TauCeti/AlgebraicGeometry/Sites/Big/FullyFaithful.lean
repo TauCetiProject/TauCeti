@@ -25,7 +25,7 @@ The morphism `φ` is read off on the open subschemes `U` of `S`, whose big-site 
 `AlgebraicGeometry.Scheme.Modules.bigPresheafOpensAddEquiv`). To see that `ψ` is `φ^a` over an
 arbitrary `S`-scheme `(T, h)`, `ψ` is first restricted to a morphism of `𝒪_T`-modules
 `h^* F ⟶ h^* G` (`AlgebraicGeometry.Scheme.Modules.bigRestrictHom`), acting on the sections over
-an open `W` of `T` through the `S`-scheme `W` (`AlgebraicGeometry.Scheme.Modules.bigOpenEquiv`).
+an open `W` of `T` through the `S`-scheme `W` (`AlgebraicGeometry.Scheme.Modules.bigOpenAddEquiv`).
 A morphism out of `h^* F` is determined by its values on the pullbacks of sections of `F`
 (`Scheme.Modules.pullback_hom_ext`), and on those both morphisms are computed by `ψ` on the open
 subschemes of `S`. No quasi-coherence is needed for this argument.
@@ -59,94 +59,105 @@ namespace Modules
 
 variable {S : Scheme.{u}} {F G : S.Modules} (ψ : F.bigPresheaf ⟶ G.bigPresheaf)
 
+section Transport
+
+/-! Both morphisms induced by `ψ` are built the same way: the sections over each open `W` of a
+scheme `X` are additively identified, by `e`, with the big-site sections over an `S`-scheme `O W`,
+compatibly with scalars and restriction, and `ψ` on `O W` is transported along `e`. -/
+
+variable {X : Scheme.{u}} (P : S.Modules → X.Modules) (O : X.Opens → Over S)
+  (e : ∀ (M : S.Modules) (W : X.Opens), Γ(P M, W) ≃+ Γ((pullback (O W).hom).obj M, ⊤))
+
+/-- The map on sections over an open `W` of `X` obtained by conjugating `ψ` on `O W` with `e`. -/
+private noncomputable def transportMap (W : X.Opens) : Γ(P F, W) →+ Γ(P G, W) :=
+  (e G W).symm.toAddMonoidHom.comp
+    ((ψ.app (op (O W))).hom.toAddMonoidHom.comp (e F W).toAddMonoidHom)
+
+private lemma apply_transportMap (W : X.Opens) (s : Γ(P F, W)) :
+    e G W (transportMap ψ P O e W s) = ψ.app (op (O W)) (e F W s) :=
+  AddEquiv.apply_symm_apply _ _
+
+variable (ρ : ∀ {W' W : X.Opens}, W' ≤ W → (O W' ⟶ O W))
+  (σ : ∀ W : X.Opens, Γ(X, W) → Γ((O W).left, ⊤))
+  (he_smul : ∀ (M : S.Modules) (W : X.Opens) (r : Γ(X, W)) (s : Γ(P M, W)),
+    e M W (r • s) = σ W r • e M W s)
+  (he_map : ∀ (M : S.Modules) {W' W : X.Opens} (h : W' ≤ W) (s : Γ(P M, W)),
+    M.bigPresheaf.map (ρ h).op (e M W s) = e M W' ((P M).presheaf.map (homOfLE h).op s))
+
+include he_smul in
+private lemma transportMap_smul (W : X.Opens) (r : Γ(X, W)) (s : Γ(P F, W)) :
+    transportMap ψ P O e W (r • s) = r • transportMap ψ P O e W s :=
+  (e G W).injective (by
+    rw [apply_transportMap, he_smul, he_smul, apply_transportMap]
+    exact (ψ.app _).hom.map_smul _ _)
+
+include he_map in
+private lemma transportMap_map {W W' : X.Opens} (h : W' ≤ W) (s : Γ(P F, W)) :
+    transportMap ψ P O e W' ((P F).presheaf.map (homOfLE h).op s) =
+      (P G).presheaf.map (homOfLE h).op (transportMap ψ P O e W s) :=
+  (e G W').injective (by
+    rw [apply_transportMap, ← he_map F h, ← he_map G h, apply_transportMap]
+    exact PresheafOfModules.naturality_apply ψ (ρ h).op _)
+
+/-- The morphism `P F ⟶ P G` of `𝒪_X`-modules obtained by transporting `ψ` along identifications
+`e` that are compatible with scalars (through `σ`) and with restriction (through `ρ`). -/
+private noncomputable def transportHom : P F ⟶ P G :=
+  ⟨PresheafOfModules.homMk
+    { app W := AddCommGrpCat.ofHom (transportMap ψ P O e W.unop)
+      naturality _ _ i := by
+        ext s
+        exact transportMap_map ψ P O e ρ he_map i.unop.le s }
+    fun W r s ↦ transportMap_smul ψ P O e σ he_smul W.unop r s⟩
+
+end Transport
+
 section Restrict
 
 variable (T : Over S)
 
-/-- The map on sections over an open `W` of `T` of the morphism `h^* F ⟶ h^* G` induced by `ψ`:
-apply `ψ` on the `S`-scheme `W`. -/
-private noncomputable def bigRestrictMap (W : T.left.Opens) (s : Γ((pullback T.hom).obj F, W)) :
-    Γ((pullback T.hom).obj G, W) :=
-  (bigOpenEquiv G T W).symm (ψ.app (op (Over.mk (W.ι ≫ T.hom))) (bigOpenEquiv F T W s))
-
-private lemma bigOpenEquiv_bigRestrictMap (W : T.left.Opens)
-    (s : Γ((pullback T.hom).obj F, W)) :
-    bigOpenEquiv G T W (bigRestrictMap ψ T W s) =
-      ψ.app (op (Over.mk (W.ι ≫ T.hom))) (bigOpenEquiv F T W s) :=
-  Equiv.apply_symm_apply _ _
-
-private lemma bigRestrictMap_add (W : T.left.Opens) (s s' : Γ((pullback T.hom).obj F, W)) :
-    bigRestrictMap ψ T W (s + s') = bigRestrictMap ψ T W s + bigRestrictMap ψ T W s' :=
-  (bigOpenEquiv G T W).injective (by
-    rw [bigOpenEquiv_add, bigOpenEquiv_bigRestrictMap, bigOpenEquiv_bigRestrictMap,
-      bigOpenEquiv_bigRestrictMap, bigOpenEquiv_add]
-    exact (ψ.app _).hom.map_add _ _)
-
-private lemma bigRestrictMap_smul (W : T.left.Opens) (r : Γ(T.left, W))
-    (s : Γ((pullback T.hom).obj F, W)) :
-    bigRestrictMap ψ T W (r • s) = r • bigRestrictMap ψ T W s :=
-  (bigOpenEquiv G T W).injective (by
-    rw [bigOpenEquiv_smul, bigOpenEquiv_bigRestrictMap, bigOpenEquiv_bigRestrictMap,
-      bigOpenEquiv_smul]
-    exact (ψ.app _).hom.map_smul _ _)
-
-private lemma bigRestrictMap_map {W W' : T.left.Opens} (hW : W' ≤ W)
-    (s : Γ((pullback T.hom).obj F, W)) :
-    bigRestrictMap ψ T W' (((pullback T.hom).obj F).presheaf.map (homOfLE hW).op s) =
-      ((pullback T.hom).obj G).presheaf.map (homOfLE hW).op (bigRestrictMap ψ T W s) :=
-  (bigOpenEquiv G T W').injective (by
-    let f : Over.mk (W'.ι ≫ T.hom) ⟶ Over.mk (W.ι ≫ T.hom) :=
-      Over.homMk (T.left.homOfLE hW) (by simp)
-    have e (M : S.Modules) (x : Γ((pullback T.hom).obj M, W)) :
-        M.bigPresheaf.map f.op (bigOpenEquiv M T W x) =
-          bigOpenEquiv M T W' (((pullback T.hom).obj M).presheaf.map (homOfLE hW).op x) := by
-      rw [bigPresheaf_map_apply, bigOpenEquiv_apply, bigOpenEquiv_apply]
-      exact bigSectionsRestrict_homMk_homOfLE M T hW rfl rfl x
-    rw [bigOpenEquiv_bigRestrictMap, ← e, ← e, bigOpenEquiv_bigRestrictMap]
-    exact PresheafOfModules.naturality_apply ψ f.op _)
-
 /-- The morphism of `𝒪_T`-modules `h^* F ⟶ h^* G` induced by `ψ : F^a ⟶ G^a` over an `S`-scheme
 `(T, h)`: on sections over an open `W` of `T` it is `ψ` on the `S`-scheme `W`
-(`bigOpenEquiv_bigRestrictHom_app`). -/
+(`bigOpenAddEquiv_bigRestrictHom_app`). -/
 noncomputable def bigRestrictHom : (pullback T.hom).obj F ⟶ (pullback T.hom).obj G :=
-  ⟨PresheafOfModules.homMk
-    { app W := AddCommGrpCat.ofHom (AddMonoidHom.mk' (bigRestrictMap ψ T W.unop)
-        (bigRestrictMap_add ψ T W.unop))
-      naturality _ _ i := by
-        ext s
-        exact bigRestrictMap_map ψ T i.unop.le s }
-    fun W r s ↦ bigRestrictMap_smul ψ T W.unop r s⟩
+  transportHom ψ (fun M ↦ (pullback T.hom).obj M) (fun W ↦ Over.mk (W.ι ≫ T.hom))
+    (fun M W ↦ bigOpenAddEquiv M T W) (fun hW ↦ Over.homMk (T.left.homOfLE hW) (by simp))
+    (fun W ↦ (W.ι.appLE W ⊤ (by simp)).hom) (fun M W ↦ bigOpenAddEquiv_smul M T W)
+    fun M _ _ hW s ↦ by
+      rw [bigPresheaf_map_apply, bigOpenAddEquiv_apply, bigOpenAddEquiv_apply]
+      exact bigSectionsRestrict_homMk_homOfLE M T hW rfl rfl s
 
 /-- On sections over an open `W` of `T`, the restriction of `ψ` to `(T, h)` is `ψ` on the
 `S`-scheme `W`. -/
 @[simp]
-lemma bigOpenEquiv_bigRestrictHom_app (W : T.left.Opens) (s : Γ((pullback T.hom).obj F, W)) :
-    bigOpenEquiv G T W ((bigRestrictHom ψ T).app W s) =
-      ψ.app (op (Over.mk (W.ι ≫ T.hom))) (bigOpenEquiv F T W s) :=
-  bigOpenEquiv_bigRestrictMap ψ T W s
+lemma bigOpenAddEquiv_bigRestrictHom_app (W : T.left.Opens) (s : Γ((pullback T.hom).obj F, W)) :
+    bigOpenAddEquiv G T W ((bigRestrictHom ψ T).app W s) =
+      ψ.app (op (Over.mk (W.ι ≫ T.hom))) (bigOpenAddEquiv F T W s) :=
+  apply_transportMap ψ (fun M ↦ (pullback T.hom).obj M) (fun W ↦ Over.mk (W.ι ≫ T.hom))
+    (fun M W ↦ bigOpenAddEquiv M T W) W s
 
 /-- On global sections, the restriction of `ψ` to `(T, h)` is `ψ` on `(T, h)`. -/
 @[simp]
 lemma bigRestrictHom_app_top (s : Γ((pullback T.hom).obj F, ⊤)) :
     (bigRestrictHom ψ T).app ⊤ s = ψ.app (op T) s := by
-  apply (bigOpenEquiv G T ⊤).injective
+  apply (bigOpenAddEquiv G T ⊤).injective
   let ι : Over.mk ((⊤ : T.left.Opens).ι ≫ T.hom) ⟶ T := Over.homMk (⊤ : T.left.Opens).ι
   have e (M : S.Modules) (x : Γ((pullback T.hom).obj M, ⊤)) :
-      M.bigPresheaf.map ι.op x = bigOpenEquiv M T ⊤ x := by
-    rw [bigPresheaf_map_apply, bigSectionsRestrict_homMk_ι, bigOpenEquiv_apply]
+      M.bigPresheaf.map ι.op x = bigOpenAddEquiv M T ⊤ x := by
+    rw [bigPresheaf_map_apply, bigSectionsRestrict_homMk_ι, bigOpenAddEquiv_apply]
     congr 1
-    exact congr($(((pullback T.hom).obj M).presheaf.map_id (op ⊤)) x)
-  rw [bigOpenEquiv_bigRestrictHom_app, ← e F s]
+    rw [Subsingleton.elim (homOfLE le_top) (𝟙 (⊤ : T.left.Opens)), op_id,
+      CategoryTheory.Functor.map_id, AddCommGrpCat.id_apply]
+  rw [bigOpenAddEquiv_bigRestrictHom_app, ← e F s]
   exact (PresheafOfModules.naturality_apply ψ ι.op s).trans (e G _)
 
 /-- The restriction of `ψ` to `(T, h)` on the pullback of a section `s` of `F` over `U`: it is
 `ψ` applied to `s` on the `S`-scheme `U`, restricted to `h⁻¹ U`. -/
-lemma bigOpenEquiv_bigRestrictHom_pullbackSections (U : S.Opens) (s : Γ(F, U)) :
-    bigOpenEquiv G T (T.hom ⁻¹ᵁ U)
+lemma bigOpenAddEquiv_bigRestrictHom_pullbackSections (U : S.Opens) (s : Γ(F, U)) :
+    bigOpenAddEquiv G T (T.hom ⁻¹ᵁ U)
         ((bigRestrictHom ψ T).app (T.hom ⁻¹ᵁ U) (T.hom.pullbackSections F U s)) =
       G.bigPresheaf.map (bigPreimageHom T U).op
         (ψ.app (op (Over.mk U.ι)) (F.bigPresheafOpensAddEquiv U s)) := by
-  rw [bigOpenEquiv_bigRestrictHom_app, bigOpenEquiv_pullbackSections, ← bigPresheaf_map_apply]
+  rw [bigOpenAddEquiv_bigRestrictHom_app, bigOpenAddEquiv_pullbackSections, ← bigPresheaf_map_apply]
   exact PresheafOfModules.naturality_apply ψ _ _
 
 end Restrict
@@ -158,55 +169,21 @@ theorem bigPresheafFunctor_map_eq (φ : F ⟶ G)
         G.bigPresheafOpensAddEquiv U (φ.app U s)) :
     (bigPresheafFunctor S).map φ = ψ := by
   have key (T : Over S) : bigRestrictHom ψ T = (pullback T.hom).map φ := by
-    refine pullback_hom_ext fun U s ↦ (bigOpenEquiv G T (T.hom ⁻¹ᵁ U)).injective ?_
-    rw [bigOpenEquiv_bigRestrictHom_pullbackSections, h, Hom.pullbackSections_naturality,
-      bigOpenEquiv_pullbackSections, bigPresheaf_map_apply]
+    refine pullback_hom_ext fun U s ↦ (bigOpenAddEquiv G T (T.hom ⁻¹ᵁ U)).injective ?_
+    rw [bigOpenAddEquiv_bigRestrictHom_pullbackSections, h, Hom.pullbackSections_naturality,
+      bigOpenAddEquiv_pullbackSections, bigPresheaf_map_apply]
   ext ⟨T⟩ s
   exact (bigPresheafFunctor_map_app_apply φ T s).trans
     ((congr($(key T).app ⊤ s)).symm.trans (bigRestrictHom_app_top ψ T s))
 
 section OfHom
 
-/-- The map on sections over an open `U` of `S` of the morphism `F ⟶ G` induced by `ψ`. -/
-private noncomputable def bigOfHomMap (U : S.Opens) (s : Γ(F, U)) : Γ(G, U) :=
-  (G.bigPresheafOpensAddEquiv U).symm (ψ.app (op (Over.mk U.ι)) (F.bigPresheafOpensAddEquiv U s))
-
-private lemma bigPresheafOpensAddEquiv_bigOfHomMap (U : S.Opens) (s : Γ(F, U)) :
-    G.bigPresheafOpensAddEquiv U (bigOfHomMap ψ U s) =
-      ψ.app (op (Over.mk U.ι)) (F.bigPresheafOpensAddEquiv U s) :=
-  AddEquiv.apply_symm_apply _ _
-
-private lemma bigOfHomMap_add (U : S.Opens) (s s' : Γ(F, U)) :
-    bigOfHomMap ψ U (s + s') = bigOfHomMap ψ U s + bigOfHomMap ψ U s' :=
-  (G.bigPresheafOpensAddEquiv U).injective (by
-    simp only [map_add, bigPresheafOpensAddEquiv_bigOfHomMap]
-    exact (ψ.app _).hom.map_add _ _)
-
-private lemma bigOfHomMap_smul (U : S.Opens) (r : Γ(S, U)) (s : Γ(F, U)) :
-    bigOfHomMap ψ U (r • s) = r • bigOfHomMap ψ U s :=
-  (G.bigPresheafOpensAddEquiv U).injective (by
-    rw [bigPresheafOpensAddEquiv_smul, bigPresheafOpensAddEquiv_bigOfHomMap,
-      bigPresheafOpensAddEquiv_bigOfHomMap, bigPresheafOpensAddEquiv_smul]
-    exact (ψ.app _).hom.map_smul _ _)
-
-private lemma bigOfHomMap_map {U U' : S.Opens} (hU : U' ≤ U) (s : Γ(F, U)) :
-    bigOfHomMap ψ U' (F.presheaf.map (homOfLE hU).op s) =
-      G.presheaf.map (homOfLE hU).op (bigOfHomMap ψ U s) :=
-  (G.bigPresheafOpensAddEquiv U').injective (by
-    rw [bigPresheafOpensAddEquiv_bigOfHomMap, ← bigPresheaf_map_bigPresheafOpensAddEquiv,
-      ← bigPresheaf_map_bigPresheafOpensAddEquiv, bigPresheafOpensAddEquiv_bigOfHomMap]
-    exact PresheafOfModules.naturality_apply ψ _ _)
-
 /-- The morphism `F ⟶ G` induced by `ψ : F^a ⟶ G^a`: on sections over an open `U` of `S` it is
 `ψ` on the `S`-scheme `U` (`bigPresheafOpensAddEquiv_bigOfHom_app`). -/
 noncomputable def bigOfHom : F ⟶ G :=
-  ⟨PresheafOfModules.homMk
-    { app U := AddCommGrpCat.ofHom (AddMonoidHom.mk' (bigOfHomMap ψ U.unop)
-        (bigOfHomMap_add ψ U.unop))
-      naturality _ _ i := by
-        ext s
-        exact bigOfHomMap_map ψ i.unop.le s }
-    fun U r s ↦ bigOfHomMap_smul ψ U.unop r s⟩
+  transportHom ψ (fun M ↦ M) (fun U ↦ Over.mk U.ι) bigPresheafOpensAddEquiv
+    (fun hU ↦ Over.homMk (S.homOfLE hU) (by simp)) (fun U ↦ (U.ι.appLE U ⊤ (by simp)).hom)
+    bigPresheafOpensAddEquiv_smul fun M _ _ hU s ↦ bigPresheaf_map_bigPresheafOpensAddEquiv M hU s
 
 /-- On sections over an open `U` of `S`, the morphism induced by `ψ` is `ψ` on the `S`-scheme
 `U`. -/
@@ -214,7 +191,7 @@ noncomputable def bigOfHom : F ⟶ G :=
 lemma bigPresheafOpensAddEquiv_bigOfHom_app (U : S.Opens) (s : Γ(F, U)) :
     G.bigPresheafOpensAddEquiv U ((bigOfHom ψ).app U s) =
       ψ.app (op (Over.mk U.ι)) (F.bigPresheafOpensAddEquiv U s) :=
-  bigPresheafOpensAddEquiv_bigOfHomMap ψ U s
+  apply_transportMap ψ (fun M ↦ M) (fun U ↦ Over.mk U.ι) bigPresheafOpensAddEquiv U s
 
 /-- **`(bigOfHom ψ)^a = ψ`.** Every `𝒪`-linear morphism `F^a ⟶ G^a` comes from a morphism of
 `𝒪_S`-modules. -/

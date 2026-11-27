@@ -22,7 +22,7 @@ identification pulls a section of `F` over `V` back along the inclusion `ι_V : 
 
 For an `S`-scheme `(T, h)`, the pullback of a section of `F` over `V` to the open `h⁻¹ V` of `T`,
 read on the `S`-scheme `h⁻¹ V`, is the restriction of the corresponding section of `F^a` along
-`h⁻¹ V ⟶ V` (`AlgebraicGeometry.Scheme.Modules.bigOpenEquiv_pullbackSections`).
+`h⁻¹ V ⟶ V` (`AlgebraicGeometry.Scheme.Modules.bigOpenAddEquiv_pullbackSections`).
 -/
 
 public section
@@ -81,11 +81,11 @@ noncomputable abbrev bigPreimageHom (T : Over S) (V : S.Opens) :
 
 /-- The pullback to `h⁻¹ V` of a section of `F` over `V`, read on the `S`-scheme `h⁻¹ V`, is the
 restriction of that section from the `S`-scheme `V`. -/
-lemma bigOpenEquiv_pullbackSections (T : Over S) (V : S.Opens) (s : Γ(F, V)) :
-    bigOpenEquiv F T (T.hom ⁻¹ᵁ V) (T.hom.pullbackSections F V s) =
+lemma bigOpenAddEquiv_pullbackSections (T : Over S) (V : S.Opens) (s : Γ(F, V)) :
+    bigOpenAddEquiv F T (T.hom ⁻¹ᵁ V) (T.hom.pullbackSections F V s) =
       bigSectionsRestrict F (bigPreimageHom T V) (F.bigPresheafOpensAddEquiv V s) := by
   have hV : ⊤ ≤ ((T.hom ⁻¹ᵁ V).ι ≫ T.hom) ⁻¹ᵁ V := by simp
-  rw [bigOpenEquiv_apply, ← Hom.pullbackSectionsLE_self,
+  rw [bigOpenAddEquiv_apply, ← Hom.pullbackSectionsLE_self,
     bigSectionsRestrictLE_pullbackSectionsLE F _ rfl V _ ⊤ le_rfl _ hV,
     bigPresheafOpensAddEquiv_apply]
   exact (bigSectionsRestrict_pullbackSectionsLE F (bigPreimageHom T V) V (by simp) hV s).symm

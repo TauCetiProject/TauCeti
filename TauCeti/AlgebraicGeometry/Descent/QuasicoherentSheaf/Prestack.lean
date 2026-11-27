@@ -171,35 +171,25 @@ private lemma bigPresheafOpensAddEquiv_glued_app (U : S.Opens) (s : Γ(M, U)) :
 private lemma pullback_map_glued {Y : Over S} (g : Y ⟶ Over.mk (𝟙 S)) (hg : R g) :
     (Scheme.Modules.pullback Y.hom).map (glued hR hm) = m g hg := by
   refine pullback_hom_ext fun U s ↦ ?_
-  let V : Y.left.Opens := Y.hom ⁻¹ᵁ U
-  let ιV : Over.mk (V.ι ≫ Y.hom) ⟶ Y := Over.homMk V.ι
-  let c : Over.mk (V.ι ≫ Y.hom) ⟶ opensOver U :=
-    Over.homMk (Y.hom.resLE U V le_rfl) (Scheme.Hom.resLE_comp_ι _ _)
-  have hc : R (c ≫ Over.mkIdTerminal.from (opensOver U)) := by
-    rw [Over.mkIdTerminal.hom_ext (c ≫ _) (ιV ≫ g)]
+  let ιV : Over.mk ((Y.hom ⁻¹ᵁ U).ι ≫ Y.hom) ⟶ Y := Over.homMk (Y.hom ⁻¹ᵁ U).ι
+  have hc : R (bigPreimageHom Y U ≫ Over.mkIdTerminal.from (opensOver U)) := by
+    rw [Over.mkIdTerminal.hom_ext (bigPreimageHom Y U ≫ _) (ιV ≫ g)]
     exact R.downward_closed hg ιV
-  have hV : ⊤ ≤ (V.ι ≫ Y.hom) ⁻¹ᵁ U := by simp [V]
-  apply (bijective_bigSectionsRestrictLE_ι N Y.hom V rfl).injective
-  -- Both sides, read as global sections over the open subscheme `V = Y⁻¹ U`, are the value of
-  -- the member of `m` over `V` on the pullback of `s`: for the glued morphism by construction of
-  -- its sections over `U`, for `m g hg` by compatibility of `m` with restriction to `V`.
-  have h₁ : bigSectionsRestrictLE N V.ι rfl V ⊤ (by simp)
-      (((Scheme.Modules.pullback Y.hom).map (glued hR hm)).app V (Y.hom.pullbackSections M U s)) =
-      (m _ hc).app ⊤ ((V.ι ≫ Y.hom).pullbackSectionsLE M U ⊤ hV s) := by
-    rw [Scheme.Hom.pullbackSections_naturality, ← Scheme.Hom.pullbackSectionsLE_self,
-      bigSectionsRestrictLE_pullbackSectionsLE N V.ι rfl U V ⊤ le_rfl _ hV]
-    refine (bigSectionsRestrict_pullbackSectionsLE N c U (by simp) hV _).symm.trans ?_
-    refine (congrArg (bigSectionsRestrict N c) ((bigPresheafOpensAddEquiv_apply N U _).symm.trans
-      (bigPresheafOpensAddEquiv_glued_app hR hm U s))).trans ?_
-    rw [bigSectionsRestrict_glue hR hm _ _ c hc, bigPresheafOpensAddEquiv_apply]
-    exact congrArg _ (bigSectionsRestrict_pullbackSectionsLE M c U _ hV s)
-  have h₂ : bigSectionsRestrictLE N V.ι rfl V ⊤ (by simp)
-      ((m g hg).app V (Y.hom.pullbackSections M U s)) =
-      (m _ hc).app ⊤ ((V.ι ≫ Y.hom).pullbackSectionsLE M U ⊤ hV s) := by
-    rw [bigSectionsRestrictLE_app, ← Scheme.Hom.pullbackSectionsLE_self,
-      bigSectionsRestrictLE_pullbackSectionsLE M V.ι rfl U V ⊤ le_rfl _ hV]
-    have := hm ιV g hg
-    exact congr(Hom.app $((this.symm.trans (m_congr m _ hc))) ⊤ _)
+  apply (bigOpenAddEquiv N Y (Y.hom ⁻¹ᵁ U)).injective
+  -- Both sides, read as global sections over the open subscheme `Y⁻¹ U`, are the value of the
+  -- member of `m` over `Y⁻¹ U` on the pullback of `s`: for the glued morphism by construction of
+  -- its sections over `U`, for `m g hg` by compatibility of `m` with restriction to `Y⁻¹ U`.
+  have h₁ : bigOpenAddEquiv N Y (Y.hom ⁻¹ᵁ U)
+      (((Scheme.Modules.pullback Y.hom).map (glued hR hm)).app (Y.hom ⁻¹ᵁ U)
+        (Y.hom.pullbackSections M U s)) =
+      (m _ hc).app ⊤ (bigOpenAddEquiv M Y (Y.hom ⁻¹ᵁ U) (Y.hom.pullbackSections M U s)) := by
+    rw [Scheme.Hom.pullbackSections_naturality, bigOpenAddEquiv_pullbackSections,
+      bigPresheafOpensAddEquiv_glued_app, bigSectionsRestrict_glue hR hm _ _ _ hc,
+      bigOpenAddEquiv_pullbackSections]
+  have h₂ : bigOpenAddEquiv N Y (Y.hom ⁻¹ᵁ U) ((m g hg).app _ (Y.hom.pullbackSections M U s)) =
+      (m _ hc).app ⊤ (bigOpenAddEquiv M Y (Y.hom ⁻¹ᵁ U) (Y.hom.pullbackSections M U s)) := by
+    rw [bigOpenAddEquiv_apply, bigOpenAddEquiv_apply, bigSectionsRestrictLE_app]
+    exact congr(Hom.app $((hm ιV g hg).symm.trans (m_congr m _ hc)) ⊤ _)
   exact h₁.trans h₂.symm
 
 private lemma sectionsEquiv_app_eq_glue (φ : M ⟶ N)
