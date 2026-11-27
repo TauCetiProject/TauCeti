@@ -98,7 +98,9 @@ into `CF^∞` (`isHomogeneous_mapRange_toLaurent`), the quotient map onto `CF⁺
   `TauCeti.HeegaardRegionSystem.IsMaslovGrading.isHomogeneous_minusDifferential`,
   `TauCeti.HeegaardRegionSystem.IsMaslovGrading.isHomogeneous_infinityDifferential` and
   `TauCeti.HeegaardRegionSystem.IsMaslovGrading.isHomogeneous_plusDifferential`: the differentials
-  have degree `-1`.
+  have degree `-1`. The minus differential is homogeneous by
+  `TauCeti.HeegaardRegionSystem.isHomogeneous_monomialGradedPiece`, which checks the degree of a
+  map given by polynomial coefficients on the chains `U ^ k x`.
 * `TauCeti.HeegaardRegionSystem.X_smul_mem_minusGradedPiece`,
   `TauCeti.HeegaardRegionSystem.X_smul_mem_infinityGradedPiece` and
   `TauCeti.HeegaardRegionSystem.X_smul_mem_plusGrading_piece`: `U` has degree `-2`.
@@ -356,6 +358,30 @@ theorem X_smul_mem_monomialGradedPiece [AddGroup ι] {d : ι}
     rw [hdeg, hc x j hk]
   · exact absurd rfl hk
 
+/-- **A map given by coefficients `coef x y` is homogeneous of degree `d`** when every term `U ^ j`
+of `coef x y` sends `U ^ k x` to `U ^ (k + j) y` of degree `deg x k + d`. The minus differential
+and the minus knot differential are of this form. -/
+theorem isHomogeneous_monomialGradedPiece [Add ι] {d : ι}
+    {f : (H.Generator →₀ (ZMod 2)[X]) →ₗ[(ZMod 2)[X]] H.Generator →₀ (ZMod 2)[X]}
+    (coef : H.Generator → H.Generator → (ZMod 2)[X])
+    (hf : ∀ x y a, f (Finsupp.single x a) y = a * coef x y)
+    (hcoef : ∀ x y k j, (coef x y).coeff j ≠ 0 → deg y (k + j) = deg x k + d) :
+    LinearMap.IsHomogeneous f (H.monomialGradedPiece deg) (H.monomialGradedPiece deg) d := by
+  -- Check the degree on the basis `U ^ k x`, which spans the pieces.
+  nth_rw 1 [monomialGradedPiece_eq_span]
+  refine LinearMap.isHomogeneous_span_iff.2 ?_
+  rintro a _ ⟨⟨x, k⟩, hi, rfl⟩
+  rw [mem_monomialGradedPiece_iff]
+  intro y j hj
+  simp only [Finsupp.coe_basis, coe_basisMonomials, ← X_pow_eq_monomial, hf,
+    coeff_X_pow_mul'] at hj
+  split_ifs at hj with hkj
+  · obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hkj
+    rw [Nat.add_sub_cancel_left] at hj
+    simp only [Set.mem_ofPred_eq] at hi
+    rw [hcoef x y k i hj, hi]
+  · exact absurd rfl hj
+
 end Monomial
 
 /-- The degree-`q` piece of `CF⁻` for a grading `gr` of the generators: the span of the chains
@@ -609,19 +635,12 @@ theorem isHomogeneous_hatDifferential (h : H.IsMaslovGrading χ gr) :
 theorem isHomogeneous_minusDifferential (h : H.IsMaslovGrading χ gr) :
     LinearMap.IsHomogeneous (H.minusDifferential χ) (H.minusGradedPiece gr)
       (H.minusGradedPiece gr) (-1) := by
-  -- Check the degree on the basis `U ^ k x` of `CF⁻`, which spans its pieces.
-  refine LinearMap.isHomogeneous_span_iff.2 ?_
-  rintro p _ ⟨⟨x, k⟩, hi, rfl⟩
-  rw [mem_minusGradedPiece_iff]
-  intro y j hj
-  simp only [Finsupp.coe_basis, coe_basisMonomials, ← X_pow_eq_monomial,
-    minusDifferential_single_apply, coeff_X_pow_mul'] at hj
-  split_ifs at hj with hkj
-  · have := h.sub_eq_one_sub_two_mul_of_coeff_minusCoefficient_ne_zero hj
-    push_cast [hkj] at this
-    simp only [Set.mem_ofPred_eq] at hi
-    linarith
-  · exact absurd rfl hj
+  unfold minusGradedPiece
+  refine isHomogeneous_monomialGradedPiece _ minusDifferential_single_apply
+    fun x y k j hj => ?_
+  have := h.sub_eq_one_sub_two_mul_of_coeff_minusCoefficient_ne_zero hj
+  push_cast
+  linarith
 
 /-- **The infinity differential has degree `-1`** for a Maslov grading. -/
 theorem isHomogeneous_infinityDifferential (h : H.IsMaslovGrading χ gr) :

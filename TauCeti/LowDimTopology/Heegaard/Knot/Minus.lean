@@ -366,23 +366,12 @@ grading. -/
 theorem isHomogeneous_knotMinusDifferential_alexander (h : H.IsKnotGrading χ w z M A) :
     LinearMap.IsHomogeneous (H.knotMinusDifferential χ w z) (H.knotMinusAlexanderPiece A)
       (H.knotMinusAlexanderPiece A) 0 := by
-  -- Check the degree on the basis `U ^ k x` of `CFK⁻`, which spans its pieces.
-  have hspan : H.knotMinusAlexanderPiece A = fun a => Submodule.span (ZMod 2)
-      (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) '' {i | A i.1 - i.2 = a}) :=
-    monomialGradedPiece_eq_span
-  nth_rw 1 [hspan]
-  refine LinearMap.isHomogeneous_span_iff.2 ?_
-  rintro a _ ⟨⟨x, k⟩, hi, rfl⟩
-  rw [mem_knotMinusAlexanderPiece_iff]
-  intro y j hj
-  simp only [Finsupp.coe_basis, coe_basisMonomials, ← X_pow_eq_monomial,
-    knotMinusDifferential_single_apply, coeff_X_pow_mul'] at hj
-  split_ifs at hj with hkj
-  · have := h.alexander_eq_sub_of_coeff_knotMinusCoefficient_ne_zero hj
-    simp only [Set.mem_ofPred_eq] at hi
-    push_cast [hkj] at this
-    omega
-  · exact absurd rfl hj
+  unfold knotMinusAlexanderPiece
+  refine isHomogeneous_monomialGradedPiece _ knotMinusDifferential_single_apply
+    fun x y k j hj => ?_
+  have := h.alexander_eq_sub_of_coeff_knotMinusCoefficient_ne_zero hj
+  push_cast
+  omega
 
 end IsKnotGrading
 
