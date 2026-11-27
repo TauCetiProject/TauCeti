@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModul
 public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Etale
-import TauCeti.AlgebraicGeometry.IdealSheaf.Over
 import TauCeti.AlgebraicGeometry.RelativeSpec.BaseChange
 import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
 import TauCeti.AlgebraicGeometry.VectorBundle.Pushforward
@@ -623,8 +622,7 @@ level `toScheme X I 0 : V(I ^ 1) ⟶ X` of `X.formalCompletion I` is injective o
 from a finite, flat, locally finitely presented scheme `Y ⟶ X` into a finite, flat, locally
 finitely presented, formally unramified scheme `Z ⟶ X`. -/
 theorem overPullback_map_injective_of_faithful_completionFunctor
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Faithful]
+    [(Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor X I).Faithful]
     {Y Z : Scheme.{u}} (p : Y ⟶ X) (q : Z ⟶ X)
     [IsFinite p] [Flat p] [LocallyOfFinitePresentation p]
     [IsFinite q] [Flat q] [LocallyOfFinitePresentation q] [FormallyUnramified q] :
@@ -636,13 +634,13 @@ theorem overPullback_map_injective_of_faithful_completionFunctor
   have hg₁ : g₁.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₁
   have hg₂ : g₂.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₂
   let m₁ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₁.left
-    (Scheme.IdealSheafData.comap_comap_over_left I g₁).le
+    (by rw [← Scheme.IdealSheafData.comap_comp, hg₁])
   let m₂ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₂.left
-    (Scheme.IdealSheafData.comap_comap_over_left I g₂).le
+    (by rw [← Scheme.IdealSheafData.comap_comp, hg₂])
   have hg₀ : m₁.app 0 = m₂.app 0 := by
-    apply (cancel_mono (Scheme.formalCompletion.levelIsoPullback q rfl 0).hom).mp
-    rw [Scheme.formalCompletion.levelIsoPullback_hom_map rfl rfl g₁ 0,
-      Scheme.formalCompletion.levelIsoPullback_hom_map rfl rfl g₂ 0, h]
+    apply (cancel_mono (Scheme.formalCompletion.isPullback_map_app q rfl 0).isoPullback.hom).mp
+    rw [Scheme.formalCompletion.map_app_isoPullback_hom rfl rfl g₁ 0,
+      Scheme.formalCompletion.map_app_isoPullback_hom rfl rfl g₂ 0, h]
   have hfu : ∀ n, FormallyUnramified
       ((Scheme.formalCompletion.map (I := I.comap q) q le_rfl).app n) := fun n ↦
     MorphismProperty.of_isPullback (P := @FormallyUnramified)
@@ -663,10 +661,8 @@ zeroth level `toScheme X I 0 : V(I ^ 1) ⟶ X` of `X.formalCompletion I` is bije
 `X`-morphisms `Y ⟶ Z` (for finite, flat, locally finitely presented `Y ⟶ X` and finite étale
 `Z ⟶ X`) to `V(I ^ 1)`-morphisms. -/
 theorem overPullback_map_bijective_of_fullyFaithful_completionFunctor
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Full]
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Faithful]
+    [(Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor X I).Full]
+    [(Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor X I).Faithful]
     {Y Z : Scheme.{u}} (p : Y ⟶ X) (q : Z ⟶ X)
     [IsFinite p] [Flat p] [LocallyOfFinitePresentation p]
     [IsFinite q] [Etale q] :
@@ -677,21 +673,21 @@ theorem overPullback_map_bijective_of_fullyFaithful_completionFunctor
   let p_fc := Scheme.formalCompletion.map (I := I.comap p) p le_rfl
   let q_fc := Scheme.formalCompletion.map (I := I.comap q) q le_rfl
   let a₀ : (Y.formalCompletion (I.comap p)).X 0 ⟶ (Z.formalCompletion (I.comap q)).X 0 :=
-    (Scheme.formalCompletion.levelIsoPullback p rfl 0).hom ≫ g₀.left ≫
-      (Scheme.formalCompletion.levelIsoPullback q rfl 0).inv
+    (Scheme.formalCompletion.isPullback_map_app p rfl 0).isoPullback.hom ≫ g₀.left ≫
+      (Scheme.formalCompletion.isPullback_map_app q rfl 0).isoPullback.inv
   have ha₀ : a₀ ≫ q_fc.app 0 = p_fc.app 0 := by
     have hw : g₀.left ≫ Limits.pullback.snd q (Scheme.formalCompletion.toScheme X I 0) =
         Limits.pullback.snd p (Scheme.formalCompletion.toScheme X I 0) := by
       simpa only [Over.pullback_obj_hom, Over.mk_hom] using Over.w g₀
-    simp only [a₀, p_fc, q_fc, Category.assoc, Scheme.formalCompletion.levelIsoPullback_inv_snd]
-    rw [hw, Scheme.formalCompletion.levelIsoPullback_hom_snd]
+    simp only [a₀, p_fc, q_fc, Category.assoc, IsPullback.isoPullback_inv_snd]
+    rw [hw, IsPullback.isoPullback_hom_snd]
   let a := AdicThickeningSystem.liftOfEtale p_fc q_fc a₀ ha₀
   obtain ⟨g, hg, hga⟩ := Scheme.formalCompletion.exists_hom_of_isFinite_of_flat (I := I) p q rfl rfl
     a (AdicThickeningSystem.liftOfEtale_comp _ _ a₀ ha₀)
   refine ⟨Over.homMk g hg, Over.OverMorphism.ext ?_⟩
-  simp only [Scheme.formalCompletion.overPullback_map_left_eq_levelIsoPullback rfl rfl
-      (Over.homMk g hg) 0,
-    Over.homMk_left, congrArg (·.app 0) hga, a, AdicThickeningSystem.liftOfEtale_app_zero,
+  rw [(Iso.eq_inv_comp _).mpr
+    (Scheme.formalCompletion.map_app_isoPullback_hom rfl rfl (Over.homMk g hg) 0).symm]
+  simp only [Over.homMk_left, congrArg (·.app 0) hga, a, AdicThickeningSystem.liftOfEtale_app_zero,
     a₀, Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
 
 end OverPullback
