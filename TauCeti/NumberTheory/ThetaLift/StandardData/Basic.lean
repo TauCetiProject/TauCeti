@@ -206,10 +206,19 @@ omit s in
 theorem standardColDatum_one :
     O.standardColDatum χ ((1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁)
       (((1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) = 1 := by
-  have hcols : (1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁ *
-      (1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ = 1 :=
-    submatrix_one_mul_submatrix_one ⟨Sum.inl, Sum.inl_injective⟩
-  rw [standardColDatum_map, hcols, det_one, map_one, inv_one]
+  have hrows : (1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁ =
+      (1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix (Function.Embedding.inl (β := a)) id := by
+    ext i j
+    rw [toRows₁_apply, submatrix_apply, Function.Embedding.inl_apply, id_eq]
+  have hcols : (1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ =
+      (1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix id (Function.Embedding.inl (β := a)) := by
+    ext i j
+    rw [toCols₁_apply, submatrix_apply, Function.Embedding.inl_apply, id_eq]
+  have hprod : (1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁ *
+      (1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ = 1 := by
+    rw [hrows, hcols]
+    exact submatrix_one_mul_submatrix_one _
+  rw [standardColDatum_map, hprod, det_one, map_one, inv_one]
 
 /-- Partners have support on complementary blocks of integral invertible matrices and
 satisfy the determinant matching identity there. The coordinate order is `b ⊕ a`. -/
