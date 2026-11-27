@@ -644,8 +644,10 @@ lemma singularPairHomologyPermutationIso_inv (k : ℕ) :
   (rfl)
 
 /-- The relative comparison on homology commutes with the maps from absolute to relative
-homology: under the absolute and relative comparisons, the quotient map
-`H(E; R) ⟶ H(E, p⁻¹ A; R)` is the quotient map `H(B; ℤ[p⁻¹]) ⟶ H(B, A; ℤ[p⁻¹])`. -/
+homology: under the absolute and relative comparisons, the map `H(E; R) ⟶ H(E, p⁻¹ A; R)` from
+absolute to relative homology corresponds to the map `H(B; L) ⟶ H(B, A; L)` from absolute to
+relative twisted homology, where `L` is the permutation local system `hp.permutationLocalSystem R`.
+-/
 @[reassoc]
 theorem singularHomologyπ_comp_singularPairHomologyPermutationIso_hom (k : ℕ) :
     (TopPair.ofSubset (p ⁻¹' A)).singularHomologyπ (ModuleCat.of R R) k ≫
