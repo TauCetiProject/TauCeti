@@ -32,7 +32,7 @@ presheaf of modules into presheaves.
   for the restriction maps of a presheaf);
 * `TauCeti.SymmetricAlgebra.mapₛₗ_mem_homogeneousSubmodule` and
   `TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule`: the induced maps preserve degrees;
-* `TauCeti.SymmetricAlgebra.map_decompose`: the algebra map induced by a linear map commutes with
+* `SymmetricAlgebra.map_decompose`: the algebra map induced by a linear map commutes with
   taking homogeneous components;
 * `TauCeti.SymmetricAlgebra.homogeneousSubmoduleMapₛₗ`: the induced semilinear map between
   homogeneous pieces of the same degree.
@@ -163,16 +163,23 @@ theorem map_mem_homogeneousSubmodule {N' : Type*} [AddCommMonoid N'] [Module R N
   simpa only [_root_.SymmetricAlgebra.mapₛₗ_eq_map, RingHom.coe_coe] using
     mapₛₗ_mem_homogeneousSubmodule f hx
 
+end TauCeti.SymmetricAlgebra
+
+namespace SymmetricAlgebra
+
+open TauCeti.SymmetricAlgebra (homogeneousSubmodule map_mem_homogeneousSubmodule)
+
+variable {R : Type u₁} {M : Type v₁} {N : Type v₂} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
 /-- The algebra homomorphism induced by a linear map commutes with taking homogeneous components:
 it maps the degree-`n` component of `x` to the degree-`n` component of the image of `x`. -/
-theorem map_decompose {N' : Type*} [AddCommMonoid N'] [Module R N'] (f : M →ₗ[R] N')
-    (x : _root_.SymmetricAlgebra R M) (n : ℕ) :
-    _root_.SymmetricAlgebra.map R f
-        (DirectSum.decompose (homogeneousSubmodule R M) x n : _root_.SymmetricAlgebra R M) =
-      (DirectSum.decompose (homogeneousSubmodule R N') (_root_.SymmetricAlgebra.map R f x) n :
-        _root_.SymmetricAlgebra R N') :=
-  DirectSum.map_decompose_shift (homogeneousSubmodule R M) (homogeneousSubmodule R N')
-    (_root_.SymmetricAlgebra.map R f).toLinearMap.toAddMonoidHom id Function.injective_id
+@[simp]
+theorem map_decompose (f : M →ₗ[R] N) (x : SymmetricAlgebra R M) (n : ℕ) :
+    map R f (DirectSum.decompose (homogeneousSubmodule R M) x n : SymmetricAlgebra R M) =
+      (DirectSum.decompose (homogeneousSubmodule R N) (map R f x) n : SymmetricAlgebra R N) :=
+  DirectSum.map_decompose_shift (homogeneousSubmodule R M) (homogeneousSubmodule R N)
+    (map R f).toLinearMap.toAddMonoidHom id Function.injective_id
     (fun _ _ hx ↦ map_mem_homogeneousSubmodule f hx) n x
 
-end TauCeti.SymmetricAlgebra
+end SymmetricAlgebra

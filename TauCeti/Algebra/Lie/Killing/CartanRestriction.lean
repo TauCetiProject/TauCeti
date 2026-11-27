@@ -254,12 +254,13 @@ theorem lieCartanRestriction_mem_homogeneousSubmodule {n : ℕ} {p : SymmetricAl
 
 /-- The restriction commutes with taking homogeneous components: it maps the component of degree
 `n` of `p` to the component of degree `n` of the restriction of `p`. -/
+@[simp]
 theorem lieCartanRestriction_decompose (p : SymmetricAlgebra K L) (n : ℕ) :
     lieCartanRestriction H (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule K L) p n :
         SymmetricAlgebra K L) =
       (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule K H)
         (lieCartanRestriction H p) n : SymmetricAlgebra K H) :=
-  SymmetricAlgebra.map_decompose _ p n
+  _root_.SymmetricAlgebra.map_decompose _ p n
 
 /-- **The restriction square.** Restricting a polynomial function on `L`, an element of
 `S(L*)`, along the inclusion `H → L` commutes with the Killing identifications: transporting
