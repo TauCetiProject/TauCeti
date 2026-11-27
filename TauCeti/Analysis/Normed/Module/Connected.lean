@@ -113,17 +113,11 @@ real affine space of dimension greater than one leaves it preconnected. -/
 theorem _root_.IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank
     (h : 1 < Module.rank ℝ E) {U s : Set P} (hUc : IsPreconnected U) (hU : IsOpen U)
     (hs : IsClosed (Subtype.val ⁻¹' s : Set U))
-    (hd : IsDiscrete (Subtype.val ⁻¹' s : Set U)) : IsPreconnected (U \ s) := by
-  let V : TopologicalSpace.Opens P := ⟨U, hU⟩
-  let : PreconnectedSpace V := isPreconnected_iff_preconnectedSpace.mp hUc
-  have hc : IsPreconnected (Subtype.val ⁻¹' s : Set V)ᶜ :=
-    isPreconnected_compl_of_isDiscrete hs hd fun x _ _ hW ↦
-      exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source h
-        (V.openPartialHomeomorphSubtypeCoe ⟨x⟩) (mem_univ x) hW
-  have himage : Subtype.val '' (Subtype.val ⁻¹' s : Set V)ᶜ = U \ s := by
-    rw [image_compl_preimage, Subtype.range_val, TopologicalSpace.Opens.coe_mk]
-  rw [← himage]
-  exact hc.image _ continuous_subtypeVal.continuousOn
+    (hd : IsDiscrete (Subtype.val ⁻¹' s : Set U)) : IsPreconnected (U \ s) :=
+  hUc.sdiff_of_isDiscrete hs hd fun x _ _ hW ↦
+    exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source h
+      ((⟨U, hU⟩ : TopologicalSpace.Opens P).openPartialHomeomorphSubtypeCoe ⟨x⟩)
+      (mem_univ x) hW
 
 /-- The `δ`-thickening of a preconnected set in a real seminormed space is preconnected. -/
 theorem _root_.IsPreconnected.thickening {s : Set E} (hs : IsPreconnected s) (δ : ℝ) :

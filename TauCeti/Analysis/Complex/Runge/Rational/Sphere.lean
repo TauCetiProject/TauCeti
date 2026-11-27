@@ -59,7 +59,7 @@ theorem _root_.IsCompact.exists_rational_natDegree_le_norm_sub_lt {K U A : Set �
   obtain ⟨a₀, ha₀A, ha₀c⟩ := hA x₀ fun hxK ↦ hx₀ (subset_filledHull hxK)
   have ha₀ : a₀ ∉ filledHull K := by
     rwa [← mem_compl_iff,
-      compl_filledHull_eq_connectedComponentIn Complex.one_lt_rank_real hK.isBounded hx₀]
+      compl_filledHull_eq_connectedComponentIn Complex.one_lt_rank_real_complex hK.isBounded hx₀]
   have ha₀K : a₀ ∉ K := fun h ↦ ha₀ (subset_filledHull h)
   set φ : ℂ → ℂ := fun z ↦ (z - a₀)⁻¹
   have hKU' : φ '' K ⊆ ({0}ᶜ : Set ℂ) ∩ (fun w : ℂ ↦ a₀ + w⁻¹) ⁻¹' U := by
@@ -69,8 +69,8 @@ theorem _root_.IsCompact.exists_rational_natDegree_le_norm_sub_lt {K U A : Set �
   obtain ⟨P, Q, -, hQA', happrox⟩ := (hK.image_inv_sub ha₀K).exists_rational_norm_sub_lt
     ((continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hU)
     hKU'
-    (hK.isClosed.image_inv_sub_inter_connectedComponentIn_nonempty Complex.one_lt_rank_real ha₀
-      fun x hx ↦ hA x hx.2)
+    (hK.isClosed.image_inv_sub_inter_connectedComponentIn_nonempty Complex.one_lt_rank_real_complex
+      ha₀ fun x hx ↦ hA x hx.2)
     (hf.comp (((differentiableOn_const a₀).add differentiableOn_inv).mono inter_subset_left)
       inter_subset_right) hε
   have hQ0 : Q.eval 0 ≠ 0 := by

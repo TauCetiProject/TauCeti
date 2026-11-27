@@ -174,13 +174,14 @@ theorem exists_finite_rank_runge_operator_with_param {X : Type*} [NormedAddCommG
                 (fun x' ↦ h (x', z) - ∑ j, (w j * g j z) • h (x', ζ j)) x m‖ ≤ ε * B := by
   obtain ⟨L, hL, hKL, hLUΩ, hA⟩ :=
     hRunge.isFilledIn.exists_differentiableOn_norm_sub_sum_smul_le.{0}
-      hRunge.isCompact hRunge.subset hU hKU hRunge.isOpen hRunge.subset
+      hRunge.isCompact hRunge.subset (hU.inter hRunge.isOpen) (subset_inter hKU hRunge.subset)
   refine ⟨L, hL, hKL, hLUΩ, fun ε hε ↦ ?_⟩
   obtain ⟨N, ζ, g, hζ, hg, hA⟩ := hA hε
   refine ⟨N, ζ, fun _ ↦ 1, g, fun j ↦ (hζ j).1, hg,
     fun n S h hS hh hhol k hk x hx m B hB hhB z hz ↦ ?_⟩
   refine norm_iteratedFDeriv_sub_sum_smul_apply_le (fun f hf B' _ hfB' z' hz' ↦ ?_) hS hU
     (fun j ↦ (hLUΩ (interior_subset (hζ j).1)).1) hKU hh hhol hk hx m hB hhB hz
-  simpa only [one_mul, smul_eq_mul, mul_comm (g _ z')] using hA f B' hf hfB' z' hz'
+  simpa only [one_mul, smul_eq_mul, mul_comm (g _ z')] using
+    hA f B' (hf.mono inter_subset_left) hfB' z' hz'
 
 end TauCeti

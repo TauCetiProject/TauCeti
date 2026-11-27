@@ -154,7 +154,7 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
   have hRunge₁ : IsRungeCompactPair Ω (insert z Ktilde) :=
     isRungeCompactPair_iff.mpr ⟨hΩ, hKt_cpt.insert z,
       insert_subset_iff.mpr ⟨holomorphicHull_subset_left _ _ hz, fillIn_subset hKΩ⟩,
-      (isFilledIn_fillIn K Ω).insert Complex.one_lt_rank_real (hΩ.sdiff hKt_cpt.isClosed) z⟩
+      (isFilledIn_fillIn K Ω).insert Complex.one_lt_rank_real_complex (hΩ.sdiff hKt_cpt.isClosed) z⟩
   -- Step 2: Separate `z` from `Ktilde` by a `0`/`1` function on disjoint open sets.
   obtain ⟨r, hr, hr_ball⟩ := Metric.isOpen_iff.mp hKt_cpt.isClosed.isOpen_compl z hzKt
   set r' : ℝ := r / 2
@@ -240,7 +240,7 @@ theorem _root_.IsCompact.isPolynomiallyConvex_image_const_iff_isConnected_compl
     IsPolynomiallyConvex (Function.const ι '' K) ↔ IsConnected Kᶜ := by
   rw [← hK.isBounded.holomorphicHull_univ_eq_self_iff_isPolynomiallyConvex,
     holomorphicHull_univ_eq_filledHull hK,
-    filledHull_eq_self_iff_isConnected_compl Complex.one_lt_rank_real hK.isBounded]
+    filledHull_eq_self_iff_isConnected_compl Complex.one_lt_rank_real_complex hK.isBounded]
 
 /-- **Polynomial Runge theorem**: a compact set `K ⊆ ℂ` has connected complement `Kᶜ` if and only
 if every holomorphic function on an open neighbourhood `U ⊇ K` can be approximated uniformly on `K`
@@ -251,7 +251,7 @@ theorem _root_.IsCompact.isConnected_compl_iff_forall_differentiableOn_exists_po
       ∀ U : Set ℂ, IsOpen U → K ⊆ U →
       ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U →
         ∀ ε > 0, ∃ p : Polynomial ℂ, ∀ z ∈ K, ‖f z - p.eval z‖ < ε := by
-  rw [← filledHull_eq_self_iff_isConnected_compl Complex.one_lt_rank_real hK.isBounded,
+  rw [← filledHull_eq_self_iff_isConnected_compl Complex.one_lt_rank_real_complex hK.isBounded,
     ← fillIn_univ K, fillIn_eq_self_iff_isFilledIn]
   refine ⟨fun hfill U hU hKU f hf ε hε =>
     hfill.exists_polynomial_norm_sub_lt hK hU hKU hf hε, fun h => ?_⟩
