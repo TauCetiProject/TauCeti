@@ -502,15 +502,10 @@ theorem isPrimeTo_span_natCast_support_iff {𝔪 : Modulus ℚ} {m : ℕ} (hm : 
   have hbot : Ideal.span {(m : 𝓞 ℚ)} ≠ ⊥ := by
     rw [Ne, Ideal.span_singleton_eq_bot]
     exact_mod_cast hm
-  rw [Ideal.isPrimeTo_iff, and_iff_right hbot]
-  simp only [Finset.mem_coe, mem_support_rat_iff, Ideal.dvd_span_singleton,
-    Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd]
-  refine ⟨fun h ↦ by_contra fun hncop ↦ ?_, fun hcop v hv hm' ↦ ?_⟩
-  · obtain ⟨p, hp, hpm, hpN⟩ := (Nat.Prime.not_coprime_iff_dvd).mp hncop
-    obtain ⟨v, rfl⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
-    exact h v hpN hpm
-  · have hp : (Ideal.absNorm v.asIdeal).Prime := Rat.HeightOneSpectrum.prime_absNorm_asIdeal v
-    exact hp.not_dvd_one (hcop.gcd_eq_one ▸ Nat.dvd_gcd hm' hv)
+  rw [← ratModulus_absNorm_support 𝔪]
+  refine (Ideal.isPrimeTo_iff.trans <| Modulus.isCoprimeTo_iff.symm.trans <|
+    isCoprimeTo_ratModulus_iff hbot).trans ?_
+  rw [Ideal.absNorm_span_natCast, NumberField.RingOfIntegers.rank, Module.finrank_self, pow_one]
 
 /-- **The moduli `(d)` and `(n)` without the real place divide each other as `d` and `n` do.** -/
 theorem ratFiniteModulus_dvd_ratFiniteModulus_iff {d : ℕ} {hd : d ≠ 0} :

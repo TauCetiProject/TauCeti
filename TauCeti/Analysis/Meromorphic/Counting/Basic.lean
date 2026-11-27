@@ -223,14 +223,9 @@ theorem sum_zeroCount_le {Rs : List (Set 𝕜)} (hdisj : Rs.Pairwise Disjoint)
 the zero count unchanged, without any finite-support hypothesis. -/
 theorem zeroCount_inter_eq_self (h : ∀ z ∈ R, 0 < MeromorphicOn.divisor f U z → z ∈ S) :
     zeroCount f U (R ∩ S) = zeroCount f U R := by
-  have hsupp : (R ∩ S) ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat) =
-      R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat) := by
-    refine subset_antisymm (inter_subset_inter_left _ inter_subset_left) ?_
-    rintro z ⟨hzR, hz0⟩
-    refine ⟨⟨hzR, h z hzR ?_⟩, hz0⟩
-    have := Function.mem_support.mp hz0
-    omega
-  rw [zeroCount_def, zeroCount_def, ← finsum_mem_inter_support, hsupp, finsum_mem_inter_support]
+  rw [zeroCount_def, zeroCount_def]
+  refine finsum_mem_inter_support_eq' _ (R ∩ S) R fun z hz ↦ ⟨fun hz' ↦ hz'.1, fun hzR ↦ ⟨hzR, ?_⟩⟩
+  exact h z hzR (by have := Function.mem_support.mp hz; omega)
 
 /-- If the divisor vanishes on the frontier of a region, then the region and its interior have
 the same zero count. -/

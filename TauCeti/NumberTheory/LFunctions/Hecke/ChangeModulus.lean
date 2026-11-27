@@ -53,14 +53,6 @@ theorem meromorphicOrderAt_heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : Ray
   rw [meromorphicOrderAt_congr hev,
     meromorphicOrderAt_mul_of_ne_zero ((χ.differentiable_eulerCorrection 𝔫).analyticAt s) hs]
 
-/-- Off the imaginary axis, inducing a ray class character to a larger modulus does not change the
-meromorphic order of `heckeLFunctionC`. -/
-theorem meromorphicOrderAt_heckeLFunctionC_induced_of_re_ne_zero (h : 𝔪 ∣ 𝔫)
-    (χ : RayClassCharacter 𝔪) {s : ℂ} (hs : s.re ≠ 0) :
-    meromorphicOrderAt (heckeLFunctionC (χ.induced h)) s =
-      meromorphicOrderAt (heckeLFunctionC χ) s :=
-  meromorphicOrderAt_heckeLFunctionC_induced h χ (χ.eulerCorrection_ne_zero 𝔫 hs)
-
 /-- Wherever the deleted Euler correction is nonzero, inducing does not change the divisor of
 `heckeLFunctionC` on any domain `U`. -/
 theorem divisor_heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
@@ -122,7 +114,8 @@ variable {K : Type*} [Field K] [NumberField K] {𝔪 𝔫 : Modulus K}
     (h : 𝔪 ∣ 𝔫) {s : ℂ} (hs : s.re ≠ 0) :
     meromorphicOrderAt (heckeLFunctionC (χ.induced h)) s =
       meromorphicOrderAt (heckeLFunctionC χ) s :=
-  TauCeti.LFunctions.meromorphicOrderAt_heckeLFunctionC_induced_of_re_ne_zero h χ hs
+  TauCeti.LFunctions.meromorphicOrderAt_heckeLFunctionC_induced h χ
+    (χ.eulerCorrection_ne_zero 𝔫 hs)
 
 /-- Inducing a ray class character does not affect zero-freeness right of a nonnegative
 threshold. -/
