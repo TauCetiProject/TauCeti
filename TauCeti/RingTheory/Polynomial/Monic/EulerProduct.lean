@@ -114,25 +114,28 @@ private theorem weightedSum_eq_sum_powerset [Finite F] {R : Type*} [Semiring R]
 /-- The weighted generating series is the coefficientwise product of
 `1 + c X ^ p.natDegree` over all monic irreducible polynomials `p`. -/
 theorem hasProd_weightedSquarefreeSeries (F : Type*) [Field F] [Finite F]
-    {R : Type*} [CommRing R] [TopologicalSpace R] (c : R) :
+    {R : Type*} [CommSemiring R] [TopologicalSpace R] (c : R) :
     HasProd (fun p : {p : Polynomial F // p.Monic ∧ Irreducible p} ↦
       1 + C c * X ^ (p : Polynomial F).natDegree) (weightedSquarefreeSeries F c) := by
   classical
-  let degree : MonicIrreducible F → ℕ+ := fun p ↦ ⟨_, p.property.2.natDegree_pos⟩
-  have h := hasProd_expand (m := degree) (finite_monicIrreducible_natDegree_le F)
-    (f := fun _ ↦ 1 + C c * X) (fun _ ↦ by simp)
-  have hexpand (p : MonicIrreducible F) :
-      expand (degree p) (degree p).ne_zero (1 + C c * X) =
-        1 + C c * X ^ (p : Polynomial F).natDegree := by
-    simp [expand_C, expand_X, degree]
-  simp only [hexpand] at h
-  convert h using 1
-  ext m
-  rw [coeff_weightedSquarefreeSeries, coeff_mk, prod_one_add, map_sum,
-    ← weightedSum_eq_sum_powerset]
+  rw [HasProd, WithPiTopology.tendsto_iff_coeff_tendsto]
+  refine fun m ↦ tendsto_atTop_of_eventually_const
+    (i₀ := (finite_monicIrreducible_natDegree_le F m).toFinset) fun s hs ↦ ?_
+  rw [coeff_weightedSquarefreeSeries, ← weightedSum_eq_sum_powerset, prod_one_add, map_sum]
   simp only [Finset.prod_mul_distrib, Finset.prod_const, ← map_pow, Finset.prod_pow_eq_pow_sum,
     coeff_C_mul_X_pow, Finset.sum_filter, eq_comm (a := m)]
-  rfl
+  symm
+  refine Finset.sum_subset (powerset_mono.mpr hs) fun t _ ht ↦ ?_
+  have hnot : ¬ t ⊆ (finite_monicIrreducible_natDegree_le F m).toFinset := by
+    simpa only [mem_powerset] using ht
+  obtain ⟨p, hpt, hp⟩ := Finset.not_subset.mp hnot
+  have hdeg : m < (p : Polynomial F).natDegree := by
+    simpa only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] using hp
+  have hlt : m < ∑ q ∈ t, (q : Polynomial F).natDegree :=
+    lt_of_lt_of_le hdeg (Finset.single_le_sum
+      (f := fun q : MonicIrreducible F ↦ (q : Polynomial F).natDegree)
+      (fun q _ ↦ Nat.zero_le _) hpt)
+  simp [ne_of_gt hlt]
 
 end Weighted
 
