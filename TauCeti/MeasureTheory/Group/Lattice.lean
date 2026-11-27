@@ -44,6 +44,9 @@ formula (`QuotientGroup.lintegral_eq_lintegral_automorphize`), and `G ⧸ Γ` is
   is finite.
 * `Subgroup.IsLattice.of_isHaarMeasure`, `Subgroup.IsUniformLattice.of_isHaarMeasure`: being a
   (uniform) lattice does not depend on the Haar measure.
+* `Subgroup.isLattice_of_isFundamentalDomain_measure_lt_top`: for a right and inversion invariant
+  Haar measure, a discrete subgroup whose left action has a fundamental domain of finite measure
+  is a lattice.
 * `Subgroup.IsLattice.isFiniteMeasure_quotient`: the quotient measure on `G ⧸ Γ` of a lattice is
   finite.
 * `Subgroup.IsUniformLattice.compactSpace`: the quotient by a uniform lattice is compact.
@@ -96,6 +99,19 @@ structure IsUniformLattice [TopologicalSpace G] (Γ : Subgroup G) (μ : Measure 
     extends Γ.IsLattice μ where
   /-- A uniform lattice is cocompact: some compact set meets every left coset. -/
   exists_isCompact_mul_eq_univ : ∃ K : Set G, IsCompact K ∧ K * (Γ : Set G) = univ
+
+/-- For an inversion invariant measure, inversion turns a fundamental domain of the left action of
+`Γ` on `G`, `g ↦ γ g`, into a fundamental domain of its right action `g ↦ g γ`. -/
+theorem _root_.MeasureTheory.IsFundamentalDomain.preimage_inv_op [MeasurableInv G]
+    {Γ : Subgroup G} {μ : Measure G} [μ.IsInvInvariant] {s : Set G}
+    (hs : IsFundamentalDomain Γ s μ) : IsFundamentalDomain Γ.op (Inv.inv ⁻¹' s) μ := by
+  refine hs.preimage_of_equiv (Measure.measurePreserving_inv μ).quasiMeasurePreserving
+    (e := fun γ : Γ ↦ ⟨MulOpposite.op (γ : G)⁻¹, mem_op.mpr (inv_mem γ.property)⟩)
+    ⟨fun γ δ h ↦ ?_, fun γ ↦ ?_⟩ fun γ x ↦ ?_
+  · ext : 1
+    simpa using congrArg (fun x : Γ.op ↦ (x : Gᵐᵒᵖ).unop⁻¹) h
+  · exact ⟨⟨γ.val.unop⁻¹, inv_mem (mem_op.mp γ.property)⟩, by ext; simp⟩
+  · simp [Subgroup.smul_def, mul_inv_rev]
 
 variable [TopologicalSpace G] {Γ : Subgroup G} {μ : Measure G}
 
@@ -153,6 +169,16 @@ theorem isLattice_iff_discreteTopology_and_covolume_lt_top [BorelSpace G] [μ.Is
   have : Countable Γ := countable_of_Lindelof_of_discrete
   obtain ⟨s, -, hs⟩ := Γ.exists_isFundamentalDomain_op μ
   exact ⟨s, hs, hs.covolume_eq_volume μ ▸ hcov⟩
+
+omit [IsTopologicalGroup G] in
+/-- For a right and inversion invariant Haar measure, a discrete subgroup whose left action
+`g ↦ γ g` has a fundamental domain of finite measure is a lattice: inversion turns that domain
+into a fundamental domain of the right action of the same measure. -/
+theorem isLattice_of_isFundamentalDomain_measure_lt_top [MeasurableInv G] [μ.IsHaarMeasure]
+    [μ.IsMulRightInvariant] [μ.IsInvInvariant] [DiscreteTopology Γ] {s : Set G}
+    (hs : IsFundamentalDomain Γ s μ) (hμs : μ s < ∞) : Γ.IsLattice μ :=
+  ⟨inferInstance, inferInstance, inferInstance, _, hs.preimage_inv_op,
+    by rwa [Measure.measure_preimage_inv]⟩
 
 omit [IsTopologicalGroup G] in
 /-- The quotient measure on `G ⧸ Γ` of a lattice `Γ` is finite. -/

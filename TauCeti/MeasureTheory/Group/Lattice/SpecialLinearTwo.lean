@@ -28,7 +28,8 @@ the modular character to be trivial
 (`MeasureTheory.IsFundamentalDomain.isMulRightInvariant_of_measure_ne_top`). So `SL(2, ℤ)` shows
 that `SL(2, ℝ)` is unimodular: its Haar measure is right invariant and invariant under inversion.
 Inversion then turns fundamental domains of the left action into fundamental domains of the right
-action `g ↦ g γ` with the same measure, which is the lattice condition `Subgroup.IsLattice`.
+action `g ↦ g γ` with the same measure, which is the lattice condition `Subgroup.IsLattice`
+(`Subgroup.isLattice_of_isFundamentalDomain_measure_lt_top`).
 
 The lattice `SL(2, ℤ)` is not uniform: if `K * SL(2, ℤ) = SL(2, ℝ)` for a compact `K`, every
 point of `ℍ` would be an `SL(2, ℤ)`-translate of a point of the compact set `K⁻¹ • i`, whose
@@ -116,20 +117,7 @@ theorem isLattice_of_forall_exists_smul_mem {F : Set ℍ} (hFv : volume F ≠ �
     (hF : ∀ z : ℍ, ∃ γ ∈ Γ, γ • z ∈ F) : Γ.IsLattice volume := by
   have : Countable Γ := countable_of_Lindelof_of_discrete
   obtain ⟨D, -, hD, hDF⟩ := exists_isFundamentalDomain_volume_le_of_forall_exists_smul_mem hF
-  refine isLattice_iff_discreteTopology_and_covolume_lt_top.mpr ⟨inferInstance, ?_⟩
-  obtain ⟨s, -, hs⟩ := Γ.exists_isFundamentalDomain_op (volume : Measure SL(2, ℝ))
-  -- inversion turns `s` into a fundamental domain of the left action
-  have hsinv : IsFundamentalDomain Γ (Inv.inv ⁻¹' s) volume := by
-    refine hs.preimage_of_equiv
-      (e := fun γ : Γ.op ↦ (⟨(γ : SL(2, ℝ)ᵐᵒᵖ).unop⁻¹, inv_mem (mem_op.mp γ.property)⟩ : Γ))
-      (measurePreserving_inv volume).quasiMeasurePreserving ⟨fun γ δ h ↦ ?_, fun γ ↦ ?_⟩
-      fun γ x ↦ ?_
-    · ext : 1
-      simpa using congrArg (fun x : Γ ↦ ((x : SL(2, ℝ))⁻¹)) h
-    · exact ⟨⟨MulOpposite.op (γ : SL(2, ℝ))⁻¹, mem_op.mpr (by simp)⟩, by ext; simp⟩
-    · simp [Subgroup.smul_def, mul_inv_rev]
-  rw [hs.covolume_eq_volume, ← measure_preimage_inv, hsinv.measure_eq hD]
-  exact hDF.trans_lt hFv.lt_top
+  exact isLattice_of_isFundamentalDomain_measure_lt_top hD (hDF.trans_lt hFv.lt_top)
 
 end Subgroup
 
@@ -149,7 +137,9 @@ theorem _root_.ModularGroup.im_smul_eq_or_le_inv (g : SL(2, ℤ)) (z : ℍ) :
   have hz := z.im_pos
   have hnormSq : Complex.normSq (denom g z) =
       ((g 1 0 : ℝ) * z.re + g 1 1) ^ 2 + ((g 1 0 : ℝ) * z.im) ^ 2 := by
-    simp [ModularGroup.denom_apply, Complex.normSq_apply]
+    simp only [ModularGroup.denom_apply, Fin.isValue, Complex.normSq_apply, Complex.add_re,
+      Complex.mul_re, Complex.intCast_re, coe_re, Complex.intCast_im, coe_im, zero_mul, sub_zero,
+      Complex.add_im, Complex.mul_im, add_zero]
     ring
   rw [ModularGroup.im_smul_eq_div_normSq, hnormSq]
   by_cases hc : g 1 0 = 0
@@ -197,13 +187,8 @@ theorem not_isUniformLattice_range_map_intCast :
     hKΓ ▸ mem_univ _
   -- `k⁻¹ • i = g • w`
   have hkw : k⁻¹ • I = g • w := by
-    have : toSL2R w = (map (Int.castRingHom ℝ) g)⁻¹ * k⁻¹ := by
-      have h1 : k * map (Int.castRingHom ℝ) g = (toSL2R w)⁻¹ := hkγ
-      simpa [mul_inv_rev] using (congrArg (·⁻¹) h1).symm
-    have h' := toSL2R_smul_I w
-    rw [this, mul_smul, inv_smul_eq_iff] at h'
-    rw [h']
-    simp
+    rw [inv_smul_I_eq_smul_of_mul_eq_toSL2R_inv (b := map (Int.castRingHom ℝ) g) hkγ]
+    simp only [ModularGroup.sl_moeb, toGL_smul]
   have hlo : m ≤ (g • w).im := hkw ▸ hmin hk
   have hhi : (g • w).im ≤ M := hkw ▸ hmax hk
   rcases ModularGroup.im_smul_eq_or_le_inv g w with h | h

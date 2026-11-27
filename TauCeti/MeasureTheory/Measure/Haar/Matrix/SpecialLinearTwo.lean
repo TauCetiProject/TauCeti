@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
-public import Mathlib.Analysis.Complex.UpperHalfPlane.ProperAction
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Splitting
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.SpecialLinearGroup
 public import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
 
 /-!
@@ -17,10 +18,10 @@ public import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
 
 The group `SL(2, ℝ)` acts transitively on the upper half-plane `ℍ`, and the stabilizer `K` of `i`
 is compact (it is `SO(2)`). Mathlib's continuous section `UpperHalfPlane.toSL2R` of the orbit map
-`g ↦ g • i` splits `SL(2, ℝ)` as `ℍ × K`: every `g` is uniquely `toSL2R z * k` with `z = g • i`
-and `k ∈ K`. This file builds a left Haar measure on `SL(2, ℝ)` from this splitting: the
-push-forward of the product of the invariant measure `dx dy / y²` on `ℍ` and the normalized Haar
-measure of `K`.
+`g ↦ g • i` splits `SL(2, ℝ)` as `ℍ × K` (`UpperHalfPlane.toSL2RMulHomeomorph`): every `g` is
+uniquely `toSL2R z * k` with `z = g • i` and `k ∈ K`. This file builds a left Haar measure on
+`SL(2, ℝ)` from this splitting: the push-forward of the product of the invariant measure
+`dx dy / y²` on `ℍ` and the normalized Haar measure of `K`.
 
 Left translation by `g` acts on the coordinates `(z, k)` as the skew product
 `(z, k) ↦ (g • z, κ(g, z) * k)`, where `κ(g, z) = toSL2R (g • z)⁻¹ * g * toSL2R z` lies in `K`.
@@ -35,18 +36,11 @@ This is the Haar measure on `SL(2, ℝ)` used for the lattice `SL(2, ℤ)` and i
 
 ## Main definitions
 
-* `Matrix.SpecialLinearGroup.instMeasurableSpace`, `instBorelSpace`: the Borel measurable
-  structure of `SL(n, ℝ)`.
-* `UpperHalfPlane.toSL2RMulHomeomorph`: the splitting `ℍ × K ≃ₜ SL(2, ℝ)`,
-  `(z, k) ↦ toSL2R z * k`, with `K` the stabilizer of `i`.
 * `Matrix.SpecialLinearGroup.instMeasureSpaceSL2R`: the Haar measure on `SL(2, ℝ)` normalized by
   the hyperbolic area of `ℍ` and total mass one on `K`.
 
 ## Main results
 
-* `Matrix.SpecialLinearGroup.instLocallyCompactSpace`: over a locally compact `T1` topological
-  ring, `SL(n, R)` is locally compact.
-* `UpperHalfPlane.isCompact_stabilizer_I`: the stabilizer of `i` in `SL(2, ℝ)` is compact.
 * `Matrix.SpecialLinearGroup.instIsHaarMeasureSL2R`: the measure is a left Haar measure.
 * `Matrix.SpecialLinearGroup.volume_preimage_smul_I`: the orbit map `g ↦ g • i` pushes it
   forward to the hyperbolic area measure of `ℍ`.
@@ -63,75 +57,6 @@ noncomputable section
 
 open MeasureTheory Measure Set Topology UpperHalfPlane
 open scoped MatrixGroups ENNReal
-
-namespace Matrix.SpecialLinearGroup
-
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [TopologicalSpace R]
-
-/-- Over a locally compact `T1` topological ring, `SL(n, R)` is locally compact, as a closed
-subset of the locally compact space of matrices. -/
-instance instLocallyCompactSpace [IsTopologicalRing R] [T1Space R] [LocallyCompactSpace R] :
-    LocallyCompactSpace (SpecialLinearGroup n R) :=
-  isClosedEmbedding_val.locallyCompactSpace
-
-/-- The Borel measurable structure of `SL(n, ℝ)`. -/
-instance instMeasurableSpace : MeasurableSpace (SpecialLinearGroup n ℝ) := borel _
-
-/-- `SL(n, ℝ)` carries its Borel measurable structure. -/
-instance instBorelSpace : BorelSpace (SpecialLinearGroup n ℝ) := ⟨rfl⟩
-
-end Matrix.SpecialLinearGroup
-
-namespace UpperHalfPlane
-
-/-- The stabilizer of `i` in `SL(2, ℝ)` is compact: it is the preimage of a point under the
-proper orbit map `g ↦ g • i`. -/
-theorem isCompact_stabilizer_I : IsCompact (MulAction.stabilizer SL(2, ℝ) I : Set SL(2, ℝ)) :=
-  isProperMap_smul_I.isCompact_preimage (isCompact_singleton (x := I))
-
-/-- The stabilizer of `i` in `SL(2, ℝ)` is a compact space. -/
-instance instCompactSpaceStabilizerI : CompactSpace (MulAction.stabilizer SL(2, ℝ) I) :=
-  isCompact_iff_compactSpace.mp isCompact_stabilizer_I
-
-/-- `(toSL2R z)⁻¹ * g` fixes `i` when `g • i = z`. -/
-theorem toSL2R_inv_mul_mem_stabilizer (g : SL(2, ℝ)) :
-    (toSL2R (g • I))⁻¹ * g ∈ MulAction.stabilizer SL(2, ℝ) I := by
-  rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, toSL2R_smul_I]
-
-/-- **The splitting `SL(2, ℝ) ≃ₜ ℍ × K`.** Every `g ∈ SL(2, ℝ)` is uniquely `toSL2R z * k`, with
-`z = g • i` and `k` in the stabilizer `K` of `i`. -/
-@[expose] def toSL2RMulHomeomorph : ℍ × MulAction.stabilizer SL(2, ℝ) I ≃ₜ SL(2, ℝ) where
-  toFun p := toSL2R p.1 * p.2
-  invFun g := (g • I, ⟨(toSL2R (g • I))⁻¹ * g, toSL2R_inv_mul_mem_stabilizer g⟩)
-  left_inv p := by
-    obtain ⟨z, k, hk⟩ := p
-    have hz : (toSL2R z * k) • I = z := by
-      rw [mul_smul, MulAction.mem_stabilizer_iff.mp hk, toSL2R_smul_I]
-    ext <;> simp [hz]
-  right_inv g := by simp
-  continuous_toFun :=
-    (continuous_toSL2R.comp continuous_fst).mul (continuous_subtypeVal.comp continuous_snd)
-  continuous_invFun := by
-    refine (continuous_id.smul continuous_const).prodMk (Continuous.subtype_mk ?_ _)
-    exact ((continuous_toSL2R.comp (continuous_id.smul continuous_const)).inv).mul continuous_id
-
-@[simp]
-theorem toSL2RMulHomeomorph_apply (p : ℍ × MulAction.stabilizer SL(2, ℝ) I) :
-    toSL2RMulHomeomorph p = toSL2R p.1 * p.2 :=
-  rfl
-
-/-- Right multiplication by an element of the stabilizer of `i` does not move `toSL2R z • i = z`. -/
-@[simp]
-theorem toSL2R_mul_smul_I (z : ℍ) (k : MulAction.stabilizer SL(2, ℝ) I) :
-    (toSL2R z * k) • I = z := by
-  rw [mul_smul, MulAction.mem_stabilizer_iff.mp k.property, toSL2R_smul_I]
-
-/-- The orbit map `g ↦ g • i` is the first coordinate of the splitting `ℍ × K ≃ₜ SL(2, ℝ)`. -/
-theorem toSL2RMulHomeomorph_apply_smul_I (p : ℍ × MulAction.stabilizer SL(2, ℝ) I) :
-    toSL2RMulHomeomorph p • I = p.1 :=
-  toSL2R_mul_smul_I p.1 p.2
-
-end UpperHalfPlane
 
 namespace Matrix.SpecialLinearGroup
 
