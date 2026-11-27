@@ -93,11 +93,6 @@ variable [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)]
   (hD : IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ X) D)
   {n : ℕ∞ω} [ENat.LEInfty n] (hDs : ContMDiffCovariantDerivativeOn ℂ n D univ)
 
-/-- The reading of a section `s` in the preferred chart of `X` and the preferred trivialization of
-`L` at `c`: the function `y ↦ (e_c (s (φ_c⁻¹ y))).2` on the chart target. -/
-private abbrev chartReading (s : Π x, L x) (c : X) (y : ℂ) : ℂ :=
-  (trivializationAt ℂ L c (TotalSpace.mk' ℂ ((chartAt ℂ c).symm y) (s ((chartAt ℂ c).symm y)))).2
-
 /-- Chart data at a point `z` for the zero count: a centre `c` whose preferred chart and
 trivialization contain `z`, and an open set `Ω ∋ φ_c z` on which the reading of `s` is `C¹` and
 satisfies `‖\bar∂ f‖ ≤ C ‖f‖`. -/
@@ -112,8 +107,9 @@ private structure ChartData (s : Π x, L x) (z : X) where
   mem_baseSet : z ∈ (trivializationAt ℂ L c).baseSet
   isOpen : IsOpen Ω
   mem : chartAt ℂ c z ∈ Ω
-  contDiffOn : ContDiffOn ℝ 1 (chartReading s c) Ω
-  norm_le : ∀ y ∈ Ω, ‖conjWirtingerDeriv (chartReading s c) y‖ ≤ C * ‖chartReading s c y‖
+  contDiffOn : ContDiffOn ℝ 1 (preferredChartReading ℂ ℂ s c) Ω
+  norm_le : ∀ y ∈ Ω, ‖conjWirtingerDeriv (preferredChartReading ℂ ℂ s c) y‖ ≤
+    C * ‖preferredChartReading ℂ ℂ s c y‖
 
 include hD hDs in
 /-- Around every point, a `C¹` section in the kernel has chart data for the zero count. -/
@@ -124,15 +120,12 @@ private theorem nonempty_chartData [CompactSpace X] {s : Π x, L x}
   choose i hi using A.exists_mem_dom
   choose C hC₀ hC using fun j ↦
     A.exists_norm_complexAntilinearPartL_fderiv_coord_le hD hDs j hs hs0
-  -- The readings of `s` in the charts of `A`.
-  have hc (j : Fin A.n) : chartReading s (A.center j) = A.coord j s :=
-    funext fun y ↦ (A.coord_def j s y).symm
   refine ⟨fun z ↦ ⟨A.center (i z), A.image (i z), C (i z), A.dom_subset_chart_source _ (hi z),
     A.dom_subset_baseSet _ (hi z), (A.image _).isOpen, A.mem_image.2 ⟨z, hi z, rfl⟩, ?_, ?_⟩⟩
-  · rw [hc]
+  · rw [A.preferredChartReading_center]
     -- The reading of `s` is `C¹` on the chart image.
     exact A.contDiffOn_coord_image hs (i z)
-  · rw [hc]
+  · rw [A.preferredChartReading_center]
     -- On `ℂ`, `\bar∂` is the complex antilinear part of the derivative.
     exact fun y hy ↦ ContinuousLinearMap.opNorm_le_bound _
       (mul_nonneg (hC₀ _) (norm_nonneg _)) fun v ↦ by

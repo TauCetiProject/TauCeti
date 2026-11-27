@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Associativity
-public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform
+public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 
 /-!

@@ -17,6 +17,9 @@ factors. Together with `Scheme.Modules.pullbackObjUnitIso_id` for the unit and
 `Scheme.Modules.pullback_comp_δ` for composition, this gives the identity and composition
 normalizations of the canonical oplax monoidal pullback structure.
 
+The canonical identity isomorphism is monoidal for the strong monoidal pullback structure
+(`Scheme.Modules.isMonoidal_pullbackId_hom`).
+
 The result specializes the identity coherence for sheaves of modules on a ringed site, with
 no finiteness or quasi-coherence assumptions on the modules.
 -/
@@ -40,6 +43,11 @@ theorem pullback_id_δ
       ((Scheme.Modules.pullbackId X).hom.app M ⊗ₘ (Scheme.Modules.pullbackId X).hom.app N) =
       (Scheme.Modules.pullbackId X).hom.app (M ⊗ N) :=
   SheafOfModules.pullback_id_δ X.sheaf M N
+
+/-- The canonical identity isomorphism of module pullback is monoidal. -/
+instance isMonoidal_pullbackId_hom (X : Scheme.{u}) :
+    NatTrans.IsMonoidal (pullbackId X).hom :=
+  TauCeti.SheafOfModules.isMonoidal_pullbackId_hom X.sheaf
 
 end
 

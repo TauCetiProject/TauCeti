@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Group.Submonoid.Defs
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
-# Submonoid membership of finite products and sums over an involution
+# Finite products and sums over an involution
 
 When an involution `τ` preserves a finite set `s`, grouping `s` by its orbits `{x, τ x}` partitions
 any commutative product or sum over `s` into singletons at fixed points and two-element pairs on
@@ -20,10 +20,24 @@ Unlike `Finset.prod_involution`, which requires paired factors to cancel to `1`,
 inverses or quotients and applies directly to submonoids such as squares (`Submonoid.square`) and
 even elements (`AddSubmonoid.even`).
 
+If instead every pair `f x * f (τ x)` equals one fixed element `c`, reindexing along `τ` gives
+`(∏ x ∈ s, f x) ^ 2 = c ^ #s`, fixed points included. Additively, `f x + f (τ x) = c` gives
+`2 • ∑ x ∈ s, f x = #s • c`; over a field with `2 ≠ 0` and `c = 1` this says that the sum is
+half the cardinality of `s`. This is the averaging step in Martin's proof of Chen's divisibility
+theorem for Markoff graphs.
+
 ## Main results
 
 * `Finset.prod_mem_of_involution`, `Finset.sum_mem_of_involution`: submonoid (or additive
   submonoid) membership of a finite product (or sum) over a `τ`-invariant `Finset`.
+* `Finset.sq_prod_eq_pow_card_of_involution`, `Finset.two_nsmul_sum_eq_card_nsmul_of_involution`:
+  the square of a product (twice a sum) over a `τ`-invariant `Finset` whose paired values are
+  constant.
+
+## References
+
+* D. E. Martin, *A new proof of Chen's theorem for Markoff graphs*, Invent. Math. 241 (2025),
+  623–626, §2, equations (2.3)–(2.5).
 -/
 
 public section
@@ -60,5 +74,24 @@ theorem prod_mem_of_involution {ι M B : Type*} [CommMonoid M] [SetLike B M] [Su
   · simpa [h] using hfix x hx h
   · rw [prod_pair h.symm]
     exact horb x hx h
+
+/-- **Products over an involution with constant pairs.** Let `τ` map `s` into itself with
+`τ (τ x) = x` on `s`. If `f x * f (τ x) = c` for every `x ∈ s`, then
+`(∏ x ∈ s, f x) ^ 2 = c ^ #s`. Fixed points of `τ` are allowed: there the hypothesis reads
+`f x * f x = c`. -/
+@[to_additive two_nsmul_sum_eq_card_nsmul_of_involution
+/-- **Sums over an involution with constant pairs.** Let `τ` map `s` into itself with
+`τ (τ x) = x` on `s`. If `f x + f (τ x) = c` for every `x ∈ s`, then
+`2 • ∑ x ∈ s, f x = #s • c`. Fixed points of `τ` are allowed: there the hypothesis reads
+`f x + f x = c`. -/]
+theorem sq_prod_eq_pow_card_of_involution {ι M : Type*} [CommMonoid M] (s : Finset ι)
+    {f : ι → M} {c : M} (τ : ι → ι) (hmem : ∀ x ∈ s, τ x ∈ s) (hτ : ∀ x ∈ s, τ (τ x) = x)
+    (hf : ∀ x ∈ s, f x * f (τ x) = c) :
+    (∏ x ∈ s, f x) ^ 2 = c ^ #s := by
+  have hcomp : ∏ x ∈ s, f (τ x) = ∏ x ∈ s, f x :=
+    prod_nbij' τ τ hmem hmem hτ hτ fun _ _ ↦ rfl
+  rw [sq]
+  nth_rw 2 [← hcomp]
+  rw [← prod_mul_distrib, prod_congr rfl hf, prod_const]
 
 end Finset

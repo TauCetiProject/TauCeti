@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.Topology.EMetricSpace.Paracompact
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
 # Basic API for the complex unit disc
@@ -20,12 +22,18 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
   (`Complex.UnitDisc.circle_smul_left_injective`), and hence the circle acts faithfully on the
   disc, which is nontrivial.
 * Compactness of the disc points of Euclidean norm at most `ρ < 1`
-  (`Complex.UnitDisc.isCompact_setOf_norm_le`).
+  (`Complex.UnitDisc.isCompact_setOf_norm_le`), and openness of those of norm less than `ρ`
+  (`Complex.UnitDisc.isOpen_setOf_norm_lt`). Conversely, every compact subset of the disc lies in
+  the disc points of norm less than some `ρ₀ < 1`, and then also below any `ρ` between `ρ₀` and `1`
+  (`Complex.UnitDisc.exists_forall_norm_lt_of_isCompact`).
 * The inclusion of the open unit disc into `ℂ` is an open embedding
   (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff; it is connected
   (`Complex.UnitDisc.instConnectedSpace`) and not compact
-  (`Complex.UnitDisc.instNoncompactSpace`). A point outside a set of the disc with closed image in
-  `ℂ` is the centre of a round disc missing that set
+  (`Complex.UnitDisc.instNoncompactSpace`); it is contractible, metrizable and paracompact
+  (`Complex.UnitDisc.instContractibleSpace`, `Complex.UnitDisc.instParacompactSpace`), so vector
+  bundles pulled back to it are trivial. It is homeomorphic to the subtype
+  `Metric.ball 0 1` it is a type synonym of (`Complex.UnitDisc.homeomorphBall`). A point outside
+  a set of the disc with closed image in `ℂ` is the centre of a round disc missing that set
   (`Complex.UnitDisc.exists_pos_forall_notMem_ball`); in particular every point of the disc is
   isolated from the other points of a finite subset
   (`Complex.UnitDisc.exists_pos_forall_mem_ball_eq`).
@@ -68,6 +76,20 @@ lemma isCompact_setOf_norm_le {ρ : ℝ} (hρ : ρ < 1) : IsCompact {z : 𝔻 | 
   convert isEmbedding_coe.isInducing.isCompact_preimage' (isCompact_closedBall (0 : ℂ) ρ) _
   · simp
   · exact fun w hw => ⟨mk w ((mem_closedBall_zero_iff.1 hw).trans_lt hρ), rfl⟩
+
+/-- The set of unit-disc points of Euclidean norm less than `ρ` is open. -/
+lemma isOpen_setOf_norm_lt (ρ : ℝ) : IsOpen {z : 𝔻 | ‖(z : ℂ)‖ < ρ} :=
+  isOpen_lt continuous_coe.norm continuous_const
+
+/-- A compact subset of `𝔻` lies in the open disc of some radius `0 ≤ ρ₀ < 1` about `0`. The
+statement also provides a radius `ρ` strictly between `ρ₀` and `1`, at which to cut off. -/
+theorem exists_forall_norm_lt_of_isCompact {K : Set 𝔻} (hK : IsCompact K) :
+    ∃ ρ₀ ρ, 0 ≤ ρ₀ ∧ ρ₀ < ρ ∧ ρ < 1 ∧ ∀ z ∈ K, ‖(z : ℂ)‖ < ρ₀ := by
+  obtain ⟨ρ₀, hρ₀, hKρ₀⟩ := exists_pos_lt_subset_ball zero_lt_one
+    (hK.image continuous_coe).isClosed
+    (image_subset_iff.2 fun z _ ↦ mem_ball_zero_iff.2 z.norm_lt_one)
+  obtain ⟨ρ, hρ₀ρ, hρ₁⟩ := exists_between hρ₀.2
+  exact ⟨ρ₀, ρ, hρ₀.1.le, hρ₀ρ, hρ₁, fun z hz ↦ mem_ball_zero_iff.1 (hKρ₀ ⟨z, hz, rfl⟩)⟩
 
 /-- The inclusion of the open unit disc into `ℂ` is an open embedding. -/
 theorem isOpenEmbedding_coe : Topology.IsOpenEmbedding ((↑) : 𝔻 → ℂ) :=
@@ -130,6 +152,33 @@ instance instFaithfulSMulCircle : FaithfulSMul Circle 𝔻 where
   eq_of_smul_eq_smul h := by
     obtain ⟨z, hz⟩ := exists_ne (0 : 𝔻)
     exact circle_smul_left_injective hz (h z)
+
+/-- The identity, from the open unit disc to the subtype `ball (0 : ℂ) 1` it is a type synonym
+of. -/
+noncomputable def homeomorphBall : 𝔻 ≃ₜ ball (0 : ℂ) 1 :=
+  Homeomorph.refl _
+
+@[simp]
+theorem coe_homeomorphBall (z : 𝔻) : (homeomorphBall z : ℂ) = z :=
+  (rfl)
+
+@[simp]
+theorem coe_homeomorphBall_symm (z : ball (0 : ℂ) 1) : (homeomorphBall.symm z : ℂ) = z :=
+  (rfl)
+
+/-- The open unit disc is contractible, being an open ball. -/
+instance instContractibleSpace : ContractibleSpace 𝔻 :=
+  have := contractibleSpace_ball (x := (0 : ℂ)) zero_lt_one
+  homeomorphBall.contractibleSpace
+
+/-- The open unit disc is metrizable, as a subspace of `ℂ`. -/
+instance instMetrizableSpace : TopologicalSpace.MetrizableSpace 𝔻 :=
+  isEmbedding_coe.metrizableSpace
+
+/-- The open unit disc is paracompact, being metrizable. -/
+instance instParacompactSpace : ParacompactSpace 𝔻 :=
+  letI := TopologicalSpace.metrizableSpaceMetric 𝔻
+  inferInstance
 
 end Complex.UnitDisc
 

@@ -24,6 +24,7 @@ commutative affine group.
 
 ## Main declarations
 
+* `TauCeti.HopfAlgebra.antipode_algebraMap`: the antipode fixes scalars.
 * `TauCeti.HopfAlgebra.antipode_comul_antidistrib`: the identity as an equality of linear maps.
 * `TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply`: the pointwise form.
 * `TauCeti.HopfAlgebra.antipode_antipode`: the antipode of a commutative Hopf algebra is
@@ -78,12 +79,30 @@ namespace TauCeti
 
 namespace HopfAlgebra
 
+/-- The square of the antipode is inner if it is conjugation by a unit. -/
+def AntipodeSquareIsInner (k H : Type*) [CommSemiring k] [Semiring H]
+    [HopfAlgebraStruct k H] : Prop :=
+  ∃ u : Hˣ, ∀ x : H, antipode k (antipode k x) = (u : H) * x * ↑u⁻¹
+
+/-- The unit witnessing that the square of the antipode is inner. -/
+theorem antipodeSquareIsInner_iff (k H : Type*) [CommSemiring k] [Semiring H]
+    [HopfAlgebraStruct k H] :
+    AntipodeSquareIsInner k H ↔
+      ∃ u : Hˣ, ∀ x : H, antipode k (antipode k x) = (u : H) * x * ↑u⁻¹ :=
+  Iff.rfl
+
 universe u v w
 
 variable {R : Type u} {C : Type v}
 variable [CommSemiring R] [Semiring C] [_root_.HopfAlgebra R C]
 
 noncomputable section
+
+/-- The antipode fixes the image of every scalar. -/
+@[simp]
+theorem antipode_algebraMap (r : R) :
+    HopfAlgebraStruct.antipode R (algebraMap R C r) = algebraMap R C r := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, _root_.HopfAlgebra.antipode_one]
 
 section Commutative
 

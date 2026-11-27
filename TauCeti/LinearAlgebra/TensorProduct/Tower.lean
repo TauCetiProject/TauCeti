@@ -44,6 +44,8 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
 * `TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor`: cancelling the base
   change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image of `x` in
   `B ⊗[R] M`.
+* `LinearMap.injective_lTensor_baseChange_iff`: tensoring with a module over an `R`-algebra gives
+  the same injectivity test before and after extending scalars to that algebra.
 * `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange`: the
   comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
   its pure-tensor form
@@ -54,6 +56,8 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
   then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
+* `Submodule.map_cancelBaseChange_baseChange_baseChange`: along a tower `R → K → A`, cancelling
+  the base change carries `(N_K)_A` onto `N_A`.
 * `LinearMap.baseChange_leftInverse`: base change preserves left inverses.
 * `LinearMap.liftBaseChangeSemilinear`, `AddMonoidHom.liftBaseChangeSemilinear`,
   `LinearMap.ext_one_tmul`, `LinearMap.eq_liftBaseChangeSemilinear_iff`,
@@ -109,6 +113,23 @@ theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor 
   induction x using TensorProduct.inductionOn with
   | tmul a m => simp [smul_tmul', Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [tmul_add, map_add, hx, hy, smul_add]
+
+/-- For an `A`-module `B` with compatible `R`-action, tensoring an `R`-linear map with `B` over
+`R` gives an injective map if and only if extending scalars to `A` and then tensoring with `B`
+over `A` does. -/
+theorem LinearMap.injective_lTensor_baseChange_iff {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
+    (A B : Type*) [CommSemiring A] [Algebra R A] [AddCommMonoid B] [Module A B] [Module R B]
+    [IsScalarTower R A B] :
+    Function.Injective ((f.baseChange A).lTensor B) ↔ Function.Injective (f.lTensor B) := by
+  let eM := AlgebraTensorModule.cancelBaseChange R A A B M
+  let eN := AlgebraTensorModule.cancelBaseChange R A A B N
+  have hcomm : eN ∘ (f.baseChange A).lTensor B = f.lTensor B ∘ eM := by
+    -- The scalar-linear tensor maps in the naturality lemma have the same underlying functions.
+    funext z
+    exact LinearMap.congr_fun
+      (AlgebraTensorModule.lTensor_comp_cancelBaseChange R A A f).symm z
+  rw [← EquivLike.comp_injective _ eN, hcomm, EquivLike.injective_comp]
 
 /-- The comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` distributing scalar
 extension over a tensor product is natural in both tensor factors. -/
@@ -175,6 +196,23 @@ theorem Submodule.one_tmul_mem_baseChange_of_smul_mem {R A M : Type*} [CommSemir
   rw [← (N.baseChange A).smul_mem_iff' ha.unit, Units.smul_def, IsUnit.unit_spec, algebraMap_smul,
     ← tmul_smul]
   exact tmul_mem_baseChange_of_mem 1 hx
+
+/-- Along a tower `R → K → A`, cancelling the base change `A ⊗[K] (K ⊗[R] M) ≃ A ⊗[R] M` carries
+`(N_K)_A` onto `N_A`. -/
+@[simp]
+theorem Submodule.map_cancelBaseChange_baseChange_baseChange {R K M : Type*} [CommSemiring R]
+    [CommSemiring K] [Algebra R K] [AddCommMonoid M] [Module R M] (N : Submodule R M)
+    (A : Type*) [CommSemiring A] [Algebra R A] [Algebra K A] [IsScalarTower R K A] :
+    ((N.baseChange K).baseChange A).map
+        (TensorProduct.AlgebraTensorModule.cancelBaseChange R K A A M).toLinearMap =
+      N.baseChange A := by
+  conv_lhs => rw [← N.span_eq]
+  conv_rhs => rw [← N.span_eq]
+  rw [baseChange_span, baseChange_span, baseChange_span, map_span, Set.image_image,
+    Set.image_image]
+  simp only [mk_apply, LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_tmul, one_smul]
+  -- both sides are spanned by the `1 ⊗ₜ x` for `x ∈ N`
+  exact congrArg (span A) (Set.image_congr fun x _ ↦ (mk_apply 1 x).symm)
 
 /-- Base change preserves left inverses: if `f ∘ₗ g = id`, then `f.baseChange A` is a left
 inverse of `g.baseChange A`. -/

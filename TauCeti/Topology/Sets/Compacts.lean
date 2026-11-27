@@ -104,14 +104,10 @@ lemma exists_comap_le_of_mem_compactNhds [LocallyCompactSpace β] (f : α → β
     (hL' : L' ∈ (Compacts.comap f hf K).compactNhds) :
     ∃ L ∈ K.compactNhds, Compacts.comap f hf L ≤ L' := by
   obtain ⟨U, hKU, hUL'⟩ := exists_open_set_nhds_of_mem_compactsNhds hL'
-  have hK : (K : Set β) ⊆ (f '' (U : Set α)ᶜ)ᶜ := by
-    rintro _ hy ⟨x, hx, rfl⟩
-    exact hx (hKU hy)
   obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between K.isCompact
-    (hf.isClosedMap _ U.isOpen.isClosed_compl).isOpen_compl hK
-  refine ⟨⟨L, hL⟩, fun y ↦ mem_interior_iff_mem_nhds.mp (hKL y.property), fun x hx ↦ hUL' ?_⟩
-  by_contra hxU
-  exact hLU hx ⟨x, hxU, rfl⟩
+    (isClosedMap_iff_kernImage.mp hf.isClosedMap U.isOpen) (subset_kernImage_iff.mpr hKU)
+  exact ⟨⟨L, hL⟩, fun y ↦ mem_interior_iff_mem_nhds.mp (hKL y.property),
+    fun x hx ↦ hUL' (subset_kernImage_iff.mp hLU hx)⟩
 
 /-- The image of compact sets under a continuous map is monotone. -/
 lemma map_mono (f : α → β) (hf : Continuous f) : Monotone (Compacts.map f hf) :=

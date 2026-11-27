@@ -180,6 +180,16 @@ theorem mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition
   simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
     selmerStructure_localCondition]
 
+/-- A `φ̂`-Selmer class, restricted to `L i` into the kernel of the dual of the base change of `φ`
+(`TauCeti.Isogeny.dualKerRes`), satisfies the local Kummer condition of that dual. This is the
+form in which the local Tate pairings of the base changes of `φ` see the `φ̂`-Selmer group. -/
+theorem dualKerRes_mem_localKummerCondition_of_mem_selmerGroup
+    {d : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff} (hd : d ∈ φ.dual.selmerGroup τ)
+    (i : ι) : φ.dualKerRes (τ i) d ∈ (φ.baseChange (L i)).dual.localKummerCondition := by
+  have h := (φ.dual.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).mp hd i
+  rw [mem_localKummerCondition_iff] at h ⊢
+  rwa [explicitCoeff1_kerCoeffIncl_dualKerRes]
+
 /-- Imposing the local conditions along a subfamily `τ ∘ f` of the localisations gives a larger
 `φ`-Selmer group. -/
 theorem selmerGroup_le_comp {κ : Type*} (f : κ → ι) :

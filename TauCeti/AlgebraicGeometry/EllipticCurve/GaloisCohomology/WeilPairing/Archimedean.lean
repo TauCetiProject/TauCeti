@@ -801,6 +801,17 @@ theorem degree_pow_mult_mul_natCard_H1_kerCoeff_completion [DecidableEq w.Comple
     (k := w.mult) (natCard_pow_mult_mul_natCard_H1_completion w (A := (ofIsogeny φ).KerCoeff)
       (n := φ.degree) φ.degree_nsmul_kerCoeff_eq_zero)
 
+/-- At an infinite place `w`, the group `H¹(K_w, E₁[φ])` is finite. -/
+instance finite_H1_kerCoeff_completion :
+    Finite (H1 (Gal w.Completion) (ofIsogeny φ).KerCoeff) := by
+  classical
+  have := (ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  have := (ofIsogeny φ.dual).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ.dual)
+  refine Nat.finite_of_card_ne_zero fun h ↦ ?_
+  have h' := φ.degree_pow_mult_mul_natCard_H1_kerCoeff_completion
+  rw [h, mul_zero] at h'
+  exact (Nat.mul_pos Nat.card_pos Nat.card_pos).ne h'
+
 /-- At every infinite place `w`, `#H¹_φ(K_w) · #H¹_φ̂(K_w) = #H¹(K_w, E₁[φ])`. -/
 theorem natCard_range_kummerMap_mul_dual_eq_natCard_H1_completion [DecidableEq w.Completion] :
     Nat.card φ.kummerMap.range * Nat.card φ.dual.kummerMap.range =
