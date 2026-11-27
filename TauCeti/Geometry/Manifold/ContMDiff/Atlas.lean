@@ -33,8 +33,9 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 
 ## Main results
 
-* `TauCeti.conj_chartAt_mem_maximalAtlas`: a chart of the model vector space, read through the
-  preferred chart at a point, is a chart of the manifold's maximal atlas.
+* `TauCeti.conj_mem_maximalAtlas`, `TauCeti.conj_chartAt_mem_maximalAtlas`: a chart of the model
+  vector space, read through a chart of the manifold's maximal atlas (or the preferred chart at a
+  point), is a chart of the manifold's maximal atlas.
 * `TauCeti.contMDiffAt_prodMap_id_of_mem_maximalAtlas`,
   `TauCeti.contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas`: a chart times the identity, and its
   inverse, are smooth.
@@ -82,39 +83,45 @@ theorem comp_conj_chartAt [I.Boundaryless] (x : M) (c : OpenPartialHomeomorph E 
   ext y
   simp [extChartAt, I.right_inv (I.range_eq_univ ▸ Set.mem_univ _)]
 
+/-- A chart of the model vector space, read through any chart `c₀` of the maximal atlas of a
+manifold with a boundaryless model, is a chart of the manifold's maximal atlas. -/
+theorem conj_mem_maximalAtlas [I.Boundaryless] [IsManifold I n M]
+    {c₀ : OpenPartialHomeomorph M H} (hc₀ : c₀ ∈ IsManifold.maximalAtlas I n M)
+    {c : OpenPartialHomeomorph E E} (hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) :
+    ((c₀.transHomeomorph I.toHomeomorph).trans c).transHomeomorph
+      I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M := by
+  apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
+  · have h1 : ContMDiffOn I 𝓘(𝕜, E) n (I ∘ c₀)
+        (((c₀.transHomeomorph I.toHomeomorph).trans c).transHomeomorph
+          I.toHomeomorph.symm).source :=
+      (I.contMDiff.comp_contMDiffOn (contMDiffOn_of_mem_maximalAtlas hc₀)).mono fun y hy => by
+        simp only [mfld_simps] at hy
+        exact hy.1
+    have h2 := (contMDiffOn_of_mem_maximalAtlas hc).comp h1 fun y hy => by
+      simp only [mfld_simps] at hy
+      exact hy.2
+    refine (I.contMDiffOn_symm.comp h2 fun y _ => by simp [I.range_eq_univ]).congr ?_
+    intro y _
+    simp [mfld_simps, ModelWithCorners.toHomeomorph_apply, ModelWithCorners.toHomeomorph_symm_apply]
+  · have hmem : ∀ y ∈ (((c₀.transHomeomorph I.toHomeomorph).trans c).transHomeomorph
+        I.toHomeomorph.symm).target,
+        I y ∈ c.target ∧ I.symm (c.symm (I y)) ∈ c₀.target := fun y hy => by
+      simpa [ModelWithCorners.toHomeomorph_apply, ModelWithCorners.toHomeomorph_symm_apply] using hy
+    have h1 := (contMDiffOn_symm_of_mem_maximalAtlas hc).comp I.contMDiff.contMDiffOn
+      fun y hy => (hmem y hy).1
+    have h2 := I.contMDiffOn_symm.comp h1 fun y _ => by simp [I.range_eq_univ]
+    refine ((contMDiffOn_symm_of_mem_maximalAtlas hc₀).comp h2 fun y hy =>
+      (hmem y hy).2).congr ?_
+    intro y _
+    simp [mfld_simps, ModelWithCorners.toHomeomorph_apply, ModelWithCorners.toHomeomorph_symm_apply]
+
 /-- A chart of the model vector space, read through the preferred chart at `x` of a manifold with
 a boundaryless model, is a chart of the manifold's maximal atlas. -/
 theorem conj_chartAt_mem_maximalAtlas [I.Boundaryless] [IsManifold I n M] (x : M)
     {c : OpenPartialHomeomorph E E} (hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) :
     (((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-      I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M := by
-  -- As a map, the chart is `I.symm ∘ c ∘ extChartAt I x`, with inverse
-  -- `(extChartAt I x).symm ∘ c.symm ∘ I`.
-  apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
-  · have h1 : ContMDiffOn I 𝓘(𝕜, E) n (extChartAt I x)
-        ((((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-          I.toHomeomorph.symm).source :=
-      contMDiffOn_extChartAt.mono fun y hy => by
-        simp only [mfld_simps] at hy
-        exact hy.1
-    have h2 := (contMDiffOn_of_mem_maximalAtlas hc).comp h1 fun y hy => by
-      simp only [mfld_simps] at hy
-      simpa [extChartAt] using hy.2
-    refine (I.contMDiffOn_symm.comp h2 fun y _ => by simp [I.range_eq_univ]).congr ?_
-    intro y _
-    simp [extChartAt]
-  · have h2 := (contMDiffOn_symm_of_mem_maximalAtlas hc).comp I.contMDiff.contMDiffOn
-      (s := ((((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-        I.toHomeomorph.symm).target) fun y hy => by
-      have hy' : I y ∈ c.target ∧ I.symm (c.symm (I y)) ∈ (chartAt H x).target := by
-        simpa using hy
-      exact hy'.1
-    refine ((contMDiffOn_extChartAt_symm x).comp h2 fun y hy => ?_).congr ?_
-    · have hy' : I y ∈ c.target ∧ I.symm (c.symm (I y)) ∈ (chartAt H x).target := by
-        simpa using hy
-      simpa [extChartAt, I.range_eq_univ] using hy'.2
-    · intro y _
-      simp [extChartAt]
+      I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M :=
+  conj_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x) hc
 
 section ProdMap
 

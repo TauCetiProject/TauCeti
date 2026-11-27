@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberProduct.Associativity
-public import TauCeti.Geometry.Manifold.FiberProduct.Iterated.Basic
+public import TauCeti.Geometry.Manifold.FiberProduct.TransverseAssociativity
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Composition
 
 /-!

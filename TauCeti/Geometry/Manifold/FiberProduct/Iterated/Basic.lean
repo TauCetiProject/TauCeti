@@ -5,130 +5,202 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.FiberProduct.Submersion
-import TauCeti.LinearAlgebra.Submodule.FiberProduct
+public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Transversality of iterated fibre products
+# Iterated fibre products of a map
 
-Let `f : X → B`, `g : Y → B`, `h : Y → C` and `k : Z → C` be smooth maps, with `f` and `g`
-transverse and `h` and `k` transverse. Then `X ×_B Y` and `Y ×_C Z` are manifolds
-(`TauCeti.transverseFiberProductChartedSpace`), and the matching triples `(x, y, z)`, with
-`f x = g y` and `h y = k z`, can be grouped in two ways:
+For any map `π : Y → M`, the `k`-fold iterated fibre product `Y^[k]` is the subtype
+`TauCeti.IteratedFiberProduct π k = {y : Fin k → Y // ∀ i j, π (y i) = π (y j)}`, equipped with its
+subspace topology in `Fin k → Y`.
 
-* as `(X ×_B Y) ×_C Z`, the fibre product of `(x, y) ↦ h y` and `k`;
-* as `X ×_B (Y ×_C Z)`, the fibre product of `f` and `(y, z) ↦ g y`.
-
-This file shows that the first of these fibre products is transverse exactly when the second is
-(`TauCeti.transverse_fiberProduct_assoc_iff`). Both conditions say that
-`(u, v, w) ↦ (df u - dg v, dh v - dk w)` is onto `T_b B × T_c C` at every matching triple. The
-differential of the projection `X ×_B Y → Y` has range `dg⁻¹(range df)`
-(`TauCeti.range_mfderiv_snd_transverseFiberProduct`), so the differential of `(x, y) ↦ h y` has
-range `dh (dg⁻¹(range df))`; likewise the differential of `(y, z) ↦ g y` on `Y ×_C Z` has range
-`dg (dh⁻¹(range dk))` (`TauCeti.range_mfderiv_fst_transverseFiberProduct`). So the comparison is
-the linear statement `LinearMap.map_comap_range_sup_range_eq_top_iff`.
-
-When both groupings are transverse, both iterated fibre products are manifolds, and the
-associator `TauCeti.fiberProductAssocDiffeomorph` identifies them. This is the setting of the
-associativity of transverse composition of correspondences.
-
-## References
-
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer (2013), Theorem 6.30
-  (transverse preimages).
+This file collects the manifold-free set-theoretic and topological API:
+* the factor projections `TauCeti.IteratedFiberProduct.eval`, the diagonal inclusion
+  `TauCeti.IteratedFiberProduct.const`, and for positive `k = m + 1`, the common base projection
+  `TauCeti.IteratedFiberProduct.baseProj`;
+* continuity of `eval`, `const`, and `baseProj`, together with the embedding properties of
+  `const (m + 1)` (`TauCeti.IteratedFiberProduct.isEmbedding_const`,
+  `TauCeti.IteratedFiberProduct.isClosedEmbedding_const`);
+* when `M` is Hausdorff and `π` is continuous, the subtype inclusion into `Fin k → Y` is a closed
+  topological embedding (`TauCeti.isClosedEmbedding_coe_iteratedFiberProduct`).
 -/
 
 public section
 
-open Module
-open scoped Manifold ContDiff
+open Function Set Topology
 
 namespace TauCeti
 
-variable {EX HX X EY HY Y EZ HZ Z EB HB B EC HC C : Type*}
-  [NormedAddCommGroup EX] [NormedSpace ℝ EX] [FiniteDimensional ℝ EX] [TopologicalSpace HX]
-  [NormedAddCommGroup EY] [NormedSpace ℝ EY] [FiniteDimensional ℝ EY] [TopologicalSpace HY]
-  [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ] [TopologicalSpace HZ]
-  [NormedAddCommGroup EB] [NormedSpace ℝ EB] [FiniteDimensional ℝ EB] [TopologicalSpace HB]
-  [NormedAddCommGroup EC] [NormedSpace ℝ EC] [FiniteDimensional ℝ EC] [TopologicalSpace HC]
-  {IX : ModelWithCorners ℝ EX HX} {IY : ModelWithCorners ℝ EY HY}
-  {IZ : ModelWithCorners ℝ EZ HZ} {IB : ModelWithCorners ℝ EB HB}
-  {IC : ModelWithCorners ℝ EC HC}
-  [IX.Boundaryless] [IY.Boundaryless] [IZ.Boundaryless] [IB.Boundaryless] [IC.Boundaryless]
-  [TopologicalSpace X] [ChartedSpace HX X] [TopologicalSpace Y] [ChartedSpace HY Y]
-  [TopologicalSpace Z] [ChartedSpace HZ Z] [TopologicalSpace B] [ChartedSpace HB B]
-  [TopologicalSpace C] [ChartedSpace HC C]
-  {n : ℕ∞ω} [IsManifold IX n X] [IsManifold IY n Y] [IsManifold IZ n Z]
-  [IsManifold IB n B] [IsManifold IC n C]
-  {f : X → B} {g : Y → B} {h : Y → C} {k : Z → C}
+section Set
 
-/-- The model of the transverse fibre product `X ×_B Y`. -/
-local notation "KXY" => 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EB) → ℝ)
+variable {Y M : Type*} {π : Y → M}
 
-/-- The model of the transverse fibre product `Y ×_C Z`. -/
-local notation "KYZ" => 𝓘(ℝ, Fin (finrank ℝ EY + finrank ℝ EZ - finrank ℝ EC) → ℝ)
+/-- The `k`-fold fibre product `Y^[k]` of a map `π : Y → M` over `M`: the subtype of tuples
+`y : Fin k → Y` whose coordinates share a common image under `π`. It is an abbreviation so that it
+inherits the subspace topology and `Subtype.val` coercion from `Fin k → Y` directly. -/
+abbrev IteratedFiberProduct (π : Y → M) (k : ℕ) : Type _ :=
+  {y : Fin k → Y // ∀ i j, π (y i) = π (y j)}
 
-/-- **The transversality of an iterated fibre product does not depend on the grouping.** Let
-`f : X → B` and `g : Y → B` be transverse, and let `h : Y → C` and `k : Z → C` be transverse.
-Then `(x, y) ↦ h y` on the fibre product `X ×_B Y` is transverse to `k` exactly when `f` is
-transverse to `(y, z) ↦ g y` on the fibre product `Y ×_C Z`. -/
-theorem transverse_fiberProduct_assoc_iff (hn : 1 ≤ n) (hf : ContMDiff IX IB n f)
-    (hg : ContMDiff IY IB n g) (hh : ContMDiff IY IC n h) (hk : ContMDiff IZ IC n k)
-    (hfg : ∀ p : X × Y, f p.1 = g p.2 →
-      (mfderiv IX IB f p.1).range ⊔
-        (((tangentSpaceCast IB (g p.2) (f p.1)).toContinuousLinearMap).comp
-          (mfderiv IY IB g p.2)).range = ⊤)
-    (hhk : ∀ p : Y × Z, h p.1 = k p.2 →
-      (mfderiv IY IC h p.1).range ⊔
-        (((tangentSpaceCast IC (k p.2) (h p.1)).toContinuousLinearMap).comp
-          (mfderiv IZ IC k p.2)).range = ⊤) :
-    letI := transverseFiberProductChartedSpace hn hf hg hfg
-    letI := transverseFiberProductChartedSpace hn hh hk hhk
-    (∀ p : {p : X × Y // f p.1 = g p.2} × Z, h p.1.val.2 = k p.2 →
-      (mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.val.2) p.1).range ⊔
-        (((tangentSpaceCast IC (k p.2) (h p.1.val.2)).toContinuousLinearMap).comp
-          (mfderiv IZ IC k p.2)).range = ⊤) ↔
-    (∀ p : X × {p : Y × Z // h p.1 = k p.2}, f p.1 = g p.2.val.1 →
-      (mfderiv IX IB f p.1).range ⊔
-        (((tangentSpaceCast IB (g p.2.val.1) (f p.1)).toContinuousLinearMap).comp
-          (mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.val.1) p.2)).range = ⊤) := by
-  let := transverseFiberProductChartedSpace hn hf hg hfg
-  let := transverseFiberProductChartedSpace hn hh hk hhk
-  have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
-  -- At a matching triple `(x, y, z)`, both conditions are the two sides of the linear statement
-  -- for `a = df`, `b = dg`, `c = dh` and `d = dk`.
-  have key (x : X) (y : Y) (z : Z) (hxy : f x = g y) (hyz : h y = k z) :
-      (mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.val.2) ⟨(x, y), hxy⟩).range ⊔
-          (((tangentSpaceCast IC (k z) (h y)).toContinuousLinearMap).comp
-            (mfderiv IZ IC k z)).range = ⊤ ↔
-        (mfderiv IX IB f x).range ⊔
-          (((tangentSpaceCast IB (g y) (f x)).toContinuousLinearMap).comp
-            (mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.val.1)
-              ⟨(y, z), hyz⟩)).range = ⊤ := by
-    -- The two outer maps factor through the projections of the inner fibre products.
-    have hXY : mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.val.2) ⟨(x, y), hxy⟩ =
-        (mfderiv IY IC h y).comp
-          (mfderiv KXY IY (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) ⟨(x, y), hxy⟩) :=
-      mfderiv_comp _ (hh.mdifferentiable hn0 y)
-        ((isSmoothEmbedding_coe_transverseFiberProduct hn hf hg hfg).contMDiff.mdifferentiable
-          hn0 _).snd
-    have hYZ : mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.val.1) ⟨(y, z), hyz⟩ =
-        (mfderiv IY IB g y).comp
-          (mfderiv KYZ IY (fun q : {p : Y × Z // h p.1 = k p.2} ↦ q.val.1) ⟨(y, z), hyz⟩) :=
-      mfderiv_comp _ (hg.mdifferentiable hn0 y)
-        ((isSmoothEmbedding_coe_transverseFiberProduct hn hh hk hhk).contMDiff.mdifferentiable
-          hn0 _).fst
-    rw [hXY, ContinuousLinearMap.toLinearMap_comp _
-        (mfderiv KXY IY (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) ⟨(x, y), hxy⟩),
-      LinearMap.range_comp, range_mfderiv_snd_transverseFiberProduct hn hf hg hfg, hYZ,
-      ← ContinuousLinearMap.comp_assoc, ContinuousLinearMap.toLinearMap_comp _
-        (mfderiv KYZ IY (fun q : {p : Y × Z // h p.1 = k p.2} ↦ q.val.1) ⟨(y, z), hyz⟩),
-      LinearMap.range_comp, range_mfderiv_fst_transverseFiberProduct hn hh hk hhk]
-    exact LinearMap.map_comap_range_sup_range_eq_top_iff (hfg (x, y) hxy) (hhk (y, z) hyz)
-  constructor
-  · rintro hL ⟨x, ⟨⟨y, z⟩, hyz⟩⟩ hxy
-    exact (key x y z hxy hyz).1 (hL (⟨(x, y), hxy⟩, z) hyz)
-  · rintro hR ⟨⟨⟨x, y⟩, hxy⟩, z⟩ hyz
-    exact (key x y z hxy hyz).2 (hR (x, ⟨(y, z), hyz⟩) hxy)
+/-- The underlying set of `IteratedFiberProduct π k` in `Fin k → Y` is the set of tuples whose
+entries have equal images under `π`. -/
+theorem range_coe_iteratedFiberProduct (π : Y → M) (k : ℕ) :
+    range (Subtype.val : IteratedFiberProduct π k → (Fin k → Y)) =
+      {y : Fin k → Y | ∀ i j, π (y i) = π (y j)} :=
+  Subtype.range_coe_subtype
+
+/-- A tuple in `Fin k → Y` belongs to the image of `IteratedFiberProduct π k` if and only if all
+its coordinates have the same image under `π`. -/
+theorem mem_range_coe_iteratedFiberProduct_iff {k : ℕ} {y : Fin k → Y} :
+    y ∈ range (Subtype.val : IteratedFiberProduct π k → (Fin k → Y)) ↔
+      ∀ i j, π (y i) = π (y j) := by
+  rw [range_coe_iteratedFiberProduct]
+  rfl
+
+namespace IteratedFiberProduct
+
+/-- The zero-fold fibre product consists of the unique empty tuple. -/
+instance instUniqueZero : Unique (IteratedFiberProduct π 0) where
+  default := ⟨Fin.elim0, fun i ↦ i.elim0⟩
+  uniq _ := Subtype.ext (funext fun i ↦ i.elim0)
+
+/-- The `i`-th factor projection `Y^[k] → Y`. -/
+@[expose] def eval {k : ℕ} (i : Fin k) (y : IteratedFiberProduct π k) : Y :=
+  y.val i
+
+/-- Evaluation at `i` reads the `i`-th coordinate of the underlying tuple. -/
+@[simp]
+theorem eval_apply {k : ℕ} (i : Fin k) (y : IteratedFiberProduct π k) :
+    eval i y = y.val i := (rfl)
+
+/-- Two points of `IteratedFiberProduct π k` are equal when all their factor projections agree. -/
+theorem ext {k : ℕ} {y₁ y₂ : IteratedFiberProduct π k} (h : ∀ i, eval i y₁ = eval i y₂) :
+    y₁ = y₂ :=
+  Subtype.ext (funext h)
+
+/-- Any two factor projections of `y : IteratedFiberProduct π k` have equal images under `π`. -/
+theorem map_eval_eq {k : ℕ} (y : IteratedFiberProduct π k) (i j : Fin k) :
+    π (eval i y) = π (eval j y) :=
+  y.property i j
+
+/-- The diagonal inclusion `Y → Y^[k]` sending `z` to the constant tuple `(z, …, z)`. -/
+@[expose] def const (k : ℕ) (z : Y) : IteratedFiberProduct π k :=
+  ⟨fun _ ↦ z, fun _ _ ↦ rfl⟩
+
+/-- The underlying tuple of `const k z` is the constant function `Function.const (Fin k) z`. -/
+@[simp]
+theorem coe_const (k : ℕ) (z : Y) :
+    (const (π := π) k z : Fin k → Y) = Function.const (Fin k) z := (rfl)
+
+/-- Evaluating the diagonal tuple `const k z` at any index returns `z`. -/
+theorem eval_const {k : ℕ} (i : Fin k) (z : Y) :
+    eval i (const (π := π) k z) = z := (rfl)
+
+/-- Every factor projection `eval i : Y^[k] → Y` is surjective, split by the diagonal `const k`. -/
+theorem surjective_eval {k : ℕ} (i : Fin k) :
+    Surjective (eval i : IteratedFiberProduct π k → Y) :=
+  fun z ↦ ⟨const k z, rfl⟩
+
+/-- For positive `k = m + 1`, the diagonal inclusion `const (m + 1) : Y → Y^[m + 1]` is
+injective, split by `eval 0`. -/
+theorem injective_const (m : ℕ) :
+    Injective (const (π := π) (m + 1)) :=
+  Function.LeftInverse.injective (fun z ↦ eval_const (π := π) (0 : Fin (m + 1)) z)
+
+/-- The common projection `Y^[m + 1] → M` to the base, defined via the `0`-th factor and equal to
+`π ∘ eval i` for every `i : Fin (m + 1)`. -/
+@[expose] def baseProj {m : ℕ} (y : IteratedFiberProduct π (m + 1)) : M :=
+  π (y.val 0)
+
+/-- The base projection agrees with `π (y.1 i)` at every coordinate `i : Fin (m + 1)`. -/
+theorem baseProj_eq_apply {m : ℕ} (y : IteratedFiberProduct π (m + 1)) (i : Fin (m + 1)) :
+    baseProj y = π (y.val i) :=
+  y.property 0 i
+
+/-- Composing `π` with any factor projection `eval i` yields `baseProj`. -/
+theorem map_eval_eq_baseProj {m : ℕ} (y : IteratedFiberProduct π (m + 1)) (i : Fin (m + 1)) :
+    π (eval i y) = baseProj y :=
+  (y.property 0 i).symm
+
+/-- On a diagonal tuple `const (m + 1) z`, the base projection is `π z`. -/
+@[simp]
+theorem baseProj_const (m : ℕ) (z : Y) :
+    baseProj (const (π := π) (m + 1) z) = π z := (rfl)
+
+/-- The base projection `Y^[m + 1] → M` is surjective if and only if `π` is surjective. -/
+theorem surjective_baseProj_iff {m : ℕ} :
+    Surjective (baseProj : IteratedFiberProduct π (m + 1) → M) ↔ Surjective π :=
+  ⟨fun h b ↦ by obtain ⟨y, rfl⟩ := h b; exact ⟨y.val 0, rfl⟩,
+    fun h b ↦ by obtain ⟨z, rfl⟩ := h b; exact ⟨const (m + 1) z, rfl⟩⟩
+
+end IteratedFiberProduct
+
+end Set
+
+section Topology
+
+variable {Y M : Type*} [TopologicalSpace Y] {π : Y → M}
+
+namespace IteratedFiberProduct
+
+/-- Every factor projection `eval i : Y^[k] → Y` is continuous. -/
+theorem continuous_eval {k : ℕ} (i : Fin k) :
+    Continuous (eval i : IteratedFiberProduct π k → Y) :=
+  (continuous_apply i).comp continuous_subtypeVal
+
+/-- The diagonal map `const k : Y → Y^[k]` is continuous. -/
+theorem continuous_const (k : ℕ) :
+    Continuous (const (π := π) k) :=
+  (continuous_pi fun _ ↦ continuous_id).subtype_mk _
+
+/-- For positive `k = m + 1`, the diagonal inclusion `const (m + 1) : Y → Y^[m + 1]` is a
+topological embedding, split by `eval 0`. -/
+theorem isEmbedding_const (m : ℕ) :
+    IsEmbedding (const (π := π) (m + 1)) :=
+  Function.LeftInverse.isEmbedding (fun z ↦ eval_const (π := π) (0 : Fin (m + 1)) z)
+    (continuous_eval 0) (continuous_const (m + 1))
+
+/-- When `Y` is Hausdorff, the diagonal inclusion `const (m + 1) : Y → Y^[m + 1]` is a closed
+topological embedding. -/
+theorem isClosedEmbedding_const [T2Space Y] (m : ℕ) :
+    IsClosedEmbedding (const (π := π) (m + 1)) :=
+  Function.LeftInverse.isClosedEmbedding (fun z ↦ eval_const (π := π) (0 : Fin (m + 1)) z)
+    (continuous_eval 0) (continuous_const (m + 1))
+
+/-- When `π` is continuous, the base projection `baseProj : Y^[m + 1] → M` is continuous. -/
+theorem continuous_baseProj [TopologicalSpace M] (hπ : Continuous π) (m : ℕ) :
+    Continuous (baseProj : IteratedFiberProduct π (m + 1) → M) :=
+  hπ.comp (continuous_eval 0)
+
+end IteratedFiberProduct
+
+/-- When the base `M` is Hausdorff and `π` is continuous, the equal-fibre locus in `Fin k → Y` is
+closed as the preimage of the closed multidiagonal of `Fin k → M` under `Pi.map fun _ ↦ π`. -/
+theorem isClosed_setOf_map_eq [TopologicalSpace M] [T2Space M] (hπ : Continuous π) (k : ℕ) :
+    IsClosed {y : Fin k → Y | ∀ i j, π (y i) = π (y j)} := by
+  have hdiag : IsClosed {z : Fin k → M | ∀ i j, z i = z j} := by
+    have hEq : {z : Fin k → M | ∀ i j, z i = z j} = ⋂ i, ⋂ j, {z : Fin k → M | z i = z j} := by
+      ext z; simp
+    rw [hEq]
+    exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦
+      isClosed_eq (continuous_apply i) (continuous_apply j)
+  exact hdiag.preimage (continuous_pi fun i ↦ hπ.comp (continuous_apply i))
+
+/-- When `M` is Hausdorff and `π` is continuous, the image of `IteratedFiberProduct π k` in
+`Fin k → Y` is closed. -/
+theorem isClosed_range_coe_iteratedFiberProduct [TopologicalSpace M] [T2Space M]
+    (hπ : Continuous π) (k : ℕ) :
+    IsClosed (range (Subtype.val : IteratedFiberProduct π k → (Fin k → Y))) := by
+  rw [range_coe_iteratedFiberProduct]
+  exact isClosed_setOf_map_eq hπ k
+
+/-- When `M` is Hausdorff and `π` is continuous, the subtype inclusion of
+`IteratedFiberProduct π k` into `Fin k → Y` is a closed topological embedding. -/
+theorem isClosedEmbedding_coe_iteratedFiberProduct [TopologicalSpace M] [T2Space M]
+    (hπ : Continuous π) (k : ℕ) :
+    IsClosedEmbedding (Subtype.val : IteratedFiberProduct π k → (Fin k → Y)) :=
+  .subtypeVal (isClosed_setOf_map_eq hπ k)
+
+end Topology
 
 end TauCeti
