@@ -331,6 +331,41 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} {s : Finset 
     exact meromorphicAt_cuspFunction_mul (hF i (Finset.mem_insert_self i s))
       (ih fun k hk ↦ hF k (Finset.mem_insert_of_mem hk))
 
+/-- Each coefficient of `∏ i ∈ s, (X - C (F i τ))` has a cusp function meromorphic at `0` when
+every `F i` does. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_coeff_prod_X_sub_C {ι : Type*} {s : Finset ι}
+    {F : ι → ℍ → ℂ} (hF : ∀ i ∈ s, MeromorphicAt (cuspFunction h (F i)) 0) (k : ℕ) :
+    MeromorphicAt
+      (cuspFunction h fun τ ↦ (∏ i ∈ s, (Polynomial.X - Polynomial.C (F i τ))).coeff k) 0 := by
+  classical
+  induction s using Finset.induction_on generalizing k with
+  | empty =>
+    simpa only [Finset.prod_empty] using
+      meromorphicAt_cuspFunction_const (h := h) ((1 : Polynomial ℂ).coeff k)
+  | insert a t hat ih =>
+    have hFt : ∀ i ∈ t, MeromorphicAt (cuspFunction h (F i)) 0 :=
+      fun i hi ↦ hF i (Finset.mem_insert_of_mem hi)
+    rcases k with _ | k
+    · have hEq :
+          (fun τ ↦ (∏ i ∈ insert a t, (Polynomial.X - Polynomial.C (F i τ))).coeff 0) =
+            -(F a * fun τ ↦ (∏ i ∈ t, (Polynomial.X - Polynomial.C (F i τ))).coeff 0) := by
+        funext τ
+        rw [Finset.prod_insert hat, Polynomial.mul_coeff_zero]
+        simp
+      rw [hEq]
+      exact meromorphicAt_cuspFunction_neg
+        (meromorphicAt_cuspFunction_mul (hF a (Finset.mem_insert_self a t)) (ih hFt 0))
+    · have hEq :
+          (fun τ ↦ (∏ i ∈ insert a t, (Polynomial.X - Polynomial.C (F i τ))).coeff (k + 1)) =
+            (fun τ ↦ (∏ i ∈ t, (Polynomial.X - Polynomial.C (F i τ))).coeff k) -
+              F a * fun τ ↦ (∏ i ∈ t, (Polynomial.X - Polynomial.C (F i τ))).coeff (k + 1) := by
+        funext τ
+        rw [Finset.prod_insert hat, Polynomial.coeff_X_sub_C_mul]
+        rfl
+      rw [hEq]
+      exact meromorphicAt_cuspFunction_sub (ih hFt k)
+        (meromorphicAt_cuspFunction_mul (hF a (Finset.mem_insert_self a t)) (ih hFt (k + 1)))
+
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
     (hf : MeromorphicAt (cuspFunction h f) 0) :

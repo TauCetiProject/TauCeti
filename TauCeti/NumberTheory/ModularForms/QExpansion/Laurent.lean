@@ -429,6 +429,45 @@ theorem laurentQExpansion_prod {ι : Type*} {s : Finset ι} {F : ι → ℍ → 
     rw [Finset.prod_insert hi, Finset.prod_insert hi, laurentQExpansion_mul
       (hF i (Finset.mem_insert_self i s)) (meromorphicAt_cuspFunction_prod hs), ih hs]
 
+/-- The Laurent `q`-expansion of the `X ^ k`-coefficient of `∏ i ∈ s, (X - C (F i τ))` is the
+`X ^ k`-coefficient of `∏ i ∈ s, (X - C (laurentQExpansion h (F i)))`. -/
+theorem laurentQExpansion_coeff_prod_X_sub_C {ι : Type*} {s : Finset ι} {F : ι → ℍ → ℂ}
+    (hF : ∀ i ∈ s, MeromorphicAt (cuspFunction h (F i)) 0) (k : ℕ) :
+    laurentQExpansion h (fun τ ↦ (∏ i ∈ s, (Polynomial.X - Polynomial.C (F i τ))).coeff k) =
+      (∏ i ∈ s, (Polynomial.X - Polynomial.C (laurentQExpansion h (F i)))).coeff k := by
+  classical
+  induction s using Finset.induction_on generalizing k with
+  | empty =>
+    simp only [Finset.prod_empty, laurentQExpansion_const, Polynomial.coeff_one]
+    rcases eq_or_ne k 0 with rfl | hk
+    · simp
+    · simp [hk]
+  | insert a t hat ih =>
+    have hFt : ∀ i ∈ t, MeromorphicAt (cuspFunction h (F i)) 0 :=
+      fun i hi ↦ hF i (Finset.mem_insert_of_mem hi)
+    have hFa := hF a (Finset.mem_insert_self a t)
+    have hmer := meromorphicAt_cuspFunction_coeff_prod_X_sub_C hFt
+    rcases k with _ | k
+    · have hEq :
+          (fun τ ↦ (∏ i ∈ insert a t, (Polynomial.X - Polynomial.C (F i τ))).coeff 0) =
+            (-F a) * fun τ ↦ (∏ i ∈ t, (Polynomial.X - Polynomial.C (F i τ))).coeff 0 := by
+        funext τ
+        rw [Finset.prod_insert hat, Polynomial.mul_coeff_zero]
+        simp
+      rw [hEq, laurentQExpansion_mul (meromorphicAt_cuspFunction_neg hFa) (hmer 0),
+        laurentQExpansion_neg hFa, ih hFt 0, Finset.prod_insert hat, Polynomial.mul_coeff_zero]
+      simp
+    · have hEq :
+          (fun τ ↦ (∏ i ∈ insert a t, (Polynomial.X - Polynomial.C (F i τ))).coeff (k + 1)) =
+            (fun τ ↦ (∏ i ∈ t, (Polynomial.X - Polynomial.C (F i τ))).coeff k) -
+              F a * fun τ ↦ (∏ i ∈ t, (Polynomial.X - Polynomial.C (F i τ))).coeff (k + 1) := by
+        funext τ
+        rw [Finset.prod_insert hat, Polynomial.coeff_X_sub_C_mul]
+        rfl
+      rw [hEq, Finset.prod_insert hat, Polynomial.coeff_X_sub_C_mul,
+        laurentQExpansion_sub (hmer k) (meromorphicAt_cuspFunction_mul hFa (hmer (k + 1))),
+        laurentQExpansion_mul hFa (hmer (k + 1)), ih hFt k, ih hFt (k + 1)]
+
 /-- The Laurent `q`-expansion commutes with inverses. This includes the case where the cusp
 function vanishes near `q = 0`, where both sides are `0`. -/
 theorem laurentQExpansion_inv (hf : MeromorphicAt (cuspFunction h f) 0) :
