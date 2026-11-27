@@ -43,8 +43,8 @@ theorem isIso_of_comp_eq_id_of_etale {X Y : Scheme.{u}} (f : X ⟶ Y) [Etale f]
   have hsub : (f ⁻¹' {f x}).Subsingleton :=
     (f.isConnected_preimage_singleton _).isPreconnected.isDiscrete_iff_subsingleton.mp
       (f.isDiscrete_preimage_singleton _)
-  refine ⟨f x, hsub ?_ rfl⟩
+  refine ⟨f x, hsub ?_ (Set.mem_preimage.2 (Set.mem_singleton _))⟩
   rw [Set.mem_preimage, Set.mem_singleton_iff, ← Scheme.Hom.comp_apply, hs]
-  rfl
+  simp
 
 end AlgebraicGeometry

@@ -48,10 +48,14 @@ that is étale, with connected fibres, and a section of such a morphism is an is
   relative dimension `n` over `S` exactly when its relative dimension is constantly `n`.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.relativeDimension_baseChange`: for `f : T ⟶ S`, the
   relative dimension of `A_T` at `t` is that of `A` at `f t`.
+* `AbelianScheme.smoothOfRelativeDimension_baseChange_fromSpecResidueField`: the fibre of `A` over
+  `s`, its base change to `Spec κ(s)`, is smooth of relative dimension `A.relativeDimension s`.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.relativeDimension_identity`: the identity abelian
   scheme has relative dimension zero.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.relativeDimension_eq_of_iso`: abelian schemes with
   isomorphic underlying schemes over `S` have the same relative dimension.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_zeroSection_iff_isIso_hom`: the zero section is
+  an isomorphism exactly when the structure morphism is one.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_zeroSection_iff`: the zero section is an
   isomorphism exactly when the relative dimension is zero everywhere.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.isoIdentity`: an abelian scheme of relative dimension
@@ -114,6 +118,15 @@ theorem relativeDimension_baseChange (A : AbelianScheme S) (f : T ⟶ S) (t : T)
   rw [topologicalKrullDim_fiber, topologicalKrullDim_fiber] at h
   exact_mod_cast h
 
+/-- The fibre of `A` over `s`, its base change along `Spec κ(s) ⟶ S`, is smooth of relative
+dimension `A.relativeDimension s`. -/
+theorem smoothOfRelativeDimension_baseChange_fromSpecResidueField (A : AbelianScheme S) (s : S) :
+    SmoothOfRelativeDimension (A.relativeDimension s)
+      (A.baseChange (S.fromSpecResidueField s)).toOver.hom := by
+  rw [smoothOfRelativeDimension_iff]
+  intro q
+  rw [relativeDimension_baseChange, S.fromSpecResidueField_apply]
+
 /-- The identity abelian scheme has relative dimension zero. -/
 @[simp]
 theorem relativeDimension_identity (s : S) : (identity S).relativeDimension s = 0 := by
@@ -139,7 +152,7 @@ theorem relativeDimension_eq_of_iso {A B : AbelianScheme S} (e : A.toOver ≅ B.
 
 /-- The zero section of an abelian scheme is an isomorphism exactly when its structure morphism
 is one. -/
-private lemma isIso_zeroSection_iff_isIso_hom (A : AbelianScheme S) :
+lemma isIso_zeroSection_iff_isIso_hom (A : AbelianScheme S) :
     IsIso A.zeroSection ↔ IsIso A.toOver.hom :=
   ⟨fun _ ↦ IsIso.eq_inv_of_hom_inv_id A.zeroSection_comp_toOver_hom ▸ inferInstance,
     fun _ ↦ IsIso.eq_inv_of_inv_hom_id A.zeroSection_comp_toOver_hom ▸ inferInstance⟩
@@ -164,7 +177,8 @@ noncomputable def isoIdentity (A : AbelianScheme S) (h : ∀ s, A.relativeDimens
   have : IsIso (toUnit A.toOver) :=
     have : IsIso A.toOver.hom :=
       (isIso_zeroSection_iff_isIso_hom A).mp ((isIso_zeroSection_iff A).mpr h)
-    have : IsIso ((Over.forget S).map (toUnit A.toOver)) := this
+    have : IsIso ((Over.forget S).map (toUnit A.toOver)) := by
+      rwa [Over.forget_map, Over.toUnit_left]
     isIso_of_reflects_iso _ (Over.forget S)
   @isoMk _ _ _ (@asIso _ _ _ _ (toUnit A.toOver) this)
     (inferInstance : IsMonHom (toUnit A.toOver))
