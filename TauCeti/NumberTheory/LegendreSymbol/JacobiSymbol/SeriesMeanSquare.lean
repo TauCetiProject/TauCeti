@@ -14,16 +14,18 @@ public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import TauCeti.NumberTheory.DirichletCharacter.PolyaVinogradov
-import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.ClassOfOne
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Char
 
 /-!
 # Mean squares of Jacobi-symbol series averaged over numerators
 
 When averaging `|∑ n, a n * J(-v | n°)|²` over the numerator `-v`, with `n°` the odd part
-of `n`, the pair `m, n` contributes a character sum of modulus `(m * n)°`. The pairs for
-which this modulus is square are bounded trivially; the others admit Pólya–Vinogradov
-cancellation. This separation allows the same mean-square estimate to be used for finite sums
-and for absolutely summable weights such as Gaussian weights in theta series.
+of `n`, the pair `m, n` contributes a character sum of modulus `(m * n)°`. More generally,
+for any family of odd denominators the pair contributes a character sum at their product.
+Square products are bounded trivially; the others admit Pólya–Vinogradov cancellation.
+The second-moment bounds apply to finite sums and to absolutely summable weights such as
+Gaussian weights in theta series, without requiring distinct denominators.
 
 The application to quadratic twists follows the moment calculation in
 `grh/src/Lib/Analytic/QuadraticTwist.lean` of
@@ -35,7 +37,6 @@ notably `New.dirichletCharacter_jacobiSym_ne_one`, `New.norm_sum_jacobiSym_le`, 
 public section
 
 open Finset Nat
-open scoped ComplexConjugate
 
 namespace TauCeti
 
@@ -54,30 +55,16 @@ theorem norm_sum_jacobiSym_neg_Icc_le {b : ℕ} (hb : Odd b) (X : ℕ) :
   · exact hcard
   refine le_min hcard ?_
   have hχ : χ ≠ 1 := by
-    obtain ⟨s, a, hs, ha, rfl, hsf⟩ := Nat.sq_mul_squarefree_of_pos hb.pos
-    let : NeZero s := ⟨hs.ne'⟩
-    let : NeZero a := ⟨ha.ne'⟩
-    have hs₁ : 1 < s := by
-      by_contra! h
-      have heq : s = 1 := by omega
-      exact hsq ⟨a, by simp [heq, sq]⟩
-    have hlift : χ = (jacobiChar ℂ s).changeLevel (dvd_mul_left s (a ^ 2)) := by
-      refine MulChar.ext fun u ↦ ?_
-      have hcop := (ZMod.val_coe_unit_coprime u).coprime_dvd_right
-        ((dvd_pow_self a two_ne_zero).trans (dvd_mul_right (a ^ 2) s))
-      have hsqUnit : jacobiSym (u : ZMod (a ^ 2 * s)).val a ^ 2 = 1 :=
-        jacobiSym.sq_one (by rwa [Int.gcd_natCast_natCast])
-      dsimp only [χ]
-      simp only [jacobiChar_apply, changeLevel_jacobiChar_apply_units, jacobiSym.mul_right,
-        jacobiSym.pow_right, hsqUnit, one_mul]
-    rw [ne_eq, hlift, DirichletCharacter.changeLevel_eq_one_iff]
-    obtain ⟨v, _, hv, hval⟩ := exists_modEq_one_jacobiSym_eq_neg_one_of_squarefree
-      (Nat.odd_mul.mp hb).2 hs₁ hsf (Nat.coprime_one_right s)
-    have hv' := (ZMod.isUnit_iff_coprime v s).2 (by simpa using hv)
+    obtain ⟨v, hv⟩ := exists_jacobiSym_eq_neg_one_of_odd_of_not_isSquare hb hsq
+    have hunit : IsUnit (v : ZMod b) := by
+      rw [ZMod.isUnit_iff_coprime, Nat.Coprime, ← Int.gcd_natCast_natCast]
+      by_contra h
+      have hz := jacobiSym.eq_zero_iff_not_coprime.mpr h
+      rw [hv] at hz
+      norm_num at hz
     intro h
     have heq : (-1 : ℂ) = 1 := by
-      simpa [jacobiChar_natCast, hval, MulChar.one_apply hv'] using
-        DFunLike.congr_fun h (v : ZMod s)
+      simpa [χ, hv, MulChar.one_apply hunit] using DFunLike.congr_fun h (v : ZMod b)
     exact (by norm_num : (-1 : ℂ) ≠ 1) heq
   have hval (v : ℕ) : (jacobiSym (-(v : ℤ)) b : ℂ) = χ (-1) * χ v := by
     simp only [χ, ← jacobiChar_intCast (R := ℂ), Int.cast_neg, Int.cast_natCast]
@@ -104,59 +91,77 @@ theorem norm_sum_mul_jacobiSym_ordCompl_le (X : ℕ) (m n : ℕ+) :
   exact norm_sum_jacobiSym_neg_Icc_le (Nat.coprime_two_left.mp (Nat.coprime_ordCompl
     Nat.prime_two (mul_ne_zero m.ne_zero n.ne_zero))) X
 
-/-- The mean square of a Jacobi-symbol series with absolutely summable complex coefficients.
-Pairs with square odd part of `m * n` are kept separate from pairs with cancellation. The bound
-by the interval length in both cases keeps the series on the right absolutely convergent. -/
-theorem sum_norm_tsum_mul_jacobiSym_sq_le (X : ℕ) {a : ℕ+ → ℂ}
-    (ha : Summable fun n ↦ ‖a n‖) :
-    ∑ v ∈ Icc 1 X, ‖∑' n : ℕ+, a n * (jacobiSym (-(v : ℤ)) (ordCompl[2] (n : ℕ)) : ℂ)‖ ^ 2 ≤
-      ∑' p : ℕ+ × ℕ+, ‖a p.1‖ * ‖a p.2‖ *
-        (let b := ordCompl[2] ((p.1 : ℕ) * p.2)
-         if IsSquare b then (X : ℝ) else min X (2 * Real.sqrt b * (1 + Real.log b))) := by
-  let J (v : ℕ) (n : ℕ+) : ℂ := jacobiSym (-(v : ℤ)) (ordCompl[2] (n : ℕ))
-  let A (v : ℕ) (n : ℕ+) := a n * J v n
-  let W (p : ℕ+ × ℕ+) : ℝ :=
-    let b := ordCompl[2] ((p.1 : ℕ) * p.2)
-    if IsSquare b then X else min X (2 * Real.sqrt b * (1 + Real.log b))
-  have hJ (v : ℕ) (n : ℕ+) : ‖J v n‖ ≤ 1 := by
-    let : NeZero (ordCompl[2] (n : ℕ)) := ⟨(Nat.ordCompl_pos 2 n.ne_zero).ne'⟩
-    simpa only [J, jacobiChar_intCast] using
-      (jacobiChar ℂ (ordCompl[2] (n : ℕ))).norm_le_one (Int.cast (-(v : ℤ)))
-  have hA (v : ℕ) : Summable fun n ↦ ‖A v n‖ := ha.of_nonneg_of_le
-    (fun _ ↦ norm_nonneg _) (fun n ↦ by
-      dsimp only [A]
-      rw [norm_mul]
-      exact mul_le_of_le_one_right (norm_nonneg _) (hJ v n))
-  have hW (p) : ‖∑ v ∈ Icc 1 X, J v p.1 * J v p.2‖ ≤ W p :=
-    norm_sum_mul_jacobiSym_ordCompl_le X p.1 p.2
-  have hMajor : Summable fun p ↦ ‖a p.1‖ * ‖a p.2‖ * W p :=
-    ((ha.mul_of_nonneg ha (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)).mul_right
-      (X : ℝ)).of_nonneg_of_le
-      (fun p ↦ mul_nonneg (by positivity) ((norm_nonneg _).trans (hW p))) (fun p ↦ by
-        apply mul_le_mul_of_nonneg_left _ (by positivity)
-        simp only [W]
-        split_ifs <;> simp)
-  have hExpand : HasSum
-      (fun p : ℕ+ × ℕ+ ↦ ∑ v ∈ Icc 1 X, A v p.1 * conj (A v p.2))
-      (∑ v ∈ Icc 1 X, ((‖∑' n, A v n‖ ^ 2 : ℝ) : ℂ)) := by
-    apply hasSum_sum
-    intro v _
-    have h := (hA v).of_norm.hasSum
-    rw [Complex.ofReal_pow, ← Complex.mul_conj']
-    have hc : Summable (fun n ↦ ‖conj (A v n)‖) := by simpa only [Complex.norm_conj] using hA v
-    exact h.mul ((RCLike.hasSum_conj' ℂ).mpr h) (summable_mul_of_summable_norm (hA v) hc)
-  have hBound (p : ℕ+ × ℕ+) :
-      ‖∑ v ∈ Icc 1 X, A v p.1 * conj (A v p.2)‖ ≤ ‖a p.1‖ * ‖a p.2‖ * W p := by
-    have h (v : ℕ) : A v p.1 * conj (A v p.2) =
-        (a p.1 * conj (a p.2)) * (J v p.1 * J v p.2) := by
-      simp only [A, map_mul, J, map_intCast]
-      ring
-    simp_rw [h, ← mul_sum, norm_mul, Complex.norm_conj]
-    exact mul_le_mul_of_nonneg_left (hW p) (by positivity)
-  have hnonneg : 0 ≤ ∑ v ∈ Icc 1 X, ‖∑' n, A v n‖ ^ 2 :=
-    Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
-  have h := hExpand.norm_le_of_bounded hMajor.hasSum hBound
-  rw [← Complex.ofReal_sum, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hnonneg] at h
-  exact h
+/-- In the numerator second moment, each pair of weights costs at most `K` when the
+product of its odd denominators is square, and at most the smaller of `K` and the
+Pólya–Vinogradov bound otherwise. The indices need not have distinct denominators. -/
+theorem _root_.Finset.sum_norm_sq_jacobiSym_neg_le {ι : Type*} (S : Finset ι) (m : ι → ℕ)
+    (c : ι → ℂ) (hm : ∀ i ∈ S, Odd (m i)) (K : ℕ) :
+    ∑ v ∈ Icc 1 K, ‖∑ i ∈ S, c i * (jacobiSym (-(v : ℤ)) (m i) : ℂ)‖ ^ 2 ≤
+      ∑ i ∈ S, ∑ j ∈ S, ‖c i‖ * ‖c j‖ *
+        (if IsSquare (m i * m j) then (K : ℝ)
+          else min K (2 * Real.sqrt (m i * m j : ℕ) * (1 + Real.log (m i * m j : ℕ)))) := by
+  -- Keep the signed correlations inside the norm until the numerator sum has been taken.
+  let J (v b : ℕ) : ℂ := jacobiSym (-(v : ℤ)) b
+  have hexpand (v : ℕ) :
+      ‖∑ i ∈ S, c i * (jacobiSym (-(v : ℤ)) (m i) : ℂ)‖ ^ 2 =
+        (∑ i ∈ S, ∑ j ∈ S, (c i * star (c j)) * J v (m i * m j)).re := by
+    rw [Complex.sq_norm, ← Complex.ofReal_re (Complex.normSq _),
+      Complex.normSq_eq_conj_mul_self, mul_comm, map_sum, sum_mul]
+    simp_rw [mul_sum]
+    congr 1
+    refine sum_congr rfl fun i hi ↦ sum_congr rfl fun j hj ↦ ?_
+    let : NeZero (m i) := ⟨(hm i hi).pos.ne'⟩
+    let : NeZero (m j) := ⟨(hm j hj).pos.ne'⟩
+    simp [J, jacobiSym.mul_right, mul_assoc, mul_left_comm]
+  simp_rw [hexpand]
+  rw [← Complex.re_sum, sum_comm (s := Icc 1 K)]
+  simp_rw [sum_comm (s := Icc 1 K), ← mul_sum, Complex.re_sum]
+  refine sum_le_sum fun i hi ↦ sum_le_sum fun j hj ↦ ?_
+  set b := m i * m j
+  have hb : Odd b := (hm i hi).mul (hm j hj)
+  refine (Complex.re_le_norm _).trans ?_
+  rw [norm_mul, norm_mul, norm_star]
+  exact mul_le_mul_of_nonneg_left (norm_sum_jacobiSym_neg_Icc_le hb K) (by positivity)
+
+/-- The numerator second-moment bound for absolutely summable weights. The product-indexed
+majorant is summable because each correlation is bounded by `K`. -/
+theorem sum_norm_sq_tsum_jacobiSym_neg_le {ι : Type*} (m : ι → ℕ) (c : ι → ℂ)
+    (hm : ∀ i, Odd (m i)) (hc : Summable (fun i ↦ ‖c i‖)) (K : ℕ) :
+    ∑ v ∈ Icc 1 K, ‖∑' i, c i * (jacobiSym (-(v : ℤ)) (m i) : ℂ)‖ ^ 2 ≤
+      ∑' p : ι × ι, ‖c p.1‖ * ‖c p.2‖ *
+        (if IsSquare (m p.1 * m p.2) then (K : ℝ)
+          else min K (2 * Real.sqrt (m p.1 * m p.2 : ℕ) * (1 + Real.log (m p.1 * m p.2 : ℕ)))) := by
+  let F (v : ℕ) (i : ι) := c i * (jacobiSym (-(v : ℤ)) (m i) : ℂ)
+  set B : ι × ι → ℝ := fun p ↦ ‖c p.1‖ * ‖c p.2‖ *
+    (if IsSquare (m p.1 * m p.2) then (K : ℝ)
+      else min K (2 * Real.sqrt (m p.1 * m p.2 : ℕ) * (1 + Real.log (m p.1 * m p.2 : ℕ))))
+  have hB₀ (p) : 0 ≤ B p := by
+    have hp : (1 : ℝ) ≤ (m p.1 * m p.2 : ℕ) := by exact_mod_cast ((hm p.1).mul (hm p.2)).pos
+    dsimp only [B]
+    split_ifs <;> positivity [Real.log_nonneg hp]
+  have hB : Summable B := by
+    refine Summable.of_nonneg_of_le hB₀ (fun p ↦ ?_)
+      ((hc.mul_of_nonneg hc (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)).mul_right (K : ℝ))
+    dsimp only [B]
+    split_ifs
+    · rfl
+    · exact mul_le_mul_of_nonneg_left (min_le_left _ _) (by positivity)
+  have hF (v : ℕ) : Summable (F v) := by
+    refine hc.of_norm_bounded fun i ↦ ?_
+    let : NeZero (m i) := ⟨(hm i).pos.ne'⟩
+    dsimp only [F]
+    rw [norm_mul, ← jacobiChar_intCast]
+    exact mul_le_of_le_one_right (norm_nonneg _) ((jacobiChar ℂ (m i)).norm_le_one _)
+  have hlim : Filter.Tendsto
+      (fun S : Finset ι ↦ ∑ v ∈ Icc 1 K, ‖∑ i ∈ S, F v i‖ ^ 2) Filter.atTop
+      (nhds (∑ v ∈ Icc 1 K, ‖∑' i, F v i‖ ^ 2)) := by
+    refine tendsto_finsetSum _ fun v _ ↦ ?_
+    have hv : Filter.Tendsto (fun S : Finset ι ↦ ∑ i ∈ S, F v i) Filter.atTop
+      (nhds (∑' i, F v i)) := (hF v).hasSum
+    exact hv.norm.pow 2
+  refine le_of_tendsto' hlim fun S ↦ ?_
+  refine (S.sum_norm_sq_jacobiSym_neg_le m c (fun i _ ↦ hm i) K).trans ?_
+  rw [← Finset.sum_product S S B]
+  exact hB.sum_le_tsum _ fun p _ ↦ hB₀ p
 
 end TauCeti
