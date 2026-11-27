@@ -53,7 +53,8 @@ determinant of its restriction to the rows and columns indexed by a finite set o
   and the principal minor on all indices is the determinant.
 * `Matrix.principalMinor_mul_of_apply_eq_zero_right`,
   `Matrix.principalMinor_mul_of_apply_eq_zero_left`: the principal minor on `s` is multiplicative
-  when one factor maps the coordinates in `s` into themselves.
+  when the right factor preserves the coordinates in `s`, or the left factor preserves the
+  coordinates outside `s`.
 * `Matrix.principalMinor_one`, `Matrix.principalMinor_diagonal`: every principal minor of the
   identity matrix is `1`, and a principal minor of a diagonal matrix is the product of the
   chosen diagonal entries.

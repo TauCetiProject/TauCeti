@@ -226,17 +226,6 @@ theorem principalMinorProd_diagonal {d : ι → K} (hd : ∀ a, d a ≠ 0) (w : 
     (diagonal d).principalMinorProd w = ∏ a, d a ^ w a :=
   principalMinorProd_eq_prod_zpow_of_principalMinor_eq_prod hd (principalMinor_diagonal d) w
 
-omit [Fintype ι] in
-/-- A principal minor of a matrix that is block triangular for an injective ranking of its
-indices is the product of the chosen diagonal entries. -/
-theorem BlockTriangular.principalMinor_eq_prod_diag {R α : Type*} [CommRing R] [LinearOrder α]
-    {b : Matrix ι ι R} {o : ι → α} (hb : b.BlockTriangular o) (ho : Function.Injective o)
-    (s : Finset ι) : b.principalMinor s = ∏ a ∈ s, b a a := by
-  rw [principalMinor_def,
-    (hb.submatrix (f := Subtype.val)).det_eq_prod_diag (ho.comp Subtype.val_injective),
-    ← prod_coe_sort s]
-  simp only [submatrix_apply]
-
 /-- The product of principal minors of weight `w` of a matrix that is triangular for an injective
 ranking of the indices, with nonzero diagonal entries, is `∏_a b_aa ^ w_a`. -/
 theorem BlockTriangular.principalMinorProd_eq_prod_zpow {α : Type*} [LinearOrder α]
