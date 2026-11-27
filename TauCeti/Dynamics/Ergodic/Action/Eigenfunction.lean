@@ -25,6 +25,10 @@ every `x`. Its modulus is then almost invariant, hence almost everywhere constan
 `2πa` of the Koopman group (`TauCeti.toLp_mem_eigenspace_koopmanGroup`). This passes between
 measurable eigenfunctions and the `L²` eigenvectors of the spectral theory of the Koopman group.
 
+For `a ≠ 0` the factor `exp(2πiat)` is `-1` at `t = 1/(2a)`
+(`TauCeti.exp_two_pi_mul_one_div_two_mul_mul_I_eq_neg_one`), so the equation there reads
+`f(t +ᵥ x) = -f(x)`.
+
 The constant-modulus step is `ErgodicVAdd.ae_eq_const_of_forall_ae_eq_comp_vadd₀`: for an
 ergodic action, an almost invariant function is almost everywhere constant.
 
@@ -41,6 +45,14 @@ open MeasureTheory Filter Function Set
 open scoped ENNReal
 
 namespace TauCeti
+
+/-- At `t = 1/(2a)` the factor `exp(2πiat)` of the eigenfunction equation of frequency `a ≠ 0`
+is `-1`. -/
+theorem exp_two_pi_mul_one_div_two_mul_mul_I_eq_neg_one {a : ℝ} (ha : a ≠ 0) :
+    Complex.exp (2 * Real.pi * a * (1 / (2 * a) : ℝ) * Complex.I) = -1 := by
+  have ha' : (a : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 ha
+  rw [show (2 * Real.pi * a * (1 / (2 * a) : ℝ) * Complex.I : ℂ) = Real.pi * Complex.I by
+    push_cast; field_simp, Complex.exp_pi_mul_I]
 
 variable {X : Type*} [MeasurableSpace X] [AddAction ℝ X] {μ : Measure X}
 
