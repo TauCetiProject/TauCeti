@@ -1,0 +1,451 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Green
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Annihilator
+import TauCeti.Geometry.Manifold.ExtChartAt.SelfModel
+import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.ChartSection
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.ZeroOneGram
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.SemiFredholm
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.SMul
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.ExtendByZero
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+import TauCeti.Analysis.Normed.Module.Annihilator
+
+/-!
+# Duality for smooth real Cauchy–Riemann operators on closed surfaces
+
+Let `M` be a complex curve without boundary and `V → M` a complex vector bundle with
+finite-dimensional model fibre `F`, smooth as a real vector bundle, with a finite bundle atlas `A`
+(so `M` is compact), smooth metrics on `TM` and `V`, and the Riemannian volume `dV`. Let `D` be a
+smooth real Cauchy–Riemann operator on `V`, realized as
+`D : W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` (`TauCeti.IsRealCauchyRiemannOperator.sobolevL`),
+`1 < p < ∞`, and `D*` its formal adjoint on smooth `(0,1)`-forms, for compatible metrics and a
+smooth metric connection.
+
+* *Annihilators of the range.* Every continuous functional `Λ` on the `Lᵖ` `(0,1)`-forms that
+  vanishes on the range of `D` is the `L²` pairing `w ↦ ∫ ⟪η, w⟫ dV`
+  (`TauCeti.zeroOneHilbertSchmidtL`) with a smooth `(0,1)`-form `η` satisfying `D* η = 0`
+  (`TauCeti.IsRealCauchyRiemannOperator.exists_zeroOneHilbertSchmidtL_eq_of_annihilator`).
+  Conversely, by Green's formula, such pairings vanish on the range of `D`
+  (`TauCeti.IsRealCauchyRiemannOperator.annihilator_iff_exists_zeroOneHilbertSchmidtL_eq`).
+* *The duality (C.1.3).* A `(0,1)`-form is in the range of `D` exactly when it is
+  `L²`-orthogonal to every smooth `(0,1)`-form `η` with `D* η = 0`
+  (`TauCeti.IsRealCauchyRiemannOperator.mem_range_sobolevL_iff`): the range is closed, so it is
+  cut out by the functionals vanishing on it.
+
+## The argument
+
+Take a smooth partition of unity `χᵢ` subordinate to the charts and open sets `Q₀ ⋐ Q₁` of the
+chart images with the support of `χᵢ` read in chart `i` inside `Q₀`
+(`TauCeti.FiniteBundleAtlas.exists_nested_chart_sets`). Over `Q₁`, `Λ` is integration
+`w ↦ ∫ θ (wᵢ(1)) dz` against a covector field `θ` that solves the adjoint equation weakly
+(`TauCeti.exists_memLp_forall_integral_eq_zero_of_annihilator`), so `θ` is smooth
+(`TauCeti.IsRealCauchyRiemannOperator.exists_contDiffOn_ae_eq_of_forall_integral_eq_zero`). In
+chart `i` the Riemannian volume is `ρ dz` for the smooth positive chart density `ρ`, up to a
+constant, and inverting the chart Gram form of the metrics
+(`TauCeti.FiniteBundleAtlas.exists_contDiffOn_hilbertSchmidtInner_eq`) gives a smooth
+`(0,1)`-form `ηᵢ` over `Q₁` with `ρ ⟪ηᵢ, w⟫ = θ (wᵢ(1))`. Then `η = ∑ χᵢ ηᵢ` is smooth and
+represents `Λ = ∑ Λ (χᵢ ·)`. Finally `∫ ⟪D* η, ξ⟫ dV = ∫ ⟪η, D ξ⟫ dV = Λ (D ξ) = 0` for every
+smooth section `ξ`, so `D* η = 0`
+(`TauCeti.IsRealCauchyRiemannOperator.eq_formalAdjoint_of_forall_integral_inner_eq`).
+
+## Main results
+
+* `TauCeti.IsRealCauchyRiemannOperator.exists_zeroOneHilbertSchmidtL_eq_of_annihilator`: an
+  annihilator of the range is the `L²` pairing with a smooth solution of `D* η = 0`.
+* `TauCeti.IsRealCauchyRiemannOperator.annihilator_iff_exists_zeroOneHilbertSchmidtL_eq`: the
+  annihilators of the range are exactly these pairings.
+* `TauCeti.IsRealCauchyRiemannOperator.mem_range_sobolevL_iff`: McDuff–Salamon's duality (C.1.3).
+
+## References
+
+* D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  Appendix C.1, the duality (C.1.3), and Theorem C.2.3.
+-/
+
+public section
+
+noncomputable section
+
+open Bundle MeasureTheory Module Set TopologicalSpace
+open ContinuousLinearMap (antilinearOfOneL complexAntilinearPartL)
+open scoped Manifold ENNReal NNReal ContDiff TauCeti.ComplexManifold RealInnerProductSpace
+
+namespace TauCeti
+
+open SmoothAlmostComplexStructure FiniteBundleAtlas
+
+/-! ### The Riemannian volume in a chart -/
+
+section Chart
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
+  {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] (A : FiniteBundleAtlas ℂ M F V)
+
+local instance instIsContinuousRiemannianBundleTangentDualityChart :
+    IsContinuousRiemannianBundle ℂ (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := 𝓘(ℝ, ℂ)) (n := ∞)
+
+/-- The density of the Riemannian volume read in chart `i` with respect to Lebesgue measure on
+`ℂ`: the chart volume density times the constant comparing the Haar measure of
+`Module.finBasis ℝ ℂ` with Lebesgue measure. -/
+private def chartDensity (i : Fin A.n) (z : ℂ) : ℝ :=
+  (Measure.addHaarScalarFactor (Module.finBasis ℝ ℂ).addHaar (volume : Measure ℂ) : ℝ) *
+    chartVolumeDensity (I := 𝓘(ℝ, ℂ)) (A.center i) ((A.chart i).symm z)
+
+/-- The chart density is smooth on the image of chart `i`. -/
+private theorem contDiffOn_chartDensity (i : Fin A.n) :
+    ContDiffOn ℝ ∞ (chartDensity A i) (A.image i) := by
+  have h : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞
+      (fun z ↦ chartVolumeDensity (I := 𝓘(ℝ, ℂ)) (A.center i) ((A.chart i).symm z))
+      (A.chart i).target :=
+    (contMDiffOn_chartVolumeDensity (A.center i)).comp contMDiffOn_chart_symm fun z hz ↦ by
+      rw [mem_preimage, TangentBundle.trivializationAt_baseSet]
+      exact (A.chart i).map_target hz
+  exact (contDiffOn_const.mul (contMDiffOn_iff_contDiffOn.1 h)).mono fun z hz ↦
+    (A.image_subset_target_inter_preimage_baseSet i hz).1
+
+omit [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
+/-- The chart density is positive on the image of chart `i`. -/
+private theorem chartDensity_pos {i : Fin A.n} {z : ℂ} (hz : z ∈ A.image i) :
+    0 < chartDensity A i z :=
+  mul_pos (NNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _))
+    (chartVolumeDensity_pos _ (by
+      simpa only [TangentBundle.trivializationAt_baseSet] using
+        A.dom_subset_chart_source i (A.symm_mem_dom hz)))
+
+variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
+/-- **Integration in chart `i`.** If `f` vanishes off the points read in chart `i` inside an open
+subset `Q` of the chart image, its integral against the Riemannian volume is the integral over `Q`
+of `f` read in the chart, weighted by the chart density. -/
+private theorem integral_riemannianVolume_eq_setIntegral_chart {i : Fin A.n} {Q : Opens ℂ}
+    (hQ : (Q : Set ℂ) ⊆ A.image i) {f : M → ℝ} (hf : ∀ x ∉ (A.chart i).symm '' Q, f x = 0) :
+    ∫ x, f x ∂riemannianVolume 𝓘(ℝ, ℂ) M =
+      ∫ z in Q, chartDensity A i z * f ((A.chart i).symm z) := by
+  have hQt : (Q : Set ℂ) ⊆ (A.chart i).target := fun z hz ↦
+    (A.image_subset_target_inter_preimage_baseSet i (hQ hz)).1
+  have hSs : (A.chart i).symm '' Q ⊆ (A.chart i).source := by
+    rintro _ ⟨z, hz, rfl⟩
+    exact (A.chart i).map_target (hQt hz)
+  have hSo : IsOpen ((A.chart i).symm '' Q) :=
+    (A.chart i).isOpen_image_symm_of_subset_target Q.isOpen hQt
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hf,
+    setIntegral_riemannianVolume_of_subset hSs hSo.measurableSet,
+    extChartAt_modelWithCornersSelf_eq]
+  simp only [OpenPartialHomeomorph.coe_toPartialEquiv,
+    OpenPartialHomeomorph.coe_toPartialEquiv_symm]
+  rw [show A.chart i '' ((A.chart i).symm '' Q) = Q from
+      (A.chart i).toPartialEquiv.image_symm_image_of_subset_target hQt,
+    Module.Basis.setIntegral_addHaar_congr_measurableSpace _ _ _ _ _ _
+      (inferInstance : BorelSpace ℂ),
+    Measure.isAddLeftInvariant_eq_smul (Module.finBasis ℝ ℂ).addHaar volume,
+    Measure.restrict_smul, integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul,
+    ← integral_const_mul]
+  refine setIntegral_congr_fun Q.isOpen.measurableSet fun z _ ↦ ?_
+  simp only [chartDensity, smul_eq_mul, mul_assoc]
+
+end Chart
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M] [T2Space M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
+  [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℂ F V]
+
+local instance instVectorBundleRealCauchyRiemannDuality : VectorBundle ℝ F V :=
+  VectorBundle.restrictScalars ℝ ℂ F V
+
+variable [RiemannianBundle V] [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
+  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
+  (A : FiniteBundleAtlas ℂ M F V) {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+local instance instIsContinuousRiemannianBundleDuality : IsContinuousRiemannianBundle F V :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := 𝓘(ℝ, ℂ)) (n := ∞)
+
+local instance instIsContinuousRiemannianBundleTangentDuality :
+    IsContinuousRiemannianBundle ℂ (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := 𝓘(ℝ, ℂ)) (n := ∞)
+
+/-! ### Representing an annihilator in one chart -/
+
+omit [T2Space M] [FiniteDimensional ℝ F] [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x]
+  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
+/-- On the image of chart `i`, a one-form at the point read at `z` is recovered from its reading
+by the inverse of the trivialization. -/
+private theorem symmL_coord_tangentHom {i : Fin A.n} {z : ℂ} (hz : z ∈ A.image i)
+    (t : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) :
+    (A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) (A.tangentHom.coord i t z) =
+      t ((A.chart i).symm z) := by
+  have hb : (A.chart i).symm z ∈ (A.tangentHom.triv i).baseSet := by
+    have := A.tangentHom.image_subset_target_inter_preimage_baseSet i
+    rw [image_tangentHom] at this
+    exact (this hz).2
+  rw [Trivialization.symmL_apply _ hb]
+  exact (congrArg _ (A.tangentHom.coord_def i t z)).trans
+    (Trivialization.symm_apply_apply_mk _ hb _)
+
+omit [T2Space M] in
+/-- **One chart of the representing form.** Let `Q₀ ⊆ Q₁` be open subsets of the image of chart
+`i`, `χ` a smooth function with support read in chart `i` inside `Q₀`, and `Λ` a functional on the
+`Lᵖ` `(0,1)`-forms represented over `Q₁` by `θ`, `Λ w = ∫_{Q₁} θ (wᵢ(1))`, with `θ` almost
+everywhere equal on `Q₁` to a field `g` smooth on `Q₁`. Then there is a smooth `(0,1)`-form `ζ`
+with `Λ (χ w) = ∫ ⟪ζ, w⟫ dV` for every `(0,1)`-form `w`, for the Riemannian volume `dV`. -/
+private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
+    (hQ₀₁ : Q₀ ≤ Q₁) (hQ₁ : (Q₁ : Set ℂ) ⊆ A.image i)
+    {χ : M → ℝ} (hχs : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ χ) (hχ : tsupport χ ⊆ (A.chart i).symm '' Q₀)
+    {Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ} {θ : ℂ → F →L[ℝ] ℝ}
+    (hrep : ∀ w : zeroOneSobolevSections A volume p 0,
+      (w : SobolevSection A.tangentHom volume p 0) ∈
+          SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q₁) →
+        Λ w = ∫ z in Q₁, θ z (A.tangentHom.sectionChartData.chartValueL volume p 0 i
+          ((w : SobolevSection A.tangentHom volume p 0) :
+            A.tangentHom.sectionChartData.SobolevData volume p 0) z 1))
+    {g : ℂ → F →L[ℝ] ℝ} (hg : ContDiffOn ℝ ∞ g Q₁) (hθg : θ =ᵐ[volume.restrict Q₁] g) :
+    ∃ ζ : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x,
+      ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ →L[ℝ] F)) ∞ (fun x ↦
+        TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (ζ x)) ∧
+      (∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (ζ x)) ∧
+      ∀ (w : zeroOneSobolevSections A volume p 0)
+        (s : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x),
+        (∀ j, A.tangentHom.sectionChartData.chartValueL volume p 0 j
+          ((w : SobolevSection A.tangentHom volume p 0) :
+            A.tangentHom.sectionChartData.SobolevData volume p 0)
+              =ᵐ[volume.restrict (A.image j)] A.tangentHom.coord j s) →
+        Λ (zeroOnePartSobolevL A volume p 0
+            (SobolevSection.contMDiffSMulL A.tangentHom volume p 0 hχs w)) =
+          ∫ x, (ζ x).hilbertSchmidtInner (s x) ∂riemannianVolume 𝓘(ℝ, ℂ) M := by
+  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
+  -- The values at `1` of the representing form, in chart `i`: `g / ρ` through the Gram form.
+  obtain ⟨R, hR, hRg⟩ := A.exists_contDiffOn_hilbertSchmidtInner_eq i hQ₁
+    (g := fun z ↦ (chartDensity A i z)⁻¹ • g z)
+    ((((contDiffOn_chartDensity A i).mono hQ₁).inv fun z hz ↦
+      (chartDensity_pos A (hQ₁ hz)).ne').smul hg)
+  set η := A.tangentHom.chartSection i (fun z ↦ antilinearOfOneL F (R z))
+  have hη (z : ℂ) (hz : z ∈ A.image i) : A.tangentHom.coord i η z = antilinearOfOneL F (R z) :=
+    coord_chartSection _ (by rwa [image_tangentHom])
+  refine ⟨fun x ↦ χ x • η x, ?_, fun x ↦ ?_, fun w s hs ↦ ?_⟩
+  · refine A.tangentHom.contMDiff_smul_chartSection_of_contDiffOn hχs Q₁.isOpen
+      (fun x hx ↦ ?_) ((antilinearOfOneL F).contDiff.comp_contDiffOn hR)
+    obtain ⟨z, hz, rfl⟩ := hχ hx
+    have hzi := hQ₁ (hQ₀₁ hz)
+    refine ⟨A.symm_mem_dom hzi, show A.chart i ((A.chart i).symm z) ∈ Q₁ from ?_⟩
+    rw [(A.chart i).right_inv (A.image_subset_target_inter_preimage_baseSet i hzi).1]
+    exact hQ₀₁ hz
+  · -- `η` is a `(0,1)`-form: in chart `i` it reads as antilinear maps, and it vanishes off it.
+    have hηx : (ofComplexManifold ℂ M).IsZeroOneForm (η x) := by
+      by_cases hx : x ∈ A.dom i
+      · have hy : A.chart i x ∈ A.image i := A.mem_image.2 ⟨x, hx, rfl⟩
+        have h := (A.isZeroOneForm_iff_coord_tangentHom i η hy).2 fun v ↦ by
+          rw [hη _ hy, ContinuousLinearMap.antilinearOfOneL_apply_I_smul]
+        rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)] at h
+      · rw [show η x = 0 from chartSection_eq_zero fun h ↦ (hx h).elim]
+        exact isZeroOneForm_iff.2 fun v ↦ by simp
+    refine isZeroOneForm_iff.2 fun v ↦ ?_
+    simp only [smul_apply, isZeroOneForm_iff.1 hηx v, smul_neg, smul_comm (χ x) Complex.I]
+  · -- `w` vanishes off the points read in chart `i` inside `Q₁`, where `Λ` is represented by `θ`.
+    have hmem := SobolevSection.aeZeroOff_mono (hχ.trans (image_mono hQ₀₁))
+      (zeroOnePartSobolevL_mem_aeZeroOff (SobolevSection.contMDiffSMulL_mem_aeZeroOff hχs
+        (w : SobolevSection A.tangentHom volume p 0)))
+    have hQ₁s : (Q₁ : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
+      rwa [sectionChartData_image_tangentHom]
+    rw [hrep _ hmem, integral_riemannianVolume_eq_setIntegral_chart A hQ₁ fun x hx ↦ by
+      beta_reduce
+      rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (image_mono hQ₀₁ (hχ h)), zero_smul,
+        ContinuousLinearMap.hilbertSchmidtInner_zero_left]]
+    refine integral_congr_ae ?_
+    filter_upwards [hθg, ae_restrict_of_ae_restrict_of_subset hQ₁s
+        (chartValueL_zeroOnePartSobolevL_ae
+          (SobolevSection.contMDiffSMulL A.tangentHom volume p 0 hχs
+            (w : SobolevSection A.tangentHom volume p 0)) i),
+      ae_restrict_of_ae_restrict_of_subset hQ₁s ((ae_image_tangentHom_iff A volume i).2
+        ((A.image_tangentHom i).symm ▸ SobolevSection.chartValueL_contMDiffSMulL_ae hχs
+          (w : SobolevSection A.tangentHom volume p 0) i)),
+      ae_restrict_of_ae_restrict_of_subset hQ₁ (hs i),
+      ae_restrict_of_ae_restrict_of_subset hQ₁s (mem_zeroOneSobolevSections_iff.1 w.prop i),
+      ae_restrict_mem Q₁.isOpen.measurableSet] with z hθz h₁ h₂ h₃ hw hz
+    have hzi := hQ₁ hz
+    have h₂' : _ = χ ((A.chart i).symm z) • _ := h₂
+    rw [h₃] at hw
+    rw [hθz, h₁, h₂', h₃, map_smul, ContinuousLinearMap.complexAntilinearPartL_eq_self_iff.2 hw,
+      ContinuousLinearMap.hilbertSchmidtInner_smul_left,
+      ← symmL_coord_tangentHom A hzi η, ← symmL_coord_tangentHom A hzi s, hη z hzi,
+      hRg z hz _ hw]
+    simp only [smul_apply, map_smul, smul_eq_mul]
+    field_simp [(chartDensity_pos A hzi).ne']
+
+/-! ### Annihilators of the range -/
+
+namespace IsRealCauchyRiemannOperator
+
+variable {D : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+  (hD : IsRealCauchyRiemannOperator F (ofComplexManifold ℂ M) D)
+  (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
+
+include hD hDs in
+/-- An annihilator of the range of `D` is the `L²` pairing with a smooth `(0,1)`-form. -/
+private theorem exists_eq_zeroOneHilbertSchmidtL (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ)
+    (hΛ : ∀ w, Λ (hD.sobolevL A hDs volume p w) = 0) :
+    ∃ (η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)
+      (hη : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ →L[ℝ] F)) ∞ fun x ↦
+        TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x)),
+      (∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (η x)) ∧
+        zeroOneHilbertSchmidtL A volume p 0 isPositiveDensityMeasure_riemannianVolume η
+          hη.continuous = Λ := by
+  have hpq : p.HolderConjugate p.conjExponent := .conjExponent hp.le
+  have : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
+  have hq : 1 < p.conjExponent :=
+    (ENNReal.HolderConjugate.lt_top_iff_one_lt (p := p) (q := p.conjExponent)).1 hp_top.lt_top
+  obtain ⟨χ, Q₀, Q₁, Q₂, Q₃, hχ, hQ₀, hQ₁, hQ₂, hQ₃, -⟩ := A.exists_nested_chart_sets
+  have hQ₁i (i : Fin A.n) : closure (Q₁ i : Set ℂ) ⊆ A.image i :=
+    (hQ₁ i).2.trans (subset_closure.trans ((hQ₂ i).trans (subset_closure.trans (hQ₃ i))))
+  -- In every chart, `Λ` is represented over `Q₁` by a smooth field, giving one piece `ζᵢ`.
+  choose θ hθ hrep hweak using fun i ↦
+    exists_memLp_forall_integral_eq_zero_of_annihilator (q := p.conjExponent) A hD hDs hp
+      hp_top Λ hΛ i (hQ₁i i)
+  choose g hg hθg using fun i ↦ exists_contDiffOn_ae_eq_of_forall_integral_eq_zero A hD hDs
+    (subset_closure.trans (hQ₁i i)) hq (hθ i).memLpLoc (hweak i)
+  choose ζ hζs hζ01 hζΛ using fun i ↦ exists_zeroOneForm_chart A
+    (subset_closure.trans (hQ₀ i).2) (subset_closure.trans (hQ₁i i)) (χ i).contMDiff (hχ i)
+    (hrep i) (hg i) (hθg i)
+  have hη : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ →L[ℝ] F)) ∞ fun x ↦
+      TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x
+        (∑ i, ζ i x) :=
+    ContMDiff.sum_section fun i _ ↦ hζs i
+  refine ⟨fun x ↦ ∑ i, ζ i x, hη, fun x ↦ isZeroOneForm_iff.2 fun v ↦ ?_, ?_⟩
+  · simp only [FunLike.coe_sum, Finset.sum_apply, isZeroOneForm_iff.1 (hζ01 _ x),
+      Finset.sum_neg_distrib, Finset.smul_sum]
+  refine ContinuousLinearMap.ext fun w ↦ ?_
+  obtain ⟨s, hs⟩ := SobolevSection.exists_ae_eq_coord (w : SobolevSection A.tangentHom volume p 0)
+  have hs' (j : Fin A.n) : A.tangentHom.sectionChartData.chartValueL volume p 0 j
+      ((w : SobolevSection A.tangentHom volume p 0) :
+        A.tangentHom.sectionChartData.SobolevData volume p 0)
+        =ᵐ[volume.restrict (A.image j)] A.tangentHom.coord j s :=
+    A.image_tangentHom j ▸ hs j
+  -- `w` is the sum of the `(0,1)`-projections of the `χᵢ w`, and `Λ (χᵢ w) = ∫ ⟪ζᵢ, w⟫ dV`.
+  have h1 (x : M) : ∑ i, χ i x = 1 := by
+    simpa [finsum_eq_sum_of_fintype] using χ.sum_eq_one (mem_univ x)
+  have hint (i : Fin A.n) : Integrable (fun x ↦ (ζ i x).hilbertSchmidtInner (s x))
+      (riemannianVolume 𝓘(ℝ, ℂ) M) := by
+    simpa only [ContinuousLinearMap.hilbertSchmidtInnerL_apply] using
+      SobolevSection.integrable_apply (A := A.tangentHom) isPositiveDensityMeasure_riemannianVolume
+        (L := fun x ↦ (ζ i x).hilbertSchmidtInnerL)
+        (fun x₀ ↦ Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL _
+          (trivializationAt _ _ x₀).open_baseSet subset_rfl (hζs i).continuous.continuousOn) hs
+  rw [zeroOneHilbertSchmidtL_apply _ _ hs',
+    ← sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self (fun i ↦ (χ i).contMDiff) h1 w, map_sum,
+    Finset.sum_congr rfl fun i _ ↦ hζΛ i w s hs', ← integral_finsetSum _ fun i _ ↦ hint i]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+  simp only [ContinuousLinearMap.hilbertSchmidtInner_comm _ (s x),
+    ← ContinuousLinearMap.hilbertSchmidtInnerL_apply, map_sum]
+
+variable (cov : _root_.CovariantDerivative 𝓘(ℝ, ℂ) F V)
+  [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞] [∀ x, ContinuousSMul ℂ (V x)]
+
+include hD hDs in
+/-- **Annihilators of the range are pairings with solutions of the adjoint equation**
+(McDuff–Salamon, (C.1.3) and the proof of Theorem C.2.3, on a closed surface). For compatible
+metrics, a smooth metric connection, the Riemannian volume and `1 < p < ∞`, every continuous
+functional `Λ` on the `Lᵖ` `(0,1)`-forms vanishing on the range of
+`D : W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` is the `L²` pairing `w ↦ ∫ ⟪η, w⟫ dV`
+(`TauCeti.zeroOneHilbertSchmidtL`) with a smooth `(0,1)`-form `η` satisfying `D* η = 0`. -/
+theorem exists_zeroOneHilbertSchmidtL_eq_of_annihilator (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫)
+    (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ)
+    (hΛ : ∀ w, Λ (hD.sobolevL A hDs volume p w) = 0) :
+    ∃ (η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)
+      (hη : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ →L[ℝ] F)) ∞ fun x ↦
+        TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x)),
+      (∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (η x)) ∧ (∀ x, hD.formalAdjoint cov η x = 0) ∧
+        zeroOneHilbertSchmidtL A volume p 0 isPositiveDensityMeasure_riemannianVolume η
+          hη.continuous = Λ := by
+  have := A.compactSpace
+  obtain ⟨η, hη, hη01, rfl⟩ := exists_eq_zeroOneHilbertSchmidtL A hD hDs hp hp_top Λ hΛ
+  refine ⟨η, hη, hη01, fun x ↦ ?_, rfl⟩
+  -- `∫ ⟪0, ξ⟫ dV = 0 = Λ (D ξ) = ∫ ⟪η, D ξ⟫ dV` for smooth `ξ`, so `0 = D* η`.
+  have h0 := hD.eq_formalAdjoint_of_forall_integral_inner_eq cov hcov hDs hJ hV hη hη01
+    (Bundle.contMDiff_zeroSection (IB := 𝓘(ℝ, ℂ)) (n := ∞) ℝ (E := V)) fun ξ hξ _ ↦ by
+      let ξ₁ : Cₛ^1⟮𝓘(ℝ, ℂ); F, V⟯ := ⟨ξ, hξ.of_le (by simp)⟩
+      have h := hΛ (SobolevSection.ofContMDiffSection A volume p 1 ξ₁)
+      rw [zeroOneHilbertSchmidtL_apply _ _
+        (chartValueL_sobolevL_ofContMDiffSection_ae A hD hDs volume p ξ₁)] at h
+      simpa [ξ₁] using h.symm
+  exact (congrFun h0 x).symm
+
+include hD hDs in
+/-- **The annihilator of the range of `D`.** For compatible metrics, a smooth metric connection,
+the Riemannian volume and `1 < p < ∞`, a continuous functional on the `Lᵖ` `(0,1)`-forms vanishes on
+the range of `D : W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` exactly when it is the `L²` pairing
+(`TauCeti.zeroOneHilbertSchmidtL`) with a smooth `(0,1)`-form `η` satisfying `D* η = 0`. -/
+theorem annihilator_iff_exists_zeroOneHilbertSchmidtL_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫)
+    (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) :
+    (∀ w, Λ (hD.sobolevL A hDs volume p w) = 0) ↔
+      ∃ (η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)
+        (hη : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ →L[ℝ] F)) ∞ fun x ↦
+          TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x)),
+        (∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (η x)) ∧
+          (∀ x, hD.formalAdjoint cov η x = 0) ∧
+            zeroOneHilbertSchmidtL A volume p 0 isPositiveDensityMeasure_riemannianVolume η
+              hη.continuous = Λ := by
+  refine ⟨exists_zeroOneHilbertSchmidtL_eq_of_annihilator A hD hDs cov hp hp_top hcov hJ hV Λ,
+    ?_⟩
+  rintro ⟨η, hη, hη01, hDη, rfl⟩ w
+  exact range_sobolevL_le_ker_zeroOneHilbertSchmidtL hD hDs cov hp_top hcov hJ hV hη hη01 hDη
+    ⟨w, rfl⟩
+
+include hD hDs in
+/-- **McDuff–Salamon's duality (C.1.3)** on a closed surface. For compatible metrics, a smooth
+metric connection, the Riemannian volume and `1 < p < ∞`, an `Lᵖ` `(0,1)`-form `y` is in the range
+of `D : W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` exactly when it is `L²`-orthogonal,
+`∫ ⟪η, y⟫ dV = 0`, to every smooth `(0,1)`-form `η` with `D* η = 0`. -/
+theorem mem_range_sobolevL_iff (hp : 1 < p) (hp_top : p ≠ ⊤) (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫)
+    (y : zeroOneSobolevSections A volume p 0) :
+    y ∈ (hD.sobolevL A hDs volume p).range ↔
+      ∀ (η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)
+        (hη : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ →L[ℝ] F)) ∞ fun x ↦
+          TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x)),
+        (∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (η x)) →
+          (∀ x, hD.formalAdjoint cov η x = 0) →
+            zeroOneHilbertSchmidtL A volume p 0 isPositiveDensityMeasure_riemannianVolume η
+              hη.continuous y = 0 := by
+  refine ⟨fun hy η hη hη01 hDη ↦
+    range_sobolevL_le_ker_zeroOneHilbertSchmidtL hD hDs cov hp_top hcov hJ hV hη hη01 hDη hy,
+    fun h ↦ ?_⟩
+  -- The range is closed, so it is cut out by the functionals vanishing on it.
+  rw [← (isClosed_range_sobolevL A hD hDs hp hp_top).submodule_topologicalClosure_eq,
+    Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero]
+  intro Λ hΛ
+  obtain ⟨η, hη, hη01, hDη, rfl⟩ := exists_zeroOneHilbertSchmidtL_eq_of_annihilator A hD hDs cov
+    hp hp_top hcov hJ hV Λ fun w ↦ hΛ _ ⟨w, rfl⟩
+  exact h η hη hη01 hDη
+
+end IsRealCauchyRiemannOperator
+
+end TauCeti

@@ -21,6 +21,8 @@ chart `i`.
 
 ## Main results
 
+* `TauCeti.FiniteBundleAtlas.contMDiff_smul_chartSection_of_contDiffOn`: a smooth cutoff times the
+  section equal in a chart to a function smooth near the support of the cutoff is smooth.
 * `TauCeti.FiniteBundleAtlas.exists_contMDiff_eqOn_coord`: a smooth function with compact support
   in a chart image is the reading of a smooth section, supported over its support.
 -/
@@ -42,6 +44,22 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensio
   [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] (A : FiniteBundleAtlas E M F V)
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- **Cut-off chart sections.** The product of a smooth function `ψ` with the section equal in
+chart `i` to a function `G` is a smooth section, if `G` is smooth on an open set `W` and the support
+of `ψ` consists of points of the domain of chart `i` read in chart `i` inside `W`. -/
+theorem contMDiff_smul_chartSection_of_contDiffOn {i : Fin A.n} {ψ : M → ℝ}
+    (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) {W : Set E} (hW : IsOpen W)
+    (hψi : tsupport ψ ⊆ A.dom i ∩ A.chart i ⁻¹' W) {G : E → F} (hG : ContDiffOn ℝ ∞ G W) :
+    ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) ∞
+      fun x ↦ TotalSpace.mk' F x (ψ x • A.chartSection i G x) :=
+  hψ.contMDiffOn.smul_section_of_tsupport (A.isOpen_dom_inter_preimage i hW) hψi <|
+    ((A.triv i).contMDiffOn_section_iff (A.isOpen_dom_inter_preimage i hW)
+      (inter_subset_left.trans (A.dom_subset_baseSet i))).2 <|
+      (hG.contMDiffOn.comp (contMDiffOn_chart.mono
+        (inter_subset_left.trans (A.dom_subset_chart_source i))) fun _ hx ↦ hx.2).congr
+          fun _ hx ↦ triv_chartSection G hx.1
 
 /-- **Smooth sections from chart functions.** A smooth function `φ` with compact support inside
 the image of chart `i` is the reading in chart `i` of a smooth section, supported over the image
