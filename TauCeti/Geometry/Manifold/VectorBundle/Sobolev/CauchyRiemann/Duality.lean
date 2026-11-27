@@ -11,11 +11,15 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
 import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOne.Gram
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChartHaar
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.SemiFredholm
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.SMul
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.ExtendByZero
 import TauCeti.Analysis.Normed.Module.Annihilator
+import TauCeti.Analysis.Normed.Module.Dual.Adjoint
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Cokernel
 
 /-!
 # Duality for smooth real Cauchy–Riemann operators on closed surfaces
@@ -38,6 +42,14 @@ smooth metric connection.
   `L²`-orthogonal to every smooth `(0,1)`-form `η` with `D* η = 0`
   (`TauCeti.IsRealCauchyRiemannOperator.mem_range_sobolevL_iff`): the range is closed, so it is
   cut out by the functionals vanishing on it.
+* *The cokernel.* The pairing identifies the smooth `(0,1)`-forms `η` with `D* η = 0`
+  (`TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjoint`) with the annihilator of the range, the
+  kernel of the transpose of `D`
+  (`TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjointEquivKerPrecomp`): it is onto by the first
+  item, and one-to-one because `∫ ⟪η, η⟫ dV = 0` forces `η = 0`. So `dim coker D = dim ker D*`
+  and `index D = dim ker D - dim ker D*`. Since no nonzero `η` with `D* η = 0` is in the range of
+  `D`, sending `η` to its class is a linear equivalence `ker D* ≃ coker D`
+  (`TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjointEquivCoker`).
 
 ## The argument
 
@@ -55,6 +67,11 @@ represents `Λ = ∑ Λ (χᵢ ·)`. Finally `∫ ⟪D* η, ξ⟫ dV = ∫ ⟪η
 smooth section `ξ`, so `D* η = 0`
 (`TauCeti.IsRealCauchyRiemannOperator.eq_formalAdjoint_of_forall_integral_inner_eq`).
 
+## Main definitions
+
+* `TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjointToZeroOne`: a smooth solution of `D* η = 0`
+  as an `Lᵖ` `(0,1)`-form.
+
 ## Main results
 
 * `TauCeti.IsRealCauchyRiemannOperator.exists_zeroOneHilbertSchmidtL_eq_of_annihilator`: an
@@ -62,6 +79,15 @@ smooth section `ξ`, so `D* η = 0`
 * `TauCeti.IsRealCauchyRiemannOperator.annihilator_iff_exists_zeroOneHilbertSchmidtL_eq`: the
   annihilators of the range are exactly these pairings.
 * `TauCeti.IsRealCauchyRiemannOperator.mem_range_sobolevL_iff`: McDuff–Salamon's duality (C.1.3).
+* `TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjointEquivKerPrecomp`: the kernel of `D*` is the
+  kernel of the transpose of `D`.
+* `TauCeti.IsRealCauchyRiemannOperator.finrank_quotient_range_sobolevL_eq_finrank_kerFormalAdjoint`,
+  `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_eq_finrank_sub`:
+  `dim coker D = dim ker D*` and `index D = dim ker D - dim ker D*`.
+* `TauCeti.IsRealCauchyRiemannOperator.finiteDimensional_kerFormalAdjoint`: `ker D*` is
+  finite-dimensional.
+* `TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjointEquivCoker`: `ker D* ≃ coker D`, sending `η`
+  to its class.
 
 ## References
 
@@ -375,6 +401,212 @@ theorem mem_range_sobolevL_iff (hp : 1 < p) (hp_top : p ≠ ⊤) (hcov : cov.IsM
   obtain ⟨η, hη, hη01, hDη, rfl⟩ := exists_zeroOneHilbertSchmidtL_eq_of_annihilator A hD hDs cov
     hp hp_top hcov hJ hV Λ fun w ↦ hΛ _ ⟨w, rfl⟩
   exact h η hη hη01 hDη
+
+/-! ### The cokernel is the kernel of the formal adjoint -/
+
+variable (p) in
+/-- **Smooth solutions of `D* η = 0` as `Lᵖ` `(0,1)`-forms.** The linear map sending a smooth
+`(0,1)`-form `η` with `D* η = 0` (`TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjoint`) to the
+element of `Lᵖ(M, Λ^{0,1} ⊗ V)` it defines. -/
+def kerFormalAdjointToZeroOne :
+    hD.kerFormalAdjoint cov →ₗ[ℝ] zeroOneSobolevSections A volume p 0 :=
+  ((SobolevSection.ofContMDiffSection A.tangentHom volume p 0).comp
+    ({ toFun η := ⟨η, ((hD.mem_kerFormalAdjoint cov).1 η.property).1.of_le (by simp)⟩
+       map_add' _ _ := ContMDiffSection.ext fun _ ↦ by simp
+       map_smul' _ _ := ContMDiffSection.ext fun _ ↦ by simp } :
+      hD.kerFormalAdjoint cov →ₗ[ℝ]
+        Cₛ^(0 : ℕ)⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯)).codRestrict
+    _ fun η ↦
+    ofContMDiffSection_mem_zeroOneSobolevSections ((hD.mem_kerFormalAdjoint cov).1 η.property).2.1
+
+omit [T2Space M] [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞] in
+/-- The `L²` pairing of a continuous `(0,1)`-form `η` with the `Lᵖ` form of `η'` in the kernel of
+`D*` is `∫ ⟪η, η'⟫ dV`. -/
+theorem zeroOneHilbertSchmidtL_kerFormalAdjointToZeroOne
+    {η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+    (hη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
+    (η' : hD.kerFormalAdjoint cov) :
+    zeroOneHilbertSchmidtL A volume p 0 isPositiveDensityMeasure_riemannianVolume η hη
+        (hD.kerFormalAdjointToZeroOne A p cov η') =
+      ∫ x, (η x).hilbertSchmidtInner ((η' : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x)
+        ∂riemannianVolume 𝓘(ℝ, ℂ) M :=
+  zeroOneHilbertSchmidtL_ofContMDiffSection
+    (σ := ⟨η', ((hD.mem_kerFormalAdjoint cov).1 η'.property).1.of_le (by simp)⟩) _ hη _
+
+omit [T2Space M] [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞] in
+/-- A smooth solution of `D* η = 0` whose `L²` pairing with its own `Lᵖ` form vanishes is zero:
+`∫ ⟪η, η⟫ dV = 0` for a continuous `η` and the Riemannian volume. -/
+private theorem eq_zero_of_zeroOneHilbertSchmidtL_kerFormalAdjointToZeroOne
+    (η : hD.kerFormalAdjoint cov)
+    (h : zeroOneHilbertSchmidtL A volume p 0 isPositiveDensityMeasure_riemannianVolume η
+      ((hD.mem_kerFormalAdjoint cov).1 η.property).1.continuous
+        (hD.kerFormalAdjointToZeroOne A p cov η) = 0) :
+    η = 0 := by
+  have := A.compactSpace
+  have hη := ((hD.mem_kerFormalAdjoint cov).1 η.property).1
+  rw [zeroOneHilbertSchmidtL_kerFormalAdjointToZeroOne] at h
+  set f : M → ℝ := fun x ↦ ((η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x).hilbertSchmidtInner
+    ((η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x)
+  have hf : Continuous f := (hη.hilbertSchmidtInner_bundle hη).continuous
+  have hf0 : 0 ≤ f := fun x ↦ ContinuousLinearMap.hilbertSchmidtInner_self_nonneg _
+  have hae := (integral_eq_zero_iff_of_nonneg hf0
+    (hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f))).1 h
+  have hf_eq : f = 0 := (hf.ae_eq_iff_eq _ continuous_const).1 hae
+  refine Subtype.ext (funext fun x ↦ ?_)
+  exact (ContinuousLinearMap.hilbertSchmidtInner_self_eq_zero_iff _).1 (congrFun hf_eq x)
+
+variable (p) in
+/-- The pairing of a smooth solution of `D* η = 0` with `Lᵖ` `(0,1)`-forms, as a linear map into the
+continuous functionals. -/
+private def kerFormalAdjointToDual :
+    hD.kerFormalAdjoint cov →ₗ[ℝ] StrongDual ℝ (zeroOneSobolevSections A volume p 0) where
+  toFun η := zeroOneHilbertSchmidtL A volume p 0 isPositiveDensityMeasure_riemannianVolume η
+    ((hD.mem_kerFormalAdjoint cov).1 η.property).1.continuous
+  map_add' _ _ := zeroOneHilbertSchmidtL_add _ _ _ _
+  map_smul' c _ := zeroOneHilbertSchmidtL_smul _ c _ _
+
+include hDs in
+/-- No nonzero smooth solution of `D* η = 0` is in the range of `D`: its `L²` pairing with itself
+would vanish by Green's formula. -/
+private theorem injective_mkQ_comp_kerFormalAdjointToZeroOne (hp_top : p ≠ ⊤)
+    (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫) :
+    Function.Injective
+      ((hD.sobolevL A hDs volume p).range.mkQ ∘ₗ hD.kerFormalAdjointToZeroOne A p cov) := by
+  refine (injective_iff_map_eq_zero _).2 fun η h ↦ ?_
+  obtain ⟨hη, hη01, hDη⟩ := (hD.mem_kerFormalAdjoint cov).1 η.property
+  refine eq_zero_of_zeroOneHilbertSchmidtL_kerFormalAdjointToZeroOne A hD cov (p := p) η ?_
+  exact range_sobolevL_le_ker_zeroOneHilbertSchmidtL hD hDs cov hp_top hcov hJ hV hη hη01 hDη
+    ((Submodule.Quotient.mk_eq_zero _).1 h)
+
+include hD hDs in
+/-- **The kernel of `D*` is the kernel of the transpose of `D`** (McDuff–Salamon, (C.1.3) and the
+proof of Theorem C.2.3, on a closed surface). For compatible metrics, a smooth metric connection,
+the Riemannian volume and `1 < p < ∞`, the `L²` pairing `η ↦ (w ↦ ∫ ⟪η, w⟫ dV)` identifies the
+smooth `(0,1)`-forms `η` with `D* η = 0` with the continuous functionals on the `Lᵖ` `(0,1)`-forms
+vanishing on the range of `D : W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)`. -/
+def kerFormalAdjointEquivKerPrecomp (hp : 1 < p) (hp_top : p ≠ ⊤) (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫) :
+    hD.kerFormalAdjoint cov ≃ₗ[ℝ]
+      (ContinuousLinearMap.precomp ℝ (hD.sobolevL A hDs volume p) :
+        StrongDual ℝ (zeroOneSobolevSections A volume p 0) →L[ℝ]
+          StrongDual ℝ (SobolevSection A volume p 1)).ker :=
+  LinearEquiv.ofBijective
+    ((kerFormalAdjointToDual A p hD cov).codRestrict _ fun η ↦ by
+      obtain ⟨hη, hη01, hDη⟩ := (hD.mem_kerFormalAdjoint cov).1 η.property
+      rw [ContinuousLinearMap.ker_precomp_eq_orthogonalBilin_range]
+      refine Submodule.mem_orthogonalBilin.2 fun _ hy ↦ ?_
+      exact range_sobolevL_le_ker_zeroOneHilbertSchmidtL hD hDs cov hp_top hcov hJ hV hη hη01 hDη
+        hy)
+    ⟨(injective_iff_map_eq_zero _).2 fun η h ↦
+      eq_zero_of_zeroOneHilbertSchmidtL_kerFormalAdjointToZeroOne A hD cov η
+        (DFunLike.congr_fun (congrArg Subtype.val h) _),
+      fun Λ ↦ by
+        have hΛ (w : SobolevSection A volume p 1) :
+            (Λ : StrongDual ℝ (zeroOneSobolevSections A volume p 0))
+              (hD.sobolevL A hDs volume p w) = 0 :=
+          DFunLike.congr_fun (LinearMap.mem_ker.1 Λ.property) w
+        obtain ⟨η, hη, hη01, hDη, hηΛ⟩ := exists_zeroOneHilbertSchmidtL_eq_of_annihilator A hD hDs
+          cov hp hp_top hcov hJ hV _ hΛ
+        exact ⟨⟨η, (hD.mem_kerFormalAdjoint cov).2 ⟨hη, hη01, hDη⟩⟩, Subtype.ext hηΛ⟩⟩
+
+include hD hDs in
+/-- **`dim coker D = dim ker D*`** (McDuff–Salamon, (C.1.3), on a closed surface). For compatible
+metrics, a smooth metric connection, the Riemannian volume and `1 < p < ∞`, the cokernel of
+`D : W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` has the dimension of the space of smooth `(0,1)`-forms `η`
+with `D* η = 0`. -/
+theorem finrank_quotient_range_sobolevL_eq_finrank_kerFormalAdjoint (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫) :
+    finrank ℝ (zeroOneSobolevSections A volume p 0 ⧸ (hD.sobolevL A hDs volume p).range) =
+      finrank ℝ (hD.kerFormalAdjoint cov) := by
+  have := finiteDimensional_quotient_range_sobolevL A hD hDs hp hp_top
+  rw [(kerFormalAdjointEquivKerPrecomp A hD hDs cov hp hp_top hcov hJ hV).finrank_eq,
+    ContinuousLinearMap.finrank_ker_precomp_eq_finrank_quotient_range
+      (hD.sobolevL A hDs volume p) (isClosed_range_sobolevL A hD hDs hp hp_top)]
+
+include A hD hDs in
+/-- **The kernel of `D*` is finite-dimensional.** On a closed surface, for compatible metrics and a
+smooth metric connection, the smooth `(0,1)`-forms `η` with `D* η = 0` form a finite-dimensional
+space. -/
+theorem finiteDimensional_kerFormalAdjoint (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫) :
+    FiniteDimensional ℝ (hD.kerFormalAdjoint cov) := by
+  have : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨ENNReal.one_lt_two.le⟩
+  have hp : (1 : ℝ≥0∞) < 2 := ENNReal.one_lt_two
+  have hp_top : (2 : ℝ≥0∞) ≠ ⊤ := ENNReal.ofNat_ne_top
+  have := finiteDimensional_quotient_range_sobolevL A hD hDs hp hp_top
+  exact FiniteDimensional.of_injective _
+    (injective_mkQ_comp_kerFormalAdjointToZeroOne A hD hDs cov hp_top hcov hJ hV)
+
+include hD hDs in
+/-- Every class in the cokernel of `D` contains exactly one smooth solution of `D* η = 0`. -/
+private theorem bijective_mkQ_comp_kerFormalAdjointToZeroOne (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫) :
+    Function.Bijective
+      ((hD.sobolevL A hDs volume p).range.mkQ ∘ₗ hD.kerFormalAdjointToZeroOne A p cov) := by
+  have := finiteDimensional_quotient_range_sobolevL A hD hDs hp hp_top
+  have := finiteDimensional_kerFormalAdjoint A hD hDs cov hcov hJ hV
+  have hinj := injective_mkQ_comp_kerFormalAdjointToZeroOne A hD hDs cov hp_top hcov hJ hV
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (finrank_quotient_range_sobolevL_eq_finrank_kerFormalAdjoint A hD hDs cov hp hp_top hcov hJ
+      hV).symm).1 hinj⟩
+
+include hD hDs in
+/-- **The cokernel of `D` is the kernel of `D*`** (McDuff–Salamon, (C.1.3), on a closed surface).
+For compatible metrics, a smooth metric connection, the Riemannian volume and `1 < p < ∞`, every
+class in the cokernel of `D : W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` contains exactly one smooth
+`(0,1)`-form `η` with `D* η = 0`: the map sending `η` to its class is a linear equivalence. -/
+def kerFormalAdjointEquivCoker (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫) :
+    hD.kerFormalAdjoint cov ≃ₗ[ℝ]
+      zeroOneSobolevSections A volume p 0 ⧸ (hD.sobolevL A hDs volume p).range :=
+  LinearEquiv.ofBijective _
+    (bijective_mkQ_comp_kerFormalAdjointToZeroOne A hD hDs cov hp hp_top hcov hJ hV)
+
+/-- `TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjointEquivCoker` sends `η` to the class of its
+`Lᵖ` form. -/
+@[simp]
+theorem kerFormalAdjointEquivCoker_apply (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫)
+    (η : hD.kerFormalAdjoint cov) :
+    kerFormalAdjointEquivCoker A hD hDs cov hp hp_top hcov hJ hV η =
+      Submodule.Quotient.mk (hD.kerFormalAdjointToZeroOne A p cov η) := by
+  rw [kerFormalAdjointEquivCoker, LinearEquiv.ofBijective_apply, LinearMap.comp_apply,
+    Submodule.mkQ_apply]
+
+include hD hDs in
+/-- **The index is `dim ker D - dim ker D*`** (McDuff–Salamon, Theorem C.1.10 (i), on a closed
+surface). For compatible metrics, a smooth metric connection, the Riemannian volume and
+`1 < p < ∞`, the index of `D : W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` is the dimension of its kernel
+minus the dimension of the space of smooth `(0,1)`-forms `η` with `D* η = 0`. -/
+theorem index_sobolevL_eq_finrank_sub (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hcov : cov.IsMetricCompatible)
+    (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
+      ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
+    (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫) :
+    (hD.sobolevL A hDs volume p).index =
+      finrank ℝ (hD.sobolevL A hDs volume p).ker - finrank ℝ (hD.kerFormalAdjoint cov) := by
+  rw [ContinuousLinearMap.index_eq_finrank_sub,
+    ← finrank_quotient_range_sobolevL_eq_finrank_kerFormalAdjoint A hD hDs cov hp hp_top hcov hJ hV]
 
 end IsRealCauchyRiemannOperator
 
