@@ -44,7 +44,9 @@ and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For general
 Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
-change of variables `y = c + b * x` (`0 < b`) on `Ioi a`.
+change of variables `y = c + b * x` (`0 < b`) on `Ioi a`. Splitting `(c, ∞)` at two points bounds
+the norm of an integral over it by the integrals of majorants of its integrand on the three pieces
+(`TauCeti.norm_integral_Ioi_le_of_three_pieces`).
 
 The integrals of a function integrable on a strip `ℝ × T` over the rectangles `[a i, b i] × T`
 converge to its integral over the strip as `a i → -∞` and `b i → ∞`
@@ -419,5 +421,32 @@ theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [Norm
     ← (measurePreserving_add_left volume c).setIntegral_preimage_emb (measurableEmbedding_addLeft c)
       g (Ioi (c + b * a)),
     preimage_const_add_Ioi, add_sub_cancel_left]
+
+/-- **Bounding an integral over `(c, ∞)` piece by piece.** Split `(c, ∞)` at `c ≤ a ≤ δ`: if `‖φ‖`
+is dominated by integrable `g₁`, `g₂`, `g₃` on `(c, a]`, `(a, δ]` and `(δ, ∞)`, then
+`‖∫_c^∞ φ‖ ≤ ∫_c^a g₁ + ∫_a^δ g₂ + ∫_δ^∞ g₃`. -/
+theorem norm_integral_Ioi_le_of_three_pieces {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {φ : ℝ → E} {g₁ g₂ g₃ : ℝ → ℝ} {c a δ : ℝ} (hca : c ≤ a) (haδ : a ≤ δ)
+    (hφ : AEStronglyMeasurable φ (volume.restrict (Ioi c)))
+    (hi₁ : IntegrableOn g₁ (Ioc c a)) (hi₂ : IntegrableOn g₂ (Ioc a δ))
+    (hi₃ : IntegrableOn g₃ (Ioi δ)) (hb₁ : ∀ t ∈ Ioc c a, ‖φ t‖ ≤ g₁ t)
+    (hb₂ : ∀ t ∈ Ioc a δ, ‖φ t‖ ≤ g₂ t) (hb₃ : ∀ t ∈ Ioi δ, ‖φ t‖ ≤ g₃ t) :
+    ‖∫ t in Ioi c, φ t‖ ≤ (∫ t in Ioc c a, g₁ t) + (∫ t in Ioc a δ, g₂ t) + ∫ t in Ioi δ, g₃ t := by
+  have hφi {s : Set ℝ} {g : ℝ → ℝ} (hs : MeasurableSet s) (hsc : s ⊆ Ioi c)
+      (hg : IntegrableOn g s volume) (hb : ∀ t ∈ s, ‖φ t‖ ≤ g t) : IntegrableOn φ s :=
+    Integrable.mono' hg (hφ.mono_set hsc : AEStronglyMeasurable φ (volume.restrict s))
+      ((ae_restrict_iff' hs).mpr (Eventually.of_forall hb))
+  have hφ₁ := hφi measurableSet_Ioc Ioc_subset_Ioi_self hi₁ hb₁
+  have hφ₂ := hφi measurableSet_Ioc (fun t ht ↦ hca.trans_lt ht.1) hi₂ hb₂
+  have hφ₃ := hφi measurableSet_Ioi (Ioi_subset_Ioi (hca.trans haδ)) hi₃ hb₃
+  have hn {s : Set ℝ} {g : ℝ → ℝ} (hs : MeasurableSet s) (hg : IntegrableOn g s volume)
+      (hb : ∀ t ∈ s, ‖φ t‖ ≤ g t) : ‖∫ t in s, φ t‖ ≤ ∫ t in s, g t :=
+    norm_integral_le_of_norm_le hg ((ae_restrict_iff' hs).mpr (Eventually.of_forall hb))
+  rw [← Ioc_union_Ioi_eq_Ioi hca, setIntegral_union (Ioc_disjoint_Ioi le_rfl)
+    measurableSet_Ioi hφ₁ (by rw [← Ioc_union_Ioi_eq_Ioi haδ]; exact hφ₂.union hφ₃),
+    ← Ioc_union_Ioi_eq_Ioi haδ, setIntegral_union (Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi
+    hφ₂ hφ₃, ← add_assoc]
+  exact (norm_add₃_le).trans (add_le_add_three (hn measurableSet_Ioc hi₁ hb₁)
+    (hn measurableSet_Ioc hi₂ hb₂) (hn measurableSet_Ioi hi₃ hb₃))
 
 end TauCeti

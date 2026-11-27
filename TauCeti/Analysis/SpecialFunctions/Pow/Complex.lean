@@ -120,6 +120,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.cpow_sub_natCast_mul_sum_mul_pow` -- reversing a finite sum of powers:
   `z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k` for `z ≠ 0`.
+* `Complex.norm_ofReal_cpow_le_add_of_re_mem_Icc` -- for a positive real base, the norm of a
+  complex power on a vertical strip is bounded by the sum of the norms at the real endpoints.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
 * `AnalyticAt.const_cpow` -- `y ↦ w ^ f y` is analytic at `x` whenever `f` is analytic at `x` and
   either `w ≠ 0` or `f x ≠ 0`.
@@ -962,6 +964,14 @@ theorem hasDerivAt_add_cpow_mul_exp_mul (b c k : ℂ) {z : ℂ} (hz : z + c ∈ 
     ((hasDerivAt_id z).const_mul k).cexp).congr_deriv ?_
   rw [id, cpow_sub _ _ (slitPlane_ne_zero hz), cpow_one]
   field_simp
+
+/-- For a positive real base `u` and `a ≤ s.re ≤ b`, the norm of `u ^ s` is bounded by the
+sum of the norms of its powers at the real endpoints `a` and `b`. -/
+theorem norm_ofReal_cpow_le_add_of_re_mem_Icc {u a b : ℝ} (hu : 0 < u) {s : ℂ}
+    (hs : s.re ∈ Set.Icc a b) :
+    ‖(u : ℂ) ^ s‖ ≤ ‖(u : ℂ) ^ (a : ℂ)‖ + ‖(u : ℂ) ^ (b : ℂ)‖ := by
+  simp only [norm_cpow_eq_rpow_re_of_pos hu, ofReal_re]
+  exact Real.rpow_le_rpow_add_rpow_of_mem_Icc hu hs
 
 /-- A real power of a positive real number grows at most exponentially in the exponent. -/
 theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :

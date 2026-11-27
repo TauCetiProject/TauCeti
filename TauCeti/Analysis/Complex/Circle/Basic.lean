@@ -24,6 +24,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.RingTheory.IntegralDomain
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -86,6 +87,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.sq_mul_inv_ne_one`: `(d e⁻¹)² ≠ 1` for unit directions `d` and `e` that are not
   parallel.
 * `Circle.isCyclic_of_finite`: every finite subgroup of the circle is cyclic.
+* `Circle.mem_iff_pow_natCard_eq_one`: a finite subgroup of the circle with `N` elements is the
+  group of `N`-th roots of unity.
 * `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
   differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
@@ -525,6 +528,16 @@ theorem sq_mul_inv_ne_one {d e : Circle} (hde : d ≠ e) (hde' : d ≠ -e) : (d 
 /-- Every finite subgroup of the circle is cyclic: it is a finite group of units of `ℂ`. -/
 instance isCyclic_of_finite (H : Subgroup Circle) [Finite H] : IsCyclic H :=
   isCyclic_of_injective_ringHom (coeHom.comp H.subtype) fun _ _ h => Subtype.ext (coe_injective h)
+
+/-- **A finite subgroup of the circle consists of roots of unity.** For a finite subgroup `H` of
+`Circle` with `N` elements, `x ∈ H` exactly when `x ^ N = 1`: `H` is the group of `N`-th roots of
+unity. This is `Subgroup.eq_rootsOfUnity_natCard` for the image of `H` in `ℂˣ`. -/
+theorem mem_iff_pow_natCard_eq_one (H : Subgroup Circle) [Finite H] {x : Circle} :
+    x ∈ H ↔ x ^ Nat.card H = 1 := by
+  have hinj : Function.Injective toUnits := unitSphereToUnits_injective
+  have : Finite (H.map toUnits) := .of_equiv H (H.equivMapOfInjective _ hinj)
+  rw [← Subgroup.mem_map_iff_mem hinj, (H.map toUnits).eq_rootsOfUnity_natCard,
+    Subgroup.card_map_of_injective hinj, mem_rootsOfUnity, ← map_pow, map_eq_one_iff _ hinj]
 
 end Circle
 

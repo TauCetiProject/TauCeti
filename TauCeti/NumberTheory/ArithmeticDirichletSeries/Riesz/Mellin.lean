@@ -9,7 +9,9 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.RemainderMellin
 import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.LaplaceTransform.Mellin
 import TauCeti.Analysis.MellinTransform.UpperTail
 
 /-!
@@ -29,6 +31,9 @@ interchanges summation with Lebesgue and Bochner integration using
   `(1, ∞)` for `1 < s.re` and `LSeriesSummable a s`.
 * `TauCeti.integral_rieszSum_mul_cpow`: evaluation
   `∫ y in Set.Ioi 1, rieszSum a y * y ^ (-s - 1) = LSeries a s / (s * (s - 1))`.
+* `Meromorphic.integrableOn_and_integral_rieszSum_add_mul_cpow_eq_rieszRemainderMellin`: when
+  `LSeries a = -L′/L` at `s`, the Riesz sum corrected by the main term read off from the order
+  and finite part of `L′/L` at `1` has Mellin transform `TauCeti.rieszRemainderMellin L s`.
 
 ## References
 
@@ -199,5 +204,35 @@ theorem integral_rieszSum_mul_cpow {a : ℕ → ℂ} {s : ℂ} (hs : 1 < s.re)
       ring
   simp_rw [hterm]
   rw [tsum_div_const, LSeries]
+
+/-- **Mellin transform of a first Riesz remainder.** Let `L` be meromorphic, analytic and
+nonzero at `s` with `1 < s.re`, and let `LSeries a s = -logDeriv L s`. Write `m` for the order
+of `L` at `1` and `c` for the finite part of `L′/L` there. Then the first Riesz sum of `a`
+plus the main term `(c - m) y + m y log y` has absolutely convergent upper Mellin transform
+`rieszRemainderMellin L s`. -/
+theorem _root_.Meromorphic.integrableOn_and_integral_rieszSum_add_mul_cpow_eq_rieszRemainderMellin
+    {a : ℕ → ℂ} {L : ℂ → ℂ} (hL : Meromorphic L) {s : ℂ} (hs : 1 < s.re)
+    (hsum : LSeriesSummable a s) (hLS : LSeries a s = -logDeriv L s) (ha : AnalyticAt ℂ L s)
+    (hne : L s ≠ 0) :
+    IntegrableOn (fun y : ℝ ↦ (rieszSum a y +
+      ((logDerivFinitePart L 1 - (meromorphicOrderAt L 1).untop₀) * y +
+        (meromorphicOrderAt L 1).untop₀ * y * Real.log y)) * (y : ℂ) ^ (-s - 1)) (Set.Ioi 1) ∧
+    ∫ y in Set.Ioi (1 : ℝ), (rieszSum a y +
+      ((logDerivFinitePart L 1 - (meromorphicOrderAt L 1).untop₀) * y +
+        (meromorphicOrderAt L 1).untop₀ * y * Real.log y)) * (y : ℂ) ^ (-s - 1) =
+      rieszRemainderMellin L s := by
+  have h₀ : s ≠ 0 := by rintro rfl; norm_num at hs
+  have h₁ : s ≠ 1 := by rintro rfl; norm_num at hs
+  have hR := integrableOn_rieszSum_mul_cpow hs hsum
+  obtain ⟨hM, hval⟩ := integrableOn_and_integral_mul_add_mul_log_mul_cpow
+    (logDerivFinitePart L 1 - (meromorphicOrderAt L 1).untop₀)
+    ((meromorphicOrderAt L 1).untop₀ : ℂ) hs
+  -- Split the transform into the Riesz sum and the main-term correction.
+  conv in (occs := *) (rieszSum _ _ + _) * _ => rw [add_mul]
+  refine ⟨hR.add hM, ?_⟩
+  rw [integral_add hR hM, integral_rieszSum_mul_cpow hs hsum, hLS, hval,
+    (hL.rieszRemainderMellin_eq_and_analyticAt h₀ h₁ ha hne).1]
+  field_simp [h₀, sub_ne_zero.mpr h₁]
+  ring
 
 end TauCeti

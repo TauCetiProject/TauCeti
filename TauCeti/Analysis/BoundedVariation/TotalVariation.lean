@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
 /-!

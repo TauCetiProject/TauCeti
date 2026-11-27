@@ -39,6 +39,12 @@ The laws of the two factors combine:
   an orientation-reversing loop `η₀ = σ`, and it has monodromy `+1` along the rotation;
 * it is its own inverse (`TauCeti.RankOneLocalSystem.inv_viterboTwist`), and it is trivial over a
   ring in which `2 = 0` (`TauCeti.RankOneLocalSystem.viterboTwist_eq_one_of_two_eq_zero`);
+* it is defined over `ℤ`: extending its coefficients along a ring homomorphism `R →+* R'` gives
+  the twist with coefficients in `R'` (`TauCeti.RankOneLocalSystem.mapRingHom_viterboTwist`), since
+  both factors act by signs `±1`
+  (`TauCeti.RankOneLocalSystem.mapRingHom_torusSign`,
+  `TauCeti.RankOneLocalSystem.mapRingHom_viterboOrientationTwist`). So the twist over any
+  commutative ring is the extension of coefficients of the twist over `ℤ`;
 * on an orientable manifold it is the torus sign
   (`TauCeti.HomologicalOrientation.viterboTwist_eq_torusSign`), so it is trivial exactly when `c`
   vanishes on the torus classes or `2 = 0`
@@ -58,6 +64,8 @@ The torus sign, and so the twist, is defined for manifolds `M` in the lowest uni
 * `TauCeti.RankOneLocalSystem.viterboTwist_ρ_rotationLoop`: the twist is trivial along the rotation
   of every loop.
 * `TauCeti.RankOneLocalSystem.inv_viterboTwist`: the twist is its own inverse.
+* `TauCeti.RankOneLocalSystem.mapRingHom_viterboTwist`: the twist is compatible with extension of
+  coefficients.
 * `TauCeti.HomologicalOrientation.viterboTwist_eq_one_iff`: on an orientable manifold the twist is
   trivial exactly when `c` vanishes on the torus classes or `2 = 0`.
 
@@ -136,6 +144,16 @@ theorem viterboTwist_eq_one_of_two_eq_zero (h2 : (2 : R) = 0) (γ : MooreFreeLoo
     viterboTwist R hd c γ = 1 := by
   rw [viterboTwist_def, torusSign_eq_one_of_two_eq_zero c h2,
     viterboOrientationTwist_eq_freeLoopTwist, freeLoopTwist_eq_one_of_two_eq_zero h2, one_mul]
+
+/-- **The Viterbo twist is defined over `ℤ`**: extending its coefficients along a ring
+homomorphism `φ : R →+* R'` gives the Viterbo twist with coefficients in `R'`. Taking for `φ` the
+map `ℤ →+* R`, the twist over any commutative ring is the extension of coefficients of the twist
+over `ℤ`. -/
+@[simp]
+theorem mapRingHom_viterboTwist {R' : Type*} [CommRing R'] (φ : R →+* R')
+    (γ : MooreFreeLoopSpace M) : mapRingHom φ (viterboTwist R hd c γ) = viterboTwist R' hd c γ := by
+  rw [viterboTwist_def, viterboTwist_def, map_mul, mapRingHom_torusSign,
+    mapRingHom_viterboOrientationTwist]
 
 /-- **Along the constant loops the Viterbo twist is the orientation local system**:
 `i_M^* η₀ = o_M`, since the torus sign is trivial along the constant loops. -/
