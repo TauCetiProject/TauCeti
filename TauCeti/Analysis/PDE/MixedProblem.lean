@@ -917,13 +917,10 @@ theorem existsUnique_frontierTraceOfIsLipschitzDomain_ae_eq_and_forall_energyFor
             W1p.frontierTraceOfIsLipschitzDomain (mu := volume) (p := 2) ENNReal.ofNat_ne_top
               hΓadm.isLipschitzDomain hb (v : W1p volume Omega 2) y
                 ∂μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1] := by
-  have hcoercive := hA.isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomain ha hc hb0 hc_nonneg
-    hcoeff hΓadm.isLipschitzDomain hb hconn hΓ
-  simpa only [mixedForcingL_apply,
-    hΓadm.sub_mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq (p := 2)
-      ENNReal.ofNat_ne_top hb] using
-    existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq hcoeff hcoercive g
-      (mixedForcingL hΓadm.isLipschitzDomain hb f h)
+  simpa only [hΓadm.sub_mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq
+    (p := 2) ENNReal.ofNat_ne_top hb] using
+    existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_setIntegral_add_setIntegral
+      hA ha hc hb0 hc_nonneg hcoeff hΓadm.isLipschitzDomain hb hconn hΓ g f h
 
 end IsUniformlyEllipticAE
 
