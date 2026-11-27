@@ -121,7 +121,8 @@ closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) 
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
   intersection is the intersection of the Lie algebras.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_map_conj`: the Lie algebra of a conjugate of a subgroup is
-  the adjoint image of its Lie algebra.
+  the adjoint image of its Lie algebra; `TauCeti.Lie.lieSubalgebraOfSubgroupMapConjEquiv` is the
+  resulting linear isomorphism.
 
 ## References
 
@@ -557,5 +558,29 @@ theorem lieSubalgebraOfSubgroup_map_conj {K : Subgroup G} (g : G) :
     refine ⟨lieExp (I := I) (t • Y), hY t, ?_⟩
     rw [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, conj_lieExp, map_smul,
       LieEquiv.coe_toLieHom]
+
+/-- The adjoint action of `g` as a linear isomorphism from the Lie algebra of `K` onto the Lie
+algebra of its conjugate `g K g⁻¹` (`lieSubalgebraOfSubgroup_map_conj`). -/
+def lieSubalgebraOfSubgroupMapConjEquiv (K : Subgroup G) (g : G) :
+    (lieSubalgebraOfSubgroup (I := I) K).toSubmodule ≃ₗ[ℝ]
+      (lieSubalgebraOfSubgroup (I := I) (K.map (MulAut.conj g).toMonoidHom)).toSubmodule :=
+  (Ad (I := I) g).toLinearEquiv.ofSubmodules _ _ <| by
+    rw [lieSubalgebraOfSubgroup_map_conj]
+    rfl
+
+/-- `lieSubalgebraOfSubgroupMapConjEquiv K g` acts as `Ad g`. -/
+theorem coe_lieSubalgebraOfSubgroupMapConjEquiv_apply (K : Subgroup G) (g : G)
+    (X : (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) :
+    (lieSubalgebraOfSubgroupMapConjEquiv K g X : LeftInvariantDerivation I G) =
+      Ad (I := I) g X :=
+  (rfl)
+
+/-- The inverse of `lieSubalgebraOfSubgroupMapConjEquiv K g` acts as `Ad g⁻¹`. -/
+theorem coe_lieSubalgebraOfSubgroupMapConjEquiv_symm_apply (K : Subgroup G) (g : G)
+    (X : (lieSubalgebraOfSubgroup (I := I) (K.map (MulAut.conj g).toMonoidHom)).toSubmodule) :
+    ((lieSubalgebraOfSubgroupMapConjEquiv K g).symm X : LeftInvariantDerivation I G) =
+      Ad (I := I) g⁻¹ X := by
+  rw [Ad_inv]
+  exact (rfl)
 
 end TauCeti.Lie

@@ -76,6 +76,8 @@ Hessian (`TauCeti.Algebra.Lie.Coadjoint.Height`) and the dimension of the orbit
 * `TauCeti.IsRootPlane.apply_lie_lie`, `TauCeti.IsRootPlane.mul_apply_lie_lie`: the form
   `B(q_p A, q_X C)` behind the height Hessian on a root plane, in quotient and in tangent
   coordinates.
+* `TauCeti.IsRootPlane.map`: a Lie algebra isomorphism carrying `B` to `B'` carries root planes to
+  root planes, transporting the root and the rotation.
 * `TauCeti.IsRootPlane.le_orthogonal`: for an invariant form, root planes with
   `α(H)² ≠ α'(H)²` for some `H ∈ t` are orthogonal.
 * `TauCeti.IsRootPlane.apply_eq_zero_of_forall_lie_eq_zero`: for an invariant form, a root plane
@@ -164,6 +166,28 @@ protected theorem neg (h : IsRootPlane B t α E J) : IsRootPlane B t (-α) E (-J
 /-- The rotation of a root plane is injective. -/
 theorem injective (h : IsRootPlane B t α E J) : Function.Injective J := fun v w hvw ↦ by
   rw [← neg_neg v, ← h.apply_apply v, hvw, h.apply_apply, neg_neg]
+
+/-- **Transport of a root plane along a Lie algebra isomorphism.** Let `e : L ≃ L'` be an
+isomorphism of Lie algebras carrying the form `B` to `B'`, and let `e_t : t ≃ t'` and
+`e_E : E ≃ E'` be restrictions of `e`. If `E` is a root plane of `t` with root `α` and rotation `J`,
+then `E'` is a root plane of `t'` with root `α ∘ e_t⁻¹` and rotation `e_E ∘ J ∘ e_E⁻¹`. -/
+protected theorem map {L' : Type*} [LieRing L'] [LieAlgebra R L'] (h : IsRootPlane B t α E J)
+    (e : L ≃ₗ⁅R⁆ L') {B' : LinearMap.BilinForm R L'} (hB : ∀ x y, B' (e x) (e y) = B x y)
+    {t' E' : Submodule R L'} (et : t ≃ₗ[R] t') (het : ∀ H, (et H : L') = e H) (eE : E ≃ₗ[R] E')
+    (heE : ∀ v, (eE v : L') = e v) :
+    IsRootPlane B' t' (α ∘ₗ et.symm.toLinearMap) E' (eE.conj J) where
+  apply_apply v := by
+    simp only [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply, h.apply_apply, map_neg,
+      LinearEquiv.apply_symm_apply]
+  apply_left v w := by
+    obtain ⟨v, rfl⟩ := eE.surjective v
+    obtain ⟨w, rfl⟩ := eE.surjective w
+    simp only [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply, heE, hB, h.apply_left]
+  lie_apply H v := by
+    obtain ⟨H, rfl⟩ := et.surjective H
+    obtain ⟨v, rfl⟩ := eE.surjective v
+    simp only [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, het, heE, ← LieEquiv.map_lie, h.lie_apply, map_smul]
 
 /-- **The orbit derivative on a root plane.** The derivative `q_p A = ⁅A, p⁆` at the identity
 of the orbit map through `p ∈ t` is `-α(p) J` on a root plane. -/
