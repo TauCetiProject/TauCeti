@@ -21,17 +21,17 @@ locally compact space to `G_k(E)`, through the proper projection `π : G_k(E) �
 
 ## Main results
 
-* `TauCeti.grassmannBundle.VarifoldTendsto.weight`: `V_j → V` implies `‖V_j‖ → ‖V‖` against
+* `TauCeti.VarifoldTendsto.grassmannBundle_weight`: `V_j → V` implies `‖V_j‖ → ‖V‖` against
   compactly supported continuous functions on `B`.
-* `TauCeti.grassmannBundle.VarifoldTendsto.limsup_weight_le`,
-  `TauCeti.grassmannBundle.VarifoldTendsto.weight_le_liminf`: for compact `C` and open `O` in
+* `TauCeti.VarifoldTendsto.grassmannBundle_limsup_weight_le`,
+  `TauCeti.VarifoldTendsto.grassmannBundle_weight_le_liminf`: for compact `C` and open `O` in
   `B`, `lim sup ‖V_j‖(C) ≤ ‖V‖(C)` and `‖V‖(O) ≤ lim inf ‖V_j‖(O)`.
-* `TauCeti.grassmannBundle.VarifoldTendsto.iSup_weight_ne_top`: a convergent sequence of varifolds
+* `TauCeti.VarifoldTendsto.grassmannBundle_iSup_weight_ne_top`: a convergent sequence of varifolds
   has locally bounded mass, `sup_j ‖V_j‖(K) < ∞` for every compact `K ⊆ B`.
 * `TauCeti.grassmannBundle.exists_subseq_varifoldTendsto`: **compactness**, every sequence of
   varifolds with `sup_j ‖V_j‖(K) < ∞` for each compact `K ⊆ B` has a subsequence converging to a
   varifold.
-* `TauCeti.grassmannBundle.VarifoldTendsto.restrictOpens`: convergence commutes with restriction
+* `TauCeti.VarifoldTendsto.grassmannBundle_restrictOpens`: convergence commutes with restriction
   to an open `W ⊆ B`, and `TauCeti.grassmannBundle.varifoldTendsto_iff_forall_restrictOpens`:
   convergence is local, it holds exactly when it holds on every set of an open cover of `B`.
 
@@ -61,7 +61,7 @@ variable {B F : Type*} {E : B → Type*} [TopologicalSpace B]
 omit [SecondCountableTopology B] in
 /-- **Weights converge**: if varifolds `V_j → V`, then `‖V_j‖ → ‖V‖` against compactly supported
 continuous functions on the base. -/
-theorem VarifoldTendsto.weight (h : VarifoldTendsto V V') :
+theorem _root_.TauCeti.VarifoldTendsto.grassmannBundle_weight (h : VarifoldTendsto V V') :
     VarifoldTendsto (fun n ↦ grassmannBundle.weight (V n)) (grassmannBundle.weight V') := by
   have hπ := (isProperMap_iff_tendsto_cocompact.1 (isProperMap_proj F E k)).2
   simpa [weight_def] using h.map ⟨⟨proj, continuous_proj⟩, hπ⟩
@@ -69,29 +69,28 @@ theorem VarifoldTendsto.weight (h : VarifoldTendsto V V') :
 omit [SecondCountableTopology B] in
 /-- **Locally bounded mass**: along a convergent sequence of varifolds, the weights of each compact
 subset of the base are bounded uniformly in `n`. -/
-theorem VarifoldTendsto.iSup_weight_ne_top [∀ n, IsFiniteMeasureOnCompacts (V n)]
-    (h : VarifoldTendsto V V') {K : Set B} (hK : IsCompact K) :
+theorem _root_.TauCeti.VarifoldTendsto.grassmannBundle_iSup_weight_ne_top
+    [∀ n, IsFiniteMeasureOnCompacts (V n)] (h : VarifoldTendsto V V') {K : Set B}
+    (hK : IsCompact K) :
     ⨆ n, grassmannBundle.weight (V n) K ≠ ∞ := by
-  have : LocallyCompactSpace (grassmannBundle F E k) := inferInstance
   simp only [weight_apply hK.measurableSet]
   exact VarifoldTendsto.iSup_measure_ne_top h ((isProperMap_proj F E k).isCompact_preimage hK)
 
 /-- **Upper semicontinuity of the weights on compact sets**: along a convergent sequence of
 varifolds, `lim sup ‖V_j‖(C) ≤ ‖V‖(C)` for compact `C ⊆ B`. -/
-theorem VarifoldTendsto.limsup_weight_le [∀ n, IsFiniteMeasureOnCompacts (V n)]
-    [IsFiniteMeasureOnCompacts V'] (h : VarifoldTendsto V V') {C : Set B} (hC : IsCompact C) :
+theorem _root_.TauCeti.VarifoldTendsto.grassmannBundle_limsup_weight_le
+    [∀ n, IsFiniteMeasureOnCompacts (V n)] [IsFiniteMeasureOnCompacts V']
+    (h : VarifoldTendsto V V') {C : Set B} (hC : IsCompact C) :
     limsup (fun n ↦ grassmannBundle.weight (V n) C) atTop ≤ grassmannBundle.weight V' C := by
-  have : LocallyCompactSpace (grassmannBundle F E k) := inferInstance
-  have : PseudoMetrizableSpace (grassmannBundle F E k) := inferInstance
   simp only [weight_apply hC.measurableSet]
   exact VarifoldTendsto.limsup_measure_le h ((isProperMap_proj F E k).isCompact_preimage hC)
 
 /-- **Lower semicontinuity of the weights on open sets**: along a convergent sequence of
 varifolds with limit a varifold, `‖V‖(O) ≤ lim inf ‖V_j‖(O)` for open `O ⊆ B`. -/
-theorem VarifoldTendsto.weight_le_liminf [IsFiniteMeasureOnCompacts V']
-    (h : VarifoldTendsto V V') {O : Set B} (hO : IsOpen O) :
+theorem _root_.TauCeti.VarifoldTendsto.grassmannBundle_weight_le_liminf
+    [IsFiniteMeasureOnCompacts V'] (h : VarifoldTendsto V V') {O : Set B} (hO : IsOpen O) :
     grassmannBundle.weight V' O ≤ liminf (fun n ↦ grassmannBundle.weight (V n) O) atTop := by
-  have : LocallyCompactSpace (grassmannBundle F E k) := inferInstance
+  -- Instance search does not find the metrizability of the bundle unaided.
   have : PseudoMetrizableSpace (grassmannBundle F E k) := inferInstance
   simp only [weight_apply hO.measurableSet]
   exact VarifoldTendsto.le_liminf_measure h (hO.preimage (continuous_proj))
@@ -102,7 +101,6 @@ theorem exists_subseq_varifoldTendsto (V : ℕ → Measure (grassmannBundle F E 
     (hV : ∀ K : Set B, IsCompact K → ⨆ n, grassmannBundle.weight (V n) K ≠ ∞) :
     ∃ (V' : Measure (grassmannBundle F E k)) (φ : ℕ → ℕ), IsFiniteMeasureOnCompacts V' ∧
       StrictMono φ ∧ VarifoldTendsto (V ∘ φ) V' := by
-  have : LocallyCompactSpace (grassmannBundle F E k) := inferInstance
   have hS : ∀ C : Set (grassmannBundle F E k), IsCompact C → ⨆ ρ ∈ range V, ρ C ≠ ∞ := by
     intro C hC
     have hK := hC.image (continuous_proj)
@@ -119,7 +117,8 @@ omit [SecondCountableTopology B] [LocallyCompactSpace B] [MeasurableSpace B]
   [BorelSpace B] in
 /-- **Convergence commutes with restriction to open sets**: if varifolds `V_j → V` on `B`, then
 their restrictions to an open `W ⊆ B` converge to the restriction of `V`. -/
-theorem VarifoldTendsto.restrictOpens (h : VarifoldTendsto V V') {W : Set B} (hW : IsOpen W) :
+theorem _root_.TauCeti.VarifoldTendsto.grassmannBundle_restrictOpens (h : VarifoldTendsto V V')
+    {W : Set B} (hW : IsOpen W) :
     VarifoldTendsto (fun n ↦ grassmannBundle.restrictOpens W (V n))
       (grassmannBundle.restrictOpens W V') := by
   simpa only [restrictOpens_def] using
@@ -134,7 +133,6 @@ theorem varifoldTendsto_iff_forall_restrictOpens [∀ n, IsFiniteMeasureOnCompac
     VarifoldTendsto V V' ↔ ∀ i, VarifoldTendsto
       (fun n ↦ grassmannBundle.restrictOpens (U i) (V n))
       (grassmannBundle.restrictOpens (U i) V') := by
-  have : LocallyCompactSpace (grassmannBundle F E k) := inferInstance
   simp only [restrictOpens_def]
   refine TauCeti.varifoldTendsto_iff_forall_comap (fun i ↦ isOpenEmbedding_inclusion (U i) (hU i))
     ?_
