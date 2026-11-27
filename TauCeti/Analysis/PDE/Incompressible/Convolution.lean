@@ -10,9 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
-import TauCeti.Analysis.Distribution.TestFunction.Gradient
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.ChangeOfVariables
-import TauCeti.MeasureTheory.Function.Lp.Duality
 
 /-!
 # Translation, convolution and mollification of solenoidal fields
@@ -90,24 +88,14 @@ theorem convolutionLp_mem_solenoidalLp (hp : p ≠ ∞) (k : E → ℝ) {u : Lp 
   swap
   · rw [convolutionLp_of_not_integrable hp hk, zero_apply]
     exact zero_mem _
-  rw [mem_solenoidalLp_iff_integral_inner_eq_zero]
+  rw [mem_solenoidalLp_iff_testGradientPairingCLM_eq_zero]
   intro φ
   -- The pairing with `∇φ` is a continuous linear functional on `Lᵖ`, so it commutes with the
   -- `Lᵖ`-valued integral defining the convolution and vanishes on each translate of `u`.
-  have : (ENNReal.conjExponent p).HolderConjugate p :=
-    (ENNReal.HolderConjugate.conjExponent Fact.out).symm
-  let L : Lp E p μ →L[ℝ] ℝ := MemLp.innerLpCLM ℝ
-    ((TestFunction.gradientCLM φ).continuous.memLp_of_hasCompactSupport (p := p.conjExponent)
-      (μ := μ) (TestFunction.gradientCLM φ).hasCompactSupport)
-  have hL (v : Lp E p μ) : L v = ∫ x, ⟪v x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ := by
-    simp_rw [L, MemLp.innerLpCLM_apply, TestFunction.gradientCLM_apply, real_inner_comm]
-  have htr (y : E) : L (μ.translateLp p (-y) u) = 0 := by
-    rw [hL]
-    exact mem_solenoidalLp_iff_integral_inner_eq_zero.mp
-      (translateLp_mem_solenoidalLp_iff.mpr hu) φ
-  rw [← hL, convolutionLp_apply hp hk,
-    ← L.integral_comp_comm (integrable_smul_translateLp hp hk u)]
-  simp [htr]
+  rw [convolutionLp_apply hp hk,
+    ← integral_comp_comm _ (integrable_smul_translateLp hp hk u)]
+  simp [fun y : E ↦ mem_solenoidalLp_iff_testGradientPairingCLM_eq_zero.mp
+    (translateLp_mem_solenoidalLp_iff (a := -y) |>.mpr hu) φ]
 
 /-- The pointwise convolution `k ⋆ u` of a field `u ∈ Lᵖ_σ(E)`, `p < ∞`, with an integrable
 scalar kernel is weakly solenoidal on the whole space. -/
