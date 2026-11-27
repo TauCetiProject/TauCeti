@@ -17,18 +17,20 @@ import TauCeti.Geometry.Manifold.SmoothSingular.Circle
 
 In `ContMDiff.smoothSingularChainHomotopyEquivOfRetract`, a smooth-to-singular chain homotopy
 equivalence on `N` transfers to `M` along smooth maps `j : N → M` and `r : M → N` together with
-a smooth homotopy `j ∘ r ~ id_M`. This file shows that the homotopy `j ∘ r ~ id_M` cannot be
-omitted.
+a smooth homotopy `j ∘ r ~ id_M`. This file shows that without `j ∘ r ~ id_M` the
+transferred-inverse formula `r_* ≫ s ≫ j_*` can fail, as it does for `N = PUnit` on `Circle`.
 
 For `N = PUnit`, `r : M → PUnit` constant, and `j = const c : PUnit → M`, for every chain map
 `s` on `PUnit` the candidate `TauCeti.pointTransferCandidate` (`r_* ≫ s ≫ j_*`) induces zero on
 positive-degree homology (`TauCeti.homologyMap_pointTransferCandidate_eq_zero`), so whenever `M` has
-non-zero positive-degree smooth or continuous singular homology, no `s` makes it a left or right
-chain homotopy inverse (`TauCeti.isEmpty_homotopy_pointTransferCandidate_hom_inv`,
+non-zero positive-degree smooth (respectively continuous) singular homology, no `s` makes it a left
+(respectively right) chain homotopy inverse
+(`TauCeti.isEmpty_homotopy_pointTransferCandidate_hom_inv`,
 `TauCeti.isEmpty_homotopy_pointTransferCandidate_inv_hom`). Instantiating on `M = Circle` with
 `TauCeti.homologyMap_smoothSingularSubcomplex_ι_circle_int_ne_zero` rules out both left and right
-homotopy inverses (`Circle.isEmpty_homotopy_circle_pointTransfer_hom_inv`,
-`Circle.isEmpty_homotopy_circle_pointTransfer_inv_hom`).
+homotopy inverses for this candidate
+(`TauCeti.isEmpty_homotopy_pointTransferCandidate_hom_inv_circle`,
+`TauCeti.isEmpty_homotopy_pointTransferCandidate_inv_hom_circle`).
 
 ## Main definitions and results
 
@@ -37,8 +39,9 @@ homotopy inverses (`Circle.isEmpty_homotopy_circle_pointTransfer_hom_inv`,
   `TauCeti.isEmpty_homotopy_pointTransferCandidate_hom_inv`,
   `TauCeti.isEmpty_homotopy_pointTransferCandidate_inv_hom`: general obstruction for manifolds with
   nontrivial positive-degree homology.
-* `Circle.isEmpty_homotopy_circle_pointTransfer_hom_inv`,
-  `Circle.isEmpty_homotopy_circle_pointTransfer_inv_hom`: necessity of `j ∘ r ~ id_M` on `Circle`.
+* `TauCeti.isEmpty_homotopy_pointTransferCandidate_hom_inv_circle`,
+  `TauCeti.isEmpty_homotopy_pointTransferCandidate_inv_hom_circle`: failure of `r_* ≫ s ≫ j_*`
+  through `PUnit` on `Circle` without `j ∘ r ~ id_M`.
 -/
 
 public section
@@ -121,16 +124,10 @@ theorem isEmpty_homotopy_pointTransferCandidate_inv_hom [CategoryWithHomology C]
     zero_comp, HomologicalComplex.homologyMap_id] at hid
   exact (IsZero.iff_id_eq_zero _).mpr hid.symm
 
-end TauCeti
-
-namespace Circle
-
-open TauCeti
-
-/-- **Necessity of `j ∘ r ~ id_M` (left inverse).** On `Circle`, for any point `c` and any chain
-map `s` on `PUnit`, the point-retract candidate `r_* ≫ s ≫ j_*` is not a left chain homotopy
-inverse of the smooth-chain inclusion. -/
-theorem isEmpty_homotopy_circle_pointTransfer_hom_inv (c : Circle)
+/-- **Failure of `r_* ≫ s ≫ j_*` without `j ∘ r ~ id_M` (left inverse).** On `Circle`, for any
+point `c` and any chain map `s` on `PUnit`, the point-retract candidate `r_* ≫ s ≫ j_*` is not a
+left chain homotopy inverse of the smooth-chain inclusion. -/
+theorem isEmpty_homotopy_pointTransferCandidate_hom_inv_circle (c : Circle)
     (s : ((TopCat.toSSet.obj (TopCat.of PUnit.{1})).chainComplex (ModuleCat.of ℤ ℤ)) ⟶
       ((smoothSingularSubcomplex 𝓘(ℝ, PUnit.{1}) PUnit.{1} : SSet).chainComplex
         (ModuleCat.of ℤ ℤ))) :
@@ -140,10 +137,10 @@ theorem isEmpty_homotopy_circle_pointTransfer_hom_inv (c : Circle)
   isEmpty_homotopy_pointTransferCandidate_hom_inv c (ModuleCat.of ℤ ℤ) s one_ne_zero fun hZ ↦
     homologyMap_smoothSingularSubcomplex_ι_circle_int_ne_zero (hZ.eq_of_src _ _)
 
-/-- **Necessity of `j ∘ r ~ id_M` (right inverse).** On `Circle`, for any point `c` and any chain
-map `s` on `PUnit`, the point-retract candidate `r_* ≫ s ≫ j_*` is not a right chain homotopy
-inverse of the smooth-chain inclusion. -/
-theorem isEmpty_homotopy_circle_pointTransfer_inv_hom (c : Circle)
+/-- **Failure of `r_* ≫ s ≫ j_*` without `j ∘ r ~ id_M` (right inverse).** On `Circle`, for any
+point `c` and any chain map `s` on `PUnit`, the point-retract candidate `r_* ≫ s ≫ j_*` is not a
+right chain homotopy inverse of the smooth-chain inclusion. -/
+theorem isEmpty_homotopy_pointTransferCandidate_inv_hom_circle (c : Circle)
     (s : ((TopCat.toSSet.obj (TopCat.of PUnit.{1})).chainComplex (ModuleCat.of ℤ ℤ)) ⟶
       ((smoothSingularSubcomplex 𝓘(ℝ, PUnit.{1}) PUnit.{1} : SSet).chainComplex
         (ModuleCat.of ℤ ℤ))) :
@@ -154,4 +151,4 @@ theorem isEmpty_homotopy_circle_pointTransfer_inv_hom (c : Circle)
   isEmpty_homotopy_pointTransferCandidate_inv_hom c (ModuleCat.of ℤ ℤ) s one_ne_zero fun hZ ↦
     homologyMap_smoothSingularSubcomplex_ι_circle_int_ne_zero (hZ.eq_of_tgt _ _)
 
-end Circle
+end TauCeti

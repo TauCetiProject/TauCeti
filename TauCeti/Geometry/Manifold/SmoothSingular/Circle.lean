@@ -137,7 +137,8 @@ theorem homologyMap_smoothSingularSubcomplex_ι_circle_int_ne_zero :
     d_ιChainComplex_circleLoopSimplex
   let w := HomologicalComplex.cyclesMap φ 1 zK
   have himg := ConcreteCategory.congr_hom hzero (K.homologyπ 1 zK)
-  rw [← ModuleCat.comp_apply, SSet.homologyπ_homologyMap, ModuleCat.comp_apply] at himg
+  rw [← ModuleCat.comp_apply, HomologicalComplex.homologyπ_naturality _ 1,
+    ModuleCat.comp_apply] at himg
   have hper :
       chainsDesc
         (fun s ↦ pathClassIntegral circleAngularForm (.mk (TauCeti.TopCat.path₁ s)))
