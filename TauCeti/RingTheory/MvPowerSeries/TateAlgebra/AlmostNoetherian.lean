@@ -100,7 +100,7 @@ theorem isNoetherianRing_unitClosedBall_of_isNoetherianRing_restrictedUnitClosed
     [IsNoetherianRing (Subring.unitClosedBall (IsRestricted.subring (R := R) r))] :
     IsNoetherianRing (Subring.unitClosedBall R) :=
   isNoetherianRing_of_surjective _ _ (unitClosedBallConstantCoeffHom (σ := σ) (r := r)) fun c ↦
-    ⟨unitClosedBallCoeffHom c, unitClosedBallConstantCoeffHom_unitClosedBallCoeffHom c⟩
+    ⟨unitClosedBallC c, unitClosedBallConstantCoeffHom_unitClosedBallC c⟩
 
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
 
@@ -199,7 +199,7 @@ local notation "Tate " τ:max => IsRestricted.subring (R := K) (fun _ : τ ↦ 1
 
 /-- Base case `IsEmpty σ`: `K⟨X⟩°` is isomorphic to `K°`, whose ideals are almost principal. -/
 private theorem isAlmostNoetherianModule_of_isEmpty {σ : Type*} [IsEmpty σ] :
-    IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
+    IsAlmostNoetherianModule (unitClosedBallC (σ := σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate σ)) := by
   rw [isAlmostNoetherianModule_iff]
   intro I ε _ hε1
@@ -208,7 +208,7 @@ private theorem isAlmostNoetherianModule_of_isEmpty {σ : Type*} [IsEmpty σ] :
       (Subring.unitClosedBall K) (Subring.unitClosedBall (Tate σ)) fun c ↦ by
         simp [Subring.mem_unitClosedBall, IsRestricted.isEmptyEquiv_symm_apply]
   have hce (c : Subring.unitClosedBall K) :
-      unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1) c = e c :=
+      unitClosedBallC (σ := σ) (r := fun _ ↦ 1) c = e c :=
     Subtype.ext <| by
       simp [e, RingEquiv.restrict_apply_coe, IsRestricted.isEmptyEquiv_symm_apply]
   obtain ⟨x, hxI, hsmul⟩ :=
@@ -225,18 +225,18 @@ private theorem isAlmostNoetherianModule_of_isEmpty {σ : Type*} [IsEmpty σ] :
 balls. -/
 private theorem isAlmostNoetherianModule_of_algEquiv {σ τ : Type*}
     (e : Tate σ ≃ₐ[K] Tate τ) (he : ∀ f, ‖e f‖ = ‖f‖)
-    (hσ : IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
+    (hσ : IsAlmostNoetherianModule (unitClosedBallC (σ := σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate σ))) :
-    IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := τ) (R := K) (r := fun _ ↦ 1))
+    IsAlmostNoetherianModule (unitClosedBallC (σ := τ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate τ)) := by
   let e₀ := e.toRingEquiv.restrict (Subring.unitClosedBall _) (Subring.unitClosedBall _)
     fun f ↦ by simp [Subring.mem_unitClosedBall, he]
-  have hcomp : e₀.toRingHom.comp (unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1)) =
-      unitClosedBallCoeffHom (σ := τ) (r := fun _ ↦ 1) :=
+  have hcomp : e₀.toRingHom.comp (unitClosedBallC (σ := σ) (r := fun _ ↦ 1)) =
+      unitClosedBallC (σ := τ) (r := fun _ ↦ 1) :=
     RingHom.ext fun c ↦ Subtype.ext <| by
       rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-        RingEquiv.restrict_apply_coe, AlgEquiv.coe_toRingEquiv, coe_unitClosedBallCoeffHom,
-        coe_unitClosedBallCoeffHom]
+        RingEquiv.restrict_apply_coe, AlgEquiv.coe_toRingEquiv, coe_unitClosedBallC,
+        coe_unitClosedBallC]
       exact e.commutes (c : K)
   rw [← hcomp]
   exact hσ.of_surjective_ringHom e₀.surjective
@@ -255,12 +255,12 @@ private noncomputable def optionEmbedHom (σ : Type*) :
       exact Subring.mem_unitClosedBall.mp hb
 
 private theorem optionEmbedHom_coeff (σ : Type*) (c : Subring.unitClosedBall K) :
-    optionEmbedHom σ (unitClosedBallCoeffHom c) = unitClosedBallCoeffHom c := by
+    optionEmbedHom σ (unitClosedBallC c) = unitClosedBallC c := by
   apply Subtype.ext
   apply (restrictedOptionEquiv (σ := σ) (R := K) (c := fun _ ↦ 1)).injective
   simp only [optionEmbedHom, RingHom.coe_restrict_apply, RingHom.comp_apply,
     RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
-    AlgEquiv.apply_symm_apply, coe_unitClosedBallCoeffHom, AlgEquiv.commutes]
+    AlgEquiv.apply_symm_apply, coe_unitClosedBallC, AlgEquiv.commutes]
   exact (IsScalarTower.algebraMap_apply K (Tate σ)
     (PowerSeries.IsRestricted.subring (R := Tate σ) 1) (c : K)).symm
 
@@ -339,7 +339,7 @@ private theorem exists_mul_add_optionTruncHom_of_isMulDistinguished [CompleteSpa
     (hdh : ‖(d : K)‖ * ‖(h : Tate (Option σ))‖ ≤ ‖a‖) :
     ∃ (qd : Subring.unitClosedBall (Tate (Option σ)))
       (u : Fin s → Subring.unitClosedBall (Tate σ)),
-      unitClosedBallCoeffHom d * h = g' * qd + optionTruncHom σ s u := by
+      unitClosedBallC d * h = g' * qd + optionTruncHom σ s u := by
   have ha0 : a ≠ 0 := norm_pos_iff.mp ha_pos
   obtain ⟨q, r, hr_deg, hqr, hq_norm, hr_norm⟩ :=
     exists_mul_add_eq_of_isMulDistinguished
@@ -366,14 +366,14 @@ private theorem exists_mul_add_optionTruncHom_of_isMulDistinguished [CompleteSpa
   rw [hrem_u]
   apply Subtype.ext
   have hda : a * ((d : K) * a⁻¹) = (d : K) := by rw [mul_comm (d : K), mul_inv_cancel_left₀ ha0]
-  simp only [MulMemClass.coe_mul, AddMemClass.coe_add, coe_unitClosedBallCoeffHom, qd, rd]
+  simp only [MulMemClass.coe_mul, AddMemClass.coe_add, coe_unitClosedBallC, qd, rd]
   rw [← Algebra.smul_def, hg', smul_mul_smul_comm, hda, ← smul_add, hqr]
 
 /-- Weierstrass-remainder approximation for an ideal `J` of `K⟨X, Y⟩°` containing a rescaled
 multiplicatively distinguished series `g' = a • g₀` dominating `‖d‖ * ‖h‖` on `J`. -/
 private theorem exists_fg_le_forall_smul_mem_of_isMulDistinguished [CompleteSpace K] {σ : Type*}
     (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ)
-    (hσ : IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
+    (hσ : IsAlmostNoetherianModule (unitClosedBallC (σ := σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate σ)))
     {s : ℕ} {J : Ideal (Subring.unitClosedBall (Tate (Option σ)))}
     {g' : Subring.unitClosedBall (Tate (Option σ))} (hg'J : g' ∈ J) {a : K} (ha_pos : 0 < ‖a‖)
@@ -386,7 +386,7 @@ private theorem exists_fg_le_forall_smul_mem_of_isMulDistinguished [CompleteSpac
     (hdom : ∀ h ∈ J, ‖(d : K)‖ * ‖(h : Tate (Option σ))‖ ≤ ‖a‖) :
     ∃ J' : Ideal (Subring.unitClosedBall (Tate (Option σ))), J'.FG ∧ J' ≤ J ∧
       ∀ c : Subring.unitClosedBall K, ‖(c : K)‖ ≤ ε → ∀ h ∈ J,
-        unitClosedBallCoeffHom (σ := Option σ) (r := fun _ ↦ 1) c • h ∈ J' := by
+        unitClosedBallC (σ := Option σ) (r := fun _ ↦ 1) c • h ∈ J' := by
   classical
   obtain ⟨Nrem', hNrem'fg, hNrem'le, hNrem'smul⟩ :=
     (hσ.fin_pi hdense s).exists_fg_le_forall_smul_mem (Submodule.comap (optionTruncHom σ s) J)
@@ -412,11 +412,11 @@ private theorem exists_fg_le_forall_smul_mem_of_isMulDistinguished [CompleteSpac
     rw [Submodule.mem_comap, eq_sub_of_add_eq' hdh_eq.symm]
     exact J.sub_mem (J.mul_mem_left _ hh) (J.mul_mem_right _ hg'J)
   have hrem_cu_mem : optionTruncHom σ s
-      (unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1) c' • u) ∈ J' :=
+      (unitClosedBallC (σ := σ) (r := fun _ ↦ 1) c' • u) ∈ J' :=
     hNrem'_le_comap (hNrem'smul c' hc'δ u hu_mem)
-  have hfinal : unitClosedBallCoeffHom (σ := Option σ) (r := fun _ ↦ 1) (c' * d) • h =
-      g' * (unitClosedBallCoeffHom c' * qd) +
-        optionTruncHom σ s (unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1) c' • u) := by
+  have hfinal : unitClosedBallC (σ := Option σ) (r := fun _ ↦ 1) (c' * d) • h =
+      g' * (unitClosedBallC c' * qd) +
+        optionTruncHom σ s (unitClosedBallC (σ := σ) (r := fun _ ↦ 1) c' • u) := by
     rw [map_smulₛₗ, smul_eq_mul, optionEmbedHom_coeff, smul_eq_mul, map_mul, mul_assoc,
       hdh_eq, mul_add]
     ring
@@ -428,9 +428,9 @@ private theorem exists_fg_le_forall_smul_mem_of_isMulDistinguished [CompleteSpac
 `K°` has dense norms below `1`. -/
 private theorem isAlmostNoetherianModule_option [CompleteSpace K] {σ : Type*} [Finite σ]
     (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ)
-    (hσ : IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
+    (hσ : IsAlmostNoetherianModule (unitClosedBallC (σ := σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate σ))) :
-    IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := Option σ) (R := K) (r := fun _ ↦ 1))
+    IsAlmostNoetherianModule (unitClosedBallC (σ := Option σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate (Option σ))) := by
   rw [isAlmostNoetherianModule_iff]
   intro I ε hε0 hε1
@@ -453,9 +453,9 @@ private theorem isAlmostNoetherianModule_option [CompleteSpace K] {σ : Type*} [
   let e₀ := e.toRingEquiv.restrict (Subring.unitClosedBall _) (Subring.unitClosedBall _)
     fun f ↦ by simp [Subring.mem_unitClosedBall, he_norm]
   have hec_symm (c : Subring.unitClosedBall K) :
-      e₀.symm (unitClosedBallCoeffHom c) = unitClosedBallCoeffHom c :=
+      e₀.symm (unitClosedBallC c) = unitClosedBallC c :=
     Subtype.ext <| by
-      rw [RingEquiv.restrict_symm_apply_coe, coe_unitClosedBallCoeffHom,
+      rw [RingEquiv.restrict_symm_apply_coe, coe_unitClosedBallC,
         RingEquiv.symm_apply_eq, AlgEquiv.coe_toRingEquiv]
       exact (e.commutes (c : K)).symm
   let J : Ideal (Subring.unitClosedBall (Tate (Option σ))) := Ideal.map e₀.toRingHom I
@@ -485,11 +485,11 @@ private theorem isAlmostNoetherianModule_option [CompleteSpace K] {σ : Type*} [
 `IsAlmostNoetherianModule`. -/
 private theorem isAlmostNoetherianModule_unitClosedBall_of_dense [CompleteSpace K] {σ : Type*}
     [Finite σ] (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ) :
-    IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
+    IsAlmostNoetherianModule (unitClosedBallC (σ := σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate σ)) :=
   Finite.induction_empty_option
     (P := fun τ ↦ IsAlmostNoetherianModule
-      (unitClosedBallCoeffHom (σ := τ) (R := K) (r := fun _ ↦ 1))
+      (unitClosedBallC (σ := τ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate τ)))
     (fun e h ↦ isAlmostNoetherianModule_of_algEquiv
       (IsRestricted.renameAlgEquiv (R := K) e fun _ ↦ 1)
@@ -499,9 +499,9 @@ private theorem isAlmostNoetherianModule_unitClosedBall_of_dense [CompleteSpace 
 
 /-- **The Gauss unit ball `K⟨X⟩°` is almost noetherian.** Over any complete ultrametric normed
 field `K` and finite variable set `σ`, `K⟨X⟩°` satisfies `TauCeti.IsAlmostNoetherianModule` with
-respect to `unitClosedBallCoeffHom`. -/
+respect to `unitClosedBallC`. -/
 theorem isAlmostNoetherianModule_unitClosedBall [CompleteSpace K] {σ : Type*} [Finite σ] :
-    IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
+    IsAlmostNoetherianModule (unitClosedBallC (σ := σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate σ)) := by
   by_cases hdisc : ∃ r : ℝ, r < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ r
   · have : IsNoetherianRing (Subring.unitClosedBall K) :=
@@ -513,7 +513,7 @@ theorem isAlmostNoetherianModule_unitClosedBall [CompleteSpace K] {σ : Type*} [
 be a commutative ring admitting a surjective ring homomorphism `ρ : K⟨X⟩° →+* S` in finitely many
 variables over a complete ultrametric normed field `K`. For every finitely generated `S`-module `M`,
 every submodule `N ≤ M`, and every `0 < ε < 1`, there is a single finitely generated `S`-submodule
-`N' ≤ N` containing `ρ (unitClosedBallCoeffHom c) • x` for all `c ∈ K°` with `‖c‖ ≤ ε` and all
+`N' ≤ N` containing `ρ (unitClosedBallC c) • x` for all `c ∈ K°` with `‖c‖ ≤ ε` and all
 `x ∈ N`. -/
 theorem _root_.RingHom.exists_fg_le_forall_smul_mem_of_surjective_unitClosedBall [CompleteSpace K]
     {σ : Type*} [Finite σ] {S : Type*} [CommRing S]
@@ -522,14 +522,14 @@ theorem _root_.RingHom.exists_fg_le_forall_smul_mem_of_surjective_unitClosedBall
     (N : Submodule S M) {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε < 1) :
     ∃ N' : Submodule S M, N'.FG ∧ N' ≤ N ∧
       ∀ c : Subring.unitClosedBall K, ‖(c : K)‖ ≤ ε → ∀ x ∈ N,
-        ρ (unitClosedBallCoeffHom c) • x ∈ N' := by
+        ρ (unitClosedBallC c) • x ∈ N' := by
   by_cases hdisc : ∃ r : ℝ, r < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ r
   · -- Discrete or trivial norm: `K°`, hence `K⟨X⟩°`, hence `S` is noetherian, so `N` itself is FG.
     have : IsNoetherianRing (Subring.unitClosedBall K) :=
       isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le.mpr hdisc
     have : IsNoetherianRing S := isNoetherianRing_of_surjective _ _ ρ hρ
     exact (IsAlmostNoetherianModule.of_isNoetherian
-      (φ := ρ.comp (unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1)))).exists_fg_le_forall_smul_mem
+      (φ := ρ.comp (unitClosedBallC (σ := σ) (r := fun _ ↦ 1)))).exists_fg_le_forall_smul_mem
       N hε0 hε1
   · -- Dense norms below `1`: descend almost noetherianity along `ρ` and lift to finite modules.
     exact ((isAlmostNoetherianModule_unitClosedBall.of_surjective_ringHom hρ).of_finite
@@ -538,14 +538,14 @@ theorem _root_.RingHom.exists_fg_le_forall_smul_mem_of_surjective_unitClosedBall
 /-- **Kiehl's almost noetherianity theorem for the Gauss unit ball `K⟨X⟩°` (Satz 5.1).** Over any
 complete ultrametric normed field `K`, for every finitely generated `K⟨X⟩°`-module `M`, every
 submodule `N ≤ M`, and every `0 < ε < 1`, there is a single finitely generated submodule `N' ≤ N`
-containing `unitClosedBallCoeffHom c • x` for all `c ∈ K°` with `‖c‖ ≤ ε` and all `x ∈ N`. -/
+containing `unitClosedBallC c • x` for all `c ∈ K°` with `‖c‖ ≤ ε` and all `x ∈ N`. -/
 theorem _root_.Submodule.exists_fg_le_forall_smul_mem_unitClosedBall [CompleteSpace K] {σ : Type*}
     [Finite σ] {M : Type*} [AddCommGroup M] [Module (Subring.unitClosedBall (Tate σ)) M]
     [Module.Finite (Subring.unitClosedBall (Tate σ)) M]
     (N : Submodule (Subring.unitClosedBall (Tate σ)) M) {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε < 1) :
     ∃ N' : Submodule (Subring.unitClosedBall (Tate σ)) M, N'.FG ∧ N' ≤ N ∧
       ∀ c : Subring.unitClosedBall K, ‖(c : K)‖ ≤ ε → ∀ x ∈ N,
-        unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1) c • x ∈ N' :=
+        unitClosedBallC (σ := σ) (r := fun _ ↦ 1) c • x ∈ N' :=
   (RingHom.id (Subring.unitClosedBall (Tate σ)))
     |>.exists_fg_le_forall_smul_mem_of_surjective_unitClosedBall Function.surjective_id N hε0 hε1
 

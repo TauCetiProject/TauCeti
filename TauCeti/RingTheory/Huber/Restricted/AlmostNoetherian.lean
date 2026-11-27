@@ -65,10 +65,10 @@ theorem RingHom.exists_fg_le_forall_smul_mem_of_surjective_restrictedMvPowerSeri
       hsurj N hε0 hε1
   refine ⟨N', hfg, hle, fun c hc x hx ↦ ?_⟩
   have heq : (φ.comp e.symm.toRingHom)
-      (unitClosedBallCoeffHom (σ := Fin n) (r := fun _ ↦ 1) (integerUnitClosedBallEquiv c)) =
+      (unitClosedBallC (σ := Fin n) (r := fun _ ↦ 1) (integerUnitClosedBallEquiv c)) =
       φ (algebraMap 𝒪[K] _ c) := by
     rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-      restrictedMvPowerSeriesCompletionIntegerEquiv_symm_unitClosedBallCoeffHom,
+      restrictedMvPowerSeriesCompletionIntegerEquiv_symm_unitClosedBallC,
       RingEquiv.symm_apply_apply]
   have hc' : ‖(integerUnitClosedBallEquiv c : K)‖ ≤ ε := by
     rwa [coe_integerUnitClosedBallEquiv]

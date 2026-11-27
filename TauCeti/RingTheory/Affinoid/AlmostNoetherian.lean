@@ -114,22 +114,22 @@ theorem algebraMap_mem_map_unitClosedBall (π : Tate σ →ₐ[K] A) {c : K} (hc
     ((norm_algebraMap_isRestrictedSubring c).trans_le hc), π.commutes c⟩
 
 @[simp]
-theorem unitClosedBallMapHom_unitClosedBallCoeffHom (π : Tate σ →ₐ[K] A)
+theorem unitClosedBallMapHom_unitClosedBallC (π : Tate σ →ₐ[K] A)
     (c : Subring.unitClosedBall K) :
     π.unitClosedBallMapHom
-        (TauCeti.MvPowerSeries.unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1) c) =
+        (TauCeti.MvPowerSeries.unitClosedBallC (σ := σ) (r := fun _ ↦ 1) c) =
       ⟨algebraMap K A c,
         π.algebraMap_mem_map_unitClosedBall (Subring.mem_unitClosedBall.mp c.property)⟩ :=
   Subtype.ext <| by
-    rw [coe_unitClosedBallMapHom, TauCeti.MvPowerSeries.coe_unitClosedBallCoeffHom]
+    rw [coe_unitClosedBallMapHom, TauCeti.MvPowerSeries.coe_unitClosedBallC]
     exact π.commutes (c : K)
 
-theorem coe_unitClosedBallMapHom_unitClosedBallCoeffHom (π : Tate σ →ₐ[K] A)
+theorem coe_unitClosedBallMapHom_unitClosedBallC (π : Tate σ →ₐ[K] A)
     (c : Subring.unitClosedBall K) :
     (π.unitClosedBallMapHom
-        (TauCeti.MvPowerSeries.unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1) c) : A) =
+        (TauCeti.MvPowerSeries.unitClosedBallC (σ := σ) (r := fun _ ↦ 1) c) : A) =
       algebraMap K A c := by
-  rw [coe_unitClosedBallMapHom, TauCeti.MvPowerSeries.coe_unitClosedBallCoeffHom]
+  rw [coe_unitClosedBallMapHom, TauCeti.MvPowerSeries.coe_unitClosedBallC]
   exact π.commutes (c : K)
 
 /-- **Zero-variable check.** When the variable index type `σ` is empty, the integral presentation
@@ -212,7 +212,7 @@ theorem exists_fg_le_forall_smul_mem_map_unitClosedBall [CompleteSpace K] [_root
       π.unitClosedBallMapHom_surjective N hε0 hε1
   refine ⟨N', hfg, hle, fun c hc x hx ↦ ?_⟩
   let c₀ : Subring.unitClosedBall K := ⟨c, Subring.mem_unitClosedBall.mpr (hc.trans hε1.le)⟩
-  simpa only [π.unitClosedBallMapHom_unitClosedBallCoeffHom c₀] using hsmul c₀ hc x hx
+  simpa only [π.unitClosedBallMapHom_unitClosedBallC c₀] using hsmul c₀ hc x hx
 
 /-- Scalar-tower form of `AlgHom.exists_fg_le_forall_smul_mem_map_unitClosedBall`: over a complete
 ultrametric normed field `K`, for any finitely generated `A₀`-submodule `M` of an ambient
