@@ -462,9 +462,9 @@ theorem isIso_supportedModuleHPresheafFunctor_map_supportedSubmoduleι {j : ℕ}
   | zero =>
     have : IsIso ((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom :=
       (ObjectProperty.isIso_hom_iff _).2 (F.isIso_supportedSubmoduleFunctor_map_ι hZS)
-    exact @IsIso.of_isIso_fac_right _ _ _ _ _ _ _ _ (Iso.isIso_hom _)
-      (IsIso.comp_isIso' (Iso.isIso_hom _) ‹_›)
-      (supportedModuleHPresheafZeroIso_hom_naturality Z (F.supportedSubmoduleι S))
+    rw [(Iso.eq_comp_inv _).2
+      (supportedModuleHPresheafZeroIso_hom_naturality Z (F.supportedSubmoduleι S))]
+    exact IsIso.comp_isIso' (IsIso.comp_isIso' (Iso.isIso_hom _) ‹_›) (Iso.isIso_inv _)
   | succ j ih =>
     -- embed `F` into an injective sheaf `F₂ = I(F)` with quotient `F₃`; as `𝓗_S¹(F) = 0`,
     -- applying `Γ_S` gives a short exact sequence `Γ_S(T)`

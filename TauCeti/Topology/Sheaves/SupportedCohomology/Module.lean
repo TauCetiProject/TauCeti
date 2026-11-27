@@ -774,14 +774,10 @@ lemma supportedModuleHPresheafPostcomp_add
     (α β : Ext.{u} F G n) (hk : m + n = k) :
     supportedModuleHPresheafPostcomp S (α + β) hk =
       supportedModuleHPresheafPostcomp S α hk + supportedModuleHPresheafPostcomp S β hk := by
-  refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
-  rw [supportedModuleHPresheafPostcomp_app_apply, NatTrans.app_add]
-  refine (Ext.comp_add x α β hk).trans ?_
-  rw [← supportedModuleHPresheafPostcomp_app_apply S α hk W x,
-    ← supportedModuleHPresheafPostcomp_app_apply S β hk W x]
-  exact (congrFun (congrArg DFunLike.coe
-    (ModuleCat.hom_add ((supportedModuleHPresheafPostcomp S α hk).app W)
-      ((supportedModuleHPresheafPostcomp S β hk).app W))) x).symm
+  ext W x
+  rw [NatTrans.app_add]
+  simp only [ModuleCat.hom_add, LinearMap.add_apply]
+  exact Ext.comp_add x α β hk
 
 /-- For a degree-zero class `Ext.mk₀ f`, Yoneda postcomposition is the map of
 supported cohomology presheaves induced by `f`. -/
