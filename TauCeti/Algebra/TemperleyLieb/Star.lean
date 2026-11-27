@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.SelfAdjoint
 public import TauCeti.Algebra.TemperleyLieb.Basic
+public import TauCeti.Basic.Complex.Basic
 
 /-!
 # The adjoint on the Temperley–Lieb algebra
@@ -31,7 +32,7 @@ gives `δ • e = star δ • e`, and distinct scalar multiples of the two-stran
 distinct (`TauCeti.TemperleyLieb.smul_left_injective_e_two`).
 
 The hypothesis on `δ` is the instance argument `Fact (IsSelfAdjoint δ)`; for a real loop value
-`δ : ℝ` in `ℂ` it is supplied by `Complex.conj_ofReal δ`.
+`r : ℝ` in `ℂ` it is the instance `TauCeti.instFactIsSelfAdjointComplexOfReal`.
 
 ## Main definitions
 
@@ -171,6 +172,16 @@ end UniversalProperty
 theorem strandIncl_star (x : TemperleyLieb R δ (n + 1)) :
     strandIncl (star x) = star (strandIncl x) :=
   map_star_iff.mpr (fun i ↦ by simpa using isSelfAdjoint_e (δ := δ) (n := n + 2) i.castSucc) x
+
+/-- Adding a straight strand at any level `n ≥ 0` commutes with the analytic adjoint. -/
+@[simp]
+theorem strandInclAll_star (n : ℕ) (x : TemperleyLieb R δ n) :
+    strandInclAll n (star x) = star (strandInclAll n x) := by
+  cases n with
+  | zero =>
+    rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x]
+    simp [Algebra.algebraMap_eq_smul_one]
+  | succ _ => rw [strandInclAll_succ, strandIncl_star]
 
 /-- The augmentation conjugates: on at most one strand, where the algebra is the base ring, the
 analytic adjoint is the star of `R`. -/

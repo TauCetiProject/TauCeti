@@ -106,6 +106,20 @@ theorem coe_generalLinearContinuousMulEquiv :
       LinearMap.GeneralLinearGroup K V ≃* V ≃ₗ[K] V) =
       LinearMap.GeneralLinearGroup.generalLinearEquiv K V := (rfl)
 
+/-- The automorphism attached to an invertible endomorphism has that endomorphism as its underlying
+linear map. -/
+@[simp]
+theorem coe_generalLinearContinuousMulEquiv_apply (u : LinearMap.GeneralLinearGroup K V) :
+    ((generalLinearContinuousMulEquiv u : V ≃ₗ[K] V) : Module.End K V) = u :=
+  (rfl)
+
+/-- The invertible endomorphism attached to an automorphism is its underlying linear map. -/
+@[simp]
+theorem coe_generalLinearContinuousMulEquiv_symm_apply (g : V ≃ₗ[K] V) :
+    ((generalLinearContinuousMulEquiv.symm g : LinearMap.GeneralLinearGroup K V) :
+      Module.End K V) = g :=
+  (rfl)
+
 /-- A family of linear automorphisms is continuous exactly when its forward and inverse
 endomorphisms are both continuous. -/
 theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]
@@ -137,6 +151,26 @@ theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]
 theorem continuous_linearEquiv_toLinearMap :
     Continuous (fun e : V ≃ₗ[K] V => (e : Module.End K V)) :=
   (continuous_linearEquiv_iff.mp (continuous_id : Continuous (fun e : V ≃ₗ[K] V => e))).1
+
+section Evaluation
+
+variable {K V : Type*} [CommRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
+  [AddCommGroup V] [Module K V] [TopologicalSpace V] [IsModuleTopology K V]
+  [Module.Finite K V]
+
+/-- Evaluation of linear automorphisms on a finite module is jointly continuous for the
+forward-and-inverse topology and the caller's module topology. -/
+@[fun_prop]
+theorem continuous_linearEquiv_apply :
+    Continuous (fun p : (V ≃ₗ[K] V) × V ↦ p.1 p.2) := by
+  have : ContinuousAdd V := IsModuleTopology.toContinuousAdd K V
+  refine (IsModuleTopology.continuous_linearMap_apply_iff
+    (fun e : V ≃ₗ[K] V ↦ (e : Module.End K V))).2 fun v ↦ ?_
+  exact (IsModuleTopology.continuous_of_linearMap
+    ((LinearMap.applyₗ : V →ₗ[K] Module.End K V →ₗ[K] V) v)).comp
+      continuous_linearEquiv_toLinearMap
+
+end Evaluation
 
 section AutCongr
 

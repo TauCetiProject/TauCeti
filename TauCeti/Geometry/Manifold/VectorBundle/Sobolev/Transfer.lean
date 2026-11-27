@@ -10,7 +10,7 @@ import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Deriv
 
 /-!
 # Transfer of chart data of Sobolev sections between charts
@@ -108,7 +108,6 @@ theorem FiniteBundleAtlas.chartDerivL_ae_overlap (w : A.sectionChartData.sobolev
   have hC := A.aeTransition_sectionChartData μ
   have hτ := (A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i w).comp_contDiffOn_diffeo
     (U := O) (A.contDiffOn_transition i i')
-    (fun y hy y' hy' h ↦ by rw [← A.transition_transition hy, h, A.transition_transition hy'])
     (fun y hy ↦ by
       rw [A.fderiv_transition hy]
       exact ContinuousLinearEquiv.toLinearEquiv _ |>.isUnit_det'.ne_zero)

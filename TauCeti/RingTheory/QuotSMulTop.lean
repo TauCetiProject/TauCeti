@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.QuotSMulTop
 public import Mathlib.RingTheory.Regular.IsSMulRegular
+import TauCeti.RingTheory.Regular.IsSMulRegular
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.Ideal.Colon
 import Mathlib.LinearAlgebra.TensorProduct.Pi
@@ -27,13 +29,17 @@ Reduction modulo `I` is right exact. When `I = (x)` and `x` is regular on the la
 preserves injectivity on the left, so it carries a short exact sequence `0 → K → P → M → 0` to a
 short exact sequence `0 → K ⧸ x K → P ⧸ x P → M ⧸ x M → 0`. More generally, bounded
 `x`-power torsion on the last term bounds the induced filtration on the first term by a fixed
-shift of its `(x)`-adic filtration.
+shift of its `(x)`-adic filtration. Conversely, if `x` is regular on `P` and the reduction of a map
+`f : K → P` modulo `x` is injective, then `x` is regular on the cokernel of `f`; if that cokernel is
+moreover `x`-power torsion, then `f` is surjective.
 
 Mathlib makes `QuotSMulTop x M = M ⧸ x M` a module over `R ⧸ (x)`; this action is induced by the
 `R`-action on `M`, the analogue for `x • ⊤` of Mathlib's `Module.Quotient.mk_smul_mk` for `I • ⊤`.
 
 Reductions of cyclic modules commute: `(R ⧸ (s)) ⧸ r (R ⧸ (s))` and `(R ⧸ (r)) ⧸ s (R ⧸ (r))` are
-both `R ⧸ (r, s)`. For an `R`-algebra `A` and an `A`-module `N`, reducing modulo the image of
+both `R ⧸ (r, s)`. Multiplication by `xᵏ` and the projection give a sequence
+`0 → M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M → 0`, exact except possibly at `M ⧸ x M`, where it is exact
+when `x` is `M`-regular. For an `R`-algebra `A` and an `A`-module `N`, reducing modulo the image of
 `r : R` in `A` is reducing the underlying `R`-module modulo `r`. A finite free `R`-module of rank
 `d` reduces modulo `r` to `(R ⧸ (r)) ^ d`, so it has `#(R ⧸ (r)) ^ d` elements. Finally, in a
 domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ m)`.
@@ -44,9 +50,11 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `Ideal.quotSMulTopSelfEquiv`: the `R ⧸ I`-linear equivalence `(R ⧸ I • ⊤) ≃ₗ[R ⧸ I] R ⧸ I`.
 * `QuotSMulTop.quotSpanSingletonSMulTopEquiv`: the `R ⧸ (x)`-linear equivalence
   `(M ⧸ (x) • ⊤) ≃ₗ[R ⧸ (x)] QuotSMulTop x M`.
+* `QuotSMulTop.equivQuotSpanSingleton`: the `R`-linear equivalence `QuotSMulTop x R ≃ R ⧸ (x)`.
 * `Module.IsTorsionBy.quotSMulTopEquiv`: `M ⧸ x M ≃ M` when `x` kills `M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
+* `QuotSMulTop.mulPow`: multiplication by `xᵏ`, as a map `M ⧸ x M → M ⧸ xᵏ⁺¹ M`.
 
 ## Main results
 
@@ -54,17 +62,37 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `QuotSMulTop.subsingleton_of_isUnit`: `M ⧸ x M` is trivial for a unit `x`.
 * `QuotSMulTop.subsingleton_iff_smul_right_surjective`: `M ⧸ x M` is trivial exactly when
   multiplication by `x` on `M` is surjective.
+* `QuotSMulTop.exact_mulPow`: the sequence `M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M`, multiplication by
+  `xᵏ` followed by the projection, is exact in the middle. The projection is surjective
+  (`Submodule.factor_surjective`), and `QuotSMulTop.mulPow_injective` gives injectivity of
+  multiplication by `xᵏ` when `x` is `M`-regular.
 * `Ideal.mapQSMulTop_id` and `Ideal.mapQSMulTop_comp`: reduction modulo `I` is functorial.
 * `Ideal.mapQSMulTop_surjective` and `Ideal.mapQSMulTop_exact`: reduction modulo `I` preserves
   surjectivity and exactness at the middle of `M → N → P → 0`.
 * `QuotSMulTop.map_comp_quotEquivOfEq`: for `I = (x)`, the reduction is `QuotSMulTop.map x f`, up
   to the identification of `(x) • ⊤` with `x • ⊤`.
+* `QuotSMulTop.map_injective_iff_comap_smul_top_le` and
+  `QuotSMulTop.map_surjective_iff_range_sup_smul_top_eq_top`: the reduction of `f` modulo `r` is
+  injective exactly when `f x ∈ r N` forces `x ∈ r M`, and surjective exactly when
+  `range f + r N = N`.
+* `IsSMulRegular.comap_pow_smul_top_le`, `IsSMulRegular.bijective_quotSMulTop_map_pow`: for `r`
+  regular on `M`, a map `f : N → M` injective (bijective) modulo `r` is injective (bijective)
+  modulo every `rⁿ`.
+* `IsSMulRegular.comap_iInf_pow_smul_top_le`: for such `f` injective modulo `r`,
+  `f x ∈ ⋂ₙ rⁿ M` forces `x ∈ ⋂ₙ rⁿ N`.
+* `IsSMulRegular.bijective_smul_quotient_range_sup_iInf`: for such `f` bijective modulo `r`,
+  multiplication by `r` is bijective on `M ⧸ (range f + ⋂ₙ rⁿ M)`.
 * `Ideal.mapQSMulTop_span_singleton_injective`: reduction modulo `(x)` preserves injectivity of the
   first map of a short exact sequence whose last term is `x`-regular.
 * `QuotSMulTop.mem_annihilator_range_map` and `QuotSMulTop.mem_annihilator_ker_map`: if `b` kills
   the cokernel of `f`, it kills the cokernel of its reduction modulo `x`, and also the kernel when
   `f` is injective. So an inclusion of lattices of index dividing `p ^ B` induces maps on the
   reductions modulo `p ^ n` whose kernel and cokernel are killed by `p ^ B`.
+* `TauCeti.isSMulRegular_quotient_range_iff_injective_quotSMulTop_map`: for injective `f` and `r`
+  regular on `N`, the reduction `M ⧸ r M → N ⧸ r N` of `f` is injective exactly when `r` is regular
+  on the cokernel of `f`; regularity of `r` on `N` alone gives the implication from injectivity.
+* `TauCeti.surjective_iff_injective_quotSMulTop_map`: if moreover the cokernel of `f` is
+  `r`-power torsion, `f` is surjective exactly when its reduction modulo `r` is injective.
 * `QuotSMulTop.ker_mapQ_mkQ` and `QuotSMulTop.mapQ_mkQ_surjective`: for an ideal `I` and `y : R`,
   the map `N ⧸ I N → (N ⧸ y N) ⧸ I (N ⧸ y N)` is surjective with kernel `y (N ⧸ I N)`, so that
   quotienting by `I` and by `y` may be done in either order.
@@ -75,6 +103,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   depends only on its class modulo `I`, up to multiplication by units.
 * `Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk`: a scalar that is a unit modulo `I` is
   regular on `M ⧸ I • M`.
+* `Ideal.isSMulRegular_quotient_smul_top_of_mem_sup_span_singleton`: if `a ∈ I ⊔ (b)` is regular
+  on `M ⧸ I • M`, then so is `b`.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
 * `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
@@ -180,6 +210,27 @@ theorem quotSpanSingletonSMulTopEquiv_symm_mk (x : R) (m : M) :
       Submodule.Quotient.mk m :=
   (rfl)
 
+/-- Reducing `R` modulo `x` gives `R ⧸ (x)`: `QuotSMulTop x R ≃ₗ[R] R ⧸ (x)`, the `R`-linear
+equivalence underlying `QuotSMulTop.quotSpanSingletonSMulTopEquiv` and
+`Ideal.quotSMulTopSelfEquiv`. -/
+noncomputable def equivQuotSpanSingleton (x : R) : QuotSMulTop x R ≃ₗ[R] R ⧸ Ideal.span {x} :=
+  ((quotSpanSingletonSMulTopEquiv x R).symm.trans
+    (Ideal.span {x}).quotSMulTopSelfEquiv).restrictScalars R
+
+/-- `equivQuotSpanSingleton` sends the class of `r` to the class of `r`. -/
+@[simp]
+theorem equivQuotSpanSingleton_mk (x r : R) :
+    equivQuotSpanSingleton x (Ideal.Quotient.mk (x • ⊤) r) =
+      Ideal.Quotient.mk (Ideal.span {x}) r :=
+  (rfl)
+
+/-- `equivQuotSpanSingleton.symm` sends the class of `r` to the class of `r`. -/
+@[simp]
+theorem equivQuotSpanSingleton_symm_mk (x r : R) :
+    (equivQuotSpanSingleton x).symm (Ideal.Quotient.mk (Ideal.span {x}) r) =
+      Ideal.Quotient.mk (x • ⊤) r :=
+  (rfl)
+
 /-- Negation is the identity on a module modulo twice itself. -/
 @[simp]
 theorem neg_eq_self (x : QuotSMulTop (2 : R) M) : -x = x := by
@@ -207,6 +258,69 @@ theorem map_comp_quotEquivOfEq (x : R) (f : M →ₗ[R] N) :
       (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul x ⊤)).toLinearMap ∘ₗ
         ((Ideal.span {x}).mapQSMulTop f).restrictScalars R :=
   Submodule.linearMap_qext _ rfl
+
+/-- The reduction of `f` modulo `r` is injective exactly when `f x ∈ r N` forces `x ∈ r M`. -/
+theorem map_injective_iff_comap_smul_top_le {r : R} {f : M →ₗ[R] N} :
+    Injective (QuotSMulTop.map r f) ↔ (r • ⊤ : Submodule R N).comap f ≤ r • ⊤ := by
+  refine ⟨fun h x hx ↦ ?_, fun h ↦ (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_⟩
+  · refine (Submodule.Quotient.mk_eq_zero _).mp (h ?_)
+    rwa [map_apply_mk, map_zero, Submodule.Quotient.mk_eq_zero]
+  · obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+    rw [map_apply_mk, Submodule.Quotient.mk_eq_zero] at hx
+    exact (Submodule.Quotient.mk_eq_zero _).mpr (h hx)
+
+/-- The reduction of `f` modulo `r` is surjective exactly when the range of `f` and `r N` span
+`N`. -/
+theorem map_surjective_iff_range_sup_smul_top_eq_top {r : R} {f : M →ₗ[R] N} :
+    Surjective (QuotSMulTop.map r f) ↔ LinearMap.range f ⊔ r • ⊤ = ⊤ := by
+  rw [← (Submodule.mkQ_surjective _).of_comp_iff, ← LinearMap.coe_comp, map_comp_mkQ,
+    ← LinearMap.range_eq_top, LinearMap.range_comp, Submodule.map_mkQ_eq_top, sup_comm]
+
+variable (M) in
+/-- Multiplication by `xᵏ`, as a map `M ⧸ x M → M ⧸ xᵏ⁺¹ M`. -/
+noncomputable def mulPow (x : R) (k : ℕ) :
+    QuotSMulTop x M →ₗ[R] QuotSMulTop (x ^ (k + 1)) M :=
+  Submodule.mapQ _ _ (LinearMap.lsmul R M (x ^ k)) fun _ hm ↦ by
+    obtain ⟨m, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hm
+    simpa [smul_smul, ← pow_succ'] using
+      Submodule.smul_mem_pointwise_smul m (x ^ (k + 1)) (⊤ : Submodule R M) Submodule.mem_top
+
+@[simp]
+theorem mulPow_mk (x : R) (k : ℕ) (m : M) :
+    mulPow M x k (Submodule.Quotient.mk m) = Submodule.Quotient.mk (x ^ k • m) :=
+  (rfl)
+
+/-- If `x` is regular on `M`, multiplication by `xᵏ` is injective from `M ⧸ x M` to
+`M ⧸ xᵏ⁺¹ M`. -/
+theorem mulPow_injective {x : R} (hx : IsSMulRegular M x) (k : ℕ) :
+    Injective (mulPow M x k) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro y hy
+  induction y using Submodule.Quotient.induction_on with | H m => ?_
+  rw [mulPow_mk, Submodule.Quotient.mk_eq_zero] at hy
+  obtain ⟨m', -, hm'⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hy
+  rw [pow_succ, mul_smul] at hm'
+  rw [(hx.pow k).eq_iff.1 hm'.symm, Submodule.Quotient.mk_eq_zero]
+  exact Submodule.smul_mem_pointwise_smul _ _ ⊤ Submodule.mem_top
+
+/-- The sequence `M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M`, whose first map is multiplication by `xᵏ`
+and whose second map is the projection, is exact at `M ⧸ xᵏ⁺¹ M`. -/
+theorem exact_mulPow (x : R) (k : ℕ) :
+    Exact (mulPow M x k) (Submodule.factor
+      (Submodule.smul_top_le_smul_top_of_dvd (M := M) (pow_dvd_pow x (k.le_add_right 1)))) := by
+  intro y
+  induction y using Submodule.Quotient.induction_on with | H m => ?_
+  rw [← Submodule.mkQ_apply, Submodule.factor_mk, Submodule.mkQ_apply,
+    Submodule.Quotient.mk_eq_zero]
+  refine ⟨fun hm ↦ ?_, ?_⟩
+  · obtain ⟨m', -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hm
+    exact ⟨Submodule.Quotient.mk m', mulPow_mk x k m'⟩
+  · rintro ⟨y, hy⟩
+    induction y using Submodule.Quotient.induction_on with | H m' => ?_
+    rw [mulPow_mk, Submodule.mkQ_apply, Submodule.Quotient.eq] at hy
+    have := sub_mem (Submodule.smul_mem_pointwise_smul m' (x ^ k) ⊤ Submodule.mem_top)
+      (Submodule.smul_top_le_smul_top_of_dvd (pow_dvd_pow x (k.le_add_right 1)) hy)
+    rwa [sub_sub_cancel] at this
 
 /-- If `b` kills the cokernel of `f`, it kills the cokernel of the reduction of `f` modulo `x`. -/
 theorem mem_annihilator_range_map (x : R) {f : M →ₗ[R] N} {b : R}
@@ -284,6 +398,62 @@ theorem mapQSMulTop_span_singleton_injective {x : R} {f : K →ₗ[R] N} {g : N 
 
 end Ideal
 
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] {M N : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {r : R} {f : M →ₗ[R] N}
+
+open LinearMap Submodule
+
+/-- **Saturation of the range.** If `r` is regular on `N` and `f mod r` is injective, then `r` is
+regular on the cokernel of `f`: `r • y ∈ range f` forces `y ∈ range f`. -/
+theorem isSMulRegular_quotient_range_of_injective_quotSMulTop_map (hN : IsSMulRegular N r)
+    (h : Injective (QuotSMulTop.map r f)) : IsSMulRegular (N ⧸ range f) r := by
+  refine (isSMulRegular_quotient_iff_mem_of_smul_mem _ _).mpr fun y ⟨z, hz⟩ ↦ ?_
+  -- The class of `z` maps to the class of `r • y = 0` in `N ⧸ rN`, so `z = r • w`.
+  have hz0 : Submodule.Quotient.mk (p := r • (⊤ : Submodule R M)) z = 0 := h <| by
+    rw [QuotSMulTop.map_apply_mk, map_zero, hz, Submodule.Quotient.mk_eq_zero]
+    exact Submodule.smul_mem_pointwise_smul y r ⊤ trivial
+  obtain ⟨w, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp
+    ((Submodule.Quotient.mk_eq_zero _).mp hz0)
+  exact ⟨w, hN (by simpa using hz)⟩
+
+/-- **Regularity on the cokernel.** For injective `f` with `r` regular on `N`, the reduction
+`f mod r : M ⧸ rM → N ⧸ rN` is injective exactly when `r` is regular on `N ⧸ range f`. -/
+theorem isSMulRegular_quotient_range_iff_injective_quotSMulTop_map (hf : Injective f)
+    (hN : IsSMulRegular N r) :
+    IsSMulRegular (N ⧸ range f) r ↔ Injective (QuotSMulTop.map r f) := by
+  refine ⟨fun hC ↦ ?_, isSMulRegular_quotient_range_of_injective_quotSMulTop_map hN⟩
+  -- Mathlib's four-term lemma, applied to `0 → M → N → N ⧸ range f`.
+  have := QuotSMulTop.map_first_exact_on_four_term_exact_of_isSMulRegular_last
+    ((exact_zero_iff_injective PUnit.{1} f).mpr hf) (exact_map_mkQ_range f) hC
+  rwa [map_zero, exact_zero_iff_injective] at this
+
+/-- **Surjectivity from the reduction modulo `r`.** If `r` is regular on `N`, a power of `r`
+carries every element of `N` into the range of `f`, and `f mod r` is injective, then `f` is
+surjective. -/
+theorem surjective_of_injective_quotSMulTop_map (hN : IsSMulRegular N r)
+    (hC : ∀ y : N, ∃ n : ℕ, r ^ n • y ∈ range f) (h : Injective (QuotSMulTop.map r f)) :
+    Surjective f := by
+  have hsat := (isSMulRegular_quotient_iff_mem_of_smul_mem _ _).mp
+    (isSMulRegular_quotient_range_of_injective_quotSMulTop_map hN h)
+  refine fun y ↦ mem_range.mp ?_
+  obtain ⟨n, hn⟩ := hC y
+  induction n generalizing y with
+  | zero => simpa using hn
+  | succ n ih => exact hsat y (ih (r • y) (by rwa [smul_smul, ← pow_succ]))
+
+/-- **The isomorphism criterion modulo `r`.** Let `f` be injective, `r` regular on `N`, and
+suppose a power of `r` carries every element of `N` into the range of `f`. Then `f` is surjective
+exactly when its reduction `f mod r : M ⧸ rM → N ⧸ rN` is injective. -/
+theorem surjective_iff_injective_quotSMulTop_map (hf : Injective f) (hN : IsSMulRegular N r)
+    (hC : ∀ y : N, ∃ n : ℕ, r ^ n • y ∈ range f) :
+    Surjective f ↔ Injective (QuotSMulTop.map r f) :=
+  ⟨fun hs ↦ (QuotSMulTop.congr r (LinearEquiv.ofBijective f ⟨hf, hs⟩)).injective,
+    surjective_of_injective_quotSMulTop_map hN hC⟩
+
+end TauCeti
+
 namespace LinearMap
 
 variable {R : Type*} [CommSemiring R]
@@ -313,6 +483,79 @@ theorem comap_pow_smul_top_le_of_bounded_torsion (hf : Function.Injective f)
   rw [f.map_smul, hz, smul_smul, ← pow_add, hy]
 
 end LinearMap
+
+namespace IsSMulRegular
+
+open Submodule
+
+variable {R : Type*} [CommRing R] {M N : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {r : R} (hM : IsSMulRegular M r) {f : N →ₗ[R] M}
+include hM
+
+/-- **Injectivity modulo `rⁿ`.** If `r` is regular on `M` and `f x ∈ r M` forces `x ∈ r N`, then
+`f x ∈ rⁿ M` forces `x ∈ rⁿ N`, for every `n`. -/
+theorem comap_pow_smul_top_le (hf : (r • ⊤ : Submodule R M).comap f ≤ r • ⊤) (n : ℕ) :
+    (r ^ n • ⊤ : Submodule R M).comap f ≤ r ^ n • ⊤ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    intro x hx
+    simp only [mem_comap, mem_smul_pointwise_iff_exists, mem_top, true_and] at hx ⊢
+    obtain ⟨y, hy⟩ := hx
+    -- `f x = r • (rⁿ • y)`, so `x = r • x'`; cancelling `r` puts `f x'` in `rⁿ M`.
+    have hfx : f x ∈ (r • ⊤ : Submodule R M) := (mem_smul_pointwise_iff_exists _ _ _).mpr
+      ⟨r ^ n • y, trivial, by rw [← hy, pow_succ', mul_smul]⟩
+    obtain ⟨x', -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp (hf hfx)
+    have hx' : f x' = r ^ n • y := hM <| by
+      beta_reduce
+      rw [← map_smul, ← hy, pow_succ', mul_smul]
+    obtain ⟨z, -, hz⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp <| ih <|
+      mem_comap.mpr <| (mem_smul_pointwise_iff_exists _ _ _).mpr ⟨y, trivial, hx'.symm⟩
+    exact ⟨z, by rw [← hz, pow_succ', mul_smul]⟩
+
+/-- **Bijectivity modulo `rⁿ`.** If `r` is regular on `M` and `f` is bijective modulo `r`, then
+`f` is bijective modulo every power `rⁿ`. -/
+theorem bijective_quotSMulTop_map_pow (hf : Bijective (QuotSMulTop.map r f)) (n : ℕ) :
+    Bijective (QuotSMulTop.map (r ^ n) f) := by
+  refine ⟨QuotSMulTop.map_injective_iff_comap_smul_top_le.mpr <|
+    hM.comap_pow_smul_top_le (QuotSMulTop.map_injective_iff_comap_smul_top_le.mp hf.1) n,
+    QuotSMulTop.map_surjective_iff_range_sup_smul_top_eq_top.mpr ?_⟩
+  have h := sup_pow_smul_top_eq_top (I := Ideal.span {r}) (P := LinearMap.range f) (by
+    rw [ideal_span_singleton_smul]
+    exact QuotSMulTop.map_surjective_iff_range_sup_smul_top_eq_top.mp hf.2) n
+  rwa [Ideal.span_singleton_pow, ideal_span_singleton_smul] at h
+
+/-- If `r` is regular on `M` and `f` is injective modulo `r`, then `f x ∈ ⋂ₙ rⁿ M` forces
+`x ∈ ⋂ₙ rⁿ N`. -/
+theorem comap_iInf_pow_smul_top_le (hf : Injective (QuotSMulTop.map r f)) :
+    (⨅ n : ℕ, (r ^ n • ⊤ : Submodule R M)).comap f ≤ ⨅ n : ℕ, r ^ n • ⊤ := by
+  rw [comap_iInf]
+  exact iInf_mono <|
+    hM.comap_pow_smul_top_le (QuotSMulTop.map_injective_iff_comap_smul_top_le.mp hf)
+
+/-- **What the lattice of lifts misses.** If `r` is regular on `M` and `f` is bijective modulo
+`r`, then multiplication by `r` is bijective on `M ⧸ (range f + ⋂ₙ rⁿ M)`. -/
+theorem bijective_smul_quotient_range_sup_iInf (hf : Bijective (QuotSMulTop.map r f)) :
+    Bijective fun x : M ⧸ (LinearMap.range f ⊔ ⨅ n : ℕ, (r ^ n • ⊤ : Submodule R M)) ↦ r • x := by
+  refine ⟨(isSMulRegular_quotient_iff_mem_of_smul_mem _ _).mpr fun x hx ↦ ?_, ?_⟩
+  · -- Write `r • x = f a + d`; then `f a ∈ r M`, so `a = r • a'`, and `d = r • d'` with `d' ∈ D`.
+    obtain ⟨_, ⟨a, rfl⟩, d, hd, had⟩ := mem_sup.mp hx
+    have hfa : f a ∈ (r • ⊤ : Submodule R M) := by
+      have hd1 : d ∈ (r • ⊤ : Submodule R M) := by
+        simpa using (Submodule.mem_iInf _).mp hd 1
+      rw [show f a = r • x - d by rw [← had, add_sub_cancel_right]]
+      exact sub_mem (smul_mem_pointwise_smul _ _ _ trivial) hd1
+    obtain ⟨a', -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp <|
+      (QuotSMulTop.map_injective_iff_comap_smul_top_le.mp hf.1) hfa
+    obtain ⟨d', hd', rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp
+      (hM.smul_iInf_pow_smul_top.ge hd)
+    have hx' : x = f a' + d' := hM (by beta_reduce; rw [smul_add, ← map_smul, had])
+    exact hx' ▸ add_mem_sup (LinearMap.mem_range_self f a') hd'
+  · -- Every class is `r` times a class, since `range f + r M = M`.
+    exact surjective_smul_quotient_of_sup_smul_top_eq_top
+      (QuotSMulTop.map_surjective_iff_range_sup_smul_top_eq_top.mp hf.2) le_sup_left
+
+end IsSMulRegular
 
 namespace QuotSMulTop
 
@@ -421,6 +664,15 @@ theorem isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem (I : Ideal R) {a b u�
   rw [← (hu₁.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right,
     I.isSMulRegular_quotient_smul_top_congr hab,
     (hu₂.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right]
+
+/-- If `a ∈ I ⊔ (b)` and `a` is regular on `M ⧸ I • M`, then so is `b`. -/
+theorem isSMulRegular_quotient_smul_top_of_mem_sup_span_singleton (I : Ideal R) {a b : R}
+    (hab : a ∈ I ⊔ Ideal.span {b}) (ha : IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a) :
+    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) b := by
+  obtain ⟨i, hi, c, hc, rfl⟩ := Submodule.mem_sup.mp hab
+  obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton'.mp hc
+  -- `i + y b` acts on `M ⧸ I • M` as `y b`
+  exact ((I.isSMulRegular_quotient_smul_top_congr (b := y * b) (by simpa using hi)).mp ha).of_mul
 
 /-- A scalar that is a unit modulo `I` is regular on `M ⧸ I • M`. -/
 theorem isSMulRegular_quotient_smul_top_of_isUnit_mk (I : Ideal R) [I.IsTwoSided] {a : R}

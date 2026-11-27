@@ -43,12 +43,15 @@ of `∏ n ∈ s, cyclotomic n R` are already cofinal.
 * `TauCeti.cycloIndex_le_iff`: the universal property of the generated submonoid.
 * `TauCeti.mem_cycloIndex_iff`: the indices are the finite products of cyclotomic powers of
   orders in `S`.
+* `TauCeti.exists_finite_subset_mem_cycloIndex`: every index already lies in `cycloIndex R U` for
+  a finite subset `U` of `S`.
 * `TauCeti.monic_of_mem_cycloIndex`: every index is monic.
 * `TauCeti.cycloIndex_monotone`, `TauCeti.map_cycloIndex`: monotonicity in `S` and transport along a
   coefficient ring homomorphism.
 * `TauCeti.exists_dvd_cycloChain`: every index divides some member of the cofinal chain.
 * `TauCeti.exists_dvd_prod_cyclotomic_pow`, `TauCeti.exists_dvd_cycloProd_pow`: for finite `s`,
   every index divides a power of `∏ n ∈ s, cyclotomic n R`.
+* `TauCeti.cycloIndex.directed_dvd`: the indices are directed for divisibility.
 * `TauCeti.cycloIndex_eq_bot_iff_subsingleton_or`: over any commutative ring the index monoid is
   trivial exactly when `R` is the zero ring or every order in `S` is zero.
 
@@ -174,6 +177,13 @@ theorem mem_cycloIndex_iff :
         fun _ _ _ ↦ pow_add _ _ _).symm
   · rintro ⟨e, he, rfl⟩
     exact Submonoid.prod_mem _ fun n hn ↦ cyclotomic_pow_mem_cycloIndex (he hn) _
+
+/-- Every index involves only finitely many orders: it lies in `cycloIndex R U` for some finite
+subset `U` of `S`. -/
+theorem exists_finite_subset_mem_cycloIndex (hf : f ∈ cycloIndex R S) :
+    ∃ U ⊆ S, U.Finite ∧ f ∈ cycloIndex R U := by
+  obtain ⟨e, he, rfl⟩ := mem_cycloIndex_iff.mp hf
+  exact ⟨e.support, he, e.support.finite_toSet, mem_cycloIndex_iff.mpr ⟨e, subset_rfl, rfl⟩⟩
 
 variable (R) in
 /-- The `N`-th member `∏_{n ∈ S, 1 ≤ n ≤ N} cyclotomic n R ^ N` of the countable cofinal chain of
@@ -317,11 +327,10 @@ theorem exists_map_eq_of_mem_cycloIndex (φ : R →+* R') {f' : R'[X]}
   rcases hf' with ⟨f, hf, rfl⟩
   exact ⟨⟨f, hf⟩, rfl⟩
 
-/-- Any two indices in `cycloIndex R S` divide a common index in `cycloIndex R S` (namely their
-product), making `(cycloIndex R S, ∣)` directed. -/
-theorem cycloIndex.exists_dvd_and_dvd (f g : cycloIndex R S) :
-    ∃ h : cycloIndex R S, (f : R[X]) ∣ h ∧ (g : R[X]) ∣ h :=
-  ⟨f * g, dvd_mul_right (f : R[X]) g, dvd_mul_left (g : R[X]) f⟩
+/-- The members of `cycloIndex R S` form a directed family for divisibility: any two indices
+divide a common index, namely their product. -/
+theorem cycloIndex.directed_dvd : Directed (· ∣ ·) (fun f : cycloIndex R S ↦ (f : R[X])) :=
+  fun f g ↦ ⟨f * g, dvd_mul_right (f : R[X]) g, dvd_mul_left (g : R[X]) f⟩
 
 variable (R) in
 /-- `cycloChain R S N` bundled as an element of `cycloIndex R S`. -/

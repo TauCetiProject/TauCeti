@@ -76,11 +76,7 @@ lemma isZero_homology_cokernel_ofLE_of_isZero {b m : ℤ}
     (j : ℤ) (hj : b ≤ j) :
     IsZero ((cokernel (Subobject.ofLE (F b) (F j) (hF hj))).homology m) := by
   induction j using Int.inductionOn' (b := b) with
-  | zero =>
-    have : IsIso (Subobject.ofLE (F b) (F b) (hF hj)) := by
-      rw [Subobject.ofLE_refl]
-      infer_instance
-    exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) m).isZero_homology
+  | zero => exact Subobject.isZero_homology_cokernel_ofLE_of_eq rfl m
   | succ i hi ih =>
     -- The short exact sequence `F_i/F_b ⟶ F_{i+1}/F_b ⟶ F_{i+1}/F_i`.
     have hS := TauCeti.cokernelCompSequence_shortExact

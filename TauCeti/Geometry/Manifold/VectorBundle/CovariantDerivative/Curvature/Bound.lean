@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Topology.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
+import TauCeti.Topology.VectorBundle.Riemannian.Comparison
 
 /-!
-# Local bounds for the curvature tensor
+# Bounds for the curvature and Ricci tensors
 
 Let `∇` be a smooth connection on a finite-rank vector bundle `V` over a manifold `M`, and give
 `V` and the tangent bundle of `M` continuous fibre metrics. The curvature tensor of `∇` is
@@ -18,9 +20,17 @@ locally bounded: near each point, `‖R(u, v)w‖ ≤ C ‖u‖ ‖v‖ ‖w‖`
 hence the same holds on every compact subset of `M`. No metric compatibility or torsion
 hypothesis is needed.
 
-The proof reads the tensor in the trivializations at the point, where it is a continuous family
-of trilinear maps on the model fibres (`CovariantDerivative.contMDiff_curvatureTensorCLM`), and
-compares the fibre norms with the model norms by Mathlib's `eventually_norm_trivializationAt_lt`
+For a smooth tangent connection with pointwise positive Ricci curvature, a continuous background
+metric gives a uniform positive Ricci lower bound on each compact set. Specializing to the
+Levi-Civita connection of a smooth metric supplies the uniform Ricci hypothesis in Bonnet–Myers.
+
+For a compact nonempty subset of a manifold of positive dimension, the difference
+`Scal(x) − 2 Ricₓ(v,v)` attains a maximum over the unit tangent vectors based in the subset.
+Only continuity of the background metric is needed.
+
+The curvature bound proof reads the tensor as continuous trilinear maps in the trivializations
+at the point (`CovariantDerivative.contMDiff_curvatureTensorCLM`), and compares the fibre norms
+with the model norms by Mathlib's `eventually_norm_trivializationAt_lt`
 and `eventually_norm_symmL_trivializationAt_lt`. Such bounds feed energy estimates for linear
 equations whose coefficients involve curvature, such as the Jacobi equation along a geodesic.
 
@@ -30,6 +40,17 @@ equations whose coefficients involve curvature, such as the Jacobi equation alon
   each point.
 * `CovariantDerivative.exists_norm_curvatureTensor_le_of_isCompact`: the curvature tensor is
   bounded on each compact set.
+* `IsCompact.exists_pos_mul_norm_sq_le_ricciTensor`: positive Ricci curvature has a uniform
+  positive lower bound on each compact set.
+* `CovariantDerivative.exists_pos_mul_norm_sq_le_ricciTensor_of_compactSpace`: the corresponding
+  bound on a compact manifold.
+* `IsCompact.exists_max_scalarCurvature_sub_two_mul_ricciTensor`: the ambient curvature maximum
+  in the traced Gauss equation.
+
+The uniform positive Ricci bound proof originated in
+[`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/dc053c9/ForTauCeti/Geometry/Manifold/Riemannian/Curvature/Ricci/UniformPositive.lean).
+The traced Gauss maximum originated in the same project
+([`TotalCurvature/Ambient`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/9dcd16306c431e362c8168f08667d5f9da72a2e8/ForTauCeti/Geometry/Manifold/Riemannian/Immersion/MinimalHypersurface/TotalCurvature/Ambient.lean)).
 -/
 
 public section
@@ -133,3 +154,79 @@ theorem exists_norm_curvatureTensor_le_of_isCompact {K : Set M} (hK : IsCompact 
       fun _ hy ↦ hy⟩
 
 end CovariantDerivative
+
+open CovariantDerivative Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+variable
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-- For a smooth tangent connection and a continuous background metric, the expression
+`Scal(x) − 2 Ricₓ(v,v)` on unit tangent vectors over a nonempty compact set attains its
+maximum, provided the tangent space has positive dimension. -/
+theorem IsCompact.exists_max_scalarCurvature_sub_two_mul_ricciTensor
+    {K : Set M} (hK : IsCompact K) (hne : K.Nonempty) [Nontrivial E]
+    (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
+    [ContMDiffCovariantDerivative cov ∞] :
+    ∃ (x : M) (v : TangentSpace I x), x ∈ K ∧ ‖v‖ = 1 ∧
+      ∀ (y : M) (w : TangentSpace I y), y ∈ K → ‖w‖ = 1 →
+        cov.scalarCurvature y - 2 * cov.ricciTensor y w w ≤
+          cov.scalarCurvature x - 2 * cov.ricciTensor x v v := by
+  let U : Set (TangentBundle I M) := {p | p.proj ∈ K ∧ ‖p.snd‖ = 1}
+  have hπ := FiberBundle.continuous_proj E (TangentSpace I : M → Type _)
+  have hU : IsCompact U :=
+    (hK.norm_le_bundle (F := E) (E := TangentSpace I) 1).of_isClosed_subset
+      ((hK.isClosed.preimage hπ).inter
+        (isClosed_eq (TauCeti.continuous_norm_bundle E (TangentSpace I)) continuous_const))
+      (fun _ hp ↦ ⟨hp.1, hp.2.le⟩)
+  obtain ⟨x, hx⟩ := hne
+  have : Nontrivial (TangentSpace I x) := inferInstanceAs (Nontrivial E)
+  obtain ⟨v, hv⟩ := exists_norm_eq (TangentSpace I x) zero_le_one
+  let Q (p : TangentBundle I M) :=
+    cov.scalarCurvature p.proj - 2 * cov.ricciTensor p.proj p.snd p.snd
+  have hQ : Continuous Q :=
+    (cov.continuous_scalarCurvature.comp hπ).sub
+      (continuous_const.mul cov.continuous_ricciTensor_apply_self_tangentBundle)
+  obtain ⟨p, hp, hmax⟩ := hU.exists_isMaxOn ⟨⟨x, v⟩, hx, hv⟩ hQ.continuousOn
+  refine ⟨p.proj, p.snd, hp.1, hp.2, fun y w hy hw ↦ ?_⟩
+  have hwU : (⟨y, w⟩ : TangentBundle I M) ∈ U := ⟨hy, hw⟩
+  exact hmax hwU
+
+/-- A compact set with positive Ricci tensor for a smooth tangent connection has a uniform
+bound `k ‖v‖² ≤ Ric(v,v)` with `k > 0`, measured in a continuous background metric. -/
+theorem IsCompact.exists_pos_mul_norm_sq_le_ricciTensor
+    {K : Set M} (hK : IsCompact K)
+    (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
+    [ContMDiffCovariantDerivative cov ∞]
+    (hpos : ∀ (x : M), x ∈ K → ∀ (v : TangentSpace I x), v ≠ 0 →
+      0 < cov.ricciTensor x v v) :
+    ∃ k > 0, ∀ (x : M), x ∈ K → ∀ (v : TangentSpace I x),
+      k * ‖v‖ ^ 2 ≤ cov.ricciTensor x v v := by
+  have hcont : Continuous (fun x : M ↦
+      TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x
+        (cov.ricciTensor x).toContinuousBilinearMap) :=
+    cov.contMDiff_ricciTensor.continuous
+  obtain ⟨k, hk, hle⟩ := hK.exists_pos_forall_mul_norm_sq_le_bundle
+    (b := id) hcont.continuousOn
+      (fun x hx v hv ↦ by
+        simpa only [LinearMap.toContinuousBilinearMap_apply] using hpos x hx v hv)
+  exact ⟨k, hk, fun x hx v ↦ by
+    simpa only [LinearMap.toContinuousBilinearMap_apply] using hle x hx v⟩
+
+/-- Pointwise positive Ricci curvature of a smooth tangent connection on a compact manifold
+has a uniform positive bound measured in a continuous background metric. -/
+theorem CovariantDerivative.exists_pos_mul_norm_sq_le_ricciTensor_of_compactSpace
+    [CompactSpace M] (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
+    [ContMDiffCovariantDerivative cov ∞]
+    (hpos : ∀ (x : M) (v : TangentSpace I x), v ≠ 0 →
+      0 < cov.ricciTensor x v v) :
+    ∃ k > 0, ∀ (x : M) (v : TangentSpace I x),
+      k * ‖v‖ ^ 2 ≤ cov.ricciTensor x v v := by
+  obtain ⟨k, hk, hle⟩ := isCompact_univ.exists_pos_mul_norm_sq_le_ricciTensor cov
+    (fun x _ v hv ↦ hpos x v hv)
+  exact ⟨k, hk, fun x v ↦ hle x (mem_univ x) v⟩

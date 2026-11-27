@@ -252,7 +252,7 @@ theorem sectionIndex_eq_localIndex_fiberCoord [FiniteDimensional ℝ F] {z : M}
     -- Restricting the fibre coordinate from `U` to `V` does not change its local index.
     have hincl : IsOpenEmbedding (fun x : V ↦ (⟨x.val, hVU x.property⟩ : U)) :=
       (IsOpenEmbedding.of_comp_iff _ U.isOpenEmbedding').1 V.isOpenEmbedding'
-    have h := HomologicalOrientation.localIndex_comap hF (oM.comap U.isOpenEmbedding') oF hincl
+    have h := (oM.comap U.isOpenEmbedding').localIndex_comap oF hF hincl
       IsOpenEmbedding.id (f := fiberCoord hs e hVe) (g := fiberCoord hs e hUe) (x := ⟨z, hzV⟩)
       (.of_forall fun _ ↦ rfl)
     rw [HomologicalOrientation.comap_comap, HomologicalOrientation.comap_id,

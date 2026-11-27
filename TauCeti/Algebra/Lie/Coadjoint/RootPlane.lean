@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
 
@@ -76,6 +78,18 @@ Hessian (`TauCeti.Algebra.Lie.Coadjoint.Height`) and the dimension of the orbit
   coordinates.
 * `TauCeti.IsRootPlane.le_orthogonal`: for an invariant form, root planes with
   `α(H)² ≠ α'(H)²` for some `H ∈ t` are orthogonal.
+* `TauCeti.IsRootPlane.apply_eq_zero_of_forall_lie_eq_zero`: for an invariant form, a root plane
+  with a nonzero root is orthogonal to every element commuting with `t`.
+* `TauCeti.lie_mem_of_lie_eq_smul`: if every `H ∈ t` rotates a pair `x, y` by `α(H)`
+  (`⁅H, x⁆ = α(H) y`, `⁅H, y⁆ = -α(H) x`, as `v, J v` on a root plane) and `t` contains every
+  element commuting with it, then `⁅x, y⁆ ∈ t`; an invariant form pairs `H ∈ t` with `⁅x, y⁆` to
+  `α(H) B(y, y)` (`LinearMap.BilinForm.lieInvariant.apply_lie_eq_mul_of_lie_eq_smul`).
+* `LinearMap.BilinForm.lieInvariant.iIsOrtho_of_lie_eq_smul`,
+  `LinearMap.BilinForm.lieInvariant.root_apply_lie_pos_of_lie_eq_smul`: for `α ≠ 0`, the triple
+  `x, y, ⁅x, y⁆` is orthogonal for a symmetric invariant form, and `α(⁅x, y⁆) > 0` when the form is
+  positive definite and `x ≠ 0`.
+* `LinearMap.BilinForm.lieInvariant.lie_eq_smul_of_lie_eq_smul`: for a symmetric positive
+  definite invariant form, `⁅x, y⁆ = B(y, y) • a` when `⁅x, y⁆ ∈ t` and `a ∈ t` represents `α`.
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
   in `0` when `α(p) ≠ 0`, and lies in it when `α(p) = 0`.
 
@@ -108,6 +122,27 @@ structure IsRootPlane (B : LinearMap.BilinForm R L) (t : Submodule R L) (α : Du
   apply_left (v w : E) : B (J v) w = -B v (J w)
   /-- Every `H ∈ t` acts on the plane by `α(H) J`. -/
   lie_apply (H : t) (v : E) : ⁅(H : L), (v : L)⁆ = α H • (J v : L)
+
+/-! ### Root pairs -/
+
+section RootPair
+
+variable {t : Submodule R L} {α : Dual R t} {x y : L}
+
+/-- If every `H ∈ t` rotates the pair `x, y` by `α(H)`, then `⁅x, y⁆` commutes with `t`. -/
+theorem lie_lie_eq_zero_of_lie_eq_smul (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y)
+    (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) (H : t) : ⁅(H : L), ⁅x, y⁆⁆ = 0 := by
+  rw [leibniz_lie, hx, hy]
+  simp
+
+/-- If every `H ∈ t` rotates the pair `x, y` by `α(H)`, and `t` contains every element commuting
+with it, then `⁅x, y⁆ ∈ t`. -/
+theorem lie_mem_of_lie_eq_smul (ht : ∀ z : L, (∀ H : t, ⁅(H : L), z⁆ = 0) → z ∈ t)
+    (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) :
+    ⁅x, y⁆ ∈ t :=
+  ht _ (lie_lie_eq_zero_of_lie_eq_smul hx hy)
+
+end RootPair
 
 namespace IsRootPlane
 
@@ -237,6 +272,25 @@ theorem apply_lie_lie_eq_zero_of_le_orthogonal (h : IsRootPlane B t α E J)
   rw [h.lie_left, h'.lie_left]
   simp [hzero]
 
+/-- **A root plane is orthogonal to the centralizer of `t`.** For an invariant form `B` and a root
+plane with a nonzero root, `B(H, v) = 0` for every `H` commuting with `t` and every `v` in the
+plane. In particular a root plane is orthogonal to an abelian `t`. -/
+theorem apply_eq_zero_of_forall_lie_eq_zero [NoZeroDivisors R] (h : IsRootPlane B t α E J)
+    (hB : B.lieInvariant L) (hα : α ≠ 0) {H : L} (hH : ∀ H' : t, ⁅(H' : L), H⁆ = 0) (v : E) :
+    B H v = 0 := by
+  obtain ⟨H', hH'⟩ : ∃ H' : t, α H' ≠ 0 := by
+    by_contra! h'
+    exact hα (LinearMap.ext h')
+  -- Invariance under `H'`: `α(H') B(H, J w) = B(H, ⁅H', w⁆) = -B(⁅H', H⁆, w) = 0`.
+  have key (w : E) : α H' * B H (J w) = 0 := by
+    have hinv := hB (H' : L) H (w : L)
+    rw [hH H', map_zero, LinearMap.zero_apply, h.lie_apply, map_smul, smul_eq_mul] at hinv
+    linear_combination hinv
+  -- Every `v` is `-J (J v)`.
+  have hv := key (J v)
+  rw [h.apply_apply, Submodule.coe_neg, map_neg, mul_neg, neg_eq_zero] at hv
+  exact (mul_eq_zero.mp hv).resolve_left hH'
+
 end Orthogonal
 
 /-! #### Root planes and the stabilizer -/
@@ -285,3 +339,94 @@ end Stabilizer
 end IsRootPlane
 
 end TauCeti
+
+namespace LinearMap.BilinForm.lieInvariant
+
+variable {R L : Type*} [LieRing L]
+
+section CommRing
+
+variable [CommRing R] [LieAlgebra R L] {B : LinearMap.BilinForm R L} {t : Submodule R L}
+  {α : Dual R t} {x y : L}
+
+/-- If every `H ∈ t` rotates the pair `x, y` by `α(H)`, then an invariant form pairs `H` with
+`⁅x, y⁆` to `α(H) B(y, y)`. -/
+theorem apply_lie_eq_mul_of_lie_eq_smul (hB : B.lieInvariant L)
+    (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) (H : t) : B H ⁅x, y⁆ = α H * B y y := by
+  have h := hB x H y
+  simp [← lie_skew x (H : L), hx] at h
+  exact h.symm
+
+/-- If every `H ∈ t` rotates the pair `x, y` by a nonzero `α`, then `x`, `y` and `⁅x, y⁆` are
+orthogonal for a symmetric invariant form. -/
+theorem iIsOrtho_of_lie_eq_smul [NoZeroDivisors R] [NeZero (2 : R)] (hB : B.lieInvariant L)
+    (hBs : B.IsSymm) (hα : α ≠ 0) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) :
+    B.iIsOrtho ![x, y, ⁅x, y⁆] := by
+  obtain ⟨H₀, hH₀⟩ : ∃ H₀, α H₀ ≠ 0 := by simpa using DFunLike.ne_iff.mp hα
+  -- `B(x, y) = -B(y, x)` by invariance under `H₀`, and `B` is symmetric.
+  have hxy : B x y = 0 := by
+    have h : α H₀ * B x y = -(α H₀ * B x y) := by simpa [hx, hBs.eq y x] using hB H₀ x x
+    have h2 : 2 * (α H₀ * B x y) = 0 := by linear_combination h
+    exact (mul_eq_zero.mp ((mul_eq_zero.mp h2).resolve_left two_ne_zero)).resolve_left hH₀
+  -- `B(⁅x, y⁆, x) = -B(y, ⁅x, x⁆)` and `B(⁅y, x⁆, y) = -B(x, ⁅y, y⁆)` vanish.
+  have hZx : B ⁅x, y⁆ x = 0 := by simpa using hB x y x
+  have hZy : B ⁅x, y⁆ y = 0 := by
+    rw [← lie_skew, map_neg, LinearMap.neg_apply, neg_eq_zero]
+    simpa using hB y x y
+  rw [iIsOrtho_def]
+  intro i j hij
+  fin_cases i <;> fin_cases j <;>
+    simp [hxy, hZx, hZy, hBs.eq y x, hBs.eq x ⁅x, y⁆, hBs.eq y ⁅x, y⁆] at hij ⊢
+
+end CommRing
+
+section OrderedCommRing
+
+variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [LieAlgebra R L]
+  {B : LinearMap.BilinForm R L} {t : Submodule R L} {α : Dual R t} {x y : L}
+
+/-- If every `H ∈ t` rotates the pair `x ≠ 0, y` by a nonzero `α`, and `⁅x, y⁆ ∈ t`, then
+`α(⁅x, y⁆) > 0` for a positive definite invariant form, since
+`B(⁅x, y⁆, ⁅x, y⁆) = α(⁅x, y⁆) B(y, y)`. This is the positivity that normalizes the coroot of
+`α`. -/
+theorem root_apply_lie_pos_of_lie_eq_smul (hB : B.lieInvariant L) (hBp : B.toQuadraticMap.PosDef)
+    (hα : α ≠ 0) (hx0 : x ≠ 0) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y)
+    (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) (hxy : ⁅x, y⁆ ∈ t) :
+    0 < α ⟨⁅x, y⁆, hxy⟩ := by
+  obtain ⟨H₀, hH₀⟩ : ∃ H₀, α H₀ ≠ 0 := by simpa using DFunLike.ne_iff.mp hα
+  have hpos (v : L) (hv : v ≠ 0) : 0 < B v v := by simpa using hBp v hv
+  have hy0 : y ≠ 0 := by
+    rintro rfl
+    have h := hy H₀
+    rw [lie_zero, eq_comm, neg_eq_zero] at h
+    have h₀ : α H₀ * B x x = 0 := by simpa using congr(B $h x)
+    exact (mul_ne_zero hH₀ (hpos x hx0).ne') h₀
+  have hBZ := hB.apply_lie_eq_mul_of_lie_eq_smul hx
+  have hZ0 : ⁅x, y⁆ ≠ 0 := by
+    intro h
+    have h₀ := hBZ H₀
+    rw [h, map_zero, eq_comm] at h₀
+    exact (mul_ne_zero hH₀ (hpos y hy0).ne') h₀
+  exact (pos_iff_pos_of_mul_pos (hBZ _ ▸ hpos _ hZ0)).mpr (hpos y hy0)
+
+omit [IsStrictOrderedRing R] in
+/-- If every `H ∈ t` rotates the pair `x, y` by `α(H)`, `⁅x, y⁆ ∈ t`, and `a ∈ t` represents `α`
+through a symmetric positive definite invariant form `B`, then `⁅x, y⁆ = B(y, y) • a`: the
+bracket points in the coroot direction of `α`. -/
+theorem lie_eq_smul_of_lie_eq_smul (hB : B.lieInvariant L) (hBs : B.IsSymm)
+    (hBp : B.toQuadraticMap.PosDef) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) (hxy : ⁅x, y⁆ ∈ t)
+    {a : t} (ha : ∀ H : t, B a H = α H) : ⁅x, y⁆ = B y y • (a : L) := by
+  -- `d = ⁅x, y⁆ - B(y, y) • a ∈ t` pairs with itself to `α(d) B(y, y) - B(y, y) α(d) = 0`.
+  set d : t := ⟨⁅x, y⁆, hxy⟩ - B y y • a
+  have h₁ : B d ⁅x, y⁆ = α d * B y y := hB.apply_lie_eq_mul_of_lie_eq_smul hx d
+  have h₂ : B d a = α d := by rw [← ha, hBs.eq]
+  have hd : (d : L) = 0 := by
+    refine hBp.anisotropic _ ?_
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply]
+    calc B (d : L) d = B d ⁅x, y⁆ - B y y * B d a := by simp [d, map_sub]
+      _ = 0 := by rw [h₁, h₂]; ring
+  exact sub_eq_zero.mp hd
+
+end OrderedCommRing
+
+end LinearMap.BilinForm.lieInvariant

@@ -115,9 +115,7 @@ chart. -/
 theorem mvfderiv_mfderiv_symm (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ e.target) :
     mvfderiv 𝓘(ℂ) e (e.symm z)
       (mfderiv 𝓘(ℂ) 𝓘(ℂ) e.symm z ((NormedSpace.fromTangentSpace z).symm 1)) = 1 := by
-  have hd : e.MDifferentiable 𝓘(ℂ) 𝓘(ℂ) :=
-    ⟨fun _ hx ↦ (mdifferentiableAt_of_mem_maximalAtlas he hx).mdifferentiableWithinAt,
-      fun _ hz ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas he hz).mdifferentiableWithinAt⟩
+  have hd : e.MDifferentiable 𝓘(ℂ) 𝓘(ℂ) := mdifferentiable_of_mem_maximalAtlas he
   have := congrArg (fun L ↦ L ((NormedSpace.fromTangentSpace (𝕜 := ℂ) z).symm 1))
     (hd.comp_symm_deriv hz)
   simp only [ContinuousLinearMap.comp_apply] at this
@@ -370,6 +368,17 @@ theorem HolomorphicAt.order_eq_zero [IsManifold 𝓘(ℂ) 1 X] (hω : ω.Holomor
   rw [order_def, ((holomorphicAt_def ω x).1 hω).meromorphicOrderAt_eq,
     analyticOrderAt_eq_zero.2 (Or.inr (coeff_chartAt_ne_zero hx))]
   rfl
+
+/-- A `1`-form holomorphic at `x` has order zero at `x` exactly when it does not vanish at `x`. -/
+theorem HolomorphicAt.order_eq_zero_iff [IsManifold 𝓘(ℂ) 1 X] (hω : ω.HolomorphicAt x) :
+    ω.order x = 0 ↔ ω x ≠ 0 := by
+  refine ⟨fun h hx ↦ ?_, hω.order_eq_zero⟩
+  have hc : ω.coeff (chartAt ℂ x) (chartAt ℂ x x) = 0 :=
+    (coeff_eq_iff ω (chart_mem_maximalAtlas x) (mem_chart_source ℂ x)).2 (by simp [hx])
+  rw [order_def, ((holomorphicAt_def ω x).1 hω).meromorphicOrderAt_eq] at h
+  have h0 : analyticOrderAt (ω.coeff (chartAt ℂ x)) (chartAt ℂ x x) = 0 := by
+    simpa using h
+  exact (analyticOrderAt_eq_zero.1 h0).elim (· hω) (· hc)
 
 /-- A `1`-form meromorphic at `x` is holomorphic on a punctured neighbourhood of `x`. -/
 theorem MeromorphicAt.eventually_holomorphicAt [IsManifold 𝓘(ℂ) 1 X]

@@ -29,10 +29,12 @@ instead.
 The second statement is diagonal extraction for countably many properties of extractions
 (`TauCeti.extraction_forall`): if every extraction has, for each `j`, a further extraction with
 the property `P j`, then one extraction is, for every `j`, eventually a subsequence of an
-extraction with the property `P j`. In particular, a single subsequence makes countably many
-sequences converge at once when every subsequence of each of them has a convergent further
-subsequence (`TauCeti.extraction_forall_exists_tendsto`). This is the compactness step of the
-Arzelà–Ascoli theorem. For finitely many properties of extractions, each preserved by further
+extraction with the property `P j`. When the properties concern the filter `map ψ atTop` and pass
+to finer filters, one extraction has all of them (`TauCeti.extraction_forall_of_antitone`). In
+particular, a single subsequence makes countably many sequences converge at once when every
+subsequence of each of them has a convergent further subsequence
+(`TauCeti.extraction_forall_exists_tendsto`). This is the compactness step of the Arzelà–Ascoli
+theorem. For finitely many properties of extractions, each preserved by further
 extraction, the same holds one property at a time (`TauCeti.extraction_forall_mem_finset`).
 
 Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
@@ -122,6 +124,24 @@ theorem exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le {ψ D : ℕ → ℕ} 
   choose! f hf using hD
   have hev : ∀ᶠ n in atTop, n ≤ f n ∧ D n = ψ (f n) := (eventually_ge_atTop m).mono hf
   exact ⟨f, tendsto_atTop_mono' atTop (hev.mono fun _ h ↦ h.1) tendsto_id, hev.mono fun _ h ↦ h.2⟩
+
+/-- **Diagonal extraction for properties stable under refinement.** Let `P j` be properties of
+filters on `ℕ` that pass from a filter to every finer one. If every extraction has, for each `j`, a
+further extraction `ψ` with `P j (map ψ atTop)`, then one extraction `D` has `P j (map D atTop)` for
+every `j`. -/
+theorem extraction_forall_of_antitone {P : ℕ → Filter ℕ → Prop}
+    (hP : ∀ j ⦃l l' : Filter ℕ⦄, l' ≤ l → P j l → P j l')
+    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ →
+      ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ P j (map (ψ ∘ ψ') atTop)) :
+    ∃ D : ℕ → ℕ, StrictMono D ∧ ∀ j, P j (map D atTop) := by
+  obtain ⟨D, hD, hDP⟩ := extraction_forall (P := fun j ψ ↦ P j (map ψ atTop)) h
+  refine ⟨D, hD, fun j ↦ ?_⟩
+  obtain ⟨ψ, hψ, hDψ⟩ := hDP j
+  -- `D` is eventually a reindexing `ψ ∘ f` of `ψ`, so `map D atTop` refines `map ψ atTop`.
+  obtain ⟨f, hf, hDf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hDψ
+  refine hP j ?_ hψ
+  rw [map_congr hDf, ← map_map]
+  exact map_mono hf
 
 /-- A property eventually true along a sequence `ψ` is eventually true along a sequence `D` whose
 terms from some index on are terms `ψ k` with `k ≥ n`. -/

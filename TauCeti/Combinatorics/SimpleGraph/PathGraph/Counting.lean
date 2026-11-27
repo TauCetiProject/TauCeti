@@ -8,6 +8,9 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.AdjMatrix
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
 public import TauCeti.Combinatorics.PlanarMatching.Counting
+public import TauCeti.Combinatorics.SimpleGraph.EndpointWalk
+public import TauCeti.Combinatorics.SimpleGraph.WalkFrom
+import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
 
 /-!
 # Walk counts on a path graph
@@ -20,6 +23,17 @@ cutoff at least `n` does not affect walks of length `n` starting at zero.
 
 The proof uses the adjacency-matrix walk-counting theorem and the existing ballot
 recurrence, including the vanishing of the upper boundary term.
+
+## Main results
+
+* `TauCeti.card_walk_length_pathGraph`: the `n`-step walks from `0` to `v` are counted by a ballot
+  number.
+* `TauCeti.sum_sq_card_walk_length_pathGraph`: the squared endpoint multiplicities of `n`-step
+  walks from `0` sum to `catalan n`.
+* `SimpleGraph.card_endpointWalk_pathGraph_two`: enumeration of `n`-step walks on `pathGraph 2`.
+* `SimpleGraph.IsWalkFrom.exists_isWalkFrom_pathGraph_of_val_eq_add_one`: if a walk from `0`
+  recorded by its vertex sequence, with `m + 1` steps, ends at `v + 1`, then some walk from `0`
+  with `m` steps ends at `v`.
 
 ## References
 
@@ -114,3 +128,41 @@ theorem sum_sq_card_walk_length_pathGraph {N n : ℕ} (hn : n ≤ N) :
     _ = catalan n := sum_halfCount_sq n
 
 end TauCeti
+
+namespace SimpleGraph
+
+/-- On the path graph, if a walk from `0` with `m + 1` steps ends at `v + 1`, then some walk from
+`0` with `m` steps ends at `v`. -/
+theorem IsWalkFrom.exists_isWalkFrom_pathGraph_of_val_eq_add_one {k : ℕ} :
+    ∀ {m : ℕ} {s : Fin (m + 2) → Fin (k + 1)}, (pathGraph (k + 1)).IsWalkFrom 0 s →
+      ∀ {v : Fin (k + 1)}, (s (Fin.last (m + 1))).val = v.val + 1 →
+        ∃ p : Fin (m + 1) → Fin (k + 1), (pathGraph (k + 1)).IsWalkFrom 0 p ∧ p (Fin.last m) = v
+  | 0, s, hs, v, hv => by
+    have h := hs.adj (a := 0) (b := Fin.last (0 + 1)) (by simp)
+    rw [hs.apply_zero, pathGraph_adj] at h
+    refine ⟨fun _ ↦ 0, (isWalkFrom_zero _).2 rfl, Fin.ext ?_⟩
+    simp only [Fin.val_zero] at h ⊢
+    omega
+  | m + 1, s, hs, v, hv => by
+    have h := hs.adj (a := (Fin.last (m + 1)).castSucc) (b := Fin.last (m + 1 + 1))
+      (by simp)
+    rw [pathGraph_adj] at h
+    by_cases hu : (s (Fin.last (m + 1)).castSucc).val = v.val
+    · exact ⟨Fin.init s, hs.init, Fin.ext hu⟩
+    · obtain ⟨p, hp, hpv⟩ := hs.init.exists_isWalkFrom_pathGraph_of_val_eq_add_one
+        (v := ⟨v.val + 1, by omega⟩) (by simp only [Fin.init_def]; omega)
+      refine ⟨Fin.snoc p v, (isWalkFrom_snoc _ _).2 ⟨hp, ?_⟩, Fin.snoc_last _ _⟩
+      rw [hpv, pathGraph_adj]
+      exact Or.inr rfl
+
+/-- On the two-vertex path `pathGraph 2`, there is one `n`-step walk from `0` to `v` iff
+`v.val = n % 2`. -/
+theorem card_endpointWalk_pathGraph_two (n : ℕ) (v : Fin 2) :
+    Fintype.card ((pathGraph 2).EndpointWalk 0 n v) = if v.val = n % 2 then 1 else 0 := by
+  induction n generalizing v with
+  | zero => rw [card_endpointWalk_zero]; fin_cases v <;> simp
+  | succ n ih =>
+    rw [card_endpointWalk_succ]; simp_rw [ih]; rw [sum_neighborFinset_pathGraph]
+    fin_cases v <;> simp <;> split_ifs <;> omega
+
+end SimpleGraph

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Basic
-public import TauCeti.Geometry.Manifold.Boundary.Collar.ClosedBall
+public import TauCeti.Geometry.Manifold.Boundary.Collar.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 
 /-!
@@ -122,22 +122,13 @@ theorem contMDiff_ballCollarInv {k : ℕ∞ω} :
   · refine ContMDiff.codRestrict_sphere (fun y ↦ ?_) _
     simp only [coe_ballCollarInv_fst]
     exact ((hnorm y).inv₀ (norm_ne_zero_iff.2 y.property)).smul hy.contMDiffAt
-  · have hcoord : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k
-        (fun y : puncturedClosedBall E ↦
-          (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
-            (-Real.log ‖((y : closedBall (0 : E) 1) : E)‖)) := fun y ↦ by
-      have hlog : ContDiffAt ℝ k Real.log ‖((y : closedBall (0 : E) 1) : E)‖ :=
-        Real.contDiffAt_log.2 (norm_ne_zero_iff.2 y.property)
-      exact (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.contMDiffAt.comp y
-        (hlog.comp_contMDiffAt
-          (f := fun y : puncturedClosedBall E ↦ ‖((y : closedBall (0 : E) 1) : E)‖) (hnorm y)).neg
-    have hrange (y : puncturedClosedBall E) :
-        (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
-          (-Real.log ‖((y : closedBall (0 : E) 1) : E)‖) ∈ range (𝓡∂ 1) := by
-      rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
-      simpa using Real.log_nonpos (norm_nonneg _) (mem_closedBall_zero_iff.1 y.val.property)
-    exact ((𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hcoord hrange).congr fun y ↦ by
-      rw [ballCollarInv_snd, Function.comp_apply, EuclideanHalfSpace.normalRay_eq_symm]
+  · simp only [ballCollarInv_snd]
+    refine ContMDiff.normalRay (fun y ↦ ?_) fun y ↦
+      neg_nonneg.2 (Real.log_nonpos (norm_nonneg _) (mem_closedBall_zero_iff.1 y.val.property))
+    have hlog : ContDiffAt ℝ k Real.log ‖((y : closedBall (0 : E) 1) : E)‖ :=
+      Real.contDiffAt_log.2 (norm_ne_zero_iff.2 y.property)
+    exact (hlog.comp_contMDiffAt
+      (f := fun y : puncturedClosedBall E ↦ ‖((y : closedBall (0 : E) 1) : E)‖) (hnorm y)).neg
 
 variable (E) in
 /-- The radial collar as an open partial homeomorphism onto the punctured closed ball. -/

@@ -60,12 +60,17 @@ in the Harish-Chandra projection from the center of `U(L)` to `S(H)`.
 
 * `TauCeti.UniversalEnvelopingAlgebra.instCommRing`: the enveloping algebra of an abelian Lie
   algebra is commutative.
+* `TauCeti.UniversalEnvelopingAlgebra.ι_mem_center`: the canonical generators of the enveloping
+  algebra of an abelian Lie algebra are central.
 * `TauCeti.UniversalEnvelopingAlgebra.isSymmetricAlgebra_ι` and
   `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv`: **`ι : L → U(L)` exhibits `U(L)` as
   the symmetric algebra of `L`**, with the resulting algebra isomorphism `S(L) ≃ₐ[R] U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltration_iff` and
   `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff`:
-  the comparison matches the PBW filtration of `U(L)` with the degree filtration of `S(L)`.
+  the comparison matches the PBW filtration of `U(L)` with the degree filtration of `S(L)`;
+  `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_mem_pbwFiltration_iff` and
+  `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_mem_pbwFiltrationPrevious_iff` state
+  the same in the forward direction.
 * `TauCeti.UniversalEnvelopingAlgebra.mvPolynomialEquiv`: for a basis of `L`, the identification of
   `U(L)` with a polynomial algebra.
 * `TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`: `ι` is injective, with no
@@ -111,6 +116,12 @@ instance instCommRing : CommRing U :=
       rw [adjoin_range_ι R L] at hcomm
       exact setLike_mul_comm (s := (⊤ : Subalgebra R U)) _root_.Algebra.mem_top
         _root_.Algebra.mem_top }
+
+/-- In `U(L)` for an abelian Lie algebra `L`, the canonical generators are central. -/
+theorem ι_mem_center (y : L) :
+    _root_.UniversalEnvelopingAlgebra.ι R y ∈ Subalgebra.center R U :=
+  ι_mem_center_of_mem_center <|
+    (LieModule.mem_maxTrivSubmodule R L L y).mpr fun x => trivial_lie_zero L L x y
 
 /-! ### The comparison with the symmetric algebra -/
 
@@ -238,6 +249,22 @@ theorem symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff {k : ℕ} {u :
   | succ k =>
     rw [TauCeti.Algebra.wordFiltrationPrevious_succ, pbwFiltrationPrevious_succ,
       symmetricAlgebraEquiv_symm_mem_wordFiltration_iff]
+
+/-- The comparison isomorphism sends an element of `S(L)` of degree at most `k` exactly into PBW
+filtration degree `k` of `U(L)`. -/
+@[simp]
+theorem symmetricAlgebraEquiv_mem_pbwFiltration_iff {k : ℕ} {a : SymmetricAlgebra R L} :
+    symmetricAlgebraEquiv R L a ∈ pbwFiltration R L k ↔
+      a ∈ TauCeti.Algebra.wordFiltration (SymmetricAlgebra.ι R L) k := by
+  rw [← symmetricAlgebraEquiv_symm_mem_wordFiltration_iff, AlgEquiv.symm_apply_apply]
+
+/-- The comparison isomorphism matches the steps preceding degree `k` of the degree filtration of
+`S(L)` and of the PBW filtration of `U(L)`. -/
+@[simp]
+theorem symmetricAlgebraEquiv_mem_pbwFiltrationPrevious_iff {k : ℕ} {a : SymmetricAlgebra R L} :
+    symmetricAlgebraEquiv R L a ∈ pbwFiltrationPrevious R L k ↔
+      a ∈ TauCeti.Algebra.wordFiltrationPrevious (SymmetricAlgebra.ι R L) k := by
+  rw [← symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff, AlgEquiv.symm_apply_apply]
 
 /-- **The canonical map of an abelian Lie algebra into its enveloping algebra is injective.** Under
 the comparison it is the canonical map `L → S(L)`, which is injective for every module. For a

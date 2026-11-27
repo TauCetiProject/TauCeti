@@ -15,8 +15,8 @@ Let `k` be a field, `C` an integral proper curve over `k` with finite-dimensiona
 `H¹(C, 𝒪_C)`, possibly singular, and `g : C' ⟶ C` a finite flat morphism over `k` of constant
 rank `n`, where `H⁰(C', 𝒪_{C'})` and `H¹(C', 𝒪_{C'})` are finite-dimensional. Pulling back along
 `g` multiplies degrees by `n` (`LineBundleClass.eulerDegree_pullback_of_finrank_eq`), and by
-`[K(C') : K(C)]` for a finite dominant `g` from an integral scheme when the local rings of `C` are
-valuation rings (`LineBundleClass.eulerDegree_pullback_of_isDominant`).
+`[K(C') : K(C)]` for a finite dominant `g` from an integral scheme
+(`LineBundleClass.eulerDegree_pullback_of_isDominant`).
 
 For intersection numbers this is the **projection formula**. Let `ι : C ⟶ X` be a curve on a
 scheme `X`, for instance a component of the special fibre of a regular model, and let
@@ -90,16 +90,15 @@ theorem intersectionNumber_pullback_of_finrank_eq [Flat g] {n : ℕ} (hg : ∀ x
 be curves, `f : X' ⟶ X` a morphism and `g : C' ⟶ C` a finite dominant morphism with
 `ι' ≫ f = g ≫ ι`, where `C` and `C'` are as in
 `LineBundleClass.eulerDegree_pullback_of_isDominant`. Then
-`(f^* a · C') = [K(C') : K(C)] · (a · C)` for every line-bundle class `a` on `X`. -/
-theorem intersectionNumber_pullback_of_isDominant [IsIntegral C'] [IsDominant g]
-    [∀ y : C, ValuationRing (C.presheaf.stalk y)] (f : X' ⟶ X) {ι' : C' ⟶ X'}
-    (w : ι' ≫ f = g ≫ ι) (a : LineBundleClass X) :
+`(f^* a · C') = [K(C') : K(C)] · (a · C)` for every line-bundle class `a` on `X`. The curve `C`
+may be singular and `g` need not be flat. -/
+theorem intersectionNumber_pullback_of_isDominant [IsIntegral C'] [IsDominant g] (f : X' ⟶ X)
+    {ι' : C' ⟶ X'} (w : ι' ≫ f = g ≫ ι) (a : LineBundleClass X) :
     intersectionNumber k ι' (pullback f a) =
       Module.finrank g.functionFieldMap.hom.fieldRange C'.functionField *
-        intersectionNumber k ι a :=
-  have := g.flat_of_isDominant_of_valuationRing
-  intersectionNumber_pullback_of_finrank_eq k g ι g.finrank_eq_finrank_fieldRange_functionFieldMap
-    f w a
+        intersectionNumber k ι a := by
+  rw [intersectionNumber_pullback, w, intersectionNumber_def, intersectionNumber_def,
+    ← pullback_comp, eulerDegree_pullback_of_isDominant k g]
 
 end LineBundleClass
 

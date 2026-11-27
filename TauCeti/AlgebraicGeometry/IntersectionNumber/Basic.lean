@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Space
 import TauCeti.AlgebraicGeometry.Curves.Normalization
 import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
+import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
 
 /-!
 # Intersection numbers of line bundles with curves
@@ -84,6 +85,8 @@ off-diagonal entries of the intersection matrix.
 * `LineBundleClass.intersectionNumber_eq_zero_of_eq_comp`: every class has intersection number
   zero with a curve contracted to a point; combined with `intersectionNumber_pullback` applied to
   `ι ≫ g`, so does every pullback along a morphism `g` contracting the curve;
+* `LineBundleClass.intersectionNumber_eq_zero_of_isEmpty`: every class has intersection number
+  zero with an empty scheme;
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf`: `(-D · C) = -dim_k Γ(D ∩ C)` for an
   effective Cartier divisor `D` meeting a proper curve `C` properly;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum`: `(D · C)` is the sum
@@ -105,9 +108,13 @@ off-diagonal entries of the intersection matrix.
   possibly singular, with `LineBundleClass.intersectionNumber_pow_of_isIntegral`,
   `LineBundleClass.intersectionNumber_zpow_of_isIntegral` and
   `LineBundleClass.intersectionNumber_prod_of_isIntegral` for powers and finite products;
-* `LineBundleClass.intersectionNumber_mul_of_isClosedImmersion` and
-  `LineBundleClass.intersectionNumber_inv_of_isClosedImmersion`: additivity on an integral closed
+* `LineBundleClass.intersectionNumber_mul_of_isClosedImmersion`,
+  `LineBundleClass.intersectionNumber_inv_of_isClosedImmersion` and
+  `LineBundleClass.intersectionNumber_pow_of_isClosedImmersion`: additivity on an integral closed
   curve, possibly singular, of a proper scheme over `k`;
+* `LineBundleClass.intersectionNumber_eq_eulerDegree_of_isClosedImmersion`: on an integral scheme
+  of dimension at most one, the only integral closed curve is the scheme itself, so the
+  intersection number with it is the degree;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
   additivity on a regular proper integral curve, bundled as
   `LineBundleClass.intersectionNumberHom k ι : Pic X →+ ℤ`; for powers
@@ -199,6 +206,16 @@ theorem intersectionNumber_eq_zero_of_eq_comp {T : Scheme.{u}} (h : C ⟶ T) (j 
     intersectionNumber k ι a = 0 := by
   rw [intersectionNumber_def, w, ← pullback_comp, eq_one_of_forall_specializes ht (pullback j a),
     pullback_one, eulerDegree_one]
+
+/-- **Empty curves.** Every class has intersection number zero with an empty scheme, on which every
+sheaf of modules has trivial cohomology. -/
+@[simp]
+theorem intersectionNumber_eq_zero_of_isEmpty [IsEmpty C] (a : LineBundleClass X) :
+    intersectionNumber k ι a = 0 := by
+  have (M : C.Modules) (j : ℕ) := M.subsingleton_cohomology_of_isEmpty j
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [intersectionNumber_mk, InvertibleSheaf.eulerDegree_eq_finrank_sub]
+  simp only [Module.finrank_zero_of_subsingleton, Nat.cast_zero, sub_self]
 
 section Effective
 
@@ -438,7 +455,42 @@ theorem intersectionNumber_inv_of_isClosedImmersion (hι : C ↘ Spec (.of k) = 
   rw [inv_mul_cancel, intersectionNumber_one] at h
   omega
 
+/-- The intersection number of a power of a class with an integral closed curve of a proper
+`k`-scheme is the corresponding multiple. -/
+theorem intersectionNumber_pow_of_isClosedImmersion (hι : C ↘ Spec (.of k) = ι ≫ x)
+    (hC : topologicalKrullDim C = 1) (a : LineBundleClass X) (n : ℕ) :
+    intersectionNumber k ι (a ^ n) = n * intersectionNumber k ι a := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, intersectionNumber_mul_of_isClosedImmersion k ι hι hC, ih]
+    push_cast
+    ring
+
 end ClosedImmersion
+
+section Curve
+
+variable [IrreducibleSpace C] [IsClosedImmersion ι] [X.Over (Spec (.of k))] [IsIntegral X]
+
+/-- **Curves on a curve.** On an integral `k`-scheme `X` of dimension at most one, the
+intersection number of a class with an irreducible closed curve `C` over `k` is the degree of
+the class on `X`: the curve is all of `X`. -/
+theorem intersectionNumber_eq_eulerDegree_of_isClosedImmersion
+    (hX : topologicalKrullDim X ≤ 1) (hι : C ↘ Spec (.of k) = ι ≫ (X ↘ Spec (.of k)))
+    (hC : topologicalKrullDim C = 1) (a : LineBundleClass X) :
+    intersectionNumber k ι a = eulerDegree k a := by
+  have : Nontrivial C := by
+    by_contra h
+    have : Subsingleton C := not_nontrivial_iff_subsingleton.mp h
+    have h₀ := topologicalKrullDim_zero_of_discreteTopology C
+    rw [hC] at h₀
+    exact absurd h₀ (by decide)
+  have := Scheme.surjective_of_isClosedImmersion hX ι
+  have := isIso_of_isClosedImmersion_of_surjective ι
+  rw [intersectionNumber_def, eulerDegree_pullback_of_isIso ι hι.symm]
+
+end Curve
 
 section Regular
 

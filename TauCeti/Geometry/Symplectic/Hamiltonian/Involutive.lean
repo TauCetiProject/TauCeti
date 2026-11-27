@@ -32,6 +32,9 @@ parametrization satisfying the hypotheses described below:
 * functions whose differentials at `x` vanish on `ker dF_x`, such as functions of `F`, then
   Poisson-commute at `x` as well
   (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_zero_of_ker_le`);
+* linear combinations `v ⬝ᵥ F` of functions that pairwise Poisson-commute at `x` and are
+  differentiable there Poisson-commute at `x`, for any two-form `σ`
+  (`TauCeti.SmoothTwoForm.poissonBracket_dotProduct_eq_zero`);
 * the rank of `F` at `x` (`TauCeti.mfderivRank`, the dimension of the image of `dF_x`) is the
   dimension of the span of the `X_{F_i}(x)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderivRank_eq_finrank_span_hamiltonianVectorField`), so
@@ -71,11 +74,33 @@ Liouville–Arnold theorem, are Lagrangian.
 public section
 
 open Module
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Matrix
 
 namespace TauCeti
 
 namespace SmoothTwoForm
+
+/-! ### Linear combinations of Poisson-commuting functions -/
+
+section LinearCombination
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] {σ : SmoothTwoForm I M}
+
+/-- **Linear combinations of Poisson-commuting functions Poisson-commute.** If functions `Fᵢ`,
+differentiable at `x`, pairwise Poisson-commute at `x`, so do any two of their linear combinations
+`v ⬝ᵥ F` and `w ⬝ᵥ F`. -/
+theorem poissonBracket_dotProduct_eq_zero {ι : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
+    (hF : ∀ i, MDifferentiableAt I 𝓘(ℝ) (F · i) x)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) (v w : ι → ℝ) :
+    σ.poissonBracket (fun y ↦ v ⬝ᵥ F y) (fun y ↦ w ⬝ᵥ F y) x = 0 := by
+  rw [poissonBracket_def, hamiltonianVectorField_dotProduct hF,
+    hamiltonianVectorField_dotProduct hF, ← SmoothForm.bilinFormAt_apply]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
+    SmoothForm.bilinFormAt_apply, ← poissonBracket_def, hcomm, smul_zero, Finset.sum_const_zero]
+
+end LinearCombination
 
 namespace IsNondegenerate
 
@@ -134,10 +159,8 @@ theorem _root_.TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff
       ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
       mvfderiv_apply_eq_mfderiv_apply]
     exact funext_iff
-  · have h0 (f : M → ℝ) : σ.hamiltonianVectorField f x = 0 := by
-      rw [hamiltonianVectorField_def, ContinuousLinearMap.inverse_of_not_isInvertible hinv]
-      rfl
-    simp [poissonBracket_def, h0]
+  · simp [poissonBracket_eq_zero_of_not_isInvertible_flat hinv,
+      hamiltonianVectorField_eq_zero_of_not_isInvertible_flat hinv]
 
 /-- The kernel of `dF_x` is a coisotropic subspace of `T_x M` exactly when
 `{F_i, F_j}(x) = 0` for all `i` and `j`. -/
@@ -163,7 +186,7 @@ theorem poissonBracket_eq_zero_of_ker_le
     have hXk : σ.hamiltonianVectorField k x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker :=
       hσ.hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero
         ((hσ.isCoisotropic_ker_mfderiv_iff hF).2 hcomm) fun _ hv ↦ hk hv
-    rw [hσ.poissonBracket_eq_mvfderiv]
+    rw [σ.poissonBracket_eq_mvfderiv]
     exact hg hXk
   · -- If `F` is not differentiable at `x` then `dF_x = 0`, so `dk_x = 0` and `X_k(x) = 0`.
     rw [mfderiv_zero_of_not_mdifferentiableAt hF] at hk
@@ -171,7 +194,7 @@ theorem poissonBracket_eq_zero_of_ker_le
       ext v
       exact hk (by simp : v ∈ ((0 : TangentSpace I x →L[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)) :
         TangentSpace I x →ₗ[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)).ker)
-    rw [hσ.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_eq_zero_iff.2 hdk, map_zero]
+    rw [σ.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_eq_zero_iff.2 hdk, map_zero]
 
 /-! ### Independent functions -/
 

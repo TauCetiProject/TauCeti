@@ -35,6 +35,7 @@ multiplied by its volume of `U₀`.
 * `TauCeti.HaarMeasureWithValues A G`: finitely additive, left-invariant `A`-valued functions on
   the compact open subsets of `G`.
 * `TauCeti.HaarMeasureWithValues.map`: pushing the values forward along an additive map.
+* `TauCeti.HaarMeasureWithValues.instSMul`: the rescaled Haar measure `c • μ : K ↦ c • μ(K)`.
 * `TauCeti.HaarMeasureWithValues.normalized`: the Haar measure normalised by `μ U₀ = 1` on a
   compact open subgroup `U₀` of invertible pro-order.
 
@@ -177,6 +178,32 @@ theorem map_apply {B : Type*} [AddCommMonoid B] (f : A →+ B) (K : CompactOpens
     μ.map f K = f (μ K) :=
   (rfl)
 
+section SMul
+
+variable {R : Type*}
+
+/-- The rescaled Haar measure `c • μ : K ↦ c • μ(K)`, the pushforward of `μ` along `a ↦ c • a`. -/
+instance instSMul [DistribSMul R A] : SMul R (HaarMeasureWithValues A G) :=
+  ⟨fun c μ ↦ μ.map (DistribSMul.toAddMonoidHom A c)⟩
+
+/-- The rescaled Haar measure gives `K` the volume `c • μ(K)`. -/
+@[simp]
+theorem smul_apply [DistribSMul R A] (c : R) (K : CompactOpens G) : (c • μ) K = c • μ K :=
+  (rfl)
+
+instance [DistribSMul R A] : SMulZeroClass R (HaarMeasureWithValues A G) where
+  smul_zero c := ext fun K ↦ by simp
+
+instance [Monoid R] [DistribMulAction R A] : MulAction R (HaarMeasureWithValues A G) where
+  one_smul μ := ext fun K ↦ by simp
+  mul_smul a b μ := ext fun K ↦ by simp [mul_smul]
+
+instance [Semiring R] [Module R A] : MulActionWithZero R (HaarMeasureWithValues A G) where
+  smul_zero := smul_zero
+  zero_smul μ := ext fun K ↦ by simp
+
+end SMul
+
 end AddCommMonoid
 
 /-! ### Compact open sets as unions of cosets -/
@@ -194,23 +221,15 @@ theorem apply_eq_ncard_smul (K : CompactOpens G) (W : OpenSubgroup G) (hW : IsCo
     μ K = (((↑) : G → G ⧸ (W : Subgroup G)) '' K).ncard • μ (W.toCompactOpens hW) := by
   classical
   have hT := K.isCompact.finite_image_mk W
-  -- `x ∈ q.out • W` exactly when `x` lies in the coset `q`.
-  have hmem (q : G ⧸ (W : Subgroup G)) (x : G) :
-      x ∈ q.out • W.toCompactOpens hW ↔ (x : G ⧸ (W : Subgroup G)) = q := by
-    rw [CompactOpens.mem_smul_iff_inv_smul_mem, OpenSubgroup.mem_toCompactOpens, smul_eq_mul,
-      ← OpenSubgroup.mem_toSubgroup, ← QuotientGroup.eq, QuotientGroup.out_eq', eq_comm]
   have hK : K = hT.toFinset.sup fun q ↦ q.out • W.toCompactOpens hW := by
     refine CompactOpens.ext (Set.ext fun g ↦ ?_)
     simp only [CompactOpens.coe_finsetSup, Set.Finite.mem_toFinset, Set.mem_iUnion, exists_prop,
-      SetLike.mem_coe, hmem, exists_eq_right']
+      SetLike.mem_coe, W.mem_out_smul_toCompactOpens_iff hW, exists_eq_right']
     exact (Subgroup.mk_mem_image_iff_of_forall_mul_mem
       (W := (W : Subgroup G)) (K := (K : Set G)) hKW).symm
-  have hdisj : ((hT.toFinset : Finset (G ⧸ (W : Subgroup G))) : Set (G ⧸ (W : Subgroup G))
-      ).PairwiseDisjoint fun q ↦ ((q.out • W.toCompactOpens hW : CompactOpens G) : Set G) :=
-    fun q _ q' _ hqq' ↦ Set.disjoint_left.2 fun g hg hg' ↦
-      hqq' (((hmem q g).1 hg).symm.trans ((hmem q' g).1 hg'))
   conv_lhs => rw [hK]
-  rw [μ.apply_finsetSup hdisj, Finset.sum_congr rfl fun q _ ↦ μ.apply_smul _ _, Finset.sum_const,
+  rw [μ.apply_finsetSup (W.pairwiseDisjoint_out_smul_toCompactOpens hW _),
+    Finset.sum_congr rfl fun q _ ↦ μ.apply_smul _ _, Finset.sum_const,
     ← Set.ncard_eq_toFinset_card _ hT]
 
 /-- **Index formula.** For compact open subgroups `W ≤ U`, the volume of `U` is `[U : W]` times

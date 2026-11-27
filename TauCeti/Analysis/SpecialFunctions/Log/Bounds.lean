@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Elementary bounds for the real logarithm
@@ -15,7 +16,10 @@ From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x 
 one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
 `x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+real cutoff `x` when passing between inclusive and strict prime sums. From `e² < (3 / 2) ^ 5`
+(Mathlib's `Real.exp_one_lt_d9`) one obtains `log (3 / 2) > 2 / 5`
+(`Real.two_fifths_lt_log_three_halves`), which locates the zero of the unoffset logarithmic
+integral below `3 / 2`.
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
@@ -33,9 +37,17 @@ at `y = log x / 4`: since `L² e^{−L/2}` peaks at `L = 4` with value `16 / e²
 logarithm is at most `16 √x / e²` for `x ≥ 1`. This bounds the prime powers that are not primes
 in explicit prime-counting estimates.
 
+In the other direction, a small logarithm bounds a power from above: if `log z ≤ L` and
+`n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε` for every real `z`
+(`TauCeti.pow_le_one_add_two_mul_of_log_le`), since `z^n ≤ |z^n| ≤ exp (n log z)`
+(`Real.abs_rpow_le_exp_log_mul`) and `exp ε ≤ 1 / (1 - ε) ≤ 1 + 2 ε`. This bounds the powers
+`ζ(s)^n` of a zeta function whose logarithm is bounded by an exponentially decaying function of
+`s`.
+
 ## Main results
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
+* `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
@@ -43,6 +55,8 @@ in explicit prime-counting estimates.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
+* `TauCeti.pow_le_one_add_two_mul_of_log_le`: `z^n ≤ 1 + 2 ε` when `log z ≤ L`, `n L ≤ ε` and
+  `0 ≤ ε ≤ 1 / 2`.
 -/
 
 public section
@@ -55,6 +69,15 @@ theorem log_four_le_two : log 4 ≤ 2 := by
   rw [h4, log_pow]
   norm_num
   linarith [log_le_sub_one_of_pos zero_lt_two]
+
+/-- `2 / 5 < log (3 / 2)`, from `e² < (3 / 2) ^ 5` and `e < 2.7182818286`. -/
+theorem two_fifths_lt_log_three_halves : (2 / 5 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  refine (pow_lt_pow_iff_left₀ (exp_pos _).le (by norm_num) (by norm_num : (5 : ℕ) ≠ 0)).1 ?_
+  rw [← exp_natCast_mul, show ((5 : ℕ) : ℝ) * (2 / 5) = (2 : ℕ) * 1 by norm_num, exp_natCast_mul]
+  have h := exp_one_lt_d9
+  have h0 := (exp_pos 1).le
+  nlinarith
 
 /-- For every nonnegative real `x`, `log x / x ≤ 1 / 2` (holding at `x = 0` via `0 / 0 = 0`). -/
 theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := by
@@ -133,3 +156,23 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
       (log_natCast_nonneg N)
 
 end Real
+
+namespace TauCeti
+
+open Real
+
+/-- **A power with a small logarithm is at most `1 + 2 ε`.** For every real `z`, if `log z ≤ L`
+and `n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε`. -/
+theorem pow_le_one_add_two_mul_of_log_le {z L ε : ℝ} {n : ℕ} (hzL : log z ≤ L) (hL : n * L ≤ ε)
+    (hε0 : 0 ≤ ε) (hε : ε ≤ 1 / 2) : z ^ n ≤ 1 + 2 * ε := by
+  have h := abs_rpow_le_exp_log_mul z n
+  rw [rpow_natCast, mul_comm] at h
+  -- `z ^ n ≤ |z ^ n| ≤ exp (n log z) ≤ exp ε ≤ 1 / (1 - ε) ≤ 1 + 2 ε`.
+  calc z ^ n ≤ exp (n * log z) := (le_abs_self _).trans h
+    _ ≤ exp ε := exp_le_exp.2 ((mul_le_mul_of_nonneg_left hzL (Nat.cast_nonneg n)).trans hL)
+    _ ≤ 1 / (1 - ε) := exp_bound_div_one_sub_of_interval hε0 (by linarith)
+    _ ≤ 1 + 2 * ε := by
+      rw [div_le_iff₀ (by linarith)]
+      nlinarith [mul_nonneg hε0 (by linarith : (0 : ℝ) ≤ 1 - 2 * ε)]
+
+end TauCeti

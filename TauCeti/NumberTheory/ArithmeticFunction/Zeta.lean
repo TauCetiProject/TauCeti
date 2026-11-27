@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import Mathlib.Data.Nat.Choose.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Linarith
+import TauCeti.NumberTheory.Divisors
 
 /-!
 # Convolution powers of the arithmetic zeta function
@@ -21,7 +22,8 @@ are bounded by powers of the ordinary divisor count. The analytic subpower estim
 `TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds`.
 
 The distinct-prime-factor powers are bounded by the corresponding divisor coefficients,
-and the fourth divisor coefficient dominates the squared ordinary divisor count.
+`2 ^ ω n ≤ n` for `n ≠ 0`, and the fourth divisor coefficient dominates the squared ordinary
+divisor count. Since `2 ^ ω n ≤ σ₀ n ≤ 2 √n`, also `2 ^ ω n ≤ 2 * Nat.sqrt n` for `n ≠ 0`.
 
 The prime-power argument is adapted from `d_apply_prime_pow` in
 [Alex Kontorovich, Terence Tao and contributors, *Prime Number Theorem and More*][PNT].
@@ -65,33 +67,39 @@ theorem zeta_pow_succ_apply_le_card_divisors_pow (k n : ℕ) :
   rw [zeta_pow_succ_apply_prime_pow k _ (prime_of_mem_primeFactors hp)]
   exact Nat.choose_add_le_add_one_pow _ _
 
-open scoped omega
+open scoped omega sigma
 
 /-- Distinct-prime-factor powers are bounded by fixed-order divisor coefficients. -/
 theorem pow_cardDistinctFactors_le_zeta_pow (k : ℕ) {n : ℕ} (hn : n ≠ 0) :
     k ^ ω n ≤ (ζ ^ k : ArithmeticFunction ℕ) n := by
-  cases k with
-  | zero =>
-    by_cases hn1 : n = 1
-    · simp [hn1]
-    · have hn_gt : 1 < n := by omega
-      have hω : ω n ≠ 0 := (cardDistinctFactors_pos.mpr hn_gt).ne'
-      simp [hn1, hω]
-  | succ k =>
-    rw [(isMultiplicative_zeta.pow (k := k + 1)).multiplicative_factorization _ hn,
-      prod_factorization_eq_prod_primeFactors]
-    calc
-      (k + 1) ^ ω n = ∏ p ∈ n.primeFactors, (k + 1) := by
-        rw [prod_const, cardDistinctFactors_eq_card_primeFactors]
-      _ ≤ _ := by
-        apply prod_le_prod
-        intro p hp
-        rw [zeta_pow_succ_apply_prime_pow k _ (prime_of_mem_primeFactors hp)]
-        have ha : 1 ≤ n.factorization p :=
-          (prime_of_mem_primeFactors hp).factorization_pos_of_dvd hn (dvd_of_mem_primeFactors hp)
-        calc
-          k + 1 = (k + 1).choose k := (Nat.choose_succ_self_right k).symm
-          _ ≤ _ := Nat.choose_le_choose k (by omega)
+  rw [isMultiplicative_zeta.pow.multiplicative_factorization _ hn,
+    prod_factorization_eq_prod_primeFactors, cardDistinctFactors_eq_card_primeFactors]
+  -- Each prime power `p ^ a` dividing `n` exactly has `a ≥ 1`, so its coefficient is at least `k`.
+  refine pow_card_le_prod _ _ _ fun p hp ↦ ?_
+  obtain _ | k := k
+  · exact Nat.zero_le _
+  have hpp := prime_of_mem_primeFactors hp
+  rw [zeta_pow_succ_apply_prime_pow k _ hpp, ← Nat.choose_succ_self_right k]
+  exact Nat.choose_le_choose k
+    (Nat.lt_add_of_pos_left (hpp.factorization_pos_of_dvd hn (dvd_of_mem_primeFactors hp)))
+
+/-- A positive integer has at most `log₂ n` distinct prime factors: `2 ^ ω n ≤ n`, since each
+distinct prime factor is at least `2` and their product divides `n`. -/
+theorem two_pow_cardDistinctFactors_le {n : ℕ} (hn : n ≠ 0) : 2 ^ ω n ≤ n := by
+  rw [cardDistinctFactors_eq_card_primeFactors]
+  exact (pow_card_le_prod _ _ _ fun p hp ↦ (prime_of_mem_primeFactors hp).two_le).trans
+    (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) (prod_primeFactors_dvd n))
+
+/-- A positive integer has at least `2 ^ ω n` divisors: `2 ^ ω n ≤ σ₀ n`. -/
+theorem two_pow_cardDistinctFactors_le_sigma_zero {n : ℕ} (hn : n ≠ 0) : 2 ^ ω n ≤ σ 0 n := by
+  simpa [sigma_zero_apply] using
+    (pow_cardDistinctFactors_le_zeta_pow 2 hn).trans (zeta_pow_succ_apply_le_card_divisors_pow 1 n)
+
+/-- `2 ^ ω n ≤ 2 √n` for `n ≠ 0`, since `n` has at least `2 ^ ω n` and at most `2 √n` divisors. -/
+theorem two_pow_cardDistinctFactors_le_two_mul_sqrt {n : ℕ} (hn : n ≠ 0) :
+    2 ^ ω n ≤ 2 * n.sqrt :=
+  (two_pow_cardDistinctFactors_le_sigma_zero hn).trans <|
+    (sigma_zero_apply n).trans_le (Nat.card_divisors_le_two_mul_sqrt n)
 
 /-- The fourth fixed-order divisor coefficient dominates the squared divisor count. -/
 theorem sigma_zero_sq_le_zeta_pow_four (n : ℕ) :
