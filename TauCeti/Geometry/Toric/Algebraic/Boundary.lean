@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.Algebra.MonoidAlgebra.Face
 public import TauCeti.Algebra.MonoidAlgebra.TensorProduct
 
+import TauCeti.Algebra.Group.UniqueProds.Submonoid
+
 /-!
 # The integral boundary of a regular toric chart
 
@@ -437,8 +439,6 @@ for a lattice: its ideal is prime. -/
 theorem isPrime_span_boundaryCoordinate_image {R : Type*} [CommSemiring R] [NoZeroDivisors R]
     [Nontrivial R] (J : Set ι) :
     (Ideal.span (boundaryCoordinate R Q '' J)).IsPrime := by
-  have : UniqueSums (boundaryFace Q J) :=
-    .of_injective_addHom (boundaryFace Q J).subtype.toAddHom Subtype.val_injective inferInstance
   rw [span_boundaryCoordinate_image]
   exact (boundaryFace Q J).faceIdeal_isPrime (addSaturated_boundaryFace Q J)
 

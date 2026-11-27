@@ -77,6 +77,13 @@ noncomputable def faceAffineChartRingMap (hτσ : τ.IsFaceOf σ) :
     affineChartRing R hi σ →ₐ[R] affineChartRing R hi τ :=
   mapDomainAlgHom R R (AddSubmonoid.inclusion (dualSemigroup_anti hi hτσ.le))
 
+/-- The underlying ring homomorphism of chart restriction is induced by inclusion of the dual
+semigroups. -/
+theorem toRingHom_faceAffineChartRingMap (hτσ : τ.IsFaceOf σ) :
+    (faceAffineChartRingMap R hi hτσ).toRingHom =
+      mapDomainRingHom R (AddSubmonoid.inclusion (dualSemigroup_anti hi hτσ.le)) :=
+  (rfl)
+
 /-- Restriction along a face sends a monomial to the monomial of the same character. -/
 @[simp]
 theorem faceAffineChartRingMap_single (hτσ : τ.IsFaceOf σ) (m : dualSemigroup hi σ) (r : R) :
@@ -130,10 +137,7 @@ theorem isLocalization_away_faceAffineChartRingMap_inf_ker (hσ : σ.FG) (m : du
         (σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)))) := by
   set F := σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m))
   have hF : F.IsFaceOf σ := PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.property)
-  have hring : (faceAffineChartRingMap R hi hF).toRingHom =
-      mapDomainRingHom R (AddSubmonoid.inclusion (dualSemigroup_anti hi hF.le)) := by
-    apply AddMonoidAlgebra.ringHom_ext <;> simp
-  rw [hring]
+  rw [toRingHom_faceAffineChartRingMap R hi hF]
   refine AddMonoidAlgebra.isLocalization_away_mapDomainRingHom R _
     (AddSubmonoid.inclusion_injective _) m ?_ fun y ↦ ?_
   · -- The image of `m` is an additive unit because `-m` lies in the dual semigroup of the face.
@@ -206,7 +210,9 @@ theorem faceAffineChartMap_comp_specAlgebraMap (hτσ : τ.IsFaceOf σ) :
   exact congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ))
     (faceAffineChartRingMap R hi hτσ).comp_algebraMap
 
-private theorem range_faceAffineChartMap_of_eq (hσ : σ.FG) (hτσ : τ.IsFaceOf σ)
+/-- If `m` exposes the face `τ` of a finitely generated cone `σ`, the image of the chart of
+`τ` in the chart of `σ` is the basic open set where the monomial of `m` does not vanish. -/
+theorem range_faceAffineChartMap_of_eq (hσ : σ.FG) (hτσ : τ.IsFaceOf σ)
     (m : dualSemigroup hi σ)
     (hm : σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) = τ) :
     Set.range (faceAffineChartMap R hi hτσ) =
