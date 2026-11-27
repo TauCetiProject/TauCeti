@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.Internal
 public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
 public import Mathlib.RingTheory.Congruence.Basic
 public import Mathlib.RingTheory.Congruence.Hom
+public import Mathlib.RingTheory.GradedAlgebra.RingHom
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Ring.Parity
@@ -47,6 +48,9 @@ the Milnor ring is not an exterior algebra. The grade involution `σ`, which is 
 * `TauCeti.MilnorK.lift`: the ring homomorphism out of `MilnorK R` attached to an additive map
   `Rˣ → A` killing the Steinberg products.
 * `TauCeti.MilnorK.map`: the ring homomorphism induced by a ring homomorphism `R →+* S`.
+* `TauCeti.MilnorK.gradedMap`, `TauCeti.MilnorK.mapDegree`: the graded ring homomorphism
+  `degree R →+*ᵍ degree S` and degree-`n` `ℤ`-linear maps `K_nᴹ(R) →ₗ[ℤ] K_nᴹ(S)` induced by
+  `R →+* S`.
 * `TauCeti.MilnorK.degreeZeroEquiv`, `TauCeti.MilnorK.degreeOneEquiv`: `ℤ ≃ K_0ᴹ(R)` and
   `Additive Rˣ ≃ K_1ᴹ(R)`.
 * `TauCeti.MilnorK.involute`: the grade involution `σ`, sending `{a}` to `-{a}`.
@@ -62,8 +66,9 @@ the Milnor ring is not an exterior algebra. The grade involution `σ`, which is 
   classes are equal.
 * `TauCeti.MilnorK.lift_mem_of_mem_degree`: `lift` sends `degree R n` into the `n`-th piece of a
   graded target when the additive map lands in its degree-one piece.
-* `TauCeti.MilnorK.degree_eq_span`, `TauCeti.MilnorK.mem_degree_iff`: the degree-`n` group is
-  spanned by the symbols of length `n`, and is the image of the degree-`n` tensors.
+* `TauCeti.MilnorK.degree_eq_span`, `TauCeti.MilnorK.mem_degree_iff`,
+  `TauCeti.MilnorK.degree_linearMap_ext`: the degree-`n` group is spanned by the symbols of length
+  `n`, is the image of the degree-`n` tensors, and supports extensionality on length-`n` symbols.
 * `TauCeti.MilnorK.iSup_degree_eq_top`, `TauCeti.MilnorK.span_range_symbol`: the degree
   submodules exhaust `MilnorK R`, and the symbols span it.
 * `TauCeti.MilnorK.surjective_of_symbol_mem_range`,
@@ -416,6 +421,31 @@ instance instGradedMonoidDegree : SetLike.GradedMonoid (degree R) where
   one_mem := by simpa using symbol_mem_degree ([] : List Rˣ)
   mul_mem _ _ _ _ := mul_mem_degree
 
+/-- Any symbol of a list of length `n` lies in `MilnorK.degree R n`. -/
+theorem symbol_mem_degree_of_length {n : ℕ} {l : List Rˣ} (hl : l.length = n) :
+    symbol l ∈ degree R n :=
+  hl ▸ symbol_mem_degree l
+
+/-- A product of two degree-one unit classes lies in `MilnorK.degree R 2`. -/
+theorem ofUnit_mul_mem_degree_two (a b : Rˣ) : ofUnit a * ofUnit b ∈ degree R 2 :=
+  SetLike.GradedMul.mul_mem (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)
+
+/-- A submodule contains `MilnorK.degree R n` iff it contains every symbol of length `n`. -/
+theorem degree_le_iff {n : ℕ} {S : Submodule ℤ (MilnorK R)} :
+    degree R n ≤ S ↔ ∀ l : List Rˣ, l.length = n → symbol l ∈ S := by
+  rw [degree_eq_span, Submodule.span_le]
+  exact ⟨fun h l hl ↦ h ⟨l, hl, rfl⟩, fun h _ ⟨l, hl, hx⟩ ↦ hx ▸ h l hl⟩
+
+/-- Two `ℤ`-linear maps out of `degree R n` agree if they agree on length-`n` symbols. -/
+theorem degree_linearMap_ext {n : ℕ} {A : Type*} [AddCommMonoid A] [Module ℤ A]
+    {f g : degree R n →ₗ[ℤ] A}
+    (h : ∀ (l : List Rˣ) (hl : l.length = n),
+      f ⟨symbol l, symbol_mem_degree_of_length hl⟩ = g ⟨symbol l, symbol_mem_degree_of_length hl⟩) :
+    f = g := by
+  apply (Submodule.linearMap_eq_iff_of_eq_span f g (degree_eq_span n)).2
+  rintro ⟨_, l, hl, rfl⟩
+  exact h l hl
+
 /-- An element of the Milnor K-ring lies in degree `n` exactly when it is the class of a tensor of
 degree `n`. -/
 theorem mem_degree_iff {n : ℕ} {x : MilnorK R} :
@@ -543,6 +573,59 @@ theorem lift_mem_of_mem_degree {A σ : Type*} [Ring A] [SetLike σ A] [AddSubgro
 theorem map_mem_degree {S : Type*} [CommRing S] (f : R →+* S) {n : ℕ} {x : MilnorK R}
     (hx : x ∈ degree R n) : map f x ∈ degree S n :=
   lift_mem_of_mem_degree _ _ (fun _ ↦ ofUnit_mem_degree_one _) hx
+
+section GradedMap
+
+variable {S T : Type*} [CommRing S] [CommRing T]
+
+/-- Graded ring homomorphism `degree R →+*ᵍ degree S` induced by `f : R →+* S`. -/
+def gradedMap (f : R →+* S) : degree R →+*ᵍ degree S where
+  toRingHom := map f
+  map_mem hx := map_mem_degree f hx
+
+@[simp]
+theorem gradedMap_toRingHom (f : R →+* S) : (gradedMap f).toRingHom = map f :=
+  (rfl)
+
+@[simp]
+theorem gradedMap_apply (f : R →+* S) (x : MilnorK R) : gradedMap f x = map f x :=
+  (rfl)
+
+@[simp]
+theorem gradedMap_id : gradedMap (RingHom.id R) = GradedRingHom.id (degree R) :=
+  GradedRingHom.ext fun x ↦ RingHom.congr_fun map_id x
+
+@[simp]
+theorem gradedMap_comp (g : S →+* T) (f : R →+* S) :
+    gradedMap (g.comp f) = (gradedMap g).comp (gradedMap f) :=
+  GradedRingHom.ext fun x ↦ RingHom.congr_fun (map_comp g f) x
+
+/-- The degree-`n` `ℤ`-linear map `Kₙᴹ(R) →ₗ[ℤ] Kₙᴹ(S)` induced by `f : R →+* S`. -/
+def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n :=
+  ((gradedMap f).gradedAddHom n).toIntLinearMap
+
+@[simp]
+theorem mapDegree_coe (f : R →+* S) (n : ℕ) (x : degree R n) :
+    (mapDegree f n x : MilnorK S) = map f x.val :=
+  (rfl)
+
+@[simp]
+theorem mapDegree_id (n : ℕ) : mapDegree (RingHom.id R) n = LinearMap.id := by
+  ext x; simp
+
+@[simp]
+theorem mapDegree_comp (g : S →+* T) (f : R →+* S) (n : ℕ) :
+    mapDegree (g.comp f) n = (mapDegree g n).comp (mapDegree f n) := by
+  ext x; simp
+
+@[simp]
+theorem mapDegree_symbol (f : R →+* S) {n : ℕ} (l : List Rˣ) (hl : l.length = n) :
+    mapDegree f n ⟨symbol l, symbol_mem_degree_of_length hl⟩ =
+      ⟨symbol (l.map (Units.map f.toMonoidHom)),
+        symbol_mem_degree_of_length (by simp [hl])⟩ :=
+  Subtype.ext (by simp)
+
+end GradedMap
 
 /-! ### The grade involution -/
 
