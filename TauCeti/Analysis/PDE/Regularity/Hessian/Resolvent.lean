@@ -54,6 +54,8 @@ is bounded by the open mapping theorem.
 * `TauCeti.Wkp.heatResolventKernel_convolution_oneSubLaplacianL_ae_eq`: `G₁ ⋆ (w - Δw) = w`.
 * `TauCeti.Wkp.oneSubLaplacianL_injective`, `TauCeti.Wkp.oneSubLaplacianL_surjective`: `1 - Δ` is
   a bijection for `1 < p < ∞`.
+* `TauCeti.Wkp.smul_valueL_sub_laplacianL_surjective`: more generally `μ - Δ` is onto `Lᵖ(E)`
+  for every `μ > 0`, the starting point of the method of continuity for shifted equations.
 * `TauCeti.Wkp.oneSubLaplacianEquiv`: `1 - Δ` as an isomorphism `W^{2,p}(E) ≃L[ℝ] Lᵖ(E)`.
 * `TauCeti.Wkp.value_oneSubLaplacianEquiv_symm_ae`: its inverse is convolution with `G₁`.
 * `TauCeti.exists_wkp_value_ae_eq_heatResolventKernel_convolution`: for `f ∈ Lᵖ(E)`, `G₁ ⋆ f` is
@@ -112,13 +114,13 @@ private theorem mem_graph_weakLaplacianLp (w : Wkp (volume : Measure E) ⊤ p 2)
   refine mem_graph_weakLaplacianLp_iff.2 fun φ ↦ ?_
   simpa only [coeFn_castLpₗᵢ] using integral_laplacian_smul_value_eq_laplacianL 0 w φ
 
-/-- Convolution with the heat resolvent kernel `G₁` is the resolvent of the distributional
-Laplacian on `Lᵖ(E)` at `1`. -/
-private theorem isResolventAt_weakLaplacianLp (hp_top : p ≠ ⊤) :
-    LinearPMap.IsResolventAt (weakLaplacianLp E ℝ p) 1
-      (convolutionLp hp_top (heatResolventKernel 1) volume) := by
+/-- Convolution with the heat resolvent kernel `G_μ` is the resolvent of the distributional
+Laplacian on `Lᵖ(E)` at `μ > 0`. -/
+private theorem isResolventAt_weakLaplacianLp (hp_top : p ≠ ⊤) {μ : ℝ} (hμ : 0 < μ) :
+    LinearPMap.IsResolventAt (weakLaplacianLp E ℝ p) μ
+      (convolutionLp hp_top (heatResolventKernel μ) volume) := by
   rw [← generator_heatSemigroup_eq_weakLaplacianLp hp_top]
-  exact isResolventAt_generator_heatSemigroup hp_top one_pos
+  exact isResolventAt_generator_heatSemigroup hp_top hμ
 
 /-- **Convolution with `G₁` inverts `1 - Δ` on `W^{2,p}(E)`**: for `1 ≤ p < ∞` and
 `w ∈ W^{2,p}(E)`, `G₁ ⋆ (w - Δw) = w` almost everywhere, where `G₁` is the heat resolvent
@@ -129,7 +131,8 @@ theorem heatResolventKernel_convolution_oneSubLaplacianL_ae_eq (hp_top : p ≠ �
   set F := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) (value 2 w)
   set G := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) (value 0 (laplacianL 0 w))
   have hR := ((LinearPMap.isResolventAt_iff_forall_mem_graph.1
-    (isResolventAt_weakLaplacianLp (E := E) hp_top)).2 (F, G)) (mem_graph_weakLaplacianLp w)
+    (isResolventAt_weakLaplacianLp (E := E) hp_top one_pos)).2 (F, G))
+      (mem_graph_weakLaplacianLp w)
   have hFG : ((1 : ℝ) • F - G : Lp ℝ p volume) =ᵐ[volume] oneSubLaplacianL w := by
     filter_upwards [Lp.coeFn_sub ((1 : ℝ) • F) G, Lp.coeFn_smul (1 : ℝ) F,
       (Lp.coeFn_sub (value 2 w) (value 0 (laplacianL 0 w))).filter_mono
@@ -157,24 +160,40 @@ theorem oneSubLaplacianL_injective :
   rw [LinearIsometryEquiv.map_eq_zero_iff] at hF
   exact Wkp.ext 2 (by rw [hF, value_zero'])
 
+/-- **`μ - Δ` is onto `Lᵖ(E)` from `W^{2,p}(E)`** for `μ > 0` and `1 < p < ∞`: every
+`f ∈ Lᵖ(E)` is `μ w - Δw` for some `w ∈ W^{2,p}(E)`, namely the element with value `G_μ ⋆ f`. -/
+theorem smul_valueL_sub_laplacianL_surjective (hp : 1 < p) (hp_top : p ≠ ⊤) {μ : ℝ}
+    (hμ : 0 < μ) :
+    Function.Surjective
+      (μ • valueL 2 - valueL 0 ∘L laplacianL 0 : Wkp (volume : Measure E) ⊤ p 2 →L[ℝ]
+        Lp ℝ p ((volume : Measure E).restrict (⊤ : Opens E))) := by
+  intro y
+  set y' := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) y
+  set R := convolutionLp hp_top (heatResolventKernel μ) (volume : Measure E) (F := ℝ)
+  have hg := mem_graph_weakLaplacianLp_iff.1 ((LinearPMap.isResolventAt_iff_forall_mem_graph.1
+    (isResolventAt_weakLaplacianLp (E := E) hp_top hμ)).1 y')
+  obtain ⟨w, hwv, hwtr⟩ := exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq hp hp_top
+    (Lp.memLp (R y')) (Lp.memLp (μ • R y' - y')) fun φ hφ hc ↦ by
+      exact hg ⟨φ, hφ, hc, fun _ _ ↦ Opens.mem_top _⟩
+  refine ⟨w, Lp.ext ?_⟩
+  rw [Filter.EventuallyEq, Measure.ae_restrict_coe_opens_top]
+  have hΔ := value_laplacianL_zero_ae_eq_trace (mu := (volume : Measure E)) (Omega := ⊤) (p := p) w
+  rw [Measure.ae_restrict_coe_opens_top] at hΔ
+  filter_upwards [(Lp.coeFn_sub (μ • valueL 2 w) (valueL 0 (laplacianL 0 w))).filter_mono
+      Measure.ae_le_ae_restrict_coe_opens_top,
+    (Lp.coeFn_smul μ (valueL 2 w)).filter_mono Measure.ae_le_ae_restrict_coe_opens_top, hΔ, hwv,
+    hwtr, Lp.coeFn_sub (μ • R y') y', Lp.coeFn_smul μ (R y')] with x h₁ h₂ h₃ h₄ h₅ h₆ h₇
+  rw [_root_.sub_apply, _root_.smul_apply, ContinuousLinearMap.comp_apply, h₁, Pi.sub_apply, h₂,
+    Pi.smul_apply, valueL_apply, valueL_apply, h₃, h₄, h₅, h₆, Pi.sub_apply, h₇, Pi.smul_apply,
+    coeFn_castLpₗᵢ, smul_eq_mul]
+  ring
+
 /-- **`1 - Δ` is onto `Lᵖ(E)` from `W^{2,p}(E)`** for `1 < p < ∞`: every `f ∈ Lᵖ(E)` is
 `w - Δw` for some `w ∈ W^{2,p}(E)`. -/
 theorem oneSubLaplacianL_surjective (hp : 1 < p) (hp_top : p ≠ ⊤) :
     Function.Surjective (oneSubLaplacianL (E := E) (p := p)) := by
-  intro y
-  set y' := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) y
-  set R := convolutionLp hp_top (heatResolventKernel 1) (volume : Measure E) (F := ℝ)
-  have hg := mem_graph_weakLaplacianLp_iff.1 ((LinearPMap.isResolventAt_iff_forall_mem_graph.1
-    (isResolventAt_weakLaplacianLp (E := E) hp_top)).1 y')
-  obtain ⟨w, hwv, hwtr⟩ := exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq hp hp_top
-    (Lp.memLp (R y')) (Lp.memLp ((1 : ℝ) • R y' - y')) fun φ hφ hc ↦ by
-      exact hg ⟨φ, hφ, hc, fun _ _ ↦ Opens.mem_top _⟩
-  refine ⟨w, Lp.ext ?_⟩
-  rw [Filter.EventuallyEq, Measure.ae_restrict_coe_opens_top]
-  filter_upwards [oneSubLaplacianL_ae w, hwv, hwtr, Lp.coeFn_sub ((1 : ℝ) • R y') y',
-    Lp.coeFn_smul (1 : ℝ) (R y')] with x h₁ h₂ h₃ h₄ h₅
-  rw [h₁, h₂, h₃, h₄, Pi.sub_apply, h₅, Pi.smul_apply, one_smul, coeFn_castLpₗᵢ]
-  ring
+  simpa only [oneSubLaplacianL, one_smul] using
+    smul_valueL_sub_laplacianL_surjective (E := E) hp hp_top one_pos
 
 /-- **`1 - Δ` as an isomorphism `W^{2,p}(E) ≃ Lᵖ(E)`** for `1 < p < ∞`: `w ↦ w - Δw`, where `Δ`
 is the weak Laplacian. Its inverse is convolution with the heat resolvent kernel
