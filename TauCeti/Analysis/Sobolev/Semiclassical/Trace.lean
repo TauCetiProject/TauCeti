@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Semiclassical.Mixed
 public import TauCeti.Analysis.Sobolev.Semiclassical.UniformlyLocal
 public import TauCeti.Analysis.Sobolev.Trace.IteratedFDeriv
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.BumpFunction.Translates
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
+import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
 # Traces of semiclassical Sobolev norms on hyperplanes
@@ -47,8 +50,29 @@ because `h⁻¹ • ((a, y) - (a, x)) = (0, h⁻¹ • (y - x))`
 (`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_hyperplane_le`), with no compact support needed
 for `f`.
 
-These are the trace estimates for the semiclassical and uniformly local norms in which Taubes
-measures the fields near a pseudoholomorphic curve, at the scale `h = (2r)^(-1/2)`.
+The same holds for the mixed norms `‖·‖_{k,h,V}` (`Submodule.mixedSemiclassicalSobolevNorm`) of
+a tube, which weight each normal derivative by `h`, leave each tangent one unweighted and
+normalize the volume by `h^(dim V)`, for both kinds of hyperplane. Let `V` be a subspace of `E`.
+
+* If the first coordinate of `ℝ × E` is a tangent direction, the normal directions of `ℝ × E`
+  are the vectors `(0, v)`, `v ∈ V`, and
+  `‖u(a, ·)‖_{k,h,V} ≤ (k + 1) 2ᵏ⁺² ‖u‖_{k+1,h,V}`
+  (`Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le_map_inrL2`).
+* If the first coordinate is a normal direction, the normal directions of `ℝ × E` are the
+  vectors `(s, v)`, `v ∈ V`, and `‖u(a, ·)‖_{k,h,V} ≤ (k + 1) 2ᵏ⁺² ‖u‖_{k+1,h,ℝ × V}`
+  (`Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le_comap_sndₗ`).
+
+Both are reduced to the trace estimate at scale one. The mixed norm at scale `h` is the mixed
+norm at scale one of the field read in the normal coordinate rescaled by `h`, and at scale one
+the mixed norm is equivalent to the Sobolev norm (`TauCeti.Analysis.Sobolev.Semiclassical.Mixed`).
+Rescaling the normal coordinate commutes with the restriction to `{a} × E` when the first
+coordinate is tangent, and turns it into the restriction to `{a / h} × E` when it is normal
+(`Submodule.normalDilation_map_inrL2_toLp`, `Submodule.normalDilation_comap_sndₗ_toLp`). Tangent
+hyperplanes cut a tube about a submanifold transversally, and restricting to them repeatedly
+reaches the normal fibres.
+
+These are the trace estimates for the semiclassical, uniformly local and mixed norms in which
+Taubes measures the fields near a pseudoholomorphic curve, at the scale `h = (2r)^(-1/2)`.
 
 ## Main results
 
@@ -59,6 +83,9 @@ measures the fields near a pseudoholomorphic curve, at the scale `h = (2r)^(-1/2
   `(a, x)`.
 * `TauCeti.uniformlyLocalSemiclassicalSobolevNorm_hyperplane_le`: the trace estimate for the
   uniformly local norms.
+* `Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le_map_inrL2`,
+  `Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le_comap_sndₗ`: the trace estimates for the
+  mixed norms of a tube, on a tangent and on a normal hyperplane, uniformly in `h`.
 
 ## References
 
@@ -168,3 +195,91 @@ theorem uniformlyLocalSemiclassicalSobolevNorm_hyperplane_le (hη : ContDiff ℝ
         (semiclassicalSobolevNorm_le_uniformlyLocalSemiclassicalSobolevNorm hb _) zero_le_two)
 
 end TauCeti
+
+/-! ### Traces of the mixed norms -/
+
+namespace Submodule
+
+open MeasureTheory
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (V : Submodule ℝ E) {k : ℕ} {h : ℝ}
+
+/-- The common step of the mixed trace estimates. Let `W` be a subspace of `ℝ × E` and `u` a
+compactly supported function of class `Cᵏ⁺¹` on `ℝ × E`. If a function `g` on `E` read in the
+normal coordinate along `V` rescaled by `h` is the restriction to `{b} × E` of `u` read in the
+normal coordinate along `W` rescaled by `h`, then `‖g‖_{k,h,V} ≤ (k + 1) 2ᵏ⁺² ‖u‖_{k+1,h,W}`. -/
+private theorem mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation_eq
+    (W : Submodule ℝ (WithLp 2 (ℝ × E))) [W.HasOrthogonalProjection]
+    {u : WithLp 2 (ℝ × E) → F} (hu : ContDiff ℝ (k + 1) u) (hsupp : HasCompactSupport u)
+    (hh : 0 < h) {g : E → F} {b : ℝ}
+    (hg : g ∘ V.normalDilation h = fun y ↦ (u ∘ W.normalDilation h) (WithLp.toLp 2 (b, y))) :
+    V.mixedSemiclassicalSobolevNorm k h g ≤
+      (k + 1) * 2 ^ (k + 2) * W.mixedSemiclassicalSobolevNorm (k + 1) h u := by
+  set v := u ∘ W.normalDilation h
+  have hv : ContDiff ℝ (k + 1) v := hu.comp (W.normalDilation h).contDiff
+  have hvc : HasCompactSupport v := by
+    have := hsupp.comp_homeomorph (W.normalDilationEquiv hh.ne').toHomeomorph
+    rwa [ContinuousLinearEquiv.coe_toHomeomorph, W.coeFn_normalDilationEquiv] at this
+  -- The restriction of `v` to `{b} × E` is compactly supported, so its derivatives are in `L²`.
+  have he : Topology.IsClosedEmbedding (fun y : E ↦ WithLp.toLp 2 (b, y)) :=
+    WithLp.isClosedEmbedding_toLp_prodMk_left 2 b
+  have hr : ContDiff ℝ (k + 1) fun y : E ↦ v (WithLp.toLp 2 (b, y)) :=
+    hv.comp (WithLp.contDiff_toLp.comp (contDiff_const.prodMk contDiff_id))
+  have hrc : HasCompactSupport fun y : E ↦ v (WithLp.toLp 2 (b, y)) :=
+    hvc.comp_isClosedEmbedding he
+  have hrm : ∀ n ≤ k, MemLp (iteratedFDeriv ℝ n (g ∘ V.normalDilation h)) 2 := fun n hn ↦
+    hg ▸ hr.memLp_iteratedFDeriv_of_hasCompactSupport (by norm_cast; omega) hrc
+  have hum : ∀ n ≤ k + 1, ∀ a ≤ n, MemLp (W.mixedIteratedFDeriv n a u) 2 := fun n hn a _ ↦
+    W.memLp_mixedIteratedFDeriv
+      (hu.memLp_iteratedFDeriv_of_hasCompactSupport (by exact_mod_cast hn) hsupp) a
+  calc V.mixedSemiclassicalSobolevNorm k h g
+      ≤ (k + 1) * TauCeti.semiclassicalSobolevNorm k 1 (g ∘ V.normalDilation h) :=
+        (V.memLp_mixedIteratedFDeriv_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation
+          hh hrm).2
+    _ = (k + 1) * TauCeti.semiclassicalSobolevNorm k 1 (fun y ↦ v (WithLp.toLp 2 (b, y))) := by
+        rw [hg]
+    _ ≤ (k + 1) * (2 * TauCeti.semiclassicalSobolevNorm (k + 1) 1 v) :=
+        mul_le_mul_of_nonneg_left
+          (TauCeti.semiclassicalSobolevNorm_hyperplane_le hv hvc one_pos b) (by positivity)
+    _ ≤ (k + 1) * (2 * (2 ^ (k + 1) * W.mixedSemiclassicalSobolevNorm (k + 1) h u)) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
+          (W.memLp_iteratedFDeriv_comp_normalDilation_and_semiclassicalSobolevNorm_le hu hum hh).2
+          zero_le_two) (by positivity)
+    _ = (k + 1) * 2 ^ (k + 2) * W.mixedSemiclassicalSobolevNorm (k + 1) h u := by ring
+
+/-- **The trace on a tangent hyperplane, uniformly in the scale.** Let `V` be a subspace of `E`,
+read as the normal directions of `ℝ × E` through the vectors `(0, v)`, `v ∈ V`, so that the first
+coordinate of `ℝ × E` is a tangent direction. For `h > 0` and `u` compactly supported of class
+`Cᵏ⁺¹` on `ℝ × E`, the restriction of `u` to the hyperplane `{a} × E` satisfies
+`‖u(a, ·)‖_{k,h,V} ≤ (k + 1) 2ᵏ⁺² ‖u‖_{k+1,h,V}`. The constant is independent of `h`, `a` and
+`u`. -/
+theorem mixedSemiclassicalSobolevNorm_hyperplane_le_map_inrL2 {u : WithLp 2 (ℝ × E) → F}
+    (hu : ContDiff ℝ (k + 1) u) (hsupp : HasCompactSupport u) (hh : 0 < h) (a : ℝ) :
+    V.mixedSemiclassicalSobolevNorm k h (fun y ↦ u (WithLp.toLp 2 (a, y))) ≤
+      (k + 1) * 2 ^ (k + 2) *
+        (V.map (WithLp.inrL2 ℝ ℝ E).toLinearMap).mixedSemiclassicalSobolevNorm (k + 1) h u :=
+  V.mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation_eq _ hu hsupp hh (b := a) <| by
+    ext y
+    rw [Function.comp_apply, Function.comp_apply, normalDilation_map_inrL2_toLp]
+
+/-- **The trace on a normal hyperplane, uniformly in the scale.** Let `V` be a subspace of `E`,
+read as part of the normal directions of `ℝ × E` through the vectors `(s, v)`, `v ∈ V`, so that
+the first coordinate of `ℝ × E` is a normal direction too. For `h > 0` and `u` compactly
+supported of class `Cᵏ⁺¹` on `ℝ × E`, the restriction of `u` to the hyperplane `{a} × E`
+satisfies `‖u(a, ·)‖_{k,h,V} ≤ (k + 1) 2ᵏ⁺² ‖u‖_{k+1,h,ℝ × V}`. The constant is independent of
+`h`, `a` and `u`; the normalizations of the volume, by `h^(dim V)` on the left and by
+`h^(dim V + 1)` on the right, are those for which a field concentrated at the scale `h` near
+the hyperplane has comparable norms on both sides. -/
+theorem mixedSemiclassicalSobolevNorm_hyperplane_le_comap_sndₗ {u : WithLp 2 (ℝ × E) → F}
+    (hu : ContDiff ℝ (k + 1) u) (hsupp : HasCompactSupport u) (hh : 0 < h) (a : ℝ) :
+    V.mixedSemiclassicalSobolevNorm k h (fun y ↦ u (WithLp.toLp 2 (a, y))) ≤
+      (k + 1) * 2 ^ (k + 2) *
+        (V.comap (WithLp.sndₗ 2 ℝ ℝ E)).mixedSemiclassicalSobolevNorm (k + 1) h u :=
+  V.mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation_eq _ hu hsupp hh (b := a / h) <| by
+    ext y
+    rw [Function.comp_apply, Function.comp_apply, normalDilation_comap_sndₗ_toLp,
+      mul_div_cancel₀ a hh.ne']
+
+end Submodule
