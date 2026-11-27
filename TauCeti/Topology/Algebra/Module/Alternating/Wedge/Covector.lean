@@ -13,7 +13,7 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.LinearAlgebra.Alternating.TopDegree
 
 /-!
-# Top-degree wedges with a covector
+# Wedges with a covector
 
 Let `a` be a real covector on a space `E` of dimension `l + 1`, let `N` be its kernel, and let
 `a(r) = 1`. For a real `l`-form `ψ`, inserting `r` into `a ∧ ψ` and restricting to `N` gives
@@ -33,9 +33,20 @@ linearly independent vectors the wedge is computed on their span, of dimension `
 This is the step from the contact volume form `α ∧ (dα)ⁿ` to the top power of `dα` on the
 hyperplane `ker α`.
 
+In every degree, wedging with a covector is exact. The homotopy formula
+`ι_r (a ∧ ψ) + a ∧ ι_r ψ = a(r) ψ`
+(`ContinuousAlternatingMap.curryLeftTopological_pairedWedge_add_pairedWedge_curryLeftTopological`)
+shows that if `a ∧ ψ = 0` and `a(r) = 1`, then `ψ = a ∧ ι_r ψ`
+(`ContinuousAlternatingMap.pairedWedge_curryLeftTopological_of_pairedWedge_eq_zero`); on `0`-forms
+the wedge with a nonzero covector is injective
+(`ContinuousAlternatingMap.pairedWedge_eq_zero_iff_of_ne_zero`). This is the exactness of the
+symbol sequence of the de Rham complex at nonzero covectors.
+
 ## References
 
 * H. Geiges, *An Introduction to Contact Topology*, Cambridge University Press, 2008, Section 1.1.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer, 2013, Lemma 14.13 (the
+  interior product is an antiderivation).
 -/
 
 public section
@@ -141,5 +152,53 @@ theorem pairedWedge_congr_right_of_compContinuousLinearMap_subtypeL_eq
       simpa only [compContinuousLinearMap_apply, sub_apply, coe_zero, Pi.zero_apply,
         sub_eq_zero] using (congrArg (fun φ : N [⋀^Fin l]→L[ℝ] ℝ ↦ φ w) h).symm)
   rw [← add_sub_cancel ψ ψ', pairedWedge_add_right, hdiff, add_zero]
+
+/-! ### Exactness of the wedge with a covector -/
+
+/-- **The homotopy formula for a covector.** For a real covector `a`, a vector `r` and an
+`(l + 1)`-form `ψ`, the interior products `ι_r` (`ContinuousAlternatingMap.curryLeftTopological`)
+satisfy `ι_r (a ∧ ψ) + a ∧ ι_r ψ = a(r) ψ`, where the degree `l + 1` of `ψ` is identified with
+`1 + l`. -/
+theorem curryLeftTopological_pairedWedge_add_pairedWedge_curryLeftTopological
+    (a : E [⋀^Fin 1]→L[ℝ] ℝ) (ψ : E [⋀^Fin (l + 1)]→L[ℝ] ℝ) (r : E) (w : Fin (1 + l) → E) :
+    curryLeftTopological (n := 1 + l)
+        (pairedWedge (k := 1) (l := l + 1) (ContinuousLinearMap.mul ℝ ℝ)
+          (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a ψ) r w +
+      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a
+        (curryLeftTopological ψ r) w =
+      a ![r] * ψ (w ∘ Fin.cast (Nat.add_comm l 1)) := by
+  have h := curryLeftTopological_pairedWedge (k := 0) (ContinuousLinearMap.mul ℝ ℝ)
+    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a ψ r w
+  rw [h, pairedWedge_apply_zero_left, curryLeftTopological_apply_apply, Matrix.zero_empty]
+  simp [Function.comp_def]
+
+/-- **The wedge with a covector is exact.** If the wedge `a ∧ ψ` of a real covector `a` with an
+`(l + 1)`-form `ψ` vanishes and `a(r) = 1`, then `ψ = a ∧ ι_r ψ` is a wedge with `a`, where the
+degree `1 + l` of the wedge is identified with `l + 1`. -/
+theorem pairedWedge_curryLeftTopological_of_pairedWedge_eq_zero
+    {a : E [⋀^Fin 1]→L[ℝ] ℝ} {ψ : E [⋀^Fin (l + 1)]→L[ℝ] ℝ}
+    (h : pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a ψ =
+      0) {r : E} (hr : a ![r] = 1) (w : Fin (1 + l) → E) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a
+        (curryLeftTopological ψ r) w =
+      ψ (w ∘ Fin.cast (Nat.add_comm l 1)) := by
+  have hc := curryLeftTopological_pairedWedge_add_pairedWedge_curryLeftTopological a ψ r w
+  rwa [h, curryLeftTopological_apply_apply, coe_zero, Pi.zero_apply, zero_add, hr, one_mul] at hc
+
+/-- **The wedge with a nonzero covector is injective on functions.** The wedge `a ∧ c` of a nonzero
+real covector `a` with a `0`-form `c` vanishes only for `c = 0`. -/
+theorem pairedWedge_eq_zero_iff_of_ne_zero {a : E [⋀^Fin 1]→L[ℝ] ℝ} (ha : a ≠ 0)
+    {c : E [⋀^Fin 0]→L[ℝ] ℝ} :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a c = 0 ↔
+      c = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, pairedWedge_zero_right]⟩
+  obtain ⟨v, hv⟩ : ∃ v, a v ≠ 0 := by
+    by_contra! hv
+    exact ha (ext hv)
+  have hc := congrArg (fun φ : E [⋀^Fin (1 + 0)]→L[ℝ] ℝ ↦ φ v) h
+  simp only [pairedWedge_apply_zero_right, ContinuousLinearMap.mul_apply', coe_zero,
+    Pi.zero_apply, mul_eq_zero, hv, false_or] at hc
+  ext w
+  rw [Subsingleton.elim w 0, hc, coe_zero, Pi.zero_apply]
 
 end ContinuousAlternatingMap

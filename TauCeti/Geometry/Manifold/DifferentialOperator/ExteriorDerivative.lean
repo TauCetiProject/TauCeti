@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Elliptic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Covector
 
 /-!
 # The exterior derivative as a differential operator between form bundles
@@ -40,6 +42,15 @@ symbols multiply under composition, the symbols form a complex, `σ(d)(ξ) ∘ �
 (`TauCeti.sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mextDerivSection`):
 the symbol sequence of the de Rham complex.
 
+This sequence is exact at every nonzero covector `ξ`
+(`TauCeti.exact_sectionPrincipalSymbol_mextDerivSection`), so the de Rham complex is an elliptic
+complex: if `ξ ∧ β = 0` and `ξ(r) = 1`, the homotopy formula
+`ι_r (ξ ∧ β) + ξ ∧ ι_r β = ξ(r) β` gives `β = ξ ∧ ι_r β`. In degree `0` the symbol `c ↦ c ξ`
+is injective (`TauCeti.injective_sectionPrincipalSymbol_mextDerivSection_zero`), but its image is
+the line through `ξ`, so `d` on functions is elliptic exactly in dimension at most one
+(`TauCeti.isSectionEllipticAt_mextDerivSection_zero_iff`): a single exterior derivative is not
+elliptic in general, only the complex is.
+
 ## Main results
 
 * `TauCeti.mextDerivSection`: the exterior derivative on smooth sections of the form bundles.
@@ -53,6 +64,12 @@ the symbol sequence of the de Rham complex.
   `d ∘ d = 0`, also in the applied form `d (d s) = 0`.
 * `TauCeti.sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mextDerivSection`:
   the principal symbols of `d` form a complex.
+* `TauCeti.exact_sectionPrincipalSymbol_mextDerivSection`: this symbol complex is exact at every
+  nonzero covector.
+* `TauCeti.injective_sectionPrincipalSymbol_mextDerivSection_zero`: the symbol of `d` on functions
+  is injective at every nonzero covector.
+* `TauCeti.isSectionEllipticAt_mextDerivSection_zero_iff`: `d` on functions is elliptic exactly in
+  dimension at most one.
 
 ## References
 
@@ -66,7 +83,7 @@ public section
 
 noncomputable section
 
-open Bundle
+open Bundle Module
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -206,6 +223,89 @@ theorem sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mext
   simp only [mextDerivSection_comp_mextDerivSection]
   -- The operator `⟨0, _⟩` is the zero element of the submodule of operators of order two.
   exact sectionPrincipalSymbol_zero hx ξ
+
+/-- **The symbol sequence of the de Rham complex is exact.** At a nonzero covector `ξ ∈ T_x*M`,
+the principal symbols `σ(d)(ξ) = ξ ∧ ·` of the exterior derivatives
+`Γ(Λᵏ T*M) → Γ(Λᵏ⁺¹ T*M) → Γ(Λᵏ⁺² T*M)` form an exact sequence: a `(k + 1)`-covector `β` with
+`ξ ∧ β = 0` is `ξ ∧ α` for a `k`-covector `α`. So the de Rham complex is an elliptic complex. -/
+theorem exact_sectionPrincipalSymbol_mextDerivSection (hx : I.IsInteriorPoint x)
+    {ξ : TangentSpace I x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+    Function.Exact
+      (sectionPrincipalSymbol I hx
+        ⟨mextDerivSection I M k, mextDerivSection_mem_differentialOperators_one I M k⟩ ξ)
+      (sectionPrincipalSymbol I hx
+        ⟨mextDerivSection I M (k + 1), mextDerivSection_mem_differentialOperators_one I M (k + 1)⟩
+          ξ) := by
+  refine fun β ↦ ⟨fun hβ ↦ ?_, ?_⟩
+  · -- `ξ ∧ β = 0`, so `β = ξ ∧ ι_r β` for a vector `r` with `ξ r = 1`.
+    have hw : ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
+        (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+        (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) ξ) β = 0 := by
+      ext u
+      simpa [Function.comp_def] using
+        congrArg (fun φ ↦ φ (u ∘ Fin.cast (Nat.add_comm 1 (k + 1)).symm)) hβ
+    obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hξ
+    have hr : ξ ((ξ v)⁻¹ • v) = 1 := by simpa using inv_mul_cancel₀ hv
+    refine ⟨ContinuousAlternatingMap.curryLeftTopological β ((ξ v)⁻¹ • v), ?_⟩
+    ext w
+    rw [sectionPrincipalSymbol_mextDerivSection_apply,
+      ContinuousAlternatingMap.pairedWedge_curryLeftTopological_of_pairedWedge_eq_zero hw
+        (by simpa using hr)]
+    simp [Function.comp_def]
+  · rintro ⟨α, rfl⟩
+    exact LinearMap.congr_fun
+      (sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mextDerivSection hx ξ) α
+
+/-- **The symbol of `d` on functions is injective.** At a nonzero covector `ξ ∈ T_x*M`, the
+principal symbol `σ(d)(ξ) c = c ξ` of `d : Γ(Λ⁰ T*M) → Γ(Λ¹ T*M)` is injective. -/
+theorem injective_sectionPrincipalSymbol_mextDerivSection_zero (hx : I.IsInteriorPoint x)
+    {ξ : TangentSpace I x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+    Function.Injective (sectionPrincipalSymbol I hx
+      ⟨mextDerivSection I M 0, mextDerivSection_mem_differentialOperators_one I M 0⟩ ξ) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro c hc
+  have ha : ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) ξ ≠ 0 :=
+    fun ha ↦ hξ <| ContinuousLinearMap.ext fun v ↦ by simpa using congrArg (· ![v]) ha
+  refine (ContinuousAlternatingMap.pairedWedge_eq_zero_iff_of_ne_zero ha).1 ?_
+  ext u
+  simpa [Function.comp_def] using congrArg (fun φ ↦ φ (u ∘ Fin.cast (Nat.add_comm 1 0).symm)) hc
+
+/-- **`d` on functions is elliptic exactly in dimension at most one.** At an interior point,
+`d : Γ(Λ⁰ T*M) → Γ(Λ¹ T*M)` is elliptic exactly when `dim M ≤ 1`: its symbol `c ↦ c ξ` at a
+nonzero covector `ξ` has the line through `ξ` as image, which is all of `T_x*M` only in dimension
+one. For instance on `ℝ²` the symbol at `ξ = dx` misses `dy`. -/
+theorem isSectionEllipticAt_mextDerivSection_zero_iff (hx : I.IsInteriorPoint x) :
+    IsSectionEllipticAt
+        ⟨mextDerivSection I M 0, mextDerivSection_mem_differentialOperators_one I M 0⟩ x ↔
+      finrank ℝ E ≤ 1 := by
+  refine ⟨fun h ↦ ?_, fun hE ↦ isSectionEllipticAt_iff.2 fun hx' ξ hξ ↦
+    sectionPrincipalSymbol_bijective_of_injective ?_ hx'
+      (injective_sectionPrincipalSymbol_mextDerivSection_zero hx' hξ)⟩
+  · -- In dimension at least two, a covector `η` independent of `ξ ≠ 0` is not `c ξ`.
+    by_contra! hE
+    have hE' : 1 < finrank ℝ (TangentSpace I x →L[ℝ] ℝ) := by
+      rwa [ContinuousLinearMap.dual_finrank_eq]
+    have := Module.nontrivial_of_finrank_pos (zero_lt_one.trans hE')
+    obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace I x →L[ℝ] ℝ)
+    obtain ⟨η, hη⟩ := exists_linearIndependent_pair_of_one_lt_finrank hE' hξ
+    obtain ⟨c, hc⟩ := (h.sectionPrincipalSymbol_bijective hx hξ).2
+      (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) η)
+    have hcη : c 0 • ξ + (-1 : ℝ) • η = 0 := ContinuousLinearMap.ext fun v ↦ by
+      have hv := congrArg (fun φ ↦ φ ![v]) hc
+      simp only [sectionPrincipalSymbol_mextDerivSection_apply] at hv
+      simp at hv
+      simp [← hv, mul_comm]
+    exact one_ne_zero (neg_eq_zero.1 ((LinearIndependent.pair_iff.1 hη) _ _ hcη).2)
+  · -- In dimension one, `0`-covectors and `1`-covectors both form lines.
+    have hpos : 0 < finrank ℝ (TangentSpace I x →L[ℝ] ℝ) :=
+      Module.finrank_pos_iff_exists_ne_zero.2 ⟨ξ, hξ⟩
+    rw [ContinuousLinearMap.dual_finrank_eq] at hpos
+    rw [← (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E (F := ℝ)
+        (ι := Fin 0)).toLinearEquiv.finrank_eq,
+      ← (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ)
+        (0 : Fin 1)).toLinearEquiv.finrank_eq,
+      ContinuousLinearMap.dual_finrank_eq, Module.finrank_self]
+    exact (hE.antisymm hpos).symm
 
 end PrincipalSymbol
 
