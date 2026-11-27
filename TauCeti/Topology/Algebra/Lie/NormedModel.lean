@@ -41,35 +41,15 @@ variable [FiniteDimensional ℝ L]
 
 instance : FiniteDimensional ℝ (NormedModel L) := inferInstanceAs (FiniteDimensional ℝ L)
 
-/-- Coordinates for the normed model in the chosen finite basis. -/
-private def coordinates : NormedModel L ≃ₗ[ℝ] (Fin (Module.finrank ℝ L) → ℝ) :=
-  lieEquiv.toLinearEquiv.trans (Module.finBasis ℝ L).equivFun
-
-/-- The norm of a vector is the supremum norm of its chosen coordinates. -/
-@[no_expose] instance : Norm (NormedModel L) where
-  norm x := ‖coordinates x‖
-
--- Unfold the norm in these proofs to apply the norm laws in the coordinate space.
-private theorem normedSpaceCore : NormedSpace.Core ℝ (NormedModel L) where
-  norm_nonneg x := norm_nonneg (coordinates x)
-  norm_smul c x := by
-    change ‖coordinates (c • x)‖ = ‖c‖ * ‖coordinates x‖
-    rw [map_smul, norm_smul]
-  norm_triangle x y := by
-    change ‖coordinates (x + y)‖ ≤ ‖coordinates x‖ + ‖coordinates y‖
-    rw [map_add]
-    exact norm_add_le _ _
-  norm_eq_zero_iff x := by
-    change ‖coordinates x‖ = 0 ↔ x = 0
-    rw [norm_eq_zero, map_eq_zero_iff _ coordinates.injective]
-
 /-- The additive group is normed by the supremum norm of the chosen coordinates. -/
 instance : NormedAddCommGroup (NormedModel L) :=
-  NormedAddCommGroup.ofCore (𝕜 := ℝ) (by exact normedSpaceCore)
+  let coordinates := lieEquiv.toLinearEquiv.trans (Module.finBasis ℝ L).equivFun
+  NormedAddCommGroup.induced (NormedModel L) _ coordinates coordinates.injective
 
 /-- Scalar multiplication uses the supremum norm in the chosen coordinates. -/
 instance : NormedSpace ℝ (NormedModel L) :=
-  NormedSpace.ofCore (by exact normedSpaceCore)
+  let coordinates := lieEquiv.toLinearEquiv.trans (Module.finBasis ℝ L).equivFun
+  NormedSpace.induced ℝ (NormedModel L) _ coordinates
 
 end NormedModel
 
