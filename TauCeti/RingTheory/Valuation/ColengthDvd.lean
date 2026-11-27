@@ -85,13 +85,9 @@ theorem ColengthDvd.of_det_dvd [Fintype ι] [DecidableEq ι] {A : Matrix ι ι O
   obtain ⟨L₀, Q₀, d, hL₀, hQ₀, h⟩ := exists_mul_mul_eq_diagonal_of_preValuationRing A
   let f (j : ι) : (ι → O) →ₗ[O] O := .proj j ∘ₗ L₀.mulVecLin
   let S (s : Finset ι) : Submodule O (ι → O) := ⨅ j ∈ s, Submodule.comap (f j) (Ideal.span {d j})
-  -- each further coordinate condition costs `d j`
-  have h_chain (s : Finset ι) : ColengthDvd ⊤ (S s) (∏ j ∈ s, d j) := by
-    induction s using Finset.induction with
-    | empty => simp [S]
-    | insert j s hj ih =>
-      simpa only [S, Finset.iInf_insert, inf_comm, prod_insert hj, mul_comm] using
-        ih.trans (colengthDvd_inf_comap_span _ (f j) (d j))
+  have h_chain (s : Finset ι) : ColengthDvd ⊤ (S s) (∏ j ∈ s, d j) :=
+    s.colengthDvd_biInf fun j _ ↦
+      (colengthDvd_inf_comap_span ⊤ (f j) (d j)).mono le_rfl inf_le_right
   -- the last submodule lies in the image of `A = L₀⁻¹ * diagonal d * Q₀⁻¹`
   have h_image : S univ ≤ LinearMap.range A.mulVecLin := by
     intro x hx

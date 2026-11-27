@@ -43,10 +43,11 @@ An endomorphism `y` of `V` is *onto `M` modulo `p ^ n` up to colength `c`* (`p �
   `Submodule.ColengthDvd.exists_smul_mem`: each `x ∈ M` has a multiple `a • x ∈ N` with `a ∣ z`,
   so `z • M ≤ N` (`Submodule.ColengthDvd.smul_le`).
 * `Submodule.ColengthDvd.trans`: `M ⊸_z N` and `N ⊸_a P` give `M ⊸_{z * a} P`.
-* `Submodule.ColengthDvd.inf`, `Finset.colengthDvd_iInf`, `Submodule.ColengthDvd.iInf`:
+* `Submodule.ColengthDvd.inf`, `Finset.colengthDvd_biInf`, `Submodule.ColengthDvd.iInf`:
   the bounds multiply under finite intersections of target submodules.
-* `Submodule.ColengthDvd.exists_matrix_row_mem`: extract a determinant witness in the
-  standard basis of a finite coordinate module using `Submodule.ColengthDvd.exists_matrix`.
+* `Submodule.ColengthDvd.exists_matrix_row_mem`: a colength bound for a submodule of a finite
+  coordinate module gives a square matrix whose rows lie in the submodule and whose determinant
+  divides the bound.
 * `Submodule.ColengthDvd.comap`, `Submodule.ColengthDvd.map`: pull-back and push-forward along a
   linear map.
 * `Submodule.ColengthDvd.map_sup_smul`: if `f(M) ⊆ M`, `M ⊸_z (f(M) + a • M)` and
@@ -187,7 +188,7 @@ theorem ColengthDvd.inf (hN : M.ColengthDvd N z) (hP : M.ColengthDvd P a) :
 
 /-- For targets indexed by a finite set, the colength of their intersection divides the
 product of their individual bounds over the same source. -/
-theorem _root_.Finset.colengthDvd_iInf {ι : Type*} {L : ι → Submodule O V} {b : ι → O}
+theorem _root_.Finset.colengthDvd_biInf {ι : Type*} {L : ι → Submodule O V} {b : ι → O}
     (s : Finset ι) (h : ∀ i ∈ s, M.ColengthDvd (L i) (b i)) :
     M.ColengthDvd (⨅ i ∈ s, L i) (∏ i ∈ s, b i) := by
   classical
@@ -205,7 +206,7 @@ theorem ColengthDvd.iInf {ι : Type*} [Fintype ι] {L : ι → Submodule O V} {b
     (h : ∀ i, M.ColengthDvd (L i) (b i)) :
     M.ColengthDvd (⨅ i, L i) (∏ i, b i) := by
   simpa only [Finset.mem_univ, iInf_pos] using
-    Finset.univ.colengthDvd_iInf (fun i _ ↦ h i)
+    Finset.univ.colengthDvd_biInf (fun i _ ↦ h i)
 
 /-- A colength bound on a submodule of a finite coordinate module gives a matrix whose rows
 lie in that submodule and whose determinant divides the bound. -/

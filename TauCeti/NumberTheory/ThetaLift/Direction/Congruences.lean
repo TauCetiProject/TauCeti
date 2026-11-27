@@ -17,10 +17,16 @@ linear congruence against a distinguished direction. These options have differen
 the two sides: the Frobenius allows the left modulus to be a root of the right modulus.
 The colengths record these costs before passing to valuations and allow constraints from
 several partners to be imposed on the same directions.
+`TauCeti.exists_colengthDvd_frobenius_pairing` uses `Submodule.colengthDvd_inf_comap_span`
+for linear tests and `Submodule.colengthDvd_top_smul_top` for whole-block scaling.
+`TauCeti.DirectionPairExempt` and `TauCeti.directionDeductionCost` describe which pairs
+are exempt and the resulting cost in powers of the source modulus.
 
 The allocation follows `New.exists_congruenceChoice_cost_eq_and_covers` and
-`New.exists_newDirection_dvd` in `grh/src/New/Derivatives/Divisibility/NullFrames.lean`
-of [grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207).
+`New.exists_newDirection_dvd` in `grh/src/New/Derivatives/Divisibility/NullFrames.lean`.
+The exemption and cost follow `New.IsExemptPair` and `New.deductionTerm` in the same file
+of grh-lean (https://github.com/lsernau/grh-lean) at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`.
 -/
 
 public section
@@ -101,6 +107,33 @@ private theorem dvd_of_direction_cover {p e : ℕ} (hp : p.Prime) {d : R}
     rw [hx, scalePow, smul_dotProduct, smul_eq_mul]
     exact dvd_mul_of_dvd_right hy _
 
+/-- A pairing with a distinguished source block is exempt when the source is marked or
+when the partner block is distinguished and its place is marked. -/
+def DirectionPairExempt (markL markR : Bool) (h j : Option ι) : Prop :=
+  h = none ∧ (markL = true ∨ j = none ∧ markR = true)
+
+/-- An ordinary source block is never exempt. -/
+@[simp] theorem directionPairExempt_some_left (markL markR : Bool) (i : ι) (j : Option ι) :
+    DirectionPairExempt markL markR (some i) j ↔ False := by simp [DirectionPairExempt]
+
+/-- With an ordinary partner block, exemption requires a marked distinguished source. -/
+@[simp] theorem directionPairExempt_none_some (markL markR : Bool) (j : ι) :
+    DirectionPairExempt markL markR (none : Option ι) (some j) ↔ markL = true := by
+  simp [DirectionPairExempt]
+
+/-- A pair of distinguished blocks is exempt when either place is marked. -/
+@[simp] theorem directionPairExempt_none_none (markL markR : Bool) :
+    DirectionPairExempt markL markR (none : Option ι) none ↔ markL = true ∨ markR = true := by
+  simp [DirectionPairExempt]
+
+/-- The deduction in powers of the source modulus, where the partner modulus is its
+`q`-th power. The two minima choose between covering the source and covering the partner. -/
+def directionDeductionCost [Fintype ι] (height : ι → ℕ) (a b : Option ι → ℕ) (q : ℕ)
+    (markL markR : Bool) : ℕ :=
+  min (if markL then 0 else a none)
+    (q * ((∑ i, b (some i)) + if markR then 0 else b none)) +
+  (∑ i, a (some i)) + min (∑ i, a (some i) * height i) (q * (∑ i, b (some i) * height i))
+
 /-- Choosing the cheaper side for the two variable costs pays the deduction exactly. -/
 private theorem pairedDirection_cost [Fintype ι] (a b : Option ι → ℕ) (q : ℕ)
     (markL markR : Bool) :
@@ -108,7 +141,6 @@ private theorem pairedDirection_cost [Fintype ι] (a b : Option ι → ℕ) (q :
     let u := if markR then 0 else b none
     let A := ∑ i, a (some i) * height i
     let B := ∑ i, b (some i) * height i
-    let c := ∑ i, a (some i)
     let f := ∑ i, b (some i)
     let leftOne := t ≤ q * (f + u)
     let leftTall := A ≤ q * B
@@ -118,9 +150,9 @@ private theorem pairedDirection_cost [Fintype ι] (a b : Option ι → ℕ) (q :
       (if h.isSome && !decide leftTall then directionBlockSize height h else 0) +
       (if !markL && !decide leftOne && (h.isSome || !markR) then 1 else 0)
     (∑ h, a h * l h) + q * (∑ h, b h * r h) =
-      min t (q * (f + u)) + c + min A (q * B) := by
+      directionDeductionCost height a b q markL markR := by
   classical
-  dsimp only
+  dsimp only [directionDeductionCost]
   rw [Fintype.sum_option, Fintype.sum_option]
   split_ifs <;> simp_all only [Finset.sum_add_distrib, Nat.mul_add, min_def,
     zero_add, add_zero, mul_zero, mul_one, Option.elim_none, Option.elim_some,
@@ -134,13 +166,13 @@ private theorem pairedDirection_cost [Fintype ι] (a b : Option ι → ℕ) (q :
 
 /-- Every nonexempt pair is covered by either a block scaling or a linear test. -/
 private theorem directionChoices_cover (markL markR leftOne leftTall : Bool) (h j : Option ι)
-    (he : ¬(h = none ∧ (markL = true ∨ j = none ∧ markR = true))) :
+    (he : ¬DirectionPairExempt markL markR h j) :
     h.elim (!markL && leftOne) (fun _ ↦ leftTall) = true ∨
     (j.isSome && !leftTall) = true ∨ (j = none ∧ h.isSome = true) ∨
     (h = none ∧ (!markL && !leftOne && (j.isSome || !markR)) = true) := by
   cases h with
   | none =>
-    have hmarkL : markL = false := by cases markL <;> simp_all
+    have hmarkL : markL = false := by cases markL <;> cases j <;> simp_all
     cases leftOne with
     | true => exact .inl (by simp [hmarkL])
     | false =>
@@ -169,11 +201,8 @@ theorem exists_colengthDvd_frobenius_pairing [PreValuationRing R] [Fintype ι]
       (∀ h, (⊤ : Submodule R _).ColengthDvd (L h) (d ^ l h)) ∧
       (∀ h, (⊤ : Submodule R _).ColengthDvd (M h) ((d ^ (p ^ e)) ^ r h)) ∧
       ((∑ h, a h * l h) + p ^ e * (∑ h, b h * r h) =
-        min (if markL then 0 else a none)
-          (p ^ e * ((∑ i, b (some i)) + if markR then 0 else b none)) +
-        (∑ i, a (some i)) +
-        min (∑ i, a (some i) * height i) (p ^ e * (∑ i, b (some i) * height i))) ∧
-      (∀ h j, ¬(h = none ∧ (markL = true ∨ j = none ∧ markR = true)) →
+        directionDeductionCost height a b (p ^ e) markL markR) ∧
+      (∀ h j, ¬DirectionPairExempt markL markR h j →
         ∀ x ∈ L h, ∀ y ∈ M j,
         d ^ (p ^ e) ∣ (fun i ↦ (Y h x i) ^ (p ^ e)) ⬝ᵥ Z j y) := by
   classical
