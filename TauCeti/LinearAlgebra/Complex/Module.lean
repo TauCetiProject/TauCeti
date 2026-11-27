@@ -48,7 +48,8 @@ additive-group parent for use in constructions on real modules.
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
-at `I` (`Units.conj_complexAlgHom_apply`).
+at `I` (`Units.conj_complexAlgHom_apply`). Complex conjugation as an `ℝ`-algebra equivalence is
+its own inverse (`Complex.conjAe_symm`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
 half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). For a real-linear `J`
@@ -116,6 +117,11 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
   simpa only [LinearMap.restrictScalars_apply, LinearMap.toSpanSingleton_apply, one_smul]
     using (LinearMap.apply_eq_re_smul_one_add_im_smul_I
       ((LinearMap.toSpanSingleton ℂ V v).restrictScalars ℝ) z).symm
+
+/-- Complex conjugation as an `ℝ`-algebra equivalence is its own inverse. -/
+@[simp]
+theorem conjAe_symm : conjAe.symm = conjAe :=
+  AlgEquiv.ext fun z ↦ by rw [AlgEquiv.symm_apply_eq]; simp
 
 end Complex
 

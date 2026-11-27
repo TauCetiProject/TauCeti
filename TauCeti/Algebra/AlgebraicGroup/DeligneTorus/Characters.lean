@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Splitting
 public import TauCeti.Algebra.Bialgebra.GroupLike.ScalarAut
 public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.GroupLike
 import TauCeti.Data.Finsupp.Fin
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Hodge cocharacters and algebraic character lattice of the Deligne torus
@@ -289,16 +290,13 @@ theorem ofConv_characterLatticeEquiv_symm (pq : ℤ × ℤ)
     mapDomain_baseChangeComplexBialgEquiv_symm]
   simp
 
-private lemma conjAe_symm : Complex.conjAe.symm = Complex.conjAe :=
-  AlgEquiv.ext fun z ↦ by rw [AlgEquiv.symm_apply_eq]; simp
-
 private lemma ofConv_conjAe_smul (g : WithConv (baseChangeComplex →ₐ[ℂ] ℂ))
     (z : ℂ ⊗[ℝ] S) :
     g.ofConv (Complex.conjAe • z) =
       star (((baseChangeComplexPointsMulEquiv ℂ).symm
         (AlgHom.mapValue Complex.conjAe.toAlgHom
           (baseChangeComplexPointsMulEquiv ℂ g))).ofConv z) := by
-  simp [g.ofConv.apply_scalarAut_smul Complex.conjAe z, conjAe_symm]
+  simp [g.ofConv.apply_scalarAut_smul Complex.conjAe z]
 
 private lemma characterGroup_swap_conj (pq : ℤ × ℤ) (f : WithConv (S →ₐ[ℝ] ℂ)) :
     characterGroup ℂ (.ofAdd pq.swap) f =
