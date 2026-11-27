@@ -140,7 +140,7 @@ theorem tan_div_two_eq_iff_eq_gwAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 π) :
   have key : numer θ = 2 * sin (θ / 2) * (sin (θ / 2) - θ * cos (θ / 2)) := by
     have h2 : θ = 2 * (θ / 2) := by ring
     conv_lhs => rw [numer, h2, cos_two_mul, sin_two_mul]
-    nlinarith [sin_sq_add_cos_sq (θ / 2)]
+    linear_combination (-2) * sin_sq_add_cos_sq (θ / 2)
   rw [← numer_eq_zero_iff hθ.1 hθ.2.le, key, tan_eq_sin_div_cos, div_eq_iff hc.ne']
   constructor
   · intro h; rw [h]; ring
@@ -227,16 +227,9 @@ theorem gwConstant_eq_iff {θ : ℝ} (hθ : θ ∈ Ioc 0 π) :
 
 /-- The cosine of the Goemans–Williamson angle: `cos θ₀ = (1 - θ₀²) / (1 + θ₀²)`. -/
 theorem cos_gwAngle : cos gwAngle = (1 - gwAngle ^ 2) / (1 + gwAngle ^ 2) := by
-  have hn : 1 - cos gwAngle = gwAngle * sin gwAngle := by
-    have := numer_gwAngle; unfold numer at this; linarith
-  have hpos : 0 < 1 - cos gwAngle :=
-    one_sub_cos_pos gwAngle_pos (by linarith [gwAngle_mem_Ioo.2, pi_pos])
-  have key : 1 - cos gwAngle = gwAngle ^ 2 * (1 + cos gwAngle) := by
-    refine mul_left_cancel₀ hpos.ne' ?_
-    linear_combination (1 - cos gwAngle + gwAngle * sin gwAngle) * hn +
-      gwAngle ^ 2 * sin_sq_add_cos_sq gwAngle
-  rw [eq_div_iff (by positivity)]
-  linarith
+  have hne : cos gwAngle ≠ -1 := fun h ↦ (one_add_cos_pos (by linarith [gwAngle_pos, pi_pos])
+    gwAngle_mem_Ioo.2).ne' (by rw [h]; ring)
+  rw [cos_eq_two_mul_tan_half_div_one_sub_tan_half_sq gwAngle hne, tan_gwAngle_div_two]
 
 /-- The closed form `gwConstant = (1 + θ₀²) / (π θ₀)` at the Goemans–Williamson angle `θ₀`. -/
 theorem gwConstant_eq_one_add_sq_div : gwConstant = (1 + gwAngle ^ 2) / (π * gwAngle) := by
