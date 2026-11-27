@@ -9,7 +9,9 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cap.RestrictScalars
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.IntersectionForm
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.CapDuality
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Prod
+public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
 import TauCeti.CategoryTheory.Linear.Int
 
@@ -44,6 +46,16 @@ both are `dim Hᵖ(M; k)`
 For a closed oriented three-manifold `Y` with finite-dimensional real cohomology, `k = ℝ`, `d = 0`
 and `p = 1`, this is `b₂⁺ = b₂⁻ = b₁(Y)` for the real cup pairing of `S¹ × Y` against
 `[S¹] × [Y]_ℝ`.
+
+A map `f : M → N` of compact oriented `n`-manifolds with `N` preconnected carries `[M]_k` to
+`deg f • [N]_k` (`TauCeti.HomologicalOrientation.map_fundamentalClassOver_eq_degree_smul`), so by
+naturality of the cup pairing `⟨f^*α ⌣ f^*β, [M]_k⟩ = deg f • ⟨α ⌣ β, [N]_k⟩`
+(`singularCupPairing_singularCohomologyMap_fundamentalClassOver_eq_degree_smul`).
+In particular a self-map of degree one, such as an orientation-preserving homeomorphism, is an
+isometry of the cup pairing on the middle cohomology
+(`TauCeti.HomologicalOrientation.isIsometry_singularCohomologyMap_of_degree_eq_one`). On a closed
+oriented surface over a field with `2 ≠ 0` that pairing on `H¹(M; k)` is nondegenerate and
+alternating, so the action of such a map on `H¹(M; k)` is symplectic.
 
 **The fundamental class of `Sᵈ⁺¹ × M`.** Over a field, `[M]_k` is nonzero on a nonempty `M`, since
 the unit of `H⁰(M; k)` pairs nontrivially against it
@@ -168,6 +180,43 @@ theorem isFundamentalClass_fundamentalClassOver [CompactSpace M] [ConnectedSpace
   (isFundamentalClass_iff_ne_zero hn _).2 (o.fundamentalClassOver_ne_zero hn k)
 
 end Field
+
+section Degree
+
+variable {N F : Type} [TopologicalSpace N] [T2Space N] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] [ChartedSpace F N] {n : ℕ} (o : HomologicalOrientation M E n)
+  (o' : HomologicalOrientation N F n) (hn : finrank ℝ E = n) (k : Type) [CommRing k]
+  [CompactSpace M]
+
+/-- **The cup pairing under a map of degree `d`**: for a map `f : M → N` of compact oriented
+`n`-manifolds with `N` preconnected, a commutative ring `k` and classes `α ∈ Hᵖ(N; k)`,
+`β ∈ H^q(N; k)` with `p + q = n`, `⟨f^*α ⌣ f^*β, [M]_k⟩ = deg f • ⟨α ⌣ β, [N]_k⟩`. -/
+theorem singularCupPairing_singularCohomologyMap_fundamentalClassOver_eq_degree_smul
+    (hF : finrank ℝ F = n) [CompactSpace N] [PreconnectedSpace N] {p q : ℕ} (h : p + q = n)
+    (f : C(M, N))
+    (α : (TopCat.of N).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) p)
+    (β : (TopCat.of N).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) q) :
+    (TopCat.of M).singularCupPairing k h (o.fundamentalClassOver hn k)
+        (TopCat.singularCohomologyMap (TopCat.ofHom f) p α)
+        (TopCat.singularCohomologyMap (TopCat.ofHom f) q β) =
+      o.degree o' hn f •
+        (TopCat.of N).singularCupPairing k h (o'.fundamentalClassOver hF k) α β := by
+  rw [TopCat.singularCupPairing_naturality, o.map_fundamentalClassOver_eq_degree_smul o' hn hF,
+    TopCat.singularCupPairing_apply, TopCat.singularCupPairing_apply, map_zsmul]
+
+/-- **A map of degree one preserves the middle cup pairing**: for a self-map `f` of degree one of
+a compact connected oriented `n`-manifold, such as an orientation-preserving homeomorphism, and
+`p + p = n`, the pull-back `f^*` on `Hᵖ(M; k)` is an isometry of the cup pairing
+`(α, β) ↦ ⟨α ⌣ β, [M]_k⟩`. -/
+theorem isIsometry_singularCohomologyMap_of_degree_eq_one [PreconnectedSpace M] {p : ℕ}
+    (h : p + p = n) {f : C(M, M)} (hf : o.degree o hn f = 1) :
+    BilinForm.IsIsometry ((TopCat.of M).singularCupPairing k h (o.fundamentalClassOver hn k))
+      (TopCat.singularCohomologyMap (TopCat.ofHom f) p).hom :=
+  BilinForm.isIsometry_iff.2 fun α β ↦ by
+    simpa [hf] using o.singularCupPairing_singularCohomologyMap_fundamentalClassOver_eq_degree_smul
+      o hn k hn h f α β
+
+end Degree
 
 section Prod
 

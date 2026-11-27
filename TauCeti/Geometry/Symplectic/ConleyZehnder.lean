@@ -111,9 +111,8 @@ which `ω` has the matrix `J`, the matrix of a linear map preserving `ω` is a s
 theorem toMatrix_mem_symplecticGroup {b : Basis (ι ⊕ ι) ℝ V}
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) {A : V →ₗ[ℝ] V}
     (hA : ∀ u v, ω (A u) (A v) = ω u v) :
-    LinearMap.toMatrix b b A ∈ symplecticGroup ι ℝ := by
-  rw [SymplecticGroup.mem_iff', ← hb]
-  exact (TauCeti.BilinForm.isIsometry_iff_toMatrix b).1 (TauCeti.BilinForm.isIsometry_iff.2 hA)
+    LinearMap.toMatrix b b A ∈ symplecticGroup ι ℝ :=
+  (TauCeti.BilinForm.isIsometry_iff.2 hA).toMatrix_mem_symplecticGroup b hb
 
 /-- The matrix of a linear map `A` preserving `ω` in a symplectic basis `b`, as an element of the
 symplectic group `TauCeti.GLSymplectic`. -/
