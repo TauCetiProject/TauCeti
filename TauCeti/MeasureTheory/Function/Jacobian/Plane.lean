@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
+public import TauCeti.Analysis.Complex.RealChart
 
 /-!
 # Change of variables in the plane for densities scaling by the Jacobian
@@ -30,6 +31,8 @@ plane, where densities of this kind arise as coefficients of two-forms.
   of the size of a density scaling by `det dφ`.
 * `TauCeti.lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul`: the lower Lebesgue
   integral of the positive part of a real density scaling by `|det dφ|`.
+* `TauCeti.Complex.setIntegral_image_realChart_inv`: the change of variables along the inversion
+  `ζ ↦ ζ⁻¹` in real coordinates, whose Jacobian is `|ζ⁻¹|⁴`.
 -/
 
 public section
@@ -108,5 +111,22 @@ theorem setIntegral_det_mul_comp_le_integral {g : ℝ × ℝ → ℝ} (hs : Meas
   rw [← integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
     rw [abs_of_nonneg (hdet w hw), smul_eq_mul]]
   exact setIntegral_le_integral hgi (ae_of_all _ hg)
+
+namespace Complex
+
+/-- **Changing variables along the inversion.** On a measurable set `S` avoiding `ζ = 0`, the
+integral of `g` over the image of `S` under the inversion `ζ ↦ ζ⁻¹` is the integral over `S` of
+`|ζ⁻¹|⁴ g(ζ⁻¹)`, the Jacobian of the inversion being `|ζ⁻¹|⁴`. -/
+theorem setIntegral_image_realChart_inv {S : Set (ℝ × ℝ)} (hS : MeasurableSet S)
+    (hS0 : ∀ ζ ∈ S, Complex.equivRealProdCLM.symm ζ ≠ 0) (g : ℝ × ℝ → ℝ) :
+    ∫ w in realChart (·⁻¹) '' S, g w =
+      ∫ ζ in S, ‖Complex.equivRealProdCLM.symm (realChart (·⁻¹) ζ)‖ ^ 4 *
+        g (realChart (·⁻¹) ζ) :=
+  integral_image_eq_integral_of_eq_abs_det_smul hS realChart_inv_involutive.injective.injOn
+    (fun ζ hζ ↦ (contDiffAt_realChart_inv (hS0 ζ hζ) (n := 1)).differentiableAt one_ne_zero)
+    fun ζ hζ ↦ by
+      rw [det_fderiv_realChart_inv (hS0 ζ hζ), abs_of_nonneg (by positivity), smul_eq_mul]
+
+end Complex
 
 end TauCeti

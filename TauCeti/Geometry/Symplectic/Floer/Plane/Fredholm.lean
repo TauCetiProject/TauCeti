@@ -16,7 +16,6 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.SemiFredholm
 import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
-import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -545,55 +544,6 @@ private theorem mul_abs_mul_inv_sq_lt_one {A B : ℝ} (hA : 0 ≤ A) :
         mul_le_mul_of_nonneg_left hε1 (by positivity)
     _ < 1 := by linarith
 
-/-- **Two cokernel elements close on a disc are close.** Let `η₁`, `η₂` be `C²` representatives
-of `h₁, h₂ ∈ L²(ℂ, V)` annihilated by `D_u^*`, and let the `L²` estimate of cokernel elements on the
-disc `K_b` hold with constant `A`. If cutoffs `g_i` of `η_i` agree with them on `K_b` and the `L²`
-norm of `g₁ - g₂` on `K_b` is at most `B ε²`, then `‖h₁ - h₂‖² ≤ A |B| ε²`. -/
-private theorem norm_sub_sq_le_of_setIntegral_le (ω : SymplecticForm V)
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ContDiff ℝ 1 u) {Kb : Set (ℝ × ℝ)} (hKb : MeasurableSet Kb) {A : ℝ} (hA : 0 ≤ A)
-    (hglob : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
-      (∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-        Ks Kt u η z = 0) → Integrable (fun z ↦ ‖η z‖ ^ 2) →
-      ∫ z, ‖η z‖ ^ 2 ≤ A * ∫ z in Kb, ‖η z‖ ^ 2)
-    {h₁ h₂ : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))} {η₁ η₂ g₁ g₂ : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hη₁ : ContDiff ℝ 2 η₁) (hη₂ : ContDiff ℝ 2 η₂)
-    (hae₁ : (fun z ↦ innerSL ℝ (h₁ z)) =ᵐ[volume] η₁)
-    (hae₂ : (fun z ↦ innerSL ℝ (h₂ z)) =ᵐ[volume] η₂)
-    (hD₁ : ∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      Ks Kt u η₁ z = 0)
-    (hD₂ : ∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      Ks Kt u η₂ z = 0)
-    (hg₁ : ∀ z ∈ Kb, g₁ z = η₁ z) (hg₂ : ∀ z ∈ Kb, g₂ z = η₂ z) {B ε : ℝ}
-    (hsmall : ∫ z in Kb, ‖(g₁ - g₂) z‖ ^ 2 ≤ B * ε ^ 2) :
-    ‖h₁ - h₂‖ ^ 2 ≤ A * |B| * ε ^ 2 := by
-  have hJu (z : ℝ × ℝ) : DifferentiableAt ℝ
-      (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z :=
-    ((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero
-  -- The difference `h₁ - h₂` is represented by `η₁ - η₂`, annihilated by `D_u^*`.
-  have hae : (fun z ↦ innerSL ℝ ((h₁ - h₂) z)) =ᵐ[volume] η₁ - η₂ := by
-    have hsub := (ae_restrict_iff' MeasurableSet.univ).1 (Lp.coeFn_sub h₁ h₂)
-    filter_upwards [hsub, hae₁, hae₂] with z h1 h2 h3
-    rw [h1 (mem_univ z), Pi.sub_apply, map_sub, h2, h3, Pi.sub_apply]
-  obtain ⟨hdn, hdi⟩ : ∫ z, ‖(η₁ - η₂) z‖ ^ 2 = ‖h₁ - h₂‖ ^ 2 ∧
-      Integrable fun z ↦ ‖(η₁ - η₂) z‖ ^ 2 := by
-    simpa only [Measure.restrict_univ] using
-      Lp.integral_norm_sq_eq_and_integrable_of_ae_eq_innerSL (ae_restrict_of_ae hae)
-  have hdD (z : ℝ × ℝ) : ω.floerLinearizationAdjoint
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (η₁ - η₂) z = 0 := by
-    rw [floerLinearizationAdjoint_sub ((hη₁.differentiable (by norm_num)) z)
-      ((hη₂.differentiable (by norm_num)) z) (hJu z), hD₁ z, hD₂ z, sub_zero]
-  have hKeq : ∫ z in Kb, ‖(g₁ - g₂) z‖ ^ 2 = ∫ z in Kb, ‖(η₁ - η₂) z‖ ^ 2 :=
-    setIntegral_congr_fun hKb fun z hz ↦ by simp [hg₁ z hz, hg₂ z hz]
-  rw [← hdn]
-  calc _ ≤ A * ∫ z in Kb, ‖(η₁ - η₂) z‖ ^ 2 := hglob (hη₁.sub hη₂) hdD hdi
-    _ ≤ A * (|B| * ε ^ 2) := by
-        rw [← hKeq]
-        exact mul_le_mul_of_nonneg_left (hsmall.trans (mul_le_mul_of_nonneg_right
-          (le_abs_self B) (sq_nonneg ε))) hA
-    _ = A * |B| * ε ^ 2 := by ring
-
 /-- **The cokernel of the linearized operator of a PSS plane is finite-dimensional.** Let `J` be
 `C³` and `K_s`, `K_t` be `C⁴` at the points `(z, u z)` along a `C³` map `u`, with `J` compatible
 along `u` and `‖J(z, u z)‖ ≤ B`, and let the coefficient field of `D_u` on conformal jets be
@@ -656,15 +606,9 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positiv
   -- An infinite-dimensional cokernel contains vectors of norm at most `Rr` at mutual distance ≥ 1.
   by_contra hfin
   obtain ⟨Rr, f, -, hfR, hsep⟩ := exists_seq_norm_le_one_le_norm_sub hfin
-  have hreg (k : ℕ) : ∃ η : ℝ × ℝ → V →L[ℝ] ℝ, ContDiff ℝ 2 η ∧
-      (fun z ↦ innerSL ℝ ((f k : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))) z)) =ᵐ[volume] η ∧
-      ∀ z, ω.floerLinearizationAdjoint J' Ks Kt u η z = 0 := by
-    obtain ⟨η, hη, hae, hD⟩ := ω.exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero
-      (J := J') (u := u) hρ (fun z _ ↦ hJ z) (fun z _ ↦ (J z (u z)).toContinuousLinearMap_mul_self)
-      (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) hM (f k).property
-    exact ⟨η, contDiffOn_univ.1 hη, ((ae_restrict_iff' MeasurableSet.univ).1 hae).mono
-      fun z hz ↦ hz (mem_univ z), fun z ↦ hD z (mem_univ z)⟩
-  choose η hηs hηae hηD using hreg
+  choose η hηs hηae hηD using fun k ↦
+    ω.exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero (J := J') (u := u) hρ hJ
+      (fun z ↦ (J z (u z)).toContinuousLinearMap_mul_self) hKs hKt hu hM (f k).property
   -- The jets of their cut-offs are bounded in `W^{1,2}`.
   set g : ℕ → ℝ × ℝ → V →L[ℝ] ℝ := fun k z ↦ χ z • η k z
   have hg (k : ℕ) : ContDiff ℝ 2 (g k) := hχ2.smul (hηs k)
@@ -685,7 +629,7 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positiv
   have hjet := toLp_jet_sub_ae_eq hρ (hgT k) (hgT l)
   have hgη (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Kb) : g k z = η k z := by
     simp [g, hχ1 z (le_trans hz hbn)]
-  have hle := norm_sub_sq_le_of_setIntegral_le ω hJ1 hu1 hKb.measurableSet hA0 hglob (hηs k)
+  have hle := norm_sub_sq_le_of_setIntegral_le (J := J') hJ1 hu1 hKb.measurableSet hA0 hglob (hηs k)
     (hηs l) (hηae k) (hηae l) (hηD k) (hηD l) (hgη k) (hgη l)
     (B := |B'|) ((hB' ((hg k).continuous.sub (hg l).continuous).continuousOn hjet).trans
       ((mul_le_mul_of_nonneg_right (le_abs_self B') (sq_nonneg _)).trans

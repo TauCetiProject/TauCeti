@@ -50,11 +50,15 @@ Hamiltonian perturbation is free, the universal operator has dense range, and it
   to the range of `D_u` is represented on `U` by a `C²` covector field annihilated by the formal
   adjoint `D_u^*`
   (`exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero`, in the namespace
-  `TauCeti.SymplecticForm`). On the whole plane, a test section, such as a cut-off of the
+  `TauCeti.SymplecticForm`), and on the whole plane by a `C²` covector field on the plane
+  (`TauCeti.SymplecticForm.exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero`).
+* **Peetre's argument.** On the whole plane, a test section, such as a cut-off of the
   representative, whose weighted `W^{1,2}` energy is controlled by the `L²` norm of the
   representative has a jet of norm controlled by that of the element
-  (`TauCeti.ConformalSobolev.norm_toLp_jet_le_of_ae_eq`); Peetre's argument for the finiteness of
-  the cokernel uses this bound.
+  (`TauCeti.ConformalSobolev.norm_toLp_jet_le_of_ae_eq`). When the `L²` norm of solutions of
+  `D_u^* η = 0` is controlled on a set `K`, two cokernel elements whose cut-off representatives are
+  close on `K` are close (`TauCeti.SymplecticForm.norm_sub_sq_le_of_setIntegral_le`). The proofs
+  that the cokernel is finite-dimensional use both steps.
 * **Density.** Equivalently, the range of `D_u` and the span of the variations are dense in
   `L²(U, V)`
   (`topologicalClosure_range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top`,
@@ -273,6 +277,27 @@ theorem exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero (hρ : 
   ext v
   exact hv v hz
 
+/-- **Elements orthogonal to the range on the plane are regular.** The case `U = univ` of
+`exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero`: under its hypotheses on the
+whole plane, for a `C³` map `u`, every element `h ∈ L²(ℂ, V)` orthogonal to the range of the
+realization `D_u : W^{1,2}(ℂ, V) → L²(ℂ, V)` is represented by a `C²` covector field `η` on the
+plane, `⟪h, ·⟫ = η` almost everywhere, with `D_u^* η = 0` everywhere. -/
+theorem exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero (hρ : IsWeight univ ρ)
+    (hJ : ∀ z, ContDiffAt ℝ 3 (uncurry J) (z, u z))
+    (hJJ : ∀ z, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V)
+    (hKs : ∀ z, ContDiffAt ℝ 4 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 4 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 3 u)
+    (hM : MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict univ))
+    {h : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))}
+    (hD : h ∈ (ω.floerConformalSobolevOperator univ ρ J Ks Kt u).rangeᗮ) :
+    ∃ η : ℝ × ℝ → V →L[ℝ] ℝ, ContDiff ℝ 2 η ∧ (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η ∧
+      ∀ z, ω.floerLinearizationAdjoint J Ks Kt u η z = 0 := by
+  obtain ⟨η, hη, hae, hD⟩ := exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero hρ
+    (fun z _ ↦ hJ z) (fun z _ ↦ hJJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z)
+    (fun z _ ↦ hu.contDiffAt) hM hD
+  exact ⟨η, contDiffOn_univ.1 hη, ((ae_restrict_iff' MeasurableSet.univ).1 hae).mono
+    fun z hz ↦ hz (mem_univ z), fun z ↦ hD z (mem_univ z)⟩
+
 /-- **Hamiltonian variations detect the cokernel of the linearized Floer operator on
 `W^{1,2}`.** Let `U` be a connected open set with a conformal weight `ρ`, let `J` be `C²` with
 `J(z, u z)² = -1` and the Hamiltonians `K_s`, `K_t` be `C³` near the graph of a map `u` which is
@@ -423,6 +448,49 @@ theorem _root_.TauCeti.ConformalSobolev.norm_toLp_jet_le_of_ae_eq (hρ : IsWeigh
   calc K * ∫ z, ‖η z‖ ^ 2 ≤ max K 0 * ∫ z, ‖η z‖ ^ 2 :=
         mul_le_mul_of_nonneg_right (le_max_left _ _) (integral_nonneg fun z ↦ by positivity)
     _ ≤ max K 0 * r ^ 2 := mul_le_mul_of_nonneg_left h4 (le_max_right _ _)
+
+/-- **Two cokernel elements close on a set are close.** Let `η₁`, `η₂` be `C²` representatives of
+`h₁, h₂ ∈ L²(ℂ, V)` annihilated by `D_u^*`, and let every square-integrable `C²` solution `η` of
+`D_u^* η = 0` satisfy `∫ ‖η‖² ≤ A ∫_K ‖η‖²`. If fields `g₁`, `g₂`, typically cut-offs of `η₁`,
+`η₂`, agree with them on `K` and the `L²` norm of `g₁ - g₂` on `K` is at most `B ε²`, then
+`‖h₁ - h₂‖² ≤ A |B| ε²`. Peetre's argument for the finiteness of the cokernel uses this step. -/
+theorem norm_sub_sq_le_of_setIntegral_le (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
+    (hu : ContDiff ℝ 1 u) {K : Set (ℝ × ℝ)} (hK : MeasurableSet K) {A : ℝ} (hA : 0 ≤ A)
+    (hglob : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      (∀ z, ω.floerLinearizationAdjoint J Ks Kt u η z = 0) → Integrable (fun z ↦ ‖η z‖ ^ 2) →
+      ∫ z, ‖η z‖ ^ 2 ≤ A * ∫ z in K, ‖η z‖ ^ 2)
+    {h₁ h₂ : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))} {η₁ η₂ g₁ g₂ : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη₁ : ContDiff ℝ 2 η₁) (hη₂ : ContDiff ℝ 2 η₂)
+    (hae₁ : (fun z ↦ innerSL ℝ (h₁ z)) =ᵐ[volume] η₁)
+    (hae₂ : (fun z ↦ innerSL ℝ (h₂ z)) =ᵐ[volume] η₂)
+    (hD₁ : ∀ z, ω.floerLinearizationAdjoint J Ks Kt u η₁ z = 0)
+    (hD₂ : ∀ z, ω.floerLinearizationAdjoint J Ks Kt u η₂ z = 0)
+    (hg₁ : ∀ z ∈ K, g₁ z = η₁ z) (hg₂ : ∀ z ∈ K, g₂ z = η₂ z) {B ε : ℝ}
+    (hsmall : ∫ z in K, ‖(g₁ - g₂) z‖ ^ 2 ≤ B * ε ^ 2) :
+    ‖h₁ - h₂‖ ^ 2 ≤ A * |B| * ε ^ 2 := by
+  -- The difference `h₁ - h₂` is represented by `η₁ - η₂`, annihilated by `D_u^*`.
+  have hae : (fun z ↦ innerSL ℝ ((h₁ - h₂) z)) =ᵐ[volume] η₁ - η₂ := by
+    have hsub := (ae_restrict_iff' MeasurableSet.univ).1 (Lp.coeFn_sub h₁ h₂)
+    filter_upwards [hsub, hae₁, hae₂] with z h1 h2 h3
+    rw [h1 (mem_univ z), Pi.sub_apply, map_sub, h2, h3, Pi.sub_apply]
+  obtain ⟨hdn, hdi⟩ : ∫ z, ‖(η₁ - η₂) z‖ ^ 2 = ‖h₁ - h₂‖ ^ 2 ∧
+      Integrable fun z ↦ ‖(η₁ - η₂) z‖ ^ 2 := by
+    simpa only [Measure.restrict_univ] using
+      Lp.integral_norm_sq_eq_and_integrable_of_ae_eq_innerSL (ae_restrict_of_ae hae)
+  have hJu (z : ℝ × ℝ) : DifferentiableAt ℝ (fun w ↦ J w (u w)) z :=
+    ((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero
+  have hdD (z : ℝ × ℝ) : ω.floerLinearizationAdjoint J Ks Kt u (η₁ - η₂) z = 0 := by
+    rw [floerLinearizationAdjoint_sub ((hη₁.differentiable two_ne_zero) z)
+      ((hη₂.differentiable two_ne_zero) z) (hJu z), hD₁ z, hD₂ z, sub_zero]
+  have hKeq : ∫ z in K, ‖(g₁ - g₂) z‖ ^ 2 = ∫ z in K, ‖(η₁ - η₂) z‖ ^ 2 :=
+    setIntegral_congr_fun hK fun z hz ↦ by simp [hg₁ z hz, hg₂ z hz]
+  rw [← hdn]
+  calc _ ≤ A * ∫ z in K, ‖(η₁ - η₂) z‖ ^ 2 := hglob (hη₁.sub hη₂) hdD hdi
+    _ ≤ A * (|B| * ε ^ 2) := by
+        rw [← hKeq]
+        exact mul_le_mul_of_nonneg_left (hsmall.trans (mul_le_mul_of_nonneg_right
+          (le_abs_self B) (sq_nonneg ε))) hA
+    _ = A * |B| * ε ^ 2 := by ring
 
 end Cokernel
 

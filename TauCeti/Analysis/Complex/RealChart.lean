@@ -38,7 +38,10 @@ point (`TauCeti.Complex.contDiffAt_realChart`). The inversion `w ↦ w⁻¹` in 
 involution (`TauCeti.Complex.realChart_inv_involutive`) that inverts the Euclidean norm
 (`TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv`); away from `0` it is smooth
 (`TauCeti.Complex.contDiffAt_realChart_inv`) with Jacobian determinant `|w⁻¹|⁴`
-(`TauCeti.Complex.det_fderiv_realChart_inv`). Read through the inversion, a function vanishing on
+(`TauCeti.Complex.det_fderiv_realChart_inv`), and its derivative `(a, b)` along `(1, 0)` has
+`a² + b² = |w⁻¹|⁴` (`TauCeti.Complex.sq_add_sq_fderiv_realChart_inv`). It maps the punctured disc
+`0 < |ζ| < r` onto the exterior `|w| > r⁻¹` (`TauCeti.Complex.image_realChart_inv_setOf_lt`). Read
+through the inversion, a function vanishing on
 the disc `|w| < r` vanishes on `|ζ| > r⁻¹` (`TauCeti.Complex.apply_realChart_inv_eq_zero`), and
 also near `ζ = 0` when it has compact support
 (`TauCeti.Complex.exists_pos_forall_apply_realChart_inv_eq_zero`).
@@ -209,6 +212,21 @@ theorem det_fderiv_realChart_inv {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM
     Complex.normSq_eq_norm_sq, norm_neg, norm_inv, norm_pow]
   ring
 
+/-- Along `(1, 0)`, the derivative `(a, b)` of the inversion at `w ≠ 0` has
+`a² + b² = |w⁻¹|⁴`. -/
+theorem sq_add_sq_fderiv_realChart_inv {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm w ≠ 0) :
+    (fderiv ℝ (realChart (·⁻¹)) w (1, 0)).1 ^ 2 + (fderiv ℝ (realChart (·⁻¹)) w (1, 0)).2 ^ 2 =
+      (‖Complex.equivRealProdCLM.symm (realChart (·⁻¹) w)‖ ^ 2) ^ 2 := by
+  rw [fderiv_realChart_apply (hasDerivAt_inv hw), norm_equivRealProdCLM_symm_realChart_inv]
+  have h1 : Complex.equivRealProdCLM.symm (1, 0) = 1 := by
+    apply Complex.ext <;> simp
+  set x := Complex.equivRealProdCLM.symm w
+  have hn : ‖-(x ^ 2)⁻¹‖ ^ 2 = ((‖x‖⁻¹) ^ 2) ^ 2 := by
+    rw [norm_neg, norm_inv, norm_pow]
+    ring
+  rw [h1, mul_one, Complex.equivRealProdCLM_apply, ← hn, Complex.sq_norm, Complex.normSq_apply]
+  ring
+
 /-- Away from `0`, the inversion is smooth in real coordinates. -/
 theorem contDiffAt_realChart_inv {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm w ≠ 0)
     {n : WithTop ℕ∞} : ContDiffAt ℝ n (realChart (·⁻¹)) w :=
@@ -222,6 +240,22 @@ theorem apply_realChart_inv_eq_zero {E : Type*} [Zero E] {f : ℝ × ℝ → E} 
   hf _ (by
     rw [norm_equivRealProdCLM_symm_realChart_inv]
     exact inv_lt_of_inv_lt₀ hr hζ)
+
+/-- The inversion maps the punctured disc `0 < |ζ| < r` onto the exterior `r⁻¹ < |w|` of a disc. -/
+theorem image_realChart_inv_setOf_lt {r : ℝ} (hr : 0 < r) :
+    realChart (·⁻¹) ''
+        {ζ : ℝ × ℝ | Complex.equivRealProdCLM.symm ζ ≠ 0 ∧ ‖Complex.equivRealProdCLM.symm ζ‖ < r} =
+      {w | r⁻¹ < ‖Complex.equivRealProdCLM.symm w‖} := by
+  rw [realChart_inv_involutive.image_eq_preimage_symm]
+  ext w
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, equivRealProdCLM_symm_realChart, ne_eq,
+    inv_eq_zero, norm_inv]
+  constructor
+  · rintro ⟨hw, hlt⟩
+    exact (inv_lt_comm₀ (norm_pos_iff.2 hw) hr).1 hlt
+  · intro h
+    have hw : Complex.equivRealProdCLM.symm w ≠ 0 := norm_pos_iff.1 ((inv_pos.2 hr).trans h)
+    exact ⟨hw, (inv_lt_comm₀ hr (norm_pos_iff.2 hw)).1 h⟩
 
 /-- A compactly supported function vanishing on the disc `|w| < r` vanishes, read through the
 inversion, on a neighbourhood `|ζ| < δ` of `ζ = 0`. -/

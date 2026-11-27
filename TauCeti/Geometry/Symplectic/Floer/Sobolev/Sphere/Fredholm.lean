@@ -16,7 +16,7 @@ import TauCeti.Geometry.Symplectic.Floer.Linearization.Infinity
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Sphere
 import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Jacobian.Plane
 
 /-!
 # The linearized Floer operator on the Riemann sphere is Fredholm
@@ -36,7 +36,7 @@ the namespace `TauCeti.SymplecticForm`.
 
 * **Cokernel elements are regular.** An element `h ∈ L²` orthogonal to the range of `D_u` is
   represented by a `C²` covector field `η` on the plane with `D_u^* η = 0`
-  (`TauCeti.SymplecticForm.exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero`).
+  (`TauCeti.SymplecticForm.exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero`).
 * **They extend across infinity.** Near `∞` the data are constant, and `η`, read in the chart
   `ζ = w⁻¹` as the `(0, 1)`-form `η' = η (ζ⁻¹) ∘ (a + b J₀)` (`TauCeti.Floer.covectorPullback`
   along the inversion), extends smoothly across `ζ = 0`
@@ -59,8 +59,9 @@ the namespace `TauCeti.SymplecticForm`.
   in the namespace `TauCeti.SymplecticForm`),
   so their restrictions to the disc lie in a compact set (Rellich's theorem,
   `TauCeti.ConformalSobolev.isCompactOperator_restrictWeightedValue_comp_subtypeL`), and two of them
-  close on the disc are close everywhere. Hence the closed unit ball of the cokernel is totally
-  bounded (`FiniteDimensional.of_norm_sub_le_mul_dist`).
+  close on the disc are close everywhere
+  (`TauCeti.SymplecticForm.norm_sub_sq_le_of_setIntegral_le`). Hence the closed unit ball of the
+  cokernel is totally bounded (`FiniteDimensional.of_norm_sub_le_mul_dist`).
 
 The target is a symplectic inner product space. The index of `D_u` is not computed here.
 
@@ -90,23 +91,6 @@ section Inversion
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- Along `(1, 0)`, the derivative `(a, b)` of the inversion at `ζ ≠ 0` has `a² + b² = |ζ⁻¹|⁴`. -/
-private theorem sq_add_sq_fderiv_realChart_inv {ζ : ℝ × ℝ}
-    (hζ : Complex.equivRealProdCLM.symm ζ ≠ 0) :
-    (fderiv ℝ (TauCeti.Complex.realChart (·⁻¹)) ζ stdComplexLineReal).1 ^ 2 +
-        (fderiv ℝ (TauCeti.Complex.realChart (·⁻¹)) ζ stdComplexLineReal).2 ^ 2 =
-      (‖Complex.equivRealProdCLM.symm (TauCeti.Complex.realChart (·⁻¹) ζ)‖ ^ 2) ^ 2 := by
-  rw [TauCeti.Complex.fderiv_realChart_apply (hasDerivAt_inv hζ),
-    TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv]
-  have h1 : Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
-    apply Complex.ext <;> simp [stdComplexLineReal_eq]
-  set x := Complex.equivRealProdCLM.symm ζ
-  have hn : ‖-(x ^ 2)⁻¹‖ ^ 2 = ((‖x‖⁻¹) ^ 2) ^ 2 := by
-    rw [norm_neg, norm_inv, norm_pow]
-    ring
-  rw [h1, mul_one, Complex.equivRealProdCLM_apply, ← hn, Complex.sq_norm, Complex.normSq_apply]
-  ring
-
 /-- **A covector field read through the inversion, from below.** Where the structure is `J₀`, the
 form `η' = η (ζ⁻¹) ∘ (a + b J₀)` read in the chart `ζ = w⁻¹` controls `η` at `w = ζ⁻¹`:
 `|w|² ‖η w‖ ≤ (1 + ‖J₀‖) ‖η' ζ‖`. -/
@@ -123,7 +107,8 @@ private theorem mul_norm_le_norm_covectorPullback_realChart_inv {J : ℝ × ℝ 
     rw [TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv]
     positivity
   rw [covectorPullback_apply, hJ]
-  exact J₀.mul_opNorm_le_opNorm_comp_smul_add_smul _ (sq_add_sq_fderiv_realChart_inv hζ) hr
+  exact J₀.mul_opNorm_le_opNorm_comp_smul_add_smul _
+    (TauCeti.Complex.sq_add_sq_fderiv_realChart_inv hζ) hr
 
 /-- **A covector field read through the inversion, from above.** Where the structure is `J₀`, the
 form `η' = η (ζ⁻¹) ∘ (a + b J₀)` read in the chart `ζ = w⁻¹` is controlled by `η` at `w = ζ⁻¹`:
@@ -141,7 +126,7 @@ private theorem norm_covectorPullback_realChart_inv_le {J : ℝ × ℝ → V →
   set b := (fderiv ℝ (TauCeti.Complex.realChart (·⁻¹)) ζ stdComplexLineReal).2
   set r := ‖Complex.equivRealProdCLM.symm (TauCeti.Complex.realChart (·⁻¹) ζ)‖ ^ 2
   set N := ‖J₀.toLinearMap.toContinuousLinearMap‖
-  have hab : a ^ 2 + b ^ 2 = r ^ 2 := sq_add_sq_fderiv_realChart_inv hζ
+  have hab : a ^ 2 + b ^ 2 = r ^ 2 := TauCeti.Complex.sq_add_sq_fderiv_realChart_inv hζ
   have hr : 0 ≤ r := by positivity
   have ha : |a| ≤ r := by
     rw [← abs_of_nonneg hr]
@@ -161,39 +146,6 @@ private theorem norm_covectorPullback_realChart_inv_le {J : ℝ × ℝ → V →
         mul_le_mul_of_nonneg_left hM (norm_nonneg _)
     _ = _ := by ring
 
-/-- **Changing variables along the inversion.** On a measurable set `S` avoiding `ζ = 0`, the
-integral of `g` over the image of `S` under the inversion `ζ ↦ ζ⁻¹` is the integral over `S` of
-`|ζ⁻¹|⁴ g(ζ⁻¹)`, the Jacobian of the inversion being `|ζ⁻¹|⁴`. -/
-private theorem setIntegral_image_realChart_inv {S : Set (ℝ × ℝ)} (hS : MeasurableSet S)
-    (hS0 : ∀ ζ ∈ S, Complex.equivRealProdCLM.symm ζ ≠ 0) (g : ℝ × ℝ → ℝ) :
-    ∫ w in TauCeti.Complex.realChart (·⁻¹) '' S, g w =
-      ∫ ζ in S, ‖Complex.equivRealProdCLM.symm (TauCeti.Complex.realChart (·⁻¹) ζ)‖ ^ 4 *
-        g (TauCeti.Complex.realChart (·⁻¹) ζ) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hS
-    (fun ζ hζ ↦ ((TauCeti.Complex.contDiffAt_realChart_inv (hS0 ζ hζ) (n := 1)).differentiableAt
-      one_ne_zero).hasFDerivAt.hasFDerivWithinAt)
-    TauCeti.Complex.realChart_inv_involutive.injective.injOn g]
-  refine setIntegral_congr_fun hS fun ζ hζ ↦ ?_
-  rw [TauCeti.Complex.det_fderiv_realChart_inv (hS0 ζ hζ), abs_of_nonneg (by positivity),
-    smul_eq_mul]
-
-/-- The inversion maps the punctured disc `0 < |ζ| < r` onto the exterior `r⁻¹ < |w|` of a disc. -/
-private theorem image_realChart_inv_setOf_lt {r : ℝ} (hr : 0 < r) :
-    TauCeti.Complex.realChart (·⁻¹) ''
-        {ζ : ℝ × ℝ | Complex.equivRealProdCLM.symm ζ ≠ 0 ∧ ‖Complex.equivRealProdCLM.symm ζ‖ < r} =
-      {w | r⁻¹ < ‖Complex.equivRealProdCLM.symm w‖} := by
-  rw [TauCeti.Complex.realChart_inv_involutive.image_eq_preimage_symm]
-  ext w
-  simp only [mem_preimage, mem_ofPred_eq, TauCeti.Complex.equivRealProdCLM_symm_realChart,
-    ne_eq, inv_eq_zero, norm_inv]
-  constructor
-  · rintro ⟨hw, hlt⟩
-    exact (inv_lt_comm₀ (norm_pos_iff.2 hw) hr).1 hlt
-  · intro h
-    have hw : Complex.equivRealProdCLM.symm w ≠ 0 := norm_pos_iff.1 ((inv_pos.2 hr).trans h)
-    exact ⟨hw, (inv_lt_comm₀ hr (norm_pos_iff.2 hw)).1 h⟩
-
 end Inversion
 
 /-! ### The `L²` norm of a cokernel element is controlled on a disc -/
@@ -203,30 +155,6 @@ section Estimate
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ × ℝ → V → AlmostComplexStructure V}
   {J₀ : AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {T : ℝ}
-
-/-- Where `2 T < |w|`, so that the data are `J₀` and `0` near `w`, the formal adjoint at `w` along
-`u` is that of the constant data `J₀`, `0`, along any map `u'`. -/
-private theorem floerLinearizationAdjoint_eq_const_of_eq_base
-    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
-    (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
-    (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0) (u' : ℝ × ℝ → V)
-    (η : ℝ × ℝ → V →L[ℝ] ℝ) {w : ℝ × ℝ} (hw : 2 * T < ‖Complex.equivRealProdCLM.symm w‖) :
-    ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η
-        w =
-      ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ _ ↦ 0) u' η w := by
-  have hT : T < ‖w‖ := by linarith [norm_equivRealProdCLM_symm_le_two_mul w]
-  have hJ : (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) =ᶠ[𝓝 w]
-      fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap := by
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hT] with z hz
-    funext y
-    simp [hJ₀ z hz.le y]
-  rw [ω.floerLinearizationAdjoint_congr_data (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0) u η hJ
-    (funext (hKs₀ w hT.le)) (funext (hKt₀ w hT.le))]
-  simp only [floerLinearizationAdjoint_def,
-    ω.floerLinearizationCoeff_eq_zero_of_eq_base
-      (J := fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
-      (Kt := fun _ _ ↦ 0) _ (z := w) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)]
 
 /-- **The `L²` norm of a field supported in a disc, for constant data.** For an `ω`-compatible
 `J₀` and `r > 0` there is `C` such that every compactly supported `C²` covector field `θ` vanishing
@@ -415,7 +343,8 @@ private theorem setIntegral_norm_sq_le_of_eq_covectorPullback {u : ℝ × ℝ �
   have hB : IsCompact B := isCompact_setOf_norm_equivRealProdCLM_symm_le r
   have hBi : IntegrableOn (fun ζ ↦ ‖η₀ ζ‖ ^ 2) B := (hη₀.norm.pow 2).integrableOn_compact hB
   have hSB : S ⊆ B := fun ζ hζ ↦ hζ.2.le
-  rw [← image_realChart_inv_setOf_lt hr, setIntegral_image_realChart_inv hS fun ζ hζ ↦ hζ.1,
+  rw [← TauCeti.Complex.image_realChart_inv_setOf_lt hr,
+    TauCeti.Complex.setIntegral_image_realChart_inv hS fun ζ hζ ↦ hζ.1,
     ← integral_const_mul]
   refine (integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity)
     ((hBi.mono_set hSB).const_mul _) (ae_restrict_of_forall_mem hS fun ζ hζ ↦ ?_)).trans
@@ -473,7 +402,8 @@ private theorem setIntegral_annulus_norm_sq_le_of_eq_covectorPullback {u : ℝ �
                   pow_le_pow_left₀ (norm_nonneg _) h 2
               _ = _ := by ring)
     _ = (1 + ‖J₀.toLinearMap.toContinuousLinearMap‖) ^ 2 * ∫ w in ι '' A, ‖η w‖ ^ 2 := by
-        rw [integral_const_mul, setIntegral_image_realChart_inv hAc.measurableSet hA0]
+        rw [integral_const_mul,
+          TauCeti.Complex.setIntegral_image_realChart_inv hAc.measurableSet hA0]
     _ ≤ _ := mul_le_mul_of_nonneg_left (setIntegral_mono_set hηi.integrableOn
         (ae_of_all _ fun _ ↦ by positivity) (Eventually.of_forall himage)) (by positivity)
 
@@ -690,76 +620,11 @@ private theorem exists_integral_sphereWeight_smul_le (ω : SymplecticForm V)
     _ ≤ C * ((M * (1 + B)) ^ 2 * (∫ z, ‖η z‖ ^ 2) + ∫ z, ‖η z‖ ^ 2) := by gcongr
     _ = _ := by ring
 
-/-- **Two cokernel elements close on a disc are close.** Let `η₁`, `η₂` be `C²` representatives
-of `h₁, h₂ ∈ L²(ℂ, V)` annihilated by `D_u^*`, and let the `L²` estimate of solutions of the
-formal adjoint on the disc `K` hold with constant `A`. Let `χ` be a cutoff equal to one on `K` with
-`χ η₁`, `χ η₂` test sections, and let `B` control the `L²` norm on `K` of a continuous section by
-the restricted weighted value of its jet. Then `‖h₁ - h₂‖² ≤ A |B| ‖x₁ - x₂‖²`, where `x_i` is the
-restricted weighted value of the jet of `χ η_i`. -/
-private theorem norm_sub_sq_le_mul_norm_restrictWeightedValue_sub_sq (ω : SymplecticForm V)
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ContDiff ℝ 1 u) {K : Set (ℝ × ℝ)} (hK : MeasurableSet K) {A B : ℝ} (hA : 0 ≤ A)
-    (hglob : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 1 η →
-      (∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-        Ks Kt u η z = 0) → Integrable (fun z ↦ ‖η z‖ ^ 2) →
-      ∫ z, ‖η z‖ ^ 2 ≤ A * ∫ z in K, ‖η z‖ ^ 2)
-    (hB : ∀ ⦃ξ : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContinuousOn ξ K →
-      ∀ ⦃f : Lp ((V →L[ℝ] ℝ) × (V →L[ℝ] ℝ) × (V →L[ℝ] ℝ)) 2 (volume.restrict univ)⦄,
-      f =ᵐ[volume.restrict univ] jet sphereWeight ξ →
-      ∫ z in K, ‖ξ z‖ ^ 2 ≤ B * ‖restrictWeightedValue (V →L[ℝ] ℝ) univ K f‖ ^ 2)
-    {χ : ℝ × ℝ → ℝ} (hχ1 : ∀ z ∈ K, χ z = 1)
-    {h₁ h₂ : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))} {η₁ η₂ : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hη₁ : ContDiff ℝ 2 η₁) (hη₂ : ContDiff ℝ 2 η₂)
-    (hae₁ : (fun z ↦ innerSL ℝ (h₁ z)) =ᵐ[volume] η₁)
-    (hae₂ : (fun z ↦ innerSL ℝ (h₂ z)) =ᵐ[volume] η₂)
-    (hD₁ : ∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      Ks Kt u η₁ z = 0)
-    (hD₂ : ∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      Ks Kt u η₂ z = 0)
-    (hg₁ : (fun z ↦ χ z • η₁ z) ∈ testSection (V →L[ℝ] ℝ) univ)
-    (hg₂ : (fun z ↦ χ z • η₂ z) ∈ testSection (V →L[ℝ] ℝ) univ) :
-    ‖h₁ - h₂‖ ^ 2 ≤ A * |B| * ‖restrictWeightedValue (V →L[ℝ] ℝ) univ K
-      ((memLp_jet isWeight_sphereWeight hg₁).toLp (jet sphereWeight fun z ↦ χ z • η₁ z) -
-        (memLp_jet isWeight_sphereWeight hg₂).toLp (jet sphereWeight fun z ↦ χ z • η₂ z))‖ ^ 2 := by
-  -- The difference `h₁ - h₂` is represented by `η₁ - η₂`, annihilated by `D_u^*`.
-  have hae : (fun z ↦ innerSL ℝ ((h₁ - h₂) z)) =ᵐ[volume] η₁ - η₂ := by
-    have hsub := (ae_restrict_iff' MeasurableSet.univ).1 (Lp.coeFn_sub h₁ h₂)
-    filter_upwards [hsub, hae₁, hae₂] with z h1 h2 h3
-    rw [h1 (mem_univ z), Pi.sub_apply, map_sub, h2, h3, Pi.sub_apply]
-  obtain ⟨hdn, hdi⟩ : ∫ z, ‖(η₁ - η₂) z‖ ^ 2 = ‖h₁ - h₂‖ ^ 2 ∧
-      Integrable fun z ↦ ‖(η₁ - η₂) z‖ ^ 2 := by
-    simpa only [Measure.restrict_univ] using
-      Lp.integral_norm_sq_eq_and_integrable_of_ae_eq_innerSL (ae_restrict_of_ae hae)
-  have hdD (z : ℝ × ℝ) : ω.floerLinearizationAdjoint
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (η₁ - η₂) z = 0 := by
-    rw [floerLinearizationAdjoint_sub (hη₁.differentiable two_ne_zero z)
-      (hη₂.differentiable two_ne_zero z)
-      (((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero), hD₁ z, hD₂ z,
-      sub_zero]
-  -- On `K` the cutoff is one, so the cut-off fields agree with `η₁`, `η₂` there.
-  have hKeq : ∫ z in K, ‖(η₁ - η₂) z‖ ^ 2 =
-      ∫ z in K, ‖((fun z ↦ χ z • η₁ z) - fun z ↦ χ z • η₂ z) z‖ ^ 2 :=
-    setIntegral_congr_fun hK fun z hz ↦ by simp [hχ1 z hz]
-  have hR := hB (((mem_testSection_iff.1 hg₁).1.continuous.sub
-    (mem_testSection_iff.1 hg₂).1.continuous).continuousOn)
-    (toLp_jet_sub_ae_eq isWeight_sphereWeight hg₁ hg₂)
-  rw [← hdn]
-  calc _ ≤ A * ∫ z in K, ‖(η₁ - η₂) z‖ ^ 2 := hglob ((hη₁.sub hη₂).of_le one_le_two) hdD hdi
-    _ ≤ A * (|B| * ‖restrictWeightedValue (V →L[ℝ] ℝ) univ K
-        ((memLp_jet isWeight_sphereWeight hg₁).toLp (jet sphereWeight fun z ↦ χ z • η₁ z) -
-          (memLp_jet isWeight_sphereWeight hg₂).toLp
-            (jet sphereWeight fun z ↦ χ z • η₂ z))‖ ^ 2) := by
-        rw [hKeq]
-        exact mul_le_mul_of_nonneg_left (hR.trans (mul_le_mul_of_nonneg_right (le_abs_self B)
-          (sq_nonneg _))) hA
-    _ = _ := by ring
-
 /-- **Cokernel elements on the sphere are regular.** Under the hypotheses of
-`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereWeight_of_eq_base`, every
-`h ∈ L²` orthogonal to the range of `D_u` is represented by a `C²` covector field `η` on the whole
-plane with `D_u^* η = 0`. -/
-private theorem exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero
+`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereWeight_of_eq_base`, the
+coefficient field of `D_u` is essentially bounded, so every `h ∈ L²` orthogonal to the range of
+`D_u` is represented by a `C²` covector field `η` on the whole plane with `D_u^* η = 0`. -/
+private theorem exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero_of_eq_base
     (ω : SymplecticForm V)
     (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
     (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
@@ -773,18 +638,14 @@ private theorem exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).rangeᗮ) :
     ∃ η : ℝ × ℝ → V →L[ℝ] ℝ, ContDiff ℝ 2 η ∧ (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η ∧
       ∀ z, ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-        Ks Kt u η z = 0 := by
-  obtain ⟨η, hη, hae, hD⟩ := ω.exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (u := u)
-    isWeight_sphereWeight (fun z _ ↦ hJ z)
-    (fun z _ ↦ (J z (u z)).toContinuousLinearMap_mul_self) (fun z _ ↦ hKs z)
-    (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt)
+        Ks Kt u η z = 0 :=
+  ω.exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) isWeight_sphereWeight hJ
+    (fun z ↦ (J z (u z)).toContinuousLinearMap_mul_self) hKs hKt hu
     (ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight
-      (J₀ := J₀.toLinearMap.toContinuousLinearMap) (fun z hz y ↦ by simp [hJ₀ z hz y])
-      hKs₀ hKt₀ (fun z ↦ (hJ z).of_le (by norm_num)) (fun z ↦ (hKs z).of_le (by norm_num))
+      (J₀ := J₀.toLinearMap.toContinuousLinearMap) (fun z hz y ↦ by simp [hJ₀ z hz y]) hKs₀ hKt₀
+      (fun z ↦ (hJ z).of_le (by norm_num)) (fun z ↦ (hKs z).of_le (by norm_num))
       (fun z ↦ (hKt z).of_le (by norm_num)) (hu.of_le (by norm_num))) hh
-  exact ⟨η, contDiffOn_univ.1 hη, ((ae_restrict_iff' MeasurableSet.univ).1 hae).mono
-    fun z hz ↦ hz (mem_univ z), fun z ↦ hD z (mem_univ z)⟩
 
 /-- **The cokernel of the linearized operator on the sphere is finite-dimensional.** Let the Floer
 data `J`, `K_s`, `K_t` on the plane `ℝ × ℝ ≅ ℂ` be the fixed structure `J₀` and the zero
@@ -827,8 +688,8 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereW
     (V := V →L[ℝ] ℝ) isWeight_sphereWeight hKb (subset_univ _)
   -- Every cokernel element is represented by a `C²` solution of the formal adjoint.
   choose η hηs hηae hηD using fun h : E ↦
-    exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero ω hJ₀ hKs₀ hKt₀ hJ hKs hKt hu
-      h.property
+    exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero_of_eq_base ω hJ₀ hKs₀ hKt₀ hJ
+      hKs hKt hu h.property
   -- Their cut-offs are test sections.
   have hgT (h : E) : (fun z ↦ χ z • η h z) ∈ testSection (V →L[ℝ] ℝ) univ :=
     mem_testSection_iff.2 ⟨hχs.smul (hηs h), HasCompactSupport.intro
@@ -850,13 +711,14 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereW
       exact norm_toLp_jet_le_of_ae_eq isWeight_sphereWeight (hηae h) (hgT h)
         (by rwa [Submodule.norm_coe]) (hK (hηs h) (hηD h))), rfl⟩) (C := √(A * |B'|))
     fun h h' _ _ ↦ ?_
-  have hsq := norm_sub_sq_le_mul_norm_restrictWeightedValue_sub_sq ω hJ1 hu1 hKb.measurableSet
-    hA0 hglob hB' (fun z hz ↦ hχ1 z hz) (hηs h) (hηs h') (hηae h) (hηae h') (hηD h) (hηD h')
-    (hgT h) (hgT h')
+  have hsq := norm_sub_sq_le_of_setIntegral_le hJ1 hu1 hKb.measurableSet hA0
+    (fun η hη ↦ hglob (hη.of_le one_le_two)) (hηs h) (hηs h') (hηae h) (hηae h') (hηD h) (hηD h')
+    (fun z hz ↦ by simp [hχ1 z hz]) (fun z hz ↦ by simp [hχ1 z hz])
+    (hB' (((hχs.smul (hηs h)).sub (hχs.smul (hηs h'))).continuous.continuousOn)
+      (toLp_jet_sub_ae_eq isWeight_sphereWeight (hgT h) (hgT h')))
   rw [← Submodule.coe_sub, Submodule.norm_coe] at hsq
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
-  rw [mul_pow, Real.sq_sqrt (by positivity), dist_eq_norm, ← map_sub]
-  exact hsq
+  rwa [mul_pow, Real.sq_sqrt (by positivity), dist_eq_norm, ← map_sub]
 
 /-- **The linearized operator on the sphere is Fredholm.** Let the Floer data `J`, `K_s`, `K_t` on
 the plane `ℝ × ℝ ≅ ℂ` be the fixed structure `J₀` and the zero perturbation on `‖w‖ ≥ T`, a

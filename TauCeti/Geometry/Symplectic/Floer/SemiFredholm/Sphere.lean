@@ -82,8 +82,10 @@ below. The weight `(1 + |w|²)²` is the inverse of `ρ`, as for the dual of `W^
 * On the disc `|w| ≤ R`, a cutoff reduces the estimate to the `L²` estimate of the adjoint on
   compact sets
   (`exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add`).
-* Near infinity the data are `J₀` and `0`, and the adjoint is `-ω♭ (∂s ξ - J₀ ∂t ξ)` for
-  `ξ = ω♭⁻¹ ∘ η` (`TauCeti.SymplecticForm.floerLinearizationAdjoint_const_eq_neg_flatEquiv`),
+* Near infinity the data are `J₀` and `0`, so the adjoint there is that of the constant data
+  (`TauCeti.SymplecticForm.floerLinearizationAdjoint_eq_const_of_eq_base`), which is
+  `-ω♭ (∂s ξ - J₀ ∂t ξ)` for `ξ = ω♭⁻¹ ∘ η`
+  (`TauCeti.SymplecticForm.floerLinearizationAdjoint_const_eq_neg_flatEquiv`),
   `-ω♭` of the Cauchy–Riemann operator of `-J₀`. Since `-J₀` is compatible with `-ω`
   (`TauCeti.SymplecticForm.Compatible.rescale_neg_of_neg`), the energy estimate of the
   Cauchy–Riemann operator of a compatible structure, used for `D_u` above with `ω` and `J₀`, applies
@@ -375,17 +377,17 @@ private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall
     hθc (subset_univ _)
 
 /-- **The energy estimate for the adjoint of constant data.** For a constant `ω`-compatible
-structure `J₀` and the zero perturbation, the Dirichlet energy of a compactly supported `C²`
-covector field is controlled by the `L²` norm of its formal adjoint, with no lower-order term. The
-adjoint is `-ω♭` of the Cauchy–Riemann operator of `-J₀` on `ξ = ω♭⁻¹ ∘ η`
-(`TauCeti.SymplecticForm.floerLinearizationAdjoint_const_eq_neg_flatEquiv`), and `-J₀` is
-compatible with `-ω`, so the energy estimate of the Cauchy–Riemann operator of `-J₀` for `-ω`
-bounds the Dirichlet energy of `ξ`. -/
+structure `J₀` and the zero perturbation, there is `C ≥ 0` such that every compactly supported `C²`
+covector field `η` has Dirichlet energy `∫ (‖∂s η‖² + ‖∂t η‖²)` at most `C ∫ ‖D^* η‖²`, for the
+formal adjoint `D^*` of the constant data `J₀`, `0`, with no lower-order term. -/
 theorem exists_forall_integral_norm_fderiv_sq_le_of_const (h₀ : ω.Compatible J₀) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
       ∫ z, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
         C * ∫ z, ‖ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
           (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 η z‖ ^ 2 := by
+  -- The adjoint is `-ω♭` of the Cauchy–Riemann operator of `-J₀` on `ξ = ω♭⁻¹ ∘ η`, and `-J₀` is
+  -- compatible with `-ω`, so the energy estimate of the Cauchy–Riemann operator of `-J₀` for `-ω`
+  -- bounds the Dirichlet energy of `ξ`.
   have hneg : (-1 : ℝ) < 0 := by norm_num
   obtain ⟨C, hC, hE⟩ := exists_forall_integral_norm_fderiv_sq_le_of_eq_base
     (ω := ω.rescale (-1) hneg.ne) (J := fun _ _ ↦ -J₀) (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
@@ -733,6 +735,26 @@ private theorem eventuallyEq_const_of_eq_base (hJ₀ : ∀ z : ℝ × ℝ, T ≤
   funext y
   simp [hJ₀ z hz.le y]
 
+/-- Where `2 T < |w|`, so that the data are `J₀` and `0` near `w`, the formal adjoint at `w` along
+`u` is that of the constant data `J₀`, `0`, along any map `u'`. -/
+theorem floerLinearizationAdjoint_eq_const_of_eq_base
+    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
+    (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
+    (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0) (u' : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ) {w : ℝ × ℝ} (hw : 2 * T < ‖Complex.equivRealProdCLM.symm w‖) :
+    ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η
+        w =
+      ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun _ _ ↦ 0) u' η w := by
+  have hT : T ≤ ‖w‖ := by linarith [norm_equivRealProdCLM_symm_le_two_mul w]
+  rw [ω.floerLinearizationAdjoint_congr_data (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0) u η
+    (eventuallyEq_const_of_eq_base hJ₀ hw) (funext (hKs₀ w hT)) (funext (hKt₀ w hT))]
+  -- The constant data have no zeroth-order part, along any map.
+  simp only [floerLinearizationAdjoint_def,
+    ω.floerLinearizationCoeff_eq_zero_of_eq_base
+      (J := fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
+      (Kt := fun _ _ ↦ 0) _ (z := w) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)]
+
 /-- Let the data be `J₀` and `0` on `‖w‖ ≥ T`. For a covector field `η₂` vanishing on the disc
 `|w| < a`, with `2 T < a`, the formal adjoint of the data along `u` is that of the constant data
 `J₀`, `0` along the zero map. -/
@@ -751,15 +773,8 @@ private theorem floerLinearizationAdjoint_const_eq_of_eq_base
       (notMem_tsupport_iff_eventuallyEq.2 (Filter.mem_of_superset
         ((isOpen_lt Complex.equivRealProdCLM.symm.continuous.norm continuous_const).mem_nhds h)
         fun z hz ↦ hη₂0 z hz)) hw
-    have hT : T ≤ ‖w‖ := by linarith [norm_equivRealProdCLM_symm_le_two_mul w]
-    rw [ω.floerLinearizationAdjoint_congr_data (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0) u η₂
-      (eventuallyEq_const_of_eq_base hJ₀ (by linarith)) (funext (hKs₀ w hT))
-      (funext (hKt₀ w hT))]
-    -- The constant data have no zeroth-order part, along any map.
-    simp only [floerLinearizationAdjoint_def,
-      ω.floerLinearizationCoeff_eq_zero_of_eq_base
-        (J := fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
-        (Kt := fun _ _ ↦ 0) _ (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)]
+    exact (floerLinearizationAdjoint_eq_const_of_eq_base hJ₀ hKs₀ hKt₀ 0 η₂
+      (haT.trans_le haw)).symm
   · rw [floerLinearizationAdjoint_of_notMem_tsupport hw,
       floerLinearizationAdjoint_of_notMem_tsupport hw]
 
