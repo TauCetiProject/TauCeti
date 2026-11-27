@@ -51,16 +51,7 @@ theorem IsPLMap.symm {f : M ≃ₜ N} (hf : s.IsPLMap t f) : t.IsPLMap s f.symm 
   have hG (y : Realization t.K) : G (y.val : t.ι → ℝ) =
       ((s.e.symm (f.symm (t.e y))).val : s.ι → ℝ) :=
     (injective_realization_coe t.K).extend_apply _ _ y
-  have hcoords : s.K.linearExtension (fun v => Pi.single v (1 : ℝ)) =
-      (fun x : Realization s.K => (x.val : s.ι → ℝ)) := by
-    funext x
-    ext i
-    simp +contextual [linearExtension_apply, Finsupp.linearCombination_apply,
-      Pi.single_apply, Finsupp.sum]
-  let K := s.K.imageComplex (fun v => Pi.single v (1 : ℝ))
-    (by simpa only [hcoords] using injective_realization_coe s.K)
-  have hspace : K.space = range fun x : Realization s.K => (x.val : s.ι → ℝ) := by
-    rw [space_imageComplex, hcoords]
+  obtain ⟨K, hK, hspace⟩ := s.K.exists_finite_space_eq_range_realization_coe
   have hleft : LeftInvOn G F K.space := by
     rw [hspace]
     rintro _ ⟨x, rfl⟩
@@ -76,8 +67,7 @@ theorem IsPLMap.symm {f : M ≃ₜ N} (hf : s.IsPLMap t f) : t.IsPLMap s f.symm 
         Homeomorph.symm_apply_apply]
   have hF' : IsPLOn F K.space := by
     rwa [hspace]
-  have hG' := hF'.inverse_of_leftInvOn (K := K) (g := G)
-    (finite_faces_imageComplex_iff.mpr (Set.toFinite _)) hleft
+  have hG' := hF'.inverse_of_leftInvOn (K := K) (g := G) hK hleft
   rw [himage] at hG'
   exact isPLMap_iff.mpr ⟨G, hG', hG⟩
 

@@ -46,6 +46,8 @@ other polyhedra there needs exactly this, as in Munkres' construction of smooth 
   linear extension.
 * `AbstractSimplicialComplex.vertices_imageComplex`: its vertices are the points `p v`.
 * `AbstractSimplicialComplex.finite_faces_imageComplex_iff`: it is finite exactly when `K` is.
+* `AbstractSimplicialComplex.exists_finite_space_eq_range_realization_coe`: on a finite vertex
+  type, the barycentric coordinate range is the space of a finite geometric complex.
 
 ## References
 
@@ -132,5 +134,27 @@ theorem finite_faces_imageComplex_iff : (K.imageComplex p hp).faces.Finite ↔ K
   rw [faces_imageComplex, ← PreAbstractSimplicialComplex.faces_map]
   exact PreAbstractSimplicialComplex.finite_faces_map_iff_of_injOn p
     (injective_of_injective_linearExtension hp).injOn
+
+/-- On a finite vertex type, the barycentric coordinate range of a realization is the space of a
+geometric simplicial complex with finitely many faces. -/
+theorem exists_finite_space_eq_range_realization_coe [Finite ι] (K : AbstractSimplicialComplex ι) :
+    ∃ L : Geometry.SimplicialComplex ℝ (ι → ℝ),
+      L.faces.Finite ∧ L.space = range fun x : Realization K => (x.val : ι → ℝ) := by
+  classical
+  have hcomb : Finsupp.linearCombination ℝ (fun v : ι => Pi.single v (1 : ℝ)) =
+      Finsupp.lcoeFun := by
+    apply Finsupp.lhom_ext
+    intro i r
+    rw [Finsupp.linearCombination_single, Finsupp.lcoeFun_apply, ← Finsupp.single_eq_pi_single,
+      ← Finsupp.coe_smul, Finsupp.smul_single_one]
+  have hcoords : K.linearExtension (fun v => Pi.single v (1 : ℝ)) =
+      (fun x : Realization K => (x.val : ι → ℝ)) := by
+    funext x
+    simp only [linearExtension_apply, hcomb, Finsupp.lcoeFun_apply]
+  let := Fintype.ofFinite ι
+  refine ⟨K.imageComplex (fun v => Pi.single v (1 : ℝ)) ?_,
+    finite_faces_imageComplex_iff.mpr (Set.toFinite _), ?_⟩
+  · simpa only [hcoords] using injective_realization_coe K
+  · rw [space_imageComplex, hcoords]
 
 end AbstractSimplicialComplex
