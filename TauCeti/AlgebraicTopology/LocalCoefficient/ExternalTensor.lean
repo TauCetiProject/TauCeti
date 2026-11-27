@@ -27,8 +27,8 @@ applies to it.
 
 ## References
 
-* E. H. Spanier, *Algebraic Topology*, McGraw-Hill, 1966, §5.5 (the cross product with
-  coefficients in a tensor product of coefficient systems).
+* G. W. Whitehead, *Elements of Homotopy Theory*, Graduate Texts in Mathematics 61, Springer,
+  1978, Chapter VI (homology with local coefficients).
 -/
 
 public section

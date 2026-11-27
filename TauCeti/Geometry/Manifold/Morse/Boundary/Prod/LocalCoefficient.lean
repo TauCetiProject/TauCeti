@@ -17,9 +17,10 @@ pseudo-gradient `X` and orientation data `𝔬`, and likewise `g`, `Y`, `𝔬'` 
 coefficient systems `L` on `M` and `K` on `N` of modules over a commutative ring `S`, this file
 computes the Morse boundary with coefficients in the external tensor product `L ⊠ K`
 (`TauCeti.LocalCoefficientSystem.externalTensor`) of the separated sum `f ∘ Prod.fst + g ∘ Prod.snd`
-on `M × N`, for the product field `(X, Y)` and the product orientation data `𝔬.prod 𝔬'`. It is
-the tensor product of the twisted boundaries of the factors, with the Koszul sign: the component
-from `(p, q)` sends `a ⊗ b`, for `a ∈ L(p)` and `b ∈ K(q)`, to
+on `M × N`, for the product field `(X, Y)` and the product orientation data `𝔬.prod 𝔬'`. When
+`X` and `Y` are Morse–Smale, it is the tensor product of the twisted boundaries of the factors,
+with the Koszul sign: the component from `(p, q)` sends `a ⊗ b`, for `a ∈ L(p)` and `b ∈ K(q)`,
+to
 
 `∂ a ⊗ b + (-1) ^ ind p • a ⊗ ∂ b`.
 
@@ -54,9 +55,8 @@ where `ε` multiplies the value at `p` by `(-1) ^ ind p`
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.twistedMorseBoundary_twistedMorseChainProd`).
 Since the twisted boundary anticommutes with `ε`
 (`TauCeti.IsAdaptedPseudoGradient.twistedMorseBoundary_neg_one_pow_smul`), the twisted boundary of
-the product squares to zero whenever those of the factors do
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.` +
-`twistedMorseBoundary_comp_twistedMorseBoundary_prod`).
+the product squares to zero whenever those of the factors do:
+`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.twistedMorseBoundary_comp_twistedMorseBoundary_prod`.
 
 ## References
 
@@ -285,10 +285,10 @@ private theorem transport_externalTensor_trajectoryPathClass_prod_left {x : M} {
         (hX.map_snd_trajectoryPathClass_prod_left hY w hz))
 
 include hf hg in
-/-- **The components of the twisted boundary of a product along the first factor.** With
-coefficients in `L ⊠ K`, the component of the Morse boundary of the product from `(p, q)` to
-`(p', q)` sends `a ⊗ b` to `∂ a ⊗ b`, where `∂ a` is the component of the boundary of `L` from `p`
-to `p'`. -/
+/-- **The components of the twisted boundary of a product along the first factor.** For
+Morse–Smale `X`, with coefficients in `L ⊠ K`, the component of the Morse boundary of the product
+from `(p, q)` to `(p', q)` sends `a ⊗ b` to `∂ a ⊗ b`, where `∂ a` is the component of the
+boundary of `L` from `p` to `p'`. -/
 theorem twistedMorseBoundaryMap_prod_right (hXs : hX.IsMorseSmale)
     (p p' : criticalPoints 𝓘(ℝ, E) f) (q : criticalPoints 𝓘(ℝ, E') g)
     (a : L.obj (FundamentalGroupoid.mk (p : M))) (b : K.obj (FundamentalGroupoid.mk (q : N))) :
@@ -321,23 +321,13 @@ theorem twistedMorseBoundaryMap_prod_right (hXs : hX.IsMorseSmale)
       (Set.equivOfEq (hX.morseTrajectorySlice_prod_right hY q.property p p').symm)
   have := (hXs.finite_morseTrajectorySlice hf hpp').to_subtype
   have := Fintype.ofFinite (hX.morseTrajectorySlice p p')
-  have hR : hX.twistedMorseBoundaryMap 𝔬 L p p' a ⊗ₜ[S] b = ∑ x : hX.morseTrajectorySlice p p',
-      (hX.trajectorySign (𝔬.chart p) (𝔬.chart p') (𝔬.orientation p) (𝔬.orientation p') hpp' x •
-        LocalCoefficientSystem.transport L (hX.trajectoryPathClass x) a) ⊗ₜ[S] b := by
-    rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hpp', finsum_eq_sum_of_fintype,
-      LinearMap.sum_apply, TensorProduct.sum_tmul]
-    rfl
-  refine Eq.trans ?_ hR.symm
-  -- The terms of the product cannot be rewritten (see above), so the sum over its trajectories
-  -- is reindexed by those of `X` with `Eq.trans`.
-  refine (LinearMap.congr_fun (twistedMorseBoundaryMap_of_morseIndex_eq_add_one
-    (hX := hX.prod hY) (𝔬 := 𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable)
-    (L := L.externalTensor K) hPQ) _).trans ?_
-  refine (LinearMap.congr_fun (finsum_comp_equiv φ).symm _).trans ?_
-  refine (LinearMap.congr_fun (finsum_eq_sum_of_fintype _) _).trans ?_
-  refine (LinearMap.sum_apply _ _ _).trans (Finset.sum_congr rfl fun x _ ↦ ?_)
+  rw [twistedMorseBoundaryMap_apply_eq_sum_of_equiv hpp' (Equiv.refl _), TensorProduct.sum_tmul]
+  -- The terms of the product cannot be rewritten (see above), so its component is unfolded, with
+  -- its trajectories reindexed by those of `X`, by `Eq.trans`.
+  refine (twistedMorseBoundaryMap_apply_eq_sum_of_equiv (hX := hX.prod hY)
+    (𝔬 := 𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable) (L := L.externalTensor K) hPQ φ
+    _).trans (Finset.sum_congr rfl fun x _ ↦ ?_)
   obtain ⟨hu, hs, -⟩ := hX.mem_morseTrajectorySlice.1 x.property
-  refine (LinearMap.smul_apply _ _ _).trans ?_
   refine (congrArg₂ (· • ·) (trajectorySign_prod_right (hX := hX) (hY := hY)
     (𝔬.coord_mfderiv_chart p) (𝔬.coord_mfderiv_chart p') (𝔬'.coord_mfderiv_chart q) hf hg
     q.property ⟨hu, hs⟩ (bijective_trajectoryComparison (𝔬.coord_mfderiv_chart p)
@@ -347,11 +337,11 @@ theorem twistedMorseBoundaryMap_prod_right (hXs : hX.IsMorseSmale)
   exact (TensorProduct.smul_tmul' _ _ _).symm
 
 include hf hg in
-/-- **The components of the twisted boundary of a product along the second factor.** With
-coefficients in `L ⊠ K`, the component of the Morse boundary of the product from `(p, q)` to
-`(p, q')` sends `a ⊗ b` to `(-1) ^ ind p • a ⊗ ∂ b`, where `∂ b` is the component of the boundary
-of `K` from `q` to `q'`: the direction of the flow passes the `ind p` directions of the unstable
-manifold of `p` in the product orientation. -/
+/-- **The components of the twisted boundary of a product along the second factor.** For
+Morse–Smale `Y`, with coefficients in `L ⊠ K`, the component of the Morse boundary of the product
+from `(p, q)` to `(p, q')` sends `a ⊗ b` to `(-1) ^ ind p • a ⊗ ∂ b`, where `∂ b` is the component
+of the boundary of `K` from `q` to `q'`: the direction of the flow passes the `ind p` directions of
+the unstable manifold of `p` in the product orientation. -/
 theorem twistedMorseBoundaryMap_prod_left (hYs : hY.IsMorseSmale)
     (p : criticalPoints 𝓘(ℝ, E) f) (q q' : criticalPoints 𝓘(ℝ, E') g)
     (a : L.obj (FundamentalGroupoid.mk (p : M))) (b : K.obj (FundamentalGroupoid.mk (q : N))) :
@@ -384,27 +374,15 @@ theorem twistedMorseBoundaryMap_prod_left (hYs : hY.IsMorseSmale)
       (Set.equivOfEq (hX.morseTrajectorySlice_prod_left hY p.property q q').symm)
   have := (hYs.finite_morseTrajectorySlice hg hqq').to_subtype
   have := Fintype.ofFinite (hY.morseTrajectorySlice q q')
-  have hR : (-1 : ℤ) ^ manifoldMorseIndex 𝓘(ℝ, E) f p •
-      a ⊗ₜ[S] hY.twistedMorseBoundaryMap 𝔬' K q q' b = ∑ w : hY.morseTrajectorySlice q q',
-        ((-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p *
-          hY.trajectorySign (𝔬'.chart q) (𝔬'.chart q') (𝔬'.orientation q) (𝔬'.orientation q')
-            hqq' w) • a ⊗ₜ[S] LocalCoefficientSystem.transport K (hY.trajectoryPathClass w) b := by
-    rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hqq', finsum_eq_sum_of_fintype,
-      LinearMap.sum_apply, TensorProduct.tmul_sum, Finset.smul_sum]
-    refine Finset.sum_congr rfl fun w _ ↦ ?_
-    rw [LinearMap.smul_apply, TensorProduct.tmul_smul, smul_smul]
-    rfl
-  refine Eq.trans ?_ hR.symm
-  -- As in `twistedMorseBoundaryMap_prod_right`, the sum over the trajectories of the product is
-  -- reindexed by those of `Y` with `Eq.trans`.
-  refine (LinearMap.congr_fun (twistedMorseBoundaryMap_of_morseIndex_eq_add_one
-    (hX := hX.prod hY) (𝔬 := 𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable)
-    (L := L.externalTensor K) hPQ) _).trans ?_
-  refine (LinearMap.congr_fun (finsum_comp_equiv φ).symm _).trans ?_
-  refine (LinearMap.congr_fun (finsum_eq_sum_of_fintype _) _).trans ?_
-  refine (LinearMap.sum_apply _ _ _).trans (Finset.sum_congr rfl fun w _ ↦ ?_)
+  rw [twistedMorseBoundaryMap_apply_eq_sum_of_equiv hqq' (Equiv.refl _), TensorProduct.tmul_sum,
+    Finset.smul_sum]
+  -- As in `twistedMorseBoundaryMap_prod_right`, the component of the product is unfolded, with its
+  -- trajectories reindexed by those of `Y`, by `Eq.trans`.
+  refine (twistedMorseBoundaryMap_apply_eq_sum_of_equiv (hX := hX.prod hY)
+    (𝔬 := 𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable) (L := L.externalTensor K) hPQ φ
+    _).trans (Finset.sum_congr rfl fun w _ ↦ ?_)
   obtain ⟨hu, hs, -⟩ := hY.mem_morseTrajectorySlice.1 w.property
-  refine (LinearMap.smul_apply _ _ _).trans ?_
+  rw [TensorProduct.tmul_smul, smul_smul]
   exact congrArg₂ (· • ·) (trajectorySign_prod_left (hX := hX) (hY := hY)
     (𝔬.coord_mfderiv_chart p) (𝔬'.coord_mfderiv_chart q) (𝔬'.coord_mfderiv_chart q') hf hg
     p.property ⟨hu, hs⟩ (bijective_trajectoryComparison (𝔬'.coord_mfderiv_chart q)
@@ -565,22 +543,24 @@ theorem twistedMorseBoundary_comp_twistedMorseBoundary_prod (hXs : hX.IsMorseSma
   set D := (hX.prod hY).twistedMorseBoundary (𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable)
     (L.externalTensor K) (hf.comp_fst_add_comp_snd_chartedSpaceProd hg)
   set B := twistedMorseChainProd f g L K hX.mdifferentiable hY.mdifferentiable
-  set dL := hX.twistedMorseBoundary 𝔬 L hf
-  set dK := hY.twistedMorseBoundary 𝔬' K hg
   -- The square of the boundary vanishes on external products of chains.
   have hB (c : (p : criticalPoints 𝓘(ℝ, E) f) → L.obj (FundamentalGroupoid.mk (p : M)))
       (d : (q : criticalPoints 𝓘(ℝ, E') g) → K.obj (FundamentalGroupoid.mk (q : N))) :
       D (D (B c d)) = 0 := by
     have hε : (fun r : criticalPoints 𝓘(ℝ, E) f ↦ (-1 : ℤ) ^ manifoldMorseIndex 𝓘(ℝ, E) f r •
-        dL c r) + dL (fun r ↦ (-1 : ℤ) ^ manifoldMorseIndex 𝓘(ℝ, E) f r • c r) = 0 :=
+        hX.twistedMorseBoundary 𝔬 L hf c r) + hX.twistedMorseBoundary 𝔬 L hf
+          (fun r ↦ (-1 : ℤ) ^ manifoldMorseIndex 𝓘(ℝ, E) f r • c r) = 0 :=
       funext fun r ↦ by
       rw [Pi.add_apply, twistedMorseBoundary_neg_one_pow_smul, add_neg_cancel, Pi.zero_apply]
+    have hdL : hX.twistedMorseBoundary 𝔬 L hf (hX.twistedMorseBoundary 𝔬 L hf c) = 0 :=
+      LinearMap.congr_fun hL c
+    have hdK : hY.twistedMorseBoundary 𝔬' K hg (hY.twistedMorseBoundary 𝔬' K hg d) = 0 :=
+      LinearMap.congr_fun hK d
     rw [hXs.twistedMorseBoundary_twistedMorseChainProd hf hg 𝔬 𝔬' L K hYs, map_add,
       hXs.twistedMorseBoundary_twistedMorseChainProd hf hg 𝔬 𝔬' L K hYs,
-      hXs.twistedMorseBoundary_twistedMorseChainProd hf hg 𝔬 𝔬' L K hYs,
-      show dL (dL c) = 0 from LinearMap.congr_fun hL c,
-      show dK (dK d) = 0 from LinearMap.congr_fun hK d, map_zero, LinearMap.zero_apply, map_zero,
-      zero_add, add_zero, ← LinearMap.add_apply, ← map_add, hε, map_zero, LinearMap.zero_apply]
+      hXs.twistedMorseBoundary_twistedMorseChainProd hf hg 𝔬 𝔬' L K hYs]
+    simp only [hdL, hdK, map_zero, LinearMap.zero_apply, zero_add, add_zero,
+      ← LinearMap.map_add₂, hε]
   -- The chains of the product are spanned by external products of single chains.
   refine LinearMap.pi_ext fun P x ↦ ?_
   obtain ⟨⟨p, q⟩, rfl⟩ := (criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable

@@ -191,6 +191,19 @@ theorem twistedMorseBoundaryMap_of_morseIndex_eq_add_one {p q : criticalPoints �
           (LocalCoefficientSystem.transport L (hX.trajectoryPathClass y)).toLinearMap :=
   dite_eq_left hpq
 
+/-- For critical points of consecutive index, the component of the twisted boundary applied to `v`
+is the finite sum of the signed transports of `v` along the trajectories, indexed through an
+equivalence `φ` from a finite type. -/
+theorem twistedMorseBoundaryMap_apply_eq_sum_of_equiv {p q : criticalPoints 𝓘(ℝ, E) f}
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {ι : Type*}
+    [Fintype ι] (φ : ι ≃ hX.morseTrajectorySlice p q) (v : L.obj (FundamentalGroupoid.mk (p : M))) :
+    hX.twistedMorseBoundaryMap 𝔬 L p q v =
+      ∑ i, hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq
+        (φ i) • LocalCoefficientSystem.transport L (hX.trajectoryPathClass (φ i)) v := by
+  rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hpq, ← finsum_comp_equiv φ,
+    finsum_eq_sum_of_fintype, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply, LinearEquiv.coe_coe]
+
 /-- The component of the twisted boundary vanishes unless the index drops by one. -/
 @[simp]
 theorem twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one {p q : criticalPoints 𝓘(ℝ, E) f}
