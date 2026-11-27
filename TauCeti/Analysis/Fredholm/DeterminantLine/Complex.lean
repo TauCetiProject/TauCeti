@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Fredholm.DeterminantLine.DirectSum
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Transport
-public import TauCeti.LinearAlgebra.Determinant.Complex.LinearMap
+public import TauCeti.LinearAlgebra.Determinant.Complex.Prod
 public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
@@ -88,6 +89,17 @@ an operator joined to a complex-linear reference through invertible operators ha
 determinant sign. This holds for real Banach spaces with compatible complex structures that need
 not come from complex norms.
 
+Complex orientations split over direct sums
+(`LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul`), and
+orientation transport commutes with direct sums (`TauCeti.detLineOrientationTransport_prodMap`).
+Together, along paths `T` and `T'` starting at complex-linear operators, transport along `T ⊕ T'`
+carries the complex orientation at the start to the direct sum of the orientations transported
+along `T` and `T'`, normalized by the sign `(-1) ^ (dim coker T b * dim coker T' b)` of
+`TauCeti.detLineOrientationTransport_prodMap`
+(`TauCeti.detLineOrientationTransport_prodMap_of_isComplexPositiveDetLine`): up to this sign at
+the end of the paths, determinant signs relative to complex-linear references multiply over direct
+sums.
+
 ## Main definitions
 
 * `ContinuousLinearMap.IsFredholm.complexDetLineOrientation`: the complex orientation of the
@@ -109,6 +121,9 @@ not come from complex norms.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine`:
   transport from a complex-linear operator along invertible operators gives the orientation of
   invertibility.
+* `TauCeti.detLineOrientationTransport_prodMap_of_isComplexPositiveDetLine`: transport of the
+  complex orientation of a direct sum is the direct sum of the transports, normalized by the sign
+  `(-1) ^ (dim coker T b * dim coker T' b)`.
 
 ## References
 
@@ -641,5 +656,104 @@ theorem detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPos
     LinearEquiv.apply_symm_apply]
 
 end Invertible
+
+section DirectSum
+
+/-! ### Complex orientations of direct sums along paths -/
+
+variable {E F E' F' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Module ℂ E]
+  [IsScalarTower ℝ ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [Module ℂ F]
+  [IsScalarTower ℝ ℂ F] [CompleteSpace F] [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [Module ℂ E'] [IsScalarTower ℝ ℂ E'] [CompleteSpace E'] [NormedAddCommGroup F']
+  [NormedSpace ℝ F'] [Module ℂ F'] [IsScalarTower ℝ ℂ F'] [CompleteSpace F']
+  {T : ℝ → E →L[ℝ] F} {T' : ℝ → E' →L[ℝ] F'} {a b : ℝ}
+
+/-- **Transport of the complex orientation of a direct sum.** Let `T` and `T'` be paths of
+operators between real Banach spaces with compatible complex structures, continuous and Fredholm
+between `a` and `b`, whose operators at `a` are complex linear: `T a` and `T' a` are the real maps
+underlying `f` and `f'`, and their direct sum is the real map underlying `h`. If transport along
+`T` and `T'` carries the complex orientations at `a`, those of complex positive elements `z₁` and
+`z₁'`, to the orientations of `u` and `u'`, then transport along `T ⊕ T'` carries the complex
+orientation of `h` to that of the direct sum of `u` and `u'`, normalized by the sign
+`(-1) ^ (dim coker T b * dim coker T' b)` of `TauCeti.detLineOrientationTransport_prodMap`. So
+determinant signs relative to complex-linear references multiply over direct sums. -/
+theorem detLineOrientationTransport_prodMap_of_isComplexPositiveDetLine
+    (hT : ContinuousOn T (uIcc a b)) (hT' : ContinuousOn T' (uIcc a b))
+    (hF : ∀ t ∈ uIcc a b, IsFredholm (T t)) (hF' : ∀ t ∈ uIcc a b, IsFredholm (T' t))
+    [FiniteDimensional ℝ (T b).ker] [FiniteDimensional ℝ (F ⧸ (T b).range)]
+    [FiniteDimensional ℝ (T' b).ker] [FiniteDimensional ℝ (F' ⧸ (T' b).range)]
+    {f : E →ₗ[ℂ] F} {f' : E' →ₗ[ℂ] F'} {h : E × E' →ₗ[ℂ] F × F'}
+    (hf : f.restrictScalars ℝ = T a) (hf' : f'.restrictScalars ℝ = T' a)
+    (hh : h.restrictScalars ℝ = ((T a).prodMap (T' a) : E × E' →ₗ[ℝ] F × F'))
+    {z₁ : (f.restrictScalars ℝ).detLine} {z₁' : (f'.restrictScalars ℝ).detLine}
+    {z : (h.restrictScalars ℝ).detLine} (hz₁ : f.IsComplexPositiveDetLine z₁)
+    (hz₁' : f'.IsComplexPositiveDetLine z₁') (hz : h.IsComplexPositiveDetLine z)
+    {u : (T b : E →ₗ[ℝ] F).detLine} {u' : (T' b : E' →ₗ[ℝ] F').detLine} (hu : u ≠ 0)
+    (hu' : u' ≠ 0)
+    (htr : detLineOrientationTransport a b hT hF (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z₁)
+      (hz₁.detLineCongrOfEq_ne_zero_of_isFredholm hf (hF a left_mem_uIcc))) = rayOfNeZero ℝ u hu)
+    (htr' : detLineOrientationTransport a b hT' hF' (rayOfNeZero ℝ
+      (LinearMap.detLineCongrOfEq hf' z₁')
+      (hz₁'.detLineCongrOfEq_ne_zero_of_isFredholm hf' (hF' a left_mem_uIcc))) =
+        rayOfNeZero ℝ u' hu') :
+    detLineOrientationTransport (T := fun t ↦ (T t).prodMap (T' t)) a b (hT.prod_mapL ℝ hT')
+        (fun t ht ↦ (hF t ht).prodMap (hF' t ht))
+        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hh z)
+          (hz.detLineCongrOfEq_ne_zero_of_isFredholm hh
+            ((hF a left_mem_uIcc).prodMap (hF' a left_mem_uIcc)))) =
+      rayOfNeZero ℝ ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (T b).range) * finrank ℝ (F' ⧸ (T' b).range)) •
+          ((LinearMap.detLineProdMapEquiv (T b : E →ₗ[ℝ] F) (T' b : E' →ₗ[ℝ] F')).symm (u ⊗ₜ u') :
+            ((T b).prodMap (T' b) : E × E' →ₗ[ℝ] F × F').detLine))
+        (LinearMap.neg_one_pow_smul_detLineProdMapEquiv_symm_tmul_ne_zero _ _ _ hu hu') := by
+  have := (hF a left_mem_uIcc).finite_ker
+  have := (hF a left_mem_uIcc).finite_coker
+  have := (hF' a left_mem_uIcc).finite_ker
+  have := (hF' a left_mem_uIcc).finite_coker
+  have hh' : (f.restrictScalars ℝ).prodMap (f'.restrictScalars ℝ) = h.restrictScalars ℝ := by
+    rw [hh, hf, hf', ContinuousLinearMap.coe_prodMap]
+  -- The kernels and cokernels of `f` and `f'` are finite-dimensional over `ℂ`.
+  have := (hF a left_mem_uIcc).finiteDimensional_ker_of_restrictScalars_eq hf
+  have := (hF' a left_mem_uIcc).finiteDimensional_ker_of_restrictScalars_eq hf'
+  have := (hF a left_mem_uIcc).finiteDimensional_quotient_range_of_restrictScalars_eq hf
+  have := (hF' a left_mem_uIcc).finiteDimensional_quotient_range_of_restrictScalars_eq hf'
+  have := ((hF a left_mem_uIcc).prodMap
+    (hF' a left_mem_uIcc)).finiteDimensional_quotient_range_of_restrictScalars_eq hh
+  -- `z` is a positive multiple of the direct sum of `z₁` and `z₁'`.
+  obtain ⟨c, hc, rfl⟩ :=
+    (hz₁.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul hh' hz₁').exists_pos_smul_eq hz
+  -- The normalizing sign at `a` is `1`, since the cokernel of `T a` is a complex vector space.
+  have heven : Even (finrank ℝ (F ⧸ (T a).range)) := by
+    rw [← hf]
+    exact f.even_finrank_quotient_range_restrictScalars
+  -- Read through `hh`, the direct sum of `z₁` and `z₁'` is the normalized direct sum of their
+  -- images in the determinant lines of `T a` and `T' a`.
+  have key : LinearMap.detLineCongrOfEq hh (LinearMap.detLineCongrOfEq hh'
+      ((LinearMap.detLineProdMapEquiv _ _).symm (z₁ ⊗ₜ z₁'))) =
+      ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (T a).range) * finrank ℝ (F' ⧸ (T' a).range)) •
+        (LinearMap.detLineProdMapEquiv (T a : E →ₗ[ℝ] F) (T' a : E' →ₗ[ℝ] F')).symm
+          (LinearMap.detLineCongrOfEq hf z₁ ⊗ₜ LinearMap.detLineCongrOfEq hf' z₁') :
+        ((T a).prodMap (T' a) : E × E' →ₗ[ℝ] F × F').detLine) := by
+    rw [(heven.mul_right _).neg_one_pow, one_smul, ← LinearEquiv.trans_apply,
+      LinearMap.detLineCongrOfEq_trans]
+    refine (LinearMap.detLineProdMapEquiv (T a : E →ₗ[ℝ] F) (T' a : E' →ₗ[ℝ] F')).injective ?_
+    rw [LinearEquiv.apply_symm_apply]
+    refine (LinearMap.detLineProdMapEquiv_detLineCongrOfEq _ _ hf hf' _).trans ?_
+    rw [LinearEquiv.apply_symm_apply, TensorProduct.congr_tmul]
+  have hv₀ := hz₁.detLineCongrOfEq_ne_zero_of_isFredholm hf (hF a left_mem_uIcc)
+  have hv₀' := hz₁'.detLineCongrOfEq_ne_zero_of_isFredholm hf' (hF' a left_mem_uIcc)
+  have hne := LinearMap.neg_one_pow_smul_detLineProdMapEquiv_symm_tmul_ne_zero
+    (T a : E →ₗ[ℝ] F) (T' a : E' →ₗ[ℝ] F') (finrank ℝ (F ⧸ (T a).range) *
+      finrank ℝ (F' ⧸ (T' a).range)) hv₀ hv₀'
+  have hX : LinearMap.detLineCongrOfEq hh (LinearMap.detLineCongrOfEq hh'
+      ((LinearMap.detLineProdMapEquiv _ _).symm (z₁ ⊗ₜ z₁'))) ≠ 0 := by
+    rw [key]
+    exact hne
+  have hray : rayOfNeZero ℝ _ hX = rayOfNeZero ℝ _ hne :=
+    (ray_eq_iff hX hne).2 (by rw [key]; exact .rfl)
+  simp_rw [LinearEquiv.map_smul]
+  rw [ray_pos_smul hX hc, hray]
+  exact detLineOrientationTransport_prodMap hT hT' hF hF' hv₀ hv₀' hu hu' htr htr'
+
+end DirectSum
 
 end TauCeti
