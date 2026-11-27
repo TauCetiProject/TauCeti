@@ -202,7 +202,7 @@ theorem mem_irreducibleCharacters_of_restrict_eq_of_eqOn_compl {Y : ClassFunctio
     · have hc : h * g * h⁻¹ ∉ N := fun hc => hg (by
         simpa [mul_assoc] using Subgroup.Normal.conj_mem _ hc h⁻¹)
       rw [hoff hc, hoff hg]
-      exact ClassFunction.mem_iff.mp Θ.property g h
+      exact apply_conj Θ h g
   let F : ClassFunction k G := ⟨χ, hcl⟩
   have hYY :=
     characterPairing_self_of_mem_irreducibleCharacters hY (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
@@ -236,10 +236,8 @@ theorem mem_irreducibleCharacters_semidirectProduct_of_comp_inl_eq {N S : Type*}
     (hoff : ∀ x : N ⋊[φ] S, x.right ≠ 1 → χ x = (Θ : N ⋊[φ] S → k) x) :
     χ ∈ irreducibleCharacters k (N ⋊[φ] S) := by
   classical
-  -- `N` is the kernel of the projection onto `S`, which has index `|S|`
+  -- `N` is the kernel of the projection onto `S`, which has index `|S|` (`index_ker_rightHom`)
   let e : N ≃* (rightHom : N ⋊[φ] S →* S).ker := mulEquivKerRightHom
-  have hidx : (rightHom : N ⋊[φ] S →* S).ker.index = Nat.card S := by
-    rw [Subgroup.index_ker, MonoidHom.range_eq_top.mpr rightHom_surjective, Subgroup.card_top]
   have hcomap (f : ClassFunction k (N ⋊[φ] S)) :
       comap (e : N →* _) (comap (rightHom : N ⋊[φ] S →* S).ker.subtype f) = comap inl f :=
     Subtype.ext (funext fun n => by simp [comap_apply, e])
@@ -260,12 +258,11 @@ theorem mem_irreducibleCharacters_semidirectProduct_of_comp_inl_eq {N S : Type*}
     funext x
     obtain ⟨n, rfl⟩ := e.surjective x
     rw [Function.comp_apply, hY', hY', MulAut.conjNormal_apply]
-    simp only [e, coe_mulEquivKerRightHom_apply, mul_inl_mul_inv, left_inl]
-    rw [ClassFunction.mem_iff.mp Y.property]
+    simp only [e, coe_mulEquivKerRightHom_apply, mul_inl_mul_inv, left_inl, apply_conj]
     exact congrFun (hinv g.right) n
-  · rw [hidx, hpair, hcomap]
+  · rw [index_ker_rightHom, hpair, hcomap]
     exact h₁
-  · rw [hidx, hpair, hYe, hcomap]
+  · rw [index_ker_rightHom, hpair, hYe, hcomap]
     exact h₂
   · intro x
     obtain ⟨n, rfl⟩ := e.surjective x

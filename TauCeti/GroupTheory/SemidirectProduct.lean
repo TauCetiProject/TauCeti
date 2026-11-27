@@ -34,6 +34,8 @@ normality of `H` in the ambient group (`SemidirectProduct.mulEquivSup`).
   multiplication homomorphism is `H ⊔ K`.
 * `SemidirectProduct.ker_rightHom_sup_range_inr`: the kernel of the projection to the acting group
   and the acting group generate the semidirect product.
+* `SemidirectProduct.index_ker_rightHom`: the kernel of the projection to the acting group has
+  index the order of the acting group.
 * `SemidirectProduct.mulEquivKerRightHom`: `SemidirectProduct.inl` is an isomorphism from the
   normal factor onto the kernel of the projection to the acting group.
 * `SemidirectProduct.infinite_range_inl`: the image of the normal factor is infinite whenever the
@@ -148,6 +150,12 @@ theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →
   refine top_unique fun x _ ↦ ?_
   rw [← inl_left_mul_inr_right x]
   exact Subgroup.mul_mem_sup (by rw [← range_inl_eq_ker_rightHom]; exact ⟨_, rfl⟩) ⟨_, rfl⟩
+
+/-- The kernel of the projection of a semidirect product to the acting group, which is the image of
+the normal factor, has index the order of the acting group. -/
+theorem index_ker_rightHom {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} :
+    (rightHom : N ⋊[φ] Q →* Q).ker.index = Nat.card Q := by
+  rw [Subgroup.index_ker, MonoidHom.range_eq_top.mpr rightHom_surjective, Subgroup.card_top]
 
 /-- **The normal factor is the kernel of the projection.** `SemidirectProduct.inl` is an
 isomorphism from `N` onto the kernel of `SemidirectProduct.rightHom : N ⋊[φ] Q →* Q`. -/

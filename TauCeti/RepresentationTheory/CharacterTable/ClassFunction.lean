@@ -17,8 +17,9 @@ their module with the module of functions on `ConjClasses G`, computes its finit
 are finitely many conjugacy classes, pulls class functions back along a group homomorphism,
 twists them by a power map, inverts the group element, changes their coefficients along a ring
 homomorphism, shows that characters of representations are class functions, and evaluates a sum
-over a finite group one conjugacy class at a time. The restriction of a class function to a
-normal subgroup is invariant under ambient conjugation
+over a finite group one conjugacy class at a time. The `simp` lemma
+`TauCeti.ClassFunction.apply_conj` evaluates a class function at a conjugate `g * x * g⁻¹`. The
+restriction of a class function to a normal subgroup is invariant under ambient conjugation
 (`TauCeti.ClassFunction.comap_subtype_apply_conjNormal`). On a normal subgroup that is maximal among
 proper subgroups, a class function invariant under conjugation by one outside element is invariant
 under all ambient conjugations (`TauCeti.ClassFunction.apply_conjNormal_eq_of_isCoatom`).
@@ -73,6 +74,11 @@ theorem mem_iff {f : G → k} :
 /-- On a commutative group every function is a class function: conjugation is the identity. -/
 theorem mem_of_isMulCommutative [IsMulCommutative G] (f : G → k) : f ∈ ClassFunction k G :=
   mem_iff.2 fun g h => by rw [IsMulCommutative.is_comm.comm h g, mul_inv_cancel_right]
+
+/-- A class function takes the same value at `x` and at its conjugate `g * x * g⁻¹`. -/
+@[simp]
+theorem apply_conj (f : ClassFunction k G) (g x : G) : f.val (g * x * g⁻¹) = f.val x :=
+  f.property x g
 
 /-- Class functions take the same value on conjugate elements. -/
 theorem eq_of_isConj (f : ClassFunction k G) {g h : G} (hgh : IsConj g h) :
@@ -147,8 +153,7 @@ theorem comap_comp {H : Type w} {J : Type w'} [Group H] [Group J] (φ : H →* G
 conjugation by every element of `G`. -/
 theorem comap_subtype_apply_conjNormal {N : Subgroup G} [N.Normal] (f : ClassFunction k G) (g : G)
     (n : N) : (comap N.subtype f).val (MulAut.conjNormal g n) = (comap N.subtype f).val n := by
-  rw [comap_apply, comap_apply, Subgroup.subtype_apply, MulAut.conjNormal_apply]
-  exact mem_iff.mp f.property n g
+  simp only [comap_apply, Subgroup.subtype_apply, MulAut.conjNormal_apply, apply_conj]
 
 /-- On a normal subgroup that is maximal among proper subgroups, invariance of a class function
 under conjugation by one outside element implies invariance under all ambient conjugations. -/

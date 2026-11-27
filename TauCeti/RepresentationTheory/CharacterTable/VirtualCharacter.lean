@@ -264,15 +264,16 @@ theorem virtualCharacters_le_classFunction :
     exact h ▸ (ClassFunction.ofCharacter V.ρ).property
 
 /-- **The class function of a representation is a virtual character**: for a finite-dimensional
-representation it is the character of `FDRep.of ρ`, and otherwise it is `0`. -/
+representation it is the character of `FDRep.ofShrink ρ`, and otherwise it is `0`. The carrier may
+live in any universe. -/
 @[simp]
-theorem ClassFunction.ofCharacter_mem_virtualCharacters {V : Type u} [AddCommGroup V] [Module k V]
+theorem ClassFunction.ofCharacter_mem_virtualCharacters {V : Type w} [AddCommGroup V] [Module k V]
     (ρ : Representation k G V) :
     (ClassFunction.ofCharacter ρ : G → k) ∈ virtualCharacters k G := by
   by_cases hV : FiniteDimensional k V
-  · have h : (ClassFunction.ofCharacter ρ : G → k) = (FDRep.of ρ).character :=
-      funext fun g => by rw [ClassFunction.ofCharacter_apply, FDRep.character_of]
-    exact h ▸ character_mem_virtualCharacters (FDRep.of ρ)
+  · have h : (ClassFunction.ofCharacter ρ : G → k) = (FDRep.ofShrink ρ).character :=
+      funext fun g => by rw [ClassFunction.ofCharacter_apply, FDRep.character_ofShrink]
+    exact h ▸ character_mem_virtualCharacters (FDRep.ofShrink ρ)
   · have h : (ClassFunction.ofCharacter ρ : G → k) = 0 :=
       funext fun g => by
         rw [ClassFunction.ofCharacter_apply, ρ.character_eq_zero_of_not_finite hV]
@@ -542,6 +543,17 @@ section Norm
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k] [CharZero k]
   [Invertible (Nat.card G : k)]
 
+/-- If a sum of squares of integers is at most one of its terms, every other term vanishes. -/
+private theorem eq_zero_of_sum_mul_self_le {ι : Type*} [Fintype ι] {c : ι → ℤ} {i₀ : ι}
+    (h : ∑ i, c i * c i ≤ c i₀ * c i₀) {j : ι} (hj : j ≠ i₀) : c j = 0 := by
+  classical
+  have hnn : ∀ i ∈ Finset.univ.erase i₀, 0 ≤ c i * c i := fun i _ => mul_self_nonneg _
+  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i₀)] at h
+  have hS : ∑ i ∈ Finset.univ.erase i₀, c i * c i = 0 :=
+    le_antisymm (by linarith) (Finset.sum_nonneg hnn)
+  exact mul_self_eq_zero.mp ((Finset.sum_eq_zero_iff_of_nonneg hnn).mp hS j
+    (Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩))
+
 /-- **A virtual character of norm `1` is `±` an irreducible character.** Writing the virtual
 character as `∑ᵢ cᵢ χᵢ` with integer coefficients, its norm is `∑ᵢ cᵢ²`; a sum of squares of
 integers is `1` only when a single coefficient is `±1` and the rest vanish.
@@ -573,11 +585,8 @@ theorem exists_eq_irreducibleCharacter_or_neg {f : ClassFunction k G}
   have hge : 1 ≤ c i₀ * c i₀ := by simpa using Int.lt_iff_add_one_le.mp hpos
   have hle : c i₀ * c i₀ ≤ 1 := hsum ▸ Finset.single_le_sum hnn (Finset.mem_univ i₀)
   have hone : c i₀ * c i₀ = 1 := le_antisymm hle hge
-  have hadd := Finset.sum_erase_add Finset.univ (fun i => c i * c i) (Finset.mem_univ i₀)
-  have hzero : ∑ i ∈ Finset.univ.erase i₀, c i * c i = 0 := by omega
   have hrest : ∀ i ∈ Finset.univ.erase i₀, c i = 0 := fun i hi =>
-    mul_self_eq_zero.mp
-      ((Finset.sum_eq_zero_iff_of_nonneg fun j _ => hnn j (Finset.mem_univ j)).mp hzero i hi)
+    eq_zero_of_sum_mul_self_le (hsum.trans hone.symm).le (Finset.ne_of_mem_erase hi)
   have hval : (f : G → k) = (c i₀ : k) • irreducibleCharacter k i₀ := by
     rw [hc, ← Finset.sum_erase_add Finset.univ _ (Finset.mem_univ i₀),
       Finset.sum_eq_zero fun i hi => by rw [hrest i hi]; simp, zero_add]
@@ -631,32 +640,25 @@ theorem mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
     sum_characterPairing_smul_ofCharacter (irreducibleRepresentation k)
       (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) f
   choose z hz using hrat
-  -- in `ℤ`: `∑ zᵢ² = n²` and `z i₀ = n w`
+  -- `n • f` is the virtual character `∑ zᵢ χᵢ`, so in `ℤ`: `∑ zᵢ² = n²`, and `z i₀ = n w`
+  have hnf : (((n : k) • f : ClassFunction k G) : G → k) =
+      ∑ i, (z i : k) • irreducibleCharacter k i := by
+    conv_lhs => rw [← hexp]
+    rw [smul_sum, Submodule.coe_sum]
+    refine sum_congr rfl fun i _ => funext fun g => ?_
+    simp [← hz, a, ofCharacter_apply, character_irreducibleRepresentation, mul_assoc]
   have hsq : ∑ i, z i * z i = n * n := by
-    have h := congrArg (fun f' => characterPairing f' f) hexp
-    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul] at h
-    refine Int.cast_injective (α := k) ?_
-    push_cast
-    simp only [← hz]
-    rw [← mul_one ((n : k) * n), ← hnorm, ← h, mul_sum]
-    exact sum_congr rfl fun i _ => by ring
+    have h := characterPairing_eq_intCast_sum hnf hnf
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hnorm, mul_one] at h
+    exact_mod_cast h.symm
   have hzi₀ : z i₀ = n * w := Int.cast_injective (α := k) (by push_cast; rw [← hz, hi₀])
-  -- so the other `zᵢ` vanish
-  have hnn : ∀ i ∈ univ.erase i₀, 0 ≤ z i * z i := fun i _ => mul_self_nonneg _
-  have key : (n : ℤ) * n * (w * w) + ∑ i ∈ univ.erase i₀, z i * z i = n * n * 1 := by
-    rw [← add_sum_erase univ (fun i => z i * z i) (mem_univ i₀), hzi₀] at hsq
-    linear_combination hsq
-  have hn' : (n : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hn
-  have hww : w * w = 1 := le_antisymm
-    (le_of_mul_le_mul_left (by linarith [sum_nonneg hnn]) (mul_self_pos.mpr hn'))
-    (by nlinarith [mul_self_pos.mpr hw])
-  have hS : ∑ i ∈ univ.erase i₀, z i * z i = 0 := by
-    rw [hww] at key
-    linarith
+  -- so `∑ zᵢ² = n² ≤ (n w)² = z i₀ ²`, and the other `zᵢ` vanish
+  have hle : ∑ i, z i * z i ≤ z i₀ * z i₀ := by
+    rw [hsq, hzi₀]
+    nlinarith [mul_self_pos.mpr hw, mul_self_nonneg (n : ℤ)]
   have hzero : ∀ j ≠ i₀, a j = 0 := fun j hj => by
     have h := hz j
-    rw [mul_self_eq_zero.mp ((sum_eq_zero_iff_of_nonneg hnn).mp hS j
-      (mem_erase.mpr ⟨hj, mem_univ j⟩)), Int.cast_zero] at h
+    rw [eq_zero_of_sum_mul_self_le hle hj, Int.cast_zero] at h
     exact (mul_eq_zero.mp h).resolve_left (Nat.cast_ne_zero.mpr hn)
   -- hence `f = w • χ_{i₀}` is a virtual character
   have hfv : (f : G → k) ∈ virtualCharacters k G := by
