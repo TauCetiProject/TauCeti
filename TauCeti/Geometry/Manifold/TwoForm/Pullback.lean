@@ -64,11 +64,8 @@ theorem nondegenerate_bilinFormAt_mpullback_iff (hp : ContMDiff I J ∞ p) (η :
     {z : Z} (hdp : Bijective (mfderiv I J p z)) :
     ((SmoothForm.mpullback p hp η).bilinFormAt z).Nondegenerate ↔
       (η.bilinFormAt (p z)).Nondegenerate := by
-  rw [LinearMap.BilinForm.Nondegenerate, LinearMap.BilinForm.Nondegenerate,
-    (SmoothForm.isAlt_bilinFormAt _ z).isRefl.nondegenerate_iff_separatingLeft,
-    (SmoothForm.isAlt_bilinFormAt η _).isRefl.nondegenerate_iff_separatingLeft,
-    LinearMap.separatingLeft_iff_ker_eq_bot, LinearMap.separatingLeft_iff_ker_eq_bot,
-    ker_bilinFormAt_mpullback hp η hdp.2,
+  rw [SmoothForm.nondegenerate_bilinFormAt_iff_ker_eq_bot,
+    SmoothForm.nondegenerate_bilinFormAt_iff_ker_eq_bot, ker_bilinFormAt_mpullback hp η hdp.2,
     ← LinearMap.ker_eq_bot_of_injective hdp.1,
     ← Submodule.comap_bot]
   exact (Submodule.comap_injective_of_surjective hdp.2).eq_iff

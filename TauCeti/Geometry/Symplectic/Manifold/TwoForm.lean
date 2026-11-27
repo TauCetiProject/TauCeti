@@ -243,11 +243,10 @@ every point `f x`: a tangent vector at `f x` pairing to zero with every vector i
 theorem _root_.IsLocalDiffeomorph.eq_zero_of_isNondegenerate_mpullback {f : M₂ → M}
     (hf : IsLocalDiffeomorph I₂ I ∞ f)
     (h : SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ)) (x : M₂)
-    (v : TangentSpace I (f x)) (hv : ∀ w, SmoothBundleForm.eval₂ σ (f x) v w = 0) : v = 0 := by
-  rw [isNondegenerate_iff_separatingLeft] at h
-  -- The differential at `x` is onto, so `v = df u`, and `u` pairs to zero with every vector.
-  obtain ⟨u, rfl⟩ := (hf.isInvertible_mfderiv (by simp) x).surjective v
-  rw [h x u fun w ↦ by rw [SmoothForm.eval₂_mpullback]; exact hv _, map_zero]
+    (v : TangentSpace I (f x)) (hv : ∀ w, SmoothBundleForm.eval₂ σ (f x) v w = 0) : v = 0 :=
+  have hinv := hf.isInvertible_mfderiv (by simp) x
+  ((nondegenerate_bilinFormAt_mpullback_iff _ σ ⟨hinv.injective, hinv.surjective⟩).1 (h x)).1 v
+    fun w ↦ (SmoothForm.bilinFormAt_apply σ (f x) v w).trans (hv w)
 
 /-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
 back to a nondegenerate form exactly when the form is nondegenerate. -/

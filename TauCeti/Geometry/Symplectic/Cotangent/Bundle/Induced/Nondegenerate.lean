@@ -125,9 +125,7 @@ theorem nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff (n : N) 
   -- latter vanishes exactly when the former is the kernel of the projection's differential.
   have hker := SmoothTwoForm.ker_bilinFormAt_mpullback hq.contMDiff
     (balancedProductInducedForm I G σ hf hfK hσK hμ) hsurj
-  rw [LinearMap.BilinForm.Nondegenerate,
-    (SmoothForm.isAlt_bilinFormAt _ _).isRefl.nondegenerate_iff_separatingLeft,
-    LinearMap.separatingLeft_iff_ker_eq_bot,
+  rw [SmoothForm.nondegenerate_bilinFormAt_iff_ker_eq_bot,
     ← (Submodule.comap_injective_of_surjective hsurj).eq_iff, Submodule.comap_bot, ← hker,
     ← BalancedProduct.ker_mfderiv_quotientMk_rightTranslation,
     le_antisymm_iff, and_iff_left (hker ▸ Submodule.comap_mono bot_le)]
