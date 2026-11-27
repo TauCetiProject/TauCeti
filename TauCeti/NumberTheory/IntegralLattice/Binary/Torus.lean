@@ -129,8 +129,10 @@ private theorem stabilizer_map_binaryNormForm (hL : L.form ≠ 0) :
 lattice `L` with nonzero form and a `ℚ`-algebra `A`, the proper isometries of the base change to
 `A ⊗ V` of the rational norm form of `L` form a group isomorphic to `T_L(A)`, the norm-one elements
 of the quadratic order of discriminant `Δ = binaryDiscriminant L` with coefficients in `A`. A
-proper isometry corresponds to the norm-one element whose regular representation, in the basis of
-`A ⊗ V` given by the carrier basis `b`, is its matrix. -/
+proper isometry corresponds to the norm-one element `x + y ω` whose automorph
+`!![x + y (Δ - β)/2, -c y; a y, x + y (Δ + β)/2]` of the primitive part `⟨a, β, c⟩` of the
+binary norm form of `b` is the matrix of the isometry in the basis of `A ⊗ V` given by `b`
+(`coe_stabilizerEquivUnitary_symm_specialOrthogonalGroupBaseChangeEquivUnitary`). -/
 noncomputable def specialOrthogonalGroupBaseChangeEquivUnitary (hL : L.form ≠ 0) :
     QuadraticMap.specialOrthogonalGroup (L.norm.baseChange A) ≃*
       unitary (QuadraticAlgebra A
