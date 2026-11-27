@@ -386,6 +386,10 @@ theorem transport_bijective (b : Apartment φ) : Function.Bijective (fun α : Af
     · rw [constant_transport, eval_def, add_comm]
       exact heq
 
+/-- With no roots there are no affine roots. -/
+instance [IsEmpty ι] : IsEmpty (AffineRoot φ) :=
+  ⟨fun α ↦ isEmptyElim α.gradient⟩
+
 end AffineRoot
 
 end TauCeti.BruhatTits
