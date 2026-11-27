@@ -34,6 +34,8 @@ and every `t` as above. The standard simplex is compact, so along a sequence `ε
 
 * `Matrix.exists_mulVec_eq_smul_of_nonneg`: an entrywise nonnegative real square matrix has a
   nonzero nonnegative eigenvector whose eigenvalue is its spectral radius.
+* `Matrix.spectralRadius_real_eq_of_nonneg`: an entrywise nonnegative real square matrix has the
+  same spectral radius over `ℝ` as over `ℂ`.
 * `Matrix.ofReal_le_spectralRadius_of_smul_le_mulVec`: if `t y ≤ A y` for a nonzero nonnegative
   vector `y`, then `t` is at most the spectral radius of `A`.
 
@@ -151,6 +153,33 @@ theorem exists_mulVec_eq_smul_of_nonneg [Nonempty n] (hA : ∀ i j, 0 ≤ A i j)
       ∃ v : n → ℝ, 0 ≤ v ∧ v ≠ 0 ∧ A *ᵥ v = r • v :=
   let ⟨r, hr, hρ, hv, _⟩ := exists_spectralRadius_eq_aux hA
   ⟨r, hr, hρ, hv⟩
+
+/-- An entrywise nonnegative real square matrix has the same spectral radius over `ℝ` as over `ℂ`:
+the Perron eigenvalue is a real eigenvalue of largest modulus, and every real eigenvalue is also a
+complex one. -/
+theorem spectralRadius_real_eq_of_nonneg (hA : ∀ i j, 0 ≤ A i j) :
+    spectralRadius ℝ A = spectralRadius ℂ (A.map (↑) : Matrix n n ℂ) := by
+  classical
+  rcases isEmpty_or_nonempty n with hn | hn
+  · simp [spectralRadius]
+  obtain ⟨r, hr, hρ, v, -, hv0, hAv⟩ := exists_mulVec_eq_smul_of_nonneg hA
+  rw [hρ, spectralRadius_eq_of_unital]
+  refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_) ?_
+  · obtain ⟨z, hz, hAz⟩ := mem_spectrum_iff_exists_mulVec_eq_smul.1 hμ
+    have hz' : (fun i ↦ (z i : ℂ)) ≠ 0 := by
+      obtain ⟨j, hj⟩ := Function.ne_iff.1 hz
+      exact fun h ↦ hj (by simpa using congrFun h j)
+    have hAz' : A.map (↑) *ᵥ (fun i ↦ (z i : ℂ)) = (μ : ℂ) • fun i ↦ (z i : ℂ) := by
+      ext i
+      simpa [mulVec, dotProduct] using congrArg Complex.ofReal (congrFun hAz i)
+    have hmem : (μ : ℂ) ∈ spectrum ℂ (A.map (↑) : Matrix n n ℂ) :=
+      mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨_, hz', hAz'⟩
+    have := le_iSup₂ (f := fun (k : ℂ) (_ : k ∈ spectrum ℂ (A.map (↑) : Matrix n n ℂ)) ↦ ‖k‖ₑ)
+      (μ : ℂ) hmem
+    rw [← spectralRadius_eq_of_unital, hρ] at this
+    simpa [eNorm_eq_nnNorm, Complex.nnNorm_real] using this
+  · refine le_iSup₂_of_le r (mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨v, hv0, hAv⟩) ?_
+    rw [Real.eNorm_eq_ofReal hr]
 
 /-- **Collatz–Wielandt bound for nonnegative matrices.** If `t y ≤ A y` entrywise for an entrywise
 nonnegative real square matrix `A` and a nonzero vector `y` with nonnegative entries, then `t` is at

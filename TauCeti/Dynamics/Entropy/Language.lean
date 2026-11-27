@@ -37,8 +37,7 @@ are monotone, so the shift by `c` does not change their growth rate.
   `TauCeti.languageCount_le_coverMincard_shift`: the two comparisons above.
 * `TauCeti.coverEntropy_shift_nat_eq_expGrowthSup`: the entropy formula.
 
-This is the counting step of item 4 of §5.2 of the ClassicalErgodicTheory roadmap, used there for
-subshifts of finite type.
+Used to compute the entropy of subshifts of finite type (`TauCeti.Dynamics.Entropy.FiniteType`).
 -/
 
 public section
@@ -54,6 +53,7 @@ variable {α : Type*}
 def wordsOf (F : Set (ℕ → α)) (n : ℕ) : Set (Fin n → α) :=
   (fun x i ↦ x i) '' F
 
+@[simp]
 theorem mem_wordsOf {F : Set (ℕ → α)} {n : ℕ} {w : Fin n → α} :
     w ∈ wordsOf F n ↔ ∃ x ∈ F, ∀ i : Fin n, x i = w i := by
   simp [wordsOf, funext_iff]
@@ -73,8 +73,7 @@ theorem languageCount_mono : Monotone (languageCount F) := by
   intro m n hmn
   have h : wordsOf F m = (fun w : Fin n → α ↦ fun i : Fin m ↦ w (Fin.castLE hmn i)) ''
       wordsOf F n := by
-    simp only [wordsOf, image_image]
-    rfl
+    simp only [wordsOf, image_image, Fin.val_castLE]
   rw [languageCount_def, languageCount_def, h]
   exact ncard_image_le (toFinite _)
 
