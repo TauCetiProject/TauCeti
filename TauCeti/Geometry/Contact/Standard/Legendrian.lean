@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Contact.Standard
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -92,7 +93,12 @@ theorem range_mfderiv_le_kerDistribution_innerProductContactForm_iff {V : Type*}
   have hmem (s : ℝ) : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, V × V × ℝ) (fun s ↦ (q s, p s, z s)) t s ∈
       (innerProductContactForm V).kerDistribution (q t, p t, z t) ↔
       s * deriv z t = s * ⟪p t, deriv q t⟫_ℝ := by
-    rw [mem_kerDistribution_innerProductContactForm, hd.mfderiv_apply s]
+    have hv : (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, V × V × ℝ) (fun s ↦ (q s, p s, z s)) t s : V × V × ℝ) =
+        s • (deriv q t, deriv p t, deriv z t) := by
+      rw [Manifold.mfderiv_apply_eq_smul_curveVelocity, Manifold.curveVelocity_eq_deriv, hd.deriv]
+      -- The scalar action on the tangent space is that of the model space.
+      rfl
+    rw [mem_kerDistribution_innerProductContactForm, hv]
     simp [inner_smul_right]
   rw [LinearMap.range_le_iff_comap, Submodule.eq_top_iff']
   exact ⟨fun h ↦ by simpa using (hmem 1).1 (h (1 : ℝ)),
@@ -176,8 +182,10 @@ private theorem isLegendrianEmbedding_smul {α : SmoothForm 𝓘(ℝ, ℝ × ℝ
   have hd (t : ℝ) : HasDerivAt (fun s : ℝ ↦ s • v) v t := by
     simpa using (hasDerivAt_id t).smul_const v
   have hdf (t s : ℝ) :
-      (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s : ℝ ↦ s • v) t s : ℝ × ℝ × ℝ) = s • v :=
-    (hd t).mfderiv_apply s
+      (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s : ℝ ↦ s • v) t s : ℝ × ℝ × ℝ) = s • v := by
+    rw [Manifold.mfderiv_apply_eq_smul_curveVelocity, Manifold.curveVelocity_eq_deriv, (hd t).deriv]
+    -- The scalar action on the tangent space is that of the model space.
+    rfl
   have hsmooth : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ (fun s : ℝ ↦ s • v) :=
     (contDiff_id.smul contDiff_const).contMDiff
   have himm : Manifold.IsImmersion 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ (fun s : ℝ ↦ s • v) :=
