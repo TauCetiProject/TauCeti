@@ -8,13 +8,17 @@ module
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.GroupTheory.GroupAction.Effective
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # The coarse space of the faithful quotient action
 
 Dividing by the kernel of a permutation action preserves the actual orbit quotient with its
 quotient topology. This needs no continuity assumption: the two orbit relations coincide.
-If the original group acts by continuous maps, so does the quotient group.
+If the original group acts by continuous maps, so does the quotient group. If every orbit map
+`g ↦ g • x` is continuous and points are closed, the kernel of the action is a closed subgroup
+(`TauCeti.isClosed_ker_toPermHom`), so that for a topological group the faithful quotient is the
+quotient by a closed normal subgroup.
 
 ## References
 
@@ -34,6 +38,13 @@ instance instContinuousConstSMulQuotientKerToPermHom [ContinuousConstSMul G X] :
     ContinuousConstSMul (G ⧸ (toPermHom G X).ker) X where
   continuous_const_smul q := QuotientGroup.induction_on q fun g ↦ by
     simpa only [quotientKerToPermHom_mk_smul] using (continuous_const_smul g : Continuous (g • ·))
+
+/-- **The kernel of an action is closed** when every orbit map `g ↦ g • x` is continuous and points
+are closed: it is the intersection of the stabilizers of all points. -/
+theorem isClosed_ker_toPermHom [TopologicalSpace G] [T1Space X]
+    (h : ∀ x : X, Continuous fun g : G ↦ g • x) : IsClosed ((toPermHom G X).ker : Set G) := by
+  rw [ker_toPermHom_eq_iInf_stabilizer, Subgroup.coe_iInf]
+  exact isClosed_iInter fun x ↦ isClosed_stabilizer (h x)
 
 /-- Effective reduction of a connected finite smooth action chart preserves its coarse topology.
 More generally, every action has the same orbit topology as its faithful quotient. -/

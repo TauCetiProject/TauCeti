@@ -43,6 +43,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   `d` is `d.homology hd`.
 * `LinearMap.homologyMap`: the map on homology induced by a semilinear chain map
   `f` across coefficient rings with `f ∘ d = e ∘ f`.
+* `LinearMap.homologyEquivOfHomotopy`: the isomorphism of homologies induced by a chain homotopy
+  equivalence.
 * `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a semilinear equivalence `f`
   with `f ∘ d = e ∘ f`.
 * `LinearMap.homologyRTensorProdEquiv`: the homology of `d ⊗ 1` on `M ⊗ (S × S)` is the homology
@@ -364,6 +366,44 @@ theorem comp_comp_sub_id_eq_of_sub_id_eq {f : M →ₗ[S] N} {g : N →ₗ[S] M}
   rw [← sub_add_sub_cancel _ (g (f x)), h₁, h₂]
   abel
 
+/-- **A chain homotopy equivalence induces an isomorphism on homology.** If chain maps
+`f : (M, d) → (N, e)` and `g : (N, e) → (M, d)` between square-zero endomorphisms have
+`g ∘ f - 1 = d ∘ h + h ∘ d` and `f ∘ g - 1 = e ∘ k + k ∘ e` for some `h` and `k`, the maps they
+induce on homology are mutually inverse. -/
+noncomputable def homologyEquivOfHomotopy (f : M →ₗ[S] N) (g : N →ₗ[S] M) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ e = d ∘ₗ g)
+    (hgf : ∃ h : M →ₗ[S] M, g ∘ₗ f - LinearMap.id = d ∘ₗ h + h ∘ₗ d)
+    (hfg : ∃ k : N →ₗ[S] N, f ∘ₗ g - LinearMap.id = e ∘ₗ k + k ∘ₗ e) :
+    d.homology hd ≃ₗ[S] e.homology he :=
+  LinearEquiv.ofLinearMap (homologyMap f hd he hf) (homologyMap g he hd hg)
+    (by
+      obtain ⟨k, hk⟩ := hfg
+      rw [homologyMap_comp_homologyMap, homologyMap_eq_of_sub_eq _ _ k he he _ (by simp) hk,
+        homologyMap_id])
+    (by
+      obtain ⟨h, hh⟩ := hgf
+      rw [homologyMap_comp_homologyMap, homologyMap_eq_of_sub_eq _ _ h hd hd _ (by simp) hh,
+        homologyMap_id])
+
+/-- The isomorphism induced by a chain homotopy equivalence is the map induced by `f`. -/
+@[simp]
+theorem homologyEquivOfHomotopy_apply (f : M →ₗ[S] N) (g : N →ₗ[S] M) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ e = d ∘ₗ g)
+    (hgf : ∃ h : M →ₗ[S] M, g ∘ₗ f - LinearMap.id = d ∘ₗ h + h ∘ₗ d)
+    (hfg : ∃ k : N →ₗ[S] N, f ∘ₗ g - LinearMap.id = e ∘ₗ k + k ∘ₗ e) (c : d.homology hd) :
+    homologyEquivOfHomotopy f g hd he hf hg hgf hfg c = homologyMap f hd he hf c :=
+  (rfl)
+
+/-- The inverse of the isomorphism induced by a chain homotopy equivalence is the map induced by
+`g`. -/
+@[simp]
+theorem homologyEquivOfHomotopy_symm_apply (f : M →ₗ[S] N) (g : N →ₗ[S] M) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ e = d ∘ₗ g)
+    (hgf : ∃ h : M →ₗ[S] M, g ∘ₗ f - LinearMap.id = d ∘ₗ h + h ∘ₗ d)
+    (hfg : ∃ k : N →ₗ[S] N, f ∘ₗ g - LinearMap.id = e ∘ₗ k + k ∘ₗ e) (c : e.homology he) :
+    (homologyEquivOfHomotopy f g hd he hf hg hgf hfg).symm c = homologyMap g he hd hg c :=
+  (rfl)
+
 end Homotopy
 
 section Product
@@ -611,6 +651,15 @@ theorem homologyEquiv_mk (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e 
         ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d) (e := e) f.toLinearMap hf z.property⟩ :=
   LinearMap.homologyMap_mk f.toLinearMap hd he hf z
 
+/-- As a function, the equivalence of homologies induced by `f` is the map induced by `f` on
+homology. -/
+theorem coe_homologyEquiv (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f.toLinearMap ∘ₛₗ d = e ∘ₛₗ f.toLinearMap) :
+    ⇑(f.homologyEquiv hd he hf) = LinearMap.homologyMap f.toLinearMap hd he hf :=
+  funext fun z => by
+    obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ z
+    simp
+
 /-- A semilinear equivalence `f` induces an equivalence from the homology of a square-zero
 endomorphism `d` to that of its conjugate `f ∘ d ∘ f⁻¹`. -/
 noncomputable def conjHomologyEquiv (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) :
@@ -772,12 +821,6 @@ end LinearMap
 namespace HomologicalComplex
 
 variable {S : Type*} [Ring S] {K L : HomologicalComplex (ModuleCat S) (ComplexShape.refl Unit)}
-
-variable (K) in
-/-- The unique differential of a complex of shape `ComplexShape.refl Unit` squares to zero, as a
-linear map. -/
-theorem hom_d_comp_hom_d : (K.d () ()).hom ∘ₗ (K.d () ()).hom = 0 := by
-  rw [← ModuleCat.hom_comp, K.d_comp_d, ModuleCat.hom_zero]
 
 variable (K) in
 /-- The homology of a one-object complex of modules is the kernel of its differential modulo

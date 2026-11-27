@@ -110,9 +110,7 @@ theorem quasiIso_of_forall_quasiIso_truncLE {M : DGRightModuleCat.{uR, uA, uM} h
     QuasiIso φ :=
   quasiIso_of_forall_quasiIso_of_injective (M.ιTruncLE h𝒜)
     (fun k ↦ M.ιTruncLE_injective (h𝒜 := h𝒜) k)
-    (fun s ↦ (M.exists_forall_mem_truncLESubmodule (h𝒜 := h𝒜) s).imp fun _ hk x hx ↦ by
-      rw [DGRightModuleCat.range_ιTruncLE]
-      exact hk x hx)
+    (M.exists_forall_mem_range_ιTruncLE (h𝒜 := h𝒜))
     φ φ' hφ' hcomm
 
 include h𝒜 in

@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.BesselPotential.Conjugation
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 
@@ -38,7 +39,10 @@ It can be tested with a single cutoff: for `1 < p < ∞`, `T` is `H^{s,p}` near 
 (`Distribution.isLocallyMemSobolevAt_iff_exists_memSobolev_cutoffTempered`), since test functions
 multiply `H^{s,p}` into itself (`TemperedDistribution.MemSobolev.smulLeftCLM_testFunction`).
 Conversely, if `T` is `H^{s,p}` near every point of the support of `χ`, then `χ T ∈ H^{s,p}`
-(`Distribution.memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt`).
+(`Distribution.memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt`). A tempered
+distribution in `H^{s,p}`, and its real part, are `H^{s,p}` near every point of `Ω`
+(`TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_toDistribution`,
+`TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_re_toDistribution`).
 
 Smooth multiples preserve the notion (`Distribution.IsLocallyMemSobolevAt.smulLeftCLM`), and for
 `1 < p < ∞` each derivative costs one order (`Distribution.IsLocallyMemSobolevAt.lineDerivOp`,
@@ -120,7 +124,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 for every Schwartz function `ψ`. -/
 theorem MemSobolev.memSobolev_neg_two_mul_smulLeftCLM (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ}
     {k : ℕ} (hk : finrank ℝ E < 2 * (s + 2 * k)) {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f)
-    (ψ : 𝓢(E, ℂ)) : MemSobolev (-(2 * k)) p (smulLeftCLM F (ψ : E → ℂ) f) := by
+    (ψ : 𝓢(E, ℂ)) :
+    MemSobolev (-(2 * k)) p (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) f) := by
   -- `v = J^{-2k} f` lies in `H^{s + 2k}` with `2 (s + 2k) > n`, so it is an `L²` function with a
   -- bounded continuous representative.
   set v := besselPotential E F (-(2 * k)) f
@@ -135,7 +140,8 @@ theorem MemSobolev.memSobolev_neg_two_mul_smulLeftCLM (hp : 1 < p) (hp_top : p �
   have hgb : MemLp (g : E → F) ∞ volume := g.toBCF.memLp_top
   -- Each factor `J²` of `f = (J²)^k v` costs two orders.
   have key (j : ℕ) (ψ : 𝓢(E, ℂ)) :
-      MemSobolev (-(2 * j)) p (smulLeftCLM F (ψ : E → ℂ) (besselPotential E F (2 * j) v)) := by
+      MemSobolev (-(2 * j)) p
+        (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) (besselPotential E F (2 * j) v)) := by
     induction j generalizing ψ with
     | zero =>
       simpa [besselPotential_zero, hu] using memSobolev_zero_smulLeftCLM_of_ae_eq hgb hg ψ
@@ -422,6 +428,16 @@ theorem _root_.TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_toDistribut
   ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun φ _ ↦ by
     rw [cutoffTempered_toDistribution]
     exact hu.smulLeftCLM_testFunction hp hp_top φ⟩
+
+/-- Let `1 < p < ∞`. The real part of a tempered distribution in `H^{s,p}`, restricted to `Ω`, is
+`H^{s,p}` near every point of `Ω`. -/
+theorem _root_.TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_re_toDistribution
+    (hp : 1 < p) (hp_top : p ≠ ∞) {u : 𝓢'(E, ℂ)} (hu : TemperedDistribution.MemSobolev s p u)
+    (hx : x ∈ Ω) :
+    (mapCLM (Complex.ofRealCLM ∘L Complex.reCLM)
+      (TemperedDistribution.toDistribution Ω u)).IsLocallyMemSobolevAt s p x := by
+  rw [TemperedDistribution.mapCLM_re_toDistribution]
+  exact ((hu.add (hu.conjPostcompCLM _)).smul _).isLocallyMemSobolevAt_toDistribution hp hp_top hx
 
 variable {e : OpenPartialHomeomorph E E} {U : Opens E}
   {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}

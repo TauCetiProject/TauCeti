@@ -78,6 +78,19 @@ noncomputable def InfiniteAdeleRing.homeomorphMixedSpace :
     continuous_toFun := isom.continuous.congr h
     continuous_invFun := isom.symm.continuous.congr hsymm }
 
+/-- The zero of the infinite adeles is zero at every infinite place: the additive structure of
+`InfiniteAdeleRing K` is that of the product of the completions. -/
+@[simp]
+theorem InfiniteAdeleRing.zero_apply (w : InfinitePlace K) : (0 : InfiniteAdeleRing K) w = 0 :=
+  rfl
+
+/-- Infinite adeles are added place by place: the additive structure of `InfiniteAdeleRing K` is
+that of the product of the completions. -/
+@[simp]
+theorem InfiniteAdeleRing.add_apply (x y : InfiniteAdeleRing K) (w : InfinitePlace K) :
+    (x + y) w = x w + y w :=
+  rfl
+
 @[simp]
 theorem InfiniteAdeleRing.homeomorphMixedSpace_apply
     (x : InfiniteAdeleRing K) :
