@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Contact.Contactomorphism
 public import TauCeti.Geometry.Contact.Symplectization.Annihilator
 public import TauCeti.Geometry.Contact.Symplectization.Trivialization
 public import TauCeti.Geometry.Manifold.Diffeomorph.Annihilator
+import TauCeti.Geometry.Contact.Symplectization.Components
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
@@ -55,7 +57,27 @@ reverses the coorientation and lands in the other half,
 `Φ (κ_α (t, x)) = κ_(-α') (t - log(-f(x)), h x)`
 
 (`Diffeomorph.annihilatorLift_symplectizationToAnnihilator_of_neg`). These identities only use
-that `ξ` and `ξ'` are smooth hyperplane fields.
+that `ξ` and `ξ'` are smooth hyperplane fields. So for `f > 0` the lift maps the image of `κ_α`
+onto that of `κ_α'`, and for `f < 0` onto that of `κ_(-α')`
+(`Diffeomorph.image_annihilatorLift_range_symplectizationToAnnihilator`,
+`Diffeomorph.image_annihilatorLift_range_symplectizationToAnnihilator_of_neg`).
+
+On a connected manifold these images are the two connected components of `ξ⁰ ∖ 0`
+(`TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_range`). Hence a
+contactomorphism `g` of `ξ = ker α` with `g^* α = f α`, `f < 0`, exchanges the two components: its
+lift sends every covector of `ξ⁰ ∖ 0` to the component not containing it
+(`Diffeomorph.disjoint_connectedComponentIn_annihilatorLift`), while it still preserves `θ`. In
+the trivialization by `α`, by contrast, no map `(t, x) ↦ (φ(t, x), g x)` covering `g` preserves
+`eᵗ α` (`TauCeti.SmoothForm.eq_symplectizationLift_of_mpullback_symplectization_eq`).
+
+On the standard contact space `V × V × ℝ` with `α = dz - ⟪p, dq⟫`, the diffeomorphism
+`e : (q, p, z) ↦ (q, c p, c z)` pulls `α` back to `c α`. A map `(t, x) ↦ (φ(t, x), e x)` preserves
+`eᵗ α` exactly when `c > 0` and `φ(t, x) = t - log c`
+(`TauCeti.mpullback_symplectization_innerProductContactForm_eq_iff_of_coe_eq`), and for `c < 0` the
+lift of `e` exchanges the components of `ξ⁰ ∖ 0`
+(`TauCeti.disjoint_connectedComponentIn_annihilatorLift_innerProductContactForm_of_coe_eq`). For
+`V = ℝ` and `c = -1` this is the map `(x, y, z) ↦ (-x, y, -z)` of `ℝ³` with the form `dz - x dy`,
+in the coordinates `(q, p, z) = (y, x, z)` of `TauCeti.mpullback_innerProductContactForm_real`.
 
 The preservation of `θ` is the naturality of the Liouville form under cotangent lifts
 (`Diffeomorph.mpullback_cotangent_liouvilleForm`), pulled back along the inclusions of the
@@ -328,6 +350,141 @@ theorem annihilatorLift_comp_symplectizationToAnnihilator (hf₀ : ∀ x, 0 < f 
   funext fun p ↦
     annihilatorLift_symplectizationToAnnihilator h hDD' hD hD' hk hk' hα hα' hf (hf₀ p.2)
 
+omit [Nonempty M] [Nonempty N] in
+include hf in
+/-- **The lift of a coorientation-preserving contactomorphism maps half onto half.** If `h` pulls
+`α'` back to `f α` for an everywhere positive `f`, then the lift of `h` to the annihilator lines
+maps the image of `κ_α`, the covectors that are positive multiples of `α`, onto the image of
+`κ_α'`. -/
+theorem image_annihilatorLift_range_symplectizationToAnnihilator (hf₀ : ∀ x, 0 < f x) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    h.annihilatorLift hDD' hD hD' hk hk' '' range (α.symplectizationToAnnihilator hα) =
+      range (α'.symplectizationToAnnihilator hα') := by
+  let := hD.annihilatorFiberBundle hk
+  let := hD'.annihilatorFiberBundle hk'
+  rw [← Set.range_comp,
+    annihilatorLift_comp_symplectizationToAnnihilator h hDD' hD hD' hk hk' hα hα' hf hf₀,
+    Set.range_comp, (symplectizationLift_surjective (F := h) h.surjective f).range_eq, image_univ]
+
+omit [Nonempty M] [Nonempty N] in
+include hf in
+/-- **The lift of a coorientation-reversing contactomorphism maps half onto the opposite half.**
+If `h` pulls `α'` back to `f α` for an everywhere negative `f`, then the lift of `h` to the
+annihilator lines maps the image of `κ_α`, the covectors that are positive multiples of `α`, onto
+the image of `κ_(-α')`, the covectors that are negative multiples of `α'`. -/
+theorem image_annihilatorLift_range_symplectizationToAnnihilator_of_neg (hf₀ : ∀ x, f x < 0) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    h.annihilatorLift hDD' hD hD' hk hk' '' range (α.symplectizationToAnnihilator hα) =
+      range ((-α').symplectizationToAnnihilator (SmoothForm.kerDistribution_neg.trans hα')) :=
+  image_annihilatorLift_range_symplectizationToAnnihilator h hDD' hD hD' hk hk' hα
+    (SmoothForm.kerDistribution_neg.trans hα')
+    (fun x ↦ SmoothForm.mpullback_neg_apply_eq_neg_smul (hf x)) fun x ↦ neg_pos.2 (hf₀ x)
+
 end Trivialization
 
+/-! ### Exchange of the two halves -/
+
+section Exchange
+
+variable [BoundarylessManifold I M] [PreconnectedSpace M] {g : M ≃ₘ⟮I, I⟯ M}
+  (hgξ : ∀ x v, v ∈ ξ x ↔ mfderiv I I g x v ∈ ξ (g x)) {α : SmoothForm I M ℝ 1}
+  (hα : α.kerDistribution = ξ) {f : M → ℝ}
+  (hf : ∀ x, (SmoothForm.mpullback g g.contMDiff α).val x = f x • α.val x)
+
+include hα hf in
+/-- **A coorientation-reversing contactomorphism exchanges the two components of the
+symplectization.** Let `ξ = ker α` be a contact structure on a preconnected manifold and let `g`
+be a contactomorphism of `ξ` pulling `α` back to `f α` with `f` everywhere negative. Then the
+lift of `g` to the symplectization `ξ⁰ ∖ 0` sends every covector to the connected component not
+containing it: the component of `κ_α` to that of `κ_(-α)`, and conversely. -/
+theorem disjoint_connectedComponentIn_annihilatorLift (hf₀ : ∀ x, f x < 0)
+    {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x}
+    (hz : z ∈ hξ.annihilatorPunctured) :
+    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+    Disjoint (connectedComponentIn (hξ.annihilatorPunctured : Set _) z)
+      (connectedComponentIn (hξ.annihilatorPunctured : Set _)
+        (g.annihilatorLift hgξ hξ.isContMDiffDistribution hξ.isContMDiffDistribution
+          hξ.finrank_sub_one_add_one hξ.finrank_sub_one_add_one z)) := by
+  let := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+  have hα₀ : ∀ x, α.val x ≠ 0 :=
+    (SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hα ▸ hξ)).apply_ne_zero
+  have hneg := SmoothForm.kerDistribution_neg.trans hα
+  have hdisj := SmoothForm.disjoint_range_symplectizationToAnnihilator_neg hα hα₀
+  rcases (SmoothForm.mem_range_symplectizationToAnnihilator_or_neg_iff hα hα₀).2
+    (hξ.mem_annihilatorPunctured.1 hz) with ⟨p, rfl⟩ | ⟨p, rfl⟩
+  · -- The half of `α` goes to the half of `-α`.
+    rw [hξ.connectedComponentIn_annihilatorPunctured_eq_range hα p,
+      annihilatorLift_symplectizationToAnnihilator_of_neg g hgξ _ _ _ _ hα hα hf (hf₀ p.2),
+      hξ.connectedComponentIn_annihilatorPunctured_eq_range hneg]
+    exact hdisj
+  · -- The half of `-α` goes to the half of `α`, since `g^* α = (-f) (-α)` with `-f > 0`.
+    have hf' (x : M) : (SmoothForm.mpullback g g.contMDiff α).val x = -f x • (-α).val x := by
+      rw [hf x, NegMemClass.coe_neg, Pi.neg_apply, neg_smul_neg]
+    rw [hξ.connectedComponentIn_annihilatorPunctured_eq_range hneg p,
+      annihilatorLift_symplectizationToAnnihilator g hgξ _ _ _ _ hneg hα hf' (neg_pos.2 (hf₀ p.2)),
+      hξ.connectedComponentIn_annihilatorPunctured_eq_range hα]
+    exact hdisj.symm
+
+end Exchange
+
 end Diffeomorph
+
+/-! ### The standard contact space -/
+
+namespace TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- **The scalings of the standard contact space and the symplectization.** Let `e` be the
+diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of `V × V × ℝ`, which pulls the standard contact form
+`α = dz - ⟪p, dq⟫` back to `c α`. A map `(t, x) ↦ (φ(t, x), e x)` covering `e` pulls the
+symplectization form `eᵗ α` back to itself exactly when `c > 0` and `φ(t, x) = t - log c`. In
+particular, for `c < 0`, such as for `(q, p, z) ↦ (q, -p, -z)`, no map covering `e` preserves
+`eᵗ α`. -/
+theorem mpullback_symplectization_innerProductContactForm_eq_iff_of_coe_eq {c : ℝ}
+    {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2))
+    {φ : ℝ × (V × V × ℝ) → ℝ} (hφ : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V × V × ℝ)) 𝓘(ℝ) ∞ φ) :
+    SmoothForm.mpullback (fun p ↦ (φ p, e p.2)) (hφ.prodMk (e.contMDiff.comp contMDiff_snd))
+        (innerProductContactForm V).symplectization =
+      (innerProductContactForm V).symplectization ↔
+        0 < c ∧ φ = fun p ↦ p.1 - Real.log c := by
+  have hpull := mpullback_innerProductContactForm_apply_of_coe_eq he
+  constructor
+  · intro h
+    obtain ⟨hc, hφe⟩ := SmoothForm.eq_symplectizationLift_of_mpullback_symplectization_eq
+      e.contMDiff hpull (isContactForm_innerProductContactForm V).apply_ne_zero hφ h
+    exact ⟨hc 0, funext fun p ↦ by simpa using congrArg Prod.fst (congrFun hφe p)⟩
+  · rintro ⟨hc, rfl⟩
+    -- The map `(t, x) ↦ (t - log c, e x)` is the lift `symplectizationLift e (fun _ ↦ c)`.
+    convert SmoothForm.mpullback_symplectizationLift_symplectization e.contMDiff contMDiff_const
+      (fun _ ↦ hc) hpull <;> simp
+
+/-- **The scalings with negative factor exchange the components of the symplectization.** For
+`c < 0`, the diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of `V × V × ℝ`, such as
+`(q, p, z) ↦ (q, -p, -z)`, is a contactomorphism of the standard contact structure `ker α`,
+`α = dz - ⟪p, dq⟫`, reversing its coorientation. Its lift to the symplectization `ξ⁰ ∖ 0` of
+`ξ = ker α` preserves the tautological one-form
+(`Diffeomorph.mpullback_annihilatorLift_annihilatorLiouvilleForm`) and sends every covector to the
+connected component not containing it. -/
+theorem disjoint_connectedComponentIn_annihilatorLift_innerProductContactForm_of_coe_eq
+    [FiniteDimensional ℝ V] {c : ℝ} (hc : c < 0) {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)}
+    (he : ⇑e = fun x ↦ (x.1, c • x.2))
+    {z : TotalSpace (Fin 1 → ℝ) fun x ↦
+      annihilatorSpace 𝓘(ℝ, V × V × ℝ) (innerProductContactForm V).kerDistribution x}
+    (hz : z ∈ IsContactDistribution.annihilatorPunctured
+      ((isContactForm_innerProductContactForm V).isContactDistribution_kerDistribution (n := ∞))) :
+    let hξ : IsContactDistribution 𝓘(ℝ, V × V × ℝ) ∞ (innerProductContactForm V).kerDistribution :=
+      (isContactForm_innerProductContactForm V).isContactDistribution_kerDistribution
+    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+    Disjoint (connectedComponentIn (hξ.annihilatorPunctured : Set _) z)
+      (connectedComponentIn (hξ.annihilatorPunctured : Set _)
+        (e.annihilatorLift (fun x v ↦ (Diffeomorph.isContactomorphism_iff.1
+            (isContactomorphism_innerProductContactForm_of_coe_eq hc.ne he) x v).symm)
+          hξ.isContMDiffDistribution hξ.isContMDiffDistribution
+          hξ.finrank_sub_one_add_one hξ.finrank_sub_one_add_one z)) :=
+  Diffeomorph.disjoint_connectedComponentIn_annihilatorLift _ _ rfl
+    (mpullback_innerProductContactForm_apply_of_coe_eq he) (fun _ ↦ hc) hz
+
+end TauCeti

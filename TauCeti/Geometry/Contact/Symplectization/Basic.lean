@@ -317,6 +317,14 @@ theorem contMDiff_symplectizationLift {F : M → M'} (hF : ContMDiff I I' ∞ F)
     ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I') ∞ (symplectizationLift F f) :=
   (contMDiff_fst.sub ((hf.log hf₀).comp contMDiff_snd)).prodMk (hF.comp contMDiff_snd)
 
+omit [TopologicalSpace M] [TopologicalSpace M'] in
+/-- The lift `(t, x) ↦ (t - log f(x), F(x))` of a surjective map is surjective, for every
+function `f`. -/
+theorem symplectizationLift_surjective {F : M → M'} (hF : Function.Surjective F) (f : M → ℝ) :
+    Function.Surjective (symplectizationLift F f) := fun q ↦ by
+  obtain ⟨x, hx⟩ := hF q.2
+  exact ⟨(q.1 + Real.log (f x), x), by simp [hx]⟩
+
 namespace SmoothForm
 
 /-- Pulling back a symplectization form along a map covering `F` depends on its real component
