@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 public import TauCeti.NumberTheory.QuadraticForm.Global.Operations
+import Mathlib.RingTheory.Finiteness.Descent
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
@@ -28,8 +29,9 @@ at least two, representation of regular forms is controlled only by dimension, a
 of equal dimension are equivalent.  `TauCeti.NumberTheory.QuadraticForm.Global.ComplexPlaces`
 makes this omission explicit.
 
-If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic. Adjoining a
-zero orthogonal summand does not change which scalars a form locally represents.
+If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic; for a
+regular form, the converse holds as well. Adjoining a zero orthogonal summand does not change
+which scalars a form locally represents.
 
 -/
 
@@ -142,6 +144,24 @@ theorem LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
       ((QuadraticMap.represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.2 w)
       (by simpa using ha)
     simp
+
+/-- For a regular quadratic form over a number field and any scalar `a`, adjoining `⟨-a⟩` produces
+a locally isotropic form if and only if the form locally represents `a`. -/
+theorem isLocallyIsotropic_smul_sq_prod_iff
+    (Q : _root_.QuadraticForm K W) (hQ : Q.Nondegenerate) (a : K) :
+    IsLocallyIsotropic (((-a) • (QuadraticMap.sq : _root_.QuadraticForm K K)).prod Q) ↔
+      Q.LocallyRepresentsScalar a := by
+  refine ⟨fun h => (locallyRepresentsScalar_iff Q a).mpr ⟨fun v => ?_, fun w => ?_⟩,
+    LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod⟩
+  · rw [atFinitePlace_def]
+    let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    exact QuadraticForm.represents_baseChange_of_not_anisotropic_smul_sq_prod hQ
+      (by simpa only [atFinitePlace_def] using ((isLocallyIsotropic_iff _).mp h).1 v)
+  · let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
+    rw [atRealPlace_def]
+    let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    exact QuadraticForm.represents_baseChange_of_not_anisotropic_smul_sq_prod hQ
+      (by simpa only [atRealPlace_def] using ((isLocallyIsotropic_iff _).mp h).2 w)
 
 /-- Two quadratic forms over a number field are locally equivalent if their localizations are
 equivalent at every finite and real place. -/
@@ -360,5 +380,17 @@ theorem LocallyRepresents.finrank_le [FiniteDimensional K W]
   obtain ⟨f, hf, -⟩ := hp
   simpa only [Module.finrank_baseChange] using
     LinearMap.finrank_le_finrank_of_injective hf
+
+/-- A quadratic space locally represented by a finite-dimensional quadratic space over a number
+field is itself finite-dimensional. -/
+theorem finiteDimensional_of_locallyRepresents [FiniteDimensional K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
+    (h : Q.LocallyRepresents R) : FiniteDimensional K V := by
+  let v : HeightOneSpectrum (𝓞 K) := Classical.arbitrary _
+  obtain ⟨f, hf, -⟩ :=
+    (QuadraticMap.isRepresentedBy_iff _ _).mp (((locallyRepresents_iff Q R).mp h).1 v)
+  have : Module.Finite (v.adicCompletion K) (v.adicCompletion K ⊗[K] V) :=
+    Module.Finite.of_injective f hf
+  exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat (v.adicCompletion K)
 
 end QuadraticForm

@@ -81,6 +81,20 @@ theorem isRepresentedBy_prod_right (Q₁ : QuadraticMap R M N)
     Q₂.IsRepresentedBy (Q₁.prod Q₂) :=
   ⟨Isometry.inr Q₁ Q₂, LinearMap.inr_injective⟩
 
+/-- Orthogonal product preserves representation of quadratic maps. -/
+theorem IsRepresentedBy.prod
+    {M₂ M₁' M₂' : Type*} [AddCommMonoid M₂] [Module R M₂]
+    [AddCommMonoid M₁'] [Module R M₁'] [AddCommMonoid M₂'] [Module R M₂']
+    {Q₁ : QuadraticMap R M N} {Q₂ : QuadraticMap R M₂ N}
+    {Q₁' : QuadraticMap R M₁' N} {Q₂' : QuadraticMap R M₂' N}
+    (h₁ : Q₁.IsRepresentedBy Q₁') (h₂ : Q₂.IsRepresentedBy Q₂') :
+    (Q₁.prod Q₂).IsRepresentedBy (Q₁'.prod Q₂') := by
+  obtain ⟨f₁, hf₁⟩ := h₁
+  obtain ⟨f₂, hf₂⟩ := h₂
+  exact ⟨f₁.prodMap f₂, by
+    simpa only [Function.Injective, Isometry.prodMap_apply, Prod.map] using
+      hf₁.prodMap hf₂⟩
+
 /-- Every quadratic map is represented by itself. -/
 @[refl]
 theorem IsRepresentedBy.refl (Q : QuadraticMap R M N) :
@@ -308,6 +322,22 @@ theorem Represents.of_isSquare_div {K V : Type*} [Semifield K] [AddCommMonoid V]
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
+/-- An injective isometry from a finite-dimensional regular quadratic form `Q₁` splits `Q` as
+`Q₁ ⊥ Q|_P`, where `P` is the orthogonal complement of `LinearMap.range f.toLinearMap`. Neither
+`Q` nor `Q|_P` needs to be regular. -/
+theorem Isometry.equivalent_prod_orthogonal_range [Invertible (2 : K)]
+    {V₁ : Type*} [AddCommGroup V₁] [Module K V₁] [FiniteDimensional K V₁]
+    {Q : QuadraticForm K V} {Q₁ : QuadraticForm K V₁}
+    (f : Q₁ →qᵢ Q) (hf : Function.Injective f) (hQ₁ : Q₁.Nondegenerate) :
+    Q.Equivalent (Q₁.prod (Q.restrict
+      (LinearMap.BilinForm.orthogonal Q.polarBilin (LinearMap.range f.toLinearMap)))) := by
+  let e : Q₁.IsometryEquiv (Q.restrict (LinearMap.range f.toLinearMap)) :=
+    { toLinearEquiv := LinearEquiv.ofInjective f.toLinearMap hf
+      map_app' := f.map_app }
+  have hW := e.nondegenerate_iff.mp hQ₁
+  exact ⟨(IsometryEquiv.prodRestrictOrthogonal Q _ hW.isCompl_orthogonal).symm.trans
+    (e.symm.prod (IsometryEquiv.refl _))⟩
+
 /-- **A represented finite-dimensional regular form splits off.** If a finite-dimensional regular
 form `Q₁` is represented by a regular form `Q`, then `Q ≅ Q₁ ⊥ Q|_P` for a subspace `P` on which
 `Q` is regular, namely the orthogonal complement of the image of `Q₁`. -/
@@ -316,14 +346,12 @@ theorem IsRepresentedBy.exists_equivalent_prod [Invertible (2 : K)]
     {Q : QuadraticForm K V} {Q₁ : QuadraticForm K V₁} (h : Q₁.IsRepresentedBy Q)
     (hQ₁ : Q₁.Nondegenerate) (hQ : Q.Nondegenerate) :
     ∃ P : Submodule K V, (Q.restrict P).Nondegenerate ∧ Q.Equivalent (Q₁.prod (Q.restrict P)) := by
-  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff Q₁ Q).mp h
-  let e : Q₁.IsometryEquiv (Q.restrict (LinearMap.range f)) :=
-    { toLinearEquiv := LinearEquiv.ofInjective f hf
-      map_app' := hfQ }
+  obtain ⟨f, hf⟩ := h
+  let e : Q₁.IsometryEquiv (Q.restrict (LinearMap.range f.toLinearMap)) :=
+    { toLinearEquiv := LinearEquiv.ofInjective f.toLinearMap hf
+      map_app' := f.map_app }
   have hW := e.nondegenerate_iff.mp hQ₁
-  exact ⟨_, hQ.nondegenerate_restrict_orthogonal hW,
-    ⟨(IsometryEquiv.prodRestrictOrthogonal Q _ hW.isCompl_orthogonal).symm.trans
-      (e.symm.prod (IsometryEquiv.refl _))⟩⟩
+  exact ⟨_, hQ.nondegenerate_restrict_orthogonal hW, f.equivalent_prod_orthogonal_range hf hQ₁⟩
 
 /-- For a quadratic form with trivial radical, every nonzero isotropic vector `x` has an
 isotropic partner `y` with `polar Q x y = 1`, so that `x, y` is a hyperbolic pair. -/
@@ -474,5 +502,85 @@ theorem not_anisotropic_prod_iff_exists_mem_unitValueSet_neg_mem
   · rintro ⟨x, hx₁, hx₂⟩
     exact not_anisotropic_prod_of_represents_neg (mem_unitValueSet.mp hx₁)
       (by simpa using mem_unitValueSet.mp hx₂) x.ne_zero
+
+/-- Projecting an embedding of a quadratic map with trivial radical into `0_Z ⊥ R` onto `R`
+yields an injective isometry into `R`. -/
+theorem isRepresentedBy_of_isRepresentedBy_zero_prod
+    {R M M' Z N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup M'] [Module R M'] [AddCommGroup Z] [Module R Z]
+    [AddCommGroup N] [Module R N]
+    {Q : QuadraticMap R M N} (hQ : Q.radical = ⊥) {Q' : QuadraticMap R M' N}
+    (h : Q.IsRepresentedBy ((0 : QuadraticMap R Z N).prod Q')) :
+    Q.IsRepresentedBy Q' := by
+  obtain ⟨f, -⟩ := h
+  let g : Q →qᵢ Q' := (Isometry.snd Z Q').comp f
+  exact ⟨g, g.injective_of_radical_eq_bot hQ⟩
+
+/-- A nonzero vector `x` with quadratic value `c` embeds the rank-one form `c • sq` into `Q`. -/
+theorem isRepresentedBy_smul_sq_of_apply_eq {Q : QuadraticForm K V} {x : V} {c : K}
+    (hx : Q x = c) (hx_ne : x ≠ 0) :
+    (c • (sq : QuadraticForm K K)).IsRepresentedBy Q :=
+  (isRepresentedBy_iff _ Q).mpr ⟨LinearMap.toSpanSingleton K V x,
+    fun _ _ hxy ↦ smul_left_injective K hx_ne hxy,
+    fun t ↦ by simp [← hx, Q.map_smul, smul_eq_mul, mul_comm]⟩
+
+/-- A nonzero scalar `c` represented by a quadratic form `Q` embeds the rank-one form `c • sq` into
+`Q`. -/
+theorem Represents.isRepresentedBy_smul_sq {Q : QuadraticForm K V} {c : K}
+    (h : Represents Q c) (hc : c ≠ 0) :
+    (c • (sq : QuadraticForm K K)).IsRepresentedBy Q := by
+  obtain ⟨x, hx⟩ := h
+  exact isRepresentedBy_smul_sq_of_apply_eq hx fun h0 ↦ hc (by simpa [h0] using hx.symm)
+
+/-- Any zero quadratic map on a finite-dimensional space is isometric to the zero map on any
+finite-dimensional space of the same dimension. -/
+theorem zero_equivalent_zero_of_finrank_eq
+    {F M₁ M₂ N : Type*} [Field F] [AddCommGroup M₁] [Module F M₁] [FiniteDimensional F M₁]
+    [AddCommGroup M₂] [Module F M₂] [FiniteDimensional F M₂] [AddCommMonoid N] [Module F N]
+    (h : Module.finrank F M₁ = Module.finrank F M₂) :
+    (0 : QuadraticMap F M₁ N).Equivalent (0 : QuadraticMap F M₂ N) :=
+  ⟨{ toLinearEquiv := LinearEquiv.ofFinrankEq M₁ M₂ h
+     map_app' := fun _ ↦ rfl }⟩
+
+/-- A zero quadratic map on a finite-dimensional space is represented by the zero map on any
+finite-dimensional space of at least as large dimension. -/
+theorem zero_isRepresentedBy_zero_of_finrank_le
+    {F M₁ M₂ N : Type*} [Field F] [AddCommGroup M₁] [Module F M₁] [FiniteDimensional F M₁]
+    [AddCommGroup M₂] [Module F M₂] [FiniteDimensional F M₂] [AddCommMonoid N] [Module F N]
+    (h : Module.finrank F M₁ ≤ Module.finrank F M₂) :
+    (0 : QuadraticMap F M₁ N).IsRepresentedBy (0 : QuadraticMap F M₂ N) :=
+  let ⟨f, hf⟩ := _root_.finrank_le_iff_exists_linearMap.mp h
+  (isRepresentedBy_iff _ _).mpr ⟨f, hf, fun _ ↦ rfl⟩
+
+/-- Projecting an embedding of a zero map into `0_Z ⊥ T` onto `T` produces an embedding into `T`
+of any zero map on a finite-dimensional space of dimension at most `dim U - dim Z`. -/
+theorem zero_isRepresentedBy_of_zero_isRepresentedBy_zero_prod
+    {F U' U Z M N : Type*} [Field F]
+    [AddCommGroup U'] [Module F U'] [FiniteDimensional F U']
+    [AddCommGroup U] [Module F U] [FiniteDimensional F U]
+    [AddCommGroup Z] [Module F Z] [FiniteDimensional F Z]
+    [AddCommGroup M] [Module F M] [AddCommMonoid N] [Module F N]
+    {T : QuadraticMap F M N}
+    (h : (0 : QuadraticMap F U N).IsRepresentedBy ((0 : QuadraticMap F Z N).prod T))
+    (hk : Module.finrank F U' + Module.finrank F Z ≤ Module.finrank F U) :
+    (0 : QuadraticMap F U' N).IsRepresentedBy T := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp h
+  let g : U →ₗ[F] M := (LinearMap.snd F Z M).comp f
+  have hker_le : Module.finrank F (LinearMap.ker g) ≤ Module.finrank F Z := by
+    let p : LinearMap.ker g →ₗ[F] Z := (LinearMap.fst F Z M).comp (f.comp (LinearMap.ker g).subtype)
+    have hp : Function.Injective p := fun x y hxy ↦
+      Subtype.ext (hf (Prod.ext hxy (x.property.trans y.property.symm)))
+    exact LinearMap.finrank_le_finrank_of_injective hp
+  have hrange_ge : Module.finrank F U' ≤ Module.finrank F (LinearMap.range g) := by
+    have hsum := LinearMap.finrank_range_add_finrank_ker g
+    omega
+  have hzero_range : (0 : QuadraticMap F U' N).IsRepresentedBy
+      (0 : QuadraticMap F (LinearMap.range g) N) :=
+    zero_isRepresentedBy_zero_of_finrank_le hrange_ge
+  have hrange_T : (0 : QuadraticMap F (LinearMap.range g) N).IsRepresentedBy T :=
+    (isRepresentedBy_iff _ _).mpr ⟨(LinearMap.range g).subtype, Subtype.coe_injective, by
+      rintro ⟨_, u, rfl⟩
+      simpa [g, QuadraticMap.prod_apply] using hfQ u⟩
+  exact hzero_range.trans hrange_T
 
 end QuadraticMap
