@@ -39,6 +39,8 @@ elementary subgroup `D.extendedElementarySubgroup K`. Left multiplication by a s
 * `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_of_mem_posRoots` and
   `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots`: root-positivity rules for
   simple Bruhat-cell multiplication.
+* `ChevalleyDatum.extendedElementarySubgroup_inf_normalizer_positivePoints`: over every field,
+  the normalizer of `U(K)` in `D.extendedElementarySubgroup K` is `B(K)`.
 
 ## References
 

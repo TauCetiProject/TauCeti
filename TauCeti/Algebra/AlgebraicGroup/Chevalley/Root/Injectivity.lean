@@ -15,11 +15,10 @@ Over every field `k` and for every Chevalley datum `D`, every root subgroup para
 `D.rootSubgroupPoints γ k` is injective. No assumption on the characteristic, the field size, or
 the character lattice is needed.
 
-The proof passes to an algebraic closure, uses the nonvanishing of the coordinate root
-`D.coordinateRoot γ` (recovered from `ChevalleyDatum.sum_coordinateRoot_smul` and
-`RootPairing.ne_zero`) to realize a nonzero root parameter as a torus character via
-`TauCeti.torusCharacter_surjective`, and conjugates by that torus point to reach the
-nontriviality theorem `ChevalleyDatum.rootSubgroupPoints_ofAdd_one_ne_one`.
+This makes `D.rootSubgroupPoints γ k` a faithful parametrization of the root subgroup `X_γ(k)` in
+`D.points k`, enabling exact cancellation and triviality checks (`rootSubgroupPoints_eq_iff` and
+`rootSubgroupPoints_eq_one_iff`) in unipotent, torus-centralizer, and centre calculations over
+arbitrary fields, including `𝔽₂`.
 
 ## Main results
 
@@ -48,6 +47,9 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
+-- Pass to `AlgebraicClosure k`, realize a nonzero root parameter as a torus character for the
+-- nonzero coordinate root `D.coordinateRoot γ`, and conjugate to
+-- `rootSubgroupPoints_ofAdd_one_ne_one`.
 /-- Over any field, every root subgroup parametrization of a Chevalley datum is injective.
 No assumption on the characteristic, the field size, or the character lattice is needed. -/
 theorem rootSubgroupPoints_injective (k : Type v) [Field k] (γ : Fin t.numRoots) :

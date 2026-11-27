@@ -16,12 +16,10 @@ Over any infinite field `K`, inside `D.extendedElementarySubgroup K`, the normal
 actual character-lattice torus `T(K)` is precisely the Weyl subgroup `D.weylSubgroup K`, and
 its centralizer is `T(K)` itself.
 
-The normalizer proof combines the sharp Bruhat normal form (`u * n * b`) with torus invariance
-of `U_w(K)` (`ChevalleyDatum.range_torusPoints_le_normalizer_subsystemPoints`) and
-self-normalization of `T(K)` in `B(K)`
-(`ChevalleyDatum.borelSubgroup_inf_normalizer_range_torusPoints`). The centralizer calculation
-then reduces to `D.weylSubgroup K` and identifies trivial Weyl projection with torus membership
-via `ChevalleyDatum.weylProjection_eq_one_iff_mem_range_torusPoints`.
+The `[Infinite K]` hypothesis ensures that torus characters separate distinct roots from `0` (in
+contrast to the field-independent Borel normalizer and centre computations). These `@[simp]`
+intersection theorems provide direct normalizer and centralizer reductions for `T(K)` in
+subgroup, Weyl-quotient, and structure arguments over infinite fields.
 
 ## Main results
 
@@ -99,6 +97,8 @@ private theorem torus_conj_bruhat_eq_of_mem_normalizer (n : D.weylSubgroup K)
   exact ⟨D.inversionPoints_le_positivePoints K _ u.property,
     D.mem_centralizer_range_torusPoints_of_mul_mul_eq_of_mem_normalizer K n u b hg hgN⟩
 
+-- Combine the sharp Bruhat normal form (`u * n * b`) with torus invariance of `U_w(K)` and
+-- self-normalization of `T(K)` in `B(K)` (`borelSubgroup_inf_normalizer_range_torusPoints`).
 /-- **Torus normalizer in the extended elementary Chevalley group.** Over an infinite field,
 the normalizer of the actual character-lattice torus inside `D.extendedElementarySubgroup K`
 is precisely the Weyl subgroup `D.weylSubgroup K`. -/
