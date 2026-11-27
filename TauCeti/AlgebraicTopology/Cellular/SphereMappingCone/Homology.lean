@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Cellular.EdgeIncidence
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 public import TauCeti.AlgebraicTopology.Cellular.Lacunary
 public import TauCeti.AlgebraicTopology.Cellular.SphereMappingCone.Coordinates
+public import TauCeti.LinearAlgebra.LinearMap.Ker
+public import TauCeti.LinearAlgebra.LinearMap.Range
 public import Mathlib.Data.ZMod.QuotientRing
 
 /-!
@@ -121,21 +124,6 @@ private lemma cellularChainComplex_d_one_eq_zero :
   · exact cellularChainComplex_d_eq_zero_of_isEmpty_or _ _
       (.inl (isEmpty_cell_sphereMappingConeCWComplex h f (by omega) (by omega) (by omega)))
 
-/-- The cellular homology of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` in degree `0` is `R`. -/
-private def cellularHomologyZeroLinearEquiv :
-    letI := sphereMappingConeCWComplex h f
-    (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).homology 0 ≃ₗ[R] R :=
-  letI := sphereMappingConeCWComplex h f
-  letI := uniqueCellZeroSphereMappingConeCWComplex h f n.succ_ne_zero
-  let K := cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)
-  (K.homologyIsoSc' 1 0 0 (by simp) (by simp) ≪≫
-      (K.sc' 1 0 0).asIsoHomologyι (K.shape 0 0 (by simp)) ≪≫
-        (K.sc' 1 0 0).moduleCatOpcyclesIso).toLinearEquiv ≪≫ₗ
-    Submodule.quotEquivOfEqBot _ (by
-      rw [LinearMap.range_eq_bot]
-      exact congrArg ModuleCat.Hom.hom (cellularChainComplex_d_one_eq_zero h R f)) ≪≫ₗ
-    cellularChainCoord _ R default
-
 variable (b : OrthonormalBasis (Fin (n + 1 + 1)) ℝ (EuclideanSpace ℝ ι)) {m : ℤ}
   (hf : (reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) (n + 1)).inv ≫
       (reducedSingularHomologyFunctor (ModuleCat.of R R) (n + 1)).map
@@ -143,83 +131,20 @@ variable (b : OrthonormalBasis (Fin (n + 1 + 1)) ℝ (EuclideanSpace ℝ ι)) {m
     m • (reducedSingularHomologySphereIso (ModuleCat.of R R) b).inv)
 
 include hf in
-/-- In the oriented coordinate of the `(n + 1)`-cell, the boundaries in degree `n + 1` of the
-cellular chain complex of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` are the left ideal `R m`. -/
-private lemma map_range_d_eq_span :
+/-- In the oriented coordinates of its cells, the cellular differential of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` out of
+degree `n + 2` is right multiplication by `m`, as a commuting square of linear maps. -/
+private lemma toSpanSingleton_comp_topCoord :
     letI := sphereMappingConeCWComplex h f
-    (LinearMap.range ((cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).d
-        (n + 1 + 1) (n + 1)).hom).map
-        (sphereMappingConeSphereCoord h R b (uniqueCellSphereCWComplex h n.succ_ne_zero).default f :
-          _ →ₗ[R] R) =
-      R ∙ (m : R) := by
+    LinearMap.toSpanSingleton R R (m : R) ∘ₗ (sphereMappingConeTopCoord h R f : _ →ₗ[R] R) =
+      (sphereMappingConeSphereCoord h R b (uniqueCellSphereCWComplex h n.succ_ne_zero).default f :
+          _ →ₗ[R] R) ∘ₗ
+        ((cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).d (n + 1 + 1)
+          (n + 1)).hom := by
   let := sphereMappingConeCWComplex h f
-  have hd := sphereMappingConeSphereCoord_d h R b
-    (uniqueCellSphereCWComplex h n.succ_ne_zero).default f m hf
-  ext y
-  simp only [Submodule.mem_map, LinearMap.mem_range, Submodule.mem_span_singleton, smul_eq_mul]
-  constructor
-  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-    exact ⟨sphereMappingConeTopCoord h R f x, (hd x).symm⟩
-  · rintro ⟨a, rfl⟩
-    refine ⟨_, ⟨(sphereMappingConeTopCoord h R f).symm a, rfl⟩, (hd _).trans ?_⟩
-    rw [LinearEquiv.apply_symm_apply]
-
-include hf in
-/-- In the coordinate of the `(n + 2)`-cell, the cycles in degree `n + 2` of the cellular chain
-complex of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` are the `m`-torsion of `R`. -/
-private lemma map_ker_d_eq_ker :
-    letI := sphereMappingConeCWComplex h f
-    (LinearMap.ker ((cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).d
-        (n + 1 + 1) (n + 1)).hom).map (sphereMappingConeTopCoord h R f : _ →ₗ[R] R) =
-      LinearMap.ker (LinearMap.toSpanSingleton R R (m : R)) := by
-  let := sphereMappingConeCWComplex h f
-  have hd := sphereMappingConeSphereCoord_d h R b
-    (uniqueCellSphereCWComplex h n.succ_ne_zero).default f m hf
-  have key (x : (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).X (n + 1 + 1)) :
-      (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).d (n + 1 + 1) (n + 1) x =
-          0 ↔ sphereMappingConeTopCoord h R f x * m = 0 := by
-    rw [← (sphereMappingConeSphereCoord h R b
-      (uniqueCellSphereCWComplex h n.succ_ne_zero).default f).map_eq_zero_iff, hd]
-  ext y
-  simp only [Submodule.mem_map, LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    exact (key x).1 hx
-  · intro hy
-    exact ⟨(sphereMappingConeTopCoord h R f).symm y,
-      (key _).2 (by rwa [LinearEquiv.apply_symm_apply]), LinearEquiv.apply_symm_apply _ _⟩
+  exact LinearMap.ext fun x ↦ (sphereMappingConeSphereCoord_d h R b
+    (uniqueCellSphereCWComplex h n.succ_ne_zero).default f m hf x).symm
 
 /-! ### Cellular homology -/
-
-include hf in
-/-- The cellular homology of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` in degree `n + 1` is `R / R m`. -/
-private def cellularHomologyLinearEquiv :
-    letI := sphereMappingConeCWComplex h f
-    (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).homology (n + 1) ≃ₗ[R]
-      R ⧸ R ∙ (m : R) :=
-  letI := sphereMappingConeCWComplex h f
-  let K := cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)
-  (K.homologyIsoSc' (n + 1 + 1) (n + 1) n (by simp) (by simp) ≪≫
-      (K.sc' (n + 1 + 1) (n + 1) n).asIsoHomologyι (cellularChainComplex_d_succ_eq_zero h R f) ≪≫
-        (K.sc' (n + 1 + 1) (n + 1) n).moduleCatOpcyclesIso).toLinearEquiv ≪≫ₗ
-    Submodule.Quotient.equiv _ _
-      (sphereMappingConeSphereCoord h R b (uniqueCellSphereCWComplex h n.succ_ne_zero).default f)
-      (map_range_d_eq_span h R f b hf)
-
-include hf in
-/-- The cellular homology of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` in degree `n + 2` is the `m`-torsion of `R`. -/
-private def cellularHomologyTopLinearEquiv :
-    letI := sphereMappingConeCWComplex h f
-    (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).homology (n + 1 + 1) ≃ₗ[R]
-      LinearMap.ker (LinearMap.toSpanSingleton R R (m : R)) :=
-  letI := sphereMappingConeCWComplex h f
-  let K := cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)
-  (K.homologyIsoSc' (n + 1 + 1 + 1) (n + 1 + 1) (n + 1) (by simp) (by simp) ≪≫
-      ((K.sc' (n + 1 + 1 + 1) (n + 1 + 1) (n + 1)).asIsoHomologyπ
-        (cellularChainComplex_d_top_eq_zero h R f)).symm ≪≫
-        (K.sc' (n + 1 + 1 + 1) (n + 1 + 1) (n + 1)).moduleCatCyclesIso).toLinearEquiv ≪≫ₗ
-    LinearEquiv.ofSubmodules (sphereMappingConeTopCoord h R f) _ _
-      (map_ker_d_eq_ker h R f b hf)
 
 /-- The singular homology of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` is the homology of its cellular chain complex. -/
 private def singularHomologyIsoCellular (k : ℕ) :
@@ -238,7 +163,13 @@ private def singularHomologyIsoCellular (k : ℕ) :
 def sphereMappingConeSingularHomologyZeroLinearEquiv :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) 0).obj
         (ModuleCat.of R R)).obj (TopCat.of (sphereMappingCone f)) ≃ₗ[R] R :=
-  (singularHomologyIsoCellular h R f 0).toLinearEquiv ≪≫ₗ cellularHomologyZeroLinearEquiv h R f
+  letI := sphereMappingConeCWComplex h f
+  letI := uniqueCellZeroSphereMappingConeCWComplex h f n.succ_ne_zero
+  (singularHomologyIsoCellular h R f 0).toLinearEquiv ≪≫ₗ
+    HomologicalComplex.homologyEquivOfDEqZero
+      (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)) (by simp) (by simp)
+      (cellularChainCoord _ R default) (cellularChainComplex_d_one_eq_zero h R f)
+      ((cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)).shape 0 0 (by simp))
 
 include hf in
 /-- **The homology of a Moore space in the dimension of its sphere.** For `f : Sⁿ⁺¹ → Sⁿ⁺¹` of
@@ -247,8 +178,14 @@ the generator determined by the orthonormal basis `b`, `H_{n+1}(Sⁿ⁺¹ ∪_f 
 def sphereMappingConeSingularHomologyLinearEquiv :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (n + 1)).obj
         (ModuleCat.of R R)).obj (TopCat.of (sphereMappingCone f)) ≃ₗ[R] R ⧸ R ∙ (m : R) :=
+  letI := sphereMappingConeCWComplex h f
   (singularHomologyIsoCellular h R f (n + 1)).toLinearEquiv ≪≫ₗ
-    cellularHomologyLinearEquiv h R f b hf
+    HomologicalComplex.homologyEquivQuotOfOutgoingDEqZero
+      (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)) (by simp) (by simp)
+      (sphereMappingConeSphereCoord h R b (uniqueCellSphereCWComplex h n.succ_ne_zero).default f)
+      (cellularChainComplex_d_succ_eq_zero h R f)
+      ((LinearMap.map_range_eq_range_of_comp_eq _ (sphereMappingConeTopCoord h R f).surjective
+        (toSpanSingleton_comp_topCoord h R f b hf)).trans (LinearMap.range_toSpanSingleton _))
 
 include hf in
 /-- **The top homology of a Moore space.** For `f : Sⁿ⁺¹ → Sⁿ⁺¹` of degree `m`,
@@ -257,8 +194,14 @@ def sphereMappingConeSingularHomologyTopLinearEquiv :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (n + 1 + 1)).obj
         (ModuleCat.of R R)).obj (TopCat.of (sphereMappingCone f)) ≃ₗ[R]
       LinearMap.ker (LinearMap.toSpanSingleton R R (m : R)) :=
+  letI := sphereMappingConeCWComplex h f
   (singularHomologyIsoCellular h R f (n + 1 + 1)).toLinearEquiv ≪≫ₗ
-    cellularHomologyTopLinearEquiv h R f b hf
+    HomologicalComplex.homologyEquivOfIncomingDEqZero
+      (cellularChainComplex (sphereMappingCone f) (ModuleCat.of R R)) (by simp) (by simp)
+      (sphereMappingConeTopCoord h R f) (cellularChainComplex_d_top_eq_zero h R f)
+      (LinearMap.map_ker_eq_ker_of_comp_eq _ (sphereMappingConeTopCoord h R f).surjective
+        (sphereMappingConeSphereCoord h R b (uniqueCellSphereCWComplex h n.succ_ne_zero).default
+          f).injective (toSpanSingleton_comp_topCoord h R f b hf))
 
 include h in
 /-- **The homology of a Moore space vanishes in the other positive degrees.** For every

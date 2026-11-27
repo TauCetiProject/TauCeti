@@ -75,6 +75,11 @@ intertwining two differentials up to a unit identify their images and kernels
 `HomologicalComplex.ker_d_eq_map_of_linearEquiv`), restrict to an equivalence of the images
 (`HomologicalComplex.boundaryEquivOfLinearEquiv`), and transfer exactness
 (`HomologicalComplex.exactAt_iff_of_linearEquiv`).
+Next to a vanishing differential, the homology is read off from a linear equivalence `e` of the
+term with a module `M`: it is `M` modulo the image of the boundaries when the outgoing differential
+vanishes (`HomologicalComplex.homologyEquivQuotOfOutgoingDEqZero`), the image of the cycles when
+the incoming one does (`HomologicalComplex.homologyEquivOfIncomingDEqZero`), and `M` itself when
+both do (`HomologicalComplex.homologyEquivOfDEqZero`).
 A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), zero on the image of a zero differential
@@ -888,6 +893,40 @@ theorem exactAt_iff_of_linearEquiv {i j k i' j' k' : ι} (hi : c.prev j = i) (hk
   rw [D.exactAt_iff_range_eq_ker hi' hk', C.exactAt_iff_range_eq_ker hi hk,
     range_d_eq_map_of_linearEquiv eⱼ eᵢ hu hij, ker_d_eq_map_of_linearEquiv eⱼ eₖ hv hjk]
   exact (Submodule.map_injective_of_injective eⱼ.injective).eq_iff
+
+/-! ### Homology in a degree next to a vanishing differential -/
+
+section HomologyOfDEqZero
+
+variable (K : HomologicalComplex (ModuleCat R) c) {i j k : ι} (hi : c.prev j = i)
+  (hk : c.next j = k) {M : Type*} [AddCommGroup M] [Module R M] (e : K.X j ≃ₗ[R] M)
+
+/-- If the outgoing differential `K.d j k` vanishes and the linear equivalence `e` carries the
+boundaries in degree `j` onto `p`, the homology in degree `j` is `M ⧸ p`. -/
+noncomputable def homologyEquivQuotOfOutgoingDEqZero (hjk : K.d j k = 0) {p : Submodule R M}
+    (hp : (LinearMap.range (K.d i j).hom).map (e : K.X j →ₗ[R] M) = p) :
+    K.homology j ≃ₗ[R] M ⧸ p :=
+  (K.homologyIsoSc' i j k hi hk ≪≫ (K.sc' i j k).asIsoHomologyι hjk ≪≫
+      (K.sc' i j k).moduleCatOpcyclesIso).toLinearEquiv ≪≫ₗ
+    Submodule.Quotient.equiv _ _ e hp
+
+/-- If the incoming differential `K.d i j` vanishes and the linear equivalence `e` carries the
+cycles in degree `j` onto `p`, the homology in degree `j` is `p`. -/
+noncomputable def homologyEquivOfIncomingDEqZero (hij : K.d i j = 0) {p : Submodule R M}
+    (hp : (LinearMap.ker (K.d j k).hom).map (e : K.X j →ₗ[R] M) = p) :
+    K.homology j ≃ₗ[R] p :=
+  (K.homologyIsoSc' i j k hi hk ≪≫ ((K.sc' i j k).asIsoHomologyπ hij).symm ≪≫
+      (K.sc' i j k).moduleCatCyclesIso).toLinearEquiv ≪≫ₗ
+    LinearEquiv.ofSubmodules e _ _ hp
+
+/-- If both differentials adjacent to degree `j` vanish, the homology in degree `j` is the term
+`K.X j`, here identified with `M` along the linear equivalence `e`. -/
+noncomputable def homologyEquivOfDEqZero (hij : K.d i j = 0) (hjk : K.d j k = 0) :
+    K.homology j ≃ₗ[R] M :=
+  K.homologyEquivQuotOfOutgoingDEqZero hi hk e hjk (p := ⊥) (by simp [hij]) ≪≫ₗ
+    Submodule.quotEquivOfEqBot ⊥ rfl
+
+end HomologyOfDEqZero
 
 end HomologicalComplex
 
