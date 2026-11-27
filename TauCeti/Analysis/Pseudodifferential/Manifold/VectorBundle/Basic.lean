@@ -233,6 +233,15 @@ theorem IsSectionProperlySupported.of_map_smul [T2Space M]
     IsSectionProperlySupported P :=
   of_local fun _ _ hs ↦ apply_eq_zero_of_map_smul hP hs
 
+/-- On a compact manifold every operator between bundles is properly supported, with `K' = M`: a
+section vanishing near all of `M` is zero. -/
+theorem IsSectionProperlySupported.of_compactSpace [CompactSpace M]
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    IsSectionProperlySupported P := by
+  refine fun _ _ ↦ ⟨univ, isCompact_univ, fun _ _ ↦ subset_univ _, fun s hs x _ ↦ ?_⟩
+  have hs0 : s = 0 := ContMDiffSection.ext fun y ↦ hs.self_of_nhdsSet y (mem_univ y)
+  simp [hs0]
+
 end ProperSupport
 
 /-! ### Matrix entries -/
@@ -462,7 +471,7 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
       (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
       t.cutoffFrameCoeff ρ hρ ℓ (f • s) = t.cutoffFrameCoeff ρ hρ ℓ s * f := by
     ext x
-    simp [mul_comm, mul_left_comm]
+    simp [mul_comm]
   refine mem_sectionClassicalPseudodifferentialOperators_iff.2
     ⟨isSectionProperlySupported_iff.2 fun K hK ↦ ?_, fun T _ ψ hψ v T' _ χ hχ ℓ' ↦ ?_⟩
   · obtain ⟨K', hK', hA₁, hA₂⟩ :=
@@ -593,6 +602,20 @@ theorem comp_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional 
     (P _).eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection _ g hg' hPs b]
   simp only [map_sum, LinearMap.sum_apply, LinearMap.comp_apply,
     sectionEntry_apply_eq_cutoffFrameCoeff]
+
+/-- **Powers.** If `P : Γ(E) → Γ(E)` is a classical pseudodifferential operator of order `m` on a
+bundle with finite-dimensional fibre, then `P ^ k` has order `k * m`. -/
+theorem pow_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional ℂ V] {m : ℝ}
+    {P : Module.End ℂ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯}
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (k : ℕ) :
+    P ^ k ∈ sectionClassicalPseudodifferentialOperators (k * m) := by
+  induction k with
+  | zero =>
+    rw [pow_zero, Nat.cast_zero, zero_mul, Module.End.one_eq_id]
+    exact id_mem_sectionClassicalPseudodifferentialOperators
+  | succ k ih =>
+    rw [pow_succ', Module.End.mul_eq_comp, Nat.cast_succ, add_one_mul, add_comm]
+    exact comp_mem_sectionClassicalPseudodifferentialOperators hP ih
 
 end Composition
 

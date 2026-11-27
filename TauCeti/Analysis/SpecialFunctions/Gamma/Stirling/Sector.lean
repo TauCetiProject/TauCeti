@@ -33,8 +33,9 @@ form `‖r₁(z)‖ < 1 / (12 * sin (δ / 2) ^ 2 * ‖z‖)`, the sharp `1 / 12`
   `TauCeti.norm_stirlingSeriesRemainder_lt_of_abs_arg_le`,
   `TauCeti.norm_iteratedDeriv_stirlingRemainder_lt_of_abs_arg_le`,
   `TauCeti.norm_stirlingRemainder_lt_of_abs_arg_le`,
-  `TauCeti.abs_log_norm_Gamma_sub_stirling_lt`: Stieltjes' sharp slit-plane and closed-sector
-  bounds and the `1 / 12` bound for `log ‖Γ s‖`.
+  `TauCeti.norm_stirlingRemainder_lt_of_re_nonneg`,
+  `TauCeti.abs_log_norm_Gamma_sub_stirling_lt`: Stieltjes' sharp slit-plane, closed-sector,
+  and closed right half-plane bounds and the `1 / 12` bound for `log ‖Γ s‖`.
 
 ## References
 
@@ -191,6 +192,19 @@ theorem norm_stirlingRemainder_lt_of_abs_arg_le {z : ℂ} {δ : ℝ}
     (hδ : 0 < δ) (hz : |z.arg| ≤ π - δ) (hz0 : z ≠ 0) :
     ‖stirlingRemainder z‖ < 1 / (12 * Real.sin (δ / 2) ^ 2 * ‖z‖) := by
   simpa [iteratedDeriv_zero] using norm_iteratedDeriv_stirlingRemainder_lt_of_abs_arg_le 0 hδ hz hz0
+
+/-- Stieltjes' `1 / 6` bound on the closed right half-plane: `‖stirlingRemainder z‖ < 1 / (6 * ‖z‖)`
+for nonzero `z` with `0 ≤ re z`. This is the closed-sector bound at `δ = π / 2`. -/
+theorem norm_stirlingRemainder_lt_of_re_nonneg {z : ℂ} (hz : 0 ≤ z.re) (hz0 : z ≠ 0) :
+    ‖stirlingRemainder z‖ < 1 / (6 * ‖z‖) := by
+  have hdiv : π / 2 / 2 = π / 4 := by ring
+  have hsin : Real.sin (π / 2 / 2) ^ 2 = 1 / 2 := by
+    rw [hdiv, Real.sin_pi_div_four, div_pow, Real.sq_sqrt zero_le_two]
+    norm_num
+  have h := norm_stirlingRemainder_lt_of_abs_arg_le (δ := π / 2) (by positivity)
+    (by rw [sub_half]; exact abs_arg_le_pi_div_two_iff.mpr hz) hz0
+  rw [hsin] at h
+  exact h.trans_eq (by ring)
 
 /-- Sharp `1 / 12` closed-sector Stirling bound for `log ‖Γ s‖`: for `0 < δ` and nonzero `s`
 with `|arg s| ≤ π - δ`,

@@ -11,10 +11,12 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Variants of Hölder's inequality
@@ -44,7 +46,8 @@ On a finite measure space, a weight `0 ≤ θ ≤ K` and a function with `‖g�
 
 for Hölder conjugate exponents `q, q'`, so the weighted integral is small when the mean of `θ` is
 small. This is how the mean oscillation of the coefficients enters regularity estimates for
-divergence-form equations.
+divergence-form equations. Combined with a volume ratio `|t| = δ^N |s|`, it turns a decay estimate
+for integrals over `t ⊆ s` with such a weighted error into the same estimate for averages.
 
 For a product of `k` functions, the norm of its integral is at most the average of their `k`th
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
@@ -58,6 +61,8 @@ expected products without any independence assumption.
 * `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
+* `TauCeti.setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq`: the averaged form of a decay
+  estimate whose error is controlled by Hölder's inequality with a bounded weight.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
 
@@ -237,6 +242,48 @@ theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg fun x => by positivity)
     hθq hq.symm.inv_nonneg) (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
 
+/-- **Averaged form of a decay estimate with a Hölder-controlled error.** Let `|t| = δ^N |s|` with
+`δ > 0` and `0 < |s| < ∞`, let `θ` be measurable on `s` with `0 ≤ θ ≤ K` there, and let
+`‖g‖ ∈ L^{2q}(s)` for a pair of Hölder conjugate exponents `q, q'`. If
+
+`∫_t f ≤ C₁ δ^(N + 2) ∫_s F + C₂ (M ∫_s θ² ‖g‖² + ∫_s G)`
+
+with `C₂, M ≥ 0`, then
+
+`⨍_t f ≤ C₁ δ² ⨍_s F + C₂ δ^(-N) (M (K^(2q' - 1) ⨍_s θ)^(1/q') (⨍_s ‖g‖^(2q))^(1/q) + ⨍_s G)`.
+
+This passes a Campanato-type decay estimate with a coefficient error to averages, which are
+invariant under dilations. -/
+theorem setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq {E : Type*} [NormedAddCommGroup E]
+    {s t : Set β} {f F G θ : β → ℝ} {g : β → E} {C₁ C₂ K M δ q q' : ℝ} {N : ℕ}
+    (hs : 0 < ν.real s) (hδ : 0 < δ) (ht : ν.real t = δ ^ N * ν.real s) (hC₂ : 0 ≤ C₂)
+    (hM : 0 ≤ M) (hq : q.HolderConjugate q') (hθm : AEStronglyMeasurable θ (ν.restrict s))
+    (hθ : ∀ᵐ x ∂ν.restrict s, 0 ≤ θ x ∧ θ x ≤ K)
+    (hg : MemLp g (ENNReal.ofReal (2 * q)) (ν.restrict s))
+    (h : ∫ x in t, f x ∂ν ≤ C₁ * δ ^ (N + 2) * ∫ x in s, F x ∂ν +
+      C₂ * (M * ∫ x in s, θ x ^ 2 * ‖g x‖ ^ 2 ∂ν + ∫ x in s, G x ∂ν)) :
+    ⨍ x in t, f x ∂ν ≤ C₁ * δ ^ 2 * ⨍ x in s, F x ∂ν +
+      C₂ * δ⁻¹ ^ N * (M * ((K ^ (2 * q' - 1) * ⨍ x in s, θ x ∂ν) ^ q'⁻¹ *
+        (⨍ x in s, ‖g x‖ ^ (2 * q) ∂ν) ^ q⁻¹) + ⨍ x in s, G x ∂ν) := by
+  have : IsFiniteMeasure (ν.restrict s) :=
+    isFiniteMeasure_restrict.2 fun h => by simp [Measure.real, h] at hs
+  have hΘ := integral_sq_mul_norm_sq_le_of_ae_le hq hθm hθ hg
+  simp only [setAverage_eq, smul_eq_mul, ht]
+  set V := ν.real s
+  set Iθ := ∫ x in s, θ x ∂ν
+  set Ig := ∫ x in s, ‖g x‖ ^ (2 * q) ∂ν
+  have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
+      V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
+    rw [mul_left_comm (K ^ (2 * q' - 1)) V⁻¹ Iθ]
+    exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hs.le)
+      hq.symm.inv_add_inv_eq_one
+  rw [hsplit]
+  refine (mul_le_mul_of_nonneg_left (h.trans (add_le_add le_rfl (mul_le_mul_of_nonneg_left
+    (add_le_add (mul_le_mul_of_nonneg_left hΘ hM) le_rfl) hC₂))) (by positivity)).trans_eq ?_
+  have hV0 : V ≠ 0 := hs.ne'
+  rw [inv_pow]
+  field_simp
+  ring
 end TauCeti
 
 namespace MeasureTheory

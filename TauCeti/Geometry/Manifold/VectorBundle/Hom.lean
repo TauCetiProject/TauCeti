@@ -48,15 +48,18 @@ trivialization of a `C^n` vector bundle, a `C^n` field of bilinear forms reads a
 bilinear forms on the model fibre (`Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ`). Fibrewise
 inversion preserves smoothness of a hom-bundle section at every point where the section is
 invertible (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle
-form of the smoothness of inversion of continuous linear maps between Banach spaces. A constant
+form of the smoothness of inversion of continuous linear maps between Banach spaces; in
+particular the inverses of a `C^n` family of equivalences are `C^n`
+(`ContMDiff.clm_bundle_equiv_symm`). A constant
 bilinear pairing between trivial bundles is a smooth hom-bundle section
 (`TauCeti.contMDiff_const_bundlePairing`). A hom-bundle section whose coordinate expressions are
 constant on the common frame domains is smooth
 (`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
 
 Fibrewise composition preserves joint `Cⁿ` regularity along any common base map
-(`ContMDiff.clm_bundle_comp`). The corresponding native section operation is
-`ContMDiffSection.clmComp`; it requires no finite rank or completeness assumption.
+(`ContMDiff.clm_bundle_comp`, and `ContMDiffWithinAt.clm_bundle_comp` within a set). The
+corresponding native section operation is `ContMDiffSection.clmComp`; it requires no finite rank
+or completeness assumption.
 
 Negation of a hom-bundle section along any base map preserves its regularity
 (`ContMDiff.clm_bundle_neg`). Taking the ordinary trace of an endomorphism family along a
@@ -360,6 +363,27 @@ variable {𝕜 B M F₁ F₂ F₃ EB HB EM HM : Type*} [NontriviallyNormedField 
   {n : WithTop ℕ∞} {b : M → B}
   {A : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)} {C : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
 
+/-- Composing two hom-bundle fields along the same base map preserves their regularity within a
+set at a point. -/
+theorem ContMDiffWithinAt.clm_bundle_comp {s : Set M} {x : M}
+    (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃) (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (A y)) s x)
+    (hC : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y)) s x) :
+    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) s x := by
+  have hAx := (contMDiffWithinAt_hom_bundle _).mp hA
+  have hCx := (contMDiffWithinAt_hom_bundle _).mp hC
+  rw [contMDiffWithinAt_hom_bundle]
+  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_
+    (ContinuousLinearMap.inCoordinates_comp (A x) (C x)
+      (mem_baseSet_trivializationAt F₂ V₂ (b x)))⟩
+  filter_upwards [hAx.1.continuousWithinAt.preimage_mem_nhdsWithin
+    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
+  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
+
 /-- Composing two hom-bundle fields along the same base map preserves their regularity at a
 point. -/
 theorem ContMDiffAt.clm_bundle_comp {x : M}
@@ -369,15 +393,9 @@ theorem ContMDiffAt.clm_bundle_comp {x : M}
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y)) x) :
     ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
-        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) x := by
-  have hAx := (contMDiffAt_hom_bundle _).mp hA
-  have hCx := (contMDiffAt_hom_bundle _).mp hC
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_⟩
-  filter_upwards [hAx.1.continuousAt.preimage_mem_nhds
-    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
-  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) x :=
+  contMDiffWithinAt_univ.1 <|
+    (contMDiffWithinAt_univ.2 hA).clm_bundle_comp (contMDiffWithinAt_univ.2 hC)
 
 /-- Composing two hom-bundle fields along the same base map preserves their regularity. -/
 theorem ContMDiff.clm_bundle_comp
@@ -523,6 +541,16 @@ theorem ContMDiff.clm_bundle_inverse
       (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x)) (b m)
         (ϕ m).inverse) :=
   fun x ↦ (hϕ x).clm_bundle_inverse (hinv x)
+
+/-- Consider continuous linear equivalences `Φ m : E₁ (b m) ≃L[𝕜] E₂ (b m)` depending `C^n` on
+`m`, over a base map `b : M → B`. Then their inverses depend `C^n` on `m`. -/
+theorem ContMDiff.clm_bundle_equiv_symm {Φ : ∀ m, E₁ (b m) ≃L[𝕜] E₂ (b m)}
+    (hΦ : CMDiff n (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun (x : B) ↦ (E₁ x →L[𝕜] E₂ x))
+      (b m) (Φ m : E₁ (b m) →L[𝕜] E₂ (b m)))) :
+    CMDiff n (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x))
+      (b m) ((Φ m).symm : E₂ (b m) →L[𝕜] E₁ (b m))) := by
+  simpa only [ContinuousLinearMap.inverse_equiv] using
+    hΦ.clm_bundle_inverse fun _ ↦ ContinuousLinearMap.isInvertible_equiv
 
 end Inverse
 

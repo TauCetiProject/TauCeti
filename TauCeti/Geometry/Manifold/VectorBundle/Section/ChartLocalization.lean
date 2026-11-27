@@ -56,6 +56,9 @@ The converse direction of the universal property is
 * `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, every point lies in a
   smooth chart into the model space with smooth inverse, inside the base set of the trivialization
   at that point.
+* `TauCeti.exists_mem_maximalAtlas_source_subset_baseSet`: every point lies in the source of a
+  chart of the maximal atlas inside the base sets of the trivializations at that point of two
+  fiber bundles.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
   inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
 * `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
@@ -346,6 +349,23 @@ theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I 
       x ∈ c.source :=
   ⟨testChart F I V x, contMDiffOn_testChart V x, contMDiffOn_testChart_symm V x,
     testChart_source_subset V x, mem_testChart_source V x⟩
+
+omit [I.Boundaryless] in
+variable (I F) in
+/-- Every point `x` lies in the source of a chart of the maximal atlas whose source lies in the
+base sets of the trivializations at `x` of two fiber bundles `V` and `W`. -/
+theorem TauCeti.exists_mem_maximalAtlas_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M]
+    (F' : Type*) [TopologicalSpace F'] (W : M → Type*) [∀ x, TopologicalSpace (W x)]
+    [TopologicalSpace (TotalSpace F' W)] [FiberBundle F' W] (x : M) :
+    ∃ c : OpenPartialHomeomorph M H, c ∈ IsManifold.maximalAtlas I n M ∧ x ∈ c.source ∧
+      c.source ⊆ (trivializationAt F V x).baseSet ∧
+        c.source ⊆ (trivializationAt F' W x).baseSet := by
+  have hopen : IsOpen ((trivializationAt F V x).baseSet ∩ (trivializationAt F' W x).baseSet) :=
+    (trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet
+  refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hopen, ?_⟩
+  rw [OpenPartialHomeomorph.restr_source' _ _ hopen]
+  exact ⟨⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x,
+    FiberBundle.mem_baseSet_trivializationAt' x⟩, fun _ hy ↦ hy.2.1, fun _ hy ↦ hy.2.2⟩
 
 end TestChart
 

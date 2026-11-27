@@ -30,6 +30,8 @@ of `TauCeti.IsFactorMap`, which is the case of a single map; the additive versio
 * `TauCeti.IsFactorMapSMul.id`, `TauCeti.IsFactorMapSMul.comp`: factor maps contain the identity
   and compose.
 * `TauCeti.IsFactorMapSMul.of_map_smul`: an equivariant measure-preserving map is a factor map.
+  `TauCeti.IsFactorMapSMul.of_measurableEquiv_symm`: so is the inverse of an equivariant
+  measure-preserving measurable equivalence.
 * `TauCeti.IsFactorMapSMul.toPUnit`: the constant map to a point is a factor map onto the trivial
   action.
 * `TauCeti.IsFactorMapSMul.prodMap`, `TauCeti.IsFactorMapSMul.fst`,
@@ -101,6 +103,14 @@ protected theorem id (μ : Measure X) : IsFactorMapSMul M id μ μ :=
 theorem of_map_smul (hπ : MeasurePreserving π μ ν) (h : ∀ (m : M) (x : X), π (m • x) = m • π x) :
     IsFactorMapSMul M π μ ν :=
   ⟨hπ, fun m ↦ .of_eq (funext fun x ↦ h m x)⟩
+
+/-- The inverse of an equivariant measure-preserving measurable equivalence is a factor map. -/
+@[to_additive /-- The inverse of an equivariant measure-preserving measurable equivalence of
+additive actions is a factor map. -/]
+theorem of_measurableEquiv_symm {e : X ≃ᵐ Y} (he : MeasurePreserving e μ ν)
+    (h : ∀ (m : M) (x : X), e (m • x) = m • e x) : IsFactorMapSMul M e.symm ν μ :=
+  of_map_smul he.symm fun m y ↦ by
+    rw [← e.symm_apply_apply (m • e.symm y), h, e.apply_symm_apply]
 
 /-- Factor maps compose. -/
 @[to_additive /-- Factor maps compose. -/]

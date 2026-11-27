@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Option
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # The expected dimension of sphere-tree strata of Floer moduli spaces
@@ -70,8 +71,12 @@ and bubbling the same simple sphere several times both lower the dimension.
   dimension in the problems with `ind A ≤ 1`
   (`TauCeti.Floer.sphereTreeDimension_neg_of_le_one`): the rigid counts of the product and of the
   continuation maps, and the one-dimensional moduli spaces of pairs of pants and of continuation
-  maps whose boundaries give their chain-level identities. Here `ind A` is the dimension before
-  any quotient by translations.
+  maps whose boundaries give their chain-level identities. Conversely, in these problems a stratum
+  without bubbles has the expected dimension `ind A` of the core, so a stratum has nonnegative
+  expected dimension exactly when it has no nonconstant bubble and `ind A ≥ 0`
+  (`TauCeti.Floer.sphereTreeDimension_nonneg_iff`). Here `ind A` is the dimension before any
+  quotient by translations of the core itself; translations of pieces of the core, such as the
+  cylinders broken off a pair of pants below, may already be divided out in it.
 
 **Translations and broken configurations.** A Floer cylinder of a time-independent cylindrical
 datum is taken modulo the `ℝ`-translation of its domain, which lowers the expected dimension by
@@ -110,6 +115,30 @@ cylinder level (`TauCeti.Floer.brokenSphereTreeDimension_neg_of_le_one`); those 
 level have expected dimension `0`, and they are the ends of the one-dimensional moduli spaces.
 Levels that are not taken modulo translation, such as continuation cylinders, pairs of pants and
 planes, are the levels outside `T`.
+
+**Broken limits of pairs of pants.** Besides bubbling, a sequence of pairs of pants can lose energy
+along its three ends, where Floer cylinders break off. The core of such a limit is a broken pair of
+pants: a pair of pants together with chains of Floer cylinders at its two inputs and at its output,
+each cylinder taken modulo its `ℝ`-translation. The pieces meet at nondegenerate orbits, so the
+expected dimension of the core is the sum of those of its pieces
+(`TauCeti.Floer.brokenPantsDimension`, built from `TauCeti.Floer.cylinderChainDimension`). Unlike
+the levels of `TauCeti.Floer.brokenSphereTreeDimension`, which each carry their own tree, its
+spheres form one tree attached to any of the pieces, so its special points are points of all of
+them. The gradings of the intermediate orbits telescope (`TauCeti.Floer.cylinderChainDimension_eq`):
+the expected dimension of a broken pair of pants is the index `μ₁ + μ₂ - μ₀ - n + 2 c₁(A)` of the
+unbroken problem in its total class `A`, minus the number `k` of cylinders that have broken off
+(`TauCeti.Floer.brokenPantsDimension_eq`). The class of the limit is the sum of the classes of its
+pieces, as for the sewing of cap classes (`TauCeti.Floer.productClass_comp_out`,
+`TauCeti.Floer.productClass_comp_in`, `TauCeti.Floer.cylinderClass_comp`). With sphere trees
+attached, the expected dimension of the stratum is at most `μ₁ + μ₂ - μ₀ - n + 2 c₁(A) - k - 2 #κ`
+when `c₁` is nonnegative on simple spheres
+(`TauCeti.Floer.sphereTreeDimension_brokenPantsDimension_le`). This states exactly which strata
+of the product's rigid and one-dimensional problems have nonnegative expected dimension
+(`TauCeti.Floer.sphereTreeDimension_brokenPantsDimension_nonneg_iff`): in a problem of expected
+dimension `0`, only the unbroken pairs of pants without bubbles; in a problem of expected dimension
+`1`, the unbroken pairs of pants and those with a single broken-off cylinder, all without bubbles.
+The latter are the boundary of the one-dimensional moduli spaces that gives the Leibniz rule of the
+product.
 
 These are statements about expected dimensions. That a stratum of negative expected dimension is
 empty for generic data is the transversality of the evaluation maps of simple spheres, which is not
@@ -378,6 +407,28 @@ theorem sphereTreeDimension_sub_one_neg_of_le_two [Nonempty κ] {n : ℤ} (c : G
   have := sphereTreeDimension_le_sub_two c hind A₀ hB hm hρ hc parent node root (n := n)
   linarith
 
+/-- **The strata of rigid and one-dimensional problems with nonnegative expected dimension.** On a
+target where every simple sphere has nonnegative first Chern number, if the unbubbled problem in
+class `A₀ + ∑ v, B v` has expected dimension at most one, a reduced stratum has nonnegative
+expected dimension exactly when it has no nonconstant sphere bubble and the unbubbled problem has
+nonnegative expected dimension. -/
+theorem sphereTreeDimension_nonneg_iff {n : ℤ} (c : G →+ ℤ) {ind : G → ℤ}
+    (hind : ∀ A B, ind (A + B) = ind A + 2 * c B) (A₀ : G) {B : ι → G} {B' : κ → G}
+    {m : ι → ℕ} {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v)
+    (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w)) (hA : ind (A₀ + ∑ v, B v) ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n (ind A₀) (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ 0 ≤ ind (A₀ + ∑ v, B v) := by
+  cases isEmpty_or_nonempty κ with
+  | inl hκ =>
+    -- Without simple spheres there are no bubbles, since every bubble covers a simple sphere.
+    have : IsEmpty ι := Function.isEmpty ρ
+    simp [hκ]
+  | inr hκ =>
+    have := sphereTreeDimension_neg_of_le_one c hind A₀ hB hm hρ hc hA parent node root (n := n)
+    simp only [not_isEmpty_of_nonempty, false_and, iff_false, not_le]
+    exact this
+
 end Reduction
 
 section Broken
@@ -560,5 +611,123 @@ theorem brokenSphereTreeDimension_neg_of_le_one {n : ℤ} (c : G →+ ℤ) {ind 
       (by linarith [Int.natCast_nonneg #T]) parent node root
 
 end Broken
+
+/-! ### Broken limits of pairs of pants -/
+
+section BrokenPants
+
+variable {G : Type*} [AddCommMonoid G] {ι : Type*} [Fintype ι]
+
+/-- The expected dimension of a chain of `k` Floer cylinders, each taken modulo its
+`ℝ`-translation. The cylinder `j` runs from a capped orbit of grading `g j.castSucc` at its positive
+end to a capped orbit of grading `g j.succ` at its negative end, in the class `C j` relative to the
+two caps. Its index is `g j.castSucc - g j.succ + 2 c₁(C j)`, and the translation lowers its
+dimension by one. -/
+def cylinderChainDimension (c : G →+ ℤ) {k : ℕ} (g : Fin (k + 1) → ℤ) (C : Fin k → G) : ℤ :=
+  ∑ j, (g j.castSucc - g j.succ + 2 * c (C j) - 1)
+
+theorem cylinderChainDimension_def (c : G →+ ℤ) {k : ℕ} (g : Fin (k + 1) → ℤ) (C : Fin k → G) :
+    cylinderChainDimension c g C = ∑ j, (g j.castSucc - g j.succ + 2 * c (C j) - 1) := by
+  rw [cylinderChainDimension]
+
+/-- The indices of the cylinders of a chain add up to the index of a single cylinder from the first
+capped orbit to the last one, in the sum of their classes. So the expected dimension of the chain
+is that index minus the number of cylinders. -/
+theorem cylinderChainDimension_eq (c : G →+ ℤ) {k : ℕ} (g : Fin (k + 1) → ℤ) (C : Fin k → G) :
+    cylinderChainDimension c g C = g 0 - g (Fin.last k) + 2 * c (∑ j, C j) - k := by
+  rw [cylinderChainDimension, ← Fin.sum_univ_castSucc_sub_succ g]
+  simp [sum_sub_distrib, sum_add_distrib, map_sum, mul_sum]
+
+/-- The expected dimension of a broken limit of pairs of pants in a target of real dimension `2n`,
+before bubbling. Its pair of pants has inputs at capped orbits of gradings `g₁ (last k₁)` and
+`g₂ (last k₂)`, output at a capped orbit of grading `g₀ 0`, and class `A` relative to these caps,
+so its index is `g₁ (last k₁) + g₂ (last k₂) - g₀ 0 - n + 2 c₁(A)`. At its first input a chain of
+`k₁` Floer cylinders has broken off, running from the capped generator of grading `g₁ 0` to the
+pair of pants (`TauCeti.Floer.cylinderChainDimension`), and likewise a chain of `k₂` cylinders at
+its second input. At its output a chain of `k₀` cylinders runs from the pair of pants to the capped
+generator of grading `g₀ (last k₀)`. The orbits at which the pieces meet are nondegenerate, hence
+isolated, so matching the pieces there imposes no condition and the expected dimensions add. -/
+def brokenPantsDimension (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ)
+    (g₂ : Fin (k₂ + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G)
+    (C₀ : Fin k₀ → G) (A : G) : ℤ :=
+  g₁ (Fin.last k₁) + g₂ (Fin.last k₂) - g₀ 0 - n + 2 * c A + cylinderChainDimension c g₁ C₁ +
+    cylinderChainDimension c g₂ C₂ + cylinderChainDimension c g₀ C₀
+
+theorem brokenPantsDimension_def (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ)
+    (g₂ : Fin (k₂ + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G)
+    (C₀ : Fin k₀ → G) (A : G) :
+    brokenPantsDimension n c g₁ g₂ g₀ C₁ C₂ C₀ A =
+      g₁ (Fin.last k₁) + g₂ (Fin.last k₂) - g₀ 0 - n + 2 * c A + cylinderChainDimension c g₁ C₁ +
+        cylinderChainDimension c g₂ C₂ + cylinderChainDimension c g₀ C₀ := by
+  rw [brokenPantsDimension]
+
+/-- **The index of a broken pair of pants.** The expected dimension of a broken limit of pairs of
+pants is the index `μ₁ + μ₂ - μ₀ - n + 2 c₁(A')` of the unbroken problem between the capped
+generators of gradings `μ₁ = g₁ 0`, `μ₂ = g₂ 0` and `μ₀ = g₀ (last k₀)`, in the total class
+`A' = A + ∑ C₁ + ∑ C₂ + ∑ C₀`, minus one for each of the `k₁ + k₂ + k₀` cylinders that have broken
+off. -/
+theorem brokenPantsDimension_eq (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ)
+    (g₂ : Fin (k₂ + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G)
+    (C₀ : Fin k₀ → G) (A : G) :
+    brokenPantsDimension n c g₁ g₂ g₀ C₁ C₂ C₀ A =
+      g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + 2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j) -
+        (k₁ + k₂ + k₀) := by
+  rw [brokenPantsDimension, cylinderChainDimension_eq, cylinderChainDimension_eq,
+    cylinderChainDimension_eq, map_add, map_add, map_add]
+  ring
+
+/-- **Sphere trees on broken pairs of pants.** On a target where every simple sphere has
+nonnegative first Chern number, a stratum of limits of pairs of pants consisting of a broken pair of
+pants with `k₁ + k₂ + k₀` cylinders broken off at its ends and a tree of simple spheres attached to
+it has expected dimension at most `μ₁ + μ₂ - μ₀ - n + 2 c₁(A') - (k₁ + k₂ + k₀) - 2 #κ`, where `A'`
+is the total class of the limit, including its bubbles: one less for each broken-off cylinder and
+two less for each simple sphere. The points of `P` at which spheres are attached to the broken pair
+of pants lie on any of its pieces. -/
+theorem sphereTreeDimension_brokenPantsDimension_le (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ}
+    (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G)
+    (C₂ : Fin k₂ → G) (C₀ : Fin k₀ → G) (A : G) {B : ι → G} {B' : κ → G} {m : ι → ℕ}
+    {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v)
+    (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w)) (parent : κ → Option κ)
+    (node root : κ → P) :
+    sphereTreeDimension n (brokenPantsDimension n c g₁ g₂ g₀ C₁ C₂ C₀ A) (fun w => c (B' w))
+        parent node root ≤
+      g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n +
+          2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) - (k₁ + k₂ + k₀) -
+        2 * Fintype.card κ := by
+  rw [brokenPantsDimension_eq]
+  exact sphereTreeDimension_le_sub_two_mul_card c
+    (ind := fun A' => g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + 2 * c A' - (k₁ + k₂ + k₀))
+    (fun _ _ => by rw [map_add]; ring) _ hB hm hρ hc parent node root
+
+/-- **The strata of the product's rigid and one-dimensional problems.** On a target where every
+simple sphere has nonnegative first Chern number, consider the limits of pairs of pants between
+capped generators of gradings `μ₁ = g₁ 0`, `μ₂ = g₂ 0` and `μ₀ = g₀ (last k₀)`, in a total class
+`A'` for which the stratum of broken pairs of pants with `k₁ + k₂ + k₀` broken-off cylinders has
+expected dimension at most one. For instance, the problem has expected dimension
+`μ₁ + μ₂ - μ₀ - n + 2 c₁(A')` at most one, as for the rigid products and for the one-dimensional
+moduli spaces behind the Leibniz rule. Such a stratum with a tree of simple spheres attached has
+nonnegative expected dimension exactly when it has no nonconstant sphere bubble and at most
+`μ₁ + μ₂ - μ₀ - n + 2 c₁(A')` cylinders have broken off. So in a problem of expected dimension
+zero only the unbroken pairs of pants remain, and in a problem of expected dimension one the
+unbroken ones and those with a single broken-off cylinder. -/
+theorem sphereTreeDimension_brokenPantsDimension_nonneg_iff (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ}
+    (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G)
+    (C₂ : Fin k₂ → G) (C₀ : Fin k₀ → G) (A : G) {B : ι → G} {B' : κ → G} {m : ι → ℕ}
+    {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v)
+    (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w))
+    (hA : g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) - (k₁ + k₂ + k₀) ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n (brokenPantsDimension n c g₁ g₂ g₀ C₁ C₂ C₀ A) (fun w => c (B' w))
+        parent node root ↔
+      IsEmpty κ ∧ (k₁ + k₂ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) := by
+  rw [brokenPantsDimension_eq]
+  refine (sphereTreeDimension_nonneg_iff c
+    (ind := fun A' => g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + 2 * c A' - (k₁ + k₂ + k₀))
+    (fun _ _ => by rw [map_add]; ring) _ hB hm hρ hc hA parent node root).trans ?_
+  simp only [sub_nonneg]
+
+end BrokenPants
 
 end TauCeti.Floer

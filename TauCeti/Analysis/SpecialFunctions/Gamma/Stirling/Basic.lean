@@ -27,13 +27,13 @@ it to the derivative of the Stieltjes integral via
 `0` by letting `z = n + 1 → ∞` using Stirling's formula for `n!`
 (`Stirling.tendsto_log_factorial_sub_stirling`).
 
-Sharp `1 / 12` slit-plane and closed-sector bounds (and the resulting bound for `log ‖Γ s‖`)
-are proved via the periodic Bernoulli expansion in
-`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`, whose consequences on vertical
-strips are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`. Higher
-derivatives of `stirlingRemainder` are in
-`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Series.lean`, and their positive-axis sign
-alternation and asymptotic bounds are in
+Sharp `1 / 12` slit-plane and closed-sector bounds (and the resulting bound for `log ‖Γ s‖`
+as well as the `1 / 6` bound on the closed right half-plane) are proved via the periodic
+Bernoulli expansion in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`, whose
+consequences on vertical strips are in
+`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`. Higher derivatives of
+`stirlingRemainder` are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Series.lean`, and
+their positive-axis sign alternation and asymptotic bounds are in
 `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Remainder.lean`.
 
 ## Main declarations
