@@ -53,6 +53,8 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
   with left translation.
 * `MeasureTheory.Lp.continuous_leftTranslation_apply`: for `p < ∞`, `g ↦ L_g f` is continuous.
 * `MeasureTheory.Lp.tendsto_leftTranslation_apply_nhds_one`: for `p < ∞`, `L_g f → f` as `g → 1`.
+* `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_left_sub`: for `p < ∞`, the left translation
+  increments `‖f (g * ·) - f‖_p` of an `Lᵖ` function tend to `0` as `g → 1`.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
 -/
@@ -183,6 +185,31 @@ theorem tendsto_leftTranslation_apply_nhds_one [TopologicalSpace G] [IsTopologic
     (f : Lp E p μ) : Tendsto (fun g : G => leftTranslation μ p 𝕜 g f) (𝓝 1) (𝓝 f) := by
   simpa only [map_one, LinearIsometryEquiv.coe_one, id_eq]
     using (continuous_leftTranslation_apply (𝕜 := 𝕜) hp f).tendsto 1
+
+open Topology in
+/-- The left translates of an `Lᵖ` function converge to it in `Lᵖ` for `1 ≤ p < ∞`:
+`‖f (g * ·) - f‖_p → 0` as `g → 1`, for a left-invariant measure that is locally finite and inner
+regular for compact sets, such as a regular left Haar measure. The counterpart for right
+translates is `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular`. -/
+theorem _root_.MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_left_sub [TopologicalSpace G]
+    [IsTopologicalGroup G] [BorelSpace G] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+    {f : G → E} (hf : MemLp f p μ) (hp : p ≠ ∞) :
+    Tendsto (fun g => eLpNorm (fun x => f (g * x) - f x) p μ) (𝓝 1) (𝓝 0) := by
+  have : Fact (p ≠ ∞) := ⟨hp⟩
+  set F := hf.toLp f
+  -- `f (g * ·)` represents the `DomMulAct` translate `mk g • F`, which tends to `F` as `g → 1`.
+  have h : Tendsto (fun g : G => DomMulAct.mk g • F - F) (𝓝 1) (𝓝 0) := by
+    simpa using (((DomMulAct.continuous_mk (M := G)).smul
+      (continuous_const (y := F))).tendsto (1 : G)).sub_const F
+  refine (eNorm_zero (E := Lp E p μ) ▸ (continuous_eNorm.tendsto 0).comp h).congr' <|
+    Eventually.of_forall fun g => ?_
+  rw [Function.comp_apply, Lp.eNorm_def]
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [Lp.coeFn_sub (DomMulAct.mk g • F) F, DomMulAct.smul_Lp_ae_eq (DomMulAct.mk g) F,
+    hf.coeFn_toLp, (measurePreserving_mul_left μ g).quasiMeasurePreserving.ae hf.coeFn_toLp]
+    with x h₁ h₂ h₃ h₄
+  rw [h₁, Pi.sub_apply, h₂, h₃]
+  simpa using h₄
 
 end MeasureTheory.Lp
 
