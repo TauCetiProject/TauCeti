@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
 
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
-import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Normal
 
 /-!
 # Normalized blowups of models of curves
@@ -29,9 +28,9 @@ the total space is regular. Over an arbitrary, possibly non-excellent, discrete 
 step is a model because the generic fibre is smooth
 (`TauCeti.Model.isFinite_fromNormalization_genericι`).
 
-The first step is that normalizing does nothing over a normal open `V` of `X`: over an affine open
-`Spec A ⊆ V`, the generic fibre is `Spec A[1/π]` for a uniformizer `π`, and the normal ring `A` is
-integrally closed in its localization `A[1/π]` at the nonzerodivisor `π`.
+Normalizing does nothing over a normal open of `X`
+(`TauCeti.Model.le_isoLocus_fromNormalization_genericι`), so when `X` is normal the normalized
+blowup is the blowup away from the closure of `x`.
 
 ## Main definitions
 
@@ -42,9 +41,6 @@ integrally closed in its localization `A[1/π]` at the nonzerodivisor `π`.
 
 ## Main results
 
-* `TauCeti.Model.le_isoLocus_fromNormalization_genericι`: normalizing the total space in the
-  generic fibre is an isomorphism over every normal open of the total space.
-* `TauCeti.Model.isIso_normalizationHom`: normalizing a normal model changes nothing.
 * `TauCeti.Model.isProper_normalizedBlowup`, `TauCeti.Model.isNormalScheme_normalizedBlowup` and
   `TauCeti.Model.finite_compl_regularLocus_normalizedBlowup`: a normalized blowup of a proper model
   is a proper normal model with finitely many singular points.
@@ -77,48 +73,6 @@ variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 variable (M : Model R K C toK)
-
-section Normal
-
-/-- **Normalization changes nothing over the normal locus.** Over an open `V` of the total space
-of a model `M` which is a normal scheme, the normalization of the total space in the generic fibre
-is an isomorphism. -/
-theorem le_isoLocus_fromNormalization_genericι (V : M.total.Opens) [IsNormalScheme V] :
-    V ≤ M.genericι.fromNormalization.isoLocus := by
-  intro y hy
-  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, hUV⟩ :=
-    M.total.isBasis_affineOpens.exists_subset_of_mem_open hy V.isOpen
-  refine M.genericι.fromNormalization.mem_isoLocus_iff.mpr ⟨U, hyU, ?_⟩
-  rw [Scheme.Hom.isIso_morphismRestrict_fromNormalization_iff _ hU]
-  -- Over `U`, the generic fibre is `Spec Γ(X, U)[1/π]`, with `π` a nonzerodivisor.
-  have := M.isOpenImmersion_genericι
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible R
-  let := (M.genericι.app U).hom.toAlgebra
-  let := M.toBase.sectionsAlgebra U
-  have := M.isLocalization_away_app_genericι hU hπ
-  -- The ring `Γ(X, U)` is normal, since `U` is an open of the normal scheme `V`.
-  have : IsNormalScheme U := .of_isOpenImmersion (M.total.homOfLE (show U ≤ V from hUV))
-  have : IsNormalScheme (Spec Γ(M.total, U)) := .of_isOpenImmersion hU.isoSpec.inv
-  have : IsIntegrallyClosedIn Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := by
-    refine Spec.isIntegrallyClosedIn_of_presheaf_map_leTop_bijective
-      (Submonoid.powers_le.mpr (M.algebraMap_mem_nonZeroDivisors_sections hU hπ.ne_zero)) ⊤
-      (fun p _ ↦ (isNormalScheme_Spec_iff_forall_localization _).mp ‹_› p.asIdeal) ?_
-    -- Restriction from `Spec Γ(X, U)` to its top open is the identity.
-    rw [show (⊤ : (Spec (.of Γ(M.total, U))).Opens).leTop = 𝟙 ⊤ from rfl, op_id,
-      CategoryTheory.Functor.map_id]
-    exact ConcreteCategory.bijective_of_isIso _
-  refine ⟨M.genericι.app_injective U, fun s hs ↦ ?_⟩
-  obtain ⟨a, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp hs
-  exact ⟨a, rfl⟩
-
-/-- **Normalizing a normal model changes nothing.** If the total space of `M` is normal, the
-normalization morphism of models is an isomorphism. -/
-instance isIso_normalizationHom [IsFinite M.genericι.fromNormalization]
-    [IsNormalScheme M.total] : IsIso M.normalizationHom := by
-  rw [isIso_iff_isIso_hom, normalizationHom_hom, ← Scheme.Hom.isoLocus_eq_top_iff, eq_top_iff]
-  exact M.le_isoLocus_fromNormalization_genericι ⊤
-
-end Normal
 
 section NormalizedBlowup
 

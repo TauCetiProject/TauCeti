@@ -287,9 +287,10 @@ theorem range_genericι_eq_basicOpen (M : Model R K C toK) {π : R}
   rw [Scheme.zeroLocus_singleton, Set.mem_compl_iff, not_not]
 
 /-- Over an affine open `U` of the total space of a model, the sections of the generic fibre over
-`U ∩ C` are the localization of `Γ(X, U)` away from the image of a uniformizer `π` of `R`. -/
+`U ∩ C` are the localization of `Γ(X, U)` away from the image of a nonzero element `π` of the
+maximal ideal of `R`, such as a uniformizer. -/
 theorem isLocalization_away_app_genericι (M : Model R K C toK) {U : M.total.Opens}
-    (hU : IsAffineOpen U) {π : R} (hπ : Irreducible π) :
+    (hU : IsAffineOpen U) {π : R} (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) :
     letI := (M.genericι.app U).hom.toAlgebra
     letI := M.toBase.sectionsAlgebra U
     IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
@@ -302,7 +303,7 @@ theorem isLocalization_away_app_genericι (M : Model R K C toK) {U : M.total.Ope
       M.toBase ⁻¹ᵁ (Spec (.of R)).basicOpen ((Scheme.ΓSpecIso (.of R)).inv π) := by
     ext1
     rw [Scheme.Hom.coe_opensRange, Scheme.preimage_basicOpen_top,
-      M.range_genericι_eq_basicOpen ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero]
+      M.range_genericι_eq_basicOpen hπ hπ0]
   rw [hrange, M.toBase.algebraMap_sections]
   exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
 
