@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Action.Basic
 public import Mathlib.RepresentationTheory.Invariants
-import Mathlib.LinearAlgebra.Basis.VectorSpace
+import TauCeti.RepresentationTheory.GaloisDescent.FiniteIndex
 
 /-!
 # Invariant vectors span a semilinear representation
@@ -21,6 +21,8 @@ Galois action on its character lattice.
 
 The result has no characteristic restriction and does not require the order of `G` to be
 invertible in `L`.
+
+It is the case `U = ⊥`, `j = id` of `TauCeti.GaloisDescent.mem_span_invariants_of_finiteIndex`.
 
 ## References
 
@@ -41,27 +43,13 @@ extension `L / k` for which that group is finite; the extension need not be Galo
 theorem span_invariants_eq_top
     {ρ : Representation k G V}
     (hsemi : ∀ (g : G) (a : L) (v : V), ρ g (a • v) = (g • a) • ρ g v) :
-    Submodule.span L (ρ.invariants : Set V) = ⊤ := by
-  classical
-  let := Fintype.ofFinite G
-  by_contra hspan
-  obtain ⟨f, hf, hker⟩ :=
-    (Submodule.span L (ρ.invariants : Set V)).exists_le_ker_of_lt_top
-      (lt_top_iff_ne_top.mpr hspan)
-  apply hf
-  ext v
-  have horbit (a : L) : ∑ g : G, ρ g (a • v) ∈ ρ.invariants := by
-    rw [Representation.mem_invariants]
-    intro h
-    simpa only [Representation.norm, LinearMap.sum_apply] using ρ.self_norm_apply h (a • v)
-  -- Dedekind's independence of the characters `a ↦ g • a` of `L`, for `g ∈ G`.
-  have hli := (linearIndependent_monoidHom L L).comp
-    (fun g : G ↦ (MulSemiringAction.toRingHom G L g : L →* L))
-    fun g h hgh ↦ eq_of_smul_eq_smul fun a ↦ DFunLike.congr_fun hgh a
-  have hsum : ∑ g : G, f (ρ g v) • ⇑(MulSemiringAction.toRingHom G L g : L →* L) = 0 := by
-    ext a
-    have hz := LinearMap.mem_ker.mp (hker (Submodule.subset_span (horbit a)))
-    simpa [hsemi, mul_comm] using hz
-  simpa using Fintype.linearIndependent_iff.mp hli _ hsum 1
+    Submodule.span L (ρ.invariants : Set V) = ⊤ :=
+  -- The case `U = ⊥`, `j = id`: faithfulness says that only `1` fixes all of `L`.
+  eq_top_iff.mpr fun _ _ ↦ mem_span_invariants_of_finiteIndex (MonoidHom.id G) ⊥
+    (fun g hg ↦ Subgroup.mem_bot.mpr <| eq_of_smul_eq_smul fun a ↦ by
+      rw [one_smul]
+      exact (mem_fixingSubgroup_iff G).mp hg a fun m ↦ by
+        rw [Subgroup.smul_def, Subgroup.mem_bot.mp m.property, one_smul]) hsemi
+    (fun g hg ↦ by simp_all)
 
 end TauCeti.GaloisDescent

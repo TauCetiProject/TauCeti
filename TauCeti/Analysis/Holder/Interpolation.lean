@@ -412,11 +412,7 @@ theorem norm_fderiv_le_of_contDiffOn {U s : Set E} {u : E → F} (hU : IsOpen U)
     (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
     {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x ε ⊆ s) :
     ‖fderiv ℝ u x‖ ≤ M / ε + H * ε ^ (1 + (α : ℝ)) := by
-  have hd1 : ∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y := fun y hy =>
-    ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt (by norm_num)).hasFDerivAt
-      |>.hasFDerivWithinAt
-  have hd2 : ∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y :=
-    fun y hy => ((hu.contDiffAt (hU.mem_nhds (hsU hy))).hasFDerivAt_fderiv le_rfl).hasFDerivWithinAt
+  obtain ⟨hd1, hd2⟩ := hu.hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hsU
   have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_subset hd1 hd2 hM hε hxs
 
@@ -429,11 +425,7 @@ theorem norm_iteratedFDeriv_two_le_of_contDiffOn {U s : Set E} {u : E → F} (hU
     (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
     {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x (2 * ε) ⊆ s) :
     ‖iteratedFDeriv ℝ 2 u x‖ ≤ 2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) := by
-  have hd1 : ∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y := fun y hy =>
-    ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt (by norm_num)).hasFDerivAt
-      |>.hasFDerivWithinAt
-  have hd2 : ∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y :=
-    fun y hy => ((hu.contDiffAt (hU.mem_nhds (hsU hy))).hasFDerivAt_fderiv le_rfl).hasFDerivWithinAt
+  obtain ⟨hd1, hd2⟩ := hu.hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hsU
   have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset hd1 hd2 hM hε hxs

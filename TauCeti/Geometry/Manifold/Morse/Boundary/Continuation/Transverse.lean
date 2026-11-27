@@ -74,6 +74,8 @@ its transition maps are the time maps of the flow of `X`, which preserve the sta
   the continuation slices.
 * `TauCeti.IsTransverseContinuation.morseBoundary_comp_morseContinuationMap_eq_iff`: the
   chain-map criterion for a transverse continuation.
+* `IsAdaptedPseudoGradient.timeDependentFlowOf_continuationSpaceField_constantContinuationField`:
+  the transition maps of the constant continuation are the time maps of the flow of `X`.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isTransverseContinuation_constantContinuationField`:
   the constant continuation of a Morse–Smale pseudo-gradient is transverse.
 
@@ -225,11 +227,8 @@ private theorem exists_isMorseSmalePair_and_morseContinuationSlice_eq (hf₁ : I
     (hV.eventually_morseContinuationSlice_eq_preimage_mpullback hVs hX₀ hX₁ hC hσ)
   obtain ⟨a, ha⟩ := h.exists
   obtain ⟨b, hb₁, hb₂⟩ := (ha.1.and ha.2).exists
-  refine ⟨_, continuationTransition C hVs σ a, hb₁, hb₂, fun q ↦ ?_⟩
-  set Φ := continuationTransition C hVs a b
-  have h := (Φ.isLocalDiffeomorph (Φ.symm q)).manifoldMorseIndex_comp (by simp)
-    ((hf₁.contMDiff _).of_le (by simp)) (by rw [Φ.apply_symm_apply]; exact q.property)
-  rwa [Φ.apply_symm_apply] at h
+  exact ⟨_, continuationTransition C hVs σ a, hb₁, hb₂, fun q ↦
+    manifoldMorseIndex_symm_apply_eq_of_comp rfl ((hf₁.contMDiff _).of_le (by simp)) q.property⟩
 
 /-- **A transverse continuation has no trajectories raising the index.** For a transverse smooth
 continuation field at rate `C > 0` between pseudo-gradients adapted to Morse functions, there is no
@@ -281,6 +280,22 @@ end IsTransverseContinuation
 
 /-! ### The constant continuation -/
 
+/-- **The transition maps of the constant continuation are flow maps.** The space component of the
+constant continuation field `(X x, C t (1 - t²))` is `X` at all times, so its time-dependent flow
+from `a` to `b` is the time-`(b - a)` map of the flow of `X`, for any rate `C`. -/
+theorem IsAdaptedPseudoGradient.timeDependentFlowOf_continuationSpaceField_constantContinuationField
+    {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} (hX : IsAdaptedPseudoGradient f X)
+    (C a b : ℝ) :
+    timeDependentFlowOf (continuationSpaceField C (constantContinuationField X C)) a b =
+      hX.flow (b - a) := by
+  have hY : continuationSpaceField C (constantContinuationField X C) = fun _ ↦ (1 : ℝ) • X := by
+    funext s x
+    simp [continuationSpaceField_apply]
+  rw [hY, timeDependentFlowOf_const_smul (hX.contMDiff.of_le (by simp)) hX.isCompleteVectorField,
+    mul_one]
+  funext y
+  rw [hX.flow_apply, flowOf_apply]
+
 /-- **The constant continuation of a Morse–Smale pseudo-gradient is transverse.** For a Morse–Smale
 pseudo-gradient `X` adapted to `f` and any rate `C`, the continuation along the constant
 continuation field `(X x, C t (1 - t²))` is transverse. Its space component is `X` at all times,
@@ -290,21 +305,11 @@ theorem IsAdaptedPseudoGradient.IsMorseSmale.isTransverseContinuation_constantCo
     {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (C : ℝ) :
     IsTransverseContinuation C (constantContinuationField X C) hX hX := by
-  -- The space component is `X = 1 • X` at all times, so the transition maps are flow maps.
-  have hY : continuationSpaceField C (constantContinuationField X C) = fun _ ↦ (1 : ℝ) • X := by
-    funext s x
-    simp [continuationSpaceField_apply]
-  have hflow (a b : ℝ) :
-      timeDependentFlowOf (continuationSpaceField C (constantContinuationField X C)) a b =
-        hX.flow ((b - a) * 1) := by
-    rw [hY, timeDependentFlowOf_const_smul (hX.contMDiff.of_le (by simp)) hX.isCompleteVectorField]
-    funext y
-    rw [hX.flow_apply, flowOf_apply]
   refine isTransverseContinuation_iff.2 <| .of_forall fun a ↦ .of_forall fun b p q y hy ↦ ?_
-  -- The flow maps preserve the stable manifolds of `X`.
-  have hs : hX.flow ((b - a) * 1) ⁻¹' hX.flow.stableSet q = hX.flow.stableSet q :=
+  -- The transition maps are flow maps, which preserve the stable manifolds of `X`.
+  have hs : hX.flow (b - a) ⁻¹' hX.flow.stableSet q = hX.flow.stableSet q :=
     ext fun _ ↦ Flow.apply_mem_stableSet_iff _ _
-  rw [hflow, hs] at hy ⊢
+  rw [hX.timeDependentFlowOf_continuationSpaceField_constantContinuationField, hs] at hy ⊢
   exact ((isMorseSmalePair_self_iff hX).2 h).span_mtangentConeAt_sup_eq_top hy
 
 end TauCeti

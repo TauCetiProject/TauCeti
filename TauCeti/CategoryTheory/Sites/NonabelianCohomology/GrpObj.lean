@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Sites.Canonical
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Action
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Mod
 public import TauCeti.CategoryTheory.Sites.Canonical
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Map
 
@@ -26,7 +27,12 @@ locally for `J`. Its functor of points is then a torsor under `h_G`, `IsTorsor.t
 assignment is fully faithful: morphisms of torsors of sheaves are exactly the equivariant
 morphisms in `C`. Consequently the classes in `NonabelianH1 h_G` detect isomorphism of torsors of
 `C`, the class of `X` is the base point exactly when `X` has a global section, and an equivariant
-morphism of torsors is an isomorphism in `C`.
+morphism of torsors is an isomorphism in `C`. The `G`-torsors of `C` form a full subcategory of
+the `G`-module objects, and the functor of points `toTorsorFunctor` from it is fully faithful.
+Conversely, a torsor `P` under `h_G` whose underlying sheaf is represented by an object `X` comes
+from a `G`-torsor structure on `X`: the action of `G` on `X` corresponds by the Yoneda lemma to the
+action on `P`, and `P` is isomorphic to the torsor of points of `X`. So the essential image of the
+functor of points consists of the torsors whose underlying sheaf is representable.
 
 The sheaf of points is taken with values in groups of a universe `max v w` for an arbitrary `w`,
 so that its torsors can be sheafified in a large site such as the big fppf site of a scheme;
@@ -35,12 +41,17 @@ this is what the functoriality `NonabelianH1.map` along homomorphisms requires.
 ## Main declarations
 
 * `CategoryTheory.GrothendieckTopology.uliftYonedaGrp`: the functor sending a group object to its
-  sheaf of points.
+  sheaf of points, whose underlying sheaf of sets is represented by the group object
+  (`uliftYonedaGrpObjRepresentableBy`).
+* `CategoryTheory.GrothendieckTopology.uliftYonedaMulActionSheaf`: the sheaf of points of an
+  object with an action of `G`, with the action of the sheaf of points of `G`, represented by the
+  object (`uliftYonedaMulActionSheafRepresentableBy`).
 * `CategoryTheory.GrothendieckTopology.IsTorsor`: a torsor of `C` under a group object.
 * `CategoryTheory.GrothendieckTopology.IsTorsor.toTorsor`: its functor of points, a torsor under
   the sheaf of points.
 * `CategoryTheory.GrothendieckTopology.IsTorsor.toTorsorSectionEquiv`: its sections are the
-  morphisms into the torsor.
+  morphisms into the torsor, and `IsTorsor.toTorsorMulActionSheafSectionEquiv` identifies them
+  equivariantly with the sections of `uliftYonedaMulActionSheaf`.
 * `CategoryTheory.GrothendieckTopology.IsTorsor.toTorsorHomEquiv`: morphisms of these sheaf
   torsors are the equivariant morphisms.
 * `CategoryTheory.GrothendieckTopology.IsTorsor.isIso_of_isModHom`: equivariant morphisms of
@@ -57,6 +68,15 @@ this is what the functoriality `NonabelianH1.map` along homomorphisms requires.
   if and only if it has a global section (`IsTorsor.exists_iso_isModHom_iff`).
 * `CategoryTheory.GrothendieckTopology.subsingleton_nonabelianH1_of_isTerminal`: the trivial group
   object has a single torsor class.
+* `CategoryTheory.GrothendieckTopology.toTorsorFunctor`: the functor of points from the category
+  of `G`-torsors of `C` to the category of torsors under the sheaf of points, fully faithful by
+  `fullyFaithfulToTorsorFunctor`.
+* `CategoryTheory.Sheaf.Torsor.modObjOfRepresentableBy`, `Sheaf.Torsor.isTorsor_of_representableBy`
+  and `Sheaf.Torsor.toTorsorIsoOfRepresentableBy`: an object representing a torsor under the sheaf
+  of points is a `G`-torsor whose torsor of points is the given torsor.
+* `CategoryTheory.Sheaf.Torsor.toTorsorFunctor_essImage_iff`: a torsor under the sheaf of points
+  lies in the essential image of the functor of points if and only if its underlying sheaf is
+  representable.
 
 ## References
 
@@ -120,6 +140,82 @@ lemma uliftYonedaGrpObjEquiv_map_hom_app {G H : Grp C} (φ : G ⟶ H) (T : Cᵒ�
       uliftYonedaGrpObjEquiv G T g ≫ φ.hom.hom :=
   (rfl)
 
+/-- The underlying presheaf of sets of the sheaf of points of `G` is represented by `G`. -/
+noncomputable def uliftYonedaGrpObjRepresentableBy (G : Grp C) :
+    ((J.uliftYonedaGrp.{w}.obj G).obj ⋙ forget GrpCat).RepresentableBy G.X where
+  homEquiv {T} := (uliftYonedaGrpObjEquiv (J := J) G (op T)).symm.toEquiv
+  homEquiv_comp _ _ := (rfl)
+
+/-- The representation `uliftYonedaGrpObjRepresentableBy` sends a morphism `T ⟶ G` to the
+corresponding section of the sheaf of points. -/
+lemma uliftYonedaGrpObjRepresentableBy_homEquiv (G : Grp C) {T : C} (g : T ⟶ G.X) :
+    (uliftYonedaGrpObjRepresentableBy.{w} (J := J) G).homEquiv g =
+      (uliftYonedaGrpObjEquiv.{w} (J := J) G (op T)).symm g :=
+  (rfl)
+
+variable (J) in
+/-- The sheaf of points of an object `X` with an action of a group object `G`, with the action of
+the sheaf of points of `G`: a point `g : T ⟶ G` acts on a point `x : T ⟶ X` by `g • x`. Its
+contracted products with torsors under the sheaf of points of `G` twist `X` by these torsors.
+
+Use `uliftYonedaMulActionSheafSectionEquiv` to identify its sections with morphisms into `X`,
+`uliftYonedaMulActionSheafSectionEquiv_map` and `uliftYonedaMulActionSheafSectionEquiv_smul` for
+restriction and the action, and `uliftYonedaMulActionSheafRepresentableBy` for its
+representation by `X`. -/
+noncomputable def uliftYonedaMulActionSheaf (G : Grp C) (X : C) [ModObj G.X X] :
+    Sheaf.MulActionSheaf (J.uliftYonedaGrp.{w}.obj G) where
+  sheaf := J.uliftYoneda.{w}.obj X
+  mulAction T :=
+    { smul g x := ULift.up (uliftYonedaGrpObjEquiv G T g • (ULift.down (α := unop T ⟶ X) x))
+      one_smul x := congrArg ULift.up (one_smul _ (ULift.down (α := unop T ⟶ X) x))
+      mul_smul g g' x := congrArg ULift.up (mul_smul (uliftYonedaGrpObjEquiv G T g)
+        (uliftYonedaGrpObjEquiv G T g') (ULift.down (α := unop T ⟶ X) x)) }
+  map_smul T _ f _ x :=
+    congrArg ULift.up (ModObj.comp_smul f.unop _ (ULift.down (α := unop T ⟶ X) x))
+
+section uliftYonedaMulActionSheaf
+
+variable (G : Grp C) (X : C) [ModObj G.X X]
+
+/-- The sections over `T` of the sheaf of points of `X` are the morphisms `T ⟶ X`. -/
+noncomputable def uliftYonedaMulActionSheafSectionEquiv (T : Cᵒᵖ) :
+    (J.uliftYonedaMulActionSheaf.{w} G X).sheaf.obj.obj T ≃ (unop T ⟶ X) :=
+  Equiv.ulift
+
+/-- Restriction of sections of the sheaf of points of `X` is precomposition. -/
+@[simp]
+lemma uliftYonedaMulActionSheafSectionEquiv_map {T T' : Cᵒᵖ} (f : T ⟶ T')
+    (x : (J.uliftYonedaMulActionSheaf.{w} G X).sheaf.obj.obj T) :
+    uliftYonedaMulActionSheafSectionEquiv G X T'
+        ((J.uliftYonedaMulActionSheaf.{w} G X).sheaf.obj.map f x) =
+      f.unop ≫ uliftYonedaMulActionSheafSectionEquiv G X T x :=
+  (rfl)
+
+/-- A point `g : T ⟶ G` acts on a point `x : T ⟶ X` of the sheaf of points of `X` by the action
+of `G` on `X`. -/
+@[simp]
+lemma uliftYonedaMulActionSheafSectionEquiv_smul {T : Cᵒᵖ}
+    (g : (J.uliftYonedaGrp.{w}.obj G).obj.obj T)
+    (x : (J.uliftYonedaMulActionSheaf.{w} G X).sheaf.obj.obj T) :
+    uliftYonedaMulActionSheafSectionEquiv G X T (g • x) =
+      uliftYonedaGrpObjEquiv G T g • uliftYonedaMulActionSheafSectionEquiv G X T x :=
+  (rfl)
+
+/-- The underlying sheaf of sets of the sheaf of points of `X` is represented by `X`. -/
+noncomputable def uliftYonedaMulActionSheafRepresentableBy :
+    (J.uliftYonedaMulActionSheaf.{w} G X).sheaf.obj.RepresentableBy X where
+  homEquiv {T} := (uliftYonedaMulActionSheafSectionEquiv G X (op T)).symm
+  homEquiv_comp _ _ := (rfl)
+
+/-- The representation `uliftYonedaMulActionSheafRepresentableBy` sends a morphism `T ⟶ X` to the
+corresponding section. -/
+lemma uliftYonedaMulActionSheafRepresentableBy_homEquiv {T : C} (x : T ⟶ X) :
+    (uliftYonedaMulActionSheafRepresentableBy.{w} (J := J) G X).homEquiv x =
+      (uliftYonedaMulActionSheafSectionEquiv G X (op T)).symm x :=
+  (rfl)
+
+end uliftYonedaMulActionSheaf
+
 /-- For the trivial group object, a terminal object of `C`, every torsor under its sheaf of points
 is trivial: the torsor classes form a point. -/
 lemma subsingleton_nonabelianH1_of_isTerminal {G : Grp C} (hG : Limits.IsTerminal G.X) :
@@ -157,13 +253,8 @@ Use `toTorsorSectionEquiv` to identify its sections with morphisms into `X`, and
 noncomputable def toTorsor (h : J.IsTorsor G X) :
     Sheaf.Torsor (J.uliftYonedaGrp.{w}.obj G) where
   sheaf := J.uliftYoneda.{w}.obj X
-  mulAction T :=
-    { smul g x := ULift.up (uliftYonedaGrpObjEquiv G T g • (ULift.down (α := unop T ⟶ X) x))
-      one_smul x := congrArg ULift.up (one_smul _ (ULift.down (α := unop T ⟶ X) x))
-      mul_smul g g' x := congrArg ULift.up (mul_smul (uliftYonedaGrpObjEquiv G T g)
-        (uliftYonedaGrpObjEquiv G T g') (ULift.down (α := unop T ⟶ X) x)) }
-  map_smul T T' f g x :=
-    congrArg ULift.up (ModObj.comp_smul f.unop _ (ULift.down (α := unop T ⟶ X) x))
+  mulAction := (J.uliftYonedaMulActionSheaf.{w} G X).mulAction
+  map_smul := (J.uliftYonedaMulActionSheaf.{w} G X).map_smul
   coversTop Z := J.superset_covering (by
     rintro T a ⟨⟨T', ⟨x⟩⟩, ⟨b⟩⟩
     exact ⟨⟨T', ⟨ULift.up x⟩⟩, ⟨b⟩⟩) (h.coversTop Z)
@@ -185,21 +276,59 @@ lemma toTorsor_sheaf : h.toTorsor.sheaf = J.uliftYoneda.{w}.obj X :=
 /-- The sections over `T` of the torsor of points of `X` are the morphisms `T ⟶ X`. -/
 noncomputable def toTorsorSectionEquiv (T : Cᵒᵖ) :
     (toTorsor.{w} h).sheaf.obj.obj T ≃ (unop T ⟶ X) :=
-  Equiv.ulift
+  uliftYonedaMulActionSheafSectionEquiv G X T
 
 /-- Restriction of sections of the torsor of points is precomposition. -/
 @[simp]
 lemma toTorsorSectionEquiv_map {T T' : Cᵒᵖ} (f : T ⟶ T') (x : (toTorsor.{w} h).sheaf.obj.obj T) :
     h.toTorsorSectionEquiv T' ((toTorsor.{w} h).sheaf.obj.map f x) =
       f.unop ≫ h.toTorsorSectionEquiv T x :=
-  (rfl)
+  uliftYonedaMulActionSheafSectionEquiv_map G X f x
 
 /-- A point `g : T ⟶ G` acts on a point `x : T ⟶ X` by the action of `G` on `X`. -/
 @[simp]
 lemma toTorsorSectionEquiv_smul {T : Cᵒᵖ} (g : (J.uliftYonedaGrp.{w}.obj G).obj.obj T)
     (x : (toTorsor.{w} h).sheaf.obj.obj T) :
     h.toTorsorSectionEquiv T (g • x) = uliftYonedaGrpObjEquiv G T g • h.toTorsorSectionEquiv T x :=
-  (rfl)
+  uliftYonedaMulActionSheafSectionEquiv_smul G X g x
+
+/-- The sections over `T` of the torsor of points of `X` are those of the sheaf of points of `X`
+with its action; on morphisms into `X` this is the identity. It commutes with restriction
+(`toTorsorMulActionSheafSectionEquiv_map`) and with the action
+(`toTorsorMulActionSheafSectionEquiv_smul`). -/
+noncomputable def toTorsorMulActionSheafSectionEquiv (T : Cᵒᵖ) :
+    (toTorsor.{w} h).sheaf.obj.obj T ≃ (J.uliftYonedaMulActionSheaf.{w} G X).sheaf.obj.obj T :=
+  (h.toTorsorSectionEquiv T).trans (uliftYonedaMulActionSheafSectionEquiv G X T).symm
+
+/-- The identification `toTorsorMulActionSheafSectionEquiv` sends the section of the torsor of
+points given by a morphism `x : T ⟶ X` to the section of the sheaf of points given by `x`. -/
+@[simp]
+lemma toTorsorMulActionSheafSectionEquiv_toTorsorSectionEquiv_symm {T : Cᵒᵖ} (x : unop T ⟶ X) :
+    h.toTorsorMulActionSheafSectionEquiv T ((h.toTorsorSectionEquiv T).symm x) =
+      (uliftYonedaMulActionSheafSectionEquiv G X T).symm x := by
+  rw [toTorsorMulActionSheafSectionEquiv, Equiv.trans_apply, Equiv.apply_symm_apply]
+
+/-- The identification `toTorsorMulActionSheafSectionEquiv` commutes with restriction. -/
+@[simp]
+lemma toTorsorMulActionSheafSectionEquiv_map {T T' : Cᵒᵖ} (f : T ⟶ T')
+    (x : (toTorsor.{w} h).sheaf.obj.obj T) :
+    h.toTorsorMulActionSheafSectionEquiv T' ((toTorsor.{w} h).sheaf.obj.map f x) =
+      (J.uliftYonedaMulActionSheaf.{w} G X).sheaf.obj.map f
+        (h.toTorsorMulActionSheafSectionEquiv T x) := by
+  apply (uliftYonedaMulActionSheafSectionEquiv G X T').injective
+  simp only [toTorsorMulActionSheafSectionEquiv, Equiv.trans_apply, Equiv.apply_symm_apply,
+    uliftYonedaMulActionSheafSectionEquiv_map, toTorsorSectionEquiv_map]
+
+/-- The identification `toTorsorMulActionSheafSectionEquiv` commutes with the action of the sheaf
+of points of `G`. -/
+@[simp]
+lemma toTorsorMulActionSheafSectionEquiv_smul {T : Cᵒᵖ}
+    (g : (J.uliftYonedaGrp.{w}.obj G).obj.obj T) (x : (toTorsor.{w} h).sheaf.obj.obj T) :
+    h.toTorsorMulActionSheafSectionEquiv T (g • x) =
+      g • h.toTorsorMulActionSheafSectionEquiv T x := by
+  apply (uliftYonedaMulActionSheafSectionEquiv G X T).injective
+  simp only [toTorsorMulActionSheafSectionEquiv, Equiv.trans_apply, Equiv.apply_symm_apply,
+    uliftYonedaMulActionSheafSectionEquiv_smul, toTorsorSectionEquiv_smul]
 
 variable (h' : J.IsTorsor G Y)
 
@@ -332,6 +461,147 @@ lemma IsTorsor.exists_iso_isModHom_iff {G : Grp C} {X : C} [ModObj G.X X]
 
 end Self
 
+section TorsorFunctor
+
+variable (J) in
+/-- The `G`-module objects of `C` which are `G`-torsors for the topology `J`. The full subcategory
+of these, with the `G`-equivariant morphisms, is the category of `G`-torsors of `C`. -/
+abbrev torsorProperty (G : Grp C) : ObjectProperty (Mod C G.X) :=
+  fun X ↦ J.IsTorsor G X.X
+
+variable (J) in
+/-- The functor of points from the category of `G`-torsors of `C` to the category of torsors under
+the sheaf of points of `G`, sending a torsor to its torsor of points `IsTorsor.toTorsor` and an
+equivariant morphism to the morphism `IsTorsor.toTorsorHomEquiv` assigns to it. It is fully
+faithful (`fullyFaithfulToTorsorFunctor`). -/
+-- The body is exposed so that `toTorsorFunctor_map` can be stated: its right-hand side is a
+-- morphism between torsors of points, which must be seen to be the images of `X` and `Y`. The
+-- functor laws are tactic proofs, which can still use the hidden body of `toTorsorHomEquiv`.
+@[expose] noncomputable def toTorsorFunctor (G : Grp C) :
+    (J.torsorProperty G).FullSubcategory ⥤ Sheaf.Torsor (J.uliftYonedaGrp.{w}.obj G) where
+  obj X := IsTorsor.toTorsor X.property
+  map f := (IsTorsor.toTorsorHomEquiv _ _).symm ⟨f.hom.hom, inferInstance⟩
+  map_id _ := by exact Sheaf.Torsor.hom_ext (J.uliftYoneda.map_id _)
+  map_comp _ _ := by exact Sheaf.Torsor.hom_ext (J.uliftYoneda.map_comp _ _)
+
+/-- The functor of points sends a torsor to its torsor of points `IsTorsor.toTorsor`. -/
+@[simp]
+lemma toTorsorFunctor_obj (G : Grp C) (X : (J.torsorProperty G).FullSubcategory) :
+    (J.toTorsorFunctor.{w} G).obj X = IsTorsor.toTorsor X.property :=
+  (rfl)
+
+/-- The functor of points sends an equivariant morphism to the morphism of torsors of points
+`IsTorsor.toTorsorHomEquiv` assigns to it. -/
+@[simp]
+lemma toTorsorFunctor_map (G : Grp C) {X Y : (J.torsorProperty G).FullSubcategory} (f : X ⟶ Y) :
+    (J.toTorsorFunctor.{w} G).map f =
+      (IsTorsor.toTorsorHomEquiv X.property Y.property).symm ⟨f.hom.hom, inferInstance⟩ :=
+  (rfl)
+
+/-- The functor of points from `G`-torsors of `C` to torsors under the sheaf of points of `G` is
+fully faithful: morphisms of torsors of points are the `G`-equivariant morphisms
+(`IsTorsor.toTorsorHomEquiv`). -/
+noncomputable def fullyFaithfulToTorsorFunctor (G : Grp C) :
+    (J.toTorsorFunctor.{w} G).FullyFaithful where
+  preimage {X Y} f :=
+    haveI := ((IsTorsor.toTorsorHomEquiv X.property Y.property) f).property
+    ObjectProperty.homMk ⟨((IsTorsor.toTorsorHomEquiv X.property Y.property) f).val⟩
+  map_preimage {X Y} f := (IsTorsor.toTorsorHomEquiv X.property Y.property).symm_apply_apply f
+  preimage_map {X Y} f := by
+    ext
+    exact congrArg Subtype.val
+      ((IsTorsor.toTorsorHomEquiv X.property Y.property).apply_symm_apply ⟨f.hom.hom, _⟩)
+
+instance (G : Grp C) : (J.toTorsorFunctor.{w} G).Full :=
+  (fullyFaithfulToTorsorFunctor G).full
+
+instance (G : Grp C) : (J.toTorsorFunctor.{w} G).Faithful :=
+  (fullyFaithfulToTorsorFunctor G).faithful
+
+end TorsorFunctor
+
 end GrothendieckTopology
+
+namespace Sheaf.Torsor
+
+open GrothendieckTopology
+
+variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C]
+  {J : GrothendieckTopology C} [J.Subcanonical] {G : Grp C}
+  (P : Torsor (J.uliftYonedaGrp.{w}.obj G)) {X : C} (e : P.sheaf.obj.RepresentableBy X)
+
+/-- The action of `G` on an object `X` representing a torsor `P` under the sheaf of points of `G`:
+the action morphism `G ⊗ X ⟶ X` corresponds to the section `fst • snd` of `P` over `G ⊗ X`. The
+representation `e` is then equivariant (`homEquiv_smul_modObjOfRepresentableBy`). -/
+@[instance_reducible]
+noncomputable def modObjOfRepresentableBy : ModObj G.X X :=
+  letI (T : C) : MulAction (T ⟶ G.X) (P.sheaf.obj.obj (op T)) :=
+    MulAction.compHom _ (uliftYonedaGrpObjEquiv (J := J) G (op T)).symm.toMonoidHom
+  TauCeti.ModObj.ofRepresentableBy G.X (fun _ _ f _ x ↦ P.map_smul f.op _ x) e
+
+/-- For the action `modObjOfRepresentableBy`, the representation `e` sends `g • x` to the
+action on `e.homEquiv x` of the section of the sheaf of points corresponding to `g`. -/
+lemma homEquiv_smul_modObjOfRepresentableBy {T : C} (g : T ⟶ G.X) (x : T ⟶ X) :
+    letI := P.modObjOfRepresentableBy e
+    e.homEquiv (g • x) = (uliftYonedaGrpObjEquiv (J := J) G (op T)).symm g • e.homEquiv x :=
+  letI (T : C) : MulAction (T ⟶ G.X) (P.sheaf.obj.obj (op T)) :=
+    MulAction.compHom _ (uliftYonedaGrpObjEquiv (J := J) G (op T)).symm.toMonoidHom
+  TauCeti.ModObj.homEquiv_smul_ofRepresentableBy (fun _ _ f _ x ↦ P.map_smul f.op _ x) e g x
+
+/-- An object `X` representing a torsor `P` under the sheaf of points of `G` is a `G`-torsor for
+the action `modObjOfRepresentableBy`. -/
+lemma isTorsor_of_representableBy :
+    letI := P.modObjOfRepresentableBy e
+    J.IsTorsor G X := by
+  let := P.modObjOfRepresentableBy e
+  refine ⟨(ModObj.isIso_leftSMul_iff (M := G.X) (X := X)).2 fun Z x y ↦ ?_, fun Z ↦ ?_⟩
+  · obtain ⟨⟨g, x'⟩, hg⟩ := (P.bijective (op Z)).2 (e.homEquiv y, e.homEquiv x)
+    obtain ⟨hg, rfl⟩ := Prod.ext_iff.1 hg
+    refine ⟨uliftYonedaGrpObjEquiv G (op Z) g, e.homEquiv.injective ?_, fun m hm ↦ ?_⟩
+    · rw [P.homEquiv_smul_modObjOfRepresentableBy e, MulEquiv.symm_apply_apply]
+      exact hg
+    · rw [← MulEquiv.symm_apply_eq]
+      refine P.smul_left_injective (e.homEquiv x) ?_
+      dsimp only
+      rw [← P.homEquiv_smul_modObjOfRepresentableBy e, hm]
+      exact hg.symm
+  · exact J.superset_covering (by
+      rintro T a ⟨⟨T', ⟨x⟩⟩, ⟨b⟩⟩
+      exact ⟨⟨T', ⟨e.homEquiv.symm x⟩⟩, ⟨b⟩⟩) (P.coversTop Z)
+
+/-- A torsor `P` under the sheaf of points of `G` whose underlying sheaf is represented by `X` is
+isomorphic to the torsor of points of `X`, for the action `modObjOfRepresentableBy`. -/
+noncomputable def toTorsorIsoOfRepresentableBy :
+    letI := P.modObjOfRepresentableBy e
+    (P.isTorsor_of_representableBy e).toTorsor ≅ P :=
+  letI := P.modObjOfRepresentableBy e
+  asIso (C := Torsor (J.uliftYonedaGrp.{w}.obj G))
+    (X := (P.isTorsor_of_representableBy e).toTorsor) (Y := P)
+    { hom := ObjectProperty.homMk (Functor.RepresentableBy.equivUliftYonedaIso _ _ e).hom
+      map_smul _ _ x := P.homEquiv_smul_modObjOfRepresentableBy e _ x.down }
+
+/-- The isomorphism `toTorsorIsoOfRepresentableBy` sends a point `x : T ⟶ X` of the torsor of
+points of `X` to the section `e.homEquiv x` of `P`. -/
+lemma toTorsorIsoOfRepresentableBy_hom_app (T : Cᵒᵖ) :
+    letI := P.modObjOfRepresentableBy e
+    ∀ x : (P.isTorsor_of_representableBy e).toTorsor.sheaf.obj.obj T,
+      (P.toTorsorIsoOfRepresentableBy e).hom.hom.hom.app T x =
+        e.homEquiv ((P.isTorsor_of_representableBy e).toTorsorSectionEquiv T x) :=
+  fun _ ↦ (rfl)
+
+/-- A torsor under the sheaf of points of `G` lies in the essential image of the functor of points
+`toTorsorFunctor` if and only if its underlying sheaf of sets is representable. -/
+lemma toTorsorFunctor_essImage_iff :
+    (J.toTorsorFunctor.{w} G).essImage P ↔ P.sheaf.obj.IsRepresentable := by
+  refine ⟨fun ⟨Y, ⟨i⟩⟩ ↦ ?_, fun ⟨X, ⟨e⟩⟩ ↦ ?_⟩
+  · -- The underlying sheaf of the torsor of points of `Y` is the sheaf represented by `Y`.
+    have : IsIso i.hom.hom := inferInstance
+    exact ((Functor.RepresentableBy.equivUliftYonedaIso _ _).symm
+      ((sheafToPresheaf J _).mapIso (asIso i.hom.hom))).isRepresentable
+  · let := P.modObjOfRepresentableBy e
+    exact ⟨⟨Mod.mk (A := G.X) X, P.isTorsor_of_representableBy e⟩,
+      ⟨P.toTorsorIsoOfRepresentableBy e⟩⟩
+
+end Sheaf.Torsor
 
 end CategoryTheory

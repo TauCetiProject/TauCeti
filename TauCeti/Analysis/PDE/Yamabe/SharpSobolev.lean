@@ -198,9 +198,6 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
     convert hfin0 using 2
     ext y
     exact ENNReal.ofReal_pos.symm
-  have hfin : ∀ t, 0 < t → volume {y | t < ‖u y‖} ≠ ⊤ := fun t ht ↦
-    ((measure_mono fun _ hy ↦ hsub_supp (ENNReal.ofReal_pos.mpr (ht.trans hy))).trans_lt
-      hsupp.measure_lt_top).ne
   have hv_ne_top : ∀ x, v_enn x ≠ ⊤ :=
     hu_norm.schwarzRearrangement_ofReal_ne_top volume hfin0_norm
   have hv_anti : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x := fun x y hxy ↦
@@ -227,7 +224,7 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
     · rw [← Real.norm_eq_abs, ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hpₙ.le]
   have hps : ∫ x, ‖fderiv ℝ v x‖ ^ 2 ≤ ∫ x, ‖fderiv ℝ u x‖ ^ 2 := by
     simpa only [Real.rpow_two] using
-      hu.integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le hfin one_le_two
+      hu.integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le one_le_two
         (by simpa only [Real.rpow_two] using
           integrable_norm_fderiv_sq_of_lipschitzWith (𝕜 := ℝ) (μ := volume) hu hsupp)
   -- Stage 3: Apply the radial sharp Sobolev inequality to `v`.

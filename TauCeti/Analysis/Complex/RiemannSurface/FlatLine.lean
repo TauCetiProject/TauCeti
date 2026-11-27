@@ -131,6 +131,14 @@ instance (n : WithTop ℕ∞) : ContMDiffConstVAdd 𝓘(ℂ, ℂ × ℂ) n (Flat
     simp only [vadd_def]
     fun_prop⟩
 
+/-- The action is also real smooth, so the flat line is a real manifold with the orbit projection a
+real local diffeomorphism, on which real differential forms live. -/
+instance (n : WithTop ℕ∞) : ContMDiffConstVAdd 𝓘(ℝ, ℂ × ℂ) n (FlatLineLattice ψ) (ℂ × ℂ) :=
+  ⟨fun ω ↦ by
+    rw [contMDiff_iff_contDiff]
+    simp only [vadd_def]
+    fun_prop⟩
+
 /-- The action is properly discontinuous because its first coordinate is the translation action
 of the discrete lattice `L` on `ℂ`. -/
 instance [DiscreteTopology L] : ProperlyDiscontinuousVAdd (FlatLineLattice ψ) (ℂ × ℂ) := by

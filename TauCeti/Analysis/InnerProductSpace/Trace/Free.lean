@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Trace
-public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
+import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Trace-free self-adjoint endomorphisms
@@ -42,6 +43,8 @@ pairing `tr (T* U) = tr (T U)` is real.
 ## Main results
 
 * `LinearMap.trace_adjoint`, `ContinuousLinearMap.trace_adjoint`: `tr T* = conj (tr T)`.
+* `LinearMap.trace_adjoint_comp_eq_sum_inner`: `tr (A† B) = ∑ᵢ ⟪A bᵢ, B bᵢ⟫` for every
+  orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_adjoint_comp_self_eq_sum_norm_apply_sq`: `tr (A† A) = ∑ᵢ ‖A bᵢ‖²` for every
   orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_eq_zero_of_inner_left_eq_neg`: a skew-adjoint endomorphism of a real inner
@@ -54,6 +57,8 @@ pairing `tr (T* U) = tr (T U)` is real.
   the symmetric part computes the trace pairing with a self-adjoint endomorphism.
 * `ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id`: if `M N = 1`, then
   `tr ((N A N†) (M† D M)) = tr (A D)`.
+* `ContinuousLinearMap.traceCLM_conj_symmPart_comp_of_comp_eq_id`: over `ℝ`, if `M N = 1` and `D`
+  is self-adjoint, then `tr ((N ((A + A†) / 2) N†) (M† D M)) = tr (A D)`.
 * `ContinuousLinearMap.traceCLM_comp_eq_sum_inner`: if `H f = (T f)† g`, then
   `tr (A H) = ⟪∑ᵢ T eᵢ (A† eᵢ), g⟫` for any orthonormal basis `(eᵢ)`.
 * `InnerProductSpace.trace_rankOne_mul`, `InnerProductSpace.trace_mul_rankOne`: the trace pairing
@@ -62,6 +67,8 @@ pairing `tr (T* U) = tr (T U)` is real.
   `TauCeti.traceFreePart_id`: `traceFreePart` projects onto the trace-free endomorphisms along the
   scalars.
 * `TauCeti.trace_traceFreePart_mul`: the projection is orthogonal for the trace pairing.
+* `ContinuousLinearEquiv.traceFreePart_conjContinuousAlgEquiv`: conjugation by a continuous linear
+  equivalence commutes with the projection.
 * `TauCeti.finrank_traceFreeSelfAdjoint`: the trace-free self-adjoint endomorphisms of a complex
   inner product space of dimension `n` have real dimension `n² - 1`.
 -/
@@ -83,6 +90,15 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 theorem trace_adjoint (T : E →ₗ[𝕜] E) : trace 𝕜 E T.adjoint = conj (trace 𝕜 E T) := by
   let b := stdOrthonormalBasis 𝕜 E
   simp [trace_eq_sum_inner _ b, adjoint_inner_right, map_sum]
+
+/-- **The Hilbert–Schmidt inner product as a trace.** In an orthonormal basis `(bᵢ)` of the
+source, `tr (A† B) = ∑ᵢ ⟪A bᵢ, B bᵢ⟫`. -/
+theorem trace_adjoint_comp_eq_sum_inner {F ι : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [Fintype ι] (b : OrthonormalBasis ι 𝕜 E)
+    (A B : E →ₗ[𝕜] F) :
+    trace 𝕜 E (A.adjoint ∘ₗ B) = ∑ i, ⟪A (b i), B (b i)⟫_𝕜 := by
+  rw [trace_eq_sum_inner _ b]
+  exact Finset.sum_congr rfl fun i _ ↦ adjoint_inner_right A _ _
 
 /-- The trace of `A† A` is `∑ᵢ ‖A bᵢ‖²` for every orthonormal basis `(bᵢ)` of the source. -/
 theorem trace_adjoint_comp_self_eq_sum_norm_apply_sq {F ι : Type*} [NormedAddCommGroup F]
@@ -181,6 +197,19 @@ theorem traceCLM_comp_adjoint_comp_comp_of_comp_eq_id [CompleteSpace E] {W : Typ
   congr 1
   ext z
   simp [hNM]
+
+open TauCeti in
+/-- **The trace pairing after a linear change of variables.** Over `ℝ`, if `M ∘ N = 1` and `D` is
+self-adjoint, then `tr ((N ((A + A†) / 2) N†) ∘ (M† D M)) = tr (A D)`. With `M = e` and
+`N = e⁻¹`, this turns an equation `tr (A D²u) = f` into one for `u ∘ e`, whose Hessian is
+`e† D²u(e ·) e`, with the coefficient `e⁻¹ ((A + A†) / 2) e⁻†`. -/
+theorem traceCLM_conj_symmPart_comp_of_comp_eq_id {V W : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup W]
+    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] {M : W →L[ℝ] V} {N : V →L[ℝ] W}
+    (h : M ∘L N = ContinuousLinearMap.id ℝ V) (A D : V →L[ℝ] V) (hD : D.adjoint = D) :
+    traceCLM ℝ W ((N ∘L ((2⁻¹ : ℝ) • (A + A.adjoint)) ∘L N.adjoint) ∘L (M.adjoint ∘L D ∘L M)) =
+      traceCLM ℝ V (A ∘L D) := by
+  rw [traceCLM_comp_adjoint_comp_comp_of_comp_eq_id h, traceCLM_symmPart_comp _ _ hD]
 
 open TauCeti in
 /-- The trace of `A ∘ H` for an endomorphism of the form `H f = (T f)† g`: in any orthonormal
@@ -284,6 +313,17 @@ theorem _root_.IsSelfAdjoint.traceFreePart [CompleteSpace E]
   exact hT.sub ((htr.div (.natCast _)).smul (by
     rw [IsSelfAdjoint, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_id]))
 
+/-- Conjugation `T ↦ e ∘ T ∘ e⁻¹` by a continuous linear equivalence commutes with taking trace-free
+parts, as it is unital and preserves traces and dimensions. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.traceFreePart_conjContinuousAlgEquiv {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] (e : E ≃L[𝕜] F) (T : E →L[𝕜] E) :
+    traceFreePart 𝕜 F (e.conjContinuousAlgEquiv T) =
+      e.conjContinuousAlgEquiv (traceFreePart 𝕜 E T) := by
+  rw [traceFreePart_apply, traceFreePart_apply, map_sub, map_smul,
+    ContinuousLinearEquiv.trace_conjContinuousAlgEquiv, e.toLinearEquiv.finrank_eq,
+    ← ContinuousLinearMap.one_def, ← ContinuousLinearMap.one_def, map_one]
+
 end TraceFreePart
 
 section TraceFreeSelfAdjoint
@@ -361,8 +401,10 @@ theorem finrank_traceFreeSelfAdjoint :
     have him : (LinearMap.trace ℂ E T).im = 0 := Complex.conj_eq_iff_im.1 hT.conj_trace
     simp [hφ, hT, Complex.ext_iff, him]
   have hS : finrank ℝ S = finrank ℂ E ^ 2 := by
-    rw [finrank_selfAdjoint_submodule, ← (LinearMap.toContinuousLinearMap (𝕜 := ℂ) (E := E)
-      (F' := E)).finrank_eq, Module.finrank_linearMap, sq]
+    rw [finrank_selfAdjoint_submodule_eq ℝ _ Complex.mem_range_algebraMap_of_isSelfAdjoint
+        Complex.val_mk0_I_mem_skewAdjoint,
+      ← (LinearMap.toContinuousLinearMap (𝕜 := ℂ) (E := E) (F' := E)).finrank_eq,
+      Module.finrank_linearMap, sq]
   have : FiniteDimensional ℝ (E →L[ℂ] E) := Module.Finite.trans ℂ _
   have hle : traceFreeSelfAdjoint E ≤ S := fun T hT ↦ hT.1
   have hrk := LinearMap.finrank_range_add_finrank_ker φ
