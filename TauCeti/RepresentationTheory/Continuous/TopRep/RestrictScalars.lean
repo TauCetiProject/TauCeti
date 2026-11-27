@@ -25,12 +25,17 @@ representation is the underlying additive representation of the coinduced one, o
 function space `C(G, V)`, and the invariants of the underlying additive representation are the
 underlying topological abelian group of the invariants.
 
-The reason for stopping at `ℤ` is explained in
+The reason for stopping at `ℤ` for the category-level functor is explained in
 `TauCeti.Algebra.Category.ModuleCat.Topology.RestrictScalars`: only the canonical `ℤ`-module
-structure exists on every topological module without a choice.
+structure exists on every topological module without a choice. At the unbundled level of
+`ContRepresentation` and `ContIntertwiningMap`, scalar restriction works for any compatibly acting
+ring `R` (`ContRepresentation.restrictScalars`, `ContIntertwiningMap.restrictScalars`), and
+`restrictScalarsInt` is the `R = ℤ` specialization.
 
 ## Main definitions
 
+* `ContRepresentation.restrictScalars`, `ContIntertwiningMap.restrictScalars`: a continuous
+  representation, and a continuous intertwining map, read over a compatibly acting ring `R`.
 * `ContRepresentation.restrictScalarsInt`, `ContIntertwiningMap.restrictScalarsInt`: a continuous
   representation, and a continuous intertwining map, read over `ℤ`.
 * `TopRep.restrictScalarsInt`: the functor `TopRep k G ⥤ TopRep ℤ G` forgetting the scalars.
@@ -56,6 +61,55 @@ open CategoryTheory ContRepresentation
 
 namespace ContRepresentation
 
+section RestrictScalars
+
+variable {A : Type*} [Ring A] {G : Type*} [Monoid G] {V W : Type*}
+  [AddCommGroup V] [Module A V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [AddCommGroup W] [Module A W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+
+/-- A continuous representation on a topological `A`-module, read as a continuous representation
+over a ring `R` acting compatibly with `A`: each operator is restricted to a continuous
+`R`-linear map. Its operators are those of `π` (`ContRepresentation.restrictScalars_apply`). -/
+def restrictScalars (R : Type*) [Ring R] [Module R V] [LinearMap.CompatibleSMul V V R A]
+    (π : ContRepresentation A G V) : ContRepresentation R G V :=
+  ofMonoidHom
+    { toFun g := (π g).restrictScalars R
+      map_one' := ContinuousLinearMap.ext fun v ↦ by simp
+      map_mul' g h := ContinuousLinearMap.ext fun v ↦ by simp }
+
+/-- Restricting the scalars of a continuous representation does not change its action on
+vectors. -/
+@[simp]
+theorem restrictScalars_apply {R : Type*} [Ring R] [Module R V]
+    [LinearMap.CompatibleSMul V V R A] (π : ContRepresentation A G V) (g : G) (v : V) :
+    π.restrictScalars R g v = π g v :=
+  (rfl)
+
+variable {π₁ : ContRepresentation A G V} {π₂ : ContRepresentation A G W}
+
+/-- A continuous intertwining map between representations on topological `A`-modules, read as a
+continuous intertwining map between the scalar-restricted representations over `R`. -/
+def _root_.ContIntertwiningMap.restrictScalars (R : Type*) [Ring R]
+    [Module R V] [Module R W]
+    [LinearMap.CompatibleSMul V V R A] [LinearMap.CompatibleSMul W W R A]
+    [LinearMap.CompatibleSMul V W R A] (f : π₁ →ⁱL π₂) :
+    π₁.restrictScalars R →ⁱL π₂.restrictScalars R where
+  __ := f.toContinuousLinearMap.restrictScalars R
+  isIntertwining' g :=
+    ContinuousLinearMap.ext fun v ↦ DFunLike.congr_fun (f.isIntertwining' g) v
+
+/-- Restricting the scalars of a continuous intertwining map does not change its underlying
+function. -/
+@[simp]
+theorem _root_.ContIntertwiningMap.restrictScalars_apply {R : Type*} [Ring R]
+    [Module R V] [Module R W]
+    [LinearMap.CompatibleSMul V V R A] [LinearMap.CompatibleSMul W W R A]
+    [LinearMap.CompatibleSMul V W R A] (f : π₁ →ⁱL π₂) (v : V) :
+    f.restrictScalars R v = f v :=
+  (rfl)
+
+end RestrictScalars
+
 variable {R : Type*} [Ring R] {G : Type*} [Monoid G] {V W : Type*}
   [AddCommGroup V] [Module R V] [TopologicalSpace V] [IsTopologicalAddGroup V]
   [AddCommGroup W] [Module R W] [TopologicalSpace W] [IsTopologicalAddGroup W]
@@ -65,32 +119,27 @@ on the underlying topological abelian group: each operator is restricted to a co
 `ℤ`-linear map. Its behaviour is `ContRepresentation.restrictScalarsInt_apply`: the operators are
 the same functions as before. -/
 def restrictScalarsInt (π : ContRepresentation R G V) : ContRepresentation ℤ G V :=
-  ofMonoidHom
-    { toFun g := (π g).restrictScalars ℤ
-      map_one' := ContinuousLinearMap.ext fun v ↦ by simp
-      map_mul' g h := ContinuousLinearMap.ext fun v ↦ by simp }
+  π.restrictScalars ℤ
 
 /-- The operators of `π.restrictScalarsInt` are those of `π`. -/
 @[simp]
 theorem restrictScalarsInt_apply (π : ContRepresentation R G V) (g : G) (v : V) :
     π.restrictScalarsInt g v = π g v :=
-  (rfl)
+  π.restrictScalars_apply g v
 
 variable {π₁ : ContRepresentation R G V} {π₂ : ContRepresentation R G W}
 
 /-- A continuous intertwining map between representations on topological `R`-modules, read as a
 continuous intertwining map between the underlying additive representations. -/
 def _root_.ContIntertwiningMap.restrictScalarsInt (f : π₁ →ⁱL π₂) :
-    π₁.restrictScalarsInt →ⁱL π₂.restrictScalarsInt where
-  __ := f.toContinuousLinearMap.restrictScalars ℤ
-  isIntertwining' g :=
-    ContinuousLinearMap.ext fun v ↦ DFunLike.congr_fun (f.isIntertwining' g) v
+    π₁.restrictScalarsInt →ⁱL π₂.restrictScalarsInt :=
+  f.restrictScalars ℤ
 
 /-- Restricting the scalars of an intertwining map does not change its underlying function. -/
 @[simp]
 theorem _root_.ContIntertwiningMap.restrictScalarsInt_apply (f : π₁ →ⁱL π₂) (v : V) :
     f.restrictScalarsInt v = f v :=
-  (rfl)
+  f.restrictScalars_apply v
 
 end ContRepresentation
 

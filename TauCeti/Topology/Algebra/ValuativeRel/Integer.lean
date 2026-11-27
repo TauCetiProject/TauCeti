@@ -74,7 +74,9 @@ variable (E) in
 /-- The submodule `(1 : Submodule 𝒪[E] E)` is open in `E`, as it coincides with `𝒪[E]`. -/
 theorem isOpen_one_submodule_integerRing : IsOpen ((1 : Submodule 𝒪[E] E) : Set E) := by
   have heq : ((1 : Submodule 𝒪[E] E) : Set E) = (𝒪[E] : Set E) := by
-    ext x; rw [SetLike.mem_coe, Submodule.mem_one]
+    ext x
+    rw [SetLike.mem_coe, Submodule.mem_one]
+    simp only [Algebra.algebraMap_ofSubsemiring_apply]
     exact ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
   rw [heq]; exact Valuation.isOpen_integer
 

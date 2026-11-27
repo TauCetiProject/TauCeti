@@ -412,11 +412,15 @@ theorem integerRing_eq_integralClosure :
 variable (K M) in
 /-- `𝒪[M]` is the integral closure of `𝒪[K]` in `M`. -/
 theorem isIntegralClosure_integerRing : IsIntegralClosure 𝒪[M] 𝒪[K] M where
-  algebraMap_injective := Subtype.val_injective
+  algebraMap_injective a b h := Subtype.ext <| by
+    simpa only [Algebra.algebraMap_ofSubsemiring_apply] using h
   isIntegral_iff {x} := by
     have hmem : x ∈ 𝒪[M] ↔ IsIntegral 𝒪[K] x := by
       rw [integerRing_eq_integralClosure K M, Subalgebra.mem_toSubring, mem_integralClosure_iff]
-    exact ⟨fun hx ↦ ⟨⟨x, hmem.mpr hx⟩, rfl⟩, fun ⟨b, hb⟩ ↦ hmem.mp (hb ▸ b.property)⟩
+    exact ⟨fun hx ↦ ⟨⟨x, hmem.mpr hx⟩, Algebra.algebraMap_ofSubsemiring_apply _ _⟩,
+      fun ⟨b, hb⟩ ↦ hmem.mp <| by
+        rw [← hb, Algebra.algebraMap_ofSubsemiring_apply]
+        exact b.property⟩
 
 end IntegralClosure
 

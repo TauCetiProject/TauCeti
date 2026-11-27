@@ -9,8 +9,8 @@ public import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 public import TauCeti.NumberTheory.LocalField.Different.Quotient
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Quotient
 public import TauCeti.NumberTheory.LocalField.Topology
-public import TauCeti.RepresentationTheory.Continuous.Basic
-public import TauCeti.RepresentationTheory.Continuous.Pontryagin.Module
+public import TauCeti.RepresentationTheory.Continuous.ModulePontryaginDual
+public import TauCeti.RepresentationTheory.Continuous.TopRep.RestrictScalars
 public import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 

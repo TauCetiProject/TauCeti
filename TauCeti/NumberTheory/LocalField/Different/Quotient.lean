@@ -95,12 +95,11 @@ theorem mk_inv_uniformizer_mem_ker_directTracePairing (hram : ¬ IsUnramified K 
       (differentIdeal_eq_span_pow_uniformizer K L hϖ)]
   have hd : 1 ≤ differentExponent K L :=
     Nat.one_le_iff_ne_zero.mpr (mt (differentExponent_eq_zero_iff K L).mp hram)
-  have hϖL : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   have hpow : (ϖ : L) ^ differentExponent K L =
       (ϖ : L) * (ϖ : L) ^ (differentExponent K L - 1) := by
     rw [← pow_succ', Nat.sub_add_cancel hd]
   refine Submodule.mem_one.mpr ⟨ϖ ^ (differentExponent K L - 1), ?_⟩
   simp only [map_pow, Algebra.algebraMap_ofSubsemiring_apply]
-  rw [hpow, inv_mul_cancel_left₀ hϖL]
+  rw [hpow, inv_mul_cancel_left₀ (ZeroMemClass.coe_eq_zero.not.mpr hϖ.ne_zero)]
 
 end TauCeti

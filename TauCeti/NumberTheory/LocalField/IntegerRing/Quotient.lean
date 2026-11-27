@@ -151,7 +151,7 @@ private theorem exact_algebraMap_mkQ_one (K : Type*) [Field K] [ValuativeRel K] 
 private theorem bijective_smul_pow_uniformizer (K : Type*) [Field K] [ValuativeRel K]
     {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (n : ℕ) :
     Function.Bijective fun x : K ↦ (ϖ ^ n : 𝒪[K]) • x := by
-  have hpowK : (ϖ : K) ^ n ≠ 0 := pow_ne_zero n fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  have hpowK : (ϖ : K) ^ n ≠ 0 := pow_ne_zero n (ZeroMemClass.coe_eq_zero.not.mpr hϖ.ne_zero)
   simpa [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply, SubmonoidClass.coe_pow] using
     mulLeft_bijective₀ ((ϖ : K) ^ n) hpowK
 
@@ -186,7 +186,7 @@ end
     (quotientMaximalIdealPowEquivTorsionBySet hϖ n
         (Ideal.Quotient.mk (𝓂[K] ^ n : Ideal 𝒪[K]) a) : K ⧸ (1 : Submodule 𝒪[K] K)) =
       Submodule.Quotient.mk ((a : K) / (ϖ : K) ^ n) := by
-  have hpowK : (ϖ : K) ^ n ≠ 0 := pow_ne_zero n fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  have hpowK : (ϖ : K) ^ n ≠ 0 := pow_ne_zero n (ZeroMemClass.coe_eq_zero.not.mpr hϖ.ne_zero)
   have hsmul : (ϖ ^ n : 𝒪[K]) • ((a : K) / (ϖ : K) ^ n) = (a : K) := by
     simp only [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply, SubmonoidClass.coe_pow]
     exact mul_div_cancel₀ _ hpowK
@@ -194,7 +194,7 @@ end
       Submodule.torsionBy 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) (ϖ ^ n) := by
     rw [Submodule.mem_torsionBy_iff, ← Submodule.Quotient.mk_smul, hsmul,
       Submodule.Quotient.mk_eq_zero, Submodule.mem_one]
-    exact ⟨a, rfl⟩
+    exact ⟨a, Algebra.algebraMap_ofSubsemiring_apply _ a⟩
   let x : Submodule.torsionBy 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) (ϖ ^ n) :=
     ⟨Submodule.Quotient.mk ((a : K) / (ϖ : K) ^ n), hmem⟩
   have hinj : Function.Injective (Algebra.linearMap 𝒪[K] K) :=
@@ -204,7 +204,8 @@ end
       Submodule.Quotient.mk a := by
     rw [torsionByδEquiv_apply]
     exact torsionByδ_eq (exact_algebraMap_mkQ_one K) hinj
-      (Submodule.mkQ_surjective _) x rfl hsmul.symm
+      (Submodule.mkQ_surjective _) x rfl
+      ((Algebra.algebraMap_ofSubsemiring_apply _ a).trans hsmul.symm)
   have hsymm := (torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one K) hinj
     (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer K hϖ n)).symm_apply_eq.mpr
     hx.symm
@@ -235,9 +236,8 @@ theorem mk_inv_uniformizer_ne_zero {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
     Submodule.Quotient.mk (p := (1 : Submodule 𝒪[K] K)) ((ϖ : K)⁻¹) ≠ 0 := by
   rw [ne_eq, Submodule.Quotient.mk_eq_zero, Submodule.mem_one]
   rintro ⟨b, hb⟩
-  have hϖK : (ϖ : K) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
-  have hb' : (b : K) = (ϖ : K)⁻¹ := hb
+  rw [Algebra.algebraMap_ofSubsemiring_apply] at hb
   exact hϖ.not_isUnit (IsUnit.of_mul_eq_one b <| Subtype.ext <| by
-    push_cast; rw [hb', mul_inv_cancel₀ hϖK])
+    push_cast; rw [hb, mul_inv_cancel₀ (ZeroMemClass.coe_eq_zero.not.mpr hϖ.ne_zero)])
 
 end TauCeti
