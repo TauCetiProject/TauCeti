@@ -97,6 +97,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   `r` is regular on `R ⧸ (π ^ m)`.
 * `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
   regularity on `M ⧸ I • ⊤`.
+* `Submodule.sup_smul_top_eq_top_iff`: quotienting by `I • ⊤` detects whether
+  `(I ⊔ J) • ⊤ = ⊤`.
 -/
 
 public section
@@ -583,3 +585,12 @@ theorem isSMulRegular_quotient_smul_top_of_isUnit_mk (I : Ideal R) [I.IsTwoSided
 end Ring
 
 end Ideal
+
+/-- Quotienting by `I • ⊤` detects whether `(I ⊔ J) • ⊤ = ⊤`. -/
+theorem Submodule.sup_smul_top_eq_top_iff {R : Type*} [Ring R] (M : Type*)
+    [AddCommGroup M] [Module R M] (I J : Ideal R) :
+    (I ⊔ J) • (⊤ : Submodule R M) = ⊤ ↔
+      J • (⊤ : Submodule R (M ⧸ (I • ⊤ : Submodule R M))) = ⊤ := by
+  simpa only [Submodule.sup_smul, Submodule.map_smul'', Submodule.map_top,
+    Submodule.range_mkQ] using
+    (Submodule.map_mkQ_eq_top (I • (⊤ : Submodule R M)) (J • ⊤)).symm
