@@ -85,7 +85,8 @@ covolume. The isogenies of that file are in `TauCeti.Algebra.Module.ZLattice.Com
 `New.riemannForm_periods_mul_eq_sub` and the second half of the proof of
 `New.addSubgroupOf_dualLattice_nsmul_eq_range`, and
 `ZLattice.comp_neg_mem_thetaSpace_sigmaSignData` from `New.comp_neg_mem_thetaSpace`, in the same
-file.
+file. `ZLattice.exists_eq_appellHumbertData` is new here: grh-lean keeps the form and the
+multiplier as separate data.
 
 ## References
 

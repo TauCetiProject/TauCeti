@@ -31,6 +31,13 @@ determinant, the oriented area `Im (conj ω₁ ω₂)` of the parallelogram they
 `a ω₁ + b ω₂`, `c ω₁ + d ω₂` multiplies this oriented area by the determinant `a d - b c`
 (`TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add`). Oriented areas also give the coordinates
 of any `x` in the frame `u, v` (`TauCeti.im_mul_conj_mul`).
+
+## Provenance
+
+`TauCeti.im_mul_conj_mul` is adapted from `New.riemannForm_periods_mul_eq_sub` (file
+`src/Lib/CM/Sigma/Basic.lean`) in grh-lean (https://github.com/lsernau/grh-lean, commit `72fead1`,
+Apache 2.0, Copyright 2026 Anthropic, PBC). There it is stated for the Riemann form of a period
+pair; here it is the underlying identity for arbitrary `u, v, x ∈ ℂ`.
 -/
 
 public section

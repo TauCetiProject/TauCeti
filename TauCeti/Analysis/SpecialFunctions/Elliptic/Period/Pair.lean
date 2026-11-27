@@ -38,6 +38,13 @@ a period exactly when `m` and `n` are even (`PeriodPair.div_two_mem_lattice_iff`
 this also shows that `ℂ / Λ` has exactly three points of order two: given three distinct ones `t`,
 `t'`, `t - t'`, every half-period is congruent to `0`, `t`, `t'` or `t - t'`
 (`PeriodPair.mem_lattice_or_sub_mem_lattice_of_two_mul_mem`).
+
+## Provenance
+
+`PeriodPair.eq_of_eqOn_compl_lattice` is adapted from `PeriodPair.eq_of_eq_off_lattice` (file
+`src/Lib/CM/Sigma/Basic.lean`) in grh-lean (https://github.com/lsernau/grh-lean, commit `72fead1`,
+Apache 2.0, Copyright 2026 Anthropic, PBC). There the functions are entire and agree off a
+translate of the lattice; here they are continuous and agree off the lattice itself.
 -/
 
 public section

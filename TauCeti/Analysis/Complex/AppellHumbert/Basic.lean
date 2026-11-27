@@ -114,6 +114,12 @@ statement in `(-1) ^ E` form and the Hermitian constructor
 and `New.ThetaTori.isAppellHumbert_canonicalMultiplier` (file
 `src/Lib/Shimura/ComplexTheta/DimensionFormula.lean`) in grh-lean, at the same commit; the
 semicharacter is stated with the Riemann form `E = Im H` and as a map `L → U(1)`.
+`TauCeti.AppellHumbertData.apply_coe_eq_zero_of_mem_thetaSpace` and
+`TauCeti.AppellHumbertData.apply_add_mul_apply_sub_mem_thetaSpace_two_nsmul` are adapted from
+`New.theta_eq_zero_of_mem_lattice` and `New.sigma_add_mul_sigma_sub_mem_thetaSpace` (file
+`src/Lib/CM/Sigma/Basic.lean`) in grh-lean, at the same commit. There they are stated for the
+Hermitian form of a period pair in `ℂ`, the second for the sigma function only; here they hold for
+every Appell–Humbert datum and, for the second, every theta function of it.
 
 ## References
 
