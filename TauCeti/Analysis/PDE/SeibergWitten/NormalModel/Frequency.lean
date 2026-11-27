@@ -95,6 +95,8 @@ onto the moving kernels contribute commutator terms, which are not treated in th
 
 ## Main definitions
 
+* `TauCeti.SeibergWitten.normalFrequencyCoupling`, `TauCeti.SeibergWitten.pairedFrequencyCoupling`:
+  the base couplings `b_N(ξ)`, `b_P(ξ)` at frequency `ξ`, as linear maps of `ℝ⁴`.
 * `TauCeti.SeibergWitten.frequencyNormalRow`, `TauCeti.SeibergWitten.frequencyPairedRow`: the two
   rows of the frozen normal model at base frequency `ξ`.
 
@@ -193,6 +195,66 @@ theorem inner_pairedBaseCoupling_smulRight_innerSL_left (ξ : ℂ) (u p : Euclid
     inner_add_right, inner_smul_right, inner_smul_right]
   simp only [conj_re, conj_im, RCLike.conj_to_real]
   ring
+
+/-- The base coupling of the normal row at frequency `ξ`, `v ↦ Re ξ • v - Im ξ • J' v`, as a
+linear map of `ℝ⁴`. -/
+def normalFrequencyCoupling (ξ : ℂ) :
+    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  ξ.re • ContinuousLinearMap.id ℝ _ -
+    ξ.im • (Vortex.targetComplexStructure.toContinuousLinearEquiv :
+      EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+
+/-- The base coupling of the paired row at frequency `ξ`, `u ↦ Re ξ • u + Im ξ • J u`, as a
+linear map of `ℝ⁴`. -/
+def pairedFrequencyCoupling (ξ : ℂ) :
+    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  ξ.re • ContinuousLinearMap.id ℝ _ +
+    ξ.im • (Vortex.variationComplexStructure.toContinuousLinearEquiv :
+      EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+
+/-- The value of the normal coupling: `b_N(ξ) v = Re ξ • v - Im ξ • J' v`. -/
+@[simp]
+theorem normalFrequencyCoupling_apply (ξ : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
+    normalFrequencyCoupling ξ v = ξ.re • v - ξ.im • Vortex.targetComplexStructure v := by
+  simp [normalFrequencyCoupling]
+
+/-- The value of the paired coupling: `b_P(ξ) u = Re ξ • u + Im ξ • J u`. -/
+@[simp]
+theorem pairedFrequencyCoupling_apply (ξ : ℂ) (u : EuclideanSpace ℝ (Fin 4)) :
+    pairedFrequencyCoupling ξ u = ξ.re • u + ξ.im • Vortex.variationComplexStructure u := by
+  simp [pairedFrequencyCoupling]
+
+/-- The normal coupling is the base coupling of the normal rows on the rank-one derivative
+`w ↦ ⟪ξ, w⟫ v`. -/
+theorem normalFrequencyCoupling_eq_normalBaseCoupling (ξ : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
+    normalFrequencyCoupling ξ v = normalBaseCoupling ((innerSL ℝ ξ).smulRight v) := by
+  rw [normalBaseCoupling_smulRight_innerSL, normalFrequencyCoupling_apply]
+
+/-- The paired coupling is the base coupling of the paired rows on the rank-one derivative
+`w ↦ ⟪ξ, w⟫ u`. -/
+theorem pairedFrequencyCoupling_eq_pairedBaseCoupling (ξ : ℂ) (u : EuclideanSpace ℝ (Fin 4)) :
+    pairedFrequencyCoupling ξ u = pairedBaseCoupling ((innerSL ℝ ξ).smulRight u) := by
+  rw [pairedBaseCoupling_smulRight_innerSL, pairedFrequencyCoupling_apply]
+
+/-- The normal coupling vanishes at frequency zero. -/
+@[simp]
+theorem normalFrequencyCoupling_zero : normalFrequencyCoupling 0 = 0 := by
+  simp [normalFrequencyCoupling]
+
+/-- The paired coupling vanishes at frequency zero. -/
+@[simp]
+theorem pairedFrequencyCoupling_zero : pairedFrequencyCoupling 0 = 0 := by
+  simp [pairedFrequencyCoupling]
+
+/-- The normal coupling depends continuously on the frequency. -/
+theorem continuous_normalFrequencyCoupling : Continuous normalFrequencyCoupling := by
+  unfold normalFrequencyCoupling
+  fun_prop
+
+/-- The paired coupling depends continuously on the frequency. -/
+theorem continuous_pairedFrequencyCoupling : Continuous pairedFrequencyCoupling := by
+  unfold pairedFrequencyCoupling
+  fun_prop
 
 end Coupling
 
