@@ -93,9 +93,12 @@ end HigherOrderLocalization
 section HigherOrderExtension
 local notation "E" => EuclideanSpace ℝ ι
 
-/-- Let `ψ` be a smooth compactly supported cutoff with `ψ u ∈ H¹₀(Ω)` and
-`tsupport ψ ∩ H ⊆ Ω`, where `Ω ⊆ H`. Its zero extension is a Dirichlet solution in `H¹₀(H)`
-with forcing in `H^k(H)`, and agrees with `ψ u` on `Ω`. -/
+/-- Let `u ∈ H^{k+1}(Ω)` solve `-div(a ∇u) = F` in `Ω` with `F ∈ H^k(Ω)`,
+where `a` has smooth entries and its associated bilinear form is bounded and Lipschitz,
+and let `Ω ⊆ H`. If `ψ` is a smooth compactly supported cutoff with
+`tsupport ψ ∩ H ⊆ Ω` and `ψ u ∈ H¹₀(Ω)`, then the zero extension of `ψ u` belongs to
+`H¹₀(H)`, solves a Dirichlet problem on `H` with forcing in `H^k(H)`, and agrees with
+`ψ u` on `Ω`. -/
 theorem exists_isWeakSolutionDirichlet_value_ae_eq_indicator {H : Opens E} {M : ℝ} {L : ℝ≥0}
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
     (hL : LipschitzWith L (fun x ↦ matrixBilinearForm (a x)))

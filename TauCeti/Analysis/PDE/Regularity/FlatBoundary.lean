@@ -57,7 +57,7 @@ The classical proof (Evans, §6.3.2, Theorem 4) localizes the global theorem on 
   `Ω ∩ V`.
 
 The `H³` statement is the `k = 1` instance of the finite-order flat-boundary theorem
-`TauCeti.PDE.UniformlyEllipticOn.exists_value_succ_succ_eq_value_restrictL_of_mapsTo`
+`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo_of_contDiffOn`
 in `Regularity/Boundary/ScalarBootstrap.lean`.
 
 ## Main declarations
@@ -293,7 +293,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo (hν : ν 
     (hVU : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ U) :
     ∃ W : Wkp mu (Omega ⊓ V) 2 3,
       Wkp.value 3 W = W1p.value (W1p.restrictL (inf_le_left : Omega ⊓ V ≤ Omega) u) := by
-  apply ha.exists_value_succ_succ_eq_value_restrictL_of_mapsTo hν hHc hH hΩU hsmooth
+  apply ha.exists_value_eq_value_restrictL_of_mapsTo_of_contDiffOn hν hHc hH hΩU hsmooth
     1 (W1p.restrictL inf_le_left F) ?_ hu0 hV hVU
   intro v
   rw [Wkp.value_one (W1p.restrictL (inf_le_left : Omega ⊓ U ≤ Omega) F),
