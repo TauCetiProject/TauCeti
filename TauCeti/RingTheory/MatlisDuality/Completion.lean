@@ -178,9 +178,9 @@ def adicCompletionEvalEquivOfIsArtinian :
   have : IsArtinian A M :=
     (AdicCompletion.isArtinian_torsionModule_iff _).mpr ‹_›
   let eHom : (M →ₗ[A] E) ≃ₗ[A] (M →ₗ[R] E) :=
-    AdicCompletion.restrictScalarsEquivOfMemPrimaryComponent
-      (maximalIdeal R).fg_of_isNoetherianRing
+    AdicCompletion.torsionRestrictScalarsEquiv
       (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M))
+      hι.mem_primaryComponent
   (hι.adicCompletion.evalEquivOfIsArtinian M ≪≫ₗ LinearEquiv.congrLeft E A eHom).restrictScalars R
 
 @[simp]

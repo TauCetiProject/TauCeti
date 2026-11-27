@@ -203,6 +203,23 @@ end TauCeti.AdicCompletion
 
 namespace LinearMap
 
+private theorem map_adicCompletion_smul_aux {R : Type*} [CommRing R] {I : Ideal R}
+    {P Q : Type*} [AddCommGroup P] [Module R P] [Module (AdicCompletion I R) P]
+    [AddCommGroup Q] [Module R Q] [Module (AdicCompletion I R) Q]
+    (f : P →ₗ[R] Q) (hP : ∀ x : P, x ∈ I.primaryComponent P)
+    (hact : ∀ (n : ℕ) (a : AdicCompletion I R), ∃ r : R,
+      (∀ y ∈ Submodule.torsionBySet R P ↑(I ^ n), a • y = r • y) ∧
+      (∀ z ∈ Submodule.torsionBySet R Q ↑(I ^ n), a • z = r • z))
+    (a : AdicCompletion I R) (x : P) :
+    f (a • x) = a • f x := by
+  obtain ⟨n, hn⟩ := (I.primaryComponent_mem P x).mp (hP x)
+  have hfx : f x ∈ Submodule.torsionBySet R Q ↑(I ^ n) := by
+    rw [Submodule.mem_torsionBySet_iff] at hn ⊢
+    intro r
+    rw [← f.map_smul, hn r, f.map_zero]
+  obtain ⟨r, hrP, hrQ⟩ := hact n a
+  rw [hrP x hn, hrQ (f x) hfx, f.map_smul]
+
 variable {R : Type*} [CommRing R] {I : Ideal R}
 variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 variable (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
@@ -214,19 +231,32 @@ completion actions. -/
 theorem map_adicCompletion_smul (f : M →ₗ[R] N) (a : AdicCompletion I R) (x : M) :
     letI := TauCeti.AdicCompletion.torsionModule hM
     letI := TauCeti.AdicCompletion.torsionModule hN
-    f (a • x) = a • f x := by
-  obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem M I x).mp (hM x)
-  have hfx : f x ∈ Submodule.torsionBySet R N ↑(I ^ n) := by
-    rw [Submodule.mem_torsionBySet_iff] at hn ⊢
-    intro r
-    rw [← f.map_smul, hn r, f.map_zero]
-  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n a)
-  rw [a.torsion_smul_eq hM x r hn hr.symm,
-    a.torsion_smul_eq hN (f x) r hfx hr.symm, f.map_smul]
+    f (a • x) = a • f x :=
+  letI := TauCeti.AdicCompletion.torsionModule hM
+  letI := TauCeti.AdicCompletion.torsionModule hN
+  map_adicCompletion_smul_aux f hM (fun n a ↦ by
+    obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n a)
+    exact ⟨r, fun y hy ↦ a.torsion_smul_eq hM y r hy hr.symm,
+      fun z hz ↦ a.torsion_smul_eq hN z r hz hr.symm⟩) a x
 
 end LinearMap
 
 namespace TauCeti.AdicCompletion
+
+private def restrictScalarsEquivOfMapSmul {R : Type*} [CommRing R] {I : Ideal R}
+    {P : Type*} [AddCommGroup P] [Module R P] [Module (_root_.AdicCompletion I R) P]
+    [IsScalarTower R (_root_.AdicCompletion I R) P]
+    {Q : Type*} [AddCommGroup Q] [Module R Q] [Module (_root_.AdicCompletion I R) Q]
+    [IsScalarTower R (_root_.AdicCompletion I R) Q]
+    (hsmul : ∀ (f : P →ₗ[R] Q) (a : _root_.AdicCompletion I R) (x : P), f (a • x) = a • f x) :
+    (P →ₗ[_root_.AdicCompletion I R] Q) ≃ₗ[_root_.AdicCompletion I R] (P →ₗ[R] Q) where
+  __ := LinearMap.restrictScalarsₗ R (_root_.AdicCompletion I R) P Q (_root_.AdicCompletion I R)
+  invFun f :=
+    { toFun := f
+      map_add' := f.map_add
+      map_smul' := hsmul f }
+  left_inv _ := LinearMap.ext fun _ ↦ rfl
+  right_inv _ := LinearMap.ext fun _ ↦ rfl
 
 variable {R : Type*} [CommRing R] {I : Ideal R}
 variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -238,17 +268,14 @@ variable (hN : ∀ y : N, y ∈ Ideal.primaryComponent N I)
 def torsionRestrictScalarsEquiv :
     letI := TauCeti.AdicCompletion.torsionModule hM
     letI := TauCeti.AdicCompletion.torsionModule hN
-    (M →ₗ[AdicCompletion I R] N) ≃ₗ[R] (M →ₗ[R] N) := by
+    haveI := TauCeti.AdicCompletion.torsionModule_isScalarTower hM
+    haveI := TauCeti.AdicCompletion.torsionModule_isScalarTower hN
+    (M →ₗ[AdicCompletion I R] N) ≃ₗ[AdicCompletion I R] (M →ₗ[R] N) :=
   letI := TauCeti.AdicCompletion.torsionModule hM
   letI := TauCeti.AdicCompletion.torsionModule hN
-  exact
-    { LinearMap.restrictScalarsₗ R (AdicCompletion I R) M N R with
-      invFun := fun f ↦
-        { toFun := f
-          map_add' := f.map_add
-          map_smul' := f.map_adicCompletion_smul hM hN }
-      left_inv := fun f ↦ by ext; rfl
-      right_inv := fun f ↦ by ext; rfl }
+  haveI := TauCeti.AdicCompletion.torsionModule_isScalarTower hM
+  haveI := TauCeti.AdicCompletion.torsionModule_isScalarTower hN
+  restrictScalarsEquivOfMapSmul fun f ↦ f.map_adicCompletion_smul hM hN
 
 /-- The comparison of Hom modules is restriction of scalars. -/
 @[simp]
@@ -387,15 +414,11 @@ theorem map_adicCompletion_smul_of_mem_primaryComponent {R : Type*} [CommRing R]
     [IsScalarTower R (AdicCompletion I R) Q]
     (f : P →ₗ[R] Q) (fg : I.FG) (hP : ∀ x : P, x ∈ I.primaryComponent P)
     (a : AdicCompletion I R) (x : P) :
-    f (a • x) = a • f x := by
-  obtain ⟨n, hn⟩ := (I.primaryComponent_mem P x).mp (hP x)
-  have hfn : f x ∈ Submodule.torsionBySet R Q ↑(I ^ n) := by
-    rw [Submodule.mem_torsionBySet_iff] at hn ⊢
-    intro m
-    rw [← f.map_smul, hn m, f.map_zero]
-  obtain ⟨r, hr⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow fg n a
-  rw [TauCeti.smul_eq_of_sub_algebraMap_mem_map hn hr,
-    TauCeti.smul_eq_of_sub_algebraMap_mem_map hfn hr, f.map_smul]
+    f (a • x) = a • f x :=
+  map_adicCompletion_smul_aux f hP (fun n a ↦ by
+    obtain ⟨r, hr⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow fg n a
+    exact ⟨r, fun y hy ↦ TauCeti.smul_eq_of_sub_algebraMap_mem_map hy hr,
+      fun z hz ↦ TauCeti.smul_eq_of_sub_algebraMap_mem_map hz hr⟩) a x
 
 end LinearMap
 
@@ -416,14 +439,8 @@ variable {R : Type*} [CommRing R] {I : Ideal R}
 typeclass diamonds. -/
 def restrictScalarsEquivOfMemPrimaryComponent (fg : I.FG)
     (hP : ∀ x : P, x ∈ I.primaryComponent P) :
-    (P →ₗ[_root_.AdicCompletion I R] Q) ≃ₗ[_root_.AdicCompletion I R] (P →ₗ[R] Q) where
-  __ := LinearMap.restrictScalarsₗ R (_root_.AdicCompletion I R) P Q (_root_.AdicCompletion I R)
-  invFun f :=
-    { toFun := f
-      map_add' := f.map_add
-      map_smul' := f.map_adicCompletion_smul_of_mem_primaryComponent fg hP }
-  left_inv _ := LinearMap.ext fun _ ↦ rfl
-  right_inv _ := LinearMap.ext fun _ ↦ rfl
+    (P →ₗ[_root_.AdicCompletion I R] Q) ≃ₗ[_root_.AdicCompletion I R] (P →ₗ[R] Q) :=
+  restrictScalarsEquivOfMapSmul fun f ↦ f.map_adicCompletion_smul_of_mem_primaryComponent fg hP
 
 @[simp]
 theorem restrictScalarsEquivOfMemPrimaryComponent_apply (fg : I.FG)
