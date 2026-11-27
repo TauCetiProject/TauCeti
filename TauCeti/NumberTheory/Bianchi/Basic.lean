@@ -8,6 +8,7 @@ module
 public import Mathlib.Basic.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.NumberTheory.NumberField.Basic
+public import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Congruence.Map
 
 /-!
@@ -91,7 +92,7 @@ theorem bianchiGamma_le (I : Ideal (𝓞 F)) : bianchiGamma F ι I ≤ bianchi F
 theorem bianchiGamma_mono : Monotone (bianchiGamma F ι) := fun _ _ h ↦
   Subgroup.map_mono (Matrix.SpecialLinearGroup.ker_map_quotientMk_mono h)
 
-/-- Reduction modulo the zero ideal has trivial projective image. -/
+/-- The principal congruence subgroup at the zero ideal is trivial. -/
 @[simp] theorem bianchiGamma_bot : bianchiGamma F ι ⊥ = ⊥ := by
   have h : (Matrix.SpecialLinearGroup.map (n := Fin 2)
       (Ideal.Quotient.mk (⊥ : Ideal (𝓞 F)))).ker = ⊥ :=
@@ -108,16 +109,6 @@ theorem bianchiGamma_mono : Monotone (bianchiGamma F ι) := fun _ _ h ↦
       Submodule.mem_top, implies_true, Subgroup.mem_top]
   rw [bianchiGamma_def, h, Subgroup.map_top, bianchi_def]
 
-/-- Principal congruence subgroups are normal inside the Bianchi group. -/
-instance bianchiGamma_normal (I : Ideal (𝓞 F)) :
-    ((bianchiGamma F ι I).subgroupOf (bianchi F ι)).Normal := by
-  apply (Subgroup.normal_subgroupOf_iff_le_normalizer (bianchiGamma_le F ι I)).mpr
-  have h := Subgroup.le_normalizer_map
-    (H := (Matrix.SpecialLinearGroup.map (n := Fin 2) (Ideal.Quotient.mk I)).ker)
-    (bianchiMap F ι)
-  simpa only [Subgroup.normalizer_eq_top, Subgroup.map_top, bianchi_def,
-    bianchiGamma_def] using h
-
 section ChangeOfField
 
 variable {F} {K : Type*} [Field K]
@@ -129,7 +120,9 @@ theorem bianchiMap_comp_mapEquiv (e : K ≃+* F) (A : SL(2, 𝓞 K)) :
       bianchiMap F ι
         (Matrix.SpecialLinearGroup.mapEquiv (Fin 2) (RingOfIntegers.mapRingEquiv e) A) := by
   rw [bianchiMap_apply, bianchiMap_apply]
-  congr 1
+  apply congrArg (fun B : SL(2, ℂ) ↦ (B : PSL(2, ℂ)))
+  ext i j
+  simp [Matrix.SpecialLinearGroup.coe_mapEquiv_apply, ← RingOfIntegers.coe_eq_algebraMap]
 
 /-- The Bianchi group is unchanged on replacing the field by an isomorphic field and composing
 the embedding with that isomorphism. In particular it is invariant under field automorphisms. -/
