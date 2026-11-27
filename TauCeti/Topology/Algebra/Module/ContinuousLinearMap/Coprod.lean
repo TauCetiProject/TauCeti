@@ -19,7 +19,8 @@ characterizes surjectivity of `f₁.coprod (-f₂)`, `(x, y) ↦ f₁ x - f₂ y
 transversality condition for two maps with a common target. Extending a map by the zero map on a
 second factor only sees the first component (`ContinuousLinearMap.coprod_zero_right`), so a right
 inverse `g` of `f` pads to the right inverse `x ↦ (g x, 0)` of the extended map
-(`ContinuousLinearMap.coprod_zero_comp_prod_zero`).
+(`ContinuousLinearMap.coprod_zero_comp_prod_zero`). Since the first projection is surjective, the
+extended map vanishes only when `f` does (`ContinuousLinearMap.comp_fst_eq_zero_iff`).
 
 ## Main results
 
@@ -29,6 +30,8 @@ inverse `g` of `f` pads to the right inverse `x ↦ (g x, 0)` of the extended ma
   equivalent to `f₁.range ⊔ f₂.range = ⊤`.
 * `ContinuousLinearMap.coprod_zero_right`: `f.coprod 0 = f.comp (fst R M₁ M₂)`.
 * `ContinuousLinearMap.coprod_zero_comp_prod_zero`: `(f.coprod 0).comp (g.prod 0) = f.comp g`.
+* `ContinuousLinearMap.comp_fst_eq_zero_iff`: a map vanishes once its pullback along the first
+  projection does, `f.comp (fst R M₁ M₂) = 0 ↔ f = 0`.
 -/
 
 public section
@@ -63,6 +66,21 @@ theorem coprod_zero_comp_prod_zero {N : Type*} [TopologicalSpace N] [AddCommMono
   rw [coprod_zero_right, comp_assoc, fst_comp_prod]
 
 end Semiring
+
+section Fst
+
+variable {R M M₁ M₂ : Type*} [Semiring R]
+  [TopologicalSpace M] [TopologicalSpace M₁] [TopologicalSpace M₂]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+
+/-- A continuous linear map vanishes exactly when its pullback along the first projection
+`M₁ × M₂ → M₁` does. -/
+@[simp]
+theorem comp_fst_eq_zero_iff {f : M₁ →L[R] M} : f.comp (fst R M₁ M₂) = 0 ↔ f = 0 := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ by rw [hf, zero_comp]⟩
+  rw [← f.comp_id, ← fst_comp_inl (R := R) (M₂ := M₂), ← comp_assoc, hf, zero_comp]
+
+end Fst
 
 section Ring
 

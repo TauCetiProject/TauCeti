@@ -496,10 +496,8 @@ theorem schwarzRearrangementNorm_neg (u : W1p mu ⊤ 1) :
 @[simp]
 theorem schwarzRearrangementNorm_posPart (hp : 1 ≠ (∞ : ℝ≥0∞)) (u : W1p mu ⊤ 1) :
     W1p.schwarzRearrangementNorm (W1p.posPart hp u) = W1p.schwarzRearrangement u := by
-  have h0 : ∀ᵐ x ∂mu.restrict (⊤ : Opens E), 0 ≤ W1p.value (W1p.posPart hp u) x := by
-    rw [W1p.value_posPart]
-    exact (Lp.coeFn_posPart (W1p.value u)).mono fun _ hx ↦ hx.symm ▸ le_max_right _ _
-  rw [schwarzRearrangementNorm_eq_schwarzRearrangement_of_ae_nonneg h0,
+  rw [schwarzRearrangementNorm_eq_schwarzRearrangement_of_ae_nonneg
+      (W1p.value_posPart_nonneg_ae hp u),
     schwarzRearrangement_posPart]
 
 /-- `W1p.schwarzRearrangement` fixes `W1p.schwarzRearrangementNorm u`. -/

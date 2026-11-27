@@ -106,6 +106,13 @@ lemma id_toFun (i : Fin (n.len + 1)) : Hom.toFun (𝟙 n) i = i := rfl
 lemma comp_toFun (f : m ⟶ n) (g : n ⟶ k) (i : Fin (m.len + 1)) :
     (f ≫ g).toFun i = g.toFun (f.toFun i) := rfl
 
+/-- If `g` does not send `x` to the basepoint, then `x` is not the basepoint. -/
+lemma exists_eq_succ_of_toFun_ne_zero {g : n ⟶ k} {x : Fin (n.len + 1)}
+    (h : g.toFun x ≠ 0) : ∃ j : Fin n.len, x = j.succ := by
+  obtain h0 | hj := Fin.eq_zero_or_eq_succ x
+  · exact absurd (h0 ▸ g.map_zero) h
+  · exact hj
+
 /-! ### The comparison with pointed types -/
 
 /-- The functor from `FinPointed` to pointed types, sending `⟨n⟩` to `Fin (n + 1)` pointed at
@@ -143,6 +150,17 @@ lemma Hom.isInert_iff (f : m ⟶ n) :
 lemma Hom.isActive_iff (f : m ⟶ n) :
     f.IsActive ↔ ∀ i : Fin (m.len + 1), f.toFun i = 0 → i = 0 :=
   Iff.rfl
+
+/-- Along an inert map, every element other than the basepoint has exactly one preimage. -/
+lemma Hom.IsInert.existsUnique {f : m ⟶ n} (hf : f.IsInert) {j : Fin (n.len + 1)} (hj : j ≠ 0) :
+    ∃! i, f.toFun i = j :=
+  hf j hj
+
+/-- An inert map is injective on each fibre over an element `j.succ` other than the basepoint;
+the elements of the source other than the basepoint are indexed by `Fin.succ`. -/
+lemma Hom.IsInert.eq_of_toFun_succ_eq {f : m ⟶ n} (hf : f.IsInert) {i i' : Fin m.len}
+    {j : Fin n.len} (hi : f.toFun i.succ = j.succ) (hi' : f.toFun i'.succ = j.succ) : i = i' :=
+  Fin.succ_injective _ ((hf.existsUnique (Fin.succ_ne_zero j)).unique hi hi')
 
 /-- The inert maps of `FinPointed`. -/
 def inert : MorphismProperty FinPointed.{u} := fun _ _ f ↦ f.IsInert
