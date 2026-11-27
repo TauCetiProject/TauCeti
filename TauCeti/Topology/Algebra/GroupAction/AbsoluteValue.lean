@@ -19,7 +19,7 @@ group `AbsoluteValue.inertia G w` are closed in `G`. Each defining condition, `w
 continuous map to a discrete space, so each condition cuts out a closed subset of `G`.
 
 No compactness, normalisation or hypothesis relating `G` to a fixed field is needed, so this
-applies to every place of a field of characteristic zero.
+applies to every absolute value of `L`, archimedean or not, and in particular to every place.
 
 ## Main results
 
