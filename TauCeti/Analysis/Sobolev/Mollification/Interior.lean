@@ -24,11 +24,13 @@ the support condition ensures that no boundary term enters the identity.
 `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_right` states this for arbitrary kernels.
 `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed` specializes to normalized smooth bumps,
 with the geometric condition that the closed ball of the outer radius lies inside the domain.
-`HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator`,
-`HasWeakFDerivOn.fderiv_normed_convolution_indicator`, and
-`HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply` restate this identity with the bump
-as the left factor of the convolution and with locally-integrable-on-`Ω` hypotheses on a
-relatively compact subdomain `V`.
+`HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply` restates this identity with the bump
+as the left factor of the convolution, `Lᵖ` hypotheses on `Ω`, zero extension from `Ω`, and
+evaluation in a fixed direction.
+`HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator` and
+`HasWeakFDerivOn.fderiv_normed_convolution_indicator` place the bump on the left factor for the
+zero extension from an open set `V` with compact closure in `Ω`, with no extra integrability
+assumption.
 The vector-valued formulation applies to successive weak derivative fields when constructing
 smooth local approximations in higher-order Sobolev spaces.
 

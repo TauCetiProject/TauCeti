@@ -206,12 +206,19 @@ private theorem eLpNorm_sub_setAverage_le_of_convex_of_integrableOn
 private theorem memLp_of_convex_of_ne_top (hu : HasWeakFDerivOn μ Ω u Du)
     (hΩc : Convex ℝ (Ω : Set E)) (hΩb : Bornology.IsBounded (Ω : Set E))
     {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hDu : MemLp Du p (μ.restrict Ω)) :
-    MemLp u p (μ.restrict Ω) :=
-  memLp_of_interior_ball_sub_average_lt_top Ω.isOpen hΩb fun x₀ r hr hcbΩ =>
+    MemLp u p (μ.restrict Ω) := by
+  rcases (Ω : Set E).eq_empty_or_nonempty with hΩe | ⟨x₀, hx₀⟩
+  · simp [hΩe]
+  obtain ⟨R, hR, hRΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x₀ hx₀
+  have hr : 0 < R / 2 := half_pos hR
+  have hcbΩ : closedBall x₀ (R / 2) ⊆ Ω := (closedBall_subset_ball (half_lt_self hR)).trans hRΩ
+  have : IsFiniteMeasure (μ.restrict (Ω : Set E)) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hΩb.measure_lt_top⟩
+  exact MemLp.of_sub_const (c := ⨍ y in ball x₀ (R / 2), u y ∂μ) <| memLp_iff.2 <|
     (eLpNorm_sub_setAverage_le_of_convex_of_integrableOn hu hΩc hΩb
       (ball_subset_closedBall.trans hcbΩ) (measure_ball_pos μ x₀ hr).ne' hp1 hp
       ((hu.locallyIntegrableOn.integrableOn_compact_subset hcbΩ
-        (isCompact_closedBall x₀ r)).mono_set ball_subset_closedBall)
+        (isCompact_closedBall x₀ (R / 2))).mono_set ball_subset_closedBall)
       hDu).trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hDu.eLpNorm_lt_top)
 
 private theorem eLpNorm_sub_setAverage_le_of_convex_of_ne_top (hu : HasWeakFDerivOn μ Ω u Du)
@@ -279,11 +286,15 @@ whole domain. -/
 theorem HasWeakFDerivOn.memLp_of_convex (hu : HasWeakFDerivOn μ Ω u Du)
     (hΩc : Convex ℝ (Ω : Set E)) (hΩb : Bornology.IsBounded (Ω : Set E))
     {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hDu : MemLp Du p (μ.restrict Ω)) :
-    MemLp u p (μ.restrict Ω) :=
-  memLp_of_interior_ball_sub_average_lt_top Ω.isOpen hΩb fun x₀ _ hr hcbΩ =>
-    (hu.eLpNorm_sub_setAverage_le_of_convex hΩc hΩb (ball_subset_closedBall.trans hcbΩ)
-      (measure_ball_pos μ x₀ hr).ne' hp1).trans_lt
-      (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hDu.eLpNorm_lt_top)
+    MemLp u p (μ.restrict Ω) := by
+  rcases (Ω : Set E).eq_empty_or_nonempty with hΩe | ⟨x₀, hx₀⟩
+  · simp [hΩe]
+  obtain ⟨R, hR, hRΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x₀ hx₀
+  have : IsFiniteMeasure (μ.restrict (Ω : Set E)) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hΩb.measure_lt_top⟩
+  exact MemLp.of_sub_const (c := ⨍ y in ball x₀ R, u y ∂μ) <| memLp_iff.2 <|
+    (hu.eLpNorm_sub_setAverage_le_of_convex hΩc hΩb hRΩ (measure_ball_pos μ x₀ hR).ne'
+      hp1).trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hDu.eLpNorm_lt_top)
 
 /-- **The Poincaré–Wirtinger inequality on a bounded convex open set**, in `∫⁻` form for any
 real exponent `1 ≤ p`. -/

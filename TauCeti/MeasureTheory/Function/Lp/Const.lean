@@ -32,6 +32,7 @@ extend continuously to `t = 1`.
 * `TauCeti.eLpNorm_sub_const_eq_enorm`: the deviation from a constant as a distance in `Lᵖ`.
 * `TauCeti.eLpNorm_sub_const_restrict_le_liminf`: Fatou along an exhaustion for the deviation from
   a constant.
+* `MeasureTheory.MemLp.of_sub_const`: on a finite measure space, `u - c ∈ Lᵖ` implies `u ∈ Lᵖ`.
 * `MeasureTheory.Measure.tendsto_norm_lpConst_div_one_sub`: the constant class `t / (1 - t)` is
   unbounded in `Lᵖ` as `t → 1⁻`.
 -/
@@ -52,6 +53,11 @@ theorem eLpNorm_sub_const_eq_enorm (a : F) (f : Lp F p μ) :
     eLpNorm (fun x => f x - a) p μ = ‖f - Lp.const p μ a‖ₑ := by
   rw [Lp.eNorm_def]
   exact eLpNorm_congr_ae ((Lp.coeFn_sub _ _).trans (.sub .rfl (Lp.coeFn_const p μ a))).symm
+
+/-- On a finite measure space, if `fun x => u x - c` is in `Lᵖ`, then `u` is in `Lᵖ`. -/
+theorem _root_.MeasureTheory.MemLp.of_sub_const {u : α → F} {c : F}
+    (hu : MemLp (fun x => u x - c) p μ) : MemLp u p μ := by
+  simpa only [Pi.add_def, sub_add_cancel] using hu.add (memLp_const c)
 
 omit [IsFiniteMeasure μ] in
 /-- The `Lᵖ` seminorm of `f - b` on `Ω` is at most the `liminf` of the `Lᵖ` seminorms of `f - aₙ`

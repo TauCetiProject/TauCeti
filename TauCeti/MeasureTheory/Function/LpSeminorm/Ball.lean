@@ -62,8 +62,6 @@ exact form of the bounded-overlap count.
   `eLpNorm f p μ ≠ ∞`, the supremum over all centres `x` of `‖f‖_{Lᵖ(B(x, r))}` (and any quantity
   eventually bounded by a finite multiple of it) tends to `0` as the ball measure (or radius, in a
   nontrivial finite-dimensional space) tends to `0`.
-* `TauCeti.memLp_of_interior_ball_sub_average_lt_top`: if `Ω` is a bounded open set and
-  `u - ⨍_{B(x₀, r)} u ∈ Lᵖ(Ω)` on interior balls `closedBall x₀ r ⊆ Ω`, then `u ∈ Lᵖ(Ω)`.
 -/
 
 public section
@@ -72,28 +70,6 @@ namespace TauCeti
 
 open Filter MeasureTheory Metric Module
 open scoped ENNReal NNReal Topology
-
-/-- If `Ω` is a bounded open set and `u - ⨍_{B(x₀, r)} u ∈ Lᵖ(Ω)` whenever `closedBall x₀ r ⊆ Ω`
-with `0 < r`, then `u ∈ Lᵖ(Ω)`. -/
-theorem memLp_of_interior_ball_sub_average_lt_top {E F : Type*} [PseudoMetricSpace E]
-    [MeasurableSpace E] [ProperSpace E] {μ : Measure E} [IsLocallyFiniteMeasure μ]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Set E} (hΩo : IsOpen Ω)
-    (hΩb : Bornology.IsBounded Ω) {u : E → F} {p : ℝ≥0∞}
-    (hbound : ∀ ⦃x₀ : E⦄ ⦃r : ℝ⦄, 0 < r → closedBall x₀ r ⊆ Ω →
-      eLpNorm (fun x => u x - ⨍ y in ball x₀ r, u y ∂μ) p (μ.restrict Ω) < ∞) :
-    MemLp u p (μ.restrict Ω) := by
-  rcases Ω.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · simp
-  obtain ⟨R, hR, hRΩ⟩ := Metric.isOpen_iff.1 hΩo x₀ hx₀
-  set r := R / 2
-  have hr : 0 < r := half_pos hR
-  have hcbΩ : closedBall x₀ r ⊆ Ω := (closedBall_subset_ball (half_lt_self hR)).trans hRΩ
-  set m : F := ⨍ y in ball x₀ r, u y ∂μ
-  have hsub : MemLp (fun x => u x - m) p (μ.restrict Ω) := hbound hr hcbΩ
-  have : IsFiniteMeasure (μ.restrict Ω) :=
-    ⟨by rw [Measure.restrict_apply_univ]; exact hΩb.measure_lt_top⟩
-  have hadd : MemLp (fun x => (u x - m) + m) p (μ.restrict Ω) := hsub.add (memLp_const m)
-  simpa only [sub_add_cancel] using hadd
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [ProperSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
