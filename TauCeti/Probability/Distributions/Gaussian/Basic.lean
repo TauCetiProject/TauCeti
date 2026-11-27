@@ -50,9 +50,6 @@ needs nothing beyond the definition of `gaussianReal`.
   `x g(x) → 0` as `|x| → ∞`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
   its real argument is `-(x - μ) / v` times the density, for every variance.
-* `TauCeti.Probability.hasDerivAt_exp_neg_sq_div_two` and
-  `TauCeti.Probability.hasDerivAt_exp_sq_div_two` — the derivatives of the standard Gaussian
-  weight `e^{-x²/2}` and of its reciprocal `e^{x²/2}`.
 * `TauCeti.Probability.integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul` — at positive
   variance, integrability against `gaussianReal μ v` is equivalent to Lebesgue integrability of
   the function weighted by the density.
@@ -192,19 +189,6 @@ theorem hasDerivAt_gaussianPDFReal (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
   have hq := (((hasDerivAt_id' x).sub_const μ).fun_pow 2).fun_neg.div_const (2 * (v : ℝ))
   convert hq.exp.const_mul (√(2 * π * (v : ℝ)))⁻¹ using 1
   field_simp
-  ring
-
-/-- The derivative of the standard Gaussian weight `e^{-x²/2}` is `-x e^{-x²/2}`. -/
-theorem hasDerivAt_exp_neg_sq_div_two (x : ℝ) :
-    HasDerivAt (fun u : ℝ => Real.exp (-(u ^ 2 / 2))) (Real.exp (-(x ^ 2 / 2)) * -x) x := by
-  convert ((hasDerivAt_pow 2 x).div_const 2).fun_neg.exp using 1
-  ring
-
-/-- The derivative of the reciprocal `e^{x²/2}` of the standard Gaussian weight is
-`x e^{x²/2}`. -/
-theorem hasDerivAt_exp_sq_div_two (x : ℝ) :
-    HasDerivAt (fun u : ℝ => Real.exp (u ^ 2 / 2)) (Real.exp (x ^ 2 / 2) * x) x := by
-  convert ((hasDerivAt_pow 2 x).div_const 2).exp using 1
   ring
 
 /-- At positive variance, a function is integrable against `gaussianReal μ v` if and only if its

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.Stein.Solution
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -31,7 +32,7 @@ theorem steinSolution_id : TauCeti.Probability.steinSolution (fun x => x) = fun 
   ext w
   have hderiv : ∀ t, HasDerivAt (fun t : ℝ => -exp (-(t ^ 2 / 2))) (t * exp (-(t ^ 2 / 2))) t :=
     fun t => by
-      convert (TauCeti.Probability.hasDerivAt_exp_neg_sq_div_two t).fun_neg using 1
+      convert (TauCeti.hasDerivAt_exp_neg_sq_div_two t).fun_neg using 1
       ring
   have hint : Integrable fun t : ℝ => t * exp (-(t ^ 2 / 2)) := by
     refine (integrable_mul_exp_neg_mul_sq (b := 1 / 2) (by norm_num)).congr

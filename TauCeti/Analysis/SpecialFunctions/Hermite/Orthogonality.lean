@@ -15,6 +15,7 @@ public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Basic
 public import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
 /-!
 # The Gaussian orthogonality relation for the probabilists' Hermite polynomials

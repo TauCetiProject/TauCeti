@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
