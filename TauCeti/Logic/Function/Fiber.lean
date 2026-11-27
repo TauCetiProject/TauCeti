@@ -6,20 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Set
+public import Mathlib.Basic.Finite.Defs
+public import Mathlib.Order.SetNotation
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Fibres of a map over a base
 
-For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file collects the
-elementary constructions on such fibres that the covering-space development uses. None needs a
-topology, so they are stated for bare functions and equivalences; a `ContinuousMap` or a
-`Homeomorph` is applied through its underlying function or equivalence.
+For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file gives elementary
+fibre constructions used in covering-space development and finite-preimage criteria used for
+finite-branch fibres. These results are stated for bare functions and equivalences. A
+`ContinuousMap` or a `Homeomorph` is applied through its underlying function or equivalence.
 
 * `Function.fiberMap`: a map `f : E → F` commuting with the projections to `X` restricts to the
   fibres over each point. It is `Set.MapsTo.restrict` for the fibre inclusion, so its application,
   identity and composition laws are the generic `Subtype.map` ones.
 * `Equiv.compFiberEquiv`: relabelling the base along `h : X ≃ Y` identifies the fibre of `h ∘ p`
   over `y` with the fibre of `p` over `h.symm y`. It is the identity on underlying points.
+* `Set.finite_preimage_of_subset_iUnion`: the preimage of a finite target is finite when
+  finitely many pieces cover it and the map is injective on each piece's intersection with that
+  preimage.
+* `Set.finite_fiber_of_subset_iUnion`: the single-target specialization.
 
 ## Main declarations
 
@@ -171,3 +178,21 @@ theorem compFiberEquiv_symm_apply_coe (h : X ≃ Y) (y : Y) (e : p ⁻¹' {h.sym
   (rfl)
 
 end Equiv
+
+/-- A finite target has finite preimage if that preimage is covered by finitely many
+pieces on whose portions over the target the function is injective. -/
+theorem Set.finite_preimage_of_subset_iUnion {α β κ : Type*} [Finite κ] {f : α → β}
+    {t : Set β} (ht : t.Finite) {S : κ → Set α} (hS : f ⁻¹' t ⊆ ⋃ k, S k)
+    (hf : ∀ k, Set.InjOn f (S k ∩ f ⁻¹' t)) : (f ⁻¹' t).Finite := by
+  have hpiece (k : κ) : (S k ∩ f ⁻¹' t).Finite :=
+    Set.Finite.of_injOn (f := f) (fun _ hx => hx.2) (hf k) ht
+  apply (Set.finite_iUnion hpiece).subset
+  rw [← Set.iUnion_inter]
+  exact fun x hx => ⟨hS hx, hx⟩
+
+/-- A fiber covered by finitely many pieces is finite when the function is injective
+on the part of each piece lying in that fiber. No condition is imposed elsewhere. -/
+theorem Set.finite_fiber_of_subset_iUnion {α β κ : Type*} [Finite κ] {f : α → β}
+    {S : κ → Set α} (w : β) (hS : f ⁻¹' {w} ⊆ ⋃ k, S k)
+    (hf : ∀ k, Set.InjOn f (S k ∩ f ⁻¹' {w})) : Finite {x : α // f x = w} :=
+  (Set.finite_preimage_of_subset_iUnion (Set.finite_singleton w) hS hf).to_subtype

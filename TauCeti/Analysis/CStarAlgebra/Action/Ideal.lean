@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Hom
 public import TauCeti.Analysis.CStarAlgebra.Action.Quotient
-public import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
 # Invariant closed ideals and concrete quotient C⋆-actions
@@ -73,16 +72,18 @@ theorem ker (f : CStarAction.Hom α β) :
   rw [SetLike.mem_coe, TwoSidedIdeal.mem_ker, CStarAction.Hom.coe_toNonUnitalStarAlgHom] at ha ⊢
   rw [f.map_action, ha, map_zero]
 
-private theorem isInvariant_toNonUnitalStarSubalgebra {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
-    _root_.IsInvariant (fun g a => α g a) (I.toNonUnitalStarSubalgebra : Set A) :=
-  fun g _ ha => I.mem_toNonUnitalStarSubalgebra.mpr (hI g (I.mem_toNonUnitalStarSubalgebra.mp ha))
+/-- Viewing a closed invariant two-sided ideal of a C⋆-algebra as a nonunital `⋆`-subalgebra
+preserves invariance. -/
+theorem toNonUnitalStarSubalgebra {τ : Type*} {ϕ : τ → A → A}
+    {I : TwoSidedIdeal A} [IsClosed (I : Set A)] (hI : _root_.IsInvariant ϕ (I : Set A)) :
+    _root_.IsInvariant ϕ (I.toNonUnitalStarSubalgebra : Set A) := by
+  rwa [I.coe_toNonUnitalStarSubalgebra]
 
 /-- Restrict an automorphism from an action to a closed invariant two-sided ideal. -/
 def restrictIdealEquiv {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (g : G) : I ≃⋆ₐ[ℂ] I :=
   I.toNonUnitalStarSubalgebraEquiv.trans
-    (((isInvariant_toNonUnitalStarSubalgebra hI).restrictEquiv g).trans
+    ((hI.toNonUnitalStarSubalgebra.restrictEquiv g).trans
       I.toNonUnitalStarSubalgebraEquiv.symm)
 
 @[simp]
@@ -94,7 +95,7 @@ theorem restrictIdealEquiv_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 /-- Restrict a C⋆-action to a closed invariant two-sided ideal. -/
 def restrictIdeal {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) : CStarAction G I :=
-  (isInvariant_toNonUnitalStarSubalgebra hI).restrict.conjugate
+  hI.toNonUnitalStarSubalgebra.restrict.conjugate
     I.toNonUnitalStarSubalgebraEquiv.symm
 
 @[simp]
@@ -109,24 +110,84 @@ theorem coe_restrictIdeal_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     ((hI.restrictIdeal g x : I) : A) = α g x := by
   rw [restrictIdeal_apply]
 
+/-- The canonical `⋆`-isomorphism `I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra` bundled as an equivariant
+homomorphism from `hI.restrictIdeal` to `hI.toNonUnitalStarSubalgebra.restrict`. -/
+def idealToSubalgebraHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    CStarAction.Hom hI.restrictIdeal hI.toNonUnitalStarSubalgebra.restrict where
+  toNonUnitalStarAlgHom := I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom
+  map_action' g x := Subtype.ext <| by simp
+
+@[simp]
+theorem idealToSubalgebraHom_toNonUnitalStarAlgHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    hI.idealToSubalgebraHom.toNonUnitalStarAlgHom =
+      I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom :=
+  (rfl)
+
+@[simp]
+theorem idealToSubalgebraHom_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (x : I) :
+    hI.idealToSubalgebraHom x = ⟨x, I.mem_toNonUnitalStarSubalgebra.mpr x.property⟩ :=
+  I.toNonUnitalStarSubalgebraEquiv_apply x
+
+/-- The inverse `⋆`-isomorphism `I.toNonUnitalStarSubalgebra ≃⋆ₐ[ℂ] I` bundled as an equivariant
+homomorphism from `hI.toNonUnitalStarSubalgebra.restrict` to `hI.restrictIdeal`. -/
+def subalgebraToIdealHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    CStarAction.Hom hI.toNonUnitalStarSubalgebra.restrict hI.restrictIdeal where
+  toNonUnitalStarAlgHom := I.toNonUnitalStarSubalgebraEquiv.symm.toNonUnitalStarAlgHom
+  map_action' g x := Subtype.ext <| by simp
+
+@[simp]
+theorem subalgebraToIdealHom_toNonUnitalStarAlgHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    hI.subalgebraToIdealHom.toNonUnitalStarAlgHom =
+      I.toNonUnitalStarSubalgebraEquiv.symm.toNonUnitalStarAlgHom :=
+  (rfl)
+
+@[simp]
+theorem subalgebraToIdealHom_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (x : I.toNonUnitalStarSubalgebra) :
+    hI.subalgebraToIdealHom x = ⟨x, I.mem_toNonUnitalStarSubalgebra.mp x.property⟩ :=
+  I.toNonUnitalStarSubalgebraEquiv_symm_apply x
+
+@[simp]
+theorem subalgebraToIdealHom_comp_idealToSubalgebraHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    hI.subalgebraToIdealHom.comp hI.idealToSubalgebraHom = CStarAction.Hom.id hI.restrictIdeal := by
+  ext x
+  simp
+
+@[simp]
+theorem idealToSubalgebraHom_comp_subalgebraToIdealHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    hI.idealToSubalgebraHom.comp hI.subalgebraToIdealHom =
+      CStarAction.Hom.id hI.toNonUnitalStarSubalgebra.restrict := by
+  ext x
+  simp
+
 /-- The canonical isometric inclusion `I →⋆ₙₐ[ℂ] A` of a closed invariant two-sided ideal is an
 equivariant homomorphism. -/
 def idealSubtypeHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
     CStarAction.Hom hI.restrictIdeal α :=
-  (isInvariant_toNonUnitalStarSubalgebra hI).subtypeHom.comp
-    ⟨I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom,
-      (I.toNonUnitalStarSubalgebraEquiv.symm.isEquivariant_symm
-        (CStarAction.IsEquivariant.conjugate
-          (isInvariant_toNonUnitalStarSubalgebra hI).restrict
-          I.toNonUnitalStarSubalgebraEquiv.symm)).apply⟩
+  hI.toNonUnitalStarSubalgebra.subtypeHom.comp hI.idealToSubalgebraHom
+
+@[simp]
+theorem subtypeHom_comp_idealToSubalgebraHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    hI.toNonUnitalStarSubalgebra.subtypeHom.comp hI.idealToSubalgebraHom = hI.idealSubtypeHom :=
+  (rfl)
 
 @[simp]
 theorem idealSubtypeHom_toNonUnitalStarAlgHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
     hI.idealSubtypeHom.toNonUnitalStarAlgHom = I.starAlgHom := by
   ext x
-  simp [idealSubtypeHom]
+  rw [CStarAction.Hom.coe_toNonUnitalStarAlgHom, idealSubtypeHom, CStarAction.Hom.comp_apply]
+  simp
 
 @[simp]
 theorem idealSubtypeHom_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]

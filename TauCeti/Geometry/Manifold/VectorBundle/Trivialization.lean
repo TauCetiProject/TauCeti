@@ -71,6 +71,13 @@ section.
   trivialization's base set is open.
 * `TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`: the expression of a `C^n`
   section in a chart of the maximal atlas and an atlas trivialization is `C^n`.
+* `TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod`: the coordinates, in the
+  trivialization at `α` and along the chart at `α`, of a section depending jointly on a parameter
+  in a normed space are `C^n` in the parameter and the chart coordinate.
+* `TauCeti.continuousAt_comp_symmL_of_contMDiffOn`: covectors `ℓ y` on the fibres along a
+  continuous map that are `C^n` in the frames are continuous in the frames.
+* `TauCeti.exists_mem_maximalAtlas_source_subset_baseSet`: a chart of the maximal atlas at a
+  point over which two fibre bundles are trivial.
 -/
 
 public noncomputable section
@@ -462,6 +469,76 @@ theorem contDiffOn_trivialization_comp_chart_symm_of_contMDiff {s : ∀ x, V x}
 
 end TauCeti
 
+namespace TauCeti
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) (n : WithTop ℕ∞) [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I n M]
+  (F₁ : Type*) [TopologicalSpace F₁] (E₁ : M → Type*) [TopologicalSpace (TotalSpace F₁ E₁)]
+  [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁]
+  (F₂ : Type*) [TopologicalSpace F₂] (E₂ : M → Type*) [TopologicalSpace (TotalSpace F₂ E₂)]
+  [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
+
+/-- **A chart over which two bundles are trivial.** At every point `x` of `M` there is a chart of
+the maximal `C^n` atlas whose source contains `x` and lies in the base sets of the preferred
+trivializations at `x` of two fibre bundles over `M`: restrict the preferred chart at `x` to the
+intersection of these base sets. -/
+theorem exists_mem_maximalAtlas_source_subset_baseSet (x : M) :
+    ∃ e ∈ IsManifold.maximalAtlas I n M, x ∈ e.source ∧
+      e.source ⊆ (trivializationAt F₁ E₁ x).baseSet ∧
+        e.source ⊆ (trivializationAt F₂ E₂ x).baseSet := by
+  have hopen :=
+    (trivializationAt F₁ E₁ x).open_baseSet.inter (trivializationAt F₂ E₂ x).open_baseSet
+  refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hopen, ?_⟩
+  rw [OpenPartialHomeomorph.restr_source' _ _ hopen]
+  exact ⟨⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x,
+    FiberBundle.mem_baseSet_trivializationAt' x⟩, fun _ hy ↦ hy.2.1, fun _ hy ↦ hy.2.2⟩
+
+end TauCeti
+
+namespace TauCeti.Manifold
+
+variable {𝕜 Q F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup Q] [NormedSpace 𝕜 Q]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] {n : WithTop ℕ∞} [IsManifold I n M]
+  [ContMDiffVectorBundle n F V I]
+
+/-- **The chart coordinates of a parametrized `C^n` section are `C^n`.** The coordinates, in the
+trivialization at `α`, of a section `(q, x) ↦ σ q x` of a vector bundle `V` over `M` depending on a
+point `q` of a normed space `Q`, read along the chart at `α`, are `C^n` on
+`U × (extChartAt I α).target` when the section is jointly `C^n` at every point of `U × M` and the
+chart target lies over the base set of the trivialization. Unlike
+`TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm`, which treats a single tangent vector
+field, the section here is of any vector bundle and depends jointly on the parameter `q`. -/
+theorem contDiffOn_trivializationAt_extChartAt_symm_prod {U : Set Q} {σ : Q → (x : M) → V x}
+    {α : M}
+    (hbase : ∀ w ∈ (extChartAt I α).target,
+      (extChartAt I α).symm w ∈ (trivializationAt F V α).baseSet)
+    (hσ : ∀ q ∈ U, ∀ x, ContMDiffAt (𝓘(𝕜, Q).prod I) (I.prod 𝓘(𝕜, F)) n
+      (fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2)) (q, x)) :
+    ContDiffOn 𝕜 n (fun p : Q × E ↦ (trivializationAt F V α
+        ⟨(extChartAt I α).symm p.2, σ p.1 ((extChartAt I α).symm p.2)⟩).2)
+      (U ×ˢ (extChartAt I α).target) := by
+  rintro ⟨q, y⟩ ⟨hq, hy⟩
+  -- The coordinates of the section in the trivialization at `α` are `C^n` at `(q, x)`, for the
+  -- point `x` with chart coordinate `y`.
+  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := trivializationAt F V α)
+    (f := fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2))
+    ((trivializationAt F V α).mem_source.2 (hbase y hy))).1
+    (hσ q hq ((extChartAt I α).symm y))).2
+  -- The map `(q, y) ↦ (q, x)` into `Q × M` is `C^n` over the chart target.
+  have hψ : ContMDiffWithinAt 𝓘(𝕜, Q × E) (𝓘(𝕜, Q).prod I) n
+      (fun p : Q × E ↦ (p.1, (extChartAt I α).symm p.2)) (U ×ˢ (extChartAt I α).target) (q, y) :=
+    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
+      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (q, y)
+        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
+  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (q, y) hψ) :)
+
+end TauCeti.Manifold
+
 namespace Bundle.Trivialization
 
 open Set
@@ -494,3 +571,25 @@ theorem contMDiffOn_scalarCoordChange {n : ℕ∞ω}
       e.scalarCoordChange_def e' q q' x
 
 end Bundle.Trivialization
+
+namespace TauCeti
+
+/-- Covectors `ℓ y` on the fibres `V (ι y)` that are `C^n` in `y` in the frames along a continuous
+map `ι` are continuous in the frames: near `y₀` the map `y ↦ ℓ y ∘ t⁻¹` is `C^n` on the open set
+`ι⁻¹ t.baseSet`, which contains `y₀`. -/
+theorem continuousAt_comp_symmL_of_contMDiffOn {M F : Type*} [TopologicalSpace M]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle ℝ F V]
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {n : WithTop ℕ∞}
+    {ι : N → M} (hι : Continuous ι) {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ}
+    (hℓ : ∀ y₀, ContMDiffOn J 𝓘(ℝ, F →L[ℝ] ℝ) n
+      (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y))
+      (ι ⁻¹' (trivializationAt F V (ι y₀)).baseSet)) (y₀ : N) :
+    ContinuousAt (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y)) y₀ :=
+  (hℓ y₀).continuousOn.continuousAt <| ((trivializationAt F V (ι y₀)).open_baseSet.preimage hι)
+    |>.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' _)
+
+end TauCeti

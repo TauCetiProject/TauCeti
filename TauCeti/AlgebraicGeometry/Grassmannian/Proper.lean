@@ -33,8 +33,9 @@ Grassmannian is moreover locally of finite presentation over `Spec R`
 * `Module.Grassmannian.valuativeCriterion_toSpec`: for finite `M`, the structure morphism satisfies
   the valuative criterion.
 * `Module.Grassmannian.isSeparated_toSpec`: the Grassmannian is separated over `Spec R`.
-* `Module.Grassmannian.exists_mem_range_chartι_comp`: the charts at subfamilies of a generating
-  family cover the Grassmannian.
+* `Module.Grassmannian.exists_mem_range_chartι_comp` and
+  `Module.Grassmannian.iSup_opensRange_chartι_comp_eq_top`: the charts at subfamilies of a
+  generating family cover the Grassmannian.
 * `Module.Grassmannian.isProper_toSpec`: for finite `M`, the Grassmannian is proper over `Spec R`.
 * `Module.Grassmannian.locallyOfFinitePresentation_toSpec`: for finitely presented `M`, the
   Grassmannian is locally of finite presentation over `Spec R`.
@@ -181,6 +182,14 @@ theorem exists_mem_range_chartι_comp {ι : Type*} (m : ι → M)
     rw [PrimeSpectrum.localization_away_comap_range B a]
     exact hap
   exact ⟨y, _, congrArg (fun f : Spec (CommRingCat.of B) ⟶ scheme R M k ↦ f q) hg.symm⟩
+
+/-- **The charts at subfamilies of a generating family cover the Grassmannian**, as an equality of
+opens: if `m : ι → M` generates `M`, the images of the charts at `m ∘ y`, `y : Fin k → ι`, cover
+`G(k, M)`. -/
+theorem iSup_opensRange_chartι_comp_eq_top {ι : Type*} (m : ι → M)
+    (hm : Submodule.span R (Set.range m) = ⊤) :
+    ⨆ y : Fin k → ι, (chartι R (m ∘ y)).opensRange = ⊤ :=
+  eq_top_iff.2 fun z _ ↦ TopologicalSpace.Opens.mem_iSup.2 (exists_mem_range_chartι_comp m hm z)
 
 /-- For `M` finitely generated, the Grassmannian is quasi-compact: the charts at `k`-tuples of a
 finite generating family form a finite affine open cover. -/

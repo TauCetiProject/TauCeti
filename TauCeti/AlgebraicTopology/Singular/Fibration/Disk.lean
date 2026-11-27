@@ -316,14 +316,14 @@ private lemma isIso_totalToOuter (hp : serreFibrations p) (m : ℕ) :
 omit [FiniteDimensional ℝ V] in
 /-- **Over a disk, the part over the boundary sphere and the part off the centre have the same
 relative homology.** For a Serre fibration `p : E ⟶ Dʳ` over the closed unit ball, the inclusion
-`(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` induces isomorphisms on relative singular homology. -/
-theorem isIso_singularHomologyMap_ofSubsetMap_preimage_sphere (R : Type u) [Ring R]
-    (hp : serreFibrations p) (m : ℕ) :
+`(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` induces isomorphisms on relative singular homology, with
+coefficients in any module `M`. -/
+theorem isIso_singularHomologyMap_ofSubsetMap_preimage_sphere (hp : serreFibrations p) (m : ℕ) :
     IsIso (TopPair.singularHomologyMap
       (TopPair.ofSubsetMap (B := p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1})
         (B' := p ⁻¹' {x | (x : V) ≠ 0}) (𝟙 E) fun _ hx ↦ ne_of_mem_sphere hx one_ne_zero)
-      (ModuleCat.of R R) m) := by
-  have := isIso_totalToOuter (ModuleCat.of R R) hp m
+      M m) := by
+  have := isIso_totalToOuter M hp m
   rwa [TopTriple.totalToOuter_app_ofSubset] at this
 
 /-- **A Serre fibration over a disk has vanishing homology modulo the part over the boundary

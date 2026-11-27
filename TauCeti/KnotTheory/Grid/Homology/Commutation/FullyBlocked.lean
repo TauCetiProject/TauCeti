@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Grading.Map
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.FullyBlocked
-public import TauCeti.KnotTheory.Grid.Homology.FullyBlockedBigraded
+public import TauCeti.KnotTheory.Grid.Homology.FullyBlocked.Bigraded
 import TauCeti.Algebra.CharP.Two
 
 /-!

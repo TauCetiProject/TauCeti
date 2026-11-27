@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
 
 /-!
 # The blowup of a scheme along an ideal sheaf
@@ -222,9 +223,7 @@ theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :
 ideal sheaf is of finite type, so `Bl_I X ⟶ X` is proper for every ideal sheaf `I`. -/
 instance isProper_blowupToBase_of_isLocallyNoetherian [IsLocallyNoetherian X] :
     IsProper I.blowupToBase :=
-  I.isProper_blowupToBase fun U ↦
-    have := IsLocallyNoetherian.component_noetherian U
-    IsNoetherian.noetherian _
+  I.isProper_blowupToBase I.fg_ideal
 
 end Blowup
 

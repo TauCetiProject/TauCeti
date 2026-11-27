@@ -79,9 +79,10 @@ theorem deriv_mul_fderiv_fderiv_stripBandGeneratingFunction_apply_zero_one (hJ :
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {c : ℝ} (hc : c ∈ J)
     (hface : ∀ s, (F (s, c)).2 = c) (x : ℝ) (v : ℝ × ℝ) :
     deriv (fun s ↦ (F (s, c)).1) x *
-        fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c)) v (0, 1) =
-      -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c)) v
-        (1, 0) := by
+        fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F)))
+          (stripTwistCoord F (x, c)) v (0, 1) =
+      -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F)))
+        (stripTwistCoord F (x, c)) v (1, 0) := by
   have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   have hd := (hF _ hq).differentiableAt two_ne_zero
   have hB := (hasDerivAt_fst_slice_left hd).deriv
@@ -114,8 +115,8 @@ theorem neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face (hJ : IsOpen J)
     (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {c : ℝ} (hc : c ∈ J)
     (x a b : ℝ) :
-    -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c))
-        (c - a, b - c) (1, 0) =
+    -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F)))
+        (stripTwistCoord F (x, c)) (c - a, b - c) (1, 0) =
       (deriv (fun s ↦ (F (s, c)).1) x * (a - c) + (b - c)) / (fderiv ℝ F (x, c) (0, 1)).1 := by
   have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   have hd := (hF _ hq).differentiableAt two_ne_zero
@@ -135,8 +136,8 @@ theorem mul_neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_nonneg (hJ 
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {c : ℝ} (hc : c ∈ J) {x a b : ℝ}
     (hB : 0 ≤ deriv (fun s ↦ (F (s, c)).1) x) (ha : c ≤ a) (hb : c ≤ b) :
     0 ≤ (fderiv ℝ F (x, c) (0, 1)).1 *
-      -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c))
-        (c - a, b - c) (1, 0) := by
+      -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F)))
+        (stripTwistCoord F (x, c)) (c - a, b - c) (1, 0) := by
   have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   rw [neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face hJ hJc h0 hF hY hdet htwist hc,
     mul_div_cancel₀ _ (htwist _ hq)]
@@ -155,8 +156,8 @@ theorem mul_neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_nonpos (hJ 
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {c : ℝ} (hc : c ∈ J) {x a b : ℝ}
     (hB : 0 ≤ deriv (fun s ↦ (F (s, c)).1) x) (ha : a ≤ c) (hb : b ≤ c) :
     (fderiv ℝ F (x, c) (0, 1)).1 *
-      -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c))
-        (c - a, b - c) (1, 0) ≤ 0 := by
+      -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F)))
+        (stripTwistCoord F (x, c)) (c - a, b - c) (1, 0) ≤ 0 := by
   have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   rw [neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face hJ hJc h0 hF hY hdet htwist hc,
     mul_div_cancel₀ _ (htwist _ hq)]
@@ -172,8 +173,8 @@ theorem neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_eq_zero_iff (hJ
     (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {c : ℝ} (hc : c ∈ J) {x a b : ℝ}
     (hB : 0 < deriv (fun s ↦ (F (s, c)).1) x) (hab : c ≤ a ∧ c ≤ b ∨ a ≤ c ∧ b ≤ c) :
-    -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c))
-        (c - a, b - c) (1, 0) = 0 ↔ a = c ∧ b = c := by
+    -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F)))
+        (stripTwistCoord F (x, c)) (c - a, b - c) (1, 0) = 0 ↔ a = c ∧ b = c := by
   have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   rw [neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face hJ hJc h0 hF hY hdet htwist hc,
     div_eq_zero_iff, or_iff_left (htwist _ hq)]
@@ -199,11 +200,13 @@ both point out of the block `0 ≤ y ≤ 1`, as they must for a negative twist. 
 
 example (x : ℝ) :
     -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction
-        (fun q : ℝ × ℝ ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2)) univ))
+        (fun q : ℝ × ℝ ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2)) univ
+        (stripGeneratingFunction fun q : ℝ × ℝ ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2))))
         (stripTwistCoord (fun q : ℝ × ℝ ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2)) (x, 0))
         (0 - 1 / 8, 1 / 8 - 0) (1, 0) = -(1 / 3) ∧
     -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction
-        (fun q : ℝ × ℝ ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2)) univ))
+        (fun q : ℝ × ℝ ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2)) univ
+        (stripGeneratingFunction fun q : ℝ × ℝ ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2))))
         (stripTwistCoord (fun q : ℝ × ℝ ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2)) (x, 1))
         (1 - 7 / 8, 7 / 8 - 1) (1, 0) = 1 / 3 := by
   set N : ℝ × ℝ → ℝ × ℝ := fun q ↦ (q.1 + -(1 / 8) + -(3 / 4) * q.2, q.2)

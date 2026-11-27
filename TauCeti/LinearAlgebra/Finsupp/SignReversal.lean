@@ -33,10 +33,16 @@ and keeps the others.
 * `Finsupp.signEquiv_one`, `Finsupp.signEquiv_trans`: the trivial signs give the identity, and
   composing sign changes multiplies the signs.
 * `Finsupp.support_signEquiv`: the sign change keeps the support.
+* `LinearMap.comp_signEquiv_eq_smul`: a linear map supported on the indices of one sign `u` is
+  multiplied by `u` under the sign change.
 * `Finsupp.signReversal_single`, `Finsupp.signReversal_apply`,
   `Finsupp.signReversal_signReversal`, `Finsupp.signReversal_symm`,
   `Finsupp.signReversal_trans_self`, `Finsupp.signReversal_empty`,
   `Finsupp.support_signReversal`: the same for `signReversal`.
+* `Finsupp.signReversal_congr`, `Finsupp.signReversal_eq_refl`: the sign reversal depends only on
+  the points of the set, and is the identity on a set without points.
+* `Finsupp.signReversal_trans_signReversal`: sign reversals compose by symmetric difference of
+  their sets.
 -/
 
 public section
@@ -115,6 +121,19 @@ theorem support_signEquiv (c : α →₀ A) : (signEquiv R ε c).support = c.sup
   rw [mem_support_iff, mem_support_iff, signEquiv_apply]
   rcases Int.units_eq_one_or (ε q) with h | h <;> simp [h]
 
+/-- **A linear map supported on one sign.** If an `R`-linear map `a` on `α →₀ A` vanishes on the
+coefficients at every `q` whose sign `ε q` is not `u`, then composing `a` with the sign change by
+`ε` multiplies it by `u`. For the Koszul sign `ε q = (-1) ^ |q|` of a graded basis, a linear form
+of degree `k` is multiplied by `(-1) ^ k`. -/
+theorem _root_.LinearMap.comp_signEquiv_eq_smul {N : Type*} [AddCommGroup N] [Module R N]
+    (a : (α →₀ A) →ₗ[R] N) {u : ℤˣ} (ha : ∀ q, ε q ≠ u → ∀ c, a (single q c) = 0) :
+    a ∘ₗ (signEquiv R ε).toLinearMap = (u : ℤ) • a := by
+  refine lhom_ext fun q c ↦ ?_
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, signEquiv_single, LinearMap.smul_apply]
+  by_cases hq : ε q = u
+  · rw [hq, ← smul_single, map_zsmul]
+  · rw [ha q hq, ha q hq, smul_zero]
+
 variable (R) in
 /-- The sign change by the trivial signs is the identity. -/
 @[simp]
@@ -170,12 +189,33 @@ theorem signReversal_trans_self :
 theorem support_signReversal (c : α →₀ A) : (signReversal R S c).support = c.support :=
   support_signEquiv c
 
+/-- The sign reversal depends only on the points of the set: sign reversals on sets with the same
+points agree, whatever their decidability instances. -/
+theorem signReversal_congr {T : Set α} [DecidablePred (· ∈ T)] (h : ∀ p, p ∈ S ↔ p ∈ T) :
+    signReversal (A := A) R S = signReversal R T :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by simp [h]
+
+/-- The sign reversal on a set without points is the identity. -/
+theorem signReversal_eq_refl (h : ∀ p, p ∉ S) :
+    signReversal R S = LinearEquiv.refl R (α →₀ A) :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by simp [h]
+
+/-- **Sign reversals compose by symmetric difference**: the sign reversal on `S` followed by that
+on `T` is the sign reversal on a set `U` whose points are those lying in exactly one of `S` and
+`T`. -/
+theorem signReversal_trans_signReversal {T U : Set α} [DecidablePred (· ∈ T)]
+    [DecidablePred (· ∈ U)] (h : ∀ p, p ∈ U ↔ Xor (p ∈ S) (p ∈ T)) :
+    (signReversal (A := A) R S).trans (signReversal R T) = signReversal R U :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by
+    rw [LinearEquiv.trans_apply, signReversal_apply, signReversal_apply, signReversal_apply]
+    by_cases hS : q ∈ S <;> by_cases hT : q ∈ T <;> simp [hS, hT, h]
+
 variable (R) in
 /-- The sign reversal on the empty set is the identity. -/
 @[simp]
 theorem signReversal_empty [DecidablePred (· ∈ (∅ : Set α))] :
     signReversal R (∅ : Set α) = LinearEquiv.refl R (α →₀ A) :=
-  LinearEquiv.ext fun c ↦ ext fun q ↦ by simp
+  signReversal_eq_refl Set.notMem_empty
 
 end SignReversal
 

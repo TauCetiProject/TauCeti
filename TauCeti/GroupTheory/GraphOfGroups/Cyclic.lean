@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
-public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.PresentedGroup
 public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.Data.Int.Cast.Lemmas

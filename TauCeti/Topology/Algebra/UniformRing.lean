@@ -75,6 +75,8 @@ maps from a fixed commutative ring into completions.
 * `UniformSpace.Completion.completeAlgEquivSelf`: the same map as an `R`-algebra equivalence,
   for a complete Hausdorff topological `R`-algebra `S` whose scalar multiplication by `R` is
   uniformly continuous (`UniformContinuousConstSMul R S`).
+* `UniformSpace.Completion.mapAlgHom`: the `R`-algebra map of completions induced by a
+  continuous `R`-algebra map.
 * `UniformSpace.Completion.mapAlgEquiv`: the `R`-algebra isomorphism of completions induced by
   an `R`-algebra isomorphism that is continuous in both directions.
 
@@ -92,6 +94,12 @@ maps from a fixed commutative ring into completions.
 * `UniformSpace.Completion.continuous_mapRingEquiv` and
   `UniformSpace.Completion.continuous_mapRingEquiv_symm`: the isomorphism of completions induced
   by a topological ring isomorphism is continuous in both directions.
+* `UniformSpace.Completion.mapAlgHom_coe` and `UniformSpace.Completion.continuous_mapAlgHom`:
+  the algebra map of completions extends the given map and is continuous.
+* `UniformSpace.Completion.mapAlgHom_id` and `UniformSpace.Completion.mapAlgHom_comp`:
+  the lift of algebra maps to completions is functorial. The projection lemmas
+  `UniformSpace.Completion.toRingHom_mapAlgHom` and `UniformSpace.Completion.toAlgHom_mapAlgEquiv`
+  relate the lifts of ring maps, algebra maps and algebra isomorphisms.
 * `UniformSpace.Completion.mapAlgEquiv_coe` and `UniformSpace.Completion.continuous_mapAlgEquiv`:
   the algebra isomorphism of completions extends the given isomorphism and is continuous.
 * `UniformSpace.Completion.mapAlgEquiv_symm` and
@@ -141,6 +149,11 @@ section Ext
 variable {R : Type*} [Ring R] [UniformSpace R] [IsTopologicalRing R] [IsUniformAddGroup R]
   {B : Type*} [NonAssocSemiring B] [TopologicalSpace B] [T2Space B]
 
+/-- The ring homomorphism `coeRingHom` is the coercion of `R` into its completion. -/
+@[simp]
+theorem coeRingHom_apply (a : R) : coeRingHom a = (a : Completion R) :=
+  (rfl)
+
 /-- **Maps out of a completion are determined on the image of the coercion.** Two continuous
 ring homomorphisms `R̂ → B` into a non-associative semiring carrying a Hausdorff topology that
 agree after composing with `coeRingHom` are equal.
@@ -176,13 +189,53 @@ theorem continuous_mapRingEquiv_symm (f : α ≃+* β) (hf : Continuous f) (hf' 
 
 end MapRingEquiv
 
-section MapAlgEquiv
+section MapAlg
 
 variable {R : Type*} [CommSemiring R]
   {α β : Type*} [Ring α] [UniformSpace α] [IsTopologicalRing α] [IsUniformAddGroup α]
   [Algebra R α] [UniformContinuousConstSMul R α]
   [Ring β] [UniformSpace β] [IsTopologicalRing β] [IsUniformAddGroup β]
   [Algebra R β] [UniformContinuousConstSMul R β]
+
+/-- A continuous `R`-algebra map induces an `R`-algebra map between the completions. -/
+noncomputable def mapAlgHom (f : α →ₐ[R] β) (hf : Continuous f) :
+    Completion α →ₐ[R] Completion β where
+  toRingHom := mapRingHom (f : α →+* β) hf
+  commutes' r := by
+    rw [RingHom.toFun_eq_coe, algebraMap_def, algebraMap_def,
+      mapRingHom_coe (f := (f : α →+* β)) hf, AlgHom.coe_toRingHom, f.commutes]
+
+/-- The ring homomorphism underlying `mapAlgHom f` is the completion of the underlying ring map. -/
+@[simp]
+theorem toRingHom_mapAlgHom (f : α →ₐ[R] β) (hf : Continuous f) :
+    (mapAlgHom f hf : Completion α →+* Completion β) = mapRingHom (f : α →+* β) hf :=
+  (rfl)
+
+/-- The algebra map of completions acts by the underlying completion map. -/
+theorem coe_mapAlgHom (f : α →ₐ[R] β) (hf : Continuous f) :
+    (mapAlgHom f hf : Completion α → Completion β) = Completion.map f :=
+  (rfl)
+
+/-- The map of completions induced by `f` agrees with `f` on the original algebra. -/
+@[simp]
+theorem mapAlgHom_coe (f : α →ₐ[R] β) (hf : Continuous f) (a : α) :
+    mapAlgHom f hf a = (f a : Completion β) := by
+  rw [coe_mapAlgHom, map_coe (uniformContinuous_addMonoidHom_of_continuous (f := f) hf)]
+
+/-- The algebra map of completions induced by a continuous algebra map is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_mapAlgHom (f : α →ₐ[R] β) (hf : Continuous f) :
+    Continuous (mapAlgHom f hf) := by
+  rw [coe_mapAlgHom]
+  exact continuous_map
+
+/-- The identity algebra map lifts to the identity of the completion. -/
+@[simp]
+theorem mapAlgHom_id :
+    mapAlgHom (AlgHom.id R α) (by rw [AlgHom.coe_id]; exact continuous_id) =
+      AlgHom.id R (Completion α) := by
+  apply AlgHom.toRingHom_injective
+  simpa only [toRingHom_mapAlgHom, AlgHom.id_toRingHom] using (mapRingHom_id (α := α))
 
 /-- An `R`-algebra isomorphism `α ≃ₐ[R] β` between topological rings, continuous in both
 directions, lifts to an `R`-algebra isomorphism between their completions. Its underlying ring
@@ -207,6 +260,13 @@ theorem mapAlgEquiv_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Conti
     (x : Completion α) : mapAlgEquiv f hf hf' x = Completion.map f x := by
   rw [← AlgEquiv.coe_toRingEquiv (mapAlgEquiv f hf hf'), toRingEquiv_mapAlgEquiv,
     mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
+
+/-- The underlying algebra map of the lifted isomorphism is the lift of the underlying map. -/
+@[simp]
+theorem toAlgHom_mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    (mapAlgEquiv f hf hf').toAlgHom = mapAlgHom f.toAlgHom (by rwa [AlgEquiv.coe_toAlgHom]) :=
+  AlgHom.ext fun x ↦ by
+    rw [AlgEquiv.coe_toAlgHom, mapAlgEquiv_apply, coe_mapAlgHom, AlgEquiv.coe_toAlgHom]
 
 /-- The inverse of the algebra isomorphism of completions induced by `f` is
 `UniformSpace.Completion.map f.symm`. -/
@@ -252,6 +312,14 @@ theorem mapAlgEquiv_refl :
 variable {γ : Type*} [Ring γ] [UniformSpace γ] [IsTopologicalRing γ] [IsUniformAddGroup γ]
   [Algebra R γ] [UniformContinuousConstSMul R γ]
 
+/-- Lifting algebra maps to completions respects composition. -/
+theorem mapAlgHom_comp (f : α →ₐ[R] β) (g : β →ₐ[R] γ) (hf : Continuous f) (hg : Continuous g) :
+    mapAlgHom (g.comp f) (by rw [AlgHom.coe_comp]; exact hg.comp hf) =
+      (mapAlgHom g hg).comp (mapAlgHom f hf) := by
+  apply AlgHom.toRingHom_injective
+  simpa only [toRingHom_mapAlgHom, AlgHom.comp_toRingHom] using
+    (mapRingHom_comp (f := (f : α →+* β)) (g := (g : β →+* γ)) hg hf).symm
+
 /-- Lifting algebra isomorphisms to completions respects composition. -/
 theorem mapAlgEquiv_trans (f : α ≃ₐ[R] β) (g : β ≃ₐ[R] γ) (hf : Continuous f)
     (hf' : Continuous f.symm) (hg : Continuous g) (hg' : Continuous g.symm) :
@@ -263,7 +331,7 @@ theorem mapAlgEquiv_trans (f : α ≃ₐ[R] β) (g : β ≃ₐ[R] γ) (hf : Cont
       rw [mapAlgEquiv_coe, AlgEquiv.trans_apply, AlgEquiv.trans_apply, mapAlgEquiv_coe,
         mapAlgEquiv_coe]
 
-end MapAlgEquiv
+end MapAlg
 
 /-! ## Completions of nonunital rings and star structures -/
 

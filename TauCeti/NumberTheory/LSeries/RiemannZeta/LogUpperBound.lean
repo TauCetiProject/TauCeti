@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.Analysis.Complex.Liouville
+import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.Asymptotics.Sum.Rpow
+import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 
@@ -35,6 +39,9 @@ contains the strip `1 - β / log (|Im s| + 2) ≤ Re s ≤ 10` for every width `
   `‖riemannZeta₀ s‖ ≤ C log (|Im s| + 2)` whenever `1 - A / log (|Im s| + 2) ≤ Re s`.
 * `TauCeti.exists_norm_riemannZeta_le_mul_log`: the same bound for `ζ(s)` itself when
   `1 ≤ |Im s|`.
+* `TauCeti.exists_norm_deriv_riemannZeta₀_le_mul_log_sq`: for every real `A`,
+  `‖deriv riemannZeta₀ s‖ ≤ C log² (|Im s| + 2)` on the same region, by Cauchy's estimate on the
+  circle of radius `1 / log (|Im s| + 2)` about `s`.
 
 ## References
 
@@ -54,19 +61,6 @@ public section
 open Complex
 
 namespace TauCeti
-
-private lemma one_le_norm_sub_one {s : ℂ} (ht : 1 ≤ |s.im|) : 1 ≤ ‖s - 1‖ := by
-  have h := abs_im_le_norm (s - 1)
-  simp only [sub_im, one_im, sub_zero] at h
-  exact ht.trans h
-
-private lemma ne_one_of_one_le_abs_im {s : ℂ} (ht : 1 ≤ |s.im|) : s ≠ 1 := by
-  rintro rfl
-  norm_num at ht
-
-private lemma norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹‖ ≤ 1 := by
-  rw [norm_inv]
-  exact inv_le_one_of_one_le₀ (one_le_norm_sub_one ht)
 
 private lemma one_le_log_abs_im_add_two {s : ℂ} (ht : 1 ≤ |s.im|) :
     1 ≤ Real.log (|s.im| + 2) := by
@@ -203,7 +197,7 @@ theorem exists_norm_riemannZeta₀_le_mul_log (A : ℝ) :
     (Real.exp (2 * B))
   refine ⟨max (4 * Real.exp B + 2) (|D| / Real.log 2), fun s hs ↦ ?_⟩
   set L := Real.log (|s.im| + 2)
-  have hL2 : Real.log 2 ≤ L := Real.log_le_log two_pos (by linarith [abs_nonneg s.im])
+  have hL2 : Real.log 2 ≤ L := Real.log_two_le_log_add_two (abs_nonneg s.im)
   have hL : 0 < L := hlog2.trans_le hL2
   have hAL : (1 - s.re) * L ≤ B := by
     have := (le_div_iff₀ hL).mp (by linarith : 1 - s.re ≤ A / L)
@@ -215,10 +209,8 @@ theorem exists_norm_riemannZeta₀_le_mul_log (A : ℝ) :
       have : B / L ≤ B / Real.log 2 := div_le_div_of_nonneg_left hB hlog2 hL2
       have := (le_div_iff₀ hL).mpr hAL
       linarith
-    have hbound := (hD s hσ₁ hTt.le).trans (le_abs_self D)
-    calc ‖riemannZeta₀ s‖ ≤ |D| / Real.log 2 * L := by
-          rw [div_mul_eq_mul_div, le_div_iff₀ hlog2]
-          nlinarith [abs_nonneg D]
+    calc ‖riemannZeta₀ s‖ ≤ |D| := (hD s hσ₁ hTt.le).trans (le_abs_self D)
+      _ ≤ |D| / Real.log 2 * L := le_div_mul_of_le (abs_nonneg D) hlog2 hL2
       _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) hL.le
 
 /-- **`ζ(s)` is `O(log (|Im s| + 2))` right of the curves `Re s = 1 - A / log (|Im s| + 2)`,
@@ -234,5 +226,53 @@ theorem exists_norm_riemannZeta_le_mul_log (A : ℝ) :
   have hpole := norm_inv_sub_one_le_one ht
   rw [riemannZeta_eq_inv_sub_add hs₁]
   linarith [norm_add_le (s - 1)⁻¹ (riemannZeta₀ s), hC s hs]
+
+/-- **Cauchy's estimate for `riemannZeta₀` right of the curves.** For every real `A` there is `C`
+such that the derivative of the entire function `riemannZeta₀ s = ζ(s) - 1/(s - 1)` satisfies
+`‖deriv riemannZeta₀ s‖ ≤ C log² (|Im s| + 2)` whenever `1 - A / log (|Im s| + 2) ≤ Re s`. -/
+theorem exists_norm_deriv_riemannZeta₀_le_mul_log_sq (A : ℝ) :
+    ∃ C : ℝ, ∀ s : ℂ, 1 - A / Real.log (|s.im| + 2) ≤ s.re →
+      ‖deriv riemannZeta₀ s‖ ≤ C * Real.log (|s.im| + 2) ^ 2 := by
+  set B := max A 0
+  obtain ⟨C, hC⟩ := exists_norm_riemannZeta₀_le_mul_log (2 * (B + 1))
+  refine ⟨2 * max C 0, fun s hs ↦ ?_⟩
+  set L := Real.log (|s.im| + 2)
+  have hL : 0 < L :=
+    (Real.log_pos one_lt_two).trans_le (Real.log_two_le_log_add_two (abs_nonneg _))
+  have hsB : 1 - B / L ≤ s.re :=
+    le_trans (sub_le_sub_left (div_le_div_of_nonneg_right (le_max_left _ _) hL.le) 1) hs
+  have hsph : ∀ z ∈ Metric.sphere s L⁻¹, ‖riemannZeta₀ z‖ ≤ 2 * max C 0 * L := by
+    intro z hz
+    rw [mem_sphere_iff_norm] at hz
+    have him : |z.im - s.im| ≤ 2 := by
+      have := abs_im_le_norm (z - s)
+      rw [sub_im] at this
+      have hLinv : L⁻¹ ≤ 2 := by
+        rw [inv_le_comm₀ hL two_pos]
+        linarith [Real.log_two_gt_d9, Real.log_two_le_log_add_two (abs_nonneg s.im)]
+      linarith
+    have hre : s.re - L⁻¹ ≤ z.re := by
+      have := neg_abs_le (z - s).re
+      have := abs_re_le_norm (z - s)
+      rw [sub_re] at *
+      linarith
+    have hLz : Real.log (|z.im| + 2) ≤ 2 * L :=
+      Real.log_add_two_le_two_mul_log_add_two (abs_nonneg _) (abs_nonneg _)
+        (by linarith [abs_sub_abs_le_abs_sub z.im s.im])
+    have hLz0 : 0 < Real.log (|z.im| + 2) :=
+      (Real.log_pos one_lt_two).trans_le (Real.log_two_le_log_add_two (abs_nonneg _))
+    have hzA : 1 - 2 * (B + 1) / Real.log (|z.im| + 2) ≤ z.re := by
+      have h1 : (B + 1) / L ≤ 2 * (B + 1) / Real.log (|z.im| + 2) := by
+        rw [div_le_div_iff₀ hL hLz0]
+        nlinarith [le_max_right A 0]
+      have h2 : B / L + L⁻¹ = (B + 1) / L := by field_simp
+      linarith
+    calc ‖riemannZeta₀ z‖ ≤ C * Real.log (|z.im| + 2) := hC z hzA
+      _ ≤ max C 0 * Real.log (|z.im| + 2) := by gcongr; exact le_max_left _ _
+      _ ≤ max C 0 * (2 * L) := by gcongr
+      _ = 2 * max C 0 * L := by ring
+  have := Complex.norm_deriv_le_of_forall_mem_sphere_norm_le (inv_pos.mpr hL)
+    differentiable_riemannZeta₀.diffContOnCl hsph
+  rwa [div_inv_eq_mul, mul_assoc, ← sq] at this
 
 end TauCeti

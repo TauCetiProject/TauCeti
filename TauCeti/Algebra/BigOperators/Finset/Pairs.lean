@@ -61,6 +61,8 @@ by `ℕ`, and the positions of `Fin n` form the initial segment of length `n.cho
   strictly increasing index pairs (`Finset.sum_sum_Iio_eq_sum_sum_Ioi` additively).
 * `Finset.prod_erase_univ_eq_prod_Ioi_mul_prod_Iio`: splits the product over `univ.erase i` into
   the indices above `i` and below `i` (`Finset.sum_erase_univ_eq_sum_Ioi_add_sum_Iio` additively).
+* `Finset.sum_sum_erase_univ_eq_two_nsmul_sum_sum_Ioi`: a symmetric double sum over the
+  off-diagonal pairs is twice its sum over the strictly increasing pairs.
 * `Finset.sum_mul_sum_Ioi_sub_sum_Iio`: folds a weighted antisymmetric difference of upper and
   lower sums onto strictly increasing index pairs.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
@@ -128,6 +130,15 @@ theorem prod_erase_univ_eq_prod_Ioi_mul_prod_Iio {ι M : Type*} [Fintype ι] [Li
     [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (i : ι) (f : ι → M) :
     (∏ j ∈ univ.erase i, f j) = (∏ j ∈ Ioi i, f j) * ∏ j ∈ Iio i, f j := by
   rw [← compl_singleton, ← Ioi_disjUnion_Iio, prod_disjUnion]
+
+/-- A symmetric double sum over the off-diagonal pairs is twice its sum over the strictly
+increasing pairs. -/
+theorem sum_sum_erase_univ_eq_two_nsmul_sum_sum_Ioi {ι M : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [AddCommMonoid M] (f : ι → ι → M)
+    (hf : ∀ i j, f i j = f j i) :
+    ∑ i, ∑ j ∈ univ.erase i, f i j = 2 • ∑ i, ∑ j ∈ Ioi i, f i j := by
+  simp_rw [sum_erase_univ_eq_sum_Ioi_add_sum_Iio, sum_add_distrib, sum_sum_Iio_eq_sum_sum_Ioi]
+  rw [sum_congr rfl fun i _ => sum_congr rfl fun j _ => hf j i, two_nsmul]
 
 /-- Pairing a weight `w` against the antisymmetric difference `(∑_{j > i} g i j) - ∑_{j < i} g j i`
 folds onto strictly increasing index pairs as `∑_{i < j} (w i - w j) * g i j`. -/
