@@ -128,6 +128,14 @@ theorem toPresentationLimit_comp_presentationLimitMap {V W : Opens ↥(spa Aplus
         q.toCompletionLocObjHom := by subst e; simp
   exact key (presentationIndexRestrict_obj_pres h i)
 
+/-- **The canonical map commutes with restriction, on sections**:
+`toPresentationLimit_comp_presentationLimitMap` evaluated at an element `c`. -/
+theorem presentationLimitMap_apply_toPresentationLimit_apply {V W : Opens ↥(spa Aplus)}
+    (h : W ≤ V) (c : CompleteSeparatedTopCommRingCat.of A) :
+    (presentationLimitMap (P := P) h).hom.val ((toPresentationLimit Aplus V).hom.val c) =
+      (toPresentationLimit Aplus W).hom.val c :=
+  ConcreteCategory.congr_hom (toPresentationLimit_comp_presentationLimitMap Aplus h) c
+
 /-- **The canonical map commutes with transport along an equality of opens.** -/
 theorem toPresentationLimit_comp_eqToHom {V W : Opens ↥(spa Aplus)} (e : V = W) :
     toPresentationLimit Aplus V ≫
@@ -310,6 +318,9 @@ theorem topSectionRingEquiv_symm_eq (P : PairOfDefinition A) {Aplus : Subring A}
     (topSectionRingEquiv P hAplus).symm r =
       (toPresentationLimit (P := P) Aplus ⊤).hom.val
         ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) := by
+  -- `(forget₂ TopCommRingCat CommRingCat).obj (TopCommRingCat.of _)` only unfolds to the
+  -- underlying ring at default transparency, so `mapIso`, `commRingCatIsoToRingEquiv`, and
+  -- `eqToIso` reduce `(topSectionRingEquiv P hAplus).symm` to `.hom.val` composition by defeq.
   rw [topSectionRingEquiv]; rfl
 
 /-- Under `rationalSectionRingEquiv`, the canonical image of `r : A` in the presentation limit over
@@ -341,12 +352,9 @@ theorem rationalSectionRingEquiv_map_top (P : PairOfDefinition A) {Aplus : Subri
         ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val x) =
       algebraMap A B (topSectionRingEquiv P hAplus x) := by
   obtain ⟨r, rfl⟩ := (topSectionRingEquiv P hAplus).symm.surjective x
-  rw [RingEquiv.apply_symm_apply, topSectionRingEquiv_symm_eq]
-  change rationalSectionRingEquiv P hAplus T s hT hB
-      ((toPresentationLimit (P := P) Aplus ⊤ ≫
-        presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val
-        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) = _
-  rw [toPresentationLimit_comp_presentationLimitMap, rationalSectionRingEquiv_toPresentationLimit]
+  rw [RingEquiv.apply_symm_apply, topSectionRingEquiv_symm_eq,
+    presentationLimitMap_apply_toPresentationLimit_apply,
+    rationalSectionRingEquiv_toPresentationLimit]
 
 end TauCeti.ValuationSpectrum
 

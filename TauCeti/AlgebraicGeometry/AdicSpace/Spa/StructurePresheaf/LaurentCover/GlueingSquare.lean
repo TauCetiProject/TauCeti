@@ -17,8 +17,8 @@ import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.RationalCompletion
 /-!
 # Simple Laurent covers of sheafy Tate rings form glueing squares
 
-Let `R` be a complete Hausdorff Tate ring and `S = (R, R⁺)` a Huber pair whose presentation-limit
-structure presheaf is a sheaf (`IsSheafyForEveryPresentation S.plus`). For any `f : R` and models
+Let `R` be a complete Hausdorff Tate ring and `Aplus` a subring whose presentation-limit
+structure presheaf is a sheaf (`IsSheafyForEveryPresentation Aplus`). For any `f : R` and models
 `R₁`, `R₂`, `R₁₂` of `R⟨{f, 1}/1⟩ = R⟨f⟩`, `R⟨{1}/f⟩ = R⟨1/f⟩`, and `R⟨{f², 1}/f⟩ = R⟨f, 1/f⟩`
 with continuous `R`-algebra transition maps `R₁ → R₁₂` and `R₂ → R₁₂`, the square
 `R → R₁, R₂ → R₁₂` is a `TauCeti.Huber.GlueingSquare`.
@@ -68,10 +68,10 @@ variable {R R₁ R₂ R₁₂ : Type*} [CommRing R] [CommRing R₁] [CommRing R�
   {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset R) : Set R) : Set R)}
 
 /-- A simple Laurent cover `{|f| ≤ 1}`, `{|f| ≥ 1}` of a complete Hausdorff Tate ring `R` equipped
-with a Huber pair `S` satisfying `IsSheafyForEveryPresentation S.plus` forms a `GlueingSquare`
+with a subring `Aplus` satisfying `IsSheafyForEveryPresentation Aplus` forms a `GlueingSquare`
 (Kedlaya–Liu, §2.4, Lemma 2.4.22 and proof of Theorem 2.4.23). -/
-theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
-    (hs : IsSheafyForEveryPresentation S.plus) (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ R₁)
+theorem GlueingSquare.of_simpleLaurent [IsTateRing R] {Aplus : Subring R}
+    (hs : IsSheafyForEveryPresentation Aplus) (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ R₁)
     (h₂ : IsRationalCompletion P {1} f hT₂ R₂) (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ R₁₂)
     (hc₁ : Continuous (algebraMap R₁ R₁₂)) (hc₂ : Continuous (algebraMap R₂ R₁₂)) :
     GlueingSquare R R₁ R₂ R₁₂ := by
@@ -85,15 +85,13 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
   let _ : Algebra L₁ L₁₂ := φ₁.toAlgebra
   let _ : Algebra L₂ L₁₂ := φ₂.toAlgebra
   have _ : IsScalarTower R L₁ L₁₂ := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    change algebraMap R L₁₂ r =
-      h₁₂.ratLocEquiv.symm (algebraMap R₁ R₁₂ (h₁.ratLocEquiv (algebraMap R L₁ r)))
-    rw [h₁.ratLocEquiv.commutes, ← IsScalarTower.algebraMap_apply R R₁ R₁₂,
-      ← h₁₂.ratLocEquiv.commutes, AlgEquiv.symm_apply_apply]
+    rw [RingHom.algebraMap_toAlgebra]
+    simp only [L₁₂, φ₁, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply R R₁ R₁₂]
   have _ : IsScalarTower R L₂ L₁₂ := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    change algebraMap R L₁₂ r =
-      h₁₂.ratLocEquiv.symm (algebraMap R₂ R₁₂ (h₂.ratLocEquiv (algebraMap R L₂ r)))
-    rw [h₂.ratLocEquiv.commutes, ← IsScalarTower.algebraMap_apply R R₂ R₁₂,
-      ← h₁₂.ratLocEquiv.commutes, AlgEquiv.symm_apply_apply]
+    rw [RingHom.algebraMap_toAlgebra]
+    simp only [L₁₂, φ₂, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply R R₂ R₁₂]
   have hL₁ := isRationalCompletion_ratLoc P {f, 1} 1 hT₁
   have hL₂ := isRationalCompletion_ratLoc P {1} f hT₂
   have hL₁₂ := isRationalCompletion_ratLoc P {f * f, 1} f hT₁₂
@@ -104,14 +102,14 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
     rw [RingHom.algebraMap_toAlgebra]
     exact h₁₂.continuous_ratLocEquiv_symm.comp (hc₂.comp h₂.continuous_ratLocEquiv)
   obtain ⟨hinj, hexact⟩ :=
-    laurent_injective_and_exact_of_isSheafyForEveryPresentation S hs hL₁ hL₂ hL₁₂ hcL₁ hcL₂
+    laurent_injective_and_exact_of_isSheafyForEveryPresentation hs hL₁ hL₂ hL₁₂ hcL₁ hcL₂
   obtain ⟨P₀, hP₀, -⟩ := hs.exists_compatible_isSheaf
   have hsqL : GlueingSquare R L₁ L₂ L₁₂ :=
     GlueingSquare.of_exact hL₁.continuous_algebraMap hL₂.continuous_algebraMap hcL₁ hcL₂
       hinj hexact (hL₁.surjective_algebraMap_sub_laurent hL₂ hL₁₂ hcL₁ hcL₂)
       (hL₂.denseRange_of_comp_algebraMap_eq hL₁₂
         (RingHom.ext fun x ↦ (IsScalarTower.algebraMap_apply R L₂ L₁₂ x).symm))
-      (exists_prime_comap_eq_of_simpleLaurent S.plus S.isRingOfIntegralElements hP₀ f hL₁ hL₂)
+      (exists_prime_comap_eq_of_simpleLaurent Aplus hs.isRingOfIntegralElements hP₀ f hL₁ hL₂)
   exact hsqL.congr h₁.ratLocEquiv h₁.continuous_ratLocEquiv h₁.continuous_ratLocEquiv_symm
     h₂.ratLocEquiv h₂.continuous_ratLocEquiv h₂.continuous_ratLocEquiv_symm
     h₁₂.ratLocEquiv.toRingEquiv h₁₂.continuous_ratLocEquiv h₁₂.continuous_ratLocEquiv_symm
@@ -124,7 +122,7 @@ theorem GlueingSquare.of_simpleLaurent_of_isSheafyRing [IsTateRing R] (hs : IsSh
     (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ R₁₂)
     (hc₁ : Continuous (algebraMap R₁ R₁₂)) (hc₂ : Continuous (algebraMap R₂ R₁₂)) :
     GlueingSquare R R₁ R₂ R₁₂ :=
-  GlueingSquare.of_simpleLaurent (Pair.powerBounded R)
+  GlueingSquare.of_simpleLaurent
     (hs.isSheafyForEveryPresentation (Pair.powerBounded R).isRingOfIntegralElements)
     h₁ h₂ h₁₂ hc₁ hc₂
 

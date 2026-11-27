@@ -29,7 +29,8 @@ application formula, and evaluation rules on constants and coordinate variables.
 * `TauCeti.Huber.modelEvalHom_apply`: explicit formula for `modelEvalHom` in terms of
   `PairOfDefinition.rationalEvalHom`.
 * `TauCeti.Huber.modelEvalHom_weightedC`, `TauCeti.Huber.modelEvalHom_X_eq_algebraMap_of_mul`,
-  and `TauCeti.Huber.modelEvalHom_X_mul_inv`: values of `modelEvalHom` on constants and variables.
+  and `TauCeti.Huber.algebraMap_mul_modelEvalHom_X_of_eq_one`: values of `modelEvalHom` on
+  constants and variables.
 -/
 
 public section
@@ -50,8 +51,7 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 
 /-- Evaluation `A⟨X₁, …, Xₖ⟩ →+* B` from the uncompleted restricted power series ring into a model
 `B` of `A⟨T/s⟩`. -/
-noncomputable def modelEvalHom :
-    letI := P.toNonarchimedeanRing
+noncomputable def modelEvalHom : letI := P.toNonarchimedeanRing
     weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+* B :=
   letI := P.toNonarchimedeanRing
   e.toRingHom.comp ((P.rationalEvalHom T s (Localization.Away s)
@@ -94,7 +94,7 @@ theorem modelEvalHom_X_eq_algebraMap_of_mul (i : Fin k) {a : A} (hti : t i = s *
     ← algebraMap_ratLoc, e.commutes]
 
 /-- When `t i = 1`, `modelEvalHom` sends the variable `Xᵢ` to an inverse of `algebraMap A B s`. -/
-theorem modelEvalHom_X_mul_inv (i : Fin k) (hti : t i = 1) :
+theorem algebraMap_mul_modelEvalHom_X_of_eq_one (i : Fin k) (hti : t i = 1) :
     letI := P.toNonarchimedeanRing
     algebraMap A B s * modelEvalHom P hT e t ht (weightedX _ isWeightFamily_one_weight i) = 1 := by
   let _ := P.toNonarchimedeanRing

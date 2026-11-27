@@ -242,18 +242,15 @@ theorem GlueingDatum.eq_lift {N : Type*} [AddCommMonoid N] [Module R N]
 
 @[simp]
 theorem GlueingDatum.baseChangeFst_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (r₁ : R₁) (x : D.sections R) :
-    D.baseChangeFst R (r₁ ⊗ₜ x) = r₁ • D.fst R x := by rfl
+    (r₁ : R₁) (x : D.sections R) : D.baseChangeFst R (r₁ ⊗ₜ x) = r₁ • D.fst R x := by rfl
 
 @[simp]
 theorem GlueingDatum.baseChangeSnd_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (r₂ : R₂) (x : D.sections R) :
-    D.baseChangeSnd R (r₂ ⊗ₜ x) = r₂ • D.snd R x := by rfl
+    (r₂ : R₂) (x : D.sections R) : D.baseChangeSnd R (r₂ ⊗ₜ x) = r₂ • D.snd R x := by rfl
 
 /-- The defining overlap compatibility of the two projections of a section `x : D.sections R`. -/
 theorem GlueingDatum.ψ₁_one_tmul_fst (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.sections R) : D.ψ₁ (1 ⊗ₜ D.fst R x) = D.ψ₂ (1 ⊗ₜ D.snd R x) :=
-  x.property
+    (x : D.sections R) : D.ψ₁ (1 ⊗ₜ D.fst R x) = D.ψ₂ (1 ⊗ₜ D.snd R x) := x.property
 
 @[simp]
 theorem GlueingDatum.sectionsEquivProdOfSubsingleton_apply [Subsingleton M₁₂]
@@ -276,20 +273,16 @@ theorem GlueingDatum.coe_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁
     (((D.sectionsEquivSymm R).symm x : D.sections R) : M₁ × M₂) = (x.val.2, x.val.1) := by rfl
 
 theorem GlueingDatum.fst_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.sections R) :
-    D.symm.fst R (D.sectionsEquivSymm R x) = D.snd R x := by rfl
+    (x : D.sections R) : D.symm.fst R (D.sectionsEquivSymm R x) = D.snd R x := by rfl
 
 theorem GlueingDatum.snd_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.sections R) :
-    D.symm.snd R (D.sectionsEquivSymm R x) = D.fst R x := by rfl
+    (x : D.sections R) : D.symm.snd R (D.sectionsEquivSymm R x) = D.fst R x := by rfl
 
 theorem GlueingDatum.fst_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.symm.sections R) :
-    D.fst R ((D.sectionsEquivSymm R).symm x) = D.symm.snd R x := by rfl
+    (x : D.symm.sections R) : D.fst R ((D.sectionsEquivSymm R).symm x) = D.symm.snd R x := by rfl
 
 theorem GlueingDatum.snd_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.symm.sections R) :
-    D.snd R ((D.sectionsEquivSymm R).symm x) = D.symm.fst R x := by rfl
+    (x : D.symm.sections R) : D.snd R ((D.sectionsEquivSymm R).symm x) = D.symm.fst R x := by rfl
 
 @[simp]
 theorem GlueingDatum.fst_comp_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :

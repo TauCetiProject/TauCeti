@@ -37,8 +37,7 @@ example {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 example {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] (P : PairOfDefinition A)
     {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
     (h : IsRationalCompletion P {1} 0 (isOpen_span_of_one_mem (by simp)) B) :
-    Subsingleton B :=
-  h.subsingleton_of_denom_zero
+    Subsingleton B := h.subsingleton_of_denom_zero
 
 section Padic
 
@@ -48,8 +47,7 @@ open Classical in
 /-- **Concrete model at denominator `1`**: `ℚ_[p]` itself models `ℚ_[p]⟨{p, 1}/1⟩`. -/
 example :
     let P := (IsHuberRing.nonempty_pairOfDefinition (A := ℚ_[p])).some
-    IsRationalCompletion P {(p : ℚ_[p]), 1} 1
-      (isOpen_span_of_one_mem (by simp)) ℚ_[p] := by
+    IsRationalCompletion P {(p : ℚ_[p]), 1} 1 (isOpen_span_of_one_mem (by simp)) ℚ_[p] := by
   let P := (IsHuberRing.nonempty_pairOfDefinition (A := ℚ_[p])).some
   refine isRationalCompletion_self_denom_one P {(p : ℚ_[p]), 1} _ fun t ht ↦ ?_
   rcases Finset.mem_insert.mp ht with rfl | ht
@@ -73,8 +71,7 @@ example : Function.Surjective fun x : ℚ_[p] × ℚ_[p] ↦ x.1 - x.2 := by
 projections are distinct continuous `ℚ_[p]`-algebra homomorphisms into `ℚ_[p]`. -/
 example :
     let P := (IsHuberRing.nonempty_pairOfDefinition (A := ℚ_[p])).some
-    ¬ IsRationalCompletion P {1} 1 (isOpen_span_of_one_mem (by simp))
-      (ℚ_[p] × ℚ_[p]) := fun h ↦
+    ¬ IsRationalCompletion P {1} 1 (isOpen_span_of_one_mem (by simp)) (ℚ_[p] × ℚ_[p]) := fun h ↦
   one_ne_zero (congrArg (fun φ : ℚ_[p] × ℚ_[p] →ₐ[ℚ_[p]] ℚ_[p] ↦ φ (1, 0))
     (h.algHom_ext_of_continuous (f := AlgHom.fst ℚ_[p] ℚ_[p] ℚ_[p])
       (g := AlgHom.snd ℚ_[p] ℚ_[p] ℚ_[p]) continuous_fst continuous_snd))

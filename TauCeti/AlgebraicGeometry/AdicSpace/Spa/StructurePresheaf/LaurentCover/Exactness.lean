@@ -16,8 +16,8 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafFor
 /-!
 # Algebraic exactness of simple Laurent covers from sheafiness
 
-Over a complete Hausdorff Huber ring `R` equipped with a Huber pair `S` whose presentation-limit
-structure presheaf is a sheaf (`IsSheafyForEveryPresentation S.plus`), this file deduces left
+Over a complete Hausdorff Huber ring `R` equipped with a subring `Aplus` whose presentation-limit
+structure presheaf is a sheaf (`IsSheafyForEveryPresentation Aplus`), this file deduces left
 exactness of the simple Laurent sequence `0 → R → R₁ × R₂ → R₁₂` for any models `R₁`, `R₂`,
 `R₁₂` of `R⟨{f, 1}/1⟩`, `R⟨{1}/f⟩`, and `R⟨{f², 1}/f⟩` connected by continuous `R`-algebra maps.
 
@@ -119,18 +119,19 @@ private theorem presentationLimitMap_laurentInf_eq {Aplus : Subring R}
     rationalSectionRingEquiv_map_le P hAplus hT₂ hT₁₂ (hEq.le.trans inf_le_right) h₂ h₁₂ hc₂,
     e₁.apply_symm_apply, e₂.apply_symm_apply, hy]
 
-/-- Over a complete Hausdorff Huber ring `R` equipped with a Huber pair `S` satisfying
-`IsSheafyForEveryPresentation S.plus`, the simple Laurent sequence `0 → R → R₁ × R₂ → R₁₂` is
+/-- Over a complete Hausdorff Huber ring `R` equipped with a subring `Aplus` satisfying
+`IsSheafyForEveryPresentation Aplus`, the simple Laurent sequence `0 → R → R₁ × R₂ → R₁₂` is
 injective on `R` and exact in the middle. -/
-theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing R] (S : Pair R)
-    (hs : IsSheafyForEveryPresentation S.plus) (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ R₁)
-    (h₂ : IsRationalCompletion P {1} f hT₂ R₂) (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ R₁₂)
+theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing R]
+    {Aplus : Subring R} (hs : IsSheafyForEveryPresentation Aplus)
+    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ R₁) (h₂ : IsRationalCompletion P {1} f hT₂ R₂)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ R₁₂)
     (hc₁ : Continuous (algebraMap R₁ R₁₂)) (hc₂ : Continuous (algebraMap R₂ R₁₂)) :
     (Function.Injective fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r)) ∧
       Function.Exact (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
         fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2 := by
-  have hSplus : ∀ ⦃a⦄, a ∈ S.plus → IsPowerBounded a :=
-    fun _ ha ↦ mem_powerBoundedSubring.mp (S.isRingOfIntegralElements.le_powerBoundedSubring ha)
+  have hSplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a :=
+    fun _ ha ↦ mem_powerBoundedSubring.mp (hs.isRingOfIntegralElements.le_powerBoundedSubring ha)
   set e₀ := topSectionRingEquiv P hSplus
   set e₁ := rationalSectionRingEquiv P hSplus {f, 1} 1 hT₁ h₁
   set e₂ := rationalSectionRingEquiv P hSplus {1} f hT₂ h₂
@@ -152,10 +153,8 @@ theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing
       (e₁.symm x₁) (e₂.symm x₂)
       (presentationLimitMap_laurentInf_eq hSplus h₁ h₂ h₁₂ hc₁ hc₂ (sub_eq_zero.mp hsub))
     exact ⟨e₀ a, Prod.ext
-      (by have h := congrArg e₁ ha₁
-          rwa [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top] at h)
-      (by have h := congrArg e₂ ha₂
-          rwa [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top] at h)⟩
+      (by simpa [e₀, e₁, rationalSectionRingEquiv_map_top] using congrArg e₁ ha₁)
+      (by simpa [e₀, e₂, rationalSectionRingEquiv_map_top] using congrArg e₂ ha₂)⟩
   · rintro ⟨r, h⟩
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
     simp [← IsScalarTower.algebraMap_apply R R₁ R₁₂, ← IsScalarTower.algebraMap_apply R R₂ R₁₂]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Laurent covers of the adic spectrum
@@ -181,8 +182,6 @@ theorem val_preimage_laurentPiece_mem_spaRationalFamily
     [Finite ι] (Aplus : Subring A) (f : ι → A) (J : Set ι) :
     (Subtype.val ⁻¹' laurentPiece Aplus f J : Set (spa Aplus)) ∈ spaRationalFamily Aplus := by
   classical
-  have hopen {T : Finset A} (h1 : (1 : A) ∈ T) : IsOpen (Ideal.span (T : Set A) : Set A) :=
-    (Ideal.eq_top_iff_one _).mpr (Ideal.subset_span h1) ▸ isOpen_univ
   -- Every finite intersection of the pieces is a rational subset with `1` in the numerator set.
   have key (t : Finset ι) : ∃ (T : Finset A) (s : A), (1 : A) ∈ T ∧
       (⋂ i ∈ t, Subtype.val ⁻¹' (if i ∈ J then rationalSubset Aplus {1} (f i)
@@ -199,7 +198,7 @@ theorem val_preimage_laurentPiece_mem_spaRationalFamily
   cases nonempty_fintype ι
   rw [val_preimage_laurentPiece_eq_iInter]
   obtain ⟨T, s, hT, h⟩ := key Finset.univ
-  exact mem_spaRationalFamily_iff.mpr ⟨T, s, hopen hT, by simpa using h⟩
+  exact mem_spaRationalFamily_iff.mpr ⟨T, s, isOpen_span_of_one_mem hT, by simpa using h⟩
 
 /-! ### Part (ii): restricting a standard cover to a Laurent cover -/
 
@@ -406,9 +405,7 @@ variable (Aplus) in
 the unit ideal, which is open. -/
 theorem laurentCoverOpen_mem_spaRationalOpens (f : A) (b : Bool) :
     laurentCoverOpen Aplus f b ∈ spaRationalOpens Aplus :=
-  spaBasicOpen_mem_spaRationalOpens (by
-    rw [(Ideal.eq_top_iff_one _).mpr (Ideal.subset_span (by cases b <;> simp))]
-    exact isOpen_univ)
+  spaBasicOpen_mem_spaRationalOpens (isOpen_span_of_one_mem (by cases b <;> simp))
 
 variable (Aplus) in
 /-- **The Laurent cover of `u⁻¹ g` for a unit `u`, first piece**: `{|u⁻¹ g| ≤ 1}` is

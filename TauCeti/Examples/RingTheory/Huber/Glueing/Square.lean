@@ -18,8 +18,8 @@ public import TauCeti.RingTheory.Huber.Padic.Field
   `GlueingSquare.of_subsingleton_right`.
 * Non-example (diagonal failure): `ℚ_[p], ℚ_[p] → ℚ_[p] × ℚ_[p]` fails `surjective_sub`, hence is
   not a `GlueingSquare`.
-* Non-example (independence of `exact_sub`): over discrete `ℤ` and `ℤ[X]`, the square with
-  `R = ℤ` and `R₁ = R₂ = R₁₂ = ℤ[X]` satisfies `denseRange`, `surjective_sub`, and
+* Non-example (failure of `exact_sub`): over discrete `ℤ` and `ℤ[X]`, the square with
+  `R = ℤ` and `R₁ = R₂ = R₁₂ = ℤ[X]` satisfies `denseRange_algebraMap₂₁₂`, `surjective_sub`, and
   `exists_prime_comap_eq`, yet is not a `GlueingSquare` because `(X, X)` maps to `0` without coming
   from `ℤ`.
 * Module glueing check: flat module recovery `GlueingSquare.equivSectionsOfModule` on
@@ -57,18 +57,18 @@ noncomputable example :
 
 end Padic
 
-/-- **Independence of `exact_sub`**: with `R = ℤ` and `R₁ = R₂ = R₁₂ = ℤ[X]` (equipped with the
-discrete topology), `denseRange`, `surjective_sub`, and `exists_prime_comap_eq` all hold, yet
-`GlueingSquare` fails because `(X, X)` lies in the kernel of subtraction without coming from `ℤ`. -/
+/-- **Non-example (failure of `exact_sub`)**: with `R = ℤ` and `R₁ = R₂ = R₁₂ = ℤ[X]` (equipped
+with the discrete topology), `denseRange_algebraMap₂₁₂`, `surjective_sub`, and
+`exists_prime_comap_eq` all hold, yet `GlueingSquare` fails because `(X, X)` lies in the kernel of
+subtraction without coming from `ℤ`. -/
 example :
     letI : TopologicalSpace ℤ := ⊥
     letI : TopologicalSpace ℤ[X] := ⊥
     DenseRange (algebraMap ℤ[X] ℤ[X]) ∧
       Function.Surjective (fun q : ℤ[X] × ℤ[X] ↦
         algebraMap ℤ[X] ℤ[X] q.1 - algebraMap ℤ[X] ℤ[X] q.2) ∧
-      (∀ m : Ideal ℤ, m.IsMaximal →
-        ∃ q : Ideal (ℤ[X] × ℤ[X]), q.IsPrime ∧
-          Ideal.comap (RingHom.prod (algebraMap ℤ ℤ[X]) (algebraMap ℤ ℤ[X])) q = m) ∧
+      (∀ m : Ideal ℤ, m.IsMaximal → ∃ q : Ideal (ℤ[X] × ℤ[X]), q.IsPrime ∧
+        Ideal.comap (RingHom.prod (algebraMap ℤ ℤ[X]) (algebraMap ℤ ℤ[X])) q = m) ∧
       ¬ GlueingSquare ℤ ℤ[X] ℤ[X] ℤ[X] := by
   let _ : TopologicalSpace ℤ := ⊥
   let _ : TopologicalSpace ℤ[X] := ⊥

@@ -107,30 +107,6 @@ open TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
 /-! ### The diagram chase -/
 
-section Square
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-
--- A continuous ring homomorphism out of `A⟨T⟩` is determined by constants and the variable, so a
--- square with the renaming `A⟨T⟩ → A⟨X, Y⟩` commutes once it does on those.
-private theorem apply_eq_apply_weightedRename {B B' : Type*} [Semiring B] [TopologicalSpace B]
-    [Semiring B'] [TopologicalSpace B'] [T2Space B'] {e : Fin 1 ↪ Fin 2}
-    {π : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight →+* B}
-    {π' : weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
-      B'} {ρ : B →+* B'} (hρ : Continuous ρ) (hπ : Continuous π) (hπ' : Continuous π')
-    (hC : ∀ a, ρ (π (weightedC _ isWeightFamily_one_weight a)) =
-      π' (weightedC _ isWeightFamily_one_weight a))
-    (hX : ∀ i, ρ (π (weightedX _ isWeightFamily_one_weight i)) =
-      π' (weightedX _ isWeightFamily_one_weight (e i)))
-    (g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    ρ (π g) = π' (weightedRename e _ _ (fun _ ↦ subset_rfl) g) := by
-  have key : ρ.comp π = π'.comp (weightedRename e _ _ (fun _ ↦ subset_rfl)) :=
-    weightedRestrictedSubring_ringHom_ext_of_continuous _ (hρ.comp hπ)
-      (hπ'.comp (continuous_weightedRename _ _ _ _)) (fun a ↦ by simp [hC]) (fun i ↦ by simp [hX])
-  exact DFunLike.congr_fun key g
-
-end Square
-
 section Chase
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [NonarchimedeanRing A]
@@ -140,21 +116,6 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [Nonarc
   {π₁₂ : weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
     B₁₂}
   {ρ₁ : B₁ →+* B₁₂} {ρ₂ : B₂ →+* B₁₂}
-
--- Surjectivity of `(x₁, x₂) ↦ ρ₁ x₁ - ρ₂ x₂`: as `π₁₂` kills `1 - XY` it factors through
--- `A⟨ζ, ζ⁻¹⟩ = A⟨X, Y⟩ ⧸ (1 - XY)`, where `laurentDiff` is already known to be surjective.
-private theorem exists_sub_eq_of_surjective (hπ₁₂ : Function.Surjective π₁₂)
-    (hsq₁ : ∀ g, ρ₁ (π₁ g) = π₁₂ (weightedRename Fin.castSuccEmb _ _ (fun _ ↦ subset_rfl) g))
-    (hsq₂ : ∀ h, ρ₂ (π₂ h) = π₁₂ (weightedRename (Fin.succEmb 1) _ _ (fun _ ↦ subset_rfl) h))
-    (hXY : π₁₂ (1 - weightedX _ isWeightFamily_one_weight 0 *
-      weightedX _ isWeightFamily_one_weight 1) = 0) (y : B₁₂) :
-    ∃ (x₁ : B₁) (x₂ : B₂), ρ₁ x₁ - ρ₂ x₂ = y := by
-  obtain ⟨u, rfl⟩ := hπ₁₂ y
-  obtain ⟨⟨g, h⟩, hgh⟩ := laurentDiff_surjective A (Ideal.Quotient.mk (laurentIdeal A) u)
-  rw [laurentDiff_apply, Ideal.Quotient.eq, mem_laurentIdeal] at hgh
-  obtain ⟨w, hw⟩ := hgh
-  exact ⟨π₁ g, π₂ h, by
-    rw [hsq₁, hsq₂, ← map_sub, ← sub_eq_zero, ← map_sub, hw, map_mul, hXY, zero_mul]⟩
 
 -- Transport the exact Laurent-cover row through three quotient presentations. The overlap kernel
 -- identifies the two restrictions in the algebraic overlap quotient; exactness there produces a

@@ -43,38 +43,7 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 
 section SimpleLaurent
 
-variable [CompleteSpace A] [T0Space A]
-
-private theorem comp_modelEvalHom_eq_weightedRename (P : PairOfDefinition A)
-    {T₁ T₂ : Finset A} {s₁ s₂ : A} (hT₁ : IsOpen (Ideal.span (T₁ : Set A) : Set A))
-    (hT₂ : IsOpen (Ideal.span (T₂ : Set A) : Set A))
-    {B B₁₂ : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
-    [CommRing B₁₂] [TopologicalSpace B₁₂] [T2Space B₁₂] [Algebra A B₁₂]
-    (e : ratLoc P T₁ s₁ (P.hasDenominatorPower_of_isOpen_span T₁ s₁ _ hT₁) ≃ₐ[A] B)
-    (he : Continuous e)
-    (e₁₂ : ratLoc P T₂ s₂ (P.hasDenominatorPower_of_isOpen_span T₂ s₂ _ hT₂) ≃ₐ[A] B₁₂)
-    (he₁₂ : Continuous e₁₂) (t : Fin 1 → A) (ht : ∀ i, t i ∈ T₁)
-    (t₁₂ : Fin 2 → A) (ht₁₂ : ∀ i, t₁₂ i ∈ T₂) (ρ : B →ₐ[A] B₁₂) (hc : Continuous ρ)
-    (emb : Fin 1 ↪ Fin 2) (hX : letI := P.toNonarchimedeanRing
-      ρ (modelEvalHom P hT₁ e t ht (weightedX _ isWeightFamily_one_weight 0)) =
-        modelEvalHom P hT₂ e₁₂ t₁₂ ht₁₂ (weightedX _ isWeightFamily_one_weight (emb 0))) :
-    letI := P.toNonarchimedeanRing
-    ρ.toRingHom.comp (modelEvalHom P hT₁ e t ht) =
-      (modelEvalHom P hT₂ e₁₂ t₁₂ ht₁₂).comp (weightedRename emb isWeightFamily_one_weight
-        isWeightFamily_one_weight fun _ ↦ subset_rfl) := by
-  let _ := P.toNonarchimedeanRing
-  refine weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
-    (hc.comp (continuous_modelEvalHom P hT₁ e t ht he))
-    ((continuous_modelEvalHom P hT₂ e₁₂ t₁₂ ht₁₂ he₁₂).comp (continuous_weightedRename emb _ _ _))
-    (fun a ↦ by
-      rw [RingHom.comp_apply, RingHom.comp_apply, weightedRename_weightedC,
-        modelEvalHom_weightedC, modelEvalHom_weightedC, AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe, ρ.commutes])
-    (fun i ↦ by
-      rw [Subsingleton.elim i 0, RingHom.comp_apply, RingHom.comp_apply, weightedRename_weightedX,
-        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hX])
-
-variable [DecidableEq A]
+variable [CompleteSpace A] [T0Space A] [DecidableEq A]
 
 private theorem modelEvalHom_surjective_overlap (P : PairOfDefinition A) (f : A)
     (hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset A) : Set A) : Set A))
@@ -111,8 +80,8 @@ variable {P : PairOfDefinition A} {f : A}
   {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset A) : Set A) : Set A)}
 
 /-- **Kedlaya–Liu, Lemma 2.4.22.** For a complete Hausdorff Huber ring `A` and any `f : A`,
-given models `B₁`, `B₂`, `B₁₂` of the simple Laurent pieces `A⟨f, 1/1⟩`, `A⟨1/f⟩`, and their
-overlap `A⟨f², 1/f⟩`, together with continuous `A`-algebra maps `ρ₁ : B₁ →ₐ[A] B₁₂` and
+given models `B₁`, `B₂`, `B₁₂` of the simple Laurent pieces `A⟨{f, 1}/1⟩`, `A⟨{1}/f⟩`, and their
+overlap `A⟨{f², 1}/f⟩`, together with continuous `A`-algebra maps `ρ₁ : B₁ →ₐ[A] B₁₂` and
 `ρ₂ : B₂ →ₐ[A] B₁₂`, the difference map `(b₁, b₂) ↦ ρ₁ b₁ - ρ₂ b₂` is surjective. -/
 theorem IsRationalCompletion.surjective_sub_laurent
     (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁) (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
@@ -125,43 +94,36 @@ theorem IsRationalCompletion.surjective_sub_laurent
   have ht₂ : ∀ i : Fin 1, ![1] i ∈ ({1} : Finset A) := fun i ↦ by fin_cases i; simp
   have ht₁₂ : ∀ i : Fin 2, ![f * f, 1] i ∈ ({f * f, 1} : Finset A) :=
     Fin.forall_fin_two.mpr ⟨by simp, by simp⟩
-  let π₁ := modelEvalHom P hT₁ h₁.ratLocEquiv ![f] ht₁
   let π₂ := modelEvalHom P hT₂ h₂.ratLocEquiv ![1] ht₂
   let π₁₂ := modelEvalHom P hT₁₂ h₁₂.ratLocEquiv ![f * f, 1] ht₁₂
   have hX₀ : π₁₂ (weightedX _ isWeightFamily_one_weight 0) = algebraMap A B₁₂ f :=
     modelEvalHom_X_eq_algebraMap_of_mul P hT₁₂ h₁₂.ratLocEquiv ![f * f, 1] ht₁₂ 0 rfl
   have hmul₁₂ : algebraMap A B₁₂ f * π₁₂ (weightedX _ isWeightFamily_one_weight 1) = 1 :=
-    modelEvalHom_X_mul_inv P hT₁₂ h₁₂.ratLocEquiv ![f * f, 1] ht₁₂ 1 rfl
-  have hρ₁ := comp_modelEvalHom_eq_weightedRename P hT₁ hT₁₂ h₁.ratLocEquiv
-    h₁.continuous_ratLocEquiv h₁₂.ratLocEquiv h₁₂.continuous_ratLocEquiv ![f] ht₁ ![f * f, 1]
-    ht₁₂ ρ₁ hc₁ Fin.castSuccEmb (by
-      rw [Fin.castSuccEmb_apply, Fin.castSucc_zero,
+    algebraMap_mul_modelEvalHom_X_of_eq_one P hT₁₂ h₁₂.ratLocEquiv ![f * f, 1] ht₁₂ 1 rfl
+  have hπ₁₂_cont :=
+    continuous_modelEvalHom P hT₁₂ h₁₂.ratLocEquiv ![f * f, 1] ht₁₂ h₁₂.continuous_ratLocEquiv
+  have hρ₁ := apply_eq_apply_weightedRename (ρ := ρ₁.toRingHom) hc₁
+    (continuous_modelEvalHom P hT₁ h₁.ratLocEquiv ![f] ht₁ h₁.continuous_ratLocEquiv) hπ₁₂_cont
+    (fun a ↦ by simp [ρ₁.commutes]) fun i ↦ by
+      rw [Subsingleton.elim i 0, Fin.castSuccEmb_apply, Fin.castSucc_zero,
         modelEvalHom_X_eq_algebraMap_of_mul P hT₁ h₁.ratLocEquiv ![f] ht₁ 0 (one_mul f).symm,
-        ρ₁.commutes]
-      exact hX₀.symm)
-  have hρ₂ := comp_modelEvalHom_eq_weightedRename P hT₂ hT₁₂ h₂.ratLocEquiv
-    h₂.continuous_ratLocEquiv h₁₂.ratLocEquiv h₁₂.continuous_ratLocEquiv ![1] ht₂ ![f * f, 1]
-    ht₁₂ ρ₂ hc₂ (Fin.succEmb 1) (by
-      have hmul₂ : algebraMap A B₁₂ f *
-          ρ₂ (π₂ (weightedX _ isWeightFamily_one_weight 0)) = 1 := by
+        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ρ₁.commutes, ← hX₀]
+  have hρ₂ := apply_eq_apply_weightedRename (ρ := ρ₂.toRingHom) hc₂
+    (continuous_modelEvalHom P hT₂ h₂.ratLocEquiv ![1] ht₂ h₂.continuous_ratLocEquiv) hπ₁₂_cont
+    (fun a ↦ by simp [ρ₂.commutes]) fun i ↦ by
+      have hmul₂ : algebraMap A B₁₂ f * ρ₂ (π₂ (weightedX _ isWeightFamily_one_weight 0)) = 1 := by
         rw [← ρ₂.commutes f, ← map_mul,
-          modelEvalHom_X_mul_inv P hT₂ h₂.ratLocEquiv ![1] ht₂ 0 rfl, map_one]
-      rw [Fin.coe_succEmb, Fin.succ_zero_eq_one']
-      exact left_inv_eq_right_inv (by rw [mul_comm]; exact hmul₂) hmul₁₂)
-  intro y
-  obtain ⟨u, rfl⟩ := modelEvalHom_surjective_overlap P f hT₁₂ h₁₂.ratLocEquiv y
-  obtain ⟨⟨g, h⟩, hgh⟩ := laurentDiff_surjective A (Ideal.Quotient.mk (laurentIdeal A) u)
-  rw [laurentDiff_apply, Ideal.Quotient.eq, mem_laurentIdeal] at hgh
-  obtain ⟨w, hw⟩ := hgh
-  refine ⟨(π₁ g, π₂ h), ?_⟩
+          algebraMap_mul_modelEvalHom_X_of_eq_one P hT₂ h₂.ratLocEquiv ![1] ht₂ 0 rfl, map_one]
+      rw [Subsingleton.elim i 0, Fin.coe_succEmb, Fin.succ_zero_eq_one']
+      exact left_inv_eq_right_inv (by rw [mul_comm]; exact hmul₂) hmul₁₂
   have hrel : π₁₂ (1 - weightedX _ isWeightFamily_one_weight 0 *
       weightedX _ isWeightFamily_one_weight 1) = 0 := by
     rw [map_sub, map_one, map_mul, hX₀, hmul₁₂, sub_self]
-  have hsub := congrArg π₁₂ hw
-  rw [map_sub, map_sub, map_mul, hrel, zero_mul, sub_eq_zero] at hsub
-  have hρ₁g : ρ₁ (π₁ g) = π₁₂ _ := RingHom.congr_fun hρ₁ g
-  have hρ₂h : ρ₂ (π₂ h) = π₁₂ _ := RingHom.congr_fun hρ₂ h
-  dsimp only [π₁, π₂, π₁₂] at hsub hρ₁g hρ₂h ⊢; rwa [hρ₁g, hρ₂h]
+  intro y
+  obtain ⟨x₁, x₂, h⟩ :=
+    exists_sub_eq_of_surjective (modelEvalHom_surjective_overlap P f hT₁₂ h₁₂.ratLocEquiv)
+      hρ₁ hρ₂ hrel y
+  exact ⟨(x₁, x₂), h⟩
 
 /-- Scalar-tower form of `IsRationalCompletion.surjective_sub_laurent`, for `B₁ → B₁₂` and
 `B₂ → B₁₂` given as `[Algebra B₁ B₁₂]` and `[Algebra B₂ B₁₂]`. -/

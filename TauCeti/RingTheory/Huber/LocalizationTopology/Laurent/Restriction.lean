@@ -53,7 +53,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [De
   [Algebra A B₁₂] {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset A) : Set A) : Set A)}
 
 /-- There is a unique continuous `A`-algebra transition map `B₁ →ₐ[A] B₁₂` from any model `B₁` of
-`A⟨f, 1/1⟩` to any model `B₁₂` of `A⟨f², 1/f⟩`: in `B₁₂`, `f = f² / f` is a distinguished
+`A⟨{f, 1}/1⟩` to any model `B₁₂` of `A⟨{f², 1}/f⟩`: in `B₁₂`, `f = f² / f` is a distinguished
 fraction and `1 / 1 = 1`. -/
 theorem IsRationalCompletion.existsUnique_laurentLeftAlgHom {B₁ : Type*} [CommRing B₁]
     [TopologicalSpace B₁] [Algebra A B₁]
@@ -66,7 +66,7 @@ theorem IsRationalCompletion.existsUnique_laurentLeftAlgHom {B₁ : Type*} [Comm
       (fun h ↦ Or.inl (Finset.mem_singleton.mp h))
 
 /-- There is a unique continuous `A`-algebra transition map `B₂ →ₐ[A] B₁₂` from any model `B₂` of
-`A⟨1/f⟩` to any model `B₁₂` of `A⟨f², 1/f⟩`. -/
+`A⟨{1}/f⟩` to any model `B₁₂` of `A⟨{f², 1}/f⟩`. -/
 theorem IsRationalCompletion.existsUnique_laurentRightAlgHom {B₂ : Type*} [CommRing B₂]
     [TopologicalSpace B₂] [Algebra A B₂]
     {hT₂ : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A)}
@@ -188,8 +188,7 @@ theorem laurentRightAlgHom_coe (P : PairOfDefinition A) (f : A)
 /-- The canonical `A⟨{f, 1}/1⟩`-algebra structure on the overlap `A⟨{f², 1}/f⟩` induced by
 `laurentLeftAlgHom`. -/
 @[instance_reducible]
-noncomputable def laurentLeftAlgebra
-    (P : PairOfDefinition A) (f : A)
+noncomputable def laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     Algebra (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
@@ -200,8 +199,7 @@ scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.laurentLeftAlge
 /-- The canonical `A⟨{1}/f⟩`-algebra structure on the overlap `A⟨{f², 1}/f⟩` induced by
 `laurentRightAlgHom`. -/
 @[instance_reducible]
-noncomputable def laurentRightAlgebra
-    (P : PairOfDefinition A) (f : A)
+noncomputable def laurentRightAlgebra (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     Algebra (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=

@@ -85,6 +85,15 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTop
 
 /-! ### The structure maps as morphisms -/
 
+-- Cancellation of paired `eqToHom` transports in `TopCommRingCat`.
+private theorem eqToHom_apply_eqToHom_symm_apply {X Y : TopCommRingCat.{v}} (e : X = Y) (y : Y) :
+    (eqToHom e).val ((eqToHom e.symm).val y) = y :=
+  (eqToIso e.symm).hom_inv_id_apply y
+
+-- Composition of morphisms in `TopCommRingCat` acts by function composition on underlying rings.
+private theorem topCommRingCat_comp_apply {X Y Z : TopCommRingCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (x : X) : (f ≫ g).val x = g.val (f.val x) := rfl
+
 /-- **The structure map `A → A⟨p⟩`** of a presentation, as a morphism of
 `CompleteSeparatedTopCommRingCat` out of the complete Hausdorff ring `A`. -/
 noncomputable def Presentation.toCompletionLocObjHom
@@ -368,8 +377,8 @@ theorem presentationLimitRationalIso_map_apply (hAplus : ∀ ⦃a⦄, a ∈ Aplu
   refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).val (g.hom.val z)) key).trans ?_
   rw [ObjectProperty.FullSubcategory.comp_hom, restrictionObjHom_eq_completionLocObjHom,
     completionLocObjHom_hom]
-  exact (eqToIso
-    (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower).symm).hom_inv_id_apply _
+  exact eqToHom_apply_eqToHom_symm_apply
+    (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower) _
 
 section RationalSection
 
@@ -407,6 +416,9 @@ theorem rationalSectionRingEquiv_apply
       hB.ratLocEquiv
         ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
           ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val z)) := by
+  -- `(forget₂ TopCommRingCat CommRingCat).obj (TopCommRingCat.of _)` only unfolds to the
+  -- underlying ring at default transparency, so `mapIso`, `commRingCatIsoToRingEquiv`, `trans`,
+  -- and `eqToIso` reduce to composition of `.hom.val` by definitional equality.
   rw [rationalSectionRingEquiv, rationalSectionTopIso]; rfl
 
 /-- `rationalSectionRingEquiv` is continuous. -/
@@ -514,33 +526,16 @@ theorem rationalSectionRingEquiv_symm_algebraMap
     (P.hasDenominatorPower_of_isOpen_span T s _ hT)
   let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
   dsimp only
-  rw [RingEquiv.symm_apply_eq, rationalSectionRingEquiv_apply]
-  have hinv : (presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val
-      ((presentationLimitRationalIso Aplus hAplus p hT).inv.hom.val
-        (p.toCompletionLocObjHom.hom.val
-          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r))) =
-      p.toCompletionLocObjHom.hom.val
-        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) :=
-    congrArg (fun m ↦ m.hom.val
-      (p.toCompletionLocObjHom.hom.val
-        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)))
+  have hinv (w) : (presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val
+      ((presentationLimitRationalIso Aplus hAplus p hT).inv.hom.val w) = w :=
+    congrArg (fun m ↦ m.hom.val w)
       (presentationLimitRationalIso Aplus hAplus p hT).inv_hom_id
-  rw [hinv, Presentation.toCompletionLocObjHom_hom]
-  change _ = hB.ratLocEquiv ((eqToHom (completionLocObj_obj P p.num p.den _
-    p.hasDenominatorPower)).val
-    ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).val
-      (toCompletionLoc P p.num p.den _ p.hasDenominatorPower
-        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val
-          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)))))
-  have ha : (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val
-      ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) = r :=
-    (eqToIso (CompleteSeparatedTopCommRingCat.of_obj A).symm).hom_inv_id_apply r
-  have hb : (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
-      ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).val
-        (toCompletionLoc P p.num p.den _ p.hasDenominatorPower r)) =
-      toCompletionLoc P p.num p.den _ p.hasDenominatorPower r :=
-    (eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).hom_inv_id_apply _
-  rw [ha, hb, ← algebraMap_ratLoc, hB.ratLocEquiv.commutes]
+  rw [RingEquiv.symm_apply_eq, rationalSectionRingEquiv_apply, hinv,
+    Presentation.toCompletionLocObjHom_hom, topCommRingCat_comp_apply,
+    topCommRingCat_comp_apply, eqToHom_apply_eqToHom_symm_apply,
+    eqToHom_apply_eqToHom_symm_apply]
+  dsimp only
+  rw [← algebraMap_ratLoc, hB.ratLocEquiv.commutes]
 
 end TauCeti.ValuationSpectrum
 
