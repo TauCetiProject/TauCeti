@@ -104,11 +104,10 @@ theorem isPullback_comapHom_closedFiberι :
   (isPullback_of_isClosedImmersion _ _ _ _ (by simp) (by simp)).flip
 
 /-- Restriction along an open immersion preserves divided power thickenings. -/
-theorem IsPDThickening.comapOfIsOpenImmersion {X : DividedPowerScheme.{u}}
-    (hX : X.IsPDThickening) {T : Scheme.{u}} (f : T ⟶ X.scheme) [IsOpenImmersion f] :
+instance isPDThickening_comapOfIsOpenImmersion [X.IsPDThickening] :
     (X.comapOfIsOpenImmersion f).IsPDThickening :=
   MorphismProperty.of_isPullback (P := @AlgebraicGeometry.IsThickening)
-    (X.isPullback_comapHom_closedFiberι f) hX
+    (X.isPullback_comapHom_closedFiberι f) ‹X.IsPDThickening›
 
 end
 

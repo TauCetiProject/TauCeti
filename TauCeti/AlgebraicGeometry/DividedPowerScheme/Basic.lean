@@ -269,8 +269,7 @@ theorem Hom.fromTrivial_hom {T : Scheme.{u}} (f : T ⟶ X.scheme) (h) :
     (Hom.fromTrivial f h).hom = f := (rfl)
 
 /-- The trivial divided power scheme is a divided power thickening. -/
-@[simp]
-theorem isPDThickening_trivial_obj (T : Scheme.{u}) : (trivial.obj T).IsPDThickening := by
+instance isPDThickening_trivial_obj (T : Scheme.{u}) : (trivial.obj T).IsPDThickening := by
   rw [isPDThickening_iff, trivial_obj_ideal]
   exact bot_le
 
