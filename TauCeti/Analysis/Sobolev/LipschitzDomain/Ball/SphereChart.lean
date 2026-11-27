@@ -124,7 +124,7 @@ theorem unitSphereGraph_of_norm_le {v : K} (hv : ‖v‖ ≤ 1 / 4) :
 /-- Near the centre of the chart, `ν`-coordinate `r - s` and tangential coordinate `v` describe a
 point of the open ball of radius `r` exactly when `s` lies strictly above the sphere graph
 `r (1 - √(1 - ‖v / r‖²))`, and a point of the closed ball exactly when `s` lies above it. -/
-private theorem sq_add_sq_lt_iff {r s : ℝ} (hr : 0 < r) {v : K}
+theorem sq_add_sq_lt_iff {r s : ℝ} (hr : 0 < r) {v : K}
     (hs : s < r) (hv : ‖v‖ ≤ r / 4) :
     ((r - s) ^ 2 + ‖v‖ ^ 2 < r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) < s) ∧
       ((r - s) ^ 2 + ‖v‖ ^ 2 ≤ r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) ≤ s) := by

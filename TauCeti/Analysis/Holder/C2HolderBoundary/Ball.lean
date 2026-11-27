@@ -15,9 +15,10 @@ import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.SphereChart
 # Balls have `C^{2,α}` boundary
 
 An open ball `B(c, R)` in a finite-dimensional real inner product space has `C^{2,α}` boundary
-for every `α ≤ 1` (`TauCeti.hasC2HolderBoundary_ball`). So balls are bounded domains to which the
-global Schauder estimate and the solvability of the Dirichlet problem in `C^{2,α}` of
-`TauCeti/Analysis/PDE/Regularity/Hessian/Schauder/` apply.
+for every `α ≤ 1` (`TauCeti.hasC2HolderBoundary_ball`). So balls satisfy the boundary hypothesis
+`Set.HasC2HolderBoundary` of the global Schauder estimate and of the method-of-continuity
+reduction of the Dirichlet problem to the Laplacian in
+`TauCeti/Analysis/PDE/Regularity/Hessian/Schauder/`.
 
 ## The graph patch
 
@@ -58,48 +59,26 @@ private theorem norm_sub_lt_iff_of_norm_sub_lt {c z ν x : E} {R : ℝ}
     (hR : 0 < R) (hν : ‖ν‖ = 1) (hzc : z - c = (-R) • ν) (hx : ‖x - z‖ < R / 4) :
     ‖x - c‖ < R ↔ ⟪z, ν⟫_ℝ +
       R * unitSphereGraph ((R⁻¹ • (ℝ ∙ ν)ᗮ.starProjection) (x - c)) < ⟪x, ν⟫_ℝ := by
-  set P := (ℝ ∙ ν)ᗮ.starProjection
-  have hνν : ⟪ν, ν⟫_ℝ = 1 := by rw [real_inner_self_eq_norm_sq, hν, one_pow]
-  -- `‖x - c‖² = ⟪ν, x - c⟫² + ‖P (x - c)‖²`.
-  have hPsq : ‖P (x - c)‖ ^ 2 = ‖x - c‖ ^ 2 - ⟪ν, x - c⟫_ℝ ^ 2 := by
+  -- `‖x - c‖² = ⟪ν, x - c⟫² + ‖P (x - c)‖²`, where `P` is the projection onto `ν^⊥`.
+  have hPsq : ‖x - c‖ ^ 2 = ⟪ν, x - c⟫_ℝ ^ 2 + ‖(ℝ ∙ ν)ᗮ.starProjection (x - c)‖ ^ 2 := by
     rw [Submodule.norm_sq_eq_add_norm_sq_starProjection (x - c) (ℝ ∙ ν),
-      Submodule.starProjection_unit_singleton ℝ hν, norm_smul, hν, mul_one, Real.norm_eq_abs,
-      sq_abs]
-    ring
+      Submodule.starProjection_unit_singleton ℝ hν]
+    simp only [norm_smul, hν, mul_one, Real.norm_eq_abs, sq_abs]
+  set P := (ℝ ∙ ν)ᗮ.starProjection
   have hxc : x - c = (x - z) + (-R) • ν := by rw [← hzc]; abel
-  have hPx : ‖P (x - c)‖ < R / 4 := by
-    rw [hxc, map_add, map_smul, Submodule.starProjection_orthogonalComplement_singleton_eq_zero,
-      smul_zero, add_zero]
-    exact (Submodule.norm_starProjection_apply_le _ _).trans_lt hx
-  have hv : ‖(R⁻¹ • P) (x - c)‖ = R⁻¹ * ‖P (x - c)‖ := by
-    rw [smul_apply, norm_smul, norm_inv, Real.norm_of_nonneg hR.le]
-  have hv4 : ‖(R⁻¹ • P) (x - c)‖ ≤ 1 / 4 := by
-    rw [hv, inv_mul_le_iff₀ hR]
-    linarith
-  -- Near `z` the graph is the lower hemisphere `⟪c, ν⟫ - √(R² - ‖P (x - c)‖²)`.
-  have hsqrt : R * √(1 - ‖(R⁻¹ • P) (x - c)‖ ^ 2) = √(R ^ 2 - ‖P (x - c)‖ ^ 2) := by
-    have h : R ^ 2 - ‖P (x - c)‖ ^ 2 = R ^ 2 * (1 - ‖(R⁻¹ • P) (x - c)‖ ^ 2) := by
-      rw [hv]
-      field_simp
-    rw [h, Real.sqrt_mul (sq_nonneg R), Real.sqrt_sq hR.le]
-  have hzν : ⟪z, ν⟫_ℝ = ⟪c, ν⟫_ℝ - R := by
-    rw [show z = c + (-R) • ν by rw [← hzc]; abel, inner_add_left, real_inner_smul_left, hνν]
-    ring
-  rw [unitSphereGraph_of_norm_le hv4, mul_sub, mul_one, hsqrt, hzν]
-  -- `⟪ν, x - c⟫ < 0` near `z`, so the ball is the region above the lower hemisphere.
+  have hPx : ‖P (x - c)‖ ≤ R / 4 := by
+    have hPν : P ν = 0 := Submodule.starProjection_orthogonalComplement_singleton_eq_zero ν
+    simpa [hxc, hPν] using (Submodule.norm_starProjection_apply_le _ (x - z)).trans hx.le
+  -- In the coordinates `r = R`, `s = ⟪x, ν⟫ - ⟪z, ν⟫`, `v = P (x - c)` of `sq_add_sq_lt_iff`,
+  -- `r - s = -⟪ν, x - c⟫`.
+  have hxz : ⟪ν, x - z⟫_ℝ = ⟪x, ν⟫_ℝ - ⟪z, ν⟫_ℝ := by simp [inner_sub_right, real_inner_comm]
   have ht : ⟪ν, x - c⟫_ℝ = ⟪ν, x - z⟫_ℝ - R := by
-    rw [hxc, inner_add_right, real_inner_smul_right, hνν]
-    ring
-  have hνxz : ⟪ν, x - z⟫_ℝ ≤ ‖x - z‖ := by
-    simpa [hν] using real_inner_le_norm ν (x - z)
-  have ht0 : 0 ≤ -⟪ν, x - c⟫_ℝ := by linarith
-  have hxν : ⟪x, ν⟫_ℝ - ⟪c, ν⟫_ℝ = ⟪ν, x - c⟫_ℝ := by
-    rw [inner_sub_right, real_inner_comm ν, real_inner_comm ν]
-  rw [← pow_lt_pow_iff_left₀ (norm_nonneg _) hR.le two_ne_zero,
-    show ⟪c, ν⟫_ℝ - R + (R - √(R ^ 2 - ‖P (x - c)‖ ^ 2)) < ⟪x, ν⟫_ℝ ↔
-      -⟪ν, x - c⟫_ℝ < √(R ^ 2 - ‖P (x - c)‖ ^ 2) by constructor <;> intro h <;> linarith,
-    Real.lt_sqrt ht0, hPsq]
-  constructor <;> intro h <;> nlinarith
+    simp [hxc, inner_add_right, inner_smul_right, hν, sub_eq_add_neg]
+  have hνxz : ⟪ν, x - z⟫_ℝ ≤ ‖x - z‖ := by simpa [hν] using real_inner_le_norm ν (x - z)
+  have key := (sq_add_sq_lt_iff hR (s := ⟪x, ν⟫_ℝ - ⟪z, ν⟫_ℝ) (by linarith) hPx).1
+  rw [show R - (⟪x, ν⟫_ℝ - ⟪z, ν⟫_ℝ) = -⟪ν, x - c⟫_ℝ by linarith, neg_sq,
+    lt_sub_iff_add_lt'] at key
+  rw [smul_apply, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hR.le two_ne_zero, hPsq, key]
 
 /-- **Balls have `C^{2,α}` boundary.** In a finite-dimensional real inner product space, every open
 ball has `C^{2,α}` boundary for `α ≤ 1`: near each point `z` of its sphere it is the region above
@@ -114,10 +93,9 @@ theorem hasC2HolderBoundary_ball [FiniteDimensional ℝ E] (c : E) (R : ℝ) {α
   -- The inner unit normal `ν` at `z` and the orthogonal projection `P` onto `ν^⊥`.
   set ν : E := R⁻¹ • (c - z) with hν_def
   have hν : ‖ν‖ = 1 := by
-    rw [hν_def, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, ← norm_neg, neg_sub, hz,
-      inv_mul_cancel₀ hR.ne']
+    simp [hν_def, norm_smul, abs_of_pos hR, ← norm_neg (c - z), hz, hR.ne']
   have hzc : z - c = (-R) • ν := by
-    rw [hν_def, smul_smul, neg_mul, mul_inv_cancel₀ hR.ne', neg_smul, one_smul, neg_sub]
+    simp [hν_def, smul_smul, hR.ne']
   set P := (ℝ ∙ ν)ᗮ.starProjection
   -- The cut-off sphere graph is a bounded `C^{2,α}` function, being smooth with compact support.
   obtain ⟨g, hg⟩ := CkHolderSpace.exists_coe_eq_of_contDiff (F := ℝ) hα 2
