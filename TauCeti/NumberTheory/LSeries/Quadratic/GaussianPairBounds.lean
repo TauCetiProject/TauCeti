@@ -15,10 +15,17 @@ import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 /-!
 # Gaussian pair sums for quadratic-twist second moments
 
-For the square contribution, group pairs by their product. A product with square odd part
-is a square or twice a square, so the divisor bound and a discrete exponential moment
-control the resulting sum. For the other contribution, bound the square-root and logarithm
-weight by a product of one-variable power weights.
+The second moment of a Jacobi-twisted theta series splits according to whether the odd part of
+`a * b` is square. For positive integers `a, b`, write `W` for the product of the norms of the
+Gaussian monomials at `a * u` and `b * u`. For every `δ > 0` and `u > 0`, both of the following
+pair weights are summable, with constants uniform in the parity and scale:
+
+* `W` restricted to products with square odd part: its sum multiplied by `u` is at most
+  `C * u ^ (-2 * δ)`.
+* `W * √(a * b) * (1 + log (a * b))` over all pairs: its sum multiplied by `u` is at most
+  `C * u ^ (-(2 + 2 * δ))`. This bounds the nonsquare contribution, where the character sum
+  has a square-root and logarithm bound. At `u ≥ 1 / T` with `T > 0`, the extra `u ^ (-2)` is
+  at most `T ^ 2`.
 
 The two weights are those of `New.sum_sq_thetaSeries_jacobiSym_le` in
 `grh/src/Lib/Analytic/QuadraticTwist.lean` of [grh-lean](https://github.com/lsernau/grh-lean),
@@ -212,7 +219,8 @@ private theorem gaussianPair_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < δ) (j : Fin 
   let m : ℝ := (p.1 : ℝ) * p.2
   have hlog : 1 + log m ≤ (1 + δ⁻¹) * m ^ δ := by
     have hpow := Real.one_le_rpow hm hδ.le
-    linarith [log_le_rpow_div (show 0 ≤ m by positivity) hδ, div_eq_mul_inv (m ^ δ) δ]
+    have hm₀ : 0 ≤ m := zero_le_one.trans hm
+    linarith [log_le_rpow_div hm₀ hδ, div_eq_mul_inv (m ^ δ) δ]
   calc
     _ ≤ (3 * exp (-(p.1 * u))) * (3 * exp (-(p.2 * u))) *
         (√m * ((1 + δ⁻¹) * m ^ δ)) := by

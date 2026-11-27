@@ -69,8 +69,7 @@ theorem primeFactors_ordCompl (n p : ℕ) :
   rw [← support_factorization, factorization_ordCompl, Finsupp.support_erase,
     support_factorization]
 
-/-- If the part of `n` prime to `p` is a square, then `n` is a square times `p^d`,
-where `d` is zero or one. -/
+/-- If `ordCompl[p] n` is a square, then `n` is a square times `p^d`, where `d` is zero or one. -/
 theorem exists_eq_pow_mul_sq_of_isSquare_ordCompl {n p : ℕ} (h : IsSquare (ordCompl[p] n)) :
     ∃ d : Fin 2, ∃ k : ℕ, n = p ^ d.val * k ^ 2 := by
   obtain ⟨r, hr⟩ := h

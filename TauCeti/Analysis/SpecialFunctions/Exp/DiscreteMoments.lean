@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Data.PNat.Basic
+import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 
 /-!
 # Discrete exponential moments
@@ -35,13 +36,8 @@ theorem exists_summable_and_tsum_rpow_mul_exp_neg_le {a : ℝ} (ha : 0 ≤ a) :
   let v := u / 2
   have hv : 0 < v := by positivity
   have hg : HasSum (fun n : ℕ+ ↦ exp (-(n * v))) (1 / (exp v - 1)) := by
-    have he : ‖exp (-v)‖ < 1 := by simpa [abs_of_pos (exp_pos _)] using hv
-    convert hasSum_geometric_pnat he using 1
-    · ext n
-      rw [← exp_natCast_mul]
-      simp [neg_mul, mul_comm]
-    · rw [exp_neg]
-      field_simp [(exp_lt_exp.mpr hv : exp 0 < exp v).ne, (exp_pos v).ne']
+    refine (hasSum_pnat_iff_hasSum_succ (f := fun n : ℕ ↦ exp (-((n : ℝ) * v)))).2 ?_
+    simpa only [Nat.cast_succ, one_div] using Real.hasSum_exp_neg_nat_succ_mul hv
   have hb (n : ℕ+) : (n : ℝ) ^ a * exp (-(n * u)) ≤ (C * u ^ (-a)) * exp (-(n * v)) := by
     have h := hmax ((n : ℝ) * u) (by positivity)
     rw [mul_rpow (by positivity) hu.le] at h
