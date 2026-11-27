@@ -921,7 +921,7 @@ where `n` is the dimension of `E`. This pointwise bound is what controls the mea
 `u` on `ball x₀ ρ` in every `L^γ` at once. -/
 theorem norm_sub_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E) (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖)
     (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) {x₀ : E} {ρ R : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R))
-    (hi : IntegrableOn u (ball x₀ R) μ) (c : F) (hρ : 0 < ρ) (h8 : 8 * (a * b * ρ) ≤ R)
+    (hi : IntegrableOn u (ball x₀ R) μ) (c : F) (h8 : 8 * (a * b * ρ) ≤ R)
     {y z : E} (hy : y ∈ ball x₀ ρ) (hz : z ∈ ball x₀ ρ) :
     ‖u y - u z‖ ≤ 2 ^ (2 * finrank ℝ E + 3) * finrank ℝ E * (a * b) ^ (finrank ℝ E + 1) *
       (ρ / R) * ⨍ x in ball x₀ R, ‖u x - c‖ ∂μ := by
@@ -930,6 +930,7 @@ theorem norm_sub_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E) (hae : ∀ x, ‖
   · rw [Subsingleton.elim y z, sub_self, norm_zero, hn, Module.finrank_zero_of_subsingleton]
     simp
   obtain ⟨ha, hb⟩ := pos_and_pos_of_norm_le hae hbe
+  have hρ : 0 < ρ := pos_of_mem_ball hy
   have hR : 0 < R := by nlinarith [mul_pos (mul_pos ha hb) hρ]
   set ν := μ.map e.symm
   have hsub := ball_div_subset_preimage_ball hbe hb x₀ R
@@ -1033,7 +1034,7 @@ private lemma setAverage_ball_norm_sub_setAverage_rpow_le_of_eight_mul_le (e : E
       (measure_ball_pos μ x₀ hρ).ne' measure_ball_lt_top.ne
       ((ae_restrict_mem measurableSet_ball).mono fun z hz ↦ by
         rw [mem_closedBall, dist_eq_norm]
-        exact norm_sub_le_of_harmonicOnNhd_comp e hae hbe hu hi c hρ h8 hz hy)
+        exact norm_sub_le_of_harmonicOnNhd_comp e hae hbe hu hi c h8 hz hy)
       (hi.mono_set (ball_subset_ball hρR))
     rwa [mem_closedBall, dist_eq_norm, norm_sub_rev] at h
   have hbd : ∀ᵐ x ∂μ.restrict (ball x₀ ρ), ‖u x - m‖ ^ γ ≤ L ^ γ :=
