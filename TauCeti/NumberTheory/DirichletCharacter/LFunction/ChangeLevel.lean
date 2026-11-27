@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 
 /-!
 # Uniform bounds for deleted Euler factors
@@ -25,8 +25,11 @@ characters at their common level, including primes dividing both conductors.
 The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
 meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
 pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
-For principal characters `LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow` gives the comparison
-even at `1` after the pole is removed. `one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow`
+`regularizedLFunction_eq_primitiveCharacter_mul_prod_one_sub_mul_prime_cpow` gives the
+comparison with the primitive character at every point for regularized L-functions.
+For principal characters `LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow` also gives the
+comparison after the pole is removed but before dividing by `s`.
+`one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow`
 bounds the correction from below in terms of the number of distinct prime divisors, rather than
 the size of the new level.
 The factors are also nonzero on `Re(s) < 0`:
@@ -148,6 +151,29 @@ theorem LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow (N : ℕ) [NeZero N]
   · rw [LFunctionTrivChar₁_apply_of_ne_one N hs, LFunctionTrivChar₁_one_apply_of_ne_one hs,
       LFunctionTrivChar_eq_mul_riemannZeta hs]
     ring
+
+/-- At every `s`, the regularized L-function is the regularized L-function of the inducing
+primitive character times the deleted Euler factors. This includes `s = 1` for the principal
+character. -/
+theorem regularizedLFunction_eq_primitiveCharacter_mul_prod_one_sub_mul_prime_cpow
+    {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (s : ℂ) :
+    χ.regularizedLFunction s = χ.primitiveCharacter.regularizedLFunction s *
+      ∏ p ∈ N.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
+  obtain rfl | hχ := eq_or_ne χ 1
+  · simp only [primitiveCharacter_one, regularizedLFunction_one_apply, entireLFunction_one]
+    have hunit (p : ℕ) : IsUnit (p : ZMod (1 : DirichletCharacter ℂ N).conductor) := by
+      rw [conductor_one]
+      exact isUnit_of_subsingleton _
+    have hlevel (M : ℕ) [NeZero M] (hM : M = 1) :
+        LFunctionTrivChar₁ M s = LFunctionTrivChar₁ 1 s := by
+      subst M
+      rfl
+    simp only [MulChar.one_apply (hunit _), one_mul, hlevel _ conductor_one]
+    rw [LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow, mul_div_right_comm]
+  · have hprim : χ.primitiveCharacter ≠ 1 := mt χ.primitiveCharacter_eq_one_iff.mp hχ
+    rw [χ.regularizedLFunction_of_ne_one hχ, regularizedLFunction_of_ne_one _ hprim]
+    conv_lhs => rw [← χ.changeLevel_primitiveCharacter]
+    exact LFunction_changeLevel _ _ (.inl hprim)
 
 /-- Raising the level multiplies `χ.LFunction` by the deleted Euler factors on a punctured
 neighbourhood of every `s : ℂ`. -/

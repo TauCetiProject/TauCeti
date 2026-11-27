@@ -39,25 +39,11 @@ theorem exists_pos_eventually_le_norm_regularizedLFunction_of_card_primeFactors_
     Complex.continuous_re.continuousAt.tendsto.eventually_const_lt (by norm_num)
   refine ⟨c * K, mul_pos hc hK, ?_⟩
   filter_upwards [hnear, hre] with s hs hsre N inst hN χ hχ
-  obtain rfl | h := eq_or_ne χ 1
-  · have hB : 1 ≤ B := by simpa only [conductor_one] using hχ
-    have h₁ := hs 1 hB 1
-    have h₂ : K ≤ ‖∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))‖ := by
-      simpa [K, MulChar.one_apply (isUnit_of_subsingleton _)] using
-        one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow (N := N) (1 : DirichletCharacter ℂ 1)
-          hN (by norm_num : (0 : ℝ) ≤ 1 / 2) hsre.le
-    rw [regularizedLFunction_one_apply, entireLFunction_one,
-      LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow, mul_div_right_comm, norm_mul,
-      ← entireLFunction_one, ← regularizedLFunction_one_apply]
-    exact mul_le_mul h₁ h₂ hK.le (norm_nonneg _)
-  · have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
-    have hprim : χ.primitiveCharacter ≠ 1 := mt (χ.primitiveCharacter_eq_one_iff).mp h
-    have h₁ := hs χ.conductor hχ χ.primitiveCharacter
-    rw [χ.primitiveCharacter.regularizedLFunction_of_ne_one hprim] at h₁
-    have h₂ := one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow χ.primitiveCharacter hN
-      (by norm_num : (0 : ℝ) ≤ 1 / 2) hsre.le
-    rw [χ.regularizedLFunction_of_ne_one h, ← χ.changeLevel_primitiveCharacter,
-      LFunction_changeLevel _ _ (.inl hprim), norm_mul]
-    exact mul_le_mul h₁ h₂ hK.le (norm_nonneg _)
+  have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
+  have h₁ := hs χ.conductor hχ χ.primitiveCharacter
+  have h₂ := one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow χ.primitiveCharacter hN
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) hsre.le
+  rw [χ.regularizedLFunction_eq_primitiveCharacter_mul_prod_one_sub_mul_prime_cpow, norm_mul]
+  exact mul_le_mul h₁ h₂ hK.le (norm_nonneg _)
 
 end TauCeti.DirichletCharacter
