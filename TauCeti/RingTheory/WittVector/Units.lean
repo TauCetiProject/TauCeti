@@ -181,8 +181,7 @@ theorem associated_p_pow_iff [PerfectRing R p] {x : 𝕎 R} {n : ℕ} :
 /-- Over a perfect domain of characteristic `p`, `p` is a prime element of `𝕎 R`: the quotient
 `𝕎 R ⧸ (p)` is `R` (`WittVector.quotientPEquiv`). -/
 theorem prime_p [IsDomain R] [PerfectRing R p] : Prime (p : 𝕎 R) := by
-  have hp0 : (p : 𝕎 R) ≠ 0 := fun h ↦ one_ne_zero (eq_zero_of_p_mul_eq_zero (1 : 𝕎 R) (by simp [h]))
-  rw [← Ideal.span_singleton_prime hp0, ← Ideal.Quotient.isDomain_iff_prime]
+  rw [← Ideal.span_singleton_prime (p_ne_zero p R), ← Ideal.Quotient.isDomain_iff_prime]
   exact quotientPEquiv.toMulEquiv.isDomain
 
 end CharP

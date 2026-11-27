@@ -216,9 +216,11 @@ variable {p : ℕ} [Fact p.Prime] {C : Type*} [NontriviallyNormedField C] [IsUlt
 /-- **Nonunits of the tilt of `O_C`.** An element `c` of `O_C♭` is a nonunit exactly when its sharp
 `c♯` has norm less than one. -/
 theorem norm_untilt_lt_one_iff {c : PreTilt (𝒪[C]) p} : ‖(c.untilt : C)‖ < 1 ↔ ¬IsUnit c := by
-  rw [(Valued.integer.mem_iff.mp c.untilt.property).lt_iff_ne, ne_eq, not_congr]
-  rw [← AddSubgroupClass.coe_norm, ← Valued.integer.isUnit_iff_norm_eq_one, isUnit_iff_dvd_one,
-    isUnit_iff_dvd_one, ← untilt_dvd_untilt_iff, map_one]
+  rw [(Valued.integer.mem_iff.mp c.untilt.property).lt_iff_ne, ne_eq, not_iff_not]
+  -- `c♯` has norm one iff it is a unit of `O_C`, iff it divides `1♯ = 1`, iff `c` divides `1`.
+  calc ‖(c.untilt : C)‖ = 1 ↔ IsUnit c.untilt := Valued.integer.isUnit_iff_norm_eq_one.symm
+    _ ↔ c.untilt ∣ (1 : PreTilt (𝒪[C]) p).untilt := by rw [map_one, isUnit_iff_dvd_one]
+    _ ↔ IsUnit c := by rw [untilt_dvd_untilt_iff, isUnit_iff_dvd_one]
 
 /-- **Nonunits of the tilt of `O_C` are topologically nilpotent.** Every nonzero `d ∈ O_C♭`
 divides some power of every nonunit `c`, because `‖c♯‖ ^ n ≤ ‖d♯‖` for large `n`. -/

@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Period
+public import Mathlib.RingTheory.WittVector.Basic
 public import TauCeti.RingTheory.Perfectoid.PreTilt.ValuationRing
 
-import TauCeti.RingTheory.Perfectoid.Cyclotomic.Level
 import TauCeti.RingTheory.WittVector.Complete
 import TauCeti.RingTheory.WittVector.Units
 
@@ -22,9 +21,6 @@ is a perfect valuation ring with a rank-one valuation (through the sharp map), t
 
 * `p` is a prime element of `A_inf`, because `A_inf ⧸ (p) ≅ O_C♭` is a domain; this is the case
   `R = O_C♭` of `WittVector.prime_p`.
-* If `C` is moreover complete and perfectoid, and `ε ∈ O_C♭` is such that the sharp of
-  `ε ^ (1 / p)` is a primitive `p`-th root of unity, then Fontaine's map identifies `A_inf ⧸ (ξ)`
-  with the domain `O_C`, so the cyclotomic period `ξ` is a prime element (`PreTilt.prime_xi`).
 * If `p ≠ 0` in `C`, then `A_inf` is complete and separated for the `(a, c)`-adic topology for any
   two nonunits `a` and `c` (`PreTilt.isAdicComplete_span_pair_of_not_isUnit`). The zeroth Witt
   coordinates of `a` and `c` are comparable for divisibility; if `ϖ` is the one dividing the
@@ -38,7 +34,6 @@ is a perfect valuation ring with a rank-one valuation (through the sharp map), t
 
 ## Main results
 
-* `PreTilt.prime_xi`: `ξ` is a prime element of `A_inf`.
 * `PreTilt.isAdicComplete_span_pair_of_not_isUnit`: for nonunits `a, c` of `A_inf`, `A_inf` is
   `(a, c)`-adically complete.
 * `PreTilt.mem_radical_span_pair_of_not_dvd`: if `p ∤ δ`, every nonunit of `A_inf` lies in the
@@ -46,8 +41,8 @@ is a perfect valuation ring with a rank-one valuation (through the sharp map), t
 
 ## Provenance
 
-The statements follow `New.Period.Ainf.prime_p`, `New.Period.Ainf.prime_xi`,
-`New.Period.Ainf.isAdicComplete_span_pair` and `New.Period.Ainf.mem_radical_of_not_isUnit` in
+The statements follow `New.Period.Ainf.prime_p`, `New.Period.Ainf.isAdicComplete_span_pair` and
+`New.Period.Ainf.mem_radical_of_not_isUnit` in
 `src/Lib/PadicHodge/PeriodRings/Ainf.lean` of grh-lean (https://github.com/lsernau/grh-lean,
 Apache 2.0, Copyright 2026 Anthropic, PBC), where they are proved for `C = ℂ_p`; the proofs here
 go through zeroth Witt coordinates and the sharp map instead.
@@ -62,22 +57,11 @@ public section
 
 namespace PreTilt
 
-open TauCeti.Perfectoid _root_.WittVector
+open _root_.WittVector
 open scoped NormedField Valued
 
 variable {p : ℕ} [Fact p.Prime] {C : Type*} [NontriviallyNormedField C] [IsUltrametricDist C]
   [Fact ¬IsUnit (p : 𝒪[C])] [IsAdicComplete (Ideal.span {(p : 𝒪[C])}) (𝒪[C])]
-
-/-- **`ξ` is a prime element of `A_inf`.** For a complete perfectoid nonarchimedean field `C`
-and `ε ∈ O_C♭` such that the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity, the
-cyclotomic period `ξ` generates the kernel of Fontaine's map onto the domain `O_C`. -/
-theorem prime_xi [CompleteSpace C] [IsPerfectoidTateRing p C] (ε : PreTilt (𝒪[C]) p)
-    (hε : IsPrimitiveRoot
-      (untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p) :
-    Prime (xi p ε) := by
-  rw [← Ideal.span_singleton_prime (xi_ne_zero p (ne_one_of_isPrimitiveRoot ε hε)),
-    ← ker_fontaineTheta_eq_span_xi ε hε]
-  exact RingHom.ker_isPrime _
 
 /-- **`A_inf` is complete for the ideal of any two nonunits.** If `p ≠ 0` in `C`, then
 `A_inf = W(O_C♭)` is `(a, c)`-adically complete and separated for all nonunits `a` and `c`. -/
