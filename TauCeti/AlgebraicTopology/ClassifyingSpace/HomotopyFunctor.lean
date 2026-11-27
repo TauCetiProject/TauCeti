@@ -340,8 +340,8 @@ def cellularClassifyingSpacePointedHomotopyIso {G : GrpCat.{u}}
     ⟨h.choose, h.choose_spec.1⟩
   { hom := PointedHomotopyCat.quotient.map (cellularHomotopyEquivClassifyingSpaceBasedHom R e)
     inv := PointedHomotopyCat.quotient.map gHom
-    hom_inv_id := PointedHomotopyCat.quotient_map_comp_eq_id _ _ h.choose_spec.2.1
-    inv_hom_id := PointedHomotopyCat.quotient_map_comp_eq_id _ _ h.choose_spec.2.2 }
+    hom_inv_id := (PointedHomotopyCat.quotient_map_comp_eq_id_iff _ _).2 h.choose_spec.2.1
+    inv_hom_id := (PointedHomotopyCat.quotient_map_comp_eq_id_iff _ _).2 h.choose_spec.2.2 }
 
 @[simp]
 theorem cellularClassifyingSpacePointedHomotopyIso_hom {G : GrpCat.{u}}

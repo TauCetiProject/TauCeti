@@ -52,17 +52,6 @@ namespace TauCeti
 
 namespace PointedHomotopyCat
 
-/-- A composite of based maps is the identity in `PointedHomotopyCat` exactly when the composite
-of their underlying continuous maps is homotopic to the identity relative to the base point. -/
-theorem quotient_map_comp_eq_id_iff {X Y : BasedTopologicalSpace.{u}} (f : X ⟶ Y) (g : Y ⟶ X) :
-    quotient.map (f ≫ g) = 𝟙 (quotient.obj X) ↔
-      (g.toContinuousMap.comp f.toContinuousMap).HomotopicRel
-        (ContinuousMap.id X.carrier) {X.basepoint} := by
-  rw [← quotient.map_id, quotient_map_eq_iff]
-  simp only [BasedTopologicalSpace.comp_eq_hom_comp,
-    BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
-    BasedTopologicalSpace.Hom.toContinuousMap_id]
-
 /-- **A based homotopy equivalence between well-pointed spaces is an isomorphism in
 `PointedHomotopyCat`.** If both base points have the homotopy extension property and
 `h : X.carrier ≃ₕ Y.carrier` preserves the base points, then `h` admits a based homotopy inverse
@@ -77,12 +66,8 @@ def isoOfHomotopyEquiv {X Y : BasedTopologicalSpace.{u}}
   let hg := hX.exists_basedInverse_homotopicRel hY h hh
   { hom := quotient.map ⟨h.toFun, hh⟩
     inv := quotient.map ⟨hg.choose, hg.choose_spec.1⟩
-    hom_inv_id := by
-      rw [← quotient.map_comp]
-      exact (quotient_map_comp_eq_id_iff _ _).2 hg.choose_spec.2.1
-    inv_hom_id := by
-      rw [← quotient.map_comp]
-      exact (quotient_map_comp_eq_id_iff _ _).2 hg.choose_spec.2.2 }
+    hom_inv_id := (quotient_map_comp_eq_id_iff _ _).2 hg.choose_spec.2.1
+    inv_hom_id := (quotient_map_comp_eq_id_iff _ _).2 hg.choose_spec.2.2 }
 
 /-- The forward morphism of `PointedHomotopyCat.isoOfHomotopyEquiv` is the pointed homotopy class
 of the given based homotopy equivalence. -/
@@ -117,7 +102,7 @@ private theorem homotopyEquivOfIso_left_inv_homotopicRel_aux {X Y : BasedTopolog
       (quotient.map_surjective e.hom).choose.toContinuousMap).HomotopicRel
       (ContinuousMap.id X.carrier) {X.basepoint} :=
   (quotient_map_comp_eq_id_iff _ _).1 <| by
-    rw [quotient.map_comp, (quotient.map_surjective e.hom).choose_spec,
+    rw [(quotient.map_surjective e.hom).choose_spec,
       (quotient.map_surjective e.inv).choose_spec, e.hom_inv_id]
 
 private theorem homotopyEquivOfIso_right_inv_homotopicRel_aux {X Y : BasedTopologicalSpace.{u}}
@@ -126,7 +111,7 @@ private theorem homotopyEquivOfIso_right_inv_homotopicRel_aux {X Y : BasedTopolo
       (quotient.map_surjective e.inv).choose.toContinuousMap).HomotopicRel
       (ContinuousMap.id Y.carrier) {Y.basepoint} :=
   (quotient_map_comp_eq_id_iff _ _).1 <| by
-    rw [quotient.map_comp, (quotient.map_surjective e.inv).choose_spec,
+    rw [(quotient.map_surjective e.inv).choose_spec,
       (quotient.map_surjective e.hom).choose_spec, e.inv_hom_id]
 
 /-- **An isomorphism in `PointedHomotopyCat` gives a pointed homotopy equivalence.** Its forward
