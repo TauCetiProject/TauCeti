@@ -28,6 +28,10 @@ finite comodules, where both are characterized by matrix coefficients.
 * `TauCeti.IsSumOfUnits.of_iso`: the property is invariant under isomorphism.
 * `TauCeti.isSumOfUnits_tensorUnit`: the unit is a sum of units.
 * `TauCeti.IsSumOfUnits.subquotientHull_tensorUnit`: a sum of units lies in the hull of the unit.
+* `CategoryTheory.Functor.map_isSumOfUnits`: strong monoidal functors preserving finite products
+  send sums of units to sums of units.
+* `CategoryTheory.Equivalence.isSumOfUnits_obj_iff`: monoidal equivalences preserve and reflect
+  sums of units.
 
 ## References
 

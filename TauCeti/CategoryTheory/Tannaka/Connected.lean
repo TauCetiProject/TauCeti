@@ -45,7 +45,7 @@ variable (K : Type u) [Field K] (B : Type u) [CommRing B] [_root_.HopfAlgebra K 
 /-- The absence of nontrivial finite tensor-closed hulls in an equivalent category means that
 there are no nontrivial finite-dimensional Hopf subalgebras. This holds in every characteristic.
 An object is nontrivial here precisely when it is not a finite sum of tensor units. -/
-theorem forall_isHopfSubalgebra_eq_bot_iff_not_tensorClosed_hull
+theorem forall_isHopfSubalgebra_eq_bot_iff_forall_not_tensorLE_subquotientHull
     (E : C ≌ FGComoduleCat.{u, u, u} K B) [E.functor.Monoidal] :
     (∀ A : Subalgebra K B, A.IsHopfSubalgebra → FiniteDimensional K A → A = ⊥) ↔
       ∀ X : C, ¬ IsSumOfUnits X →
@@ -57,26 +57,26 @@ theorem forall_isHopfSubalgebra_eq_bot_iff_not_tensorClosed_hull
 /-- **Connectedness criterion in characteristic zero.** Under a monoidal equivalence with
 finite comodules over `B`, its prime spectrum is connected exactly when every object outside
 the finite sums of units has a hull that fails tensor closure. -/
-theorem connected_iff_not_tensorClosed_hull [CharZero K]
+theorem connectedSpace_primeSpectrum_iff_forall_not_tensorLE_subquotientHull [CharZero K]
     (E : C ≌ FGComoduleCat.{u, u, u} K B) [E.functor.Monoidal] :
     ConnectedSpace (PrimeSpectrum B) ↔
       ∀ X : C, ¬ IsSumOfUnits X →
         ¬ (subquotientHull X).TensorLE (subquotientHull X) (subquotientHull X) :=
   HopfAlgebra.connectedSpace_primeSpectrum_iff_forall_isHopfSubalgebra_eq_bot.trans
-    (forall_isHopfSubalgebra_eq_bot_iff_not_tensorClosed_hull K B E)
+    (forall_isHopfSubalgebra_eq_bot_iff_forall_not_tensorLE_subquotientHull K B E)
 
 /-- Over a perfect field, the categorical hull criterion implies connectedness. The reverse
 implication can fail in positive characteristic, for example for `αₚ`. -/
-theorem connected_of_not_tensorClosed_hull [PerfectField K]
+theorem connectedSpace_primeSpectrum_of_forall_not_tensorLE_subquotientHull [PerfectField K]
     (E : C ≌ FGComoduleCat.{u, u, u} K B) [E.functor.Monoidal]
     (h : ∀ X : C, ¬ IsSumOfUnits X →
       ¬ (subquotientHull X).TensorLE (subquotientHull X) (subquotientHull X)) :
     ConnectedSpace (PrimeSpectrum B) :=
   HopfAlgebra.connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot
-    ((forall_isHopfSubalgebra_eq_bot_iff_not_tensorClosed_hull K B E).2 h)
+    ((forall_isHopfSubalgebra_eq_bot_iff_forall_not_tensorLE_subquotientHull K B E).2 h)
 
 /-- The characteristic-zero hull criterion in scheme-theoretic geometric form. -/
-theorem geometricallyConnected_hopfSpec_iff_not_tensorClosed_hull [CharZero K]
+theorem geometricallyConnected_hopfSpec_iff_forall_not_tensorLE_subquotientHull [CharZero K]
     (E : C ≌ FGComoduleCat.{u, u, u} K B) [E.functor.Monoidal] :
     AlgebraicGeometry.GeometricallyConnected
         (((AlgebraicGeometry.hopfSpec (CommRingCat.of K)).obj
@@ -84,22 +84,23 @@ theorem geometricallyConnected_hopfSpec_iff_not_tensorClosed_hull [CharZero K]
       ∀ X : C, ¬ IsSumOfUnits X →
         ¬ (subquotientHull X).TensorLE (subquotientHull X) (subquotientHull X) :=
   (geometricallyConnected_hopfSpec_iff_connectedSpace K (CommHopfAlgCat.of K B)).trans
-    (connected_iff_not_tensorClosed_hull K B E)
+    (connectedSpace_primeSpectrum_iff_forall_not_tensorLE_subquotientHull K B E)
 
 /-- The characteristic-zero hull criterion for the coordinate-algebra predicate of geometric
 connectedness. -/
-theorem geometricallyConnected_iff_not_tensorClosed_hull [CharZero K]
+theorem geometricallyConnectedCommHopfAlgProperty_iff_forall_not_tensorLE_subquotientHull
+    [CharZero K]
     (E : C ≌ FGComoduleCat.{u, u, u} K B) [E.functor.Monoidal] :
     geometricallyConnectedCommHopfAlgProperty K (CommHopfAlgCat.of K B) ↔
       ∀ X : C, ¬ IsSumOfUnits X →
         ¬ (subquotientHull X).TensorLE (subquotientHull X) (subquotientHull X) :=
   (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec K
     (CommHopfAlgCat.of K B)).trans
-      (geometricallyConnected_hopfSpec_iff_not_tensorClosed_hull K B E)
+      (geometricallyConnected_hopfSpec_iff_forall_not_tensorLE_subquotientHull K B E)
 
 /-- Over a perfect field, the hull criterion gives geometric connectedness of the Hopf
 spectrum, using its identity section. -/
-theorem geometricallyConnected_hopfSpec_of_not_tensorClosed_hull [PerfectField K]
+theorem geometricallyConnected_hopfSpec_of_forall_not_tensorLE_subquotientHull [PerfectField K]
     (E : C ≌ FGComoduleCat.{u, u, u} K B) [E.functor.Monoidal]
     (h : ∀ X : C, ¬ IsSumOfUnits X →
       ¬ (subquotientHull X).TensorLE (subquotientHull X) (subquotientHull X)) :
@@ -107,17 +108,18 @@ theorem geometricallyConnected_hopfSpec_of_not_tensorClosed_hull [PerfectField K
       (((AlgebraicGeometry.hopfSpec (CommRingCat.of K)).obj
         (Opposite.op (CommHopfAlgCat.of K B))).X.hom) :=
   (geometricallyConnected_hopfSpec_iff_connectedSpace K (CommHopfAlgCat.of K B)).2
-    (connected_of_not_tensorClosed_hull K B E h)
+    (connectedSpace_primeSpectrum_of_forall_not_tensorLE_subquotientHull K B E h)
 
 /-- Over a perfect field, the hull criterion gives the coordinate-algebra predicate of
 geometric connectedness. -/
-theorem geometricallyConnected_of_not_tensorClosed_hull [PerfectField K]
+theorem geometricallyConnectedCommHopfAlgProperty_of_forall_not_tensorLE_subquotientHull
+    [PerfectField K]
     (E : C ≌ FGComoduleCat.{u, u, u} K B) [E.functor.Monoidal]
     (h : ∀ X : C, ¬ IsSumOfUnits X →
       ¬ (subquotientHull X).TensorLE (subquotientHull X) (subquotientHull X)) :
     geometricallyConnectedCommHopfAlgProperty K (CommHopfAlgCat.of K B) :=
   (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec K
     (CommHopfAlgCat.of K B)).2
-      (geometricallyConnected_hopfSpec_of_not_tensorClosed_hull K B E h)
+      (geometricallyConnected_hopfSpec_of_forall_not_tensorLE_subquotientHull K B E h)
 
 end TauCeti.Tannaka

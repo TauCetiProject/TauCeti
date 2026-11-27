@@ -63,10 +63,11 @@ theorem constantGroup_regular (K : Type u) [Field K]
     obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp
       (h (Submodule.mem_top : ConstantGroup.delta K G 1 ∈ (⊤ : Submodule K _)))
     obtain ⟨g, hg⟩ := exists_ne (1 : G)
-    have h1 := congrArg (fun f ↦ ConstantGroup.functionAlgEquiv K G f 1) ha
-    have hg' := congrArg (fun f ↦ ConstantGroup.functionAlgEquiv K G f g) ha
-    simp at h1
-    simp [hg, h1] at hg'
+    have h1 : a = 1 := by
+      simpa using congrArg (fun f ↦ ConstantGroup.functionAlgEquiv K G f 1) ha
+    have h0 : a = 0 := by
+      simpa [hg] using congrArg (fun f ↦ ConstantGroup.functionAlgEquiv K G f g) ha
+    simp [h1] at h0
   · rw [FGComoduleCat.tensorLE_subquotientHull_iff, hcoeff]
     exact le_top
 
