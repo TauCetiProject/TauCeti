@@ -75,6 +75,16 @@ theorem sq_sub_mul_add_sq_mul {a b x y u v : R} (ha : a = x ^ 2 - x * y + y ^ 2)
   ⟨x * u - y * v, x * v + y * u - y * v, by
     rw [ha, hb, sq_sub_mul_add_sq_mul_sq_sub_mul_add_sq]⟩
 
+/-- A power of an element of the form `x ^ 2 - x * y + y ^ 2` is again of this form. -/
+theorem sq_sub_mul_add_sq_pow {a x y : R} (ha : a = x ^ 2 - x * y + y ^ 2) (k : ℕ) :
+    ∃ r s : R, a ^ k = r ^ 2 - r * s + s ^ 2 := by
+  induction k with
+  | zero => exact ⟨1, 0, by ring⟩
+  | succ k ih =>
+    obtain ⟨r, s, hrs⟩ := ih
+    rw [pow_succ]
+    exact sq_sub_mul_add_sq_mul hrs ha
+
 /-- Completing the square: `4 (a ^ 2 - a * b + b ^ 2) = (2 a - b) ^ 2 + 3 b ^ 2`. -/
 theorem four_mul_sq_sub_mul_add_sq (a b : R) :
     4 * (a ^ 2 - a * b + b ^ 2) = (2 * a - b) ^ 2 + 3 * b ^ 2 := by
@@ -294,64 +304,30 @@ theorem Prime.exists_eq_sq_sub_mul_add_sq_iff {p : ℕ} (hp : p.Prime) :
   exact Nat.not_even_one heven
 
 /-- If every prime `q ≡ 2 (mod 3)` divides `n` to an even power, then `n` is of the form
-`a ^ 2 - a * b + b ^ 2`. -/
+`a ^ 2 - a * b + b ^ 2`: each prime power in the factorization of `n` is of this form, and the
+form is closed under products. -/
 theorem exists_eq_sq_sub_mul_add_sq_of_even_factorization {n : ℕ}
     (h : ∀ q : ℕ, q.Prime → q % 3 = 2 → Even (n.factorization q)) :
     ∃ a b : ℤ, (n : ℤ) = a ^ 2 - a * b + b ^ 2 := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    rcases Nat.lt_or_ge n 2 with hn | hn
-    · interval_cases n
-      · exact ⟨0, 0, by norm_num⟩
-      · exact ⟨1, 0, by norm_num⟩
-    have hn0 : n ≠ 0 := by omega
-    have hp : n.minFac.Prime := Nat.minFac_prime (by omega)
-    by_cases hp3 : n.minFac % 3 = 2
-    · -- A prime `p ≡ 2 (mod 3)` dividing `n` divides it at least twice; split off `p ^ 2`.
-      have h1 := hp.factorization_pos_of_dvd hn0 (Nat.minFac_dvd n)
-      have h2 : 2 ≤ n.factorization n.minFac := by
-        obtain ⟨r, hr⟩ := h _ hp hp3
-        omega
-      obtain ⟨m, hm⟩ := (hp.pow_dvd_iff_le_factorization hn0).2 h2
-      have hm0 : m ≠ 0 := by
-        rintro rfl
-        omega
-      have hlt : m < n := by
-        have h4 : 4 ≤ n.minFac ^ 2 := by nlinarith [hp.two_le]
-        have := Nat.mul_le_mul_right m h4
-        omega
-      have hfac : ∀ q : ℕ, q.Prime → q % 3 = 2 → Even (m.factorization q) := by
-        intro q hq hq3
-        have hq' := h q hq hq3
-        rw [hm, hp.factorization_pow_mul_apply 2 hm0] at hq'
-        split_ifs at hq'
-        · exact (Nat.even_add.1 hq').1 even_two
-        · rwa [zero_add] at hq'
-      have hcast : (n : ℤ) = (n.minFac : ℤ) ^ 2 * m := by exact_mod_cast hm
-      obtain ⟨a, b, hab⟩ := ih m hlt hfac
-      have hp2 : (n.minFac : ℤ) ^ 2 = (n.minFac : ℤ) ^ 2 - n.minFac * 0 + 0 ^ 2 := by ring
-      rw [hcast]
-      exact sq_sub_mul_add_sq_mul hp2 hab
-    · -- A prime `p ≢ 2 (mod 3)` is of the required form; split off `p`.
-      obtain ⟨m, hm⟩ := Nat.minFac_dvd n
-      have hm0 : m ≠ 0 := by
-        rintro rfl
-        omega
-      have hlt : m < n := by
-        have := Nat.mul_le_mul_right m hp.two_le
-        omega
-      have hfac : ∀ q : ℕ, q.Prime → q % 3 = 2 → Even (m.factorization q) := by
-        intro q hq hq3
-        have hq' := h q hq hq3
-        have hpq : n.minFac ≠ q := fun hpq ↦ hp3 (hpq ▸ hq3)
-        have hfact := hp.factorization_pow_mul_apply 1 hm0 q
-        rw [pow_one, ite_eq_right hpq, zero_add] at hfact
-        rwa [hm, hfact] at hq'
-      have hcast : (n : ℤ) = (n.minFac : ℤ) * m := by exact_mod_cast hm
-      obtain ⟨a, b, hab⟩ := ih m hlt hfac
-      obtain ⟨c, d, hcd⟩ := hp.exists_eq_sq_sub_mul_add_sq hp3
-      rw [hcast]
-      exact sq_sub_mul_add_sq_mul hcd hab
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact ⟨0, 0, by norm_num⟩
+  have hpow : ∀ p ∈ n.primeFactors,
+      ∃ a b : ℤ, (p : ℤ) ^ n.factorization p = a ^ 2 - a * b + b ^ 2 := by
+    intro p hp
+    have hprime := Nat.prime_of_mem_primeFactors hp
+    by_cases hp3 : p % 3 = 2
+    · -- An even power `p ^ (j + j)` is the value of the form at `(p ^ j, 0)`.
+      obtain ⟨j, hj⟩ := h p hprime hp3
+      exact ⟨(p : ℤ) ^ j, 0, by rw [hj, pow_add]; ring⟩
+    · obtain ⟨c, d, hcd⟩ := hprime.exists_eq_sq_sub_mul_add_sq hp3
+      exact sq_sub_mul_add_sq_pow hcd _
+  have hn' : (n : ℤ) = ∏ p ∈ n.primeFactors, (p : ℤ) ^ n.factorization p := by
+    have hprod := Nat.prod_factorization_pow_eq_self hn
+    rw [Finsupp.prod, Nat.support_factorization] at hprod
+    exact_mod_cast hprod.symm
+  rw [hn']
+  exact Finset.prod_induction _ (fun x : ℤ ↦ ∃ a b : ℤ, x = a ^ 2 - a * b + b ^ 2)
+    (fun _ _ ⟨_, _, hx⟩ ⟨_, _, hy⟩ ↦ sq_sub_mul_add_sq_mul hx hy) ⟨1, 0, by ring⟩ hpow
 
 /-- **The Eisenstein norm criterion.** A natural number `n` is of the form
 `a ^ 2 - a * b + b ^ 2` with integers `a` and `b` if and only if every prime `q ≡ 2 (mod 3)`
