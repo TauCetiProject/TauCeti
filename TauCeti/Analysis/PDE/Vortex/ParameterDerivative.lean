@@ -136,7 +136,7 @@ local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens 
 
 /-- **The weighted norm of the zeroth-order part.** Multiplication by `Z(b, ·)`, for an essentially
 bounded coefficient `b`, costs at most `‖Z‖ ‖b‖∞` in every weighted norm. -/
-private theorem eLpNorm_exp_mul_smul_holderL_le (c : ℝ) (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
+theorem eLpNorm_exp_mul_smul_holderL_le (c : ℝ) (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
     (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
       gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b g z) 2 μ⊤ ≤
@@ -279,7 +279,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_m
 
 /-- `Q (Z(b, y))` costs at most `q ‖Z‖ ‖b‖∞ r N` in a weighted norm in which `Q` costs at most `q`
 and `y` at most `r N`. -/
-private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le {c : ℝ} {q r : ℝ≥0}
+theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le {c : ℝ} {q r : ℝ≥0}
     {N : ℝ≥0∞}
     {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
     (hQ : ∀ g, eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (Q g) z) 2 μ⊤ ≤
@@ -304,7 +304,7 @@ most `kc` on the kernel at the rate `c`, and at most `qᵢ` on `eᵢ k` at the r
 `‖k‖₂`, then
 
 `‖exp(c ρ) y‖₂ ≤ kc ∑ i ∈ s, qᵢ ‖exp(c ρ) Aᵢ‖₂ + ‖exp(c ρ) (y - π y)‖₂`. -/
-private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner {c : ℝ}
+theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner {c : ℝ}
     {kc : ℝ≥0} {ι : Type*} {s : Finset ι} {q : ι → ℝ≥0}
     {T : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
     {π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}

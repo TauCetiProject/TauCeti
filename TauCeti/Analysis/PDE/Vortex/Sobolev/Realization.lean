@@ -19,6 +19,8 @@ import TauCeti.Topology.Algebra.Support
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Fredholm.Criteria
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 
 /-!
@@ -116,7 +118,9 @@ in a direction `v` is the zeroth-order operator whose coefficient is the derivat
 direction (`TauCeti.Vortex.fderiv_sobolevGaugeFixedOperator_comp_apply`). Along a family `C²` at
 a point, the second derivative of `L_a` is likewise the zeroth-order operator whose coefficient is
 the second derivative of `a`
-(`TauCeti.Vortex.fderiv_fun_fderiv_sobolevGaugeFixedOperator_comp_apply`).
+(`TauCeti.Vortex.fderiv_fun_fderiv_sobolevGaugeFixedOperator_comp_apply`), and along a curve `C^j`
+at a point its `j`-th derivative, `j ≠ 0`, is the zeroth-order operator whose coefficient is the
+`j`-th derivative of `a` (`TauCeti.Vortex.iteratedDeriv_sobolevGaugeFixedOperator_comp_apply`).
 
 ## References
 
@@ -386,6 +390,28 @@ theorem fderiv_fun_fderiv_sobolevGaugeFixedOperator_comp_apply {X : Type*}
       ((H.flip (sobolevFieldValues y)).comp (fderiv ℝ (fun p ↦ fderiv ℝ a p v) p₀)) p₀ :=
     (H.flip (sobolevFieldValues y)).hasFDerivAt.comp p₀ hd.hasFDerivAt
   rw [h1.fderiv_eq, h2.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply]
+
+/-- **The derivatives of the realization along a curve of coefficients.** The realization is
+affine in the `L∞` class of the coefficient, so along a curve `a` of coefficients `C^j` at `t₀`, its
+`j`-th derivative for `j ≠ 0` is the zeroth-order operator `y ↦ Z(aⱼ, y)` whose coefficient is the
+`j`-th derivative `aⱼ` of `a` at `t₀`. -/
+theorem iteratedDeriv_sobolevGaugeFixedOperator_comp_apply
+    {a : ℝ → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {t₀ : ℝ} {j : ℕ} (ha : ContDiffAt ℝ j a t₀)
+    (hj : j ≠ 0) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    iteratedDeriv j (fun t ↦ sobolevGaugeFixedOperator (a t)) t₀ y =
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 (iteratedDeriv j a t₀) (sobolevFieldValues y) := by
+  set H := gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
+  have hL : ContDiffAt ℝ j (fun t ↦ sobolevGaugeFixedOperator (a t)) t₀ :=
+    contDiff_sobolevGaugeFixedOperator.contDiffAt.comp t₀ ha
+  set A := ContinuousLinearMap.apply ℝ (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) y
+  -- Evaluated at `y`, the family is the constant `L₀ y` plus the linear map `b ↦ Z(b, y)` of `a`.
+  have hfun : (A ∘ fun t ↦ sobolevGaugeFixedOperator (a t)) =
+      fun t ↦ sobolevGaugeFixedOperator 0 y + (H.flip (sobolevFieldValues y) ∘ a) t :=
+    funext fun t ↦ by simp [sobolevGaugeFixedOperator_eq_add (a t), A, H]
+  have h := A.iteratedDeriv_comp_left hL le_rfl
+  rw [hfun, iteratedDeriv_const_add (Nat.pos_of_ne_zero hj),
+    (H.flip (sobolevFieldValues y)).iteratedDeriv_comp_left ha le_rfl] at h
+  simpa [A, H] using h.symm
 
 /-- On a variation `y` whose coordinates have the coordinates of a `C¹` field `Y` as
 representatives, the realization at the `L∞` class of a field `x` is the classical gauge-fixed
