@@ -69,9 +69,9 @@ endomorphisms are unique and compose.
 * `TauCeti.Perfectoid.AMax.exists_mem_adjoin_sub_mem_span_pow` and
   `TauCeti.Perfectoid.AMax.exists_natCast_pow_mul_eq_algebraMap`: polynomials in `ξ / p` over
   `W(S)` are `p`-adically dense in `A_max`, and each of them has a multiple `p ^ k` in `W(S)`.
-* `TauCeti.Perfectoid.frobenius_xi_mem_span`: the Witt vector Frobenius carries `ξ` into `(p, ξ)`,
-  so it extends to `A_max` and `B⁺_max` (`TauCeti.Perfectoid.AMax.frobenius_eq_map`,
-  `TauCeti.Perfectoid.BMaxPlus.frobenius_eq_map`).
+* `TauCeti.Perfectoid.AMax.frobenius_eq_map`, `TauCeti.Perfectoid.BMaxPlus.frobenius_eq_map`:
+  the Frobenius of `A_max` and of `B⁺_max` is the extension of the Witt vector Frobenius, which
+  carries `ξ` into `(p, ξ)` (`TauCeti.Perfectoid.frobenius_xi_mem_span`).
 * `TauCeti.Perfectoid.AMax.map_comp`, `TauCeti.Perfectoid.BMaxPlus.map_comp`: the extensions to
   `A_max` and to `B⁺_max` compose, when `p` is a nonzerodivisor of `A_max`.
 * `TauCeti.Perfectoid.BMaxPlus.algebraMap_injective`: `A_max → B⁺_max` is injective.
@@ -120,15 +120,6 @@ noncomputable instance (ε : S) : CommRing (AMax p ε) :=
 noncomputable instance (ε : S) : Algebra (WittVector p S) (AMax p ε) :=
   inferInstanceAs (Algebra (WittVector p S) (AdicCompletion _ _))
 
-/-- The Witt vector Frobenius carries `ξ` into the ideal `(p, ξ)` of `W(S)`, since
-`φ(ξ) ≡ ξ ^ p` modulo `p`. -/
-theorem frobenius_xi_mem_span (ε : S) :
-    _root_.WittVector.frobenius (xi p ε) ∈ Ideal.span {(p : WittVector p S), xi p ε} := by
-  obtain ⟨y, hy⟩ := (isFrobeniusLift_frobenius p S).dvd_sub_pow (xi p ε)
-  refine Ideal.mem_span_pair.mpr ⟨y, xi p ε ^ (p - 1), ?_⟩
-  rw [← pow_succ, Nat.sub_add_cancel (Fact.out : p.Prime).one_le]
-  linear_combination -hy
-
 namespace AMax
 
 variable {p}
@@ -169,6 +160,15 @@ private theorem ofPre_of (a : WittVector p S) :
 private theorem ofPre_root : ofPre ε (AdjoinRoot.root (rel p ε)) = xiDivP p ε :=
   (rfl)
 
+-- `AMax p ε` is definitionally `AdicCompletion (preIdeal p ε) (Pre p ε)`, so the image of the
+-- ideal `(p)` is the ideal `(p)` of `A_max`. `preIdeal` is an abbrev, already unfolded here.
+private theorem map_preIdeal :
+    (preIdeal p ε).map
+        (algebraMap (Pre p ε) (AdicCompletion (preIdeal p ε) (Pre p ε))) =
+      Ideal.span {(p : AMax p ε)} := by
+  rw [Ideal.map_span, Set.image_singleton, map_natCast]
+  rfl
+
 /-- **The defining relation of `ξ / p`**: `p * (ξ / p) = ξ` in `A_max`. -/
 @[simp]
 theorem natCast_mul_xiDivP :
@@ -179,7 +179,7 @@ theorem natCast_mul_xiDivP :
 /-- **`A_max` is `p`-adically complete.** -/
 instance instIsAdicComplete : IsAdicComplete (Ideal.span {(p : AMax p ε)}) (AMax p ε) := by
   have h := AdicCompletion.isAdicComplete_self (preIdeal p ε) (Submodule.fg_span_singleton _)
-  rwa [preIdeal, Ideal.map_span, Set.image_singleton, map_natCast] at h
+  rwa [map_preIdeal] at h
 
 /-- **`p` is a nonzerodivisor of `A_max`** when `S` is a domain and `ε ≠ 1`: then `p, ξ` is a
 weakly regular sequence of `W(S)`, so `p` is a nonzerodivisor on `W(S)[X] ⧸ (p X - ξ)`, and
@@ -264,10 +264,8 @@ theorem ringHom_ext {R : Type*} [CommRing R] [IsHausdorff (Ideal.span {(p : R)})
   have hle (k : AMax p ε →+* R) :
       (preIdeal p ε).map (algebraMap (Pre p ε) (AdicCompletion (preIdeal p ε) (Pre p ε))) ≤
         (Ideal.span {(p : R)}).comap k := by
-    have hk : Ideal.span {(p : AMax p ε)} ≤ (Ideal.span {(p : R)}).comap k :=
-      Ideal.map_le_iff_le_comap.mp (by rw [Ideal.map_span, Set.image_singleton, map_natCast])
-    rw [Ideal.map_span, Set.image_singleton, map_natCast]
-    exact hk
+    rw [map_preIdeal]
+    exact Ideal.map_le_iff_le_comap.mp (by rw [Ideal.map_span, Set.image_singleton, map_natCast])
   refine AdicCompletion.ringHom_ext (Submodule.fg_span_singleton _) (hle f) (hle g) ?_
   exact AdjoinRoot.ringHom_ext (RingHom.ext fun a ↦ congr($h a)) hx
 
@@ -302,8 +300,16 @@ theorem exists_mem_adjoin_sub_mem_span_pow (x : AMax p ε) (n : ℕ) :
       x - y ∈ Ideal.span {(p : AMax p ε) ^ n} := by
   obtain ⟨y, hy⟩ :=
     AdicCompletion.exists_sub_algebraMap_mem_map_pow (Submodule.fg_span_singleton _) n x
-  rw [Ideal.span_singleton_pow, Ideal.map_span, Set.image_singleton, map_pow,
-    map_natCast (algebraMap (Pre p ε) (AdicCompletion (preIdeal p ε) (Pre p ε)))] at hy
+  -- `map_preIdeal` rewrites the image of `(p)`. Under `^ n`, `rw` rechecks the `CommRing`
+  -- instance of `A_max` against that of the completion, and those instances agree only at
+  -- default transparency, so the power is substituted from `map_preIdeal`.
+  have hpow :
+      ((preIdeal p ε) ^ n).map
+          (algebraMap (Pre p ε) (AdicCompletion (preIdeal p ε) (Pre p ε))) =
+        Ideal.span {(p : AMax p ε) ^ n} :=
+    (Ideal.map_pow _ (preIdeal p ε) n).trans <|
+      (congrArg (· ^ n) map_preIdeal).trans (Ideal.span_singleton_pow _ _)
+  rw [hpow] at hy
   exact ⟨ofPre ε y, range_ofPreₐ (p := p) (ε := ε) ▸ ⟨y, rfl⟩, hy⟩
 
 /-- Every element of the `W(S)`-subalgebra of `A_max` generated by `ξ / p` becomes an element of

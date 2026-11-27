@@ -33,6 +33,7 @@ map sends `τ` to `ζ - 1`, where `ζ` is the sharp of `ε^(1/p)`; this is nonze
 * `TauCeti.Perfectoid.mu_eq_xi_mul_frobeniusEquiv_symm`: `μ = ξ * φ^(-1)(μ)`.
 * `TauCeti.Perfectoid.iterate_frobeniusEquiv_mu`: `φ^j(μ(ε)) = μ(ε ^ p ^ j)`.
 * `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiTilde`: `φ^j(xiTilde(ε)) = xiTilde(ε ^ p ^ j)`.
+* `TauCeti.Perfectoid.frobenius_xi_mem_span`: the Witt vector Frobenius carries `ξ` into `(p, ξ)`.
 * `TauCeti.Perfectoid.coeff_zero_mu`: the zeroth Witt coordinate of `μ` is `ε - 1`.
 * `TauCeti.Perfectoid.mu_ne_zero`: for `ε ≠ 1`, `μ ≠ 0`.
 * `TauCeti.Perfectoid.not_natCast_dvd_mu`,
@@ -92,6 +93,13 @@ theorem xi_eq (ε : S) : xi p ε =
 
 /-- The defining equation of `xiTilde`. -/
 theorem xiTilde_eq (ε : S) : xiTilde p ε = (frobeniusEquiv p S) (xi p ε) := (rfl)
+
+/-- The Witt vector Frobenius carries `ξ` into the ideal `(p, ξ)` of `W(S)`. This is
+`WittVector.frobenius_mem_span_natCast_self` applied to `ξ`: `φ x ∈ (p, x)` for every Witt
+vector `x`. -/
+theorem frobenius_xi_mem_span (ε : S) :
+    WittVector.frobenius (xi p ε) ∈ Ideal.span {(p : WittVector p S), xi p ε} :=
+  WittVector.frobenius_mem_span_natCast_self (xi p ε)
 
 /-- Frobenius carries the polynomial expression for `ξ` to the geometric sum in `[ε]`. -/
 theorem xiTilde_eq_sum (ε : S) : xiTilde p ε =
