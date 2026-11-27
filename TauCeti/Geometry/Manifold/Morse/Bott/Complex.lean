@@ -453,6 +453,12 @@ theorem eq_zero_of_mem_totalDegree_coordinateGrading {d : ι → ℕ}
     (h : ∀ C (i : Fin (d C + 1)), (i : ℤ) ≠ k - B.rank C) : x = 0 :=
   funext fun C ↦ funext fun i ↦ mem_totalDegree_coordinateGrading_iff.1 hx C i (h C i)
 
+/-- For Bott data graded by coordinates, every chain of negative total degree vanishes. -/
+theorem eq_zero_of_mem_totalDegree_coordinateGrading_of_neg {d : ι → ℕ}
+    {B : BottChainData R ι fun C ↦ Fin (d C + 1) → R} {k : ℤ} {x : ∀ C, Fin (d C + 1) → R}
+    (hx : x ∈ B.totalDegree (fun C ↦ coordinateGrading R (d C)) k) (hk : k < 0) : x = 0 :=
+  eq_zero_of_mem_totalDegree_coordinateGrading hx fun _ _ ↦ by omega
+
 variable {S}
 
 /-- **The Bott differential has total degree `-1`**: if the boundary of each component lowers the
@@ -519,6 +525,18 @@ theorem chainComplex_d_apply_of_eq_add_one
       B.differential x.val := by
   subst hij
   exact B.chainComplex_d_apply hboundary hpushforward j x
+
+/-- A chain of total degree `i = j + 1` lies in the kernel of the differential of the Bott chain
+complex to total degree `j` exactly when its Bott differential vanishes. -/
+theorem mem_ker_chainComplex_d_iff
+    (hboundary : ∀ C j, ∀ x ∈ S C j, B.boundary C x ∈ S C (j - 1))
+    (hpushforward : ∀ C D j, ∀ x ∈ S C j,
+      B.pushforward C D x ∈ S D (j + bottDegreeShift B.rank C D))
+    {i j : ℤ} (hij : i = j + 1) (x : (B.chainComplex hboundary hpushforward).X i) :
+    x ∈ LinearMap.ker ((B.chainComplex hboundary hpushforward).d i j).hom ↔
+      B.differential (x : B.totalDegree S i).val = 0 := by
+  rw [LinearMap.mem_ker, ← B.chainComplex_d_apply_of_eq_add_one hboundary hpushforward hij x]
+  exact Subtype.ext_iff
 
 /-- The object of the Bott chain complex in total degree `k` is the total-degree piece. -/
 @[simp]

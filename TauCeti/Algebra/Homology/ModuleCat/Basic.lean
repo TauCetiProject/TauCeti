@@ -62,7 +62,7 @@ differential, the kernel and the homology form an exact sequence
 the outgoing differential is injective (`HomologicalComplex.isZero_homology_of_injective_d`), and
 it is linearly equivalent to the target of any surjective linear map on that kernel which vanishes
 exactly on the image of the incoming differential
-(`HomologicalComplex.nonempty_linearEquiv_homology_of_surjective`).
+(`HomologicalComplex.homologyLinearEquivOfSurjective`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
 with its surjectivity and its kernel described by the coboundaries.  When the differential is a
@@ -542,23 +542,44 @@ theorem exact_inclusion_moduleCatKerHomologyClass {p : ι} (hp : c.prev n = p) :
   · rintro ⟨⟨_, y, rfl⟩, rfl⟩
     exact ⟨y, rfl⟩
 
-include hm in
+/-- If every element of the term of degree `p` vanishes, the image of the differential `K.d p n`
+is zero. -/
+theorem range_d_eq_bot_of_forall_eq_zero {p : ι} (h : ∀ y : K.X p, y = 0) :
+    LinearMap.range (K.d p n).hom = ⊥ :=
+  LinearMap.range_eq_bot.2 (LinearMap.ext fun y ↦ by rw [h y, map_zero, LinearMap.zero_apply])
+
+variable {p : ι} (hp : c.prev n = p) {N : Type*} [AddCommGroup N] [Module R N]
+  (ψ : LinearMap.ker (K.d n m).hom →ₗ[R] N) (hψ : Function.Surjective ψ)
+  (hker : ∀ z, ψ z = 0 ↔ (z : K.X n) ∈ LinearMap.range (K.d p n).hom)
+
 /-- **Homology from a presentation of the cycles.** If a surjective linear map `ψ` on the kernel
 of the outgoing differential `K.d n m` vanishes exactly on the image of the incoming differential
-`K.d p n`, then the homology in degree `n` is linearly equivalent to the target of `ψ`. -/
-theorem nonempty_linearEquiv_homology_of_surjective {p : ι} (hp : c.prev n = p) {N : Type*}
-    [AddCommGroup N] [Module R N] (ψ : LinearMap.ker (K.d n m).hom →ₗ[R] N)
-    (hψ : Function.Surjective ψ)
-    (hker : ∀ z, ψ z = 0 ↔ (z : K.X n) ∈ LinearMap.range (K.d p n).hom) :
-    Nonempty (K.homology n ≃ₗ[R] N) := by
-  have h : LinearMap.ker (K.moduleCatKerHomologyClass hm) = LinearMap.ker ψ := by
-    ext z
-    rw [LinearMap.mem_ker, LinearMap.mem_ker, K.exact_inclusion_moduleCatKerHomologyClass hm hp z,
-      hker]
-    exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hz ↦ ⟨⟨z, hz⟩, rfl⟩⟩
-  exact ⟨((K.moduleCatKerHomologyClass hm).quotKerEquivOfSurjective
-    (K.moduleCatKerHomologyClass_surjective hm)).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ h ≪≫ₗ
-      ψ.quotKerEquivOfSurjective hψ⟩
+`K.d p n`, then the homology in degree `n` is linearly equivalent to the target of `ψ`, by the
+equivalence sending the class of `z` to `ψ z`
+(`HomologicalComplex.homologyLinearEquivOfSurjective_moduleCatKerHomologyClass`). -/
+noncomputable def homologyLinearEquivOfSurjective : K.homology n ≃ₗ[R] N :=
+  ((K.moduleCatKerHomologyClass hm).quotKerEquivOfSurjective
+    (K.moduleCatKerHomologyClass_surjective hm)).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (by
+      ext z
+      rw [LinearMap.mem_ker, LinearMap.mem_ker,
+        K.exact_inclusion_moduleCatKerHomologyClass hm hp z, hker]
+      exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hz ↦ ⟨⟨z, hz⟩, rfl⟩⟩) ≪≫ₗ
+    ψ.quotKerEquivOfSurjective hψ
+
+/-- The equivalence `HomologicalComplex.homologyLinearEquivOfSurjective` sends the homology class
+of `z` to `ψ z`. -/
+@[simp]
+theorem homologyLinearEquivOfSurjective_moduleCatKerHomologyClass
+    (z : LinearMap.ker (K.d n m).hom) :
+    K.homologyLinearEquivOfSurjective hm hp ψ hψ hker (K.moduleCatKerHomologyClass hm z) =
+      ψ z := by
+  have h : ((K.moduleCatKerHomologyClass hm).quotKerEquivOfSurjective
+      (K.moduleCatKerHomologyClass_surjective hm)).symm (K.moduleCatKerHomologyClass hm z) =
+      Submodule.Quotient.mk z := by
+    rw [LinearEquiv.symm_apply_eq, LinearMap.quotKerEquivOfSurjective_apply_mk]
+  rw [homologyLinearEquivOfSurjective, LinearEquiv.trans_apply, LinearEquiv.trans_apply, h,
+    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
 
 end KerHomologyClass
 
