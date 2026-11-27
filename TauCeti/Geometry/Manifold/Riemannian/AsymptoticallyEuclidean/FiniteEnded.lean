@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Asymptotics
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Rescale
+public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Volume
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 
 /-!
