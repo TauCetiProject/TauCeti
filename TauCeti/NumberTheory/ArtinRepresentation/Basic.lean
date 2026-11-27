@@ -207,6 +207,10 @@ def quotientKerEquivRange (ρ : ArtinRep F V) :
 @[simp]
 theorem coe_quotientKerEquivRange_mk (ρ : ArtinRep F V) (g : Field.absoluteGaloisGroup F) :
     ((ρ.quotientKerEquivRange g : (V →L[ℂ] V)ˣ) : V →L[ℂ] V) = ρ g :=
+  -- Definitional: `quotientMulEquivOfEq` sends the class of `g` to the class of `g`, the first
+  -- isomorphism theorem sends that class to `ρ.toMonoidHom.toHomUnits g` (Mathlib has no
+  -- evaluation lemma for `QuotientGroup.rangeKerLift`), and the underlying operator of
+  -- `toHomUnits` is `ρ g` (`MonoidHom.coe_toHomUnits`, itself `rfl`).
   (rfl)
 
 /-- **The image of an Artin representation is finite.** -/
@@ -255,9 +259,25 @@ theorem ofContinuousRep_apply (σ : ContinuousRep (Field.absoluteGaloisGroup F) 
   σ.toContRepresentation_apply g v
 
 @[simp]
+theorem toContRepresentation_ofContinuousRep
+    (σ : ContinuousRep (Field.absoluteGaloisGroup F) ℂ V) :
+    (ofContinuousRep σ).toContRepresentation = σ.toContRepresentation :=
+  (rfl)
+
+@[simp]
 theorem toRepresentation_ofContinuousRep (σ : ContinuousRep (Field.absoluteGaloisGroup F) ℂ V) :
     (ofContinuousRep σ).toRepresentation = σ.toRepresentation :=
   σ.toRepresentation_toContRepresentation
+
+@[simp]
+theorem toContRepresentation_toContinuousRep (ρ : ArtinRep F V) :
+    ρ.toContinuousRep.toContRepresentation = ρ.toContRepresentation :=
+  ContinuousRep.toContRepresentation_ofContRepresentation _ _
+
+@[simp]
+theorem toRepresentation_toContinuousRep (ρ : ArtinRep F V) :
+    ρ.toContinuousRep.toRepresentation = ρ.toRepresentation :=
+  ContinuousRep.toRepresentation_ofContRepresentation _ _
 
 @[simp]
 theorem ofContinuousRep_toContinuousRep (ρ : ArtinRep F V) :
@@ -360,8 +380,7 @@ of `V`. -/
 theorem character_trivial :
     (trivial F V).character = ContinuousMap.const _ (Module.finrank ℂ V : ℂ) := by
   ext g
-  rw [character_apply, trivial_apply, ContinuousLinearMap.toLinearMap_one, LinearMap.trace_one,
-    ContinuousMap.const_apply]
+  simp
 
 /-- The character of the one-dimensional Artin representation of a linear character `χ` is `χ`.
 This is not a `simp` lemma: `simp` already unfolds the character to a trace with
