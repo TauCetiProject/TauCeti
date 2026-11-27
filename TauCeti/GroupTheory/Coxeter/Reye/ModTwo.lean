@@ -58,7 +58,8 @@ of the Coxeter system through `CoxeterMatrix.isLiftable_preReflection_map`.
 
 * `TauCeti.ker_polarBilin_reyeQuadratic`: the radical of the polar form is `⟨u, z⟩`, and
   `TauCeti.finrank_ker_polarBilin_reyeQuadratic`: it is two-dimensional.
-* `TauCeti.reyeQuadratic_smul_add_smul`: `q(a u + b z) = b`.
+* `TauCeti.reyeQuadratic_smul_add_smul`: `q(a u + b z) = b`; in particular `q(u) = 0` and
+  `q(z) = 1` (`TauCeti.reyeQuadratic_reyeRadicalU`, `TauCeti.reyeQuadratic_reyeRadicalZ`).
 * `TauCeti.reyeReductionAction_simple_apply`: the simple generator `sᵢ` acts by
   `x ↦ x + b(x, eᵢ) eᵢ`.
 * `TauCeti.reyeReductionAction_apply_intCast`: the action is the reduction modulo `2` of the
@@ -215,6 +216,28 @@ theorem reyeQuadratic_smul_add_smul (a b : ZMod 2) :
   rw [reyeQuadratic_apply]
   revert a b
   decide
+
+/-- The vector `u` lies in the radical of the polar form. -/
+theorem reyeRadicalU_mem_ker_polarBilin :
+    reyeRadicalU ∈ LinearMap.ker (polarBilin reyeQuadratic) := by
+  rw [ker_polarBilin_reyeQuadratic]
+  exact Submodule.subset_span (Set.mem_insert _ _)
+
+/-- The vector `z` lies in the radical of the polar form. -/
+theorem reyeRadicalZ_mem_ker_polarBilin :
+    reyeRadicalZ ∈ LinearMap.ker (polarBilin reyeQuadratic) := by
+  rw [ker_polarBilin_reyeQuadratic]
+  exact Submodule.subset_span (Set.mem_insert_of_mem _ rfl)
+
+/-- The radical vector `u` is isotropic: `q(u) = 0`. -/
+@[simp]
+theorem reyeQuadratic_reyeRadicalU : reyeQuadratic reyeRadicalU = 0 := by
+  simpa using reyeQuadratic_smul_add_smul 1 0
+
+/-- The radical vector `z` has norm one: `q(z) = 1`. -/
+@[simp]
+theorem reyeQuadratic_reyeRadicalZ : reyeQuadratic reyeRadicalZ = 1 := by
+  simpa using reyeQuadratic_smul_add_smul 0 1
 
 /-! ### The action of the T246 Coxeter group -/
 
