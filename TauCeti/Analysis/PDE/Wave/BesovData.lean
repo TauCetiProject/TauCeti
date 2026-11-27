@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Strichartz.HomogeneousBesov
 public import TauCeti.Analysis.PDE.Wave.Propagator
 import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Analysis.PDE.Wave.TimeExponentTwo
+import TauCeti.Analysis.PDE.Wave.WeakSolution
 
 /-!
 # Wave evolutions of data in homogeneous Besov spaces
@@ -32,7 +33,7 @@ functions, so `cos(tD)` and `D⁻¹ sin(tD)` have no a priori meaning on them. F
 whose pieces are the evolutions of the `L²` blocks of the data, and shows that these series
 converge to some limit `U`, determined for almost every `t`, which serves as the evolution, with
 the Strichartz bound. It builds no evolution operator on these Besov spaces and does not show that
-the limits satisfy `∂ₜ²u = Δu` or attain the data. For each series there is `U : ℝ → L^r` such
+the limits attain the data. For each series there is `U : ℝ → L^r` such
 that the partial sums converge to `U(t)` in `L^r` for almost every time `t` and to `U` in
 `L^q_t L^r_x`, with
 
@@ -52,6 +53,17 @@ its `D⁻¹ sin(tD)` counterpart). When the data are `L²` functions, any such l
 (`ContDiffBump.ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block`), so they are consistent
 with the `L²` solution of the free wave equation.
 
+Every such limit solves the wave equation `∂ₜ²U = ΔU` in the sense of distributions, tested against
+products `θ(t) ψ(x)` of a compactly supported `C²` function of time and a Schwartz function:
+
+`∫ θ''(t) ∫ conj (ψ(x)) U(t)(x) dx dt = ∫ θ(t) ∫ conj (Δψ(x)) U(t)(x) dx dt`
+
+(`ContDiffBump.integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_sum_waveCosPropagator_block`,
+`ContDiffBump.integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_sum_waveSinPropagator_block`).
+The partial sums are free waves with `L²` data, which satisfy this identity
+(`TauCeti.integral_deriv_deriv_mul_inner_waveDuhamelSolution`), and both sides pass to limits in
+mixed norm (`TauCeti.integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolution`).
+
 Each piece obeys the frequency-localized Strichartz estimate
 `‖cos(tD) Pⱼ x‖_{L^q_t L^r_x} ≤ C 2^{jγ} ‖x‖₂`, and its `D⁻¹ sin(tD)` counterpart with
 `2^{j(γ - 1)}`
@@ -69,7 +81,7 @@ series of the evolution of a datum in `\dot B^σ_{2,1}` converges under such est
 public section
 
 open Filter MeasureTheory Topology TauCeti
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal SchwartzMap Laplacian InnerProductSpace
 
 namespace ContDiffBump
 
@@ -218,5 +230,63 @@ theorem exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveSinPropagator_block_of_le_end
   φ.exists_tendsto_eLpNorm_eLpNorm_sub_sum_apply_block one_le_two _ _
     (fun x ↦ (continuous_waveSinPropagator_apply x).aestronglyMeasurable)
     (φ.exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le_of_le_endpoint hn hr)
+
+/-! ### The limits solve the wave equation -/
+
+section WaveEquation
+
+variable {σ : ℝ} {b q : ℝ≥0∞}
+
+/-- **The `cos(tD)` evolution of Besov data solves the wave equation.** Let
+`f ∈ \dot B^σ_{2,b}` and let `U : ℝ → L^r` be a limit of the dyadic series `∑ⱼ cos(tD) Pⱼ f`, in
+`L^r` for almost every `t` and in the mixed norm `L^q_t L^r_x` for some `1 ≤ q`, such as the limits
+of `ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveCosPropagator_block` and its
+variants at the pairs `(∞, r)` and `(2, r)`. Then `∂ₜ²U = ΔU` in the sense of distributions,
+tested against `θ(t) ψ(x)`: for every Schwartz function `ψ` and every compactly supported `C²`
+function `θ` of time,
+
+`∫ θ''(t) ∫ conj (ψ(x)) U(t)(x) dx dt = ∫ θ(t) ∫ conj (Δψ(x)) U(t)(x) dx dt`. -/
+theorem integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_sum_waveCosPropagator_block
+    (hq : 1 ≤ q) {f : HomogeneousBesovSpace ℂ φ σ 2 b} {U : ℝ → Lp ℂ r (volume : Measure E)}
+    (hae : ∀ᵐ t, Tendsto (fun s : Finset ℤ ↦
+      eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveCosPropagator ℂ t (f.block j))) r volume) atTop (𝓝 0))
+    (hlim : Tendsto (fun s : Finset ℤ ↦ eLpNorm (fun t ↦
+      eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveCosPropagator ℂ t (f.block j))) r volume) q volume)
+        atTop (𝓝 0))
+    (ψ : 𝓢(E, ℂ)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ) :
+    ∫ t, deriv (deriv θ) t * ∫ x, ⟪ψ x, U t x⟫_ℂ = ∫ t, θ t * ∫ x, ⟪(Δ ψ) x, U t x⟫_ℂ := by
+  have h (s : Finset ℤ) (t : ℝ) : ∑ j ∈ s, waveCosPropagator ℂ t (f.block j) =
+      waveDuhamelSolution ℂ (∑ j ∈ s, f.block j) 0 0 t := by
+    simp [map_sum]
+  simp_rw [h] at hae hlim
+  exact integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolution hq hae hlim ψ hθ
+    hθc
+
+/-- **The `D⁻¹ sin(tD)` evolution of Besov data solves the wave equation.** Let
+`g ∈ \dot B^σ_{2,b}` and let `U : ℝ → L^r` be a limit of the dyadic series `∑ⱼ D⁻¹ sin(tD) Pⱼ g`,
+in `L^r` for almost every `t` and in the mixed norm `L^q_t L^r_x` for some `1 ≤ q`, such as the
+limits of `ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveSinPropagator_block` and its
+variants at the pairs `(∞, r)` and `(2, r)`. Then `∂ₜ²U = ΔU` in the sense of distributions,
+tested against `θ(t) ψ(x)`: for every Schwartz function `ψ` and every compactly supported `C²`
+function `θ` of time,
+
+`∫ θ''(t) ∫ conj (ψ(x)) U(t)(x) dx dt = ∫ θ(t) ∫ conj (Δψ(x)) U(t)(x) dx dt`. -/
+theorem integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_sum_waveSinPropagator_block
+    (hq : 1 ≤ q) {g : HomogeneousBesovSpace ℂ φ σ 2 b} {U : ℝ → Lp ℂ r (volume : Measure E)}
+    (hae : ∀ᵐ t, Tendsto (fun s : Finset ℤ ↦
+      eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveSinPropagator ℂ t (g.block j))) r volume) atTop (𝓝 0))
+    (hlim : Tendsto (fun s : Finset ℤ ↦ eLpNorm (fun t ↦
+      eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveSinPropagator ℂ t (g.block j))) r volume) q volume)
+        atTop (𝓝 0))
+    (ψ : 𝓢(E, ℂ)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ) :
+    ∫ t, deriv (deriv θ) t * ∫ x, ⟪ψ x, U t x⟫_ℂ = ∫ t, θ t * ∫ x, ⟪(Δ ψ) x, U t x⟫_ℂ := by
+  have h (s : Finset ℤ) (t : ℝ) : ∑ j ∈ s, waveSinPropagator ℂ t (g.block j) =
+      waveDuhamelSolution ℂ 0 (∑ j ∈ s, g.block j) 0 t := by
+    simp [map_sum]
+  simp_rw [h] at hae hlim
+  exact integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolution hq hae hlim ψ hθ
+    hθc
+
+end WaveEquation
 
 end ContDiffBump

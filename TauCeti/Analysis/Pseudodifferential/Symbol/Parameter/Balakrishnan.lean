@@ -91,6 +91,8 @@ principal symbol `σ(A) ^ (-σ)`
   inverse of `A + t` along the axis is `A ^ (-σ)`.
 * `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse`: the integral of the inverse
   of a symbol `a` elliptic with parameter, equal to `A + t` along the axis, is `A ^ (-σ)`.
+* `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse_of_smul_one`: the same for a
+  scalar symbol, equal to `(q + t) • 1` along the axis, whose integral is `q ^ (-σ) • 1`.
 * `TauCeti.ParameterSymbol.exists_coefficient_balakrishnanIntegral_rightParametrix_eq_rpow_add`:
   the integral of a truncated right parametrix is `A ^ (-σ)` up to one fixed symbol of lower
   order.
@@ -513,6 +515,25 @@ theorem coefficient_balakrishnanIntegral_inverse (hσ0 : 0 < σ) (hm : -m - 2 * 
   rw [← hpA t ht]
   exact coefficient_inverse_comp_coefficient ha p.1 p.2 hmem
 
+/-- **The Balakrishnan integral of the inverse of a scalar symbol.** Let `a` be a symbol of order
+`m` elliptic with parameter whose value at `p` along the negative real axis is the scalar
+`a(p, -t) = (q + t) • 1`, `t > 0`, for a real `q > 0`. Then for `0 < σ < 1` the Balakrishnan
+integral of the inverse symbol `a⁻¹` at `p` is `q ^ (-σ) • 1`: the case `A = q • 1` of
+`TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse`. -/
+theorem coefficient_balakrishnanIntegral_inverse_of_smul_one (hσ0 : 0 < σ)
+    (hm : -m - 2 * σ + 2 < 0) {a : ParameterSymbol n Λ V V m} (ha : a.IsElliptic)
+    {p : CoordinateSpace n × CoordinateSpace n} {q : ℝ} (hq : 0 < q)
+    (hpq : ∀ t : ℝ, 0 < t → a.coefficient (p, -(t : ℂ)) = (q + t) • (1 : V →L[ℂ] V)) :
+    ((a.inverse ha).balakrishnanIntegral hΛ hσ hm).coefficient p =
+      q ^ (-σ) • (1 : V →L[ℂ] V) := by
+  obtain ⟨r, hr⟩ : ∃ r : NNReal, (r : ℝ) = q := ⟨⟨_, hq.le⟩, rfl⟩
+  have hr0 : 0 < r := by rwa [← NNReal.coe_pos, hr]
+  have hmap (r : NNReal) : algebraMap NNReal (V →L[ℂ] V) r = (r : ℝ) • (1 : V →L[ℂ] V) := by
+    rw [Algebra.algebraMap_eq_smul_one, NNReal.smul_def]
+  rw [coefficient_balakrishnanIntegral_inverse hΛ hσ hσ0 hm ha (A := algebraMap NNReal _ r)
+    (isStrictlyPositive_algebraMap hr0) fun t ht ↦ by rw [hpq t ht, hmap, hr, add_smul],
+    CFC.rpow_algebraMap, hmap, NNReal.coe_rpow, hr]
+
 /-- **The principal part of Seeley's symbol of a negative power.** Let `a` be a symbol of order
 `m` elliptic with parameter, and `N : ℕ`. The Balakrishnan integral of its truncated right
 parametrix `Bₙ₊₁` (`TauCeti.ParameterSymbol.rightParametrix`) satisfies: there is one symbol `d`
@@ -591,16 +612,10 @@ theorem coefficient_balakrishnanIntegral_inverse_shiftedLaplacian {V : Type*}
     (x ξ : CoordinateSpace n) :
     (((shiftedLaplacian V s).inverse h).balakrishnanIntegral hΛ hσ hm).coefficient (x, ξ) =
       ((s + ‖ξ‖ ^ 2) ^ (-σ) : ℝ) • (1 : V →L[ℂ] V) := by
-  have hq : 0 < s + ‖ξ‖ ^ 2 := by positivity
-  obtain ⟨q, hq_def⟩ : ∃ q : NNReal, (q : ℝ) = s + ‖ξ‖ ^ 2 := ⟨⟨_, hq.le⟩, rfl⟩
-  have hq0 : 0 < q := by rwa [← NNReal.coe_pos, hq_def]
-  have hmap (r : NNReal) : algebraMap NNReal (V →L[ℂ] V) r = (r : ℝ) • (1 : V →L[ℂ] V) := by
-    rw [Algebra.algebraMap_eq_smul_one, NNReal.smul_def]
-  rw [coefficient_balakrishnanIntegral_inverse hΛ hσ (by linarith) hm h (A := algebraMap NNReal _ q)
-    (isStrictlyPositive_algebraMap hq0) fun t ht ↦ ?_, CFC.rpow_algebraMap, hmap, NNReal.coe_rpow,
-    hq_def]
+  refine coefficient_balakrishnanIntegral_inverse_of_smul_one hΛ hσ (by linarith) hm h
+    (by positivity) fun t ht ↦ ?_
   have hmem : -(t : ℂ) ∈ Λ := by simpa using hΛ (-t) (by linarith)
-  rw [coefficient_shiftedLaplacian s x ξ hmem, hmap, hq_def, ← add_smul, ← Complex.coe_smul]
+  rw [coefficient_shiftedLaplacian s x ξ hmem, ← ContinuousLinearMap.one_def, ← Complex.coe_smul]
   congr 1
   push_cast
   ring

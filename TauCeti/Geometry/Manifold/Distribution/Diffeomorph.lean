@@ -15,21 +15,25 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 # Transport of distributions through diffeomorphisms
 
 A partial diffeomorphism transports local frames and involutivity between its source and target,
-while a local diffeomorphism pulls smooth constant-rank distributions back. This allows
+while a global diffeomorphism transports smooth constant-rank distributions. This allows
 regularity and involutivity to be checked in local or global coordinate models when constructing
-integral manifolds. In particular, the pullback of a smooth distribution by a local
-diffeomorphism, for instance its restriction to an open subset, is smooth, and a distribution is
-involutive if and only if its pullback by a diffeomorphism is involutive.
+integral manifolds. In particular, the pullback of a smooth distribution is smooth, and a
+distribution is involutive if and only if its pullback by a diffeomorphism is involutive.
 
 The vector-field pullback and Lie-bracket naturality APIs are provided by Mathlib.
 
 `TauCeti.IsDistributionFrameOn.comap_mfderivWithin` pulls a local frame back through partial
-coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization.
-`TauCeti.IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_comap` shows that a
-distribution that a local diffeomorphism pulls back from a `C^m` one near a point has a `C^m` local
-frame there. Hence `TauCeti.IsContMDiffDistribution.comap_mfderiv` pulls back a smooth
-distribution through a local diffeomorphism, and `TauCeti.IsContMDiffDistribution.comp_subtypeVal`
-restricts it to an open subset.
+coordinates, and `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization.
+`TauCeti.IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_comap` is the local
+version for distributions: a distribution that a local diffeomorphism pulls back from a `C^m` one
+near a point has a `C^m` local frame there. Hence pullbacks along local diffeomorphisms of `C^m`
+distributions are `C^m` (`TauCeti.IsContMDiffDistribution.comap_mfderiv_of_isLocalDiffeomorph`,
+with the special case `TauCeti.IsContMDiffDistribution.comap_mfderiv` of a diffeomorphism), and
+conversely a distribution whose pullback along a surjective local diffeomorphism is `C^m` is itself
+`C^m` (`TauCeti.IsContMDiffDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`), as local
+inverses pull the pullback back to it.
+In particular the restriction of a `C^m` distribution to an open subset is `C^m`
+(`TauCeti.IsContMDiffDistribution.comp_subtypeVal`).
 When `D x` is the preimage of `D' (f x)` under the differential of a local diffeomorphism `f` at
 `x`, the differential restricts to a linear equivalence `D x ≃ D' (f x)`
 (`IsLocalDiffeomorphAt.mfderivRestrictEquiv`) and induces one of normal spaces
@@ -169,15 +173,24 @@ theorem IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_co
     (hY.mono inter_subset_left).contMDiffOn, fun hz ↦ hY.linearIndependent hz.1, fun hz ↦ ?_⟩
   rw [hY.span_eq hz.1, hz.2.2, hz.2.1]
 
-/-- **Pullback of a distribution by a local diffeomorphism.** The pullback of a `C^m` distribution
-of rank `k` through a `C^n` local diffeomorphism `f`, the preimage `x ↦ df_x⁻¹ (D' (f x))` of each
-subspace under the differential, is a `C^m` distribution of rank `k` when `m + 1 ≤ n`. -/
-theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ} {f : M → N}
-    (hD' : IsContMDiffDistribution J m k D') (hf : IsLocalDiffeomorph I J n f) (hmn : m + 1 ≤ n) :
+/-- **Pullback of a distribution along a local diffeomorphism.** The pullback
+`x ↦ (df_x)⁻¹ (D' (f x))` of a `C^m` distribution of rank `k` along a `C^n` local diffeomorphism
+`f` is a `C^m` distribution of rank `k` when `m + 1 ≤ n`. -/
+theorem IsContMDiffDistribution.comap_mfderiv_of_isLocalDiffeomorph {m : ℕ∞ω} {k : ℕ}
+    {f : M → N} (hD' : IsContMDiffDistribution J m k D') (hf : IsLocalDiffeomorph I J n f)
+    (hmn : m + 1 ≤ n) :
     IsContMDiffDistribution I m k
       (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap) :=
   .of_mem_nhds fun x ↦ hD'.exists_isDistributionFrameOn_of_eventually_eq_comap (hf x) hmn
     (.of_forall fun _ ↦ rfl)
+
+/-- The pullback of a `C^m` distribution through a `C^n` diffeomorphism is a `C^m`
+distribution of the same rank when `m + 1 ≤ n`. -/
+theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
+    (hD' : IsContMDiffDistribution J m k D') (h : M ≃ₘ^n⟮I, J⟯ N) (hmn : m + 1 ≤ n) :
+    IsContMDiffDistribution I m k
+      (fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap) :=
+  hD'.comap_mfderiv_of_isLocalDiffeomorph h.isLocalDiffeomorph hmn
 
 /-- **Restriction of a distribution to an open subset.** The restriction `x ↦ D x` of a `C^m`
 distribution of rank `k` to an open subset `U` is a `C^m` distribution of rank `k` on `U`, the
@@ -187,7 +200,30 @@ theorem IsContMDiffDistribution.comp_subtypeVal {m : ℕ∞ω} {k : ℕ}
     IsContMDiffDistribution I m k (fun x : U ↦ D x) := by
   rw [show (fun x : U ↦ D x) = fun x : U ↦ (D x).comap (mfderiv I I Subtype.val x).toLinearMap from
     funext fun x ↦ (Submodule.comap_mfderiv_subtype_val (D x)).symm]
-  exact hD.comap_mfderiv isLocalDiffeomorph_subtype_val le_rfl
+  exact hD.comap_mfderiv_of_isLocalDiffeomorph isLocalDiffeomorph_subtype_val le_rfl
+
+omit [CompleteSpace E] in
+/-- **Descent of a distribution along a surjective local diffeomorphism.** Let `f` be a surjective
+`C^n` local diffeomorphism and `D'` a distribution on its target. If the pullback
+`x ↦ (df_x)⁻¹ (D' (f x))` is a `C^m` distribution of rank `k` and `m + 1 ≤ n`, then so is `D'`:
+near each point `f x`, a local inverse of `f` pulls the pullback back to `D'`. -/
+theorem IsContMDiffDistribution.of_comap_mfderiv_of_isLocalDiffeomorph [CompleteSpace F]
+    {m : ℕ∞ω} {k : ℕ} {f : M → N}
+    (hD : IsContMDiffDistribution I m k
+      (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap))
+    (hf : IsLocalDiffeomorph I J n f) (hsurj : Function.Surjective f) (hmn : m + 1 ≤ n) :
+    IsContMDiffDistribution J m k D' := by
+  have hn : n ≠ 0 := fun h ↦ by simp [h] at hmn
+  refine .of_mem_nhds fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := hsurj y
+  refine hD.exists_isDistributionFrameOn_of_eventually_eq_comap
+    (hf x).localInverse_isLocalDiffeomorphAt hmn ?_
+  filter_upwards [(hf x).localInverse_open_source.mem_nhds (hf x).localInverse_mem_source]
+    with z hz
+  ext v
+  rw [Submodule.mem_comap, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.coe_coe, (hf x).mfderiv_apply_mfderiv_localInverse_apply hn hz v,
+    (hf x).localInverse_right_inv hz]
 
 end Regularity
 
