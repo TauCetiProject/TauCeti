@@ -15,6 +15,9 @@ import Mathlib.Analysis.SpecialFunctions.Arsinh
 Every element of `SU(1,1)` has the form `rotation α * boost t * rotation γ` with
 `0 ≤ α < 2π`, `t ≥ 0`, and `-2π ≤ γ < 2π`. The coordinates in these ranges are unique
 when the off-diagonal entry is nonzero, which is equivalent to `t > 0`.
+`SU11.continuous_euler` gives the measurability needed to push forward the Euler Haar
+density from the positive-boost domain to the group. `SU11.bijOn_euler` gives each element
+with nonzero upper-right entry exactly one parameter triple in that domain.
 
 The order of the factors and the half-angle convention follow Vilenkin and Klimyk,
 *Representation of Lie Groups and Special Functions*, Vol. 1, §6.1.1, (10)–(12).
@@ -60,9 +63,8 @@ theorem continuous_rotation : Continuous rotation := by
 theorem coe_rotation_two_pi :
     ((rotation (2 * π)).val : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
   rw [coe_eq_matrix]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [entryA_rotation, entryB_rotation, Circle.coe_exp, Complex.exp_pi_mul_I]
+  conv_rhs => rw [Matrix.eta_fin_two (-1 : Matrix (Fin 2) (Fin 2) ℂ)]
+  simp [Circle.coe_exp, Complex.exp_pi_mul_I]
 
 /-- Two full turns in the angle parameter give the identity. -/
 @[simp]
@@ -154,6 +156,12 @@ theorem mem_eulerDomain {α t γ : ℝ} :
     (α, t, γ) ∈ eulerDomain ↔ α ∈ Ico 0 (2 * π) ∧ 0 < t ∧ γ ∈ Ico (-(2 * π)) (2 * π) :=
   Iff.rfl
 
+private theorem half_mem_euler_Ico {γ : ℝ} :
+    γ / 2 ∈ Ico (-π) π ↔ γ ∈ Ico (-(2 * π)) (2 * π) := by
+  have h := preimage_mul_const_Ico₀ (-π) π (by norm_num : 0 < (2 : ℝ)⁻¹)
+  simpa only [mem_preimage, div_eq_mul_inv, inv_inv, neg_mul, mul_comm π] using
+    Set.ext_iff.mp h γ
+
 /-- Every element has Euler angles in the stated ranges, including the case `t = 0`. -/
 theorem exists_euler_eq (g : SU11) :
     ∃ α t γ : ℝ, α ∈ Ico 0 (2 * π) ∧ 0 ≤ t ∧ γ ∈ Ico (-(2 * π)) (2 * π) ∧
@@ -184,7 +192,9 @@ theorem exists_euler_eq (g : SU11) :
     rw [← hpA, ← Circle.exp_add, hadd, hαphase, hpA, mul_comm]
   refine ⟨α, t, 2 * δ, by simpa using hα,
     mul_nonneg (by norm_num) (arsinh_nonneg_iff.mpr (norm_nonneg _)), ?_, ?_⟩
-  · exact ⟨by linarith [hδ.1], by linarith [hδ.2]⟩
+  · apply half_mem_euler_Ico.mp
+    rw [mul_div_cancel_left₀ _ (by norm_num : (2 : ℝ) ≠ 0)]
+    simpa only [two_mul π, neg_add_cancel_left] using hδ
   · ext
     · rw [entryA_euler, hcosh, hpA, Circle.coe_exp, Complex.norm_mul_exp_arg_mul_I]
     · rw [entryB_euler, hsinh, hpB, Circle.coe_exp, Complex.norm_mul_exp_arg_mul_I]
@@ -214,7 +224,7 @@ private theorem injOn_euler : InjOn (fun p : ℝ × ℝ × ℝ ↦ euler p.1 p.2
   subst α'
   have hδ : γ / 2 = γ' / 2 :=
     Circle.exp_injOn_Ico (a := -π) (b := π) (by rw [sub_neg_eq_add, two_mul])
-      ⟨by linarith [hγ.1], by linarith [hγ.2]⟩ ⟨by linarith [hγ'.1], by linarith [hγ'.2]⟩
+      (half_mem_euler_Ico.mpr hγ) (half_mem_euler_Ico.mpr hγ')
       (by simpa only [add_div, Circle.exp_add, mul_right_inj] using hpA)
   have hγeq : γ = γ' := by linarith
   subst γ'

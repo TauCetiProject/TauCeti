@@ -42,8 +42,8 @@ abbrev SU11 := ↥su11
 theorem mem_su11_iff {g : SL(2, ℂ)} :
     g ∈ su11 ↔ (g : Matrix (Fin 2) (Fin 2) ℂ)ᴴ * diagonal (![1, -1] : Fin 2 → ℂ) *
       (g : Matrix (Fin 2) (Fin 2) ℂ) = diagonal ![1, -1] := by
-  rw [su11, mem_specialIsometryGroup_iff]
-  rfl
+  have hstar : (starRingEnd ℂ : ℂ → ℂ) = star := funext starRingEnd_apply
+  rw [su11, mem_specialIsometryGroup_iff, conjTranspose, transpose_map, hstar]
 
 namespace SU11
 
@@ -74,12 +74,9 @@ theorem coe_eq_matrix (g : SU11) :
     simpa [J, mul_diagonal, diagonal_mul] using congrFun (congrFun h 0) 0
   have hb : star (A 0 1) = A 1 0 := by
     simpa [J, mul_diagonal, diagonal_mul] using congrFun (congrFun h 1) 0
-  ext i j
-  fin_cases i <;> fin_cases j
-  · simp [entryA_def]
-  · simp [entryB_def]
-  · simpa [entryB_def, A] using hb.symm
-  · simpa [entryA_def, A] using ha.symm
+  calc
+    A = !![A 0 0, A 0 1; A 1 0, A 1 1] := eta_fin_two A
+    _ = _ := by simp only [entryA_def, entryB_def, ← ha, ← hb, A]
 
 /-- The entries of an element of `SU(1,1)` satisfy the determinant-one relation. -/
 theorem norm_entryA_sq_sub_norm_entryB_sq (g : SU11) :
@@ -101,13 +98,11 @@ noncomputable def ofPair (a b : ℂ) (h : ‖a‖ ^ 2 - ‖b‖ ^ 2 = 1) : SU11 
   refine ⟨SpecialLinearGroup.mk !![a, b; star b, star a] (by simpa [det_fin_two] using hdet),
     mem_su11_iff.mpr ?_⟩
   ext i j
-  fin_cases i <;> fin_cases j
-  · simpa [Matrix.mul_apply, Fin.sum_univ_two, Matrix.diagonal_apply, mul_comm, sub_eq_add_neg]
-      using hdet
-  · simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.diagonal_apply, mul_comm]
-  · simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.diagonal_apply, mul_comm]
-  · simpa [Matrix.mul_apply, Fin.sum_univ_two, Matrix.diagonal_apply, mul_comm, neg_sub,
-      sub_eq_add_neg]
+  fin_cases i <;> fin_cases j <;> simp only [Matrix.mul_apply', vec2_dotProduct]
+  · simpa [Matrix.diagonal_apply, mul_comm, sub_eq_add_neg] using hdet
+  · simp [mul_comm]
+  · simp [mul_comm]
+  · simpa [Matrix.diagonal_apply, mul_comm, neg_sub, sub_eq_add_neg]
       using congrArg Neg.neg hdet
 
 /-- The matrix of the element with top row `(a, b)`. -/
@@ -130,20 +125,16 @@ theorem entryB_ofPair (a b : ℂ) (h : ‖a‖ ^ 2 - ‖b‖ ^ 2 = 1) :
 /-- The upper-left entry of a product in `SU(1,1)`. -/
 theorem entryA_mul (g h : SU11) :
     (g * h).entryA = g.entryA * h.entryA + g.entryB * star h.entryB := by
-  have hmul : ((g * h).val : Matrix (Fin 2) (Fin 2) ℂ) =
-      (g.val : Matrix (Fin 2) (Fin 2) ℂ) * (h.val : Matrix (Fin 2) (Fin 2) ℂ) :=
-    Matrix.coe_mul_specialIsometryGroup (Q := diagonal ![1, -1]) (σ := starRingEnd ℂ) g h
-  rw [entryA_def, hmul, coe_eq_matrix g, coe_eq_matrix h]
-  simp [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [entryA_def, Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+    coe_eq_matrix g, coe_eq_matrix h, Matrix.mul_apply', vec2_dotProduct]
+  simp
 
 /-- The upper-right entry of a product in `SU(1,1)`. -/
 theorem entryB_mul (g h : SU11) :
     (g * h).entryB = g.entryA * h.entryB + g.entryB * star h.entryA := by
-  have hmul : ((g * h).val : Matrix (Fin 2) (Fin 2) ℂ) =
-      (g.val : Matrix (Fin 2) (Fin 2) ℂ) * (h.val : Matrix (Fin 2) (Fin 2) ℂ) :=
-    Matrix.coe_mul_specialIsometryGroup (Q := diagonal ![1, -1]) (σ := starRingEnd ℂ) g h
-  rw [entryB_def, hmul, coe_eq_matrix g, coe_eq_matrix h]
-  simp [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [entryB_def, Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+    coe_eq_matrix g, coe_eq_matrix h, Matrix.mul_apply', vec2_dotProduct]
+  simp
 
 /-- Inversion conjugates the upper-left entry. -/
 @[simp]
