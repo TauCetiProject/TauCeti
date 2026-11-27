@@ -544,32 +544,18 @@ private theorem exists_contMDiff_of_testFunction (p : M)
         ∫ y in (Ω : Set _),
           (chartVolumeDensity (I := I) p (chartInvMap (I := I) p y) *
             f (chartInvMap (I := I) p y)) * φ y := by
-  let wE : E → ℝ := fun z ↦ φ (coordEquiv E z)
-  have hwE_smooth : ContDiff ℝ ∞ wE := φ.contDiff.comp (coordEquiv E).contDiff
-  have hsupp_sub : tsupport wE ⊆ (coordEquiv E).symm '' tsupport (φ : _ → ℝ) := by
-    refine closure_minimal (fun z hz ↦ ?_)
-      (φ.hasCompactSupport.isCompact.image (coordEquiv E).symm.continuous).isClosed
-    exact ⟨coordEquiv E z, subset_tsupport _ hz, (coordEquiv E).symm_apply_apply z⟩
-  have hwE_comp : HasCompactSupport wE :=
-    (φ.hasCompactSupport.isCompact.image (coordEquiv E).symm.continuous).of_isClosed_subset
-      (isClosed_tsupport wE) hsupp_sub
   have hφΩ : tsupport (φ : _ → ℝ) ⊆ (Ω : Set _) := φ.tsupport_subset
-  have hwE_tgt : tsupport wE ⊆ (extChartAt I p).target := by
-    refine hsupp_sub.trans ?_
-    rintro _ ⟨y, hy, rfl⟩
-    exact hΩt (hφΩ hy)
   obtain ⟨Φ₀, hΦ₀, -, hΦ₀supp, hΦ₀eq⟩ :=
-    exists_contMDiff_comp_extChartAt_symm_eq (I := I) (n := ∞) (c := p) hwE_smooth hwE_comp hwE_tgt
+    exists_contMDiff_comp_extChartAt_symm_comp_symm_eq (I := I) (n := ∞) (c := p) (coordEquiv E)
+      φ.contDiff φ.hasCompactSupport fun y hy ↦ hΩt (hφΩ hy)
   let Φ : C^∞⟮I, M; ℝ⟯ := ⟨Φ₀, hΦ₀⟩
   have hΦ_coe (x : M) : Φ x = Φ₀ x := congrFun (ContMDiffMap.coeFn_mk Φ₀ hΦ₀) x
   have hΦ_ψ (y : EuclideanSpace ℝ (Fin (finrank ℝ E))) (hy : y ∈ Ω) :
       Φ (chartInvMap (I := I) p y) = φ y := by
     rw [hΦ_coe, chartInvMap, hΦ₀eq _ (hΩt hy)]
-    simp [wE]
   have hΦ_U : tsupport (Φ : M → ℝ) ⊆ chartNbhd (I := I) p Ω := by
     refine hΦ₀supp.trans ?_
-    rintro _ ⟨z, hz, rfl⟩
-    obtain ⟨y, hy, rfl⟩ := hsupp_sub hz
+    rintro _ ⟨_, ⟨y, hy, rfl⟩, rfl⟩
     have hyt : (coordEquiv E).symm y ∈ (extChartAt I p).target := hΩt (hφΩ hy)
     refine ⟨(extChartAt I p).map_target hyt, ?_⟩
     rw [mem_preimage, (extChartAt I p).right_inv hyt]

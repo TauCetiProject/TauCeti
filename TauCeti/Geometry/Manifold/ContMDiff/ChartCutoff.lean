@@ -42,7 +42,9 @@ space to a manifold.
   charts, giving a compactly supported `C^n` function on a product of manifolds.
 * `TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_eq`: a `C^n` function on the model
   space with compact support in the chart target is the coordinate expression of a compactly
-  supported `C^n` function on the manifold.
+  supported `C^n` function on the manifold, and
+  `TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_comp_symm_eq`, the same for a function
+  read through a continuous linear equivalence with the model space.
 * `TauCeti.Manifold.exists_contMDiff_transplant`: a `C^n` nonnegative function on the model space
   supported in a compact subset of a coordinate ball transplants to a `C^n` nonnegative compactly
   supported function on the manifold supported in any prescribed set containing the chart
@@ -220,6 +222,28 @@ theorem exists_contMDiff_comp_extChartAt_symm_eq {n : WithTop ℕ∞} [IsManifol
   rw [indicator_of_mem (by
     simpa only [(chartAt H c).extend_source] using ((chartAt H c).extend I).map_target hy)]
   exact congrArg w (((chartAt H c).extend I).right_inv hy)
+
+/-- **Transplanting a function from a chart through a linear equivalence.** For a continuous
+linear equivalence `L` from the model space to `E'`, a `C^n` function `w` on `E'` with compact
+support which `L⁻¹` maps into the target of the extended chart at `c` is, read through `L⁻¹` and
+the inverse chart, the coordinate expression of a compactly supported `C^n` function `u` on `M`
+whose support lies in the chart preimage of the image of the support of `w` under `L⁻¹`. -/
+theorem exists_contMDiff_comp_extChartAt_symm_comp_symm_eq {n : WithTop ℕ∞} [IsManifold I n M]
+    {c : M} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] (L : E ≃L[𝕜] E')
+    {w : E' → F} (hw : ContDiff 𝕜 n w) (hwc : HasCompactSupport w)
+    (hwt : MapsTo L.symm (tsupport w) (extChartAt I c).target) :
+    ∃ u : M → F, ContMDiff I 𝓘(𝕜, F) n u ∧ HasCompactSupport u ∧
+      tsupport u ⊆ (extChartAt I c).symm '' (L.symm '' tsupport w) ∧
+      ∀ y, L.symm y ∈ (extChartAt I c).target → u ((extChartAt I c).symm (L.symm y)) = w y := by
+  -- Apply `exists_contMDiff_comp_extChartAt_symm_eq` to `w ∘ L`, supported in `L⁻¹ (tsupport w)`.
+  have hts : tsupport (w ∘ L) = L.symm '' tsupport w := by
+    rw [L.image_symm_eq_preimage]
+    exact tsupport_comp_eq_preimage w L.toHomeomorph
+  obtain ⟨u, hu, huc, hut, hu_eq⟩ := exists_contMDiff_comp_extChartAt_symm_eq (c := c)
+    (hw.comp L.contDiff) (hwc.comp_homeomorph L.toHomeomorph)
+    (hts ▸ mapsTo_iff_image_subset.1 hwt)
+  refine ⟨u, hu, huc, hts ▸ hut, fun y hy ↦ ?_⟩
+  rw [hu_eq _ hy, Function.comp_apply, L.apply_symm_apply]
 
 end TauCeti.Manifold
 

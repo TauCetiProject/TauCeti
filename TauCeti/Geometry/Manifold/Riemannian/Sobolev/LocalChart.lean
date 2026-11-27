@@ -44,10 +44,11 @@ an element `v` of `W^{1,2}` of the whole coordinate space with compact support
 (`TauCeti.W1p.exists_top_value_gradient_ae_eq_mul_sub_const`). Test functions are dense in it
 (`TauCeti.W1p.denseRange_ofTestFunctionₗ_top`); after multiplying them by a fixed cutoff equal to
 `1` on the support of `v`, the approximants `ϑₙ` are supported in a fixed compact set. Transplanted
-to `M` they give smooth functions `Φₙ` (`TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_eq`)
-which form a Cauchy sequence in `H¹(M)` by the estimate above, and whose values converge to `χ f`
-in `L²(M)`. So `χ f` is the value of the limit. A smooth partition of unity subordinate to such
-neighbourhoods writes `f` as a finite sum of functions `χ f`.
+to `M` they give smooth functions `Φₙ`
+(`TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_comp_symm_eq`) which form a Cauchy
+sequence in `H¹(M)` by the estimate above, and whose values converge to `χ f` in `L²(M)`. So
+`χ f` is the value of the limit. A smooth partition of unity subordinate to such neighbourhoods
+writes `f` as a finite sum of functions `χ f`.
 
 ## Main results
 
@@ -94,47 +95,6 @@ variable [I.Boundaryless] [CompactSpace M] [T2Space M] [IsManifold I ∞ M] [Mea
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasureSpace F] [BorelSpace F] [(volume : Measure F).IsAddHaarMeasure]
-
-omit [I.Boundaryless] [T2Space M] [FiniteDimensional ℝ F] in
-/-- The `L²` norm of a function vanishing outside the chart neighbourhood of an open set `V` of
-coordinates is at most a constant multiple, independent of the function, of the `L²(V)` norm of
-its reading in the chart. -/
-private theorem exists_eLpNorm_le_mul_eLpNorm_comp (L : E ≃L[ℝ] F) (p : M)
-    {V K : Set F} (hV : IsOpen V) (hK : IsCompact K) (hVK : V ⊆ K)
-    (hKt : MapsTo L.symm K (extChartAt I p).target) :
-    ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ g : M → ℝ, AEStronglyMeasurable g (riemannianVolume I M) →
-      (∀ᵐ x ∂riemannianVolume I M,
-        x ∉ (extChartAt I p).source ∩ extChartAt I p ⁻¹' (L.symm '' V) → g x = 0) →
-      eLpNorm g 2 (riemannianVolume I M) ≤
-        C * eLpNorm (fun y ↦ g ((extChartAt I p).symm (L.symm y))) 2 (volume.restrict V) := by
-  obtain ⟨C, hC, hle⟩ :=
-    exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm (I := I) (M := M)
-      L p hV hK hVK hKt
-  have hC1 : C + 1 ≠ ⊤ := ENNReal.add_ne_top.2 ⟨hC, ENNReal.one_ne_top⟩
-  refine ⟨(C + 1) ^ (1 / 2 : ℝ), ENNReal.rpow_ne_top_of_nonneg (by norm_num) hC1,
-    fun g hgm hg ↦ ?_⟩
-  by_cases hgψ : AEStronglyMeasurable (fun y ↦ g ((extChartAt I p).symm (L.symm y)))
-    (volume.restrict V)
-  swap
-  · rw [eLpNorm_of_not_aestronglyMeasurable hgψ, ENNReal.mul_top]
-    · exact le_top
-    · exact (ENNReal.rpow_pos (by positivity) hC1).ne'
-  set S := (extChartAt I p).source ∩ extChartAt I p ⁻¹' (L.symm '' V)
-  have hS : MeasurableSet S :=
-    (isOpen_extChartAt_preimage' p (L.symm.toHomeomorph.isOpenMap _ hV)).measurableSet
-  have hgS : ∫⁻ x, ‖g x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M =
-      ∫⁻ x in S, ‖g x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M := by
-    rw [← lintegral_indicator hS]
-    refine lintegral_congr_ae ?_
-    filter_upwards [hg] with x hx
-    by_cases hxS : x ∈ S
-    · rw [indicator_of_mem hxS]
-    · rw [indicator_of_notMem hxS, hx hxS, eNorm_zero, ENNReal.zero_rpow_of_pos two_pos]
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hgm,
-    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hgψ]
-  simp only [ENNReal.toReal_ofNat]
-  rw [hgS, ← ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
-  exact ENNReal.rpow_le_rpow ((hle _).trans (by gcongr; exact le_self_add)) (by norm_num)
 
 omit [I.Boundaryless] [T2Space M] in
 /-- An `L²` bound by a multiple of the `L²` norm of an element of an `Lp` space, read as a bound on
@@ -273,8 +233,9 @@ private theorem exists_norm_ofSmooth_le (L : E ≃L[ℝ] F) (p : M) {r R C₂ : 
   set V := ball y₀ R
   have hKt : MapsTo L.symm (closedBall y₀ R) φ.target :=
     fun y hy ↦ hrt y (closedBall_subset_ball hRr hy)
-  obtain ⟨C, hC, hE2⟩ := exists_eLpNorm_le_mul_eLpNorm_comp (I := I) L p isOpen_ball
-    (isCompact_closedBall y₀ R) ball_subset_closedBall hKt
+  obtain ⟨C, hC, hE2⟩ := exists_eLpNorm_le_mul_eLpNorm_comp_extChartAt_symm (I := I) (G := ℝ) L p
+    isOpen_ball (isCompact_closedBall y₀ R) ball_subset_closedBall hKt two_ne_zero
+    ENNReal.ofNat_ne_top
   set Q := φ.symm '' (L.symm '' Kθ)
   have hVt (y : F) (hy : y ∈ V) : L.symm y ∈ φ.target := hrt y (ball_subset_ball hRr.le hy)
   have hQ : IsClosed Q :=
@@ -361,31 +322,6 @@ private theorem exists_contDiff_eq_comp (L : E ≃L[ℝ] F) (p : M) {r : ℝ} (h
         rw [← L.symm.injective hzy]
         exact ball_subset_closedBall hz
       simp only [h0, mul_zero]
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ F]
-  [MeasureSpace F] [BorelSpace F] [(volume : Measure F).IsAddHaarMeasure] in
-/-- A test function supported in a compact subset `S` of the coordinate ball of radius `r` around
-`L (φ p)`, on which the inverse chart is defined, transplanted to `M`: a smooth function vanishing
-outside the chart image of `S` which agrees with the test function in the chart on the ball. -/
-private theorem exists_contMDiff_eq_testFunction (L : E ≃L[ℝ] F) (p : M) {r : ℝ}
-    (hrt : ∀ y ∈ ball (L (extChartAt I p p)) r, L.symm y ∈ (extChartAt I p).target)
-    {S : Set F} (hS : IsCompact S) (hSr : S ⊆ ball (L (extChartAt I p p)) r)
-    (ϑ : 𝓓((⊤ : Opens F), ℝ)) (hϑS : tsupport (ϑ : F → ℝ) ⊆ S) :
-    ∃ Φ : C^∞⟮I, M; ℝ⟯, (∀ x ∉ (extChartAt I p).symm '' (L.symm '' S), Φ x = 0) ∧
-      ∀ y ∈ ball (L (extChartAt I p p)) r, Φ ((extChartAt I p).symm (L.symm y)) = ϑ y := by
-  have hwts : tsupport (fun z ↦ ϑ (L z)) ⊆ L.symm '' S :=
-    closure_minimal (fun z hz ↦ ⟨L z, hϑS (subset_tsupport _ hz), L.symm_apply_apply z⟩)
-      (hS.image L.symm.continuous).isClosed
-  have hwt : tsupport (fun z ↦ ϑ (L z)) ⊆ (extChartAt I p).target :=
-    hwts.trans (image_subset_iff.2 fun y hy ↦ hrt y (hSr hy))
-  obtain ⟨Φ₀, hΦ₀, -, hΦ₀supp, hΦ₀eq⟩ := exists_contMDiff_comp_extChartAt_symm_eq (I := I)
-    (n := ∞) (c := p) (ϑ.contDiff.comp L.contDiff)
-    (ϑ.hasCompactSupport.comp_homeomorph L.toHomeomorph) hwt
-  refine ⟨⟨Φ₀, hΦ₀⟩, fun x hx ↦ ?_, fun y hy ↦ ?_⟩
-  · exact image_eq_zero_of_notMem_tsupport fun h ↦ hx (image_mono hwts (hΦ₀supp h))
-  · rw [ContMDiffMap.coeFn_mk, hΦ₀eq _ (hrt y hy), Function.comp_apply, L.apply_symm_apply]
 
 omit [CompactSpace M] [T2Space M] [MeasurableSpace M] [BorelSpace M] [FiniteDimensional ℝ F]
   [MeasureSpace F] [BorelSpace F] [(volume : Measure F).IsAddHaarMeasure] in
@@ -484,11 +420,20 @@ private theorem exists_toLp_ae_eq_of_tendsto_ofTestFunctionₗ (L : E ≃L[ℝ] 
   have hBr : ball y₀ (3 * r / 4) ⊆ ball y₀ r := ball_subset_ball (by linarith)
   obtain ⟨A, hA, hE1⟩ := exists_norm_ofSmooth_le (I := I) L p hC₂ hrt hgrad
     (by linarith : 3 * r / 4 < r) hSc hSB
-  obtain ⟨C, hC, hE2⟩ := exists_eLpNorm_le_mul_eLpNorm_comp (I := I) L p
+  obtain ⟨C, hC, hE2⟩ := exists_eLpNorm_le_mul_eLpNorm_comp_extChartAt_symm (I := I) (G := ℝ) L p
     (V := ball y₀ (3 * r / 4)) isOpen_ball (isCompact_closedBall y₀ (3 * r / 4))
-    ball_subset_closedBall fun y hy ↦ hrt y (closedBall_subset_ball (by linarith) hy)
+    ball_subset_closedBall (fun y hy ↦ hrt y (closedBall_subset_ball (by linarith) hy))
+    two_ne_zero ENNReal.ofNat_ne_top
   -- The test functions `ϑ n`, transplanted to `M`.
-  have hlift (n : ℕ) := exists_contMDiff_eq_testFunction L p hrt hSc (hSB.trans hBr) (ϑ n) (hϑS n)
+  have hlift (n : ℕ) : ∃ Φ : C^∞⟮I, M; ℝ⟯, (∀ x ∉ φ.symm '' (L.symm '' S), Φ x = 0) ∧
+      ∀ y ∈ ball y₀ r, Φ (φ.symm (L.symm y)) = ϑ n y := by
+    obtain ⟨Φ₀, hΦ₀, -, hΦ₀supp, hΦ₀eq⟩ := exists_contMDiff_comp_extChartAt_symm_comp_symm_eq
+      (I := I) (n := ∞) (c := p) L (ϑ n).contDiff (ϑ n).hasCompactSupport
+      fun y hy ↦ hrt y (hBr (hSB (hϑS n hy)))
+    refine ⟨⟨Φ₀, hΦ₀⟩, fun x hx ↦ ?_, fun y hy ↦ ?_⟩
+    · exact image_eq_zero_of_notMem_tsupport fun h ↦
+        hx (image_mono (image_mono (hϑS n)) (hΦ₀supp h))
+    · rw [ContMDiffMap.coeFn_mk, hΦ₀eq y (hrt y hy)]
   choose Φs hΦs0 hΦsϑ using hlift
   -- They form a Cauchy sequence in `H¹(M)`, since `‖Φ‖_{H¹} ≤ A ‖ϑ‖_{W^{1,2}}`.
   have hcauchy : CauchySeq fun n ↦ ofSmooth (Φs n) := by
