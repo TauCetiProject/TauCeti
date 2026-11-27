@@ -32,8 +32,9 @@ when it fixes the place `u`, the primes `σ • Q` and `Q` both lie over `u`, so
 * `IsDedekindDomain.HeightOneSpectrum.exists_smul_eq_of_complexConj_smul_under_eq`: conversely,
   for `L` Galois over `ℚ`, if complex conjugation fixes that place, it extends to an element of
   the decomposition group at `Q`.
-* `IsDedekindDomain.HeightOneSpectrum.isFriendly_of_smul_eq`: such an element makes every place
-  `v` unramified over `ℚ` friendly.
+* `IsDedekindDomain.HeightOneSpectrum.isFriendly_of_smul_eq`: if, when `E_K` is CM, some element
+  of the decomposition group at `Q` acts on `E_K` as complex conjugation, then the place `v` below
+  `Q` is friendly when it is unramified over `ℚ`.
 * `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_exists_smul_eq`: for `L` Galois over `ℚ`, `v`
   is friendly if and only if it is unramified over `ℚ` and, when `E_K` is CM, some element of the
   decomposition group at `Q` acts on `E_K` as complex conjugation.
@@ -57,27 +58,27 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
-/-- An automorphism `δ` of `L` acting on `E_K` as its complex conjugation `c` intertwines `c` on
-`𝓞 E_K` and `δ` on `𝓞 L`. -/
-theorem algebraMap_complexConj_smul_eq_smul [IsCMField (maximalRealOrCMSubfield K)]
-    (δ : L ≃ₐ[ℚ] L)
+/-- If `δ ∈ Gal(L/ℚ)` acts on `E_K` as its complex conjugation `c`, the prime of `𝓞 E_K` below
+`δ • Q` is `c` applied to the prime below `Q`. -/
+private theorem under_smul_eq_complexConj_smul [IsCMField (maximalRealOrCMSubfield K)]
+    (Q : Ideal (𝓞 L)) (δ : L ≃ₐ[ℚ] L)
     (hδ : ∀ x : maximalRealOrCMSubfield K, δ (algebraMap K L x) =
-      algebraMap K L (IsCMField.complexConj (maximalRealOrCMSubfield K) x))
-    (x : 𝓞 (maximalRealOrCMSubfield K)) :
-    algebraMap (𝓞 K) (𝓞 L) (algebraMap _ (𝓞 K)
-        (IsCMField.complexConj (maximalRealOrCMSubfield K) • x)) =
-      δ • algebraMap (𝓞 K) (𝓞 L) (algebraMap _ (𝓞 K) x) := by
-  -- route both sides through `E_K ⊆ K ⊆ L`
-  have h (y : 𝓞 (maximalRealOrCMSubfield K)) :
-      algebraMap (𝓞 L) L (algebraMap (𝓞 K) (𝓞 L) (algebraMap _ (𝓞 K) y)) =
-        algebraMap K L (algebraMap _ (maximalRealOrCMSubfield K) y) := by
-    rw [← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 L) L, IsScalarTower.algebraMap_apply (𝓞 K) K L,
-      ← IsScalarTower.algebraMap_apply _ (𝓞 K) K,
-      IsScalarTower.algebraMap_apply _ (maximalRealOrCMSubfield K) K]
-    rfl
-  apply FaithfulSMul.algebraMap_injective (𝓞 L) L
-  rw [h, algebraMap_smul_eq_apply, algebraMap_smul_eq_apply, h]
-  exact (hδ _).symm
+      algebraMap K L (IsCMField.complexConj (maximalRealOrCMSubfield K) x)) :
+    (δ • Q).under (𝓞 (maximalRealOrCMSubfield K)) =
+      IsCMField.complexConj (maximalRealOrCMSubfield K) •
+        Q.under (𝓞 (maximalRealOrCMSubfield K)) := by
+  set E := maximalRealOrCMSubfield K
+  set c := IsCMField.complexConj E
+  -- `δ` intertwines `c` on `𝓞 E` with its own action on `𝓞 L`, through `E ⊆ K ⊆ L`
+  have hc (y : 𝓞 E) : algebraMap (𝓞 E) (𝓞 L) (c • y) = δ • algebraMap (𝓞 E) (𝓞 L) y := by
+    apply FaithfulSMul.algebraMap_injective (𝓞 L) L
+    simp only [algebraMap_smul_eq_apply, ← IsScalarTower.algebraMap_apply (𝓞 E) (𝓞 L) L,
+      IsScalarTower.algebraMap_apply (𝓞 E) E L, IsScalarTower.algebraMap_apply E K L,
+      Subfield.algebraMap_ofSubfield, Subfield.coe_subtype, hδ]
+  ext y
+  rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, Ideal.under_def, Ideal.under_def,
+    Ideal.mem_comap, Ideal.mem_comap, ← smul_inv_smul c y, hc, inv_smul_smul,
+    Ideal.smul_mem_pointwise_smul_iff]
 
 /-- **The decomposition group and complex conjugation.** Let `Q` be a prime of `𝓞 L` above the
 place `v` of `K`. If `δ ∈ Gal(L/ℚ)` lies in the decomposition group of `Q` and acts on `E_K` as
@@ -90,20 +91,8 @@ theorem complexConj_smul_under_eq_of_smul_eq [IsCMField (maximalRealOrCMSubfield
     IsCMField.complexConj (maximalRealOrCMSubfield K) •
         v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K)) =
       v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K)) := by
-  set c := IsCMField.complexConj (maximalRealOrCMSubfield K)
-  have hc : c⁻¹ = c :=
-    inv_eq_iff_mul_eq_one.2 (AlgEquiv.ext (IsCMField.complexConj_apply_apply _))
-  -- membership in the place of `E_K` below `v` is membership of the image in `Q`
-  have hmem (y : 𝓞 (maximalRealOrCMSubfield K)) :
-      y ∈ v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K)) ↔
-        algebraMap (𝓞 K) (𝓞 L) (algebraMap _ (𝓞 K) y) ∈ Q := by
-    rw [Ideal.under_def, Ideal.mem_comap, Ideal.over_def Q v.asIdeal, Ideal.under_def,
-      Ideal.mem_comap]
-  ext y
-  rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, hc, hmem, hmem,
-    algebraMap_complexConj_smul_eq_smul δ hδ]
-  nth_rw 1 [← hQ]
-  exact Ideal.smul_mem_pointwise_smul_iff
+  rw [Ideal.over_def Q (v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K))),
+    ← under_smul_eq_complexConj_smul Q δ hδ, hQ]
 
 /-- **Complex conjugation extends into the decomposition group.** Let `L` be Galois over `ℚ` and
 `Q` a prime of `𝓞 L` above the place `v` of `K`. If the complex conjugation `c` of `E_K` fixes
@@ -121,32 +110,13 @@ theorem exists_smul_eq_of_complexConj_smul_under_eq [IsGalois ℚ L]
   set c := IsCMField.complexConj E
   have : IsScalarTower ℚ E L := .of_algebraMap_eq fun x ↦ by simp
   have : IsGalois E L := IsGalois.tower_top_of_isGalois ℚ E L
-  -- the map `𝓞 E → 𝓞 L` factors through `𝓞 K`
-  have hj (y : 𝓞 E) : algebraMap (𝓞 E) (𝓞 L) y = algebraMap (𝓞 K) (𝓞 L) (algebraMap _ (𝓞 K) y) := by
-    apply FaithfulSMul.algebraMap_injective (𝓞 L) L
-    rw [← IsScalarTower.algebraMap_apply (𝓞 E) (𝓞 L) L, IsScalarTower.algebraMap_apply (𝓞 E) E L,
-      ← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 L) L, IsScalarTower.algebraMap_apply (𝓞 K) K L,
-      ← IsScalarTower.algebraMap_apply _ (𝓞 K) K, IsScalarTower.algebraMap_apply _ E K]
-    rfl
-  have hmem (I : Ideal (𝓞 L)) (y : 𝓞 E) :
-      y ∈ I.under (𝓞 E) ↔ algebraMap (𝓞 K) (𝓞 L) (algebraMap _ (𝓞 K) y) ∈ I := by
-    rw [Ideal.under_def, Ideal.mem_comap, hj]
   -- extend `c` to an automorphism `σ` of `L`
   set σ : L ≃ₐ[ℚ] L := (c.restrictScalars ℚ).liftNormal L
   have hσ (x : E) : σ (algebraMap K L x) = algebraMap K L (c x) :=
     AlgEquiv.liftNormal_commutes (c.restrictScalars ℚ) L x
-  have hc : c⁻¹ = c :=
-    inv_eq_iff_mul_eq_one.2 (AlgEquiv.ext (IsCMField.complexConj_apply_apply _))
   -- `σ • Q` and `Q` lie over the same prime of `𝓞 E`
-  have hQ : Q.under (𝓞 E) = v.asIdeal.under (𝓞 E) := by
-    ext y
-    rw [hmem, Ideal.under_def, Ideal.mem_comap, Ideal.over_def Q v.asIdeal, Ideal.under_def,
-      Ideal.mem_comap]
-  have hσQ : (σ • Q).LiesOver (Q.under (𝓞 E)) := by
-    refine ⟨Ideal.ext fun y ↦ ?_⟩
-    have hy : c • c • y = y := by rw [← mul_smul, inv_eq_iff_mul_eq_one.1 hc, one_smul]
-    rw [hQ, ← Ideal.smul_mem_pointwise_smul_iff (a := c), h, ← hQ, hmem, hmem,
-      ← Ideal.smul_mem_pointwise_smul_iff (a := σ), ← algebraMap_complexConj_smul_eq_smul σ hσ, hy]
+  have hσQ : (σ • Q).LiesOver (Q.under (𝓞 E)) :=
+    ⟨by rw [under_smul_eq_complexConj_smul Q σ hσ, ← Ideal.over_def Q (v.asIdeal.under (𝓞 E)), h]⟩
   obtain ⟨τ, hτ⟩ :=
     Ideal.exists_smul_eq_of_isGaloisGroup (Q.under (𝓞 E)) (σ • Q) Q (L ≃ₐ[E] L)
   refine ⟨τ.restrictScalars ℚ * σ, ?_, fun x ↦ ?_⟩
