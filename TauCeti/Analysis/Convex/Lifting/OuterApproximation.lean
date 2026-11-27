@@ -496,15 +496,6 @@ private lemma not_fst_image_sharedOA_subset_directOA_of_rows
     rw [← outerRow_componentRow, houter 0, hcomp 0] at hdir
     norm_num at hdir
 
-private lemma proj_comp_pi_two (c₀ c₁ : ℝ) :
-    (ContinuousLinearMap.proj (R := ℝ) 0).comp (ContinuousLinearMap.pi
-      ![ContinuousLinearMap.toSpanSingleton ℝ c₀, ContinuousLinearMap.toSpanSingleton ℝ c₁]) =
-      ContinuousLinearMap.toSpanSingleton ℝ c₀ ∧
-    (ContinuousLinearMap.proj (R := ℝ) 1).comp (ContinuousLinearMap.pi
-      ![ContinuousLinearMap.toSpanSingleton ℝ c₀, ContinuousLinearMap.toSpanSingleton ℝ c₁]) =
-      ContinuousLinearMap.toSpanSingleton ℝ c₁ :=
-  ⟨by ext; simp, by ext; simp⟩
-
 /-- Exact rows on selected coordinates strictly extend the monotone-derivative comparison: there
 exist `g : ℝ → Fin 2 → ℝ`, `h : (Fin 2 → ℝ) → ℝ`, an anchor `a : Fin 1 → ℝ`, and actual Fréchet
 derivatives `Dg`, `Dh` satisfying all hypotheses of `affine_coordinate_comparison` for `J = {0}` on
@@ -536,9 +527,16 @@ theorem exists_affine_coordinate_comparison_not_monotone :
     (-2 : ℝ) • ContinuousLinearMap.proj (R := ℝ) (0 : Fin 2) + ContinuousLinearMap.proj (R := ℝ) 1
   have hg : ∀ i : Fin 1, HasFDerivAt g Dg0 (a i) := fun _ => hasFDerivAt_pi'.2 fun j => by
     fin_cases j
-    · dsimp; rw [(proj_comp_pi_two 1 (-2)).1]; exact (hasDerivAt_id' (-1 : ℝ)).hasFDerivAt
-    · dsimp; rw [(proj_comp_pi_two 1 (-2)).2]
-      exact ((hasDerivAt_pow 2 (-1 : ℝ)).congr_deriv (by norm_num)).hasFDerivAt
+    · simpa [g, a] using
+        (hasDerivAt_id' (-1 : ℝ)).hasFDerivAt.congr_fderiv
+          (by ext; simp [Dg0] :
+            ContinuousLinearMap.toSpanSingleton ℝ (1 : ℝ) =
+              (ContinuousLinearMap.proj (R := ℝ) (0 : Fin 2)).comp Dg0)
+    · simpa [g, a] using
+        ((hasDerivAt_pow 2 (-1 : ℝ)).congr_deriv (by norm_num)).hasFDerivAt.congr_fderiv
+          (by ext; simp [Dg0] :
+            ContinuousLinearMap.toSpanSingleton ℝ (-2 : ℝ) =
+              (ContinuousLinearMap.proj (R := ℝ) (1 : Fin 2)).comp Dg0)
   have hh : ∀ i : Fin 1, HasFDerivAt h Dh0 (g (a i)) := fun i => by
     have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (-2 : ℝ) (g (a i) 0) :=
       (hasDerivAt_pow 2 (g (a i) 0)).congr_deriv (by norm_num [g, a])
