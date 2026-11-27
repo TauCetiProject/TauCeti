@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Pick.Herglotz.Finite
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Convex.SchauderFixedPoint
+import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Density
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
@@ -52,36 +53,37 @@ private def companionRatio (u : ℂ) (t : ℝ) : ℂ := t / (u - t)
 
 private def companionKernel (u : ℂ) (t : ℝ) : ℂ := u * companionRatio u t
 
-private theorem companionRatio_eq {u : ℂ} {t : ℝ} (h : u - (t : ℂ) ≠ 0) :
-    companionRatio u t = u / (u - t) - 1 := by
-  unfold companionRatio
+private theorem companionRatio_eq_resolvent {u : ℂ} {t : ℝ} (h : (t : ℂ) - u ≠ 0) :
+    companionRatio u t = -u * resolvent (R := ℝ) u t - 1 := by
+  rw [companionRatio, Complex.resolvent_real_eq_inv, ← neg_sub (t : ℂ) u]
   field_simp [h]
   ring
 
 private theorem norm_companionRatio_le {u : ℂ} (hu : u.im ≠ 0) (t : ℝ) :
     ‖companionRatio u t‖ ≤ ‖u‖ / |u.im| + 1 := by
-  have him : |u.im| ≤ ‖u - (t : ℂ)‖ := by
-    simpa using Complex.abs_im_le_norm (u - t)
-  have hne : u - (t : ℂ) ≠ 0 := sub_ne_zero.mpr fun h ↦ hu (by simp [h])
+  rw [companionRatio_eq_resolvent (ofReal_sub_ne_zero_of_im_ne_zero hu t)]
   calc
-    _ ≤ ‖u‖ / ‖u - (t : ℂ)‖ + 1 := by
-      simpa [companionRatio_eq hne, norm_div] using norm_sub_le (u / (u - (t : ℂ))) 1
-    _ ≤ _ := add_le_add_left (div_le_div_of_nonneg_left (norm_nonneg _) (abs_pos.mpr hu) him) _
-
-private theorem continuous_companionRatio {u : ℂ} (hu : u.im ≠ 0) :
-    Continuous (companionRatio u) :=
-  Complex.continuous_ofReal.div (continuous_const.sub Complex.continuous_ofReal)
-    (fun _ ↦ sub_ne_zero.mpr fun h ↦ hu (by simp [h]))
+    _ ≤ ‖u‖ * ‖resolvent (R := ℝ) u t‖ + 1 := by
+      simpa using norm_sub_le (-u * resolvent (R := ℝ) u t) 1
+    _ ≤ _ := by
+      rw [div_eq_mul_inv]
+      gcongr
+      exact Complex.norm_resolvent_real_le u t hu
 
 private theorem integrable_companionRatio {u : ℂ} (hu : u.im ≠ 0) :
     Integrable (companionRatio u) ν :=
-  (integrable_const (‖u‖ / |u.im| + 1)).mono'
-    (continuous_companionRatio hu).aestronglyMeasurable (.of_forall (norm_companionRatio_le hu))
+  (((integrable_resolvent_of_im_ne_zero hu).const_mul (-u)).sub (integrable_const 1)).congr
+    (.of_forall fun t ↦ (companionRatio_eq_resolvent
+      (ofReal_sub_ne_zero_of_im_ne_zero hu t)).symm)
+
+private theorem integrable_companionKernel {u : ℂ} (hu : u.im ≠ 0) :
+    Integrable (companionKernel u) ν :=
+  (integrable_companionRatio hu).const_mul u
 
 private theorem integrable_sq_norm_companionRatio {u : ℂ} (hu : u.im ≠ 0) :
     Integrable (fun t ↦ ‖companionRatio u t‖ ^ 2) ν :=
   (integrable_const ((‖u‖ / |u.im| + 1) ^ 2)).mono'
-    ((continuous_companionRatio hu).norm.pow 2).aestronglyMeasurable (.of_forall fun t ↦ by
+    ((integrable_companionRatio hu).aestronglyMeasurable.norm.pow 2) (.of_forall fun t ↦ by
       rw [Real.norm_of_nonneg (sq_nonneg _)]
       gcongr
       exact norm_companionRatio_le hu t)
@@ -91,38 +93,37 @@ private theorem integral_companionKernel_eq {u : ℂ} (hu : u.im ≠ 0) :
       -(u ^ 2 * resolventTransform ν u) - ν.real univ • u := by
   have h := integrable_resolvent_of_im_ne_zero (μ := ν) hu
   have heq (t : ℝ) : companionKernel u t = -(u ^ 2 * resolvent (R := ℝ) u t) - u := by
-    have hne : u - (t : ℂ) ≠ 0 := sub_ne_zero.mpr fun h ↦ hu (by simp [h])
-    rw [companionKernel, companionRatio_eq hne, Complex.resolvent_real_eq_inv,
-      ← neg_sub u (t : ℂ), inv_neg, mul_neg, neg_neg, div_eq_mul_inv]
+    rw [companionKernel, companionRatio_eq_resolvent (ofReal_sub_ne_zero_of_im_ne_zero hu t)]
     ring
   simp_rw [heq]
   rw [integral_sub (f := fun t ↦ -(u ^ 2 * resolvent (R := ℝ) u t))
     ((h.const_mul _).neg) (integrable_const _), integral_neg, integral_const_mul, integral_const,
     resolventTransform_apply]
 
+private theorem sq_norm_companionRatio (u : ℂ) (t : ℝ) :
+    ‖companionRatio u t‖ ^ 2 = t ^ 2 / Complex.normSq (u - t) := by
+  rw [← Complex.normSq_eq_norm_sq, companionRatio, Complex.normSq_div,
+    Complex.normSq_ofReal, pow_two]
+
 private theorem im_companionKernel (u : ℂ) (t : ℝ) :
     (companionKernel u t).im = -(u.im * ‖companionRatio u t‖ ^ 2) := by
-  rw [companionKernel, companionRatio, norm_div, Complex.norm_real,
-    div_pow, Real.norm_eq_abs, sq_abs, ← Complex.normSq_eq_norm_sq, Complex.mul_im,
-    Complex.div_im, Complex.div_re]
-  simp only [Complex.ofReal_re, Complex.ofReal_im, Complex.sub_re, Complex.sub_im, sub_zero,
-    zero_mul]
+  rw [sq_norm_companionRatio]
+  simp [companionKernel, companionRatio, Complex.mul_im, Complex.div_im, Complex.div_re]
   ring
 
 private theorem im_integral_companionKernel {u : ℂ} (hu : u.im ≠ 0) :
     (∫ t, companionKernel u t ∂ν).im =
       -(u.im * ∫ t, ‖companionRatio u t‖ ^ 2 ∂ν) := by
-  have hi : Integrable (companionKernel u) ν := (integrable_companionRatio hu).const_mul u
   calc
     _ = ∫ t, (companionKernel u t).im ∂ν := by
-      simpa only [RCLike.im_eq_complex_im] using (integral_im hi).symm
+      simpa only [RCLike.im_eq_complex_im] using (integral_im (integrable_companionKernel hu)).symm
     _ = _ := by simp_rw [im_companionKernel, integral_neg, integral_const_mul]
 
 private theorem companionKernel_sub {u v : ℂ} {t : ℝ}
-    (hu : u - (t : ℂ) ≠ 0) (hv : v - (t : ℂ) ≠ 0) :
+    (hu : (t : ℂ) - u ≠ 0) (hv : (t : ℂ) - v ≠ 0) :
     companionKernel u t - companionKernel v t =
       -(u - v) * (companionRatio u t * companionRatio v t) := by
-  unfold companionKernel companionRatio
+  simp only [companionKernel, companionRatio, ← neg_sub (t : ℂ) u, ← neg_sub (t : ℂ) v]
   field_simp [hu, hv]
   ring
 
@@ -133,15 +134,13 @@ private theorem norm_integral_companionKernel_sub_le {u v : ℂ}
         ∫ t, ‖companionRatio v t‖ ^ 2 ∂ν) / 2) := by
   have hiu := integrable_sq_norm_companionRatio (ν := ν) hu
   have hiv := integrable_sq_norm_companionRatio (ν := ν) hv
-  have hku : Integrable (companionKernel u) ν := (integrable_companionRatio hu).const_mul u
-  have hkv : Integrable (companionKernel v) ν := (integrable_companionRatio hv).const_mul v
-  rw [← integral_sub hku hkv, ← integral_add hiu hiv,
+  rw [← integral_sub (integrable_companionKernel hu) (integrable_companionKernel hv),
+    ← integral_add hiu hiv,
     ← integral_div, ← integral_const_mul]
   refine norm_integral_le_of_norm_le (((hiu.add hiv).div_const _).const_mul _) (.of_forall ?_)
   intro t
-  have hu' : u - (t : ℂ) ≠ 0 := sub_ne_zero.mpr fun h ↦ hu (by simp [h])
-  have hv' : v - (t : ℂ) ≠ 0 := sub_ne_zero.mpr fun h ↦ hv (by simp [h])
-  rw [companionKernel_sub hu' hv', norm_mul, norm_neg, norm_mul]
+  rw [companionKernel_sub (ofReal_sub_ne_zero_of_im_ne_zero hu t)
+    (ofReal_sub_ne_zero_of_im_ne_zero hv t), norm_mul, norm_neg, norm_mul]
   have hsq := sq_nonneg (‖companionRatio u t‖ - ‖companionRatio v t‖)
   exact mul_le_mul_of_nonneg_left (by nlinarith only [hsq]) (norm_nonneg _)
 
@@ -255,14 +254,16 @@ private theorem exists_mul_norm_integral_companionRatio_le {y ε : ℝ}
   have hχ : Integrable (B.indicator (fun _ ↦ (y + 1) / d)) ν :=
     (integrable_const _).indicator hB
   have hsq := (integrable_sq_norm_companionRatio (ν := ν) hu.ne').const_mul (d * a)
-  have hbound := integral_mono (((integrable_companionRatio (ν := ν) hu.ne').norm).const_mul a)
-    ((integrable_const _).add (hsq.add hχ)) (hpoint ha hay huR)
-  simp only [Pi.add_apply] at hbound
-  rw [integral_const_mul, integral_add (g := fun t ↦
-      d * a * ‖companionRatio u t‖ ^ 2 + B.indicator (fun _ ↦ (y + 1) / d) t)
-      (integrable_const _) (hsq.add hχ),
-    integral_add hsq hχ, integral_const_mul, integral_const, integral_indicator_const _ hB,
-    smul_eq_mul, smul_eq_mul] at hbound
+  have hright : (∫ t, d / (ν.real univ + 1) +
+      (d * a * ‖companionRatio u t‖ ^ 2 + B.indicator (fun _ ↦ (y + 1) / d) t) ∂ν) =
+      ν.real univ * (d / (ν.real univ + 1)) +
+        ((d * a) * (∫ t, ‖companionRatio u t‖ ^ 2 ∂ν) + ν.real B * ((y + 1) / d)) := by
+    calc
+      _ = (∫ _ : ℝ, d / (ν.real univ + 1) ∂ν) +
+          ∫ t, d * a * ‖companionRatio u t‖ ^ 2 + B.indicator (fun _ ↦ (y + 1) / d) t ∂ν :=
+        integral_add (integrable_const _) (hsq.add hχ)
+      _ = _ := by
+        simp [integral_add hsq hχ, integral_const_mul, integral_indicator_const _ hB, smul_eq_mul]
   have hfirst : ν.real univ * (d / (ν.real univ + 1)) ≤ d := by
     rw [← mul_div_assoc, div_le_iff₀ (by positivity)]
     linarith
@@ -276,6 +277,9 @@ private theorem exists_mul_norm_integral_companionRatio_le {y ε : ℝ}
     _ ≤ a * ∫ t, ‖companionRatio u t‖ ∂ν :=
       mul_le_mul_of_nonneg_left (norm_integral_le_integral_norm _) ha
     _ ≤ ε := by
+      have hbound := integral_mono ((integrable_companionRatio (ν := ν) hu.ne').norm.const_mul a)
+        ((integrable_const _).add (hsq.add hχ)) (hpoint ha hay huR)
+      simp only [Pi.add_apply, integral_const_mul, hright] at hbound
       have hd' : 3 * d = ε := by dsimp [d]; ring
       linarith only [hbound, hfirst, hmiddle, hlast, hd']
 
@@ -352,13 +356,19 @@ private theorem exists_companionEquation (y : ℝ≥0) {z : ℂ} (hz : 0 < z.im)
   simp only [T, hp_id _ hxi'] at heq
   linear_combination heq
 
-private theorem companionKernel_eq_div {u : ℂ} (hu : u ≠ 0) (t : ℝ) :
-    companionKernel u t = t / (1 + (t : ℂ) * (-u⁻¹)) := by
-  have heq : 1 + (t : ℂ) * (-u⁻¹) = (u - t) / u := by
+private theorem companionKernel_neg_inv {w : ℂ} (hw : w ≠ 0) (t : ℝ) :
+    companionKernel (-w⁻¹) t = t / (1 + (t : ℂ) * w) := by
+  have heq : -w⁻¹ - (t : ℂ) = -(1 + (t : ℂ) * w) / w := by
     field_simp
     ring
-  rw [heq, companionKernel, companionRatio, div_div_eq_mul_div]
-  ring
+  rw [companionKernel, companionRatio, heq, div_div_eq_mul_div, ← mul_div_assoc]
+  simp only [neg_mul, div_neg, neg_div, neg_neg]
+  rw [mul_left_comm, inv_mul_cancel₀ hw, mul_one]
+
+private theorem companionEquation_iff {ν : Measure ℝ} {z w a : ℂ} (hw : w ≠ 0) :
+    (z = -w⁻¹ + a * ∫ t, companionKernel (-w⁻¹) t ∂ν) ↔
+      z = -w⁻¹ + a * ∫ t, (t : ℂ) / (1 + (t : ℂ) * w) ∂ν := by
+  simp only [companionKernel_neg_inv hw]
 
 /-- The integral kernel of the population covariance companion equation is integrable
 against any finite population measure at a nonreal transform variable. -/
@@ -368,11 +378,7 @@ theorem integrable_populationCovarianceCompanionKernel_of_im_ne_zero {w : ℂ}
   have hu : (-w⁻¹).im ≠ 0 := by
     rw [Complex.neg_im, Complex.inv_im, neg_div, neg_neg]
     exact div_ne_zero hw (Complex.normSq_pos.mpr hw₀).ne'
-  have hk : Integrable (companionKernel (-w⁻¹)) ν :=
-    (integrable_companionRatio hu).const_mul _
-  exact hk.congr (.of_forall fun t ↦ by
-    simp only [companionKernel_eq_div (neg_ne_zero.mpr (inv_ne_zero hw₀)),
-      inv_neg, inv_inv, neg_neg])
+  exact (integrable_companionKernel hu).congr (.of_forall (companionKernel_neg_inv hw₀))
 
 /-- For every upper-half-plane parameter `z` there is exactly one upper-half-plane
 solution of the companion equation with population measure `ν` and aspect ratio `y`. -/
@@ -382,13 +388,11 @@ theorem existsUnique_populationCovarianceCompanion (ν : Measure ℝ) [IsFiniteM
       z = -w⁻¹ + ((y : ℝ) : ℂ) * ∫ t, (t : ℂ) / (1 + (t : ℂ) * w) ∂ν := by
   obtain ⟨u, hu, heq⟩ := exists_companionEquation (ν := ν) y hz
   refine ⟨-u⁻¹, ⟨im_neg_inv_pos.mpr hu, ?_⟩, ?_⟩
-  · have hu₀ := UpperHalfPlane.ne_zero ⟨u, hu⟩
-    simpa only [inv_neg, inv_inv, neg_neg, ← companionKernel_eq_div hu₀] using heq
+  · have hw₀ := UpperHalfPlane.ne_zero ⟨-u⁻¹, im_neg_inv_pos.mpr hu⟩
+    exact (companionEquation_iff hw₀).mp (by simpa using heq)
   · intro w hw
     have hw' := im_neg_inv_pos.mpr hw.1
-    have hw₀ := UpperHalfPlane.ne_zero ⟨-w⁻¹, hw'⟩
-    have heq' : z = -w⁻¹ + ((y : ℝ) : ℂ) * ∫ t, companionKernel (-w⁻¹) t ∂ν := by
-      simpa only [companionKernel_eq_div hw₀, inv_neg, inv_inv, neg_neg] using hw.2
+    have heq' := (companionEquation_iff (UpperHalfPlane.ne_zero ⟨w, hw.1⟩)).mpr hw.2
     have h := eq_of_companionEquation y.coe_nonneg hz hw' hu heq' heq
     simpa only [inv_neg, inv_inv, neg_neg] using congrArg (fun v : ℂ ↦ -v⁻¹) h
 
@@ -453,11 +457,25 @@ private theorem tendsto_mul_neg_inv_companionReciprocal {u : ℂ → ℂ} (y : �
     _ ≤ ε / 2 := hsmall hu y.coe_nonneg le_rfl he hnorm
     _ < ε := by linarith
 
-private theorem exists_populationCovarianceCompanionMeasure (y : ℝ≥0) :
-    ∃ μ : ProbabilityMeasure ℝ, ∀ z : ℂ, 0 < z.im →
+/-- A probability measure solves the population covariance companion equation if its
+Stieltjes transform satisfies the equation throughout the upper half-plane. -/
+def IsPopulationCovarianceCompanion (ν : Measure ℝ) (y : ℝ≥0)
+    (μ : ProbabilityMeasure ℝ) : Prop :=
+  ∀ z : ℂ, 0 < z.im →
+    z = -(resolventTransform (μ : Measure ℝ) z)⁻¹ +
+      ((y : ℝ) : ℂ) *
+        ∫ t, (t : ℂ) / (1 + (t : ℂ) * resolventTransform (μ : Measure ℝ) z) ∂ν
+
+/-- The companion solution predicate is characterized by the Stieltjes transform equation. -/
+theorem isPopulationCovarianceCompanion_iff {ν : Measure ℝ} {y : ℝ≥0} {μ : ProbabilityMeasure ℝ} :
+    IsPopulationCovarianceCompanion ν y μ ↔ ∀ z : ℂ, 0 < z.im →
       z = -(resolventTransform (μ : Measure ℝ) z)⁻¹ +
         ((y : ℝ) : ℂ) *
-          ∫ t, (t : ℂ) / (1 + (t : ℂ) * resolventTransform (μ : Measure ℝ) z) ∂ν := by
+          ∫ t, (t : ℂ) / (1 + (t : ℂ) * resolventTransform (μ : Measure ℝ) z) ∂ν :=
+  Iff.rfl
+
+private theorem exists_populationCovarianceCompanionMeasure (y : ℝ≥0) :
+    ∃ μ : ProbabilityMeasure ℝ, IsPopulationCovarianceCompanion ν y μ := by
   obtain ⟨u, hdu, hu⟩ := exists_differentiableOn_companionReciprocal (ν := ν) y
   let w : ℂ → ℂ := fun z ↦ -(u z)⁻¹
   have hwpos (z) (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) : 0 < (w z).im :=
@@ -489,36 +507,52 @@ private theorem exists_populationCovarianceCompanionMeasure (y : ℝ≥0) :
   have hone : μ.real univ = 1 := by exact_mod_cast neg_injective hmass
   have hprob : IsProbabilityMeasure μ := ⟨by
     rw [← ofReal_measureReal, hone, ENNReal.ofReal_one]⟩
-  refine ⟨⟨μ, hprob⟩, fun z hz ↦ ?_⟩
+  refine ⟨⟨μ, hprob⟩, isPopulationCovarianceCompanion_iff.mpr fun z hz ↦ ?_⟩
   rw [ProbabilityMeasure.coe_mk, ← hres z hz]
-  simpa only [w, inv_neg, inv_inv, neg_neg, ← companionKernel_eq_div (hdu0 z hz)] using
-    (hu z hz).2
+  have hw₀ := UpperHalfPlane.ne_zero ⟨w z, hwpos z hz⟩
+  exact (companionEquation_iff hw₀).mp (by simpa [w] using (hu z hz).2)
 
 /-- The companion equation determines the Stieltjes transform of a unique probability
 measure on the real line. -/
 theorem existsUnique_populationCovarianceCompanionMeasure (ν : Measure ℝ) [IsFiniteMeasure ν]
     (y : ℝ≥0) :
-    ∃! μ : ProbabilityMeasure ℝ, ∀ z : ℂ, 0 < z.im →
-      z = -(resolventTransform (μ : Measure ℝ) z)⁻¹ +
-        ((y : ℝ) : ℂ) *
-          ∫ t, (t : ℂ) / (1 + (t : ℂ) * resolventTransform (μ : Measure ℝ) z) ∂ν := by
+    ∃! μ : ProbabilityMeasure ℝ, IsPopulationCovarianceCompanion ν y μ := by
   obtain ⟨μ, hμ⟩ := exists_populationCovarianceCompanionMeasure (ν := ν) y
   refine ⟨μ, hμ, ?_⟩
   intro κ hκ
   apply ProbabilityMeasure.toMeasure_injective
   refine Measure.ext_of_resolventTransform fun z hz ↦ ?_
   obtain ⟨w, -, hw⟩ := existsUnique_populationCovarianceCompanion ν y hz
-  exact (hw _ ⟨im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz, hκ z hz⟩).trans
-    (hw _ ⟨im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz, hμ z hz⟩).symm
+  exact (hw _ ⟨im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz,
+    isPopulationCovarianceCompanion_iff.mp hκ z hz⟩).trans
+    (hw _ ⟨im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz,
+      isPopulationCovarianceCompanion_iff.mp hμ z hz⟩).symm
+
+/-- The probability measure whose Stieltjes transform solves the population covariance
+companion equation at aspect ratio `y`. -/
+def populationCovarianceCompanionMeasure (ν : Measure ℝ) [IsFiniteMeasure ν]
+    (y : ℝ≥0) : ProbabilityMeasure ℝ :=
+  (existsUnique_populationCovarianceCompanionMeasure ν y).choose
+
+/-- The population covariance companion measure satisfies the companion equation. -/
+@[simp]
+theorem populationCovarianceCompanionMeasure_spec (ν : Measure ℝ) [IsFiniteMeasure ν]
+    (y : ℝ≥0) : IsPopulationCovarianceCompanion ν y (populationCovarianceCompanionMeasure ν y) :=
+  (existsUnique_populationCovarianceCompanionMeasure ν y).choose_spec.1
+
+/-- Every probability measure satisfying the companion equation is the population covariance
+companion measure. -/
+theorem eq_populationCovarianceCompanionMeasure {y : ℝ≥0} {μ : ProbabilityMeasure ℝ}
+    (hμ : IsPopulationCovarianceCompanion ν y μ) : μ = populationCovarianceCompanionMeasure ν y :=
+  (existsUnique_populationCovarianceCompanionMeasure ν y).choose_spec.2 μ hμ
 
 private theorem re_companionKernel_add_nonneg (u : ℂ) {t : ℝ} (ht : 0 ≤ t) :
     0 ≤ (companionKernel u t).re + u.re * ‖companionRatio u t‖ ^ 2 := by
   have heq : (companionKernel u t).re + u.re * ‖companionRatio u t‖ ^ 2 =
       t * Complex.normSq u / Complex.normSq (u - t) := by
-    rw [companionKernel, companionRatio, norm_div, Complex.norm_real, div_pow, Real.norm_eq_abs,
-      sq_abs, ← Complex.normSq_eq_norm_sq, Complex.mul_re, Complex.div_im, Complex.div_re]
-    simp only [Complex.ofReal_re, Complex.ofReal_im, Complex.sub_re, Complex.sub_im, sub_zero,
-      zero_mul, Complex.normSq_apply u]
+    rw [sq_norm_companionRatio]
+    simp [companionKernel, companionRatio, Complex.mul_re, Complex.div_im, Complex.div_re,
+      Complex.normSq_apply u]
     ring
   rw [heq]
   exact div_nonneg (mul_nonneg ht (Complex.normSq_nonneg _)) (Complex.normSq_nonneg _)
@@ -527,7 +561,7 @@ private theorem re_mul_le_of_companionEquation {z u : ℂ} {a : ℝ} (ha : 0 ≤
     (hν : ∀ᵐ t : ℝ ∂ν, 0 ≤ t)
     (h : z = u + (a : ℂ) * ∫ t, companionKernel u t ∂ν) :
     u.re * (1 - a * ∫ t, ‖companionRatio u t‖ ^ 2 ∂ν) ≤ z.re := by
-  have hk : Integrable (companionKernel u) ν := (integrable_companionRatio hu.ne').const_mul u
+  have hk := integrable_companionKernel (ν := ν) hu.ne'
   have hre : (∫ t, companionKernel u t ∂ν).re = ∫ t, (companionKernel u t).re ∂ν := by
     simpa only [RCLike.re_eq_complex_re] using (integral_re hk).symm
   have hnonneg : 0 ≤ (∫ t, (companionKernel u t).re ∂ν) +
@@ -574,10 +608,7 @@ private theorem im_neg_inv_le_of_companionEquation {z u : ℂ} {a B : ℝ} (ha :
 measure solving the companion equation is concentrated there as well. -/
 theorem measure_Iio_zero_of_populationCovarianceCompanion {ν : Measure ℝ} [IsFiniteMeasure ν]
     {μ : ProbabilityMeasure ℝ} (hν : ∀ᵐ t : ℝ ∂ν, 0 ≤ t) (y : ℝ≥0)
-    (hμ : ∀ z : ℂ, 0 < z.im →
-      z = -(resolventTransform (μ : Measure ℝ) z)⁻¹ +
-        ((y : ℝ) : ℂ) *
-          ∫ t, (t : ℂ) / (1 + (t : ℂ) * resolventTransform (μ : Measure ℝ) z) ∂ν) :
+    (hμ : IsPopulationCovarianceCompanion ν y μ) :
     (μ : Measure ℝ) (Iio 0) = 0 := by
   obtain ⟨R, -, hbound⟩ := exists_norm_sub_le_of_companionEquation (ν := ν) y.coe_nonneg
   refine measure_eq_zero_of_tendsto_im_resolventTransform_zero (fun x hx ↦ ?_)
@@ -601,11 +632,10 @@ theorem measure_Iio_zero_of_populationCovarianceCompanion {ν : Measure ℝ} [Is
     have hz : 0 < z.im := hzim.symm ▸ hη.1
     let w : ℂ := resolventTransform (μ : Measure ℝ) z
     let u := -w⁻¹
-    have hu : 0 < u.im := im_neg_inv_pos.mpr (im_resolventTransform_pos
-      (IsProbabilityMeasure.ne_zero _) hz)
-    have hu₀ := UpperHalfPlane.ne_zero ⟨u, hu⟩
-    have heq : z = u + ((y : ℝ) : ℂ) * ∫ t, companionKernel u t ∂ν := by
-      simpa only [companionKernel_eq_div hu₀, u, inv_neg, inv_inv, neg_neg] using hμ z hz
+    have hw : 0 < w.im := im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz
+    have hu : 0 < u.im := im_neg_inv_pos.mpr hw
+    have heq := (companionEquation_iff (UpperHalfPlane.ne_zero ⟨w, hw⟩)).mpr
+      (isPopulationCovarianceCompanion_iff.mp hμ z hz)
     have hunorm := hbound hz hu y.coe_nonneg le_rfl heq
     have hznorm : ‖z‖ ≤ |x| + 1 := calc
       _ ≤ ‖(x : ℂ)‖ + ‖(η : ℂ) * I‖ := norm_add_le _ _
