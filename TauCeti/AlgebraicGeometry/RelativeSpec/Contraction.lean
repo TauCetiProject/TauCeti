@@ -143,6 +143,7 @@ instance modObjGradedRelativeSpec :
     exact (scaleHom_scaleHom A _ _ _ _).symm
 
 /-- The action of `𝔸¹_X` on `Spec_X (⨁ₙ Aₙ)` is `gradedRelativeSpecSMul`. -/
+@[simp]
 lemma smul_gradedRelativeSpec :
     γ[𝔸(PUnit.{u + 1}; X).asOver X, (MorphismProperty.Over.forget _ _ X).obj
       ((relativeSpec X).obj (op (toQuasicoherentAlgebra.obj A)))] =
@@ -190,6 +191,8 @@ def gradedRelativeSpecVertex : 𝟙_ (Over X) ⟶ (MorphismProperty.Over.forget 
   ((relativeSpecHomIso X).inv.app _).app _
     (augmentation A (𝟙_ (Over X)).hom.pushforwardStructureAlgebra)
 
+-- Not a `simp` lemma: `simp` rewrites `op (𝟙_ (Over X))` in the left-hand side to the tensor
+-- unit of `(Over X)ᵒᵖ`, so the left-hand side is not in simp-normal form.
 /-- The algebra map of the vertex is the augmentation. -/
 theorem relativeSpecHomIso_hom_app_app_gradedRelativeSpecVertex :
     ((relativeSpecHomIso X).hom.app _).app _ (gradedRelativeSpecVertex A) =
@@ -209,6 +212,7 @@ theorem relativeSpecHomIso_hom_app_app_comp_gradedRelativeSpecVertex {T : Over X
 open scoped CommRingObj in
 /-- **Contracting by zero gives the vertex.** For every point `t : T ⟶ Spec_X (⨁ₙ Aₙ)`, the
 point `0 • t` factors through the vertex. -/
+@[simp]
 theorem lift_zero_comp_gradedRelativeSpecSMul {T : Over X}
     (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj
       ((relativeSpec X).obj (op (toQuasicoherentAlgebra.obj A)))) :
@@ -221,6 +225,7 @@ theorem lift_zero_comp_gradedRelativeSpecSMul {T : Over X}
   exact scaleHom_zero A _ _
 
 /-- **The vertex is fixed by the contraction.** -/
+@[simp]
 theorem lift_toUnit_comp_gradedRelativeSpecVertex_comp_gradedRelativeSpecSMul {T : Over X}
     (a : T ⟶ 𝔸(PUnit.{u + 1}; X).asOver X) :
     lift a (toUnit T ≫ gradedRelativeSpecVertex A) ≫ gradedRelativeSpecSMul A =

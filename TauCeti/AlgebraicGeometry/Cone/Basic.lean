@@ -42,8 +42,9 @@ isomorphism in degree zero and an epimorphism in every degree
 vertex and the contraction action of the affine line on the relative spectrum of a graded algebra
 are constructed in `TauCeti.AlgebraicGeometry.RelativeSpec.Contraction`; the embedding commutes
 with both, being induced by a morphism of graded algebras. Closed subcones of a cone are the
-graded quotients of its cone algebra that are isomorphisms in degree zero, and these are again cone
-algebras (`IsConeAlgebra.of_epi`).
+graded quotients of its cone algebra that are isomorphisms in degree zero; these are again cone
+algebras (`IsConeAlgebra.of_epi`), and their relative spectra are closed subschemes
+(`isClosedImmersion_relativeSpec_map_toQuasicoherentAlgebra_map`).
 Altogether, cone algebras are exactly the graded quasicoherent algebras with `A₀ = 𝒪_X` and `A₁`
 of finite type that are graded quotients of `Sym A₁`
 (`isConeAlgebra_iff_epi_gradedSymmetricAlgebraLift`).
@@ -69,7 +70,9 @@ In the namespace `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra`:
   epimorphism in every degree.
 * `isConeAlgebra_iff_epi_gradedSymmetricAlgebraLift`: the characterization of cone algebras as
   graded quotients of `Sym A₁`.
-* `IsConeAlgebra.isClosedImmersion_relativeSpec_map_gradedSymmetricAlgebraLift`: a cone is a
+* `isClosedImmersion_relativeSpec_map_toQuasicoherentAlgebra_map`: a graded quotient, surjective
+  in positive degrees, gives a closed subscheme of relative spectra, and
+  `IsConeAlgebra.isClosedImmersion_relativeSpec_map_gradedSymmetricAlgebraLift`: a cone is a
   closed subscheme of its abelian hull.
 
 ## References
@@ -175,17 +178,25 @@ theorem isConeAlgebra_iff_epi_gradedSymmetricAlgebraLift :
   exact ((isConeAlgebra_gradedSymmetricAlgebra_iff _).mpr hA₁).of_epi
     (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A)))
 
+/-- **Graded quotients give closed subschemes.** A morphism `g : A ⟶ B` of graded quasicoherent
+algebras that is an epimorphism in every positive degree, where the unit `𝒪_X ⟶ B₀` is an
+epimorphism, induces a closed immersion `Spec_X (⨁ₙ Bₙ) ⟶ Spec_X (⨁ₙ Aₙ)`. This covers closed
+subcones of a cone (`IsConeAlgebra.of_epi`). -/
+theorem isClosedImmersion_relativeSpec_map_toQuasicoherentAlgebra_map (g : A ⟶ B)
+    [Epi B.obj.toMon.one] (hg : ∀ n, 0 < n → Epi (g.hom.hom.hom n)) :
+    IsClosedImmersion ((relativeSpec X).map (toQuasicoherentAlgebra.map g).op).left := by
+  have := epi_toQuasicoherentAlgebra_map g hg
+  rw [relativeSpec_map_left]
+  exact CommMon.isClosedImmersion_relativeSpecMap_of_epi (toQuasicoherentAlgebra.map g).hom
+
 /-- **A cone is a closed subscheme of its abelian hull.** For a cone algebra `A`, the morphism
 `Spec_X (⨁ₙ Aₙ) ⟶ Spec_X (Sym A₁)` induced by `Sym A₁ ⟶ A` is a closed immersion. -/
 theorem IsConeAlgebra.isClosedImmersion_relativeSpec_map_gradedSymmetricAlgebraLift
     (hA : A.IsConeAlgebra) :
     IsClosedImmersion ((relativeSpec X).map
-      (toQuasicoherentAlgebra.map (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A)))).op).left := by
+      (toQuasicoherentAlgebra.map (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A)))).op).left :=
   have := hA.isIso_one
-  have := epi_toQuasicoherentAlgebra_map (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A)))
+  isClosedImmersion_relativeSpec_map_toQuasicoherentAlgebra_map _
     fun n _ ↦ hA.epi_gradedSymmetricAlgebraLift n
-  rw [relativeSpec_map_left]
-  exact CommMon.isClosedImmersion_relativeSpecMap_of_epi
-    (toQuasicoherentAlgebra.map (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A)))).hom
 
 end TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra

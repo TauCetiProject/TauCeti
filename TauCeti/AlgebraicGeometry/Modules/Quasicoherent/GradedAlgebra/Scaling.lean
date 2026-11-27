@@ -151,13 +151,10 @@ private theorem scaleHom_one_aux (ψ : (toQuasicoherentAlgebra.obj A).obj ⟶
     A.obj.toMon.one ≫ ιTotal A 0 ≫ ψ.hom.hom ≫ (Scheme.Modules.pushforward q).map
         (Scheme.Modules.globalSectionsSmul (𝟙_ T.Modules) (c ^ 0)) =
       η[q.pushforwardStructureAlgebra.X] := by
-  have h₀ : (Scheme.Modules.pushforward q).map
-      (Scheme.Modules.globalSectionsSmul (𝟙_ T.Modules) (c ^ 0)) = 𝟙 _ := by
-    rw [pow_zero, Scheme.Modules.globalSectionsSmul_one]
-    exact (Scheme.Modules.pushforward q).map_id _
-  -- the goal mixes the `X.Modules` and `SheafOfModules` category instances, on which `rw [h₀]`
-  -- cannot build its motive, so `h₀` is applied as a term
-  exact (congrArg (fun f ↦ A.obj.toMon.one ≫ ιTotal A 0 ≫ ψ.hom.hom ≫ f) h₀).trans
+  -- the goal mixes the `X.Modules` and `SheafOfModules` category instances, on which `rw`
+  -- cannot build its motive, so the equations are applied as terms
+  exact (congrArg (fun f ↦ A.obj.toMon.one ≫ ιTotal A 0 ≫ ψ.hom.hom ≫ f)
+    (q.pushforward_map_globalSectionsSmul_of_eq_one _ (pow_zero c))).trans
     ((congrArg (fun f ↦ A.obj.toMon.one ≫ ιTotal A 0 ≫ f) (Category.comp_id _)).trans
       (one_ιTotal_comp A ψ))
 
@@ -198,7 +195,7 @@ variable (ψ : (toQuasicoherentAlgebra.obj A).obj ⟶ q.pushforwardStructureAlge
 
 /-- On the summand `Aₙ`, the scaled algebra map `scaleHom A q ψ c` is `ψ` followed by
 multiplication by `cⁿ`. -/
-@[reassoc]
+@[simp, reassoc]
 theorem ιTotal_scaleHom (n : ℕ) :
     ιTotal A n ≫ (scaleHom A q ψ c).hom.hom =
       ιTotal A n ≫ ψ.hom.hom ≫ (Scheme.Modules.pushforward q).map
@@ -209,12 +206,9 @@ theorem ιTotal_scaleHom (n : ℕ) :
 @[simp]
 theorem scaleHom_one : scaleHom A q ψ 1 = ψ := by
   refine CommMon.hom_ext _ _ (toQuasicoherentAlgebra_hom_ext fun n ↦ ?_)
-  have h₁ : (Scheme.Modules.pushforward q).map
-      (Scheme.Modules.globalSectionsSmul (𝟙_ T.Modules) (1 ^ n)) = 𝟙 _ := by
-    rw [one_pow, Scheme.Modules.globalSectionsSmul_one]
-    exact (Scheme.Modules.pushforward q).map_id _
   exact (ιTotal_scaleHom A q ψ 1 n).trans ((congrArg (fun f ↦ ιTotal A n ≫ ψ.hom.hom ≫ f)
-    h₁).trans (congrArg (ιTotal A n ≫ ·) (Category.comp_id _)))
+    (q.pushforward_map_globalSectionsSmul_of_eq_one _ (one_pow n))).trans
+      (congrArg (ιTotal A n ≫ ·) (Category.comp_id _)))
 
 /-- Scaling by `c'` and then by `c` is scaling by `c * c'`. -/
 @[simp]
@@ -234,24 +228,21 @@ theorem scaleHom_scaleHom (c' : Γ(T, ⊤)) :
 
 /-- Scaling by the function `0` is the augmentation: it kills every summand of positive
 degree. -/
+@[simp]
 theorem scaleHom_zero [IsIso A.obj.toMon.one] :
     scaleHom A q ψ 0 = augmentation A q.pushforwardStructureAlgebra := by
-  refine commMonHom_ext fun n ↦ ?_
-  have h₀ : (Scheme.Modules.pushforward q).map
-      (Scheme.Modules.globalSectionsSmul (𝟙_ T.Modules) ((0 : Γ(T, ⊤)) ^ (n + 1))) = 0 := by
-    rw [zero_pow n.succ_ne_zero, Scheme.Modules.globalSectionsSmul_zero, Functor.map_zero]
-  rw [ιTotal_augmentation]
+  refine (eq_augmentation_iff A _).2 fun n ↦ ?_
   exact (ιTotal_scaleHom A q ψ 0 (n + 1)).trans ((congrArg (fun f ↦ ιTotal A (n + 1) ≫
-    ψ.hom.hom ≫ f) h₀).trans ((congrArg (ιTotal A (n + 1) ≫ ·) (comp_zero (C := X.Modules))).trans
-      (comp_zero (C := X.Modules))))
+    ψ.hom.hom ≫ f) (q.pushforward_map_globalSectionsSmul_of_eq_zero _
+      (zero_pow n.succ_ne_zero))).trans ((congrArg (ιTotal A (n + 1) ≫ ·)
+        (comp_zero (C := X.Modules))).trans (comp_zero (C := X.Modules))))
 
 /-- Scaling the augmentation by any function leaves it unchanged. -/
 @[simp]
 theorem scaleHom_augmentation [IsIso A.obj.toMon.one] :
     scaleHom A q (augmentation A q.pushforwardStructureAlgebra) c =
       augmentation A q.pushforwardStructureAlgebra := by
-  refine commMonHom_ext fun n ↦ ?_
-  rw [ιTotal_augmentation]
+  refine (eq_augmentation_iff A _).2 fun n ↦ ?_
   exact (ιTotal_scaleHom A q _ c (n + 1)).trans ((Category.assoc _ _ _).symm.trans
     ((congrArg (· ≫ _) (ιTotal_augmentation A _ n)).trans (zero_comp (C := X.Modules))))
 

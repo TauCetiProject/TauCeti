@@ -132,6 +132,7 @@ multiplication `relativeSpecSymmetricAlgebraSMul F` is the contraction action
 `gradedRelativeSpecSMul` of the affine line on the relative spectrum of the graded algebra
 `Sym F = ⨁ₙ Symⁿ F`, which multiplies functions of degree `n` by the `n`-th power of the
 scalar. -/
+@[simp]
 theorem gradedRelativeSpecSMul_gradedSymmetricAlgebra :
     gradedRelativeSpecSMul ((gradedSymmetricAlgebra X).obj F) =
       relativeSpecSymmetricAlgebraSMul F := by
@@ -151,8 +152,8 @@ theorem gradedRelativeSpecSMul_gradedSymmetricAlgebra :
   have h₃ : relativeSpecSymmetricAlgebraHomEquiv F _ (relativeSpecSymmetricAlgebraSMul F) =
       relativeSpecSymmetricAlgebraHomEquiv F _ (snd _ _) ≫
         (Scheme.Modules.pushforward _).map (Scheme.Modules.globalSectionsSmul _
-          (AffineSpace.homAsOverEquiv _ (fst _ _) .unit)) :=
-    Equiv.apply_symm_apply _ _
+          (AffineSpace.homAsOverEquiv _ (fst _ _) .unit)) := by
+    rw [relativeSpecSymmetricAlgebraSMul, Equiv.apply_symm_apply]
   exact (congrArg (fun ψ ↦ GradedQuasicoherentAlgebra.ιTotal _ n ≫ ψ.hom.hom ≫ _) h₁).trans
     ((ιTotal_symmetricAlgebraLift_comp_globalSectionsSmul _ _ _ n).symm.trans
       (congrArg (fun ψ ↦ GradedQuasicoherentAlgebra.ιTotal _ n ≫ ψ.hom.hom)
@@ -167,8 +168,9 @@ instance modObjRelativeSpecSymmetricAlgebra :
       ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) :=
   modObjGradedRelativeSpec ((gradedSymmetricAlgebra X).obj F)
 
+-- Not a `simp` lemma: `simp` proves it through `smul_gradedRelativeSpec` and
+-- `gradedRelativeSpecSMul_gradedSymmetricAlgebra`.
 /-- The action of `𝔸¹_X` on `Spec_X (Sym F)` is `relativeSpecSymmetricAlgebraSMul`. -/
-@[simp]
 lemma smul_relativeSpecSymmetricAlgebra :
     γ[𝔸(PUnit.{u + 1}; X).asOver X, (MorphismProperty.Over.forget _ _ X).obj
       ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))] =

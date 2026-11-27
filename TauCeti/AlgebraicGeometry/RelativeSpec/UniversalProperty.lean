@@ -500,6 +500,9 @@ theorem relativeSpecHomIso_hom_app_app_comp_relativeSpec_map {B B' : Quasicohere
       f.hom ≫ ((relativeSpecHomIso X).hom.app (op B')).app (op T) t :=
   relativeSpecOverHomEquiv_comp_relativeSpecMap f t
 
+-- Not a `simp` lemma: `simp` rewrites the types of the bijections in the left-hand side (the
+-- functor composites of `relativeSpecHomIso` and `Opposite.op` of a tensor unit), so the
+-- left-hand side is not in simp-normal form.
 /-- The algebra map of the point given by an algebra map `φ : B ⟶ q_* 𝒪_T` is `φ`. -/
 theorem relativeSpecHomIso_hom_app_app_inv_app_app (B : QuasicoherentAlgebra X) (T : Over X)
     (φ : B.obj ⟶ T.hom.pushforwardStructureAlgebra) :

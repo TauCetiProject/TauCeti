@@ -134,9 +134,7 @@ theorem gradedRelativeSpecVertex_gradedSymmetricAlgebra :
         ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) := by
   apply relativeSpecHomIso_hom_app_app_injective
   rw [relativeSpecHomIso_hom_app_app_gradedRelativeSpecVertex]
-  refine commMonHom_ext fun n ↦ ?_
-  rw [ιTotal_augmentation]
-  exact (ιTotal_relativeSpecHomIso_zero _ n).symm
+  exact ((eq_augmentation_iff _ _).2 (ιTotal_relativeSpecHomIso_zero _)).symm
 
 end
 
