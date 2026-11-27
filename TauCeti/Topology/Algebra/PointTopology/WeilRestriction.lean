@@ -27,7 +27,7 @@ upgrade to topological multiplicative equivalences of convolution monoids (or to
 `pointsContinuousMulEquiv` and `basePointsContinuousMulEquiv`. Given a continuous scalar-extension
 equivalence `T ⊗[A] B ≃A[T] S` sending `1 ⊗ b` to `algebraMap B S b`,
 `pointsContinuousMulEquivOfBaseChange` combines `pointsContinuousMulEquiv` with the continuous
-factor swap `ContinuousAlgEquiv.baseChangeRight` to identify `(Res_{B/A} G)(T)` with `G(S)` as
+factor swap `ContinuousAlgEquiv.ofCommRight` to identify `(Res_{B/A} G)(T)` with `G(S)` as
 topological monoids (or topological groups).
 
 The comparison uses `TauCeti.Algebra.WeilRestriction.homEquiv` and the right tensor unitor.
@@ -289,6 +289,8 @@ end BasePoints
 
 section BaseChange
 
+section Single
+
 attribute [local instance] Algebra.TensorProduct.rightAlgebra
 
 variable (A B H : Type*) [CommRing A] [CommRing B] [CommRing H] [Algebra A B]
@@ -297,39 +299,26 @@ variable {T S : Type*} [CommRing T] [CommRing S] [Algebra A T] [Algebra B S] [Al
   [TopologicalSpace T] [IsTopologicalRing T] [TopologicalSpace S]
   [TopologicalSpace (T ⊗[A] B)] [IsModuleTopology T (T ⊗[A] B)]
 
-private def pointsContinuousMulEquivOfBaseChangeAux (e : T ⊗[A] B ≃A[T] S)
-    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
-    WithConv (WeilRestriction A B H →ₐ[A] T) ≃ₜ* WithConv (H →ₐ[B] S) :=
-  letI : TopologicalSpace (B ⊗[A] T) := moduleTopology T (B ⊗[A] T)
-  haveI : IsModuleTopology T (B ⊗[A] T) := ⟨rfl⟩
-  (pointsContinuousMulEquiv A B H T).trans (e.baseChangeRight he).mapValueContinuousMulEquiv
-
-private theorem toMulEquiv_pointsContinuousMulEquivOfBaseChangeAux (e : T ⊗[A] B ≃A[T] S)
-    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
-    (pointsContinuousMulEquivOfBaseChangeAux A B H e he).toMulEquiv =
-      pointsMulEquivOfBaseChange A B H e.toAlgEquiv he := by
-  unfold pointsContinuousMulEquivOfBaseChangeAux
-  dsimp only [ContinuousMulEquiv.trans]
-  simp only [ContinuousMulEquiv.toMulEquiv_eq_coe, toMulEquiv_pointsContinuousMulEquiv,
-    ContinuousAlgEquiv.toMulEquiv_mapValueContinuousMulEquiv,
-    ContinuousAlgEquiv.baseChangeRight_toAlgEquiv, pointsMulEquivOfBaseChange_eq_trans]
-
 /-- **Topological points of a Weil restriction along a scalar-extension equivalence.** Given a
 continuous `T`-algebra equivalence `e : T ⊗[A] B ≃A[T] S` sending `1 ⊗ b` to `algebraMap B S b`
 for the `T`-module topology on `T ⊗[A] B`, `WeilRestriction.pointsMulEquivOfBaseChange` is a
 topological multiplicative equivalence `(Res_{B/A} G)(T) ≃ₜ* G(S)`. -/
 def pointsContinuousMulEquivOfBaseChange (e : T ⊗[A] B ≃A[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
-    WithConv (WeilRestriction A B H →ₐ[A] T) ≃ₜ* WithConv (H →ₐ[B] S) where
-  toMulEquiv := pointsMulEquivOfBaseChange A B H e.toAlgEquiv he
-  continuous_toFun :=
-    (pointsContinuousMulEquivOfBaseChangeAux A B H e he).continuous.congr fun x ↦
-      DFunLike.congr_fun (toMulEquiv_pointsContinuousMulEquivOfBaseChangeAux A B H e he) x
-  continuous_invFun := by
-    refine (pointsContinuousMulEquivOfBaseChangeAux A B H e he).symm.continuous.congr fun y ↦ ?_
-    rw [MulEquiv.invFun_eq_symm,
-      ← toMulEquiv_pointsContinuousMulEquivOfBaseChangeAux A B H e he]
-    rfl
+    WithConv (WeilRestriction A B H →ₐ[A] T) ≃ₜ* WithConv (H →ₐ[B] S) :=
+  -- Equip `B ⊗[A] T` with its `T`-module topology only for the continuity proof so that
+  -- `toMulEquiv` remains definitionally `pointsMulEquivOfBaseChange`.
+  letI : TopologicalSpace (B ⊗[A] T) := moduleTopology T (B ⊗[A] T)
+  haveI : IsModuleTopology T (B ⊗[A] T) := ⟨rfl⟩
+  let h : WithConv (WeilRestriction A B H →ₐ[A] T) ≃ₜ* WithConv (H →ₐ[B] S) :=
+    (pointsContinuousMulEquiv A B H T).trans (e.ofCommRight he).mapValueContinuousMulEquiv
+  have h_eq (x) : h x = pointsMulEquivOfBaseChange A B H e.toAlgEquiv he x :=
+    WithConv.ofConv_injective <| AlgHom.ext fun z ↦ by
+      simp [h, ← ContinuousAlgEquiv.coe_toAlgEquiv]
+  { toMulEquiv := pointsMulEquivOfBaseChange A B H e.toAlgEquiv he
+    continuous_toFun := h.continuous.congr h_eq
+    continuous_invFun := h.symm.continuous.congr fun y ↦
+      h.symm_apply_eq.mpr ((h_eq _).trans (MulEquiv.apply_symm_apply _ _)).symm }
 
 variable {A B H}
 
@@ -354,13 +343,86 @@ theorem pointsContinuousMulEquivOfBaseChange_apply (e : T ⊗[A] B ≃A[T] S)
 
 /-- Applying `WeilRestriction.pointsMulEquiv` to the inverse of
 `pointsContinuousMulEquivOfBaseChange` post-composes with the inverse of
-`AlgEquiv.baseChangeRight`. -/
+`AlgEquiv.ofCommRight`. -/
 @[simp]
 theorem pointsMulEquiv_pointsContinuousMulEquivOfBaseChange_symm (e : T ⊗[A] B ≃A[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (y : WithConv (H →ₐ[B] S)) :
     pointsMulEquiv A B H T ((pointsContinuousMulEquivOfBaseChange A B H e he).symm y) =
-      AlgHom.mapValue (e.toAlgEquiv.baseChangeRight he).symm.toAlgHom y :=
+      AlgHom.mapValue (e.toAlgEquiv.ofCommRight he).symm.toAlgHom y :=
   pointsMulEquiv_pointsMulEquivOfBaseChange_symm e.toAlgEquiv he y
+
+/-- **Rational diagonal compatibility.** Under `pointsContinuousMulEquivOfBaseChange`, the image
+of an `A`-point of `Res_{B/A} G` along `A → T` corresponds to the image along `B → S` of the
+associated `B`-point under `basePointsMulEquiv`. -/
+theorem pointsContinuousMulEquivOfBaseChange_mapValue_ofId (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b)
+    (x : WithConv (WeilRestriction A B H →ₐ[A] A)) :
+    pointsContinuousMulEquivOfBaseChange A B H e he (AlgHom.mapValue (Algebra.ofId A T) x) =
+      AlgHom.mapValue (Algebra.ofId B S) (basePointsMulEquiv A B H x) :=
+  pointsMulEquivOfBaseChange_mapValue_ofId e.toAlgEquiv he x
+
+/-- **Compatibility with coefficient homomorphisms.** If `pT : T →ₐ[A] T'` and `pS : S →ₐ[B] S'`
+intertwine two continuous base-change equivalences `e` and `e'` on pure tensors, then
+`pointsContinuousMulEquivOfBaseChange` intertwines `AlgHom.mapValue pT` and `AlgHom.mapValue pS`. -/
+theorem pointsContinuousMulEquivOfBaseChange_mapValue {T' S' : Type*} [CommRing T'] [CommRing S']
+    [Algebra A T'] [Algebra B S'] [Algebra T' S']
+    [TopologicalSpace T'] [IsTopologicalRing T'] [TopologicalSpace S']
+    [TopologicalSpace (T' ⊗[A] B)] [IsModuleTopology T' (T' ⊗[A] B)]
+    (e : T ⊗[A] B ≃A[T] S) (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b)
+    (e' : T' ⊗[A] B ≃A[T'] S') (he' : ∀ b : B, e' (1 ⊗ₜ[A] b) = algebraMap B S' b)
+    (pT : T →ₐ[A] T') (pS : S →ₐ[B] S')
+    (hp : ∀ t b, pS (e (t ⊗ₜ[A] b)) = e' (pT t ⊗ₜ[A] b))
+    (x : WithConv (WeilRestriction A B H →ₐ[A] T)) :
+    pointsContinuousMulEquivOfBaseChange A B H e' he' (AlgHom.mapValue pT x) =
+      AlgHom.mapValue pS (pointsContinuousMulEquivOfBaseChange A B H e he x) :=
+  pointsMulEquivOfBaseChange_mapValue e.toAlgEquiv he e'.toAlgEquiv he' pT pS hp x
+
+end Single
+
+/-- **Naturality in bialgebra morphisms.** `pointsContinuousMulEquivOfBaseChange` commutes with
+morphisms `φ : H₁ →ₐc[B] H₂` of coordinate bialgebras. -/
+theorem pointsContinuousMulEquivOfBaseChange_mapDomain_mapBialgHom {A B H₁ H₂ T S : Type*}
+    [CommRing A] [CommRing B] [CommRing H₁] [CommRing H₂] [CommRing T] [CommRing S]
+    [Algebra A B] [Module.Finite A B] [Module.Projective A B]
+    [Bialgebra B H₁] [Bialgebra B H₂] [Algebra A T] [Algebra B S] [Algebra T S]
+    [TopologicalSpace T] [IsTopologicalRing T] [TopologicalSpace S]
+    [TopologicalSpace (T ⊗[A] B)] [IsModuleTopology T (T ⊗[A] B)]
+    (e : T ⊗[A] B ≃A[T] S) (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b)
+    (φ : H₁ →ₐc[B] H₂) (x : WithConv (WeilRestriction A B H₂ →ₐ[A] T)) :
+    pointsContinuousMulEquivOfBaseChange A B H₁ e he
+        (BialgHom.mapDomain (mapBialgHom A B φ) x) =
+      BialgHom.mapDomain φ (pointsContinuousMulEquivOfBaseChange A B H₂ e he x) :=
+  pointsMulEquivOfBaseChange_mapDomain_mapBialgHom e.toAlgEquiv he φ x
+
+/-- **Tower compatibility of `pointsContinuousMulEquivOfBaseChange`.** In a tower `A → B → C`
+of finite projective algebras, if `e₁₃ : T ⊗[A] C ≃A[T] S₂` factors through
+`e₁₂ : T ⊗[A] B ≃A[T] S₁` and `e₂₃ : S₁ ⊗[B] C ≃A[S₁] S₂` via
+`e₁₃ (t ⊗ c) = e₂₃ (e₁₂ (t ⊗ 1) ⊗ c)`, then restricting along `compBialgEquiv` and applying
+`pointsContinuousMulEquivOfBaseChange` in two steps agrees with the direct `C/A` comparison. -/
+theorem pointsContinuousMulEquivOfBaseChange_mapDomain_compBialgEquiv
+    {A B C H T S₁ S₂ : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing H]
+    [CommRing T] [CommRing S₁] [CommRing S₂] [Algebra A B] [Algebra B C] [Algebra A C]
+    [IsScalarTower A B C] [Module.Finite A B] [Module.Projective A B]
+    [Module.Finite B C] [Module.Projective B C] [Module.Finite A C] [Module.Projective A C]
+    [Bialgebra C H] [Algebra A T] [Algebra B S₁] [Algebra T S₁]
+    [Algebra C S₂] [Algebra S₁ S₂] [Algebra T S₂]
+    [TopologicalSpace T] [IsTopologicalRing T] [TopologicalSpace S₁] [IsTopologicalRing S₁]
+    [TopologicalSpace S₂]
+    [TopologicalSpace (T ⊗[A] B)] [IsModuleTopology T (T ⊗[A] B)]
+    [TopologicalSpace (S₁ ⊗[B] C)] [IsModuleTopology S₁ (S₁ ⊗[B] C)]
+    [TopologicalSpace (T ⊗[A] C)] [IsModuleTopology T (T ⊗[A] C)]
+    (e₁₂ : T ⊗[A] B ≃A[T] S₁) (he₁₂ : ∀ b : B, e₁₂ (1 ⊗ₜ[A] b) = algebraMap B S₁ b)
+    (e₂₃ : S₁ ⊗[B] C ≃A[S₁] S₂) (he₂₃ : ∀ c : C, e₂₃ (1 ⊗ₜ[B] c) = algebraMap C S₂ c)
+    (e₁₃ : T ⊗[A] C ≃A[T] S₂) (he₁₃ : ∀ c : C, e₁₃ (1 ⊗ₜ[A] c) = algebraMap C S₂ c)
+    (htower : ∀ (t : T) (c : C), e₁₃ (t ⊗ₜ[A] c) = e₂₃ (e₁₂ (t ⊗ₜ[A] 1) ⊗ₜ[B] c))
+    (x : WithConv (WeilRestriction A C H →ₐ[A] T)) :
+    pointsContinuousMulEquivOfBaseChange B C H e₂₃ he₂₃
+        (pointsContinuousMulEquivOfBaseChange A B (WeilRestriction B C H) e₁₂ he₁₂
+          (BialgHom.mapDomain (compBialgEquiv A B C H :
+            WeilRestriction A B (WeilRestriction B C H) →ₐc[A] WeilRestriction A C H) x)) =
+      pointsContinuousMulEquivOfBaseChange A C H e₁₃ he₁₃ x :=
+  pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv
+    e₁₂.toAlgEquiv he₁₂ e₂₃.toAlgEquiv he₂₃ e₁₃.toAlgEquiv he₁₃ htower x
 
 end BaseChange
 

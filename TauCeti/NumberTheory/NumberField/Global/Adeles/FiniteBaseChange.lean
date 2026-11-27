@@ -369,8 +369,7 @@ theorem finiteAdeleBaseChangeEquiv_proj (v : HeightOneSpectrum (𝓞 K))
       HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra,
       HeightOneSpectrum.algebraMap_adicCompletion]
   | add s₁ s₂ hs₁ hs₂ =>
-    simp only [map_add, Pi.add_apply] at *
-    exact congrArg₂ (· + ·) hs₁ hs₂
+    simp only [map_add, Pi.add_apply, hs₁, hs₂]
 
 /-- Pure-tensor form of `finiteAdeleBaseChangeEquiv_proj`. -/
 theorem finiteAdeleBaseChangeEquiv_proj_tmul (v : HeightOneSpectrum (𝓞 K))

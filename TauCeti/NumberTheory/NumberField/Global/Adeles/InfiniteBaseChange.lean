@@ -300,7 +300,7 @@ theorem infiniteAdeleBaseChangeEquiv_eval (v : InfinitePlace K)
     obtain rfl : w.comap (algebraMap K L) = v := InfinitePlace.LiesOver.comap_eq w v
     simp [AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
   | add s₁ s₂ hs₁ hs₂ =>
-    simp only [map_add, Pi.add_apply] at *
+    simp only [map_add, Pi.add_apply]
     exact congrArg₂ (· + ·) hs₁ hs₂
 
 /-- Pure-tensor form of `infiniteAdeleBaseChangeEquiv_eval`. -/

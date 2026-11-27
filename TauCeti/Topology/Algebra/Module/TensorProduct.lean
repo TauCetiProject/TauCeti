@@ -24,7 +24,7 @@ a continuous `T`-algebra equivalence
 `Algebra.TensorProduct.continuousCommRight : T ⊗[A] B ≃A[T] B ⊗[A] T`. Precomposing a continuous
 `T`-algebra equivalence `e : T ⊗[A] B ≃A[T] S` sending `1 ⊗ b` to `algebraMap B S b` with this
 swap gives a continuous `B`-algebra equivalence
-`ContinuousAlgEquiv.baseChangeRight : B ⊗[A] T ≃A[B] S`.
+`ContinuousAlgEquiv.ofCommRight : B ⊗[A] T ≃A[B] S`.
 -/
 
 public section
@@ -109,41 +109,41 @@ variable {A B T S : Type*} [CommSemiring A] [CommSemiring B] [CommSemiring T] [S
   [TopologicalSpace (B ⊗[A] T)] [IsModuleTopology T (B ⊗[A] T)]
   [TopologicalSpace (T ⊗[A] B)] [IsModuleTopology T (T ⊗[A] B)]
 
-/-- Continuous upgrade of `AlgEquiv.baseChangeRight`: when `B ⊗[A] T` and `T ⊗[A] B` carry their
+/-- Continuous upgrade of `AlgEquiv.ofCommRight`: when `B ⊗[A] T` and `T ⊗[A] B` carry their
 `T`-module topologies, swapping tensor factors and applying `e : T ⊗[A] B ≃A[T] S` is a continuous
 `B`-algebra equivalence `B ⊗[A] T ≃A[B] S`. -/
-noncomputable def baseChangeRight (e : T ⊗[A] B ≃A[T] S)
+noncomputable def ofCommRight (e : T ⊗[A] B ≃A[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) : B ⊗[A] T ≃A[B] S :=
   let hcomm := (Algebra.TensorProduct.continuousCommRight A T B).symm
-  { toAlgEquiv := e.toAlgEquiv.baseChangeRight he
+  { toAlgEquiv := e.toAlgEquiv.ofCommRight he
     continuous_toFun := (e.continuous.comp hcomm.continuous).congr fun z ↦ by
       rw [Function.comp_apply, Algebra.TensorProduct.continuousCommRight_symm_apply]
-      exact (e.toAlgEquiv.baseChangeRight_apply he z).symm
+      exact (e.toAlgEquiv.ofCommRight_apply he z).symm
     continuous_invFun := (hcomm.symm.continuous.comp e.symm.continuous).congr fun s ↦ by
       rw [Function.comp_apply, ContinuousAlgEquiv.symm_symm,
         Algebra.TensorProduct.continuousCommRight_apply, ← Algebra.TensorProduct.comm_symm]
-      exact (e.toAlgEquiv.baseChangeRight_symm_apply he s).symm }
+      exact (e.toAlgEquiv.ofCommRight_symm_apply he s).symm }
 
-/-- Forgetting continuity from `ContinuousAlgEquiv.baseChangeRight` recovers
-`AlgEquiv.baseChangeRight`. -/
+/-- Forgetting continuity from `ContinuousAlgEquiv.ofCommRight` recovers
+`AlgEquiv.ofCommRight`. -/
 @[simp]
-theorem baseChangeRight_toAlgEquiv (e : T ⊗[A] B ≃A[T] S)
+theorem ofCommRight_toAlgEquiv (e : T ⊗[A] B ≃A[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
-    (e.baseChangeRight he).toAlgEquiv = e.toAlgEquiv.baseChangeRight he := (rfl)
+    (e.ofCommRight he).toAlgEquiv = e.toAlgEquiv.ofCommRight he := (rfl)
 
-/-- `ContinuousAlgEquiv.baseChangeRight` swaps tensor factors and applies `e`. -/
+/-- `ContinuousAlgEquiv.ofCommRight` swaps tensor factors and applies `e`. -/
 @[simp]
-theorem baseChangeRight_apply (e : T ⊗[A] B ≃A[T] S)
+theorem ofCommRight_apply (e : T ⊗[A] B ≃A[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (z : B ⊗[A] T) :
-    e.baseChangeRight he z = e (Algebra.TensorProduct.comm A B T z) :=
-  e.toAlgEquiv.baseChangeRight_apply he z
+    e.ofCommRight he z = e (Algebra.TensorProduct.comm A B T z) :=
+  e.toAlgEquiv.ofCommRight_apply he z
 
-/-- The inverse of `ContinuousAlgEquiv.baseChangeRight` applies `e.symm` and swaps tensor
+/-- The inverse of `ContinuousAlgEquiv.ofCommRight` applies `e.symm` and swaps tensor
 factors. -/
 @[simp]
-theorem baseChangeRight_symm_apply (e : T ⊗[A] B ≃A[T] S)
+theorem ofCommRight_symm_apply (e : T ⊗[A] B ≃A[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (s : S) :
-    (e.baseChangeRight he).symm s = (Algebra.TensorProduct.comm A B T).symm (e.symm s) :=
-  e.toAlgEquiv.baseChangeRight_symm_apply he s
+    (e.ofCommRight he).symm s = (Algebra.TensorProduct.comm A B T).symm (e.symm s) :=
+  e.toAlgEquiv.ofCommRight_symm_apply he s
 
 end ContinuousAlgEquiv

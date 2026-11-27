@@ -91,9 +91,9 @@ ones, so the public `LinearMap.baseChange` API applies.
   `AlgHom.sectionBaseChange_sectionBaseChange` along `A → A' → T`.
 * `AlgHom.semilinearTwist y σ φ hφ`: the twist `(σ⁻¹ ⊗ T) ∘ y ∘ φ` of an algebra map
   `y : D →ₐ[C] C ⊗[A] T` by a ring homomorphism `φ` semilinear over an automorphism `σ` of `C`.
-* `AlgEquiv.baseChangeRight e he`: swaps the tensor factors of `e : T ⊗[A] B ≃ₐ[T] S` sending
+* `AlgEquiv.ofCommRight e he`: swaps the tensor factors of `e : T ⊗[A] B ≃ₐ[T] S` sending
   `1 ⊗ b` to `algebraMap B S b`, producing a `B`-algebra equivalence `B ⊗[A] T ≃ₐ[B] S`.
-* `AlgEquiv.baseChangeRight_comp_lTensor`: compatibility of `AlgEquiv.baseChangeRight` with
+* `AlgEquiv.ofCommRight_comp_lTensor`: compatibility of `AlgEquiv.ofCommRight` with
   towers `A → B → C` via `Algebra.TensorProduct.cancelBaseChange`.
 -/
 
@@ -597,38 +597,38 @@ variable {A B T S : Type*} [CommSemiring A] [CommSemiring B] [CommSemiring T] [S
 /-- From a `T`-algebra equivalence `e : T ⊗[A] B ≃ₐ[T] S` sending `1 ⊗ b` to `algebraMap B S b`,
 precomposing with `Algebra.TensorProduct.comm` produces a `B`-algebra equivalence
 `B ⊗[A] T ≃ₐ[B] S`. -/
-noncomputable def baseChangeRight (e : T ⊗[A] B ≃ₐ[T] S)
+noncomputable def ofCommRight (e : T ⊗[A] B ≃ₐ[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) : B ⊗[A] T ≃ₐ[B] S :=
   AlgEquiv.ofRingEquiv
     (f := (Algebra.TensorProduct.comm A B T).toRingEquiv.trans e.toRingEquiv)
     fun b ↦ by simp [Algebra.TensorProduct.algebraMap_apply, he]
 
-/-- `AlgEquiv.baseChangeRight` swaps tensor factors and applies `e`. -/
+/-- `AlgEquiv.ofCommRight` swaps tensor factors and applies `e`. -/
 @[simp]
-theorem baseChangeRight_apply (e : T ⊗[A] B ≃ₐ[T] S)
+theorem ofCommRight_apply (e : T ⊗[A] B ≃ₐ[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (z : B ⊗[A] T) :
-    e.baseChangeRight he z = e (Algebra.TensorProduct.comm A B T z) := (rfl)
+    e.ofCommRight he z = e (Algebra.TensorProduct.comm A B T z) := (rfl)
 
-/-- The inverse of `AlgEquiv.baseChangeRight` applies `e.symm` and swaps tensor factors. -/
+/-- The inverse of `AlgEquiv.ofCommRight` applies `e.symm` and swaps tensor factors. -/
 @[simp]
-theorem baseChangeRight_symm_apply (e : T ⊗[A] B ≃ₐ[T] S)
+theorem ofCommRight_symm_apply (e : T ⊗[A] B ≃ₐ[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (s : S) :
-    (e.baseChangeRight he).symm s = (Algebra.TensorProduct.comm A B T).symm (e.symm s) := (rfl)
+    (e.ofCommRight he).symm s = (Algebra.TensorProduct.comm A B T).symm (e.symm s) := (rfl)
 
 /-- In a tower `A → B → C`, when `e₁₃ : T ⊗[A] C ≃ₐ[T] S₂` factors through `e₁₂ : T ⊗[A] B ≃ₐ[T] S₁`
-and `e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂`, their swapped right-base-change equivalences form a commutative
+and `e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂`, their swapped equivalences form a commutative
 triangle with `Algebra.TensorProduct.cancelBaseChange`. -/
-theorem baseChangeRight_comp_lTensor {C S₁ S₂ : Type*} [CommSemiring C] [CommSemiring S₁]
+theorem ofCommRight_comp_lTensor {C S₁ S₂ : Type*} [CommSemiring C] [CommSemiring S₁]
     [Semiring S₂] [Algebra A C] [Algebra B C] [IsScalarTower A B C]
     [Algebra B S₁] [Algebra T S₁] [Algebra C S₂] [Algebra S₁ S₂] [Algebra T S₂]
     (e₁₂ : T ⊗[A] B ≃ₐ[T] S₁) (he₁₂ : ∀ b : B, e₁₂ (1 ⊗ₜ[A] b) = algebraMap B S₁ b)
     (e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂) (he₂₃ : ∀ c : C, e₂₃ (1 ⊗ₜ[B] c) = algebraMap C S₂ c)
     (e₁₃ : T ⊗[A] C ≃ₐ[T] S₂) (he₁₃ : ∀ c : C, e₁₃ (1 ⊗ₜ[A] c) = algebraMap C S₂ c)
     (htower : ∀ (t : T) (c : C), e₁₃ (t ⊗ₜ[A] c) = e₂₃ (e₁₂ (t ⊗ₜ[A] 1) ⊗ₜ[B] c)) :
-    (e₂₃.baseChangeRight he₂₃ : C ⊗[B] S₁ →ₐ[C] S₂).comp
+    (e₂₃.ofCommRight he₂₃ : C ⊗[B] S₁ →ₐ[C] S₂).comp
         (Algebra.TensorProduct.lTensor (S := C) C
-          (e₁₂.baseChangeRight he₁₂ : B ⊗[A] T →ₐ[B] S₁)) =
-      (e₁₃.baseChangeRight he₁₃ : C ⊗[A] T →ₐ[C] S₂).comp
+          (e₁₂.ofCommRight he₁₂ : B ⊗[A] T →ₐ[B] S₁)) =
+      (e₁₃.ofCommRight he₁₃ : C ⊗[A] T →ₐ[C] S₂).comp
         (Algebra.TensorProduct.cancelBaseChange A B C C T).toAlgHom := by
   refine AlgHom.ext fun z ↦ ?_
   induction z using TensorProduct.inductionOn with

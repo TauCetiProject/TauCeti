@@ -192,7 +192,7 @@ theorem pointsMulEquiv_adelicPointsContinuousMulEquiv_symm
     (y : AdelicPoints (𝓞 E) E H) :
     pointsMulEquiv F E H (AdeleRing (𝓞 F) F)
         ((adelicPointsContinuousMulEquiv F E H).symm y) =
-      AlgHom.mapValue ((adeleBaseChangeAlgEquiv F E).baseChangeRight
+      AlgHom.mapValue ((adeleBaseChangeAlgEquiv F E).ofCommRight
         (adeleBaseChangeAlgEquiv_one_tmul F E)).symm.toAlgHom y := by
   simp [adelicPointsContinuousMulEquiv]
 
@@ -203,7 +203,7 @@ theorem pointsMulEquiv_finiteAdelicPointsContinuousMulEquiv_symm
     (y : AdelicPoints.FiniteAdelicPoints (𝓞 E) E H) :
     pointsMulEquiv F E H (FiniteAdeleRing (𝓞 F) F)
         ((finiteAdelicPointsContinuousMulEquiv F E H).symm y) =
-      AlgHom.mapValue ((finiteAdeleBaseChangeAlgEquiv F E).baseChangeRight
+      AlgHom.mapValue ((finiteAdeleBaseChangeAlgEquiv F E).ofCommRight
         (finiteAdeleBaseChangeAlgEquiv_one_tmul F E)).symm.toAlgHom y := by
   simp [finiteAdelicPointsContinuousMulEquiv]
 
@@ -214,7 +214,7 @@ theorem pointsMulEquiv_infiniteAdelicPointsContinuousMulEquiv_symm
     (y : AdelicPoints.InfinitePoints E H) :
     pointsMulEquiv F E H (InfiniteAdeleRing F)
         ((infiniteAdelicPointsContinuousMulEquiv F E H).symm y) =
-      AlgHom.mapValue ((infiniteAdeleBaseChangeAlgEquiv F E).baseChangeRight
+      AlgHom.mapValue ((infiniteAdeleBaseChangeAlgEquiv F E).ofCommRight
         (infiniteAdeleBaseChangeAlgEquiv_one_tmul F E)).symm.toAlgHom y := by
   simp [infiniteAdelicPointsContinuousMulEquiv]
 
@@ -227,8 +227,7 @@ theorem adelicPointsContinuousMulEquiv_diagonal
         (AdelicPoints.diagonal (𝓞 F) F (WeilRestriction F E H) x) =
       AdelicPoints.diagonal (𝓞 E) E H (basePointsMulEquiv F E H x) := by
   rw [AdelicPoints.diagonal_def, AdelicPoints.diagonal_def]
-  exact (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv _).trans
-    (pointsMulEquivOfBaseChange_mapValue_ofId _ _ x)
+  exact pointsContinuousMulEquivOfBaseChange_mapValue_ofId _ _ x
 
 /-- **Rational diagonal compatibility on finite adeles.** -/
 theorem finiteAdelicPointsContinuousMulEquiv_finiteDiagonal
@@ -237,8 +236,7 @@ theorem finiteAdelicPointsContinuousMulEquiv_finiteDiagonal
         (AdelicPoints.finiteDiagonal (𝓞 F) F (WeilRestriction F E H) x) =
       AdelicPoints.finiteDiagonal (𝓞 E) E H (basePointsMulEquiv F E H x) := by
   rw [AdelicPoints.finiteDiagonal_def, AdelicPoints.finiteDiagonal_def]
-  exact (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv _).trans
-    (pointsMulEquivOfBaseChange_mapValue_ofId _ _ x)
+  exact pointsContinuousMulEquivOfBaseChange_mapValue_ofId _ _ x
 
 /-- **Rational diagonal compatibility on infinite adeles.** -/
 theorem infiniteAdelicPointsContinuousMulEquiv_infiniteDiagonal
@@ -247,8 +245,7 @@ theorem infiniteAdelicPointsContinuousMulEquiv_infiniteDiagonal
         (AdelicPoints.infiniteDiagonal F (WeilRestriction F E H) x) =
       AdelicPoints.infiniteDiagonal E H (basePointsMulEquiv F E H x) := by
   rw [AdelicPoints.infiniteDiagonal_def, AdelicPoints.infiniteDiagonal_def]
-  exact (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv _).trans
-    (pointsMulEquivOfBaseChange_mapValue_ofId _ _ x)
+  exact pointsContinuousMulEquivOfBaseChange_mapValue_ofId _ _ x
 
 /-- **Archimedean component projection.** Projecting from full adeles to infinite adeles intertwines
 `adelicPointsContinuousMulEquiv` with `infiniteAdelicPointsContinuousMulEquiv`. -/
@@ -262,14 +259,11 @@ theorem infiniteAdelicPointsContinuousMulEquiv_infiniteProjection
   let pS : AdeleRing (𝓞 E) E →ₐ[E] InfiniteAdeleRing E :=
     AlgHom.fst E (InfiniteAdeleRing E) (FiniteAdeleRing (𝓞 E) E)
   rw [AdelicPoints.infiniteProjection_def, AdelicPoints.infiniteProjection_def]
-  refine (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv _).trans ?_
-  refine (pointsMulEquivOfBaseChange_mapValue (adeleBaseChangeAlgEquiv F E)
-    (adeleBaseChangeAlgEquiv_one_tmul F E) _ _ pT pS (fun a b ↦ ?_) x).trans ?_
-  · simp only [pT, pS, adeleBaseChangeAlgEquiv_tmul, infiniteAdeleBaseChangeAlgEquiv_tmul,
-      map_mul, AlgHom.commutes]
-    exact congrArg (· * algebraMap E (InfiniteAdeleRing E) b) (adeleExtension_fst a)
-  · exact congrArg (AlgHom.mapValue pS)
-      (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv x).symm
+  refine pointsContinuousMulEquivOfBaseChange_mapValue (adeleBaseChangeEquiv F E)
+    (adeleBaseChangeEquiv_one_tmul F E) _ _ pT pS (fun a b ↦ ?_) x
+  simp only [pT, pS, adeleBaseChangeEquiv_tmul, infiniteAdeleBaseChangeEquiv_tmul,
+    map_mul, AlgHom.commutes]
+  exact congrArg (· * algebraMap E (InfiniteAdeleRing E) b) (adeleExtension_fst a)
 
 /-- **Finite-adele component projection.** Projecting from full adeles to finite adeles intertwines
 `adelicPointsContinuousMulEquiv` with `finiteAdelicPointsContinuousMulEquiv`. -/
@@ -283,14 +277,11 @@ theorem finiteAdelicPointsContinuousMulEquiv_finiteProjection
   let pS : AdeleRing (𝓞 E) E →ₐ[E] FiniteAdeleRing (𝓞 E) E :=
     AlgHom.snd E (InfiniteAdeleRing E) (FiniteAdeleRing (𝓞 E) E)
   rw [AdelicPoints.finiteProjection_def, AdelicPoints.finiteProjection_def]
-  refine (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv _).trans ?_
-  refine (pointsMulEquivOfBaseChange_mapValue (adeleBaseChangeAlgEquiv F E)
-    (adeleBaseChangeAlgEquiv_one_tmul F E) _ _ pT pS (fun a b ↦ ?_) x).trans ?_
-  · simp only [pT, pS, adeleBaseChangeAlgEquiv_tmul, finiteAdeleBaseChangeAlgEquiv_tmul,
-      map_mul, AlgHom.commutes]
-    exact congrArg (· * algebraMap E (FiniteAdeleRing (𝓞 E) E) b) (adeleExtension_snd a)
-  · exact congrArg (AlgHom.mapValue pS)
-      (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv x).symm
+  refine pointsContinuousMulEquivOfBaseChange_mapValue (adeleBaseChangeEquiv F E)
+    (adeleBaseChangeEquiv_one_tmul F E) _ _ pT pS (fun a b ↦ ?_) x
+  simp only [pT, pS, adeleBaseChangeEquiv_tmul, finiteAdeleBaseChangeEquiv_tmul,
+    map_mul, AlgHom.commutes]
+  exact congrArg (· * algebraMap E (FiniteAdeleRing (𝓞 E) E) b) (adeleExtension_snd a)
 
 end Adelic
 
@@ -306,10 +297,7 @@ theorem adelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
     (x : AdelicPoints (𝓞 F) F (WeilRestriction F E H₂)) :
     adelicPointsContinuousMulEquiv F E H₁ (BialgHom.mapDomain (mapBialgHom F E φ) x) =
       BialgHom.mapDomain φ (adelicPointsContinuousMulEquiv F E H₂ x) :=
-  (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv _).trans
-    ((pointsMulEquivOfBaseChange_mapDomain_mapBialgHom _ _ φ x).trans
-      (congrArg (BialgHom.mapDomain φ)
-        (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv x).symm))
+  pointsContinuousMulEquivOfBaseChange_mapDomain_mapBialgHom _ _ φ x
 
 /-- **Naturality of `finiteAdelicPointsContinuousMulEquiv`** in morphisms `φ : H₁ →ₐc[E] H₂`. -/
 theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
@@ -318,10 +306,7 @@ theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
     (x : AdelicPoints.FiniteAdelicPoints (𝓞 F) F (WeilRestriction F E H₂)) :
     finiteAdelicPointsContinuousMulEquiv F E H₁ (BialgHom.mapDomain (mapBialgHom F E φ) x) =
       BialgHom.mapDomain φ (finiteAdelicPointsContinuousMulEquiv F E H₂ x) :=
-  (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv _).trans
-    ((pointsMulEquivOfBaseChange_mapDomain_mapBialgHom _ _ φ x).trans
-      (congrArg (BialgHom.mapDomain φ)
-        (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv x).symm))
+  pointsContinuousMulEquivOfBaseChange_mapDomain_mapBialgHom _ _ φ x
 
 /-- **Naturality of `infiniteAdelicPointsContinuousMulEquiv`** in morphisms `φ : H₁ →ₐc[E] H₂`. -/
 theorem infiniteAdelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
@@ -330,10 +315,7 @@ theorem infiniteAdelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
     (x : AdelicPoints.InfinitePoints F (WeilRestriction F E H₂)) :
     infiniteAdelicPointsContinuousMulEquiv F E H₁ (BialgHom.mapDomain (mapBialgHom F E φ) x) =
       BialgHom.mapDomain φ (infiniteAdelicPointsContinuousMulEquiv F E H₂ x) :=
-  (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv _).trans
-    ((pointsMulEquivOfBaseChange_mapDomain_mapBialgHom _ _ φ x).trans
-      (congrArg (BialgHom.mapDomain φ)
-        (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv x).symm))
+  pointsContinuousMulEquivOfBaseChange_mapDomain_mapBialgHom _ _ φ x
 
 /-- **Tower compatibility on full adeles.** In a tower `F ⊆ E ⊆ L` of number fields, precomposing
 an `𝔸_F`-point of `Res_{L/F} G` with `WeilRestriction.compBialgEquiv` and applying
@@ -348,19 +330,11 @@ theorem adelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
           (BialgHom.mapDomain (compBialgEquiv F E L H :
             WeilRestriction F E (WeilRestriction E L H) →ₐc[F] WeilRestriction F L H) x)) =
       adelicPointsContinuousMulEquiv F L H x :=
-  (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv _).trans
-    ((congrArg _ (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv _)).trans
-      ((pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv
-        (adeleBaseChangeAlgEquiv F E)
-        (adeleBaseChangeAlgEquiv_one_tmul F E)
-        (adeleBaseChangeAlgEquiv E L)
-        (adeleBaseChangeAlgEquiv_one_tmul E L)
-        (adeleBaseChangeAlgEquiv F L)
-        (adeleBaseChangeAlgEquiv_one_tmul F L)
-        (fun a z ↦ by
-          simp only [adeleBaseChangeAlgEquiv_tmul, map_one, mul_one]
-          rw [← adeleExtension_comp (𝓞 F) F (𝓞 E) E (𝓞 L) L, RingHom.comp_apply]) x).trans
-        (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv x).symm))
+  pointsContinuousMulEquivOfBaseChange_mapDomain_compBialgEquiv
+    (adeleBaseChangeEquiv F E) (adeleBaseChangeEquiv_one_tmul F E)
+    (adeleBaseChangeEquiv E L) (adeleBaseChangeEquiv_one_tmul E L)
+    (adeleBaseChangeEquiv F L) (adeleBaseChangeEquiv_one_tmul F L)
+    (adeleBaseChangeEquiv_tower F E L) x
 
 /-- **Tower compatibility on finite adeles.** -/
 theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
@@ -372,19 +346,11 @@ theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
           (BialgHom.mapDomain (compBialgEquiv F E L H :
             WeilRestriction F E (WeilRestriction E L H) →ₐc[F] WeilRestriction F L H) x)) =
       finiteAdelicPointsContinuousMulEquiv F L H x :=
-  (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv _).trans
-    ((congrArg _ (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv _)).trans
-      ((pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv
-        (finiteAdeleBaseChangeAlgEquiv F E)
-        (finiteAdeleBaseChangeAlgEquiv_one_tmul F E)
-        (finiteAdeleBaseChangeAlgEquiv E L)
-        (finiteAdeleBaseChangeAlgEquiv_one_tmul E L)
-        (finiteAdeleBaseChangeAlgEquiv F L)
-        (finiteAdeleBaseChangeAlgEquiv_one_tmul F L)
-        (fun a z ↦ by
-          simp only [finiteAdeleBaseChangeAlgEquiv_tmul, map_one, mul_one]
-          rw [← finiteAdeleExtension_comp (𝓞 F) F (𝓞 E) E (𝓞 L) L, RingHom.comp_apply]) x).trans
-        (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv x).symm))
+  pointsContinuousMulEquivOfBaseChange_mapDomain_compBialgEquiv
+    (finiteAdeleBaseChangeEquiv F E) (finiteAdeleBaseChangeEquiv_one_tmul F E)
+    (finiteAdeleBaseChangeEquiv E L) (finiteAdeleBaseChangeEquiv_one_tmul E L)
+    (finiteAdeleBaseChangeEquiv F L) (finiteAdeleBaseChangeEquiv_one_tmul F L)
+    (finiteAdeleBaseChangeEquiv_tower F E L) x
 
 /-- **Tower compatibility on infinite adeles.** -/
 theorem infiniteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
@@ -396,19 +362,11 @@ theorem infiniteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
           (BialgHom.mapDomain (compBialgEquiv F E L H :
             WeilRestriction F E (WeilRestriction E L H) →ₐc[F] WeilRestriction F L H) x)) =
       infiniteAdelicPointsContinuousMulEquiv F L H x :=
-  (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv _).trans
-    ((congrArg _ (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv _)).trans
-      ((pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv
-        (infiniteAdeleBaseChangeAlgEquiv F E)
-        (infiniteAdeleBaseChangeAlgEquiv_one_tmul F E)
-        (infiniteAdeleBaseChangeAlgEquiv E L)
-        (infiniteAdeleBaseChangeAlgEquiv_one_tmul E L)
-        (infiniteAdeleBaseChangeAlgEquiv F L)
-        (infiniteAdeleBaseChangeAlgEquiv_one_tmul F L)
-        (fun a z ↦ by
-          simp only [infiniteAdeleBaseChangeAlgEquiv_tmul, map_one, mul_one]
-          rw [← infiniteAdeleExtension_comp F E L, RingHom.comp_apply]) x).trans
-        (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv x).symm))
+  pointsContinuousMulEquivOfBaseChange_mapDomain_compBialgEquiv
+    (infiniteAdeleBaseChangeEquiv F E) (infiniteAdeleBaseChangeEquiv_one_tmul F E)
+    (infiniteAdeleBaseChangeEquiv E L) (infiniteAdeleBaseChangeEquiv_one_tmul E L)
+    (infiniteAdeleBaseChangeEquiv F L) (infiniteAdeleBaseChangeEquiv_one_tmul F L)
+    (infiniteAdeleBaseChangeEquiv_tower F E L) x
 
 end NaturalityAndTower
 
@@ -476,7 +434,7 @@ theorem pointsMulEquiv_adicCompletionPointsContinuousMulEquiv_symm (v : HeightOn
       AdelicPoints.LocalPoints (𝓞 E) E H w.val) :
     pointsMulEquiv F E H (v.adicCompletion F)
         ((adicCompletionPointsContinuousMulEquiv F E H v).symm y) =
-      AlgHom.mapValue ((v.adicCompletionSemilocalEquiv F (𝓞 E) E).baseChangeRight
+      AlgHom.mapValue ((v.adicCompletionSemilocalEquiv F (𝓞 E) E).ofCommRight
           fun b ↦ by ext w; simp).symm.toAlgHom
         (toConv (AlgHom.pi fun w ↦ (y w).ofConv)) := by
   have hy : (TauCeti.PointTopology.piContinuousMulEquiv E H
@@ -493,7 +451,7 @@ theorem pointsMulEquiv_infiniteCompletionPointsContinuousMulEquiv_symm (v : Infi
     (y : ∀ w : {w : InfinitePlace E // w.LiesOver v}, WithConv (H →ₐ[E] w.val.Completion)) :
     pointsMulEquiv F E H v.Completion
         ((infiniteCompletionPointsContinuousMulEquiv F E H v).symm y) =
-      AlgHom.mapValue ((infiniteSemilocalEquiv E v).baseChangeRight
+      AlgHom.mapValue ((infiniteSemilocalEquiv E v).ofCommRight
           fun b ↦ by ext w; simp).symm.toAlgHom
         (toConv (AlgHom.pi fun w ↦ (y w).ofConv)) := by
   have hy : (TauCeti.PointTopology.piContinuousMulEquiv E H
@@ -521,15 +479,12 @@ theorem adicCompletionPointsContinuousMulEquiv_finiteLocalProjection (v : Height
   have hloc : pointsContinuousMulEquivOfBaseChange F E H
         (TauCeti.semilocalContinuousEquiv E v) TauCeti.semilocalContinuousEquiv_one_tmul
         (AlgHom.mapValue pT x) =
-      AlgHom.mapValue pS (finiteAdelicPointsContinuousMulEquiv F E H x) := by
-    refine (DFunLike.congr_fun (toMulEquiv_pointsContinuousMulEquivOfBaseChange _ _) _).trans ?_
-    refine (pointsMulEquivOfBaseChange_mapValue (finiteAdeleBaseChangeAlgEquiv F E)
-      (finiteAdeleBaseChangeAlgEquiv_one_tmul F E) _ _ pT pS (fun a b ↦ funext fun w' ↦ by
+      AlgHom.mapValue pS (finiteAdelicPointsContinuousMulEquiv F E H x) :=
+    pointsContinuousMulEquivOfBaseChange_mapValue (finiteAdeleBaseChangeEquiv F E)
+      (finiteAdeleBaseChangeEquiv_one_tmul F E) _ _ pT pS
+      (fun a b ↦ funext fun w' ↦ by
         simp only [pS, pT, AlgHom.pi_apply, ContinuousAlgHom.coe_coe,
-          ← finiteAdeleBaseChangeEquiv_toAlgEquiv, ContinuousAlgEquiv.coe_toAlgEquiv,
-          finiteAdeleBaseChangeEquiv_proj_tmul]) x).trans ?_
-    exact congrArg (AlgHom.mapValue pS)
-      (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv x).symm
+          finiteAdeleBaseChangeEquiv_proj_tmul]) x
   rw [AdelicPoints.finiteLocalProjection_def, AdelicPoints.finiteLocalProjection_def,
     adicCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
     TauCeti.PointTopology.piContinuousMulEquiv_apply_eq_mapValue_evalAlgHom, hloc,
@@ -566,16 +521,10 @@ theorem infiniteCompletionPointsContinuousMulEquiv_infiniteLocalProjection (v : 
   have hloc : pointsContinuousMulEquivOfBaseChange F E H
         (infiniteSemilocalContinuousEquiv E v) infiniteSemilocalContinuousEquiv_one_tmul
         (AlgHom.mapValue pT x) =
-      AlgHom.mapValue pS (infiniteAdelicPointsContinuousMulEquiv F E H x) := by
-    refine (DFunLike.congr_fun (toMulEquiv_pointsContinuousMulEquivOfBaseChange _ _) _).trans ?_
-    refine (pointsMulEquivOfBaseChange_mapValue (infiniteAdeleBaseChangeAlgEquiv F E)
-      (infiniteAdeleBaseChangeAlgEquiv_one_tmul F E) _ _ pT pS (fun a b ↦ funext fun w' ↦ by
-        simp only [pS, pT, AlgHom.pi_apply, ← infiniteAdeleBaseChangeEquiv_toAlgEquiv,
-          ContinuousAlgEquiv.coe_toAlgEquiv]
-        rw [Pi.evalAlgHom_apply, Pi.evalAlgHom_apply,
-          infiniteAdeleBaseChangeEquiv_eval_tmul]) x).trans ?_
-    exact congrArg (AlgHom.mapValue pS)
-      (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv x).symm
+      AlgHom.mapValue pS (infiniteAdelicPointsContinuousMulEquiv F E H x) :=
+    pointsContinuousMulEquivOfBaseChange_mapValue (infiniteAdeleBaseChangeEquiv F E)
+      (infiniteAdeleBaseChangeEquiv_one_tmul F E) _ _ pT pS
+      (fun a b ↦ funext fun w' ↦ infiniteAdeleBaseChangeEquiv_eval_tmul F E v a b w') x
   rw [AdelicPoints.infiniteLocalProjection_def, AdelicPoints.infiniteLocalProjection_def,
     infiniteCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
     TauCeti.PointTopology.piContinuousMulEquiv_apply_eq_mapValue_evalAlgHom, hloc,
@@ -631,7 +580,7 @@ theorem pointsMulEquiv_multiplicativeGroupAdelicPointsContinuousMulEquiv_symm
     (u : IdeleGroup (𝓞 E) E) :
     pointsMulEquiv F E E[T;T⁻¹] (AdeleRing (𝓞 F) F)
         ((multiplicativeGroupAdelicPointsContinuousMulEquiv F E).symm u) =
-      AlgHom.mapValue ((adeleBaseChangeAlgEquiv F E).baseChangeRight
+      AlgHom.mapValue ((adeleBaseChangeAlgEquiv F E).ofCommRight
           (adeleBaseChangeAlgEquiv_one_tmul F E)).symm.toAlgHom
         (toConv (TauCeti.laurentEval (R := E) u)) := by
   simp [multiplicativeGroupAdelicPointsContinuousMulEquiv]
@@ -644,7 +593,7 @@ theorem multiplicativeGroupPoints_multiplicativeGroupAdelicPointsContinuousMulEq
     (u : IdeleGroup (𝓞 E) E) :
     multiplicativeGroupPoints F E (AdeleRing (𝓞 F) F)
         ((multiplicativeGroupAdelicPointsContinuousMulEquiv F E).symm u) =
-      Units.map ((adeleBaseChangeAlgEquiv F E).baseChangeRight
+      Units.map ((adeleBaseChangeAlgEquiv F E).ofCommRight
         (adeleBaseChangeAlgEquiv_one_tmul F E)).symm.toRingHom.toMonoidHom u := by
   ext
   rw [multiplicativeGroupPoints_apply, ← pointsMulEquiv_apply,
