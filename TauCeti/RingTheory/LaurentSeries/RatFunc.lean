@@ -10,14 +10,18 @@ public import Mathlib.RingTheory.LaurentSeries
 import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
-# Transcendence of Laurent expansions of rational functions
+# Laurent expansions of rational functions
 
 The Laurent expansion at `0` of a nonconstant rational function `p ∈ K(X)` is transcendental over
 `K` in `K⸨X⸩`: the embedding `K(X) → K⸨X⸩` is an injective `K`-algebra map, and `p` itself is
 transcendental over `K` by `RatFunc.transcendental_of_ne_C`.
+The scalar tower `K → K(X) → K⸨X⸩` lets linear maps and derivations over `K(X)` be
+restricted to `K`.
 
 ## Main results
 
+* `RatFunc.isScalarTower_laurentSeries_algebra`, `RatFunc.isScalarTower_laurentSeries`:
+  the scalar tower for the algebra-map and coefficientwise actions of `K` on `K⸨X⸩`.
 * `RatFunc.transcendental_coe`: the Laurent expansion of a nonconstant rational function is
   transcendental over the constants.
 -/
@@ -30,14 +34,17 @@ namespace RatFunc
 
 variable {K : Type*} [Field K]
 
-/-- The expansion of rational functions into Laurent series respects the coefficient field. -/
+/-- The scalar tower for the action of `K` on `K⸨X⸩` by multiplication by its image under
+`algebraMap`. Algebraic lemmas such as `transcendental_algebraMap_iff` use this action.
+The coefficientwise Hahn series action is definitionally distinct. -/
 instance isScalarTower_laurentSeries_algebra :
     @IsScalarTower K (RatFunc K) K⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
   .of_algebraMap_eq (R := K) (S := RatFunc K) (A := K⸨X⸩) fun c ↦ by
     simp [← RatFunc.algebraMap_C, ← IsScalarTower.algebraMap_apply,
       HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply']
 
-/-- The same tower for the coefficientwise action of `K` on Laurent series. -/
+/-- The scalar tower for the coefficientwise action of `K` on Laurent series, used by
+`Derivation.restrictScalars` when the target is the Laurent series field. -/
 instance isScalarTower_laurentSeries : IsScalarTower K (RatFunc K) K⸨X⸩ :=
   .of_algebraMap_smul fun c f ↦ by
     rw [Algebra.smul_def, ← IsScalarTower.algebraMap_apply,
