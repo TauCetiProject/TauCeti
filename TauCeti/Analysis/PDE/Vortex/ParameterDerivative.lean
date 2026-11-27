@@ -145,7 +145,7 @@ local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens 
 
 /-- **The weighted norm of the zeroth-order part.** Multiplication by `Z(b, ·)`, for an essentially
 bounded coefficient `b`, costs at most `‖Z‖ ‖b‖∞` in every weighted norm. -/
-theorem eLpNorm_exp_mul_smul_holderL_le (c : ℝ) (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
+private theorem eLpNorm_exp_mul_smul_holderL_le (c : ℝ) (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
     (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
       gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b g z) 2 μ⊤ ≤
