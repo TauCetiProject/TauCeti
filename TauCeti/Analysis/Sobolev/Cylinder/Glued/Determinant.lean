@@ -159,9 +159,8 @@ theorem detLineGluingEquiv_symm_congr_eq_detLineFourTermEquiv_gluingObstruction
           (detLineTensorDualProdEquiv ℝ _ _ _ _ w) := by
   have hg : ∀ k, (gluingObstruction hQ : _ →ₗ[ℝ] S₁ × S₂) k = parameterProj _ _
       (LinearEquiv.ofBijective (gluingKerMap hQ).toLinearMap h k) := fun k ↦ by
-    rw [ContinuousLinearMap.coe_coe, gluingObstruction_apply, LinearEquiv.ofBijective_apply,
-      parameterProj_apply, ContinuousLinearMap.coe_coe, coe_gluingKerMap_apply, Prod.snd_sub,
-      neckPreglue_apply_snd]
+    simp only [ContinuousLinearMap.coe_coe, gluingObstruction_apply, LinearEquiv.ofBijective_apply,
+      parameterProj_apply, coe_gluingKerMap_apply, Prod.snd_sub, neckPreglue_apply_snd]
   exact detLineGluingEquiv_symm_congr_eq_detLineFourTermEquiv _ hA₁ hA₂ hQ.surjective
     (gluingKerMap_gluingKerInclusion hQ h) hg (gluingKerInclusion_injective hQ h)
     (exact_gluingKerInclusion_gluingObstruction hQ h)

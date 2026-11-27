@@ -229,10 +229,11 @@ theorem detLineGluingEquiv_eq_det_smul
     induction y using TensorProduct.inductionOn with
     | tmul a φ =>
       have he : e.symm.trans (e.trans e'.symm) = e'.symm := LinearEquiv.ext fun v ↦ by simp
-      rw [LinearEquiv.rTensor_tmul, LinearEquiv.rTensor_tmul, smul_tmul',
-        ← LinearEquiv.detLineCongr_apply_eq_det_smul, LinearEquiv.detLineCongr_symm,
-        LinearEquiv.detLineCongr_symm, ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans,
-        he]
+      have hsymm : e'.detLineCongr.symm =
+          e.detLineCongr.symm.trans (e.trans e'.symm).detLineCongr := by
+        simp only [LinearEquiv.detLineCongr_symm, ← LinearEquiv.detLineCongr_trans, he]
+      simp only [LinearEquiv.rTensor_tmul, hsymm, LinearEquiv.trans_apply,
+        LinearEquiv.detLineCongr_apply_eq_det_smul, smul_tmul']
     | add y y' hy hy' => rw [LinearEquiv.map_add, LinearEquiv.map_add, hy, hy', smul_add]
   simp only [detLineGluingEquiv, LinearEquiv.trans_apply, hmid, LinearEquiv.map_smul]
 
