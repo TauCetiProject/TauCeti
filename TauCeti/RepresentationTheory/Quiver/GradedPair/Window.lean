@@ -494,6 +494,15 @@ private def repOperator (M : FiniteRep w) : Module.End ℂ (∀ i, vertexSpace M
       (M.obj.map h.choose_spec.some.toPath).hom.comp (LinearMap.proj h.choose)
     else 0
 
+open Classical in
+private theorem repOperator_apply (M : FiniteRep w) (x : ∀ i, vertexSpace M i) :
+    repOperator M x = fun j ↦
+      if h : ∃ i, Nonempty (i ⟶ j) then (M.obj.map h.choose_spec.some.toPath).hom (x h.choose)
+      else 0 := by
+  funext j
+  simp only [repOperator, LinearMap.pi_apply, DFunLike.dite_apply, LinearMap.comp_apply,
+    LinearMap.proj_apply, LinearMap.zero_apply]
+
 private theorem repOperator_apply_of_arrow (M : FiniteRep w) {i j : WindowVertex w}
     (e : i ⟶ j) (x : ∀ i, vertexSpace M i) :
     repOperator M x j = (M.obj.map e.toPath).hom (x i) := by
@@ -543,12 +552,29 @@ def ofRepCarrierEquiv (d : StepDirection) (M : FiniteRep w) :
       (ofRep d M).space.Carrier :=
   coordinateEquiv d M
 
-private theorem ofRep_operator (M : FiniteRep w) (x : ∀ i, vertexSpace M i) :
-    (ofRep d M).pair.operator (coordinateEquiv d M x) =
-      coordinateEquiv d M (repOperator M x) := by
-  exact (LinearEquiv.conj_apply_apply (coordinateEquiv d M) (repOperator M) _).trans
-    (congrArg (fun u ↦ coordinateEquiv d M (repOperator M u))
-      ((coordinateEquiv d M).symm_apply_apply x))
+/-- An assembled vector lies in grade `a` exactly when its components at vertices of other
+degrees vanish. -/
+theorem ofRepCarrierEquiv_mem_grade_iff (M : FiniteRep w)
+    (x : ∀ i, QuiverRep.vertexSpace ℂ (WindowVertex w) M.obj i) (a : ℤ) :
+    ofRepCarrierEquiv d M x ∈ (ofRep d M).space.grade a ↔
+      ∀ i, d.windowDegree w i ≠ a → x i = 0 :=
+  coordinateEquiv_mem_grade_iff M x a
+
+open Classical in
+/-- The operator on an assembled vector applies the incoming arrow map at each vertex, giving
+zero at a vertex with no incoming arrow. -/
+@[simp]
+theorem ofRep_operator (M : FiniteRep w)
+    (x : ∀ i, QuiverRep.vertexSpace ℂ (WindowVertex w) M.obj i) :
+    (ofRep d M).pair.operator (ofRepCarrierEquiv d M x) =
+      ofRepCarrierEquiv d M (fun j ↦
+        if h : ∃ i, Nonempty (i ⟶ j) then (M.obj.map h.choose_spec.some.toPath).hom (x h.choose)
+        else 0) := by
+  let E := coordinateEquiv d M
+  -- Use the coordinate model's vertex-space type to apply the conjugation formula.
+  let y : ∀ i, vertexSpace M i := x
+  exact (LinearEquiv.conj_apply_apply E (repOperator M) (E y)).trans
+    (congrArg E ((congrArg (repOperator M) (E.symm_apply_apply y)).trans (repOperator_apply M y)))
 
 open Classical in
 /-- The vertex space of a representation is linearly equivalent to the corresponding graded
@@ -628,8 +654,10 @@ theorem ofRepGradeEquiv_arrow (M : FiniteRep w) {i j : WindowVertex w}
       ofRepGradeEquiv d M j ((M.obj.map e.toPath).hom x) := by
   apply Subtype.ext
   rw [coe_arrowMap]
-  exact (ofRep_operator (d := d) M (Pi.single i x)).trans
-    (congrArg (coordinateEquiv d M) (repOperator_single M e x))
+  -- The coordinate model lets the inverse-equivalence and single-vertex rewrites match.
+  change (coordinateEquiv d M).conj (repOperator M) (coordinateEquiv d M (Pi.single i x)) =
+    coordinateEquiv d M (Pi.single j ((M.obj.map e.toPath).hom x))
+  rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply, repOperator_single M e x]
 
 /-- Restricting the assembled graded pair recovers the original representation, by the
 equivalences on its vertex spaces. -/
