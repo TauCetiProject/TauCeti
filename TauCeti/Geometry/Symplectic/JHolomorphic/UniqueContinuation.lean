@@ -802,13 +802,10 @@ theorem finite_inter_preimage_singleton_of_cauchyRiemann_inter_im_nonneg
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
     (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ x₀)
     {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω ∩ {z | 0 ≤ z.im}) :
-    (K ∩ u ⁻¹' {x₀}).Finite := by
-  have h := hK.finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono hKΩ
-    (setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg hΩ hΩc hA hAA hAR hu hCR
-      hbd hne))
-  convert h using 1
-  ext z
-  simp
+    (K ∩ u ⁻¹' {x₀}).Finite :=
+  hK.finite_inter_of_compl_mem_codiscreteWithin hKΩ
+    (setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg hΩ hΩc hA hAA hAR hu hCR hbd
+      hne)
 
 end Reflection
 
