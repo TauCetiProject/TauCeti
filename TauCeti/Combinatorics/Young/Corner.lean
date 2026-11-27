@@ -183,6 +183,12 @@ theorem card_erase (h : IsCorner μ c) : (erase μ c).card + 1 = μ.card := by
 theorem card_pos (h : IsCorner μ c) : 0 < μ.card :=
   Finset.card_pos.mpr ⟨c, h.mem⟩
 
+/-- Erasing distinct corners gives distinct diagrams. -/
+theorem erase_inj (hc : IsCorner μ c) (hd : IsCorner μ d) : erase μ c = erase μ d ↔ c = d := by
+  refine ⟨fun h => by_contra fun hne => notMem_erase (μ := μ) (c := c) ?_, fun h => h ▸ rfl⟩
+  rw [h]
+  exact hd.mem_erase_iff.mpr ⟨hc.mem, hne⟩
+
 /-! ### Rows and columns after erasure -/
 
 /-- Erasing a corner erases that cell from every row finset. Only its own row contains it. -/

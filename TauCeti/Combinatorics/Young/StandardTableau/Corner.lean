@@ -35,6 +35,8 @@ rather than reading them off its argument.
 * `TauCeti.StandardYoungTableau.restrict`: delete the corner carrying the largest label.
 * `TauCeti.StandardYoungTableau.extend`: the inverse, labelling a corner with the largest label.
 * `TauCeti.StandardYoungTableau.cornerFiberEquiv`: the two as an equivalence.
+* `TauCeti.StandardYoungTableau.sigmaCornerEquiv`: the decomposition of all the standard Young
+  tableaux of a nonempty shape over the corners carrying their largest label.
 
 ## Main results
 
@@ -298,9 +300,40 @@ noncomputable def cornerFiberEquiv (hc : YoungDiagram.IsCorner μ c) :
   left_inv T := Subtype.ext (extend_restrict hc T.val T.property)
   right_inv T := restrict_extend hc T
 
+/-- Restoring a deleted corner is injective. -/
+theorem extend_injective (hc : YoungDiagram.IsCorner μ c) : Function.Injective (extend hc) :=
+  fun _ _ h => (cornerFiberEquiv hc).symm.injective (Subtype.ext h)
+
+/-- The tableaux obtained by restoring the corner `c` are those carrying their largest label
+at `c`. -/
+theorem mem_range_extend_iff (hc : YoungDiagram.IsCorner μ c) (T : StandardYoungTableau μ) :
+    T ∈ Set.range (extend hc) ↔ (T ⟨c, hc.mem⟩).val + 1 = μ.card :=
+  ⟨by rintro ⟨U, rfl⟩; exact extend_apply_self hc U,
+    fun hT => ⟨restrict hc T hT, extend_restrict hc T hT⟩⟩
+
 private noncomputable def maxCorner (hμ : 0 < μ.card) (T : StandardYoungTableau μ) :
     {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ} :=
   ⟨maxCell hμ T, YoungDiagram.mem_corners.mpr (isCorner_maxCell hμ T)⟩
+
+/-- **The corner decomposition** of the standard Young tableaux of a nonempty shape `μ`: a
+tableau is recorded by the corner `c` carrying its largest label together with the tableau of
+shape `erase μ c` left after deleting that corner. The inverse direction restores the corner
+(`TauCeti.StandardYoungTableau.sigmaCornerEquiv_apply`). -/
+noncomputable def sigmaCornerEquiv (hμ : 0 < μ.card) :
+    (Σ c : {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ},
+      StandardYoungTableau (YoungDiagram.erase μ c.val)) ≃ StandardYoungTableau μ :=
+  (Equiv.sigmaCongrRight fun c =>
+    ((Equiv.subtypeEquivRight fun T => by
+      rw [Subtype.ext_iff]
+      exact maxCell_eq_iff hμ T (YoungDiagram.mem_corners.mp c.property).mem).trans
+      (cornerFiberEquiv (YoungDiagram.mem_corners.mp c.property))).symm).trans
+    (Equiv.sigmaFiberEquiv (maxCorner hμ))
+
+@[simp]
+theorem sigmaCornerEquiv_apply (hμ : 0 < μ.card) (c : {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ})
+    (T : StandardYoungTableau (YoungDiagram.erase μ c.val)) :
+    sigmaCornerEquiv hμ ⟨c, T⟩ = extend (YoungDiagram.mem_corners.mp c.property) T :=
+  (rfl)
 
 end StandardYoungTableau
 
@@ -309,22 +342,8 @@ shape `μ` are counted by their corners, a tableau being recorded by the corner 
 label together with what is left after deleting that corner. -/
 theorem standardCount_eq_sum_corners {μ : YoungDiagram} (hμ : 0 < μ.card) :
     standardCount μ = ∑ c ∈ YoungDiagram.corners μ, standardCount (YoungDiagram.erase μ c) := by
-  classical
-  have key : ∀ c : {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ},
-      Fintype.card {T : StandardYoungTableau μ // StandardYoungTableau.maxCorner hμ T = c}
-        = standardCount (YoungDiagram.erase μ c.val) := by
-    intro c
-    have hc : YoungDiagram.IsCorner μ c.val := YoungDiagram.mem_corners.mp c.property
-    have e : {T : StandardYoungTableau μ // StandardYoungTableau.maxCorner hμ T = c} ≃
-        StandardYoungTableau (YoungDiagram.erase μ c.val) :=
-      (Equiv.subtypeEquivRight fun T => by
-        rw [Subtype.ext_iff]
-        exact StandardYoungTableau.maxCell_eq_iff hμ T hc.mem).trans
-        (StandardYoungTableau.cornerFiberEquiv hc)
-    rw [standardCount_def, Fintype.card_congr e]
-  rw [standardCount_def, ← Fintype.card_congr
-      (Equiv.sigmaFiberEquiv (StandardYoungTableau.maxCorner hμ)),
+  rw [standardCount_def, ← Fintype.card_congr (StandardYoungTableau.sigmaCornerEquiv hμ),
     Fintype.card_sigma, ← Finset.sum_coe_sort (YoungDiagram.corners μ)]
-  exact Finset.sum_congr rfl fun c _ => key c
+  simp only [standardCount_def]
 
 end TauCeti
