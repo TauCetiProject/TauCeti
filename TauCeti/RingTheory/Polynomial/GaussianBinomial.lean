@@ -381,16 +381,34 @@ theorem gaussianBinomialInt_natCast (t : R) (n k : ℕ) :
     gaussianBinomialInt t n k = gaussianBinomial t n k :=
   (rfl)
 
-/-- `gaussianBinomialInt` vanishes on a negative lower index `-(m + 1)`. -/
-@[simp]
+/-- `gaussianBinomialInt` vanishes on a negative lower index `-(m + 1)`. Not `@[simp]`: `simp`
+already proves it through `gaussianBinomialInt_of_neg` and `Int.negSucc_lt_zero`. -/
 theorem gaussianBinomialInt_negSucc (t : R) (n m : ℕ) :
     gaussianBinomialInt t n (Int.negSucc m) = 0 :=
   (rfl)
 
 /-- `[n 0]_t = 1` for the integer lower index `0`. -/
 @[simp]
-theorem gaussianBinomialInt_zero_right (t : R) (n : ℕ) : gaussianBinomialInt t n 0 = 1 :=
-  gaussianBinomial_zero_right t n
+theorem gaussianBinomialInt_zero_right (t : R) (n : ℕ) : gaussianBinomialInt t n 0 = 1 := by
+  rw [← Nat.cast_zero (R := ℤ), gaussianBinomialInt_natCast, gaussianBinomial_zero_right]
+
+/-- On the integer lower index `1`, `gaussianBinomialInt` is the Gaussian binomial coefficient. -/
+@[simp]
+theorem gaussianBinomialInt_one_right (t : R) (n : ℕ) :
+    gaussianBinomialInt t n 1 = gaussianBinomial t n 1 := by
+  rw [← Nat.cast_one (R := ℤ), gaussianBinomialInt_natCast]
+
+/-- On a numeric literal lower index, `gaussianBinomialInt` is the Gaussian binomial
+coefficient. -/
+@[simp]
+theorem gaussianBinomialInt_ofNat (t : R) (n k : ℕ) [k.AtLeastTwo] :
+    gaussianBinomialInt t n (no_index (OfNat.ofNat k)) = gaussianBinomial t n (OfNat.ofNat k) := by
+  rw [← Nat.cast_ofNat (R := ℤ), gaussianBinomialInt_natCast]
+
+/-- `[n n]_t = 1` for the integer lower index `n`. Not `@[simp]`: `simp` already proves it
+through `gaussianBinomialInt_natCast` and `gaussianBinomial_self`. -/
+theorem gaussianBinomialInt_self (t : R) (n : ℕ) : gaussianBinomialInt t n n = 1 := by
+  rw [gaussianBinomialInt_natCast, gaussianBinomial_self]
 
 /-- On a nonnegative lower index, `gaussianBinomialInt` is the Gaussian binomial coefficient. -/
 theorem gaussianBinomialInt_of_nonneg (t : R) (n : ℕ) {k : ℤ} (hk : 0 ≤ k) :
@@ -399,12 +417,11 @@ theorem gaussianBinomialInt_of_nonneg (t : R) (n : ℕ) {k : ℤ} (hk : 0 ≤ k)
   simp
 
 /-- `gaussianBinomialInt` vanishes on a negative lower index. -/
+@[simp]
 theorem gaussianBinomialInt_of_neg (t : R) (n : ℕ) {k : ℤ} (hk : k < 0) :
     gaussianBinomialInt t n k = 0 := by
-  obtain ⟨m, rfl⟩ := Int.exists_eq_neg_ofNat hk.le
-  rcases m with _ | m
-  · simp at hk
-  · rfl
+  obtain ⟨m, rfl⟩ := Int.eq_negSucc_of_lt_zero hk
+  exact gaussianBinomialInt_negSucc t n m
 
 /-- `gaussianBinomialInt` as a single equation: `[n k]_t` truncated to `0` for `k < 0`. -/
 theorem gaussianBinomialInt_def (t : R) (n : ℕ) (k : ℤ) :
@@ -414,6 +431,7 @@ theorem gaussianBinomialInt_def (t : R) (n : ℕ) (k : ℤ) :
   · exact gaussianBinomialInt_of_neg t n (not_le.1 hk)
 
 /-- `gaussianBinomialInt` vanishes on a lower index larger than the upper one. -/
+@[simp]
 theorem gaussianBinomialInt_eq_zero_of_lt (t : R) {n : ℕ} {k : ℤ} (h : n < k) :
     gaussianBinomialInt t n k = 0 := by
   rw [gaussianBinomialInt_of_nonneg t n (by omega),
@@ -436,7 +454,7 @@ theorem gaussianBinomialInt_succ (t : R) (n : ℕ) (k : ℤ) :
   · simp [gaussianBinomialInt_of_neg _ _ hk, gaussianBinomialInt_of_neg _ _ (by omega : k - 1 < 0)]
   lift k to ℕ using hk
   rcases k with _ | k
-  · simp [gaussianBinomialInt_of_neg _ _ (by norm_num : (-1 : ℤ) < 0)]
+  · simp
   · rw [show ((k + 1 : ℕ) : ℤ) - 1 = k by omega]
     simp only [gaussianBinomialInt_natCast, Int.toNat_natCast]
     exact gaussianBinomial_succ_succ t n k
@@ -450,7 +468,7 @@ theorem gaussianBinomialInt_succ' (t : R) (n : ℕ) (k : ℤ) :
   · simp [gaussianBinomialInt_of_neg _ _ hk, gaussianBinomialInt_of_neg _ _ (by omega : k - 1 < 0)]
   lift k to ℕ using hk
   rcases k with _ | k
-  · simp [gaussianBinomialInt_of_neg _ _ (by norm_num : (-1 : ℤ) < 0)]
+  · simp
   · rw [show ((k + 1 : ℕ) : ℤ) - 1 = k by omega, show ((n : ℤ) + 1 - (k + 1 : ℕ)).toNat = n - k by
       omega]
     simp only [gaussianBinomialInt_natCast]

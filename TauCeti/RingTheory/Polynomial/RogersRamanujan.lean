@@ -100,8 +100,9 @@ private theorem sum_pow_mul_gaussianBinomial_add_two (t : R) (a n : ℕ) :
         show (i + 1) ^ 2 + a * (i + 1) + d = i + i + d + 1 + a + (i ^ 2 + a * i) by ring]
     · rw [gaussianBinomial_eq_zero_of_lt t hlt, mul_zero, mul_zero]
   rw [sum_range_succ' _ (n + 2), sum_range_succ _ (n + 1), sum_range_succ' _ (n + 1), mul_sum,
-    sum_congr rfl hterm, sum_add_distrib]
-  simp
+    sum_congr rfl hterm, sum_add_distrib,
+    gaussianBinomial_eq_zero_of_lt t (by omega : n + 2 - (n + 1 + 1) < n + 1 + 1), mul_zero,
+    add_zero, gaussianBinomial_zero_right, gaussianBinomial_zero_right]
   abel
 
 /-- `∑_{j ≤ 0} t^(j²) [0-j j]_t = 1`. -/

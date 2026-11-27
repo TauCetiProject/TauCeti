@@ -29,8 +29,7 @@ example (t : ℤ) : schurAlternatingSumTwo t 2 = 1 + t ^ 2 := by
 
 example (t : ℤ) : rogersRamanujanSum t 4 = 1 + t + t ^ 2 + t ^ 3 + t ^ 4 := by
   rw [rogersRamanujanSum_add_two, rogersRamanujanSum_add_two (n := 1),
-    rogersRamanujanSum_add_two (n := 0)]
-  simp
+    rogersRamanujanSum_add_two (n := 0), rogersRamanujanSum_one, rogersRamanujanSum_zero]
   ring
 
 example (t : ℤ) :
