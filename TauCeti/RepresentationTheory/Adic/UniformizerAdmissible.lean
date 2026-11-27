@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.IdealTorsion
+public import TauCeti.RepresentationTheory.TorsionBy
 public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.Smooth.Admissible
 public import TauCeti.RepresentationTheory.Smooth.Category
@@ -55,7 +55,7 @@ ring. The parameter `ϖ` is the image in `A` of the coefficient uniformizer. -/
 @[mk_iff]
 class IsUniformizerAdicallyAdmissible (ρ : Representation A G V) (ϖ : A) : Prop where
   isAdicComplete : IsAdicComplete (Ideal.span {ϖ}) V
-  bounded_torsion : ∃ n : ℕ, (Ideal.span {ϖ}).primaryComponent V ≤ torsionBy A V (ϖ ^ n)
+  bounded_torsion : ∃ n : ℕ, (Ideal.span {ϖ}).primaryComponent V ≤ Submodule.torsionBy A V (ϖ ^ n)
   isSmooth_quotSMulTop (n : ℕ) : IsSmooth (ρ.quotSMulTop (ϖ ^ n))
   primaryComponent_eq_top (n : ℕ) : (maximalIdeal A).primaryComponent (QuotSMulTop (ϖ ^ n) V) = ⊤
   isAdmissible_socle : IsAdmissible ((ρ.quotSMulTop ϖ).torsionByIdeal (maximalIdeal A))
