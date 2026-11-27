@@ -22,10 +22,11 @@ import TauCeti.Topology.Order.Interval.Basic
 # Canonical separating-contour continuation and joint four-variable holomorphy
 
 This module defines the canonical abscissa-independent separating-contour Mellin–Barnes integral
-`Complex.mellinBarnesIntegral`, which agrees with `Γ(a) Γ(b) 𝐅(a, b; c; z)` (and hence
-`(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when `c ∉ -ℕ`) on `‖z‖ < 1` with `-z ∈ Complex.slitPlane`
-(and with `Γ(a) Γ(b) Complex.eulerIntegral a b c z` for `0 < Re b < Re c` and
-`-z ∈ Complex.slitPlane`), and provides its analytic continuation to the cut plane
+`Complex.mellinBarnesIntegral`. In `Barnes/Continuation.lean`, for `a, b ∉ -ℕ` it is shown to
+agree with `Γ(a) Γ(b) 𝐅(a, b; c; z)` (and hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when also
+`c ∉ -ℕ`) on `‖z‖ < 1` with `-z ∈ Complex.slitPlane`, and for `a ∉ -ℕ` with
+`Γ(a) Γ(b) Complex.eulerIntegral a b c z` when `0 < Re b < Re c` and `-z ∈ Complex.slitPlane`,
+providing the analytic continuation of `Γ(a) Γ(b) 𝐅(a, b; c; z)` to the cut plane
 `-z ∈ Complex.slitPlane` for `a, b ∉ -ℕ` and all `c : ℂ` (including resonant integer differences
 `a - b ∈ ℤ`, where simple pole candidates coalesce, potentially producing double poles though
 reciprocal Gamma zeros can lower their order or cancel the pole):
@@ -118,12 +119,17 @@ private theorem mellinBarnesAbscissa_avoid (a b : ℂ) :
     · exact absurd hx_av h2
     · exact hx_av
 
-/-- **Canonical separating-contour Mellin–Barnes integral**, agreeing with
-`Γ(a) Γ(b) 𝐅(a, b; c; z)` (and `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when `c ∉ -ℕ`) on
-`‖z‖ < 1` with `-z ∈ Complex.slitPlane`, and with `Γ(a) Γ(b) eulerIntegral a b c z` when
-`0 < Re b < Re c` and `-z ∈ Complex.slitPlane`, and providing its analytic continuation to the
-cut plane `-z ∈ Complex.slitPlane` for `a, b ∉ -ℕ` and all `c : ℂ`. Evaluated at a canonical
-negative abscissa avoiding `-Re a - ℕ` and `-Re b - ℕ`, this agrees with
+/-- **Canonical separating-contour Mellin–Barnes integral**. For `a, b ∉ -ℕ`, it agrees with
+`Γ(a) Γ(b) 𝐅(a, b; c; z)` (and `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when also `c ∉ -ℕ`) on
+`‖z‖ < 1` with `-z ∈ Complex.slitPlane` (see
+`Complex.regularizedGaussHGFun_eq_mellinBarnesRegularizedGaussHGFun` and
+`Complex.ordinaryHypergeometric_eq_mellinBarnesOrdinaryHypergeometric` in
+`Barnes/Continuation.lean`). For `a ∉ -ℕ`, it agrees with `Γ(a) Γ(b) eulerIntegral a b c z` when
+`0 < Re b < Re c` and `-z ∈ Complex.slitPlane` (see
+`Complex.eulerIntegral_eq_mellinBarnesRegularizedGaussHGFun` in `Barnes/Continuation.lean`). It
+provides the analytic continuation of `Γ(a) Γ(b) 𝐅(a, b; c; z)` to the cut plane
+`-z ∈ Complex.slitPlane` for `a, b ∉ -ℕ` and all `c : ℂ`. Evaluated at a canonical negative
+abscissa avoiding `-Re a - ℕ` and `-Re b - ℕ`, this agrees with
 `hypergeometricMellinBarnes a b c z σ` for every admissible negative abscissa `σ < 0` when
 `-z ∈ slitPlane`. -/
 def mellinBarnesIntegral (a b c z : ℂ) : ℂ :=
