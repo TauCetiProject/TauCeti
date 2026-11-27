@@ -16,7 +16,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Complex.CoveringMap
 import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Analysis.Complex.BranchLogRoot
-import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
@@ -89,12 +89,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
 
 /-! ### Continuous logarithms are smooth -/
-
-/-- Two complex numbers with the same exponential at distance less than `2π` are equal. -/
-private theorem eq_of_exp_eq_of_norm_sub_lt {a b : ℂ} (h : exp a = exp b)
-    (hab : ‖a - b‖ < 2 * π) : a = b :=
-  sub_eq_zero.1 (eq_zero_of_exp_eq_one_of_norm_lt
-    (by rw [Complex.exp_sub, h, div_self (Complex.exp_ne_zero b)]) hab)
 
 /-- A continuous logarithm of a `C^n` function on a manifold is `C^n`: near each point it is a
 constant plus the principal logarithm of the function divided by its value there. This is the

@@ -149,14 +149,15 @@ theorem subtypeValRectangleTangentEquiv_toContinuousLinearMap (x : Icc a b × Ic
 
 /-- The rectangle `[a, b] × [c, d]` is contractible, as a convex subset of the plane. -/
 instance : ContractibleSpace (Icc a b × Icc c d) :=
-  haveI := ((convex_Icc a b).prod (convex_Icc c d)).contractibleSpace
-    ⟨(a, c), ⟨left_mem_Icc.2 (Fact.out : a < b).le, left_mem_Icc.2 (Fact.out : c < d).le⟩⟩
-  (Homeomorph.Set.prod (Icc a b) (Icc c d)).symm.toHomotopyEquiv.contractibleSpace
+  haveI := (convex_Icc a b).contractibleSpace (nonempty_Icc.2 (Fact.out : a < b).le)
+  haveI := (convex_Icc c d).contractibleSpace (nonempty_Icc.2 (Fact.out : c < d).le)
+  inferInstance
 
 /-- The rectangle `[a, b] × [c, d]` is locally path connected, as a convex subset of the plane. -/
 instance : LocallyPathConnectedSpace (Icc a b × Icc c d) :=
-  haveI := Convex.locallyPathConnectedSpace (ℝ × ℝ) ((convex_Icc a b).prod (convex_Icc c d))
-  (Homeomorph.Set.prod (Icc a b) (Icc c d)).locallyPathConnectedSpace
+  haveI := Convex.locallyPathConnectedSpace ℝ (convex_Icc a b)
+  haveI := Convex.locallyPathConnectedSpace ℝ (convex_Icc c d)
+  inferInstance
 
 /-- The manifold boundary of the rectangle `[a, b] × [c, d]`, the union of its four edges, is
 connected. -/
