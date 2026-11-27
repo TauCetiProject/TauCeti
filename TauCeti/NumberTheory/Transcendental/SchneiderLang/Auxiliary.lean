@@ -20,9 +20,9 @@ import TauCeti.NumberTheory.Transcendental.AuxiliaryFunction
 The auxiliary functions for the Schneider–Lang criterion on
 `ℂ^d₀ × (ℂˣ)^d₁` have polynomial factors in the first `d₀` coordinates and frequencies
 that are bounded natural combinations of a given family of `d₁` vectors. Their growth bound
-keeps track of the common cutoff for both exponents and frequencies. Rational linear
-independence of the frequency generators ensures a nonzero Taylor coefficient at the origin
-for every nonzero coefficient vector.
+keeps track of the common cutoff for both exponents and frequencies. When the bounded
+frequencies are distinct, every nonzero coefficient vector gives a nonzero Taylor coefficient
+at the origin. Rational linear independence of the generators ensures this distinctness.
 
 ## References
 
@@ -235,13 +235,13 @@ theorem auxiliaryFunction_injective (h : d₀ ≤ n) {x : Fin d₁ → Fin n →
       (hx (congrArg Prod.snd hab)))
 
 /-- A nonzero auxiliary coefficient vector yields a nonzero Taylor coefficient at the origin
-when the frequency generators are linearly independent over `ℚ`. -/
+when the bounded auxiliary frequencies are distinct. -/
 theorem exists_mvTaylorCoeff_auxiliaryFunction_ne_zero (h : d₀ ≤ n)
-    {x : Fin d₁ → Fin n → ℂ} (hx : LinearIndependent ℚ x)
+    {x : Fin d₁ → Fin n → ℂ} (hx : Function.Injective (auxiliaryFrequency (T := T) x))
     {p : AuxiliaryIndex d₀ d₁ T → ℂ} (hp : p ≠ 0) :
     ∃ σ : Fin n → ℕ, mvTaylorCoeff (auxiliaryFunction h x p) 0 σ ≠ 0 := by
   by_contra! hσ
-  apply hp (auxiliaryFunction_injective h (auxiliaryFrequency_injective hx) ?_)
+  apply hp (auxiliaryFunction_injective h hx ?_)
   rw [map_zero]
   funext z
   have hs := hasSum_mvTaylorCoeff_sum_mul_prod_pow_mul_cexp univ p
