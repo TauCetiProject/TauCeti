@@ -14,6 +14,7 @@ public import TauCeti.Combinatorics.AssociationScheme.Basic
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.LinearAlgebra.Dimension.Finrank
+import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Data.Matrix.Mul
 import TauCeti.LinearAlgebra.End.Idempotent
@@ -206,7 +207,7 @@ private theorem exists_split_of_not_mul_eq_smul (h : IsAssocScheme rel) {p A : M
     rw [h.mul_comm_of_mem_bmAlgebra hp_mem hM_mem]
     simp [M, Matrix.mul_assoc, hp_idem.eq]
   obtain ⟨x₀, y₀, hx₀, hy₀, hne⟩ :=
-    hM_herm.exists_eigenvectorBasis_ne_zero_of_mul_eq hpM hnot
+    hM_herm.exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq hpM hnot
   obtain ⟨Q, hQ_mem, hQ_idem, hQx₀, hQy₀⟩ :=
     exists_spectral_proj h hM_mem hM_herm x₀ y₀ hne
   have hcomm : Q * p = p * Q := h.mul_comm_of_mem_bmAlgebra hQ_mem hp_mem
@@ -566,22 +567,6 @@ theorem sum_trace (hE : IsPrimitiveIdempotents rel E) :
   simp_rw [hE.trace_eq_rank]
   rw [← Nat.cast_sum, hE.sum_rank]
 
-private theorem sum_smul_mul (hE : IsPrimitiveIdempotents rel E) (c : Fin (d + 1) → ℝ)
-    (i : Fin (d + 1)) : (∑ j, c j • E j) * E i = c i • E i := by
-  rw [Finset.sum_mul, Finset.sum_eq_single i]
-  · rw [Matrix.smul_mul, (hE.complete.idem i).eq]
-  · intro j _ hji
-    rw [Matrix.smul_mul, hE.complete.ortho hji, smul_zero]
-  · simp
-
-private theorem mul_sum_smul (hE : IsPrimitiveIdempotents rel E) (i : Fin (d + 1))
-    (c : Fin (d + 1) → ℝ) : E i * (∑ j, c j • E j) = c i • E i := by
-  rw [Finset.mul_sum, Finset.sum_eq_single i]
-  · rw [Matrix.mul_smul, (hE.complete.idem i).eq]
-  · intro j _ hji
-    rw [Matrix.mul_smul, hE.complete.ortho hji.symm, smul_zero]
-  · simp
-
 /-- Every matrix `M` in the Bose–Mesner algebra acts on the range of `E i` by the scalar
 `tr (M * E i) / tr (E i)`. -/
 theorem mul_eq_smul (hE : IsPrimitiveIdempotents rel E)
@@ -590,7 +575,8 @@ theorem mul_eq_smul (hE : IsPrimitiveIdempotents rel E)
   have hmem : M ∈ Submodule.span ℝ (Set.range E) := hE.span_eq_bmAlgebra.symm ▸ hM
   rw [Submodule.mem_span_range_iff_exists_fun] at hmem
   obtain ⟨c, rfl⟩ := hmem
-  have hmul := hE.sum_smul_mul c i
+  have hmul := sum_smul_mul_eq_smul_of_pairwise_mul_eq_zero_of_sum_eq_one
+    (fun _ _ _ _ hne => hE.complete.ortho hne) hE.complete.complete c (Finset.mem_univ i)
   have htr := congrArg Matrix.trace hmul
   rw [Matrix.trace_smul, smul_eq_mul] at htr
   have hc : c i = ((∑ j, c j • E j) * E i).trace / (E i).trace :=
@@ -661,7 +647,9 @@ private theorem eq_of_mul_ne_zero (hE : IsPrimitiveIdempotents rel E)
     {i k : Fin (d + 1)} (hk : E' i * E k ≠ 0) : E' i = E k := by
   have hcomm : E k * E' i = E' i * E k := by
     conv_lhs => rw [hE.eq_sum_smul (hE'.mem_bmAlgebra i)]
-    rw [hE.mul_sum_smul k, ← hE.mul_eq_smul (hE'.mem_bmAlgebra i) k]
+    rw [mul_sum_smul_eq_smul_of_pairwise_mul_eq_zero_of_sum_eq_one
+        (fun _ _ _ _ hne => hE.complete.ortho hne) hE.complete.complete _ (Finset.mem_univ k),
+      ← hE.mul_eq_smul (hE'.mem_bmAlgebra i) k]
   have hEk : E' i * E k = E k := (hE'.complete.idem i).mul_eq_right_of_mul_eq_smul
     (hE.mul_eq_smul (hE'.mem_bmAlgebra i) k) hk
   have hEi : E k * E' i = E' i := (hE.complete.idem k).mul_eq_right_of_mul_eq_smul

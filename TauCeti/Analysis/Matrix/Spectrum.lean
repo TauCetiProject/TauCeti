@@ -112,9 +112,9 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   eigenvalues;
 * `Matrix.IsHermitian.eq_zero_of_mulVec_eigenvectorBasis` — a matrix annihilating every vector of
   `hA.eigenvectorBasis` is zero;
-* `Matrix.IsHermitian.exists_eigenvectorBasis_ne_zero_of_mul_eq` — if `p * A = A` and `A` is not a
-  real scalar multiple of `p`, then `p` preserves two eigenvectors of `A` with distinct
-  eigenvalues.
+* `Matrix.IsHermitian.exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq` — if `p * A = A` and `A` is
+  not a real scalar multiple of `p`, then `p` does not annihilate at least two eigenvectors of
+  `A` with distinct eigenvalues.
 
 ## References
 
@@ -615,7 +615,7 @@ theorem eq_zero_of_mulVec_eigenvectorBasis (hA : A.IsHermitian) {C : Matrix ι �
 /-- If `A` is Hermitian, `p * A = A`, and `A` is not a real scalar multiple of `p`, then there
 are two eigenvectors in `hA.eigenvectorBasis` with distinct eigenvalues that are not annihilated
 by `p`. -/
-theorem exists_eigenvectorBasis_ne_zero_of_mul_eq (hA : A.IsHermitian) {p : Matrix ι ι 𝕜}
+theorem exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq (hA : A.IsHermitian) {p : Matrix ι ι 𝕜}
     (hpA : p * A = A) (hnot : ∀ c : ℝ, A ≠ c • p) :
     ∃ x₀ y₀ : ι, p *ᵥ ⇑(hA.eigenvectorBasis x₀) ≠ 0 ∧
       p *ᵥ ⇑(hA.eigenvectorBasis y₀) ≠ 0 ∧
