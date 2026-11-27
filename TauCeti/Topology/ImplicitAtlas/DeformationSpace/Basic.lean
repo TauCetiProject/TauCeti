@@ -41,7 +41,10 @@ This file defines `D_(I,J,B)` (`TauCeti.ImplicitAtlas.deformationSpace`) as a su
   continuous action of `Γ_B` (`TauCeti.ImplicitAtlas.instMulActionDeformationSpace`).
 * **The supports** (`TauCeti.ImplicitAtlas.deformationSupport`): for `K ⊆ X`, the set
   `Z_K ⊆ D_(I,J,B)` of the points with `e = 0` and `ψ_∅J(x) ∈ K`. It is monotone in `K`
-  (`TauCeti.ImplicitAtlas.deformationSupport_mono`), closed when `K` is
+  (`TauCeti.ImplicitAtlas.deformationSupport_mono`), takes the empty set, unions and
+  intersections to the same (`TauCeti.ImplicitAtlas.deformationSupport_empty`,
+  `TauCeti.ImplicitAtlas.deformationSupport_union`,
+  `TauCeti.ImplicitAtlas.deformationSupport_inter`), closed when `K` is
   (`TauCeti.ImplicitAtlas.isClosed_deformationSupport`), continuous along the compact
   neighbourhoods of a compact `K` when `X` is locally compact Hausdorff
   (`TauCeti.ImplicitAtlas.exists_mem_compactNhds_disjoint_deformationSupport`), and invariant under
@@ -333,6 +336,31 @@ theorem mem_deformationSupport_iff_of_eq_zero {I J B : Finset A} {hJB : J ⊆ B}
 theorem deformationSupport_mono {I J B : Finset A} {hJB : J ⊆ B} {K L : Set X} (h : K ⊆ L) :
     𝒜.deformationSupport I hJB K ⊆ 𝒜.deformationSupport I hJB L :=
   fun _ ⟨he, hx, hK⟩ ↦ ⟨he, hx, h hK⟩
+
+/-- The support of the empty set is empty. -/
+@[simp]
+theorem deformationSupport_empty {I J B : Finset A} {hJB : J ⊆ B} :
+    𝒜.deformationSupport I hJB ∅ = ∅ :=
+  eq_empty_of_forall_notMem fun _ hp ↦ (mem_deformationSupport.1 hp).2.2
+
+/-- The support of a union is the union of the supports. -/
+@[simp]
+theorem deformationSupport_union {I J B : Finset A} {hJB : J ⊆ B} (K L : Set X) :
+    𝒜.deformationSupport I hJB (K ∪ L) =
+      𝒜.deformationSupport I hJB K ∪ 𝒜.deformationSupport I hJB L :=
+  Subset.antisymm (fun _ ⟨he, hx, h⟩ ↦ h.imp (fun h ↦ ⟨he, hx, h⟩) fun h ↦ ⟨he, hx, h⟩)
+    (union_subset (deformationSupport_mono subset_union_left)
+      (deformationSupport_mono subset_union_right))
+
+/-- The support of an intersection is the intersection of the supports. -/
+@[simp]
+theorem deformationSupport_inter {I J B : Finset A} {hJB : J ⊆ B} (K L : Set X) :
+    𝒜.deformationSupport I hJB (K ∩ L) =
+      𝒜.deformationSupport I hJB K ∩ 𝒜.deformationSupport I hJB L :=
+  Subset.antisymm
+    (subset_inter (deformationSupport_mono inter_subset_left)
+      (deformationSupport_mono inter_subset_right))
+    fun _ ⟨⟨he, hx, h⟩, ⟨_, _, h'⟩⟩ ↦ ⟨he, hx, h, h'⟩
 
 variable (𝒜) in
 /-- The base point `ψ_∅J(x) ∈ X` of a point `(0, t, x)` of `D_(I,J,B)`, defined on the closed set

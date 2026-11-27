@@ -32,7 +32,9 @@ complexes. The argument has two steps.
   `Z_K ⊆ D` (`TauCeti.localChainKPresheaf`), and they form a homotopy K-sheaf by Pardon's
   Lemma A.6.3 (`TauCeti.isHomotopyKSheaf_localChainKPresheaf`). Its hypotheses on `K ↦ Z_K` hold:
   `Z_K` is the set of points `(0, t, x)` with `ψ_∅J(x) ∈ K`, a preimage of `K`, so it is empty for
-  `K = ∅` and takes unions to unions and intersections to intersections; it is closed
+  `K = ∅` and takes unions to unions and intersections to intersections
+  (`TauCeti.ImplicitAtlas.deformationSupport_union`,
+  `TauCeti.ImplicitAtlas.deformationSupport_inter`); it is closed
   (`TauCeti.ImplicitAtlas.isClosed_deformationSupport`); and a compact set `T ⊆ D` disjoint from
   `Z_K` is disjoint from `Z_L` for a compact neighbourhood `L` of `K`
   (`TauCeti.ImplicitAtlas.exists_mem_compactNhds_disjoint_deformationSupport`), since the points of
@@ -98,12 +100,6 @@ section Complexes
 
 variable (k : Type u) [CommRing k]
 
-variable (ρ) in
-/-- The dual orientation line `o_(E_B)^∨` of the obstruction space `E_B`, as an action of `Γ_B` on
-a `k`-module: the coefficients of the partial virtual complexes. -/
-abbrev partialVirtualCoefficients (B : Finset A) : SingleObj ((α : B) → Γ α) ⥤ ModuleCat.{u} k :=
-  (Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k
-
 /-- The relative chains of the deformation pairs with coefficients in `o_(E_B)^∨`, before taking
 invariants, are the relative chains along the supports `Z_K`. -/
 def deformationPairChainsIso (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (n : ℤ) :
@@ -123,21 +119,12 @@ def deformationPairChainsIso (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (n 
           eqToHom (TopPair.singularChainComplexFunctor_obj_obj _ _) ≫
             localChainRestriction _
               ((𝒜.deformationSupportHom I hJB).monotone (leOfHom h.unop)) := by
-        have hres : ((𝒜.deformationPairPresheaf I hJB).map h).app (SingleObj.star _) =
-            TopPair.ofSubsetMap (𝟙 (TopCat.of (𝒜.deformationSpace I hJB)))
-              (compl_subset_compl.2 ((𝒜.deformationSupportHom I hJB).monotone
-                (leOfHom h.unop))) :=
-          have hfst : TopPair.Hom.fst (((𝒜.deformationPairPresheaf I hJB).map h).app
-              (SingleObj.star _)) = 𝟙 (TopCat.of (𝒜.deformationSpace I hJB)) :=
-            ConcreteCategory.hom_ext _ _ fun p ↦
-              𝒜.deformationPairRestriction_app_fst_apply I hJB _ _ p
-          TopPair.hom_ext_of_fst _ (hfst.trans (TopPair.ofSubsetMap_fst _ _).symm)
-        refine (TopPair.diagonalChainActionMap_app_comp_eqToHom _ _ _).trans ?_
-        exact (congrArg (fun f ↦ eqToHom _ ≫ TopPair.singularChainComplexMap f
-          ((partialVirtualCoefficients ρ k B).obj (SingleObj.star _))) hres).trans
-            (congrArg (eqToHom _ ≫ ·) (localChainRestriction_def _ _).symm)
+        rw [TopPair.diagonalChainActionMap_app_comp_eqToHom, deformationPairPresheaf_map,
+          deformationPairRestriction_app, localChainRestriction_def]
+        -- the coefficients `((L.prod' P).obj _).1` of the diagonal action are `L.obj _`
+        rfl
       let ext := (ComplexShape.embeddingUpIntLE n).extendFunctor (ModuleCat.{u} k)
-      exact (ext.map_comp _ _).symm.trans ((congrArg ext.map key).trans (ext.map_comp _ _))
+      exact (ext.map_comp _ _).symm.trans ((ext.congr_map key).trans (ext.map_comp _ _))
 
 variable {k} (hΓ : ∀ α, IsUnit (Nat.card (Γ α) : k))
 
@@ -160,14 +147,9 @@ def partialVirtualComplexRetract (I : Finset A) {J B : Finset A} (hJB : J ⊆ B)
     exact IsUnit.prod_univ_iff.2 fun α ↦ hΓ α
   let r := SingleObj.limRetract (C := ChainComplex (ModuleCat.{u} k) ℕ) hB
   -- the source is `(Φ ⋙ lim) ⋙ ext` by the definition of `partialVirtualComplex`
-  Retract.trans
-    { i := Functor.whiskerRight (Functor.whiskerLeft Φ r.i) ext
-      r := Functor.whiskerRight (Functor.whiskerLeft Φ r.r) ext
-      retract := by
-        ext K : 2
-        exact (ext.map_comp _ _).symm.trans
-          ((congrArg ext.map (Retract.retract_app r (Φ.obj K))).trans (ext.map_id _)) }
-    (Retract.ofIso (𝒜.deformationPairChainsIso k I hJB _))
+  ((r.map ((Functor.whiskeringLeft _ _ _).obj Φ)).map
+    ((Functor.whiskeringRight _ _ _).obj ext)).trans
+      (Retract.ofIso (𝒜.deformationPairChainsIso k I hJB _))
 
 include hΓ in
 /-- **The partial virtual complexes are homotopy K-sheaves** (Pardon, Section 4.3). For an implicit
@@ -181,12 +163,8 @@ theorem isHomotopyKSheaf_partialVirtualComplex [T2Space X] [LocallyCompactSpace 
     (𝒜.partialVirtualComplex k I hJB).IsHomotopyKSheaf :=
   (isHomotopyKSheaf_localChainKPresheaf ((partialVirtualCoefficients ρ k B).obj (SingleObj.star _))
       (𝒜.deformationSupportHom I hJB) _
-      (Set.eq_empty_of_forall_notMem fun _ hp ↦ (mem_deformationSupport.1 hp).2.2)
-      (fun _ _ _ hp ↦ let ⟨he, hx, h⟩ := mem_deformationSupport.1 hp
-        h.imp (fun h ↦ mem_deformationSupport.2 ⟨he, hx, h⟩)
-          fun h ↦ mem_deformationSupport.2 ⟨he, hx, h⟩)
-      (fun _ _ _ ⟨hp, hp'⟩ ↦ let ⟨he, hx, h⟩ := mem_deformationSupport.1 hp
-        mem_deformationSupport.2 ⟨he, hx, h, (mem_deformationSupport.1 hp').2.2⟩)
+      deformationSupport_empty (fun K L ↦ (deformationSupport_union (K : Set X) L).subset)
+      (fun K L ↦ (deformationSupport_inter (K : Set X) L).superset)
       (fun K ↦ isClosed_deformationSupport K.isCompact.isClosed)
       fun K _ hS hSK ↦ 𝒜.exists_mem_compactNhds_disjoint_deformationSupport K hS hSK
     ).of_retract (𝒜.partialVirtualComplexRetract hΓ I hJB)

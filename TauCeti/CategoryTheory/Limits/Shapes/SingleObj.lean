@@ -297,8 +297,6 @@ unit of `k`, the limit functor on actions of `G` on objects of a `k`-linear cate
 of the evaluation at the object of `SingleObj G`: the leg of the limit cone is the inclusion of the
 invariants, and the lift of the averaging cone (`CategoryTheory.Limits.SingleObj.averageCone`) is
 the retraction, both natural in the action. -/
--- The body is exposed for `@[simps]`, whose projection lemmas are checked by unfolding it.
-@[expose, simps]
 noncomputable def limRetract :
     Retract (lim : (SingleObj G ⥤ C) ⥤ C) ((evaluation (SingleObj G) C).obj (SingleObj.star G))
     where
@@ -309,6 +307,18 @@ noncomputable def limRetract :
   retract := by
     ext J : 2
     exact limit_π_comp_lift_averageCone hG J
+
+/-- The inclusion of the averaging retraction is the leg of the limit cone. -/
+@[simp]
+lemma limRetract_i_app (J : SingleObj G ⥤ C) :
+    (limRetract hG).i.app J = limit.π J (SingleObj.star G) :=
+  (rfl)
+
+/-- The retraction of the averaging retraction is the lift of the averaging cone. -/
+@[simp]
+lemma limRetract_r_app (J : SingleObj G ⥤ C) :
+    (limRetract hG).r.app J = limit.lift J (averageCone hG J) :=
+  (rfl)
 
 end Average
 
