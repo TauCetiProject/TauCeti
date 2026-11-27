@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.GraphFlattening.Direction
 public import TauCeti.Analysis.Holder.C2HolderBoundary.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.InnerProductSpace.GraphPatch
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
 
 /-!
 # Flattening charts at the boundary of a domain with `C^{2,α}` boundary
@@ -20,13 +21,10 @@ shear `Φ = shearAlong γ ν`, `Φ y = y + γ y ν`, flattens this region: it ca
 `{0 < ⟪y, ν⟫}` onto `{γ x < ⟪x, ν⟫}` and the hyperplane `{⟪y, ν⟫ = 0}` onto the graph, and its
 inverse is the shear `Ψ = shearAlong (-γ) ν` (`TauCeti.shearAlong_neg_shearAlong`).
 
-This file packages these shears as the charts in which boundary regularity is proved by
-flattening the boundary (Gilbarg–Trudinger, Section 6.2; Evans, §6.3.2):
+This file packages these shears, which are changes of variables of order two
+(`TauCeti.Wkp.isChangeOfVariables_shearAlong`), as the charts in which boundary regularity is
+proved by flattening the boundary (Gilbarg–Trudinger, Section 6.2; Evans, §6.3.2):
 
-* `TauCeti.Wkp.isChangeOfVariables_shearAlong`: the shear by a `C²` function `γ` invariant along a
-  vector `ν` with `‖ν‖ ≤ 1`, whose first two derivatives are bounded by `G` on `U`, is a change of
-  variables of order two on `U` (`TauCeti.Wkp.IsChangeOfVariables`) with constant `1 + G` and
-  Jacobian determinant one.
 * `Set.HasC2HolderBoundary.exists_isChangeOfVariables_halfSpace`: every frontier point `z` of a
   set with `C^{2,α}` boundary lies in an open set `U` with a pair of mutually inverse changes of
   variables of order two `Φ : U' → U`, `Ψ : U → U'`, whose second derivatives are `α`-Hölder, such
@@ -51,34 +49,6 @@ open scoped InnerProductSpace NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-namespace TauCeti.Wkp
-
-/-- **A shear is a change of variables of order two.** Let `γ` be `C²` and invariant along `ν`,
-with `‖ν‖ ≤ 1`, and let `Dγ` and `D²γ` be bounded by `G` on an open set `U`. Then the shear
-`shearAlong γ ν`, `y ↦ y + γ y ν`, is a change of variables of order two from `U` into every open
-set `V` into which it maps `U`, with constant `1 + G` and Jacobian determinant one. -/
-theorem isChangeOfVariables_shearAlong {γ : E → ℝ} {ν : E} {G : ℝ≥0} {U V : Opens E}
-    (hν : ‖ν‖ ≤ 1) (hγ : ContDiff ℝ 2 γ) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
-    (hG1 : ∀ x ∈ (U : Set E), ‖fderiv ℝ γ x‖ ≤ G)
-    (hG2 : ∀ x ∈ (U : Set E), ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G)
-    (hUV : MapsTo (shearAlong γ ν) U V) :
-    IsChangeOfVariables 2 U V (shearAlong γ ν) (1 + G) 1 where
-  contDiffOn := (contDiff_shearAlong hγ).contDiffOn
-  differentiableOn := (differentiable_shearAlong (hγ.differentiable (by norm_num))).differentiableOn
-  injOn := (injective_shearAlong hγν).injOn
-  mapsTo := hUV
-  norm_iteratedFDeriv_le i hi hi2 x hx := by
-    obtain rfl | rfl : i = 1 ∨ i = 2 := by omega
-    · rw [norm_iteratedFDeriv_one]
-      exact norm_fderiv_shearAlong_le hν (hγ.differentiable (by norm_num) x) (hG1 x hx)
-    · rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one]
-      exact (norm_fderiv_fderiv_shearAlong_le hν hγ.contDiffAt).trans
-        ((hG2 x hx).trans (le_add_of_nonneg_left zero_le_one))
-  pos := one_pos
-  le_abs_det x _ := (abs_det_fderiv_shearAlong (hγ.differentiable (by norm_num)) hγν x).ge
-
-end TauCeti.Wkp
-
 namespace Set.HasC2HolderBoundary
 
 open TauCeti
@@ -88,10 +58,10 @@ variable {Ω : Set E} {α : ℝ≥0}
 /-- **Flattening charts at the boundary of a domain with `C^{2,α}` boundary.** Let `Ω` have
 `C^{2,α}` boundary and let `z` be a frontier point of `Ω`. Then there are open sets `U ∋ z` and
 `U'`, mutually inverse changes of variables of order two `Φ : U' → U` and `Ψ : U → U'` with
-Jacobian determinant one and `α`-Hölder second derivatives, and a unit vector `ν`, such that `Φ`
-maps the part of `U'` in the half-space `{0 < ⟪y, ν⟫}` onto `Ω ∩ U` and the part of `U'` in the
-hyperplane `{⟪y, ν⟫ = 0}` onto `frontier Ω ∩ U`. The charts are the shears by the boundary graph:
-`Φ = shearAlong γ ν` and `Ψ = shearAlong (-γ) ν`. -/
+Jacobian lower bound one (`1 ≤ |det DΦ|`, `1 ≤ |det DΨ|`) and `α`-Hölder second derivatives, and a
+unit vector `ν`, such that `Φ` maps the part of `U'` in the half-space `{0 < ⟪y, ν⟫}` onto `Ω ∩ U`
+and the part of `U'` in the hyperplane `{⟪y, ν⟫ = 0}` onto `frontier Ω ∩ U`. The charts are the
+shears by the boundary graph: `Φ = shearAlong γ ν` and `Ψ = shearAlong (-γ) ν`. -/
 theorem exists_isChangeOfVariables_halfSpace (h : Ω.HasC2HolderBoundary α) {z : E}
     (hz : z ∈ frontier Ω) :
     ∃ (U' U : Opens E) (Φ Ψ : E → E) (L : ℝ) (K : ℝ≥0) (ν : E),
