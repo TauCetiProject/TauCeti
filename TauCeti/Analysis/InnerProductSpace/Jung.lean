@@ -13,6 +13,7 @@ import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
 import Mathlib.Topology.Order.Lattice
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
+import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
 
 /-!
 # Jung's theorem
@@ -32,8 +33,6 @@ summing over `j` gives `2 k R² ≤ (k - 1) δ²` for the number `k ≤ d + 1` o
 
 ## Main results
 
-* `TauCeti.exists_mem_forall_dist_le_of_isComplete_convex`: the nearest point of a complete
-  convex set `K` to `u` is at least as close as `u` to every point of `K`.
 * `TauCeti.exists_isMinOn_finset_sup'_dist`: the largest distance to a nonempty finite set has a
   global minimizer, the centre of the smallest enclosing ball.
 * `TauCeti.mem_convexHull_farthest_of_isMinOn`: that centre lies in the convex hull of the
@@ -61,17 +60,6 @@ open scoped RealInnerProductSpace
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The nearest point `v` of a nonempty complete convex set `K` to a point `u` is at least as
-close as `u` to every point of `K`. -/
-theorem exists_mem_forall_dist_le_of_isComplete_convex {K : Set E} (hne : K.Nonempty)
-    (hKc : IsComplete K) (hK : Convex ℝ K) (u : E) : ∃ v ∈ K, ∀ y ∈ K, dist y v ≤ dist y u := by
-  obtain ⟨v, hv, hmin⟩ := exists_norm_eq_iInf_of_complete_convex hne hKc hK u
-  have hinner := (norm_eq_iInf_iff_real_inner_le_zero hK hv).1 hmin
-  refine ⟨v, hv, fun y hy ↦ ?_⟩
-  rw [dist_eq_norm, dist_eq_norm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _),
-    ← sub_sub_sub_cancel_right y u v, norm_sub_sq_real (y - v), real_inner_comm]
-  nlinarith [hinner y hy, sq_nonneg ‖u - v‖]
 
 /-- The largest distance `c ↦ max_{x ∈ S} d(x, c)` to a nonempty finite set `S` has a global
 minimizer: the centre of the smallest closed ball containing `S`. -/

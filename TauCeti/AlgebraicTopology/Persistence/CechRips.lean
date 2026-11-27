@@ -83,19 +83,23 @@ theorem cechComplex_mono (x : ι → E) : Monotone (cechComplex x) := fun _ _ h 
   ⟨hσ.1, hσ.2.imp fun _ hz a ha => (hz a ha).trans h⟩
 
 /-- A vertex is a face of the Vietoris–Rips complex exactly at nonnegative scales. -/
+@[simp high]
 theorem singleton_mem_ripsComplex {a : ι} : {a} ∈ ripsComplex x r ↔ 0 ≤ r := by
   simp
 
 /-- A vertex is a face of the Čech complex exactly at nonnegative scales. -/
+@[simp high]
 theorem singleton_mem_cechComplex {a : ι} : {a} ∈ cechComplex x r ↔ 0 ≤ r :=
   ⟨fun ⟨_, z, hz⟩ => dist_nonneg.trans (hz a (Finset.mem_singleton_self a)),
     fun hr => ⟨Finset.singleton_nonempty a, x a, by simpa using hr⟩⟩
 
 /-- At a negative scale the Vietoris–Rips complex has no faces. -/
+@[simp]
 theorem ripsComplex_eq_bot (hr : r < 0) : ripsComplex x r = ⊥ :=
   eq_bot_iff.2 fun _ ⟨⟨a, ha⟩, h⟩ => by linarith [h a ha a ha, dist_self (x a)]
 
 /-- At a negative scale the Čech complex has no faces. -/
+@[simp]
 theorem cechComplex_eq_bot (hr : r < 0) : cechComplex x r = ⊥ :=
   eq_bot_iff.2 fun _ ⟨⟨a, ha⟩, z, hz⟩ => by linarith [hz a ha, dist_nonneg (x := x a) (y := z)]
 
@@ -109,6 +113,7 @@ theorem cechComplex_le_ripsComplex_le (x : ι → E) (r : ℝ) :
 
 /-- An edge is a face of the Vietoris–Rips complex at scale `r` iff its length is at most
 `2 r`. -/
+@[simp high]
 theorem pair_mem_ripsComplex_iff [DecidableEq ι] {a b : ι} :
     {a, b} ∈ ripsComplex x r ↔ dist (x a) (x b) ≤ 2 * r := by
   refine ⟨fun h => h.2 a (by simp) b (by simp), fun h => ⟨Finset.insert_nonempty _ _, ?_⟩⟩

@@ -55,6 +55,8 @@ Hausdorff measures, so this map compares the boundary areas of nested convex set
   nonexpansive.
 * `Convex.exists_lipschitzWith_one_forall_inner_le_zero`: a nonempty complete convex set has a
   `1`-Lipschitz nearest-point map.
+* `TauCeti.exists_mem_forall_dist_le_of_isComplete_convex`: the nearest point of a nonempty
+  complete convex set `K` to `u` is at least as close as `u` to every point of `K`.
 * `TauCeti.cauchySeq_of_antitone_convex_norm_sub_le`: metric projections onto a decreasing sequence
   of convex sets with bounded distances form a Cauchy sequence.
 * `TauCeti.exists_tendsto_of_antitone_isClosed_convex_norm_sub_le`: in a complete real inner product
@@ -108,6 +110,16 @@ theorem _root_.Convex.exists_lipschitzWith_one_forall_inner_le_zero {K : Set E}
   refine ⟨P, LipschitzWith.of_dist_le_mul fun x y => ?_, fun x => ⟨hPK x, hvar x⟩⟩
   simpa [dist_eq_norm] using
     norm_sub_le_norm_sub_of_inner_sub_le_zero (hvar x _ (hPK y)) (hvar y _ (hPK x))
+
+/-- The nearest point `v` of a nonempty complete convex set `K` to a point `u` is at least as
+close as `u` to every point of `K`. -/
+theorem exists_mem_forall_dist_le_of_isComplete_convex {K : Set E} (hne : K.Nonempty)
+    (hKc : IsComplete K) (hK : Convex ℝ K) (u : E) : ∃ v ∈ K, ∀ y ∈ K, dist y v ≤ dist y u := by
+  obtain ⟨v, hv, hmin⟩ := exists_norm_eq_iInf_of_complete_convex hne hKc hK u
+  have hinner := (norm_eq_iInf_iff_real_inner_le_zero hK hv).1 hmin
+  refine ⟨v, hv, fun y hy ↦ ?_⟩
+  rw [dist_comm y v, dist_comm y u, dist_eq_norm, dist_eq_norm]
+  exact norm_sub_le_norm_sub_of_inner_sub_le_zero (hinner y hy) (by simp)
 
 /-- Let `K : ℕ → Set E` be a decreasing sequence of convex sets in a real inner product space, and
 suppose `p n ∈ K n` minimizes `‖u - w‖` over `w ∈ K n`. If the minimal distances `‖u - p n‖` are
