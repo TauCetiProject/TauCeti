@@ -38,8 +38,7 @@ topological entropies are `k` times those of `T`, this gives
 * `TauCeti.IsInlSeparated.partitionEntropyRate_le_log_two_add`: the rate step,
   `h(T, ζ) ≤ log 2 + coverEntropyInfEntourage T univ U` for a label `ζ` whose `Sum.inl` values
   are separated by `U`.
-* `TauCeti.partitionEntropyRate_le_ofReal_log_two_add`,
-  `TauCeti.measureEntropy_le_log_two_add_coverEntropy`: `h_μ(T) ≤ log 2 + h_top(T)`.
+* `TauCeti.measureEntropy_le_log_two_add_coverEntropy`: `h_μ(T) ≤ log 2 + h_top(T)`.
 * `TauCeti.measureEntropy_le_coverEntropy`: **Goodwyn's inequality** `h_μ(T) ≤ h_top(T)`.
 
 ## References
@@ -55,6 +54,21 @@ open scoped ENNReal Uniformity Topology
 namespace TauCeti
 
 variable {X ι : Type*}
+
+/-- A nonnegative real bound on the `EReal` image of `x : ℝ≥0∞` is the bound `ENNReal.ofReal r`
+in `ℝ≥0∞`. -/
+private theorem coe_ennreal_le_coe_iff_le_ofReal {x : ℝ≥0∞} {r : ℝ} (hr : 0 ≤ r) :
+    (x : EReal) ≤ r ↔ x ≤ ENNReal.ofReal r := by
+  rw [← EReal.coe_ennreal_le_coe_ennreal_iff, EReal.coe_ennreal_ofReal, max_eq_left hr]
+
+/-- The topological entropy of a map of a nonempty uniform space is `⊤` or a nonnegative real. -/
+private theorem coverEntropy_univ_eq_top_or_eq_coe [UniformSpace X] [Nonempty X] (T : X → X) :
+    coverEntropy T univ = ⊤ ∨ ∃ t : ℝ, 0 ≤ t ∧ coverEntropy T univ = t := by
+  rcases eq_or_ne (coverEntropy T univ) ⊤ with htop | htop
+  · exact .inl htop
+  have h0 := coverEntropy_nonneg T univ_nonempty
+  exact .inr ⟨_, EReal.toReal_nonneg h0,
+    (EReal.coe_toReal htop (h0.trans_lt' EReal.bot_lt_zero).ne').symm⟩
 
 section RateStep
 
@@ -91,13 +105,11 @@ theorem IsInlSeparated.partitionEntropyRate_le_log_div [Nonempty X] (hT : Measur
     gcongr
     exact countablePartitionEntropy_iteratedPartitionLabel_le_ofReal_log_card_mul_two_pow hT hζ h
       hs
-  refine (EReal.coe_ennreal_le_coe_ennreal_iff.2 key).trans_eq ?_
+  refine ((coe_ennreal_le_coe_iff_le_ofReal hlog).2 key).trans_eq ?_
   have hval : (2 : ℝ≥0∞) ^ n * ((s.card : ℕ∞) : ℝ≥0∞) = ENNReal.ofReal (s.card * 2 ^ n) := by
     rw [ENNReal.ofReal_mul (Nat.cast_nonneg _), ENNReal.ofReal_natCast,
       ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat, mul_comm, ENat.toENNReal_coe]
-  rw [EReal.coe_ennreal_ofReal, max_eq_left hlog, ← hcard, hval,
-    ENNReal.log_ofReal_of_pos (by linarith), EReal.coe_div]
-  rfl
+  rw [← hcard, hval, ENNReal.log_ofReal_of_pos (by linarith), EReal.coe_div, EReal.coe_natCast]
 
 /-- **The rate step of Goodwyn's inequality.** For a nonempty space and an entourage `U`
 separating the `Sum.inl` values of a measurable label `ζ`,
@@ -131,7 +143,7 @@ variable [UniformSpace X] [CompactSpace X] [MeasurableSpace X] [OpensMeasurableS
 /-- For a measure-preserving map `T` of a compact uniform space with a weakly regular Borel
 probability measure, and a real number `t` equal to the topological entropy of `T`, every
 measurable finite label has entropy rate at most `log 2 + t`. -/
-theorem partitionEntropyRate_le_ofReal_log_two_add (hT : MeasurePreserving T μ μ) {n : ℕ}
+private theorem partitionEntropyRate_le_ofReal_log_two_add (hT : MeasurePreserving T μ μ) {n : ℕ}
     {a : X → Fin n} (ha : Measurable a) {t : ℝ} (ht : coverEntropy T univ = t) :
     partitionEntropyRate μ T a ≤ ENNReal.ofReal (Real.log 2 + t) := by
   have hX : Nonempty X := nonempty_of_isProbabilityMeasure μ
@@ -154,8 +166,7 @@ theorem partitionEntropyRate_le_ofReal_log_two_add (hT : MeasurePreserving T μ 
   have hζ := measurable_restrictLabel ha hFm
   have hrate : partitionEntropyRate μ T (restrictLabel a (⋃ i, F i)) ≤
       ENNReal.ofReal (Real.log 2 + t) := by
-    rw [← EReal.coe_ennreal_le_coe_ennreal_iff, EReal.coe_ennreal_ofReal, max_eq_left hc0,
-      EReal.coe_add, ← ht]
+    rw [← coe_ennreal_le_coe_iff_le_ofReal hc0, EReal.coe_add, ← ht]
     refine ((isInlSeparated_restrictLabel_iUnion hFa hUdisj).partitionEntropyRate_le_log_two_add
       hT.measurable hζ).trans ?_
     gcongr
@@ -174,7 +185,7 @@ theorem partitionEntropyRate_le_ofReal_log_two_add (hT : MeasurePreserving T μ 
 /-- For a measure-preserving map `T` of a compact uniform space with a weakly regular Borel
 probability measure, and a real number `t` equal to the topological entropy of `T`,
 `h_μ(T) ≤ log 2 + t`. -/
-theorem measureEntropy_le_ofReal_log_two_add (hT : MeasurePreserving T μ μ) {t : ℝ}
+private theorem measureEntropy_le_ofReal_log_two_add (hT : MeasurePreserving T μ μ) {t : ℝ}
     (ht : coverEntropy T univ = t) :
     measureEntropy μ T ≤ ENNReal.ofReal (Real.log 2 + t) := by
   rw [measureEntropy_eq_iSup_fin hT]
@@ -185,17 +196,11 @@ probability measure, `h_μ(T) ≤ log 2 + h_top(T)`. -/
 theorem measureEntropy_le_log_two_add_coverEntropy (hT : MeasurePreserving T μ μ) :
     (measureEntropy μ T : EReal) ≤ Real.log 2 + coverEntropy T univ := by
   have hX : Nonempty X := nonempty_of_isProbabilityMeasure μ
-  rcases eq_or_ne (coverEntropy T univ) ⊤ with htop | htop
+  obtain htop | ⟨t, ht0, ht⟩ := coverEntropy_univ_eq_top_or_eq_coe T
   · rw [htop, EReal.coe_add_top]
     exact le_top
-  have hbot : coverEntropy T univ ≠ ⊥ :=
-    ((coverEntropy_nonneg T univ_nonempty).trans_lt' EReal.bot_lt_zero).ne'
-  have ht := (EReal.coe_toReal htop hbot).symm
-  have hc0 : 0 ≤ Real.log 2 + (coverEntropy T univ).toReal :=
-    add_nonneg (Real.log_nonneg one_le_two)
-      (EReal.toReal_nonneg (coverEntropy_nonneg T univ_nonempty))
-  rw [ht, ← EReal.coe_add, ← max_eq_left hc0, ← EReal.coe_ennreal_ofReal,
-    EReal.coe_ennreal_le_coe_ennreal_iff]
+  rw [ht, ← EReal.coe_add,
+    coe_ennreal_le_coe_iff_le_ofReal (add_nonneg (Real.log_nonneg one_le_two) ht0)]
   exact measureEntropy_le_ofReal_log_two_add hT ht
 
 /-- **Goodwyn's inequality.** For a continuous map `T` of a compact uniform space (for instance a
@@ -204,15 +209,10 @@ measure entropy is at most the topological entropy: `h_μ(T) ≤ coverEntropy T 
 theorem measureEntropy_le_coverEntropy (hT : MeasurePreserving T μ μ) (hTc : Continuous T) :
     (measureEntropy μ T : EReal) ≤ coverEntropy T univ := by
   have hX : Nonempty X := nonempty_of_isProbabilityMeasure μ
-  rcases eq_or_ne (coverEntropy T univ) ⊤ with htop | htop
+  obtain htop | ⟨t, ht0, ht⟩ := coverEntropy_univ_eq_top_or_eq_coe T
   · rw [htop]
     exact le_top
-  have hbot : coverEntropy T univ ≠ ⊥ :=
-    ((coverEntropy_nonneg T univ_nonempty).trans_lt' EReal.bot_lt_zero).ne'
-  set t := (coverEntropy T univ).toReal
-  have ht : coverEntropy T univ = t := (EReal.coe_toReal htop hbot).symm
-  have ht0 : 0 ≤ t := EReal.toReal_nonneg (coverEntropy_nonneg T univ_nonempty)
-  rw [ht, ← max_eq_left ht0, ← EReal.coe_ennreal_ofReal, EReal.coe_ennreal_le_coe_ennreal_iff]
+  rw [ht, coe_ennreal_le_coe_iff_le_ofReal ht0]
   -- Apply the bound with `log 2` to `T^[k]` and divide by `k`.
   have hk (k : ℕ) (hk : k ≠ 0) :
       measureEntropy μ T ≤ ENNReal.ofReal (Real.log 2 / k + t) := by
