@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.NNReal.Defs
+public import TauCeti.Algebra.Order.Nonneg.Int
 public import TauCeti.Algebra.Order.Ring.Cast
 public import TauCeti.Combinatorics.Network.Coefficients
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
@@ -221,6 +222,15 @@ theorem nonnegAssignment_apply_eq_natCast (f : Flow cap s t) {x y : V} (e : Q x 
   Subtype.ext (by
     simpa only [coe_nonnegAssignment, Nonneg.coe_natCast] using
       (f.coe_natAssignment e).symm)
+
+/-- The ordered additive equivalence from nonnegative integers to natural numbers sends the
+nonnegative arrow values of an integer flow to its natural arrow values. -/
+@[simp]
+theorem nonnegAssignment_map_intOrderAddMonoidIsoNat (f : Flow cap s t) :
+    f.nonnegAssignment.map Nonneg.intOrderAddMonoidIsoNat = f.natAssignment := by
+  funext x y e
+  simp only [Assignment.map_apply, Nonneg.intOrderAddMonoidIsoNat_apply, natAssignment_apply]
+  rw [coe_nonnegAssignment]
 
 end Flow
 
