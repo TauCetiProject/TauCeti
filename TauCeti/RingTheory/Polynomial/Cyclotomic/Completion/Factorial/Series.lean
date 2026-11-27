@@ -30,6 +30,8 @@ factorial digits are one.
 
 ## Main results
 
+* `TauCeti.CycloCompletion.summable_of_forall_mem_span_factorialPoly`: a family whose members
+  lie in `(P_{m_a})` with `m_a → ∞` is summable.
 * `TauCeti.CycloCompletion.hasSum_factorialSeries`: the series is unconditionally summable, with
   sum `factorialSeries b`.
 * `TauCeti.CycloCompletion.proj_factorialIndex_factorialSeries`: modulo `P_N` the sum is
@@ -40,8 +42,8 @@ factorial digits are one.
   `TauCeti.CycloCompletion.map_factorialSeries`: additivity, scalar and polynomial multiplication,
   and coefficient change.
 * `TauCeti.CycloCompletion.factorialDigit_factorialSeries`,
-  `TauCeti.CycloCompletion.factorialSeries_factorialDigit`: reconstruction from bounded-degree
-  digits and from the digits of an element.
+  `TauCeti.CycloCompletion.factorialSeries_factorialDigit`: a series with `deg a_n ≤ n` has digits
+  `a_n`; every element is the series of its digits.
 * `TauCeti.CycloCompletion.factorialDigit_kontsevich`: every digit of `F` is one.
 
 ## References
@@ -64,15 +66,25 @@ namespace CycloCompletion
 
 open PolyFamilyLimit
 
+/-- A family in the full completion whose member `x_a` is a multiple of `P_{m_a}`, where
+`m_a → ∞` along the cofinite filter, is summable: modulo each index only finitely many of its
+members are nonzero. -/
+theorem summable_of_forall_mem_span_factorialPoly {α : Type*}
+    {x : α → CycloCompletion R {n | 0 < n}} {m : α → ℕ} (hm : Tendsto m cofinite atTop)
+    (hx : ∀ a, x a ∈ Ideal.span {fromPoly R {n | 0 < n} (factorialPoly R (m a))}) :
+    Summable x := by
+  refine summable_iff_forall_eventually_proj_eq_zero.mpr fun f ↦ ?_
+  filter_upwards [hm.eventually (eventually_dvd_factorialIndex f)] with a ha
+  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (hx a)
+  rw [← hc, map_mul, proj_fromPoly,
+    AdjoinRoot.mk_eq_zero.mpr (ha.trans (factorialIndex_dvd_iff.mpr dvd_rfl)), mul_zero]
+
 /-- The factorial terms `b_n P_n` of any polynomial sequence are summable in the full completion:
 modulo each index only finitely many of them are nonzero. -/
 theorem summable_fromPoly_mul_factorialPoly (b : ℕ → R[X]) :
-    Summable fun n ↦ fromPoly R {n | 0 < n} (b n * factorialPoly R n) := by
-  refine summable_iff_forall_eventually_proj_eq_zero.mpr fun f ↦ ?_
-  rw [Nat.cofinite_eq_atTop]
-  filter_upwards [eventually_dvd_factorialIndex f] with n hn
-  rw [proj_fromPoly, AdjoinRoot.mk_eq_zero]
-  exact (hn.trans (factorialIndex_dvd_iff.mpr dvd_rfl)).mul_left _
+    Summable fun n ↦ fromPoly R {n | 0 < n} (b n * factorialPoly R n) :=
+  summable_of_forall_mem_span_factorialPoly (m := id) (Nat.cofinite_eq_atTop ▸ tendsto_id)
+    fun n ↦ Ideal.mem_span_singleton'.mpr ⟨fromPoly R _ (b n), (map_mul _ _ _).symm⟩
 
 /-- The factorial series `∑_{n ≥ 0} b_n P_n` of an arbitrary polynomial sequence `b`, in the full
 cyclotomic completion. -/
@@ -106,6 +118,7 @@ theorem eventually_mk_sum_eq_proj_factorialSeries (b : ℕ → R[X]) (f : cycloI
 
 /-- **Finite projections of a factorial series.** Modulo `P_N`, the factorial series
 `∑_{n ≥ 0} b_n P_n` is the finite sum `∑_{n < N} b_n P_n`. -/
+@[simp]
 theorem proj_factorialIndex_factorialSeries (b : ℕ → R[X]) (N : ℕ) :
     proj (factorialIndex R N) (factorialSeries b) =
       AdjoinRoot.mk _ (∑ n ∈ range N, b n * factorialPoly R n) := by
@@ -175,8 +188,9 @@ theorem map_factorialSeries (φ : R →+* R') (b : ℕ → R[X]) :
     fun n ↦ ?_).tsum_eq.symm
   simp [map_fromPoly, map_factorialPoly]
 
-/-- **Reconstruction from digits.** For coefficients with `deg a_n ≤ n`, the normalized factorial
-digits of the factorial series `∑_{n ≥ 0} a_n P_n` are the coefficients `a_n`. -/
+/-- **Digits of a bounded-degree factorial series.** For coefficients with `deg a_n ≤ n`, the
+normalized factorial digits of the factorial series `∑_{n ≥ 0} a_n P_n` are the coefficients
+`a_n`. -/
 theorem factorialDigit_factorialSeries {a : ℕ → R[X]} (ha : ∀ n, (a n).degree ≤ n) :
     (factorialSeries a).factorialDigit = a :=
   factorialDigit_eq_of_eventually ha fun _ ↦ eventually_mk_sum_eq_proj_factorialSeries a _
