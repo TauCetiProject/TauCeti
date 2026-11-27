@@ -22,13 +22,11 @@ commutator and iterate formulas and the state-level Borcherds identity.
 
 ## Main results
 
-* `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_sum` and
-  `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_finsum`: the Borcherds commutator formula
+* `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_sum`: the Borcherds commutator formula
   `⁅a₍ₘ₎, b₍ₙ₎⁆ = ∑_{j < N} (m choose j) (a₍ⱼ₎ b)₍ₘ₊ₙ₋ⱼ₎`, its `m = 0` specialization
   `TauCeti.FormalVertexAxioms.lie_ncoeff_zero_field` (`⁅a₍₀₎, b₍ₙ₎⁆ = (a₍₀₎ b)₍ₙ₎`), and the
   derivation identity `TauCeti.FormalVertexAxioms.ncoeff_zero_field_ncoeff_apply`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply_apply_eq_sum` and
-  `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply_apply_eq_finsum`: the Borcherds iterate
+* `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply_apply_eq_sum`: the Borcherds iterate
   formula for `((a₍ₙ₎ b)₍q₎) c`.
 * `TauCeti.FormalVertexAxioms.borcherds_finsum`, `TauCeti.FormalVertexAxioms.borcherds`, and
   `TauCeti.FormalVertexAxioms.exists_borcherds`: the full three-parameter Borcherds identity for
@@ -75,17 +73,7 @@ theorem lie_ncoeff_field_eq_sum [HasUniqueDiv V] (a b : V) (m n : ℤ) {N : ℕ}
   refine sum_subset (range_mono (le_max_left N L)) fun j _ hj ↦ ?_
   simp [hN j (by simp only [mem_range] at hj; omega)]
 
-/-- **Borcherds commutator formula** in `finsum` form, independent of a chosen locality bound. -/
-theorem lie_ncoeff_field_eq_finsum [HasUniqueDiv V] (a b : V) (m n : ℤ) :
-    ⁅(A.field a)[[m]], (A.field b)[[n]]⁆ =
-      ∑ᶠ i : ℕ, Ring.choose m i • (A.field (((A.field a)[[(i : ℤ)]]) b))[[m + n - i]] := by
-  obtain ⟨N, h⟩ := A.exists_isLocalOfOrder a b
-  have hN (j : ℕ) (hj : N ≤ j) : ((A.field a)[[(j : ℤ)]]) b = 0 :=
-    A.ncoeff_field_apply_eq_zero_of_isLocalOfOrder h hj
-  rw [A.lie_ncoeff_field_eq_sum a b m n hN, eq_comm]
-  exact TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by simp [hN i hi]
-
-/-- The `0`-th mode `a₍₀₎` commutes with `Y(b, z)` by `[a₍₀₎, b₍ₙ₎] = (a₍₀₎ b)₍ₙ₎`. -/
+/-- The commutator of the `0`-th mode `a₍₀₎` with `b₍ₙ₎` is `⁅a₍₀₎, b₍ₙ₎⁆ = (a₍₀₎ b)₍ₙ₎`. -/
 @[simp]
 theorem lie_ncoeff_zero_field [HasUniqueDiv V] (a b : V) (n : ℤ) :
     ⁅(A.field a)[[0]], (A.field b)[[n]]⁆ = (A.field (((A.field a)[[0]]) b))[[n]] := by
@@ -113,16 +101,6 @@ theorem ncoeff_field_ncoeff_apply_apply_eq_sum [HasUniqueDiv V] (a b c : V) (n q
         (((A.field a)[[n - j]]) (((A.field b)[[q + j]]) c) -
           Int.negOnePow n • ((A.field b)[[n + q - j]]) (((A.field a)[[(j : ℤ)]]) c)) := by
   rw [A.field_ncoeff_apply, ncoeff_nthProduct_apply_eq_sum n (A.field a) (A.field b) q c ha hb]
-
-/-- **Mode iterate / associativity formula** (`m = 0` case of the Borcherds identity) in `finsum`
-form: `((a₍ₙ₎ b)₍ᵣ₎) c = ∑ᶠ i : ℕ, (-1)ⁱ (n choose i) (a₍ₙ₋ᵢ₎ (b₍ᵣ₊ᵢ₎ c) - (-1)ⁿ b₍ₙ₊ᵣ₋ᵢ₎ (a₍ᵢ₎ c))`
-for all `a, b, c : V` and all integers `n, r : ℤ`. -/
-theorem ncoeff_field_ncoeff_apply_apply_eq_finsum [HasUniqueDiv V] (a b c : V) (n r : ℤ) :
-    ((A.field (((A.field a)[[n]]) b))[[r]]) c =
-      ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
-        (((A.field a)[[n - i]]) (((A.field b)[[r + i]]) c) -
-          (n.negOnePow : ℤ) • ((A.field b)[[n + r - i]]) (((A.field a)[[(i : ℤ)]]) c)) := by
-  rw [A.field_ncoeff_apply, ncoeff_nthProduct_apply]
 
 /-! ### The full Borcherds identity -/
 

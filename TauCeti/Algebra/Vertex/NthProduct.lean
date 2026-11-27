@@ -45,8 +45,8 @@ products (`lie_ncoeff_nthProduct`).
 ## Main results
 
 * `VertexOperator.ncoeff_nthProduct_apply_eq_sum` and
-  `VertexOperator.ncoeff_nthProduct_apply`: unified mode formula for all `n, m : ℤ` in finite-sum
-  and `finsum` forms.
+  `VertexOperator.ncoeff_nthProduct_apply_eq_finsum`: unified mode formula for all `n, m : ℤ` in
+  finite-sum and `finsum` forms.
 * `VertexOperator.nthProduct_derivative_left`: `(∂A)₍ₙ₎ B = -n • A₍ₙ₋₁₎ B`.
 * `VertexOperator.derivative_nthProduct`: `∂(A₍ₙ₎ B) = (∂A)₍ₙ₎ B + A₍ₙ₎ (∂B)`.
 * `VertexOperator.lie_ncoeff_nthProduct_eq_add`, `VertexOperator.lie_ncoeff_nthProduct`:
@@ -424,7 +424,7 @@ theorem ncoeff_neg_one_nthProduct_apply {A B : VertexOperator R V} {vac : V}
 over a commutative ring, in `finsum` form:
 `((A_{(n)} B)_{(r)}) v = ∑ᶠ i : ℕ, (-1)ⁱ (n choose i) (A₍ₙ₋ᵢ₎ (B₍ᵣ₊ᵢ₎ v) - (-1)ⁿ B₍ₙ₊ᵣ₋ᵢ₎ (A₍ᵢ₎ v))`
 for all `A, B : VertexOperator R V`, `n, r : ℤ`, and `v : V`. -/
-theorem ncoeff_nthProduct_apply (A B : VertexOperator R V) (n r : ℤ) (v : V) :
+theorem ncoeff_nthProduct_apply_eq_finsum (A B : VertexOperator R V) (n r : ℤ) (v : V) :
     ((nthProduct n A B)[[r]]) v =
       ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
         ((A[[n - i]]) ((B[[r + i]]) v) -

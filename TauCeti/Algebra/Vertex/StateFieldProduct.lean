@@ -27,7 +27,7 @@ state–field map on every integer mode product `(a₍ₙ₎ b)` (`n : ℤ`) wit
 * `TauCeti.FormalVertexAxioms.field_ncoeff_apply`: state–field correspondence
   `Y(a₍ₙ₎ b, z) = Y(a, z)₍ₙ₎ Y(b, z)` for all `n : ℤ` under `[HasUniqueDiv V]`, together with the
   specializations `field_ncoeff_neg_one_apply`, `field_ncoeff_natCast_apply`,
-  `field_ncoeff_zero_apply`, and `field_ncoeff_neg_succ_apply`.
+  `field_ncoeff_zero_apply`, and `field_ncoeff_neg_natCast_sub_one_apply`.
 
 ## References
 
@@ -85,7 +85,7 @@ theorem field_ncoeff_zero_apply [HasUniqueDiv V] (a b : V) :
   rw [A.field_ncoeff_apply, nthProduct_zero]
 
 /-- For `k : ℕ`, `Y(a₍₋ₖ₋₁₎ b, z)` is `:(∂_z^{(k)} Y(a, z)) Y(b, z):`. -/
-theorem field_ncoeff_neg_succ_apply [HasUniqueDiv V] (a b : V) (k : ℕ) :
+theorem field_ncoeff_neg_natCast_sub_one_apply [HasUniqueDiv V] (a b : V) (k : ℕ) :
     A.field (((A.field a)[[-(k : ℤ) - 1]]) b) =
       normalOrder (hasseDeriv k (A.field a)) (A.field b) := by
   rw [A.field_ncoeff_apply, nthProduct_neg_natCast_sub_one]

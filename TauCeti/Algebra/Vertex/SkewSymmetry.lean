@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Vertex.Axioms
-import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.RingTheory.Binomial.PascalSum
 
@@ -38,8 +37,6 @@ stated in this division-free form over a torsion-free module, as well as in the 
   over `ℚ`.
 * `TauCeti.FormalVertexAxioms.ncoeff_zero_field_apply_add_mem_range_translation`:
   `a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range A.translation`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_finsum_ncoeff_field_apply_vacuum`:
-  division-free `finsum` skew symmetry.
 
 ## Implementation notes
 
@@ -255,20 +252,5 @@ theorem ncoeff_zero_field_apply_add_mem_range_translation [Module ℚ V] (a b : 
       (A.translation ^ j) (((A.field b)[[(j + 1 : ℕ)]]) a), ?_⟩
   simp only [Units.smul_def]
   rw [map_zsmul, map_rat_smul, pow_succ', mul_apply_eq_comp]
-
-/-- **Skew symmetry (division-free `finsum` form):**
-`a₍ₙ₎ b = ∑ᶠ i : ℕ, -(-1)ⁿ⁺ⁱ (b₍ₙ₊ᵢ₎ a)₍₋ᵢ₋₁₎|0⟩`. -/
-theorem ncoeff_field_apply_eq_finsum_ncoeff_field_apply_vacuum [HasUniqueDiv V] (a b : V) (n : ℤ) :
-    ((A.field a)[[n]]) b =
-      ∑ᶠ i : ℕ, (-((n + i).negOnePow : ℤ)) •
-        ((A.field (((A.field b)[[n + i]]) a))[[-(i : ℤ) - 1]]) A.vacuum := by
-  obtain ⟨M, hM⟩ := (A.field b).exists_forall_ncoeff_add_apply_eq_zero a n
-  rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := M) fun i hi ↦ by simp [hM i hi],
-    A.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum a b n M fun k hk ↦ by
-      have hk' : k = n + ((k - n).toNat : ℤ) := by omega
-      rw [hk']
-      exact hM (k - n).toNat (by omega)]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [Int.negOnePow_succ, Units.smul_def, Units.val_neg, neg_smul]
 
 end TauCeti.FormalVertexAxioms

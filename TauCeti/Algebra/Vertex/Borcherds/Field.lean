@@ -21,7 +21,7 @@ For any two mutually local vertex operators `A` and `B` over an arbitrary commut
 
 The proof follows from the Pascal recurrence on `(m, n, r)` via
 `TauCeti.eq_zero_of_pascal_recurrence`, with the `m = 0` iterate formula
-(`VertexOperator.ncoeff_nthProduct_apply`) and the `n = 0` commutator formula
+(`VertexOperator.ncoeff_nthProduct_apply_eq_finsum`) and the `n = 0` commutator formula
 (`VertexOperator.IsLocalOfOrder.lie_ncoeff_eq_sum_nthProduct`) as base cases.
 
 ## Main results
@@ -185,7 +185,7 @@ private theorem borcherds_eq {A B : VertexOperator R V} {N : ℕ}
   · rw [borcherdsLHS, finsum_eq_single _ 0 (fun i hi ↦ by
       simp [Ring.choose_zero_pos ℤ (Nat.pos_of_ne_zero hi)])]
     simpa [borcherdsRHS, borcherdsLHSTerm, borcherdsRHSTerm₁, borcherdsRHSTerm₂] using
-      ncoeff_nthProduct_apply A B q s v
+      ncoeff_nthProduct_apply_eq_finsum A B q s v
   · rw [borcherdsRHS, finsum_eq_single _ 0 (fun i hi ↦ by
       simp [Ring.choose_zero_pos ℤ (Nat.pos_of_ne_zero hi)])]
     have hL : borcherdsLHS A B v p 0 s = (⁅A[[p]], B[[s]]⁆) v := by

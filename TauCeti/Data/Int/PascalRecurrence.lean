@@ -10,9 +10,9 @@ import Mathlib.Algebra.Order.Ring.Int
 import Mathlib.Tactic.Lift
 
 /-!
-# Uniqueness for the two-variable Pascal recurrence on `ℤ`
+# Uniqueness for the Pascal recurrence on `ℤ × ℤ × ℤ`
 
-An additive-monoid-valued function `D : ℤ → ℤ → ℤ → G` satisfying the Pascal-type recurrence
+An `AddZeroClass`-valued function `D : ℤ → ℤ → ℤ → G` satisfying the Pascal-type recurrence
 
 `D (p + 1) q s = D p q (s + 1) + D p (q + 1) s`
 
@@ -31,7 +31,7 @@ public section
 
 namespace TauCeti
 
-/-- An additive-group- or monoid-valued function on `ℤ × ℤ × ℤ` satisfying the Pascal recurrence
+/-- An `AddZeroClass`-valued function on `ℤ × ℤ × ℤ` satisfying the Pascal recurrence
 `D (p + 1) q s = D p q (s + 1) + D p (q + 1) s` and vanishing on the two axes `p = 0` and `q = 0`
 vanishes everywhere. -/
 theorem eq_zero_of_pascal_recurrence {G : Type*} [AddZeroClass G] (D : ℤ → ℤ → ℤ → G)

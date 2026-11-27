@@ -208,15 +208,6 @@ theorem ncoeff_add_apply_eq_sum {B : VertexOperator R V} {a : V} {N : ℕ}
   · have hj : ij.2 ≠ 0 := fun hj ↦ hne (Prod.ext (by simpa [hj] using mem_antidiagonal.1 hij) hj)
     rw [A.ncoeff_field_apply_vacuum_of_nonneg a _ (by omega), map_zero, smul_zero, smul_zero]
 
-/-- If `Y(a, z)` and `Y(b, z)` are local of order `N`, then `a₍ᵢ₎ b = 0` for all `i ≥ N`. -/
-theorem ncoeff_field_apply_eq_zero_of_isLocalOfOrder {a b : V} {N : ℕ}
-    (h : (A.field a).IsLocalOfOrder (A.field b) N) {i : ℕ} (hi : N ≤ i) :
-    ((A.field a)[[(i : ℤ)]]) b = 0 := by
-  have hsum := A.ncoeff_add_apply_eq_sum (h.mono hi) 0
-  rw [zero_add] at hsum
-  rw [hsum]
-  exact sum_eq_zero fun ij _ ↦ by simp [A.ncoeff_field_apply_vacuum_of_nonneg]
-
 /-- **Goddard's uniqueness theorem.** Two fields that are local to every field `Y(a,z)` of a
 formal vertex algebra and agree on the vacuum are equal. -/
 theorem eq_of_ncoeff_apply_vacuum_eq {B C : VertexOperator R V}
