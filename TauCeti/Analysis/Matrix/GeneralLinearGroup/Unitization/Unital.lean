@@ -47,37 +47,6 @@ namespace TauCeti
 
 variable (𝕜 A : Type*) [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
 
-/-- The splitting `A⁺ ≃+* A × 𝕜`, `(r, a) ↦ (r • 1 + a, r)`, of the unitization of a unital
-normed algebra is continuous. -/
-theorem _root_.Unitization.continuous_prodAlgEquiv :
-    Continuous ((Unitization.prodAlgEquiv 𝕜 A).toRingEquiv : Unitization 𝕜 A →+* A × 𝕜) := by
-  have h : ⇑((Unitization.prodAlgEquiv 𝕜 A).toRingEquiv : Unitization 𝕜 A →+* A × 𝕜) =
-      fun x ↦ (algebraMap 𝕜 A x.fst + x.snd, x.fst) :=
-    funext fun x ↦ Unitization.prodAlgEquiv_apply x
-  rw [h]
-  exact (((continuous_algebraMap 𝕜 A).comp Unitization.continuous_fst).add
-    Unitization.continuous_snd).prodMk Unitization.continuous_fst
-
-/-- The inverse `A × 𝕜 ≃+* A⁺`, `(b, r) ↦ (r, b - r • 1)`, of the splitting of the unitization of
-a unital normed algebra is continuous. -/
-theorem _root_.Unitization.continuous_prodAlgEquiv_symm :
-    Continuous ((Unitization.prodAlgEquiv 𝕜 A).toRingEquiv.symm : A × 𝕜 →+* Unitization 𝕜 A) := by
-  rw [Unitization.isUniformEmbedding_addEquiv.isUniformInducing.isInducing.continuous_iff]
-  have h : ⇑(Unitization.addEquiv 𝕜 A) ∘
-      ⇑((Unitization.prodAlgEquiv 𝕜 A).toRingEquiv.symm : A × 𝕜 →+* Unitization 𝕜 A) =
-      fun y ↦ (y.2, y.1 - algebraMap 𝕜 A y.2) :=
-    funext fun y ↦ Prod.ext (by simp) (by simp)
-  rw [h]
-  exact continuous_snd.prodMk
-    (continuous_fst.sub ((continuous_algebraMap 𝕜 A).comp continuous_snd))
-
-/-- The map `A⁺ →+* A`, `(r, a) ↦ r • 1 + a`, the lift of the identity of a unital normed algebra
-`A` to its unitization, is continuous. -/
-theorem _root_.Unitization.continuous_lift_id :
-    Continuous (Unitization.lift (NonUnitalAlgHom.id 𝕜 A) : Unitization 𝕜 A →+* A) := by
-  rw [← Unitization.fst_comp_prodAlgEquiv]
-  exact continuous_fst.comp (Unitization.continuous_prodAlgEquiv 𝕜 A)
-
 variable [RegularNormedAlgebra 𝕜 A]
 
 namespace UnitizationKOne
@@ -101,8 +70,7 @@ theorem unitalProdEquiv_apply_fst (x : StableComponentGroup (Unitization 𝕜 A)
         (Unitization.continuous_lift_id 𝕜 A) x := by
   simp only [unitalProdEquiv, MulEquiv.trans_apply, StableComponentGroup.mapEquiv_apply,
     StableComponentGroup.prodEquiv_apply, StableComponentGroup.map_map,
-    ← Unitization.fst_comp_prodAlgEquiv]
-  rfl
+    AlgEquiv.toRingEquiv_toRingHom, ← Unitization.fst_comp_prodAlgEquiv]
 
 /-- Under `π₀GL_∞(A⁺) ≃* π₀GL_∞(A) × π₀GL_∞(𝕜)`, the second component is induced by the scalar
 part `A⁺ → 𝕜`. -/
@@ -113,8 +81,7 @@ theorem unitalProdEquiv_apply_snd (x : StableComponentGroup (Unitization 𝕜 A)
         (Unitization.continuous_fstHom 𝕜 A) x := by
   simp only [unitalProdEquiv, MulEquiv.trans_apply, StableComponentGroup.mapEquiv_apply,
     StableComponentGroup.prodEquiv_apply, StableComponentGroup.map_map,
-    ← Unitization.snd_comp_prodAlgEquiv]
-  rfl
+    AlgEquiv.toRingEquiv_toRingHom, ← Unitization.snd_comp_prodAlgEquiv]
 
 /-- The inverse of `π₀GL_∞(A⁺) ≃* π₀GL_∞(A) × π₀GL_∞(𝕜)` is the inverse of the stable component
 group of a product followed by the map induced by the inverse splitting. -/

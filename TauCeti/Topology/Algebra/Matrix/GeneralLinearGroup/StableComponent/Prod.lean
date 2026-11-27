@@ -7,7 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.AlgebraicK1
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent.Basic
+public import TauCeti.Topology.Algebra.Ring.Basic
 
 /-!
 # The stable component group of a product of topological rings
@@ -38,7 +39,6 @@ sends a pair of classes of invertible matrices of a common size to the class of 
   lies in the identity component exactly when both of its components do.
 * `TauCeti.StableComponentGroup.prodEquiv_apply`,
   `TauCeti.StableComponentGroup.prodEquiv_symm_mk`: the isomorphism and its inverse on classes.
-* `RingHom.continuous_fst`, `RingHom.continuous_snd`: continuity of the bundled projections.
 * `TauCeti.StableComponentGroup.map_fst_prodEquiv_symm`,
   `TauCeti.StableComponentGroup.map_snd_prodEquiv_symm`: the projections recover the two
   components from the inverse.
@@ -54,18 +54,6 @@ public section
 noncomputable section
 
 namespace TauCeti
-
-/-- The first projection `A × B →+* A` is continuous, stated for the bundled ring homomorphism so
-that it matches the continuity argument of `TauCeti.StableComponentGroup.map`. -/
-theorem _root_.RingHom.continuous_fst {A B : Type*} [NonAssocSemiring A] [TopologicalSpace A]
-    [NonAssocSemiring B] [TopologicalSpace B] : Continuous (RingHom.fst A B) :=
-  _root_.continuous_fst
-
-/-- The second projection `A × B →+* B` is continuous, stated for the bundled ring homomorphism
-so that it matches the continuity argument of `TauCeti.StableComponentGroup.map`. -/
-theorem _root_.RingHom.continuous_snd {A B : Type*} [NonAssocSemiring A] [TopologicalSpace A]
-    [NonAssocSemiring B] [TopologicalSpace B] : Continuous (RingHom.snd A B) :=
-  _root_.continuous_snd
 
 variable {A B : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A] [Ring B]
   [TopologicalSpace B] [IsTopologicalRing B]
