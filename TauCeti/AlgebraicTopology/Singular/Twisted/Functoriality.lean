@@ -150,6 +150,15 @@ lemma twistedChainComplexπ_comp_twistedChainComplexMap :
         Q.twistedChainComplexπ L :=
   P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
 
+/-- The quotient maps on twisted chains commute with the pair map in each degree. -/
+@[reassoc]
+lemma twistedChainComplexπ_f_comp_twistedChainComplexMap_f (n : ℕ) :
+    (P.twistedChainComplexπ ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)).f n ≫
+        (twistedChainComplexMap f L).f n =
+      (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L).f n ≫
+        (Q.twistedChainComplexπ L).f n :=
+  HomologicalComplex.congr_hom (twistedChainComplexπ_comp_twistedChainComplexMap f L) n
+
 /-- In each degree, the relative twisted chain map sends the class of an ambient chain to the class
 of its image. -/
 @[simp]
@@ -159,10 +168,8 @@ lemma twistedChainComplexMap_f_twistedChainComplexπ_f_apply {k : ℕ}
         ((P.twistedChainComplexπ ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)).f k
           c) =
       (Q.twistedChainComplexπ L).f k
-        ((LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L).f k c) := by
-  rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f,
-    twistedChainComplexπ_comp_twistedChainComplexMap, HomologicalComplex.comp_f,
-    ConcreteCategory.comp_apply]
+        ((LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L).f k c) :=
+  ConcreteCategory.congr_hom (twistedChainComplexπ_f_comp_twistedChainComplexMap_f f L k) c
 
 /-- **Relative twisted chains of a subpair inject.** If the ambient component of a map of pairs
 `f : (X, A) ⟶ (Y, B)` is injective and every point of `X` sent into `B` lies in `A`, then `f`

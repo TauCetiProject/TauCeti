@@ -12,8 +12,9 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision.Basic
 /-!
 # Relative barycentric subdivision with local coefficients
 
-`TopPair.twistedSubdivisionChainMap` and `TopPair.twistedSubdivisionHomotopy` descend
-the ambient subdivision and prism of `LocalCoefficientSystem` through the relative cokernel.
+`TopPair.twistedSubdivisionChainMap` and `TopPair.twistedSubdivisionHomotopy` descend the
+ambient subdivision and prism of `LocalCoefficientSystem` using `TopPair.twistedChainComplexDesc`
+and `Homotopy.descCokernel`.
 They are natural in pairs and local coefficients, and subdivision induces the identity on
 relative homology compatibly with the pair sequence (Hatcher, *Algebraic Topology*, §2.1,
 proof of Proposition 2.21, and §3.H).
@@ -48,9 +49,8 @@ lemma twistedChainComplexπ_comp_twistedSubdivisionChainMap :
 @[reassoc (attr := simp)]
 lemma twistedChainComplexπ_f_comp_twistedSubdivisionChainMap_f (n : ℕ) :
     (P.twistedChainComplexπ L).f n ≫ (P.twistedSubdivisionChainMap L).f n =
-      L.twistedSubdivisionChainMap.f n ≫ (P.twistedChainComplexπ L).f n := by
-  simpa only [HomologicalComplex.comp_f] using
-    congrArg (fun g ↦ g.f n) (P.twistedChainComplexπ_comp_twistedSubdivisionChainMap L)
+      L.twistedSubdivisionChainMap.f n ≫ (P.twistedChainComplexπ L).f n :=
+  HomologicalComplex.congr_hom (P.twistedChainComplexπ_comp_twistedSubdivisionChainMap L) n
 
 /-- Relative subdivision computes on any ambient chain representative. -/
 @[simp]
@@ -59,23 +59,55 @@ lemma twistedSubdivisionChainMap_f_apply {n : ℕ} (c : L.twistedChainComplex.X 
       (P.twistedChainComplexπ L).f n (L.twistedSubdivisionChainMap.f n c) :=
   ConcreteCategory.congr_hom (P.twistedChainComplexπ_f_comp_twistedSubdivisionChainMap_f L n) c
 
-local instance (n : ℕ) : Epi ((P.twistedChainComplexπ L).f n) :=
-  (ModuleCat.epi_iff_surjective _).2 (P.twistedChainComplexπ_f_surjective L)
+/-- Relative barycentric subdivision fixes degree-zero chains. -/
+@[simp]
+lemma twistedSubdivisionChainMap_f_zero : (P.twistedSubdivisionChainMap L).f 0 = 𝟙 _ := by
+  rw [← cancel_epi ((P.twistedChainComplexπ L).f 0)]
+  simp only [twistedChainComplexπ_f_comp_twistedSubdivisionChainMap_f,
+    LocalCoefficientSystem.twistedSubdivisionChainMap_f,
+    LocalCoefficientSystem.twistedSubdivisionX_zero, Category.id_comp, Category.comp_id]
+
+/-- The relative twisted prism is a homotopy from the identity to barycentric subdivision. -/
+def twistedSubdivisionHomotopy :
+    _root_.Homotopy (𝟙 (P.twistedChainComplex L)) (P.twistedSubdivisionChainMap L) :=
+  _root_.Homotopy.descCokernel L.twistedSubdivisionHomotopy
+    (LocalCoefficientSystem.twistedChainComplexMap P.map L)
+    (P.twistedChainComplexπ L) (P.twistedChainComplexπ L) (P.twistedChainComplex_condition_f L)
+    (P.isColimitCokernelCoforkTwistedChainComplexX L)
+    (fun i j ↦ by
+      by_cases hij : i + 1 = j
+      · subst j
+        simp only [LocalCoefficientSystem.twistedSubdivisionHomotopy_hom,
+          LocalCoefficientSystem.twistedChainComplexMap_f_comp_twistedPrismX_assoc,
+          twistedChainComplex_condition_f, comp_zero]
+      · rw [(L.twistedSubdivisionHomotopy).zero i j (by simpa using hij), zero_comp, comp_zero])
+    (by simp only [Category.comp_id, Category.id_comp])
+    (P.twistedChainComplexπ_comp_twistedSubdivisionChainMap L)
 
 /-- The relative subdivision prism sends a chain class to the class of its ambient prism. -/
-def twistedPrismX (n : ℕ) :
-    (P.twistedChainComplex L).X n ⟶ (P.twistedChainComplex L).X (n + 1) :=
-  (P.isColimitCokernelCoforkTwistedChainComplexX L n).desc
-    (CokernelCofork.ofπ (L.twistedPrismX n ≫ (P.twistedChainComplexπ L).f (n + 1)) (by
-      rw [← Category.assoc, LocalCoefficientSystem.twistedChainComplexMap_f_comp_twistedPrismX,
-        Category.assoc, twistedChainComplex_condition_f, comp_zero]))
+def twistedPrismX (n : ℕ) : (P.twistedChainComplex L).X n ⟶ (P.twistedChainComplex L).X (n + 1) :=
+  (P.twistedSubdivisionHomotopy L).hom n (n + 1)
+
+/-- The successor-degree component of the relative subdivision homotopy is the relative prism
+`twistedPrismX` by definition. -/
+@[simp]
+lemma twistedSubdivisionHomotopy_hom (n : ℕ) :
+    (P.twistedSubdivisionHomotopy L).hom n (n + 1) = P.twistedPrismX L n := (rfl)
 
 /-- The relative prism agrees with the ambient prism after projection to relative chains. -/
 @[reassoc (attr := simp)]
 lemma twistedChainComplexπ_f_comp_twistedPrismX (n : ℕ) :
     (P.twistedChainComplexπ L).f n ≫ P.twistedPrismX L n =
-      L.twistedPrismX n ≫ (P.twistedChainComplexπ L).f (n + 1) :=
-  (P.isColimitCokernelCoforkTwistedChainComplexX L n).fac _ WalkingParallelPair.one
+      L.twistedPrismX n ≫ (P.twistedChainComplexπ L).f (n + 1) := by
+  rw [← twistedSubdivisionHomotopy_hom, twistedSubdivisionHomotopy,
+    _root_.Homotopy.π_descCokernel_hom, LocalCoefficientSystem.twistedSubdivisionHomotopy_hom]
+
+/-- The relative subdivision prism vanishes in degree zero. -/
+@[simp]
+lemma twistedPrismX_zero : P.twistedPrismX L 0 = 0 := by
+  rw [← cancel_epi ((P.twistedChainComplexπ L).f 0)]
+  simp only [twistedChainComplexπ_f_comp_twistedPrismX,
+    LocalCoefficientSystem.twistedPrismX_zero, zero_comp, comp_zero]
 
 /-- The relative prism computes on any ambient chain representative. -/
 @[simp]
@@ -83,38 +115,6 @@ lemma twistedPrismX_apply {n : ℕ} (c : L.twistedChainComplex.X n) :
     P.twistedPrismX L n ((P.twistedChainComplexπ L).f n c) =
       (P.twistedChainComplexπ L).f (n + 1) (L.twistedPrismX n c) :=
   ConcreteCategory.congr_hom (P.twistedChainComplexπ_f_comp_twistedPrismX L n) c
-
-/-- The relative twisted prism is a homotopy from the identity to barycentric subdivision. -/
-def twistedSubdivisionHomotopy :
-    _root_.Homotopy (𝟙 (P.twistedChainComplex L)) (P.twistedSubdivisionChainMap L) :=
-  _root_.Homotopy.equivSubZero.symm <| _root_.Homotopy.mkChainComplex _ (P.twistedPrismX L)
-    (by
-      rw [← cancel_epi ((P.twistedChainComplexπ L).f 0)]
-      simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.id_f,
-        Preadditive.comp_sub, Category.comp_id, twistedChainComplexπ_f_comp_twistedPrismX_assoc,
-        twistedChainComplexπ_f_comp_twistedSubdivisionChainMap_f,
-        LocalCoefficientSystem.twistedSubdivisionChainMap_f,
-        LocalCoefficientSystem.twistedSubdivisionX_zero, LocalCoefficientSystem.twistedPrismX_zero,
-        Category.id_comp, sub_self, zero_comp])
-    (fun n ↦ by
-      rw [← cancel_epi ((P.twistedChainComplexπ L).f (n + 1))]
-      simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.id_f,
-        Preadditive.comp_sub, Category.comp_id,
-        twistedChainComplexπ_f_comp_twistedSubdivisionChainMap_f,
-        Preadditive.comp_add, LocalCoefficientSystem.twistedSubdivisionChainMap_f]
-      -- Move the quotient past the two terms of the ambient homotopy identity.
-      rw [(P.twistedChainComplexπ L).comm_assoc,
-        twistedChainComplexπ_f_comp_twistedPrismX_assoc,
-        twistedChainComplexπ_f_comp_twistedPrismX,
-        (P.twistedChainComplexπ L).comm, ← Category.assoc, ← Category.assoc, ← Preadditive.add_comp,
-        LocalCoefficientSystem.twistedPrismX_boundary_add_boundary_twistedPrismX,
-        Preadditive.sub_comp, Category.id_comp])
-
-/-- The successor-degree component of the relative subdivision homotopy is the relative prism. -/
-@[simp]
-lemma twistedSubdivisionHomotopy_hom (n : ℕ) :
-    (P.twistedSubdivisionHomotopy L).hom n (n + 1) = P.twistedPrismX L n :=
-  _root_.Homotopy.mkChainComplex_hom_succ _ _ _ _ n
 
 /-- Barycentric subdivision induces the identity on relative homology with local coefficients. -/
 @[simp]
@@ -161,11 +161,11 @@ lemma twistedChainComplexMap_f_comp_twistedPrismX (n : ℕ) :
     (twistedChainComplexMap f K).f n ≫ Q.twistedPrismX K n =
       P.twistedPrismX ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj K) n ≫
         (twistedChainComplexMap f K).f (n + 1) := by
-  have h (i : ℕ) := congrArg (fun g ↦ g.f i) (twistedChainComplexπ_comp_twistedChainComplexMap f K)
-  simp only [HomologicalComplex.comp_f] at h
-  rw [← cancel_epi ((P.twistedChainComplexπ _).f n), reassoc_of% h n,
+  rw [← cancel_epi ((P.twistedChainComplexπ _).f n)]
+  simp only [twistedChainComplexπ_f_comp_twistedChainComplexMap_f_assoc,
     twistedChainComplexπ_f_comp_twistedPrismX, twistedChainComplexπ_f_comp_twistedPrismX_assoc,
-    h, LocalCoefficientSystem.twistedChainComplexMap_f_comp_twistedPrismX_assoc]
+    twistedChainComplexπ_f_comp_twistedChainComplexMap_f,
+    LocalCoefficientSystem.twistedChainComplexMap_f_comp_twistedPrismX_assoc]
 
 variable (P) {L}
   {M : LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ M)
@@ -187,11 +187,10 @@ lemma twistedChainComplexCoefficientMap_comp_twistedSubdivisionChainMap :
 lemma twistedChainComplexCoefficientMap_f_comp_twistedPrismX (n : ℕ) :
     (P.twistedChainComplexCoefficientMap η).f n ≫ P.twistedPrismX M n =
       P.twistedPrismX L n ≫ (P.twistedChainComplexCoefficientMap η).f (n + 1) := by
-  have h (i : ℕ) :=
-    congrArg (fun g ↦ g.f i) (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η)
-  simp only [HomologicalComplex.comp_f] at h
-  rw [← cancel_epi ((P.twistedChainComplexπ L).f n), reassoc_of% h n,
+  rw [← cancel_epi ((P.twistedChainComplexπ L).f n)]
+  simp only [twistedChainComplexπ_f_comp_twistedChainComplexCoefficientMap_f_assoc,
     twistedChainComplexπ_f_comp_twistedPrismX, twistedChainComplexπ_f_comp_twistedPrismX_assoc,
-    h, LocalCoefficientSystem.twistedChainComplexCoefficientMap_f_comp_twistedPrismX_assoc]
+    twistedChainComplexπ_f_comp_twistedChainComplexCoefficientMap_f,
+    LocalCoefficientSystem.twistedChainComplexCoefficientMap_f_comp_twistedPrismX_assoc]
 
 end TopPair
