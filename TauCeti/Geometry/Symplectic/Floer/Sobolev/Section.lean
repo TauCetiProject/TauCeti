@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Cylinder.W1p
 public import TauCeti.Analysis.Sobolev.QuasilinearSection
-public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 
 /-!
 # The Floer section on spaces of `W^{1,p}` jets
@@ -38,7 +40,25 @@ section `ξ` is `F(w + ξ) - F(w)` almost everywhere
 If moreover `J` and `G` are differentiable in `y`, with bounded, jointly continuous derivatives
 `J'`, `G'` that are uniformly equicontinuous, it is strictly differentiable, with derivative the
 linearization `TauCeti.quasilinearLinearization` of these coefficients
-(`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`).
+(`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`), and hence continuously differentiable
+(`TauCeti.SymplecticForm.contDiff_floerSection`).
+
+**The derivative is the linearized Floer operator.** The zeroth-order part of the linearized Floer
+operator along a map `u` is `η ↦ (dJ(z, u) η) ∂t u + dG(z, u) η`
+(`TauCeti.SymplecticForm.floerLinearizationCoeff_eq_flip_add_fderiv_floerZerothOrder`), and the
+linearization of the Floer coefficients at `x₀ = (ξ₀, ξ₀_s, ξ₀_t)` is
+`h ↦ h_s + J(u₀) h_t + (J'(u₀) h) (∂t w + ξ₀_t) + G'(u₀) h` with `u₀ = w + ξ₀`. On `W^{1,p}` of the
+cylinder, when the Hamiltonian vector fields are differentiable and `u₀` has the classical
+derivative `∂t u₀ = ∂t w + ξ₀_t` almost everywhere, essentially bounded, the two agree: the
+linearization is the Sobolev realization `D_{u₀}` of the linearized Floer operator
+(`TauCeti.SymplecticForm.floerSobolevOperator`;
+`TauCeti.SymplecticForm.quasilinearLinearization_eq_floerSobolevOperator`), which is therefore the
+strict derivative of the Floer section at `x₀`
+(`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection_floerSobolevOperator`). At the reference
+map, `x₀ = 0`, the conditions on `x₀` hold automatically, and the derivative of the Floer section
+around `w` at `0` is `D_w` (`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection_zero`). Through
+these identifications, properties of `D_w` such as being Fredholm or onto become properties of the
+derivative of the Floer section, as the implicit function and Sard–Smale theorems require.
 
 Under the hypotheses of `TauCeti.SymplecticForm.floerSection_apply_ae` (`∂t w` and `J` bounded,
 `J` and `G` Lipschitz in `y` uniformly in `z`), the Floer section is everywhere given by its
@@ -71,6 +91,15 @@ jets of differentiable sections, and has the same derivative.
 * `TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`: for coefficients differentiable in `y`
   with bounded, continuous, uniformly equicontinuous derivatives, the Floer section is strictly
   differentiable, with derivative the linearization of the Floer coefficients.
+* `TauCeti.SymplecticForm.contDiff_floerSection`: under the same hypotheses, the Floer section is
+  `C¹`.
+* `TauCeti.SymplecticForm.quasilinearLinearization_eq_floerSobolevOperator`: at a point whose
+  value has bounded classical `t`-derivative equal to its weak one, the linearization of the Floer
+  coefficients is the Sobolev realization of the linearized Floer operator.
+* `TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection_floerSobolevOperator`: the strict
+  derivative of the Floer section at such a point `x₀` is `D_{w + ξ₀}`.
+* `TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection_zero`: the strict derivative of the Floer
+  section at the reference map is `D_w`.
 
 ## References
 
@@ -200,5 +229,135 @@ theorem hasStrictFDerivAt_floerSection
   rw [floerSection_def]
   exact hasStrictFDerivAt_quasilinearSection he hJc hGc hJ'c hG'c hw
     (aestronglyMeasurable_fderiv_apply w) hwB hJC hJ hJ'K hJ'u hG hG'K hG'u x₀
+
+/-- **The Floer section is `C¹`.** Under the hypotheses of
+`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`, the Floer section is strictly
+differentiable at every point, hence continuously differentiable. -/
+theorem contDiff_floerSection
+    (he : ∀ x : X, ∀ᵐ z ∂μ, ((x : Lp (V × V × V) p μ) z).1 = e x z)
+    {J' : ℝ × ℝ → V → V →L[ℝ] V →L[ℝ] V} {G' : ℝ × ℝ → V → V →L[ℝ] V}
+    (hJc : Continuous (Function.uncurry J))
+    (hGc : Continuous (Function.uncurry (ω.floerZerothOrder J Ks Kt)))
+    (hJ'c : Continuous (Function.uncurry J')) (hG'c : Continuous (Function.uncurry G'))
+    (hw : AEStronglyMeasurable w μ) {B C : ℝ} {K L : ℝ≥0}
+    (hwB : ∀ z, ‖fderiv ℝ w z (0, 1)‖ ≤ B) (hJC : ∀ z y, ‖J z y‖ ≤ C)
+    (hJ : ∀ z y, HasFDerivAt (J z) (J' z y) y) (hJ'K : ∀ z y, ‖J' z y‖ ≤ K)
+    (hJ'u : UniformEquicontinuous J')
+    (hG : ∀ z y, HasFDerivAt (ω.floerZerothOrder J Ks Kt z) (G' z y) y)
+    (hG'K : ∀ z y, ‖G' z y‖ ≤ L) (hG'u : UniformEquicontinuous G') :
+    ContDiff ℝ 1 (ω.floerSection e J Ks Kt w) :=
+  contDiff_one_of_forall_hasStrictFDerivAt fun x₀ ↦ hasStrictFDerivAt_floerSection he hJc hGc
+    hJ'c hG'c hw hwB hJC hJ hJ'K hJ'u hG hG'K hG'u x₀
+
+/-! ### The derivative is the linearized Floer operator -/
+
+section Linearization
+
+open CylinderSobolev (W1p continuousValue fst_ae_eq_continuousValue)
+open StripSobolev (stripMeasure)
+
+variable {J' : ℝ × ℝ → V → V →L[ℝ] V →L[ℝ] V} {G' : ℝ × ℝ → V → V →L[ℝ] V}
+
+/-- **The linearization of the Floer coefficients is the linearized Floer operator.** Let
+`2 < p < ∞`, let `∂t w` be bounded, let `J` be bounded and continuous, and let `J'`, `G'` be
+bounded, continuous derivatives in `y` of `J` and of the zeroth-order term
+`G = -X_{K_s} - J X_{K_t}`, the Hamiltonian vector fields being differentiable. At a point
+`x₀ = (ξ₀, ξ₀_s, ξ₀_t)` of `W^{1,p}` of the cylinder whose continuous value `ξ₀` makes
+`u₀ = w + ξ₀` a map with `∂t u₀ = ∂t w + ξ₀_t` almost everywhere and `∂t u₀` essentially bounded,
+the linearization `TauCeti.quasilinearLinearization` of the Floer coefficients at `x₀` is the
+Sobolev realization `D_{u₀}` of the linearized Floer operator along `u₀`
+(`TauCeti.SymplecticForm.floerSobolevOperator`). -/
+theorem quasilinearLinearization_eq_floerSobolevOperator (hp : 2 < p) (hpt : p ≠ ∞)
+    (hJc : Continuous (Function.uncurry J)) (hJ'c : Continuous (Function.uncurry J'))
+    (hG'c : Continuous (Function.uncurry G')) (hw : AEStronglyMeasurable w stripMeasure)
+    {B B' C : ℝ} {K L : ℝ≥0} (hwB : ∀ z, ‖fderiv ℝ w z (0, 1)‖ ≤ B) (hJC : ∀ z y, ‖J z y‖ ≤ C)
+    (hJ'K : ∀ z y, ‖J' z y‖ ≤ K) (hG'K : ∀ z y, ‖G' z y‖ ≤ L) (x₀ : W1p V p)
+    (hJ : ∀ z, HasFDerivAt (J z) (J' z (w z + continuousValue p x₀ z))
+      (w z + continuousValue p x₀ z))
+    (hG : ∀ z, HasFDerivAt (ω.floerZerothOrder J Ks Kt z) (G' z (w z + continuousValue p x₀ z))
+      (w z + continuousValue p x₀ z))
+    (hKs : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks z))
+      (w z + continuousValue p x₀ z))
+    (hKt : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt z))
+      (w z + continuousValue p x₀ z))
+    (hx₀ : ∀ᵐ z ∂stripMeasure, fderiv ℝ (w + ⇑(continuousValue p x₀)) z (0, 1) =
+      fderiv ℝ w z (0, 1) + ((x₀ : Lp (V × V × V) p stripMeasure) z).2.2)
+    (hx₀B : ∀ᵐ z ∂stripMeasure, ‖fderiv ℝ (w + ⇑(continuousValue p x₀)) z (0, 1)‖ ≤ B') :
+    quasilinearLinearization (continuousValue p) J J' G' w (fun z ↦ fderiv ℝ w z (0, 1)) x₀ =
+      ω.floerSobolevOperator p J Ks Kt (w + ⇑(continuousValue p x₀)) := by
+  set u₀ := w + ⇑(continuousValue p x₀)
+  -- `u₀ z` unfolds to the point `w z + continuousValue p x₀ z` of the hypotheses
+  have hM : MemLp (ω.floerJetCoeff J Ks Kt u₀) ∞ stripMeasure :=
+    ω.memLp_top_floerJetCoeff hJc hJ'c hG'c
+      (hw.add (continuousValue p x₀).continuous.aestronglyMeasurable) hJC hJ'K hG'K hJ hG hKs hKt
+      hx₀B
+  refine ContinuousLinearMap.ext fun h ↦ Lp.ext ?_
+  filter_upwards [quasilinearLinearization_apply_ae (e := continuousValue p) hJc hJ'c hG'c hw
+      (aestronglyMeasurable_fderiv_apply w) hwB hJC hJ'K hG'K x₀ h,
+    coeFn_floerSobolevOperator ω hM h, hx₀, fst_ae_eq_continuousValue hp hpt h]
+    with z e₁ e₂ e₃ e₄
+  rw [e₁, e₂, ω.floerJetCoeff_eq_firstOrderJetCoeff (hJ z) (hG z) (hKs z) (hKt z),
+    firstOrderJetCoeff_apply, e₃, ← e₄]
+  simp only [u₀, Pi.add_apply, add_apply, ContinuousLinearMap.flip_apply, map_add]
+  abel
+
+/-- **The derivative of the Floer section is the linearized Floer operator.** Under the hypotheses
+of `TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`, with differentiable Hamiltonian
+vector fields, at a point `x₀ = (ξ₀, ξ₀_s, ξ₀_t)` of `W^{1,p}` of the cylinder for which
+`u₀ = w + ξ₀` has `∂t u₀ = ∂t w + ξ₀_t` almost everywhere and `∂t u₀` essentially bounded, the
+strict derivative of the Floer section is the Sobolev realization `D_{u₀}` of the linearized Floer
+operator along `u₀`. -/
+theorem hasStrictFDerivAt_floerSection_floerSobolevOperator (hp : 2 < p) (hpt : p ≠ ∞)
+    (hJc : Continuous (Function.uncurry J))
+    (hGc : Continuous (Function.uncurry (ω.floerZerothOrder J Ks Kt)))
+    (hJ'c : Continuous (Function.uncurry J')) (hG'c : Continuous (Function.uncurry G'))
+    (hw : AEStronglyMeasurable w stripMeasure) {B B' C : ℝ} {K L : ℝ≥0}
+    (hwB : ∀ z, ‖fderiv ℝ w z (0, 1)‖ ≤ B) (hJC : ∀ z y, ‖J z y‖ ≤ C)
+    (hJ : ∀ z y, HasFDerivAt (J z) (J' z y) y) (hJ'K : ∀ z y, ‖J' z y‖ ≤ K)
+    (hJ'u : UniformEquicontinuous J')
+    (hG : ∀ z y, HasFDerivAt (ω.floerZerothOrder J Ks Kt z) (G' z y) y)
+    (hG'K : ∀ z y, ‖G' z y‖ ≤ L) (hG'u : UniformEquicontinuous G')
+    (x₀ : W1p V p)
+    (hKs : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks z))
+      (w z + continuousValue p x₀ z))
+    (hKt : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt z))
+      (w z + continuousValue p x₀ z))
+    (hx₀ : ∀ᵐ z ∂stripMeasure, fderiv ℝ (w + ⇑(continuousValue p x₀)) z (0, 1) =
+      fderiv ℝ w z (0, 1) + ((x₀ : Lp (V × V × V) p stripMeasure) z).2.2)
+    (hx₀B : ∀ᵐ z ∂stripMeasure, ‖fderiv ℝ (w + ⇑(continuousValue p x₀)) z (0, 1)‖ ≤ B') :
+    HasStrictFDerivAt (ω.floerSection (continuousValue p) J Ks Kt w)
+      (ω.floerSobolevOperator p J Ks Kt (w + ⇑(continuousValue p x₀))) x₀ := by
+  rw [← quasilinearLinearization_eq_floerSobolevOperator hp hpt hJc hJ'c hG'c hw hwB hJC hJ'K hG'K
+    x₀ (fun z ↦ hJ z _) (fun z ↦ hG z _) hKs hKt hx₀ hx₀B]
+  exact hasStrictFDerivAt_floerSection (fst_ae_eq_continuousValue hp hpt) hJc hGc hJ'c hG'c hw hwB
+    hJC hJ hJ'K hJ'u hG hG'K hG'u x₀
+
+/-- **The derivative of the Floer section at the reference map is `D_w`.** Under the hypotheses of
+`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`, with differentiable Hamiltonian vector
+fields, the strict derivative of the Floer section on `W^{1,p}` of the cylinder around `w` at `0`
+is the Sobolev realization `D_w` of the linearized Floer operator along `w`. -/
+theorem hasStrictFDerivAt_floerSection_zero (hp : 2 < p) (hpt : p ≠ ∞)
+    (hJc : Continuous (Function.uncurry J))
+    (hGc : Continuous (Function.uncurry (ω.floerZerothOrder J Ks Kt)))
+    (hJ'c : Continuous (Function.uncurry J')) (hG'c : Continuous (Function.uncurry G'))
+    (hw : AEStronglyMeasurable w stripMeasure) {B C : ℝ} {K L : ℝ≥0}
+    (hwB : ∀ z, ‖fderiv ℝ w z (0, 1)‖ ≤ B) (hJC : ∀ z y, ‖J z y‖ ≤ C)
+    (hJ : ∀ z y, HasFDerivAt (J z) (J' z y) y) (hJ'K : ∀ z y, ‖J' z y‖ ≤ K)
+    (hJ'u : UniformEquicontinuous J')
+    (hG : ∀ z y, HasFDerivAt (ω.floerZerothOrder J Ks Kt z) (G' z y) y)
+    (hG'K : ∀ z y, ‖G' z y‖ ≤ L) (hG'u : UniformEquicontinuous G')
+    (hKs : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks z)) (w z))
+    (hKt : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt z)) (w z)) :
+    HasStrictFDerivAt (ω.floerSection (continuousValue p) J Ks Kt w)
+      (ω.floerSobolevOperator p J Ks Kt w) 0 := by
+  have hv : w + ⇑(continuousValue p (0 : W1p V p)) = w := by simp
+  have h := hasStrictFDerivAt_floerSection_floerSobolevOperator hp hpt hJc hGc hJ'c hG'c hw hwB
+    hJC hJ hJ'K hJ'u hG hG'K hG'u (B' := B) 0 (by simpa using hKs) (by simpa using hKt) ?_ ?_
+  · rwa [hv] at h
+  · filter_upwards [Lp.coeFn_zero (V × V × V) p stripMeasure] with z hz
+    simp only [hv, Submodule.coe_zero, hz, Pi.zero_apply, Prod.snd_zero, add_zero]
+  · simpa [hv] using Filter.Eventually.of_forall hwB
+
+end Linearization
 
 end TauCeti.SymplecticForm
