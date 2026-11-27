@@ -56,7 +56,7 @@ transport rule `TauCeti.SpinStructure.fiberOrientation_map` in `simp`. -/
 @[simp high]
 theorem fiberOrientation_metricChange (s : SpinStructure F E n)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) :
-    fiberOrientation (s.metricChange g) o x =
+    (s.metricChange g).fiberOrientation o x =
       Orientation.map (Fin n) (WithFiberMetric.toWithFiberMetric g x).toLinearEquiv
         (s.fiberOrientation o x) := by
   have := s.finiteDimensional_fiber

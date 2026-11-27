@@ -105,7 +105,9 @@ linear map, the orthogonal complement of its kernel has the dimension of the cod
 Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
 (`LinearMap.toContinuousLinearMap_star`) and its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
-Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`).
+Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`), and
+conjugation by an isometric isomorphism of Hilbert spaces commutes with adjoints
+(`LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv`).
 
 -/
 
@@ -669,6 +671,21 @@ instance instIsIsometricSMul [CompleteSpace E] : IsIsometricSMul (unitary (E →
   isometry_smul u := (Unitary.linearIsometryEquiv u).isometry
 
 end Unitary
+
+namespace LinearIsometryEquiv
+
+/-- Conjugation `T ↦ e ∘ T ∘ e⁻¹` by an isometric isomorphism of Hilbert spaces commutes with
+adjoints. -/
+@[simp]
+theorem adjoint_conjContinuousAlgEquiv [CompleteSpace E] [CompleteSpace F] (e : E ≃ₗᵢ[𝕜] F)
+    (T : E →L[𝕜] E) :
+    ContinuousLinearMap.adjoint (e.toContinuousLinearEquiv.conjContinuousAlgEquiv T) =
+      e.toContinuousLinearEquiv.conjContinuousAlgEquiv (ContinuousLinearMap.adjoint T) :=
+  -- Mathlib's star algebra equivalence `e.conjStarAlgEquiv` is defined as this conjugation
+  -- together with its compatibility with `star = adjoint`, so `map_star` is the statement.
+  (map_star e.conjStarAlgEquiv T).symm
+
+end LinearIsometryEquiv
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 

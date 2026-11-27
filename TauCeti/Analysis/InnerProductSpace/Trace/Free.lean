@@ -67,6 +67,8 @@ pairing `tr (T* U) = tr (T U)` is real.
   `TauCeti.traceFreePart_id`: `traceFreePart` projects onto the trace-free endomorphisms along the
   scalars.
 * `TauCeti.trace_traceFreePart_mul`: the projection is orthogonal for the trace pairing.
+* `ContinuousLinearEquiv.traceFreePart_conjContinuousAlgEquiv`: conjugation by a continuous linear
+  equivalence commutes with the projection.
 * `TauCeti.finrank_traceFreeSelfAdjoint`: the trace-free self-adjoint endomorphisms of a complex
   inner product space of dimension `n` have real dimension `n² - 1`.
 -/
@@ -310,6 +312,16 @@ theorem _root_.IsSelfAdjoint.traceFreePart [CompleteSpace E]
   rw [traceFreePart_apply]
   exact hT.sub ((htr.div (.natCast _)).smul (by
     rw [IsSelfAdjoint, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_id]))
+
+/-- Conjugation `T ↦ e ∘ T ∘ e⁻¹` by a continuous linear equivalence commutes with taking trace-free
+parts, as it is unital and preserves traces and dimensions. -/
+theorem _root_.ContinuousLinearEquiv.traceFreePart_conjContinuousAlgEquiv {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] (e : E ≃L[𝕜] F) (T : E →L[𝕜] E) :
+    traceFreePart 𝕜 F (e.conjContinuousAlgEquiv T) =
+      e.conjContinuousAlgEquiv (traceFreePart 𝕜 E T) := by
+  rw [traceFreePart_apply, traceFreePart_apply, map_sub, map_smul,
+    ContinuousLinearEquiv.trace_conjContinuousAlgEquiv, e.toLinearEquiv.finrank_eq,
+    ← ContinuousLinearMap.one_def, ← ContinuousLinearMap.one_def, map_one]
 
 end TraceFreePart
 

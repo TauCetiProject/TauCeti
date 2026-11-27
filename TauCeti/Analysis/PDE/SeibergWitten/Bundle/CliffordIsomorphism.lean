@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Analysis.PDE.SeibergWitten.Bundle.QuadraticTwoForm
 public import TauCeti.Topology.VectorBundle.SpinStructure.Orientation
 
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
@@ -121,7 +122,9 @@ orientation `o` of `V`, read through `b`, is `o` pulled back along `κ_p` for ev
 theorem fiberOrientation_map_repr (s : SpinCStructure F E 4) {x : X} (p : s.P x) :
     s.fiberOrientation (Orientation.map (Fin 4) b.repr.toLinearEquiv o) x =
       Orientation.map (Fin 4) (s.vectorFrame b p).symm.toLinearEquiv o := by
-  rw [fiberOrientation_eq_map_frameAt s _ p, ← Orientation.map_trans]
+  -- `Spinᶜ(4)` acts on frames through `SO(4)`, by transformations of determinant `1`.
+  rw [s.fiberOrientation_eq_map_frameAt
+    (fun g ↦ by simp [QuadraticMap.det_coe_specialOrthogonalGroup]) _ p, ← Orientation.map_trans]
   congr 2
   ext v
   simp
@@ -137,7 +140,7 @@ local notation "hklE" x =>
 
 /-- The Hodge star of two-forms on the fibre `E x`, for the orientation induced by `s`. -/
 local notation "⋆[" s ", " x "]" =>
-  Orientation.hodgeStar (fiberOrientation (s : SpinCStructure F E 4)
+  Orientation.hodgeStar (OrthonormalFrameLift.fiberOrientation (s : SpinCStructure F E 4)
     (Orientation.map (Fin 4) b.repr.toLinearEquiv o) x) (hklE x)
 
 /-- The self-dual two-forms `Λ⁺_x` on the fibre `E x`. -/
@@ -370,10 +373,8 @@ theorem re_trace_adjoint_mul_cliffordRestriction (s : SpinCStructure F E 4) {x :
   -- In the frame `p`, write `T = e T₀`; both sides are then those of the model statement for `T₀`,
   -- because `e` preserves traces and, `[p, -]` being unitary, commutes with adjoints.
   obtain ⟨T₀, rfl⟩ := e.surjective T
-  have hstar : ContinuousLinearMap.adjoint (e T₀) = e (ContinuousLinearMap.adjoint T₀) := by
-    simpa [e, ContinuousLinearMap.star_eq_adjoint, LinearIsometryEquiv.conjStarAlgEquiv] using
-      (map_star (frm p).conjStarAlgEquiv T₀).symm
-  rw [inner_cliffordRestrictionAdjoint_left, cliffordRestriction_eq_conj s p, hstar,
+  rw [inner_cliffordRestrictionAdjoint_left, cliffordRestriction_eq_conj s p,
+    LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv,
     ← ContinuousLinearMap.toLinearMap_mul, ← map_mul, ← ContinuousLinearMap.toLinearMap_mul,
     ← map_mul, ContinuousLinearEquiv.trace_conjContinuousAlgEquiv,
     ContinuousLinearEquiv.trace_conjContinuousAlgEquiv, ContinuousLinearMap.toLinearMap_mul,
@@ -495,17 +496,10 @@ theorem cliffordRestriction_cliffordRestrictionAdjoint_eq_traceFreePart
   -- commutes with adjoints, as `[p, -]` is unitary, and with trace-free parts, as it is unital and
   -- preserves traces.
   obtain ⟨T₀, rfl⟩ := e.surjective T
-  have hstar : ContinuousLinearMap.adjoint (e T₀) = e (ContinuousLinearMap.adjoint T₀) := by
-    simpa [e, ContinuousLinearMap.star_eq_adjoint, LinearIsometryEquiv.conjStarAlgEquiv] using
-      (map_star (frm p).conjStarAlgEquiv T₀).symm
-  have htfp (U : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ) :
-      traceFreePart ℂ (s.halfSpinorBundle o hQ b ρ hρ 1 x) (e U) =
-        e (traceFreePart ℂ (positiveHalfSpinors o ρ) U) := by
-    rw [traceFreePart_apply, traceFreePart_apply, map_sub, map_smul,
-      ContinuousLinearEquiv.trace_conjContinuousAlgEquiv, (frm p).toLinearEquiv.finrank_eq,
-      ← ContinuousLinearMap.one_def, ← ContinuousLinearMap.one_def, map_one]
-  rw [coe_cliffordRestrictionAdjoint_eq s p, cliffordRestriction_eq_conj s p, hstar, ← map_add,
-    htfp, ← LinearMapClass.map_smul_of_tower (R := ℝ) (S := ℂ) e, e.symm_apply_apply,
+  rw [coe_cliffordRestrictionAdjoint_eq s p, cliffordRestriction_eq_conj s p,
+    LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv, ← map_add,
+    ContinuousLinearEquiv.traceFreePart_conjContinuousAlgEquiv,
+    ← LinearMapClass.map_smul_of_tower (R := ℝ) (S := ℂ) e, e.symm_apply_apply,
     ← SeibergWitten.cliffordRestriction_cliffordRestrictionAdjoint_eq_traceFreePart o hQ hρ hkl h₂]
   simp [e]
 
@@ -524,6 +518,7 @@ theorem cliffordRestriction_cliffordRestrictionAdjoint_of_mem_traceFreeSelfAdjoi
   module
 
 /-- The inverse of the Clifford isomorphism is `τ_x / 4`. -/
+@[simp]
 theorem cliffordRestrictionEquiv_symm_apply (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
     (s : SpinCStructure F E 4) {x : X}
     (T : traceFreeSelfAdjoint (s.halfSpinorBundle o hQ b ρ hρ 1 x)) :
