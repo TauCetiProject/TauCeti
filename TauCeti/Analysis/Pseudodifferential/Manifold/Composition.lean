@@ -574,6 +574,19 @@ private theorem classicalPrincipalSymbol_comp_mulLeft_one_sub_comp_eq_zero
   rw [h₁, classicalPrincipalSymbol_eq_zero_of_mem_sub_one hS, hφx] at h₂
   simpa using h₂
 
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- **Splitting a composition by a cutoff.** For operators `A`, `B` and a smooth function `X` on
+`M`, `A ∘ B = A X B + A (1 - X) B`. -/
+theorem comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp
+    (A B : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (X : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    A ∘ₗ B = A ∘ₗ LinearMap.mulLeft ℂ X ∘ₗ B + A ∘ₗ LinearMap.mulLeft ℂ (1 - X) ∘ₗ B := by
+  have hid : LinearMap.mulLeft ℂ X + LinearMap.mulLeft ℂ (1 - X) = LinearMap.id := by
+    ext f q
+    simp [sub_mul]
+  rw [← LinearMap.comp_add, ← LinearMap.add_comp, hid, LinearMap.id_comp]
+
 /-- **The principal symbol of a composition** is the product of the principal symbols:
 `σ_{m'+m}(P ∘ Q)(x, ξ) = σ_{m'}(P)(x, ξ) σ_m(Q)(x, ξ)` for classical pseudodifferential operators
 `P` of order `m'` and `Q` of order `m`. -/
@@ -600,16 +613,11 @@ theorem classicalPrincipalSymbol_comp (hP : P ∈ classicalPseudodifferentialOpe
   set X := e.complexCutoffPullback he χ 1
   have hPXQ := comp_mem_classicalPseudodifferentialOperators hP
     (mulLeft_comp_mem_classicalPseudodifferentialOperators hQ X)
-  have hsplit : P ∘ₗ Q = P ∘ₗ LinearMap.mulLeft ℂ X ∘ₗ Q +
-      P ∘ₗ LinearMap.mulLeft ℂ (1 - X) ∘ₗ Q := by
-    have hid : LinearMap.mulLeft ℂ X + LinearMap.mulLeft ℂ (1 - X) = LinearMap.id := by
-      ext f q
-      simp [sub_mul]
-    rw [← LinearMap.comp_add, ← LinearMap.add_comp, hid, LinearMap.id_comp]
   -- `P X Q` is seen in the chart, as `Op(a # b)` for the chart symbols `a` of `P` and `b` of `Q`.
   obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he φ χ₂
   obtain ⟨b, hb⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hQ).2 e he χ φ
-  rw [hsplit, classicalPrincipalSymbol_add hPXQ (comp_mem_classicalPseudodifferentialOperators hP
+  rw [comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp P Q X,
+    classicalPrincipalSymbol_add hPXQ (comp_mem_classicalPseudodifferentialOperators hP
       (mulLeft_comp_mem_classicalPseudodifferentialOperators hQ (1 - X))),
     classicalPrincipalSymbol_eq_mul_of_eq_sharp hPXQ hP hQ he hχφ hχ₂ _ ha hb
       (quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_mulLeft_comp he hχ₂ ha hb) hx

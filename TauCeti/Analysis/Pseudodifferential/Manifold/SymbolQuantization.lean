@@ -155,6 +155,7 @@ private theorem contDiffOn_chartHomogeneousSymbol (ρ : 𝓓(⟨e.target, e.open
   · -- On the chart target, `s` read in the chart is smooth.
     have hsA := ((mem_homogeneousCotangentSymbols_iff.1 hs).2.2 e he).contDiffAt
       ((e.open_target.prod isOpen_compl_singleton).mem_nhds ⟨hy, hη⟩)
+    rw [funext (chartCotangentSymbol_apply s e)] at hsA
     exact ((Complex.ofRealCLM.contDiff.comp (ρ.contDiff.comp contDiff_fst)).contDiffAt.mul
       hsA).smul contDiffAt_const
   · -- Off the chart target, `ρ` vanishes near `y`.

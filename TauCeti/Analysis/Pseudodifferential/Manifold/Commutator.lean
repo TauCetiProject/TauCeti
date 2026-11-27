@@ -486,8 +486,7 @@ away from the diagonal (`mulLeft_comp_comp_mulLeft_one_sub_comp_sub_mem`). -/
 private theorem complexChartCompression_lie_apply {m m' : ℝ}
     {φ θ χ χ₂ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hθφ : ∀ z ∈ tsupport φ, θ z = 1)
     (hχφ : ∀ z ∈ tsupport φ, χ z = 1) (hχ₂χ : ∀ z ∈ tsupport χ, χ₂ z = 1)
-    (hχ₂φ : ∀ z ∈ tsupport φ, χ₂ z = 1) {a : ClassicalSymbol n ℂ ℂ m'}
-    {b : ClassicalSymbol n ℂ ℂ m}
+    {a : ClassicalSymbol n ℂ ℂ m'} {b : ClassicalSymbol n ℂ ℂ m}
     (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
       quantizeSchwartzValue a.toSymbol.coefficient u y =
         e.complexChartCompression he χ χ₂ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
@@ -511,18 +510,15 @@ private theorem complexChartCompression_lie_apply {m m' : ℝ}
   -- Split `⁅P, Q⁆ = (P X Q - Q X P) + (P (1 - X) Q - Q (1 - X) P)`; `φ` sees the second part
   -- only through `Θ`, and the first one is `φ Op(a # b - b # a) φ`.
   set X := e.complexCutoffPullback he χ 1
-  have hsplit (A B : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-      A ∘ₗ B = A ∘ₗ LinearMap.mulLeft ℂ X ∘ₗ B + A ∘ₗ LinearMap.mulLeft ℂ (1 - X) ∘ₗ B := by
-    have hid : LinearMap.mulLeft ℂ X + LinearMap.mulLeft ℂ (1 - X) = LinearMap.id := by
-      ext f q
-      simp [sub_mul]
-    rw [← LinearMap.comp_add, ← LinearMap.add_comp, hid, LinearMap.id_comp]
+  have hχ₂φ : ∀ z ∈ tsupport φ, χ₂ z = 1 := fun z hz ↦
+    hχ₂χ z (subset_tsupport _ (by simp [hχφ z hz]))
   rw [quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_mulLeft_comp he hχ₂χ ha hb,
     quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_mulLeft_comp he hχ₂χ hb ha,
     smul_sub, OpenPartialHomeomorph.smul_complexChartCompression_smulLeftCLM he hχφ hχ₂φ,
     OpenPartialHomeomorph.smul_complexChartCompression_smulLeftCLM he hχφ hχ₂φ, Ring.lie_def,
-    Module.End.mul_eq_comp, Module.End.mul_eq_comp, hsplit P Q, hsplit Q P]
+    Module.End.mul_eq_comp, Module.End.mul_eq_comp,
+    comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp P Q X,
+    comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp Q P X]
   simp only [X, map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply,
     ContMDiffMap.coe_add, ContMDiffMap.coe_sub, Pi.add_apply, Pi.sub_apply, LinearMap.comp_assoc,
     OpenPartialHomeomorph.complexChartCompression_mulLeft_comp_of_eq_one he hθφ]
@@ -622,7 +618,7 @@ theorem chartClassicalPrincipalSymbol_lie {m m' : ℝ}
   have hσ := coefficient_principal_eq_of_coefficient_eq_compress_add c₀ s d.toSymbol φ.contDiff
     φ.hasCompactSupport (coefficient_eq_compress_add_of_sharpCommutator hc₀ φ.contDiff
       φ.hasCompactSupport fun u z ↦ by
-      rw [hs, complexChartCompression_lie_apply he hθφ hχφ hχ₂χ hχ₂φ ha hb, hd]) hφy η
+      rw [hs, complexChartCompression_lie_apply he hθφ hχφ hχ₂χ ha hb, hd]) hφy η
   have hL : s.principal.coefficient (y, η) 1 =
       chartClassicalPrincipalSymbol (m' + m - 1) ⁅P, Q⁆ e (y, η) :=
     (eventuallyEq_chartClassicalPrincipalSymbol hPQ he hs hy hφy hφy η).self_of_nhds
