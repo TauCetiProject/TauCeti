@@ -82,7 +82,7 @@ on a σ-finite measure space.
 * `MeasureTheory.VectorMeasure.apply_eq_setIntegral_of_restrict_eq_withDensityᵥ` and
   `MeasureTheory.VectorMeasure.variation_apply_eq_setLIntegral_of_restrict_eq_withDensityᵥ`: values
   and variation of a vector measure on subsets of a set on which it has a density.
-* `MeasureTheory.VectorMeasure.exists_integrable_withDensityᵥ_eq_of_restrict`: gluing of densities
+* `MeasureTheory.VectorMeasure.exists_integrable_eq_withDensityᵥ_of_restrict`: gluing of densities
   along a countable measurable cover.
 
 ## References
@@ -472,9 +472,9 @@ theorem variation_apply_eq_setLIntegral_of_restrict_eq_withDensityᵥ [CompleteS
           MeasureTheory.withDensity_apply _ ht,
           Measure.restrict_restrict ht, Set.inter_eq_left.2 hts]
 
-/-- `MeasureTheory.VectorMeasure.exists_integrable_withDensityᵥ_eq_of_restrict` for densities that
+/-- `MeasureTheory.VectorMeasure.exists_integrable_eq_withDensityᵥ_of_restrict` for densities that
 are integrable on their pieces. -/
-private theorem exists_integrable_withDensityᵥ_eq_of_restrict_of_integrableOn [CompleteSpace F]
+private theorem exists_integrable_eq_withDensityᵥ_of_restrict_of_integrableOn [CompleteSpace F]
     [IsFiniteMeasure m.variation]
     {S : ℕ → Set X} (hS : ∀ n, MeasurableSet (S n)) (hcover : ⋃ n, S n = Set.univ)
     {f : ℕ → X → F} (hf : ∀ n, IntegrableOn (f n) (S n) ν)
@@ -520,7 +520,7 @@ private theorem exists_integrable_withDensityᵥ_eq_of_restrict_of_integrableOn 
 /-- **Gluing of densities.** Let `S n` be measurable sets covering `X`. If a vector measure `m` of
 finite variation has a density `f n` with respect to `ν` on each `S n`, then it has a single
 integrable density with respect to `ν` on all of `X`. -/
-theorem exists_integrable_withDensityᵥ_eq_of_restrict [CompleteSpace F]
+theorem exists_integrable_eq_withDensityᵥ_of_restrict [CompleteSpace F]
     [IsFiniteMeasure m.variation]
     {S : ℕ → Set X} (hS : ∀ n, MeasurableSet (S n)) (hcover : ⋃ n, S n = Set.univ)
     {f : ℕ → X → F} (hm : ∀ n, m.restrict (S n) = (ν.restrict (S n)).withDensityᵥ (f n)) :
@@ -528,7 +528,7 @@ theorem exists_integrable_withDensityᵥ_eq_of_restrict [CompleteSpace F]
   classical
   -- A density that is not integrable on `S n` gives the zero vector measure there, which also has
   -- the density `0`.
-  refine exists_integrable_withDensityᵥ_eq_of_restrict_of_integrableOn hS hcover
+  refine exists_integrable_eq_withDensityᵥ_of_restrict_of_integrableOn hS hcover
     (f := fun n ↦ if Integrable (f n) (ν.restrict (S n)) then f n else 0) (fun n ↦ ?_) fun n ↦ ?_
   · split_ifs with h
     exacts [h, integrable_zero _ _ _]
