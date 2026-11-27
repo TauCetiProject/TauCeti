@@ -76,7 +76,8 @@ theorem jet_order_pow_four_le_residue_size {x b : ℝ} {m p j : ℕ}
   have hb : 0 < b := hx.trans_le hxb
   have hB4 : log b ^ 4 ≤ m := by
     apply le_of_pow_le_pow_left₀ two_ne_zero (Nat.cast_nonneg m)
-    rw [← pow_mul, show 4 * 2 = 8 by decide]
+    rw [← pow_mul]
+    norm_num
     exact hscale.trans hm
   have hm' : 8 * log b ≤ m := by
     calc
@@ -95,7 +96,11 @@ theorem jet_order_pow_four_le_residue_size {x b : ℝ} {m p j : ℕ}
     _ ≤ exp m := exp_le_exp.mpr hm'
     _ = exp 1 ^ m := by rw [← exp_natCast_mul, mul_one]
     _ ≤ (p : ℝ) ^ m := by gcongr; exact exp_one_lt_three.le.trans (by exact_mod_cast hp)
-    _ ≤ (p : ℝ) ^ j := pow_le_pow_right₀ (by exact_mod_cast (show 1 ≤ p by omega)) hj
+    _ ≤ (p : ℝ) ^ j := by
+      have hp1 : 1 ≤ (p : ℝ) := by
+        norm_cast
+        omega
+      exact pow_le_pow_right₀ hp1 hj
 
 /-- The logarithmic factor of the cycle degree condition fits inside `√b`.
 Here `e` is the step exponent and `n` is the number of letters. -/
@@ -184,8 +189,7 @@ step exponent `e`, and base `p`. The cutoff assumptions are weaker than the
 separations in a theta-lift chain; `m` is the chain length and `k` the source rank.
 The residue size is `p^(e*n)` and the proportion parameter is `1/(m²*f)`. -/
 theorem frobenius_cycle_degree_bounds {x x₁ b : ℝ} {m k f n p e : ℕ}
-    (hx : 4 ≤ x) (hcut : x ^ 235 ≤ x₁) (hb₀ : 0 < b)
-    (hsmall : log x₁ ^ 6 ≤ log b) (hlarge : log b ^ 8 ≤ x)
+    (hcut : x ^ 235 ≤ x₁) (hb₀ : 0 < b) (hsmall : log x₁ ^ 6 ≤ log b) (hlarge : log b ^ 8 ≤ x)
     (hm : x ≤ (m : ℝ) ^ 2) (hm' : (m : ℝ) ^ 2 ≤ 4 * x)
     (hk : x ^ 3 ≤ (k : ℝ)) (hk' : (k : ℝ) ≤ x ^ 6) (hf : (f : ℝ) ≤ x ^ 12)
     (hn : n ≤ f) (hp : 3 ≤ p) (hp' : (p : ℝ) ≤ x₁)
@@ -194,6 +198,16 @@ theorem frobenius_cycle_degree_bounds {x x₁ b : ℝ} {m k f n p e : ℕ}
     (x * b) ^ 4 ≤ (p : ℝ) ^ (e * n) ∧
     ((n : ℝ) * k * log ((p : ℝ) ^ (e * n)) / (1 / ((m : ℝ) ^ 2 * f))) ^ 5 *
       ((p : ℝ) ^ e) ^ (3 * Nat.clog p m) ≤ x * b := by
+  have hx : 4 ≤ x := by
+    have hpR : (3 : ℝ) ≤ p := by exact_mod_cast hp
+    have hlog := log_le_log (by norm_num) (hpR.trans hp')
+    have hlog₁ : (21 / 20 : ℝ) ≤ log x₁ := by linarith [log_three_gt_d9]
+    have hlogb : (21 / 20 : ℝ) ^ 6 ≤ log b :=
+      (pow_le_pow_left₀ (by norm_num) hlog₁ _).trans hsmall
+    calc
+      4 ≤ ((21 / 20 : ℝ) ^ 6) ^ 8 := by norm_num
+      _ ≤ log b ^ 8 := by gcongr
+      _ ≤ x := hlarge
   have hx1 : 1 ≤ x := by linarith
   have hxx₁ : x ≤ x₁ := (le_self_pow₀ hx1 (by decide : 235 ≠ 0)).trans hcut
   have hx₁ : 1 ≤ x₁ := hx1.trans hxx₁
@@ -209,7 +223,8 @@ theorem frobenius_cycle_degree_bounds {x x₁ b : ℝ} {m k f n p e : ℕ}
   have hr' := (hr.trans hlog₁).trans (le_self_pow₀ hx1 two_ne_zero)
   have hm1 : 1 ≤ m := Nat.pos_of_ne_zero fun hm₀ ↦ by simp [hm₀] at hm; linarith
   have hne := mul_ne_zero_iff.mp (Nat.ne_of_gt (hm1.trans hlen))
-  have hf1 : 1 ≤ f := (show 1 ≤ n from Nat.pos_of_ne_zero hne.2).trans hn
+  have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hne.2
+  have hf1 : 1 ≤ f := hn1.trans hn
   have he₀ : 0 < e := Nat.pos_of_ne_zero hne.1
   refine ⟨he₀.trans_le he, ?_, ⟨by positivity, ?_⟩,
     jet_order_pow_four_le_residue_size hB hlarge hxb hm hp hlen, ?_⟩
