@@ -65,11 +65,16 @@ Each statement holds for the components of `T` in a chart and a frame, by the Eu
 `Distribution.isMicrolocallySmoothAt_iff_eventually_forall_isMicrolocallySobolevAt`,
 `Distribution.notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt` and
 `Distribution.sobolevWaveFrontSet_delta`. Reading covectors at `x` in a chart `c` is a bijection
-onto the covectors of `E`. For the neighbourhoods in the cotangent bundle, the reading
-`(y, η) ↦ ⟪η, ·⟫ ∘ dc_(c⁻¹ y)` of a vector of `E × E` as a covector of `M` at `c⁻¹ y` is continuous
-(`TauCeti.CotangentBundle.continuousAt_mk_comp_mfderiv`) and inverts the reading of covectors in
-the chart, so a neighbourhood of a covector of `M` pulls back to a neighbourhood of its reading
-(`TauCeti.CotangentBundle.eventually_mk_symm_comp_mfderiv_of_eventually`).
+onto the covectors of `E` that sends only the zero covector to zero, so the nonzero covectors at
+`x` correspond to the nonzero directions at `c x`
+(`TauCeti.BundleTest.forall_chartComponent_iff_forall_isMicrolocallyAt`), and the projections are
+instances of `TauCeti.BundleTest.proj_image_microlocalSingularSet`. For the neighbourhoods in the
+cotangent bundle, the pullback `(y, p) ↦ p ∘ Dc(c⁻¹ y)` of a point `y` of the chart target and a
+covector `p ∈ E*` to a covector of `M` at `c⁻¹ y` is continuous on `E × E*`
+(`TauCeti.CotangentBundle.continuousAt_mk_symm_comp_mfderiv`) and inverts the reading of covectors
+in the chart, so a neighbourhood of a covector of `M` pulls back to a neighbourhood of its reading
+(`TauCeti.CotangentBundle.eventually_mk_symm_comp_mfderiv_of_eventually`). Vectors `η` of `E`
+are read as covectors `⟪η, ·⟫` through `toDual`.
 
 ## References
 
@@ -127,35 +132,22 @@ theorem isLocallySobolevAt_iff_forall_isMicrolocallySobolevAt [I.Boundaryless] :
   refine ⟨fun h ξ _ ↦ h.isMicrolocallySobolevAt ξ, fun h ↦ ?_⟩
   obtain ⟨c, hc, hcs, hct, hx⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) x
   have hcx : c x ∈ (⟨c.target, c.open_target⟩ : Opens E) := c.map_source hx
-  have hcd : c.MDifferentiable I 𝓘(ℝ, E) :=
-    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩
   refine (isLocallySobolevAt_iff T hc hcs hct hx).2 fun v ↦
-    (Distribution.isLocallySobolevAt_iff_forall_isMicrolocallySobolevAt hcx).2 fun η hη ↦ ?_
-  -- The vector `η` is the reading in the chart of a nonzero covector `ξ` at `x`.
-  obtain ⟨ξ, hξη⟩ := (OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective hcd hx).2
-    (toDual ℝ E η)
-  dsimp only at hξη
-  have hξ : ξ ≠ 0 := fun h0 ↦ hη <| by
-    rw [← (toDual ℝ E).symm_apply_apply η, ← hξη]
-    exact (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).2 h0
-  have hread : (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = η := by
-    rw [← (toDual ℝ E).symm_apply_apply η]
-    exact congrArg _ hξη
-  exact hread ▸ (isMicrolocallySobolevAt_iff T hc hcs hct hx ξ).1 (h ξ hξ) v
+    (Distribution.isLocallySobolevAt_iff_forall_isMicrolocallySobolevAt hcx).2 ?_
+  exact (forall_chartComponent_iff_forall_isMicrolocallyAt
+    (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) T hc hcs hct hx).2
+      (fun ξ hξ ↦ isMicrolocallySobolevAt_def.1 (h ξ hξ)) v
 
 /-- **The projection of the `H^s` wave front set is the `H^s` singular support** (Hörmander,
 *Lectures on Nonlinear Hyperbolic Differential Equations*, §11.1), on a manifold without
 boundary. -/
 theorem proj_image_sobolevWaveFrontSet [I.Boundaryless] (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
     TotalSpace.proj '' sobolevWaveFrontSet I s T = sobolevSingularSupport I s T := by
-  ext x
-  rw [← not_iff_not, mem_sobolevSingularSupport_iff, not_not,
-    isLocallySobolevAt_iff_forall_isMicrolocallySobolevAt]
-  refine ⟨fun h ξ hξ ↦ by_contra fun hT ↦
-    h ⟨⟨x, ξ⟩, mem_sobolevWaveFrontSet_iff.2 ⟨hξ, hT⟩, rfl⟩, ?_⟩
-  rintro h ⟨p, hpT, rfl⟩
-  obtain ⟨hp, hT⟩ := mem_sobolevWaveFrontSet_iff.1 hpT
-  exact hT (h p.snd hp)
+  rw [sobolevWaveFrontSet_eq_microlocalSingularSet]
+  refine proj_image_microlocalSingularSet fun _ ↦ ?_
+  rw [mem_sobolevSingularSupport_iff, not_not]
+  simpa only [isMicrolocallySobolevAt_def] using
+    isLocallySobolevAt_iff_forall_isMicrolocallySobolevAt (T := T)
 
 /-- On a manifold without boundary, a functional has empty `H^s` singular support exactly when it
 has empty `H^s` wave front set. -/
