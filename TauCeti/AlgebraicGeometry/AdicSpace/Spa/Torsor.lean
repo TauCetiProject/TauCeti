@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.FiniteAlgebra
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Generalizing
+public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Action
 public import TauCeti.RingTheory.Etale.Torsor.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Invariant
 
@@ -116,7 +117,7 @@ theorem isOpenMap_spaComap_of_isFiniteEtaleTorsor {φ : Hom S T}
     obtain ⟨g, hg⟩ := (spaComap_eq_spaComap_iff_of_isInvariant (G := G) hφ).mp huy
     refine ⟨g, ?_⟩
     convert hu using 1
-    exact Subtype.ext <| by simpa [σ, hg] using hinv g⁻¹ u.val
+    exact Subtype.ext <| by simpa [σ, hg, smul_def] using hinv g⁻¹ u.val
   · rintro ⟨g, hg⟩
     refine ⟨σ g y, hg, (spaComap_eq_spaComap_iff_of_isInvariant (G := G) hφ).mpr
       ⟨g, (hinv g y.val).symm⟩⟩
@@ -131,7 +132,7 @@ theorem spaComap_orbits_of_isFiniteEtaleTorsor {φ : Hom S T}
     (hT : T.plus = (integralClosure (S.plus.map (algebraMap A B)) B).toSubring) :
     Function.Surjective φ.spaComap ∧ IsOpenMap φ.spaComap ∧
       ∀ x y : spa T.plus, φ.spaComap x = φ.spaComap y ↔
-        ∃ g : G, (y : Spv B) = comap (MulSemiringAction.toRingHom G B g⁻¹) x :=
+        ∃ g : G, (y : Spv B) = g • (x : Spv B) :=
   ⟨surjective_spaComap_of_isFiniteEtaleTorsor (G := G) hφ hT,
     isOpenMap_spaComap_of_isFiniteEtaleTorsor (G := G) hφ hT,
     fun _ _ ↦ spaComap_eq_spaComap_iff_of_isInvariant hφ⟩

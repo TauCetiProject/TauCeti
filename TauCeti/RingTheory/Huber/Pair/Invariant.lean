@@ -176,21 +176,25 @@ variable (G) in
 /-- The inclusion `(Aᴳ, A^{+G}) → (A, A⁺)` of the invariant pair, a morphism of Huber pairs. It
 induces the restriction `Spa(A, A⁺) → Spa(Aᴳ, A^{+G})`, `v ↦ v|_{Aᴳ}`, of adic spectra. -/
 def invariantPair.inclusion (P : Pair A) : (invariantPair G P).Hom P where
-  toRingHom := (FixedPoints.subring A G).subtype
-  continuous_toRingHom := continuous_subtypeVal
-  map_mem_plus _ ha := ha
+  toRingHom := algebraMap (FixedPoints.subring A G) A
+  continuous_toRingHom := by
+    rw [Algebra.algebraMap_ofSubring, Subring.coe_subtype]
+    exact continuous_subtypeVal
+  map_mem_plus x hx := by
+    rwa [invariantPair_plus, Subring.mem_comap, ← Algebra.algebraMap_ofSubring] at hx
 
-/-- The underlying ring homomorphism of the inclusion of the invariant pair is the inclusion of the
-fixed subring. -/
+/-- The underlying ring homomorphism of the inclusion of the invariant pair is the algebra map of
+the fixed subring. -/
 @[simp]
 theorem invariantPair.toRingHom_inclusion (P : Pair A) :
-    (invariantPair.inclusion G P).toRingHom = (FixedPoints.subring A G).subtype :=
+    (invariantPair.inclusion G P).toRingHom = algebraMap (FixedPoints.subring A G) A :=
   (rfl)
 
 /-- The inclusion of the invariant pair is injective. -/
 theorem invariantPair.inclusion_injective (P : Pair A) :
-    Function.Injective (invariantPair.inclusion G P).toRingHom :=
-  Subtype.val_injective
+    Function.Injective (invariantPair.inclusion G P).toRingHom := by
+  rw [invariantPair.toRingHom_inclusion]
+  exact FaithfulSMul.algebraMap_injective _ _
 
 end Inclusion
 
@@ -242,11 +246,12 @@ theorem invariantPair.map_injective {P : Pair A} {Q : Pair B} (f : P.Hom Q)
 
 /-- The inclusions of invariant pairs are natural: restricting an equivariant morphism of Huber
 pairs to invariants and then including is the same as including and then applying it. -/
+@[simp]
 theorem invariantPair.inclusion_comp_map {P : Pair A} {Q : Pair B} (f : P.Hom Q)
     (hf : ∀ (g : G) (a : A), f.toRingHom (g • a) = g • f.toRingHom a) :
     (invariantPair.inclusion G Q).comp (invariantPair.map G f hf) =
       f.comp (invariantPair.inclusion G P) :=
-  Pair.Hom.ext (RingHom.ext fun _ ↦ by simp)
+  Pair.Hom.ext (RingHom.ext fun _ ↦ by simp [Algebra.algebraMap_ofSubring])
 
 end Functoriality
 
@@ -285,7 +290,7 @@ invariant pair of `G`. -/
 theorem invariantPair.inclusion_comp_subgroup (H : Subgroup G) (P : Pair A) :
     (invariantPair.inclusion H P).comp (invariantPair.subgroup G H P) =
       invariantPair.inclusion G P :=
-  Pair.Hom.ext (RingHom.ext fun _ ↦ by simp)
+  Pair.Hom.ext (RingHom.ext fun _ ↦ by simp [Algebra.algebraMap_ofSubring])
 
 end Subgroup
 

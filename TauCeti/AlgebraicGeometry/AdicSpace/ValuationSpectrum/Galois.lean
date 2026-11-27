@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
-public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Action
 import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Invariant
 import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.LyingOver
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
@@ -27,8 +27,8 @@ of those extensions (`TauCeti/RingTheory/Valuation/Galois.lean`) to `Spv`:
 * if `L / K` is purely inseparable, the extension is unique;
 * if a finite group `G` acts on `L` by automorphisms fixing `K`, with fixed field purely
   inseparable over `K`, then the fibres of `Spv L → Spv K` are the `G`-orbits, for the action
-  `g • y = comap (g⁻¹ • ·) y` used over the invariants of a finite group in
-  `TauCeti/AlgebraicGeometry/AdicSpace/ValuationSpectrum/Invariant.lean`. For a normal extension
+  `g • y = comap (g⁻¹ • ·) y` of
+  `TauCeti/AlgebraicGeometry/AdicSpace/ValuationSpectrum/Action.lean`. For a normal extension
   with finitely many automorphisms, `G = Gal(L/K)` qualifies: its fixed field is the relative
   perfect closure `perfectClosure K L`, over which `Spv` therefore maps bijectively to `Spv K`.
 
@@ -82,12 +82,12 @@ when `y' = g • y` for some `g ∈ G`, where `(g • y)(b) = y(g⁻¹ • b)`. 
 theorem comap_algebraMap_eq_comap_algebraMap_iff_of_fixedPoints_le
     (hG : FixedPoints.intermediateField (F := K) G ≤ perfectClosure K L) {y y' : Spv L} :
     comap (algebraMap K L) y = comap (algebraMap K L) y' ↔
-      ∃ g : G, y' = comap (MulSemiringAction.toRingHom G L g⁻¹) y := by
-  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by rw [hg, ← smul_def, comap_algebraMap_smul]⟩
+      ∃ g : G, y' = g • y := by
+  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by rw [hg, comap_algebraMap_smul]⟩
   obtain ⟨g, hg⟩ := ValuationSubring.exists_smul_eq_of_comap_eq hG
     ((comap_eq_comap_iff_valuationSubring_comap_eq _).mp h)
   refine ⟨g, ?_⟩
-  rw [← ofValuation_valuationSubring_valuation y', ← hg,
+  rw [smul_def, ← ofValuation_valuationSubring_valuation y', ← hg,
     ValuationSubring.pointwise_smul_eq_comap, ← comap_ofValuation_valuation,
     ofValuation_valuationSubring_valuation]
 
@@ -98,7 +98,7 @@ with finitely many automorphisms, two points `y` and `y'` of `Spv L` have the sa
 theorem comap_algebraMap_eq_comap_algebraMap_iff_of_normal [Normal K L] [Finite Gal(L/K)]
     {y y' : Spv L} :
     comap (algebraMap K L) y = comap (algebraMap K L) y' ↔
-      ∃ σ : Gal(L/K), y' = comap (MulSemiringAction.toRingHom Gal(L/K) L σ⁻¹) y :=
+      ∃ σ : Gal(L/K), y' = σ • y :=
   comap_algebraMap_eq_comap_algebraMap_iff_of_fixedPoints_le (G := Gal(L/K)) fun _ hx ↦
     TauCeti.mem_perfectClosure_iff_fixed.mpr hx
 
