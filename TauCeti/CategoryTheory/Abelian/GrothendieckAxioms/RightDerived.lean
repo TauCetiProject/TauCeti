@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.Colimit
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.CategoryTheory.Abelian.RightDerived
 public import TauCeti.CategoryTheory.Preadditive.FunctorCategory
@@ -25,8 +26,9 @@ This file proves that `colimitRightDerivedComparison G q` is an isomorphism
 `CategoryTheory.Limits.colimitRightDerivedIso G q` between `colimit (rightDerivedDiagram G q)` and
 `(colimit G).rightDerived q`.
 For any `X : C` with chosen injective resolution `I`, evaluating `(colimit G)` termwise on
-`I.cocomplex` forms the colimit in `CochainComplex D ℕ` of the complexes `(G.obj t)(I.cocomplex)`,
-and `HomologicalComplex.homologyFunctor D (ComplexShape.up ℕ) q` preserves colimits of shape `T` by
+`I.cocomplex` forms the colimit in `CochainComplex D ℕ` of the complexes `(G.obj t)(I.cocomplex)`
+(`HomologicalComplex.isColimitMapColimitCocone`), and
+`HomologicalComplex.homologyFunctor D (ComplexShape.up ℕ) q` preserves colimits of shape `T` by
 `TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`.
 
 ## Main definitions
@@ -90,45 +92,13 @@ lemma ι_app_colimitRightDerivedComparison_app (G : T ⥤ C ⥤ D) [∀ t, (G.ob
       ((colimit.ι G t).rightDerived q).app X :=
   NatTrans.congr_app (ι_colimitRightDerivedComparison G q t) X
 
-/-- Applying the diagram `G : T ⥤ C ⥤ D` termwise to a cochain complex `K` gives a diagram of
-cochain complexes in `D`. -/
-@[simps]
-private abbrev mapComplexDiagram (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive]
-    (K : CochainComplex C ℕ) : T ⥤ CochainComplex D ℕ where
-  obj t := ((G.obj t).mapHomologicalComplex _).obj K
-  map w := (NatTrans.mapHomologicalComplex (G.map w) _).app K
-  map_id t := by simp
-  map_comp f g := by simp
-
-/-- `(colimit G)` applied to `K` forms a cocone on `mapComplexDiagram G K`. -/
-@[simps]
-private abbrev mapComplexCocone (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive]
-    (K : CochainComplex C ℕ) : Cocone (mapComplexDiagram G K) where
-  pt := ((colimit G).mapHomologicalComplex _).obj K
-  ι :=
-    { app t := (NatTrans.mapHomologicalComplex (colimit.ι G t) _).app K
-        -- each naturality square is `colimit.w` applied termwise to `K`
-      naturality _ _ w := by
-        dsimp
-        rw [Category.comp_id, ← NatTrans.comp_app, ← NatTrans.mapHomologicalComplex_comp,
-          colimit.w] }
-
-/-- `mapComplexCocone G K` is a colimit cocone in `CochainComplex D ℕ`, since in each degree `m` it
-is the evaluation of `colimit.cocone G` at `K.X m`. -/
-private def isColimitMapComplexCocone (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive]
-    (K : CochainComplex C ℕ) : IsColimit (mapComplexCocone G K) :=
-  HomologicalComplex.isColimitOfEval _ _ fun m ↦
-    IsColimit.ofIsoColimit
-      (isColimitOfPreserves ((evaluation C D).obj (K.X m)) (colimit.isColimit G))
-      (Cocone.ext (Iso.refl _) fun t ↦ by simp)
-
 /-- For an injective resolution `I` of `X`, the objectwise identifications
 `I.isoRightDerivedObj (G.obj t) q` assemble into a natural isomorphism of `T`-diagrams in `D`. -/
 @[simps!]
 private def rightDerivedEvaluationIso (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive] (q : ℕ)
     {X : C} (I : InjectiveResolution X) :
     rightDerivedDiagram G q ⋙ (evaluation C D).obj X ≅
-      mapComplexDiagram G I.cocomplex ⋙ HomologicalComplex.homologyFunctor D _ q :=
+      I.cocomplex.mapDiagram G ⋙ HomologicalComplex.homologyFunctor D _ q :=
   NatIso.ofComponents (fun t ↦ I.isoRightDerivedObj (G.obj t) q) fun {t t'} w ↦ by
     dsimp
     rw [I.rightDerived_app_eq (G.map w) q, Category.assoc, Category.assoc, Iso.inv_hom_id,
@@ -148,11 +118,12 @@ instance isIso_colimitRightDerivedComparison (G : T ⥤ C ⥤ D) [∀ t, (G.obj 
         (colimit.cocone (rightDerivedDiagram G q))) :=
       isColimitOfPreserves ((evaluation C D).obj X) (colimit.isColimit (rightDerivedDiagram G q))
     have hc₂ : IsColimit ((HomologicalComplex.homologyFunctor D _ q).mapCocone
-        (mapComplexCocone G I.cocomplex)) :=
+        (I.cocomplex.mapColimitCocone G)) :=
       isColimitOfPreserves (HomologicalComplex.homologyFunctor D _ q)
-        (isColimitMapComplexCocone G I.cocomplex)
+        (I.cocomplex.isColimitMapColimitCocone G)
     let c₂' := (Cocone.precompose (rightDerivedEvaluationIso G q I).hom).obj
-      ((HomologicalComplex.homologyFunctor D _ q).mapCocone (mapComplexCocone G I.cocomplex))
+      ((HomologicalComplex.homologyFunctor D _ q).mapCocone
+        (I.cocomplex.mapColimitCocone G))
     have hc₂' : IsColimit c₂' :=
       (IsColimit.precomposeHomEquiv (rightDerivedEvaluationIso G q I) _).invFun hc₂
     -- `colimitRightDerivedComparison` followed by `I.isoRightDerivedObj (colimit G) q` is the

@@ -219,6 +219,17 @@ def tildeCompSupportedSubmoduleSectionsTopIso {I : Ideal R} (hI : I.FG) :
           congrArg _ (tilde.toOpen_map_app f ⊤).symm
       _ = _ := (Category.assoc _ _ _).symm).symm
 
+/-- Under the inverse of `tildeCompSupportedSubmoduleSectionsTopIso`, the inclusion of supported
+global sections of `M~` agrees with `I.primaryComponentFunctorι` followed by `tilde.toOpen`. -/
+@[reassoc (attr := simp)]
+lemma tildeCompSupportedSubmoduleSectionsTopIso_inv_app_comp_supportedSubmoduleι
+    {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) :
+    (tildeCompSupportedSubmoduleSectionsTopIso hI).inv.app M ≫
+        ((modulesSpecToSheaf.obj ((tilde.functor R).obj M)).supportedSubmoduleι
+          (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤) =
+      I.primaryComponentFunctorι.app M ≫ tilde.toOpen M ⊤ :=
+  primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI M
+
 end DegreeZero
 
 end TauCeti.AlgebraicGeometry
