@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.jordanGL` is the non-semisimple normal form and occurs in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- `TauCeti.GL2NonSplitTorusHom` is the elliptic normal form and occurs in the statements below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus.Basic
 -- Proof-only: a quadratic root in the extension, and its trace and norm, pin the elliptic form.
 import TauCeti.FieldTheory.Quadratic
 import TauCeti.RingTheory.Norm.Quadratic

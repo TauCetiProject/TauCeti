@@ -20,6 +20,9 @@ is an isomorphism onto `K`. This is how a finite presentation is recognised as a
 group: an order bound on the presented group, compared with the order of the image of the
 presentation map, upgrades that map to `MonoidHom.mulEquivOfRangeEq`.
 
+The intersection `H ⊓ K` of two subgroups can be read as a subgroup of `K` or of `H`, and the
+two readings have the same order (`Subgroup.card_subgroupOf_comm`).
+
 ## Main definitions
 
 * `Subgroup.fintypeOfFinite`: the `Fintype` structure `Fintype.ofFinite` on the elements of a
@@ -42,6 +45,11 @@ variable {G : Type*} [Group G]
 @[instance_reducible, expose]
 noncomputable def fintypeOfFinite (H : Subgroup G) [Finite H] : Fintype H :=
   Fintype.ofFinite H
+
+/-- The intersection `H ⊓ K`, read in `K` or in `H`, has the same order either way. -/
+theorem card_subgroupOf_comm (H K : Subgroup G) :
+    Nat.card (H.subgroupOf K) = Nat.card (K.subgroupOf H) := by
+  rw [← card_subtype K, ← card_subtype H, subgroupOf_map_subtype, subgroupOf_map_subtype, inf_comm]
 
 end Subgroup
 

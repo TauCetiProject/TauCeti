@@ -46,6 +46,8 @@ multiplication and `g` acting by `x ↦ (g • x) * (f g)⁻¹`. It has class `f
 
 * `TauCeti.NonabelianH1.SmoothTorsor.cls_eq_cls_iff`: two smooth torsors have the same class
   exactly when they are isomorphic.
+* `TauCeti.NonabelianH1.SmoothTorsor.cls_eq_cls_of_map`: a map commuting with both actions
+  preserves the class.
 * `TauCeti.NonabelianH1.SmoothTorsor.cls_eq_one_iff`: a smooth torsor has the trivial class
   exactly when `G` fixes one of its points.
 * `TauCeti.NonabelianH1.SmoothTorsor.cls_torsor`: the torsor of a cocycle has its class.
@@ -212,11 +214,24 @@ theorem cls_eq_one_iff : P.cls = 1 ↔ ∃ x : P.carrier, ∀ g : G, g • x = x
 
 variable {P} {Q : SmoothTorsor.{u, v, w'} G A}
 
+/-- A map of smooth torsors commuting with the actions of `A` and `G` preserves cocycles. -/
+theorem cocycle_map_eq (φ : P.carrier → Q.carrier) (hA : ∀ (a : A) x, φ (a • x) = a • φ x)
+    (hG : ∀ (g : G) x, φ (g • x) = g • φ x) (x : P.carrier) :
+    Q.cocycle (φ x) = P.cocycle x :=
+  Cocycle.ext fun g ↦ by
+    rw [cocycle_apply_eq_iff, ← hG, ← hA, ← smul_eq_inv_cocycle_smul]
+
 /-- An isomorphism of smooth torsors preserves cocycles. -/
 @[simp]
 theorem Iso.cocycle_eq (e : P.Iso Q) (x : P.carrier) : Q.cocycle (e.toEquiv x) = P.cocycle x :=
-  Cocycle.ext fun g ↦ by
-    rw [cocycle_apply_eq_iff, ← e.map_smul_G, ← e.map_smul_A, ← smul_eq_inv_cocycle_smul]
+  cocycle_map_eq e.toEquiv e.map_smul_A e.map_smul_G x
+
+/-- Two smooth torsors related by a map commuting with the actions of `A` and `G` have the same
+class. -/
+theorem cls_eq_cls_of_map (φ : P.carrier → Q.carrier) (hA : ∀ (a : A) x, φ (a • x) = a • φ x)
+    (hG : ∀ (g : G) x, φ (g • x) = g • φ x) : P.cls = Q.cls := by
+  obtain ⟨x⟩ := (inferInstance : Nonempty P.carrier)
+  rw [P.cls_eq x, Q.cls_eq (φ x), cocycle_map_eq φ hA hG]
 
 /-- Smooth torsors with equal cocycles at two points are isomorphic, by the bijection
 `a • x ↦ a • y`. -/
@@ -248,8 +263,7 @@ theorem cls_eq_cls_iff : P.cls = Q.cls ↔ Nonempty (P.Iso Q) := by
     obtain ⟨a, ha⟩ := h
     refine ⟨isoOfCocycleEq (x := a⁻¹ • x) (y := y) (Cocycle.ext fun g ↦ ?_)⟩
     rw [cocycle_smul, ha, smul_inv', inv_inv]
-  · obtain ⟨x⟩ := (inferInstance : Nonempty P.carrier)
-    rw [P.cls_eq x, Q.cls_eq (e.toEquiv x), e.cocycle_eq]
+  · exact cls_eq_cls_of_map e.toEquiv e.map_smul_A e.map_smul_G
 
 end SmoothTorsor
 

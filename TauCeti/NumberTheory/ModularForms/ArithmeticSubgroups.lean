@@ -9,6 +9,8 @@ module
 public import Mathlib.NumberTheory.ModularForms.ArithmeticSubgroups
 -- `Subgroup.index_smul`: conjugation preserves the index.
 import TauCeti.GroupTheory.Index.Map
+-- `card_center_subgroupOf_eq_two_iff` and `mapGL_neg_one` for the `SL` facts.
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The projective index of a subgroup
@@ -34,10 +36,15 @@ from `GL₂(ℤ/m)` to `GL₂(ℤ/n)` for `n ∣ m` and `m ≠ 0`.
 
 * `Subgroup.projectiveIndex_eq_index`: if `-1 ∈ H`, the projective index is the index.
 * `Subgroup.two_mul_projectiveIndex`: if `-1 ∉ H`, the index is twice the projective index.
+* `Subgroup.map_subgroupOf_le_map_adjoinNegOne_subgroupOf`: inside any subgroup, the image of `H`
+  lies in the image of `±H`.
 * `Subgroup.comap_adjoinNegOne`: adjoining `-1` commutes with preimages under a homomorphism that
   commutes with negation.
 * `Subgroup.projectiveIndex_comap_of_surjective`, `Subgroup.projectiveIndex_pointwise_smul`: the
   projective index is unchanged by surjective pullback and by conjugation.
+* `Subgroup.card_center_subgroupOf_mul_relIndex_adjoinNegOne`: for `H ≤ SL(2, R)`,
+  `|H ∩ {±I}| · [±H : H] = 2`.
+* `Subgroup.map_mapGL_adjoinNegOne`: adjoining `-I` commutes with `SL(n, R) → GL(n, S)`.
 
 ## References
 
@@ -57,6 +64,10 @@ noncomputable def projectiveIndex (H : Subgroup G) : ℕ :=
 
 theorem projectiveIndex_def (H : Subgroup G) : H.projectiveIndex = H.adjoinNegOne.index :=
   (rfl)
+
+/-- `±H` has finite index whenever `H` does. -/
+instance finiteIndex_adjoinNegOne (H : Subgroup G) [H.FiniteIndex] : H.adjoinNegOne.FiniteIndex :=
+  finiteIndex_of_le H.le_adjoinNegOne
 
 /-- The projective index divides the index. -/
 theorem projectiveIndex_dvd_index (H : Subgroup G) : H.projectiveIndex ∣ H.index :=
@@ -88,10 +99,43 @@ theorem projectiveIndex_comap_of_surjective (H : Subgroup G) {f : G' →* G}
   rw [projectiveIndex_def, ← comap_adjoinNegOne H f hf, index_comap_of_surjective _ hs,
     projectiveIndex_def]
 
+/-- Inside any subgroup `K`, the image of `H` lies in the image of `±H`. For `Γ ≤ SL(2, ℤ)` and
+`K = 𝒮ℒ` this says that the cosets of `Γ` refine those of `±Γ`, which gives the projection
+`Subgroup.quotientMapOfLE` from the cusps of `Γ` to those of `±Γ`. -/
+theorem map_subgroupOf_le_map_adjoinNegOne_subgroupOf {M : Type*} [Group M] (H : Subgroup G)
+    (f : G →* M) (K : Subgroup M) :
+    (H.map f).subgroupOf K ≤ (H.adjoinNegOne.map f).subgroupOf K :=
+  subgroupOf_mono _ (map_mono H.le_adjoinNegOne)
+
 open scoped Pointwise in
 /-- Conjugation does not change the projective index. -/
 theorem projectiveIndex_pointwise_smul (H : Subgroup G) (g : ConjAct G) :
     (g • H).projectiveIndex = H.projectiveIndex := by
   rw [projectiveIndex_def, adjoinNegOne_conj, index_smul, projectiveIndex_def]
+
+section SpecialLinearGroup
+
+open Matrix Matrix.SpecialLinearGroup
+open scoped MatrixGroups
+
+/-- `|H ∩ {±I}| · [±H : H] = 2` for `H ≤ SL(2, R)`: the two factors are `2, 1` when `-I ∈ H` and
+`1, 2` otherwise. -/
+theorem card_center_subgroupOf_mul_relIndex_adjoinNegOne {R : Type*} [CommRing R]
+    [NoZeroDivisors R] [NeZero (2 : R)] (H : Subgroup SL(2, R)) :
+    Nat.card ((center SL(2, R)).subgroupOf H) * H.relIndex H.adjoinNegOne = 2 := by
+  by_cases h : (-1 : SL(2, R)) ∈ H
+  · rw [(card_center_subgroupOf_eq_two_iff H).mpr h, adjoinNegOne_eq_self_iff.mpr h,
+      relIndex_self]
+  · rw [(card_center_subgroupOf_eq_one_iff H).mpr h, relIndex_adjoinNegOne_eq_two h]
+
+/-- Adjoining `-I` commutes with mapping `SL(n, R)` into `GL(n, S)`. For `Γ ≤ SL(2, ℤ)` this says
+that `±Γ`, read in `GL(2, ℝ)`, is the image of `Γ` with `-I` adjoined. -/
+theorem map_mapGL_adjoinNegOne {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [CommRing S] [Algebra R S] [Fact (Even (Fintype.card n))]
+    (H : Subgroup (SpecialLinearGroup n R)) :
+    H.adjoinNegOne.map (mapGL S) = (H.map (mapGL S)).adjoinNegOne :=
+  map_adjoinNegOne H _ mapGL_neg
+
+end SpecialLinearGroup
 
 end Subgroup

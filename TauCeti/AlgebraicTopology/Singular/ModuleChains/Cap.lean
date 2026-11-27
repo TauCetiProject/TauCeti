@@ -60,6 +60,9 @@ proved in this file.
 
 ## Main results
 
+* `TopPair.IsSemiInvariantCocycle.cyclesMap_singularCochainComplexMap`: semi-invariant cocycles pull
+  back to semi-invariant cocycles along maps of pairs which are equivariant along a homomorphism of
+  the acting monoids.
 * `TopPair.map_singularChainsRepCap_comp_singularChainsRepTwistExtendForget₂Iso_hom`: forgetting
   the action, the equivariant cap product is `TopPair.pushforwardCapChainMap`.
 * `TopPair.quasiIso_singularChainsRepCap_iff`: it is a quasi-isomorphism if and only if
@@ -113,6 +116,52 @@ theorem isSemiInvariantCocycle_iff {G : Type u} [Monoid G] [MulAction G P.fst]
     (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
         (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ) :=
   Iff.rfl
+
+variable {P n} in
+/-- **Semi-invariant cocycles pull back along equivariant maps.** Let `f : P ⟶ P'` be a map of
+pairs whose ambient map satisfies `f(g • x) = ρ(g) • f(x)` for a homomorphism `ρ : G →* H`. If a
+relative cocycle `φ` of `P'` is semi-invariant for a character `χ` of `H`, then its pull-back
+`f^* φ` to `P` is semi-invariant for the character `χ ∘ ρ` of `G`. -/
+theorem IsSemiInvariantCocycle.cyclesMap_singularCochainComplexMap {P' : TopPair.{u}}
+    {G H : Type u} [Monoid G] [Monoid H] [MulAction G P.fst] [ContinuousConstSMul G P.fst]
+    [MulAction H P'.fst] [ContinuousConstSMul H P'.fst] (f : P ⟶ P') (ρ : G →* H)
+    (hf : ∀ (g : G) x, Hom.fst f (g • x) = ρ g • Hom.fst f x) {χ : H →* kˣ}
+    {φ : (P'.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n}
+    (hφ : IsSemiInvariantCocycle χ φ) :
+    IsSemiInvariantCocycle (χ.comp ρ)
+      (HomologicalComplex.cyclesMap (singularCochainComplexMap f) n φ) := by
+  intro g
+  have hi : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n
+      (HomologicalComplex.cyclesMap (singularCochainComplexMap f) n φ) =
+      (singularChainComplexMap f (ModuleCat.of k k)).f n ≫
+        (P'.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ :=
+    congr(ModuleCat.Hom.hom $(HomologicalComplex.cyclesMap_i (singularCochainComplexMap f) n) φ)
+  -- the quotient onto the relative chains is natural in `f`; the composites of
+  -- `singularChainComplexπ_pair_naturality` are formed in the category of chain complexes of the
+  -- singular simplicial set, so its component in degree `n` is restated here
+  have hπ : ((singularChains k).map (Hom.fst f)).f n ≫
+      (P'.singularChainComplexπ (ModuleCat.of k k)).f n =
+      (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (singularChainComplexMap f (ModuleCat.of k k)).f n :=
+    HomologicalComplex.congr_hom (singularChainComplexπ_pair_naturality f (ModuleCat.of k k)) n
+  -- acting by `g` and then mapping by `f` is mapping by `f` and then acting by `ρ g`
+  have hg : TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩ ≫ Hom.fst f =
+      Hom.fst f ≫ TopCat.ofHom ⟨(ρ g • · : P'.fst → P'.fst), continuous_const_smul (ρ g)⟩ :=
+    ConcreteCategory.hom_ext _ _ fun x ↦ hf g x
+  have hc := congrArg (fun h ↦ ((singularChains k).map h).f n) hg
+  simp only [Functor.map_comp, HomologicalComplex.comp_f] at hc
+  have hπ' : (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+      (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n
+        (HomologicalComplex.cyclesMap (singularCochainComplexMap f) n φ) =
+      ((singularChains k).map (Hom.fst f)).f n ≫ (P'.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (P'.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ := by
+    rw [hi]
+    exact (congrArg (· ≫ _) hπ).symm
+  -- `erw`: the composites in `IsSemiInvariantCocycle` are formed in the category of chain
+  -- complexes of the singular simplicial set rather than in `ModuleCat k`, as for `hπ`; the closing
+  -- `rfl` evaluates `χ.comp ρ` at `g`
+  erw [hπ', ← Category.assoc, hc, Category.assoc, hφ (ρ g), Linear.comp_smul]
+  rfl
 
 /-- The relative cocycle `φ` pulled back to a cocycle of the ambient space along the quotient onto
 the relative chains. -/
