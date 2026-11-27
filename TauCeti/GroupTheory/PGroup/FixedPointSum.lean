@@ -10,6 +10,7 @@ public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 
 /-!
 # Sums of invariant functions over a `p`-group set with `p`-torsion values
@@ -23,7 +24,9 @@ weighted form of `IsPGroup.card_modEq_card_fixedPoints`, which is the case `f = 
 
 For a `p`-subgroup `P` of a finite group `G` acting by conjugation, the fixed points are the
 centralizer `C_G(P)`: the sum over `G` of a function invariant under conjugation by `P` is its sum
-over `C_G(P)` (`IsPGroup.sum_eq_sum_centralizer_of_nsmul_eq_zero`).
+over `C_G(P)` (`IsPGroup.sum_eq_sum_centralizer_of_nsmul_eq_zero`). For a single permutation `σ`
+with `σ ^ p ^ n = 1`, the fixed points are those of `σ`
+(`Equiv.Perm.sum_eq_sum_filter_apply_eq_self_of_pow_eq_one`).
 
 ## References
 
@@ -125,3 +128,38 @@ theorem sum_eq_sum_centralizer_of_nsmul_eq_zero (hP : IsPGroup p P)
   · rw [h n n.property, mul_inv_cancel_right]
 
 end IsPGroup
+
+namespace Equiv.Perm
+
+variable {X M : Type*} [Fintype X] [DecidableEq X] [AddCommMonoid M] {p : ℕ} [Fact p.Prime]
+
+/-- Let `σ` be a permutation of a finite type with `σ ^ p ^ n = 1`, for a prime `p`, and let `f` be
+a `σ`-invariant function into an additive monoid killed by `p`. Then the sum of `f` equals its sum
+over the fixed points of `σ`: the other points fall into `σ`-orbits of size divisible by `p`. -/
+theorem sum_eq_sum_filter_apply_eq_self_of_pow_eq_one {n : ℕ} (σ : Perm X) (hσ : σ ^ p ^ n = 1)
+    (hM : ∀ m : M, p • m = 0) (f : X → M) (hf : ∀ x, f (σ x) = f x) :
+    ∑ x, f x = ∑ x with σ x = x, f x := by
+  classical
+  -- The cyclic group `⟨σ⟩` is a `p`-group whose fixed points are those of `σ`.
+  have hH : IsPGroup p (Subgroup.zpowers σ) := fun g ↦ by
+    obtain ⟨g, z, rfl⟩ := g
+    refine ⟨n, Subtype.ext ?_⟩
+    simp only [Subgroup.coe_pow, Subgroup.coe_one]
+    rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hσ, one_zpow]
+  have hfz : ∀ (z : ℤ) x, f ((σ ^ z) x) = f x := by
+    intro z
+    induction z using Int.induction_on with
+    | zero => simp
+    | succ n ih => intro x; rw [zpow_add_one, mul_apply, ih, hf]
+    | pred n ih =>
+      intro x
+      rw [zpow_sub_one, mul_apply, ih, ← hf (σ⁻¹ x)]
+      simp
+  have hfix : ∀ x, x ∈ MulAction.fixedPoints (Subgroup.zpowers σ) X ↔ σ x = x := by
+    refine fun x ↦ ⟨fun h ↦ h ⟨σ, Subgroup.mem_zpowers σ⟩, fun h ↦ ?_⟩
+    rintro ⟨g, z, rfl⟩
+    exact zpow_apply_eq_self_of_apply_eq_self h z
+  rw [hH.sum_eq_sum_fixedPoints_of_nsmul_eq_zero hM f (by rintro ⟨g, z, rfl⟩ x; exact hfz z x)]
+  exact Finset.sum_congr (Finset.filter_congr fun x _ ↦ hfix x) fun _ _ ↦ rfl
+
+end Equiv.Perm

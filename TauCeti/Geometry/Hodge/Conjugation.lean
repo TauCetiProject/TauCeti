@@ -34,6 +34,8 @@ models.
   of a real vector space, bundled as a Hodge conjugation.
 * `LinearMap.map_eigenspace_baseChange`: canonical conjugation carries each eigenspace of a
   complexified real-linear endomorphism to the eigenspace of the conjugate eigenvalue.
+* `Module.Basis.complexificationConjugation_toEquiv_baseChange`: canonical conjugation fixes the
+  complexification of a real basis.
 * `TauCeti.Hodge.Conjugation.tensorPiEquiv_complexificationConjugation`: in a basis fixed by a
   conjugation, the coordinate identification `ℂ ⊗[ℝ] (ι → ℝ) ≃ W` intertwines the canonical
   conjugation of the complexification with it.
@@ -177,6 +179,22 @@ theorem map_eigenspace_baseChange (f : V →ₗ[ℝ] V) (z : ℂ) :
       _ = z • tmulConj V x := by simp
 
 end LinearMap
+
+namespace Module.Basis
+
+open TauCeti
+open scoped TensorProduct
+
+universe u
+
+variable {V : Type u} [AddCommGroup V] [Module ℝ V] {ι : Type*}
+
+/-- The complexification of a real basis is fixed by the conjugation of `ℂ ⊗[ℝ] V`. -/
+theorem complexificationConjugation_toEquiv_baseChange (e : Module.Basis ι ℝ V) (i : ι) :
+    (Hodge.complexificationConjugation V).toEquiv (e.baseChange ℂ i) = e.baseChange ℂ i := by
+  rw [Module.Basis.baseChange_apply, Hodge.complexificationConjugation_toEquiv_tmul, map_one]
+
+end Module.Basis
 
 namespace TauCeti.Hodge
 

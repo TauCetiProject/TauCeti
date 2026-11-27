@@ -14,7 +14,7 @@ import Mathlib.RingTheory.Finiteness.Small
 import Mathlib.Tactic.NormNum.IsSquare
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Basic
-import TauCeti.NumberTheory.QuadraticForm.Global.Transport
+import TauCeti.NumberTheory.QuadraticForm.Global.Transport.Basic
 import TauCeti.RingTheory.Norm.Quadratic
 
 /-!

@@ -56,7 +56,8 @@ finishes the proof.
   form** `[[0, D, 0], [-D, 0, 0], [0, 0, 0]]` of an alternating form on a finite free module over a
   principal ideal domain.
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate`: the normal form
-  `[[0, D], [-D, 0]]` of a nondegenerate alternating form.
+  `[[0, D], [-D, 0]]` of a nondegenerate alternating form, and
+  `LinearMap.BilinForm.IsAlt.even_finrank_of_isPrincipalIdealRing`: the module then has even rank.
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate`: over an
   ordered principal ideal domain, such as `ℤ`, the elementary divisors can be taken positive.
 * `LinearMap.BilinForm.det_toMatrix_eq_prod_sq_of_toMatrix_eq_fromBlocks`: over `ℤ` the
@@ -64,6 +65,10 @@ finishes the proof.
 * `LinearMap.BilinForm.eq_of_toMatrix_eq_fromBlocks`: over `ℤ` **the elementary divisors are
   unique**: two nonnegative divisibility chains `d`, `d'` for which `B` has matrices
   `[[0, D], [-D, 0]]` and `[[0, D'], [-D', 0]]` in two bases are equal.
+* `LinearMap.BilinForm.IsAlt.polarizationType`: **the type** `(d₁, …, d_g)` of a nondegenerate
+  alternating form on a finite free `ℤ`-module of rank `2g`, with `IsAlt.polarizationType_eq`
+  (any nonnegative divisibility chain giving the normal form is the type) and
+  `IsAlt.det_toMatrix_eq_prod_polarizationType_sq` (`det B = (d₁ ⋯ d_g)²`).
 
 The uniqueness over `ℤ` reduces to that of the Smith normal form
 (`Matrix.smith_normal_form_unique`): `[[0, D], [-D, 0]]` is `-J` times `diag(D, D)`, where `J`
@@ -299,6 +304,15 @@ theorem IsAlt.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate {M : Type*} [
   rw [toMatrix_apply, Basis.reindex_apply, Basis.reindex_apply, hbv]
   rcases x with x | x <;> rcases y with y | y <;> simp
 
+/-- A finite free module over a principal ideal domain carrying a nondegenerate alternating form
+has even rank. -/
+theorem IsAlt.even_finrank_of_isPrincipalIdealRing {M : Type*} [AddCommGroup M] [Module R M]
+    [Module.Free R M] [Module.Finite R M] {B : BilinForm R M} (hB : B.IsAlt)
+    (hnd : B.Nondegenerate) : Even (finrank R M) := by
+  obtain ⟨g, b, -⟩ := hB.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate hnd
+  rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]
+  exact ⟨g, rfl⟩
+
 end PID
 
 section Ordered
@@ -405,6 +419,76 @@ theorem eq_of_toMatrix_eq_fromBlocks {g : ℕ} {b b' : Basis (Fin g ⊕ Fin g) �
       rw [IsUnit.unit_spec, IsUnit.unit_spec, ← hφ d, ← map_mul φ, ← map_mul φ, hmain, hφ]
   funext i
   simpa using congrFun hsmith (TauCeti.finSumFinInterleaveEquiv g (.inl i))
+
+section PolarizationType
+
+variable [Module.Free ℤ M] [Module.Finite ℤ M]
+
+/-- **Elementary divisor normal form indexed by half the rank.** A nondegenerate alternating form
+on a finite free `ℤ`-module `M` has, in a basis indexed by `Fin (finrank ℤ M / 2) ⊕
+Fin (finrank ℤ M / 2)`, the matrix `[[0, D], [-D, 0]]` with `D = diag(d₁, …, d_g)`, every `dᵢ > 0`
+and `d₁ ∣ ⋯ ∣ d_g`. This is `IsAlt.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate` with
+`g` identified as `finrank ℤ M / 2`. -/
+private theorem IsAlt.exists_basis_toMatrix_eq_fromBlocks_finrank (hB : B.IsAlt)
+    (hnd : B.Nondegenerate) :
+    ∃ (b : Basis (Fin (finrank ℤ M / 2) ⊕ Fin (finrank ℤ M / 2)) ℤ M)
+      (d : Fin (finrank ℤ M / 2) → ℤ), (∀ i, 0 < d i) ∧ (∀ i j, i ≤ j → d i ∣ d j) ∧
+        BilinForm.toMatrix b B = fromBlocks 0 (diagonal d) (-diagonal d) 0 := by
+  obtain ⟨g, b, d, hd, hdd, hb⟩ := hB.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate hnd
+  have hg : finrank ℤ M / 2 = g := by
+    rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]
+    omega
+  rw [hg]
+  exact ⟨b, d, hd, hdd, hb⟩
+
+/-- **The type of a nondegenerate alternating form** on a finite free `ℤ`-module `M` of rank
+`2g`: the elementary divisors `d₁ ∣ d₂ ∣ ⋯ ∣ d_g`, all positive, for which `B` has matrix
+`[[0, D], [-D, 0]]`, `D = diag(d₁, …, d_g)`, in some basis. They are unique
+(`IsAlt.polarizationType_eq`). For the Riemann form of a polarization on the period lattice of a
+complex abelian variety this is the type of the polarization. -/
+noncomputable def IsAlt.polarizationType (hB : B.IsAlt) (hnd : B.Nondegenerate) :
+    Fin (finrank ℤ M / 2) → ℤ :=
+  (hB.exists_basis_toMatrix_eq_fromBlocks_finrank hnd).choose_spec.choose
+
+/-- The form has the matrix `[[0, D], [-D, 0]]` with `D` the diagonal of its type, in some basis. -/
+theorem IsAlt.exists_basis_toMatrix_eq_polarizationType (hB : B.IsAlt) (hnd : B.Nondegenerate) :
+    ∃ b : Basis (Fin (finrank ℤ M / 2) ⊕ Fin (finrank ℤ M / 2)) ℤ M,
+      BilinForm.toMatrix b B = fromBlocks 0 (diagonal (hB.polarizationType hnd))
+        (-diagonal (hB.polarizationType hnd)) 0 :=
+  ⟨_, (hB.exists_basis_toMatrix_eq_fromBlocks_finrank hnd).choose_spec.choose_spec.2.2⟩
+
+/-- The entries of the type of a form are positive. -/
+theorem IsAlt.polarizationType_pos (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    (i : Fin (finrank ℤ M / 2)) : 0 < hB.polarizationType hnd i :=
+  (hB.exists_basis_toMatrix_eq_fromBlocks_finrank hnd).choose_spec.choose_spec.1 i
+
+/-- The entries of the type of a form form a divisibility chain. -/
+theorem IsAlt.polarizationType_dvd (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    {i j : Fin (finrank ℤ M / 2)} (hij : i ≤ j) :
+    hB.polarizationType hnd i ∣ hB.polarizationType hnd j :=
+  (hB.exists_basis_toMatrix_eq_fromBlocks_finrank hnd).choose_spec.choose_spec.2.1 i j hij
+
+/-- **The type is the unique elementary divisor chain**: if `B` has matrix `[[0, D], [-D, 0]]` in
+a basis indexed by `Fin g ⊕ Fin g`, with `D = diag(d₁, …, d_g)` a nonnegative divisibility chain,
+then `d` is the type of `B`, read along `finrank ℤ M / 2 = g`. -/
+theorem IsAlt.polarizationType_eq (hB : B.IsAlt) (hnd : B.Nondegenerate) {g : ℕ}
+    (hg : finrank ℤ M / 2 = g) {b : Basis (Fin g ⊕ Fin g) ℤ M} {d : Fin g → ℤ}
+    (hd : ∀ i, 0 ≤ d i) (hdd : ∀ i j, i ≤ j → d i ∣ d j)
+    (hb : BilinForm.toMatrix b B = fromBlocks 0 (diagonal d) (-diagonal d) 0) :
+    hB.polarizationType hnd = d ∘ Fin.cast hg := by
+  subst hg
+  obtain ⟨b', hb'⟩ := hB.exists_basis_toMatrix_eq_polarizationType hnd
+  exact eq_of_toMatrix_eq_fromBlocks (fun i ↦ (hB.polarizationType_pos hnd i).le) hd
+    (fun _ _ ↦ hB.polarizationType_dvd hnd) hdd hb' hb
+
+/-- **The determinant of the form is the square of the product of its type**, in every basis. -/
+theorem IsAlt.det_toMatrix_eq_prod_polarizationType_sq (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (c : Basis ι ℤ M) :
+    (BilinForm.toMatrix c B).det = (∏ i, hB.polarizationType hnd i) ^ 2 :=
+  det_toMatrix_eq_prod_sq_of_toMatrix_eq_fromBlocks
+    (hB.exists_basis_toMatrix_eq_polarizationType hnd).choose_spec c
+
+end PolarizationType
 
 end Int
 

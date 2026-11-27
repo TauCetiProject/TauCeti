@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FiberInclusion
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup

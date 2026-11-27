@@ -124,6 +124,12 @@ theorem augmentationSign_eq_one_or_eq_neg_one {q : criticalPoints 𝓘(ℝ, E) f
   rcases Int.units_eq_one_or ((𝔬.orientation q).signBasis
     (Module.finBasisOfFinrankEq ℝ _ (𝔬.chart q).finrank_negativeWeight_fun)) with h | h <;> simp [h]
 
+/-- At a critical point of index `0`, the augmentation sign squares to `1`, in every ring. -/
+theorem augmentationSign_mul_self {R : Type*} [NonAssocRing R] {q : criticalPoints 𝓘(ℝ, E) f}
+    (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0) :
+    (𝔬.augmentationSign q : R) * 𝔬.augmentationSign q = 1 := by
+  rcases 𝔬.augmentationSign_eq_one_or_eq_neg_one hq with h | h <;> simp [h]
+
 /-- Modulo two, the augmentation sign is `1` at the critical points of index `0` and `0`
 elsewhere, whatever the orientations. -/
 theorem intCast_augmentationSign (q : criticalPoints 𝓘(ℝ, E) f) :
