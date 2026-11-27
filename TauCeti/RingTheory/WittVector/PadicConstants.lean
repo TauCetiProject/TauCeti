@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.RingTheory.WittVector.Compare
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Ideal
 
 /-!
 # `p`-adic and finite constants in Witt vectors
@@ -34,8 +35,6 @@ polynomial of `F^a` has coefficients in `ℤ_p`.
 
 ## Main definitions and results
 
-* `WittVector.mem_range_map_iff`: a Witt vector lies in the image of `W(f)` if and only if every
-  coordinate lies in the image of `f`.
 * `TauCeti.WittVector.padicConstants p k`: the homomorphism `ι_k : ℤ_[p] →+* W(k)`, with
   `TauCeti.WittVector.padicConstants_injective`, the naturality
   `TauCeti.WittVector.map_padicConstants` and the identification
@@ -64,24 +63,6 @@ public section
 noncomputable section
 
 open scoped Polynomial
-
-namespace WittVector
-
-variable {p : ℕ} [Fact p.Prime] {R S : Type*} [CommRing R] [CommRing S]
-
-local notation "𝕎" => WittVector p
-
-/-- A Witt vector lies in the image of `WittVector.map f` if and only if each of its coordinates
-lies in the image of `f`. -/
-theorem mem_range_map_iff (f : R →+* S) (x : 𝕎 S) :
-    x ∈ Set.range (map f) ↔ ∀ n, x.coeff n ∈ Set.range f := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨y, rfl⟩ n
-    exact ⟨y.coeff n, (map_coeff f y n).symm⟩
-  · choose c hc using h
-    exact ⟨mk p c, ext fun n ↦ by rw [map_coeff, coeff_mk, hc]⟩
-
-end WittVector
 
 namespace TauCeti.WittVector
 

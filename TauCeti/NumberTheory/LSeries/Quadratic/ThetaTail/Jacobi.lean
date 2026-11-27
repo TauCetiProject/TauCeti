@@ -82,28 +82,6 @@ private theorem gaussianTheta_pair_offDiag_le {j : Fin 2} {c : ℕ → ℂ} {δ 
       rw [← he, Real.rpow_add hp (-(3 / 2 + δ)), show -2 * (3 / 2 + δ) = -3 - 2 * δ by ring]
       ring
 
-private theorem gaussianTheta_moment_scale {T u δ X D K d o : ℝ} (hT : 0 < T)
-    (hTu : T⁻¹ ≤ u) (hX : X ≤ T ^ 2) (hDd : 0 ≤ D * d) (hKo : 0 ≤ K * o) :
-    u * ((D * u ^ (-2 * (1 / 2 + δ)) * X) * d + K * u ^ (-3 - 2 * δ) * o) ≤
-      (D * d + K * o + 1) * T ^ 2 * u ^ (-2 * δ) := by
-  have hu := (inv_pos.mpr hT).trans_le hTu
-  have hi : u⁻¹ ≤ T := (inv_le_comm₀ hu hT).mpr hTu
-  have hr (s : ℝ) : u * u ^ s = u ^ (1 + s) := by rw [Real.rpow_add hu, Real.rpow_one]
-  have hd' : u * u ^ (-2 * (1 / 2 + δ)) = u ^ (-2 * δ) := by
-    rw [hr, show 1 + -2 * (1 / 2 + δ) = -2 * δ by ring]
-  have ho' : u * u ^ (-3 - 2 * δ) = u⁻¹ ^ 2 * u ^ (-2 * δ) := by
-    rw [hr, show 1 + (-3 - 2 * δ) = -2 + (-2 * δ) by ring, Real.rpow_add hu,
-      Real.rpow_neg hu.le, Real.rpow_two, inv_pow]
-  calc
-    _ = (D * d * X + K * o * u⁻¹ ^ 2) * u ^ (-2 * δ) := by
-      linear_combination (D * X * d) * hd' + (K * o) * ho'
-    _ ≤ (D * d * T ^ 2 + K * o * T ^ 2) * u ^ (-2 * δ) := by
-      gcongr
-    _ = (D * d + K * o) * T ^ 2 * u ^ (-2 * δ) := by ring
-    _ ≤ _ := by
-      refine mul_le_mul_of_nonneg_right ?_ (by positivity)
-      exact mul_le_mul_of_nonneg_right (le_add_of_nonneg_right zero_le_one) (sq_nonneg T)
-
 private def thetaSquarePairs : Set (ℕ+ × ℕ+) := {p | IsSquare (ordCompl[2] ((p.1 : ℕ) * p.2))}
 
 private noncomputable def thetaDiagonalWeight (δ : ℝ) : ℕ+ × ℕ+ → ℝ :=
@@ -125,6 +103,15 @@ private theorem summable_thetaDiagonalWeight {δ : ℝ} (hδ : 0 < δ) :
   -- Pulling the square condition back along `Prod.map Subtype.val Subtype.val` gives
   -- `thetaSquarePairs`; the real casts of positive naturals already factor through `ℕ`.
   rfl
+
+private theorem norm_sq_gaussianThetaSeries_mul_jacobiSym (j : Fin 2) (c : ℕ → ℂ) (v : ℕ)
+    {u : ℝ} (hu : 0 ≤ u) :
+    ‖gaussianThetaSeries j (fun n ↦ c n * (jacobiSym (-(v : ℤ)) (ordCompl[2] n) : ℂ)) u‖ ^ 2 =
+      u * ‖∑' n : ℕ+, (c n * (gaussianMonomial j (n * u) : ℂ)) *
+        (jacobiSym (-(v : ℤ)) (ordCompl[2] (n : ℕ)) : ℂ)‖ ^ 2 := by
+  rw [gaussianThetaSeries_def, norm_mul, mul_pow, Complex.norm_real,
+    norm_of_nonneg (sqrt_nonneg u), Real.sq_sqrt hu, gaussianTheta_def]
+  simp only [mul_right_comm]
 
 private theorem gaussianTheta_jacobiSym_moment_le {j : Fin 2} {c : ℕ → ℂ} {u δ D E : ℝ}
     (hδ : 0 < δ) (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) (hu : 0 < u)
@@ -148,6 +135,8 @@ private theorem gaussianTheta_jacobiSym_moment_le {j : Fin 2} {c : ℕ → ℂ} 
   have ha : Summable (fun n ↦ ‖a n‖) :=
     (summable_gaussianTheta (j := j) hc hu).norm
   have ho₀ (p) : 0 ≤ o p := by dsimp [o]; positivity
+  have hodd (n : ℕ+) : Odd (ordCompl[2] (n : ℕ)) :=
+    Nat.coprime_two_left.mp (Nat.coprime_ordCompl Nat.prime_two n.ne_zero)
   let A := D ^ 2 * u ^ (-2 * (1 / 2 + δ)) * (X : ℝ)
   let B := K * u ^ (-3 - 2 * δ)
   let f (p : ℕ+ × ℕ+) : ℝ := ‖a p.1‖ * ‖a p.2‖ *
@@ -168,20 +157,20 @@ private theorem gaussianTheta_jacobiSym_moment_le {j : Fin 2} {c : ℕ → ℂ} 
         (gaussianTheta_pair_offDiag_le hδ hc hu he p)
   have hs : Summable (fun p ↦ A * thetaDiagonalWeight δ p + B * o p) :=
     (hds.mul_left A).add (hos.mul_left B)
-  have hf : Summable f := hs.of_nonneg_of_le (fun p ↦
-    mul_nonneg (by positivity) ((norm_nonneg _).trans
-      (norm_sum_mul_jacobiSym_ordCompl_le X p.1 p.2))) hmajor
+  have hf : Summable f := hs.of_nonneg_of_le (fun p ↦ by
+    have hb : Odd (ordCompl[2] ((p.1 : ℕ) * p.2)) := by
+      rw [Nat.ordCompl_mul]
+      exact (hodd p.1).mul (hodd p.2)
+    exact mul_nonneg (by positivity) ((norm_nonneg _).trans (norm_sum_jacobiSym_neg_Icc_le hb X)))
+    hmajor
   have hsum : ∑' p, f p ≤ A * (∑' p, thetaDiagonalWeight δ p) + B * (∑' p, o p) := by
     simpa only [((hds.mul_left A).tsum_add (hos.mul_left B)), tsum_mul_left] using
       hf.tsum_le_tsum hmajor hs
-  have hnorm (v : ℕ) :
-      ‖gaussianThetaSeries j (fun n ↦ c n * (jacobiSym (-(v : ℤ)) (ordCompl[2] n) : ℂ)) u‖ ^ 2 =
-        u * ‖∑' n : ℕ+, a n * (jacobiSym (-(v : ℤ)) (ordCompl[2] (n : ℕ)) : ℂ)‖ ^ 2 := by
-    rw [gaussianThetaSeries_def, norm_mul, mul_pow, Complex.norm_real,
-      norm_of_nonneg (sqrt_nonneg u), Real.sq_sqrt hu.le, gaussianTheta_def]
-    simp only [a, mul_right_comm]
-  simp_rw [hnorm, ← mul_sum]
-  exact mul_le_mul_of_nonneg_left ((sum_norm_tsum_mul_jacobiSym_sq_le X ha).trans hsum) hu.le
+  simp_rw [norm_sq_gaussianThetaSeries_mul_jacobiSym j c _ hu.le, ← mul_sum]
+  have hmoment := sum_norm_sq_tsum_jacobiSym_neg_le (fun n : ℕ+ ↦ ordCompl[2] (n : ℕ)) a
+    hodd ha X
+  simp_rw [← Nat.ordCompl_mul] at hmoment
+  exact mul_le_mul_of_nonneg_left (hmoment.trans hsum) hu.le
 
 private theorem sum_norm_sq_gaussianThetaSeries_mul_jacobiSym_le_exp {j : Fin 2}
     {c : ℕ → ℂ} {u T : ℝ} (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) (hu : 0 < u) :
@@ -230,10 +219,27 @@ theorem exists_sum_norm_sq_gaussianThetaSeries_mul_jacobiSym_le {δ : ℝ} (hδ 
   rcases hT.eq_or_lt with rfl | hT
   · simp
   have hu := (inv_pos.mpr hT).trans_le hTu
-  exact le_min ((gaussianTheta_jacobiSym_moment_le hδ hc hu (hd j) (he j) _).trans
-    (gaussianTheta_moment_scale hT hTu (Nat.floor_le (sq_nonneg T))
-      (mul_nonneg (sq_nonneg D) hd₀) (mul_nonneg hK ho₀)))
-    (sum_norm_sq_gaussianThetaSeries_mul_jacobiSym_le_exp hc hu)
+  refine le_min ?_ (sum_norm_sq_gaussianThetaSeries_mul_jacobiSym_le_exp hc hu)
+  refine (gaussianTheta_jacobiSym_moment_le hδ hc hu (hd j) (he j) _).trans ?_
+  have hX : (⌊T ^ 2⌋₊ : ℝ) ≤ T ^ 2 := Nat.floor_le (sq_nonneg T)
+  have hi : u⁻¹ ≤ T := (inv_le_comm₀ hu hT).mpr hTu
+  have hd' : u * u ^ (-2 * (1 / 2 + δ)) = u ^ (-2 * δ) := by
+    rw [mul_comm, ← Real.rpow_add_one hu.ne', show -2 * (1 / 2 + δ) + 1 = -2 * δ by ring]
+  have ho' : u * u ^ (-3 - 2 * δ) = u ^ (-2 * δ) * u⁻¹ ^ 2 := by
+    rw [mul_comm, ← Real.rpow_add_one hu.ne', show -3 - 2 * δ + 1 = -2 * δ - 2 by ring,
+      Real.rpow_sub hu, Real.rpow_two, div_eq_mul_inv, inv_pow]
+  change u * ((D ^ 2 * u ^ (-2 * (1 / 2 + δ)) * _) * d + K * u ^ (-3 - 2 * δ) * o) ≤ _
+  calc
+    _ = (D ^ 2 * d * (⌊T ^ 2⌋₊ : ℝ) + K * o * u⁻¹ ^ 2) * u ^ (-2 * δ) := by
+      linear_combination (D ^ 2 * (⌊T ^ 2⌋₊ : ℝ) * d) * hd' + (K * o) * ho'
+    _ ≤ (D ^ 2 * d * T ^ 2 + K * o * T ^ 2) * u ^ (-2 * δ) := by
+      exact mul_le_mul_of_nonneg_right (add_le_add
+        (mul_le_mul_of_nonneg_left hX (mul_nonneg (sq_nonneg D) hd₀))
+        (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hi 2) (mul_nonneg hK ho₀)))
+        (by positivity)
+    _ = (D ^ 2 * d + K * o) * T ^ 2 * u ^ (-2 * δ) := by ring
+    _ ≤ _ := mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
+      (le_add_of_nonneg_right zero_le_one) (sq_nonneg T)) (by positivity)
 
 /-- The summed joint tails (including the Möbius twists) of a Jacobi-symbol family are at most
 `C T^(2+δ)` over the numerators `1 ≤ v ≤ T²`, uniformly in the parity and in the unit-bounded
