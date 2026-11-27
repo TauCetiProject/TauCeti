@@ -32,10 +32,11 @@ An isomorphism intertwining two maps transports surjectivity of the Lang map `g 
 
 A surjective Lang map on an invariant subgroup corrects an element whose Frobenius defect lies in
 that subgroup to a fixed element in the same coset
-(`exists_fixed_inv_mul_of_surjective_commutatorMap`). This is useful for lifting fixed elements of
-a normalizer or coset quotient; it does not require a finite kernel or claim uniqueness of a fixed
-lift. For the induced bijection on fixed left cosets `G^F ⧸ J^F ≃ (G ⧸ J)^F`, see
-`TauCeti.GroupTheory.FixedSubgroup.Quotient`.
+(`exists_fixed_inv_mul_of_surjective_commutatorMap` for left multiplication, and
+`exists_fixed_mul_of_surjective_inv_mul` for a left coset `hJ` without requiring `J` to be normal
+or `F`-invariant). This is useful for lifting fixed elements of a normalizer or coset quotient; it
+does not require a finite kernel or claim uniqueness of a fixed lift. For the induced bijection on
+fixed left cosets `G^F ⧸ J^F ≃ (G ⧸ J)^F`, see `TauCeti.GroupTheory.FixedSubgroup.Quotient`.
 
 The telescoping calculation follows the argument of
 `MonoidHom.FixedPointFree.prod_pow_eq_one` in Mathlib. The correction argument is the
@@ -116,6 +117,20 @@ theorem finite_setOf_inv_mul_eq (F : G →* G) [Finite (TauCeti.fixedSubgroup F)
       fun g₁ g₂ h => Subtype.ext (mul_right_cancel (congrArg Subtype.val h))
   · have : IsEmpty {g : G | g⁻¹ * F g = a} := not_nonempty_iff.mp hne
     infer_instance
+
+/-- **Fixed-coset lifting (without `F`-invariance)**: if `J ≤ G` is a subgroup (not necessarily
+normal or `F`-invariant) such that every element of `J` has the form `z⁻¹ * F z` with `z ∈ J`,
+then every left coset `hJ` satisfying `h⁻¹ * F h ∈ J` contains an `F`-fixed element `h * z` with
+`z ∈ J`. Unlike `exists_fixed_inv_mul_of_surjective_commutatorMap`, no endomorphism `f : J →* J`
+intertwining `F` is assumed. -/
+theorem exists_fixed_mul_of_surjective_inv_mul (F : G →* G) (J : Subgroup G)
+    (hJ : ∀ d ∈ J, ∃ z ∈ J, z⁻¹ * F z = d) {h : G} (hh : h⁻¹ * F h ∈ J) :
+    ∃ z ∈ J, F (h * z) = h * z := by
+  obtain ⟨z, hzJ, hz⟩ := hJ _ hh
+  refine ⟨z⁻¹, J.inv_mem hzJ, ?_⟩
+  have hFh : F h = h * (z⁻¹ * F z) := eq_mul_of_inv_mul_eq hz.symm
+  rw [map_mul, map_inv, hFh]
+  group
 
 /-- Correct an element to a fixed element by left multiplication from an invariant
 subgroup with surjective Lang map. The defect must lie in the subgroup's image. -/

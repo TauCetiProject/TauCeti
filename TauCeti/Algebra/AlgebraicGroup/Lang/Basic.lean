@@ -60,7 +60,7 @@ the convolution group of algebra-valued points:
 
 Over a finite field `F` of cardinality `q`, every positive iterate of the geometric Frobenius
 `id ⊗ Frob` on `K ⊗[F] H` has zero differential
-(`TauCeti.FiniteField.derivationComp_geometricFrobeniusBialgHom_eq_zero`). Applying the general
+(`TauCeti.FiniteField.derivationComp_geometricFrobeniusBialgHom_pow_eq_zero`). Applying the general
 theorem to the base change of a geometrically connected finite-type affine group scheme over `F`
 yields Lang's theorem for every positive iterate `n ≠ 0`
 (`TauCeti.Lang.surjective_inv_mul_frobeniusPoints`,
@@ -218,55 +218,6 @@ section Injectivity
 variable {K : Type u} [Field K]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra K H]
 
-/-- Evaluating a cotangent dual functional on `Ideal.mapCotangent` of an augmentation class gives
-the corresponding derivation evaluated on the underlying element. -/
-private theorem dual_mapCotangent_toCotangent
-    (g : H →ₐ[K] H)
-    (hgI : Bialgebra.AugmentationIdeal K H ≤ (Bialgebra.AugmentationIdeal K H).comap g)
-    (f : Module.Dual K (Bialgebra.CotangentSpace K H))
-    (x : Bialgebra.AugmentationIdeal K H) :
-    f (Ideal.mapCotangent (Bialgebra.AugmentationIdeal K H)
-        (Bialgebra.AugmentationIdeal K H) g hgI
-        ((Bialgebra.AugmentationIdeal K H).toCotangent x)) =
-      Bialgebra.CounitAlgebra.algEquivSelf K H K
-        (Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f (g x.val)) := by
-  rw [Ideal.mapCotangent_toCotangent, ← Bialgebra.cotangentMap_augmentation K H,
-    Derivation.algEquivSelf_cotangentLinearEquiv_apply]
-
-/-- Evaluating a cotangent dual functional on `Bialgebra.cotangentSpaceMap` of an augmentation
-class gives the corresponding derivation evaluated on the underlying element. -/
-private theorem dual_cotangentSpaceMap_toCotangent
-    (ψ : H →ₐc[K] H)
-    (f : Module.Dual K (Bialgebra.CotangentSpace K H))
-    (x : Bialgebra.AugmentationIdeal K H) :
-    f (Bialgebra.cotangentSpaceMap ψ ((Bialgebra.AugmentationIdeal K H).toCotangent x)) =
-      Bialgebra.CounitAlgebra.algEquivSelf K H K
-        (Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f
-          ((ψ : H →ₐ[K] H) x.val)) := by
-  rw [← Bialgebra.cotangentMap_augmentation K H x, Bialgebra.cotangentSpaceMap_cotangentMap,
-    Derivation.algEquivSelf_cotangentLinearEquiv_apply, BialgHom.coe_toAlgHom]
-
-/-- A counit-preserving algebra endomorphism preserves the augmentation ideal. -/
-private theorem augmentationIdeal_le_comap_of_counit_comp {f : H →ₐ[K] H}
-    (hf : (_root_.Bialgebra.counitAlgHom K H).comp f = _root_.Bialgebra.counitAlgHom K H) :
-    Bialgebra.AugmentationIdeal K H ≤ (Bialgebra.AugmentationIdeal K H).comap f := by
-  intro x hx
-  simp only [Ideal.mem_comap, Bialgebra.AugmentationIdeal, RingHom.mem_ker,
-    AlgHom.coe_toRingHom] at hx ⊢
-  rw [← AlgHom.comp_apply, hf]
-  exact hx
-
-/-- A counit-preserving algebra endomorphism induces the identity on the quotient by the
-augmentation ideal. -/
-private theorem quotient_mk_augmentationIdeal_comp_of_counit_comp {f : H →ₐ[K] H}
-    (hf : (_root_.Bialgebra.counitAlgHom K H).comp f = _root_.Bialgebra.counitAlgHom K H) :
-    Ideal.Quotient.mk (Bialgebra.AugmentationIdeal K H) ∘ f =
-      Ideal.Quotient.mk (Bialgebra.AugmentationIdeal K H) := by
-  ext x
-  simp only [Function.comp_apply, Ideal.Quotient.eq, Bialgebra.AugmentationIdeal,
-    RingHom.mem_ker, AlgHom.coe_toRingHom, map_sub]
-  rw [← AlgHom.comp_apply, hf, sub_self]
-
 /-- The induced map of `twistedLangAtId φ a` on the cotangent space at the identity coincides with
 that of conjugation by `a⁻¹`. -/
 private theorem mapCotangent_twistedLangAtId (φ : H →ₐc[K] H)
@@ -280,8 +231,9 @@ private theorem mapCotangent_twistedLangAtId (φ : H →ₐc[K] H)
   obtain ⟨x, rfl⟩ := (Bialgebra.AugmentationIdeal K H).toCotangent_surjective c
   rw [← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff K]
   intro f
-  rw [map_sub, sub_eq_zero, dual_mapCotangent_toCotangent, dual_cotangentSpaceMap_toCotangent,
-    BialgEquiv.toBialgHom_eq_coe, HopfAlgebra.pointConjugationBialgEquiv_toAlgHom]
+  rw [map_sub, sub_eq_zero, Derivation.apply_mapCotangent_toCotangent,
+    Derivation.apply_cotangentSpaceMap_toCotangent, BialgEquiv.toBialgHom_eq_coe,
+    HopfAlgebra.pointConjugationBialgEquiv_toAlgHom]
   exact congrArg (Bialgebra.CounitAlgebra.algEquivSelf K H K)
     (derivation_comp_twistedLangAtId φ hφ a
       (Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f) x.val)
@@ -297,9 +249,10 @@ theorem twistedLangAlgHom_injective [IsNoetherianRing H] [IsDomain H]
   have hI_ne_top : I ≠ ⊤ := RingHom.ker_ne_top (_root_.Bialgebra.counitAlgHom K H : H →+* K)
   have hcounit := counit_comp_twistedLangAtId φ a
   have hfI : I ≤ I.comap (twistedLangAtId φ a) :=
-    augmentationIdeal_le_comap_of_counit_comp hcounit
+    AlgHom.augmentationIdeal_le_comap_of_counitAlgHom_comp (twistedLangAtId φ a) hcounit
   have hquot : Function.Surjective (Ideal.Quotient.mk I ∘ twistedLangAtId φ a) := by
-    rw [quotient_mk_augmentationIdeal_comp_of_counit_comp hcounit]
+    rw [AlgHom.quotient_mk_augmentationIdeal_comp_of_counitAlgHom_comp (twistedLangAtId φ a)
+      hcounit]
     exact Ideal.Quotient.mk_surjective
   let e : H ≃ₐc[K] H := HopfAlgebra.pointConjugationBialgEquiv a⁻¹
   have hcot : Function.Surjective (Ideal.mapCotangent I I (twistedLangAtId φ a) hfI) := by
@@ -502,7 +455,7 @@ theorem exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue
   let act : (L ≃ₐ[F] L) → WithConv (H →ₐ[F] L) →* WithConv (H →ₐ[F] L) :=
     fun γ => AlgHom.mapValue γ.toAlgHom
   have hact1 : act 1 = MonoidHom.id _ := by
-    have h1id : (1 : L ≃ₐ[F] L).toAlgHom = AlgHom.id F L := AlgHom.ext fun _ => rfl
+    have h1id : (1 : L ≃ₐ[F] L).toAlgHom = AlgHom.id F L := AlgHom.ext fun x => AlgEquiv.one_apply x
     dsimp only [act]
     rw [h1id, AlgHom.mapValue_id]
   have hc1 : c 1 = 1 := TauCeti.cocycle_one_eq_one act hact1 c hc
@@ -528,7 +481,7 @@ theorem exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue
     rw [hpow1, hc1, map_one] at h
     exact (inv_mul_eq_one.mp h).symm
   obtain ⟨b, hb⟩ : bK ∈ (AlgHom.mapValue (H := H) ι).range := by
-    rw [FiniteField.range_mapValue]
+    rw [FiniteField.range_mapValue_eq_fixedSubgroup_frobeniusPoints]
     exact mem_fixedSubgroup.mpr hfix
   refine ⟨b, fun γ => ?_⟩
   obtain ⟨n, rfl⟩ := (_root_.FiniteField.bijective_frobeniusAlgEquivOfAlgebraic_pow F L).2 γ

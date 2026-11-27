@@ -19,7 +19,7 @@ For a commutative ring `R`, an endomorphism preserving an ideal `I` that is surj
 and on the conormal module `I ⧸ I ^ 2` is surjective modulo every power `I ^ n`
 (`RingHom.quotientMap_pow_surjective` in `TauCeti.RingTheory.Ideal.Cotangent.Basic`). When `R` is
 Noetherian, each quotient `R ⧸ I ^ n` is Noetherian, so the induced endomorphism on every
-infinitesimal quotient is bijective (`RingHom.injective_of_surjective` in
+infinitesimal quotient is bijective (`IsNoetherianRing.injective_of_surjective_endomorphism` in
 `TauCeti.RingTheory.Noetherian.RingHom`); if `I` is adically separated (`⨅ n, I ^ n = ⊥`), in
 particular when `R` is a Noetherian domain and `I ≠ ⊤` by Krull's intersection theorem, the
 endomorphism is injective.
@@ -58,8 +58,8 @@ theorem injective_of_iInf_pow_eq_bot_of_surjective_quotient_of_surjective_cotang
   rw [← Ideal.mem_bot, ← hsep, Ideal.mem_iInf]
   intro n
   have hpow : I ^ n ≤ (I ^ n).comap f := Ideal.pow_le_comap_pow_of_le_comap f hfI n
-  have hinj := (Ideal.quotientMap (I ^ n) f hpow).injective_of_surjective
-    (f.quotientMap_pow_surjective hfI hquot hcot n)
+  have hinj := IsNoetherianRing.injective_of_surjective_endomorphism
+    (Ideal.quotientMap (I ^ n) f hpow) (f.quotientMap_pow_surjective hfI hquot hcot n)
   have hzero : Ideal.quotientMap (I ^ n) f hpow (Ideal.Quotient.mk (I ^ n) x) = 0 := by
     rw [Ideal.quotientMap_mk, hx, map_zero]
   exact Ideal.Quotient.eq_zero_iff_mem.mp (hinj (hzero.trans (map_zero _).symm))

@@ -23,6 +23,8 @@ the induced map on reduced quotients (`TauCeti.HopfIdeal.reductionBialgHom`).
   points of the reduced quotient and of `H`.
 * `TauCeti.HopfIdeal.reductionPointsMulEquiv_apply`: evaluation as `BialgHom.mapDomain` along the
   quotient morphism.
+* `TauCeti.HopfIdeal.reductionPointsMulEquiv_symm_apply`: inverse evaluation via
+  `Ideal.Quotient.liftₐ`.
 * `TauCeti.HopfIdeal.reductionPointsMulEquiv_mapDomain_reductionBialgHom`: naturality with respect
   to `TauCeti.HopfIdeal.reductionBialgHom`.
 -/
@@ -58,11 +60,24 @@ noncomputable def reductionPointsMulEquiv :
           Ideal.Quotient.liftₐ_comp, toConv_ofConv]⟩
 
 /-- `reductionPointsMulEquiv` acts by precomposition with the quotient bialgebra morphism. -/
+@[simp]
 theorem reductionPointsMulEquiv_apply
     (g : WithConv ((H ⧸ (reduction R H).toIdeal) →ₐ[R] A)) :
     reductionPointsMulEquiv R H A g =
       BialgHom.mapDomain (A := A) (Bialgebra.Quotient.mkBialgHom (reduction R H).toIdeal) g :=
   (rfl)
+
+/-- The inverse of `reductionPointsMulEquiv` lifts a reduced-valued point of `H` through the
+reduced quotient `H ⧸ (HopfIdeal.reduction R H).toIdeal`. -/
+@[simp]
+theorem reductionPointsMulEquiv_symm_apply (a : WithConv (H →ₐ[R] A)) :
+    (reductionPointsMulEquiv R H A).symm a =
+      toConv (Ideal.Quotient.liftₐ (reduction R H).toIdeal a.ofConv fun x hx =>
+        ((mem_nilradical.mp (reduction_toIdeal R H ▸ hx)).map a.ofConv.toRingHom).eq_zero) := by
+  apply (reductionPointsMulEquiv R H A).injective
+  rw [MulEquiv.apply_symm_apply, reductionPointsMulEquiv_apply, BialgHom.mapDomain_apply,
+    ofConv_toConv, Bialgebra.Quotient.mkBialgHom_toAlgHom, Ideal.Quotient.liftₐ_comp,
+    toConv_ofConv]
 
 variable {R H A}
 

@@ -24,8 +24,8 @@ This file records two concrete illustrations of Lang's theorem:
   `g ↦ g⁻¹ * Frob(g)` induced by the entrywise `|F|`-power Frobenius is surjective on
   `GL_n(K)`.
 * **Failure without connectedness**
-  (`TauCeti.Lang.inv_mul_frobeniusPoints_zmod_two_eq_one_of_odd_card`,
-  `TauCeti.Lang.not_surjective_inv_mul_frobeniusPoints_zmod_two_of_odd_card`):
+  (`TauCeti.Lang.inv_mul_frobeniusPoints_rootsOfUnityGroup_two_eq_one_of_odd_card`,
+  `TauCeti.Lang.not_surjective_inv_mul_frobeniusPoints_rootsOfUnityGroup_two_of_odd_card`):
   for a finite field `F` of odd cardinality, any nontrivial commutative `F`-algebra `K`, and any
   `n : ℕ`, the `|F|^n`-Frobenius acts trivially on `μ₂(K)`, so the Lang map on `μ₂(K)` is
   constantly `1` and misses the point `-1`.
@@ -62,7 +62,7 @@ theorem surjective_inv_mul_generalLinearGroup_map_frobeniusAlgHom
 
 /-- Over a finite field `F` of odd cardinality, every iterate of the `|F|`-Frobenius acts trivially
 on the points of `μ₂` in any commutative `F`-algebra, so the Lang map is identically `1`. -/
-theorem inv_mul_frobeniusPoints_zmod_two_eq_one_of_odd_card
+theorem inv_mul_frobeniusPoints_rootsOfUnityGroup_two_eq_one_of_odd_card
     {F : Type u} [Field F] [Fintype F] (hodd : Odd (Fintype.card F))
     {K : Type w} [CommRing K] [Algebra F K] (n : ℕ)
     (g : WithConv (MonoidAlgebra F (Multiplicative (ZMod 2)) →ₐ[F] K)) :
@@ -82,7 +82,7 @@ theorem inv_mul_frobeniusPoints_zmod_two_eq_one_of_odd_card
 any nontrivial commutative `F`-algebra `K` (in particular any algebraically closed extension), and
 any `n : ℕ`, the Lang map of the `|F|^n`-Frobenius on `μ₂(K)` is not surjective, as it misses
 `-1`. -/
-theorem not_surjective_inv_mul_frobeniusPoints_zmod_two_of_odd_card
+theorem not_surjective_inv_mul_frobeniusPoints_rootsOfUnityGroup_two_of_odd_card
     {F : Type u} [Field F] [Fintype F] (hodd : Odd (Fintype.card F))
     {K : Type w} [CommRing K] [Nontrivial K] [Algebra F K] (n : ℕ) :
     ¬ Function.Surjective
@@ -99,7 +99,7 @@ theorem not_surjective_inv_mul_frobeniusPoints_zmod_two_of_odd_card
   intro hsurj
   obtain ⟨g, hg⟩ := hsurj a
   have ha1 : a = 1 :=
-    hg.symm.trans (inv_mul_frobeniusPoints_zmod_two_eq_one_of_odd_card hodd n g)
+    hg.symm.trans (inv_mul_frobeniusPoints_rootsOfUnityGroup_two_eq_one_of_odd_card hodd n g)
   have hval := congrArg (fun p =>
     ((RootsOfUnityGroup.pointsMulEquiv (R := F) (A := K) 2 p : Kˣ) : K)) ha1
   simp only [a, negOne, MulEquiv.apply_symm_apply, map_one, OneMemClass.coe_one, Units.val_one,

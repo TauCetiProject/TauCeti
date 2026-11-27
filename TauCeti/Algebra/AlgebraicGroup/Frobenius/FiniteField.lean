@@ -68,8 +68,9 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   every morphism of group schemes over `K`.
 * `TauCeti.FiniteField.coe_rationalPointsMulEquiv_mapDomain`: the identification of the fixed
   points with the `K`-points is natural in the group scheme.
-* `TauCeti.FiniteField.range_mapValue`: for a finite field extension `L / K` and `ι : L →ₐ[K] A`
-  into a domain, the points coming from `L`-points are those fixed by the `q ^ [L : K]`-Frobenius.
+* `TauCeti.FiniteField.range_mapValue_eq_fixedSubgroup_frobeniusPoints`: for a finite field
+  extension `L / K` and `ι : L →ₐ[K] A` into a domain, the points coming from `L`-points are those
+  fixed by the `q ^ [L : K]`-Frobenius.
 * `TauCeti.FiniteField.finite_fixedSubgroup_frobeniusPoints`: for `H` of finite type and `A` a
   domain, the points fixed by a positive iterate of the Frobenius form a finite group.
 * `baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom`,
@@ -337,8 +338,8 @@ end Domain
 /-- Over a domain `A`, for a finite field extension `L / K` and a `K`-algebra homomorphism
 `ι : L →ₐ[K] A`, the points coming from `L`-points along `ι` are exactly the points fixed by the
 `|K| ^ [L : K]`-Frobenius. -/
-theorem range_mapValue [IsDomain A] {L : Type*} [Field L] [Finite L] [Algebra K L]
-    (ι : L →ₐ[K] A) :
+theorem range_mapValue_eq_fixedSubgroup_frobeniusPoints [IsDomain A] {L : Type*} [Field L]
+    [Finite L] [Algebra K L] (ι : L →ₐ[K] A) :
     (AlgHom.mapValue (H := H) ι).range =
       fixedSubgroup (frobeniusPoints K (Module.finrank K L)) := by
   let _ : Algebra L A := ι.toRingHom.toAlgebra
@@ -435,16 +436,10 @@ theorem baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom_
   induction n with
   | zero =>
     ext f : 1
-    have h1 : (1 : k ⊗[K] H →ₐc[k] k ⊗[K] H) = BialgHom.id k (k ⊗[K] H) :=
-      BialgHom.ext fun _ => BialgHom.one_apply _
-    simp [h1]
+    simp [BialgHom.End_toOne_one]
   | succ n ih =>
     ext f : 1
-    have hmul :
-        geometricFrobeniusBialgHom K k H * geometricFrobeniusBialgHom K k H ^ n =
-          (geometricFrobeniusBialgHom K k H).comp (geometricFrobeniusBialgHom K k H ^ n) :=
-      BialgHom.ext fun _ => BialgHom.mul_apply _ _ _
-    simp only [MonoidHom.comp_apply, pow_succ', hmul, BialgHom.mapDomain_comp]
+    simp only [MonoidHom.comp_apply, pow_succ', BialgHom.End_toMul_mul, BialgHom.mapDomain_comp]
     have hn := DFunLike.congr_fun ih
       (BialgHom.mapDomain (A := R) (geometricFrobeniusBialgHom K k H) f)
     have h1 := DFunLike.congr_fun

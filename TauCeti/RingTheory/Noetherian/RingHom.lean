@@ -16,15 +16,15 @@ of the kernel into that stable range. No commutativity hypothesis is needed.
 
 ## Main results
 
-* `RingHom.injective_of_surjective`: a surjective ring endomorphism of a left-Noetherian ring is
-  injective.
-* `RingHom.bijective_of_surjective`: a surjective ring endomorphism of a left-Noetherian ring is
-  bijective.
+* `IsNoetherianRing.injective_of_surjective_endomorphism`: a surjective ring endomorphism of a
+  left-Noetherian ring is injective.
+* `IsNoetherianRing.bijective_of_surjective_endomorphism`: a surjective ring endomorphism of a
+  left-Noetherian ring is bijective.
 -/
 
 public section
 
-namespace RingHom
+namespace IsNoetherianRing
 
 section Ring
 
@@ -32,7 +32,7 @@ variable {R : Type*} [Ring R]
 
 /-- **Hopfian property of Noetherian rings**: every surjective ring endomorphism of a
 left-Noetherian ring is injective. -/
-theorem injective_of_surjective [IsNoetherianRing R] (f : R →+* R)
+theorem injective_of_surjective_endomorphism [IsNoetherianRing R] (f : R →+* R)
     (hf : Function.Surjective f) : Function.Injective f := by
   let kerChain : ℕ →o Ideal R :=
     ⟨fun n => RingHom.ker (f ^ n), fun m n hmn x hx => by
@@ -52,10 +52,10 @@ theorem injective_of_surjective [IsNoetherianRing R] (f : R →+* R)
   exact RingHom.mem_ker.mp (hstab.symm ▸ hy)
 
 /-- Every surjective ring endomorphism of a left-Noetherian ring is bijective. -/
-theorem bijective_of_surjective [IsNoetherianRing R] (f : R →+* R)
+theorem bijective_of_surjective_endomorphism [IsNoetherianRing R] (f : R →+* R)
     (hf : Function.Surjective f) : Function.Bijective f :=
-  ⟨f.injective_of_surjective hf, hf⟩
+  ⟨injective_of_surjective_endomorphism f hf, hf⟩
 
 end Ring
 
-end RingHom
+end IsNoetherianRing

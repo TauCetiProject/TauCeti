@@ -46,7 +46,7 @@ theorem derivationComp_frobeniusBialgHom_eq_zero
     derivationComp (B := B) (frobeniusBialgHom F H) = 0 := by
   ext d h : 2
   rw [derivationComp_apply, LinearMap.zero_apply, zero_apply, BialgHom.coe_toAlgHom,
-    frobeniusBialgHom_apply, d.pow_eq_zero (Nat.cast_card_eq_zero F)]
+    frobeniusBialgHom_apply, d.map_pow_eq_zero_of_natCast_eq_zero (Nat.cast_card_eq_zero F)]
 
 namespace FiniteField
 
@@ -71,7 +71,7 @@ theorem derivationComp_geometricFrobeniusBialgHom_eq_zero
           s • (((1 : K) ⊗ₜ[F] h) ^ Fintype.card F) := by
       rw [BialgHom.coe_toAlgHom, geometricFrobeniusBialgHom_tmul, Algebra.TensorProduct.tmul_pow,
         one_pow, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-    rw [htmul, Derivation.map_smul, d.pow_eq_zero hcardK, smul_zero]
+    rw [htmul, Derivation.map_smul, d.map_pow_eq_zero_of_natCast_eq_zero hcardK, smul_zero]
 
 /-- Every positive power of the geometric Frobenius `id ⊗ Frob` on a base change `K ⊗[F] H`
 has zero differential. -/
@@ -82,11 +82,7 @@ theorem derivationComp_geometricFrobeniusBialgHom_pow_eq_zero
     {B : Type*} [Semiring B] [Algebra K B] {n : ℕ} (hn : n ≠ 0) :
     TauCeti.derivationComp (B := B) ((geometricFrobeniusBialgHom F K H) ^ n) = 0 := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  have hmul :
-      geometricFrobeniusBialgHom F K H * geometricFrobeniusBialgHom F K H ^ m =
-        (geometricFrobeniusBialgHom F K H).comp (geometricFrobeniusBialgHom F K H ^ m) :=
-    BialgHom.ext fun _ => BialgHom.mul_apply _ _ _
-  rw [pow_succ', hmul, TauCeti.derivationComp_comp,
+  rw [pow_succ', BialgHom.End_toMul_mul, TauCeti.derivationComp_comp,
     derivationComp_geometricFrobeniusBialgHom_eq_zero, LinearMap.comp_zero]
 
 end FiniteField
