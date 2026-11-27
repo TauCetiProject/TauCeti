@@ -60,8 +60,9 @@ integrally closed ring with fraction field and finite quotients, including rings
 number fields. -/
 theorem normOne_isFiniteRelIndex [Ring.HasFiniteQuotients R]
     (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) :
-    hΛ.normOne.IsFiniteRelIndex hΓ.normOne := by
-  unfold normOne
-  exact StarOrder.unitarySubgroup_isFiniteRelIndex _ _
+    hΛ.normOne.IsFiniteRelIndex hΓ.normOne :=
+  StarOrder.unitarySubgroup_isFiniteRelIndex
+    (StarOrder.ofSubalgebra Λ hΛ fun _ hx => hΛ.star_mem hx)
+    (StarOrder.ofSubalgebra Γ hΓ fun _ hx => hΓ.star_mem hx)
 
 end TauCeti.IntegralOrder.IsOrder

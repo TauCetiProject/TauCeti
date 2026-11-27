@@ -47,6 +47,18 @@ theorem mem_unitarySubgroup (O : StarOrder R F E) {x : unitary E} :
 theorem unitarySubgroup_mono (h : O ≤ P) : O.unitarySubgroup ≤ P.unitarySubgroup :=
   fun _ hx => h hx
 
+omit [StarRing E] in
+private theorem mem_of_sub_one_mem_map {Λ Γ : Subalgebra R E} {r : R}
+    (hrΓ : ∀ v ∈ Γ, r • v ∈ Λ) (z : Γ)
+    (hz : z - 1 ∈ (Ideal.span {r}).map (algebraMap R Γ)) : (z : E) ∈ Λ := by
+  rw [Ideal.mem_map_algebraMap_iff, Submodule.ideal_span_singleton_smul] at hz
+  obtain ⟨y, _, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ r ⊤).mp hz
+  have hdiff : r • (y : E) = (z : E) - 1 := by
+    simpa only [Subalgebra.coe_smul, Subalgebra.coe_sub, Subalgebra.coe_one] using
+      congrArg ((↑) : Γ → E) hy
+  have hsub : (z : E) - 1 ∈ Λ := hdiff ▸ hrΓ y y.property
+  simpa only [sub_add_cancel] using Λ.add_mem hsub Λ.one_mem
+
 /-- Over a ring with finite quotients, the unitary subgroups of any two star-orders have finite
 relative index. For nested star-orders the smaller unitary subgroup thus has finite index in
 the larger one. -/
@@ -56,6 +68,7 @@ theorem unitarySubgroup_isFiniteRelIndex {K : Type*} [Field K] [Algebra R K]
   have : IsDomain R := (IsFractionRing.isDomain_iff_isField (K := K)).2 (Field.toIsField K)
   let Λ := O.toSubalgebra
   let Γ := P.toSubalgebra
+  -- Clear denominators uniformly so that a nonzero scalar carries Γ into Λ.
   have hfg : Γ.toSubmodule.FG := Module.Finite.iff_fg.1 P.isOrder.finite
   obtain ⟨r, hr, hrΓ⟩ := hfg.exists_smul_mem_of_le_span (F := K) (M := Λ.toSubmodule) R⁰ (by
     intro v _
@@ -64,6 +77,7 @@ theorem unitarySubgroup_isFiniteRelIndex {K : Type*} [Field K] [Algebra R K]
     rw [O.isOrder.span_eq_top]
     trivial)
   have hr0 : r ≠ 0 := nonZeroDivisors.ne_zero hr
+  -- Reduce the unitary subgroup of Γ into the units of the finite quotient Γ / rΓ.
   have : Finite (R ⧸ Ideal.span {r}) :=
     Ring.HasFiniteQuotients.finiteQuotient (by simpa using hr0)
   have := P.isOrder.finite
@@ -82,6 +96,7 @@ theorem unitarySubgroup_isFiniteRelIndex {K : Type*} [Field K] [Algebra R K]
       (reduction x : Γ ⧸ J) = Ideal.Quotient.mk J (inclusion x) :=
     MonoidHom.coe_toHomUnits _ _
   have : reduction.ker.FiniteIndex := inferInstance
+  -- A kernel element is congruent to one modulo rΓ, so it belongs to Λ.
   have hker : reduction.ker ≤ O.unitarySubgroup.subgroupOf P.unitarySubgroup := by
     intro x hx
     have hxval : (reduction x : Γ ⧸ J) = 1 :=
@@ -90,14 +105,8 @@ theorem unitarySubgroup_isFiniteRelIndex {K : Type*} [Field K] [Algebra R K]
       rw [← reduction_val, map_one]
       exact hxval
     have hx' : inclusion x - 1 ∈ J := Ideal.Quotient.eq.mp hxquot
-    rw [Ideal.mem_map_algebraMap_iff, Submodule.ideal_span_singleton_smul] at hx'
-    obtain ⟨y, _, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ r ⊤).mp hx'
-    have hdiff : r • (y : E) = ((inclusion x : Γ) : E) - 1 := by
-      simpa only [Subalgebra.coe_smul, Subalgebra.coe_sub, Subalgebra.coe_one] using
-        congrArg ((↑) : Γ → E) hy
-    have hsub : ((inclusion x : Γ) : E) - 1 ∈ Λ := hdiff ▸ hrΓ y y.property
-    have hmem := Λ.add_mem hsub Λ.one_mem
-    rw [sub_add_cancel, inclusion_coe] at hmem
+    have hmem := mem_of_sub_one_mem_map hrΓ (inclusion x) hx'
+    rw [inclusion_coe] at hmem
     exact (mem_unitarySubgroup O).2 (mem_toSubalgebra.mp hmem)
   rw [Subgroup.isFiniteRelIndex_iff_finiteIndex]
   exact Subgroup.finiteIndex_of_le hker
