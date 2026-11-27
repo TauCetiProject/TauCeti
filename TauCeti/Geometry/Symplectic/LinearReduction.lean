@@ -254,6 +254,12 @@ noncomputable def reduction : SymplecticForm (ω.ReducedSpace U) :=
     intro u
     exact ω.self_eq_zero u
 
+/-- The reduction of `ω` along `U` is the symplectic form induced on the quotient by the kernel
+by the (alternating) restriction of `ω` to `U`. -/
+theorem reduction_eq_symplecticFormQuotKer (hB : (ω.toBilinForm.restrict U).IsAlt) :
+    ω.reduction U = hB.symplecticFormQuotKer :=
+  (rfl)
+
 /-- The defining formula `ω_red([u], [v]) = ω(u, v)` of the reduced symplectic form. -/
 @[simp]
 theorem reduction_mk (u v : U) :
@@ -461,6 +467,16 @@ section Functoriality
 
 variable {ω : SymplecticForm V} {ω' : SymplecticForm V'} {ω'' : SymplecticForm V''}
 
+/-- A linear symplectomorphism `e` carrying `U` onto `U'` intertwines the restrictions of `ω` and
+`ω'` along the induced equivalence `U ≃ U'`. -/
+private theorem restrict_apply_submoduleMap_trans_ofEq (e : V ≃ₗ[ℝ] V')
+    (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
+    (hU : U.map (e : V →ₗ[ℝ] V') = U') (u v : U) :
+    ω'.toBilinForm.restrict U' ((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU) u)
+        ((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU) v) =
+      ω.toBilinForm.restrict U u v := by
+  simpa using he.apply u v
+
 variable (ω ω') in
 /-- A linear symplectomorphism `e : V ≃ V'` carrying `U` onto `U'` induces the linear equivalence
 `[u] ↦ [e u]` of reduced spaces; it is a symplectomorphism
@@ -469,7 +485,7 @@ noncomputable def reducedSpaceCongr (e : V ≃ₗ[ℝ] V') (he : IsSymplectomorp
     {U : Submodule ℝ V} {U' : Submodule ℝ V'} (hU : U.map (e : V →ₗ[ℝ] V') = U') :
     ω.ReducedSpace U ≃ₗ[ℝ] ω'.ReducedSpace U' :=
   LinearMap.BilinForm.quotKerCongr _ _ ((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU))
-    fun u v ↦ he.apply u v
+    (restrict_apply_submoduleMap_trans_ofEq e he hU)
 
 /-- The induced map of reduced spaces is `[u] ↦ [e u]`. -/
 @[simp]
@@ -483,9 +499,12 @@ theorem reducedSpaceCongr_mk (e : V ≃ₗ[ℝ] V') (he : IsSymplectomorphism ω
 theorem isSymplectomorphism_reducedSpaceCongr (e : V ≃ₗ[ℝ] V')
     (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
     (hU : U.map (e : V →ₗ[ℝ] V') = U') :
-    IsSymplectomorphism (ω.reduction U) (ω'.reduction U') (reducedSpaceCongr ω ω' e he hU) :=
-  LinearMap.BilinForm.IsAlt.isSymplectomorphism_quotKerCongr _ _
-    ((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU)) fun u v ↦ he.apply u v
+    IsSymplectomorphism (ω.reduction U) (ω'.reduction U') (reducedSpaceCongr ω ω' e he hU) := by
+  have hB : (ω.toBilinForm.restrict U).IsAlt := fun u ↦ by simp
+  have hB' : (ω'.toBilinForm.restrict U').IsAlt := fun u ↦ by simp
+  rw [reducedSpaceCongr, reduction_eq_symplecticFormQuotKer ω U hB,
+    reduction_eq_symplecticFormQuotKer ω' U' hB']
+  exact hB.isSymplectomorphism_quotKerCongr hB' _ (restrict_apply_submoduleMap_trans_ofEq e he hU)
 
 /-- The descent condition of `TauCeti.SymplecticForm.reducedQuadraticForm` transfers along a linear
 symplectomorphism `e` carrying `U` onto `U'`: the pullback `Q ∘ e` vanishes on `(U ∩ U^ω) × U`
