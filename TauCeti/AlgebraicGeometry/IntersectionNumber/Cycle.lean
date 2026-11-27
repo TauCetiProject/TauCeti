@@ -150,16 +150,7 @@ theorem cycleIntersectionNumber_basis_of_isClosedImmersion [CompactSpace X] {C :
   have hI : I ≤ ι.ker := vanishingIdeal_le_ker_of_range_subset ι hrange.le
   let e := IsClosedImmersion.lift I.subschemeι ι (by simpa using hI)
   have he : e ≫ I.subschemeι = ι := IsClosedImmersion.lift_fac _ _ _
-  have : IsClosedImmersion (e ≫ I.subschemeι) := he ▸ inferInstance
-  have := IsClosedImmersion.of_comp_isClosedImmersion e I.subschemeι
-  have : Surjective e := by
-    constructor
-    intro y
-    obtain ⟨z, hz⟩ := hrange.ge y.property
-    exact ⟨z, I.subschemeι.isClosedEmbedding.injective
-      ((Scheme.Hom.comp_apply e I.subschemeι z).symm.trans
-        ((congrArg (fun f : C ⟶ X ↦ f z) he).trans hz))⟩
-  have := isIso_of_isClosedImmersion_of_surjective e
+  have : IsIso e := ι.isIso_lift_subschemeι_vanishingIdeal hrange
   have heOver : e ≫ I.subscheme ↘ Spec (.of k) = C ↘ Spec (.of k) := by
     rw [← comp_over I.subschemeι (Spec (.of k)), ← Category.assoc, he, comp_over]
   rw [cycleIntersectionNumber_basis, ← he, intersectionNumber_def,
