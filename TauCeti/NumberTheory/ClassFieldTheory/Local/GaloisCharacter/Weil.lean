@@ -138,16 +138,22 @@ theorem toWeilCharacter_unramifiedCharacter (a : G) (w : WeilGroup K) :
 
 end Group
 
-section CommGroup
+section CommMonoid
 
-variable {G : Type*} [CommGroup G] [TopologicalSpace G]
+variable {M : Type*} [CommMonoid M] [TopologicalSpace M] [ContinuousMul M]
 
 /-- `toWeilCharacter` preserves products of characters. -/
 @[simp]
-theorem toWeilCharacter_mul [ContinuousMul G] (δ₁ δ₂ : Kˣ →ₜ* G) :
+theorem toWeilCharacter_mul (δ₁ δ₂ : Kˣ →ₜ* M) :
     (δ₁ * δ₂).toWeilCharacter = δ₁.toWeilCharacter * δ₂.toWeilCharacter := by
   ext1 _
   rfl
+
+end CommMonoid
+
+section CommGroup
+
+variable {G : Type*} [CommGroup G] [TopologicalSpace G]
 
 /-- `toWeilCharacter` preserves inverses of characters. -/
 @[simp]
@@ -257,14 +263,14 @@ theorem exists_galoisCharacter_one {M : Type*} [Monoid M] [TopologicalSpace M] :
       ∀ w : WeilGroup K, χ (weilToAbsolute K w) = (1 : Kˣ →ₜ* M).toWeilCharacter w :=
   ⟨1, fun _ ↦ rfl⟩
 
-/-- If `δ₁, δ₂ : Kˣ →ₜ* G` extend continuously to `G_K`, then so does `δ₁ * δ₂`. -/
-theorem exists_galoisCharacter_mul {G : Type*} [CommGroup G] [TopologicalSpace G] [ContinuousMul G]
-    {δ₁ δ₂ : Kˣ →ₜ* G}
-    (h₁ : ∃ χ : Field.absoluteGaloisGroup K →ₜ* G,
+/-- If `δ₁, δ₂ : Kˣ →ₜ* M` extend continuously to `G_K`, then so does `δ₁ * δ₂`. -/
+theorem exists_galoisCharacter_mul {M : Type*} [CommMonoid M] [TopologicalSpace M]
+    [ContinuousMul M] {δ₁ δ₂ : Kˣ →ₜ* M}
+    (h₁ : ∃ χ : Field.absoluteGaloisGroup K →ₜ* M,
       ∀ w : WeilGroup K, χ (weilToAbsolute K w) = δ₁.toWeilCharacter w)
-    (h₂ : ∃ χ : Field.absoluteGaloisGroup K →ₜ* G,
+    (h₂ : ∃ χ : Field.absoluteGaloisGroup K →ₜ* M,
       ∀ w : WeilGroup K, χ (weilToAbsolute K w) = δ₂.toWeilCharacter w) :
-    ∃ χ : Field.absoluteGaloisGroup K →ₜ* G,
+    ∃ χ : Field.absoluteGaloisGroup K →ₜ* M,
       ∀ w : WeilGroup K, χ (weilToAbsolute K w) = (δ₁ * δ₂).toWeilCharacter w := by
   obtain ⟨χ₁, hχ₁⟩ := h₁
   obtain ⟨χ₂, hχ₂⟩ := h₂
@@ -287,9 +293,9 @@ theorem exists_galoisCharacter_inv {G : Type*} [CommGroup G] [TopologicalSpace G
 /-- **Product law for continuous Galois extensions.** Any continuous Galois character extending
 `(δ₁ * δ₂).toWeilCharacter` is the pointwise product of continuous extensions of
 `δ₁.toWeilCharacter` and `δ₂.toWeilCharacter`. -/
-theorem galoisCharacter_eq_mul_of_weilToAbsolute_eq {G : Type*} [CommGroup G] [TopologicalSpace G]
-    [ContinuousMul G] [T2Space G] {δ₁ δ₂ : Kˣ →ₜ* G}
-    {χ χ₁ χ₂ : Field.absoluteGaloisGroup K →ₜ* G}
+theorem galoisCharacter_eq_mul_of_weilToAbsolute_eq {M : Type*} [CommMonoid M] [TopologicalSpace M]
+    [ContinuousMul M] [T2Space M] {δ₁ δ₂ : Kˣ →ₜ* M}
+    {χ χ₁ χ₂ : Field.absoluteGaloisGroup K →ₜ* M}
     (hχ : ∀ w : WeilGroup K, χ (weilToAbsolute K w) = (δ₁ * δ₂).toWeilCharacter w)
     (hχ₁ : ∀ w : WeilGroup K, χ₁ (weilToAbsolute K w) = δ₁.toWeilCharacter w)
     (hχ₂ : ∀ w : WeilGroup K, χ₂ (weilToAbsolute K w) = δ₂.toWeilCharacter w) :

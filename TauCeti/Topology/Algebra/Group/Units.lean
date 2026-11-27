@@ -63,7 +63,7 @@ instance instT1Space [T1Space M] : T1Space Mˣ :=
 disconnected space. -/]
 instance instTotallyDisconnectedSpace [TotallyDisconnectedSpace M] :
     TotallyDisconnectedSpace Mˣ :=
-  totallyDisconnectedSpace_of_injective_continuous val_injective continuous_val
+  totallyDisconnectedSpace_of_injective_of_continuous val_injective continuous_val
 
 /-- **The neighbourhood filter of a unit** is the meet of the pullbacks of the neighbourhood
 filters of the unit and of its inverse along the two coercions to `M`. -/

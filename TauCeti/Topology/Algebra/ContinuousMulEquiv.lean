@@ -263,10 +263,7 @@ continuous inversion) as a `ContinuousMulEquiv`. This is `MulEquiv.inv` upgraded
   upgraded to a `ContinuousAddEquiv`. -/]
 def _root_.ContinuousMulEquiv.inv : G ≃ₜ* G where
   toEquiv := Equiv.inv G
-  map_mul' a b := by
-    change (a * b)⁻¹ = a⁻¹ * b⁻¹
-    rw [mul_inv_rev]
-    exact IsMulCommutative.is_comm.comm _ _
+  map_mul' a b := (mul_inv_rev a b).trans (IsMulCommutative.is_comm.comm _ _)
   continuous_toFun := continuous_inv
   continuous_invFun := continuous_inv
 

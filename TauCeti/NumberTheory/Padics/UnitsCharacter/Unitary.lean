@@ -15,7 +15,7 @@ import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 A continuous character `δ : ℚ_[p]ˣ →ₜ* Lˣ` with values in a valuated field `L` is **unitary**
 (`TauCeti.PadicUnitsCharacter.IsUnitary`) when `valuation L (δ (padicPrimeUnit p) : L) = 1`. When
 `L` is a nonarchimedean local field, every continuous homomorphism from a compact monoid into `Lˣ`
-takes values of valuation `1` (`TauCeti.valuation_eq_one_of_continuousMonoidHom`), so in particular
+takes values of valuation `1` (`ContinuousMonoidHom.valuation_apply_eq_one`), so in particular
 `δ` maps `ℤ_[p]ˣ` into units of valuation `1`
 (`TauCeti.PadicUnitsCharacter.valuation_apply_padicIntUnitsInclusion_eq_one`), and `δ` is unitary
 if and only if `valuation L (δ x : L) = 1` for all `x ∈ ℚ_[p]ˣ`
@@ -35,7 +35,7 @@ nonarchimedean local field `L` equipped with a continuous `ℚ_[p]`-algebra stru
 * `TauCeti.PadicUnitsCharacter.isUnitary_iff_valuation_padicPrimeUnit_eq_one`,
   `TauCeti.PadicUnitsCharacter.isUnitary_one`, `TauCeti.PadicUnitsCharacter.isUnitary_mul`,
   `TauCeti.PadicUnitsCharacter.isUnitary_inv`: basic properties of unitary characters.
-* `TauCeti.valuation_eq_one_of_continuousMonoidHom`: every continuous homomorphism from a compact
+* `ContinuousMonoidHom.valuation_apply_eq_one`: every continuous homomorphism from a compact
   monoid into `Lˣ` takes values of valuation `1`.
 * `TauCeti.PadicUnitsCharacter.valuation_apply_padicIntUnitsInclusion_eq_one`: `δ(ℤ_[p]ˣ)` has
   valuation `1` in any nonarchimedean local field.
@@ -95,23 +95,35 @@ theorem PadicUnitsCharacter.isUnitary_inv [ContinuousMul L] {δ : PadicUnitsChar
 
 end UnitaryBasic
 
-section UnitaryLocalField
+end TauCeti
 
-variable {p : ℕ} [Fact p.Prime]
+namespace ContinuousMonoidHom
+
+open TauCeti
+
 variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 
 /-- Every continuous homomorphism from a compact monoid `A` into the unit group `Lˣ` of a
 nonarchimedean local field `L` takes values of valuation `1`, because its composition with
 `normalizedValuation L` is trivial. -/
-theorem valuation_eq_one_of_continuousMonoidHom {A : Type*} [Monoid A] [TopologicalSpace A]
-    [CompactSpace A] (φ : A →ₜ* Lˣ) (a : A) :
-    valuation L (φ a : L) = 1 := by
+theorem valuation_apply_eq_one {A : Type*} [Monoid A] [TopologicalSpace A] [CompactSpace A]
+    (φ : A →ₜ* Lˣ) (a : A) : valuation L (φ a : L) = 1 := by
   let f : A →ₜ* Multiplicative ℤ :=
     ⟨(normalizedValuation L).comp φ.toMonoidHom,
       (continuous_normalizedValuation L).comp φ.continuous⟩
   exact (normalizedValuation_eq_one_iff _).mp
     (DFunLike.congr_fun (ContinuousMonoidHom.eq_one_of_isMulTorsionFree f) a)
+
+end ContinuousMonoidHom
+
+namespace TauCeti
+
+section UnitaryLocalField
+
+variable {p : ℕ} [Fact p.Prime]
+variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L]
 
 /-- Every continuous character `δ : ℚ_[p]ˣ →ₜ* Lˣ` into a nonarchimedean local field `L` sends
 all of `ℤ_[p]ˣ` into units of valuation `1`. -/
@@ -119,20 +131,20 @@ all of `ℤ_[p]ˣ` into units of valuation `1`. -/
 theorem PadicUnitsCharacter.valuation_apply_padicIntUnitsInclusion_eq_one
     (δ : PadicUnitsCharacter p L) (u : ℤ_[p]ˣ) :
     valuation L (δ (padicIntUnitsInclusion p u) : L) = 1 := by
-  simpa [PadicUnitsCharacter.toWeight_apply] using
-    valuation_eq_one_of_continuousMonoidHom δ.toWeight u
+  simpa [PadicUnitsCharacter.toWeight_apply] using δ.toWeight.valuation_apply_eq_one u
 
 /-- `δ : ℚ_[p]ˣ →ₜ* Lˣ` is unitary if and only if every value `δ(x)` has valuation `1` in `L`. -/
 theorem PadicUnitsCharacter.isUnitary_iff_forall_valuation_eq_one (δ : PadicUnitsCharacter p L) :
     δ.IsUnitary ↔ ∀ x : ℚ_[p]ˣ, valuation L (δ x : L) = 1 := by
   refine ⟨fun h x ↦ (normalizedValuation_eq_one_iff _).mp ?_, fun h ↦ h (padicPrimeUnit p)⟩
   let ψ : ℚ_[p]ˣ →* Multiplicative ℤ := (normalizedValuation L).comp δ.toMonoidHom
-  change ψ x = 1
   have hp : ψ (padicPrimeUnit p) = 1 := (normalizedValuation_eq_one_iff _).mpr h
   have hu : ψ (padicIntUnitsInclusion p (padicUnitPart p x)) = 1 :=
     (normalizedValuation_eq_one_iff _).mpr (δ.valuation_apply_padicIntUnitsInclusion_eq_one _)
-  rw [eq_padicPrimeUnit_zpow_mul_padicUnitPart p x]
-  simp [hp, hu]
+  have hx : ψ x = 1 := by
+    rw [eq_padicPrimeUnit_zpow_mul_padicUnitPart p x]
+    simp [hp, hu]
+  simpa [ψ] using hx
 
 /-- The character `x ↦ algebraMap ℚ_[p] L x` into any nonarchimedean local field `L` with a
 continuous `ℚ_[p]`-algebra structure (including `ℚ_[p]` itself and its finite extensions) is not

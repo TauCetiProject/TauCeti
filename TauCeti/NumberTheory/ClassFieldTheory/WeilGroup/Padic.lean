@@ -52,20 +52,9 @@ theorem localWeilGeometricArtinEquiv_symm_padic_mk (p : ℕ) [Fact p.Prime] (w :
     weilToAbsoluteAbelianization_localWeilGeometricArtinEquiv,
     padicAbsoluteGaloisGroupAbelianizationEquiv_apply,
     padicAbsoluteGaloisGroupAbelianizationEquiv_geometricArtinMap,
-    unramifiedCoordinate_weilDegree, abelianizedLocalCyclotomicCharacter_mk]
-  let x : ℚ_[p]ˣ := padicPrimeUnit p ^ (-(weilDegree ℚ_[p] w).toAdd) *
-    padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w))
-  have hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ (-(weilDegree ℚ_[p] w).toAdd) *
-      ((localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w) : ℤ_[p]ˣ) : ℤ_[p]) := by
-    rw [Units.val_mul, Units.val_zpow_eq_zpow_val, coe_padicPrimeUnit,
-      coe_padicIntUnitsInclusion_apply]
-  have hval : (x : ℚ_[p]).valuation = -(weilDegree ℚ_[p] w).toAdd :=
-    TauCeti.Padic.valuation_eq_of_eq hx
-  have hunit : padicUnitPart p x =
-      localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w) :=
-    padicUnitPart_apply_of_eq hx
-  refine Prod.ext ?_ hunit.symm
-  rw [hval, neg_neg]
+    unramifiedCoordinate_weilDegree, abelianizedLocalCyclotomicCharacter_mk,
+    valuation_padicPrimeUnit_zpow_mul, padicUnitPart_padicPrimeUnit_zpow_mul, neg_neg]
+  refine Prod.ext ?_ rfl
   conv_lhs => rw [← ofAdd_toAdd (weilDegree ℚ_[p] w), zHat.ofInt_ofAdd]
 
 end TauCeti.ClassFieldTheory

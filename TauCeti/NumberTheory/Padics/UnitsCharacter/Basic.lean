@@ -164,7 +164,7 @@ identity on `ℤ_pˣ`. -/
 theorem padicUnitPart_apply_of_eq {x : ℚ_[p]ˣ} {k : ℤ} {u : ℤ_[p]ˣ}
     (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * (u : ℤ_[p])) : padicUnitPart p x = u := by
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
-  have hv : (x : ℚ_[p]).valuation = k := TauCeti.Padic.valuation_eq_of_eq hx
+  have hv : (x : ℚ_[p]).valuation = k := _root_.Padic.valuation_eq_of_coe_eq_zpow_mul hx
   refine Units.ext <| PadicInt.ext ?_
   rw [coe_padicUnitPart_apply, hv, hx, zpow_neg]
   field_simp
@@ -179,6 +179,18 @@ theorem padicUnitPart_padicPrimeUnit : padicUnitPart p (padicPrimeUnit p) = 1 :=
 theorem padicUnitPart_padicIntUnitsInclusion (u : ℤ_[p]ˣ) :
     padicUnitPart p (padicIntUnitsInclusion p u) = u :=
   padicUnitPart_apply_of_eq (k := 0) (by simp)
+
+variable (p) in
+/-- The `p`-adic valuation of `p ^ n * u` (`n : ℤ`, `u ∈ ℤ_pˣ`) is `n`. -/
+theorem valuation_padicPrimeUnit_zpow_mul (n : ℤ) (u : ℤ_[p]ˣ) :
+    ((padicPrimeUnit p ^ n * padicIntUnitsInclusion p u : ℚ_[p]ˣ) : ℚ_[p]).valuation = n :=
+  _root_.Padic.valuation_eq_of_coe_eq_zpow_mul (k := n) (u := u) (by simp)
+
+variable (p) in
+/-- The unit part of `p ^ n * u` (`n : ℤ`, `u ∈ ℤ_pˣ`) is `u`. -/
+theorem padicUnitPart_padicPrimeUnit_zpow_mul (n : ℤ) (u : ℤ_[p]ˣ) :
+    padicUnitPart p (padicPrimeUnit p ^ n * padicIntUnitsInclusion p u) = u := by
+  simp
 
 /-- **Homomorphisms out of `ℚ_pˣ`.** A homomorphism from `ℚ_pˣ` to a monoid is determined by its
 value at `p` and its restriction to `ℤ_pˣ`. -/

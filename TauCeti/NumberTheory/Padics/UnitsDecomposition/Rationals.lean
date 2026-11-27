@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.NumberTheory.Padics.UnitsCharacter.Basic
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Canonical splitting of `ℚ_pˣ`
@@ -96,38 +97,19 @@ theorem coe_unitFiltrationZeroPadicEquiv_symm_apply (u : ℤ_[p]ˣ) :
     ((unitFiltrationZeroPadicEquiv p).symm u : ℚ_[p]ˣ) = padicIntUnitsInclusion p u :=
   congrArg Subtype.val (unitFiltrationZeroPadicMulEquiv_symm_apply p u)
 
-/-- Topological product equivalence transferring the second factor from `U(ℚ_[p], 0)` to
-`ℤ_[p]ˣ`. -/
-private def prodUnitFiltrationEquiv :
-    Multiplicative ℤ × unitFiltration ℚ_[p] 0 ≃ₜ* Multiplicative ℤ × ℤ_[p]ˣ where
-  toMulEquiv := MulEquiv.prodCongr (MulEquiv.refl (Multiplicative ℤ))
-    (unitFiltrationZeroPadicEquiv p).toMulEquiv
-  continuous_toFun := continuous_fst.prodMk
-    ((unitFiltrationZeroPadicEquiv p).continuous.comp continuous_snd)
-  continuous_invFun := continuous_fst.prodMk
-    ((unitFiltrationZeroPadicEquiv p).symm.continuous.comp continuous_snd)
-
-private theorem prodUnitFiltrationEquiv_apply (z : Multiplicative ℤ × unitFiltration ℚ_[p] 0) :
-    prodUnitFiltrationEquiv p z = (z.1, unitFiltrationZeroPadicEquiv p z.2) :=
-  (rfl)
-
-private theorem prodUnitFiltrationEquiv_symm_apply (z : Multiplicative ℤ × ℤ_[p]ˣ) :
-    (prodUnitFiltrationEquiv p).symm z = (z.1, (unitFiltrationZeroPadicEquiv p).symm z.2) :=
-  (rfl)
-
 /-- **The canonical splitting `ℚ_[p]ˣ ≃ₜ* Multiplicative ℤ × ℤ_[p]ˣ`.** It specializes
 `TauCeti.unitsEquivIntProd` at `p`, sending `x` to `(v_p(x), x · p^{-v_p(x)})`, with inverse
 `(n, u) ↦ p ^ n * u`. -/
 def padicUnitsEquivIntProd : ℚ_[p]ˣ ≃ₜ* Multiplicative ℤ × ℤ_[p]ˣ :=
   (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p) (normalizedValuation_padicPrimeUnit p)).trans
-    (prodUnitFiltrationEquiv p)
+    ((ContinuousMulEquiv.refl (Multiplicative ℤ)).prodCongr (unitFiltrationZeroPadicEquiv p))
 
 /-- The `ℤ`-component of `padicUnitsEquivIntProd p` is the `p`-adic valuation. -/
 @[simp]
 theorem padicUnitsEquivIntProd_apply_fst (x : ℚ_[p]ˣ) :
     (padicUnitsEquivIntProd p x).1 = .ofAdd (x : ℚ_[p]).valuation :=
   Multiplicative.toAdd.injective <| by
-    rw [padicUnitsEquivIntProd, ContinuousMulEquiv.trans_apply, prodUnitFiltrationEquiv_apply]
+    rw [padicUnitsEquivIntProd, ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.prodCongr_apply]
     simp
 
 /-- The `ℤ_[p]ˣ`-component of `padicUnitsEquivIntProd p` is `TauCeti.padicUnitPart p`. -/
@@ -135,7 +117,7 @@ theorem padicUnitsEquivIntProd_apply_fst (x : ℚ_[p]ˣ) :
 theorem padicUnitsEquivIntProd_apply_snd (x : ℚ_[p]ˣ) :
     (padicUnitsEquivIntProd p x).2 = padicUnitPart p x :=
   Units.ext <| PadicInt.ext <| by
-    rw [padicUnitsEquivIntProd, ContinuousMulEquiv.trans_apply, prodUnitFiltrationEquiv_apply]
+    rw [padicUnitsEquivIntProd, ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.prodCongr_apply]
     simp
 
 /-- The inverse of `padicUnitsEquivIntProd p` sends `(n, u)` to `p ^ n * u`. -/
@@ -144,8 +126,10 @@ theorem padicUnitsEquivIntProd_symm_apply (z : Multiplicative ℤ × ℤ_[p]ˣ) 
     (padicUnitsEquivIntProd p).symm z =
       padicPrimeUnit p ^ z.1.toAdd * padicIntUnitsInclusion p z.2 := by
   rw [padicUnitsEquivIntProd, ContinuousMulEquiv.symm_trans_apply,
-    prodUnitFiltrationEquiv_symm_apply]
-  simp
+    ContinuousMulEquiv.prodCongr_symm, ContinuousMulEquiv.prodCongr_apply]
+  have hrefl : (ContinuousMulEquiv.refl (Multiplicative ℤ)).symm z.1 = z.1 :=
+    (ContinuousMulEquiv.refl (Multiplicative ℤ)).symm_apply_eq.mpr rfl
+  simp [hrefl]
 
 /-- If `x : ℚ_[p]ˣ` factors as `p ^ k * w` with `w ∈ ℤ_[p]ˣ`, then
 `padicUnitsEquivIntProd p x = (.ofAdd k, w)`. -/

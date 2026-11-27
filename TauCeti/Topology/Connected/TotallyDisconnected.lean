@@ -50,7 +50,7 @@ instance ULift.totallyDisconnectedSpace {X : Type u} [TopologicalSpace X]
 
 /-- A topological space admitting a continuous injection into a totally disconnected space is
 totally disconnected. -/
-theorem totallyDisconnectedSpace_of_injective_continuous {X Y : Type*} [TopologicalSpace X]
+theorem totallyDisconnectedSpace_of_injective_of_continuous {X Y : Type*} [TopologicalSpace X]
     [TopologicalSpace Y] [TotallyDisconnectedSpace Y] {f : X → Y}
     (hinj : Function.Injective f) (hcont : Continuous f) : TotallyDisconnectedSpace X :=
   ⟨isTotallyDisconnected_of_image hcont.continuousOn hinj

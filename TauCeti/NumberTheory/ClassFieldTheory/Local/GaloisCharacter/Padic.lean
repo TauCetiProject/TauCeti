@@ -23,16 +23,18 @@ Over `ℚ_[p]`, Colmez's explicit reciprocity formula gives
 continuous multiplication and `[T1Space G]`, a continuous character `δ : ℚ_[p]ˣ →ₜ* G` extends
 continuously to `G_{ℚ_p} →ₜ* G` if and only if `n ↦ δ(p) ^ n` extends to a continuous
 homomorphism `ℤ̂ →ₜ* G` (`ContinuousMonoidHom.exists_galoisCharacter_iff_exists_zHat`). In
-particular, an extension exists when `G` is profinite
-(`ContinuousMonoidHom.toGaloisCharacterOfProfinite`, covering e.g. `ℤ_[p]ˣ`, `𝒪[L]ˣ`,
+particular, an extension exists when `G` is profinite (`ContinuousMonoidHom.padicGaloisCharacter`
+from `GaloisCharacter/Basic`, restricting on `W_{ℚ_p}` via
+`ContinuousMonoidHom.padicGaloisCharacter_weilToAbsolute`, covering e.g. `ℤ_[p]ˣ`, `𝒪[L]ˣ`,
 `(ZMod p)ˣ`), when `δ(p)` has finite order
 (`ContinuousMonoidHom.toGaloisCharacterOfFinOrderAtPrime`), or over any nonarchimedean local field
 `L` when `δ` is unitary (`TauCeti.PadicUnitsCharacter.exists_galoisCharacter_iff_isUnitary`).
 
 Under this dictionary, `x ↦ x |x|_p` corresponds to `continuousLocalCyclotomicCharacter p ℚ_[p]`
-(`TauCeti.toGaloisCharacterOfProfinite_padicUnitPart`), `ω` corresponds to
+(`TauCeti.continuousLocalCyclotomicCharacter_weilToAbsolute_eq_toWeilCharacter_padicUnitPart` and
+`ContinuousMonoidHom.padicGaloisCharacter_padicUnitPart`), `ω` corresponds to
 `modPLocalCyclotomicCharacter p ℚ_[p]`
-(`TauCeti.toGaloisCharacterOfProfinite_padicModPCyclotomicCharacter`), and for any nonarchimedean
+(`TauCeti.padicGaloisCharacter_padicModPCyclotomicCharacter`), and for any nonarchimedean
 local field `L` with a continuous `ℚ_[p]`-algebra map, `x ↦ algebraMap ℚ_[p] L x` admits no
 continuous Galois extension (`TauCeti.not_exists_galoisCharacter_padicAlgebraMapCharacter`).
 
@@ -40,8 +42,6 @@ continuous Galois extension (`TauCeti.not_exists_galoisCharacter_padicAlgebraMap
 
 * `ContinuousMonoidHom.toGaloisCharacterOfZHat`: continuous Galois extension `G_{ℚ_p} →ₜ* G`
   built from an explicit `ℤ̂ →ₜ* G`.
-* `ContinuousMonoidHom.toGaloisCharacterOfProfinite`: continuous Galois extension when `G` is
-  compact and totally disconnected.
 * `ContinuousMonoidHom.toGaloisCharacterOfFinOrderAtPrime`: continuous Galois extension when
   `δ(p)` has finite order.
 * `TauCeti.PadicUnitsCharacter.toGaloisCharacterOfUnitary`: continuous Galois extension of a
@@ -52,10 +52,12 @@ continuous Galois extension (`TauCeti.not_exists_galoisCharacter_padicAlgebraMap
 * `ContinuousMonoidHom.padic_toWeilCharacter_apply`: Colmez's formula on `W_{ℚ_p}`.
 * `ContinuousMonoidHom.exists_galoisCharacter_iff_exists_zHat`,
   `ContinuousMonoidHom.exists_galoisCharacter_iff_exists_zHat_ofInt`: exact extension criteria.
+* `ContinuousMonoidHom.padicGaloisCharacter_weilToAbsolute`: Weil compatibility for the profinite
+  character `ContinuousMonoidHom.padicGaloisCharacter`.
 * `TauCeti.PadicUnitsCharacter.exists_galoisCharacter_iff_isUnitary`: exact unitary criterion over
   a nonarchimedean local field `L`.
-* `TauCeti.toGaloisCharacterOfProfinite_padicUnitPart`,
-  `TauCeti.toGaloisCharacterOfProfinite_padicModPCyclotomicCharacter`,
+* `TauCeti.continuousLocalCyclotomicCharacter_weilToAbsolute_eq_toWeilCharacter_padicUnitPart`,
+  `TauCeti.padicGaloisCharacter_padicModPCyclotomicCharacter`,
   `TauCeti.not_exists_galoisCharacter_padicAlgebraMapCharacter`: canonical checks and the
   non-unitary counterexample.
 
@@ -101,7 +103,8 @@ section CommGroup
 variable {G : Type*} [CommGroup G] [TopologicalSpace G] [ContinuousMul G]
 
 /-- Given `δ : ℚ_[p]ˣ →ₜ* G` and a continuous homomorphism `φ : ℤ̂ →ₜ* G`, construct the
-continuous Galois character `σ ↦ φ((unramifiedCoordinate σ)⁻¹) * δ(χ_cyc(σ))`.
+continuous Galois character `σ ↦ φ((unramifiedCoordinate σ)⁻¹) * δ(χ_cyc(σ))`, pulling back
+`ContinuousMonoidHom.padicGaloisCharacterOfZHat` to `G_{ℚ_p}`.
 
 This generalizes `ContinuousMonoidHom.padicGaloisCharacter` by taking the unramified factor
 `φ : ℤ̂ →ₜ* G` as an explicit input rather than building it by profiniteness. When
@@ -109,12 +112,9 @@ This generalizes `ContinuousMonoidHom.padicGaloisCharacter` by taking the unrami
 (`ContinuousMonoidHom.toGaloisCharacterOfZHat_weilToAbsolute_iff`). -/
 def toGaloisCharacterOfZHat (δ : ℚ_[p]ˣ →ₜ* G) (φ : zHat.{0} →ₜ* G) :
     Field.absoluteGaloisGroup ℚ_[p] →ₜ* G :=
-  ((φ.comp (ContinuousMulEquiv.inv zHat.{0} : zHat.{0} →ₜ* zHat.{0})).coprod
-      (δ.comp (padicIntUnitsInclusion p))).comp
-    ((padicAbsoluteGaloisGroupAbelianizationEquiv p :
-        Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* zHat.{0} × ℤ_[p]ˣ).comp
-      (Subgroup.quotientMkContinuousMonoidHom
-        (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure))
+  (δ.padicGaloisCharacterOfZHat φ).comp
+    (Subgroup.quotientMkContinuousMonoidHom
+      (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure)
 
 /-- Pointwise formula for `δ.toGaloisCharacterOfZHat φ`. -/
 @[simp]
@@ -123,7 +123,7 @@ theorem toGaloisCharacterOfZHat_apply (δ : ℚ_[p]ˣ →ₜ* G) (φ : zHat.{0} 
     δ.toGaloisCharacterOfZHat φ σ =
       φ ((unramifiedCoordinate ℚ_[p] (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]))⁻¹) *
         δ (padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] σ)) := by
-  simp [toGaloisCharacterOfZHat, abelianizedLocalCyclotomicCharacter_mk]
+  simp [toGaloisCharacterOfZHat, abelianizedLocalCyclotomicCharacter_mk, mul_comm]
 
 /-- Evaluating `δ.toGaloisCharacterOfZHat φ` on a lift of `geometricArtinMap ℚ_[p] x` gives
 `φ (zHat.gen ^ (x : ℚ_[p]).valuation) * δ (padicIntUnitsInclusion p (padicUnitPart p x))`. -/
@@ -133,13 +133,9 @@ theorem toGaloisCharacterOfZHat_geometricArtinMap (δ : ℚ_[p]ˣ →ₜ* G) (φ
     δ.toGaloisCharacterOfZHat φ σ =
       φ (zHat.gen ^ (x : ℚ_[p]).valuation) *
         δ (padicIntUnitsInclusion p (padicUnitPart p x)) := by
-  rw [toGaloisCharacterOfZHat_apply, ← abelianizedLocalCyclotomicCharacter_mk, hσ,
-    abelianizedLocalCyclotomicCharacter_geometricArtinMap_padic]
-  have hu : unramifiedCoordinate ℚ_[p] (geometricArtinMap ℚ_[p] x) =
-      zHat.gen ^ (-(x : ℚ_[p]).valuation) := by
-    have h := congrArg Prod.fst (padicAbsoluteGaloisGroupAbelianizationEquiv_geometricArtinMap p x)
-    simpa [padicAbsoluteGaloisGroupAbelianizationEquiv_apply] using h
-  rw [hu, zpow_neg, inv_inv]
+  rw [toGaloisCharacterOfZHat, coe_comp, Function.comp_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, hσ, padicGaloisCharacterOfZHat_geometricArtinMap,
+    mul_comm]
 
 /-- **Exact compatibility condition for `toGaloisCharacterOfZHat`.** `δ.toGaloisCharacterOfZHat φ`
 restricts on `W_{ℚ_p}` to `δ.toWeilCharacter` if and only if `φ zHat.gen = δ(p)`. -/
@@ -229,28 +225,23 @@ end CommGroup
 
 section Profinite
 
-variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G]
+variable {A : Type*} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A] [CompactSpace A]
+  [TotallyDisconnectedSpace A]
 
-/-- Continuous Galois extension when `G` is a profinite commutative topological group
-(`[CompactSpace G]`, `[TotallyDisconnectedSpace G]`), obtained by pulling back
-`ContinuousMonoidHom.padicGaloisCharacter` to `G_{ℚ_p}`. This covers both `G = Λˣ` (for a
-compact totally disconnected commutative topological monoid `Λ`, or more generally profinite `Λˣ`)
-and arbitrary profinite commutative groups `G`. -/
-def toGaloisCharacterOfProfinite (δ : ℚ_[p]ˣ →ₜ* G) :
-    Field.absoluteGaloisGroup ℚ_[p] →ₜ* G :=
-  (padicGaloisCharacter δ).comp
-    (Subgroup.quotientMkContinuousMonoidHom
-      (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure)
-
-/-- `toGaloisCharacterOfProfinite` restricts on `W_{ℚ_p}` to `δ.toWeilCharacter`. -/
-theorem toGaloisCharacterOfProfinite_weilToAbsolute (δ : ℚ_[p]ˣ →ₜ* G) (w : WeilGroup ℚ_[p]) :
-    δ.toGaloisCharacterOfProfinite (weilToAbsolute ℚ_[p] w) = δ.toWeilCharacter w := by
-  obtain ⟨x, hx⟩ := (localWeilGeometricArtinEquiv ℚ_[p]).surjective (QuotientGroup.mk w)
-  have hcompat := localWeilGeometricArtinEquiv_compat ℚ_[p] x w hx.symm
-  rw [toGaloisCharacterOfProfinite, coe_comp, Function.comp_apply,
-    Subgroup.quotientMkContinuousMonoidHom_apply, hcompat, padicGaloisCharacter_geometricArtinMap,
-    δ.toWeilCharacter_eq_of_mk_eq_localWeilGeometricArtinEquiv x w hx.symm]
+/-- For a profinite commutative topological group `A`, `padicGaloisCharacter δ` restricts on
+`W_{ℚ_p}` (via `G_{ℚ_p}^{ab}`) to `δ.toWeilCharacter`. -/
+theorem padicGaloisCharacter_weilToAbsolute (δ : ℚ_[p]ˣ →ₜ* A) (w : WeilGroup ℚ_[p]) :
+    padicGaloisCharacter δ
+        (weilToAbsolute ℚ_[p] w : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
+      δ.toWeilCharacter w := by
+  have h :
+      padicGaloisCharacter δ
+          (weilToAbsolute ℚ_[p] w : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
+        δ.toGaloisCharacterOfZHat (zHat.lift (δ (padicPrimeUnit p))) (weilToAbsolute ℚ_[p] w) := by
+    rw [padicGaloisCharacter_apply, toGaloisCharacterOfZHat_apply,
+      abelianizedLocalCyclotomicCharacter_mk, mul_comm,
+      ← zpow_neg_one (δ (padicPrimeUnit p)), zHat.lift_zpow_apply, zpow_neg_one, map_inv]
+  exact h.trans (δ.toGaloisCharacterOfZHat_weilToAbsolute _ (zHat.lift_gen _) w)
 
 end Profinite
 
@@ -295,7 +286,7 @@ theorem PadicUnitsCharacter.exists_galoisCharacter_iff_isUnitary (δ : PadicUnit
   · intro h
     obtain ⟨φ, hφ⟩ := δ.exists_galoisCharacter_iff_exists_zHat.mp h
     rw [PadicUnitsCharacter.isUnitary_iff_valuation_padicPrimeUnit_eq_one, ← hφ]
-    exact valuation_eq_one_of_continuousMonoidHom φ zHat.gen
+    exact φ.valuation_apply_eq_one zHat.gen
   · intro hδ
     exact ⟨δ.toGaloisCharacterOfUnitary hδ, δ.toGaloisCharacterOfUnitary_weilToAbsolute hδ⟩
 
@@ -317,17 +308,6 @@ theorem continuousLocalCyclotomicCharacter_weilToAbsolute_eq_toWeilCharacter_pad
   rw [ContinuousMonoidHom.padic_toWeilCharacter_apply, padicUnitPart_padicPrimeUnit, one_zpow,
     one_mul, padicUnitPart_padicIntUnitsInclusion, continuousLocalCyclotomicCharacter_apply]
 
-/-- The unique continuous Galois extension of `padicUnitPart p` (`x ↦ x |x|`) is
-`continuousLocalCyclotomicCharacter p ℚ_[p]`. -/
-theorem toGaloisCharacterOfProfinite_padicUnitPart :
-    (padicUnitPart p).toGaloisCharacterOfProfinite =
-      continuousLocalCyclotomicCharacter p ℚ_[p] := by
-  ext1 σ
-  rw [ContinuousMonoidHom.toGaloisCharacterOfProfinite, ContinuousMonoidHom.coe_comp,
-    Function.comp_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
-    ContinuousMonoidHom.padicGaloisCharacter_padicUnitPart, abelianizedLocalCyclotomicCharacter_mk,
-    continuousLocalCyclotomicCharacter_apply]
-
 /-- **Mod-`p` cyclotomic character check.** Under Colmez's normalization, `ω` corresponds on
 `W_{ℚ_p}` to `modPLocalCyclotomicCharacter p ℚ_[p]`. -/
 theorem modPLocalCyclotomicCharacter_weilToAbsolute_eq_toWeilCharacter_padicModPCyclotomicCharacter
@@ -342,12 +322,23 @@ theorem modPLocalCyclotomicCharacter_weilToAbsolute_eq_toWeilCharacter_padicModP
 
 /-- The unique continuous Galois extension of `padicModPCyclotomicCharacter p` (`ω`) is
 `modPLocalCyclotomicCharacter p ℚ_[p]`. -/
-theorem toGaloisCharacterOfProfinite_padicModPCyclotomicCharacter :
-    (padicModPCyclotomicCharacter p).toGaloisCharacterOfProfinite =
+theorem padicGaloisCharacter_padicModPCyclotomicCharacter
+    (σ : Field.absoluteGaloisGroup ℚ_[p]) :
+    ContinuousMonoidHom.padicGaloisCharacter (padicModPCyclotomicCharacter p)
+        (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
+      modPLocalCyclotomicCharacter p ℚ_[p] σ := by
+  have h : (ContinuousMonoidHom.padicGaloisCharacter (padicModPCyclotomicCharacter p)).comp
+      (Subgroup.quotientMkContinuousMonoidHom
+        (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure) =
       modPLocalCyclotomicCharacter p ℚ_[p] :=
-  galoisCharacter_eq_of_weilToAbsolute_eq fun w ↦ by
-    rw [ContinuousMonoidHom.toGaloisCharacterOfProfinite_weilToAbsolute,
-      modPLocalCyclotomicCharacter_weilToAbsolute_eq_toWeilCharacter_padicModPCyclotomicCharacter]
+    galoisCharacter_eq_of_weilToAbsolute_eq fun w ↦ by
+      rw [ContinuousMonoidHom.coe_comp, Function.comp_apply,
+        Subgroup.quotientMkContinuousMonoidHom_apply,
+        (padicModPCyclotomicCharacter p).padicGaloisCharacter_weilToAbsolute w,
+        modPLocalCyclotomicCharacter_weilToAbsolute_eq_toWeilCharacter_padicModPCyclotomicCharacter]
+  have h' := DFunLike.congr_fun h σ
+  rwa [ContinuousMonoidHom.coe_comp, Function.comp_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply] at h'
 
 section NonUnitary
 

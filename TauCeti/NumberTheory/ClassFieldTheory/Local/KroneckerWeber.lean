@@ -103,15 +103,9 @@ private theorem padicAbelianizationProdHom_surjective :
   have hsub : (Set.range (zHat.ofInt : Multiplicative ℤ →* zHat.{0})) ×ˢ (Set.univ : Set ℤ_[p]ˣ) ⊆
       Set.range (padicAbelianizationProdHom p) := by
     rintro ⟨_, u⟩ ⟨⟨n, rfl⟩, -⟩
-    let x : ℚ_[p]ˣ := padicPrimeUnit p ^ n.toAdd * padicIntUnitsInclusion p u⁻¹
-    have hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ n.toAdd * ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) := by
-      rw [Units.val_mul, Units.val_zpow_eq_zpow_val, coe_padicPrimeUnit,
-        coe_padicIntUnitsInclusion_apply]
-    have hval : (x : ℚ_[p]).valuation = n.toAdd := TauCeti.Padic.valuation_eq_of_eq hx
-    have hunit : padicUnitPart p x = u⁻¹ := padicUnitPart_apply_of_eq hx
-    refine ⟨artinMap ℚ_[p] x, ?_⟩
-    rw [padicAbelianizationProdHom_artinMap, hval, hunit, inv_inv, ← zHat.ofInt_ofAdd,
-      ofAdd_toAdd]
+    refine ⟨artinMap ℚ_[p] (padicPrimeUnit p ^ n.toAdd * padicIntUnitsInclusion p u⁻¹), ?_⟩
+    rw [padicAbelianizationProdHom_artinMap, valuation_padicPrimeUnit_zpow_mul,
+      padicUnitPart_padicPrimeUnit_zpow_mul, inv_inv, ← zHat.ofInt_ofAdd, ofAdd_toAdd]
   have hdense : Dense
       ((Set.range (zHat.ofInt : Multiplicative ℤ →* zHat.{0})) ×ˢ (Set.univ : Set ℤ_[p]ˣ)) :=
     zHat.denseRange_ofInt.prod dense_univ

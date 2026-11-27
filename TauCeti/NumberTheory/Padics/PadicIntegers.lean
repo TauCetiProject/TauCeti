@@ -7,9 +7,9 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.ProperSpace
-public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
+public import TauCeti.Topology.Algebra.Group.Units
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
@@ -26,8 +26,8 @@ to every `ℤ_p`) and valuation lemmas for `ℚ_p`.
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
 `ℤ_p` is a complete normed ring. Compactness is Mathlib's instance for the units of a compact `T₁`
-topological monoid, recorded here as a shortcut instance; the instance
-`TotallyDisconnectedSpace ℤ_[p]ˣ` is proved here.
+topological monoid, recorded here as a shortcut instance; total disconnectedness comes from
+`Units.instTotallyDisconnectedSpace`.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
 divides every element of no larger norm, so that a nonempty family of `p`-adic integers is a common
@@ -84,7 +84,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.norm_unitPart`, `Padic.eq_zpow_valuation_mul_unitPart`: the unit part of a nonzero
   `x : ℚ_[p]` has norm one, and every `x` is `p ^ v(x)` times its unit part.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
-  valuation.
+  valuation (`Padic.valuation_eq_of_coe_eq_zpow_mul` specializes to `p ^ k * u` for `u ∈ ℤ_[p]ˣ`).
 * `Padic.valuation_p_pow_mul_intCast`: the valuation of `p ^ n m`, for an integer `m` prime to
   `p`, is `n`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
@@ -95,8 +95,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
   `p`-adic numbers into `ℤ_[p]`.
-* `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
-  profinite group.
+* `PadicInt.compactSpace_units`: `ℤ_[p]ˣ` is a compact group (shortcut instance).
 
 ## Main definitions
 
@@ -278,11 +277,6 @@ instance term matters for unification: elaborating continuous linear maps on `C(
 compact-open topology, which times out at `whnf` with Mathlib's applied instance term. -/
 instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
 
-/-- `ℤ_pˣ` is totally disconnected, as a subspace of the ultrametric space `ℤ_p`. -/
-instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
-  ⟨Units.isOpenEmbedding_val.isEmbedding.isTotallyDisconnected
-    (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
-
 variable (p) in
 /-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
 `ℤ_p`. -/
@@ -440,6 +434,18 @@ theorem valuation_p_zpow_mul (α : ℤ) {x : ℚ_[p]} (hx : x ≠ 0) :
     ((p : ℚ_[p]) ^ α * x).valuation = α + x.valuation := by
   rw [Padic.valuation_mul (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)) hx,
     Padic.valuation_zpow, Padic.valuation_p, mul_one]
+
+/-- If `x : ℚ_[p]ˣ` factors as `p ^ k * u` with `u ∈ ℤ_[p]ˣ`, then its `p`-adic valuation is `k`. -/
+theorem valuation_eq_of_coe_eq_zpow_mul {x : ℚ_[p]ˣ} {k : ℤ} {u : ℤ_[p]ˣ}
+    (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * (u : ℤ_[p])) :
+    (x : ℚ_[p]).valuation = k := by
+  have hu : ((u : ℤ_[p]) : ℚ_[p]).valuation = 0 := by
+    have h1 : ‖((u : ℤ_[p]) : ℚ_[p])‖ = 1 :=
+      (PadicInt.norm_coe (u : ℤ_[p])).trans (PadicInt.isUnit_iff.1 u.isUnit)
+    rwa [Padic.norm_eq_zpow_neg_valuation (PadicInt.coe_ne_zero.mpr u.ne_zero),
+      zpow_eq_one_iff_right₀ (Nat.cast_nonneg p) (by exact_mod_cast (Fact.out : p.Prime).ne_one),
+      neg_eq_zero] at h1
+  rw [hx, valuation_p_zpow_mul k (PadicInt.coe_ne_zero.mpr u.ne_zero), hu, add_zero]
 
 /-- The valuation of `p ^ n m` in `ℚ_[p]`, for an integer `m` prime to `p`, is `n`: the case
 `v(m) = 0` of `Padic.valuation_p_zpow_mul`. -/
