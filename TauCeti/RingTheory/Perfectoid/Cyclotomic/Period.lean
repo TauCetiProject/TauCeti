@@ -267,8 +267,8 @@ theorem fontaineThetaShifted_xiTilde_eq_zero [IsDomain A] (ε : PreTilt A p)
   rw [fontaineThetaShifted_xiTilde, fontaineTheta_xi_eq_zero ε hε]
 
 /-- If the sharp `ζ` of `ε ^ (1 / p)` is not `1`, for instance if it is a primitive `p`-th root
-of unity, then Fontaine's map does not kill `τ = φ^(-1)(μ)`. The value `θ(τ) = ζ - 1` itself is
-`fontaineThetaShifted_mu`, read through the definitional `fontaineThetaShifted_apply`. -/
+of unity, then Fontaine's map does not kill `τ = φ^(-1)(μ)`. Here `θ(τ) = ζ - 1`; see
+`fontaineThetaShifted_mu`. -/
 theorem fontaineTheta_frobeniusEquiv_symm_mu_ne_zero (ε : PreTilt A p)
     (hε : PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε) ≠ 1) :
     fontaineTheta A p ((frobeniusEquiv p (PreTilt A p)).symm (mu p ε)) ≠ 0 := by

@@ -168,7 +168,7 @@ theorem mem_span_mu_iff (ε : PreTilt (𝒪[C]) p)
 
 /-- An element of `A_inf` lies in `(τ)`, where `τ = φ^(-1)(μ)`, exactly when it is killed by
 `θ ∘ φ^j` for every `j ≥ 1`, provided the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of
-unity. This is `mem_span_mu_iff` at `φ(a)`, transported across the Frobenius automorphism. -/
+unity. -/
 theorem mem_span_frobeniusEquiv_symm_mu_iff (ε : PreTilt (𝒪[C]) p)
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
