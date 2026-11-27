@@ -28,8 +28,11 @@ and an element of degree `n` of `ℳ ⊗ ⟨Q⟩`, as in the degree-`n` term of 
 twisted differential of the cone is block-triangular: on the `P`-part it is the twisted
 differential `D_P` of `mP`, and its `Q`-part is `D_Q (f ∘ inr) + (-1) ^ (n + 1) • Ψ (f ∘ inl)`,
 the Koszul sign of `f (inl x)` and the sign `(-1) ^ ind x` of the row combining to
-`(-1) ^ (n + 1)`. The mapping cone has differential `(a, b) ↦ (-D_P a, Ψ a + D_Q b)`, so the
-identification multiplies the `P`-part in degree `n` by `(-1) ^ (n + 1)` and keeps the `Q`-part.
+`(-1) ^ (n + 1)` (`TauCeti.ContinuationCocycle.twistedDifferential_cone_apply_inl`,
+`TauCeti.ContinuationCocycle.twistedDifferential_cone_apply_inr`, in
+`TauCeti.Algebra.Homology.DG.Twisted.Block`). The mapping cone has differential
+`(a, b) ↦ (-D_P a, Ψ a + D_Q b)`, so the identification multiplies the `P`-part in degree `n`
+by `(-1) ^ (n + 1)` and keeps the `Q`-part.
 
 Hence the continuation map of `ν` is a quasi-isomorphism exactly when the twisted complex of
 `ν.cone` is acyclic (`TauCeti.ContinuationCocycle.quasiIso_continuationHom_iff_acyclic`). In the
@@ -48,12 +51,12 @@ quasi-isomorphism exactly when the twisted complex of the slab is acyclic.
 
 ## Main results
 
-* `TauCeti.ContinuationCocycle.fst_v_coneTwistedCochainComplexIso_hom_f_apply`,
-  `TauCeti.ContinuationCocycle.snd_v_coneTwistedCochainComplexIso_hom_f_apply`: the two components
-  of the isomorphism, `f ↦ ((-1) ^ (n + 1) • f ∘ inl, f ∘ inr)` in degree `n`.
-* `TauCeti.ContinuationCocycle.coneTwistedCochainComplexIso_inv_f_inl_v_apply`,
-  `TauCeti.ContinuationCocycle.coneTwistedCochainComplexIso_inv_f_inr_f_apply`: its inverse on the
-  two summands of the mapping cone, extension by zero with the same signs.
+* `ContinuationCocycle.twistedCochainComplexXEquiv_fst_v_coneTwistedCochainComplexIso_hom_f_apply`,
+  `ContinuationCocycle.twistedCochainComplexXEquiv_snd_v_coneTwistedCochainComplexIso_hom_f_apply`:
+  the two components of the isomorphism, `f ↦ ((-1) ^ (n + 1) • f ∘ inl, f ∘ inr)` in degree `n`.
+* `ContinuationCocycle.twistedCochainComplexXEquiv_coneTwistedCochainComplexIso_inv_f_inl_v_apply`,
+  `ContinuationCocycle.twistedCochainComplexXEquiv_coneTwistedCochainComplexIso_inv_f_inr_f_apply`:
+  its inverse on the two summands of the mapping cone, extension by zero with the same signs.
 * `TauCeti.ContinuationCocycle.quasiIso_continuationHom_iff_acyclic`: the continuation map of `ν`
   is a quasi-isomorphism if and only if the twisted complex of `ν.cone` is acyclic.
 * `TauCeti.TwistingCocycle.quasiIso_blockContinuation_continuationHom_iff_acyclic`: the same for
@@ -87,41 +90,6 @@ namespace ContinuationCocycle
 
 variable {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
   (ν : ContinuationCocycle mP mQ) (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0)
-
-/-! ### The twisted differential of the cone -/
-
-section Differential
-
-omit [IsScalarTower R Aᵐᵒᵖ M] [GradedAlgebra 𝒜]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
-
-/-- On the generators of `P`, the twisted differential of `ν.cone` is the twisted differential
-of `mP`: the cone never goes from `Q` to `P`. -/
-theorem twistedDifferential_cone_apply_inl (f : P ⊕ Q → M) (x : P) :
-    twistedDifferential (ν.cone hν).m ℳ dM f (.inl x) =
-      twistedDifferential mP.m ℳ dM (fun p ↦ f (.inl p)) x := by
-  simp [twistedDifferential_apply, Fintype.sum_sum_type]
-
-/-- On the generators of `Q`, the twisted differential of `ν.cone` on a family of total degree `n`
-is the twisted differential of `mQ` plus `(-1) ^ (n + 1)` times the continuation map of `ν`. -/
-theorem twistedDifferential_cone_apply_inr {n : ℤ} {f : P ⊕ Q → M}
-    (hf : f ∈ twistedTotalGrading ℳ (Sum.elim (fun x ↦ ind x + 1) indQ) n) (y : Q) :
-    twistedDifferential (ν.cone hν).m ℳ dM f (.inr y) =
-      twistedDifferential mQ.m ℳ dM (fun y ↦ f (.inr y)) y +
-        (n + 1).negOnePow • continuationMap R M ν.ν (fun x ↦ f (.inl x)) y := by
-  rw [twistedDifferential_apply, twistedDifferential_apply, Fintype.sum_sum_type,
-    continuationMap_apply, Finset.smul_sum, add_comm (∑ x : P, _), ← add_assoc]
-  simp only [cone_m_inr_inr, cone_m_inl_inr]
-  congr 1
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  have hx : f (.inl x) ∈ ℳ (n + (ind x + 1)) := by
-    simpa using mem_twistedTotalGrading_iff.1 hf (.inl x)
-  -- The sign of the row and the Koszul sign of `f (inl x)` combine to `(-1) ^ (n + 1)`.
-  rw [koszulTwist_one_eq_negOnePow_smul hx, op_smul, smul_assoc,
-    smul_comm (op (ν.ν x y)) (n + (ind x + 1)).negOnePow, smul_smul,
-    negOnePow_mul_negOnePow_of_even (c := n + 1) ⟨ind x, by ring⟩]
-
-end Differential
 
 /-! ### The degreewise identification -/
 
@@ -310,7 +278,7 @@ noncomputable def coneTwistedCochainComplexIso :
 /-- The `P`-component of the isomorphism with the mapping cone in degree `n` multiplies the
 `P`-part of a family by `(-1) ^ (n + 1)`. -/
 @[simp]
-theorem fst_v_coneTwistedCochainComplexIso_hom_f_apply (n : ℤ)
+theorem twistedCochainComplexXEquiv_fst_v_coneTwistedCochainComplexIso_hom_f_apply (n : ℤ)
     (x : ((ν.cone hν).twistedCochainComplex dM hM).X n) :
     (twistedCochainComplexXEquiv mP.mem_graded mP.twisting hM (n + 1)
         (((mappingCone.fst (ν.continuationHom hM)).val.v n (n + 1) rfl).hom
@@ -326,7 +294,7 @@ theorem fst_v_coneTwistedCochainComplexIso_hom_f_apply (n : ℤ)
 
 /-- The `Q`-component of the isomorphism with the mapping cone is the `Q`-part of a family. -/
 @[simp]
-theorem snd_v_coneTwistedCochainComplexIso_hom_f_apply (n : ℤ)
+theorem twistedCochainComplexXEquiv_snd_v_coneTwistedCochainComplexIso_hom_f_apply (n : ℤ)
     (x : ((ν.cone hν).twistedCochainComplex dM hM).X n) :
     (twistedCochainComplexXEquiv mQ.mem_graded mQ.twisting hM n
         (((mappingCone.snd (ν.continuationHom hM)).v n n (add_zero n)).hom
@@ -343,7 +311,7 @@ theorem snd_v_coneTwistedCochainComplexIso_hom_f_apply (n : ℤ)
 /-- The inverse of the isomorphism with the mapping cone sends an element `a` of degree `n + 1`
 of `ℳ ⊗ ⟨P⟩` to the family `(-1) ^ (n + 1) • a` on `P`, extended by zero on `Q`. -/
 @[simp]
-theorem coneTwistedCochainComplexIso_inv_f_inl_v_apply (n : ℤ)
+theorem twistedCochainComplexXEquiv_coneTwistedCochainComplexIso_inv_f_inl_v_apply (n : ℤ)
     (a : (mP.twistedCochainComplex dM hM).X (n + 1)) :
     (twistedCochainComplexXEquiv (ν.cone hν).mem_graded (ν.cone hν).twisting hM n
         (((ν.coneTwistedCochainComplexIso hν hM).inv.f n).hom
@@ -360,7 +328,7 @@ theorem coneTwistedCochainComplexIso_inv_f_inl_v_apply (n : ℤ)
 /-- The inverse of the isomorphism with the mapping cone sends an element `b` of degree `n` of
 `ℳ ⊗ ⟨Q⟩` to the family `b` on `Q`, extended by zero on `P`. -/
 @[simp]
-theorem coneTwistedCochainComplexIso_inv_f_inr_f_apply (n : ℤ)
+theorem twistedCochainComplexXEquiv_coneTwistedCochainComplexIso_inv_f_inr_f_apply (n : ℤ)
     (b : (mQ.twistedCochainComplex dM hM).X n) :
     (twistedCochainComplexXEquiv (ν.cone hν).mem_graded (ν.cone hν).twisting hM n
         (((ν.coneTwistedCochainComplexIso hν hM).inv.f n).hom
