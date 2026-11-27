@@ -20,9 +20,9 @@ Checks for the eigenfunction criterion of weak mixing
 for `f : X → ℂ` and `a ∈ ℝ` reads `f(t +ᵥ x) = exp(2πiat) f(x)` for almost every `x`, for every
 `t`.
 
-It also gives counterexamples for the *multiplier property* of weak mixing, which is not yet in
-the library: for measure-preserving actions of `ℝ` on probability spaces `X` and `Y`, if the
-action on `X` is weakly mixing and the action on `Y` is ergodic, then the diagonal action
+It also gives counterexamples for the *multiplier property* of weak mixing: for
+measure-preserving actions of `ℝ` on probability spaces `X` and `Y`, if the action on `X` is
+weakly mixing and the action on `Y` is ergodic, then the diagonal action
 `t +ᵥ (x, y) = (t +ᵥ x, t +ᵥ y)` on `X × Y` is ergodic. Each counterexample drops one of the two
 hypotheses and the conclusion fails.
 
@@ -41,7 +41,7 @@ hypotheses and the conclusion fails.
 * **The multiplier property needs `Y` ergodic.** Take `X` the one-point space, whose trivial
   action is weakly mixing, and `Y` the two-point space with the trivial action and the uniform
   measure, which is not ergodic. The diagonal action on `X × Y` is not ergodic:
-  `univ ×ˢ {y}` is invariant of measure `1/2`.
+  `univ ×ˢ {y}` is invariant of measure `1/2` for either point `y`.
 -/
 
 public section
@@ -163,17 +163,18 @@ theorem not_exists_ae_eq_const_diagonalMode :
 
 /-! ### The multiplier property needs `Y` ergodic -/
 
-/-- The set `univ ×ˢ {x}` of the product of the one-point and two-point spaces. -/
+/-- The set `univ ×ˢ {TwoPoint.pt true}` of the product of the one-point and two-point spaces. -/
 abbrev pointSet : Set (SinglePoint × TwoPoint) := univ ×ˢ {TwoPoint.pt true}
 
-/-- `univ ×ˢ {x}` has measure `1/2` for the product of the Dirac and uniform measures. -/
+/-- `univ ×ˢ {TwoPoint.pt true}` has measure `1/2` for the product of the Dirac and uniform
+measures. -/
 theorem prod_pointSet :
     (dirac SinglePoint.pt).prod (uniformOn (univ : Set TwoPoint)) pointSet = 2⁻¹ := by
   rw [Measure.prod_prod, measure_univ, one_mul, uniformOn_univ, TwoPoint.card_eq]
   simp
 
 /-- **The product of the one-point space with the trivial two-point space is not ergodic.** The
-set `univ ×ˢ {x}` is invariant under the diagonal action, of measure `1/2`. -/
+set `univ ×ˢ {TwoPoint.pt true}` is invariant under the diagonal action, of measure `1/2`. -/
 theorem not_ergodicVAdd_singlePoint_prod_twoPoint :
     ¬ ErgodicVAdd ℝ (SinglePoint × TwoPoint)
       ((dirac SinglePoint.pt).prod (uniformOn (univ : Set TwoPoint))) := by
