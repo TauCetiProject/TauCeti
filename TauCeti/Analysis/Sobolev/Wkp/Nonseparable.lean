@@ -280,13 +280,6 @@ private theorem exists_ball_clm_ae_eq [Nontrivial E] (hΩ : (Omega : Set E).None
   exact iteratedLineDerivZeroL_ae_eq_of_contDiffOn k _ _ (hf.mono hB)
     ((value_restrictL_ae hB k w).trans (ae_restrict_of_ae_restrict_of_subset hB hwf))
 
-/-- A bounded operator `T` into `L^∞(ν)` moves values, almost everywhere, by at most
-`‖T‖ dist a b`. -/
-private theorem ae_dist_le_opNorm_mul_dist {α F : Type*} [MeasurableSpace α] {ν : Measure α}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] (T : F →L[ℝ] Lp ℝ ∞ ν) (a b : F) :
-    ∀ᵐ x ∂ν, dist (T a x) (T b x) ≤ ‖T‖ * dist a b :=
-  (Lp.ae_dist_le_dist_top (T a) (T b)).mono fun _ h => h.trans (T.lipschitzWith.dist_le_mul a b)
-
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
 /-- The point `x₀ + s e`, for a unit vector `e` and `|s| < ρ`, lies in `B(x₀, ρ)` and has
 `⟪e, x₀ + s e⟫ = ⟪e, x₀⟫ + s`. -/
@@ -361,7 +354,7 @@ theorem not_separableSpace_top (hΩ : (Omega : Set E).Nonempty) (k : ℕ) :
     obtain ⟨hy, hyc⟩ := add_smul_mem_ball_and_inner_eq he x₀ (s := (s + t) / 2 - c) (ρ := ρ)
       (by rw [abs_lt]; constructor <;> linarith)
     obtain ⟨x, -, ⟨hxs, hxt⟩, hTs, hTt, hle⟩ := exists_mem_ball_inner_mem_Ioo_of_ae
-      ((hv s).and ((hv t).and (ae_dist_le_opNorm_mul_dist T (v s) (v t)))) hy (s := s) (t := t)
+      ((hv s).and ((hv t).and (T.ae_dist_le_opNorm_top (v s) (v t)))) hy (s := s) (t := t)
       (by rw [hyc]; constructor <;> linarith)
     simp only [hTs, hTt, truncPow_of_pos (sub_pos.2 hxs), truncPow_of_nonpos (sub_nonpos.2 hxt.le),
       pow_zero, mul_one, mul_zero, Real.dist_eq, sub_zero, Nat.abs_cast] at hle
@@ -412,7 +405,7 @@ theorem not_dense_contDiffOn_representatives_top (hΩ : (Omega : Set E).Nonempty
       mul_le_mul_of_nonneg_left (by rw [dist_comm]; exact (mem_ball.1 hwv).le) (norm_nonneg T)
     linarith
   refine not_ae_abs_mul_truncPow_sub_le (mu := mu) he hρ hg hβ ?_
-  filter_upwards [hv, hTw w hf hwf, ae_dist_le_opNorm_mul_dist T v w] with x h₁ h₂ h₃
+  filter_upwards [hv, hTw w hf hwf, T.ae_dist_le_opNorm_top v w] with x h₁ h₂ h₃
   rwa [h₁, h₂, Real.dist_eq] at h₃
 
 end TauCeti.Wkp
