@@ -341,8 +341,7 @@ def splitCompactElement (a b : q) : so' p q ℝ :=
     rw [mem_so'_iff_forall]
     intro x y
     simp only [Matrix.sub_apply, single_apply, indefiniteDiagonal, diagonal_apply_eq]
-    rcases x with x | x <;> rcases y with y | y <;> simp
-    grind⟩
+    rcases x with x | x <;> rcases y with y | y <;> grind⟩
 
 /-- The underlying matrix of `splitCompactElement a b` is `E_(a, b) - E_(b, a)`. -/
 @[simp]
