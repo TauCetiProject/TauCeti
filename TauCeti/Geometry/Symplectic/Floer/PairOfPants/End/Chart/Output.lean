@@ -46,17 +46,12 @@ theorem norm_equivRealProdCLM_symm_positiveEndChart_inf (s t : ℝ) :
   rw [positiveEndChart_apply, equivRealProdCLM_symm_endChart]
   simpa using h
 
-/-- The output end, read in the positive end chart `φ'_∞` at `ζ`, lies at the norm `2 exp (2π ζ₁)`:
-the form of `norm_equivRealProdCLM_symm_positiveEndChart_inf` for a point `ζ` of the strip. -/
-theorem norm_equivRealProdCLM_symm_positiveEndChart_inf' (ζ : ℝ × ℝ) :
-    ‖Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)‖ = 2 * exp (2 * π * ζ.1) := by
-  rw [← norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2, Prod.mk.eta]
-
 /-- Beyond the height `max R 0` of the output end, points are at distance at least `R` from `0`. -/
 theorem le_norm_equivRealProdCLM_symm_positiveEndChart_inf {R : ℝ} {ζ : ℝ × ℝ}
     (hζ : max R 0 ≤ ζ.1) : R ≤ ‖Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)‖ := by
-  rw [norm_equivRealProdCLM_symm_positiveEndChart_inf']
-  have := add_one_le_exp (2 * π * ζ.1)
+  obtain ⟨s, t⟩ := ζ
+  rw [norm_equivRealProdCLM_symm_positiveEndChart_inf]
+  have := add_one_le_exp (2 * π * s)
   nlinarith [le_max_left R 0, le_max_right R 0, two_le_pi]
 
 /-- The output end, read in the positive end chart `φ'_∞` at `(s, t)`, lies in the direction
@@ -134,7 +129,8 @@ the pair of pants `S`: it is at distance at least `2` from `0`. -/
 theorem positiveEndChart_inf_add_mem_thricePuncturedSphereReal {c : ℝ} (hc : |c| ≤ 1)
     {ζ : ℝ × ℝ} (hζ : 1 ≤ ζ.1) : positiveEndChart inf ζ + (c, 0) ∈ thricePuncturedSphereReal := by
   set Z := Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)
-  have hn : ‖Z‖ = 2 * exp (2 * π * ζ.1) := norm_equivRealProdCLM_symm_positiveEndChart_inf' ζ
+  have hn : ‖Z‖ = 2 * exp (2 * π * ζ.1) :=
+    norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
   have h2π : 2 * π ≤ 2 * π * ζ.1 := le_mul_of_one_le_right (by positivity) hζ
   have h14 : (14 : ℝ) ≤ 2 * exp (2 * π * ζ.1) :=
     fourteen_le_two_mul_exp_two_pi.trans

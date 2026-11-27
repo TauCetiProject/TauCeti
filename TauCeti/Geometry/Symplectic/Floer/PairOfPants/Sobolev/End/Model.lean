@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Operator
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Transfer
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Asymptotic
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
+import TauCeti.Topology.Circle.AddCircle
+import TauCeti.Topology.Circle.Metric
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -55,7 +57,9 @@ to a parametrix of `D_u` spliced from inverses of its end models.
   `TauCeti.Floer.positiveEndChartScale_add_fst`), so the unit tangent
   `TauCeti.Floer.endUnitTangent` of the chart and the rotation depend only on `t`
   (`TauCeti.Floer.endModelRotation_eq_of_snd_eq`), and so does the end model
-  (`TauCeti.Floer.endModelCoeff_eq_of_snd_eq`).
+  (`TauCeti.Floer.endModelCoeff_eq_of_snd_eq`). For loops of period one, both are therefore
+  uniformly continuous in `exp (2π i t)`
+  (`TauCeti.Floer.exists_pos_forall_norm_endModelCoeff_sub_lt`).
 * **Invertibility.** Since `a² + b² = r²` and `J_t² = -1`, the rotation is invertible with inverse
   `r⁻¹ (a - b J_t)` (`TauCeti.Floer.isInvertible_endModelRotation`, from
   `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`), and for continuous loops it
@@ -295,6 +299,46 @@ theorem memLp_endModelCoeff (q : Puncture) {J : ℝ → AlmostComplexStructure V
   memLp_top_of_eq_comp_snd (((continuous_endModelRotation q hJ).clm_comp
     (continuous_stationaryJetCoeff hJ hS)).comp (continuous_const.prodMk continuous_id))
     fun _ ↦ endModelCoeff_eq_of_snd_eq q J S rfl
+
+/-- **The end model is uniformly continuous in the angle.** For continuous loops `L_t` and `S_t` of
+period one and every `η > 0`, two points of the strip whose angular coordinates `t`, `t'` have
+images `exp (2π i t)`, `exp (2π i t')` within `δ` on the circle have unit tangents of the end chart,
+and end models, within `η`. -/
+theorem exists_pos_forall_norm_endModelCoeff_sub_lt (q : Puncture)
+    {L : ℝ → AlmostComplexStructure V}
+    {S : ℝ → V →L[ℝ] V} (hL : Continuous fun t ↦ (L t).toLinearMap.toContinuousLinearMap)
+    (hS : Continuous S) (hLp : Periodic L 1) (hSp : Periodic S 1) {η : ℝ} (hη : 0 < η) :
+    ∃ δ > 0, ∀ ζ ζ' : ℝ × ℝ,
+      ‖(Circle.exp (2 * π * ζ.2) : ℂ) - Circle.exp (2 * π * ζ'.2)‖ < δ →
+        ‖endUnitTangent q ζ - endUnitTangent q ζ'‖ < η ∧
+          ‖endModelCoeff q L S ζ - endModelCoeff q L S ζ'‖ < η := by
+  -- Both depend only on `t`, through a continuous function of period one.
+  set P : ℝ → (ℝ × ℝ) × (V × V × V →L[ℝ] V) :=
+    fun t ↦ (endUnitTangent q (0, t), endModelCoeff q L S (0, t))
+  have hGeq : endModelCoeff q L S =
+      fun ζ ↦ (endModelRotation q L ζ).comp (stationaryJetCoeff L S ζ) :=
+    funext fun ζ ↦ endModelCoeff_def q L S ζ
+  have hPc : Continuous P := by
+    refine ((continuous_endUnitTangent q).comp (continuous_const.prodMk continuous_id)).prodMk ?_
+    rw [hGeq]
+    exact ((continuous_endModelRotation q hL).clm_comp
+      (continuous_stationaryJetCoeff hL hS)).comp (continuous_const.prodMk continuous_id)
+  have hPp : Periodic P 1 := fun t ↦ by
+    simp only [P, endUnitTangent_add_one, hGeq, endModelRotation_eq, hLp t]
+    congr 2
+    exact ContinuousLinearMap.ext fun v ↦ by simp only [stationaryJetCoeff_apply, hLp t, hSp t]
+  obtain ⟨G, hGu, hGg⟩ := hPp.exists_uniformContinuous_eq_comp_circleExp one_ne_zero hPc
+  simp only [div_one] at hGg
+  obtain ⟨δ, hδ, hG⟩ := Metric.uniformContinuous_iff.1 hGu η hη
+  refine ⟨δ, hδ, fun ζ ζ' h ↦ ?_⟩
+  -- The metric of `Circle` is the subspace metric of `ℂ`.
+  rw [← Circle.dist_eq_norm_coe_sub] at h
+  have hd := hG h
+  rw [← hGg, ← hGg, Prod.dist_eq, max_lt_iff, dist_eq_norm, dist_eq_norm] at hd
+  rwa [endUnitTangent_eq_of_snd_eq q (ζ := ζ) (ζ' := (0, ζ.2)) rfl,
+    endUnitTangent_eq_of_snd_eq q (ζ := ζ') (ζ' := (0, ζ'.2)) rfl,
+    endModelCoeff_eq_of_snd_eq q L S (ζ := ζ) (ζ' := (0, ζ.2)) rfl,
+    endModelCoeff_eq_of_snd_eq q L S (ζ := ζ') (ζ' := (0, ζ'.2)) rfl]
 
 variable (q : Puncture) (J : ℝ → AlmostComplexStructure V) (S : ℝ → V →L[ℝ] V) in
 /-- The **end model operator** of the end `q`: the first-order operator of

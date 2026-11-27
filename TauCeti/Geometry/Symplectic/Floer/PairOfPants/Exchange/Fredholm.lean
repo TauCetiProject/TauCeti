@@ -10,8 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Fredholm
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
-import TauCeti.Topology.Circle.AddCircle
-import TauCeti.Topology.Circle.Metric
 
 /-!
 # The linearized operator along the input-exchange family is Fredholm
@@ -163,45 +161,6 @@ private theorem exists_forall_le_norm_weightNormSq (c : ℂ) {η δ : ℝ} (hη 
   · rwa [dist_zero_right, NormedSpace.normalize_eq_div_norm, NormedSpace.normalize_eq_div_norm,
       Complex.coe_algebraMap] at hc
 
-/-- **The end model is uniformly continuous in the angle.** For continuous loops `L_t` and `S_t` of
-period one and every `η > 0`, two points of the strip whose angular coordinates `t`, `t'` have
-images `exp (2π i t)`, `exp (2π i t')` within `δ` on the circle have unit tangents of the end chart,
-and end models, within `η`. -/
-private theorem exists_pos_forall_norm_endModelCoeff_sub_lt {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [FiniteDimensional ℝ V] (q : Puncture) {L : ℝ → AlmostComplexStructure V}
-    {S : ℝ → V →L[ℝ] V} (hL : Continuous fun t ↦ (L t).toLinearMap.toContinuousLinearMap)
-    (hS : Continuous S) (hLp : Periodic L 1) (hSp : Periodic S 1) {η : ℝ} (hη : 0 < η) :
-    ∃ δ > 0, ∀ ζ ζ' : ℝ × ℝ,
-      ‖(Circle.exp (2 * π * ζ.2) : ℂ) - Circle.exp (2 * π * ζ'.2)‖ < δ →
-        ‖endUnitTangent q ζ - endUnitTangent q ζ'‖ < η ∧
-          ‖endModelCoeff q L S ζ - endModelCoeff q L S ζ'‖ < η := by
-  -- Both depend only on `t`, through a continuous function of period one.
-  set P : ℝ → (ℝ × ℝ) × (V × V × V →L[ℝ] V) :=
-    fun t ↦ (endUnitTangent q (0, t), endModelCoeff q L S (0, t))
-  have hGeq : endModelCoeff q L S =
-      fun ζ ↦ (endModelRotation q L ζ).comp (stationaryJetCoeff L S ζ) :=
-    funext fun ζ ↦ endModelCoeff_def q L S ζ
-  have hPc : Continuous P := by
-    refine ((continuous_endUnitTangent q).comp (continuous_const.prodMk continuous_id)).prodMk ?_
-    rw [hGeq]
-    exact ((continuous_endModelRotation q hL).clm_comp
-      (continuous_stationaryJetCoeff hL hS)).comp (continuous_const.prodMk continuous_id)
-  have hPp : Periodic P 1 := fun t ↦ by
-    simp only [P, endUnitTangent_add_one, hGeq, endModelRotation_eq, hLp t]
-    congr 2
-    exact ContinuousLinearMap.ext fun v ↦ by simp only [stationaryJetCoeff_apply, hLp t, hSp t]
-  obtain ⟨G, hGu, hGg⟩ := hPp.exists_uniformContinuous_eq_comp_circleExp hPc
-  obtain ⟨δ, hδ, hG⟩ := Metric.uniformContinuous_iff.1 hGu η hη
-  refine ⟨δ, hδ, fun ζ ζ' h ↦ ?_⟩
-  -- The metric of `Circle` is the subspace metric of `ℂ`.
-  rw [← Circle.dist_eq_norm_coe_sub] at h
-  have hd := hG h
-  rw [← hGg, ← hGg, Prod.dist_eq, max_lt_iff, dist_eq_norm, dist_eq_norm] at hd
-  rwa [endUnitTangent_eq_of_snd_eq q (ζ := ζ) (ζ' := (0, ζ.2)) rfl,
-    endUnitTangent_eq_of_snd_eq q (ζ := ζ') (ζ' := (0, ζ'.2)) rfl,
-    endModelCoeff_eq_of_snd_eq q L S (ζ := ζ) (ζ' := (0, ζ.2)) rfl,
-    endModelCoeff_eq_of_snd_eq q L S (ζ := ζ') (ζ' := (0, ζ'.2)) rfl]
-
 /-- With `|Z|² ρ(Z) ≤ 4` at `Z = φ'_∞(ζ)`, the jet coefficient of the transfer along the output end
 chart with the cutoff `1` has norm at most `4π + 2`. -/
 private theorem norm_endTransferCoeff_inf_one_le {V : Type*} [NormedAddCommGroup V]
@@ -271,27 +230,6 @@ namespace TauCeti.SymplecticForm
 open Floer StripSobolev
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- **Translating the data changes the coefficient field only through the weight.** If
-`w + v = z`, the coefficient field on conformal jets at `w` of the data translated by `v` differs
-from that of the data at `z` by at most `|1 - √ρ(z) / √ρ(w)|` times the norm of the latter: only
-the weight in front of the zeroth-order term is read at a different point. -/
-private theorem norm_floerConformalJetCoeff_sub_floerConformalJetCoeff_comp_add_le
-    (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (u : ℝ × ℝ → V) {v z w : ℝ × ℝ} (hwz : w + v = z) (hρz : 0 < √(ρ z)) :
-    ‖ω.floerConformalJetCoeff ρ J Ks Kt u z - ω.floerConformalJetCoeff ρ (fun z ↦ J (z + v))
-        (fun z ↦ Ks (z + v)) (fun z ↦ Kt (z + v)) (fun z ↦ u (z + v)) w‖ ≤
-      |1 - √(ρ z) / √(ρ w)| * ‖ω.floerConformalJetCoeff ρ J Ks Kt u z‖ := by
-  rw [floerConformalJetCoeff_comp_add_right, hwz, floerConformalJetCoeff_def]
-  -- The zeroth-order parts are `k L` and `k' L`, and `k L - k' L = (1 - k' / k) k L`.
-  set L := ω.floerLinearizationCoeff J Ks Kt u z
-  set k := (√(ρ z))⁻¹
-  set k' := (√(ρ w))⁻¹
-  have hkk : k • L - k' • L = (1 - k' / k) • (k • L) := by
-    rw [smul_smul, ← sub_smul, sub_mul, one_mul, div_mul_cancel₀ _ (inv_ne_zero hρz.ne')]
-  calc _ ≤ ‖k • L - k' • L‖ := norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le _ _ _
-    _ = |1 - √(ρ z) / √(ρ w)| * ‖k • L‖ := by rw [hkk, norm_smul, Real.norm_eq_abs, inv_div_inv]
-    _ ≤ _ := mul_le_mul_of_nonneg_left (norm_le_norm_firstOrderJetCoeff_right _ _) (abs_nonneg _)
 
 /-- **The pointwise comparison with the end model across the recentring.** Let
 `z = φ'_∞(ζ) = φ'_∞(ζ') + c`, with `Z = z` read in `ℂ`. Suppose that at `Z` the translation by `c`
