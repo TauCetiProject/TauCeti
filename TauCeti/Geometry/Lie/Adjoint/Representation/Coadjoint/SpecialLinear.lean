@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.SpecialLinear
+public import TauCeti.Geometry.Lie.SpecialLinear.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.Stabilizer
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.NilpotentOrbitFinTwo
