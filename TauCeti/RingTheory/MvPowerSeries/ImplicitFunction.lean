@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import Mathlib.RingTheory.MvPowerSeries.Rename
-import Mathlib.Data.Fintype.Sum
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
@@ -84,27 +83,6 @@ theorem existsUnique_fixedPoint_of_order_sub
 
 end Ring
 
-/-- A series that vanishes on both coordinate blocks has total order at least two. -/
-theorem two_le_order_of_killCompl_sum_eq_zero [CommSemiring R] (f : MvPowerSeries (σ ⊕ τ) R)
-    (hl : killCompl Function.Embedding.inl f = 0)
-    (hr : killCompl Function.Embedding.inr f = 0) : 2 ≤ f.order := by
-  refine nat_le_order (n := 2) fun d hd ↦ ?_
-  have hdeg : d.degree = 0 ∨ d.degree = 1 := by lia
-  rcases hdeg with hdeg | hdeg
-  · rw [(Finsupp.degree_eq_zero_iff d).mp hdeg]
-    have h := congrArg (coeff 0) hl
-    simpa only [coeff_killCompl, Finsupp.embDomain_zero, map_zero] using h
-  · obtain ⟨i, rfl⟩ := (Set.ext_iff.mp Finsupp.range_single_one d).mpr hdeg
-    cases i with
-    | inl i =>
-      have h := congrArg (coeff (Finsupp.single i 1)) hl
-      simpa only [coeff_killCompl, Finsupp.embDomain_single, Function.Embedding.inl_apply,
-        map_zero] using h
-    | inr i =>
-      have h := congrArg (coeff (Finsupp.single i 1)) hr
-      simpa only [coeff_killCompl, Finsupp.embDomain_single, Function.Embedding.inr_apply,
-        map_zero] using h
-
 section CommRing
 
 variable [CommRing R]
@@ -172,37 +150,36 @@ theorem two_le_order_sub_rename_killCompl_add_X_of_killCompl_eq_X
     simp only [zero_add, sub_self]
 
 /-- A tuple of series with `F(0, Y) = Y` admits a unique zero-constant tuple `a` solving
-`F(X, a(X)) = 0`. In particular this gives the inverse series of a formal group law without
-using associativity or commutativity (Stix §10.2.2). -/
-theorem existsUnique_subst_sumElim_X_eq_zero_of_killCompl_eq_X [Finite σ]
-    (f : σ → MvPowerSeries (σ ⊕ σ) R)
+`F(X, a(X)) = 0` for finite parameter and unknown blocks. Taking the same index type for both
+blocks gives the inverse series of a formal group law (Stix §10.2.2). -/
+theorem existsUnique_subst_sumElim_X_eq_zero_of_killCompl_eq_X [Finite σ] [Finite τ]
+    (f : τ → MvPowerSeries (σ ⊕ τ) R)
     (h : ∀ i, killCompl Function.Embedding.inr (f i) = X i) :
-    ∃! a : {a : σ → MvPowerSeries σ R // ∀ i, constantCoeff (a i) = 0},
+    ∃! a : {a : τ → MvPowerSeries σ R // ∀ i, constantCoeff (a i) = 0},
       ∀ i, substAlgHom (HasSubst.X.sumElim (hasSubst_of_constantCoeff_zero a.prop)) (f i) = 0 := by
-  let l (i : σ) : MvPowerSeries σ R := killCompl Function.Embedding.inl (f i)
-  let g : σ ⊕ σ → MvPowerSeries (σ ⊕ σ) R :=
+  let l (i : τ) : MvPowerSeries σ R := killCompl Function.Embedding.inl (f i)
+  let g : σ ⊕ τ → MvPowerSeries (σ ⊕ τ) R :=
     Sum.elim (X ∘ Sum.inl) (fun i ↦ f i - rename Function.Embedding.inl (l i))
   have hg : ∀ i, 2 ≤ (g i - X i).order := by
     rintro (i | i)
     · simp only [g, Sum.elim_inl, Function.comp_apply, sub_self, order_zero, le_top]
     · simpa only [g, l, Sum.elim_inr, sub_sub] using
         two_le_order_sub_rename_killCompl_add_X_of_killCompl_eq_X (f i) (h i)
-  let q : σ ⊕ σ → MvPowerSeries σ R := Sum.elim X (-l)
+  let q : σ ⊕ τ → MvPowerSeries σ R := Sum.elim X (-l)
   have hq : ∀ i, constantCoeff (q i) = 0 := by
     rintro (i | i)
     · exact constantCoeff_X i
     · simpa only [q, l, Sum.elim_inr, Pi.neg_apply, map_neg, neg_eq_zero, constantCoeff_killCompl,
         constantCoeff_X] using congrArg constantCoeff (h i)
-  have hrename {z : σ ⊕ σ → MvPowerSeries σ R} (hz : HasSubst z)
+  have hrename {z : σ ⊕ τ → MvPowerSeries σ R} (hz : HasSubst z)
       (hleft : ∀ i, z (Sum.inl i) = X i) (p : MvPowerSeries σ R) :
-      (rename (Function.Embedding.inl : σ ↪ σ ⊕ σ) p).subst z = p := by
-    have he : z ∘ (Function.Embedding.inl : σ ↪ σ ⊕ σ) = X := funext hleft
+      (rename (Function.Embedding.inl : σ ↪ σ ⊕ τ) p).subst z = p := by
+    have he : z ∘ (Function.Embedding.inl : σ ↪ σ ⊕ τ) = X := funext hleft
     rw [subst_rename _ _ hz, he, subst_self, id_eq]
-  let := Fintype.ofFinite σ
   obtain ⟨b, hb, huniq⟩ := existsUnique_subst_eq_of_two_le_order_sub_X g hg q hq
   have hleft (i : σ) : b.val (Sum.inl i) = X i := by
     simpa only [g, q, Sum.elim_inl, Function.comp_apply, substAlgHom_X] using hb (Sum.inl i)
-  let a : {a : σ → MvPowerSeries σ R // ∀ i, constantCoeff (a i) = 0} :=
+  let a : {a : τ → MvPowerSeries σ R // ∀ i, constantCoeff (a i) = 0} :=
     ⟨b.val ∘ Sum.inr, fun i ↦ b.prop (Sum.inr i)⟩
   have hab : Sum.elim X a.val = b.val :=
     funext fun | .inl i => (hleft i).symm | .inr _ => rfl
@@ -214,7 +191,7 @@ theorem existsUnique_subst_sumElim_X_eq_zero_of_killCompl_eq_X [Finite σ]
     rw [substAlgHom_apply, hab]
     exact sub_eq_neg_self.mp hi
   · intro c hc
-    let c' : {d : σ ⊕ σ → MvPowerSeries σ R // ∀ i, constantCoeff (d i) = 0} :=
+    let c' : {d : σ ⊕ τ → MvPowerSeries σ R // ∀ i, constantCoeff (d i) = 0} :=
       ⟨Sum.elim X c.val, fun | .inl i => constantCoeff_X i | .inr i => c.prop i⟩
     have hc' : c' = b := huniq c' <| by
       intro i
