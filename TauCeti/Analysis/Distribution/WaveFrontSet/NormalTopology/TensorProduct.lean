@@ -21,6 +21,7 @@ import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Normed.Module.Seminorm.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Continuity of the tensor product in the normal topology
@@ -928,13 +929,6 @@ section Swap
 variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
   [NormedSpace ℝ D]
 
-omit [NormedSpace ℝ E] [NormedSpace ℝ D] in
-private theorem coe_comap_prodSwap {Ω : Opens E} {O : Opens D} {V : Opens (E × D)}
-    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
-    (Opens.comap ContinuousMap.prodSwap V : Set (D × E)) = (O : Set D) ×ˢ (Ω : Set E) := by
-  ext ⟨y, x⟩
-  simp [hV, and_comm]
-
 private theorem mapsTo_comap_withLpProdComm {V : Opens (E × D)} {W : Opens (WithLp 2 (E × D))}
     (hW : MapsTo (prodContinuousLinearEquiv 2 ℝ E D) W V) :
     MapsTo (prodContinuousLinearEquiv 2 ℝ D E)
@@ -1054,7 +1048,7 @@ def tensorProductLeftCLM (hΓ₁ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ₁))
   (inclusionCLM (preimage_withLpProdComm_tensorCone Γ₁ Γ₂).subset).comp <|
     (transportCLM (LinearIsometryEquiv.withLpProdComm 2 ℝ E D) (mapsTo_withLpProdComm_comap W)
       (mapsTo_withLpProdComm_symm_comap W)).comp <|
-    tensorProductRightCLM (coe_comap_prodSwap hV) (mapsTo_comap_withLpProdComm hW) hΓ₂ hcone₂
+    tensorProductRightCLM (Opens.coe_comap_prodSwap hV) (mapsTo_comap_withLpProdComm hW) hΓ₂ hcone₂
       hΓ₂0 hΓ₁ hcone₁ hΓ₁0 u
 
 @[simp]
@@ -1069,7 +1063,7 @@ theorem toDistribution_tensorProductLeftCLM (hΓ₁ : IsOpen (((Ω : Set E) ×ˢ
   simp only [tensorProductLeftCLM, ContinuousLinearMap.comp_apply, toDistribution_inclusionCLM,
     toDistribution_transportCLM, toDistribution_tensorProductRightCLM]
   exact Distribution.transportCLM_withLpProdComm_transportCLM_tensorProduct _ _ hV hW
-    (coe_comap_prodSwap hV) (mapsTo_comap_withLpProdComm hW) (mapsTo_withLpProdComm_comap W)
+    (Opens.coe_comap_prodSwap hV) (mapsTo_comap_withLpProdComm hW) (mapsTo_withLpProdComm_comap W)
 
 /-- The tensor product `u ⊗ v` is the same whether it is regarded as continuous in `u`
 (`TauCeti.WaveFrontSpace.tensorProductRightCLM`) or in `v`

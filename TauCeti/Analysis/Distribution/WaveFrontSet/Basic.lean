@@ -924,7 +924,8 @@ theorem isMicrolocallySmoothAt_transportCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E'}
 wave front set of the transport `e^* T` consists of the `(x, ξ)` with `(e x, (e⁻¹)ᵀ ξ)` in the
 wave front set of `T`: positions move by `e⁻¹` and covectors by the transpose `eᵀ`. For a linear
 isometry `L`, the transpose inverse `(L⁻¹)ᵀ` is `L` itself
-(`LinearIsometryEquiv.adjoint_eq_symm`), so positions and covectors both move by `L⁻¹`. -/
+(`LinearIsometryEquiv.adjoint_toContinuousLinearEquiv_symm`), so positions and covectors both
+move by `L⁻¹`. -/
 theorem waveFrontSet_transportCLM (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' Ω)
     (h' : MapsTo e.symm Ω Ω') (T : 𝓓'(Ω, ℂ)) :
     (transportCLM e h T).waveFrontSet =
