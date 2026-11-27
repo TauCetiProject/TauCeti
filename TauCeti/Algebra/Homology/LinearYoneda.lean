@@ -329,6 +329,16 @@ lemma _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply
   (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a).trans
     (X.linearYonedaObjMap_f_hom_apply k g i _)
 
+/-- The identity of a chain complex `X` induces the identity on the cohomology of `Hom(X, Y)`.
+The map is typed between `linearYonedaObj` complexes, as in the statements downstream that
+`rw` with it; the identity morphism's type is matched only up to unfolding
+`linearYonedaFunctor`. -/
+lemma homologyMap_linearYonedaFunctor_map_id (X : ChainComplex C α) (i : α) :
+    HomologicalComplex.homologyMap (K := X.linearYonedaObj k Y) (L := X.linearYonedaObj k Y)
+      ((linearYonedaFunctor k Y).map (𝟙 X).op) i = 𝟙 _ := by
+  rw [op_id, CategoryTheory.Functor.map_id]
+  exact HomologicalComplex.homologyMap_id _ _
+
 section Elementwise
 
 variable {k Y} {X : ChainComplex C α}
