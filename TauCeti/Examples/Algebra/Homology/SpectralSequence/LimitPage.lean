@@ -49,11 +49,14 @@ def graded (X : κ → C) : SpectralSequence C c r₀ where
   iso r _ pq _ _ :=
     ((HomologicalComplex.graded (c r) X).XIsoHomologyOfDEqZero pq (by simp) (by simp)).symm
 
+private lemma graded_page (X : κ → C) (r : ℤ) (hr : r₀ ≤ r) :
+    (graded c r₀ X).page r hr = HomologicalComplex.graded (c r) X :=
+  rfl
+
 lemma degeneratesAt_graded (X : κ → C) : (graded c r₀ X).DegeneratesAt r₀ where
   le := le_rfl
   d_eq_zero _ _ _ _ _ := by
-    change (HomologicalComplex.graded (c _) X).d _ _ = 0
-    simp
+    rw [graded_page]
 
 instance hasLimitPage_graded (X : κ → C) (pq : κ) : (graded c r₀ X).HasLimitPage pq :=
   ((degeneratesAt_graded c r₀ X).stabilizesAt pq).hasLimitPage

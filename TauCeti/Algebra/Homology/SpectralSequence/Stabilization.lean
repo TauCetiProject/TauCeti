@@ -314,13 +314,17 @@ lemma StabilizesAt.pageXIso_add_one (h : E.StabilizesAt pq s) (r : ℤ) (hr : r�
         E.iso r (r + 1) pq rfl hr :=
   Int.leInduction_add_one _ _ r hsr
 
+/-- `(K.sc pq).g` is `K.d pq (c'.next pq)`, which is definitionally `K.dFrom pq` via the `abbrev`
+`HomologicalComplex.dFrom`. -/
+private lemma sc_g_eq_dFrom {c' : ComplexShape κ} (K : HomologicalComplex C c') (pq : κ) :
+    (K.sc pq).g = K.dFrom pq :=
+  HomologicalComplex.shortComplexFunctor_obj_g C c' pq K
+
 private lemma π_comp_iCyclesIso_inv {A : C} {c' : ComplexShape κ} {K : HomologicalComplex C c'}
     (pq : κ) (P : SubquotientPresentation A (K.X pq)) (hFrom : K.dFrom pq = 0) :
     P.π ≫ (K.iCyclesIso pq (c'.next pq) rfl hFrom).inv =
       Subobject.ofLE _ _ (by
-        rw [HomologicalComplex.shortComplexFunctor_obj_g]
-        change P.Z ≤ P.preimage (kernelSubobject (K.dFrom pq))
-        rw [hFrom, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
+        rw [sc_g_eq_dFrom, hFrom, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
         P.preimageπ (kernelSubobject (K.sc pq).g) ≫
         (K.sc pq).kernelSubobjectIsoCycles.hom := by
   rw [← cancel_mono (K.iCycles pq), Category.assoc, Category.assoc, Category.assoc,
@@ -342,9 +346,7 @@ private lemma pageXIso_step_eq_isoOfEq (r : ℤ) (hr : r₀ ≤ r) (hFrom : (E.p
         (E.pagePresentation pq (r + 1) (Int.le_add_one hr)) hB hZ := by
   have hπ' : Subobject.ofLE _ _ hZ.le ≫ (E.pagePresentation pq (r + 1) (Int.le_add_one hr)).π =
       Subobject.ofLE _ _ (by
-        rw [HomologicalComplex.shortComplexFunctor_obj_g]
-        change _ ≤ (E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r hr).dFrom pq))
-        rw [hFrom, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
+        rw [sc_g_eq_dFrom, hFrom, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
         (E.pagePresentation pq r hr).preimageπ (kernelSubobject ((E.page r hr).sc pq).g) ≫
         ((E.page r hr).sc pq).kernelSubobjectIsoCycles.hom ≫
         ((E.page r hr).sc pq).homologyπ ≫ (E.iso r (r + 1) pq rfl hr).hom := by
