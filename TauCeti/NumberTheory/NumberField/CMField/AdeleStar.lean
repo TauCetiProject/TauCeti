@@ -18,7 +18,10 @@ to the finite adeles `𝔸_f` and to the infinite adeles `E_∞ = ∏_w E_w` of 
 structures on these rings (`NumberField.IsCMField.finiteAdeleConj`,
 `NumberField.IsCMField.infiniteAdeleConj`), semilinear over `E`: `conj (r • a) = conj r • conj a`
 for `r ∈ E`; `star` is the `simp` normal form of both conjugations
-(`NumberField.IsCMField.finiteAdeleConj_apply`, `NumberField.IsCMField.infiniteAdeleConj_apply`).
+(`NumberField.IsCMField.finiteAdeleConj_apply`, `NumberField.IsCMField.infiniteAdeleConj_apply`),
+also on the diagonal copy of `E`, where `simp` rewrites the image of `complexConj E x` to
+`star (algebraMap E _ x)` (`IsDedekindDomain.FiniteAdeleRing.algebraMap_complexConj`,
+`NumberField.InfiniteAdeleRing.algebraMap_complexConj`).
 Conjugation preserves the integral finite adeles `Ô`, which form a star subsemiring and inherit the
 star structure. With them, the matrix groups of hermitian forms over the adeles, such as
 `{g ∈ GL_n(𝔸_f) : g* g = 1}`, are the groups `Matrix.unitaryGroupOf A` of Tau Ceti's general
@@ -188,6 +191,15 @@ theorem star_apply_conjPlace (a : 𝔸ᶠ[E]) (w : HeightOneSpectrum (𝓞 E)) :
   rw [← coe_finiteAdeleConj, finiteAdeleConj_def]
   exact finiteAdeleEquiv_apply_eq_adicCompletionCongr _ _ a
 
+/-- The diagonal embedding of a CM field in its finite adeles commutes with conjugation. As
+`star_eq_complexConj` makes `complexConj E` the `simp` normal form of conjugation on `E` and
+`finiteAdeleConj_apply` makes `star` the normal form on the finite adeles, this is the `simp`
+lemma joining them. -/
+@[simp]
+theorem algebraMap_complexConj (x : E) :
+    algebraMap E 𝔸ᶠ[E] (complexConj E x) = star (algebraMap E 𝔸ᶠ[E] x) := by
+  rw [← finiteAdeleConj_apply, finiteAdeleConj_algebraMap]
+
 end IsDedekindDomain.FiniteAdeleRing
 
 /-! ### The infinite adeles -/
@@ -273,6 +285,16 @@ end NumberField.IsCMField
 namespace NumberField.InfiniteAdeleRing
 
 variable {E : Type*} [Field E] [CharZero E] [Algebra.IsIntegral ℚ E] [IsCMField E]
+
+/-- The diagonal embedding of a CM field in its infinite adeles commutes with conjugation. As
+`star_eq_complexConj` makes `complexConj E` the `simp` normal form of conjugation on `E` and
+`infiniteAdeleConj_apply` makes `star` the normal form on the infinite adeles, this is the `simp`
+lemma joining them. -/
+@[simp]
+theorem algebraMap_complexConj (x : E) :
+    algebraMap E (InfiniteAdeleRing E) (complexConj E x) =
+      star (algebraMap E (InfiniteAdeleRing E) x) := by
+  rw [← infiniteAdeleConj_apply, infiniteAdeleConj_algebraMap]
 
 /-- The component at an infinite place `w` of the conjugate of an infinite adele only depends on
 its component at `w`, as conjugation fixes `w`. -/

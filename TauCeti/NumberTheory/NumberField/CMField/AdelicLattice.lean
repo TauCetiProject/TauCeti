@@ -214,7 +214,7 @@ theorem latticeDiscriminant_pos
     have h_conj : (x.map (algebraMap E 𝔸ᶠ[E])).map (finiteAdeleConj E) =
         (x.map (complexConj E)).map (algebraMap E 𝔸ᶠ[E]) := by
       ext i j : 1
-      simp only [Matrix.map_apply, finiteAdeleConj_algebraMap]
+      simp
     rw [gramDet_def, h_conj, ← Matrix.transpose_map, ← Matrix.map_mul, RingHom.map_det,
       RingHom.mapMatrix_apply]
   rw [latticeDiscriminant_span_col hx, genIndex_gramDet_mul, h_gram, genIndex_algebraMap]
