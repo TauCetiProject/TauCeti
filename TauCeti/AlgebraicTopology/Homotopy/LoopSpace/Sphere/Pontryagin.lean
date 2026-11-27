@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Wang
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere.Basic
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv
 
 /-!
