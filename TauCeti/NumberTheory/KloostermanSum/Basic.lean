@@ -20,8 +20,9 @@ character `ψ : AddChar R R'` and `a, b ∈ R`, the Kloosterman sum is
 
   `K(χ, ψ; a, b) = ∑_{x ∈ Rˣ} χ(x) ψ(a x + b x⁻¹)`.
 
-The sum runs over the units of `R`. On a finite field it is the Kloosterman sum of Weil's bound
-`|K(χ; a, b)| ≤ 2 √q`, and on `ZMod c` with `ZMod.stdAddChar` it is the sum `S_χ(a, b; c)`.
+The sum runs over the units of `R`. On a finite field with `q` elements, for complex-valued
+characters with `ψ ≠ 1` and for `(a, b) ≠ (0, 0)`, it is the Kloosterman sum of Weil's bound
+`|K(χ; a, b)| ≤ 2 √q`. On `ZMod c` with `ZMod.stdAddChar` it is the sum `S_χ(a, b; c)`.
 
 This file proves the elementary identities. With `b = 0` the sum is the Gauss sum of `χ` and
 `x ↦ ψ(a x)`, since `χ` vanishes off the units. The substitution `x ↦ x⁻¹` exchanges `a` and `b`
