@@ -285,7 +285,7 @@ theorem isGδ_setOf_dense_range_iterate_and_symm [SecondCountableTopology X] (T 
     IsGδ {x : X | Dense (range fun n : ℕ ↦ T^[n] x) ∧ Dense (range fun n : ℕ ↦ T.symm^[n] x)} := by
   have h₁ := isGδ_setOf_dense_orbit (IterateMulAct ⇑T) (X := X)
   have h₂ := isGδ_setOf_dense_orbit (IterateMulAct ⇑T.symm) (X := X)
-  simp only [orbit_iterateMulAct] at h₁ h₂
+  simp only [orbit_iterateMulAct, Function.forwardOrbit_def] at h₁ h₂
   exact h₁.inter h₂
 
 variable [T1Space X] [∀ x : X, (𝓝[≠] x).NeBot] [SecondCountableTopology X] [BaireSpace X]
@@ -336,7 +336,7 @@ theorem setOf_dense_range_iterate_and_symm_mem_residual (T : X ≃ₜ X)
   have hT' := (isTopologicallyTransitive_iterateMulAct_symm_iff T).2 hT
   have h₁ := setOf_dense_orbit_mem_residual (IterateMulAct ⇑T) (X := X)
   have h₂ := setOf_dense_orbit_mem_residual (IterateMulAct ⇑T.symm) (X := X)
-  simp only [orbit_iterateMulAct] at h₁ h₂
+  simp only [orbit_iterateMulAct, Function.forwardOrbit_def] at h₁ h₂
   exact inter_mem h₁ h₂
 
 /-- **Transitivity of a homeomorphism through dense orbits.** On a nonempty second-countable Baire
