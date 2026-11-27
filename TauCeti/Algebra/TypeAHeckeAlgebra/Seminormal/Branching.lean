@@ -42,8 +42,8 @@ simple module (`TauCeti.TypeAHeckeAlgebra.isSimpleModule_seminormalRep`).
 * `TauCeti.TypeAHeckeAlgebra.seminormalRep_cast_strandIncl_comp_extendByZero`: extension by zero
   from the tableaux with the largest label at a corner intertwines the restricted action.
 * `TauCeti.TypeAHeckeAlgebra.seminormalRep_cast_strandIncl_cornerFunEquiv`: the branching rule.
-* `TauCeti.TypeAHeckeAlgebra.additiveContent_ne_zero_erase`: the hypothesis on `μ` carries over to
-  the diagrams `erase μ c`.
+* `TauCeti.TypeAHeckeAlgebra.additiveContent_ne_zero_of_le`: the hypothesis on `μ` carries over to
+  its subdiagrams, such as the diagrams `erase μ c`.
 
 ## Implementation notes
 
@@ -69,12 +69,13 @@ open YoungTableau StandardYoungTableau Function.ExtendByZero
 variable {K : Type*} [Field K] {q : Kˣ} {μ : YoungDiagram} {c : ℕ × ℕ}
   {hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent ((q : K) ^ 2) d ≠ 0}
 
-/-- The hypothesis defining the seminormal representation of `μ` carries over to the diagram
-`erase μ c` obtained by removing a corner `c`, which has one cell fewer. -/
-theorem additiveContent_ne_zero_erase {Q : K} (hc : YoungDiagram.IsCorner μ c)
+/-- The hypothesis defining the seminormal representation of `μ` carries over to every
+subdiagram `ν ≤ μ`, such as the diagram `erase μ c` obtained by removing a corner `c`. -/
+theorem additiveContent_ne_zero_of_le {Q : K} {ν : YoungDiagram} (hνμ : ν ≤ μ)
     (hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent Q d ≠ 0) :
-    ∀ d : ℕ, 0 < d → d < (μ.erase c).card → additiveContent Q d ≠ 0 :=
-  fun d hd hdc => hμ d hd (by have := hc.card_erase; omega)
+    ∀ d : ℕ, 0 < d → d < ν.card → additiveContent Q d ≠ 0 :=
+  fun d hd hdν => hμ d hd
+    (hdν.trans_le (Finset.card_le_card (YoungDiagram.cells_subset_iff.mpr hνμ)))
 
 /-- The branching rule on a generator, at a single corner. -/
 private theorem seminormalRep_cast_strandIncl_T_extendByZero (hc : YoungDiagram.IsCorner μ c)
@@ -84,7 +85,7 @@ private theorem seminormalRep_cast_strandIncl_T_extendByZero (hc : YoungDiagram.
           (strandIncl K q _ (T q i)))
         (linearMap K K (extend hc) ψ) =
       linearMap K K (extend hc) (seminormalRep q (μ.erase c)
-        (additiveContent_ne_zero_erase hc hμ) (T q i) ψ) := by
+        (additiveContent_ne_zero_of_le (YoungDiagram.erase_le μ c) hμ) (T q i) ψ) := by
   have hcard := hc.card_erase
   have hi : (i : ℕ) + 1 < (μ.erase c).card := by omega
   rw [strandIncl_T, cast_T]
@@ -117,7 +118,7 @@ theorem seminormalRep_cast_strandIncl_comp_extendByZero (hc : YoungDiagram.IsCor
         (AlgEquiv.cast (R := K) (A := TypeAHeckeAlgebra K q) hc.card_erase (strandIncl K q _ x)) ∘ₗ
         linearMap K K (extend hc) =
       linearMap K K (extend hc) ∘ₗ seminormalRep q (μ.erase c)
-        (additiveContent_ne_zero_erase hc hμ) x := by
+        (additiveContent_ne_zero_of_le (YoungDiagram.erase_le μ c) hμ) x := by
   have hx : x ∈ Algebra.adjoin K (Set.range (T (n := (μ.erase c).card) q)) := by
     rw [adjoin_range_T]
     trivial
@@ -147,7 +148,7 @@ theorem seminormalRep_cast_strandIncl_cornerFunEquiv {n : ℕ} (h : n + 1 = μ.c
         (cornerFunEquiv (R := K) (by omega) φ) =
       cornerFunEquiv (R := K) (by omega) fun c =>
         seminormalRep q (μ.erase c.val)
-          (additiveContent_ne_zero_erase (YoungDiagram.mem_corners.mp c.property) hμ)
+          (additiveContent_ne_zero_of_le (YoungDiagram.erase_le μ c) hμ)
           (AlgEquiv.cast (R := K) (A := TypeAHeckeAlgebra K q)
             (by have := (YoungDiagram.mem_corners.mp c.property).card_erase; omega) x)
           (φ c) := by
