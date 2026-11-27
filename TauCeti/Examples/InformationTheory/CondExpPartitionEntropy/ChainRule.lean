@@ -11,13 +11,13 @@ public import Mathlib.MeasureTheory.Measure.Count
 /-!
 # Worked examples: the conditional chain rule
 
-These examples check `TauCeti.condExpPartitionEntropy_pair` on two fair bits.
+These examples check `TauCeti.condExpPartitionEntropy_pair_eq_add` on two fair bits.
 
 * For two independent fair bits `P` and `Q` (the coordinates of the uniform probability on
   `Bool × Bool`), `H(P ∨ Q) = 2 log 2`, `H(P) = log 2`, and the chain rule gives
   `H(Q | σ(P)) = log 2`: knowing `P` says nothing about `Q`.
 * For a fair bit `P` joined with itself, `H(P ∨ P) = log 2`, not the `2 log 2` of two independent
-  fair bits, and `H(P | σ(P)) = 0`.
+  fair bits.
 -/
 
 public section
@@ -43,20 +43,20 @@ instance instIsProbabilityMeasureFairBit : IsProbabilityMeasure fairBit :=
     rw [smul_apply, Measure.count_univ]
     simp [ENNReal.inv_mul_cancel]⟩
 
-/-- Every atom of a label on a finite discrete space is measurable. -/
-theorem measurableSet_preimage {α β : Type*} [MeasurableSpace α] [DiscreteMeasurableSpace α]
-    (f : α → β) (i : β) : MeasurableSet (f ⁻¹' {i}) :=
-  DiscreteMeasurableSpace.forall_measurableSet _
+/-- Each point of `Bool × Bool` has mass `1 / 4` under `twoBits`. -/
+theorem twoBits_real_singleton (x : Bool × Bool) : twoBits.real {x} = 1 / 4 := by
+  rw [measureReal_def, smul_apply, Measure.count_singleton, smul_eq_mul, mul_one,
+    ENNReal.toReal_inv]
+  norm_num
 
 /-- The joint entropy of two independent fair bits is `2 log 2`. -/
 theorem condExpPartitionEntropy_bot_pair :
     condExpPartitionEntropy twoBits ⊥ (fun x ↦ (x.1, x.2)) = 2 * log 2 := by
-  rw [condExpPartitionEntropy_bot fun i ↦ (measurableSet_preimage _ i).nullMeasurableSet]
-  have h4 : log 4 = 2 * log 2 := by
-    rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.log_pow]
-    push_cast
-    ring
-  simpa [measureReal_def, negMulLog] using h4
+  rw [condExpPartitionEntropy_bot fun _ ↦ MeasurableSet.of_discrete.nullMeasurableSet]
+  simp only [Prod.mk.eta, Set.preimage_id', twoBits_real_singleton, Finset.sum_const,
+    Finset.card_univ, Fintype.card_prod, Fintype.card_bool, nsmul_eq_mul, negMulLog]
+  rw [one_div, log_inv, show (4 : ℝ) = 2 ^ 2 by norm_num, Real.log_pow]
+  ring
 
 /-- Each value of the first coordinate has two preimages in `Bool × Bool`. -/
 theorem count_fst_preimage (b : Bool) :
@@ -70,7 +70,7 @@ theorem count_fst_preimage (b : Bool) :
 /-- The entropy of the first of two independent fair bits is `log 2`. -/
 theorem condExpPartitionEntropy_bot_fst :
     condExpPartitionEntropy twoBits ⊥ Prod.fst = log 2 := by
-  rw [condExpPartitionEntropy_bot fun i ↦ (measurableSet_preimage _ i).nullMeasurableSet]
+  rw [condExpPartitionEntropy_bot fun _ ↦ MeasurableSet.of_discrete.nullMeasurableSet]
   simp only [measureReal_def, smul_apply, count_fst_preimage, Fintype.sum_bool, negMulLog,
     smul_eq_mul]
   norm_num [Real.log_div one_ne_zero two_ne_zero]
@@ -80,16 +80,15 @@ theorem condExpPartitionEntropy_bot_fst :
 first: `H(Q | σ(P)) = H(P ∨ Q) - H(P) = 2 log 2 - log 2`. -/
 example : condExpPartitionEntropy twoBits (⊥ ⊔ MeasurableSpace.comap Prod.fst ⊤) Prod.snd =
     log 2 := by
-  have h := condExpPartitionEntropy_pair (μ := twoBits) (m := ⊥)
-    (measurableSet_preimage Prod.fst) (measurableSet_preimage Prod.snd)
+  have h := condExpPartitionEntropy_pair_eq_add (μ := twoBits) (m := ⊥) (a := Prod.fst)
+    (b := Prod.snd) (fun _ ↦ .of_discrete) (fun _ ↦ MeasurableSet.of_discrete.nullMeasurableSet)
   rw [condExpPartitionEntropy_bot_pair, condExpPartitionEntropy_bot_fst] at h
   linarith
 
 /-- A fair bit joined with itself has entropy `log 2`, not `2 log 2`. -/
 example : condExpPartitionEntropy fairBit ⊥ (fun x ↦ (x, x)) = log 2 := by
-  change condExpPartitionEntropy fairBit ⊥ (fun x ↦ (id x, id x)) = log 2
-  rw [condExpPartitionEntropy_pair_self (a := id) (measurableSet_preimage id),
-    condExpPartitionEntropy_bot fun i ↦ (measurableSet_preimage id i).nullMeasurableSet]
+  rw [condExpPartitionEntropy_pair_self (a := fun x ↦ x) (fun _ ↦ .of_discrete),
+    condExpPartitionEntropy_bot fun _ ↦ MeasurableSet.of_discrete.nullMeasurableSet]
   simp [measureReal_def, negMulLog]
 
 end TauCeti.CondExpPartitionEntropyChainRuleExamples
