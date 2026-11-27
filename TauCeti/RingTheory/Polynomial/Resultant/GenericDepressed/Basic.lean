@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
-import Mathlib.Algebra.MvPolynomial.Division
 import Mathlib.RingTheory.Localization.Away.Basic
 import Mathlib.RingTheory.MvPolynomial.Localization
+import TauCeti.Algebra.MvPolynomial.Equiv
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Polynomial.Resultant.FreeMonic
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
@@ -63,6 +63,10 @@ the discriminant for `m = 2` is `-4 a₂`.
   `IsUnit (2 : R)` when `m = 2`, the discriminant is prime.
 * `TauCeti.depressedDiscr_two`, `TauCeti.depressedDiscr_three`: the discriminants in degrees `2`
   and `3`.
+* `TauCeti.mem_weightedHomogeneousSubmodule_weierstrass`: `4 * X 0 ^ 3 + 27 * X 1 ^ 2` has weight
+  `12` for the weights `![4, 6]`.
+* `TauCeti.prime_four_mul_X_pow_three_add_twentySeven_mul_X_sq`: primality of
+  `4 * X 0 ^ 3 + 27 * X 1 ^ 2` over any integral domain with `(2 : R) ≠ 0` and `(3 : R) ≠ 0`.
 -/
 
 public section
@@ -263,22 +267,30 @@ private theorem depressedWeight_last (hm : 3 ≤ m) :
   dsimp
   omega
 
+private theorem weight_eq_of_mem_support_depressedDiscr {m : ℕ} {d : Fin (m - 1) →₀ ℕ}
+    (hd : d ∈ (depressedDiscr R m).support) :
+    Finsupp.weight (depressedWeight m) d = (m : ℤ) * (m - 1) :=
+  (MvPolynomial.mem_weightedHomogeneousSubmodule _ _ _ _).mp (depressedDiscr_mem R m)
+    (MvPolynomial.mem_support_iff.mp hd)
+
+private theorem sum_le_weight_depressedWeight {m : ℕ} (d : Fin (m - 1) →₀ ℕ)
+    {s : Finset (Fin (m - 1))} (hs : s ⊆ d.support) :
+    ∑ x ∈ s, (d x : ℤ) * depressedWeight m x ≤ Finsupp.weight (depressedWeight m) d := by
+  rw [Finsupp.weight_apply, Finsupp.sum]
+  exact Finset.sum_le_sum_of_subset_of_nonneg hs
+    fun x _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (depressedWeight_nonneg x)
+
 /-- Any monomial in the support of `depressedDiscr R m` has degree at most `m` in the variable
 `aₘ₋₁` (corresponding to the linear term `X`). -/
 private theorem depressedDiscr_support_le {m : ℕ} (hm : 3 ≤ m) {d : Fin (m - 1) →₀ ℕ}
     (hd : d ∈ (depressedDiscr R m).support) : d ⟨m - 3, by omega⟩ ≤ m := by
   let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
-  have hwt : Finsupp.weight (depressedWeight m) d = (m : ℤ) * (m - 1) :=
-    (MvPolynomial.mem_weightedHomogeneousSubmodule _ _ _ _).mp (depressedDiscr_mem R m)
-      (MvPolynomial.mem_support_iff.mp hd)
+  have hwt := weight_eq_of_mem_support_depressedDiscr hd
   have hle : (d i₀ : ℤ) * depressedWeight m i₀ ≤ Finsupp.weight (depressedWeight m) d := by
-    rw [Finsupp.weight_apply, Finsupp.sum]
     by_cases hiu : i₀ ∈ d.support
-    · exact Finset.single_le_sum
-        (fun j _ ↦ mul_nonneg (Nat.cast_nonneg _) (depressedWeight_nonneg j)) hiu
+    · simpa using sum_le_weight_depressedWeight d (Finset.singleton_subset_iff.mpr hiu)
     · rw [Finsupp.notMem_support_iff.mp hiu, Nat.cast_zero, zero_mul]
-      exact Finset.sum_nonneg
-        fun j _ ↦ mul_nonneg (Nat.cast_nonneg _) (depressedWeight_nonneg j)
+      simpa using sum_le_weight_depressedWeight d (Finset.empty_subset _)
   rw [hwt, depressedWeight_last hm] at hle
   have : (d i₀ : ℤ) ≤ m := by nlinarith
   dsimp only [i₀] at this
@@ -289,12 +301,9 @@ private theorem depressedDiscr_support_le {m : ℕ} (hm : 3 ≤ m) {d : Fin (m -
 private theorem depressedDiscr_eq_single_of_le {m : ℕ} (hm : 3 ≤ m) {d : Fin (m - 1) →₀ ℕ}
     (hd : d ∈ (depressedDiscr R m).support) (hge : m ≤ d ⟨m - 3, by omega⟩) :
     d = Finsupp.single ⟨m - 3, by omega⟩ m := by
-  let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
-  change d = Finsupp.single i₀ m
+  set i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
   have hdi₀ : d i₀ = m := le_antisymm (depressedDiscr_support_le hm hd) hge
-  have hwt : Finsupp.weight (depressedWeight m) d = (m : ℤ) * (m - 1) :=
-    (MvPolynomial.mem_weightedHomogeneousSubmodule _ _ _ _).mp (depressedDiscr_mem R m)
-      (MvPolynomial.mem_support_iff.mp hd)
+  have hwt := weight_eq_of_mem_support_depressedDiscr hd
   have hzero : ∀ j, j ≠ i₀ → d j = 0 := by
     intro j hj
     by_contra hdj
@@ -303,11 +312,7 @@ private theorem depressedDiscr_eq_single_of_le {m : ℕ} (hm : 3 ≤ m) {d : Fin
       rcases Finset.mem_insert.mp hx with rfl | hx
       · exact Finsupp.mem_support_iff.mpr (by rw [hdi₀]; omega)
       · rw [Finset.mem_singleton.mp hx]; exact Finsupp.mem_support_iff.mpr hdj
-    have hsum_le : ∑ x ∈ ({i₀, j} : Finset _), (d x : ℤ) * depressedWeight m x ≤
-        Finsupp.weight (depressedWeight m) d := by
-      rw [Finsupp.weight_apply, Finsupp.sum]
-      exact Finset.sum_le_sum_of_subset_of_nonneg hsub
-        fun x _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (depressedWeight_nonneg x)
+    have hsum_le := sum_le_weight_depressedWeight d hsub
     rw [Finset.sum_pair hj.symm, hdi₀, depressedWeight_last hm, hwt] at hsum_le
     have hwtj : 2 ≤ depressedWeight m j := two_le_depressedWeight j
     have hdj_pos : (1 : ℤ) ≤ d j := by exact_mod_cast Nat.pos_of_ne_zero hdj
@@ -324,9 +329,7 @@ private theorem depressedDiscr_eq_single_of_support_subset {m : ℕ} (hm : 3 ≤
     (hsupp : ∀ j ≠ ⟨m - 3, by omega⟩, d j = 0) :
     d = Finsupp.single ⟨m - 3, by omega⟩ m := by
   let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
-  have hwt : Finsupp.weight (depressedWeight m) d = (m : ℤ) * (m - 1) :=
-    (MvPolynomial.mem_weightedHomogeneousSubmodule _ _ _ _).mp (depressedDiscr_mem R m)
-      (MvPolynomial.mem_support_iff.mp hd)
+  have hwt := weight_eq_of_mem_support_depressedDiscr hd
   have hsum : Finsupp.weight (depressedWeight m) d = (d i₀ : ℤ) * ((m : ℤ) - 1) := by
     rw [Finsupp.weight_apply, Finsupp.sum, Finset.sum_eq_single i₀]
     · rw [depressedWeight_last hm, nsmul_eq_mul]
@@ -383,55 +386,35 @@ private theorem depressedDiscr_coeff_single_eq (R : Type*) [CommRing R] {m : ℕ
         (by rw [degree_X_pow, degree_X]; exact_mod_cast (by omega : 1 < m)), natDegree_X_pow]
     have hp_next : p.nextCoeff = 0 := by
       rw [nextCoeff, hp_deg, ite_eq_right (by omega)]
-      simp [p, coeff_X, show m - 1 ≠ m by omega, show 1 ≠ m - 1 by omega]
+      have hm1 : m - 1 ≠ m := by omega
+      have h1m : 1 ≠ m - 1 := by omega
+      simp [p, coeff_X, hm1, h1m]
     have hv_eq : (fun j : Fin (m - 1) ↦ p.coeff (m - 2 - (j : ℕ))) = v := by
       ext j
       by_cases hj : j = i₀
       · subst hj
-        simp [p, v, i₀, coeff_X, show m - 2 - (m - 3) = 1 by omega, show 1 ≠ m by omega]
+        have hidx : m - 2 - (m - 3) = 1 := by omega
+        have h1m : 1 ≠ m := by omega
+        simp [p, v, i₀, coeff_X, hidx, h1m]
       · have hne1 : 1 ≠ m - 2 - (j : ℕ) := by
           intro h1
           apply hj
           ext
           dsimp [i₀]
           omega
-        simp [p, v, coeff_X, Pi.single_eq_of_ne hj, hne1, show m - 2 - (j : ℕ) ≠ m by omega]
+        have hnem : m - 2 - (j : ℕ) ≠ m := by omega
+        simp [p, v, coeff_X, Pi.single_eq_of_ne hj, hne1, hnem]
     rw [discr_eq_eval_depressedDiscr hp_mon hp_deg hp_next, hv_eq]
   rw [← heval_sum, heval_discr, discr_X_pow_add_X (by omega)]
 
-/-- Split `MvPolynomial (Fin (m - 1)) A` as a univariate polynomial in `aₘ₋₁` over the remaining
-variables. -/
-private noncomputable def depressedSplitEquiv (A : Type*) [CommRing A] {m : ℕ} (hm : 3 ≤ m) :
-    MvPolynomial (Fin (m - 1)) A ≃ₐ[A]
-      Polynomial (MvPolynomial {b : Fin (m - 1) // b ≠ ⟨m - 3, by omega⟩} A) :=
-  (MvPolynomial.renameEquiv A (Equiv.optionSubtypeNe ⟨m - 3, by omega⟩).symm).trans
-    (MvPolynomial.optionEquivLeft A _)
-
-private theorem coeff_coeff_depressedSplitEquiv (A : Type*) [CommRing A] {m : ℕ} (hm : 3 ≤ m)
-    (p : MvPolynomial (Fin (m - 1)) A) (n : ℕ)
-    (d : {b : Fin (m - 1) // b ≠ ⟨m - 3, by omega⟩} →₀ ℕ) :
-    ((depressedSplitEquiv A hm p).coeff n).coeff d =
-      p.coeff ((Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe ⟨m - 3, by omega⟩)) := by
-  let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
-  let σ := (Equiv.optionSubtypeNe i₀).symm
-  dsimp only [depressedSplitEquiv, AlgEquiv.trans_apply]
-  rw [MvPolynomial.optionEquivLeft_coeff_coeff]
-  let u := (Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i₀)
-  have hu : u.mapDomain σ = Finsupp.optionElim n d := by
-    dsimp only [u]
-    rw [← Finsupp.mapDomain_comp,
-      show σ ∘ Equiv.optionSubtypeNe i₀ = id from funext (Equiv.symm_apply_apply _),
-      Finsupp.mapDomain_id]
-  have hren := MvPolynomial.coeff_rename_mapDomain σ σ.injective p u
-  rwa [hu, ← MvPolynomial.renameEquiv_apply (R := A)] at hren
-
-private theorem coeff_depressedSplitEquiv_depressedDiscr_of_lt (A : Type*) [CommRing A]
+private theorem coeff_optionSubtypeNeEquiv_depressedDiscr_of_lt (A : Type*) [CommRing A]
     {m : ℕ} (hm : 3 ≤ m) {n : ℕ} (hn : m < n) :
-    (depressedSplitEquiv A hm (depressedDiscr A m)).coeff n = 0 := by
-  refine MvPolynomial.ext _ _ fun d ↦ ?_
-  rw [AddMonoidAlgebra.coeff_zero, coeff_coeff_depressedSplitEquiv]
-  by_contra hne
+    (MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
+      (depressedDiscr A m)).coeff n = 0 := by
   let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
+  refine MvPolynomial.ext _ _ fun d ↦ ?_
+  rw [AddMonoidAlgebra.coeff_zero, MvPolynomial.coeff_coeff_optionSubtypeNeEquiv]
+  by_contra hne
   let u := (Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i₀)
   have hui₀ : u i₀ = n := by
     dsimp only [u]
@@ -441,17 +424,19 @@ private theorem coeff_depressedSplitEquiv_depressedDiscr_of_lt (A : Type*) [Comm
   dsimp only [u, i₀] at hui₀
   omega
 
-private theorem coeff_depressedSplitEquiv_depressedDiscr_self (A : Type*) [CommRing A]
+private theorem coeff_optionSubtypeNeEquiv_depressedDiscr_self (A : Type*) [CommRing A]
     {m : ℕ} (hm : 3 ≤ m) :
-    (depressedSplitEquiv A hm (depressedDiscr A m)).coeff m =
+    (MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
+      (depressedDiscr A m)).coeff m =
       MvPolynomial.C ((depressedDiscr A m).coeff (Finsupp.single ⟨m - 3, by omega⟩ m)) := by
   let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
   have hσ_none : (Equiv.optionSubtypeNe i₀).symm i₀ = none :=
-    (Equiv.symm_apply_eq _).mpr rfl
+    Equiv.optionSubtypeNe_symm_self i₀
   have hσ_some : ∀ j : {b : Fin (m - 1) // b ≠ i₀},
-      (Equiv.optionSubtypeNe i₀).symm j.val = some j := fun j ↦ (Equiv.symm_apply_eq _).mpr rfl
+      (Equiv.optionSubtypeNe i₀).symm j.val = some j :=
+    fun j ↦ Equiv.optionSubtypeNe_symm_of_ne j.property
   refine MvPolynomial.ext _ _ fun d ↦ ?_
-  rw [coeff_coeff_depressedSplitEquiv]
+  rw [MvPolynomial.coeff_coeff_optionSubtypeNeEquiv]
   by_cases hd : d = 0
   · subst hd
     rw [MvPolynomial.coeff_C, ite_eq_left rfl]
@@ -505,9 +490,9 @@ private theorem depressedDiscr_dvd_of_C_pow_mul_dvd [IsDomain R] {m : ℕ} (hm :
       rw [map_mul, MvPolynomial.map_C, hpow, map_zero, zero_mul, map_mul,
         map_depressedDiscr] at hmap
       exact hmap.symm
-    let e := depressedSplitEquiv A hm
+    let e := MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
     have hunit : IsUnit ((e (depressedDiscr A m)).coeff m) := by
-      rw [coeff_depressedSplitEquiv_depressedDiscr_self, depressedDiscr_coeff_single_eq A hm]
+      rw [coeff_optionSubtypeNeEquiv_depressedDiscr_self A hm, depressedDiscr_coeff_single_eq A hm]
       have hmA : (m : A) = 0 := by simpa [π] using hπm
       have hm1A : ((m - 1 : ℕ) : A) = -1 := by
         have h1 : ((m - 1 : ℕ) : A) + ((1 : ℕ) : A) = (m : A) := by
@@ -521,13 +506,14 @@ private theorem depressedDiscr_dvd_of_C_pow_mul_dvd [IsDomain R] {m : ℕ} (hm :
       · have hdeg : (e (depressedDiscr A m)).natDegree = m :=
           natDegree_eq_of_le_of_coeff_ne_zero
             (natDegree_le_iff_coeff_eq_zero.mpr
-              fun n hn ↦ coeff_depressedSplitEquiv_depressedDiscr_of_lt A hm hn)
+              fun n hn ↦ coeff_optionSubtypeNeEquiv_depressedDiscr_of_lt A hm hn)
             hunit.ne_zero
         have hlc_unit : IsUnit (e (depressedDiscr A m)).leadingCoeff := by
           rwa [leadingCoeff, hdeg]
         have heq0 : e (depressedDiscr A m) * e (MvPolynomial.map π q) = 0 := by
           rw [← map_mul, hq0, map_zero]
-        exact e.injective ((isUnit_leadingCoeff_mul_right_eq_zero_iff hlc_unit).mp heq0)
+        exact e.injective (((isUnit_leadingCoeff_mul_right_eq_zero_iff hlc_unit).mp heq0).trans
+          (map_zero e).symm)
       · rw [not_nontrivial_iff_subsingleton] at hnt
         exact Subsingleton.elim _ _
     have hr : ∀ r' : R, π r' = 0 ↔ (m : R) ∣ r' := fun r' ↦
@@ -665,6 +651,33 @@ theorem depressedDiscr_three :
   rw [← discr_genericDepressed, discr_of_degree_eq_three (by rw [degree_genericDepressed,
     Nat.cast_ofNat])]
   simp [genericDepressed, Fin.sum_univ_two, coeff_X]
+
+/-- The negative of the cubic depressed discriminant, `4 * X 0 ^ 3 + 27 * X 1 ^ 2` (the short
+Weierstrass discriminant factor), has weight `12` when the variables have weights `4` and `6`. -/
+theorem mem_weightedHomogeneousSubmodule_weierstrass :
+    (4 * MvPolynomial.X 0 ^ 3 + 27 * MvPolynomial.X 1 ^ 2 : MvPolynomial (Fin 2) R) ∈
+      MvPolynomial.weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ) 12 := by
+  have hneg_eq : -(depressedDiscr R 3) =
+      (4 * MvPolynomial.X 0 ^ 3 + 27 * MvPolynomial.X 1 ^ 2 : MvPolynomial (Fin 2) R) := by
+    rw [depressedDiscr_three]
+    ring
+  rw [← hneg_eq]
+  exact neg_mem (depressedDiscr_three_mem_four_six R)
+
+variable {R}
+
+/-- Over any integral domain `R` in which `(2 : R) ≠ 0` and `(3 : R) ≠ 0`, the negative of the
+cubic depressed discriminant, `4 * X 0 ^ 3 + 27 * X 1 ^ 2` (the short Weierstrass discriminant
+factor), is prime. -/
+theorem prime_four_mul_X_pow_three_add_twentySeven_mul_X_sq [IsDomain R]
+    (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) :
+    Prime (4 * MvPolynomial.X 0 ^ 3 + 27 * MvPolynomial.X 1 ^ 2 : MvPolynomial (Fin 2) R) := by
+  have hassoc : Associated (depressedDiscr R 3)
+      (4 * MvPolynomial.X 0 ^ 3 + 27 * MvPolynomial.X 1 ^ 2 : MvPolynomial (Fin 2) R) :=
+    ⟨-1, by rw [depressedDiscr_three]; simp only [Units.val_neg, Units.val_one]; ring⟩
+  exact hassoc.prime_iff.mp
+    (depressedDiscr_prime h2 (m := 3) (by exact_mod_cast h3) (by norm_num)
+      (fun h ↦ absurd h (by omega)))
 
 end Ring
 

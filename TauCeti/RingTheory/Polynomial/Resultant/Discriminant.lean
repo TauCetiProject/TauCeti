@@ -459,8 +459,9 @@ theorem discr_X_pow_add_X {m : ℕ} (hm : 2 ≤ m) :
   have hres : (X : R[X]).resultant (X ^ (m - 1) - C (-1)) = 1 := by
     rw [natDegree_X, ← sub_zero (X : R[X]), ← C_0, resultant_X_sub_C_left _ _ 0 le_rfl]
     simp [zero_pow hm1]
+  have hm2 : m - 1 - 1 = m - 2 := by omega
   rw [hfac, hmonX.discr_mul hmonQ, hdiscrX, hres, one_pow, one_mul, mul_one,
-    discr_X_pow_sub_C, show m - 1 - 1 = m - 2 by omega]
+    discr_X_pow_sub_C, hm2]
   simp only [neg_neg, one_pow, mul_one]
 
 namespace Monic

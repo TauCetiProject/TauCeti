@@ -26,6 +26,9 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 
 * `MvPolynomial.finSuccEquiv'`: the `R`-algebra isomorphism
   `R[X₀, …, Xₙ] ≃ R[X_{p.succAbove 0}, …, X_{p.succAbove (n-1)}][Xₚ]`.
+* `MvPolynomial.optionSubtypeNeEquiv`: the `R`-algebra isomorphism
+  `MvPolynomial σ R ≃ₐ[R] Polynomial (MvPolynomial {b : σ // b ≠ i} R)` singling out an arbitrary
+  variable `X i`.
 
 ## Main results
 
@@ -43,6 +46,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.polynomial_eval_map_finSuccEquiv'`, `MvPolynomial.polynomial_eval_map_finSuccEquiv`:
   specializing the other variables to a point `s` and then evaluating the polynomial variable at
   `y` is evaluating at the point obtained by inserting `y` into `s` at position `p`.
+* `MvPolynomial.coeff_coeff_optionSubtypeNeEquiv`: coefficient extraction under
+  `optionSubtypeNeEquiv`.
 
 The last two results are the compatibility of this equivalence with coefficient maps and with
 evaluation. They let a polynomial in `n + 1` variables be treated as a family of univariate
@@ -334,5 +339,53 @@ theorem polynomial_eval_map_optionEquivLeft_rename_finSuccEquivLast (α : Fin n 
   cases i using Fin.lastCases <;> simp
 
 end Last
+
+section OptionSubtypeNe
+
+variable {σ : Type*} [DecidableEq σ]
+
+/-- The `R`-algebra isomorphism between polynomials in variables `σ` and univariate polynomials in
+a chosen variable `X i` over polynomials in the remaining variables `{b : σ // b ≠ i}`. -/
+noncomputable def optionSubtypeNeEquiv (R : Type*) [CommSemiring R] (i : σ) :
+    MvPolynomial σ R ≃ₐ[R] Polynomial (MvPolynomial {b : σ // b ≠ i} R) :=
+  (renameEquiv R (Equiv.optionSubtypeNe i).symm).trans (optionEquivLeft R {b : σ // b ≠ i})
+
+/-- The chosen variable becomes the univariate polynomial variable under
+`optionSubtypeNeEquiv`. -/
+@[simp]
+theorem optionSubtypeNeEquiv_X_self (i : σ) :
+    optionSubtypeNeEquiv R i (X i) = Polynomial.X := by
+  simp [optionSubtypeNeEquiv]
+
+/-- Every variable distinct from `i` becomes a constant under `optionSubtypeNeEquiv`. -/
+@[simp]
+theorem optionSubtypeNeEquiv_X_of_ne {i j : σ} (h : j ≠ i) :
+    optionSubtypeNeEquiv R i (X j) = Polynomial.C (X ⟨j, h⟩) := by
+  simp [optionSubtypeNeEquiv, Equiv.optionSubtypeNe_symm_of_ne h]
+
+/-- Constants stay constant under `optionSubtypeNeEquiv`. -/
+@[simp]
+theorem optionSubtypeNeEquiv_C (i : σ) (r : R) :
+    optionSubtypeNeEquiv R i (C r) = Polynomial.C (C r) :=
+  (optionSubtypeNeEquiv R i).commutes r
+
+/-- Extracting the coefficient of `d` in the `n`-th univariate coefficient of
+`optionSubtypeNeEquiv R i p` recovers the coefficient of `p` at the exponent obtained by
+extending `d` with `n` at `i`. -/
+theorem coeff_coeff_optionSubtypeNeEquiv (i : σ) (p : MvPolynomial σ R) (n : ℕ)
+    (d : {b : σ // b ≠ i} →₀ ℕ) :
+    ((optionSubtypeNeEquiv R i p).coeff n).coeff d =
+      p.coeff ((Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i)) := by
+  let e := Equiv.optionSubtypeNe i
+  dsimp only [optionSubtypeNeEquiv, AlgEquiv.trans_apply]
+  rw [optionEquivLeft_coeff_coeff]
+  let u := (Finsupp.optionElim n d).mapDomain e
+  have hu : u.mapDomain e.symm = Finsupp.optionElim n d := by
+    dsimp only [u]
+    rw [← Finsupp.mapDomain_comp, Equiv.symm_comp_self, Finsupp.mapDomain_id]
+  have hren := coeff_rename_mapDomain e.symm e.symm.injective p u
+  rwa [hu, ← renameEquiv_apply (R := R)] at hren
+
+end OptionSubtypeNe
 
 end MvPolynomial

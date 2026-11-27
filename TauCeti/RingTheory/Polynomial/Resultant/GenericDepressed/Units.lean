@@ -55,10 +55,6 @@ positive-sign short Weierstrass discriminant factor `4 a³ + 27 b²`
   `R[a₂, …, aₘ]_Δ` are the multiples of `m (m - 1)`.
 * `TauCeti.homogeneousUnitDegrees_awayGrading_depressedDiscr_three_four_six`: for the weights
   `4, 6`, the homogeneous unit degrees of `R[a, b]_Δ` are the multiples of `12`.
-* `TauCeti.mem_weightedHomogeneousSubmodule_weierstrass`: `4 * X 0 ^ 3 + 27 * X 1 ^ 2` has weight
-  `12` for the weights `![4, 6]`.
-* `TauCeti.prime_four_mul_X_pow_three_add_twentySeven_mul_X_sq`: primality of
-  `4 * X 0 ^ 3 + 27 * X 1 ^ 2` over any integral domain with `(2 : R) ≠ 0` and `(3 : R) ≠ 0`.
 
 ## References
 
@@ -154,28 +150,6 @@ theorem shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv_mk [IsDomain R
     (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) (c : ℤ) :
     shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv h2 h3 c = c :=
   shiftClassGroupAwayGradingWeightedEquiv_mk _ _ _ c
-
-/-- The negative of the cubic depressed discriminant, `4 * X 0 ^ 3 + 27 * X 1 ^ 2` (the short
-Weierstrass discriminant factor), has weight `12` when the variables have weights `4` and `6`. -/
-theorem mem_weightedHomogeneousSubmodule_weierstrass (R : Type*) [CommRing R] :
-    (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) R) ∈
-      weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ) 12 := by
-  have hneg := neg_mem (depressedDiscr_three_mem_four_six R)
-  rwa [depressedDiscr_three, show -(-4 * X 0 ^ 3 - 27 * X 1 ^ 2 : MvPolynomial (Fin 2) R) =
-    4 * X 0 ^ 3 + 27 * X 1 ^ 2 by ring] at hneg
-
-/-- Over any integral domain `R` in which `(2 : R) ≠ 0` and `(3 : R) ≠ 0`, the negative of the
-cubic depressed discriminant, `4 * X 0 ^ 3 + 27 * X 1 ^ 2` (the short Weierstrass discriminant
-factor), is prime. -/
-theorem prime_four_mul_X_pow_three_add_twentySeven_mul_X_sq [IsDomain R]
-    (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) :
-    Prime (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) R) := by
-  have hassoc : Associated (depressedDiscr R 3)
-      (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) R) :=
-    ⟨-1, by simp [depressedDiscr_three]; ring⟩
-  exact hassoc.prime_iff.mp
-    (depressedDiscr_prime h2 (m := 3) (by exact_mod_cast h3) (by norm_num)
-      (fun h ↦ absurd h (by omega)))
 
 /-- Inverting `4 * X 0 ^ 3 + 27 * X 1 ^ 2` in `R[a, b]` with weights `4, 6` over an integral
 domain `R` with `(2 : R) ≠ 0` and `(3 : R) ≠ 0` yields shift class group `ZMod 12`. -/
