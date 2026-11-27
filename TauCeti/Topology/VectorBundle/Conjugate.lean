@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Analysis.Normed.Module.Conjugate
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # The conjugate of a complex vector bundle
@@ -29,6 +31,9 @@ that is complex-linear on each fibre (`TauCeti.ConjugateBundle.doubleConjugateHo
 the conjugate of a direct sum is the direct sum of the conjugates
 (`TauCeti.ConjugateBundle.prodHomeomorph`). Pullback commutes with conjugation through
 `TauCeti.ConjugateBundle.pullbackHomeomorph`, which preserves every base point and fibre entry.
+A continuous fibrewise conjugate-linear equivalence of complex vector bundles with
+finite-dimensional model source has a continuous inverse on total spaces
+(`TauCeti.continuous_bundle_symm_of_conjLinear`).
 
 The conjugate bundle is the second piece of the doubled bundle of a bundle pair over a bordered
 Riemann surface: `E` over the surface is glued to its conjugate over the reflected copy, along the
@@ -339,5 +344,33 @@ theorem prodHomeomorph_mk [∀ x, AddCommGroup (E₁ x)] [∀ x, Module ℂ (E�
 end Prod
 
 end ConjugateBundle
+
+section ConjLinear
+
+variable [TopologicalSpace B]
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℂ F₁] [FiniteDimensional ℂ F₁]
+  {E₁ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module ℂ (E₁ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
+  [FiberBundle F₁ E₁] [VectorBundle ℂ F₁ E₁]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℂ F₂]
+  {E₂ : B → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module ℂ (E₂ x)]
+  [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₂ E₂] [VectorBundle ℂ F₂ E₂]
+
+/-- A continuous fibrewise conjugate-linear equivalence of complex vector bundles with
+finite-dimensional model source has a continuous inverse on total spaces: the conjugate-linear
+version of `TauCeti.continuous_bundle_symm`. -/
+theorem continuous_bundle_symm_of_conjLinear (e : ∀ x, E₁ x ≃L⋆[ℂ] E₂ x)
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd))) :
+    Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.snd)) := by
+  -- Read in the conjugate bundle of `E₂`, the equivalence is complex-linear.
+  have h := continuous_bundle_symm (F₂ := Conjugate F₂) (E₂ := ConjugateBundle E₂)
+    (fun x ↦ (e x).trans toConjL)
+    (((ConjugateBundle.toConjHomeomorph F₂ E₂).continuous.comp he).congr fun _ ↦ by simp)
+  refine (h.comp (ConjugateBundle.toConjHomeomorph F₂ E₂).continuous).congr fun p ↦ ?_
+  rw [Function.comp_apply, ConjugateBundle.toConjHomeomorph_apply]
+  simp
+
+end ConjLinear
 
 end TauCeti

@@ -46,8 +46,10 @@ built from `P` and the circle bundle of `E` or as the tensor product `(P ×_{det
 Moreover charge conjugation turns a twist by `L` into a twist by an inverse `L'` of `L`,
 `(s.twist L).chargeConj ≃ s.chargeConj.twist L'` (`TauCeti.SpinCStructure.chargeConjTwistEquiv`).
 These equivalences are in `TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation`.
-On a symplectic four-manifold the second gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` once the
-determinant line of `s_ω` is identified with `K⁻¹`, which is not proved there. The identity
+On a symplectic four-manifold, where the determinant line of `s_ω` is `K⁻¹`, these equivalences,
+combined with the identifications of the Hermitian lines of the twisting circle bundles in that file
+(`TauCeti.SpinCStructure.chargeConjTwistLineEquiv`), are steps toward
+`conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`; the final identification is not yet formalised. The identity
 `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
 
 **The half-spinor bundles.** In rank four, let `j : W ≃ W'` be a conjugate-linear isometric
