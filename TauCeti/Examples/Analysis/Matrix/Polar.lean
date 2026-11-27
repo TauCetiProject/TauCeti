@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Polar.Diffeomorph
+public import TauCeti.Analysis.Matrix.Sqrt
 
 /-!
 # The polar decomposition of `[[0, -2], [1/2, 0]]`
@@ -103,15 +104,6 @@ theorem star_matrix_mul_matrix :
   ext i j
   fin_cases i <;> fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_two, star_apply]
 
-/-- The square root of a diagonal matrix with nonnegative entries is computed entry by entry. -/
-private theorem sqrt_diagonal {n : Type*} [Fintype n] [DecidableEq n] {d : n → ℝ} (hd : 0 ≤ d) :
-    CFC.sqrt (diagonal d) = diagonal fun i ↦ √(d i) := by
-  refine CFC.sqrt_unique ?_ (PosSemidef.diagonal fun i ↦ Real.sqrt_nonneg (d i)).nonneg
-  rw [diagonal_mul_diagonal]
-  congr 1
-  ext i
-  exact Real.mul_self_sqrt (hd i)
-
 /-- The left positive factor is `P = √(A Aᵀ) = diag(2, 1/2)`. -/
 theorem sqrt_matrix_mul_star :
     CFC.sqrt ((matrix : Matrix (Fin 2) (Fin 2) ℝ) * star (matrix : Matrix (Fin 2) (Fin 2) ℝ)) =
@@ -160,7 +152,7 @@ theorem coe_polarUnitary_toGL_matrix :
   have h := Units.polarUnitary_eq_of_mul_eq (SpecialLinearGroup.toGL matrix)
     (PosSemidef.diagonal (d := ![(2 : ℝ), 1 / 2]) (fun i ↦ by fin_cases i <;> norm_num)).nonneg
     (v := ⟨rotation, specialUnitaryGroup_le_unitaryGroup rotation.property⟩)
-    diagonal_mul_rotation
+    (diagonal_mul_rotation.trans (SpecialLinearGroup.coe_GL_coe_matrix matrix).symm)
   exact congrArg Subtype.val h
 
 /-- Taking the right positive factor as a left factor: `√(Aᵀ A)⁻¹ A = [[0, -4], [1/4, 0]]`. -/
@@ -194,7 +186,7 @@ theorem sqrt_star_matrix_mul_matrix_mul_ne (V : unitaryGroup (Fin 2) ℝ) :
       (V : Matrix (Fin 2) (Fin 2) ℝ) ≠ matrix := by
   intro h
   have h' := Units.sqrt_mul_star_eq_of_mul_eq (SpecialLinearGroup.toGL matrix)
-    (CFC.sqrt_nonneg _) h
+    (CFC.sqrt_nonneg _) (h.trans (SpecialLinearGroup.coe_GL_coe_matrix matrix).symm)
   rw [SpecialLinearGroup.coe_GL_coe_matrix, sqrt_matrix_mul_star, sqrt_star_matrix_mul_matrix]
     at h'
   have h00 := congrFun (congrFun h' 0) 0
