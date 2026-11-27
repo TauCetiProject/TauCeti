@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Transport of distributions through diffeomorphisms
@@ -70,15 +69,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {n : ℕ∞ω}
   {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
   {D' : Π y : N, Submodule 𝕜 (TangentSpace J y)}
-
-omit [CompleteSpace E] in
-/-- The differential of the inclusion of an open subset `U` is the identity of the common tangent
-space, so pulling a subspace of `T_x M` back along it, at a point `x` of `U`, gives the same
-subspace. -/
-theorem Submodule.comap_mfderiv_subtype_val {U : TopologicalSpace.Opens M} {x : U}
-    (S : Submodule 𝕜 (TangentSpace I (x : M))) :
-    S.comap (mfderiv I I (Subtype.val : U → M) x).toLinearMap = S :=
-  ext fun v ↦ Iff.of_eq (congrArg (· ∈ S) (TauCeti.Manifold.mfderiv_subtype_val_apply x v))
 
 namespace TauCeti
 
