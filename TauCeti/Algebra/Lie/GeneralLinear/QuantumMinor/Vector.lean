@@ -192,7 +192,9 @@ theorem lie_vector_quantumMinor (E : Matrix ι ι A) (y : ι → A) (u : K)
   have skew {k : ι} (h : ∀ i j, ⁅E (a i) (b j), y k⁆ = if a i = k then -y (b j) else 0)
       (i j : Fin (n + 1)) : ⁅y k, E (a i) (b j)⁆ = if k = a i then y (b j) else 0 := by
     rw [← lie_skew, h]
-    by_cases h' : a i = k <;> simp [h', eq_comm]
+    by_cases h' : a i = k
+    · simp [h']
+    · simp [h', Ne.symm h']
   rw [lie_vector_quantumMinor_rows E y u a b c (skew hc)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [quantumMinor_vectorRow E y u (i.removeNth a) b
