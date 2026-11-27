@@ -56,9 +56,10 @@ vanishes at no time
   pairing `⟪u, ∇f(γ)⟫` is constant (`TauCeti.hasDerivAt_inner_gradient_comp`). As `u` is square
   integrable and `∇f(γ)` is bounded, the constant is `0`
   (`TauCeti.inner_gradient_comp_eq_zero_of_memLp`): `u` is normal to the trajectory everywhere.
-* **The normal component.** Near the regular point `γ s₀`, the level-hitting time `τ(x)`, defined
-  by `f (γ (τ x)) = f x`, is a `Cⁿ` function, by the inverse function theorem for `t ↦ f (γ t)`,
-  whose derivative `-‖∇f(γ t)‖²` does not vanish near `s₀`. The function
+* **The normal component.** Near the regular point `γ s₀`, the level-hitting time `τ = σ ∘ f`,
+  for a local inverse `σ` of `t ↦ f (γ t)` near `s₀`, satisfies `f (γ (τ x)) = f x` and is `Cⁿ`
+  (`IsIntegralCurve.exists_contDiffAt_levelHittingTime`). This is the inverse function theorem
+  for `t ↦ f (γ t)`, whose derivative `-‖∇f(γ t)‖²` does not vanish near `s₀`. The function
   `g x = ⟪u s₀, x - γ (τ x)⟫` vanishes on the trajectory near `γ s₀`, and its derivative at `γ s`
   is `⟪u s₀, ·⟫` on the vectors normal to `∇f(γ s)`. A bump `ψ` at `γ s₀` so small that the
   trajectory meets it only at times close to `s₀` makes `h = ψ g` a potential variation whose path
@@ -208,7 +209,7 @@ private theorem exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner {n : ℕ∞
       (∀ᶠ s in 𝓝 s₀, g (γ s) = 0) ∧
       ∀ s, γ s ∈ O → ∀ v, ⟪v, ∇ f (γ s)⟫ = 0 → fderiv ℝ g (γ s) v = ⟪w, v⟫ := by
   have hγn := hγ.contDiff_neg_gradient hf (Order.one_le_iff_ne_zero.2 (by exact_mod_cast hn0))
-  obtain ⟨σ, T, hT, hsT, hσ, hσγ⟩ := hγ.exists_contDiffAt_levelHittingTime hf hn0 hcrit
+  obtain ⟨σ, T, hT, hsT, hσ, -, hσγ⟩ := hγ.exists_contDiffAt_levelHittingTime hf hn0 hcrit
   have hk {x : E} (hx : f x ∈ T) : ContDiffAt ℝ n (fun y ↦ γ (σ (f y))) x :=
     hγn.contDiffAt.comp x ((hσ _ hx).comp x hf.contDiffAt)
   refine ⟨f ⁻¹' T, hT.preimage hf.continuous, hsT, fun x ↦ ⟪w, x - γ (σ (f x))⟫,

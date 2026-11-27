@@ -64,7 +64,8 @@ route to Morse homology.
   global trajectory passes only at nearby times; `IsIntegralCurve.comap_nhds_le_nhds` is the same
   statement for filters.
 * `IsIntegralCurve.exists_contDiffAt_levelHittingTime`: near a point which is not critical, the
-  time at which a global trajectory of a `Cⁿ` function reaches a given level of `f` is `Cⁿ`.
+  time at which a global trajectory of a `Cⁿ` function reaches a given level of `f` is `Cⁿ`: it
+  is a local inverse of `t ↦ f (γ t)`.
 * `IsIntegralCurveOn.intervalIntegrable_norm_gradient_sq`: finite energy on compact time
   intervals.
 * `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` and
@@ -341,12 +342,12 @@ theorem comap_nhds_le_nhds (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
 /-- **The level-hitting time near a regular point.** Let `f` be `Cⁿ`, `n ≠ 0`, and `γ` a negative
 gradient trajectory with `∇f(γ s₀) ≠ 0`, so that `γ` is `Cⁿ` as well. Then `f ∘ γ` has a local
 inverse `σ` near `s₀`, of class `Cⁿ` on an open set `T` containing `f (γ s₀)`:
-`σ (f (γ s)) = s` for `s` near `s₀`. So `σ (f x)` is the time at which the trajectory reaches the
-level of `f` at `x`. -/
+`f (γ (σ a)) = a` for `a ∈ T`, and `σ (f (γ s)) = s` for `s` near `s₀`. So for `f x ∈ T`,
+`σ (f x)` is the time at which the trajectory reaches the level of `f` at `x`. -/
 theorem exists_contDiffAt_levelHittingTime (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {n : ℕ∞}
     (hf : ContDiff ℝ n f) (hn0 : (n : WithTop ℕ∞) ≠ 0) {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) :
     ∃ σ : ℝ → ℝ, ∃ T : Set ℝ, IsOpen T ∧ f (γ s₀) ∈ T ∧ (∀ a ∈ T, ContDiffAt ℝ n σ a) ∧
-      ∀ᶠ s in 𝓝 s₀, σ (f (γ s)) = s := by
+      (∀ a ∈ T, f (γ (σ a)) = a) ∧ ∀ᶠ s in 𝓝 s₀, σ (f (γ s)) = s := by
   have hγn := hγ.contDiff_neg_gradient hf (Order.one_le_iff_ne_zero.2 (by exact_mod_cast hn0))
   have hφ (t : ℝ) := hγ.hasDerivAt_comp_neg_gradient (t := t) (hf.differentiable hn0 _)
   have hφ0 : -‖∇ f (γ s₀)‖ ^ 2 ≠ 0 := by simpa using hcrit
@@ -361,7 +362,8 @@ theorem exists_contDiffAt_levelHittingTime (hγ : IsIntegralCurve γ (fun _ x �
   refine ⟨Φ.symm, Φ.target ∩ Φ.symm ⁻¹' {t | ∇ f (γ t) ≠ 0},
     Φ.isOpen_inter_preimage_symm (isOpen_ne_fun hgc continuous_const),
     ⟨Φ.map_source hs₀, by simpa [hinv] using hcrit⟩,
-    fun a ha ↦ Φ.contDiffAt_symm_deriv (by simpa using ha.2) ha.1 (hφ _) hφn.contDiffAt, ?_⟩
+    fun a ha ↦ Φ.contDiffAt_symm_deriv (by simpa using ha.2) ha.1 (hφ _) hφn.contDiffAt,
+    fun a ha ↦ Φ.right_inv ha.1, ?_⟩
   filter_upwards [Φ.open_source.mem_nhds hs₀] with s hs using Φ.left_inv hs
 
 /-- Along a negative gradient trajectory from `p` at `-∞` to `q` at `+∞`, the value of `f` lies
