@@ -50,7 +50,11 @@ between any two critical points of equal index, the four kinds of ends are evenl
 half of the independence of the continuation map from the choice of path within its homotopy class;
 the geometric half, that these four sets are the ends of compact one-dimensional manifolds with
 boundary, needs the compactification and gluing of the parametrized continuation trajectory spaces
-and is not proved here.
+and is not proved here. For a family of continuation fields with uniform end windows, the digon
+trajectories are described through the transition maps of the slab in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Digon`, which restates the criterion for
+the intersections of the unstable manifolds of `X₀` with the preimages of the stable manifolds of
+`X₁` under a one-parameter family of diffeomorphisms of `M`.
 
 **The chain homotopy.** When `F⁰` is a chain map and the digon identity holds, `F¹` is a chain
 map as well (`LinearMap.comp_eq_comp_of_comp_add_comp_eq_add`), and the graded homotopy

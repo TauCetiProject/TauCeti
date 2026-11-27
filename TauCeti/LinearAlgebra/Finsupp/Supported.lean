@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.RingTheory.Finiteness.Defs
 
@@ -35,10 +36,28 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
 * `TauCeti.Finsupp.filterSupported_comp_inclusion`,
   `TauCeti.Finsupp.inclusion_comp_filterSupported`: the filter commutes with the inclusions
   `Finsupp.supported M R s ≤ Finsupp.supported M R s'` given by enlarging the support.
+* `TauCeti.Finsupp.sum_filterSupported_eq`: summing `filterSupported (g · = b)` over all `b` in
+  a finite decidable codomain recovers the original supported function.
 * `Finsupp.sub_single_mem_supported`: removing the value at one exceptional coordinate leaves a
   function supported on a prescribed set.
 * `Finsupp.map_mem_supported_of_forall_single_mem`: a linear map that sends the basis vectors
   over `s` into `supported N R t` maps `supported M R s` into it.
+* `Finsupp.map_mem_supported_of_map_single_eq_smul_single`: an operator
+  `single j 1 ↦ c j • single (σ j) 1` maps `supported R R s` into `supported R R t` when `c j`
+  vanishes whenever `σ` moves `j ∈ s` out of `t`.
+* `Finsupp.map_eq_self_of_forall_single_eq`: a linear map fixing the basis vectors over `s` fixes
+  `supported M R s`.
+* `Finsupp.op_smul_single_one`, `Finsupp.map_single_eq_op_smul`: in the right `A`-module
+  `α →₀ A`, `single k b` is `single k 1` scaled on the right by `b`, so a right-linear map is
+  determined by its values on the basis vectors `single k 1`.
+* `Finsupp.map_apply_eq_sum_of_mem_supported`: on vectors supported on `Finset.range n`, a
+  right-linear map out of `ℕ →₀ A` acts as the matrix of its values on `single k 1`, `k < n`.
+* `Finsupp.sum_mul_single_apply`: the sum `∑ j : Fin n, w j * single k a j` is `w k * a` when
+  `k < n` and `0` otherwise.
+* `Finsupp.mem_supported_of_apply_eq_sum`, `Finsupp.filter_of_apply_eq_sum`: a map of free
+  modules given by matrix coefficients preserves the functions supported on a set that no nonzero
+  coefficient leaves, and commutes with filtering by a predicate that no nonzero coefficient
+  crosses.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
 * `Finsupp.exists_support_map_subset_range`: a linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a
@@ -93,6 +112,14 @@ theorem inclusion_comp_filterSupported {s t t' : Set α} (p : α → Prop) [Deci
     (Submodule.inclusion (supported_mono (M := M) (R := R) ht)).comp (filterSupported p h) =
       filterSupported p fun a ha hp ↦ ht (h a ha hp) :=
   LinearMap.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- Decomposing a function supported on `s` by the fibers of a map `g : α → β` into a finite
+decidable type and summing over `β` recovers the function. -/
+theorem sum_filterSupported_eq {β : Type*} [Fintype β] [DecidableEq β] {s : Set α} (g : α → β)
+    (f : supported M R s) :
+    ∑ b : β, filterSupported (g · = b) (fun _ ha _ ↦ ha) f = f := by
+  refine Subtype.ext (Finsupp.ext fun a ↦ ?_)
+  simp [Finsupp.finsetSum_apply, Finsupp.filter_apply]
 
 /-- **A finitely generated module maps into finitely many coordinates**: the values of a linear
 map from a finitely generated module into `α →₀ M` are all supported on one finite set, the union
@@ -151,6 +178,100 @@ theorem map_mem_supported_of_forall_single_mem [AddCommMonoid M] [Module R M] [A
   rw [← sum_single v, map_finsuppSum]
   exact Submodule.sum_mem _ fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
 
+/-- A linear map fixing every basis vector `single j x` with `j ∈ s` fixes every function
+supported on `s`. -/
+theorem map_eq_self_of_forall_single_eq [AddCommMonoid M] [Module R M] {s : Set α}
+    (f : (α →₀ M) →ₗ[R] (α →₀ M)) (hf : ∀ j ∈ s, ∀ x, f (single j x) = single j x)
+    {v : α →₀ M} (hv : v ∈ supported M R s) : f v = v := by
+  calc f v = f (v.sum single) := by rw [sum_single]
+    _ = v.sum fun j x ↦ f (single j x) := map_finsuppSum f _ _
+    _ = v.sum single := sum_congr fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
+    _ = v := sum_single v
+
+/-- A linear map sending each `single j 1` to a multiple `c j • single (σ j) 1` maps
+`supported R R s` into `supported R R t`, if `c j = 0` whenever `j ∈ s` and `σ j ∉ t`. -/
+theorem map_mem_supported_of_map_single_eq_smul_single {s : Set α} {t : Set β}
+    (f : (α →₀ R) →ₗ[R] (β →₀ R)) (c : α → R) (σ : α → β)
+    (hf : ∀ j, f (single j 1) = c j • single (σ j) 1) (hc : ∀ j ∈ s, σ j ∉ t → c j = 0)
+    {v : α →₀ R} (hv : v ∈ supported R R s) : f v ∈ supported R R t := by
+  refine map_mem_supported_of_forall_single_mem R f (fun j hj x ↦ ?_) hv
+  rw [← smul_single_one, map_smul, hf]
+  by_cases h : σ j ∈ t
+  · exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (single_mem_supported R _ h))
+  · rw [hc j hj h, zero_smul, smul_zero]
+    exact zero_mem _
+
+end Finsupp
+
+namespace Finsupp
+
+open MulOpposite
+
+variable {α A N : Type*} [Semiring A]
+
+/-- In the right `A`-module `α →₀ A`, the vector `single k b` is the basis vector `single k 1`
+scaled on the right by `b`. -/
+theorem op_smul_single_one (k : α) (b : A) : op b • single k (1 : A) = single k b := by
+  rw [smul_single, op_smul_eq_mul, one_mul]
+
+/-- A right-linear map on `α →₀ A` is determined on `single k b` by its value on the basis vector
+`single k 1`. -/
+theorem map_single_eq_op_smul {F : Type*} [AddCommMonoid N] [Module Aᵐᵒᵖ N]
+    [FunLike F (α →₀ A) N] [LinearMapClass F Aᵐᵒᵖ (α →₀ A) N] (f : F) (k : α) (b : A) :
+    f (single k b) = op b • f (single k 1) := by
+  rw [← map_smul, op_smul_single_one]
+
+/-- On a vector supported on the first `n` coordinates, a right-linear map is the matrix of its
+values on the basis vectors `single 0 1, …, single (n - 1) 1`. -/
+theorem map_apply_eq_sum_of_mem_supported {β : Type*} (f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (β →₀ A)) {n : ℕ}
+    {x : ℕ →₀ A} (hx : x ∈ supported A Aᵐᵒᵖ (Finset.range n : Set ℕ)) (b : β) :
+    f x b = ∑ k : Fin n, f (single k 1) b * x k := by
+  have hx' : x.support ⊆ Finset.range n := by exact_mod_cast (mem_supported _ x).1 hx
+  conv_lhs => rw [← sum_single x, sum_of_support_subset x hx' _ fun _ _ ↦ single_zero _]
+  rw [map_sum, finsetSum_apply, ← Finset.sum_range fun k ↦ f (single k 1) b * x k]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [map_single_eq_op_smul, smul_apply, op_smul_eq_mul]
+
+end Finsupp
+
+namespace Finsupp
+
+variable {α R : Type*} [Semiring R] {f : (α →₀ R) → α →₀ R} {k : α → α → R}
+
+/-- A map of free modules with matrix coefficients `k x y` maps the functions supported on `s` to
+functions supported on `s`, when no nonzero coefficient leads out of `s`. -/
+theorem mem_supported_of_apply_eq_sum (hf : ∀ v y, f v y = v.sum fun x a => a * k x y)
+    {s : Set α} (hs : ∀ x ∈ s, ∀ y, k x y ≠ 0 → y ∈ s) {v : α →₀ R}
+    (hv : v ∈ supported R R s) : f v ∈ supported R R s := by
+  rw [mem_supported']
+  intro y hy
+  rw [hf, Finsupp.sum]
+  refine Finset.sum_eq_zero fun x hx => ?_
+  rw [not_ne_iff.mp (mt (hs x ((mem_supported _ _).mp hv hx) y) hy), mul_zero]
+
+/-- A map of free modules with matrix coefficients `k x y` commutes with restricting a function to
+the points satisfying `p`, when no nonzero coefficient joins a point satisfying `p` to one that
+does not. -/
+theorem filter_of_apply_eq_sum (hf : ∀ v y, f v y = v.sum fun x a => a * k x y)
+    {p : α → Prop} [DecidablePred p] (hk : ∀ x y, k x y ≠ 0 → (p x ↔ p y))
+    (v : α →₀ R) : f (v.filter p) = (f v).filter p := by
+  have hk' (x y : α) (hxy : ¬(p x ↔ p y)) : k x y = 0 :=
+    not_imp_comm.mp (hk x y) hxy
+  ext y
+  rw [filter_apply, hf, hf, sum_of_support_subset _ (s := v.support)
+    (by rw [support_filter]; exact Finset.filter_subset _ _) _ fun _ _ => zero_mul _, Finsupp.sum]
+  split_ifs with hy
+  · refine Finset.sum_congr rfl fun x _ => ?_
+    rw [filter_apply]
+    split_ifs with hx
+    · rfl
+    · rw [zero_mul, hk' x y (fun h => hx (h.mpr hy)), mul_zero]
+  · refine Finset.sum_eq_zero fun x _ => ?_
+    rw [filter_apply]
+    split_ifs with hx
+    · rw [hk' x y (fun h => hy (h.mp hx)), mul_zero]
+    · rw [zero_mul]
+
 end Finsupp
 
 namespace Finsupp
@@ -167,6 +288,18 @@ theorem exists_support_map_subset_range {R M N : Type*} [Semiring R] [AddCommMon
         (Finset.coe_subset.2 hu))⟩
   exact Finset.mem_coe.2 <| Finset.mem_range.2 <| Nat.lt_succ_of_le <|
     Finset.le_sup (f := id) (Finset.mem_biUnion.2 ⟨j, Finset.mem_coe.1 hj, hT j x hk⟩)
+
+/-- Pairing a row `w` over `Fin n` with a basis vector `single k a` of `ℕ →₀ A` picks out
+`w k * a` when `k < n`, and gives `0` otherwise. -/
+theorem sum_mul_single_apply {A : Type*} [NonUnitalNonAssocSemiring A] (n : ℕ) (w : Fin n → A)
+    (k : ℕ) (a : A) :
+    ∑ j : Fin n, w j * single k a (j : ℕ) = if h : k < n then w ⟨k, h⟩ * a else 0 := by
+  split_ifs with h
+  · rw [Fintype.sum_eq_single ⟨k, h⟩ fun j hj ↦ by
+      rw [single_eq_of_ne fun hjk ↦ hj (Fin.ext hjk), mul_zero]]
+    simp
+  · exact Finset.sum_eq_zero fun j _ ↦ by
+      rw [single_eq_of_ne fun hjk ↦ h (by have := j.isLt; omega), mul_zero]
 
 /-- A finitely supported function is supported on the points of rank below some bound, for any
 rank function to `ℕ`. -/

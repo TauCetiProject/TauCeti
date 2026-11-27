@@ -11,6 +11,9 @@ public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Borel
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
+import TauCeti.Analysis.Matrix.Eigenvalues.Gram
+import TauCeti.Analysis.Matrix.Frobenius
+
 /-!
 # Empirical singular-value measures
 
@@ -29,6 +32,10 @@ The squared-singular-value measure needs no separate definition: it is the exist
 by the squared Lipschitz constant times the average squared Frobenius error. This controls
 bounded approximations of covariance spectra using only second moments. All singular values come
 from Mathlib's `LinearMap.singularValues` via `Matrix.toEuclideanLin`.
+
+For an invertible square matrix `B`, the mean logarithm of the singular values is
+`(card n)⁻¹ * log ‖det B‖`, and for any matrix the mean logarithm of the Gram eigenvalues is twice
+the mean logarithm of the singular values; these are the inputs to Girko's hermitization.
 
 ## References
 
@@ -67,14 +74,8 @@ theorem map_spectralMeasure_conjTranspose_mul_self_sqrt (A : Matrix m n 𝕜) :
     map_empiricalMeasureOfFintype Real.continuous_sqrt.measurable, singularValueMeasure_def]
   congr 1
   funext i
-  rw [LinearMap.singularValues_fin _ finrank_euclideanSpace]
-  congr 1
-  -- Compare the adjoint Gram operator with the matrix Gram operator before taking eigenvalues.
-  apply LinearMap.IsSymmetric.eigenvalues_congr
-    (by
-      classical
-      rw [← toEuclideanLin_conjTranspose_eq_adjoint]
-      exact toLpLin_mul_same 2 Aᴴ A)
+  rw [Function.comp_apply, eigenvalues₀_conjTranspose_mul_self_eq_sq_singularValues,
+    Real.sqrt_sq (LinearMap.singularValues_nonneg _ _)]
 
 /-- Squared singular values, with multiplicity and domain-size normalization, have exactly
 the Gram spectral measure. -/
@@ -134,6 +135,53 @@ theorem ae_nonneg_singularValueMeasure (A : Matrix m n 𝕜) :
   rw [← map_spectralMeasure_conjTranspose_mul_self_sqrt, ProbabilityMeasure.toMeasure_map]
   exact (ae_map_iff Real.continuous_sqrt.measurable.aemeasurable measurableSet_Ici).2
     (Filter.Eventually.of_forall fun _ => Real.sqrt_nonneg _)
+
+/-- The second moment of the singular-value measure is the squared Frobenius norm divided by
+the number of columns. -/
+theorem lintegral_sq_singularValueMeasure (A : Matrix m n 𝕜) :
+    ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(A.singularValueMeasure : Measure ℝ) =
+      ENNReal.ofReal (‖A‖ ^ 2 / Fintype.card n) := by
+  have hmap := congrArg (fun μ : ProbabilityMeasure ℝ ↦ (μ : Measure ℝ))
+    (map_singularValueMeasure_sq A)
+  rw [ProbabilityMeasure.toMeasure_map] at hmap
+  rw [← lintegral_map (by fun_prop : Measurable ENNReal.ofReal) (by fun_prop), hmap]
+  have htrace : RCLike.re (Aᴴ * A).trace = ‖A‖ ^ 2 := by
+    rw [trace_mul_comm, re_trace_mul_conjTranspose_self, frobenius_norm_sq_eq_sum_norm_sq]
+  rw [lintegral_spectralMeasure,
+    ← ENNReal.ofReal_sum_of_nonneg
+      (fun i _ ↦ (posSemidef_conjTranspose_mul_self A).eigenvalues_nonneg i),
+    ← (isHermitian_conjTranspose_mul_self A).re_trace_eq_sum_eigenvalues, htrace]
+  rw [div_eq_inv_mul, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_inv_of_pos (by positivity),
+    ENNReal.ofReal_natCast]
+
+/-- An invertible square matrix has strictly positive singular values. -/
+theorem ae_pos_singularValueMeasure_of_det_ne_zero {A : Matrix n n 𝕜} (hA : A.det ≠ 0) :
+    ∀ᵐ x ∂(A.singularValueMeasure : Measure ℝ), 0 < x := by
+  rw [singularValueMeasure_def, empiricalMeasureOfFintype_toMeasure, ae_finsetSum_measure_iff]
+  intro i _
+  refine Measure.ae_smul_measure ?_ _
+  exact (ae_dirac_iff measurableSet_Ioi).mpr
+    (((toEuclideanLin A).singularValues_pos_iff_ne_zero i).mpr
+      (A.det_ne_zero_iff_forall_singularValues_ne_zero.mp hA i))
+
+/-- For an invertible square matrix, the mean logarithm of its singular values, with multiplicity,
+is the normalized logarithm of the absolute value of its determinant. -/
+theorem integral_log_singularValueMeasure_eq_log_norm_det {B : Matrix n n 𝕜} (hB : B.det ≠ 0) :
+    ∫ s, Real.log s ∂(B.singularValueMeasure : Measure ℝ) =
+      (Fintype.card n : ℝ)⁻¹ * Real.log ‖B.det‖ := by
+  rw [integral_singularValueMeasure, norm_det_eq_prod_singularValues B,
+    Real.log_prod (fun i _ ↦ B.det_ne_zero_iff_forall_singularValues_ne_zero.mp hB i), smul_eq_mul]
+
+/-- The mean logarithm of the eigenvalues of the Gram matrix `Aᴴ * A` is twice the mean logarithm
+of the singular values of `A`. Zero singular values contribute `Real.log 0 = 0` on both sides. -/
+theorem integral_log_spectralMeasure_conjTranspose_mul_self (A : Matrix m n 𝕜) :
+    ∫ x, Real.log x ∂((Aᴴ * A).spectralMeasure (isHermitian_conjTranspose_mul_self A) :
+        Measure ℝ) =
+      2 * ∫ s, Real.log s ∂(A.singularValueMeasure : Measure ℝ) := by
+  rw [← map_singularValueMeasure_sq, ProbabilityMeasure.toMeasure_map,
+    integral_map (by fun_prop) Real.measurable_log.aestronglyMeasurable]
+  simp_rw [Real.log_pow, Nat.cast_ofNat]
+  exact integral_const_mul _ _
 
 /-- Left unitary multiplication preserves the singular-value measure. -/
 @[simp]

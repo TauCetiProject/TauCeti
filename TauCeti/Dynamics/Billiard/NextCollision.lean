@@ -51,6 +51,10 @@ tangency, `0 < ω(χ'(s), χ(t) - χ(s))` whenever `χ(t) ≠ χ(s)`, where `ω`
 orientation (`StrictConvexBilliardTable.areaForm_pos`). No smoothness beyond a unit-speed derivative
 is assumed here; the smoothness of the map, its inverse and its generating function are separate.
 
+The same hypothesis shows that no boundary point lies strictly between two others
+(`apply_notMem_openSegment`), so the boundary contains no nondegenerate segment
+(`not_segment_subset_range`).
+
 ## Main definitions
 
 * `TauCeti.StrictConvexBilliardTable`: an arclength parametrization of the boundary of a strictly
@@ -85,6 +89,7 @@ the plane `E` oriented by `o`. It is `L`-periodic with `L > 0`, has unit speed, 
 `[0, L)`, and the table lies strictly to the left of each oriented tangent line, which it meets only
 at the point of tangency: `0 < ω(χ'(s), χ(t) - χ(s))` whenever `χ(t) ≠ χ(s)`. The last condition
 combines the strict convexity of the table with the positive orientation of its boundary. -/
+@[ext]
 structure StrictConvexBilliardTable (o : Orientation ℝ E (Fin 2)) where
   /-- The parametrization of the boundary. -/
   toFun : ℝ → E
@@ -123,6 +128,34 @@ theorem injOn_Ico (s : ℝ) : InjOn χ (Ico s (s + χ.period)) :=
 
 theorem apply_ne_of_mem_Ioo {s t : ℝ} (ht : t ∈ Ioo s (s + χ.period)) : χ t ≠ χ s := fun h ↦
   ht.1.ne' (χ.injOn_Ico s ⟨ht.1.le, ht.2⟩ ⟨le_rfl, by linarith [χ.period_pos]⟩ h)
+
+/-! ### The boundary contains no segment -/
+
+/-- **No boundary point lies strictly between two others.** If `p ≠ q` are points of the boundary,
+no boundary point `χ(s)` lies on the open segment between them: the tangent line at `χ(s)` would
+have `p` and `q` strictly on its left, while they lie on opposite sides of `χ(s)` along a line. In
+particular a line meets the boundary in at most two points. -/
+theorem apply_notMem_openSegment {p q : E} (hp : p ∈ range χ) (hq : q ∈ range χ) (hpq : p ≠ q)
+    (s : ℝ) : χ s ∉ openSegment ℝ p q := by
+  intro hs
+  obtain ⟨t, rfl⟩ := hp
+  obtain ⟨u, rfl⟩ := hq
+  have ⟨a, b, ha, hb, hab, hs'⟩ := hs
+  have h₁ := χ.areaForm_pos s t fun h ↦ hpq (left_mem_openSegment_iff.1 (by rwa [← h] at hs))
+  have h₂ := χ.areaForm_pos s u fun h ↦ hpq (right_mem_openSegment_iff.1 (by rwa [← h] at hs))
+  have h0 : a • (χ t - χ s) + b • (χ u - χ s) = 0 := by
+    linear_combination (norm := module) hs' - hab • χ s
+  have h := congrArg (o.areaForm (deriv χ s)) h0
+  simp only [map_add, map_smul, map_zero, smul_eq_mul] at h
+  linarith [mul_pos ha h₁, mul_pos hb h₂]
+
+/-- **The boundary contains no segment.** No nondegenerate segment lies in the boundary of a
+strictly convex billiard table: its midpoint would lie strictly between its endpoints. -/
+theorem not_segment_subset_range {p q : E} (hpq : p ≠ q) : ¬segment ℝ p q ⊆ range χ := by
+  intro h
+  obtain ⟨s, hs⟩ := h (openSegment_subset_segment ℝ p q (midpoint_mem_openSegment p q))
+  exact χ.apply_notMem_openSegment (h (left_mem_segment ℝ p q)) (h (right_mem_segment ℝ p q)) hpq
+    s (hs ▸ midpoint_mem_openSegment p q)
 
 /-! ### The outgoing velocity -/
 

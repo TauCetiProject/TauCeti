@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Neighborhood
+public import TauCeti.Topology.Homeomorph.Pi
 import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Topology.UniformSpace.CompleteSeparated
@@ -94,12 +95,17 @@ series of a profinite group.
   compact.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
+* `Subgroup.topologicalClosure_commutator_topologicalClosure`: the closure of the commutator of
+  the closures of two subgroups is the closure of their commutator.
 * `DenseRange.topologicalClosure_map_commutator`: a homomorphism with dense range maps the
   commutator subgroup onto a dense subgroup of the closed commutator subgroup.
 * `Subgroup.topologicalClosure_commutator_le_of_forall_commutatorElement_mem`: a closed normal
   subgroup containing the commutators of a topological generating set contains the closure of
   the commutator subgroup.
 * `Subgroup.instCompactSpace_of_isClosed`: a closed subgroup of a compact group is compact.
+* `Subgroup.piContinuousMulEquiv`: a product `Subgroup.pi Set.univ H` of subgroups, with the
+  subspace topology of the product group, is the product of the subgroups `H i` with their
+  subspace topologies.
 * `Subgroup.isClosed_of_weaklyLocallyCompactSpace`: a weakly locally compact subgroup of a
   `T0` topological group is closed; the additive version is
   `AddSubgroup.isClosed_of_weaklyLocallyCompactSpace`.
@@ -474,6 +480,20 @@ theorem commutator_topologicalClosure_right_le {A B N : Subgroup G} (hN : IsClos
   rw [← SetLike.mem_coe, topologicalClosure_coe] at hb
   exact closure_minimal (fun y hy ↦ h a ha y hy) (hN.preimage hcont) hb
 
+/-- **Closing up the factors of a commutator does not change its closure**:
+`closure ⁅closure A, closure B⁆ = closure ⁅A, B⁆`. -/
+theorem topologicalClosure_commutator_topologicalClosure (A B : Subgroup G) :
+    ⁅A.topologicalClosure, B.topologicalClosure⁆.topologicalClosure =
+      ⁅A, B⁆.topologicalClosure := by
+  refine le_antisymm (topologicalClosure_minimal _ ?_ (isClosed_topologicalClosure _))
+    (topologicalClosure_mono (commutator_mono (le_topologicalClosure A) (le_topologicalClosure B)))
+  -- Close up one factor at a time, swapping the factors in between.
+  refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+  rw [commutator_comm]
+  refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+  rw [commutator_comm]
+  exact le_topologicalClosure _
+
 /-- **Commutators of a dense image are dense in the commutators.** If `f : M →* H` has dense
 range, the image of the commutator subgroup of `M` is dense in the closed commutator subgroup of
 `H`. No topology on `M` is involved. -/
@@ -524,6 +544,40 @@ theorem topologicalClosure_commutator_le_of_forall_commutatorElement_mem {s : Se
   rw [← QuotientGroup.eq_one_iff, ← QuotientGroup.mk'_apply, map_commutatorElement,
     commutatorElement_eq_one_iff_commute]
   exact setLike_mul_comm (mem_top _) (mem_top _)
+
+/-- A product `Subgroup.pi Set.univ H` of subgroups of topological groups, with the subspace
+topology of the product group, is isomorphic as a topological group to the product of the
+subgroups `H i`, each with its subspace topology. -/
+@[to_additive /-- A product `AddSubgroup.pi Set.univ H` of additive subgroups of topological
+additive groups, with the subspace topology of the product group, is isomorphic as a topological
+additive group to the product of the additive subgroups `H i`, each with its subspace topology. -/]
+def piContinuousMulEquiv {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
+    [∀ i, TopologicalSpace (G i)] (H : ∀ i, Subgroup (G i)) :
+    pi Set.univ H ≃ₜ* ∀ i, H i where
+  toHomeomorph := Homeomorph.Set.univPi fun i ↦ (H i : Set (G i))
+  -- both sides are computed coordinatewise by `Homeomorph.Set.coe_univPi_apply`, and
+  -- multiplication in `pi Set.univ H` and in each `H i` is computed in the ambient groups
+  map_mul' x y := funext fun i ↦ Subtype.ext <|
+    (Homeomorph.Set.coe_univPi_apply _ (x * y) i).trans <| congrArg₂ (· * ·)
+      (Homeomorph.Set.coe_univPi_apply _ x i).symm (Homeomorph.Set.coe_univPi_apply _ y i).symm
+
+/-- The `i`-th coordinate of the image of `x` under `Subgroup.piContinuousMulEquiv` is the `i`-th
+coordinate of `x`. -/
+@[to_additive (attr := simp) /-- The `i`-th coordinate of the image of `x` under
+`AddSubgroup.piContinuousAddEquiv` is the `i`-th coordinate of `x`. -/]
+theorem coe_piContinuousMulEquiv_apply {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
+    [∀ i, TopologicalSpace (G i)] (H : ∀ i, Subgroup (G i)) (x : pi Set.univ H) (i : ι) :
+    (piContinuousMulEquiv H x i : G i) = (x : ∀ i, G i) i :=
+  Homeomorph.Set.coe_univPi_apply _ x i
+
+/-- The inverse of `Subgroup.piContinuousMulEquiv` assembles the coordinates into an element of
+the product subgroup. -/
+@[to_additive (attr := simp) /-- The inverse of `AddSubgroup.piContinuousAddEquiv` assembles the
+coordinates into an element of the product additive subgroup. -/]
+theorem coe_piContinuousMulEquiv_symm_apply {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
+    [∀ i, TopologicalSpace (G i)] (H : ∀ i, Subgroup (G i)) (x : ∀ i, H i) :
+    ((piContinuousMulEquiv H).symm x : ∀ i, G i) = fun i ↦ (x i : G i) :=
+  Homeomorph.Set.coe_univPi_symm_apply _ x
 
 end Subgroup
 

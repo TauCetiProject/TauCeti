@@ -25,6 +25,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   equation.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
+* `HasFDerivAt.mfderiv_apply`: on normed spaces, the manifold derivative of a map with Fréchet
+  derivative `f'` applies `f'` through the tangent-space identifications.
 * `TauCeti.mvfderiv_apply_eval`: the derivative of evaluation `a ↦ a u` of continuous linear maps
   is evaluation at `u`.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
@@ -44,6 +46,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
+* `TauCeti.fderiv_comp_apply_eq_mfderiv`: the chain rule for a map between normed spaces which
+  factors through a manifold.
 * `HasMFDerivAt.hasDerivAt_comp_graph`: the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along
   a curve in a manifold.
 * `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
@@ -120,6 +124,15 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
     mvfderiv 𝓘(𝕜, F) f x v = fderiv 𝕜 f x v := by
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
   exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
+
+/-- For a map between normed spaces with Fréchet derivative `f'` at `x`, the manifold derivative
+at `x` applies `f'` to a tangent vector, read through the model-space tangent identifications. -/
+theorem _root_.HasFDerivAt.mfderiv_apply {f : F → F'} {f' : F →L[𝕜] F'} {x : F}
+    (h : HasFDerivAt f f' x) (v : TangentSpace 𝓘(𝕜, F) x) :
+    mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F') f x v =
+      (NormedSpace.fromTangentSpace (f x)).symm (f' (NormedSpace.fromTangentSpace x v)) := by
+  rw [mfderiv_eq_fderiv, h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe]
 
 /-- The derivative of the evaluation map `a ↦ a u` on continuous linear maps is evaluation
 at `u`. -/
@@ -350,6 +363,17 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
     Function.uncurry_apply_pair, id_eq] using hc
+
+/-- The chain rule for a map between normed spaces which factors through a manifold: the derivative
+of `Φ ∘ f` is the composite of the manifold derivatives of `f` and `Φ`. -/
+theorem fderiv_comp_apply_eq_mfderiv {Φ : M → F'} {f : F → M} {x : F}
+    (hΦ : MDifferentiableAt I 𝓘(𝕜, F') Φ (f x)) (hf : MDifferentiableAt 𝓘(𝕜, F) I f x) (a : F) :
+    fderiv 𝕜 (Φ ∘ f) x a = mfderiv I 𝓘(𝕜, F') Φ (f x) (mfderiv 𝓘(𝕜, F) I f x a) := by
+  have h := mfderiv_comp_apply x hΦ hf a
+  -- `mfderiv_eq_fderiv` reads the tangent spaces of `F` and `F'` as the spaces themselves through
+  -- `NormedSpace.fromTangentSpace`, which is the identity.
+  rw [mfderiv_eq_fderiv] at h
+  exact h
 
 /-- **The chain rule along a curve for a time-dependent family.** If the curve `u` has velocity
 `w` at `t` and `f` is jointly differentiable at `(t, u t)`, then `s ↦ f s (u s)` has derivative

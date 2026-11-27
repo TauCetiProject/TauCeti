@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.DifferentialOperator
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -32,11 +32,33 @@ divergence, `∫ X(f) dV = -∫ f div X dV` for compactly supported `f`
 bundle with the flat connection this is the formula `-X - div X` for the formal transpose of a
 vector field acting on functions. Merely negating `∇_X` is wrong unless `X` is divergence-free.
 
+When `X` is divergence-free, for instance a Killing field
+(`TauCeti.Manifold.IsKillingField.divergence_eq_zero`), `∇_X` is formally skew-adjoint, and so
+`∫ ⟪∇_X ∇_X σ, σ⟫ dV = -∫ ‖∇_X σ‖² dV` for compactly supported `σ`. If moreover `A` is a bundle
+map which is skew-adjoint at every point and commutes with `∇_X`, then `A ∇_X` is formally
+self-adjoint: `(A ∇_X)* = (∇_X)* A* = (-∇_X)(-A) = A ∇_X`. On a product `S¹ × Y` with the product
+metric, the Dirac operator of a Clifford module splits as `D = c(T) ∇_T + B_T` along the parallel
+unit field `T = ∂ₛ`, which is Killing
+(`CovariantDerivative.IsMetricCompatible.isKillingField_of_forall_eq_zero`). Clifford
+multiplication `c(T)` is skew-adjoint, and it commutes with `∇_T` when the connection is
+compatible with Clifford multiplication, since `∇_T T = 0`. So the summand `c(T) ∇_T` of the
+split Dirac operator is formally self-adjoint, and `-∇_T²` is a nonnegative operator; these are
+the integrations by parts in the `T` direction behind the energy identity
+`0 = ‖∇_T ψ‖² + ‖B_A ψ‖² + ‖ι_T F_A‖² + 2π² ⟨c₁(L)², [S¹ × Y]⟩` for the unperturbed
+Seiberg–Witten equations on `S¹ × Y`.
+
 ## Main results
 
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField`,
   `CovariantDerivative.IsMetricCompatible.formalAdjoint_alongVectorField_apply`: the formal
   adjoint of `∇_X` for the Riemannian volume is `-∇_X - div X`.
+* `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_neg`: along a
+  divergence-free field, in particular along a Killing field, `∇_X` is formally skew-adjoint.
+* `CovariantDerivative.IsMetricCompatible.integral_inner_alongVectorField_alongVectorField`:
+  `∫ ⟪∇_X ∇_X σ, σ⟫ dV = -∫ ‖∇_X σ‖² dV` along a divergence-free field.
+* `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_comp_alongVectorField`: for a pointwise
+  skew-adjoint bundle map `A` commuting with `∇_X`, `A ∇_X` is formally self-adjoint along a
+  divergence-free field.
 
 ## References
 
@@ -141,6 +163,54 @@ theorem IsMetricCompatible.formalAdjoint_alongVectorField_apply (hcov : cov.IsMe
     (Q := -cov.alongVectorField X - Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ d) fun τ x ↦ by simp [hd]
   rw [h.formalAdjoint_eq]
   simp [hd]
+
+/-- **`∇_X` is formally skew-adjoint along a divergence-free field.** For a metric connection on a
+Riemannian vector bundle over a Riemannian manifold without boundary, and a smooth vector field
+`X` with `div X = 0`, the formal adjoint of `∇_X` for the Riemannian volume is `-∇_X`. -/
+theorem IsMetricCompatible.isFormalAdjoint_alongVectorField_neg (hcov : cov.IsMetricCompatible)
+    (hX : ∀ x, divergence I (fun y ↦ X y) x = 0) :
+    (cov.alongVectorField X).IsFormalAdjoint (-cov.alongVectorField X) (riemannianVolume I M) :=
+  hcov.isFormalAdjoint_alongVectorField X fun τ x ↦ by simp [hX x]
+
+/-- **The energy identity along a divergence-free field.** For a metric connection on a
+Riemannian vector bundle over a Riemannian manifold without boundary, a smooth vector field `X`
+with `div X = 0` and a compactly supported smooth section `σ`,
+`∫ ⟪∇_X ∇_X σ, σ⟫ dV = -∫ ‖∇_X σ‖² dV`. -/
+theorem IsMetricCompatible.integral_inner_alongVectorField_alongVectorField
+    (hcov : cov.IsMetricCompatible) (hX : ∀ x, divergence I (fun y ↦ X y) x = 0)
+    {σ : Cₛ^∞⟮I; F, V⟯} (hσ : IsCompact σ.tsupport) :
+    ∫ x, ⟪cov.alongVectorField X (cov.alongVectorField X σ) x, σ x⟫ ∂riemannianVolume I M =
+      -∫ x, ‖cov.alongVectorField X σ x‖ ^ 2 ∂riemannianVolume I M := by
+  rw [(hcov.isFormalAdjoint_alongVectorField_neg X hX).integral_inner_eq (Or.inr hσ),
+    ← integral_neg]
+  simp
+
+/-- **Formal self-adjointness of a skew-adjoint bundle map composed with `∇_X`.** Let `X` be a
+smooth vector field with `div X = 0` and let `A` act on smooth sections by a bundle map `a`,
+`(A s)(x) = a(x) (s x)`, which is skew-adjoint at every point and commutes with `∇_X`. Then, for a
+metric connection on a Riemannian vector bundle over a Riemannian manifold without boundary,
+`A ∇_X` is its own formal adjoint for the Riemannian volume. For Clifford multiplication
+`A = c(T)` by a parallel unit field `T`, this is the formal self-adjointness of the summand
+`c(T) ∇_T` of the split Dirac operator. -/
+theorem IsMetricCompatible.isFormalAdjoint_comp_alongVectorField (hcov : cov.IsMetricCompatible)
+    (hX : ∀ x, divergence I (fun y ↦ X y) x = 0) {A : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯}
+    (a : Π x : M, V x →L[ℝ] V x) (hA : ∀ s x, A s x = a x (s x))
+    (ha : ∀ x v w, ⟪a x v, w⟫ = -⟪v, a x w⟫)
+    (hAX : ∀ s, cov.alongVectorField X (A s) = A (cov.alongVectorField X s)) :
+    (A ∘ₗ cov.alongVectorField X).IsFormalAdjoint (A ∘ₗ cov.alongVectorField X)
+      (riemannianVolume I M) := by
+  -- `A` is pointwise skew-adjoint, so its formal adjoint is `-A`, which does not enlarge supports.
+  have hAadj : A.IsFormalAdjoint (-A) (riemannianVolume I M) :=
+    LinearMap.isFormalAdjoint_of_forall_inner_eq fun s t x ↦ by simp [hA, ha]
+  have hAs (t : Cₛ^∞⟮I; F, V⟯) : ((-A) t).tsupport ⊆ t.tsupport := by
+    simp only [ContMDiffSection.tsupport_def]
+    exact closure_mono fun x hx h0 ↦ hx (by simp [hA, h0])
+  have h := hAadj.comp (hcov.isFormalAdjoint_alongVectorField_neg X hX)
+    (cov.tsupport_alongVectorField_apply_subset X) hAs
+  -- The adjoint `(-∇_X) ∘ (-A) = ∇_X ∘ A` is `A ∘ ∇_X`, since `A` commutes with `∇_X`.
+  convert h using 1
+  ext s : 1
+  simp [hAX]
 
 end Adjoint
 

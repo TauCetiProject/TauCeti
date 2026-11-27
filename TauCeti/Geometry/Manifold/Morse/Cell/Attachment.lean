@@ -742,8 +742,7 @@ theorem IsMorse.exists_sublevel_union_cells_deformation (hf : IsMorse I f) {δ :
   obtain ⟨ε₀, hε₀, hε₀δ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
   refine ⟨ε₀, hε₀, hε₀δ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
     fun ε hε hεε₀ ↦ TauCeti.exists_sublevel_union_cells_deformation hf.contMDiff ψ hψ _
       (fun p ↦ (closedBall_subset_closedBall (Real.sqrt_le_sqrt (by linarith))).trans
@@ -793,8 +792,7 @@ theorem IsMorse.exists_diffeomorph_sublevel_eq_union_handles (hf : IsMorse I f) 
   obtain ⟨ε, hε, hεδ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
   exact ⟨ε, hε, hεδ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
     TauCeti.exists_diffeomorph_sublevel_eq_union_handles hf.contMDiff ψ hψ _ hε
       (fun p ↦ (hψp p).2.2.2.1) (fun p ↦ (hψp p).2.2.2.2)

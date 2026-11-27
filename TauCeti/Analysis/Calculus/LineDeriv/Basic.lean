@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import TauCeti.Analysis.Calculus.Deriv.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Tactic.Abel
 
@@ -22,8 +24,21 @@ Outside the topological support of a function on a topological vector space, its
 derivatives vanish. This is the directional counterpart of Mathlib's `fderiv_of_notMem_tsupport`.
 Both results require no differentiability hypothesis, which matters for Lipschitz functions.
 
+Multiplying a function by a constant from a field, negating it, or composing it with a continuous
+linear equivalence acts in the same way on its directional derivatives, again with no
+differentiability hypothesis (`TauCeti.lineDeriv_const_smul`, `TauCeti.lineDeriv_neg_left`,
+`ContinuousLinearEquiv.comp_lineDeriv`). Negation, composition with a continuous linear
+equivalence and multiplication by a nonzero constant do not change which restrictions to lines are
+differentiable; multiplication by `0` gives `0` on both sides.
+
 A differentiable map that is affine near `0` along a line `s ↦ w + s • d` has the slope of that
 line as its derivative at `w` in the direction `d` (`DifferentiableAt.fderiv_apply_eq_of_add_smul`).
+The derivative of the restriction of any function to a line is its directional derivative along
+the line (`TauCeti.deriv_comp_add_smul_eq_lineDeriv`), and a function whose restriction to a line
+is a translate of a differentiable function of one variable has the derivative of that function as
+its directional derivative (`HasDerivAt.hasLineDerivAt_of_add_smul`); for a function
+differentiable at the base point, this computes its derivative in the direction of the line
+(`DifferentiableAt.fderiv_apply_eq_of_hasDerivAt_add_smul`).
 
 For a continuous function `g` with values in a real Banach space, the integral
 `y ↦ ∫ₐᵇ g (y - t h) dt` of its translates has directional derivative `g (y - a h) - g (y - b h)` in
@@ -57,16 +72,31 @@ theorem lineDeriv_of_notMem_tsupport {E : Type*} [AddCommGroup E] [Module 𝕜 E
       (Continuous.tendsto' (by fun_prop) 0 x (by simp))
   rw [lineDeriv, hzero.deriv_eq, deriv_const]
 
+/-- If `f (x + t • v) = g (c + t)` for every scalar `t` near `0` and `g` has derivative `g'` at `c`,
+then `f` has derivative `g'` at `x` in the direction `v`. -/
+theorem _root_.HasDerivAt.hasLineDerivAt_of_add_smul {E : Type*} [AddCommGroup E] [Module 𝕜 E]
+    {f : E → F} {x v : E} {g : 𝕜 → F} {g' : F} {c : 𝕜} (hg : HasDerivAt g g' c)
+    (hf : ∀ᶠ t in 𝓝 (0 : 𝕜), f (x + t • v) = g (c + t)) : HasLineDerivAt 𝕜 f g' x v := by
+  unfold HasLineDerivAt
+  rw [← add_zero c] at hg
+  exact (hg.comp_const_add c 0).congr_of_eventuallyEq hf
+
+/-- If `f` is differentiable at `x`, `f (x + t • v) = g (c + t)` for every scalar `t` near `0` and
+`g` has derivative `g'` at `c`, then the derivative of `f` at `x` sends `v` to `g'`. -/
+theorem _root_.DifferentiableAt.fderiv_apply_eq_of_hasDerivAt_add_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : E → F} {x v : E} {g : 𝕜 → F} {g' : F} {c : 𝕜}
+    (hf : DifferentiableAt 𝕜 f x) (hg : HasDerivAt g g' c)
+    (h : ∀ᶠ t in 𝓝 (0 : 𝕜), f (x + t • v) = g (c + t)) : fderiv 𝕜 f x v = g' :=
+  (hf.hasFDerivAt.hasLineDerivAt v).unique (hg.hasLineDerivAt_of_add_smul h)
+
 /-- **A map that is affine along a line has the slope of that line as its derivative there.** If
 `g` is differentiable at `w` and `g (w + s • d) = g w + s • y` for every scalar `s` near `0`, then
 the derivative of `g` at `w` sends `d` to `y`. -/
 theorem _root_.DifferentiableAt.fderiv_apply_eq_of_add_smul {G : Type*} [NormedAddCommGroup G]
     [NormedSpace 𝕜 G] {g : F → G} {w d : F} {y : G} (hg : DifferentiableAt 𝕜 g w)
-    (h : ∀ᶠ s in 𝓝 (0 : 𝕜), g (w + s • d) = g w + s • y) : fderiv 𝕜 g w d = y := by
-  refine (hg.hasFDerivAt.hasLineDerivAt d).unique ?_
-  rw [HasLineDerivAt]
-  refine HasDerivAt.congr_of_eventuallyEq ?_ h
-  simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const y).const_add (g w)
+    (h : ∀ᶠ s in 𝓝 (0 : 𝕜), g (w + s • d) = g w + s • y) : fderiv 𝕜 g w d = y :=
+  hg.fderiv_apply_eq_of_hasDerivAt_add_smul (g := fun s ↦ g w + s • y) (c := 0)
+    (by simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const y).const_add (g w)) (by simpa using h)
 
 /-- The function `y ↦ ∫ₐᵇ g (y - t h) dt` of a continuous `g` has directional derivative
 `g (y - a h) - g (y - b h)` in the direction `h`. -/
@@ -97,5 +127,43 @@ theorem _root_.Continuous.hasLineDerivAt_intervalIntegral_comp_sub {E G : Type*}
   have h2 := (hf.integral_hasStrictDerivAt 0 (a - 0)).hasDerivAt.scomp 0
     ((hasDerivAt_id (0 : ℝ)).const_sub a)
   exact (h1.sub h2).congr_deriv (by simp [f, neg_add_eq_sub])
+
+/-- The derivative at `t` of the restriction `s ↦ f (x + s • v)` of a function to a line is the
+directional derivative of `f` at `x + t • v` along `v`. No differentiability hypothesis is needed:
+both sides are `0` where `f` is not differentiable along the line. -/
+theorem deriv_comp_add_smul_eq_lineDeriv {E : Type*} [AddCommGroup E] [Module 𝕜 E] (f : E → F)
+    (x v : E) (t : 𝕜) :
+    deriv (fun s : 𝕜 ↦ f (x + s • v)) t = lineDeriv 𝕜 f (x + t • v) v := by
+  have h : (fun s : 𝕜 ↦ f (x + s • v)) =
+      fun s ↦ (fun u : 𝕜 ↦ f ((x + t • v) + u • v)) (s - t) := by
+    funext s
+    simp [sub_smul]
+  rw [h, deriv_comp_sub_const (f := fun u : 𝕜 ↦ f ((x + t • v) + u • v)), sub_self, lineDeriv]
+
+/-- The directional derivative of `c • f` is `c` times that of `f`, for every constant `c` of the
+field, whether or not the directional derivative of `f` exists. -/
+@[to_fun (attr := simp) lineDeriv_fun_const_smul]
+theorem lineDeriv_const_smul {E : Type*} [AddCommGroup E] [Module 𝕜 E] (c : 𝕜) (f : E → F)
+    (x v : E) : lineDeriv 𝕜 (c • f) x v = c • lineDeriv 𝕜 f x v := by
+  simp only [lineDeriv, Pi.smul_apply]
+  exact deriv_fun_const_smul_field c _
+
+/-- The directional derivative of `-f` is minus that of `f`, whether or not the latter exists. -/
+@[to_fun (attr := simp) lineDeriv_fun_neg_left]
+theorem lineDeriv_neg_left {E : Type*} [AddCommGroup E] [Module 𝕜 E] (f : E → F) (x v : E) :
+    lineDeriv 𝕜 (-f) x v = -lineDeriv 𝕜 f x v := by
+  simp only [lineDeriv, Pi.neg_apply]
+  exact deriv.fun_neg
+
+-- Allow `to_fun` to eta-expand `L ∘ f`, as Mathlib does for `fderiv_comp`.
+attribute [local push ←] Function.comp_def in
+/-- The directional derivative of `L ∘ f`, for a continuous linear equivalence `L`, is `L` applied
+to that of `f`, whether or not the latter exists. -/
+@[to_fun (attr := simp)]
+theorem _root_.ContinuousLinearEquiv.comp_lineDeriv {E F' : Type*} [AddCommGroup E] [Module 𝕜 E]
+    [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] (L : F ≃L[𝕜] F') (f : E → F) (x v : E) :
+    lineDeriv 𝕜 (L ∘ f) x v = L (lineDeriv 𝕜 f x v) := by
+  simp only [lineDeriv]
+  exact L.comp_deriv _ _
 
 end TauCeti

@@ -43,9 +43,15 @@ The derivative bound comes from Mathlib's Faà di Bruno estimate
 * `TauCeti.exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le` and
   `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le`: Gaussian bounds on all derivatives, with and
   without polynomial weights.
+* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le_const`: every derivative is bounded.
+* `TauCeti.integrable_iteratedFDeriv_heatKernel_comp`: every derivative composed with an
+  almost everywhere strongly measurable map is integrable against any finite measure.
+* `TauCeti.integrable_heatKernel_comp`, `TauCeti.integrable_fderiv_heatKernel_comp`, and
+  `TauCeti.integrable_laplacian_heatKernel_comp`: the kernel, derivative and Laplacian cases.
 * `TauCeti.exists_integrable_norm_iteratedFDeriv_heatKernel_add_le`: integrable domination of the
   derivatives on translates of any bounded radius.
 * `TauCeti.integrable_iteratedFDeriv_heatKernel`: every derivative is integrable.
+* `TauCeti.memLp_laplacian_heatKernel`: the Laplacian `Δ K_t` lies in every `Lᵠ`.
 -/
 
 public section
@@ -55,7 +61,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Module Real
-open scoped Nat
+open scoped ENNReal Nat
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -222,6 +228,57 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ
     ∃ C > 0, ∀ x : E, ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C * heatKernel (2 * t) x := by
   simpa using exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le (E := E) ht k 0
 
+/-- **Every derivative of the heat kernel is bounded.** For `t > 0` and every order `k` there is a
+constant `C` with `‖D^k K_t(x)‖ ≤ C` for all `x`. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_le_const {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C := by
+  obtain ⟨C, hC₀, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht k
+  exact ⟨_, fun x ↦ (hC x).trans
+    (mul_le_mul_of_nonneg_left (heatKernel_le (by positivity) x) hC₀.le)⟩
+
+section FiniteMeasure
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ] {z : Ω → E}
+
+/-- Every derivative of the heat kernel composed with an almost everywhere strongly measurable
+map is integrable against any finite measure. -/
+theorem integrable_iteratedFDeriv_heatKernel_comp {t : ℝ} (ht : 0 < t) (k : ℕ)
+    (hz : AEStronglyMeasurable z μ) :
+    Integrable (fun ω ↦ iteratedFDeriv ℝ k (heatKernel t) (z ω)) μ := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le_const (E := E) ht k
+  exact Integrable.of_bound
+    (((contDiff_heatKernel t).continuous_iteratedFDeriv
+      (by exact_mod_cast le_top)).comp_aestronglyMeasurable hz) C (.of_forall fun ω ↦ hC (z ω))
+
+/-- The heat kernel composed with an almost everywhere strongly measurable map is integrable
+against any finite measure. -/
+theorem integrable_heatKernel_comp {t : ℝ} (ht : 0 < t) (hz : AEStronglyMeasurable z μ) :
+    Integrable (fun ω ↦ heatKernel t (z ω)) μ := by
+  exact (integrable_iteratedFDeriv_heatKernel_comp ht 0 hz).congr'
+    ((contDiff_heatKernel t (k := 0)).continuous.comp_aestronglyMeasurable hz)
+    (.of_forall fun ω ↦ norm_iteratedFDeriv_zero)
+
+/-- The derivative of the heat kernel composed with an almost everywhere strongly measurable
+map is integrable against any finite measure. -/
+theorem integrable_fderiv_heatKernel_comp {t : ℝ} (ht : 0 < t)
+    (hz : AEStronglyMeasurable z μ) :
+    Integrable (fun ω ↦ fderiv ℝ (heatKernel t) (z ω)) μ := by
+  exact (integrable_iteratedFDeriv_heatKernel_comp ht 1 hz).congr'
+    (((contDiff_heatKernel t (k := ⊤)).continuous_fderiv (by simp)).comp_aestronglyMeasurable hz)
+    (.of_forall fun ω ↦ norm_iteratedFDeriv_one _)
+
+/-- The Laplacian of the heat kernel composed with an almost everywhere strongly measurable
+map is integrable against any finite measure. -/
+theorem integrable_laplacian_heatKernel_comp [FiniteDimensional ℝ E] {t : ℝ} (ht : 0 < t)
+    (hz : AEStronglyMeasurable z μ) :
+    Integrable (fun ω ↦ Laplacian.laplacian (heatKernel t : E → ℝ) (z ω)) μ := by
+  let L := ∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) ℝ
+    ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]
+  exact (L.integrable_comp (integrable_iteratedFDeriv_heatKernel_comp ht 2 hz)).congr
+    (.of_forall fun ω ↦ (laplacian_eq_traceL_iteratedFDeriv _ _).symm)
+
+end FiniteMeasure
+
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Every derivative of the heat kernel is dominated, uniformly on translates of norm at most
@@ -251,5 +308,22 @@ theorem integrable_iteratedFDeriv_heatKernel {t : ℝ} (ht : 0 < t) (m : ℕ) :
   exact ((integrable_heatKernel (by positivity : 0 < 2 * t)).const_mul C).mono'
     ((contDiff_heatKernel t).continuous_iteratedFDeriv
       (by exact_mod_cast le_top)).aestronglyMeasurable (Filter.Eventually.of_forall hC)
+
+/-- At every positive time `t`, the Laplacian `Δ K_t` of the heat kernel belongs to every `Lᵠ`,
+`0 ≤ q ≤ ∞`: it is dominated by a multiple of `K_{2t}`. -/
+theorem memLp_laplacian_heatKernel {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} :
+    MemLp (Laplacian.laplacian (heatKernel t : E → ℝ)) q volume := by
+  obtain ⟨C, hC₀, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht 2
+  refine ((memLp_heatKernel (E := E) (by positivity : 0 < 2 * t)).const_mul
+    (finrank ℝ E * C)).of_le (contDiff_heatKernel t).continuous_laplacian.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x => ?_)
+  have hK := heatKernel_pos (E := E) (by positivity : 0 < 2 * t) x
+  calc ‖Laplacian.laplacian (heatKernel t : E → ℝ) x‖
+      ≤ finrank ℝ E * ‖iteratedFDeriv ℝ 2 (heatKernel t) x‖ :=
+        norm_laplacian_le_norm_iteratedFDeriv_two _ x
+    _ ≤ finrank ℝ E * (C * heatKernel (2 * t) x) := by gcongr; exact hC x
+    _ = ‖finrank ℝ E * C * heatKernel (2 * t) x‖ := by
+        rw [Real.norm_of_nonneg (by positivity)]
+        ring
 
 end TauCeti

@@ -43,6 +43,8 @@ polylogarithms. In weight one the domain `{z | 1 - z ∈ Complex.slitPlane}` is 
   `TauCeti.Polylog.mul_deriv_polylog_add_one`, `TauCeti.Polylog.deriv_polylog_add_one`, and
   `TauCeti.Polylog.hasDerivAt_polylog_add_one`): the Euler differential recursion on the principal
   domain (and its quotient form away from `0`).
+* `TauCeti.Polylog.mul_deriv_polylog_comp_const_mul_pow`: the Euler recursion composed with a
+  monomial `w ↦ c * w ^ m`, which scales by `m`.
 * `TauCeti.Polylog.intervalIntegrable_polylog_div`, `TauCeti.Polylog.polylog_eq_integral`, and
   `TauCeti.Polylog.polylog_add_one_eq_integral`: the recursive radial integral on the principal
   domain for all `n : ℤ`.
@@ -164,6 +166,21 @@ complex derivative `polylog n z / z`. -/
 theorem hasDerivAt_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) (hz0 : z ≠ 0) :
     HasDerivAt (polylog (n + 1)) (polylog n z / z) z := by
   simpa only [add_sub_cancel_right] using hasDerivAt_polylog (n + 1) hz hz0
+
+/-- Under composition with a monomial `w ↦ c * w ^ m` whose value at `z` lies in the principal
+domain, the Euler differential operator `z ↦ z * deriv · z` multiplies `polylog n` by `m` and
+lowers the weight by one. This holds at `z = 0` as well, where both sides vanish. -/
+theorem mul_deriv_polylog_comp_const_mul_pow (n : ℤ) (m : ℕ) (c : ℂ) {z : ℂ}
+    (hz : 1 - c * z ^ m ∈ Complex.slitPlane) :
+    z * deriv (fun w ↦ polylog n (c * w ^ m)) z = (m : ℂ) * polylog (n - 1) (c * z ^ m) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  have hcomp : deriv (fun w ↦ polylog n (c * w ^ m)) z =
+      deriv (polylog n) (c * z ^ m) * (c * ((m : ℂ) * z ^ (m - 1))) :=
+    ((differentiableAt_polylog n hz).hasDerivAt.comp z
+      ((hasDerivAt_pow m z).const_mul c)).deriv
+  rw [hcomp, ← mul_deriv_polylog n hz, ← mul_pow_sub_one hm z]
+  ring
 
 private lemma polylog_sub_one_div_eq_mul_deriv_on_Ioc (n : ℤ) {z : ℂ}
     (hz : 1 - z ∈ Complex.slitPlane) {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) 1) :

@@ -9,9 +9,11 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Smoothness
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.VectorValued
 public import TauCeti.Analysis.Pseudodifferential.InteriorRegularity
+public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Distribution
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Pseudodifferential.EllipticRegularity.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
@@ -55,6 +57,24 @@ vector bundles has such a symbol and acts on such distributions, so this is
 `Pu ∈ H^s_loc ⟹ u ∈ H^(s + m)_loc` for bundle-valued `u` in a chart. The scalar regularity and
 singular-support statements above are its case `V = W = ℂ`.
 
+**Operators elliptic on an open set.** A formal left parametrix on all of `ℝⁿ` is more than an
+operator on a manifold provides: read in a chart through a cut-off extension `ψ a` of its symbol,
+it is only elliptic where `ψ = 1`. The same conclusions hold at every point near which some symbol
+`e` of order `-m` is a left inverse of `a(y, ξ)` at large frequencies, with nothing assumed of `a`
+elsewhere (`Distribution.IsLocallySobolevAt.of_quantizeDistribution_of_eventually_comp_eq_id`, and
+for systems the statements
+`vectorSobolevSingularSupport_inter_subset_vectorSobolevSingularSupport_quantizeDistribution` and
+`singularSupport_inter_subset_singularSupport_quantizeDistribution` in the namespace
+`Distribution`). In particular, let `a` be an elliptic classical symbol on an open set `U`
+(`TauCeti.LocalClassicalSymbol`), and let `p` agree with `a` at the positions of an open set
+`O ⊆ U`. Then `Op(p) T ∈ H^s` near `x ∈ O` implies `T ∈ H^(s + m)` near `x`, for scalar and for
+vector-valued `T`. These are the statements
+`isLocallySobolevAt_of_quantizeDistribution`,
+`vectorSobolevSingularSupport_inter_subset_vectorSobolevSingularSupport_quantizeDistribution` and
+`singularSupport_inter_subset_singularSupport_quantizeDistribution` in the namespace
+`TauCeti.LocalClassicalSymbol.IsElliptic`, and this is `Pu ∈ H^s_loc ⟹ u ∈ H^(s + m)_loc` for an
+elliptic operator read in a chart.
+
 ## The argument
 
 Both directions reduce to the Bessel-potential spaces through one identity. Let `ψ` be a test
@@ -91,6 +111,9 @@ matrix-valued interior regularity on `H^r` then gives `φ u ∈ H^(s + m)`, whos
 * `TauCeti.Symbol.quantizeTempered_cutoffTempered`: `Op(ψ a) (χ T) = ψ Op(a) T`.
 * `TauCeti.Symbol.exists_cutoffs_of_mem_nhds`: the nested cutoffs `φ`, `ψ` and `χ` at a point,
   for a symbol with values in any `V →L[ℂ] W`.
+* `TauCeti.Symbol.toDistr_postcomp_quantizeSobolev_smulLeft`: for a matrix-valued `a` and
+  `u ∈ H^r(ℝⁿ; V)` with the cut-off coordinates `χ (c_j ∘ T)`, the component of `Op(ψ a) u` along
+  `ℓ` is `ψ (ℓ ∘ Op(a) T)`.
 * `TauCeti.Symbol.HasNearDiagonalKernel.exists_cutoffs_of_mem_nhds`: the same cutoffs, reducing
   local elliptic regularity of a scalar operator to interior regularity on any regularity scale.
 * `Distribution.memSobolev_cutoffTempered_quantizeDistribution`: properly supported operators of
@@ -103,6 +126,14 @@ matrix-valued interior regularity on `H^r` then gives `φ u ∈ H^(s + m)`, whos
   `Distribution.singularSupport_subset_singularSupport_quantizeDistribution`: elliptic operators
   do not shrink singular supports, the latter also for matrix-valued symbols acting on vector-valued
   distributions.
+* `Distribution.IsLocallySobolevAt.of_quantizeDistribution_of_eventually_comp_eq_id`, with the
+  versions for systems of the names
+  `vectorSobolevSingularSupport_inter_subset_vectorSobolevSingularSupport_quantizeDistribution`
+  and `singularSupport_inter_subset_singularSupport_quantizeDistribution` in `Distribution`:
+  **local elliptic regularity of operators that are only elliptic near the points considered**.
+* `TauCeti.LocalClassicalSymbol.IsElliptic.isLocallySobolevAt_of_quantizeDistribution`, and for
+  systems the statements of the same names in `TauCeti.LocalClassicalSymbol.IsElliptic`: **local
+  elliptic regularity for elliptic classical symbols on an open set**.
 
 ## References
 
@@ -285,7 +316,7 @@ within distance `R` of the diagonal, let `p(x, ξ) = ψ(x) a(x, ξ)`, and let `�
 equal to one on the closed `R`-neighbourhood of the support of `ψ`. If the coordinates of
 `u ∈ H^r(ℝⁿ; V)` in a basis are the cut-off components `χ (c_j ∘ T)` of a distribution `T`, then
 the component of `Op(p) u` along any functional `ℓ` is `ψ (ℓ ∘ Op(a) T)`. -/
-private theorem toDistr_postcomp_quantizeSobolev_smulLeft (b : Module.Basis ι ℂ V)
+theorem toDistr_postcomp_quantizeSobolev_smulLeft (b : Module.Basis ι ℂ V)
     (ha : a.HasNearDiagonalKernel R) {ψ χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)}
     (hχ : ∀ x ∈ Metric.cthickening R (tsupport ψ), χ x = 1)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) {r : ℝ} (u : H^{r}(CoordinateSpace n, V))
@@ -358,6 +389,54 @@ theorem memSobolev_cutoffTempered_quantizeDistribution (ha : a.HasNearDiagonalKe
   simpa using memSobolev_quantizeTempered hp
     (memSobolev_cutoffTempered_of_forall_isLocallySobolevAt fun y hy ↦ hχU hy)
 
+/-- The step common to local elliptic regularity of properly supported systems. Let `Op(a)` have
+kernel supported within distance `R` of the diagonal, and let `Op(a) T` be `H^s` near `x`. Suppose
+that interior regularity holds on the Bessel-potential spaces for the localizations
+`p = ψ a`, `tsupport ψ ⊆ U`: if `Op(p) u ∈ H^s` then `φ u ∈ H^(s + m)`, for cutoffs `φ` supported in
+`tsupport ψ` near which `p = a`. Then `T` is `H^(s + m)` near `x`. -/
+private theorem notMem_vectorSobolevSingularSupport_of_forall_memSobolev {V W : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V] [NormedAddCommGroup W]
+    [InnerProductSpace ℂ W] [FiniteDimensional ℂ W] {a : Symbol n V W m}
+    (ha : a.HasNearDiagonalKernel R) {s : ℝ} {T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)}
+    {x : CoordinateSpace n} {U : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x)
+    (hreg : ∀ (ψ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) (φ : 𝓢(CoordinateSpace n, ℂ)),
+      tsupport ψ ⊆ U → tsupport φ ⊆ tsupport ψ → HasCompactSupport φ →
+      (∀ᶠ y in 𝓝ˢ (tsupport φ), ∀ ξ,
+        (smulLeft ψ.contDiff a).coefficient (y, ξ) = a.coefficient (y, ξ)) →
+      ∀ (r : ℝ) (u : H^{r}(CoordinateSpace n, V)),
+        MemSobolev s 2 ((smulLeft ψ.contDiff a).quantizeSobolev
+          (hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a) r u).toDistr →
+        MemSobolev (s + m) 2 (TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ)
+          u.toDistr))
+    (hx : x ∉ (quantizeDistribution ha T).vectorSobolevSingularSupport s) :
+    x ∉ T.vectorSobolevSingularSupport (s + m) := by
+  set bV := Module.finBasis ℂ V
+  set bW := Module.finBasis ℂ W
+  -- The coordinates of `Op(a) T` are `H^s` on a common neighbourhood `⋂ₖ U'ₖ` of `x`.
+  have hk := (notMem_vectorSobolevSingularSupport_iff_forall_basis bW (mem_univ x)).1 hx
+  choose U' hU' hUs using fun k ↦ (hk k).exists_nhds_forall_memSobolev_cutoffTempered
+  obtain ⟨φ, ψ, χ, φS, hφx, hψU, hφψ, hχψ, hφS, hφSc, hpa⟩ :=
+    exists_cutoffs_of_mem_nhds a R (Filter.inter_mem hU (Filter.iInter_mem.2 hU'))
+  -- Some `u ∈ H^r` has the cut-off coordinates `χ (c_j ∘ T)`, and `Op(ψ a) u ∈ H^s`.
+  obtain ⟨r, u, hu⟩ := exists_toDistr_postcomp_coord_eq_cutoffTempered bV T χ
+  have hp : (smulLeft ψ.contDiff a).HasCompactSpatialSupport :=
+    hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a
+  have hv : MemSobolev s 2 ((smulLeft ψ.contDiff a).quantizeSobolev hp r u).toDistr := by
+    refine (memSobolev_iff_forall_postcomp_coord bW).2 fun k ↦ ?_
+    have h := toDistr_postcomp_quantizeSobolev_smulLeft bV ha hχψ T u hu
+      (bW.coord k).toContinuousLinearMap
+    rw [← BesselPotentialSpace.toDistr_postcomp, h]
+    exact hUs k ψ (hψU.trans (inter_subset_right.trans (iInter_subset U' k)))
+  -- Interior elliptic regularity gives `φ u ∈ H^(s + m)`; its coordinates are `φ (c_j ∘ T)`.
+  have hreg' := hreg ψ φS (hψU.trans inter_subset_left) (by rw [hφS]; exact hφψ) hφSc hpa r u hv
+  rw [hφS] at hreg'
+  refine (notMem_vectorSobolevSingularSupport_iff_forall_basis bV (mem_univ x)).2 fun j ↦
+    isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
+      ⟨φ, by simp [hφx.self_of_nhds], ?_⟩
+  rw [← postcomp_smulLeftCLM_toDistr bV T
+    (fun y hy ↦ hχψ y (Metric.self_subset_cthickening _ (hφψ hy))) u hu j]
+  exact hreg'.postcomp _
+
 /-- **Local elliptic regularity of properly supported systems.** Let `a` be a symbol of order `m`
 with values in `V →L[ℂ] W`, for finite-dimensional complex inner product spaces `V` and `W`, whose
 quantization has kernel supported within distance `R` of the diagonal, and let `a` have a formal
@@ -373,36 +452,11 @@ theorem vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantiz
       (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
     (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
     T.vectorSobolevSingularSupport (s + m) ⊆
-      (quantizeDistribution ha T).vectorSobolevSingularSupport s := by
-  intro x hx
+      (quantizeDistribution ha T).vectorSobolevSingularSupport s := fun x hx ↦ by
   by_contra hPx
-  set bV := Module.finBasis ℂ V
-  set bW := Module.finBasis ℂ W
-  -- The coordinates of `Op(a) T` are `H^s` on a common neighbourhood `U` of `x`.
-  have hk := (notMem_vectorSobolevSingularSupport_iff_forall_basis bW (mem_univ x)).1 hPx
-  choose U hU hUs using fun k ↦ (hk k).exists_nhds_forall_memSobolev_cutoffTempered
-  obtain ⟨φ, ψ, χ, φS, hφx, hψU, hφψ, hχψ, hφS, hφSc, hpa⟩ :=
-    exists_cutoffs_of_mem_nhds a R (Filter.iInter_mem.2 hU)
-  -- Some `u ∈ H^r` has the cut-off coordinates `χ (c_j ∘ T)`, and `Op(ψ a) u ∈ H^s`.
-  obtain ⟨r, u, hu⟩ := exists_toDistr_postcomp_coord_eq_cutoffTempered bV T χ
-  set p := smulLeft ψ.contDiff a
-  have hp : p.HasCompactSpatialSupport :=
-    hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a
-  have hv : MemSobolev s 2 (p.quantizeSobolev hp r u).toDistr := by
-    refine (memSobolev_iff_forall_postcomp_coord bW).2 fun k ↦ ?_
-    have h := toDistr_postcomp_quantizeSobolev_smulLeft bV ha hχψ T u hu
-      (bW.coord k).toContinuousLinearMap
-    rw [← BesselPotentialSpace.toDistr_postcomp, h]
-    exact hUs k ψ (hψU.trans (iInter_subset U k))
-  -- Interior elliptic regularity gives `φ u ∈ H^(s + m)`; its coordinates are `φ (c_j ∘ T)`.
-  have hreg := memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev hab hφSc hp hpa u hv
-  rw [hφS] at hreg
-  refine (notMem_vectorSobolevSingularSupport_iff_forall_basis bV (mem_univ x)).2 (fun j ↦
-    isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
-      ⟨φ, by simp [hφx.self_of_nhds], ?_⟩) hx
-  rw [← postcomp_smulLeftCLM_toDistr bV T
-    (fun y hy ↦ hχψ y (Metric.self_subset_cthickening _ (hφψ hy))) u hu j]
-  exact hreg.postcomp _
+  exact notMem_vectorSobolevSingularSupport_of_forall_memSobolev ha Filter.univ_mem
+    (fun ψ _ _ _ hφc hpa _ u hv ↦ memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev hab hφc
+      (hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a) hpa u hv) hPx hx
 
 /-- **Local elliptic regularity of properly supported operators.** Let `Op(a)` have order `m` and
 kernel supported within distance `R` of the diagonal, and let `a` have a formal left parametrix
@@ -435,6 +489,36 @@ theorem sobolevSingularSupport_subset_sobolevSingularSupport_quantizeDistributio
   fun x hx ↦ mem_sobolevSingularSupport_iff.2 ⟨mem_univ x, fun h ↦
     (mem_sobolevSingularSupport_iff.1 hx).2 (h.of_quantizeDistribution ha hab)⟩
 
+/-- The step common to elliptic regularity for smoothness. Let `Op(a)` have order `m`, and let
+`T` be `H^(t + m)` at every point of a neighbourhood `O` of `x` where `Op(a) T` is `H^t`, for every
+real `t`. If `Op(a) T` is smooth near `x`, then so is `T`. -/
+private theorem notMem_singularSupport_of_forall_inter_subset {V W : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V] [NormedAddCommGroup W]
+    [InnerProductSpace ℂ W] [FiniteDimensional ℂ W] {a : Symbol n V W m}
+    (ha : a.HasNearDiagonalKernel R) {T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)}
+    {x : CoordinateSpace n} {O : Set (CoordinateSpace n)} (hO : O ∈ 𝓝 x)
+    (h : ∀ t : ℝ, T.vectorSobolevSingularSupport (t + m) ∩ O ⊆
+      (quantizeDistribution ha T).vectorSobolevSingularSupport t)
+    (hx : x ∉ (quantizeDistribution ha T).singularSupport) : x ∉ T.singularSupport := by
+  set bV := Module.finBasis ℂ V
+  set bW := Module.finBasis ℂ W
+  rw [singularSupport_eq_iUnion_basis bW, mem_iUnion, not_exists] at hx
+  rw [singularSupport_eq_iUnion_basis bV, mem_iUnion, not_exists]
+  intro j
+  -- Near `x`, every coordinate of `Op(a) T` has every Sobolev order, hence so does `T`.
+  have hev : ∀ᶠ y in 𝓝 x, ∀ k s,
+      (mapCLM ((bW.coord k).toContinuousLinearMap.restrictScalars ℝ)
+        (quantizeDistribution ha T)).IsLocallySobolevAt s y :=
+    Filter.eventually_all.2 fun k ↦
+      (notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt (mem_univ x)).1 (hx k)
+  refine (notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt (mem_univ x)).2 ?_
+  filter_upwards [hev, hO] with y hy hyO s
+  have hy' : y ∉ (quantizeDistribution ha T).vectorSobolevSingularSupport (s - m) :=
+    (notMem_vectorSobolevSingularSupport_iff_forall_basis bW (mem_univ y)).2 fun k ↦ hy k _
+  have hT : y ∉ T.vectorSobolevSingularSupport (s - m + m) := fun h' ↦ hy' (h (s - m) ⟨h', hyO⟩)
+  rw [sub_add_cancel] at hT
+  exact (notMem_vectorSobolevSingularSupport_iff_forall_basis bV (mem_univ y)).1 hT j
+
 /-- **Elliptic regularity for smoothness.** If `Op(a)`, for a symbol `a` with values in
 `V →L[ℂ] W`, has kernel supported within distance `R` of the diagonal and a formal left parametrix,
 then a `V`-valued distribution `T` is smooth wherever `Op(a) T` is: the singular support of `T` lies
@@ -447,29 +531,92 @@ theorem singularSupport_subset_singularSupport_quantizeDistribution {V W : Type*
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
       (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
-    T.singularSupport ⊆ (quantizeDistribution ha T).singularSupport := by
-  set bV := Module.finBasis ℂ V
-  set bW := Module.finBasis ℂ W
-  intro x hx
+    T.singularSupport ⊆ (quantizeDistribution ha T).singularSupport := fun x hx ↦ by
   by_contra hPx
-  rw [singularSupport_eq_iUnion_basis bW, mem_iUnion, not_exists] at hPx
-  rw [singularSupport_eq_iUnion_basis bV, mem_iUnion] at hx
-  obtain ⟨j, hj⟩ := hx
-  -- Near `x`, every coordinate of `Op(a) T` has every Sobolev order, hence so does `T`.
-  have hev : ∀ᶠ y in 𝓝 x, ∀ k s,
-      (mapCLM ((bW.coord k).toContinuousLinearMap.restrictScalars ℝ)
-        (quantizeDistribution ha T)).IsLocallySobolevAt s y :=
-    Filter.eventually_all.2 fun k ↦
-      (notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt (mem_univ x)).1 (hPx k)
-  refine (notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt (mem_univ x)).2 ?_ hj
-  filter_upwards [hev] with y hy s
-  have hy' : y ∉ (quantizeDistribution ha T).vectorSobolevSingularSupport (s - m) :=
-    (notMem_vectorSobolevSingularSupport_iff_forall_basis bW (mem_univ y)).2 fun k ↦ hy k _
-  have hT : y ∉ T.vectorSobolevSingularSupport (s - m + m) := fun h ↦ hy'
-    (vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantizeDistribution
-      ha hab (s - m) T h)
-  rw [sub_add_cancel] at hT
-  exact (notMem_vectorSobolevSingularSupport_iff_forall_basis bV (mem_univ y)).1 hT j
+  exact notMem_singularSupport_of_forall_inter_subset ha Filter.univ_mem (fun t _ hy ↦
+    vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantizeDistribution ha hab t
+      T hy.1) hPx hx
+
+/-! ### Operators elliptic on an open set
+
+The results above ask for a formal left parametrix of `a` on all of `ℝⁿ`. An operator on a manifold,
+read in a chart through a cut-off extension `ψ a` of its symbol, is only elliptic where the cutoff
+`ψ` is `1`. The following results only ask for a left inverse of `a(y, ξ)` at large frequencies
+near the points considered, and conclude there. -/
+
+/-- **Local elliptic regularity of locally elliptic properly supported systems.** Let `a` be a
+symbol of order `m` with values in `V →L[ℂ] W`, for finite-dimensional complex inner product spaces
+`V` and `W`, whose quantization has kernel supported within distance `R` of the diagonal. Suppose
+that near every point of a set `U` some symbol of order `-m` is a left inverse of `a(y, ξ)` at all
+large frequencies. Then every `V`-valued distribution `T` is `H^(s + m)` at every point of `U` where
+`Op(a) T` is `H^s`. Nothing is assumed of `a` away from `U`. -/
+theorem vectorSobolevSingularSupport_inter_subset_vectorSobolevSingularSupport_quantizeDistribution
+    {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
+    [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W] {a : Symbol n V W m}
+    (ha : a.HasNearDiagonalKernel R) {U : Set (CoordinateSpace n)}
+    (he : ∀ x ∈ U, ∃ (e : Symbol n W V (-m)) (R' : ℝ), ∀ᶠ y in 𝓝 x, ∀ ξ, R' ≤ ‖ξ‖ →
+      e.coefficient (y, ξ) ∘L a.coefficient (y, ξ) = .id ℂ V)
+    (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    T.vectorSobolevSingularSupport (s + m) ∩ U ⊆
+      (quantizeDistribution ha T).vectorSobolevSingularSupport s := by
+  rintro x ⟨hx, hxU⟩
+  by_contra hPx
+  obtain ⟨e, R', he⟩ := he x hxU
+  obtain ⟨O, hO, hOo, hxO⟩ := eventually_nhds_iff.1 he
+  refine notMem_vectorSobolevSingularSupport_of_forall_memSobolev ha (hOo.mem_nhds hxO)
+    (fun ψ φ hψO hφψ _ hpa r u hv ↦ ?_) hPx hx
+  -- `e` is a left inverse of `ψ a` near `tsupport φ`, where `ψ a = a`, so interior regularity for
+  -- locally elliptic symbols applies.
+  have he' : ∀ᶠ y in 𝓝ˢ (tsupport φ), ∀ ξ, R' ≤ ‖ξ‖ →
+      e.coefficient (y, ξ) ∘L (smulLeft ψ.contDiff a).coefficient (y, ξ) = .id ℂ V := by
+    filter_upwards [hpa, hOo.mem_nhdsSet.2 (hφψ.trans hψO)] with y hy hyO ξ hξ
+    rw [hy ξ]
+    exact hO y hyO ξ hξ
+  have h := memSobolev_smulLeftCLM_of_eventually_comp_eq_id
+    (hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a) he'
+    (Function.HasTemperateGrowth.const 1) (Filter.Eventually.of_forall fun _ ↦ rfl) (s := s + m)
+    (u := u) (by rwa [TemperedDistribution.smulLeftCLM_const, one_smul, add_sub_cancel_right])
+  rwa [BesselPotentialSpace.toDistr_smulLeftCLM] at h
+
+/-- **Local elliptic regularity of locally elliptic properly supported operators.** Let `Op(a)`
+have order `m` and kernel supported within distance `R` of the diagonal, and let a symbol `e` of
+order `-m` be a left inverse of `a(y, ξ)` at all large frequencies and all positions `y` near `x`.
+If `Op(a) T` is `H^s` near `x` for a distribution `T`, then `T` is `H^(s + m)` near `x`. -/
+theorem IsLocallySobolevAt.of_quantizeDistribution_of_eventually_comp_eq_id
+    (ha : a.HasNearDiagonalKernel R) {x : CoordinateSpace n} {e : Symbol n ℂ ℂ (-m)} {R' : ℝ}
+    (he : ∀ᶠ y in 𝓝 x, ∀ ξ, R' ≤ ‖ξ‖ → e.coefficient (y, ξ) ∘L a.coefficient (y, ξ) = .id ℂ ℂ)
+    {s : ℝ} (h : (quantizeDistribution ha T).IsLocallySobolevAt s x) :
+    T.IsLocallySobolevAt (s + m) x := by
+  by_contra hT
+  have hx :=
+    vectorSobolevSingularSupport_inter_subset_vectorSobolevSingularSupport_quantizeDistribution ha
+    (U := {x}) (fun y hy ↦ by rw [mem_singleton_iff.1 hy]; exact ⟨e, R', he⟩) s T ⟨by
+      rw [vectorSobolevSingularSupport_eq_sobolevSingularSupport]
+      exact mem_sobolevSingularSupport_iff.2 ⟨mem_univ x, hT⟩, rfl⟩
+  rw [vectorSobolevSingularSupport_eq_sobolevSingularSupport] at hx
+  exact (mem_sobolevSingularSupport_iff.1 hx).2 h
+
+/-- **Elliptic regularity for smoothness, for locally elliptic systems.** Let `Op(a)`, for a symbol
+`a` with values in `V →L[ℂ] W`, have kernel supported within distance `R` of the diagonal, and
+suppose that near every point of a set `U` some symbol of order `-m` is a left inverse of `a(y, ξ)`
+at all large frequencies. Then a `V`-valued distribution `T` is smooth at every point of `U` where
+`Op(a) T` is: `singsupp T ∩ U ⊆ singsupp Op(a) T`. -/
+theorem singularSupport_inter_subset_singularSupport_quantizeDistribution {V W : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V] [NormedAddCommGroup W]
+    [InnerProductSpace ℂ W] [FiniteDimensional ℂ W] {a : Symbol n V W m}
+    (ha : a.HasNearDiagonalKernel R) {U : Set (CoordinateSpace n)}
+    (he : ∀ x ∈ U, ∃ (e : Symbol n W V (-m)) (R' : ℝ), ∀ᶠ y in 𝓝 x, ∀ ξ, R' ≤ ‖ξ‖ →
+      e.coefficient (y, ξ) ∘L a.coefficient (y, ξ) = .id ℂ V)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    T.singularSupport ∩ U ⊆ (quantizeDistribution ha T).singularSupport := by
+  rintro x ⟨hx, hxU⟩
+  by_contra hPx
+  -- The left inverse `e` at `x` serves at every point of an open neighbourhood `O` of `x`.
+  obtain ⟨e, R', he⟩ := he x hxU
+  obtain ⟨O, hO, hOo, hxO⟩ := eventually_nhds_iff.1 he
+  exact notMem_singularSupport_of_forall_inter_subset ha (hOo.mem_nhds hxO) (fun t ↦
+    vectorSobolevSingularSupport_inter_subset_vectorSobolevSingularSupport_quantizeDistribution ha
+      (fun y hy ↦ ⟨e, R', Filter.eventually_of_mem (hOo.mem_nhds hy) hO⟩) t T) hPx hx
 
 end Distribution
 
@@ -497,6 +644,20 @@ theorem ClassicalSymbol.IsElliptic.isLocallySobolevAt_of_quantizeDistribution
     T.IsLocallySobolevAt (s + m) x :=
   let ⟨_, hab⟩ := hell.exists_isAsymptoticSum_sharpTerm_left
   h.of_quantizeDistribution ha hab
+
+/-- **Local elliptic regularity for elliptic classical symbols on an open set.** Let `a` be an
+elliptic classical symbol of order `m` on an open set `U`, and let `Op(p)` have kernel supported
+within distance `R` of the diagonal, with `p` equal to `a` at all positions near `x ∈ U`, for
+instance a cut-off extension of `a` by a cutoff equal to `1` near `x`. If `Op(p) T ∈ H^s` near `x`,
+then `T ∈ H^(s + m)` near `x`. -/
+theorem LocalClassicalSymbol.IsElliptic.isLocallySobolevAt_of_quantizeDistribution
+    {U : Opens (CoordinateSpace n)} {a : LocalClassicalSymbol U ℂ ℂ m} (hell : a.IsElliptic)
+    {p : Symbol n ℂ ℂ m} (hp : p.HasNearDiagonalKernel R) (hx : x ∈ U)
+    (hpa : ∀ᶠ y in 𝓝 x, ∀ ξ, p.coefficient (y, ξ) = a.toLocalSymbol.coefficient (y, ξ))
+    (h : (Symbol.quantizeDistribution hp T).IsLocallySobolevAt s x) :
+    T.IsLocallySobolevAt (s + m) x :=
+  let ⟨_, _, he⟩ := hell.exists_eventually_comp_eq_id hx hpa
+  h.of_quantizeDistribution_of_eventually_comp_eq_id hp (he.mono fun _ h ξ hξ ↦ (h ξ hξ).1)
 
 section Vector
 
@@ -534,6 +695,55 @@ theorem vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantiz
     ha hab s T
 
 end ClassicalSymbol.IsElliptic
+
+namespace LocalClassicalSymbol.IsElliptic
+
+variable {U : Opens (CoordinateSpace n)} {O : Set (CoordinateSpace n)}
+
+omit [FiniteDimensional ℂ W] in
+/-- A symbol that agrees with an elliptic classical symbol on `U` at the positions of an open set
+`O ⊆ U` has a left inverse symbol at large frequencies near every point of `O`. -/
+private theorem forall_exists_eventually_comp_eq_id {a : LocalClassicalSymbol U V W m}
+    (hell : a.IsElliptic) {p : Symbol n V W m} (hO : IsOpen O) (hOU : O ⊆ U)
+    (hpa : ∀ x ∈ O, ∀ ξ, p.coefficient (x, ξ) = a.toLocalSymbol.coefficient (x, ξ)) :
+    ∀ x ∈ O, ∃ (e : Symbol n W V (-m)) (R' : ℝ), ∀ᶠ y in 𝓝 x, ∀ ξ, R' ≤ ‖ξ‖ →
+      e.coefficient (y, ξ) ∘L p.coefficient (y, ξ) = .id ℂ V := fun _ hx ↦
+  let ⟨e, R', he⟩ := hell.exists_eventually_comp_eq_id (hOU hx)
+    (Filter.eventually_of_mem (hO.mem_nhds hx) hpa)
+  ⟨e, R', he.mono fun _ h ξ hξ ↦ (h ξ hξ).1⟩
+
+/-- **Local elliptic regularity for elliptic classical systems on an open set.** Let `a` be an
+elliptic classical symbol of order `m` on an open set `U`, with values in `V →L[ℂ] W`, and let `p`
+be a symbol on `ℝⁿ` whose quantization has kernel supported within distance `R` of the diagonal
+and which agrees with `a` at the positions of an open set `O ⊆ U`, for instance a cut-off extension
+of `a` by a cutoff equal to `1` on `O`. Then every `V`-valued distribution `T` is `H^(s + m)` at
+every point of `O` where `Op(p) T` is `H^s`. In a chart and a local frame this is
+`Pu ∈ H^s_loc ⟹ u ∈ H^(s + m)_loc` for an elliptic operator between vector bundles. -/
+theorem vectorSobolevSingularSupport_inter_subset_vectorSobolevSingularSupport_quantizeDistribution
+    {a : LocalClassicalSymbol U V W m} (hell : a.IsElliptic) {p : Symbol n V W m}
+    (hp : p.HasNearDiagonalKernel R) (hO : IsOpen O) (hOU : O ⊆ U)
+    (hpa : ∀ x ∈ O, ∀ ξ, p.coefficient (x, ξ) = a.toLocalSymbol.coefficient (x, ξ)) (s : ℝ)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    T.vectorSobolevSingularSupport (s + m) ∩ O ⊆
+      (Symbol.quantizeDistribution hp T).vectorSobolevSingularSupport s :=
+  T.vectorSobolevSingularSupport_inter_subset_vectorSobolevSingularSupport_quantizeDistribution hp
+    (forall_exists_eventually_comp_eq_id hell hO hOU hpa) s
+
+/-- **Elliptic regularity for smoothness, for elliptic classical systems on an open set.** Let `a`
+be an elliptic classical symbol on an open set `U`, with values in `V →L[ℂ] W`, and let `p` be a
+symbol on `ℝⁿ` whose quantization has kernel supported within distance `R` of the diagonal and which
+agrees with `a` at the positions of an open set `O ⊆ U`. Then a `V`-valued distribution `T` is
+smooth at every point of `O` where `Op(p) T` is: `singsupp T ∩ O ⊆ singsupp Op(p) T`. -/
+theorem singularSupport_inter_subset_singularSupport_quantizeDistribution
+    {a : LocalClassicalSymbol U V W m} (hell : a.IsElliptic) {p : Symbol n V W m}
+    (hp : p.HasNearDiagonalKernel R) (hO : IsOpen O) (hOU : O ⊆ U)
+    (hpa : ∀ x ∈ O, ∀ ξ, p.coefficient (x, ξ) = a.toLocalSymbol.coefficient (x, ξ))
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    T.singularSupport ∩ O ⊆ (Symbol.quantizeDistribution hp T).singularSupport :=
+  Distribution.singularSupport_inter_subset_singularSupport_quantizeDistribution hp
+    (forall_exists_eventually_comp_eq_id hell hO hOU hpa) T
+
+end LocalClassicalSymbol.IsElliptic
 
 end Vector
 

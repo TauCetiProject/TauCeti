@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Limits.Affine.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Limits.Finite.Presentation
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.AlgebraicGeometry.Gluing.Separated
-public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 
@@ -19,7 +19,20 @@ import TauCeti.AlgebraicGeometry.Scheme.Opens
 Finitely presented schemes over a cofiltered affine-transition limit descend to a finite stage.
 It suffices that one member of the diagram is quasi-compact and quasi-separated.
 
-Reference: The Stacks Project, Lemma 32.10.1 (Tag 01ZM).
+For a scheme of finite presentation over the limit, the theorem gives a finite-stage model
+and a Cartesian square identifying its pullback with the original scheme. For example, a family
+of finite presentation over the spectrum of a filtered colimit of rings can be defined over one
+of the rings in the system.
+
+## Main results
+
+* `CategoryTheory.Limits.IsLimit.exists_isPullback_of_finitePresentation`: a finitely presented
+  scheme over a cofiltered affine-transition limit with at least one quasi-compact quasi-separated
+  member is the base change of a finitely presented scheme over some stage.
+
+## References
+
+* The Stacks Project, Lemma 32.10.1 ([Tag 01ZM](https://stacks.math.columbia.edu/tag/01ZM)).
 -/
 
 public section
@@ -32,350 +45,126 @@ namespace AlgebraicGeometry
 
 open Scheme
 
-variable {Index : Type u} [Category.{u} Index]
-  {diagram : Index ⥤ Scheme.{u}} {cone : Cone diagram} (limit : IsLimit cone)
+variable {I : Type u} [Category.{u} I] {D : I ⥤ Scheme.{u}}
 
-variable (diagram cone) in
-/-- The property that `sourceMap : sourceScheme ⟶ lim Dⱼ` is the base change along
-`lim Dⱼ ⟶ D_k` of a scheme of finite presentation over the stage `D_k`. -/
-private def HasModelAt (stageIndex : Index) {sourceScheme : Scheme.{u}}
-    (sourceMap : sourceScheme ⟶ cone.pt) : Prop :=
-  ∃ (stageScheme : Scheme.{u}) (stageMap : stageScheme ⟶ diagram.obj stageIndex)
-    (comparison : sourceScheme ⟶ stageScheme), LocallyOfFinitePresentation stageMap ∧
-    CompactSpace stageScheme ∧ QuasiSeparatedSpace stageScheme ∧
-      IsPullback comparison sourceMap stageMap (cone.π.app stageIndex)
+section ModelData
 
-variable (diagram cone) in
-/-- The property that `sourceMap : sourceScheme ⟶ lim Dⱼ` is the base change of a scheme of
-finite presentation over one of the stages. -/
-private def HasFiniteStageModel {sourceScheme : Scheme.{u}}
-    (sourceMap : sourceScheme ⟶ cone.pt) : Prop :=
-  ∃ stageIndex, HasModelAt diagram cone stageIndex sourceMap
+/-- The property that `f : X ⟶ c.pt` is the base change along `c.π.app i : c.pt ⟶ D.obj i` of a
+locally finitely presented, quasi-compact, quasi-separated scheme over some stage `D.obj i`. -/
+private def HasFiniteStageModel (c : Cone D) {X : Scheme.{u}} (f : X ⟶ c.pt) : Prop :=
+  ∃ (i : I) (Y : Scheme.{u}) (p : Y ⟶ D.obj i) (a : X ⟶ Y),
+    LocallyOfFinitePresentation p ∧ CompactSpace Y ∧ QuasiSeparatedSpace Y ∧
+      IsPullback a f p (c.π.app i)
+
+private lemma HasFiniteStageModel.comp_iso {c : Cone D} {X Y : Scheme.{u}} (e : Y ≅ X)
+    {f : X ⟶ c.pt} (h : HasFiniteStageModel c f) :
+    HasFiniteStageModel c (e.hom ≫ f) := by
+  obtain ⟨i, Z, p, a, hp, hcpt, hqs, hsq⟩ := h
+  refine ⟨i, Z, p, e.hom ≫ a, hp, hcpt, hqs, ?_⟩
+  have hiso : IsPullback e.hom (e.hom ≫ f) f (𝟙 c.pt) :=
+    IsPullback.of_horiz_isIso ⟨by simp⟩
+  simpa using hiso.paste_horiz hsq
+
+private lemma HasFiniteStageModel.preimage_open {c : Cone D} {X : Scheme.{u}} (f : X ⟶ c.pt)
+    {U W : X.Opens} (hUW : U ≤ W) (hU : HasFiniteStageModel c (U.ι ≫ f)) :
+    HasFiniteStageModel c ((W.ι ⁻¹ᵁ U).ι ≫ W.ι ≫ f) := by
+  simpa only [Category.assoc, Scheme.Opens.isoOfLE_hom_ι_assoc] using
+    hU.comp_iso (Scheme.Opens.isoOfLE hUW)
 
 /-- Finite-stage model data together with a descended quasi-compact open. -/
-private structure ModelWithOpenAt {U : Scheme.{u}} (u : U ⟶ cone.pt)
-    (chosenOpen : U.Opens) (i : Index) where
+private structure ModelWithOpenAt (c : Cone D) {U : Scheme.{u}} (u : U ⟶ c.pt)
+    (W : U.Opens) (i : I) where
   scheme : Scheme.{u}
-  map : scheme ⟶ diagram.obj i
+  map : scheme ⟶ D.obj i
   comparison : U ⟶ scheme
   openSubset : scheme.Opens
   finitePresentation : LocallyOfFinitePresentation map
   compactSpace : CompactSpace scheme
   quasiSeparated : QuasiSeparatedSpace scheme
-  square : IsPullback comparison u map (cone.π.app i)
+  square : IsPullback comparison u map (c.π.app i)
   compactOpen : IsCompact (openSubset : Set scheme)
-  preimage : comparison ⁻¹ᵁ openSubset = chosenOpen
-
-variable (diagram cone) in
-/-- A finite-stage model whose chosen open pulls back to the specified open. -/
-private def HasModelWithOpenAt (stageIndex : Index) {sourceScheme : Scheme.{u}}
-    (sourceMap : sourceScheme ⟶ cone.pt) (chosenOpen : sourceScheme.Opens) : Prop :=
-  Nonempty (ModelWithOpenAt (diagram := diagram) sourceMap chosenOpen stageIndex)
+  preimage : comparison ⁻¹ᵁ openSubset = W
 
 /-- A chart model uses the range of its overlap immersion as the chosen open. -/
-private abbrev OpenChartModel {T U : Scheme.{u}} (u : U ⟶ cone.pt) (r : T ⟶ U)
-    [IsOpenImmersion r] (i : Index) :=
-  ModelWithOpenAt (diagram := diagram) u r.opensRange i
+private abbrev OpenChartModel (c : Cone D) {T U : Scheme.{u}} (u : U ⟶ c.pt) (r : T ⟶ U)
+    [IsOpenImmersion r] (i : I) :=
+  ModelWithOpenAt c u r.opensRange i
 
-variable {T U : Scheme.{u}} {u : U ⟶ cone.pt} {r : T ⟶ U} [IsOpenImmersion r]
-  {i : Index}
+private noncomputable abbrev ModelWithOpenAt.baseChange {c : Cone D} {U : Scheme.{u}}
+    {u : U ⟶ c.pt} {W : U.Opens} {i : I} (M : ModelWithOpenAt c u W i)
+    {j : I} (t : j ⟶ i) [QuasiCompact (D.map t)] [QuasiSeparated (D.map t)] :
+    ModelWithOpenAt c u W j where
+  scheme := pullback M.map (D.map t)
+  map := pullback.snd _ _
+  comparison := (IsPullback.of_hasPullback M.map (D.map t)).lift M.comparison (u ≫ c.π.app j)
+    (by rw [M.square.w, Category.assoc, c.w t])
+  openSubset := pullback.fst M.map (D.map t) ⁻¹ᵁ M.openSubset
+  finitePresentation := have := M.finitePresentation; inferInstance
+  compactSpace := have := M.compactSpace; inferInstance
+  quasiSeparated :=
+    have := M.quasiSeparated
+    quasiSeparatedSpace_of_quasiSeparated (pullback.fst _ _)
+  square := by
+    have hsq : IsPullback M.comparison u M.map (c.π.app j ≫ D.map t) := by
+      rw [c.w t]
+      exact M.square
+    exact hsq.of_right' (IsPullback.of_hasPullback M.map (D.map t))
+  compactOpen := QuasiCompact.isCompact_preimage _ M.openSubset.isOpen M.compactOpen
+  preimage := by
+    rw [← Scheme.Hom.comp_preimage, IsPullback.lift_fst, M.preimage]
 
-private noncomputable def ModelWithOpenAt.overlapMap
-    (M : OpenChartModel (diagram := diagram) u r i) : T ⟶ M.openSubset.toScheme :=
+section OpenChart
+
+variable {c : Cone D} {T U : Scheme.{u}} {u : U ⟶ c.pt} {r : T ⟶ U} [IsOpenImmersion r] {i : I}
+
+private noncomputable def ModelWithOpenAt.overlapMap (M : OpenChartModel c u r i) :
+    T ⟶ M.openSubset.toScheme :=
   IsOpenImmersion.lift M.openSubset.ι (r ≫ M.comparison) (by
     rintro _ ⟨x, rfl⟩
     rw [Scheme.Opens.range_ι]
-    -- Membership in the chosen model open is membership in its comparison preimage.
+    -- Express membership of the composite image as preimage membership at `r x`,
+    -- so the model's preimage identity applies.
     change r x ∈ M.comparison ⁻¹ᵁ M.openSubset
     rw [M.preimage]
     exact ⟨x, rfl⟩)
 
-private lemma ModelWithOpenAt.overlap_square (M : OpenChartModel (diagram := diagram) u r i) :
+private lemma ModelWithOpenAt.overlap_square (M : OpenChartModel c u r i) :
     IsPullback M.overlapMap r M.openSubset.ι M.comparison :=
   IsOpenImmersion.isPullback _ _ _ _ (IsOpenImmersion.lift_fac ..).symm
     (by rw [Scheme.Opens.opensRange_ι, M.preimage])
 
-private lemma ModelWithOpenAt.overlap_base_square (M : OpenChartModel (diagram := diagram) u r i) :
-    IsPullback M.overlapMap (r ≫ u) (M.openSubset.ι ≫ M.map) (cone.π.app i) :=
+private lemma ModelWithOpenAt.overlap_base_square (M : OpenChartModel c u r i) :
+    IsPullback M.overlapMap (r ≫ u) (M.openSubset.ι ≫ M.map) (c.π.app i) :=
   M.overlap_square.paste_vert M.square
 
-private noncomputable abbrev ModelWithOpenAt.baseChange {U : Scheme.{u}}
-    {u : U ⟶ cone.pt} {chosenOpen : U.Opens} {i : Index}
-    (M : ModelWithOpenAt (diagram := diagram) u chosenOpen i) {j : Index} (t : j ⟶ i)
-    [QuasiCompact (diagram.map t)] [QuasiSeparated (diagram.map t)] :
-    ModelWithOpenAt (diagram := diagram) u chosenOpen j := by
-  let := M.finitePresentation
-  let := M.compactSpace
-  let := M.quasiSeparated
-  have square : IsPullback M.comparison u M.map (cone.π.app j ≫ diagram.map t) := by
-    rw [cone.w t]
-    exact M.square
-  let rightSquare := IsPullback.of_hasPullback M.map (diagram.map t)
-  refine
-    { scheme := pullback M.map (diagram.map t)
-      map := pullback.snd _ _
-      comparison := rightSquare.lift M.comparison (u ≫ cone.π.app j)
-        (by rw [square.w, Category.assoc])
-      openSubset := pullback.fst M.map (diagram.map t) ⁻¹ᵁ M.openSubset
-      finitePresentation := inferInstance
-      compactSpace := inferInstance
-      quasiSeparated := quasiSeparatedSpace_of_quasiSeparated (pullback.fst _ _)
-      square := square.of_right' rightSquare
-      compactOpen := QuasiCompact.isCompact_preimage _ M.openSubset.isOpen M.compactOpen
-      preimage := ?_ }
-  rw [← Scheme.Hom.comp_preimage, IsPullback.lift_fst, M.preimage]
-
-private lemma ModelWithOpenAt.baseChange_overlap_square
-    (M : OpenChartModel (diagram := diagram) u r i) {j : Index} (t : j ⟶ i)
-    [QuasiCompact (diagram.map t)] [QuasiSeparated (diagram.map t)] :
-    IsPullback (pullback.fst M.map (diagram.map t) ∣_ M.openSubset)
+private lemma ModelWithOpenAt.baseChange_overlap_square (M : OpenChartModel c u r i)
+    {j : I} (t : j ⟶ i) [QuasiCompact (D.map t)] [QuasiSeparated (D.map t)] :
+    IsPullback (pullback.fst M.map (D.map t) ∣_ M.openSubset)
       ((M.baseChange t).openSubset.ι ≫ (M.baseChange t).map)
-      (M.openSubset.ι ≫ M.map) (diagram.map t) :=
-  (isPullback_morphismRestrict (pullback.fst M.map (diagram.map t)) M.openSubset).paste_vert
-    (IsPullback.of_hasPullback M.map (diagram.map t))
+      (M.openSubset.ι ≫ M.map) (D.map t) :=
+  (isPullback_morphismRestrict (pullback.fst M.map (D.map t)) M.openSubset).paste_vert
+    (IsPullback.of_hasPullback M.map (D.map t))
 
-private lemma ModelWithOpenAt.baseChange_overlapMap_comp
-    (M : OpenChartModel (diagram := diagram) u r i) {j : Index} (t : j ⟶ i)
-    [QuasiCompact (diagram.map t)] [QuasiSeparated (diagram.map t)] :
+private lemma ModelWithOpenAt.baseChange_overlapMap_comp (M : OpenChartModel c u r i)
+    {j : I} (t : j ⟶ i) [QuasiCompact (D.map t)] [QuasiSeparated (D.map t)] :
     (M.baseChange t).overlapMap ≫
-      (pullback.fst M.map (diagram.map t) ∣_ M.openSubset) = M.overlapMap := by
+      (pullback.fst M.map (D.map t) ∣_ M.openSubset) = M.overlapMap := by
   rw [← cancel_mono M.openSubset.ι]
   simp only [Category.assoc, morphismRestrict_ι]
   rw [(M.baseChange t).overlap_square.w_assoc, IsPullback.lift_fst]
   exact M.overlap_square.w.symm
 
-private lemma ModelWithOpenAt.overlapMap_comp_map
-    (M : OpenChartModel (diagram := diagram) u r i) :
-    M.overlapMap ≫ M.openSubset.ι ≫ M.map = r ≫ u ≫ cone.π.app i := by
-  rw [M.overlap_square.w_assoc, M.square.w]
+end OpenChart
 
-variable [IsCofiltered Index]
-  [∀ {sourceIndex targetIndex : Index} (transition : sourceIndex ⟶ targetIndex),
-    IsAffineHom (diagram.map transition)]
-
-omit [IsCofiltered Index]
-  [∀ {i j : Index} (f : i ⟶ j), IsAffineHom (diagram.map f)] in
-private lemma HasModelWithOpenAt.mono {stageIndex laterIndex : Index}
-    (transition : laterIndex ⟶ stageIndex)
-    [QuasiCompact (diagram.map transition)] [QuasiSeparated (diagram.map transition)]
-    {sourceScheme : Scheme.{u}}
-    {sourceMap : sourceScheme ⟶ cone.pt} {chosenOpen : sourceScheme.Opens}
-    (modelData : HasModelWithOpenAt diagram cone stageIndex sourceMap chosenOpen) :
-    HasModelWithOpenAt diagram cone laterIndex sourceMap chosenOpen := by
-  obtain ⟨M⟩ := modelData
-  exact ⟨M.baseChange transition⟩
-
-include limit in
-/-- A quasi-compact open in a finite-stage model descends after passing to a later stage. -/
-private lemma exists_modelWithOpenAt {stageIndex : Index} {sourceScheme : Scheme.{u}}
-    {sourceMap : sourceScheme ⟶ cone.pt}
-    (modelData : HasModelAt diagram cone stageIndex sourceMap) (chosenOpen : sourceScheme.Opens)
-    (hW : IsCompact (chosenOpen : Set sourceScheme)) :
-    ∃ laterIndex : Index, HasModelWithOpenAt diagram cone laterIndex sourceMap chosenOpen := by
-  obtain ⟨stageScheme, stageMap, comparison, hp, hcpt, hqs, hsq⟩ := modelData
-  have := hp; have := hcpt; have := hqs
-  let c' := (cone.pullbackOver stageMap).extend hsq.flip.isoPullback.hom
-  have hlim : IsLimit c' := (limit.pullbackOver stageMap).ofIsoLimit
-    (Cone.ext hsq.flip.isoPullback.symm (fun overIndex ↦ by simp [c']))
-  obtain ⟨overIndex, stageOpen, hOc, hO⟩ :=
-    exists_preimage_eq (diagram.pullbackOver stageMap) c' hlim chosenOpen hW
-  let a := c'.π.app overIndex
-  have hsq' : IsPullback a sourceMap (pullback.fst (diagram.map overIndex.hom) stageMap)
-      (cone.π.app overIndex.left) := by
-    refine IsPullback.of_right ?_ (by simp [a, c'])
-      (IsPullback.of_hasPullback (diagram.map overIndex.hom) stageMap).flip
-    simpa [a, c'] using hsq
-  exact ⟨overIndex.left, ⟨⟨pullback (diagram.map overIndex.hom) stageMap, pullback.fst _ _,
-    a, stageOpen, inferInstance, inferInstance,
-    quasiSeparatedSpace_of_quasiSeparated (pullback.snd _ _), hsq', hOc, hO⟩⟩⟩
-
-include limit in
-/-- An affine scheme over an affine open of a stage has a finite-stage model. -/
-private lemma HasFiniteStageModel.of_isAffine {baseStage : Index} {sourceScheme : Scheme.{u}}
-    [IsAffine sourceScheme] (sourceMap : sourceScheme ⟶ cone.pt)
-    [LocallyOfFinitePresentation sourceMap] {secondOpen : (diagram.obj baseStage).Opens}
-    (hV : IsAffineOpen secondOpen) (openLift : sourceScheme ⟶ secondOpen.toScheme)
-    (hq : openLift ≫ secondOpen.ι = sourceMap ≫ cone.π.app baseStage) :
-    HasFiniteStageModel diagram cone sourceMap := by
-  have : IsAffine secondOpen.toScheme := hV
-  have : ∀ overIndex : Over baseStage,
-      IsAffine ((diagram.pullbackOver secondOpen.ι).obj overIndex) := fun _ ↦ by
-    dsimp; infer_instance
-  let a := pullback.lift sourceMap openLift hq.symm
-  have ha : a ≫ pullback.fst (cone.π.app baseStage) secondOpen.ι = sourceMap :=
-    pullback.lift_fst ..
-  have : LocallyOfFinitePresentation
-      (a ≫ pullback.fst (cone.π.app baseStage) secondOpen.ι) := by
-    simpa only [ha] using (inferInstance : LocallyOfFinitePresentation sourceMap)
-  have : LocallyOfFinitePresentation a := locallyOfFinitePresentation_of_comp a
-    (pullback.fst (cone.π.app baseStage) secondOpen.ι)
-  obtain ⟨overIndex, stageScheme, hYaff, stageMap, hp, comparison, hsq⟩ :=
-    CategoryTheory.Functor.exists_isPullback_of_locallyOfFinitePresentation_of_isAffine
-      (diagram.pullbackOver secondOpen.ι) (cone.pullbackOver secondOpen.ι)
-      (limit.pullbackOver secondOpen.ι) a
-  have := hYaff; have := hp
-  have hbase : IsPullback
-      ((cone.pullbackOver secondOpen.ι).π.app overIndex)
-      (pullback.fst (cone.π.app baseStage) secondOpen.ι)
-      (pullback.fst (diagram.map overIndex.hom) secondOpen.ι)
-      (cone.π.app overIndex.left) := by
-    refine IsPullback.of_right ?_ (by simp)
-      (IsPullback.of_hasPullback (diagram.map overIndex.hom) secondOpen.ι).flip
-    simpa using (IsPullback.of_hasPullback (cone.π.app baseStage) secondOpen.ι).flip
-  refine ⟨overIndex.left, stageScheme,
-    stageMap ≫ pullback.fst (diagram.map overIndex.hom) secondOpen.ι, comparison,
-    inferInstance, inferInstance, inferInstance, ?_⟩
-  simpa only [ha] using hsq.paste_vert hbase
-
-include limit in
-/-- An affine open of a scheme over the limit that lies over an affine open of
-one of the stages descends to a finite stage. -/
-private lemma HasFiniteStageModel.of_isAffineOpen {baseStage : Index}
-    {sourceScheme : Scheme.{u}} (sourceMap : sourceScheme ⟶ cone.pt)
-    [LocallyOfFinitePresentation sourceMap] {chosenOpen : sourceScheme.Opens}
-    (hW : IsAffineOpen chosenOpen) {secondOpen : (diagram.obj baseStage).Opens}
-    (hV : IsAffineOpen secondOpen)
-    (hle : chosenOpen ≤ (sourceMap ≫ cone.π.app baseStage) ⁻¹ᵁ secondOpen) :
-    HasFiniteStageModel diagram cone (chosenOpen.ι ≫ sourceMap) := by
-  have : IsAffine chosenOpen.toScheme := hW
-  refine HasFiniteStageModel.of_isAffine limit _ hV
-    ((sourceMap ≫ cone.π.app baseStage).resLE secondOpen chosenOpen hle) ?_
-  rw [Scheme.Hom.resLE_comp_ι, Category.assoc]
-
-omit [IsCofiltered Index]
-  [∀ {i j : Index} (f : i ⟶ j), IsAffineHom (diagram.map f)]
-  in
-private lemma HasFiniteStageModel.comp_iso {sourceScheme isomorphicSource : Scheme.{u}}
-    (modelIso : isomorphicSource ≅ sourceScheme) {sourceMap : sourceScheme ⟶ cone.pt}
-    (modelData : HasFiniteStageModel diagram cone sourceMap) :
-    HasFiniteStageModel diagram cone (modelIso.hom ≫ sourceMap) := by
-  obtain ⟨stageIndex, stageScheme, stageMap, comparison, hp, hcpt, hqs, hsq⟩ := modelData
-  refine ⟨stageIndex, stageScheme, stageMap, modelIso.hom ≫ comparison, hp, hcpt, hqs, ?_⟩
-  have hiso : IsPullback modelIso.hom (modelIso.hom ≫ sourceMap) sourceMap (𝟙 cone.pt) :=
-    IsPullback.of_horiz_isIso ⟨by simp⟩
-  simpa using hiso.paste_horiz hsq
-
-variable [∀ i, CompactSpace (diagram.obj i)] [∀ i, QuasiSeparatedSpace (diagram.obj i)]
-
-include limit in
-/-- Descend the isomorphism between the two canonical pullback presentations of an overlap. -/
-private lemma ModelWithOpenAt.exists_overlap_pullback_iso {T U V : Scheme.{u}}
-    {u : U ⟶ cone.pt} {v : V ⟶ cone.pt} {r : T ⟶ U} {s : T ⟶ V}
-    [IsOpenImmersion r] [IsOpenImmersion s] {i : Index}
-    (M : OpenChartModel (diagram := diagram) u r i)
-    (N : OpenChartModel (diagram := diagram) v s i) (h : r ≫ u = s ≫ v) :
-    ∃ (j : Index) (t : j ⟶ i)
-      (e : pullback (diagram.map t) (M.openSubset.ι ≫ M.map) ≅
-        pullback (diagram.map t) (N.openSubset.ι ≫ N.map)),
-      e.hom ≫ pullback.fst _ _ = pullback.fst _ _ ∧
-        M.overlap_base_square.flip.isoPullback.hom ≫
-            pullback.map (cone.π.app i) (M.openSubset.ι ≫ M.map) (diagram.map t)
-              (M.openSubset.ι ≫ M.map) (cone.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) ≫ e.hom =
-          N.overlap_base_square.flip.isoPullback.hom ≫
-            pullback.map (cone.π.app i) (N.openSubset.ι ≫ N.map) (diagram.map t)
-              (N.openSubset.ι ≫ N.map) (cone.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) := by
-  let := M.finitePresentation; let := M.compactSpace; let := M.quasiSeparated
-  let := N.finitePresentation; let := N.compactSpace; let := N.quasiSeparated
-  let : CompactSpace M.openSubset.toScheme := isCompact_iff_compactSpace.mp M.compactOpen
-  let : CompactSpace N.openSubset.toScheme := isCompact_iff_compactSpace.mp N.compactOpen
-  let : QuasiSeparatedSpace M.openSubset.toScheme :=
-    QuasiSeparatedSpace.of_isOpenEmbedding M.openSubset.ι.isOpenEmbedding
-  let : QuasiSeparatedSpace N.openSubset.toScheme :=
-    QuasiSeparatedSpace.of_isOpenEmbedding N.openSubset.ι.isOpenEmbedding
-  let p := M.openSubset.ι ≫ M.map
-  let q := N.openSubset.ι ≫ N.map
-  let a := M.overlap_base_square.flip.isoPullback.symm ≪≫
-    N.overlap_base_square.flip.isoPullback
-  have ha : a.hom ≫ pullback.fst _ _ = pullback.fst _ _ := by
-    dsimp only [a, Iso.trans_hom, Iso.symm_hom]
-    rw [Category.assoc, IsPullback.isoPullback_hom_fst, ← h, IsPullback.isoPullback_inv_fst]
-  obtain ⟨j, hji, b, hb₁, hb₂⟩ := limit.exists_pullbackMap_comp_eq a.hom ha
-  have : IsIso (pullback.map (cone.π.app j) (pullback.fst (diagram.map hji) p) (cone.π.app j)
-      (pullback.fst (diagram.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by exact hb₁.symm)) :=
-    (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq
-      (.isomorphisms Scheme) hji ha hb₁ hb₂).mpr (inferInstance : IsIso a.hom)
-  have : CompactSpace ↥(pullback (diagram.map hji) p) :=
-    QuasiCompact.compactSpace_of_compactSpace (pullback.fst (diagram.map hji) p)
-  have : CompactSpace ↥(pullback (diagram.map hji) q) :=
-    QuasiCompact.compactSpace_of_compactSpace (pullback.fst (diagram.map hji) q)
-  have : QuasiSeparatedSpace ↥(pullback (diagram.map hji) q) :=
-    quasiSeparatedSpace_of_quasiSeparated (pullback.fst (diagram.map hji) q)
-  have : LocallyOfFinitePresentation b := by
-    have : LocallyOfFinitePresentation (b ≫ pullback.fst (diagram.map hji) q) := by
-      rw [hb₁]
-      infer_instance
-    exact locallyOfFinitePresentation_of_comp b (pullback.fst (diagram.map hji) q)
-  obtain ⟨k, hkj, hk⟩ := limit.exists_isIso_pullbackMap b hb₁
-  let ψ {Z : Scheme.{u}} (r : Z ⟶ diagram.obj i) :
-      pullback (diagram.map hkj) (pullback.fst (diagram.map hji) r) ≅
-        pullback (diagram.map (hkj ≫ hji)) r :=
-    pullbackRightPullbackFstIso (diagram.map hji) r (diagram.map hkj) ≪≫
-      pullback.congrHom (diagram.map_comp hkj hji).symm rfl
-  let bK := pullback.map (diagram.map hkj) (pullback.fst (diagram.map hji) p) (diagram.map hkj)
-    (pullback.fst (diagram.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by exact hb₁.symm)
-  have : IsIso bK := hk
-  let e := (ψ p).symm ≪≫ asIso bK ≪≫ ψ q
-  refine ⟨k, hkj ≫ hji, e, ?_, ?_⟩
-  · simp [e, ψ, bK, p, q]
-  · apply pullback.hom_ext
-    · simpa [e, ψ, bK, a, p, q, Category.assoc] using
-        congrArg (M.overlap_base_square.flip.isoPullback.hom ≫ ·)
-          (((reassoc_of% ha) (cone.π.app k)).symm)
-    · have h := congrArg (· ≫ pullback.snd (diagram.map hji) q) hb₂
-      simp only [Category.assoc] at h
-      have key : pullback.map (cone.π.app i) p (diagram.map (hkj ≫ hji)) p
-          (cone.π.app k) (𝟙 _) (𝟙 _) (by simp) (by simp) ≫ (ψ p).inv ≫
-            pullback.snd (diagram.map hkj) (pullback.fst (diagram.map hji) p) =
-          pullback.map (cone.π.app i) p (diagram.map hji) p
-            (cone.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) := by
-        apply pullback.hom_ext <;> simp [ψ]
-      have h' := congrArg (· ≫ b ≫ pullback.snd (diagram.map hji) q) key
-      simpa [e, ψ, bK, a, p, q, Category.assoc] using
-        congrArg (M.overlap_base_square.flip.isoPullback.hom ≫ ·) (h'.trans h)
-
-include limit in
-private lemma ModelWithOpenAt.exists_iso_overlap {T U V : Scheme.{u}}
-    {u : U ⟶ cone.pt} {v : V ⟶ cone.pt} {r : T ⟶ U} {s : T ⟶ V}
-    [IsOpenImmersion r] [IsOpenImmersion s] {i : Index}
-    (M : OpenChartModel (diagram := diagram) u r i)
-    (N : OpenChartModel (diagram := diagram) v s i) (h : r ≫ u = s ≫ v) :
-    ∃ (j : Index) (t : j ⟶ i)
-      (e : (M.baseChange t).openSubset.toScheme ≅ (N.baseChange t).openSubset.toScheme),
-      e.hom ≫ (N.baseChange t).openSubset.ι ≫ (N.baseChange t).map =
-        (M.baseChange t).openSubset.ι ≫ (M.baseChange t).map ∧
-      (M.baseChange t).overlapMap ≫ e.hom = (N.baseChange t).overlapMap := by
-  obtain ⟨j, t, e, he₁, he₂⟩ := M.exists_overlap_pullback_iso limit N h
-  let e₁ := (M.baseChange_overlap_square t).flip.isoPullback
-  let e₂ := (N.baseChange_overlap_square t).flip.isoPullback
-  have hcomp {T' U' : Scheme.{u}} {u' : U' ⟶ cone.pt} {r' : T' ⟶ U'}
-      [IsOpenImmersion r'] (P : OpenChartModel (diagram := diagram) u' r' i) :
-      (P.baseChange t).overlapMap ≫ (P.baseChange_overlap_square t).flip.isoPullback.hom =
-        P.overlap_base_square.flip.isoPullback.hom ≫
-          pullback.map (cone.π.app i) (P.openSubset.ι ≫ P.map) (diagram.map t)
-            (P.openSubset.ι ≫ P.map) (cone.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) := by
-    apply pullback.hom_ext
-    · simpa [Category.assoc, IsPullback.isoPullback_hom_fst] using
-        (P.baseChange t).overlapMap_comp_map
-    · simpa [Category.assoc, IsPullback.isoPullback_hom_snd] using
-        P.baseChange_overlapMap_comp t
-  refine ⟨j, t, e₁ ≪≫ e ≪≫ e₂.symm, ?_, ?_⟩
-  · dsimp only [Iso.trans_hom, Iso.symm_hom]
-    rw [Category.assoc, Category.assoc, IsPullback.isoPullback_inv_fst, he₁,
-      IsPullback.isoPullback_hom_fst]
-  · rw [← cancel_mono e₂.hom]
-    simp only [Iso.trans_hom, Iso.symm_hom, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-    rw [← Category.assoc, hcomp M, Category.assoc, he₂, ← hcomp N]
-
-omit [IsCofiltered Index]
-  [∀ {i j : Index} (f : i ⟶ j), IsAffineHom (diagram.map f)]
-  [∀ i, CompactSpace (diagram.obj i)] [∀ i, QuasiSeparatedSpace (diagram.obj i)] in
-private lemma hasFiniteStageModel_of_compatible_charts {X : Scheme.{u}} (f : X ⟶ cone.pt)
-    (U V : X.Opens) (hUV : U ⊔ V = ⊤) {i : Index}
-    (M : OpenChartModel (diagram := diagram) (U.ι ≫ f) (X.homOfLE (inf_le_left : U ⊓ V ≤ U)) i)
-    (N : OpenChartModel (diagram := diagram) (V.ι ≫ f) (X.homOfLE (inf_le_right : U ⊓ V ≤ V)) i)
+/-- Gluing two finite-stage chart models along a compatible isomorphism of their descended
+overlaps yields a finite-stage model of the union. -/
+private lemma hasFiniteStageModel_of_compatible_charts {c : Cone D} {X : Scheme.{u}}
+    (f : X ⟶ c.pt) (U V : X.Opens) (hUV : U ⊔ V = ⊤) {i : I}
+    (M : OpenChartModel c (U.ι ≫ f) (X.homOfLE (inf_le_left : U ⊓ V ≤ U)) i)
+    (N : OpenChartModel c (V.ι ≫ f) (X.homOfLE (inf_le_right : U ⊓ V ≤ V)) i)
     (e : M.openSubset.toScheme ≅ N.openSubset.toScheme)
     (he₁ : e.hom ≫ N.openSubset.ι ≫ N.map = M.openSubset.ι ≫ M.map)
-    (he₂ : M.overlapMap ≫ e.hom = N.overlapMap) : HasFiniteStageModel diagram cone f := by
+    (he₂ : M.overlapMap ≫ e.hom = N.overlapMap) : HasFiniteStageModel c f := by
   let := M.finitePresentation; let := M.compactSpace; let := M.quasiSeparated
   let := N.finitePresentation; let := N.compactSpace; let := N.quasiSeparated
   let : CompactSpace M.openSubset.toScheme := isCompact_iff_compactSpace.mp M.compactOpen
@@ -394,12 +183,12 @@ private lemma hasFiniteStageModel_of_compatible_charts {X : Scheme.{u}} (f : X �
   let a := pushout.map (X.homOfLE (inf_le_left : U ⊓ V ≤ U))
     (X.homOfLE (inf_le_right : U ⊓ V ≤ V)) M.openSubset.ι
     (e.hom ≫ N.openSubset.ι) M.comparison N.comparison M.overlapMap hf.symm hg.symm
-  have hsquare : IsPullback a (pushoutOpensDesc U V ≫ f) p (cone.π.app i) := by
+  have hsquare : IsPullback a (pushoutOpensDesc U V ≫ f) p (c.π.app i) := by
     apply Scheme.Hom.isPullback_pushout_map_desc_of_isPullback M.openSubset.ι
       (e.hom ≫ N.openSubset.ι) (X.homOfLE (inf_le_left : U ⊓ V ≤ U))
       (X.homOfLE (inf_le_right : U ⊓ V ≤ V))
       M.comparison N.comparison M.overlapMap M.map N.map _
-      (pushoutOpensDesc U V ≫ f) (cone.π.app i) M.overlap_square hv
+      (pushoutOpensDesc U V ≫ f) (c.π.app i) M.overlap_square hv
     · rw [inl_pushoutOpensDesc_assoc]
       exact M.square
     · rw [inr_pushoutOpensDesc_assoc]
@@ -407,122 +196,223 @@ private lemma hasFiniteStageModel_of_compatible_charts {X : Scheme.{u}} (f : X �
   let : IsZariskiLocalAtSource @LocallyOfFinitePresentation :=
     HasRingHomProperty.instIsZariskiLocalAtSource (Q := RingHom.FinitePresentation)
   have := isIso_pushoutOpensDesc U V hUV
-  refine ⟨i, pushout M.openSubset.ι (e.hom ≫ N.openSubset.ι), p,
-    inv (pushoutOpensDesc U V) ≫ a,
-    IsZariskiLocalAtSource.pushout_desc _ _ _ _ _ inferInstance inferInstance,
-    inferInstance, quasiSeparatedSpace_pushout _ _, ?_⟩
-  have hIso : IsPullback (inv (pushoutOpensDesc U V)) f (pushoutOpensDesc U V ≫ f)
-      (𝟙 cone.pt) := IsPullback.of_horiz_isIso ⟨by simp⟩
-  simpa using hIso.paste_horiz hsquare
+  simpa using HasFiniteStageModel.comp_iso (asIso (pushoutOpensDesc U V)).symm
+    ⟨i, pushout M.openSubset.ι (e.hom ≫ N.openSubset.ι), p, a,
+      IsZariskiLocalAtSource.pushout_desc _ _ _ _ _ inferInstance inferInstance,
+      inferInstance, quasiSeparatedSpace_pushout _ _, hsquare⟩
 
-include limit in
+end ModelData
+
+section Descent
+
+variable [IsCofiltered I] [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)]
+  {c : Cone D} (hc : IsLimit c)
+include hc
+
+/-- A quasi-compact open in a finite-stage model descends after passing to a later stage. -/
+private lemma exists_modelWithOpenAt {X : Scheme.{u}} {f : X ⟶ c.pt}
+    (h : HasFiniteStageModel c f) (W : X.Opens) (hW : IsCompact (W : Set X)) :
+    ∃ j : I, Nonempty (ModelWithOpenAt c f W j) := by
+  obtain ⟨i, Y, p, a, hp, hcpt, hqs, hsq⟩ := h
+  have := hp; have := hcpt; have := hqs
+  let c' := (c.pullbackOver p).extend hsq.flip.isoPullback.hom
+  have hlim : IsLimit c' := (hc.pullbackOver p).ofIsoLimit
+    (Cone.ext hsq.flip.isoPullback.symm (fun j ↦ by simp [c']))
+  obtain ⟨j, V, hVc, hV⟩ := exists_preimage_eq (D.pullbackOver p) c' hlim W hW
+  have hsq' : IsPullback (c'.π.app j) f (pullback.fst (D.map j.hom) p) (c.π.app j.left) := by
+    refine IsPullback.of_right ?_ (by simp [c'])
+      (IsPullback.of_hasPullback (D.map j.hom) p).flip
+    simpa [c'] using hsq
+  exact ⟨j.left, ⟨⟨pullback (D.map j.hom) p, pullback.fst _ _, c'.π.app j, V, inferInstance,
+    inferInstance, quasiSeparatedSpace_of_quasiSeparated (pullback.snd _ _), hsq', hVc, hV⟩⟩⟩
+
+/-- An affine scheme over an affine open of a stage has a finite-stage model. -/
+private lemma HasFiniteStageModel.of_isAffine {i₀ : I} {X : Scheme.{u}}
+    [IsAffine X] (f : X ⟶ c.pt) [LocallyOfFinitePresentation f]
+    {V : (D.obj i₀).Opens} (hV : IsAffineOpen V) (q : X ⟶ V.toScheme)
+    (hq : q ≫ V.ι = f ≫ c.π.app i₀) :
+    HasFiniteStageModel c f := by
+  have : IsAffine V.toScheme := hV
+  have : ∀ j : Over i₀, IsAffine ((D.pullbackOver V.ι).obj j) := fun _ ↦ by
+    dsimp; infer_instance
+  let a := pullback.lift f q hq.symm
+  have ha : a ≫ pullback.fst (c.π.app i₀) V.ι = f := pullback.lift_fst ..
+  have : LocallyOfFinitePresentation (a ≫ pullback.fst (c.π.app i₀) V.ι) := by
+    simpa only [ha] using (inferInstance : LocallyOfFinitePresentation f)
+  have : LocallyOfFinitePresentation a :=
+    locallyOfFinitePresentation_of_comp a (pullback.fst (c.π.app i₀) V.ι)
+  obtain ⟨j, Y, hYaff, p, hp, b, hsq⟩ :=
+    CategoryTheory.Functor.exists_isPullback_of_locallyOfFinitePresentation_of_isAffine
+      (D.pullbackOver V.ι) (c.pullbackOver V.ι) (hc.pullbackOver V.ι) a
+  have := hYaff; have := hp
+  have hbase : IsPullback ((c.pullbackOver V.ι).π.app j) (pullback.fst (c.π.app i₀) V.ι)
+      (pullback.fst (D.map j.hom) V.ι) (c.π.app j.left) := by
+    refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback (D.map j.hom) V.ι).flip
+    simpa using (IsPullback.of_hasPullback (c.π.app i₀) V.ι).flip
+  refine ⟨j.left, Y, p ≫ pullback.fst (D.map j.hom) V.ι, b,
+    inferInstance, inferInstance, inferInstance, ?_⟩
+  simpa only [ha] using hsq.paste_vert hbase
+
+/-- An affine open of a scheme over the limit that lies over an affine open of one of the stages
+descends to a finite stage. -/
+private lemma HasFiniteStageModel.of_isAffineOpen {i₀ : I} {X : Scheme.{u}}
+    (f : X ⟶ c.pt) [LocallyOfFinitePresentation f] {U : X.Opens} (hU : IsAffineOpen U)
+    {V : (D.obj i₀).Opens} (hV : IsAffineOpen V) (hle : U ≤ (f ≫ c.π.app i₀) ⁻¹ᵁ V) :
+    HasFiniteStageModel c (U.ι ≫ f) := by
+  have : IsAffine U.toScheme := hU
+  refine HasFiniteStageModel.of_isAffine hc _ hV ((f ≫ c.π.app i₀).resLE V U hle) ?_
+  rw [Scheme.Hom.resLE_comp_ι, Category.assoc]
+
+section AllStages
+
+variable [∀ i, CompactSpace (D.obj i)] [∀ i, QuasiSeparatedSpace (D.obj i)]
+
+/-- Descend the isomorphism between the two canonical pullback presentations of an overlap. -/
+private lemma ModelWithOpenAt.exists_overlap_pullback_iso {T U V : Scheme.{u}}
+    {u : U ⟶ c.pt} {v : V ⟶ c.pt} {r : T ⟶ U} {s : T ⟶ V}
+    [IsOpenImmersion r] [IsOpenImmersion s] {i : I}
+    (M : OpenChartModel c u r i) (N : OpenChartModel c v s i) (h : r ≫ u = s ≫ v) :
+    ∃ (j : I) (t : j ⟶ i)
+      (e : pullback (D.map t) (M.openSubset.ι ≫ M.map) ≅
+        pullback (D.map t) (N.openSubset.ι ≫ N.map)),
+      e.hom ≫ pullback.fst _ _ = pullback.fst _ _ ∧
+        M.overlap_base_square.flip.isoPullback.hom ≫
+            pullback.map (c.π.app i) (M.openSubset.ι ≫ M.map) (D.map t)
+              (M.openSubset.ι ≫ M.map) (c.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) ≫ e.hom =
+          N.overlap_base_square.flip.isoPullback.hom ≫
+            pullback.map (c.π.app i) (N.openSubset.ι ≫ N.map) (D.map t)
+              (N.openSubset.ι ≫ N.map) (c.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) := by
+  let := M.finitePresentation; let := M.quasiSeparated
+  let := N.finitePresentation; let := N.quasiSeparated
+  let : CompactSpace M.openSubset.toScheme := isCompact_iff_compactSpace.mp M.compactOpen
+  let : CompactSpace N.openSubset.toScheme := isCompact_iff_compactSpace.mp N.compactOpen
+  let : QuasiSeparatedSpace M.openSubset.toScheme :=
+    QuasiSeparatedSpace.of_isOpenEmbedding M.openSubset.ι.isOpenEmbedding
+  let : QuasiSeparatedSpace N.openSubset.toScheme :=
+    QuasiSeparatedSpace.of_isOpenEmbedding N.openSubset.ι.isOpenEmbedding
+  let a := M.overlap_base_square.flip.isoPullback.symm ≪≫ N.overlap_base_square.flip.isoPullback
+  have ha : a.hom ≫ pullback.fst _ _ = pullback.fst _ _ := by
+    dsimp only [a, Iso.trans_hom, Iso.symm_hom]
+    rw [Category.assoc, IsPullback.isoPullback_hom_fst, ← h, IsPullback.isoPullback_inv_fst]
+  obtain ⟨j, t, e, he₁, he₂⟩ := hc.exists_iso_pullback_of_iso a ha
+  refine ⟨j, t, e, he₁, ?_⟩
+  rw [he₂]
+  simp [a]
+
+/-- Descend the isomorphism between the two descended overlap opens of two chart models. -/
+private lemma ModelWithOpenAt.exists_iso_overlap {T U V : Scheme.{u}}
+    {u : U ⟶ c.pt} {v : V ⟶ c.pt} {r : T ⟶ U} {s : T ⟶ V}
+    [IsOpenImmersion r] [IsOpenImmersion s] {i : I}
+    (M : OpenChartModel c u r i) (N : OpenChartModel c v s i) (h : r ≫ u = s ≫ v) :
+    ∃ (j : I) (t : j ⟶ i)
+      (e : (M.baseChange t).openSubset.toScheme ≅ (N.baseChange t).openSubset.toScheme),
+      e.hom ≫ (N.baseChange t).openSubset.ι ≫ (N.baseChange t).map =
+        (M.baseChange t).openSubset.ι ≫ (M.baseChange t).map ∧
+      (M.baseChange t).overlapMap ≫ e.hom = (N.baseChange t).overlapMap := by
+  obtain ⟨j, t, e, he₁, he₂⟩ := M.exists_overlap_pullback_iso hc N h
+  let e₁ := (M.baseChange_overlap_square t).flip.isoPullback
+  let e₂ := (N.baseChange_overlap_square t).flip.isoPullback
+  have hcomp {T' U' : Scheme.{u}} {u' : U' ⟶ c.pt} {r' : T' ⟶ U'} [IsOpenImmersion r']
+      (P : OpenChartModel c u' r' i) :
+      (P.baseChange t).overlapMap ≫ (P.baseChange_overlap_square t).flip.isoPullback.hom =
+        P.overlap_base_square.flip.isoPullback.hom ≫
+          pullback.map (c.π.app i) (P.openSubset.ι ≫ P.map) (D.map t)
+            (P.openSubset.ι ≫ P.map) (c.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) := by
+    apply pullback.hom_ext
+    · simpa [Category.assoc, IsPullback.isoPullback_hom_fst] using
+        (P.baseChange t).overlap_base_square.w
+    · simpa [Category.assoc, IsPullback.isoPullback_hom_snd] using
+        P.baseChange_overlapMap_comp t
+  refine ⟨j, t, e₁ ≪≫ e ≪≫ e₂.symm, ?_, ?_⟩
+  · dsimp only [Iso.trans_hom, Iso.symm_hom]
+    rw [Category.assoc, Category.assoc, IsPullback.isoPullback_inv_fst, he₁,
+      IsPullback.isoPullback_hom_fst]
+  · rw [← cancel_mono e₂.hom]
+    simp only [Iso.trans_hom, Iso.symm_hom, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+    rw [← Category.assoc, hcomp M, Category.assoc, he₂, ← hcomp N]
+
 /-- Two finite-stage chart models glue after descending their common quasi-compact overlap. -/
-private lemma HasFiniteStageModel.of_sup_eq_top {X : Scheme.{u}} (f : X ⟶ cone.pt)
+private lemma HasFiniteStageModel.of_sup_eq_top {X : Scheme.{u}} (f : X ⟶ c.pt)
     (U V : X.Opens) (hUV : U ⊔ V = ⊤) (hWc : IsCompact ((U ⊓ V : X.Opens) : Set X))
-    (hU : HasFiniteStageModel diagram cone (U.ι ≫ f))
-    (hV : HasFiniteStageModel diagram cone (V.ι ≫ f)) : HasFiniteStageModel diagram cone f := by
-  have hc (A B : X.Opens) (hAB : IsCompact ((A ⊓ B : X.Opens) : Set X)) :
-      IsCompact ((A.ι ⁻¹ᵁ B : A.toScheme.Opens) : Set A.toScheme) := by
-    have he : (A.ι ⁻¹ᵁ B : A.toScheme.Opens) = A.ι ⁻¹ᵁ (A ⊓ B) := by
-      rw [Scheme.Hom.preimage_inf, Scheme.Opens.ι_preimage_self, top_inf_eq]
-    rw [he]
-    exact A.ι.isOpenEmbedding.isInducing.isCompact_preimage' hAB
-      (by rw [Scheme.Opens.range_ι]; exact inf_le_left)
-  obtain ⟨i, hU⟩ := hU
-  obtain ⟨j, hV⟩ := hV
-  obtain ⟨k, hU⟩ := exists_modelWithOpenAt limit hU _ (hc U V hWc)
-  obtain ⟨l, hV⟩ := exists_modelWithOpenAt limit hV _ (hc V U (by simpa [inf_comm] using hWc))
-  obtain ⟨⟨Y, p, a, W, hp, hc, hq, hs, hW, ha⟩⟩ := hU.mono (IsCofiltered.minToLeft k l)
-  obtain ⟨⟨Z, q, b, W', hq', hc', hq'', hs', hW', hb⟩⟩ := hV.mono (IsCofiltered.minToRight k l)
-  let M : OpenChartModel (diagram := diagram) (U.ι ≫ f) (X.homOfLE (inf_le_left : U ⊓ V ≤ U))
-      (IsCofiltered.min k l) :=
-    ⟨Y, p, a, W, hp, hc, hq, hs, hW, by
-      simpa [Scheme.opensRange_homOfLE, Scheme.Hom.preimage_inf] using ha⟩
-  let N : OpenChartModel (diagram := diagram) (V.ι ≫ f) (X.homOfLE (inf_le_right : U ⊓ V ≤ V))
-      (IsCofiltered.min k l) :=
-    ⟨Z, q, b, W', hq', hc', hq'', hs', hW', by
-      simpa [Scheme.opensRange_homOfLE, Scheme.Hom.preimage_inf] using hb⟩
-  obtain ⟨_n, t, e, he₁, he₂⟩ := M.exists_iso_overlap limit N (by
+    (hU : HasFiniteStageModel c (U.ι ≫ f)) (hV : HasFiniteStageModel c (V.ι ≫ f)) :
+    HasFiniteStageModel c f := by
+  have hcomp {A B : X.Opens} (hAB : A ≤ B) (hAc : IsCompact (A : Set X)) :
+      IsCompact ((X.homOfLE hAB).opensRange : Set B.toScheme) := by
+    rw [Scheme.opensRange_homOfLE]
+    exact B.ι.isOpenEmbedding.isInducing.isCompact_preimage' hAc
+      (by rw [Scheme.Opens.range_ι]; exact hAB)
+  obtain ⟨k, ⟨MU⟩⟩ := exists_modelWithOpenAt hc hU _ (hcomp inf_le_left hWc)
+  obtain ⟨l, ⟨MV⟩⟩ := exists_modelWithOpenAt hc hV _ (hcomp inf_le_right hWc)
+  let M : OpenChartModel c (U.ι ≫ f) (X.homOfLE (inf_le_left : U ⊓ V ≤ U))
+      (IsCofiltered.min k l) := MU.baseChange (IsCofiltered.minToLeft k l)
+  let N : OpenChartModel c (V.ι ≫ f) (X.homOfLE (inf_le_right : U ⊓ V ≤ V))
+      (IsCofiltered.min k l) := MV.baseChange (IsCofiltered.minToRight k l)
+  obtain ⟨_, t, e, he₁, he₂⟩ := M.exists_iso_overlap hc N (by
     simp only [← Category.assoc, Scheme.homOfLE_ι])
   exact hasFiniteStageModel_of_compatible_charts f U V hUV (M.baseChange t) (N.baseChange t)
     e he₁ he₂
 
-omit [IsCofiltered Index]
-  [∀ {i j : Index} (g : i ⟶ j), IsAffineHom (diagram.map g)]
-  [∀ i, CompactSpace (diagram.obj i)] [∀ i, QuasiSeparatedSpace (diagram.obj i)] in
-private lemma HasFiniteStageModel.preimage_open {X : Scheme.{u}} (f : X ⟶ cone.pt)
-    {U W : X.Opens} (hUW : U ≤ W) (hU : HasFiniteStageModel diagram cone (U.ι ≫ f)) :
-    HasFiniteStageModel diagram cone ((W.ι ⁻¹ᵁ U).ι ≫ W.ι ≫ f) := by
-  simpa only [Category.assoc, Scheme.Opens.isoOfLE_hom_ι_assoc] using
-    HasFiniteStageModel.comp_iso (Scheme.Opens.isoOfLE hUW) hU
-
-include limit in
 /-- Finite-stage models of two opens glue when their intersection is quasi-compact. -/
-private lemma HasFiniteStageModel.sup {X : Scheme.{u}} (f : X ⟶ cone.pt) (U V : X.Opens)
+private lemma HasFiniteStageModel.sup {X : Scheme.{u}} (f : X ⟶ c.pt) (U V : X.Opens)
     (hW : IsCompact ((U ⊓ V : X.Opens) : Set X))
-    (hU : HasFiniteStageModel diagram cone (U.ι ≫ f))
-    (hV : HasFiniteStageModel diagram cone (V.ι ≫ f)) :
-    HasFiniteStageModel diagram cone ((U ⊔ V).ι ≫ f) := by
+    (hU : HasFiniteStageModel c (U.ι ≫ f)) (hV : HasFiniteStageModel c (V.ι ≫ f)) :
+    HasFiniteStageModel c ((U ⊔ V).ι ≫ f) := by
   let W := U ⊔ V
-  have hc : IsCompact (((W.ι ⁻¹ᵁ U) ⊓ (W.ι ⁻¹ᵁ V) : W.toScheme.Opens) : Set W.toScheme) := by
+  have hcomp : IsCompact (((W.ι ⁻¹ᵁ U) ⊓ (W.ι ⁻¹ᵁ V) : W.toScheme.Opens) : Set W.toScheme) := by
     rw [← Scheme.Hom.preimage_inf]
     exact W.ι.isOpenEmbedding.isInducing.isCompact_preimage' hW
       (by rw [Scheme.Opens.range_ι]; exact inf_le_left.trans le_sup_left)
-  apply HasFiniteStageModel.of_sup_eq_top limit (W.ι ≫ f) (W.ι ⁻¹ᵁ U) (W.ι ⁻¹ᵁ V)
-    (by rw [← Scheme.Hom.preimage_sup]; exact Scheme.Opens.ι_preimage_self W) hc
+  apply HasFiniteStageModel.of_sup_eq_top hc (W.ι ≫ f) (W.ι ⁻¹ᵁ U) (W.ι ⁻¹ᵁ V)
+    (by rw [← Scheme.Hom.preimage_sup]; exact Scheme.Opens.ι_preimage_self W) hcomp
   · exact hU.preimage_open f le_sup_left
   · exact hV.preimage_open f le_sup_right
 
-include limit in
 /-- A finite union of affine charts lying over affine opens of a stage has a finite-stage model. -/
 private lemma hasFiniteStageModel_finsetSup {X : Scheme.{u}} [QuasiSeparatedSpace X]
-    {i : Index} (f : X ⟶ cone.pt) [LocallyOfFinitePresentation f] (s : Finset X.Opens)
-    (hs : ∀ U ∈ s, IsAffineOpen U ∧ ∃ V : (diagram.obj i).Opens,
-      IsAffineOpen V ∧ U ≤ (f ≫ cone.π.app i) ⁻¹ᵁ V) :
-    HasFiniteStageModel diagram cone ((s.sup id : X.Opens).ι ≫ f) := by
+    {i : I} (f : X ⟶ c.pt) [LocallyOfFinitePresentation f] (s : Finset X.Opens)
+    (hs : ∀ U ∈ s, IsAffineOpen U ∧ ∃ V : (D.obj i).Opens,
+      IsAffineOpen V ∧ U ≤ (f ≫ c.π.app i) ⁻¹ᵁ V) :
+    HasFiniteStageModel c ((s.sup id : X.Opens).ι ≫ f) := by
   classical
   induction s using Finset.induction with
   | empty =>
     rw [Finset.sup_empty]
-    exact HasFiniteStageModel.of_isAffineOpen limit f (isAffineOpen_bot X)
-      (isAffineOpen_bot (diagram.obj i)) bot_le
+    exact HasFiniteStageModel.of_isAffineOpen hc f (isAffineOpen_bot X)
+      (isAffineOpen_bot (D.obj i)) bot_le
   | insert U s _ ih =>
     obtain ⟨hU, V, hV, hUV⟩ := hs U (Finset.mem_insert_self U s)
     have hs' := fun W hW ↦ hs W (Finset.mem_insert_of_mem hW)
-    have hc : IsCompact ((s.sup id : X.Opens) : Set X) := by
+    have hcomp : IsCompact ((s.sup id : X.Opens) : Set X) := by
       simpa only [TopologicalSpace.Opens.coe_finset_sup, Finset.sup_set_eq_biUnion,
         Function.comp_apply, id_eq] using s.isCompact_biUnion (fun W hW ↦ (hs' W hW).1.isCompact)
     rw [Finset.sup_insert, id]
-    apply HasFiniteStageModel.sup limit f U (s.sup id)
-    · exact QuasiSeparatedSpace.inter_isCompact _ _ U.isOpen hU.isCompact (s.sup id).isOpen hc
-    · exact HasFiniteStageModel.of_isAffineOpen limit f hU hV hUV
+    apply HasFiniteStageModel.sup hc f U (s.sup id)
+    · exact QuasiSeparatedSpace.inter_isCompact _ _ U.isOpen hU.isCompact (s.sup id).isOpen hcomp
+    · exact HasFiniteStageModel.of_isAffineOpen hc f hU hV hUV
     · exact ih hs'
 
-include limit in
-/-- A finitely presented scheme over a cofiltered limit of quasi-compact,
-quasi-separated schemes with affine transitions is the pullback of an actual
-finitely presented scheme over some stage. -/
-private theorem exists_isPullback_of_finitePresentation_allStages {sourceScheme : Scheme.{u}}
-    (sourceMap : sourceScheme ⟶ cone.pt)
-    [LocallyOfFinitePresentation sourceMap] [QuasiCompact sourceMap] [QuasiSeparated sourceMap] :
-    ∃ (index : Index) (stageScheme : Scheme.{u}) (stageMap : stageScheme ⟶ diagram.obj index)
-      (_ : LocallyOfFinitePresentation stageMap) (_ : QuasiCompact stageMap)
-      (_ : QuasiSeparated stageMap) (comparison : sourceScheme ⟶ stageScheme),
-      IsPullback comparison sourceMap stageMap (cone.π.app index) := by
+/-- A finitely presented scheme over a cofiltered limit of quasi-compact quasi-separated schemes
+with affine transition maps is the base change of a finitely presented scheme over some stage. -/
+private theorem exists_isPullback_of_finitePresentation_allStages {X : Scheme.{u}}
+    (f : X ⟶ c.pt) [LocallyOfFinitePresentation f] [QuasiCompact f] [QuasiSeparated f] :
+    ∃ (i : I) (Y : Scheme.{u}) (p : Y ⟶ D.obj i)
+      (_ : LocallyOfFinitePresentation p) (_ : QuasiCompact p)
+      (_ : QuasiSeparated p) (a : X ⟶ Y),
+      IsPullback a f p (c.π.app i) := by
   classical
-  obtain ⟨baseStage⟩ : Nonempty Index := IsCofiltered.nonempty
-  have := isAffineHom_π_app _ _ limit
-  have : CompactSpace cone.pt := QuasiCompact.compactSpace_of_compactSpace (cone.π.app baseStage)
-  have : QuasiSeparatedSpace cone.pt := quasiSeparatedSpace_of_quasiSeparated (cone.π.app baseStage)
-  have : CompactSpace sourceScheme := QuasiCompact.compactSpace_of_compactSpace sourceMap
-  have : QuasiSeparatedSpace sourceScheme := quasiSeparatedSpace_of_quasiSeparated sourceMap
-  let A := {V : sourceScheme.affineOpens // ∃ U : (diagram.obj baseStage).affineOpens,
-    V.val ≤ (sourceMap ≫ cone.π.app baseStage) ⁻¹ᵁ U.val}
-  have htop : IsCompactElement (⊤ : sourceScheme.Opens) :=
+  obtain ⟨i₀⟩ : Nonempty I := IsCofiltered.nonempty
+  have := isAffineHom_π_app _ _ hc
+  have : CompactSpace c.pt := QuasiCompact.compactSpace_of_compactSpace (c.π.app i₀)
+  have : QuasiSeparatedSpace c.pt := quasiSeparatedSpace_of_quasiSeparated (c.π.app i₀)
+  have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace f
+  have : QuasiSeparatedSpace X := quasiSeparatedSpace_of_quasiSeparated f
+  let A := {V : X.affineOpens // ∃ U : (D.obj i₀).affineOpens,
+    V.val ≤ (f ≫ c.π.app i₀) ⁻¹ᵁ U.val}
+  have htop : IsCompactElement (⊤ : X.Opens) :=
     (TopologicalSpace.Opens.isCompactElement_iff _).mpr (by simpa using isCompact_univ)
   obtain ⟨s, hs⟩ := htop.exists_finset_of_le_iSup (fun V : A ↦ V.val.val)
     (by rw [Scheme.Hom.iSup_affineOpens_le_preimage_eq_top])
-  have modelData := hasFiniteStageModel_finsetSup limit (i := baseStage) sourceMap
+  have hmodel := hasFiniteStageModel_finsetSup hc (i := i₀) f
     (s.image fun V : A ↦ V.val.val) (by
       intro U hU
       obtain ⟨V, _, rfl⟩ := Finset.mem_image.mp hU
@@ -532,37 +422,49 @@ private theorem exists_isPullback_of_finitePresentation_allStages {sourceScheme 
     apply top_le_iff.mp
     rw [Finset.sup_image]
     simpa only [Function.comp_apply, id_eq, Finset.sup_eq_iSup] using hs
-  rw [hsup] at modelData
-  replace modelData := HasFiniteStageModel.comp_iso sourceScheme.topIso.symm modelData
-  rw [Iso.symm_hom, ← Category.assoc, Scheme.toIso_inv_ι, Category.id_comp] at modelData
-  obtain ⟨index, stageScheme, stageMap, comparison, hp, hcpt, hqs, hsq⟩ := modelData
+  rw [hsup] at hmodel
+  replace hmodel := hmodel.comp_iso X.topIso.symm
+  rw [Iso.symm_hom, ← Category.assoc, Scheme.toIso_inv_ι, Category.id_comp] at hmodel
+  obtain ⟨i, Y, p, a, hp, hcpt, hqs, hsq⟩ := hmodel
   have := hp; have := hcpt; have := hqs
-  exact ⟨index, stageScheme, stageMap, hp, inferInstance, inferInstance, comparison, hsq⟩
+  exact ⟨i, Y, p, hp, inferInstance, inferInstance, a, hsq⟩
 
-include limit in
-omit [∀ i, CompactSpace (diagram.obj i)] [∀ i, QuasiSeparatedSpace (diagram.obj i)] in
-/-- A finitely presented scheme over a cofiltered affine-transition limit descends to a stage
-as soon as one member of the diagram is quasi-compact and quasi-separated. -/
-theorem _root_.CategoryTheory.Limits.IsLimit.exists_isPullback_of_finitePresentation
-    (baseStage : Index)
-    [CompactSpace (diagram.obj baseStage)] [QuasiSeparatedSpace (diagram.obj baseStage)]
-    {sourceScheme : Scheme.{u}} (sourceMap : sourceScheme ⟶ cone.pt)
-    [LocallyOfFinitePresentation sourceMap] [QuasiCompact sourceMap] [QuasiSeparated sourceMap] :
-    ∃ (index : Index) (stageScheme : Scheme.{u}) (stageMap : stageScheme ⟶ diagram.obj index)
-      (_ : LocallyOfFinitePresentation stageMap) (_ : QuasiCompact stageMap)
-      (_ : QuasiSeparated stageMap) (comparison : sourceScheme ⟶ stageScheme),
-      IsPullback comparison sourceMap stageMap (cone.π.app index) := by
-  let restrictedDiagram := Over.forget baseStage ⋙ diagram
-  have {i j : Over baseStage} (t : i ⟶ j) : IsAffineHom (restrictedDiagram.map t) :=
-    inferInstanceAs (IsAffineHom (diagram.map t.left))
-  have (i : Over baseStage) : CompactSpace (restrictedDiagram.obj i) :=
-    QuasiCompact.compactSpace_of_compactSpace (diagram.map i.hom)
-  have (i : Over baseStage) : QuasiSeparatedSpace (restrictedDiagram.obj i) :=
-    quasiSeparatedSpace_of_quasiSeparated (diagram.map i.hom)
-  have restrictedLimit : IsLimit (cone.whisker (Over.forget baseStage)) :=
-    (Functor.Initial.isLimitWhiskerEquiv (Over.forget baseStage) cone).symm limit
-  obtain ⟨i, X, f, hfp, hqc, hqs, a, square⟩ :=
-    exists_isPullback_of_finitePresentation_allStages restrictedLimit sourceMap
-  exact ⟨i.left, X, f, hfp, hqc, hqs, a, square⟩
+end AllStages
+
+end Descent
 
 end AlgebraicGeometry
+
+namespace CategoryTheory.Limits.IsLimit
+
+open AlgebraicGeometry
+
+variable {I : Type u} [Category.{u} I] [IsCofiltered I] {D : I ⥤ Scheme.{u}}
+  [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)] {c : Cone D} (hc : IsLimit c)
+
+include hc in
+/-- A finitely presented scheme over a cofiltered affine-transition limit descends to a stage
+as soon as one member of the diagram is quasi-compact and quasi-separated.
+Stacks, Lemma 32.10.1 (01ZM). -/
+theorem exists_isPullback_of_finitePresentation (i₀ : I)
+    [CompactSpace (D.obj i₀)] [QuasiSeparatedSpace (D.obj i₀)]
+    {X : Scheme.{u}} (f : X ⟶ c.pt)
+    [LocallyOfFinitePresentation f] [QuasiCompact f] [QuasiSeparated f] :
+    ∃ (i : I) (Y : Scheme.{u}) (p : Y ⟶ D.obj i)
+      (_ : LocallyOfFinitePresentation p) (_ : QuasiCompact p)
+      (_ : QuasiSeparated p) (a : X ⟶ Y),
+      IsPullback a f p (c.π.app i) := by
+  let D' := Over.forget i₀ ⋙ D
+  have {i j : Over i₀} (t : i ⟶ j) : IsAffineHom (D'.map t) :=
+    inferInstanceAs (IsAffineHom (D.map t.left))
+  have (i : Over i₀) : CompactSpace (D'.obj i) :=
+    QuasiCompact.compactSpace_of_compactSpace (D.map i.hom)
+  have (i : Over i₀) : QuasiSeparatedSpace (D'.obj i) :=
+    quasiSeparatedSpace_of_quasiSeparated (D.map i.hom)
+  have hc' : IsLimit (c.whisker (Over.forget i₀)) :=
+    (Functor.Initial.isLimitWhiskerEquiv (Over.forget i₀) c).symm hc
+  obtain ⟨i, Y, p, hfp, hqc, hqs, a, hsq⟩ :=
+    exists_isPullback_of_finitePresentation_allStages hc' f
+  exact ⟨i.left, Y, p, hfp, hqc, hqs, a, hsq⟩
+
+end CategoryTheory.Limits.IsLimit

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
 /-!
@@ -30,7 +31,9 @@ For any `θ < 1` and any exponent `β`, some base `τ ∈ (0, 1)` has `θ < τ ^
 geometric ratio is chosen in iteration arguments, such as the absorption lemma.
 
 For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r ∈ (0, 1]`. This is
-how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori estimates.
+how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori estimates. Likewise,
+for `0 < α`, every `c (ε ^ (1 + α) + ε ^ α)` is at most `b > 0` at some scale `ε ∈ (0, ε₀]`, as
+when interpolation inequalities absorb a Hölder constant.
 
 For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its tangent lines:
 `v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. Conversely,
@@ -80,6 +83,10 @@ length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which
 For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`. This bounds
 all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the sign of `p`.
 
+For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. Unlike Mathlib's `Real.log_le_rpow_div`
+for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a coefficient bound
+`log (n + 1)` becomes a power bound `n ^ ε / ε` at every `n ≥ 0`.
+
 ## Main results
 
 * `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
@@ -107,6 +114,7 @@ all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the s
 * `Real.rpow_sub_rpow_neg_le`: `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε` for `0 < b` and `0 ≤ ε ≤ 1`.
 * `Real.natCast_rpow_le_max_one_rpow`: `n ^ p ≤ max 1 (x ^ p)` for a natural number `n ≤ x` and
   every real `p`.
+* `Real.log_add_one_le_rpow_div`: `log (x + 1) ≤ x ^ ε / ε` for `0 ≤ x` and `0 < ε ≤ 1`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -119,6 +127,8 @@ all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the s
   `TauCeti.le_rpow_mul_rpow_mul_of_forall_pos`: `a ^ (1 - x) * b ^ x ≤ max a b` on `[0, 1]`, its
   product-seminorm corollary `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`, and right-continuity at `ε = 0`
   of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` for `θ ∈ [0, 1]`.
+* `TauCeti.rpow_neg_one_add_div_le`: `(1 + u / q) ^ (-q) ≤ (1 + u / p) ^ (-p)` for `0 ≤ u` and
+  `0 < p ≤ q`.
 -/
 
 public section
@@ -181,6 +191,23 @@ theorem exists_pos_le_one_mul_rpow_le (c : ℝ) {α b : ℝ} (hα : 0 < α) (hb 
     (s := Set.Ioi 0) ((ht.eventually (eventually_le_nhds hb)).and (eventually_le_nhds one_pos))).and
     self_mem_nhdsWithin).exists
   exact ⟨r, hr, hr1, hrb⟩
+
+/-- For `0 < α`, `0 < b` and `0 < ε₀`, every `c (ε ^ (1 + α) + ε ^ α)` is at most `b` for some
+scale `ε ∈ (0, ε₀]`. -/
+theorem exists_pos_le_mul_rpow_add_rpow_le (c : ℝ) {α b ε₀ : ℝ} (hα : 0 < α) (hb : 0 < b)
+    (hε₀ : 0 < ε₀) : ∃ ε : ℝ, 0 < ε ∧ ε ≤ ε₀ ∧ c * (ε ^ (1 + α) + ε ^ α) ≤ b := by
+  obtain ⟨ε₁, hε₁, hε₁1, hsmall⟩ := exists_pos_le_one_mul_rpow_le (2 * max c 0) hα hb
+  have hε : 0 < min ε₀ ε₁ := lt_min hε₀ hε₁
+  refine ⟨min ε₀ ε₁, hε, min_le_left _ _, ?_⟩
+  have hq : min ε₀ ε₁ ^ α ≤ ε₁ ^ α := rpow_le_rpow hε.le (min_le_right _ _) hα.le
+  have hq' : min ε₀ ε₁ ^ (1 + α) ≤ min ε₀ ε₁ ^ α := by
+    rw [rpow_add hε, rpow_one]
+    exact mul_le_of_le_one_left (by positivity) ((min_le_right _ _).trans hε₁1)
+  calc c * (min ε₀ ε₁ ^ (1 + α) + min ε₀ ε₁ ^ α)
+      ≤ max c 0 * (min ε₀ ε₁ ^ (1 + α) + min ε₀ ε₁ ^ α) := by gcongr; exact le_max_left _ _
+    _ ≤ max c 0 * (2 * ε₁ ^ α) := by gcongr; linarith
+    _ = 2 * max c 0 * ε₁ ^ α := by ring
+    _ ≤ b := hsmall
 
 /-- **The strict tangent-line inequality for real powers.** For `1 < p` and distinct `u, v ≥ 0`,
 `u ↦ u ^ p` lies strictly above its tangent line at `v`. -/
@@ -379,6 +406,14 @@ theorem natCast_rpow_le_max_one_rpow {n : ℕ} {x : ℝ} (hnx : (n : ℝ) ≤ x)
     · exact rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) h
   · exact (rpow_le_rpow (by positivity) hnx h).trans (le_max_right _ _)
 
+/-- For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. -/
+theorem log_add_one_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (hε₁ : ε ≤ 1) :
+    log (x + 1) ≤ x ^ ε / ε := by
+  have hsub : (x + 1) ^ ε ≤ x ^ ε + 1 := by
+    simpa using rpow_add_le_add_rpow hx zero_le_one hε.le hε₁
+  rw [le_div_iff₀ hε, mul_comm, ← log_rpow (by linarith)]
+  linarith [log_le_sub_one_of_pos (rpow_pos_of_pos (by linarith : 0 < x + 1) ε)]
+
 end Real
 
 namespace TauCeti
@@ -478,6 +513,24 @@ theorem le_rpow_mul_rpow_mul_of_forall_pos {A M₀ M₁ θ C : ℝ} (hθ : θ �
   have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
   simp only [add_zero] at hlim
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
+
+/-- For `u ≥ 0` and `0 < p ≤ q`, the decreasing Bernoulli comparison
+`(1 + u / q) ^ (-q) ≤ (1 + u / p) ^ (-p)`. -/
+theorem rpow_neg_one_add_div_le {u p q : ℝ} (hu : 0 ≤ u) (hp : 0 < p) (hpq : p ≤ q) :
+    (1 + u / q) ^ (-q) ≤ (1 + u / p) ^ (-p) := by
+  have hq : 0 < q := hp.trans_le hpq
+  have hqp : 1 ≤ q / p := (one_le_div hp).mpr hpq
+  have hber : 1 + u / p ≤ (1 + u / q) ^ (q / p) := by
+    have h := one_add_mul_self_le_rpow_one_add (div_nonneg hu hq.le |>.trans' (by linarith)) hqp
+    refine le_trans (le_of_eq ?_) h
+    field_simp
+  have hpow : (1 + u / p) ^ p ≤ (1 + u / q) ^ q := by
+    calc (1 + u / p) ^ p ≤ ((1 + u / q) ^ (q / p)) ^ p :=
+          Real.rpow_le_rpow (by positivity) hber hp.le
+      _ = (1 + u / q) ^ q := by
+          rw [← Real.rpow_mul (by positivity), div_mul_cancel₀ q hp.ne']
+  rw [Real.rpow_neg (by positivity), Real.rpow_neg (by positivity)]
+  exact inv_anti₀ (Real.rpow_pos_of_pos (by positivity) p) hpow
 
 end TauCeti
 

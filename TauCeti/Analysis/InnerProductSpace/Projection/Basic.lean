@@ -67,6 +67,9 @@ The complementary projection `1 - P_U` has range `Uᗮ`, and more generally `1 -
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
+For `s ⊆ U`, the preimage of `s` under the orthogonal projection onto `U` is the cylinder
+`{y + z | y ∈ s, z ∈ Uᗮ}`.
+
 Conjugating the orthogonal projection onto `V` by a linear isometry equivalence `e` of Hilbert
 spaces gives the orthogonal projection onto `e(V)`.
 
@@ -81,6 +84,11 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
+* `Submodule.preimage_orthogonalProjectionOnto_eq`: the preimage of `s ⊆ U` under the
+  orthogonal projection onto `U` is the cylinder `{y + z | y ∈ s, z ∈ Uᗮ}`.
+* `Submodule.preimage_orthogonalProjectionOnto_setOf_inner`: for `u ∈ U` and a predicate `p`,
+  the preimage of `{y ∈ U | p ⟪y, u⟫}` under the orthogonal projection onto `U` is
+  `{x | p ⟪x, u⟫}`.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
   onto that subspace.
 * `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
@@ -140,6 +148,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_orthogonal_eq_finrank_quotient`: `dim Kᗮ = dim (E ⧸ K)`.
 * `Submodule.inner_starProjection_map_apply`: `⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫` for a linear
   isometry equivalence `e`.
+* `Submodule.orthogonalProjectionOnto_orthogonal_span_singleton_eq_iff`: the projection onto
+  `(𝕜 ∙ e)ᗮ` sends `x` to `y` iff `x` lies on the line through `y` parallel to `e`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -148,13 +158,32 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
+* `Submodule.starProjection_comp_eq_self_iff`: `P_U T = T` if and only if the range of `T` lies
+  in `U`.
 * `Submodule.apply_starProjection_eq_of_forall_mem_orthogonal`,
   `Submodule.mul_starProjection_eq_self`, `Submodule.commute_starProjection_orthogonal_iff`,
   `Submodule.apply_mem_of_commute_starProjection`: additive maps vanishing on `Uᗮ` factor through
   `U.starProjection`, commutation with `Uᗮ.starProjection` is equivalent to commutation with
   `U.starProjection`, and operators commuting with `U.starProjection` leave `U` invariant.
+* `Submodule.starProjection_toLinearMap_comp_self`: orthogonal projection is idempotent as a
+  linear map.
+* `Submodule.id_eq_sum_starProjection_toLinearMap_self_orthogonalComplement`:
+  `id = P_U + P_{Uᗮ}` as linear maps.
+* `Submodule.starProjection_comp_comp_starProjection_idem`: two-sided projection compression
+  `Δ ↦ P_W Δ P_K` is idempotent.
 * `LinearMap.apply_sub_starProjection_ker`,
-  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
+  `LinearMap.comp_starProjection_ker_eq_zero`,
+  `LinearMap.adjoint_comp_starProjection_orthogonal_range_eq_zero`,
+  `LinearMap.sub_starProjection_comp_eq_add`,
+  `LinearMap.normalPart`, `LinearMap.normalPart_def`,
+  `LinearMap.normalPart_normalPart`, `LinearMap.normalPart_self`,
+  `LinearMap.adjoint_comp_normalPart_eq_zero`, `LinearMap.comp_adjoint_normalPart_eq_zero`,
+  `LinearMap.finrank_range_sub_starProjection_comp_le`,
+  `LinearMap.finrank_range_sub_normalPart_le`,
+  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: kernel, range, and tangent–normal
+  projection identities and rank bounds.
+* `LinearMap.exists_infDist_inf_ker_le`: distance to `P ⊓ ker D` is controlled by distance to `P`
+  plus a multiple of `‖D (P.starProjection w)‖`.
 * `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
   equivalence `e` gives the orthogonal projection onto `e(V)`.
 -/
@@ -239,6 +268,31 @@ theorem finrank_range_comp_starProjection_le {F : Type*} [AddCommMonoid F] [Modu
       Module.finrank 𝕜 U :=
   Module.finrank_le_finrank_of_rank_le_rank (U.lift_rank_comp_starProjection_le T)
     (Module.rank_lt_aleph0 𝕜 U)
+
+/-- Orthogonal projection onto `U` is idempotent as an algebraic linear map. -/
+@[simp]
+theorem starProjection_toLinearMap_comp_self :
+    U.starProjection.toLinearMap ∘ₗ U.starProjection.toLinearMap = U.starProjection.toLinearMap :=
+  (Module.End.mul_eq_comp _ _).symm.trans
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap U.isIdempotentElem_starProjection).eq
+
+/-- As algebraic linear maps, the orthogonal projections onto `U` and `Uᗮ` sum to the identity. -/
+theorem id_eq_sum_starProjection_toLinearMap_self_orthogonalComplement :
+    (LinearMap.id : E →ₗ[𝕜] E) = U.starProjection.toLinearMap + Uᗮ.starProjection.toLinearMap :=
+  congrArg ContinuousLinearMap.toLinearMap U.id_eq_sum_starProjection_self_orthogonalComplement
+
+omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
+/-- Two-sided projection compression `Δ ↦ P_W Δ P_K` is idempotent. -/
+theorem starProjection_comp_comp_starProjection_idem {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (W : Submodule 𝕜 F) (K : Submodule 𝕜 E)
+    [W.HasOrthogonalProjection] [K.HasOrthogonalProjection] (Δ : E →ₗ[𝕜] F) :
+    W.starProjection.toLinearMap ∘ₗ
+        (W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap) ∘ₗ
+        K.starProjection.toLinearMap =
+      W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap := by
+  simp only [LinearMap.comp_assoc]
+  rw [K.starProjection_toLinearMap_comp_self, ← LinearMap.comp_assoc,
+    W.starProjection_toLinearMap_comp_self]
 
 omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
 /-- For finite-dimensional subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same
@@ -417,6 +471,25 @@ theorem orthogonalProjectionOnto_comp_subtypeL :
   ext u
   exact congrArg Subtype.val (U.orthogonalProjectionOnto_mem_subspace_eq_self u)
 
+/-- The cylinder over `s ⊆ U` along `Uᗮ`, the set `{y + z | y ∈ s, z ∈ Uᗮ}`, is the preimage of
+`s` under the orthogonal projection onto `U`. -/
+theorem preimage_orthogonalProjectionOnto_eq (s : Set U) :
+    U.orthogonalProjectionOnto ⁻¹' s = {x | ∃ y ∈ s, ∃ z ∈ Uᗮ, (y : E) + z = x} := by
+  ext x
+  refine ⟨fun hx => ⟨_, hx, x - U.orthogonalProjectionOnto x,
+    U.sub_starProjection_mem_orthogonal x, add_sub_cancel _ _⟩, ?_⟩
+  rintro ⟨y, hy, z, hz, rfl⟩
+  rwa [Set.mem_preimage, map_add, U.orthogonalProjectionOnto_mem_subspace_eq_self,
+    U.orthogonalProjectionOnto_eq_zero_iff.2 hz, add_zero]
+
+/-- For `u ∈ U` and any predicate `p` on `𝕜`, the cylinder over `{y ∈ U | p ⟪y, u⟫}` is
+`{x ∈ E | p ⟪x, u⟫}`. For instance, over `ℝ` with `p = (· < s)`, the cylinder over the
+half-space `{y ∈ U | ⟪y, u⟫ < s}` of `U` is the half-space `{x ∈ E | ⟪x, u⟫ < s}` of `E`. -/
+theorem preimage_orthogonalProjectionOnto_setOf_inner (u : U) (p : 𝕜 → Prop) :
+    U.orthogonalProjectionOnto ⁻¹' {y | p ⟪y, u⟫_𝕜} = {x : E | p ⟪x, (u : E)⟫_𝕜} := by
+  ext x
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, inner_orthogonalProjectionOnto_eq_of_mem_right]
+
 /-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
 Both maps are regarded as finite-dimensional algebraic linear maps. -/
 @[simp]
@@ -487,6 +560,20 @@ theorem inner_starProjection_map_apply {E' : Type*} [NormedAddCommGroup E']
       ⟪K.starProjection x, y⟫_𝕜 := by
   rw [starProjection_map_apply, e.symm_apply_apply, e.inner_map_map]
 
+/-- The orthogonal projection onto `(𝕜 ∙ e)ᗮ` sends `x` to `y` exactly when `x` lies on the line
+through `y` parallel to `e`. -/
+theorem orthogonalProjectionOnto_orthogonal_span_singleton_eq_iff {e : E} (y : (𝕜 ∙ e)ᗮ)
+    (x : E) : (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x = y ↔ ∃ t : 𝕜, (y : E) + t • e = x := by
+  constructor
+  · intro hx
+    have hmem := (𝕜 ∙ e)ᗮ.sub_starProjection_mem_orthogonal x
+    rw [orthogonal_orthogonal, starProjection_apply, hx] at hmem
+    obtain ⟨t, ht⟩ := mem_span_singleton.1 hmem
+    exact ⟨t, by rw [ht]; abel⟩
+  · rintro ⟨t, rfl⟩
+    rw [map_add, map_smul, orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
+      smul_zero, add_zero, orthogonalProjectionOnto_mem_subspace_eq_self]
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -549,6 +636,17 @@ theorem mul_starProjection_eq_self {U : Submodule 𝕜 E} [U.HasOrthogonalProjec
   ext x
   simpa only [_root_.mul_apply_eq_comp] using
     U.apply_starProjection_eq_of_forall_mem_orthogonal hker x
+
+/-- An operator into `E` is fixed by left composition with `U.starProjection` exactly when its
+range lies in `U`. -/
+theorem starProjection_comp_eq_self_iff {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
+    [TopologicalSpace F] {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {T : F →L[𝕜] E} :
+    U.starProjection ∘L T = T ↔ T.range ≤ U := by
+  refine ⟨?_, fun hT ↦ ContinuousLinearMap.ext fun x ↦
+    U.starProjection_eq_self_iff.mpr (hT ⟨x, rfl⟩)⟩
+  rintro hT _ ⟨x, rfl⟩
+  rw [← hT]
+  exact U.starProjection_apply_mem _
 
 /-- A bounded operator commutes with `Uᗮ.starProjection` if and only if it commutes with
 `U.starProjection`. -/
@@ -661,6 +759,13 @@ theorem exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E
   obtain ⟨e, he₀, he⟩ := exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank s hs
   exact ⟨(‖e‖⁻¹ : 𝕜) • e, norm_smul_inv_norm he₀, fun u hu ↦ by
     rw [inner_smul_right, he u hu, mul_zero]⟩
+
+/-- In dimension at least two, the orthogonal complement of any vector contains a unit vector. -/
+theorem exists_norm_eq_one_mem_orthogonal_singleton (e : E) (hE : 2 ≤ Module.finrank 𝕜 E) :
+    ∃ w : (𝕜 ∙ e)ᗮ, ‖(w : E)‖ = 1 := by
+  obtain ⟨w, hw, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := 𝕜) ({e} : Finset E) (by simp; omega)
+  exact ⟨⟨w, Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth e (by simp))⟩, hw⟩
 
 /-- A vector orthogonal to a nonzero vector `b` is not `-b`. -/
 theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 = 0) : a ≠ -b := by
@@ -814,6 +919,151 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
   rw [mem_ker] at hx
   simpa only [map_add, hx, add_zero] using
     congrArg u (sub_add_cancel x (u.ker.starProjection x))
+
+/-- Composing `Θ` on the right with the orthogonal projection onto `ker Θ` vanishes. -/
+@[simp]
+theorem comp_starProjection_ker_eq_zero (Θ : E →ₗ[𝕜] F) [Θ.ker.HasOrthogonalProjection] :
+    Θ ∘ₗ (ker Θ).starProjection.toLinearMap = 0 := by
+  ext x
+  exact mem_ker.mp ((ker Θ).starProjection_apply_mem x)
+
+section NormalPart
+
+variable {F' : Type*} [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
+
+/-- The tangent part `Δ - P_W Δ P_K` decomposes as `P_{Wᗮ} Δ + P_W Δ P_{Kᗮ}`. -/
+theorem sub_starProjection_comp_eq_add (Δ : E →ₗ[𝕜] F') (W : Submodule 𝕜 F')
+    (K : Submodule 𝕜 E) [W.HasOrthogonalProjection] [K.HasOrthogonalProjection] :
+    Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap =
+      Wᗮ.starProjection.toLinearMap ∘ₗ Δ +
+        W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ Kᗮ.starProjection.toLinearMap := by
+  have hΔ : Δ = W.starProjection.toLinearMap ∘ₗ Δ + Wᗮ.starProjection.toLinearMap ∘ₗ Δ := by
+    conv_lhs =>
+      rw [← id_comp Δ, W.id_eq_sum_starProjection_toLinearMap_self_orthogonalComplement, add_comp]
+  have hWΔ : W.starProjection.toLinearMap ∘ₗ Δ =
+      W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap +
+        W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ Kᗮ.starProjection.toLinearMap := by
+    conv_lhs =>
+      rw [← comp_id (W.starProjection.toLinearMap ∘ₗ Δ),
+        K.id_eq_sum_starProjection_toLinearMap_self_orthogonalComplement, comp_add]
+      simp only [comp_assoc]
+  conv_lhs =>
+    arg 1
+    rw [hΔ, hWΔ]
+  rw [add_assoc, add_sub_cancel_left]
+  exact add_comm _ _
+
+/-- The tangent part `Δ - P_W Δ P_K` of a linear map with respect to orthogonal projections onto
+`W ≤ F'` and `K ≤ E` has rank at most `dim Wᗮ + dim Kᗮ`. -/
+theorem finrank_range_sub_starProjection_comp_le [FiniteDimensional 𝕜 E]
+    [FiniteDimensional 𝕜 F'] (Δ : E →ₗ[𝕜] F') (W : Submodule 𝕜 F') (K : Submodule 𝕜 E) :
+    Module.finrank 𝕜
+        (range (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap)) ≤
+      Module.finrank 𝕜 Wᗮ + Module.finrank 𝕜 Kᗮ := by
+  rw [Δ.sub_starProjection_comp_eq_add W K]
+  set T₁ : E →ₗ[𝕜] F' := Wᗮ.starProjection.toLinearMap ∘ₗ Δ
+  set T₂ : E →ₗ[𝕜] F' := W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ Kᗮ.starProjection.toLinearMap
+  have h1 : Module.finrank 𝕜 (range T₁) ≤ Module.finrank 𝕜 Wᗮ := by
+    calc Module.finrank 𝕜 (range T₁)
+        ≤ Module.finrank 𝕜 (range Wᗮ.starProjection.toLinearMap) :=
+          Submodule.finrank_mono (range_comp_le_range _ _)
+      _ = Module.finrank 𝕜 Wᗮ := by rw [Wᗮ.range_starProjection]
+  have h2 : Module.finrank 𝕜 (range T₂) ≤ Module.finrank 𝕜 Kᗮ :=
+    Kᗮ.finrank_range_comp_starProjection_le (W.starProjection.toLinearMap ∘ₗ Δ)
+  exact ((Submodule.finrank_mono (range_add_le T₁ T₂)).trans
+    (Submodule.finrank_add_le_finrank_add_finrank _ _)).trans (Nat.add_le_add h1 h2)
+
+/-- The canonical normal-part operator `Δ ↦ P_{(range Θ)ᗮ} Δ P_{ker Θ}` with respect to `Θ`. -/
+def normalPart (Θ : E →ₗ[𝕜] F') [(range Θ)ᗮ.HasOrthogonalProjection]
+    [(ker Θ).HasOrthogonalProjection] : (E →ₗ[𝕜] F') →ₗ[𝕜] (E →ₗ[𝕜] F') :=
+  compRight 𝕜 (range Θ)ᗮ.starProjection.toLinearMap ∘ₗ
+    lcomp 𝕜 F' (ker Θ).starProjection.toLinearMap
+
+/-- Unfolding theorem for `LinearMap.normalPart`:
+`Θ.normalPart Δ = P_{(range Θ)ᗮ} ∘ₗ Δ ∘ₗ P_{ker Θ}`. -/
+theorem normalPart_def (Θ Δ : E →ₗ[𝕜] F') [(range Θ)ᗮ.HasOrthogonalProjection]
+    [(ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart Δ =
+      (range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ (ker Θ).starProjection.toLinearMap :=
+  (rfl)
+
+/-- The canonical normal part operation `Δ ↦ Θ.normalPart Δ` is idempotent. -/
+@[simp]
+theorem normalPart_normalPart (Θ Δ : E →ₗ[𝕜] F') [(range Θ)ᗮ.HasOrthogonalProjection]
+    [(ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart (Θ.normalPart Δ) = Θ.normalPart Δ := by
+  simp only [normalPart_def]
+  exact (range Θ)ᗮ.starProjection_comp_comp_starProjection_idem (ker Θ) Δ
+
+/-- The canonical normal part of `Θ` with respect to itself is `0`. -/
+@[simp]
+theorem normalPart_self (Θ : E →ₗ[𝕜] F') [(range Θ)ᗮ.HasOrthogonalProjection]
+    [(ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart Θ = 0 := by
+  simp only [normalPart_def, comp_starProjection_ker_eq_zero, comp_zero]
+
+/-- For a target map `Θ`, the canonical tangent part `Δ - Θ.normalPart Δ` has rank at most
+`2 * rank Θ`. -/
+theorem finrank_range_sub_normalPart_le [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F']
+    (Θ Δ : E →ₗ[𝕜] F') :
+    Module.finrank 𝕜 (range (Δ - Θ.normalPart Δ)) ≤ 2 * Module.finrank 𝕜 (range Θ) := by
+  rw [normalPart_def]
+  have h := Δ.finrank_range_sub_starProjection_comp_le (range Θ)ᗮ (ker Θ)
+  rwa [Submodule.orthogonal_orthogonal, orthogonal_ker, finrank_range_adjoint, ← two_mul] at h
+
+section Adjoint
+
+variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F']
+
+/-- Composing `Θ†` on the right with the orthogonal projection onto `(range Θ)ᗮ` vanishes. -/
+@[simp]
+theorem adjoint_comp_starProjection_orthogonal_range_eq_zero (Θ : E →ₗ[𝕜] F') :
+    adjoint Θ ∘ₗ (range Θ)ᗮ.starProjection.toLinearMap = 0 := by
+  convert (adjoint Θ).comp_starProjection_ker_eq_zero
+  exact orthogonal_range Θ
+
+/-- The canonical normal part `Θ.normalPart Δ` satisfies `Θ† (Θ.normalPart Δ) = 0`. -/
+@[simp]
+theorem adjoint_comp_normalPart_eq_zero (Θ Δ : E →ₗ[𝕜] F') :
+    adjoint Θ ∘ₗ Θ.normalPart Δ = 0 := by
+  rw [normalPart_def, ← comp_assoc, adjoint_comp_starProjection_orthogonal_range_eq_zero, zero_comp]
+
+/-- The canonical normal part `Θ.normalPart Δ` satisfies `Θ (Θ.normalPart Δ)† = 0`. -/
+@[simp]
+theorem comp_adjoint_normalPart_eq_zero (Θ Δ : E →ₗ[𝕜] F') :
+    Θ ∘ₗ adjoint (Θ.normalPart Δ) = 0 := by
+  rw [normalPart_def]
+  simp only [adjoint_comp, (ker Θ).starProjection_isSymmetric.adjoint_eq,
+    ← comp_assoc, comp_starProjection_ker_eq_zero, zero_comp]
+
+end Adjoint
+
+end NormalPart
+
+/-- **Subspace-kernel distance bound.** For `D : E →ₗ[𝕜] F` on a finite-dimensional inner product
+space and `P ≤ E`, `infDist w (P ⊓ ker D)` is bounded by
+`infDist w P + c * ‖D (P.starProjection w)‖`. -/
+theorem exists_infDist_inf_ker_le {F : Type*} [FiniteDimensional 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (D : E →ₗ[𝕜] F) (P : Submodule 𝕜 E) :
+    ∃ c : NNReal, 0 < c ∧ ∀ w : E,
+      Metric.infDist w ((P ⊓ LinearMap.ker D : Submodule 𝕜 E) : Set E) ≤
+        Metric.infDist w (P : Set E) + c * ‖D (P.starProjection w)‖ := by
+  set K₀ : Submodule 𝕜 E := P ⊓ LinearMap.ker D; set M : Submodule 𝕜 E := P ⊓ K₀ᗮ
+  have hM_inj : LinearMap.ker (D.comp M.subtype) = ⊥ := by
+    rw [LinearMap.ker_eq_bot]; rintro ⟨m, hmP, hmK⟩ ⟨n, hnP, hnK⟩ hmn; ext
+    have hsub : m - n ∈ K₀ ⊓ K₀ᗮ := ⟨⟨P.sub_mem hmP hnP, LinearMap.mem_ker.mpr (by
+      simpa [map_sub, sub_eq_zero] using hmn)⟩, K₀ᗮ.sub_mem hmK hnK⟩
+    exact sub_eq_zero.mp ((Submodule.mem_bot 𝕜).mp (Submodule.inf_orthogonal_eq_bot K₀ ▸ hsub))
+  obtain ⟨c, hc0, hc_anti⟩ := (D.comp M.subtype).exists_antilipschitzWith hM_inj
+  refine ⟨c, hc0, fun w => ?_⟩
+  let p := P.starProjection w; let q := K₀.starProjection p
+  have hqK : q ∈ K₀ := K₀.starProjection_apply_mem p
+  have hnorm_m : ‖p - q‖ ≤ c * ‖D p‖ := by
+    simpa [Subtype.dist_eq, map_sub, LinearMap.mem_ker.mp hqK.2] using hc_anti.le_mul_dist
+      ⟨p - q, P.sub_mem (P.starProjection_apply_mem w) hqK.1,
+        K₀.sub_starProjection_mem_orthogonal p⟩ 0
+  exact ((Metric.infDist_le_dist_of_mem hqK).trans (dist_triangle w p q)).trans <| by
+    rw [P.dist_starProjection_eq_infDist w, dist_eq_norm]; gcongr
 
 end LinearMap
 

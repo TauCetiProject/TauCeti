@@ -45,6 +45,12 @@ energy of test sections by `∫ ‖D_u ξ‖²` and an `L²` norm on a compact s
 of Peetre's argument
 (`exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le`).
 
+The coefficient field is continuous where the data are regular along `u`
+(`continuousOn_floerConformalJetCoeff`), and for a family of data `(J_μ, K_{s,μ}, K_{t,μ})` that is
+regular jointly in the parameter it is continuous jointly in the parameter and the domain point
+(`continuousAt_floerConformalJetCoeff_family`); this is how the operators of a family of data are
+compared in operator norm.
+
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
 `(0, 1)`-form `(dξ + …)^(0,1)` for the conformal metric, since the conformal factors of a
 one-form and of the area cancel; for the pair of pants this is the norm in which the energy and
@@ -94,6 +100,15 @@ theorem floerConformalJetCoeff_apply (ω : SymplecticForm V) (ρ : ℝ × ℝ �
     ω.floerConformalJetCoeff ρ J Ks Kt u z v =
       v.2.1 + J z (u z) v.2.2 + (√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z v.1 :=
   firstOrderJetCoeff_apply _ _ v
+
+/-- The coefficient field on conformal jets at `z` depends on the Floer data `J`, `Ks`, `Kt` only
+through their values at `z`, as functions of the target point. -/
+theorem floerConformalJetCoeff_congr_data (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    {z : ℝ × ℝ} (hJ : J z = J' z) (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerConformalJetCoeff ρ J Ks Kt u z = ω.floerConformalJetCoeff ρ J' Ks' Kt' u z := by
+  rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
+    ω.floerLinearizationCoeff_congr_data u hJ hKs hKt, hJ]
 
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
@@ -152,6 +167,28 @@ theorem norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le (ω : Sympl
         gcongr 1 + B + κ * ?_
         exact hC.trans (mul_le_mul h1 hCe (norm_nonneg _) (by linarith))
 
+/-- The coefficient field on conformal jets of a family of Floer data `(J_μ, K_{s,μ}, K_{t,μ})`
+with parameter `μ` in a real normed space `P` along `u` is continuous jointly in `μ` and the
+domain point `z` at `(μ, z)` when the family is `C¹` (with `C²` Hamiltonians) jointly in `μ`, `z`
+and the target point at `((μ, z), u z)`, `u` is `C¹` at `z`, and the weight is continuous and
+positive at `z`. -/
+theorem continuousAt_floerConformalJetCoeff_family {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] (ω : SymplecticForm V) {ρ : ℝ × ℝ → ℝ} {J : P × (ℝ × ℝ) → V → V →L[ℝ] V}
+    {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : ℝ × ℝ → V} {p : P × (ℝ × ℝ)}
+    (hJ : ContDiffAt ℝ 1 (uncurry J) (p, u p.2))
+    (hKs : ContDiffAt ℝ 2 (uncurry Ks) (p, u p.2)) (hKt : ContDiffAt ℝ 2 (uncurry Kt) (p, u p.2))
+    (hu : ContDiffAt ℝ 1 u p.2) (hρ : ContinuousAt ρ p.2) (hρp : 0 < ρ p.2) :
+    ContinuousAt (fun q : P × (ℝ × ℝ) ↦ ω.floerConformalJetCoeff ρ (fun z ↦ J (q.1, z))
+      (fun z ↦ Ks (q.1, z)) (fun z ↦ Kt (q.1, z)) u q.2) p := by
+  have hJu : ContinuousAt (fun q ↦ J q (u q.2)) p :=
+    ContinuousAt.comp (f := fun q : P × (ℝ × ℝ) ↦ (q, u q.2)) hJ.continuousAt
+      (continuousAt_id.prodMk (hu.continuousAt.comp continuousAt_snd))
+  have hρq : ContinuousAt (fun q : P × (ℝ × ℝ) ↦ (√(ρ q.2))⁻¹) p :=
+    ((hρ.comp continuousAt_snd).sqrt).inv₀ (Real.sqrt_pos.2 hρp).ne'
+  simp only [floerConformalJetCoeff_def]
+  exact continuousAt_firstOrderJetCoeff hJu
+    (hρq.smul (ω.continuousAt_floerLinearizationCoeff_family hJ hKs hKt hu))
+
 /-- The coefficient field on conformal jets is continuous on `U` when the weight is a conformal
 weight on `U`, the data are `C¹` (and the Hamiltonians `C²`) along the graph of `u` over `U`, and
 `u` is `C¹` on `U`. -/
@@ -162,15 +199,46 @@ theorem continuousOn_floerConformalJetCoeff (ω : SymplecticForm V) {U : Set (�
     (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 1 u U) :
     ContinuousOn (ω.floerConformalJetCoeff ρ J Ks Kt u) U := by
   intro z hz
-  have huz : ContDiffAt ℝ 1 u z := hu.contDiffAt (hρ.isOpen.mem_nhds hz)
-  have hJu : ContinuousAt (fun z ↦ J z (u z)) z :=
-    (hJ z hz).continuousAt.comp (f := fun z ↦ (z, u z))
-      (continuousAt_id.prodMk huz.continuousAt)
-  have hA := ω.continuousAt_floerLinearizationCoeff (hJ z hz) (hKs z hz) (hKt z hz) huz
-  have hρz : ContinuousAt (fun z ↦ (√(ρ z))⁻¹) z :=
-    ((hρ.continuousOn.continuousAt (hρ.isOpen.mem_nhds hz)).sqrt).inv₀
-      (Real.sqrt_pos.2 (hρ.pos z hz)).ne'
-  exact (continuousAt_firstOrderJetCoeff hJu (hρz.smul hA)).continuousWithinAt
+  -- The data form a constant family over the parameter space `ℝ`.
+  have hπ {m : WithTop ℕ∞} :
+      ContDiffAt ℝ m (fun x : (ℝ × (ℝ × ℝ)) × V ↦ (x.1.2, x.2)) (((0 : ℝ), z), u z) :=
+    (contDiff_fst.snd.prodMk contDiff_snd).contDiffAt
+  have h := ω.continuousAt_floerConformalJetCoeff_family (P := ℝ) (J := fun q ↦ J q.2)
+    (Ks := fun q ↦ Ks q.2) (Kt := fun q ↦ Kt q.2) (p := (0, z))
+    ((hJ z hz).comp (((0 : ℝ), z), u z) hπ) ((hKs z hz).comp (((0 : ℝ), z), u z) hπ)
+    ((hKt z hz).comp (((0 : ℝ), z), u z) hπ) (hu.contDiffAt (hρ.isOpen.mem_nhds hz))
+    (hρ.continuousOn.continuousAt (hρ.isOpen.mem_nhds hz)) (hρ.pos z hz)
+  exact (h.comp (f := fun w : ℝ × ℝ ↦ ((0 : ℝ), w))
+    (continuousAt_const.prodMk continuousAt_id)).continuousWithinAt
+
+/-- **The coefficient field on conformal jets is bounded when the data are constant near
+infinity.** Let `ρ` be a conformal weight on the whole plane, and let the Floer data `J`, `K_s`,
+`K_t` be a fixed `J₀` and the zero perturbation on `‖w‖ ≥ T`, with `J` `C¹` and `K_s`, `K_t` `C²`
+along a `C¹` map `u`. Then the coefficient field of the linearized Floer operator on the conformal
+jets of `ρ` is essentially bounded on the plane: on `‖w‖ ≥ T` it is that of `∂s + J₀ ∂t`. -/
+theorem memLp_floerConformalJetCoeff_of_eq_base (ω : SymplecticForm V) {ρ : ℝ × ℝ → ℝ}
+    (hρ : IsWeight univ ρ) {J : ℝ × ℝ → V → V →L[ℝ] V} {J₀ : V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {T : ℝ}
+    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
+    (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
+    (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0)
+    (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u) :
+    MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict univ) := by
+  have hcont := ω.continuousOn_floerConformalJetCoeff hρ (fun z _ ↦ hJ z) (fun z _ ↦ hKs z)
+    (fun z _ ↦ hKt z) hu.contDiffOn
+  -- On the compact square `‖w‖ ≤ T` the field is continuous, hence bounded.
+  obtain ⟨B, hB⟩ := (isCompact_closedBall (0 : ℝ × ℝ) T).exists_bound_of_continuousOn
+    (hcont.mono (subset_univ _))
+  refine memLp_top_of_bound (hcont.aestronglyMeasurable MeasurableSet.univ) (max B (1 + ‖J₀‖))
+    (Filter.Eventually.of_forall fun z ↦ ?_)
+  rcases le_or_gt ‖z‖ T with hz | hz
+  · exact (hB z (mem_closedBall_zero_iff.2 hz)).trans (le_max_left _ _)
+  -- Beyond the square the field is that of the Cauchy–Riemann operator of `J₀`.
+  refine le_max_of_le_right ((ω.norm_floerConformalJetCoeff_le _ _ _ _ _ z).trans_eq ?_)
+  rw [ω.floerLinearizationCoeff_eq_zero_of_eq_base u (hJ₀ z hz.le) (hKs₀ z hz.le)
+    (hKt₀ z hz.le), norm_zero, mul_zero, add_zero, hJ₀ z hz.le]
 
 variable (U : Set (ℝ × ℝ)) (ρ : ℝ × ℝ → ℝ)
 
@@ -181,13 +249,14 @@ field on conformal jets, and it is `0` by convention when this field is not
 essentially bounded on `U`. -/
 def floerConformalSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) : H1 V U ρ →L[ℝ] Lp V 2 (volume.restrict U) :=
-  (jetOperator (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp (H1 V U ρ).subtypeL
+  (jetOperator 2 (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
+    (H1 V U ρ).subtypeL
 
 /-- The definition of the conformal Sobolev realization of the linearized Floer operator. -/
 theorem floerConformalSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
     ω.floerConformalSobolevOperator U ρ J Ks Kt u =
-      (jetOperator (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
+      (jetOperator 2 (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
         (H1 V U ρ).subtypeL :=
   (rfl)
 
@@ -202,7 +271,7 @@ theorem coeFn_floerConformalSobolevOperator (ω : SymplecticForm V)
     ω.floerConformalSobolevOperator U ρ J Ks Kt u x =ᵐ[volume.restrict U]
       fun z ↦ ω.floerConformalJetCoeff ρ J Ks Kt u z
         ((x : Lp (V × V × V) 2 (volume.restrict U)) z) :=
-  coeFn_jetOperator hM x
+  coeFn_jetOperator (p := 2) hM x
 
 /-- On the jet of a test section `ξ`, the conformal Sobolev realization of the linearized Floer
 operator is `D_u ξ`, when the coefficient field on conformal jets is essentially bounded on `U`. -/

@@ -78,6 +78,11 @@ theorem mem_framedGaugeGroup (u : ℂ → Circle) :
     u ∈ framedGaugeGroup ↔
       ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) := Iff.rfl
 
+/-- A gauge of the smooth framed group is differentiable. -/
+theorem differentiable_of_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) :
+    Differentiable ℝ fun z ↦ (u z : ℂ) :=
+  ((mem_framedGaugeGroup u).1 hu).1.differentiable (by simp)
+
 /-- A gauge of the smooth framed group composed with a translation is again in the smooth
 framed group. -/
 theorem comp_add_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) (a : ℂ) :
@@ -346,9 +351,8 @@ theorem hasDerivAt_gaugeTransform_add_smul (u : ℂ → Circle)
 instance : MulAction framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) where
   smul u x := gaugeTransform u.val x
   one_smul := gaugeTransform_one
-  mul_smul u v x := gaugeTransform_mul
-    (((mem_framedGaugeGroup _).mp u.property).1.differentiable (by simp))
-    (((mem_framedGaugeGroup _).mp v.property).1.differentiable (by simp)) x
+  mul_smul u v x := gaugeTransform_mul (differentiable_of_mem_framedGaugeGroup u.property)
+    (differentiable_of_mem_framedGaugeGroup v.property) x
 
 /-- The bundled action is the charge-one coordinate transformation. -/
 @[simp]
@@ -498,15 +502,36 @@ nonvanishing, regularity or equation hypothesis on the field is required. -/
 instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) := by
   apply isCancelSMul_iff_eq_one_of_smul_eq.mpr
   intro u x hu
-  have hup := (mem_framedGaugeGroup _).mp u.property
-  exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
+  exact Subtype.ext (eq_one_of_gaugeTransform_eq_self
+    (differentiable_of_mem_framedGaugeGroup u.property)
+    ((mem_framedGaugeGroup _).mp u.property).2 hu)
+
+/-- The logarithmic derivatives of gauges depending on a parameter, `C^(n+1)` jointly in the
+parameter and the point at `p₀`, are `C^n` jointly in the parameter and the point at `p₀`. -/
+theorem contDiffAt_parametric_gaugeForm {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : WithTop ℕ∞} {u : P → ℂ → Circle} {p₀ : P × ℂ}
+    (hu : ContDiffAt ℝ (n + 1) (fun p : P × ℂ ↦ (u p.1 p.2 : ℂ)) p₀) :
+    ContDiffAt ℝ n (fun p : P × ℂ ↦ gaugeForm (u p.1) p.2) p₀ :=
+  contDiffAt_const.clm_comp
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp p₀
+      (conjCLE.contDiff.contDiffAt.comp p₀ (hu.of_le le_self_add)) |>.clm_comp
+      (ContDiffAt.fderiv (f := fun p z ↦ (u p.1 z : ℂ))
+        (hu.comp (f := fun q : (P × ℂ) × ℂ ↦ (q.1.1, q.2)) (p₀, p₀.2)
+          (contDiffAt_fst.fst.prodMk contDiffAt_snd)) contDiffAt_snd le_rfl))
+
+/-- The logarithmic derivatives of gauges depending on a parameter, `C^(n+1)` jointly in the
+parameter and the point, are `C^n` jointly in the parameter and the point. -/
+theorem contDiff_parametric_gaugeForm {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : WithTop ℕ∞} {u : P → ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) fun p : P × ℂ ↦ (u p.1 p.2 : ℂ)) :
+    ContDiff ℝ n fun p : P × ℂ ↦ gaugeForm (u p.1) p.2 :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_parametric_gaugeForm hu.contDiffAt
 
 /-- The logarithmic derivative of a `C^(n+1)` gauge is a `C^n` one-form. -/
 theorem contDiff_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle}
     (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ))) : ContDiff ℝ n (gaugeForm u) :=
-  contDiff_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp (hu.of_le le_self_add))
-      |>.clm_comp (hu.fderiv_right le_rfl))
+  (contDiff_parametric_gaugeForm (P := Unit) (u := fun _ ↦ u) (hu.comp contDiff_snd)).comp
+    ((contDiff_const (c := ())).prodMk contDiff_id)
 
 /-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
 and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
@@ -534,35 +559,71 @@ theorem contDiff_coe_of_contDiff_gaugeForm {u : ℂ → Circle}
     exact_mod_cast le_self_add
   | coe n => exact_mod_cast hfin n hω
 
+/-- The local form of `TauCeti.Vortex.contDiff_gaugeForm`: the logarithmic derivative of a gauge
+that is `C^(n+1)` at `z` is `C^n` at `z`. -/
+theorem contDiffAt_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle} {z : ℂ}
+    (hu : ContDiffAt ℝ (n + 1) (fun w ↦ (u w : ℂ)) z) : ContDiffAt ℝ n (gaugeForm u) z :=
+  (contDiffAt_parametric_gaugeForm (P := Unit) (u := fun _ ↦ u) (p₀ := ((), z))
+    (hu.comp (f := Prod.snd) ((), z) contDiffAt_snd)).comp z
+    ((contDiffAt_const (c := ())).prodMk contDiffAt_id)
+
 /-- A `C²` gauge has a differentiable logarithmic derivative. -/
 theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z) :
-    DifferentiableAt ℝ (gaugeForm u) z := by
-  have h : ContDiffAt ℝ 1 (gaugeForm u) z :=
-    contDiffAt_const.clm_comp
-      ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
-        (conjCLE.contDiff.contDiffAt.comp z (hu.of_le (by norm_num))) |>.clm_comp
-        (hu.fderiv_right (by norm_num)))
-  exact h.differentiableAt one_ne_zero
+    DifferentiableAt ℝ (gaugeForm u) z :=
+  (contDiffAt_gaugeForm (n := 1) hu).differentiableAt one_ne_zero
+
+/-- Gauges and fields depending on a parameter, `C^(n+1)` and `C^n` jointly in the parameter and
+the point at `p₀`, give gauge-transformed fields that are `C^n` jointly in the parameter and the
+point at `p₀`. -/
+theorem contDiffAt_parametric_gaugeTransform {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {n : WithTop ℕ∞} {u : P → ℂ → Circle} {p₀ : P × ℂ}
+    (hu : ContDiffAt ℝ (n + 1) (fun p : P × ℂ ↦ (u p.1 p.2 : ℂ)) p₀)
+    {x : P → ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiffAt ℝ n (fun p : P × ℂ ↦ x p.1 p.2) p₀) :
+    ContDiffAt ℝ n (fun p : P × ℂ ↦ gaugeTransform (u p.1) (x p.1) p.2) p₀ := by
+  have hg := contDiffAt_parametric_gaugeForm hu
+  have hr := reCLM.contDiff.contDiffAt.comp p₀ (hu.of_le le_self_add)
+  have hi := imCLM.contDiff.contDiffAt.comp p₀ (hu.of_le le_self_add)
+  have hc (i : Fin 4) : ContDiffAt ℝ n (fun p : P × ℂ ↦ x p.1 p.2 i) p₀ :=
+    (contDiffAt_piLp _).mp hx i
+  refine (contDiffAt_piLp _).mpr fun i ↦ ?_
+  fin_cases i <;> simp only [gaugeTransform, PiLp.toLp_apply]
+  · exact (hc 0).sub (hg.clm_apply contDiffAt_const)
+  · exact (hc 1).sub (hg.clm_apply contDiffAt_const)
+  · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
+  · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+
+/-- Gauges and fields depending on a parameter, `C^(n+1)` and `C^n` jointly in the parameter and
+the point, give gauge-transformed fields that are `C^n` jointly in the parameter and the point. -/
+theorem contDiff_parametric_gaugeTransform {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : WithTop ℕ∞} {u : P → ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) fun p : P × ℂ ↦ (u p.1 p.2 : ℂ))
+    {x : P → ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n fun p : P × ℂ ↦ x p.1 p.2) :
+    ContDiff ℝ n fun p : P × ℂ ↦ gaugeTransform (u p.1) (x p.1) p.2 :=
+  contDiff_iff_contDiffAt.2 fun _ ↦
+    contDiffAt_parametric_gaugeTransform hu.contDiffAt hx.contDiffAt
 
 /-- A `C^(n+1)` gauge preserves `C^n` fields: the connection loses one derivative of the gauge
 through `u⁻¹ du`, the section none. -/
 theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
     (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ)))
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
-    ContDiff ℝ n (gaugeTransform u x) := by
-  have hg := contDiff_gaugeForm hu
-  have hr := reCLM.contDiff.comp (hu.of_le le_self_add)
-  have hi := imCLM.contDiff.comp (hu.of_le le_self_add)
-  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) :=
-    (contDiff_piLp _).mp hx i
-  apply (contDiff_piLp _).mpr
-  intro i
-  fin_cases i <;> simp only [gaugeTransform, PiLp.toLp_apply]
-  · exact (hc 0).sub (hg.clm_apply contDiff_const)
-  · exact (hc 1).sub (hg.clm_apply contDiff_const)
-  · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
-  · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+    ContDiff ℝ n (gaugeTransform u x) :=
+  (contDiff_parametric_gaugeTransform (P := Unit) (u := fun _ ↦ u) (x := fun _ ↦ x)
+    (hu.comp contDiff_snd) (hx.comp contDiff_snd)).comp
+    ((contDiff_const (c := ())).prodMk contDiff_id)
+
+/-- The local form of `TauCeti.Vortex.contDiff_gaugeTransform`: a gauge that is `C^(n+1)` at `z`
+takes a field that is `C^n` at `z` to a field that is `C^n` at `z`. -/
+theorem contDiffAt_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle} {z : ℂ}
+    (hu : ContDiffAt ℝ (n + 1) (fun w ↦ (u w : ℂ)) z)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiffAt ℝ n x z) :
+    ContDiffAt ℝ n (gaugeTransform u x) z :=
+  (contDiffAt_parametric_gaugeTransform (P := Unit) (u := fun _ ↦ u) (x := fun _ ↦ x)
+    (p₀ := ((), z)) (hu.comp (f := Prod.snd) ((), z) contDiffAt_snd)
+    (hx.comp (f := Prod.snd) ((), z) contDiffAt_snd)).comp z
+    ((contDiffAt_const (c := ())).prodMk contDiffAt_id)
 
 /-- A `C¹` gauge transformation of a continuous field is continuous. -/
 theorem continuous_gaugeTransform {u : ℂ → Circle} (hu : ContDiff ℝ 1 (fun w ↦ (u w : ℂ)))

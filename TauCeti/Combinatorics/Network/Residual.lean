@@ -45,6 +45,7 @@ lower bounds. We prove:
   homomorphism.
 * `TauCeti.residualUpdate f r`: the residual update `f + residualNet r`.
 * `TauCeti.residualDifference f g`: the canonical residual assignment updating `f` to `g`.
+* `TauCeti.Network.residual`: the same residual construction bundled as a bounded network.
 
 ## Main results
 
@@ -417,5 +418,43 @@ theorem residualDifference_mem [LinearOrder K] {S : Type*} [SetLike S K] [AddSub
     exacts [neg_mem (sub_mem (hg e) (hf e)), zero_mem H]
 
 end AddCommGroup
+
+namespace Network
+
+variable [AddGroup K] [Preorder K] [AddRightMono K]
+
+/-- The residual network of a feasible assignment, retaining both tagged copies of every arrow,
+including copies of loops and arrows of zero residual capacity.
+
+Exposed and reducible so its dependent arrow family computes to `ResidualHom N.Hom`. -/
+@[expose, reducible]
+def residual (N : Network K V) (f : N.Assignment K) (hf : f ∈ Set.Icc N.lower N.upper) :
+    Network K V :=
+  { ofCapacity (ResidualHom N.Hom) (residualCapacity N.lower N.upper f)
+      (fun {_ _} e ↦ residualCapacity_nonneg hf _ _ e) with
+    lower := 0 }
+
+/-- Residual arrows depend only on the original arrow family, not on the feasible assignment. -/
+@[simp]
+theorem residual_Hom (N : Network K V) (f : N.Assignment K)
+    (hf : f ∈ Set.Icc N.lower N.upper) :
+    (N.residual f hf).Hom = ResidualHom N.Hom :=
+  (rfl)
+
+/-- Every residual lower bound is zero. -/
+@[simp]
+theorem residual_lower (N : Network K V) (f : N.Assignment K)
+    (hf : f ∈ Set.Icc N.lower N.upper) :
+    (N.residual f hf).lower = 0 :=
+  (rfl)
+
+/-- The upper bounds of the bundled residual network are the unbundled residual capacities. -/
+@[simp]
+theorem residual_upper (N : Network K V) (f : N.Assignment K)
+    (hf : f ∈ Set.Icc N.lower N.upper) :
+    (N.residual f hf).upper = residualCapacity N.lower N.upper f :=
+  (rfl)
+
+end Network
 
 end TauCeti

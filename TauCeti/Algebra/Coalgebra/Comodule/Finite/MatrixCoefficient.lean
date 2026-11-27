@@ -107,14 +107,9 @@ theorem matrixCoefficientSubmodule_biproduct {ι : Type} [Finite ι]
   refine le_antisymm (Comodule.matrixCoefficientSubmodule_le fun φ z ↦ ?_)
     (iSup_le (le_matrixCoefficientSubmodule_biproduct F))
   -- Decompose `z` along the biproduct, then pull `φ` back to each summand.
-  let ev : ((⨁ F) ⟶ (⨁ F)) →+ (⨁ F : FGComoduleCat.{u, v, w} R C) :=
-    { toFun g := g z
-      map_zero' := rfl
-      map_add' _ _ := rfl }
   have hz : z = ∑ j, biproduct.ι F j (biproduct.π F j z) := by
-    have h := congrArg ev (biproduct.total (f := F))
-    rw [map_sum] at h
-    exact h.symm
+    exact (ConcreteCategory.congr_hom (biproduct.total (f := F)) z).symm.trans
+      (FGComoduleCat.sum_apply _ _ z)
   rw [hz, ← Comodule.matrixCoefficientLinear_apply, map_sum]
   refine Submodule.sum_mem _ fun j _ ↦ Submodule.mem_iSup_of_mem j ?_
   rw [Comodule.matrixCoefficientLinear_apply]

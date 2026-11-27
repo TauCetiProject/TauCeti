@@ -98,6 +98,19 @@ theorem toMeromorphicNFAt_comp_sub_const_apply (f : 𝕜 → E) (x c z : 𝕜) :
     toMeromorphicNFAt (f ∘ (· - c)) x z = toMeromorphicNFAt f (x - c) (z - c) :=
   congrFun (toMeromorphicNFAt_comp_sub_const f x c) z
 
+/-- Whole-space meromorphic normal forms depend only on the punctured germ at each point. -/
+theorem toMeromorphicNFOn_univ_congr_nhdsNE {f g : 𝕜 → E}
+    (h : ∀ x : 𝕜, f =ᶠ[𝓝[≠] x] g) :
+    toMeromorphicNFOn f Set.univ = toMeromorphicNFOn g Set.univ := by
+  have hm : MeromorphicOn f Set.univ ↔ MeromorphicOn g Set.univ :=
+    forall₂_congr fun x _ ↦ MeromorphicAt.meromorphicAt_congr (h x)
+  by_cases hf : MeromorphicOn f Set.univ
+  · funext x
+    rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hf (Set.mem_univ x),
+      toMeromorphicNFOn_eq_toMeromorphicNFAt (hm.mp hf) (Set.mem_univ x)]
+    exact (toMeromorphicNFAt_eventuallyEq_nhds_congr (h x)).eq_of_nhds
+  · simp [hf, mt hm.mpr hf]
+
 /-- Conversion to meromorphic normal form on a set commutes with adding a constant to the
 argument, the set being pulled back along the translation. -/
 theorem toMeromorphicNFOn_comp_add_const (f : 𝕜 → E) (U : Set 𝕜) (c : 𝕜) :

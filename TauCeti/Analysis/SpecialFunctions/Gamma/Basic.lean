@@ -7,11 +7,14 @@ module
 
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Gamma.LogConvex
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -34,9 +37,9 @@ series with coefficients `1 / Γ(b + n)`, such as hypergeometric and Bessel seri
 For a complex parameter the corresponding estimate is the factorial decay of `1 / Γ(s + n)` on
 the half-plane `1 ≤ Re s`.
 
-Finally, the rising factorial is recorded as a quotient of real Gamma values, and Mathlib's Euler
-limit formula `Real.GammaSeq_tendsto_Gamma` is recast as the asymptotic
-equivalence `Γ(n + 1 + s) ~ n ^ s * n!` along the natural numbers, valid for every real shift `s`.
+Finally, the rising factorial is recorded as a quotient of real Gamma values, and the asymptotic
+equivalence `Γ(n + 1 + s) ~ n ^ s * n!` along the natural numbers, valid for every real shift `s`,
+is read off from the real-variable Gamma-ratio asymptotic proved from Wendel's inequalities.
 This is the form in which polynomial decay of Gamma quotients such as `Γ(n + a) / Γ(n + b)` enters
 summability and moment arguments for discrete laws with Beta-function masses. Euler's reflection
 formula is also recorded in the reciprocal form `Γ(s) sin (π s) = π / Γ(1 - s)` for `s ∉ -ℕ`,
@@ -49,15 +52,18 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 
 ## Main results
 
+* `Complex.analyticAt_Gamma` — Gamma is analytic away from the nonpositive integers.
 * `Real.measurable_Gamma` — `Real.Gamma` is measurable.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
 * `TauCeti.continuous_Gamma_sum_div_prod` — the finite Gamma quotient is jointly continuous on
   positive parameters.
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
+* `Real.Gamma_add_natCast_eq_ascPochhammer_eval_mul` — `Γ(x + k) = (x)ₖ Γ(x)` off the poles.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
 * `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
+* `Real.Gamma_three_halves` — `Γ(3 / 2) = √π / 2`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
@@ -75,10 +81,19 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
   a natural number, avoids `−ℕ`.
 * `Real.neg_one_pow_div_factorial_mul_Gamma_sub_natCast` — the reflection formula at `c - k`:
   `(-1)^k / k! · Γ(c - k) = (π / sin πc) / (k! Γ(1 - c + k))` when `sin πc ≠ 0`.
+* `Real.neg_one_pow_mul_Gamma_pos_of_mem_Ioo` — the sign of `Γ` between consecutive poles:
+  `(-1)ᵏ Γ s > 0` on `(-k, -k + 1)`, with the even and odd cases `Real.Gamma_pos_of_mem_Ioo` and
+  `Real.Gamma_neg_of_mem_Ioo`.
+* `Real.pi_div_factorial_le_neg_one_pow_mul_Gamma_of_mem_Ioo` — `π / k! ≤ (-1)ᵏ Γ s` on
+  `(-k, -k + 1)`, `k ≥ 1`, with the even case `Real.pi_div_factorial_le_Gamma_of_mem_Ioo`.
 * `Real.ne_neg_natCast_of_mem_Ioo` — a real number strictly between `-(k + 1)` and `-k` avoids
   `−ℕ`.
+* `Real.eventually_ne_neg_natCast` — the points near a real number off `−ℕ` are off `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
+* `Complex.norm_inv_Gamma_add_natCast_mul_factorial_le` —
+  `‖1 / Γ(c + k)‖ k! ≤ ‖1 / Γ(c + N)‖ (R + N + k) ^ N` for every `c` with `1 - Re c ≤ N` and
+  `‖c‖ ≤ R`: factorial decay up to a polynomial factor, without a half-plane restriction.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
@@ -181,6 +196,12 @@ theorem Gamma_add_nat_div_Gamma_eq {n : ℕ} (x : ℝ) (hx : ∀ k : ℕ, x ≠ 
       Polynomial.eval_natCast, ← ih, Nat.cast_succ, ← add_assoc, Gamma_add_one hxn]
     ring
 
+/-- `Γ(x + k) = (x)ₖ Γ(x)` for real `x` off the poles of `Γ`; the real counterpart of
+`Complex.Gamma_add_natCast_eq_ascPochhammer_eval_mul`. -/
+theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {x : ℝ} (hx : ∀ m : ℕ, x ≠ -m) (k : ℕ) :
+    Gamma (x + k) = (ascPochhammer ℝ k).eval x * Gamma x := by
+  rw [← Gamma_add_nat_div_Gamma_eq x hx, div_mul_cancel₀ _ (Gamma_ne_zero hx)]
+
 /-- The product `s (s + 1) ⋯ (s + n - 1)` times `Γ s` is `Γ (s + n)`, for positive `s`. -/
 theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
     (∏ j ∈ Finset.range n, (s + j)) * Gamma s = Gamma (s + n) := by
@@ -211,51 +232,35 @@ theorem Gamma_nat_add_half_eq_factorial (n : ℕ) :
   rw [eq_div_iff (by positivity), hfour, mul_left_comm, h]
   field_simp
 
-/-- The positive-shift case of `isEquivalent_Gamma_natCast_add_one_add`, read off from Euler's
-limit `GammaSeq s n → Γ s`. -/
-private theorem isEquivalent_Gamma_natCast_add_one_add_of_pos {s : ℝ} (hs : 0 < s) :
-    (fun n : ℕ => Gamma (n + 1 + s)) ~[atTop] fun n => (n : ℝ) ^ s * n ! := by
-  refine isEquivalent_of_tendsto_one ?_
-  have hΓ := (Gamma_pos_of_pos hs).ne'
-  have hlim : Tendsto (fun n => Gamma s / GammaSeq s n) atTop (𝓝 1) := by
-    have := (tendsto_const_nhds (x := Gamma s)).div (GammaSeq_tendsto_Gamma s) hΓ
-    rwa [div_self hΓ] at this
-  refine hlim.congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
-  have hprod := prod_range_add_mul_Gamma hs (n + 1)
-  rw [Pi.div_apply, GammaSeq, show (n : ℝ) + 1 + s = s + ((n + 1 : ℕ) : ℝ) by push_cast; ring,
-    ← hprod]
-  field_simp
+/-- The half-integer value `Γ(3 / 2) = √π / 2`: the case `n = 1` of
+`Real.Gamma_nat_add_half_eq_factorial`. -/
+theorem Gamma_three_halves : Gamma (3 / 2) = √π / 2 := by
+  have h := Gamma_nat_add_half_eq_factorial 1
+  have harg : ((1 : ℕ) : ℝ) + 1 / 2 = 3 / 2 := by norm_num
+  have hval : ((2 * 1)! : ℝ) * √π / (4 ^ 1 * (1 : ℕ)!) = √π / 2 := by
+    simp only [mul_one, Nat.factorial_two, Nat.factorial_one, Nat.cast_ofNat, Nat.cast_one,
+      pow_one]
+    ring
+  rwa [harg, hval] at h
 
 /-- **Euler's limit formula in ratio form.** For every real `s`, `Γ(n + 1 + s)` is asymptotic to
-`n ^ s * n!` as the natural number `n` tends to infinity. -/
+`n ^ s * n!` as the natural number `n` tends to infinity: the case `x = n` of
+`Γ(x + 1)/Γ(x + (1 + s)) ∼ x^{-s}` (`Real.isEquivalent_Gamma_add_one_div_Gamma_add`), inverted
+and multiplied by `Γ(n + 1) = n!`. -/
 theorem isEquivalent_Gamma_natCast_add_one_add (s : ℝ) :
     (fun n : ℕ => Gamma (n + 1 + s)) ~[atTop] fun n => (n : ℝ) ^ s * n ! := by
-  -- Lower the shift one unit at a time, starting from a positive value of the shift.
-  suffices h : ∀ N : ℕ, ∀ s : ℝ, 0 < s + N →
-      (fun n : ℕ => Gamma (n + 1 + s)) ~[atTop] fun n => (n : ℝ) ^ s * (n ! : ℝ) by
-    obtain ⟨N, hN⟩ := exists_nat_gt (-s)
-    exact h N s (by linarith)
-  intro N
-  induction N with
-  | zero => exact fun s hs => isEquivalent_Gamma_natCast_add_one_add_of_pos (by simpa using hs)
-  | succ N ih =>
-    intro s hs
-    have hshift := ih (s + 1) (by push_cast at hs; linarith)
-    have hlin : (fun n : ℕ => (n : ℝ) + (1 + s)) ~[atTop] fun n => (n : ℝ) :=
-      IsEquivalent.refl.add_isLittleO
-        ((isLittleO_const_id_atTop (1 + s)).comp_tendsto tendsto_natCast_atTop_atTop)
-    refine ((hshift.div hlin).congr_left ?_).congr_right ?_
-    · filter_upwards [tendsto_natCast_atTop_atTop.eventually_gt_atTop (-(1 + s))] with n hn
-      have hne : (n : ℝ) + 1 + s ≠ 0 := by linarith
-      simp only [Pi.div_apply]
-      rw [show (n : ℝ) + 1 + (s + 1) = (n + 1 + s) + 1 by ring, Gamma_add_one hne, add_assoc,
-        mul_div_cancel_left₀ _ (by rwa [← add_assoc])]
-    · filter_upwards [eventually_ne_atTop 0] with n hn
-      have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
-      simp only [Pi.div_apply]
-      rw [rpow_add_one hn'.ne']
-      field_simp
+  have h := (((isEquivalent_Gamma_add_one_div_Gamma_add (1 + s)).comp_tendsto
+    tendsto_natCast_atTop_atTop).inv).mul (IsEquivalent.refl (u := fun n : ℕ => (n ! : ℝ)))
+  refine (h.congr_left ?_).congr_right ?_
+  · refine Eventually.of_forall fun n => ?_
+    have hfac : (n ! : ℝ) ≠ 0 := by positivity
+    simp only [Function.comp_apply, Pi.inv_apply, Pi.mul_apply]
+    rw [Gamma_nat_eq_factorial, add_assoc]
+    field_simp
+  · filter_upwards [eventually_ne_atTop 0] with n hn
+    have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
+    simp only [Function.comp_apply, Pi.inv_apply, Pi.mul_apply]
+    rw [sub_add_cancel_left, rpow_neg hn'.le, inv_inv]
 
 /-- The Gamma quotients `Γ(n + a) / Γ(n + b)` tend to zero along the natural numbers when `a < b`,
 since they decay like `n ^ (a - b)`. -/
@@ -340,6 +345,35 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
 
+/-- For every complex `c`, the reciprocal Gamma function decays along `c + k` like `1 / k!` up to a
+polynomial factor: if `1 - Re c ≤ N` and `‖c‖ ≤ R`, then
+`‖1 / Γ(c + k)‖ k! ≤ ‖1 / Γ(c + N)‖ (R + N + k) ^ N`. This extends
+`Complex.norm_inv_Gamma_add_natCast_le` from the half-plane `1 ≤ Re s` to all `c`, by writing
+`1 / Γ(c + k) = (c + k)_N / Γ(c + N + k)`. -/
+theorem norm_inv_Gamma_add_natCast_mul_factorial_le {c : ℂ} {N : ℕ} {R : ℝ}
+    (hN : 1 - c.re ≤ N) (hR : ‖c‖ ≤ R) (k : ℕ) :
+    ‖(Gamma (c + k))⁻¹‖ * k ! ≤ ‖(Gamma (c + N))⁻¹‖ * (R + N + k) ^ N := by
+  rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (c + k) N, norm_mul]
+  have hR₀ : 0 ≤ R := (norm_nonneg c).trans hR
+  have h₁ : ‖(ascPochhammer ℂ N).eval (c + k)‖ ≤ (R + N + k) ^ N := by
+    have hck : ‖c + k‖ ≤ R + k :=
+      (norm_add_le _ _).trans (by rw [Complex.norm_natCast]; linarith)
+    refine (TauCeti.norm_ascPochhammer_eval_le_of_norm_le N hck).trans ?_
+    rw [TauCeti.ascPochhammer_eval_eq_prod_range]
+    calc ∏ i ∈ Finset.range N, (R + k + i) ≤ ∏ _i ∈ Finset.range N, (R + N + k) := by
+          refine Finset.prod_le_prod₀ (fun i _ => by positivity) fun i hi => ?_
+          have : (i : ℝ) ≤ N := by exact_mod_cast (Finset.mem_range.1 hi).le
+          linarith
+      _ = (R + N + k) ^ N := by simp
+  have h₂ : ‖(Gamma (c + k + N))⁻¹‖ * k ! ≤ ‖(Gamma (c + N))⁻¹‖ := by
+    have := norm_inv_Gamma_add_natCast_le (s := c + N) (by simp; linarith) k
+    rw [show c + k + N = c + N + k by ring]
+    rwa [le_div_iff₀ (by positivity)] at this
+  calc ‖(ascPochhammer ℂ N).eval (c + k)‖ * ‖(Gamma (c + k + N))⁻¹‖ * k !
+      = ‖(ascPochhammer ℂ N).eval (c + k)‖ * (‖(Gamma (c + k + N))⁻¹‖ * k !) := by ring
+    _ ≤ (R + N + k) ^ N * ‖(Gamma (c + N))⁻¹‖ := by gcongr
+    _ = ‖(Gamma (c + N))⁻¹‖ * (R + N + k) ^ N := by ring
+
 /-- For every complex `s` and natural `n`, `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`, where
 `(s)_n = (ascPochhammer ℂ n).eval s`. Unlike `Complex.Gamma_add_nat_div_Gamma_eq`, this holds at
 the nonpositive integer poles of `Γ` as well, where Mathlib sets `Γ(-k) = 0`. -/
@@ -404,6 +438,64 @@ theorem neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℝ}
     div_mul_eq_mul_div, div_mul_eq_mul_div, div_eq_iff (by positivity)]
   linear_combination (k ! : ℝ) * hrefl
 
+/-- The reflection formula between consecutive poles:
+`(-1)ᵏ Γ s = π / sin(π(s + k)) / Γ(1 - s)` for `s ∈ (-k, -k + 1)`, where `0 < π(s + k) < π`. -/
+private theorem neg_one_pow_mul_Gamma_eq_of_mem_Ioo {k : ℕ} {s : ℝ}
+    (hs : s ∈ Set.Ioo (-(k : ℝ)) (-k + 1)) :
+    0 < sin (π * (s + k)) ∧ (-1) ^ k * Gamma s = π / sin (π * (s + k)) / Gamma (1 - s) := by
+  have hsin : 0 < sin (π * (s + k)) :=
+    sin_pos_of_pos_of_lt_pi (by nlinarith [hs.1, pi_pos]) (by nlinarith [hs.2, pi_pos])
+  refine ⟨hsin, ?_⟩
+  have h := neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin.ne' k
+  rw [add_sub_cancel_right, show 1 - (s + k) + k = 1 - s by ring, mul_comm (k ! : ℝ), ← div_div,
+    div_mul_eq_mul_div, div_left_inj₀ (by positivity)] at h
+  exact h
+
+/-- The sign of `Γ` between consecutive poles: `(-1)ᵏ Γ s > 0` for `s ∈ (-k, -k + 1)`. For
+`k = 0` this is the interval `(0, 1)`. -/
+theorem neg_one_pow_mul_Gamma_pos_of_mem_Ioo {k : ℕ} {s : ℝ}
+    (hs : s ∈ Set.Ioo (-(k : ℝ)) (-k + 1)) : 0 < (-1) ^ k * Gamma s := by
+  obtain ⟨hsin, h⟩ := neg_one_pow_mul_Gamma_eq_of_mem_Ioo hs
+  have h1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
+  rw [h]
+  positivity
+
+/-- `Γ` is positive between the poles `-2n` and `-2n + 1`. -/
+theorem Gamma_pos_of_mem_Ioo {n : ℕ} {s : ℝ} (hs : s ∈ Set.Ioo (-2 * (n : ℝ)) (-2 * n + 1)) :
+    0 < Gamma s := by
+  simpa [pow_mul] using neg_one_pow_mul_Gamma_pos_of_mem_Ioo (k := 2 * n)
+    (by push_cast; constructor <;> linarith [hs.1, hs.2])
+
+/-- `Γ` is negative between the poles `-2n - 1` and `-2n`. -/
+theorem Gamma_neg_of_mem_Ioo {n : ℕ} {s : ℝ} (hs : s ∈ Set.Ioo (-2 * (n : ℝ) - 1) (-2 * n)) :
+    Gamma s < 0 := by
+  simpa [pow_succ, pow_mul] using neg_one_pow_mul_Gamma_pos_of_mem_Ioo (k := 2 * n + 1)
+    (by push_cast; constructor <;> linarith [hs.1, hs.2])
+
+/-- `(-1)ᵏ Γ s ≥ π / k!` between the poles `-k` and `-k + 1`, for `k ≥ 1`: in the reflection
+formula `(-1)ᵏ Γ s = π / sin(π(s + k)) / Γ(1 - s)` the factor `Γ(1 - s)` is at most
+`Γ(k + 1) = k!` and `sin(π(s + k))` is at most `1`. -/
+theorem pi_div_factorial_le_neg_one_pow_mul_Gamma_of_mem_Ioo {k : ℕ} (hk : 1 ≤ k) {s : ℝ}
+    (hs : s ∈ Set.Ioo (-(k : ℝ)) (-k + 1)) : π / (k ! : ℝ) ≤ (-1) ^ k * Gamma s := by
+  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  obtain ⟨hsin, h⟩ := neg_one_pow_mul_Gamma_eq_of_mem_Ioo hs
+  have hG1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
+  -- `Γ` is convex on `[1, k + 1]`, with `Γ 1 = 1 ≤ k! = Γ (k + 1)`
+  have hle : Gamma (1 - s) ≤ (k ! : ℝ) := by
+    have h := convexOn_Gamma.le_max_of_mem_Icc (Set.mem_Ioi.2 one_pos)
+      (Set.mem_Ioi.2 (by positivity : (0 : ℝ) < k + 1)) (z := 1 - s)
+      ⟨by linarith [hs.2], by linarith [hs.1]⟩
+    rwa [Gamma_one, Gamma_nat_eq_factorial, max_eq_right (Nat.one_le_cast.2 k.factorial_pos)] at h
+  rw [h, div_div]
+  exact div_le_div_of_nonneg_left pi_pos.le (by positivity)
+    ((mul_le_of_le_one_left hG1.le (sin_le_one _)).trans hle)
+
+/-- `Γ s ≥ π / (2n)!` between the poles `-2n` and `-2n + 1`, for `n ≥ 1`. -/
+theorem pi_div_factorial_le_Gamma_of_mem_Ioo {n : ℕ} (hn : 1 ≤ n) {s : ℝ}
+    (hs : s ∈ Set.Ioo (-2 * (n : ℝ)) (-2 * n + 1)) : π / ((2 * n) ! : ℝ) ≤ Gamma s := by
+  simpa [pow_mul] using pi_div_factorial_le_neg_one_pow_mul_Gamma_of_mem_Ioo (k := 2 * n)
+    (by omega) (by push_cast; constructor <;> linarith [hs.1, hs.2])
+
 /-- A real number strictly between `-(k + 1)` and `-k` is not a nonpositive integer. -/
 theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Set.Ioo (-(k + 1 : ℝ)) (-k))
     (n : ℕ) : a ≠ -n := by
@@ -412,6 +504,15 @@ theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Set.Ioo (-(k +
   have h₂ : (k : ℝ) < n := by linarith [ha.2]
   norm_cast at h₁ h₂
   omega
+
+/-- The points near a real number off `−ℕ` are off `−ℕ`: the poles of `Γ` are isolated. -/
+theorem eventually_ne_neg_natCast {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    ∀ᶠ y in 𝓝 x, ∀ m : ℕ, y ≠ -(m : ℝ) := by
+  have hcl : IsClosed (Set.range fun m : ℕ => -(m : ℝ)) := by
+    have := (Homeomorph.neg ℝ).isClosedMap _ Nat.isClosedEmbedding_coe_real.isClosed_range
+    rwa [← Set.range_comp] at this
+  filter_upwards [hcl.isOpen_compl.mem_nhds fun ⟨m, hm⟩ => hx m hm.symm] with y hy m hm
+  exact hy ⟨m, hm.symm⟩
 
 /-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
 `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of
@@ -528,5 +629,15 @@ theorem isEquivalent_factorial_div_ascPochhammer_eval_succ {s : ℂ} (hs : ∀ m
   have hn' : (n : ℂ) ^ s ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr hn))
   simp only [Pi.mul_apply, GammaSeq, ← TauCeti.ascPochhammer_eval_eq_prod_range]
   field_simp
+
+end Complex
+
+namespace Complex
+
+/-- Gamma is analytic away from the nonpositive integers. -/
+@[fun_prop]
+theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
+  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
+  simpa only [Pi.inv_def, inv_inv] using h
 
 end Complex

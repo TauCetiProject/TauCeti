@@ -40,7 +40,8 @@ Riemannian manifold it is the compactness part of the Myers–Steenrod theorem.
 
 ## Main results
 
-* `Isometry.iterate`: the iterates of an isometric self-map are isometries.
+* `Isometry.iterate`, `Isometry.zpow`: the iterates of an isometric self-map, and the integer
+  powers of an isometric permutation, are isometries.
 * `Isometry.surjective_of_compactSpace`: an isometric self-map of a compact metric space is
   surjective.
 * `IsometryEquiv.isInducing_coe`, `IsometryEquiv.tendsto_nhds_iff`, `IsometryEquiv.continuous_iff`:
@@ -75,6 +76,18 @@ protected theorem iterate {α : Type*} [PseudoEMetricSpace α] {f : α → α} (
     ∀ n : ℕ, Isometry f^[n]
   | 0 => isometry_id
   | n + 1 => (hf.iterate n).comp hf
+
+/-- The integer powers of an isometric permutation are isometries. -/
+protected theorem zpow {α : Type*} [PseudoEMetricSpace α] {f : Equiv.Perm α} (hf : Isometry f) :
+    ∀ n : ℤ, Isometry ⇑(f ^ n)
+  | (n : ℕ) => by
+    rw [zpow_natCast, Equiv.Perm.coe_pow]
+    exact hf.iterate n
+  | .negSucc n => by
+    rw [zpow_negSucc]
+    refine Isometry.right_inv (f := ⇑(f ^ (n + 1))) ?_ fun _ ↦ by simp
+    rw [Equiv.Perm.coe_pow]
+    exact hf.iterate (n + 1)
 
 variable {α : Type*} [EMetricSpace α] [CompactSpace α] {f : α → α}
 
