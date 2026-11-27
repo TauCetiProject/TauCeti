@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
+import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -73,6 +74,8 @@ is compact.
   `H^s` to `H^r` for `r < s`.
 * `BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`: a bounded subset of
   `H^s` on which multiplication by `φ` is the identity has compact closure in `H^r`.
+* `BesselPotentialSpace.isCompactOperator_piLp_of_smulLeftCLM_eq`: the same in finite Hilbert sums
+  `⨁ₖ H^s ⊆ ⨁ₖ H^r`, for maps between subspaces whose components are fixed by `φ`.
 * `BesselPotentialSpace.not_isCompactOperator_inclusion`: the inclusion `H^{s,p} ⊆ H^{r,p}` on the
   whole space is not compact.
 * `BesselPotentialSpace.exists_norm_inclusion_smulLeftCLM_le`,
@@ -377,6 +380,30 @@ theorem exists_norm_inclusion_le_of_smulLeftCLM_eq [FiniteDimensional ℂ F] (φ
       ‖inclusion hrs.le u‖ ≤ ε * ‖u‖ + C * ‖inclusion (htr.trans hrs.le) u‖ := by
   obtain ⟨C, hC, h⟩ := exists_norm_inclusion_smulLeftCLM_le (F := F) φ htr hrs hε
   exact ⟨C, hC, fun u hu ↦ by simpa [hu] using h u⟩
+
+/-- **Rellich's theorem in a finite Hilbert sum, for a common compact support.** Let `L : X → Y`
+be read in the finite Hilbert sums `⨁ₖ H^s(E, F)` and `⨁ₖ H^r(E, F)`, for real orders `r < s`,
+through a continuous map `i` with `i 0 = 0` and a closed embedding `j`, so that every component of
+`j (L x)` is the inclusion of the corresponding component of `i x`. If multiplication by a scalar
+Schwartz function `φ` fixes every component of every `i x`, then `L` is compact. Typically `i` and
+`j` are the inclusions of a subspace of `⨁ₖ H^s(E, F)` and of a closed subspace of
+`⨁ₖ H^r(E, F)`, such as the Sobolev spaces of a compact manifold read in finitely many charts. -/
+theorem isCompactOperator_piLp_of_smulLeftCLM_eq [FiniteDimensional ℂ F] {κ X Y : Type*}
+    [Finite κ] [Zero X] [TopologicalSpace X] [TopologicalSpace Y] (φ : 𝓢(E, ℂ)) (h : r < s)
+    {i : X → PiLp 2 fun _ : κ ↦ H^{s}(E, F)} (hi : Continuous i) (hi0 : i 0 = 0)
+    {j : Y → PiLp 2 fun _ : κ ↦ H^{r}(E, F)} (hj : Topology.IsClosedEmbedding j)
+    (hφ : ∀ x k, smulLeftCLM s φ (i x k) = i x k) {L : X → Y}
+    (hL : ∀ x k, j (L x) k = inclusion h.le (i x k)) : IsCompactOperator L := by
+  -- In every component, `L` is `w ↦ φ w`, which is compact from `H^s` to `H^r`.
+  let g (y : PiLp 2 fun _ : κ ↦ H^{s}(E, F)) : PiLp 2 fun _ : κ ↦ H^{r}(E, F) :=
+    WithLp.toLp 2 fun k ↦ (inclusion h.le ∘L smulLeftCLM s φ) (y k)
+  obtain ⟨K, hK, hgK⟩ : IsCompactOperator g :=
+    (IsCompactOperator.pi fun k ↦ (isCompactOperator_inclusion_comp_smulLeftCLM φ h).comp_clm
+      (PiLp.proj (𝕜 := ℂ) 2 (fun _ ↦ H^{s}(E, F)) k)).continuous_comp (PiLp.continuous_toLp 2 _)
+  have hjL : j ∘ L = g ∘ i := funext fun x ↦ PiLp.ext fun k ↦ by simp [g, hL, hφ]
+  refine ⟨j ⁻¹' K, hj.isCompact_preimage hK, ?_⟩
+  rw [← preimage_comp, hjL, preimage_comp]
+  exact hi.continuousAt.preimage_mem_nhds (by rwa [hi0])
 
 section NotCompact
 

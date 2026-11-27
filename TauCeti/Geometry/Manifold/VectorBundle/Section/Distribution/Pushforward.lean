@@ -71,6 +71,7 @@ one cutoff serves all the tests supported in a fixed compact set.
   `TauCeti.BundleTest.pushforward_apply_of_eventuallyEq` and
   `TauCeti.BundleTest.pushforward_apply_eq_cutoffCompCLM`, and
   `TauCeti.BundleTest.pushforward_eq_cutoffPushforwardCLM` for compactly supported `T`.
+* `TauCeti.BundleTest.dsupport_cutoffPushforwardCLM_subset`: `supp f_* (χ T) ⊆ f (supp χ ∩ supp T)`.
 * `TauCeti.BundleTest.dsupport_pushforward_subset`: `supp (f_* T) ⊆ f (supp T)`, and
   `TauCeti.BundleTest.IsProperOnSupport.pushforward`.
 * `TauCeti.BundleTest.pushforward_zero`, `TauCeti.BundleTest.pushforward_add`,
@@ -738,6 +739,23 @@ private theorem pushforward_apply_eq_zero (hT : IsProperOnSupport ⇑T f)
   filter_upwards [eventually_apply_comp_eq_zero f.contMDiff.continuous s
     fun h ↦ disjoint_left.1 hs h ⟨x, hx, rfl⟩] with z hz
   simp [hz]
+
+omit [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W] in
+/-- **The support of a pushforward with a cutoff** lies in the image of the part of the support of
+`T` in the support of the cutoff: `supp f_* (χ T) ⊆ f (supp χ ∩ supp T)`. -/
+theorem dsupport_cutoffPushforwardCLM_subset [T2Space Y] [ContinuousConstSMul ℝ W]
+    {χ : C^∞⟮I, X; ℝ⟯} (hχ : HasCompactSupport χ) :
+    dsupport ⇑(cutoffPushforwardCLM χ hχ f T) ⊆ f '' (_root_.tsupport χ ∩ dsupport ⇑T) := by
+  intro y hy
+  by_contra hyT
+  have hC : IsCompact (f '' (_root_.tsupport χ ∩ dsupport ⇑T)) :=
+    (hχ.inter_right (isClosed_dsupport _)).image f.contMDiff.continuous
+  refine (notMem_dsupport_iff.2 ⟨_, hC.isClosed.isOpen_compl, hyT, isVanishingOn_iff.2
+    fun s hs ↦ ?_⟩) hy
+  refine cutoffPushforwardCLM_apply_eq_zero_of_disjoint hχ f
+    (isVanishingOn_iff.1 (isVanishingOn_compl_dsupport T)) ?_
+  rw [sdiff_compl]
+  exact disjoint_compl_left.mono_left hs
 
 /-- **The support of the pushforward** lies in the image of the support:
 `supp (f_* T) ⊆ f (supp T)`. -/

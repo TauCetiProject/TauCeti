@@ -85,8 +85,9 @@ the `L²` norm of `D_u^* η` carries the inverse of the cylindrical weight `ρ`
   `-(∂s f) η - (∂t f) η ∘ J` (`floerLinearizationAdjoint_fun_smul`), and on the compact core `w`
   is bounded above and below.
 * `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_add` is
-  the estimate along a Floer pair of pants for the pair-of-pants perturbation, with `w = ρ⁻¹`, from
-  the end estimate
+  the estimate along a Floer pair of pants for data which far out on the ends are the pair-of-pants
+  perturbation and are arbitrary elsewhere on `S`, as for `D_u`, with `w = ρ⁻¹`, from the end
+  estimate
   `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`, which
   carries the weight `|z - c_q|²` for the center `c_q` of the end. On the part `±s ≥ 0` of
   the end `q` this weight is at most `5 ρ⁻¹`
@@ -934,22 +935,24 @@ theorem
 /-- **The semi-Fredholm estimate of the formal adjoint along a Floer pair of pants.** Let `H_q` be
 jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive end
 Hamiltonians `H'_q` have globally Lipschitz suspended vector fields, and let `x_q` be orbits of
-`H'_q` starting at nondegenerate fixed points of the time-one maps. Let `u` be a `C¹` solution on
-`S` of the Floer equation for the pair-of-pants perturbation of `H`, along which `J` is `C¹` and
-compatible, and which far out on each end, beyond a height `R₁`, is `C²`, with `J` there a `C²`
-family `J_q(t)` compatible along `x_q`. Suppose that the loops of `u` in each positive end chart
-`φ'_q` converge uniformly to `x_q` while the slice defects `∂t (u ∘ φ'_q) - X_{H'_q}` tend
-uniformly to zero. Then there are `C ≥ 0` and `T ≥ 0` such that every `C²` covector field `η`
-with compact support in `S` satisfies
+`H'_q` starting at nondegenerate fixed points of the time-one maps. Let `(J, K_s, K_t)` be Floer
+data on `S`, with `J` `C¹` and `K_s`, `K_t` `C²` along `u`, whose perturbation far out on each end,
+beyond a height `R₁`, is the pair-of-pants perturbation of `H`. Let `u` be a `C¹` map on `S`, along
+which `J` is compatible, that solves the Floer equation for these data beyond `R₁` on each end and
+is `C²` there, with `J` there a `C²` family `J_q(t)` compatible along `x_q`. Suppose that the loops
+of `u` in each positive end chart `φ'_q` converge uniformly to `x_q` while the slice defects
+`∂t (u ∘ φ'_q) - X_{H'_q}` tend uniformly to zero. Then there are `C ≥ 0` and `T ≥ 0` such that
+every `C²` covector field `η` with compact support in `S` satisfies
 
 `∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s η'_q‖² + ‖∂t η'_q‖² + ‖η'_q‖²)`
 `  + ∫_{S_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{S_{T + 1}} ‖η‖²)`
 
-for the formal adjoint `D_u^*` of the linearized Floer operator, where `η'_q` is `η` read in the
-chart of the end `q` as a `(0, 1)`-form (`TauCeti.Floer.covectorPullback`), and `ρ` is the
-cylindrical weight. This is the semi-Fredholm estimate of `D_u^*`, the counterpart of
+for the formal adjoint `D_u^*` of the linearized Floer operator of the data, where `η'_q` is `η`
+read in the chart of the end `q` as a `(0, 1)`-form (`TauCeti.Floer.covectorPullback`), and `ρ` is
+the cylindrical weight. This is the semi-Fredholm estimate of `D_u^*`, the counterpart of
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` for the
-operator whose kernel is the cokernel of `D_u`. -/
+operator whose kernel is the cokernel of `D_u`. A Floer pair of pants is the case where `K_s`, `K_t`
+are the components of the pair-of-pants perturbation on all of `S`. -/
 theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_add
     (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {L : Puncture → ℝ≥0}
@@ -964,17 +967,22 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     {Je : Puncture → ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
     (hJe : ∀ q, ContDiff ℝ 2 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
-    (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2) {u : ℝ × ℝ → V}
+    (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hu₂ : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart q ζ))
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
     (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
       (Icc 0 1))
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
@@ -986,18 +994,12 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ) +
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity η z ≤
         C * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u η z‖ ^ 2) +
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
-  have hKs (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :=
-    contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1
-  have hKt (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :=
-    contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I
   choose C R hend using fun q ↦
     ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint hH hHs
-      q (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) hJ hu (hu₂ q) hc hF (hux q) (hδ q)
+      q (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) (hK q) hJ hu (hu₂ q) hc (hF q) (hux q)
+      (hδ q)
   -- On the part `±s > 0` of the end `q`, the weight `|z - c_q|²` is at most `5 ρ⁻¹`.
   refine
     exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends

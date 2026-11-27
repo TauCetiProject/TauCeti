@@ -66,6 +66,7 @@ on the restriction of `τ` to `E_K`, and satisfies `2 • m(τ) = w` when `K` ha
   totally real or CM, and
   `TauCeti.NumberField.maximalRealOrCMSubfield_eq_maximalRealSubfield_of_odd`: `E_K = K⁺` in odd
   degree.
+* `TauCeti.NumberField.isCMField_maximalRealOrCMSubfield_of_isCMField`: `E_K` is CM when `K` is.
 * `TauCeti.NumberField.map_maximalRealOrCMSubfield`: `E_K` is preserved by isomorphisms of fields
   algebraic over `ℚ`.
 * `TauCeti.NumberField.exists_mem_topologicalClosure_cmSubgroup_iff_eqOn_maximalRealOrCMSubfield`:
@@ -307,6 +308,15 @@ theorem isCMField_maximalRealOrCMSubfield_iff_ne_maximalRealSubfield :
   · refine (isTotallyReal_or_isCMField_maximalRealOrCMSubfield K).resolve_left fun hE ↦ hne ?_
     exact le_antisymm (isTotallyReal_iff_le_maximalRealSubfield.mp hE)
       (maximalRealSubfield_le_maximalRealOrCMSubfield K)
+
+/-- If `K` is CM, then so is `E_K`, which is all of `K`. -/
+instance isCMField_maximalRealOrCMSubfield_of_isCMField [IsCMField K] :
+    IsCMField (maximalRealOrCMSubfield K) := by
+  rw [isCMField_maximalRealOrCMSubfield_iff_ne_maximalRealSubfield,
+    maximalRealOrCMSubfield_eq_top_of_isCMField]
+  intro h
+  refine IsTotallyComplex.not_isTotallyReal (K := K) (isTotallyReal_top_iff.mp ?_)
+  rw [isTotallyReal_iff_le_maximalRealSubfield, ← h]
 
 /-- **The maximal real subfield of `E_K` is `K⁺`**, by `comap_subtype_maximalRealSubfield` and
 `maximalRealSubfield_le_maximalRealOrCMSubfield`. -/

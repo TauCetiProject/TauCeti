@@ -15,7 +15,8 @@ Let `b` be an `A`-banding of a pseudofunctor `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ
 the fibre over `U`. The action `AbelianBanding.act` of `A(U)` on the isomorphisms `x ≅ y` is a
 multiplicative action (`AbelianBanding.isomMulAction`), so `x ≅ y` is an object of the category
 of `A(U)`-sets (`AbelianBanding.fiberAction`), and postcomposition with `q : y ≅ z` is an
-isomorphism of `A(U)`-sets (`AbelianBanding.postcomposeActionIso`), functorial in `q`. The
+isomorphism of `A(U)`-sets (`AbelianBanding.postcomposeActionIso`), functorial in `q`; so is
+precomposition with the inverse of `e : x ≅ w` (`AbelianBanding.precomposeActionIso`). The
 `A(U)`-set `x ≅ y` may be empty. Pulling back along `f : V ⟶ U` is a map of `A(U)`-sets to the
 isomorphisms over `V`, on which `A(U)` acts through the restriction `A(U) → A(V)`
 (`AbelianBanding.restrictActionHom`). These fibre actions are the input for a functor from
@@ -29,7 +30,11 @@ In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 * `fiberAction`: `x ≅ y` as an object of `Action (Type _) (Multiplicative A(U))`, with
   `fiberAction_ρ_apply` and `isEmpty_fiberAction_V`.
 * `postcomposeActionIso`: postcomposition with `q : y ≅ z`, with `postcomposeActionIso_hom_hom`,
-  `postcomposeActionIso_inv_hom`, `postcomposeActionIso_refl`, `postcomposeActionIso_trans`.
+  `postcomposeActionIso_inv_hom`, `postcomposeActionIso_refl`, `postcomposeActionIso_trans`,
+  `postcomposeActionIso_symm`.
+* `precomposeActionIso`: precomposition with the inverse of `e : x ≅ w`, with
+  `precomposeActionIso_hom_hom`, `precomposeActionIso_inv_hom`, `precomposeActionIso_refl`,
+  `precomposeActionIso_trans`, `precomposeActionIso_symm`.
 * `restrictActionHom`: pulling back along `f : V ⟶ U`, a map of `A(U)`-sets to the fibre action
   over `V` restricted along `A(U) → A(V)`, with `restrictActionHom_hom_apply`.
 
@@ -131,6 +136,69 @@ theorem postcomposeActionIso_trans {w : F.obj (.mk (op U))} (q : y ≅ z) (r : z
   simp only [TypeCat.Fun.toFun_apply, Iso.trans_hom, Action.comp_hom, comp_apply,
     b.postcomposeActionIso_hom_hom _ p, postcomposeActionIso_hom_hom]
   exact (Iso.trans_assoc p q r).symm
+
+/-- Postcomposition with `q.symm` is the inverse of postcomposition with `q`. -/
+theorem postcomposeActionIso_symm (q : y ≅ z) :
+    b.postcomposeActionIso (x := x) q.symm = (b.postcomposeActionIso q).symm := by
+  ext p
+  exact (b.postcomposeActionIso_hom_hom _ p).trans (b.postcomposeActionIso_inv_hom _ p).symm
+
+variable {w : F.obj (.mk (op U))}
+
+/-- **Precomposition** with the inverse of `e : x ≅ w` as an isomorphism of `A(U)`-sets
+`fiberAction x y ≅ fiberAction w y`: the bijection `Iso.isoCongrLeft e`, which commutes with the
+action by `AbelianBanding.trans_act`. -/
+def precomposeActionIso (e : x ≅ w) : b.fiberAction x y ≅ b.fiberAction w y :=
+  Action.mkIso (Equiv.toIso (Iso.isoCongrLeft (Y := y) e)) fun a ↦ by
+    ext (p : x ≅ y)
+    -- As in `postcomposeActionIso`, `change` states the goal on isomorphisms, by unfolding
+    -- `isoCongrLeft e p` to `e.symm ≪≫ (p ≪≫ Iso.refl y)`.
+    change e.symm ≪≫ (b.act p a ≪≫ Iso.refl y) = b.act (e.symm ≪≫ (p ≪≫ Iso.refl y)) a
+    simp
+
+/-- The forward map of `precomposeActionIso e` sends `p` to `e.symm ≪≫ p`. -/
+@[simp]
+theorem precomposeActionIso_hom_hom (e : x ≅ w) (p : x ≅ y) :
+    (b.precomposeActionIso e).hom.hom p = e.symm ≪≫ p := by
+  -- The forward map unfolds to `Iso.isoCongrLeft e`; see the comment in `postcomposeActionIso`.
+  change e.symm ≪≫ (p ≪≫ Iso.refl y) = e.symm ≪≫ p
+  simp
+
+/-- The inverse map of `precomposeActionIso e` sends `p` to `e ≪≫ p`. -/
+@[simp]
+theorem precomposeActionIso_inv_hom (e : x ≅ w) (p : w ≅ y) :
+    (b.precomposeActionIso e).inv.hom p = e ≪≫ p := by
+  -- The inverse map unfolds to `(Iso.isoCongrLeft e).symm`; see the comment in
+  -- `postcomposeActionIso`.
+  change e ≪≫ (p ≪≫ (Iso.refl y).symm) = e ≪≫ p
+  simp
+
+/-- Precomposition with the identity is the identity. -/
+@[simp]
+theorem precomposeActionIso_refl :
+    b.precomposeActionIso (y := y) (Iso.refl x) = Iso.refl (b.fiberAction x y) := by
+  ext p
+  -- As in `postcomposeActionIso_refl`, the lemma about the carrier element `p` is instantiated
+  -- explicitly.
+  simp [b.precomposeActionIso_hom_hom _ p, Iso.refl_trans p]
+
+/-- Precomposition with the inverse of `e ≪≫ f` is precomposition with the inverse of `e`
+followed by precomposition with the inverse of `f`. -/
+@[simp]
+theorem precomposeActionIso_trans {v : F.obj (.mk (op U))} (e : x ≅ w) (f : w ≅ v) :
+    b.precomposeActionIso (y := y) (e ≪≫ f) =
+      b.precomposeActionIso e ≪≫ b.precomposeActionIso f := by
+  ext p
+  simp only [TypeCat.Fun.toFun_apply, Iso.trans_hom, Action.comp_hom, comp_apply,
+    b.precomposeActionIso_hom_hom _ p, precomposeActionIso_hom_hom, Iso.trans_symm]
+  exact Iso.trans_assoc f.symm e.symm p
+
+/-- Precomposition with the inverse of `e.symm` is the inverse of precomposition with the inverse
+of `e`. -/
+theorem precomposeActionIso_symm (e : x ≅ w) :
+    b.precomposeActionIso (y := y) e.symm = (b.precomposeActionIso e).symm := by
+  ext p
+  exact (b.precomposeActionIso_hom_hom _ p).trans (b.precomposeActionIso_inv_hom _ p).symm
 
 variable {V : C} (f : V ⟶ U)
 
