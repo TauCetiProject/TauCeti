@@ -62,6 +62,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `Matrix.toLin_bijective_iff`, and `Matrix.toLin_bijective_iff_isUnit_det`: for bases of two
   modules indexed by the same finite type, the representing matrix (and, over a commutative ring,
   its determinant) is a unit if and only if the linear map is bijective.
+* `Matrix.toLin_apply_fin_two`: for bases indexed by `Fin 2`, the linear map of a matrix acts on
+  coordinates by the matrix.
 * `LinearEquiv.map_toMatrix_mul_map_toMatrix_symm`: even after applying a ring homomorphism to
   their entries, the matrix of a linear equivalence is a left inverse of the matrix of its inverse;
   applying the lemma to `T.symm` gives the product in the other order.
@@ -360,6 +362,17 @@ theorem toLin_bijective_iff_isUnit_det {R V M ι : Type*} [CommRing R] [AddCommM
     (v : Module.Basis ι R V) (b : Module.Basis ι R M) (A : Matrix ι ι R) :
     Function.Bijective (Matrix.toLin v b A) ↔ IsUnit A.det := by
   rw [toLin_bijective_iff, isUnit_iff_isUnit_det]
+
+/-- For bases `v` and `b` indexed by `Fin 2`, the linear map with matrix `A` sends the vector with
+coordinates `(x, y)` in `v` to the vector with coordinates `A (x, y)` in `b`. -/
+theorem toLin_apply_fin_two {R V M : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid M] [Module R M] (v : Module.Basis (Fin 2) R V) (b : Module.Basis (Fin 2) R M)
+    (A : Matrix (Fin 2) (Fin 2) R) (x y : R) :
+    Matrix.toLin v b A (x • v 0 + y • v 1) =
+      (A 0 0 * x + A 0 1 * y) • b 0 + (A 1 0 * x + A 1 1 * y) • b 1 := by
+  simp only [map_add, map_smul, toLin_self, Fin.sum_univ_two, smul_add, smul_smul, add_smul]
+  rw [mul_comm x, mul_comm y, mul_comm x, mul_comm y]
+  abel
 
 section Bilinear
 

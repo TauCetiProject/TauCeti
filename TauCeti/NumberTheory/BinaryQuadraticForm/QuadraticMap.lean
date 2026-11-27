@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.SpecialLinearGroup
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ToLin
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # The binary form of a quadratic map in a basis
@@ -91,7 +91,7 @@ theorem toLin_equiv_mem_orthogonalGroup_iff (γ : SL(2, R)) :
   · -- Both sides of `γ • f = f` evaluate `Q` at the same vector, the image under `γ⁻¹`.
     intro h
     refine TauCeti.BinaryQuadraticForm.eval_injective (funext₂ fun x y ↦ ?_)
-    have hinv := SpecialLinearGroup.toLin_equiv_apply_fin_two e γ⁻¹ x y
+    have hinv := Matrix.toLin_apply_fin_two e e ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) x y
     simp only [SpecialLinearGroup.inv_apply_zero_zero, SpecialLinearGroup.inv_apply_zero_one,
       SpecialLinearGroup.inv_apply_one_zero, SpecialLinearGroup.inv_apply_one_one] at hinv
     have hu (w : M) : ((SpecialLinearGroup.toLin_equiv e γ : M ≃ₗ[R] M) : M → M)
@@ -100,14 +100,15 @@ theorem toLin_equiv_mem_orthogonalGroup_iff (γ : SL(2, R)) :
       simp
     have hw : (γ 1 1 * x - γ 0 1 * y) • e 0 + (-γ 1 0 * x + γ 0 0 * y) • e 1 =
         ((SpecialLinearGroup.toLin_equiv e γ⁻¹ : M ≃ₗ[R] M) : M → M) (x • e 0 + y • e 1) := by
-      rw [hinv]
+      rw [← LinearEquiv.coe_coe, SpecialLinearGroup.toLin_equiv.toLinearMap_eq, hinv]
       congr 2
       ring
     rw [TauCeti.BinaryQuadraticForm.eval_smul, eval_toBinaryQuadraticForm,
       eval_toBinaryQuadraticForm, hw, ← h, hu]
   · intro h v
     obtain ⟨x, y, rfl⟩ : ∃ x y : R, x • e 0 + y • e 1 = v := ⟨_, _, (hv v).symm⟩
-    rw [SpecialLinearGroup.toLin_equiv_apply_fin_two, ← eval_toBinaryQuadraticForm,
+    rw [← LinearEquiv.coe_coe, SpecialLinearGroup.toLin_equiv.toLinearMap_eq,
+      Matrix.toLin_apply_fin_two, ← eval_toBinaryQuadraticForm,
       ← eval_toBinaryQuadraticForm,
       ← TauCeti.BinaryQuadraticForm.eval_smul_apply γ (Q.toBinaryQuadraticForm e) x y, h]
 
@@ -144,7 +145,7 @@ theorem coe_specialOrthogonalGroupEquivStabilizer_apply
     (g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
     ((specialOrthogonalGroupEquivStabilizer Q e g : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) =
       LinearMap.toMatrix e e (g : M ≃ₗ[R] M).toLinearMap :=
-  (rfl)
+  SpecialLinearGroup.toLin_equiv.symm_toLinearMap_eq e _
 
 /-- The proper isometry attached to an automorph `γ` is the linear map with matrix `γ` in `e`. -/
 @[simp]
@@ -152,6 +153,6 @@ theorem coe_specialOrthogonalGroupEquivStabilizer_symm_apply
     (γ : stabilizer SL(2, R) (Q.toBinaryQuadraticForm e)) :
     (((specialOrthogonalGroupEquivStabilizer Q e).symm γ : M ≃ₗ[R] M) : M →ₗ[R] M) =
       Matrix.toLin e e ((γ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) :=
-  (rfl)
+  SpecialLinearGroup.toLin_equiv.toLinearMap_eq e γ
 
 end QuadraticMap

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Rat
 public import TauCeti.Algebra.QuadraticAlgebra.Unitary
 public import TauCeti.NumberTheory.BinaryQuadraticForm.QuadraticMap
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Stabilizer
@@ -144,17 +145,16 @@ noncomputable def specialOrthogonalGroupBaseChangeEquivUnitary (hL : L.form ≠ 
         (L.isPrimitive_binaryNormForm_primPart b hL).span_intCast_eq_top
         (L.binaryDiscriminant_eq_discrim_primPart b hV).symm
         -- `2` is a unit in a `ℚ`-algebra, so it is not a zero divisor.
-        (by simpa only [map_ofNat] using
-          ((IsUnit.mk0 (2 : ℚ) two_ne_zero).map (algebraMap ℚ A)).isRegular.left)
+        (@isUnit_of_invertible _ _ _ (invertibleTwoOfAlgebraRat A)).isRegular.left
 
 /-- The matrix, in the basis of `A ⊗ V` given by `b`, of a proper isometry is the automorph of the
 primitive norm form attached to its norm-one element. -/
 theorem coe_stabilizerEquivUnitary_symm_specialOrthogonalGroupBaseChangeEquivUnitary
-    (hL : L.form ≠ 0) (h2 : IsLeftRegular (2 : A))
-    (g : QuadraticMap.specialOrthogonalGroup (L.norm.baseChange A)) :
+    (hL : L.form ≠ 0) (g : QuadraticMap.specialOrthogonalGroup (L.norm.baseChange A)) :
     (((BinaryQuadraticForm.stabilizerEquivUnitary
         (L.isPrimitive_binaryNormForm_primPart b hL).span_intCast_eq_top
-        (L.binaryDiscriminant_eq_discrim_primPart b hV).symm h2).symm
+        (L.binaryDiscriminant_eq_discrim_primPart b hV).symm
+        (@isUnit_of_invertible _ _ _ (invertibleTwoOfAlgebraRat A)).isRegular.left).symm
           (specialOrthogonalGroupBaseChangeEquivUnitary b hV A hL g) : SL(2, A)) :
         Matrix (Fin 2) (Fin 2) A) =
       LinearMap.toMatrix ((b.extendOfIsFullLattice ℚ).baseChange A)
@@ -186,7 +186,7 @@ theorem specialOrthogonalToOrthogonal_mem_localStabilizer_iff (hL : L.form ≠ 0
           (h : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).toLinearMap i j ∈ S) ↔
         (e h).val.re ∈ S ∧ (e h).val.im ∈ S := by
     rw [← coe_stabilizerEquivUnitary_symm_specialOrthogonalGroupBaseChangeEquivUnitary b hV ℚ_[p]
-      hL ((IsUnit.mk0 (2 : ℚ_[p]) two_ne_zero).isRegular.left)]
+      hL]
     exact BinaryQuadraticForm.forall_coe_stabilizerEquivUnitary_symm_apply_mem_iff
       (L.isPrimitive_binaryNormForm_primPart b hL) _ _ S (e h)
   have hinv : ((QuadraticMap.specialOrthogonalToOrthogonal _ g :
@@ -196,8 +196,9 @@ theorem specialOrthogonalToOrthogonal_mem_localStabilizer_iff (hL : L.form ≠ 0
     rw [QuadraticMap.coe_specialOrthogonalToOrthogonal, Subgroup.coe_inv]
   rw [L.localStabilizer_eq_integralOrthogonalSubgroup p b,
     QuadraticMap.mem_integralOrthogonalSubgroup_iff, hinv,
-    QuadraticMap.coe_specialOrthogonalToOrthogonal, hmat, hmat, map_inv,
-    ← Unitary.star_eq_inv, Unitary.coe_star, re_star, im_star]
+    QuadraticMap.coe_specialOrthogonalToOrthogonal, hmat, hmat]
+  -- The norm-one element of `g⁻¹` is the conjugate of that of `g`.
+  simp only [map_inv, ← Unitary.star_eq_inv, Unitary.coe_star, re_star, im_star]
   -- The conjugate `x + Δ y - y ω` of `x + y ω` has integral coordinates when `x + y ω` does.
   refine ⟨fun h ↦ h.1, fun h ↦ ⟨h, ?_, S.neg_mem h.2⟩⟩
   exact S.add_mem h.1 (S.mul_mem (intCast_mem S _) h.2)
