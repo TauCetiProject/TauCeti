@@ -348,6 +348,12 @@ variable {C} in
 theorem mem_stripTraces_iff {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} :
     g ∈ C.stripTraces ↔ ∃ F, C.IsStripFunction F g :=
   Iff.rfl
+/-- The values of the trace `g₀` on the line `re z = 0` are bounded by `‖g‖`. -/
+theorem norm_stripTraces_fst_apply_le (g : C.stripTraces) (t : ℝ) : ‖g.val.1 t‖ ≤ ‖g‖ :=
+  (g.val.1.norm_coe_le_norm t).trans (norm_fst_le _)
+/-- The values of the trace `g₁` on the line `re z = 1` are bounded by `‖g‖`. -/
+theorem norm_stripTraces_snd_apply_le (g : C.stripTraces) (t : ℝ) : ‖g.val.2 t‖ ≤ ‖g‖ :=
+  (g.val.2.norm_coe_le_norm t).trans (norm_snd_le _)
 
 /-- The admissible function with boundary traces `g`, extended by zero off the closed strip. On
 the closed strip it agrees with every admissible function with these traces
@@ -588,7 +594,7 @@ theorem lift_unique (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ 
 
 end Lift
 
-@[simp] theorem norm_lift {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+theorem norm_lift {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
     (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ g = 0 → A g = 0) :
     ‖lift A hA‖ = ‖A‖ := (C.stripEval θ).ker.norm_liftQL A hA
 
@@ -790,20 +796,17 @@ def toFst : C.ComplexMethodSpace 0 →L[ℂ] X₀ :=
       ((ContinuousLinearMap.fst ℂ C₀(ℝ, X₀) C₀(ℝ, X₁)).comp C.stripTraces.subtypeL))
     fun _ hg => C.fstToSum_injective (by simpa using hg)
 
-@[simp] theorem toFst_mk (g : C.stripTraces) :
-    toFst (mk 0 g) = (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 0 := by
+@[simp] theorem toFst_mk (g : C.stripTraces) : toFst (mk 0 g) = g.val.1 0 := by
   simp [toFst, ZeroAtInftyContinuousMap.evalCLM_apply]
 @[simp] theorem fstToSum_toFst (u : C.ComplexMethodSpace 0) : C.fstToSum (toFst u) = toSum u := by
   obtain ⟨g, rfl⟩ := mk_surjective u; simp
 theorem toFst_injective : Function.Injective (toFst (C := C)) := fun _ _ huv =>
   toSum_injective <| by rw [← fstToSum_toFst, ← fstToSum_toFst, huv]
-theorem norm_toFst_le (u : C.ComplexMethodSpace 0) : ‖toFst u‖ ≤ ‖u‖ :=
-  le_of_forall_gt fun _ hr => by
-    obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 hr; rw [toFst_mk]
-    exact (((g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1.norm_coe_le_norm 0).trans
-      (norm_fst_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)))).trans_lt hg
 theorem opNorm_toFst_le : ‖(toFst : C.ComplexMethodSpace 0 →L[ℂ] X₀)‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by simpa using norm_toFst_le u
+  opNorm_le_of_norm_apply_mk_le zero_le_one fun g => by
+    simpa using C.norm_stripTraces_fst_apply_le g 0
+theorem norm_toFst_le (u : C.ComplexMethodSpace 0) : ‖toFst u‖ ≤ ‖u‖ :=
+  (toFst.le_of_opNorm_le opNorm_toFst_le u).trans_eq (one_mul _)
 @[simp] theorem toFst_ofInter (x : C.inter) : toFst (ofInter 0 x) = C.interFst x :=
   C.fstToSum_injective <| by rw [fstToSum_toFst, toSum_ofInter ⟨le_rfl, zero_le_one⟩]
 
@@ -813,20 +816,17 @@ def toSnd : C.ComplexMethodSpace 1 →L[ℂ] X₁ :=
       ((ContinuousLinearMap.snd ℂ C₀(ℝ, X₀) C₀(ℝ, X₁)).comp C.stripTraces.subtypeL))
     fun _ hg => C.sndToSum_injective (by simpa using hg)
 
-@[simp] theorem toSnd_mk (g : C.stripTraces) :
-    toSnd (mk 1 g) = (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 0 := by
+@[simp] theorem toSnd_mk (g : C.stripTraces) : toSnd (mk 1 g) = g.val.2 0 := by
   simp [toSnd, ZeroAtInftyContinuousMap.evalCLM_apply]
 @[simp] theorem sndToSum_toSnd (u : C.ComplexMethodSpace 1) : C.sndToSum (toSnd u) = toSum u := by
   obtain ⟨g, rfl⟩ := mk_surjective u; simp
 theorem toSnd_injective : Function.Injective (toSnd (C := C)) := fun _ _ huv =>
   toSum_injective <| by rw [← sndToSum_toSnd, ← sndToSum_toSnd, huv]
-theorem norm_toSnd_le (u : C.ComplexMethodSpace 1) : ‖toSnd u‖ ≤ ‖u‖ :=
-  le_of_forall_gt fun _ hr => by
-    obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 hr; rw [toSnd_mk]
-    exact (((g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2.norm_coe_le_norm 0).trans
-      (norm_snd_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)))).trans_lt hg
 theorem opNorm_toSnd_le : ‖(toSnd : C.ComplexMethodSpace 1 →L[ℂ] X₁)‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by simpa using norm_toSnd_le u
+  opNorm_le_of_norm_apply_mk_le zero_le_one fun g => by
+    simpa using C.norm_stripTraces_snd_apply_le g 0
+theorem norm_toSnd_le (u : C.ComplexMethodSpace 1) : ‖toSnd u‖ ≤ ‖u‖ :=
+  (toSnd.le_of_opNorm_le opNorm_toSnd_le u).trans_eq (one_mul _)
 @[simp] theorem toSnd_ofInter (x : C.inter) : toSnd (ofInter 1 x) = C.interSnd x :=
   C.sndToSum_injective <| by
     rw [sndToSum_toSnd, toSum_ofInter ⟨zero_le_one, le_rfl⟩, C.fstToSum_interFst]

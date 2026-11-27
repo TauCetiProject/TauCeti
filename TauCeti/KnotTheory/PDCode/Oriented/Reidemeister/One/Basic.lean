@@ -188,6 +188,28 @@ theorem crossingSign_reidemeisterOne_last (D : OrientedPDCode n) (h : Fin (4 * n
   · apply (crossingSign_eq_one_iff _ _).mpr
     simp
 
+/-- A positive arc kink adds one positive crossing. A negative kink leaves
+the positive crossing count unchanged. -/
+@[simp]
+theorem positiveCrossingCount_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :
+    (D.reidemeisterOne h b).positiveCrossingCount =
+      D.positiveCrossingCount + if b then 1 else 0 := by
+  classical
+  simp only [positiveCrossingCount_def, Finset.card_filter, Fin.sum_univ_castSucc,
+    crossingSign_reidemeisterOne_castSucc, crossingSign_reidemeisterOne_last]
+  cases b <;> simp
+
+/-- A negative arc kink adds one negative crossing. A positive kink leaves
+the negative crossing count unchanged. -/
+@[simp]
+theorem negativeCrossingCount_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :
+    (D.reidemeisterOne h b).negativeCrossingCount =
+      D.negativeCrossingCount + if b then 0 else 1 := by
+  classical
+  simp only [negativeCrossingCount_def, Finset.card_filter, Fin.sum_univ_castSucc,
+    crossingSign_reidemeisterOne_castSucc, crossingSign_reidemeisterOne_last]
+  cases b <;> simp
+
 /-- Inserting an oriented kink changes the writhe by the sign of the new crossing. -/
 @[simp]
 theorem writhe_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :

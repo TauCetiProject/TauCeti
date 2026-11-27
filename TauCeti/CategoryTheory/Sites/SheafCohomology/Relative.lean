@@ -55,7 +55,9 @@ morphism `W ∖ S ⟶ W` gives the cohomology of `F` on `W` with supports in `S`
 * `CategoryTheory.Sheaf.relativeH'.zeroEquiv`: `H⁰(V, U; F)` is the group of sections over `V`
   restricting to zero along `i`, naturally in `F` (`relativeH'.coe_zeroEquiv_naturality_right`);
 * `CategoryTheory.Sheaf.relativeH'.subsingleton_one` and `relativeH'.subsingleton_add_two`:
-  vanishing of relative cohomology from vanishing of absolute cohomology.
+  vanishing of relative cohomology from vanishing of absolute cohomology;
+* `CategoryTheory.Sheaf.relativeH'.toH'AddEquiv`: `Hⁿ(V, U; F) ≃+ Hⁿ(V, F)` when the free sheaf
+  `ℤ_U` is zero, for instance when the empty sieve covers `U`.
 * `TauCeti.CategoryTheory.relativeFreeYonedaSheafMap`: the map `ℤ_{V',U'} ⟶ ℤ_{V,U}` induced by a
   commutative square from `i' : U' ⟶ V'` to `i : U ⟶ V`, and
   `TauCeti.CategoryTheory.isIso_relativeFreeYonedaSheafMap_iff`, its Yoneda criterion for being an
@@ -379,6 +381,30 @@ lemma freeYonedaSheafSectionsEquiv_addEquiv₀_toH' (x : F.relativeH' i 0) :
 /-- Relative cohomology vanishes for an isomorphism. -/
 instance subsingleton_of_isIso [IsIso i] (n : ℕ) : Subsingleton (F.relativeH' i n) :=
   TauCeti.subsingleton_ext_of_isZero_left (isZero_relativeFreeYonedaSheaf J i) F n
+
+/-- If the free abelian sheaf on `U` is zero, for instance when the empty sieve covers `U`, the
+map `Hⁿ(V, U; F) ⟶ Hⁿ(V, F)` is bijective. -/
+theorem bijective_toH'_of_isZero (hU : IsZero ((freeYonedaSheafFunctor J).obj U)) (n : ℕ) :
+    Function.Bijective (toH' F i n) := by
+  have := cokernel.π_of_zero (hU.eq_of_src ((freeYonedaSheafFunctor J).map i) 0)
+  have h : ⇑(toH' F i n) = (F.H'AddEquivExt n V).symm ∘
+      TauCeti.extAddEquivOfIso (asIso (cokernel.π ((freeYonedaSheafFunctor J).map i))).symm
+        (Iso.refl F) n := by
+    ext x
+    simp [toH']
+  rw [h]
+  exact (F.H'AddEquivExt n V).symm.bijective.comp (TauCeti.extAddEquivOfIso _ _ n).bijective
+
+/-- If the free abelian sheaf on `U` is zero, for instance when the empty sieve covers `U`,
+relative cohomology `Hⁿ(V, U; F)` is the cohomology `Hⁿ(V, F)`, through `toH'`. -/
+noncomputable def toH'AddEquiv (hU : IsZero ((freeYonedaSheafFunctor J).obj U)) (n : ℕ) :
+    F.relativeH' i n ≃+ F.H' n V :=
+  AddEquiv.ofBijective (toH' F i n) (bijective_toH'_of_isZero F i hU n)
+
+@[simp]
+lemma toH'AddEquiv_apply (hU : IsZero ((freeYonedaSheafFunctor J).obj U)) {n : ℕ}
+    (x : F.relativeH' i n) : toH'AddEquiv F i hU n x = toH' F i n x :=
+  (rfl)
 
 section map
 

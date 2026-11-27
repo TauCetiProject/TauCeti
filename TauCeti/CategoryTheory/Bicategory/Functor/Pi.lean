@@ -23,12 +23,18 @@ It comes with the projections `pi.π F i : pi F ⟶ F i` and has the 2-universal
 product: strong transformations into it are induced by families of strong transformations into
 the `F i` (`pi.lift`, with `pi.liftCompπ`), and modifications between them are given by families
 of modifications between their projections (`pi.homMk`, `pi.isoMk`) and are determined by these
-(`pi.hom_ext`).
+(`pi.hom_ext`). A family of strong transformations `f i : F i ⟶ G i` induces their product
+`TauCeti.Stack.piMap f : pi F ⟶ pi G`, whose components are equivalences when those of the `f i`
+are (`isEquivalence_piMap_app`), and a family of modifications `m i : f i ⟶ g i` induces their
+product `TauCeti.Stack.piMap₂ m : piMap f ⟶ piMap g`, whose projections are the `m i`
+(`piMap₂_whiskerRight_π`), compatibly with identities and composition (`piMap₂_id`, `piMap₂_comp`).
 
 The product of the empty family is the terminal pseudofunctor `TauCeti.Stack.terminal`, whose
 fibers are the category with one object and one morphism: every pseudofunctor has a strong
 transformation to it (`terminal.lift`), and any two strong transformations to it are related by a
-unique modification (`terminal.homMk`, `terminal.hom_ext`).
+unique modification (`terminal.homMk`, `terminal.hom_ext`). The component of `terminal.lift K`
+over `X` is an equivalence when the fiber `K.obj X` is equivalent to the point
+(`terminal.isEquivalence_lift_app`).
 
 The construction uses no topology; that products of stacks are stacks is proved in
 `TauCeti.CategoryTheory.Sites.Descent.Pi`.
@@ -47,8 +53,12 @@ The fibers of `pi F` for `I : Type w` and `F i` with values in `Cat.{v', u'}` li
   strong transformations `a i : K ⟶ F i`, with `liftCompπ`.
 * `TauCeti.Stack.pi.homMk`, `TauCeti.Stack.pi.isoMk`, `TauCeti.Stack.pi.hom_ext`: modifications
   into the product.
-* `TauCeti.Stack.terminal`: the terminal pseudofunctor, with `terminal.lift`, `terminal.homMk` and
-  `terminal.hom_ext`.
+* `TauCeti.Stack.piMap`: the product of a family of strong transformations, with
+  `isEquivalence_piMap_app`.
+* `TauCeti.Stack.piMap₂`: the product of a family of modifications, with
+  `piMap₂_whiskerRight_π`, `piMap₂_id` and `piMap₂_comp`.
+* `TauCeti.Stack.terminal`: the terminal pseudofunctor, with `terminal.lift`, `terminal.homMk`,
+  `terminal.hom_ext` and `terminal.isEquivalence_lift_app`.
 -/
 
 open CategoryTheory Bicategory Opposite
@@ -276,6 +286,12 @@ lemma lift_app_toFunctor (X : LocallyDiscrete Cᵒᵖ) :
     ((lift a).app X).toFunctor = liftApp a X :=
   (rfl)
 
+/-- The components of the image of `φ` under `lift a` are the images of `φ` under the `a i`. -/
+@[simp]
+lemma lift_app_map_apply (X : LocallyDiscrete Cᵒᵖ) {k l : K.obj X} (φ : k ⟶ l) (i : I) :
+    ((lift a).app X).toFunctor.map φ i = ((a i).app X).toFunctor.map φ :=
+  (rfl)
+
 /-- The naturality isomorphisms of `lift a` have the naturality isomorphisms of the `a i` as
 components. -/
 @[simp]
@@ -388,6 +404,53 @@ end homMk
 
 end pi
 
+/-! ### The product of a family of strong transformations -/
+
+section piMap
+
+variable {F} {G : I → Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w u'}}
+
+/-- The product `pi F ⟶ pi G` of a family of strong transformations `f i : F i ⟶ G i`. -/
+def piMap (f : ∀ i, F i ⟶ G i) : pi F ⟶ pi G :=
+  pi.lift fun i ↦ pi.π F i ≫ f i
+
+/-- The component of `piMap f` over `X` is the product of the components of the `f i`. -/
+@[simp]
+lemma piMap_app_toFunctor (f : ∀ i, F i ⟶ G i) (X : LocallyDiscrete Cᵒᵖ) :
+    ((piMap f).app X).toFunctor = Functor.pi fun i ↦ ((f i).app X).toFunctor :=
+  (rfl)
+
+/-- The components of the image of `φ` under `piMap f` are the images of the components of `φ`. -/
+@[simp]
+lemma piMap_app_map_apply (f : ∀ i, F i ⟶ G i) (X : LocallyDiscrete Cᵒᵖ) {x y : (pi F).obj X}
+    (φ : x ⟶ y) (i : I) :
+    ((piMap f).app X).toFunctor.map φ i = ((f i).app X).toFunctor.map (φ i) :=
+  (rfl)
+
+/-- The `i`-th projection of `piMap f` is the `i`-th projection followed by `f i`. -/
+def piMapCompπ (f : ∀ i, F i ⟶ G i) (i : I) : piMap f ≫ pi.π G i ≅ pi.π F i ≫ f i :=
+  pi.liftCompπ _ i
+
+/-- The components of `piMapCompπ f i` are identities. -/
+@[simp]
+lemma piMapCompπ_hom_as_app (f : ∀ i, F i ⟶ G i) (i : I) (X : LocallyDiscrete Cᵒᵖ) :
+    (piMapCompπ f i).hom.as.app X = 𝟙 _ :=
+  rfl
+
+/-- The components of the inverse of `piMapCompπ f i` are identities. -/
+@[simp]
+lemma piMapCompπ_inv_as_app (f : ∀ i, F i ⟶ G i) (i : I) (X : LocallyDiscrete Cᵒᵖ) :
+    (piMapCompπ f i).inv.as.app X = 𝟙 _ :=
+  rfl
+
+/-- The product of a family of strong transformations whose components over `X` are equivalences
+has its component over `X` an equivalence. -/
+instance isEquivalence_piMap_app (f : ∀ i, F i ⟶ G i) (X : LocallyDiscrete Cᵒᵖ)
+    [∀ i, ((f i).app X).toFunctor.IsEquivalence] : ((piMap f).app X).toFunctor.IsEquivalence :=
+  inferInstanceAs (Functor.pi fun i ↦ ((f i).app X).toFunctor).IsEquivalence
+
+end piMap
+
 /-! ### The terminal pseudofunctor -/
 
 /-- The terminal pseudofunctor `LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat`, the product of the empty family: its
@@ -402,6 +465,11 @@ instance instUniqueObj (X : LocallyDiscrete Cᵒᵖ) :
   default := fun i ↦ i.elim
   uniq _ := funext fun i ↦ i.elim
 
+/-- The fibers of the terminal pseudofunctor have exactly one morphism between any two objects. -/
+instance instIsThinObj (X : LocallyDiscrete Cᵒᵖ) :
+    Quiver.IsThin ((terminal.{u', v'} (C := C)).obj X) :=
+  fun _ _ ↦ ⟨fun _ _ ↦ funext fun i ↦ i.elim⟩
+
 /-- The fibers of the terminal pseudofunctor are groupoids. -/
 instance instIsGroupoidObj (X : LocallyDiscrete Cᵒᵖ) :
     IsGroupoid ((terminal.{u', v'} (C := C)).obj X) :=
@@ -412,6 +480,16 @@ variable (K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{v', u'})
 /-- The strong transformation from a pseudofunctor to the terminal pseudofunctor. -/
 def lift : K ⟶ terminal :=
   pi.lift fun i ↦ i.elim
+
+/-- The component over `X` of the strong transformation `K ⟶ terminal` is an equivalence when the
+fiber `K.obj X` is equivalent to the point: nonempty, with exactly one morphism between any two
+objects. -/
+theorem isEquivalence_lift_app (X : LocallyDiscrete Cᵒᵖ) (hne : Nonempty (K.obj X))
+    (hthin : Quiver.IsThin (K.obj X)) (hconn : ∀ x y : K.obj X, Nonempty (x ⟶ y)) :
+    ((lift K).app X).toFunctor.IsEquivalence where
+  faithful := ⟨fun {x y} _ _ _ ↦ (hthin x y).elim _ _⟩
+  full := ⟨fun {x y} _ ↦ ⟨(hconn x y).some, Subsingleton.elim _ _⟩⟩
+  essSurj := ⟨fun _ ↦ ⟨hne.some, ⟨eqToIso (Subsingleton.elim _ _)⟩⟩⟩
 
 variable {K} (φ ψ : K ⟶ terminal)
 
@@ -424,6 +502,64 @@ lemma hom_ext (m n : φ ⟶ ψ) : m = n :=
   pi.hom_ext fun i ↦ i.elim
 
 end terminal
+
+end TauCeti.Stack
+
+end
+
+/-! ### The product of a family of modifications
+
+`piMap₂` is not exposed: its components are computed by `piMap₂_as_app_app` and its projections
+by `piMap₂_whiskerRight_π`. -/
+
+public section
+
+namespace TauCeti.Stack
+
+variable {C : Type u} [Category.{v} C] {I : Type w}
+  {F G : I → Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w u'}}
+
+/-- The product `piMap f ⟶ piMap g` of a family of modifications `m i : f i ⟶ g i`. -/
+def piMap₂ {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) : piMap f ⟶ piMap g :=
+  pi.homMk fun i ↦ (piMapCompπ f i).hom ≫ pi.π F i ◁ m i ≫ (piMapCompπ g i).inv
+
+/-- The components of `piMap₂ m` are those of the `m i`. -/
+@[simp]
+lemma piMap₂_as_app_app {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (X : LocallyDiscrete Cᵒᵖ)
+    (x : (pi F).obj X) (i : I) :
+    ((piMap₂ m).as.app X).toNatTrans.app x i = ((m i).as.app X).toNatTrans.app (x i) := by
+  simp only [piMap₂, pi.homMk_as_app_app, Pseudofunctor.StrongTrans.homCategory_comp_as_app,
+    piMapCompπ_hom_as_app, piMapCompπ_inv_as_app, Pseudofunctor.StrongTrans.whiskerLeft_as_app]
+  -- The identities come from `piMapCompπ` and live over objects that are only definitionally the
+  -- source and target of the whiskered component, so `Category.id_comp` applies only up to
+  -- unfolding.
+  erw [Category.id_comp, Category.comp_id]
+  rfl
+
+/-- The `i`-th projection of `piMap₂ m` is `m i`, whiskered by the `i`-th projection and
+conjugated by the comparisons `piMapCompπ`. -/
+@[simp]
+lemma piMap₂_whiskerRight_π {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (i : I) :
+    piMap₂ m ▷ pi.π G i = (piMapCompπ f i).hom ≫ pi.π F i ◁ m i ≫ (piMapCompπ g i).inv := by
+  rw [piMap₂, pi.homMk_whiskerRight_π]
+
+/-- The product of identity modifications is the identity. -/
+@[simp]
+lemma piMap₂_id (f : ∀ i, F i ⟶ G i) : piMap₂ (fun i ↦ 𝟙 (f i)) = 𝟙 (piMap f) := by
+  ext X x
+  funext i
+  exact piMap₂_as_app_app _ X x i
+
+/-- The product of composite modifications is the composite of the products. -/
+@[simp]
+lemma piMap₂_comp {f g h : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (n : ∀ i, g i ⟶ h i) :
+    piMap₂ (fun i ↦ m i ≫ n i) = piMap₂ m ≫ piMap₂ n := by
+  ext X x
+  funext i
+  simp only [Pseudofunctor.StrongTrans.homCategory_comp_as_app, Cat.Hom₂.comp_app, pi.comp_apply',
+    piMap₂_as_app_app]
+  -- The two composites differ only in how their middle object is written.
+  rfl
 
 end TauCeti.Stack
 

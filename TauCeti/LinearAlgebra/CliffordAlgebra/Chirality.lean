@@ -66,8 +66,8 @@ a semilinear map commuting with the generators whose twist fixes the real scalar
 conjugate-linear map of complex Clifford modules: it maps each eigenspace of `Γ` to the eigenspace
 of the twisted eigenvalue (`CliffordAlgebra.map_mem_eigenspace_chirality`), so it preserves the
 half-spinors, whose eigenvalues `±1` are real. A conjugate-linear isometric equivalence of
-Hermitian Clifford modules thus restricts to the positive half-spinors, as charge conjugation of
-spinors does.
+Hermitian Clifford modules thus restricts to each eigenspace of `Γ`, with conjugated eigenvalue,
+and in particular to the positive half-spinors, as charge conjugation of spinors does.
 
 ## Main definitions
 
@@ -76,6 +76,9 @@ spinors does.
   of `Γ` acting on a Clifford module `ρ : CliffordAlgebra Q → End_K W`.
 * `CliffordAlgebra.positiveHalfSpinorsEquiv o ρ o' ρ' U hU`: the restriction `W⁺ ≃ W'⁺` of an
   equivalence of Clifford modules `U` that intertwines the chirality elements.
+* `CliffordAlgebra.eigenspaceChiralityConjEquiv o ρ ρ' j hj hε`: the restriction
+  `W^ε ≃ W'^ε'`, `ε' = conj ε`, of a conjugate-linear isometric equivalence `j` of Hermitian
+  Clifford modules commuting with the generators to the eigenspaces of `Γ`.
 * `CliffordAlgebra.positiveHalfSpinorsConjEquiv o ρ ρ' j hj`: the restriction `W⁺ ≃ W'⁺` of a
   conjugate-linear isometric equivalence `j` of Hermitian Clifford modules commuting with the
   generators.
@@ -763,22 +766,47 @@ variable {W W' : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [Normed
   (ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W') (j : W ≃ₗᵢ⋆[ℂ] W')
   (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
 
-/-- **Charge conjugation of positive half-spinors**: a conjugate-linear isometric equivalence `j`
-of Hermitian Clifford modules commuting with Clifford multiplication restricts to a
-conjugate-linear isometric equivalence `W⁺ ≃ W'⁺` of the positive half-spinors. -/
-def positiveHalfSpinorsConjEquiv :
-    positiveHalfSpinors o ρ ≃ₗᵢ⋆[ℂ] positiveHalfSpinors o ρ' where
-  toFun ψ := ⟨j ψ, map_mem_positiveHalfSpinors (fun r ↦ Complex.conj_ofReal r)
+/-- **Charge conjugation of the eigenspaces of `Γ`**: a conjugate-linear isometric equivalence
+`j` of Hermitian Clifford modules commuting with Clifford multiplication restricts to a
+conjugate-linear isometric equivalence `W^ε ≃ W'^ε'` from the `ε`-eigenspace of the chirality
+element to its `ε'`-eigenspace, for `ε' = conj ε`. -/
+def eigenspaceChiralityConjEquiv {ε ε' : ℂ} (hε : starRingEnd ℂ ε = ε') :
+    Module.End.eigenspace (ρ (chirality Q o)) ε ≃ₗᵢ⋆[ℂ]
+      Module.End.eigenspace (ρ' (chirality Q o)) ε' where
+  toFun ψ := ⟨j ψ, hε ▸ map_mem_eigenspace_chirality (fun r ↦ Complex.conj_ofReal r)
     (U := j.toLinearEquiv.toLinearMap) hj ψ.property⟩
-  invFun ψ := ⟨j.symm ψ, map_mem_positiveHalfSpinors (fun r ↦ Complex.conj_ofReal r)
-    (U := j.symm.toLinearEquiv.toLinearMap)
-    (fun v w ↦ by rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, j.symm_apply_eq,
-      hj, j.apply_symm_apply]) ψ.property⟩
+  invFun ψ := ⟨j.symm ψ, (by rw [← hε, Complex.conj_conj] : starRingEnd ℂ ε' = ε) ▸
+    map_mem_eigenspace_chirality (fun r ↦ Complex.conj_ofReal r)
+      (U := j.symm.toLinearEquiv.toLinearMap)
+      (fun v w ↦ by rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
+        j.symm_apply_eq, hj, j.apply_symm_apply]) ψ.property⟩
   map_add' ψ φ := Subtype.ext <| by simp
   map_smul' c ψ := Subtype.ext <| by simp [map_smulₛₗ]
   left_inv ψ := Subtype.ext (j.symm_apply_apply ψ)
   right_inv ψ := Subtype.ext (j.apply_symm_apply ψ)
   norm_map' ψ := j.norm_map (ψ : W)
+
+/-- The restriction of `j` to the eigenspaces of `Γ` is `j`. -/
+@[simp]
+theorem coe_eigenspaceChiralityConjEquiv_apply {ε ε' : ℂ} (hε : starRingEnd ℂ ε = ε')
+    (ψ : Module.End.eigenspace (ρ (chirality Q o)) ε) :
+    (eigenspaceChiralityConjEquiv o ρ ρ' j hj hε ψ : W') = j ψ :=
+  (rfl)
+
+/-- The inverse of the restriction of `j` to the eigenspaces of `Γ` is `j⁻¹`. -/
+@[simp]
+theorem coe_eigenspaceChiralityConjEquiv_symm_apply {ε ε' : ℂ} (hε : starRingEnd ℂ ε = ε')
+    (ψ : Module.End.eigenspace (ρ' (chirality Q o)) ε') :
+    ((eigenspaceChiralityConjEquiv o ρ ρ' j hj hε).symm ψ : W) = j.symm ψ :=
+  (rfl)
+
+/-- **Charge conjugation of positive half-spinors**: a conjugate-linear isometric equivalence `j`
+of Hermitian Clifford modules commuting with Clifford multiplication restricts to a
+conjugate-linear isometric equivalence `W⁺ ≃ W'⁺` of the positive half-spinors. This is the case
+`ε = 1` of `CliffordAlgebra.eigenspaceChiralityConjEquiv`. -/
+def positiveHalfSpinorsConjEquiv :
+    positiveHalfSpinors o ρ ≃ₗᵢ⋆[ℂ] positiveHalfSpinors o ρ' :=
+  eigenspaceChiralityConjEquiv o ρ ρ' j hj (map_one _)
 
 /-- The restriction of `j` to the positive half-spinors is `j`. -/
 @[simp]

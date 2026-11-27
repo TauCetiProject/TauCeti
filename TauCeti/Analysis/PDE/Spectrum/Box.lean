@@ -12,7 +12,8 @@ import TauCeti.Analysis.Calculus.Deriv.Second
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.Fourier.SineSeries
+import TauCeti.Analysis.Fourier.SineCosineSeries
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The Dirichlet spectrum of `-Δ` on a box
@@ -97,6 +98,86 @@ theorem exists_eq_endpoint_of_mem_frontier_boxDomain {a b : ι → ℝ}
   have hi : x ∈ boxDomain a b := mem_boxDomain.mpr fun i ↦
     ⟨lt_of_le_of_ne (hc i).1 (h i).1.symm, lt_of_le_of_ne (hc i).2 (h i).2⟩
   exact disjoint_frontier_iff_isOpen.mpr (boxDomain a b).isOpen |>.notMem_of_mem_right hi hx
+
+/-- A box `∏ⱼ (aⱼ, bⱼ)` with `aⱼ < bⱼ` for every `j` is nonempty: it contains its centre. -/
+theorem nonempty_boxDomain {a b : ι → ℝ} (hab : ∀ j, a j < b j) :
+    (boxDomain a b : Set (EuclideanSpace ℝ ι)).Nonempty :=
+  ⟨WithLp.toLp 2 fun j ↦ (a j + b j) / 2, mem_boxDomain.2 fun j ↦
+    ⟨by simp; linarith [hab j], by simp; linarith [hab j]⟩⟩
+
+/-- A function continuous on the closure of a box is integrable on the box, for every measure
+that is finite on compact sets. -/
+theorem integrableOn_boxDomain {E : Type*} [NormedAddCommGroup E] {a b : ι → ℝ}
+    {mu : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasureOnCompacts mu]
+    {F : EuclideanSpace ℝ ι → E} (hF : ContinuousOn F (closure (boxDomain a b))) :
+    IntegrableOn F (boxDomain a b) mu :=
+  (hF.integrableOn_compact (isBounded_boxDomain a b).isCompact_closure).mono_set subset_closure
+
+/-- The line through `x` parallel to the `i`-th axis meets the box in its `i`-th side exactly when
+the other coordinates of `x` lie in the box. -/
+theorem toLp_update_mem_boxDomain_iff [DecidableEq ι] {a b : ι → ℝ} {i : ι} (x : ι → ℝ)
+    (t : ℝ) :
+    WithLp.toLp 2 (Function.update x i t) ∈ (boxDomain a b : Set (EuclideanSpace ℝ ι)) ↔
+      t ∈ Ioo (a i) (b i) ∧ ∀ j ≠ i, x j ∈ Ioo (a j) (b j) := by
+  simp only [SetLike.mem_coe, mem_boxDomain]
+  refine ⟨fun h ↦ ⟨by simpa using h i, fun j hj ↦ by simpa [hj] using h j⟩, fun h j ↦ ?_⟩
+  by_cases hj : j = i
+  · subst hj
+    simpa using h.1
+  · simpa [hj] using h.2 j hj
+
+/-- A part of the hyperplane `xᵢ = aᵢ` misses the box `∏ⱼ (aⱼ, bⱼ)`. -/
+theorem disjoint_boxDomain_of_forall_apply_eq_left {a b : ι → ℝ} {i : ι}
+    {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : ∀ x ∈ Γ, x i = a i) :
+    Disjoint Γ (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
+  Set.disjoint_left.2 fun x hx hxΩ ↦ by
+    have := (mem_boxDomain.1 hxΩ i).1
+    rw [hΓ x hx] at this
+    exact lt_irrefl _ this
+
+/-- Along the line through `x` parallel to the `i`-th axis, the integral over the box is the
+integral over the `i`-th side when the other coordinates of `x` lie in the box, and `0`
+otherwise. -/
+theorem lintegral_indicator_boxDomain_toLp_update [DecidableEq ι] {a b : ι → ℝ} {i : ι}
+    (F : EuclideanSpace ℝ ι → ENNReal) (x : ι → ℝ) :
+    ∫⁻ t, (boxDomain a b : Set (EuclideanSpace ℝ ι)).indicator F
+        (WithLp.toLp 2 (Function.update x i t)) =
+      if ∀ j ≠ i, x j ∈ Ioo (a j) (b j) then
+        ∫⁻ t in Ioo (a i) (b i), F (WithLp.toLp 2 (Function.update x i t)) else 0 := by
+  classical
+  split_ifs with hx
+  · rw [← lintegral_indicator measurableSet_Ioo]
+    congr 1
+    ext t
+    simp only [Set.indicator_apply, toLp_update_mem_boxDomain_iff, and_iff_left hx]
+  · simp only [Set.indicator_apply, toLp_update_mem_boxDomain_iff, hx, and_false, ite_false,
+      lintegral_zero]
+
+/-- **Comparison of integrals over a box along the lines parallel to one axis.** If `F, G ≥ 0` are
+continuous and the integral of `F` over each segment of the box parallel to the `i`-th axis is at
+most that of `G`, then `∫_Ω F ≤ ∫_Ω G`, for every additive Haar measure. -/
+theorem setIntegral_boxDomain_le [DecidableEq ι] {a b : ι → ℝ} {i : ι}
+    {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure] {F G : EuclideanSpace ℝ ι → ℝ}
+    (hF : Continuous F) (hG : Continuous G) (hF0 : ∀ x, 0 ≤ F x) (hG0 : ∀ x, 0 ≤ G x)
+    (h : ∀ x : ι → ℝ, (∀ j ≠ i, x j ∈ Ioo (a j) (b j)) →
+      ∫⁻ t in Ioo (a i) (b i), ENNReal.ofReal (F (WithLp.toLp 2 (Function.update x i t))) ≤
+        ∫⁻ t in Ioo (a i) (b i), ENNReal.ofReal (G (WithLp.toLp 2 (Function.update x i t)))) :
+    ∫ x in boxDomain a b, F x ∂mu ≤ ∫ x in boxDomain a b, G x ∂mu := by
+  have hΩ : MeasurableSet (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
+    (boxDomain a b).isOpen.measurableSet
+  rw [← ENNReal.ofReal_le_ofReal_iff (setIntegral_nonneg hΩ fun x _ => hG0 x),
+    ofReal_integral_eq_lintegral_ofReal (f := F) (integrableOn_boxDomain hF.continuousOn)
+      (ae_of_all _ hF0),
+    ofReal_integral_eq_lintegral_ofReal (f := G) (integrableOn_boxDomain hG.continuousOn)
+      (ae_of_all _ hG0),
+    ← lintegral_indicator hΩ, ← lintegral_indicator hΩ]
+  refine lintegral_le_lintegral_of_forall_lintegral_update_le mu
+    (hF.measurable.ennreal_ofReal.indicator hΩ) (hG.measurable.ennreal_ofReal.indicator hΩ) i
+    fun x => ?_
+  rw [lintegral_indicator_boxDomain_toLp_update, lintegral_indicator_boxDomain_toLp_update]
+  split_ifs with hx
+  · exact h x hx
+  · exact le_rfl
 
 /-- The separated sine mode of a rectangular box, extended smoothly to the whole space. -/
 def boxSineMode (a b : ι → ℝ) (k : ι → ℕ) (x : EuclideanSpace ℝ ι) : ℝ :=

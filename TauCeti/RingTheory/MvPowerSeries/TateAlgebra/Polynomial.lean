@@ -48,6 +48,8 @@ constants and variables, and commutes with bounded coefficient maps by
 * `TauCeti.MvPowerSeries.tendsto_truncTotal_atTop`: in finitely many variables, total-degree
   truncations converge in the Gauss norm.
 * `TauCeti.MvPowerSeries.denseRange_polynomialToRestricted`: the polynomials are dense.
+* `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring
+  homomorphisms out of `R{X/c}` are determined by the constants and the variables.
 * `TauCeti.MvPowerSeries.hasBasis_polynomialGaussUniformSpace`: the entourages of the Gauss
   uniform structure on polynomials are given by the Gauss norm of differences.
 
@@ -120,6 +122,23 @@ theorem tendsto_truncTotal_atTop [Finite σ] (f : IsRestricted.subring (R := R) 
 theorem denseRange_polynomialToRestricted : DenseRange (polynomialToRestricted (R := R) c) :=
   fun f ↦ mem_closure_of_tendsto (tendsto_truncFinset_atTop f)
     (Eventually.of_forall fun _ ↦ Set.mem_range_self _)
+
+/-- **Continuous ring homomorphisms out of `R{X/c}` are determined by the constants and the
+variables**, at arbitrary positive polyradii `c`, since the polynomials are dense. -/
+theorem isRestricted_subring_ringHom_ext_of_continuous {T : Type*} [Semiring T]
+    [TopologicalSpace T] [T2Space T] {ψ₁ ψ₂ : IsRestricted.subring (R := R) c →+* T}
+    (h₁ : Continuous ψ₁) (h₂ : Continuous ψ₂)
+    (hC : ∀ r, ψ₁ (algebraMap R _ r) = ψ₂ (algebraMap R _ r))
+    (hX : ∀ i, ψ₁ ⟨X i, isRestricted_X c i⟩ = ψ₂ ⟨X i, isRestricted_X c i⟩) : ψ₁ = ψ₂ := by
+  have hp : ψ₁.comp (polynomialToRestricted c).toRingHom =
+      ψ₂.comp (polynomialToRestricted c).toRingHom := by
+    apply MvPolynomial.ringHom_ext
+    · intro r
+      simpa [← MvPolynomial.algebraMap_eq] using hC r
+    · intro i
+      simpa using hX i
+  exact DFunLike.coe_injective (denseRange_polynomialToRestricted.equalizer h₁ h₂
+    (funext (DFunLike.congr_fun hp)))
 
 variable (c) in
 /-- The uniform structure of the Gauss norm at the polyradii `c` on polynomials: the structure

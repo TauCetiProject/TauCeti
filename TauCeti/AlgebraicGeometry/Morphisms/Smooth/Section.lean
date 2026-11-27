@@ -33,6 +33,8 @@ passes through its singular point.
 
 * `AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_of_isRegularLocalRing`: a section passes through
   the smooth locus at every point where the base and the source are regular.
+* `AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_of_valuationRing`: a section passes through the
+  smooth locus at every point where the base is a valuation ring and the source is regular.
 * `AlgebraicGeometry.Scheme.Hom.range_subset_smoothLocus_of_isRegularLocalRing`: if the base and
   the source have regular local rings, the image of every section lies in the smooth locus.
 
@@ -91,6 +93,20 @@ theorem mem_smoothLocus_of_isRegularLocalRing (f : X ⟶ S) [LocallyOfFinitePres
   simp only [Arrow.mk_hom, Category.assoc] at hg
   rw [reassoc_of% hr, ← Arrow.comp_left, e.inv_hom_id, Arrow.id_left] at hg
   exact Algebra.IsSmoothAt.of_isRegularLocalRing p q _ congr(($hg.symm).hom)
+
+/-- **A section passes through the smooth locus over a valuation ring.** Let `f : X ⟶ S` be
+locally of finite presentation with a section `σ`. If the local ring of `S` at `s` is a valuation
+ring and the local ring of `X` at `σ s` is regular, then `σ s` lies in the smooth locus of `f`.
+No Noetherian hypothesis on `S` is needed: the local ring of `S` at `s` is a quotient of the
+Noetherian local ring of `X` at `σ s`, so it is a Noetherian valuation ring and hence regular. -/
+theorem mem_smoothLocus_of_valuationRing (f : X ⟶ S) [LocallyOfFinitePresentation f]
+    {σ : S ⟶ X} (hσ : σ ≫ f = 𝟙 S) (s : S) [IsDomain (S.presheaf.stalk s)]
+    [ValuationRing (S.presheaf.stalk s)] [IsRegularLocalRing (X.presheaf.stalk (σ s))] :
+    σ s ∈ f.smoothLocus := by
+  have : SurjectiveOnStalks (σ ≫ f) := by rw [hσ]; infer_instance
+  have := SurjectiveOnStalks.of_comp σ f
+  have := isNoetherianRing_of_surjective _ _ _ (σ.stalkMap_surjective s)
+  exact f.mem_smoothLocus_of_isRegularLocalRing hσ s
 
 /-- **Sections of a regular scheme over a regular base lie in the smooth locus.** If `f : X ⟶ S`
 is locally of finite presentation and all local rings of `S` and of `X` are regular, then the

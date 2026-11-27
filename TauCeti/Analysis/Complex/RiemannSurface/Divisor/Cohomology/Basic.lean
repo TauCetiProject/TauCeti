@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.FiniteDimensional
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.FiniteDimensional
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.PointTwist
 public import TauCeti.Topology.Sheaves.Cech.LongExactSequence
@@ -30,8 +31,11 @@ point-twist steps in the Euler-characteristic calculation for divisor sheaves.
 The cohomology of `O(0)` is that of the holomorphic structure sheaf
 (`TauCeti.RiemannSurface.divisorCechCohomologyZeroIso`). Since every divisor is reached from `0`
 by point twists, finiteness of `H¹(O(D))` does not depend on `D`
-(`TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one_iff`), so it holds for every
-divisor once it holds for the structure sheaf.
+(`TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one_iff`). On a compact Hausdorff
+Riemann surface `H¹(X, 𝒪)` is finite-dimensional
+(`TauCeti.RiemannSurface.finiteDimensional_cechCohomology_one_holomorphicStructureSheafModules`),
+so `H¹(O(D))` is finite-dimensional for every divisor
+(`TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one`).
 
 On a compact connected curve the degree-zero cohomology of `𝒪(D)` has the dimension of its global
 sections (`TauCeti.RiemannSurface.finrank_divisorCechCohomology_zero`).
@@ -321,24 +325,20 @@ theorem finiteDimensional_divisorCechCohomology_one_iff (D E : WeilDivisor X) :
   exact WeilDivisor.induction_add_ofPoint Iff.rfl fun D x ↦ by
     rw [finiteDimensional_divisorCechCohomology_one_add_point_iff]
 
-/-- If `H¹(X, 𝒪)` is finite-dimensional, then so is `H¹(X, 𝒪(D))` for every divisor `D`. -/
-instance finiteDimensional_divisorCechCohomology_one
-    [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-      (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
-    (D : WeilDivisor X) : FiniteDimensional ℂ (divisorCechCohomology D 1) :=
+/-- On a compact Hausdorff Riemann surface, `H¹(X, 𝒪(D))` is finite-dimensional for every
+divisor `D`, since `H¹(X, 𝒪)` is. -/
+instance finiteDimensional_divisorCechCohomology_one (D : WeilDivisor X) :
+    FiniteDimensional ℂ (divisorCechCohomology D 1) :=
   (finiteDimensional_divisorCechCohomology_one_iff D 0).mpr
     ((finiteDimensional_divisorCechCohomology_zero_iff 1).mpr inferInstance)
 
-/-- The point-twist step of the Euler characteristic calculation: once the first cohomology
-is finite-dimensional, adding a point raises `h⁰ - h¹` by one. The analytic finiteness theorem
-is not assumed implicitly or asserted here. -/
-theorem finrank_pointTwist_euler_characteristic [ConnectedSpace X]
-    [FiniteDimensional ℂ (divisorCechCohomology D 1)] :
+/-- The point-twist step of the Euler characteristic calculation: on a compact connected
+Riemann surface, adding a point raises `h⁰ - h¹` by one. -/
+theorem finrank_pointTwist_euler_characteristic [ConnectedSpace X] :
     (Module.finrank ℂ ((divisorSheaf (D + WeilDivisor.ofPoint x)).obj.obj (op ⊤)) : ℤ) -
         Module.finrank ℂ (divisorCechCohomology (D + WeilDivisor.ofPoint x) 1) =
       (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
         Module.finrank ℂ (divisorCechCohomology D 1) + 1 := by
-  have := (finiteDimensional_divisorCechCohomology_one_add_point_iff D x).mpr inferInstance
   let f := ((divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app (op ⊤)).hom
   have hf : Function.Injective f := (ModuleCat.mono_iff_injective _).mp inferInstance
   have h₀ := f.finrank_eq_finrank_range_add_finrank_range_of_exact

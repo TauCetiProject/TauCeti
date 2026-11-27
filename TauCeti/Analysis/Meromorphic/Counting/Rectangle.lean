@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import Mathlib.Analysis.Complex.Basic
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!

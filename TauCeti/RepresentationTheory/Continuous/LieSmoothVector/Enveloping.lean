@@ -27,7 +27,8 @@ vectors. This file adds:
   makes the smooth vectors a `U(𝔤)`-module, together with its adjoint covariance;
 * for commutative coefficients `R` (for instance `R = ℂ`), the `R`-linear extension of the derived
   action to `R ⊗[ℝ] 𝔤`, with `dπ(a ⊗ X) = a • dπ(X)` (so `dπ(i ⊗ X) = i • dπ(X)` for complex
-  representations), and the induced module structure over `U(R ⊗[ℝ] 𝔤)`.
+  representations), the induced module structure over `U(R ⊗[ℝ] 𝔤)`, and the Lie module structure
+  over `R ⊗[ℝ] 𝔤` with `⁅x, v⁆ = dπ(x) v`, whose `U(R ⊗[ℝ] 𝔤)`-representation is that action.
 
 ## Main definitions
 
@@ -37,6 +38,8 @@ vectors. This file adds:
   derived action to `R ⊗[ℝ] 𝔤`.
 * `ContRepresentation.lieSmoothVectorsBaseChangeEnvelopingAction I π`: the action of
   `U(R ⊗[ℝ] 𝔤)` on the smooth vectors.
+* `ContRepresentation.instLieModuleTensorProductLieSmoothVectors`: the Lie module structure of the
+  smooth vectors over `R ⊗[ℝ] 𝔤`.
 
 ## Main results
 
@@ -46,6 +49,8 @@ vectors. This file adds:
   endomorphisms of the smooth vectors.
 * `ContRepresentation.lieSmoothVectorsEnvelopingAction_map_Ad`: the adjoint covariance of the
   `U(𝔤)`-action.
+* `ContRepresentation.representation_lieSmoothVectors`: the `U(R ⊗[ℝ] 𝔤)`-representation of the
+  Lie module of smooth vectors is `lieSmoothVectorsBaseChangeEnvelopingAction I π`.
 
 ## References
 
@@ -252,6 +257,41 @@ theorem baseChangeEnvelopingAlgebra_smul_lieSmoothVectors_def
     (w : lieSmoothVectors I π) :
     u • w = lieSmoothVectorsBaseChangeEnvelopingAction I π u w :=
   (rfl)
+
+/-- **The smooth vectors are a Lie module over `R ⊗[ℝ] Lie(G)`**, through the extended derived
+action: `⁅x, v⁆ = dπ(x) v`. -/
+instance instLieRingModuleTensorProductLieSmoothVectors :
+    LieRingModule (R ⊗[ℝ] LeftInvariantDerivation I G) (lieSmoothVectors I π) :=
+  LieRingModule.compLieHom _ (lieSmoothVectorsBaseChangeDerivedAction I π)
+
+/-- The bracket of `x ∈ R ⊗[ℝ] Lie(G)` with a smooth vector is the extended derived action. -/
+theorem lie_lieSmoothVectors_def (x : R ⊗[ℝ] LeftInvariantDerivation I G)
+    (v : lieSmoothVectors I π) : ⁅x, v⁆ = lieSmoothVectorsBaseChangeDerivedAction I π x v := by
+  rw [LieRingModule.compLieHom_apply, Module.End.lie_apply]
+
+/-- The bracket of `a ⊗ X` with a smooth vector is `a • dπ(X) v`. -/
+@[simp]
+theorem tmul_lie_lieSmoothVectors (a : R) (X : LeftInvariantDerivation I G)
+    (v : lieSmoothVectors I π) : ⁅a ⊗ₜ[ℝ] X, v⁆ = a • lieSmoothVectorsDerivative I π X v := by
+  rw [lie_lieSmoothVectors_def, lieSmoothVectorsBaseChangeDerivedAction_tmul, LinearMap.smul_apply]
+
+/-- **The `R`-Lie module of smooth vectors** over `R ⊗[ℝ] Lie(G)`. -/
+instance instLieModuleTensorProductLieSmoothVectors :
+    LieModule R (R ⊗[ℝ] LeftInvariantDerivation I G) (lieSmoothVectors I π) :=
+  LieModule.compLieHom _ (lieSmoothVectorsBaseChangeDerivedAction I π)
+
+/-- **The `U(R ⊗[ℝ] 𝔤)`-representation of the Lie module of smooth vectors** is the enveloping
+action `lieSmoothVectorsBaseChangeEnvelopingAction`. -/
+@[simp]
+theorem representation_lieSmoothVectors :
+    TauCeti.UniversalEnvelopingAlgebra.representation R (R ⊗[ℝ] LeftInvariantDerivation I G)
+        (lieSmoothVectors I π) =
+      lieSmoothVectorsBaseChangeEnvelopingAction I π := by
+  refine UniversalEnvelopingAlgebra.hom_ext R (LieHom.ext fun x ↦ ?_)
+  rw [LieHom.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply, AlgHom.toLieHom_apply,
+    TauCeti.UniversalEnvelopingAlgebra.representation_ι,
+    lieSmoothVectorsBaseChangeEnvelopingAction_ι]
+  exact LinearMap.ext fun v ↦ by rw [LieModule.toEnd_apply_apply, lie_lieSmoothVectors_def]
 
 end BaseChange
 

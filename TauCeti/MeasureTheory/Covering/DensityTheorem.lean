@@ -17,10 +17,10 @@ Mathlib's `IsUnifLocDoublingMeasure.ae_tendsto_average_norm_sub` states the Lebe
 differentiation theorem for a uniformly locally doubling measure along arbitrary families of
 closed balls shrinking to a point. This file records its most common special case: almost every
 point `x` is a Lebesgue point of a locally integrable function `f` in the sense that the mean
-oscillation `⨍_{closedBall x r} ‖f - f x‖` tends to zero as `r → 0⁺`, and the analogous statement
-for the averages of an integrable `ℝ≥0∞`-valued function. For an additive Haar measure on a
-finite-dimensional real normed space, spheres are null, so the same averages over open balls
-converge as well.
+oscillation `⨍_{closedBall x r} ‖f - f x‖` tends to zero as `r → 0⁺` (also in `ℝ≥0∞` form), and
+the analogous statement for the averages of an integrable `ℝ≥0∞`-valued function. For an additive
+Haar measure on a finite-dimensional real normed space, spheres are null, so the same averages
+over open balls converge as well.
 -/
 
 public section
@@ -34,14 +34,20 @@ variable {α E : Type*} [PseudoMetricSpace α] [MeasurableSpace α] (μ : Measur
   [IsUnifLocDoublingMeasure μ] [SecondCountableTopology α] [BorelSpace α]
   [IsLocallyFiniteMeasure μ] [NormedAddCommGroup E]
 
+/-- The closed balls `closedBall x r` centred at `x` tend to `x` along the Vitali family of `μ`
+as `r → 0⁺`. -/
+theorem tendsto_closedBall_self_filterAt (x : α) :
+    Tendsto (closedBall x) (𝓝[>] 0) ((vitaliFamily μ 1).filterAt x) :=
+  tendsto_closedBall_filterAt μ (fun _ => x) id tendsto_id
+    (eventually_mem_nhdsWithin.mono fun r hr => mem_closedBall_self (by simpa using (le_of_lt hr)))
+
 /-- **Lebesgue differentiation theorem along concentric closed balls.** For a uniformly locally
 doubling measure, almost every point `x` is a Lebesgue point of a locally integrable function `f`:
 the mean oscillation `⨍_{closedBall x r} ‖f - f x‖` tends to zero as `r → 0⁺`. -/
 theorem ae_tendsto_average_closedBall_norm_sub {f : α → E} (hf : LocallyIntegrable f μ) :
     ∀ᵐ x ∂μ, Tendsto (fun r => ⨍ y in closedBall x r, ‖f y - f x‖ ∂μ) (𝓝[>] 0) (𝓝 0) := by
-  filter_upwards [ae_tendsto_average_norm_sub μ hf 1] with x hx
-  exact hx (fun _ => x) id tendsto_id (eventually_mem_nhdsWithin.mono fun r hr =>
-    mem_closedBall_self (by simpa using (le_of_lt hr)))
+  filter_upwards [(vitaliFamily μ 1).ae_tendsto_average_norm_sub hf] with x hx
+  exact hx.comp (tendsto_closedBall_self_filterAt μ x)
 
 /-- **Lebesgue differentiation theorem along concentric closed balls, for `ℝ≥0∞`-valued
 functions.** For a uniformly locally doubling measure and an a.e. measurable `f` with finite
@@ -50,10 +56,17 @@ theorem ae_tendsto_setLAverage_closedBall {f : α → ℝ≥0∞} (hf : AEMeasur
     (hfin : ∫⁻ x, f x ∂μ ≠ ∞) :
     ∀ᵐ x ∂μ, Tendsto (fun r => ⨍⁻ y in closedBall x r, f y ∂μ) (𝓝[>] 0) (𝓝 (f x)) := by
   filter_upwards [(vitaliFamily μ 1).ae_tendsto_lintegral_div hf hfin] with x hx
-  refine (hx.comp (tendsto_closedBall_filterAt μ (fun _ => x) id tendsto_id
-    (eventually_mem_nhdsWithin.mono fun r hr =>
-      mem_closedBall_self (by simpa using (le_of_lt hr))))).congr fun r => ?_
-  simp only [Function.comp_apply, id, setLAverage_eq]
+  refine (hx.comp (tendsto_closedBall_self_filterAt μ x)).congr fun r => ?_
+  simp only [Function.comp_apply, setLAverage_eq]
+
+/-- **Lebesgue differentiation theorem along concentric closed balls, in `ℝ≥0∞` form.** For a
+uniformly locally doubling measure and a locally integrable `f`, for almost every `x` the ratio
+`(∫_{closedBall x r} ‖f - f x‖) / μ (closedBall x r)` tends to zero as `r → 0⁺`. -/
+theorem ae_tendsto_lintegral_closedBall_eNorm_sub_div {f : α → E} (hf : LocallyIntegrable f μ) :
+    ∀ᵐ x ∂μ, Tendsto (fun r => (∫⁻ y in closedBall x r, ‖f y - f x‖ₑ ∂μ) / μ (closedBall x r))
+      (𝓝[>] 0) (𝓝 0) := by
+  filter_upwards [(vitaliFamily μ 1).ae_tendsto_lintegral_eNorm_sub_div hf] with x hx
+  exact hx.comp (tendsto_closedBall_self_filterAt μ x)
 
 end IsUnifLocDoublingMeasure
 
