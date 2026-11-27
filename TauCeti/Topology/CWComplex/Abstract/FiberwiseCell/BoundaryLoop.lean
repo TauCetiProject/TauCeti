@@ -333,7 +333,7 @@ end Arc
 section Circle
 
 /-- The base point `1` of the unit circle in `ℂ`. -/
-private def circleOne : sphere (0 : ℂ) 1 := ⟨1, by simp⟩
+private abbrev circleOne : sphere (0 : ℂ) 1 := ⟨1, by simp⟩
 
 private theorem coe_circleOne : (circleOne : ℂ) = 1 :=
   (rfl)
@@ -375,9 +375,6 @@ private theorem circleArcHomotopy_mem (γ : Path circleOne circleOne) (t : I) (p
     simp
   · rw [circleArcHomotopy_apply_spherePlus]
     exact (γ t).property
-
-private theorem homeomorphSphere_one : Circle.homeomorphSphere 1 = circleOne :=
-  Subtype.ext (by simp [coe_circleOne])
 
 /-- The degree of the loop `H₋ · H₊⁻¹` of the boundary homotopy `circleArcHomotopy γ`: the end `-1`
 stays at `1`, so it is minus the degree of `γ`. -/
@@ -428,7 +425,7 @@ theorem exists_not_homotopicRel_fiberwiseCellReattachment_sphere :
             (⟨1, by simp⟩ : sphere (0 : ℂ) 1)))) := by
   refine ⟨circleArcHomotopy (Path.refl circleOne),
     circleArcHomotopy ((Circle.expLoop.map Circle.homeomorphSphere.continuous).cast
-      homeomorphSphere_one.symm homeomorphSphere_one.symm),
+      Circle.homeomorphSphere_one.symm Circle.homeomorphSphere_one.symm),
     circleArcHomotopy_mem _, circleArcHomotopy_mem _, fun hE ↦ ?_⟩
   have hd := Circle.degree_eq_of_homotopic
     ((homotopic_arcBoundaryTrack_trans_symm_of_homotopicRel_fiberwiseCellReattachment circleOne
@@ -439,7 +436,7 @@ theorem exists_not_homotopicRel_fiberwiseCellReattachment_sphere :
     Circle.degree_congr ((Path.refl circleOne).map Circle.homeomorphSphere.symm.continuous)
       (Path.refl (Circle.homeomorphSphere.symm circleOne)) (fun _ ↦ Circle.ext (by simp)),
     Circle.degree_congr (((Circle.expLoop.map Circle.homeomorphSphere.continuous).cast
-        homeomorphSphere_one.symm homeomorphSphere_one.symm).map
+        Circle.homeomorphSphere_one.symm Circle.homeomorphSphere_one.symm).map
           Circle.homeomorphSphere.symm.continuous) Circle.expLoop (fun _ ↦ Circle.ext (by simp)),
     Circle.degree_refl, Circle.degree_expLoop] at hd
   norm_num at hd
