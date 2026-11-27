@@ -36,6 +36,9 @@ the free module, that is, the `fᵢ` generate the unit ideal of `Γ(X, ⊤)`.
   its value on `Σ aᵢ eᵢ` is `Σ aᵢ fᵢ`.
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.exists_coefficients_linearCombination_app_eq_sum`: for
   a finite family, every value over an open `U` is a combination `Σ aᵢ fᵢ` with `aᵢ ∈ Γ(X, U)`.
+* `TauCeti.AlgebraicGeometry.Scheme.Modules.eq_zero_of_comp_linearCombination_single_eq_zero`:
+  for finite `ι`, the coordinate projections `linearCombination (Pi.single i 1)` are jointly
+  injective.
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.epi_linearCombination`: it is an epimorphism when the
   basic opens of the `fᵢ` cover `X`.
 
@@ -112,6 +115,34 @@ lemma exists_coefficients_linearCombination_app_eq_sum (f : ι → Γ(X, ⊤)) (
     (R := X.ringCatSheaf) (I := ι) (Y := .op U) c
   -- `X.ringCatSheaf.obj.obj (.op U)` is `Γ(X, U)` viewed as a ring.
   exact ⟨a, linearCombination_app_sum_smul f U a⟩
+
+omit [Fintype ι] in
+/-- The coordinate projections `linearCombination (Pi.single i 1) : 𝒪_X^ι ⟶ 𝒪_X`, `(gⱼ) ↦ gᵢ`,
+of the free module on a finite type `ι` are jointly injective: a morphism into `𝒪_X^ι` that all of
+them kill is zero. -/
+theorem eq_zero_of_comp_linearCombination_single_eq_zero [Finite ι] [DecidableEq ι]
+    {Z : X.Modules}
+    (g : Z ⟶ (show X.Modules from SheafOfModules.free (R := X.ringCatSheaf) ι))
+    (hg : ∀ i, g ≫ linearCombination (Pi.single i 1) =
+      (0 : Z ⟶ (show X.Modules from SheafOfModules.unit X.ringCatSheaf))) :
+    g = 0 := by
+  have := Fintype.ofFinite ι
+  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+  ext t
+  obtain ⟨a, ha⟩ := TauCeti.SheafOfModules.exists_eq_sum_smul_freeSection
+    (R := X.ringCatSheaf) (I := ι) (Y := .op U) (g.app U t)
+  have hai (i : ι) : a i = 0 := by
+    have h := congrArg (fun ψ ↦ ψ.app U t) (hg i)
+    change (linearCombination (Pi.single i 1)).app U (g.app U t) = 0 at h
+    rw [ha] at h
+    have h' := (linearCombination_app_sum_smul (Pi.single i 1) U a).symm.trans h
+    refine Eq.trans ?_ h'
+    rw [Finset.sum_eq_single i (fun k _ hk ↦ by simp [Pi.single_eq_of_ne hk]) (by simp)]
+    simp
+  change g.app U t = 0
+  rw [ha]
+  simp only [hai, zero_smul, Finset.sum_const_zero]
+  rfl
 
 omit [Fintype ι] in
 /-- If the basic opens of global functions `fᵢ` cover `X`, then `(gᵢ) ↦ Σ fᵢ gᵢ` is an
