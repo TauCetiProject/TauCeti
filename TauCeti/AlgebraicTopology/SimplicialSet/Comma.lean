@@ -64,6 +64,13 @@ noncomputable def coneMap : join Δ[0] (comma i b) ⟶ B :=
 lemma inl_coneMap : join.inl _ _ ≫ coneMap i b = const b :=
   (coslice.homEquiv (toCoslice i b)).property
 
+/-- The coslice projection corresponds to the tautological cone under the coslice
+universal property. -/
+@[simp]
+lemma homEquiv_toCoslice :
+    coslice.homEquiv (toCoslice i b) = ⟨coneMap i b, inl_coneMap i b⟩ :=
+  (rfl)
+
 @[reassoc (attr := simp)]
 lemma inr_coneMap : join.inr _ _ ≫ coneMap i b = π i b ≫ i := by
   rw [coneMap, ← coslice.comp_π]
@@ -118,6 +125,13 @@ lemma map_π (a : A' ⟶ A) (h : a ≫ i = i') : map a h ≫ π i b = π i' b �
 lemma map_coneMap (a : A' ⟶ A) (h : a ≫ i = i') :
     join.map (𝟙 _) (map a h (b := b)) ≫ coneMap i b = coneMap i' b :=
   map_lift_coneMap _ _ _ _
+
+/-- Reindexing preserves the projection to the coslice. -/
+@[reassoc (attr := simp)]
+lemma map_toCoslice (a : A' ⟶ A) (h : a ≫ i = i') :
+    map a h ≫ toCoslice i b = toCoslice i' b := by
+  apply coslice.hom_ext
+  simp
 
 @[simp]
 lemma map_id : map (𝟙 A) (Category.id_comp i) (b := b) = 𝟙 (comma i b) := by
