@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.AbsoluteValue.ValuationSubring
 public import TauCeti.RingTheory.Invariant.Profinite.ValuationSubring
 
+import TauCeti.Topology.Algebra.MulAction.Discrete
+
 /-!
 # Frobenius elements at a nonarchimedean absolute value for profinite actions
 
@@ -127,7 +129,9 @@ theorem exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one (hw : IsNonarchim
     [Finite (R ⧸ Q.under R)] :
     ∃ σ : G, σ ∈ stabilizer G (w.valuationSubring hw) ∧
       ∀ x, w x ≤ 1 → w (σ • x - x ^ Nat.card (R ⧸ Q.under R)) < 1 := by
-  have hint : Algebra.IsIntegral R B := IsFractionRing.of_continuousSMul_discreteTopology B L G
+  have hint : Algebra.IsIntegral R B :=
+    (IsFractionRing.injective B L).elim_continuousSMul_discreteTopology (G := G)
+      (fun _ _ ↦ algebraMap.smul' ..)
     (Algebra.IsInvariant.isIntegral_of_profinite (A := R) (B := B) (G := G))
   have hB (b : B) : w (algebraMap B L b) ≤ 1 :=
     hw.apply_le_one_of_isIntegral hR ((hint.isIntegral b).algebraMap)

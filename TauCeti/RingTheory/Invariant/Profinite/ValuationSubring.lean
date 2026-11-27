@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Invariant.Profinite.Frobenius
 public import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 
 import TauCeti.RingTheory.Frobenius
+import TauCeti.Topology.Algebra.MulAction.Discrete
 
 /-!
 # Frobenius elements at a valuation subring for profinite actions
@@ -27,8 +28,9 @@ This file transports the profinite Frobenius results of
 valuation subring `A`. In the language of valuation subrings, an element `σ` inducing
 `x ↦ x ^ q` on the residue field of `A` is described by the two conditions
 `σ ∈ MulAction.stabilizer G A` and `∀ x ∈ A, σ • x - x ^ q ∈ A.nonunits`, with no named predicate.
-The first condition follows from the second (`ValuationSubring.IsCenteredAt.mem_stabilizer`), but
-results state both, so that they can be quoted as they are used.
+The first condition follows from the second
+(`ValuationSubring.IsCenteredAt.mem_stabilizer_of_forall_smul_sub_pow_mem_nonunits`), but results
+state both, so that they can be quoted as they are used.
 
 The typical setting is `B` the integral closure of a Dedekind domain `R` in an algebraic, possibly
 infinite, Galois extension `L` of its fraction field `K`, and `G` a profinite group acting on `L`
@@ -45,7 +47,7 @@ For a continuous action of a profinite `G` on `L` with the discrete topology, wi
 
 The continuity hypothesis is on `L`, not on `B`: the discrete topology on `B` used by the
 prime-level results is introduced inside the proofs, by
-`IsFractionRing.of_continuousSMul_discreteTopology`.
+`Function.Injective.elim_continuousSMul_discreteTopology` applied to `algebraMap B L`.
 
 ## Main results
 
@@ -84,8 +86,8 @@ variable {B L : Type*} [CommRing B] [Field L] [Algebra B L] [IsFractionRing B L]
 
 /-- An element raising every element of `A` to the `q`-th power modulo the nonunits of `A`
 stabilizes `A`. -/
-theorem mem_stabilizer (h : A.IsCenteredAt Q) {g : G} {q : ℕ}
-    (hg : ∀ x ∈ A, g • x - x ^ q ∈ A.nonunits) : g ∈ stabilizer G A := by
+theorem mem_stabilizer_of_forall_smul_sub_pow_mem_nonunits (h : A.IsCenteredAt Q) {g : G}
+    {q : ℕ} (hg : ∀ x ∈ A, g • x - x ^ q ∈ A.nonunits) : g ∈ stabilizer G A := by
   rw [h.stabilizer_eq]
   exact Ideal.mem_stabilizer_of_forall_smul_sub_pow_mem (h.smul_sub_pow_mem_of_forall hg)
 
@@ -121,10 +123,11 @@ theorem exists_mem_stabilizer_forall_smul_sub_pow_mem_nonunits (h : A.IsCentered
     ∃ σ : G, σ ∈ stabilizer G A ∧
       ∀ x ∈ A, σ • x - x ^ Nat.card (R ⧸ Q.under R) ∈ A.nonunits := by
   obtain ⟨σ, hσ⟩ : ∃ σ : G, IsArithFrobAt R σ Q :=
-    IsFractionRing.of_continuousSMul_discreteTopology B L G
+    (IsFractionRing.injective B L).elim_continuousSMul_discreteTopology (G := G)
+      (fun _ _ ↦ algebraMap.smul' ..)
       (IsArithFrobAt.exists_of_isInvariant_of_profinite R G Q)
   have hσ' := h.isArithFrobAt_iff_forall_smul_sub_pow_mem.mp hσ
-  exact ⟨σ, h.mem_stabilizer hσ', hσ'⟩
+  exact ⟨σ, h.mem_stabilizer_of_forall_smul_sub_pow_mem_nonunits hσ', hσ'⟩
 
 /-- **A Frobenius element and inertia generate the stabilizer of a valuation subring**, as a
 product of subsets: if `σ` acts on `A` by `x ↦ x ^ #(R ⧸ Q ∩ R)` modulo its nonunits, every
@@ -135,7 +138,8 @@ theorem topologicalClosure_zpowers_mul_inertia_eq_stabilizer (h : A.IsCenteredAt
     (hσ : ∀ x ∈ A, σ • x - x ^ Nat.card (R ⧸ Q.under R) ∈ A.nonunits) :
     ((Subgroup.zpowers σ).topologicalClosure : Set G) * Q.inertia G = stabilizer G A := by
   rw [h.stabilizer_eq]
-  exact IsFractionRing.of_continuousSMul_discreteTopology B L G
+  exact (IsFractionRing.injective B L).elim_continuousSMul_discreteTopology (G := G)
+    (fun _ _ ↦ algebraMap.smul' ..)
     (Ideal.topologicalClosure_zpowers_mul_inertia_eq_stabilizer_of_isArithFrobAt Q
       (h.isArithFrobAt_iff_forall_smul_sub_pow_mem.mpr hσ))
 
@@ -146,7 +150,8 @@ theorem topologicalClosure_zpowers_sup_inertia_eq_stabilizer (h : A.IsCenteredAt
     (hσ : ∀ x ∈ A, σ • x - x ^ Nat.card (R ⧸ Q.under R) ∈ A.nonunits) :
     (Subgroup.zpowers σ).topologicalClosure ⊔ Q.inertia G = stabilizer G A := by
   rw [h.stabilizer_eq]
-  exact IsFractionRing.of_continuousSMul_discreteTopology B L G
+  exact (IsFractionRing.injective B L).elim_continuousSMul_discreteTopology (G := G)
+    (fun _ _ ↦ algebraMap.smul' ..)
     (Ideal.topologicalClosure_zpowers_sup_inertia_eq_stabilizer_of_isArithFrobAt Q
       (h.isArithFrobAt_iff_forall_smul_sub_pow_mem.mpr hσ))
 
