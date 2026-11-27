@@ -59,8 +59,8 @@ other block.
   test fields holds on all of `H¹(ℂ)⁴`
   (`TauCeti.Vortex.mul_norm_sobolevFieldValues_sq_le_norm_sobolevGaugeFixedAdjoint_sq`). The range
   of `L_x*` is orthogonal to the values `K` of the kernel of `L_x`, so the orthogonal projection
-  `Π` onto `K` vanishes on it (`TauCeti.Vortex.starProjection_sobolevGaugeFixedAdjoint`). At a
-  vortex, the same `c` bounds `L_x` below off its kernel, `c ‖u - Π u‖² ≤ ‖L_x u‖²`
+  `Π` onto `K` vanishes on it (`TauCeti.Vortex.starProjection_sobolevGaugeFixedAdjoint_eq_zero`).
+  At a vortex, the same `c` bounds `L_x` below off its kernel, `c ‖u - Π u‖² ≤ ‖L_x u‖²`
   (`TauCeti.Vortex.mul_norm_sub_starProjection_sq_le_norm_sobolevGaugeFixedOperator_sq`), since
   `u - Π u` lies in the range of `L_x*`.
 * **Fredholm and index.** When that kernel is finite dimensional, the description of the range
@@ -399,7 +399,7 @@ theorem range_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hsol : ∀ z, eq
 /-- **`L_x*` takes values orthogonal to the kernel of `L_x`.** For a continuous field `x` with
 `L∞` class `a`, the `L²`-orthogonal projection onto the values of the kernel of the realization of
 `L_x` vanishes on the range of the realization of `L_x*`. -/
-theorem starProjection_sobolevGaugeFixedAdjoint (hx : Continuous x) (hax : a =ᵐ[μ⊤] x)
+theorem starProjection_sobolevGaugeFixedAdjoint_eq_zero (hx : Continuous x) (hax : a =ᵐ[μ⊤] x)
     [((sobolevGaugeFixedOperator a).ker.map
       sobolevFieldValues.toLinearMap).HasOrthogonalProjection]
     (η : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :

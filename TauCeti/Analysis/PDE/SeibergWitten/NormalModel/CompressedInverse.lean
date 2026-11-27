@@ -37,8 +37,8 @@ projection onto `K`, the slow variables of the model.
   by `b_P(ξ)` (`pairedFrequencyCoupling_compLpL_mem_map_ker_sobolevGaugeFixedOperator`), and so is
   its orthogonal complement, since `b_P(ξ)† = b_P(conj ξ)`. Hence `Π` commutes with `b_P(ξ)`
   (`starProjection_pairedFrequencyCoupling_compLpL`). The range of `L_x*` is orthogonal to `K`
-  (`TauCeti.Vortex.starProjection_sobolevGaugeFixedAdjoint`), so the slow component of the paired
-  row only sees the slow component of `u`:
+  (`TauCeti.Vortex.starProjection_sobolevGaugeFixedAdjoint_eq_zero`), so the slow component of
+  the paired row only sees the slow component of `u`:
   `Π (L_x* v + b_P(ξ) u) = b_P(ξ) (Π u)` (`starProjection_snd_sobolevFrequencyNormalModel`).
 * **The band estimate on `H¹`.** If `c ∫ |η|² ≤ ∫ |L_x* η|²` on test fields, as at every vortex by
   the spectral gap of `L_x L_x*`, then `c ‖η‖² ≤ ‖L_x* η‖²` on `H¹` and
@@ -101,13 +101,12 @@ private theorem pairedFrequencyCoupling_compLpL_apply (ξ : ℂ)
     (pairedFrequencyCoupling ξ).compLpL 2 μ g = ξ.re • g + ξ.im •
       Vortex.variationComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp g := by
   set J := Vortex.variationComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap
-  refine Lp.ext ?_
-  filter_upwards [(pairedFrequencyCoupling ξ).coeFn_compLpL g,
-    Lp.coeFn_add (ξ.re • g) (ξ.im • J.compLp g), Lp.coeFn_smul ξ.re g,
-    Lp.coeFn_smul ξ.im (J.compLp g), J.coeFn_compLp g] with z h₁ h₂ h₃ h₄ h₅
-  rw [h₁, h₂, Pi.add_apply, h₃, h₄, Pi.smul_apply, Pi.smul_apply, h₅,
-    pairedFrequencyCoupling_apply]
-  simp [J]
+  have h : pairedFrequencyCoupling ξ = ξ.re • ContinuousLinearMap.id ℝ _ + ξ.im • J := by
+    ext1 u
+    simp [pairedFrequencyCoupling_apply, J]
+  rw [h, ContinuousLinearMap.add_compLpL, ContinuousLinearMap.smul_compLpL,
+    ContinuousLinearMap.smul_compLpL, ContinuousLinearMap.id_compLpL]
+  rfl
 
 /-- On `L²`, the paired coupling at `ξ⁻¹` inverts the paired coupling at `ξ ≠ 0`. -/
 private theorem pairedFrequencyCoupling_inv_compLpL_apply {ξ : ℂ} (hξ : ξ ≠ 0)
@@ -192,7 +191,7 @@ theorem starProjection_snd_sobolevFrequencyNormalModel (ξ : ℂ) (hx : Continuo
           Vortex.sobolevFieldValues.toLinearMap).starProjection
           (Vortex.sobolevFieldValues y.1)) := by
   rw [snd_sobolevFrequencyNormalModel, map_add,
-    Vortex.starProjection_sobolevGaugeFixedAdjoint hx hax, zero_add,
+    Vortex.starProjection_sobolevGaugeFixedAdjoint_eq_zero hx hax, zero_add,
     starProjection_pairedFrequencyCoupling_compLpL]
 
 /-! ### The band estimate on `H¹` -/
@@ -236,6 +235,21 @@ end Band
 
 /-! ### The slow and fast parts of the inverse -/
 
+/-- Each row of the frozen normal model is bounded by the whole:
+`‖L_x u‖ ≤ ‖T_ξ (u, v)‖` and `‖L_x* v‖ ≤ ‖T_ξ (u, v)‖`. -/
+private theorem norm_sobolevGaugeFixedOperator_le_and_norm_sobolevGaugeFixedAdjoint_le (ξ : ℂ)
+    (hx : Continuous x) (hax : a =ᵐ[μ⊤] x)
+    (y : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) × (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)) :
+    ‖Vortex.sobolevGaugeFixedOperator a y.1‖ ≤ ‖sobolevFrequencyNormalModel a ξ y‖ ∧
+      ‖Vortex.sobolevGaugeFixedAdjoint a y.2‖ ≤ ‖sobolevFrequencyNormalModel a ξ y‖ := by
+  have h := norm_sobolevFrequencyNormalModel_sq ξ hx hax y
+  have h₀ : 0 ≤ ‖ξ‖ ^ 2 *
+      (‖Vortex.sobolevFieldValues y.1‖ ^ 2 + ‖Vortex.sobolevFieldValues y.2‖ ^ 2) := by
+    positivity
+  constructor <;> refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_ <;>
+    nlinarith [sq_nonneg ‖Vortex.sobolevGaugeFixedOperator a y.1‖,
+      sq_nonneg ‖Vortex.sobolevGaugeFixedAdjoint a y.2‖]
+
 section Inverse
 
 variable (hx : ContDiff ℝ 1 x) (hsol : ∀ z, Vortex.equation x z = 0)
@@ -261,10 +275,8 @@ theorem starProjection_fst_sobolevFrequencyNormalModelEquiv_symm {ξ : ℂ} (hξ
         (((Vortex.sobolevGaugeFixedOperator a).ker.map
           Vortex.sobolevFieldValues.toLinearMap).starProjection f.snd) := by
   set y := (sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ).symm f
-  have hy : sobolevFrequencyNormalModel a ξ y = f := by
-    rw [← coe_sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ,
-      ContinuousLinearEquiv.apply_symm_apply]
-  rw [← hy, starProjection_snd_sobolevFrequencyNormalModel ξ hx.continuous hax,
+  rw [← sobolevFrequencyNormalModel_sobolevFrequencyNormalModelEquiv_symm_apply ξ hx hsol hlim hcov
+    hax hξ f, starProjection_snd_sobolevFrequencyNormalModel ξ hx.continuous hax,
     pairedFrequencyCoupling_inv_compLpL_apply hξ]
 
 /-- **The size of the slow part of the inverse.** In the setting of
@@ -301,8 +313,7 @@ theorem mul_add_le_norm_sq_sobolevFrequencyNormalModelEquiv_symm {ξ : ℂ} (hξ
       ‖f‖ ^ 2 := by
   set y := (sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ).symm f
   have h := mul_add_add_le_norm_sobolevFrequencyNormalModel_sq hx hsol hlim hax hgap ξ y
-  rw [← coe_sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ,
-    ContinuousLinearEquiv.apply_symm_apply] at h
+  rw [sobolevFrequencyNormalModel_sobolevFrequencyNormalModelEquiv_symm_apply] at h
   nlinarith [sq_nonneg ‖ξ‖, sq_nonneg ‖Vortex.sobolevFieldValues y.1‖,
     sq_nonneg ‖Vortex.sobolevFieldValues y.2‖]
 
@@ -325,46 +336,40 @@ theorem exists_forall_exists_mem_ker_norm_sobolevFrequencyNormalModelEquiv_symm_
         ‖((sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ).symm f).2‖ ≤
           C * ‖f‖ := by
   set K := (Vortex.sobolevGaugeFixedOperator a).ker.map Vortex.sobolevFieldValues.toLinearMap
-  -- `Q` is the right inverse of `L_x` with values `L²`-orthogonal to its kernel.
+  -- `P` is the projection onto the kernel of `L_x` with `L²`-orthogonal fibres, and `Q` the right
+  -- inverse of `L_x` with values `L²`-orthogonal to its kernel, so that `u - P u = Q (L_x u)`.
   have := Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator hx hsol hlim hcov hax
   have hsurj := Vortex.sobolevGaugeFixedOperator_surjective hx hsol hlim hax
-  have hQ := (ContinuousLinearMap.IsFredholm.of_surjective
-    hsurj).isOrthogonalRightInverse_orthogonalRightInverse Vortex.sobolevFieldValues_injective hsurj
+  have hP := ContinuousLinearMap.isOrthogonalKerProjection_orthogonalKerProjection
+    Vortex.sobolevFieldValues_injective (Vortex.sobolevGaugeFixedOperator a)
+  have hPQ := (ContinuousLinearMap.IsFredholm.of_surjective hsurj).sub_orthogonalKerProjection_apply
+    Vortex.sobolevFieldValues_injective hsurj
+  set P := ContinuousLinearMap.orthogonalKerProjection Vortex.sobolevFieldValues
+    (Vortex.sobolevGaugeFixedOperator a)
   set Q := ContinuousLinearMap.orthogonalRightInverse Vortex.sobolevFieldValues
     (Vortex.sobolevGaugeFixedOperator a)
   obtain ⟨C₁, hC₁, h₁⟩ := Vortex.exists_norm_le_mul_norm_sobolevGaugeFixedAdjoint hx hsol hlim hax
   refine ⟨max ‖Q‖ C₁, le_max_of_le_right hC₁.le, fun ξ hξ f ↦ ?_⟩
   set y := (sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ).symm f
-  have hE := norm_sobolevFrequencyNormalModel_sq ξ hx.continuous hax y
-  rw [← coe_sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ,
-    ContinuousLinearEquiv.apply_symm_apply] at hE
-  -- `k = u - Q (L_x u)` lies in the kernel, and its values are the slow component `Π u`.
-  set k := y.1 - Q (Vortex.sobolevGaugeFixedOperator a y.1) with hk_def
-  have hk : k ∈ (Vortex.sobolevGaugeFixedOperator a).ker := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, hQ.rightInverse, sub_self]
-  have hkv : Vortex.sobolevFieldValues k = K.starProjection (Vortex.sobolevFieldValues y.1) := by
-    refine (K.eq_starProjection_of_mem_orthogonal ⟨k, hk, rfl⟩ ?_).symm
+  obtain ⟨hL, hA⟩ := norm_sobolevGaugeFixedOperator_le_and_norm_sobolevGaugeFixedAdjoint_le ξ
+    hx.continuous hax y
+  rw [sobolevFrequencyNormalModel_sobolevFrequencyNormalModelEquiv_symm_apply] at hL hA
+  -- The values of `P u` are the slow component `Π u`.
+  have hPv :
+      Vortex.sobolevFieldValues (P y.1) = K.starProjection (Vortex.sobolevFieldValues y.1) := by
+    refine (K.eq_starProjection_of_mem_orthogonal ⟨P y.1, hP.mem_ker y.1, rfl⟩ ?_).symm
     refine (K.mem_orthogonal _).2 ?_
     rintro _ ⟨k', hk', rfl⟩
     simp only [ContinuousLinearMap.coe_coe]
-    rw [← map_sub, hk_def, sub_sub_cancel, real_inner_comm]
-    exact hQ.inner_eq_zero _ k' hk'
-  refine ⟨k, hk, hkv.trans (starProjection_fst_sobolevFrequencyNormalModelEquiv_symm hx hsol hlim
-    hcov hax hξ f), ?_, ?_⟩
-  · -- `u - k = Q (L_x u)`, and `‖L_x u‖ ≤ ‖f‖`.
-    have hL : ‖Vortex.sobolevGaugeFixedOperator a y.1‖ ≤ ‖f‖ :=
-      (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 (by
-        nlinarith [sq_nonneg ‖Vortex.sobolevGaugeFixedAdjoint a y.2‖, sq_nonneg ‖ξ‖,
-          sq_nonneg ‖Vortex.sobolevFieldValues y.1‖, sq_nonneg ‖Vortex.sobolevFieldValues y.2‖])
-    calc ‖y.1 - k‖ = ‖Q (Vortex.sobolevGaugeFixedOperator a y.1)‖ := by
-          rw [hk_def, sub_sub_cancel]
+    rw [← map_sub, real_inner_comm]
+    exact hP.inner_sub_eq_zero _ k' hk'
+  refine ⟨P y.1, hP.mem_ker y.1, hPv.trans (starProjection_fst_sobolevFrequencyNormalModelEquiv_symm
+    hx hsol hlim hcov hax hξ f), ?_, ?_⟩
+  · -- `u - P u = Q (L_x u)`, and `‖L_x u‖ ≤ ‖f‖`.
+    calc ‖y.1 - P y.1‖ = ‖Q (Vortex.sobolevGaugeFixedOperator a y.1)‖ := by rw [hPQ]
       _ ≤ ‖Q‖ * ‖f‖ := Q.le_opNorm_of_le hL
       _ ≤ max ‖Q‖ C₁ * ‖f‖ := by gcongr; exact le_max_left _ _
   · -- `‖v‖_{H¹} ≤ C₁ ‖L_x* v‖ ≤ C₁ ‖f‖`.
-    have hA : ‖Vortex.sobolevGaugeFixedAdjoint a y.2‖ ≤ ‖f‖ :=
-      (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 (by
-        nlinarith [sq_nonneg ‖Vortex.sobolevGaugeFixedOperator a y.1‖, sq_nonneg ‖ξ‖,
-          sq_nonneg ‖Vortex.sobolevFieldValues y.1‖, sq_nonneg ‖Vortex.sobolevFieldValues y.2‖])
     calc ‖y.2‖ ≤ C₁ * ‖Vortex.sobolevGaugeFixedAdjoint a y.2‖ := h₁ y.2
       _ ≤ C₁ * ‖f‖ := by gcongr
       _ ≤ max ‖Q‖ C₁ * ‖f‖ := by gcongr; exact le_max_right _ _
