@@ -15,6 +15,12 @@ For a commutative cancellative monoid, centrality says that each coefficient mul
 opposite factor-set value gives the same result. The factors themselves may differ when the scalar
 coefficient cannot be cancelled. With cancellation away from zero, the center is the span
 of the basis elements at which the factor set is symmetric against every monoid element.
+
+For a commutative index monoid, `centralIndices` is the submonoid of central basis indices and
+`centerOf` bundles its basis elements into the center. The injective map `centerHom` from the
+restricted twisted algebra has image exactly the central elements supported on this submonoid,
+with no cancellation needed. When the index monoid is cancellative and nonzero scalar
+coefficients cancel, `centerEquiv` identifies the restricted algebra with the whole center.
 -/
 
 public section

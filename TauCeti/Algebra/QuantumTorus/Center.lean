@@ -23,9 +23,9 @@ twisted group algebras.
 
 The central exponent subgroup is defined in
 `TauCeti.Algebra.QuantumTorus.CentralExponents`. When the twist on this subgroup is
-trivial, the center is equivalent to its ordinary group algebra. For alternating
-forms whose parameter square has infinite order, the radical gives the corresponding
-group-algebra presentation of the center.
+trivial and nonzero scalar coefficients cancel, the center is equivalent to its ordinary group
+algebra. For an alternating form whose parameter square has infinite order, cancellation of
+nonzero scalar coefficients gives the corresponding group-algebra presentation on the radical.
 
 ## References
 
