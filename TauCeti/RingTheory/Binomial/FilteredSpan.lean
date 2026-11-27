@@ -125,7 +125,7 @@ theorem ringChooseFilteredSpan_mono {r : ℕ} (h : Fin r → R) :
   exact span_mono (Set.image_mono fun _ ha => ha.trans hmn)
 
 /-- The stages exhaust the unbounded integral additive span of ordered binomial products. -/
-theorem iSup_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R) :
+theorem toAddSubgroup_iSup_ringChooseFilteredSpan_eq_closure {r : ℕ} (h : Fin r → R) :
     (⨆ n, ringChooseFilteredSpan h n).toAddSubgroup =
       AddSubgroup.closure
         (Set.range fun a : Fin r → ℕ => (List.ofFn fun i => Ring.choose (h i) (a i)).prod) := by
