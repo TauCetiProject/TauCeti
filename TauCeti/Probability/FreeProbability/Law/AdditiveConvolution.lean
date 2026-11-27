@@ -35,7 +35,7 @@ elements in any C⋆-probability space.
 * `MeasureTheory.Measure.freeConv_comm`, `MeasureTheory.Measure.freeConv_assoc`: commutativity
   and associativity.
 * `MeasureTheory.Measure.freeConv_dirac`: `μ ⊞ δ_c` is the translate of `μ` by `c`.
-* `MeasureTheory.Measure.map_freeConv_const_mul`: compatibility with dilations.
+* `MeasureTheory.Measure.freeConv_map_mul`: compatibility with dilations.
 * `MeasureTheory.Measure.support_freeConv_subset_Icc`: the support bound.
 
 ## Implementation notes
@@ -322,29 +322,21 @@ theorem dirac_freeConv_dirac (x y : ℝ) : (dirac x).freeConv (dirac y) = dirac 
     exact isCompact_singleton
   rw [freeConv_dirac _ hx y, map_dirac' (measurable_add_const y)]
 
-/-- Free convolution commutes with dilations: `(μ ⊞ ν) ∘ (r ·)⁻¹ = μ ∘ (r ·)⁻¹ ⊞ ν ∘ (r ·)⁻¹`. -/
-theorem map_freeConv_const_mul (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
-    (hμ : IsCompact μ.support) (hν : IsCompact ν.support) (r : ℝ) :
-    (μ.freeConv ν).map (r * ·) = (μ.map (r * ·)).freeConv (ν.map (r * ·)) := by
+/-- Free convolution commutes with dilations:
+`(μ ∘ (b ·)⁻¹) ⊞ (ν ∘ (b ·)⁻¹) = (μ ⊞ ν) ∘ (b ·)⁻¹`. -/
+theorem freeConv_map_mul (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hμ : IsCompact μ.support) (hν : IsCompact ν.support) (b : ℝ) :
+    (μ.map (b * ·)).freeConv (ν.map (b * ·)) = (μ.freeConv ν).map (b * ·) := by
   obtain ⟨A, _, _, _, φ, a, hφ, ha, hfree, rfl, rfl, -⟩ := exists_pair μ ν hμ hν
-  have hsmul (i : Fin 2) : law φ (r • a i) = (law φ (a i)).map (r * ·) := by
-    simpa using law_smul_add_algebraMap φ (ha i) r 0
-  have hra (i : Fin 2) : IsSelfAdjoint (r • a i) := (IsSelfAdjoint.all r).smul (ha i)
-  have hrfree : IsFreelyIndependentElements φ.toLinearMap fun i => r • a i :=
+  have hsmul (i : Fin 2) : law φ (b • a i) = (law φ (a i)).map (b * ·) := by
+    simpa using law_smul_add_algebraMap φ (ha i) b 0
+  have hra (i : Fin 2) : IsSelfAdjoint (b • a i) := (IsSelfAdjoint.all b).smul (ha i)
+  have hrfree : IsFreelyIndependentElements φ.toLinearMap fun i => b • a i :=
     (isFreelyIndependentElements_iff.1 hfree).isFreelyIndependentElements_of_mem fun i => by
       rw [← Complex.coe_smul]
       exact Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton ℂ (a i)) _
-  rw [← hfree.law_add hφ (by decide : (0 : Fin 2) ≠ 1) (ha 0) (ha 1), ← hsmul, ← hsmul,
-    ← hrfree.law_add hφ (by decide : (0 : Fin 2) ≠ 1) (hra 0) (hra 1), ← smul_add]
-  simpa using (law_smul_add_algebraMap φ ((ha 0).add (ha 1)) r 0).symm
-
-/-- Free convolution commutes with translations: translating `μ ⊞ ν` by `c` is the free
-convolution of the translate of `μ` with `ν`. -/
-theorem map_freeConv_add_const (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support) (c : ℝ) :
-    (μ.freeConv ν).map (· + c) = (μ.map (· + c)).freeConv ν := by
-  have := isProbabilityMeasure_freeConv hμ hν
-  rw [← freeConv_dirac _ (isCompact_support_freeConv μ ν), ← freeConv_dirac μ hμ, freeConv_assoc,
-    freeConv_assoc, freeConv_comm ν]
+  rw [← hsmul, ← hsmul, ← hrfree.law_add hφ (by decide : (0 : Fin 2) ≠ 1) (hra 0) (hra 1),
+    ← smul_add, ← hfree.law_add hφ (by decide : (0 : Fin 2) ≠ 1) (ha 0) (ha 1)]
+  simpa using law_smul_add_algebraMap φ ((ha 0).add (ha 1)) b 0
 
 end MeasureTheory.Measure

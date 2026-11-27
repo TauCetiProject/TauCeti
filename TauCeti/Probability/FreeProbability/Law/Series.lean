@@ -40,8 +40,11 @@ R-series equals its variance.
   `MeasureTheory.Measure.freeCumulant_zero`,
   `MeasureTheory.Measure.freeCumulant_one`,
   `MeasureTheory.Measure.freeCumulant_two_eq_variance`,
-  `MeasureTheory.Measure.freeCumulant_integral_const_eq`: coefficient, special-value, and
-  constant-word formulas for `MeasureTheory.Measure.freeCumulant`.
+  `MeasureTheory.Measure.freeCumulant_integral_const_eq`,
+  `MeasureTheory.Measure.rSeries_integral_map_affine`,
+  `MeasureTheory.Measure.freeCumulant_one_map_affine`,
+  `MeasureTheory.Measure.freeCumulant_map_affine`: coefficient, special-value,
+  constant-word, and affine transport formulas for `MeasureTheory.Measure.freeCumulant`.
 * `MeasureTheory.Measure.ext_of_rSeries_integral_eq`,
   `MeasureTheory.Measure.eq_iff_rSeries_integral_eq`,
   `MeasureTheory.Measure.eq_iff_forall_freeCumulant_eq`,
@@ -199,5 +202,67 @@ theorem coeff_one_rSeries_integral_eq_variance {Ω : Type*} [MeasurableSpace Ω]
     PowerSeries.coeff 1 (TauCeti.rSeries (fun f : Ω → ℝ => ∫ ω, f ω ∂μ) X) = variance X μ := by
   rw [← TauCeti.coeff_succ_freeCumulantSeries, TauCeti.coeff_two_freeCumulantSeries]
   exact (variance_eq_sub hX).symm
+
+/-- **Affine equivariance of the formal R-series of a compactly supported probability measure.**
+Under `x ↦ a + b * x`, `R_{μ.map (a + b * ·)}(z) = b • rescale b R_μ(z) + C a`. -/
+theorem rSeries_integral_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : IsCompact μ.support) (a b : ℝ) :
+    TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.map fun x => a + b * x)) id =
+      b • PowerSeries.rescale b (TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id) +
+        PowerSeries.C a := by
+  have : CompactSpace μ.support := isCompact_iff_compactSpace.mp hμ
+  let φ : C(μ.support, ℂ) →ₚ[ℂ] ℂ :=
+    ContinuousMap.integralPositiveLinearMap (μ.comap ((↑) : μ.support → ℝ))
+  let x : C(μ.support, ℂ) := (ContinuousMap.restrict μ.support (ContinuousMap.id ℝ)).realToRCLike ℂ
+  have hφ : φ 1 = 1 :=
+    ContinuousMap.integralPositiveLinearMap_comap_subtypeVal_one (Measure.measure_compl_support)
+  have hx : IsSelfAdjoint x := ContinuousMap.isSelfAdjoint_realToRCLike ℂ
+  have hlaw : φ.law x = μ :=
+    PositiveLinearMap.law_integralPositiveLinearMap_comap_restrict_id
+      (Measure.measure_compl_support)
+  have haff : φ.law ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) = μ.map fun t => a + b * t := by
+    have h1 := φ.law_smul_add_algebraMap hx b a
+    rw [hlaw] at h1
+    refine h1.trans ?_
+    congr 1; funext t; ring
+  have hsa : IsSelfAdjoint ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) := by
+    simpa [Complex.coe_smul, IsScalarTower.algebraMap_apply ℝ ℂ C(μ.support, ℂ)] using
+      ((IsSelfAdjoint.all b).smul hx).add (IsSelfAdjoint.algebraMap _ (.all a))
+  apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
+  rw [← haff, φ.map_ofReal_rSeries_integral_law hsa]
+  change TauCeti.rSeries φ.toLinearMap _ = _
+  rw [TauCeti.rSeries_add_algebraMap hφ _ (a : ℂ),
+    TauCeti.rSeries_smul φ.toLinearMap (b : ℂ) x]
+  change (b : ℂ) • PowerSeries.rescale (b : ℂ) (TauCeti.rSeries φ x) + PowerSeries.C (a : ℂ) = _
+  rw [← φ.map_ofReal_rSeries_integral_law hx, hlaw, map_add, PowerSeries.map_C,
+    Complex.ofRealHom_eq_coe]
+  congr 1
+  ext n
+  simp only [PowerSeries.coeff_smul, PowerSeries.coeff_rescale, PowerSeries.coeff_map,
+    Complex.ofRealHom_eq_coe, smul_eq_mul]
+  push_cast
+  ring
+
+/-- Under `x ↦ a + b * x`, the first free cumulant (mean) transforms by
+`κ₁(μ.map (a + b * ·)) = a + b * κ₁(μ)`. -/
+theorem freeCumulant_one_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : Integrable (id : ℝ → ℝ) μ) (a b : ℝ) :
+    (μ.map fun x => a + b * x).freeCumulant 1 = a + b * μ.freeCumulant 1 := by
+  have hm : Integrable (fun x => b * x) μ := hμ.const_mul b
+  rw [freeCumulant_one, freeCumulant_one, integral_map (by fun_prop) (by fun_prop),
+    integral_add (integrable_const a) hm, integral_const, probReal_univ, smul_eq_mul, one_mul]
+  exact congrArg (a + ·) (MeasureTheory.integral_const_mul b id)
+
+/-- For `n ≥ 2`, pushing a compactly supported probability measure `μ` forward by `x ↦ a + b * x`
+scales its `n`-th free cumulant by `b ^ n`. -/
+theorem freeCumulant_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : IsCompact μ.support) (a b : ℝ) {n : ℕ} (hn : 2 ≤ n) :
+    (μ.map fun x => a + b * x).freeCumulant n = b ^ n * μ.freeCumulant n := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  rw [show k + 2 = (k + 1) + 1 by omega, freeCumulant_succ_eq_coeff_rSeries,
+    rSeries_integral_map_affine hμ a b, map_add, PowerSeries.coeff_succ_C, add_zero,
+    PowerSeries.coeff_smul, PowerSeries.coeff_rescale, ← freeCumulant_succ_eq_coeff_rSeries,
+    smul_eq_mul]
+  ring
 
 end MeasureTheory.Measure
