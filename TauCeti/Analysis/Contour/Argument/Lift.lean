@@ -42,6 +42,8 @@ API does not expose.
   `TauCeti.Contour.sub_eq_sub_of_eq_norm_mul_exp` — a curve continuous and nowhere zero on
   `[a, b]` has a continuous argument there, and any two continuous arguments of a nowhere-zero
   function on a preconnected set have the same variation between two of its points.
+* `TauCeti.Contour.conj_div_eq_exp_of_eq_norm_mul_exp` — for `w = ‖w‖ · exp (i θ) ≠ 0`,
+  `conj w / w = exp (-2 i θ)`.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
   assemble the index integral downstream; `TauCeti.Contour.sum_im_log_segRatio_eq_zero_of_le` and
   `TauCeti.Contour.sum_im_log_segRatio_eq_sum_of_le` evaluate the lift's segment sum before and
@@ -496,7 +498,7 @@ theorem exists_continuousOn_arg_lift_with_partition {γ : ℝ → ℂ} {w : ℂ}
 
 section ContinuousArgument
 
-open Complex
+open Complex ComplexConjugate
 
 variable {c : ℝ → ℂ} {a b : ℝ}
 
@@ -532,6 +534,19 @@ theorem sub_eq_sub_of_eq_norm_mul_exp {X : Type*} [TopologicalSpace X] {s : Set 
   have hb := hk ⟨y, hy⟩
   simp only [domRestrict_apply] at ha hb
   linarith
+
+/-- **The phase of `conj w / w`.** If `w = ‖w‖ · exp (i θ)` is nonzero, then
+`conj w / w = exp (-2 i θ)`. -/
+theorem conj_div_eq_exp_of_eq_norm_mul_exp {w : ℂ} (hw : w ≠ 0) {θ : ℝ}
+    (h : w = ‖w‖ * exp (I * θ)) : conj w / w = exp (-2 * I * θ) := by
+  have he : conj (exp (I * θ)) = exp (-2 * I * θ) * exp (I * θ) := by
+    rw [← exp_conj, map_mul, conj_I, conj_ofReal, ← exp_add]
+    ring_nf
+  rw [div_eq_iff hw]
+  conv_lhs => rw [h]
+  conv_rhs => rw [h]
+  rw [map_mul, conj_ofReal, he]
+  ring
 
 end ContinuousArgument
 

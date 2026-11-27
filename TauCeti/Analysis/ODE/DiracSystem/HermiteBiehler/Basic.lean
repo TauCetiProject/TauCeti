@@ -24,6 +24,8 @@ literature), built from the Neumann column `(A, C)` and the Dirichlet column `(B
 * `E(t, ·)` and `E~(t, ·)` are entire when `q` is integrable between `0` and `t`
   (`TauCeti.differentiable_diracHermiteBiehler`,
   `TauCeti.differentiable_diracHermiteBiehlerDirichlet`).
+* `t ↦ E(t, z)` and `t ↦ E~(t, z)` are continuous on `[0, T]` when `q` is integrable there
+  (`TauCeti.continuousOn_diracHermiteBiehler`, `TauCeti.continuousOn_diracHermiteBiehlerDirichlet`).
 * For `q` integrable on `[0, t]` and `t ≥ 0`, the entrywise bound on `M_q(t, z)`
   (`TauCeti.norm_diracFundamentalMatrix_apply_le`) gives
   `|E(t, z)|, |E~(t, z)| ≤ 2 exp(t|z| + ∫₀ᵗ |q|)` (`TauCeti.norm_diracHermiteBiehler_le`,
@@ -102,6 +104,26 @@ theorem differentiable_diracHermiteBiehlerDirichlet (hq : IntegrableOn q (uIcc 0
     Differentiable ℂ (diracHermiteBiehlerDirichlet q t) :=
   (differentiable_diracFundamentalMatrix_apply hq 0 1).sub
     ((differentiable_diracFundamentalMatrix_apply hq 1 1).const_mul I)
+
+/-- `t ↦ E(t, z)` is continuous on `[0, T]` when `q` is integrable there. -/
+theorem continuousOn_diracHermiteBiehler {T : ℝ} (hq : IntegrableOn q (Icc 0 T)) (z : ℂ) :
+    ContinuousOn (fun s ↦ diracHermiteBiehler q s z) (Icc 0 T) := by
+  have hc (i : Fin 2) : ContinuousOn (fun s ↦ diracFundamentalMatrix q s z i 0) (Icc 0 T) := by
+    have := (continuous_apply i).comp_continuousOn
+      (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single 0 1))
+    simpa [Function.comp_def, mulVec_single] using this
+  simp_rw [diracHermiteBiehler_def]
+  exact (hc 0).sub (continuousOn_const.mul (hc 1))
+
+/-- `t ↦ E~(t, z)` is continuous on `[0, T]` when `q` is integrable there. -/
+theorem continuousOn_diracHermiteBiehlerDirichlet {T : ℝ} (hq : IntegrableOn q (Icc 0 T))
+    (z : ℂ) : ContinuousOn (fun s ↦ diracHermiteBiehlerDirichlet q s z) (Icc 0 T) := by
+  have hc (i : Fin 2) : ContinuousOn (fun s ↦ diracFundamentalMatrix q s z i 1) (Icc 0 T) := by
+    have := (continuous_apply i).comp_continuousOn
+      (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single 1 1))
+    simpa [Function.comp_def, mulVec_single] using this
+  simp_rw [diracHermiteBiehlerDirichlet_def]
+  exact (hc 0).sub (continuousOn_const.mul (hc 1))
 
 /-- **Growth of `E`.** If `q` is integrable on `[0, t]` and `t ≥ 0`, then
 `|E(t, z)| ≤ 2 exp(t|z| + ∫₀ᵗ |q|)`. -/

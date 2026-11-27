@@ -19,9 +19,10 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 Let `q` be a potential, locally integrable on `[0, ∞)`, with `f = Re q` and `g = Im q`, and let
 `E(t, z) = A(t, z) - i C(t, z)` be the Hermite–Biehler function of its Dirac system
-(`TauCeti.diracHermiteBiehler`). At a real `x`, `E(t, x)` does not vanish
-(`TauCeti.diracFundamentalMatrix_sub_I_mul_ne_zero`), so `t ↦ E(t, x)` has a continuous argument
-`φ` on `[0, T]` with `φ(0) = 0` (`TauCeti.exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp`).
+(`TauCeti.diracHermiteBiehler`). `E(t, z)` and `E~(t, z)` do not vanish for `Im z ≥ 0`
+(`TauCeti.diracHermiteBiehler_ne_zero`, `TauCeti.diracHermiteBiehlerDirichlet_ne_zero`), so for a
+real `x` the curve `t ↦ E(t, x)` has a continuous argument `φ` on `[0, T]` with `φ(0) = 0`
+(`TauCeti.exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp`).
 Since `E#(t, x) = conj E(t, x)` on the real axis, the equation
 `∂ₜ E = -ix E + q E#` reads `∂ₜ E / E = -ix + q e^{-2iφ}`, whose real and imaginary parts are the
 modulus and argument equations
@@ -32,7 +33,8 @@ modulus and argument equations
   (`TauCeti.sub_eq_integral_of_diracHermiteBiehler_eq_norm_mul_exp`),
 
 so that `∂ₜ log |E| = f cos 2φ + g sin 2φ` and `∂ₜ φ = -x + g cos 2φ - f sin 2φ` at almost every
-`t` (`TauCeti.ae_hasDerivAt_log_norm_diracHermiteBiehler`). The proof integrates the
+`t` (`TauCeti.ae_hasDerivAt_log_norm_diracHermiteBiehler`,
+`TauCeti.ae_hasDerivAt_of_diracHermiteBiehler_eq_norm_mul_exp`). The proof integrates the
 logarithmic derivative of the absolutely continuous curve `t ↦ E(t, x)` against a continuous
 argument (`AbsolutelyContinuousOnInterval.integral_deriv_div_eq_log_norm_add_I_mul_sub`).
 
@@ -58,21 +60,17 @@ namespace TauCeti
 
 variable {q : ℝ → ℂ} {t T : ℝ}
 
-/-- `t ↦ E(t, z)` is continuous on `[0, T]` when `q` is integrable there. -/
-theorem continuousOn_diracHermiteBiehler (hq : IntegrableOn q (Icc 0 T)) (z : ℂ) :
-    ContinuousOn (fun s ↦ diracHermiteBiehler q s z) (Icc 0 T) := by
-  have hc (i : Fin 2) : ContinuousOn (fun s ↦ diracFundamentalMatrix q s z i 0) (Icc 0 T) := by
-    have := (continuous_apply i).comp_continuousOn
-      (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single 0 1))
-    simpa [Function.comp_def, Matrix.mulVec_single] using this
-  simp_rw [diracHermiteBiehler_def]
-  exact (hc 0).sub (continuousOn_const.mul (hc 1))
-
-/-- On the real axis `E(t, x)` does not vanish. -/
-theorem diracHermiteBiehler_ofReal_ne_zero (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t)
-    (x : ℝ) : diracHermiteBiehler q t x ≠ 0 := by
+/-- `E(t, z)` does not vanish in the closed upper half-plane `0 ≤ Im z`. -/
+theorem diracHermiteBiehler_ne_zero (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t) {z : ℂ}
+    (hz : 0 ≤ z.im) : diracHermiteBiehler q t z ≠ 0 := by
   rw [diracHermiteBiehler_def]
-  exact diracFundamentalMatrix_sub_I_mul_ne_zero hq ht (by simp) 0
+  exact diracFundamentalMatrix_sub_I_mul_ne_zero hq ht hz 0
+
+/-- `E~(t, z)` does not vanish in the closed upper half-plane `0 ≤ Im z`. -/
+theorem diracHermiteBiehlerDirichlet_ne_zero (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t)
+    {z : ℂ} (hz : 0 ≤ z.im) : diracHermiteBiehlerDirichlet q t z ≠ 0 := by
+  rw [diracHermiteBiehlerDirichlet_def]
+  exact diracFundamentalMatrix_sub_I_mul_ne_zero hq ht hz 1
 
 /-- **Continuous arguments of `E` on the real axis.** For real `x`, the curve `t ↦ E(t, x)` has a
 continuous argument on `[0, T]` vanishing at `0`. -/
@@ -84,25 +82,13 @@ theorem exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp
   · exact ⟨0, continuousOn_const, rfl, fun s hs ↦ absurd hs (by simp [Icc_eq_empty_of_lt hT])⟩
   obtain ⟨θ, hθ, hlift⟩ := TauCeti.Contour.exists_continuousOn_eq_norm_mul_exp
     (continuousOn_diracHermiteBiehler (hq.integrableOn_compact_subset Icc_subset_Ici_self
-      isCompact_Icc) x) fun s hs ↦ diracHermiteBiehler_ofReal_ne_zero hq hs.1 x
+      isCompact_Icc) x) fun s hs ↦ diracHermiteBiehler_ne_zero hq hs.1 (by simp)
   -- `E(0, x) = 1`, so `θ 0` is a multiple of `2π` and `θ - θ 0` is still an argument.
   have h0 := hlift 0 (left_mem_Icc.2 hT)
   rw [diracHermiteBiehler_zero, norm_one, ofReal_one, one_mul] at h0
   refine ⟨fun s ↦ θ s - θ 0, hθ.sub continuousOn_const, sub_self _, fun s hs ↦ ?_⟩
   conv_lhs => rw [hlift s hs]
   rw [ofReal_sub, mul_sub, exp_sub, ← h0, div_one]
-
-/-- For `w = |w| e^{iθ} ≠ 0`, `conj w / w = e^{-2iθ}`. -/
-private theorem conj_div_eq_exp {w : ℂ} (hw : w ≠ 0) {θ : ℝ} (h : w = ‖w‖ * exp (I * θ)) :
-    conj w / w = exp (-2 * I * θ) := by
-  have he : conj (exp (I * θ)) = exp (-2 * I * θ) * exp (I * θ) := by
-    rw [← exp_conj, map_mul, conj_I, conj_ofReal, ← exp_add]
-    ring_nf
-  rw [div_eq_iff hw]
-  conv_lhs => rw [h]
-  conv_rhs => rw [h]
-  rw [map_mul, conj_ofReal, he]
-  ring
 
 /-- The real part of the logarithmic derivative `-ix + q e^{-2iθ}`. -/
 private theorem re_integrand (x : ℝ) (w : ℂ) (θ : ℝ) :
@@ -166,7 +152,8 @@ private theorem integral_eq_log_norm_add_I_mul_sub (ht : 0 ≤ t) (hφ : Continu
     ∫ s in (0 : ℝ)..t, (-I * x + q s * exp (-2 * I * φ s)) =
       (Real.log ‖diracHermiteBiehler q t x‖ : ℂ) + I * (φ t - φ 0 : ℝ) := by
   obtain ⟨hac, hd⟩ := absolutelyContinuousOnInterval_and_ae_deriv hq x ht
-  have hne (s) (hs : s ∈ Icc 0 t) := diracHermiteBiehler_ofReal_ne_zero hq hs.1 x
+  have hne (s) (hs : s ∈ Icc 0 t) : diracHermiteBiehler q s x ≠ 0 :=
+    diracHermiteBiehler_ne_zero hq hs.1 (by simp)
   have h := hac.integral_deriv_div_eq_log_norm_add_I_mul_sub (θ := φ)
     (fun s hs ↦ hne s (uIcc_of_le ht ▸ hs)) (uIcc_of_le ht ▸ hφ)
     (fun s hs ↦ hlift s (uIcc_of_le ht ▸ hs))
@@ -178,7 +165,7 @@ private theorem integral_eq_log_norm_add_I_mul_sub (ht : 0 ≤ t) (hφ : Continu
   have hsI' : s ∈ Ioo 0 t := ⟨hsI.1, hsI.2.lt_of_ne hst⟩
   have hsc : s ∈ Icc 0 t := Ioo_subset_Icc_self hsI'
   have h0 := hne s hsc
-  rw [hs hsI', ← conj_div_eq_exp h0 (hlift s hsc)]
+  rw [hs hsI', ← TauCeti.Contour.conj_div_eq_exp_of_eq_norm_mul_exp h0 (hlift s hsc)]
   field_simp
 
 /-- The integrand `-ix + q e^{-2iφ}` is interval integrable on `[0, t]`. -/
@@ -219,35 +206,53 @@ theorem sub_eq_integral_of_diracHermiteBiehler_eq_norm_mul_exp (ht : 0 ≤ t)
   rw [h]
   simp
 
-/-- **The modulus and argument equations.** For an argument `φ` of `t ↦ E(t, x)` continuous on
-`[0, T]`, at almost every `t ∈ (0, T)`, `∂ₜ log |E(t, x)| = f cos 2φ + g sin 2φ` and
-`∂ₜ φ = -x + g cos 2φ - f sin 2φ`, with `f = Re q`, `g = Im q`. -/
-theorem ae_hasDerivAt_log_norm_diracHermiteBiehler (hT : 0 ≤ T) (hφ : ContinuousOn φ (Icc 0 T))
-    (hlift : ∀ s ∈ Icc 0 T,
-      diracHermiteBiehler q s x = ‖diracHermiteBiehler q s x‖ * exp (I * φ s)) :
-    ∀ᵐ t, t ∈ Ioo 0 T →
-      HasDerivAt (fun s ↦ Real.log ‖diracHermiteBiehler q s x‖)
-          ((q t).re * Real.cos (2 * φ t) + (q t).im * Real.sin (2 * φ t)) t ∧
-        HasDerivAt φ (-x + (q t).im * Real.cos (2 * φ t) - (q t).re * Real.sin (2 * φ t)) t := by
+/-- The real and imaginary parts of the integrand `-ix + q e^{-2iφ}` are interval integrable on
+`[0, T]`. -/
+private theorem intervalIntegrable_re_and_im (hT : 0 ≤ T) (hφ : ContinuousOn φ (Icc 0 T)) :
+    IntervalIntegrable
+        (fun s ↦ (q s).re * Real.cos (2 * φ s) + (q s).im * Real.sin (2 * φ s)) volume 0 T ∧
+      IntervalIntegrable
+        (fun s ↦ -x + (q s).im * Real.cos (2 * φ s) - (q s).re * Real.sin (2 * φ s))
+        volume 0 T := by
   have hI := intervalIntegrable_mul_exp hq (x := x) hT hφ
   have hre : IntervalIntegrable (fun s ↦ (-I * x + q s * exp (-2 * I * φ s)).re) volume 0 T :=
     ⟨hI.1.re, hI.2.re⟩
   have him : IntervalIntegrable (fun s ↦ (-I * x + q s * exp (-2 * I * φ s)).im) volume 0 T :=
     ⟨hI.1.im, hI.2.im⟩
   simp only [re_integrand, im_integrand] at hre him
-  filter_upwards [hre.ae_hasDerivAt_integral, him.ae_hasDerivAt_integral] with t h₁ h₂ htT
+  exact ⟨hre, him⟩
+
+/-- **The modulus equation.** For an argument `φ` of `t ↦ E(t, x)` continuous on `[0, T]`, at
+almost every `t ∈ (0, T)`, `∂ₜ log |E(t, x)| = f cos 2φ + g sin 2φ`, with `f = Re q`, `g = Im q`. -/
+theorem ae_hasDerivAt_log_norm_diracHermiteBiehler (hT : 0 ≤ T) (hφ : ContinuousOn φ (Icc 0 T))
+    (hlift : ∀ s ∈ Icc 0 T,
+      diracHermiteBiehler q s x = ‖diracHermiteBiehler q s x‖ * exp (I * φ s)) :
+    ∀ᵐ t, t ∈ Ioo 0 T →
+      HasDerivAt (fun s ↦ Real.log ‖diracHermiteBiehler q s x‖)
+        ((q t).re * Real.cos (2 * φ t) + (q t).im * Real.sin (2 * φ t)) t := by
+  have hI := (intervalIntegrable_re_and_im hq (x := x) hT hφ).1
+  filter_upwards [hI.ae_hasDerivAt_integral] with t h htT
   have hmem : t ∈ uIcc 0 T := uIcc_of_le hT ▸ Ioo_subset_Icc_self htT
-  have hnhds : ∀ᶠ s in 𝓝 t, s ∈ Icc 0 T :=
-    Filter.mem_of_superset (Ioo_mem_nhds htT.1 htT.2) Ioo_subset_Icc_self
-  constructor
-  · refine (h₁ hmem 0 left_mem_uIcc).congr_of_eventuallyEq ?_
-    filter_upwards [hnhds] with s hs
-    exact log_norm_diracHermiteBiehler_eq_integral hq hs.1 (hφ.mono (Icc_subset_Icc_right hs.2))
-      fun r hr ↦ hlift r (Icc_subset_Icc_right hs.2 hr)
-  · refine ((h₂ hmem 0 left_mem_uIcc).const_add (φ 0)).congr_of_eventuallyEq ?_
-    filter_upwards [hnhds] with s hs
-    rw [← sub_eq_iff_eq_add', sub_eq_integral_of_diracHermiteBiehler_eq_norm_mul_exp hq hs.1
-      (hφ.mono (Icc_subset_Icc_right hs.2)) fun r hr ↦ hlift r (Icc_subset_Icc_right hs.2 hr)]
+  refine (h hmem 0 left_mem_uIcc).congr_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhds htT.1 htT.2] with s hs
+  exact log_norm_diracHermiteBiehler_eq_integral hq hs.1.le
+    (hφ.mono (Icc_subset_Icc_right hs.2.le)) fun r hr ↦ hlift r (Icc_subset_Icc_right hs.2.le hr)
+
+/-- **The argument equation.** For an argument `φ` of `t ↦ E(t, x)` continuous on `[0, T]`, at
+almost every `t ∈ (0, T)`, `∂ₜ φ = -x + g cos 2φ - f sin 2φ`, with `f = Re q`, `g = Im q`. -/
+theorem ae_hasDerivAt_of_diracHermiteBiehler_eq_norm_mul_exp (hT : 0 ≤ T)
+    (hφ : ContinuousOn φ (Icc 0 T))
+    (hlift : ∀ s ∈ Icc 0 T,
+      diracHermiteBiehler q s x = ‖diracHermiteBiehler q s x‖ * exp (I * φ s)) :
+    ∀ᵐ t, t ∈ Ioo 0 T →
+      HasDerivAt φ (-x + (q t).im * Real.cos (2 * φ t) - (q t).re * Real.sin (2 * φ t)) t := by
+  have hI := (intervalIntegrable_re_and_im hq (x := x) hT hφ).2
+  filter_upwards [hI.ae_hasDerivAt_integral] with t h htT
+  have hmem : t ∈ uIcc 0 T := uIcc_of_le hT ▸ Ioo_subset_Icc_self htT
+  refine ((h hmem 0 left_mem_uIcc).const_add (φ 0)).congr_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhds htT.1 htT.2] with s hs
+  rw [← sub_eq_iff_eq_add', sub_eq_integral_of_diracHermiteBiehler_eq_norm_mul_exp hq hs.1.le
+    (hφ.mono (Icc_subset_Icc_right hs.2.le)) fun r hr ↦ hlift r (Icc_subset_Icc_right hs.2.le hr)]
 
 end RealAxis
 
@@ -270,7 +275,7 @@ theorem eqOn_zero_of_diracHermiteBiehler_eq_norm_mul_exp (hq : LocallyIntegrable
     simp
   have h := TauCeti.Contour.sub_eq_sub_of_eq_norm_mul_exp isPreconnected_Icc
     (left_mem_Icc.2 (hs.1.trans hs.2)) hs
-    (fun r hr ↦ by simpa using diracHermiteBiehler_ofReal_ne_zero hq hr.1 0) hφ
+    (fun r hr ↦ diracHermiteBiehler_ne_zero hq hr.1 (by simp)) hφ
     continuousOn_const hlift hE
   simpa [hφ0] using h
 
