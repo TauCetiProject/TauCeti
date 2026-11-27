@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.FlatChart
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.UpperDensity
 import TauCeti.Analysis.InnerProductSpace.Comass
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
+import TauCeti.MeasureTheory.Covering.ChartDensity
 
 /-!
 # Density of the defect energy for large-parameter solutions in a Darboux chart
@@ -76,8 +77,28 @@ on `r`, on the solution or on the centre. Integrating it as in the flat chart
 The balls are those of the chart, and the measure `μ` is an additive Haar measure of the chart;
 the Riemannian volume form `ω² / 2` is a multiple of it. The chart is centred at the centre of
 the balls, so the covering argument of `TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.FlatChart`,
-whose balls have many centres, needs a Darboux chart about each of them and is not carried out
-here.
+whose balls have many centres, needs a Darboux chart about each of them.
+
+**On the manifold.** The manifold is a metric space `X`, with a measure `μX`, the defect energy
+of the solution on `X`. About a point `z` a Darboux chart is a map `e : X → E` on a set `s`, and
+the defect energy `ν` of the chart is compared with the pushforward of `μX`, through the sets
+`s ∩ e ⁻¹' t` for `t ⊆ ball (e z) R`; they are equal when the Riemannian volume reads as `μ` in
+the chart. The balls of `X` and of the chart are compared through Lipschitz bounds at the centre
+(`TauCeti.ofReal_div_mul_pow_le_measure_closedBall_of_dist_le_mul_dist_apply`,
+`TauCeti.measure_closedBall_le_ofReal_mul_mul_pow_of_dist_apply_le_mul_dist`). This gives
+
+* the quadratic lower bound `μX (B_ρ(z)) ≥ c ρ²` for the balls of `X` at a zero of `α`, when the
+  inverse of the chart is `Λ`-Lipschitz at `e z`
+  (`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`);
+* the quadratic upper bound `μX (B_ρ(z)) ≤ C'' ρ²` for the balls of `X` at every centre, when the
+  chart is `Λ`-Lipschitz at `z`
+  (`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_le`);
+* Taubes's packing bound: a set `Z` of zeros of `α` with a Darboux chart about each of its points,
+  with uniform constants, is covered by at most `4 μX(Z_{σ/2}) / (c σ²)` balls of `X` of radius
+  `σ` centred in `Z`, for `r ≥ (2 c₀ / σ)²`
+  (`TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_frame`). With the lower bound,
+  `TauCeti.exists_finset_isCover_pairwiseDisjoint_closedBall` also gives such a cover whose
+  half-balls are pairwise disjoint.
 
 ## Main results
 
@@ -87,6 +108,11 @@ here.
   quadratic lower bound at a zero of `α`.
 * `TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame`: the quadratic upper bound
   at every centre.
+* `TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`,
+  `TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_le`: the quadratic
+  lower and upper bounds for the balls of a metric space, through a Darboux chart.
+* `TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_frame`: the covering of the zeros of
+  `α` in a metric space with a Darboux chart about each of them.
 
 ## References
 
@@ -309,5 +335,175 @@ theorem exists_forall_measure_closedBall_le_of_frame {K C H L R M c₀ : ℝ} (h
   have hs0 : 0 < s := (by positivity : 0 ≤ c₀ / √r).trans_lt hs.1
   exact hmono r hr F G S φ β η c hF hdF hFG hSω hS hφc hβc hφ hβ hφβ hβK hη hGeq hGm s
     ⟨hs0, hs.2.trans (half_lt_self hR)⟩
+
+/-! ### Quadratic bounds and the covering of the zeros on a metric space -/
+
+/-- **Quadratic lower bound for the defect energy at a zero of `α`, on a metric space.** Fix
+constants `K, C, H, L ≥ 0`, a radius `R > 0` and a constant `Λ > 0`. There are constants
+`c₀, c, ρ₀ > 0` with the following property. Let `X` be a metric space with a measure `μX`, for
+instance a symplectic four-manifold with a distance and its defect energy measure, and let `z` be a
+point of `X`. Let `e : X → E` be a Darboux chart on a set `s`, whose inverse is `Λ`-Lipschitz at
+`e z` on the ball `ball (e z) R`: `dist y z ≤ Λ ‖e y - e z‖` for `y ∈ s` with
+`e y ∈ ball (e z) R`. Let the fields `F`, `G`, `S`, `φ`, `β`, `α`, `b`, `η` satisfy the
+hypotheses of `TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame`
+on `ball (e z) R`, with `α (e z) = 0`, and suppose that the defect energy `ν = δ dμ` of the chart,
+`δ = (r / 4) |1 - |φ|² - |β|²|`, is at most the pushforward of `μX` on `ball (e z) R`. Then
+`μX (closedBall z ρ) ≥ c ρ²` for every `c₀ / √r ≤ ρ ≤ ρ₀`, for the balls of `X`. -/
+theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le {X : Type*}
+    [PseudoMetricSpace X] [MeasurableSpace X] {K C H L R Λ : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C)
+    (hH : 0 ≤ H) (hL : 0 ≤ L) (hR : 0 < R) (hΛ : 0 < Λ) :
+    ∃ c₀ > 0, ∃ c > 0, ∃ ρ₀ > 0, ∀ r, 1 ≤ r → 8 * K ≤ r →
+      ∀ (μX : Measure X) (e : X → E) (s : Set X) (F G : E → E [⋀^Fin 2]→L[ℝ] ℝ)
+        (S : E → E →L[ℝ] E) (φ β : E → positiveHalfSpinors o ρ) (α : E → ℂ)
+        (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (η : E → ⋀[ℝ]^2 E) (z : X),
+      (∀ y ∈ s, e y ∈ ball (e z) R → dist y z ≤ Λ * dist (e y) (e z)) →
+      (∀ t ⊆ ball (e z) R, MeasurableSet t →
+        (μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) t ≤
+          μX (s ∩ e ⁻¹' t)) →
+      (∀ x ∈ ball (e z) R, ContDiffAt ℝ 1 F x) → (∀ x ∈ ball (e z) R, extDeriv F x = 0) →
+      (∀ x ∈ ball (e z) R, F x = (G x).compContinuousLinearMap (S x)) →
+      (∀ x ∈ ball (e z) R, ∀ u v, ⟪J (S x u), S x v⟫ = ⟪J u, v⟫) →
+      (∀ x ∈ ball (e z) R, ‖S x - 1‖ ≤ L * ‖x - e z‖) →
+      ContinuousOn φ (ball (e z) R) → ContinuousOn β (ball (e z) R) →
+      (∀ x ∈ ball (e z) R, DifferentiableAt ℝ α x) → (∀ x ∈ ball (e z) R, ‖φ x‖ = ‖α x‖) →
+      (∀ x ∈ ball (e z) R, cliffordProjection o ρ J.kahlerForm (φ x) = φ x) →
+      (∀ x ∈ ball (e z) R, cliffordProjection o ρ J.kahlerForm (β x) = 0) →
+      (∀ x ∈ ball (e z) R, ‖φ x‖ ^ 2 + ‖β x‖ ^ 2 ≤ 1 + K / r) →
+      (∀ x ∈ ball (e z) R, ‖β x‖ ^ 2 ≤ K / r * max (1 - ‖φ x‖ ^ 2) 0 + K / r ^ 2) →
+      (∀ x ∈ ball (e z) R,
+        ‖covariantDeriv b α x‖ ^ 2 ≤ K * r * max (1 - ‖φ x‖ ^ 2) 0 + K) →
+      (∀ x ∈ ball (e z) R, ‖η x‖ ≤ H) →
+      (∀ x ∈ ball (e z) R, (alternatingFormEquiv E 2).symm (G x) +
+        o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (G x)) = (r / 4) • J.kahlerForm -
+          (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ x + β x)) : ⋀[ℝ]^2 E) - η x) →
+      (∀ x ∈ ball (e z) R, ‖(2⁻¹ : ℝ) • ((alternatingFormEquiv E 2).symm (G x) -
+          o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (G x)))‖ ≤
+          r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ x‖ ^ 2) 0 + C) →
+      α (e z) = 0 →
+      ∀ ρ, c₀ / √r ≤ ρ → ρ ≤ ρ₀ → ENNReal.ofReal (c * ρ ^ 2) ≤ μX (closedBall z ρ) := by
+  obtain ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, hdens⟩ :=
+    exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame (μ := μ) h₀ h₂₃ hQ hkl he hρ h₂ hK
+      hC hH hL hR
+  -- In the chart the lower bound holds up to the radius `min ρ₀ (R / 2) < R`; the inverse of
+  -- the chart rescales the radii by `Λ` and the constant by `Λ⁻²`.
+  refine ⟨Λ * c₀, by positivity, c / Λ ^ 2, by positivity, Λ * min ρ₀ (R / 2), by positivity,
+    fun r hr hrK μX e s F G S φ β α b η z hdist hν hF hdF hFG hSω hS hφc hβc hα hφα hφ hβ hφβ hβK
+      hgrad hη hGeq hGm hα₀ σ hσ hσρ₀ ↦ ?_⟩
+  refine ofReal_div_mul_pow_le_measure_closedBall_of_dist_le_mul_dist_apply hdist hν hΛ
+    ((min_le_right _ _).trans_lt (half_lt_self hR)) (fun τ hτ hτb ↦ hdens r hr hrK F G S φ β α b η
+      (e z) hF hdF hFG hSω hS hφc hβc hα hφα hφ hβ hφβ hβK hgrad hη hGeq hGm hα₀ τ hτ
+        (hτb.trans (min_le_left _ _))) ?_ hσρ₀
+  rwa [← mul_div_assoc]
+
+/-- **Quadratic upper bound for the defect energy, on a metric space.** Fix constants
+`K, C, H, L, M ≥ 0`, radii `R > 0` and `R₁`, a scale `c₀ > 0` and a constant `Λ > 0`. There is a
+constant `C'' > 0` with the following property. Let `X` be a metric space with a measure `μX` and
+let `z` be a point of `X`. Let `e : X → E` be a Darboux chart on a set `s` containing the closed
+ball of radius `R₁` about `z`, which is `Λ`-Lipschitz at `z` on that ball:
+`‖e y - e z‖ ≤ Λ dist y z`. Let the fields `F`, `G`, `S`, `φ`, `β`, `η` satisfy the hypotheses of
+`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame` on `ball (e z) R`, including
+the bound `M` on the defect energy `ν = δ dμ` of the chart ball of radius `R / 2`,
+`δ = (r / 4) |1 - |φ|² - |β|²|`, and suppose that the pushforward of `μX` is at most `ν` on
+`ball (e z) R`. Then `μX (closedBall z ρ) ≤ C'' ρ²` for every `ρ ≤ R₁` with `c₀ / √r ≤ ρ` and
+`Λ ρ ≤ R / 2`, for the balls of `X`. Unlike the lower bound
+(`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`),
+the centre need not be a zero of `α`. -/
+theorem exists_forall_measure_closedBall_le_of_frame_of_dist_le {X : Type*} [PseudoMetricSpace X]
+    [MeasurableSpace X] {K C H L R R₁ M c₀ Λ : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C) (hH : 0 ≤ H)
+    (hL : 0 ≤ L) (hR : 0 < R) (hM : 0 ≤ M) (hc₀ : 0 < c₀) (hΛ : 0 < Λ) :
+    ∃ C'' > 0, ∀ r, 1 ≤ r →
+      ∀ (μX : Measure X) (e : X → E) (s : Set X) (F G : E → E [⋀^Fin 2]→L[ℝ] ℝ)
+        (S : E → E →L[ℝ] E) (φ β : E → positiveHalfSpinors o ρ) (η : E → ⋀[ℝ]^2 E) (z : X),
+      closedBall z R₁ ⊆ s → (∀ y ∈ closedBall z R₁, dist (e y) (e z) ≤ Λ * dist y z) →
+      (∀ t ⊆ ball (e z) R, MeasurableSet t → μX (s ∩ e ⁻¹' t) ≤
+        (μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) t) →
+      (∀ x ∈ ball (e z) R, ContDiffAt ℝ 1 F x) → (∀ x ∈ ball (e z) R, extDeriv F x = 0) →
+      (∀ x ∈ ball (e z) R, F x = (G x).compContinuousLinearMap (S x)) →
+      (∀ x ∈ ball (e z) R, ∀ u v, ⟪J (S x u), S x v⟫ = ⟪J u, v⟫) →
+      (∀ x ∈ ball (e z) R, ‖S x - 1‖ ≤ L * ‖x - e z‖) →
+      ContinuousOn φ (ball (e z) R) → ContinuousOn β (ball (e z) R) →
+      (∀ x ∈ ball (e z) R, cliffordProjection o ρ J.kahlerForm (φ x) = φ x) →
+      (∀ x ∈ ball (e z) R, cliffordProjection o ρ J.kahlerForm (β x) = 0) →
+      (∀ x ∈ ball (e z) R, ‖φ x‖ ^ 2 + ‖β x‖ ^ 2 ≤ 1 + K / r) →
+      (∀ x ∈ ball (e z) R, ‖β x‖ ^ 2 ≤ K / r * max (1 - ‖φ x‖ ^ 2) 0 + K / r ^ 2) →
+      (∀ x ∈ ball (e z) R, ‖η x‖ ≤ H) →
+      (∀ x ∈ ball (e z) R, (alternatingFormEquiv E 2).symm (G x) +
+        o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (G x)) = (r / 4) • J.kahlerForm -
+          (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ x + β x)) : ⋀[ℝ]^2 E) - η x) →
+      (∀ x ∈ ball (e z) R, ‖(2⁻¹ : ℝ) • ((alternatingFormEquiv E 2).symm (G x) -
+          o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (G x)))‖ ≤
+          r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ x‖ ^ 2) 0 + C) →
+      (μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|))
+        (closedBall (e z) (R / 2)) ≤ ENNReal.ofReal M →
+      ∀ ρ, ρ ≤ R₁ → c₀ / √r ≤ ρ → Λ * ρ ≤ R / 2 →
+        μX (closedBall z ρ) ≤ ENNReal.ofReal (C'' * ρ ^ 2) := by
+  -- In the chart the upper bound holds from the scale `Λ c₀`; the chart rescales the radii by `Λ`
+  -- and the constant by `Λ²`.
+  obtain ⟨C'', hC'', hbound⟩ :=
+    exists_forall_measure_closedBall_le_of_frame (μ := μ) h₀ h₂₃ hQ hkl he hρ h₂ hK hC hH hL hR
+      hM (mul_pos hΛ hc₀)
+  refine ⟨C'' * Λ ^ 2, by positivity, fun r hr μX e s F G S φ β η z hs hdist hν hF hdF hFG hSω hS
+    hφc hβc hφ hβ hφβ hβK hη hGeq hGm hνM σ hσR₁ hσ hσR ↦ ?_⟩
+  refine measure_closedBall_le_ofReal_mul_mul_pow_of_dist_apply_le_mul_dist hs hdist hν hΛ
+    (half_lt_self hR) (fun τ hτ hτR ↦ hbound r hr F G S φ β η (e z) hF hdF hFG hSω hS hφc hβc hφ
+      hβ hφβ hβK hη hGeq hGm hνM τ hτ hτR) hσR₁ ?_ hσR
+  rw [mul_div_assoc]
+  exact mul_le_mul_of_nonneg_left hσ hΛ.le
+
+/-- **Covering the zeros of `α` on a metric space.** Fix constants `K, C, H, L ≥ 0`, a radius
+`R > 0` and a constant `Λ > 0`. There are constants `c₀, c, ρ₀ > 0` with the following property.
+Let `X` be a metric space with a measure `μX`, for instance a symplectic four-manifold with a
+distance and its defect energy measure, and let `Z ⊆ X` be a set of zeros: about each `z ∈ Z`
+there is a Darboux chart `e` on a set `s` with the hypotheses of
+`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`,
+its inverse `Λ`-Lipschitz at `e z` on `ball (e z) R`, the fields of the chart satisfying the
+equations and Taubes's coarse bounds there, the defect energy of the chart at most the pushforward
+of `μX`, and `α (e z) = 0`. Then for every `σ > 0` with `σ ≤ 2 ρ₀`, as soon as `r ≥ (2 c₀ / σ)²`,
+the set `Z` is covered by at most `4 μX(Z_{σ/2}) / (c σ²)` closed balls of `X` of radius `σ`
+centred in `Z`, where `Z_{σ/2}` is the closed `σ / 2`-thickening of `Z`. -/
+theorem exists_forall_coveringNumber_le_of_frame {X : Type*} [PseudoMetricSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {K C H L R Λ : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C)
+    (hH : 0 ≤ H) (hL : 0 ≤ L) (hR : 0 < R) (hΛ : 0 < Λ) :
+    ∃ c₀ > 0, ∃ c > 0, ∃ ρ₀ > 0, ∀ r, 1 ≤ r → 8 * K ≤ r → ∀ (μX : Measure X) (Z : Set X),
+      (∀ z ∈ Z, ∃ (e : X → E) (s : Set X) (F G : E → E [⋀^Fin 2]→L[ℝ] ℝ) (S : E → E →L[ℝ] E)
+          (φ β : E → positiveHalfSpinors o ρ) (α : E → ℂ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+          (η : E → ⋀[ℝ]^2 E),
+        (∀ y ∈ s, e y ∈ ball (e z) R → dist y z ≤ Λ * dist (e y) (e z)) ∧
+        (∀ t ⊆ ball (e z) R, MeasurableSet t →
+          (μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) t ≤
+            μX (s ∩ e ⁻¹' t)) ∧
+        (∀ x ∈ ball (e z) R, ContDiffAt ℝ 1 F x) ∧ (∀ x ∈ ball (e z) R, extDeriv F x = 0) ∧
+        (∀ x ∈ ball (e z) R, F x = (G x).compContinuousLinearMap (S x)) ∧
+        (∀ x ∈ ball (e z) R, ∀ u v, ⟪J (S x u), S x v⟫ = ⟪J u, v⟫) ∧
+        (∀ x ∈ ball (e z) R, ‖S x - 1‖ ≤ L * ‖x - e z‖) ∧
+        ContinuousOn φ (ball (e z) R) ∧ ContinuousOn β (ball (e z) R) ∧
+        (∀ x ∈ ball (e z) R, DifferentiableAt ℝ α x) ∧ (∀ x ∈ ball (e z) R, ‖φ x‖ = ‖α x‖) ∧
+        (∀ x ∈ ball (e z) R, cliffordProjection o ρ J.kahlerForm (φ x) = φ x) ∧
+        (∀ x ∈ ball (e z) R, cliffordProjection o ρ J.kahlerForm (β x) = 0) ∧
+        (∀ x ∈ ball (e z) R, ‖φ x‖ ^ 2 + ‖β x‖ ^ 2 ≤ 1 + K / r) ∧
+        (∀ x ∈ ball (e z) R, ‖β x‖ ^ 2 ≤ K / r * max (1 - ‖φ x‖ ^ 2) 0 + K / r ^ 2) ∧
+        (∀ x ∈ ball (e z) R,
+          ‖covariantDeriv b α x‖ ^ 2 ≤ K * r * max (1 - ‖φ x‖ ^ 2) 0 + K) ∧
+        (∀ x ∈ ball (e z) R, ‖η x‖ ≤ H) ∧
+        (∀ x ∈ ball (e z) R, (alternatingFormEquiv E 2).symm (G x) +
+          o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (G x)) = (r / 4) • J.kahlerForm -
+            (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ x + β x)) : ⋀[ℝ]^2 E) - η x) ∧
+        (∀ x ∈ ball (e z) R, ‖(2⁻¹ : ℝ) • ((alternatingFormEquiv E 2).symm (G x) -
+            o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (G x)))‖ ≤
+            r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ x‖ ^ 2) 0 + C) ∧
+        α (e z) = 0) →
+      ∀ σ : ℝ≥0, σ ≠ 0 → (σ : ℝ) ≤ 2 * ρ₀ → (2 * c₀ / σ) ^ 2 ≤ r →
+        (coveringNumber σ Z : ℝ≥0∞) ≤
+          ENNReal.ofReal (4 / (c * σ ^ 2)) * μX (cthickening (σ / 2) Z) := by
+  obtain ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, hdens⟩ :=
+    exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le (μ := μ) (X := X) h₀ h₂₃
+      hQ hkl he hρ h₂ hK hC hH hL hR hΛ
+  refine ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, fun r hr hrK μX Z hZ σ hσ hσρ₀ hrσ ↦
+    TauCeti.coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le hc (fun z hz ↦ ?_) hσ
+      hσρ₀ hrσ⟩
+  obtain ⟨e, s, F, G, S, φ, β, α, b, η, hdist, hν, hF, hdF, hFG, hSω, hS, hφc, hβc, hα, hφα, hφ,
+    hβ, hφβ, hβK, hgrad, hη, hGeq, hGm, hα₀⟩ := hZ z hz
+  exact hdens r hr hrK μX e s F G S φ β α b η z hdist hν hF hdF hFG hSω hS hφc hβc hα hφα hφ hβ
+    hφβ hβK hgrad hη hGeq hGm hα₀
 
 end TauCeti.SeibergWitten
