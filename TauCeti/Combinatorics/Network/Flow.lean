@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Order.Filter.Extr
 public import TauCeti.Algebra.Order.Group.ZMultiples
 public import TauCeti.Combinatorics.Network.Residual
 import TauCeti.Combinatorics.Network.Shift
@@ -36,8 +37,11 @@ flows is assembled.
   entering `S`.
 * `TauCeti.BoundedFlow.swap`: the same assignment as a bounded `t`–`s` assignment.
 * `TauCeti.BoundedFlow.update`: the residual update by a residual `s`–`t` assignment.
+* `TauCeti.BoundedFlow.IsMaximum` and `TauCeti.BoundedFlow.IsMinimum`: bounded assignments of
+  largest and smallest value, exchanged by terminal swap.
 * `TauCeti.Flow cap s t`: ordinary `s`–`t` flows for the capacities `cap`, with reindexing
   equivalence `Flow.congr`.
+* `TauCeti.Flow.IsMaximum`: an ordinary `s`–`t` flow of largest value.
 * `TauCeti.Flow.zero`: the zero flow for nonnegative capacities.
 * `TauCeti.BoundedFlow.swapFlow`: terminal exchange, turning a capacity-feasible assignment of
   nonpositive value into an ordinary flow in the opposite direction.
@@ -60,6 +64,9 @@ flows is assembled.
   the cut bound exactly when no residual arrow of positive capacity leaves the cut.
 * `TauCeti.BoundedFlow.val_update` and `TauCeti.BoundedFlow.exists_update_eq`: residual updates
   add values, and connect any two bounded `s`–`t` assignments.
+* `TauCeti.BoundedFlow.isMaximum_update_iff` and
+  `TauCeti.BoundedFlow.isMinimum_update_swap_iff`: residual updates are extremal exactly when the
+  corresponding bounded residual assignments are extremal.
 * `TauCeti.BoundedFlow.exists_update_eq_of_le` and
   `TauCeti.BoundedFlow.exists_update_swap_eq_of_le`: assignments above or below a given feasible
   assignment arise from ordinary flows in the two directions of its residual network.
@@ -364,6 +371,131 @@ theorem exists_update_eq [Lattice K] [IsOrderedAddMonoid K] {lo hi : Assignment 
   have hv := congrArg (excessAt · v) hfr
   rwa [excessAt_residualUpdate, f.conserve v hvs hvt, g.conserve v hvs hvt, zero_add] at hv
 
+section Preorder
+
+variable [Preorder K] {lo hi : Assignment Q K} {s t : V}
+
+/-- A bounded `s`–`t` assignment is *maximum* when it maximizes the value among all bounded
+`s`–`t` assignments for the same bounds. -/
+def IsMaximum (f : BoundedFlow lo hi s t) : Prop :=
+  IsMaxOn val Set.univ f
+
+/-- A bounded `s`–`t` assignment `f` is maximum exactly when every bounded `s`–`t` assignment for
+the same bounds has value at most `f.val`. -/
+theorem isMaximum_iff {f : BoundedFlow lo hi s t} :
+    f.IsMaximum ↔ ∀ g : BoundedFlow lo hi s t, g.val ≤ f.val :=
+  isMaxOn_univ_iff
+
+/-- When the terminals coincide, every bounded assignment is maximum. -/
+theorem isMaximum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMaximum :=
+  isMaximum_iff.2 fun g ↦ (val_eq_zero_of_eq hst g).trans_le (val_eq_zero_of_eq hst f).ge
+
+/-- A bounded terminal assignment is minimum when no other feasible assignment has smaller
+terminal value. No sign condition is imposed on that value. -/
+def IsMinimum (f : BoundedFlow lo hi s t) : Prop :=
+  IsMinOn val Set.univ f
+
+/-- A bounded `s`–`t` assignment `f` is minimum exactly when every bounded `s`–`t` assignment for
+the same bounds has value at least `f.val`. -/
+theorem isMinimum_iff {f : BoundedFlow lo hi s t} :
+    f.IsMinimum ↔ ∀ g : BoundedFlow lo hi s t, f.val ≤ g.val :=
+  isMinOn_univ_iff
+
+/-- When the terminals coincide, every bounded assignment is minimum. -/
+theorem isMinimum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMinimum :=
+  isMinimum_iff.2 fun g ↦ (val_eq_zero_of_eq hst f).trans_le (val_eq_zero_of_eq hst g).ge
+
+@[simp]
+theorem isMaximum_congr_iff {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo')
+    (hhi : hi = hi') (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).IsMaximum ↔ f.IsMaximum := by
+  rw [isMaximum_iff, isMaximum_iff, ← (BoundedFlow.congr hlo hhi hs ht).forall_congr_right]
+  simp
+
+@[simp]
+theorem isMinimum_congr_iff {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo')
+    (hhi : hi = hi') (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).IsMinimum ↔ f.IsMinimum := by
+  rw [isMinimum_iff, isMinimum_iff, ← (BoundedFlow.congr hlo hhi hs ht).forall_congr_right]
+  simp
+
+end Preorder
+
+/-- All minimum bounded terminal assignments have the same value. -/
+theorem IsMinimum.val_eq [PartialOrder K] {lo hi : Assignment Q K} {s t : V}
+    {f g : BoundedFlow lo hi s t} (hf : f.IsMinimum) (hg : g.IsMinimum) : f.val = g.val :=
+  le_antisymm (isMinimum_iff.1 hf g) (isMinimum_iff.1 hg f)
+
+/-- All maximum bounded `s`–`t` assignments have the same value. -/
+theorem IsMaximum.val_eq [PartialOrder K] {lo hi : Assignment Q K} {s t : V}
+    {f g : BoundedFlow lo hi s t} (hf : f.IsMaximum) (hg : g.IsMaximum) : f.val = g.val :=
+  le_antisymm (isMaximum_iff.1 hg f) (isMaximum_iff.1 hf g)
+
+section Ordered
+
+variable [Preorder K] [AddLeftMono K] {lo hi : Assignment Q K} {s t : V}
+
+/-- Exchanging the terminals exchanges minimum and maximum assignments. -/
+@[simp]
+theorem isMaximum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMaximum ↔ f.IsMinimum := by
+  rw [isMaximum_iff, isMinimum_iff]
+  constructor
+  · intro h g
+    simpa using h g.swap
+  · intro h g
+    rw [val_swap]
+    exact le_neg.1 (by simpa using h g.swap)
+
+/-- Exchanging the terminals exchanges maximum and minimum assignments. -/
+@[simp]
+theorem isMinimum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMinimum ↔ f.IsMaximum := by
+  rw [← isMaximum_swap, swap_swap]
+
+/-- A bounded `s`–`t` assignment whose value equals minus the cut bound of the complement of a
+vertex set containing `s` but not `t` is minimum. -/
+theorem isMinimum_of_val_eq_neg_cutBound_compl [DecidableEq V]
+    (f : BoundedFlow lo hi s t) {S : Finset V} (hs : s ∈ S) (ht : t ∉ S)
+    (h : f.val = -cutBound lo hi Sᶜ) : f.IsMinimum :=
+  isMinimum_iff.2 fun g ↦ h ▸ g.neg_cutBound_compl_le_val hs ht
+
+/-- A bounded `s`–`t` assignment whose value equals the cut bound of a vertex set containing `s`
+but not `t` is maximum. -/
+theorem isMaximum_of_val_eq_cutBound [DecidableEq V] (f : BoundedFlow lo hi s t) {S : Finset V}
+    (hs : s ∈ S) (ht : t ∉ S) (h : f.val = cutBound lo hi S) : f.IsMaximum :=
+  isMaximum_iff.2 fun g ↦ h ▸ g.val_le_cutBound hs ht
+
+end Ordered
+
+section Lattice
+
+variable [Lattice K] [IsOrderedAddMonoid K] {lo hi : Assignment Q K} {s t : V}
+
+/-- Updating a bounded assignment by a bounded residual assignment gives a maximum assignment
+exactly when the residual assignment is maximum. -/
+@[simp]
+theorem isMaximum_update_iff (f : BoundedFlow lo hi s t)
+    (r : BoundedFlow 0 (residualCapacity lo hi f.toFun) s t) :
+    (f.update r).IsMaximum ↔ r.IsMaximum := by
+  rw [isMaximum_iff, isMaximum_iff]
+  constructor
+  · intro h q
+    simpa only [val_update, add_le_add_iff_left] using h (f.update q)
+  · intro h g
+    obtain ⟨q, hq⟩ := f.exists_update_eq g
+    rw [← hq, val_update, val_update]
+    exact add_le_add le_rfl (h q)
+
+/-- Updating a bounded assignment by a reverse bounded residual assignment gives a minimum
+assignment exactly when the reverse residual assignment is maximum. -/
+@[simp]
+theorem isMinimum_update_swap_iff (f : BoundedFlow lo hi s t)
+    (r : BoundedFlow 0 (residualCapacity lo hi f.toFun) t s) :
+    (f.update r.swap).IsMinimum ↔ r.IsMaximum := by
+  rw [← isMaximum_swap]
+  exact f.swap.isMaximum_update_iff r
+
+end Lattice
+
 end BoundedFlow
 
 /-! ### Ordinary flows -/
@@ -451,9 +583,63 @@ theorem congr_refl :
     Flow.congr (rfl : cap = cap) (rfl : s = s) (rfl : t = t) = Equiv.refl _ :=
   (rfl)
 
+/-- An ordinary `s`–`t` flow is *maximum* when it maximizes the value among all ordinary `s`–`t`
+flows for the same capacities. -/
+def IsMaximum (f : Flow cap s t) : Prop :=
+  IsMaxOn (fun g : Flow cap s t ↦ g.val) Set.univ f
+
+/-- An ordinary `s`–`t` flow `f` is maximum exactly when every ordinary `s`–`t` flow for the same
+capacities has value at most `f.val`. -/
+theorem isMaximum_iff {f : Flow cap s t} : f.IsMaximum ↔ ∀ g : Flow cap s t, g.val ≤ f.val :=
+  isMaxOn_univ_iff
+
+@[simp]
+theorem isMaximum_congr_iff {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') (f : Flow cap s t) :
+    (Flow.congr hcap hs ht f).IsMaximum ↔ f.IsMaximum := by
+  rw [isMaximum_iff, isMaximum_iff, ← (Flow.congr hcap hs ht).forall_congr_right]
+  simp
+
 end Flow
 
 end Flow
+
+namespace Flow
+
+/-- An ordinary flow is maximum among ordinary flows exactly when it is maximum among all bounded
+assignments with zero lower bounds: a bounded assignment of larger value has positive value, so it
+is itself an ordinary flow. -/
+@[simp]
+theorem isMaximum_toBoundedFlow [LinearOrder K] {cap : Assignment Q K} {s t : V}
+    (f : Flow cap s t) : f.toBoundedFlow.IsMaximum ↔ f.IsMaximum := by
+  rw [BoundedFlow.isMaximum_iff, isMaximum_iff]
+  refine ⟨fun hf g ↦ hf g.toBoundedFlow, fun hf g ↦ le_of_not_gt fun hg ↦ ?_⟩
+  have hg₀ : 0 ≤ excessAt g.toFun t := by
+    rw [← BoundedFlow.val_def]
+    exact f.val_nonneg.trans hg.le
+  exact (hf ⟨g, hg₀⟩).not_gt hg
+
+end Flow
+
+namespace BoundedFlow
+
+/-- Updating a bounded assignment by an ordinary residual flow gives a maximum assignment exactly
+when the residual flow is maximum. -/
+theorem isMaximum_update_toBoundedFlow_iff [LinearOrder K] [IsOrderedAddMonoid K]
+    {lo hi : Assignment Q K} {s t : V} (f : BoundedFlow lo hi s t)
+    (r : Flow (residualCapacity lo hi f.toFun) s t) :
+    (f.update r.toBoundedFlow).IsMaximum ↔ r.IsMaximum := by
+  rw [isMaximum_update_iff, Flow.isMaximum_toBoundedFlow]
+
+/-- Updating a bounded assignment by a reverse ordinary residual flow gives a minimum assignment
+exactly when the reverse residual flow is maximum. -/
+theorem isMinimum_update_toBoundedFlow_swap_iff [LinearOrder K] [IsOrderedAddMonoid K]
+    {lo hi : Assignment Q K} {s t : V} (f : BoundedFlow lo hi s t)
+    (r : Flow (residualCapacity lo hi f.toFun) t s) :
+    (f.update r.toBoundedFlow.swap).IsMinimum ↔ r.IsMaximum := by
+  rw [isMinimum_update_swap_iff, Flow.isMaximum_toBoundedFlow]
+
+end BoundedFlow
 
 section Ordered
 
@@ -531,8 +717,7 @@ theorem BoundedFlow.exists_update_swap_eq_of_le [Lattice K] [IsOrderedAddMonoid 
     ∃ r : Flow (residualCapacity lo hi f.toFun) t s,
       f.update r.toBoundedFlow.swap = g := by
   obtain ⟨r, hr⟩ := f.swap.exists_update_eq_of_le g.swap (by simpa using neg_le_neg hgf)
-  exact ⟨r, BoundedFlow.ext (by
-    simpa only [update_toFun, swap_toFun] using congrArg BoundedFlow.toFun hr)⟩
+  exact ⟨r, congrArg BoundedFlow.swap hr⟩
 
 /-- Every ordinary `s`–`t` flow `g` of value at least that of `f` is the augmentation of `f` by an
 ordinary `s`–`t` flow of the residual network of `f`, necessarily of value `g.val - f.val`. -/
