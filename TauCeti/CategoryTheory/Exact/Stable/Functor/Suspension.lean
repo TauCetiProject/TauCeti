@@ -560,8 +560,8 @@ theorem stableSuspensionCompStableFunctorIso_comp
           E''.projectiveStableFunctor.obj (G.obj (hF.mapSuspensionPresentation hE X).K)) =
         eqToHom (by
           rw [hE.stableSuspension_obj_projectiveStableFunctor_obj X,
-            (hF.comp hG).stableFunctor_obj_projectiveStableFunctor_obj hE]
-          rfl :
+            (hF.comp hG).stableFunctor_obj_projectiveStableFunctor_obj hE,
+            Functor.comp_obj] :
             ((hF.comp hG).stableFunctor hE).obj
               (hE.stableSuspension.obj (E.projectiveStableFunctor.obj X)) =
             E''.projectiveStableFunctor.obj (G.obj (F.obj (hE.suspensionObj X)))) ≫

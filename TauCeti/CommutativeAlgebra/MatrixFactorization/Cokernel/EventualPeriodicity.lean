@@ -111,9 +111,7 @@ private theorem isZero_projective_retract_minimal_syzygy_of_isMaximalCohenMacaul
       (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext hip.apply_apply_eq_zero)))
   have hT : (MaximalCohenMacaulayModuleCat.exactStructure.{u} R).Conflation T :=
     (MaximalCohenMacaulayModuleCat.exactStructure_conflation_iff R T).2
-      { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 hip
-        mono_f := (ModuleCat.mono_iff_injective i).2 hi
-        epi_g := (ModuleCat.epi_iff_surjective p).2 hp }
+      (ModuleCat.shortComplex_shortExact _ hip hi hp)
   have hInj : (MaximalCohenMacaulayModuleCat.exactStructure.{u} R).isInjective P' :=
     (MaximalCohenMacaulayModuleCat.exactStructure_isInjective_iff hw P').2 inferInstance
   have hinfl := (MaximalCohenMacaulayModuleCat.exactStructure.{u} R).isInflation_f hT
@@ -144,10 +142,7 @@ private theorem exists_isMinimal_quotientCokernel_iso_of_isMaximalCohenMacaulay
   have : Projective F := ModuleCat.projective_of_categoryTheory_projective F
   let sc : ShortComplex (ModuleCat.{u} S) :=
     ShortComplex.mk i p (ModuleCat.hom_ext (LinearMap.ext hip.apply_apply_eq_zero))
-  have hsc : sc.ShortExact :=
-    { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 hip
-      mono_f := (ModuleCat.mono_iff_injective i).2 hi
-      epi_g := (ModuleCat.epi_iff_surjective p).2 hp }
+  have hsc : sc.ShortExact := ModuleCat.shortComplex_shortExact _ hip hi hp
   have : Projective K := (projective_iff_hasProjectiveDimensionLE_zero K).2
     ((hsc.hasProjectiveDimensionLT_X₃_iff 0 inferInstance).1 hpd)
   have : Module.Projective S K := ModuleCat.projective_of_module_projective K

@@ -140,9 +140,7 @@ theorem exists_minimal_cons {R : Type u} [CommRing R]
   have : Projective F := ModuleCat.projective_of_categoryTheory_projective F
   have hip' : i ≫ p = 0 := ModuleCat.hom_ext (LinearMap.ext hip.apply_apply_eq_zero)
   have hS : (ShortComplex.mk i p hip').ShortExact :=
-    { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 hip
-      mono_f := (ModuleCat.mono_iff_injective i).2 hi
-      epi_g := (ModuleCat.epi_iff_surjective p).2 hp }
+    ModuleCat.shortComplex_shortExact _ hip hi hp
   let P := Q.cons hS
   refine ⟨P, fun k ↦ ?_, ?_, ⟨Q.consTruncateIso hS⟩⟩
   · rcases k with _ | k

@@ -110,24 +110,32 @@ private theorem not_nonempty_retract_self_of_range_d₁_le (hw : w ∈ nonZeroDi
   obtain ⟨y, hy⟩ := quotientCokernelπ_surjective X (retR.i.hom 1)
   have hπy : retR.r.hom (quotientCokernelπ X y) = 1 :=
     hy ▸ ConcreteCategory.congr_hom retR.retract 1
-  have : Module.Projective S X.obj.X₁ := X.property.2
-  let φ : X.obj.X₁ →ₗ[S] S ⧸ Ideal.span {w} :=
-    (quotientCokernelπ X ≫ (ModuleCat.restrictScalars q).map retR.r).hom
+  have : Module.Projective S X.obj.X₁.obj := X.property.2
+  let f : X.obj.X₁.obj ⟶ ModuleCat.of S (S ⧸ Ideal.span {w}) :=
+    quotientCokernelπ X ≫ (ModuleCat.restrictScalars q).map retR.r ≫
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := S) (S := S ⧸ Ideal.span {w})
+        (S ⧸ Ideal.span {w})).hom
+  let φ : X.obj.X₁.obj →ₗ[S] S ⧸ Ideal.span {w} := f.hom
   obtain ⟨β, hβ⟩ := Module.projective_lifting_property (Ideal.span {w}).mkQ φ
     (Submodule.mkQ_surjective _)
-  have hβ_eq (z : X.obj.X₁) : q (β z) = φ z := congr($hβ z)
+  have hβ_eq (z : X.obj.X₁.obj) : q (β z) = retR.r.hom (quotientCokernelπ X z) := by
+    have hf_apply : f z = retR.r (quotientCokernelπ X z) := by
+      dsimp only [f, q]
+      rw [ModuleCat.comp_apply, ModuleCat.comp_apply]
+      exact (ModuleCat.restrictScalarsAlgebraMapIso_hom_apply (R := S) (S := S ⧸ Ideal.span {w})
+        (S ⧸ Ideal.span {w}) _).trans (ModuleCat.restrictScalars.map_apply _ retR.r _)
+    -- `f.hom z` and `f z` coincide via `ModuleCat`'s `ConcreteCategory.hom := Hom.hom`.
+    exact (congr($hβ z)).trans hf_apply
   have hβy : β y ∉ maximalIdeal S := fun hm ↦ by
     have : IsLocalHom q := .of_surjective _ Ideal.Quotient.mk_surjective
     have h1 : (1 : S ⧸ Ideal.span {w}) ∈ maximalIdeal (S ⧸ Ideal.span {w}) := by
-      have hφy : φ y = 1 := hπy
-      rw [← hφy, ← hβ_eq y]; exact map_nonunit q (β y) hm
+      rw [← hπy, ← hβ_eq y]; exact map_nonunit q (β y) hm
     exact (maximalIdeal.isMaximal _).ne_top ((Ideal.eq_top_iff_one _).2 h1)
   have hd₀_div (x : X.obj.X₀) : ∃ c : S, β (X.obj.d₀.hom.hom x) = w * c := by
     refine Ideal.mem_span_singleton.1 (Ideal.Quotient.eq_zero_iff_mem.1 ?_)
     have h0 : (quotientCokernelπ X).hom (X.obj.d₀.hom.hom x) = 0 :=
       (exact_d₀_quotientCokernelπ X _).2 ⟨x, rfl⟩
-    exact (hβ_eq _).trans ((congrArg ((ModuleCat.restrictScalars q).map retR.r).hom h0).trans
-      (map_zero _))
+    exact (hβ_eq _).trans ((congrArg retR.r.hom h0).trans (map_zero _))
   obtain ⟨m, hm, hwm_eq⟩ : ∃ m ∈ maximalIdeal S,
       β (X.obj.d₀.hom.hom (X.obj.d₁.hom.hom y)) = w * m :=
     Submodule.smul_induction_on (hd₁ ⟨y, rfl⟩)
