@@ -41,6 +41,8 @@ has `D ≡ 1 (mod 8)`, it gives the thirteen discriminants `f² D` of such order
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_eq_one_iff`: the order of
   conductor `f` in an imaginary quadratic field has class number one iff `h_K = 1` and `(D, f)` is
   as above.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_eq_one_iff`: the same criterion for an
+  arbitrary order of an imaginary quadratic field, with `f` its index.
 
 ## References
 
@@ -259,5 +261,17 @@ theorem card_pic_intAddMulOrder_eq_one_iff [IsTotallyComplex K] (hK : finrank �
       simpa [prod_pow_mul_sub_prime Nat.prime_three, h30, h3] using key
     · have h20 : c 2 = 0 := (fundamentalDiscriminantChar_two_three_of_eq_neg_four hD h4).1
       simpa [prod_pow_mul_sub_prime Nat.prime_two, h20, h4] using key
+
+/-- **The orders of class number one, by index.** An order `O` of an imaginary quadratic field `K`
+with discriminant `D` has trivial Picard group iff `K` has class number one and either `O` is
+maximal (index `1`), or `O` has index `2` and `D ≡ 1 (mod 8)`, or `D = -3` and `O` has index `2`
+or `3`, or `D = -4` and `O` has index `2`. -/
+theorem card_pic_eq_one_iff [IsTotallyComplex K] (hK : finrank ℚ K = 2) (O : NumberFieldOrder K) :
+    Nat.card (Pic O) = 1 ↔ classNumber K = 1 ∧
+      (O.index = 1 ∨ (O.index = 2 ∧ NumberField.discr K % 8 = 1) ∨
+        (NumberField.discr K = -3 ∧ (O.index = 2 ∨ O.index = 3)) ∨
+          (NumberField.discr K = -4 ∧ O.index = 2)) := by
+  conv_lhs => rw [eq_intAddMulOrder_index hK O]
+  rw [card_pic_intAddMulOrder_eq_one_iff hK, Nat.card_eq_fintype_card, classNumber]
 
 end TauCeti.GlobalNumberFields.NumberFieldOrder
