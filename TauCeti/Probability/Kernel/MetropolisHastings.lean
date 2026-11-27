@@ -39,6 +39,12 @@ noncomputable def metropolisHastings (Q : Kernel X X) [IsSFiniteKernel Q] (a : X
     Kernel X X :=
   Q.withDensity a + Kernel.id.withDensity (fun x _ ↦ 1 - Q.withDensity a x univ)
 
+/-- The Metropolis–Hastings kernel is the sum of the accepted proposal kernel and the
+identity kernel weighted by the remaining mass at each state. -/
+theorem metropolisHastings_def (Q : Kernel X X) [IsSFiniteKernel Q] (a : X → X → ℝ≥0∞) :
+    Q.metropolisHastings a =
+      Q.withDensity a + Kernel.id.withDensity (fun x _ ↦ 1 - Q.withDensity a x univ) := (rfl)
+
 /-- The law at `x` is the accepted proposal measure plus a Dirac mass weighted by the
 rejection probability. -/
 theorem metropolisHastings_apply (Q : Kernel X X) [IsSFiniteKernel Q]
