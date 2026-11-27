@@ -22,7 +22,8 @@ two coordinate presentations: `ℝ × ℝ × ℝ` with coordinates `(q, p, z)` a
 **Fronts.** A curve `t ↦ (q t, p t, z t)` is tangent to `ker (dz - p dq)` at a point where it is
 differentiable exactly when `z' = p q'`
 (`TauCeti.range_mfderiv_le_kerDistribution_innerProductContactForm_iff`,
-`TauCeti.isHorizontalMap_innerProductContactForm_iff`). Its **front** is its projection
+`TauCeti.isHorizontalMap_innerProductContactForm_iff`, stated for `V × V × ℝ` with the form
+`dz - ⟪p, dq⟫` and the condition `z' = ⟪p, q'⟫`). Its **front** is its projection
 `t ↦ (q t, z t)` to the `(q, z)`-plane. For a Legendrian curve the front is immersed at `t`
 exactly when `q' ≠ 0` (`TauCeti.deriv_prodMk_ne_zero_iff_of_deriv_eq_mul`), and there the curve is
 recovered from its front as the slope `p = z' / q'`. Where the front is the graph of `z = f(q)`,
@@ -69,41 +70,43 @@ public section
 noncomputable section
 
 open Set Filter Function Module
-open scoped Manifold Topology ContDiff
+open scoped Manifold Topology ContDiff InnerProductSpace
 
 namespace TauCeti
 
 /-! ### Horizontal curves for `dz - p dq` -/
 
-/-- **Horizontal curves for `dz - p dq`.** At a point where it is differentiable, the curve
-`t ↦ (q t, p t, z t)` of `ℝ × ℝ × ℝ` has its tangent line in the kernel of the one-jet contact form
-`dz - p dq` exactly when `z' = p q'`. -/
-theorem range_mfderiv_le_kerDistribution_innerProductContactForm_iff {q p z : ℝ → ℝ} {t : ℝ}
+/-- **Horizontal curves for `dz - ⟪p, dq⟫`.** At a point where it is differentiable, the curve
+`t ↦ (q t, p t, z t)` of `V × V × ℝ` has its tangent line in the kernel of the one-jet contact form
+`dz - ⟪p, dq⟫` exactly when `z' = ⟪p, q'⟫`; for `V = ℝ` this reads `z' = p q'`. -/
+theorem range_mfderiv_le_kerDistribution_innerProductContactForm_iff {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] {q p : ℝ → V} {z : ℝ → ℝ} {t : ℝ}
     (hq : DifferentiableAt ℝ q t) (hp : DifferentiableAt ℝ p t) (hz : DifferentiableAt ℝ z t) :
-    LinearMap.range (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ)
+    LinearMap.range (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, V × V × ℝ)
         (fun s ↦ (q s, p s, z s)) t).toLinearMap ≤
-        (innerProductContactForm ℝ).kerDistribution (q t, p t, z t) ↔
-      deriv z t = p t * deriv q t := by
+        (innerProductContactForm V).kerDistribution (q t, p t, z t) ↔
+      deriv z t = ⟪p t, deriv q t⟫_ℝ := by
   have hd := HasDerivAt.prodMk hq.hasDerivAt (HasDerivAt.prodMk hp.hasDerivAt hz.hasDerivAt)
-  -- The differential sends `s` to `s (q', p', z')`, which lies in the kernel iff `s z' = p s q'`.
-  have hmem (s : ℝ) : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s ↦ (q s, p s, z s)) t s ∈
-      (innerProductContactForm ℝ).kerDistribution (q t, p t, z t) ↔
-      s * deriv z t = p t * (s * deriv q t) := by
-    rw [mem_kerDistribution_innerProductContactForm, hd.mfderiv_apply s,
-      Real.inner_apply]
-    simp
+  -- The differential sends `s` to `s (q', p', z')`, which lies in the kernel iff
+  -- `s z' = s ⟪p, q'⟫`.
+  have hmem (s : ℝ) : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, V × V × ℝ) (fun s ↦ (q s, p s, z s)) t s ∈
+      (innerProductContactForm V).kerDistribution (q t, p t, z t) ↔
+      s * deriv z t = s * ⟪p t, deriv q t⟫_ℝ := by
+    rw [mem_kerDistribution_innerProductContactForm, hd.mfderiv_apply s]
+    simp [inner_smul_right]
   rw [LinearMap.range_le_iff_comap, Submodule.eq_top_iff']
   exact ⟨fun h ↦ by simpa using (hmem 1).1 (h (1 : ℝ)),
-    fun h (s : ℝ) ↦ (hmem s).2 (by rw [h]; ring)⟩
+    fun h (s : ℝ) ↦ (hmem s).2 (by rw [h])⟩
 
-/-- **Horizontal curves for `dz - p dq`.** A differentiable curve `t ↦ (q t, p t, z t)` of
-`ℝ × ℝ × ℝ` is tangent to the kernel of the one-jet contact form `dz - p dq` exactly when
-`z' = p q'` at every time. -/
-theorem isHorizontalMap_innerProductContactForm_iff {q p z : ℝ → ℝ} (hq : Differentiable ℝ q)
+/-- **Horizontal curves for `dz - ⟪p, dq⟫`.** A differentiable curve `t ↦ (q t, p t, z t)` of
+`V × V × ℝ` is tangent to the kernel of the one-jet contact form `dz - ⟪p, dq⟫` exactly when
+`z' = ⟪p, q'⟫` at every time; for `V = ℝ` this reads `z' = p q'`. -/
+theorem isHorizontalMap_innerProductContactForm_iff {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {q p : ℝ → V} {z : ℝ → ℝ} (hq : Differentiable ℝ q)
     (hp : Differentiable ℝ p) (hz : Differentiable ℝ z) :
-    IsHorizontalMap 𝓘(ℝ, ℝ) (innerProductContactForm ℝ).kerDistribution
+    IsHorizontalMap 𝓘(ℝ, ℝ) (innerProductContactForm V).kerDistribution
         (fun s ↦ (q s, p s, z s)) ↔
-      ∀ t, deriv z t = p t * deriv q t :=
+      ∀ t, deriv z t = ⟪p t, deriv q t⟫_ℝ :=
   isHorizontalMap_iff_range_mfderiv_le.trans <| forall_congr' fun t ↦
     range_mfderiv_le_kerDistribution_innerProductContactForm_iff (hq t) (hp t) (hz t)
 
@@ -238,8 +241,9 @@ private def negSwapCLM : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ :=
     ((ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)).prod
       ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))))
 
-private theorem coe_negSwapCLM : ⇑negSwapCLM = fun x : ℝ × ℝ × ℝ ↦ (-x.2.1, x.1, x.2.2) :=
-  (rfl)
+private theorem coe_negSwapCLM : ⇑negSwapCLM = fun x : ℝ × ℝ × ℝ ↦ (-x.2.1, x.1, x.2.2) := by
+  funext x
+  simp [negSwapCLM]
 
 /-- **A strict model of the `y`-axis.** The coordinate swap `(q, p, z) ↦ (p, q, z)`, which carries
 the zero section `{p = z = 0}` of the one-jet space onto the `y`-axis, pulls the standard contact
