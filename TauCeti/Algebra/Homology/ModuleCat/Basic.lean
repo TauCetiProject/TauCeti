@@ -567,9 +567,7 @@ lemma moduleCatHomologyLinearEquivOfSurjective_moduleCatKerHomologyClass
     (z : LinearMap.ker (K.d n m).hom) :
     K.moduleCatHomologyLinearEquivOfSurjective hm hp ψ hψ hker
       (K.moduleCatKerHomologyClass hm z) = ψ z := by
-  rw [moduleCatHomologyLinearEquivOfSurjective, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    Function.Exact.linearEquivOfSurjective_symm_apply, Submodule.quotEquivOfEq_mk,
-    LinearMap.quotKerEquivOfSurjective_apply_mk]
+  simp [moduleCatHomologyLinearEquivOfSurjective]
 
 end KerHomologyClass
 

@@ -233,9 +233,7 @@ rank-one shift. -/
 theorem differential_circleMappingTorus_apply_one (x : Fin 2 → R × R) :
     (circleMappingTorus R u).differential x 1 = ((1 - (u : ℤ)) • (x 1).2, 0) := by
   rw [circleMappingTorus, differential_ofBoundary_apply]
-  simp only [Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_zero, circleCellBoundary_apply,
-    Fin.val_one, Nat.cast_one, Int.negOnePow_one, Units.neg_smul, one_smul, Prod.neg_mk, neg_zero,
-    ← neg_smul, neg_sub]
+  simp [← neg_mul, neg_sub]
 
 variable (R) in
 /-- The chains of the model of total degree `k`, a submodule of `Fin 2 → R × R`. -/
@@ -440,9 +438,11 @@ noncomputable def circleMappingTorusHomologyZeroEquiv :
     (p := 1) (by simp)
     ((circleMappingTorusDegreeZeroEquiv u).toLinearMap ∘ₗ
       (LinearMap.ker ((circleMappingTorusComplex R u).d 0 (-1)).hom).subtype)
-    (show Function.Surjective _ from fun r ↦ ⟨⟨(circleMappingTorusDegreeZeroEquiv u).symm r, by
-      rw [LinearMap.mem_ker, circleMappingTorusComplex_d_zero_neg_one, ModuleCat.hom_zero,
-        LinearMap.zero_apply]⟩, (circleMappingTorusDegreeZeroEquiv u).apply_symm_apply r⟩)
+    -- The ascription keeps `Function.Surjective` in the type of the abstracted proof; without it
+    -- that type is unfolded, the definition is no longer type-correct at instance transparency,
+    -- and `simp` cannot apply the evaluation lemma below. The same holds for `H₁` and `H₂`.
+    (show Function.Surjective _ from fun r ↦ ⟨⟨(circleMappingTorusDegreeZeroEquiv u).symm r,
+      by simp [circleMappingTorusComplex_d_zero_neg_one]⟩, by simp⟩)
     (fun z ↦ by
       rw [circleMappingTorusComplex_d_one_zero, LinearMap.comp_apply, LinearEquiv.coe_coe,
         LinearEquiv.map_eq_zero_iff, Submodule.subtype_apply, Submodule.coe_eq_zero]
@@ -456,9 +456,8 @@ theorem circleMappingTorusHomologyZeroEquiv_moduleCatKerHomologyClass
     circleMappingTorusHomologyZeroEquiv R u
         ((circleMappingTorusComplex R u).moduleCatKerHomologyClass (by simp) z) =
       circleMappingTorusDegreeZeroEquiv u z := by
-  rw [circleMappingTorusHomologyZeroEquiv,
-    HomologicalComplex.moduleCatHomologyLinearEquivOfSurjective_moduleCatKerHomologyClass,
-    LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe]
+  rw [circleMappingTorusHomologyZeroEquiv]
+  simp
 
 variable (R) in
 /-- **`H₁ = R × R ⧸ (1 - u) R` for the model.** Every chain of total degree `1` is a cycle, and
@@ -476,10 +475,7 @@ noncomputable def circleMappingTorusHomologyOneEquiv :
     (show Function.Surjective _ by
       rintro ⟨a, q⟩
       obtain ⟨b, rfl⟩ := Submodule.mkQ_surjective _ q
-      refine ⟨⟨(circleMappingTorusDegreeOneEquiv u).symm (a, b), by
-        rw [LinearMap.mem_ker, circleMappingTorusComplex_d_one_zero, ModuleCat.hom_zero,
-          LinearMap.zero_apply]⟩, ?_⟩
-      simp)
+      exact ⟨⟨(circleMappingTorusDegreeOneEquiv u).symm (a, b), by simp⟩, by simp⟩)
     (fun z ↦ by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.subtype_apply,
         LinearMap.prodMap_apply, LinearMap.id_apply, Prod.mk_eq_zero, Submodule.mkQ_apply,
@@ -503,10 +499,8 @@ theorem circleMappingTorusHomologyOneEquiv_moduleCatKerHomologyClass
         ((circleMappingTorusComplex R u).moduleCatKerHomologyClass (by simp) z) =
       ((circleMappingTorusDegreeOneEquiv u z).1,
         Submodule.Quotient.mk (circleMappingTorusDegreeOneEquiv u z).2) := by
-  rw [circleMappingTorusHomologyOneEquiv,
-    HomologicalComplex.moduleCatHomologyLinearEquivOfSurjective_moduleCatKerHomologyClass,
-    LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe,
-    LinearMap.prodMap_apply, LinearMap.id_apply, Submodule.mkQ_apply]
+  rw [circleMappingTorusHomologyOneEquiv]
+  simp
 
 variable (R) in
 /-- **`H₂ = {r | (1 - u) r = 0}` for the model.** Nothing has total degree `3`, and a multiple `r`
@@ -535,11 +529,8 @@ noncomputable def circleMappingTorusHomologyTwoEquiv :
       · rwa [LinearEquiv.apply_symm_apply]
       · exact (circleMappingTorusDegreeTwoEquiv u).apply_symm_apply r)
     (fun z ↦ by
-      rw [circleMappingTorusComplex_d_three_two]
-      simp only [ModuleCat.hom_zero, LinearMap.zero_apply, exists_const, Subtype.ext_iff,
-        ZeroMemClass.coe_zero]
-      rw [LinearMap.coe_restrict_apply, LinearEquiv.coe_coe, LinearEquiv.map_eq_zero_iff]
-      exact eq_comm)
+      simpa [circleMappingTorusComplex_d_three_two] using
+        (Subtype.ext_iff (a1 := z) (a2 := 0)).trans eq_comm)
 
 /-- The class of a cycle of total degree `2` in `H₂ = {r | (1 - u) r = 0}` is its coefficient on
 the edge of `C₁`. -/
@@ -549,9 +540,8 @@ theorem coe_circleMappingTorusHomologyTwoEquiv_moduleCatKerHomologyClass
     (circleMappingTorusHomologyTwoEquiv R u
         ((circleMappingTorusComplex R u).moduleCatKerHomologyClass (by simp) z) : R) =
       circleMappingTorusDegreeTwoEquiv u z := by
-  rw [circleMappingTorusHomologyTwoEquiv,
-    HomologicalComplex.moduleCatHomologyLinearEquivOfSurjective_moduleCatKerHomologyClass,
-    LinearMap.coe_restrict_apply, LinearEquiv.coe_coe]
+  rw [circleMappingTorusHomologyTwoEquiv]
+  simp
 
 /-- **The other homology groups of the model vanish.** -/
 theorem isZero_homology_circleMappingTorusComplex {k : ℤ} (h0 : k ≠ 0) (h1 : k ≠ 1) (h2 : k ≠ 2) :
@@ -592,11 +582,12 @@ theorem circleMappingTorusHomologyOneEquivNegOne_moduleCatKerHomologyClass
       ((circleMappingTorusDegreeOneEquiv (-1) z).1,
         ((circleMappingTorusDegreeOneEquiv (-1) (z : (circleMappingTorusComplex ℤ (-1)).X 1)).2 :
           ZMod 2)) := by
+  -- `simp` would first rewrite `1 - ↑(-1)` to `2` in the types of these equivalences, after which
+  -- their evaluation lemmas no longer match, so those steps are rewritten explicitly.
   rw [circleMappingTorusHomologyOneEquivNegOne, LinearEquiv.trans_apply,
     circleMappingTorusHomologyOneEquiv_moduleCatKerHomologyClass, LinearEquiv.prodCongr_apply,
-    LinearEquiv.refl_apply, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
-    AddEquiv.coe_toIntLinearEquiv]
-  exact congrArg (Prod.mk _) (RingHom.congr_fun (Int.quotientSpanNatEquivZMod_comp_Quotient_mk 2) _)
+    LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk]
+  simp
 
 /-- **`H₂ = 0` for the Klein bottle model over `ℤ`**: the edge of `C₁` has boundary twice the
 vertex of `C₁`, and `2 n = 0` forces `n = 0` in `ℤ`. -/
@@ -651,9 +642,10 @@ theorem circleMappingTorusHomologyOneEquivOne_moduleCatKerHomologyClass
     circleMappingTorusHomologyOneEquivOne R
         ((circleMappingTorusComplex R 1).moduleCatKerHomologyClass (by simp) z) =
       circleMappingTorusDegreeOneEquiv 1 z := by
+  -- As for `u = -1`, `simp` would first rewrite `1 - ↑1` in the type of the `H₁` equivalence.
   rw [circleMappingTorusHomologyOneEquivOne, LinearEquiv.trans_apply,
-    circleMappingTorusHomologyOneEquiv_moduleCatKerHomologyClass, LinearEquiv.prodCongr_apply,
-    LinearEquiv.refl_apply, Submodule.quotEquivOfEqBot_apply_mk]
+    circleMappingTorusHomologyOneEquiv_moduleCatKerHomologyClass]
+  simp
 
 variable (R) in
 /-- **For a trivial negative line, `H₂ = R`**, spanned by the edge of `C₁`: the fundamental class
@@ -671,6 +663,7 @@ theorem circleMappingTorusHomologyTwoEquivOne_moduleCatKerHomologyClass
     circleMappingTorusHomologyTwoEquivOne R
         ((circleMappingTorusComplex R 1).moduleCatKerHomologyClass (by simp) z) =
       circleMappingTorusDegreeTwoEquiv 1 z := by
+  -- As for `H₁`, `simp` would first rewrite `1 - ↑1` in the type of the `H₂` equivalence.
   rw [circleMappingTorusHomologyTwoEquivOne, LinearEquiv.trans_apply, LinearEquiv.ofTop_apply,
     coe_circleMappingTorusHomologyTwoEquiv_moduleCatKerHomologyClass]
 
