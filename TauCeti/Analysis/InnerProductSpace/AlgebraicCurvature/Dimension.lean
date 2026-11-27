@@ -124,6 +124,14 @@ structure IsBivectorSymmetric (r : FourTensor V) : Prop where
 theorem IsAlgebraicCurvature.isBivectorSymmetric {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     IsBivectorSymmetric r := ⟨hr.antisymm_first, hr.antisymm_last, hr.swap_pairs⟩
 
+/-- A four-tensor that is antisymmetric in its first pair and symmetric under pair interchange
+is bivector-symmetric. -/
+theorem IsBivectorSymmetric.of_antisymm_first_of_swap_pairs {r : FourTensor V}
+    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
+    (hswap : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]) :
+    IsBivectorSymmetric r :=
+  ⟨h₁, fun u v z w ↦ by rw [hswap u v z w, h₁ z w u v, hswap w z u v], hswap⟩
+
 variable (V) in
 /-- The submodule of bivector-symmetric four-tensors on `V`. -/
 def bivectorSymmetricSubmodule : Submodule ℝ (FourTensor V) where

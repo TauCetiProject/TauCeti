@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction.Basic
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Bracket
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.SymmetricProduct
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
@@ -110,21 +111,6 @@ theorem bivectorSharp_comm (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
 theorem bivectorSharp_self (R : Module.End ℝ (⋀[ℝ]^2 V)) :
     bivectorSharp R R = bivectorAd ∘ₗ map 2 R ∘ₗ LinearMap.adjoint bivectorAd := by
   rw [bivectorSharp_apply, symmMap₂_self]
-
-private theorem adjoint_symmMap₂ (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
-    LinearMap.adjoint (symmMap₂ R S) = symmMap₂ R.adjoint S.adjoint := by
-  refine linearMap_ext_inner_ιMulti_two fun α β γ δ ↦ ?_
-  rw [LinearMap.adjoint_inner_left]
-  -- After `linearMap_ext_inner_ιMulti_two` (#45889), `symmMap₂` uses `Submodule.module` rather than
-  -- `NormedSpace.toModule`; instantiate `real_inner_smul_right` / `inner_add_right` concretely.
-  have hsmul (x y : ⋀[ℝ]^2 (⋀[ℝ]^2 V)) (c : ℝ) : ⟪x, c • y⟫ = c * ⟪x, y⟫ :=
-    real_inner_smul_right x y c
-  have hadd (x y z : ⋀[ℝ]^2 (⋀[ℝ]^2 V)) : ⟪x, y + z⟫ = ⟪x, y⟫ + ⟪x, z⟫ :=
-    inner_add_right x y z
-  simp only [symmMap₂_apply_ιMulti, real_inner_smul_left, hsmul,
-    inner_add_left, hadd, inner_ιMulti_two, LinearMap.adjoint_inner_left]
-  simp only [real_inner_comm (R _), real_inner_comm (S _)]
-  ring
 
 /-- Taking the adjoint commutes with `TauCeti.bivectorSharp`. -/
 @[simp]
@@ -309,18 +295,6 @@ theorem IsBivectorSymmetric.curvatureEndomorphism_reactionTensor {r : FourTensor
         bivectorSharp (curvatureEndomorphism r) (curvatureEndomorphism r)) := by
   rw [← reactionBilinear_self, hr.curvatureEndomorphism_reactionBilinear hr]
   module
-
-/-- On any four-tensor antisymmetric in its first pair and symmetric under pair interchange,
-`curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` with `R = curvatureEndomorphism r`. -/
-theorem curvatureEndomorphism_reactionTensor {r : FourTensor V}
-    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
-    (hswap : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]) :
-    curvatureEndomorphism (reactionTensor r) =
-      (2 : ℝ) • (curvatureEndomorphism r * curvatureEndomorphism r +
-        bivectorSharp (curvatureEndomorphism r) (curvatureEndomorphism r)) :=
-  have h₂ (u v z w : V) : r ![u, v, z, w] = -r ![u, v, w, z] := by
-    rw [hswap u v z w, h₁ z w u v, hswap w z u v]
-  (IsBivectorSymmetric.mk h₁ h₂ hswap).curvatureEndomorphism_reactionTensor
 
 end FourTensor
 
