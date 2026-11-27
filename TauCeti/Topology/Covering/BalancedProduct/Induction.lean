@@ -25,10 +25,14 @@ The `G`-maps are stated as functions satisfying `f ⟦g a⁻¹, z⟧ = a • f �
 
 ## Main definitions
 
-* `TauCeti.BalancedProduct.inducedLift`: the map `⟦g, z⟧ ↦ g⁻¹ • ι z` induced by a `K`-map `ι`.
+* `TauCeti.BalancedProduct.inducedLift`: the map `⟦g, z⟧ ↦ g⁻¹ • ι z` induced by a `K`-map `ι`,
+  `G`-equivariant (`inducedLift_mul_inv`), restricting to `ι` (`inducedLift_mk_one`) and the only
+  `G`-map doing so (`eq_inducedLift`).
 
 ## Main results
 
+* `TauCeti.BalancedProduct.apply_mk_eq_inv_smul_apply_mk_one`: a `G`-map sends `⟦g, z⟧` to
+  `g⁻¹ • f ⟦1, z⟧`.
 * `TauCeti.bijOn_balancedProduct_lift`: **the universal property of induction.**
 
 ## References
@@ -63,6 +67,54 @@ theorem BalancedProduct.inducedLift_mk {ι : Z → Y}
     inducedLift K Z Y hι (mk K g z) = g⁻¹ • ι z :=
   (rfl)
 
+/-- The induced map is `G`-equivariant: `a` acts on the balanced product by
+`⟦g, z⟧ ↦ ⟦g a⁻¹, z⟧`. -/
+theorem BalancedProduct.inducedLift_mul_inv {ι : Z → Y}
+    (hι : ∀ (h : K) (z : Z), ι (h • z) = (h : G) • ι z) (a g : G) (z : Z) :
+    inducedLift K Z Y hι (mk K (g * a⁻¹) z) = a • inducedLift K Z Y hι (mk K g z) := by
+  simp [mul_smul]
+
+/-- Restricting the induced map along `z ↦ ⟦1, z⟧` gives back `ι`. Not `@[simp]`: `simp` proves
+it from `inducedLift_mk`. -/
+theorem BalancedProduct.inducedLift_mk_one {ι : Z → Y}
+    (hι : ∀ (h : K) (z : Z), ι (h • z) = (h : G) • ι z) (z : Z) :
+    inducedLift K Z Y hι (mk K 1 z) = ι z := by
+  simp
+
+variable {K Z Y}
+
+/-- A `G`-map out of the balanced product is determined by its values on the classes `⟦1, z⟧`:
+it sends `⟦g, z⟧` to `g⁻¹ • f ⟦1, z⟧`. -/
+theorem BalancedProduct.apply_mk_eq_inv_smul_apply_mk_one {f : BalancedProduct K G Z → Y}
+    (hf : ∀ (a g : G) (z : Z), f (mk K (g * a⁻¹) z) = a • f (mk K g z)) (g : G) (z : Z) :
+    f (mk K g z) = g⁻¹ • f (mk K 1 z) := by
+  simpa using hf g⁻¹ 1 z
+
+/-- The restriction of a `G`-map out of the balanced product along `z ↦ ⟦1, z⟧` is a `K`-map. -/
+theorem BalancedProduct.apply_mk_one_smul {f : BalancedProduct K G Z → Y}
+    (hf : ∀ (a g : G) (z : Z), f (mk K (g * a⁻¹) z) = a • f (mk K g z)) (h : K) (z : Z) :
+    f (mk K 1 (h • z)) = (h : G) • f (mk K 1 z) := by
+  rw [mk_smul_right, apply_mk_eq_inv_smul_apply_mk_one hf]
+  simp [Subgroup.smul_def]
+
+/-- **Uniqueness of the induced map**: a `G`-map out of the balanced product which restricts to
+`ι` along `z ↦ ⟦1, z⟧` is the induced map. -/
+theorem BalancedProduct.eq_inducedLift {f : BalancedProduct K G Z → Y}
+    (hf : ∀ (a g : G) (z : Z), f (mk K (g * a⁻¹) z) = a • f (mk K g z)) {ι : Z → Y}
+    (hι : ∀ (h : K) (z : Z), ι (h • z) = (h : G) • ι z) (hfι : ∀ z, f (mk K 1 z) = ι z) :
+    f = inducedLift K Z Y hι := by
+  funext x
+  induction x using BalancedProduct.ind with
+  | h g z => rw [apply_mk_eq_inv_smul_apply_mk_one hf, hfι, inducedLift_mk]
+
+/-- The induced map of the restriction of a `G`-map is that `G`-map. -/
+theorem BalancedProduct.inducedLift_apply_mk_one {f : BalancedProduct K G Z → Y}
+    (hf : ∀ (a g : G) (z : Z), f (mk K (g * a⁻¹) z) = a • f (mk K g z)) :
+    inducedLift K Z Y (ι := fun z ↦ f (mk K 1 z)) (apply_mk_one_smul hf) = f :=
+  (eq_inducedLift hf _ fun _ ↦ rfl).symm
+
+variable (K Z Y)
+
 /-- **The universal property of induction.** For a subgroup `K` of `G`, a `K`-set `Z` and a
 `G`-set `Y`, restricting along `z ↦ ⟦1, z⟧` is a bijection from the `G`-maps out of the balanced
 product `TauCeti.BalancedProduct K G Z` to `Y` onto the `K`-maps `Z → Y`, with inverse
@@ -71,22 +123,14 @@ theorem bijOn_balancedProduct_lift :
     Set.BijOn (fun (f : BalancedProduct K G Z → Y) (z : Z) ↦ f (mk K (1 : G) z))
       {f | ∀ (a g : G) (z : Z), f (mk K (g * a⁻¹) z) = a • f (mk K g z)}
       {ι | ∀ (h : K) (z : Z), ι (h • z) = (h : G) • ι z} := by
-  -- The class of `(1, h • z)` is that of `(1 * h⁻¹, z)`, and every class is that of `(1 * a⁻¹, z)`.
-  have hmk (h : K) (z : Z) : mk K (1 : G) (h • z) = mk K ((1 : G) * (h : G)⁻¹) z := by
-    rw [mk_smul_right, Subgroup.smul_def, smul_eq_mul, mul_one, one_mul, Subgroup.coe_inv]
-  refine ⟨fun f hf h z ↦ ?_, fun f hf f' hf' hff' ↦ ?_, fun ι hι ↦ ?_⟩
-  · beta_reduce
-    rw [hmk, hf]
-  · funext x
-    induction x using BalancedProduct.ind with
-    | h g z =>
-      have hg : mk K g z = mk K ((1 : G) * g⁻¹⁻¹) z := by rw [inv_inv, one_mul]
-      rw [hg, hf, hf']
-      exact congrArg _ (congrFun hff' z)
-  · refine ⟨BalancedProduct.inducedLift K Z Y hι, fun a g z ↦ ?_, funext fun z ↦ ?_⟩
-    · rw [BalancedProduct.inducedLift_mk, BalancedProduct.inducedLift_mk, mul_inv_rev, inv_inv,
-        mul_smul]
-    · beta_reduce
-      rw [BalancedProduct.inducedLift_mk, inv_one, one_smul]
+  refine ⟨fun f hf ↦ BalancedProduct.apply_mk_one_smul hf, fun f hf f' hf' hff' ↦ ?_,
+    fun ι hι ↦ ⟨BalancedProduct.inducedLift K Z Y hι, BalancedProduct.inducedLift_mul_inv K Z Y hι,
+      funext (BalancedProduct.inducedLift_mk_one K Z Y hι)⟩⟩
+  funext x
+  induction x using BalancedProduct.ind with
+  | h g z =>
+    rw [BalancedProduct.apply_mk_eq_inv_smul_apply_mk_one hf,
+      BalancedProduct.apply_mk_eq_inv_smul_apply_mk_one hf']
+    exact congrArg _ (congrFun hff' z)
 
 end TauCeti
