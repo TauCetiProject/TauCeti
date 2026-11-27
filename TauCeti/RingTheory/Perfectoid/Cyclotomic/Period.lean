@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Huber.Normed
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
 
+import TauCeti.RingTheory.Huber.ValuedField
 import TauCeti.RingTheory.WittVector.Frobenius
 import TauCeti.RingTheory.WittVector.Units
 

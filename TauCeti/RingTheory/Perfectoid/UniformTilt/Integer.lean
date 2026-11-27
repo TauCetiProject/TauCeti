@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Perfectoid.UniformTilt.Field
 public import TauCeti.Topology.Algebra.Valued.NormedValued
 import Mathlib.Topology.Algebra.Valued.LocallyCompact
 import TauCeti.RingTheory.Huber.Normed
+import TauCeti.RingTheory.Huber.ValuedField
 import TauCeti.RingTheory.Perfectoid.UniformTilt.Theta
 
 /-!
