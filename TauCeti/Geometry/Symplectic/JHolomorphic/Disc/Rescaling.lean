@@ -201,18 +201,6 @@ private theorem exists_rescale_of_le {η r A : ℝ} {K : ℝ≥0} (hη : 0 < η)
   exact ⟨hdt, fun x hx ↦ (hAt x hx).trans hAη,
     fun x hx y hy ↦ (hLt x hx y hy).trans (mul_le_mul_of_nonneg_right hLη (norm_nonneg _))⟩
 
-/-- A map that is `K`-Lipschitz on the ball of radius `r` about `c` is bounded there by its value
-at the centre plus `K r`; applied to the derivative of a map this bounds the derivative. -/
-private theorem norm_le_norm_add_mul_of_lipschitz {X Z : Type*} [SeminormedAddCommGroup X]
-    [SeminormedAddCommGroup Z] {g : X → Z} {c : X} {r : ℝ} {K : ℝ≥0} (hr : 0 ≤ r)
-    (hL : ∀ x ∈ closedBall c r, ∀ y ∈ closedBall c r, ‖g x - g y‖ ≤ K * ‖x - y‖) :
-    ∀ x ∈ closedBall c r, ‖g x‖ ≤ ‖g c‖ + K * r := fun x hx ↦ by
-  refine norm_le_norm_add_const_of_dist_le ?_
-  rw [dist_eq_norm]
-  refine (hL x hx c (mem_closedBall_self hr)).trans ?_
-  rw [mem_closedBall, dist_eq_norm] at hx
-  gcongr
-
 /-- Rescaling the argument of a map `J` whose derivative is `K`-Lipschitz on the ball of radius
 `r` makes its derivative and the Lipschitz constant of its derivative as small as required on
 the ball of radius `4`. -/
@@ -228,7 +216,9 @@ private theorem exists_rescale {J : F → F →L[ℝ] F} {η r : ℝ} {K : ℝ�
   -- On the ball of radius `r`, `DJ` is bounded by `‖DJ(0)‖ + K r`.
   obtain ⟨t, ht, -, htr, h⟩ := exists_rescale_of_le (F := F) (K := K) hη hr
     (by positivity : 0 ≤ ‖fderiv ℝ J 0‖ + K * r)
-  exact ⟨t, ht, htr, h J hd (norm_le_norm_add_mul_of_lipschitz (g := fderiv ℝ J) hr.le hL) hL⟩
+  exact ⟨t, ht, htr, h J hd (fun x hx ↦ norm_le_norm_add_const_of_dist_le (a := fderiv ℝ J x) <|
+    (dist_eq_norm _ _).trans_le <| (lipschitzOnWith_iff_norm_sub_le.2 hL).norm_sub_le_of_le hx
+      (mem_closedBall_self hr.le) (mem_closedBall_iff_norm.1 hx)) hL⟩
 
 /-- **Discs solving `∂ₛu + J(u) ∂ₜu = 0` with a prescribed first jet.** Let
 `J : F → (F →L[ℝ] F)` be of class `C²` near `0` with `J(0) v = i v`. For every `ξ ∈ F` there is a
@@ -564,8 +554,10 @@ private theorem exists_rescaled_beltrami_family [CompleteSpace F] {J : E → F �
     fun q ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J q.1 q.2)
   -- On the ball of radius `r` about `(p₀, 0)`, `DQ` is bounded by `A = ‖DQ(p₀, 0)‖ + K r`.
   set A := ‖fderiv ℝ Q (p₀, 0)‖ + K * r
-  have hA : ∀ q ∈ closedBall (p₀, (0 : F)) r, ‖fderiv ℝ Q q‖ ≤ A :=
-    norm_le_norm_add_mul_of_lipschitz hr.le hL
+  have hA : ∀ q ∈ closedBall (p₀, (0 : F)) r, ‖fderiv ℝ Q q‖ ≤ A := fun q hq ↦
+    norm_le_norm_add_const_of_dist_le (a := fderiv ℝ Q q) <| (dist_eq_norm _ _).trans_le <|
+      (lipschitzOnWith_iff_norm_sub_le.2 hL).norm_sub_le_of_le hq (mem_closedBall_self hr.le)
+        (mem_closedBall_iff_norm.1 hq)
   have hA0 : 0 ≤ A := by positivity
   obtain ⟨t, ht, ht1, htr, hresc⟩ := exists_rescale_of_le (F := F) (K := K) hη hr hA0
   refine ⟨r, hr, t, ht, ht1, A + K, add_nonneg hA0 K.coe_nonneg, fun p hp ↦ ?_,
