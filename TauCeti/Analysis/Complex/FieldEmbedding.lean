@@ -101,9 +101,9 @@ transcendental over `k` and a complex number `z` transcendental over `k`, some `
 homomorphism `E →ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algHom_apply_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E ≤ 𝔠) {α : E}
     {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E →ₐ[k] ℂ, φ α = z := by
-  obtain ⟨t, _, ht⟩ := hz.exists_isTranscendenceBasis_mem
+  have : Algebra.Transcendental k ℂ := ⟨⟨z, hz⟩⟩
   have : FaithfulSMul k ℂ :=
-    (faithfulSMul_iff_algebraMap_injective k ℂ).2 ht.1.algebraMap_injective
+    (faithfulSMul_iff_algebraMap_injective k ℂ).2 Algebra.injective_of_transcendental
   obtain ⟨φ, _, hφ⟩ := hα.exists_algHom_apply_eq hz (lift_trdeg_le hE)
   exact ⟨φ, hφ⟩
 
@@ -113,12 +113,12 @@ an element `α ∈ E` transcendental over `k` and a complex number `z` transcend
 isomorphism `E ≃ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algEquiv_apply_eq [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = 𝔠) {α : E}
     {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E ≃ₐ[k] ℂ, φ α = z := by
-  obtain ⟨s, _, hs⟩ := hα.exists_isTranscendenceBasis_mem
-  obtain ⟨t, _, ht⟩ := hz.exists_isTranscendenceBasis_mem
+  have : Algebra.Transcendental k E := ⟨⟨α, hα⟩⟩
+  have : Algebra.Transcendental k ℂ := ⟨⟨z, hz⟩⟩
   have : FaithfulSMul k E :=
-    (faithfulSMul_iff_algebraMap_injective k E).2 hs.1.algebraMap_injective
+    (faithfulSMul_iff_algebraMap_injective k E).2 Algebra.injective_of_transcendental
   have : FaithfulSMul k ℂ :=
-    (faithfulSMul_iff_algebraMap_injective k ℂ).2 ht.1.algebraMap_injective
+    (faithfulSMul_iff_algebraMap_injective k ℂ).2 Algebra.injective_of_transcendental
   exact hα.exists_algEquiv_apply_eq hz (lift_trdeg_eq hE)
 
 end CommRing
