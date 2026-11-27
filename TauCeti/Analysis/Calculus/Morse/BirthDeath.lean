@@ -435,20 +435,9 @@ theorem exists_eq_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 < s)
     (hz : IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w))
     (hbot : Tendsto z atBot (𝓝 (WithLp.toLp 2 (-√s, y))))
     (htop : Tendsto z atTop (𝓝 (WithLp.toLp 2 (√s, y)))) :
-    ∃ τ, z = fun t ↦ WithLp.toLp 2 (birthDeathOrbit s (t + τ), y) := by
-  obtain ⟨h₁, h₂⟩ := (isIntegralCurve_separatedSum_iff
-    (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz
-  have hfst := (WithLp.fstL 2 ℝ ℝ F).continuous.tendsto
-  have hsnd := (WithLp.sndL 2 ℝ ℝ F).continuous.tendsto
-  have hy := h₂.eq_const_of_tendsto (fun _ ↦ hg _) (hg y).continuousAt
-    (by simpa [Function.comp_def] using (hsnd _).comp hbot)
-    (by simpa [Function.comp_def] using (hsnd _).comp htop)
-  obtain ⟨τ, hτ⟩ := exists_eq_birthDeathOrbit_comp_add hs h₁
-    (by simpa [Function.comp_def] using (hfst _).comp hbot)
-    (by simpa [Function.comp_def] using (hfst _).comp htop)
-  refine ⟨τ, funext fun t ↦ WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)⟩
-  · simpa using congrFun hτ t
-  · simpa using congrFun hy t
+    ∃ τ, z = fun t ↦ WithLp.toLp 2 (birthDeathOrbit s (t + τ), y) :=
+  hz.exists_eq_toLp_comp_add_of_separatedSum hg (fun _ ↦ differentiable_birthDeathPotential s _)
+    (fun _ hδ hδbot hδtop ↦ exists_eq_birthDeathOrbit_comp_add hs hδ hδbot hδtop) hbot htop
 
 /-- Conversely, above a critical point `y` of a transverse function `g` differentiable at `y`, the
 curve `t ↦ (√s tanh (√s t), y)` is a negative gradient trajectory of the birth–death model. -/
