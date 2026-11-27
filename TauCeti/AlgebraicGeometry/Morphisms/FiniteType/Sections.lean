@@ -71,21 +71,27 @@ theorem with_finiteType_algebraIsPushout_of_isPullback
   let : X.Over (Spec (.of R)) := ⟨toR⟩
   let : Y.Over (Spec (.of S)) := ⟨toS⟩
   have : LocallyOfFiniteType (X ↘ Spec (.of R)) := ‹_›
-  refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
-    (R := R) (S := S) (Y := Y) H hU fun hpush hRX hSY hXY ↦ ?_
-  have : Algebra.IsPushout R Γ(X, U) S Γ(Y, g ⁻¹ᵁ U) := hpush.symm
-  have : Algebra.FiniteType R Γ(X, U) :=
-    hRX ▸ finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
+  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+  let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
+    ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+  let : Algebra Γ(X, U) Γ(Y, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
+  let : Algebra R Γ(Y, g ⁻¹ᵁ U) := ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
+  have : IsScalarTower R Γ(X, U) Γ(Y, g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  have : IsScalarTower R S Γ(Y, g ⁻¹ᵁ U) :=
+    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U H.toCommSq
+  have : Algebra.IsPushout R Γ(X, U) S Γ(Y, g ⁻¹ᵁ U) :=
+    (Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU).symm
+  have : Algebra.FiniteType R Γ(X, U) := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
   have hcomp : hU.fromSpec ≫ toR = Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U))) := by
     -- `X ↘ Spec (.of R)` is definitionally `toR` via the local `Over` instance above.
     change hU.fromSpec ≫ (X ↘ Spec (.of R)) = _
-    rw [hU.fromSpec_comp_eq_SpecMap (X ↘ Spec (.of R)), hRX, RingHom.algebraMap_toAlgebra,
+    rw [hU.fromSpec_comp_eq_SpecMap (X ↘ Spec (.of R)), RingHom.algebraMap_toAlgebra,
       Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.ofHom_hom]
   have hS : algebraMap S Γ(Y, g ⁻¹ᵁ U) =
       ((Scheme.ΓSpecIso (.of S)).inv ≫ toS.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom := by
     -- `Y ↘ Spec (.of S)` is definitionally `toS` via the local `Over` instance above.
     change _ = ((Scheme.ΓSpecIso (.of S)).inv ≫ (Y ↘ Spec (.of S)).appLE ⊤ (g ⁻¹ᵁ U) le_top).hom
-    rw [hSY, RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
-  exact hP hcomp hS hXY
+    rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
+  exact hP hcomp hS rfl
 
 end TauCeti.AlgebraicGeometry
