@@ -123,14 +123,14 @@ theorem exists_partialDiffeomorph_kerDistribution_eq_contactization [Nonempty Λ
       mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J φ x w := fun x w ↦ by
     rw [PartialDiffeomorph.coe_trans, PartialDiffeomorph.coe_subtypeVal]
     exact Manifold.mfderiv_subtype_val_comp_apply w
+  have hΨ : ∀ x, Ψ x = (φ x : M) := fun x ↦ by
+    rw [PartialDiffeomorph.coe_trans, PartialDiffeomorph.coe_subtypeVal, Function.comp_apply]
   refine ⟨Ψ, fun q ↦ hΨsrc ▸ hsrc q, fun q ↦ ?_, fun x hx ↦ ?_, fun q ↦ ?_⟩
-  · rw [PartialDiffeomorph.coe_trans, PartialDiffeomorph.coe_subtypeVal, Function.comp_apply,
-      hval q, hι'_val]
+  · rw [hΨ, hval q, hι'_val]
   · rw [hΨsrc] at hx
     ext v
-    rw [SmoothForm.mem_kerDistribution, ← hφ x hx, TauCeti.mpullback_apply_one,
-      Submodule.mem_comap, ContinuousLinearMap.coe_coe, hdΨ x, PartialDiffeomorph.coe_trans,
-      PartialDiffeomorph.coe_subtypeVal, Function.comp_apply, ← congrFun hker (φ x)]
+    rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, hdΨ, hΨ, ← congrFun hker (φ x)]
+    simp only [SmoothForm.mem_kerDistribution, ← hφ x hx, TauCeti.mpullback_apply_one]
     exact SmoothForm.mem_kerDistribution.symm
   obtain ⟨c, hc, hce⟩ := hpos q (hιW' q)
   refine ⟨c⁻¹, inv_pos.2 hc, fun w ↦ ?_⟩
@@ -140,7 +140,7 @@ theorem exists_partialDiffeomorph_kerDistribution_eq_contactization [Nonempty Λ
     dsimp only at hy
     subst hy
     rw [← SmoothForm.degreeOneEquiv_apply_apply_vec, hce]
-    rfl
+    exact (smul_apply (σ q) c v).trans (smul_eq_mul c (σ q v))
   rw [hdΨ, ← hφ _ hx, TauCeti.mpullback_apply_one, key _ (by rw [hval q, hι'_val]),
     ← mul_assoc, inv_mul_cancel₀ hc.ne', one_mul]
 

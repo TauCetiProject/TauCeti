@@ -104,13 +104,15 @@ private theorem exists_smoothForm_pos_smul_near (hD : IsContMDiffDistribution I 
   obtain ⟨Y, hY, hYq⟩ := FiberBundle.exists_contMDiff_section_eq I E (∞ : ℕ∞ω) v₀
   have hYc : Continuous fun q' ↦ TotalSpace.mk' E (E := fun x : M ↦ TangentSpace I x) (ι q')
       (Y (ι q')) := hY.continuous.comp hι.continuous
-  have hf₂ : Continuous fun q' ↦ σ q' (Y (ι q')) :=
+  -- Pairing a continuous covector field along `ι` with `Y` gives a continuous function.
+  have hpair : ∀ τ : Π q' : X, TangentSpace I (ι q') →L[ℝ] ℝ, Continuous (fun q' ↦
+      TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (ι q') (τ q')) →
+      Continuous fun q' ↦ τ q' (Y (ι q')) := fun τ hτ ↦
     continuous_snd.comp ((Bundle.Trivial.homeomorphProd M ℝ).continuous.comp
-      (Continuous.clm_bundle_apply (E₂ := Bundle.Trivial M ℝ) hσ hYc))
-  have hf₁ : Continuous fun q' ↦ SmoothForm.degreeOneEquiv α' (ι q') (Y (ι q')) :=
-    continuous_snd.comp ((Bundle.Trivial.homeomorphProd M ℝ).continuous.comp
-      (Continuous.clm_bundle_apply (E₂ := Bundle.Trivial M ℝ)
-        ((SmoothForm.degreeOneEquiv α').contMDiff.continuous.comp hι.continuous) hYc))
+      (Continuous.clm_bundle_apply (E₂ := Bundle.Trivial M ℝ) hτ hYc))
+  have hf₂ := hpair σ hσ
+  have hf₁ := hpair (fun q' ↦ SmoothForm.degreeOneEquiv α' (ι q'))
+    ((SmoothForm.degreeOneEquiv α').contMDiff.continuous.comp hι.continuous)
   obtain ⟨V, hV, hVP⟩ := hι.isOpen_iff.1 (isOpen_lt continuous_const (hf₁.mul hf₂))
   have hqV : q ∈ ι ⁻¹' V := by
     rw [hVP, mem_ofPred, Pi.mul_apply, hα'_apply, ← hσc, hYq]
@@ -223,6 +225,8 @@ theorem exists_opens_smoothForm_pos_smul (hD : IsContMDiffDistribution I ∞ k D
       s (TopologicalSpace.Opens.inclusion hWO y) := fun y ↦ ContinuousLinearMap.ext fun v ↦ by
     rw [SmoothForm.degreeOneEquiv_mpullback_apply, Manifold.mfderiv_inclusion_apply,
       LinearEquiv.apply_symm_apply]
+    -- Both sides are `s` at the same point applied to `v`; they differ only in whether `v` is
+    -- typed in `TangentSpace I y` or in `TangentSpace I (inclusion hWO y)`, which are both `E`.
     rfl
   have hα₀ : ∀ y : W, SmoothForm.degreeOneEquiv α y ≠ 0 := by
     rintro ⟨_, y, hy, rfl⟩
