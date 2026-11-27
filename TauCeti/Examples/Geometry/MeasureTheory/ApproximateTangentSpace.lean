@@ -46,6 +46,10 @@ namespace TauCeti.Examples.ApproxTangentSpace
 def xAxis : Submodule ℝ (EuclideanSpace ℝ (Fin 2)) :=
   ℝ ∙ EuclideanSpace.single 0 1
 
+/-- The `x`-axis is the span of `e₀`. -/
+theorem xAxis_eq_span : xAxis = ℝ ∙ EuclideanSpace.single 0 1 :=
+  (rfl)
+
 /-- The `x`-axis is a line. -/
 theorem finrank_xAxis : finrank ℝ xAxis = 1 :=
   finrank_span_singleton (by simp)

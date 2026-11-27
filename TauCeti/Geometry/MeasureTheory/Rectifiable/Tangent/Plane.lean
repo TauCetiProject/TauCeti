@@ -9,6 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Approximate
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Uniqueness
 public import Mathlib.Order.LiminfLimsup
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import TauCeti.Analysis.Convex.Cone.InfDist
 import TauCeti.Geometry.Euclidean.Volume.Density
 
 /-!
@@ -28,6 +29,8 @@ For inverse-Lipschitz parametrizations `f : U → V` differentiable within `s` a
 density-one point `x₀ ∈ s` (without assuming `f` is Lipschitz on `s`), any subspace with
 cone-density zero contains `range A` (`HasFDerivWithinAt.range_le_of_densityZeroOutsideCones`),
 identifying `approximateTangentPlane` on both general patches and differentiable normal graphs.
+In particular, a set containing a line through `x` not contained in `P` fails
+`TauCeti.DensityZeroOutsideCones 1` at `x` for `P` (`not_densityZeroOutsideCones_of_not_le`).
 The canonical plane and projection provide the linear domain for tangential derivatives and
 Jacobians in `Rectifiable.TangentialFDeriv`.
 
@@ -108,8 +111,7 @@ theorem range_le_of_densityZeroOutsideCones (hf : HasFDerivWithinAt f A s x₀)
   have hAu : A u ∉ Q := fun h => hvQ <| by
     simpa [u, smul_smul, norm_ne_zero_iff.mpr hv0] using Q.smul_mem ‖v‖ h
   set d := infDist (A u) (Q : Set V) with hd_def
-  have hd0 : 0 < d := (Q.isClosed_of_finiteDimensional.notMem_iff_infDist_pos ⟨0, Q.zero_mem⟩).mp
-    hAu
+  have hd0 : 0 < d := Q.infDist_pos_of_notMem hAu
   set η : ℝ := min (1 / 2) (d / (2 * (‖A‖ + 1)))
   have hη0 : 0 < η := lt_min (by norm_num) (by positivity)
   let C : ℝ≥0 := ⟨‖A‖ + 1, by positivity⟩; have hC0 : 0 < C := Subtype.mk_lt_mk.mpr (by positivity)
@@ -171,6 +173,37 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
     [MeasurableSpace V] [BorelSpace V] {k : ℕ} {E E₁ E₂ : Set V}
+
+/-- If a set `E` contains the line `x + L` through `x`, where `L` is not contained in a subspace
+`P`, then `E` does not have `1`-dimensional density zero outside the cones about `P` at `x`. This
+is `HasFDerivWithinAt.range_le_of_densityZeroOutsideCones` for the parametrization `t ↦ x + t v`
+of the line through `x` in the direction of a vector `v ∈ L \ P`. -/
+theorem not_densityZeroOutsideCones_of_not_le {x : V} {L P : Submodule ℝ V}
+    (hLE : ∀ z ∈ L, x + z ∈ E) (hLP : ¬ L ≤ P) : ¬ DensityZeroOutsideCones 1 E x P := by
+  intro h
+  obtain ⟨v, hvL, hvP⟩ := IsConcreteLE.not_le_iff_exists.mp hLP
+  have hv0 : v ≠ 0 := fun hv ↦ hvP (hv ▸ P.zero_mem)
+  let A : ℝ →L[ℝ] V := ContinuousLinearMap.toSpanSingleton ℝ v
+  have hf : HasFDerivWithinAt (fun t : ℝ ↦ x + A t) A univ 0 :=
+    (A.hasFDerivAt.const_add x).hasFDerivWithinAt
+  have hi : AntilipschitzWith ‖v‖₊⁻¹ ((univ : Set ℝ).domRestrict fun t ↦ x + A t) :=
+    AntilipschitzWith.of_le_mul_dist fun s t ↦ by
+      change dist (s : ℝ) t ≤ _ * dist (x + A s) (x + A t)
+      rw [dist_add_left, dist_eq_norm, dist_eq_norm, ← map_sub,
+        ContinuousLinearMap.toSpanSingleton_apply, norm_smul, NNReal.coe_inv, coe_nnNorm,
+        mul_comm _ ‖v‖,
+        inv_mul_cancel_left₀ (norm_ne_zero_iff.mpr hv0)]
+  have hsub : (fun t : ℝ ↦ x + A t) '' univ ⊆ E := by
+    rintro _ ⟨t, -, rfl⟩
+    exact hLE _ (L.smul_mem t hvL)
+  have hdens : Tendsto (fun r ↦ volume ((univ : Set ℝ) ∩ cb 0 r) / volume (cb (0 : ℝ) r)) 𝓝₊
+      (𝓝 1) := by
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
+    rw [univ_inter, ENNReal.div_self (measure_closedBall_pos volume _ hr).ne'
+      measure_closedBall_lt_top.ne]
+  have hle := hf.range_le_of_densityZeroOutsideCones hi hsub hdens (by simpa using h)
+  exact hvP (hle ⟨1, by simp [A]⟩)
 
 /-- `P` is an approximate tangent `k`-plane to `E` at `x` (Mattila, Definition 15.17). -/
 structure IsApproximateTangentPlane (k : ℕ) (E : Set V) (x : V) (P : Submodule ℝ V) : Prop where

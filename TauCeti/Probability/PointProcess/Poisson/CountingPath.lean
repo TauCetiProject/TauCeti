@@ -126,9 +126,6 @@ theorem HasIndepIncrements.add_and_hasLaw_sub_poissonMeasure {N₁ N₂ : ℝ≥
     ⟨h0₂, hN₂, hlaw₂⟩
   have hsum := isPoissonRandomMeasure_add hM₁ hM₂
     (hind.comp measurable_countingPathMeasure measurable_countingPathMeasure)
-  have : IsLocallyFiniteMeasure (Λ₁ + Λ₂) :=
-    (Λ₁ + Λ₂).isLocallyFiniteMeasure_of_measure_Iic_lt_top fun _ ↦
-      ENNReal.add_lt_top.2 ⟨measure_Iic_lt_top, measure_Iic_lt_top⟩
   have hcount : ∀ᵐ ω ∂P, ∀ t,
       (countingPathMeasure (fun t ↦ N₁ t ω) + countingPathMeasure fun t ↦ N₂ t ω) (Iic t) =
         ((N₁ t ω + N₂ t ω : ℕ) : ℝ≥0∞) := by
