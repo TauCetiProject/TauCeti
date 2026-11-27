@@ -14,6 +14,7 @@ import Mathlib.RingTheory.Norm.Basic
 import TauCeti.FieldTheory.Minpoly
 import TauCeti.NumberTheory.Cyclotomic.IntegralClosure
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Cyclotomic
+import TauCeti.RingTheory.DiscreteValuationRing.IntegralClosure
 import TauCeti.RingTheory.PowerBasis
 
 /-!
@@ -269,6 +270,22 @@ theorem isPrimitiveRoot_integralRoot (n : ℕ) :
 noncomputable def integralPowerBasis (n : ℕ) :
     PowerBasis ℤ_[p] (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :=
   (isPrimitiveRoot_root p Ω n).subOneIntegralClosurePowerBasis ℤ_[p] ℚ_[p] PadicInt.prime_p
+
+/-- The integral closure of `ℤ_p` in the chosen cyclotomic level is a discrete valuation ring. -/
+instance integralClosure_isDiscreteValuationRing (n : ℕ) :
+    IsDiscreteValuationRing (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :=
+  TauCeti.integralClosure.isDiscreteValuationRing ℤ_[p] ℚ_[p] _
+
+/-- The integral closure of `ℤ_p` in the chosen cyclotomic level is a finite `ℤ_p`-module. -/
+instance integralClosure_moduleFinite (n : ℕ) :
+    Module.Finite ℤ_[p] (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :=
+  (integralPowerBasis p Ω n).finite
+
+/-- The scalar inclusion of the p-adic integers into the cyclotomic integer ring reflects units. -/
+instance integralClosure_isLocalHom (n : ℕ) :
+    IsLocalHom (algebraMap ℤ_[p] (integralClosure ℤ_[p] (padicCyclotomicField p Ω n))) := by
+  have := Module.Free.of_basis (integralPowerBasis p Ω n).basis
+  infer_instance
 
 @[simp]
 theorem integralPowerBasis_gen (n : ℕ) : (integralPowerBasis p Ω n).gen = integralRoot p Ω n - 1 :=
