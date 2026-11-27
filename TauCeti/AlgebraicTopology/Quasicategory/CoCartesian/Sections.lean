@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Basic
-public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
+public import TauCeti.AlgebraicTopology.Quasicategory.FullyFaithful
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 
 /-!
@@ -21,6 +21,10 @@ carrying base edges to `SSet.Edge.IsCoCartesian` edges over `p`.
 * `SSet.coCartesianSections` constructs that subcategory using `SSet.fullEnhancedSubcategory`.
 * `SSet.mem_coCartesianSections_obj_iff` tests a family over the base at each parameter vertex,
   using `SSet.ihomOver.objEquiv` and Mathlib's `SSet.stdSimplex.map`.
+* `SSet.le_coCartesianSections_iff` and `SSet.range_le_coCartesianSections_iff` characterize
+  subcomplex containment and factorization through the inclusion by testing vertices.
+* The inclusion is fully faithful by `SSet.IsFullyFaithful.fullEnhancedSubcategory_ι` and is
+  an inner fibration by the corresponding full-subcategory instance.
 * `SSet.coCartesianSections.quasicategory` gives the quasicategory for an inner fibration, and
   `SSet.coCartesianSections.isTerminalId` identifies the section category of the identity as
   terminal.
@@ -72,20 +76,47 @@ lemma mem_coCartesianSections_obj_iff {n : ℕ} {s : (coherentSections p : SSet)
     s ∈ (coCartesianSections p).obj (op ⦋n⦌) ↔
       ∀ (i : Fin (n + 1)) ⦃x y : B _⦋0⦌⦄ (e : Edge x y),
         (e.map ((fstStdSimplexZeroIso B).inv ≫
-          (B ◁ stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i)) ≫
+          (B ◁ SSet.stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i)) ≫
           (ihomOver.objEquiv s).val)).IsCoCartesian p := by
   rw [coCartesianSections_eq_fullEnhancedSubcategory,
     mem_fullEnhancedSubcategory_obj_iff_forall_fin]
   exact forall_congr' fun i ↦ by rw [ihomOver.obj₀Equiv_map]
 
+variable {p} in
+/-- A subcomplex of coherent sections lies in the coCartesian section complex exactly when
+each of its vertices represents a section that sends base edges to coCartesian edges.
+Use this as an explicit rewrite to switch from the subcomplex order to a vertexwise condition.
+The simp rule for map factorization is `range_le_coCartesianSections_iff`. -/
+lemma le_coCartesianSections_iff (A : (coherentSections p : SSet).Subcomplex) :
+    A ≤ coCartesianSections p ↔ ∀ s ∈ A.obj (op ⦋0⦌),
+      ∀ ⦃x y : B _⦋0⦌⦄ (e : Edge x y), (e.map (ihomOver.obj₀Equiv s).val).IsCoCartesian p := by
+  rw [coCartesianSections_eq_fullEnhancedSubcategory, le_fullEnhancedSubcategory_iff]
+
+variable {p} in
+/-- A map into the coherent sections factors through the coCartesian sections exactly when
+the section at each vertex sends base edges to coCartesian edges. -/
+@[simp]
+lemma range_le_coCartesianSections_iff {Y : SSet.{u}} (f : Y ⟶ (coherentSections p : SSet)) :
+    Subcomplex.range f ≤ coCartesianSections p ↔ ∀ s : Y _⦋0⦌,
+      ∀ ⦃x y : B _⦋0⦌⦄ (e : Edge x y),
+        (e.map (ihomOver.obj₀Equiv (f.app _ s)).val).IsCoCartesian p := by
+  rw [coCartesianSections_eq_fullEnhancedSubcategory, range_le_fullEnhancedSubcategory_iff]
+
 /-- For an isomorphism, every section is coCartesian. -/
 @[simp]
 lemma coCartesianSections_eq_top_of_isIso [IsIso p] : coCartesianSections p = ⊤ := by
-  rw [coCartesianSections_eq_fullEnhancedSubcategory]
-  refine top_unique ((le_fullEnhancedSubcategory_iff _ _).2 fun s _ _ _ e ↦ ?_)
+  refine top_unique ((le_coCartesianSections_iff ⊤).2 fun s _ _ _ e ↦ ?_)
   exact Edge.isCoCartesian_of_isIso _ p
 
 namespace coCartesianSections
+
+/-- The inclusion of coCartesian sections into coherent sections is fully faithful. -/
+instance isFullyFaithful_ι : IsFullyFaithful (coCartesianSections p).ι :=
+  inferInstanceAs (IsFullyFaithful ((coherentSections p : SSet).fullEnhancedSubcategory _).ι)
+
+/-- The inclusion of coCartesian sections into coherent sections is an inner fibration. -/
+instance innerFibration_ι : InnerFibration (coCartesianSections p).ι :=
+  inferInstanceAs (InnerFibration ((coherentSections p : SSet).fullEnhancedSubcategory _).ι)
 
 /-- The vertices of the coCartesian section complex are the coCartesian sections of `p`. -/
 def obj₀Equiv :
