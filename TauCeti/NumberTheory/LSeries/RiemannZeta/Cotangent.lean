@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The Taylor expansion of the cotangent in the even zeta values
@@ -25,7 +26,7 @@ The proof expands each term of the partial-fraction expansion `cot_series_rep'`,
 `1/(z - n) + 1/(z + n) = 2z/(z² - n²) = -2 ∑_{k ≥ 0} z^(2k+1) / n^(2k+2)` for `|z| < 1 ≤ n`,
 as a geometric series. The double series converges absolutely, since
 `|z|^(2k+1) / n^(2k+2) ≤ |z|^(2k+1) / n²`, so the two summations may be exchanged, and
-`∑_{n ≥ 1} 1 / n^(2k+2) = ζ(2k + 2)`.
+`∑_{n ≥ 1} 1 / n^(2k+2) = ζ(2k + 2)` (`TauCeti.hasSum_one_div_natCast_add_one_pow`).
 
 ## Main results
 
@@ -48,10 +49,7 @@ namespace TauCeti
 private theorem hasSum_pow_div_natCast_add_one_pow {z : ℂ} {n : ℕ} (hz : ‖z‖ < n + 1) :
     HasSum (fun k : ℕ ↦ z ^ (2 * k + 1) / (n + 1 : ℂ) ^ (2 * k + 2))
       (z / ((n + 1 : ℂ) ^ 2 - z ^ 2)) := by
-  have hm : ‖(n + 1 : ℂ)‖ = n + 1 := by
-    rw [show (n + 1 : ℂ) = ((n + 1 : ℕ) : ℂ) by push_cast; ring, Complex.norm_natCast]
-    push_cast
-    ring
+  have hm : ‖(n + 1 : ℂ)‖ = n + 1 := by norm_cast
   have hm₀ : (n + 1 : ℂ) ≠ 0 := by
     rw [← norm_ne_zero_iff, hm]
     positivity
@@ -70,20 +68,6 @@ private theorem hasSum_pow_div_natCast_add_one_pow {z : ℂ} {n : ℕ} (hz : ‖
     ring
   · field_simp
 
-/-- `ζ(2k + 2) = ∑_{n ≥ 0} 1 / (n + 1)^(2k+2)`, with the summability of the series. -/
-private theorem hasSum_one_div_natCast_add_one_pow (k : ℕ) :
-    HasSum (fun n : ℕ ↦ 1 / (n + 1 : ℂ) ^ (2 * k + 2)) (riemannZeta (2 * k + 2)) := by
-  have hs : Summable fun n : ℕ ↦ 1 / (n + 1 : ℂ) ^ (2 * k + 2) := by
-    refine Summable.of_norm ?_
-    refine ((summable_nat_add_iff 1).2
-      (Real.summable_one_div_nat_pow.2 (show 1 < 2 * k + 2 by omega))).congr fun n ↦ ?_
-    rw [norm_div, norm_one, norm_pow, show (n + 1 : ℂ) = ((n + 1 : ℕ) : ℂ) by push_cast; ring,
-      Complex.norm_natCast]
-  convert hs.hasSum using 1
-  rw [show (2 * (k : ℂ) + 2) = ((2 * k + 2 : ℕ) : ℂ) by push_cast; ring,
-    zeta_eq_tsum_one_div_nat_add_one_cpow (by rw [natCast_re]; exact_mod_cast (by omega))]
-  simp_rw [cpow_natCast]
-
 /-- The family `(n, k) ↦ z^(2k+1) / (n + 1)^(2k+2)` is absolutely summable for `‖z‖ < 1`. -/
 private theorem summable_norm_pow_div_natCast_add_one_pow {z : ℂ} (hz : ‖z‖ < 1) :
     Summable fun p : ℕ × ℕ ↦ ‖z ^ (2 * p.2 + 1) / (p.1 + 1 : ℂ) ^ (2 * p.2 + 2)‖ := by
@@ -94,10 +78,7 @@ private theorem summable_norm_pow_div_natCast_add_one_pow {z : ℂ} (hz : ‖z�
       ‖z‖ ^ 2 < 1)).mul_left ‖z‖).congr fun k ↦ by ring
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ ?_)
     (h₁.mul_of_nonneg h₂ (fun _ ↦ by positivity) (fun _ ↦ by positivity))
-  have hm : ‖(p.1 + 1 : ℂ)‖ = p.1 + 1 := by
-    rw [show (p.1 + 1 : ℂ) = ((p.1 + 1 : ℕ) : ℂ) by push_cast; ring, Complex.norm_natCast]
-    push_cast
-    ring
+  have hm : ‖(p.1 + 1 : ℂ)‖ = p.1 + 1 := by norm_cast
   rw [norm_div, norm_pow, norm_pow, hm, one_div, inv_mul_eq_div]
   exact div_le_div_of_nonneg_left (by positivity) (by positivity)
     (pow_le_pow_right₀ (by linarith [(Nat.cast_nonneg p.1 : (0 : ℝ) ≤ p.1)]) (by omega))
@@ -115,7 +96,8 @@ theorem hasSum_pi_mul_cot_pi_mul_sub_one_div {z : ℂ} (hz : ‖z‖ < 1) :
     have h : |(m : ℝ)| < 1 := by simpa [Complex.norm_intCast] using hz
     have h₁ : -1 < m := by exact_mod_cast (abs_lt.1 h).1
     have h₂ : m < 1 := by exact_mod_cast (abs_lt.1 h).2
-    exact hz₀ (by simp [show m = 0 by omega])
+    have hm : m = 0 := by omega
+    exact hz₀ (by simp [hm])
   set f : ℕ × ℕ → ℂ := fun p ↦ z ^ (2 * p.2 + 1) / (p.1 + 1 : ℂ) ^ (2 * p.2 + 2) with hf
   have hS : Summable f := (summable_norm_pow_div_natCast_add_one_pow hz).of_norm
   -- summing over `k` first gives `z / ((n + 1)² - z²)`; summing over `n` first, `ζ(2k + 2)`
@@ -124,7 +106,9 @@ theorem hasSum_pi_mul_cot_pi_mul_sub_one_div {z : ℂ} (hz : ‖z‖ < 1) :
       (hz.trans_le (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))
   have hk : HasSum (fun k : ℕ ↦ riemannZeta (2 * k + 2) * z ^ (2 * k + 1)) (∑' p, f p) :=
     ((Equiv.prodComm ℕ ℕ).hasSum_iff.2 hS.hasSum).prod_fiberwise fun k ↦ by
-      have h := (hasSum_one_div_natCast_add_one_pow k).mul_left (z ^ (2 * k + 1))
+      have h := (hasSum_one_div_natCast_add_one_pow (k := 2 * k + 2) (by omega)).mul_left
+        (z ^ (2 * k + 1))
+      push_cast at h
       rw [mul_comm (z ^ _)] at h
       convert h using 1
       funext n
@@ -157,14 +141,15 @@ theorem pi_mul_cot_pi_mul_eq_one_div_sub_tsum {z : ℂ} (hz : ‖z‖ < 1) :
 /-- At `z = 1/2`, where `cot (π/2) = 0`, the expansion gives `∑_{n ≥ 1} ζ(2n) / 4ⁿ = 1/2`. -/
 example : HasSum (fun k : ℕ ↦ riemannZeta (2 * k + 2) * (1 / 4) ^ (k + 1)) (1 / 2) := by
   have h := (hasSum_pi_mul_cot_pi_mul_sub_one_div (z := 1 / 2) (by norm_num)).mul_left (-1 / 4)
+  have hπ : (π : ℂ) * (1 / 2) = π / 2 := by ring
   have hcot : cot (π * (1 / 2 : ℂ)) = 0 := by
-    rw [Complex.cot_eq_cos_div_sin, show (π : ℂ) * (1 / 2) = π / 2 by ring, Complex.cos_pi_div_two,
-      zero_div]
+    rw [Complex.cot_eq_cos_div_sin, hπ, Complex.cos_pi_div_two, zero_div]
   rw [hcot] at h
   convert h using 1
   · funext k
-    rw [show (1 / 4 : ℂ) = (1 / 2) ^ 2 by norm_num, ← pow_mul,
-      show 2 * (k + 1) = 2 * k + 1 + 1 by ring, pow_succ]
+    have h₄ : (1 / 4 : ℂ) = (1 / 2) ^ 2 := by norm_num
+    have hk : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
+    rw [h₄, ← pow_mul, hk, pow_succ]
     ring
   · norm_num
 
