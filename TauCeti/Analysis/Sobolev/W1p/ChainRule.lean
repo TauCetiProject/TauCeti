@@ -76,7 +76,8 @@ by approximation, and the *order* of the two limits matters.
   `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels, and
   `TauCeti.W1p.value_posPartAbove_nonneg_ae`: the truncation is nonnegative.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
-  `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
+  `TauCeti.W1p.value_posPart`, its nonnegativity `TauCeti.W1p.value_posPart_nonneg_ae` and its
+  weak gradient `TauCeti.W1p.gradient_posPart_ae`.
 * `TauCeti.W1p.posPart_eq_self_of_ae_nonneg`: the positive part of a nonnegative function is the
   function itself.
 
@@ -866,6 +867,11 @@ theorem W1p.posPartAbove_zero (hp : p ≠ ∞) (u : W1p mu Omega p) :
   filter_upwards [W1p.value_posPartAbove_ae hp (le_refl 0) u,
     Lp.coeFn_posPart (W1p.value u)] with x hx hy
   rw [hx, hy, sub_zero]
+
+/-- The positive part `u⁺` is nonnegative almost everywhere. -/
+theorem W1p.value_posPart_nonneg_ae (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.posPart hp u) x :=
+  W1p.posPartAbove_zero hp u ▸ W1p.value_posPartAbove_nonneg_ae hp le_rfl u
 
 /-- Truncating `(u - k)⁺` above a further level `l ≥ 0` truncates `u` above `k + l`. -/
 @[simp]

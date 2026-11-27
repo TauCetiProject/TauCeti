@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.OneEndpoint
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Oscillation
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Sobolev.Poincare.SharpConstant
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
@@ -94,32 +95,12 @@ theorem mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_snd_eq_zero (hab
 
 /-! ### Optimality of the constant -/
 
-/-- The squares of `sin` and `cos` of `π (t - a) / (2 (b - a))` both integrate to `(b - a) / 2`
-over `(a, b)`. -/
-private theorem integral_sin_sq_and_integral_cos_sq (hab : a < b) :
-    ∫ t in a..b, Real.sin (π / (2 * (b - a)) * (t - a)) ^ 2 = (b - a) / 2 ∧
-      ∫ t in a..b, Real.cos (π / (2 * (b - a)) * (t - a)) ^ 2 = (b - a) / 2 := by
-  set k := π / (2 * (b - a)) with hk
-  have hk0 : k ≠ 0 := (div_pos Real.pi_pos (by linarith)).ne'
-  have hkb : k * b - k * a = π / 2 := by
-    rw [hk]
-    field_simp
-  simp_rw [mul_sub]
-  rw [intervalIntegral.integral_comp_mul_sub (fun y ↦ Real.sin y ^ 2) hk0,
-    intervalIntegral.integral_comp_mul_sub (fun y ↦ Real.cos y ^ 2) hk0, sub_self, hkb,
-    integral_sin_sq, integral_cos_sq]
-  constructor <;>
-  · simp only [Real.sin_zero, Real.cos_zero, Real.sin_pi_div_two, Real.cos_pi_div_two,
-      smul_eq_mul]
-    field_simp
-    linarith
-
 /-- The class of `sin (π (t - a) / (2 (b - a)))` lies in `H¹_{{a}}(a, b)`, is nonzero, and has
 `‖u'‖² = (π / (2 (b - a)))² ‖u‖²`. -/
 private theorem exists_mem_singleton_left_norm_gradient_sq_eq (hab : a < b) :
     ∃ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ 2 {a},
       0 < ‖value u‖ ^ 2 ∧ ‖gradient u‖ ^ 2 = (π / (2 * (b - a))) ^ 2 * ‖value u‖ ^ 2 := by
-  obtain ⟨hs, hc⟩ := integral_sin_sq_and_integral_cos_sq hab
+  obtain ⟨hs, hc⟩ := integral_sin_sq_and_integral_cos_sq_quarter_period hab
   set k := π / (2 * (b - a))
   obtain ⟨u, hrep, hv, hg⟩ := exists_intervalRepresentativeL_eq_of_contDiff (p := 2) hab
     (f := fun t ↦ Real.sin (k * (t - a))) (by fun_prop)
@@ -140,7 +121,7 @@ private theorem exists_mem_singleton_left_norm_gradient_sq_eq (hab : a < b) :
 private theorem exists_mem_singleton_right_norm_gradient_sq_eq (hab : a < b) :
     ∃ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ 2 {b},
       0 < ‖value u‖ ^ 2 ∧ ‖gradient u‖ ^ 2 = (π / (2 * (b - a))) ^ 2 * ‖value u‖ ^ 2 := by
-  obtain ⟨hs, hc⟩ := integral_sin_sq_and_integral_cos_sq hab
+  obtain ⟨hs, hc⟩ := integral_sin_sq_and_integral_cos_sq_quarter_period hab
   have hkb : π / (2 * (b - a)) * (b - a) = π / 2 := by
     field_simp
   set k := π / (2 * (b - a))

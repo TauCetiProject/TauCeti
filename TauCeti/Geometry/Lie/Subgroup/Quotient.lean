@@ -60,7 +60,8 @@ More generally, if `G` acts smoothly on a boundaryless manifold `M` and `K` acts
 properly, the orbit space `M ⧸ K` is a smooth manifold for the charts
 `Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`
 (`Subgroup.isManifold_orbitRelQuotientOfIsClosed`), and the orbit projection is a smooth
-submersion (`Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed`).
+submersion (`Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed`) whose vertical directions at `y`
+are the orbit directions `𝔨 · y` (`Subgroup.ker_mfderiv_orbitRelQuotientMkOfIsClosed`).
 
 The charts of `G ⧸ K` come from the case `M = G` of this quotient manifold theorem
 (`ProperSMul.instIsManifoldOrbitRelQuotient`), for the action of `K` on `G` by left
@@ -163,6 +164,28 @@ theorem isSubmersion_orbitRelQuotientMkOfIsClosed (hK : IsClosed (K : Set G)) :
   have := d.lieGroup
   have := d.contMDiffSMul (I'' := I') (M := M)
   exact ProperSMul.isSubmersion_quotientMk
+
+/-- **The vertical directions of the orbit projection of a closed subgroup.** For a free proper
+action of a closed subgroup `K`, the kernel of the differential at `y` of the projection
+`M → M ⧸ K` is the orbit tangent space `𝔨 · y`. -/
+theorem ker_mfderiv_orbitRelQuotientMkOfIsClosed (hK : IsClosed (K : Set G)) (y : M) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := orbitRelQuotientChartedSpaceOfIsClosed I I' M hK
+    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).chartedSpace
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).lieGroup
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).contMDiffSMul
+      (I'' := I') (M := M)
+    (mfderiv I'
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E')
+      (Quotient.mk (MulAction.orbitRel K M)) y).ker =
+      (InfinitesimalAction.fundamental 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
+        K I' M).orbitTangent y := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  exact ProperSMul.ker_mfderiv_quotientMk y
 
 end OrbitSpace
 

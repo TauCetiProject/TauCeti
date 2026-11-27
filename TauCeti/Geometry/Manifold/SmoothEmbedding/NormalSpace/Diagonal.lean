@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diagonal
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
 /-!

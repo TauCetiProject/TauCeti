@@ -74,8 +74,9 @@ functions are only Lipschitz.
   the part of `Γ` on `tsupport ψ` matters.
 * `TauCeti.W1pVanishingOn.valueL`: its value map into `Lᵖ(Ω)`, injective
   (`TauCeti.W1pVanishingOn.valueL_injective`), with dense range for `p = 2` when
-  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`) and compact when the value map
-  of `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`).
+  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`), nonzero on a nonempty `Ω` when
+  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.valueL_ne_zero`), and compact when the value map of
+  `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`).
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients, and
   `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_union`: a cutoff whose support misses

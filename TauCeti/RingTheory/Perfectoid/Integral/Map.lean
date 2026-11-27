@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Perfectoid.Integral.Tilt
+public import TauCeti.RingTheory.Perfectoid.Integral.Torsion
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Map
 
 /-!
@@ -26,7 +26,9 @@ the induced map of tilts `f♭ = PreTilt.map p f` and the induced map
   `f♭ ξ₀`-adically separated. Modulo `f♭ ξ₀`, every element of `B♭` is congruent to the image of an
   element of `A♭`, because `B♭ ⧸ (f♭ ξ₀) ≅ B ⧸ p` is a quotient of `A ⧸ p ≅ A♭ ⧸ ξ₀`. By
   completeness, `f♭` and hence `W(f♭)` are surjective. Then `W(f♭)` maps `ker θ_A` onto `ker θ_B`,
-  and `W(A♭)` surjects onto the fibre product `W(B♭) ×_B A`.
+  and `W(A♭)` surjects onto the fibre product `W(B♭) ×_B A`. For `a : A♭` with `a♯` a unit
+  multiple of `p`, also `[a] W(A♭)` surjects onto `[f♭ a] W(B♭) ×_{p B} p A`: the defect of a
+  first lift lies in `B[p]`, which is the sharp of `B♭[f♭ a]` (`PreTilt.torsionByEquiv`).
 * **The kernel of `A_inf(f)`.** Let `K = ker W(f♭)`. Then `θ_A` maps `K` onto `ker f`, and
   `K ∩ ker θ_A = (ker θ_A) K`, because `W(f♭) ξ` is a nonzerodivisor of `W(B♭)`. Together, `θ_A`
   induces an isomorphism `K ⧸ ξ K ≅ ker f`.
@@ -49,6 +51,9 @@ isomorphisms, with no assumption on `B`.
   `W(f♭)`, by `WittVector.map_surjective`.
 * `WittVector.exists_map_eq_and_fontaineTheta_eq`: for surjective `f`, `W(A♭)` surjects onto the
   fibre product `W(B♭) ×_B A`.
+* `WittVector.exists_map_teichmuller_mul_eq_and_fontaineTheta_eq`: for surjective `f` and
+  `a : A♭` with `a♯` a unit multiple of `p`, `[a] W(A♭)` surjects onto the fibre product
+  `[f♭ a] W(B♭) ×_{p B} p A`.
 * `WittVector.map_fontaineTheta_ker_map`: for surjective `f`, `θ_A (ker W(f♭)) = ker f`.
 * `WittVector.ker_map_inf_ker_fontaineTheta`: `ker W(f♭) ∩ ker θ_A = (ker θ_A) (ker W(f♭))`.
 
@@ -213,5 +218,61 @@ theorem map_fontaineTheta_ker_map {f : A →+* B} (hf : Function.Surjective f) :
   · obtain ⟨v, hv, rfl⟩ := exists_map_eq_and_fontaineTheta_eq hf
       (w := (0 : WittVector p (PreTilt B p))) (by rw [map_zero, RingHom.mem_ker.mp ha])
     exact mem_map_of_mem _ (RingHom.mem_ker.mpr hv)
+
+/-- **`[p♭] A_inf(A)` surjects onto `[f♭ p♭] A_inf(B) ×_{p B} p A`** for a surjection
+`f : A →+* B` of nonzero integral perfectoid rings and an element `a` of `A♭` whose sharp is a unit
+multiple of `p` (Česnavičius–Scholze, *Purity for flat cohomology*, proof of Proposition 2.1.4):
+if `θ_B ([f♭ a] w') = f (p y)`, then some `w : W(A♭)` has `W(f♭) ([a] w) = [f♭ a] w'` and
+`θ_A ([a] w) = p y`.
+
+With `y = -1` this lifts every element `p + [f♭ a] w'` of `ker θ_B` to the element `p + [a] w` of
+`ker θ_A`, which is distinguished, hence a generator of `ker θ_A`. -/
+theorem exists_map_teichmuller_mul_eq_and_fontaineTheta_eq {f : A →+* B}
+    (hf : Function.Surjective f) {a : PreTilt A p} (ha : Associated a.untilt (p : A))
+    {w' : WittVector p (PreTilt B p)} {y : A}
+    (h : fontaineTheta B p (teichmuller p (PreTilt.map p f a) * w') = f (p * y)) :
+    ∃ w, map (PreTilt.map p f) (teichmuller p a * w) = teichmuller p (PreTilt.map p f a) * w' ∧
+      fontaineTheta A p (teichmuller p a * w) = p * y := by
+  obtain ⟨e, he⟩ := ha
+  have hfe : f e * f ↑e⁻¹ = 1 := by rw [← map_mul, e.mul_inv, map_one]
+  have hfa : f a.untilt * f e = p := by rw [← map_mul, he, map_natCast]
+  obtain ⟨v, rfl⟩ := map_surjective _ (PreTilt.map_surjective (p := p) hf) w'
+  simp only [map_mul, fontaineTheta_teichmuller, theta_natural, PreTilt.untilt_natural,
+    map_natCast] at h
+  -- `θ_A ([a] w) = p y` says that `p` kills `e⁻¹ θ_A(w) - y`. For `w = v` this holds after applying
+  -- `f`, so the image of `e⁻¹ θ_A(v) - y` in `B` is the sharp of an element `m` of `B♭[f♭ a]`.
+  have hfz : (p : B) * f (↑e⁻¹ * fontaineTheta A p v - y) = 0 := by
+    rw [map_sub, map_mul]
+    linear_combination h + (f a.untilt * f (fontaineTheta A p v)) * hfe -
+      (f ↑e⁻¹ * f (fontaineTheta A p v)) * hfa
+  have ha' : Associated (PreTilt.map p f a).untilt (p : B) :=
+    ⟨e.map f, by rw [PreTilt.untilt_natural, Units.coe_map, MonoidHom.coe_ofClass, hfa]⟩
+  obtain ⟨⟨m, hm⟩, hmz⟩ : ∃ m : Submodule.torsionBy (PreTilt B p) (PreTilt B p)
+      (PreTilt.map p f a), (m : PreTilt B p).untilt = f (↑e⁻¹ * fontaineTheta A p v - y) :=
+    ⟨(PreTilt.torsionByEquiv ha' dvd_rfl).symm ⟨_, (Submodule.mem_torsionBy_iff _ _).mpr hfz⟩,
+      by rw [PreTilt.untilt_torsionByEquiv_symm_apply]⟩
+  rw [Submodule.mem_torsionBy_iff, smul_eq_mul] at hm
+  -- Correct `v` by `[m'] ε`, with `m'` lifting `m` and `θ_A(ε) = e`; what remains of
+  -- `e⁻¹ θ_A(v) - y` lies in `ker f = θ_A (ker W(f♭))`, and is removed by an element of
+  -- `ker W(f♭)`.
+  obtain ⟨m', rfl⟩ := PreTilt.map_surjective (p := p) hf m
+  rw [PreTilt.untilt_natural, map_sub, map_mul] at hmz
+  obtain ⟨ε, hε⟩ := IsIntegralPerfectoid.surjective_fontaineTheta (p := p) (A := A) (e : A)
+  set v₂ := v - teichmuller p m' * ε with hv₂
+  have hz₂ : (e : A) * (↑e⁻¹ * fontaineTheta A p v₂ - y) ∈ RingHom.ker f := by
+    rw [RingHom.mem_ker]
+    simp only [v₂, map_mul, map_sub, fontaineTheta_teichmuller, hε]
+    linear_combination (-(f e * (f e * f ↑e⁻¹))) * hmz +
+      (f e * f y - f (fontaineTheta A p v) * (f e * f ↑e⁻¹)) * hfe
+  rw [← map_fontaineTheta_ker_map (p := p) hf, mem_map_iff_of_surjective _
+    (IsIntegralPerfectoid.surjective_fontaineTheta (p := p) (A := A))] at hz₂
+  obtain ⟨k, hk, hkθ⟩ := hz₂
+  refine ⟨v₂ - k, ?_, ?_⟩
+  · have hm' : teichmuller p (PreTilt.map p f a) * teichmuller p (PreTilt.map p f m') = 0 := by
+      rw [← map_mul, hm, teichmuller_zero]
+    simp only [map_mul, map_sub, map_teichmuller, RingHom.mem_ker.mp hk, hv₂, sub_zero]
+    linear_combination (-map (PreTilt.map p f) ε) * hm'
+  · rw [map_mul, fontaineTheta_teichmuller, map_sub, hkθ, ← he]
+    linear_combination (-(a.untilt * fontaineTheta A p v₂)) * e.mul_inv
 
 end WittVector

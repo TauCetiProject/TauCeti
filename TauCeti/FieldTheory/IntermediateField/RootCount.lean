@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.FieldTheory.IntermediateField.Algebraic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 
 /-!
 # Roots of a polynomial in an intermediate field

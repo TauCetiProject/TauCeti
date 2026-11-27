@@ -24,13 +24,19 @@ over `(0, 1]` and `(1, ∞)`; the substitution `u = x t` moves their common endp
 Power bounds at `0+` and `+∞` give absolute convergence and holomorphy of these two partial
 Mellin integrals.
 
-The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
-transform, with the same convergence. Kernels that are extended by zero off `(0, ∞)` are compared
-with their unextended forms this way.
+The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing almost everywhere
+there have the same transform, with the same convergence. Kernels extended by zero off `(0, ∞)`
+are compared with their unextended forms this way. A finite sum of kernels with absolutely
+convergent Mellin transforms at a common parameter can be transformed term by term. A real-power
+substitution rescales the parameter, and multiplying the kernel by a complex power shifts it.
 
 ## Main results
 
-* `TauCeti.hasMellin_congr`: functions agreeing on `(0, ∞)` have the same Mellin transform.
+* `HasMellin.finsetSum`: finite sums preserve absolute convergence and transform term by term.
+* `HasMellin.comp_rpow`, `HasMellin.cpow_smul`: power substitutions and power weights transport
+  both convergence and the value of the transform.
+* `TauCeti.hasMellin_congr_ae`, `TauCeti.hasMellin_congr`: functions agreeing almost everywhere
+  or pointwise on `(0, ∞)` have the same Mellin transform and convergence.
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
@@ -86,18 +92,48 @@ public section
 
 open Set MeasureTheory Complex
 
+/-- The Mellin transform of a finite sum is the sum of the individual transforms, with
+absolute convergence. -/
+theorem HasMellin.finsetSum {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {t : Finset ι} {f : ι → ℝ → E} {s : ℂ} {m : ι → E}
+    (h : ∀ i ∈ t, HasMellin (f i) s (m i)) :
+    HasMellin (fun x ↦ ∑ i ∈ t, f i x) s (∑ i ∈ t, m i) := by
+  have hi i (hit : i ∈ t) := (h i hit).1
+  refine ⟨?_, ?_⟩
+  · simpa only [MellinConvergent, IntegrableOn, Finset.smul_sum] using integrable_finsetSum t hi
+  · simp only [mellin, Finset.smul_sum, integral_finsetSum t hi]
+    exact Finset.sum_congr rfl fun i hit ↦ (h i hit).2
+
+/-- Substituting `t ^ a` for `t` with `a ≠ 0` transports an absolutely convergent Mellin
+transform at `s / a` to one at `s`, with its value scaled by `|a|⁻¹`. -/
+theorem HasMellin.comp_rpow {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {s : ℂ} {a : ℝ} {m : E} (h : HasMellin f (s / a) m) (ha : a ≠ 0) :
+    HasMellin (fun t ↦ f (t ^ a)) s (|a|⁻¹ • m) :=
+  ⟨(MellinConvergent.comp_rpow ha).mpr h.1, (mellin_comp_rpow f s a).trans (congrArg _ h.2)⟩
+
+/-- Weighting a kernel by `t ^ a` shifts its absolutely convergent Mellin transform from
+`s + a` to `s`, without changing its value. -/
+theorem HasMellin.cpow_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {s a : ℂ} {m : E} (h : HasMellin f (s + a) m) :
+    HasMellin (fun t ↦ (t : ℂ) ^ a • f t) s m :=
+  ⟨MellinConvergent.cpow_smul.mpr h.1, (mellin_cpow_smul f s a).trans h.2⟩
+
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
+/-- Functions that agree almost everywhere on `(0, ∞)` have the same Mellin transform,
+with the same convergence. -/
+theorem hasMellin_congr_ae {f g : ℝ → E} (h : f =ᵐ[volume.restrict (Ioi 0)] g) {s : ℂ} {m : E} :
+    HasMellin f s m ↔ HasMellin g s m := by
+  have h' := h.mono fun t ht ↦ congrArg (fun z : E ↦ (t : ℂ) ^ (s - 1) • z) ht
+  simp only [HasMellin, MellinConvergent, IntegrableOn, mellin,
+    integrable_congr h', integral_congr_ae h']
+
 /-- Functions that agree on `(0, ∞)` have the same Mellin transform, with the same convergence. -/
 theorem hasMellin_congr {f g : ℝ → E} (h : EqOn f g (Ioi 0)) {s : ℂ} {m : E} :
-    HasMellin f s m ↔ HasMellin g s m := by
-  have h' : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t) (fun t ↦ (t : ℂ) ^ (s - 1) • g t)
-      (Ioi 0) := fun t ht ↦ by simp only [h ht]
-  simp only [HasMellin, MellinConvergent, mellin,
-    MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
-    MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
+    HasMellin f s m ↔ HasMellin g s m :=
+  hasMellin_congr_ae (h.eventuallyEq_of_mem (ae_restrict_mem measurableSet_Ioi))
 
 /-- For a measurable `s ⊆ (0, ∞)`, the Mellin transform of `s.indicator f` converges exactly when
 the Mellin integrand of `f` is integrable on `s`. -/
