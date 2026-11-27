@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
-public import TauCeti.CategoryTheory.Monoidal.TensorPow.Functor
 public import TauCeti.CategoryTheory.Comma.StructuredArrow.Automorphisms
 public import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
-public import Mathlib.CategoryTheory.Core
 
 /-!
 # Roots of a line bundle
@@ -42,32 +40,6 @@ universe u
 noncomputable section
 
 variable {X : Scheme.{u}}
-
-/-- The tensor-power functor on the core of invertible sheaves. Its objects use the
-right-associated tensor-power convention `TauCeti.tensorPow`. -/
-abbrev powerFunctor (X : Scheme.{u}) (n : ℕ) :
-    Core (InvertibleSheaf X) ⥤ Core (InvertibleSheaf X) :=
-  ((Functor.pi' (fun _ : Fin n ↦ 𝟭 (InvertibleSheaf X)) ⋙
-    (𝟭 (InvertibleSheaf X)).tensorPow n).copyObj
-      (fun M ↦ TauCeti.tensorPow M n)
-      (fun M ↦ eqToIso ((𝟭 (InvertibleSheaf X)).tensorPow_obj_const M n))).core
-
-@[simp]
-lemma powerFunctor_obj (n : ℕ) (M : Core (InvertibleSheaf X)) :
-    (powerFunctor X n).obj M = ⟨TauCeti.tensorPow M.of n⟩ := (rfl)
-
-/-- The power functor acts on arrows by the specified tensor power of an isomorphism. -/
-@[simp]
-lemma powerFunctor_map_iso (n : ℕ) {M N : Core (InvertibleSheaf X)} (e : M ⟶ N) :
-    ((powerFunctor X n).map e).iso = TauCeti.tensorPowMapIso e.iso n := by
-  apply Iso.ext
-  dsimp [powerFunctor, Functor.core, Core.functorToCore, Functor.copyObj]
-  symm
-  apply (conj_eqToHom_iff_heq' ..).mpr
-  · simpa only [TauCeti.tensorPowMapIso_hom, Functor.pi', Functor.id_map, Functor.id_obj] using
-      ((𝟭 (InvertibleSheaf X)).tensorPow_map_const e.iso.hom n).symm
-  · simp [Functor.pi', Functor.tensorPow_obj_const]
-  · simp [Functor.pi', Functor.tensorPow_obj_const]
 
 /-- The groupoid of `n`-th roots of `L`: objects retain a line bundle and its power
 isomorphism, and arrows commute with the power isomorphisms. -/
