@@ -21,7 +21,8 @@ When `u` is moreover representably flat, so that it defines a morphism of sites,
 inverse to the pullback of torsors along the identity of `u_* G`
 (`CategoryTheory.Sheaf.NonabelianH1.pullback`): the class of a torsor is determined by its
 restriction (`NonabelianH1.restrictEquiv J u G : H¹(G) ≃ H¹(u_* G)`). This applies to the inclusion
-of a dense subsite, and to an equivalence of sites.
+of a dense subsite whose inclusion functor is representably flat (for instance, one that preserves
+finite limits, such as `TauCeti.FiniteEtaleScheme.toEtale`), and to an equivalence of sites.
 
 ## Main declarations
 
@@ -52,7 +53,11 @@ namespace Torsor
 
 /-- The restriction `u_* Q` of a `G`-torsor `Q` along a continuous and cocontinuous functor `u`,
 a torsor under `u_* G`: over `U` its sections are those of `Q` over `u(U)`, with the action of
-`G(u(U))`. It is locally nonempty because `u` is cocontinuous. -/
+`G(u(U))`. It is locally nonempty because `u` is cocontinuous.
+
+The body is exposed because the sheaf of `u_* Q` is, by definition, the pushforward of the sheaf of
+`Q`: the statement of `restrictMap_hom` and the action in `restrict_smul` rely on it. Use
+`restrict_sheaf` and `restrict_smul` rather than unfolding it. -/
 @[expose]
 def restrict (Q : Torsor G) : Torsor ((u.sheafPushforwardContinuous GrpCat.{w} J K).obj G) where
   sheaf := (u.sheafPushforwardContinuous (Type w) J K).obj Q.sheaf
@@ -68,6 +73,14 @@ def restrict (Q : Torsor G) : Torsor ((u.sheafPushforwardContinuous GrpCat.{w} J
 lemma restrict_sheaf (Q : Torsor G) :
     (Q.restrict J u).sheaf = (u.sheafPushforwardContinuous (Type w) J K).obj Q.sheaf :=
   rfl
+
+/-- The action of `u_* G` on `u_* Q` over `U` is the action of `G` on `Q` over `u(U)`. -/
+@[simp]
+lemma restrict_smul (Q : Torsor G) {U : Cᵒᵖ}
+    (g : ((u.sheafPushforwardContinuous GrpCat.{w} J K).obj G).obj.obj U)
+    (p : (Q.restrict J u).sheaf.obj.obj U) :
+    g • p = (show G.obj.obj (u.op.obj U) from g) • (show Q.sheaf.obj.obj (u.op.obj U) from p) :=
+  (rfl)
 
 /-- The restriction of a morphism of `G`-torsors. -/
 def restrictMap {Q R : Torsor G} (f : Q ⟶ R) : Q.restrict J u ⟶ R.restrict J u where
