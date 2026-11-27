@@ -46,6 +46,8 @@ support.
   position.
 * `TauCeti.Symbol.spatialDeriv_adjoint`, `TauCeti.Symbol.frequencyDeriv_adjoint`: derivatives
   commute with taking adjoint symbols, `∂ (a*) = (∂ a)*`.
+* `TauCeti.Symbol.adjoint_add`, `TauCeti.Symbol.adjoint_smul`, `TauCeti.Symbol.adjoint_sub`: the
+  adjoint symbol is conjugate-linear, `(a + b)* = a* + b*` and `(c • a)* = conj c • a*`.
 * `TauCeti.Symbol.integral_inner_quantizeUniformCLM`: for a uniform symbol `a`, `Op_R(a†)` is the
   formal adjoint of `Op(a)`, and dually `TauCeti.Symbol.integral_inner_quantizeRightUniformCLM`:
   `Op(c†)` is the formal adjoint of `Op_R(c)`.
@@ -61,6 +63,11 @@ support.
   (`HasCompactSpatialSupport.continuous_fourierChar_smul_fourier_slice_sub_smul`,
   `HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice_sub_smul`,
   `HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le`).
+  For the symbols vanishing outside a fixed compact set `K`, the constants of these bounds are
+  finite sums of seminorms of `a` on `K`
+  (`TauCeti.Symbol.exists_norm_fourier_slice_sub_smul_le_sum_seminorm`,
+  `TauCeti.Symbol.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le_sum_seminorm`),
+  which makes the adjoint symbol continuous in `a`.
 
 The asymptotic expansion `a* ∼ ∑_α (1 / α!) ∂_ξ^α D_x^α a†` of the adjoint symbol is in
 `TauCeti.Analysis.Pseudodifferential.Adjoint.Expansion`, and the adjoint of a classical symbol in
@@ -94,6 +101,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform
+open TopologicalSpace (Compacts)
 open scoped SchwartzMap RealInnerProductSpace ContDiff
 
 namespace TauCeti
@@ -109,20 +117,20 @@ section Slice
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {a : Symbol n V W m}
 
-/-- The decay of `â(θ, ξ - sθ)` for bounded shifts: for a symbol of order `m` with compact spatial
-support and every `R`, `‖â(θ, ξ - sθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m` for all `|s| ≤ R`, which
-is integrable in `θ`. The decay of `â` in its first variable absorbs the growth of Peetre's
-inequality in the shift `sθ`. The adjoint symbol uses the shift `s = 2π`. -/
-theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le
-    (ha : a.HasCompactSpatialSupport) (R : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ θ ξ : CoordinateSpace n,
-      ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
-        C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+/-- The decay of `â(θ, ξ - sθ)` for shifts `|s| ≤ R`, from the decay
+`(1 + ‖η‖) ^ (n + 1 + ⌈|m|⌉₊) ‖â(η, ξ)‖ ≤ C₀ ⟨ξ⟩ ^ m` of the Fourier transform of the position
+slices. The decay of `â` in its first variable absorbs the growth of Peetre's inequality in the
+shift `sθ`. -/
+private theorem norm_fourier_slice_sub_smul_le_of_decay {C₀ R : ℝ}
+    (hdecay : ∀ η ξ : CoordinateSpace n, (1 + ‖η‖) ^ (n + 1 + ⌈|m|⌉₊) *
+      ‖𝓕 (fun x ↦ a.coefficient (x, ξ)) η‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hC₀ : 0 ≤ C₀) {s : ℝ} (hs : |s| ≤ R) (θ ξ : CoordinateSpace n) :
+    ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
+      C₀ * 2 ^ (|m| / 2) * max R 1 ^ |m| *
+        ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
   set c := max R 1
   have hc : 1 ≤ c := le_max_right R 1
   set k := ⌈|m|⌉₊
-  obtain ⟨C₀, hC₀, hdecay⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le (n + 1 + k)
-  refine ⟨C₀ * 2 ^ (|m| / 2) * c ^ |m|, by positivity, fun s hs θ ξ ↦ ?_⟩
   set t := 1 + ‖θ‖
   have ht : 0 < t := by positivity
   have h1 : 1 ≤ t := le_add_of_nonneg_right (norm_nonneg θ)
@@ -164,6 +172,35 @@ theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le
       _ = _ := by ring
   exact le_of_mul_le_mul_left hkey (by positivity)
 
+/-- The decay of `â(θ, ξ - sθ)` for bounded shifts: for a symbol of order `m` with compact spatial
+support and every `R`, `‖â(θ, ξ - sθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m` for all `|s| ≤ R`, which
+is integrable in `θ`. The adjoint symbol uses the shift `s = 2π`. -/
+theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le
+    (ha : a.HasCompactSpatialSupport) (R : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ θ ξ : CoordinateSpace n,
+      ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
+        C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+  obtain ⟨C₀, hC₀, hdecay⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le (n + 1 + ⌈|m|⌉₊)
+  exact ⟨_, by positivity, fun s hs ↦ norm_fourier_slice_sub_smul_le_of_decay hdecay hC₀ hs⟩
+
+/-- **The decay of `â(θ, ξ - sθ)` with seminorm constants.** For a compact set `K` and every `R`
+there are finitely many words `α` and a constant `C` such that every symbol `a` of order `m`
+vanishing at positions outside `K` satisfies
+`‖â(θ, ξ - sθ)‖ ≤ C (∑_α p_{K,α,[]}(a)) (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m` for all `|s| ≤ R`. -/
+theorem exists_norm_fourier_slice_sub_smul_le_sum_seminorm (K : Compacts (CoordinateSpace n))
+    (R : ℝ) :
+    ∃ (t : Finset (List (Fin n))) (C : ℝ), 0 ≤ C ∧ ∀ a : Symbol n V W m,
+      (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ s : ℝ, |s| ≤ R → ∀ θ ξ : CoordinateSpace n,
+        ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
+          C * (∑ α ∈ t, Symbol.seminorm K α [] a) *
+            ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+  obtain ⟨t, C, hC0, hC⟩ := exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm (V := V)
+    (W := W) (m := m) K (n + 1 + ⌈|m|⌉₊)
+  refine ⟨t, C * 2 ^ (|m| / 2) * max R 1 ^ |m|, by positivity, fun a haK s hs θ ξ ↦ ?_⟩
+  refine (norm_fourier_slice_sub_smul_le_of_decay (hC a haK)
+    (mul_nonneg hC0 (Finset.sum_nonneg fun α _ ↦ apply_nonneg _ _)) hs θ ξ).trans_eq ?_
+  ring
+
 /-- The Fourier transform `â(g t, h t)` of a position slice is continuous along continuous maps
 `g`, `h` into the dual position variable and the frequency. -/
 private theorem HasCompactSpatialSupport.continuous_fourier_slice_comp
@@ -195,6 +232,20 @@ theorem HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice_sub_s
   simpa only [neg_smul, ← sub_eq_add_neg] using
     ha.integrable_fourierChar_smul_fourier_slice_add_smul (-s) x ξ
 
+/-- A bound `C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m` on `â(θ, ξ - sθ)` integrates to the bound
+`C I ⟨ξ⟩ ^ m` on `∫ exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ) dθ`, with `I` the integral of the weight. -/
+private theorem norm_integral_fourierChar_smul_fourier_slice_sub_smul_le {C s : ℝ}
+    {x ξ : CoordinateSpace n} (hC : ∀ θ, ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
+      C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2))) :
+    ‖∫ θ, (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ‖ ≤
+      C * (∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1))) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  refine (norm_integral_le_of_norm_le ((integrable_one_add_norm_rpow_neg_add_one.mul_const
+    ((1 + ‖ξ‖ ^ 2) ^ (m / 2))).const_mul C) (.of_forall fun θ ↦ ?_)).trans_eq ?_
+  · rw [norm_smul, Circle.norm_coe, one_mul]
+    exact hC θ
+  · rw [integral_const_mul, integral_mul_const]
+    ring
+
 /-- The integral `∫ exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ) dθ`, whose adjoint is the adjoint symbol for
 `s = 2π`, grows at most like `⟨ξ⟩ ^ m`, uniformly in the position and in the shifts `|s| ≤ R`. -/
 theorem HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le
@@ -203,15 +254,28 @@ theorem HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_fourier_s
       ‖∫ θ, (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
   obtain ⟨C, hC0, hC⟩ := ha.exists_norm_fourier_slice_sub_smul_le R
+  exact ⟨_, mul_nonneg hC0 (integral_nonneg fun θ ↦ by positivity), fun s hs x ξ ↦
+    norm_integral_fourierChar_smul_fourier_slice_sub_smul_le fun θ ↦ hC s hs θ ξ⟩
+
+/-- **The growth of `∫ exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ) dθ` with seminorm constants.** For a compact
+set `K` and every `R` there are finitely many words `α` and a constant `C` such that every symbol
+`a` of order `m` vanishing at positions outside `K` satisfies
+`‖∫ exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ) dθ‖ ≤ C (∑_α p_{K,α,[]}(a)) ⟨ξ⟩ ^ m` for all positions `x` and
+all `|s| ≤ R`. -/
+theorem exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le_sum_seminorm
+    (K : Compacts (CoordinateSpace n)) (R : ℝ) :
+    ∃ (t : Finset (List (Fin n))) (C : ℝ), 0 ≤ C ∧ ∀ a : Symbol n V W m,
+      (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ s : ℝ, |s| ≤ R → ∀ x ξ : CoordinateSpace n,
+        ‖∫ θ, (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ‖ ≤
+          C * (∑ α ∈ t, Symbol.seminorm K α [] a) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨t, C, hC0, hC⟩ := exists_norm_fourier_slice_sub_smul_le_sum_seminorm (V := V) (W := W)
+    (m := m) K R
   set I := ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1))
-  have hI : 0 ≤ I := integral_nonneg fun θ ↦ by positivity
-  refine ⟨C * I, mul_nonneg hC0 hI, fun s hs x ξ ↦ ?_⟩
-  refine (norm_integral_le_of_norm_le ((integrable_one_add_norm_rpow_neg_add_one.mul_const
-    ((1 + ‖ξ‖ ^ 2) ^ (m / 2))).const_mul C) (.of_forall fun θ ↦ ?_)).trans_eq ?_
-  · rw [norm_smul, Circle.norm_coe, one_mul]
-    exact hC s hs θ ξ
-  · rw [integral_const_mul, integral_mul_const]
-    ring
+  refine ⟨t, C * I, mul_nonneg hC0 (integral_nonneg fun θ ↦ by positivity),
+    fun a haK s hs x ξ ↦ ?_⟩
+  refine (norm_integral_fourierChar_smul_fourier_slice_sub_smul_le fun θ ↦
+    hC a haK s hs θ ξ).trans_eq ?_
+  ring
 
 end Slice
 
@@ -279,6 +343,34 @@ theorem frequencyDeriv_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
   rw [adjoint, adjoint, frequencyDeriv_ofRight]
   congr 1
   exact frequencyDeriv_map _ a j
+
+/-- The adjoint symbol is additive: `(a + b)* = a* + b*`. -/
+theorem adjoint_add (a b : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) :
+    adjoint (a + b) (ha.add hb) = adjoint a ha + adjoint b hb := by
+  ext1
+  funext ⟨y, ξ⟩
+  rw [coefficient_add, Pi.add_apply, coefficient_adjoint, coefficient_adjoint, coefficient_adjoint]
+  simp_rw [ha.fourier_slice_add hb, smul_add]
+  rw [integral_add (ha.integrable_fourierChar_smul_fourier_slice_sub_smul _ y ξ)
+    (hb.integrable_fourierChar_smul_fourier_slice_sub_smul _ y ξ), map_add]
+
+/-- The adjoint symbol is conjugate-linear: `(c • a)* = conj c • a*`. -/
+theorem adjoint_smul (c : ℂ) (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport) :
+    adjoint (c • a) (ha.smul c) = (starRingEnd ℂ) c • adjoint a ha := by
+  ext1
+  funext ⟨y, ξ⟩
+  rw [coefficient_smul, Pi.smul_apply, coefficient_adjoint, coefficient_adjoint]
+  simp_rw [ha.fourier_slice_smul, smul_comm _ c]
+  rw [integral_smul, LinearIsometryEquiv.map_smulₛₗ]
+
+/-- The adjoint symbol of a difference is the difference of the adjoint symbols. -/
+theorem adjoint_sub (a b : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) :
+    adjoint (a - b) (ha.sub hb) = adjoint a ha - adjoint b hb := by
+  rw [eq_sub_iff_add_eq, ← adjoint_add]
+  congr 1
+  exact sub_add_cancel a b
 
 /-! ### The adjoint identity -/
 

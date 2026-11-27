@@ -36,6 +36,14 @@ with an actual remainder symbol after every number of terms:
   `a* - a†` has order `m - 1` (`TauCeti.Symbol.adjoint_eq_map_add_adjointRemainder_one`), and
   `a*` is an asymptotic sum of the terms (`TauCeti.Symbol.isAsymptoticSum_adjoint`), which
   determines it modulo smoothing symbols.
+* `TauCeti.Symbol.exists_seminorm_adjointRemainder_le`: **the seminorm estimate of the
+  remainder.** For compact sets `K` and `L`, each seminorm `p_{L,α,β}` of the remainder after `N`
+  terms, in the class of order `m - N`, is at most a constant times finitely many seminorms on `K`
+  of `a`, for all `a` vanishing at positions outside `K`. Its case `N = 0` is the estimate
+  `TauCeti.Symbol.exists_seminorm_adjoint_le` for `a*` itself. Together with the additivity of the
+  terms and remainders (`TauCeti.Symbol.adjointTerm_add`, `TauCeti.Symbol.adjointRemainder_add`),
+  these give the continuity of `a ↦ a*` and of the remainders in
+  `TauCeti.Analysis.Pseudodifferential.Adjoint.Continuity`.
 
 ## Proof outline
 
@@ -52,9 +60,13 @@ so that `A_1 = a*` by definition and `A_0 = a†` by Fourier inversion. Since
 `d/dt R_{N+1}(t)(a) = -i ∑ⱼ R_N(t)(∂_{x_j} ∂_{ξ_j} a)` and `R_{N+1}(0) = 0`. The mean value theorem
 and induction on `N` bound `R_N(t)` by `C ⟨ξ⟩ ^ (m - N)` uniformly for `t ∈ [0, 1]`, starting from
 the decay of `â(θ, ξ - 2πtθ)` in `θ`
-(`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`). Derivatives
+(`TauCeti.Symbol.exists_norm_fourier_slice_sub_smul_le_sum_seminorm`). Derivatives
 commute with the adjoint symbol and with the terms, so every mixed derivative of the remainder is
-the remainder of a derivative of `a`, which gives the symbol estimates of order `m - N`.
+the remainder of a derivative of `a`, which gives the symbol estimates of order `m - N`. The
+constants are tracked through the induction: for `a` vanishing outside a compact set `K`, the
+decay constant is a finite sum of seminorms of `a` on `K`, and the derivative `∂_{x_j} ∂_{ξ_j} a`
+has the seminorms of `a` with `j` appended to both words, so every constant is a finite sum of
+seminorms of `a` on `K`.
 
 ## References
 
@@ -67,6 +79,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform Finset
+open TopologicalSpace (Compacts)
 open scoped RealInnerProductSpace ContDiff SchwartzMap
 
 namespace TauCeti
@@ -138,6 +151,23 @@ theorem coefficient_adjointTerm (a : Symbol n V W m) (k : ℕ) (x ξ : Coordinat
     push_cast
     field_simp
     ring
+
+/-- The terms of the adjoint expansion are additive in the symbol. -/
+@[simp]
+theorem adjointTerm_add (a b : Symbol n V W m) (k : ℕ) :
+    (a + b).adjointTerm k = a.adjointTerm k + b.adjointTerm k := by
+  induction k generalizing m with
+  | zero =>
+    ext1
+    funext p
+    simp
+  | succ k ih => simp only [adjointTerm_succ, map_add, ih, Finset.sum_add_distrib, smul_add]
+
+/-- The terms of the adjoint expansion of a difference are the differences of the terms. -/
+@[simp]
+theorem adjointTerm_sub (a b : Symbol n V W m) (k : ℕ) :
+    (a - b).adjointTerm k = a.adjointTerm k - b.adjointTerm k := by
+  rw [eq_sub_iff_add_eq, ← adjointTerm_add, sub_add_cancel]
 
 /-- Spatial derivatives commute with the terms of the adjoint expansion. -/
 @[simp]
@@ -235,16 +265,19 @@ pointwise adjoint (`t = 0`) and the adjoint symbol (`t = 1`). -/
 private def scaledAdjoint (t : ℝ) (x ξ : CoordinateSpace n) : W →L[ℂ] V :=
   ContinuousLinearMap.adjoint (∫ θ, shiftIntegrand a (t * (2 * π)) x ξ θ)
 
-/-- `‖A_t(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m`, uniformly in the position and in `|t| ≤ 2`. -/
-private theorem exists_norm_scaledAdjoint_le
-    (ha : a.HasCompactSpatialSupport) :
-    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, |t| ≤ 2 → ∀ x ξ : CoordinateSpace n,
-      ‖scaledAdjoint a t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  obtain ⟨C, hC0, hC⟩ :=
-    ha.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le (4 * π)
-  refine ⟨C, hC0, fun t ht x ξ ↦ ?_⟩
+/-- `‖A_t(x, ξ)‖ ≤ C (∑_α p_{K,α,[]}(a)) ⟨ξ⟩ ^ m` for every symbol `a` vanishing at positions
+outside `K`, uniformly in the position and in `|t| ≤ 2`. -/
+private theorem exists_norm_scaledAdjoint_le (K : Compacts (CoordinateSpace n)) :
+    ∃ (s : Finset (List (Fin n))) (C : ℝ), 0 ≤ C ∧ ∀ a : Symbol n V W m,
+      (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ t : ℝ, |t| ≤ 2 → ∀ x ξ : CoordinateSpace n,
+        ‖scaledAdjoint a t x ξ‖ ≤
+          C * (∑ α ∈ s, Symbol.seminorm K α [] a) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨s, C, hC0, hC⟩ :=
+    exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le_sum_seminorm (V := V)
+      (W := W) (m := m) K (4 * π)
+  refine ⟨s, C, hC0, fun a haK t ht x ξ ↦ ?_⟩
   rw [scaledAdjoint, LinearIsometryEquiv.norm_map]
-  exact hC _ (abs_mul_two_pi_le ht) x ξ
+  exact hC a haK _ (abs_mul_two_pi_le ht) x ξ
 
 /-- At `t = 1` the family is the adjoint symbol. -/
 private theorem scaledAdjoint_one (ha : a.HasCompactSpatialSupport)
@@ -366,42 +399,80 @@ private theorem remainderAt_zero (ha : a.HasCompactSpatialSupport)
   rw [remainderAt, scaledAdjoint_zero ha, Finset.sum_range_succ']
   simp
 
-/-- **The remainder estimate.** `‖A_t(a) - ∑_{k < N} t^k adjointTerm a k‖ ≤ C ⟨ξ⟩ ^ (m - N)`,
-uniformly in the position and in `t ∈ [0, 1]`. -/
-private theorem exists_norm_remainderAt_le (N : ℕ) :
-    ∀ {m : ℝ} {a : Symbol n V W m}, a.HasCompactSpatialSupport →
-      ∃ C, 0 ≤ C ∧ ∀ t ∈ Set.Icc (0 : ℝ) 1, ∀ x ξ : CoordinateSpace n,
-        ‖remainderAt a N t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- The seminorms of `∂_{x_j} ∂_{ξ_j} a` on `K` are those of `a` with the letter `j` appended to
+both words, so their sum over a finite set of pairs of words is at most the sum of the seminorms of
+`a` over the images of that set. -/
+private theorem sum_seminorm_spatialDeriv_frequencyDeriv_le [DecidableEq (List (Fin n))]
+    (K : Compacts (CoordinateSpace n)) (s : Finset (List (Fin n) × List (Fin n))) (j : Fin n)
+    (a : Symbol n V W m) :
+    ∑ i ∈ s, Symbol.seminorm K i.1 i.2 (spatialDeriv j (frequencyDeriv j a)) ≤
+      ∑ i ∈ univ.biUnion fun l ↦ s.image fun i ↦ (i.1 ++ [l], i.2 ++ [l]),
+        Symbol.seminorm K i.1 i.2 a := by
+  refine Finset.sum_le_sum_of_injOn (fun i ↦ (i.1 ++ [j], i.2 ++ [j])) (fun i _ k _ h ↦ ?_)
+    (Finset.subset_biUnion_of_mem (fun l ↦ s.image fun i ↦ (i.1 ++ [l], i.2 ++ [l]))
+      (Finset.mem_univ j)) (fun i _ ↦ by simp) fun _ _ _ ↦ apply_nonneg _ _
+  simp only [Prod.mk.injEq, List.append_cancel_right_eq] at h
+  exact Prod.ext h.1 h.2
+
+/-- **The remainder estimate, with seminorm constants.** For a compact set `K` there are finitely
+many pairs of words and a constant `C` such that
+`‖A_t(a) - ∑_{k < N} t^k adjointTerm a k‖ ≤ C (∑ᵢ p_{K,αᵢ,βᵢ}(a)) ⟨ξ⟩ ^ (m - N)` for every symbol
+`a` vanishing at positions outside `K`, uniformly in the position and in `t ∈ [0, 1]`. -/
+private theorem exists_norm_remainderAt_le (K : Compacts (CoordinateSpace n)) (N : ℕ) :
+    ∀ {m : ℝ}, ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ a : Symbol n V W m, (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) →
+        ∀ t ∈ Set.Icc (0 : ℝ) 1, ∀ x ξ : CoordinateSpace n,
+          ‖remainderAt a N t x ξ‖ ≤
+            C * (∑ i ∈ s, Symbol.seminorm K i.1 i.2 a) * (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
+  classical
   induction N with
   | zero =>
-    intro m a ha
-    obtain ⟨C, hC0, hC⟩ := exists_norm_scaledAdjoint_le ha
-    refine ⟨C, hC0, fun t ht x ξ ↦ ?_⟩
+    intro m
+    obtain ⟨s, C, hC0, hC⟩ := exists_norm_scaledAdjoint_le (V := V) (W := W) (m := m) K
+    refine ⟨s.image fun α ↦ (α, []), C, hC0, fun a haK t ht x ξ ↦ ?_⟩
     have ht2 : |t| ≤ 2 := abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩
-    simpa [remainderAt] using hC t ht2 x ξ
+    rw [Finset.sum_image fun _ _ _ _ h ↦ congrArg Prod.fst h]
+    simpa [remainderAt] using hC a haK t ht2 x ξ
   | succ N ih =>
-    intro m a ha
-    choose C hC0 hC using fun j ↦ ih ((ha.frequencyDeriv j).spatialDeriv j)
-    refine ⟨∑ j, C j, Finset.sum_nonneg fun j _ ↦ hC0 j, fun t ht x ξ ↦ ?_⟩
-    have hw : (1 + ‖ξ‖ ^ 2) ^ ((m - 1 - N) / 2) =
-        (1 + ‖ξ‖ ^ 2) ^ ((m - ((N + 1 : ℕ) : ℝ)) / 2) := by
+    intro m
+    -- the remainder of `a` with `N + 1` terms is driven by those of `∂_{x_j} ∂_{ξ_j} a` with `N`
+    obtain ⟨s, C, hC0, hC⟩ := ih (m := m - 1)
+    set S := univ.biUnion fun l ↦ s.image fun i ↦ (i.1 ++ [l], i.2 ++ [l])
+    refine ⟨S, n * C, by positivity, fun a haK t ht x ξ ↦ ?_⟩
+    have ha : a.HasCompactSpatialSupport := hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, haK⟩
+    set P := ∑ i ∈ S, Symbol.seminorm K i.1 i.2 a
+    set w := (1 + ‖ξ‖ ^ 2) ^ ((m - ((N + 1 : ℕ) : ℝ)) / 2)
+    have hw : (1 + ‖ξ‖ ^ 2) ^ ((m - 1 - N) / 2) = w := by
       congr 1
       push_cast
       ring
-    have hbound : ∀ s ∈ Set.Ico (0 : ℝ) 1,
-        ‖(-Complex.I) • ∑ j, remainderAt (spatialDeriv j (frequencyDeriv j a)) N s x ξ‖ ≤
-          (∑ j, C j) * (1 + ‖ξ‖ ^ 2) ^ ((m - ((N + 1 : ℕ) : ℝ)) / 2) := by
-      intro s hs
-      rw [norm_smul, norm_neg, Complex.norm_I, one_mul, Finset.sum_mul]
-      refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
-      rw [← hw]
-      exact hC j s (Set.Ico_subset_Icc_self hs) x ξ
+    have hb (j : Fin n) : ∀ x ∉ K, ∀ ξ,
+        (spatialDeriv j (frequencyDeriv j a)).coefficient (x, ξ) = 0 := fun x hx ↦
+      coefficient_spatialDeriv_eq_zero K.isCompact.isClosed
+        (fun y hy ↦ coefficient_frequencyDeriv_eq_zero (haK y hy) j) j hx
+    have hbound : ∀ s' ∈ Set.Ico (0 : ℝ) 1,
+        ‖(-Complex.I) • ∑ j, remainderAt (spatialDeriv j (frequencyDeriv j a)) N s' x ξ‖ ≤
+          n * C * P * w := by
+      intro s' hs'
+      rw [norm_smul, norm_neg, Complex.norm_I, one_mul]
+      refine (norm_sum_le _ _).trans ?_
+      calc ∑ j, ‖remainderAt (spatialDeriv j (frequencyDeriv j a)) N s' x ξ‖
+          ≤ ∑ _j : Fin n, C * P * w := Finset.sum_le_sum fun j _ ↦ by
+            refine (hC _ (hb j) s' (Set.Ico_subset_Icc_self hs') x ξ).trans ?_
+            rw [hw]
+            gcongr
+            exact sum_seminorm_spatialDeriv_frequencyDeriv_le K s j a
+        _ = n * C * P * w := by
+            rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+            ring
     have hmv := norm_image_sub_le_of_norm_deriv_le_segment'
       (fun s hs ↦ (hasDerivAt_remainderAt ha N (abs_le.2 ⟨by linarith [hs.1], hs.2⟩) x
         ξ).hasDerivWithinAt) hbound t ht
     rw [remainderAt_zero ha, sub_zero, sub_zero] at hmv
-    have hB : 0 ≤ (∑ j, C j) * (1 + ‖ξ‖ ^ 2) ^ ((m - ((N + 1 : ℕ) : ℝ)) / 2) :=
-      mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) (by positivity)
+    have hB : 0 ≤ n * C * P * w :=
+      mul_nonneg (mul_nonneg (by positivity) (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _))
+        (by positivity)
     exact hmv.trans (mul_le_of_le_one_right hB ht.2)
 
 end Remainder
@@ -441,41 +512,66 @@ private theorem frequencyDeriv_remainderSymbol (ha : a.HasCompactSpatialSupport)
     frequencyDeriv_inclusion, coefficient_inclusion, Pi.sub_apply, Finset.sum_apply,
     frequencyDeriv_adjoint, coefficient_frequencyDeriv_adjointTerm]
 
-/-- The symbol estimates of order `m - N` for the remainder, uniformly in the position: every
-mixed derivative of the remainder of `a` is the remainder of a derivative of `a`, and a frequency
+/-- **The symbol estimates of the remainder, with seminorm constants.** For a compact set `K` and
+words `α`, `β` there are finitely many pairs of words and a constant `C` such that
+`‖∂_x^α ∂_ξ^β (a* - ∑_{k < N} adjointTerm a k)‖ ≤ C (∑ᵢ p_{K,αᵢ,βᵢ}(a)) ⟨ξ⟩ ^ (m - N - |β|)` for
+every symbol `a` vanishing at positions outside `K`, uniformly in the position: every mixed
+derivative of the remainder of `a` is the remainder of a derivative of `a`, and a frequency
 derivative lowers the order of `a` by one. -/
-private theorem exists_bound_remainderSymbol (N : ℕ) (α β : List (Fin n)) :
-    ∀ {m : ℝ} {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport), ∃ C, 0 ≤ C ∧ ∀ x ξ,
-      ‖mixedDeriv α β (remainderSymbol a ha N).coefficient x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m - N - β.length) / 2) := by
+private theorem exists_bound_remainderSymbol (K : Compacts (CoordinateSpace n)) (N : ℕ)
+    (α β : List (Fin n)) :
+    ∀ {m : ℝ}, ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport),
+        (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ x ξ,
+          ‖mixedDeriv α β (remainderSymbol a ha N).coefficient x ξ‖ ≤
+            C * (∑ i ∈ s, Symbol.seminorm K i.1 i.2 a) *
+              (1 + ‖ξ‖ ^ 2) ^ ((m - N - β.length) / 2) := by
+  classical
   obtain ⟨D, hD⟩ : ∃ D, α.length + β.length = D := ⟨_, rfl⟩
   induction D generalizing α β with
   | zero =>
     obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
       simpa [List.length_eq_zero_iff] using hD
-    intro m a ha
-    obtain ⟨C, hC0, hC⟩ := exists_norm_remainderAt_le N ha
-    refine ⟨C, hC0, fun x ξ ↦ ?_⟩
-    simpa [coefficient_remainderSymbol] using hC 1 ⟨zero_le_one, le_rfl⟩ x ξ
+    intro m
+    obtain ⟨s, C, hC0, hC⟩ := exists_norm_remainderAt_le (V := V) (W := W) K N (m := m)
+    refine ⟨s, C, hC0, fun a ha haK x ξ ↦ ?_⟩
+    simpa [coefficient_remainderSymbol] using hC a haK 1 ⟨zero_le_one, le_rfl⟩ x ξ
   | succ D ih =>
-    intro m a ha
+    intro m
     rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
     · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
       · simp at hD
-      · obtain ⟨C, hC0, hC⟩ := ih α' [] (by simpa using hD) (ha.spatialDeriv j)
-        refine ⟨C, hC0, fun x ξ ↦ ?_⟩
-        rw [← mixedDeriv_spatialDeriv, spatialDeriv_remainderSymbol]
-        exact hC x ξ
+      · obtain ⟨s, C, hC0, hC⟩ := ih α' [] (by simpa using hD) (m := m)
+        refine ⟨s.image (Prod.map (· ++ [j]) id), C, hC0, fun a ha haK x ξ ↦ ?_⟩
+        rw [Finset.sum_image fun _ _ _ _ h ↦
+          ((List.append_left_injective [j]).prodMap Function.injective_id) h,
+          ← mixedDeriv_spatialDeriv, spatialDeriv_remainderSymbol]
+        simpa using hC _ (ha.spatialDeriv j)
+          (fun y hy ↦ coefficient_spatialDeriv_eq_zero K.isCompact.isClosed haK j hy) x ξ
     · have hlen : α.length + β'.length = D := by
         simp only [List.length_append, List.length_singleton] at hD
         omega
-      obtain ⟨C, hC0, hC⟩ := ih α β' hlen (ha.frequencyDeriv j)
-      refine ⟨C, hC0, fun x ξ ↦ ?_⟩
+      obtain ⟨s, C, hC0, hC⟩ := ih α β' hlen (m := m - 1)
+      refine ⟨s.image (Prod.map id (· ++ [j])), C, hC0, fun a ha haK x ξ ↦ ?_⟩
       have e : (m - 1 - N - β'.length) / 2 = (m - N - (β' ++ [j]).length) / 2 := by
         simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
         ring
-      rw [← mixedDeriv_frequencyDeriv, frequencyDeriv_remainderSymbol, ← e]
-      exact hC x ξ
+      rw [Finset.sum_image fun _ _ _ _ h ↦
+        (Function.injective_id.prodMap (List.append_left_injective [j])) h,
+        ← mixedDeriv_frequencyDeriv, frequencyDeriv_remainderSymbol, ← e]
+      simpa using hC _ (ha.frequencyDeriv j)
+        (fun y hy ↦ coefficient_frequencyDeriv_eq_zero (haK y hy) j) x ξ
+
+/-- The symbol estimates of order `m - N` for the remainder of a symbol with compact spatial
+support, uniformly in the position. -/
+private theorem HasCompactSpatialSupport.exists_bound_remainderSymbol
+    (ha : a.HasCompactSpatialSupport) (N : ℕ) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ξ, ‖mixedDeriv α β (remainderSymbol a ha N).coefficient x ξ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m - N - β.length) / 2) := by
+  obtain ⟨K, hK, haK⟩ := hasCompactSpatialSupport_iff.1 ha
+  obtain ⟨s, C, hC0, hC⟩ :=
+    Symbol.exists_bound_remainderSymbol (V := V) (W := W) ⟨K, hK⟩ N α β (m := m)
+  exact ⟨_, mul_nonneg hC0 (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _), hC a ha haK⟩
 
 variable (a) in
 /-- The remainder `a* - ∑_{k < N} adjointTerm a k` of the adjoint expansion after `N` terms, a
@@ -484,7 +580,7 @@ def adjointRemainder (ha : a.HasCompactSpatialSupport) (N : ℕ) : Symbol n W V 
   coefficient := (remainderSymbol a ha N).coefficient
   contDiff_coefficient := (remainderSymbol a ha N).contDiff_coefficient
   exists_bound _ _ α β := by
-    obtain ⟨C, hC0, hC⟩ := exists_bound_remainderSymbol N α β ha
+    obtain ⟨C, hC0, hC⟩ := ha.exists_bound_remainderSymbol N α β
     exact ⟨C, hC0, fun x _ ξ ↦ hC x ξ⟩
 
 @[simp]
@@ -497,7 +593,60 @@ theorem coefficient_adjointRemainder (ha : a.HasCompactSpatialSupport) (N : ℕ)
 @[simp]
 theorem isUniform_adjointRemainder (ha : a.HasCompactSpatialSupport) (N : ℕ) :
     (a.adjointRemainder ha N).IsUniform :=
-  isUniform_iff.2 fun α β ↦ exists_bound_remainderSymbol N α β ha
+  isUniform_iff.2 fun α β ↦ ha.exists_bound_remainderSymbol N α β
+
+/-- **Seminorm estimate for the remainder of the adjoint expansion.** For compact sets `K` and `L`
+of positions, every `N` and words `α`, `β`, there are finitely many pairs of words and a constant
+`C` such that the remainder `R_N(a) = a* - ∑_{k < N} adjointTerm a k`, a symbol of order `m - N`,
+satisfies
+
+`p_{L,α,β}(R_N(a)) ≤ C ∑ᵢ p_{K,αᵢ,βᵢ}(a)`
+
+for every symbol `a` of order `m` vanishing at positions outside `K`. -/
+theorem exists_seminorm_adjointRemainder_le (K L : Compacts (CoordinateSpace n)) (N : ℕ)
+    (α β : List (Fin n)) :
+    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport),
+        (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) →
+          Symbol.seminorm L α β (a.adjointRemainder ha N) ≤
+            C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a := by
+  obtain ⟨s, C, hC0, hC⟩ := exists_bound_remainderSymbol (V := V) (W := W) K N α β (m := m)
+  exact ⟨s, C, hC0, fun a ha haK ↦ seminorm_le_bound L α β _
+    (mul_nonneg hC0 (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _)) fun x _ ξ ↦ hC a ha haK x ξ⟩
+
+/-- **Seminorm estimate for the adjoint symbol.** For compact sets `K` and `L` of positions and
+words `α`, `β`, there are finitely many pairs of words and a constant `C` such that
+
+`p_{L,α,β}(a*) ≤ C ∑ᵢ p_{K,αᵢ,βᵢ}(a)`
+
+for every symbol `a` of order `m` vanishing at positions outside `K`. This is the case of no terms
+of the remainder estimate `exists_seminorm_adjointRemainder_le`. -/
+theorem exists_seminorm_adjoint_le (K L : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
+    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport),
+        (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) →
+          Symbol.seminorm L α β (adjoint a ha) ≤ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a := by
+  obtain ⟨s, C, hC0, hC⟩ := exists_bound_remainderSymbol (V := V) (W := W) K 0 α β (m := m)
+  refine ⟨s, C, hC0, fun a ha haK ↦ seminorm_le_bound L α β _
+    (mul_nonneg hC0 (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _)) fun x _ ξ ↦ ?_⟩
+  simpa [remainderSymbol] using hC a ha haK x ξ
+
+/-- The remainder of the adjoint expansion is additive in the symbol. -/
+theorem adjointRemainder_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (N : ℕ) :
+    (a + b).adjointRemainder (ha.add hb) N = a.adjointRemainder ha N + b.adjointRemainder hb N := by
+  ext1
+  simp only [coefficient_adjointRemainder, adjoint_add a b ha hb, adjointTerm_add, coefficient_add,
+    Finset.sum_add_distrib]
+  abel
+
+/-- The remainder of the adjoint expansion of a difference is the difference of the remainders. -/
+theorem adjointRemainder_sub {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (N : ℕ) :
+    (a - b).adjointRemainder (ha.sub hb) N = a.adjointRemainder ha N - b.adjointRemainder hb N := by
+  rw [eq_sub_iff_add_eq, ← adjointRemainder_add]
+  congr 1
+  exact sub_add_cancel a b
 
 /-- **The asymptotic expansion of the adjoint symbol.** For every `N`,
 `a* = ∑_{k < N} adjointTerm a k + adjointRemainder a ha N`, where `adjointTerm a k` is the term
