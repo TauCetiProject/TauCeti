@@ -58,6 +58,8 @@ chain rule for the gradient of a real profile composed with a real function.
 * `TauCeti.gradient_fun_mul`: the Leibniz rule `∇ (f g) = conj f ∇ g + conj g ∇ f`.
 * `TauCeti.gradient_comp_linearIsometryEquiv_right`: `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))` for a
   linear isometry equivalence `l`.
+* `TauCeti.gradient_comp_neg`: `∇ (fun y ↦ f (-y)) x = -∇ f (-x)`, and
+  `TauCeti.gradient_neg_of_even`: the gradient of an even function is odd.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `TauCeti.gradient_eq_zero_iff`: `∇ f x = 0 ↔ fderiv 𝕜 f x = 0`.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
@@ -199,6 +201,16 @@ theorem gradient_comp_linearIsometryEquiv_right {E : Type*} [NormedAddCommGroup 
   rw [gradient, gradient, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv l,
     ContinuousLinearEquiv.comp_right_fderiv]
   simp [LinearIsometryEquiv.inner_map_eq_flip]
+
+/-- The gradient of `y ↦ f (-y)` at `x` is `-∇ f (-x)`. No differentiability hypothesis is
+needed. -/
+theorem gradient_comp_neg (f : F → 𝕜) (x : F) : ∇ (fun y ↦ f (-y)) x = -∇ f (-x) := by
+  simpa [Function.comp_def] using
+    gradient_comp_linearIsometryEquiv_right (LinearIsometryEquiv.neg 𝕜 (E := F)) f x
+
+/-- The gradient of an even function, `f (-y) = f y`, is odd: `∇ f (-x) = -∇ f x`. -/
+theorem gradient_neg_of_even (hf : ∀ y, f (-y) = f y) (x : F) : ∇ f (-x) = -∇ f x := by
+  simpa [hf, neg_eq_iff_eq_neg] using (gradient_comp_neg f x).symm
 
 /-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
 does. -/
