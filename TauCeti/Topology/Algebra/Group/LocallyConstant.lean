@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.CompactOpen
+public import TauCeti.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.LocallyConstant.Compact
 import Mathlib.Topology.Separation.Connected
 import TauCeti.Topology.ContinuousMap.LocallyConstant
@@ -17,7 +18,10 @@ import TauCeti.Topology.ContinuousMap.LocallyConstant
 A homomorphism from a group with separately continuous multiplication whose kernel is open is
 locally constant, even when its codomain is only a `MulOneClass`
 (`MonoidHom.isLocallyConstant_of_isOpen_ker`, with its additive form). Open kernels are preserved
-by taking integer multiples of additive homomorphisms into an additive commutative group.
+by taking integer multiples of additive homomorphisms into an additive commutative group. A
+continuous homomorphism to a `T₁` group with finite range has open kernel
+(`MonoidHom.isOpen_ker_of_finite_range`); on a compact group the converse holds, so the kernel is
+open exactly when the range is finite (`MonoidHom.isOpen_ker_iff_finite_range`).
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
 the neighbourhood on which it is constant depends on the point. On a *compact* group the
@@ -63,6 +67,28 @@ theorem isLocallyConstant_of_isOpen_ker [MulOneClass A] (χ : G →* A)
     hχ.preimage (continuous_id.const_mul x⁻¹)
   filter_upwards [hopen.mem_nhds (by simp)] with y hy
   exact χ.eq_iff.mpr hy
+
+omit [SeparatelyContinuousMul G] in
+/-- A continuous homomorphism to a `T₁` group with finite range has open kernel. -/
+theorem isOpen_ker_of_finite_range {H : Type*} [Group H] [TopologicalSpace H] [T1Space H]
+    (f : G →* H) (hf : Continuous f) (hfin : (Set.range f).Finite) :
+    IsOpen (f.ker : Set G) :=
+  (IsLocallyConstant.of_continuous_of_finite_range hf hfin).isOpen_fiber 1
+
+/-- A continuous homomorphism from a compact group to a `T₁` group has open kernel exactly when
+its range is finite. Compactness is needed for the forward direction: the identity of `ℤ` with
+the discrete topology has open kernel and infinite range. The `T₁` condition is needed for the
+converse: the identity of a two-element group with the indiscrete topology has finite range and a
+kernel that is not open. -/
+theorem isOpen_ker_iff_finite_range [CompactSpace G] {H : Type*} [Group H] [TopologicalSpace H]
+    [T1Space H] (f : G →* H) (hf : Continuous f) :
+    IsOpen (f.ker : Set G) ↔ (Set.range f).Finite := by
+  refine ⟨fun h ↦ ?_, f.isOpen_ker_of_finite_range hf⟩
+  -- An open subgroup of a compact group has finite index, and `G ⧸ ker f ≃* range f`.
+  have := Subgroup.quotient_finite_of_isOpen f.ker h
+  have : Finite f.range := .of_equiv _ (QuotientGroup.quotientKerEquivRange f).toEquiv
+  rw [← f.coe_range]
+  exact Set.toFinite _
 
 end MonoidHom
 
