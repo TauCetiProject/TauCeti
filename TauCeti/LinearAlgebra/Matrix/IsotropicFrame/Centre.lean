@@ -176,10 +176,13 @@ theorem map_frameUnipotent {S : Type*} [Ring S] [StarRing S]
   simp [frameUnipotent_def, Matrix.mul_apply, map_sum, conjTranspose_apply, hf.eq,
     Matrix.one_apply, apply_ite]
 
-/-- The additive parameter of the central translations varies continuously. -/
-theorem continuous_frameUnipotent [TopologicalSpace R] [IsTopologicalRing R] [ContinuousStar R]
-    (J : Matrix n n R) (k : Matrix n p R) : Continuous (J.frameUnipotent k) := by
-  unfold frameUnipotent
+/-- The additive parameter of the central translations varies continuously. Only separate
+continuity of multiplication is needed, since the frame and Gram matrix are fixed. -/
+theorem continuous_frameUnipotent [TopologicalSpace R] [IsTopologicalAddGroup R]
+    [SeparatelyContinuousMul R] [ContinuousStar R] (J : Matrix n n R) (k : Matrix n p R) :
+    Continuous (J.frameUnipotent k) := by
+  refine continuous_const.add (continuous_matrix fun i j ↦ ?_)
+  simp only [Matrix.mul_apply, conjTranspose_apply]
   fun_prop
 
 variable [DecidableEq p]
