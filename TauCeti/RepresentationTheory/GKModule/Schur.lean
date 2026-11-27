@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.InfinitesimalCharacter.Basic
 public import TauCeti.RepresentationTheory.GKModule.Hom
 public import TauCeti.RepresentationTheory.GKModule.Irreducible
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 /-!
 # Schur's lemma for admissible `(𝔤, K)`-modules and infinitesimal characters
@@ -87,13 +88,8 @@ theorem IsIrreducible.exists_hasInfinitesimalCharacter [IsAlgClosed k] (hM : M.I
     ⟨{ centralAction k 𝔤 V z with map_lie' := centralAction_lie z _ _ }, fun g v ↦ (hZ g z v).symm⟩
   choose c hc using h
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  have key {a b : k} (h : a • v = b • v) : a = b := smul_left_injective k hv h
-  refine ⟨{ toFun := c
-            map_one' := map_one_of_forall_apply_eq_smul (centralAction k 𝔤 V).toMonoidHom hc
-            map_mul' := map_mul_of_forall_apply_eq_smul (centralAction k 𝔤 V).toMonoidHom hc
-            map_zero' := key (by rw [← hc, map_zero, LinearMap.zero_apply, zero_smul])
-            map_add' := fun z w ↦ key (by rw [← hc, map_add, LinearMap.add_apply, hc, hc, add_smul])
-            commutes' := fun r ↦ key (by simp [← hc]) }, ?_⟩
-  exact hasInfinitesimalCharacter_iff.2 fun z m ↦ hc z m
+  exact ⟨(centralAction k 𝔤 V).eigenvalueHomOfJointEigenvector c v hv
+    fun z ↦ Module.End.mem_eigenspace_iff.2 (hc z v),
+    hasInfinitesimalCharacter_iff.2 fun z m ↦ by simpa using hc z m⟩
 
 end TauCeti.GKModule
