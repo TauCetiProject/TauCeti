@@ -98,29 +98,23 @@ theorem ιTotal_relativeSpecHomIso_zero (T : Over X) (n : ℕ) :
             ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F))))).hom.hom = 0 := by
   -- The module map of the zero point is zero, so it is unchanged by multiplication by the
   -- function `0`, which acts by `0ⁿ⁺¹ = 0` in degree `n + 1`.
-  have hm : (Scheme.Modules.pushforward T.hom).map
-      (Scheme.Modules.globalSectionsSmul (𝟙_ T.left.Modules) 0) = 0 := by
-    rw [Scheme.Modules.globalSectionsSmul_zero, (Scheme.Modules.pushforward T.hom).map_zero]
   have h : relativeSpecSymmetricAlgebraHomEquiv F T 0 =
       relativeSpecSymmetricAlgebraHomEquiv F T 0 ≫ (Scheme.Modules.pushforward T.hom).map
         (Scheme.Modules.globalSectionsSmul (𝟙_ T.left.Modules) 0) := by
-    rw [hm, ← relativeSpecSymmetricAlgebraHomAddEquiv_apply, map_zero]
+    rw [T.hom.pushforward_map_globalSectionsSmul_of_eq_zero _ rfl,
+      ← relativeSpecSymmetricAlgebraHomAddEquiv_apply, map_zero]
     -- the zero of the group of module maps `F ⟶ q_* 𝒪_T` is the zero morphism of `X.Modules`
     exact (zero_comp (C := X.Modules)).symm
   rw [relativeSpecHomIso_hom_app_app_eq_symmetricAlgebraLift]
   refine ((congrArg (fun φ ↦ ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫
     (symmetricAlgebraLift (B := T.hom.pushforwardStructureAlgebra) φ).hom.hom) h).trans
       (ιTotal_symmetricAlgebraLift_comp_globalSectionsSmul T.hom _ 0 (n + 1))).trans ?_
-  refine (congrArg (fun a ↦ ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫
-    (symmetricAlgebraLift (B := T.hom.pushforwardStructureAlgebra)
-      (relativeSpecSymmetricAlgebraHomEquiv F T 0)).hom.hom ≫ (Scheme.Modules.pushforward T.hom).map
-        (Scheme.Modules.globalSectionsSmul (𝟙_ T.left.Modules) a))
-          (zero_pow n.succ_ne_zero)).trans ?_
-  -- `rw [hm]` cannot build its motive here, as the goal mixes the `X.Modules` and
-  -- `SheafOfModules` category instances, so `hm` is applied as a term
+  -- `rw` cannot build its motive here, as the goal mixes the `X.Modules` and
+  -- `SheafOfModules` category instances, so the vanishing is applied as a term
   exact (congrArg (fun f ↦ ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫
     (symmetricAlgebraLift (B := T.hom.pushforwardStructureAlgebra)
-      (relativeSpecSymmetricAlgebraHomEquiv F T 0)).hom.hom ≫ f) hm).trans
+      (relativeSpecSymmetricAlgebraHomEquiv F T 0)).hom.hom ≫ f)
+        (T.hom.pushforward_map_globalSectionsSmul_of_eq_zero _ (zero_pow n.succ_ne_zero))).trans
         ((congrArg (ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫ ·)
           (comp_zero (C := X.Modules))).trans (comp_zero (C := X.Modules)))
 
