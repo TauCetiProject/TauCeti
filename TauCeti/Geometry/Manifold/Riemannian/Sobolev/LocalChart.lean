@@ -409,7 +409,7 @@ private theorem exists_ball_subset_and_norm_mgradient_le (L : E ≃L[ℝ] F) (p 
     rw [ContinuousAt, extChartAt_to_inv] at h
     exact h.comp hL
   obtain ⟨r, hr, hgood⟩ := Metric.eventually_nhds_iff_ball.1
-    ((show ∀ᶠ y in 𝓝 (L (φ p)), y ∈ Ω from hΩ).and
+    ((Filter.eventually_mem_set.2 hΩ).and
       ((hL.eventually (extChartAt_target_mem_nhds (I := I) p)).and (hψ.eventually hgradp)))
   refine ⟨C₂, hC₂.le, r, hr, fun y hy ↦ (hgood y hy).1, fun y hy ↦ (hgood y hy).2.1,
     fun y hy g hg ↦ ?_⟩
