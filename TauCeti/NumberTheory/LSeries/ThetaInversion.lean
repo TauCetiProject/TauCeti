@@ -31,13 +31,12 @@ local notation "W" j:arg t:arg => ((t ^ j * Real.exp (-Real.pi * t ^ 2) : ℝ) :
 
 namespace DirichletCharacter
 
-/-- For a Gaussian weight of matching parity, the bilateral sum of a character is its zero
-term plus twice the positive-index sum. -/
-theorem tsum_gaussian_eq_add_two_mul_tsum_succ {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) {j : ℕ} (hpar : χ (-1) = (-1) ^ j)
-    {t : ℝ} (ht : t ≠ 0) :
+/-- For a weight with the parity of the character, the bilateral Gaussian sum is twice its
+positive-index part plus the term at zero. Only degree zero can contribute at zero. -/
+theorem tsum_gaussian_eq_zero_add_two_mul_tsum_succ {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) {j : ℕ} (hpar : χ (-1) = (-1) ^ j) {t : ℝ} (ht : t ≠ 0) :
     (∑' n : ℤ, χ n * W j ((n : ℝ) * t)) =
-      χ 0 * W j (0 : ℝ) + 2 * ∑' n : ℕ, χ (n + 1 : ℕ) * W j ((n + 1 : ℕ) * t) := by
+      (if j = 0 then χ 0 else 0) + 2 * ∑' n : ℕ, χ (n + 1 : ℕ) * W j ((n + 1 : ℕ) * t) := by
   have heven : (fun n : ℤ ↦ χ n * W j ((n : ℝ) * t)).Even := by
     intro n
     have hw (x : ℝ) : W j (-x) = (-1 : ℂ) ^ j * W j x := by
@@ -53,8 +52,11 @@ theorem tsum_gaussian_eq_add_two_mul_tsum_succ {N : ℕ} [NeZero N]
       _ = ((-1 : ℂ) ^ j * (-1 : ℂ) ^ j) * (χ n * W j ((n : ℝ) * t)) := by ring
       _ = _ := by rw [hsign, one_mul]
   rw [tsum_int_eq_zero_add_two_mul_tsum_pnat heven (ZMod.summable_periodic_gaussian χ j ht)]
-  simp only [Int.cast_zero, zero_mul, two_nsmul, ← two_mul, Int.cast_natCast]
   rw [← tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ χ n * W j ((n : ℝ) * t))]
+  simp only [Int.cast_zero, Int.cast_natCast, zero_mul, two_nsmul, ← two_mul]
+  rcases eq_or_ne j 0 with rfl | hj
+  · simp
+  · simp [hj, zero_pow hj]
 
 private theorem norm_tsum_gaussian_eq_norm_tsum_inv {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) {j : ℕ} (hj : j ≤ 1)
@@ -98,10 +100,10 @@ theorem IsPrimitive.norm_gaussian_theta_inversion {N : ℕ} [NeZero N]
   have hq : N ≠ 1 := fun h ↦ hχ₀ (level_one' χ h)
   have hy : 0 < 1 / ((N : ℝ) * t) := one_div_pos.mpr (mul_pos hN ht)
   have h := norm_tsum_gaussian_eq_norm_tsum_inv hχ hj ht
-  rw [tsum_gaussian_eq_add_two_mul_tsum_succ χ hpar ht.ne',
-    tsum_gaussian_eq_add_two_mul_tsum_succ χ hpar hy.ne'] at h
-  simp only [χ.map_zero' hq, zero_mul, zero_add, norm_mul, Complex.norm_two] at h
-  rw [mul_left_comm ((Real.sqrt N * t)⁻¹),
+  rw [tsum_gaussian_eq_zero_add_two_mul_tsum_succ χ hpar ht.ne',
+    tsum_gaussian_eq_zero_add_two_mul_tsum_succ χ hpar hy.ne'] at h
+  simp only [χ.map_zero' hq, ite_self, zero_add] at h
+  rw [norm_mul, norm_mul, Complex.norm_two, mul_left_comm ((Real.sqrt N * t)⁻¹),
     mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0)] at h
   rw [h, ← mul_assoc, Real.sqrt_div (by norm_num : (0 : ℝ) ≤ 1), Real.sqrt_one,
     Real.sqrt_mul hN.le]
