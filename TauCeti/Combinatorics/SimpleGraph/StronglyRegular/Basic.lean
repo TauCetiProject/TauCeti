@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.StronglyRegular
-public import TauCeti.Combinatorics.SimpleGraph.AdjMatrix
+public import TauCeti.Combinatorics.SimpleGraph.AdjMatrix.Basic
 
 import Mathlib.Tactic.Ring
 

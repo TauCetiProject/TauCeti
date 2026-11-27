@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Laurent
+import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
@@ -39,6 +40,9 @@ and to the entries (`Matrix.aeval_map`), and a rectangular matrix intertwining t
 intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). Natural matrix identities
 valid at unit parameters extend to all parameters by polynomial specialization
 (`Matrix.identity_of_units`).
+
+A polynomial in a matrix acts on an eigenvector by the value of the polynomial at the eigenvalue
+(`Matrix.aeval_mulVec_of_mulVec_eq_smul`).
 -/
 
 public section
@@ -70,6 +74,16 @@ theorem identity_of_units {R : Type u} [CommRing R] {m n : Type*}
   exact h
 
 variable {n R : Type*} [Fintype n] [DecidableEq n]
+
+/-- A polynomial in a matrix acts on an eigenvector by the value of the polynomial at its
+eigenvalue. The vector may also be zero. -/
+theorem aeval_mulVec_of_mulVec_eq_smul [CommRing R] {A : Matrix n n R} {v : n → R} {t : R}
+    (h : A *ᵥ v = t • v) (p : R[X]) : aeval A p *ᵥ v = p.eval t • v := by
+  have hv : toLinAlgEquiv' A v = t • v := by rwa [toLinAlgEquiv'_apply]
+  have hval := Module.End.aeval_apply_of_mem_apply_eq_smul (p := p) hv
+  have hcomm : aeval (toLinAlgEquiv' A) p = toLinAlgEquiv' (aeval A p) := by
+    simpa only [AlgEquiv.toAlgHom_apply] using aeval_algHom_apply toLinAlgEquiv'.toAlgHom A p
+  simpa only [hcomm, toLinAlgEquiv'_apply] using hval
 
 /-- Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the
 coefficients of the polynomial and to the entries of the matrix. -/

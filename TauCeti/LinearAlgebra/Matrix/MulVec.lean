@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Span.Basic
@@ -64,6 +65,8 @@ A `2 × 2` matrix acts linearly on pairs `K × K` by `Matrix.toLinProd` via
   vector in two multiplications.
 * `Matrix.mulVec_apply_eq_mul_of_forall_ne_eq_zero`: if row `i` of `A` vanishes off the diagonal,
   then `(A *ᵥ v) i = A i i * v i`.
+* `Matrix.IsSymm.exists_eq_smul_of_one_iff`: a symmetric matrix is a scalar multiple of the
+  all-ones matrix exactly when it annihilates every vector of coordinate sum zero.
 * `Matrix.mulVec_comp_of_submatrix_eq`: multiplying an `e₂`-invariant vector by an
   `(e₁, e₂)`-invariant matrix yields an `e₁`-invariant vector.
 * `Matrix.diagonal_const_sub_mulVec_eq_zero_iff`: `(a - A) v = 0` for a constant diagonal `a`
@@ -103,6 +106,28 @@ variable {m n : Type*} [Fintype n]
 theorem mulVec_mulVec_eq_zero_of_sq_eq_zero [DecidableEq n] {R : Type*} [Semiring R]
     {M : Matrix n n R} (hM : M ^ 2 = 0) (v : n → R) : M *ᵥ M *ᵥ v = 0 := by
   rw [mulVec_mulVec, ← sq, hM, zero_mulVec]
+
+/-- A symmetric matrix is a scalar multiple of the all-ones matrix exactly when it annihilates
+every vector of coordinate sum zero. -/
+theorem IsSymm.exists_eq_smul_of_one_iff {R : Type*} [NonAssocRing R]
+    {M : Matrix n n R} (hM : M.IsSymm) :
+    (∃ d : R, M = d • Matrix.of (fun _ _ ↦ (1 : R))) ↔
+      ∀ v : n → R, (∑ i, v i) = 0 → M *ᵥ v = 0 := by
+  classical
+  constructor
+  · rintro ⟨d, rfl⟩ v hv
+    ext i
+    simp [mulVec, dotProduct, smul_eq_mul, ← Finset.mul_sum, hv]
+  · intro hann
+    -- Differences of coordinate vectors have sum zero, so all columns agree.
+    have hcol (i j l : n) : M i j = M i l := by
+      have hz := hann (Pi.single j 1 - Pi.single l 1) (by simp [Finset.sum_sub_distrib])
+      simpa [mulVec_sub, col_apply, sub_eq_zero] using congrFun hz i
+    by_cases hn : Nonempty n
+    · obtain ⟨j⟩ := hn
+      refine ⟨M j j, Matrix.ext fun i l ↦ ?_⟩
+      simpa using (hcol i l j).trans ((hM.apply j i).trans (hcol j i j))
+    · exact ⟨0, Matrix.ext fun i _ ↦ (hn ⟨i⟩).elim⟩
 
 section NonUnitalNonAssocSemiring
 
