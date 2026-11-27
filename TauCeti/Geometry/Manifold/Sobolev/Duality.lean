@@ -45,7 +45,8 @@ of its formal adjoint on `H^{m - s}(M)`.
   function `b`, the pairing `∫ ⟪ψᵢ · (u ∘ eᵢ⁻¹), b⟫ dy` of the `i`-th reading of `u` is
   `∫ ⟪u, v_b⟫ dμ` for the smooth function `v_b = ((ψᵢ / ρᵢ) b) ∘ eᵢ` on `M`, extended by `0`, and
   `‖v_b‖_{H^s} ≤ C ‖b‖_{H^s}` since its readings in the charts `eⱼ` are localized changes of
-  variables of `b`. The Euclidean dual characterization of the `H^{-s}` norm
+  variables of `b` (`TauCeti.exists_norm_chartReading_complexCutoffPullback_le`). The Euclidean
+  dual characterization of the `H^{-s}` norm
   (`SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall`) then bounds the reading. This
   half holds for every finite family of chart cutoffs and every measure with a smooth positive
   density.
@@ -183,45 +184,6 @@ end Chart
 variable {ι : Type*} [Fintype ι] {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
   (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
   (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
-
-omit [MeasurableSpace M] [BorelSpace M] in
-/-- **The readings of a pulled-back Schwartz function.** For a cutoff `σ` in a chart `e'`, the
-smooth function `(σ b) ∘ e'` on `M`, extended by `0`, of a Schwartz function `b` has chart readings
-of order `s` bounded by `C ‖b‖_{H^s}`: its reading in the chart `eᵢ` is the localized change of
-variables `y ↦ θᵢ(y) b(e' (eᵢ⁻¹ y))` of `b`. -/
-private theorem exists_norm_chartReading_complexCutoffPullback_le
-    {e' : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (σ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)) (s : ℝ) :
-    ∃ C, ∀ b : 𝓢(CoordinateSpace n, ℂ),
-      ‖chartReading he ψ s
-          (e'.complexCutoffPullback he' σ (ContMDiffMap.ofContDiff b (b.smooth ⊤)))‖ ≤
-        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 b‖ := by
-  -- In the chart `eᵢ`, the reading is `θᵢ · (b ∘ κᵢ)` for the overlap cutoff `θᵢ` and the
-  -- transition map `κᵢ = e' ∘ eᵢ⁻¹`.
-  have hC (i : ι) : ∃ C, ∀ b : 𝓢(CoordinateSpace n, ℂ),
-      ‖chartReading he ψ s
-          (e'.complexCutoffPullback he' σ (ContMDiffMap.ofContDiff b (b.smooth ⊤))) i‖ ≤
-        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 b‖ := by
-    obtain ⟨hθ, hθc, hθs⟩ := overlapCutoff_spec he' (he i) (ψ i) σ
-    obtain ⟨C, hC⟩ := BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp
-      (F := ℂ) (contDiffOn_symm_trans_of_mem_maximalAtlas (he i) he')
-      (fun _ hz ↦ (contDiffAt_symm_trans_symm_of_mem_maximalAtlas (he i) he' hz).contDiffWithinAt)
-      hθ hθc hθs ENNReal.one_lt_two ENNReal.ofNat_ne_top s
-    refine ⟨C, fun b ↦ ?_⟩
-    rw [chartReading_apply]
-    refine hC _ _ fun y ↦ ?_
-    rw [cutoffPushforwardSchwartz_apply, overlapCutoff_apply, coe_trans, Function.comp_apply,
-      ← smul_smul]
-    congr 1
-    by_cases hy : (e i).symm y ∈ e'.source
-    · rw [complexCutoffPullback_apply_of_mem he' _ _ hy, cutoffPullback_one_apply_of_mem he' _ hy,
-        ContMDiffMap.coe_ofContDiff]
-    · rw [complexCutoffPullback_apply_of_notMem he' _ _ hy,
-        cutoffPullback_apply_of_notMem he' _ _ hy, zero_smul]
-  choose C hC using hC
-  exact ⟨∑ i, |C i|, fun b ↦
-    PiLp.norm_le_sum_abs_mul_of_forall_norm_apply_le (norm_nonneg _) fun i ↦ hC i b⟩
 
 omit [BorelSpace M] in
 /-- **The `H^{-s}` norm is controlled by the dual norm for the `L²(μ)` pairing.** For a measure `μ`

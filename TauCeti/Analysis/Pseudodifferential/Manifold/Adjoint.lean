@@ -144,18 +144,6 @@ variable {ρ : CoordinateSpace n → ℝ}
 
 include hint
 
-/-- The pullback on the left: pairing `(θ f) ∘ e` with a continuous function `F` on `M` is pairing
-`f` with `F ∘ e⁻¹` against `ρ θ dy`. -/
-private theorem integral_inner_complexCutoffPullback_left
-    (θ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) {F : M → ℂ}
-    (hF : Continuous F) :
-    ∫ x, inner ℂ (e.complexCutoffPullback he θ f x) (F x) ∂μ =
-      ∫ y, ((ρ y * θ y : ℝ) : ℂ) * inner ℂ (f y) (F (e.symm y)) := by
-  have h := congrArg conj (e.integral_inner_complexCutoffPullback he hint θ f hF)
-  rw [← integral_conj, ← integral_conj] at h
-  simpa only [inner_conj_symm, map_mul, Complex.conj_ofReal] using h
-
 variable {m : ℝ}
   {P Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
@@ -215,7 +203,7 @@ private theorem quantizeSchwartzValue_weightedAdjoint_eq_complexChartCompression
         simp
       _ = ∫ z, inner ℂ (v z)
             (e.complexChartCompression he φ ψ Q (ContMDiffMap.ofContDiff u (u.smooth ⊤)) z) := by
-        rw [integral_inner_complexCutoffPullback_left he hint φ' _ (Q G).contMDiff.continuous]
+        rw [e.integral_inner_complexCutoffPullback_left he hint φ' _ (Q G).contMDiff.continuous]
         refine integral_congr_ae (.of_forall fun z ↦ ?_)
         by_cases hz : z ∈ e.target
         · have hρz : (ρ z : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (hρpos z hz).ne'

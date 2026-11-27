@@ -13,7 +13,9 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Sc
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
+import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.Sobolev.ChartReading
 
 /-!
@@ -74,6 +76,8 @@ Such families of cutoffs exist on every compact manifold
   compact for `r < s`.
 * `TauCeti.exists_norm_chartReading_le`: chart readings in any family of charts are bounded by
   those in a chart partition.
+* `TauCeti.exists_norm_chartReading_complexCutoffPullback_le`: the chart readings of a Schwartz
+  function pulled back to `M` by a cutoff in a chart are bounded by its `H^s` norm.
 
 ## References
 
@@ -422,6 +426,44 @@ theorem exists_norm_chartReading_le
       ≤ ∑ j, ‖chartReading he' φ s u j‖ := PiLp.norm_le_sum_norm _
     _ ≤ ∑ j, (∑ i, |C j i|) * ‖chartReading he ψ s u‖ := Finset.sum_le_sum fun j _ ↦ hj j
     _ = (∑ j, ∑ i, |C j i|) * ‖chartReading he ψ s u‖ := (Finset.sum_mul ..).symm
+
+/-- **The readings of a pulled-back Schwartz function.** For a cutoff `σ` in a chart `c`, the
+smooth function `(σ b) ∘ c` on `M`, extended by `0`, of a Schwartz function `b` has chart readings
+of order `s` bounded by `C ‖b‖_{H^s}`: its reading in the chart `eᵢ` is the localized change of
+variables `y ↦ θᵢ(y) b(c (eᵢ⁻¹ y))` of `b`. -/
+theorem exists_norm_chartReading_complexCutoffPullback_le
+    {c : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (hc : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (σ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (s : ℝ) :
+    ∃ C, ∀ b : 𝓢(CoordinateSpace n, ℂ),
+      ‖chartReading he ψ s
+          (c.complexCutoffPullback hc σ (ContMDiffMap.ofContDiff b (b.smooth ⊤)))‖ ≤
+        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 b‖ := by
+  -- In the chart `eᵢ`, the reading is `θᵢ · (b ∘ κᵢ)` for the overlap cutoff `θᵢ` and the
+  -- transition map `κᵢ = c ∘ eᵢ⁻¹`.
+  have hC (i : ι) : ∃ C, ∀ b : 𝓢(CoordinateSpace n, ℂ),
+      ‖chartReading he ψ s
+          (c.complexCutoffPullback hc σ (ContMDiffMap.ofContDiff b (b.smooth ⊤))) i‖ ≤
+        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 b‖ := by
+    obtain ⟨hθ, hθc, hθs⟩ := overlapCutoff_spec hc (he i) (ψ i) σ
+    obtain ⟨C, hC⟩ := BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp
+      (F := ℂ) (contDiffOn_symm_trans_of_mem_maximalAtlas (he i) hc)
+      (fun _ hz ↦ (contDiffAt_symm_trans_symm_of_mem_maximalAtlas (he i) hc hz).contDiffWithinAt)
+      hθ hθc hθs ENNReal.one_lt_two ENNReal.ofNat_ne_top s
+    refine ⟨C, fun b ↦ ?_⟩
+    rw [chartReading_apply]
+    refine hC _ _ fun y ↦ ?_
+    rw [cutoffPushforwardSchwartz_apply, overlapCutoff_apply, coe_trans, Function.comp_apply,
+      ← smul_smul]
+    congr 1
+    by_cases hy : (e i).symm y ∈ c.source
+    · rw [complexCutoffPullback_apply_of_mem hc _ _ hy, cutoffPullback_one_apply_of_mem hc _ hy,
+        ContMDiffMap.coe_ofContDiff]
+    · rw [complexCutoffPullback_apply_of_notMem hc _ _ hy,
+        cutoffPullback_apply_of_notMem hc _ _ hy, zero_smul]
+  choose C hC using hC
+  exact ⟨∑ i, |C i|, fun b ↦
+    PiLp.norm_le_sum_abs_mul_of_forall_norm_apply_le (norm_nonneg _) fun i ↦ hC i b⟩
 
 /-- **Independence of the charts.** The Sobolev spaces `H^s(M)` of two chart partitions, whose
 cutoffs read on `M` add up to `1`, are isomorphic Banach spaces, through the isomorphism that is

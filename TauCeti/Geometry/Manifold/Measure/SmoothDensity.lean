@@ -67,6 +67,8 @@ nonempty open sets.
 * `OpenPartialHomeomorph.integral_inner_complexCutoffPullback`: pairing a continuous function on
   `M` with the pullback `(θ f) ∘ e` of a function on the chart target is pairing in coordinates
   against `ρ θ dy`.
+* `OpenPartialHomeomorph.integral_inner_complexCutoffPullback_left`: the same with the pullback
+  on the left of the pairing.
 
 ## References
 
@@ -79,7 +81,7 @@ public section
 noncomputable section
 
 open Set MeasureTheory
-open scoped ContDiff Manifold Distributions
+open scoped ContDiff Manifold Distributions ComplexConjugate
 
 namespace TauCeti
 
@@ -268,5 +270,20 @@ theorem integral_inner_complexCutoffPullback (he : e ∈ IsManifold.maximalAtlas
     RCLike.inner_apply', Complex.real_smul]
   push_cast
   ring
+
+/-- **Changing variables in a chart, the pullback on the left.** With `μ` and `ρ` as in
+`OpenPartialHomeomorph.integral_inner_complexCutoffPullback`, pairing the pullback `(θ f) ∘ e`
+with a continuous function `F` on `M` is pairing `f` with `F ∘ e⁻¹` against `ρ θ dy`. -/
+theorem integral_inner_complexCutoffPullback_left
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (hint : ∀ f : M → ℂ, Continuous f → HasCompactSupport f → tsupport f ⊆ e.source →
+      ∫ x, f x ∂μ = ∫ y in e.target, (ρ y : ℂ) * f (e.symm y))
+    (θ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) {F : M → ℂ}
+    (hF : Continuous F) :
+    ∫ x, inner ℂ (e.complexCutoffPullback he θ f x) (F x) ∂μ =
+      ∫ y, ((ρ y * θ y : ℝ) : ℂ) * inner ℂ (f y) (F (e.symm y)) := by
+  have h := congrArg conj (e.integral_inner_complexCutoffPullback he hint θ f hF)
+  rw [← integral_conj, ← integral_conj] at h
+  simpa only [inner_conj_symm, map_mul, Complex.conj_ofReal] using h
 
 end OpenPartialHomeomorph
