@@ -303,6 +303,25 @@ theorem contMDiffAt_restrictOpen_vectorField {n : ℕ∞ω} {X : Π x : M, Tange
     ← congrFun (Trivialization.coe_linearMapAt_of_mem (R := 𝕜) _ hyM)]
   exact Trivialization.continuousLinearMapAt_symmL _ hyU _
 
+/-- Restrict a vector field to the tangent bundle of an open submanifold, using the
+differential of the inclusion to identify its tangent spaces with the ambient ones. -/
+def _root_.TopologicalSpace.Opens.restrictVectorField (U : Opens M) {n : ℕ∞ω} :
+    Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯ →ₗ[𝕜]
+      Cₛ^n⟮I; E, (TangentSpace I : U → Type _)⟯ where
+  toFun X := ⟨fun x ↦ (tangentSpaceOpenEquiv (I := I) x).symm (X x),
+    fun x ↦ contMDiffAt_restrictOpen_vectorField (X.contMDiff (x : M))⟩
+  map_add' X Y := ContMDiffSection.ext fun x ↦
+    (tangentSpaceOpenEquiv (I := I) x).symm.map_add (X x) (Y x)
+  map_smul' a X := ContMDiffSection.ext fun x ↦
+    (tangentSpaceOpenEquiv (I := I) x).symm.map_smul a (X x)
+
+/-- The inclusion takes the value of the restricted field to the ambient vector. -/
+@[simp]
+theorem _root_.TopologicalSpace.Opens.restrictVectorField_apply (U : Opens M) {n : ℕ∞ω}
+    (X : Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯) (x : U) :
+    U.restrictVectorField X x = (tangentSpaceOpenEquiv (I := I) x).symm (X x) :=
+  (rfl)
+
 end VectorField
 
 end TauCeti.Manifold
