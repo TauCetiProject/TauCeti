@@ -19,8 +19,10 @@ injective on `C`.
 
 ## Main results
 
-* `Set.injOn_restrict_of_card_compl_lt`: restriction to `s` is injective on `C` when
-  `#sᶜ < d(C)`.
+* `Set.injOn_restrict_of_card_compl_lt`: restriction to `s` (`Finset.restrict`) is injective on
+  `C` when `#sᶜ < d(C)`.
+* `Set.exists_finset_card_eq_card_compl_lt`: for a code with at least two words, some `s` with
+  `n - d + 1` coordinates has `#sᶜ < d(C)`.
 * `Set.natCard_le_prod_of_card_compl_lt`: then `|C| ≤ ∏_{i ∈ s} |β i|`, for alphabets `β i` that
   may depend on the coordinate.
 * `Set.natCard_le_pow_of_nontrivial`: **the Singleton bound** `|C| ≤ q ^ (n - d + 1)` for a code
@@ -46,12 +48,13 @@ variable {ι : Type*} {β : ι → Type*} [Fintype ι] [∀ i, DecidableEq (β i
 /-- If fewer than `d(C)` coordinates lie outside `s`, then two distinct words of `C` differ
 somewhere in `s`: restriction to `s` is injective on `C`. -/
 theorem injOn_restrict_of_card_compl_lt [DecidableEq ι] (s : Finset ι)
-    (hs : #sᶜ < C.hammingMinDist) : C.InjOn fun x (i : s) ↦ x i := by
+    (hs : #sᶜ < C.hammingMinDist) : C.InjOn s.restrict := by
   intro x hx y hy hxy
   by_contra hne
   have hle : hammingDist x y ≤ #sᶜ := by
+    rw [hammingDist]
     refine Finset.card_le_card fun i hi ↦ Finset.mem_compl.2 fun his ↦ (Finset.mem_filter.1 hi).2 ?_
-    exact congr_fun hxy ⟨i, his⟩
+    simpa using congr_fun hxy ⟨i, his⟩
   exact absurd hs (not_lt.2 ((hammingMinDist_le hx hy hne).trans hle))
 
 /-- If fewer than `d(C)` coordinates lie outside `s`, then `|C| ≤ ∏_{i ∈ s} |β i|`. -/
@@ -62,19 +65,23 @@ theorem natCard_le_prod_of_card_compl_lt [DecidableEq ι] [∀ i, Fintype (β i)
     _ = ∏ i ∈ s, Fintype.card (β i) := by
         rw [Nat.card_eq_fintype_card, Fintype.card_pi, prod_coe_sort s fun i ↦ Fintype.card (β i)]
 
+/-- If `C` has at least two words, some set `s` of `n - d(C) + 1` coordinates leaves fewer than
+`d(C)` coordinates outside. -/
+theorem exists_finset_card_eq_card_compl_lt [DecidableEq ι] (hC : C.Nontrivial) :
+    ∃ s : Finset ι, #s = Fintype.card ι - C.hammingMinDist + 1 ∧ #sᶜ < C.hammingMinDist := by
+  have hd := hammingMinDist_pos_iff.2 hC
+  have hdn : C.hammingMinDist ≤ Fintype.card ι := hammingMinDist_le_card
+  obtain ⟨s, -, hs⟩ := Finset.exists_subset_card_eq (s := (Finset.univ : Finset ι))
+    (n := Fintype.card ι - C.hammingMinDist + 1) (by rw [Finset.card_univ]; omega)
+  exact ⟨s, hs, by rw [Finset.card_compl, hs]; omega⟩
+
 /-- **The Singleton bound.** A code `C` of length `n` with at least two words and minimum
 distance `d` over an alphabet of `q` letters has `|C| ≤ q ^ (n - d + 1)`. -/
 theorem natCard_le_pow_of_nontrivial {α : Type*} [Fintype α] [DecidableEq α] {C : Set (ι → α)}
     (hC : C.Nontrivial) :
     Nat.card C ≤ Fintype.card α ^ (Fintype.card ι - C.hammingMinDist + 1) := by
   classical
-  have hd := hammingMinDist_pos_iff.2 hC
-  have hdn : C.hammingMinDist ≤ Fintype.card ι := hammingMinDist_le_card
-  obtain ⟨s, -, hs⟩ := Finset.exists_subset_card_eq (s := (Finset.univ : Finset ι))
-    (n := Fintype.card ι - C.hammingMinDist + 1) (by rw [Finset.card_univ]; omega)
-  have hsc : #sᶜ < C.hammingMinDist := by
-    rw [Finset.card_compl, hs]
-    omega
+  obtain ⟨s, hs, hsc⟩ := exists_finset_card_eq_card_compl_lt hC
   simpa [hs] using natCard_le_prod_of_card_compl_lt s hsc
 
 end Set
@@ -93,13 +100,9 @@ theorem finrank_add_hammingMinDist_le {F ι : Type*} [Field F] [Fintype ι] [Dec
   · simp [Submodule.bot_coe, hammingMinDist_singleton]
   -- Keep `n - d + 1` coordinates; a codeword vanishing on them has weight below `d`.
   obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hC
-  have hd := hammingMinDist_pos_iff.2 ⟨x, hx, 0, C.zero_mem, hx0⟩
   have hdn : (C : Set (ι → F)).hammingMinDist ≤ Fintype.card ι := hammingMinDist_le_card
-  obtain ⟨s, -, hs⟩ := Finset.exists_subset_card_eq (s := (Finset.univ : Finset ι))
-    (n := Fintype.card ι - (C : Set (ι → F)).hammingMinDist + 1) (by rw [Finset.card_univ]; omega)
-  have hsc : #sᶜ < (C : Set (ι → F)).hammingMinDist := by
-    rw [Finset.card_compl, hs]
-    omega
+  obtain ⟨s, hs, hsc⟩ := exists_finset_card_eq_card_compl_lt (C := (C : Set (ι → F)))
+    ⟨x, hx, 0, C.zero_mem, hx0⟩
   have hinj := injOn_restrict_of_card_compl_lt s hsc
   have hk := finrank_puncture_eq C (s : Set ι) fun y hy hy0 ↦
     hinj hy C.zero_mem (funext fun i ↦ by simpa using hy0 ⟨i, i.property⟩)
