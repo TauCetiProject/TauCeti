@@ -15,9 +15,11 @@ import TauCeti.LinearAlgebra.Eigenspace.Range
 For an endomorphism `T` of a vector space over a normed field and a real level `α`, the
 *dominant subspace* `T.dominantSubspace α` is the sum of the generalized eigenspaces of `T` for
 the eigenvalues of modulus at least `α`, and the *subdominant subspace* `T.subdominantSubspace α`
-is the sum of those for the eigenvalues of modulus less than `α`. These are the two invariant
-subspaces into which a circle of radius `α` splits the space; power and subspace iteration converge
-to the dominant one at a rate governed by the ratio between the moduli on the two sides.
+is the sum of those for the eigenvalues of modulus less than `α`. When the generalized eigenspaces
+of `T` span the space (for instance over an algebraically closed field in finite dimension), these
+are the two invariant subspaces into which a circle of radius `α` splits it; power and subspace
+iteration converge to the dominant one at a rate governed by the ratio between the moduli on the
+two sides.
 
 Generalized eigenspaces, not eigenspaces, are needed: for the Jordan block `[[1, 1], [0, 1]]` and
 `α = 1` the eigenspaces of the eigenvalues of modulus at least `1` span only a line, while the
@@ -67,6 +69,16 @@ def dominantSubspace (T : End K V) (α : ℝ) : Submodule K V :=
 for the eigenvalues of modulus less than `α`. -/
 def subdominantSubspace (T : End K V) (α : ℝ) : Submodule K V :=
   ⨆ (μ : K) (_ : ‖μ‖ < α), T.maxGenEigenspace μ
+
+/-- The dominant subspace at level `α` as a supremum of generalized eigenspaces. -/
+theorem dominantSubspace_eq_iSup (T : End K V) (α : ℝ) :
+    T.dominantSubspace α = ⨆ (μ : K) (_ : α ≤ ‖μ‖), T.maxGenEigenspace μ :=
+  (rfl)
+
+/-- The subdominant subspace at level `α` as a supremum of generalized eigenspaces. -/
+theorem subdominantSubspace_eq_iSup (T : End K V) (α : ℝ) :
+    T.subdominantSubspace α = ⨆ (μ : K) (_ : ‖μ‖ < α), T.maxGenEigenspace μ :=
+  (rfl)
 
 /-- The generalized eigenspace of an eigenvalue of modulus at least `α` lies in the dominant
 subspace at level `α`. -/
