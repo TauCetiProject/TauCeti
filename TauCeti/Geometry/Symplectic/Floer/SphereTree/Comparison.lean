@@ -101,8 +101,12 @@ which is its own reduction, and for a constant core; the strata over such cores 
 `TauCeti.Floer.sphereTreeDimension_comparisonCoreDimension_add_nonneg_iff`. With a tree of simple
 spheres attached to a multiply covered core, the stratum loses two more for each simple sphere when
 every simple sphere has nonnegative first Chern number
-(`TauCeti.Floer.sphereTreeDimension_comparisonCoveredCoreDimension_add_le`). Which strata of a
-problem of expected dimension at most one survive now depends on the Chern number of `v`.
+(`TauCeti.Floer.sphereTreeDimension_comparisonCoveredCoreDimension_add_le`). In a problem of
+expected dimension at most one, a stratum then has nonnegative expected dimension exactly when it
+has no nonconstant bubble, `(m - 1) c₁(B) = 0`, its marked points are distinct, and few enough
+Morse trajectories have broken off
+(`TauCeti.Floer.sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff`), so which
+strata survive depends on the Chern number of `v`.
 
 * If `c₁(B) ≥ 1`, as for every nonconstant simple sphere of a positively monotone target, a stratum
   has nonnegative expected dimension exactly when it has no nonconstant bubble, its core covers `v`
@@ -489,11 +493,41 @@ theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_le (n : ℤ) (c :
       h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) - (k₁ + k₂ + k₀) + p -
         2 * Fintype.card κ - 2 * ((m - 1) * c B₀) - 2 * (3 - j) := by
   rw [comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub n c h₁ h₂ h₀ B₀ m j,
-    comparisonCoreDimension_eq]
-  exact (sphereTreeDimension_le_sub_two_mul_card c
-    (ind := fun A' => h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c A' - (k₁ + k₂ + k₀) -
-      2 * ((m - 1) * c B₀) - 2 * (3 - j) + p)
-    (fun _ _ => by rw [map_add]; ring) (m • B₀) hB hm hρ hc parent node root).trans_eq (by ring)
+    show ∀ x y z : ℤ, x - y - z + p = x + (p - y - z) by intros; ring]
+  exact (sphereTreeDimension_comparisonCoreDimension_add_le n c h₁ h₂ h₀ (m • B₀) _ hB hm hρ hc
+    parent node root).trans_eq (by ring)
+
+/-- **The strata at the end without perturbation.** On a target where every simple sphere has
+nonnegative first Chern number, consider the limits of the PSS comparison family at the end without
+perturbation, over a face of dimension `p` of the parameter space, whose core covers a simple
+sphere of class `B₀` `m ≥ 1` times, with `j ≤ 3` distinct marked points, in a total class `A'` for
+which the stratum with `k₁ + k₂ + k₀` broken-off Morse trajectories has expected dimension at most
+one. Such a stratum with a tree of simple spheres attached has nonnegative expected dimension
+exactly when it has no nonconstant sphere bubble, its multiple-cover loss `(m - 1) c₁(B₀)`
+vanishes, its marked points are distinct and at most `i₁ + i₂ - i₀ - 2n + 2 c₁(A') + p` Morse
+trajectories have broken off. -/
+theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff (n : ℤ) (c : G →+ ℤ)
+    {k₁ k₂ k₀ : ℕ} (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ) (h₀ : Fin (k₀ + 1) → ℤ)
+    {B₀ : G} {m j : ℕ} (p : ℤ) {B : ι → G} {B' : κ → G} {mv : ι → ℕ} {ρ : ι → κ}
+    (hB : ∀ v, B v = mv v • B' (ρ v)) (hm : ∀ v, 0 < mv v) (hρ : Function.Surjective ρ)
+    (hc : ∀ w, 0 ≤ c (B' w)) (hB₀ : 0 ≤ c B₀) (hm₀ : 0 < m) (hj : j ≤ 3)
+    (hA : h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) - (k₁ + k₂ + k₀) +
+      p ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n (comparisonCoveredCoreDimension n c h₁ h₂ h₀ B₀ j + p)
+        (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ ((m : ℤ) - 1) * c B₀ = 0 ∧ j = 3 ∧
+        (k₁ + k₂ + k₀ : ℤ) ≤
+          h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) + p := by
+  have hL : 0 ≤ ((m : ℤ) - 1) * c B₀ := mul_nonneg (by omega) hB₀
+  refine (sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c (X := m • B₀)
+    (J := h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + p - 2 * ((m - 1) * c B₀) - 2 * (3 - j))
+    (k := k₁ + k₂ + k₀) hB hm hρ hc ?_ (by omega) parent node root).trans
+    (and_congr_right fun _ => ?_)
+  · rw [comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub n c h₁ h₂ h₀ B₀ m j,
+      comparisonCoreDimension_eq]
+    ring
+  · omega
 
 /-- **The strata at the end without perturbation, for spheres of positive Chern number.** On a
 target where every simple sphere has nonnegative first Chern number, consider the limits of the PSS
@@ -519,25 +553,9 @@ theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff_of_one
       IsEmpty κ ∧ m = 1 ∧ j = 3 ∧
         (k₁ + k₂ + k₀ : ℤ) ≤
           h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) + p := by
-  constructor
-  · intro h
-    have hle := sphereTreeDimension_comparisonCoveredCoreDimension_add_le n c h₁ h₂ h₀ B₀ m j p
-      hB hm hρ hc parent node root
-    -- The losses `2 #κ`, `2 (m - 1) c₁(B₀)` and `2 (3 - j)` are nonnegative and total at most one.
-    have hcov : 0 ≤ ((m : ℤ) - 1) * c B₀ :=
-      mul_nonneg (by linarith [show (1 : ℤ) ≤ m by exact_mod_cast hm₀]) (by linarith)
-    set L := ((m : ℤ) - 1) * c B₀ with hLdef
-    have hκ : Fintype.card κ = 0 := by omega
-    have hL : L = 0 := by omega
-    have hm1 : m = 1 := by
-      rcases mul_eq_zero.mp (hLdef ▸ hL) with h | h <;> omega
-    exact ⟨Fintype.card_eq_zero_iff.mp hκ, hm1, by omega, by omega⟩
-  · rintro ⟨hκ, rfl, rfl, hK⟩
-    have : IsEmpty ι := Function.isEmpty ρ
-    simp only [univ_eq_empty, sum_empty, add_zero, one_smul] at hK
-    rw [sphereTreeDimension_of_isEmpty, comparisonCoveredCoreDimension_eq]
-    push_cast
-    linarith
+  refine (sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff n c h₁ h₂ h₀ p hB hm
+    hρ hc (by omega) hm₀ hj hA parent node root).trans (and_congr_right fun _ => ?_)
+  rw [mul_eq_zero, or_iff_left (by omega : c B₀ ≠ 0), sub_eq_zero, Nat.cast_eq_one]
 
 /-- **The strata at the end without perturbation, for spheres of Chern number zero.** On a target
 where every simple sphere has nonnegative first Chern number, consider the limits of the PSS
@@ -562,18 +580,12 @@ theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff_of_che
       IsEmpty κ ∧ j = 3 ∧
         (k₁ + k₂ + k₀ : ℤ) ≤
           h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) + p := by
-  constructor
-  · intro h
-    have hle := sphereTreeDimension_comparisonCoveredCoreDimension_add_le n c h₁ h₂ h₀ B₀ m j p
-      hB hm hρ hc parent node root
-    rw [hB₀, mul_zero] at hle
-    have hκ : Fintype.card κ = 0 := by omega
-    exact ⟨Fintype.card_eq_zero_iff.mp hκ, by omega, by omega⟩
-  · rintro ⟨hκ, rfl, hK⟩
-    have : IsEmpty ι := Function.isEmpty ρ
-    simp only [univ_eq_empty, sum_empty, add_zero, map_nsmul, hB₀, smul_zero] at hK
-    rw [sphereTreeDimension_of_isEmpty, comparisonCoveredCoreDimension_eq, hB₀]
-    push_cast
-    linarith
+  -- The class `m B₀` enters only through `c₁`, so the count is that of the simple sphere, `m = 1`.
+  have hcls : c (m • B₀ + ∑ v, B v) = c ((1 : ℕ) • B₀ + ∑ v, B v) := by
+    simp only [map_add, map_nsmul, hB₀, smul_zero]
+  rw [hcls] at hA ⊢
+  refine (sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff n c h₁ h₂ h₀ p hB hm
+    hρ hc hB₀.ge one_pos hj hA parent node root).trans (and_congr_right fun _ => ?_)
+  rw [hB₀, mul_zero, eq_self, true_and]
 
 end TauCeti.Floer
