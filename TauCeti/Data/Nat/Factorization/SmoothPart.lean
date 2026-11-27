@@ -77,9 +77,9 @@ theorem smoothPart_dvd (m k : ℕ) : m.smoothPart k ∣ m :=
 @[simp] theorem factorization_div_smoothPart (m k : ℕ) :
     (m / m.smoothPart k).factorization = m.factorization.filter (k ≤ ·) := by
   rw [factorization_div (smoothPart_dvd m k), factorization_smoothPart]
-  simpa only [add_tsub_cancel_left, Nat.not_lt] using
-    congrArg (· - m.factorization.filter (· < k))
-      (Finsupp.filter_add_filter_not m.factorization (· < k)).symm
+  ext p
+  simp only [Finsupp.tsub_apply, Finsupp.filter_apply, ← Nat.not_lt]
+  by_cases hp : p < k <;> simp [hp]
 
 /-- The smooth part is multiplicative on nonzero natural numbers. -/
 theorem smoothPart_mul {a b : ℕ} (ha : a ≠ 0) (hb : b ≠ 0) (k : ℕ) :

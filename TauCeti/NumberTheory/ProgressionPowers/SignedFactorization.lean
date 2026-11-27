@@ -86,8 +86,7 @@ theorem IsSignedFactorization.sign_root (h : IsSignedFactorization n d k ℓ A z
     (hℓ : Odd ℓ) (i : Fin k) : (z i).sign = (n.progressionTerm d i).sign := by
   have ha : 0 < (A i : ℤ) := by
     exact_mod_cast h.coeff_pos i
-  rw [Int.sign_eq_sign, Int.sign_eq_sign, h.term_eq, sign_mul, sign_pos ha, one_mul, sign_pow,
-    SignType.pow_odd _ hℓ]
+  simp [Int.sign_eq_sign, h.term_eq i, sign_mul, sign_pos ha, sign_pow, SignType.pow_odd _ hℓ]
 
 /-- At odd exponent the coefficient and root families are both unique. -/
 theorem IsSignedFactorization.unique (h : IsSignedFactorization n d k ℓ A z)
