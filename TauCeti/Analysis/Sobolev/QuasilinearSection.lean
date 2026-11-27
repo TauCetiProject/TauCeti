@@ -51,9 +51,14 @@ takes the value `0`. Its pointwise formula is `TauCeti.quasilinearSection_apply_
 making every term of it lie in `Lᵖ`: `b` and `A` bounded, `A` and `G` Lipschitz in `y`, uniformly
 in `z`. Under these hypotheses its zeros are the `x` in `X` solving the weak equation
 `ξ_s + A(z, w + ξ) (b + ξ_t) - A(z, w) b + G(z, w + ξ) - G(z, w) = 0` almost everywhere; that such a
-zero is a classical solution is elliptic regularity, which is not proved here. For a reference map
-with `F(w)` in `Lᵖ`, such as a pre-glued map, the section plus the constant `F(w)` agrees with
-`ξ ↦ F(w + ξ)` on jets of differentiable sections, an affine shift with the same derivative.
+zero is a classical solution is elliptic regularity. On the cylinder, with `b = ∂t w` and
+`F(w) = 0`, the pointwise formula shows that a zero satisfies `F(u) = 0` almost everywhere for
+`u = w + ξ`, with the weak derivatives of `ξ`; for finite-dimensional `V`, `p < ∞`, `ℓ ≥ 1` and
+periodic `w`, `A`, `G` of class `C^ℓ`, with `A(z, u z)² = -1`, elliptic regularity then makes `u`
+of class `C^ℓ` (`TauCeti.CylinderSobolev.contDiff_add_continuousValue_of_ae_eq_zero`); on the strip
+it is not proved here. For a reference map with `F(w)` in `Lᵖ`, such as a pre-glued map, the
+section plus the constant `F(w)` agrees with `ξ ↦ F(w + ξ)` on jets of differentiable sections, an
+affine shift with the same derivative.
 
 **The linearization.** At `x₀ = (ξ₀, ξ₀_s, ξ₀_t)`, with `u₀ = w + ξ₀`, the derivative of the
 section is the operator `TauCeti.quasilinearLinearization e A A' G' w b x₀`,
