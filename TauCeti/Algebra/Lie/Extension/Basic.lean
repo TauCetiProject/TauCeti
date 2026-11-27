@@ -522,6 +522,7 @@ theorem derivationToProd_smulMapDerivationHom (r : R) (hc : c' = r • c)
     (LieDerivation.liftLineHom_right _ _ _ _ x)
 
 /-- `smulMapDerivationHom` restricts to `smulMap` on `ofTwoCocycle c`. -/
+@[simp]
 theorem smulMapDerivationHom_toDerivationExtension (r : R) (hc : c' = r • c)
     (x : ofTwoCocycle c) :
     smulMapDerivationHom c D hD c' hD' r hc (toDerivationExtension c D hD x) =
@@ -827,7 +828,6 @@ variable (c' : twoCocycle R L (TrivialLieModule R L R))
     (c' : twoCochain R L (TrivialLieModule R L R)) x (D y) = 0)
 
 /-- `smulMapDerivationHom` scales `K` by `r`. -/
-@[simp]
 theorem smulMapDerivationHom_centralElement (r : R) (hc : c' = r • c) :
     smulMapDerivationHom c D hD c' hD' r hc (toDerivationExtension c D hD (centralElement c)) =
       r • toDerivationExtension c' D hD' (centralElement c') := by

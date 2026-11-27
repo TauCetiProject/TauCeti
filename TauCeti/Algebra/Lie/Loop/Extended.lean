@@ -662,6 +662,7 @@ theorem extendedToProd_extendedLevelHom {r : R} (h : Ψ = r • Φ)
   ofTwoCocycle.derivationToProd_smulMapDerivationHom cΦ (degreeDerivation R L) _ cΨ _ r _ x
 
 /-- `extendedLevelHom` restricts to `ofTwoCocycle.smulMap` on the residue central extension. -/
+@[simp]
 theorem extendedLevelHom_toExtendedResidueExtension {r : R} (h : Ψ = r • Φ)
     (x : ofTwoCocycle cΦ) :
     extendedLevelHom hΦ hΦs hΨ hΨs h (toExtendedResidueExtension Φ hΦ hΦs x) =
@@ -673,10 +674,9 @@ theorem extendedLevelHom_toExtendedResidueExtension {r : R} (h : Ψ = r • Φ)
 @[simp]
 theorem extendedLevelHom_mode {r : R} (h : Ψ = r • Φ) (n : ℤ) (x : L) :
     extendedLevelHom hΦ hΦs hΨ hΨs h (mode Φ hΦ hΦs n x) = mode Ψ hΨ hΨs n x := by
-  simp [mode_apply, extendedLevelHom_toExtendedResidueExtension]
+  simp [mode_apply]
 
 /-- `extendedLevelHom` scales the canonical central element by `r`. -/
-@[simp]
 theorem extendedLevelHom_centralElement {r : R} (h : Ψ = r • Φ) :
     extendedLevelHom hΦ hΦs hΨ hΨs h
         (toExtendedResidueExtension Φ hΦ hΦs (centralElement cΦ)) =

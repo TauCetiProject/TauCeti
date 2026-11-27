@@ -48,6 +48,11 @@ height: reflection in a simple root subtracts the corresponding Cartan integer.
   simple reflection by positivity of the corresponding Cartan integer.
 * `RootPairing.pairingIn_eq_sum_of_root_eq_sum` reads the Cartan integers of an integral
   combination of roots off those of its summands.
+* `RootPairing.Base.root_eq_sum_toWeightBasisInt_repr`,
+  `RootPairing.Base.toWeightBasisInt_repr_eq_of_root_eq_sum`, `RootPairing.Base.root_eq_sum_dite`,
+  `RootPairing.Base.sum_toWeightBasisInt_repr`, and
+  `RootPairing.Base.pairingIn_eq_sum_toWeightBasisInt_repr`: expansion of an arbitrary root and
+  its height and Cartan integers in the integral simple-root basis `b.toWeightBasisInt`.
 * `TauCeti.apply_root_eq_height_zsmul` says that an additive map taking the constant value `c`
   on the simple roots takes the value `ht(α) • c` on every root.
 * `TauCeti.sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero` says that height respects integral
@@ -227,6 +232,43 @@ lemma height_reflectionPerm_lt_iff {i j : ι} (hi : i ∈ b.support) :
 
 end Reflection
 
+section ToWeightBasisInt
+
+variable [CharZero R] (b : P.Base)
+
+/-- Expansion of an arbitrary root index `r` in the integral simple-root basis of `b`. -/
+theorem root_eq_sum_toWeightBasisInt_repr (r : ι) :
+    P.root r = ∑ i : b.support, b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) i • P.root i := by
+  have h := congrArg Subtype.val (b.toWeightBasisInt.sum_repr (P.rootSpanMem ℤ r))
+  simpa [eq_comm] using h
+
+/-- Uniqueness of the expansion coefficients of `P.root r` in the integral simple-root basis. -/
+theorem toWeightBasisInt_repr_eq_of_root_eq_sum {r : ι} {f : b.support → ℤ}
+    (hf : P.root r = ∑ i : b.support, f i • P.root i) (i : b.support) :
+    b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) i = f i := by
+  have h : P.rootSpanMem ℤ r = ∑ i, f i • b.toWeightBasisInt i :=
+    Subtype.ext <| by simpa using hf
+  rw [h, b.toWeightBasisInt.repr_sum_self]
+
+open scoped Classical in
+/-- The expansion `root_eq_sum_toWeightBasisInt_repr` indexed in `ι`, matching `height_eq_sum` and
+`pairingIn_eq_sum_of_root_eq_sum`. -/
+theorem root_eq_sum_dite (r : ι) :
+    P.root r = ∑ k ∈ b.support,
+      (if h : k ∈ b.support then b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) ⟨k, h⟩ else 0) •
+        P.root k := by
+  rw [b.root_eq_sum_toWeightBasisInt_repr r, ← Finset.sum_coe_sort b.support]
+  simp
+
+/-- The sum of the simple-root expansion coefficients of `P.root r` is `b.height r`. -/
+theorem sum_toWeightBasisInt_repr (r : ι) :
+    ∑ i : b.support, b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) i = b.height r := by
+  classical
+  rw [height_eq_sum (b.root_eq_sum_dite r), ← Finset.sum_coe_sort b.support]
+  simp
+
+end ToWeightBasisInt
+
 end RootPairing.Base
 
 /-- Over a field, there is a linear form taking value one on every simple root, even when
@@ -250,6 +292,17 @@ theorem pairingIn_eq_sum_of_root_eq_sum {ι R M N : Type*} [CommRing R] [CharZer
   FaithfulSMul.algebraMap_injective ℤ R <| by
     simp_rw [algebraMap_pairingIn, map_sum, map_mul, algebraMap_pairingIn,
       ← root_coroot'_eq_pairing, h, map_sum, map_zsmul, zsmul_eq_mul, eq_intCast]
+
+/-- Pairing a root `r` with a coroot `l` expands along the simple-root coordinates of `r`. -/
+theorem Base.pairingIn_eq_sum_toWeightBasisInt_repr {ι R M N : Type*} [CommRing R] [CharZero R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
+    [P.IsCrystallographic] (b : P.Base) (r l : ι) :
+    P.pairingIn ℤ r l =
+      ∑ i : b.support, b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) i * P.pairingIn ℤ i l := by
+  classical
+  rw [RootPairing.pairingIn_eq_sum_of_root_eq_sum (b.root_eq_sum_dite r),
+    ← Finset.sum_coe_sort b.support]
+  simp
 
 end RootPairing
 

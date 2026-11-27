@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Flip
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 
 /-!
@@ -135,41 +136,6 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 
 /-! ### The marks -/
 
-omit [Finite ι] [Nonempty ι] in
-/-- Expansion of an arbitrary root index `r` in the integral simple-root basis of `b`. -/
-private theorem root_eq_sum_toWeightBasisInt_repr (r : ι) :
-    P.root r = ∑ i : b.support, b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) i • P.root i := by
-  have h := congrArg Subtype.val (b.toWeightBasisInt.sum_repr (P.rootSpanMem ℤ r))
-  simpa [eq_comm] using h
-
-omit [Finite ι] [Nonempty ι] in
-/-- Uniqueness of the expansion coefficients of `P.root r` in the integral simple-root basis. -/
-private theorem toWeightBasisInt_repr_eq_of_root_eq_sum {r : ι} {f : b.support → ℤ}
-    (hf : P.root r = ∑ i : b.support, f i • P.root i) (i : b.support) :
-    b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) i = f i := by
-  have h : P.rootSpanMem ℤ r = ∑ i, f i • b.toWeightBasisInt i :=
-    Subtype.ext <| by simpa using hf
-  rw [h, b.toWeightBasisInt.repr_sum_self]
-
-open scoped Classical in
-omit [Finite ι] [Nonempty ι] in
-/-- The expansion `root_eq_sum_toWeightBasisInt_repr` indexed in `ι`, matching `height_eq_sum` and
-`pairingIn_eq_sum_of_root_eq_sum`. -/
-private theorem root_eq_sum_dite (r : ι) :
-    P.root r = ∑ k ∈ b.support,
-      (if h : k ∈ b.support then b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) ⟨k, h⟩ else 0) •
-        P.root k := by
-  rw [b.root_eq_sum_toWeightBasisInt_repr r, ← Finset.sum_coe_sort b.support]
-  simp
-
-omit [Finite ι] [Nonempty ι] in
-/-- The sum of the simple-root expansion coefficients of `P.root r` is `b.height r`. -/
-private theorem sum_toWeightBasisInt_repr (r : ι) :
-    ∑ i : b.support, b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) i = b.height r := by
-  classical
-  rw [height_eq_sum (b.root_eq_sum_dite r), ← Finset.sum_coe_sort b.support]
-  simp
-
 /-- **The marks** of the affine Cartan matrix: `1` at the affine node and, at a simple root `αᵢ`,
 the coefficient of `αᵢ` in the expansion `θ = ∑ mᵢ αᵢ` of the highest root. These are the
 coefficients of the relation `∑ₖ mₖ αₖ = 0` with `α₀ = -θ`, the finite projection of the affine
@@ -281,32 +247,24 @@ theorem affineComarks_zsmul_form_highestRoot (B : P.InvariantForm) (i : b.suppor
   apply P.flip.toPerfPair.injective
   ext x
   simp only [map_zero, LinearMap.zero_apply, map_sum, map_smul, LinearMap.coe_sum,
-    Finset.sum_apply, LinearMap.smul_apply, smul_eq_mul, coeff, sub_mul, Finset.sum_sub_distrib,
+    Finset.sum_apply, LinearMap.smul_apply, LinearMap.toPerfPair_apply,
+    RootPairing.flip_toLinearMap, smul_eq_mul, coeff, sub_mul, Finset.sum_sub_distrib,
     zsmul_eq_mul, mul_assoc]
-  have hB (j : ι) : 2 * B.form x (P.root j) =
-      (P.flip.toPerfPair (P.coroot j) x) * B.form (P.root j) (P.root j) := by
-    rw [two_mul, ← eq_sub_iff_add_eq]
-    nth_rw 1 [← B.isOrthogonal_reflection j]
-    rw [RootPairing.reflection_apply, RootPairing.reflection_apply_self, LinearMap.map_sub₂,
-      LinearMap.map_smul₂, smul_eq_mul, map_neg, map_neg, mul_neg, neg_sub_neg,
-      ← RootPairing.toPerfPair_flip_comp_coroot]
-    -- `P.flip.toPerfPair` is definitionally `P.toLinearMap.flip.toPerfPair`.
-    rfl
-  have hpair : P.flip.toPerfPair (P.coroot b.highestRoot) x =
-      ∑ j : b.support, (b.affineComarks (some j) : R) * P.flip.toPerfPair (P.coroot j) x := by
-    rw [b.coroot_highestRoot_eq_sum_affineComarks, map_sum]
-    simp [zsmul_eq_mul]
+  have hpair : P.coroot' b.highestRoot x =
+      ∑ j : b.support, (b.affineComarks (some j) : R) * P.coroot' j x := by
+    simp [RootPairing.coroot', b.coroot_highestRoot_eq_sum_affineComarks, zsmul_eq_mul]
   have hL : ∑ j : b.support, (b.affineComarks (some j) : R) *
-      (B.form (P.root b.highestRoot) (P.root b.highestRoot) *
-        P.flip.toPerfPair (P.coroot j) x) = 2 * B.form x (P.root b.highestRoot) := by
-    rw [hB b.highestRoot, hpair, Finset.sum_mul]
+      (B.form (P.root b.highestRoot) (P.root b.highestRoot) * P.coroot' j x) =
+      2 * B.form x (P.root b.highestRoot) := by
+    rw [B.two_mul_apply_root x b.highestRoot, hpair, Finset.sum_mul]
     exact Finset.sum_congr rfl fun j _ ↦ by ring
   have hR : ∑ j : b.support, (b.affineMarks (some j) : R) *
-      (B.form (P.root j) (P.root j) * P.flip.toPerfPair (P.coroot j) x) =
+      (B.form (P.root j) (P.root j) * P.coroot' j x) =
       2 * B.form x (P.root b.highestRoot) := by
     rw [b.root_highestRoot_eq_sum_affineMarks, map_sum, Finset.mul_sum]
     exact Finset.sum_congr rfl fun j _ ↦ by
-      rw [map_zsmul, zsmul_eq_mul]; linear_combination (b.affineMarks (some j) : R) * (hB j).symm
+      rw [map_zsmul, zsmul_eq_mul]
+      linear_combination (b.affineMarks (some j) : R) * (B.two_mul_apply_root x j).symm
   rw [hL, hR, sub_self]
 
 /-- **The comarks are positive** for a reduced irreducible crystallographic root pairing: `a₀^∨ = 1`
@@ -419,16 +377,6 @@ theorem affineCartanMatrix_apply_eq_zero_iff_symm {k l : Option b.support} :
 end IsDomain
 
 /-! ### The null-root relation and the kernel -/
-
-omit [Finite ι] [Nonempty ι] in
-/-- Pairing a root `r` with a coroot `l` expands along the simple-root coordinates of `r`. -/
-private theorem pairingIn_eq_sum_toWeightBasisInt_repr (r l : ι) :
-    P.pairingIn ℤ r l =
-      ∑ i : b.support, b.toWeightBasisInt.repr (P.rootSpanMem ℤ r) i * P.pairingIn ℤ i l := by
-  classical
-  rw [RootPairing.pairingIn_eq_sum_of_root_eq_sum (b.root_eq_sum_dite r),
-    ← Finset.sum_coe_sort b.support]
-  simp
 
 /-- Pairing the highest root with a coroot expands along the marks. -/
 private theorem pairingIn_highestRoot_eq_sum_affineMarks (l : ι) :
