@@ -47,8 +47,8 @@ Nearby choices of primitive, base or subset do not give Liouville domains:
   covectors is such a Liouville domain
   (`TauCeti.CotangentBundle.not_isLiouvilleDomain_of_forall_snd_ne_zero`): not a shell
   `{a ≤ ‖p‖ ≤ b}`, `0 < a ≤ b` (`TauCeti.CotangentBundle.not_isLiouvilleDomain_shell`), nor a
-  finite union of shells, although `p ∂_p` is transverse to their boundaries. Along an inner
-  boundary sphere it points into the set.
+  finite union of shells. For `a < b`, `p ∂_p` is transverse to the boundary of the shell, but
+  along its inner boundary sphere `‖p‖ = a` it points into the shell.
 
 ## Main results
 
@@ -193,8 +193,8 @@ theorem mk_smul_mem_of_isLiouvilleDomain {W : Set (CotangentBundle I M)}
 
 /-- **A Liouville domain for `-λ` meets the zero section**: a nonempty set of nonzero covectors is
 not a Liouville domain for the canonical form with the primitive `-λ`. This applies to every shell
-`{a ≤ ‖p‖ ≤ b}` with `0 < a ≤ b`, and to every finite union of such shells: there the Liouville
-field `p ∂_p` points into the set along the inner boundary. -/
+`{a ≤ ‖p‖ ≤ b}` with `0 < a ≤ b`, and to every finite union of such shells. For `a < b`, the
+Liouville field `p ∂_p` points into the shell along its inner boundary `‖p‖ = a`. -/
 theorem not_isLiouvilleDomain_of_forall_snd_ne_zero {W : Set (CotangentBundle I M)}
     (hW : W.Nonempty) (h₀ : ∀ z ∈ W, z.snd ≠ 0) :
     ¬ IsLiouvilleDomain (symplecticForm I M) (-liouvilleForm I M) W := fun h ↦ by
@@ -203,8 +203,8 @@ theorem not_isLiouvilleDomain_of_forall_snd_ne_zero {W : Set (CotangentBundle I 
 
 /-- **A shell of covectors is not a Liouville domain.** For a nonempty manifold of positive
 dimension and `0 < a ≤ b`, the shell `{a ≤ ‖p‖ ≤ b}` in `T*M` is not a Liouville domain for the
-canonical form with the primitive `-λ`, although the Liouville field `p ∂_p` is transverse to both
-of its boundary components: it points into the shell along the inner one `‖p‖ = a`. -/
+canonical form with the primitive `-λ`. For `a < b`, the Liouville field `p ∂_p` is transverse to
+both of its boundary components, but it points into the shell along the inner one `‖p‖ = a`. -/
 theorem not_isLiouvilleDomain_shell [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [Nonempty M] [Nontrivial E] {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     ¬ IsLiouvilleDomain (symplecticForm I M) (-liouvilleForm I M)
