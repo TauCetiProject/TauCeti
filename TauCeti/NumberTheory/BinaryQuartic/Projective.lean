@@ -79,8 +79,7 @@ theorem sq_mul_mk_diagGL_smul_apply (u : Rˣ) (f : BinaryQuartic R) (i : Fin 5) 
     funext i
     have hdet : ((GeneralLinearGroup.det (GeneralLinearGroup.map φ g))⁻¹ : Sˣ).val =
         φ ((GeneralLinearGroup.det g)⁻¹ : Rˣ).val := by
-      rw [GeneralLinearGroup.map_det, ← map_inv (Units.map (φ : R →* S))]
-      rfl
+      simp only [GeneralLinearGroup.map_det, Units.coe_map_inv, MonoidHom.coe_ofClass]
     simp only [Pi.smul_apply, smul_eq_mul, Function.comp_apply, map_mul, map_pow, hdet]
     exact congrArg (fun x ↦ φ ((GeneralLinearGroup.det g)⁻¹ : Rˣ).val ^ 2 * x)
       (congrFun (smul_comp f φ g) i)
