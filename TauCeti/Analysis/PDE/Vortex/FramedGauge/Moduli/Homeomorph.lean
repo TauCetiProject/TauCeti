@@ -129,7 +129,9 @@ theorem vortexModuliEquivSobolevVortexModuli_symm_mk (hk : 3 < k)
     (vortexModuliEquivSobolevVortexModuli hk).symm (Quotient.mk'' x) =
       ⟨Quotient.mk _ ⟨x.val, x.val.property, continuous_sobolevVortexSubMulAction x⟩,
         mk_mem_vortexModuli (equation_sobolevVortexSubMulAction_eq_zero x)⟩ := by
-  simp [vortexModuliEquivSobolevVortexModuli, continuousVortexEquivSobolevVortex_symm_apply]
+  rw [vortexModuliEquivSobolevVortexModuli, Equiv.symm_trans_apply,
+    MulAction.orbitRelQuotientCongr_symm_mk, continuousVortexEquivSobolevVortex_symm_apply,
+    Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk]
 
 /-- `vortexModuliEquivSobolevVortexModuli` sends the orbit of a continuous vortex `x` of `A_m^k` to
 its `sobolevGaugeGroup`-orbit in `sobolevVortexSubMulAction`. -/
@@ -140,7 +142,9 @@ theorem vortexModuliEquivSobolevVortexModuli_mk (hk : 3 < k) {x : SobolevFieldSp
         ⟨Quotient.mk _ x, mk_mem_vortexModuli hx⟩ =
       Quotient.mk'' ⟨x.toFramedFieldSpace,
         mem_sobolevVortexSubMulAction.2 (toFramedFieldSpace_mem_sobolevVortices hk hx)⟩ := by
-  simp [vortexModuliEquivSobolevVortexModuli, continuousVortexEquivSobolevVortex_apply]
+  rw [vortexModuliEquivSobolevVortexModuli, Equiv.trans_apply,
+    Equiv.subtypeQuotientEquivQuotientSubtype_mk, MulAction.orbitRelQuotientCongr_mk,
+    continuousVortexEquivSobolevVortex_apply]
 
 /-- **Homeomorphism between `vortexModuli` and the smooth framed vortex moduli.** For `k ≥ 4`, the
 Sobolev vortex moduli space `vortexModuli f m hs` is homeomorphic to the orbit space of the smooth
