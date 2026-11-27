@@ -221,11 +221,13 @@ theorem range_ofAdicCompletionGL (v : HeightOneSpectrum R) :
     · rw [map_proj_ofAdicCompletionGL_of_ne hu, hx u hu]
 
 /-- `ofAdicCompletionMatrix K v` is continuous. -/
+@[fun_prop]
 theorem continuous_ofAdicCompletionMatrix (v : HeightOneSpectrum R) :
     Continuous (ofAdicCompletionMatrix (ι := ι) K v) :=
   ((continuous_id.sub continuous_const).matrix_map (single K v).continuous).add continuous_const
 
 /-- `ofAdicCompletionGL K v` is continuous. -/
+@[fun_prop]
 theorem continuous_ofAdicCompletionGL (v : HeightOneSpectrum R) :
     Continuous (ofAdicCompletionGL (ι := ι) K v) :=
   Continuous.units_map _ (continuous_ofAdicCompletionMatrix v)

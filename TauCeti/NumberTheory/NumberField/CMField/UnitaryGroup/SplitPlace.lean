@@ -42,12 +42,8 @@ Hecke eigenforms on unitary groups are read at split places.
 
 ## Main results
 
-* `IsDedekindDomain.FiniteAdeleRing.map_proj_conjPlace_star_inv`: for `x ∈ GL_n(𝔸_f)`, the
-  component of `(x*)⁻¹` at `conj w` is the inverse transpose of the conjugate of `x_w`.
 * `IsDedekindDomain.FiniteAdeleRing.commute_ofAdicCompletionGL_star`: at a split place `w`, an
   element of `GL_n(𝔸_f)` trivial away from `w` commutes with the adjoint of any other such element.
-* `TauCeti.finiteAdelicUnitaryGroup.proj_eq_map`: the component of `g ∈ G_f` at `w` is the
-  component of `g` read in `GL_n(𝔸_f)`.
 * `TauCeti.finiteAdelicUnitaryGroup.proj_ofSplitPlace_self`,
   `TauCeti.finiteAdelicUnitaryGroup.proj_conjPlace_ofSplitPlace`,
   `TauCeti.finiteAdelicUnitaryGroup.proj_ofSplitPlace_of_ne`: the components of `ι_w(g)`.
@@ -83,24 +79,9 @@ variable {E : Type*} [Field E] [NumberField E] [IsCMField E] {ι : Type*} [Finty
 
 namespace IsDedekindDomain.FiniteAdeleRing
 
-/-- **The adjoint of an adelic matrix at a conjugate place.** For `x ∈ GL_n(𝔸_f)` and a finite
-place `w`, the component at `conj w` of the inverse of the adjoint `x* = (conj x)ᵀ` is the inverse
-transpose of the image of `x_w` under the isomorphism `σ : E_w ≃ E_{conj w}` extending the
-conjugation of `E`: `((x*)⁻¹)_{conj w} = (σ(x_w)⁻¹)ᵀ`. For `x ∈ G_f`, where `(x*)⁻¹ = x`, this is
-`TauCeti.finiteAdelicUnitaryGroup.proj_conjPlace`. -/
-theorem map_proj_conjPlace_star_inv (x : GL ι 𝔸ᶠ[E]) (w : HeightOneSpectrum (𝓞 E)) :
-    GeneralLinearGroup.map (proj E w.conjPlace : _ →+* w.conjPlace.adicCompletion E) (star x)⁻¹ =
-      GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map
-        (adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w) :
-          w.adicCompletion E →+* w.conjPlace.adicCompletion E)
-        (GeneralLinearGroup.map (proj E w : _ →+* w.adicCompletion E) x)) := by
-  refine GeneralLinearGroup.ext fun i j ↦ ?_
-  rw [← star_inv, GeneralLinearGroup.coe_inverseTranspose, transpose_apply, ← map_inv, ← map_inv]
-  simp only [GeneralLinearGroup.map_apply, RingHom.coe_coe, proj_apply, Units.coe_star, star_apply]
-  exact star_apply_conjPlace _ w
-
 /-- The adjoint of the element of `GL_n(𝔸_f)` with component `g` at `w` and `1` elsewhere is `1`
 away from `conj w`. -/
+@[simp]
 theorem map_proj_star_ofAdicCompletionGL_of_ne {u w : HeightOneSpectrum (𝓞 E)}
     (h : u ≠ w.conjPlace) (g : GL ι (w.adicCompletion E)) :
     GeneralLinearGroup.map (FiniteAdeleRing.proj E u : _ →+* u.adicCompletion E)
@@ -126,15 +107,6 @@ end IsDedekindDomain.FiniteAdeleRing
 namespace TauCeti
 
 namespace finiteAdelicUnitaryGroup
-
-/-- The component of `g ∈ G_f` at a finite place `w` is the component of `g` read in
-`GL_n(𝔸_f)`. -/
-theorem proj_eq_map (w : HeightOneSpectrum (𝓞 E)) (g : finiteAdelicUnitaryGroup E ι) :
-    proj E ι w g = GeneralLinearGroup.map (FiniteAdeleRing.proj E w : _ →+* w.adicCompletion E)
-      (g : GL ι 𝔸ᶠ[E]) :=
-  GeneralLinearGroup.ext fun i j ↦ by
-    simp only [proj_apply, GeneralLinearGroup.map_apply, RingHom.coe_coe,
-      FiniteAdeleRing.proj_apply]
 
 variable (E ι) in
 /-- The **embedding `ι_w : GL_n(E_w) → G_f` at a split place** `w` (`conj w ≠ w`): `ι_w(g)` has
@@ -191,6 +163,7 @@ theorem ofSplitPlace_injective : Function.Injective (ofSplitPlace E ι w hw) :=
   (leftInverse_proj_ofSplitPlace hw).injective
 
 /-- `ι_w` is continuous. -/
+@[fun_prop]
 theorem continuous_ofSplitPlace : Continuous (ofSplitPlace E ι w hw) := by
   have hy := continuous_ofAdicCompletionGL (ι := ι) (K := E) w
   exact continuous_induced_rng.2 <|
@@ -212,29 +185,29 @@ theorem range_ofSplitPlace :
     · rw [proj_conjPlace_ofSplitPlace, proj_conjPlace]
     · rw [proj_ofSplitPlace_of_ne hw hu hu', hx u hu hu']
 
-/-- The conjugate inverse transpose of an element of `GL_n(𝒪_w)` lies in `GL_n(𝒪_{conj w})`. -/
+/-- The conjugate inverse transpose of an element of `GL_n(𝒪_w)` lies in `GL_n(𝒪_{conj w})`: the
+transport `σ : E_w ≃ E_{conj w}` carries `GL_n(𝒪_w)` into `GL_n(𝒪_{conj w})`, and the inverse
+transpose preserves `GL_n(𝒪_{conj w})` (`Matrix.GeneralLinearGroup.map_inverseTranspose`). -/
 private theorem inverseTranspose_map_mem_range {g : GL ι (w.adicCompletion E)}
     (hg : g ∈ (GeneralLinearGroup.map (n := ι) (w.adicCompletionIntegers E).subtype).range) :
     GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map
         (adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w) :
           w.adicCompletion E →+* w.conjPlace.adicCompletion E) g) ∈
       (GeneralLinearGroup.map (n := ι) (w.conjPlace.adicCompletionIntegers E).subtype).range := by
-  -- membership in `GL_n(𝒪)` is integrality of the entries and of the inverse entries
-  have hS (v : HeightOneSpectrum (𝓞 E)) (x : v.adicCompletion E) :
-      x ∈ (v.adicCompletionIntegers E).subtype.range ↔ x ∈ v.adicCompletionIntegers E :=
-    ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun h ↦ ⟨⟨x, h⟩, rfl⟩⟩
-  rw [GeneralLinearGroup.mem_range_map_iff_of_injective (ValuationSubring.subtype_injective _)]
-    at hg ⊢
-  simp only [hS] at hg ⊢
-  refine ⟨fun i j ↦ ?_, fun i j ↦ ?_⟩
-  · rw [GeneralLinearGroup.coe_inverseTranspose, transpose_apply, ← map_inv,
-      GeneralLinearGroup.map_apply, RingEquiv.coe_toRingHom,
-      adicCompletionCongr_mem_adicCompletionIntegers_iff]
-    exact hg.2 j i
-  · rw [← map_inv, GeneralLinearGroup.coe_inverseTranspose, inv_inv, transpose_apply,
-      GeneralLinearGroup.map_apply, RingEquiv.coe_toRingHom,
-      adicCompletionCongr_mem_adicCompletionIntegers_iff]
-    exact hg.1 j i
+  have hS (v : HeightOneSpectrum (𝓞 E)) :
+      (v.adicCompletionIntegers E).subtype.range = (v.adicCompletionIntegers E).toSubring :=
+    Subring.range_subtype _
+  obtain ⟨k, hk⟩ : GeneralLinearGroup.map
+      (adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w) :
+        w.adicCompletion E →+* w.conjPlace.adicCompletion E) g ∈
+      (GeneralLinearGroup.map (n := ι) (w.conjPlace.adicCompletionIntegers E).subtype).range := by
+    rw [GeneralLinearGroup.mem_range_map_iff_of_injective (ValuationSubring.subtype_injective _)]
+      at hg ⊢
+    simp only [hS, ValuationSubring.mem_toSubring, ← map_inv, GeneralLinearGroup.map_apply,
+      RingEquiv.coe_toRingHom, adicCompletionCongr_mem_adicCompletionIntegers_iff] at hg ⊢
+    exact hg
+  exact ⟨GeneralLinearGroup.inverseTranspose k,
+    (GeneralLinearGroup.map_inverseTranspose _ k).trans (congrArg _ hk)⟩
 
 /-- **`ι_w(g)` lies in `K₀` exactly when `g ∈ GL_n(𝒪_w)`.** -/
 theorem ofSplitPlace_mem_integralAdelicUnitaryGroup_iff {g : GL ι (w.adicCompletion E)} :
