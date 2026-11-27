@@ -24,19 +24,15 @@ open MeasureTheory Set Matrix Complex
 
 namespace TauCeti.Examples.DiracSystem
 
-/-- The absolute integral of the norm of a real constant potential is `ct` when `ct ≥ 0`. -/
-private theorem abs_integral_norm_const {c t : ℝ} (hct : 0 ≤ c * t) :
-    |∫ _ in (0 : ℝ)..t, ‖(c : ℂ)‖| = c * t := by
-  simpa [intervalIntegral.integral_const, smul_eq_mul, Complex.norm_real, abs_mul, mul_comm]
-    using abs_of_nonneg hct
-
 /-- At zero frequency, a real constant potential with `ct ≥ 0` attains the upper bound for
 `|E(t, 0)|`. -/
 theorem norm_diracHermiteBiehler_ofReal_const_spectralParam_zero {c t : ℝ} (hct : 0 ≤ c * t) :
     ‖diracHermiteBiehler (fun _ ↦ (c : ℂ)) t 0‖ =
       Real.exp |∫ _ in (0 : ℝ)..t, ‖(c : ℂ)‖| := by
-  rw [abs_integral_norm_const hct, diracHermiteBiehler_ofReal_const_spectralParam_zero]
-  exact Complex.norm_of_nonneg (Real.exp_pos _).le
+  rw [diracHermiteBiehler_ofReal_const_spectralParam_zero,
+    Complex.norm_of_nonneg (Real.exp_pos _).le]
+  congr 1
+  simpa [smul_eq_mul, mul_comm t] using (abs_of_nonneg hct).symm
 
 /-- At zero frequency, a real constant potential with `ct ≥ 0` attains the lower bound for
 `|E~(t, 0)|`. -/
@@ -44,9 +40,10 @@ theorem norm_diracHermiteBiehlerDirichlet_ofReal_const_spectralParam_zero {c t :
     (hct : 0 ≤ c * t) :
     ‖diracHermiteBiehlerDirichlet (fun _ ↦ (c : ℂ)) t 0‖ =
       Real.exp (-|∫ _ in (0 : ℝ)..t, ‖(c : ℂ)‖|) := by
-  rw [abs_integral_norm_const hct, diracHermiteBiehlerDirichlet_ofReal_const_spectralParam_zero,
-    norm_mul, norm_neg, norm_I, one_mul]
-  exact Complex.norm_of_nonneg (Real.exp_pos _).le
+  rw [diracHermiteBiehlerDirichlet_ofReal_const_spectralParam_zero, norm_mul, norm_neg, norm_I,
+    one_mul, Complex.norm_of_nonneg (Real.exp_pos _).le]
+  congr 2
+  simpa [smul_eq_mul, mul_comm t] using (abs_of_nonneg hct).symm
 
 /-- The upper bound of `TauCeti.norm_diracHermiteBiehler_ofReal_le` at this potential. -/
 example {c t : ℝ} :
