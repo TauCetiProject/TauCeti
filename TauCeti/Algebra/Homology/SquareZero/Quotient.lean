@@ -29,7 +29,10 @@ surjective because `v` acts by zero on homology.
 
 A surjection `π : N → P` with kernel `range f` for an injective chain map `f : M → N` makes
 `(a, b) ↦ π b` a quasi-isomorphism from `LinearMap.mappingCone d e f` to `P`
-(`LinearMap.mappingConeProjectionHomologyEquiv`). Composing it with the mapping-cone shearing
+(`LinearMap.mappingConeProjectionHomologyEquiv`). The underlying bijection on homology
+(`LinearMap.bijective_homologyMap_comp_snd`) allows `π` to be semilinear along a ring homomorphism
+`σ : S →+* T`, as for the reduction of coefficients modulo a nonzerodivisor `u` of `S` acting on
+free modules, where `f` is multiplication by `u`. Composing it with the mapping-cone shearing
 isomorphism `LinearMap.mappingConeHomologyEquivOfHomotopy` for a homotopy `e ∘ h + h ∘ d = f₁ - f₂`
 compares the quotients of `(N, e)` by homotopic injective chain maps `f₁, f₂ : M → N`
 (`LinearMap.homologyEquivOfHomotopicInjective`), sending `[π₁ b]` (for `f₁ a + e b = 0`) to
@@ -380,12 +383,12 @@ end Splitting
 
 section MappingConeProjection
 
-variable {N P : Type*} [AddCommGroup N] [Module S N] [AddCommGroup P] [Module S P]
-  {d : M →ₗ[S] M} {e : N →ₗ[S] N} {q : P →ₗ[S] P}
+variable {N T P : Type*} [AddCommGroup N] [Module S N] [Ring T] [AddCommGroup P] [Module T P]
+  {σ : S →+* T} {d : M →ₗ[S] M} {e : N →ₗ[S] N} {q : P →ₗ[T] P}
   (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0)
   {f : M →ₗ[S] N} (hf : f ∘ₗ d = e ∘ₗ f) (hinj : Function.Injective f)
-  {π : N →ₗ[S] P} (hπ : Function.Surjective π) (hexact : Function.Exact f π)
-  (hπe : π ∘ₗ e = q ∘ₗ π)
+  {π : N →ₛₗ[σ] P} (hπ : Function.Surjective π) (hexact : Function.Exact f π)
+  (hπe : π ∘ₛₗ e = q ∘ₛₗ π)
 
 include he hf hinj in
 /-- If `f` is injective with `f ∘ d = e ∘ f` and `e ∘ e = 0`, any `(a, b)` with `f a + e b = 0`
@@ -398,15 +401,20 @@ theorem mem_ker_mappingCone_of_add_eq_zero {a : M} {b : N} (hab : f a + e b = 0)
   simp [mem_ker, hda, hab]
 
 include hexact hπe in
-/-- `(a, b) ↦ π b` intertwines `mappingCone d e f` with `q` when `Exact f π` and `π ∘ e = q ∘ π`. -/
+/-- `(a, b) ↦ π b` intertwines `mappingCone d e f` with `q` when `Exact f π` and `π ∘ e = q ∘ π`.
+The map `π` may be semilinear, for instance a change of coefficients along a ring homomorphism. -/
 theorem comp_snd_comp_mappingCone :
-    (π ∘ₗ snd S M N) ∘ₗ mappingCone d e f = q ∘ₗ (π ∘ₗ snd S M N) :=
+    (π ∘ₛₗ snd S M N) ∘ₛₗ mappingCone d e f = q ∘ₛₗ (π ∘ₛₗ snd S M N) :=
   LinearMap.ext fun ⟨a, b⟩ => by
     simp [comp_apply, (hexact (f a)).mpr ⟨a, rfl⟩, (congr($hπe b) : π (e b) = q (π b))]
 
 include hinj hπ in
-private theorem bijective_homologyMap_comp_snd :
-    Function.Bijective (homologyMap (π ∘ₗ snd S M N)
+/-- **The mapping cone of an injective chain map computes the homology of its cokernel.** When
+`0 → M --f--> N --π--> P → 0` is short exact on chains, with `π` possibly semilinear,
+`(a, b) ↦ π b` induces a bijection from the homology of `mappingCone d e f` onto the homology of
+`q`. -/
+theorem bijective_homologyMap_comp_snd :
+    Function.Bijective (homologyMap (π ∘ₛₗ snd S M N)
       (mappingCone_comp_self f hd he hf) hq (comp_snd_comp_mappingCone hexact hπe)) := by
   refine ⟨(homologyMap_injective_iff _ _ _ _).mpr fun ⟨a, b⟩ hab ⟨c', hc'⟩ => ?_,
     (homologyMap_surjective_iff _ _ _ _).mpr fun z hz => ?_⟩
@@ -423,6 +431,17 @@ private theorem bijective_homologyMap_comp_snd :
       rw [(congr($hπe b) : π (e b) = q (π b)), mem_ker.mp hz]
     exact ⟨(-a', b), mem_ker_mappingCone_of_add_eq_zero he hf hinj
       (by rw [map_neg, ha', neg_add_cancel]), 0, by simp⟩
+
+end MappingConeProjection
+
+section MappingConeProjectionEquiv
+
+variable {N P : Type*} [AddCommGroup N] [Module S N] [AddCommGroup P] [Module S P]
+  {d : M →ₗ[S] M} {e : N →ₗ[S] N} {q : P →ₗ[S] P}
+  (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0)
+  {f : M →ₗ[S] N} (hf : f ∘ₗ d = e ∘ₗ f) (hinj : Function.Injective f)
+  {π : N →ₗ[S] P} (hπ : Function.Surjective π) (hexact : Function.Exact f π)
+  (hπe : π ∘ₗ e = q ∘ₗ π)
 
 /-- When `0 → M --f--> N --π--> P → 0` is short exact on chains, `(a, b) ↦ π b` induces an
 isomorphism from the homology of `mappingCone d e f` onto the homology of `q`. -/
@@ -449,7 +468,7 @@ theorem mappingConeProjectionHomologyEquiv_symm_mk {a : M} {b : N} (hab : f a + 
   (mappingConeProjectionHomologyEquiv hd he hq hf hinj hπ hexact hπe).injective <| by
     rw [LinearEquiv.apply_symm_apply, mappingConeProjectionHomologyEquiv_mk]
 
-end MappingConeProjection
+end MappingConeProjectionEquiv
 
 section HomotopicInjective
 
