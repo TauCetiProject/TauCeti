@@ -12,6 +12,7 @@ import Mathlib.Algebra.Order.Star.Real
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
@@ -232,8 +233,8 @@ private theorem neg_sum_mul_fderiv_fderiv_cutoff_mul_le {lam Lam R : ℝ}
   -- `-2 (m + 2) n Λ R⁻² s^m u`.
   have h₂ : -(2 * (m + 2) * n * Lam / R ^ 2 * s ^ m * u y) ≤ u y * T₂ := by
     have hT₂ := neg_le_sum_mul_fderiv_fderiv_cutoff (ha.quadraticForm_nonneg hy) c y R m hs0.le
-    have htr0 : 0 ≤ (a y).trace := Finset.sum_nonneg fun i _ => by
-      simpa [toQuadraticForm'_apply] using ha.quadraticForm_nonneg hy (EuclideanSpace.single i 1)
+    have htr0 : 0 ≤ (a y).trace :=
+      trace_nonneg_of_toQuadraticForm'_nonneg fun ξ ↦ ha.quadraticForm_nonneg hy (WithLp.toLp 2 ξ)
     have htr := ha.trace_le hy
     have hsm : s ^ (m + 1) ≤ s ^ m := pow_le_pow_of_le_one hs0.le hs1 (Nat.le_succ m)
     have hkey : -(2 * (m + 2) * n * Lam / R ^ 2 * s ^ m) ≤ T₂ := by
