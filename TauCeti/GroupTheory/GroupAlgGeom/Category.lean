@@ -37,6 +37,8 @@ group in that universe.
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.AlgSetCat ι`: algebraic sets over `ι` with word maps.
+* `TauCeti.GroupAlgGeom.AlgSetCat.homEquiv`: word maps `A → B` are the coefficient-preserving
+  homomorphisms `Γ(B) → Γ(A)`.
 * `TauCeti.GroupAlgGeom.coordGroupFunctor ι`: the contravariant coordinate-group functor
   `(AlgSetCat ι)ᵒᵖ ⥤ Under (GrpCat.of G)`.
 * `TauCeti.GroupAlgGeom.coordGroupFunctor.fullyFaithful`: it is fully faithful.
@@ -72,9 +74,9 @@ namespace AlgSetCat
 
 variable {ι : G →* H}
 
-/-- The defining system of an algebraic set: its ideal `I_H(Y)`. Its coordinate group is
-`G[X] ⧸ I_H(Y)`. -/
-abbrev S (A : AlgSetCat ι) : Set (GX G A.X) := I ι A.carrier
+/-- The ideal `I_H(Y)` of an algebraic set `Y`, the equations vanishing on it. Its coordinate group
+is `G[X] ⧸ I_H(Y)`, and its solution set is `Y` again. -/
+abbrev ideal (A : AlgSetCat ι) : Set (GX G A.X) := I ι A.carrier
 
 variable (ι) in
 /-- The algebraic set `V_H(S)` of a system `S ⊆ G[X]`. -/
@@ -82,70 +84,57 @@ abbrev of {Y : Type u} (S : Set (GX G Y)) : AlgSetCat ι :=
   ⟨Y, V ι S, V_I_V S⟩
 
 /-- The points of an algebraic set. -/
-abbrev Pt (A : AlgSetCat ι) : Type (max u v) := V ι A.S
-
-/-- A morphism of algebraic sets: a map of points given by a tuple of words. -/
-@[ext]
-structure Hom (A B : AlgSetCat ι) where
-  /-- The underlying map of points. -/
-  toFun : A.Pt → B.Pt
-  /-- The map is given by a tuple of words. -/
-  isWordMap : IsWordMap toFun
+abbrev Pt (A : AlgSetCat ι) : Type (max u v) := V ι A.ideal
 
 /-- Algebraic sets with word maps as morphisms. -/
 instance : Category (AlgSetCat ι) where
-  Hom := Hom
+  Hom A B := {f : A.Pt → B.Pt // IsWordMap f}
   id _ := ⟨id, isWordMap_id⟩
-  comp f g := ⟨g.toFun ∘ f.toFun, g.isWordMap.comp f.isWordMap⟩
+  comp f g := ⟨g.val ∘ f.val, g.property.comp f.property⟩
 
 @[ext]
-theorem hom_ext {A B : AlgSetCat ι} {f g : A ⟶ B} (h : f.toFun = g.toFun) : f = g :=
-  Hom.ext h
+theorem hom_ext {A B : AlgSetCat ι} {f g : A ⟶ B} (h : f.val = g.val) : f = g :=
+  Subtype.ext h
 
 @[simp]
-theorem id_toFun (A : AlgSetCat ι) : Hom.toFun (𝟙 A) = id :=
+theorem id_val (A : AlgSetCat ι) : (𝟙 A : A ⟶ A).val = id :=
   (rfl)
 
 @[simp]
-theorem comp_toFun {A B C : AlgSetCat ι} (f : A ⟶ B) (g : B ⟶ C) :
-    Hom.toFun (f ≫ g) = g.toFun ∘ f.toFun :=
+theorem comp_val {A B C : AlgSetCat ι} (f : A ⟶ B) (g : B ⟶ C) : (f ≫ g).val = g.val ∘ f.val :=
   (rfl)
 
-/-- The coefficient-preserving homomorphism `Γ(B) → Γ(A)` induced by a word map `A → B`. -/
-noncomputable def Hom.coordGroupHom {A B : AlgSetCat ι} (f : Hom A B) :
-    GHom (CoordGroup.coeff ι B.S) (CoordGroup.coeff ι A.S) :=
-  (CoordGroup.gHomEquivWordMap ι A.S B.S).symm ⟨f.toFun, f.isWordMap⟩
+/-- Word maps `A → B` are the coefficient-preserving homomorphisms `Γ(B) → Γ(A)` of coordinate
+groups: `CoordGroup.gHomEquivWordMap` read on hom-sets. -/
+noncomputable def homEquiv (A B : AlgSetCat ι) :
+    (A ⟶ B) ≃ GHom (CoordGroup.coeff ι B.ideal) (CoordGroup.coeff ι A.ideal) :=
+  (CoordGroup.gHomEquivWordMap ι A.ideal B.ideal).symm
 
-/-- The word map induced by `f.coordGroupHom` is `f`. -/
+/-- The word map induced by `homEquiv A B f` is `f`. -/
 @[simp]
-theorem Hom.comap_coordGroupHom {A B : AlgSetCat ι} (f : Hom A B) :
-    CoordGroup.comap f.coordGroupHom = f.toFun :=
-  CoordGroup.comap_gHomEquivWordMap_symm _
+theorem comap_homEquiv {A B : AlgSetCat ι} (f : A ⟶ B) :
+    CoordGroup.comap (homEquiv A B f) = f.val :=
+  CoordGroup.comap_gHomEquivWordMap_symm f
 
-/-- The word map induced by a coefficient-preserving homomorphism `Γ(B) → Γ(A)`. -/
-def Hom.ofGHom {A B : AlgSetCat ι} (φ : GHom (CoordGroup.coeff ι B.S) (CoordGroup.coeff ι A.S)) :
-    Hom A B :=
-  ⟨CoordGroup.comap φ, CoordGroup.isWordMap_comap φ⟩
-
-/-- The homomorphism induced by the word map of `φ` is `φ`. -/
+/-- The morphism corresponding to a coordinate-group homomorphism is the map it induces. -/
 @[simp]
-theorem Hom.coordGroupHom_ofGHom {A B : AlgSetCat ι}
-    (φ : GHom (CoordGroup.coeff ι B.S) (CoordGroup.coeff ι A.S)) :
-    (Hom.ofGHom φ).coordGroupHom = φ :=
-  CoordGroup.comap_injective (by rw [Hom.comap_coordGroupHom]; rfl)
+theorem homEquiv_symm_apply_val {A B : AlgSetCat ι}
+    (φ : GHom (CoordGroup.coeff ι B.ideal) (CoordGroup.coeff ι A.ideal)) :
+    ((homEquiv A B).symm φ).val = CoordGroup.comap φ := by
+  rw [homEquiv, Equiv.symm_symm, CoordGroup.gHomEquivWordMap_apply]
 
 /-- The identity word map induces the identity of the coordinate group. -/
-theorem Hom.coordGroupHom_id (A : AlgSetCat ι) :
-    Hom.coordGroupHom (𝟙 A) = GHom.id _ :=
-  CoordGroup.comap_injective (by rw [Hom.comap_coordGroupHom, CoordGroup.comap_id]; rfl)
+@[simp]
+theorem homEquiv_id (A : AlgSetCat ι) : homEquiv A A (𝟙 A) = GHom.id _ :=
+  CoordGroup.comap_injective (by rw [comap_homEquiv, CoordGroup.comap_id, id_val])
 
 /-- A composite of word maps induces the composite of the induced homomorphisms, in the opposite
 order. -/
-theorem Hom.coordGroupHom_comp {A B C : AlgSetCat ι} (f : A ⟶ B) (g : B ⟶ C) :
-    Hom.coordGroupHom (f ≫ g) = f.coordGroupHom.comp g.coordGroupHom :=
+@[simp]
+theorem homEquiv_comp {A B C : AlgSetCat ι} (f : A ⟶ B) (g : B ⟶ C) :
+    homEquiv A C (f ≫ g) = (homEquiv A B f).comp (homEquiv B C g) :=
   CoordGroup.comap_injective (by
-    rw [Hom.comap_coordGroupHom, CoordGroup.comap_comp, Hom.comap_coordGroupHom,
-      Hom.comap_coordGroupHom, comp_toFun])
+    rw [comap_homEquiv, CoordGroup.comap_comp, comap_homEquiv, comap_homEquiv, comp_val])
 
 end AlgSetCat
 
@@ -153,85 +142,40 @@ open AlgSetCat CoordGroup
 
 variable (ι : G →* H)
 
-/-- The coordinate group of an algebraic set, as a group under `G`. -/
-abbrev coordGroupUnder (A : AlgSetCat ι) : Under (GrpCat.of G) :=
-  Under.mk (GrpCat.ofHom (coeff ι A.S))
+/-- **The coordinate-group functor.** It sends an algebraic set `Y` to its coordinate group
+`G[X] ⧸ I_H(Y)` under `G`, and a word map `Y → Y'` to the induced coefficient-preserving
+homomorphism of coordinate groups `Γ(Y') → Γ(Y)`.
 
-variable {ι} in
-/-- A coefficient-preserving homomorphism of coordinate groups as a morphism of groups under `G`.
--/
-def GHom.toUnderHom {A B : AlgSetCat ι} (φ : GHom (coeff ι B.S) (coeff ι A.S)) :
-    coordGroupUnder ι B ⟶ coordGroupUnder ι A :=
-  Under.homMk (GrpCat.ofHom φ.toMonoidHom) (by ext g; exact φ.map_coeff g)
-
-variable {ι} in
-/-- A morphism of groups under `G` between coordinate groups as a coefficient-preserving
-homomorphism. -/
-def GHom.ofUnderHom {A B : AlgSetCat ι} (φ : coordGroupUnder ι B ⟶ coordGroupUnder ι A) :
-    GHom (coeff ι B.S) (coeff ι A.S) where
-  toMonoidHom := φ.right.hom
-  map_coeff' g := congrArg (fun f : GrpCat.of G ⟶ _ ↦ f.hom g) (Under.w φ)
-
-variable {ι} in
-/-- `GHom.ofUnderHom` is inverse to `GHom.toUnderHom`. -/
-@[simp]
-theorem GHom.toUnderHom_ofUnderHom {A B : AlgSetCat ι}
-    (φ : coordGroupUnder ι B ⟶ coordGroupUnder ι A) : (GHom.ofUnderHom φ).toUnderHom = φ := by
-  ext x
-  rfl
-
-variable {ι} in
-/-- The identity homomorphism is the identity morphism under `G`. -/
-@[simp]
-theorem GHom.toUnderHom_id (A : AlgSetCat ι) :
-    (GHom.id (coeff ι A.S)).toUnderHom = 𝟙 (coordGroupUnder ι A) := by
-  ext x
-  simp [GHom.toUnderHom]
-
-variable {ι} in
-/-- Composition of coefficient-preserving homomorphisms is composition under `G`. -/
-theorem GHom.toUnderHom_comp {A B C : AlgSetCat ι} (ψ : GHom (coeff ι C.S) (coeff ι B.S))
-    (φ : GHom (coeff ι B.S) (coeff ι A.S)) :
-    (φ.comp ψ).toUnderHom = ψ.toUnderHom ≫ φ.toUnderHom := by
-  ext x
-  simp [GHom.toUnderHom]
-
-/-- **The coordinate-group functor.** It sends an algebraic set `V_H(S)` to its coordinate group
-`G_{R(S)}` under `G`, and a word map `V_H(S) → V_H(T)` to the induced coefficient-preserving
-homomorphism `G_{R(T)} → G_{R(S)}`. -/
+The body is exposed so that `coordGroupFunctor_map` typechecks outside this declaration: its two
+sides live in `(coordGroupFunctor ι).obj A ⟶ (coordGroupFunctor ι).obj B` and in the hom-set
+between the explicit coordinate groups, which agree only by unfolding `obj`. -/
 @[expose] noncomputable def coordGroupFunctor : (AlgSetCat ι)ᵒᵖ ⥤ Under (GrpCat.of G) where
-  obj A := coordGroupUnder ι A.unop
-  map f := f.unop.coordGroupHom.toUnderHom
-  map_id A := by
-    rw [unop_id, Hom.coordGroupHom_id, GHom.toUnderHom_id]
-  map_comp f g := by
-    rw [unop_comp, Hom.coordGroupHom_comp, GHom.toUnderHom_comp]
+  obj A := Under.mk (GrpCat.ofHom (coeff ι A.unop.ideal))
+  map {A B} f := GHom.equivUnderHom (AlgSetCat.homEquiv B.unop A.unop f.unop)
+  map_id A := by simp
+  map_comp f g := by simp
 
 @[simp]
 theorem coordGroupFunctor_obj (A : (AlgSetCat ι)ᵒᵖ) :
-    (coordGroupFunctor ι).obj A = coordGroupUnder ι A.unop :=
+    (coordGroupFunctor ι).obj A = Under.mk (GrpCat.ofHom (coeff ι A.unop.ideal)) :=
   (rfl)
 
 @[simp]
 theorem coordGroupFunctor_map {A B : (AlgSetCat ι)ᵒᵖ} (f : A ⟶ B) :
-    (coordGroupFunctor ι).map f = f.unop.coordGroupHom.toUnderHom :=
+    (coordGroupFunctor ι).map f = GHom.equivUnderHom (AlgSetCat.homEquiv B.unop A.unop f.unop) :=
   (rfl)
 
 /-- **The coordinate-group functor is fully faithful**, for an arbitrary coefficient
-homomorphism: word maps `V_H(S) → V_H(T)` correspond to coefficient-preserving homomorphisms
-`G_{R(T)} → G_{R(S)}` (Baumslag, Myasnikov and Remeslennikov, Theorem 4). -/
+homomorphism: word maps `Y → Y'` correspond to coefficient-preserving homomorphisms
+`Γ(Y') → Γ(Y)` (Baumslag, Myasnikov and Remeslennikov, Theorem 4). -/
 noncomputable def coordGroupFunctor.fullyFaithful : (coordGroupFunctor ι).FullyFaithful where
-  preimage {A B} φ := (show B.unop ⟶ A.unop from Hom.ofGHom (GHom.ofUnderHom φ)).op
+  preimage {A B} φ := ((AlgSetCat.homEquiv B.unop A.unop).symm (GHom.equivUnderHom.symm φ)).op
   map_preimage {A B} φ := by
-    rw [coordGroupFunctor_map, Quiver.Hom.unop_op, Hom.coordGroupHom_ofGHom]
-    exact GHom.toUnderHom_ofUnderHom (A := B.unop) (B := A.unop) φ
-  preimage_map f := by
-    apply Quiver.Hom.unop_inj
-    apply AlgSetCat.hom_ext
-    rw [Quiver.Hom.unop_op, coordGroupFunctor_map]
-    change comap _ = _
-    rw [← Hom.comap_coordGroupHom f.unop]
-    congr 1
+    rw [coordGroupFunctor_map, Quiver.Hom.unop_op, Equiv.apply_symm_apply]
+    exact GHom.equivUnderHom.apply_symm_apply (β := Under.mk (GrpCat.ofHom
+      (coeff ι A.unop.ideal)) ⟶ Under.mk (GrpCat.ofHom (coeff ι B.unop.ideal))) φ
+  preimage_map {A B} f := by
+    rw [coordGroupFunctor_map, Equiv.symm_apply_apply, Equiv.symm_apply_apply, Quiver.Hom.op_unop]
 
 instance : (coordGroupFunctor ι).Full :=
   (coordGroupFunctor.fullyFaithful ι).full
