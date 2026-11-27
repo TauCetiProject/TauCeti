@@ -154,7 +154,7 @@ private theorem bijective_negativeChangeAt : Bijective (φ.negativeChangeAt φ' 
       refine Finset.sum_nonneg fun i _ ↦ ?_
       by_cases hi : φ'.weight i < 0
       · have := congrFun hc ⟨i, hi⟩
-        rw [negativeCoord_apply, Pi.zero_apply] at this
+        rw [MorseBottChart.negativeCoord_apply, Pi.zero_apply] at this
         rw [this]
         simp
       · exact mul_nonneg (not_lt.1 hi) (sq_nonneg _)

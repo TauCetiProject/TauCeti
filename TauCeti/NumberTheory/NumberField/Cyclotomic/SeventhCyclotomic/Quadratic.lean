@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.SeventhCyclotomic.Basic
 import TauCeti.FieldTheory.IntermediateField.Quadratic
+import TauCeti.RingTheory.RootsOfUnity.Seventh
 
 /-!
 # The Gaussian-period presentation of the seventh cyclotomic quadratic subfield
@@ -50,17 +51,10 @@ theorem seventhCyclotomicSqrtNegSeven_def :
     seventhCyclotomicSqrtNegSeven (L := L) =
       1 + 2 * (zeta 7 ℚ L + zeta 7 ℚ L ^ 2 + zeta 7 ℚ L ^ 4) := (rfl)
 
-private theorem seventhCyclotomic_geom_sum :
-    1 + zeta 7 ℚ L + zeta 7 ℚ L ^ 2 + zeta 7 ℚ L ^ 3 +
-      zeta 7 ℚ L ^ 4 + zeta 7 ℚ L ^ 5 + zeta 7 ℚ L ^ 6 = 0 := by
-  simpa [Finset.sum_range_succ] using (zeta_spec 7 ℚ L).geom_sum_eq_zero (by decide)
-
 /-- The Gaussian period is a square root of `-7`. -/
 @[simp] theorem seventhCyclotomicSqrtNegSeven_sq :
-    seventhCyclotomicSqrtNegSeven (L := L) ^ 2 = -7 := by
-  rw [seventhCyclotomicSqrtNegSeven_def]
-  linear_combination
-    (4 * zeta 7 ℚ L ^ 2 - 4 * zeta 7 ℚ L + 8) * seventhCyclotomic_geom_sum (L := L)
+    seventhCyclotomicSqrtNegSeven (L := L) ^ 2 = -7 :=
+  (zeta_spec 7 ℚ L).one_add_two_mul_add_sq_add_pow_four_sq_of_seven
 
 private theorem frobeniusThreeSeven_apply_zeta :
     frobeniusThreeSeven (L := L) (zeta 7 ℚ L) = zeta 7 ℚ L ^ 3 := by
@@ -77,7 +71,7 @@ private theorem frobeniusThreeSeven_apply_zeta :
     frobeniusThreeSeven_apply_zeta, ← pow_mul]
   rw [pow_eq_pow_mod 12 (zeta_spec 7 ℚ L).pow_eq_one]
   norm_num
-  linear_combination 2 * seventhCyclotomic_geom_sum (L := L)
+  linear_combination 2 * (zeta_spec 7 ℚ L).geom_sum_eq_zero_of_seven
 
 /-- The square root of `-7` belongs to the quadratic fixed field. -/
 -- Apply before the general fixed-field membership expansion.

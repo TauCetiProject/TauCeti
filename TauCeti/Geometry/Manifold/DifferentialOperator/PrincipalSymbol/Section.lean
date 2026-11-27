@@ -61,6 +61,10 @@ symbol is its fibre map.
 
 * `TauCeti.sectionCommutatorSymbol_mvfderiv`, `TauCeti.sectionPrincipalSymbol_mvfderiv`: the values
   at differentials of functions are the iterated commutators.
+* `TauCeti.sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero`: for functions `fᵢ` vanishing
+  at `x`, the commutator symbol at their differentials is `s(x) ↦ (P (f₁ ⋯ fₘ • s))(x)`.
+* `TauCeti.exists_mvfderiv_eq_and_apply_eq`: covectors and fibre vectors at `x` are the
+  differentials of smooth functions vanishing at `x` and the value of a smooth section.
 * `TauCeti.eq_sectionCommutatorSymbol_iff`: the commutator symbol is the multilinear map with
   these values.
 * `TauCeti.sectionCommutatorSymbol_comp_perm`: the commutator symbol is symmetric.
@@ -270,6 +274,21 @@ theorem sectionCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
   rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
   rwa [sectionCommutatorSymbol_apply, smoothSectionFiberMap_apply]
 
+/-- For smooth functions `f₁, …, fₘ` vanishing at `x`, the commutator symbol at their differentials,
+evaluated on the value at `x` of a smooth section `s`, is the value at `x` of `P` applied to the
+product `f₁ ⋯ fₘ • s`: every other term of the expanded iterated commutator carries a factor
+`fᵢ(x) = 0`. -/
+theorem sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero (hx : I.IsInteriorPoint x)
+    {m : ℕ} (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
+    {f : Fin m → C^∞⟮I, M; ℝ⟯} (hf : ∀ i, f i x = 0) (s : Cₛ^∞⟮I; F, V⟯) :
+    sectionCommutatorSymbol I hx P (fun i ↦ mvfderiv I (f i) x) (s x) =
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ((∏ i, f i) • s) x := by
+  have h := apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
+    (commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top P
+      (fun i ↦ mem_smoothVanishingIdeal_iff.2 (hf i)) s)
+  rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
+  rw [sectionCommutatorSymbol_mvfderiv, h]
+
 /-- The commutator symbol at `x` in two covectors, evaluated on the differentials at `x` of smooth
 functions `f` and `g` and on the value at `x` of a smooth section `s`, is the value at `x` of the
 double commutator `[[P, f], g] s`. -/
@@ -283,6 +302,19 @@ theorem sectionCommutatorSymbol_mvfderiv_pair (hx : I.IsInteriorPoint x)
   funext i
   fin_cases i <;> rfl
 
+omit [FiniteDimensional ℝ F] in
+variable (x) in
+/-- Covectors at `x` and a vector of `V_x` are the differentials at `x` of smooth functions
+vanishing at `x` and the value at `x` of a smooth section. This is how the commutator symbol is
+tested on arbitrary covectors and fibre vectors. -/
+theorem exists_mvfderiv_eq_and_apply_eq {m : ℕ} (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ)
+    (v : V x) :
+    ∃ (f : Fin m → C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯), (∀ i, f i x = 0) ∧
+      (fun i ↦ mvfderiv I (f i) x) = ξ ∧ s x = v := by
+  choose f hf0 hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
+  obtain ⟨s, hs⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+  exact ⟨f, s, hf0, funext hf, (ContMDiffSection.evalLinearMap_apply ..).symm.trans hs⟩
+
 /-- A real multilinear map on `T_x*M` with values in `Hom(V_x, W_x)` is the commutator symbol of
 `P` at `x` as soon as it sends the differentials at `x` of smooth functions `f₁, …, fₘ` and the
 value at `x` of a smooth section `s` to the value at `x` of `[⋯[P, f₁], …, fₘ] s`. -/
@@ -295,10 +327,8 @@ theorem eq_sectionCommutatorSymbol_iff (hx : I.IsInteriorPoint x) {m : ℕ}
         commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m P f s x := by
   refine ⟨fun h f s ↦ h ▸ sectionCommutatorSymbol_mvfderiv hx P f s, fun h ↦ ?_⟩
   ext ξ v
-  choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
-  obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
-  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
-  rw [ContMDiffSection.evalLinearMap_apply, h, sectionCommutatorSymbol_mvfderiv]
+  obtain ⟨f, s, -, rfl, rfl⟩ := exists_mvfderiv_eq_and_apply_eq (F := F) x ξ v
+  rw [h, sectionCommutatorSymbol_mvfderiv]
 
 /-- The commutator symbol is symmetric. -/
 theorem sectionCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}

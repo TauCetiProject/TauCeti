@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+import Mathlib.Analysis.Complex.Angle
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
@@ -56,6 +58,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   `arg (z - 1) + arg (z + 1) ∈ (-π, π]`.
 * `Complex.arg_eq_pi_div_two_sub_arctan_of_im_pos`: in the open upper half-plane,
   `arg w = π / 2 - arctan (re w / im w)`.
+* `Complex.pi_div_two_sub_arg_le_div`: for `0 ≤ z.re` and `0 < z.im`,
+  `π / 2 - arg z ≤ re z / im z`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
@@ -84,11 +88,16 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.abs_arg_le_pi_div_two_mul_norm_sub_one`: on the unit circle, `|arg z| ≤ (π / 2) ‖z - 1‖`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
+* `TauCeti.continuousAt_abs_arg`: `|arg z|`, the unoriented angle with `1`, is continuous away
+  from the origin, across the negative real axis too.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
+* `Complex.toLex_norm_arg_injective`, `Complex.polarLt`, `Complex.instIsStrictTotalOrderPolarLt`:
+  the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)` is injective on `ℂ` and induces the
+  polar-lexicographic strict total order `Complex.polarLt` on `ℂ`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -172,6 +181,13 @@ theorem arg_eq_pi_div_two_sub_arctan_of_im_pos {w : ℂ} (hw : 0 < w.im) :
   rw [Real.arctan_eq_of_tan_eq (x := π / 2 - w.arg) ?_ ⟨by linarith, by linarith⟩]
   · ring
   · rw [Real.tan_pi_div_two_sub, tan_arg, inv_div]
+
+/-- If `0 ≤ z.re` and `0 < z.im`, then `arg z` falls short of `π / 2` by at most
+`re z / im z`. -/
+theorem pi_div_two_sub_arg_le_div {z : ℂ} (hre : 0 ≤ z.re) (him : 0 < z.im) :
+    π / 2 - z.arg ≤ z.re / z.im := by
+  rw [arg_eq_pi_div_two_sub_arctan_of_im_pos him, sub_sub_cancel]
+  exact Real.arctan_le_self (div_nonneg hre him.le)
 
 /-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
 `c ω² = -‖c‖`. -/
@@ -461,6 +477,70 @@ theorem sin_arg_sub_arg_one_sub (ξ : ℂ) :
   simp
   ring
 
+/-- Injectivity of the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)` on `ℂ`. -/
+theorem toLex_norm_arg_injective : Function.Injective fun z : ℂ ↦ toLex (‖z‖, arg z) :=
+  fun _ _ h ↦ let ⟨h₁, h₂⟩ := Prod.ext_iff.1 (toLex.injective h); ext_norm_arg h₁ h₂
+
+/-- Polar-lexicographic strict order on `ℂ`: `w.polarLt z` holds when `‖w‖ < ‖z‖`, or when
+`‖w‖ = ‖z‖` and `w.arg < z.arg`. -/
+def polarLt (w z : ℂ) : Prop :=
+  toLex (‖w‖, w.arg) < toLex (‖z‖, z.arg)
+
+/-- `Complex.polarLt` is comparison of the lexicographic norm–argument key
+`z ↦ toLex (‖z‖, z.arg)`. -/
+theorem polarLt_iff_toLex_norm_arg (w z : ℂ) :
+    w.polarLt z ↔ toLex (‖w‖, w.arg) < toLex (‖z‖, z.arg) :=
+  Iff.rfl
+
+/-- Unfolding lemma for `Complex.polarLt`. -/
+@[grind =]
+theorem polarLt_def (w z : ℂ) :
+    w.polarLt z ↔ ‖w‖ < ‖z‖ ∨ ‖w‖ = ‖z‖ ∧ w.arg < z.arg :=
+  Prod.Lex.toLex_lt_toLex
+
+/-- `Complex.polarLt` is a strict total order on `ℂ`. -/
+instance instIsStrictTotalOrderPolarLt : IsStrictTotalOrder ℂ polarLt :=
+  toLex_norm_arg_injective.isStrictTotalOrder_onFun (· < ·)
+
+/-- Strict norm inequality implies `Complex.polarLt`. -/
+theorem polarLt_of_norm_lt {w z : ℂ} (h : ‖w‖ < ‖z‖) : w.polarLt z :=
+  Prod.Lex.toLex_lt_toLex.mpr (.inl h)
+
+/-- Equal norms and strict argument inequality imply `Complex.polarLt`. -/
+theorem polarLt_of_norm_eq_of_arg_lt {w z : ℂ} (hn : ‖w‖ = ‖z‖) (ha : w.arg < z.arg) :
+    w.polarLt z :=
+  Prod.Lex.toLex_lt_toLex.mpr (.inr ⟨hn, ha⟩)
+
+/-- `Complex.polarLt` is compatible with nondecreasing norms. -/
+theorem polarLt.norm_le {w z : ℂ} (h : w.polarLt z) : ‖w‖ ≤ ‖z‖ :=
+  ((polarLt_def w z).mp h).elim le_of_lt fun h' => h'.1.le
+
+/-- Nothing precedes `0` in `Complex.polarLt`. -/
+@[simp]
+theorem not_polarLt_zero (w : ℂ) : ¬ w.polarLt 0 := by
+  rw [polarLt_def]
+  rintro (h | ⟨hn, ha⟩)
+  · exact (norm_nonneg w).not_gt (by simpa using h)
+  · rw [norm_zero, norm_eq_zero] at hn
+    subst hn
+    exact lt_irrefl _ ha
+
+/-- `0` precedes every nonzero complex number in `Complex.polarLt`. -/
+@[simp]
+theorem zero_polarLt_iff {z : ℂ} : (0 : ℂ).polarLt z ↔ z ≠ 0 :=
+  ⟨fun h hz => not_polarLt_zero 0 (hz ▸ h),
+    fun hz => polarLt_of_norm_lt (by simpa using norm_pos_iff.mpr hz)⟩
+
+/-- Along a single ray (`w.arg = z.arg`), `Complex.polarLt` reduces to strict norm comparison. -/
+theorem polarLt_iff_of_arg_eq {w z : ℂ} (h : w.arg = z.arg) : w.polarLt z ↔ ‖w‖ < ‖z‖ :=
+  ⟨fun hp => ((polarLt_def w z).mp hp).elim id fun ⟨_, ha⟩ => absurd (h ▸ ha) (lt_irrefl _),
+    polarLt_of_norm_lt⟩
+
+/-- On a circle (`‖w‖ = ‖z‖`), `Complex.polarLt` reduces to strict argument comparison. -/
+theorem polarLt_iff_of_norm_eq {w z : ℂ} (h : ‖w‖ = ‖z‖) : w.polarLt z ↔ w.arg < z.arg :=
+  ⟨fun hp => ((polarLt_def w z).mp hp).elim (fun hn => absurd (h ▸ hn) (lt_irrefl _)) And.right,
+    polarLt_of_norm_eq_of_arg_lt h⟩
+
 end Complex
 
 /-- If `f` has complex derivative `f'` at `z` and `f z` lies in the slit plane, then the argument
@@ -501,6 +581,16 @@ theorem ContDiff.contDiffAt_comp_arg {E : Type*} [NormedAddCommGroup E] [NormedS
 namespace TauCeti
 
 open Complex Metric Set
+
+/-- The absolute value of the argument, the unoriented angle with `1`, is continuous away from
+`0`, across the negative real axis too, where the argument itself jumps. -/
+theorem continuousAt_abs_arg {w : ℂ} (hw : w ≠ 0) : ContinuousAt (fun z : ℂ => |z.arg|) w := by
+  have hangle : ContinuousAt (fun z : ℂ => InnerProductGeometry.angle z 1) w :=
+    (InnerProductGeometry.continuousAt_angle (x := (w, (1 : ℂ))) hw one_ne_zero).comp
+      (f := fun z : ℂ => (z, (1 : ℂ))) (by fun_prop)
+  refine hangle.congr ?_
+  filter_upwards [isOpen_ne.mem_nhds hw] with z hz
+  exact angle_one_right hz
 
 /-- In polar coordinates about `v`, rotated and scaled by `b`, the open sector
 `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by the punctured ball of radius `δ`, is

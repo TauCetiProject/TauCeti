@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.Morse.MinCriticalCount
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Degenerate
@@ -42,6 +43,11 @@ small manifolds and show which hypotheses and conventions the bounds need.
   nonempty.
 * **A point.** Every function has exactly one critical point, the category count is `1` and the
   cup length `0`: `1 ≥ 1 ≥ 0 + 1`.
+* **A manifold with boundary.** On a compact interval `[x, y]`, such as `[0, 1]`, modelled on the
+  half-line `𝓡∂ 1`, the function `f(t) = t` is smooth with derivative `1` everywhere, endpoints
+  included, so it has no critical points. The interval is contractible, so its category count is
+  `1`, and `lsCategoryCount M univ ≤ totalCriticalCount I f` fails: the bound needs `M` to be
+  boundaryless.
 
 ## References
 
@@ -198,5 +204,35 @@ example [Subsingleton E] [Unique M] :
   exact ⟨rfl, rfl, rfl⟩
 
 end Degenerate
+
+/-! ### A manifold with boundary -/
+
+section Boundary
+
+variable {x y : ℝ} [Fact (x < y)]
+
+/-- On a compact interval `[x, y]`, a manifold with boundary modelled on the half-line `𝓡∂ 1`, the
+function `f(t) = t` is smooth and has no critical points: its derivative sends the unit tangent
+vector to `1` at every point, the two endpoints included. The interval is contractible, so its
+Lusternik–Schnirelmann count is `1`, and `lsCategoryCount M univ ≤ totalCriticalCount I f` fails:
+the Lusternik–Schnirelmann bound needs a boundaryless manifold. -/
+example : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ (Subtype.val : Icc x y → ℝ) ∧
+    totalCriticalCount (𝓡∂ 1) (Subtype.val : Icc x y → ℝ) = 0 ∧
+    lsCategoryCount (Icc x y) univ = 1 ∧
+    ¬lsCategoryCount (Icc x y) univ ≤ totalCriticalCount (𝓡∂ 1) (Subtype.val : Icc x y → ℝ) := by
+  have hcrit : totalCriticalCount (𝓡∂ 1) (Subtype.val : Icc x y → ℝ) = 0 := by
+    rw [totalCriticalCount_def]
+    refine encard_eq_zero.2 (eq_empty_of_forall_notMem fun z hz ↦ ?_)
+    have h := congrArg (· 1) (mem_criticalPoints_iff_mfderiv_eq_zero.1 hz)
+    simp only [mfderiv_subtypeVal_Icc_one, zero_apply] at h
+    -- The tangent spaces of `ℝ` are `ℝ` itself, with its own unit.
+    exact one_ne_zero (α := ℝ) h
+  have : ContractibleSpace (Icc x y) :=
+    (convex_Icc x y).contractibleSpace (nonempty_Icc.2 (Fact.out : x < y).le)
+  refine ⟨contMDiff_subtypeVal_Icc, hcrit, lsCategoryCount_univ_of_contractibleSpace, ?_⟩
+  rw [hcrit, lsCategoryCount_univ_of_contractibleSpace]
+  exact not_le.2 zero_lt_one
+
+end Boundary
 
 end TauCeti.Examples

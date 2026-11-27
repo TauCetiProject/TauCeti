@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Garding
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
+public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Symmetric
 public import TauCeti.Analysis.MvPolynomial.NewtonMaclaurin
 public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
@@ -22,7 +24,16 @@ permutations of the coordinates and under positive dilations. Together with open
 (`TauCeti.isOpen_hessianCone`) and `Γ_n ⊆ Γ_k ⊆ Γ_1` (`TauCeti.sum_pos_of_mem_hessianCone`), both
 from the basic cone API next to the definition, this makes `Γ_k` an admissible cone for
 `1 ≤ k ≤ n` (`TauCeti.isAdmissibleCone_hessianCone`). The largest index `Γ_n` is the positive
-orthant (`TauCeti.hessianCone_self`).
+orthant (`TauCeti.hessianCone_self`). By Gårding's theorem on the convexity of the cones of
+hyperbolic polynomials (`MvPolynomial.IsHyperbolic.convex_gardingCone`), every `Γ_k` is convex
+(`TauCeti.convex_hessianCone`); for `k > n` it is empty, since `σ_{n+1} = 0`
+(`TauCeti.hessianCone_eq_empty`).
+
+More generally, the Gårding cone `Γ(p, e)` of a symmetric polynomial `p` of positive degree,
+hyperbolic in the direction `e`, is an admissible cone as soon as every coordinate vector lies in
+its closure (`TauCeti.isAdmissibleCone_gardingCone`): it then contains the positive orthant
+(`MvPolynomial.IsHyperbolic.setOf_forall_pos_subset_iff`), and it lies in the half-space
+`σ_1 > 0` by symmetry (`MvPolynomial.IsHyperbolic.sum_pos_of_mem_gardingCone`).
 
 ## Main results
 
@@ -31,6 +42,10 @@ orthant (`TauCeti.hessianCone_self`).
   cone.
 * `TauCeti.hessianCone_self`: `Γ_n` is the positive orthant.
 * `TauCeti.isAdmissibleCone_hessianCone`: for `1 ≤ k ≤ n`, `Γ_k` is an admissible cone.
+* `TauCeti.hessianCone_eq_empty`: `Γ_k` is empty for `k > n`.
+* `TauCeti.convex_hessianCone`: `Γ_k` is convex.
+* `TauCeti.isAdmissibleCone_gardingCone`: the Gårding cone of a symmetric hyperbolic polynomial
+  whose closure contains the coordinate vectors is an admissible cone.
 
 ## References
 
@@ -81,5 +96,37 @@ theorem isAdmissibleCone_hessianCone (hk : 1 ≤ k) (hkn : k ≤ n) :
   smul_mem ht _ hμ := smul_mem_hessianCone ht hμ
   mem_of_forall_pos hμ := mem_hessianCone_of_pos hμ hkn
   sum_pos hμ := sum_pos_of_mem_hessianCone hk hμ
+
+/-- For `k > n` the Hessian cone `Γ_k ⊆ ℝⁿ` is empty, since `σ_k = 0` on `ℝⁿ`. -/
+theorem hessianCone_eq_empty (hkn : n < k) : hessianCone n k = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun μ hμ ↦ ?_
+  have h := mem_hessianCone.1 hμ (n + 1) (mem_Icc.2 ⟨by omega, hkn⟩)
+  have hzero : esymm (Fin n) ℝ (n + 1) = 0 := by
+    rw [esymm_eq_multiset_esymm]
+    exact Multiset.esymm_of_card_lt (by simp)
+  simp [hzero] at h
+
+/-- **The Hessian cone `Γ_k` is convex** (Gårding). For `k ≤ n` it is the Gårding cone of the
+hyperbolic polynomial `σ_k`; for `k > n` it is empty, since `σ_{n+1}` vanishes on `ℝⁿ`. -/
+theorem convex_hessianCone (n k : ℕ) : Convex ℝ (hessianCone n k) := by
+  rcases le_or_gt k n with hkn | hkn
+  · rw [← gardingCone_esymm_eq_hessianCone]
+    exact (isHyperbolic_esymm (σ := Fin n) (by simpa using hkn)).convex_gardingCone
+  · rw [hessianCone_eq_empty hkn]
+    exact convex_empty
+
+/-- **Symmetric Gårding cones whose closure contains the coordinate vectors are admissible.**
+For a symmetric polynomial `p` of degree `m ≥ 1`, hyperbolic in the direction `e = (1, …, 1)`,
+whose Gårding cone `Γ(p, e)` has every coordinate vector in its closure, `Γ(p, e)` is an
+admissible cone. -/
+theorem isAdmissibleCone_gardingCone {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {p : MvPolynomial ι ℝ} {m : ℕ} (hp : p.IsHyperbolic m 1) (hm : 1 ≤ m)
+    (hsymm : p.IsSymmetric) (he : ∀ i, (Pi.single i 1 : ι → ℝ) ∈ closure (gardingCone p 1)) :
+    IsAdmissibleCone (gardingCone p 1) where
+  isOpen := isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne'
+  comp_perm_mem σ _ hμ := comp_mem_gardingCone (hsymm σ) rfl hμ
+  smul_mem ht _ hμ := smul_mem_gardingCone hp.isHomogeneous hμ ht
+  mem_of_forall_pos hμ := (hp.setOf_forall_pos_subset_iff.2 he) hμ
+  sum_pos hμ := hp.sum_pos_of_mem_gardingCone hm hsymm hμ
 
 end TauCeti
