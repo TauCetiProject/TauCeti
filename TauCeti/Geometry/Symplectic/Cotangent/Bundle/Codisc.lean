@@ -31,6 +31,8 @@ Both sets are closed, and their parts over a compact subset of `M` are compact
 `IsCompact.norm_le_bundle_of_continuous`: near each point the bundle coordinates of a covector are
 bounded by a multiple of its norm, since the inverse tangent trivialization is locally bounded. In
 particular both are compact when `M` is compact (`TauCeti.CotangentBundle.isCompact_codiscBundle`).
+Conversely `D*M` contains the zero section, which projects onto `M`, so `D*M` is compact exactly
+when `M` is (`TauCeti.CotangentBundle.isCompact_codiscBundle_iff`).
 
 Since every nonzero value is a regular value of the norm of covectors
 (`TauCeti.CotangentBundle.isRegularValue_norm_snd`), `S*M` is a regular level. For a smooth metric
@@ -57,6 +59,7 @@ normalizing a smooth family of nonzero covectors gives a smooth map into `S*M`
   `TauCeti.CotangentBundle.isCompact_codiscBundle_inter_preimage_proj` and
   `TauCeti.CotangentBundle.isCompact_codiscBundle`: `D*M` is closed, compact over every compact
   subset of `M`, and compact over a compact manifold; similarly for `S*M`.
+* `TauCeti.CotangentBundle.isCompact_codiscBundle_iff`: `D*M` is compact exactly when `M` is.
 * `TauCeti.CotangentBundle.instIsManifoldCosphereBundle`: `S*M` is a smooth manifold.
 * `TauCeti.CotangentBundle.isSmoothEmbedding_coe_cosphereBundle`: its inclusion into `T*M` is a
   smooth embedding.
@@ -203,6 +206,17 @@ theorem isCompact_cosphereBundle_inter_preimage_proj {K : Set M} (hK : IsCompact
 /-- **The unit codisc bundle of a compact Riemannian manifold is compact.** -/
 theorem isCompact_codiscBundle [CompactSpace M] : IsCompact (codiscBundle I M) := by
   simpa using isCompact_codiscBundle_inter_preimage_proj (I := I) (isCompact_univ (X := M))
+
+/-- **The unit codisc bundle is compact exactly when the manifold is.** It contains the zero
+section, which projects onto `M`, so `M` is compact when `D*M` is. -/
+theorem isCompact_codiscBundle_iff : IsCompact (codiscBundle I M) ↔ CompactSpace M := by
+  refine ⟨fun h ↦ ⟨?_⟩, fun _ ↦ isCompact_codiscBundle⟩
+  -- Every point of `M` is the projection of its zero covector, which lies in `D*M`.
+  refine (h.image (FiberBundle.continuous_proj (E →L[ℝ] ℝ)
+    (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))).of_isClosed_subset isClosed_univ fun x _ ↦
+      ⟨⟨x, 0⟩, ?_, rfl⟩
+  rw [mem_codiscBundle, (ContinuousLinearMap.opNorm_zero_iff _).2 rfl]
+  exact zero_le_one
 
 /-- The unit cosphere bundle of a compact Riemannian manifold is compact. -/
 theorem isCompact_cosphereBundle [CompactSpace M] : IsCompact (cosphereBundle I M) := by

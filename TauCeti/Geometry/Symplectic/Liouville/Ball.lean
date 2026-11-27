@@ -35,13 +35,17 @@ In particular the quadratic Hamiltonian `a ‖x‖²` is linear at infinity, wit
 limit over the slope defines the symplectic homology of the ball.
 
 For `E = ℝ²ⁿ` with coordinates `(q, p)` and `ω = Σⱼ dqⱼ ∧ dpⱼ`, the primitive is
-`λ = ½ Σⱼ (qⱼ dpⱼ - pⱼ dqⱼ)` and `B` is the standard ball `D²ⁿ`.
+`λ = ½ Σⱼ (qⱼ dpⱼ - pⱼ dqⱼ)` and `B` is the standard ball `D²ⁿ`. The opposite primitive
+`½ Σⱼ (pⱼ dqⱼ - qⱼ dpⱼ)`, whose differential is `-ω`, is the primitive of no Liouville domain for
+`ω` (`TauCeti.SymplecticForm.not_isLiouvilleDomain_neg_radialPrimitive`).
 
 ## Main results
 
 * `TauCeti.SymplecticForm.isLiouvilleDomain_closedBall`: a closed ball of positive radius is a
   Liouville domain for the constant form and its radial primitive.
 * `TauCeti.SymplecticForm.isLiouvilleCompletion_closedBall`: the vector space is its completion.
+* `TauCeti.SymplecticForm.not_isLiouvilleDomain_neg_radialPrimitive`: the opposite primitive
+  `-λ` is the primitive of no Liouville domain.
 * `TauCeti.liouvilleRadialCoordinate_closedBall`: the radial coordinate is
   `max 1 (‖x‖² / r²)`.
 * `TauCeti.isLinearAtInfinity_mul_norm_sq`: `a ‖x‖²` is linear at infinity with
@@ -166,6 +170,21 @@ theorem isLiouvilleCompletion_closedBall (hr : 0 < r) :
   exists_isCompleteVectorField := ⟨fun x : E ↦ (2⁻¹ : ℝ) • x,
     ω.constSmooth_interior_two_inv_smul, isCompleteVectorField_dilation _,
     exists_flowOf_two_inv_smul_mem_closedBall hr⟩
+
+end SymplecticForm
+
+namespace SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  [Nontrivial V] (ω : SymplecticForm V)
+
+/-- **The opposite radial primitive is excluded.** On a nonzero symplectic vector space, no set is
+a Liouville domain for the constant form `ω` with the primitive `-λ`, `λₓ(v) = ω(x, v) / 2`: its
+differential is `-ω`. For `ω = Σⱼ dqⱼ ∧ dpⱼ` this primitive is `½ Σⱼ (pⱼ dqⱼ - qⱼ dpⱼ)`, so the
+standard ball `D²ⁿ` is a Liouville domain for `½ Σⱼ (qⱼ dpⱼ - pⱼ dqⱼ)` only. -/
+theorem not_isLiouvilleDomain_neg_radialPrimitive (W : Set V) :
+    ¬ IsLiouvilleDomain ω.constSmooth (-ω.radialPrimitive) W :=
+  not_isLiouvilleDomain_neg_of_mextDeriv_eq ω.mextDeriv_radialPrimitive W
 
 end SymplecticForm
 

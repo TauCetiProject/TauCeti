@@ -35,11 +35,35 @@ covector into `D*M`. So `T*M` is the completion of `D*M`
 (`TauCeti.CotangentBundle.isLiouvilleCompletion_codiscBundle`): every covector outside `D*M` is
 `e^t p` for exactly one unit covector `p` and one time `t > 0`.
 
+Nearby choices of primitive, base or subset do not give Liouville domains:
+
+* the primitive `λ` itself has differential `-ω`, so no set is a Liouville domain for `ω` with
+  the primitive `λ` (`TauCeti.CotangentBundle.not_isLiouvilleDomain_liouvilleForm`);
+* since `D*M` is compact exactly when `M` is, the codisc bundle of a noncompact manifold, such as
+  `ℝ`, is not a Liouville domain (`TauCeti.CotangentBundle.not_isLiouvilleDomain_codiscBundle`);
+* the backward flow `p ↦ e^(-t) p` of `p ∂_p` preserves every Liouville domain `W` for `-λ`, so
+  `W` is star-shaped in the fibres and contains the zero covector below each of its points
+  (`TauCeti.CotangentBundle.mk_smul_mem_of_isLiouvilleDomain`). Hence no nonempty set of nonzero
+  covectors is such a Liouville domain
+  (`TauCeti.CotangentBundle.not_isLiouvilleDomain_of_forall_snd_ne_zero`): not a shell
+  `{a ≤ ‖p‖ ≤ b}`, `0 < a ≤ b` (`TauCeti.CotangentBundle.not_isLiouvilleDomain_shell`), nor a
+  finite union of shells, although `p ∂_p` is transverse to their boundaries. Along an inner
+  boundary sphere it points into the set.
+
 ## Main results
 
 * `TauCeti.CotangentBundle.isLiouvilleDomain_codiscBundle`: `D*M` is a Liouville domain for the
   canonical symplectic form, with primitive `-λ`.
 * `TauCeti.CotangentBundle.isLiouvilleCompletion_codiscBundle`: `T*M` is its completion.
+* `TauCeti.CotangentBundle.not_isLiouvilleDomain_liouvilleForm`: `λ` is the primitive of no
+  Liouville domain for `ω`.
+* `TauCeti.CotangentBundle.not_isLiouvilleDomain_codiscBundle`: the codisc bundle of a noncompact
+  manifold is not a Liouville domain.
+* `TauCeti.CotangentBundle.mk_smul_mem_of_isLiouvilleDomain`: a Liouville domain for `-λ` is
+  star-shaped in the fibres.
+* `TauCeti.CotangentBundle.not_isLiouvilleDomain_of_forall_snd_ne_zero`,
+  `TauCeti.CotangentBundle.not_isLiouvilleDomain_shell`: sets of nonzero covectors, such as shells,
+  are not Liouville domains for `-λ`.
 
 ## References
 
@@ -52,16 +76,20 @@ covector into `D*M`. So `T*M` is the completion of `D*M`
 public section
 
 open Bundle
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
 namespace CotangentBundle
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I (⊤ : ℕ∞) M]
+
+section Codisc
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I (⊤ : ℕ∞) E (fun x : M ↦ TangentSpace I x)]
 
@@ -103,6 +131,99 @@ theorem isLiouvilleCompletion_codiscBundle [CompactSpace M] [T2Space M] :
     rw [flowOf_vectorBundleEulerField, mem_codiscBundle, norm_smul_snd,
       Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_neg, inv_mul_le_one₀ (Real.exp_pos _)]
     linarith [Real.add_one_le_exp ‖z.snd‖]
+
+end Codisc
+
+/-! ### Sets that are not Liouville domains -/
+
+/-- **The unit codisc bundle of a noncompact manifold is not a Liouville domain**, for any form and
+primitive, since `D*M` is compact exactly when `M` is (`isCompact_codiscBundle_iff`). This applies
+for instance to `M = ℝ`. -/
+theorem not_isLiouvilleDomain_codiscBundle [FiniteDimensional ℝ E]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] [NoncompactSpace M]
+    (ω : SmoothTwoForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M))
+    (α : SmoothForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M) ℝ 1) :
+    ¬ IsLiouvilleDomain ω α (codiscBundle I M) := fun h ↦
+  not_compactSpace_iff.2 ‹_› (isCompact_codiscBundle_iff.1 h.isCompact)
+
+/-- **The Liouville form itself is not the primitive of a Liouville domain.** For a nonempty
+manifold of positive dimension, no set is a Liouville domain for the canonical form `ω = -dλ` with
+the primitive `λ`: its differential is `-ω`. The vector field `Z` with `ι_Z ω = λ` is `-p ∂_p`,
+which points into the unit codisc bundle. -/
+theorem not_isLiouvilleDomain_liouvilleForm [Nonempty M] [Nontrivial E]
+    (W : Set (CotangentBundle I M)) :
+    ¬ IsLiouvilleDomain (symplecticForm I M) (liouvilleForm I M) W := by
+  have : Nonempty (CotangentBundle I M) := ⟨⟨Classical.arbitrary M, 0⟩⟩
+  have := not_isLiouvilleDomain_neg_of_mextDeriv_eq (α := -liouvilleForm I M)
+    (ω := symplecticForm I M)
+    (by rw [NegMemClass.coe_neg, mextDeriv_neg, ← symplecticForm_eq_neg_mextDeriv]) W
+  rwa [neg_neg] at this
+
+variable [I.Boundaryless] [T2Space M]
+
+/-- **A Liouville domain for `-λ` is star-shaped in the fibres.** If `W ⊆ T*M` is a Liouville domain
+for the canonical form `ω = -dλ` with the primitive `-λ`, then with every covector `z` it contains
+`s • z` for `0 ≤ s ≤ 1`, in particular the zero covector over the same point. The Liouville field
+is `p ∂_p`, whose flow `p ↦ e^t p` is complete, and the backward flow preserves a Liouville
+domain. -/
+theorem mk_smul_mem_of_isLiouvilleDomain {W : Set (CotangentBundle I M)}
+    (h : IsLiouvilleDomain (symplecticForm I M) (-liouvilleForm I M) W)
+    {z : CotangentBundle I M} (hz : z ∈ W) {s : ℝ} (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
+    (⟨z.proj, s • z.snd⟩ : CotangentBundle I M) ∈ W := by
+  have hZ : RoughForm.interior (vectorBundleEulerField I) (symplecticForm I M).val =
+      (-liouvilleForm I M).val := by
+    rw [NegMemClass.coe_neg, symplecticForm_interior_vectorBundleEulerField]
+  have hc := isCompleteVectorField_vectorBundleEulerField (I := I)
+    (V := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (F := E →L[ℝ] ℝ)
+  -- For `s > 0`, the covector `s • z` is `z` flowed backwards for the time `-log s ≥ 0`.
+  have hpos : ∀ s : ℝ, 0 < s → s ≤ 1 → (⟨z.proj, s • z.snd⟩ : CotangentBundle I M) ∈ W :=
+    fun s hs hs₁ ↦ by
+      have := h.flowOf_neg_mem hZ hc hz (t := -Real.log s)
+        (neg_nonneg.2 (Real.log_nonpos hs.le hs₁))
+      rwa [neg_neg, flowOf_vectorBundleEulerField, Real.exp_log hs] at this
+  rcases hs₀.lt_or_eq with hs | rfl
+  · exact hpos s hs hs₁
+  -- For `s = 0`, the zero covector is the limit of the covectors `s • z` as `s → 0⁺`.
+  have hcont : Continuous fun s : ℝ ↦ (⟨z.proj, s • z.snd⟩ : CotangentBundle I M) :=
+    (FiberBundle.continuous_totalSpaceMk _ _ z.proj).comp (continuous_id.smul continuous_const)
+  refine h.isClosed.mem_of_tendsto
+    (hcont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds : Filter.Tendsto _ (𝓝[>] (0 : ℝ)) _) ?_
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with s hs using hpos s hs.1 hs.2.le
+
+/-- **A Liouville domain for `-λ` meets the zero section**: a nonempty set of nonzero covectors is
+not a Liouville domain for the canonical form with the primitive `-λ`. This applies to every shell
+`{a ≤ ‖p‖ ≤ b}` with `0 < a ≤ b`, and to every finite union of such shells: there the Liouville
+field `p ∂_p` points into the set along the inner boundary. -/
+theorem not_isLiouvilleDomain_of_forall_snd_ne_zero {W : Set (CotangentBundle I M)}
+    (hW : W.Nonempty) (h₀ : ∀ z ∈ W, z.snd ≠ 0) :
+    ¬ IsLiouvilleDomain (symplecticForm I M) (-liouvilleForm I M) W := fun h ↦ by
+  obtain ⟨z, hz⟩ := hW
+  simpa using h₀ _ (mk_smul_mem_of_isLiouvilleDomain h hz le_rfl zero_le_one)
+
+/-- **A shell of covectors is not a Liouville domain.** For a nonempty manifold of positive
+dimension and `0 < a ≤ b`, the shell `{a ≤ ‖p‖ ≤ b}` in `T*M` is not a Liouville domain for the
+canonical form with the primitive `-λ`, although the Liouville field `p ∂_p` is transverse to both
+of its boundary components: it points into the shell along the inner one `‖p‖ = a`. -/
+theorem not_isLiouvilleDomain_shell [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [Nonempty M] [Nontrivial E] {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    ¬ IsLiouvilleDomain (symplecticForm I M) (-liouvilleForm I M)
+      {z : CotangentBundle I M | a ≤ ‖z.snd‖ ∧ ‖z.snd‖ ≤ b} := by
+  refine not_isLiouvilleDomain_of_forall_snd_ne_zero ?_ fun z hz h0 ↦ ?_
+  · -- A nonzero covector, normalized and scaled by `a`, has norm `a`.
+    obtain ⟨v, hv⟩ := exists_ne (0 : E)
+    obtain ⟨g, -, hg⟩ := exists_dual_vector ℝ v (norm_ne_zero_iff.2 hv)
+    set z₀ : CotangentBundle I M := ⟨Classical.arbitrary M, g⟩
+    -- The covector `z₀.snd` is `g` by definition of `z₀`.
+    have hz₀ : z₀.snd ≠ 0 := fun h ↦ by
+      rw [show g = 0 from h, zero_apply] at hg
+      exact hv (norm_eq_zero.1 (RCLike.ofReal_eq_zero.1 hg.symm))
+    refine ⟨⟨(normalize z₀).proj, a • (normalize z₀).snd⟩, ?_⟩
+    rw [Set.mem_ofPred_eq, norm_smul_snd, Real.norm_of_nonneg ha.le, norm_snd_normalize hz₀,
+      mul_one]
+    exact ⟨le_rfl, hab⟩
+  · rw [Set.mem_ofPred_eq, h0, (ContinuousLinearMap.opNorm_zero_iff _).2 rfl] at hz
+    exact ha.not_ge hz.1
 
 end CotangentBundle
 
