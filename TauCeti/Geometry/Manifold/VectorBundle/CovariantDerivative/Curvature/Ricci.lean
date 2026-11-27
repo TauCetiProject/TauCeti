@@ -308,11 +308,16 @@ function on the tangent bundle. -/
 theorem continuous_ricciTensor_apply_self_tangentBundle :
     Continuous (fun v : TangentBundle I M ↦ cov.ricciTensor v.proj v.snd v.snd) := by
   have hπ := FiberBundle.continuous_proj E (TangentSpace I : M → Type _)
+  -- Reconstructing a total-space point from its base and fibre is the identity.
   have hv : Continuous (fun v : TangentBundle I M ↦ TotalSpace.mk' E v.proj v.snd) :=
     continuous_id
-  exact continuous_snd.comp ((Trivial.homeomorphProd M ℝ).continuous.comp
-    ((cov.contMDiff_ricciTensor.continuous.comp hπ).clm_bundle_apply₂
-      (F₁ := E) (F₂ := E) (E₃ := Trivial M ℝ) hv hv))
+  -- The second coordinate in the trivial-bundle product is the evaluated scalar.
+  have h : Continuous (fun v : TangentBundle I M ↦
+      (cov.ricciTensor v.proj).toContinuousBilinearMap v.snd v.snd) :=
+    continuous_snd.comp ((Trivial.homeomorphProd M ℝ).continuous.comp
+      ((cov.contMDiff_ricciTensor.continuous.comp hπ).clm_bundle_apply₂
+        (F₁ := E) (F₂ := E) (E₃ := Trivial M ℝ) hv hv))
+  simpa only [LinearMap.toContinuousBilinearMap_apply] using h
 
 section Prod
 
