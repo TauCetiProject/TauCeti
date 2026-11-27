@@ -192,18 +192,28 @@ section Universal
 
 variable {A : Type*} [AddCommGroup A]
 
+/-- The `ℤ`-bilinear map `Additive Rˣ →ₗ[ℤ] Additive Rˣ →ₗ[ℤ] A` associated to a Steinberg
+pairing `c`. -/
+private def liftBilin (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c) :
+    Additive Rˣ →ₗ[ℤ] Additive Rˣ →ₗ[ℤ] A :=
+  AddMonoidHom.toIntLinearMap
+    { toFun := fun u => AddMonoidHom.toIntLinearMap
+        { toFun := fun v => c (Additive.toMul u) (Additive.toMul v)
+          map_zero' := hc.map_one_right _
+          map_add' := fun _ _ => hc.map_mul_right _ _ _ }
+      map_zero' := LinearMap.ext fun _ => hc.map_one_left _
+      map_add' := fun _ _ => LinearMap.ext fun _ => hc.map_mul_left _ _ _ }
+
+@[simp]
+private theorem liftBilin_apply (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c)
+    (u v : Additive Rˣ) :
+    liftBilin c hc u v = c (Additive.toMul u) (Additive.toMul v) :=
+  rfl
+
 /-- Universal property of `MatsumotoGroup R`: a Steinberg pairing `c : Rˣ → Rˣ → A` into an
 additive commutative group descends to a `ℤ`-linear map `MatsumotoGroup R →ₗ[ℤ] A`. -/
 def liftLinear (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c) : MatsumotoGroup R →ₗ[ℤ] A :=
-  let bilin : Additive Rˣ →ₗ[ℤ] Additive Rˣ →ₗ[ℤ] A :=
-    AddMonoidHom.toIntLinearMap
-      { toFun := fun u => AddMonoidHom.toIntLinearMap
-          { toFun := fun v => c (Additive.toMul u) (Additive.toMul v)
-            map_zero' := hc.map_one_right _
-            map_add' := fun _ _ => hc.map_mul_right _ _ _ }
-        map_zero' := LinearMap.ext fun _ => hc.map_one_left _
-        map_add' := fun _ _ => LinearMap.ext fun _ => hc.map_mul_left _ _ _ }
-  (steinbergRelations R).liftQ (TensorProduct.lift bilin) <| by
+  (steinbergRelations R).liftQ (TensorProduct.lift (liftBilin c hc)) <| by
     rw [steinbergRelations_def, Submodule.span_le]
     rintro _ ⟨a, b, hab, rfl⟩
     exact hc.steinberg a b hab
@@ -212,7 +222,8 @@ def liftLinear (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c) : MatsumotoGr
 theorem liftLinear_symbol (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c) (a b : Rˣ) :
     liftLinear c hc (symbol a b) = c a b := by
   rw [← mk_tmul, liftLinear]
-  exact (Submodule.liftQ_apply (steinbergRelations R) _ _).trans (TensorProduct.lift.tmul _ _)
+  exact (Submodule.liftQ_apply (steinbergRelations R) _ _).trans
+    ((TensorProduct.lift.tmul _ _).trans (by simp))
 
 theorem liftLinear_unique (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c)
     (f : MatsumotoGroup R →ₗ[ℤ] A) (hf : ∀ a b : Rˣ, f (symbol a b) = c a b) :
@@ -258,9 +269,7 @@ theorem map_id : map (RingHom.id R) = LinearMap.id :=
 @[simp]
 theorem map_comp {S T : Type*} [CommSemiring S] [CommSemiring T] (g : S →+* T)
     (f : R →+* S) : map (g.comp f) = (map g).comp (map f) :=
-  linearMap_ext fun a b => by
-    simp only [LinearMap.comp_apply, map_symbol, RingHom.toMonoidHom_comp, Units.map_comp,
-      MonoidHom.comp_apply]
+  linearMap_ext fun a b => by simp [Units.map_comp]
 
 end CommSemiring
 

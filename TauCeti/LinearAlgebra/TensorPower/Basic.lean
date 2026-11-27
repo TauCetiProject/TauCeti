@@ -82,6 +82,13 @@ theorem twoEquiv_tmul (a b : M) :
   simp only [twoEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, oneEquiv_symm_apply]
   rw [← TensorPower.gMul_def, TensorPower.tprod_mul_tprod, h]
 
+/-- Evaluating `(twoEquiv R M).symm` on a pure two-factor tensor power yields the corresponding
+pure tensor. -/
+@[simp]
+theorem twoEquiv_symm_tprod (a b : M) :
+    (twoEquiv R M).symm (PiTensorProduct.tprod R ![a, b]) = a ⊗ₜ[R] b := by
+  rw [LinearEquiv.symm_apply_eq, twoEquiv_tmul]
+
 /-- Appending one factor to a tensor power: `⨂[R]^n M ⊗[R] M ≃ ⨂[R]^(n + 1) M`. -/
 noncomputable def succEquiv (n : ℕ) : TensorPower R n M ⊗[R] M ≃ₗ[R] TensorPower R (n + 1) M :=
   TensorProduct.congr (.refl R _) (oneEquiv R M).symm ≪≫ₗ _root_.TensorPower.mulEquiv

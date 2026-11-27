@@ -161,9 +161,10 @@ namespace RingHom
 
 /-- The monoid homomorphism underlying a composite of ring homomorphisms is the composite of the
 underlying monoid homomorphisms. -/
+@[simp]
 theorem toMonoidHom_comp {α β γ : Type*} [NonAssocSemiring α] [NonAssocSemiring β]
     [NonAssocSemiring γ] (g : β →+* γ) (f : α →+* β) :
-    (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
+    (g.comp f : α →* γ) = (g : β →* γ).comp (f : α →* β) :=
   rfl
 
 end RingHom

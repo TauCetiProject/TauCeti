@@ -77,12 +77,10 @@ private def tensorPowerTwoToMatsumotoGroup (R : Type u) [CommRing R] :
 private theorem tensorPowerTwoToMatsumotoGroup_tprod (a b : Rˣ) :
     tensorPowerTwoToMatsumotoGroup R
       (PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b]) =
-        MatsumotoGroup.symbol a b := by
-  rw [← MatsumotoGroup.mk_tmul]
-  exact congrArg (MatsumotoGroup.steinbergRelations R).mkQ
-    ((TauCeti.TensorPower.twoEquiv ℤ (Additive Rˣ)).symm_apply_eq.mpr
-      (TauCeti.TensorPower.twoEquiv_tmul ℤ (Additive Rˣ)
-        (Additive.ofMul a) (Additive.ofMul b)).symm)
+        MatsumotoGroup.symbol a b :=
+  (congrArg (MatsumotoGroup.steinbergRelations R).mkQ
+    (TauCeti.TensorPower.twoEquiv_symm_tprod ℤ (Additive Rˣ)
+      (Additive.ofMul a) (Additive.ofMul b))).trans (MatsumotoGroup.mk_tmul a b)
 
 private theorem steinbergRelations_two_le_ker (R : Type u) [CommRing R] :
     steinbergRelations R 2 ≤ LinearMap.ker (tensorPowerTwoToMatsumotoGroup R) := by
@@ -100,9 +98,12 @@ private theorem steinbergRelations_two_le_ker (R : Type u) [CommRing R] :
 private def matsumotoGroupToDegreeTwo (R : Type u) [CommRing R] :
     MatsumotoGroup R →ₗ[ℤ] degree R 2 :=
   MatsumotoGroup.liftLinear (fun a b : Rˣ => ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩)
-    { map_mul_left := fun _ _ _ => Subtype.ext (by simp [ofUnit_mul, add_mul])
-      map_mul_right := fun _ _ _ => Subtype.ext (by simp [ofUnit_mul, mul_add])
-      steinberg := fun _ _ hab => Subtype.ext (ofUnit_mul_ofUnit_of_add_eq_one hab) }
+    (isSteinbergPairing_ofUnit_mul.codRestrict (degree R 2) ofUnit_mul_mem_degree_two)
+
+private theorem matsumotoGroupToDegreeTwo_symbol (a b : Rˣ) :
+    matsumotoGroupToDegreeTwo R (MatsumotoGroup.symbol a b) =
+      ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩ :=
+  MatsumotoGroup.liftLinear_symbol _ _ a b
 
 private theorem degreeEquiv_symm_ofUnit_mul (a b : Rˣ) :
     (degreeEquiv R 2).symm ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩ =
@@ -123,21 +124,25 @@ def degreeTwoEquiv : degree R 2 ≃ₗ[ℤ] MatsumotoGroup R :=
       (steinbergRelations_two_le_ker R)).comp (degreeEquiv R 2).symm.toLinearMap)
     (matsumotoGroupToDegreeTwo R)
     (MatsumotoGroup.linearMap_ext fun a b => by
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, matsumotoGroupToDegreeTwo,
-        MatsumotoGroup.liftLinear_symbol, degreeEquiv_symm_ofUnit_mul, Submodule.liftQ_apply,
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, matsumotoGroupToDegreeTwo_symbol,
+        degreeEquiv_symm_ofUnit_mul, Submodule.liftQ_apply,
         tensorPowerTwoToMatsumotoGroup_tprod, LinearMap.id_apply])
     (degreeTwo_linearMap_ext fun a b => by
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.id_apply,
-        degreeEquiv_symm_ofUnit_mul, Submodule.liftQ_apply, tensorPowerTwoToMatsumotoGroup_tprod]
-      exact Subtype.ext (by simp [matsumotoGroupToDegreeTwo]))
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, degreeEquiv_symm_ofUnit_mul,
+        Submodule.liftQ_apply, tensorPowerTwoToMatsumotoGroup_tprod,
+        matsumotoGroupToDegreeTwo_symbol, LinearMap.id_apply])
+
+private theorem degreeTwoEquiv_symm_apply (x : MatsumotoGroup R) :
+    (degreeTwoEquiv R).symm x = matsumotoGroupToDegreeTwo R x := by
+  rw [degreeTwoEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap]
 
 @[simp]
 theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
     degreeTwoEquiv R ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩ =
       MatsumotoGroup.symbol a b := by
   have hsymm : (⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩ : degree R 2) =
-      (degreeTwoEquiv R).symm (MatsumotoGroup.symbol a b) :=
-    Subtype.ext (by simp [degreeTwoEquiv, matsumotoGroupToDegreeTwo])
+      (degreeTwoEquiv R).symm (MatsumotoGroup.symbol a b) := by
+    rw [degreeTwoEquiv_symm_apply, matsumotoGroupToDegreeTwo_symbol]
   rw [hsymm, LinearEquiv.apply_symm_apply]
 
 -- Not `@[simp]`: `symbol [a, b]` simplifies via `symbol_cons`/`symbol_nil`/`mul_one` to
@@ -152,7 +157,7 @@ theorem degreeTwoEquiv_symbol (a b : Rˣ) :
 @[simp]
 theorem degreeTwoEquiv_symm_symbol (a b : Rˣ) :
     ((degreeTwoEquiv R).symm (MatsumotoGroup.symbol a b) : MilnorK R) = ofUnit a * ofUnit b := by
-  simp [degreeTwoEquiv, matsumotoGroupToDegreeTwo]
+  simp only [degreeTwoEquiv_symm_apply, matsumotoGroupToDegreeTwo_symbol]
 
 end CommRing
 

@@ -76,6 +76,15 @@ theorem comp_ringHom {c : Sˣ → Sˣ → A} (hc : IsSteinbergPairing c) (f : R 
   map_mul_right _ _ _ := by rw [map_mul, hc.map_mul_right]
   steinberg _ _ h := hc.steinberg _ _ (by simp [← map_add, h])
 
+/-- Restricting the codomain of a Steinberg pairing to an additive subgroup containing all its
+values yields a Steinberg pairing into that subgroup. -/
+theorem codRestrict {σ : Type*} [SetLike σ A] [AddSubgroupClass σ A]
+    {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (s : σ) (hs : ∀ a b, c a b ∈ s) :
+    IsSteinbergPairing (fun a b => (⟨c a b, hs a b⟩ : s)) where
+  map_mul_left a b d := Subtype.ext (hc.map_mul_left a b d)
+  map_mul_right a b d := Subtype.ext (hc.map_mul_right a b d)
+  steinberg a b h := Subtype.ext (hc.steinberg a b h)
+
 variable {c : Rˣ → Rˣ → A}
 
 theorem map_one_left (hc : IsSteinbergPairing c) (b : Rˣ) : c 1 b = 0 :=

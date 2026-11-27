@@ -44,10 +44,7 @@ theorem sign_two_eq_matsumotoGroup_sign (x : degree R 2) :
     (g := (MatsumotoGroup.sign R).toIntLinearMap.comp (degreeTwoEquiv R).toLinearMap)
     (degreeTwo_linearMap_ext fun a b => by
       rw [← degreeTwo_symbol_eq_ofUnit_mul]
-      simp only [LinearMap.comp_apply, Submodule.coe_subtype, AddMonoidHom.coe_toIntLinearMap,
-        LinearEquiv.coe_coe, degreeTwoEquiv_symbol, MatsumotoGroup.sign_symbol, sign_symbol,
-        List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, List.forall_mem_cons,
-        List.not_mem_nil, false_implies, implies_true, and_true, true_and]) x
+      simp [-symbol_cons, degreeTwoEquiv_symbol]) x
 
 end OrderedCommRing
 
