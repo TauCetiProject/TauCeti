@@ -28,6 +28,8 @@ of `M`. Every open set of `Mˣ` is therefore the preimage of a Borel set of `M`.
 * `Units.measurableSet_range_val`: the units of a Polish monoid form a Borel subset.
 * `Units.measurableEmbedding_val`: the coercion `Mˣ → M` is a measurable embedding.
 * `Units.borelSpace`: the units of a Polish monoid form a Borel space.
+* `Ring.measurable_inverse`: inversion, extended by `0` off the units, is measurable on a Polish
+  topological ring.
 
 ## References
 
@@ -69,3 +71,20 @@ theorem measurableEmbedding_val : MeasurableEmbedding (val : Mˣ → M) :=
   continuous_val.measurableEmbedding val_injective
 
 end Units
+
+/-- **Inversion on a Polish ring is measurable.** `Ring.inverse`, which inverts units and sends
+every other element to `0`, is Borel measurable on a Polish topological ring: it extends the
+continuous map `u ↦ u⁻¹` on the units by `0`, along the measurable embedding of the units. -/
+theorem Ring.measurable_inverse {R : Type*} [MonoidWithZero R] [TopologicalSpace R]
+    [ContinuousMul R] [PolishSpace R] [MeasurableSpace R] [BorelSpace R] :
+    Measurable (Ring.inverse : R → R) := by
+  have h : (Ring.inverse : R → R) = Function.extend ((↑) : Rˣ → R) (fun u ↦ (↑u⁻¹ : R)) 0 := by
+    ext x
+    by_cases hx : IsUnit x
+    · obtain ⟨u, rfl⟩ := hx
+      rw [Ring.inverse_unit, Units.val_injective.extend_apply]
+    · rw [Ring.inverse_non_unit _ hx, Function.extend_apply' _ _ _ fun ⟨u, hu⟩ ↦ hx ⟨u, hu⟩]
+      rfl
+  rw [h]
+  exact Units.measurableEmbedding_val.measurable_extend
+    (Units.continuous_val.comp continuous_inv).measurable measurable_const

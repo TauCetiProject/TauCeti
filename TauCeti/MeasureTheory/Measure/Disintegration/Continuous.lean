@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 public import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.NNReal
 public import Mathlib.MeasureTheory.Measure.OpenPos
+import Mathlib.Topology.UrysohnsLemma
 
 /-!
 # Pointwise uniqueness of continuous disintegrations
@@ -20,7 +21,9 @@ The fibres are represented as regular measures on a fixed locally compact Hausdo
 their total mass need not be finite.
 
 `TauCeti.eq_of_continuous_lintegral_of_disintegration` applies to two families satisfying the
-same integration formula along an arbitrary map. No geometric structure on this map is needed
+same integration formula along an arbitrary map. Finiteness of the test integrals already makes a
+fibre finite on compact sets (`TauCeti.isFiniteMeasureOnCompacts_of_lintegral_lt_top`), hence
+regular on a σ-compact metrizable space. No geometric structure on this map is needed
 for uniqueness. Regularity already ensures that the compactly supported test integrals are
 finite, so no separate finiteness assumption is required.
 
@@ -89,5 +92,25 @@ theorem eq_of_continuous_lintegral_of_disintegration
       ∫ x, (f x : ℝ) ∂m = (∫⁻ x, f x ∂m).toReal :=
     (f.toBoundedContinuousFunction.toReal_lintegral_coe_eq_integral m).symm
   rw [h_toReal, h_toReal, heq]
+
+/-- A measure on a locally compact Hausdorff space whose lower integrals of nonnegative compactly
+supported continuous functions are all finite is finite on compact sets: by Urysohn's lemma, the
+indicator of a compact set lies below such a function. -/
+theorem isFiniteMeasureOnCompacts_of_lintegral_lt_top {X : Type*} [TopologicalSpace X]
+    [T2Space X] [LocallyCompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+    (h : ∀ f : C_c(X, ℝ≥0), ∫⁻ x, f x ∂μ < ∞) : IsFiniteMeasureOnCompacts μ := by
+  refine ⟨fun K hK ↦ ?_⟩
+  obtain ⟨f, hfK, hfc, -, -⟩ :=
+    exists_continuousMap_one_of_isCompact_subset_isOpen hK isOpen_univ (Set.subset_univ K)
+  have hf : HasCompactSupport f :=
+    .intro' hfc (isClosed_tsupport f) fun _ hx ↦ image_eq_zero_of_notMem_tsupport hx
+  let g : C_c(X, ℝ≥0) :=
+    ⟨⟨fun x ↦ (f x).toNNReal, continuous_real_toNNReal.comp f.continuous⟩,
+      hf.comp_left Real.toNNReal_zero⟩
+  calc μ K = ∫⁻ _ in K, 1 ∂μ := (setLIntegral_one K).symm
+    _ ≤ ∫⁻ x in K, g x ∂μ := setLIntegral_mono' hK.isClosed.measurableSet fun x hx ↦ by
+        simp [g, hfK hx]
+    _ ≤ ∫⁻ x, g x ∂μ := setLIntegral_le_lintegral K _
+    _ < ∞ := h g
 
 end TauCeti
