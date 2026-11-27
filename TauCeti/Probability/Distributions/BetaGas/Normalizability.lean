@@ -16,6 +16,8 @@ For a continuous potential, `0 < β ≤ β'`, and `1 < β'`, the weight is integ
 The Vandermonde product contributes a coordinate power `β * (n - 1)`; the growth assumption
 dominates it by a power with exponent below `-1`, uniformly in `n`. The partition function is
 then positive and the beta-gas measure is a probability. The Gaussian case is a specialization.
+For a fixed nonzero `n`, a separate result requires only the corresponding exponent to be below
+`-1`, allowing weaker growth than the uniform-in-size condition.
 
 ## References
 
@@ -111,6 +113,44 @@ theorem betaGasWeight_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
       intro i _
       ring
 
+/-- For a nonempty gas, the coordinate majorant is integrable when the logarithmic
+growth coefficient makes its exponent strictly smaller than `-1`. -/
+theorem integrable_betaGasWeight_of_eventually_le_div_log_of_exponent
+    (n : ℕ) (hn : 0 < n) {β c : ℝ} (hβ : 0 < β)
+    {V : ℝ → ℝ} (hV : Continuous V)
+    (hq : β * ((n - 1 : ℕ) : ℝ) - (β * (n : ℝ) / 2) * c < -1)
+    (hRatio : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+      c ≤ V x / log |x|) :
+    Integrable (betaGasWeight n β V)
+      (volume : Measure (Fin n → ℝ)) := by
+  classical
+  let a : ℝ := β * (n : ℝ) / 2
+  let p : ℝ := β * ((n - 1 : ℕ) : ℝ)
+  have ha : 0 < a := by
+    dsimp [a]
+    positivity
+  have hlarge : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, 1 < |x| := by
+    exact Filter.tendsto_comap.eventually (Filter.eventually_gt_atTop 1)
+  have hGrowth :
+      ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, c * log |x| ≤ V x := by
+    filter_upwards [hRatio, hlarge] with x hratio hx
+    have hlog : 0 < log |x| := Real.log_pos hx
+    exact (le_div_iff₀ hlog).mp hratio
+  have hmajor : Integrable
+      (fun x : Fin n → ℝ =>
+        ∏ i, ((1 + |x i|) ^ p * exp (-a * V (x i))))
+      (volume : Measure (Fin n → ℝ)) :=
+    Integrable.fintype_prod fun _ =>
+      integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth
+        (by positivity) ha hq hV hGrowth
+  apply Integrable.mono' hmajor
+    ((continuous_betaGasWeight n hβ.le hV).aestronglyMeasurable)
+  filter_upwards with x
+  simpa only [Real.norm_eq_abs, abs_of_nonneg (betaGasWeight_nonneg n β V x),
+    abs_of_nonneg (by positivity :
+      0 ≤ ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))))] using
+    betaGasWeight_le_coord_prod n hβ.le V x
+
 /-- For a continuous potential and `0 < β ≤ β'` with `1 < β'`, the beta-gas weight is
 integrable if eventually as `|x| → ∞`, `2 * β' / β ≤ V x / log |x|`. -/
 theorem integrable_betaGasWeight_of_eventually_le_div_log (n : ℕ) {β β' : ℝ}
@@ -120,23 +160,19 @@ theorem integrable_betaGasWeight_of_eventually_le_div_log (n : ℕ) {β β' : �
       2 * β' / β ≤ V x / log |x|) :
     Integrable (betaGasWeight n β V)
       (volume : Measure (Fin n → ℝ)) := by
-  classical
   by_cases hn : n = 0
   · subst n
     simp
   · have hnle : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn
-    let a : ℝ := β * (n : ℝ) / 2
-    let p : ℝ := β * ((n - 1 : ℕ) : ℝ)
-    let c : ℝ := 2 * β' / β
-    have ha : 0 < a := by
-      dsimp [a]
-      positivity
-    have hq : p - a * c < -1 := by
+    apply integrable_betaGasWeight_of_eventually_le_div_log_of_exponent n
+      (Nat.pos_of_ne_zero hn) hβ hV _ hRatio
+    have hq : β * ((n - 1 : ℕ) : ℝ) -
+        (β * (n : ℝ) / 2) * (2 * β' / β) < -1 := by
       have hncast : (n : ℝ) = ((n - 1 : ℕ) : ℝ) + 1 := by
         exact_mod_cast (Nat.sub_add_cancel hnle).symm
-      have hformula : p - a * c =
+      have hformula : β * ((n - 1 : ℕ) : ℝ) -
+          (β * (n : ℝ) / 2) * (2 * β' / β) =
           -β' + ((n - 1 : ℕ) : ℝ) * (β - β') := by
-        dsimp [p, a, c]
         rw [hncast]
         field_simp [hβ.ne']
         ring
@@ -145,27 +181,7 @@ theorem integrable_betaGasWeight_of_eventually_le_div_log (n : ℕ) {β β' : �
       have hmul : ((n - 1 : ℕ) : ℝ) * (β - β') ≤ 0 :=
         mul_nonpos_of_nonneg_of_nonpos (by positivity) hdiff
       linarith
-    have hlarge : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, 1 < |x| := by
-      exact Filter.tendsto_comap.eventually (Filter.eventually_gt_atTop 1)
-    have hGrowth :
-        ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, c * log |x| ≤ V x := by
-      filter_upwards [hRatio, hlarge] with x hratio hx
-      have hlog : 0 < log |x| := Real.log_pos hx
-      exact (le_div_iff₀ hlog).mp hratio
-    have hmajor : Integrable
-        (fun x : Fin n → ℝ =>
-          ∏ i, ((1 + |x i|) ^ p * exp (-a * V (x i))))
-        (volume : Measure (Fin n → ℝ)) :=
-      Integrable.fintype_prod fun _ =>
-        integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth
-          (by positivity) ha hq hV hGrowth
-    apply Integrable.mono' hmajor
-      ((continuous_betaGasWeight n hβ.le hV).aestronglyMeasurable)
-    filter_upwards with x
-    simpa only [Real.norm_eq_abs, abs_of_nonneg (betaGasWeight_nonneg n β V x),
-      abs_of_nonneg (by positivity :
-        0 ≤ ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))))] using
-      betaGasWeight_le_coord_prod n hβ.le V x
+    exact hq
 
 /-- For a continuous potential and `0 < β ≤ β'` with `1 < β'`, the beta-gas weight is
 integrable if the liminf of `V x / log |x|` as `|x| → ∞` exceeds `2 * β' / β`.

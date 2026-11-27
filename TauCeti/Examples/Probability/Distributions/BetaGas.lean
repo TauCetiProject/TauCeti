@@ -31,6 +31,13 @@ example : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
     (-1 : ℝ) < (x ^ 2 / 2) / log |x| :=
   TauCeti.eventually_quadratic_div_log_abs_gt (-1)
 
+example {V : ℝ → ℝ} (hV : Continuous V)
+    (hRatio : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+      (3 / 2 : ℝ) ≤ V x / log |x|) :
+    Integrable (betaGasWeight 1 2 V) (volume : Measure (Fin 1 → ℝ)) :=
+  integrable_betaGasWeight_of_eventually_le_div_log_of_exponent 1 (by norm_num)
+    (by norm_num) hV (by norm_num) hRatio
+
 example (hint : Integrable (betaGasWeight n β V)
     (volume : Measure (Fin n → ℝ))) :
     0 < betaGasPartitionFunction n β V :=

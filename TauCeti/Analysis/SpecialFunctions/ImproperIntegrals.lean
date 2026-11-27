@@ -99,7 +99,8 @@ private theorem one_add_abs_rpow_mul_exp_neg_le {p a c x vx : ℝ}
             rw [Real.div_rpow (by positivity) (by positivity),
               Real.rpow_neg (by positivity)]
             ring
-      nlinarith [mul_le_mul_of_nonneg_left hpow (show 0 ≤ (2 : ℝ) ^ p by positivity)]
+      have htwo : 0 ≤ (2 : ℝ) ^ p := by positivity
+      simpa only [mul_assoc] using mul_le_mul_of_nonneg_left hpow htwo
 
 /-- A continuous potential with sufficient logarithmic growth dominates a
 polynomial factor and makes the resulting exponential weight integrable. -/
