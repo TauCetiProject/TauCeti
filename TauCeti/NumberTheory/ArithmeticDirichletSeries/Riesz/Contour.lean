@@ -10,6 +10,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Contour.Residue.Rectangle
 import TauCeti.Analysis.Contour.Residue.SimplePole
+import TauCeti.Analysis.MellinTransform.EdgeBounds
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
@@ -154,35 +155,24 @@ private lemma norm_intervalIntegral_perronRiesz_sub_vertical_le {F : ℂ → ℂ
     ‖∫ t in (-T)..T, F (σ + t * I) *
         (perronRieszKernel (z * (1 + η)) σ t - perronRieszKernel z σ t)‖ ≤
       4 * A * η * z ^ σ * Real.log (1 + T / (1 - σ)) := by
-  let d := 1 - σ
-  have hd : 0 < d := sub_pos.mpr hσ₁
   have hA₀ := (norm_nonneg _).trans (hA 0 ⟨by linarith, hT⟩)
-  have hC : Continuous (fun t : ℝ ↦ (d + |t|)⁻¹) := by
-    apply (continuous_const.add continuous_abs).inv₀
-    exact fun t ↦ (add_pos_of_pos_of_nonneg hd (abs_nonneg t)).ne'
-  rw [intervalIntegral.integral_of_le (by linarith : -T ≤ T)]
-  have hInt := (hC.const_mul (2 * A * η * z ^ σ)).intervalIntegrable (μ := volume) (-T) T
-  refine (norm_integral_le_of_norm_le hInt.1 ?_).trans_eq ?_
-  · filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-    have hden : (d + |t|) / 2 ≤ ‖(σ : ℂ) + t * I - 1‖ := by
-      have hr := Complex.abs_re_le_norm ((σ : ℂ) + t * I - 1)
-      have hi := Complex.abs_im_le_norm ((σ : ℂ) + t * I - 1)
-      simp [abs_of_neg (sub_neg.mpr hσ₁)] at hr
-      simp at hi
-      dsimp [d]
-      linarith
-    rw [norm_mul]
-    calc
-      _ ≤ A * (η * z ^ σ / ‖(σ : ℂ) + t * I - 1‖) := mul_le_mul
-        (hA t (Ioc_subset_Icc_self ht)) (norm_perronRieszKernel_mul_one_add_sub_le hz hη hσ hσ₁ t)
+  -- `|σ + it - 1| = |(1 - σ) + it|`: the shifted edge is the vertical edge at `1 - σ`
+  have hnorm (t : ℝ) : ‖(σ : ℂ) + t * I - 1‖ = ‖((1 - σ : ℝ) : ℂ) + t * I‖ := by
+    rw [← norm_neg, ← Complex.norm_conj]
+    congr 1
+    apply Complex.ext <;> simp
+  have h := norm_intervalIntegral_vertical_le (K := A * η * z ^ σ)
+    (f := fun s : ℂ ↦ F (σ + s.im * I) *
+      (perronRieszKernel (z * (1 + η)) σ s.im - perronRieszKernel z σ s.im))
+    (sub_pos.mpr hσ₁) hT fun t ht ↦ by
+      simp only [add_im, ofReal_im, mul_im, ofReal_re, I_im, I_re, mul_zero, mul_one,
+        zero_add, add_zero, norm_mul]
+      rw [← hnorm, mul_assoc A η, mul_div_assoc]
+      exact mul_le_mul (hA t ht) (norm_perronRieszKernel_mul_one_add_sub_le hz hη hσ hσ₁ t)
         (norm_nonneg _) hA₀
-      _ ≤ A * (η * z ^ σ / ((d + |t|) / 2)) :=
-        mul_le_mul_of_nonneg_left (div_le_div_of_nonneg_left (by positivity)
-          (half_pos (add_pos_of_pos_of_nonneg hd (abs_nonneg t))) hden) hA₀
-      _ = (2 * A * η * z ^ σ) * (d + |t|)⁻¹ := by rw [div_div_eq_mul_div]; ring
-  · rw [integral_const_mul, ← intervalIntegral.integral_of_le (by linarith : -T ≤ T),
-      integral_inv_add_abs hd hT]
-    ring
+  simp only [add_im, ofReal_im, mul_im, ofReal_re, I_im, I_re, mul_zero, mul_one,
+    zero_add, add_zero] at h
+  exact h.trans_eq (by ring)
 
 private lemma norm_intervalIntegral_perronRiesz_sub_horizontal_le {F : ℂ → ℂ} {z η σ t A : ℝ}
     (hz : 1 ≤ z) (hη : 0 ≤ η) (hη₁ : η ≤ 1) (hσ : σ ≤ 2) (ht : t ≠ 0)
