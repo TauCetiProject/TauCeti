@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.Grp.FiniteAbelian.Basic
+public import TauCeti.Algebra.Category.Grp.FiniteAddCommGrp.Basic
 public import TauCeti.CategoryTheory.Exact.YonedaExt.TrivialIdeal
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.Data.ZMod.MulCastHom
@@ -34,15 +34,15 @@ public noncomputable section
 
 open CategoryTheory
 
-namespace TauCeti.FiniteAbelianGrp
+namespace TauCeti.FiniteAddCommGrp
 
 local notation "ι" => AddCommGrpCat.isFinite.ι
-local notation "E" => ExactStructure.abelian FiniteAbelianGrp
+local notation "E" => ExactStructure.abelian FiniteAddCommGrp
 
 variable (n : ℕ) [NeZero n]
 
 /-- The extension of `ℤ/nℤ` by itself with middle group `ℤ/n²ℤ`. -/
-abbrev zmodSqExtension : (E).Extension (zmod n) (zmod n) := by
+def zmodSqExtension : (E).Extension (zmod n) (zmod n) :=
   let i := ZMod.mulCastHom n (pow_two n).symm
   let q := ZMod.castHom (dvd_pow_self n (by decide : 2 ≠ 0)) (ZMod n)
   let f : zmod n ⟶ zmod (n ^ 2) := ObjectProperty.homMk (AddCommGrpCat.ofHom i)
@@ -52,26 +52,57 @@ abbrev zmodSqExtension : (E).Extension (zmod n) (zmod n) := by
     ext x
     exact ZMod.castHom_mulCastHom n (pow_two n).symm x
   let S := ShortComplex.mk f g hf
-  refine ⟨zmod (n ^ 2), f, g, hf, (ExactStructure.abelian_conflation _).mpr ?_⟩
-  refine ShortExact.reflects_shortExact_of_faithful ι (?_ : (S.map ι).ShortExact)
-  exact
+  have hS : (S.map ι).ShortExact :=
     { exact := ((S.map ι).ab_exact_iff_function_exact).mpr
         (ZMod.exact_mulCastHom_castHom n (pow_two n).symm)
       mono_f := (AddCommGrpCat.mono_iff_injective ((S.map ι).f)).mpr
         (ZMod.mulCastHom_injective _ _ (NeZero.ne n))
       epi_g := (AddCommGrpCat.epi_iff_surjective ((S.map ι).g)).mpr
         (ZMod.castHom_surjective (dvd_pow_self n (by decide : 2 ≠ 0))) }
+  ⟨zmod (n ^ 2), f, g, hf, (ExactStructure.abelian_conflation _).mpr
+    (ShortExact.reflects_shortExact_of_faithful ι hS)⟩
 
-private theorem zmodSqExtension_f_comp_eq_zero (g : zmod (n ^ 2) ⟶ zmod n) :
+/-- The middle group of the cyclic-square extension is `ℤ/n²ℤ`. -/
+@[simp]
+theorem zmodSqExtension_obj : (zmodSqExtension n).obj = zmod (n ^ 2) :=
+  (rfl)
+
+/-- After identifying the middle group with `ℤ/n²ℤ`, the first map multiplies by `n`. -/
+@[simp]
+theorem zmodSqExtension_f_comp_eqToHom :
+    (zmodSqExtension n).f ≫ eqToHom (zmodSqExtension_obj n) =
+      ObjectProperty.homMk (AddCommGrpCat.ofHom (ZMod.mulCastHom n (pow_two n).symm)) :=
+  (rfl)
+
+/-- After identifying the middle group with `ℤ/n²ℤ`, the second map reduces modulo `n`. -/
+@[simp]
+theorem zmodSqExtension_eqToHom_comp_g :
+    eqToHom (zmodSqExtension_obj n).symm ≫ (zmodSqExtension n).g =
+      ObjectProperty.homMk (AddCommGrpCat.ofHom
+        (ZMod.castHom (dvd_pow_self n (by decide : 2 ≠ 0)) (ZMod n)).toAddMonoidHom) :=
+  (rfl)
+
+/-- The first map of the cyclic-square extension sends `1` to `n` in its cyclic middle group. -/
+@[simp↓]
+theorem zmodSqExtension_f_one :
+    ((zmodSqExtension n).f ≫ eqToHom (zmodSqExtension_obj n)).hom (1 : ZMod n) =
+      (n : ZMod (n ^ 2)) := by
+  rw [zmodSqExtension_f_comp_eqToHom, ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom]
+  simpa only [Int.cast_one, one_mul] using ZMod.mulCastHom_intCast n (pow_two n).symm 1
+
+private theorem zmodSqExtension_f_comp_eq_zero (g : (zmodSqExtension n).obj ⟶ zmod n) :
     (zmodSqExtension n).f ≫ g = 0 := by
+  have hg : (zmodSqExtension n).f ≫ g =
+      ((zmodSqExtension n).f ≫ eqToHom (zmodSqExtension_obj n)) ≫
+        eqToHom (zmodSqExtension_obj n).symm ≫ g := by
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [hg]
   apply zmod_hom_ext
-  have h : (zmodSqExtension n).f.hom (1 : ZMod n) = (n : ZMod (n ^ 2)) := by
-    simpa only [ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom, Int.cast_one, one_mul]
-      using ZMod.mulCastHom_intCast n (pow_two n).symm 1
   -- Every map to the left endpoint kills multiples of `n`.
-  simp only [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply, h]
-  rw [← nsmul_one, map_nsmul, ZModModule.char_nsmul_eq_zero]
-  rfl
+  rw [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply, zmodSqExtension_f_one]
+  rw [← nsmul_one, map_nsmul, ZModModule.char_nsmul_eq_zero, ← ObjectProperty.ι_map,
+    Functor.map_zero]
+  exact (AddMonoidHom.zero_apply (1 : ZMod n)).symm
 
 private theorem exists_zmodSqExtension_pushout
     (e : (E).Extension (zmod n) (zmod n)) :
@@ -90,28 +121,26 @@ private theorem exists_zmodSqExtension_pushout
     ObjectProperty.homMk (AddCommGrpCat.ofHom
       (ZMod.lift (n ^ 2) ⟨zmultiplesHom _ y, by
         rw [zmultiplesHom_apply, natCast_zsmul, hy'']⟩))
-  have hlift (b : ℤ) : lift.hom (b : ZMod (n ^ 2)) = b • y :=
-    (ZMod.lift_coe _ _ _).trans (zmultiplesHom_apply _ _ b)
+  have hlift (b : ℤ) : lift.hom (b : ZMod (n ^ 2)) = b • y := by
+    simp only [lift, ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom, ZMod.lift_coe,
+      zmultiplesHom_apply]
   refine ⟨a, (ExactStructure.Ext1.pushout_mk_eq_pullback_mk (e := zmodSqExtension n)
-    (e' := e) (c := 𝟙 _) lift ?_ ?_).trans (ExactStructure.Ext1.pullback_id _)⟩
-  · apply zmod_hom_ext
-    have hf : (zmodSqExtension n).f.hom (1 : ZMod n) = (n : ZMod (n ^ 2)) := by
-      simpa only [ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom, Int.cast_one, one_mul]
-      using ZMod.mulCastHom_intCast n (pow_two n).symm 1
-    have hmul := zmodMul_apply n a 1
-    rw [mul_one] at hmul
-    simp only [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply, hf, hmul]
+    (e' := e) (c := 𝟙 _) (eqToHom (zmodSqExtension_obj n) ≫ lift) ?_ ?_).trans
+      (ExactStructure.Ext1.pullback_id _)⟩
+  · rw [← Category.assoc]
+    apply zmod_hom_ext
     have h := hlift (n : ℤ)
     rw [Int.cast_natCast, natCast_zsmul] at h
+    rw [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply, zmodSqExtension_f_one,
+      ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply, zmodMul_apply, mul_one]
     exact h.trans ha.symm
-  · apply zmod_hom_ext
-    have hg : (zmodSqExtension n).g.hom (1 : ZMod (n ^ 2)) = (1 : ZMod n) :=
-      map_one (ZMod.castHom (dvd_pow_self n (by decide : 2 ≠ 0)) (ZMod n))
-    have h := hlift 1
-    simp only [Int.cast_one, one_zsmul] at h
-    simp only [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply,
-      ObjectProperty.FullSubcategory.id_hom, h, hg, hy]
-    rfl
+  · rw [Category.comp_id, ← cancel_epi (eqToHom (zmodSqExtension_obj n).symm)]
+    simp only [← Category.assoc, eqToHom_trans, eqToHom_refl, Category.id_comp]
+    apply zmod_hom_ext
+    have h : lift.hom (1 : ZMod (n ^ 2)) = y := by
+      simpa only [Int.cast_one, one_zsmul] using hlift 1
+    rw [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply, h, hy]
+    simp
 
 /-- The self-extension group of `ℤ/nℤ` among finite abelian groups is `ℤ/nℤ` under the Baer sum.
 The residue `a` gives the pushout of the sequence with middle group `ℤ/n²ℤ` along multiplication
@@ -127,8 +156,11 @@ def zmodExt1AddEquiv : ZMod n ≃+ (E).Ext1 (zmod n) (zmod n) := by
       (zmodMul n a)).mp (AddMonoidHom.mem_ker.mp ha)
     obtain ⟨g, hg⟩ := h
     have hz : zmodMul n a = 0 := hg.symm.trans (zmodSqExtension_f_comp_eq_zero n g)
-    have h := ConcreteCategory.congr_hom (congrArg (fun f ↦ (ι).map f) hz) (1 : ZMod n)
-    exact (mul_one a).symm.trans ((zmodMul_apply n a 1).symm.trans h)
+    have h := congrArg (fun f ↦ (ι).map f) hz
+    rw [Functor.map_zero] at h
+    have h₁ := ConcreteCategory.congr_hom h (1 : ZMod n)
+    rw [ObjectProperty.ι_map, zmodMul_apply, mul_one] at h₁
+    exact h₁.trans (AddMonoidHom.zero_apply (1 : ZMod n))
   · intro ξ
     induction ξ using ExactStructure.Ext1.induction with
     | h e => exact exists_zmodSqExtension_pushout n e
@@ -147,11 +179,11 @@ theorem zmodExt1AddEquiv_one :
 
 /-- There are exactly `n` self-extension classes of the cyclic group of order `n`. -/
 @[simp]
-theorem natCard_zmod_ext1 : Nat.card ((E).Ext1 (zmod n) (zmod n)) = n :=
+theorem natCard_ext1_zmod : Nat.card ((E).Ext1 (zmod n) (zmod n)) = n :=
   (Nat.card_congr (zmodExt1AddEquiv n).toEquiv.symm).trans (Nat.card_zmod n)
 
 /-- The cyclic-square sequence represents a nonzero class for a nontrivial cyclic group. -/
-theorem zmodSqExtension_class_ne_zero [Nontrivial (ZMod n)] :
+theorem mk_zmodSqExtension_ne_zero [Nontrivial (ZMod n)] :
     ExactStructure.Ext1.mk (zmodSqExtension n) ≠ 0 := by
   rw [← zmodExt1AddEquiv_one, ← map_zero (zmodExt1AddEquiv n)]
   exact fun h ↦ one_ne_zero ((zmodExt1AddEquiv n).injective h)
@@ -162,6 +194,6 @@ theorem id_notMem_projectivelyTrivialIdeal_zmod [Nontrivial (ZMod n)] :
   intro h
   have hz := ExactStructure.mem_projectivelyTrivialIdeal_iff_forall_ext1.mp h
     (zmod n) (ExactStructure.Ext1.mk (zmodSqExtension n))
-  exact zmodSqExtension_class_ne_zero n (by simpa only [ExactStructure.Ext1.pullback_id] using hz)
+  exact mk_zmodSqExtension_ne_zero n (by simpa only [ExactStructure.Ext1.pullback_id] using hz)
 
-end TauCeti.FiniteAbelianGrp
+end TauCeti.FiniteAddCommGrp
