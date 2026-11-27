@@ -1056,6 +1056,13 @@ theorem typeABoxTensorDifferential_eq_zero_of_typeABoxDifferential_eq_zero [Char
     N.typeABoxTensorDifferential hMm hι = 0 :=
   LinearMap.ext fun φ => Subtype.ext (by simp [h])
 
+/-- The box tensor differential squares to zero on `M ⊗ N` when it vanishes on all row vectors. -/
+theorem typeABoxTensorDifferential_comp_self_eq_zero_of_typeABoxDifferential_eq_zero [CharP R 2]
+    (hMm : Mm.IsStrictlyUnital ι) (hι : ∀ s, d (ι s) = 0) (h : N.typeABoxDifferential Mm = 0) :
+    N.typeABoxTensorDifferential hMm hι ∘ₗ N.typeABoxTensorDifferential hMm hι = 0 := by
+  rw [typeABoxTensorDifferential_eq_zero_of_typeABoxDifferential_eq_zero hMm hι h,
+    LinearMap.zero_comp]
+
 /-- The box tensor differential of a bounded module squares to zero on `M ⊗ N`. -/
 theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_act_eq_zero [CharP R 2]
     (hMm : Mm.IsStrictlyUnital ι) (hι : ∀ s, d (ι s) = 0) {K : ℕ}

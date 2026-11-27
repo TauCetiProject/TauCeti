@@ -189,15 +189,15 @@ theorem typeABoxDifferential_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD :
 
 /-- **The pairing of `torusRho₂Rho₁TypeA` with the chain `torusChainTypeD n` has homology of rank
 `n + 1`**, the rank of `HF̂` of the lens space `L(n + 1, 1)`. -/
-theorem finrank_homology_torusRho₂Rho₁TypeA_torusChainTypeD (n : ℕ)
-    (hd : (torusChainTypeD R n).typeABoxTensorDifferential (isStrictlyUnital_torusRho₂Rho₁TypeA R)
-        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) ∘ₗ
-      (torusChainTypeD R n).typeABoxTensorDifferential (isStrictlyUnital_torusRho₂Rho₁TypeA R)
-        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) = 0) :
-    Module.finrank R (LinearMap.homology _ hd) = n + 1 := by
-  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+theorem finrank_homology_torusRho₂Rho₁TypeA_torusChainTypeD (n : ℕ) :
+    Module.finrank R (LinearMap.homology _
+      (TypeDStructure.typeABoxTensorDifferential_comp_self_eq_zero_of_typeABoxDifferential_eq_zero
+        (isStrictlyUnital_torusRho₂Rho₁TypeA R)
+        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _)
+        (typeABoxDifferential_torusRho₂Rho₁TypeA_torusChainTypeD R n))) = n + 1 := by
+  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero _ _
     (torusRho₂Rho₁TypeA_eq_threePointTypeA R)
-    (typeABoxDifferential_torusRho₂Rho₁TypeA_torusChainTypeD R n) hd]
+    (typeABoxDifferential_torusRho₂Rho₁TypeA_torusChainTypeD R n)]
   -- The generators at `ι₁` are the `γₗ`.
   refine (Fintype.card_congr ((Equiv.subtypeEquivRight fun x ↦ ?_).trans
     (Equiv.optionIsSomeEquiv _))).trans (Fintype.card_fin _)
@@ -205,15 +205,15 @@ theorem finrank_homology_torusRho₂Rho₁TypeA_torusChainTypeD (n : ℕ)
 
 /-- **The pairing of `torusRho₃Rho₂TypeA` with the chain `torusChainTypeD n` has homology of rank
 `1`**, the rank of `HF̂(S³)`. -/
-theorem finrank_homology_torusRho₃Rho₂TypeA_torusChainTypeD (n : ℕ)
-    (hd : (torusChainTypeD R n).typeABoxTensorDifferential (isStrictlyUnital_torusRho₃Rho₂TypeA R)
-        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) ∘ₗ
-      (torusChainTypeD R n).typeABoxTensorDifferential (isStrictlyUnital_torusRho₃Rho₂TypeA R)
-        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) = 0) :
-    Module.finrank R (LinearMap.homology _ hd) = 1 := by
-  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+theorem finrank_homology_torusRho₃Rho₂TypeA_torusChainTypeD (n : ℕ) :
+    Module.finrank R (LinearMap.homology _
+      (TypeDStructure.typeABoxTensorDifferential_comp_self_eq_zero_of_typeABoxDifferential_eq_zero
+        (isStrictlyUnital_torusRho₃Rho₂TypeA R)
+        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _)
+        (typeABoxDifferential_torusRho₃Rho₂TypeA_torusChainTypeD R n))) = 1 := by
+  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero _ _
     (torusRho₃Rho₂TypeA_eq_threePointTypeA R)
-    (typeABoxDifferential_torusRho₃Rho₂TypeA_torusChainTypeD R n) hd]
+    (typeABoxDifferential_torusRho₃Rho₂TypeA_torusChainTypeD R n)]
   -- The only generator at `ι₀` is `x`.
   refine (Fintype.card_congr (Equiv.subtypeEquivRight fun x ↦ ?_)).trans
     (Fintype.card_subtype_eq none)
@@ -222,17 +222,15 @@ theorem finrank_homology_torusRho₃Rho₂TypeA_torusChainTypeD (n : ℕ)
 
 /-- **The pairing of `torusRho₂Rho₁TypeA` with `torusBoundedRho₁₂TypeD` has homology of rank `2`**,
 the rank of `HF̂(S¹ × S²)`. -/
-theorem finrank_homology_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD
-    (hd : (torusBoundedRho₁₂TypeD R).typeABoxTensorDifferential
+theorem finrank_homology_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD :
+    Module.finrank R (LinearMap.homology _
+      (TypeDStructure.typeABoxTensorDifferential_comp_self_eq_zero_of_typeABoxDifferential_eq_zero
         (isStrictlyUnital_torusRho₂Rho₁TypeA R)
-        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) ∘ₗ
-      (torusBoundedRho₁₂TypeD R).typeABoxTensorDifferential
-        (isStrictlyUnital_torusRho₂Rho₁TypeA R)
-        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) = 0) :
-    Module.finrank R (LinearMap.homology _ hd) = 2 := by
-  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _)
+        (typeABoxDifferential_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD R))) = 2 := by
+  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero _ _
     (torusRho₂Rho₁TypeA_eq_threePointTypeA R)
-    (typeABoxDifferential_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD R) hd]
+    (typeABoxDifferential_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD R)]
   -- The generators at `ι₁` are `y₁` and `y₂`.
   refine (Fintype.card_congr (Equiv.subtypeEquivRight fun x ↦ ?_)).trans
     (by decide : Fintype.card {x : Fin 3 // x ≠ 1} = 2)
@@ -240,17 +238,15 @@ theorem finrank_homology_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD
 
 /-- **The pairing of `torusRho₃Rho₂TypeA` with `torusBoundedRho₁₂TypeD` has homology of rank `1`**,
 the rank of `HF̂(S³)`. -/
-theorem finrank_homology_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD
-    (hd : (torusBoundedRho₁₂TypeD R).typeABoxTensorDifferential
+theorem finrank_homology_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD :
+    Module.finrank R (LinearMap.homology _
+      (TypeDStructure.typeABoxTensorDifferential_comp_self_eq_zero_of_typeABoxDifferential_eq_zero
         (isStrictlyUnital_torusRho₃Rho₂TypeA R)
-        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) ∘ₗ
-      (torusBoundedRho₁₂TypeD R).typeABoxTensorDifferential
-        (isStrictlyUnital_torusRho₃Rho₂TypeA R)
-        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) = 0) :
-    Module.finrank R (LinearMap.homology _ hd) = 1 := by
-  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+        (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _)
+        (typeABoxDifferential_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD R))) = 1 := by
+  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero _ _
     (torusRho₃Rho₂TypeA_eq_threePointTypeA R)
-    (typeABoxDifferential_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD R) hd]
+    (typeABoxDifferential_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD R)]
   -- The only generator at `ι₀` is `x`.
   refine (Fintype.card_congr (Equiv.subtypeEquivRight fun x ↦ ?_)).trans
     (Fintype.card_subtype_eq (1 : Fin 3))

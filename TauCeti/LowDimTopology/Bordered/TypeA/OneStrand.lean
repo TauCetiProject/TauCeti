@@ -516,6 +516,20 @@ theorem finrank_typeABoxTensor_threePointTypeA :
 
 variable [DecidableEq X]
 
+/-- The box tensor differential with the module of three points vanishes when no coefficient of the
+type `D` structure has a component along the idempotent `I(i)`, which `m₂` reads, and every higher
+operation vanishes on the coefficients along every path of generators. -/
+private theorem typeABoxDifferential_threePointTypeA_eq_zero_of_act_add_two_eq_zero
+    (hI : ∀ x y, oneStrandIdemCoord R M ⟨M i, i, rfl⟩ (N.coeff x y) = 0)
+    (h : ∀ n (x : Fin (n + 2 + 1) → X), (threePointTypeA R M hki hij hM hbetween).act (n + 2)
+      (fun l ↦ N.coeff (x l.castSucc) (x l.succ)) = 0) :
+    N.typeABoxDifferential (threePointTypeA R M hki hij hM hbetween) = 0 :=
+  N.typeABoxDifferential_eq_zero_of_forall_act_eq_zero _ fun n x ↦ by
+    match n with
+    | 0 => simp
+    | 1 => exact LinearMap.ext fun y ↦ by simp [threePointTypeA_act_one_apply, hI]
+    | n + 2 => exact h n x
+
 /-- **The box tensor differential with the module of three points vanishes** when no coefficient of
 the type `D` structure has a component along the idempotent `I(i)` or along the chord `ρ_ij`, which
 the first (leftmost) input of every higher operation reads. -/
@@ -523,11 +537,8 @@ theorem typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_left
     (hI : ∀ x y, oneStrandIdemCoord R M ⟨M i, i, rfl⟩ (N.coeff x y) = 0)
     (hρ : ∀ x y, oneStrandChordCoord R M hij (N.coeff x y) = 0) :
     N.typeABoxDifferential (threePointTypeA R M hki hij hM hbetween) = 0 :=
-  N.typeABoxDifferential_eq_zero_of_forall_act_eq_zero _ fun n x ↦ LinearMap.ext fun y ↦ by
-    match n with
-    | 0 => simp
-    | 1 => simp [threePointTypeA_act_one_apply, hI]
-    | n + 2 => simp [threePointTypeA_act_add_two_apply, hρ]
+  typeABoxDifferential_threePointTypeA_eq_zero_of_act_add_two_eq_zero hI fun _ _ ↦
+    LinearMap.ext fun _ ↦ by simp [threePointTypeA_act_add_two_apply, hρ]
 
 /-- **The box tensor differential with the module of three points vanishes** when no coefficient of
 the type `D` structure has a component along the idempotent `I(i)` or along the chord `ρ_ki`, which
@@ -536,11 +547,8 @@ theorem typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_right
     (hI : ∀ x y, oneStrandIdemCoord R M ⟨M i, i, rfl⟩ (N.coeff x y) = 0)
     (hρ : ∀ x y, oneStrandChordCoord R M hki (N.coeff x y) = 0) :
     N.typeABoxDifferential (threePointTypeA R M hki hij hM hbetween) = 0 :=
-  N.typeABoxDifferential_eq_zero_of_forall_act_eq_zero _ fun n x ↦ LinearMap.ext fun y ↦ by
-    match n with
-    | 0 => simp
-    | 1 => simp [threePointTypeA_act_one_apply, hI]
-    | n + 2 => simp [threePointTypeA_act_add_two_apply, hρ]
+  typeABoxDifferential_threePointTypeA_eq_zero_of_act_add_two_eq_zero hI fun _ _ ↦
+    LinearMap.ext fun _ ↦ by simp [threePointTypeA_act_add_two_apply, hρ]
 
 /-- **The homology of the box tensor product with the module of three points** `k < i < j`, when
 its differential vanishes, is free on the generators of the type `D` structure at the idempotent
@@ -548,12 +556,13 @@ its differential vanishes, is free on the generators of the type `D` structure a
 it applies to modules defined as one, whose strict unitality enters the differential. -/
 theorem finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
     {Mm : UngradedAInfinityRightModule (matchedSummandDifferential R M 1) R}
-    {hMm : Mm.IsStrictlyUnital (oneStrandIdem R M)}
-    {hι : ∀ s, matchedSummandDifferential R M 1 (oneStrandIdem R M s) = 0}
-    (hMm' : Mm = threePointTypeA R M hki hij hM hbetween) (h : N.typeABoxDifferential Mm = 0)
-    (hd : N.typeABoxTensorDifferential hMm hι ∘ₗ N.typeABoxTensorDifferential hMm hι = 0) :
-    Module.finrank R (LinearMap.homology _ hd) = Fintype.card {x // N.idem x = ⟨M i, i, rfl⟩} := by
-  rw [(LinearMap.homologyEquivOfEqZero _ hd
+    (hMm : Mm.IsStrictlyUnital (oneStrandIdem R M))
+    (hι : ∀ s, matchedSummandDifferential R M 1 (oneStrandIdem R M s) = 0)
+    (hMm' : Mm = threePointTypeA R M hki hij hM hbetween) (h : N.typeABoxDifferential Mm = 0) :
+    Module.finrank R (LinearMap.homology _
+        (N.typeABoxTensorDifferential_comp_self_eq_zero_of_typeABoxDifferential_eq_zero hMm hι h)) =
+      Fintype.card {x // N.idem x = ⟨M i, i, rfl⟩} := by
+  rw [(LinearMap.homologyEquivOfEqZero _ _
     (TypeDStructure.typeABoxTensorDifferential_eq_zero_of_typeABoxDifferential_eq_zero _ _
       h)).finrank_eq, hMm', finrank_typeABoxTensor_threePointTypeA]
 
