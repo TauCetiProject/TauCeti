@@ -535,6 +535,16 @@ theorem complexCutoffPullback_one_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
   · simp [complexCutoffPullback_apply_of_mem he _ _ hx, cutoffPullback_apply_of_mem he _ _ hx]
   · simp [complexCutoffPullback_apply_of_notMem he _ _ hx, cutoffPullback_apply_of_notMem he _ _ hx]
 
+/-- A cutoff `χ` equal to `1` on the support of `ψ` absorbs `ψ`, both read on `M` through the
+chart: the complex counterpart of `cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset`. -/
+theorem complexCutoffPullback_one_mul_complexCutoffPullback_one_of_tsupport_subset
+    {ψ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ : tsupport ψ ⊆ χ ⁻¹' {1}) :
+    e.complexCutoffPullback he ψ 1 * e.complexCutoffPullback he χ 1 =
+      e.complexCutoffPullback he ψ 1 := by
+  ext x
+  simp only [ContMDiffMap.coe_mul, Pi.mul_apply, complexCutoffPullback_one_apply,
+    ← Complex.ofReal_mul, cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset he hχ]
+
 /-- The complex pullback `(ψ f) ∘ e` is supported in the image under the inverse of the chart of
 the common support of `ψ` and `f`, a compact subset of the chart target. -/
 theorem tsupport_complexCutoffPullback_subset_inter (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))

@@ -54,6 +54,11 @@ values on compactly supported functions, and hence by its chart compressions.
   properly supported. A local operator takes the same value at `x` on functions that agree near
   `x` (`TauCeti.apply_eq_of_eventuallyEq_of_local`) and does not enlarge supports
   (`TauCeti.apply_eq_zero_of_notMem_tsupport_of_local`).
+* `TauCeti.IsProperlySupported.locallyFinite_setOf_mem_union_and_mulLeft_comp_comp_mulLeft_ne_zero`:
+  for a properly supported `P` and compactly supported functions `gᵢ` with locally finite supports,
+  only finitely many pieces `gᵢ P gⱼ` are nonzero near every compact set
+  (`TauCeti.IsProperlySupported.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_left` and
+  `TauCeti.IsProperlySupported.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_right`).
 * `TauCeti.isProperlySupported_locallyFiniteSum`: the locally finite sum
   `ContMDiffMap.locallyFiniteSum P hP` of operators `f ↦ ∑ᵢ Pᵢ f` is properly supported when the
   outputs of `Pᵢ` lie in compact sets `Sᵢ` forming a locally finite family and each `Pᵢ` only sees
@@ -321,6 +326,81 @@ theorem isProperlySupported_locallyFiniteSum [T2Space M] (hS : LocallyFinite S)
     refine Finset.sum_eq_zero fun i hi ↦ ?_
     rw [hloc i f (hf.filter_mono (nhdsSet_mono (subset_biUnion_of_mem hi))),
       ContMDiffMap.coe_zero, Pi.zero_apply]
+
+/-! #### Pieces of a properly supported operator along a locally finite family -/
+
+variable {g : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+
+/-- **Only finitely many pieces `gᵢ P gⱼ` with `j` fixed are nonzero.** If `P` is properly
+supported and the supports of the functions `gᵢ` form a locally finite family, then for every `j`
+with `gⱼ` compactly supported, `gᵢ P gⱼ ≠ 0` for only finitely many `i`: the outputs of `P` on
+functions supported in `supp gⱼ` lie in a compact set, which meets only finitely many `supp gᵢ`. -/
+theorem IsProperlySupported.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_right
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) (hg : LocallyFinite fun i ↦ tsupport (g i)) {j : ι}
+    (hgj : HasCompactSupport (g j)) :
+    {i | LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g j) ≠ 0}.Finite := by
+  obtain ⟨K', hK', hsupp, -⟩ := isProperlySupported_iff.1 hP _ hgj
+  refine (hg.finite_nonempty_inter_compact hK').subset fun i hi ↦ ?_
+  by_contra hiK
+  refine hi (LinearMap.ext fun f ↦ ContMDiffMap.ext fun x ↦ ?_)
+  -- At a point of `supp gᵢ`, which misses `K'`, the output `P (gⱼ f)` vanishes.
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+    LinearMap.zero_apply, ContMDiffMap.coe_zero, Pi.zero_apply]
+  by_cases hx : x ∈ tsupport (g i)
+  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hiK ⟨x, hx,
+      hsupp _ (by rw [ContMDiffMap.coe_mul]; exact tsupport_mul_subset_left) h⟩, mul_zero]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul]
+
+/-- **Only finitely many pieces `gᵢ P gⱼ` with `i` fixed are nonzero.** If `P` is properly
+supported and the supports of the functions `gⱼ` form a locally finite family, then for every `i`
+with `gᵢ` compactly supported, `gᵢ P gⱼ ≠ 0` for only finitely many `j`: the values of `P` on
+`supp gᵢ` only depend on its input near a compact set, which meets only finitely many `supp gⱼ`. -/
+theorem IsProperlySupported.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_left
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) (hg : LocallyFinite fun j ↦ tsupport (g j)) {i : ι}
+    (hgi : HasCompactSupport (g i)) :
+    {j | LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g j) ≠ 0}.Finite := by
+  have := ChartedSpace.locallyCompactSpace (CoordinateSpace n) M
+  obtain ⟨K', hK', -, hloc⟩ := isProperlySupported_iff.1 hP _ hgi
+  obtain ⟨L, hL, hK'L⟩ := exists_compact_superset hK'
+  refine (hg.finite_nonempty_inter_compact hL).subset fun j hj ↦ ?_
+  by_contra hjL
+  refine hj (LinearMap.ext fun f ↦ ContMDiffMap.ext fun x ↦ ?_)
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+    LinearMap.zero_apply, ContMDiffMap.coe_zero, Pi.zero_apply]
+  by_cases hx : x ∈ tsupport (g i)
+  · -- `gⱼ f` vanishes on `interior L`, a neighbourhood of `K'` which misses `supp gⱼ`.
+    refine (congrArg _ (hloc _ (Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK'L)
+      fun y hy ↦ ?_) x hx)).trans (mul_zero _)
+    simp [image_eq_zero_of_notMem_tsupport fun h ↦ hjL ⟨y, h, interior_subset hy⟩]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul]
+
+/-- **The nonzero pieces `gᵢ P gⱼ` are locally finite.** If `P` is properly supported and the
+compactly supported functions `gᵢ` have supports in sets `Bᵢ` forming a locally finite family, then
+the sets `Bᵢ ∪ Bⱼ`, over the pairs `(i, j)` with `gᵢ P gⱼ ≠ 0`, form a locally finite family. -/
+theorem IsProperlySupported.locallyFinite_setOf_mem_union_and_mulLeft_comp_comp_mulLeft_ne_zero
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) {B : ι → Set M} (hB : LocallyFinite B)
+    (hgB : ∀ i, tsupport (g i) ⊆ B i) (hgc : ∀ i, HasCompactSupport (g i)) :
+    LocallyFinite fun p : ι × ι ↦ {x | x ∈ B p.1 ∪ B p.2 ∧
+      LinearMap.mulLeft ℂ (g p.1) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g p.2) ≠ 0} := by
+  have hgf : LocallyFinite fun i ↦ tsupport (g i) := hB.subset hgB
+  intro x
+  obtain ⟨U, hU, hUf⟩ := hB x
+  -- A pair whose set meets `U` has a first or second index among the finitely many with `Bᵢ`
+  -- meeting `U`, and then finitely many choices of the other index.
+  refine ⟨U, hU, ((hUf.biUnion fun i _ ↦
+    ((hP.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_left hgf (hgc i)).image
+      fun j ↦ (i, j))).union (hUf.biUnion fun j _ ↦
+    ((hP.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_right hgf (hgc j)).image
+      fun i ↦ (i, j)))).subset ?_⟩
+  rintro ⟨i, j⟩ ⟨y, ⟨hyB | hyB, hT⟩, hyU⟩
+  · exact Or.inl (mem_biUnion ⟨y, hyB, hyU⟩ ⟨j, hT, rfl⟩)
+  · exact Or.inr (mem_biUnion ⟨y, hyB, hyU⟩ ⟨i, hT, rfl⟩)
 
 end ProperSupport
 

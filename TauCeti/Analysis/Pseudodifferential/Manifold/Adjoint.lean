@@ -39,19 +39,29 @@ Proper support of `Q` is a hypothesis, not a consequence: the adjoint identity o
 values of `Q` on compactly supported functions, while membership in
 `TauCeti.classicalPseudodifferentialOperators` constrains `Q` on all smooth functions.
 
-On a compact manifold of positive dimension, with `μ` finite, every classical pseudodifferential
-operator `P` of order `m` has a formal adjoint, which is a classical pseudodifferential operator of
-order `m` with conjugate principal symbol
-(`TauCeti.exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq`), and this
-formal adjoint is unique
-(`TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`). Indeed `P` is a
-finite sum of chart quantizations (`TauCeti.exists_eq_sum_chartQuantization`), `μ` reads in each
-of their charts as a smooth positive density
+On a σ-compact manifold of positive dimension, compact or not, with `μ` finite on compact sets,
+every classical pseudodifferential operator `P` of order `m` has a formal adjoint, which is a
+classical pseudodifferential operator of order `m`, in particular properly supported, with
+conjugate principal symbol
+(`exists_mem_classicalPseudodifferentialOperators_forall_hasCompactSupport_integral_inner_eq`, in
+the namespace `TauCeti`).
+Take a locally finite partition of unity `gᵢ` in charts. Every piece `gᵢ P gⱼ` is a finite sum of
+chart quantizations (`TauCeti.exists_mulLeft_comp_comp_mulLeft_eq_sum_chartQuantization`), `μ`
+reads in each of their charts as a smooth positive density
 (`TauCeti.HasSmoothPositiveDensity.exists_map_restrict_source_eq_withDensity`), and a finite sum of
-chart quantizations has such a formal adjoint
+chart quantizations has a formal adjoint which is again one
 (`TauCeti.exists_mem_classicalPseudodifferentialOperators_integral_inner_sum_chartQuantization_eq`).
-Uniqueness holds because `μ` is positive on nonempty open sets, so a smooth function orthogonal to
-itself vanishes. In particular the formal adjoint of an elliptic operator is elliptic
+The formal adjoint of `P` is the locally finite sum of these adjoints, localized near the supports
+of `gⱼ` and `gᵢ`. On a noncompact manifold infinitely many pieces occur, but proper support of `P`
+leaves only finitely many nonzero pieces near every compact set
+(`TauCeti.IsProperlySupported.locallyFinite_setOf_mem_union_and_mulLeft_comp_comp_mulLeft_ne_zero`).
+
+On a compact manifold, with `μ` finite, the formal adjoint satisfies the adjoint identity for all
+smooth `u` and `v`
+(`TauCeti.exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq`), and it is
+unique (`TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`), because
+`μ` is positive on nonempty open sets, so a smooth function orthogonal to itself vanishes. In
+particular the formal adjoint of an elliptic operator is elliptic
 (`TauCeti.IsClassicalElliptic.exists_isClassicalElliptic_forall_integral_inner_eq`). In the
 Fredholm theory of elliptic operators on compact manifolds, the kernel of the formal adjoint
 describes the cokernel of `P`.
@@ -86,9 +96,12 @@ classical symbol of order `m` (`TauCeti.ClassicalSymbol.weightedAdjoint`) with p
 * `TauCeti.isClassicalEllipticAt_iff_of_forall_integral_inner_eq`,
   `TauCeti.isClassicalElliptic_iff_of_forall_integral_inner_eq`: a properly supported formal
   adjoint is elliptic exactly where the operator is.
+* `exists_mem_classicalPseudodifferentialOperators_forall_hasCompactSupport_integral_inner_eq`:
+  on a σ-compact manifold of positive dimension, every classical pseudodifferential operator has a
+  formal adjoint of the same order with conjugate principal symbol.
 * `TauCeti.exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq`: on a compact
-  manifold of positive dimension, every classical pseudodifferential operator has a formal adjoint
-  of the same order with conjugate principal symbol.
+  manifold of positive dimension, the formal adjoint satisfies the adjoint identity for all smooth
+  functions.
 * `TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`: on a compact
   manifold, formal adjoints for a finite measure positive on open sets are unique.
 * `TauCeti.IsClassicalElliptic.exists_isClassicalElliptic_forall_integral_inner_eq`: on a compact
@@ -398,6 +411,336 @@ theorem isClassicalElliptic_iff_of_forall_integral_inner_eq
   simp only [isClassicalElliptic_iff,
     isClassicalEllipticAt_iff_of_forall_integral_inner_eq hμ hP hQ hPQ]
 
+/-! ### Existence on a σ-compact manifold -/
+
+section SigmaCompact
+
+variable [BorelSpace M] [IsFiniteMeasureOnCompacts μ]
+
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- For a measure finite on compact sets, the pairing of two smooth functions one of which has
+compact support is integrable. -/
+private theorem integrable_inner_of_hasCompactSupport
+    {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (h : HasCompactSupport f ∨ HasCompactSupport g) :
+    Integrable (fun x ↦ inner ℂ (f x) (g x)) μ := by
+  refine (f.contMDiff.continuous.inner g.contMDiff.continuous).integrable_of_hasCompactSupport ?_
+  rcases h with h | h
+  · exact h.mono fun x hx h0 ↦ hx (by simp [h0])
+  · exact h.mono fun x hx h0 ↦ hx (by simp [h0])
+
+/-- **Formal adjoints of localized operators.** If `ρ` and `τ` are cutoffs in two charts and `P` is
+a classical pseudodifferential operator of order `m`, then `ρ P τ`, with the cutoffs read on `M`,
+has a formal adjoint for `μ` which is a classical pseudodifferential operator of order `m`. Indeed
+`ρ P τ` is a finite sum of chart quantizations
+(`TauCeti.exists_mulLeft_comp_comp_mulLeft_eq_sum_chartQuantization`). -/
+private theorem exists_mem_forall_integral_inner_mulLeft_comp_comp_mulLeft_eq [NeZero n]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    {e e' : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ρ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (τ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)) :
+    ∃ Q ∈ classicalPseudodifferentialOperators m,
+      ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+        ∫ x, inner ℂ ((LinearMap.mulLeft ℂ (e.complexCutoffPullback he ρ 1) ∘ₗ P ∘ₗ
+          LinearMap.mulLeft ℂ (e'.complexCutoffPullback he' τ 1)) u x) (v x) ∂μ =
+          ∫ x, inner ℂ (u x) (Q v x) ∂μ := by
+  obtain ⟨k, e'', he'', φ, ψ, a, h⟩ :=
+    exists_mulLeft_comp_comp_mulLeft_eq_sum_chartQuantization hP he ρ he' τ
+  choose ρ' hρ hρ0 hρμ using fun i ↦ hμ.exists_map_restrict_source_eq_withDensity (he'' i)
+  obtain ⟨Q, hQ, hadj, -⟩ :=
+    exists_mem_classicalPseudodifferentialOperators_integral_inner_sum_chartQuantization_eq
+      Finset.univ he'' (fun i _ ↦ hρ i) (fun i _ ↦ hρ0 i) (fun i _ ↦ hρμ i) φ ψ a
+  exact ⟨Q, hQ, fun u v ↦ by rw [h]; exact hadj u v⟩
+
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- **Splitting a pairing along a partition of unity.** If the functions `gᵢ` add up to `1` and `u`,
+`v` have compact supports, met only by the supports of the `gⱼ` with `j ∈ Fᵤ` and of the `gᵢ` with
+`i ∈ Fᵥ`, then `∫ ⟪P u, v⟫ dμ = ∑_{i ∈ Fᵥ} ∑_{j ∈ Fᵤ} ∫ ⟪gᵢ P (gⱼ u), v⟫ dμ`. -/
+private theorem integral_inner_eq_sum_sum_mulLeft_comp_comp_mulLeft {ι : Type*}
+    {g : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hg : ∀ x, ∑ᶠ i, g i x = 1)
+    {u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hv : HasCompactSupport v)
+    {Fu Fv : Finset ι} (hFu : ∀ i, ∀ x ∈ tsupport u, g i x ≠ 0 → i ∈ Fu)
+    (hFv : ∀ i, ∀ x ∈ tsupport v, g i x ≠ 0 → i ∈ Fv) :
+    ∫ x, inner ℂ (P u x) (v x) ∂μ = ∑ i ∈ Fv, ∑ j ∈ Fu,
+      ∫ x, inner ℂ ((LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g j)) u x) (v x)
+        ∂μ := by
+  -- On a compact set `K`, the `gᵢ` with `i` in a finite set containing all those not vanishing on
+  -- `K` add up to `1`.
+  have hsum (F : Finset ι) (K : Set M) (hF : ∀ i, ∀ x ∈ K, g i x ≠ 0 → i ∈ F) (x : M)
+      (hx : x ∈ K) : ∑ i ∈ F, g i x = 1 := by
+    rw [← finsum_eq_sum_of_support_subset _ fun i hi ↦ hF i x hx hi, hg x]
+  -- `u = ∑_{j ∈ Fᵤ} gⱼ u`.
+  have hu : u = ∑ j ∈ Fu, g j * u := by
+    ext x
+    rw [ContMDiffMap.coe_sum, Finset.sum_apply]
+    by_cases hx : x ∈ tsupport u
+    · simp [← Finset.sum_mul, hsum Fu _ hFu x hx]
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  -- `⟪P u, v⟫ = ∑_{i ∈ Fᵥ} ⟪gᵢ P u, v⟫` pointwise.
+  have hPu (x : M) : inner ℂ (P u x) (v x) = ∑ i ∈ Fv, inner ℂ ((g i * P u) x) (v x) := by
+    by_cases hx : x ∈ tsupport v
+    · have hi (i : ι) : inner ℂ ((g i * P u) x) (v x) = conj (g i x) * inner ℂ (P u x) (v x) := by
+        simp only [ContMDiffMap.coe_mul, Pi.mul_apply, RCLike.inner_apply, map_mul]
+        ring
+      rw [Finset.sum_congr rfl fun i _ ↦ hi i, ← Finset.sum_mul, ← map_sum, hsum Fv _ hFv x hx,
+        map_one, one_mul]
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  have hint (w : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+      Integrable (fun x ↦ inner ℂ (w x) (v x)) μ := integrable_inner_of_hasCompactSupport (.inr hv)
+  simp_rw [hPu]
+  rw [integral_finsetSum _ fun i _ ↦ hint _]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  conv_lhs => rw [hu, map_sum, Finset.mul_sum, ContMDiffMap.coe_sum]
+  simp only [Finset.sum_apply, sum_inner]
+  rw [integral_finsetSum _ fun j _ ↦ hint _]
+  rfl
+
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- **Pairing with a locally finite sum.** If `u` has compact support and, at the points of its
+support, `Qₚ v` only fails to vanish for `p` in a finite set `F`, then
+`∫ ⟪u, (∑ₚ Qₚ) v⟫ dμ = ∑_{p ∈ F} ∫ ⟪u, Qₚ v⟫ dμ`. -/
+private theorem integral_inner_locallyFiniteSum_eq_sum {κ : Type*}
+    {Q : κ → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    {hQ : ∀ f, LocallyFinite fun p ↦ Function.support (Q p f)}
+    {u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hu : HasCompactSupport u) {F : Finset κ}
+    (hF : ∀ p, ∀ x ∈ tsupport u, Q p v x ≠ 0 → p ∈ F) :
+    ∫ x, inner ℂ (u x) (ContMDiffMap.locallyFiniteSum Q hQ v x) ∂μ =
+      ∑ p ∈ F, ∫ x, inner ℂ (u x) (Q p v x) ∂μ := by
+  rw [← integral_finsetSum _ fun p _ ↦ integrable_inner_of_hasCompactSupport (.inl hu)]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  dsimp only
+  by_cases hx : x ∈ tsupport u
+  · rw [ContMDiffMap.locallyFiniteSum_apply, finsum_eq_sum_of_support_subset _
+      fun p hp ↦ hF p x hx hp, inner_sum]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
+omit [MeasurableSpace M] [BorelSpace M] [IsFiniteMeasureOnCompacts μ]
+  [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- Multiplication by a real cutoff read on `M` moves across the pairing. -/
+private theorem inner_mul_complexCutoffPullback_apply
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (a b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (x : M) :
+    inner ℂ (a x) ((e.complexCutoffPullback he χ 1 * b) x) =
+      inner ℂ ((e.complexCutoffPullback he χ 1 * a) x) (b x) := by
+  simp only [ContMDiffMap.coe_mul, Pi.mul_apply, RCLike.inner_apply, map_mul,
+    OpenPartialHomeomorph.complexCutoffPullback_one_apply, Complex.conj_ofReal]
+  ring
+
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [BorelSpace M]
+  [IsFiniteMeasureOnCompacts μ] in
+/-- **Localizing a formal adjoint.** If `Q₀` is a formal adjoint of `g₁ P g₂`, and the real-valued
+functions `h₁`, `h₂` are `1` on the supports of `g₁`, `g₂`, then `h₂ Q₀ h₁` is one as well. -/
+private theorem integral_inner_mulLeft_comp_comp_mulLeft_eq_of_mul_eq
+    {g₁ g₂ h₁ h₂ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hhg₁ : g₁ * h₁ = g₁)
+    (hhg₂ : g₂ * h₂ = g₂)
+    (hh₁ : ∀ a b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, ∀ x,
+      inner ℂ (a x) ((h₁ * b) x) = inner ℂ ((h₁ * a) x) (b x))
+    (hh₂ : ∀ a b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, ∀ x,
+      inner ℂ (a x) ((h₂ * b) x) = inner ℂ ((h₂ * a) x) (b x))
+    (hadj : ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      ∫ x, inner ℂ ((LinearMap.mulLeft ℂ g₁ ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ g₂) u x) (v x) ∂μ =
+        ∫ x, inner ℂ (u x) (Q v x) ∂μ)
+    (u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ∫ x, inner ℂ ((LinearMap.mulLeft ℂ g₁ ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ g₂) u x) (v x) ∂μ =
+      ∫ x, inner ℂ (u x)
+        ((LinearMap.mulLeft ℂ h₂ ∘ₗ Q ∘ₗ LinearMap.mulLeft ℂ h₁) v x) ∂μ := by
+  have hT : (LinearMap.mulLeft ℂ g₁ ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ g₂) u =
+      h₁ * (LinearMap.mulLeft ℂ g₁ ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ g₂) (h₂ * u) := by
+    simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ← mul_assoc, hhg₂,
+      mul_comm h₁ g₁, hhg₁]
+  rw [hT]
+  calc _ = ∫ x, inner ℂ ((LinearMap.mulLeft ℂ g₁ ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ g₂) (h₂ * u) x)
+          ((h₁ * v) x) ∂μ := integral_congr_ae (.of_forall fun x ↦ (hh₁ _ _ x).symm)
+    _ = ∫ x, inner ℂ ((h₂ * u) x) (Q (h₁ * v) x) ∂μ := hadj _ _
+    _ = _ := integral_congr_ae (.of_forall fun x ↦ (hh₂ _ _ x).symm)
+
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- **Assembling formal adjoints of pieces.** Let `gᵢ` add up to `1`, with supports in sets `Bᵢ`
+forming a locally finite family, and let `Q'ᵢⱼ` be formal adjoints of the pieces `gᵢ P gⱼ` whose
+outputs lie in `Bⱼ` and which only see their inputs on `Bᵢ`. Then the locally finite sum of the
+`Q'ᵢⱼ` is a formal adjoint of `P` on compactly supported functions. -/
+private theorem integral_inner_eq_integral_inner_locallyFiniteSum {ι : Type*}
+    {g : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {B : ι → Set M} (hB : LocallyFinite B)
+    (hgB : ∀ i, tsupport (g i) ⊆ B i) (hg1 : ∀ x, ∑ᶠ i, g i x = 1)
+    {Q' : ι × ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    {hQ' : ∀ f, LocallyFinite fun p ↦ Function.support (Q' p f)}
+    (hadj : ∀ i j, ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      ∫ x, inner ℂ ((LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g j)) u x) (v x) ∂μ =
+        ∫ x, inner ℂ (u x) (Q' (i, j) v x) ∂μ)
+    (hQ'B : ∀ p f x, Q' p f x ≠ 0 → x ∈ B p.2 ∧ ∃ y ∈ B p.1, f y ≠ 0)
+    {u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hu : HasCompactSupport u)
+    (hv : HasCompactSupport v) :
+    ∫ x, inner ℂ (P u x) (v x) ∂μ =
+      ∫ x, inner ℂ (u x) (ContMDiffMap.locallyFiniteSum Q' hQ' v x) ∂μ := by
+  -- Only the pieces with `Bᵢ` meeting the support of `v` and `Bⱼ` meeting that of `u` contribute.
+  have hmem {K : Set M} (hK : IsCompact K) {i : ι} {x : M} (hxB : x ∈ B i) (hxK : x ∈ K) :
+      i ∈ (hB.finite_nonempty_inter_compact hK).toFinset :=
+    (hB.finite_nonempty_inter_compact hK).mem_toFinset.2 ⟨x, hxB, hxK⟩
+  have hF (p : ι × ι) (x : M) (hx : x ∈ tsupport u) (hp : Q' p v x ≠ 0) :
+      p ∈ (hB.finite_nonempty_inter_compact hv).toFinset ×ˢ
+        (hB.finite_nonempty_inter_compact hu).toFinset := by
+    obtain ⟨hxB, y, hyB, hy⟩ := hQ'B p v x hp
+    exact Finset.mem_product.2 ⟨hmem hv hyB (subset_tsupport _ hy), hmem hu hxB hx⟩
+  rw [integral_inner_eq_sum_sum_mulLeft_comp_comp_mulLeft hg1 hv
+      (fun i x hx hgx ↦ hmem hu (hgB i (subset_tsupport _ hgx)) hx)
+      (fun i x hx hgx ↦ hmem hv (hgB i (subset_tsupport _ hgx)) hx),
+    integral_inner_locallyFiniteSum_eq_sum hu hF, Finset.sum_product]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ hadj i j u v
+
+omit [MeasurableSpace M] [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [BorelSpace M]
+  [IsFiniteMeasureOnCompacts μ] in
+/-- If `h₂ Q (h₁ f)` does not vanish at `x`, then `x` lies in the support of `h₂` and `f` does not
+vanish somewhere on the support of `h₁`. -/
+private theorem mem_tsupport_and_exists_of_mulLeft_comp_comp_mulLeft_apply_ne_zero
+    {h₁ h₂ f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M}
+    (hx : (LinearMap.mulLeft ℂ h₂ ∘ₗ Q ∘ₗ LinearMap.mulLeft ℂ h₁) f x ≠ 0) :
+    x ∈ tsupport h₂ ∧ ∃ y ∈ tsupport h₁, f y ≠ 0 := by
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul,
+    Pi.mul_apply] at hx
+  obtain ⟨y, hy⟩ : ∃ y, (h₁ * f) y ≠ 0 := by
+    by_contra! hy
+    have h0 : h₁ * f = 0 := ContMDiffMap.ext fun y ↦ by simpa using hy y
+    exact right_ne_zero_of_mul hx (by rw [h0, map_zero]; rfl)
+  rw [ContMDiffMap.coe_mul, Pi.mul_apply] at hy
+  exact ⟨subset_tsupport _ (left_ne_zero_of_mul hx), y,
+    subset_tsupport _ (left_ne_zero_of_mul hy), right_ne_zero_of_mul hy⟩
+
+omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- **Formal adjoints from a partition of unity.** Let `gᵢ` add up to `1`, with supports in compact
+sets `Bᵢ` forming a locally finite family, and let `hᵢ` be real-valued functions supported in `Bᵢ`
+and equal to `1` on the support of `gᵢ`. If every piece `gᵢ P gⱼ` of a classical
+pseudodifferential operator `P` of order `m` has a formal adjoint of order `m`, then `P` has a
+formal adjoint of order `m` on compactly supported functions: the locally finite sum of the
+localized adjoints `hⱼ Q₀ᵢⱼ hᵢ` of the nonzero pieces. -/
+private theorem exists_mem_forall_hasCompactSupport_integral_inner_eq_of_partition {ι : Type*}
+    {g h : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {B : ι → Set M}
+    (hB : LocallyFinite B) (hBc : ∀ i, IsCompact (B i)) (hgB : ∀ i, tsupport (g i) ⊆ B i)
+    (hhB : ∀ i, tsupport (h i) ⊆ B i) (hhg : ∀ i, g i * h i = g i) (hg1 : ∀ x, ∑ᶠ i, g i x = 1)
+    (hh : ∀ i, ∀ a b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, ∀ x,
+      inner ℂ (a x) ((h i * b) x) = inner ℂ ((h i * a) x) (b x))
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hpair : ∀ i j, ∃ Q ∈ classicalPseudodifferentialOperators m,
+      ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+        ∫ x, inner ℂ ((LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g j)) u x) (v x) ∂μ =
+          ∫ x, inner ℂ (u x) (Q v x) ∂μ) :
+    ∃ Q ∈ classicalPseudodifferentialOperators m,
+      ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, HasCompactSupport u →
+        HasCompactSupport v → ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ := by
+  classical
+  set T := fun i j ↦ LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g j)
+  -- Formal adjoints `Q₀ᵢⱼ` of the pieces, chosen zero when the piece is, localized by `hᵢ`, `hⱼ`.
+  have hpair' (i j : ι) : ∃ Q ∈ classicalPseudodifferentialOperators m,
+      (∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+        ∫ x, inner ℂ (T i j u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ) ∧
+      (T i j = 0 → Q = 0) := by
+    by_cases hT : T i j = 0
+    · exact ⟨0, zero_mem _, fun u v ↦ by simp [hT], fun _ ↦ rfl⟩
+    · obtain ⟨Q, hQ, hQa⟩ := hpair i j
+      exact ⟨Q, hQ, hQa, fun h ↦ (hT h).elim⟩
+  choose Q₀ hQ₀ hadj₀ hQ₀0 using hpair'
+  set Q' := fun p : ι × ι ↦ LinearMap.mulLeft ℂ (h p.2) ∘ₗ Q₀ p.1 p.2 ∘ₗ LinearMap.mulLeft ℂ (h p.1)
+  -- `Q'ᵢⱼ` has outputs supported in `Bⱼ`, only sees its input on `Bᵢ`, and vanishes with `Tᵢⱼ`.
+  set S := fun p : ι × ι ↦ {x | x ∈ B p.1 ∪ B p.2 ∧ T p.1 p.2 ≠ 0}
+  have hS : LocallyFinite S := (mem_classicalPseudodifferentialOperators_iff.1 hP).1
+    |>.locallyFinite_setOf_mem_union_and_mulLeft_comp_comp_mulLeft_ne_zero hB hgB
+      fun i ↦ (hBc i).of_isClosed_subset (isClosed_tsupport _) (hgB i)
+  have hsupp (p : ι × ι) (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+      tsupport (Q' p f) ⊆ S p := by
+    by_cases hT : T p.1 p.2 = 0
+    · simp [Q', hQ₀0 _ _ hT]
+    · intro x hx
+      simp only [Q', LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul] at hx
+      exact ⟨Or.inr (hhB _ (tsupport_mul_subset_left hx)), hT⟩
+  have hloc (p : ι × ι) (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+      (hf : ∀ᶠ y in 𝓝ˢ (S p), f y = 0) : Q' p f = 0 := by
+    by_cases hT : T p.1 p.2 = 0
+    · simp [Q', hQ₀0 _ _ hT]
+    · have hhf : h p.1 * f = 0 := by
+        ext x
+        rw [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coe_zero, Pi.zero_apply]
+        by_cases hx : x ∈ tsupport (h p.1)
+        · rw [hf.self_of_nhdsSet x ⟨Or.inl (hhB _ hx), hT⟩, mul_zero]
+        · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul]
+      simp [Q', hhf]
+  have hQ' (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+      LocallyFinite fun p ↦ Function.support (Q' p f) :=
+    hS.subset fun p ↦ (subset_tsupport _).trans (hsupp p f)
+  refine ⟨ContMDiffMap.locallyFiniteSum Q' hQ',
+    locallyFiniteSum_mem_classicalPseudodifferentialOperators hS (fun p ↦ ?_)
+      (fun p ↦ mulLeft_comp_mem_classicalPseudodifferentialOperators
+        (comp_mulLeft_mem_classicalPseudodifferentialOperators (hQ₀ _ _) _) _) hsupp hloc,
+    fun u v hu hv ↦ integral_inner_eq_integral_inner_locallyFiniteSum hB hgB hg1
+      (fun i j ↦ integral_inner_mulLeft_comp_comp_mulLeft_eq_of_mul_eq (hhg i) (hhg j) (hh i)
+        (hh j) (hadj₀ i j)) (fun p f x hx ↦ ?_) hu hv⟩
+  · by_cases hT : T p.1 p.2 = 0
+    · simp [S, hT]
+    · simpa [S, hT] using (hBc p.1).union (hBc p.2)
+  · exact (mem_tsupport_and_exists_of_mulLeft_comp_comp_mulLeft_apply_ne_zero hx).imp
+      (fun hx ↦ hhB _ hx) fun ⟨y, hy, hfy⟩ ↦ ⟨y, hhB _ hy, hfy⟩
+
+/-- **Classical pseudodifferential operators on a σ-compact manifold have formal adjoints.** Let `M`
+be a σ-compact manifold modelled on `ℝⁿ` with `n ≠ 0`, compact or not, and `μ` a measure on `M`
+finite on compact sets with a smooth positive density. A classical pseudodifferential operator `P`
+of order `m` has a formal adjoint `Q` for `μ`,
+
+`∫ ⟪P u, v⟫ dμ = ∫ ⟪u, Q v⟫ dμ`
+
+for all compactly supported smooth `u` and `v`, which is a classical pseudodifferential operator of
+order `m`, in particular properly supported, with principal symbol
+`σ_m(Q)(x, ξ) = conj σ_m(P)(x, ξ)`.
+
+With a locally finite partition of unity `gᵢ` in charts, `Q` is the locally finite sum of formal
+adjoints of the pieces `gᵢ P gⱼ`, each a finite sum of chart quantizations. Proper support of `P`
+leaves only finitely many nonzero pieces near every compact set. -/
+theorem exists_mem_classicalPseudodifferentialOperators_forall_hasCompactSupport_integral_inner_eq
+    [SigmaCompactSpace M] [NeZero n] (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hP : P ∈ classicalPseudodifferentialOperators m) :
+    ∃ Q ∈ classicalPseudodifferentialOperators m,
+      (∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, HasCompactSupport u →
+        HasCompactSupport v → ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ) ∧
+      ∀ x ξ, classicalPrincipalSymbol m Q x ξ = conj (classicalPrincipalSymbol m P x ξ) := by
+  -- A locally finite partition of unity `gᵢ = ρᵢ ∘ eᵢ` in charts, and cutoffs `hᵢ = χᵢ ∘ eᵢ` equal
+  -- to `1` near the supports of the `gᵢ`, supported in compact sets `Bᵢ`, `(Bᵢ)` locally finite.
+  obtain ⟨ι, c, ρ, W, hW, hWf, hρ⟩ :=
+    exists_locallyFinite_finsum_cutoffPullback_eq_one (E := CoordinateSpace n) (M := M)
+  set e := fun i ↦ chartAt (CoordinateSpace n) (c i)
+  have he (i : ι) : e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas (c i)
+  choose χ _ hχ hχW using fun i ↦ TestFunction.exists_cutoff_tsupport_subset (n := ⊤)
+    (Ω := ⟨(e i).target, (e i).open_target⟩) (ρ i).hasCompactSupport.isCompact (hW i).1
+    (hW i).2.1 (hW i).2.2
+  set g := fun i ↦ (e i).complexCutoffPullback (he i) (ρ i) 1
+  set h := fun i ↦ (e i).complexCutoffPullback (he i) (χ i) 1
+  have hhg (i : ι) : g i * h i = g i :=
+    (e i).complexCutoffPullback_one_mul_complexCutoffPullback_one_of_tsupport_subset (he i)
+      fun y hy ↦ (hχ i).self_of_nhdsSet y hy
+  have hhB (i : ι) : tsupport (h i) ⊆ (e i).symm '' tsupport (χ i) :=
+    (e i).tsupport_complexCutoffPullback_subset (he i) _ _
+  have hg1 (x : M) : ∑ᶠ i, g i x = 1 := by
+    have hfin : (Function.support fun i ↦ (e i).cutoffPullback (he i) (ρ i) 1 x).Finite :=
+      (hWf.point_finite x).subset fun i hi ↦ image_mono (hW i).2.1
+        ((e i).tsupport_cutoffPullback_subset (he i) _ _ (subset_tsupport _ hi))
+    simp only [g, OpenPartialHomeomorph.complexCutoffPullback_one_apply]
+    rw [← Complex.ofReal_one, ← hρ x]
+    exact (map_finsum Complex.ofRealHom hfin).symm
+  -- Each piece `gᵢ P gⱼ` is a finite sum of chart quantizations, so it has a formal adjoint.
+  obtain ⟨Q, hQ, hadj⟩ := exists_mem_forall_hasCompactSupport_integral_inner_eq_of_partition
+    (hWf.subset fun i ↦ image_mono (hχW i)) (fun i ↦ (e i).isCompact_symm_image_tsupport (χ i))
+    (fun i ↦ by rw [← hhg i, ContMDiffMap.coe_mul]; exact tsupport_mul_subset_right.trans (hhB i))
+    hhB hhg hg1 (fun i ↦ inner_mul_complexCutoffPullback_apply (he i) (χ i)) hP
+    fun i j ↦ exists_mem_forall_integral_inner_mulLeft_comp_comp_mulLeft_eq hμ hP (he i) (he j)
+      (ρ i) (ρ j)
+  exact ⟨Q, hQ, hadj, fun x ξ ↦ classicalPrincipalSymbol_eq_conj_of_forall_integral_inner_eq hμ hP
+    (mem_classicalPseudodifferentialOperators_iff.1 hQ).1 hadj x ξ⟩
+
+end SigmaCompact
+
 /-! ### Existence and uniqueness on a compact manifold -/
 
 section Compact
@@ -457,11 +800,10 @@ theorem exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq
       (∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
         ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ) ∧
       ∀ x ξ, classicalPrincipalSymbol m Q x ξ = conj (classicalPrincipalSymbol m P x ξ) := by
-  -- `P` is a finite sum of chart quantizations, and `μ` has a smooth density in each chart.
-  obtain ⟨k, e, he, φ, ψ, a, rfl⟩ := exists_eq_sum_chartQuantization hP
-  choose ρ hρ hρ0 hρμ using fun i ↦ hμ.exists_map_restrict_source_eq_withDensity (he i)
-  exact exists_mem_classicalPseudodifferentialOperators_integral_inner_sum_chartQuantization_eq
-    Finset.univ he (fun i _ ↦ hρ i) (fun i _ ↦ hρ0 i) (fun i _ ↦ hρμ i) φ ψ a
+  -- On a compact manifold every smooth function has compact support.
+  obtain ⟨Q, hQ, hadj, hσ⟩ :=
+    exists_mem_classicalPseudodifferentialOperators_forall_hasCompactSupport_integral_inner_eq hμ hP
+  exact ⟨Q, hQ, fun u v ↦ hadj u v (.of_compactSpace _) (.of_compactSpace _), hσ⟩
 
 /-- **The formal adjoint of an elliptic operator is elliptic.** On a compact manifold modelled on
 `ℝⁿ` with `n ≠ 0`, with a finite measure `μ` that has a smooth positive density, the formal adjoint
