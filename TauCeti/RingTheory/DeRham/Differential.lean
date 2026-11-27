@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Kaehler.DeRham.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import TauCeti.LinearAlgebra.Alternating.ConsCons
-import TauCeti.Data.Fin.Tuple.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
