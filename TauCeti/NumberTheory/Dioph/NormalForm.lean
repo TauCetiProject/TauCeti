@@ -25,9 +25,9 @@ such polynomials, which the theorem of Matiyasevich, Robinson, Davis and Putnam 
 this finite syntax.
 
 The proof passes from `Poly` to `MvPolynomial` by `MvPolynomial.polyEquiv`, keeps only the
-finitely many witness variables the polynomial involves (`MvPolynomial.exists_fin_rename_sumMap`)
-and transports roots along the injective renaming of witnesses
-(`MvPolynomial.exists_eval_rename_sumMap_eq_zero_iff`). The normal form is an existence
+finitely many witness variables the polynomial involves (Mathlib's
+`MvPolynomial.exists_fin_right_rename`) and transports roots along the injective renaming of
+witnesses (`MvPolynomial.exists_eval_rename_sumMap_eq_zero_iff`). The normal form is an existence
 statement; it gives no procedure recovering `m` or `p` from a proof of `Dioph S`.
 
 ## Main results
@@ -62,7 +62,7 @@ theorem exists_fin_mvPolynomial (d : Dioph S) :
     ∃ (m : ℕ) (p : MvPolynomial (α ⊕ Fin m) ℤ),
       ∀ x, x ∈ S ↔ ∃ y : Fin m → ℕ, eval (Nat.cast ∘ Sum.elim x y) p = 0 := by
   obtain ⟨β, p, hp⟩ := d
-  obtain ⟨m, f, hf, q, hq⟩ := exists_fin_rename_sumMap ((polyEquiv _).symm p)
+  obtain ⟨m, f, hf, q, hq⟩ := exists_fin_right_rename ((polyEquiv _).symm p)
   refine ⟨m, q, fun x ↦ (hp x).trans ?_⟩
   simp only [Sum.comp_elim]
   rw [← exists_eval_rename_sumMap_eq_zero_iff Nat.cast _ hf, ← hq]
@@ -72,7 +72,7 @@ theorem exists_fin_mvPolynomial (d : Dioph S) :
 any universe, is Diophantine. -/
 theorem of_mvPolynomial {β : Type*} (p : MvPolynomial (α ⊕ β) ℤ)
     (hp : ∀ x, x ∈ S ↔ ∃ y : β → ℕ, eval (Nat.cast ∘ Sum.elim x y) p = 0) : Dioph S := by
-  obtain ⟨m, f, hf, q, rfl⟩ := exists_fin_rename_sumMap p
+  obtain ⟨m, f, hf, q, rfl⟩ := exists_fin_right_rename p
   refine ⟨ULift.{u} (Fin m), toPoly (rename (Sum.map id ULift.up) q), fun x ↦ (hp x).trans ?_⟩
   simp only [toPoly_apply, Sum.comp_elim]
   rw [exists_eval_rename_sumMap_eq_zero_iff Nat.cast _ hf,

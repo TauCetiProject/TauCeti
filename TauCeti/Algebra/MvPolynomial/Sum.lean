@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Equiv
-public import Mathlib.Data.Finset.Sum
 
 /-!
 # Polynomials in two families of variables
@@ -17,15 +16,13 @@ This permits coefficient extraction with respect to one family while retaining p
 dependence on the other. `MvPolynomial.sumAlgEquiv_map` shows that this separation commutes with
 mapping coefficients along a ring homomorphism.
 
-A polynomial in variables `σ ⊕ τ` involves only finitely many variables of the second family.
-`MvPolynomial.exists_finset_rename_sumMap` and `MvPolynomial.exists_fin_rename_sumMap` are the
-versions of Mathlib's `MvPolynomial.exists_finset_rename` and `MvPolynomial.exists_fin_rename`
-that compress only the second family and leave every variable of the first family in place.
-When the second family is read as existentially quantified witnesses,
-`MvPolynomial.exists_eval_rename_sumMap_eq_zero_iff` shows that renaming the witnesses along an
-injective map does not change which assignments of the first family admit a root. Together they
-reduce an existential polynomial condition with arbitrarily many witness variables to one with
-finitely many, as in the finite normal form of Diophantine sets.
+A polynomial in variables `σ ⊕ τ` involves only finitely many variables of the second family;
+Mathlib's `MvPolynomial.exists_fin_right_rename` renames it from a polynomial in `σ ⊕ Fin m`
+along an injective map `Fin m → τ`. When the second family is read as existentially quantified
+witnesses, `MvPolynomial.exists_eval_rename_sumMap_eq_zero_iff` shows that renaming the witnesses
+along an injective map does not change which assignments of the first family admit a root.
+Together they reduce an existential polynomial condition with arbitrarily many witness variables
+to one with finitely many, as in the finite normal form of Diophantine sets.
 -/
 
 public section
@@ -51,33 +48,6 @@ theorem sumAlgEquiv_map (f : R →+* S) (p : MvPolynomial (σ ⊕ τ) R) :
   | C r => simp
   | add p q hp hq => simp [hp, hq]
   | mul_X p i hp => cases i <;> simp [hp]
-
-/-- A polynomial in the variables `σ ⊕ τ` only involves finitely many variables of `τ`; unlike
-`MvPolynomial.exists_finset_rename`, every variable of `σ` is kept. -/
-theorem exists_finset_rename_sumMap (p : MvPolynomial (σ ⊕ τ) R) :
-    ∃ (t : Finset τ) (q : MvPolynomial (σ ⊕ t) R), p = rename (Sum.map id (↑)) q := by
-  classical
-  obtain ⟨s, r, rfl⟩ := exists_finset_rename p
-  let g : s → σ ⊕ s.toRight := fun i ↦ match i with
-    | ⟨.inl a, _⟩ => .inl a
-    | ⟨.inr b, hb⟩ => .inr ⟨b, Finset.mem_toRight.2 hb⟩
-  have hg : Sum.map id ((↑) : s.toRight → τ) ∘ g = (↑) := by
-    funext ⟨i, hi⟩
-    cases i <;> rfl
-  exact ⟨s.toRight, rename g r, by rw [rename_rename, hg]⟩
-
-/-- A polynomial in the variables `σ ⊕ τ` is renamed from a polynomial in `σ ⊕ Fin m` along an
-injective map `Fin m → τ`; unlike `MvPolynomial.exists_fin_rename`, every variable of `σ` is
-kept. -/
-theorem exists_fin_rename_sumMap (p : MvPolynomial (σ ⊕ τ) R) :
-    ∃ (m : ℕ) (f : Fin m → τ) (_hf : Function.Injective f) (q : MvPolynomial (σ ⊕ Fin m) R),
-      p = rename (Sum.map id f) q := by
-  obtain ⟨t, q, rfl⟩ := exists_finset_rename_sumMap p
-  let e := Fintype.equivFin t
-  refine ⟨_, (↑) ∘ e.symm, Subtype.val_injective.comp e.symm.injective,
-    rename (Sum.map id e) q, ?_⟩
-  rw [rename_rename, Sum.map_comp_map]
-  simp [Function.comp_def]
 
 /-- Reading the variables of `τ` as existential witnesses with values `c y` for `y : W`,
 renaming them along an injective map `f` does not change which assignments `x` of `σ` admit a
