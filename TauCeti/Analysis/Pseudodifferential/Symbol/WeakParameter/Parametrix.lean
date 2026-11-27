@@ -435,8 +435,8 @@ private theorem coefficient_sharpTerm_leftNormalizedResolventTerms_eq_smul {μ :
         -((leftNormalizedResolventTerms p hp j).sharpTerm
           (ofSymbol p : WeakParameterSymbol n R V V d d) (k + 1)).coefficient q r := by
       simp [leftRemainderTerms]
-    rw [hσ, coefficient_sharpTerm_of_coefficient_eq_one_sub_smul ha k.succ_ne_zero, Pi.smul_apply,
-      ← coefficient_toSymbol _ hr, toSymbol_sharpTerm, toSymbol_ofSymbol, smul_neg, neg_smul]
+    rw [hσ, coefficient_sharpTerm_of_coefficient_eq_one_sub_smul ha k.succ_ne_zero]
+    simp [← coefficient_toSymbol _ hr, toSymbol_sharpTerm, toSymbol_ofSymbol]
 
 variable (p hp) in
 /-- The sum `Bₙ = ∑_{j < N} qⱼ` of the first `N` terms of the formal left parametrix of `1 - r p`,
@@ -580,9 +580,8 @@ private theorem coefficient_sharpTerm_rightNormalizedResolventTerms_eq_smul {μ 
         -((ofSymbol p : WeakParameterSymbol n R V V d d).sharpTerm
           (rightNormalizedResolventTerms p hp j) (k + 1)).coefficient q r := by
       simp [rightRemainderTerms]
-    rw [hσ, coefficient_sharpTerm_of_coefficient_eq_one_sub_smul_left ha k.succ_ne_zero,
-      Pi.smul_apply, ← coefficient_toSymbol _ hr, toSymbol_sharpTerm, toSymbol_ofSymbol, smul_neg,
-      neg_smul]
+    rw [hσ, coefficient_sharpTerm_of_coefficient_eq_one_sub_smul_left ha k.succ_ne_zero]
+    simp [← coefficient_toSymbol _ hr, toSymbol_sharpTerm, toSymbol_ofSymbol]
 
 variable (p hp) in
 /-- The sum `Bₙ = ∑_{j < N} qⱼ` of the first `N` terms of the formal right parametrix of
