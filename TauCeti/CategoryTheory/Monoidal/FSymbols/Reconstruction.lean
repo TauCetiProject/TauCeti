@@ -144,7 +144,7 @@ theorem functor_map_entry_of_ne {X Y : Model P} (f : X ⟶ Y) {a b : ι}
 
 /-- Inclusions and projections in a fixed grade are the coordinate Kronecker deltas. -/
 @[reassoc (attr := simp)]
-theorem incl_proj (X : Model P) (a : ι) (x y : X.basis a) :
+theorem incl_comp_proj (X : Model P) (a : ι) (x y : X.basis a) :
     incl P S X a x ≫ proj P S X a y =
       if x = y then 𝟙 (S a) else 0 := by
   have h := functor_map_entry P S (𝟙 X) a x y
@@ -154,7 +154,7 @@ theorem incl_proj (X : Model P) (a : ι) (x y : X.basis a) :
 
 /-- Inclusions and projections from distinct grades have zero composite. -/
 @[reassoc (attr := simp)]
-theorem incl_proj_of_ne (X : Model P) {a b : ι} (h : a ≠ b)
+theorem incl_comp_proj_of_ne (X : Model P) {a b : ι} (h : a ≠ b)
     (x : X.basis a) (y : X.basis b) :
     incl P S X a x ≫ proj P S X b y = 0 := by
   have h' := functor_map_entry_of_ne P S (𝟙 X) h x y
@@ -163,7 +163,7 @@ theorem incl_proj_of_ne (X : Model P) {a b : ι} (h : a ≠ b)
 
 /-- The native basis inclusions and projections resolve the identity of a realized object. -/
 @[simp]
-theorem sum_proj_incl (X : Model P) :
+theorem sum_proj_comp_incl (X : Model P) :
     ∑ a, ∑ x : X.basis a, proj P S X a x ≫ incl P S X a x =
       𝟙 ((functor P S).obj X) := by
   calc
@@ -178,7 +178,7 @@ theorem sum_proj_incl (X : Model P) :
 
 /-- Realization acts on a basis inclusion by the corresponding row of its matrix. -/
 @[reassoc]
-theorem incl_functor_map {X Y : Model P} (f : X ⟶ Y) (a : ι) (x : X.basis a) :
+theorem incl_comp_functor_map {X Y : Model P} (f : X ⟶ Y) (a : ι) (x : X.basis a) :
     incl P S X a x ≫ (functor P S).map f =
       ∑ y : Y.basis a, f a x y • incl P S Y a y := by
   simp [incl, functor, rawObj, map, biproduct.lift_eq, Category.assoc, Preadditive.sum_comp,
@@ -187,7 +187,7 @@ theorem incl_functor_map {X Y : Model P} (f : X ⟶ Y) (a : ι) (x : X.basis a) 
 
 /-- Realization acts on a basis projection by the corresponding column of its matrix. -/
 @[reassoc]
-theorem functor_map_proj {X Y : Model P} (f : X ⟶ Y) (a : ι) (y : Y.basis a) :
+theorem functor_map_comp_proj {X Y : Model P} (f : X ⟶ Y) (a : ι) (y : Y.basis a) :
     (functor P S).map f ≫ proj P S Y a y =
       ∑ x : X.basis a, f a x y • proj P S X a x := by
   simp [proj, functor, rawObj, map, biproduct.desc_eq, Category.assoc, Preadditive.comp_sum,
@@ -223,7 +223,7 @@ def simpleIso (a : ι) : (functor P S).obj (Model.simple P a) ≅ S a where
     obtain rfl := Model.eq_of_simple_basis y
     simp [Category.assoc, Subsingleton.elim x default, Subsingleton.elim y default]
   inv_hom_id := by
-    rw [incl_proj]
+    rw [incl_comp_proj]
     exact ite_eq_left rfl
 
 @[simp]
