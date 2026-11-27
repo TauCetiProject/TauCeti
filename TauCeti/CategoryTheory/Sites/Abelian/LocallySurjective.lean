@@ -92,8 +92,9 @@ private def toLocalImage : F ⟶ localImage φ :=
        ext s
        exact Subtype.ext (NatTrans.naturality_apply φ.hom f s) }⟩
 
-/-- An epimorphism of abelian sheaves is locally surjective, with no restriction on the
-relative sizes of the site and the coefficient universe. -/
+/-- An epimorphism of abelian sheaves is locally surjective whenever the category of abelian
+sheaves is balanced, for instance when it is abelian. Beyond this hypothesis, the argument
+places no restriction on the relative sizes of the site and the coefficient universe. -/
 theorem isLocallySurjective_of_epi_addCommGrp [Balanced (Sheaf J AddCommGrpCat.{w})] [Epi φ] :
     IsLocallySurjective φ := by
   have h : toLocalImage φ ≫ localImageι φ = φ := by rfl

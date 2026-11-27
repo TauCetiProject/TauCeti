@@ -41,6 +41,14 @@ This comparison transports acyclicity of the restricted sheaf to vanishing of co
 the corresponding object, for instance from affine acyclicity to local vanishing hypotheses.
 
 The over-site comparison carries resolution cocycles to their actual transported classes.
+
+## References
+
+* The natural comparison `cohomologyPresheafFunctorOverIso` follows the
+  [lookahead development](https://github.com/roed-math/TauCeti-w2-fresh/tree/877ee6253118ae038b46aca137f48841db354fe9)
+  of the Leray and Čech spectral sequences.
+
+* Stacks Project, Section 18.19, Localization (03DJ).
 -/
 
 public section

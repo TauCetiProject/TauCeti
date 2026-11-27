@@ -16,8 +16,13 @@ public import TauCeti.CategoryTheory.Sites.Over.Extension
 /-!
 # Restriction of abelian sheaves to a localized site
 
-Restriction to `J.over U` is additive, exact, and preserves injective objects. Its left adjoint
-is the sheafification of the coproduct extension and is exact as well.
+Restriction of abelian sheaves to `J.over U` preserves finite colimits, since epimorphisms of
+abelian sheaves are locally surjective, and preserves injective objects, since its left adjoint is
+exact. Its additivity comes from `TauCeti.CategoryTheory.Sites.Continuous`. The description of the
+left adjoint as the sheafified coproduct extension
+(`TauCeti.CategoryTheory.Over.sheafPullbackIsoPresheafExtension`) and its exactness
+(`TauCeti.CategoryTheory.Over.preservesFiniteLimits_sheafPullback`) are in
+`TauCeti.CategoryTheory.Sites.Over.Extension`.
 -/
 
 public section

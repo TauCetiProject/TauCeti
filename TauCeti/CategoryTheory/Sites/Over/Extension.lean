@@ -66,8 +66,9 @@ private def extensionObj (F : (Over U)ᵒᵖ ⥤ A) : Cᵒᵖ ⥤ A where
     rw [← Category.assoc, ι_extensionMap U F g f _ rfl, Category.assoc,
       ι_extensionMap U F h (g.unop ≫ f) ((h.unop ≫ g.unop) ≫ f)
         (Category.assoc _ _ _).symm,
-      ι_extensionMap U F (g ≫ h) f _ rfl, ← Category.assoc, ← F.map_comp]
-    rfl
+      ι_extensionMap U F (g ≫ h) f _ rfl, ← Category.assoc, ← F.map_comp, ← op_comp,
+      ← Over.homMk_comp]
+    simp only [unop_comp]
 
 /-- Extension of presheaves from `Over U`, given at `X` by the coproduct over maps `X ⟶ U`. -/
 def presheafExtension : ((Over U)ᵒᵖ ⥤ A) ⥤ Cᵒᵖ ⥤ A where
@@ -102,6 +103,14 @@ def presheafExtensionι (F : (Over U)ᵒᵖ ⥤ A) {X : C} (f : X ⟶ U) :
     F.obj (op (Over.mk f)) ⟶ ((presheafExtension U).obj F).obj (op X) :=
   Sigma.ι (fun f : X ⟶ U ↦ F.obj (op (Over.mk f))) f
 
+/-- Maps out of the extension at `X` agree if they agree on every coproduct summand. -/
+@[ext]
+lemma presheafExtension_hom_ext {F : (Over U)ᵒᵖ ⥤ A} {X : C} {Z : A}
+    {φ ψ : ((presheafExtension U).obj F).obj (op X) ⟶ Z}
+    (h : ∀ f : X ⟶ U, presheafExtensionι U F f ≫ φ = presheafExtensionι U F f ≫ ψ) :
+    φ = ψ :=
+  Sigma.hom_ext _ _ h
+
 /-- Restriction in the extension sends the `f` summand to the `g ≫ f` summand. -/
 @[reassoc (attr := simp)]
 lemma presheafExtensionι_map (F : (Over U)ᵒᵖ ⥤ A) {X Y : C}
@@ -133,9 +142,8 @@ private def restrictHom {F : (Over U)ᵒᵖ ⥤ A} {G : Cᵒᵖ ⥤ A}
       Sigma.ι (fun f : Y ⟶ U ↦ F.obj (op (Over.mk f))) fY ≫ k)
       (α.naturality ((Over.forget U).op.map g))
     dsimp only [presheafExtension, extensionObj] at h
-    rw [← Category.assoc] at h
-    erw [ι_extensionMap U F ((Over.forget U).op.map g) fY fZ
-      (Over.w g.unop)] at h
+    simp only [Functor.op_map, Over.forget_map] at h
+    rw [← Category.assoc, ι_extensionMap U F g.unop.left.op fY fZ (Over.w g.unop)] at h
     simp only [Category.assoc] at h ⊢
     exact h
 
@@ -162,6 +170,7 @@ def presheafExtensionAdjunction : presheafExtension (A := A) U ⊣
           right_inv α := by
             ext Y
             simp only [restrictHom, extendHom, Sigma.ι_comp_desc]
+            -- `Over.mk Y.unop.hom` is `Y.unop` by structure eta.
             congr 1 }
       homEquiv_naturality_left_symm := by
         intro F F' G α β
@@ -213,6 +222,24 @@ def presheafExtensionEvaluationIso (X : C) :
       intro F G α
       dsimp [presheafExtension, extensionObj]
       cat_disch)
+
+/-- The evaluation isomorphism sends the `f` summand to the colimit injection at `f`. -/
+@[reassoc (attr := simp)]
+lemma presheafExtensionι_evaluationIso_hom_app (F : (Over U)ᵒᵖ ⥤ A) {X : C} (f : X ⟶ U) :
+    presheafExtensionι U F f ≫ (presheafExtensionEvaluationIso U X).hom.app F =
+      colimit.ι (Discrete.functor (fun f : X ⟶ U ↦ op (Over.mk f)) ⋙ F) ⟨f⟩ := by
+  -- The summand injection is the colimit injection of the discrete coproduct diagram.
+  change colimit.ι _ _ ≫ (HasColimit.isoOfNatIso _).hom = _
+  simp
+
+/-- The inverse evaluation isomorphism sends the colimit injection at `f` to the `f` summand. -/
+@[reassoc (attr := simp)]
+lemma ι_presheafExtensionEvaluationIso_inv_app (F : (Over U)ᵒᵖ ⥤ A) {X : C} (f : X ⟶ U) :
+    colimit.ι (Discrete.functor (fun f : X ⟶ U ↦ op (Over.mk f)) ⋙ F) ⟨f⟩ ≫
+        (presheafExtensionEvaluationIso U X).inv.app F =
+      presheafExtensionι U F f := by
+  rw [← presheafExtensionι_evaluationIso_hom_app, Category.assoc, Iso.hom_inv_id_app]
+  exact Category.comp_id _
 
 /-- Extension of presheaves from a slice preserves finite limits when coproducts are exact. -/
 instance [HasFiniteLimits A] [AB4OfSize.{v} A] :
