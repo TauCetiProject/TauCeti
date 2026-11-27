@@ -168,8 +168,9 @@ noncomputable def lieInvariantsProdEquiv :
 theorem coe_lieInvariantsProdEquiv_symm_apply
     (y : SymmetricAlgebra K Z ⊗[K] lieInvariants K S S) :
     ((lieInvariantsProdEquiv K Z S).symm y : SymmetricAlgebra K (Z × S)) =
-      lieInvariantsProdHom K Z S y :=
-  (rfl)
+      lieInvariantsProdHom K Z S y := by
+  rw [lieInvariantsProdEquiv, AlgEquiv.symm_symm, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply,
+    AlgEquiv.ofInjective_apply]
 
 /-- `lieInvariantsProdHom` recovers an invariant from its image under `lieInvariantsProdEquiv`. -/
 @[simp]
