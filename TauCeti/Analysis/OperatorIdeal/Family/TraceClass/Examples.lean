@@ -22,8 +22,8 @@ coefficients `cₙ` has approximation numbers `cₙ` (`lp.singularValue_diagonal
 is therefore trace class exactly when `∑ cₙ < ∞`. More generally, a diagonal operator with
 bounded coefficients `dᵢ` is Hilbert–Schmidt exactly when `∑ ‖dᵢ‖² < ∞`, with no ordering needed.
 For `cₙ = 1 / (n + 1)` the second series converges and the first does not, so this diagonal
-operator is Hilbert–Schmidt but not trace class: the trace-class ideal is strictly smaller than
-the Hilbert–Schmidt ideal.
+operator is Hilbert–Schmidt but not trace class: the Hilbert–Schmidt ideal is not contained in
+the trace-class ideal.
 
 **Orthogonal projections.** The orthogonal projection onto a subspace of finite dimension `r` has
 approximation numbers `1` below `r` and `0` from `r` on, so its trace norm is `r`. It is the sum
@@ -78,14 +78,13 @@ theorem diagonalCLM_mem_hilbertSchmidt_iff {ι : Type*} (d : ℓ^∞(ι, 𝕜)) 
         ((hilbertSchmidt 𝕜).operatorGauge ℓ²(ι, 𝕜) ℓ²(ι, 𝕜)).finiteSubmodule ↔
       Summable fun i ↦ ‖d i‖ ^ 2 := by
   classical
-  have hb (i : ι) : (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i = lp.single 2 i 1 := by
-    rw [← HilbertBasis.repr_symm_single]
-    rfl
+  have h (i : ι) :
+      ‖diagonalCLM (p := 2) d ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i)‖ₑ ^ 2 = ‖d i ^ 2‖ₑ := by
+    simp [diagonalCLM_single, ← ofReal_norm, lp.norm_single two_pos, ENNReal.ofReal_pow]
   rw [mem_finiteSubmodule_hilbertSchmidt_iff _ (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)),
-    ContinuousLinearMap.hilbertSchmidtEnergy_def]
-  simp_rw [hb, diagonalCLM_single, mul_one, ← ofReal_norm, lp.norm_single two_pos, ofReal_norm,
-    eNorm_eq_nnNorm, ← ENNReal.coe_pow, ENNReal.tsum_coe_ne_top_iff_summable,
-    ← NNReal.summable_coe, NNReal.coe_pow, coe_nnNorm]
+    ContinuousLinearMap.hilbertSchmidtEnergy_def, tsum_congr h,
+    tsum_eNorm_ne_top_iff_summable_norm]
+  simp
 
 /-- **The diagonal operator `diag(1 / (n + 1))` is Hilbert–Schmidt**, since `∑ 1 / (n + 1)² < ∞`. -/
 theorem diagonalCLM_one_div_add_one_mem_hilbertSchmidt :

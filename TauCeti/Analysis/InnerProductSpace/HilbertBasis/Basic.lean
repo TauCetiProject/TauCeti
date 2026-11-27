@@ -42,7 +42,8 @@ closed span of the basis vectors indexed by its complement (`HilbertBasis.orthog
 This computes the cokernels of isometries that send a Hilbert basis into another one.
 
 The coordinates `⟪default i, x⟫` of a vector `x` in the standard Hilbert basis of `ℓ²(ι, 𝕜)` are
-its entries `x i` (`HilbertBasis.inner_default_apply`).
+its entries `x i` (`HilbertBasis.inner_default_apply`), and its vectors are the coordinate
+vectors `lp.single 2 i 1` (`HilbertBasis.default_apply`).
 -/
 
 public section
@@ -191,5 +192,13 @@ open scoped lp in
 theorem inner_default_apply (x : ℓ²(ι, 𝕜)) (i : ι) :
     ⟪(default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i, x⟫_𝕜 = x i :=
   ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).repr_apply_apply x i).symm
+
+open scoped lp in
+/-- The vectors of the standard Hilbert basis of `ℓ²(ι, 𝕜)` are the coordinate vectors
+`lp.single 2 i 1`. -/
+@[simp]
+theorem default_apply [DecidableEq ι] (i : ι) :
+    (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i = lp.single 2 i 1 :=
+  (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).repr_self i
 
 end HilbertBasis
