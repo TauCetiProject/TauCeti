@@ -24,7 +24,9 @@ divisor of `n` that does not divide `n / p` is divisible by the full `p`-part `p
 The product of any set of prime factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to
 the product of all the prime factors of `n` exactly when it is coprime to `n`. Monomial products of
 an injective family of primes (or fixed positive powers of their casts in characteristic zero) are
-injective on finitely supported exponent tuples.
+injective on finitely supported exponent tuples. Multiplying `m ≠ 0` by a prime power `p ^ k` adds
+`k` to the exponent of `p` and leaves the other exponents unchanged
+(`Nat.Prime.factorization_pow_mul_apply`).
 
 Conversely, a nonzero `n` is coprime to `q` once no prime factor of `n` divides `q`. Thus, for a
 set `S`, the nonzero `n` all of whose prime factors lie in `S` (the `S`-factored numbers) are all
@@ -141,6 +143,13 @@ theorem forall_mem_primeFactors_mem_empty_iff {n : ℕ} (hn : n ≠ 0) :
   simp only [Set.mem_empty_iff_false, imp_false, ← Finset.eq_empty_iff_forall_notMem,
     primeFactors_eq_empty]
   omega
+
+/-- For a prime `p` and `m ≠ 0`, the exponent of `q` in `p ^ k * m` is that of `q` in `m`, plus
+`k` when `q = p`. -/
+theorem Prime.factorization_pow_mul_apply {p : ℕ} (hp : p.Prime) (k : ℕ) {m : ℕ} (hm : m ≠ 0)
+    (q : ℕ) : (p ^ k * m).factorization q = (if p = q then k else 0) + m.factorization q := by
+  rw [factorization_mul (pow_ne_zero k hp.ne_zero) hm, Finsupp.add_apply, hp.factorization_pow,
+    Finsupp.single_apply]
 
 end Nat
 
