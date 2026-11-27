@@ -22,8 +22,9 @@ Its monodromy is `(N F)(w) = q ^ deg w • N' (F w)`, which is again `W'`-equiva
 nilpotent, and satisfies the conjugation relation for `q`. When `ι` is an open map whose image has
 finite index, the kernel of the action is open (`Representation.isOpen_ker_coind`). For an image of
 finite index the coinduced representation is the induced one; this file works with the function
-model, and `TauCeti.RepresentationTheory.WeilDeligne.Induction.Tensor` compares it with the
-tensor-product model `W ⊗_{W'} V'` in left-coset notation.
+model, and `TauCeti.RepresentationTheory.WeilDeligne.Induction.Tensor` puts the monodromy on
+Mathlib's tensor model `Representation.ind ι r'` and shows that, for a subgroup `S ≤ W`,
+`Rep.indToCoind` intertwines it with `TauCeti.WeilDeligneParameter.indN`.
 
 Induction is right adjoint to restriction: morphisms from the restriction of a parameter `D` for
 `W` to `D'` correspond to morphisms from `D` to the induced parameter
@@ -68,18 +69,23 @@ variable {E W W' V V' : Type*} [Field E] [Group W] [Group W']
 variable (ι : W' →* W) (f : ℕ) (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd)
   (hq : (q : E) ≠ 0)
 
+omit [TopologicalSpace W'] in
+include hf hq in
+/-- The exponent identity `deg (ι g * w) - f · deg' g = deg w` behind the induced monodromy. -/
+theorem zpow_deg_map_mul_mul_zpow_neg (g : W') (w : W) :
+    (q : E) ^ (deg (ι g * w)).toAdd * ((q ^ f : ℕ) : E) ^ (-(deg' g).toAdd) =
+      (q : E) ^ (deg w).toAdd := by
+  rw [Nat.cast_pow, ← zpow_natCast, ← zpow_mul, ← zpow_add₀ hq, map_mul, toAdd_mul, hf]
+  ring_nf
+
 include hf hq in
 /-- The monodromy formula preserves `W'`-equivariance. -/
 theorem indN_mem (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) {F : W → V'}
     (hF : F ∈ coindV ι D'.r) :
     (fun w ↦ (q : E) ^ (deg w).toAdd • D'.N (F w)) ∈ coindV ι D'.r := by
   intro g w
-  -- The exponent identity `deg (ι g * w) - f deg' g = deg w`.
-  have hexp : (q : E) ^ (deg (ι g * w)).toAdd * ((q ^ f : ℕ) : E) ^ (-(deg' g).toAdd) =
-      (q : E) ^ (deg w).toAdd := by
-    rw [Nat.cast_pow, ← zpow_natCast, ← zpow_mul, ← zpow_add₀ hq, map_mul, toAdd_mul, hf]
-    ring_nf
-  simp only [hF g w, N_apply_r_apply, map_smul, smul_smul, hexp]
+  simp only [hF g w, N_apply_r_apply, map_smul, smul_smul,
+    zpow_deg_map_mul_mul_zpow_neg ι f hf hq g w]
 
 /-- The **monodromy of the induced parameter**: `(N F)(w) = q ^ deg w • N' (F w)` on the
 coinduced representation. -/

@@ -84,9 +84,8 @@ theorem map_charTwist_comp_tprod (D' : WeilDeligneParameter E W' V' deg' (q ^ f)
         TensorProduct.map (MonoidAlgebra.charTwist (omega deg hq)).toLinearMap D'.N := by
   ext w v
   -- The exponent identity `deg (ι g) + deg w - f deg' g = deg w`.
-  have hexp : (((q : E) ^ f) ^ (deg' g).toAdd)⁻¹ *
-      ((q : E) ^ (deg (ι g)).toAdd * (q : E) ^ (deg w).toAdd) = (q : E) ^ (deg w).toAdd := by
-    rw [hf, ← zpow_natCast, ← zpow_mul, inv_mul_cancel_left₀ (zpow_ne_zero _ hq)]
+  have hexp := zpow_deg_map_mul_mul_zpow_neg ι f hf hq g w
+  rw [map_mul, toAdd_mul, zpow_add₀ hq, Nat.cast_pow, zpow_neg, mul_comm] at hexp
   simp [N_apply_r_apply, TensorProduct.smul_tmul', hexp]
 
 /-- **The monodromy of the tensor model** `IndV ι r' = (E[W] ⊗ V')_{W'}`:
@@ -120,8 +119,8 @@ theorem indVN_pow_mk (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (k : ℕ) 
   induction k generalizing v with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ (indVN ι f hf hq D'), mul_apply_eq_comp, indVN_mk, map_smul, ih, smul_smul,
-      ← pow_succ', pow_succ D'.N, mul_apply_eq_comp]
+    rw [pow_succ, mul_apply_eq_comp, indVN_mk, map_smul, ih]
+    simp [smul_smul, pow_succ, mul_apply_eq_comp, mul_comm]
 
 /-- `indVN_pow_mk` as an identity of linear maps out of `V'`. -/
 theorem indVN_pow_comp_mk (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (k : ℕ) (w : W) :
@@ -175,15 +174,10 @@ theorem indToCoind_indVN (D' : WeilDeligneParameter E S V' degS (q ^ f))
   rw [indVN_mk, map_smul, Submodule.coe_smul, Pi.smul_apply, indN_apply, key, key]
   by_cases hr : (QuotientGroup.rightRel S).r w h
   · obtain ⟨s, rfl⟩ : ∃ s : S, (s : W) * h = w := hr
-    have hs : (deg (s : W)).toAdd = f * (degS s).toAdd := hf s
-    -- The exponent identity `deg (s h) - f deg' s = deg h`.
-    have hexp : (q : E) ^ (deg ((s : W) * h)).toAdd * ((q ^ f : ℕ) : E) ^ (-(degS s).toAdd) =
-        (q : E) ^ (deg h).toAdd := by
-      rw [map_mul, toAdd_mul, hs, Nat.cast_pow, ← zpow_natCast, ← zpow_mul, ← zpow_add₀ hq]
-      ring_nf
     rw [Rep.indToCoindAux_mul_snd, Rep.indToCoindAux_mul_snd, Rep.indToCoindAux_self,
       Rep.indToCoindAux_self]
-    simp only [N_apply_r_apply, smul_smul, hexp]
+    simp only [N_apply_r_apply, smul_smul]
+    rw [← Subgroup.subtype_apply, zpow_deg_map_mul_mul_zpow_neg S.subtype f hf hq s h]
   · simp [Rep.indToCoindAux_of_not_rel _ _ _ hr]
 
 end FiniteIndex
