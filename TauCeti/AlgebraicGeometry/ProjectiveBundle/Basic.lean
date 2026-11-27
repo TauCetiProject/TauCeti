@@ -104,6 +104,15 @@ section Affine
 variable {S : Scheme.{u}} (F : QuasicoherentSheaf S)
 variable {U : S.Opens} (hU : IsAffineOpen U)
 
+/-- The final change of structure map in the affine chart comparison. -/
+private def affineOpenCoeffIso :
+    Over.mk (Proj.toSpecCoeff (TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(S, U)
+      ((Scheme.Modules.sectionsFunctor U).obj F.obj))) ≅
+      Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U)
+        ((Scheme.Modules.sectionsFunctor U).obj F.obj)) :=
+  Over.isoMk (Iso.refl _) ((Category.id_comp _).trans
+    (Proj.toSpecCoeff_homogeneousSubmodule Γ(S, U) _).symm)
+
 /-- Over an affine open `U` of the base, the restriction of `P(E)` is isomorphic over
 `Spec Γ(S, U)` to the projective spectrum of the symmetric algebra of the sections of `E` on `U`. -/
 def affineOpenIso :
@@ -111,16 +120,10 @@ def affineOpenIso :
       Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U)
         ((Scheme.Modules.sectionsFunctor U).obj F.obj)) :=
   let A := ((gradedSymmetricAlgebra S).obj F).obj
-  let M := (Scheme.Modules.sectionsFunctor U).obj F.obj
   let chartIso := Proj.mapIsoOverOfAlgEquiv _ _ (gradedSymmetricAlgebraSectionsEquiv F hU)
     (gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff F hU)
-  let grades := TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(S, U) M
-  let coeffIso : Over.mk (Proj.toSpecCoeff grades) ≅
-      Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U) M) :=
-    Over.isoMk (Iso.refl _) ((Category.id_comp _).trans
-      (Proj.toSpecCoeff_homogeneousSubmodule Γ(S, U) M).symm)
   (A.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩).isoOverPullback.symm ≪≫
-    chartIso ≪≫ coeffIso
+    chartIso ≪≫ affineOpenCoeffIso (U := U) F
 
 /-- The inverse affine comparison followed by the projection to the projective bundle is the
 graded comparison on projective spectra followed by the relative `Proj` chart inclusion. -/
@@ -133,18 +136,15 @@ theorem affineOpenIso_inv_left_snd :
   let h := ((gradedSymmetricAlgebra S).obj F).obj.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩
   let e := Proj.mapIsoOverOfAlgEquiv _ _ (gradedSymmetricAlgebraSectionsEquiv F hU)
     (gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff F hU)
-  let M := (Scheme.Modules.sectionsFunctor U).obj F.obj
-  let grades := TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(S, U) M
-  have hinv (c : Over.mk (Proj.toSpecCoeff grades) ≅
-      Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U) M))
-      (hc : c.inv.left = 𝟙 _) :
-      (h.isoOverPullback.symm ≪≫ e ≪≫ c).inv.left =
-        e.inv.left ≫ h.isoOverPullback.hom.left := by
-    simp only [Iso.trans_inv, Iso.symm_inv, Over.comp_left, hc, Category.id_comp]
+  have hCoeff : (affineOpenCoeffIso (U := U) F).inv.left = 𝟙 _ := by
+    simp only [affineOpenCoeffIso, Over.isoMk_inv_left, Iso.refl_inv, Over.mk_left]
+  have hInv : (h.isoOverPullback.symm ≪≫ e ≪≫ affineOpenCoeffIso (U := U) F).inv.left =
+      e.inv.left ≫ h.isoOverPullback.hom.left := by
+    simp only [Iso.trans_inv, Iso.symm_inv, Over.comp_left, hCoeff, Category.id_comp]
+  unfold affineOpenIso
   calc
-    _ = (e.inv.left ≫ h.isoOverPullback.hom.left) ≫ pullback.snd _ _ := by
-      refine congrArg (· ≫ pullback.snd _ _) (hinv _ ?_)
-      exact (Over.isoMk_inv_left _ _).trans (Iso.refl_inv _)
+    _ = (e.inv.left ≫ h.isoOverPullback.hom.left) ≫ pullback.snd _ _ :=
+      congrArg (· ≫ pullback.snd _ _) hInv
     _ = _ := by rw [Category.assoc, h.isoOverPullback_hom_left_comp_snd]
 
 end Affine
