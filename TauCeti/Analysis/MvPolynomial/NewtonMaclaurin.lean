@@ -35,6 +35,8 @@ cone `Γ_k = {λ | σ_1(λ) > 0, …, σ_k(λ) > 0}` is `TauCeti.hessianCone n k
 * `TauCeti.normalizedEsymm_rpow_le`: **Maclaurin's inequalities** `S_l^{1/l} ≤ S_k^{1/k}` on `Γ_l`
   for `1 ≤ k ≤ l`, with `TauCeti.normalizedEsymm_rpow_le_of_mem_closure` on the closure of `Γ_l`
   and `TauCeti.normalizedEsymm_rpow_le_of_nonneg` on the closed positive orthant.
+* `TauCeti.choose_rpow_mul_prod_rpow_le_eval_esymm_rpow`: its case `l = n` on the closed positive
+  orthant, `binom(n, k)^{1/k} (∏ᵢ λᵢ)^{1/n} ≤ σ_k(λ)^{1/k}`.
 
 ## Implementation notes
 
@@ -138,6 +140,21 @@ theorem normalizedEsymm_rpow_le_of_nonneg {k l : ℕ} {μ : ι → ℝ} (hμ : �
   simpa only [normalizedEsymm_eq_esymm_div_choose] using
     Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg _ hk hkl (forall_mem_map_univ_val hμ)
 
+/-- **Maclaurin's inequality between `σ_k` and `σ_n`**:
+`binom(n, k)^{1/k} (∏ᵢ λᵢ)^{1/n} ≤ σ_k(λ)^{1/k}` for `1 ≤ k ≤ n` and `λ` with nonnegative
+entries, where `n = |ι|`. -/
+theorem choose_rpow_mul_prod_rpow_le_eval_esymm_rpow {k : ℕ} {μ : ι → ℝ} (hμ : ∀ i, 0 ≤ μ i)
+    (hk : 1 ≤ k) (hkn : k ≤ Fintype.card ι) :
+    ((Fintype.card ι).choose k : ℝ) ^ (k : ℝ)⁻¹ * (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ ≤
+      eval μ (esymm ι ℝ k) ^ (k : ℝ)⁻¹ := by
+  have hC : (0 : ℝ) < (Fintype.card ι).choose k := Nat.cast_pos.2 (Nat.choose_pos hkn)
+  have hσ : 0 ≤ eval μ (esymm ι ℝ k) := by
+    simpa [normalizedEsymm_def, hC.ne'] using mul_nonneg (normalizedEsymm_nonneg hμ k) hC.le
+  have hM := normalizedEsymm_rpow_le_of_nonneg hμ hk hkn
+  rw [normalizedEsymm_def, normalizedEsymm_def, Nat.choose_self, Nat.cast_one, div_one,
+    eval_esymm_card, Real.div_rpow hσ hC.le, one_div, one_div] at hM
+  rwa [le_div_iff₀' (Real.rpow_pos_of_pos hC _)] at hM
+
 end Normalized
 
 section Cone
@@ -158,6 +175,13 @@ theorem mem_hessianCone_of_pos {n k : ℕ} {μ : Fin n → ℝ} (hμ : ∀ i, 0 
   rw [eval_esymm_eq_esymm_map, Finset.esymm_map_val]
   exact Finset.sum_pos (fun A _ ↦ Finset.prod_pos fun i _ ↦ hμ i)
     (Finset.powersetCard_nonempty.mpr (by simpa using (Finset.mem_Icc.mp hj).2.trans hk))
+
+/-- `σ_k > 0` on `Γ_k`. -/
+theorem eval_esymm_pos_of_mem_hessianCone {n k : ℕ} {μ : Fin n → ℝ} (hμ : μ ∈ hessianCone n k) :
+    0 < eval μ (esymm (Fin n) ℝ k) := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simp
+  · exact hμ k (Finset.mem_Icc.2 ⟨hk, le_rfl⟩)
 
 /-- The Hessian cone `Γ_k` is open. -/
 theorem isOpen_hessianCone (n k : ℕ) : IsOpen (hessianCone n k) := by

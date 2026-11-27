@@ -216,22 +216,10 @@ equal, `∂_i f(e) = ∂_j f(e)`, by the symmetry of `f`. -/
 theorem fderiv_one_single_eq (h : IsAdmissiblePair Γ f) (i j : ι) :
     fderiv ℝ f 1 (Pi.single i 1) = fderiv ℝ f 1 (Pi.single j 1) := by
   have h1 : (1 : ι → ℝ) ∈ Γ := h.isAdmissibleCone.mem_of_forall_pos fun _ ↦ one_pos
-  set σ := Equiv.swap i j
-  -- The linear map `μ ↦ μ ∘ σ`, which fixes `e`.
-  let L : (ι → ℝ) →L[ℝ] ι → ℝ := ContinuousLinearMap.pi fun l ↦ ContinuousLinearMap.proj (σ l)
-  have hL (μ : ι → ℝ) : L μ = μ ∘ σ := rfl
-  have hd : HasFDerivAt f (fderiv ℝ f 1) (L 1) := by
-    rw [hL]
-    exact (h.differentiableAt h1).hasFDerivAt
-  have hcomp : HasFDerivAt f ((fderiv ℝ f 1).comp L) 1 := by
-    refine (hd.comp 1 L.hasFDerivAt).congr_of_eventuallyEq ?_
+  have hf : (fun ν ↦ f (ν ∘ Equiv.swap i j)) =ᶠ[𝓝 1] f := by
     filter_upwards [h.isAdmissibleCone.isOpen.mem_nhds h1] with μ hμ
-    exact (h.apply_comp_perm σ hμ).symm
-  have hsingle : L (Pi.single i 1) = Pi.single j 1 := by
-    ext l
-    simp only [hL, Function.comp_apply, Pi.single_apply, σ, Equiv.swap_apply_eq_iff,
-      Equiv.swap_apply_left]
-  rw [← hsingle, ← ContinuousLinearMap.comp_apply, ← hcomp.fderiv]
+    exact h.apply_comp_perm _ hμ
+  simpa using (fderiv_comp_perm_apply_single (𝕜 := ℝ) hf j 1).symm
 
 /-- At the symmetric point `e = (1, …, 1)` every partial derivative of an admissible pair is
 `∂_j f(e) = f(e) / n`, by Euler's identity and the symmetry of `f`. -/

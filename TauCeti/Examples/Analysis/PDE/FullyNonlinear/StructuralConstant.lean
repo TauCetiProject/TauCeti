@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
-public import TauCeti.Analysis.PDE.FullyNonlinear.HessianPair
+public import TauCeti.Analysis.PDE.FullyNonlinear.HessianCone.Pair
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 
@@ -26,8 +26,8 @@ quotient pairs, with and without an added multiple of `σ₁`.
   `binom(3, 2)^{1/2} / 3` (`sqrt_choose_div_three`), as the general formula
   `TauCeti.fderiv_esymm_rpow_one_single` gives (`fderiv_esymm_two_rpow_one_single`).
 * The Hessian constant `(binom(n, k)^{1/k} / n)ⁿ` is `1` at `k = 1`, the Laplace constant
-  (`hessianConstant_one`), and `n^{-n}` at `k = n`, the Monge–Ampère constant
-  (`hessianConstant_self`).
+  (`choose_one_rpow_div_pow_eq_one`), and `n^{-n}` at `k = n`, the Monge–Ampère constant
+  (`choose_self_rpow_div_pow_eq_inv_pow`).
 * The pure quotient `σ₂/σ₁` in `ℝ²`: `∏_j ∂_j f = λ₁²λ₂²/(λ₁ + λ₂)⁴`
   (`prod_fderiv_quotTwo_single`), which is `1/16` at `e` (`prod_fderiv_quotTwo_one_single`) and
   `ε²/(1 + ε)⁴` at `(ε, 1)`, so no positive structural constant holds on `Γ₂`
@@ -93,13 +93,14 @@ theorem fderiv_esymm_two_rpow_one_single (j : Fin 3) :
   norm_num
 
 /-- The Hessian constant at `k = 1` is the Laplace constant `1`. -/
-theorem hessianConstant_one {n : ℕ} (hn : 1 ≤ n) :
+theorem choose_one_rpow_div_pow_eq_one (n : ℕ) :
     ((n.choose 1 : ℝ) ^ ((1 : ℕ) : ℝ)⁻¹ / n) ^ n = 1 := by
-  have : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-  simp [this]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · simp [hn.ne']
 
 /-- The Hessian constant at `k = n` is the Monge–Ampère constant `n^{-n}`. -/
-theorem hessianConstant_self (n : ℕ) :
+theorem choose_self_rpow_div_pow_eq_inv_pow (n : ℕ) :
     ((n.choose n : ℝ) ^ (n : ℝ)⁻¹ / n) ^ n = ((n : ℝ) ^ n)⁻¹ := by
   simp
 

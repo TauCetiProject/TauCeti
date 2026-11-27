@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.MvPolynomial.ElementarySymmetric
 import TauCeti.Analysis.PDE.FullyNonlinear.HessianCone.Concave
 import TauCeti.Analysis.PDE.FullyNonlinear.HessianCone.Derivative
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # The Hessian pair `(σ_k^{1/k}, Γ_k)`
@@ -26,8 +27,9 @@ constant `γ = (binom(n, k)^{1/k} / n)ⁿ` (`TauCeti.hasStructuralConstant_esymm
   (`TauCeti.fderiv_esymm_rpow_single`), and `σ_{k-1;j} > 0` on `Γ_k`
   (`TauCeti.eval_update_zero_esymm_pos_of_mem_hessianCone`).
 * Structural constant: by Maclaurin's inequality `S_n^{1/n} ≤ S_k^{1/k}` on the positive orthant
-  (`TauCeti.normalizedEsymm_rpow_le`), where `S_j = σ_j / binom(n, j)` and `S_n = ∏_i μ_i`,
-  `σ_k(μ)^{1/k} ≥ binom(n, k)^{1/k} (∏_i μ_i)^{1/n}`; Lemma 4 of Guo–Phong–Tong
+  (`TauCeti.normalizedEsymm_rpow_le_of_nonneg`), where `S_j = σ_j / binom(n, j)` and
+  `S_n = ∏_i μ_i`, `σ_k(μ)^{1/k} ≥ binom(n, k)^{1/k} (∏_i μ_i)^{1/n}`
+  (`TauCeti.choose_rpow_mul_prod_rpow_le_eval_esymm_rpow`); Lemma 4 of Guo–Phong–Tong
   (`TauCeti.IsAdmissiblePair.hasStructuralConstant_pow_of_concaveOn`) turns this lower bound
   into the structural constant.
 
@@ -53,27 +55,6 @@ namespace TauCeti
 
 variable {n k : ℕ}
 
-/-- `σ_n(μ) = ∏_i μ_i` on `ℝⁿ`. -/
-theorem eval_esymm_card (μ : Fin n → ℝ) : eval μ (esymm (Fin n) ℝ n) = ∏ i, μ i := by
-  have h : powersetCard n (univ : Finset (Fin n)) = {univ} := by
-    simpa using powersetCard_self (univ : Finset (Fin n))
-  simp [esymm, h]
-
-/-- `σ_k > 0` on `Γ_k` for `k ≥ 1`. -/
-theorem eval_esymm_pos_of_mem_hessianCone {μ : Fin n → ℝ} (hμ : μ ∈ hessianCone n k)
-    (hk : 1 ≤ k) : 0 < eval μ (esymm (Fin n) ℝ k) :=
-  mem_hessianCone.1 hμ k (mem_Icc.2 ⟨hk, le_rfl⟩)
-
-/-- `σ_k` is symmetric: `σ_k(μ ∘ σ) = σ_k(μ)`. -/
-theorem eval_comp_perm_esymm (σ : Equiv.Perm (Fin n)) (μ : Fin n → ℝ) (k : ℕ) :
-    eval (μ ∘ σ) (esymm (Fin n) ℝ k) = eval μ (esymm (Fin n) ℝ k) := by
-  rw [← eval_rename, esymm_isSymmetric (Fin n) ℝ k σ]
-
-/-- `σ_k(t μ) = t^k σ_k(μ)`. -/
-theorem eval_smul_esymm (t : ℝ) (μ : Fin n → ℝ) (k : ℕ) :
-    eval (t • μ) (esymm (Fin n) ℝ k) = t ^ k * eval μ (esymm (Fin n) ℝ k) :=
-  (isHomogeneous_esymm (σ := Fin n) (R := ℝ) k).eval_smul t μ
-
 /-- **The partial derivatives of `σ_{k+1}^{1/(k+1)}`** at a point where `σ_{k+1} > 0`:
 `∂_j σ_{k+1}^{1/(k+1)} = (1/(k+1)) σ_{k+1}^{1/(k+1) - 1} σ_{k;j}`. -/
 theorem fderiv_esymm_rpow_single {μ : Fin n → ℝ} (hμ : 0 < eval μ (esymm (Fin n) ℝ (k + 1)))
@@ -87,10 +68,8 @@ theorem fderiv_esymm_rpow_single {μ : Fin n → ℝ} (hμ : 0 < eval μ (esymm 
 /-- `σ_k^{1/k}` is smooth on `Γ_k`. -/
 theorem contDiffOn_esymm_rpow (n k : ℕ) {m : WithTop ℕ∞} :
     ContDiffOn ℝ m (fun μ ↦ eval μ (esymm (Fin n) ℝ k) ^ (k : ℝ)⁻¹) (hessianCone n k) := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · simpa using contDiffOn_const
   intro μ hμ
-  have hpos := eval_esymm_pos_of_mem_hessianCone hμ hk
+  have hpos := eval_esymm_pos_of_mem_hessianCone hμ
   have hp : ContDiff ℝ m fun ν : Fin n → ℝ ↦ eval ν (esymm (Fin n) ℝ k) := by
     simpa using (AnalyticOnNhd.eval_continuousLinearMap'
       (fun i ↦ ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n ↦ ℝ) i)
@@ -103,13 +82,11 @@ theorem isAdmissiblePair_esymm_rpow (hk : 1 ≤ k) (hkn : k ≤ n) :
   isAdmissibleCone := isAdmissibleCone_hessianCone hk hkn
   contDiffOn := contDiffOn_esymm_rpow n k
   apply_comp_perm σ μ _ := by simp only [eval_comp_perm_esymm]
-  apply_smul {t} ht μ hμ := by
-    rw [eval_smul_esymm, Real.mul_rpow (by positivity)
-      (eval_esymm_pos_of_mem_hessianCone hμ hk).le, ← Real.rpow_natCast,
-      ← Real.rpow_mul ht.le, mul_inv_cancel₀ (by positivity), Real.rpow_one]
+  apply_smul {t} ht μ hμ :=
+    (isHomogeneous_esymm k).eval_smul_rpow hk (eval_esymm_pos_of_mem_hessianCone hμ).le ht.le
   fderiv_single_pos {μ} hμ j := by
     obtain ⟨k, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
-    have hpos := eval_esymm_pos_of_mem_hessianCone hμ hk
+    have hpos := eval_esymm_pos_of_mem_hessianCone hμ
     rw [fderiv_esymm_rpow_single hpos]
     exact mul_pos (mul_pos (by positivity) (Real.rpow_pos_of_pos hpos _))
       (eval_update_zero_esymm_pos_of_mem_hessianCone hμ j)
@@ -121,26 +98,11 @@ theorem hasStructuralConstant_esymm_rpow (hk : 1 ≤ k) (hkn : k ≤ n) :
       (fun μ ↦ eval μ (esymm (Fin n) ℝ k) ^ (k : ℝ)⁻¹)
       (((n.choose k : ℝ) ^ (k : ℝ)⁻¹ / n) ^ n) := by
   have hn : (0 : ℝ) < n := Nat.cast_pos.2 (by omega)
-  have hC : (0 : ℝ) < n.choose k := Nat.cast_pos.2 (Nat.choose_pos hkn)
   simpa using (isAdmissiblePair_esymm_rpow hk hkn).hasStructuralConstant_pow_of_concaveOn
     (concaveOn_esymm_rpow n k) (by positivity) fun μ hμ ↦ by
-      -- Maclaurin: `S_n^{1/n} ≤ S_k^{1/k}`, with `S_n = ∏_i μ_i`.
-      have hΓ : μ ∈ hessianCone n n := mem_hessianCone_of_pos hμ le_rfl
-      have hM := normalizedEsymm_rpow_le hΓ hk hkn
-      have hSk : 0 ≤ normalizedEsymm k μ :=
-        (normalizedEsymm_pos_of_mem_hessianCone hΓ hkn).le
-      rw [normalizedEsymm_def, normalizedEsymm_def, Fintype.card_fin, Nat.choose_self,
-        Nat.cast_one, div_one, eval_esymm_card, one_div, one_div] at hM
-      have hσ : eval μ (esymm (Fin n) ℝ k) = n.choose k * normalizedEsymm k μ := by
-        rw [normalizedEsymm_def, Fintype.card_fin]
-        field_simp
-      rw [Fintype.card_fin, mul_div_cancel₀ _ hn.ne', hσ, Real.mul_rpow hC.le hSk]
-      rw [normalizedEsymm_def, Fintype.card_fin] at hSk ⊢
-      exact mul_le_mul_of_nonneg_left hM (by positivity)
-
-/-- `σ_k(e) = binom(n, k)` at `e = (1, …, 1)`. -/
-theorem eval_one_esymm (n k : ℕ) : eval 1 (esymm (Fin n) ℝ k) = n.choose k := by
-  simp [esymm, card_powersetCard]
+      rw [Fintype.card_fin, mul_div_cancel₀ _ hn.ne']
+      simpa only [Fintype.card_fin] using
+        choose_rpow_mul_prod_rpow_le_eval_esymm_rpow (fun i ↦ (hμ i).le) hk (by simpa using hkn)
 
 /-- **The Hessian constant is attained at `e`**: every partial derivative of `σ_k^{1/k}` at
 `e = (1, …, 1)` is `binom(n, k)^{1/k} / n`, for `1 ≤ k ≤ n`. -/
