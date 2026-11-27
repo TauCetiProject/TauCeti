@@ -92,7 +92,9 @@ theorem continuous_resolvent_real {z : ℂ} (hz : z.im ≠ 0) : Continuous (reso
 theorem norm_sub_inv_le_of_mem_ball {z w : ℂ}
     (hw : w ∈ Metric.ball z (z.im / 2)) (y : ℝ) :
     ‖((w - y)⁻¹ : ℂ)‖ ≤ 2 / z.im := by
-  have h1 := im_gt_of_mem_ball hw
+  have h1 : z.im / 2 < w.im := by
+    have := sub_lt_im_of_mem_ball hw
+    linarith
   have hradius : 0 < z.im / 2 :=
     (dist_nonneg : 0 ≤ dist w z).trans_lt (Metric.mem_ball.mp hw)
   have hwpos : 0 < w.im := by linarith

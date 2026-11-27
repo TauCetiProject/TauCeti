@@ -615,13 +615,13 @@ theorem tendsto_resolventTransform_semicircleReal_zero_one_of_mem_Icc {x : ℝ}
 
 /-- The resolvent of a positive-variance semicircle law is obtained from the standard law
 by its location-scale transformation. -/
-theorem resolventTransform_semicircleReal_eq_standard (a : ℝ) {v : ℝ≥0}
+theorem resolventTransform_semicircleReal_eq_inv_sqrt_mul_zero_one (a : ℝ) {v : ℝ≥0}
     (hv : 0 < v) (z : ℂ) :
     resolventTransform (semicircleReal a v) z =
       (Real.sqrt v : ℂ)⁻¹ *
         resolventTransform (semicircleReal 0 1) ((z - a) / Real.sqrt v) := by
   have hs : Real.sqrt (v : ℝ) ≠ 0 := (Real.sqrt_pos.2 (by exact_mod_cast hv)).ne'
-  rw [← map_standardSemicircleReal a v]
+  rw [← map_add_sqrt_mul_semicircleReal_zero_one a v]
   exact resolventTransform_map_affine a (Real.sqrt v) hs z
 
 end TauCeti.Probability

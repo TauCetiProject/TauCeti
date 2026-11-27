@@ -165,7 +165,7 @@ theorem map_affine_semicircleReal (a b c : ℝ) (v : ℝ≥0) :
       _ = _ := by rw [map_neg_semicircleMeasure]
 
 /-- Every semicircle law is the affine image of the standard semicircle law. -/
-theorem map_standardSemicircleReal (a : ℝ) (v : ℝ≥0) :
+theorem map_add_sqrt_mul_semicircleReal_zero_one (a : ℝ) (v : ℝ≥0) :
     (semicircleReal 0 1).map (fun x : ℝ ↦ a + Real.sqrt v * x) = semicircleReal a v := by
   have hvar : Real.toNNReal (Real.sqrt v ^ 2) * (1 : ℝ≥0) = v := by
     apply NNReal.coe_injective

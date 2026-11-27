@@ -136,7 +136,7 @@ private theorem deriv_m_quad (hz : 0 < z.im) {d : ℂ} (hdm : HasDerivAt m d z) 
   have hEq : (fun w : ℂ ↦ m w * m w + w * m w + 1) =ᶠ[𝓝 z] fun _ ↦ 0 := by
     filter_upwards [Metric.ball_mem_nhds z (by positivity : 0 < z.im / 2)] with w hw
     simpa using resolventTransform_semicircleReal_zero_one_quadratic_eq_zero (by
-      have h := im_gt_of_mem_ball hw
+      have h := sub_lt_im_of_mem_ball hw
       linarith)
   have hzero := (hasDerivAt_const z 0).congr_of_eventuallyEq hEq
   have := hzero.deriv
@@ -296,7 +296,7 @@ private theorem integral_log_norm_sub_semicircleReal_affine
   let s : ℝ := Real.sqrt v
   have hs : 0 < s := by dsimp [s]; exact Real.sqrt_pos.2 (by exact_mod_cast hv)
   have hmap : (semicircleReal 0 1).map (fun y : ℝ ↦ a + s * y) =
-      semicircleReal a v := map_standardSemicircleReal a v
+      semicircleReal a v := map_add_sqrt_mul_semicircleReal_zero_one a v
   rw [← hmap]
   exact Measure.integral_log_norm_sub_map_affine _ a hs z hne hint
 
@@ -327,7 +327,7 @@ private theorem integral_log_norm_sub_semicircleReal_of_im_pos_of_pos
   have hstd := log_norm_eq_primitive_re hw
   have hRT : resolventTransform (semicircleReal a v) z =
       (s : ℂ)⁻¹ * resolventTransform (semicircleReal 0 1) w := by
-    simpa [s, w] using resolventTransform_semicircleReal_eq_standard a hv z
+    simpa [s, w] using resolventTransform_semicircleReal_eq_inv_sqrt_mul_zero_one a hv z
   have harg : z - a = (s : ℂ) * w := by
     dsimp [w]
     exact (mul_div_cancel₀ _ (Complex.ofReal_ne_zero.mpr hs.ne')).symm

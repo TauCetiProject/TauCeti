@@ -119,7 +119,7 @@ theorem hasDerivAt_integral_clog_sub_of_im_pos (μ : Measure ℝ) [IsFiniteMeasu
     (Filter.Eventually.of_forall fun y w hw ↦ Complex.norm_sub_inv_le_of_mem_ball hw y)
     (integrable_const _)
     (Filter.Eventually.of_forall fun y w hw ↦ by
-      have hw' : 0 < w.im := by have := Complex.im_gt_of_mem_ball hw; linarith
+      have hw' : 0 < w.im := by have := Complex.sub_lt_im_of_mem_ball hw; linarith
       have hd : HasDerivAt (fun w : ℂ ↦ w - (y : ℂ)) 1 w := (hasDerivAt_id w).sub_const (y : ℂ)
       simpa using HasDerivAt.clog hd (TauCeti.sub_ofReal_mem_slitPlane_of_im_pos hw' y))
   convert key.2 using 1
@@ -171,7 +171,7 @@ theorem tendsto_integral_log_norm_sub_of_ae_abs_le (μ : Measure ℝ) [IsFiniteM
 
 /-- On the imaginary axis, the logarithmic kernel integral of a bounded real probability
 measure lies between `log t` and `log (t + R)`. -/
-theorem integral_log_norm_mul_I_bounds (μ : Measure ℝ) [IsProbabilityMeasure μ]
+theorem log_le_integral_log_norm_mul_I_sub_and_le_log_add (μ : Measure ℝ) [IsProbabilityMeasure μ]
     (R : ℝ) (hR : ∀ᵐ y ∂μ, |y| ≤ R) (t : ℝ) (ht : 0 < t) :
     Real.log t ≤ ∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂μ ∧
       (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂μ) ≤ Real.log (t + R) := by
@@ -214,10 +214,10 @@ theorem tendsto_integral_log_norm_mul_I_sub_log_atTop (μ : Measure ℝ) [IsProb
     simpa using Real.tendsto_log_comp_add_sub_log R
   refine Filter.Tendsto.squeeze' tendsto_const_nhds hlog ?_ ?_
   · filter_upwards [eventually_gt_atTop 0] with t ht
-    have h := (integral_log_norm_mul_I_bounds μ R hR t ht).1
+    have h := (log_le_integral_log_norm_mul_I_sub_and_le_log_add μ R hR t ht).1
     linarith
   · filter_upwards [eventually_gt_atTop 0] with t ht
-    have h := (integral_log_norm_mul_I_bounds μ R hR t ht).2
+    have h := (log_le_integral_log_norm_mul_I_sub_and_le_log_add μ R hR t ht).2
     linarith
 
 /-- The logarithmic kernel integral under a positive affine pushforward of a real probability
