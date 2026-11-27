@@ -15,6 +15,7 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Sets.Opens
 public import Mathlib.Topology.LocallyFinite
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
@@ -61,6 +62,8 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
   points whose whole orbit lies in an open set form an open set.
+* `TopologicalSpace.Opens.invariantCore`: the largest invariant open subset of an open set, under
+  a continuous action of a compact monoid, together with the restricted action on it.
 * `TauCeti.isCompact_orbit`: every orbit of a continuous action of a compact monoid is compact.
 * `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
   space is closed.
@@ -570,3 +573,67 @@ theorem isClosed_iUnion_smul_of_isCompact (hS : IsCompact S) (hS' : IsClosed S) 
 end IsClosedIUnion
 
 end TauCeti
+
+namespace TopologicalSpace.Opens
+
+section SMul
+
+variable (G : Type*) {X : Type*} [TopologicalSpace G] [CompactSpace G] [TopologicalSpace X]
+  [SMul G X] [ContinuousSMul G X]
+
+/-- The **invariant core** of an open set `U` under a jointly continuous action of a compact space
+`G`: the open set of points whose whole orbit lies in `U`. For a monoid action it is the largest
+invariant open subset of `U` (`TopologicalSpace.Opens.invariantCore_le`,
+`TopologicalSpace.Opens.smul_mem_invariantCore`, `TopologicalSpace.Opens.le_invariantCore_iff`),
+and the monoid acts on it. -/
+def invariantCore (U : Opens X) : Opens X :=
+  ⟨{x | ∀ g : G, g • x ∈ U}, TauCeti.isOpen_setOf_forall_smul_mem U.isOpen⟩
+
+variable {G}
+
+@[simp]
+theorem mem_invariantCore {U : Opens X} {x : X} : x ∈ U.invariantCore G ↔ ∀ g : G, g • x ∈ U :=
+  Iff.rfl
+
+/-- An open set lies in the invariant core of `U` exactly when every translate of it lies in `U`. -/
+theorem le_invariantCore_iff {U V : Opens X} :
+    V ≤ U.invariantCore G ↔ ∀ g : G, ∀ x ∈ V, g • x ∈ U :=
+  ⟨fun h g _ hx ↦ mem_invariantCore.1 (h hx) g, fun h _ hx ↦ mem_invariantCore.2 fun g ↦ h g _ hx⟩
+
+/-- Taking invariant cores preserves inclusions of open sets. -/
+theorem invariantCore_mono : Monotone (invariantCore G : Opens X → Opens X) :=
+  fun _ _ h ↦ le_invariantCore_iff.2 fun g _ hx ↦ h (mem_invariantCore.1 hx g)
+
+end SMul
+
+variable {G X : Type*} [Monoid G] [TopologicalSpace G] [CompactSpace G] [TopologicalSpace X]
+  [MulAction G X] [ContinuousSMul G X]
+
+variable (G) in
+/-- The invariant core of an open set is contained in it. -/
+theorem invariantCore_le (U : Opens X) : U.invariantCore G ≤ U := fun x hx ↦ by
+  simpa using mem_invariantCore.1 hx 1
+
+/-- The invariant core of an open set is invariant. -/
+theorem smul_mem_invariantCore {U : Opens X} {x : X} (hx : x ∈ U.invariantCore G) (g : G) :
+    g • x ∈ U.invariantCore G :=
+  mem_invariantCore.2 fun h ↦ by simpa [smul_smul] using mem_invariantCore.1 hx (h * g)
+
+/-- An open set equals its invariant core exactly when it is invariant. -/
+theorem invariantCore_eq_self_iff {U : Opens X} :
+    U.invariantCore G = U ↔ ∀ g : G, ∀ x ∈ U, g • x ∈ U :=
+  (invariantCore_le G U).ge_iff_eq.symm.trans le_invariantCore_iff
+
+/-- A monoid acting continuously on `X` acts on the invariant core of every open subset. -/
+instance (U : Opens X) : MulAction G (U.invariantCore G) where
+  smul g x := ⟨g • (x : X), smul_mem_invariantCore x.property g⟩
+  one_smul x := Subtype.ext (one_smul G (x : X))
+  mul_smul g h x := Subtype.ext (mul_smul g h (x : X))
+
+/-- The action on the invariant core is the restriction of the action on `X`. -/
+@[simp, norm_cast]
+theorem coe_smul_invariantCore (U : Opens X) (g : G) (x : U.invariantCore G) :
+    ((g • x : U.invariantCore G) : X) = g • (x : X) :=
+  rfl
+
+end TopologicalSpace.Opens

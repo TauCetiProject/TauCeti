@@ -37,6 +37,11 @@ followed by that of `E`.
 
 * `CategoryTheory.SpectralSequence.reindex`: the reindexed spectral sequence.
 * `CategoryTheory.SpectralSequence.reindexFunctor`: reindexing as a functor.
+
+A page shift `d` with `r₀ ≤ r₀' + d` may also drop pages: for `d = 0` and `f` the identity,
+`E.reindex 0 (Equiv.refl κ) _ hd` keeps the pages `r ≥ r₀'` of `E`. The induced morphisms only see
+those pages (`CategoryTheory.SpectralSequence.reindexMap_congr`), so morphisms of spectral sequences
+that agree from page `r₀'` on are identified.
 -/
 
 public section
@@ -137,6 +142,24 @@ lemma reindexMap_hom_f_comp_reindexPageXIso_hom (φ : E ⟶ E') (r r' : ℤ) (hr
   subst hr' hj
   -- Both identifications are `eqToHom` of an equality of definitionally equal objects.
   exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+/-- The morphism of reindexed spectral sequences induced by `φ` only depends on the pages `r + d`
+of `φ` with `r₀' ≤ r`, the pages that the reindexed spectral sequences keep. -/
+lemma reindexMap_congr {φ φ' : E ⟶ E'} (h : ∀ r (hr : r₀' ≤ r), φ.hom (r + d) = φ'.hom (r + d)) :
+    reindexMap d f hf hd φ = reindexMap d f hf hd φ' := by
+  ext r hr j
+  rw [reindexMap_hom_f, reindexMap_hom_f, h r hr]
+
+/-- Reindexing the identity morphism gives the identity morphism. -/
+@[simp]
+lemma reindexMap_id : reindexMap d f hf hd (𝟙 E) = 𝟙 _ :=
+  (rfl)
+
+/-- Reindexing a composite of morphisms gives the composite of the reindexed morphisms. -/
+@[simp, reassoc]
+lemma reindexMap_comp (φ : E ⟶ E') (ψ : E' ⟶ E'') :
+    reindexMap d f hf hd (φ ≫ ψ) = reindexMap d f hf hd φ ≫ reindexMap d f hf hd ψ :=
+  (rfl)
 
 variable (C c' r₀')
 

@@ -30,7 +30,9 @@ for a constant `C` depending only on `E`, `p` and `q`
 (`TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`). The case `k = 0`
 is the gain of integrability `‖f‖_q ≤ C R ^ (n (1/p - 1/q)) ‖f‖_p` of a band-limited function
 (`TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier`), and
-the case `p = q`, `k = 1` says that differentiating costs at most a factor `C R`.
+the case `p = q`, `k = 1` says that differentiating costs at most a factor `C R`. In the same
+way the Laplacian costs at most a factor `C R²`, with `C` independent of `p`, so its `k`-th
+iterate costs at most `(C R²)ᵏ`.
 
 If moreover `𝓕 u` vanishes on the ball of radius `R`, so that the spectrum of `f` lies in the
 annulus `R ≤ ‖ξ‖ ≤ B R`, differentiation also loses at most a factor of order `R` in the other
@@ -82,6 +84,10 @@ annulus.
   inequalities.
 * `TauCeti.exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`: Bernstein's inequality
   for one derivative, with a constant independent of the exponent `p`.
+* `TauCeti.exists_laplacian_eq_and_norm_le_of_isVanishingOn_fourier`,
+  `TauCeti.exists_norm_toLp_iterate_laplacian_le_of_isVanishingOn_fourier`: Bernstein's inequality
+  for the Laplacian, `‖Δ f‖_p ≤ C R² ‖f‖_p`, and for its iterates on band-limited Schwartz
+  functions, `‖Δᵏ φ‖_p ≤ (C R²)ᵏ ‖φ‖_p`, with a constant independent of `p` and `k`.
 * `OrthonormalBasis.exists_eq_sum_lineDerivOp_and_norm_le`: on an annulus of radius `R`, a
   function is a sum of derivatives of functions smaller by a factor of order `R⁻¹`.
 * `OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`,
@@ -99,7 +105,7 @@ public section
 noncomputable section
 
 open SchwartzMap ContinuousLinearMap MeasureTheory Metric Distribution Module
-open scoped ENNReal FourierTransform SchwartzMap LineDeriv Convolution
+open scoped ENNReal FourierTransform SchwartzMap LineDeriv Laplacian Convolution
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -254,6 +260,76 @@ theorem exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier :
     (derivSymbol hR m) f (q := p) (r := 1) le_rfl (by rw [inv_one, add_comm])
   exact ⟨g, hdist.trans hg, hgf.trans (mul_le_mul_of_nonneg_right
     (toReal_eLpNorm_fourierInv_derivSymbol_le hR m) (norm_nonneg f))⟩
+
+/-- **Bernstein's inequality for the Laplacian.** There is a constant `C`, depending only on `E`,
+with the following property. For `1 ≤ p ≤ ∞`, an `Lᵖ` function `f` whose Fourier transform
+vanishes outside the closed ball of radius `R > 0` has its Laplacian `Δ f` in `Lᵖ`, with
+`‖Δ f‖_p ≤ C R² ‖f‖_p`. -/
+theorem exists_laplacian_eq_and_norm_le_of_isVanishingOn_fourier :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}, 0 < R →
+      ∀ f : Lp F p (volume : Measure E),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
+      ∃ g : Lp F p (volume : Measure E), Δ (f : 𝓢'(E, F)) = g ∧ ‖g‖ ≤ C * R ^ 2 * ‖f‖ := by
+  obtain ⟨C, hC, h₁⟩ :=
+    exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F)
+  set b := stdOrthonormalBasis ℝ E
+  refine ⟨finrank ℝ E * C ^ 2, by positivity, fun {p} _ {R} hR f hf ↦ ?_⟩
+  -- `Δ f = ∑ᵢ ∂_{bᵢ} ∂_{bᵢ} f`, and each derivative costs a factor `C R`.
+  choose g hg hgn using h₁ hR f hf
+  have hgf (i : Fin (finrank ℝ E)) :
+      IsVanishingOn (𝓕 (g (b i) : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ := by
+    rw [← hg]
+    exact isVanishingOn_fourier_lineDerivOp hf _
+  choose h hh hhn using fun i ↦ h₁ hR (g (b i)) (hgf i) (b i)
+  refine ⟨∑ i, h i, ?_, ?_⟩
+  · rw [TemperedDistribution.laplacian_eq_sum b, Lp.toTemperedDistribution_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [hg, hh]
+  · calc ‖∑ i, h i‖ ≤ ∑ i, ‖h i‖ := norm_sum_le _ _
+      _ ≤ ∑ _i : Fin (finrank ℝ E), C ^ 2 * R ^ 2 * ‖f‖ := by
+        refine Finset.sum_le_sum fun i _ ↦ ?_
+        have h1 := hhn i
+        have h2 := hgn (b i)
+        rw [b.norm_eq_one, mul_one] at h1 h2
+        calc ‖h i‖ ≤ C * R * ‖g (b i)‖ := h1
+          _ ≤ C * R * (C * R * ‖f‖) := by gcongr
+          _ = C ^ 2 * R ^ 2 * ‖f‖ := by ring
+      _ = finrank ℝ E * C ^ 2 * R ^ 2 * ‖f‖ := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
+
+/-- **Bernstein's inequality for iterated Laplacians.** There is a constant `C`, depending only on
+`E`, with the following property. For `1 ≤ p ≤ ∞`, a Schwartz function `φ` whose Fourier transform
+vanishes outside the closed ball of radius `R > 0` satisfies `‖Δᵏ φ‖_p ≤ (C R²)ᵏ ‖φ‖_p` for every
+`k`. -/
+theorem exists_norm_toLp_iterate_laplacian_le_of_isVanishingOn_fourier :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}, 0 < R → ∀ (k : ℕ) (φ : 𝓢(E, F)),
+      IsVanishingOn (𝓕 (φ : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
+      ‖(Δ^[k] φ : 𝓢(E, F)).toLp p volume‖ ≤ (C * R ^ 2) ^ k * ‖φ.toLp p volume‖ := by
+  obtain ⟨C, hC, hB⟩ := exists_laplacian_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F)
+  refine ⟨C, hC, fun {p} _ {R} hR k ↦ ?_⟩
+  induction k with
+  | zero => exact fun φ _ ↦ by simp
+  | succ k ih =>
+    intro φ hφ
+    -- One Laplacian costs a factor `C R²` and keeps the spectrum in the ball.
+    have hf : IsVanishingOn (𝓕 ((φ.toLp p : Lp F p (volume : Measure E)) : 𝓢'(E, F)) :
+        𝓢'(E, F)) (closedBall 0 R)ᶜ := by
+      rwa [Lp.toTemperedDistribution_toLp_eq]
+    obtain ⟨g, hg, hgn⟩ := hB hR _ hf
+    set ψ : 𝓢(E, F) := Δ φ with hψ
+    have hψ' : (ψ : 𝓢'(E, F)) = Δ (φ : 𝓢'(E, F)) := by
+      rw [hψ, laplacian_toTemperedDistributionCLM_eq]
+    have hΔ : ψ.toLp p = g := by
+      have h' : ((ψ.toLp p : Lp F p (volume : Measure E)) : 𝓢'(E, F)) = (g : 𝓢'(E, F)) := by
+        rw [Lp.toTemperedDistribution_toLp_eq, ← hg, Lp.toTemperedDistribution_toLp_eq, hψ']
+      exact Lp.toTemperedDistribution_injective h'
+    have hψf : IsVanishingOn (𝓕 (ψ : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ := by
+      rw [hψ']
+      exact isVanishingOn_fourier_laplacian hφ
+    rw [Function.iterate_succ_apply]
+    refine (ih ψ hψf).trans ?_
+    rw [hΔ, pow_succ (C * R ^ 2) k, mul_assoc]
+    gcongr
 
 /-- **Bernstein's inequality for derivatives at a fixed exponent**, by induction on the number of
 derivatives: `‖∂_{m₁} ⋯ ∂_{mₖ} f‖_p ≤ (C R) ^ k ‖m₁‖ ⋯ ‖mₖ‖ ‖f‖_p`. -/

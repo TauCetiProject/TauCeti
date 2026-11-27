@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.InnerProductSpace.ProdL2
@@ -121,45 +120,26 @@ section Diagonal
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [MeasurableSpace (WithLp 2 (E × E))] [BorelSpace (WithLp 2 (E × E))]
 
-/-- `δ(x - y)` is a nonzero multiple of the surface measure of the diagonal: Lebesgue measure of
-`E` pushed forward along `x ↦ (x, x)` is a positive multiple of the surface measure of the
-diagonal, by uniqueness of Haar measure on the diagonal. -/
-private theorem exists_ofFun_one_map_diagonal_eq_smul (Ω : Opens (WithLp 2 (E × E))) :
-    ∃ c : ℂ, c ≠ 0 ∧ ofFun Ω (1 : WithLp 2 (E × E) → ℂ) (volume.map fun x : E ↦ toLp 2 (x, x)) ⊤ =
-      c • ofFun Ω 1 (volume.map ((↑) : diagonal 2 ℝ E → WithLp 2 (E × E))) ⊤ := by
-  set e := diagonalEquiv 2 ℝ E
-  have hd : (fun x : E ↦ toLp 2 (x, x)) = ((↑) : diagonal 2 ℝ E → WithLp 2 (E × E)) ∘ e := by
-    funext x
-    simp [e]
-  set c := Measure.addHaarScalarFactor (volume.map e) volume
-  have hμ : volume.map (fun x : E ↦ toLp 2 (x, x)) =
-      c • volume.map ((↑) : diagonal 2 ℝ E → WithLp 2 (E × E)) := by
-    rw [hd, ← Measure.map_map measurable_subtypeVal e.continuous.measurable,
-      congrArg (Measure.map _) (Measure.isAddLeftInvariant_eq_smul (volume.map e) volume),
-      Measure.map_smul]
-    exact measurable_subtypeVal.aemeasurable
-  have hce : Topology.IsClosedEmbedding ((↑) : diagonal 2 ℝ E → WithLp 2 (E × E)) :=
-    (diagonal 2 ℝ E).isClosedEmbedding_subtype (diagonal 2 ℝ E).isClosed_of_finiteDimensional
-  have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap volume hce.isProperMap
-  refine ⟨((c : ℝ) : ℂ), by exact_mod_cast
-    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure (volume.map e) volume).ne', ?_⟩
-  ext φ
-  rw [hμ, ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _), smul_apply,
-    ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _)]
-  simp [integral_smul_nnreal_measure, NNReal.smul_def]
-
 /-- **The wave front set of `δ(x - y)`.** The distribution `φ ↦ ∫ φ (x, x) dx` on an open set `Ω`
 of `E × E`, carried by the diagonal, is singular exactly at the points `(x, x)` of the diagonal in
 `Ω`, and there exactly in the nonzero directions `(η, -η)`, conormal to the diagonal. -/
 theorem waveFrontSet_ofFun_one_map_diagonal (Ω : Opens (WithLp 2 (E × E))) :
     (ofFun Ω 1 (volume.map fun x : E ↦ toLp 2 (x, x)) ⊤).waveFrontSet =
       {q | q.1 ∈ Ω ∧ q.1.fst = q.1.snd ∧ q.2 ≠ 0 ∧ q.2.snd = -q.2.fst} := by
-  obtain ⟨c, hc, h⟩ := exists_ofFun_one_map_diagonal_eq_smul (E := E) Ω
-  rw [h, waveFrontSet_smul hc, waveFrontSet_ofFun_one_map_subtype]
+  -- `δ(x - y)` is Lebesgue measure pushed forward along the injective linear map `x ↦ (x, x)`.
+  rw [← coe_diagL2 ℝ E, waveFrontSet_ofFun_one_map_of_injective volume
+    (fun x y h ↦ by simpa using congrArg WithLp.fst h) Ω]
   ext ⟨p, ζ⟩
-  simp only [mem_prod, mem_inter_iff, SetLike.mem_coe, Set.mem_sdiff, mem_singleton_iff,
-    WithLp.mem_diagonal_iff, mem_orthogonal_diagonal_iff, mem_ofPred_eq]
-  tauto
+  -- A point `q` of the diagonal is `diagL2 ℝ E q.fst`.
+  have hq {q : WithLp 2 (E × E)} (hq : q.fst = q.snd) : diagL2 ℝ E q.fst = q :=
+    diagL2_apply ℝ E _ ▸ ofLp_injective 2 (Prod.ext rfl hq)
+  have hp : (∃ u, diagL2 ℝ E u = p) ↔ p.fst = p.snd :=
+    ⟨fun ⟨u, hu⟩ ↦ by simp [← hu], fun h ↦ ⟨p.fst, hq h⟩⟩
+  -- Pairing with the points `(u, u)` of the diagonal is orthogonality to the diagonal.
+  have hζ : (∀ u, ⟪ζ, diagL2 ℝ E u⟫ = 0) ↔ ζ.snd = -ζ.fst := by
+    rw [← mem_orthogonal_diagonal_iff (𝕜 := ℝ), Submodule.mem_orthogonal']
+    exact ⟨fun h u hu ↦ hq (mem_diagonal_iff.1 hu) ▸ h u.fst, fun h u ↦ h _ (by simp)⟩
+  simp only [mem_ofPred_eq, hp, hζ]
 
 /-- **`δ(x - y)` fails the pullback criterion along the diagonal.** At every point `(x, x)` of
 the diagonal in `Ω` and for every `η ≠ 0`, the covector `(η, -η)` lies in the wave front set of
