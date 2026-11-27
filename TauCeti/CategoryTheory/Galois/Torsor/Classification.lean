@@ -181,9 +181,8 @@ theorem torsorSMul_map {S S' : ContAction FintypeCat.{u} G} (f : S' ⟶ S)
 
 variable [CompactSpace G]
 
-/-- The sheaf of `G`-maps into a smooth torsor `T` has sections locally: every point of an
-object lies in the image of a product with a finite orbit of `T`, over which the inclusion of
-the orbit is a section. -/
+/-- The sheaf of `G`-maps into a smooth torsor `T` has sections locally: the objects over which it
+has a section cover every object. -/
 theorem coversTop_nonempty_homPresheaf :
     (jointlySurjectiveTopology G).CoversTop fun U : {U : ContAction FintypeCat.{u} G //
       Nonempty (((homPresheaf G).obj (Action.ofMulAction G T.carrier)).obj (op U))} ↦
@@ -245,8 +244,7 @@ theorem evalTorsorStalk_smul_A (a : (point G).GrpStalk 𝒢.obj)
     evalTorsorStalk_toPresheafFiber]
   exact sectionHom_torsorSMul T b φ s
 
-/-- **The stalk of `torsorOfSmoothTorsor T` has the class of `T`**: evaluation of germs is a
-map to `T` commuting with the actions of `G` and of the stalk of `𝒢`. -/
+/-- **The stalk of `torsorOfSmoothTorsor T` has the class of `T`.** -/
 theorem cls_torsorStalkSmoothTorsor_torsorOfSmoothTorsor
     [TopologicalSpace ((point G).GrpStalk 𝒢.obj)] :
     (torsorStalkSmoothTorsor (torsorOfSmoothTorsor T)).cls = T.cls :=
@@ -294,8 +292,8 @@ theorem presheafFiber_map_sheafHomOfIso
   have := (fromSheafFullyFaithful G).map_preimage (smoothSetHomOfIso e)
   exact congr(($this).hom.hom x)
 
-/-- **An isomorphism of stalks gives a morphism of torsors**: the morphism of sheaves of sets
-with map of stalks `e` commutes with the action of `𝒢`, as it does so on germs. -/
+/-- **An isomorphism of stalks gives a morphism of torsors**: the morphism of `𝒢`-torsors whose
+map of stalks is `e`. -/
 noncomputable def torsorHomOfIso
     (e : (torsorStalkSmoothTorsor P).Iso (torsorStalkSmoothTorsor Q)) : P ⟶ Q where
   hom := sheafHomOfIso e
@@ -329,9 +327,8 @@ theorem nonabelianH1ToStalk_injective : Function.Injective (nonabelianH1ToStalk 
 variable [DiscreteTopology ((point G).GrpStalk 𝒢.obj)]
 
 variable (𝒢) in
-/-- Taking stalks is surjective onto `H¹(G, A)`, `A` the stalk of `𝒢` with the discrete topology:
-every class is the class of a smooth torsor `T`, which is the stalk of the torsor of `G`-maps into
-`T`. -/
+/-- Taking stalks is surjective onto `H¹(G, A)`, `A` the stalk of `𝒢` with the discrete
+topology. -/
 theorem nonabelianH1ToStalk_surjective : Function.Surjective (nonabelianH1ToStalk 𝒢) := by
   have : ContinuousSMul G ((point G).GrpStalk 𝒢.obj) :=
     continuousSMul_iff_stabilizer_isOpen.2 (isOpen_stabilizer_grpStalk 𝒢.obj)
