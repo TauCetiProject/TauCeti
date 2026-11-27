@@ -239,10 +239,10 @@ theorem finiteProjectiveModules_patchedModule
   finiteProjectiveModules_iff.2
     ⟨finite_patchedModule _ T.gluing
         (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-        (hπ.imp op_surjective_iff.2 op_surjective_iff.2),
+        (hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2),
       projective_patchedModule _ T.gluing
         (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-        (hπ.imp op_surjective_iff.2 op_surjective_iff.2)⟩
+        (hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2)⟩
 
 variable (π₁ π₂) in
 /-- The **patched module functor** of a fibre product `D = A₁ ×_Q A₂` with a surjective leg: it
@@ -295,10 +295,10 @@ def patchingCounitIso (T : π₁.PatchingTriples π₂) :
   CategoricalPullback.mkIso
     (ObjectProperty.isoMk _ (LinearEquiv.ofBijective _ (PatchedModule.bijective_compareFst _
       T.gluing (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-      (hπ.imp op_surjective_iff.2 op_surjective_iff.2))).toModuleIso)
+      (hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2))).toModuleIso)
     (ObjectProperty.isoMk _ (LinearEquiv.ofBijective _ (PatchedModule.bijective_compareSnd _
       T.gluing (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-      (hπ.imp op_surjective_iff.2 op_surjective_iff.2))).toModuleIso)
+      (hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2))).toModuleIso)
     (patchingCounit hπ T).w
 
 /-- The first component of `RingHom.patchingCounitIso` is the comparison map `M ⊗_D A₁ → P₁`,

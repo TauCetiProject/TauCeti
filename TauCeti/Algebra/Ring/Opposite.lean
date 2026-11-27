@@ -10,23 +10,15 @@ public import Mathlib.Algebra.Ring.CompTypeclasses
 public import Mathlib.Algebra.Ring.Opposite
 
 /-!
-# Opposite rings: surjectivity and the double-opposite equivalence
-
-A ring homomorphism `f : R →+* S` is surjective exactly when its opposite
-`fᵐᵒᵖ : Rᵐᵒᵖ →+* Sᵐᵒᵖ` (`RingHom.op f`) is; this lets surjectivity hypotheses on rings be used for
-right modules, which are left modules over the opposite rings.
+# Opposite rings and ring homomorphisms
 
 The canonical equivalence `RingEquiv.opOp A` identifies a semiring with its double opposite.
 The inverse-pair instances here allow semilinear maps along this equivalence to invert and compose.
+The lemma `RingHom.surjective_op_iff` transfers surjectivity between a ring homomorphism and its
+opposite.
 -/
 
 public section
-
-/-- A ring homomorphism is surjective exactly when its opposite `fᵐᵒᵖ : Rᵐᵒᵖ →+* Sᵐᵒᵖ` is. -/
-theorem RingHom.op_surjective_iff {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
-    {f : R →+* S} : Function.Surjective (RingHom.op f) ↔ Function.Surjective f :=
-  ⟨fun h x ↦ ⟨(h (.op x)).choose.unop, MulOpposite.op_injective (h (.op x)).choose_spec⟩,
-    fun h x ↦ ⟨.op (h x.unop).choose, MulOpposite.unop_injective (h x.unop).choose_spec⟩⟩
 
 namespace TauCeti
 
@@ -44,3 +36,15 @@ instance opOpRingHomInvPairSymm (A : Type*) [Semiring A] :
   RingHomInvPair.of_ringEquiv_symm (RingEquiv.opOp A)
 
 end TauCeti
+
+namespace RingHom
+
+/-- A ring homomorphism is surjective on opposite rings exactly when it is surjective
+on the original rings. -/
+@[simp]
+theorem surjective_op_iff {R S : Type*} [Semiring R] [Semiring S] (f : R →+* S) :
+    Function.Surjective f.op ↔ Function.Surjective f :=
+  ⟨fun h ↦ MulOpposite.unop_surjective.comp (h.comp MulOpposite.op_surjective),
+    fun h ↦ MulOpposite.op_surjective.comp (h.comp MulOpposite.unop_surjective)⟩
+
+end RingHom

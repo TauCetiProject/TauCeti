@@ -97,10 +97,14 @@ estimates do not see the boundary.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
 * `TauCeti.PDE.energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero`: the energy form only sees the
   principal coefficients where `∇u` does not vanish.
+* `TauCeti.PDE.energyFormH1_eq_of_ae_jetField_eq`: the energy form only sees its second argument
+  through its jet where the coefficients do not all vanish.
 * `TauCeti.PDE.aestronglyMeasurable_energyFormH1`: for coefficients jointly measurable in a
   parameter and in space, the energy form is a.e. strongly measurable in the parameter.
 * `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral`: the energy form with no lower-order
   terms is the integral of `⟨a ∇u, ∇v⟩`.
+* `TauCeti.PDE.energyFormH1_eq_zero_of_gradient_eq_zero`: with no mass term, a left argument
+  with vanishing gradient has zero energy against everything.
 * `TauCeti.PDE.energyFormH1_add_const_left`: with no mass term, shifting the left argument by a
   constant does not change the form.
 * `TauCeti.PDE.energyFormH1_const_right`: with no drift and no mass term, the form vanishes on a
@@ -532,6 +536,21 @@ theorem energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero {a a' : EuclideanSpace �
   · rw [ha hxs]
   · simp [hx hxs]
 
+/-- The energy form `a(u, v)` only sees its second argument through its jet where the coefficients
+do not all vanish: if `a, b, c` all vanish on `Ω \ s`, it is unchanged when `v` is replaced by a
+function `w` with the same jet almost everywhere on `s ∩ Ω`. -/
+theorem energyFormH1_eq_of_ae_jetField_eq {s : Set (EuclideanSpace ℝ ι)}
+    (hs : ∀ x ∈ Omega, x ∉ s → a x = 0 ∧ b x = 0 ∧ c x = 0) {u v w : W1p mu Omega 2}
+    (h : ∀ᵐ x ∂mu.restrict Omega, x ∈ s → jetField v x = jetField w x) :
+    energyFormH1 a b c u v = energyFormH1 a b c u w := by
+  rw [energyFormH1_def, energyFormH1_def]
+  refine integral_congr_ae ?_
+  filter_upwards [h, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+  by_cases hxs : x ∈ s
+  · rw [hx hxs]
+  · obtain ⟨ha, hb, hc⟩ := hs x hxΩ hxs
+    simp [ha, hb, hc]
+
 /-- The energy form on `H¹(Ω)` is homogeneous in the coefficient triple `(a, b, c)`. -/
 theorem energyFormH1_smul_coefficients (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ) (r : ℝ)
@@ -680,6 +699,20 @@ theorem energyFormH1_neg_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ)
     (u v : W1p mu Omega 2) : energyFormH1 a b c (-u) v = -energyFormH1 a b c u v := by
   rw [← neg_one_smul ℝ u, energyFormH1_smul_left, neg_one_mul]
+
+/-- **Functions with vanishing gradient have no energy.** With no mass term, the left argument
+enters the energy form only through its gradient, so `a(u, v) = 0` for every `v` once `∇u = 0`:
+for instance when `u` is constant on each connected component of `Ω`. -/
+theorem energyFormH1_eq_zero_of_gradient_eq_zero (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) {u : W1p mu Omega 2}
+    (hu : W1p.gradient u = 0) (v : W1p mu Omega 2) : energyFormH1 a b 0 u v = 0 := by
+  have hu' : ⇑(W1p.gradient u) =ᵐ[mu.restrict Omega] 0 := by
+    rw [hu]
+    exact Lp.coeFn_zero _ _ _
+  rw [energyFormH1_def]
+  refine (integral_congr_ae ?_).trans (integral_zero _ ℝ)
+  filter_upwards [hu'] with x hx
+  simp [hx]
 
 /-- **Shifting by a constant.** On a domain of finite measure, an energy form with no mass term
 does not see constants: `a(u + δ, v) = a(u, v)` for every constant `δ`, since adding a constant
