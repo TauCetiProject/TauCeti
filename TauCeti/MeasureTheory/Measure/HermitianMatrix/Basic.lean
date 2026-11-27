@@ -22,7 +22,7 @@ coordinate map `TauCeti.hermitianCoordinates` (`(A i i).re` at `(i, i)`, `(A i j
 ## Main declarations
 
 * `selfAdjoint.im_coe_apply_self`, `selfAdjoint.inner_eq_re_trace_mul`,
-  `selfAdjoint.norm_sq_eq_re_trace_sq`.
+  `selfAdjoint.norm_sq_eq_re_trace_sq`, `selfAdjoint.im_trace_mul`.
 * `TauCeti.hermitianCoordinates`, `TauCeti.hermitianCoordinatesMeasurableEquiv`,
   `TauCeti.finrank_hermitianMatrix`, `TauCeti.hermitianBasis`, `TauCeti.hermitianFinOneEquiv`.
 * `Matrix.UnitaryGroup.hermitianConj` — unitary conjugation `A ↦ U * A * Uᴴ`.
@@ -81,6 +81,13 @@ theorem norm_sq_eq_re_trace_sq {p : ℕ}
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
     ‖A‖ ^ 2 = ((A : Matrix (Fin p) (Fin p) ℂ) ^ 2).trace.re :=
   norm_sq_eq_rclike_re_trace_sq A
+
+/-- The trace of a product of two Hermitian matrices is real. -/
+theorem im_trace_mul {p : ℕ} (S T : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
+    ((S : Matrix (Fin p) (Fin p) ℂ) * T).trace.im = 0 := by
+  refine Complex.conj_eq_iff_im.1 ?_
+  rw [← Complex.star_def, ← Matrix.trace_conjTranspose, Matrix.conjTranspose_mul,
+    conjTranspose_coe, conjTranspose_coe, Matrix.trace_mul_comm]
 
 /-- Reading off an entry of a Hermitian matrix is continuous. -/
 theorem continuous_coe_apply_complex {p : ℕ} (i j : Fin p) :
