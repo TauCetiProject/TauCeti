@@ -114,8 +114,9 @@ theorem prod_finRange_swap_eq_cycleRange {N : ℕ} (k : ℕ) (hk : k < N) :
         ((fun i : Fin (k + 1) =>
             Equiv.swap (⟨i.val, by omega⟩ : Fin N) ⟨i.val + 1, by omega⟩) ∘
           Fin.castSucc)).prod =
-        cycleRange ⟨k, by omega⟩ :=
-      ih (by omega)
+        cycleRange ⟨k, by omega⟩ := by
+      simp only [Function.comp_def, Fin.val_castSucc]
+      exact ih (by omega)
     rw [hpre]
     simp only [Fin.val_last, cycleRange_mul_swap hk]
 

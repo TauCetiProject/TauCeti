@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Charpoly
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
+import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Exceptional
 
 /-!
@@ -28,7 +29,9 @@ characteristic polynomial of the product do not depend on the ordering:
 
 The statements are phrased with `TauCeti.HasCartanType`, so they apply to any base that the
 classification has matched to a type. TauCeti's `G₂` Cartan matrix is the transpose of Mathlib's
-`CartanMatrix.G₂`.
+`CartanMatrix.G₂`. Combining the classical and exceptional one-degenerate orders also gives the
+uniform characteristic-polynomial theorem `TauCeti.Coxeter.charpoly_of_hasCartanType_of_actsBy`
+across every `DynkinType`.
 
 ## Main results
 
@@ -36,6 +39,9 @@ classification has matched to a type. TauCeti's `G₂` Cartan matrix is the tran
   `TauCeti.Coxeter.charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy`: for a base of
   Cartan type `t` with a one-degenerate order, every Coxeter element has the order and the
   characteristic polynomial of the Coxeter element of the standard Cartan matrix of `t`.
+* `TauCeti.Coxeter.charpoly_of_hasCartanType_of_actsBy`: for every Cartan type `t` (classical or
+  exceptional), every Coxeter element has the same characteristic polynomial on the simple roots as
+  `Matrix.coxeterElement t.cartanMatrix`.
 * `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_E8` (and `E7`, `E6`, `F4`, `G2`): **every**
   Coxeter element of a base of type `E₈` has order 30 (and 18, 12, 12, 6).
 * `TauCeti.Coxeter.charpoly_of_hasCartanType_E8_of_actsBy` (and `E7`, `E6`, `F4`, `G2`): the matrix
@@ -130,6 +136,29 @@ theorem charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy [DecidableEq
     b.charpoly_prod_reflMatrix_eq_of_isOneDegenerateOrder hndS hel hlS hτS,
     b.prod_reflMatrix_eq _ e hA,
     coe_reindexAlgEquiv, charpoly_reindex]
+
+/-- **Every Coxeter element of a base of Cartan type `t`** has the same characteristic polynomial
+on the simple roots as `Matrix.coxeterElement t.cartanMatrix`. -/
+theorem charpoly_of_hasCartanType_of_actsBy [DecidableEq ι] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    W.charpoly = (coxeterElement t.cartanMatrix).charpoly := by
+  have go {A : Matrix (Fin t.rank) (Fin t.rank) ℤ} (ht : t.cartanMatrix = A)
+      {S₀ : List (Fin t.rank)} (hel₀ : List.IsOneDegenerateOrder (fun i j => A i j ≠ 0) S₀)
+      (hperm₀ : S₀.Perm (List.finRange t.rank)) :
+      W.charpoly = (coxeterElement t.cartanMatrix).charpoly :=
+    (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy ht hel₀ hperm₀ h hnd hall
+      hW).trans (by rw [ht])
+  cases t with
+  | A n => exact go (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _)
+  | B n => exact go (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _)
+  | C n => exact go (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _)
+  | D n => exact go (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _)
+  | E6 => exact go DynkinType.cartanMatrix_E6 isOneDegenerateOrder_E6 perm_finRange_E6
+  | E7 => exact go DynkinType.cartanMatrix_E7 isOneDegenerateOrder_E7 perm_finRange_E7
+  | E8 => exact go DynkinType.cartanMatrix_E8 isOneDegenerateOrder_E8 perm_finRange_E8
+  | F4 => exact go DynkinType.cartanMatrix_F4 isOneDegenerateOrder_F4 perm_finRange_F4
+  | G2 => exact go DynkinType.cartanMatrix_G2 isOneDegenerateOrder_G2 perm_finRange_G2
 
 /-- Any Coxeter element of a base of Cartan type `t`, with standard Cartan matrix `A`, has the
 order of `coxeterElement A` when the diagram of `t` has a one-degenerate order. -/
