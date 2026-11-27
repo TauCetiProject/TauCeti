@@ -13,7 +13,7 @@ import Mathlib.Tactic.Module
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Isotropic splittings of a hermitian form, and the Levi and radical elements
+# Isotropic splittings of a hermitian form, and the Levi and unipotent elements
 
 Let `R` be a commutative ring with an involution and `A` a hermitian matrix on `n`, the Gram matrix
 of the form `⟨y, z⟩ = yᴴ A z` on `R^n`. An **isotropic splitting** of `A` over a Gram matrix `A₀`
@@ -36,22 +36,22 @@ the parabolic subgroup attached to the splitting. This file constructs its two k
 * The **Levi element** `m(a, g₀)` (`TauCeti.IsotropicSplitting.levi`), for `a ∈ GL_p(R)` and
   `g₀` in the unitary group of `A₀`, acts by `a` on the frame `k`, by `g₀` on the core `ι` and by
   `(a⁻¹)ᴴ` on the frame `l`; `levi` is an injective group homomorphism.
-* The **radical element** `n(c, b)` (`TauCeti.IsotropicSplitting.radical`), for `c : Matrix n₀ p R`
-  and `b : Matrix p p R`, fixes `k`, sends `ι` to `ι + k cᴴ A₀` and `l` to
+* The **unipotent element** `n(c, b)` (`TauCeti.IsotropicSplitting.unipotent`), for
+  `c : Matrix n₀ p R` and `b : Matrix p p R`, fixes `k`, sends `ι` to `ι + k cᴴ A₀` and `l` to
   `l - ι c - k ⅟2 (j⁻¹ (b + bᴴ) + cᴴ A₀ c)`. Here `j` is a fixed unit with `star j = -j` (for
   instance a purely imaginary element of a CM field) and `2` is invertible in `R`; only the
-  hermitian part of `b` matters (`TauCeti.IsotropicSplitting.radical_eq_radical_iff`).
+  hermitian part of `b` matters (`TauCeti.IsotropicSplitting.unipotent_eq_unipotent_iff`).
 
 The main results are the laws of these elements:
 
-* `TauCeti.IsotropicSplitting.radical_mul_radical`:
+* `TauCeti.IsotropicSplitting.unipotent_mul_unipotent`:
   `n(c, b) n(c', b') = n(c + c', b + j cᴴ A₀ c' + b')`;
-* `TauCeti.IsotropicSplitting.levi_mul_radical_mul_inv_levi`:
+* `TauCeti.IsotropicSplitting.levi_mul_unipotent_mul_inv_levi`:
   `m(a, g₀) n(c, b) m(a, g₀)⁻¹ = n(g₀ c aᴴ, a b aᴴ)`;
-* the **Levi decomposition** `TauCeti.IsotropicSplitting.exists_eq_radical_mul_levi`: an element
+* the **Levi decomposition** `TauCeti.IsotropicSplitting.exists_eq_unipotent_mul_levi`: an element
   `g` of the unitary group with `g k = k a` is `n(c, b) m(a, g₀)`, where `g₀ = A₀⁻¹ ιᴴ A g ι` is its
   block on the core;
-* `TauCeti.IsotropicSplitting.exists_eq_radical_iff`: the radical elements are exactly the
+* `TauCeti.IsotropicSplitting.exists_eq_unipotent_iff`: the unipotent elements are exactly the
   elements fixing `k` pointwise with core block `1`, the unipotent radical of the parabolic.
 
 The Siegel parabolic of a doubled space, the case of a frame without core in polarization
@@ -61,13 +61,13 @@ isotropic subspace of a symplectic form in a fixed basis in `TauCeti.IsotropicPa
 
 These are the algebraic laws of the parabolic subgroups of unitary groups used in the mixed models
 of the Weil representation along a Witt decomposition. They are stated over any commutative ring
-with involution (in which `2` is invertible, for the radical elements), so the same statements
+with involution (in which `2` is invertible, for the unipotent elements), so the same statements
 apply to a hermitian space over a CM field and, in standard coordinates given by an adelic frame,
 to its adelic points.
 
 ## Provenance
 
-The definitions of the splitting, of its coordinates and of the Levi and radical elements, the
+The definitions of the splitting, of its coordinates and of the Levi and unipotent elements, the
 group law and the Levi decomposition follow `New.Space.Splitting`,
 `New.Space.Splitting.levi`, `New.Space.Splitting.radicalElement`,
 `New.Space.Splitting.radicalElement_mul`, `New.Space.Splitting.levi_conj_radicalElement`,
@@ -210,20 +210,22 @@ theorem conjTranspose_ι_mul_mul {m : Type*} (X : Matrix n m R) :
 
 @[simp] theorem lCoord_mul_ι : D.lCoord * D.ι = 0 := D.gram_kι
 
+/-- The coordinate along the core of a matrix `X` is `A₀⁻¹` times its pairing `ιᴴ A X` with the
+core. -/
+theorem ιCoord_mul {m : Type*} (X : Matrix n m R) : D.ιCoord * X = A₀⁻¹ * (D.ιᴴ * A * X) := by
+  simp only [ιCoord_def, Matrix.mul_assoc]
+
 @[simp]
 theorem ιCoord_mul_k : D.ιCoord * D.k = 0 := by
-  rw [ιCoord_def, Matrix.mul_assoc, Matrix.mul_assoc, ← Matrix.mul_assoc D.ιᴴ, D.gram_ιk,
-    Matrix.mul_zero]
+  rw [ιCoord_mul, D.gram_ιk, Matrix.mul_zero]
 
 @[simp]
 theorem ιCoord_mul_l : D.ιCoord * D.l = 0 := by
-  rw [ιCoord_def, Matrix.mul_assoc, Matrix.mul_assoc, ← Matrix.mul_assoc D.ιᴴ, D.gram_ιl,
-    Matrix.mul_zero]
+  rw [ιCoord_mul, D.gram_ιl, Matrix.mul_zero]
 
 @[simp]
 theorem ιCoord_mul_ι : D.ιCoord * D.ι = 1 := by
-  rw [ιCoord_def, Matrix.mul_assoc, Matrix.mul_assoc, ← Matrix.mul_assoc D.ιᴴ, D.gram_ιι,
-    nonsing_inv_mul _ ((isUnit_iff_isUnit_det A₀).mp D.isUnit_core)]
+  rw [ιCoord_mul, D.gram_ιι, nonsing_inv_mul _ ((isUnit_iff_isUnit_det A₀).mp D.isUnit_core)]
 
 @[simp] theorem kCoord_mul_k_mul {m : Type*} (X : Matrix p m R) : D.kCoord * (D.k * X) = X := by
   rw [← Matrix.mul_assoc, kCoord_mul_k, Matrix.one_mul]
@@ -331,12 +333,6 @@ theorem conjTranspose_mul_mul_eq_of_frames {X : Matrix n n R}
 
 /-! ### Levi elements -/
 
-omit [DecidableEq n] in
-/-- `aᴴ (a⁻¹)ᴴ = 1` for `a ∈ GL_p(R)`. -/
-private theorem conjTranspose_mul_conjTranspose_inv (a : GL p R) :
-    (a : Matrix p p R)ᴴ * (a : Matrix p p R)⁻¹ᴴ = 1 := by
-  rw [← conjTranspose_mul, ← coe_units_inv, Units.inv_mul, conjTranspose_one]
-
 /-- The matrix of the Levi element of `(a, g₀)`: `k a kCoord + ι g₀ ιCoord + l (a⁻¹)ᴴ lCoord`. -/
 private def leviMatrix (a : GL p R) (g₀ : Matrix n₀ n₀ R) : Matrix n n R :=
   D.k * (a : Matrix p p R) * D.kCoord + D.ι * g₀ * D.ιCoord +
@@ -358,27 +354,12 @@ private theorem leviMatrix_mul_l (a : GL p R) (g₀ : Matrix n₀ n₀ R) :
   simp [leviMatrix, Matrix.add_mul, Matrix.mul_assoc]
 
 omit [DecidableEq n] in
-/-- An element of the unitary group of `A₀` preserves `A₀`, in the right-associated form used by
-`simp`. -/
-private theorem conjTranspose_mul_core_mul (g₀ : unitaryGroupOf A₀) {m : Type*}
-    (X : Matrix n₀ m R) :
-    ((g₀ : GL n₀ R) : Matrix n₀ n₀ R)ᴴ * (A₀ * (((g₀ : GL n₀ R) : Matrix n₀ n₀ R) * X)) =
-      A₀ * X := by
-  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, ← star_eq_conjTranspose,
-    mem_unitaryGroupOf_iff.mp g₀.property]
-
-omit [DecidableEq n] in
-private theorem conjTranspose_mul_core (g₀ : unitaryGroupOf A₀) :
-    ((g₀ : GL n₀ R) : Matrix n₀ n₀ R)ᴴ * (A₀ * ((g₀ : GL n₀ R) : Matrix n₀ n₀ R)) = A₀ := by
-  simpa using conjTranspose_mul_core_mul g₀ (1 : Matrix n₀ n₀ R)
-
-omit [DecidableEq n] in
 private theorem leviMatrix_mem (a : GL p R) (g₀ : unitaryGroupOf A₀) :
     star (D.leviMatrix a (g₀ : GL n₀ R)) * A * D.leviMatrix a (g₀ : GL n₀ R) = A := by
   rw [star_eq_conjTranspose]
   refine D.conjTranspose_mul_mul_eq_of_frames ?_ ?_ ?_ ?_ ?_ ?_ <;>
     simp [leviMatrix_mul_k, leviMatrix_mul_ι, leviMatrix_mul_l, Matrix.mul_assoc,
-      conjTranspose_mul_core]
+      unitaryGroupOf.conjTranspose_mul_mul_cancel]
 
 /-- The **Levi homomorphism** `m : GL_p(R) × U(A₀) →* U(A)` of a splitting: `m(a, g₀)` acts by `a`
 on the frame `k`, by `g₀` on the core `ι` and by `(a⁻¹)ᴴ` on the frame `l`. -/
@@ -429,115 +410,110 @@ theorem levi_injective : Function.Injective D.levi := by
   simp only [levi_mul_k, levi_mul_ι, kCoord_mul_k_mul, ιCoord_mul_ι_mul] at hk hι
   exact Prod.ext (Units.ext hk) (unitaryGroupOf.ext hι)
 
-/-! ### Radical elements -/
+/-! ### Unipotent elements -/
 
 variable [Invertible (2 : R)] {j : Rˣ} (hj : star (j : R) = -j)
 
-omit [Invertible (2 : R)] in
-include hj in
-/-- The inverse of a unit with `star j = -j` satisfies the same relation. -/
-private theorem star_inv_of_star_eq_neg : star (↑j⁻¹ : R) = -↑j⁻¹ := by
-  have h₁ : (j : R) * ↑j⁻¹ = 1 := Units.mul_inv j
-  have h₂ : star (↑j⁻¹ : R) * star (j : R) = 1 := by
-    rw [← star_mul, Units.mul_inv, star_one]
-  linear_combination (-star (↑j⁻¹ : R)) * h₁ + (-(↑j⁻¹ : R)) * h₂ +
-    (star (↑j⁻¹ : R) * ↑j⁻¹) * hj
-
 variable (j) in
-/-- The corner `⅟2 (j⁻¹ (b + bᴴ) + cᴴ A₀ c)` of the radical element `n(c, b)`: its image of `l`
-has component `-radicalCorner j c b` along `k`. -/
-private def radicalCorner (c : Matrix n₀ p R) (b : Matrix p p R) : Matrix p p R :=
+/-- The corner `⅟2 (j⁻¹ (b + bᴴ) + cᴴ A₀ c)` of the unipotent element `n(c, b)`: its image of `l`
+has component `-unipotentCorner j c b` along `k`. -/
+private def unipotentCorner (c : Matrix n₀ p R) (b : Matrix p p R) : Matrix p p R :=
   ⅟(2 : R) • ((↑j⁻¹ : R) • (b + bᴴ) + cᴴ * A₀ * c)
 
 omit [DecidableEq n] in
 include D hj in
 /-- The hermitian part of the corner is `cᴴ A₀ c / 2`, the condition for `n(c, b)` to preserve
 the form. -/
-private theorem radicalCorner_add_conjTranspose (c : Matrix n₀ p R) (b : Matrix p p R) :
-    radicalCorner (A₀ := A₀) j c b + (radicalCorner (A₀ := A₀) j c b)ᴴ = cᴴ * A₀ * c := by
+private theorem unipotentCorner_add_conjTranspose (c : Matrix n₀ p R) (b : Matrix p p R) :
+    unipotentCorner (A₀ := A₀) j c b + (unipotentCorner (A₀ := A₀) j c b)ᴴ = cᴴ * A₀ * c := by
   have h₀ : A₀ᴴ = A₀ := D.isHermitian_core.eq
-  simp only [radicalCorner, conjTranspose_smul, conjTranspose_add, conjTranspose_mul,
-    conjTranspose_conjTranspose, h₀, star_invOf, star_ofNat, star_inv_of_star_eq_neg hj,
+  -- `star j⁻¹ = (star j)⁻¹ = (-j)⁻¹ = -j⁻¹`.
+  have hj' : star (↑j⁻¹ : R) = -↑j⁻¹ := by
+    rw [← Units.coe_star_inv, show star j = -j from Units.ext (by rw [Units.coe_star, hj,
+      Units.val_neg]), inv_neg, Units.val_neg]
+  simp only [unipotentCorner, conjTranspose_smul, conjTranspose_add, conjTranspose_mul,
+    conjTranspose_conjTranspose, h₀, star_invOf, star_ofNat, hj',
     Matrix.mul_assoc]
   rw [← smul_add, neg_smul, add_comm (bᴴ) b]
   rw [show ∀ x y : Matrix p p R, x + y + (-x + y) = (2 : R) • y by intro x y; module,
     smul_smul, invOf_mul_self, one_smul]
 
 variable (j) in
-/-- The matrix of the radical element `n(c, b)`. -/
-private def radicalMatrix (c : Matrix n₀ p R) (b : Matrix p p R) : Matrix n n R :=
+/-- The matrix of the unipotent element `n(c, b)`. -/
+private def unipotentMatrix (c : Matrix n₀ p R) (b : Matrix p p R) : Matrix n n R :=
   1 - D.ι * c * D.lCoord + D.k * (cᴴ * A₀) * D.ιCoord -
-    D.k * radicalCorner (A₀ := A₀) j c b * D.lCoord
+    D.k * unipotentCorner (A₀ := A₀) j c b * D.lCoord
 
-private theorem radicalMatrix_mul_k (c : Matrix n₀ p R) (b : Matrix p p R) :
-    D.radicalMatrix j c b * D.k = D.k := by
-  simp [radicalMatrix, Matrix.sub_mul, Matrix.add_mul, Matrix.mul_assoc]
+private theorem unipotentMatrix_mul_k (c : Matrix n₀ p R) (b : Matrix p p R) :
+    D.unipotentMatrix j c b * D.k = D.k := by
+  simp [unipotentMatrix, Matrix.sub_mul, Matrix.add_mul, Matrix.mul_assoc]
 
-private theorem radicalMatrix_mul_ι (c : Matrix n₀ p R) (b : Matrix p p R) :
-    D.radicalMatrix j c b * D.ι = D.ι + D.k * (cᴴ * A₀) := by
-  simp [radicalMatrix, Matrix.sub_mul, Matrix.add_mul, Matrix.mul_assoc]
+private theorem unipotentMatrix_mul_ι (c : Matrix n₀ p R) (b : Matrix p p R) :
+    D.unipotentMatrix j c b * D.ι = D.ι + D.k * (cᴴ * A₀) := by
+  simp [unipotentMatrix, Matrix.sub_mul, Matrix.add_mul, Matrix.mul_assoc]
 
-private theorem radicalMatrix_mul_l (c : Matrix n₀ p R) (b : Matrix p p R) :
-    D.radicalMatrix j c b * D.l = D.l - D.ι * c - D.k * radicalCorner (A₀ := A₀) j c b := by
-  simp [radicalMatrix, Matrix.sub_mul, Matrix.add_mul, Matrix.mul_assoc]
+private theorem unipotentMatrix_mul_l (c : Matrix n₀ p R) (b : Matrix p p R) :
+    D.unipotentMatrix j c b * D.l = D.l - D.ι * c - D.k * unipotentCorner (A₀ := A₀) j c b := by
+  simp [unipotentMatrix, Matrix.sub_mul, Matrix.add_mul, Matrix.mul_assoc]
 
 include hj in
-private theorem radicalMatrix_mem (c : Matrix n₀ p R) (b : Matrix p p R) :
-    star (D.radicalMatrix j c b) * A * D.radicalMatrix j c b = A := by
+private theorem unipotentMatrix_mem (c : Matrix n₀ p R) (b : Matrix p p R) :
+    star (D.unipotentMatrix j c b) * A * D.unipotentMatrix j c b = A := by
   have h₀ : A₀ᴴ = A₀ := D.isHermitian_core.eq
   -- The hermitian part of the corner, the condition for the isotropy of the image of `l`.
-  have hZ : (radicalCorner (A₀ := A₀) j c b)ᴴ = cᴴ * (A₀ * c) - radicalCorner (A₀ := A₀) j c b := by
-    rw [← Matrix.mul_assoc, ← D.radicalCorner_add_conjTranspose hj c b, add_sub_cancel_left]
+  have hZ :
+      (unipotentCorner (A₀ := A₀) j c b)ᴴ = cᴴ * (A₀ * c) - unipotentCorner (A₀ := A₀) j c b := by
+    rw [← Matrix.mul_assoc, ← D.unipotentCorner_add_conjTranspose hj c b, add_sub_cancel_left]
   rw [star_eq_conjTranspose]
   refine D.conjTranspose_mul_mul_eq_of_frames ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    simp [radicalMatrix_mul_k, radicalMatrix_mul_ι, radicalMatrix_mul_l, Matrix.sub_mul,
+    simp [unipotentMatrix_mul_k, unipotentMatrix_mul_ι, unipotentMatrix_mul_l, Matrix.sub_mul,
       Matrix.mul_sub, Matrix.add_mul, Matrix.mul_add, Matrix.mul_assoc, h₀, hZ]
 
-/-- The **radical element** `n(c, b)` of a splitting, for `c : Matrix n₀ p R` and
+/-- The **unipotent element** `n(c, b)` of a splitting, for `c : Matrix n₀ p R` and
 `b : Matrix p p R`: it fixes the frame `k`, sends the core `ι` to `ι + k cᴴ A₀` and the frame `l` to
 `l - ι c - k ⅟2 (j⁻¹ (b + bᴴ) + cᴴ A₀ c)`. Here `j` is a unit with `star j = -j`. -/
-def radical (c : Matrix n₀ p R) (b : Matrix p p R) : unitaryGroupOf A :=
-  unitaryGroupOf.ofMatrix D.isUnit (D.radicalMatrix j c b) (D.radicalMatrix_mem hj c b)
+def unipotent (c : Matrix n₀ p R) (b : Matrix p p R) : unitaryGroupOf A :=
+  unitaryGroupOf.ofMatrix D.isUnit (D.unipotentMatrix j c b) (D.unipotentMatrix_mem hj c b)
 
-private theorem val_radical_eq_radicalMatrix (c : Matrix n₀ p R) (b : Matrix p p R) :
-    ((D.radical hj c b : GL n R) : Matrix n n R) = D.radicalMatrix j c b :=
+private theorem val_unipotent_eq_unipotentMatrix (c : Matrix n₀ p R) (b : Matrix p p R) :
+    ((D.unipotent hj c b : GL n R) : Matrix n n R) = D.unipotentMatrix j c b :=
   unitaryGroupOf.val_ofMatrix _ _ _
 
-/-- The matrix of the radical element `n(c, b)`. -/
-theorem val_radical (c : Matrix n₀ p R) (b : Matrix p p R) :
-    ((D.radical hj c b : GL n R) : Matrix n n R) =
+/-- The matrix of the unipotent element `n(c, b)`. -/
+theorem val_unipotent (c : Matrix n₀ p R) (b : Matrix p p R) :
+    ((D.unipotent hj c b : GL n R) : Matrix n n R) =
       1 - D.ι * c * D.lCoord + D.k * (cᴴ * A₀) * D.ιCoord -
         D.k * (⅟(2 : R) • ((↑j⁻¹ : R) • (b + bᴴ) + cᴴ * A₀ * c)) * D.lCoord := by
-  rw [val_radical_eq_radicalMatrix, radicalMatrix, radicalCorner]
+  rw [val_unipotent_eq_unipotentMatrix, unipotentMatrix, unipotentCorner]
 
-/-- The radical element `n(c, b)` fixes the frame `k`. -/
+/-- The unipotent element `n(c, b)` fixes the frame `k`. -/
 @[simp]
-theorem radical_mul_k (c : Matrix n₀ p R) (b : Matrix p p R) :
-    ((D.radical hj c b : GL n R) : Matrix n n R) * D.k = D.k := by
-  rw [val_radical_eq_radicalMatrix, radicalMatrix_mul_k]
+theorem unipotent_mul_k (c : Matrix n₀ p R) (b : Matrix p p R) :
+    ((D.unipotent hj c b : GL n R) : Matrix n n R) * D.k = D.k := by
+  rw [val_unipotent_eq_unipotentMatrix, unipotentMatrix_mul_k]
 
-/-- The radical element `n(c, b)` sends the core `ι` to `ι + k cᴴ A₀`. -/
+/-- The unipotent element `n(c, b)` sends the core `ι` to `ι + k cᴴ A₀`. -/
 @[simp]
-theorem radical_mul_ι (c : Matrix n₀ p R) (b : Matrix p p R) :
-    ((D.radical hj c b : GL n R) : Matrix n n R) * D.ι = D.ι + D.k * (cᴴ * A₀) := by
-  rw [val_radical_eq_radicalMatrix, radicalMatrix_mul_ι]
+theorem unipotent_mul_ι (c : Matrix n₀ p R) (b : Matrix p p R) :
+    ((D.unipotent hj c b : GL n R) : Matrix n n R) * D.ι = D.ι + D.k * (cᴴ * A₀) := by
+  rw [val_unipotent_eq_unipotentMatrix, unipotentMatrix_mul_ι]
 
-/-- The radical element `n(c, b)` sends the frame `l` to `l - ι c - k ⅟2 (j⁻¹ (b + bᴴ) + cᴴ A₀ c)`.
--/
+/-- The unipotent element `n(c, b)` sends the frame `l` to
+`l - ι c - k ⅟2 (j⁻¹ (b + bᴴ) + cᴴ A₀ c)`. -/
 @[simp]
-theorem radical_mul_l (c : Matrix n₀ p R) (b : Matrix p p R) :
-    ((D.radical hj c b : GL n R) : Matrix n n R) * D.l =
+theorem unipotent_mul_l (c : Matrix n₀ p R) (b : Matrix p p R) :
+    ((D.unipotent hj c b : GL n R) : Matrix n n R) * D.l =
       D.l - D.ι * c - D.k * (⅟(2 : R) • ((↑j⁻¹ : R) • (b + bᴴ) + cᴴ * A₀ * c)) := by
-  rw [val_radical_eq_radicalMatrix, radicalMatrix_mul_l, radicalCorner]
+  rw [val_unipotent_eq_unipotentMatrix, unipotentMatrix_mul_l, unipotentCorner]
 
 /-- **Only the hermitian part of `b` matters**: `n(c, b) = n(c', b')` exactly when `c = c'` and
 `b + bᴴ = b' + b'ᴴ`. -/
-theorem radical_eq_radical_iff {c c' : Matrix n₀ p R} {b b' : Matrix p p R} :
-    D.radical hj c b = D.radical hj c' b' ↔ c = c' ∧ b + bᴴ = b' + b'ᴴ := by
+theorem unipotent_eq_unipotent_iff {c c' : Matrix n₀ p R} {b b' : Matrix p p R} :
+    D.unipotent hj c b = D.unipotent hj c' b' ↔ c = c' ∧ b + bᴴ = b' + b'ᴴ := by
   constructor
   · intro h
     have hl := congrArg (fun g : unitaryGroupOf A ↦ ((g : GL n R) : Matrix n n R) * D.l) h
-    simp only [radical_mul_l] at hl
+    simp only [unipotent_mul_l] at hl
     have hc : c = c' := by
       simpa [Matrix.mul_sub] using congrArg (D.ιCoord * ·) hl
     subst hc
@@ -552,22 +528,22 @@ theorem radical_eq_radical_iff {c c' : Matrix n₀ p R} {b b' : Matrix p p R} :
   · rintro ⟨rfl, h⟩
     refine unitaryGroupOf.ext (D.ext_mul ?_ ?_ ?_) <;> simp [h]
 
-/-- The radical element `n(0, 0)` is the identity. -/
+/-- The unipotent element `n(0, 0)` is the identity. -/
 @[simp]
-theorem radical_zero_zero : D.radical hj 0 0 = 1 :=
+theorem unipotent_zero_zero : D.unipotent hj 0 0 = 1 :=
   unitaryGroupOf.ext (D.ext_mul (by simp) (by simp) (by simp))
 
-/-! ### The laws of the radical and Levi elements -/
+/-! ### The laws of the unipotent and Levi elements -/
 
 omit [DecidableEq n] in
 include D hj in
 /-- The corners multiply as in a Heisenberg group. -/
-private theorem radicalCorner_add (c c' : Matrix n₀ p R) (b b' : Matrix p p R) :
-    radicalCorner (A₀ := A₀) j c b + cᴴ * A₀ * c' + radicalCorner (A₀ := A₀) j c' b' =
-      radicalCorner (A₀ := A₀) j (c + c') (b + (j : R) • (cᴴ * A₀ * c') + b') := by
+private theorem unipotentCorner_add (c c' : Matrix n₀ p R) (b b' : Matrix p p R) :
+    unipotentCorner (A₀ := A₀) j c b + cᴴ * A₀ * c' + unipotentCorner (A₀ := A₀) j c' b' =
+      unipotentCorner (A₀ := A₀) j (c + c') (b + (j : R) • (cᴴ * A₀ * c') + b') := by
   have h₀ : A₀ᴴ = A₀ := D.isHermitian_core.eq
   have hjj : (↑j⁻¹ : R) * j = 1 := Units.inv_mul j
-  simp only [radicalCorner, conjTranspose_add, conjTranspose_smul, conjTranspose_mul,
+  simp only [unipotentCorner, conjTranspose_add, conjTranspose_smul, conjTranspose_mul,
     conjTranspose_conjTranspose, h₀, hj, Matrix.add_mul, Matrix.mul_add, smul_add, neg_smul,
     smul_neg, smul_smul, hjj, one_smul, Matrix.mul_assoc]
   rw [← sub_eq_zero]
@@ -576,80 +552,72 @@ private theorem radicalCorner_add (c c' : Matrix n₀ p R) (b b' : Matrix p p R)
 
 omit [DecidableEq n] in
 /-- The corners transform under the Levi elements by congruence. -/
-private theorem radicalCorner_conj (a : GL p R) (g₀ : unitaryGroupOf A₀) (c : Matrix n₀ p R)
+private theorem unipotentCorner_conj (a : GL p R) (g₀ : unitaryGroupOf A₀) (c : Matrix n₀ p R)
     (b : Matrix p p R) :
-    radicalCorner (A₀ := A₀) j (((g₀ : GL n₀ R) : Matrix n₀ n₀ R) * c * (a : Matrix p p R)ᴴ)
+    unipotentCorner (A₀ := A₀) j (((g₀ : GL n₀ R) : Matrix n₀ n₀ R) * c * (a : Matrix p p R)ᴴ)
         ((a : Matrix p p R) * b * (a : Matrix p p R)ᴴ) =
-      (a : Matrix p p R) * radicalCorner (A₀ := A₀) j c b * (a : Matrix p p R)ᴴ := by
-  simp only [radicalCorner, conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,
-    conjTranspose_mul_core_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_add, Matrix.add_mul]
+      (a : Matrix p p R) * unipotentCorner (A₀ := A₀) j c b * (a : Matrix p p R)ᴴ := by
+  simp only [unipotentCorner, conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,
+    unitaryGroupOf.conjTranspose_mul_mul_mul_cancel, Matrix.mul_smul, Matrix.smul_mul,
+    Matrix.mul_add, Matrix.add_mul]
 
-/-- **The group law of the radical elements**:
+/-- **The group law of the unipotent elements**:
 `n(c, b) n(c', b') = n(c + c', b + j cᴴ A₀ c' + b')`. -/
-theorem radical_mul_radical (c c' : Matrix n₀ p R) (b b' : Matrix p p R) :
-    D.radical hj c b * D.radical hj c' b' =
-      D.radical hj (c + c') (b + (j : R) • (cᴴ * A₀ * c') + b') := by
+theorem unipotent_mul_unipotent (c c' : Matrix n₀ p R) (b b' : Matrix p p R) :
+    D.unipotent hj c b * D.unipotent hj c' b' =
+      D.unipotent hj (c + c') (b + (j : R) • (cᴴ * A₀ * c') + b') := by
   refine unitaryGroupOf.ext (D.ext_mul ?_ ?_ ?_) <;>
-    simp only [Subgroup.coe_mul, Units.val_mul, val_radical_eq_radicalMatrix, Matrix.mul_assoc,
-      radicalMatrix_mul_k, radicalMatrix_mul_ι, radicalMatrix_mul_l, Matrix.mul_add,
+    simp only [Subgroup.coe_mul, Units.val_mul, val_unipotent_eq_unipotentMatrix, Matrix.mul_assoc,
+      unipotentMatrix_mul_k, unipotentMatrix_mul_ι, unipotentMatrix_mul_l, Matrix.mul_add,
       Matrix.mul_sub]
-  · simp only [← Matrix.mul_assoc, radicalMatrix_mul_k, conjTranspose_add,
+  · simp only [← Matrix.mul_assoc, unipotentMatrix_mul_k, conjTranspose_add,
       Matrix.add_mul, Matrix.mul_add]
     abel
-  · simp only [← Matrix.mul_assoc, radicalMatrix_mul_k, radicalMatrix_mul_ι]
-    rw [← D.radicalCorner_add hj]
+  · simp only [← Matrix.mul_assoc, unipotentMatrix_mul_k, unipotentMatrix_mul_ι]
+    rw [← D.unipotentCorner_add hj]
     simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc]
     abel
 
-/-- The inverse of the radical element `n(c, b)` is `n(-c, -b)`. -/
-theorem radical_inv (c : Matrix n₀ p R) (b : Matrix p p R) :
-    (D.radical hj c b)⁻¹ = D.radical hj (-c) (-b) := by
+/-- The inverse of the unipotent element `n(c, b)` is `n(-c, -b)`. -/
+theorem unipotent_inv (c : Matrix n₀ p R) (b : Matrix p p R) :
+    (D.unipotent hj c b)⁻¹ = D.unipotent hj (-c) (-b) := by
   refine inv_eq_of_mul_eq_one_right ?_
-  rw [radical_mul_radical, ← D.radical_zero_zero hj, radical_eq_radical_iff]
+  rw [unipotent_mul_unipotent, ← D.unipotent_zero_zero hj, unipotent_eq_unipotent_iff]
   have h₀ : A₀ᴴ = A₀ := D.isHermitian_core.eq
   refine ⟨add_neg_cancel c, ?_⟩
   simp [conjTranspose_smul, hj, h₀, Matrix.mul_assoc]
 
-/-- **The Levi elements normalize the radical elements**:
+/-- **The Levi elements normalize the unipotent elements**:
 `m(a, g₀) n(c, b) = n(g₀ c aᴴ, a b aᴴ) m(a, g₀)`. -/
-theorem levi_mul_radical (x : GL p R × unitaryGroupOf A₀) (c : Matrix n₀ p R)
+theorem levi_mul_unipotent (x : GL p R × unitaryGroupOf A₀) (c : Matrix n₀ p R)
     (b : Matrix p p R) :
-    D.levi x * D.radical hj c b =
-      D.radical hj (((x.2 : GL n₀ R) : Matrix n₀ n₀ R) * c * (x.1 : Matrix p p R)ᴴ)
+    D.levi x * D.unipotent hj c b =
+      D.unipotent hj (((x.2 : GL n₀ R) : Matrix n₀ n₀ R) * c * (x.1 : Matrix p p R)ᴴ)
           ((x.1 : Matrix p p R) * b * (x.1 : Matrix p p R)ᴴ) * D.levi x := by
   refine unitaryGroupOf.ext (D.ext_mul ?_ ?_ ?_) <;>
-    simp only [Subgroup.coe_mul, Units.val_mul, val_radical_eq_radicalMatrix,
-      val_levi_eq_leviMatrix, Matrix.mul_assoc, radicalMatrix_mul_k, radicalMatrix_mul_ι,
-      radicalMatrix_mul_l, leviMatrix_mul_k, leviMatrix_mul_ι, leviMatrix_mul_l, Matrix.mul_add,
+    simp only [Subgroup.coe_mul, Units.val_mul, val_unipotent_eq_unipotentMatrix,
+      val_levi_eq_leviMatrix, Matrix.mul_assoc, unipotentMatrix_mul_k, unipotentMatrix_mul_ι,
+      unipotentMatrix_mul_l, leviMatrix_mul_k, leviMatrix_mul_ι, leviMatrix_mul_l, Matrix.mul_add,
       Matrix.mul_sub] <;>
-    simp only [← Matrix.mul_assoc, radicalMatrix_mul_k, radicalMatrix_mul_ι,
-      radicalMatrix_mul_l, leviMatrix_mul_k, leviMatrix_mul_ι]
+    simp only [← Matrix.mul_assoc, unipotentMatrix_mul_k, unipotentMatrix_mul_ι,
+      unipotentMatrix_mul_l, leviMatrix_mul_k, leviMatrix_mul_ι]
   · simp only [Matrix.add_mul, conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,
-      conjTranspose_mul_core]
-  · rw [radicalCorner_conj]
-    simp only [Matrix.sub_mul, Matrix.mul_assoc, conjTranspose_mul_conjTranspose_inv,
-      Matrix.mul_one]
+      unitaryGroupOf.conjTranspose_mul_mul_cancel]
+  · have ha : (x.1 : Matrix p p R)ᴴ * (x.1 : Matrix p p R)⁻¹ᴴ = 1 := by
+      rw [← conjTranspose_mul, nonsing_inv_mul _ (isUnits_det_units x.1), conjTranspose_one]
+    rw [unipotentCorner_conj]
+    simp only [Matrix.sub_mul, Matrix.mul_assoc, ha, Matrix.mul_one]
 
-/-- **Conjugation of a radical element by a Levi element**:
+/-- **Conjugation of a unipotent element by a Levi element**:
 `m(a, g₀) n(c, b) m(a, g₀)⁻¹ = n(g₀ c aᴴ, a b aᴴ)`. -/
-theorem levi_mul_radical_mul_inv_levi (x : GL p R × unitaryGroupOf A₀) (c : Matrix n₀ p R)
+theorem levi_mul_unipotent_mul_inv_levi (x : GL p R × unitaryGroupOf A₀) (c : Matrix n₀ p R)
     (b : Matrix p p R) :
-    D.levi x * D.radical hj c b * (D.levi x)⁻¹ =
-      D.radical hj (((x.2 : GL n₀ R) : Matrix n₀ n₀ R) * c * (x.1 : Matrix p p R)ᴴ)
+    D.levi x * D.unipotent hj c b * (D.levi x)⁻¹ =
+      D.unipotent hj (((x.2 : GL n₀ R) : Matrix n₀ n₀ R) * c * (x.1 : Matrix p p R)ᴴ)
         ((x.1 : Matrix p p R) * b * (x.1 : Matrix p p R)ᴴ) := by
-  rw [levi_mul_radical, mul_inv_cancel_right]
+  rw [levi_mul_unipotent, mul_inv_cancel_right]
 
 /-! ### The Levi decomposition -/
-
-omit [DecidableEq n₀] [DecidableEq p] [Invertible (2 : R)] in
-/-- An element of the unitary group of `A` preserves the pairing `uᴴ A v` of any two families. -/
-private theorem conjTranspose_mul_gram_mul_of_mem (g : unitaryGroupOf A) {q r : Type*}
-    (u : Matrix n q R) (v : Matrix n r R) :
-    (((g : GL n R) : Matrix n n R) * u)ᴴ * A * (((g : GL n R) : Matrix n n R) * v) =
-      uᴴ * A * v := by
-  calc _ = uᴴ * (star ((g : GL n R) : Matrix n n R) * A * ((g : GL n R) : Matrix n n R)) * v := by
-        simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
-    _ = uᴴ * A * v := by rw [mem_unitaryGroupOf_iff.mp g.property]
 
 omit [Invertible (2 : R)] in
 /-- An element of the unitary group acting on the frame `k` by `t` acts on the coordinate along
@@ -660,42 +628,42 @@ private theorem lCoord_mul_of_mul_k (g : unitaryGroupOf A) (t : GL p R)
   set G := ((g : GL n R) : Matrix n n R)
   -- `k = G k t⁻¹`, so `kᴴ A G = (t⁻¹)ᴴ (G k)ᴴ A G = (t⁻¹)ᴴ kᴴ A`.
   have hk' : D.k = G * D.k * (t : Matrix p p R)⁻¹ := by
-    rw [hk, Matrix.mul_assoc, ← coe_units_inv, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Matrix.mul_one]
+    rw [hk, Matrix.mul_assoc, mul_nonsing_inv _ (isUnits_det_units t), Matrix.mul_one]
   calc D.lCoord * G = (G * D.k * (t : Matrix p p R)⁻¹)ᴴ * A * (G * 1) := by
         rw [← hk', lCoord_def, Matrix.mul_one]
     _ = (t : Matrix p p R)⁻¹ᴴ * ((G * D.k)ᴴ * A * (G * 1)) := by
       simp only [conjTranspose_mul, Matrix.mul_assoc]
     _ = (t : Matrix p p R)⁻¹ᴴ * D.lCoord := by
-      rw [conjTranspose_mul_gram_mul_of_mem, Matrix.mul_one, conjTranspose_k_mul]
+      rw [conjTranspose_mul_mul_mul_of_star_mul_mul_eq (mem_unitaryGroupOf_iff.mp g.property),
+        Matrix.mul_one, conjTranspose_k_mul]
 
 omit [DecidableEq n] [Fintype p] [DecidableEq n₀] [DecidableEq p] in
 include hj in
-/-- The corner of the radical element that undoes the `l`-column `l + ι Y + k X` of an element of
+/-- The corner of the unipotent element that undoes the `l`-column `l + ι Y + k X` of an element of
 the unitary group fixing `k`: the isotropy relation `X + Yᴴ A₀ Y + Xᴴ = 0` makes it `-X`. -/
-private theorem radicalCorner_neg_neg_smul {X : Matrix p p R} {Y : Matrix n₀ p R}
+private theorem unipotentCorner_neg_neg_smul {X : Matrix p p R} {Y : Matrix n₀ p R}
     (h : X + Yᴴ * (A₀ * Y) + Xᴴ = 0) :
-    radicalCorner (A₀ := A₀) j (-Y) (-((j : R) • X)) = -X := by
+    unipotentCorner (A₀ := A₀) j (-Y) (-((j : R) • X)) = -X := by
   have hjj : (↑j⁻¹ : R) * j = 1 := Units.inv_mul j
   have h' : Yᴴ * A₀ * Y = -X - Xᴴ := by
     rw [Matrix.mul_assoc, ← sub_eq_zero, ← h]
     abel
-  simp only [radicalCorner, conjTranspose_neg, conjTranspose_smul, hj, neg_smul, neg_neg,
+  simp only [unipotentCorner, conjTranspose_neg, conjTranspose_smul, hj, neg_smul, neg_neg,
     Matrix.neg_mul, Matrix.mul_neg, h', smul_add, smul_neg, smul_smul, hjj, one_smul]
   have h2 : (⅟2 : R) + ⅟2 = 1 := invOf_two_add_invOf_two
   linear_combination (norm := module) -(h2 • X)
 
-/-- **The radical elements form the unipotent radical of the parabolic**: an element `g` of the
-unitary group of `A` is a radical element `n(c, b)` exactly when it fixes the frame `k` pointwise
-and acts trivially on the core, `ιCoord g ι = 1`. -/
-theorem exists_eq_radical_iff (g : unitaryGroupOf A) :
-    (∃ (c : Matrix n₀ p R) (b : Matrix p p R), g = D.radical hj c b) ↔
+/-- **The unipotent elements form the unipotent radical of the parabolic**: an element `g` of the
+unitary group of `A` is a unipotent element `n(c, b)` exactly when it fixes the frame `k` pointwise
+and has core block `ιCoord g ι = 1`. -/
+theorem exists_eq_unipotent_iff (g : unitaryGroupOf A) :
+    (∃ (c : Matrix n₀ p R) (b : Matrix p p R), g = D.unipotent hj c b) ↔
       ((g : GL n R) : Matrix n n R) * D.k = D.k ∧
         D.ιCoord * ((g : GL n R) : Matrix n n R) * D.ι = 1 := by
   constructor
   · rintro ⟨c, b, rfl⟩
-    refine ⟨D.radical_mul_k hj c b, ?_⟩
-    rw [Matrix.mul_assoc, radical_mul_ι]
+    refine ⟨D.unipotent_mul_k hj c b, ?_⟩
+    rw [Matrix.mul_assoc, unipotent_mul_ι]
     simp [Matrix.mul_add]
   rintro ⟨hk, hι⟩
   set G := ((g : GL n R) : Matrix n n R)
@@ -709,8 +677,9 @@ theorem exists_eq_radical_iff (g : unitaryGroupOf A) :
     conv_lhs => rw [← D.k_mul_kCoord_mul_add_ι_mul_ιCoord_mul_add_l_mul_lCoord_mul G, hlG]
     simp [Matrix.add_mul, Matrix.mul_assoc]
   -- `G` preserves the pairings of `l` with `ι` and with itself.
-  have h1 := conjTranspose_mul_gram_mul_of_mem g D.l D.ι
-  have h2 := conjTranspose_mul_gram_mul_of_mem g D.l D.l
+  have hg := mem_unitaryGroupOf_iff.mp g.property
+  have h1 := conjTranspose_mul_mul_mul_of_star_mul_mul_eq hg D.l D.ι
+  have h2 := conjTranspose_mul_mul_mul_of_star_mul_mul_eq hg D.l D.l
   -- Name the blocks of `G` that occur.
   generalize D.kCoord * G * D.ι = Xι at hGι
   generalize D.kCoord * G * D.l = Xl at hGl
@@ -724,10 +693,11 @@ theorem exists_eq_radical_iff (g : unitaryGroupOf A) :
     kCoord_mul_ι, Matrix.mul_zero, Matrix.mul_one, add_zero, zero_add] at h1 h2
   -- `h1 : Xι + Ylᴴ A₀ = 0` and `h2 : Xl + Ylᴴ A₀ Yl + Xlᴴ = 0`.
   refine ⟨-Yl, -((j : R) • Xl), unitaryGroupOf.ext (D.ext_mul ?_ ?_ ?_)⟩
-  · rw [hk, radical_mul_k]
-  · rw [hGι, radical_mul_ι, eq_neg_of_add_eq_zero_left h1]
+  · rw [hk, unipotent_mul_k]
+  · rw [hGι, unipotent_mul_ι, eq_neg_of_add_eq_zero_left h1]
     simp [add_comm]
-  · rw [hGl, val_radical_eq_radicalMatrix, radicalMatrix_mul_l, radicalCorner_neg_neg_smul hj h2]
+  · rw [hGl, val_unipotent_eq_unipotentMatrix, unipotentMatrix_mul_l,
+      unipotentCorner_neg_neg_smul hj h2]
     simp only [Matrix.mul_neg, sub_neg_eq_add]
     abel
 
@@ -745,7 +715,8 @@ private theorem core_mem_of_mul_k (g : unitaryGroupOf A) (t : GL p R)
       ← Matrix.mul_assoc D.lCoord, D.lCoord_mul_of_mul_k g t hk]
     simp [Matrix.mul_assoc]
   -- `G` preserves the Gram matrix `ιᴴ A ι = A₀` of the core.
-  have h := conjTranspose_mul_gram_mul_of_mem g D.ι D.ι
+  have h := conjTranspose_mul_mul_mul_of_star_mul_mul_eq (mem_unitaryGroupOf_iff.mp g.property)
+    D.ι D.ι
   rw [hGι, D.gram_ιι] at h
   generalize D.kCoord * G * D.ι = X at h
   generalize D.ιCoord * G * D.ι = Y at h ⊢
@@ -754,12 +725,12 @@ private theorem core_mem_of_mul_k (g : unitaryGroupOf A) (t : GL p R)
   simp [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_assoc]
 
 /-- **The Levi decomposition**: an element `g` of the unitary group of `A` that acts on the frame
-`k` by a matrix `a` (`g k = k a`) is a product `n(c, b) m(a, g₀)` of a radical element and a Levi
+`k` by a matrix `a` (`g k = k a`) is a product `n(c, b) m(a, g₀)` of a unipotent element and a Levi
 element, where `g₀ = ιCoord g ι` is the block of `g` on the core. -/
-theorem exists_eq_radical_mul_levi (g : unitaryGroupOf A) {a : Matrix p p R}
+theorem exists_eq_unipotent_mul_levi (g : unitaryGroupOf A) {a : Matrix p p R}
     (hk : ((g : GL n R) : Matrix n n R) * D.k = D.k * a) :
     ∃ (c : Matrix n₀ p R) (b : Matrix p p R) (x : GL p R × unitaryGroupOf A₀),
-      g = D.radical hj c b * D.levi x ∧ (x.1 : Matrix p p R) = a ∧
+      g = D.unipotent hj c b * D.levi x ∧ (x.1 : Matrix p p R) = a ∧
         ((x.2 : GL n₀ R) : Matrix n₀ n₀ R) = D.ιCoord * ((g : GL n R) : Matrix n n R) * D.ι := by
   set G := ((g : GL n R) : Matrix n n R)
   -- `a` is invertible, with left inverse `kCoord g⁻¹ k`.
@@ -771,16 +742,14 @@ theorem exists_eq_radical_mul_levi (g : unitaryGroupOf A) {a : Matrix p p R}
     unitaryGroupOf.ofMatrix D.isUnit_core _ (D.core_mem_of_mul_k g t hk)
   have hg₀ : ((g₀ : GL n₀ R) : Matrix n₀ n₀ R) = D.ιCoord * G * D.ι :=
     unitaryGroupOf.val_ofMatrix _ _ _
-  -- `g m(t, g₀)⁻¹` fixes `k` and acts trivially on the core, so it is a radical element.
-  obtain ⟨c, b, hcb⟩ := (D.exists_eq_radical_iff hj (g * (D.levi (t, g₀))⁻¹)).mpr <| by
+  -- `g m(t, g₀)⁻¹` fixes `k` and has core block `1`, so it is a unipotent element.
+  obtain ⟨c, b, hcb⟩ := (D.exists_eq_unipotent_iff hj (g * (D.levi (t, g₀))⁻¹)).mpr <| by
     rw [← map_inv]
     simp only [Subgroup.coe_mul, Units.val_mul, Matrix.mul_assoc, levi_mul_k, levi_mul_ι,
       Prod.fst_inv, Prod.snd_inv, Subgroup.coe_inv]
     refine ⟨?_, ?_⟩
-    · rw [← Matrix.mul_assoc, hk, Matrix.mul_assoc, ← Units.val_mul, mul_inv_cancel,
-        Units.val_one, Matrix.mul_one]
-    · rw [← Matrix.mul_assoc D.ιCoord G, ← Matrix.mul_assoc, ← hg₀, ← Units.val_mul,
-        mul_inv_cancel, Units.val_one]
+    · rw [← Matrix.mul_assoc, hk, Matrix.mul_assoc, Units.mul_inv, Matrix.mul_one]
+    · rw [← Matrix.mul_assoc D.ιCoord G, ← Matrix.mul_assoc, ← hg₀, Units.mul_inv]
   exact ⟨c, b, (t, g₀), mul_inv_eq_iff_eq_mul.mp hcb, rfl, hg₀⟩
 
 end IsotropicSplitting
