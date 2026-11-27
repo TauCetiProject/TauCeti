@@ -18,12 +18,13 @@ import TauCeti.RingTheory.Valuation.Continuous.Invariant
 Let a finite group `G` act on a ring `A` by ring automorphisms, and let `R → A` be a ring map
 whose image contains every invariant (`Algebra.IsInvariant R A G`), for instance the inclusion of
 the fixed subring `Aᴳ`. The group acts on `Spv A` by `(g • y)(a) = y(g⁻¹ • a)`, that is
-`g • y = comap (g⁻¹ • ·) y`. This file shows that the restriction map `Spv A → Spv R` is a
+`g • y = comap (g⁻¹ • ·) y`, by homeomorphisms (an instance, for any group acting by ring
+automorphisms). This file shows that the restriction map `Spv A → Spv R` is a
 quotient by this action on the level of points, with no hypothesis on the order of `G`:
 
 * its fibres are exactly the `G`-orbits, when `G` fixes `R`; that points in one orbit have the
   same restriction needs neither finiteness nor invariance
-  (`TauCeti.ValuationSpectrum.comap_algebraMap_comap_toRingHom`);
+  (`TauCeti.ValuationSpectrum.comap_algebraMap_smul`);
 * it is surjective when `R → A` is injective, since `A` is integral over `R`
   (`TauCeti.ValuationSpectrum.comap_algebraMap_surjective_of_isIntegral`).
 
@@ -62,18 +63,47 @@ namespace TauCeti.ValuationSpectrum
 
 section Action
 
+section SMul
+
+variable {G A : Type*} [Group G] [CommRing A] [MulSemiringAction G A]
+
+/-- A group acting on `A` by ring automorphisms acts on `Spv A` by transport of structure,
+`(g • v)(a) = v(g⁻¹ • a)`, that is `g • v = comap (g⁻¹ • ·) v`. This matches Mathlib's action on
+`PrimeSpectrum A`. -/
+instance : SMul G (Spv A) :=
+  ⟨fun g v ↦ comap (MulSemiringAction.toRingHom G A g⁻¹) v⟩
+
+/-- `g • v` is the pullback of `v` along the ring automorphism `g⁻¹ • ·`. -/
+theorem smul_def (g : G) (v : Spv A) : g • v = comap (MulSemiringAction.toRingHom G A g⁻¹) v :=
+  (rfl)
+
+/-- The action of `G` on `Spv A` by transport of structure is a group action. -/
+instance : MulAction G (Spv A) where
+  one_smul v := by
+    have h : MulSemiringAction.toRingHom G A 1 = RingHom.id A := RingHom.ext (one_smul G)
+    rw [smul_def, inv_one, h, comap_id, id]
+  mul_smul g h v := by
+    rw [smul_def, smul_def, smul_def, comap_comap]
+    congr 1
+    exact RingHom.ext fun a ↦ by simp [mul_smul]
+
+/-- `G` acts on `Spv A` by homeomorphisms. -/
+instance : ContinuousConstSMul G (Spv A) :=
+  ⟨fun _ ↦ continuous_comap _⟩
+
+end SMul
+
 variable {G R A : Type*} [Group G] [CommRing R] [CommRing A] [Algebra R A]
   [MulSemiringAction G A] [SMulCommClass G R A]
 
-/-- Pulling back along the action of `g ∈ G` does not change the image in `Spv R`, since `G` acts
-by `R`-algebra automorphisms. No finiteness or invariance hypothesis is needed. -/
+/-- Acting by `g ∈ G` does not change the image in `Spv R`, since `G` acts by `R`-algebra
+automorphisms. No finiteness or invariance hypothesis is needed. -/
 @[simp]
-theorem comap_algebraMap_comap_toRingHom (g : G) (y : Spv A) :
-    comap (algebraMap R A) (comap (MulSemiringAction.toRingHom G A g) y) =
-      comap (algebraMap R A) y := by
-  rw [comap_comap]
+theorem comap_algebraMap_smul (g : G) (y : Spv A) :
+    comap (algebraMap R A) (g • y) = comap (algebraMap R A) y := by
+  rw [smul_def, comap_comap]
   congr 1
-  exact RingHom.ext fun r ↦ smul_algebraMap g r
+  exact RingHom.ext fun r ↦ smul_algebraMap g⁻¹ r
 
 end Action
 
@@ -88,7 +118,7 @@ theorem comap_algebraMap_eq_comap_algebraMap_iff_of_isInvariant [SMulCommClass G
     {y y' : Spv A} :
     comap (algebraMap R A) y = comap (algebraMap R A) y' ↔
       ∃ g : G, y' = comap (MulSemiringAction.toRingHom G A g⁻¹) y := by
-  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by rw [hg, comap_algebraMap_comap_toRingHom]⟩
+  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by rw [hg, ← smul_def, comap_algebraMap_smul]⟩
   -- amalgamate `y` and `y'` to a point `v` of `Spv (A ⊗[R] A)`, pulled back from `κ(supp v)`
   obtain ⟨v, hvy, hvy'⟩ := exists_amalgamation y y' h
   set ψ := algebraMap (A ⊗[R] A) v.supp.ResidueField

@@ -83,7 +83,7 @@ theorem comap_algebraMap_eq_comap_algebraMap_iff_of_fixedPoints_le
     (hG : FixedPoints.intermediateField (F := K) G ≤ perfectClosure K L) {y y' : Spv L} :
     comap (algebraMap K L) y = comap (algebraMap K L) y' ↔
       ∃ g : G, y' = comap (MulSemiringAction.toRingHom G L g⁻¹) y := by
-  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by rw [hg, comap_algebraMap_comap_toRingHom]⟩
+  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by rw [hg, ← smul_def, comap_algebraMap_smul]⟩
   obtain ⟨g, hg⟩ := ValuationSubring.exists_smul_eq_of_comap_eq hG
     ((comap_eq_comap_iff_valuationSubring_comap_eq _).mp h)
   refine ⟨g, ?_⟩

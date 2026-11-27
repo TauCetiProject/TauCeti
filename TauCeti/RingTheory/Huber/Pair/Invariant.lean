@@ -32,6 +32,7 @@ spectrum by `G`, and of finite quotients of affinoid perfectoid spaces.
 ## Main definitions
 
 * `TauCeti.Huber.invariantPair G P`: the Huber pair `(Aᴳ, A⁺ ∩ Aᴳ)`.
+* `TauCeti.Huber.invariantPair.inclusion`: its inclusion into `(A, A⁺)`.
 * `TauCeti.Huber.invariantPair.map`: the morphism of invariant pairs induced by an equivariant
   morphism of Huber pairs.
 * `TauCeti.Huber.invariantPair.subgroup`: the inclusion `(Aᴳ, A^{+G}) → (Aᴴ, A^{+H})` for a
@@ -169,6 +170,30 @@ theorem integralClosure_map_invariantPair_plus (P : Pair A)
   rw [map_subtype_invariantPair_plus]
   exact P.plus.integralClosure_inf_fixedPoints
 
+section Inclusion
+
+variable (G) in
+/-- The inclusion `(Aᴳ, A^{+G}) → (A, A⁺)` of the invariant pair, a morphism of Huber pairs. It
+induces the restriction `Spa(A, A⁺) → Spa(Aᴳ, A^{+G})`, `v ↦ v|_{Aᴳ}`, of adic spectra. -/
+def invariantPair.inclusion (P : Pair A) : (invariantPair G P).Hom P where
+  toRingHom := (FixedPoints.subring A G).subtype
+  continuous_toRingHom := continuous_subtypeVal
+  map_mem_plus _ ha := ha
+
+/-- The underlying ring homomorphism of the inclusion of the invariant pair is the inclusion of the
+fixed subring. -/
+@[simp]
+theorem invariantPair.toRingHom_inclusion (P : Pair A) :
+    (invariantPair.inclusion G P).toRingHom = (FixedPoints.subring A G).subtype :=
+  (rfl)
+
+/-- The inclusion of the invariant pair is injective. -/
+theorem invariantPair.inclusion_injective (P : Pair A) :
+    Function.Injective (invariantPair.inclusion G P).toRingHom :=
+  Subtype.val_injective
+
+end Inclusion
+
 section Functoriality
 
 variable {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsTateRing B]
@@ -215,6 +240,14 @@ theorem invariantPair.map_injective {P : Pair A} {Q : Pair B} (f : P.Hom Q)
     Function.Injective (invariantPair.map G f hf).toRingHom :=
   fun _ _ h ↦ Subtype.ext (hinj (by simpa using congr_arg Subtype.val h))
 
+/-- The inclusions of invariant pairs are natural: restricting an equivariant morphism of Huber
+pairs to invariants and then including is the same as including and then applying it. -/
+theorem invariantPair.inclusion_comp_map {P : Pair A} {Q : Pair B} (f : P.Hom Q)
+    (hf : ∀ (g : G) (a : A), f.toRingHom (g • a) = g • f.toRingHom a) :
+    (invariantPair.inclusion G Q).comp (invariantPair.map G f hf) =
+      f.comp (invariantPair.inclusion G P) :=
+  Pair.Hom.ext (RingHom.ext fun _ ↦ by simp)
+
 end Functoriality
 
 section Subgroup
@@ -245,6 +278,14 @@ theorem invariantPair.subgroup_top_bijective (P : Pair A) :
     Function.Bijective (invariantPair.subgroup G ⊤ P).toRingHom :=
   ⟨invariantPair.subgroup_injective ⊤ P, fun y ↦
     ⟨⟨y, fun g ↦ y.property ⟨g, Subgroup.mem_top g⟩⟩, Subtype.ext (by simp)⟩⟩
+
+/-- Including `(Aᴳ, A^{+G})` into `(Aᴴ, A^{+H})` and then into `(A, A⁺)` is the inclusion of the
+invariant pair of `G`. -/
+@[simp]
+theorem invariantPair.inclusion_comp_subgroup (H : Subgroup G) (P : Pair A) :
+    (invariantPair.inclusion H P).comp (invariantPair.subgroup G H P) =
+      invariantPair.inclusion G P :=
+  Pair.Hom.ext (RingHom.ext fun _ ↦ by simp)
 
 end Subgroup
 
