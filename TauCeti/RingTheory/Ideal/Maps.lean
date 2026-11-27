@@ -14,7 +14,8 @@ import Mathlib.Algebra.Algebra.Tower
 Taking radicals before extending an ideal does not change the radical of its extension. Extension
 commutes with finite products of ideals. Powers of ideals commute with pullback along a ring
 equivalence, a homomorphism of possibly noncommutative rings carrying `I` into `J` carries each
-power of `I` into the same power of `J`, the powers of the image of an ideal along a surjective
+power of `I` into the same power of `J` (and in particular carries `I ^ n` into `(I.map f) ^ n`),
+the powers of the image of an ideal along a surjective
 homomorphism of possibly noncommutative rings lie in the image of its powers, and extension along a
 bijective ring homomorphism preserves and reflects primality. An endomorphism congruent to a power
 map modulo a radical ideal, such as a Frobenius lift, pulls that ideal back to itself. Extension
@@ -104,6 +105,12 @@ theorem pow_le_comap_pow_of_le_comap {R S F : Type*} [Semiring R] [Semiring S] [
     intro a ha b hb
     rw [mem_comap, map_mul, Submodule.pow_succ]
     exact mul_mem_mul (ih ha) (h hb)
+
+/-- For an ideal `I` and ring homomorphism `f`, `I ^ n ≤ (I.map f ^ n).comap f`. -/
+theorem pow_le_comap_map_pow {R S F : Type*} [Semiring R] [Semiring S] [FunLike F R S]
+    [RingHomClass F R S] (I : Ideal R) (f : F) (n : ℕ) :
+    I ^ n ≤ (I.map f ^ n).comap f :=
+  pow_le_comap_pow_of_le_comap f le_comap_map n
 
 /-- A ring homomorphism `f` with `I ≤ J.comap f` maps `I ^ n` into `J ^ n`. -/
 theorem map_mem_pow_of_le_comap {R S : Type*} [Semiring R] [Semiring S] (f : R →+* S)

@@ -50,38 +50,16 @@ private theorem ideal_map_toStalk_le_maximalIdeal :
   rw [← map_maximalIdeal_localizationToStalk p, ← map_localizationToStalk_map p]
   exact Ideal.map_mono (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
 
-private theorem pow_quotientMap_localizationToStalk_bijective (n : ℕ) (_ : 1 ≤ n) :
-    Function.Bijective (Ideal.quotientMap
-      ((((IsAdicRing.ideal A).map
-        (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))).map
-          (localizationToStalk p)) ^ n)
-      (localizationToStalk p)
-      ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n))) :=
-  RingHom.quotientMap_bijective_congr (localizationToStalk p) (Ideal.map_pow _ _ _)
-    (by rw [map_localizationToStalk_map, Ideal.map_pow])
-    (quotientMap_localizationToStalk_bijective_of_isOpen p
-      ((isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).1 n)
-      (H := map_localizationToStalk_map p (IsAdicRing.ideal A ^ n) ▸ Ideal.le_comap_map))
-
-private theorem pow_quotientMap_stalkToCompletedAtPrime_bijective (n : ℕ) (_ : 1 ≤ n) :
-    Function.Bijective (Ideal.quotientMap
-      ((((IsAdicRing.ideal A).map (toStalk p)).map (stalkToCompletedAtPrime p)) ^ n)
-      (stalkToCompletedAtPrime p)
-      ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n))) :=
-  RingHom.quotientMap_bijective_congr (stalkToCompletedAtPrime p) (Ideal.map_pow _ _ _)
-    (by rw [map_stalkToCompletedAtPrime_map, Ideal.map_pow])
-    (quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen p
-      ((isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).1 n)
-      (H := map_stalkToCompletedAtPrime_map p (IsAdicRing.ideal A ^ n) ▸ Ideal.le_comap_map))
-
-private theorem pow_quotientMap_algebraMap_completedAtPrime_bijective (n : ℕ) (_ : 1 ≤ n) :
-    Function.Bijective (Ideal.quotientMap
-      ((((IsAdicRing.ideal A).map
-        (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))).map
-          (algebraMap _ (CompletedAtPrime p))) ^ n)
-      (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p))
-      ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n))) :=
-  AdicCompletion.quotientMap_algebraMap_bijective ((IsAdicRing.ideal_spec A).1.map _) n
+private theorem quotientMapPowBijective_map_ideal {R S : Type*} [CommRing R] [CommRing S]
+    {φ : A →+* R} {g : R →+* S} {ψ : A →+* S} (hcomp : g.comp φ = ψ)
+    (h : ∀ {J : Ideal A}, IsOpen (J : Set A) →
+      ∀ {H : J.map φ ≤ (J.map ψ).comap g}, Function.Bijective (Ideal.quotientMap (J.map ψ) g H)) :
+    g.QuotientMapPowBijective ((IsAdicRing.ideal A).map φ) := fun n _ ↦
+  g.quotientMap_bijective_congr rfl (Ideal.map_pow _ _ _)
+    (by rw [Ideal.map_map, hcomp, Ideal.map_pow])
+    (h ((isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).1 n)
+      (H := (by rw [Ideal.map_map, hcomp] : ((IsAdicRing.ideal A ^ n).map φ).map g = _) ▸
+        Ideal.le_comap_map))
 
 /-- The canonical isomorphism between the maximal-ideal-adic completions of `A_𝔭` and
 `𝒪_{Spf A, p}`. -/
@@ -91,7 +69,8 @@ noncomputable def maximalIdealCompletionLocalizationEquivStalk :
       AdicCompletion (maximalIdeal ((Spf A).presheaf.stalk p)) ((Spf A).presheaf.stalk p) :=
   (localizationToStalk p).adicCompletionMaximalIdealRingEquivOfQuotientMap
     (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
-    (pow_quotientMap_localizationToStalk_bijective p)
+    (quotientMapPowBijective_map_ideal (localizationToStalk_comp_algebraMap p)
+      fun hJ ↦ quotientMap_localizationToStalk_bijective_of_isOpen p hJ)
 
 /-- On elements of `A_𝔭`, `maximalIdealCompletionLocalizationEquivStalk` applies
 `localizationToStalk p`. -/
@@ -111,9 +90,8 @@ theorem evalₐ_maximalIdealCompletionLocalizationEquivStalk (n : ℕ)
     AdicCompletion.evalₐ (maximalIdeal ((Spf A).presheaf.stalk p)) n
         (maximalIdealCompletionLocalizationEquivStalk p x) =
       Ideal.quotientMap (maximalIdeal ((Spf A).presheaf.stalk p) ^ n) (localizationToStalk p)
-        ((Ideal.pow_right_mono
-          (map_maximalIdeal_localizationToStalk p ▸ Ideal.le_comap_map) n).trans
-          (Ideal.le_comap_pow _ n))
+        (Ideal.pow_le_comap_pow_of_le_comap (localizationToStalk p)
+          (map_maximalIdeal_localizationToStalk p ▸ Ideal.le_comap_map) n)
         (AdicCompletion.evalₐ
           (maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) n x) :=
   (localizationToStalk p).evalₐ_adicCompletionMaximalIdealRingEquivOfQuotientMap _ _ n x
@@ -125,7 +103,8 @@ noncomputable def maximalIdealCompletionStalkEquivCompletedAtPrime :
       AdicCompletion (maximalIdeal (CompletedAtPrime p)) (CompletedAtPrime p) :=
   (stalkToCompletedAtPrime p).adicCompletionMaximalIdealRingEquivOfQuotientMap
     (ideal_map_toStalk_le_maximalIdeal p)
-    (pow_quotientMap_stalkToCompletedAtPrime_bijective p)
+    (quotientMapPowBijective_map_ideal (stalkToCompletedAtPrime_comp_toStalk p)
+      fun hJ ↦ quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen p hJ)
 
 /-- On elements of `𝒪_{Spf A, p}`, `maximalIdealCompletionStalkEquivCompletedAtPrime` applies
 `stalkToCompletedAtPrime p`. -/
@@ -144,9 +123,8 @@ theorem evalₐ_maximalIdealCompletionStalkEquivCompletedAtPrime (n : ℕ)
     AdicCompletion.evalₐ (maximalIdeal (CompletedAtPrime p)) n
         (maximalIdealCompletionStalkEquivCompletedAtPrime p x) =
       Ideal.quotientMap (maximalIdeal (CompletedAtPrime p) ^ n) (stalkToCompletedAtPrime p)
-        ((Ideal.pow_right_mono
-          (map_maximalIdeal_stalkToCompletedAtPrime p ▸ Ideal.le_comap_map) n).trans
-          (Ideal.le_comap_pow _ n))
+        (Ideal.pow_le_comap_pow_of_le_comap (stalkToCompletedAtPrime p)
+          (map_maximalIdeal_stalkToCompletedAtPrime p ▸ Ideal.le_comap_map) n)
         (AdicCompletion.evalₐ (maximalIdeal ((Spf A).presheaf.stalk p)) n x) :=
   (stalkToCompletedAtPrime p).evalₐ_adicCompletionMaximalIdealRingEquivOfQuotientMap _ _ n x
 
@@ -158,7 +136,7 @@ noncomputable def maximalIdealCompletionLocalizationEquivCompletedAtPrime :
   (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
       (CompletedAtPrime p)).adicCompletionMaximalIdealRingEquivOfQuotientMap
     (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
-    (pow_quotientMap_algebraMap_completedAtPrime_bijective p)
+    fun n _ ↦ AdicCompletion.quotientMap_algebraMap_bijective ((IsAdicRing.ideal_spec A).1.map _) n
 
 /-- On elements of `A_𝔭`, `maximalIdealCompletionLocalizationEquivCompletedAtPrime` applies
 `algebraMap A_𝔭 Â_𝔭`. -/
@@ -181,9 +159,8 @@ theorem evalₐ_maximalIdealCompletionLocalizationEquivCompletedAtPrime (n : ℕ
         (maximalIdealCompletionLocalizationEquivCompletedAtPrime p x) =
       Ideal.quotientMap (maximalIdeal (CompletedAtPrime p) ^ n)
         (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p))
-        ((Ideal.pow_right_mono
-          (Ideal.map_le_iff_le_comap.mp (map_maximalIdeal_le _)) n).trans
-          (Ideal.le_comap_pow _ n))
+        (Ideal.pow_le_comap_pow_of_le_comap _
+          (Ideal.map_le_iff_le_comap.mp (map_maximalIdeal_le _)) n)
         (AdicCompletion.evalₐ
           (maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) n x) :=
   (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)

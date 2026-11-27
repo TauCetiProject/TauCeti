@@ -319,7 +319,7 @@ private theorem quotientMap_ideal_pow_bijective (n : ℕ) :
     (map_stalkToCompletedAtPrime_map p (IsAdicRing.ideal A ^ n) ▸ Ideal.le_comap_map)
   have hcomp_bij : Function.Bijective (q₂ ∘ q₁) := by
     have hbij' := RingHom.quotientMap_bijective_congr
-      (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p))
+      (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p)) rfl
       (Ideal.map_pow _ _ _).symm
       (by rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq, ← Ideal.map_pow])
       (AdicCompletion.quotientMap_algebraMap_bijective ((IsAdicRing.ideal_spec A).1.map _) n
@@ -346,9 +346,9 @@ private theorem quotientMap_bijective_of_isOpen {R S : Type*} [CommRing R] [Comm
   obtain ⟨n, hn⟩ :=
     (isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).2 (J : Set A) (hJ.mem_nhds J.zero_mem)
   have hmap (K : Ideal A) : (K.map φ).map g = K.map ψ := by rw [Ideal.map_map, hcomp]
-  exact g.quotientMap_bijective_congr rfl (hmap J)
+  exact g.quotientMap_bijective_congr rfl rfl (hmap J)
     (g.quotientMap_bijective_of_le (Ideal.map_mono hn)
-      (g.quotientMap_bijective_congr rfl (hmap _).symm (hpow n) (H₂ := Ideal.le_comap_map))
+      (g.quotientMap_bijective_congr rfl rfl (hmap _).symm (hpow n) (H₂ := Ideal.le_comap_map))
       (HJ := Ideal.le_comap_map))
 
 /-- For every open ideal `J` of `A`, `A_𝔭 → 𝒪_{Spf A, p}` induces a bijection
@@ -554,8 +554,8 @@ noncomputable def stalkAdicCompletionEquivCompletedAtPrime {I : Ideal A} (hI : I
       (ideal_map_toStalk_le_comap_ofId p I) fun n ↦ by
     have hq := quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen p ((isAdic_iff.mp hI).1 n)
       (H := map_stalkToCompletedAtPrime_map p (I ^ n) ▸ Ideal.le_comap_map)
-    exact RingHom.quotientMap_bijective_congr (stalkToCompletedAtPrime p) (Ideal.map_pow _ _ _)
-      (Ideal.map_pow _ _ _) hq
+    exact RingHom.quotientMap_bijective_congr (stalkToCompletedAtPrime p)
+      (toRingHom_ofId_stalkAlgebra p).symm (Ideal.map_pow _ _ _) (Ideal.map_pow _ _ _) hq
   (AlgEquiv.ofBijective _ hbij).toRingEquiv.trans
     (RingEquiv.ofBijective
       (algebraMap (CompletedAtPrime p)
@@ -570,9 +570,10 @@ theorem stalkAdicCompletionEquivCompletedAtPrime_of {I : Ideal A} (hI : IsAdic I
     stalkAdicCompletionEquivCompletedAtPrime p hI
         (AdicCompletion.of (I.map (toStalk p)) ((Spf A).presheaf.stalk p) s) =
       stalkToCompletedAtPrime p s := by
-  rw [stalkAdicCompletionEquivCompletedAtPrime, RingEquiv.trans_apply, RingEquiv.symm_apply_eq]
-  exact AdicCompletion.mapₐ_of
-    (Algebra.ofId ((Spf A).presheaf.stalk p) (CompletedAtPrime p)) _ s
+  simp only [stalkAdicCompletionEquivCompletedAtPrime, RingEquiv.trans_apply,
+    RingEquiv.symm_apply_eq, AlgEquiv.coe_toRingEquiv, AlgEquiv.ofBijective_apply,
+    AdicCompletion.mapₐ_of]
+  exact congrArg (AdicCompletion.of _ _) (RingHom.congr_fun (toRingHom_ofId_stalkAlgebra p) s)
 
 /-- Modulo `(I Â_𝔭) ^ n`, `stalkAdicCompletionEquivCompletedAtPrime` reduces to the quotient map
 induced by `stalkToCompletedAtPrime p` on `AdicCompletion.evalₐ (I 𝒪_{Spf A, p}) n`. -/

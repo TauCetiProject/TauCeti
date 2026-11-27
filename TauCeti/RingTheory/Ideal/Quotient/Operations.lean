@@ -41,8 +41,8 @@ element of `S` is congruent modulo `J` to an image under `f`
 (`Ideal.exists_sub_mem_of_surjective_quotient_mk_comp`); this applies whenever an induced map
 `R ⧸ I → S ⧸ J` is surjective. If `R ⧸ K → S ⧸ K S` is bijective then `R ⧸ J → S ⧸ J S` is
 bijective for every ideal `J ≥ K` (`RingHom.quotientMap_bijective_of_le`), bijectivity transports
-along ideal equalities (`RingHom.quotientMap_bijective_congr`), and bijectivity modulo zero ideals
-implies bijectivity of the underlying homomorphism
+along equal homomorphisms and source and target ideals (`RingHom.quotientMap_bijective_congr`),
+and bijectivity modulo zero ideals implies bijectivity of the underlying homomorphism
 (`RingHom.bijective_of_quotientMap_bot_bijective`).
 
 An action of a monoid by ring automorphisms preserving a two-sided ideal `I` descends to an action
@@ -309,14 +309,14 @@ theorem quotientMap_bijective_of_le (f : R →+* S) {K J : Ideal R}
       rw [Ideal.quotientMap_mk, Ideal.Quotient.eq]
       simpa [neg_sub] using neg_mem (Ideal.map_mono hKJ hr)⟩
 
-/-- Bijectivity of `Ideal.quotientMap` is preserved under rewriting equal source and target
-ideals. -/
-theorem quotientMap_bijective_congr (f : R →+* S)
-    {I₁ I₂ : Ideal R} {J₁ J₂ : Ideal S} (hI : I₁ = I₂) (hJ : J₁ = J₂)
-    {H₁ : I₁ ≤ J₁.comap f} {H₂ : I₂ ≤ J₂.comap f}
-    (h : Function.Bijective (Ideal.quotientMap J₁ f H₁)) :
-    Function.Bijective (Ideal.quotientMap J₂ f H₂) := by
-  subst hI hJ; exact h
+/-- Bijectivity of `Ideal.quotientMap` is preserved under rewriting equal homomorphisms and source
+and target ideals. -/
+theorem quotientMap_bijective_congr (f₁ : R →+* S) {f₂ : R →+* S}
+    {I₁ I₂ : Ideal R} {J₁ J₂ : Ideal S} (hf : f₁ = f₂) (hI : I₁ = I₂) (hJ : J₁ = J₂)
+    {H₁ : I₁ ≤ J₁.comap f₁} {H₂ : I₂ ≤ J₂.comap f₂}
+    (h : Function.Bijective (Ideal.quotientMap J₁ f₁ H₁)) :
+    Function.Bijective (Ideal.quotientMap J₂ f₂ H₂) := by
+  subst hf hI hJ; exact h
 
 /-- If `Ideal.quotientMap` along `f : R →+* S` modulo zero ideals is bijective, then `f` itself is
 bijective. -/
