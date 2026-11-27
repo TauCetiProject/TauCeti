@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Analysis.PDE.SeibergWitten.Bundle.QuadraticTwoForm
-public import TauCeti.Topology.VectorBundle.SpinStructure.Orientation
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift.Orientation
 
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.LinearAlgebra.ExteriorPower.Basic

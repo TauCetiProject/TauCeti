@@ -149,16 +149,8 @@ theorem cliffordRestrictionAdjoint_conjContinuousAlgEquiv (hkl : 2 + 2 = finrank
   obtain ⟨β, hβ⟩ := exteriorPower.map_surjective (n := 2) f.surjective (β' : ⋀[ℝ]^2 V')
   have hβmem := (hmem β).1 (hβ ▸ β'.property)
   have hβ' : β' = ⟨_, (hmem β).2 hβmem⟩ := Subtype.ext hβ.symm
-  -- Conjugation by `e` preserves traces.
-  have htr (X : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ) :
-      LinearMap.trace ℂ (positiveHalfSpinors o' ρ')
-          (e.toContinuousLinearEquiv.conjContinuousAlgEquiv X) =
-        LinearMap.trace ℂ (positiveHalfSpinors o ρ) X := by
-    rw [← LinearMap.trace_conj' (X : Module.End ℂ (positiveHalfSpinors o ρ)) e]
-    -- On underlying linear maps, `conjContinuousAlgEquiv` is `LinearEquiv.conj`.
-    rfl
   rw [inner_cliffordRestrictionAdjoint_left, Submodule.coe_inner, hβ',
-    cliffordRestriction_map ho hU β, ← ContinuousLinearMap.toLinearMap_mul, ← map_mul, htr]
+    cliffordRestriction_map ho hU β, ContinuousLinearEquiv.trace_conjContinuousAlgEquiv_mul]
   -- `⋀²f` preserves the inner product; `f.toLinearIsometry` has underlying linear map `f`.
   exact ((exteriorPower.inner_map_map f.toLinearIsometry _ _).trans
     (inner_cliffordRestrictionAdjoint_left o ρ hkl T ⟨β, hβmem⟩)).symm
