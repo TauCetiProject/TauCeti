@@ -160,7 +160,8 @@ include hQ in
 /-- Repeated injective envelopes give a minimal injective resolution whose terms lie in the
 given class, provided every object in the class has an envelope with target and cokernel in the
 class. -/
-theorem exists_isMinimal_of_closedUnder_envelopes {Y : C} (hY : Q Y) :
+theorem _root_.TauCeti.exists_isMinimal_injectiveResolution_of_closedUnder_envelopes
+    {Y : C} (hY : Q Y) :
     ∃ I : InjectiveResolution Y, I.IsMinimal ∧ ∀ n, Q (I.cocomplex.X n) := by
   let X : Subtype Q := ⟨Y, hY⟩
   let I : InjectiveResolution Y :=

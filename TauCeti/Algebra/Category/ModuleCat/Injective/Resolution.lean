@@ -40,11 +40,11 @@ universe u v w
 
 /-- Every finitely generated left module over a finite algebra over a commutative Artinian ring
 has a minimal injective resolution with finitely generated terms in every degree. -/
-theorem exists_isMinimal_injectiveResolution_of_finite (R : Type u) [CommRing R] [IsArtinianRing R]
-    {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A] [Small.{w} A]
-    (M : ModuleCat.{w} A) [Module.Finite A M] :
+theorem exists_isMinimal_injectiveResolution_of_finite {A : Type v} [Ring A]
+    (M : ModuleCat.{w} A) (R : Type u) [CommRing R] [IsArtinianRing R] [Algebra R A]
+    [Module.Finite R A] [Small.{w} A] [Module.Finite A M] :
     ∃ I : InjectiveResolution M, I.IsMinimal ∧ ∀ n, Module.Finite A (I.cocomplex.X n) := by
-  refine InjectiveResolution.exists_isMinimal_of_closedUnder_envelopes
+  refine TauCeti.exists_isMinimal_injectiveResolution_of_closedUnder_envelopes
     (Q := fun N : ModuleCat.{w} A ↦ Module.Finite A N) (Y := M) ?_ inferInstance
   intro N hN
   obtain ⟨J, _, _, hJ, i, hi⟩ := exists_isInjectiveEnvelope_finite R (A := A) N
