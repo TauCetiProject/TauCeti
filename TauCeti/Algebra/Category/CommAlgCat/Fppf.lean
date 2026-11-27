@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
 import Mathlib.RingTheory.FiniteStability
 import TauCeti.AlgebraicGeometry.Sites.Fpqc
+import TauCeti.CategoryTheory.Sites.Canonical
 
 /-!
 # The affine fppf site
@@ -391,25 +392,17 @@ instance isLocallySurjective_pointsSheafFunctor_map
     {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
     [Flat f.left] [Surjective f.left] [LocallyOfFinitePresentation f.left] :
     Presheaf.IsLocallySurjective (fppfTopology R) ((pointsSheafFunctor R).map f).hom := by
-  have hcov : Sieve.ofArrows (fun _ : PUnit.{1} ↦ X) (fun _ : PUnit.{1} ↦ f) ∈
+  have hcov : Sieve.generate (Presieve.singleton f) ∈
       Scheme.fppfTopology.over (Spec (CommRingCat.of R)) Y := by
+    rw [← Presieve.ofArrows_pUnit.{0}]
+    change Sieve.ofArrows (fun _ : PUnit.{1} ↦ X) (fun _ : PUnit.{1} ↦ f) ∈ _
     rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
     refine Precoverage.generate_mem_toGrothendieck ?_
     rw [Presieve.ofArrows_pUnit]
     exact f.left.singleton_mem_fppfPrecoverage
-  let c : Limits.Cofan (fun _ : PUnit.{1} ↦ uliftYoneda.{u + 1}.obj X) :=
-    Limits.Cofan.mk (uliftYoneda.{u + 1}.obj X) (fun _ ↦ 𝟙 _)
-  let hc : Limits.IsColimit c :=
-    Limits.Cofan.IsColimit.mk c (fun s ↦ s.inj PUnit.unit)
-      (fun _ _ ↦ Category.id_comp _) (fun _ _ h ↦ by simpa [c] using h PUnit.unit)
-  have hloc : Presheaf.IsLocallySurjective
-      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))
-      (uliftYoneda.{u + 1}.map f) :=
-    (GrothendieckTopology.ofArrows_mem_iff_isLocallySurjective_cofanIsColimitDesc_uliftYoneda_map
-      (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) (fun _ : PUnit.{1} ↦ f) hc).mp hcov
   have : Sheaf.IsLocallySurjective ((GrothendieckTopology.uliftYoneda.{u + 1}
       (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) :=
-    (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).1 hloc
+    Sheaf.isLocallySurjective_uliftYoneda_map_of_mem hcov
   have hepi : Epi ((GrothendieckTopology.uliftYoneda.{u + 1}
       (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) :=
     Sheaf.epi_of_isLocallySurjective _

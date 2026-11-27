@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Geometrically.Reduced
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Action
@@ -54,19 +53,6 @@ variable {k : Type u} [Field k]
   [LocallyOfFiniteType X.hom] [CompactSpace X.left]
   (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
 
-/-- The orbit projection is locally of finite type, without a reducedness hypothesis. -/
-instance locallyOfFiniteType_toOrbit : LocallyOfFiniteType (toOrbit G x) := by
-  have : LocallyOfFiniteType (toOrbit G x ≫ orbitToBase G x) := by
-    rw [toOrbit_toBase]
-    infer_instance
-  exact locallyOfFiniteType_of_comp _ (orbitToBase G x)
-
-/-- The orbit projection is locally of finite presentation, without a reducedness hypothesis. -/
-instance locallyOfFinitePresentation_toOrbit : LocallyOfFinitePresentation (toOrbit G x) := by
-  have : IsLocallyNoetherian (orbitScheme G x) :=
-    LocallyOfFiniteType.isLocallyNoetherian (orbitToBase G x)
-  infer_instance
-
 private theorem flat_toOrbit_of_isAlgClosed [IsAlgClosed k] [IsReduced G.left] :
     Flat (toOrbit G x) := by
   have : JacobsonSpace (orbitScheme G x) :=
@@ -86,18 +72,6 @@ instance flat_toOrbit [GeometricallyReduced G.hom] : Flat (toOrbit G x) := by
   exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
     (isPullback_toOrbit_baseChange f G x)
     (flat_toOrbit_of_isAlgClosed ((Over.pullback f).obj G) _)
-
-/-- The orbit projection onto the orbit scheme is locally of finite type. -/
-instance locallyOfFiniteType_orbitProjection_left :
-    LocallyOfFiniteType (orbitProjection G x).left := by
-  rw [orbitProjection_left]
-  infer_instance
-
-/-- The orbit projection onto the orbit scheme is locally of finite presentation. -/
-instance locallyOfFinitePresentation_orbitProjection_left :
-    LocallyOfFinitePresentation (orbitProjection G x).left := by
-  rw [orbitProjection_left]
-  infer_instance
 
 /-- Over any field, the orbit projection from a geometrically reduced finite-type group onto
 any orbit scheme is flat. -/

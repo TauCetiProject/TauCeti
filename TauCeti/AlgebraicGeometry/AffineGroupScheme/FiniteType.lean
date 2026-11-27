@@ -118,12 +118,6 @@ instance locallyOfFiniteType_spec_asOver_hom
     LocallyOfFiniteType ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))).hom :=
   (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec R H).mp inferInstance
 
-/-- The underlying scheme of `(Spec H).asOver (Spec R)` is quasi-compact. -/
-instance compactSpace_spec_asOver_left
-    (R : Type u) [CommRing R] (H : CommHopfAlgCat.{u} R) :
-    CompactSpace ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))).left :=
-  inferInstanceAs (CompactSpace (Spec (CommRingCat.of H)))
-
 /-- Under the affine Hopf/group-scheme anti-equivalence, the inverse image of the finite-type
 scheme property is the finite-type coordinate-algebra property. -/
 theorem finiteTypeAffineGroupSchemeProperty_inverseImage

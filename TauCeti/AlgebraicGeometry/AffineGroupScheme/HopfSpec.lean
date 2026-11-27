@@ -206,6 +206,11 @@ lemma hopfSpec_obj_eq_asOver (H : CommHopfAlgCat.{u} R) :
       Grp.mk ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) :=
   rfl
 
+/-- The underlying scheme of `(Spec H).asOver (Spec R)` is quasi-compact. -/
+instance compactSpace_spec_asOver_left (H : CommHopfAlgCat.{u} R) :
+    CompactSpace ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))).left :=
+  inferInstanceAs (CompactSpace (Spec (CommRingCat.of H)))
+
 /-- The unit of a Hopf spectrum is induced by the counit of its coordinate Hopf algebra. -/
 @[simp]
 lemma hopfSpec_obj_one_left (H : CommHopfAlgCat.{u} R) :

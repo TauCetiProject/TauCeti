@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import TauCeti.AlgebraicGeometry.GroupAction.LocallyClosed
 public import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.LocallyClosed
@@ -130,6 +131,19 @@ instance : IsSchemeTheoreticallyDominant (toOrbit G x) := by
 
 instance : LocallyOfFiniteType (orbitToBase G x) := by
   rw [orbitToBase_def]
+  infer_instance
+
+/-- The orbit projection is locally of finite type, without a reducedness hypothesis. -/
+instance locallyOfFiniteType_toOrbit : LocallyOfFiniteType (toOrbit G x) := by
+  have : LocallyOfFiniteType (toOrbit G x ≫ orbitToBase G x) := by
+    rw [toOrbit_toBase]
+    infer_instance
+  exact locallyOfFiniteType_of_comp _ (orbitToBase G x)
+
+/-- The orbit projection is locally of finite presentation, without a reducedness hypothesis. -/
+instance locallyOfFinitePresentation_toOrbit : LocallyOfFinitePresentation (toOrbit G x) := by
+  have : IsLocallyNoetherian (orbitScheme G x) :=
+    LocallyOfFiniteType.isLocallyNoetherian (orbitToBase G x)
   infer_instance
 
 instance : CompactSpace (orbitScheme G x) :=
