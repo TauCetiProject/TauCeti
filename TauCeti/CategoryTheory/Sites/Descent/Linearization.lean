@@ -29,8 +29,9 @@ Restricting `φ` along a point `(g, x) : Y ⟶ G ⊗ X` gives the linearization 
 `LinearizedObject.hom D g x gx h : gx^* M ⟶ x^* M` where `h : g • x = gx`. The cocycle and unit
 conditions become multiplicativity `φ(g₁, g₂ • x) ≫ φ(g₂, x) = φ(g₁ * g₂, x)`
 (`LinearizedObject.hom_comp`) and `φ(1, x) = 1` (`LinearizedObject.hom_one`), and conversely such
-a compatible family of morphisms defines a linearization (`LinearizedObject.mk'`). This pointwise
-description gives the two basic constructions:
+a compatible family of morphisms whose member at the universal point `(pr₁, pr₂)` is an isomorphism
+defines a linearization (`LinearizedObject.mk'`); invertibility is automatic when `G` is a group,
+but not for a general monoid. This pointwise description gives the two basic constructions:
 
 * `LinearizedObject.ofObj`: an object `M` pulled back from the terminal object along
   `t : X ⟶ 𝟙_ C` carries the trivial linearization, since `γ ≫ t = pr₂ ≫ t`; this is the functor
@@ -54,7 +55,7 @@ Christian Merten, of which linearizations are the analogue for the action groupo
 * The Stacks Project, Chapter *Groupoid Schemes*, Section *Equivariant quasi-coherent sheaves*.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 universe v' v u' u
 
@@ -130,8 +131,7 @@ lemma hom_one ⦃Y : C⦄ (x : Y ⟶ X) : D.hom 1 x x (one_smul _ x) = 𝟙 _ :=
   have := congrArg (fun φ ↦ pullHom φ x x x) D.unit
   simp only [pullHom_pullHom, pullHom_id_self] at this
   rw [← this]
-  simp only [hom]
-  congr 1
+  simp only [hom, h]
 
 /-- The linearizations at points are multiplicative: `φ(g₁, g₂ • x) ≫ φ(g₂, x) = φ(g₁ * g₂, x)`. -/
 @[reassoc (attr := simp)]
@@ -206,8 +206,8 @@ lemma Hom.comm_hom {D₁ D₂ : F.LinearizedObject G X} (φ : D₁ ⟶ D₂) ⦃
   rwa [pullHom_comp, pullHom_comp, pullHom_map, pullHom_map] at this
 
 /-- An isomorphism of linearized objects, from an isomorphism of the underlying objects compatible
-with the linearizations. -/
-@[simps]
+with the linearizations. Exposed so that its `simps` lemmas are definitional. -/
+@[expose, simps]
 def isoMk {D₁ D₂ : F.LinearizedObject G X} (e : D₁.obj ≅ D₂.obj)
     (comm : (F.map γ[G,X].op.toLoc).toFunctor.map e.hom ≫ D₂.iso.hom =
       D₁.iso.hom ≫ (F.map (snd G X).op.toLoc).toFunctor.map e.hom) : D₁ ≅ D₂ where
@@ -221,8 +221,9 @@ def isoMk {D₁ D₂ : F.LinearizedObject G X} (e : D₁.obj ≅ D₂.obj)
           Iso.hom_inv_id_map_assoc, comm] }
 
 variable (F G X) in
-/-- The forgetful functor from linearized objects to objects of `F` over `X`. -/
-@[simps]
+/-- The forgetful functor from linearized objects to objects of `F` over `X`. Exposed so that its
+`simps` lemmas are definitional. -/
+@[expose, simps]
 def forget : F.LinearizedObject G X ⥤ F.obj (.mk (op X)) where
   obj D := D.obj
   map φ := φ.hom
@@ -252,7 +253,9 @@ variable (obj : F.obj (.mk (op X)))
     φ g₁ x₂ x₁ h₁ ≫ φ g₂ x₃ x₂ h₂ = φ (g₁ * g₂) x₃ x₁ (by rw [mul_smul, h₂, h₁]))
 
 /-- A linearized object from a family of morphisms `(g • x)^* M ⟶ x^* M` indexed by all points
-`(g, x)` of `G ⊗ X`, compatible with pullback, trivial at `g = 1` and multiplicative in `g`. -/
+`(g, x)` of `G ⊗ X`, compatible with pullback, trivial at `g = 1` and multiplicative in `g`, whose
+member at the universal point `(pr₁, pr₂)` is an isomorphism (`hφ`). For a monoid `G` this last
+condition does not follow from the others. -/
 abbrev mk' : F.LinearizedObject G X where
   obj := obj
   iso := asIso (φ (fst G X) (snd G X) γ[G,X] (by simp [CategoryTheory.Hom.smul_def]))
@@ -294,8 +297,10 @@ open LinearizedObject
 
 /-- The linearized object `t^* M`, for `t : X ⟶ 𝟙_ C` and an object `M` of `F` over the terminal
 object, with the linearization given by the comparison isomorphisms of `F`: both `γ ≫ t` and
-`pr₂ ≫ t` are the morphism `G ⊗ X ⟶ 𝟙_ C`. -/
-abbrev LinearizedObject.ofObj (M : F.obj (.mk (op (𝟙_ C)))) : F.LinearizedObject G X :=
+`pr₂ ≫ t` are the morphism `G ⊗ X ⟶ 𝟙_ C`. Exposed because the statement of
+`LinearizedObject.ofObj_hom` needs its underlying object to reduce to `t^* M`. -/
+@[expose]
+def LinearizedObject.ofObj (M : F.obj (.mk (op (𝟙_ C)))) : F.LinearizedObject G X :=
   mk' ((F.map (toUnit X).op.toLoc).toFunctor.obj M)
     (fun Y _ x gx _ ↦
       (F.mapComp' (toUnit X).op.toLoc gx.op.toLoc (toUnit Y).op.toLoc
@@ -309,9 +314,26 @@ abbrev LinearizedObject.ofObj (M : F.obj (.mk (op (𝟙_ C)))) : F.LinearizedObj
     (fun Y x ↦ by simp)
     (fun Y _ _ _ _ _ _ _ ↦ by simp)
 
+/-- The underlying object of `LinearizedObject.ofObj F G X M` is `t^* M`. -/
+@[simp]
+lemma LinearizedObject.ofObj_obj (M : F.obj (.mk (op (𝟙_ C)))) :
+    (ofObj F G X M).obj = (F.map (toUnit X).op.toLoc).toFunctor.obj M := rfl
+
+/-- The trivial linearization at `(g, x)` is the composite of the comparison isomorphisms
+`(g • x)^* t^* M ≅ t^* M ≅ x^* t^* M` of `F`. -/
+lemma LinearizedObject.ofObj_hom (M : F.obj (.mk (op (𝟙_ C)))) ⦃Y : C⦄ (g : Y ⟶ G)
+    (x gx : Y ⟶ X) (h : g • x = gx) :
+    (ofObj F G X M).hom g x gx h =
+      (F.mapComp' (toUnit X).op.toLoc gx.op.toLoc (toUnit Y).op.toLoc
+          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit])).inv.toNatTrans.app M ≫
+        (F.mapComp' (toUnit X).op.toLoc x.op.toLoc (toUnit Y).op.toLoc
+          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit])).hom.toNatTrans.app M := by
+  unfold ofObj
+  exact mk'_hom _ _ _ _ _ _ _ _ _ _
+
 /-- Pulling back objects of `F` from the terminal object to `X`, with their trivial
-linearizations. -/
-@[simps]
+linearizations. Exposed so that its `simps` lemmas are definitional. -/
+@[expose, simps]
 def toLinearizedObject : F.obj (.mk (op (𝟙_ C))) ⥤ F.LinearizedObject G X where
   obj M := .ofObj F G X M
   map {M M'} f :=
@@ -327,6 +349,7 @@ lemma LinearizedObject.ofObj_comm_iff {M M' : F.obj (.mk (op (𝟙_ C)))}
         (ofObj F G X M).iso.hom ≫ (F.map (snd G X).op.toLoc).toFunctor.map α ↔
       pullHom α γ[G,X] (toUnit (G ⊗ X)) (toUnit (G ⊗ X)) (comp_toUnit _) (comp_toUnit _) =
         pullHom α (snd G X) (toUnit (G ⊗ X)) (toUnit (G ⊗ X)) (comp_toUnit _) (comp_toUnit _) := by
+  unfold ofObj
   rw [mk'_iso_hom, mk'_iso_hom, pullHom, pullHom, ← cancel_epi
     ((F.mapComp' (toUnit X).op.toLoc γ[G,X].op.toLoc (toUnit (G ⊗ X)).op.toLoc
       (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit]; rfl)).hom.toNatTrans.app M),
@@ -344,8 +367,10 @@ open LinearizedObject
 variable {F G X} {Z : C} [ModObj G Z] (f : X ⟶ Z) [IsModHom G f]
 
 /-- The pullback `f^* M` of a linearized object `M` along a `G`-equivariant morphism `f`, with the
-linearization at `(g, x)` given by that of `M` at `(g, x ≫ f)`. -/
-abbrev LinearizedObject.pull (D : F.LinearizedObject G Z) : F.LinearizedObject G X :=
+linearization at `(g, x)` given by that of `M` at `(g, x ≫ f)`. Exposed because the statement of
+`LinearizedObject.pull_hom` needs its underlying object to reduce to `f^* M`. -/
+@[expose]
+def LinearizedObject.pull (D : F.LinearizedObject G Z) : F.LinearizedObject G X :=
   mk' ((F.map f.op.toLoc).toFunctor.obj D.obj)
     (fun Y g x gx h ↦
       (F.mapComp' f.op.toLoc gx.op.toLoc (gx ≫ f).op.toLoc (by simp)).inv.toNatTrans.app D.obj ≫
@@ -375,18 +400,22 @@ lemma LinearizedObject.pull_hom (D : F.LinearizedObject G Z) ⦃Y : C⦄ (g : Y 
     (D.pull f).hom g x gx h =
       (F.mapComp' f.op.toLoc gx.op.toLoc (gx ≫ f).op.toLoc (by simp)).inv.toNatTrans.app D.obj ≫
         D.hom g (x ≫ f) (gx ≫ f) (by rw [← h, IsModHom.map_smul]) ≫
-        (F.mapComp' f.op.toLoc x.op.toLoc (x ≫ f).op.toLoc (by simp)).hom.toNatTrans.app D.obj :=
-  mk'_hom _ _ _ _ _ _ _ _ _ _
+        (F.mapComp' f.op.toLoc x.op.toLoc (x ≫ f).op.toLoc (by simp)).hom.toNatTrans.app D.obj := by
+  unfold pull
+  exact mk'_hom _ _ _ _ _ _ _ _ _ _
 
 variable (F G) in
-/-- Pullback of linearized objects along a `G`-equivariant morphism. -/
-@[simps]
+/-- Pullback of linearized objects along a `G`-equivariant morphism. Exposed so that its `simps`
+lemmas are definitional. -/
+@[expose, simps]
 def LinearizedObject.pullFunctor : F.LinearizedObject G Z ⥤ F.LinearizedObject G X where
   obj D := D.pull f
   map {D₁ D₂} φ :=
     { hom := (F.map f.op.toLoc).toFunctor.map φ.hom
       comm := by
-        rw [← hom_fst_snd, ← hom_fst_snd, pull_hom, pull_hom, mapComp'_inv_naturality_assoc,
+        rw [← hom_fst_snd, ← hom_fst_snd, pull_hom, pull_hom]
+        dsimp only [pull_obj]
+        rw [mapComp'_inv_naturality_assoc,
           Hom.comm_hom_assoc, Category.assoc, Category.assoc, mapComp'_hom_naturality] }
   map_id _ := hom_ext (Functor.map_id _ _)
   map_comp _ _ := hom_ext (Functor.map_comp _ _ _)
