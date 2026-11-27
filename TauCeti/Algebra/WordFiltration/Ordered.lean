@@ -56,6 +56,14 @@ theorem prod_mem_weightedWordSpan (l : List α) {d : ℕ} (h : (l.map wt).sum �
     (l.map e).prod ∈ weightedWordSpan e wt d :=
   Submodule.subset_span ⟨l, h, rfl⟩
 
+/-- Each letter belongs to the bounded span at its own weight. -/
+theorem mem_weightedWordSpan_self (a : α) : e a ∈ weightedWordSpan e wt (wt a) := by
+  simpa using prod_mem_weightedWordSpan e wt [a] le_rfl
+
+/-- The empty word puts the identity in every bounded word span. -/
+theorem one_mem_weightedWordSpan (d : ℕ) : (1 : A) ∈ weightedWordSpan e wt d := by
+  simpa using prod_mem_weightedWordSpan e wt [] (Nat.zero_le d)
+
 /-- A word of strictly smaller weight belongs to the strict word span. -/
 theorem prod_mem_weightedWordSpanLT (l : List α) {d : ℕ} (h : (l.map wt).sum < d) :
     (l.map e).prod ∈ weightedWordSpanLT e wt d :=
@@ -80,6 +88,17 @@ theorem weightedWordSpanLT_le_iff {d : ℕ} {p : Submodule ℤ A} :
 theorem weightedWordSpanLT_zero : weightedWordSpanLT e wt 0 = ⊥ := by
   simp [weightedWordSpanLT]
 
+/-- A strict bound at a successor is the bounded span at its predecessor. -/
+@[simp]
+theorem weightedWordSpanLT_succ (d : ℕ) :
+    weightedWordSpanLT e wt (d + 1) = weightedWordSpan e wt d := by
+  simp only [weightedWordSpanLT_def, weightedWordSpan_def, Nat.lt_succ_iff]
+
+/-- Every strict word span lies in the bounded word span with the same bound. -/
+theorem weightedWordSpanLT_le (d : ℕ) :
+    weightedWordSpanLT e wt d ≤ weightedWordSpan e wt d :=
+  (weightedWordSpanLT_le_iff e wt).2 fun l hl => prod_mem_weightedWordSpan e wt l hl.le
+
 /-- The bounded word spans increase with the bound. -/
 theorem weightedWordSpan_mono : Monotone (weightedWordSpan e wt) := by
   intro i j hij
@@ -101,32 +120,26 @@ theorem mul_mem_weightedWordSpan {i j : ℕ} {x y : A}
   exact h (Submodule.mul_mem_mul hx hy)
 
 /-- A strict weight bound remains strict after multiplication on the right. -/
-theorem mul_mem_weightedWordSpanLT_left {i j : ℕ} {x y : A}
+theorem mul_mem_weightedWordSpanLT_right {i j : ℕ} {x y : A}
     (hx : x ∈ weightedWordSpanLT e wt i) (hy : y ∈ weightedWordSpan e wt j) :
     x * y ∈ weightedWordSpanLT e wt (i + j) := by
-  have h : weightedWordSpanLT e wt i * weightedWordSpan e wt j ≤
-      weightedWordSpanLT e wt (i + j) := by
-    rw [weightedWordSpanLT, weightedWordSpan, Submodule.span_mul_span, Submodule.span_le]
-    rintro _ ⟨_, ⟨l, hl, rfl⟩, _, ⟨t, ht, rfl⟩, rfl⟩
-    simpa only [SetLike.mem_coe, List.map_append, List.prod_append] using
-      prod_mem_weightedWordSpanLT e wt (l ++ t) (by
-        simp only [List.map_append, List.sum_append]
-        omega)
-  exact h (Submodule.mul_mem_mul hx hy)
+  cases i with
+  | zero => simp_all
+  | succ i =>
+    rw [weightedWordSpanLT_succ] at hx
+    rw [Nat.succ_add, weightedWordSpanLT_succ]
+    exact mul_mem_weightedWordSpan e wt hx hy
 
 /-- A strict weight bound remains strict after multiplication on the left. -/
-theorem mul_mem_weightedWordSpanLT_right {i j : ℕ} {x y : A}
+theorem mul_mem_weightedWordSpanLT_left {i j : ℕ} {x y : A}
     (hx : x ∈ weightedWordSpan e wt i) (hy : y ∈ weightedWordSpanLT e wt j) :
     x * y ∈ weightedWordSpanLT e wt (i + j) := by
-  have h : weightedWordSpan e wt i * weightedWordSpanLT e wt j ≤
-      weightedWordSpanLT e wt (i + j) := by
-    rw [weightedWordSpan, weightedWordSpanLT, Submodule.span_mul_span, Submodule.span_le]
-    rintro _ ⟨_, ⟨l, hl, rfl⟩, _, ⟨t, ht, rfl⟩, rfl⟩
-    simpa only [SetLike.mem_coe, List.map_append, List.prod_append] using
-      prod_mem_weightedWordSpanLT e wt (l ++ t) (by
-        simp only [List.map_append, List.sum_append]
-        omega)
-  exact h (Submodule.mul_mem_mul hx hy)
+  cases j with
+  | zero => simp_all
+  | succ j =>
+    rw [weightedWordSpanLT_succ] at hy
+    rw [Nat.add_succ, weightedWordSpanLT_succ]
+    exact mul_mem_weightedWordSpan e wt hx hy
 
 /-- All bounded word spans together give the integral module of the generated subring. -/
 theorem iSup_weightedWordSpan :
@@ -155,12 +168,10 @@ private theorem prod_sub_orderedInsert (a : α) (l : List α) :
     · simp [List.orderedInsert_cons, hab]
     · rw [List.orderedInsert_cons, ite_eq_right hab]
       simp only [List.map_cons, List.prod_cons, List.sum_cons]
-      have h₁ := mul_mem_weightedWordSpanLT_left e wt
+      have h₁ := mul_mem_weightedWordSpanLT_right e wt
         (hswap a b (lt_of_not_ge hab)) (prod_mem_weightedWordSpan e wt l le_rfl)
       rw [Nat.add_assoc] at h₁
-      have hb : e b ∈ weightedWordSpan e wt (wt b) := by
-        simpa using prod_mem_weightedWordSpan e wt [b] le_rfl
-      have h₂ := mul_mem_weightedWordSpanLT_right e wt hb ih
+      have h₂ := mul_mem_weightedWordSpanLT_left e wt (mem_weightedWordSpan_self e wt b) ih
       rw [← Nat.add_assoc, Nat.add_comm (wt b) (wt a), Nat.add_assoc] at h₂
       simpa only [sub_mul, mul_sub, mul_assoc, sub_add_sub_cancel] using
         (weightedWordSpanLT e wt (wt a + (wt b + (l.map wt).sum))).add_mem h₁ h₂
@@ -174,9 +185,7 @@ theorem prod_sub_insertionSort_mem_weightedWordSpanLT (l : List α) :
   | nil => simp
   | cons a l ih =>
     simp only [List.insertionSort_cons, List.map_cons, List.prod_cons, List.sum_cons]
-    have ha : e a ∈ weightedWordSpan e wt (wt a) := by
-      simpa using prod_mem_weightedWordSpan e wt [a] le_rfl
-    have h₁ := mul_mem_weightedWordSpanLT_right e wt ha ih
+    have h₁ := mul_mem_weightedWordSpanLT_left e wt (mem_weightedWordSpan_self e wt a) ih
     have h₂ := prod_sub_orderedInsert e wt key hswap a
       (l.insertionSort (fun a b => key a ≤ key b))
     rw [((List.perm_insertionSort (fun a b => key a ≤ key b) l).map wt).sum_eq] at h₂
@@ -325,8 +334,8 @@ theorem prod_mem_orderedFactorSpan_of_pairwise
         simpa only [← ht, List.map_map, Function.comp_def] using h hm
 
 /-- Integral word straightening: bounded words and increasing products of bounded total
-exponent have the same integral span. The two hypotheses separate distinct-index exchanges
-from compression at a single index. -/
+exponent have the same integral span. The normalization `hzero`, distinct-index exchanges
+`hswap`, and single-index law `hsame` supply the identity factors, sorting, and compression. -/
 theorem weightedWordSpan_eq_orderedFactorSpan
     (hzero : ∀ i, g i 0 = 1)
     (hswap : ∀ i j, i < j → ∀ m n,
@@ -373,6 +382,8 @@ theorem span_orderedFactor_eq_subringClosure
   rw [← iSup_orderedFactorSpan]
   simp_rw [← weightedWordSpan_eq_orderedFactorSpan g hzero hswap hsame]
   rw [iSup_weightedWordSpan, Algebra.adjoin_int]
+  -- Both integral submodules have exactly the underlying set of the generated subring.
+  ext x
   rfl
 
 /-- With no coordinates, the empty product still contributes the integral scalars. -/
