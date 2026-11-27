@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Fourier.Basic
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.HilbertBasis
-public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Schwartz
+public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Schwartz.Basic
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
 /-!

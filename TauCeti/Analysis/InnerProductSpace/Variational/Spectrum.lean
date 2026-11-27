@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 public import TauCeti.Analysis.Variational.QuadraticEnergy
 import TauCeti.Analysis.Normed.Operator.Coercive
 import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
+import TauCeti.Order.Northcott.Enumeration
 
 /-!
 # The spectrum of a coercive variational problem
@@ -84,6 +85,9 @@ eigenfunction.
   needed when `S` is injective.
 * `IsCoercive.exists_hilbertBasis_forall_apply_eq_smul_inner`: the variational eigenfunctions
   form an orthonormal basis of `H`.
+* `IsCoercive.exists_hilbertBasis_nat_monotone`: when `H` is infinite-dimensional, that basis is
+  indexed by `ℕ` with nondecreasing eigenvalues tending to infinity that exhaust the variational
+  spectrum.
 
 ## References
 
@@ -96,7 +100,7 @@ public section
 
 noncomputable section
 
-open Module.End UniformSpace
+open Filter Module.End UniformSpace
 open scoped InnerProductSpace
 
 namespace IsCoercive
@@ -678,5 +682,58 @@ theorem finite_setOf_le_of_orthonormal (hB : IsCoercive B) {J : V →L[ℝ] H}
     refine hfin.subset fun i hi ↦ ?_
     simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, abs_inv, abs_of_pos (hκ i)] at hi ⊢
     exact inv_anti₀ (hκ i) hi
+
+/-- **The variational eigenvalues as a nondecreasing sequence.** For a symmetric form and a
+compact `J` of dense range into an infinite-dimensional Hilbert space `H`, there are a
+nondecreasing sequence `0 < κ₀ ≤ κ₁ ≤ ⋯ → ∞` and an orthonormal basis `(bₖ)` of `H` with
+`bₖ = J uₖ` and `B uₖ v = κₖ ⟪J uₖ, J v⟫` for every `v`. The sequence lists the variational
+spectrum with multiplicity: `B w v = κ ⟪J w, J v⟫` has a nonzero solution `w` exactly when
+`κ = κₖ` for some `k`. The solution operator is diagonal, `S h = ∑ₖ κₖ⁻¹ ⟪bₖ, h⟫ bₖ`. This lists
+the basis of `IsCoercive.exists_hilbertBasis_forall_apply_eq_smul_inner`, whose eigenvalues have
+finite sublevel sets (`IsCoercive.finite_setOf_le_of_orthonormal`), in nondecreasing order. -/
+theorem exists_hilbertBasis_nat_monotone [CompleteSpace H] (hB : IsCoercive B)
+    {J : V →L[ℝ] H} (hJ : IsCompactOperator J) (hJdense : DenseRange J)
+    (hsymm : ∀ u v : V, B u v = B v u) (hH : ¬ FiniteDimensional ℝ H) :
+    ∃ (b : HilbertBasis ℕ ℝ H) (kappa : ℕ → ℝ) (u : ℕ → V),
+      Monotone kappa ∧ Tendsto kappa atTop atTop ∧ (∀ k, 0 < kappa k) ∧
+      (∀ k, J (u k) = b k) ∧
+      (∀ (k : ℕ) (v : V), B (u k) v = kappa k * ⟪J (u k), J v⟫_ℝ) ∧
+      (∀ kappa' : ℝ, (∃ w : V, w ≠ 0 ∧ ∀ v : V, B w v = kappa' * ⟪J w, J v⟫_ℝ) ↔
+        ∃ k, kappa k = kappa') ∧
+      ∀ h : H, HasSum (fun k => (kappa k)⁻¹ • b.repr h k • b k) (hB.formSolutionOperator J h) := by
+  obtain ⟨s, B', kappa, u, hB', hpos, hune, hJu, heq, hsum⟩ :=
+    hB.exists_hilbertBasis_forall_apply_eq_smul_inner hJ hJdense hsymm
+  have hJu' (x : s) : J (u x) = B' x := by rw [hJu, hB']
+  have hfin (R : ℝ) : {x : s | kappa x ≤ R}.Finite :=
+    hB.finite_setOf_le_of_orthonormal hJ B'.orthonormal hpos hJu' heq R
+  -- The basis is infinite, since `H` is infinite-dimensional.
+  have : Infinite s := by
+    rw [← not_finite_iff_infinite]
+    intro hs
+    have := Fintype.ofFinite s
+    exact hH (Module.Finite.of_basis B'.toOrthonormalBasis.toBasis)
+  obtain ⟨e, he⟩ := TauCeti.exists_equiv_monotone_comp_of_finite_setOf_le kappa hfin
+  -- Reindex the eigenbasis along the nondecreasing enumeration `e`.
+  let b := B'.reindex e.symm
+  have hb (k : ℕ) : b k = B' (e k) := by simp [b]
+  -- A variational eigenvalue occurs in the sequence: otherwise its eigenfunction would be
+  -- orthogonal to the whole eigenbasis.
+  have hiff (kappa' : ℝ) :
+      (∃ w : V, w ≠ 0 ∧ ∀ v : V, B w v = kappa' * ⟪J w, J v⟫_ℝ) ↔ ∃ k, kappa (e k) = kappa' := by
+    refine ⟨fun ⟨w, hw, hweq⟩ ↦ ?_, fun ⟨k, hk⟩ ↦ ⟨u (e k), hune (e k), hk ▸ heq (e k)⟩⟩
+    by_contra! hne
+    refine hB.apply_ne_zero_of_forall_apply_eq_smul_inner J hw hweq
+      (B'.repr.map_eq_zero_iff.1 (lp.ext (funext fun x ↦ ?_)))
+    have h := hsymm w (u x)
+    rw [hweq, heq, hJu', real_inner_comm] at h
+    rw [HilbertBasis.repr_apply_apply, lp.coeFn_zero, Pi.zero_apply]
+    exact (mul_eq_mul_right_iff.1 h.symm).resolve_left (by simpa using hne (e.symm x))
+  refine ⟨b, kappa ∘ e, u ∘ e, he, TauCeti.tendsto_comp_atTop_of_finite_setOf_le hfin e.injective,
+    fun k ↦ hpos (e k), fun k ↦ by rw [hb]; exact hJu' (e k), fun k v ↦ heq (e k) v, hiff,
+    fun h ↦ ?_⟩
+  convert (e.hasSum_iff).2 (hsum h) using 1
+  funext k
+  simp only [Function.comp_apply, b, HilbertBasis.repr_reindex_apply, HilbertBasis.reindex_apply,
+    Equiv.symm_symm]
 
 end IsCoercive

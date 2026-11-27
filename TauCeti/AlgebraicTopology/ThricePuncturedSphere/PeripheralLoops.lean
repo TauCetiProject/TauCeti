@@ -40,7 +40,8 @@ monodromy of a three-point cover along these elements is the permutation triple 
 * `TauCeti.ThricePuncturedSphere.γ0`, `TauCeti.ThricePuncturedSphere.γ1`: the two loops at `b`.
 * `norm_coe_γ0`, `norm_coe_γ1_sub_one`: `γ0` runs on the circle `|z| = 1/2` and `γ1` on the
   circle `|z − 1| = 1/2`.
-* `γ0_mem_leftOpen`, `γ1_mem_rightOpen`: `γ0` stays in `A` and `γ1` stays in `B`.
+* `γ0_mem_leftOpen`, `γ1_mem_rightOpen`, `γ1_mem_slitPlane`: `γ0` stays in `A` and `γ1` stays in
+  `B` (and hence in `Complex.slitPlane`).
 * `range_γ0_inter_range_γ1`: the two loops meet only at the basepoint.
 * `mob01_basePt`, `mob01_γ0`, `mob01_γ1`: `z ↦ 1 − z` fixes the basepoint and exchanges the two
   loops.
@@ -107,6 +108,10 @@ theorem coe_γ0_eq_exp (t : unitInterval) : (γ0 t : ℂ) = 1 / 2 * exp (2 * π 
 theorem coe_γ1_eq_exp (t : unitInterval) : (γ1 t : ℂ) = 1 - 1 / 2 * exp (2 * π * I * t) := by
   simp [coe_γ1, circleMap, mul_right_comm _ I, sub_eq_add_neg]
 
+/-- Reflecting `γ1` across `1` gives `γ0` pointwise in `ℂ`: `1 - γ1 t = γ0 t`. -/
+theorem one_sub_coe_γ1 (t : unitInterval) : 1 - (γ1 t : ℂ) = (γ0 t : ℂ) := by
+  rw [coe_γ1_eq_exp, coe_γ0_eq_exp]; ring
+
 -- These are not simp lemmas: the coercion formulas and Mathlib's circle-map simp rules already
 -- normalize their left-hand sides, so extra simp attributes would fail the simpNF linter.
 /-- The loop `γ0` lies on the circle of radius `1/2` about `0`. -/
@@ -128,6 +133,10 @@ theorem γ1_mem_rightOpen (t : unitInterval) : γ1 t ∈ rightOpen := by
   have h := re_le_norm (1 - (γ1 t : ℂ))
   rw [norm_sub_rev, norm_coe_γ1_sub_one, sub_re, one_re] at h
   linarith
+
+/-- Along `γ1`, the point `γ1 t` stays in the right half-plane, hence in `Complex.slitPlane`. -/
+theorem γ1_mem_slitPlane (t : unitInterval) : (γ1 t : ℂ) ∈ Complex.slitPlane :=
+  Or.inl (mem_rightOpen.1 (γ1_mem_rightOpen t))
 
 /-- The two peripheral loops meet only at the basepoint: the circles `|z| = 1/2` and
 `|z − 1| = 1/2` are externally tangent at `1/2`. -/

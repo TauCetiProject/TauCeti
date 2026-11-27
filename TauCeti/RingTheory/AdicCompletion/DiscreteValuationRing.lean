@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.AdicCompletion.Regular
+public import TauCeti.RingTheory.AdicCompletion.Regular.Basic
 public import TauCeti.RingTheory.AdicCompletion.LocalRing
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
