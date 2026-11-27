@@ -65,12 +65,12 @@ on the ends every member of the path of data is the end data
 
 Moving the map is moving the data. With `d = u' - u`, the operator along `u'` is the operator along
 `u` of the data `J(z, y + d(z))`, `K_s(z, y + d(z))` and `K_t(z, y + d(z)) - ω(∂t d(z), y)`
-(`TauCeti.SymplecticForm.floerConformalSobolevOperator_add`): the target point is moved by `d(z)`,
-and the linear correction of `K_t`, whose Hamiltonian vector field is `-∂t d(z)`, keeps the slice
-defect `∂t u - X_{K_t}(u)` of the moved map. These data are as regular along `u` as the original
-data along `u'`, the correction being `C²` because `d` is `C³`, and they are the original data
-wherever `d` vanishes near `z`, in particular far out on the ends. So the invariance under the data
-gives the invariance under the map.
+(`TauCeti.SymplecticForm.floerConformalSobolevOperator_fun_add_eq_comp_add_right`): the target
+point is moved by `d(z)`, and the linear correction of `K_t`, whose Hamiltonian vector field is
+`-∂t d(z)`, keeps the slice defect `∂t u - X_{K_t}(u)` of the moved map. These data are as regular
+along `u` as the original data along `u'`, the correction being `C²` because `d` is `C³`, and they
+are the original data wherever `d` vanishes near `z`, in particular far out on the ends. So the
+invariance under the data gives the invariance under the map.
 
 ## References
 
@@ -595,15 +595,6 @@ private theorem sub_eq_zero_and_fderiv_sub_eq_zero_of_lt_fst_positiveEndCoord
     simp [huu' q w hw hwR.le]
   exact ⟨hev.eq_of_nhds, by rw [hev.fderiv_eq]; simp⟩
 
-omit [FiniteDimensional ℝ V] in
-/-- Reading a `Cⁿ` function at the target point moved by a `Cⁿ` map `d` gives a `Cⁿ` function. -/
-private theorem contDiffAt_comp_prodMk_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {g : (ℝ × ℝ) × V → E} {d : ℝ × ℝ → V} {z : ℝ × ℝ} {y : V} {n : WithTop ℕ∞}
-    (hg : ContDiffAt ℝ n g (z, y + d z)) (hd : ContDiffAt ℝ n d z) :
-    ContDiffAt ℝ n (fun p : (ℝ × ℝ) × V ↦ g (p.1, p.2 + d p.1)) (z, y) := by
-  have hd₁ : ContDiffAt ℝ n (d ∘ Prod.fst) (z, y) := hd.comp (z, y) contDiffAt_fst
-  exact hg.comp (z, y) (contDiffAt_fst.prodMk (contDiffAt_snd.add hd₁))
-
 /-- For a `C³` map `d`, the linear functions `ω(∂t d(z), ·)` form a `C²` function of `(z, y)`. -/
 private theorem contDiffAt_apply_fderiv_stdComplexLineImag (ω : SymplecticForm V)
     {d : ℝ × ℝ → V} {z : ℝ × ℝ} (y : V) (hd : ContDiffAt ℝ 3 d z) :
@@ -620,7 +611,8 @@ private theorem contDiffAt_apply_fderiv_stdComplexLineImag (ω : SymplecticForm 
 
 /-- Along a map `u'` with `u' - u` of class `C³` on `S`, the pair-of-pants operator is the operator
 along `u` of the data read at the target point moved by `u' - u`, with `K_t` corrected by
-`-ω(∂t (u' - u), ·)` (`TauCeti.SymplecticForm.floerConformalSobolevOperator_add`). -/
+`-ω(∂t (u' - u), ·)`
+(`TauCeti.SymplecticForm.floerConformalSobolevOperator_fun_add_eq_comp_add_right`). -/
 private theorem floerConformalSobolevOperator_pairOfPants_eq_of_sub (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u u' : ℝ × ℝ → V}
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
@@ -640,7 +632,8 @@ private theorem floerConformalSobolevOperator_pairOfPants_eq_of_sub (ω : Symple
       rw [hud]; exact (hKt' z hz).comp (u' z) (contDiffAt_const.prodMk contDiffAt_id)
     exact (h.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by norm_num)
   conv_lhs => rw [show u' = fun w ↦ u w + (u' w - u w) from funext fun w ↦ (hud w).symm]
-  exact ω.floerConformalSobolevOperator_add isOpen_thricePuncturedSphereReal _ Ks Kt
+  exact ω.floerConformalSobolevOperator_fun_add_eq_comp_add_right isOpen_thricePuncturedSphereReal _
+    Ks Kt
     (fun z hz ↦ (hu z hz).differentiableAt one_ne_zero)
     (fun z hz ↦ (hd z hz).differentiableAt (by norm_num)) hKtd
 
@@ -649,8 +642,9 @@ agree, for maps `u` and `u'` equal on the ends. This is
 `isFredholm_floerConformalSobolevOperator_iff_of_pairOfPants_data` and
 `index_floerConformalSobolevOperator_eq_of_pairOfPants_data` for the data read at the moved target
 point `y + d(z)`, `d = u' - u`, with `K_t` corrected by `-ω(∂t d(z), ·)`: along `u` these data have
-the operator of the original data along `u'` (`floerConformalSobolevOperator_add`), and they agree
-with the original data where `d` vanishes near `z`, in particular far out on the ends. -/
+the operator of the original data along `u'`
+(`floerConformalSobolevOperator_fun_add_eq_comp_add_right`), and they agree with the original data
+where `d` vanishes near `z`, in particular far out on the ends. -/
 private theorem isFredholm_iff_and_index_eq_of_pairOfPants_map (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {L : Puncture → ℝ≥0}
@@ -735,13 +729,13 @@ private theorem isFredholm_iff_and_index_eq_of_pairOfPants_map (ω : SymplecticF
   -- The new data are as regular along `u` as the original data along `u'`.
   have hJ'' (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) : ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z) :=
-    contDiffAt_comp_prodMk_add (by rw [hud]; exact hJ' z hz) ((hd z hz).of_le (by norm_num))
+    ContDiffAt.comp_prodMk_add (by rw [hud]; exact hJ' z hz) ((hd z hz).of_le (by norm_num))
   have hKs'' (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :
       ContDiffAt ℝ 2 (uncurry Ks') (z, u z) :=
-    contDiffAt_comp_prodMk_add (by rw [hud]; exact hKs' z hz) ((hd z hz).of_le (by norm_num))
+    ContDiffAt.comp_prodMk_add (by rw [hud]; exact hKs' z hz) ((hd z hz).of_le (by norm_num))
   have hKt'' (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :
       ContDiffAt ℝ 2 (uncurry Kt') (z, u z) :=
-    (contDiffAt_comp_prodMk_add (by rw [hud]; exact hKt' z hz) ((hd z hz).of_le (by norm_num))).sub
+    (ContDiffAt.comp_prodMk_add (by rw [hud]; exact hKt' z hz) ((hd z hz).of_le (by norm_num))).sub
       (contDiffAt_apply_fderiv_stdComplexLineImag ω (u z) (hd z hz))
   have hc'' (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) : ω.Compatible (J' z (u z)) := by
     simpa only [J', hud] using hc' z hz

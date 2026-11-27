@@ -48,7 +48,8 @@ of a test section `ξ` is the `L²` norm of `D_u ξ`
 coefficient field over `U` (`TauCeti.SymplecticForm.floerConformalSobolevOperator_congr_of_eqOn`).
 Moving the map `u` by `d` is moving the data: the realization along `u + d` is that along `u` of
 the data read at the moved target point `y + d(z)`, with `K_t` corrected by the linear function
-`-ω(∂t d(z), ·)` (`TauCeti.SymplecticForm.floerConformalSobolevOperator_add`).
+`-ω(∂t d(z), ·)`
+(`TauCeti.SymplecticForm.floerConformalSobolevOperator_fun_add_eq_comp_add_right`).
 
 An estimate of the weighted energy of test sections by `∫ ‖D_u ξ‖²` and an `L²` norm on a compact
 set gives the estimate of Peetre's argument
@@ -123,8 +124,9 @@ theorem floerConformalJetCoeff_congr_data (ω : SymplecticForm V) (ρ : ℝ × �
 
 /-- **Moving the map is moving the data.** The coefficient field on conformal jets at `z` along the
 map `u + d` is that along `u` of the data read at the moved target point `y + d(z)`, with `K_t`
-corrected by the linear function `-ω(∂t d(z), ·)` (`floerLinearizationCoeff_add`). -/
-theorem floerConformalJetCoeff_add (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+corrected by the linear function `-ω(∂t d(z), ·)`
+(`floerLinearizationCoeff_fun_add_eq_comp_add_right`). -/
+theorem floerConformalJetCoeff_fun_add_eq_comp_add_right (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u d : ℝ × ℝ → V} {z : ℝ × ℝ}
     (hu : DifferentiableAt ℝ u z) (hd : DifferentiableAt ℝ d z)
     (hKt : ∀ᶠ y in 𝓝 (u z + d z), DifferentiableAt ℝ (Kt z) y) :
@@ -132,7 +134,7 @@ theorem floerConformalJetCoeff_add (ω : SymplecticForm V) (ρ : ℝ × ℝ → 
       ω.floerConformalJetCoeff ρ (fun w y ↦ J w (y + d w)) (fun w y ↦ Ks w (y + d w))
         (fun w y ↦ Kt w (y + d w) - ω (fderiv ℝ d w stdComplexLineImag) y) u z := by
   rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
-    ω.floerLinearizationCoeff_add J Ks Kt hu hd hKt]
+    ω.floerLinearizationCoeff_fun_add_eq_comp_add_right J Ks Kt hu hd hKt]
 
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
@@ -383,16 +385,16 @@ theorem floerConformalSobolevOperator_congr_of_eqOn (ω : SymplecticForm V) (hU 
 differentiable and each `K_t(z)` is differentiable near `u(z) + d(z)`, the conformal Sobolev
 realization of the linearized Floer operator along `u + d` is that along `u` of the data read at
 the moved target point `y + d(z)`, with `K_t` corrected by the linear function `-ω(∂t d(z), ·)`
-(`floerConformalJetCoeff_add`). -/
-theorem floerConformalSobolevOperator_add (ω : SymplecticForm V) (hU : IsOpen U)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u d : ℝ × ℝ → V}
+(`floerConformalJetCoeff_fun_add_eq_comp_add_right`). -/
+theorem floerConformalSobolevOperator_fun_add_eq_comp_add_right (ω : SymplecticForm V)
+    (hU : IsOpen U) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u d : ℝ × ℝ → V}
     (hu : ∀ z ∈ U, DifferentiableAt ℝ u z) (hd : ∀ z ∈ U, DifferentiableAt ℝ d z)
     (hKt : ∀ z ∈ U, ∀ᶠ y in 𝓝 (u z + d z), DifferentiableAt ℝ (Kt z) y) :
     ω.floerConformalSobolevOperator U ρ J Ks Kt (fun w ↦ u w + d w) =
       ω.floerConformalSobolevOperator U ρ (fun w y ↦ J w (y + d w)) (fun w y ↦ Ks w (y + d w))
         (fun w y ↦ Kt w (y + d w) - ω (fderiv ℝ d w stdComplexLineImag) y) u :=
   ω.floerConformalSobolevOperator_congr_of_eqOn hU.measurableSet fun z hz ↦
-    ω.floerConformalJetCoeff_add ρ J Ks Kt (hu z hz) (hd z hz) (hKt z hz)
+    ω.floerConformalJetCoeff_fun_add_eq_comp_add_right ρ J Ks Kt (hu z hz) (hd z hz) (hKt z hz)
 
 /-- When the coefficient field on conformal jets is essentially bounded on `U`, the conformal
 Sobolev realization of the linearized Floer operator acts pointwise on an `L²` jet `x ∈ H1` by the

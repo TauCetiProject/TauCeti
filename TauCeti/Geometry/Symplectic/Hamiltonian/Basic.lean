@@ -268,19 +268,6 @@ theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
   intro v
   exact (LinearMap.toContinuousBilinearMap_apply _ a v).symm
 
-/-- Subtracting the linear function `ω(a, ·)` from a Hamiltonian differentiable at `x` subtracts
-`a` from its Hamiltonian vector field at `x`. -/
-theorem hamiltonianVectorField_sub_apply_left (ω : SymplecticForm V) {H : V → ℝ} {x : V}
-    (hH : DifferentiableAt ℝ H x) (a : V) :
-    ω.hamiltonianVectorField (fun y ↦ H y - ω a y) x = ω.hamiltonianVectorField H x - a := by
-  have h : HasFDerivAt (fun y ↦ ω a y) (ω.toBilinForm.toContinuousBilinearMap a) x :=
-    (ω.toBilinForm.toContinuousBilinearMap a).hasFDerivAt
-  rw [eq_comm, eq_hamiltonianVectorField_iff, fderiv_fun_sub hH h.differentiableAt, h.fderiv]
-  intro v
-  rw [_root_.sub_apply, LinearMap.toContinuousBilinearMap_apply,
-    ← ω.apply_hamiltonianVectorField H x v]
-  exact LinearMap.map_sub₂ _ _ _ _
-
 /-- Adding a constant to a Hamiltonian does not change its Hamiltonian vector field. No
 differentiability is needed: `H` and `H + c` are differentiable at the same points. -/
 @[simp]
