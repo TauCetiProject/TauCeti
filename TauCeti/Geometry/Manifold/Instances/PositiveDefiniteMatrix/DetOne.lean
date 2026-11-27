@@ -62,6 +62,8 @@ To state or use these results, `open scoped Matrix.Norms.L2Operator` and enable
   `C^k` into the cone.
 * `Matrix.traceZeroExpDiffeomorph`: the exponential coordinates `X ↦ exp X` on `P₁`, with inverse
   the matrix logarithm.
+* `Matrix.PosDefDetOne.unitaryConj`: conjugation `P ↦ V P Vᴴ` by a unitary matrix, a
+  diffeomorphism of `P₁` since `det (V P Vᴴ) = det P`.
 
 ## References
 
@@ -335,5 +337,50 @@ theorem coe_traceZeroExpDiffeomorph_symm_apply (k : ℕ∞ω) (P : PosDefDetOne 
     (((traceZeroExpDiffeomorph n 𝕜 k).symm P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
       cfc Real.log ((P.val : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) :=
   coe_hermitianExpDiffeomorph_symm_apply k _
+
+/-! ### Unitary conjugation -/
+
+namespace PosDefDetOne
+
+variable (n 𝕜) in
+/-- **Unitary conjugation of the positive-definite matrices of determinant one**: for a unitary
+matrix `V` (an orthogonal matrix when `𝕜 = ℝ`), `P ↦ V P Vᴴ` is a diffeomorphism of the
+positive-definite matrices of determinant one onto themselves, whose inverse is conjugation by `Vᴴ`.
+It is the restriction of the conjugation `Matrix.posDefUnitaryConj` of the positive-definite cone,
+since `det (V P Vᴴ) = det P`. The regularity order `k` can be arbitrary, including analytic. -/
+def unitaryConj (k : ℕ∞ω) (V : unitaryGroup n 𝕜) :
+    PosDefDetOne n 𝕜 ≃ₘ^k⟮𝓘(ℝ, Model n 𝕜), 𝓘(ℝ, Model n 𝕜)⟯ PosDefDetOne n 𝕜 where
+  toEquiv := (posDefUnitaryConj n 𝕜 k V).toEquiv.subtypeEquiv fun P ↦ by
+    rw [Diffeomorph.coe_toEquiv, coe_posDefUnitaryConj_apply,
+      ← inv_eq_left_inv (Unitary.coe_star_mul_self V), det_conj Unitary.isUnit_coe]
+  contMDiff_toFun := contMDiff_subtypeVal_comp_iff.1
+    ((posDefUnitaryConj n 𝕜 k V).contMDiff.comp contMDiff_subtypeVal)
+  contMDiff_invFun := contMDiff_subtypeVal_comp_iff.1
+    ((posDefUnitaryConj n 𝕜 k V).symm.contMDiff.comp contMDiff_subtypeVal)
+
+/-- Conjugation of a positive-definite matrix of determinant one is its conjugation in the
+positive-definite cone. -/
+@[simp]
+theorem coe_unitaryConj_apply (k : ℕ∞ω) (V : unitaryGroup n 𝕜) (P : PosDefDetOne n 𝕜) :
+    (unitaryConj n 𝕜 k V P : posDefOpens n 𝕜) = posDefUnitaryConj n 𝕜 k V P := (rfl)
+
+/-- The inverse of conjugation by `V` is conjugation by `Vᴴ`. -/
+@[simp]
+theorem unitaryConj_symm_apply (k : ℕ∞ω) (V : unitaryGroup n 𝕜) (P : PosDefDetOne n 𝕜) :
+    (unitaryConj n 𝕜 k V).symm P = unitaryConj n 𝕜 k (star V) P :=
+  Subtype.ext (posDefUnitaryConj_symm_apply k V P.val)
+
+/-- Conjugation by the identity matrix is the identity. -/
+@[simp]
+theorem unitaryConj_one_apply (k : ℕ∞ω) (P : PosDefDetOne n 𝕜) : unitaryConj n 𝕜 k 1 P = P :=
+  Subtype.ext (posDefUnitaryConj_one_apply k P.val)
+
+/-- Conjugation is an action of the unitary group: conjugating by `V V'` is conjugating by `V'` and
+then by `V`. -/
+theorem unitaryConj_mul_apply (k : ℕ∞ω) (V V' : unitaryGroup n 𝕜) (P : PosDefDetOne n 𝕜) :
+    unitaryConj n 𝕜 k (V * V') P = unitaryConj n 𝕜 k V (unitaryConj n 𝕜 k V' P) :=
+  Subtype.ext (posDefUnitaryConj_mul_apply k V V' P.val)
+
+end PosDefDetOne
 
 end Matrix

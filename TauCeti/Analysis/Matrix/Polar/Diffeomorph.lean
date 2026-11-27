@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Matrix.Polar.Deformation
 public import TauCeti.Geometry.Manifold.Instances.PositiveDefiniteMatrix.DetOne
 public import TauCeti.Geometry.Manifold.Instances.SpecialLinearGroup
 public import TauCeti.Geometry.Manifold.Instances.Unitary.Special
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 import TauCeti.Geometry.Lie.SpecialLinear.RealEmbedding
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -42,16 +43,17 @@ Reading the Cartan coordinates through the exponential coordinates of the cone
 `A ↦ (U, √(Aᴴ A))`, with inverse `(U, Q) ↦ U Q`.
 
 The coordinates are equivariant under unitary multiplication on both sides: for unitary `V` and
-`W`, the polar coordinates of `V A W` are `(V P Vᴴ, V U W)`. After unfolding the coordinates with
-`Matrix.GeneralLinearGroup.coe_polarDiffeomorph_apply_fst` and
-`Matrix.GeneralLinearGroup.polarDiffeomorph_apply_snd`, this is exactly the equivariance of the
-polar factors, `Units.sqrt_unitary_mul_mul_unitary` and
-`Units.polarUnitary_unitary_mul_mul_unitary`.
+`W`, the polar coordinates of `V A W` are `(V P Vᴴ, V U W)`
+(`Matrix.GeneralLinearGroup.polarDiffeomorph_toUnits_mul_mul_toUnits`), where the unitary group
+acts on the positive-definite cone by the conjugation diffeomorphisms `Matrix.posDefUnitaryConj`.
+This is the equivariance of the polar factors, `Units.sqrt_unitary_mul_mul_unitary` and
+`Units.polarUnitary_unitary_mul_mul_unitary`, read in the coordinates.
 In particular, right multiplication by a unitary matrix only moves the unitary coordinate
 (`Matrix.GeneralLinearGroup.polarDiffeomorph_mul_toUnits`). Dually, the right polar coordinates
 of `V A W` are `(V U W, Wᴴ Q W)`
-(`Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul`,
-`Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_mul_toUnits_snd`).
+(`Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul_mul_toUnits`), and left
+multiplication by a unitary matrix only moves their unitary coordinate
+(`Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul`).
 
 They also restrict to determinant one: `det A = 1` exactly when `det P = 1` and `det U = 1`, because
 `det P = ‖det A‖` is positive, and likewise `det √(Aᴴ A) = ‖det A‖` (`Matrix.det_sqrt_star_mul`).
@@ -69,6 +71,13 @@ inclusion of `SL(n, 𝕜)` is a real smooth embedding
 (`Matrix.SpecialLinearGroup.isSmoothEmbedding_subtypeVal_real`), and the inverse maps
 `(P, U) ↦ P U` and `(U, Q) ↦ U Q` are smooth because their matrix products are.
 
+Both restricted coordinates are equivariant under multiplication by special unitary matrices on
+both sides, with the unitary group acting on `PosDefDetOne n 𝕜` by conjugation
+(`Matrix.PosDefDetOne.unitaryConj`): the polar coordinates of `V g W` are `(V P Vᴴ, V U W)` and its
+right polar coordinates are `(V U W, Wᴴ Q W)`
+(`Matrix.SpecialLinearGroup.polarDiffeomorph_toSL_mul_mul_toSL`,
+`Matrix.SpecialLinearGroup.rightPolarDiffeomorph_toSL_mul_mul_toSL`).
+
 To state or use the smooth structures, `open scoped Matrix.Norms.L2Operator` and enable
 `attribute [local instance] Matrix.l2OpNormedAlgebraReal`.
 
@@ -76,21 +85,27 @@ To state or use the smooth structures, `open scoped Matrix.Norms.L2Operator` and
 
 * `Matrix.GeneralLinearGroup.polarDiffeomorph`: the polar-coordinate diffeomorphism
   `A ↦ (√(A Aᴴ), U)`.
-* `Matrix.GeneralLinearGroup.polarDiffeomorph_mul_toUnits`: right unitary equivariance.
+* `Matrix.GeneralLinearGroup.polarDiffeomorph_toUnits_mul_mul_toUnits`: unitary equivariance,
+  with the one-sided cases `Matrix.GeneralLinearGroup.polarDiffeomorph_toUnits_mul` and
+  `Matrix.GeneralLinearGroup.polarDiffeomorph_mul_toUnits`.
 * `Matrix.GeneralLinearGroup.exp_cartanDiffeomorph_symm_apply_snd`: the comparison with the
   Cartan coordinates `A = U exp X`, namely `exp X = Uᴴ P U`.
 * `Matrix.GeneralLinearGroup.rightPolarDiffeomorph`: the right polar-coordinate diffeomorphism
   `A ↦ (U, √(Aᴴ A))`.
 * `Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_apply_snd_eq_star_mul_mul`: the right
   positive coordinate is `Uᴴ P U`.
-* `Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul`,
-  `Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_mul_toUnits_snd`: unitary equivariance of
-  the right polar coordinates.
+* `Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul_mul_toUnits`: unitary
+  equivariance of the right polar coordinates, with the one-sided cases
+  `Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul` and
+  `Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_mul_toUnits_snd`.
 * `Matrix.GeneralLinearGroup.det_eq_one_iff_polarDiffeomorph`: the determinant-one condition in
   polar coordinates.
 * `Matrix.SpecialLinearGroup.polarDiffeomorph`, `Matrix.SpecialLinearGroup.rightPolarDiffeomorph`:
   the polar and right polar coordinates on `SL(n, 𝕜)`, with `polarDiffeomorph_eq_iff` and
   `rightPolarDiffeomorph_eq_iff` characterizing them as the unique factorizations.
+* `Matrix.SpecialLinearGroup.polarDiffeomorph_toSL_mul_mul_toSL`,
+  `Matrix.SpecialLinearGroup.rightPolarDiffeomorph_toSL_mul_mul_toSL`: special unitary
+  equivariance of the polar coordinates on `SL(n, 𝕜)`.
 
 ## References
 
@@ -186,6 +201,24 @@ theorem polarDiffeomorph_eq_iff (A : GL n 𝕜) (p : posDefOpens n 𝕜 × unita
     exact (polarDiffeomorph n 𝕜).apply_symm_apply p
 
 /-! ### Unitary equivariance -/
+
+/-- **Unitary equivariance of the polar coordinates.** For unitary matrices `V` and `W`, the polar
+coordinates of `V A W` are `(V P Vᴴ, V U W)`, where `(P, U)` are the polar coordinates of `A`. -/
+theorem polarDiffeomorph_toUnits_mul_mul_toUnits (V : unitaryGroup n 𝕜) (A : GL n 𝕜)
+    (W : unitaryGroup n 𝕜) :
+    polarDiffeomorph n 𝕜 (Unitary.toUnits V * A * Unitary.toUnits W) =
+      (posDefUnitaryConj n 𝕜 ∞ V (polarDiffeomorph n 𝕜 A).1,
+        V * (polarDiffeomorph n 𝕜 A).2 * W) := by
+  refine Prod.ext (Subtype.ext (Subtype.ext ?_)) (Units.polarUnitary_unitary_mul_mul_unitary A V W)
+  rw [coe_posDefUnitaryConj_apply, coe_polarDiffeomorph_apply_fst, coe_polarDiffeomorph_apply_fst]
+  exact Units.sqrt_unitary_mul_mul_unitary A V W
+
+/-- Left multiplication by a unitary matrix `V` conjugates the positive polar coordinate by `V`
+and multiplies the unitary polar coordinate on the left. -/
+theorem polarDiffeomorph_toUnits_mul (V : unitaryGroup n 𝕜) (A : GL n 𝕜) :
+    polarDiffeomorph n 𝕜 (Unitary.toUnits V * A) =
+      (posDefUnitaryConj n 𝕜 ∞ V (polarDiffeomorph n 𝕜 A).1, V * (polarDiffeomorph n 𝕜 A).2) := by
+  simpa using polarDiffeomorph_toUnits_mul_mul_toUnits V A 1
 
 /-- Right multiplication by a unitary matrix fixes the positive polar coordinate and multiplies
 the unitary polar coordinate on the right. -/
@@ -302,6 +335,21 @@ theorem coe_rightPolarDiffeomorph_mul_toUnits_snd (A : GL n 𝕜) (W : unitaryGr
   simpa only [Unitary.coe_star, star_star] using
     CFC.sqrt_unitary_mul_mul_star (star W) (star (A : Matrix n n 𝕜) * A)
 
+/-- **Unitary equivariance of the right polar coordinates.** For unitary matrices `V` and `W`, the
+right polar coordinates of `V A W` are `(V U W, Wᴴ Q W)`, where `(U, Q)` are the right polar
+coordinates of `A`. -/
+theorem rightPolarDiffeomorph_toUnits_mul_mul_toUnits (V : unitaryGroup n 𝕜) (A : GL n 𝕜)
+    (W : unitaryGroup n 𝕜) :
+    rightPolarDiffeomorph n 𝕜 (Unitary.toUnits V * A * Unitary.toUnits W) =
+      (V * (rightPolarDiffeomorph n 𝕜 A).1 * W,
+        posDefUnitaryConj n 𝕜 ∞ (star W) (rightPolarDiffeomorph n 𝕜 A).2) := by
+  rw [mul_assoc, rightPolarDiffeomorph_toUnits_mul]
+  refine Prod.ext ?_ (Subtype.ext (Subtype.ext ?_))
+  · rw [rightPolarDiffeomorph_apply_fst, rightPolarDiffeomorph_apply_fst, mul_assoc]
+    simpa using congrArg (V * ·) (Units.polarUnitary_unitary_mul_mul_unitary A 1 W)
+  · rw [coe_rightPolarDiffeomorph_mul_toUnits_snd, coe_posDefUnitaryConj_apply, Unitary.coe_star,
+      star_star]
+
 /-! ### Determinant one -/
 
 /-- An invertible matrix has determinant one exactly when both of its polar coordinates have
@@ -409,6 +457,31 @@ theorem polarDiffeomorph_eq_iff (g : SpecialLinearGroup n 𝕜)
   · intro h
     rw [← Subtype.ext h, Diffeomorph.apply_symm_apply]
 
+/-- The polar coordinates of a matrix of determinant one, computed in `GL(n, 𝕜)`, are its polar
+coordinates on `SL(n, 𝕜)`, read in the positive-definite cone and the unitary group. -/
+theorem _root_.Matrix.GeneralLinearGroup.polarDiffeomorph_toGL (g : SpecialLinearGroup n 𝕜) :
+    GeneralLinearGroup.polarDiffeomorph n 𝕜 (toGL g) =
+      (((polarDiffeomorph n 𝕜 g).1 : posDefOpens n 𝕜),
+        Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup (polarDiffeomorph n 𝕜 g).2) :=
+  (rfl)
+
+/-- **Special unitary equivariance of the polar coordinates on `SL(n, 𝕜)`.** For special unitary
+matrices `V` and `W`, the polar coordinates of `V g W` are `(V P Vᴴ, V U W)`, where `(P, U)` are
+the polar coordinates of `g`. -/
+theorem polarDiffeomorph_toSL_mul_mul_toSL (V : specialUnitaryGroup n 𝕜)
+    (g : SpecialLinearGroup n 𝕜) (W : specialUnitaryGroup n 𝕜) :
+    polarDiffeomorph n 𝕜 (specialUnitaryGroup.toSL V * g * specialUnitaryGroup.toSL W) =
+      (PosDefDetOne.unitaryConj n 𝕜 ∞ (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup V)
+        (polarDiffeomorph n 𝕜 g).1, V * (polarDiffeomorph n 𝕜 g).2 * W) := by
+  have h := GeneralLinearGroup.polarDiffeomorph_toUnits_mul_mul_toUnits
+    (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup V) (toGL g)
+    (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup W)
+  rw [← specialUnitaryGroup.toGL_toSL, ← specialUnitaryGroup.toGL_toSL, ← map_mul, ← map_mul,
+    GeneralLinearGroup.polarDiffeomorph_toGL, GeneralLinearGroup.polarDiffeomorph_toGL,
+    ← PosDefDetOne.coe_unitaryConj_apply] at h
+  exact Prod.ext (Subtype.ext (congrArg Prod.fst h))
+    (Submonoid.inclusion_injective specialUnitaryGroup_le_unitaryGroup (congrArg Prod.snd h))
+
 /-! ### The right polar coordinates on `SL(n, 𝕜)` -/
 
 variable (n 𝕜) in
@@ -498,5 +571,33 @@ theorem rightPolarDiffeomorph_eq_iff (g : SpecialLinearGroup n 𝕜)
     rw [Diffeomorph.symm_apply_apply]
   · intro h
     rw [← Subtype.ext h, Diffeomorph.apply_symm_apply]
+
+/-- The right polar coordinates of a matrix of determinant one, computed in `GL(n, 𝕜)`, are its
+right polar coordinates on `SL(n, 𝕜)`, read in the unitary group and the positive-definite cone. -/
+theorem _root_.Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toGL
+    (g : SpecialLinearGroup n 𝕜) :
+    GeneralLinearGroup.rightPolarDiffeomorph n 𝕜 (toGL g) =
+      (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup (rightPolarDiffeomorph n 𝕜 g).1,
+        ((rightPolarDiffeomorph n 𝕜 g).2 : posDefOpens n 𝕜)) :=
+  (rfl)
+
+/-- **Special unitary equivariance of the right polar coordinates on `SL(n, 𝕜)`.** For special
+unitary matrices `V` and `W`, the right polar coordinates of `V g W` are `(V U W, Wᴴ Q W)`, where
+`(U, Q)` are the right polar coordinates of `g`. -/
+theorem rightPolarDiffeomorph_toSL_mul_mul_toSL (V : specialUnitaryGroup n 𝕜)
+    (g : SpecialLinearGroup n 𝕜) (W : specialUnitaryGroup n 𝕜) :
+    rightPolarDiffeomorph n 𝕜 (specialUnitaryGroup.toSL V * g * specialUnitaryGroup.toSL W) =
+      (V * (rightPolarDiffeomorph n 𝕜 g).1 * W, PosDefDetOne.unitaryConj n 𝕜 ∞
+        (star (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup W))
+        (rightPolarDiffeomorph n 𝕜 g).2) := by
+  have h := GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul_mul_toUnits
+    (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup V) (toGL g)
+    (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup W)
+  rw [← specialUnitaryGroup.toGL_toSL, ← specialUnitaryGroup.toGL_toSL, ← map_mul, ← map_mul,
+    GeneralLinearGroup.rightPolarDiffeomorph_toGL,
+    GeneralLinearGroup.rightPolarDiffeomorph_toGL, ← PosDefDetOne.coe_unitaryConj_apply] at h
+  exact Prod.ext
+    (Submonoid.inclusion_injective specialUnitaryGroup_le_unitaryGroup (congrArg Prod.fst h))
+    (Subtype.ext (congrArg Prod.snd h))
 
 end Matrix.SpecialLinearGroup
