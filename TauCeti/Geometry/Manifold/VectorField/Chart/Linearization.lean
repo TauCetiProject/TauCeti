@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Linearization
 public import TauCeti.Geometry.Manifold.VectorField.Chart.Derivative
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -85,14 +86,7 @@ theorem mdifferentiableAt_of_det_vectorFieldChartDerivative_ne_zero [FiniteDimen
     MDifferentiableAt I I.tangent (fun x ↦ (V x : TangentBundle I M)) p := by
   refine mdifferentiableAt_section_iff_differentiableAt_mpullbackWithin_extChartAt_symm.2 ?_
   rw [I.range_eq_univ, VectorField.mpullbackWithin_univ]
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · -- A map into the zero space is constant.
-    exact (differentiableAt_const (0 : E)).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun _ ↦ Subsingleton.elim _ _)
-  by_contra hd
-  rw [vectorFieldChartDerivative_def, fderiv_zero_of_not_differentiableAt hd,
-    ContinuousLinearMap.toLinearMap_zero, LinearMap.det_zero,
-    zero_pow finrank_pos.ne'] at hdet
-  exact hdet rfl
+  refine differentiableAt_of_det_fderiv_ne_zero ?_
+  rwa [ContinuousLinearMap.det, ← vectorFieldChartDerivative_def]
 
 end TauCeti

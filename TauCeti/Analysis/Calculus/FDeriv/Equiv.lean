@@ -81,6 +81,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_eqOn_comp_id`, `TauCeti.det_fderiv_ne_zero_of_eqOn_comp_id`:
   `Dg(f y) ∘ Df(y) = id` for a left inverse `g` of `f` on a set within which derivatives are
   unique, so `Df(y)` has nonzero determinant.
+* `TauCeti.differentiableAt_of_det_fderiv_ne_zero`: in finite dimension, a map of a space to itself
+  is differentiable wherever its totalized derivative has nonzero determinant.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
   `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`, so `det Dφ⁻¹(y) ≠ 0` (`Equiv.det_fderiv_symm_ne_zero`).
@@ -402,6 +404,17 @@ theorem det_fderiv_ne_zero_of_eqOn_comp_id {f g : E → E} {S : Set E} {y : E}
   refine right_ne_zero_of_mul_eq_one (a := (fderiv 𝕜 g (f y)).det) ?_
   rw [← ContinuousLinearMap.det_comp,
     fderiv_comp_fderiv_eq_id_of_eqOn_comp_id hS hf hg hid hy, ContinuousLinearMap.det_id]
+
+/-- A map of a finite-dimensional space to itself is differentiable wherever the determinant of
+its totalized derivative does not vanish: where the map is not differentiable its derivative is
+`0`, whose determinant is `0` in positive dimension. -/
+theorem differentiableAt_of_det_fderiv_ne_zero [FiniteDimensional 𝕜 E] {f : E → E} {y : E}
+    (h : (fderiv 𝕜 f y).det ≠ 0) : DifferentiableAt 𝕜 f y := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact Subsingleton.elim (fun _ ↦ f y) f ▸ differentiableAt_const (f y)
+  by_contra hnd
+  rw [fderiv_zero_of_not_differentiableAt hnd] at h
+  simp [ContinuousLinearMap.det, LinearMap.det_zero, Module.finrank_pos.ne'] at h
 
 end TauCeti
 
