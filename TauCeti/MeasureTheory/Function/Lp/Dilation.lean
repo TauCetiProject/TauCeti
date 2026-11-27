@@ -322,10 +322,6 @@ namespace MeasureTheory.Lp
 
 open scoped ENNReal
 
-private theorem toReal_ofReal_abs_inv_rpow (c q : ℝ) :
-    (ENNReal.ofReal |c⁻¹| ^ q).toReal = |c|⁻¹ ^ q := by
-  rw [← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
-
 /-- **Affine `Lᵖ` norm comparison on arbitrary sets.** If `f ∈ Lᵖ(μ.restrict s)` and
 `g ∈ Lᵖ(μ.restrict t)` satisfy `‖f x‖ ≤ M * ‖g (B x + b)‖` for `μ.restrict s`-a.e. `x`, where
 `x ↦ B x + b` maps `s` into `t` for a linear automorphism `B : E ≃L[ℝ] E` and `0 ≤ M`, then
@@ -351,9 +347,9 @@ theorem norm_le_mul_det_inv_of_ae_le {E G H : Type*} [NormedAddCommGroup E] [Nor
     ENNReal.mul_ne_top ENNReal.ofReal_ne_top <| ENNReal.mul_ne_top
       (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
       (Lp.eLpNorm_ne_top _)
-  simpa only [ENNReal.toReal_mul, ENNReal.toReal_ofReal hM,
-    toReal_ofReal_abs_inv_rpow _ (1 / p).toReal, ← Lp.norm_def, mul_assoc] using
-    ENNReal.toReal_mono hfin he
+  have hle := ENNReal.toReal_mono hfin he
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal hM, ← ENNReal.toReal_rpow,
+    ENNReal.toReal_ofReal (abs_nonneg _), abs_inv, ← Lp.norm_def, ← Lp.norm_def, ← mul_assoc] at hle
 
 /-- **Exact affine `Lᵖ` norm identity on preimages.** If `f ∈ Lᵖ(μ.restrict s)` and
 `g ∈ Lᵖ(μ.restrict t)` satisfy `f =ᵐ c • g (B · + b)` on `s = (fun x ↦ B x + b) ⁻¹' t` for a
@@ -371,8 +367,8 @@ theorem norm_eq_mul_det_inv_of_ae_eq {E G 𝕜 : Type*} [NormedAddCommGroup E] [
   have hsmul : (fun x ↦ c • g (B x + b)) = c • fun x ↦ g (B x + b) := rfl
   rw [hsmul, eLpNorm_const_smul, hst,
     Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p,
-    ENNReal.toReal_mul, ENNReal.toReal_mul, toReal_eNorm,
-    toReal_ofReal_abs_inv_rpow _ (1 / p).toReal, ← mul_assoc]
+    ENNReal.toReal_mul, ENNReal.toReal_mul, toReal_eNorm, ← ENNReal.toReal_rpow,
+    ENNReal.toReal_ofReal (abs_nonneg _), abs_inv, ← mul_assoc]
 
 section Affine
 
