@@ -8,11 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.Sets.OpenCover
-public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Topology.OpenPartialHomeomorph.Constructions
-import TauCeti.Topology.OpenPartialHomeomorph.Ball
 
 /-!
 # Coordinate balls in charted spaces
@@ -42,8 +40,6 @@ such nested covers carry compact restriction maps between Čech cochain spaces.
 * `IsOpen.exists_isOpenEmbedding_apply_zero_eq`: an open embedding `E → U` sending `0` to a given
   point of an open set `U`.
 * `Set.Finite.exists_isOpenEmbedding_prod_ball`: the open embedding of `S × ball 0 r`.
-* `TauCeti.exists_pos_preimageBall_subset`: a contractible coordinate ball inside any
-  neighbourhood of its centre, with its model ball contained in the chart target.
 * `TauCeti.exists_finite_preimageBall_cover`: the finite cover by coordinate balls.
 -/
 
@@ -134,32 +130,6 @@ end Set.Finite
 namespace TauCeti
 
 open TopologicalSpace
-
-/-- Every neighbourhood of a point in a space charted on a real normed space contains a
-contractible coordinate ball centred at that point, with its model ball in the chart target. -/
-theorem exists_pos_preimageBall_subset {H X : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
-    [TopologicalSpace X] [ChartedSpace H X] (x : X) {N : Set X} (hN : N ∈ 𝓝 x) :
-    ∃ r > 0, ball (chartAt H x x) r ⊆ (chartAt H x).target ∧
-      ((chartAt H x).preimageBall (chartAt H x x) r : Set X) ⊆ N ∧
-        ContractibleSpace ((chartAt H x).preimageBall (chartAt H x x) r) := by
-  let e := chartAt H x
-  have hx : x ∈ e.source := mem_chart_source H x
-  have hT : e '' (e.source ∩ N) ∈ 𝓝 (e x) :=
-    e.image_mem_nhds hx (Filter.inter_mem (e.open_source.mem_nhds hx) hN)
-  obtain ⟨r, hr, hRT⟩ := Metric.mem_nhds_iff.1 hT
-  have htarget : ball (e x) r ⊆ e.target :=
-    hRT.trans ((image_mono inter_subset_left).trans e.image_source_eq_target.subset)
-  refine ⟨r, hr, htarget, ?_, ?_⟩
-  · intro y hyW
-    obtain ⟨hy, hyr⟩ := e.mem_preimageBall.1 hyW
-    obtain ⟨z, ⟨hz, hzN⟩, hzy⟩ := hRT hyr
-    rwa [← e.injOn hz hy hzy]
-  · have hball : ((e.preimageBall (e x) r) : Set X) = e.chartBall x r := by
-      ext y
-      exact e.mem_preimageBall.trans e.mem_chartBall.symm
-    let : ContractibleSpace (e.chartBall x r) :=
-      (contractible_iff_id_nullhomotopic _).2 ⟨_, ⟨e.chartBallContraction hx htarget hr⟩⟩
-    exact (Homeomorph.setCongr hball).contractibleSpace
 
 universe u
 
