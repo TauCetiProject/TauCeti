@@ -62,7 +62,9 @@ functions and changes of frame bounded on the Sobolev scale of a vector bundle.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: for
   `1 < p < ∞`, if `f ∈ H^{s,p}` then `g f ∈ H^{s,p}`, for every real `s`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_schwartzMap`: in particular a Schwartz function
-  multiplies `H^{s,p}` into itself, for every real `s`.
+  multiplies `H^{s,p}` into itself, for every real `s`, and
+  `BesselPotentialSpace.smulLeftCLMOfOneLt` is this multiplication as a bounded operator on
+  `H^{s,p}(E, F)`.
 * `SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`: multiplication by a matrix-valued `A` of
   temperate growth with bounded derivatives extends to a bounded operator `H^s(E, F) → H^s(E, G)`.
 * `TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: for `A` of class
@@ -216,3 +218,27 @@ theorem MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil [FiniteDimension
       (ℓ.exists_bound_iteratedFDeriv_comp_left hA hbd)
 
 end TemperedDistribution
+
+namespace BesselPotentialSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+  [CompleteSpace F] {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Multiplication by a Schwartz function** as a bounded operator on `H^{s,p}(E, F)`, for every
+real `s` and `1 < p < ∞` (`TemperedDistribution.MemSobolev.smulLeftCLM_schwartzMap`, with the
+closed graph theorem). For `p = 2` the same operator, with an explicit norm bound, is
+`BesselPotentialSpace.smulLeftCLM`. -/
+def smulLeftCLMOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞) (φ : 𝓢(E, ℂ)) :
+    H^{s, p}(E, F) →L[ℂ] H^{s, p}(E, F) :=
+  mapCLM (TemperedDistribution.smulLeftCLM F (φ : E → ℂ)) fun u ↦
+    u.memSobolev_toDistr.smulLeftCLM_schwartzMap hp hp_top φ
+
+@[simp]
+theorem toDistr_smulLeftCLMOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞) (φ : 𝓢(E, ℂ))
+    (u : H^{s, p}(E, F)) :
+    (smulLeftCLMOfOneLt hp hp_top φ u).toDistr =
+      TemperedDistribution.smulLeftCLM F (φ : E → ℂ) u.toDistr :=
+  toDistr_mapCLM _ _ u
+
+end BesselPotentialSpace

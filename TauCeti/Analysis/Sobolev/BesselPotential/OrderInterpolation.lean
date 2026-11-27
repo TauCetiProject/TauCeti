@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Density
 public import TauCeti.Analysis.Sobolev.BesselPotential.AnalyticFamily
 public import TauCeti.Analysis.Sobolev.BesselPotential.ExponentInterpolation
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Algebra.Order.Floor.Abs
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Data.ENNReal.InterpolatedExponent
 
@@ -69,6 +69,10 @@ equivalent, not equal.
 * `TemperedDistribution.MemSobolev.map_of_forall_intCast`: a continuous linear map of tempered
   distributions that preserves `H^{k,p}` for every integer `k` with `|k| ≤ ⌈|s|⌉` preserves
   `H^{s,p}`.
+* `BesselPotentialSpace.exists_norm_inclusion_le_mul_norm_inclusion_rpow_mul_norm_rpow`: the
+  interpolation inequality `‖u‖_{H^{t,p}} ≤ C ‖u‖_{H^{r,p}} ^ (1 - θ) ‖u‖_{H^{s,p}} ^ θ` for
+  `t = (1 - θ) r + θ s`; for `p = 2` it holds with `C = 1`
+  (`BesselPotentialSpace.norm_inclusion_le_norm_inclusion_rpow_mul_norm_rpow`).
 
 ## References
 
@@ -715,3 +719,48 @@ theorem MemSobolev.map_of_forall_intCast (hp : 1 < p) (hp_top : p ≠ ∞) {s : 
     (hA _ (Int.natAbs_floor_add_one_le_natCeil_abs hs)) hu
 
 end TemperedDistribution
+
+namespace BesselPotentialSpace
+
+open TauCeti TauCeti.CompatibleCouple
+
+variable {r s t θ : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **The interpolation inequality of the `H^{·,p}` scale.** Let `1 < p < ∞`, `0 < θ < 1` and
+`t = (1 - θ) r + θ s` with `r ≤ t ≤ s`. There is `C` with
+`‖u‖_{H^{t,p}} ≤ C ‖u‖_{H^{r,p}} ^ (1 - θ) ‖u‖_{H^{s,p}} ^ θ` for every `u ∈ H^{s,p}(E, F)`. It
+comes from the complex interpolation `[H^{r,p}, H^{s,p}]_θ = H^{t,p}`
+(`TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodContinuousLinearEquiv`); for `p = 2`
+the inequality holds with `C = 1`
+(`BesselPotentialSpace.norm_inclusion_le_norm_inclusion_rpow_mul_norm_rpow`). -/
+theorem exists_norm_inclusion_le_mul_norm_inclusion_rpow_mul_norm_rpow (hp : 1 < p)
+    (hp_top : p ≠ ∞) (hrt : r ≤ t) (hts : t ≤ s) (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (ht : t = (1 - θ) * r + θ * s) :
+    ∃ C : ℝ, ∀ u : H^{s, p}(E, F),
+      ‖inclusion hts u‖ ≤ C * ‖inclusion (hrt.trans hts) u‖ ^ (1 - θ) * ‖u‖ ^ θ := by
+  have hpθ : p⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * p⁻¹ := by
+    rw [← add_mul, ← ENNReal.ofReal_add (by linarith [hθ.2]) hθ.1.le, sub_add_cancel,
+      ENNReal.ofReal_one, one_mul]
+  let C := besselPotentialSpace E F r p s p
+  let e : C.ComplexMethodSpace θ ≃L[ℂ] H^{(1 - θ) * r + θ * s, p}(E, F) :=
+    besselPotentialSpaceComplexMethodContinuousLinearEquiv E F r s p p hp hp_top hp hp_top hθ hpθ
+  refine ⟨‖e.toContinuousLinearMap‖, fun u ↦ ?_⟩
+  -- `u` is the element `(u, u)` of `H^{r,p} ∩ H^{s,p}`, whose norm in `[H^{r,p}, H^{s,p}]_θ` is
+  -- at most the geometric mean of its two norms.
+  let x : C.inter := ⟨(inclusion (hrt.trans hts) u, u), C.mem_inter_iff.2 (by simp [C])⟩
+  have hx : inclusion hts u = (e (ComplexMethodSpace.ofInter θ x)).copy t ht.symm := by
+    refine ext ?_
+    rw [toDistr_inclusion, toDistr_copy _ ht.symm,
+      toDistr_besselPotentialSpaceComplexMethodContinuousLinearEquiv_apply,
+      ComplexMethodSpace.toSum_ofInter ⟨hθ.1.le, hθ.2.le⟩, sumSpaceEmbed_fstToSum, interFst_apply,
+      besselPotentialSpace_embed₀_apply, toDistr_inclusion]
+  calc ‖inclusion hts u‖ = ‖e (ComplexMethodSpace.ofInter θ x)‖ := by
+        rw [hx, ← norm_toLp_eq, toLp_copy _ ht.symm, norm_toLp_eq]
+    _ ≤ ‖e.toContinuousLinearMap‖ * ‖ComplexMethodSpace.ofInter θ x‖ :=
+        e.toContinuousLinearMap.le_opNorm _
+    _ ≤ ‖e.toContinuousLinearMap‖ * (‖C.interFst x‖ ^ (1 - θ) * ‖C.interSnd x‖ ^ θ) := by
+        gcongr
+        exact ComplexMethodSpace.norm_ofInter_le_rpow_mul_rpow ⟨hθ.1.le, hθ.2.le⟩ x
+    _ = _ := by rw [interFst_apply, interSnd_apply, mul_assoc]
+
+end BesselPotentialSpace
