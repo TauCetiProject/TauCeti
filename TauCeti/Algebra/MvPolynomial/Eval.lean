@@ -49,12 +49,15 @@ isomorphisms and by reindexing.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
 * `MvPolynomial.aeval_surjective_iff_adjoin_range_eq_top`: `aeval x` is surjective exactly when
   the `x i` generate the algebra.
+* `MvPolynomial.adjoin_range_eq_of_aeval_comp_eq`: a surjective algebra homomorphism factoring
+  `aeval c` through `aeval b` preserves the generated subalgebra.
 * `MvPolynomial.bijective_aeval_algEquiv_comp_iff`: an algebra isomorphism carries polynomial
   generators to polynomial generators.
 * `MvPolynomial.bijective_aeval_comp_equiv_iff`: reindexing a family of polynomial generators
   along an equivalence gives polynomial generators.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
+* `MvPolynomial.exists_eval_comp`: closure of polynomial-witnessed maps under composition.
 -/
 
 public section
@@ -133,6 +136,16 @@ theorem aeval_surjective_iff_adjoin_range_eq_top {R A : Type*} [CommSemiring R] 
     Function.Surjective (aeval (R := R) x) ↔ Algebra.adjoin R (Set.range x) = ⊤ := by
   rw [← AlgHom.range_eq_top, Algebra.adjoin_range_eq_range_aeval]
 
+/-- If `φ : MvPolynomial B R →ₐ[R] MvPolynomial A R` is surjective and `(aeval b).comp φ = aeval c`,
+then `c` and `b` generate the same `R`-subalgebra. -/
+theorem adjoin_range_eq_of_aeval_comp_eq {R A B C : Type*} [CommSemiring R]
+    [CommSemiring C] [Algebra R C] {b : A → C} {c : B → C}
+    {φ : MvPolynomial B R →ₐ[R] MvPolynomial A R}
+    (hcomp : (aeval b).comp φ = aeval c) (hφ : Function.Surjective φ) :
+    Algebra.adjoin R (Set.range c) = Algebra.adjoin R (Set.range b) := by
+  rw [Algebra.adjoin_range_eq_range_aeval, Algebra.adjoin_range_eq_range_aeval, ← hcomp,
+    AlgHom.range_comp, (AlgHom.range_eq_top φ).2 hφ, Algebra.map_top]
+
 /-- Composing a family with an algebra isomorphism `e` does not change whether evaluation at it is
 bijective, since `aeval (e ∘ x) = e ∘ aeval x`. In particular `e` carries a family of polynomial
 generators, algebraically independent and generating, to one. -/
@@ -199,5 +212,19 @@ theorem exists_pos_eval_eq_mul_eval_div {α β K : Type*} [Field K] [LinearOrder
       eval (fun a ↦ eval x (N a) / eval x (D a)) p :=
     eval₂Hom_congr' rfl (fun a ha _ ↦ by simp [N', D', ha]) rfl
   obtain ⟨hB, hEq⟩ := hAB x hx; exact ⟨hB, heval ▸ hEq⟩
+
+/-- **Composition of polynomial-witnessed maps.** If `Φ : (τ → R) → R` is given by a multivariate
+polynomial and every coordinate of `Ψ : (σ → R) → τ → R` is given by a multivariate polynomial,
+then `fun w ↦ Φ (Ψ w)` is given by a multivariate polynomial. -/
+theorem exists_eval_comp {σ τ R : Type*} [CommSemiring R] {Φ : (τ → R) → R}
+    {Ψ : (σ → R) → τ → R}
+    (hΦ : ∃ P : MvPolynomial τ R, ∀ y, Φ y = eval y P)
+    (hΨ : ∀ k, ∃ Q : MvPolynomial σ R, ∀ w, Ψ w k = eval w Q) :
+    ∃ P : MvPolynomial σ R, ∀ w, Φ (Ψ w) = eval w P := by
+  choose Q hQ using hΨ
+  obtain ⟨P, hP⟩ := hΦ
+  refine ⟨aeval Q P, fun w ↦ ?_⟩
+  rw [hP (Ψ w), ← aeval_eq_eval, ← aeval_eq_eval, comp_aeval_apply, aeval_eq_eval, aeval_eq_eval]
+  exact congrArg (fun x ↦ eval x P) (funext fun k ↦ hQ k w)
 
 end MvPolynomial

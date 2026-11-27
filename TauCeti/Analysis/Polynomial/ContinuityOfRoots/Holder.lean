@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
-import Mathlib.Analysis.Polynomial.CauchyBound
+import TauCeti.Analysis.Polynomial.Monic.RootBound
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 import Mathlib.Combinatorics.SimpleGraph.Paths
@@ -55,6 +55,12 @@ path through the cluster. For complex polynomials the straight path `f + t (g - 
   and `F x₁` match with multiplicity within `(2n - 1) ρ`.
 * `Polynomial.Monic.rel_roots_norm_sub_le`: **Ostrowski's theorem** on the Hölder continuity of
   the roots of monic complex polynomials in their coefficients.
+* `Multiset.rel_norm_sub_le_of_norm_esymm_sub_le`: the same for multisets of complex numbers, read
+  off their elementary symmetric functions, the coefficients of `∏_{w ∈ s} (X - w)` up to sign.
+* `Multiset.Rel.norm_sub_le_of_norm_sub_le_cons`: a function of multisets that changes by at most
+  `L ‖a - b‖` when one element `a` is replaced by `b` changes by at most `n L d` between multisets
+  of `n` elements matched within `d`. With Ostrowski's theorem it turns Hölder coefficients into
+  Hölder symmetric functions of the roots.
 
 ## References
 
@@ -266,20 +272,13 @@ private theorem norm_coeff_segment_le {B : ℝ} {i : ℕ} (hf : ‖f.coeff i‖ 
 
 /-- By Cauchy's bound, the roots of the polynomials on the segment have norm at most `B + 1`. -/
 private theorem norm_le_of_mem_roots_segment (hf : f.Monic) (hg : g.Monic)
-    (hdeg : g.natDegree = f.natDegree) {B : ℝ} (hB : 0 ≤ B)
+    (hdeg : g.natDegree = f.natDegree) {B : ℝ}
     (hfB : ∀ i < f.natDegree, ‖f.coeff i‖ ≤ B) (hgB : ∀ i < f.natDegree, ‖g.coeff i‖ ≤ B)
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) {z : ℂ} (hz : z ∈ (segment f g t).roots) : ‖z‖ ≤ B + 1 := by
-  have hm := monic_segment hf hg hdeg t
-  have hb : cauchyBound (segment f g t) ≤ B.toNNReal + 1 := by
-    rw [cauchyBound, hm.leadingCoeff, nnNorm_one, div_one,
-      natDegree_eq_of_degree_eq_some (degree_segment hf hg hdeg t)]
-    gcongr
-    refine Finset.sup_le fun i hi => ?_
-    exact (Real.le_toNNReal_iff_coe_le hB).2
-      (norm_coeff_segment_le (hfB i (Finset.mem_range.1 hi)) (hgB i (Finset.mem_range.1 hi)) ht)
-  have hlt : ‖z‖ < B.toNNReal + 1 := by
-    exact_mod_cast ((isRoot_of_mem_roots hz).norm_lt_cauchyBound hm.ne_zero).trans_le hb
-  linarith [Real.coe_toNNReal _ hB]
+    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) {z : ℂ} (hz : z ∈ (segment f g t).roots) : ‖z‖ ≤ B + 1 :=
+  (IsRoot.norm_lt_add_one (monic_segment hf hg hdeg t) (fun i hi => norm_coeff_segment_le
+    (hfB i (by rwa [natDegree_eq_of_degree_eq_some (degree_segment hf hg hdeg t)] at hi))
+    (hgB i (by rwa [natDegree_eq_of_degree_eq_some (degree_segment hf hg hdeg t)] at hi)) ht)
+    (isRoot_of_mem_roots hz)).le
 
 /-- The one-sided estimate: every root of `f + t (g - f)`, `0 ≤ t ≤ 1`, lies within
 `(n δ (B + 1)ⁿ⁻¹)^(1/n)` of a root of `f`. -/
@@ -291,7 +290,7 @@ private theorem exists_mem_roots_norm_sub_le_of_mem_roots_segment (hf : f.Monic)
     ∃ a ∈ f.roots, ‖z - a‖ ≤
       (f.natDegree * δ * (B + 1) ^ (f.natDegree - 1)) ^ (f.natDegree⁻¹ : ℝ) := by
   set n := f.natDegree
-  have hzB := norm_le_of_mem_roots_segment hf hg hdeg hB hfB hgB ht hz
+  have hzB := norm_le_of_mem_roots_segment hf hg hdeg hfB hgB ht hz
   -- `f(z) = -t (g - f)(z)` since `z` is a root of `f + t (g - f)`
   have hfz : ‖f.eval z‖ ≤ ‖(g - f).eval z‖ := by
     have hroot := (isRoot_of_mem_roots hz).eq_zero
@@ -349,3 +348,79 @@ theorem Monic.rel_roots_norm_sub_le (hf : f.Monic) (hg : g.Monic)
 end Complex
 
 end Polynomial
+
+/-! ### Multisets of roots and their elementary symmetric functions -/
+
+namespace Multiset
+
+open Polynomial
+
+/-- The index `card s - i` of the coefficient of degree `i < card s` is a positive degree at most
+`card s`. -/
+private theorem card_sub_mem_Icc {n i : ℕ} (hi : i < n) : n - i ∈ Finset.Icc 1 n :=
+  Finset.mem_Icc.2 ⟨by omega, by omega⟩
+
+/-- **Ostrowski's theorem for multisets.** Let `s` and `t` be multisets of `n` complex numbers
+whose elementary symmetric functions of positive degree have norm at most `B` and differ by at most
+`δ`. Then `s` and `t` match one-to-one, with multiplicity, within
+`(2n - 1) (n δ (B + 1)ⁿ⁻¹)^(1/n)`. -/
+theorem rel_norm_sub_le_of_norm_esymm_sub_le {s t : Multiset ℂ} (hst : card t = card s) {B δ : ℝ}
+    (hs : ∀ j ∈ Finset.Icc 1 (card s), ‖s.esymm j‖ ≤ B)
+    (ht : ∀ j ∈ Finset.Icc 1 (card s), ‖t.esymm j‖ ≤ B)
+    (hδ : ∀ j ∈ Finset.Icc 1 (card s), ‖t.esymm j - s.esymm j‖ ≤ δ) :
+    s.Rel (fun a b ↦ ‖a - b‖ ≤ (2 * card s - 1) *
+      (card s * δ * (B + 1) ^ (card s - 1)) ^ ((card s : ℝ)⁻¹)) t := by
+  set f := (s.map fun a ↦ X - C a).prod
+  set g := (t.map fun a ↦ X - C a).prod
+  have hfd : f.natDegree = card s := natDegree_multiset_prod_X_sub_C_eq_card s
+  have hgd : g.natDegree = card s := (natDegree_multiset_prod_X_sub_C_eq_card t).trans hst
+  have h := Monic.rel_roots_norm_sub_le
+    (monic_multiset_prod_of_monic _ _ fun a _ ↦ monic_X_sub_C a)
+    (monic_multiset_prod_of_monic _ _ fun a _ ↦ monic_X_sub_C a) (hgd.trans hfd.symm)
+    (B := B) (δ := δ) (fun i hi ↦ ?_) (fun i hi ↦ ?_) (fun i hi ↦ ?_)
+  · rwa [roots_multiset_prod_X_sub_C, roots_multiset_prod_X_sub_C, hfd] at h
+  all_goals rw [hfd] at hi
+  · rw [norm_coeff_prod_X_sub_C hi.le]
+    exact hs _ (card_sub_mem_Icc hi)
+  · rw [norm_coeff_prod_X_sub_C (hst ▸ hi.le), hst]
+    exact ht _ (card_sub_mem_Icc hi)
+  · rw [prod_X_sub_C_coeff s hi.le, prod_X_sub_C_coeff t (hst ▸ hi.le), hst, ← mul_sub, norm_mul,
+      norm_pow, norm_neg, norm_one, one_pow, one_mul]
+    exact hδ _ (card_sub_mem_Icc hi)
+
+/-- **Functions of matched multisets.** Let `Φ` be a function of multisets that changes by at most
+`L ‖a - b‖` when an element `a` is replaced by `b`, for elements of norm at most `M` and multisets
+of fewer than `n` further elements of norm at most `M`. If two multisets `s` and `t` of at most
+`n` elements of norm at most `M` match within `d`, then `‖Φ s - Φ t‖ ≤ card s * (L * d)`. -/
+theorem Rel.norm_sub_le_of_norm_sub_le_cons {α E : Type*} [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup E] {Φ : Multiset α → E} {n : ℕ} {M L d : ℝ} (hL : 0 ≤ L)
+    (hΦ : ∀ a b u, ‖a‖ ≤ M → ‖b‖ ≤ M → (∀ w ∈ u, ‖w‖ ≤ M) → card u < n →
+      ‖Φ (a ::ₘ u) - Φ (b ::ₘ u)‖ ≤ L * ‖a - b‖)
+    {s t : Multiset α} (h : s.Rel (fun a b ↦ ‖a - b‖ ≤ d) t) (hs : ∀ w ∈ s, ‖w‖ ≤ M)
+    (ht : ∀ w ∈ t, ‖w‖ ≤ M) (hn : card s ≤ n) :
+    ‖Φ s - Φ t‖ ≤ card s * (L * d) := by
+  -- replace the matched elements one at a time, keeping the replaced ones in a prefix `u`
+  suffices H : ∀ u, (∀ w ∈ u, ‖w‖ ≤ M) → card u + card s ≤ n →
+      ‖Φ (u + s) - Φ (u + t)‖ ≤ card s * (L * d) by
+    simpa using H 0 (by simp) (by simpa using hn)
+  clear hn
+  induction h with
+  | zero => simp
+  | @cons a b as bs hab _ ih =>
+    intro u hu hun
+    have ha : ‖a‖ ≤ M := hs a (mem_cons_self a as)
+    have hb : ‖b‖ ≤ M := ht b (mem_cons_self b bs)
+    have h₁ : ‖Φ (a ::ₘ (u + as)) - Φ (b ::ₘ (u + as))‖ ≤ L * d :=
+      (hΦ a b _ ha hb (fun w hw ↦ (mem_add.1 hw).elim (hu w) fun hw ↦ hs w (mem_cons_of_mem hw))
+        (by simp at hun ⊢; omega)).trans (mul_le_mul_of_nonneg_left hab hL)
+    have h₂ := ih (fun w hw ↦ hs w (mem_cons_of_mem hw)) (fun w hw ↦ ht w (mem_cons_of_mem hw))
+      (b ::ₘ u) (fun w hw ↦ (mem_cons.1 hw).elim (· ▸ hb) (hu w)) (by simp at hun ⊢; omega)
+    rw [add_cons, add_cons]
+    rw [cons_add, cons_add] at h₂
+    calc ‖Φ (a ::ₘ (u + as)) - Φ (b ::ₘ (u + bs))‖
+        ≤ ‖Φ (a ::ₘ (u + as)) - Φ (b ::ₘ (u + as))‖ + ‖Φ (b ::ₘ (u + as)) - Φ (b ::ₘ (u + bs))‖ :=
+          norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ ≤ L * d + card as * (L * d) := add_le_add h₁ h₂
+      _ = card (a ::ₘ as) * (L * d) := by rw [card_cons]; push_cast; ring
+
+end Multiset

@@ -10,6 +10,7 @@ public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Analysis.PDE.Schrodinger.MixedNorm
 import TauCeti.Analysis.PDE.Schrodinger.EnergyPair
 import TauCeti.Analysis.PDE.Schrodinger.Endpoint
+import TauCeti.Analysis.PDE.Schrodinger.WeakSolution
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
@@ -54,7 +55,24 @@ For `I = (0, T]` and `f ∈ L²(E)`, the function `u(t) = S(t) f - i schrodinger
 is therefore continuous in time with values in `L²`, satisfies
 `sup_t ‖u(t)‖₂ ≤ ‖f‖₂ + C ‖Φ‖_{L^{p₁}((0, T]; L^{r₁'})}` and
 `‖u‖_{L^q([0, T]; L^r)} ≤ C (‖f‖₂ + ‖Φ‖_{L^{p₁}((0, T]; L^{r₁'})})` with `C` independent of `T`,
-and is Duhamel's formula on `[0, T]` whenever `Φ` has an integrable `L²`-valued representative.
+and is Duhamel's formula, with the forcing cut off to `(0, T]`, whenever `Φ` has an integrable
+`L²`-valued representative.
+
+It solves `i ∂ₜu + Δu = Φ`, `u(0) = f`, in the sense of distributions in space: for every Schwartz
+function `φ`, which lies in `L^{r₁}` and so pairs with the values `Φ(s) ∈ L^{r₁'}` of the forcing,
+and every `t ≥ 0`,
+
+`⟪φ, u t⟫ = ⟪φ, f⟫ + i (∫_{(0,t]} ⟪Δφ, u s⟫ ds - ∫_{(0,t] ∩ (0,T]} ∫ ⟪φ(x), Φ(s)(x)⟫ dx ds)`
+
+(`TauCeti.inner_toLp_schrodingerPropagator_sub_smul_schrodingerRetardedL`). Both sides are
+continuous in `Φ`, and on forcings with an integrable `L²`-valued representative this is the weak
+formulation of Duhamel's formula, `TauCeti.inner_toLp_schrodingerDuhamel`. Conversely, a function
+continuous on `[0, T₀]` with values in `L²` that satisfies this identity for `t ∈ [0, T₀]` is `u`
+there
+(`TauCeti.eqOn_schrodingerPropagator_sub_smul_schrodingerRetardedL_of_forall_inner_toLp_eq`), by
+the uniqueness of weak solutions of the free equation tested against Schwartz functions,
+`TauCeti.eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian`. So the Cauchy
+problem with forcing in the dual Strichartz space is uniquely solvable in `C([0, T₀]; L²)`.
 
 ## Main declarations
 
@@ -67,10 +85,14 @@ and is Duhamel's formula on `[0, T]` whenever `Φ` has an integrable `L²`-value
   `sup_t ‖schrodingerRetardedL p₁ r₁' I Φ t‖₂ ≤ C ‖Φ‖`, uniformly in `I`.
 * `TauCeti.exists_eLpNorm_eLpNorm_schrodingerRetardedL_le`: the retarded Strichartz estimate in
   `L^q_t L^r_x`, uniformly in `I`.
-* `TauCeti.schrodingerDuhamel_eq_sub_smul_schrodingerRetardedL`: on `[0, T]`, Duhamel's formula is
-  `S(t) f - i schrodingerRetardedL p₁ r₁' (0, T] Φ t`.
+* `TauCeti.schrodingerDuhamel_eq_sub_smul_schrodingerRetardedL`: for `t ≥ 0`, Duhamel's formula
+  with the forcing cut off to `(0, T]` is `S(t) f - i schrodingerRetardedL p₁ r₁' (0, T] Φ t`.
 * `TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_sub_smul_schrodingerRetardedL_le`: the
   Strichartz estimate for this solution on `[0, T]`, uniformly in `T`.
+* `TauCeti.inner_toLp_schrodingerPropagator_sub_smul_schrodingerRetardedL`: this solution solves
+  the equation in the sense of distributions in space.
+* `TauCeti.eqOn_schrodingerPropagator_sub_smul_schrodingerRetardedL_of_forall_inner_toLp_eq`: it is
+  the only such solution continuous in time with values in `L²`.
 
 ## References
 
@@ -85,7 +107,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter Topology
-open scoped ENNReal NNReal InnerProductSpace BoundedContinuousFunction
+open scoped ENNReal NNReal InnerProductSpace BoundedContinuousFunction Laplacian SchwartzMap
 
 namespace TauCeti
 
@@ -440,8 +462,9 @@ theorem exists_norm_schrodingerRetardedL_le (hq₁ : 2 ≤ q₁)
 
 /-- **Duhamel's formula through the retarded integral on the dual Strichartz space.** Under the
 hypotheses of `TauCeti.schrodingerRetardedL_apply_of_ae_eq`, if `Φ ∈ L^{p₁}((0, T]; L^{r₁'})` is
-represented on `(0, T]` by an `F : ℝ → L²(E)` integrable there, then on `[0, T]` the mild solution
-`u = TauCeti.schrodingerDuhamel f F` of `i ∂ₜu + Δu = F`, `u(0) = f`, is
+represented on `(0, T]` by an `F : ℝ → L²(E)` integrable there, then for every `t ≥ 0` the mild
+solution `u = TauCeti.schrodingerDuhamel f ((Ioc 0 T).indicator F)` of `i ∂ₜu + Δu = F` on `(0, T]`,
+`i ∂ₜu + Δu = 0` after `T`, `u(0) = f`, is
 
 `u(t) = S(t) f - i schrodingerRetardedL p₁ r₁' (0, T] Φ t`.
 
@@ -454,11 +477,12 @@ theorem schrodingerDuhamel_eq_sub_smul_schrodingerRetardedL (hq₁ : 2 ≤ q₁)
     {Φ : Lp (Lp ℂ r₁' (volume : Measure E)) p₁ (volume.restrict (Ioc 0 T))}
     {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : IntegrableOn F (Ioc 0 T))
     (hΦF : ∀ᵐ s ∂volume.restrict (Ioc 0 T), (Φ s : E → ℂ) =ᵐ[volume] F s)
-    (f : Lp ℂ 2 (volume : Measure E)) {t : ℝ} (ht : t ∈ Icc 0 T) :
-    schrodingerDuhamel f F t = schrodingerPropagator ℂ t f -
+    (f : Lp ℂ 2 (volume : Measure E)) {t : ℝ} (ht : 0 ≤ t) :
+    schrodingerDuhamel f ((Ioc 0 T).indicator F) t = schrodingerPropagator ℂ t f -
       Complex.I • schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ t := by
-  rw [schrodingerDuhamel_eq_sub_setIntegral_Iio f F ht,
-    schrodingerRetardedL_apply_of_ae_eq hq₁ hn₁ hpq₁ hqr₁ measurableSet_Ioc hF hΦF]
+  rw [schrodingerDuhamel_eq_sub_setIntegral_Iio f _ (T := max t T) ⟨ht, le_max_left t T⟩,
+    schrodingerRetardedL_apply_of_ae_eq hq₁ hn₁ hpq₁ hqr₁ measurableSet_Ioc hF hΦF,
+    indicator_indicator, inter_eq_right.2 (Ioc_subset_Ioc_right (le_max_right t T))]
 
 /-- **The Strichartz estimate for the inhomogeneous Schrödinger equation with forcing in a dual
 Strichartz space**, in every dimension `n`, for any two admissible pairs with finite time
@@ -519,6 +543,151 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_sub_smul_schrodingerRetarde
         gcongr
         · exact le_self_add
         · exact le_add_self
+
+/-! ### The weak formulation and uniqueness -/
+
+/-- The time integral over `(0, t]` of the pairing of `Δφ` with the solution, split into the free
+part and the retarded part. -/
+private theorem setIntegral_inner_sub_smul_eq (W : ℝ →ᵇ Lp ℂ 2 (volume : Measure E))
+    (f χ : Lp ℂ 2 (volume : Measure E)) (t : ℝ) :
+    ∫ s in Ioc 0 t, ⟪χ, schrodingerPropagator ℂ s f - Complex.I • W s⟫_ℂ =
+      ⟪χ, ∫ s in Ioc 0 t, schrodingerPropagator ℂ s f⟫_ℂ -
+        Complex.I * ⟪χ, ∫ s in Ioc 0 t, W s⟫_ℂ := by
+  have hS : IntegrableOn (fun s ↦ schrodingerPropagator ℂ s f) (Ioc 0 t) :=
+    (continuous_phasePropagator_apply laplacianSymbol f).integrableOn_Ioc
+  have hW : IntegrableOn (fun s ↦ Complex.I • W s) (Ioc 0 t) :=
+    W.continuous.integrableOn_Ioc.smul Complex.I
+  have hSW : IntegrableOn (fun s ↦ schrodingerPropagator ℂ s f - Complex.I • W s) (Ioc 0 t) :=
+    hS.sub hW
+  rw [integral_inner hSW, integral_sub hS hW, integral_smul, inner_sub_right, inner_smul_right]
+
+/-- The time integral over `(0, t]` of the pairing of `χ` with `S(s) f - i h(s)` depends
+continuously on the bounded continuous function of time `h`. -/
+private theorem continuous_setIntegral_inner_sub_smul (f χ : Lp ℂ 2 (volume : Measure E))
+    (t : ℝ) :
+    Continuous fun h : ℝ →ᵇ Lp ℂ 2 (volume : Measure E) ↦
+      ∫ s in Ioc 0 t, ⟪χ, schrodingerPropagator ℂ s f - Complex.I • h s⟫_ℂ := by
+  have hint : Continuous fun h : ℝ →ᵇ Lp ℂ 2 (volume : Measure E) ↦ ∫ s in Ioc 0 t, h s :=
+    (continuous_integral.comp
+      (BoundedContinuousFunction.toLp (E := Lp ℂ 2 (volume : Measure E)) 1
+        (volume.restrict (Ioc 0 t)) ℂ).continuous).congr fun h ↦
+      integral_congr_ae (BoundedContinuousFunction.coeFn_toLp _ _ _ h)
+  simp_rw [setIntegral_inner_sub_smul_eq]
+  exact continuous_const.sub (continuous_const.mul (continuous_const.inner hint))
+
+/-- The forcing term `∫_{(0,t] ∩ I} ∫ ⟪φ(x), Φ(s)(x)⟫ dx ds` of the weak formulation is continuous
+in `Φ ∈ L^{p₁}(I; L^{r₁'})`: it is the pairing of `s ↦ ∫ ⟪φ, Φ(s)⟫ ∈ L^{p₁}(I)` with the indicator
+of `(0, t]`. -/
+private theorem continuous_setIntegral_integral_inner {r : ℝ≥0∞} [r.HolderConjugate r₁']
+    (hpq₁ : p₁.HolderConjugate q₁) (I : Set ℝ) (φ : 𝓢(E, ℂ)) (t : ℝ) :
+    Continuous fun Φ : Lp (Lp ℂ r₁' (volume : Measure E)) p₁ (volume.restrict I) ↦
+      ∫ s in Ioc 0 t, (∫ x, ⟪φ x, (Φ s : E → ℂ) x⟫_ℂ) ∂volume.restrict I := by
+  have : Fact (1 ≤ (q₁ : ℝ≥0∞)) := ⟨by exact_mod_cast hpq₁.symm.lt.le⟩
+  have := hpq₁.coe_ennreal
+  set L := (φ.memLp r).innerLpCLM ℂ (q' := r₁')
+  refine (((Lp.toDual ℂ (volume.restrict I) p₁ q₁).continuous.comp
+    (L.compLpL p₁ (volume.restrict I)).continuous).clm_apply
+      (continuous_const (y := indicatorConstLp q₁ (measurableSet_Ioc (a := 0) (b := t))
+        ((Measure.restrict_apply_le I _).trans_lt measure_Ioc_lt_top).ne (1 : ℂ)))).congr
+    fun Φ ↦ ?_
+  rw [Function.comp_apply, Lp.toDual_indicatorConstLp, mul_one]
+  refine integral_congr_ae (ae_restrict_of_ae ?_)
+  filter_upwards [ContinuousLinearMap.coeFn_compLpL (p := p₁) (μ := volume.restrict I) L Φ]
+    with s hs
+  rw [hs, MemLp.innerLpCLM_apply]
+
+/-- **The solution with forcing in a dual Strichartz space is a weak solution.** Let `p₁` and `r₁'`
+be the Hölder conjugates of an admissible pair `(q₁, r₁)` with a finite time exponent,
+`2 ≤ q₁ < ∞` and `2 / q₁ + n / r₁ = n / 2`, with `n ≥ 3` when `q₁ = 2`. Let `f ∈ L²(E)`, let
+`Φ ∈ L^{p₁}((0, T]; L^{r₁'})` and let `u(t) = S(t) f - i schrodingerRetardedL p₁ r₁' (0, T] Φ t`.
+Then `u` solves `i ∂ₜu + Δu = Φ`, `u(0) = f`, in the sense of distributions in space: for every
+Schwartz function `φ` and every `t ≥ 0`,
+
+`⟪φ, u t⟫ = ⟪φ, f⟫ + i (∫_{(0,t]} ⟪Δφ, u s⟫ ds - ∫_{(0,t] ∩ (0,T]} ∫ ⟪φ(x), Φ(s)(x)⟫ dx ds)`.
+
+The forcing need not take values in `L²`: `Φ(s)` is paired with `φ ∈ L^{r₁}`. For forcings with an
+integrable `L²`-valued representative this is `TauCeti.inner_toLp_schrodingerDuhamel`. -/
+theorem inner_toLp_schrodingerPropagator_sub_smul_schrodingerRetardedL (hq₁ : 2 ≤ q₁)
+    (hn₁ : q₁ = 2 → 2 < Module.finrank ℝ E) (hpq₁ : p₁.HolderConjugate q₁)
+    (hqr₁ : 2 / (q₁ : ℝ) + Module.finrank ℝ E * (r₁⁻¹).toReal = Module.finrank ℝ E / 2) {T : ℝ}
+    (f : Lp ℂ 2 (volume : Measure E))
+    (Φ : Lp (Lp ℂ r₁' (volume : Measure E)) p₁ (volume.restrict (Ioc 0 T))) (φ : 𝓢(E, ℂ))
+    {t : ℝ} (ht : 0 ≤ t) :
+    ⟪φ.toLp 2, schrodingerPropagator ℂ t f -
+        Complex.I • schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ t⟫_ℂ =
+      ⟪φ.toLp 2, f⟫_ℂ + Complex.I * ((∫ s in Ioc 0 t, ⟪(Δ φ).toLp 2, schrodingerPropagator ℂ s f -
+          Complex.I • schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ s⟫_ℂ) -
+        ∫ s in Ioc 0 t, (∫ x, ⟪φ x, (Φ s : E → ℂ) x⟫_ℂ) ∂volume.restrict (Ioc 0 T)) := by
+  have : r₁.HolderConjugate r₁' := (inferInstance : r₁'.HolderConjugate r₁).symm
+  -- Both sides are continuous in `Φ`, so it suffices to treat forcings with an integrable
+  -- `L²`-valued representative, for which `u` is Duhamel's formula.
+  refine (denseRange_subtype_liftSubmodule ENNReal.coe_ne_top
+    (ne_top_of_admissible (zero_lt_two.trans_le hq₁) hqr₁)).induction_on Φ
+    (isClosed_eq (by fun_prop) (continuous_const.add (continuous_const.mul
+      (((continuous_setIntegral_inner_sub_smul f _ t).comp
+        (schrodingerRetardedL (E := E) (p₁ : ℝ≥0∞) r₁' (Ioc 0 T)).continuous).sub
+        (continuous_setIntegral_integral_inner (r := r₁) hpq₁ _ φ t)))))
+    fun Ψ ↦ ?_
+  rw [Submodule.subtype_apply]
+  obtain ⟨F, hF : IntegrableOn F (Ioc 0 T) volume, hΨF⟩ :=
+    Lp.mem_integrableRepSubmodule_iff.1 Ψ.property
+  have hu (s : ℝ) (hs : 0 ≤ s) :=
+    (schrodingerDuhamel_eq_sub_smul_schrodingerRetardedL hq₁ hn₁ hpq₁ hqr₁ hF hΨF f hs).symm
+  rw [hu t ht, inner_toLp_schrodingerDuhamel
+    ((hF.integrable_indicator measurableSet_Ioc).locallyIntegrable.locallyIntegrableOn _) φ ht]
+  congr 3
+  · exact setIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by rw [hu s hs.1.le]
+  · -- The forcing pairings agree for almost every time in `(0, t] ∩ (0, T]`.
+    have hind (s : ℝ) : ⟪φ.toLp 2, (Ioc 0 T).indicator F s⟫_ℂ =
+        (Ioc 0 T).indicator (fun s ↦ ⟪φ.toLp 2, F s⟫_ℂ) s := by
+      by_cases hs : s ∈ Ioc 0 T <;> simp [hs]
+    simp_rw [hind]
+    rw [setIntegral_indicator measurableSet_Ioc, Measure.restrict_restrict measurableSet_Ioc]
+    refine integral_congr_ae ?_
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_right hΨF] with s hs
+    rw [L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [φ.coeFn_toLp 2, hs] with x h₁ h₂
+    rw [h₁, h₂]
+
+/-- **Uniqueness for the Schrödinger equation with forcing in a dual Strichartz space.** Under the
+hypotheses of `TauCeti.inner_toLp_schrodingerPropagator_sub_smul_schrodingerRetardedL`, let `v`
+be continuous on `[0, T₀]` with values in `L²(E)`. If `v` solves
+`i ∂ₜv + Δv = Φ`, `v(0) = f`, in the sense of distributions in space on `[0, T₀]`: for every
+Schwartz function `φ` and every `t ∈ [0, T₀]`,
+
+`⟪φ, v t⟫ = ⟪φ, f⟫ + i (∫_{(0,t]} ⟪Δφ, v s⟫ ds - ∫_{(0,t] ∩ (0,T]} ∫ ⟪φ(x), Φ(s)(x)⟫ dx ds)`,
+
+then `v(t) = S(t) f - i schrodingerRetardedL p₁ r₁' (0, T] Φ t` on `[0, T₀]`. So the Cauchy problem
+is uniquely solvable in `C([0, T₀]; L²)`, and its solution satisfies the Strichartz estimates of
+`TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_sub_smul_schrodingerRetardedL_le`. -/
+theorem eqOn_schrodingerPropagator_sub_smul_schrodingerRetardedL_of_forall_inner_toLp_eq
+    (hq₁ : 2 ≤ q₁) (hn₁ : q₁ = 2 → 2 < Module.finrank ℝ E) (hpq₁ : p₁.HolderConjugate q₁)
+    (hqr₁ : 2 / (q₁ : ℝ) + Module.finrank ℝ E * (r₁⁻¹).toReal = Module.finrank ℝ E / 2) {T T₀ : ℝ}
+    (f : Lp ℂ 2 (volume : Measure E))
+    (Φ : Lp (Lp ℂ r₁' (volume : Measure E)) p₁ (volume.restrict (Ioc 0 T)))
+    {v : ℝ → Lp ℂ 2 (volume : Measure E)} (hv : ContinuousOn v (Icc 0 T₀))
+    (h : ∀ φ : 𝓢(E, ℂ), ∀ t ∈ Icc 0 T₀, ⟪φ.toLp 2, v t⟫_ℂ = ⟪φ.toLp 2, f⟫_ℂ +
+      Complex.I * ((∫ s in Ioc 0 t, ⟪(Δ φ).toLp 2, v s⟫_ℂ) -
+        ∫ s in Ioc 0 t, (∫ x, ⟪φ x, (Φ s : E → ℂ) x⟫_ℂ) ∂volume.restrict (Ioc 0 T))) :
+    EqOn v (fun t ↦ schrodingerPropagator ℂ t f -
+      Complex.I • schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ t) (Icc 0 T₀) := by
+  set u : ℝ → Lp ℂ 2 (volume : Measure E) := fun t ↦ schrodingerPropagator ℂ t f -
+    Complex.I • schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ t
+  have hu : Continuous u := (continuous_phasePropagator_apply laplacianSymbol f).sub
+    ((schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ).continuous.const_smul Complex.I)
+  -- The difference `v - u` is a weak solution of the free equation with zero initial value.
+  have h0 := eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian
+      (hv.sub hu.continuousOn) fun φ t ht ↦ by
+    have hint (g : ℝ → Lp ℂ 2 (volume : Measure E)) (hg : ContinuousOn g (Icc 0 T₀)) :
+        IntegrableOn (fun s ↦ ⟪(Δ φ).toLp 2, g s⟫_ℂ) (Ioc 0 t) :=
+      ((continuous_const.inner continuous_id).comp_continuousOn
+        (hg.mono (Icc_subset_Icc_right ht.2))).integrableOn_Icc.mono_set Ioc_subset_Icc_self
+    simp only [Pi.sub_apply, inner_sub_right]
+    rw [integral_sub (hint v hv) (hint u hu.continuousOn), h φ t ht,
+      inner_toLp_schrodingerPropagator_sub_smul_schrodingerRetardedL hq₁ hn₁ hpq₁ hqr₁ f Φ φ ht.1]
+    ring
+  exact fun t ht ↦ sub_eq_zero.1 (h0 ht)
 
 end Estimates
 

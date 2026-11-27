@@ -29,6 +29,11 @@ inclusion `toHopfModuleCat` is therefore strictly monoidal (`ObjectProperty.ι_�
 forgetful functor of all modules, is monoidal. The monoidal structure is preadditive and
 `k`-linear.
 
+For finite modules in independent carrier universes, `shrinkTensorEquiv` compares tensoring
+small models with shrinking the coproduct tensor product. It is natural, satisfies the
+associativity and unit laws, and becomes the native tensor congruence after forgetting the
+`H`-action. This construction uses `BialgebraModule.tensorCongr`.
+
 ## Main declarations
 
 * `MonoidalCategory (TauCeti.FiniteHopfModuleCat k H)`: the monoidal structure.
@@ -43,6 +48,9 @@ forgetful functor of all modules, is monoidal. The monoidal structure is preaddi
 * `TauCeti.FiniteHopfModuleCat.trivialEquiv_smul_id_hom_hom` and
   `TauCeti.FiniteHopfModuleCat.eq_smul_id_iff`: the scalar multiple `c • 𝟙` of the identity of the
   unit object multiplies by `c`, and is the only endomorphism of the unit doing so.
+
+* `TauCeti.FiniteHopfModuleCat.shrinkTensorEquiv`: the tensor comparison for small models,
+  with computation rules, naturality, coherence and scalar-linear compatibility.
 
 ## References
 
@@ -255,5 +263,168 @@ theorem eq_smul_id_iff {a : 𝟙_ (FiniteHopfModuleCat k H) ⟶ 𝟙_ (FiniteHop
   ext r
   apply (trivialEquiv k H).injective
   rw [h, trivialEquiv_smul_id_hom_hom]
+
+section Shrink
+
+variable (k H)
+
+universe w w' w'' w'''
+variable (V : Type w) [AddCommGroup V] [Module k V] [Module H V]
+  [IsScalarTower k H V] [Module.Finite k V]
+variable (W : Type w') [AddCommGroup W] [Module k W] [Module H W]
+  [IsScalarTower k H W] [Module.Finite k W]
+
+/-- Tensoring the small models gives the small model of the coproduct tensor product.
+The comparison sends `v ⊗ w` to the small representative of the corresponding original tensor. -/
+def shrinkTensorEquiv :
+    (ofShrink k H V ⊗ ofShrink k H W : FiniteHopfModuleCat k H) ≃ₗ[H]
+      ofShrink k H (Tensor k H V W) :=
+  (tensorCongr k H (ofShrinkEquiv k H V) (ofShrinkEquiv k H W)).trans
+    (ofShrinkEquiv k H (Tensor k H V W)).symm
+
+/-- The tensor comparison acts factorwise on pure tensors. -/
+@[simp]
+theorem shrinkTensorEquiv_tmul (x : ofShrink k H V) (y : ofShrink k H W) :
+    shrinkTensorEquiv k H V W (tmul k H x y) =
+      (ofShrinkEquiv k H (Tensor k H V W)).symm
+        (tmul k H (ofShrinkEquiv k H V x) (ofShrinkEquiv k H W y)) := by
+  exact congrArg (ofShrinkEquiv k H (Tensor k H V W)).symm
+    (tensorCongr_tmul k H (ofShrinkEquiv k H V) (ofShrinkEquiv k H W) x y)
+
+/-- On the original modules, tensor comparison is the coproduct tensor product of the
+shrinking maps. -/
+-- Simplify the composite before the primitive shrink map expands into carrier casts.
+@[simp↓]
+theorem ofShrinkEquiv_shrinkTensorEquiv
+    (x : (ofShrink k H V ⊗ ofShrink k H W : FiniteHopfModuleCat k H)) :
+    ofShrinkEquiv k H (Tensor k H V W) (shrinkTensorEquiv k H V W x) =
+      tensorMap k H (ofShrinkEquiv k H V).toLinearMap (ofShrinkEquiv k H W).toLinearMap x := by
+  calc
+    _ = tensorCongr k H (ofShrinkEquiv k H V) (ofShrinkEquiv k H W) x :=
+      (ofShrinkEquiv k H (Tensor k H V W)).apply_symm_apply _
+    _ = _ := tensorCongr_apply k H _ _ x
+
+/-- The inverse tensor comparison returns the tensor of the small representatives. -/
+@[simp]
+theorem shrinkTensorEquiv_symm_tmul (x : V) (y : W) :
+    (shrinkTensorEquiv k H V W).symm
+        ((ofShrinkEquiv k H (Tensor k H V W)).symm (tmul k H x y)) =
+      tmul k H ((ofShrinkEquiv k H V).symm x) ((ofShrinkEquiv k H W).symm y) := by
+  apply (shrinkTensorEquiv k H V W).injective
+  simp only [LinearEquiv.apply_symm_apply, shrinkTensorEquiv_tmul]
+
+/-- Forgetting the action identifies the tensor comparison with the tensor product of the
+scalar-linear shrinking equivalences. -/
+@[simp↓]
+theorem tensorEquiv_ofShrinkLinearEquiv_shrinkTensorEquiv
+    (x : (ofShrink k H V ⊗ ofShrink k H W : FiniteHopfModuleCat k H)) :
+    tensorEquiv k H V W (ofShrinkLinearEquiv k H (Tensor k H V W)
+      (shrinkTensorEquiv k H V W x)) =
+      TensorProduct.congr (ofShrinkLinearEquiv k H V) (ofShrinkLinearEquiv k H W)
+        (tensorEquiv k H (ofShrink k H V) (ofShrink k H W) x) := by
+  rw [ofShrinkLinearEquiv_apply, ofShrinkEquiv_shrinkTensorEquiv, tensorEquiv_tensorMap]
+  have hV : (ofShrinkEquiv k H V).toLinearMap.restrictScalars k =
+      (ofShrinkLinearEquiv k H V).toLinearMap := by
+    ext x
+    exact (ofShrinkLinearEquiv_apply k H V x).symm
+  have hW : (ofShrinkEquiv k H W).toLinearMap.restrictScalars k =
+      (ofShrinkLinearEquiv k H W).toLinearMap := by
+    ext x
+    exact (ofShrinkLinearEquiv_apply k H W x).symm
+  rw [hV, hW, ← TensorProduct.toLinearMap_congr]
+  rfl
+
+variable {V W}
+variable {V' : Type w''} [AddCommGroup V'] [Module k V'] [Module H V']
+  [IsScalarTower k H V'] [Module.Finite k V']
+variable {W' : Type w'''} [AddCommGroup W'] [Module k W'] [Module H W']
+  [IsScalarTower k H W'] [Module.Finite k W']
+
+/-- Tensor comparison commutes with the transport of intertwiners to small models. -/
+theorem shrinkTensorEquiv_naturality (f : V →ₗ[H] V') (g : W →ₗ[H] W') :
+    (shrinkHom k H f ⊗ₘ shrinkHom k H g) ≫
+        (shrinkTensorEquiv k H V' W').toFiniteHopfModuleCatIso.hom =
+      (shrinkTensorEquiv k H V W).toFiniteHopfModuleCatIso.hom ≫
+        shrinkHom k H (tensorMap k H f g) := by
+  ext x y
+  simp
+
+variable (V)
+
+/-- Tensor comparison commutes with the left unitor, including the unit comparison. -/
+theorem shrinkTensorEquiv_left_unitality :
+    (ofShrinkEquiv k H (Trivial k H)).symm.toFiniteHopfModuleCatIso.hom ▷ ofShrink k H V ≫
+        (shrinkTensorEquiv k H (Trivial k H) V).toFiniteHopfModuleCatIso.hom ≫
+          shrinkHom k H (lid k H V).toLinearMap =
+      (λ_ (ofShrink k H V)).hom := by
+  ext r x
+  simp [-ofShrinkEquiv_apply, ← ofShrinkLinearEquiv_apply, ← ofShrinkLinearEquiv_symm_apply]
+
+/-- Tensor comparison commutes with the right unitor, including the unit comparison. -/
+theorem shrinkTensorEquiv_right_unitality :
+    ofShrink k H V ◁ (ofShrinkEquiv k H (Trivial k H)).symm.toFiniteHopfModuleCatIso.hom ≫
+        (shrinkTensorEquiv k H V (Trivial k H)).toFiniteHopfModuleCatIso.hom ≫
+          shrinkHom k H (rid k H V).toLinearMap =
+      (ρ_ (ofShrink k H V)).hom := by
+  ext x r
+  simp [-ofShrinkEquiv_apply, ← ofShrinkLinearEquiv_apply, ← ofShrinkLinearEquiv_symm_apply]
+
+variable (W)
+variable (P : Type w'') [AddCommGroup P] [Module k P] [Module H P]
+  [IsScalarTower k H P] [Module.Finite k P]
+
+/-- The two ways of comparing a triple tensor product agree through the actual associator. -/
+theorem shrinkTensorEquiv_associativity :
+    (shrinkTensorEquiv k H V W).toFiniteHopfModuleCatIso.hom ▷ ofShrink k H P ≫
+        (shrinkTensorEquiv k H (Tensor k H V W) P).toFiniteHopfModuleCatIso.hom ≫
+          shrinkHom k H (assoc k H V W P).toLinearMap =
+      (α_ (ofShrink k H V) (ofShrink k H W) (ofShrink k H P)).hom ≫
+        ofShrink k H V ◁ (shrinkTensorEquiv k H W P).toFiniteHopfModuleCatIso.hom ≫
+          (shrinkTensorEquiv k H V (Tensor k H W P)).toFiniteHopfModuleCatIso.hom := by
+  apply hom_ext
+  simp only [hom_hom_comp, whiskerRight_hom_hom, whiskerLeft_hom_hom,
+    LinearEquiv.toFiniteHopfModuleCatIso_hom_hom, associator_hom_hom, shrinkHom_hom_hom]
+  have hVW : (ofShrinkEquiv k H (Tensor k H V W)).toLinearMap ∘ₗ
+      (shrinkTensorEquiv k H V W).toLinearMap =
+        tensorMap k H (ofShrinkEquiv k H V).toLinearMap
+          (ofShrinkEquiv k H W).toLinearMap := by
+    ext x
+    exact ofShrinkEquiv_shrinkTensorEquiv k H V W x
+  have hWP : (ofShrinkEquiv k H (Tensor k H W P)).toLinearMap ∘ₗ
+      (shrinkTensorEquiv k H W P).toLinearMap =
+        tensorMap k H (ofShrinkEquiv k H W).toLinearMap
+          (ofShrinkEquiv k H P).toLinearMap := by
+    ext x
+    exact ofShrinkEquiv_shrinkTensorEquiv k H W P x
+  -- Full-subcategory tensors inherit ambient instances; state the pointwise
+  -- comparison on canonical module carriers so tensor-map naturality applies directly.
+  suffices h : ∀ x : Tensor k H (Tensor k H (ofShrink k H V) (ofShrink k H W))
+      (ofShrink k H P),
+      (ofShrinkEquiv k H (Tensor k H V (Tensor k H W P))).symm
+        (assoc k H V W P (ofShrinkEquiv k H (Tensor k H (Tensor k H V W) P)
+          (shrinkTensorEquiv k H (Tensor k H V W) P
+            (tensorMap k H (shrinkTensorEquiv k H V W).toLinearMap LinearMap.id x)))) =
+      shrinkTensorEquiv k H V (Tensor k H W P)
+        (tensorMap k H LinearMap.id (shrinkTensorEquiv k H W P).toLinearMap
+          (assoc k H (ofShrink k H V) (ofShrink k H W) (ofShrink k H P) x)) by
+    exact LinearMap.ext h
+  intro x
+  apply (ofShrinkEquiv k H (Tensor k H V (Tensor k H W P))).injective
+  simp only [LinearEquiv.apply_symm_apply, ofShrinkEquiv_shrinkTensorEquiv]
+  have hl := tensorMap_comp k H (shrinkTensorEquiv k H V W).toLinearMap
+    (ofShrinkEquiv k H (Tensor k H V W)).toLinearMap LinearMap.id
+    (ofShrinkEquiv k H P).toLinearMap
+  have hr := tensorMap_comp k H LinearMap.id (ofShrinkEquiv k H V).toLinearMap
+    (shrinkTensorEquiv k H W P).toLinearMap
+    (ofShrinkEquiv k H (Tensor k H W P)).toLinearMap
+  simp only [hVW, LinearMap.comp_id] at hl
+  simp only [hWP, LinearMap.comp_id] at hr
+  exact (congrArg (assoc k H V W P) (LinearMap.congr_fun hl x)).symm.trans
+    ((tensorMap_tensorMap_assoc k H (ofShrinkEquiv k H V).toLinearMap
+      (ofShrinkEquiv k H W).toLinearMap (ofShrinkEquiv k H P).toLinearMap x).symm.trans
+        (LinearMap.congr_fun hr
+          (assoc k H (ofShrink k H V) (ofShrink k H W) (ofShrink k H P) x)))
+
+end Shrink
 
 end TauCeti.FiniteHopfModuleCat

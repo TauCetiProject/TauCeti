@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Data.Fintype.Card
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Data.Finset.Laminar
 import TauCeti.Data.Sym.Sym2
 
@@ -22,6 +23,12 @@ sides of that edge: its fundamental partition.
 In an acyclic graph the unique path between two vertices uses an edge exactly when that edge
 separates them, so a path from a vertex on the side of `u` crosses `s(u, v)` exactly when it ends
 off that side. These are the facts used to read off minimum cuts from weighted trees.
+
+Two facts about deleting an edge need no finiteness. After deleting `s(u, v)`, every vertex
+reachable from `u` is still reachable from `u` or from `v`. And if deleting an edge `f` separates
+two joined vertices `u`, `v`, then replacing `f` by the edge `uv` leaves the reachability relation
+unchanged (`SimpleGraph.Reachable.reachable_deleteEdges_sup_edge_eq`); this is the exchange step
+for spanning forests.
 
 The side of `u` can also be recognized without walks: in a preconnected graph it is the unique set
 containing `u` but not `v` that no other edge leaves (`SimpleGraph.edgeSide_eq_of_forall_adj`).
@@ -53,6 +60,68 @@ theorem IsPath.mem_edges_iff_not_reachable_deleteEdges (hG : G.IsAcyclic) {p : G
   simpa using q.toPath.val.edges_subset_edgeSet he
 
 end Walk
+
+/-- After the edge `s(u, v)` is deleted, every vertex reachable from `u` is still reachable from
+`u` or from `v`. -/
+theorem Reachable.reachable_deleteEdges_or_reachable_deleteEdges (h : G.Reachable u x) :
+    (G.deleteEdges {s(u, v)}).Reachable u x ∨ (G.deleteEdges {s(u, v)}).Reachable v x := by
+  obtain ⟨p⟩ := h
+  suffices key : ∀ {y z : V}, G.Walk y z →
+      ((G.deleteEdges {s(u, v)}).Reachable u y ∨ (G.deleteEdges {s(u, v)}).Reachable v y) →
+      (G.deleteEdges {s(u, v)}).Reachable u z ∨ (G.deleteEdges {s(u, v)}).Reachable v z from
+    key p (.inl .rfl)
+  intro y z q
+  induction q with
+  | nil => exact id
+  | @cons a b _ hab _ ih =>
+    refine fun ha ↦ ih ?_
+    by_cases he : s(a, b) = s(u, v)
+    · -- Crossing the deleted edge lands on one of its ends.
+      rcases Sym2.eq_iff.mp he with ⟨-, rfl⟩ | ⟨-, rfl⟩
+      · exact .inr .rfl
+      · exact .inl .rfl
+    · have hab' := (deleteEdges_adj.mpr ⟨hab, Set.notMem_singleton_iff.mpr he⟩).reachable
+      exact ha.imp (·.trans hab') (·.trans hab')
+
+/-- **Exchanging a separating edge.** If `u` and `v` are joined in `G` but no longer once the edge
+`f` is deleted, then deleting `f` and adding the edge `uv` does not change which vertices are
+joined. -/
+theorem Reachable.reachable_deleteEdges_sup_edge_eq {f : Sym2 V} (h : G.Reachable u v)
+    (hnr : ¬(G.deleteEdges {f}).Reachable u v) :
+    (G.deleteEdges {f} ⊔ edge u v).Reachable = G.Reachable := by
+  obtain ⟨p⟩ := h
+  have hfp := p.mem_edges_of_not_reachable_deleteEdges hnr
+  have huv : u ≠ v := by rintro rfl; exact hnr .rfl
+  have hle : G.deleteEdges {f} ≤ G.deleteEdges {f} ⊔ edge u v := le_sup_left
+  have hadj : (G.deleteEdges {f} ⊔ edge u v).Adj u v :=
+    (sup_adj ..).mpr (.inr ((edge_adj ..).mpr ⟨.inl ⟨rfl, rfl⟩, huv⟩))
+  ext a b
+  refine ⟨fun h ↦ ConnectedComponent.exact (h.apply_eq_apply fun x y hxy ↦ ?_),
+    fun h ↦ ConnectedComponent.exact (h.apply_eq_apply fun x y hxy ↦ ?_)⟩
+  · -- Every edge of the new graph joins vertices that are reachable in `G`.
+    refine ConnectedComponent.sound ?_
+    rcases (sup_adj ..).mp hxy with hxy | hxy
+    · exact (deleteEdges_adj.mp hxy).1.reachable
+    · rcases ((edge_adj ..).mp hxy).1 with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      · exact p.reachable
+      · exact p.reachable.symm
+  · -- Every edge of `G` joins vertices that are reachable in the new graph.
+    refine ConnectedComponent.sound ?_
+    by_cases hxyf : s(x, y) = f
+    · subst hxyf
+      -- Both `u` and `v` are joined to `x` or to `y` without `f`; as `u` and `v` are not joined
+      -- without `f`, one of them is joined to `x` and the other to `y`.
+      have hx := p.fst_mem_support_of_mem_edges hfp
+      have hu := Reachable.reachable_deleteEdges_or_reachable_deleteEdges (v := y)
+        (p.reachable_of_mem_support hx p.start_mem_support)
+      have hv := Reachable.reachable_deleteEdges_or_reachable_deleteEdges (v := y)
+        (p.reachable_of_mem_support hx p.end_mem_support)
+      rcases hu with hu | hu <;> rcases hv with hv | hv
+      · exact (hnr (hu.symm.trans hv)).elim
+      · exact (hu.mono hle).trans (hadj.reachable.trans (hv.mono hle).symm)
+      · exact (hv.mono hle).trans (hadj.reachable.symm.trans (hu.mono hle).symm)
+      · exact (hnr (hu.symm.trans hv)).elim
+    · exact ((deleteEdges_adj.mpr ⟨hxy, Set.notMem_singleton_iff.mpr hxyf⟩).reachable).mono hle
 
 variable [Fintype V]
 
@@ -126,30 +195,11 @@ theorem reachable_deleteEdges_of_mem_edgeSide {y : V} (hx : x ∈ G.edgeSide u v
     (hy : y ∈ G.edgeSide u v) : (G.deleteEdges {s(u, v)}).Reachable x y :=
   (mem_edgeSide.mp hx).symm.trans (mem_edgeSide.mp hy)
 
-/-- The union of the two sides of `s(u, v)` is closed under adjacency: crossing any other edge
-stays on the same side, and crossing `s(u, v)` itself lands on one of its ends. -/
-private theorem Adj.mem_edgeSide_or_mem_edgeSide {y z : V} (hyz : G.Adj y z)
-    (hy : y ∈ G.edgeSide u v ∨ y ∈ G.edgeSide v u) :
-    z ∈ G.edgeSide u v ∨ z ∈ G.edgeSide v u := by
-  by_cases he : s(y, z) = s(u, v)
-  · rcases Sym2.eq_iff.mp he with ⟨-, rfl⟩ | ⟨-, rfl⟩
-    · exact .inr (self_mem_edgeSide G _ u)
-    · exact .inl (self_mem_edgeSide G _ v)
-  · have hadj : (G.deleteEdges {s(u, v)}).Adj y z := deleteEdges_adj.mpr ⟨hyz, he⟩
-    have hadj' : (G.deleteEdges {s(v, u)}).Adj y z := by rwa [Sym2.eq_swap]
-    exact hy.imp (fun hy ↦ mem_edgeSide.mpr ((mem_edgeSide.mp hy).trans hadj.reachable))
-      (fun hy ↦ mem_edgeSide.mpr ((mem_edgeSide.mp hy).trans hadj'.reachable))
-
 /-- Every vertex reachable from `u` lies on the side of `u` or the side of `v` for `s(u, v)`. -/
 theorem Reachable.mem_edgeSide_or_mem_edgeSide (h : G.Reachable u x) :
     x ∈ G.edgeSide u v ∨ x ∈ G.edgeSide v u := by
-  obtain ⟨p⟩ := h
-  suffices key : ∀ {y z : V} (_ : G.Walk y z), (y ∈ G.edgeSide u v ∨ y ∈ G.edgeSide v u) →
-      z ∈ G.edgeSide u v ∨ z ∈ G.edgeSide v u from key p (.inl (self_mem_edgeSide G u v))
-  intro y z q
-  induction q with
-  | nil => exact id
-  | cons hyz _ ih => exact fun hy ↦ ih (Adj.mem_edgeSide_or_mem_edgeSide hyz hy)
+  rw [mem_edgeSide, mem_edgeSide, Sym2.eq_swap (a := v)]
+  exact h.reachable_deleteEdges_or_reachable_deleteEdges
 
 /-- The two sides of a bridge are disjoint. -/
 theorem IsBridge.disjoint_edgeSide (h : G.IsBridge s(u, v)) :

@@ -298,31 +298,32 @@ pairs of a noncrossing partition of the positions before `x` and one of the posi
 private noncomputable def fiberEquiv (hs : s.Nonempty) (hx : x ∈ s) :
     {P : NoncrossingPartition s // lastOfFirstPart hs P = x} ≃
       NoncrossingPartition {y ∈ s | y < x} × NoncrossingPartition {y ∈ s | x < y} where
-  toFun P := (⟨P.val.val.restrict (filter_subset _ s), P.val.property.restrict _⟩,
-    ⟨P.val.val.restrict (filter_subset _ s), P.val.property.restrict _⟩)
+  toFun P := (P.val.restrict (filter_subset _ s), P.val.restrict (filter_subset _ s))
   invFun LR := ⟨⟨glue s (s.min' hs) x LR.1.val LR.2.val,
       isNoncrossing_glue (fun y hy => s.min'_le y hy) LR.1.property LR.2.property⟩,
     le_antisymm (max'_le _ _ _ fun _ hy => le_of_mem_part_glue (s.min'_le x hx) hy)
       (le_max' _ _ (mem_part_glue_self (s.min'_mem hs) hx (s.min'_le x hx)))⟩
   left_inv P := by
     obtain ⟨P, rfl⟩ := P
-    exact Subtype.ext <| Subtype.ext <| glue_restrict P.property (fun y hy => s.min'_le y hy)
+    refine Subtype.ext <| Subtype.ext ?_
+    simpa only [coe_restrict] using glue_restrict P.property (fun y hy => s.min'_le y hy)
       (lastOfFirstPart_mem hs P) fun _ hy => le_lastOfFirstPart hs P hy
-  right_inv LR := Prod.ext (Subtype.ext restrict_glue_lt) (Subtype.ext restrict_glue_gt)
+  right_inv LR := Prod.ext (Subtype.ext <| (coe_restrict _ _).trans restrict_glue_lt)
+    (Subtype.ext <| (coe_restrict _ _).trans restrict_glue_gt)
 
 /-- The first component of `fiberEquiv` is the restriction to the positions before `x`. -/
 private theorem coe_fiberEquiv_fst (hs : s.Nonempty) (hx : x ∈ s)
     (P : {P : NoncrossingPartition s // lastOfFirstPart hs P = x}) :
     ((fiberEquiv hs hx P).1 : Finpartition {y ∈ s | y < x}) = P.val.val.restrict (filter_subset _ s)
         :=
-  rfl
+  coe_restrict _ _
 
 /-- The second component of `fiberEquiv` is the restriction to the positions after `x`. -/
 private theorem coe_fiberEquiv_snd (hs : s.Nonempty) (hx : x ∈ s)
     (P : {P : NoncrossingPartition s // lastOfFirstPart hs P = x}) :
     ((fiberEquiv hs hx P).2 : Finpartition {y ∈ s | x < y}) = P.val.val.restrict (filter_subset _ s)
         :=
-  rfl
+  coe_restrict _ _
 
 /-- Let `x` be the last position of the part of the first position `m` of a noncrossing partition.
 Then the part of a position after `x` lies after `x`. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Similitude
 public import TauCeti.Algebra.AlgebraicGroup.QuadraticOrthogonal.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.DiscrNondegenerate
 import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
@@ -20,7 +21,8 @@ with `q_A(g x) = c · q_A(x)` for all `x ∈ Aⁿ`, where `q_A` is the form with
 are the points of the orthogonal group scheme `O(q)` (`TauCeti.QuadraticOrthogonal`), so `O(q)` is
 the kernel of the multiplier on points
 (`TauCeti.QuadraticSimilitude.kerMultiplierPointsMulEquiv`).
-Nothing here assumes `2` invertible, and nothing is assumed of `q`.
+Nothing here assumes `2` invertible, and nothing is assumed of `q` except, for the uniqueness of
+the multiplier, nondegeneracy in positive rank (`QuadraticForm.IsDiscrNondegenerate`).
 
 Its coordinate Hopf algebra is the quotient of the coordinate Hopf algebra `O(GLₙ) ⊗[R] R[T;T⁻¹]`
 of `GLₙ × 𝔾_m` (`TauCeti.ConstantFormSimilitude.ambientHopfAlgebra`) by the coefficients of the
@@ -51,6 +53,8 @@ Wᵀ M W - s M = -(s Wᵀ (Xᵀ M X - r M) W)    (W X = 1, s r = 1).
   Hopf algebra of `GO(q)`.
 * `TauCeti.QuadraticSimilitude.multiplierPoints`: the multiplier on points, `(g, c) ↦ c`, which is
   the multiplier character under the points identification (`multiplierPoints_pointsMulEquiv`).
+* `TauCeti.QuadraticSimilitude.snd_eq_of_fst_eq` and `TauCeti.QuadraticSimilitude.fst_injective`:
+  for a nondegenerate form of positive rank, `g` determines the multiplier `c`.
 * `TauCeti.QuadraticSimilitude.kerMultiplierPointsMulEquiv`: the kernel of the multiplier on points
   is the group of points of `O(q)`, a pair `(g, 1)` being a similitude exactly when `g` is a point
   of `O(q)` (`mk_one_mem_pointsSubgroup_iff`).
@@ -450,6 +454,24 @@ theorem multiplierPoints_pointsMulEquiv
 theorem mem_ker_multiplierPoints_iff (p : pointsSubgroup R n q A) :
     p ∈ (multiplierPoints R n q A).ker ↔ (p : GL (Fin n) A × Aˣ).2 = 1 := by
   rw [MonoidHom.mem_ker, multiplierPoints_apply]
+
+/-- **For a nondegenerate form of positive rank, `g` determines the multiplier**: if `(g, c)` and
+`(g, c')` are similitudes of `q_A`, then `c = c'`. Nondegeneracy is in the sense of
+`QuadraticForm.IsDiscrNondegenerate`, with no assumption on `2`. -/
+theorem snd_eq_of_fst_eq (hn : 0 < n) (hq : IsDiscrNondegenerate q)
+    {p p' : GL (Fin n) A × Aˣ} (hp : p ∈ pointsSubgroup R n q A)
+    (hp' : p' ∈ pointsSubgroup R n q A) (h : p.1 = p'.1) : p.2 = p'.2 := by
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  -- `(c - c') q_A(x) = 0` for every `x`, and the values of `q_A` generate the unit ideal.
+  refine Units.ext (sub_eq_zero.mp (eq_zero_of_forall_mul_eq_zero (Pi.basisFun A (Fin n))
+    (hq.baseChangeForm A) fun x ↦ ?_))
+  rw [sub_mul, ← hp x, ← hp' x, h, sub_self]
+
+/-- For a nondegenerate form of positive rank, a similitude is determined by its matrix: the
+projection `GO(q)(A) → GL_n(A)` is injective. -/
+theorem fst_injective (hn : 0 < n) (hq : IsDiscrNondegenerate q) :
+    Function.Injective fun p : pointsSubgroup R n q A ↦ (p : GL (Fin n) A × Aˣ).1 :=
+  fun p p' h ↦ Subtype.ext (Prod.ext h (snd_eq_of_fst_eq R n q hn hq p.property p'.property h))
 
 variable (A) in
 /-- **`O(q)` is the kernel of the multiplier on points**: `(g, 1) ↦ g` identifies the kernel of

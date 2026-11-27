@@ -35,7 +35,8 @@ On `V × V` for any real inner product space `V`, the canonical momentum one-for
 
 ## Main results
 
-* `TauCeti.SymplecticForm.mextDeriv_radialPrimitive`: `dλ = ω`.
+* `TauCeti.SymplecticForm.mextDeriv_radialPrimitive`: `dλ = ω`; as smooth forms,
+  `TauCeti.SymplecticForm.mextDerivₗ_radialPrimitive`.
 * `TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`: `ι_Z ω = λ` for `Z(x) = x / 2`.
 * `TauCeti.innerProductMomentumForm_apply`: evaluation of `⟪p, dq⟫`.
 * `TauCeti.mextDeriv_innerProductMomentumForm_apply`: `d⟪p, dq⟫ = -stdSymplecticForm`.
@@ -98,6 +99,11 @@ theorem mextDeriv_radialPrimitive : mextDeriv ω.radialPrimitive.val = ω.constS
     fin_cases i <;> rfl
   conv_rhs => rw [hv]
   exact h.symm
+
+/-- **The radial primitive is a primitive**, as smooth forms: `dλ = ω`. -/
+@[simp]
+theorem mextDerivₗ_radialPrimitive : mextDerivₗ 𝓘(ℝ, V) 1 ω.radialPrimitive = ω.constSmooth :=
+  Subtype.ext ((mextDerivₗ_apply (I := 𝓘(ℝ, V)) 1 _).trans ω.mextDeriv_radialPrimitive)
 
 /-- The Liouville field of the radial primitive is half the position field:
 `ι_Z ω = λ` for `Z(x) = x / 2`. -/
