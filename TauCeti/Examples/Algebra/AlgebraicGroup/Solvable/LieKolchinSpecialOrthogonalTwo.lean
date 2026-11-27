@@ -12,15 +12,15 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Vector
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Center
 
 /-!
-# Check: Lie–Kolchin needs an algebraically closed field
+# `SO₂` over `ℝ`: Lie–Kolchin needs an algebraically closed field
 
-The special orthogonal group `SO₂` over `ℝ` is geometrically connected (main's
-`TauCeti.SpecialOrthogonal.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra_two`)
+The special orthogonal group `SO₂` over `ℝ` is geometrically connected
+(`TauCeti.SpecialOrthogonal.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra_two`)
 and commutative on points over every commutative ring
-(main's `Matrix.SpecialOrthogonalGroup.mul_comm_of_le_two`), but its standard comodule `ℝ²` has
+(`Matrix.SpecialOrthogonalGroup.mul_comm_of_le_two`), but its standard comodule `ℝ²` has
 no nonzero weight vector
 (`TauCeti.Examples.LieKolchinSpecialOrthogonalTwo.not_hasNonzeroWeightVector`): the rational point
-rotation by `90°` (main's `TauCeti.Matrix.SpecialOrthogonalGroup.coordinateRotation 0 1`) would
+rotation by `90°` (`TauCeti.Matrix.SpecialOrthogonalGroup.coordinateRotation 0 1`) would
 act on a weight vector by a real scalar, and it has no real eigenvector.
 So the conclusion of the Lie–Kolchin theorem fails over the non-algebraically-closed field `ℝ`.
 -/
@@ -60,21 +60,22 @@ theorem eq_zero_of_coordinateRotation_mulVec_eq_smul {a : ℝ} {v : Fin 2 → �
   fin_cases i
   exacts [hv0, hv1]
 
-/-- **The standard comodule of `SO₂` over `ℝ` has no weight vector**: the rational point rotation
-by `90°` would act on it by a real scalar. -/
+/-- **The standard comodule of `SO₂` over `ℝ` has no nonzero weight vector**, so the conclusion
+of the Lie–Kolchin theorem fails for the connected commutative group `SO₂` over the
+non-algebraically-closed field `ℝ`. -/
 theorem not_hasNonzeroWeightVector :
     letI := SpecialOrthogonal.standardComodule ℝ 2
     ¬Comodule.HasNonzeroWeightVector ℝ (SpecialOrthogonal.coordinateHopfAlgebra ℝ 2)
       (Fin 2 → ℝ) := by
   let := SpecialOrthogonal.standardComodule ℝ 2
   rw [Comodule.hasNonzeroWeightVector_iff]
-  rintro ⟨v, c, hv, -, hcoact⟩
+  rintro ⟨v, c, hv, hc, hcoact⟩
   let g := (SpecialOrthogonal.pointsMulEquiv ℝ 2 (A := ℝ)).symm
     (Matrix.SpecialOrthogonalGroup.coordinateRotation 0 1 (by decide))
-  have h := SpecialOrthogonal.basePointsRepresentation_eq_mulVec ℝ 2 g v
-  rw [Comodule.basePointsRepresentation_apply, Comodule.endOfPoint_tmul, hcoact] at h
+  have h := (SpecialOrthogonal.basePointsRepresentation_eq_mulVec ℝ 2 g v).symm.trans
+    (Comodule.basePointsRepresentation_apply_of_mem_weightSpace g (c := ⟨c, hc⟩)
+      (GroupLike.mem_weightSpace.mpr hcoact))
   simp only [g, MulEquiv.apply_symm_apply] at h
-  exact hv <|
-    eq_zero_of_coordinateRotation_mulVec_eq_smul (a := g.ofConv c) (by simpa using h.symm)
+  exact hv (eq_zero_of_coordinateRotation_mulVec_eq_smul h)
 
 end TauCeti.Examples.LieKolchinSpecialOrthogonalTwo
