@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Split
 public import TauCeti.Algebra.Lie.Symplectic.Killing
-public import Mathlib.LinearAlgebra.Matrix.IsDiag
+public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 
 /-!
 # The real symplectic Lie algebra is split
@@ -55,18 +55,10 @@ section CommRing
 variable (l) (R : Type*) [CommRing R]
 
 /-- The diagonal matrices in the symplectic Lie algebra `sp l R`, that is, the matrices
-`diag(D, -D)`. They form an abelian Lie subalgebra. -/
-def diagonalSubalgebra : LieSubalgebra R (sp l R) where
-  carrier := {X | (X : Matrix (l ⊕ l) (l ⊕ l) R).IsDiag}
-  zero_mem' := isDiag_zero
-  add_mem' hX hY := hX.add hY
-  smul_mem' c _ hX := hX.smul c
-  lie_mem' {X Y} hX hY := by
-    have h : ⁅X, Y⁆ = 0 := Subtype.ext <| by
-      rw [LieSubalgebra.coe_bracket, Ring.lie_def, ← hX.diagonal_diag, ← hY.diagonal_diag,
-        diagonal_mul_diagonal, diagonal_mul_diagonal, ZeroMemClass.coe_zero, sub_eq_zero]
-      exact congrArg diagonal (funext fun _ ↦ mul_comm _ _)
-    simpa only [h, Set.mem_ofPred_eq, ZeroMemClass.coe_zero] using isDiag_zero
+`diag(D, -D)`: the diagonal matrices of `gl` (`TauCeti.diagonalCartan`) pulled back along the
+inclusion. They form an abelian Lie subalgebra. -/
+def diagonalSubalgebra : LieSubalgebra R (sp l R) :=
+  (TauCeti.diagonalCartan R (l ⊕ l)).comap (sp l R).incl
 
 variable {l R}
 
@@ -74,16 +66,18 @@ variable {l R}
 @[simp]
 theorem mem_diagonalSubalgebra {X : sp l R} :
     X ∈ diagonalSubalgebra l R ↔ (X : Matrix (l ⊕ l) (l ⊕ l) R).IsDiag :=
-  Iff.rfl
+  TauCeti.mem_diagonalCartan_iff_isDiag
 
 /-- Diagonal symplectic Lie matrices commute. -/
 theorem lie_eq_zero_of_mem_diagonalSubalgebra {X Y : sp l R} (hX : X ∈ diagonalSubalgebra l R)
     (hY : Y ∈ diagonalSubalgebra l R) : ⁅X, Y⁆ = 0 :=
   Subtype.ext <| by
-    rw [LieSubalgebra.coe_bracket, Ring.lie_def, ← (mem_diagonalSubalgebra.mp hX).diagonal_diag,
-      ← (mem_diagonalSubalgebra.mp hY).diagonal_diag, diagonal_mul_diagonal,
-      diagonal_mul_diagonal, ZeroMemClass.coe_zero, sub_eq_zero]
-    exact congrArg diagonal (funext fun _ ↦ mul_comm _ _)
+    rw [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero]
+    exact TauCeti.lie_eq_zero_of_isDiag (mem_diagonalSubalgebra.mp hX)
+      (mem_diagonalSubalgebra.mp hY)
+
+instance : IsLieAbelian (diagonalSubalgebra l R) where
+  trivial X Y := Subtype.ext (lie_eq_zero_of_mem_diagonalSubalgebra X.property Y.property)
 
 /-- The entries of `[H, X]` for a diagonal `H`: `[H, X] a b = (H a a - H b b) X a b`. -/
 theorem lie_apply_of_mem_diagonalSubalgebra {H : sp l R} (hH : H ∈ diagonalSubalgebra l R)
@@ -91,9 +85,9 @@ theorem lie_apply_of_mem_diagonalSubalgebra {H : sp l R} (hH : H ∈ diagonalSub
     (⁅H, X⁆ : sp l R).val a b =
       ((H : Matrix (l ⊕ l) (l ⊕ l) R) a a - (H : Matrix (l ⊕ l) (l ⊕ l) R) b b) *
         (X : Matrix (l ⊕ l) (l ⊕ l) R) a b := by
-  rw [LieSubalgebra.coe_bracket, Ring.lie_def, Matrix.sub_apply,
-    ← (mem_diagonalSubalgebra.mp hH).diagonal_diag]
-  simp only [diagonal_mul, mul_diagonal, diagonal_apply_eq, diag_apply, sub_mul, mul_comm]
+  rw [LieSubalgebra.coe_bracket]
+  exact TauCeti.lie_apply_of_mem_diagonalCartan
+    (TauCeti.mem_diagonalCartan_iff_isDiag.mpr (mem_diagonalSubalgebra.mp hH)) _ a b
 
 /-- The element `H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞`. -/
 def diagonalBasisElement (i : l) : diagonalSubalgebra l R :=
@@ -103,6 +97,13 @@ def diagonalBasisElement (i : l) : diagonalSubalgebra l R :=
       intro a b hab
       simp only [Matrix.sub_apply, single_apply]
       grind⟩
+
+/-- The matrix of `H_i = E_(i, i) - E_(n + i, n + i)`. -/
+@[simp]
+theorem coe_diagonalBasisElement (i : l) :
+    ((diagonalBasisElement (R := R) i : sp l R) : Matrix (l ⊕ l) (l ⊕ l) R) =
+      single (.inl i) (.inl i) 1 - single (.inr i) (.inr i) 1 :=
+  (rfl)
 
 /-- The diagonal entries of `H_i = E_(i, i) - E_(n + i, n + i)`. -/
 theorem diagonalBasisElement_apply (i : l) (a : l ⊕ l) :
