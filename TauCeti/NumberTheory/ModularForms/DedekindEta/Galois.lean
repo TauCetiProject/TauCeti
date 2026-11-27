@@ -36,6 +36,8 @@ transformation under `SL(2, ℤ)` exactly by this rule.
 
 ## Main results
 
+* `TauCeti.exists_map_mul_diagonal_eq`: integral partners for diagonal conjugation modulo `M`,
+  preserving `Γ(N)` for every divisor `N` of `M`.
 * `TauCeti.ModularForm.etaMultiplier_sq_eq_of_mul_diagonal_eq`: `ε(γ')² = σ(ε(γ)²)` when
   `γ diag(1, d) = diag(1, d) γ'` modulo `M` and `σ(ζ_M) = ζ_M ^ d`.
 
@@ -49,6 +51,47 @@ public section
 
 open Complex Matrix ModularGroup
 open scoped Real ModularForm MatrixGroups UpperHalfPlane
+
+namespace TauCeti
+
+/-- Every `γ ∈ SL(2, ℤ)` has a partner `γ'` with `γ' diag(1, d) = diag(1, d) γ` modulo `M`,
+which lies in `Γ(N)` when `γ` does, provided `N ∣ M`. -/
+theorem exists_map_mul_diagonal_eq {N M : ℕ} (hNM : N ∣ M) (d : (ZMod M)ˣ) (γ : SL(2, ℤ)) :
+    ∃ γ' : SL(2, ℤ), (γ ∈ CongruenceSubgroup.Gamma N → γ' ∈ CongruenceSubgroup.Gamma N) ∧
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod M)) γ' :
+        SL(2, ZMod M)) : Matrix (Fin 2) (Fin 2) (ZMod M)) *
+          Matrix.diagonal ![1, (d : ZMod M)] =
+        Matrix.diagonal ![1, (d : ZMod M)] *
+          (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod M)) γ) := by
+  set red : SL(2, ℤ) →* SL(2, ZMod M) :=
+    Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod M))
+  set D := Matrix.diagonal ![1, (d : ZMod M)]
+  set D' := Matrix.diagonal ![1, ((d⁻¹ : (ZMod M)ˣ) : ZMod M)]
+  obtain ⟨γ', hγ'⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_surjective (d := M)
+    (Matrix.SpecialLinearGroup.conjDiagonal d⁻¹ (red γ))
+  have hγ'm : (red γ' : Matrix (Fin 2) (Fin 2) (ZMod M)) = D * red γ * D' := by
+    rw [hγ', Matrix.SpecialLinearGroup.coe_conjDiagonal, inv_inv]
+  refine ⟨γ', fun hγ ↦ ?_, ?_⟩
+  · -- reducing modulo `N`, the conjugate of `γ ≡ 1` by `D` is `1`
+    let ρ := ZMod.castHom hNM (ZMod N)
+    have hred (δ : SL(2, ℤ)) :
+        ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) δ : SL(2, ZMod N)) :
+          Matrix (Fin 2) (Fin 2) (ZMod N)) = ρ.mapMatrix (red δ) := by
+      ext i j
+      simp [red, ρ]
+    refine CongruenceSubgroup.Gamma_mem'.2 (Subtype.ext ?_)
+    rw [hred, hγ'm, map_mul, map_mul, ← hred,
+      congrArg Subtype.val (CongruenceSubgroup.Gamma_mem'.1 hγ)]
+    simp only [Matrix.SpecialLinearGroup.coe_one, Matrix.mul_one, ← map_mul, D, D',
+      TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, map_one]
+  · apply (Matrix.SpecialLinearGroup.conjDiagonal_eq_iff d).1
+    ext : 1
+    rw [Matrix.SpecialLinearGroup.coe_conjDiagonal, hγ'm, ← Matrix.mul_assoc,
+      ← Matrix.mul_assoc, TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul,
+      Matrix.one_mul, Matrix.mul_assoc,
+      TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul, Matrix.mul_one]
+
+end TauCeti
 
 namespace TauCeti.ModularForm
 
@@ -113,10 +156,8 @@ theorem etaMultiplier_sq_eq_of_mul_diagonal_eq {M : ℕ} [NeZero M] (hM : 12 ∣
     -- `ε(T)² = e^{π i / 12}²` is the case `n = 1` of `hζ`, whose exponent is written `π i n / 12`
     rw [Int.cast_natCast, hζ, show π * I / 12 = π * I * ((1 : ℕ) : ℂ) / 12 by simp, hζ,
       map_pow, Nat.cast_one, hσ, ZMod.natCast_zmod_val]
-  have hγ' : SpecialLinearGroup.conjDiagonal d (red γ) = red γ' := by
-    ext : 1
-    rw [SpecialLinearGroup.coe_conjDiagonal, Matrix.mul_assoc, h, ← Matrix.mul_assoc,
-      TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul, Matrix.one_mul]
+  have hγ' : SpecialLinearGroup.conjDiagonal d (red γ) = red γ' :=
+    (SpecialLinearGroup.conjDiagonal_eq_iff d).2 h
   have := congrArg Units.val (DFunLike.congr_fun key γ)
   simpa [hγ', hχ, coe_etaMultiplierSqHom] using this
 

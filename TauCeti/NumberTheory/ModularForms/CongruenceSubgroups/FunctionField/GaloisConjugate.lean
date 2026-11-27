@@ -375,51 +375,6 @@ private theorem conjAux_congr (σ : ℂ ≃+* ℂ) {f₁ f₂ : ℍ → ℂ} (hf
   rfl
 
 omit [NeZero N] in
-/-- Every `γ ∈ SL(2, ℤ)` has a partner `γ'` with `γ' diag(1, d) = diag(1, d) γ` modulo `12 N`,
-which lies in `Γ(N)` when `γ` does. -/
-private theorem exists_map_mul_diagonal_eq (d : (ZMod (12 * N))ˣ) (γ : SL(2, ℤ)) :
-    ∃ γ' : SL(2, ℤ), (γ ∈ Gamma N → γ' ∈ Gamma N) ∧
-      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ' :
-        SL(2, ZMod (12 * N))) : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) *
-          Matrix.diagonal ![1, (d : ZMod (12 * N))] =
-        Matrix.diagonal ![1, (d : ZMod (12 * N))] *
-          (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ) := by
-  set red : SL(2, ℤ) →* SL(2, ZMod (12 * N)) :=
-    Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N)))
-  set D := Matrix.diagonal ![1, (d : ZMod (12 * N))]
-  set D' := Matrix.diagonal ![1, ((d⁻¹ : (ZMod (12 * N))ˣ) : ZMod (12 * N))]
-  obtain ⟨γ', hγ'⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_surjective (d := 12 * N)
-    (Matrix.SpecialLinearGroup.conjDiagonal d⁻¹ (red γ))
-  have hγ'm : (red γ' : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) = D * red γ * D' := by
-    rw [hγ', Matrix.SpecialLinearGroup.coe_conjDiagonal, inv_inv]
-  refine ⟨γ', fun hγ ↦ ?_, ?_⟩
-  · -- reducing modulo `N`, the conjugate of `γ ≡ 1` by `D` is `1`
-    let ρ := ZMod.castHom (dvd_mul_left N 12) (ZMod N)
-    have hred (δ : SL(2, ℤ)) :
-        ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) δ : SL(2, ZMod N)) :
-          Matrix (Fin 2) (Fin 2) (ZMod N)) = ρ.mapMatrix (red δ) := by
-      ext i j
-      simp [red, ρ]
-    refine Gamma_mem'.2 (Subtype.ext ?_)
-    rw [hred, hγ'm, map_mul, map_mul, ← hred, congrArg Subtype.val (Gamma_mem'.1 hγ)]
-    simp only [Matrix.SpecialLinearGroup.coe_one, Matrix.mul_one, ← map_mul, D, D',
-      TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, map_one]
-  · rw [hγ'm, Matrix.mul_assoc, TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul, Matrix.mul_one]
-
-omit [NeZero N] in
-/-- A weak form on `Γ(N)` has period `N`. -/
-private theorem IsWeakForm.periodic_level (hf : IsWeakForm (Gamma N) k f) :
-    Function.Periodic (f ∘ ofComplex) N := by
-  simpa only [SlashAction.slash_one, strictLevel_Gamma] using
-    periodic_slash_comp_ofComplex hf.slash_eq 1
-
-/-- The cusp function of a weak form on `Γ(N)` at period `N` is meromorphic at `0`. -/
-private theorem IsWeakForm.meromorphicAt_level (hf : IsWeakForm (Gamma N) k f) :
-    _root_.MeromorphicAt (cuspFunction N f) 0 := by
-  simpa only [SlashAction.slash_one, strictLevel_Gamma] using
-    hf.meromorphicAt_cuspFunction_slash 1
-
-omit [NeZero N] in
 /-- A weak form on `Γ(N)` has period `12 N`. -/
 private theorem IsWeakForm.periodic_twelve_mul (hf : IsWeakForm (Gamma N) k f) :
     Function.Periodic (f ∘ ofComplex) ((12 * N : ℕ) : ℝ) := by
@@ -476,9 +431,9 @@ private theorem IsWeakForm.exists_conj {σ : ℂ ≃+* ℂ} {d : (ZMod (12 * N))
     rw [_root_.ModularForm.SL_smul_slash, conjAux_slash hd hf h]
   refine ⟨c • conjAux k σ hf, ⟨(mdifferentiable_conjAux σ hf).const_smul c, fun γ hγ ↦ ?_,
     fun γ ↦ ?_⟩, fun γ γ' h ↦ by rw [hslash h, hL]⟩
-  · obtain ⟨γ', hmem, h⟩ := exists_map_mul_diagonal_eq d γ
+  · obtain ⟨γ', hmem, h⟩ := exists_map_mul_diagonal_eq (dvd_mul_left N 12) d γ
     rw [hslash h, conjAux_congr σ _ hf (hf.slash_eq γ' (hmem hγ))]
-  · obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq d γ
+  · obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq (dvd_mul_left N 12) d γ
     rw [hslash h]
     exact UpperHalfPlane.exists_isBigO_exp_of_meromorphicAt_cuspFunction twelve_mul_pos
       ((periodic_conjAux σ _).smul c)
@@ -541,7 +496,7 @@ private theorem exists_conj_modularForm [ModularFormClass F (Gamma N) k] (f : F)
             (TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (⇑f ∣[k] γ')) := by
   obtain ⟨g, hg, hγ⟩ := (ModularFormClass.isWeakForm f).exists_conj hd
   have hbdd (γ : SL(2, ℤ)) : IsBoundedAtImInfty (g ∣[k] γ) := by
-    obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq d γ
+    obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq (dvd_mul_left N 12) d γ
     have hg' := hg.slash_of_normal γ
     refine (TauCeti.UpperHalfPlane.tendsto_laurentQExpansion_coeff_zero twelve_mul_pos
       hg'.periodic_twelve_mul hg'.meromorphicAt_twelve_mul ?_).isBigO_one ℝ
@@ -655,7 +610,7 @@ theorem exists_qExpansion_slash_eq_map (f : CuspForm (Gamma N) k) {σ : ℂ ≃+
   obtain ⟨G, hγ⟩ := exists_conj_modularForm f hd
   -- the constant term of the conjugate at every cusp is the conjugate of a constant term of `f`
   have hzero (γ : SL(2, ℤ)) : IsZeroAtImInfty (⇑G ∣[k] γ) := by
-    obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq d γ
+    obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq (dvd_mul_left N 12) d γ
     have hG' := (ModularFormClass.isWeakForm G).slash_of_normal γ
     have hf' := (ModularFormClass.isWeakForm f).slash_of_normal γ'
     have h₀ : (TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (⇑f ∣[k] γ')).coeff 0 =

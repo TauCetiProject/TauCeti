@@ -347,4 +347,19 @@ theorem coe_conjDiagonal {R : Type*} [CommRing R] (d : Rˣ) (g : SL(2, R)) :
       diagonal ![1, ((d⁻¹ : Rˣ) : R)] * g * diagonal ![1, (d : R)] :=
   (rfl)
 
+/-- Diagonal conjugation sends `g` to `g'` exactly when their matrices satisfy
+`g diag(1, d) = diag(1, d) g'`. -/
+theorem conjDiagonal_eq_iff {R : Type*} [CommRing R] (d : Rˣ) {g g' : SL(2, R)} :
+    conjDiagonal d g = g' ↔
+      (g : Matrix (Fin 2) (Fin 2) R) * diagonal ![1, (d : R)] =
+        diagonal ![1, (d : R)] * g' := by
+  constructor
+  · intro h
+    rw [← h, coe_conjDiagonal, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
+      TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, Matrix.one_mul]
+  · intro h
+    ext : 1
+    rw [coe_conjDiagonal, Matrix.mul_assoc, h, ← Matrix.mul_assoc,
+      TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul, Matrix.one_mul]
+
 end Matrix.SpecialLinearGroup

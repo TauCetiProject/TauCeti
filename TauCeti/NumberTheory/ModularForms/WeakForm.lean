@@ -229,6 +229,18 @@ theorem meromorphicAt_cuspFunction_slash [Γ.FiniteIndex] (hf : IsWeakForm Γ k 
   rw [SL_slash]
   exact hf.mdifferentiable.slash k _ τ
 
+/-- A weak form on `Γ(N)` has period `N`. -/
+theorem periodic_level {N : ℕ} (hf : IsWeakForm (CongruenceSubgroup.Gamma N) k f) :
+    Function.Periodic (f ∘ ofComplex) N := by
+  simpa only [SlashAction.slash_one, CongruenceSubgroup.strictLevel_Gamma] using
+    periodic_slash_comp_ofComplex hf.slash_eq 1
+
+/-- The cusp function of a weak form on `Γ(N)` at period `N` is meromorphic at `0`. -/
+theorem meromorphicAt_level {N : ℕ} [NeZero N] (hf : IsWeakForm (CongruenceSubgroup.Gamma N) k f) :
+    _root_.MeromorphicAt (cuspFunction N f) 0 := by
+  simpa only [SlashAction.slash_one, CongruenceSubgroup.strictLevel_Gamma] using
+    hf.meromorphicAt_cuspFunction_slash 1
+
 end IsWeakForm
 
 /-- **Weak forms have meromorphic cusp germs.** On a finite-index subgroup `Γ`, a function `f` is a
