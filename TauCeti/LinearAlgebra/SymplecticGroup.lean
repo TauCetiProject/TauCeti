@@ -357,14 +357,6 @@ theorem transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul {Ψ : Matrix (l ⊕
     ← Matrix.mul_assoc, SymplecticGroup.mem_iff'.1 hΨ]
   abel
 
-/-- For any square matrix `Ψ` and scalar `c`, the matrix
-`Ψᵀ * J - J * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))` is symmetric. -/
-theorem transpose_transpose_mul_J_sub_J_mul_add_smul (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) (c : R) :
-    (Ψᵀ * J l R - J l R * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1)))ᵀ =
-      Ψᵀ * J l R - J l R * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1)) := by
-  rw [transpose_add, transpose_transpose_mul_J_sub_J_mul, transpose_smul, transpose_mul,
-    transpose_transpose]
-
 /-- For a symplectic matrix `Ψ` and a scalar `c`, the symmetric matrix
 `Ψᵀ * J - J * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))` factors as
 `(Ψ + 1 - c • (J * (Ψ - 1)))ᵀ * -(J * (Ψ - 1))`. For `c = 0` this is

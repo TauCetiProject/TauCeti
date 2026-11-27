@@ -127,12 +127,10 @@ private noncomputable def crossingMatrixDeriv (c : R) (Ψ Ψ' : Matrix (n ⊕ n)
     Matrix (n ⊕ n) (n ⊕ n) R :=
   Ψ'ᵀ * J n R - J n R * Ψ' + c • (Ψ'ᵀ * (Ψ - 1) + (Ψ - 1)ᵀ * Ψ')
 
-/-- Where `Ψ + 1 - c • (J * (Ψ - 1))` is invertible, the kernel of `crossingMatrix c Ψ` is the
-space of fixed vectors of `Ψ`. -/
-private theorem ker_mulVecLin_crossingMatrix {Ψ : Matrix (n ⊕ n) (n ⊕ n) R}
-    (hΨ : Ψ ∈ symplecticGroup n R) {c : R} (h : IsUnit (Ψ + 1 - c • (J n R * (Ψ - 1))).det) :
-    LinearMap.ker (crossingMatrix c Ψ).mulVecLin = LinearMap.ker (Ψ - 1).mulVecLin := by
-  rw [crossingMatrix, ker_mulVecLin_transpose_mul_J_sub_J_mul_add_smul hΨ h]
+/-- The matrix `crossingMatrix c Ψ` is symmetric. -/
+private theorem isSymm_crossingMatrix (c : R) (Ψ : Matrix (n ⊕ n) (n ⊕ n) R) :
+    (crossingMatrix c Ψ).IsSymm :=
+  IsSymm.add (transpose_transpose_mul_J_sub_J_mul Ψ) ((isSymm_transpose_mul_self (Ψ - 1)).smul c)
 
 /-- Where `Ψ + 1 - c • (J * (Ψ - 1))` is invertible, the crossing form of `crossingMatrix c` at `Ψ`
 with derivative `crossingMatrixDeriv c Ψ Ψ'` is isometric to twice the crossing form of `Ψ` with
@@ -143,9 +141,10 @@ private noncomputable def crossingFormIsometryEquivSymplectic {Ψ : Matrix (n �
     (Ψ' : Matrix (n ⊕ n) (n ⊕ n) R) :
     (crossingForm (crossingMatrix c Ψ) (crossingMatrixDeriv c Ψ Ψ')).IsometryEquiv
       ((2 : R) • crossingForm (Ψ - 1) (-(J n R * Ψ'))) :=
-  ⟨LinearEquiv.ofEq _ _ (ker_mulVecLin_crossingMatrix hΨ h), fun v ↦ by
-    have hv : (Ψ - 1) *ᵥ (v : n ⊕ n → R) = 0 :=
-      LinearMap.mem_ker.1 ((ker_mulVecLin_crossingMatrix hΨ h).le v.property)
+  have hker : LinearMap.ker (crossingMatrix c Ψ).mulVecLin = LinearMap.ker (Ψ - 1).mulVecLin :=
+    ker_mulVecLin_transpose_mul_J_sub_J_mul_add_smul hΨ h
+  ⟨LinearEquiv.ofEq _ _ hker, fun v ↦ by
+    have hv : (Ψ - 1) *ᵥ (v : n ⊕ n → R) = 0 := LinearMap.mem_ker.1 (hker.le v.property)
     have hextra : (v : n ⊕ n → R) ⬝ᵥ (Ψ'ᵀ * (Ψ - 1) + (Ψ - 1)ᵀ * Ψ') *ᵥ v = 0 := by
       simp only [add_mulVec, ← mulVec_mulVec, hv, mulVec_zero, zero_add,
         dotProduct_mulVec, vecMul_transpose, zero_vecMul, zero_dotProduct]
@@ -354,7 +353,7 @@ private theorem signature_crossingMatrix_sub_signature {a b : ℝ} (hab : a < b)
   have hKc : ContinuousOn K (Icc a b) := (continuousOn_crossingMatrix hΨc c).congr fun t _ ↦ hK t
   have hKsymm (t : ℝ) (_ : t ∈ Icc a b) : (K t).IsSymm := by
     rw [hK]
-    exact transpose_transpose_mul_J_sub_J_mul_add_smul (Ψ t) c
+    exact isSymm_crossingMatrix c (Ψ t)
   -- The crossings of `K` are those of `Ψ`.
   have hdet (t : ℝ) (ht : t ∈ Icc a b) (hKt : (K t).det = 0) : (Ψ t - 1).det = 0 := by
     rwa [hK, crossingMatrix, det_transpose_mul_J_sub_J_mul_add_smul_eq_zero_iff (hmem t ht)
@@ -395,8 +394,7 @@ private theorem eventually_nhdsWithin_Icc_diff_det_sub_one_ne_zero
     ⟨_, rfl⟩
   have hsymm (s : ℝ) : (V s).toBilinForm.IsSymm := by
     rw [hV]
-    exact isSymm_toBilinForm_toContinuousLinearMap₂'
-      (transpose_transpose_mul_J_sub_J_mul_add_smul (Ψ s) c)
+    exact isSymm_toBilinForm_toContinuousLinearMap₂' (isSymm_crossingMatrix c (Ψ s))
   have hVd : HasDerivWithinAt V (crossingMatrixDeriv c (Ψ t) (Ψ' t)).toContinuousLinearMap₂'
       (Icc 0 1) t := by
     rw [hV]
@@ -404,8 +402,8 @@ private theorem eventually_nhdsWithin_Icc_diff_det_sub_one_ne_zero
   have hΓ : (ContinuousLinearMap.crossingForm (V t)
       (crossingMatrixDeriv c (Ψ t) (Ψ' t)).toContinuousLinearMap₂').Nondegenerate := by
     rw [hV]
-    exact (crossingFormIsometryEquiv (transpose_transpose_mul_J_sub_J_mul_add_smul (Ψ t) c)
-      _).nondegenerate_iff.2 (nondegenerate_crossingForm_crossingMatrix (hmem t ht) hunit hreg)
+    exact (crossingFormIsometryEquiv (isSymm_crossingMatrix c (Ψ t)) _).nondegenerate_iff.2
+      (nondegenerate_crossingForm_crossingMatrix (hmem t ht) hunit hreg)
   have hK :=
     ContinuousLinearMap.eventually_nhdsWithin_Icc_diff_nondegenerate_of_crossingForm_nondegenerate
       ht (fun s _ ↦ hsymm s) hVd hΓ
