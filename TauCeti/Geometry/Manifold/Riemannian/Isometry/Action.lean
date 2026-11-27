@@ -44,6 +44,8 @@ differentials at that point preserve the metric.
   `TauCeti.RiemannianIsometry.constSMul` given by an inverse is the inverse isometry.
 * `TauCeti.inner_tangentRepresentation_apply`: inner products of vectors moved by the tangent
   representation of the stabilizer of a point are those of their images under the differentials.
+* `TauCeti.inner_mfderiv_smul_of_smul_eq`: at a fixed point, a differential preserving the metric
+  preserves the inner product of the tangent space at that point.
 
 ## References
 
@@ -147,6 +149,17 @@ theorem inner_tangentRepresentation_apply {K : Type*} [Group K] [MulAction K M] 
       inner ℝ (mfderiv I I ((g : K) • ·) x u) (mfderiv I I ((g : K) • ·) x w) := by
   rw [tangentRepresentation_apply]
   exact inner_tangentSpace_congr (I := I) g.property.symm rfl rfl
+
+/-- **Isometries at a fixed point.** If `k • x = x` and the differential of `k • ·` at `x` sends
+the metric at `x` to that at `k • x`, then it preserves the metric at `x`: the inner product in
+`T_x M` of the images of `u` and `w` is that of `u` and `w`. -/
+theorem inner_mfderiv_smul_of_smul_eq {K : Type*} [SMul K M] {k : K} {x : M} (hx : k • x = x)
+    (hk : ∀ u w : TangentSpace I x,
+      inner ℝ (mfderiv I I (k • ·) x u) (mfderiv I I (k • ·) x w) = inner ℝ u w)
+    (u w : TangentSpace I x) :
+    inner ℝ (E := TangentSpace I x) (mfderiv I I (k • ·) x u) (mfderiv I I (k • ·) x w) =
+      inner ℝ u w :=
+  (inner_tangentSpace_congr (I := I) hx.symm rfl rfl).trans (hk u w)
 
 end TauCeti
 

@@ -9,6 +9,7 @@ public import Mathlib.Data.Int.Init
 public import Mathlib.Data.Set.Inclusion
 public import Mathlib.Logic.Equiv.Set
 public import Mathlib.Logic.Function.Basic
+public import Mathlib.Logic.Function.DependsOn
 public import Mathlib.Tactic.Coe
 
 /-!
@@ -41,6 +42,11 @@ along `f` is surjective.
   vacuously off the range).
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
+* `Function.extend_comp_eq_of_forall_notMem_range`: a function agreeing with the fallback off
+  the range of a map is the extension of its restriction.
+* `Function.FactorsThrough.apply_extend_eq_apply`: gluing. Functions given on blocks of
+  coordinates that agree where the blocks meet glue to one function, at which every functional
+  of one block takes its value at that block's function.
 * `Function.Injective.surjective_pi_comp_right`: restriction of dependent functions along an
   injection is surjective.
 -/
@@ -153,6 +159,31 @@ theorem Injective.extend_comp_extend {α β γ δ : Type*} {f₁₂ : α → β}
     · rw [extend_apply' _ _ _ hx,
         extend_apply' _ _ _ (fun ⟨a, ha⟩ => hx ⟨a, h.eq_iff.1 ha⟩)]
   · rw [extend_apply' _ _ _ hk, extend_apply' _ _ _ (fun ⟨a, ha⟩ => hk ⟨_, ha⟩)]
+
+/-- A function `v` that agrees with the fallback `e` off the range of a map `f` is the extension
+along `f` of its restriction `v ∘ f`, with fallback `e`. For instance, a vector vanishing off the
+range of `f` is the extension by zero of its restriction. No injectivity is needed, since `v ∘ f`
+always factors through `f`. -/
+theorem extend_comp_eq_of_forall_notMem_range {α γ : Sort*} {β : Type*} {f : α → β}
+    {v e : β → γ} (hv : ∀ b ∉ Set.range f, v b = e b) :
+    extend f (v ∘ f) e = v := by
+  funext b
+  by_cases hb : b ∈ Set.range f
+  · obtain ⟨a, rfl⟩ := hb
+    exact FactorsThrough.extend_apply (fun _ _ h => congrArg v h) e a
+  · rw [extend_apply' _ _ _ hb, hv b hb]
+
+/-- Gluing along `e : κ → α` the functions `V i` given on the blocks `e '' (p ⁻¹' {i})`, which
+agree wherever two blocks meet (`fun k => V (p k) (e k)` factors through `e`; for instance, the
+blocks are pairwise disjoint when `p` factors through `e`). The function that takes the value
+`V (p k) (e k)` at each `e k`, and the value of a fallback `f` off the range of `e`, has the same
+image as `V i` under every `F` that depends only on the values on block `i`. -/
+theorem FactorsThrough.apply_extend_eq_apply {ι κ α β γ : Type*} {p : κ → ι} {e : κ → α}
+    {V : ι → α → β} (hV : (fun k => V (p k) (e k)).FactorsThrough e) (f : α → β)
+    {F : (α → β) → γ} {i : ι} (hF : DependsOn F (e '' (p ⁻¹' {i}))) :
+    F (extend e (fun k => V (p k) (e k)) f) = F (V i) :=
+  hF <| Set.forall_mem_image.2 fun k hk => by
+    rw [hV.extend_apply f k, Set.mem_singleton_iff.1 hk]
 
 /-- Restriction `g ↦ fun i ↦ g (f i)` of dependent functions along an injective map `f` is
 surjective: extend by a fallback `g₀` off the range of `f`. This is the dependent version of

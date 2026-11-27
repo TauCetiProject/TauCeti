@@ -28,7 +28,10 @@ nontrivial `E` and `0 ≤ r < R` the bound `1 / (R - r)` is the infimum of the L
 smooth cutoffs. For `r < 0` the closed ball is empty, the zero function is a cutoff, and no positive
 lower bound holds; the existence statement is still true there. For shells of width `h` this gives
 cutoffs with constant `t / h` for every `t > 1`
-(`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv`).
+(`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv`). Composed with a continuous
+linear map `e`, a cutoff of the ball of radius `r` for the width `r` gives a cutoff of the
+sublevel set `‖e z‖ ≤ r` whose derivative has norm at most `2 ‖e‖ / r`
+(`TauCeti.exists_contDiff_cutoff_comp_continuousLinearMap`).
 
 Cutoffs with a universal but non-optimal constant `c / (R - r)` suffice for iteration arguments.
 Limits in which the width `R - r` of the transition shell shrinks to zero need the sharp constant
@@ -158,6 +161,48 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv (x₀ : E) {r h 
   refine exists_contDiff_cutoff_closedBall_lipschitzWith x₀ (by linarith) ?_
   rw [add_sub_cancel_left, NNReal.coe_mul, NNReal.coe_inv, Real.coe_toNNReal _ hh.le]
   exact (lt_mul_iff_one_lt_left (inv_pos.2 hh)).2 (by exact_mod_cast ht)
+
+/-- **Cutoffs along a linear map with derivative `O(1 / r)`.** For a continuous linear map
+`e : F →L[ℝ] E` and `r > 0`, there is a smooth `χ : F → ℝ` with values in `[0, 1]`, equal to one
+where `‖e z‖ ≤ r` and to zero where `2 r ≤ ‖e z‖`, whose derivative vanishes where `‖e z‖ < r` and
+where `2 r < ‖e z‖`, and has norm at most `2 ‖e‖ / r`. It is the cutoff of
+`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv` for the ball of radius `r` about
+`0` and the width `r`, composed with `e`. -/
+theorem exists_contDiff_cutoff_comp_continuousLinearMap {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (e : F →L[ℝ] E) {r : ℝ} (hr : 0 < r) :
+    ∃ χ : F → ℝ, ContDiff ℝ ∞ χ ∧ (∀ z, χ z ∈ Icc 0 1) ∧ (∀ z, ‖e z‖ ≤ r → χ z = 1) ∧
+      (∀ z, 2 * r ≤ ‖e z‖ → χ z = 0) ∧ (∀ z, ‖e z‖ < r → fderiv ℝ χ z = 0) ∧
+      (∀ z, 2 * r < ‖e z‖ → fderiv ℝ χ z = 0) ∧ ∀ z, ‖fderiv ℝ χ z‖ ≤ 2 * ‖e‖ / r := by
+  obtain ⟨ψ, hψ, hψ01, hψ1, hψsupp, hψL⟩ :=
+    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv (0 : E) (r := r) hr one_lt_two
+  have hone (w : E) (hw : ‖w‖ ≤ r) : ψ w = 1 := hψ1 (mem_closedBall_zero_iff.2 hw)
+  have hzero (w : E) (hw : 2 * r ≤ ‖w‖) : ψ w = 0 :=
+    notMem_support.1 fun h ↦ (not_lt.2 hw) (by simpa [two_mul] using hψsupp h)
+  -- `ψ ∘ e` is locally constant where `‖e z‖ < r` and where `2 r < ‖e z‖`.
+  have hloc (z : F) (c : ℝ) (h : (fun w ↦ ψ (e w)) =ᶠ[nhds z] fun _ ↦ c) :
+      fderiv ℝ (fun w ↦ ψ (e w)) z = 0 := by
+    rw [h.fderiv_eq, fderiv_const_apply]
+  refine ⟨fun z ↦ ψ (e z), hψ.comp e.contDiff, fun z ↦ hψ01 (mem_range_self (e z)),
+    fun z hz ↦ hone _ hz, fun z hz ↦ hzero _ hz, fun z hz ↦ hloc z 1 ?_, fun z hz ↦ hloc z 0 ?_,
+    fun z ↦ ?_⟩
+  · filter_upwards [(isOpen_lt (continuous_norm.comp e.continuous) continuous_const).mem_nhds hz]
+      with w hw
+    exact hone _ hw.le
+  · filter_upwards [(isOpen_lt continuous_const (continuous_norm.comp e.continuous)).mem_nhds hz]
+      with w hw
+    exact hzero _ hw.le
+  · -- The derivative is that of `ψ`, of norm at most `2 / r`, composed with `e`.
+    have hd : HasFDerivAt (fun w ↦ ψ (e w)) ((fderiv ℝ ψ (e z)).comp e) z :=
+      ((hψ.differentiable (by simp)) _).hasFDerivAt.comp z e.hasFDerivAt
+    have hL : ‖fderiv ℝ ψ (e z)‖ ≤ 2 / r := by
+      refine (norm_fderiv_le_of_lipschitz ℝ hψL).trans_eq ?_
+      rw [NNReal.coe_mul, NNReal.coe_inv, Real.coe_toNNReal _ hr.le, NNReal.coe_ofNat,
+        div_eq_mul_inv]
+    rw [hd.fderiv]
+    calc ‖(fderiv ℝ ψ (e z)).comp e‖ ≤ ‖fderiv ℝ ψ (e z)‖ * ‖e‖ :=
+          ContinuousLinearMap.opNorm_comp_le _ _
+      _ ≤ 2 / r * ‖e‖ := by gcongr
+      _ = 2 * ‖e‖ / r := by ring
 
 /-- The derivative of a function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and
 vanishing off `ball x₀ R`, is supported in the shell `ball x₀ R \ ball x₀ r`: elsewhere the

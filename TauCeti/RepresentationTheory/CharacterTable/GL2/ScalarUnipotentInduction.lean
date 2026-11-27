@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- diagonal matrices `diag (c, 1)`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.GL2NonSplitTorusHom` occurs in the elliptic statement below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus.Basic
 -- `AddChar` occurs in the public construction.
 public import Mathlib.Algebra.Group.AddChar
 -- Non-public: `TauCeti.smul_quotientGroup_mk_eq_self_iff` is used only inside a proof.

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
+import TauCeti.RingTheory.MvPowerSeries.NormCoeff
 
 /-!
 # Analytic substitution into restricted power series
@@ -47,10 +48,14 @@ here allows radii that are not norms of elements of `R`, which no weight family 
 * `TauCeti.MvPowerSeries.coeff_restrictedAnalyticSubst`: the coefficients of `f(g)` are the
   convergent sums `∑' t, fₜ · coeff e (g₁^t₁ ⋯ g_k^t_k)`.
 * `TauCeti.MvPowerSeries.norm_restrictedAnalyticSubst_le`: substitution is contractive.
+* `TauCeti.MvPowerSeries.norm_coeff_restrictedAnalyticSubst_le`: geometric coefficient bounds on
+  the `gᵢ` pass to `f(g)`.
 * `TauCeti.MvPowerSeries.eq_restrictedAnalyticSubst`: uniqueness among continuous algebra
   homomorphisms.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero_apply`: substituting zero gives the
   constant coefficient.
+* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_algebraMap`: substituting constants is
+  evaluating.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_self` and
   `TauCeti.MvPowerSeries.restrictedAnalyticSubst_comp`: the identity and composition laws.
 * `TauCeti.MvPowerSeries.restrictedEval₂_restrictedAnalyticSubst`: evaluating `f(g)` at `b` is
@@ -93,6 +98,14 @@ theorem restrictedAnalyticSubst_apply (f : IsRestricted.subring (R := R) r) :
     restrictedAnalyticSubst g hg f =
       restrictedEval₂ (algebraMap R _) g (fun a ↦ (norm_algebraMap_isRestrictedSubring a).le) hg
         f := (rfl)
+
+variable {g hg} in
+/-- Substitutions of equal families of series agree, whatever the proofs of their norm bounds. -/
+theorem restrictedAnalyticSubst_congr {g' : Fin k → IsRestricted.subring (R := R) s}
+    {hg' : ∀ i, ‖g' i‖ ≤ r i} (h : g = g') (f : IsRestricted.subring (R := R) r) :
+    restrictedAnalyticSubst g hg f = restrictedAnalyticSubst g' hg' f := by
+  subst h
+  rfl
 
 /-- The substitution `f(g)` is the sum of the substituted monomials `fₜ gᵗ`. -/
 theorem hasSum_restrictedAnalyticSubst (f : IsRestricted.subring (R := R) r) :
@@ -179,6 +192,30 @@ theorem norm_restrictedAnalyticSubst_le (f : IsRestricted.subring (R := R) r) :
     ‖restrictedAnalyticSubst g hg f‖ ≤ ‖f‖ :=
   norm_restrictedEval₂_le _ g _ hg f
 
+/-- **Geometric coefficient bounds survive analytic substitution.** If the coefficients of each
+`gᵢ` satisfy `‖coeff e gᵢ‖ ≤ rᵢ ∏ⱼ ρⱼ ^ eⱼ` for nonnegative rates `ρ`, then the coefficients of
+`f(g)` satisfy `‖coeff e f(g)‖ ≤ ‖f‖ ∏ⱼ ρⱼ ^ eⱼ`. -/
+theorem norm_coeff_restrictedAnalyticSubst_le [NormOneClass R] {ρ : τ → ℝ} (hρ : ∀ j, 0 ≤ ρ j)
+    (hgρ : ∀ i e, ‖coeff e (g i : MvPowerSeries τ R)‖ ≤ r i * e.prod (ρ · ^ ·))
+    (f : IsRestricted.subring (R := R) r) (e : τ →₀ ℕ) :
+    ‖coeff e (restrictedAnalyticSubst g hg f : MvPowerSeries τ R)‖ ≤ ‖f‖ * e.prod (ρ · ^ ·) := by
+  rw [coeff_restrictedAnalyticSubst]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg (norm_nonneg f) (prod_pow_nonneg hρ e)) fun t ↦ ?_
+  -- The term of `t` is `fₜ gᵗ`, and `‖fₜ‖ ∏ᵢ rᵢ ^ tᵢ ≤ ‖f‖` bounds its coefficients.
+  have hgt : ‖coeff e (∏ i, (g i : MvPowerSeries τ R) ^ t i)‖ ≤
+      t.prod (r · ^ ·) * e.prod (ρ · ^ ·) := by
+    rw [Finsupp.prod_fintype t _ fun _ ↦ pow_zero _]
+    exact norm_coeff_prod_le_prod_mul_prod_pow hρ Finset.univ
+      (fun i _ ↦ norm_coeff_pow_le_pow_mul_prod_pow hρ (hgρ i) (t i)) e
+  calc ‖coeff t (f : MvPowerSeries (Fin k) R) * coeff e (∏ i, (g i : MvPowerSeries τ R) ^ t i)‖
+      ≤ ‖coeff t (f : MvPowerSeries (Fin k) R)‖ * (t.prod (r · ^ ·) * e.prod (ρ · ^ ·)) :=
+        (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left hgt (norm_nonneg _))
+    _ = ‖coeff t (f : MvPowerSeries (Fin k) R)‖ * t.prod (r · ^ ·) * e.prod (ρ · ^ ·) :=
+        (mul_assoc _ _ _).symm
+    _ ≤ ‖f‖ * e.prod (ρ · ^ ·) := mul_le_mul_of_nonneg_right (norm_coeff_mul_prod_le f t)
+        (prod_pow_nonneg hρ e)
+
 /-- Analytic substitution is continuous for the Gauss norms. -/
 theorem continuous_restrictedAnalyticSubst : Continuous (restrictedAnalyticSubst g hg) :=
   continuous_restrictedEval₂ _ g _ hg
@@ -191,6 +228,24 @@ theorem eq_restrictedAnalyticSubst
     (hX : ∀ i, ψ ⟨X i, isRestricted_monomial r (Finsupp.single i 1) 1⟩ = g i) :
     ψ = restrictedAnalyticSubst g hg :=
   AlgHom.toRingHom_injective <| eq_restrictedEval₂ _ g _ hg ψ.toRingHom hψ ψ.commutes hX
+
+/-- **Substituting constants is evaluating**: for constants `aᵢ ∈ R` with `‖aᵢ‖ ≤ rᵢ`, the
+substitution `f(a)` into `R{Y/s}` is the constant series of the value `f(a) ∈ R`. -/
+@[simp]
+theorem restrictedAnalyticSubst_algebraMap (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ r i)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedAnalyticSubst (fun i ↦ algebraMap R (IsRestricted.subring (R := R) s) (a i))
+        (fun i ↦ (norm_algebraMap_isRestrictedSubring (a i)).trans_le (ha i)) f =
+      algebraMap R _ (restrictedEval₂ (RingHom.id R) a (fun _ ↦ le_rfl) ha f) := by
+  have hcont : Continuous (algebraMap R (IsRestricted.subring (R := R) s)) :=
+    (AddMonoidHomClass.isometry_of_norm _ norm_algebraMap_isRestrictedSubring).continuous
+  have h := eq_restrictedEval₂ (algebraMap R _) _
+    (fun b ↦ (norm_algebraMap_isRestrictedSubring b).le)
+    (fun i ↦ (norm_algebraMap_isRestrictedSubring (a i)).trans_le (ha i))
+    ((algebraMap R _).comp (restrictedEval₂ (RingHom.id R) a (fun _ ↦ le_rfl) ha))
+    (hcont.comp (continuous_restrictedEval₂ _ a _ ha))
+    (fun b ↦ by simp [restrictedEval₂_algebraMap]) fun i ↦ by simp [restrictedEval₂_X]
+  exact (DFunLike.congr_fun h f).symm
 
 /-- **Substituting the variables themselves is the identity.** -/
 theorem restrictedAnalyticSubst_self [NormOneClass R] :

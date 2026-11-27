@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Simple.Basic
+public import TauCeti.RepresentationTheory.Subrepresentation.Eigenvector
 
 /-!
 # One-dimensional representations from linear characters
@@ -32,12 +33,14 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter`: the one-dimensional representation associated to a
   unit-valued multiplicative character.
 * `FDRep.ofLinearCharacter`: the same representation as an object of `FDRep k G`.
-* `Representation.ofLinearCharacterIntCastEquivOfDistribMulAction`: the line of the sign character
-  `ℤˣ →* kˣ` is the action of `ℤˣ` on `k` by signs.
+* `Representation.ofLinearCharacterEquivOfDistribMulAction`: the line of a character by which `G`
+  acts on `k`, such as the sign character `ℤˣ →* kˣ`, is that action.
 
 ## Main results
 
 * `Representation.ofLinearCharacter_apply`: the action is multiplication by the character value.
+* `Representation.asAlgebraHom_ofLinearCharacter_apply`: the group algebra acts on the line by the
+  scalars of the algebra map `k[G] → k` extending the character.
 * `Representation.ofLinearCharacter_comp`: restriction of the representation is precomposition of
   the character.
 * `Representation.ofLinearCharacter_unitsMap_intCastRingHom`: the sign character of `ℤˣ` gives
@@ -99,6 +102,18 @@ theorem ofLinearCharacter_apply [CommSemiring k] [Monoid G] (χ : G →* kˣ) (g
     ofLinearCharacter χ g x = (χ g : k) * x :=
   (rfl)
 
+/-- **The group algebra acts on the line of `χ` by scalars.** An element `x` of `k[G]` acts on
+the line `k` by multiplication by its image under the algebra map `k[G] → k` extending `χ`. -/
+@[simp]
+theorem asAlgebraHom_ofLinearCharacter_apply [CommSemiring k] [Monoid G] (χ : G →* kˣ)
+    (x : MonoidAlgebra k G) (a : k) :
+    (ofLinearCharacter χ).asAlgebraHom x a =
+      MonoidAlgebra.lift k k G ((Units.coeHom k).comp χ) x * a := by
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy, add_mul]
+  | single g r => simp [mul_assoc]
+
 /-- **Restricting a one-dimensional representation is precomposition of its character.** -/
 @[simp]
 theorem ofLinearCharacter_comp [CommSemiring k] [Monoid G] {H : Type*} [Monoid H]
@@ -135,20 +150,23 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
     ofLinearCharacter (1 : G →* kˣ) = Representation.trivial k G k :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by simp
 
-/-- **The sign character of `ℤˣ` acts on `k` by signs.** The line of the character `ℤˣ →* kˣ`
-induced by `ℤ → k` is the action `u • x` of `ℤˣ` on `k` (`Representation.ofDistribMulAction`),
-through the identity of `k`. -/
-def ofLinearCharacterIntCastEquivOfDistribMulAction [CommRing k] :
-    (ofLinearCharacter (Units.map (Int.castRingHom k).toMonoidHom)).Equiv
-      (ofDistribMulAction k ℤˣ k) :=
-  .mk (LinearEquiv.refl k k) fun _ ↦ by
-    ext
-    simp [ofLinearCharacter_apply, Units.smul_def]
+/-- **A linear character by which `G` acts on `k` is that action.** If every `g : G` acts on `k` by
+multiplication by `χ g`, the line of `χ` is the action `g • x` of `G` on `k`
+(`Representation.ofDistribMulAction`), through the identity of `k`. For instance the sign character
+`ℤˣ →* kˣ` induced by `ℤ → k` is the action of `ℤˣ` on `k` by signs, and so is its composite
+`TauCeti.uliftIntUnitsSign` with `MulEquiv.ulift`, for the copy `ULift ℤˣ` of `ℤˣ` acting through
+`ULift.down`. -/
+def ofLinearCharacterEquivOfDistribMulAction [CommSemiring k] [Monoid G] [DistribMulAction G k]
+    [SMulCommClass G k k] (χ : G →* kˣ) (hχ : ∀ g x, (χ g : k) * x = g • x) :
+    (ofLinearCharacter χ).Equiv (ofDistribMulAction k G k) :=
+  .mk (LinearEquiv.refl k k) fun g ↦ LinearMap.ext fun x ↦ hχ g x
 
-/-- The identification `ofLinearCharacterIntCastEquivOfDistribMulAction` is the identity of `k`. -/
+/-- The identification `ofLinearCharacterEquivOfDistribMulAction` is the identity of `k`. -/
 @[simp]
-theorem ofLinearCharacterIntCastEquivOfDistribMulAction_apply [CommRing k] (x : k) :
-    ofLinearCharacterIntCastEquivOfDistribMulAction x = x :=
+theorem ofLinearCharacterEquivOfDistribMulAction_apply [CommSemiring k] [Monoid G]
+    [DistribMulAction G k] [SMulCommClass G k k] (χ : G →* kˣ)
+    (hχ : ∀ g x, (χ g : k) * x = g • x) (x : k) :
+    ofLinearCharacterEquivOfDistribMulAction χ hχ x = x :=
   (rfl)
 
 /-- The kernel of the line of a linear character is the kernel of the character. -/
@@ -307,17 +325,14 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
     rw [← mul_apply_eq_comp, (hcomm g h).eq, mul_apply_eq_comp]
   obtain ⟨v, hv⟩ := exists_ne (0 : W)
   -- The line through `v` is stable, hence everything: `W` is one-dimensional.
-  let line : Subrepresentation W.ρ :=
-    ⟨k ∙ v, fun g w hw => by
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hw
-      rw [map_smul, hc, smul_smul]
-      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)⟩
-  have hline : line = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top line).resolve_left fun h => hv <| by
-    have hmem : v ∈ line.toSubmodule := Submodule.mem_span_singleton_self v
-    rw [h] at hmem
-    exact hmem
-  have hfin : Module.finrank k W = 1 :=
-    (finrank_eq_one_iff_of_ne_zero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
+  have hev : ∀ g, ∃ a : k, W.ρ g v = a • v := fun g => ⟨c g, hc g v⟩
+  have hline : Representation.lineSubrepresentation W.ρ v hev = ⊤ :=
+    (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left
+      (Representation.isAtom_lineSubrepresentation W.ρ hev hv).1
+  have hfin : Module.finrank k W = 1 := by
+    refine (finrank_eq_one_iff_of_ne_zero v hv).mpr ?_
+    rw [← Representation.toSubmodule_lineSubrepresentation W.ρ v hev, hline,
+      Subrepresentation.toSubmodule_top]
   let χ : G →* k :=
     { toFun := c
       map_one' := Representation.map_one_of_forall_apply_eq_smul W.ρ hc
