@@ -14,7 +14,7 @@ import TauCeti.Analysis.Sobolev.W1p.ChainRule
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
 import TauCeti.Analysis.Sobolev.W1p.Restriction
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 
 /-!
 # De Giorgi's theorem and failure of `H²` regularity for a coefficient with a jump
@@ -123,29 +123,6 @@ theorem not_continuousAt_jumpCoefficient {x : EuclideanSpace ℝ (Fin (n + 1))} 
   have := tendsto_nhds_unique (hlim.congr' hval) tendsto_const_nhds
   simp [jumpCoefficient, hx] at this
 
-/-- The coordinate function `x₀` on a bounded open set, as an element of `W^{1,p}(Ω)` with weak
-gradient `e₀`; this specializes `TauCeti.W1p.exists_value_gradient_ae_eq_continuousLinearMap` to
-the coordinate functional. -/
-private theorem exists_value_ae_eq_apply_zero {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
-    ∃ g : W1p volume Omega p,
-      W1p.value g =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
-        (fun x => x 0) ∧
-      W1p.gradient g =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
-        fun _ => EuclideanSpace.single 0 1 := by
-  obtain ⟨g, hgv, hgg⟩ := W1p.exists_value_gradient_ae_eq_continuousLinearMap (mu := volume)
-    (p := p) hb (EuclideanSpace.proj (0 : Fin (n + 1)))
-  -- The gradient of the coordinate function `x₀` is `e₀`.
-  have he₀ : (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm
-      (EuclideanSpace.proj (0 : Fin (n + 1))) = EuclideanSpace.single 0 1 :=
-    ext_inner_right ℝ fun y => by
-      simp [InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_left]
-  rw [he₀] at hgg
-  refine ⟨g, ?_, hgg⟩
-  filter_upwards [hgv] with x hx
-  simp [hx]
-
 /-- The Dirichlet problem for the jump coefficient: on a bounded open set and for every
 `g ∈ H¹(Ω)`, the weak solution of `-div(κ ∇u) = 0` in `Ω`, `u = g` on `∂Ω` exists and is
 unique, by Lax–Milgram. -/
@@ -195,8 +172,7 @@ theorem exists_holderOnWith_preciseRepresentative_jumpCoefficient (n : ℕ) :
   obtain ⟨α, hα, hα1, hDG⟩ := exists_holderOnWith_preciseRepresentative_of_isCompact
     (ι := Fin (n + 1)) (mu := volume) (lam := 1) (Lam := 2)
   refine ⟨α, hα, hα1, fun {Omega} hb hne => ?_⟩
-  have hg := exists_value_ae_eq_apply_zero (p := 2) hb
-  obtain ⟨g, hgx, hgg⟩ := hg
+  obtain ⟨g, hgx, hgg⟩ := W1p.exists_value_gradient_ae_eq_apply (mu := volume) (p := 2) hb 0
   refine ⟨g, hgx, existsUnique_jumpCoefficient hb g, fun u hu => ⟨?_, fun K hK hKΩ => ?_⟩⟩
   · refine W1p0.not_exists_value_ae_eq_const_of_inner_gradient_eq_one
       (w := EuclideanSpace.single 0 1) hb hne ?_ hu.1
@@ -231,7 +207,7 @@ theorem exists_w1p_value_gradient_ae_eq_jumpSolution {p : ℝ≥0∞} [Fact (1 �
         jumpSolution n ∧
       W1p.gradient u =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
         fun x => (if 0 < x 0 then 1 else 2 : ℝ)⁻¹ • EuclideanSpace.single 0 1 := by
-  obtain ⟨g, hgv', hgg⟩ := exists_value_ae_eq_apply_zero (p := p) hb
+  obtain ⟨g, hgv', hgg⟩ := W1p.exists_value_gradient_ae_eq_apply (mu := volume) (p := p) hb 0
   refine ⟨midpoint ℝ g (W1p.posPart hp g), ?_, ?_⟩
   · filter_upwards [W1p.value_midpoint_ae g (W1p.posPart hp g), Lp.coeFn_posPart (W1p.value g),
       hgv'] with x hm hpos hx

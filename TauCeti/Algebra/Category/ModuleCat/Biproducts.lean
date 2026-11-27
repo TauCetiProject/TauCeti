@@ -65,6 +65,8 @@ each summand of a finitely generated biproduct (`ModuleCat.finite_of_finite_bipr
   element of `F.obj (⨁ f)` is the sum of the images of its components.
 * `CategoryTheory.Functor.finite_obj_biproduct`: such a functor has finitely generated value on a
   finite biproduct of objects with finitely generated values.
+* `CategoryTheory.Functor.map_biproductDesc_map_ι_apply`: for a functor to modules,
+  `biproduct.desc g` after the `j`-th inclusion acts on values as `g j`.
 -/
 
 public section
@@ -251,5 +253,21 @@ instance finite_obj_biproduct {ι : Type*} [Finite ι] (f : ι → C) [HasBiprod
     (∑ j, (F.map (biproduct.ι f j)).hom ∘ₗ LinearMap.proj (R := R) j) fun v ↦ ?_
   refine ⟨fun j ↦ (F.map (biproduct.π f j)).hom v, ?_⟩
   simpa using F.sum_map_ι_map_π_apply f v
+
+end CategoryTheory.Functor
+
+namespace CategoryTheory.Functor
+
+open CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] {R : Type*} [Ring R] (F : C ⥤ ModuleCat R)
+
+/-- For a functor to modules, a morphism out of a biproduct, applied after the `j`-th inclusion on
+values, acts as its `j`-th component. -/
+@[simp]
+theorem map_biproductDesc_map_ι_apply [HasZeroMorphisms C] {ι : Type*} {f : ι → C}
+    [HasBiproduct f] {Y : C} (g : ∀ j, f j ⟶ Y) (j : ι) (v : F.obj (f j)) :
+    (F.map (biproduct.desc g)).hom ((F.map (biproduct.ι f j)).hom v) = (F.map (g j)).hom v := by
+  rw [← ModuleCat.comp_apply, ← F.map_comp, biproduct.ι_desc]
 
 end CategoryTheory.Functor

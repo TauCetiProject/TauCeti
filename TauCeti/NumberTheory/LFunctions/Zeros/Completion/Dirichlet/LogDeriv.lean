@@ -98,6 +98,30 @@ theorem logDeriv_dirichletData_entireCompletion_eq_digamma (hne : χ ≠ 1) {s :
   rw [logDeriv_dirichletData_entireCompletion χ hχ hne hs hL,
     χ.logDeriv_gammaFactor_eq_digamma (χ.gammaFactor_ne_zero_of_re_pos hs)]
 
+/-- Away from the zeros of a primitive nonprincipal Dirichlet L-function, the logarithmic
+derivative of its entire completion has a shifted real gamma term. The correction
+`-(a - 1) / s`, with `a = χ.gammaPoleOffset`, accounts for the even gamma factor's pole at zero. -/
+theorem _root_.DirichletCharacter.logDeriv_dirichletData_entireCompletion_eq_logDeriv_Gammaℝ_add
+    (hne : χ ≠ 1) {s : ℂ} (hL : χ.LFunction s ≠ 0) :
+    logDeriv (dirichletData χ hχ).entireCompletion s =
+      (Real.log N : ℂ) / 2 + (logDeriv Gammaℝ (s + χ.gammaPoleOffset) -
+        ((χ.gammaPoleOffset : ℂ) - 1) / s) + logDeriv χ.LFunction s := by
+  have hN : N ≠ 1 := fun h ↦ hne (χ.level_one' h)
+  have hquot : χ.LFunction = χ.completedLFunction / χ.gammaFactor :=
+    funext fun z ↦ χ.LFunction_eq_completed_div_gammaFactor z (.inr hN)
+  have hq : χ.completedLFunction s / χ.gammaFactor s ≠ 0 := by
+    simpa only [hquot, Pi.div_apply] using hL
+  obtain ⟨hΛ, hΓ⟩ := div_ne_zero_iff.mp hq
+  have hdΓ : DifferentiableAt ℂ χ.gammaFactor s := by
+    simpa only [Pi.inv_def, inv_inv] using
+      (χ.differentiable_inv_gammaFactor s).inv (inv_ne_zero hΓ)
+  have hlogL : logDeriv χ.LFunction s =
+      logDeriv χ.completedLFunction s - logDeriv χ.gammaFactor s := by
+    rw [hquot, logDeriv_div s hΛ hΓ (χ.differentiable_completedLFunction hne s) hdΓ]
+  rw [logDeriv_dirichletData_entireCompletion_eq_completed χ hχ hne hΛ, hlogL,
+    χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div hΓ]
+  ring
+
 /-- The functional equation reflects the logarithmic derivative of a primitive Dirichlet entire
 completion to that of the inverse character. -/
 theorem logDeriv_dirichletData_entireCompletion_one_sub (s : ℂ) :

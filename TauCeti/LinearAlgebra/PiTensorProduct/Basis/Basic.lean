@@ -5,20 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
+import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
-# Coordinates of reindexed tensors in a product basis
+# Product bases of tensor products: coordinates and dimension
 
 For a basis `b` of `M`, the product basis `Basis.piTensorProduct fun _ ↦ b` of a finite indexed
 tensor product `⨂[R] _ : ι, M` is indexed by words `w : ι → κ`. Reindexing the factors along an
 equivalence `e : ι ≃ ι₂` reindexes these coordinates: the coordinate of `reindex e t` at `w` is the
-coordinate of `t` at `w ∘ e`.
+coordinate of `t` at `w ∘ e`. Counting the product basis of a tensor product of finite free modules
+shows that its dimension is the product of their dimensions.
 
 ## Main declarations
 
 * `Basis.piTensorProduct_repr_reindex`: reindexing the factors of a tensor reindexes its
   coordinates in a product basis.
+* `Module.finrank_piTensorProduct`: the dimension of `⨂[R] i, M i` is `∏ i, finrank R (M i)`.
 -/
 
 public section
@@ -48,3 +52,15 @@ theorem Basis.piTensorProduct_repr_reindex {ι ι₂ κ : Type*} [Finite ι] [Fi
       Basis.repr_self, Finsupp.single_apply]
     exact Fintype.prod_equiv e.symm _ _ fun i ↦ by simp
   exact LinearMap.congr_fun h t
+
+/-- The dimension of a finite tensor product of finite free modules is the product of their
+dimensions. -/
+@[simp]
+theorem Module.finrank_piTensorProduct {ι R : Type*} [Fintype ι] [CommSemiring R]
+    [StrongRankCondition R] {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, Module.Free R (M i)] [∀ i, Module.Finite R (M i)] :
+    finrank R (⨂[R] i, M i) = ∏ i, finrank R (M i) := by
+  classical
+  rw [finrank_eq_card_basis (Basis.piTensorProduct fun i ↦ Module.Free.chooseBasis R (M i)),
+    Fintype.card_pi]
+  simp [finrank_eq_card_chooseBasisIndex]
