@@ -429,9 +429,9 @@ theorem coe_iwasawaUnitaryFactor (g : GL (Fin n) 𝕜) :
 /-- The unitary Iwasawa factor depends continuously on the matrix. -/
 theorem continuous_iwasawaUnitaryFactor :
     Continuous (iwasawaUnitaryFactor (𝕜 := 𝕜) (n := n)) :=
-  ((unitarySubgroupUnitsHomeomorph (Matrix (Fin n) (Fin n) 𝕜)).continuous.comp
+  ((unitarySubgroupUnitsContinuousMulEquiv (Matrix (Fin n) (Fin n) 𝕜)).continuous.comp
     (continuous_fst.comp (iwasawaHomeomorph 𝕜 n).symm.continuous)).congr fun _ ↦
-      unitarySubgroupUnitsHomeomorph_apply _
+      unitarySubgroupUnitsContinuousMulEquiv_apply _
 
 /-- The unitary Iwasawa factor is equivariant for left multiplication by unitary matrices. -/
 theorem iwasawaUnitaryFactor_toUnits_mul (g : GL (Fin n) 𝕜) (A : unitaryGroup (Fin n) 𝕜) :
