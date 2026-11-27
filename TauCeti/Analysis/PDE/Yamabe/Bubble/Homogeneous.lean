@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Energy
 public import TauCeti.Analysis.Sobolev.D1p0.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.Analysis.Sobolev.SmoothCutoff
 
@@ -227,11 +228,7 @@ private theorem tendsto_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
       MemLp (iteratedFDeriv ℝ i (bubble t (0 : E)))
         (ENNReal.ofReal (criticalExponent (finrank ℝ E))) μ := by
     obtain rfl : i = 0 := by omega
-    exact (memLp_congr_norm
-      (((contDiff_bubble t (0 : E) : ContDiff ℝ ∞ _).continuous_iteratedFDeriv
-        (by simp)).aestronglyMeasurable)
-      (memLp_bubble μ hn ht 0).aestronglyMeasurable
-      (Eventually.of_forall fun x ↦ norm_iteratedFDeriv_zero)).mpr (memLp_bubble μ hn ht 0)
+    exact memLp_iteratedFDeriv_zero_iff.2 (memLp_bubble μ hn ht 0)
   have h := tendsto_eLpNorm_iteratedFDeriv_cutoff_sub ENNReal.ofReal_ne_top
     (r := fun n : ℕ ↦ (n : ℝ) + 1)
     (tendsto_atTop_mono (fun n : ℕ ↦ by linarith) tendsto_natCast_atTop_atTop)

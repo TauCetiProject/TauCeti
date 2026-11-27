@@ -26,7 +26,9 @@ This file shows that it implies the Leibniz rule
 
 for every completed combination `a` of degree `i` and every completed combination `b`
 (`NovikovModule.kernelMap_kernelProduct_eq_add`). Both sides are completed, not finite, sums, and
-the identity uses the composite kernels of `TauCeti.RingTheory.NovikovModule.Bilinear`.
+the identity uses the composite kernels of `TauCeti.RingTheory.NovikovModule.Bilinear`. The sign
+is visible at a closed input of odd degree: if `δ₁ a = 0` and `i` is odd, then
+`δ₀ (a ⋆ b) = -(a ⋆ δ₂ b)` (`NovikovModule.kernelMap_kernelProduct_eq_neg_of_odd`).
 
 If the product kernel also has degree shift `ε` (`NovikovModule.kernelProduct_mem_gradeBy`), the
 Leibniz rule is exactly the hypothesis under which `LinearMap.cohomologyProduct` descends the
@@ -49,6 +51,8 @@ which counts indexed by classes of a period group enter.
 
 * `TauCeti.NovikovModule.kernelMap_kernelProduct_eq_add`: the Leibniz rule on completed
   combinations, from the Leibniz identity between kernels.
+* `TauCeti.NovikovModule.kernelMap_kernelProduct_eq_neg_of_odd`: the Leibniz rule at a closed
+  input of odd degree, `δ₀ (a ⋆ b) = -(a ⋆ δ₂ b)`.
 * `TauCeti.NovikovModule.novikovMapOfMatrix_novikovProductOfMatrix_eq_add`: the Leibniz rule for
   matrices of Novikov series, from the Leibniz identity between matrices.
 
@@ -137,6 +141,22 @@ theorem kernelMap_kernelProduct_eq_add
       (fun p₁ hp₁ => funext₂ fun p₂ p₀ => by simp [k₁, k₂, hL, hp₁]) ha b,
     kernelProduct_add h₁ h₁fin hk₂ hk₂fin hk hkfin, kernelProduct_smul h₂ h₂fin _ hk₂ hk₂fin,
     LinearMap.add_apply, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.smul_apply]
+
+/-- **The Leibniz rule at a closed input of odd degree.** Under the Leibniz identity of
+`NovikovModule.kernelMap_kernelProduct_eq_add`, if `a` has odd degree `i` and `δ₁ a = 0`, then
+`δ₀ (a ⋆ b) = -(a ⋆ δ₂ b)` for every `b`: the Koszul sign `(-1)^i` of the Leibniz rule is `-1`.
+For instance, for `a` of degree `1` with `δ₁ a = 0` and `δ₂ b = c`, `δ₀ (a ⋆ b) = -(a ⋆ c)`. -/
+theorem kernelMap_kernelProduct_eq_neg_of_odd
+    (hL : ∀ p₁ p₂ p₀, kernelComp (n p₁) δ₀ p₂ p₀ =
+      kernelComp δ₁ (fun p => n p p₂) p₁ p₀ +
+        negOnePowCast R (d₁ p₁) * kernelComp δ₂ (n p₁) p₂ p₀)
+    {i : ℤ} (hi : Odd i) {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ i)
+    (hδa : kernelMap hδ₁ hδ₁fin a = 0) (b : NovikovModule R F₂) :
+    kernelMap hδ₀ hδ₀fin (kernelProduct hn hfin a b) =
+      -kernelProduct hn hfin a (kernelMap hδ₂ hδ₂fin b) := by
+  rw [kernelMap_kernelProduct_eq_add hn hfin hδ₁ hδ₁fin hδ₂ hδ₂fin hδ₀ hδ₀fin hL ha, hδa,
+    map_zero, LinearMap.zero_apply, zero_add, negOnePowCast_odd hi]
+  exact neg_one_smul R (kernelProduct hn hfin a (kernelMap hδ₂ hδ₂fin b))
 
 section Matrix
 

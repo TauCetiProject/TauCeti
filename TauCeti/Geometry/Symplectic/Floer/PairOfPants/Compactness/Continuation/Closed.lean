@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Continuation
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Global
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Continuation
 
 /-!
@@ -70,8 +71,18 @@ whose parameters converge to some `p₀ ∈ C` and which converges on an open `�
 namespace `TauCeti.SmoothTwoForm.Compatible` is the same for the almost complex structures of the
 family.
 
-The regularity of the limit, the bubbles at the points of `Z` and breaking along the three ends
-and along the necks are not treated here.
+On the whole domain, the theorem in `TauCeti.SmoothTwoForm.IsNondegenerate` named as the first
+one above with the suffix `_global` added gives a subsequence converging on all of
+`S` off a finite set `Z ⊆ S` with `#Z * δ ≤ A + ∑ q, (B_q + Δ_q)`, when the structures are
+cylindrical on the ends, `J_p = J_q(t)` beyond some height for every `p ∈ C`. Over the compact
+window `C` the neck positions are bounded, so beyond a fixed height the perturbations are the
+cylindrical data `H_q(t) dt` of the outer Hamiltonians
+(`TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le`), and the theorem
+for families with cylindrical ends of
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Global` applies.
+
+The regularity of the limit, the bubbles at the points of `Z`, breaking along the three ends and
+the broken limits as the neck positions go to infinity are not treated here.
 
 ## References
 
@@ -98,6 +109,29 @@ variable {E X M F P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteD
   {ω : SmoothTwoForm I M} {G H : Puncture → ℝ → M → ℝ} {e : M → F}
 
 namespace IsNondegenerate
+
+omit [I.Boundaryless] [CompactSpace M] [FiniteDimensional ℝ P] in
+/-- Each component `(p, z) ↦ K_{L(p)}(z)(w)` of the perturbations of the continuation family is
+`C³` jointly in the parameter, the domain point of `S` and the target point, so its Hamiltonian
+vector field is `C²` in every chart, on `P × S` times the chart target. -/
+private theorem contDiffOn_hamiltonianVectorFieldInChartAt_pantsContinuation
+    (hω : ω.IsNondegenerate) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (G q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
+    {L : P → Puncture → ℝ} (hL : ContDiff ℝ 3 L) (w : ℂ) (α : M) :
+    ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry fun p z x ↦
+        pairOfPantsContinuationPerturbation G H (L p) (equivRealProdCLM.symm z) x w))
+      ((univ ×ˢ thricePuncturedSphereReal) ×ˢ (extChartAt I α).target) := by
+  have hg : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 3
+      (fun p : (P × (ℝ × ℝ)) × M ↦ (L p.1.1, (equivRealProdCLM.symm p.1.2, p.2))) :=
+    ((hL.comp contDiff_fst).contMDiff.comp contMDiff_fst).prodMk
+      (((equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
+        contMDiff_snd)
+  exact hω.contDiffOn_hamiltonianVectorFieldInChartAt
+    (U := univ ×ˢ thricePuncturedSphereReal) (fun p hp x ↦
+    ((contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs (L p.1)
+      ⟨equivRealProdCLM.symm p.2, hp.2⟩ x).comp (p, x) hg.contMDiffAt).clm_apply
+        contMDiffAt_const) α
 
 /-- **Solutions of the pair-of-pants continuation family in a closed manifold converge off finitely
 many bubbling points.** Let `ω` be a nondegenerate two-form on a closed manifold `M`, let `G_q`,
@@ -183,21 +217,6 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
           TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop (Ω \ ↑Z) ∧
           ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
   set S := thricePuncturedSphereReal
-  -- Each component `(p, z) ↦ K_{L(p)}(z)(w)` of the perturbations is `C³` jointly in the
-  -- parameter, the domain point of `S` and the target point, so its Hamiltonian vector field is
-  -- `C²` in every chart.
-  have hg : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 3
-      (fun p : (P × (ℝ × ℝ)) × M ↦ (L p.1.1, (equivRealProdCLM.symm p.1.2, p.2))) :=
-    ((hL.comp contDiff_fst).contMDiff.comp contMDiff_fst).prodMk
-      (((equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)
-  have hK (w : ℂ) (p : P × (ℝ × ℝ)) (hp : p ∈ univ ×ˢ S) (x : M) :
-      ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
-        (uncurry fun (p : P × (ℝ × ℝ)) x ↦
-          pairOfPantsContinuationPerturbation G H (L p.1) (equivRealProdCLM.symm p.2) x w)
-        (p, x) :=
-    ((contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs (L p.1)
-      ⟨equivRealProdCLM.symm p.2, hp.2⟩ x).comp (p, x) hg.contMDiffAt).clm_apply contMDiffAt_const
   have hWS : IsOpen (W ∩ univ ×ˢ S) := hW.inter (isOpen_univ.prod isOpen_thricePuncturedSphereReal)
   have hCDWS : C ×ˢ D ⊆ W ∩ univ ×ˢ S :=
     subset_inter hCDW (prod_mono (subset_univ _) hDS)
@@ -209,10 +228,10 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
         pairOfPantsContinuationPerturbation G H (L p) (equivRealProdCLM.symm z) x Complex.I)
       he he_inj hWS hC hD hCDWS
       (fun α ↦ (hJ α).mono (prod_mono inter_subset_left subset_rfl))
-      (fun α ↦ (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK 1) α).mono
-        (prod_mono inter_subset_right subset_rfl))
-      (fun α ↦ (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK Complex.I) α).mono
-        (prod_mono inter_subset_right subset_rfl))
+      (fun α ↦ (contDiffOn_hamiltonianVectorFieldInChartAt_pantsContinuation hω hG hH hGs hHs hL
+        1 α).mono (prod_mono inter_subset_right subset_rfl))
+      (fun α ↦ (contDiffOn_hamiltonianVectorFieldInChartAt_pantsContinuation hω hG hH hGs hHs hL
+        Complex.I α).mono (prod_mono inter_subset_right subset_rfl))
       (fun p hp z hz ↦ hJt p hp z (hDS hz)) hκ hJc hLs hLt
   refine ⟨δ, hδ, fun Ω p u x A hΩ hΩD hpC hu hfl hx hint harea htop ↦ ?_⟩
   have hΩS : Ω ⊆ S := hΩD.trans hDS
@@ -224,6 +243,127 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
         (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB hΔ
         ((hu k).of_le (by norm_num)) (hx k) (hint k) (harea k)
         (fun z hz ↦ hJt _ (hpC k) z hz _) (hfl k) (htop k) hΩS
+
+/-- **Solutions of the pair-of-pants continuation family in a closed manifold converge off finitely
+many bubbling points on the whole domain.** Let `ω` be a nondegenerate two-form on a closed manifold
+`M`, let `G_q`, `H_q` be period-one `C³` Hamiltonians with `|G_q|, |H_q| ≤ B_q` and
+`|H_q - G_q| ≤ Δ_q`, and let the neck positions `L(p)` depend `C³` on a parameter `p` in a
+finite-dimensional real normed space `P`. Let `J_p(z, x)` be structures on the tangent spaces of
+`M`, tamed by `ω` for `p` in a compact window `C ⊆ P` of parameters and `z ∈ S = ℂ ∖ {0, 1}` (in
+real coordinates), which read in the chart at every point of `M` are `C²` jointly in `(p, z, y)` on
+`W × (chart target)`, for an open `W` containing `C × S`, and which are cylindrical on the ends:
+beyond `T₀` on the end `q` every `J_p`, `p ∈ C`, is `J_q(t, x)` in the end coordinates. Let
+`e : M → F` be an injective `C¹` map into a normed space, such as the Whitney embedding, and over
+every compact `D ⊆ S` let the structures be uniformly tame with respect to `e` and the pushforwards
+through `e` of the Hamiltonian vector fields of the two components of `K_{L(p)}` be bounded,
+uniformly in `p ∈ C`. There is a threshold `δ > 0` with the following property. Let `uₖ` be `C³`
+maps from `S` to `M` solving the Floer equation `(du - X_{K_{L(pₖ)}})^{0,1} = 0` for the
+structures `J_{pₖ}(z, u)`, with `pₖ ∈ C`, whose end loops `uₖ(φ_q(±R + i t))` converge pointwise to
+loops `xₖ q` as `R → ∞`, whose Floer energy and symplectic area densities are integrable over `S`,
+and whose topological energy `∫_S uₖ^*ω + ∑ q, ±∫₀¹ H_q(t, xₖ q t) dt` is at most `A`. Then there
+are a subsequence `φ`, a limit `p₀ ∈ C` of the parameters `p_{φ n}`, a finite set `Z ⊆ S` with
+`#Z * δ ≤ A + ∑ q, (B_q + Δ_q)` and a map `v`, continuous on `S \ Z`, such that along `φ` every
+disc about a point of `Z` eventually carries energy at least `δ`, and the solutions converge to `v`
+on `S \ Z`, locally uniformly after applying `e` and pointwise in `M`. Over the compact window `C`
+the necks stay below a fixed height, beyond which the perturbations are the cylindrical data
+`H_q(t) dt` of the outer Hamiltonians, so the family is cylindrical on the ends with data
+independent of `p`. -/
+theorem
+exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pantsContinuation_global
+    (hω : ω.IsNondegenerate) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (G q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
+    {B Δ : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
+    (hΔ : ∀ q t x, |H q t x - G q t x| ≤ Δ q) {L : P → Puncture → ℝ} (hL : ContDiff ℝ 3 L)
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {W : Set (P × (ℝ × ℝ))} {C : Set P} (hW : IsOpen W) (hC : IsCompact C)
+    (hCW : C ×ˢ thricePuncturedSphereReal ⊆ W)
+    (hJ : ∀ α, ContDiffOn ℝ 2 (almostComplexInChartAt I α (uncurry J))
+      (W ×ˢ (extChartAt I α).target))
+    (hJt : ∀ p ∈ C, ∀ z ∈ thricePuncturedSphereReal, ∀ x,
+      (hω.symplecticFormAt x).Tames (J p z x))
+    {T₀ : ℝ} {Jq : Puncture → ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hJe : ∀ p ∈ C, ∀ q s t x, T₀ ≤ s → J p (endChart q (q.endSign * s, t)) x = Jq q t x)
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
+    (hJc : ∀ D, IsCompact D → D ⊆ thricePuncturedSphereReal → ∃ κ > 0, ∀ p ∈ C, ∀ z ∈ D,
+      ∀ x v, κ * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (J p z x v))
+    (hLB : ∀ D, IsCompact D → D ⊆ thricePuncturedSphereReal → ∃ L', ∀ p ∈ C, ∀ z ∈ D, ∀ x,
+      ‖mvfderiv I e x (ω.hamiltonianVectorField (fun y ↦
+        pairOfPantsContinuationPerturbation G H (L p) (equivRealProdCLM.symm z) y 1) x)‖ ≤ L' ∧
+      ‖mvfderiv I e x (ω.hamiltonianVectorField (fun y ↦
+        pairOfPantsContinuationPerturbation G H (L p) (equivRealProdCLM.symm z) y Complex.I) x)‖ ≤
+        L') :
+    ∃ δ > 0, ∀ ⦃p : ℕ → P⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃x : ℕ → Puncture → ℝ → M⦄ ⦃A : ℝ⦄,
+      (∀ k, p k ∈ C) →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) thricePuncturedSphereReal) →
+      (∀ k, ∀ z ∈ thricePuncturedSphereReal,
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (p k) z (u k z))
+          (ω.perturbedMFDeriv
+            (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p k)) (equivRealProdCLM.symm z)
+              x 1)
+            (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p k)) (equivRealProdCLM.symm z)
+              x Complex.I)
+            (u k) z).toLinearMap) →
+      (∀ k q t, Tendsto (fun R : ℝ ↦ u k (equivRealProdCLM
+        (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x k q t))) →
+      (∀ k, IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p k)) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p k)) (equivRealProdCLM.symm z) x
+          Complex.I) (u k)) thricePuncturedSphereReal) →
+      (∀ k, IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u k z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal) →
+      (∀ k, (∫ z in thricePuncturedSphereReal, (SmoothBundleForm.eval₂ ω (u k z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineImag) : ℝ)) +
+          ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x k q t) ≤ A) →
+      ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ p₀ ∈ C, Tendsto (fun n ↦ p (φ n)) atTop (𝓝 p₀) ∧
+        ∃ (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M), ↑Z ⊆ thricePuncturedSphereReal ∧
+        Z.card * δ ≤ A + ∑ q, (B q + Δ q) ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ thricePuncturedSphereReal,
+          ω.floerEnergyDensity
+            (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p (φ n)))
+              (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p (φ n)))
+              (equivRealProdCLM.symm z) x Complex.I)
+            (u (φ n)) y) ∧
+        ContinuousOn v (thricePuncturedSphereReal \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop
+          (thricePuncturedSphereReal \ ↑Z) ∧
+        ∀ z ∈ thricePuncturedSphereReal \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
+  set S := thricePuncturedSphereReal
+  have hWS : IsOpen (W ∩ univ ×ˢ S) := hW.inter (isOpen_univ.prod isOpen_thricePuncturedSphereReal)
+  -- Over `C` the necks stay below a fixed height `b`, beyond which the perturbations are
+  -- `H_q(t) dt`.
+  have hLc := hL.continuous
+  obtain ⟨b, hb⟩ := hC.exists_bound_of_continuousOn (f := fun p ↦ ∑ q, |L p q|)
+    (by fun_prop : Continuous fun p ↦ ∑ q, |L p q|).continuousOn
+  have hKH (p : P) (hp : p ∈ C) (q : Puncture) (w : ℂ) (x : M)
+      (hw : max T₀ (2 + b) ≤ q.endSign * (q.endCoord w).re) :
+      pairOfPantsContinuationPerturbation G H (L p) w x =
+        H q (q.endCoord w).im x • q.endAngularForm w := by
+    refine pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le ?_ x
+    have hbp := (le_abs_self _).trans (Real.norm_eq_abs _ ▸ hb p hp)
+    linarith [le_max_right T₀ (2 + b)]
+  obtain ⟨δ, hδ, hconv⟩ :=
+    hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_of_cylindrical
+      (K := fun p ↦ pairOfPantsContinuationPerturbation G H (L p)) hWS hC
+      (subset_inter hCW (prod_mono (subset_univ _) subset_rfl))
+      (fun α ↦ (hJ α).mono (prod_mono inter_subset_left subset_rfl))
+      (fun α ↦ (contDiffOn_hamiltonianVectorFieldInChartAt_pantsContinuation hω hG hH hGs hHs hL
+        1 α).mono (prod_mono inter_subset_right subset_rfl))
+      (fun α ↦ (contDiffOn_hamiltonianVectorFieldInChartAt_pantsContinuation hω hG hH hGs hHs hL
+        Complex.I α).mono (prod_mono inter_subset_right subset_rfl))
+      hJt hJc hLB hKH hH hHs (fun p hp q s t x hs ↦ hJe p hp q s t x ((le_max_left _ _).trans hs))
+      he he_inj
+  refine ⟨δ, hδ, fun p u x A hpC hu hfl hx hint harea htop ↦ ?_⟩
+  -- The Floer energy over `S` exceeds the topological energy by at most `∑ q, (B_q + Δ_q)`,
+  -- whatever the neck positions.
+  exact hconv hpC hu hfl hint fun k ↦
+    hω.setIntegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le hG hH
+      (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB hΔ
+      ((hu k).of_le (by norm_num)) (hx k) (hint k) (harea k)
+      (fun z hz ↦ hJt _ (hpC k) z hz _) (hfl k) (htop k) subset_rfl
 
 end IsNondegenerate
 

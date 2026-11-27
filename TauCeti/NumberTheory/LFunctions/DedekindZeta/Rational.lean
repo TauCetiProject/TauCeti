@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Data
 
 /-!
 # Comparison over `ℚ` with the Riemann zeta function

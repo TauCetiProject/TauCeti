@@ -46,6 +46,8 @@ one-parameter subgroup `T_μ`, the closure of `{exp (t μ) | t ∈ ℝ}`
 * `TauCeti.Lie.isClosed_stabilizer_continuousAdjointRepresentation`: `Z_G(Y)` is closed.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation`: the Lie algebra
   of `Z_G(Y)` is the centralizer of `Y`.
+* `TauCeti.Lie.lieExp_smul_mem_connectedComponentIn_stabilizer_continuousAdjointRepresentation`:
+  the one-parameter subgroup of an `X` with `⁅X, Y⁆ = 0` lies in the identity component `Z_G(Y)⁰`.
 * `TauCeti.Lie.le_stabilizer_continuousAdjointRepresentation`: a commutative subgroup lies in the
   adjoint stabilizer of each element of its Lie algebra.
 * `TauCeti.Lie.stabilizer_continuousAdjointRepresentation_eq_stabilizer_adjointRepresentation`:
@@ -54,6 +56,9 @@ one-parameter subgroup `T_μ`, the closure of `{exp (t μ) | t ∈ ℝ}`
   stabilizer of `μ` is the centralizer of `{exp (t μ) | t ∈ ℝ}`.
 * `TauCeti.Lie.stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgroup`: it is
   the centralizer of the closed one-parameter subgroup `T_μ`.
+* `stabilizer_continuousAdjointRepresentation_eq_centralizer_closedOneParameterSubgroup`, in the
+  `TauCeti.Lie` namespace: likewise `Z_G(Y)` is the centralizer of the closed one-parameter
+  subgroup of `Y`.
 
 ## References
 
@@ -125,6 +130,23 @@ theorem lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation
   simp only [mem_stabilizer_continuousAdjointRepresentation_iff]
   exact Ad_lieExp_smul_apply_eq_self_iff
 
+/-- **One-parameter subgroups of the centralizer lie in the identity component of the adjoint
+stabilizer.** If `⁅X, Y⁆ = 0`, then every `exp (t X)` lies in the identity component `Z_G(Y)⁰`
+of `Z_G(Y) = {g | Ad_g Y = Y}`. -/
+theorem lieExp_smul_mem_connectedComponentIn_stabilizer_continuousAdjointRepresentation
+    {X Y : LeftInvariantDerivation I G} (h : ⁅X, Y⁆ = 0) (t : ℝ) :
+    lieExp (I := I) (t • X) ∈ connectedComponentIn
+      ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y :
+        Set G) 1 := by
+  -- The one-parameter subgroup is connected, passes through `1` and lies in `Z_G(Y)`.
+  have hconn : IsPreconnected (Set.range fun s : ℝ ↦ lieExp (I := I) (s • X)) :=
+    isPreconnected_range <| (contMDiff_lieExp (I := I) (G := G)).continuous.comp
+      (continuous_id.smul continuous_const)
+  refine hconn.subset_connectedComponentIn ⟨0, by simp [lieExp_zero]⟩ ?_ ⟨t, rfl⟩
+  rintro _ ⟨s, rfl⟩
+  exact mem_stabilizer_continuousAdjointRepresentation_iff.mpr
+    (Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero h s)
+
 /-! ### The adjoint stabilizer on the tangent Lie algebra -/
 
 /-- Evaluation at the identity identifies the adjoint stabilizer `Z_G(Y)` of a left-invariant
@@ -179,6 +201,22 @@ theorem stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgro
       Subgroup.mem_centralizer_singleton_iff.1 (hle hh)
   · rintro _ ⟨t, rfl⟩
     exact mulInvariantExp_smul_mem_closedOneParameterSubgroup μ t
+
+/-- **The adjoint stabilizer `Z_G(Y)` is the centralizer of the closed one-parameter subgroup of
+`Y`**, the closure of `{exp (t Y) | t ∈ ℝ}`, with `Y` read in the tangent Lie algebra. -/
+theorem stabilizer_continuousAdjointRepresentation_eq_centralizer_closedOneParameterSubgroup
+    (Y : LeftInvariantDerivation I G) :
+    (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y =
+      Subgroup.centralizer (closedOneParameterSubgroup
+        (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint Y) : Set G) := by
+  rw [← stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgroup]
+  ext g
+  rw [mem_stabilizer_continuousAdjointRepresentation_iff, Representation.mem_stabilizer,
+    adjointRepresentation_apply,
+    ← EquivLike.apply_eq_iff_eq (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+      BoundarylessManifold.isInteriorPoint), leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
+    tangentAd_apply]
 
 end TopologicalGroup
 

@@ -8,7 +8,10 @@ module
 public import TauCeti.NumberTheory.LFunctions.Continued.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
+import TauCeti.Data.Finsupp.Order
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+import TauCeti.NumberTheory.LFunctions.Data.PolarDivisor
 
 /-!
 # Analytic L-function data for Dedekind zeta
@@ -102,14 +105,14 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation where
   meromorphic := dedekindZetaData_completed K ▸ meromorphic_completedDedekindZeta K
   meromorphicOrderAt_eq p hp := by
-    rcases eq_or_ne p 0 with rfl | h0
+    rw [dedekindZetaData_polarOrder] at hp ⊢
+    rcases (Finsupp.single_add_single_ne_zero_iff one_ne_zero one_ne_zero p).mp hp with rfl | rfl
     · simp [meromorphicOrderAt_completedDedekindZeta_zero]
-    rcases eq_or_ne p 1 with rfl | h1
     · simp [meromorphicOrderAt_completedDedekindZeta_one]
-    simp [Ne.symm h0, Ne.symm h1] at hp
   analyticAt p hp := by
-    rw [dedekindZetaData_completed, analyticAt_completedDedekindZeta_iff]
-    exact ⟨fun h ↦ by simp [h] at hp, fun h ↦ by simp [h] at hp⟩
+    rw [dedekindZetaData_polarOrder] at hp
+    obtain ⟨h0, h1⟩ := (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero p).mp hp
+    simpa only [dedekindZetaData_completed] using analyticAt_completedDedekindZeta K h0 h1
 
 /-- The Dedekind zeta card is its own dual. -/
 @[simp] theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K := by
@@ -120,21 +123,15 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
   · simp
   · simp
   · simp
-  · simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
-      map_eq_one_iff _ (starRingEnd ℂ).injective]
+  · rw [AnalyticLFunctionData.dual_polarOrder_apply, dedekindZetaData_polarOrder]
+    exact single_zero_add_single_one_conj _
 
 /-- The completed card satisfies `Λ(s) = Λ(1 - s)`, with root number one. -/
 theorem dedekindZetaData_hasFunctionalEquation : (dedekindZetaData K).HasFunctionalEquation where
   norm_rootNumber := by simp
   polarOrder_one_sub_conj s := by
-    have hconj (z : ℂ) : (dedekindZetaData K).polarOrder (conj z) =
-        (dedekindZetaData K).polarOrder z := by
-      rw [← AnalyticLFunctionData.dual_polarOrder_apply, dedekindZetaData_dual]
-    have h0 : (0 : ℂ) = 1 - s ↔ 1 = s := by rw [eq_comm, sub_eq_zero]
-    have h1 : (1 : ℂ) = 1 - s ↔ 0 = s := by rw [eq_comm, sub_eq_self, eq_comm]
-    rw [← map_one (starRingEnd ℂ), ← map_sub, hconj]
-    simp only [dedekindZetaData_polarOrder, Finsupp.add_apply, Finsupp.single_apply,
-      h0, h1, add_comm]
+    rw [dedekindZetaData_polarOrder]
+    exact single_zero_add_single_one_one_sub_conj s
   completed_eq s _ _ := by
     simp [completedDedekindZeta_one_sub]
 
@@ -147,5 +144,28 @@ continuation, with the same normal-form value at the pole. -/
   rw [(dedekindZetaData_hasDirichletAgreement K).continuedL_eq_meromorphicContinuation hNF,
     funext (dedekindZetaData_coeff K), ← funext (dedekindZeta_eq_LSeries_dedekindZetaCoeff K),
     dedekindZetaC_def]
+
+/-- Constructing the Dedekind-zeta card from its Dirichlet series recovers `dedekindZetaData K`
+verbatim, because `completedDedekindZeta K` is already in meromorphic normal form. In particular,
+the extracted root number is `1`. -/
+theorem ofSeries_dedekindZetaData :
+    AnalyticLFunctionData.ofSeries (dedekindZetaData K).coeff (dedekindZetaData K).conductor
+      (dedekindZetaData K).gammaR (dedekindZetaData K).gammaC (dedekindZetaData K).polarOrder =
+      dedekindZetaData K := by
+  refine AnalyticLFunctionData.ofSeries_eq
+    (dedekindZetaData_hasDirichletAgreement K) (dedekindZetaData_hasFunctionalEquation K)
+    (meromorphicNFOn_completedDedekindZeta K) ?_ ?_
+  · rw [dedekindZetaData_polarOrder]
+    exact (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero 2).mpr
+      ⟨by norm_num, by norm_num⟩
+  rw [dedekindZetaData_completed, completedDedekindZeta_eq_mul_dedekindZeta K (by norm_num)]
+  have hdiscr : ((|discr K| : ℤ) : ℂ) ^ ((2 : ℂ) / 2) ≠ 0 := by
+    rw [div_self two_ne_zero, Complex.cpow_one]
+    exact Int.cast_ne_zero.mpr (abs_ne_zero.mpr (discr_ne_zero K))
+  have hGℝ : Gammaℝ 2 ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by norm_num)
+  have hGℂ : Gammaℂ 2 ≠ 0 := Gammaℂ_ne_zero_of_re_pos (by norm_num)
+  exact mul_ne_zero
+    (mul_ne_zero (mul_ne_zero hdiscr (pow_ne_zero _ hGℝ)) (pow_ne_zero _ hGℂ))
+    (dedekindZeta_ne_zero_of_one_lt_re (by norm_num))
 
 end TauCeti.LFunctions

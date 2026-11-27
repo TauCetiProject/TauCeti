@@ -122,6 +122,15 @@ theorem signRankOneLocalSystem_eq_one (hx : (p ⁻¹' {x}).Finite) (h : hp.signC
     hp.signRankOneLocalSystem R hx = 1 :=
   (RankOneLocalSystem.ofMonodromy_unitsMap_comp_eq_one_iff _).2 (.inl h)
 
+/-- **The sign local system is defined over `ℤ`**: extending its coefficients along a ring
+homomorphism `φ : R →+* R'` gives the sign local system with coefficients in `R'`. -/
+@[simp]
+theorem mapRingHom_signRankOneLocalSystem {R' : Type*} [CommRing R'] (φ : R →+* R')
+    (hx : (p ⁻¹' {x}).Finite) :
+    RankOneLocalSystem.mapRingHom φ (hp.signRankOneLocalSystem R hx) =
+      hp.signRankOneLocalSystem R' hx :=
+  RankOneLocalSystem.mapRingHom_ofMonodromy_unitsMap_comp φ _
+
 /-! ### The sign twist on the free loop space -/
 
 section FreeLoop
@@ -188,6 +197,15 @@ theorem freeLoopSignTwist_ρ_apply (γ₀ : MooreFreeLoopSpace X)
       else 1 := by
   rw [freeLoopSignTwist, RankOneLocalSystem.freeLoopTwist_ρ_apply,
     freeLoopSignCharacter_toCircleMap]
+
+/-- **The sign twist is defined over `ℤ`**: extending its coefficients along a ring homomorphism
+`φ : R →+* R'` gives the sign twist with coefficients in `R'`. -/
+@[simp]
+theorem mapRingHom_freeLoopSignTwist {R' : Type*} [CommRing R'] (φ : R →+* R')
+    (γ₀ : MooreFreeLoopSpace X) :
+    RankOneLocalSystem.mapRingHom φ (hp.freeLoopSignTwist R hfin γ₀) =
+      hp.freeLoopSignTwist R' hfin γ₀ :=
+  RankOneLocalSystem.mapRingHom_freeLoopTwist φ γ₀
 
 /-- A trivial sign character at the base point trivializes the sign twist. -/
 theorem freeLoopSignTwist_eq_one {γ₀ : MooreFreeLoopSpace X}

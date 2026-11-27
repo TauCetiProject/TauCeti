@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Topology.Sequences
 public import Mathlib.Analysis.RCLike.Basic
-public import TauCeti.Topology.Algebra.Module.WeakSpace
+public import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Operator.DunfordPettis.Basic
 
 /-!
