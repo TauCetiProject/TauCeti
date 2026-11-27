@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.OfSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
+import TauCeti.Analysis.Distribution.OfFun
 import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Local
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.LocalRep
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.OfSection.ChartComponent
@@ -179,24 +180,6 @@ theorem toBundleDistribution_apply {w : SobolevSection A μ p k} {s : ∀ x, V x
 
 /-! ### Injectivity and Sobolev regularity of the distributional section -/
 
-omit [FiniteDimensional ℝ E] in
-/-- Multiplying the measure by a finite constant multiplies a regular distribution by that
-constant. -/
-private theorem ofFun_smul_measure {Ω : TopologicalSpace.Opens E} {g : E → ℂ} {ν : Measure E}
-    (c : NNReal) :
-    Distribution.ofFun Ω g ((c : ℝ≥0∞) • ν) ⊤ = (c : ℝ) • Distribution.ofFun Ω g ν ⊤ := by
-  by_cases hg : LocallyIntegrableOn g Ω ν
-  · ext φ
-    rw [smul_apply, Distribution.ofFun_apply (hg.smul_measure ENNReal.coe_ne_top),
-      Distribution.ofFun_apply hg, integral_smul_measure, ENNReal.coe_toReal]
-  rcases eq_or_ne c 0 with rfl | hc
-  · ext φ
-    simp [Distribution.ofFun_apply_eq_ite]
-  · rw [Distribution.ofFun_eq_zero hg, smul_zero, Distribution.ofFun_eq_zero fun h ↦ hg ?_]
-    have h' := h.smul_measure (ENNReal.inv_ne_top.2 (ENNReal.coe_ne_zero.2 hc))
-    rwa [smul_smul, ENNReal.inv_mul_cancel (ENNReal.coe_ne_zero.2 hc) ENNReal.coe_ne_top,
-      one_smul] at h'
-
 -- The chart `baseSetChart` at the centre of chart `i` of `A`, for the dual-density bundle.
 local macro "𝒸" i:term:max : term =>
   `(baseSetChart ($(Lean.mkIdent `F) →L[ℝ] ℝ) 𝓘(ℝ, $(Lean.mkIdent `E))
@@ -225,6 +208,23 @@ private theorem image_baseSetChart_dom (i : Fin A.n) :
   exact ⟨h, h ▸ image_subset_iff.2 fun z hz ↦
     (𝒸 i).map_source (dom_subset_baseSetChart_source i hz)⟩
 
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [T2Space M] in
+/-- The chart `baseSetChart` at the centre of chart `i` is the preferred extended chart there. -/
+private theorem baseSetChart_eq_extChartAt (i : Fin A.n) :
+    ∀ x ∈ (𝒸 i).source, (𝒸 i) x = extChartAt 𝓘(ℝ, E) (A.center i) x := fun _ _ ↦ by
+  rw [coe_baseSetChart]
+
+omit [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [T2Space M] in
+/-- The reading at the centre of chart `i` of a locally integrable section is locally integrable on
+the target of the chart `baseSetChart` there. -/
+private theorem locallyIntegrableOn_localRep_center {s : ∀ x, V x}
+    (hs : LocallyIntegrableSection 𝓘(ℝ, E) F s) (i : Fin A.n) :
+    LocallyIntegrableOn (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i)) (𝒸 i).target
+      (Module.finBasis ℝ E).addHaar :=
+  hs.locallyIntegrableOn_target (𝒸 i) (baseSetChart_source_subset _ _)
+    (baseSetChart_eq_extChartAt i)
+
 /-- In the chart `baseSetChart` at the centre of chart `i` and the preferred frame of the
 dual-density bundle, the component along `v` of the distributional section of a locally
 integrable section is the regular distribution of `v` applied to its reading at the centre. -/
@@ -236,12 +236,9 @@ private theorem chartComponent_center [SigmaCompactSpace M] {s : ∀ x, V x}
       Distribution.ofFun ⟨(𝒸 i).target, (𝒸 i).open_target⟩
         (fun y ↦ (v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) : ℂ))
         (Module.finBasis ℝ E).addHaar ⊤ :=
-  chartComponent_ofSection _ _ _ (fun _ _ ↦ by rw [coe_baseSetChart]) hs v
+  chartComponent_ofSection _ _ _ (baseSetChart_eq_extChartAt i) hs v
 
-/-- **Injectivity.** An element of `W^{k,p}(V)` is determined by its distributional section: if
-the distributional section of `w` vanishes, then in each chart of `A` the components of the
-regular distribution of the chart data vanish (`TauCeti.chartComponent_ofSection`), so the chart
-data vanish almost everywhere (`Distribution.ofFun_injective`). -/
+/-- **Injectivity.** An element of `W^{k,p}(V)` is determined by its distributional section. -/
 theorem toBundleDistribution_injective : Function.Injective (toBundleDistribution A μ p k) := by
   have := A.compactSpace
   refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
@@ -253,8 +250,7 @@ theorem toBundleDistribution_injective : Function.Injective (toBundleDistributio
       ∀ᵐ y ∂μ.restrict (A.image i), (Module.finBasis ℝ F).coord j (A.coord i s y) = 0 := by
     set v := LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j)
     have hloc := (Complex.ofRealCLM.comp v).locallyIntegrableOn_comp
-      (hsl.locallyIntegrableOn_target (𝒸 i) (baseSetChart_source_subset _ _)
-        fun _ _ ↦ by rw [coe_baseSetChart])
+      (locallyIntegrableOn_localRep_center hsl i)
     have h := Distribution.ofFun_injective (Ω := ⟨(𝒸 i).target, (𝒸 i).open_target⟩) (f' := 0) hloc
       locallyIntegrableOn_zero ((chartComponent_center hsl i v).symm.trans (by
         rw [hw, Bundle.Trivialization.chartComponent_zero, Distribution.ofFun_zero]))
@@ -271,13 +267,7 @@ theorem toBundleDistribution_injective : Function.Injective (toBundleDistributio
 
 /-- **Sobolev sections are `H^k`.** For every square chart partition `B` of the dual-density bundle
 `V →L |Λ|`, the distributional section of an element of `W^{k,2}(V)` is `H^k` with respect to `B`
-(`TauCeti.SquareChartPartition.MemSobolev`). Near a point of the domain of chart `i` of `A`, its
-component along a covector `v` in the preferred chart and frame at the centre of chart `i` is the
-regular distribution of `v` applied to the chart data, up to the constant relating the Haar measure
-of the fixed basis to `volume` (`TauCeti.chartComponent_ofSection`), and the chart data are
-`W^{k,2}` there; `Distribution.isLocallySobolevAt_ofFun_iff_exists_wkp` and the locality of
-`H^k` regularity (`TauCeti.SquareChartPartition.memSobolev_iff_forall_isLocallySobolevAt`)
-conclude. -/
+(`TauCeti.SquareChartPartition.MemSobolev`). -/
 theorem memSobolev_toBundleDistribution {κ : Type*} [Fintype κ]
     (B : SquareChartPartition κ 𝓘(ℝ, E) (F →L[ℝ] ℝ)
       (fun x ↦ V x →L[ℝ] DensityBundle 𝓘(ℝ, E) M x))
@@ -298,12 +288,11 @@ theorem memSobolev_toBundleDistribution {κ : Type*} [Fintype κ]
   set g : E → ℝ := fun y ↦ c₀ * v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y)
   have hloc : LocallyIntegrableOn (fun y ↦ v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y))
       (𝒸 i).target volume :=
-    (v.locallyIntegrableOn_comp (hsl.locallyIntegrableOn_target (𝒸 i)
-      (baseSetChart_source_subset _ _) fun _ _ ↦ by rw [coe_baseSetChart])).of_isAddHaarMeasure
+    (v.locallyIntegrableOn_comp (locallyIntegrableOn_localRep_center hsl i)).of_isAddHaarMeasure
       volume
   rw [chartComponent_center hsl i v, hc₀,
-    ofFun_smul_measure (Ω := ⟨(𝒸 i).target, (𝒸 i).open_target⟩)
-      (g := fun y ↦ (v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) : ℂ)) c₀,
+    Distribution.ofFun_smul_measure (Ω := ⟨(𝒸 i).target, (𝒸 i).open_target⟩)
+      (fun y ↦ (v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) : ℂ)) volume c₀,
     ← Distribution.ofFun_smul]
   have hg : ((c₀ : ℝ) • fun y ↦ (v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) : ℂ)) =
       fun y ↦ (g y : ℂ) := by
