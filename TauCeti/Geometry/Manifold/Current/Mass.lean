@@ -99,6 +99,11 @@ theorem mass_le_iff : mass T ≤ b ↔ ∀ s : TestForm I M k,
   rw [mass, localMass_le_iff]
   simp only [subset_univ, forall_const]
 
+/-- Evaluating a unit-comass test bounds the total mass from below. -/
+theorem eNorm_apply_le_mass {s : TestForm I M k}
+    (h₁ : ∀ x, ‖TestForm.formEquiv s x‖ ≤ 1) : ‖T s‖ₑ ≤ mass T :=
+  mass_le_iff.1 le_rfl s h₁
+
 /-- Enlarging the set of allowed supports increases the local mass. -/
 @[gcongr]
 theorem localMass_mono (h : U ⊆ V) : localMass T U ≤ localMass T V :=
@@ -171,6 +176,14 @@ theorem localMass_neg : localMass (-T) U = localMass T U := by
 @[simp]
 theorem mass_neg : mass (-T) = mass T := localMass_neg
 
+/-- The local mass of a difference is bounded by the sum of the local masses. -/
+theorem localMass_sub_le : localMass (T - S) U ≤ localMass T U + localMass S U := by
+  simpa only [sub_eq_add_neg, localMass_neg] using localMass_add_le (T := T) (S := -S) (U := U)
+
+/-- The mass of a difference is bounded by the sum of the masses. -/
+theorem mass_sub_le : mass (T - S) ≤ mass T + mass S := by
+  simpa only [localMass_univ] using localMass_sub_le (T := T) (S := S) (U := univ)
+
 /-- If a test supported in `U` has pointwise comass at most `c`, its evaluation is bounded by
 `c` times the local mass, including when the local mass is infinite. -/
 theorem eNorm_apply_le_localMass_mul {s : TestForm I M k} (hs : closure {x | s x ≠ 0} ⊆ U)
@@ -229,6 +242,46 @@ theorem hasLocallyFiniteMass_iff_localMass_ne_top :
 /-- Globally finite mass implies locally finite mass. -/
 theorem hasLocallyFiniteMass_of_mass_ne_top (h : mass T ≠ ⊤) : HasLocallyFiniteMass T :=
   hasLocallyFiniteMass_iff_localMass_ne_top.2 fun _ _ ↦ ne_top_of_le_ne_top h localMass_le_mass
+
+/-- The zero current has locally finite mass. -/
+@[simp]
+theorem hasLocallyFiniteMass_zero : HasLocallyFiniteMass (0 : Current I M k) :=
+  hasLocallyFiniteMass_of_mass_ne_top (by simp)
+
+/-- The sum of two currents of locally finite mass has locally finite mass. -/
+theorem HasLocallyFiniteMass.add (hT : HasLocallyFiniteMass T) (hS : HasLocallyFiniteMass S) :
+    HasLocallyFiniteMass (T + S) := by
+  refine hasLocallyFiniteMass_iff_localMass_ne_top.2 fun K hK ↦ ?_
+  have hTK := hasLocallyFiniteMass_iff_localMass_ne_top.1 hT K hK
+  have hSK := hasLocallyFiniteMass_iff_localMass_ne_top.1 hS K hK
+  exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hTK, hSK⟩) localMass_add_le
+
+/-- Changing the sign of a current preserves local finiteness of mass. -/
+@[simp]
+theorem hasLocallyFiniteMass_neg_iff : HasLocallyFiniteMass (-T) ↔ HasLocallyFiniteMass T := by
+  simp only [hasLocallyFiniteMass_iff_localMass_ne_top, localMass_neg]
+
+/-- The negative of a current of locally finite mass has locally finite mass. -/
+theorem HasLocallyFiniteMass.neg (hT : HasLocallyFiniteMass T) : HasLocallyFiniteMass (-T) :=
+  hasLocallyFiniteMass_neg_iff.2 hT
+
+/-- The difference of two currents of locally finite mass has locally finite mass. -/
+theorem HasLocallyFiniteMass.sub (hT : HasLocallyFiniteMass T) (hS : HasLocallyFiniteMass S) :
+    HasLocallyFiniteMass (T - S) := by
+  simpa only [sub_eq_add_neg] using hT.add hS.neg
+
+/-- A real multiple of a current of locally finite mass has locally finite mass. -/
+theorem HasLocallyFiniteMass.smul (hT : HasLocallyFiniteMass T) (a : ℝ) :
+    HasLocallyFiniteMass (a • T) := by
+  refine hasLocallyFiniteMass_iff_localMass_ne_top.2 fun K hK ↦ ?_
+  rw [localMass_smul]
+  exact ENNReal.mul_ne_top eNorm_ne_top (hasLocallyFiniteMass_iff_localMass_ne_top.1 hT K hK)
+
+/-- An integer multiple of a current of locally finite mass has locally finite mass. -/
+theorem HasLocallyFiniteMass.zsmul (hT : HasLocallyFiniteMass T) (m : ℤ) :
+    HasLocallyFiniteMass (m • T) := by
+  rw [← Int.cast_smul_eq_zsmul ℝ]
+  exact hT.smul (m : ℝ)
 
 /-- A current vanishing on every test supported in the set has zero local mass there. -/
 theorem localMass_eq_zero_of_isVanishingOn (h : BundleTest.IsVanishingOn T U) :
