@@ -202,6 +202,15 @@ theorem matlisDualOpMap_add {N N' : ModuleCat.{w} Aᵐᵒᵖ} (g h : N ⟶ N') :
   refine (matlisDualOpObjEquiv_map_apply R E (g + h) φ x).trans ?_
   simp [ModuleCat.hom_add, map_add]
 
+/-- Dualizing a composite of right-module maps reverses the order of composition. -/
+theorem matlisDualOpMap_comp {N₁ N₂ N₃ : ModuleCat.{w} Aᵐᵒᵖ}
+    (f : N₁ ⟶ N₂) (g : N₂ ⟶ N₃) :
+    matlisDualOpMap R E (f ≫ g) = matlisDualOpMap R E g ≫ matlisDualOpMap R E f := by
+  have h := (matlisDualOp R E).map_comp g.op f.op
+  rw [← op_comp] at h
+  -- On opposite objects and maps, the functor uses `matlisDualOpObj` and `matlisDualOpMap`.
+  exact h
+
 instance : (matlisDualOp R E (A := A)).Additive where
   map_add := matlisDualOpMap_add R E _ _
 

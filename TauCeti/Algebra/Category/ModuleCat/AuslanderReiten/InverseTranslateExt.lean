@@ -54,7 +54,7 @@ theorem exists_arInverseTranslateEquivExt (M : ModuleCat.{max u v} A) [Module.Fi
   have : IsArtinianRing Aᵐᵒᵖ := IsArtinianRing.of_finite k Aᵐᵒᵖ
   have : Module.FinitePresentation Aᵐᵒᵖ N := Module.finitePresentation_of_finite Aᵐᵒᵖ _
   obtain ⟨P, hP⟩ := FiniteProjectivePresentation.exists_isMinimal (M := N)
-  have hp := P.injective_p_of_hasProjectiveDimensionLE_one hP hN
+  have hp := P.p_injective_of_hasProjectiveDimensionLE_one hP hN
   obtain ⟨eP⟩ := nonempty_iso_arInverseTranslate k k M P hP
   let eDD : M ≅ matlisDualOpObj k k N :=
     matlisDualEvalIso (length_quotient_linearMap_self_eq_one k) M

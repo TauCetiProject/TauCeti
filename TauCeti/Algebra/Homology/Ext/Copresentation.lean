@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughInjectives
+import Mathlib.Algebra.Exact.Basic
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # Computing Ext¹ from an injective copresentation
@@ -43,16 +45,19 @@ theorem homCoboundary_apply (f : X ⟶ S.X₃) :
 /-- The maps in the kernel of the Hom connecting map are exactly the maps lifting to `S.X₂`. -/
 theorem ker_homCoboundary :
     (homCoboundary R hS X).ker = (Linear.rightComp R X S.g).range := by
-  ext f
-  simp only [LinearMap.mem_ker, homCoboundary_apply, LinearMap.mem_range, Linear.rightComp_apply]
-  constructor
-  · intro hf
-    obtain ⟨g, hg⟩ := Ext.covariant_sequence_exact₃ X hS (Ext.mk₀ f) (zero_add 1) hf
-    refine ⟨Ext.linearEquiv₀ (R := R) g, ?_⟩
-    apply (Ext.mk₀_bijective _ _).1
-    rwa [← Ext.mk₀_comp_mk₀, Ext.mk₀_linearEquiv₀_apply]
-  · rintro ⟨g, rfl⟩
-    rw [← Ext.mk₀_comp_mk₀, Ext.comp_assoc_of_second_deg_zero, hS.comp_extClass, Ext.comp_zero]
+  apply Function.Exact.linearMap_ker_eq
+  let e₂ : (X ⟶ S.X₂) ≃+ Ext.{w} X S.X₂ 0 := Ext.addEquiv₀.symm
+  let e₃ : (X ⟶ S.X₃) ≃+ Ext.{w} X S.X₃ 0 := Ext.addEquiv₀.symm
+  refine (AddMonoidHom.exact_iff_of_surjective_of_bijective_of_injective
+    (Linear.rightComp R X S.g).toAddMonoidHom (homCoboundary R hS X).toAddMonoidHom
+    ((Ext.mk₀ S.g).postcomp X (add_zero 0)) (hS.extClass.postcomp X (zero_add 1))
+    e₂.toAddMonoidHom e₃.toAddMonoidHom (AddMonoidHom.id _)
+    ?_ ?_ e₂.surjective e₃.bijective Function.injective_id).2
+    (exact_postcomp₃ hS X 0 1 (zero_add 1))
+  · ext f
+    simp [e₂, e₃]
+  · ext f
+    simp [e₃]
 
 /-- When the middle term is injective, every extension class is the pullback along a map. -/
 theorem homCoboundary_surjective [Injective S.X₂] :
@@ -73,5 +78,26 @@ theorem homCokernelEquivExtOfInjective_mk [Injective S.X₂] (f : X ⟶ S.X₃) 
     homCokernelEquivExtOfInjective R hS X (Submodule.Quotient.mk f) =
       (Ext.mk₀ f).comp hS.extClass (zero_add 1) := by
   simp [homCokernelEquivExtOfInjective]
+
+/-- Under the inverse comparison, a pullback extension is represented by its defining map. -/
+@[simp]
+theorem homCokernelEquivExtOfInjective_symm_mk₀_comp [Injective S.X₂] (f : X ⟶ S.X₃) :
+    (homCokernelEquivExtOfInjective R hS X).symm
+        ((Ext.mk₀ f).comp hS.extClass (zero_add 1)) = Submodule.Quotient.mk f := by
+  rw [← homCokernelEquivExtOfInjective_mk R hS X, LinearEquiv.symm_apply_apply]
+
+/-- The Hom-cokernel computation of `Ext¹` is natural in the source object. -/
+@[simp]
+theorem homCokernelEquivExtOfInjective_naturality [Injective S.X₂] {X' : C} (g : X' ⟶ X)
+    (x : (X ⟶ S.X₃) ⧸ (Linear.rightComp R X S.g).range) :
+    homCokernelEquivExtOfInjective R hS X'
+        ((Linear.rightComp R X S.g).range.mapQ (Linear.rightComp R X' S.g).range
+          (Linear.leftComp R S.X₃ g) (by
+            apply LinearMap.range_le_comap_range_of_comp_eq (f := Linear.leftComp R S.X₂ g)
+            ext f
+            simp [Category.assoc]) x) =
+      (Ext.mk₀ g).comp (homCokernelEquivExtOfInjective R hS X x) (zero_add 1) := by
+  induction x using Submodule.Quotient.induction_on with
+  | _ f => simp
 
 end TauCeti

@@ -37,7 +37,7 @@ theorem shortExact_shortComplex (hp : Function.Injective P.p) : P.shortComplex.S
 
 /-- If the presented module has projective dimension at most one, the relation map of a
 minimal projective presentation is injective. -/
-theorem injective_p_of_hasProjectiveDimensionLE_one [Small.{v} A]
+theorem p_injective_of_hasProjectiveDimensionLE_one [Small.{v} A]
     (hP : IsMinimalProjectivePresentation P.p P.π) (hM : HasProjectiveDimensionLE M 1) :
     Function.Injective P.p := by
   have hker := (LinearMap.hasProjectiveDimensionLE_succ_iff_ker P.surjective 0).mp hM

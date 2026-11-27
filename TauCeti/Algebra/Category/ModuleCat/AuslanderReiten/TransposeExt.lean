@@ -12,10 +12,12 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.Presentation
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.Algebra.Module.AuslanderReiten.DualPresentation
 public import TauCeti.Algebra.Module.Injective.DivisionRing
-import Mathlib.LinearAlgebra.Quotient.Basic
+import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Defect
 import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Hom
 import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable.Basic
 import TauCeti.Algebra.Homology.Ext.Copresentation
+import TauCeti.LinearAlgebra.LinearMap.Range
+import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
 import TauCeti.RingTheory.MatlisDuality.Semilocal
 
 /-!
@@ -51,31 +53,25 @@ variable (Q : FiniteProjectivePresentation N)
 variable (k : Type w) [CommRing k] [Algebra k A]
 
 private noncomputable def rightTransposeHomCokernelEquiv :
-    Q.rightTranspose ≃ₗ[k] HomCokernel k Q.shortComplex.f (ModuleCat.of Aᵐᵒᵖ A) := by
-  letI : Module k (Q.P₁ ⟶ ModuleCat.of Aᵐᵒᵖ A) :=
-    Linear.homModule Q.P₁ (ModuleCat.of Aᵐᵒᵖ A)
-  letI : Module k (Q.P₀ ⟶ ModuleCat.of Aᵐᵒᵖ A) :=
-    Linear.homModule Q.P₀ (ModuleCat.of Aᵐᵒᵖ A)
-  let e : (Q.P₁ →ₗ[Aᵐᵒᵖ] A) ≃ₗ[k] (Q.P₁ ⟶ ModuleCat.of Aᵐᵒᵖ A) :=
-    (ModuleCat.homLinearEquivOfLinearEquiv k (B := ModuleCat.of Aᵐᵒᵖ A)
-      (LinearEquiv.refl Aᵐᵒᵖ A) Q.P₁).symm
-  have he : ((LinearMap.range (Q.p.lcomp A A)).restrictScalars k).map e.toLinearMap =
-      (Linear.leftComp k (ModuleCat.of Aᵐᵒᵖ A) Q.shortComplex.f).range := by
-    ext f
-    constructor
-    · rintro ⟨_, ⟨g, rfl⟩, rfl⟩
-      exact ⟨ModuleCat.ofHom g, by simp [e, LinearMap.lcomp_apply']⟩
-    · rintro ⟨g, rfl⟩
-      exact ⟨g.hom ∘ₗ Q.p, ⟨g.hom, rfl⟩, by simp [e]⟩
-  exact (Submodule.Quotient.restrictScalarsEquiv k _).symm.trans
-    (Submodule.Quotient.equiv _ _ e he)
+    Q.rightTranspose ≃ₗ[k] HomCokernel k Q.shortComplex.f (ModuleCat.of Aᵐᵒᵖ A) :=
+  ((Q.p.lcomp A A).cokerRestrictScalarsEquiv k).symm.trans
+    (ModuleCat.covariantDefectEquivHomQuotient k (B := ModuleCat.of Aᵐᵒᵖ A)
+      (LinearEquiv.refl Aᵐᵒᵖ A) Q.shortComplex.f)
 
 private theorem rightTransposeHomCokernelEquiv_mk (g : Q.P₁ →ₗ[Aᵐᵒᵖ] A) :
     let _ := Linear.homModule (R := k) Q.P₀ (ModuleCat.of Aᵐᵒᵖ A)
     let _ := Linear.homModule (R := k) Q.P₁ (ModuleCat.of Aᵐᵒᵖ A)
     Q.rightTransposeHomCokernelEquiv k (Submodule.Quotient.mk g) =
       Submodule.Quotient.mk (ModuleCat.ofHom g) := by
-  simp [rightTransposeHomCokernelEquiv]
+  -- Restricting scalars on `lcomp` gives precomposition over `k` with the same range.
+  erw [rightTransposeHomCokernelEquiv, LinearEquiv.trans_apply,
+    LinearMap.cokerRestrictScalarsEquiv_symm_mk, ModuleCat.covariantDefectEquivHomQuotient_mk]
+  simp
+
+private theorem smul_rightTranspose_functional (a : A) (g : Q.P₁ →ₗ[Aᵐᵒᵖ] A) :
+    a • g = LinearMap.mulLeft Aᵐᵒᵖ a ∘ₗ g := by
+  ext x
+  simp only [LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply, smul_eq_mul]
 
 /-- For a length-one projective resolution of a right module, the right transpose computes
 `Ext¹(N, A)`. The left action is described by `rightTransposeEquivExt_smul`. -/
@@ -102,8 +98,8 @@ theorem rightTransposeEquivExt_smul (hp : Function.Injective Q.p) (a : A)
       (Ext.mk₀ (ModuleCat.ofHom (LinearMap.mulLeft Aᵐᵒᵖ a))) (add_zero 1) := by
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   rw [← Submodule.Quotient.mk_smul, rightTransposeEquivExt_mk, rightTransposeEquivExt_mk]
-  rw [Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀]
-  congr 2
+  rw [Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀,
+    smul_rightTranspose_functional, ModuleCat.ofHom_comp]
 
 /-- A comparison of resolutions acts on representatives by precomposition on relation modules
 and on extension classes by pullback along the map of presented modules. -/
@@ -130,10 +126,14 @@ variable (k : Type w) [Field k] {A : Type (max u w)} [Ring A] [Algebra k A]
 local notation "D" => ModuleCat.matlisDualOpObj k k
 local notation "B" => ModuleCat.of Aᵐᵒᵖ A
 
+-- The terms of the mapped opposite complex reduce to the bundled dual modules in rewrites.
+attribute [local implicit_reducible] ModuleCat.matlisDualOp
+
 private noncomputable def dualHomCokernelEquiv :
     HomCokernel k Q.shortComplex.f B ≃ₗ[k]
       ((D B ⟶ D Q.P₁) ⧸
-        (Linear.rightComp k (D B) (Q.shortComplex.matlisDualOp k k).g).range) := by
+        (Linear.rightComp k (D B)
+          (Q.shortComplex.op.map (ModuleCat.matlisDualOp k k)).g).range) := by
   letI : Module k (Q.P₀ ⟶ B) := Linear.homModule Q.P₀ B
   letI : Module k (Q.P₁ ⟶ B) := Linear.homModule Q.P₁ B
   have hscalar : ModuleCat.moduleOfAlgebra k B = (inferInstance : Module k A) :=
@@ -141,35 +141,30 @@ private noncomputable def dualHomCokernelEquiv :
   have hB : @IsFiniteLength k _ B _ (ModuleCat.moduleOfAlgebra k B) := by
     rw [hscalar]
     exact isFiniteLength_of_finite k A
-  let e : (Q.P₁ ⟶ B) ≃ₗ[k] (D B ⟶ D Q.P₁) :=
+  let e₀ : (Q.P₀ ⟶ B) ≃ₗ[k] (D B ⟶ D Q.P₀) :=
     ModuleCat.matlisDualOpHomLinearEquiv (length_quotient_linearMap_self_eq_one k) hB
-  have hcomp (g : Q.P₀ ⟶ B) :
-      e (ModuleCat.ofHom Q.p ≫ g) =
-        ModuleCat.matlisDualOpMap k k g ≫ ModuleCat.matlisDualOpMap k k (ModuleCat.ofHom Q.p) := by
-    simp only [e, ModuleCat.matlisDualOpHomLinearEquiv_apply]
-    exact (ModuleCat.matlisDualOp k k).map_comp g.op (ModuleCat.ofHom Q.p).op
-  refine Submodule.Quotient.equiv _ _ e ?_
-  ext f
-  constructor
-  · rintro ⟨_, ⟨g, rfl⟩, rfl⟩
-    exact ⟨ModuleCat.matlisDualOpMap k k g, (hcomp g).symm⟩
-  · rintro ⟨g, rfl⟩
-    obtain ⟨φ, rfl⟩ := (ModuleCat.bijective_matlisDualOpMap (N := Q.P₀)
-      (length_quotient_linearMap_self_eq_one k) hB).surjective g
-    exact ⟨ModuleCat.ofHom Q.p ≫ φ, ⟨φ, rfl⟩, hcomp φ⟩
+  let e₁ : (Q.P₁ ⟶ B) ≃ₗ[k] (D B ⟶ D Q.P₁) :=
+    ModuleCat.matlisDualOpHomLinearEquiv (length_quotient_linearMap_self_eq_one k) hB
+  refine Submodule.Quotient.equiv _ _ e₁
+    ((Linear.leftComp k B Q.shortComplex.f).map_range_eq_range_of_comp_eq e₀.surjective ?_)
+  apply LinearMap.ext
+  intro g
+  simp [e₀, e₁, ModuleCat.matlisDualOpMap_comp]
 
 private theorem dualHomCokernelEquiv_mk (f : Q.P₁ ⟶ B) :
     let _ := Linear.homModule (R := k) Q.P₁ B
     Q.dualHomCokernelEquiv k (Submodule.Quotient.mk f) =
       Submodule.Quotient.mk (ModuleCat.matlisDualOpMap k k f) := by
-  simp [dualHomCokernelEquiv]
+  simp only [dualHomCokernelEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
+    LinearEquiv.coe_coe, ModuleCat.matlisDualOpHomLinearEquiv_apply]
 
 /-- The transpose of a length-one right projective resolution computes `Ext¹(D A, D N)`
 via the dual injective copresentation. For a resolution of `N = D M`, this computes
 the inverse Auslander–Reiten translate of `M`. -/
 noncomputable def rightTransposeEquivExtDual (hp : Function.Injective Q.p) :
     Q.rightTranspose ≃ₗ[k] Ext (D B) (D N) 1 :=
-  have : Injective (D Q.P₀) := (ExactStructure.abelian_isInjective_iff _).mp
+  have : Injective (Q.shortComplex.op.map (ModuleCat.matlisDualOp k k)).X₂ :=
+    (ExactStructure.abelian_isInjective_iff _).mp
     (isInjective_matlisDualOpObj_of_projective k k Q.P₀)
   (Q.rightTransposeHomCokernelEquiv k).trans
     ((Q.dualHomCokernelEquiv k).trans
@@ -182,7 +177,8 @@ theorem rightTransposeEquivExtDual_mk (hp : Function.Injective Q.p) (g : Q.P₁ 
     Q.rightTransposeEquivExtDual k hp (Submodule.Quotient.mk g) =
       (Ext.mk₀ (ModuleCat.matlisDualOpMap k k (ModuleCat.ofHom g))).comp
         ((Q.shortExact_shortComplex hp).matlisDualOp k k).extClass (zero_add 1) := by
-  have : Injective (D Q.P₀) := (ExactStructure.abelian_isInjective_iff _).mp
+  have : Injective (Q.shortComplex.op.map (ModuleCat.matlisDualOp k k)).X₂ :=
+    (ExactStructure.abelian_isInjective_iff _).mp
     (isInjective_matlisDualOpObj_of_projective k k Q.P₀)
   rw [rightTransposeEquivExtDual, LinearEquiv.trans_apply, rightTransposeHomCokernelEquiv_mk,
     LinearEquiv.trans_apply, dualHomCokernelEquiv_mk, homCokernelEquivExtOfInjective_mk]
@@ -196,10 +192,8 @@ theorem rightTransposeEquivExtDual_smul (hp : Function.Injective Q.p) (a : A)
         (Q.rightTransposeEquivExtDual k hp x) (zero_add 1) := by
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   rw [← Submodule.Quotient.mk_smul, rightTransposeEquivExtDual_mk, rightTransposeEquivExtDual_mk]
-  rw [Ext.mk₀_comp_mk₀_assoc]
-  congr 2
-  exact (ModuleCat.matlisDualOp k k).map_comp
-    (ModuleCat.ofHom (LinearMap.mulLeft Aᵐᵒᵖ a)).op (ModuleCat.ofHom g).op
+  rw [Ext.mk₀_comp_mk₀_assoc, smul_rightTranspose_functional, ModuleCat.ofHom_comp,
+    ModuleCat.matlisDualOpMap_comp]
 
 /-- Precomposition on relation modules agrees, under the dual comparison, with pushforward along
 the dual of the map of presented modules. -/
@@ -211,17 +205,17 @@ theorem rightTransposeEquivExtDual_comp {N' : ModuleCat.{max u w} Aᵐᵒᵖ}
       (P.rightTransposeEquivExtDual k hP (Submodule.Quotient.mk g)).comp
         (Ext.mk₀ (ModuleCat.matlisDualOpMap k k φ.τ₃)) (add_zero 1) := by
   let Df := ModuleCat.matlisDualOp k k (A := A)
-  let ψ : P.shortComplex.matlisDualOp k k ⟶ Q.shortComplex.matlisDualOp k k :=
+  let ψ : P.shortComplex.op.map Df ⟶ Q.shortComplex.op.map Df :=
     Df.mapShortComplex.map (ShortComplex.opMap φ)
   have hmap : ModuleCat.matlisDualOpMap k k (φ.τ₁ ≫ ModuleCat.ofHom g) =
-      ModuleCat.matlisDualOpMap k k (ModuleCat.ofHom g) ≫ ψ.τ₃ :=
-    Df.map_comp (ModuleCat.ofHom g).op φ.τ₁.op
+      ModuleCat.matlisDualOpMap k k (ModuleCat.ofHom g) ≫ ψ.τ₃ := by
+    simp [ψ, Df, ModuleCat.matlisDualOpMap_comp]
   have hclass :=
     ((P.shortExact_shortComplex hP).matlisDualOp k k).extClass_naturality
       ((Q.shortExact_shortComplex hQ).matlisDualOp k k) ψ
   rw [Q.rightTransposeEquivExtDual_mk k hQ, P.rightTransposeEquivExtDual_mk k hP,
     ModuleCat.ofHom_comp, ModuleCat.ofHom_hom, hmap, ← Ext.mk₀_comp_mk₀_assoc,
     ← hclass, ← Ext.comp_assoc_of_third_deg_zero]
-  rfl
+  simp [ψ, Df]
 
 end TauCeti.FiniteProjectivePresentation
