@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Quaternion.QuotientDeriv
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 import TauCeti.Analysis.Quaternion.Rigidity
-import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
 import TauCeti.MeasureTheory.Integral.CurveIntegral.Segment
 
 /-!
@@ -126,32 +125,6 @@ theorem sum_curveIntegral_segment_square_mul_flip (q₀ : ℍ) (δ : ℝ) :
   simp only [zero_add, mul_one] at h
   rw [h, sum_mul_sub_mul_square_rev]
   ext <;> norm_num [← mul_assoc]
-
-/-- Around a closed polygon whose edges lie in `s`, the integral of `dq f` for `f` agreeing on `s`
-with `q ↦ a + q * b` is the commutator sum of the vertices times `b / 2`. -/
-private theorem sum_curveIntegral_segment_mul_flip_of_eqOn {a b : ℍ}
-    (hab : ∀ q ∈ s, f q = a + q * b) (p : Fin n → ℍ)
-    (hp : ∀ k, segment ℝ (p k) (p (finRotate n k)) ⊆ s) :
-    ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate n k)), (ContinuousLinearMap.mul ℝ ℍ).flip (f q) =
-      (2 : ℝ)⁻¹ • ((∑ k, (p (finRotate n k) * p k - p k * p (finRotate n k))) * b) := by
-  rw [← sum_curveIntegral_segment_mul_flip_add_mul_const p a b]
-  refine Finset.sum_congr rfl fun k _ ↦ curveIntegral_congr ?_
-  rw [Path.range_segment]
-  intro q hq
-  simp only [hab q (hp k hq)]
-
-/-- Around a closed polygon whose edges lie in `s`, the integral of `f dq` for `f` agreeing on `s`
-with `q ↦ a + b * q` is `b / 2` times the commutator sum of the vertices. -/
-private theorem sum_curveIntegral_segment_mul_of_eqOn {a b : ℍ}
-    (hab : ∀ q ∈ s, f q = a + b * q) (p : Fin n → ℍ)
-    (hp : ∀ k, segment ℝ (p k) (p (finRotate n k)) ⊆ s) :
-    ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate n k)), ContinuousLinearMap.mul ℝ ℍ (f q) =
-      (2 : ℝ)⁻¹ • (b * ∑ k, (p k * p (finRotate n k) - p (finRotate n k) * p k)) := by
-  rw [← sum_curveIntegral_segment_mul_const_add_mul p a b]
-  refine Finset.sum_congr rfl fun k _ ↦ curveIntegral_congr ?_
-  rw [Path.range_segment]
-  intro q hq
-  simp only [hab q (hp k hq)]
 
 /-- **Loop integrals of left quotient differentiable functions.** Let `f` have a left quotient
 derivative at every point of a connected open set `s`, with left slope `b` at some point of `s`.

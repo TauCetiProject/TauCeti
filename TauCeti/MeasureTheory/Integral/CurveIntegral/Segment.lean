@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
 
 /-!
 # Curve integrals of continuous `1`-forms along segments
@@ -57,6 +58,9 @@ is not commutative.
 * `TauCeti.sum_curveIntegral_segment_mul_const_add_mul`,
   `TauCeti.sum_curveIntegral_segment_mul_flip_add_mul_const`: the integrals of `(a + b x) dx` and
   `dx (a + x b)` around a closed polygon, as commutator sums of consecutive vertices.
+* `TauCeti.sum_curveIntegral_segment_mul_of_eqOn`,
+  `TauCeti.sum_curveIntegral_segment_mul_flip_of_eqOn`: the same for `f dx` and `dx f`, when `f`
+  agrees with `x ↦ a + b x`, respectively `x ↦ a + x b`, on a set containing the edges.
 -/
 
 public section
@@ -250,6 +254,32 @@ theorem sum_curveIntegral_segment_mul_flip_add_mul_const (p : Fin n → A) (a b 
   simp_rw [hk, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.smul_sum, ← Finset.sum_mul,
     Fin.sum_univ_finRotate_sub (fun k ↦ p k * p k), Fin.sum_univ_finRotate_sub p]
   simp
+
+/-- Around a closed polygon whose edges lie in `s`, the integral of `f dx` for `f` agreeing on `s`
+with `x ↦ a + b * x` is `b / 2` times the commutator sum of the vertices. -/
+theorem sum_curveIntegral_segment_mul_of_eqOn {f : A → A} {s : Set A} {a b : A}
+    (hab : ∀ x ∈ s, f x = a + b * x) (p : Fin n → A)
+    (hp : ∀ k, segment ℝ (p k) (p (finRotate n k)) ⊆ s) :
+    ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)), ContinuousLinearMap.mul ℝ A (f x) =
+      (2 : ℝ)⁻¹ • (b * ∑ k, (p k * p (finRotate n k) - p (finRotate n k) * p k)) := by
+  rw [← sum_curveIntegral_segment_mul_const_add_mul p a b]
+  refine Finset.sum_congr rfl fun k _ ↦ curveIntegral_congr ?_
+  rw [Path.range_segment]
+  intro x hx
+  simp only [hab x (hp k hx)]
+
+/-- Around a closed polygon whose edges lie in `s`, the integral of `dx f` for `f` agreeing on `s`
+with `x ↦ a + x * b` is the commutator sum of the vertices times `b / 2`. -/
+theorem sum_curveIntegral_segment_mul_flip_of_eqOn {f : A → A} {s : Set A} {a b : A}
+    (hab : ∀ x ∈ s, f x = a + x * b) (p : Fin n → A)
+    (hp : ∀ k, segment ℝ (p k) (p (finRotate n k)) ⊆ s) :
+    ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)), (ContinuousLinearMap.mul ℝ A).flip (f x) =
+      (2 : ℝ)⁻¹ • ((∑ k, (p (finRotate n k) * p k - p k * p (finRotate n k))) * b) := by
+  rw [← sum_curveIntegral_segment_mul_flip_add_mul_const p a b]
+  refine Finset.sum_congr rfl fun k _ ↦ curveIntegral_congr ?_
+  rw [Path.range_segment]
+  intro x hx
+  simp only [hab x (hp k hx)]
 
 end NormedAlgebra
 
