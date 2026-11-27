@@ -57,9 +57,6 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
   `E_b(S + T)^(1/2) ≤ E_b(S)^(1/2) + E_b(T)^(1/2)`.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_smul` and `ContinuousLinearMap.hilbertSchmidtNorm_smul`:
   homogeneity, `E_b(c • T) = ‖c‖ₑ² E_b(T)` and `‖c • T‖_HS = ‖c‖ ‖T‖_HS`.
-* `ContinuousLinearMap.hilbertSchmidtEnergy_smulRight_innerSL` and
-  `ContinuousLinearMap.hilbertSchmidtNorm_smulRight_innerSL`: the rank-one operator
-  `x ↦ ⟪u, x⟫ w` has energy `‖u‖ₑ² ‖w‖ₑ²` and Hilbert–Schmidt norm `‖u‖ ‖w‖`.
 * `ContinuousLinearMap.hilbertSchmidtNorm_adjoint`: `‖T†‖_HS = ‖T‖_HS`, for every operator.
 * `ContinuousLinearMap.hilbertSchmidtNorm_add_le`: `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS` when `S` has
   finite energy.
@@ -155,15 +152,6 @@ theorem hilbertSchmidtEnergy_toComplL_comp (T : E →L[𝕜] F) (b : HilbertBasi
     ((UniformSpace.Completion.toComplL : F →L[𝕜] UniformSpace.Completion F) ∘L
       T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
   simp [hilbertSchmidtEnergy_def]
-
-/-- **The energy of a rank-one operator.** The operator `x ↦ ⟪u, x⟫ w` has energy
-`‖u‖ₑ² ‖w‖ₑ²`, by Parseval's identity for `u`. -/
-theorem hilbertSchmidtEnergy_smulRight_innerSL (u : E) (w : F) (b : HilbertBasis ι 𝕜 E) :
-    ((innerSL 𝕜 u).smulRight w).hilbertSchmidtEnergy b = ‖u‖ₑ ^ 2 * ‖w‖ₑ ^ 2 := by
-  simp only [hilbertSchmidtEnergy_def, smulRight_apply, innerSL_apply_apply, eNorm_smul, mul_pow,
-    ENNReal.tsum_mul_right, ← b.tsum_eNorm_inner_sq u]
-  congr 2 with i
-  rw [← ofReal_norm, ← ofReal_norm, norm_inner_symm]
 
 section AdjointEnergy
 
@@ -347,16 +335,6 @@ theorem hilbertSchmidtNorm_add_le_of_finiteDimensional [FiniteDimensional 𝕜 E
     (S + T).hilbertSchmidtNorm ≤ S.hilbertSchmidtNorm + T.hilbertSchmidtNorm := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
   exact hilbertSchmidtNorm_add_le S T b (S.hilbertSchmidtEnergy_ne_top b)
-
-/-- **The Hilbert–Schmidt norm of a rank-one operator.** The operator `x ↦ ⟪u, x⟫ w` has
-Hilbert–Schmidt norm `‖u‖ ‖w‖`. -/
-@[simp]
-theorem hilbertSchmidtNorm_smulRight_innerSL (u : E) (w : F) :
-    ((innerSL 𝕜 u).smulRight w).hilbertSchmidtNorm = ‖u‖ * ‖w‖ := by
-  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-  rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtEnergy_smulRight_innerSL, ← mul_pow,
-    ENNReal.toReal_pow, ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm,
-    Real.sqrt_sq (by positivity)]
 
 /-- **Hilbert–Schmidt domination of the operator norm.** An operator of finite energy satisfies
 `‖T‖ ≤ ‖T‖_HS`. -/

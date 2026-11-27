@@ -64,8 +64,6 @@ the `L²` spaces or countability of the bases is required.
   (6.8)–(6.13) and Lemma 6.10.
 * M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, revised
   edition, Academic Press, 1980, Theorem VI.23.
-* Riemann–Masullo formalization, https://github.com/mccorvie/riemann-masullo (6dfe34ef2e),
-  `RiemannMasullo/AppC_LCTVS/Sec3b.lean`, for an earlier formal statement of these results.
 -/
 
 public section

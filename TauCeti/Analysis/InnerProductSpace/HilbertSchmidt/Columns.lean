@@ -49,6 +49,9 @@ energy is compact**.
   exactly when its columns lie in `ℓ²`.
 * `ContinuousLinearMap.isCompactOperator_of_hilbertSchmidtEnergy_ne_top`: **Hilbert–Schmidt
   operators are compact**.
+* `ContinuousLinearMap.hilbertSchmidtEnergy_smulRight_innerSL` and
+  `ContinuousLinearMap.hilbertSchmidtNorm_smulRight_innerSL`: the rank-one operator
+  `x ↦ ⟪u, x⟫ w` has energy `‖u‖ₑ² ‖w‖ₑ²` and Hilbert–Schmidt norm `‖u‖ ‖w‖`.
 
 ## References
 
@@ -262,3 +265,28 @@ theorem _root_.ContinuousLinearMap.isCompactOperator_of_hilbertSchmidtEnergy_ne_
 end Inner
 
 end HilbertBasis
+
+namespace ContinuousLinearMap
+
+variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- **Rank-one operators.** The Hilbert–Schmidt energy of `x ↦ ⟪u, x⟫ w` is `‖u‖ₑ² ‖w‖ₑ²` in
+every Hilbert basis of the source. -/
+@[simp]
+theorem hilbertSchmidtEnergy_smulRight_innerSL (u : E) (w : F) (b : HilbertBasis ι 𝕜 E) :
+    ((innerSL 𝕜 u).smulRight w).hilbertSchmidtEnergy b = ‖u‖ₑ ^ 2 * ‖w‖ₑ ^ 2 := by
+  rw [hilbertSchmidtEnergy_def, ← b.tsum_eNorm_inner_sq u, ← ENNReal.tsum_mul_right]
+  refine tsum_congr fun i ↦ ?_
+  rw [smulRight_apply, innerSL_apply_apply, eNorm_smul, mul_pow, ← ofReal_norm ⟪u, b i⟫_𝕜,
+    norm_inner_symm, ofReal_norm]
+
+/-- **Rank-one operators.** The Hilbert–Schmidt norm of `x ↦ ⟪u, x⟫ w` is `‖u‖ ‖w‖`. -/
+@[simp]
+theorem hilbertSchmidtNorm_smulRight_innerSL [CompleteSpace E] (u : E) (w : F) :
+    ((innerSL 𝕜 u).smulRight w).hilbertSchmidtNorm = ‖u‖ * ‖w‖ := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtEnergy_smulRight_innerSL, ← mul_pow,
+    ENNReal.toReal_pow, ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm,
+    Real.sqrt_sq (by positivity)]
+
+end ContinuousLinearMap
