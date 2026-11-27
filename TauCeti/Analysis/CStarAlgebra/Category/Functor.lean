@@ -194,3 +194,38 @@ def mapLinearIsometryEquiv [F.Full] [F.Faithful] (X Y : C) :
   rw [← F.norm_map (F.preimage g), F.map_preimage]
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Iso
+
+variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [CategoryTheory.Linear ℂ C]
+  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
+  [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C]
+
+/-- Conjugation by a unitary isomorphism is isometric on endomorphism C*-algebras. -/
+@[simp] theorem norm_endStarAlgEquiv {R : Type*} [Semiring R] [CategoryTheory.Linear R C]
+    {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) (a : End X) :
+    ‖e.endStarAlgEquiv R he a‖ = ‖a‖ := by
+  rw [End.norm_def, endStarAlgEquiv_apply_asHom, he.dagger.norm_comp_left,
+    he.norm_comp_right, ← End.norm_def]
+
+/-- Nonnegative-norm version of `CategoryTheory.Iso.norm_endStarAlgEquiv`. -/
+@[simp] theorem nnNorm_endStarAlgEquiv {R : Type*} [Semiring R] [CategoryTheory.Linear R C]
+    {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) (a : End X) :
+    ‖e.endStarAlgEquiv R he a‖₊ = ‖a‖₊ :=
+  Subtype.ext (e.norm_endStarAlgEquiv he a)
+
+/-- Conjugation by a unitary isomorphism preserves and reflects the spectral order on endomorphism
+C*-algebras. -/
+theorem endStarAlgEquiv_le_iff {R : Type*} [Semiring R] [CategoryTheory.Linear R C]
+    {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) {a b : End X} :
+    e.endStarAlgEquiv R he a ≤ e.endStarAlgEquiv R he b ↔ a ≤ b :=
+  map_le_map_iff (e.endStarAlgEquiv R he)
+
+/-- Conjugation by a unitary isomorphism preserves and reflects positivity in endomorphism
+C*-algebras. -/
+@[simp] theorem endStarAlgEquiv_nonneg_iff {R : Type*} [Semiring R] [CategoryTheory.Linear R C]
+    {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) {a : End X} :
+    0 ≤ e.endStarAlgEquiv R he a ↔ 0 ≤ a := by
+  simpa only [map_zero] using e.endStarAlgEquiv_le_iff (R := R) he (a := 0) (b := a)
+
+end CategoryTheory.Iso

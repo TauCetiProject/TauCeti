@@ -413,6 +413,22 @@ def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L
 @[simp] theorem endStarAlgEquiv_symm_apply (X : HilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
     X.endStarAlgEquiv.symm f = End.of f := (rfl)
 
+/-- `HilbertCat.endStarAlgEquiv` is isometric on endomorphisms. -/
+theorem norm_endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) (a : End X) :
+    ‖X.endStarAlgEquiv a‖ = ‖a‖ := (rfl)
+
+/-- Over `ℂ`, `HilbertCat.endStarAlgEquiv` identifies the spectral order on `End X` with the
+Loewner order on `X →L[ℂ] X`. -/
+theorem endStarAlgEquiv_le_iff (X : HilbertCat.{0, v} ℂ) {a b : End X} :
+    X.endStarAlgEquiv a ≤ X.endStarAlgEquiv b ↔ a ≤ b :=
+  map_le_map_iff X.endStarAlgEquiv
+
+/-- Over `ℂ`, `HilbertCat.endStarAlgEquiv` identifies positive elements of `End X` with
+positive operators in `X →L[ℂ] X`. -/
+theorem endStarAlgEquiv_nonneg_iff (X : HilbertCat.{0, v} ℂ) {a : End X} :
+    0 ≤ X.endStarAlgEquiv a ↔ 0 ≤ a := by
+  simpa only [map_zero] using endStarAlgEquiv_le_iff X (a := 0) (b := a)
+
 /-- Finite-dimensional Hilbert spaces, as an object property on `HilbertCat 𝕜`. -/
 abbrev isFiniteDimensional (𝕜 : Type u) [RCLike 𝕜] : ObjectProperty (HilbertCat.{u, v} 𝕜) :=
   fun H => FiniteDimensional 𝕜 H
@@ -498,6 +514,23 @@ def endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X �
   EquivLike.injective X.endStarAlgEquiv <| by
     rw [StarAlgEquiv.apply_symm_apply, endStarAlgEquiv_apply]
     rfl
+
+/-- `FDHilbertCat.endStarAlgEquiv` is isometric on endomorphisms. -/
+theorem norm_endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) (a : End X) :
+    ‖X.endStarAlgEquiv a‖ = ‖a‖ := by
+  rw [endStarAlgEquiv_apply, End.norm_def, ObjectProperty.norm_def]
+
+/-- Over `ℂ`, `FDHilbertCat.endStarAlgEquiv` identifies the spectral order on `End X` with the
+Loewner order on `X →L[ℂ] X`. -/
+theorem endStarAlgEquiv_le_iff (X : FDHilbertCat.{0, v} ℂ) {a b : End X} :
+    X.endStarAlgEquiv a ≤ X.endStarAlgEquiv b ↔ a ≤ b :=
+  map_le_map_iff X.endStarAlgEquiv
+
+/-- Over `ℂ`, `FDHilbertCat.endStarAlgEquiv` identifies positive elements of `End X` with
+positive operators in `X →L[ℂ] X`. -/
+theorem endStarAlgEquiv_nonneg_iff (X : FDHilbertCat.{0, v} ℂ) {a : End X} :
+    0 ≤ X.endStarAlgEquiv a ↔ 0 ≤ a := by
+  simpa only [map_zero] using endStarAlgEquiv_le_iff X (a := 0) (b := a)
 
 -- `FDHilbertCat ℂ` inherits `CStarCategory` automatically as a full subcategory of `HilbertCat ℂ`.
 example : CStarCategory (FDHilbertCat.{0, v} ℂ) := inferInstance

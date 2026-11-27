@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.NatIso
 public import TauCeti.CategoryTheory.Dagger.Basic
 public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.CategoryTheory.Preadditive.Endomorphism
+import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
 # Dagger-preserving functors and natural transformations
@@ -126,23 +127,19 @@ variable (F : C ⥤ D) (R : Type w) [Semiring R]
 algebras over any `Semiring R`. -/
 noncomputable def mapEndStarAlgEquiv (X : C) :
     End X ≃⋆ₐ[R] End (F.obj X) :=
-  { __ := RingEquiv.ofBijective (F.mapEndRingHom X) (F.mapEndRingHom_bijective X)
-    map_smul' r f := by ext; simp [RingEquiv.coe_ofBijective]
-    map_star' f := by ext; simp [RingEquiv.coe_ofBijective] }
+  { (FullyFaithful.ofFullyFaithful F).ringEquivEnd X with
+    map_smul' r f := by ext; simp
+    map_star' f := by ext; simp }
 
 /-- Forward evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
 @[simp, grind =] theorem mapEndStarAlgEquiv_apply_asHom (X : C) (f : End X) :
-    (F.mapEndStarAlgEquiv R X f).asHom = F.map f.asHom := by
-  unfold mapEndStarAlgEquiv
-  simp only [StarAlgEquiv.coe_mk, StarRingEquiv.coe_mk, RingEquiv.coe_ofBijective,
-    mapEndRingHom_apply_asHom]
+    (F.mapEndStarAlgEquiv R X f).asHom = F.map f.asHom :=
+  (FullyFaithful.ofFullyFaithful F).ringEquivEnd_apply_asHom X f
 
 /-- Inverse evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
 @[simp, grind =] theorem mapEndStarAlgEquiv_symm_apply_asHom (X : C) (g : End (F.obj X)) :
-    ((F.mapEndStarAlgEquiv R X).symm g).asHom = F.preimage g.asHom := by
-  apply F.map_injective
-  rw [F.map_preimage, ← F.mapEndStarAlgEquiv_apply_asHom R X]
-  exact congrArg End.asHom ((F.mapEndStarAlgEquiv R X).apply_symm_apply g)
+    ((F.mapEndStarAlgEquiv R X).symm g).asHom = F.preimage g.asHom :=
+  (FullyFaithful.ofFullyFaithful F).ringEquivEnd_symm_apply_asHom X g
 
 end EndStarAlgEquiv
 

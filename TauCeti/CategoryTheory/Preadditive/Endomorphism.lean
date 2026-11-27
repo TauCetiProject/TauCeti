@@ -19,7 +19,7 @@ In a preadditive category, isomorphic objects have isomorphic endomorphism rings
 `Iso.conj` is additive. The corner of `End X` at a split idempotent is the endomorphism ring of its
 image. An additive functor `F` induces a ring homomorphism
 `End X →+* End (F.obj X)`, refining the monoid homomorphism `Functor.mapEnd`, and it is surjective
-when `F` is full and bijective when `F` is full and faithful.
+when `F` is full.
 
 ## Main definitions
 
@@ -35,8 +35,6 @@ when `F` is full and bijective when `F` is full and faithful.
   `CategoryTheory.Functor.mapEndRingHom_apply_asHom`: the underlying morphisms.
 * `CategoryTheory.Functor.mapEndRingHom_surjective`: a full additive functor is surjective on
   endomorphism rings.
-* `CategoryTheory.Functor.mapEndRingHom_bijective`: a fully faithful additive functor is bijective
-  on endomorphism rings.
 * `TauCeti.isSplitEpi_or_isSplitEpi_of_add_eq_id` and
   `TauCeti.isSplitMono_or_isSplitMono_of_add_eq_id`: when an object has a local endomorphism ring,
   a decomposition of its identity into two composites singles out a split factor.
@@ -82,13 +80,6 @@ theorem mapEndRingHom_apply_asHom (F : C ⥤ D) [F.Additive] (X : C) (f : End X)
 theorem mapEndRingHom_surjective (F : C ⥤ D) [F.Additive] [F.Full] (X : C) :
     Function.Surjective (F.mapEndRingHom X) := fun f ↦
   ⟨End.of (F.preimage f.asHom), by ext; simp⟩
-
-/-- A fully faithful additive functor induces a bijection on endomorphism rings. -/
-theorem mapEndRingHom_bijective (F : C ⥤ D) [F.Additive] [F.Full] [F.Faithful] (X : C) :
-    Function.Bijective (F.mapEndRingHom X) :=
-  ⟨fun _ _ hab ↦ End.ext <| F.map_injective <| by
-    simpa only [mapEndRingHom_apply_asHom] using congrArg End.asHom hab,
-   F.mapEndRingHom_surjective X⟩
 
 end CategoryTheory.Functor
 
