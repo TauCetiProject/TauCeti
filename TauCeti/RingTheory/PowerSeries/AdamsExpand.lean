@@ -43,15 +43,9 @@ variable (R : Type*) [CommRing R]
 /-- The **combined Adams substitution** `ψ ^ n` on `(R⸨X⸩)⟦X⟧`, dilating both the Laurent variable
 `q ↦ q ^ n` (via `LaurentSeries.expand`) and the power-series variable `t ↦ t ^ n` (via
 `PowerSeries.expand`). -/
-noncomputable def adamsExpand (n : ℕ+) : (R⸨X⸩)⟦X⟧ →ₐ[R] (R⸨X⸩)⟦X⟧ where
-  toRingHom :=
-    (PowerSeries.expand (n : ℕ) n.ne_zero).toRingHom.comp
-      (PowerSeries.map (LaurentSeries.expand R n).toRingHom)
-  commutes' r := by
-    simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-      MonoidHom.coe_ofClass, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      algebraMap_apply, map_C, expand_C]
-    exact congrArg C ((LaurentSeries.expand R n).commutes r)
+noncomputable def adamsExpand (n : ℕ+) : (R⸨X⸩)⟦X⟧ →ₐ[R] (R⸨X⸩)⟦X⟧ :=
+  ((PowerSeries.expand (n : ℕ) n.ne_zero).restrictScalars R).comp
+    (PowerSeries.mapAlgHom (LaurentSeries.expand R n))
 
 variable {R}
 

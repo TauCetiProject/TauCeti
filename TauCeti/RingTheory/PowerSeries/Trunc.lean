@@ -51,6 +51,7 @@ This file collects facts used to compare power series to a finite order `m`:
   `PowerSeries.trunc_val_zpow_mul_derivative_eq_of_trunc_eq`: the finite jets of `u ^ k` and
   `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depend only on `trunc m u` and `trunc (m + 1) u`.
 * `PowerSeries.coeff_sum_C_mul_X_pow`: the coefficients of `∑ i : Fin m, C (a i) * X ^ i`.
+* `PowerSeries.coeff_sum_finset_C_mul_X_pow`: the coefficients of `∑ j ∈ s, C (c j) * X ^ j`.
 * `PowerSeries.trunc_eq_trunc_sum_C_mul_X_pow`: a series has the `m`-truncation of its finite
   expansion along its own coefficients.
 * `PowerSeries.trunc_map_sum_mul_eq`: the truncation of a combination of finite expansions, under
@@ -147,6 +148,20 @@ theorem coeff_sum_C_mul_X_pow {m : ℕ} (a : Fin m → R) (n : ℕ) :
   · refine Finset.sum_eq_zero fun i _ ↦ ?_
     have hni : n ≠ (i : ℕ) := (i.isLt.trans_le (not_lt.mp h)).ne'
     simp [hni]
+
+/-- The coefficients of the finite expansion `∑ j ∈ s, C (c j) * X ^ j` are `c a` for `a ∈ s`,
+and vanish outside `s`. -/
+theorem coeff_sum_finset_C_mul_X_pow (s : Finset ℕ) (c : ℕ → R) (a : ℕ) :
+    coeff a (∑ j ∈ s, C (c j) * X ^ j) = if a ∈ s then c a else 0 := by
+  classical
+  rw [map_sum]
+  simp only [coeff_C_mul_X_pow]
+  split_ifs with ha
+  · rw [Finset.sum_eq_single_of_mem a ha (fun _ _ hlj ↦ ite_eq_right hlj.symm), ite_eq_left rfl]
+  · refine Finset.sum_eq_zero fun j hj ↦ ?_
+    split_ifs with hja
+    · exact absurd (hja ▸ hj) ha
+    · rfl
 
 /-- A power series has the same `m`-truncation as its finite expansion `∑_{i < m} aᵢ Xⁱ` along its
 own coefficients `aᵢ`. -/

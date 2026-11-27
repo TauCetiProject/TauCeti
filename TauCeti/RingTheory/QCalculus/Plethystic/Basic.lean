@@ -11,6 +11,7 @@ import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
 import TauCeti.RingTheory.PowerSeries.Expand
 import TauCeti.RingTheory.QCalculus.Plethystic.SupportBounds
 import TauCeti.RingTheory.PowerSeries.Log
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # The elementary plethystic exponential
@@ -279,16 +280,6 @@ theorem plethysticExp_zsmul (m : ℤ) (F : (A⸨X⸩)⟦X⟧) :
     toAdd_zpow, toAdd_ofAdd] at h
   exact h
 
-/-- Coefficientwise ring homomorphisms commute with substituting into `PowerSeries.exp`. -/
-private theorem map_subst_exp {C D : Type*} [CommRing C] [Algebra ℚ C] [CommRing D] [Algebra ℚ D]
-    (φ : C →+* D) {a : C⟦X⟧} (ha : HasSubst a) :
-    PowerSeries.map φ ((PowerSeries.exp C).subst a) =
-      (PowerSeries.exp D).subst (PowerSeries.map φ a) := by
-  have h : PowerSeries.map φ ((PowerSeries.exp C).subst a) =
-      (PowerSeries.map φ (PowerSeries.exp C)).subst (PowerSeries.map φ a) :=
-    PowerSeries.map_subst ha (PowerSeries.exp C)
-  rw [h, PowerSeries.map_exp]
-
 /-- Combined Adams dilation commutes with substitution into `PowerSeries.exp`. -/
 theorem adamsExpand_subst_exp (m : ℕ+) {G : (A⸨X⸩)⟦X⟧} (hG : HasSubst G) :
     adamsExpand A m ((PowerSeries.exp A⸨X⸩).subst G) =
@@ -416,20 +407,6 @@ private theorem coeff_plethysticExp_eq_zero_of_lt_mul {F : (A⸨X⸩)⟦X⟧} {m
   exact fun a s hs ↦
     coeff_coeff_plethysticExp_eq_zero_of_pow fun d ↦ coeff_coeff_pow_eq_zero_of_lt_mul hL d a s hs
 
-/-- Coefficient of a truncated power-series sum `∑ j ∈ Icc 1 k, C (c j) * X ^ j`. -/
-private theorem coeff_sum_Icc_C_mul_X_pow {R : Type*} [Semiring R] (c : ℕ → R) (k a : ℕ) :
-    coeff a (∑ j ∈ Icc 1 k, C (c j) * X ^ j) = if 1 ≤ a ∧ a ≤ k then c a else 0 := by
-  classical
-  rw [map_sum]
-  simp only [coeff_C_mul_X_pow]
-  split_ifs with ha
-  · rw [Finset.sum_eq_single_of_mem a (mem_Icc.mpr ha) (fun _ _ hlj ↦ ite_eq_right hlj.symm),
-      ite_eq_left rfl]
-  · refine Finset.sum_eq_zero fun j hj ↦ ?_
-    split_ifs with hja
-    · exact absurd (hja ▸ mem_Icc.mp hj) ha
-    · rfl
-
 /-- **Bidegree congruence** for `PE`: `[q ^ r t ^ k] PE(F₁) = [q ^ r t ^ k] PE(F₂)` whenever
 `F₁` and `F₂` agree in `t`-degrees `1 ≤ j ≤ k` below `q`-degree `N ≥ 0`, `F₁` vanishes in those
 `t`-degrees below `q`-degree `m ≤ 0`, and `r < k * m + N`. -/
@@ -442,20 +419,20 @@ theorem coeff_coeff_plethysticExp_eq_of_coeff_eq {F₁ F₂ : (A⸨X⸩)⟦X⟧}
   have htrunc (F : (A⸨X⸩)⟦X⟧) :
       coeff k (plethysticExp F) = coeff k (plethysticExp (truncF F)) :=
     coeff_plethysticExp_eq_of_coeff_eq fun j hj1 hjk ↦ by
-      rw [coeff_sum_Icc_C_mul_X_pow, ite_eq_left ⟨hj1, hjk⟩]
+      rw [coeff_sum_finset_C_mul_X_pow, ite_eq_left (mem_Icc.mpr ⟨hj1, hjk⟩)]
   have hF₁' : ∀ a, 1 ≤ a → ∀ i < m, (coeff a (truncF F₁)).coeff i = 0 := fun a _ i hi ↦ by
     dsimp [truncF]
-    rw [coeff_sum_Icc_C_mul_X_pow]
+    rw [coeff_sum_finset_C_mul_X_pow]
     split_ifs with ha
-    · exact hm₁ a ha.1 ha.2 i hi
+    · exact hm₁ a (mem_Icc.mp ha).1 (mem_Icc.mp ha).2 i hi
     · simp
   have hdiff : ∀ a, 1 ≤ a → ∀ i < N, (coeff a (truncF F₂ - truncF F₁)).coeff i = 0 :=
     fun a _ i hi ↦ by
       dsimp [truncF]
-      rw [map_sub, HahnSeries.coeff_sub, coeff_sum_Icc_C_mul_X_pow, coeff_sum_Icc_C_mul_X_pow,
-        sub_eq_zero]
+      rw [map_sub, HahnSeries.coeff_sub, coeff_sum_finset_C_mul_X_pow,
+        coeff_sum_finset_C_mul_X_pow, sub_eq_zero]
       split_ifs with ha
-      · exact (h a ha.1 ha.2 i hi).symm
+      · exact (h a (mem_Icc.mp ha).1 (mem_Icc.mp ha).2 i hi).symm
       · rfl
   have hdecomp : truncF F₂ = truncF F₁ + (truncF F₂ - truncF F₁) := (add_sub_cancel _ _).symm
   rw [htrunc F₁, htrunc F₂, hdecomp, plethysticExp_add]
@@ -565,6 +542,10 @@ private theorem exists_plethysticExp_zsmul_single (i : ℤ) {j : ℕ} (hj : j �
   have hsingle : ι (single i (1 : ℤ)) = single i (1 : ℚ) := by
     rw [HahnSeries.mapRingHom_apply]
     exact (HahnSeries.map_single ((Int.castRingHom ℚ : ℤ →+* ℚ) : ZeroHom ℤ ℚ)).trans (by simp)
+  have hcoe (w : ((ℤ⸨X⸩)⟦X⟧)ˣ) :
+      ((Units.map (PowerSeries.map ι).toMonoidHom w : ((ℚ⸨X⸩)⟦X⟧)ˣ) : (ℚ⸨X⸩)⟦X⟧) =
+        PowerSeries.map ι w :=
+    rfl
   have hu_map : Units.map (PowerSeries.map ι).toMonoidHom u =
       (isUnit_plethysticExp (C (single i (1 : ℚ)) * X ^ j)).unit := by
     apply Units.ext
@@ -574,8 +555,7 @@ private theorem exists_plethysticExp_zsmul_single (i : ℤ) {j : ℕ} (hj : j �
     have hmap : PowerSeries.map ι U * (1 - C (single i (1 : ℚ)) * X ^ j) = 1 := by
       simpa only [V, map_mul, map_sub, map_one, map_C, map_pow, map_X, hsingle] using
         congrArg (PowerSeries.map ι) hUV
-    rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      IsUnit.unit_spec, plethysticExp_single_mul_X_pow_mul i hj]
+    rw [hcoe, IsUnit.unit_spec, plethysticExp_single_mul_X_pow_mul i hj]
     exact hmap
   have hU_bound : ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a U).coeff s = 0 := fun a s hs ↦ by
     rw [coeff_expand]
@@ -595,7 +575,7 @@ private theorem exists_plethysticExp_zsmul_single (i : ℤ) {j : ℕ} (hj : j �
     · simp
   refine ⟨((u ^ z : ((ℤ⸨X⸩)⟦X⟧)ˣ) : (ℤ⸨X⸩)⟦X⟧), ?_, ?_⟩
   · have hz := congrArg (fun w : ((ℚ⸨X⸩)⟦X⟧)ˣ ↦ (w : (ℚ⸨X⸩)⟦X⟧)) (congrArg (· ^ z) hu_map)
-    rw [← map_zpow, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass] at hz
+    rw [← map_zpow, hcoe] at hz
     rw [hz, ← plethysticExp_zsmul, map_zsmul, map_mul, map_C, map_pow, map_X, hsingle]
   · cases z with
     | ofNat n =>
@@ -676,7 +656,8 @@ private theorem exists_map_eq_plethysticExp_rat (F : (ℤ⸨X⸩)⟦X⟧) :
         if i < N then (coeff j (PowerSeries.map ι F)).coeff i else 0 := by
     rw [coeff_map, HahnSeries.coeff_mapRingHom, coeff_map, HahnSeries.coeff_mapRingHom]
     dsimp [Flo]
-    rw [coeff_sum_Icc_C_mul_X_pow, ite_eq_left ⟨hj1, hjk⟩, HahnSeries.coeff_truncLT]
+    rw [coeff_sum_finset_C_mul_X_pow, ite_eq_left (mem_Icc.mpr ⟨hj1, hjk⟩),
+      HahnSeries.coeff_truncLT]
     split_ifs <;> simp
   have hFlo_m : ∀ j, 1 ≤ j → j ≤ k → ∀ i < m, (coeff j (PowerSeries.map ι Flo)).coeff i = 0 :=
     fun j hj1 hjk i hi ↦ by

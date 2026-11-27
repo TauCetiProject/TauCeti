@@ -128,8 +128,8 @@ theorem coeff_eight_eulerOddProd : coeff 8 (eulerOddProd R) = 2 := by
       (((1 + Polynomial.X) * (1 + Polynomial.X ^ 3) * (1 + Polynomial.X ^ 5) *
         (1 + Polynomial.X ^ 7) : R[X]) : R⟦X⟧) := by simp [prod_range_succ]
   rw [hpoly, Polynomial.coeff_coe]
-  ring_nf
-  simp [Polynomial.coeff_X_pow, Polynomial.coeff_one, Polynomial.coeff_X]
+  simp only [add_mul, mul_add, one_mul, mul_one, ← pow_add, ← pow_succ']
+  simp [Polynomial.coeff_X_pow, Polynomial.coeff_one, Polynomial.coeff_X, one_add_one_eq_two]
 
 end EulerOddProd
 
@@ -198,6 +198,12 @@ private theorem coeff_coeff_qPochhammerSeries_sq_eq (k n j : ℕ) (hj : j ≤ k)
   · exact coeff_coeff_integralQPochhammer_eq_of_lt (j / 2) n (by omega)
   · rfl
 
+/-- Coefficient of `(-X) ^ n * f` at degree `k`. -/
+private theorem coeff_neg_X_pow_mul (k n : ℕ) (f : R⟦X⟧) :
+    coeff k ((-X : R⟦X⟧) ^ n * f) = (-1) ^ n * if n ≤ k then coeff (k - n) f else 0 := by
+  rw [neg_eq_neg_one_mul, mul_pow, mul_assoc, ← map_one C, ← map_neg, ← map_pow, coeff_C_mul,
+    coeff_X_pow_mul']
+
 /-- **Euler's raw identity** in `R⟦X⟧`:
 `∑_{n ≥ 0} r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n = ∏_{i ≥ 0} (1 + r ^ (2 i + 1))`. -/
 theorem eulerSqSeries_eq_eulerOddProd : eulerSqSeries R = eulerOddProd R := by
@@ -210,9 +216,8 @@ theorem eulerSqSeries_eq_eulerOddProd : eulerSqSeries R = eulerOddProd R := by
   rw [eulerSqSeries, coeff_mk, coeff_eulerOddProd_eq_prod_of_lt k (N := k + 1) (by omega),
     ← hp_eval, map_sum, coeff_eval_eq_sum_range p (by simp)]
   refine sum_congr rfl fun n _ ↦ ?_
-  rw [mul_comm (p.coeff n), ← neg_X_pow_mul_coeff_qPochhammerSeries_sq n, neg_eq_neg_one_mul,
-    mul_pow, mul_assoc, mul_assoc, ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_C_mul,
-    coeff_X_pow_mul', coeff_X_pow_mul']
+  rw [← neg_X_pow_mul_coeff_qPochhammerSeries_sq n, mul_comm (p.coeff n),
+    coeff_neg_X_pow_mul, coeff_neg_X_pow_mul]
   split_ifs with hnk
   · rw [coeff_coeff_qPochhammerSeries_sq_eq k n (k - n) (by omega)]
   · rfl
