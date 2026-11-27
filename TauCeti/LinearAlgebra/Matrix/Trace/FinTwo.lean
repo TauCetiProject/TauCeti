@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
@@ -66,6 +67,14 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.det_one_sub_eq_two_sub_trace_of_det_eq_one`,
   `Matrix.det_one_add_eq_two_add_trace_of_det_eq_one`: `det (1 ∓ A) = 2 ∓ trace A` for a
   determinant-one matrix `A`.
+* `Matrix.mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two`: `Y₀₁ Y₁₀ = -Y₀₀²` for a `2 × 2`
+  matrix of trace zero and determinant zero.
+* `Matrix.eq_zero_of_isDiag_of_trace_eq_zero_of_det_eq_zero_fin_two`: such a matrix that is
+  diagonal is zero.
+* `Matrix.setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union`,
+  `Matrix.disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero`: over a linearly ordered commutative
+  ring, the punctured nilpotent cone `{Y | tr Y = 0, det Y = 0, Y ≠ 0}` is the disjoint union of
+  the half with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀`.
 * `Matrix.trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two`: a determinant-one matrix is not
   both traceless and symmetric.
 * `Matrix.abs_trace_pow_le_two`: the powers of a determinant-one matrix of trace at most `2` in
@@ -207,6 +216,30 @@ theorem det_one_add_eq_two_add_trace_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R
   rw [det_one_add_fin_two, hdet]
   ring
 
+/-- The off-diagonal entries of a `2 × 2` matrix of trace zero and determinant zero satisfy
+`Y₀₁ Y₁₀ = -Y₀₀²`. -/
+theorem mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two {Y : Matrix (Fin 2) (Fin 2) R}
+    (htr : Y.trace = 0) (hdet : Y.det = 0) : Y 0 1 * Y 1 0 = -Y 0 0 ^ 2 := by
+  rw [trace_fin_two] at htr
+  rw [det_fin_two] at hdet
+  linear_combination Y 0 0 * htr - hdet
+
+/-- A diagonal `2 × 2` matrix of trace zero and determinant zero is zero. -/
+theorem eq_zero_of_isDiag_of_trace_eq_zero_of_det_eq_zero_fin_two [NoZeroDivisors R]
+    {Y : Matrix (Fin 2) (Fin 2) R} (hdiag : Y.IsDiag) (htr : Y.trace = 0) (hdet : Y.det = 0) :
+    Y = 0 := by
+  have h01 : Y 0 1 = 0 := hdiag (by decide)
+  have h10 : Y 1 0 = 0 := hdiag (by decide)
+  have h00 : Y 0 0 = 0 := by
+    have h := mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet
+    rw [h01, zero_mul, eq_comm, neg_eq_zero] at h
+    exact pow_eq_zero_iff two_ne_zero |>.mp h
+  have h11 : Y 1 1 = 0 := by
+    rw [trace_fin_two] at htr
+    linear_combination htr - h00
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [h00, h01, h10, h11]
+
 end CommRing
 
 section Ordered
@@ -222,6 +255,37 @@ theorem trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two {A : Matrix (Fin 2) (
   rw [det_fin_two] at hdet
   rw [show A 1 1 = -A 0 0 by linarith [h.1], show A 1 0 = A 0 1 by linarith [h.2]] at hdet
   nlinarith [sq_nonneg (A 0 0), sq_nonneg (A 0 1)]
+
+/-- Over a linearly ordered commutative ring, the punctured nilpotent cone of `2 × 2` matrices is
+the union of the half with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀`. -/
+theorem setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union :
+    {Y : Matrix (Fin 2) (Fin 2) R | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0} =
+      {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ 0 ≤ Y 0 1 ∧ Y 1 0 ≤ 0} ∪
+        {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ Y 0 1 ≤ 0 ∧ 0 ≤ Y 1 0} := by
+  ext Y
+  simp only [Set.mem_ofPred_eq, Set.mem_union]
+  constructor
+  · rintro ⟨htr, hdet, hne⟩
+    -- The off-diagonal entries have product `-Y₀₀² ≤ 0`, so they have opposite signs.
+    have hle : Y 0 1 * Y 1 0 ≤ 0 := by
+      rw [mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet]
+      exact neg_nonpos.mpr (sq_nonneg _)
+    rcases mul_nonpos_iff.mp hle with ⟨h, h'⟩ | ⟨h, h'⟩
+    · exact .inl ⟨htr, hdet, hne, h, h'⟩
+    · exact .inr ⟨htr, hdet, hne, h, h'⟩
+  · rintro (⟨htr, hdet, hne, -⟩ | ⟨htr, hdet, hne, -⟩) <;> exact ⟨htr, hdet, hne⟩
+
+/-- Over a linearly ordered commutative ring, the half of the punctured nilpotent cone of `2 × 2`
+matrices with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀` are disjoint. -/
+theorem disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero :
+    Disjoint
+      {Y : Matrix (Fin 2) (Fin 2) R | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ 0 ≤ Y 0 1 ∧ Y 1 0 ≤ 0}
+      {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ Y 0 1 ≤ 0 ∧ 0 ≤ Y 1 0} := by
+  rw [Set.disjoint_left]
+  rintro Y ⟨htr, hdet, hne, hy, hz⟩ ⟨-, -, -, hy', hz'⟩
+  have hdiag : Y.IsDiag := by
+    simp [IsDiag, Pairwise, Fin.forall_fin_two, le_antisymm hy' hy, le_antisymm hz hz']
+  exact hne (eq_zero_of_isDiag_of_trace_eq_zero_of_det_eq_zero_fin_two hdiag htr hdet)
 
 /-- If a `2 × 2` matrix of determinant one has trace greater than `2`, then so does every nonzero
 power of it: the traces of the powers increase strictly. -/
