@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormOperator
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenspace
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
+public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Resolvent
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
@@ -30,7 +32,11 @@ graph exactly when
 that is, when `Δ⁺ f = g` weakly (`TauCeti.Manifold.SobolevH1.mem_graph_negLaplacian_iff`). It
 is the operator of the form `D` (`IsCoercive.formOperator`): the `H¹` inner product is the shifted
 form `D + ⟪J ·, J ·⟫_{L²}`, which is coercive, so `Δ⁺ + 1` is the inverse of its Lax–Milgram
-solution operator.
+solution operator. More generally, for `t > 0` the value of the resolvent
+`(Δ⁺ + t)⁻¹ : L²(M) → H¹(M)` (`TauCeti.Manifold.SobolevH1.resolvent`) inverts `Δ⁺ + t` on both
+sides: `Δ⁺ f = g` exactly when `f` is the value of `(Δ⁺ + t)⁻¹ (g + t f)`
+(`TauCeti.Manifold.SobolevH1.mem_graph_negLaplacian_iff_toLp_resolvent`), so its negative is the
+resolvent of `Δ⁺` at `-t` (`TauCeti.Manifold.SobolevH1.isResolventAt_negLaplacian`).
 
 * `Δ⁺` is self-adjoint (`TauCeti.Manifold.SobolevH1.isSelfAdjoint_negLaplacian`) and
   nonnegative (`TauCeti.Manifold.SobolevH1.inner_negLaplacian_self_nonneg`), since `D` is
@@ -57,11 +63,14 @@ solution operator.
   preserves the domain and commutes with `Δ⁺`
   (`TauCeti.Manifold.SobolevH1.negLaplacian_compMeasurePreserving`). In particular a group
   acting by isometries acts on `L²(M)` by unitaries preserving the domain of `Δ⁺` and commuting
-  with it.
+  with it, and an isometry fixing an element of the domain fixes its Laplacian
+  (`TauCeti.Manifold.SobolevH1.compMeasurePreserving_negLaplacian_eq_self`).
 
 The domain is the maximal weak domain `{J w | v ↦ D(w, v) is L²-bounded}`
-(`TauCeti.Manifold.SobolevH1.mem_domain_negLaplacian_iff`). For a smooth metric, elliptic
-regularity identifies it with the Sobolev space `H²(M)`.
+(`TauCeti.Manifold.SobolevH1.mem_domain_negLaplacian_iff`). For a smooth metric, interior elliptic
+regularity puts it inside `H²`: near every point, the reading in a chart of an element of the domain
+has square-integrable second weak derivatives
+(`TauCeti.Manifold.SobolevH1.exists_wkp_ae_eq_of_mem_domain_negLaplacian`).
 
 ## References
 
@@ -96,8 +105,13 @@ consists of the pairs `(J w, g)` with `D(w, v) = ⟪g, J v⟫_{L²}` for every `
 def negLaplacian : Lp ℝ 2 (riemannianVolume I M) →ₗ.[ℝ] Lp ℝ 2 (riemannianVolume I M) :=
   isCoercive_innerSL.formOperator toLp 1
 
+/-- The Laplacian is the operator of the Dirichlet form along the value map
+`J : H¹(M) → L²(M)`, shifted by `1`. -/
+theorem negLaplacian_def : negLaplacian I M = isCoercive_innerSL.formOperator toLp 1 :=
+  (rfl)
+
 /-- The `H¹` inner product is the Dirichlet form shifted by the `L²` inner product. -/
-private theorem inner_eq_dirichletForm_add (w v : SobolevH1 I M) :
+theorem inner_eq_dirichletForm_add (w v : SobolevH1 I M) :
     innerSL ℝ w v = dirichletForm w v + 1 * ⟪toLp w, toLp v⟫_ℝ := by
   rw [dirichletForm_apply, innerSL_apply_apply]
   ring
@@ -121,6 +135,34 @@ theorem mem_domain_negLaplacian_iff {f : Lp ℝ 2 (riemannianVolume I M)} :
     f ∈ (negLaplacian I M).domain ↔
       ∃ w : SobolevH1 I M, toLp w = f ∧ ∃ C : ℝ, ∀ v, |dirichletForm w v| ≤ C * ‖toLp v‖ :=
   isCoercive_innerSL.mem_domain_formOperator_iff denseRange_toLp inner_eq_dirichletForm_add
+
+/-- **The graph of the Laplacian through its resolvent.** For `t > 0`, `(f, g)` lies on the graph
+of `Δ⁺` exactly when `f` is the value of `(Δ⁺ + t)⁻¹ (g + t f)`, that is, when
+`(Δ⁺ + t) f = g + t f`. -/
+theorem mem_graph_negLaplacian_iff_toLp_resolvent {t : ℝ} (ht : 0 < t)
+    {f g : Lp ℝ 2 (riemannianVolume I M)} :
+    (f, g) ∈ (negLaplacian I M).graph ↔ toLp (resolvent I M ht (g + t • f)) = f := by
+  rw [mem_graph_negLaplacian_iff]
+  refine ⟨fun ⟨w, hw, hD⟩ ↦ ?_, fun h ↦ ⟨_, h, fun v ↦ ?_⟩⟩
+  · subst hw
+    rw [← eq_resolvent ht fun v ↦ by rw [hD, inner_add_left, real_inner_smul_left]]
+  · have hR := dirichletForm_resolvent_add ht (g + t • f) v
+    rw [h, inner_add_left, real_inner_smul_left] at hR
+    linarith
+
+/-- **The resolvent of the Laplacian.** For `t > 0`, `-(Δ⁺ + t)⁻¹`, read in `L²(M)` through the
+value map, is the resolvent of `Δ⁺` at `-t` in the sense of `LinearPMap.IsResolventAt`: it maps
+into the domain of `Δ⁺` and inverts `(-t) • I - Δ⁺` on both sides. -/
+theorem isResolventAt_negLaplacian {t : ℝ} (ht : 0 < t) :
+    (negLaplacian I M).IsResolventAt (-t) (-(toLp ∘L resolvent I M ht)) := by
+  refine LinearPMap.isResolventAt_iff_forall_mem_graph.2 ⟨fun h ↦ ?_, fun ⟨f, g⟩ hp ↦ ?_⟩
+  · refine (mem_graph_negLaplacian_iff_toLp_resolvent ht).2 ?_
+    simp only [neg_apply, ContinuousLinearMap.comp_apply]
+    rw [show (-t) • -toLp (resolvent I M ht h) - h + t • -toLp (resolvent I M ht h) = -h by
+      module, map_neg, map_neg]
+  · simp only [neg_apply, ContinuousLinearMap.comp_apply]
+    rw [show (-t) • f - g = -(g + t • f) by module, map_neg, map_neg, neg_neg]
+    exact (mem_graph_negLaplacian_iff_toLp_resolvent ht).1 hp
 
 /-- Every element `f` of the domain is the value of some `w ∈ H¹(M)` with
 `D(w, v) = ⟪Δ⁺ f, J v⟫_{L²}` for every `v ∈ H¹(M)`. -/
@@ -311,6 +353,18 @@ theorem negLaplacian_compMeasurePreserving (Φ : RiemannianIsometry I I' M N)
   (negLaplacian I M).mem_graph_snd_inj (LinearPMap.mem_graph _ _)
     (mem_graph_negLaplacian_compMeasurePreserving Φ ((negLaplacian I' N).mem_graph f)) rfl
 
+/-- **Isometries fixing an element fix its Laplacian.** If a Riemannian isometry `Φ` of `M`
+fixes `f` in the domain of `Δ⁺`, that is `f ∘ Φ = f`, then it fixes `Δ⁺ f`:
+`(Δ⁺ f) ∘ Φ = Δ⁺ f`. -/
+theorem compMeasurePreserving_negLaplacian_eq_self (Φ : RiemannianIsometry I I M M)
+    {f : (negLaplacian I M).domain}
+    (hf : Lp.compMeasurePreserving Φ Φ.measurePreserving_riemannianVolume
+      (f : Lp ℝ 2 (riemannianVolume I M)) = f) :
+    Lp.compMeasurePreserving Φ Φ.measurePreserving_riemannianVolume (negLaplacian I M f) =
+      negLaplacian I M f := by
+  rw [← negLaplacian_compMeasurePreserving Φ f]
+  exact congrArg (negLaplacian I M) (Subtype.ext hf)
+
 end Isometry
 
 /-! ### Smooth metrics: the Laplacian on smooth functions -/
@@ -349,6 +403,27 @@ theorem negLaplacian_toLp_ofSmooth (u : C^∞⟮I, M; ℝ⟯) :
       -toLp (ofSmooth (smoothLaplaceBeltrami I M u)) :=
   (negLaplacian I M).mem_graph_snd_inj (LinearPMap.mem_graph _ _)
     (mem_graph_negLaplacian_toLp_ofSmooth u) rfl
+
+/-- **The domain of the Laplacian lies in `H²`.** For a smooth metric, every `f` in the domain of
+`Δ⁺` has square-integrable second weak derivatives near every point of `M`: for every `p ∈ M`
+there are a linear identification `L` of the model space with `ℝⁿ`, an open neighbourhood `Ω` of
+`L (φ p)` in `ℝⁿ`, where `φ = extChartAt I p`, on which `φ⁻¹ ∘ L⁻¹` is defined, and an element of
+`W^{2,2}(Ω)` whose value is `f ∘ φ⁻¹ ∘ L⁻¹` almost everywhere on `Ω`. -/
+theorem exists_wkp_ae_eq_of_mem_domain_negLaplacian {f : Lp ℝ 2 (riemannianVolume I M)}
+    (hf : f ∈ (negLaplacian I M).domain) (p : M) :
+    ∃ (L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
+      (Ω : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
+      L (extChartAt I p p) ∈ Ω ∧ Set.MapsTo L.symm Ω (extChartAt I p).target ∧
+      ∃ u : Wkp volume Ω 2 2, (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (Ω : Set _)]
+        fun y ↦ f ((extChartAt I p).symm (L.symm y)) := by
+  obtain ⟨w, rfl, hw⟩ := exists_dirichletForm_eq_inner_negLaplacian ⟨f, hf⟩
+  -- `w` weakly solves `Δ⁺w = g` with `g = Δ⁺ f ∈ L²`.
+  refine exists_wkp_ae_eq_of_dirichletForm_add_eq (V := 0) continuous_const
+    (Lp.memLp (negLaplacian I M ⟨toLp w, hf⟩)) (fun φ ↦ ?_) p
+  rw [hw, L2.inner_def]
+  simp only [Pi.zero_apply, zero_mul, integral_zero, add_zero]
+  refine integral_congr_ae ((toLp_ofSmooth_ae_eq φ).mono fun x hx ↦ ?_)
+  simp only [hx, RCLike.inner_apply, conj_trivial, mul_comm]
 
 end Smooth
 

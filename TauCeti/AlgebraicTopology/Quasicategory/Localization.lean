@@ -279,17 +279,15 @@ theorem isLocalization_mapHomotopyCategory :
     exact h.isIso_homotopyCategoryHomMk_map w w.property
   refine Functor.IsLocalization.of_exists_comp_iso_Q _ W' hL ?_ fun F₁ F₂ ⟨α⟩ ↦ ?_
   · -- Apply `exists_nonempty_iso_comp` to `W'.Q` followed by the inverse of the counit
-    -- equivalence `ho (N W'.Localization) ≌ W'.Localization`.
-    let ε : (nerve W'.Localization).HomotopyCategory ≌ W'.Localization :=
-      Cat.equivOfIso (nerveFunctorCompHoFunctorIso.app (Cat.of _))
+    -- equivalence `ho (N W'.Localization) ≌ W'.Localization` (`nerveHomotopyCategoryEquiv`).
+    let ε := nerveHomotopyCategoryEquiv W'.Localization
     obtain ⟨G, ⟨e⟩⟩ := exists_nonempty_iso_comp h W'.Localization (W'.Q ⋙ ε.inverse)
       (MorphismProperty.IsInvertedBy.of_comp _ _ W'.Q_inverts _)
     exact ⟨G ⋙ ε.functor, ⟨(Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight e _ ≪≫
       Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft _ ε.counitIso ≪≫ Functor.rightUnitor _⟩⟩
   · -- Apply `nonempty_iso_of_nonempty_iso_comp` to `F₁` and `F₂` followed by the inverse of the
-    -- counit equivalence `ho (N (ho D)) ≌ ho D`.
-    let ε : (nerve D.HomotopyCategory).HomotopyCategory ≌ D.HomotopyCategory :=
-      Cat.equivOfIso (nerveFunctorCompHoFunctorIso.app (Cat.of _))
+    -- counit equivalence `ho (N (ho D)) ≌ ho D` (`nerveHomotopyCategoryEquiv`).
+    let ε := nerveHomotopyCategoryEquiv D.HomotopyCategory
     obtain ⟨β⟩ := nonempty_iso_of_nonempty_iso_comp h D.HomotopyCategory
       (F₁ ⋙ ε.inverse) (F₂ ⋙ ε.inverse)
       ⟨(Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight α _ ≪≫ Functor.associator _ _ _⟩

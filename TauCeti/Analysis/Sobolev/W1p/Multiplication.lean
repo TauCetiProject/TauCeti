@@ -524,4 +524,22 @@ theorem W1p.gradient_testFunctionSMulComp_ae (hp : p ≠ (∞ : ℝ≥0∞)) (ph
 
 end TestFunctionSMulComp
 
+/-- The Leibniz rule for a `C¹` scalar factor `ψ` on `Ω`. If `u, D ∈ W^{1,p}(Ω)` and
+`D` is the weak derivative of `u` along `w`, then `ψ ⟪∇u, w⟫` has the weak derivative
+`ψ ⟪∇D, v⟫ + (∂ᵥψ) ⟪∇u, w⟫` along any direction `v`. -/
+theorem W1p.hasWeakLineDerivOn_smul_inner_gradient (hpsi : ContDiffOn ℝ 1 psi Omega)
+    {u D : W1p mu Omega p} {v w : E}
+    (hD : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value D) w) :
+    HasWeakLineDerivOn mu Omega
+      (fun x => psi x • innerSL ℝ (W1p.gradient u x) w)
+      (fun x => psi x • innerSL ℝ (W1p.gradient D x) v +
+        fderiv ℝ psi x v • innerSL ℝ (W1p.gradient u x) w) v := by
+  -- `∂_w u` agrees with the value of `D` almost everywhere on `Ω`, so it has the same weak
+  -- derivatives.
+  have hae : W1p.value D =ᵐ[mu.restrict Omega]
+      fun x => innerSL ℝ (W1p.gradient u x) w :=
+    hD.ae_eq ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn _)
+  exact (((W1p.hasWeakFDerivOn D).hasWeakLineDerivOn _).congr_ae hae).contDiffOn_smul_of_ne_zero
+    hpsi one_ne_zero
+
 end TauCeti

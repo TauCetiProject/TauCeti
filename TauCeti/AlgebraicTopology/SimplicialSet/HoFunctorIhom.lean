@@ -139,21 +139,7 @@ induced functor `ho g`. -/
 @[simp]
 lemma ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm (g : A ⟶ B) :
     (ihomHoFunctor A B).obj (.mk ((ihomObj₀Equiv A B).symm g)) = mapHomotopyCategory g := by
-  let v := (ihomObj₀Equiv A B).symm g
-  let φ := (unitHomEquiv _).symm v
-  have hφ : MonoidalClosed.uncurry' φ = g := by
-    have h := ihomObj₀Equiv_app φ PUnit.unit
-    -- The tensor unit has a unique vertex, so its constant map is `toUnit A`.
-    have hu : φ.app _ PUnit.unit = v := (unitHomEquiv _).apply_symm_apply v
-    have hunit : CartesianMonoidalCategory.lift (𝟙 A) (const PUnit.unit) = (ρ_ A).inv := by
-      rfl
-    rw [hu, hunit, Equiv.apply_symm_apply] at h
-    exact h.symm
-  calc
-    _ = (ihomHoFunctor A B).obj (.mk (unitHomEquiv _ φ)) := by
-      rw [Equiv.apply_symm_apply]
-    _ = mapHomotopyCategory (MonoidalClosed.uncurry' φ) := ihomHoFunctor_obj_mk φ
-    _ = mapHomotopyCategory g := congrArg mapHomotopyCategory hφ
+  rw [ihomObj₀Equiv_symm_eq_unitHomEquiv, ihomHoFunctor_obj_mk, MonoidalClosed.uncurry'_curry']
 
 /-- **Naturality of the comparison in the source**: under the comparisons
 `ho Fun(-, B) ⥤ (ho - ⥤ ho B)`, precomposition with `f : A' ⟶ A` on `Fun(A, B)` corresponds to
@@ -180,10 +166,15 @@ private lemma map_comp_expComparison_app_nerve (C : Cat.{u, u}) {Y : SSet.{u}}
     curry (inv (prodComparison hoFunctor A Y) ≫
       (nerveAdjunction.homEquiv _ _).symm (uncurry σ)) := by
   apply uncurry_injective
+  -- Uncurrying both sides, the left side becomes `ho A ◁ ho σ` followed by the uncurried comparison
+  -- `inv (prodComparison hoFunctor A Fun(A, N C)) ≫ ho ev` and the counit, and the right side
+  -- becomes `inv (prodComparison hoFunctor A Y) ≫ ho (A ◁ σ ≫ ev)` followed by the counit.
   rw [uncurry_curry, uncurry_natural_left, uncurry_natural_right, uncurry_expComparison,
     Adjunction.homEquiv_counit, uncurry_eq, Functor.map_comp]
   simp only [← Category.assoc]
   congr 2
+  -- It remains to see `ho A ◁ ho σ ≫ inv (prodComparison _ A _) =
+  -- inv (prodComparison _ A Y) ≫ ho (A ◁ σ)`, the naturality of the product comparison.
   rw [IsIso.comp_inv_eq, Category.assoc, prodComparison_natural_whiskerLeft,
     IsIso.inv_hom_id_assoc]
 
@@ -209,13 +200,10 @@ instance isIso_expComparison_app_nerve (C : Cat.{u, u}) :
       rw [← map_comp_expComparison_app_nerve, ← Adjunction.homEquiv_naturality_left]
       -- The two sides differ only by the identity functor of `Cat` applied to `C`.
       rfl
-    have hpc : Function.Bijective fun g : hoFunctor.obj (A ⊗ Y) ⟶ C ↦
-        inv (prodComparison hoFunctor A Y) ≫ g :=
-      ⟨fun _ _ h ↦ by simpa using congrArg (prodComparison hoFunctor A Y ≫ ·) h,
-        fun g ↦ ⟨prodComparison hoFunctor A Y ≫ g, by simp⟩⟩
     rw [h]
     exact (nerveAdjunction.homEquiv _ _).bijective.comp
-      (((ihom.adjunction _).homEquiv _ _).bijective.comp (hpc.comp
+      (((ihom.adjunction _).homEquiv _ _).bijective.comp
+        ((asIso (prodComparison hoFunctor A Y)).homFromEquiv.bijective.comp
         ((nerveAdjunction.homEquiv _ _).symm.bijective.comp
           ((ihom.adjunction A).homEquiv _ _).symm.bijective)))
   have : IsIso (nerveFunctor.map θ) := by

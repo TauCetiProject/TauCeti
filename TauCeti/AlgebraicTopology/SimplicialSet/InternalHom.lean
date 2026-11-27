@@ -158,6 +158,27 @@ lemma ihomObj₀Equiv_apply (v : ((ihom X).obj Z) _⦋0⦌) :
     ← Category.id_comp (curry (fst X X ≫ f)), lift_curry_ihom_ev_app, lift_fst_assoc,
     Category.id_comp]
 
+/-- The map `𝟙_ SSet ⟶ K` given by a vertex `x` of `K` is the constant map at `x`. This holds by
+definition: both send every simplex to the corresponding degeneracy of `x`. -/
+lemma unitHomEquiv_symm_apply {K : SSet.{u}} (x : K _⦋0⦌) : (unitHomEquiv K).symm x = const x :=
+  rfl
+
+/-- The map corresponding to the vertex of `Fun(X, Z)` given by `φ : 𝟙_ SSet ⟶ Fun(X, Z)` is the
+uncurried form `MonoidalClosed.uncurry' φ` of `φ`. -/
+lemma ihomObj₀Equiv_unitHomEquiv (φ : 𝟙_ SSet ⟶ (ihom X).obj Z) :
+    ihomObj₀Equiv X Z (unitHomEquiv _ φ) = MonoidalClosed.uncurry' φ := by
+  have h : toUnit X ≫ φ = const (unitHomEquiv _ φ) := by
+    rw [← comp_const (toUnit X), ← unitHomEquiv_symm_apply, Equiv.symm_apply_apply]
+  have hρ : lift (𝟙 X) (toUnit X) = (ρ_ X).inv := by ext <;> simp
+  rw [ihomObj₀Equiv_apply, ← h, MonoidalClosed.uncurry', uncurry_eq, ← lift_whiskerLeft, hρ,
+    Category.assoc]
+
+/-- The vertex of `Fun(X, Z)` corresponding to a map `g : X ⟶ Z` is the vertex given by the global
+element `MonoidalClosed.curry' g`. -/
+lemma ihomObj₀Equiv_symm_eq_unitHomEquiv (g : X ⟶ Z) :
+    (ihomObj₀Equiv X Z).symm g = unitHomEquiv _ (curry' g) :=
+  (Equiv.symm_apply_eq _).2 (by rw [ihomObj₀Equiv_unitHomEquiv, uncurry'_curry'])
+
 /-- The map corresponding to the image of a vertex `y` under `b : Y ⟶ Fun(X, Z)` is the
 restriction of the uncurried form of `b` to `X ⊗ {y}`. -/
 lemma ihomObj₀Equiv_app {Y : SSet.{u}} (b : Y ⟶ (ihom X).obj Z) (y : Y _⦋0⦌) :
@@ -177,6 +198,15 @@ lemma pre_app_app_ihomObj₀Equiv_symm {Y : SSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z
   apply yonedaEquiv.symm.injective
   rw [← yonedaEquiv_symm_comp, yonedaEquiv_symm_ihomObj₀Equiv_symm,
     yonedaEquiv_symm_ihomObj₀Equiv_symm, curry_pre_app, whiskerRight_fst_assoc]
+
+/-- Internal precomposition `Fun(X, Y) ⟶ Fun(Fun(Y, Z), Fun(X, Z))`, adjoint to the braided
+composition, sends the vertex corresponding to `f : X ⟶ Y` to the vertex corresponding to the
+precomposition map `(pre f).app Z`. -/
+lemma curry_braiding_comp_app_ihomObj₀Equiv_symm {Y : SSet.{u}} (f : X ⟶ Y) :
+    (curry ((β_ _ _).hom ≫ MonoidalClosed.comp X Y Z)).app _ ((ihomObj₀Equiv X Y).symm f) =
+      (ihomObj₀Equiv _ _).symm ((pre f).app Z) := by
+  rw [ihomObj₀Equiv_symm_eq_unitHomEquiv, ihomObj₀Equiv_symm_eq_unitHomEquiv, ← unitHomEquiv_comp,
+    curry'_comp_curry_braiding_comp]
 
 /-- Restricting the homotopy defined by a `1`-simplex `s` of `Fun(X, Z)` to an end of the cylinder
 gives the map corresponding to the matching face of `s`. -/

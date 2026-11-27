@@ -75,7 +75,8 @@ isomorphism classes, so that it does not depend on the skeleton used to build it
   monoid of isomorphism classes of objects.
 * `TauCeti.SplitK0.of_eq_of_iff`: two objects have the same class exactly when `X ⊞ T ≅ Y ⊞ T`
   for some object `T`, and `TauCeti.SplitK0.of_sub_of_eq_of_sub_of_iff` the same criterion for
-  formal differences `[X] - [Y]`.
+  formal differences `[X] - [Y]`, and `TauCeti.SplitK0.of_eq_of_iff_of_forall_exists_biprod` the
+  choice of `T` satisfying a property `A` for which every object has a complement in `A`.
 
 ## References
 
@@ -640,6 +641,18 @@ theorem of_sub_of_eq_of_sub_of_iff {X Y X' Y' : C} :
     (of X - of Y : SplitK0 C) = of X' - of Y' ↔
       ∃ T : C, Nonempty ((X ⊞ Y') ⊞ T ≅ (X' ⊞ Y) ⊞ T) := by
   rw [sub_eq_sub_iff_add_eq_add, ← of_biprod, ← of_biprod, of_eq_of_iff]
+
+/-- **Stable isomorphisms are realised in a summand-dense property**: if every object has a
+complement whose biproduct with it satisfies `A`, two objects have the same class in split `K₀`
+exactly when they become isomorphic after adding an object satisfying `A`. -/
+theorem of_eq_of_iff_of_forall_exists_biprod (A : ObjectProperty C)
+    (hA : ∀ W : C, ∃ W' : C, A (W ⊞ W')) {X Y : C} :
+    (of X : SplitK0 C) = of Y ↔ ∃ B : C, A B ∧ Nonempty (X ⊞ B ≅ Y ⊞ B) := by
+  refine ⟨fun h => ?_, fun ⟨B, _, h⟩ => of_eq_of_iff.2 ⟨B, h⟩⟩
+  obtain ⟨W, ⟨e⟩⟩ := of_eq_of_iff.1 h
+  obtain ⟨W', hW'⟩ := hA W
+  exact ⟨W ⊞ W', hW', ⟨(biprod.associator _ _ _).symm ≪≫ biprod.mapIso e (Iso.refl _) ≪≫
+    biprod.associator _ _ _⟩⟩
 
 end SplitK0
 

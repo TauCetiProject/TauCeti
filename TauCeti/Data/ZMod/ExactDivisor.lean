@@ -174,6 +174,21 @@ theorem unitsMap_unitsEquivProd_symm_of_dvd_div {d : ℕ} (h : Q ∥ N) (hd : d 
   rw [← ZMod.unitsMap_comp hd (Nat.div_dvd_of_dvd h.dvd), MonoidHom.comp_apply,
     ← h.unitsEquivProd_apply_snd, MulEquiv.apply_symm_apply]
 
+/-- A Chinese remainder lift reduces to the lift of the reduced pair when both target factors
+divide the corresponding source factors. -/
+theorem unitsMap_unitsEquivProd_symm {M P : ℕ} (hN : Q ∥ N) (hM : P ∥ M)
+    (hPQ : P ∣ Q) (hCompl : M / P ∣ N / Q) (a : (ZMod Q)ˣ) (b : (ZMod (N / Q))ˣ) :
+    ZMod.unitsMap (show M ∣ N by
+      simpa only [Nat.mul_div_cancel' hM.dvd, Nat.mul_div_cancel' hN.dvd] using
+        Nat.mul_dvd_mul hPQ hCompl) (hN.unitsEquivProd.symm (a, b)) =
+      hM.unitsEquivProd.symm (ZMod.unitsMap hPQ a, ZMod.unitsMap hCompl b) := by
+  rw [MulEquiv.eq_symm_apply]
+  refine Prod.ext ?_ ?_
+  · simp only [unitsEquivProd_apply_fst, ← MonoidHom.comp_apply, ZMod.unitsMap_comp,
+      hN.unitsMap_unitsEquivProd_symm_of_dvd hPQ]
+  · simp only [unitsEquivProd_apply_snd, ← MonoidHom.comp_apply, ZMod.unitsMap_comp,
+      hN.unitsMap_unitsEquivProd_symm_of_dvd_div hCompl]
+
 /-- `e_Q` is `1` modulo `Q`. -/
 theorem castHom_exactDivisorIdempotent_left (h : Q ∥ N) :
     ZMod.castHom h.dvd (ZMod Q) (exactDivisorIdempotent N Q) = 1 := by

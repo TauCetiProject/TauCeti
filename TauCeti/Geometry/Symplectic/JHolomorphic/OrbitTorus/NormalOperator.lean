@@ -92,8 +92,6 @@ operators, are separate.
   untwisted along the circle factor is described by the propagator and the return map.
 * `TauCeti.exists_ne_zero_orbitTorusOperator_eq_zero_iff_det_eq_zero`: such a kernel is nonzero
   exactly when `det (ε₂ - Ψ(d)) = 0`.
-* `TauCeti.inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply`: the propagator preserves
-  the symplectic form `⟪J₀ ·, ·⟫`.
 * `TauCeti.periodic_snd_of_twists` and `TauCeti.eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero`:
   on a finite cover, twisted maps are periodic in `t`, and the operators twisted along the circle
   factor have no kernel.
@@ -248,16 +246,8 @@ theorem setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjo
 `(s, t) ↦ u (-s, t)` is the reflection of `D† u`. -/
 theorem orbitTorusOperator_comp_neg_fst (z : ℝ × ℝ) :
     orbitTorusOperator J₀ S (fun w => u (-w.1, w.2)) z = orbitTorusAdjoint J₀ S u (-z.1, z.2) := by
-  set L : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ := (ContinuousLinearEquiv.neg ℝ : ℝ ≃L[ℝ] ℝ).prodCongr (.refl ℝ ℝ)
-  have hf : fderiv ℝ (fun w => u (-w.1, w.2)) z =
-      (fderiv ℝ u (-z.1, z.2)).comp (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) :=
-    L.comp_right_fderiv (f := u)
-  have h₁ : (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) stdComplexLineReal = -stdComplexLineReal := by
-    simp [L, stdComplexLineReal_eq]
-  have h₂ : (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) stdComplexLineImag = stdComplexLineImag := by
-    simp [L, stdComplexLineImag_eq]
-  rw [orbitTorusOperator_apply, orbitTorusAdjoint_apply, hf,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h₁, h₂, map_neg]
+  simp only [orbitTorusOperator_apply, orbitTorusAdjoint_apply, stdComplexLineReal,
+    stdComplexLineImag, fderiv_comp_neg_fst_apply_one_zero, fderiv_comp_neg_fst_apply_zero_one]
 
 /-- **Reflection intertwines `D†` and `D`.** The formal adjoint `D†` applied to the reflection
 `(s, t) ↦ u (-s, t)` is the reflection of `D u`. -/
@@ -568,21 +558,6 @@ theorem contDiff_dysonSeriesLeft_apply_snd {m : ℕ} (hS : ContDiff ℝ m S) (v 
     ContDiff ℝ (m + 1) fun z : ℝ × ℝ => dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 v :=
   ((contDiff_dysonSeriesLeft ((contDiff_const (c := J₀)).clm_comp hS)).clm_apply
     contDiff_const).comp contDiff_snd
-
-/-- **The propagator is symplectic.** If `J₀` is an orthogonal complex structure and every `S(t)` is
-symmetric, then `J₀ S(t)` is skew for the symplectic form `⟪J₀ ·, ·⟫`, so the propagator `Ψ(t)` of
-the loop equation `w' = J₀ S(t) w` preserves it: `⟪J₀ (Ψ(t) x), Ψ(t) y⟫ = ⟪J₀ x, y⟫`. -/
-theorem inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply
-    (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
-    (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫) (hScont : Continuous S) (t : ℝ) (x y : V) :
-    ⟪J₀ (dysonSeriesLeft (fun t => J₀ ∘L S t) t x), dysonSeriesLeft (fun t => J₀ ∘L S t) t y⟫ =
-      ⟪J₀ x, y⟫ := by
-  have hM : Continuous fun t => J₀ ∘L S t := (continuous_const (y := J₀)).clm_comp hScont
-  have h := apply_dysonSeriesLeft_apply_dysonSeriesLeft hM
-    ((innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).comp J₀) (fun r x y => ?_) t x y
-  · simpa using h
-  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, hJ₀sq, inner_neg_left,
-    hJ₀ x, hS r, inner_neg_right, neg_neg, neg_add_cancel]
 
 end Complete
 

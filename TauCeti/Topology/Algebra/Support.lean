@@ -39,6 +39,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `TauCeti.tsupport_subset_of_forall_notMem_eq_zero`: a function vanishing off a closed set `s`
   has topological support in `s`, with multiplicative version
   `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
+* `TauCeti.disjoint_tsupport_iff_eventuallyEq`: a set is disjoint from the topological support of
+  `f` exactly when `f` vanishes near it, with multiplicative version
+  `TauCeti.disjoint_mulTSupport_iff_eventuallyEq`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
 * `HasCompactSupport.comp_subtypeVal`: the restriction of a compactly supported function to a set
@@ -114,6 +117,16 @@ end Prod
 theorem mulTSupport_subset_of_forall_notMem_eq_one {Y M : Type*} [TopologicalSpace Y] [One M]
     {f : Y → M} {s : Set Y} (hf : ∀ x ∉ s, f x = 1) (hs : IsClosed s) : mulTSupport f ⊆ s :=
   hs.closure_subset_iff.2 (Function.mulSupport_subset_iff'.2 hf)
+
+open scoped Topology in
+/-- A set `s` is disjoint from the topological multiplicative support of `f` exactly when `f` is
+equal to `1` near `s`. -/
+@[to_additive /-- A set `s` is disjoint from the topological support of `f` exactly when `f`
+vanishes near `s`. -/]
+theorem disjoint_mulTSupport_iff_eventuallyEq {Y M : Type*} [TopologicalSpace Y] [One M]
+    {f : Y → M} {s : Set Y} : Disjoint s (mulTSupport f) ↔ f =ᶠ[𝓝ˢ s] 1 := by
+  simp only [Set.disjoint_left, Filter.EventuallyEq, eventually_nhdsSet_iff_forall,
+    notMem_mulTSupport_iff_eventuallyEq]
 
 end TauCeti
 

@@ -60,6 +60,8 @@ equivalence and is compatible with identities, composition and inverses.
 * `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
   corresponds to the pure tensor `1 ⊗ v`.
 * `TensorProduct.piScalarRight_rTensor`: `piScalarRight` is natural in the module.
+* `TensorProduct.one_tmul_single_ne_zero`: the basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is
+  nonzero over a nontrivial `A`.
 
 ## References
 
@@ -131,6 +133,13 @@ theorem piScalarRight_rTensor (S : Type*) {S' N N' : Type*} [CommSemiring S] [Al
   induction x using TensorProduct.inductionOn with
   | tmul a f => ext i; simp
   | add x y hx hy => ext i; simp only [map_add, hx, hy, Pi.add_apply, Function.comp_apply]
+
+omit [Fintype ι] in
+/-- The basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is nonzero over a nontrivial `A`. -/
+theorem one_tmul_single_ne_zero [Nontrivial A] (i : ι) :
+    (1 : A) ⊗ₜ[R] (Pi.single i 1 : ι → R) ≠ 0 := by
+  intro h
+  simpa using congr_arg (fun w ↦ piScalarRightHom R A A ι w i) h
 
 end PiScalarRight
 

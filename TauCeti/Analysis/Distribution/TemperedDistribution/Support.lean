@@ -60,6 +60,10 @@ in Tate's local theory at the archimedean places.
 * `Distribution.TemperedDistribution.dsupport_subset_singleton_iff_mem_span`: a scalar tempered
   distribution is supported in `{x}` if and only if it lies in the span of the derivatives
   `∂^m δ_x`.
+* `SchwartzMap.isVanishingOn_toTemperedDistributionCLM_compl_tsupport`: a Schwartz function, as a
+  tempered distribution, vanishes off its support.
+* `TemperedDistribution.exists_pos_isVanishingOn_fourier_compl_closedBall_of_hasCompactSupport`: a
+  Schwartz function whose Fourier transform has compact support is band-limited.
 
 ## References
 
@@ -234,3 +238,47 @@ theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
     exact disjoint_compl_left_iff_subset.1 (hvan.disjoint_dsupport isOpen_compl_singleton)
 
 end Distribution.TemperedDistribution
+
+namespace SchwartzMap
+
+open MeasureTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **A Schwartz function vanishes off its support as a tempered distribution.** The tempered
+distribution `∫ g • f ∂μ` of a Schwartz function `f` vanishes on the complement of `tsupport f`. -/
+theorem isVanishingOn_toTemperedDistributionCLM_compl_tsupport
+    (μ : Measure E := by volume_tac) [μ.HasTemperateGrowth] (f : 𝓢(E, F)) :
+    Distribution.IsVanishingOn (SchwartzMap.toTemperedDistributionCLM E F μ f) (tsupport f)ᶜ := by
+  intro g hg
+  simp only [SchwartzMap.toTemperedDistributionCLM_apply_apply]
+  refine integral_eq_zero_of_ae (ae_of_all _ fun x ↦ ?_)
+  by_cases hx : x ∈ tsupport g
+  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hg hx h]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
+end SchwartzMap
+
+namespace TemperedDistribution
+
+open scoped FourierTransform
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **Compactly supported Fourier transforms are band-limited.** If the Fourier transform of a
+Schwartz function `φ` has compact support, then the Fourier transform of `φ` as a tempered
+distribution vanishes outside some closed ball of positive radius centred at `0`. -/
+theorem exists_pos_isVanishingOn_fourier_compl_closedBall_of_hasCompactSupport [CompleteSpace F]
+    {φ : 𝓢(E, F)} (hφ : HasCompactSupport ((𝓕 φ : 𝓢(E, F)) : E → F)) :
+    ∃ R > 0, Distribution.IsVanishingOn (𝓕 (φ : 𝓢'(E, F)) : 𝓢'(E, F))
+      (Metric.closedBall 0 R)ᶜ := by
+  obtain ⟨R₀, hR₀⟩ := hφ.isCompact.isBounded.subset_closedBall 0
+  refine ⟨max R₀ 1, by positivity, ?_⟩
+  rw [fourier_toTemperedDistributionCLM_eq]
+  exact Distribution.IsVanishingOn.mono
+    (Set.compl_subset_compl.2 (hR₀.trans (Metric.closedBall_subset_closedBall (le_max_left _ _))))
+    (SchwartzMap.isVanishingOn_toTemperedDistributionCLM_compl_tsupport _ _)
+
+end TemperedDistribution

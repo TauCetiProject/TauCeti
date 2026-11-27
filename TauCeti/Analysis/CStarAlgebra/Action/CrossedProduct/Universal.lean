@@ -198,6 +198,29 @@ theorem integratedFull_eq_zero_iff : M.integratedFull μ = 0 ↔ M.coefficient =
     fun h => FullCrossedProduct.starAlgHom_ext <| NonUnitalStarAlgHom.ext fun _ =>
       DoubleCentralizer.ext_fst fun _ => by simp [h]⟩
 
+variable (μ) in
+/-- `M.integratedFull μ` vanishes after `φ.fullCrossedProductMap μ` precisely when `M.coefficient`
+vanishes on the range of `φ`. -/
+theorem integratedFull_comp_fullCrossedProductMap_eq_zero_iff
+    {A' : Type v} [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'} (φ : Hom α' α) :
+    (M.integratedFull μ).comp (φ.fullCrossedProductMap μ) = 0 ↔
+      ∀ a, M.coefficient (φ a) = 0 := by
+  rw [M.integratedFull_comp_fullCrossedProductMap μ φ, integratedFull_eq_zero_iff,
+    NonUnitalStarAlgHom.ext_iff]
+  simp only [comap_coefficient, NonUnitalStarAlgHom.comp_apply, Hom.coe_toNonUnitalStarAlgHom,
+    NonUnitalStarAlgHom.zero_apply]
+
+variable (μ) in
+/-- `M.integratedFull μ` vanishes on `(φ.fullCrossedProductMap μ).range` precisely when
+`M.coefficient` vanishes on the range of `φ`. -/
+theorem forall_mem_range_fullCrossedProductMap_integratedFull_eq_zero_iff
+    {A' : Type v} [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'} (φ : Hom α' α) :
+    (∀ y ∈ (φ.fullCrossedProductMap μ).range, M.integratedFull μ y = 0) ↔
+      ∀ a, M.coefficient (φ a) = 0 := by
+  rw [← M.integratedFull_comp_fullCrossedProductMap_eq_zero_iff μ φ, NonUnitalStarAlgHom.ext_iff]
+  simp only [NonUnitalStarAlgHom.mem_range, forall_exists_index, forall_apply_eq_imp_iff,
+    NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.zero_apply]
+
 /-- `M.integratedFull μ` sends `(i_A(a)).fst x` to `M.coefficient a * M.integratedFull μ x`. -/
 @[simp]
 theorem integratedFull_coefficientMultiplier_fst (a : A) (x : FullCrossedProduct α μ) :
@@ -258,6 +281,50 @@ theorem integratedFull_covariantMultiplierHom :
   starAlgHom_ext <| NonUnitalStarAlgHom.ext fun _ => by simp
 
 end FullCrossedProduct
+
+namespace Hom
+
+open FullCrossedProduct
+
+variable (μ) in
+/-- `φ.fullCrossedProductMap μ` intertwines left canonical coefficient multipliers. -/
+@[simp]
+theorem fullCrossedProductMap_coefficientMultiplier_fst
+    {A' : Type v} [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'}
+    (φ : Hom α' α) (a : A') (x : FullCrossedProduct α' μ) :
+    φ.fullCrossedProductMap μ ((coefficientMultiplier α' μ a).fst x) =
+      (coefficientMultiplier α μ (φ a)).fst (φ.fullCrossedProductMap μ x) :=
+  DoubleCentralizer.coe_injective (𝕜 := ℂ) <| by
+    rw [← DoubleCentralizer.mul_coe_eq_coe_fst,
+      ← DoubleCentralizer.coeHom_apply (𝕜 := ℂ),
+      ← DoubleCentralizer.coeHom_apply (𝕜 := ℂ),
+      ← integratedFull_covariantMultiplierHom (α := α) (μ := μ),
+      CovariantMultiplierHom.integratedFull_fullCrossedProductMap_apply,
+      CovariantMultiplierHom.integratedFull_fullCrossedProductMap_apply,
+      CovariantMultiplierHom.integratedFull_coefficientMultiplier_fst]
+    simp
+
+variable (μ) in
+/-- `φ.fullCrossedProductMap μ` intertwines left canonical group multipliers. -/
+@[simp]
+theorem fullCrossedProductMap_groupMultiplier_fst
+    {A' : Type v} [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'}
+    (φ : Hom α' α) (r : G) (x : FullCrossedProduct α' μ) :
+    φ.fullCrossedProductMap μ
+        ((groupMultiplier α' μ r : 𝓜(ℂ, FullCrossedProduct α' μ)).fst x) =
+      (groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)).fst
+        (φ.fullCrossedProductMap μ x) :=
+  DoubleCentralizer.coe_injective (𝕜 := ℂ) <| by
+    rw [← DoubleCentralizer.mul_coe_eq_coe_fst,
+      ← DoubleCentralizer.coeHom_apply (𝕜 := ℂ),
+      ← DoubleCentralizer.coeHom_apply (𝕜 := ℂ),
+      ← integratedFull_covariantMultiplierHom (α := α) (μ := μ),
+      CovariantMultiplierHom.integratedFull_fullCrossedProductMap_apply,
+      CovariantMultiplierHom.integratedFull_fullCrossedProductMap_apply,
+      CovariantMultiplierHom.integratedFull_groupMultiplier_fst]
+    simp
+
+end Hom
 
 end TauCeti.CStarAction
 

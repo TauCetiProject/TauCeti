@@ -20,6 +20,8 @@ therefore vanish under the projection, leaving exactly reduced deconcatenation.
 ## Main results
 
 * `TauCeti.ReducedTensorWords.deconcatenation_coassoc`: reduced deconcatenation is coassociative.
+* `TauCeti.ReducedTensorWords.comp_deconcatenation_eq_of_lTensor_eq_assoc_rTensor`: coassociativity
+  comparison criterion for linear maps precomposed with reduced deconcatenation.
 
 ## References
 
@@ -111,6 +113,21 @@ theorem deconcatenation_coassoc :
           (LinearMap.lTensor (TensorWords R M) (TensorWords.deconcatenation R M)
             (TensorWords.deconcatenation R M (TensorWords.reducedInclusion R M w))) := congrArg _ h
     _ = _ := map_reducedProjection_lTensor_deconcatenation R M w
+
+/-- Two linear maps precomposed with reduced deconcatenation agree once they factor through a
+common trilinear map via `lTensor deconcatenation` and `assoc ∘ₗ rTensor deconcatenation`. -/
+theorem comp_deconcatenation_eq_of_lTensor_eq_assoc_rTensor
+    {N : Type*} [AddCommMonoid N] [Module R N]
+    {f g : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M →ₗ[R] N}
+    {F : ReducedTensorWords R M ⊗[R]
+      (ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) →ₗ[R] N}
+    (hf : f = F ∘ₗ LinearMap.lTensor _ (deconcatenation R M))
+    (hg : g = F ∘ₗ (TensorProduct.assoc R _ _ _).toLinearMap ∘ₗ
+      LinearMap.rTensor _ (deconcatenation R M)) :
+    f ∘ₗ deconcatenation R M = g ∘ₗ deconcatenation R M := by
+  rw [hf, hg]
+  simp only [LinearMap.comp_assoc]
+  exact congrArg (F ∘ₗ ·) (deconcatenation_coassoc R M).symm
 
 end ReducedTensorWords
 

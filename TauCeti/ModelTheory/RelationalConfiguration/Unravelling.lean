@@ -75,6 +75,35 @@ noncomputable def ratColor (r : ℚ) : ℕ := multiplicity 2 r.den
 
 theorem ratColor_def (r : ℚ) : ratColor r = multiplicity 2 r.den := (rfl)
 
+/-- Integers have colour `0`. -/
+@[simp]
+theorem ratColor_intCast (n : ℤ) : ratColor n = 0 := by
+  simp [ratColor_def]
+
+/-- Natural numbers have colour `0`. -/
+@[simp]
+theorem ratColor_natCast (n : ℕ) : ratColor n = 0 := by
+  simp [ratColor_def]
+
+/-- Numerals have colour `0`. -/
+@[simp]
+theorem ratColor_ofNat (n : ℕ) : ratColor (no_index (OfNat.ofNat n)) = 0 := by
+  simp [ratColor_def]
+
+/-- The colour of `1 / 2 ^ k` is `k`. -/
+@[simp]
+theorem ratColor_inv_two_pow (k : ℕ) : ratColor (2 ^ k)⁻¹ = k := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have h : ((2 : ℚ) ^ k)⁻¹.den = 2 ^ k := by
+    rw [show (2 : ℚ) ^ k = ((2 ^ k : ℕ) : ℚ) by norm_cast, Rat.inv_natCast_den]
+    simp
+  rw [ratColor_def, h, Nat.multiplicity_prime_pow]
+
+/-- The colour of `1 / 2` is `1`. -/
+@[simp]
+theorem ratColor_inv_two : ratColor 2⁻¹ = 1 := by
+  simpa using ratColor_inv_two_pow 1
+
 /-- Every natural number is the colour of some rational. -/
 theorem exists_ratColor_eq (m : ℕ) : ∃ r, ratColor r = m := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩

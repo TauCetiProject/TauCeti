@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
