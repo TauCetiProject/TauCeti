@@ -42,13 +42,13 @@ end loops can be glued.
   circle `‖w‖ = 2`, run through at the speed of the angle about `1/2`, while the end loop of the
   output at the height `0` runs through the same circle at constant speed from the point `2`. A
   *turn* within the output circle joins the two parametrizations: the point of the output circle
-  on the ray from `1/2` at the angle `θ` has the angle `θ + arg (R θ + exp (-iθ) / 2)` about `0`,
-  for the outer radius `R = TauCeti.Floer.pairOfPantsOuterRadius`, and the turn interpolates this
-  angle linearly to the angle `-2π t` of the end loop. It factors through the output circle, a
-  curve, so it has no area (`TauCeti.rectangleIntegral_comp_eq_zero`). The **output chart**
-  `TauCeti.Floer.pairOfPantsOutputChart R` is the core chart followed by the turn and by the
-  annulus of the output end out to the height `R`. It is a smooth cylinder chart from the collared
-  concatenation of the end loops of the inputs at the height `0`
+  on the ray from `1/2` at the angle `θ` has the angle `θ + arg (ρ_out θ + exp (-iθ) / 2)` about
+  `0`, for the outer radius `ρ_out = TauCeti.Floer.pairOfPantsOuterRadius`, and the turn
+  interpolates this angle linearly to the angle `-2π t` of the end loop. It factors through the
+  output circle, a curve, so it has no area (`TauCeti.rectangleIntegral_comp_eq_zero`). The
+  **output chart** `TauCeti.Floer.pairOfPantsOutputChart R` is the core chart followed by the turn
+  and by the annulus of the output end out to the height `R`. It is a smooth cylinder chart from
+  the collared concatenation of the end loops of the inputs at the height `0`
   (`TauCeti.Floer.pairOfPantsOutputChart_mk_zero`) to the end loop of the output at the height `R`
   (`TauCeti.Floer.pairOfPantsOutputChart_mk_one`), so that `u` composed with it is a cylinder for
   every `C²` map `u` (`TauCeti.Floer.isLoopCylinder_comp_pairOfPantsOutputChart`). The integral of
@@ -132,13 +132,9 @@ private theorem det_fderiv_endChart_eq_endRadius (q : Puncture) (z : ℝ × ℝ)
 private theorem endSign_mul_nonneg_of_mem_uIcc {q : Puncture} {a b x : ℝ}
     (ha : 0 ≤ q.endSign * a) (hb : 0 ≤ q.endSign * b) (hx : x ∈ [[a, b]]) :
     0 ≤ q.endSign * x := by
-  rcases le_total a b with hab | hab
-  · rw [uIcc_of_le hab] at hx
+  rcases mem_uIcc.1 hx with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;>
     cases q <;> simp only [Puncture.endSign_zero, Puncture.endSign_one, Puncture.endSign_inf,
-      one_mul, neg_one_mul, neg_nonneg] at ha hb ⊢ <;> linarith [hx.1, hx.2]
-  · rw [uIcc_of_ge hab] at hx
-    cases q <;> simp only [Puncture.endSign_zero, Puncture.endSign_one, Puncture.endSign_inf,
-      one_mul, neg_one_mul, neg_nonneg] at ha hb ⊢ <;> linarith [hx.1, hx.2]
+      one_mul, neg_one_mul, neg_nonneg] at ha hb ⊢ <;> linarith
 
 /-- The point of the circle of the end `q` at the height `x` at the angle `θ` about the center of
 the end is a point of the end chart. -/
@@ -347,8 +343,8 @@ private theorem endChart_inf_mk_zero (t : ℝ) :
   simp
 
 /-- The angle by which the point of the output circle on the ray from `1/2` at the angle `θ` is
-ahead of `θ`, seen from `0`: the argument of `R θ + exp (-iθ) / 2`, which lies in the right
-half-plane. -/
+ahead of `θ`, seen from `0`: the argument of `ρ_out θ + exp (-iθ) / 2` for the outer radius
+`ρ_out = pairOfPantsOuterRadius`, which lies in the right half-plane. -/
 private noncomputable def turnOffset (θ : ℝ) : ℝ :=
   Complex.arg (pairOfPantsOuterRadius θ + Complex.exp (-(θ * Complex.I)) / 2)
 
@@ -529,8 +525,9 @@ private theorem rectangleIntegral_comp_turnChart (φ : RoughForm I M F 2) {u : �
 
 /-! ### The output chart -/
 
-/-- The annulus of the output end from the height `0` to the height `-R`, swept by the circles of
-the end at the heights `-R β(s)` for the smooth transition `β`. -/
+/-- The annulus of the output end from the height `0` out to the height `R` (the first coordinate
+`-R` of the end chart), swept by the circles of the end at the first coordinates `-R β(s)` of the
+end chart, for the smooth transition `β`. -/
 private noncomputable def outputAnnulus (R : ℝ) (z : ℝ × ℝ) : ℝ × ℝ :=
   endChart .inf (-(R * Real.smoothTransition z.1), z.2)
 

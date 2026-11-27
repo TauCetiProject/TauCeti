@@ -755,23 +755,10 @@ private theorem mpullback_comp_lobeChart_apply (a : ℝ) {u : ℝ × ℝ → M} 
           lobeRadius a (smoothTransition z.1) z.2)) •
         mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z) ![(1, 0), (0, 1)] := by
   have hL := ((contDiff_lobeChart (n := 1) a).differentiable one_ne_zero z).hasFDerivAt
-  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
-  -- Read the pullback along `u` as a form on the plane, whose tangent spaces are `ℝ × ℝ`.
-  let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z)
-  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
-  have hv : (fderiv ℝ (lobeChart a) z ∘ ![((1 : ℝ), (0 : ℝ)), (0, 1)]) =
-      ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)] := by
-    funext i
-    fin_cases i <;> simp
-  -- An alternating map of two vectors of `ℝ × ℝ` is their determinant times its value on the
-  -- standard basis vectors.
-  have hdet := congrArg (· ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)])
-    (ψ.toAlternatingMap.eq_basis_det_smulRight (Module.Basis.finTwoProd ℝ))
-  rw [AlternatingMap.smulRight_apply, Module.Basis.det_finTwoProd_apply,
-    Module.Basis.coe_finTwoProd] at hdet
-  refine (congrArg ψ hv).trans (hdet.trans ?_)
-  refine congrArg (· • ψ ![(1, 0), (0, 1)]) ?_
-  rw [fderiv_lobeChart_apply_one_zero, fderiv_lobeChart_apply_zero_one]
+  rw [mpullback_comp_apply_eq_det_smul φ hL hu]
+  refine congrArg (· • _) ?_
+  rw [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
+    fderiv_lobeChart_apply_one_zero, fderiv_lobeChart_apply_zero_one]
   set e := Complex.exp (lobeAngle a z.2 * Complex.I)
   have he : e.re ^ 2 + e.im ^ 2 = 1 := by
     simp only [e, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
