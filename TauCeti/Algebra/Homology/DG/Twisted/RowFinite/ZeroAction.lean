@@ -132,7 +132,7 @@ section EvalSingle
 
 /-- The evaluation at a generator `x`, from the degree-`n` term of the twisted complex to
 `ℳ (n + ind x)`. -/
-def coefficientEvalX (x : P) (n : ℤ) :
+private def coefficientEvalX (x : P) (n : ℤ) :
     (m.coefficientCochainComplex hM).X n →ₗ[R]
       (shiftedModuleComplex.{uR, uA, uM, uP} hM (ind x)).X n :=
   (shiftedModuleComplexXEquiv hM (ind x) n).symm.toLinearMap ∘ₗ
@@ -141,8 +141,7 @@ def coefficientEvalX (x : P) (n : ℤ) :
     (m.coefficientCochainComplexXEquiv hM n).toLinearMap
 
 /-- `coefficientEvalX` evaluates the coefficient vector at `x`. -/
-@[simp]
-theorem shiftedModuleComplexXEquiv_coefficientEvalX (x : P) (n : ℤ)
+private theorem shiftedModuleComplexXEquiv_coefficientEvalX (x : P) (n : ℤ)
     (f : (m.coefficientCochainComplex hM).X n) :
     (shiftedModuleComplexXEquiv hM (ind x) n (m.coefficientEvalX hM x n f) : M) =
       (m.coefficientCochainComplexXEquiv hM n f : P →₀ M) x := by
@@ -152,7 +151,7 @@ theorem shiftedModuleComplexXEquiv_coefficientEvalX (x : P) (n : ℤ)
 
 /-- The insertion at a generator `x`, from `ℳ (n + ind x)` to the degree-`n` term of the twisted
 complex. -/
-def coefficientSingleX (x : P) (n : ℤ) :
+private def coefficientSingleX (x : P) (n : ℤ) :
     (shiftedModuleComplex.{uR, uA, uM, uP} hM (ind x)).X n →ₗ[R]
       (m.coefficientCochainComplex hM).X n :=
   (m.coefficientCochainComplexXEquiv hM n).symm.toLinearMap ∘ₗ
@@ -166,8 +165,7 @@ def coefficientSingleX (x : P) (n : ℤ) :
     (shiftedModuleComplexXEquiv hM (ind x) n).toLinearMap
 
 /-- `coefficientSingleX` inserts an element at `x`. -/
-@[simp]
-theorem coefficientCochainComplexXEquiv_coefficientSingleX (x : P) (n : ℤ)
+private theorem coefficientCochainComplexXEquiv_coefficientSingleX (x : P) (n : ℤ)
     (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM (ind x)).X n) :
     (m.coefficientCochainComplexXEquiv hM n (m.coefficientSingleX hM x n α) : P →₀ M) =
       Finsupp.single x (shiftedModuleComplexXEquiv hM (ind x) n α : M) := by

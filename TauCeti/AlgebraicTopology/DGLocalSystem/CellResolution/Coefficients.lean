@@ -107,7 +107,7 @@ def cycleCellCocycleHomologyEquivOfOpSmulEqZero (h : ∀ α : M, op x • α = 0
     LinearEquiv.sumPiEquivProdPi R Unit Unit _ ≪≫ₗ
     ((LinearEquiv.piUnique R _).trans
         (LinearEquiv.ofEq _ _ (by rw [Sum.elim_inl, add_zero]))).prodCongr
-      (LinearEquiv.piUnique R _)
+      ((LinearEquiv.piUnique R _).trans (LinearEquiv.ofEq _ _ (by rw [Sum.elim_inr])))
 
 /-- The `e₀`-component of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero` of a class is the
 class in `H(M)` of its image under the evaluation at `e₀`. -/
@@ -117,9 +117,14 @@ theorem coe_cycleCellCocycleHomologyEquivOfOpSmulEqZero_apply_fst (h : ∀ α : 
     ((cycleCellCocycleHomologyEquivOfOpSmulEqZero hx hdx hM h k c).1 : hM.Cohomology) =
       shiftedModuleComplexHomologyEquiv hM _ k ((HomologicalComplex.homologyMap
         (RowFiniteTwistingCocycle.coefficientEval hM (cycleCellCocycle_m_op_smul_eq_zero hx hdx h)
-          (Sum.inl ())) k).hom c) :=
-  congrArg Subtype.val <|
-    RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply hM _ k c (.inl ())
+          (Sum.inl ())) k).hom c) := by
+  rw [cycleCellCocycleHomologyEquivOfOpSmulEqZero, LinearEquiv.trans_apply,
+    LinearEquiv.trans_apply]
+  simp only [LinearEquiv.prodCongr_apply, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.piUnique_apply, LinearEquiv.sumPiEquivProdPi_apply,
+    Equiv.piUnique_apply, Equiv.sumPiEquivProdPi_apply, Equiv.toFun_as_coe,
+    RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply,
+    PUnit.default_eq_unit]
 
 /-- The `e₁`-component of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero` of a class is the
 class in `H(M)` of its image under the evaluation at `e₁`. -/
@@ -129,9 +134,14 @@ theorem coe_cycleCellCocycleHomologyEquivOfOpSmulEqZero_apply_snd (h : ∀ α : 
     ((cycleCellCocycleHomologyEquivOfOpSmulEqZero hx hdx hM h k c).2 : hM.Cohomology) =
       shiftedModuleComplexHomologyEquiv hM _ k ((HomologicalComplex.homologyMap
         (RowFiniteTwistingCocycle.coefficientEval hM (cycleCellCocycle_m_op_smul_eq_zero hx hdx h)
-          (Sum.inr ())) k).hom c) :=
-  congrArg Subtype.val <|
-    RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply hM _ k c (.inr ())
+          (Sum.inr ())) k).hom c) := by
+  rw [cycleCellCocycleHomologyEquivOfOpSmulEqZero, LinearEquiv.trans_apply,
+    LinearEquiv.trans_apply]
+  simp only [LinearEquiv.prodCongr_apply, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.piUnique_apply, LinearEquiv.sumPiEquivProdPi_apply,
+    Equiv.piUnique_apply, Equiv.sumPiEquivProdPi_apply, Equiv.toFun_as_coe,
+    RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply,
+    PUnit.default_eq_unit]
 
 end ZeroAction
 
