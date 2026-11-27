@@ -44,6 +44,8 @@ inversion formula for the first Riesz sum:
 
 * `TauCeti.perronRieszKernel_eq_sub`: partial-fraction decomposition into `TauCeti.perronIntegrand`.
 * `TauCeti.norm_perronRieszKernel_le`: quadratic decay bound in height `t` for `0 ≤ x`.
+* `TauCeti.norm_perronRieszKernel_mul_one_add_sub_le`: the change of the kernel from ratio `z` to
+  `z * (1 + η)` on a line `Re s = σ` with `0 < σ < 1` is at most `η z ^ σ / |σ + i t - 1|`.
 * `TauCeti.integrable_perronRieszKernel`, `TauCeti.inv_mul_integral_perronRieszKernel`: full-line
   integrability for `0 ≤ x`, `c ≠ 0`, `c ≠ 1` and evaluation against `if 1 ≤ x then x - 1 else 0`
   for `0 ≤ x`, `1 < c`.
@@ -153,6 +155,43 @@ theorem norm_perronRieszKernel_le {x : ℝ} (hx : 0 ≤ x) (c t : ℝ) :
               mul_le_mul hn1 hn2 (Real.sqrt_nonneg _) (norm_nonneg _)
       rw [perronRieszKernel_def, norm_div, norm_mul, hnum]
       exact div_le_div_of_nonneg_left (Real.rpow_nonneg hx c) hpos hden
+
+/-- Change of the Perron–Riesz kernel in the ratio, to the left of the pole at one: for `0 < z`,
+`0 ≤ η` and `0 < σ < 1`,
+`‖perronRieszKernel (z * (1 + η)) σ t - perronRieszKernel z σ t‖ ≤ η z ^ σ / |σ + i t - 1|`. -/
+theorem norm_perronRieszKernel_mul_one_add_sub_le {z η σ : ℝ} (hz : 0 < z) (hη : 0 ≤ η)
+    (hσ : 0 < σ) (hσ₁ : σ < 1) (t : ℝ) :
+    ‖perronRieszKernel (z * (1 + η)) σ t - perronRieszKernel z σ t‖ ≤
+      η * z ^ σ / ‖(σ : ℂ) + t * I - 1‖ := by
+  rcases hη.eq_or_lt with rfl | hη
+  · simp
+  let s : ℂ := σ + t * I
+  have hs : s.re = σ := by simp [s]
+  have hs₀ : ‖s‖ ≠ 0 := norm_ne_zero_iff.mpr (ofReal_add_mul_I_ne_zero hσ.ne' t)
+  have hbase : 0 < z * η := mul_pos hz hη
+  have hM := norm_ofReal_add_one_cpow_neg_sub_le (w := -s)
+    (y := η⁻¹) (by simp [hs]; linarith) (inv_pos.mpr hη)
+  have hscale : ((z * (1 + η) : ℝ) : ℂ) ^ s - (z : ℂ) ^ s =
+      ((z * η : ℝ) : ℂ) ^ s * (((η⁻¹ : ℝ) : ℂ) + 1) ^ s -
+        ((z * η : ℝ) : ℂ) ^ s * ((η⁻¹ : ℝ) : ℂ) ^ s := by
+    have h₁ : z * η * (η⁻¹ + 1) = z * (1 + η) := by field_simp
+    have h₂ : z * η * η⁻¹ = z := by simp [hη.ne']
+    congr 1
+    · rw [← h₁, ofReal_mul, ofReal_mul_cpow hbase.le, ofReal_add, ofReal_one]
+    · conv_lhs => rw [← h₂, ofReal_mul, ofReal_mul_cpow hbase.le]
+  rw [perronRieszKernel_def, perronRieszKernel_def, ← sub_div, hscale, ← mul_sub,
+    norm_div, norm_mul, norm_mul, norm_cpow_eq_rpow_re_of_pos hbase, hs]
+  have hM' : ‖(((η⁻¹ : ℝ) : ℂ) + 1) ^ s - ((η⁻¹ : ℝ) : ℂ) ^ s‖ ≤
+      ‖s‖ * (η⁻¹) ^ (σ - 1) := by simpa only [neg_neg, norm_neg, neg_re, hs] using hM
+  -- The exponents of `η` combine to `η ^ σ * η ^ (1 - σ) = η`.
+  have hexp : η ^ σ * (η⁻¹) ^ (σ - 1) = η := by
+    rw [Real.inv_rpow hη.le, ← div_eq_mul_inv, ← Real.rpow_sub hη, sub_sub_cancel, Real.rpow_one]
+  refine (div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hM' (by positivity))
+    (by positivity)).trans_eq ?_
+  calc
+    _ = z ^ σ * (η ^ σ * (η⁻¹) ^ (σ - 1)) * ‖s‖ / (‖s - 1‖ * ‖s‖) := by
+      rw [Real.mul_rpow hz.le hη.le]; ring
+    _ = _ := by rw [hexp, mul_div_mul_right _ _ hs₀]; ring
 
 /-- The Perron–Riesz kernel is continuous in the height `t` on any pole-free line `c ≠ 0, c ≠ 1`. -/
 theorem continuous_perronRieszKernel (x : ℝ) {c : ℝ} (hc0 : c ≠ 0) (hc1 : c ≠ 1) :

@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Connection
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
@@ -313,22 +313,13 @@ theorem antilinearPart_dbarFunction_add_conjSMulForm
 
 /-- `∂bar` on functions is smooth: it sends `C^(n + 1)` functions to `C^n` sections of the bundle
 `Hom(TM, M × F)`. -/
-theorem contMDiffCovariantDerivativeOn_dbarFunction [FiniteDimensional ℝ E] [T2Space M]
+theorem contMDiffCovariantDerivativeOn_dbarFunction
     {n : ℕ∞ω} (hn : n ≤ ∞) :
-    ContMDiffCovariantDerivativeOn F n (V := Bundle.Trivial M F) j.dbarFunction Set.univ where
-  contMDiff {σ} hσ := by
-    have htriv : (CovariantDerivative.trivial (I := I) (M := M) F).ContMDiffCovariantDerivative n :=
-      inferInstance
-    have hd := htriv.contMDiff.contMDiff hσ
-    rw [contMDiffOn_univ] at hd
-    have hdj := hd.clm_bundle_comp (j.toEndomorphism.contMDiff.of_le hn)
-    have h := (hd.add_section (contMDiffOn_univ.1 (Manifold.contMDiffOn_hom_const_smul hn
-      Complex.I hdj.contMDiffOn))).const_smul_section (a := (2⁻¹ : ℝ))
-    refine (h.contMDiffOn (s := Set.univ)).congr fun y _ ↦ ?_
-    congr 1
-    ext v
-    simp only [dbarFunction, zeroOnePart_apply, CovariantDerivative.trivial_apply, Pi.smul_apply,
-      Pi.add_apply, smul_apply, add_apply, ContinuousLinearMap.comp_apply]
+    ContMDiffCovariantDerivativeOn F n (V := Bundle.Trivial M F) j.dbarFunction Set.univ := by
+  rw [dbarFunction_eq_zeroOnePart_trivial]
+  have htriv : (CovariantDerivative.trivial (I := I) (M := M) F).ContMDiffCovariantDerivative n :=
+    inferInstance
+  exact htriv.contMDiff.zeroOnePart j hn
 
 /-- The operator `∂ σ = (dσ)^{1,0} = dσ - ∂bar σ` on functions `σ : M → F` into a complex normed
 space: `∂ σ (v) = ½ (dσ (v) - i • dσ (j v))`
@@ -401,7 +392,7 @@ theorem isComplexLinearOperator_delFunction :
 
 /-- `∂` on functions is smooth: it sends `C^(n + 1)` functions to `C^n` sections of the bundle
 `Hom(TM, M × F)`. -/
-theorem contMDiffCovariantDerivativeOn_delFunction [FiniteDimensional ℝ E] [T2Space M]
+theorem contMDiffCovariantDerivativeOn_delFunction
     {n : ℕ∞ω} (hn : n ≤ ∞) :
     ContMDiffCovariantDerivativeOn F n (V := Bundle.Trivial M F) j.delFunction Set.univ where
   contMDiff {σ} hσ := by

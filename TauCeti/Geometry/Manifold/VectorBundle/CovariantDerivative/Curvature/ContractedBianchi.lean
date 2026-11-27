@@ -462,6 +462,7 @@ theorem divergence_rieszDual_divergenceBilinearTensor_ricciTensor (x : M) :
         (fun z ↦ ((leviCivitaConnection I M).ricciTensor z).toContinuousBilinearMap) y)) x =
       (2⁻¹ : ℝ) * laplaceBeltrami I (leviCivitaConnection I M).scalarCurvature x := by
   rw [rieszDual_divergenceBilinearTensor_ricciTensor_eq_mgradient, ← laplaceBeltrami_def,
-    laplaceBeltrami_smul I _ ((leviCivitaConnection I M).contMDiff_scalarCurvature.of_le (by simp))]
+    laplaceBeltrami_smul I _
+      (((leviCivitaConnection I M).contMDiff_scalarCurvature (n := ⊤)).of_le (by simp))]
 
 end CovariantDerivative
