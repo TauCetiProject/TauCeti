@@ -28,7 +28,7 @@ public section
 
 namespace TauCeti
 
-open Set
+open Function Set
 open scoped Uniformity
 
 variable {X : Type*} [UniformSpace X]
@@ -37,8 +37,8 @@ variable {X : Type*} [UniformSpace X]
 whose images of the `F i` are pairwise disjoint. -/
 theorem exists_mem_uniformity_disjoint_image {ι : Type*} [Finite ι] {F : ι → Set X}
     (hK : ∀ i, IsCompact (F i)) (hF : ∀ i, IsClosed (F i))
-    (hdisj : Pairwise (Function.onFun Disjoint F)) :
-    ∃ U ∈ 𝓤 X, ∀ i j, i ≠ j → Disjoint (SetRel.image U (F i)) (SetRel.image U (F j)) := by
+    (hdisj : Pairwise (Disjoint on F)) :
+    ∃ U ∈ 𝓤 X, Pairwise (Disjoint on fun i ↦ SetRel.image U (F i)) := by
   have hpair (p : ι × ι) : ∃ V ∈ 𝓤 X,
       p.1 ≠ p.2 → Disjoint (SetRel.image V (F p.1)) (SetRel.image V (F p.2)) := by
     by_cases hp : p.1 = p.2

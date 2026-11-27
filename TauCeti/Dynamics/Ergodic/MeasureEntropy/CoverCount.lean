@@ -19,8 +19,8 @@ points `U`-close to a common point never carry different `Sum.inl` values. This 
 the restriction `restrictLabel a (⋃ i, F i)` of a label `a` to closed sets `F i ⊆ a ⁻¹' {i}` when
 the images `U.image (F i)` are pairwise disjoint
 (`TauCeti.isInlSeparated_restrictLabel_iUnion`), and on a compact uniform space such an entourage
-exists for pairwise disjoint closed sets (`TauCeti.exists_mem_uniformity_disjoint_image` in
-`TauCeti.Topology.UniformSpace.Compact`).
+exists for finitely many pairwise disjoint closed sets
+(`TauCeti.exists_mem_uniformity_disjoint_image` in `TauCeti.Topology.UniformSpace.Compact`).
 
 Then the itineraries of length `n` of the points in one dynamical ball for `U` are determined by
 which of their entries are `Sum.inl`, so there are at most `2 ^ n` of them, and a dynamical cover
@@ -34,6 +34,8 @@ itinerary is at most `log (card s * 2 ^ n) = n log 2 + log (card s)`
 
 ## Main results
 
+* `TauCeti.isInlSeparated_iff`, `TauCeti.IsInlSeparated.mono`: the defining property and
+  monotonicity in the entourage.
 * `TauCeti.IsInlSeparated.iteratedPartitionLabel_eq`: in a dynamical ball, an itinerary is
   determined by the positions of its `Sum.inl` entries.
 * `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_le_ofReal_log_card_mul_two_pow`: for a
@@ -48,7 +50,7 @@ itinerary is at most `log (card s * 2 ^ n) = n log 2 + log (card s)`
 
 public section
 
-open MeasureTheory Set Dynamics
+open Function MeasureTheory Set Dynamics
 open scoped ENNReal Uniformity
 
 namespace TauCeti
@@ -59,6 +61,17 @@ variable {X ι : Type*}
 common point that both carry `Sum.inl` values carry the same one. -/
 def IsInlSeparated (ζ : X → ι ⊕ Unit) (U : SetRel X X) : Prop :=
   ∀ ⦃y z z' : X⦄, (z, y) ∈ U → (z', y) ∈ U → ∀ ⦃i j : ι⦄, ζ z = .inl i → ζ z' = .inl j → i = j
+
+/-- Characterization of `IsInlSeparated` by its defining property. -/
+theorem isInlSeparated_iff {ζ : X → ι ⊕ Unit} {U : SetRel X X} :
+    IsInlSeparated ζ U ↔ ∀ ⦃y z z' : X⦄, (z, y) ∈ U → (z', y) ∈ U →
+      ∀ ⦃i j : ι⦄, ζ z = .inl i → ζ z' = .inl j → i = j :=
+  Iff.rfl
+
+/-- A label separated by an entourage is separated by every smaller relation. -/
+theorem IsInlSeparated.mono {ζ : X → ι ⊕ Unit} {U V : SetRel X X} (h : IsInlSeparated ζ U)
+    (hVU : V ⊆ U) : IsInlSeparated ζ V :=
+  fun _ _ _ hz hz' _ _ hi hj ↦ h (hVU hz) (hVU hz') hi hj
 
 /-- In a dynamical ball for an entourage separating the `Sum.inl` values of `ζ`, the itinerary of
 `ζ` is determined by the positions of its `Sum.inl` entries. -/
@@ -126,7 +139,7 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_le_ofReal_log_card_mul_
 by every entourage `U` whose images of the `F i` are pairwise disjoint. -/
 theorem isInlSeparated_restrictLabel_iUnion {a : X → ι} {F : ι → Set X}
     (hF : ∀ i, F i ⊆ a ⁻¹' {i}) {U : SetRel X X}
-    (hU : ∀ i j, i ≠ j → Disjoint (U.image (F i)) (U.image (F j))) :
+    (hU : Pairwise (Disjoint on fun i ↦ U.image (F i))) :
     IsInlSeparated (restrictLabel a (⋃ i, F i)) U := by
   -- A point of the union with `Sum.inl` value `i` lies in `F i`.
   have hmem {z : X} {i : ι} (hz : restrictLabel a (⋃ i, F i) z = .inl i) : z ∈ F i := by
@@ -136,9 +149,8 @@ theorem isInlSeparated_restrictLabel_iUnion {a : X → ι} {F : ι → Set X}
       have hak : a z = k := hF k hk
       rwa [← hz, hak]
     · simp [restrictLabel_of_notMem hzF] at hz
-  intro y z z' hz hz' i j hzi hzj
-  by_contra hij
-  exact disjoint_left.1 (hU i j hij) (SetRel.mem_image.2 ⟨z, hmem hzi, hz⟩)
+  refine isInlSeparated_iff.2 fun y z z' hz hz' i j hzi hzj ↦ by_contra fun hij ↦ ?_
+  exact disjoint_left.1 (hU hij) (SetRel.mem_image.2 ⟨z, hmem hzi, hz⟩)
     (SetRel.mem_image.2 ⟨z', hmem hzj, hz'⟩)
 
 end TauCeti
