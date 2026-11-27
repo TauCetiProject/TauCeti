@@ -200,10 +200,10 @@ private noncomputable def localNormalFormPartialDiffeomorph {π : Y → M} (hn :
     {p | ∀ i, (L i).symm (p.1, p.2 i) ∈ ((φ i).extend IY).target}
   let toFun : IteratedFiberProduct π (k + 1) → EM × (Fin (k + 1) → F) := fun z ↦
     (ψ.extend IM (IteratedFiberProduct.baseProj z), fun i ↦ (L i ((φ i).extend IY (z.val i))).2)
-  let hinv_mem : ∀ {p : EM × (Fin (k + 1) → F)}, p ∈ V → ∀ (i : Fin (k + 1)),
+  have hinv_mem : ∀ {p : EM × (Fin (k + 1) → F)}, p ∈ V → ∀ (i : Fin (k + 1)),
       ((φ i).extend IY).symm ((L i).symm (p.1, p.2 i)) ∈ (φ i).source := fun hp i ↦ by
     simpa only [OpenPartialHomeomorph.extend_source] using ((φ i).extend IY).map_target (hp i)
-  let hinv_match : ∀ {p : EM × (Fin (k + 1) → F)}, p ∈ V → ∀ (i j : Fin (k + 1)),
+  have hinv_match : ∀ {p : EM × (Fin (k + 1) → F)}, p ∈ V → ∀ (i j : Fin (k + 1)),
       π (((φ i).extend IY).symm ((L i).symm (p.1, p.2 i))) =
         π (((φ j).extend IY).symm ((L j).symm (p.1, p.2 j))) := fun hp ↦
     (forall_apply_eq_iff_fst_extend_eq (L := fun i ↦ (L i)) hφ_sub hφ_eq (hinv_mem hp)).2
@@ -214,10 +214,10 @@ private noncomputable def localNormalFormPartialDiffeomorph {π : Y → M} (hn :
     if hp : p ∈ V then
       ⟨fun i ↦ ((φ i).extend IY).symm ((L i).symm (p.1, p.2 i)), hinv_match hp⟩
     else y
-  let htoFun_pair : ∀ {z : IteratedFiberProduct π (k + 1)}, z ∈ U → ∀ i : Fin (k + 1),
+  have htoFun_pair : ∀ {z : IteratedFiberProduct π (k + 1)}, z ∈ U → ∀ i : Fin (k + 1),
       ((toFun z).1, (toFun z).2 i) = L i ((φ i).extend IY (z.val i)) := fun hz i ↦
     (localNormalForm_pair_eq hφ_eq hz i).symm
-  let hmap_source : ∀ z ∈ U, toFun z ∈ V := fun z hz i ↦ by
+  have hmap_source : ∀ z ∈ U, toFun z ∈ V := fun z hz i ↦ by
     rw [htoFun_pair hz i, (L i).symm_apply_apply]
     exact ((φ i).extend IY).map_source (by rw [OpenPartialHomeomorph.extend_source]; exact hz i)
   { toFun := toFun
