@@ -72,6 +72,9 @@ preserves the pairing when it preserves `B`; reversing the orientation exchanges
   frame, `⟨F, G⟩ = ∑_{i < j} B (F_ij, G_ij)`, and
   `Orientation.vectorFormInner_vectorFormHodgeStar_fin_four`: `⟨F, ⋆G⟩` in a positive `Fin 4`
   frame.
+* `Orientation.apply_ιMulti_two_of_vectorFormHodgeStar_eq_self`,
+  `Orientation.apply_ιMulti_two_of_vectorFormHodgeStar_eq_neg`: in a positive `Fin 4` frame a
+  self-dual or anti-self-dual two-form is determined by `F₀₁`, `F₀₂` and `F₀₃`.
 
 ## References
 
@@ -691,6 +694,51 @@ theorem vectorFormInner_vectorFormHodgeStar_fin_four (B : LinearMap.BilinForm �
     o.hodgeStar_ιMulti_zero_one hkl he, o.hodgeStar_ιMulti_zero_two hkl he,
     o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_ιMulti_one_two hkl he,
     o.hodgeStar_ιMulti_one_three hkl he, o.hodgeStar_ιMulti_two_three hkl he, map_neg]
+  ring
+
+/-- **The coefficients of a self-dual form in a positive frame**: for a positively oriented
+orthonormal basis `e` in dimension four and `⋆ω = ω`, `ω₂₃ = ω₀₁`, `ω₁₃ = -ω₀₂` and `ω₁₂ = ω₀₃`,
+where `ω_ij = ω (eᵢ ∧ eⱼ)`. -/
+theorem apply_ιMulti_two_of_vectorFormHodgeStar_eq_self {ω : ⋀[ℝ]^2 E →ₗ[ℝ] V}
+    (hω : o.vectorFormHodgeStar hkl ω = ω) :
+    ω (ιMulti ℝ 2 ![e 2, e 3]) = ω (ιMulti ℝ 2 ![e 0, e 1]) ∧
+      ω (ιMulti ℝ 2 ![e 1, e 3]) = -ω (ιMulti ℝ 2 ![e 0, e 2]) ∧
+      ω (ιMulti ℝ 2 ![e 1, e 2]) = ω (ιMulti ℝ 2 ![e 0, e 3]) := by
+  have h (x : ⋀[ℝ]^2 E) : ω (o.hodgeStar hkl x) = ω x := by
+    rw [← o.vectorFormHodgeStar_apply_of_even even_two hkl, hω]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [← o.hodgeStar_ιMulti_zero_one hkl he, h]
+  · rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he, map_neg, h]
+  · rw [← o.hodgeStar_ιMulti_zero_three hkl he, h]
+
+/-- **The coefficients of an anti-self-dual form in a positive frame**: for a positively oriented
+orthonormal basis `e` in dimension four and `⋆F = -F`, `F₂₃ = -F₀₁`, `F₁₃ = F₀₂` and
+`F₁₂ = -F₀₃`, where `F_ij = F (eᵢ ∧ eⱼ)`. -/
+theorem apply_ιMulti_two_of_vectorFormHodgeStar_eq_neg {F : ⋀[ℝ]^2 E →ₗ[ℝ] V}
+    (hF : o.vectorFormHodgeStar hkl F = -F) :
+    F (ιMulti ℝ 2 ![e 2, e 3]) = -F (ιMulti ℝ 2 ![e 0, e 1]) ∧
+      F (ιMulti ℝ 2 ![e 1, e 3]) = F (ιMulti ℝ 2 ![e 0, e 2]) ∧
+      F (ιMulti ℝ 2 ![e 1, e 2]) = -F (ιMulti ℝ 2 ![e 0, e 3]) := by
+  have h (x : ⋀[ℝ]^2 E) : F (o.hodgeStar hkl x) = -F x := by
+    rw [← o.vectorFormHodgeStar_apply_of_even even_two hkl, hF, LinearMap.neg_apply]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [← o.hodgeStar_ιMulti_zero_one hkl he, h]
+  · rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he, map_neg, h,
+      neg_neg]
+  · rw [← o.hodgeStar_ιMulti_zero_three hkl he, h]
+
+/-- **The pairing of a self-dual form with itself in a positive frame**: for a positively oriented
+orthonormal basis `e` in dimension four and `⋆ω = ω`,
+`⟨ω, ω⟩ = 2 (B (ω₀₁, ω₀₁) + B (ω₀₂, ω₀₂) + B (ω₀₃, ω₀₃))`. -/
+theorem vectorFormInner_self_of_vectorFormHodgeStar_eq_self (B : LinearMap.BilinForm ℝ V)
+    {ω : ⋀[ℝ]^2 E →ₗ[ℝ] V} (hω : o.vectorFormHodgeStar hkl ω = ω) :
+    vectorFormInner B 2 ω ω =
+      2 * (B (ω (ιMulti ℝ 2 ![e 0, e 1])) (ω (ιMulti ℝ 2 ![e 0, e 1])) +
+        B (ω (ιMulti ℝ 2 ![e 0, e 2])) (ω (ιMulti ℝ 2 ![e 0, e 2])) +
+        B (ω (ιMulti ℝ 2 ![e 0, e 3])) (ω (ιMulti ℝ 2 ![e 0, e 3]))) := by
+  obtain ⟨h23, h13, h12⟩ := o.apply_ιMulti_two_of_vectorFormHodgeStar_eq_self hkl he hω
+  rw [B.vectorFormInner_two_eq_sum_fin_four e, h23, h13, h12]
+  simp only [map_neg, LinearMap.neg_apply, neg_neg]
   ring
 
 end Orientation

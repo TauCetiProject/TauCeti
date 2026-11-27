@@ -6,7 +6,7 @@ Authors: OpenAI Codex, Bastiaan J Braams
 module
 
 public import Mathlib.Analysis.MellinTransform
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
@@ -20,16 +20,23 @@ on `Ioi a`. These identities let a Mellin transform be split into tails over `(0
 The substitution `t = e^{-u}` turns the Mellin integrand of `f` at `s` into
 `e^{-su} f(e^{-u})` on the whole real line, and the substitution `t ↦ 1/t` relates the Mellin
 transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`, and exchanges the Mellin integrals
-over `(0, 1]` and `(1, ∞)`. Power bounds at `0+` and `+∞` give absolute convergence and
-holomorphy of these two partial Mellin integrals.
+over `(0, 1]` and `(1, ∞)`; the substitution `u = x t` moves their common endpoint `1` to `x`.
+Power bounds at `0+` and `+∞` give absolute convergence and holomorphy of these two partial
+Mellin integrals.
 
-The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
-transform, with the same convergence. Kernels that are extended by zero off `(0, ∞)` are compared
-with their unextended forms this way.
+The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing almost everywhere
+there have the same transform, with the same convergence. Kernels extended by zero off `(0, ∞)`
+are compared with their unextended forms this way. A finite sum of kernels with absolutely
+convergent Mellin transforms at a common parameter can be transformed term by term. A real-power
+substitution rescales the parameter, and multiplying the kernel by a complex power shifts it.
 
 ## Main results
 
-* `TauCeti.hasMellin_congr`: functions agreeing on `(0, ∞)` have the same Mellin transform.
+* `HasMellin.finsetSum`: finite sums preserve absolute convergence and transform term by term.
+* `HasMellin.comp_rpow`, `HasMellin.cpow_smul`: power substitutions and power weights transport
+  both convergence and the value of the transform.
+* `TauCeti.hasMellin_congr_ae`, `TauCeti.hasMellin_congr`: functions agreeing almost everywhere
+  or pointwise on `(0, ∞)` have the same Mellin transform and convergence.
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
@@ -44,6 +51,19 @@ with their unextended forms this way.
   exchanges the Mellin integrals over `(0, 1]` and `(1, ∞)`, with their absolute convergence.
 * `TauCeti.integrableOn_Ioc_cpow_smul_cpow_smul`, `TauCeti.integral_Ioc_cpow_smul_cpow_smul`: for
   `0 < Re (z + w)`, `∫₀¹ t^{z-1} t^w c dt = c / (z + w)`, with absolute convergence.
+* `TauCeti.continuousOn_sum_cpow_smul`, `TauCeti.locallyIntegrableOn_sum_cpow_smul`,
+  `TauCeti.locallyIntegrableOn_cpow_smul`: finite power sums `∑_{k<n} t^{w_k} c_k` are continuous
+  on `(0, ∞)`, and multiplying by `t^z` keeps local integrability there.
+* `TauCeti.intervalIntegral_cpow_smul_cpow_smul`, `TauCeti.intervalIntegral_cpow_smul_sum`: for
+  `z + w ≠ 0`, `∫_1^R t^{z-1} t^w c dt = (R^{z+w} - 1)/(z + w) c`, and the same termwise for a
+  finite power sum.
+* `TauCeti.integral_Ioc_add_integral_Ioi_eq`: moving the common endpoint of
+  `∫_{(0,1]} F + ∫_{(1,∞)} G` from `1` to `R > 0` adds `∫_1^R (F - G)`.
+* `TauCeti.sum_cpow_smul_cpow_smul_eq_sum_mul_cpow_smul`: rescaling the variable of a finite power
+  sum, `∑ t^{w_k} x^{w_k} c_k = ∑ (x t)^{w_k} c_k` for `0 ≤ x`.
+* `TauCeti.integral_Ioc_cpow_smul_comp_mul_left`, `TauCeti.integral_Ioi_cpow_smul_comp_mul_left`:
+  the substitution `u = x t` turns the Mellin integrals of `t ↦ g (x t)` over `(0, 1]` and
+  `(1, ∞)` into `x^{-z}` times those of `g` over `(0, x]` and `(x, ∞)`.
 * `TauCeti.integrableOn_Ioc_cpow_smul_of_isBigO`, `TauCeti.integrableOn_Ioi_cpow_smul_of_isBigO`,
   `TauCeti.differentiableAt_integral_Ioc_cpow_smul_of_isBigO`,
   `TauCeti.differentiableAt_integral_Ioi_cpow_smul_of_isBigO`: absolute convergence and
@@ -72,18 +92,48 @@ public section
 
 open Set MeasureTheory Complex
 
+/-- The Mellin transform of a finite sum is the sum of the individual transforms, with
+absolute convergence. -/
+theorem HasMellin.finsetSum {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {t : Finset ι} {f : ι → ℝ → E} {s : ℂ} {m : ι → E}
+    (h : ∀ i ∈ t, HasMellin (f i) s (m i)) :
+    HasMellin (fun x ↦ ∑ i ∈ t, f i x) s (∑ i ∈ t, m i) := by
+  have hi i (hit : i ∈ t) := (h i hit).1
+  refine ⟨?_, ?_⟩
+  · simpa only [MellinConvergent, IntegrableOn, Finset.smul_sum] using integrable_finsetSum t hi
+  · simp only [mellin, Finset.smul_sum, integral_finsetSum t hi]
+    exact Finset.sum_congr rfl fun i hit ↦ (h i hit).2
+
+/-- Substituting `t ^ a` for `t` with `a ≠ 0` transports an absolutely convergent Mellin
+transform at `s / a` to one at `s`, with its value scaled by `|a|⁻¹`. -/
+theorem HasMellin.comp_rpow {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {s : ℂ} {a : ℝ} {m : E} (h : HasMellin f (s / a) m) (ha : a ≠ 0) :
+    HasMellin (fun t ↦ f (t ^ a)) s (|a|⁻¹ • m) :=
+  ⟨(MellinConvergent.comp_rpow ha).mpr h.1, (mellin_comp_rpow f s a).trans (congrArg _ h.2)⟩
+
+/-- Weighting a kernel by `t ^ a` shifts its absolutely convergent Mellin transform from
+`s + a` to `s`, without changing its value. -/
+theorem HasMellin.cpow_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {s a : ℂ} {m : E} (h : HasMellin f (s + a) m) :
+    HasMellin (fun t ↦ (t : ℂ) ^ a • f t) s m :=
+  ⟨MellinConvergent.cpow_smul.mpr h.1, (mellin_cpow_smul f s a).trans h.2⟩
+
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
+/-- Functions that agree almost everywhere on `(0, ∞)` have the same Mellin transform,
+with the same convergence. -/
+theorem hasMellin_congr_ae {f g : ℝ → E} (h : f =ᵐ[volume.restrict (Ioi 0)] g) {s : ℂ} {m : E} :
+    HasMellin f s m ↔ HasMellin g s m := by
+  have h' := h.mono fun t ht ↦ congrArg (fun z : E ↦ (t : ℂ) ^ (s - 1) • z) ht
+  simp only [HasMellin, MellinConvergent, IntegrableOn, mellin,
+    integrable_congr h', integral_congr_ae h']
+
 /-- Functions that agree on `(0, ∞)` have the same Mellin transform, with the same convergence. -/
 theorem hasMellin_congr {f g : ℝ → E} (h : EqOn f g (Ioi 0)) {s : ℂ} {m : E} :
-    HasMellin f s m ↔ HasMellin g s m := by
-  have h' : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t) (fun t ↦ (t : ℂ) ^ (s - 1) • g t)
-      (Ioi 0) := fun t ht ↦ by simp only [h ht]
-  simp only [HasMellin, MellinConvergent, mellin,
-    MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
-    MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
+    HasMellin f s m ↔ HasMellin g s m :=
+  hasMellin_congr_ae (h.eventuallyEq_of_mem (ae_restrict_mem measurableSet_Ioi))
 
 /-- For a measurable `s ⊆ (0, ∞)`, the Mellin transform of `s.indicator f` converges exactly when
 the Mellin integrand of `f` is integrable on `s`. -/
@@ -173,6 +223,129 @@ theorem integral_Ioc_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ}
   rw [mellin_indicator_of_subset_Ioi _ measurableSet_Ioc Ioc_subset_Ioi_self] at h
   simp_rw [← smul_assoc]
   rw [integral_smul_const, h, one_div]
+
+/-! ### Finite power sums and the split point -/
+
+/-- The function `t ↦ ∑_{k<n} t^{w_k} c_k` is continuous on `(0, ∞)`. -/
+theorem continuousOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ → E) (n : ℕ) :
+    ContinuousOn (fun t : ℝ ↦ ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) (Ioi 0) :=
+  continuousOn_finsetSum _ fun _ _ _ ht ↦
+    ((continuousAt_ofReal_cpow_const _ _ (Or.inr (ne_of_gt ht))).smul
+      continuousAt_const).continuousWithinAt
+
+/-- The function `t ↦ ∑_{k<n} t^{w_k} c_k` is locally integrable on `(0, ∞)`. -/
+theorem locallyIntegrableOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ → E) (n : ℕ) :
+    LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) (Ioi 0) :=
+  (continuousOn_sum_cpow_smul w c n).locallyIntegrableOn measurableSet_Ioi
+
+/-- The function `t ↦ t^z • g t` is locally integrable on `(0, ∞)` when `g` is. -/
+theorem locallyIntegrableOn_cpow_smul {g : ℝ → E} (hg : LocallyIntegrableOn g (Ioi 0))
+    (z : ℂ) : LocallyIntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ z • g t) (Ioi 0) :=
+  hg.continuousOn_smul isOpen_Ioi.isLocallyClosed fun _ ht ↦
+    (continuousAt_ofReal_cpow_const _ _ (Or.inr (ne_of_gt ht))).continuousWithinAt
+
+/-- Moving the common endpoint of `∫_{(0,1]} F + ∫_{(1,∞)} G` from `1` to `R > 0` adds
+`∫_1^R (F - G)`. -/
+theorem integral_Ioc_add_integral_Ioi_eq {F G : ℝ → E}
+    (hF : LocallyIntegrableOn F (Ioi 0)) (hG : LocallyIntegrableOn G (Ioi 0))
+    (hF1 : IntegrableOn F (Ioc 0 1)) (hG1 : IntegrableOn G (Ioi 1)) {R : ℝ} (hR : 0 < R) :
+    (∫ t in Ioc 0 R, F t) + ∫ t in Ioi R, G t =
+      (∫ t in Ioc 0 1, F t) + (∫ t in Ioi 1, G t) + ∫ t in (1 : ℝ)..R, (F t - G t) := by
+  have hsub : uIcc 1 R ⊆ Ioi 0 := fun t ht ↦
+    (lt_min one_pos hR).trans_le (by simpa only [uIcc, mem_Icc] using ht.1)
+  have hFi := (hF.integrableOn_compact_subset hsub isCompact_uIcc).intervalIntegrable
+  have hGc := hG.integrableOn_compact_subset hsub isCompact_uIcc
+  have hGR : IntegrableOn G (Ioi R) := (hGc.union hG1).mono_set fun t ht ↦ by
+    by_cases h1 : 1 < t
+    · exact Or.inr h1
+    · exact Or.inl ⟨min_le_of_right_le (le_of_lt ht), le_max_of_le_left (not_lt.mp h1)⟩
+  rw [← intervalIntegral.integral_of_le hR.le, ← intervalIntegral.integral_of_le zero_le_one,
+    ← intervalIntegral.integral_add_adjacent_intervals
+      ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mpr hF1) hFi,
+    ← intervalIntegral.integral_interval_add_Ioi' hGc.intervalIntegrable hGR,
+    intervalIntegral.integral_sub hFi hGc.intervalIntegrable]
+  abel
+
+/-- `∫_1^R t^{z-1} t^w c dt = (R^{z+w} - 1)/(z + w) c` for `R > 0` and `z + w ≠ 0`. -/
+theorem intervalIntegral_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ} (hzw : z + w ≠ 0)
+    {R : ℝ} (hR : 0 < R) (c : E) :
+    ∫ t in (1 : ℝ)..R, (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c) =
+      ((z + w)⁻¹ * ((R : ℂ) ^ (z + w) - 1)) • c := by
+  have hcongr : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c))
+      (fun t : ℝ ↦ (t : ℂ) ^ (z + w - 1) • c) (uIcc 1 R) := fun t ht ↦ by
+    have ht0 : (t : ℂ) ≠ 0 :=
+      ofReal_ne_zero.mpr (ne_of_mem_of_not_mem ht (notMem_uIcc_of_lt one_pos hR))
+    simp only [smul_smul, ← cpow_add _ _ ht0]
+    ring_nf
+  rw [intervalIntegral.integral_congr hcongr, intervalIntegral.integral_smul_const,
+    integral_cpow (Or.inr ⟨fun h ↦ hzw (by linear_combination h), notMem_uIcc_of_lt one_pos hR⟩)]
+  simp only [sub_add_cancel, ofReal_one, one_cpow]
+  rw [div_eq_inv_mul]
+
+/-- `∫_1^R t^{z-1} ∑_{k<n} t^{w_k} c_k dt = ∑_{k<n} (R^{z+w_k} - 1)/(z + w_k) c_k`. -/
+theorem intervalIntegral_cpow_smul_sum [CompleteSpace E] {z : ℂ} {w : ℕ → ℂ} {n : ℕ}
+    (hzw : ∀ k < n, z + w k ≠ 0) {R : ℝ} (hR : 0 < R) (c : ℕ → E) :
+    ∫ t in (1 : ℝ)..R, (t : ℂ) ^ (z - 1) • ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k =
+      ∑ k ∈ Finset.range n, ((z + w k)⁻¹ * ((R : ℂ) ^ (z + w k) - 1)) • c k := by
+  simp_rw [Finset.smul_sum]
+  rw [intervalIntegral.integral_finsetSum fun k _ ↦ ?_]
+  · exact Finset.sum_congr rfl fun k hk ↦
+      intervalIntegral_cpow_smul_cpow_smul (hzw k (Finset.mem_range.mp hk)) hR (c k)
+  · refine ((locallyIntegrableOn_cpow_smul (locallyIntegrableOn_cpow_smul
+      (locallyIntegrableOn_const (c k)) (w k)) (z - 1)).integrableOn_compact_subset
+      (fun t (ht : t ∈ uIcc 1 R) ↦ ?_) isCompact_uIcc).intervalIntegrable
+    exact (lt_min one_pos hR).trans_le ht.1
+
+/-- Rescaling the variable of a finite power sum: for `0 ≤ x`,
+`∑_{k<n} t^{w_k} x^{w_k} c_k = ∑_{k<n} (x t)^{w_k} c_k`. -/
+theorem sum_cpow_smul_cpow_smul_eq_sum_mul_cpow_smul {x : ℝ} (hx : 0 ≤ x) (w : ℕ → ℂ)
+    (c : ℕ → E) (n : ℕ) (t : ℝ) :
+    ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • (x : ℂ) ^ w k • c k =
+      ∑ k ∈ Finset.range n, ((x * t : ℝ) : ℂ) ^ w k • c k :=
+  Finset.sum_congr rfl fun k _ ↦ by rw [smul_smul, ofReal_mul, ofReal_mul_cpow hx, mul_comm]
+
+/-! ### Rescaling the variable -/
+
+/-- Rescaling the argument multiplies the Mellin integrand by a power: for `x > 0`,
+`t^{z-1} g(xt) = (x^{-z} x) ((xt)^{z-1} g(xt))`. -/
+private theorem cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx : 0 < x) (t : ℝ) :
+    (t : ℂ) ^ (z - 1) • g (x * t) =
+      ((x : ℂ) ^ (-z) * x) • (((x * t : ℝ) : ℂ) ^ (z - 1) • g (x * t)) := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  have : (x : ℂ) ^ z ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hx0)
+  rw [smul_smul, ofReal_mul, ofReal_mul_cpow hx.le, cpow_neg, cpow_sub _ _ hx0, cpow_one]
+  congr 1
+  field_simp
+
+/-- The factor `x^{-z} x` of `cpow_smul_comp_mul_left` absorbs the Jacobian `x⁻¹` of the
+substitution `u = x t`. -/
+private theorem cpow_neg_mul_smul_inv_smul (z : ℂ) {x : ℝ} (hx : x ≠ 0) (v : E) :
+    ((x : ℂ) ^ (-z) * x) • (x⁻¹ • v) = (x : ℂ) ^ (-z) • v := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx
+  rw [← Complex.coe_smul, smul_smul]
+  congr 1
+  push_cast
+  field_simp
+
+/-- For `x > 0`, the Mellin integral over `(0, 1]` of `t ↦ g (x t)` is `x^{-z}` times the Mellin
+integral of `g` over `(0, x]`. -/
+theorem integral_Ioc_cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx : 0 < x) :
+    ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • g (x * t) =
+      (x : ℂ) ^ (-z) • ∫ u : ℝ in Ioc 0 x, (u : ℂ) ^ (z - 1) • g u := by
+  rw [setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ cpow_smul_comp_mul_left g z hx t,
+    integral_smul, ← intervalIntegral.integral_of_le zero_le_one,
+    intervalIntegral.integral_comp_mul_left (fun u : ℝ ↦ (u : ℂ) ^ (z - 1) • g u) hx.ne',
+    mul_zero, mul_one, intervalIntegral.integral_of_le hx.le,
+    cpow_neg_mul_smul_inv_smul z hx.ne']
+
+/-- For `x > 0`, the Mellin integral over `(1, ∞)` of `t ↦ g (x t)` is `x^{-z}` times the Mellin
+integral of `g` over `(x, ∞)`. -/
+theorem integral_Ioi_cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx : 0 < x) :
+    ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (z - 1) • g (x * t) =
+      (x : ℂ) ^ (-z) • ∫ u : ℝ in Ioi x, (u : ℂ) ^ (z - 1) • g u := by
+  rw [setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ cpow_smul_comp_mul_left g z hx t,
+    integral_smul, integral_comp_mul_left_Ioi (fun u : ℝ ↦ (u : ℂ) ^ (z - 1) • g u) 1 hx,
+    mul_one, cpow_neg_mul_smul_inv_smul z hx.ne']
 
 /-! ### Mellin integrals over `(0, 1]` and `(1, ∞)` from power bounds -/
 

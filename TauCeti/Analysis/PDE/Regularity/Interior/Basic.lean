@@ -164,6 +164,16 @@ theorem divMatrixGradient_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     lineDeriv_of_notMem_tsupport (fun h => hx (tsupport_matrixBilinearForm_gradient_subset ψ _ h))
       _
 
+/-- `div(a ∇ψ)` vanishes wherever `ψ` is locally constant. -/
+theorem divMatrixGradient_eq_zero_of_eventuallyEq_const {ψ : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} {c : ℝ} (hψ : ψ =ᶠ[𝓝 x] fun _ => c) :
+    divMatrixGradient a ψ x = 0 := by
+  have hgrad : ∀ᶠ y in 𝓝 x, ∇ ψ y = 0 := hψ.eventually_nhds.mono
+    fun y (hy : ψ =ᶠ[𝓝 y] fun _ => c) => hy.gradient_eq.trans (gradient_fun_const y c)
+  refine Finset.sum_eq_zero fun i _ => ?_
+  rw [EventuallyEq.lineDeriv_eq (f := fun _ => (0 : ℝ)) (hgrad.mono fun y hy => by simp [hy])]
+  simp [lineDeriv]
+
 /-- For a Lipschitz field `a` and a smooth compactly supported `ψ`, every conormal
 component `y ↦ ⟨η, a(y) ∇ψ(y)⟩` is Lipschitz. -/
 theorem exists_lipschitzWith_matrixBilinearForm_gradient
@@ -489,6 +499,15 @@ theorem localizedForcing_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (�
         - matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x)
         - W1p.value u x * divMatrixGradient a ψ x := by
   rw [localizedForcing]
+
+/-- Where the cutoff `ψ` is identically one near `x`, the localized forcing is `f` itself at `x`:
+its other terms carry `∇ψ` or `div(a ∇ψ)`, which vanish there. -/
+theorem localizedForcing_eq_of_eventuallyEq_one {ψ : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hψ : ψ =ᶠ[𝓝 x] fun _ => (1 : ℝ)) (f : Lp ℝ 2 (mu.restrict Omega))
+    (u : W1p mu Omega 2) : localizedForcing a ψ f u x = f x := by
+  rw [localizedForcing_def, hψ.eq_of_nhds, hψ.gradient_eq.trans (gradient_fun_const x 1),
+    divMatrixGradient_eq_zero_of_eventuallyEq_const hψ]
+  simp
 
 /-- The localized forcing term is square integrable, since each of its terms is an `L²(Ω)`
 function times a bounded one. -/
@@ -1067,19 +1086,6 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
   have hψ_S : ∀ x ∈ S, ψ x = 1 ∧ ∇ ψ x = 0 := fun x hx => by
     have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := hψ_one x hx
     exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const x 1)⟩
-  -- Near `S` the conormal field of `ψ` vanishes, and with it its divergence.
-  have hdiv_S : ∀ x ∈ S, divMatrixGradient a ψ x = 0 := by
-    intro x hx
-    have hgrad_near : ∀ᶠ y in nhds x, ∇ ψ y = 0 := by
-      filter_upwards [(hψ_one x hx).eventually_nhds] with y hy
-      exact (EventuallyEq.gradient_eq hy).trans (gradient_fun_const y 1)
-    refine Finset.sum_eq_zero fun i _ => ?_
-    have hfield : (fun y => matrixBilinearForm (a y) (EuclideanSpace.basisFun ι ℝ i)
-        (∇ ψ y)) =ᶠ[nhds x] 0 := by
-      filter_upwards [hgrad_near] with y hy
-      simp [hy]
-    rw [hfield.lineDeriv_eq]
-    simp [lineDeriv]
   obtain ⟨w, g, hg, hforce, hval, hgrad⟩ :=
     exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul hM hK hu hψ hψc hts
   refine ⟨w, g, hg, ?_, ?_, ?_⟩
@@ -1089,8 +1095,7 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
     rw [hx, indicator_of_mem (hSΩ hxS), (hψ_S x hxS).1, (hψ_S x hxS).2, one_smul, smul_zero,
       add_zero]
   · filter_upwards [hforce] with x hx hxS
-    rw [hx, indicator_of_mem (hSΩ hxS)]
-    simp [localizedForcing_def, (hψ_S x hxS).1, (hψ_S x hxS).2, hdiv_S x hxS]
+    rw [hx, indicator_of_mem (hSΩ hxS), localizedForcing_eq_of_eventuallyEq_one (hψ_one x hxS)]
 
 /-! ### Interior `H²` regularity -/
 

@@ -12,7 +12,7 @@ public import TauCeti.Analysis.BoundedVariation.VariationMeasure
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
