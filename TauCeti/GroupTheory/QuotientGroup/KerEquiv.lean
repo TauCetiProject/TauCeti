@@ -172,9 +172,7 @@ theorem kerCompHomSubtypeMulEquiv_apply {G : Type*} [AddCommGroup G] (N : AddSub
 theorem kerCompHomSubtypeMulEquiv_symm_apply_coe {G : Type*} [AddCommGroup G] (N : AddSubgroup G)
     (U : Type*) [CommGroup U] (η : Multiplicative (G ⧸ N) →* U) :
     ((kerCompHomSubtypeMulEquiv N U).symm η : Multiplicative G →* U) =
-      η.comp (QuotientAddGroup.mk' N).toMultiplicative := by
-  ext x
-  rfl
+      η.comp (QuotientAddGroup.mk' N).toMultiplicative := by ext x; rfl
 
 /-- For nested additive subgroups `H ≤ M` and a commutative group `U`, characters of `M` trivial on
 `H` correspond multiplicatively to characters of `M ⧸ H.addSubgroupOf M`. -/
@@ -206,8 +204,6 @@ theorem kerCompHomInclusionMulEquiv_symm_apply_coe {L : Type*} [AddCommGroup L]
     {H M : AddSubgroup L} (hHM : H ≤ M) (U : Type*) [CommGroup U]
     (η : Multiplicative (M ⧸ H.addSubgroupOf M) →* U) :
     ((kerCompHomInclusionMulEquiv hHM U).symm η : Multiplicative M →* U) =
-      η.comp (QuotientAddGroup.mk' (H.addSubgroupOf M)).toMultiplicative := by
-  ext x
-  rfl
+      η.comp (QuotientAddGroup.mk' (H.addSubgroupOf M)).toMultiplicative := by ext x; rfl
 
 end AddSubgroup

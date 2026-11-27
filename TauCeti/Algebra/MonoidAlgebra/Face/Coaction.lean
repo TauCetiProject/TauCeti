@@ -157,8 +157,7 @@ theorem map_faceRestriction_comp_gradedCoaction (R : Type*) [CommSemiring R] {M 
       (F.toAddSubmonoid.faceRestriction F.addSaturated R)).comp (gradedCoaction R w) =
       (gradedCoaction R (w.comp F.toAddSubmonoid.subtype)).comp
         (F.toAddSubmonoid.faceRestriction F.addSaturated R) := by
-  ext m
-  by_cases hm : m ∈ F
+  ext m; by_cases hm : m ∈ F
   · simp [F.toAddSubmonoid.faceRestriction_single_of_mem F.addSaturated hm]
   · simp [F.toAddSubmonoid.faceRestriction_single_of_notMem F.addSaturated hm]
 
@@ -192,8 +191,7 @@ of `R[AddSubgroup.closure S]`. -/
 theorem map_orbitMap_comp_torusCoaction (F : SaturatedAddSubmonoid S) :
     (Algebra.TensorProduct.map (AlgHom.id R _) (F.orbitMap R)).comp (S.torusCoaction R) =
       (gradedCoaction R F.faceSubgroup.subtype).comp (F.orbitMap R) := by
-  ext s
-  by_cases hs : s ∈ F
+  ext s; by_cases hs : s ∈ F
   · simp [F.orbitMap_single_of_mem R hs]
   · simp [F.orbitMap_single_of_notMem R hs]
 

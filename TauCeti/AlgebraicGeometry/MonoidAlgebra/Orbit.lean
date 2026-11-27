@@ -86,8 +86,7 @@ noncomputable def orbitOpenHom :
 
 /-- Explicit definition of `SaturatedAddSubmonoid.orbitOpenHom`. -/
 theorem orbitOpenHom_def :
-    F.orbitOpenHom R = Spec.map (CommRingCat.ofHom (mapDomainRingHom R F.toFaceSubgroup)) :=
-  (rfl)
+    F.orbitOpenHom R = Spec.map (CommRingCat.ofHom (mapDomainRingHom R F.toFaceSubgroup)) := (rfl)
 
 /-- When `S` is finitely generated, `F.orbitOpenHom R : Spec R[F.faceSubgroup] ⟶ Spec R[F]` is an
 open immersion over any commutative ring `R`. -/
@@ -105,8 +104,7 @@ noncomputable def orbitHom :
 
 /-- Explicit definition of `SaturatedAddSubmonoid.orbitHom`. -/
 theorem orbitHom_def :
-    F.orbitHom R = Spec.map (CommRingCat.ofHom (F.orbitMap R).toRingHom) :=
-  (rfl)
+    F.orbitHom R = Spec.map (CommRingCat.ofHom (F.orbitMap R).toRingHom) := (rfl)
 
 /-- `F.orbitHom R` factors as `F.orbitOpenHom R` followed by `F.closedFaceHom R`. -/
 @[reassoc (attr := simp)]
@@ -185,8 +183,7 @@ noncomputable def torusHom :
 
 /-- Explicit definition of `AddSubmonoid.torusHom`. -/
 theorem torusHom_def :
-    S.torusHom R = Spec.map (CommRingCat.ofHom (mapDomainRingHom R S.toGroupClosure)) :=
-  (rfl)
+    S.torusHom R = Spec.map (CommRingCat.ofHom (mapDomainRingHom R S.toGroupClosure)) := (rfl)
 
 /-- When `S` is finitely generated, `S.torusHom R` is an open immersion of schemes. -/
 theorem isOpenImmersion_torusHom (hS : S.FG) : IsOpenImmersion (S.torusHom R) := by

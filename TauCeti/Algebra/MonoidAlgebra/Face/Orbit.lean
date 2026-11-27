@@ -104,8 +104,7 @@ theorem smul_algHom_single_apply {S : AddSubmonoid G}
     (χ : Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
     (x : AddMonoidAlgebra R S →ₐ[R] A) (s : S) (r : R) :
     (χ • x) (single s r) = (χ (.ofAdd (S.toGroupClosure s)) : A) * x (single s r) := by
-  rw [smul_algHom_def, AlgHom.comp_apply]
-  simp
+  rw [smul_algHom_def, AlgHom.comp_apply]; simp
 
 /-- Multiplicative action of `A`-points `Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ`
 on `AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`. -/
@@ -855,8 +854,7 @@ theorem _root_.AddSubmonoid.coe_fiberIntegralClosureEquivMapDomainAlgHom_symm_ap
         (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) = x}) :
     ((S.fiberIntegralClosureEquivMapDomainAlgHom R L B K x).symm y : B →+* K) =
       y.val.toRingHom.comp
-        (S.isIntegralClosureRingEquivNsmulSaturationInfClosure R L B).toRingHom :=
-  (rfl)
+        (S.isIntegralClosureRingEquivNsmulSaturationInfClosure R L B).toRingHom := (rfl)
 
 /-- Under `[RootableBy Kˣ ℕ]`, every `K`-point `x : R[S] →ₐ[R] K` lifts along `R[S] →+* B`. -/
 theorem exists_ringHom_comp_algebraMap_eq_of_isIntegralClosure (R L B K : Type*) [CommRing R]

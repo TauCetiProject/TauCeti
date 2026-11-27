@@ -99,26 +99,21 @@ theorem affineCoordinateRingCoaction_comp_face (hi : IsIntegralLattice i)
       (Algebra.TensorProduct.map
         (AlgHom.id ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
         (faceAffineCoordinateRingMap hi hτσ)).comp (affineCoordinateRingCoaction hi σ) := by
-  apply MonoidAlgebra.algHom_ext
-  · intro m
-    simp only [AlgHom.comp_apply]
-    rw [← ofAdd_toAdd m, faceAffineCoordinateRingMap_single,
-      affineCoordinateRingCoaction_single, affineCoordinateRingCoaction_single]
-    simp only [Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-      faceAffineCoordinateRingMap_single]
-  · exact Subsingleton.elim _ _
+  rw [affineCoordinateRingCoaction, affineCoordinateRingCoaction, faceAffineCoordinateRingMap_def,
+    affineCoordinateRingMap_def]
+  simpa only [MonoidAlgebra.mapDomainAlgHom_id] using
+    (MonoidAlgebra.map_mapDomain_comp_gradedCoaction ℂ
+      (g := MonoidHom.id (Multiplicative (dualSemigroup hi ⊥))) (by ext m; simp)).symm
 
 /-- On the zero cone, the torus coaction is its own multiplication comorphism. -/
 @[simp]
 theorem affineCoordinateRingCoaction_bot (hi : IsIntegralLattice i) :
     affineCoordinateRingCoaction hi (⊥ : PointedCone ℝ V) =
       Bialgebra.comulAlgHom ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)) := by
-  have hid :
-      AddMonoidHom.toMultiplicative (AddSubmonoid.inclusion (dualSemigroup_anti hi (le_refl ⊥))) =
-        MonoidHom.id (Multiplicative (dualSemigroup hi ⊥)) := by
-    ext m
-    rfl
-  rw [affineCoordinateRingCoaction, hid, MonoidAlgebra.gradedCoaction_id]
+  rw [affineCoordinateRingCoaction,
+    show AddMonoidHom.toMultiplicative (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)) =
+      MonoidHom.id _ from by ext m; rfl,
+    MonoidAlgebra.gradedCoaction_id]
 
 /-- A map of lattice cones intertwines their coactions and the induced map of dense tori.
 This is the coordinate-ring equivariance law for affine toric morphisms. -/
@@ -136,17 +131,11 @@ theorem affineCoordinateRingCoaction_comp_map
           (σ := ⊥) (τ := ⊥) (by simp [Set.MapsTo]))
         (affineCoordinateRingMap hi hi' f g hfg hστ)).comp
           (affineCoordinateRingCoaction hi' τ) := by
-  apply MonoidAlgebra.algHom_ext
-  · intro m
-    simp only [AlgHom.comp_apply]
-    rw [← ofAdd_toAdd m, affineCoordinateRingMap_single,
-      affineCoordinateRingCoaction_single, affineCoordinateRingCoaction_single]
-    simp only [Algebra.TensorProduct.map_tmul, affineCoordinateRingMap_single]
-    congr 2
-    apply congrArg ofAdd
-    apply Subtype.ext
-    ext n
-    simp
-  · exact Subsingleton.elim _ _
+  have hbot : Set.MapsTo g (⊥ : PointedCone ℝ V) (⊥ : PointedCone ℝ V') := by simp [Set.MapsTo]
+  rw [affineCoordinateRingCoaction, affineCoordinateRingCoaction, affineCoordinateRingMap_def,
+    affineCoordinateRingMap_def]
+  exact (MonoidAlgebra.map_mapDomain_comp_gradedCoaction ℂ
+    (g := AddMonoidHom.toMultiplicative (dualSemigroupMap hi hi' f g hfg hbot))
+    (by ext m; simp)).symm
 
 end TauCeti.Toric

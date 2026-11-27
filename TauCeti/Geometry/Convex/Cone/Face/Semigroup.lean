@@ -86,8 +86,7 @@ variable (R) in
 /-- `PointedCone.toHull` sends `s : S` to `i s` in the ambient module `V`. -/
 @[simp]
 theorem coe_toHull (i : M →+ V) (S : AddSubmonoid M) (s : S) :
-    (toHull R i S s : V) = i s.val :=
-  (rfl)
+    (toHull R i S s : V) = i s.val := (rfl)
 
 variable (R) in
 /-- `PointedCone.toHull` is injective whenever `i` is injective. -/
@@ -175,9 +174,7 @@ theorem isFaceOf_hull_rat_of_saturatedAddSubmonoid (C : PointedCone ℚ V)
   have hp_pos : 0 < p := Int.lt_toNat.2 (Rat.num_pos.2 ha)
   have hp_cast : (p : ℚ) = a.num := by
     exact_mod_cast Int.toNat_of_nonneg (Rat.num_nonneg.2 ha.le)
-  have hqa : (q : ℚ) * a = p := by
-    rw [mul_comm, hp_cast]
-    exact a.mul_den_eq_num
+  have hqa : (q : ℚ) * a = p := by rw [mul_comm, hp_cast]; exact a.mul_den_eq_num
   have hq_mem : p • x + q • y ∈
       PointedCone.hull ℚ (C.toAddSubmonoid.subtype '' (F : Set C)) := by
     have hsmul := Submodule.smul_mem

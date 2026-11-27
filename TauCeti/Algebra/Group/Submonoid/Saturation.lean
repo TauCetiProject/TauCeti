@@ -440,8 +440,7 @@ theorem map_addSubgroupCongr_faceSubgroup (F : SaturatedAddSubmonoid S) :
           _ → _) ∘
         (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).toGroupClosure) =
         S.nsmulSaturationInfClosureToGroupClosure := by
-    ext x
-    simpa using AddSubmonoid.coe_toGroupClosure _ x
+    ext x; simpa using AddSubmonoid.coe_toGroupClosure _ x
   rw [hcomp, F.closure_nsmulSaturationInfClosure_eq_nsmulSaturation]
 
 /-- Canonical additive equivalence between the face subgroup of the saturated face
@@ -458,8 +457,7 @@ def faceSubgroupNSMulSaturationEquiv (F : SaturatedAddSubmonoid S) :
 theorem coe_faceSubgroupNSMulSaturationEquiv_apply (F : SaturatedAddSubmonoid S)
     (x : ((S.nsmulSaturationInfClosureFaceOrderIso).symm F).faceSubgroup) :
     ((F.faceSubgroupNSMulSaturationEquiv x : AddSubgroup.closure (S : Set G)) : G) =
-      x.val.val := by
-  simp [faceSubgroupNSMulSaturationEquiv]
+      x.val.val := by simp [faceSubgroupNSMulSaturationEquiv]
 
 /-- The inverse of `faceSubgroupNSMulSaturationEquiv` preserves the underlying element of the
 ambient group `G`. -/

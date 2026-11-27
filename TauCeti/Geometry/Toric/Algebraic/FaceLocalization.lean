@@ -88,6 +88,13 @@ noncomputable def faceAffineCoordinateRingMap (hi : IsIntegralLattice i)
   affineCoordinateRingMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
     fun _ hx ↦ hτσ.le hx
 
+/-- Restriction along a face inclusion is the coordinate-ring map induced by the identity. -/
+theorem faceAffineCoordinateRingMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ) :
+    faceAffineCoordinateRingMap hi hτσ =
+      affineCoordinateRingMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
+        (show Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) (τ : Set V) (σ : Set V) from
+          fun _ hx ↦ hτσ.le hx) := (rfl)
+
 /-- Restriction along a face inclusion sends a monomial to the same integral character, regarded
 as an element of the larger dual semigroup of the face. -/
 @[simp]
