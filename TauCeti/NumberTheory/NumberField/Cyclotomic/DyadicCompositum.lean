@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Cyclotomic.CompatibleTower
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 import Mathlib.Algebra.Order.Archimedean.Basic
-import TauCeti.FieldTheory.IntermediateField.CompositumDegree
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Finrank
 import TauCeti.NumberTheory.NumberField.Cyclotomic.MaximalRealSubfield
 
 /-!
