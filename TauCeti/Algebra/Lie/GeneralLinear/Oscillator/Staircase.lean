@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Oscillator.Highest
+import TauCeti.Data.Finset.Basic
 import TauCeti.RingTheory.MvPolynomial.DeterminantalIdeal
 
 /-!
@@ -94,57 +95,6 @@ open MvPolynomial Finset Matrix Function
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-! ### Positions in a decreasing order -/
-
-section Position
-
-variable {ι : Type*} {s : Finset ι} {f : ι → ℤ}
-
-/-- An element with a larger key comes earlier in the decreasing order of the keys. -/
-private theorem card_filter_lt_lt_of_lt {a b : ι} (hb : b ∈ s) (h : f a < f b) :
-    #{c ∈ s | f b < f c} < #{c ∈ s | f a < f c} := by
-  refine card_lt_card ((ssubset_iff_of_subset fun c hc ↦ ?_).2 ⟨b, ?_, ?_⟩)
-  · simp only [mem_filter] at hc ⊢
-    exact ⟨hc.1, h.trans hc.2⟩
-  · simp [hb, h]
-  · simp
-
-/-- The position of an element of `s` is less than the size of `s`. -/
-private theorem card_filter_lt_lt_card {a : ι} (ha : a ∈ s) : #{c ∈ s | f a < f c} < #s :=
-  card_lt_card (filter_ssubset.2 ⟨a, ha, lt_irrefl _⟩)
-
-/-- For keys injective on `s`, the positions of the elements of `s` are distinct. -/
-private theorem injOn_card_filter_lt (hf : Set.InjOn f s) :
-    Set.InjOn (fun a ↦ #{c ∈ s | f a < f c}) s := by
-  intro a ha b hb hab
-  rcases lt_trichotomy (f a) (f b) with h | h | h
-  · exact absurd hab (card_filter_lt_lt_of_lt hb h).ne'
-  · exact hf ha hb h
-  · exact absurd hab (card_filter_lt_lt_of_lt ha h).ne
-
-/-- For keys injective on `s`, every position below the size of `s` is the position of an element
-of `s`. -/
-private theorem exists_card_filter_lt_eq (hf : Set.InjOn f s) {j : ℕ} (hj : j < #s) :
-    ∃ a ∈ s, #{c ∈ s | f a < f c} = j :=
-  surjOn_of_injOn_of_card_le (fun a ↦ #{c ∈ s | f a < f c})
-    (fun _ ha ↦ mem_coe.2 (mem_range.2 (card_filter_lt_lt_card ha))) (injOn_card_filter_lt hf)
-    (by simp) (mem_coe.2 (mem_range.2 hj))
-
-/-- For injective keys on a finite type, the positions of an element in the decreasing and the
-increasing order add up to the number of the other elements. -/
-private theorem card_filter_lt_add_card_filter_gt [Fintype ι] (hf : Injective f)
-    (a : ι) : #{c | f a < f c} + #{c | f c < f a} + 1 = Fintype.card ι := by
-  classical
-  have h : ({c | f a < f c} : Finset ι) ∪ ({c | f c < f a} : Finset ι) = univ.erase a := by
-    ext c
-    simp only [mem_union, mem_filter, mem_univ, true_and, mem_erase, and_true]
-    exact ⟨by rintro (h | h) rfl <;> exact lt_irrefl _ h,
-      fun hc ↦ lt_or_gt_of_ne fun h ↦ hc (hf h).symm⟩
-  rw [← card_union_of_disjoint (disjoint_filter.2 fun c _ h h' ↦ lt_asymm h h'), h,
-    card_erase_of_mem (mem_univ a), card_univ, Nat.sub_add_cancel (Fintype.card_pos_iff.2 ⟨a⟩)]
-
-end Position
-
 /-! ### Staircase minors -/
 
 variable {I I' : Type*} [Fintype I] [Fintype I']
@@ -177,11 +127,12 @@ private theorem staircasePairs_snd (x : staircasePairs ε' l' l p) : ε' x.val.2
 /-- The column of a pair of the staircase minor determines it. -/
 private theorem injective_staircasePairs_fst (hl : Set.InjOn l {c | ε' c}) :
     Injective fun x : staircasePairs ε' l' l p ↦ x.val.1 := by
-  intro x y (hxy : x.val.1 = y.val.1)
+  intro x y hxy
+  beta_reduce at hxy
   have hx := (mem_staircasePairs ε' l' l).1 x.property
   have hy := (mem_staircasePairs ε' l' l).1 y.property
   have hcol : x.val.2 = y.val.2 := by
-    refine injOn_card_filter_lt (s := {d | ε' d}) (f := l) (fun c hc d hd h ↦ ?_)
+    refine injOn_card_filter_apply_lt (s := {d | ε' d}) (f := l) (fun c hc d hd h ↦ ?_)
       (by simpa using hx.1) (by simpa using hy.1) ?_
     · exact hl (by simpa using hc) (by simpa using hd) h
     · simp only [filter_filter]
@@ -191,11 +142,12 @@ private theorem injective_staircasePairs_fst (hl : Set.InjOn l {c | ε' c}) :
 /-- The row of a pair of the staircase minor determines it. -/
 private theorem injective_staircasePairs_snd (hl' : Injective l') :
     Injective fun x : staircasePairs ε' l' l p ↦ x.val.2 := by
-  intro x y (hxy : x.val.2 = y.val.2)
+  intro x y hxy
+  beta_reduce at hxy
   have hx := (mem_staircasePairs ε' l' l).1 x.property
   have hy := (mem_staircasePairs ε' l' l).1 y.property
   have hrow : x.val.1 = y.val.1 :=
-    injOn_card_filter_lt (s := univ) (f := l') hl'.injOn (mem_univ _) (mem_univ _)
+    injOn_card_filter_apply_lt (s := univ) (f := l') hl'.injOn (mem_univ _) (mem_univ _)
       (by simp only [hx.2.2, hy.2.2]; rw [hxy])
   exact Subtype.ext (Prod.ext hrow hxy)
 
@@ -208,11 +160,11 @@ private theorem mem_range_staircasePairs_fst (hl : Set.InjOn l {c | ε' c}) {a :
   · rintro ⟨x, rfl⟩
     have hx := (mem_staircasePairs ε' l' l).1 x.property
     refine ⟨hx.2.2 ▸ hx.2.1, hx.2.2 ▸ ?_⟩
-    have h := card_filter_lt_lt_card (s := {d | ε' d}) (f := l) (a := x.val.2)
+    have h := card_filter_apply_lt_lt_card (s := {d | ε' d}) (f := l) (a := x.val.2)
       (by simpa using hx.1)
     simpa [filter_filter] using h
   · rintro ⟨hp, hc⟩
-    obtain ⟨c, hc, hpos⟩ := exists_card_filter_lt_eq (s := {d | ε' d}) (f := l)
+    obtain ⟨c, hc, hpos⟩ := exists_card_filter_apply_lt_eq (s := {d | ε' d}) (f := l)
       (fun c hc d hd h ↦ hl (by simpa using hc) (by simpa using hd) h) hc
     simp only [filter_filter] at hpos
     refine ⟨⟨(a, c), (mem_staircasePairs ε' l' l).2 ⟨by simpa using hc, ?_, ?_⟩⟩, rfl⟩
@@ -228,9 +180,9 @@ private theorem mem_range_staircasePairs_snd (hl' : Injective l') {c : I'} :
   · rintro ⟨x, rfl⟩
     have hx := (mem_staircasePairs ε' l' l).1 x.property
     refine ⟨hx.1, hx.2.1, hx.2.2 ▸ ?_⟩
-    simpa using card_filter_lt_lt_card (s := univ) (f := l') (mem_univ x.val.1)
+    simpa using card_filter_apply_lt_lt_card (s := univ) (f := l') (mem_univ x.val.1)
   · rintro ⟨hc, hp, hn⟩
-    obtain ⟨a, -, hpos⟩ := exists_card_filter_lt_eq (s := univ) (f := l') hl'.injOn
+    obtain ⟨a, -, hpos⟩ := exists_card_filter_apply_lt_eq (s := univ) (f := l') hl'.injOn
       (by simpa using hn)
     exact ⟨⟨(a, c), (mem_staircasePairs ε' l' l).2 ⟨hc, hp, by simpa using hpos⟩⟩, rfl⟩
 
@@ -320,16 +272,21 @@ theorem isColTermwiseHarmonic_staircaseProd [CommRing K] (hl' : Injective l')
   set V : Set (I × I') := {x | (∃ i ∈ range n, k true i ≠ 0 ∧ #{b | l' x.1 < l' b} < i) ∧
     ε' x.2 = true} ∪ {x | (∃ j ∈ range n, k false j ≠ 0 ∧ #{b | l' b < l' x.1} < j) ∧
     ε' x.2 = false}
+  -- Splitting the rows at `a` in the order of `l'`.
+  have hsplit (a : I) : #{b | l' b < l' a} + #{b | l' a < l' b} + 1 = n := by
+    have h := card_filter_lt_add_card_filter_gt_add_one (mem_image_of_mem l' (mem_univ a))
+    rwa [filter_image, filter_image, card_image_of_injective _ hl', card_image_of_injective _ hl',
+      card_image_of_injective _ hl', card_univ] at h
   refine isColTermwiseHarmonic_of_mem_supported (V := V) ?_ ?_
   · rintro a c d (⟨⟨i, hin, hi, hai⟩, hc⟩ | ⟨⟨j, hjn, hj, haj⟩, hc⟩)
       (⟨⟨i', hin', hi', hai'⟩, hd⟩ | ⟨⟨j', hjn', hj', haj'⟩, hd⟩)
     · rw [hc, hd]
-    · have h := card_filter_lt_add_card_filter_gt hl' a
+    · have h := hsplit a
       dsimp only at hai haj'
       rcases Nat.lt_or_ge n (i + j') with hn | hn
       · exact absurd ((hk i (mem_range.1 hin) j' (mem_range.1 hjn') hn).resolve_left hi) hj'
       · omega
-    · have h := card_filter_lt_add_card_filter_gt hl' a
+    · have h := hsplit a
       dsimp only at hai' haj
       rcases Nat.lt_or_ge n (i' + j) with hn | hn
       · exact absurd ((hk i' (mem_range.1 hin') j (mem_range.1 hjn) hn).resolve_left hi') hj
@@ -391,7 +348,7 @@ private theorem isKHighest_fockRowHom_staircaseMinor (hl : Set.InjOn l {c | ε' 
     (fun _ y ↦ isEvenPair_iff.2 (staircasePairs_snd y).symm) ?_
   intro a b _ hlt hb
   rw [mem_range_staircasePairs_fst hl] at hb ⊢
-  have := card_filter_lt_lt_of_lt (s := univ) (mem_univ a) hlt
+  have := card_filter_apply_lt_lt_card_filter_apply_lt (s := univ) (mem_univ a) hlt
   exact ⟨this.trans hb.1, this.trans hb.2⟩
 
 /-- The staircase minor `M_{-,p}` is `K`-highest for the rows in the order of `l'`, of the weight
@@ -409,7 +366,8 @@ private theorem isKHighest_fockRowHom_staircaseMinor_not (hl : Injective l) (p :
   · simpa [isEvenPair_iff] using staircasePairs_snd y
   intro a b _ hlt ha
   rw [mem_range_staircasePairs_fst hl'] at ha ⊢
-  have := card_filter_lt_lt_of_lt (s := univ) (f := -l') (mem_univ b) (by simpa using hlt)
+  have := card_filter_apply_lt_lt_card_filter_apply_lt (s := univ) (f := -l') (mem_univ b)
+    (by simpa using hlt)
   exact ⟨this.trans ha.1, this.trans ha.2⟩
 
 /-- **The staircase product is `K`-highest for the rows.** Let `l` be injective, and let
@@ -455,7 +413,8 @@ private theorem isKHighest_rename_swap_staircaseMinor (hl' : Injective l') (p : 
   intro c d hcd hlt hd
   rw [mem_range_staircasePairs_snd hl'] at hd ⊢
   have hc : ε' c = true := hcd.trans hd.1
-  have := card_filter_lt_lt_of_lt (s := {e | ε' e}) (f := l) (by simpa using hc) hlt
+  have := card_filter_apply_lt_lt_card_filter_apply_lt (s := {e | ε' e}) (f := l)
+    (by simpa using hc) hlt
   simp only [filter_filter] at this
   exact ⟨hc, this.trans hd.2.1, this.trans hd.2.2⟩
 
@@ -475,8 +434,8 @@ private theorem isKHighest_rename_swap_staircaseMinor_not (hl' : Injective l') (
   intro c d hcd hlt hc
   rw [mem_range_staircasePairs_snd hl''] at hc ⊢
   have hd : (!ε' d) = true := by rw [← hcd]; exact hc.1
-  have := card_filter_lt_lt_of_lt (s := {e | (!ε' e) = true}) (f := -l) (by simpa using hd)
-    (by simpa using hlt)
+  have := card_filter_apply_lt_lt_card_filter_apply_lt (s := {e | (!ε' e) = true}) (f := -l)
+    (by simpa using hd) (by simpa using hlt)
   simp only [filter_filter] at this
   exact ⟨hd, this.trans hc.2.1, this.trans hc.2.2⟩
 
@@ -512,7 +471,9 @@ theorem isKHighest_fockColHom_staircaseProd (hl' : Injective l') (k : Bool → �
   rw [sum_range_mul_ite_and_eq _ fun p hp h ↦ (hn p hp h).1,
     sum_range_mul_ite_and_eq _ fun p hp h ↦ (hn p hp h).2]
   cases ε' c
-  · simp
+  · simp only [Bool.false_eq_true, ↓reduceIte, neg_add_rev, filter_false, card_empty,
+      Nat.cast_zero, ne_eq, not_false_eq_true, filter_true, card_univ, zero_sub, Bool.not_false,
+      Bool.not_eq_eq_eq_not, Bool.not_true, Pi.neg_apply, neg_lt_neg_iff, zero_add]
     ring
   · simp
 

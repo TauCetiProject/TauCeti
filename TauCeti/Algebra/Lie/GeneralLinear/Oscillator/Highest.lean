@@ -192,12 +192,38 @@ variable {K ε ε'}
 private theorem fockRowDerivation_apply (a b : I) (P : MvPolynomial (I × I') K) :
     fockRowDerivation K ε ε' a b P = ∑ c, if IsEvenPair ε ε' (a, c)
       then polynomialOperator K (a, c) (b, c) P else -polynomialOperator K (b, c) (a, c) P := by
-  rw [fockRowDerivation, ← Derivation.coeFn_coe, Derivation.coe_sum_linearMap,
-    LinearMap.sum_apply]
+  rw [fockRowDerivation, _root_.sum_apply]
   refine sum_congr rfl fun c _ ↦ ?_
-  split_ifs <;> rfl
+  split_ifs
+  · rfl
+  · exact _root_.neg_apply _ P
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {r : m → I} {c : m → I'}
+
+omit [Fintype I'] in
+/-- A polarization operator differentiating along a variable `y` that is not a variable of the
+minor on the rows `r` and the columns `c` kills the minor. -/
+private theorem polynomialOperator_minor_eq_zero (x : I × I') {y : I × I'}
+    (hy : y ∉ Set.range r ×ˢ Set.range c) :
+    polynomialOperator K x y (mvPolynomialMinor K r c) = 0 := by
+  rw [polynomialOperator_apply,
+    pderiv_eq_zero_of_mem_supported (mvPolynomialMinor_mem_supported r c) hy, mul_zero]
+
+omit [Fintype I'] in
+/-- Let the variables of the minor on the rows `r` and the columns `c` all have the parity `p`,
+and let `ε a = ε b`. Along a column `v` where the variable `z a v` has the other parity, neither
+`z a v` nor `z b v` is a variable of the minor, so the polarization operators between the rows
+`a` and `b` along `v` kill the minor. -/
+private theorem polynomialOperator_minor_eq_zero_of_not_iff {p : Prop}
+    (hp : ∀ i j, IsEvenPair ε ε' (r i, c j) ↔ p) {a b : I} (hab : ε a = ε b) {v : I'}
+    (hv : ¬(IsEvenPair ε ε' (a, v) ↔ p)) :
+    polynomialOperator K (a, v) (b, v) (mvPolynomialMinor K r c) = 0 ∧
+      polynomialOperator K (b, v) (a, v) (mvPolynomialMinor K r c) = 0 := by
+  have h (x : I) (hx : ε x = ε a) : (x, v) ∉ Set.range r ×ˢ Set.range c := by
+    rintro ⟨⟨i, rfl⟩, ⟨j, rfl⟩⟩
+    exact hv ((isEvenPair_iff_of_eq hx.symm _).trans (hp i j))
+  exact ⟨polynomialOperator_minor_eq_zero _ (h b hab.symm),
+    polynomialOperator_minor_eq_zero _ (h a rfl)⟩
 
 /-- The polarization operator from a row `y` of the minor on the rows `r` to a row `x`, with `x`
 a row of the minor whenever `y` is, kills the minor when `x ≠ y`. -/
@@ -209,9 +235,7 @@ private theorem sum_polynomialOperator_minor_eq_zero {x y : I} (hxy : x ≠ y)
     obtain ⟨i, rfl⟩ := h ⟨j, rfl⟩
     rw [sum_polynomialOperator_mvPolynomialMinor r c i j, ite_eq_right_iff]
     exact fun h ↦ absurd (congrArg r h) hxy
-  · have hM := mvPolynomialMinor_mem_supported (R := K) r c
-    exact sum_eq_zero fun v _ ↦ by
-      rw [polynomialOperator_apply, pderiv_eq_zero_of_mem_supported hM fun h ↦ hy h.1, mul_zero]
+  · exact sum_eq_zero fun v _ ↦ polynomialOperator_minor_eq_zero _ fun h ↦ hy h.1
 
 /-- The Euler operator of a row `x` multiplies the minor on the rows `r` by one if `x` is a row of
 the minor, and kills it otherwise. -/
@@ -222,9 +246,7 @@ private theorem sum_polynomialOperator_minor_self (x : I) :
   · obtain ⟨i, rfl⟩ := hx
     simp [sum_polynomialOperator_mvPolynomialMinor r c i i]
   · rw [Set.indicator_of_notMem hx, zero_smul]
-    have hM := mvPolynomialMinor_mem_supported (R := K) r c
-    exact sum_eq_zero fun v _ ↦ by
-      rw [polynomialOperator_apply, pderiv_eq_zero_of_mem_supported hM fun h ↦ hx h.1, mul_zero]
+    exact sum_eq_zero fun v _ ↦ polynomialOperator_minor_eq_zero _ fun h ↦ hx h.1
 
 /-- On a minor whose variables are all even, the derivation of a compact matrix unit `E a b` of
 the rows is the polarization operator from the row `b` to the row `a`. -/
@@ -236,16 +258,10 @@ private theorem fockRowDerivation_minor_of_isEvenPair
   refine sum_congr rfl fun v _ ↦ ?_
   split_ifs with hv
   · rfl
-  -- The variable `z a v` is odd, so neither `z a v` nor `z b v` is a variable of the minor.
-  have hav : (a, v) ∉ Set.range r ×ˢ Set.range c := by
-    rintro ⟨⟨i, rfl⟩, ⟨j, rfl⟩⟩
-    exact hv (heven i j)
-  have hbv : (b, v) ∉ Set.range r ×ˢ Set.range c := by
-    rintro ⟨⟨i, rfl⟩, ⟨j, rfl⟩⟩
-    exact hv ((isEvenPair_iff_of_eq hab _).2 (heven i j))
-  have hM := mvPolynomialMinor_mem_supported (R := K) r c
-  rw [polynomialOperator_apply, polynomialOperator_apply, pderiv_eq_zero_of_mem_supported hM hav,
-    pderiv_eq_zero_of_mem_supported hM hbv, mul_zero, mul_zero, neg_zero]
+  -- The variable `z a v` is odd, unlike the variables of the minor.
+  obtain ⟨h₁, h₂⟩ := polynomialOperator_minor_eq_zero_of_not_iff (K := K)
+    (fun i j ↦ iff_true_intro (heven i j)) hab (by rwa [iff_true])
+  rw [h₁, h₂, neg_zero]
 
 /-- On a minor whose variables are all odd, the derivation of a compact matrix unit `E a b` of
 the rows is minus the polarization operator from the row `a` to the row `b`. -/
@@ -256,18 +272,11 @@ private theorem fockRowDerivation_minor_of_not_isEvenPair
   rw [fockRowDerivation_apply, ← sum_neg_distrib]
   refine sum_congr rfl fun v _ ↦ ?_
   split_ifs with hv
-  swap
+  · -- The variable `z a v` is even, unlike the variables of the minor.
+    obtain ⟨h₁, h₂⟩ := polynomialOperator_minor_eq_zero_of_not_iff (K := K)
+      (fun i j ↦ iff_false_intro (hodd i j)) hab (by rwa [iff_false, not_not])
+    rw [h₁, h₂, neg_zero]
   · rfl
-  -- The variable `z a v` is even, so neither `z a v` nor `z b v` is a variable of the minor.
-  have hav : (a, v) ∉ Set.range r ×ˢ Set.range c := by
-    rintro ⟨⟨i, rfl⟩, ⟨j, rfl⟩⟩
-    exact hodd i j hv
-  have hbv : (b, v) ∉ Set.range r ×ˢ Set.range c := by
-    rintro ⟨⟨i, rfl⟩, ⟨j, rfl⟩⟩
-    exact hodd i j ((isEvenPair_iff_of_eq hab _).1 hv)
-  have hM := mvPolynomialMinor_mem_supported (R := K) r c
-  rw [polynomialOperator_apply, polynomialOperator_apply, pderiv_eq_zero_of_mem_supported hM hav,
-    pderiv_eq_zero_of_mem_supported hM hbv, mul_zero, mul_zero, neg_zero]
 
 variable [Fintype I] [DecidableEq I] [DecidableEq I']
 
@@ -288,7 +297,9 @@ private theorem fockRowHom_single_apply_eq {a b : I} (hab : ε a = ε b)
     · have hc' : ¬IsEvenPair ε ε' (b, c) := (isEvenPair_iff_of_eq hab c).not.1 hc
       by_cases hab' : a = b
       · subst hab'
-        simp [hc, polynomialOperator_apply]
+        simp only [mul_apply_eq_comp, hc, not_false_eq_true, oscLower_apply_of_neg,
+          oscRaise_apply_of_neg, Derivation.leibniz, smul_eq_mul, pderiv_X, Pi.single_eq_same,
+          mul_one, neg_add_rev, ↓reduceIte, polynomialOperator_apply, mul_neg]
         ring
       · simp [hc, hc', Ne.symm hab', polynomialOperator_apply]
   · split_ifs <;> simp

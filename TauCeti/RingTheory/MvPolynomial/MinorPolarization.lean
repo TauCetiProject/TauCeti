@@ -59,10 +59,8 @@ theorem sum_polynomialOperator_mvPolynomialMinor [Fintype n] (r : t → m) (c : 
   set M := (mvPolynomialX m n R).submatrix r c
   let D : Derivation R (MvPolynomial (m × n) R) (MvPolynomial (m × n) R) :=
     ∑ v : n, polynomialOperator R (r i, v) (r j, v)
-  have hD (P : MvPolynomial (m × n) R) :
-      D P = ∑ v, polynomialOperator R (r i, v) (r j, v) P := by
-    rw [← Derivation.coeFn_coe, Derivation.coe_sum_linearMap, LinearMap.sum_apply]
-    rfl
+  have hD (P : MvPolynomial (m × n) R) : D P = ∑ v, polynomialOperator R (r i, v) (r j, v) P :=
+    _root_.sum_apply _ _ P
   -- `D` acts on the entries of `M` as the left multiplication by the matrix unit `E j i`.
   have hmap : M.map D = M * 0 - -single j i 1 * M := by
     ext a b
