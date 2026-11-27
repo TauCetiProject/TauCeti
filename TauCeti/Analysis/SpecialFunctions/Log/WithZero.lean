@@ -48,6 +48,7 @@ theorem expOrderMonoidIsoWithZero_symm_apply_of_ne_zero {r : ℝ≥0} (hr : r �
     expOrderMonoidIsoWithZero.symm r = WithZero.exp (log (r : ℝ)) := by
   rw [OrderMonoidIso.symm_apply_eq]
   apply NNReal.eq
+  rw [expOrderMonoidIsoWithZero_apply_exp]
   exact (Real.exp_log (NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hr))).symm
 
 end Real

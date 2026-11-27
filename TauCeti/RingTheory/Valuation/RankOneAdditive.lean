@@ -61,8 +61,9 @@ theorem realAddValuation_eq_top_iff {x : R} : v.realAddValuation x = ⊤ ↔ v x
 associated to the chosen embedding of the value group. -/
 theorem realAddValuation_apply_of_ne_zero {x : R} (hx : v x ≠ 0) :
     v.realAddValuation x = ((-Real.log (v.norm x) : ℝ) : WithTop ℝ) := by
+  have hnorm : 0 < v.norm x := v.norm_pos_iff_valuation_pos.mpr (pos_iff_ne_zero.mpr hx)
   have h : RankLeOne.hom' v (v.restrict x) ≠ 0 :=
-    (MonoidWithZeroHom.map_eq_zero_iff.trans v.restrict_eq_zero_iff).not.mpr hx
+    (NNReal.coe_pos.mp (v.norm_def ▸ hnorm)).ne'
   rw [realAddValuation_apply, Real.expOrderMonoidIsoWithZero_symm_apply_of_ne_zero h,
     WithZero.negLog_exp, Valuation.norm_def]
 
