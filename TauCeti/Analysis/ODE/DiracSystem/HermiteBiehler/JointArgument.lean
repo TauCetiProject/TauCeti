@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.DiracSystem.HermiteBiehler.Basic
 import Mathlib.Analysis.Complex.BranchLogRoot
-import TauCeti.Analysis.Complex.ContinuousLog.Basic
+import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Convex.SimplyConnected
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Polar
 import TauCeti.Analysis.ODE.DiracSystem.ZeroFree
@@ -110,24 +110,12 @@ theorem eqOn_of_diracHermiteBiehler_eq_norm_mul_exp_prod (hq : LocallyIntegrable
     (hψE : ∀ t, 0 ≤ t → ∀ x : ℝ,
       diracHermiteBiehler q t x = ‖diracHermiteBiehler q t x‖ * exp (I * ψ (t, x))) :
     EqOn φ ψ (Ici 0 ×ˢ univ) := by
-  set S : Set (ℝ × ℝ) := Ici 0 ×ˢ univ
-  set w : ℝ × ℝ → ℂ := fun p ↦ I * ((ψ p : ℂ) - φ p)
-  have hS : IsPreconnected S := ((convex_Ici 0).prod convex_univ).isPreconnected
-  have hw : ContinuousOn w S :=
-    continuousOn_const.mul ((continuous_ofReal.comp_continuousOn hψ).sub
-      (continuous_ofReal.comp_continuousOn hφ))
-  have h1 : ∀ v ∈ w '' S, exp v = 1 := by
-    rintro _ ⟨⟨t, x⟩, hp, rfl⟩
-    have hE : diracHermiteBiehler q t x ≠ 0 := diracHermiteBiehler_ne_zero hq hp.1 (by simp)
-    have hnorm : (‖diracHermiteBiehler q t x‖ : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 hE
-    have h := (hφE t hp.1 x).symm.trans (hψE t hp.1 x)
-    rw [mul_right_inj' hnorm] at h
-    simp only [w, mul_sub, exp_sub, ← h, div_self (exp_ne_zero _)]
   intro p hp
-  have h0 : ((0 : ℝ), p.2) ∈ S := ⟨le_rfl, mem_univ _⟩
-  have := eq_of_isPreconnected_of_forall_exp_eq_one (hS.image w hw) h1 (mem_image_of_mem w hp)
-    (mem_image_of_mem w h0)
-  simp only [w, hφ0, hψ0, sub_self, mul_zero, mul_eq_zero, I_ne_zero, false_or, sub_eq_zero] at this
-  exact_mod_cast this.symm
+  have h := Contour.sub_eq_sub_of_eq_norm_mul_exp (s := Ici 0 ×ˢ univ)
+    (f := fun r : ℝ × ℝ ↦ diracHermiteBiehler q r.1 r.2) (x := (0, p.2))
+    ((convex_Ici 0).prod convex_univ).isPreconnected ⟨le_rfl, mem_univ _⟩ hp
+    (fun r hr ↦ diracHermiteBiehler_ne_zero hq hr.1 (by simp)) hφ hψ
+    (fun r hr ↦ hφE r.1 hr.1 r.2) (fun r hr ↦ hψE r.1 hr.1 r.2)
+  simpa [hφ0, hψ0] using h
 
 end TauCeti
