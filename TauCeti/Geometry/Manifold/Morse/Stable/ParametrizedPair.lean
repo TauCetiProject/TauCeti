@@ -205,26 +205,49 @@ private theorem finrank_prod_span_mtangentConeAt_unstableSet (hf₀ : IsMorse �
   rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod, finrank_top,
     Module.finrank_self, hX₀.finrank_span_mtangentConeAt_unstableSet hf₀ hy]
 
+/-- The quotient of `E` by `T_y W^s(b)` has dimension `ind b`. -/
+private theorem finrank_quotient_span_mtangentConeAt_stableSet {y : M}
+    (hy : y ∈ hX₁.flow.stableSet b) :
+    Module.finrank ℝ (E ⧸ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y)) =
+      manifoldMorseIndex 𝓘(ℝ, E) f₁ b := by
+  have hS := hX₁.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hy
+  have hQ := Submodule.finrank_quotient_add_finrank
+    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y))
+  omega
+
+/-- A linear map restricted to `W`, followed by the quotient by `S`, is onto when the image of `W`
+and `S` span the target. -/
+private theorem surjective_mkQ_comp_comp_subtype {R F G : Type*} [Ring R] [AddCommGroup F]
+    [Module R F] [AddCommGroup G] [Module R G] {d : F →ₗ[R] G} {W : Submodule R F}
+    {S : Submodule R G}
+    (h : W.map d ⊔ S = ⊤) : Surjective (S.mkQ ∘ₗ d ∘ₗ W.subtype) :=
+  LinearMap.range_eq_top.1 <| by
+    simpa [LinearMap.range_comp, Submodule.map_mkQ_eq_top, sup_comm] using h
+
+/-- Transversality makes the derivative of `(λ, y) ↦ Φ λ y` on `ℝ × T W^u(a)`, followed by the
+quotient by `T W^s(b)`, onto. -/
+private theorem surjective_mkQ_comp_mfderiv_comp_subtype
+    (h : IsParametrizedMorseSmalePair hX₀ hX₁ Φ)
+    (hz : z ∈ hX₀.parametrizedPairSlice hX₁ Φ a b) :
+    Surjective
+      ((Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) (Φ z.1 z.2))).mkQ ∘ₗ
+        ((mfderiv (𝓘(ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) (uncurry Φ) z).toLinearMap : ℝ × E →ₗ[ℝ] E) ∘ₗ
+        ((⊤ : Submodule ℝ ℝ).prod
+          (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) z.2))).subtype) :=
+  surjective_mkQ_comp_comp_subtype (h.map_sup_span_mtangentConeAt_eq_top hz)
+
 /-- **The index rises by at most one along a Morse–Smale family.** If the parametrized
 intersection from `a` to `b` is nonempty, then the index of `b` for `f₁` is at most the index of
 `a` for `f₀` plus one. -/
 theorem manifoldMorseIndex_le_add_one (h : IsParametrizedMorseSmalePair hX₀ hX₁ Φ)
     (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hz : z ∈ hX₀.parametrizedPairSlice hX₁ Φ a b) :
     manifoldMorseIndex 𝓘(ℝ, E) f₁ b ≤ manifoldMorseIndex 𝓘(ℝ, E) f₀ a + 1 := by
-  set W := (⊤ : Submodule ℝ ℝ).prod
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) z.2))
-  let d : ℝ × E →ₗ[ℝ] E := (mfderiv (𝓘(ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) (uncurry Φ) z).toLinearMap
-  set S := Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) (Φ z.1 z.2))
-  have hW : Module.finrank ℝ W = 1 + manifoldMorseIndex 𝓘(ℝ, E) f₀ a :=
-    finrank_prod_span_mtangentConeAt_unstableSet hf₀ hz.2.1
-  have hS : Module.finrank ℝ S + manifoldMorseIndex 𝓘(ℝ, E) f₁ b = Module.finrank ℝ E :=
-    hX₁.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hz.2.2
-  -- The two subspaces span `E`, so their dimensions add up to at least `n`.
-  have htop : W.map d ⊔ S = ⊤ := h.map_sup_span_mtangentConeAt_eq_top hz
-  have hle : Module.finrank ℝ E ≤ Module.finrank ℝ (W.map d) + Module.finrank ℝ S := by
-    rw [← finrank_top ℝ E, ← htop]
-    exact Submodule.finrank_add_le_finrank_add_finrank _ _
-  have hmap : Module.finrank ℝ (W.map d) ≤ Module.finrank ℝ W := Submodule.finrank_map_le d W
+  -- The quotient of `E` by `T W^s(b)`, of dimension `ind b`, is the image of `ℝ × T W^u(a)`, of
+  -- dimension `1 + ind a`.
+  have hle := LinearMap.finrank_le_finrank_of_surjective
+    (surjective_mkQ_comp_mfderiv_comp_subtype h hz)
+  rw [finrank_quotient_span_mtangentConeAt_stableSet hz.2.2,
+    finrank_prod_span_mtangentConeAt_unstableSet hf₀ hz.2.1] at hle
   omega
 
 /-- **The parametrized intersection is empty when the index rises by more than one.** -/
@@ -266,19 +289,17 @@ theorem not_accPt_parametrizedPairSlice (h : IsParametrizedMorseSmalePair hX₀ 
   -- The derivative followed by the quotient by `T W^s(b)` is onto from `W`, by transversality, and
   -- the two spaces have the same dimension, so it is injective.
   let g : W →ₗ[ℝ] E ⧸ S := S.mkQ ∘ₗ d ∘ₗ W.subtype
-  have hg : Surjective g := by
-    rw [← LinearMap.range_eq_top, LinearMap.range_comp, LinearMap.range_comp,
-      Submodule.range_subtype, Submodule.map_mkQ_eq_top, sup_comm]
-    exact h.map_sup_span_mtangentConeAt_eq_top hz
   have hdim : Module.finrank ℝ W = Module.finrank ℝ (E ⧸ S) := by
-    have hS : Module.finrank ℝ S + manifoldMorseIndex 𝓘(ℝ, E) f₁ b = Module.finrank ℝ E :=
-      hX₁.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hz.2.2
-    have hQ := S.finrank_quotient_add_finrank
     have hle := h.manifoldMorseIndex_le_add_one hf₀ hz
-    rw [finrank_prod_span_mtangentConeAt_unstableSet hf₀ hz.2.1]
+    rw [finrank_prod_span_mtangentConeAt_unstableSet hf₀ hz.2.1,
+      finrank_quotient_span_mtangentConeAt_stableSet hz.2.2]
     omega
-  have hinj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).2 hg
-  have hgv : g ⟨v, hvW⟩ = 0 := (Submodule.Quotient.mk_eq_zero S).2 hvS
+  have hinj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).2
+    (surjective_mkQ_comp_mfderiv_comp_subtype h hz)
+  have hgv : g ⟨v, hvW⟩ = 0 := by
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply,
+      Submodule.Quotient.mk_eq_zero]
+    exact hvS
   exact hv0 (congrArg Subtype.val (hinj (hgv.trans (map_zero g).symm)))
 
 /-- **Rigid parametrized intersections are discrete.** For a Morse–Smale family with
