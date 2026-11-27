@@ -18,6 +18,9 @@ class, every object in the class has a minimal injective resolution with all its
 class. This applies, in particular, to finitely generated modules over an Artin algebra. The
 construction iterates the same injective-envelope step as
 `CategoryTheory.ComposableArrows.exists_isMinimalInjectiveCoresolution` for finite coresolutions.
+The complex, its exactness, and the quasi-isomorphism proof adapt Mathlib's
+`CategoryTheory.InjectiveResolution.of` from `Mathlib.CategoryTheory.Abelian.Injective.Resolution`,
+using chosen injective envelopes in place of `Injective.under`.
 
 For the use of minimal injective resolutions in dominant dimension, see Auslander, Reiten and
 Smalø, *Representation Theory of Artin Algebras*, §VI.5, p. 211.
@@ -53,13 +56,8 @@ variable [Abelian C]
 
 /-- The coaugmentation of a minimal injective resolution is an essential monomorphism. -/
 theorem IsMinimal.isEssentialMono_ι₀ {X : C} {I : InjectiveResolution X} (h : I.IsMinimal) :
-    IsEssentialMono I.ι₀ := by
-  let isKernel := I.exact_ι₀.fIsKernel
-  let e := isKernel.conePointUniqueUpToIso (kernelIsKernel _)
-  have he : e.hom ≫ kernel.ι (I.cocomplex.d 0 1) = I.ι₀ := by
-    simpa using IsLimit.conePointUniqueUpToIso_hom_comp isKernel (kernelIsKernel _)
-      WalkingParallelPair.zero
-  exact he ▸ (isEssentialMono_of_isIso e.hom).comp (h 0)
+    IsEssentialMono I.ι₀ :=
+  (I.exact_ι₀.fIsKernel.isEssentialMono_kernel_ι_iff).1 (h 0)
 
 section Construction
 
@@ -169,13 +167,8 @@ theorem _root_.TauCeti.exists_isMinimal_injectiveResolution {Y : C} (hY : Q Y) :
       ι := augmentation hQ X
       quasiIso := quasiIso_augmentation hQ X }
   refine ⟨I, fun n ↦ ?_, fun n ↦ (envelope hQ (cosyzygy hQ X n)).property.2.1⟩
-  let isKernel := presentationIsKernel hQ X n (cochainComplex_d hQ X n)
-  let e := isKernel.conePointUniqueUpToIso (kernelIsKernel (I.cocomplex.d n (n + 1)))
-  have he : e.hom ≫ kernel.ι (I.cocomplex.d n (n + 1)) = (presentation hQ X n).f := by
-    simpa using IsLimit.conePointUniqueUpToIso_hom_comp isKernel (kernelIsKernel _)
-      WalkingParallelPair.zero
-  exact (isEssentialMono_isIso_comp_iff e.hom _).1
-    (he.symm ▸ (envelope hQ (cosyzygy hQ X n)).property.1)
+  exact ((presentationIsKernel hQ X n (cochainComplex_d hQ X n)).isEssentialMono_kernel_ι_iff).2
+    (envelope hQ (cosyzygy hQ X n)).property.1
 
 end Construction
 
