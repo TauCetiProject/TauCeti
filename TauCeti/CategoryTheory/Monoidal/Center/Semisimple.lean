@@ -377,9 +377,7 @@ theorem globalDim_f [IsFiniteSemisimpleCategory (Center C)]
     have h1 := congrArg Hom.f
       (endAlgEquivOfSimple_smul_id (k := k) (End.of (globalDim (Center C)))).symm
     rwa [endAlgEquivOfSimple_globalDim k C, smul_f, id_f] at h1
-  rw [hZ, hd]
-  simp [sq, smul_smul]
-  rfl
+  rw [hZ, hd, Linear.smul_comp, Linear.comp_smul, Category.id_comp, smul_smul, sq]
 
 end Pivotal
 
