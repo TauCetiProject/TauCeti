@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DiracSystem.Basic
+import TauCeti.Analysis.Matrix.L2OpNorm
 
 /-!
 # The norm of the Dirac fundamental matrix
@@ -13,7 +14,8 @@ public import TauCeti.Analysis.ODE.DiracSystem.Basic
 In the Euclidean operator norm of `EuclideanSpace ℂ (Fin 2)`, the Dirac coefficient satisfies
 `‖-Ω(z - Q_q(s))‖ ≤ |z| + |q(s)|` (`TauCeti.norm_toEuclideanCLM_diracCoeff_le`), so the
 fundamental matrix satisfies `‖M_q(t, z)‖ ≤ exp(t|z| + ∫₀ᵗ |q|)` for `t ≥ 0`
-(`TauCeti.norm_toEuclideanCLM_diracFundamentalMatrix_le`).
+(`TauCeti.norm_toEuclideanCLM_diracFundamentalMatrix_le`). Hence every entry of `M_q(t, z)` is
+bounded by the same exponential (`TauCeti.norm_diracFundamentalMatrix_apply_le`).
 
 The bound is attained for a constant potential `q = c` at `z = 0`. There the coefficient is the
 constant matrix `K = Ω Q_c = [[Re c, -Im c], [-Im c, -Re c]]`, with `K² = |c|²`, and
@@ -54,6 +56,15 @@ theorem norm_toEuclideanCLM_diracFundamentalMatrix_le (hq : IntegrableOn q (Icc 
   rw [intervalIntegral.integral_add intervalIntegrable_const hqi]
   simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul]
   rw [abs_of_nonneg (add_nonneg (by positivity) hint)]
+
+open scoped Matrix.Norms.L2Operator in
+/-- **Entries of the fundamental matrix.** If `q` is integrable on `[0, t]` and `t ≥ 0`, every
+entry of `M_q(t, z)` has modulus at most `exp(t|z| + ∫₀ᵗ |q|)`. -/
+theorem norm_diracFundamentalMatrix_apply_le (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t)
+    (z : ℂ) (i j : Fin 2) :
+    ‖diracFundamentalMatrix q t z i j‖ ≤ Real.exp (t * ‖z‖ + ∫ s in (0 : ℝ)..t, ‖q s‖) :=
+  ((norm_apply_le_l2_opNorm _ i j).trans_eq (cstar_norm_def _)).trans
+    (norm_toEuclideanCLM_diracFundamentalMatrix_le hq ht z)
 
 /-- **A constant potential at `z = 0`.** For a constant `c`,
 `M_c(t, 0) = cosh(t|c|) + (sinh(t|c|)/|c|) Ω Q_c`, with

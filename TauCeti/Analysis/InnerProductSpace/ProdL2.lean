@@ -32,6 +32,9 @@ three siblings). Block operators multiply as matrices (`WithLp.blockL2_mul_block
 adjoint is the conjugate transpose (`WithLp.adjoint_blockL2`), and a block operator with compact
 entries is compact (`WithLp.isCompactOperator_blockL2`). The block diagonal operators are the
 block sums `ContinuousLinearMap.withLpProdMap` (`WithLp.blockL2_zero_zero`).
+
+The orthogonal complement of the diagonal `WithLp.diagonal 2 𝕜 E` of `WithLp 2 (E × E)` consists
+of the antidiagonal vectors `(η, -η)` (`WithLp.mem_orthogonal_diagonal_iff`).
 -/
 
 public section
@@ -121,6 +124,22 @@ theorem adjoint_diagL2 : (diagL2 𝕜 E).adjoint = WithLp.fstL 2 𝕜 E E + With
   simp [adjoint_diagL2]
 
 end Adjoint
+
+/-! ### The diagonal -/
+
+variable {𝕜 E} in
+/-- The vectors orthogonal to the diagonal of `WithLp 2 (E × E)` are the `(η, -η)`. -/
+@[simp]
+theorem mem_orthogonal_diagonal_iff {ζ : WithLp 2 (E × E)} :
+    ζ ∈ (diagonal 2 𝕜 E)ᗮ ↔ ζ.snd = -ζ.fst := by
+  rw [Submodule.mem_orthogonal]
+  refine ⟨fun h ↦ ?_, fun h u hu ↦ ?_⟩
+  · have h' := h (toLp 2 (ζ.fst + ζ.snd, ζ.fst + ζ.snd)) (mem_diagonal_iff.2 rfl)
+    rw [prod_inner_apply] at h'
+    simp only [ofLp_fst, ofLp_snd] at h'
+    rw [← inner_add_right, inner_self_eq_zero] at h'
+    exact eq_neg_iff_add_eq_zero.2 (by rwa [add_comm])
+  · simp [prod_inner_apply, mem_diagonal_iff.1 hu, h]
 
 /-! ### Block operators -/
 

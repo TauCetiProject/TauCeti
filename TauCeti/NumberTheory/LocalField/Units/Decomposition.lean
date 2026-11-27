@@ -118,6 +118,18 @@ theorem mul_zpow_neg_mem_unitFiltration_zero (hϖ : normalizedValuation K ϖ = .
   rw [← ker_normalizedValuation, MonoidHom.mem_ker, map_mul,
     normalizedValuation_zpow_of_eq_ofAdd_one hϖ, ofAdd_neg, ofAdd_toAdd, mul_inv_cancel]
 
+/-- The **tame unit** `(-1) ^ (v_K(a) v_K(b)) · b ^ v_K(a) · a ^ (-v_K(b))` of two elements of `Kˣ`
+lies in `U(K,0)`: its normalized valuation is `v_K(b) v_K(a) - v_K(a) v_K(b) = 0`. It is the unit
+`Valuation.tameUnit` of `b` and `a`, read through the normalized valuation, which enters the tame
+formula for the norm-residue symbol. -/
+theorem neg_one_zpow_mul_zpow_mul_zpow_mem_unitFiltration_zero (a b : Kˣ) :
+    (-1) ^ ((normalizedValuation K a).toAdd * (normalizedValuation K b).toAdd) *
+        b ^ (normalizedValuation K a).toAdd * a ^ (-(normalizedValuation K b).toAdd) ∈
+      unitFiltration K 0 := by
+  rw [← ker_normalizedValuation, MonoidHom.mem_ker]
+  apply Multiplicative.toAdd.injective
+  simp [normalizedValuation_neg, mul_comm]
+
 variable (K) in
 /-- **The structure of `Kˣ` attached to a uniformizer.** For `ϖ : Kˣ` of normalized valuation
 `1`, the map `x ↦ (v_K(x), x ϖ^{-v_K(x)})` is an isomorphism of topological groups

@@ -67,6 +67,13 @@ taken by the completed modules `TauCeti.NovikovModule` and the product of class-
   (`TauCeti.Floer.CappedOrbit.conleyZehnderIndex_vadd`), as it raises the action by the area of
   `B`. A capped orbit is determined by its orbit, its action and its index
   (`TauCeti.Floer.CappedOrbit.eq_iff_action_eq_and_conleyZehnderIndex_eq`).
+* **The grading of a capped orbit.** The integer grading `TauCeti.Floer.CappedOrbit.grading` is the
+  nearest integer to the index. At a nondegenerate orbit it is the index itself
+  (`TauCeti.Floer.CappedOrbit.grading_eq_conleyZehnderIndex`), its parity `(-1) ^ (n + μ)` is the
+  sign of `det (1 - dφ_1)` (`TauCeti.Floer.CappedOrbit.negOnePow_add_grading`), and gluing `B`
+  raises it by `2 c₁(B)` for every orbit (`TauCeti.Floer.CappedOrbit.grading_vadd`). Its
+  normalization at the constant orbits of a small Morse function is in
+  `TauCeti.Geometry.Symplectic.Floer.Cap.ConstantOrbit`.
 * **The sign of the index.** The index is Tau Ceti's coordinate-free Conley–Zehnder index
   (`TauCeti.SymplecticForm.conleyZehnderIndex`), which reads paths in bases in which the
   symplectic form has the matrix `J`. In the complex coordinates of `ℂⁿ`, where the grading of
@@ -85,6 +92,7 @@ taken by the completed modules `TauCeti.NovikovModule` and the product of class-
 * `TauCeti.Floer.CappedOrbit`: the capped contractible orbits.
 * `TauCeti.Floer.CappedOrbit.action`: the capped action of a capped orbit.
 * `TauCeti.Floer.CappedOrbit.conleyZehnderIndex`: the Conley–Zehnder index of a capped orbit.
+* `TauCeti.Floer.CappedOrbit.grading`: the integer grading of a capped orbit.
 
 ## Main results
 
@@ -97,6 +105,9 @@ taken by the completed modules `TauCeti.NovikovModule` and the product of class-
   index.
 * `TauCeti.Floer.CappedOrbit.conleyZehnderIndex_mk_homotopyClass`: the index of the class of a
   smooth cap is the index of the linearized flow along the capped loop.
+* `TauCeti.Floer.CappedOrbit.grading_eq_conleyZehnderIndex`,
+  `TauCeti.Floer.CappedOrbit.grading_vadd`: the grading is the index at a nondegenerate orbit, and
+  its recapping law.
 
 ## References
 
@@ -346,6 +357,77 @@ theorem eq_iff_action_eq_and_conleyZehnderIndex_eq [CompactSpace M]
   rw [action_def, action_def, conleyZehnderIndex_def, conleyZehnderIndex_def,
     ← SphericalCapClass.eq_iff_action_eq_and_conleyZehnderIndex_eq, Equiv.apply_eq_iff_eq]
 
+/-- The **grading** of a capped orbit: the nearest integer to its Conley–Zehnder index
+(`TauCeti.Floer.SphericalCapClass.grading` of its cap class). At a nondegenerate orbit it is the
+index itself (`TauCeti.Floer.CappedOrbit.grading_eq_conleyZehnderIndex`); it is the grading `μ` of
+the generators of the capped Floer complex. -/
+def grading (p : CappedOrbit ω c X) : ℤ :=
+  SphericalCapClass.grading hσ.isNondegenerate (hc (p.1.val 0))
+    (exists_isSmoothBasedCap_orbitLoop hX p.1)
+    (continuous_orbitLinearizedFlow (hX.of_le (by simp)) p.1)
+    (SmoothTwoForm.eval₂_orbitLinearizedFlow hσ.isClosed hXH hHam (hX.of_le (by simp)) p.1)
+    (OrbitCapClass.toSphericalCapClass p.2)
+
+/-- The grading of a capped orbit is the grading of its cap class
+(`TauCeti.Floer.SphericalCapClass.grading`). -/
+theorem grading_def (p : CappedOrbit ω c X) :
+    grading hX hσ hXH hHam hc p =
+      SphericalCapClass.grading hσ.isNondegenerate (hc (p.1.val 0))
+        (exists_isSmoothBasedCap_orbitLoop hX p.1)
+        (continuous_orbitLinearizedFlow (hX.of_le (by simp)) p.1)
+        (SmoothTwoForm.eval₂_orbitLinearizedFlow hσ.isClosed hXH hHam (hX.of_le (by simp)) p.1)
+        (OrbitCapClass.toSphericalCapClass p.2) :=
+  (rfl)
+
+/-- The grading of a capped orbit is the nearest integer to its Conley–Zehnder index. -/
+theorem grading_eq_round (p : CappedOrbit ω c X) :
+    grading hX hσ hXH hHam hc p = round (conleyZehnderIndex hX hσ hXH hHam hc p) :=
+  SphericalCapClass.grading_def _ _ _ _ _ _
+
+/-- **At a nondegenerate orbit the grading is the Conley–Zehnder index.** If `x 0` is a
+nondegenerate fixed point of the return map `φ_{0,1}` of the flow, the grading of every capped
+orbit `⟨x, q⟩` is its Conley–Zehnder index. -/
+theorem grading_eq_conleyZehnderIndex (p : CappedOrbit ω c X)
+    (hp : IsNondegenerateFixedPt I (timeDependentFlowOf X 0 1) (p.1.val 0)) :
+    (grading hX hσ hXH hHam hc p : ℝ) = conleyZehnderIndex hX hσ hXH hHam hc p :=
+  SphericalCapClass.grading_eq _ _ _ _ _ (orbitLinearizedFlow_zero _ p.1)
+    ((isNondegenerateFixedPt_iff_orbitLinearizedFlow (hX.of_le (by simp)) p.1).1 hp) _
+
+/-- **The parity of the grading.** If the differential of the return map `φ_{0,1}` at `x 0` is an
+endomorphism `P` of `T_(x 0) M` without the eigenvalue `1`, then `(-1) ^ (n + μ) = sign det (1 - P)`
+for the grading `μ` of every capped orbit `⟨x, q⟩`, where `2 n` is the dimension of `M`. So the
+parity of `n + μ` depends only on the orbit. -/
+theorem negOnePow_add_grading (p : CappedOrbit ω c X)
+    {P : TangentSpace I (p.1.val 0) →ₗ[ℝ] TangentSpace I (p.1.val 0)}
+    (hP : ∀ v, mfderiv I I (timeDependentFlowOf X 0 1) (p.1.val 0) v = P v)
+    (hPdet : LinearMap.det (1 - P) ≠ 0) :
+    ((((Module.finrank ℝ E / 2 : ℕ) : ℤ) + grading hX hσ hXH hHam hc p).negOnePow : ℤ) =
+      SignType.sign (LinearMap.det (1 - P)) :=
+  SphericalCapClass.negOnePow_add_grading _ _ _ _ _ (orbitLinearizedFlow_zero _ p.1)
+    (fun v ↦ (orbitLinearizedFlow_apply _ p.1 1 v).trans (hP v)) hPdet _
+
+/-- **Two capped orbits of the same orbit differ by a class of the period group**, and their
+gradings by its degree `2 c₁`. -/
+theorem grading_sub_grading (x : contractiblePeriodicSolutions X 1)
+    (q' q : OrbitCapClass ω c x) :
+    grading hX hσ hXH hHam hc ⟨x, q'⟩ - grading hX hσ hXH hHam hc ⟨x, q⟩ =
+      PeriodGroup.degree _ _ (q' -ᵥ q) := by
+  rw [grading_def, grading_def, SphericalCapClass.grading_sub_grading, OrbitCapClass.vsub_def,
+    map_neg]
+
+/-- **A capped orbit is determined by its action and its grading.** For a closed `C¹` two-form `α`
+whose integral over every sphere is the value of `ω` on its Hurewicz class, for instance `σ` itself
+when `ω` is its area, two capped orbits of the same orbit are equal exactly when they have the same
+capped action and the same grading. -/
+theorem eq_iff_action_eq_and_grading_eq [CompactSpace M]
+    {α : RoughForm I M ℝ 2} (hα : IsSmoothForm I 1 α) (hdα : mextDeriv α = 0)
+    (hω : ∀ y a, ω (hurewiczIntHom M y 1 a) = sphereIntegralHom y hα hdα a)
+    {x : contractiblePeriodicSolutions X 1} {q' q : OrbitCapClass ω c x} :
+    q' = q ↔ action hX hα hdα hω Ham ⟨x, q'⟩ = action hX hα hdα hω Ham ⟨x, q⟩ ∧
+      grading hX hσ hXH hHam hc ⟨x, q'⟩ = grading hX hσ hXH hHam hc ⟨x, q⟩ := by
+  rw [action_def, action_def, grading_def, grading_def,
+    ← SphericalCapClass.eq_iff_action_eq_and_grading_eq, Equiv.apply_eq_iff_eq]
+
 variable [PathConnectedSpace M]
 
 /-- **The recapping law.** Gluing a class `B` of the period group to the disc of a capped orbit
@@ -358,6 +440,17 @@ theorem conleyZehnderIndex_vadd (x : contractiblePeriodicSolutions X 1)
       conleyZehnderIndex hX hσ hXH hHam hc ⟨x, q⟩ + PeriodGroup.degree _ _ B := by
   rw [conleyZehnderIndex_def, conleyZehnderIndex_def, OrbitCapClass.toSphericalCapClass_vadd,
     SphericalCapClass.conleyZehnderIndex_vadd, map_neg, Int.cast_neg, neg_neg, add_comm]
+
+/-- **The recapping law of the grading.** Gluing a class `B` of the period group to the disc of a
+capped orbit raises its grading by the degree `2 c₁(B)` of `B`, as it raises its action by the area
+of `B` (`TauCeti.Floer.CappedOrbit.action_vadd`). -/
+@[simp]
+theorem grading_vadd (x : contractiblePeriodicSolutions X 1) (B : SphericalPeriodGroup ω c)
+    (q : OrbitCapClass ω c x) :
+    grading hX hσ hXH hHam hc ⟨x, B +ᵥ q⟩ =
+      grading hX hσ hXH hHam hc ⟨x, q⟩ + PeriodGroup.degree _ _ B := by
+  rw [grading_def, grading_def, OrbitCapClass.toSphericalCapClass_vadd,
+    SphericalCapClass.grading_vadd, map_neg, neg_neg, add_comm]
 
 end CappedOrbit
 

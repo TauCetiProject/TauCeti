@@ -28,6 +28,8 @@ infinite energy as well; no finiteness hypothesis is needed.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_comp_coisometry`: `E_b(T V) = E_c(T)` when `V†`
   preserves norms.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_isometry_comp_coisometry`: `E_b(U T V) = E_c(T)`.
+* `ContinuousLinearMap.hilbertSchmidtNorm_comp_starProjection`: `‖T ∘ pr_U‖_HS = ‖T ∘ ι_U‖_HS`
+  for the orthogonal projection `pr_U` onto a complete subspace `U` and its inclusion `ι_U`.
 * `ContinuousLinearMap.hilbertSchmidtNorm_isometry_comp`,
   `ContinuousLinearMap.hilbertSchmidtNorm_comp_coisometry` and
   `ContinuousLinearMap.hilbertSchmidtNorm_isometry_comp_coisometry`: the corresponding identities
@@ -93,6 +95,18 @@ theorem hilbertSchmidtNorm_comp_coisometry (T : F →L[𝕜] G) (V : E →L[𝕜
   obtain ⟨_, c, -⟩ := exists_hilbertBasis 𝕜 F
   rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtNorm_eq_sqrt _ c,
     hilbertSchmidtEnergy_comp_coisometry T V hV b c]
+
+omit [CompleteSpace F] in
+/-- **Compression to a subspace.** For a complete subspace `U` of the source, composing with the
+orthogonal projection onto `U` gives the Hilbert–Schmidt norm of the restriction of `T` to `U`:
+`‖T ∘ pr_U‖_HS = ‖T ∘ ι_U‖_HS`. -/
+theorem hilbertSchmidtNorm_comp_starProjection (T : E →L[𝕜] F) (U : Submodule 𝕜 E)
+    [CompleteSpace U] :
+    (T ∘L U.starProjection).hilbertSchmidtNorm = (T ∘L U.subtypeL).hilbertSchmidtNorm := by
+  -- `pr_U = ι_U ∘ π_U`, and the adjoint of `π_U` is `ι_U`, which preserves norms.
+  rw [Submodule.starProjection, ← comp_assoc]
+  exact hilbertSchmidtNorm_comp_coisometry _ _ fun x ↦ by
+    simp [Submodule.adjoint_orthogonalProjectionOnto]
 
 /-- **Two-sided isometric invariance of the energy.** If `U` and the adjoint of `V` preserve
 norms, then `E_b(U T V) = E_c(T)`. -/
