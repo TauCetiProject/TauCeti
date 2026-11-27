@@ -40,18 +40,17 @@ open scoped ComplexConjugate Matrix.Norms.L2Operator
 namespace TauCeti.Fock
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {ε : ι → ℤˣ}
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
-omit [DecidableEq ι] [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E] in
+omit [DecidableEq ι] in
 /-- Uniform control on the unit ball extends to all integration variables by homogeneity. -/
 private theorem deformation_bounds
-    (f : E → ℂ × (ι → ℂ) → (ι → ℂ) × ℂ) (z : E)
-    (hf : ∀ (r : ℝ) y, f z (r • y) = (r • (f z y).1, r ^ 2 • (f z y).2))
+    (g : ℂ × (ι → ℂ) → (ι → ℂ) × ℂ)
+    (hg : ∀ (r : ℝ) y, g (r • y) = (r • (g y).1, r ^ 2 • (g y).2))
     (hsmall : ∀ y ∈ closedBall (0 : ℂ × (ι → ℂ)) 1,
-      ‖(f z y).1‖ < 2 ∧ (f z y).2.re + (∑ i, ‖y.2 i‖ ^ 2) / 2 < 1 / 4)
+      ‖(g y).1‖ < 2 ∧ (g y).2.re + (∑ i, ‖y.2 i‖ ^ 2) / 2 < 1 / 4)
     (x : ι → ℂ) :
-    ‖(f z (1, x)).1‖ ≤ 2 * (1 + ‖x‖) ∧
-      (f z (1, x)).2.re ≤ 1 - (∑ i, ‖x i‖ ^ 2) / 8 := by
+    ‖(g (1, x)).1‖ ≤ 2 * (1 + ‖x‖) ∧
+      (g (1, x)).2.re ≤ 1 - (∑ i, ‖x i‖ ^ 2) / 8 := by
   let r : ℝ := max 1 ‖x‖
   have hr : 0 < r := lt_of_lt_of_le zero_lt_one (le_max_left _ _)
   have hnorm : ‖((1, x) : ℂ × (ι → ℂ))‖ = r := by simp [r, Prod.norm_def]
@@ -60,12 +59,12 @@ private theorem deformation_bounds
       Real.norm_of_nonneg (inv_nonneg.mpr hr.le),
       hnorm, inv_mul_cancel₀ hr.ne', le_refl]
   obtain ⟨h₁, h₂⟩ := hsmall _ hy
-  rw [hf] at h₁ h₂
+  rw [hg] at h₁ h₂
   have hsum : ∑ i, ‖(r⁻¹ • x) i‖ ^ 2 = r⁻¹ ^ 2 * ∑ i, ‖x i‖ ^ 2 := by
     simp [Pi.smul_apply, Real.norm_of_nonneg hr.le, mul_pow, Finset.mul_sum]
   simp only [norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hr.le)] at h₁
-  have h₁' : ‖(f z (1, x)).1‖ < 2 * r := by simpa [mul_comm] using (inv_mul_lt_iff₀ hr).mp h₁
-  have h₂' : (f z (1, x)).2.re + (∑ i, ‖x i‖ ^ 2) / 2 < r ^ 2 / 4 := by
+  have h₁' : ‖(g (1, x)).1‖ < 2 * r := by simpa [mul_comm] using (inv_mul_lt_iff₀ hr).mp h₁
+  have h₂' : (g (1, x)).2.re + (∑ i, ‖x i‖ ^ 2) / 2 < r ^ 2 / 4 := by
     simp only [Complex.real_smul, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im,
       zero_mul, sub_zero, Prod.smul_snd, hsum] at h₂
     have := (mul_lt_mul_iff_right₀ (sq_pos_of_pos hr)).mpr h₂
@@ -79,23 +78,22 @@ private theorem deformation_bounds
   exact ⟨h₁'.le.trans (by linarith), by
     nlinarith [Finset.sum_nonneg (s := Finset.univ) (fun i : ι ↦ fun _ ↦ sq_nonneg ‖x i‖)]⟩
 
-omit [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E] in
 /-- The polynomial times deformed Gaussian has an integrable bound independent of the parameter. -/
 private theorem norm_deformed_integrand_le (P : MvPolynomial ι ℂ)
-    (f : E → ℂ × (ι → ℂ) → (ι → ℂ) × ℂ) (z : E)
-    (hb : ∀ x : ι → ℂ, ‖(f z (1, x)).1‖ ≤ 2 * (1 + ‖x‖) ∧
-      (f z (1, x)).2.re ≤ 1 - (∑ i, ‖x i‖ ^ 2) / 8) (x : ι → ℂ) :
-    ‖(eval (f z (1, x)).1 P * cexp (f z (1, x)).2) •
+    (g : ℂ × (ι → ℂ) → (ι → ℂ) × ℂ)
+    (hb : ∀ x : ι → ℂ, ‖(g (1, x)).1‖ ≤ 2 * (1 + ‖x‖) ∧
+      (g (1, x)).2.re ≤ 1 - (∑ i, ‖x i‖ ^ 2) / 8) (x : ι → ℂ) :
+    ‖(eval (g (1, x)).1 P * cexp (g (1, x)).2) •
       ReproducingModel.heisenbergRep x (ReproducingModel.vacuum : FockSpace ε)‖ ≤
       P.l1Norm * Real.exp (2 * P.totalDegree + 1) *
         ‖(ReproducingModel.vacuum : FockSpace ε)‖ *
         (Real.exp (4 * P.totalDegree * ‖(1 / 2 : ℝ) • x‖) *
           ‖gaussian ι ((1 / 2 : ℝ) • x)‖) := by
   have hP := P.l1Norm_nonneg
-  have hmax : max 1 ‖(f z (1, x)).1‖ ≤ Real.exp (2 * (1 + ‖x‖)) := by
+  have hmax : max 1 ‖(g (1, x)).1‖ ≤ Real.exp (2 * (1 + ‖x‖)) := by
     exact max_le (Real.one_le_exp (by positivity))
       ((hb x).1.trans (by linarith [Real.add_one_le_exp (2 * (1 + ‖x‖))]))
-  have hpoly : ‖eval (f z (1, x)).1 P‖ ≤
+  have hpoly : ‖eval (g (1, x)).1 P‖ ≤
       P.l1Norm * Real.exp (P.totalDegree * (2 * (1 + ‖x‖))) := by
     refine (P.norm_eval_le_l1Norm_mul_max_one_pow _).trans ?_
     rw [Real.exp_natCast_mul]
@@ -110,16 +108,12 @@ private theorem norm_deformed_integrand_le (P : MvPolynomial ι ℂ)
       rw [norm_gaussian]
       simp only [Pi.smul_apply, norm_smul, Real.norm_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2),
         mul_pow, ← Finset.mul_sum, ← Real.exp_add]
-      rw [mul_assoc P.l1Norm, ← Real.exp_add]
-      have hexp : (P.totalDegree : ℝ) * (2 * (1 + ‖x‖)) +
-          (1 - (∑ i, ‖x i‖ ^ 2) / 8) =
-          (2 * P.totalDegree + 1) +
-            (4 * P.totalDegree * (1 / 2 * ‖x‖) -
-              ((1 / 2 : ℝ) ^ 2 * ∑ i, ‖x i‖ ^ 2) / 2) := by ring
-      rw [hexp]
-      ring_nf
-      simp only [Real.exp_add]
+      rw [mul_assoc P.l1Norm, ← Real.exp_add, mul_right_comm _ ‖_‖,
+        mul_assoc P.l1Norm (Real.exp (2 * _ + 1)), ← Real.exp_add]
+      congr 3
       ring
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
 /-- Superpositions of holomorphic homogeneous deformations of a polynomial times the Gaussian
 are analytic near the undeformed parameter. The two components have real degrees one and two
@@ -160,7 +154,7 @@ theorem analyticAt_integral_smul_heisenbergRep (P : MvPolynomial ι ℂ)
   · have hcont : Continuous (f z) := hc.comp (continuous_const.prodMk continuous_id)
     have hp := P.continuous_eval
     fun_prop
-  · exact norm_deformed_integrand_le P f w (deformation_bounds f w (hh w) (hU hw)) x
+  · exact norm_deformed_integrand_le P (f w) (deformation_bounds (f w) (hh w) (hU hw)) x
   · have hp : Differentiable ℂ (fun l : ι → ℂ ↦ eval l P) :=
       fun l ↦ (P.hasFDerivAt_eval l).differentiableAt
     exact (by fun_prop : Differentiable ℂ fun z ↦
@@ -292,6 +286,11 @@ theorem differentiableAt_weilRep_polyVector {γ : ℝ → unitaryGroup ε} {t : 
     simpa [η] using hγ.const_mul (((γ t)⁻¹ : GL ι ℂ) : Matrix ι ι ℂ)
   have hd := differentiableAt_weilRep_polyVector_of_eq_one (γ := η) (by simp [η]) hη P
   have h := ((weilRep ε (γ t)).restrictScalars ℝ).differentiableAt.comp t hd
-  simpa [Function.comp_def, η, ← mul_apply_eq_comp, ← map_mul] using h
+  -- Move the general point `γ t` to the identity using the representation law.
+  have hmove (s : ℝ) : weilRep ε (γ s) (polyVector ε P) =
+      weilRep ε (γ t) (weilRep ε (η s) (polyVector ε P)) := by
+    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_left]
+  rw [funext hmove]
+  exact h
 
 end TauCeti.Fock
