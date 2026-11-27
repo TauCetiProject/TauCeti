@@ -197,6 +197,16 @@ private theorem isLagrangian_comap_primaryComponent_two_evenSublattice [L.IsNond
       (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
       Nat.prime_two) hsq
 
+private theorem quadratic_restrict_primaryComponent_evenSublattice [L.IsNondegenerate]
+    (x : (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).restrict
+      (AddCommGroup.primaryComponent
+        (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2)) :
+    ((L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).restrict
+      (AddCommGroup.primaryComponent
+        (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2)).quadratic x =
+      L.evenSublattice.discriminantQuadraticMap L.isEven_evenSublattice x.val :=
+  rfl
+
 /-- For a nondegenerate integral lattice of odd discriminant, the `2`-primary component of the
 discriminant quadratic module of its even sublattice has Gauss-sum invariant equal to the norm of
 any characteristic vector modulo eight. -/
@@ -216,18 +226,14 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
     (natCard_comap_primaryComponent_two_evenSublattice_sq L hodd).trans (A.natCard_restrict P).symm
   let a₂ : A₂ := ⟨Submodule.Quotient.mk (halfCharacteristicDual L hw),
     halfCharacteristicDual_mem_primaryComponent_two L hw⟩
-  have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ := by
-    rw [A.restrict_quadratic P (a₂ + (h : A₂)), A.restrict_quadratic P a₂]
-    dsimp only [A]
-    rw [L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
-        (a₂ + (h : A₂)).val,
-      L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice a₂.val]
-    exact quadratic_halfCharacteristicDual_add L hw ⟨h.val.val, AddSubgroup.mem_comap.mp h.property⟩
-  have hqa₂ : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) := by
-    rw [A.restrict_quadratic P a₂]
-    dsimp only [A]
-    rw [L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice a₂.val]
-    exact quadratic_halfCharacteristicDual L hw
+  have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ :=
+    (quadratic_restrict_primaryComponent_evenSublattice L (a₂ + (h : A₂))).trans <|
+      (quadratic_halfCharacteristicDual_add L hw
+          ⟨h.val.val, AddSubgroup.mem_comap.mp h.property⟩).trans
+        (quadratic_restrict_primaryComponent_evenSublattice L a₂).symm
+  have hqa₂ : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) :=
+    (quadratic_restrict_primaryComponent_evenSublattice L a₂).trans
+      (quadratic_halfCharacteristicDual L hw)
   refine FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq A₂ ?_
   rw [FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian a₂
     hH₂_lag ha₂, hqa₂, ← hsq, Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _),

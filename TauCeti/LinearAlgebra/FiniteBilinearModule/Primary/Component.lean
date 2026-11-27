@@ -215,12 +215,11 @@ theorem Isometry.refl_restrictPrimaryComponent (A : FiniteBilinearModule.{u}) (n
       Isometry.refl (A.restrict (AddCommGroup.primaryComponent A n)) :=
   Isometry.toAddEquiv_injective (by simp)
 
-/-- Restricting the inverse bilinear isometry to `n`-primary components gives the inverse of the
-restricted isometry. -/
+/-- The inverse of a restricted bilinear isometry is the restriction of the inverse isometry. -/
 @[simp]
 theorem Isometry.symm_restrictPrimaryComponent {A : FiniteBilinearModule.{u}}
     {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ) :
-    f.symm.restrictPrimaryComponent n = (f.restrictPrimaryComponent n).symm :=
+    (f.restrictPrimaryComponent n).symm = f.symm.restrictPrimaryComponent n :=
   Isometry.toAddEquiv_injective (by simp)
 
 /-- Restricting a composite bilinear isometry to `n`-primary components gives the composite of the
@@ -341,12 +340,11 @@ theorem Isometry.refl_restrictPrimaryComponent (A : FiniteQuadraticModule.{u}) (
     apply Subtype.ext
     simp
 
-/-- Restricting the inverse quadratic isometry to `n`-primary components gives the inverse of the
-restricted isometry. -/
+/-- The inverse of a restricted quadratic isometry is the restriction of the inverse isometry. -/
 @[simp]
 theorem Isometry.symm_restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
-    Isometry.restrictPrimaryComponent f.symm n = (f.restrictPrimaryComponent n).symm :=
+    (f.restrictPrimaryComponent n).symm = Isometry.restrictPrimaryComponent f.symm n :=
   DFunLike.ext _ _ fun y ↦ by
     apply EquivLike.injective (f.restrictPrimaryComponent n)
     rw [QuadraticMap.IsometryEquiv.apply_symm_apply]; exact Subtype.ext (by simp)

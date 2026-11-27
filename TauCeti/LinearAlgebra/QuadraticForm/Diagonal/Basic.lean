@@ -234,6 +234,27 @@ theorem _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
 
 end Reindex
 
+omit [Fintype ι] [Fintype κ] in
+/-- Fiberwise linear equivalences along `k` and `l` assemble into a linear equivalence
+`(ι → R) ≃ₗ[R] (κ → R)`. -/
+private def fiberLinearEquiv {S : Type*} (k : ι → S) (l : κ → S)
+    (e : ∀ m : S, ({i : ι // k i = m} → R) ≃ₗ[R] ({j : κ // l j = m} → R)) :
+    (ι → R) ≃ₗ[R] (κ → R) :=
+  (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv k)).trans <|
+    (LinearEquiv.piCurry R fun (m : S) (_ : {i : ι // k i = m}) => R).trans <|
+      (LinearEquiv.piCongrRight e).trans <|
+        (LinearEquiv.piCurry R fun (m : S) (_ : {j : κ // l j = m}) => R).symm.trans
+          (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv l).symm)
+
+omit [Fintype ι] [Fintype κ] in
+/-- Evaluating `fiberLinearEquiv` at `j : κ` applies the `l j`-fiber equivalence to the `l j`-fiber
+of the input vector. -/
+private theorem fiberLinearEquiv_apply {S : Type*} (k : ι → S) (l : κ → S)
+    (e : ∀ m : S, ({i : ι // k i = m} → R) ≃ₗ[R] ({j : κ // l j = m} → R))
+    (x : ι → R) (j : κ) :
+    fiberLinearEquiv k l e x j = e (l j) (fun i => x i.val) ⟨j, rfl⟩ :=
+  rfl
+
 /-- Fiberwise equivalences of unscaled diagonal forms assemble into an equivalence of the scaled
 diagonal forms `∑ uᵢ s(kᵢ) xᵢ²` and `∑ vⱼ s(lⱼ) yⱼ²`. -/
 theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [DecidableEq S]
@@ -244,22 +265,8 @@ theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [Decidable
     (QuadraticMap.weightedSumSquares R (fun i => u i * s (k i))).Equivalent
       (QuadraticMap.weightedSumSquares R (fun j => v j * s (l j))) := by
   let e m := (h m).some
-  let E : (ι → R) ≃ₗ[R] (κ → R) :=
-    (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv k)).trans <|
-      (LinearEquiv.piCurry R fun (m : S) (_ : {i : ι // k i = m}) => R).trans <|
-        (LinearEquiv.piCongrRight fun m : S => (e m).toLinearEquiv).trans <|
-          (LinearEquiv.piCurry R fun (m : S) (_ : {j : κ // l j = m}) => R).symm.trans
-            (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv l).symm)
+  let E := fiberLinearEquiv k l fun m => (e m).toLinearEquiv
   refine ⟨{ toLinearEquiv := E, map_app' := fun x => ?_ }⟩
-  have hE (m : S) (j : {j : κ // l j = m}) :
-      E x j.val = e m (fun i => x i.val) j := by
-    have hj : (Equiv.sigmaFiberEquiv l).symm j.val = ⟨m, j⟩ :=
-      (Equiv.sigmaFiberEquiv l).symm_apply_eq.mpr rfl
-    simp only [E, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply,
-      LinearEquiv.piCurry_apply, LinearEquiv.piCongrRight_apply,
-      LinearEquiv.piCurry_symm_apply, LinearMap.funLeft_apply, Sigma.uncurry]
-    rw [hj]
-    exact congrArg (fun f => e m f j) (funext fun i => by simp [Sigma.curry])
   let T : Finset S := Finset.univ.image k ∪ Finset.univ.image l
   simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
   rw [← Function.sum_fiber_subtype l (T := T) (by simp [T]),
@@ -272,8 +279,10 @@ theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [Decidable
       = s m * ∑ j : {j : κ // l j = m},
           v j.val * (e m (fun i => x i.val) j * e m (fun i => x i.val) j) := by
         rw [Finset.mul_sum]
-        refine Finset.sum_congr rfl fun j _ => ?_
-        rw [hE m j, j.property, mul_comm (v j.val) (s m), mul_assoc]
+        refine Finset.sum_congr rfl fun ⟨j, hj⟩ _ => ?_
+        subst hj
+        rw [fiberLinearEquiv_apply, IsometryEquiv.coe_toLinearEquiv, mul_comm (v j) (s (l j)),
+          mul_assoc]
     _ = s m * ∑ i : {i : ι // k i = m}, u i.val * (x i.val * x i.val) := by
         rw [hmap]
     _ = ∑ i : {i : ι // k i = m}, (u i.val * s (k i.val)) * (x i.val * x i.val) := by

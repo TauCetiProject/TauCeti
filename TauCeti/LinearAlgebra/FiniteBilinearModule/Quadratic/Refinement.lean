@@ -277,7 +277,7 @@ theorem homOfBilinearHomOfOdd_apply (hA : Odd (Nat.card A))
 /-- Forgetting the quadratic structure after upgrading a bilinear morphism at odd order recovers
 the original bilinear morphism. -/
 @[simp]
-theorem homOfBilinearHomOfOdd_toFiniteBilinearModule (hA : Odd (Nat.card A))
+theorem toFiniteBilinearModule_homOfBilinearHomOfOdd (hA : Odd (Nat.card A))
     (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) :
     (homOfBilinearHomOfOdd hA f).toFiniteBilinearModule = f := by
   ext x; simp
@@ -285,7 +285,7 @@ theorem homOfBilinearHomOfOdd_toFiniteBilinearModule (hA : Odd (Nat.card A))
 /-- Upgrading the polar bilinear morphism of a quadratic morphism at odd order recovers the
 quadratic morphism. -/
 @[simp]
-theorem toFiniteBilinearModule_homOfBilinearHomOfOdd (hA : Odd (Nat.card A)) (g : Hom A B) :
+theorem homOfBilinearHomOfOdd_toFiniteBilinearModule (hA : Odd (Nat.card A)) (g : Hom A B) :
     homOfBilinearHomOfOdd hA g.toFiniteBilinearModule = g := by
   ext x; simp
 
