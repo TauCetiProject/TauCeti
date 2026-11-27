@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Taylor
 
+import Mathlib.Algebra.Polynomial.BigOperators
+
 /-!
 # Coefficient maps, variable swaps, and evaluation of bivariate polynomials
 
@@ -32,6 +34,8 @@ This file also provides coefficient and natural-degree formulas for `Bivariate.s
   natural degrees.
 * `Polynomial.natDegree_swap_eq_of_eq_C_mul_multiset_prod`: swapped (inner-variable) natural
   degree of a bivariate product `C c * s.prod`.
+* `Polynomial.natDegree_coeff_mul_le_of_le`, `Polynomial.natDegree_coeff_prod_le_of_le`: bounds for
+  the natural degrees of the coefficients of a product of bivariate polynomials.
 -/
 
 public section
@@ -174,5 +178,28 @@ theorem natDegree_swap_eq_of_eq_C_mul_multiset_prod {R : Type*} [CommSemiring R]
     natDegree_map_eq_of_injective C_injective,
     natDegree_multiset_prod _ fun h0 ↦ hswap_ne 0 h0 rfl,
     Multiset.map_map, Function.comp_def]
+
+/-- If the coefficients of `P` and `Q` in `R[X][Y]` have natural degree at most `a` and `b`, the
+coefficients of `P * Q` have natural degree at most `a + b`. -/
+theorem natDegree_coeff_mul_le_of_le {R : Type*} [Semiring R] {P Q : R[X][Y]} {a b : ℕ}
+    (hP : ∀ j, (P.coeff j).natDegree ≤ a) (hQ : ∀ j, (Q.coeff j).natDegree ≤ b) (n : ℕ) :
+    ((P * Q).coeff n).natDegree ≤ a + b := by
+  rw [coeff_mul]
+  exact natDegree_sum_le_of_forall_le _ _ fun x _ ↦
+    natDegree_mul_le.trans (add_le_add (hP _) (hQ _))
+
+/-- If every coefficient of each `P i` in `R[X][Y]` has natural degree at most `a`, every
+coefficient of `∏ i ∈ s, P i` has natural degree at most `#s * a`. -/
+theorem natDegree_coeff_prod_le_of_le {R ι : Type*} [CommSemiring R] (s : Finset ι)
+    (P : ι → R[X][Y]) {a : ℕ} (hP : ∀ i ∈ s, ∀ j, ((P i).coeff j).natDegree ≤ a) (n : ℕ) :
+    ((∏ i ∈ s, P i).coeff n).natDegree ≤ s.card * a := by
+  classical
+  induction s using Finset.induction_on generalizing n with
+  | empty => simp [coeff_one]; split_ifs <;> simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.card_insert_of_notMem hi, add_mul, one_mul,
+      add_comm (s.card * a)]
+    exact natDegree_coeff_mul_le_of_le (hP i (Finset.mem_insert_self i s))
+      (fun j ↦ ih (fun k hk ↦ hP k (Finset.mem_insert_of_mem hk)) j) n
 
 end Polynomial
