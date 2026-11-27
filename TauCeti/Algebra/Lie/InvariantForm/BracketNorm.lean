@@ -185,13 +185,18 @@ theorem lieBracketNorm_toQuadraticMap_eq_iSup (hrefl : B.IsRefl) (hpos : B.toQua
         (B.toQuadraticMap.comp
           ((derivedSeries ℝ L 1).incl.comp I.val.incl).toLinearMap).lieBracketNorm := by
   set D := derivedSeries ℝ L 1
-  let BD : LinearMap.BilinForm ℝ D := B.compl₁₂ D.incl.toLinearMap D.incl.toLinearMap
   have := B.isSemisimple_derivedSeries_one_of_anisotropic hrefl hpos.anisotropic hinv
-  rw [← lieBracketNorm_toQuadraticMap_comp_derivedSeries_incl hrefl hpos hinv]
-  exact lieBracketNorm_toQuadraticMap_eq_iSup_of_isSemisimple (B := BD)
-    (hrefl.compl₁₂ D.incl.toLinearMap)
+  have h := lieBracketNorm_toQuadraticMap_eq_iSup_of_isSemisimple
+    (B := B.compl₁₂ D.incl.toLinearMap D.incl.toLinearMap) (hrefl.compl₁₂ D.incl.toLinearMap)
     (B.posDef_toQuadraticMap_compl₁₂ hpos D.incl.toLinearMap D.incl_injective)
     (hinv.compl₁₂ D.incl)
+  rw [← lieBracketNorm_toQuadraticMap_comp_derivedSeries_incl hrefl hpos hinv,
+    ← BilinMap.toQuadraticMap_comp_same, h]
+  -- Restricting `B` along `D.incl` and then along `I.incl` is restricting it along their
+  -- composite.
+  refine iSup_congr fun I ↦ ?_
+  rw [LieHom.toLinearMap_comp, ← BilinMap.toQuadraticMap_comp_same B,
+    LinearMap.compl₁₂_comp_comp, BilinMap.toQuadraticMap_comp_same _ I.val.incl.toLinearMap]
 
 /-- **The norm of the Lie bracket is attained on a simple ideal**: for a reflexive invariant form
 `B` with positive definite diagonal on a finite-dimensional non-abelian real Lie algebra `L`, some
