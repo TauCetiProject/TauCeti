@@ -40,7 +40,10 @@ every field in which `|G|` is invertible, with the multiplicities read in that f
 group elements by character value writes the numerator as
 `N_X(z) = |G|⁻¹ ∑_a b_a ∏_{b ≠ a} (1 - b z)` with `b_a = ∑_{χ_V(g) = a} χ_X(g⁻¹)`
 (`FDRep.tensorMultiplicityNumerator_eq_sum_characterValues`); its coefficients are the
-convolutions of those of `Q` with the multiplicities. Over any field and for any monoid, the series
+convolutions of those of `Q` with the multiplicities. The grouped pairing
+`FDRep.finrank_hom_tensorPower_eq_sum_characterFiberSum` computes each multiplicity in the
+coefficient field from `FDRep.sum_characterFiberSum_smul` and Mathlib's
+`FDRep.scalar_product_char_eq_finrank_equivariant`. Over any field and for any monoid, the series
 is unchanged by isomorphisms of representations and by restriction along surjective homomorphisms.
 
 For a faithful representation of positive dimension `d`, interpolating the identity fibre after
@@ -362,6 +365,19 @@ theorem tensorMultiplicityNumerator_eq_sum_characterValues [Fintype G] [Decidabl
   rw [tensorMultiplicityNumerator_def, h]
 
 variable [Fintype G] [Invertible (Nat.card G : k)]
+
+/-- Over a field in which the group order is invertible, the dimension of the intertwiner space
+into a tensor power is the normalized sum of the character fibre weights times the
+corresponding powers of the character values. -/
+theorem finrank_hom_tensorPower_eq_sum_characterFiberSum (V X : FDRep k G) (n : ℕ) :
+    (Module.finrank k (X ⟶ V.tensorPower n) : k) =
+      (Nat.card G : k)⁻¹ * ∑ a ∈ V.characterValues, V.characterFiberSum X a * a ^ n := by
+  have hgroup :
+      ∑ a ∈ V.characterValues, V.characterFiberSum X a * a ^ n =
+        ∑ g : G, V.character g ^ n * X.character g⁻¹ := by
+    simpa only [smul_eq_mul, mul_comm] using V.sum_characterFiberSum_smul X (fun a : k ↦ a ^ n)
+  rw [hgroup, ← scalar_product_char_eq_finrank_equivariant X (V.tensorPower n)]
+  simp only [char_tensorPower]
 
 /-- **Coefficient–pairing interchange.** Pairing `χ_Vⁿ · P(χ_V)` against `χ_X` computes the
 combination `∑ⱼ P.coeff j · dim Hom_G(X, V^⊗(n + j))` of tensor multiplicities, for every
