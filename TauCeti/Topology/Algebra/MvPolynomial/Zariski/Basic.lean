@@ -240,8 +240,8 @@ noncomputable def evalPrimeSpectrum (x : σ → R) : PrimeSpectrum (MvPolynomial
 /-- Membership in the prime ideal `evalPrimeSpectrum x` is vanishing at `x`. -/
 @[simp]
 theorem mem_evalPrimeSpectrum_asIdeal (x : σ → R) (p : MvPolynomial σ R) :
-    p ∈ (evalPrimeSpectrum x).asIdeal ↔ MvPolynomial.eval x p = 0 :=
-  Iff.rfl
+    p ∈ (evalPrimeSpectrum x).asIdeal ↔ MvPolynomial.eval x p = 0 := by
+  simp only [evalPrimeSpectrum, RingHom.mem_ker]
 
 /-- Pulling back a `PrimeSpectrum.basicOpen` along `TauCeti.evalPrimeSpectrum` recovers the
 polynomial nonvanishing locus. -/
@@ -380,6 +380,7 @@ theorem noetherianSpace_polynomialTopology [Finite σ] [IsNoetherianRing R] :
   let T : Set (MvPolynomial σ R) := {p | {x : σ → R | MvPolynomial.eval x p ≠ 0} ∈ P}
   obtain ⟨T₀, hT₀T, hspan⟩ := (Submodule.fg_span_iff_fg_span_finset_subset T).mp
     (IsNoetherian.noetherian (Ideal.span T))
+  simp only [Ideal.submodule_span_eq] at hspan
   refine ⟨(fun p : MvPolynomial σ R ↦ {x : σ → R | MvPolynomial.eval x p ≠ 0}) '' (T₀ : Set _),
     ?_, (T₀.finite_toSet.image _), ?_⟩
   · rintro _ ⟨p, hp, rfl⟩
@@ -388,7 +389,7 @@ theorem noetherianSpace_polynomialTopology [Finite σ] [IsNoetherianRing R] :
     obtain ⟨U, hUP, hxU⟩ := mem_sUnion.mp (hs hx)
     obtain ⟨p, rfl⟩ := hP hUP
     have hpT : p ∈ Ideal.span (T₀ : Set (MvPolynomial σ R)) := by
-      rw [← show Ideal.span T = Ideal.span (T₀ : Set (MvPolynomial σ R)) from hspan]
+      rw [← hspan]
       exact Ideal.subset_span hUP
     by_contra hxQ
     have hker : (T₀ : Set (MvPolynomial σ R)) ⊆ RingHom.ker (MvPolynomial.eval x) := by
@@ -495,8 +496,9 @@ theorem polynomialTopology_eq_cofinite :
           {r : R | ¬(MvPolynomial.uniqueAlgEquiv R σ p).IsRoot r} := by
       ext x
       have heval : Polynomial.eval (x default) (MvPolynomial.uniqueAlgEquiv R σ p) =
-          MvPolynomial.eval x p :=
-        MvPolynomial.eval₂_uniqueAlgEquiv (φ := RingHom.id R) (a := x)
+          MvPolynomial.eval x p := by
+        rw [← Polynomial.eval₂_id, ← MvPolynomial.eval₂_id]
+        exact MvPolynomial.eval₂_uniqueAlgEquiv (φ := RingHom.id R) (a := x)
       simp only [mem_ofPred_eq, mem_preimage, Polynomial.IsRoot, heval]
     rw [hpre]
     refine ⟨{r : R | ¬(MvPolynomial.uniqueAlgEquiv R σ p).IsRoot r}, fun _ ↦ ?_, rfl⟩
