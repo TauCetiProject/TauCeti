@@ -31,9 +31,9 @@ the entries on and above the diagonal.
   additive Haar measure, and
   `MeasureTheory.lintegral_eq_enorm_det_pow_mul_lintegral_comp_selfAdjointConjugate_conjTranspose`
   states it in the form `∫⁻ T, g T = ‖C.det‖ₑ ^ (2 n) * ∫⁻ T, g (Cᴴ * T * C)`.
-* `TauCeti.lintegral_eq_lintegral_hermitianLebesgue_I_smul_add`: writing a square complex matrix
-  of size `p` as `Z = i S + T / 2`, with `S` and `T` Hermitian, so that `i S` is its
-  skew-Hermitian and `T / 2` its Hermitian part, Lebesgue measure is `dZ = 2 ^ (-p) dS dT`.
+* `TauCeti.lintegral_eq_inv_two_pow_mul_lintegral_lintegral_I_smul_add`: writing a square
+  complex matrix of size `p` as `Z = i S + T / 2`, with `S` and `T` Hermitian, so that `i S` is
+  its skew-Hermitian and `T / 2` its Hermitian part, Lebesgue measure is `dZ = 2 ^ (-p) dS dT`.
 
 The first is a linear change of variables with the determinant
 `Matrix.det_selfAdjointConjugate_complex`. For the second, the real trace form
@@ -128,6 +128,7 @@ private theorem entryBasis_addHaar :
     (entryBasis p).addHaar = (volume : Measure (Fin p → Fin p → ℂ)) := by
   simp only [entryBasis, Module.Basis.addHaar_pi, Complex.addHaar_basisOneI, volume_pi]
 
+open scoped Matrix.Norms.Frobenius in
 /-- The real trace form of `i S + T` and `i S' + T'`, for Hermitian `S`, `T`, `S'`, `T'`, is
 `⟪S, S'⟫ + ⟪T, T'⟫`: the cross terms vanish because the trace of a product of Hermitian matrices
 is real. -/
@@ -145,9 +146,14 @@ private theorem sum_re_conj_mul_I_smul_add
       Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.neg_re,
       Complex.neg_im, Complex.I_re, Complex.I_im, Complex.conj_re, Complex.conj_im]
     ring
+  -- For Hermitian `A`, `∑ i j, conj (A i j) * B i j` is the Frobenius inner product `tr(A * B)`.
+  have htr (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) (B : Matrix (Fin p) (Fin p) ℂ) :
+      ∑ i, ∑ j, conj ((A : Matrix (Fin p) (Fin p) ℂ) i j) * B i j =
+        ((A : Matrix (Fin p) (Fin p) ℂ) * B).trace := by
+    rw [← Matrix.frobenius_inner_eq_sum_conj_mul, Matrix.frobenius_inner_eq_trace_conjTranspose_mul,
+      selfAdjoint.conjTranspose_coe]
   simp only [h, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Complex.re_sum,
-    ← Complex.im_sum, selfAdjoint.sum_conj_mul_eq_trace, selfAdjoint.im_trace_mul, sub_zero,
-    add_zero,
+    ← Complex.im_sum, htr, selfAdjoint.im_trace_mul, sub_zero, add_zero,
     selfAdjoint.inner_eq_re_trace_mul]
   rw [Matrix.trace_mul_comm (S : Matrix (Fin p) (Fin p) ℂ),
     Matrix.trace_mul_comm (T : Matrix (Fin p) (Fin p) ℂ)]
@@ -294,8 +300,8 @@ private theorem decomposition_const :
 complex matrix of size `p` as `Z = i S + T / 2`, with `S` and `T` Hermitian, so that `i S` is its
 skew-Hermitian and `T / 2` its Hermitian part,
 `dZ = 2 ^ (-p) dS dT` for the coordinate Lebesgue measures `hermitianLebesgue p` in `S` and `T`. -/
-theorem lintegral_eq_lintegral_hermitianLebesgue_I_smul_add {g : Matrix (Fin p) (Fin p) ℂ → ℝ≥0∞}
-    (hg : Measurable g) :
+theorem lintegral_eq_inv_two_pow_mul_lintegral_lintegral_I_smul_add
+    {g : Matrix (Fin p) (Fin p) ℂ → ℝ≥0∞} (hg : Measurable g) :
     ∫⁻ Z, g Z = (2 ^ p)⁻¹ * ∫⁻ T, ∫⁻ S, g (I • (S : Matrix (Fin p) (Fin p) ℂ) +
       (2⁻¹ : ℝ) • (T : Matrix (Fin p) (Fin p) ℂ)) ∂hermitianLebesgue p ∂hermitianLebesgue p := by
   have hg' : Measurable fun x : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) ×
