@@ -48,6 +48,9 @@ The chart argument follows the pullback idiom used for the manifold bracket in
 * `VectorField.mlieBracket_neg_left`: the manifold bracket is odd in its first argument.
 * `VectorField.jacobi_identity_mlieBracket_apply`: the cyclic Jacobi identity for the manifold
   bracket.
+* `VectorField.mlieBracket_trivializationAt_symm_eq`: the Lie bracket of a differentiable vector
+  field with a constant-coordinate trivialization section on a chart target is minus the
+  pushforward of the directional derivative of its inverse-chart pullback.
 * `VectorField.contMDiff_mlieBracket`: the bracket of two smooth vector fields is smooth.
 
 ## References
@@ -72,6 +75,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
 section
 
 variable [IsManifold I (minSmoothness 𝕜 2) M]
+
+/-- `minSmoothness 𝕜 2` gives `C¹` atlas smoothness. -/
+local instance : IsManifold I 1 M :=
+  IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
 
 namespace VectorField
 
@@ -251,8 +258,6 @@ theorem eq_mlieBracket_of_mvfderiv_extChartAt {V W : ∀ y : M, TangentSpace I y
         mvfderiv I (fun y ↦ mvfderiv I (extChartAt I x) y (V y)) x (W x)) :
     v = mlieBracket I V W x := by
   rw [← mvfderiv_mlieBracket contMDiffAt_extChartAt le_rfl hV hW] at hv
-  have : IsManifold I 1 M :=
-    .of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
   obtain ⟨e, he⟩ := isInvertible_mfderiv_extChartAt (I := I) (mem_extChartAt_source x)
   have hinj : Function.Injective (mvfderiv I (extChartAt I x) x) := by
     rw [mvfderiv, ContinuousLinearMap.coe_comp, ← he]
@@ -304,6 +309,66 @@ theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_eventually_mli
   rw [hz, mpullback_apply, hz0, map_zero]
   -- The zero of a tangent space of `E` is the zero of `E` by definition.
   rfl
+
+/-- On the target of the extended chart at `x₀`, the Lie bracket of a differentiable vector field
+`V` with the constant-coordinate trivialization section `q ↦ (trivializationAt E (TangentSpace I)
+x₀).symm q u` equals minus the pushforward under `d((extChartAt I x₀).symm)` of the directional
+derivative of the inverse-chart pullback of `V` along `u`. -/
+theorem mlieBracket_trivializationAt_symm_eq
+    (x₀ : M) {z : E} (hz : z ∈ (extChartAt I x₀).target)
+    {V : (x : M) → TangentSpace I x}
+    (hV : MDifferentiableAt I I.tangent (T% V) ((extChartAt I x₀).symm z)) (u : E) :
+    mlieBracket I V (fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u)
+        ((extChartAt I x₀).symm z) =
+      -mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (Set.range I) z
+        (fderivWithin 𝕜 (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (Set.range I))
+          (Set.range I) z u) := by
+  let _ : IsManifold I 2 M := IsManifold.of_le (le_minSmoothness (𝕜 := 𝕜))
+  set σ : (q : M) → TangentSpace I q := fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u
+  have hy_src : (extChartAt I x₀).symm z ∈ (extChartAt I x₀).source :=
+    (extChartAt I x₀).map_target hz
+  have hσ_diff : MDifferentiableAt I I.tangent (T% σ) ((extChartAt I x₀).symm z) :=
+    TangentBundle.mdifferentiableAt_trivializationAt_symm x₀
+      (by simpa [extChartAt_source] using hy_src) u
+  have ht_eq : (extChartAt I x₀).target =ᶠ[𝓝 z] Set.range I :=
+    extChartAt_target_eventuallyEqSet_of_mem hz
+  -- Step 1: Naturality of the Lie bracket under `(extChartAt I x₀).symm` on its chart target.
+  have hu_t : UniqueMDiffOn 𝓘(𝕜, E) (extChartAt I x₀).target := by
+    simpa using (uniqueMDiffOn_univ (I := I)).uniqueDiffOn_target_inter x₀ |>.uniqueMDiffOn
+  have hmem : z ∈ closure (interior (extChartAt I x₀).target) := by
+    have h := extChartAt_mem_closure_interior (I := I) (s := Set.univ) (x₀ := x₀)
+      (x := (extChartAt I x₀).symm z) (by simp) hy_src
+    rwa [Set.preimage_univ, Set.univ_inter, (extChartAt I x₀).right_inv hz] at h
+  have hpull := mpullbackWithin_mlieBracketWithin' (I := 𝓘(𝕜, E)) (I' := I)
+    (f := (extChartAt I x₀).symm) (V := V) (W := σ) (x₀ := z)
+    (s := (extChartAt I x₀).target) (u := (extChartAt I x₀).target) (t := Set.univ)
+    (n := minSmoothness 𝕜 2) hV.mdifferentiableWithinAt hσ_diff.mdifferentiableWithinAt
+    hu_t hu_t (contMDiffWithinAt_extChartAt_symm_target x₀ hz) hz le_rfl (by simp) hmem
+    Set.Subset.rfl
+  -- Step 2: Evaluate the pulled-back flat bracket against the constant pullback of `σ`.
+  let V₀ : E → E := mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (Set.range I)
+  have heqV : mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (extChartAt I x₀).target
+      =ᶠ[𝓝[(extChartAt I x₀).target] z] (fun ζ ↦ (V₀ ζ : TangentSpace 𝓘(𝕜, E) ζ)) := by
+    filter_upwards [self_mem_nhdsWithin] with ζ hζt
+    exact congrArg
+      (fun L : TangentSpace 𝓘(𝕜, E) ζ →L[𝕜] TangentSpace I ((extChartAt I x₀).symm ζ) ↦
+        L.inverse (V ((extChartAt I x₀).symm ζ)))
+      (mfderivWithin_congr_set (extChartAt_target_eventuallyEqSet_of_mem hζt))
+  have hpull' : (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm
+      (mlieBracket I V σ) (extChartAt I x₀).target z : E) =
+      -(fderivWithin 𝕜 V₀ (Set.range I) z u) := by
+    rw [← mlieBracketWithin_univ]
+    exact (hpull.trans (Filter.EventuallyEq.mlieBracketWithin_vectorField_eq_of_mem heqV
+      (mpullbackWithin_extChartAt_symm_target_trivializationAt_symm_eventuallyEq x₀ u) hz |>.trans
+      (congrFun mlieBracketWithin_eq_lieBracketWithin z))).trans (by
+        rw [lieBracketWithin_congr_set ht_eq, lieBracketWithin, fderivWithin_const_apply,
+          zero_apply, zero_sub])
+  -- Step 3: Push back to `T_{(extChartAt I x₀).symm z} M` via the invertible differential.
+  rw [mpullbackWithin_apply, mfderivWithin_congr_set ht_eq] at hpull'
+  have key := congrArg (mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (Set.range I) z) hpull'
+  rw [(isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse] at key
+  exact key.trans ((mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (Set.range I) z).map_neg
+    (fderivWithin 𝕜 V₀ (Set.range I) z u : TangentSpace 𝓘(𝕜, E) z))
 
 end VectorField
 

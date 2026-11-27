@@ -102,15 +102,10 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf_self (t : ℝ) (y : M)
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)) y) :
     HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
       (fun u ↦ mpullback I I (timeDependentFlowOf X t u) α y)
-      (mlieDerivForm (X t) α y) t := by
-  have hy := mem_timeDependentFlowDomain_self hX t y
-  refine hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod (ψ := timeDependentFlowOf X t)
-    (V := X) y (Eventually.of_forall (timeDependentFlowOf_self X t))
-    (contMDiffAt_uncurry_timeDependentFlowOf (n := 1) le_rfl hX hy) (hX (t, y)) ?_ hα
-  -- The flow from `t` is defined near `(t, y)`, and moves its points with the field `X u`.
-  filter_upwards [(by fun_prop : Continuous fun p : ℝ × M ↦ ((t, p.1), p.2)).continuousAt
-    |>.eventually_mem ((isOpen_timeDependentFlowDomain hX).mem_nhds hy)] with p hp
-  exact hasMFDerivAt_timeDependentFlowOf hX hp
+      (mlieDerivForm (X t) α y) t :=
+  (PullbackAction.roughForm I M F k).hasDerivAt_timeDependentFlowOf_self hX (s := fun _ ↦ α) t y
+    (fun hid hsmooth hXty hvel ↦
+      hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod (V := X) y hid hsmooth hXty hvel hα)
 
 /-- **Lie derivatives along time-dependent flows.** For a jointly `C¹` time-dependent vector field
 `X`, a point `x` at which the flow from time `s` is defined up to time `t`, and a form `α`
@@ -122,28 +117,9 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf_of_mem {s t : ℝ} {x : M}
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)) (timeDependentFlowOf X s t x)) :
     HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
       (fun u ↦ mpullback I I (timeDependentFlowOf X s u) α x)
-      (mpullback I I (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x) t := by
-  have hD := isOpen_timeDependentFlowDomain hX
-  have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
-    mdifferentiableAt_timeDependentFlowOf hX h
-  -- Near `(t, x)`, the flow from `s` is defined up to time `t` at the second coordinate, and the
-  -- flow from `t` is defined at its image up to the time given by the first coordinate.
-  have hev : ∀ᶠ p in 𝓝 (t, x), ((s, t), p.2) ∈ timeDependentFlowDomain X ∧
-      ((t, p.1), timeDependentFlowOf X s t p.2) ∈ timeDependentFlowDomain X :=
-    ((continuous_const.prodMk continuous_snd).continuousAt.eventually_mem (hD.mem_nhds h)).and
-      (((continuous_const.prodMk continuous_fst).continuousAt.prodMk
-        (hφ.continuousAt.comp continuousAt_snd)).eventually_mem
-          (hD.mem_nhds (mem_timeDependentFlowDomain_self hX t _)))
-  rw [nhds_prod_eq] at hev
-  -- By the composition law, `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` near `x` for `u` near `t`, so the
-  -- derivative at `t` is read at the base time of the flow from `t`.
-  refine hasDerivAt_mpullback_of_eq_comp (χ := timeDependentFlowOf X t) ?_ hφ ?_
+      (mpullback I I (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x) t :=
+  (PullbackAction.roughForm I M F k).hasDerivAt_timeDependentFlowOf_of_mem hX (b := fun _ ↦ α) h
     (hasDerivAt_mpullback_timeDependentFlowOf_self hX t _ hα)
-  · filter_upwards [hev.curry] with u hu
-    filter_upwards [hu] with y hy
-    exact (timeDependentFlowOf_trans_of_mem hX hy.1 hy.2).2.symm
-  · filter_upwards [hev.curry] with u hu
-    exact mdifferentiableAt_timeDependentFlowOf hX hu.self_of_nhds.2
 
 /-- **Time-dependent flows preserve closed forms with closed contractions, where they are
 defined.** Let `X` be a jointly `C¹` time-dependent vector field and `β` a differentiable closed
@@ -201,23 +177,10 @@ theorem mpullback_timeDependentFlowOf_eq_self_iff
     (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z))) :
     (∀ s t, mpullback I I (timeDependentFlowOf X s t) α = α) ↔
-      ∀ t, mlieDerivForm (X t) α = 0 := by
-  have hid (s : ℝ) : mpullback I I (timeDependentFlowOf X s s) α = α := by
-    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
-    rw [h, mpullback_id]
-  constructor
-  · -- The pullbacks by the flow from `t` are constant, so their velocity at `t` vanishes.
-    intro h t
-    funext y
-    have hd := hasDerivAt_mpullback_timeDependentFlowOf_self hX t y (hα y)
-    have hconst : (fun u ↦ mpullback I I (timeDependentFlowOf X t u) α y) = fun _ ↦ α y :=
-      funext fun u ↦ congrFun (h t u) y
-    rw [hconst] at hd
-    exact hd.unique (hasDerivAt_const (F := E [⋀^Fin k]→L[ℝ] F) t (α y))
-  · -- With vanishing Lie derivatives, the pullbacks by the flow from `s` are constant.
-    intro h s t
-    rw [mpullback_eq_of_forall_mlieDerivForm_eq_zero
-      (fun u x ↦ hasDerivAt_mpullback_timeDependentFlowOf hc hX s u x (hα _)) h t s, hid s]
+      ∀ t, mlieDerivForm (X t) α = 0 :=
+  (PullbackAction.roughForm I M F k).forall_pull_timeDependentFlowOf_eq_self_iff hc hX
+    (L := fun V ↦ mlieDerivForm V α)
+    (fun t y ↦ hasDerivAt_mpullback_timeDependentFlowOf_self hX t y (hα y))
 
 /-- **Time-dependent flows preserve closed forms with closed contractions.** For a jointly `C¹`
 time-dependent vector field `X` with complete suspension and a differentiable closed form `β`

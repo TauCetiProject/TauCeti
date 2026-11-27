@@ -22,6 +22,9 @@ differentiability criterion for maps whose tangent maps preserve inner products.
 
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle`: package the metric of a
   `C^n` Riemannian bundle.
+* `Bundle.contMDiff_riemannianBundle_inner` and `Bundle.mdifferentiable_riemannianBundle_inner`:
+  the metric section `x ↦ (x, RiemannianBundle.g.inner x)` of a `C^n` (respectively `C¹`)
+  Riemannian bundle is `C^n` (respectively differentiable).
 * `Bundle.ContMDiffRiemannianMetric.InducesRiemannianDistance`: express that a smooth metric
   induces the ambient Riemannian distance.
 * `Bundle.ContMDiffRiemannianMetric.ext`: smooth Riemannian metrics with the same fibrewise inner
@@ -116,6 +119,25 @@ noncomputable def ofIsContMDiffRiemannianBundle
     congr 1
     ext v w
     exact hinner x v w
+
+/-- The metric section `x ↦ (x, RiemannianBundle.g.inner x)` of a `C^n` Riemannian bundle is
+`C^n`. -/
+theorem _root_.Bundle.contMDiff_riemannianBundle_inner
+    [RiemannianBundle V] [IsContMDiffRiemannianBundle IB n F V] :
+    ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun x : B ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+        (E := fun y : B ↦ V y →L[ℝ] V y →L[ℝ] ℝ) x (RiemannianBundle.g.inner x)) :=
+  (ofIsContMDiffRiemannianBundle (IB := IB) (n := n) (F := F) (V := V)).contMDiff
+
+/-- The metric section `x ↦ (x, RiemannianBundle.g.inner x)` of a `C¹` Riemannian bundle is
+differentiable everywhere. -/
+theorem _root_.Bundle.mdifferentiable_riemannianBundle_inner
+    [RiemannianBundle V] [IsContMDiffRiemannianBundle IB 1 F V] :
+    MDifferentiable IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ))
+      (fun x : B ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+        (E := fun y : B ↦ V y →L[ℝ] V y →L[ℝ] ℝ) x (RiemannianBundle.g.inner x)) :=
+  (Bundle.contMDiff_riemannianBundle_inner (IB := IB) (n := 1) (F := F) (V := V)).mdifferentiable
+    one_ne_zero
 
 /-- The Riemannian metric packaged from a `C^n` Riemannian bundle is its inner product. -/
 @[simp]

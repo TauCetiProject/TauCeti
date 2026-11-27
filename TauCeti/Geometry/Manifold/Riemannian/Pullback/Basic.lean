@@ -30,8 +30,6 @@ the metric that a manifold with a geometric structure receives through its chart
 
 ## Main results
 
-* `Bundle.trivializationAt_bilinearForm_apply`: a bilinear form on `T_x M`, read in the bundle
-  chart at `x₀`, is pulled back along the tangent coordinate change from `x₀` to `x`.
 * `Bundle.contMDiffAt_trivializationAt_bilinearForm_pullback`: the pullback of a `C^n` family of
   bilinear forms along linear maps that are `C^n` in tangent coordinates, both depending on a
   parameter, is `C^n` when read in a bundle chart. This gives the joint regularity of pullbacks
@@ -86,50 +84,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {n : ℕ∞ω}
-
-/-! ### Bilinear forms on tangent spaces in bundle coordinates -/
-
-/-- A bilinear form on `T_x M`, read in the trivialization of the bundle of bilinear forms at
-`x₀`, is pulled back along the tangent coordinate change from the chart at `x₀` to the chart at
-`x`. -/
-theorem trivializationAt_bilinearForm_apply {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
-    (B : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v w : E) :
-    (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
-        (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x₀ ⟨x, B⟩).2 v w =
-      B (tangentCoordChange I x₀ x x v) (tangentCoordChange I x₀ x x w) := by
-  have hx' : x ∈ (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by
-    simpa using hx
-  simp only [hom_trivializationAt_apply]
-  rw [inCoordinates_apply_eq₂ hx' hx' (by simp)]
-  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-    LinearMap.id_coe, id_eq]
-  rw [← Trivialization.symmL_apply (R := ℝ) _ hx', ← Trivialization.symmL_apply (R := ℝ) _ hx',
-    TangentBundle.symmL_trivializationAt_eq_core hx]
-  -- `tangentCoordChange` is an abbreviation for this coordinate change of the tangent bundle.
-  rfl
-
-/-- Read in the trivialization at `x` itself, a bilinear form on `T_x M` is unchanged. -/
-@[simp]
-theorem trivializationAt_self_bilinearForm_apply (x : M)
-    (B : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v w : E) :
-    (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
-        (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x ⟨x, B⟩).2 v w =
-      B v w := by
-  rw [trivializationAt_bilinearForm_apply (mem_chart_source H x),
-    tangentCoordChange_self (mem_extChartAt_source x),
-    tangentCoordChange_self (mem_extChartAt_source x)]
-
-/-- A bilinear form on `T_x M`, read in the trivialization at `x₀`, as a continuous linear
-function of the form. -/
-theorem trivializationAt_bilinearForm_eq_pullbackBilinL {x₀ x : M}
-    (hx : x ∈ (chartAt H x₀).source) (B : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) :
-    (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
-        (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x₀ ⟨x, B⟩).2 =
-      ContinuousLinearMap.pullbackBilinL (V := E) (W := E) (G := ℝ)
-        (tangentCoordChange I x₀ x x) B := by
-  ext v w
-  rw [trivializationAt_bilinearForm_apply hx]
-  exact (ContinuousLinearMap.pullbackBilinL_apply (V := E) (W := E) _ _ v w).symm
 
 /-! ### Pullbacks of bilinear forms -/
 

@@ -50,6 +50,8 @@ pairing `s ↦ B (u s) (v s)` which is constant has vanishing derivative `B u' v
 * `ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp`: the iterated derivatives of a family
   of bilinear maps, read along `u` and pulled back along `u`, are those of the family, taken in
   the directions of the images under `u` and pulled back along `u`.
+* `HasDerivWithinAt.pullbackBilinL`, `HasDerivAt.pullbackBilinL`: product rules for pulling back a
+  time-dependent continuous bilinear map `B r` along a time-dependent continuous linear map `L r`.
 * `ContinuousLinearMap.apply_self_fderiv_eq_of_eventuallyEq`: a local map fixing zero and
   preserving quadratic functions has a derivative preserving those quadratic functions.
 * `ContinuousAt.hasFDerivAt_clm_apply_zero`: evaluating a family `A q` of continuous linear maps,
@@ -220,6 +222,36 @@ theorem _root_.ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp
   rw [(ContinuousLinearMap.pullbackBilinL u).iteratedFDeriv_comp_left hBu hm,
     ← iteratedFDerivWithin_of_isOpen m hU' hz, ← iteratedFDerivWithin_of_isOpen m hU hz,
     u.iteratedFDerivWithin_comp_right hB hU.uniqueDiffOn hU'.uniqueDiffOn hz hm]
+
+/-- Product rule within `s` for pulling `B r` back along `L r`. -/
+theorem _root_.HasDerivWithinAt.pullbackBilinL
+    {B : 𝕜 → F →L[𝕜] F →L[𝕜] G} {B' : F →L[𝕜] F →L[𝕜] G}
+    {L : 𝕜 → E →L[𝕜] F} {L' : E →L[𝕜] F} {s : Set 𝕜} {t : 𝕜}
+    (hB : HasDerivWithinAt B B' s t) (hL : HasDerivWithinAt L L' s t) :
+    HasDerivWithinAt (fun r ↦ ContinuousLinearMap.pullbackBilinL (L r) (B r))
+      (ContinuousLinearMap.pullbackBilinL (L t) B' +
+        (B t).bilinearComp L' (L t) + (B t).bilinearComp (L t) L') s t := by
+  let Φ : (E →L[𝕜] F) →L[𝕜] (F →L[𝕜] G) →L[𝕜] E →L[𝕜] G :=
+    (ContinuousLinearMap.compL 𝕜 E F G).flip
+  have heq : (fun r ↦ ContinuousLinearMap.pullbackBilinL (L r) (B r)) =
+      fun r ↦ (Φ (L r)).comp ((B r).comp (L r)) := by ext r v w; simp [Φ]
+  rw [heq]
+  refine ((Φ.hasFDerivAt.comp_hasDerivWithinAt t hL).clm_comp (hB.clm_comp hL)).congr_deriv ?_
+  ext v w
+  simp only [Φ, add_apply, ContinuousLinearMap.pullbackBilinL_apply,
+    ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, map_add]
+  abel
+
+/-- Product rule for pulling `B r` back along `L r`. -/
+theorem _root_.HasDerivAt.pullbackBilinL
+    {B : 𝕜 → F →L[𝕜] F →L[𝕜] G} {B' : F →L[𝕜] F →L[𝕜] G}
+    {L : 𝕜 → E →L[𝕜] F} {L' : E →L[𝕜] F} {t : 𝕜}
+    (hB : HasDerivAt B B' t) (hL : HasDerivAt L L' t) :
+    HasDerivAt (fun r ↦ ContinuousLinearMap.pullbackBilinL (L r) (B r))
+      (ContinuousLinearMap.pullbackBilinL (L t) B' +
+        (B t).bilinearComp L' (L t) + (B t).bilinearComp (L t) L') t := by
+  rw [← hasDerivWithinAt_univ] at hB hL ⊢; exact hB.pullbackBilinL hL
 
 end PullbackBilin
 
