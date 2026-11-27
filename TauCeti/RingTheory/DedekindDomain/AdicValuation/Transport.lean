@@ -43,8 +43,9 @@ how an automorphism permuting the places above a given place acts on their compl
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionCongr`: the induced isomorphism of adic
   completions, with `adicCompletionCongr_algebraMap` (it extends `σ`),
   `continuous_adicCompletionCongr`, its universal property `eq_adicCompletionCongr_of_continuous`,
-  its identity, composition, and inverse laws, and `valued_adicCompletionCongr` (it preserves the
-  valuations).
+  its identity, composition, and inverse laws, `valued_adicCompletionCongr` (it preserves the
+  valuations) and `adicCompletionCongr_mem_adicCompletionIntegers_iff` (so it carries the local
+  integers onto the local integers).
 
 The ideal-level input this rests on — that `Ideal.map e` preserves divisibility and
 factorisation multiplicities, and that Mathlib's `equivOfRingEquiv` is `Ideal.map e` on
@@ -238,6 +239,13 @@ theorem valued_adicCompletionCongr (x : v.adicCompletion K) :
   rw [← adicCompletion.valued_toCompletion_apply, toCompletion_adicCompletionCongr,
     Valuation.Completion.valued_congr (v.valuation_surjective K),
     adicCompletion.valued_toCompletion_apply]
+
+/-- `adicCompletionCongr` carries the local integers `𝒪_v` onto the local integers `𝒪'_w`. -/
+@[simp]
+theorem adicCompletionCongr_mem_adicCompletionIntegers_iff {x : v.adicCompletion K} :
+    adicCompletionCongr v w σ hσ x ∈ w.adicCompletionIntegers K' ↔
+      x ∈ v.adicCompletionIntegers K := by
+  rw [mem_adicCompletionIntegers, mem_adicCompletionIntegers, valued_adicCompletionCongr]
 
 end Completion
 
