@@ -41,7 +41,7 @@ an injective linear map (`LinearMap.eq_zero_of_smul_eq_self_of_injective`) and f
 surjective one with finite source (`LinearMap.eq_zero_of_smul_eq_self_of_surjective`). So both
 ends of a short exact sequence whose middle term is finite, killed by `n` and fixes no nonzero
 vector under `a` have these properties too
-(`CategoryTheory.ShortComplex.ShortExact.moduleCat_endpoints_of_X₂`).
+(`ShortExact.moduleCat_finite_and_nsmul_eq_zero_and_eq_zero_of_smul_eq_self`).
 
 ## References
 
@@ -186,9 +186,9 @@ end OpDual
 /-- **The ends of a short exact sequence stay in the class.** If the middle term of a short exact
 sequence of `A`-modules is finite, killed by `n` and fixes no nonzero vector under `a`, then so
 are both ends. -/
-theorem ShortExact.moduleCat_endpoints_of_X₂ {A : Type*} [Ring A] {S : ShortComplex (ModuleCat A)}
-    (hS : S.ShortExact) [_root_.Finite S.X₂] {n : ℕ} (hn : ∀ m : S.X₂, n • m = 0) {a : A}
-    (ha : ∀ m : S.X₂, a • m = m → m = 0) :
+theorem ShortExact.moduleCat_finite_and_nsmul_eq_zero_and_eq_zero_of_smul_eq_self {A : Type*}
+    [Ring A] {S : ShortComplex (ModuleCat A)} (hS : S.ShortExact) [_root_.Finite S.X₂] {n : ℕ}
+    (hn : ∀ m : S.X₂, n • m = 0) {a : A} (ha : ∀ m : S.X₂, a • m = m → m = 0) :
     (_root_.Finite S.X₁ ∧ (∀ m : S.X₁, n • m = 0) ∧ ∀ m : S.X₁, a • m = m → m = 0) ∧
       (_root_.Finite S.X₃ ∧ (∀ m : S.X₃, n • m = 0) ∧ ∀ m : S.X₃, a • m = m → m = 0) := by
   have hf := hS.moduleCat_injective_f

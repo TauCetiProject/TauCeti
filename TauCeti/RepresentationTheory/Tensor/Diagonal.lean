@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.End.CharP
 
+import TauCeti.LinearAlgebra.End.TensorProduct
 import TauCeti.LinearAlgebra.TensorProduct.Finiteness
 
 /-!
@@ -67,12 +68,10 @@ noncomputable def diagonalTensorAction : R[Δ] →+* Module.End k (W ⊗[k] N) :
       -- `σ g ⊗ single g 1`.
       have h := ((MonoidAlgebra.single_commute_single (Commute.one_left g)
         (Commute.one_right r)).map (Module.toModuleEnd k (S := R[Δ]) N)).eq
-      -- `lTensorAlgHom` sends `a` to `1 ⊗ a` by definition.
-      have hl (a : Module.End k N) : Module.End.lTensorAlgHom k N W a = a.lTensor W := rfl
-      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hl,
-        Representation.tprod_apply, MonoidHom.comp_apply, MonoidAlgebra.of_apply,
-        MonoidAlgebra.singleOneRingHom_apply, ZeroHom.toFun_eq_coe, AddMonoidHom.toZeroHom_coe,
-        MonoidAlgebra.singleAddHom_apply, LinearMap.lTensor_def]
+      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        Module.End.lTensorAlgHom_apply, Representation.tprod_apply, MonoidHom.comp_apply,
+        MonoidAlgebra.of_apply, MonoidAlgebra.singleOneRingHom_apply, ZeroHom.toFun_eq_coe,
+        AddMonoidHom.toZeroHom_coe, MonoidAlgebra.singleAddHom_apply, LinearMap.lTensor_def]
       rw [commute_iff_eq, ← TensorProduct.map_mul, ← TensorProduct.map_mul, ← Module.End.one_eq_id,
         one_mul, mul_one]
       exact congrArg (TensorProduct.map (σ g)) h
@@ -83,12 +82,10 @@ second. -/
 theorem diagonalTensorAction_single_tmul (g : Δ) (r : R) (w : W) (n : N) :
     diagonalTensorAction σ N (MonoidAlgebra.single g r) (w ⊗ₜ n) =
       σ g w ⊗ₜ (MonoidAlgebra.single g r • n) := by
-  -- `lTensorAlgHom` sends `a` to `1 ⊗ a` by definition.
-  have hl (a : Module.End k N) : Module.End.lTensorAlgHom k N W a = a.lTensor W := rfl
   rw [diagonalTensorAction, MonoidAlgebra.liftNCRingHom_single]
-  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hl,
-    mul_apply_eq_comp, Representation.tprod_apply, MonoidHom.comp_apply,
-    TensorProduct.map_tmul, LinearMap.lTensor_tmul, MonoidAlgebra.of_apply,
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    Module.End.lTensorAlgHom_apply, mul_apply_eq_comp, Representation.tprod_apply,
+    MonoidHom.comp_apply, TensorProduct.map_tmul, LinearMap.lTensor_tmul, MonoidAlgebra.of_apply,
     MonoidAlgebra.singleOneRingHom_apply, ZeroHom.toFun_eq_coe, AddMonoidHom.toZeroHom_coe,
     MonoidAlgebra.singleAddHom_apply, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
     Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply]
@@ -191,6 +188,7 @@ theorem diagonalTensorMap_surjective {W' : Type w} [AddCommGroup W'] [Module k W
 
 variable {σ} in
 /-- Composition of the maps `f ⊗ 1` between diagonal tensor products. -/
+@[simp, reassoc]
 theorem diagonalTensorMap_comp {W' W'' : Type w} [AddCommGroup W'] [Module k W'] [AddCommGroup W'']
     [Module k W''] {σ' : Representation k Δ W'} {σ'' : Representation k Δ W''} (f : W →ₗ[k] W')
     (hf : ∀ g, f ∘ₗ σ g = σ' g ∘ₗ f) (f' : W' →ₗ[k] W'') (hf' : ∀ g, f' ∘ₗ σ' g = σ'' g ∘ₗ f') :

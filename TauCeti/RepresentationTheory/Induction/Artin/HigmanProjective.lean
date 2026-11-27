@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.RepresentationTheory.Augmentation.Basic
 public import TauCeti.RepresentationTheory.NormSplit.Permutation
@@ -157,6 +156,7 @@ omit [Fintype Δ] in
 /-- The inflated tensor product of a finite module with a finite representation is finite. -/
 private theorem finite_inflTensor [Finite N] (V : FDRep (ZMod ℓ) (Δ ⧸ C)) :
     Finite (inflTensor C N V) :=
+  -- The carrier of `(forget₂ _ _).obj V` is `V` by definition.
   have : Finite ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).obj V).V :=
     Module.finite_of_finite (ZMod ℓ) (M := V)
   inferInstance
@@ -256,7 +256,8 @@ assign to every `R[Δ]`-module a nonnegative rational number, multiplicative in 
 sequences `0 → M' → M → M'' → 0` whose middle term `M` is such a module, and equal to `1` on
 those such modules `P` that satisfy Higman's criterion (`TauCeti.IsHigmanProjective`): some additive
 `τ : P → P` has `∑ g, g ∘ τ ∘ g⁻¹ = 1`. Then `φ M = 1` for every such module `M`. Both ends of
-such a sequence lie in the class too (`ShortComplex.ShortExact.moduleCat_endpoints_of_X₂`).
+such a sequence lie in the class too
+(`ShortComplex.ShortExact.moduleCat_finite_and_nsmul_eq_zero_and_eq_zero_of_smul_eq_self`).
 
 Over `ZMod ℓ` Higman's criterion characterizes the projective `ZMod ℓ[Δ]`-modules, so this is the
 statement that such an invariant is determined by its values on projective modules. -/
