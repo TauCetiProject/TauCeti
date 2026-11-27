@@ -871,24 +871,19 @@ noncomputable def groupCohomologyEvenEquivTorsionBy (hord : Even (orderOf g))
     (hneg : ∀ x : A, A.ρ g x = -x) (i : ℕ) [NeZero i] (hi : Even i) :
     groupCohomology A i ≃ₗ[k] Submodule.torsionBy k A (2 : k) :=
   let ι := (Submodule.torsionBy k A (2 : k)).subtype.codRestrict _ fun x ↦
-    (Submodule.subtype_apply x).symm ▸
-      (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).2 x.property
-  (LinearEquiv.ofBijective ((groupCohomologyπEven A g hg i hi).hom ∘ₗ ι)
-    ⟨fun x y h ↦ by
-      simp only [LinearMap.comp_apply] at h
-      rw [groupCohomologyπEven_eq_iff, Rep.mem_range_norm_iff_of_ρ_eq_neg A g hg hord hneg] at h
-      dsimp only [ι] at h
-      rw [LinearMap.codRestrict_apply, LinearMap.codRestrict_apply,
-        Submodule.subtype_apply, Submodule.subtype_apply] at h
-      exact Subtype.ext (sub_eq_zero.1 h),
-    fun c ↦ by
-      obtain ⟨x, rfl⟩ := groupCohomologyπEven_surjective A g hg i hi c
-      refine ⟨⟨x.val,
-        (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).1 x.property⟩, ?_⟩
-      rw [LinearMap.comp_apply]
-      exact congrArg (groupCohomologyπEven A g hg i hi) <| Subtype.ext <| by
-        dsimp only [ι]
-        rw [LinearMap.codRestrict_apply, Submodule.subtype_apply]⟩).symm
+    (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).2 x.property
+  let φ := (groupCohomologyπEven A g hg i hi).hom ∘ₗ ι
+  have hφ : Function.Surjective φ := fun c ↦ by
+    obtain ⟨x, rfl⟩ := groupCohomologyπEven_surjective A g hg i hi c
+    exact ⟨⟨x.val, (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).1 x.property⟩,
+      congrArg (groupCohomologyπEven A g hg i hi) (Subtype.ext rfl)⟩
+  have hker : LinearMap.ker φ = ⊥ := by
+    ext x
+    rw [LinearMap.mem_ker, LinearMap.comp_apply, groupCohomologyπEven_eq_zero_iff,
+      Rep.mem_range_norm_iff_of_ρ_eq_neg A g hg hord hneg, Submodule.mem_bot]
+    rw [Subtype.ext_iff]
+    rfl
+  ((Submodule.quotEquivOfEqBot _ hker).symm.trans (φ.quotKerEquivOfSurjective hφ)).symm
 
 /-- The positive even-degree class corresponding to `x : A[2]` under
 `groupCohomologyEvenEquivTorsionBy` is the class of `x`. -/
@@ -899,8 +894,8 @@ theorem groupCohomologyEvenEquivTorsionBy_symm_apply (hord : Even (orderOf g))
     (groupCohomologyEvenEquivTorsionBy A g hg hord hneg i hi).symm x =
       groupCohomologyπEven A g hg i hi
         ⟨x.val, (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).2 x.property⟩ := by
-  rw [groupCohomologyEvenEquivTorsionBy, LinearEquiv.symm_symm]
-  exact LinearEquiv.ofBijective_apply _ x
+  simp [groupCohomologyEvenEquivTorsionBy]
+  rfl
 
 /-- Under `groupCohomologyEvenEquivTorsionBy`, the positive even-degree class of a `g`-fixed
 element `x` corresponds to `x` in `A[2]`. -/
@@ -922,15 +917,12 @@ noncomputable def groupCohomologyOddEquivQuotSMulTop (hord : Even (orderOf g))
   let φ := (groupCohomologyπOdd A g hg i hi).hom ∘ₗ ι
   have hφ : Function.Surjective φ := fun c ↦ by
     obtain ⟨x, rfl⟩ := groupCohomologyπOdd_surjective A g hg i hi c
-    refine ⟨x.val, ?_⟩
-    rw [LinearMap.comp_apply]
-    exact congrArg (groupCohomologyπOdd A g hg i hi)
-      (Subtype.ext (by rw [LinearMap.codRestrict_apply, LinearMap.id_apply]))
+    exact ⟨x.val, congrArg (groupCohomologyπOdd A g hg i hi) (Subtype.ext rfl)⟩
   have hker : LinearMap.ker φ = (2 : k) • (⊤ : Submodule k A) := by
     ext x
     rw [LinearMap.mem_ker, LinearMap.comp_apply, groupCohomologyπOdd_eq_zero_iff,
-      Rep.mem_range_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg, LinearMap.codRestrict_apply,
-      LinearMap.id_apply]
+      Rep.mem_range_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg]
+    simp [ι]
   ((Submodule.quotEquivOfEq _ _ hker.symm).trans (φ.quotKerEquivOfSurjective hφ)).symm
 
 /-- The odd-degree class corresponding to the coset of `x` in `A ⧸ 2 A` under
@@ -940,9 +932,8 @@ theorem groupCohomologyOddEquivQuotSMulTop_symm_mk (hord : Even (orderOf g))
     (hneg : ∀ x : A, A.ρ g x = -x) (i : ℕ) (hi : Odd i) (x : A) :
     (groupCohomologyOddEquivQuotSMulTop A g hg hord hneg i hi).symm (Submodule.Quotient.mk x) =
       groupCohomologyπOdd A g hg i hi ⟨x, Rep.mem_ker_norm_of_ρ_eq_neg A g hg hord hneg x⟩ := by
-  rw [groupCohomologyOddEquivQuotSMulTop, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk]
-  exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ x
+  simp [groupCohomologyOddEquivQuotSMulTop]
+  rfl
 
 /-- Under `groupCohomologyOddEquivQuotSMulTop`, the odd-degree class of an element `x` killed by
 the norm corresponds to the coset of `x` in `A ⧸ 2 A`. -/

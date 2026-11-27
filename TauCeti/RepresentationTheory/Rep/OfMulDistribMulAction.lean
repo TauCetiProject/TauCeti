@@ -65,8 +65,8 @@ theorem norm_ofMulDistribMulAction_apply [Group G] [Fintype G] [CommGroup M]
       (Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul (∏ x : G, x • m)) := by
   apply (Rep.toAdditive (M := G) (G := M)).injective
   rw [Representation.IntertwiningMap.toLinearMap_apply, Rep.norm_apply,
-    toAdditive_ofMulDistribMulAction_norm, AddEquiv.apply_symm_apply, toMul_ofMul,
-    AddEquiv.apply_symm_apply]
+    toAdditive_ofMulDistribMulAction_norm]
+  simp
 
 /-- An element `Additive.ofMul a` lies in the range of the norm on
 `Rep.ofMulDistribMulAction G M` if and only if `a` is a norm `∏ x : G, x • m` in `M`. -/
@@ -93,8 +93,9 @@ theorem ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv [Monoid G] [CommGroup M]
     (x : Rep.ofMulDistribMulAction G M) :
     (Rep.ofMulDistribMulAction G M).ρ g x = -x := by
   apply (Rep.toAdditive (M := G) (G := M)).injective
-  rw [toAdditive_ofMulDistribMulAction_ρ_apply, map_neg,
-    hinv (Additive.toMul (Rep.toAdditive (M := G) (G := M) x)), ofMul_inv, ofMul_toMul]
+  rw [toAdditive_ofMulDistribMulAction_ρ_apply, hinv]
+  simp
+  rfl
 
 /-- An element `a : M` fixed by `g : G` defines an element in the kernel of `ρ(g) - 𝟙` on
 `Rep.ofMulDistribMulAction G M`. -/
@@ -104,8 +105,8 @@ theorem mem_ker_applyAsHom_sub_of_smul_eq_self [CommMonoid G] [CommGroup M]
       (Rep.applyAsHom (Rep.ofMulDistribMulAction G M) g - 𝟙 _).hom.toLinearMap := by
   rw [LinearMap.mem_ker, Rep.applyAsHom_sub_id_apply]
   apply (Rep.toAdditive (M := G) (G := M)).injective
-  rw [map_sub, map_zero, toAdditive_ofMulDistribMulAction_ρ_apply, AddEquiv.apply_symm_apply,
-    toMul_ofMul, ha, sub_self]
+  rw [map_sub, map_zero, toAdditive_ofMulDistribMulAction_ρ_apply]
+  simp [ha]
 
 end NormAndAction
 
@@ -129,9 +130,9 @@ theorem toAdditive_ofMulDistribMulActionLinearEquiv {G M G' M' : Type*}
     (eM : M' ≃* M) (a : Rep.ofMulDistribMulAction G M) :
     Rep.toAdditive (M := G') (G := M') (ofMulDistribMulActionLinearEquiv G G' eM a) =
       Additive.ofMul (eM.symm (Additive.toMul (Rep.toAdditive (M := G) (G := M) a))) := by
-  rw [ofMulDistribMulActionLinearEquiv, AddEquiv.coe_toIntLinearEquiv,
-    AddEquiv.trans_apply, AddEquiv.trans_apply, AddEquiv.apply_symm_apply,
-    MulEquiv.toAdditive_apply_apply]
+  rw [ofMulDistribMulActionLinearEquiv, AddEquiv.coe_toIntLinearEquiv]
+  simp
+  rfl
 
 /-- The inverse of `ofMulDistribMulActionLinearEquiv` is induced by `eM.symm`. -/
 @[simp]
@@ -142,10 +143,11 @@ theorem ofMulDistribMulActionLinearEquiv_symm {G M G' M' : Type*}
     (ofMulDistribMulActionLinearEquiv G G' eM).symm =
       ofMulDistribMulActionLinearEquiv G' G eM.symm := by
   refine LinearEquiv.ext fun a ↦ (ofMulDistribMulActionLinearEquiv G G' eM).injective ?_
-  rw [LinearEquiv.apply_symm_apply]
   apply (Rep.toAdditive (M := G') (G := M')).injective
-  rw [toAdditive_ofMulDistribMulActionLinearEquiv, toAdditive_ofMulDistribMulActionLinearEquiv,
-    toMul_ofMul, MulEquiv.symm_symm, MulEquiv.symm_apply_apply, ofMul_toMul]
+  rw [LinearEquiv.apply_symm_apply, toAdditive_ofMulDistribMulActionLinearEquiv,
+    toAdditive_ofMulDistribMulActionLinearEquiv]
+  simp
+  rfl
 
 /-- `ofMulDistribMulActionLinearEquiv` intertwines the actions of `G` and `G'` when `eM` and `eG`
 intertwine the underlying `MulDistribMulAction`s. -/

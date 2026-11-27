@@ -58,11 +58,10 @@ theorem relabelCohomologyIso_cohomologyClass_factorSet {E : Type*} [Group E]
     FactorSet.cohomologyClass_def, FactorSet.cohomologyClass_def, relabelCohomologyIso_hom,
     H2π_comp_map_apply]
   refine congrArg (H2π (Rep.ofMulDistribMulAction G' M')) (cocycles₂_ext fun g₁' g₂' ↦ ?_)
-  rw [TauCeti.groupCohomology.mapCocycles₂_apply, FactorSet.coe_toCocycles₂,
-    FactorSet.coe_toCocycles₂, coe_factorSet, coe_factorSet]
   refine (Rep.toAdditive (M := G') (G := M')).injective ?_
-  refine (Rep.toAdditive_ofMulDistribMulActionResHom_hom eM eG hsmul _).trans ?_
-  exact congrArg Additive.ofMul (σ.factorSetFun_relabel eM eG g₁' g₂').symm
+  rw [TauCeti.groupCohomology.mapCocycles₂_apply, Rep.toAdditive_ofMulDistribMulActionResHom_hom]
+  simp [σ.factorSetFun_relabel]
+  rfl
 
 end Cohomology
 

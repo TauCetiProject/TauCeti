@@ -30,8 +30,8 @@ representation of `C₂` on `T` in which the generator acts by negation
 `N` with that of `C₂` with coefficients in `T`. In this form the classes of the quotient
 extensions of different groups, with isomorphic kernels and the same action, lie in one cohomology
 group and can be compared. The cohomology of the action by negation is computed in
-`TauCeti.RepresentationTheory.Homological.GroupCohomology.CyclicAutomorphism`: in positive even
-degree it is the `2`-torsion of `T` (`TauCeti.groupCohomologyEvenNegEquivTorsionBy`).
+`TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic`: in positive even
+degree it is the `2`-torsion of `T` (`Rep.FiniteCyclicGroup.groupCohomologyEvenEquivTorsionBy`).
 
 ## Main definitions
 

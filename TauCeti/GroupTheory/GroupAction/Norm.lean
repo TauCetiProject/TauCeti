@@ -93,4 +93,15 @@ theorem prod_smul_eq_one_of_smul_eq_inv {G M : Type*} [Group G] [Fintype G] [Com
       pow_smul_of_smul_eq_inv hinv, pow_smul_of_smul_eq_inv hinv]
     simp
 
+/-- Under an even-order inversion action of a cyclic group, an element is a multiplicative norm
+if and only if it is `1`. -/
+@[to_additive (dont_translate := G) exists_sum_smul_eq_iff_of_smul_eq_neg
+  /-- Under an even-order negation action of a cyclic group, an element is an additive norm if
+  and only if it is `0`. -/]
+theorem exists_prod_smul_eq_iff_of_smul_eq_inv {G M : Type*} [Group G] [Fintype G] [CommGroup M]
+    [MulDistribMulAction G M] {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g)
+    (hord : Even (orderOf g)) (hinv : ∀ m : M, g • m = m⁻¹) (a : M) :
+    (∃ m : M, ∏ x : G, x • m = a) ↔ a = 1 := by
+  simp [prod_smul_eq_one_of_smul_eq_inv hg hord hinv, eq_comm]
+
 end TauCeti

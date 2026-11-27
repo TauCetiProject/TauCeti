@@ -181,9 +181,8 @@ theorem _root_.GroupExtension.Section.cohomologyClass_factorSet_eq_zero_iff_eq_o
     {a : M} (ha : S.inl a = e ^ orderOf g) :
     (factorSet σ hσ hact).cohomologyClass = 0 ↔ a = 1 := by
   let _ : Fintype G := Fintype.ofFinite G
-  rw [σ.cohomologyClass_factorSet_eq_zero_iff_exists_prod_smul_eq hσ hact hg he ha]
-  simp only [TauCeti.prod_smul_eq_one_of_smul_eq_inv hg hord hinv, exists_const]
-  exact eq_comm
+  rw [σ.cohomologyClass_factorSet_eq_zero_iff_exists_prod_smul_eq hσ hact hg he ha,
+    TauCeti.exists_prod_smul_eq_iff_of_smul_eq_inv hg hord hinv]
 
 /-- **Splitting criterion for even-order inversion actions.** When `G = ⟨g⟩` has even order and `g`
 acts on `M` by inversion, an extension `S` splits if and only if `e ^ orderOf g = 1` for a (hence
@@ -194,9 +193,12 @@ theorem nonempty_splitting_iff_pow_orderOf_eq_one_of_smul_eq_inv [Finite G]
     Nonempty S.Splitting ↔ e ^ orderOf g = 1 := by
   let _ : Fintype G := Fintype.ofFinite G
   obtain ⟨a, ha⟩ := S.pow_orderOf_mem_range_inl g he
-  rw [nonempty_splitting_iff_exists_prod_smul_eq hact hg he ha]
-  simp only [TauCeti.prod_smul_eq_one_of_smul_eq_inv hg hord hinv, exists_const]
-  rw [← ha, ← map_one S.inl, S.inl_injective.eq_iff, eq_comm]
+  let σ := S.cyclicPowerSection g hg he
+  have hσ := S.cyclicPowerSection_one g hg he
+  rw [(factorSetToGroupExtensionEquiv σ hσ hact).nonempty_splitting_iff.symm,
+    FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero,
+    σ.cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv hσ hact hg hord hinv he ha,
+    ← ha, ← map_one S.inl, S.inl_injective.eq_iff]
 
 /-- **Equivalence criterion for even-order inversion actions.** When `G = ⟨g⟩` has even order and
 `g` acts on `M` by inversion, two extensions `S` and `S'` with lifts `e`, `e'` of `g` and
@@ -209,9 +211,8 @@ theorem nonempty_equiv_iff_eq_of_smul_eq_inv [Finite G] {E' : Type*} [Group E']
     {e' : E'} (he' : S'.rightHom e' = g) {a' : M} (ha' : S'.inl a' = e' ^ orderOf g) :
     Nonempty (S.Equiv S') ↔ a = a' := by
   let _ : Fintype G := Fintype.ofFinite G
-  rw [nonempty_equiv_iff_exists_prod_smul_eq hact hact' hg he ha he' ha']
-  simp only [TauCeti.prod_smul_eq_one_of_smul_eq_inv hg hord hinv, exists_const]
-  rw [eq_comm, div_eq_one]
+  rw [nonempty_equiv_iff_exists_prod_smul_eq hact hact' hg he ha he' ha',
+    TauCeti.exists_prod_smul_eq_iff_of_smul_eq_inv hg hord hinv, div_eq_one]
 
 end InversionAction
 

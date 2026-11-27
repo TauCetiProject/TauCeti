@@ -241,8 +241,9 @@ theorem Submodule.toAddSubgroup_torsionBy_int (A : Type*) [AddCommGroup A] [inst
     (_root_.Submodule.torsionBy ℤ A n).toAddSubgroup = AddSubgroup.torsionBy A n := by
   ext x
   simp only [AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup, Submodule.mem_torsionBy_iff]
-  rw [← Int.cast_id (n := n), @Int.cast_smul_eq_zsmul ℤ A _ _ instM,
-    @Int.cast_smul_eq_zsmul ℤ A _ _ (AddCommGroup.toIntModule A)]
+  -- `instM` may differ from `AddCommGroup.toIntModule A`; reduce `instM.smul` to `zsmul`.
+  change instM.smul n x = 0 ↔ n • x = 0
+  rw [int_smul_eq_zsmul instM]
 
 /-- Package the identification between `Submodule.torsionBy ℤ A n` and
 `AddSubgroup.torsionBy A n` as an additive equivalence. -/
