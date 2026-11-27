@@ -18,23 +18,27 @@ import TauCeti.RingTheory.RootsOfUnity.Basic
 For `m : ℕ` and a residue class `r : ZMod m`, the *multisection* of a power series
 `f = ∑ aₙ Xⁿ` is its part `f_[r] = ∑_{n ≡ r (mod m)} aₙ Xⁿ` in the degrees congruent to `r`
 modulo `m` (`PowerSeries.multisection m r`); for `m = 2` these are the even and odd parts of `f`.
-The multisections of `f` add up to `f`, and multisection is a projection, compatible with the
-grading by `ZMod m`: the product of a series supported in the degrees `≡ r` and one supported in
-the degrees `≡ s` is supported in the degrees `≡ r + s`.
+For `m > 0` the `m` multisections of `f` add up to `f` (for `m = 0`, `ZMod 0 = ℤ` and `f_[r]` is
+the term of `f` of degree `r`, zero for `r < 0`, so there is no finite sum). Multisection is a
+projection, compatible with the grading by `ZMod m`: the product of a series supported in the
+degrees `≡ r` and one supported in the degrees `≡ s` is supported in the degrees `≡ r + s`.
 
 Multisection commutes with rescaling the variable, `f_[r](a X) = (f(a X))_[r]`, and with
 substitution of a series `T` supported in the degrees `≡ 1`: `(F(T))_[r] = F_[r](T)`, because
-`T ^ k` is then supported in the degrees `≡ k`. Over a field
-containing a primitive `m`-th root of unity `ζ`, the multisection is the average of the rotations
-of `f` by the `m`-th roots of unity `ξ = ζ ^ a` (the roots of unity filter):
+`T ^ k` is then supported in the degrees `≡ k`. Over a field containing a primitive `m`-th root
+of unity `ζ`, the roots of unity filter
 
   `m · f_[r] = ∑_{a < m} ξ ^ (-r) f(ξ X)`, `ξ = ζ ^ a`,
 
-by the orthogonality of the characters of `ZMod m` (`IsPrimitiveRoot.sum_zpow_pow_eq`).
+holds by the orthogonality of the characters of `ZMod m` (`IsPrimitiveRoot.sum_zpow_pow_eq`). For
+`m = 0` it only says `0 = 0`. For `m > 0` the integer `m` is invertible in such a field
+(`IsPrimitiveRoot.neZero'`), and dividing by `m` exhibits the multisection as the average of the
+rotations `ξ ^ (-r) f(ξ X)` of `f` by the `m`-th roots of unity `ξ`.
 
-For `r = 1` this expresses the part of a series `y` in the degrees `≡ 1 (mod m)` as the mean of
-the series `ξ⁻¹ y(ξ X)`; for a parameter `y` of a formal group with complex multiplication by the
-`m`-th roots of unity, these are the transforms of `y` by the automorphisms `[ξ]`.
+For `m > 0` and `r = 1` this expresses the part of a series `y` in the degrees `≡ 1 (mod m)` as
+the mean of the series `ξ⁻¹ y(ξ X)`; for a parameter `y` of a formal group with complex
+multiplication by the `m`-th roots of unity, these are the transforms of `y` by the automorphisms
+`[ξ]`.
 
 ## Main definitions
 
@@ -43,14 +47,16 @@ the series `ξ⁻¹ y(ξ X)`; for a parameter `y` of a formal group with complex
 
 ## Main results
 
-* `PowerSeries.sum_multisection`: a power series is the sum of its `m` multisections.
+* `PowerSeries.sum_multisection`: for `m > 0`, a power series is the sum of its `m`
+  multisections.
 * `PowerSeries.multisection_mul_of_eq`, `PowerSeries.multisection_pow_of_eq`: products and powers
   of series supported in single residue classes.
 * `PowerSeries.rescale_multisection`: multisection commutes with rescaling.
 * `PowerSeries.multisection_subst`: `(F(T))_[r] = F_[r](T)` when `T` is supported in the degrees
   `≡ 1 (mod m)`.
 * `PowerSeries.natCast_smul_multisection`: the roots of unity filter
-  `m · f_[r] = ∑_{a < m} ξ ^ (-r) f(ξ X)`, `ξ = ζ ^ a`.
+  `m · f_[r] = ∑_{a < m} ξ ^ (-r) f(ξ X)`, `ξ = ζ ^ a`, scaled by `m` (an average only for
+  `m > 0`; for `m = 0` both sides vanish).
 
 ## References
 
@@ -111,7 +117,7 @@ theorem multisection_multisection (r s : ZMod m) (f : R⟦X⟧) :
   · simp only [coeff_multisection, map_zero]
     split_ifs with h₁ h₂ <;> simp_all
 
-/-- A power series is the sum of its `m` multisections. -/
+/-- For `m > 0`, a power series is the sum of its `m` multisections. -/
 theorem sum_multisection [NeZero m] (f : R⟦X⟧) : ∑ r : ZMod m, multisection m r f = f := by
   ext n
   simp [map_sum, Finset.sum_ite_eq]
@@ -197,7 +203,8 @@ section Field
 
 /-- **The roots of unity filter.** In a field with a primitive `m`-th root of unity `ζ`, `m` times
 the multisection `f_[r]` is the sum of the rotations `ξ ^ (-r) f(ξ X)` over the `m`-th roots of
-unity `ξ = ζ ^ a`, `a < m`. -/
+unity `ξ = ζ ^ a`, `a < m`. For `m > 0`, `m` is invertible in `K` and this exhibits `f_[r]` as
+the average of these rotations; for `m = 0` both sides vanish. -/
 theorem natCast_smul_multisection {K : Type*} [Field K] {m : ℕ} {ζ : K}
     (hζ : IsPrimitiveRoot ζ m) (r : ℕ) (f : K⟦X⟧) :
     (m : K) • multisection m r f = ∑ a : Fin m, (ζ ^ (a : ℕ))⁻¹ ^ r • rescale (ζ ^ (a : ℕ)) f := by

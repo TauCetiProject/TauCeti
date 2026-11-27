@@ -39,8 +39,10 @@ that of `φ`; so for `φ = X + ⋯` the constant and linear coefficients of the 
 vanishes. The units of `O⟦X⟧` are the series with unit constant coefficient, hence, for injective
 `O → R`, an element of `φ.substSubalgebra O` is a unit there exactly when its constant coefficient
 is a unit of `O`. A coordinate `ψ = G(φ)` with `G` a formal coordinate over `O` generates the same
-subalgebra, and `φ.substSubalgebra O` is stable under every substitution `f ↦ f(a)` that maps
-`φ` into it, in particular under rescaling `f(X) ↦ f(c X)`.
+subalgebra, and `φ.substSubalgebra O` is stable under every substitution `f ↦ f(a)` (with `a` of
+nilpotent constant coefficient, such as `X + ε` with `ε² = 0`) that maps `φ` into it, in
+particular under rescaling `f(X) ↦ f(c X)`: conjugating by `φ`, `f(a)(φ⁻¹)` is the substitution
+of `φ(a)(φ⁻¹)` into `f(φ⁻¹)`, and both have coefficients in `O`.
 
 ## Main definitions
 
@@ -246,19 +248,23 @@ theorem exists_constantCoeff_eq_zero_subst_eq {f : R⟦X⟧} (hf : f ∈ φ.subs
   rw [subst_sub φ.hasSubst, C_eq_algebraMap, ← coe_substAlgHom φ.hasSubst, AlgHom.commutes,
     MvPowerSeries.algebraMap_apply, hf₀, map_zero, sub_zero]
 
-/-- **Stability under substitution.** If a substitution `f ↦ f(a)` maps `φ` to a power series in
-`φ` with coefficients in `O`, then it maps every power series in `φ` with coefficients in `O` to
-one. -/
-theorem subst_mem_substSubalgebra_of_mem {a : R⟦X⟧} (ha : constantCoeff a = 0)
+/-- **Stability under substitution.** If a substitution `f ↦ f(a)`, for any `a` of nilpotent
+constant coefficient, maps `φ` to a power series in `φ` with coefficients in `O`, then it maps
+every power series in `φ` with coefficients in `O` to one. -/
+theorem subst_mem_substSubalgebra_of_mem {a : R⟦X⟧} (ha : HasSubst a)
     (hφa : φ.toPowerSeries.subst a ∈ φ.substSubalgebra O) {f : R⟦X⟧}
     (hf : f ∈ φ.substSubalgebra O) : f.subst a ∈ φ.substSubalgebra O := by
-  obtain ⟨H, hH₀, hH⟩ := exists_constantCoeff_eq_zero_subst_eq hφa
-    (constantCoeff_subst_eq_zero ha _ φ.constantCoeff_toPowerSeries)
-  obtain ⟨G, rfl⟩ := mem_substSubalgebra.mp hf
-  -- `G(φ)(a) = G(φ(a)) = G(H(φ)) = (G(H))(φ)`
-  rw [subst_comp_subst_apply φ.hasSubst (.of_constantCoeff_zero' ha), ← hH,
-    ← subst_comp_subst_apply (.of_constantCoeff_zero' hH₀) φ.hasSubst]
-  exact subst_mem_substSubalgebra _
+  rw [mem_substSubalgebra_iff_coeff_subst_inv_mem] at hφa hf ⊢
+  rw [subst_comp_subst_apply ha φ⁻¹.hasSubst] at hφa ⊢
+  have hb : HasSubst (a.subst φ⁻¹.toPowerSeries) := by
+    simpa [coe_substAlgHom] using ha.comp φ⁻¹.hasSubst
+  -- conjugating by `φ`: `f(a(φ⁻¹)) = f(φ⁻¹)(φ(a(φ⁻¹)))`, where `f(φ⁻¹)` and `φ(a(φ⁻¹))` are
+  -- integral, and so is the substitution of one into the other
+  intro n
+  rw [← φ.subst_inv_subst hb, ← subst_comp_subst_apply φ⁻¹.hasSubst (φ.hasSubst_subst hb)]
+  refine coeff_subst_mem (A := (algebraMap O R).range) (φ.hasSubst_subst hb) (fun d ↦ ?_) hf _
+  rw [Finsupp.unique_single d]
+  exact hφa _
 
 /-- **Stability under rescaling.** If `φ(c X)` is a power series in `φ` with coefficients in `O`,
 then so is `f(c X)` for every power series `f` in `φ` with coefficients in `O`. -/
@@ -266,7 +272,7 @@ theorem rescale_mem_substSubalgebra_of_mem {c : R}
     (hc : rescale c φ.toPowerSeries ∈ φ.substSubalgebra O) {f : R⟦X⟧}
     (hf : f ∈ φ.substSubalgebra O) : rescale c f ∈ φ.substSubalgebra O := by
   rw [rescale_eq_subst] at hc ⊢
-  exact subst_mem_substSubalgebra_of_mem (by simp) hc hf
+  exact subst_mem_substSubalgebra_of_mem (.smul_X' c) hc hf
 
 /-- If `ψ` is a power series in `φ` with coefficients in `O`, then so is every power series in
 `ψ` with coefficients in `O`. -/
