@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.Matrix.SkewAdjoint
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Haar measures on skew-Hermitian matrices
@@ -78,5 +79,18 @@ theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul_skewAdjoint [Finite n]
   have := Matrix.borelSpace_skewAdjoint_frobenius (n := n)
   have := μ.isAddHaarMeasure_skewAdjoint_frobenius
   exact lintegral_image_eq_lintegral_abs_det_fderiv_mul μ hs hf' hf g
+
+omit [Fintype n] in
+open scoped Matrix.Norms.Frobenius in
+/-- Change of variables along a linear automorphism of the skew-Hermitian matrices, for an
+additive Haar measure of the topology of entries. -/
+theorem lintegral_comp_linearMap_skewAdjoint [Finite n]
+    {f : skewAdjoint.submodule ℝ (Matrix n n ℂ) →ₗ[ℝ] skewAdjoint.submodule ℝ (Matrix n n ℂ)}
+    (hf : LinearMap.det f ≠ 0) (g : skewAdjoint.submodule ℝ (Matrix n n ℂ) → ℝ≥0∞) :
+    ∫⁻ S, g (f S) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ S, g S ∂μ := by
+  have := Fintype.ofFinite n
+  have := Matrix.borelSpace_skewAdjoint_frobenius (n := n)
+  have := μ.isAddHaarMeasure_skewAdjoint_frobenius
+  exact lintegral_comp_linearMap μ hf g
 
 end MeasureTheory.Measure
