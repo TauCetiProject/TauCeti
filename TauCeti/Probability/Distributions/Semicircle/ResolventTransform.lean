@@ -15,6 +15,7 @@ import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.Analysis.Real.Inequalities
 import TauCeti.Analysis.SpecificLimits.Catalan
 
 /-!
@@ -478,22 +479,6 @@ private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
   rw [himag] at hnonpos
   linarith
 
-private theorem standard_boundary_quadratic_bound {a b q x : ℝ}
-    (hqdef : q = a ^ 2 + b ^ 2) (hreal : a * (q + 1) = -x * q) (hx2 : x ^ 2 ≤ 4) :
-    q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
-  have hq : 0 ≤ q := by rw [hqdef]; exact add_nonneg (sq_nonneg a) (sq_nonneg b)
-  have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
-    have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
-    nlinarith [h]
-  have hfactor :
-      b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
-    nlinarith [hreal_sq, hqdef]
-  have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
-    have h4x : 0 ≤ 4 - x ^ 2 := by linarith
-    nlinarith [mul_nonneg hq h4x]
-  rw [hfactor]
-  exact mul_le_mul_of_nonneg_left hfactor_le hq
-
 private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     (hx : x ∈ Icc (-2) 2) (hε : 0 < ε) :
     (1 - standardSemicircleResolventNormSq x ε) ^ 2 ≤ 2 * ε := by
@@ -516,7 +501,7 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     norm_num at h
     exact h
   have hbound_b : q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
-    exact standard_boundary_quadratic_bound hqdef hreal hx2
+    exact Real.mul_one_sub_sq_le_sq_mul_add_one_sq_of_sq_le_four hqdef hreal hx2
   have himag_sq : b ^ 2 * (1 - q) ^ 2 = ε ^ 2 * q ^ 2 := by
     have h := congrArg (fun t : ℝ ↦ t ^ 2) himag
     nlinarith [h]

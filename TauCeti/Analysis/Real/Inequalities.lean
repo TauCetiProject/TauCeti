@@ -21,11 +21,31 @@ import Mathlib.Tactic.Ring
 * `Real.le_add_sq_div_two_mul_of_sq_div_le`: if `m ≤ b + d² / (2σ)` and the penalty `δ₀² / (2τ)`
   beats `c' - m + δ₀² / (2σ)` with `0 < τ ≤ σ`, then `c' ≤ b + d² / (2τ)` for every `d ≥ δ₀ ≥ 0`.
 * `Real.abs_le_abs_add_of_mem_Icc`: a bound on the absolute value of a point in a centered interval.
+* `Real.mul_one_sub_sq_le_sq_mul_add_one_sq_of_sq_le_four`: a quadratic estimate under a
+  linear relation between the variables.
 -/
 
 public section
 
 namespace Real
+
+/-- A quadratic estimate following from `q = a² + b²`, a linear relation for `a`, and
+`x² ≤ 4`. -/
+theorem mul_one_sub_sq_le_sq_mul_add_one_sq_of_sq_le_four {a b q x : ℝ}
+    (hqdef : q = a ^ 2 + b ^ 2) (hreal : a * (q + 1) = -x * q) (hx2 : x ^ 2 ≤ 4) :
+    q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
+  have hq : 0 ≤ q := by rw [hqdef]; exact add_nonneg (sq_nonneg a) (sq_nonneg b)
+  have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
+    have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
+    nlinarith [h]
+  have hfactor :
+      b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
+    nlinarith [hreal_sq, hqdef]
+  have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
+    have h4x : 0 ≤ 4 - x ^ 2 := by linarith
+    nlinarith [mul_nonneg hq h4x]
+  rw [hfactor]
+  exact mul_le_mul_of_nonneg_left hfactor_le hq
 
 /-- A point in a centered interval has absolute value at most the center's absolute value plus
 the radius. -/
