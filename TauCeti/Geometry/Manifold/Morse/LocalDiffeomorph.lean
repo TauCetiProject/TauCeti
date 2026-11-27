@@ -63,16 +63,6 @@ variable {E H M E' H' M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [To
   {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless] [TopologicalSpace M'] [ChartedSpace H' M']
   {n : WithTop ℕ∞} {π : M → M'} {x : M}
 
-omit [I'.Boundaryless] in
-/-- The coordinate expression of a local diffeomorphism at `x` in the preferred extended charts
-has invertible derivative at the chart image of `x`: on a boundaryless source this is
-`isInvertible_fderivWithin_writtenInExtChartAt`, read on the whole model space. -/
-private theorem isInvertible_fderiv_writtenInExtChartAt (hπ : IsLocalDiffeomorphAt I I' n π x)
-    (hn : n ≠ 0) :
-    (fderiv ℝ (writtenInExtChartAt I I' x π) (extChartAt I x x)).IsInvertible := by
-  have h := isInvertible_fderivWithin_writtenInExtChartAt (hπ.isInvertible_mfderiv hn)
-  rwa [I.range_eq_univ, fderivWithin_univ] at h
-
 /-- **Nondegeneracy under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
 with `2 ≤ n`, between boundaryless manifolds possibly modelled on different spaces, then `x` is a
 nondegenerate critical point of `f ∘ π` exactly when `π x` is a nondegenerate critical point of
