@@ -50,9 +50,9 @@ automorphic forms of unitary groups over `E` live.
 
 ## References
 
-* S. S. Kudla and S. Rallis, *A regularized Siegel–Weil formula: the first term identity*,
-  Ann. of Math. 140 (1994), §1, for unitary groups of hermitian spaces over CM fields and their
-  adelic points.
+* M. Harris, S. S. Kudla and W. J. Sweet, *Theta dichotomy for unitary groups*,
+  J. Amer. Math. Soc. 9 (1996), §1, for hermitian spaces over a quadratic extension of number
+  fields and their unitary groups.
 * B. H. Gross, *Algebraic modular forms*, Israel J. Math. 113 (1999), §§1–4, for levels and the
   definite case.
 
@@ -248,6 +248,7 @@ theorem mem_ratPoints_iff {g : AdelicUnitaryGroup n Φ s} :
 def finiteRatPoints : Subgroup (finiteAdelicUnitaryGroup E n) :=
   V.ratPoints.map (MonoidHom.snd _ _)
 
+@[simp]
 theorem mem_finiteRatPoints_iff {g : finiteAdelicUnitaryGroup E n} :
     g ∈ V.finiteRatPoints ↔ ∃ γ, (V.ratEmbedding γ).2 = g := by
   rw [finiteRatPoints, Subgroup.mem_map]
