@@ -26,7 +26,7 @@ public section
 
 namespace TauCeti
 
-open _root_.Real Set
+open _root_.Real
 
 /-- Attenuating `x` by `exp (-((1 - β) * log x))` gives the real power `x ^ β`. -/
 private theorem mul_exp_neg_sub_mul_log_eq_rpow {x : ℝ} (hx : 0 < x) (β : ℝ) :
@@ -83,10 +83,6 @@ theorem mul_min_one_le_logIntegral_sub_mul_logIntegral_rpow {x β a : ℝ} (hx :
   have hx₀ := zero_lt_one.trans hx
   have hle : x ^ β ≤ x := by simpa using rpow_le_rpow_of_exponent_le hx.le hβ
   have hβx : 1 < x ^ β := one_lt_two.trans_le h₂
-  have hsplit : (∫ t in x ^ β..x, (log t)⁻¹) = logIntegral x - logIntegral (x ^ β) := by
-    apply intervalIntegral.integral_eq_sub_of_hasDerivAt
-    · exact fun t ht ↦ hasDerivAt_logIntegral ((ordConnected_Ioi.uIcc_subset hβx hx) ht)
-    · simpa only [pow_one] using intervalIntegrable_inv_log_pow 1 hβx hx
   have hlog := log_pos hx
   have hgap := min_one_div_two_le_one_sub_exp_neg
     (mul_nonneg (sub_nonneg.mpr hβ) hlog.le)
@@ -94,7 +90,7 @@ theorem mul_min_one_le_logIntegral_sub_mul_logIntegral_rpow {x β a : ℝ} (hx :
     _ ≤ x * (1 - exp (-((1 - β) * log x))) / log x := by gcongr
     _ = (x - x ^ β) / log x := by rw [mul_sub, mul_one, mul_exp_neg_sub_mul_log_eq_rpow hx₀]
     _ ≤ logIntegral x - logIntegral (x ^ β) := by
-      rw [← hsplit]
+      rw [logIntegral_sub_logIntegral_eq_integral_inv_log hβx hx]
       simpa only [pow_one] using le_integral_inv_log_pow 1 hβx hle
     _ ≤ _ := sub_le_sub_left (mul_le_of_le_one_left (logIntegral_nonneg h₂) ha) _
 

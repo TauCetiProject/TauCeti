@@ -39,7 +39,7 @@ is bounded on `x ≥ 0`.
   eventually bounded by `C exp (-μ t)`, so an exponential rate `k` cannot be improved.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
-* `Real.min_one_div_two_le_one_sub_exp_neg`: `min 1 t / 2 ≤ 1 - exp (-t)` for `0 ≤ t`.
+* `TauCeti.min_one_div_two_le_one_sub_exp_neg`: `min 1 t / 2 ≤ 1 - exp (-t)` for `0 ≤ t`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
   `0 < x`.
@@ -193,7 +193,7 @@ theorem div_exp_sub_one_le_one {x : ℝ} (hx : 0 ≤ x) : x / (exp x - 1) ≤ 1 
 
 /-- For nonnegative `t`, the gap `1 - exp (-t)` is at least half of `min 1 t`: it is linear in
 `t` up to `t = 1` and bounded below by a constant thereafter. -/
-theorem _root_.Real.min_one_div_two_le_one_sub_exp_neg {t : ℝ} (ht : 0 ≤ t) :
+theorem min_one_div_two_le_one_sub_exp_neg {t : ℝ} (ht : 0 ≤ t) :
     min 1 t / 2 ≤ 1 - exp (-t) := by
   have hden : 0 < 1 + t := by linarith
   have hinv : exp (-t) ≤ (1 + t)⁻¹ := by
