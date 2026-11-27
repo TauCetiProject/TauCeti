@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Wave.Energy
 import TauCeti.Analysis.Calculus.Taylor.OrderOne
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
 
 /-!
@@ -88,6 +89,21 @@ they are differentiated by `TauCeti.hasDerivAt_waveSinPropagator_apply`,
 `TauCeti.hasDerivAt_waveCosPropagator_apply`, `∂ₜ (cos (tD) φ) = D⁻¹ sin (tD) ψ` when
 `Δφ = ψ ∈ L²`.
 
+The retarded Duhamel integral `u(t) = ∫_{s < t} D⁻¹ sin ((t - s)D) G(s) ds`, the solution with zero
+data at `t = -∞`, solves the forced equation for forcing `G` that is only integrable, not
+continuous, provided `s ↦ D⁻¹ sin (sD) G(s)` is integrable too:
+`∫ θ''(t) ⟪φ, u(t)⟫ dt = ∫ θ(t) (⟪ψ, u(t)⟫ + ⟪φ, G(t)⟫) dt`
+(`TauCeti.integral_deriv_deriv_mul_inner_setIntegral_Iio_waveSinPropagator_sub`). Here Fubini's
+theorem reduces the claim to integrations by parts against the free waves
+`t ↦ D⁻¹ sin ((t - s)D) G(s)` started at each time `s`, which vanish at `t = s` with velocity
+`G(s)`.
+The second hypothesis is needed because `‖D⁻¹ sin (sD)‖` grows like `|s|`; it holds for forcing
+terms frequency-localized away from the origin. Both sides of this identity pass to limits in a
+mixed norm `L^q_t L^r_x` (`TauCeti.tendsto_integral_mul_inner_of_tendsto_eLpNorm_eLpNorm_sub`),
+so a limit of sums `∑ⱼ uⱼ` of retarded integrals solves `∂ₜ²U - ΔU = ∑ⱼ Gⱼ` in the sense of
+distributions
+(`TauCeti.hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub`).
+
 ## Main declarations
 
 * `TauCeti.waveDuhamelSolution`: the solution formula, with
@@ -101,6 +117,12 @@ they are differentiated by `TauCeti.hasDerivAt_waveSinPropagator_apply`,
   free waves in a mixed norm `L^q_t L^r_x` solve the wave equation in the sense of distributions;
 * `TauCeti.inner_waveDuhamelSolution`, `TauCeti.inner_toLp_waveDuhamelSolution`: Duhamel's formula
   satisfies the weak formulation, integrated twice in time.
+* `TauCeti.integral_deriv_deriv_mul_inner_setIntegral_Iio_waveSinPropagator_sub`: the retarded
+  integral of an integrable forcing term solves the forced wave equation, tested against
+  `θ(t) φ(x)`;
+* `TauCeti.hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub`:
+  limits in a mixed norm of sums of retarded integrals solve the wave equation forced by the sum
+  of the forcing terms, in the sense of distributions.
 
 ## References
 
@@ -503,28 +525,16 @@ theorem integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolutio
       eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) 0 t)) r volume) q volume) l (𝓝 0))
     (φ : 𝓢(E, F)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ) :
     ∫ t, deriv (deriv θ) t * ∫ x, ⟪φ x, U t x⟫ = ∫ t, θ t * ∫ x, ⟪(Δ φ) x, U t x⟫ := by
-  have := (ENNReal.HolderConjugate.conjExponent hq).symm
-  have := (ENNReal.HolderConjugate.conjExponent (Fact.out : (1 : ℝ≥0∞) ≤ r)).symm
-  have hpair (χ : 𝓢(E, F)) (h : Lp F 2 (volume : Measure E)) :
-      ∫ x, ⟪χ x, h x⟫ = ⟪χ.toLp 2, h⟫ := by
-    rw [L2.inner_def]
-    exact integral_congr_ae (by filter_upwards [χ.coeFn_toLp 2] with x hx; rw [hx])
   -- Against `ϑ(t) χ(x)`, the pairings of the free waves converge to those of `U`.
   have hconv (χ : 𝓢(E, F)) {ϑ : ℝ → ℂ} (hϑ : Continuous ϑ) (hϑc : HasCompactSupport ϑ) :
       Tendsto (fun i ↦ ∫ t, ϑ t * ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) 0 t⟫) l
         (𝓝 (∫ t, ϑ t * ∫ x, ⟪χ x, U t x⟫)) := by
-    have hcont (i : ι) : Continuous fun t ↦ ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) 0 t⟫ :=
-      continuous_const.inner (continuous_waveDuhamelSolution (f i) (g i) continuous_zero)
-    simp_rw [← hpair χ]
-    refine tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub
-      (p := q.conjExponent) (r := r.conjExponent) (hϑ.memLp_of_hasCompactSupport hϑc)
-      (χ.memLp _) (ae_of_all _ fun t ↦ Lp.memLp (U t))
-      (ae_of_all _ fun t i ↦ MemLp.integrable_inner_of_holderConjugate (q := 2) (q' := 2)
-        (χ.memLp 2) (Lp.memLp _)) (fun i ↦ ?_) (fun i ↦ ?_) hae hlim
-    · simp_rw [hpair χ]
-      exact (hcont i).aestronglyMeasurable
-    · simp_rw [hpair χ]
-      exact (hϑ.mul (hcont i)).integrable_of_hasCompactSupport hϑc.mul_right
+    have hcont (i : ι) : Continuous (waveDuhamelSolution F (f i) (g i) 0) :=
+      continuous_waveDuhamelSolution (f i) (g i) continuous_zero
+    exact tendsto_integral_mul_inner_of_tendsto_eLpNorm_eLpNorm_sub hq hae hlim (χ.coeFn_toLp 2)
+      (χ.memLp _) (hϑ.memLp_of_hasCompactSupport hϑc) (fun i ↦ (hcont i).aestronglyMeasurable)
+      fun i ↦
+        (hϑ.mul (continuous_const.inner (hcont i))).integrable_of_hasCompactSupport hϑc.mul_right
   have hφ : Δ ((φ.toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) =
       (((Δ φ).toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
     simp
@@ -534,6 +544,238 @@ theorem integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolutio
   have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
   exact tendsto_nhds_unique ((hconv φ (hθ'.continuous_deriv le_rfl) hθc.deriv.deriv).congr heq)
     (hconv (Δ φ) hθ.continuous hθc)
+
+/-! ### The retarded integral
+
+The retarded Duhamel integral `u(t) = ∫_{s < t} D⁻¹ sin ((t - s)D) G(s) ds` solves the forced
+wave equation with zero data at `t = -∞`. For integrable `G` it need not exist, since
+`‖D⁻¹ sin (sD)‖` grows like `|s|`; it does when `s ↦ D⁻¹ sin (sD) G(s)` is integrable too, as for
+forcing terms frequency-localized away from the origin. Tested against `θ(t) φ(x)`, the equation
+follows by Fubini's theorem from the integration by parts against the free wave started at each
+time `s`. -/
+
+/-- **Fubini for the retarded pairing.** For `ϑ` continuous with compact support and `χ ∈ L²`, the
+pairing `∫ ϑ(t) ⟪χ, u(t)⟫ dt` of the retarded integral `u(t) = ∫_{s < t} D⁻¹ sin ((t - s)D) G(s) ds`
+is integrable in `t` and equals `∫ ∫_{t > s} ϑ(t) ⟪χ, D⁻¹ sin ((t - s)D) G(s)⟫ dt ds`, whose inner
+integral is integrable in `s`. -/
+private theorem integral_mul_inner_setIntegral_Iio_waveSinPropagator_sub (hG : Integrable G)
+    (hSG : Integrable fun s ↦ waveSinPropagator F s (G s)) {ϑ : ℝ → ℂ} (hϑ : Continuous ϑ)
+    (hϑc : HasCompactSupport ϑ) (χ : Lp F 2 (volume : Measure E)) :
+    Integrable (fun t ↦ ϑ t * ⟪χ, ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s)⟫) ∧
+      Integrable (fun s ↦ ∫ t in Set.Ioi s, ϑ t * ⟪χ, waveSinPropagator F (t - s) (G s)⟫) ∧
+      ∫ t, ϑ t * ⟪χ, ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s)⟫ =
+        ∫ s, ∫ t in Set.Ioi s, ϑ t * ⟪χ, waveSinPropagator F (t - s) (G s)⟫ := by
+  set f : ℝ × ℝ → ℂ := {p | p.2 < p.1}.indicator
+    fun p ↦ ϑ p.1 * ⟪χ, waveSinPropagator F (p.1 - p.2) (G p.2)⟫
+  have hmeas : MeasurableSet {p : ℝ × ℝ | p.2 < p.1} :=
+    measurableSet_lt measurable_snd measurable_fst
+  -- `‖f(t, s)‖ ≤ ‖χ‖ (‖ϑ(t)‖ |t| ‖G(s)‖ + ‖ϑ(t)‖ ‖D⁻¹ sin (sD) G(s)‖)`, a sum of products.
+  have hf : Integrable f (volume.prod volume) := by
+    have h₁ : Integrable (fun t ↦ ‖ϑ t‖ * |t|) :=
+      (hϑ.norm.mul continuous_abs).integrable_of_hasCompactSupport hϑc.norm.mul_right
+    have h₂ : Integrable (fun t ↦ ‖ϑ t‖) := hϑ.norm.integrable_of_hasCompactSupport hϑc.norm
+    refine (((h₁.mul_prod hG.norm).add (h₂.mul_prod hSG.norm)).const_mul ‖χ‖).mono' ?_
+      (.of_forall fun p ↦ ?_)
+    · exact (((hϑ.comp continuous_fst).aestronglyMeasurable).mul
+        ((continuous_const.inner continuous_id).comp_aestronglyMeasurable
+          (aestronglyMeasurable_waveSinPropagator_sub_prod hG.aestronglyMeasurable))).indicator
+          hmeas
+    · simp only [f, Set.indicator_apply]
+      split_ifs
+      · rw [norm_mul]
+        calc ‖ϑ p.1‖ * ‖⟪χ, waveSinPropagator F (p.1 - p.2) (G p.2)⟫‖
+            ≤ ‖ϑ p.1‖ * (‖χ‖ * (|p.1| * ‖G p.2‖ + ‖waveSinPropagator F p.2 (G p.2)‖)) := by
+              gcongr
+              exact (norm_inner_le_norm _ _).trans
+                (mul_le_mul_of_nonneg_left (norm_waveSinPropagator_sub_apply_le _ _ _)
+                  (norm_nonneg _))
+          _ = _ := by simp only [Pi.add_apply]; ring
+      · rw [norm_zero]
+        simp only [Pi.add_apply]
+        positivity
+  have hslice (t : ℝ) : (fun s ↦ f (t, s)) = (Set.Iio t).indicator
+      fun s ↦ ϑ t * ⟪χ, waveSinPropagator F (t - s) (G s)⟫ := by
+    ext s
+    simp [f, Set.indicator_apply]
+  have hslice' (s : ℝ) : (fun t ↦ f (t, s)) = (Set.Ioi s).indicator
+      fun t ↦ ϑ t * ⟪χ, waveSinPropagator F (t - s) (G s)⟫ := by
+    ext t
+    simp [f, Set.indicator_apply]
+  have hleft (t : ℝ) : ∫ s, f (t, s) =
+      ϑ t * ⟪χ, ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s)⟫ := by
+    rw [hslice, integral_indicator measurableSet_Iio, integral_const_mul,
+      integral_inner ((integrable_waveSinPropagator_sub_apply hG hSG t).integrableOn)]
+  have hright (s : ℝ) : ∫ t, f (t, s) =
+      ∫ t in Set.Ioi s, ϑ t * ⟪χ, waveSinPropagator F (t - s) (G s)⟫ := by
+    rw [hslice', integral_indicator measurableSet_Ioi]
+  refine ⟨?_, ?_, ?_⟩
+  · simpa only [hleft] using hf.integral_prod_left
+  · simpa only [hright] using hf.integral_prod_right
+  · simp_rw [← hleft, ← hright]
+    exact integral_integral_swap hf
+
+/-- For `ϑ` continuous with compact support and `χ ∈ L²`, the pairing `t ↦ ϑ(t) ⟪χ, u(t)⟫` with the
+retarded integral `u(t) = ∫_{s < t} D⁻¹ sin ((t - s)D) G(s) ds` is integrable, provided `G` and
+`s ↦ D⁻¹ sin (sD) G(s)` are. -/
+theorem integrable_mul_inner_setIntegral_Iio_waveSinPropagator_sub (hG : Integrable G)
+    (hSG : Integrable fun s ↦ waveSinPropagator F s (G s)) {ϑ : ℝ → ℂ} (hϑ : Continuous ϑ)
+    (hϑc : HasCompactSupport ϑ) (χ : Lp F 2 (volume : Measure E)) :
+    Integrable fun t ↦ ϑ t * ⟪χ, ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s)⟫ :=
+  (integral_mul_inner_setIntegral_Iio_waveSinPropagator_sub hG hSG hϑ hϑc χ).1
+
+/-- **Integration by parts against a wave started at time `s`.** For `φ ∈ L²` with
+`Δφ = ψ ∈ L²`, `g ∈ L²` and a compactly supported `C²` function `θ`, the function
+`k(t) = ⟪φ, D⁻¹ sin ((t - s)D) g⟫` vanishes at `t = s` with derivative `⟪φ, g⟫` there and
+satisfies `k'' = ⟪ψ, D⁻¹ sin ((t - s)D) g⟫`, so
+`∫_{t > s} θ''(t) k(t) dt = θ(s) ⟪φ, g⟫ + ∫_{t > s} θ(t) ⟪ψ, D⁻¹ sin ((t - s)D) g⟫ dt`. -/
+private theorem setIntegral_Ioi_deriv_deriv_mul_inner_waveSinPropagator_sub
+    (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F))) (g : Lp F 2 (volume : Measure E)) {θ : ℝ → ℂ}
+    (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ) (s : ℝ) :
+    ∫ t in Set.Ioi s, deriv (deriv θ) t * ⟪φ, waveSinPropagator F (t - s) g⟫ =
+      θ s * ⟪φ, g⟫ + ∫ t in Set.Ioi s, θ t * ⟪ψ, waveSinPropagator F (t - s) g⟫ := by
+  set k : ℝ → ℂ := fun t ↦ ⟪φ, waveSinPropagator F (t - s) g⟫
+  set k' : ℝ → ℂ := fun t ↦ ⟪φ, waveCosPropagator F (t - s) g⟫
+  set k'' : ℝ → ℂ := fun t ↦ ⟪ψ, waveSinPropagator F (t - s) g⟫
+  have hk (t : ℝ) : HasDerivAt k (k' t) t := by
+    have h := (hasDerivAt_waveSinPropagator_apply (F := F) (E := E) g (t - s)).comp_sub_const t s
+    have := (hasDerivAt_const t φ).inner ℂ h
+    rw [inner_zero_left, add_zero] at this
+    exact this
+  have hk' (t : ℝ) : HasDerivAt k' (k'' t) t := by
+    have h := (hasDerivAt_waveCosPropagator_apply hφψ (t - s)).comp_sub_const t s
+    have := h.inner ℂ (hasDerivAt_const t g)
+    rw [inner_zero_right, zero_add, inner_waveSinPropagator_apply] at this
+    refine this.congr_of_eventuallyEq (.of_forall fun t ↦ ?_)
+    exact (inner_waveCosPropagator_apply _ _ _).symm
+  have hck : Continuous k := continuous_iff_continuousAt.2 fun t ↦ (hk t).continuousAt
+  have hck' : Continuous k' := continuous_iff_continuousAt.2 fun t ↦ (hk' t).continuousAt
+  have hck'' : Continuous k'' :=
+    continuous_const.inner ((continuous_waveSinPropagator_apply g).comp (continuous_sub_right s))
+  have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
+  have hθ₀ (t : ℝ) : HasDerivAt θ (deriv θ t) t := (hθ.differentiable (by norm_num) t).hasDerivAt
+  have hθ'' (t : ℝ) : HasDerivAt (deriv θ) (deriv (deriv θ) t) t :=
+    (hθ'.differentiable one_ne_zero t).hasDerivAt
+  have hint {v w : ℝ → ℂ} (hv : Continuous v) (hw : Continuous w) (hc : HasCompactSupport (v * w)) :
+      IntegrableOn (v * w) (Set.Ioi s) :=
+    ((hv.mul hw).integrable_of_hasCompactSupport hc).integrableOn
+  have hs {v w : ℝ → ℂ} (hv : Continuous v) (hw : Continuous w) :
+      Tendsto (v * w) (𝓝[>] s) (𝓝 (v s * w s)) :=
+    ((hv.mul hw).tendsto s).mono_left nhdsWithin_le_nhds
+  have hk0 : k s = 0 := by simp [k]
+  have hk'0 : k' s = ⟪φ, g⟫ := by simp [k']
+  -- Integrate by parts twice: `∫ θ'' k = -∫ θ' k' = θ(s) k'(s) + ∫ θ k''`, the boundary terms at
+  -- infinity vanishing by compact support.
+  have h₁ := integral_Ioi_mul_deriv_eq_deriv_mul (fun t _ ↦ hθ'' t) (fun t _ ↦ hk t)
+    (hint hθ'.continuous hck' hθc.deriv.mul_right)
+    (hint (hθ'.continuous_deriv le_rfl) hck hθc.deriv.deriv.mul_right)
+    (hs hθ'.continuous hck) (hθc.deriv.mul_right.is_zero_at_infty.mono_left atTop_le_cocompact)
+  have h₂ := integral_Ioi_mul_deriv_eq_deriv_mul (fun t _ ↦ hθ₀ t) (fun t _ ↦ hk' t)
+    (hint hθ.continuous hck'' hθc.mul_right) (hint hθ'.continuous hck' hθc.deriv.mul_right)
+    (hs hθ.continuous hck') (hθc.mul_right.is_zero_at_infty.mono_left atTop_le_cocompact)
+  simp only [hk0, mul_zero, sub_zero, zero_sub, hk'0] at h₁ h₂
+  -- Fold the integrands into `k` and `k''`, the form in which `h₁` and `h₂` are stated.
+  change ∫ t in Set.Ioi s, deriv (deriv θ) t * k t = θ s * ⟪φ, g⟫ + ∫ t in Set.Ioi s, θ t * k'' t
+  linear_combination h₁ - h₂
+
+/-- **The retarded integral solves the forced wave equation, tested in space and time.** Let
+`G : ℝ → L²` be integrable with `s ↦ D⁻¹ sin (sD) G(s)` integrable, and let
+`u(t) = ∫_{s < t} D⁻¹ sin ((t - s)D) G(s) ds` be its retarded Duhamel integral, the solution of
+`∂ₜ²u - Δu = G` with zero data at `t = -∞`. For a test function `φ ∈ L²` with `Δφ = ψ ∈ L²` and a
+compactly supported `C²` function `θ` of time,
+
+`∫ θ''(t) ⟪φ, u(t)⟫ dt = ∫ θ(t) (⟪ψ, u(t)⟫ + ⟪φ, G(t)⟫) dt`.
+
+The second hypothesis holds when the values of `G` are frequency-localized away from the origin,
+where the operators `D⁻¹ sin (sD)` are bounded uniformly in `s`; without it the retarded integral
+need not exist, since `‖D⁻¹ sin (sD)‖` grows like `|s|`. -/
+theorem integral_deriv_deriv_mul_inner_setIntegral_Iio_waveSinPropagator_sub
+    (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F))) (hG : Integrable G)
+    (hSG : Integrable fun s ↦ waveSinPropagator F s (G s)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ)
+    (hθc : HasCompactSupport θ) :
+    ∫ t, deriv (deriv θ) t * ⟪φ, ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s)⟫ =
+      ∫ t, θ t * (⟪ψ, ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s)⟫ + ⟪φ, G t⟫) := by
+  have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
+  obtain ⟨-, -, h₁⟩ := integral_mul_inner_setIntegral_Iio_waveSinPropagator_sub hG hSG
+    (hθ'.continuous_deriv le_rfl) hθc.deriv.deriv φ
+  obtain ⟨hi₁, hi₂, h₂⟩ := integral_mul_inner_setIntegral_Iio_waveSinPropagator_sub hG hSG
+    hθ.continuous hθc ψ
+  have hθG : Integrable fun t ↦ θ t * ⟪φ, G t⟫ :=
+    (hG.const_inner φ).locallyIntegrable.integrable_smul_left_of_hasCompactSupport hθ.continuous hθc
+  simp_rw [mul_add]
+  rw [integral_add hi₁ hθG, h₁, h₂, ← integral_add hi₂ hθG]
+  exact integral_congr_ae (ae_of_all _ fun s ↦
+    (setIntegral_Ioi_deriv_deriv_mul_inner_waveSinPropagator_sub hφψ (G s) hθ hθc s).trans
+      (add_comm _ _))
+
+/-- The forced wave equation for the retarded integral of `G`, tested against `θ(t) ψ(x)` for a
+Schwartz function `ψ`, with the pairing with `G` written as an integral over space. -/
+private theorem integral_deriv_deriv_mul_inner_setIntegral_Iio_sub_eq (hG : Integrable G)
+    (hSG : Integrable fun s ↦ waveSinPropagator F s (G s)) (ψ : 𝓢(E, F)) {θ : ℝ → ℂ}
+    (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ) :
+    (∫ t, deriv (deriv θ) t *
+        ⟪ψ.toLp 2, ∫ τ in Set.Iio t, waveSinPropagator F (t - τ) (G τ)⟫) -
+      ∫ t, θ t * ⟪(Δ ψ).toLp 2, ∫ τ in Set.Iio t, waveSinPropagator F (t - τ) (G τ)⟫ =
+        ∫ t, θ t * ∫ x, ⟪ψ x, G t x⟫ := by
+  have hφ : Δ ((ψ.toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) =
+      (((Δ ψ).toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
+    simp
+  have hpair (t : ℝ) : ∫ x, ⟪ψ x, G t x⟫ = ⟪ψ.toLp 2, G t⟫ := by
+    rw [show ψ.toLp 2 volume = (ψ.memLp 2).toLp ψ from
+      Lp.ext ((ψ.coeFn_toLp 2).trans (ψ.memLp 2).coeFn_toLp.symm)]
+    exact (L2.toLp_inner_of_ae_eq (𝕜 := ℂ) (ψ.memLp 2) EventuallyEq.rfl).symm
+  refine (congrArg (· - _) (integral_deriv_deriv_mul_inner_setIntegral_Iio_waveSinPropagator_sub
+    hφ hG hSG hθ hθc)).trans ?_
+  have hθG : Integrable fun t ↦ θ t * ⟪ψ.toLp 2, G t⟫ :=
+    (hG.const_inner _).locallyIntegrable.integrable_smul_left_of_hasCompactSupport hθ.continuous hθc
+  simp_rw [mul_add, hpair]
+  rw [integral_add (integrable_mul_inner_setIntegral_Iio_waveSinPropagator_sub hG hSG
+    hθ.continuous hθc _) hθG]
+  ring
+
+/-- **Limits of sums of retarded integrals solve the forced wave equation.** Let `Gⱼ : ℝ → L²`,
+`j ∈ ι`, be integrable forcing terms with each `s ↦ D⁻¹ sin (sD) Gⱼ(s)` integrable, and let
+`U : ℝ → L^r` be a limit of the finite sums of their retarded integrals
+`uⱼ(t) = ∫_{τ < t} D⁻¹ sin ((t - τ)D) Gⱼ(τ) dτ`, in `L^r` for almost every `t` and in the mixed
+norm `L^q_t L^r_x` for some `1 ≤ q`. Then `∂ₜ²U - ΔU = ∑ⱼ Gⱼ` in the sense of distributions,
+tested against `θ(t) ψ(x)`: for every Schwartz function `ψ` and every compactly supported `C²`
+function `θ` of time, the series `∑ⱼ ∫ θ(t) ∫ ⟪ψ(x), Gⱼ(t)(x)⟫ dx dt` converges, with sum
+
+`∫ θ''(t) ∫ ⟪ψ(x), U(t)(x)⟫ dx dt - ∫ θ(t) ∫ ⟪Δψ(x), U(t)(x)⟫ dx dt`. -/
+theorem hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub
+    {ι : Type*} [Countable ι] {q r : ℝ≥0∞} [Fact (1 ≤ r)] (hq : 1 ≤ q)
+    {G : ι → ℝ → Lp F 2 (volume : Measure E)} (hint : ∀ j, Integrable (G j))
+    (hSG : ∀ j, Integrable fun s ↦ waveSinPropagator F s (G j s))
+    {U : ℝ → Lp F r (volume : Measure E)}
+    (hae : ∀ᵐ t, Tendsto (fun s : Finset ι ↦ eLpNorm (⇑(U t) - ⇑(∑ j ∈ s,
+      ∫ τ in Set.Iio t, waveSinPropagator F (t - τ) (G j τ))) r volume) atTop (𝓝 0))
+    (hlim : Tendsto (fun s : Finset ι ↦ eLpNorm (fun t ↦ eLpNorm (⇑(U t) - ⇑(∑ j ∈ s,
+      ∫ τ in Set.Iio t, waveSinPropagator F (t - τ) (G j τ))) r volume) q volume) atTop (𝓝 0))
+    (ψ : 𝓢(E, F)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ) :
+    HasSum (fun j ↦ ∫ t, θ t * ∫ x, ⟪ψ x, G j t x⟫)
+      ((∫ t, deriv (deriv θ) t * ∫ x, ⟪ψ x, U t x⟫) - ∫ t, θ t * ∫ x, ⟪(Δ ψ) x, U t x⟫) := by
+  have hum (j : ι) := aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+    (hint j).aestronglyMeasurable
+  have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
+  have hi (χ : 𝓢(E, F)) {ϑ : ℝ → ℂ} (hϑ : Continuous ϑ) (hϑc : HasCompactSupport ϑ) (j : ι) :=
+    integrable_mul_inner_setIntegral_Iio_waveSinPropagator_sub (hint j) (hSG j) hϑ hϑc (χ.toLp 2)
+  -- Against `ϑ(t) χ(x)`, the pairings of the partial sums converge to those of `U`.
+  have hconv (χ : 𝓢(E, F)) {ϑ : ℝ → ℂ} (hϑ : Continuous ϑ) (hϑc : HasCompactSupport ϑ) :
+      Tendsto (fun s : Finset ι ↦ ∫ t, ϑ t * ⟪χ.toLp 2, ∑ j ∈ s,
+        ∫ τ in Set.Iio t, waveSinPropagator F (t - τ) (G j τ)⟫) atTop
+        (𝓝 (∫ t, ϑ t * ∫ x, ⟪χ x, U t x⟫)) :=
+    tendsto_integral_mul_inner_of_tendsto_eLpNorm_eLpNorm_sub hq hae hlim (χ.coeFn_toLp 2)
+      (χ.memLp _) (hϑ.memLp_of_hasCompactSupport hϑc)
+      (fun s ↦ Finset.aestronglyMeasurable_fun_sum s fun j _ ↦ hum j) fun s ↦ by
+        simp_rw [inner_sum, Finset.mul_sum]
+        exact integrable_finsetSum s fun j _ ↦ hi χ hϑ hϑc j
+  -- `HasSum` is by definition the convergence of the partial sums along `atTop`.
+  refine ((hconv ψ (hθ'.continuous_deriv le_rfl) hθc.deriv.deriv).sub
+    (hconv (Δ ψ) hθ.continuous hθc)).congr fun s ↦ ?_
+  simp_rw [inner_sum, Finset.mul_sum]
+  rw [integral_finsetSum s fun j _ ↦ hi ψ (hθ'.continuous_deriv le_rfl) hθc.deriv.deriv j,
+    integral_finsetSum s fun j _ ↦ hi (Δ ψ) hθ.continuous hθc j, ← Finset.sum_sub_distrib]
+  exact Finset.sum_congr rfl fun j _ ↦
+    integral_deriv_deriv_mul_inner_setIntegral_Iio_sub_eq (hint j) (hSG j) ψ hθ hθc
 
 end Duhamel
 

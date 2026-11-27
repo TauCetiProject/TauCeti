@@ -712,15 +712,13 @@ theorem exists_sum_fourierMultiplierCLM_block_eq :
       ∀ (u : HomogeneousBesovSpace G φ s 2 q) (j : ℤ),
         ∑ d ∈ Finset.Ico (-(L : ℤ)) L, Lp.fourierMultiplierCLM G (m (d + j)) (u.block j) =
           u.block j := by
-  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (F := G) φ φ
-  refine ⟨L, fun {m} hm u j ↦ Lp.toTemperedDistribution_injective ?_⟩
-  dsimp only
-  rw [Lp.toTemperedDistribution_sum]
-  simp_rw [← homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ (hm _), coe_block]
-  conv_rhs => rw [hL j u.toDistr]
+  obtain ⟨L, hL⟩ :=
+    exists_eq_sum_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock (G := G) φ
+  refine ⟨L, fun {m} hm u j ↦ ?_⟩
+  conv_rhs => rw [hL j hm (u.block j) u.toDistr (coe_block u j)]
   rw [show Finset.Ico (j - L) (j + L) = (Finset.Ico (-(L : ℤ)) L).map (addRightEmbedding j) by
     rw [Finset.map_add_right_Ico, neg_add_eq_sub, add_comm (L : ℤ)], Finset.sum_map]
-  simp only [addRightEmbedding_apply, homogeneousLittlewoodPaleyBlock_comm φ φ j]
+  simp only [addRightEmbedding_apply]
 
 end L2
 
