@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import TauCeti.Analysis.Fourier.Torus.UnitCube
 import TauCeti.Analysis.InnerProductSpace.WeakSolution
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -681,15 +682,8 @@ direction `v` (`TauCeti.setIntegral_flatLineCRInverse_mul_conj_fderiv`) has norm
 `2 ‖v‖ ‖f‖`, when `ω₁, ω₂` are linearly independent over `ℝ`. -/
 theorem norm_smul_flatLineBeurling_add_smul_le (hω : (conj ω₁ * ω₂).im ≠ 0)
     (f : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))) (v : ℂ) :
-    ‖v • flatLineBeurling ω₁ ω₂ θ₁ θ₂ f + conj v • f‖ ≤ 2 * ‖v‖ * ‖f‖ := by
-  have hB : ‖flatLineBeurling ω₁ ω₂ θ₁ θ₂ f‖ ≤ ‖f‖ :=
-    ((flatLineBeurling ω₁ ω₂ θ₁ θ₂).le_opNorm f).trans
-      (mul_le_of_le_one_left (norm_nonneg f) (norm_flatLineBeurling_le hω))
-  calc ‖v • flatLineBeurling ω₁ ω₂ θ₁ θ₂ f + conj v • f‖
-      ≤ ‖v‖ * ‖flatLineBeurling ω₁ ω₂ θ₁ θ₂ f‖ + ‖v‖ * ‖f‖ := by
-        simpa only [norm_smul, norm_conj] using
-          norm_add_le (v • flatLineBeurling ω₁ ω₂ θ₁ θ₂ f) (conj v • f)
-    _ ≤ 2 * ‖v‖ * ‖f‖ := by nlinarith [norm_nonneg v]
+    ‖v • flatLineBeurling ω₁ ω₂ θ₁ θ₂ f + conj v • f‖ ≤ 2 * ‖v‖ * ‖f‖ :=
+  ContinuousLinearMap.norm_smul_apply_add_conj_smul_le (norm_flatLineBeurling_le hω) v f
 
 /-- Integration by parts for test sections in inner product form:
 `⟪∂bar φ, u⟫ + ⟪φ, ∂u⟫ = 0`. -/

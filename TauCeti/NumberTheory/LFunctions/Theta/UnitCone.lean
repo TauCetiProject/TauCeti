@@ -204,17 +204,12 @@ theorem hasMellin_mellinKernel_sub {D : Set (realSpace K)} (hDm : MeasurableSet 
   have hF : HasMellin F (s / 2)
       (∫ y in unitCone D, (archNorm y : ℂ) ^ (s / 2) * (latticeTheta L y - 1) ∂archHaar K) :=
     hasMellin_integral_surfaceScale hDm (s / 2) h
-  have hscaled := hF.comp_mul_right (a := (ZLattice.covolume L ^ 2)⁻¹) (by positivity)
-  have havg (u : ℝ) (hu : 0 < u) : mellinKernel D L u -
-      c * (surfaceHaar K).real (Subtype.val ⁻¹' D) =
-        c • F (u * (ZLattice.covolume L ^ 2)⁻¹) := by
+  have havg (u : ℝ) (hu : 0 < u) : c • F (u / ZLattice.covolume L ^ 2) =
+      mellinKernel D L u - c * (surfaceHaar K).real (Subtype.val ⁻¹' D) := by
     rw [mellinKernel_sub_eq_integral_sub_one hDm hD L hu]
-    simp only [F, c, smul_eq_mul, div_eq_mul_inv]
-  have hc := (hasMellin_congr (fun u hu ↦ (havg u hu).symm)).mp
-    (hasMellin_const_smul hscaled.1 c)
-  rw [hscaled.2, Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg (sq_nonneg _),
-    Complex.cpow_neg, inv_inv] at hc
-  simpa only [c, smul_eq_mul, Complex.ofReal_pow, mul_assoc] using hc
+    simp only [F, c, smul_eq_mul]
+  simpa only [c, smul_eq_mul, Complex.ofReal_pow] using
+    (hasMellin_congr havg).mp (hF.const_smul_comp_div c (sq_pos_of_pos hV))
 
 /-! ### The unit orbit of one point -/
 

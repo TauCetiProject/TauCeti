@@ -238,27 +238,34 @@ theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ
 theorem IsGibbs.smul (hμ : γ.IsGibbs μ) (c : ℝ≥0∞) : γ.IsGibbs (c • μ) :=
   isGibbs_iff_invariant.2 fun Λ => (isGibbs_iff_invariant.1 hμ Λ).smul c
 
-/-- **Reweighting by a tail density.** If `μ` is Gibbs and `f` is measurable for the exterior
-σ-algebra of every finite set, as a tail-measurable density is, then `f • μ` is Gibbs. -/
-theorem IsGibbs.withDensity (hμ : γ.IsGibbs μ) {f : X → ℝ≥0∞}
-    (hf : ∀ Λ : Finset I, Measurable[X.exterior Λ] f) : γ.IsGibbs (μ.withDensity f) := by
-  intro Λ
-  have hfm : Measurable f := (hf Λ).mono (X.exterior_le Λ) le_rfl
+/-- **Reweighting by an exterior density, one finite set at a time.** If `μ.bind γ_Λ = μ` and `f`
+is measurable for the exterior σ-algebra `𝓕_{Λᶜ}`, then `f • μ` also satisfies
+`(f • μ).bind γ_Λ = f • μ`. -/
+theorem bind_kernel_withDensity {Λ : Finset I} (hμ : μ.bind (γ.kernel Λ) = μ) {f : X → ℝ≥0∞}
+    (hf : Measurable[X.exterior Λ] f) :
+    (μ.withDensity f).bind (γ.kernel Λ) = μ.withDensity f := by
+  have hfm : Measurable f := hf.mono (X.exterior_le Λ) le_rfl
   ext C hC
   have hCf : Measurable fun ω => f ω * C.indicator 1 ω := hfm.mul (measurable_one.indicator hC)
   -- Properness pulls the exterior-measurable density inside each kernel.
   have hprop (ω : X) :
       f ω * γ.kernel Λ ω C = ∫⁻ ω', f ω' * C.indicator 1 ω' ∂(γ.kernel Λ ω) := by
-    rw [(γ.isProper Λ).lintegral_mul (X.exterior_le Λ) (measurable_one.indicator hC) (hf Λ),
+    rw [(γ.isProper Λ).lintegral_mul (X.exterior_le Λ) (measurable_one.indicator hC) hf,
       lintegral_indicator_one hC]
   rw [Measure.bind_apply hC (γ.measurable_kernel Λ).aemeasurable,
     lintegral_withDensity_eq_lintegral_mul _ hfm (γ.measurable_kernel_apply Λ hC),
     withDensity_apply _ hC]
   simp only [Pi.mul_apply, hprop]
-  rw [← Measure.lintegral_bind (γ.measurable_kernel Λ).aemeasurable hCf.aemeasurable, hμ Λ,
+  rw [← Measure.lintegral_bind (γ.measurable_kernel Λ).aemeasurable hCf.aemeasurable, hμ,
     ← lintegral_indicator hC]
   congr 1 with ω
   by_cases hω : ω ∈ C <;> simp [hω]
+
+/-- **Reweighting by a tail density.** If `μ` is Gibbs and `f` is measurable for the exterior
+σ-algebra of every finite set, as a tail-measurable density is, then `f • μ` is Gibbs. -/
+theorem IsGibbs.withDensity (hμ : γ.IsGibbs μ) {f : X → ℝ≥0∞}
+    (hf : ∀ Λ : Finset I, Measurable[X.exterior Λ] f) : γ.IsGibbs (μ.withDensity f) :=
+  fun Λ => bind_kernel_withDensity (hμ Λ) (hf Λ)
 
 /-- The zero measure is Gibbs. -/
 @[simp]

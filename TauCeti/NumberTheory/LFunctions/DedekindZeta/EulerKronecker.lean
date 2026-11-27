@@ -7,10 +7,10 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import TauCeti.Analysis.Calculus.LogDeriv
+public import TauCeti.Analysis.Meromorphic.LogDeriv
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 import TauCeti.Analysis.Meromorphic.Conj
-import TauCeti.NumberTheory.LSeries.Conjugate
 
 /-!
 # The Euler–Kronecker constant
@@ -18,7 +18,8 @@ import TauCeti.NumberTheory.LSeries.Conjugate
 Removing the pole of the Dedekind zeta function gives the entire function
 `dedekindZetaPoleRemoved K`, equal to `(s - 1) ζ_K(s)` off `1` and to the residue at `1`.
 Its logarithmic derivative at `1` is real and equals `NumberField.eulerKroneckerConstant K`.
-Thus `ζ_K′/ζ_K` has expansion `-1/(s - 1) + EK(K) + O(s - 1)`. This regular part enters
+Thus `ζ_K′/ζ_K` has expansion `-1/(s - 1) + EK(K) + O(s - 1)`, and `EK(K)` is the finite part
+`logDerivFinitePart (dedekindZetaC K) 1`. This regular part enters
 in the main term of smoothed prime-ideal counts. Over `ℚ` the constant is Euler's constant.
 
 For the normalization, see Y. Ihara, *On the Euler–Kronecker constants of global fields and
@@ -108,14 +109,10 @@ theorem dedekindZetaPoleRemoved_conj (s : ℂ) :
   · intro z hz
     have hz' : 1 < (conj z).re := by simpa only [conj_re] using mem_ofPred.mp hz
     have hne {w : ℂ} (hw : 1 < w.re) : w ≠ 1 := by rintro rfl; simp at hw
-    rw [Function.comp_apply, Function.comp_apply,
+    simp only [Function.comp_apply,
       dedekindZetaPoleRemoved_apply_of_ne_one K (hne hz),
       dedekindZetaPoleRemoved_apply_of_ne_one K (hne hz'), dedekindZetaC_eq_dedekindZeta K hz,
-      dedekindZetaC_eq_dedekindZeta K hz', map_mul, map_sub, map_one, conj_conj]
-    congr 1
-    simpa only [dedekindZeta, Pi.star_def, Complex.star_def, map_natCast, conj_conj] using
-      TauCeti.LSeries.LSeries_star
-        (fun n ↦ (Nat.card {I : Ideal (𝓞 K) // Ideal.absNorm I = n} : ℂ)) (conj z)
+      dedekindZetaC_eq_dedekindZeta K hz', dedekindZeta_conj, map_mul, map_sub, map_one, conj_conj]
 
 /-- Subtracting the principal part of `ζ_K′/ζ_K` gives the logarithmic derivative of the
 pole-removed function as a punctured germ at `1`. -/
@@ -136,6 +133,16 @@ theorem logDeriv_dedekindZetaC_add_inv_eventuallyEq :
   rw [hlog, logDeriv_fun_mul (f := fun t ↦ t - 1) s hsub hζ
     (differentiableAt_id.sub_const 1) (analyticAt_dedekindZetaC K hs).differentiableAt,
     logDeriv_apply (· - 1), deriv_sub_const, deriv_id'', one_div, add_comm]
+
+/-- The punctured germ at `1` of `ζ_K′/ζ_K` minus its principal part, written with the order
+of `ζ_K` at `1` as in `logDerivFinitePart`, is the logarithmic derivative of the pole-removed
+function. -/
+theorem logDeriv_dedekindZetaC_sub_order_eventuallyEq :
+    (fun s ↦ logDeriv (dedekindZetaC K) s -
+      (meromorphicOrderAt (dedekindZetaC K) 1).untop₀ / (s - 1)) =ᶠ[𝓝[≠] 1]
+      logDeriv (dedekindZetaPoleRemoved K) := by
+  simpa [meromorphicOrderAt_dedekindZetaC_one, neg_div, sub_neg_eq_add, one_div] using
+    logDeriv_dedekindZetaC_add_inv_eventuallyEq K
 
 /-- The logarithmic derivative of the pole-removed zeta function is analytic at `1`. -/
 @[fun_prop]
@@ -194,3 +201,16 @@ theorem eulerKroneckerConstant_rat : eulerKroneckerConstant ℚ = Real.eulerMasc
     div_one, deriv_riemannZeta₁_one, ofReal_re]
 
 end NumberField
+
+namespace TauCeti.LFunctions
+
+variable (K : Type*) [Field K] [NumberField K]
+
+/-- The finite part at `1` of the logarithmic derivative of the Dedekind zeta function is
+the Euler–Kronecker constant. -/
+@[simp] theorem logDerivFinitePart_dedekindZetaC_one :
+    logDerivFinitePart (dedekindZetaC K) 1 = (eulerKroneckerConstant K : ℂ) := by
+  rw [(analyticAt_logDeriv_dedekindZetaPoleRemoved_one K).logDerivFinitePart_eq
+    (logDeriv_dedekindZetaC_sub_order_eventuallyEq K), logDeriv_dedekindZetaPoleRemoved_one]
+
+end TauCeti.LFunctions

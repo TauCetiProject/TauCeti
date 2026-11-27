@@ -51,7 +51,10 @@ conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds eve
 at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
-half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). For a real-linear `J`
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). Since every element
+of a complex star algebra is a complex combination of skew-adjoint ones, an element commuting with
+every skew-adjoint element commutes with everything
+(`TauCeti.commute_of_forall_mem_skewAdjoint_commute`). For a real-linear `J`
 with `J ∘ J = -1`, the map `a + b i ↦ a - b J` from `ℂ` is multiplicative
 (`TauCeti.re_smul_sub_im_smul_apply_mul`). Multiplication by `-I` is a real linear equivalence
 from the skew-adjoint onto the self-adjoint elements, with inverse multiplication by `I`
@@ -252,6 +255,17 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
     (ℜ a : A) = a + (2 : ℝ)⁻¹ • (star a - a) := by
   rw [realPart_apply_coe]
   module
+
+open scoped ComplexStarModule in
+/-- In a complex star algebra, an element commuting with every skew-adjoint element commutes with
+every element: `a = -I • (I • ℜ a) + I • ℑ a`, where `I • ℜ a` and `I • ℑ a` are skew-adjoint. -/
+theorem commute_of_forall_mem_skewAdjoint_commute {A : Type*} [Ring A] [StarRing A]
+    [Algebra ℂ A] [StarModule ℂ A] {x : A} (h : ∀ y ∈ skewAdjoint A, Commute y x) (a : A) :
+    Commute a x := by
+  have hI (b : selfAdjoint A) : Complex.I • (b : A) ∈ skewAdjoint A :=
+    Complex.I_smul_mem_skewAdjoint_iff_isSelfAdjoint.mpr b.property
+  rw [← realPart_add_I_smul_imaginaryPart a, ← Complex.neg_I_smul_I_smul (ℜ a : A)]
+  exact ((h _ (hI _)).smul_left _).add_left (h _ (hI _))
 
 /-- The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries. -/
 theorem mem_span_real_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :

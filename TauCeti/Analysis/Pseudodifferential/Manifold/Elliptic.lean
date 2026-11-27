@@ -58,6 +58,8 @@ elliptic of order `2` (`TauCeti.IsLaplaceType.isClassicalElliptic_complexifyLine
   is unchanged by perturbations of order `m - 1` and by nonzero scalars.
 * `TauCeti.IsClassicalEllipticAt.mem`, `TauCeti.IsClassicalEllipticAt.notMem_sub_one`: in positive
   dimension an operator elliptic at a point has order `m` and not `m - 1`.
+* `TauCeti.IsClassicalElliptic.mem_of_isProperlySupported`: in every dimension a properly supported
+  elliptic operator has order `m`.
 * `TauCeti.isClassicalEllipticAt_of_subsingleton`: in dimension zero every operator is elliptic.
 * `TauCeti.IsClassicalEllipticAt.eventually`, `TauCeti.isOpen_setOf_isClassicalEllipticAt`:
   ellipticity is an open condition.
@@ -123,18 +125,8 @@ theorem isClassicalElliptic_iff : IsClassicalElliptic m P ↔ ∀ x : M, IsClass
 /-- **Ellipticity ignores lower order terms.** Adding an operator of order `m - 1` does not change
 ellipticity at a point. -/
 theorem isClassicalEllipticAt_add_iff (hQ : Q ∈ classicalPseudodifferentialOperators (m - 1))
-    {x : M} : IsClassicalEllipticAt m (P + Q) x ↔ IsClassicalEllipticAt m P x := by
-  have hQ' : Q ∈ classicalPseudodifferentialOperators m :=
-    classicalPseudodifferentialOperators_le 1 (by simp) hQ
-  by_cases hP : P ∈ classicalPseudodifferentialOperators m
-  · refine forall₂_congr fun ξ _ ↦ ?_
-    rw [classicalPrincipalSymbol_add hP hQ', classicalPrincipalSymbol_eq_zero_of_mem_sub_one hQ,
-      add_zero]
-  · -- Neither `P` nor `P + Q` is of order `m`, so both principal symbols vanish.
-    have hPQ : P + Q ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
-      simpa using sub_mem h hQ'
-    simp [isClassicalEllipticAt_iff, classicalPrincipalSymbol_of_notMem hP,
-      classicalPrincipalSymbol_of_notMem hPQ]
+    {x : M} : IsClassicalEllipticAt m (P + Q) x ↔ IsClassicalEllipticAt m P x :=
+  forall₂_congr fun ξ _ ↦ by rw [classicalPrincipalSymbol_add_of_mem_sub_one hQ]
 
 /-- **Ellipticity ignores lower order terms.** Adding an operator of order `m - 1` does not change
 ellipticity. -/
@@ -145,15 +137,9 @@ theorem isClassicalElliptic_add_iff (hQ : Q ∈ classicalPseudodifferentialOpera
 /-- Multiplying by a nonzero complex number does not change ellipticity at a point. -/
 @[simp]
 theorem isClassicalEllipticAt_smul_iff {c : ℂ} (hc : c ≠ 0) {x : M} :
-    IsClassicalEllipticAt m (c • P) x ↔ IsClassicalEllipticAt m P x := by
-  by_cases hP : P ∈ classicalPseudodifferentialOperators m
-  · refine forall₂_congr fun ξ _ ↦ ?_
-    rw [classicalPrincipalSymbol_smul hP, mul_ne_zero_iff, and_iff_right hc]
-  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
-    have hcP : c • P ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
-      simpa [smul_smul, inv_mul_cancel₀ hc] using Submodule.smul_mem _ c⁻¹ h
-    simp [isClassicalEllipticAt_iff, classicalPrincipalSymbol_of_notMem hP,
-      classicalPrincipalSymbol_of_notMem hcP]
+    IsClassicalEllipticAt m (c • P) x ↔ IsClassicalEllipticAt m P x :=
+  forall₂_congr fun ξ _ ↦ by
+    rw [classicalPrincipalSymbol_smul_of_ne_zero hc, mul_ne_zero_iff, and_iff_right hc]
 
 /-- Multiplying by a nonzero complex number does not change ellipticity. -/
 @[simp]
@@ -180,6 +166,19 @@ theorem IsClassicalEllipticAt.mem [Nontrivial (CoordinateSpace n)] {x : M}
   by_contra hP
   obtain ⟨ξ, hξ⟩ := hPx.exists_ne_zero
   exact hξ (classicalPrincipalSymbol_of_notMem hP x ξ)
+
+/-- **Ellipticity forces the order of a properly supported operator.** A properly supported
+operator elliptic at every point is a classical pseudodifferential operator of order `m`. Proper
+support is only needed in dimension zero, where every operator is elliptic. -/
+theorem IsClassicalElliptic.mem_of_isProperlySupported (hPe : IsClassicalElliptic m P)
+    (hPs : IsProperlySupported P) : P ∈ classicalPseudodifferentialOperators m := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+  · -- An empty manifold has no charts.
+    exact mem_classicalPseudodifferentialOperators_iff.2 ⟨hPs, fun e _ _ _ ↦ isEmptyElim (e.symm 0)⟩
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · exact mem_classicalPseudodifferentialOperators_of_dim_eq_zero hn hPs m
+  · have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+    exact (hPe x).mem
 
 /-- **An elliptic operator has exact order `m`.** Over a manifold of positive dimension, an operator
 elliptic at some point is not of order `m - 1`, since its principal symbol would vanish. -/
@@ -232,8 +231,7 @@ theorem isClassicalEllipticAt_iff_forall_isInvertible
     fun h ξ hξ ↦ ?_⟩
   -- The covector `ξ` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`.
   have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv he₁ hx ξ
-  refine hηξ ▸ h _ fun hη ↦ hξ ?_
-  rw [← hηξ, hη, map_zero, ContinuousLinearMap.zero_comp]
+  exact hηξ ▸ h _ (toDual_symm_comp_inverse_mvfderiv_ne_zero he₁ hx hξ)
 
 /-- **The chart symbol of an elliptic operator.** Let `a` be the symbol of the chart compression of
 `P` by `φ`, `ψ` in a chart `e`, and let `U` be an open set on which `φ ψ` does not vanish (so `U`

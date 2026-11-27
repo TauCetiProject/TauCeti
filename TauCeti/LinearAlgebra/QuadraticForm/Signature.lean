@@ -138,6 +138,16 @@ theorem exists_submodule_finrank_eq_sigNeg_and_negDef (Q : _root_.QuadraticForm 
     ∃ V : Submodule R M, Module.finrank R V = sigNeg Q ∧ ((-Q).restrict V).PosDef :=
   exists_submodule_finrank_eq_sigPos_and_posDef (-Q)
 
+/-- On a zero-dimensional space the positive index of inertia is `0`. -/
+theorem sigPos_eq_zero_of_finrank_eq_zero (Q : _root_.QuadraticForm R M)
+    (h : Module.finrank R M = 0) : sigPos Q = 0 :=
+  Nat.le_zero.mp ((sigPos_le_finrank Q).trans_eq h)
+
+/-- On a zero-dimensional space the negative index of inertia is `0`. -/
+theorem sigNeg_eq_zero_of_finrank_eq_zero (Q : _root_.QuadraticForm R M)
+    (h : Module.finrank R M = 0) : sigNeg Q = 0 :=
+  sigPos_eq_zero_of_finrank_eq_zero (-Q) h
+
 variable [IsStrictOrderedRing R]
 
 /-- Multiplication by a positive scalar preserves the positive index of inertia. -/

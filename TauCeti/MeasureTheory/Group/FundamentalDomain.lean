@@ -63,6 +63,8 @@ only along a null frontier, is itself a fundamental domain.
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
 * `MeasureTheory.covolume_eq_index_mul_covolume`: the same multiplicativity at finite index, with
   the index as a natural number.
+* `MeasureTheory.covolume_smul_measure`: for an invariant measure, scaling the measure by `c`
+  scales the covolume by `c`.
 
 Ported from the
 [AINTLIB `LeanModularForms` project](https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms),
@@ -76,7 +78,7 @@ namespace MeasureTheory
 
 open Measure Set
 
-open scoped Pointwise
+open scoped ENNReal Pointwise
 
 /-- **Transversal coset tiling of a fundamental domain.** If `s` is a fundamental domain
 for a group `G` acting on `α`, `H ≤ G` a subgroup, and `r : ι → G` a family such that
@@ -477,5 +479,24 @@ theorem IsFundamentalDomain.hasSum_setIntegral_smul {G α E : Type*} [Group G] [
   rw [← Set.image_smul]
   exact ((measurePreserving_smul g μ).setIntegral_image_emb
     (measurableEmbedding_const_smul g) f s).symm
+
+/-- **Covolume scales with the measure**: multiplying the measure by `c` multiplies the covolume
+by `c`. -/
+@[to_additive (attr := simp) addCovolume_smul_measure /-- **Covolume scales with the measure**:
+multiplying the measure by `c` multiplies the additive covolume by `c`. -/]
+theorem covolume_smul_measure {G α : Type*} [Group G] [MulAction G α] [MeasurableSpace α]
+    [Countable G] [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ]
+    (c : ℝ≥0∞) : covolume G α (c • μ) = c * covolume G α μ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp only [zero_smul, zero_mul]
+    unfold covolume
+    split_ifs <;> simp
+  by_cases h : HasFundamentalDomain G α μ
+  · obtain ⟨s, hs⟩ := h.ExistsIsFundamentalDomain
+    rw [(hs.mono smul_absolutelyContinuous).covolume_eq_volume, hs.covolume_eq_volume,
+      smul_apply, smul_eq_mul]
+  · have h' : ¬HasFundamentalDomain G α (c • μ) := fun ⟨⟨s, hs⟩⟩ =>
+      h ⟨⟨s, hs.mono (absolutelyContinuous_smul hc)⟩⟩
+    simp [covolume, h, h']
 
 end MeasureTheory

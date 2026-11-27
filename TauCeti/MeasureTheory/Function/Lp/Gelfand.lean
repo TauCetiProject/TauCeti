@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import Mathlib.Topology.ContinuousMap.Ordered
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.RCLike.ContinuousMap
-public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 
 /-!
 # Real and `RCLike` Gelfand representation of `L∞`

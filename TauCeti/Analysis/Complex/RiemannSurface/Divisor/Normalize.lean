@@ -56,6 +56,13 @@ theorem toDivisorSection_apply (E : WeilDivisor X) (g : X → ℂ) (y : X) :
     toDivisorSection E g y = if E y ≤ 0 then affineChart (sphereMap g y) else 0 := by
   simp [toDivisorSection, Set.indicator]
 
+omit [ChartedSpace ℂ X] in
+/-- The value of `toDivisorSection E g` at `x` only depends on `g` on a punctured neighbourhood
+of `x`. -/
+theorem toDivisorSection_congr_nhdsNE {g' : X → ℂ} (h : g =ᶠ[𝓝[≠] x] g') :
+    toDivisorSection E g x = toDivisorSection E g' x := by
+  simp only [toDivisorSection_apply, sphereMap_congr_nhdsNE h]
+
 /-- Normalizing a function meromorphic at `x` does not change it on a punctured neighbourhood
 of `x`. -/
 theorem toDivisorSection_eventuallyEq (E : WeilDivisor X) (hg : MeromorphicAt g x) :

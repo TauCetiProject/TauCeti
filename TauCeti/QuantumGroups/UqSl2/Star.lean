@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.Star
+public import TauCeti.Algebra.Star.ConjOpposite
 public import TauCeti.QuantumGroups.UqSl2.Antipode
 
 /-!
@@ -42,8 +43,8 @@ with the unitary corepresentations of the compact quantum group `SU_q(2)`.
 ## Implementation notes
 
 A conjugate-linear antimultiplicative map out of `UqSl2 q` is obtained from the universal property
-of the presentation as a complex algebra map into a private copy of the opposite algebra on which
-complex scalars act through complex conjugation, built with `Algebra.compHom`.
+of the presentation as a complex algebra map into the opposite algebra on which complex scalars
+act through complex conjugation, `TauCeti.ConjOpposite`.
 
 ## References
 
@@ -61,47 +62,7 @@ namespace TauCeti.UqSl2
 
 variable (q : ℂ)
 
-/-! ### The conjugate opposite algebra -/
-
-/-- The opposite algebra of `UqSl2 q`, on which complex scalars act through complex conjugation.
-A complex algebra map into it is a conjugate-linear antimultiplicative map into `UqSl2 q`. -/
-private def ConjOpposite : Type := (UqSl2 q)ᵐᵒᵖ
-
-private instance : Ring (ConjOpposite q) := inferInstanceAs (Ring (UqSl2 q)ᵐᵒᵖ)
-
-private instance : Algebra ℂ (ConjOpposite q) :=
-  Algebra.compHom (UqSl2 q)ᵐᵒᵖ (starRingEnd ℂ)
-
-/-- An element of `UqSl2 q`, viewed in the conjugate opposite algebra. -/
-private def toConj (x : UqSl2 q) : ConjOpposite q := MulOpposite.op x
-
-/-- The underlying element of `UqSl2 q`. -/
-private def ofConj (x : ConjOpposite q) : UqSl2 q := MulOpposite.unop x
-
-/- The following identities unfold the operations of `ConjOpposite q`, which are those of the
-opposite algebra except for the conjugated scalar action; they hold by definition. -/
-
-private theorem ofConj_toConj (x : UqSl2 q) : ofConj q (toConj q x) = x := rfl
-
-private theorem ofConj_injective : Function.Injective (ofConj q) :=
-  MulOpposite.unop_injective
-
-private theorem ofConj_one : ofConj q 1 = 1 := rfl
-
-private theorem ofConj_add (a b : ConjOpposite q) :
-    ofConj q (a + b) = ofConj q a + ofConj q b := rfl
-
-private theorem ofConj_sub (a b : ConjOpposite q) :
-    ofConj q (a - b) = ofConj q a - ofConj q b := rfl
-
-private theorem ofConj_mul (a b : ConjOpposite q) :
-    ofConj q (a * b) = ofConj q b * ofConj q a := rfl
-
-private theorem ofConj_smul (c : ℂ) (a : ConjOpposite q) :
-    ofConj q (c • a) = star c • ofConj q a := rfl
-
-private theorem ofConj_algebraMap (c : ℂ) :
-    ofConj q (algebraMap ℂ (ConjOpposite q) c) = algebraMap ℂ (UqSl2 q) (star c) := rfl
+open ConjOpposite
 
 /-! ### The star structure -/
 
@@ -111,27 +72,27 @@ private theorem star_q : star q = q := (Fact.out : IsSelfAdjoint q).star_eq
 
 /-- The images of the generators under the star structure, as a generator tuple in the conjugate
 opposite algebra. -/
-private def starTuple : GeneratorTuple q (ConjOpposite q) where
-  e := toConj q (k q * f q)
-  f := toConj q (e q * kInv q)
-  k := toConj q (k q)
-  kInv := toConj q (kInv q)
-  k_mul_kInv := ofConj_injective q (by simp [ofConj_mul, ofConj_toConj, ofConj_one])
-  kInv_mul_k := ofConj_injective q (by simp [ofConj_mul, ofConj_toConj, ofConj_one])
-  k_mul_e := ofConj_injective q (by
+private def starTuple : GeneratorTuple q (ConjOpposite (UqSl2 q)) where
+  e := toConj (k q * f q)
+  f := toConj (e q * kInv q)
+  k := toConj (k q)
+  kInv := toConj (kInv q)
+  k_mul_kInv := ofConj_injective (by simp [ofConj_mul, ofConj_toConj, ofConj_one])
+  kInv_mul_k := ofConj_injective (by simp [ofConj_mul, ofConj_toConj, ofConj_one])
+  k_mul_e := ofConj_injective (by
     simp only [ofConj_mul, ofConj_smul, ofConj_toConj, star_pow, star_q]
     rw [mul_assoc, f_mul_k, mul_smul_comm])
-  k_mul_f := ofConj_injective q (by
+  k_mul_f := ofConj_injective (by
     simp only [ofConj_mul, ofConj_smul, ofConj_toConj, star_pow, star_inv₀, star_q]
     rw [mul_assoc, kInv_mul_k, mul_one, ← mul_assoc, ← smul_mul_assoc, ← e_mul_k, mul_assoc,
       k_mul_kInv, mul_one])
-  e_mul_f_sub_f_mul_e := ofConj_injective q (by
+  e_mul_f_sub_f_mul_e := ofConj_injective (by
     simp only [ofConj_mul, ofConj_sub, ofConj_smul, ofConj_toConj, star_inv₀, star_sub, star_q]
     rw [mul_assoc (e q), ← mul_assoc (kInv q), kInv_mul_k, one_mul, k_mul_f_mul_e_mul_kInv,
       e_mul_f_sub_f_mul_e])
 
 /-- The conjugate-linear antimultiplicative map underlying the star structure. -/
-private def starFun (x : UqSl2 q) : UqSl2 q := ofConj q (lift (starTuple q) x)
+private def starFun (x : UqSl2 q) : UqSl2 q := ofConj (lift (starTuple q) x)
 
 private theorem starFun_mul (a b : UqSl2 q) : starFun q (a * b) = starFun q b * starFun q a := by
   simp only [starFun, map_mul, ofConj_mul]
@@ -147,7 +108,7 @@ private theorem starFun_algebraMap (c : ℂ) :
   simp only [starFun, AlgHom.commutes, ofConj_algebraMap]
 
 private theorem starFun_generator (g : Generator) :
-    starFun q (generator q g) = ofConj q ((starTuple q).toFun g) := by
+    starFun q (generator q g) = ofConj ((starTuple q).toFun g) := by
   simp only [starFun, lift_generator]
 
 /-- For a real parameter `q`, the star structure of the compact real form of `UqSl2 q`: the

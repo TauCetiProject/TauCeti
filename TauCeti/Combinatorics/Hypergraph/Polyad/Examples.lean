@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Subpolyad
+import TauCeti.Combinatorics.Hypergraph.PairColor.Const
 
 /-!
 # A subpolyad that is not a vertex box
@@ -22,11 +23,7 @@ namespace TauCeti
 
 private def oneCell : PairSkeleton3 Unit (Fin 4) where
   vertexPart := Finpartition.indiscrete univ_nonempty.ne_empty
-  pairColors :=
-    { color := fun _ ↦ ()
-      rev := id
-      rev_involutive := fun _ ↦ rfl
-      color_rev := fun _ ↦ rfl }
+  pairColors := .const ()
 
 private def fullPolyad : Polyad3 oneCell where
   c₀ := univ
