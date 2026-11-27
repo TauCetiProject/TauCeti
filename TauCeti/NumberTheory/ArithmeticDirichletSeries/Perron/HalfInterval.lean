@@ -17,9 +17,11 @@ import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.VonMangoldt
 # Truncated Perron bounds on half intervals
 
 For coefficients dominated by the von Mangoldt function, truncating the Perron integral for
-`(k/2, k]` on the line `c = 1 + 1/log k` incurs an error of order `k log² k / T + log k`.
-The two endpoints use the same line of integration, so their kernels can be subtracted before
-shifting the contour. The `log k` term covers the possible half weights at the endpoints.
+the sum over `[k/2, k]`, with weight `1/2` at `n = k/2` (when `k` is even) and at `n = k` and
+weight `1` strictly inside, on the line `c = 1 + 1/log k` incurs an error of order
+`k log² k / T + log k`. The two endpoints use the same line of integration, so their kernels can
+be subtracted before shifting the contour. The `log k` term covers the half weights at the
+endpoints.
 
 The split into indices near and far from a cutoff is the finite Perron argument of
 Davenport, *Multiplicative Number Theory*, Chapter 17.
@@ -32,33 +34,33 @@ namespace TauCeti
 open Complex Finset ArithmeticFunction
 open scoped Real LSeries.notation
 
+/-- A map `d` into `[0, m]` that is injective where it is positive has `∑ (d n)⁻¹ ≤ 1 + log m`
+over `[1, m]`: its positive values are distinct elements of `[1, m]`. -/
+private theorem sum_inv_le_one_add_log_of_injOn (m : ℕ) (d : ℕ → ℕ)
+    (hd : ∀ n ∈ Icc 1 m, d n ≤ m) (hi : Set.InjOn d ↑((Icc 1 m).filter (fun n ↦ 0 < d n))) :
+    (∑ n ∈ Icc 1 m, (d n : ℝ)⁻¹) ≤ 1 + Real.log m := by
+  rw [← sum_filter_add_sum_filter_not _ (fun n ↦ 0 < d n)]
+  have hz : (∑ n ∈ (Icc 1 m).filter (fun n ↦ ¬0 < d n), (d n : ℝ)⁻¹) = 0 := by
+    apply sum_eq_zero
+    intro n hn
+    simp [Nat.eq_zero_of_not_pos (mem_filter.mp hn).2]
+  rw [hz, add_zero, ← sum_image (f := fun j : ℕ ↦ (j : ℝ)⁻¹) hi]
+  refine (sum_le_sum_of_subset_of_nonneg (t := Icc 1 m) ?_ (fun n _ _ ↦ by positivity)).trans ?_
+  · intro j hj
+    obtain ⟨n, hn, rfl⟩ := mem_image.mp hj
+    exact mem_Icc.mpr ⟨(mem_filter.mp hn).2, hd n (mem_filter.mp hn).1⟩
+  · simpa only [harmonic_eq_sum_Icc (n := m), Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
+      using harmonic_le_one_add_log m
+
 private theorem sum_inv_half_grid_le (m : ℕ) :
     ∑ n ∈ Icc 1 m, (((m - 2 * n : ℕ) : ℝ)⁻¹ + ((2 * n - m : ℕ) : ℝ)⁻¹)
       ≤ 2 * (1 + Real.log m) := by
-  have h (d : ℕ → ℕ) (hd : ∀ n ∈ Icc 1 m, d n ≤ m)
-      (hi : Set.InjOn d ↑((Icc 1 m).filter (fun n ↦ 0 < d n))) :
-      (∑ n ∈ Icc 1 m, (d n : ℝ)⁻¹) ≤ 1 + Real.log m := by
-    rw [← sum_filter_add_sum_filter_not _ (fun n ↦ 0 < d n)]
-    have hz : (∑ n ∈ (Icc 1 m).filter (fun n ↦ ¬0 < d n), (d n : ℝ)⁻¹) = 0 := by
-      apply sum_eq_zero
-      intro n hn
-      simp [Nat.eq_zero_of_not_pos (mem_filter.mp hn).2]
-    rw [hz, add_zero, ← sum_image (f := fun j : ℕ ↦ (j : ℝ)⁻¹) hi]
-    refine (sum_le_sum_of_subset_of_nonneg (t := Icc 1 m) ?_ (fun n _ _ ↦ by positivity)).trans ?_
-    · intro j hj
-      obtain ⟨n, hn, rfl⟩ := mem_image.mp hj
-      exact mem_Icc.mpr ⟨(mem_filter.mp hn).2, hd n (mem_filter.mp hn).1⟩
-    · simpa only [harmonic_eq_sum_Icc (n := m), Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
-        using harmonic_le_one_add_log m
   rw [sum_add_distrib, two_mul]
-  apply add_le_add
-  · apply h (fun n ↦ m - 2 * n) (fun n _ ↦ Nat.sub_le ..)
-    intro a ha b hb hab
-    simp only [coe_filter, Set.mem_ofPred_eq] at ha hb
-    dsimp only at hab
-    omega
-  · apply h (fun n ↦ 2 * n - m) (fun n hn ↦ by have := (mem_Icc.mp hn).2; omega)
-    intro a ha b hb hab
+  refine add_le_add
+    (sum_inv_le_one_add_log_of_injOn m (fun n ↦ m - 2 * n) (fun n _ ↦ Nat.sub_le ..) ?_)
+    (sum_inv_le_one_add_log_of_injOn m (fun n ↦ 2 * n - m)
+      (fun n hn ↦ by have := (mem_Icc.mp hn).2; omega) ?_) <;>
+  · intro a ha b hb hab
     simp only [coe_filter, Set.mem_ofPred_eq] at ha hb
     dsimp only at hab
     omega
@@ -73,8 +75,8 @@ private theorem half_grid_log_inv_le {m n : ℕ} (hm : 0 < m) (hn : 0 < n) (hnm 
     have hratio : 0 < (m : ℝ) / 2 / n := by positivity
     have hlog := Real.log_le_sub_one_of_pos hratio
     have hlt : (m : ℝ) / 2 / n < 1 := (div_lt_one hn').mpr (by linarith)
-    rw [abs_of_neg (Real.log_neg hratio hlt), Nat.sub_eq_zero_of_le h.le, Nat.cast_zero,
-      inv_zero, zero_add, Nat.cast_sub h.le, Nat.cast_mul, Nat.cast_two]
+    rw [abs_of_neg (Real.log_neg hratio hlt)]
+    push_cast [Nat.sub_eq_zero_of_le h.le, Nat.cast_sub h.le, inv_zero, zero_add]
     refine (inv_anti₀ (b := (2 * (n : ℝ) - m) / (2 * n)) (by positivity) ?_).trans ?_
     · rw [div_le_iff₀ (by positivity : 0 < 2 * (n : ℝ))]
       have hh : (Real.log ((m : ℝ) / 2 / n) + 1) * n ≤ (m : ℝ) / 2 :=
@@ -86,8 +88,8 @@ private theorem half_grid_log_inv_le {m n : ℕ} (hm : 0 < m) (hn : 0 < n) (hnm 
   · have h' : 2 * (n : ℝ) < m := by exact_mod_cast h
     have hratio : 0 < (m : ℝ) / 2 / n := by positivity
     have hlt : 1 < (m : ℝ) / 2 / n := (one_lt_div hn').mpr (by linarith)
-    rw [abs_of_pos (Real.log_pos hlt), Nat.sub_eq_zero_of_le h.le, Nat.cast_zero,
-      inv_zero, add_zero, Nat.cast_sub h.le, Nat.cast_mul, Nat.cast_two]
+    rw [abs_of_pos (Real.log_pos hlt)]
+    push_cast [Nat.sub_eq_zero_of_le h.le, Nat.cast_sub h.le, inv_zero, add_zero]
     refine (inv_anti₀ (b := ((m : ℝ) - 2 * n) / m) (by positivity) ?_).trans ?_
     · have hh := Real.one_sub_inv_le_log_of_pos hratio
       convert hh using 1
@@ -183,7 +185,7 @@ private theorem perron_error_series_le {m : ℕ} (hm : 0 < m) {c T : ℝ} (hc : 
 
 /-- Truncated Perron at a positive half-integer for coefficients bounded by von Mangoldt. The
 `log(max 1 (m/2))/2` term pays for the integer endpoint, if there is one. -/
-theorem norm_truncatedPerron_sub_tsum_step_halfNat_le {m : ℕ} (hm : 0 < m) {c T : ℝ}
+theorem norm_truncatedPerron_LSeries_sub_tsum_step_halfNat_le {m : ℕ} (hm : 0 < m) {c T : ℝ}
     (hc : 1 < c) (hT : 0 < T) {f : ℕ → ℂ} (hf : ∀ n, ‖f n‖ ≤ Λ n) :
     let x : ℝ := m / 2
     ‖(((2 * π : ℝ) : ℂ)⁻¹ * ∫ t in -T..T, LSeries f ((c : ℂ) + t * I) * perronIntegrand x c t)
@@ -264,10 +266,11 @@ private theorem half_grid_bound_at_perron_line {D T : ℝ} (hD : 0 ≤ D) (hT : 
           Real.log k / 2 := by gcongr
     _ = _ := by ring
 
-/-- The half-weighted sum on `(k/2, k]` differs from its truncated Perron integral on
+/-- The sum over `[k/2, k]`, with weight `1/2` at `n = k/2` (when `k` is even) and at `n = k` and
+weight `1` strictly inside, differs from its truncated Perron integral on
 `c = 1 + 1/log k` by `O(k log² k / T) + log k`. Both cutoffs use the same line, and the
 constant is independent of the coefficients provided their norms are bounded by von Mangoldt. -/
-theorem exists_norm_truncatedPerron_halfInterval_sub_le :
+theorem exists_norm_truncatedPerron_LSeries_halfInterval_sub_le :
     ∃ C > (0 : ℝ), ∀ {k : ℕ}, 4 ≤ k → ∀ {T : ℝ}, 0 < T →
       ∀ {f : ℕ → ℂ}, (∀ n, ‖f n‖ ≤ Λ n) →
       let c := 1 + (Real.log k)⁻¹
@@ -286,7 +289,7 @@ theorem exists_norm_truncatedPerron_halfInterval_sub_le :
   have hP' := hP hη (inv_le_one_of_one_le₀ hl)
   rw [inv_inv] at hP'
   have hEndpoint (m : ℕ) (hm₀ : 0 < m) (hm : m ≤ 2 * k) :=
-    (norm_truncatedPerron_sub_tsum_step_halfNat_le hm₀ hc hT hf).trans
+    (norm_truncatedPerron_LSeries_sub_tsum_step_halfNat_le hm₀ hc hT hf).trans
       (half_grid_bound_at_perron_line hD hT hk hm₀ hm hP')
   have h₁ := hEndpoint (2 * k) (by omega) le_rfl
   rw [show ((2 * k : ℕ) : ℝ) / 2 = k by push_cast; ring] at h₁

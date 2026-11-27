@@ -203,20 +203,10 @@ private theorem norm_mul_truncatedPerronKernel_sub_step_le (hx : 0 < x) (hc : 0 
   have hn : (0 : ℝ) < n := Nat.cast_pos.2 hn0
   rw [← mul_sub, norm_mul]
   by_cases he : x = n
-  · rw [ite_eq_left he, he, div_self hn.ne', Real.log_one, abs_zero, mul_zero, div_zero,
-      mul_zero, zero_add, perronStep_one, div_eq_mul_inv ‖f n‖]
-    apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
-    have hhalf : ((↑(1 / 2 : ℝ)) : ℂ) = 1 / 2 := by norm_num
-    rw [truncatedPerronKernel_one hc.ne', ← hhalf, ← ofReal_sub, norm_real, Real.norm_eq_abs,
-      abs_sub_le_iff]
-    constructor
-    · have h := mul_le_mul_of_nonneg_left (Real.arctan_lt_pi_div_two (T / c)).le
-        (inv_nonneg.mpr Real.pi_pos.le)
-      have hp : π⁻¹ * (π / 2) = 1 / 2 := by field_simp
-      rw [hp] at h
-      linarith
-    · linarith [mul_nonneg (inv_nonneg.mpr Real.pi_pos.le)
-        (Real.arctan_nonneg.mpr (div_nonneg hT.le hc.le))]
+  · rw [(div_eq_one_iff_eq hn.ne').2 he, ite_eq_left he, perronStep_one]
+    refine le_add_of_nonneg_of_le (by positivity) ?_
+    exact (mul_le_mul_of_nonneg_left (norm_truncatedPerronKernel_one_sub_half_le hc hT.le)
+      (norm_nonneg _)).trans_eq (by ring)
   · rw [ite_eq_right he, add_zero]
     exact mul_le_mul_of_nonneg_left
       (norm_truncatedPerronKernel_sub_step_le (div_pos hx hn)
