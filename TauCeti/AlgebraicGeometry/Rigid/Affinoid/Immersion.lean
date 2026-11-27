@@ -13,11 +13,12 @@ import TauCeti.RingTheory.Finiteness.Nakayama
 # Locally closed and open immersions of affinoid spaces
 
 A `K`-algebra map `φ : A → B` of affinoid algebras is a morphism `Sp B → Sp A`. It is a
-*locally closed immersion* (`TauCeti.IsLocallyClosedImmersion`) if it is injective on classical
-points and every stalk map `φ*_y : 𝒪_{Sp A,φ(y)} → 𝒪_{Sp B,y}` is surjective, and an *open
-immersion* (`TauCeti.IsOpenImmersion`) if it is injective on classical points and every stalk map is
-bijective. Like affinoid subdomains and Runge immersions, both notions are algebraic: no norm on
-`A` or `B` is chosen.
+*locally closed immersion* (`TauCeti.IsAffinoidLocallyClosedImmersion`) if it is injective on
+classical points and every stalk map `φ*_y : 𝒪_{Sp A,φ(y)} → 𝒪_{Sp B,y}` is surjective, and an
+*open immersion* (`TauCeti.IsAffinoidOpenImmersion`) if it is injective on classical points and
+every stalk map is bijective. Like affinoid subdomains and Runge immersions, both notions are
+algebraic: no norm on `A` or `B` is chosen. The names carry `Affinoid` to keep them apart from
+Mathlib's scheme-theoretic `AlgebraicGeometry.IsOpenImmersion`.
 
 The inclusion of an affinoid subdomain is an open immersion, since it induces isomorphisms of
 stalks; in particular the identity is one. Open immersions are locally closed immersions, and both
@@ -36,18 +37,19 @@ but its stalk map at the origin misses `t`.
 
 ## Main definitions
 
-* `TauCeti.IsLocallyClosedImmersion φ`: `Sp B → Sp A` is a locally closed immersion.
-* `TauCeti.IsOpenImmersion φ`: `Sp B → Sp A` is an open immersion.
+* `TauCeti.IsAffinoidLocallyClosedImmersion φ`: `Sp B → Sp A` is a locally closed immersion.
+* `TauCeti.IsAffinoidOpenImmersion φ`: `Sp B → Sp A` is an open immersion.
 
 ## Main results
 
-* `TauCeti.IsAffinoidSubdomainMap.isOpenImmersion`: inclusions of affinoid subdomains are open
-  immersions.
-* `TauCeti.IsOpenImmersion.isLocallyClosedImmersion`: open immersions are locally closed.
-* `TauCeti.IsLocallyClosedImmersion.comp`, `TauCeti.IsOpenImmersion.comp`: both classes are
-  closed under composition.
-* `TauCeti.IsLocallyClosedImmersion.surjective_of_finite`: a finite locally closed immersion is a
-  closed immersion.
+* `TauCeti.IsAffinoidSubdomainMap.isAffinoidOpenImmersion`: inclusions of affinoid subdomains
+  are open immersions.
+* `TauCeti.IsAffinoidOpenImmersion.isAffinoidLocallyClosedImmersion`: open immersions are locally
+  closed.
+* `TauCeti.IsAffinoidLocallyClosedImmersion.comp`, `TauCeti.IsAffinoidOpenImmersion.comp`: both
+  classes are closed under composition.
+* `TauCeti.IsAffinoidLocallyClosedImmersion.surjective_of_finite`: a finite locally closed
+  immersion is a closed immersion.
 
 ## References
 
@@ -70,7 +72,7 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 /-- **Locally closed immersions of affinoid spaces.** The morphism `Sp B → Sp A` given by
 `φ : A → B` is a locally closed immersion if it is injective on classical points and every stalk
 map `𝒪_{Sp A,φ(y)} → 𝒪_{Sp B,y}` is surjective. -/
-structure IsLocallyClosedImmersion (φ : A →ₐ[K] B) : Prop where
+structure IsAffinoidLocallyClosedImmersion (φ : A →ₐ[K] B) : Prop where
   /-- The morphism is injective on classical points. -/
   maximalSpectrumComap_injective : Function.Injective (hB.out.maximalSpectrumComap φ)
   /-- Every stalk map is surjective. -/
@@ -79,31 +81,31 @@ structure IsLocallyClosedImmersion (φ : A →ₐ[K] B) : Prop where
 /-- **Open immersions of affinoid spaces.** The morphism `Sp B → Sp A` given by `φ : A → B` is
 an open immersion if it is injective on classical points and every stalk map
 `𝒪_{Sp A,φ(y)} → 𝒪_{Sp B,y}` is bijective. -/
-structure IsOpenImmersion (φ : A →ₐ[K] B) : Prop where
+structure IsAffinoidOpenImmersion (φ : A →ₐ[K] B) : Prop where
   /-- The morphism is injective on classical points. -/
   maximalSpectrumComap_injective : Function.Injective (hB.out.maximalSpectrumComap φ)
   /-- Every stalk map is bijective. -/
   bijective_stalkMap (y : MaximalSpectrum B) : Function.Bijective (φ.stalkMap y)
 
 /-- Open immersions are locally closed immersions. -/
-theorem IsOpenImmersion.isLocallyClosedImmersion {φ : A →ₐ[K] B} (h : IsOpenImmersion φ) :
-    IsLocallyClosedImmersion φ :=
+theorem IsAffinoidOpenImmersion.isAffinoidLocallyClosedImmersion {φ : A →ₐ[K] B}
+    (h : IsAffinoidOpenImmersion φ) : IsAffinoidLocallyClosedImmersion φ :=
   ⟨h.maximalSpectrumComap_injective, fun y ↦ (h.bijective_stalkMap y).surjective⟩
 
 /-- **Inclusions of affinoid subdomains are open immersions.** -/
-theorem IsAffinoidSubdomainMap.isOpenImmersion {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
-    (hU : IsAffinoidSubdomainMap φ U) : IsOpenImmersion φ :=
+theorem IsAffinoidSubdomainMap.isAffinoidOpenImmersion {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
+    (hU : IsAffinoidSubdomainMap φ U) : IsAffinoidOpenImmersion φ :=
   ⟨hU.maximalSpectrumComap_injective hA.out, hU.bijective_stalkMap⟩
 
 omit hB in
 /-- The identity is an open immersion. -/
-theorem isOpenImmersion_id : IsOpenImmersion (AlgHom.id K A) :=
-  (IsAffinoidSubdomainMap.id hA.out).isOpenImmersion
+theorem isAffinoidOpenImmersion_id : IsAffinoidOpenImmersion (AlgHom.id K A) :=
+  (IsAffinoidSubdomainMap.id hA.out).isAffinoidOpenImmersion
 
 /-- Locally closed immersions are closed under composition. -/
-theorem IsLocallyClosedImmersion.comp {φ : A →ₐ[K] B} {ψ : B →ₐ[K] C}
-    (hφ : IsLocallyClosedImmersion φ) (hψ : IsLocallyClosedImmersion ψ) :
-    IsLocallyClosedImmersion (ψ.comp φ) where
+theorem IsAffinoidLocallyClosedImmersion.comp {φ : A →ₐ[K] B} {ψ : B →ₐ[K] C}
+    (hφ : IsAffinoidLocallyClosedImmersion φ) (hψ : IsAffinoidLocallyClosedImmersion ψ) :
+    IsAffinoidLocallyClosedImmersion (ψ.comp φ) where
   maximalSpectrumComap_injective := by
     rw [IsAffinoidAlgebra.maximalSpectrumComap_comp hB.out hC.out]
     exact hφ.maximalSpectrumComap_injective.comp hψ.maximalSpectrumComap_injective
@@ -111,15 +113,17 @@ theorem IsLocallyClosedImmersion.comp {φ : A →ₐ[K] B} {ψ : B →ₐ[K] C}
     AlgHom.surjective_stalkMap_comp (hφ.surjective_stalkMap _) (hψ.surjective_stalkMap z)
 
 /-- Open immersions are closed under composition. -/
-theorem IsOpenImmersion.comp {φ : A →ₐ[K] B} {ψ : B →ₐ[K] C}
-    (hφ : IsOpenImmersion φ) (hψ : IsOpenImmersion ψ) :
-    IsOpenImmersion (ψ.comp φ) where
+theorem IsAffinoidOpenImmersion.comp {φ : A →ₐ[K] B} {ψ : B →ₐ[K] C}
+    (hφ : IsAffinoidOpenImmersion φ) (hψ : IsAffinoidOpenImmersion ψ) :
+    IsAffinoidOpenImmersion (ψ.comp φ) where
   maximalSpectrumComap_injective :=
-    (hφ.isLocallyClosedImmersion.comp hψ.isLocallyClosedImmersion).maximalSpectrumComap_injective
+    (hφ.isAffinoidLocallyClosedImmersion.comp
+      hψ.isAffinoidLocallyClosedImmersion).maximalSpectrumComap_injective
   bijective_stalkMap z :=
     ⟨AlgHom.injective_stalkMap_comp (hφ.bijective_stalkMap _).injective
         (hψ.bijective_stalkMap z).injective,
-      (hφ.isLocallyClosedImmersion.comp hψ.isLocallyClosedImmersion).surjective_stalkMap z⟩
+      (hφ.isAffinoidLocallyClosedImmersion.comp
+        hψ.isAffinoidLocallyClosedImmersion).surjective_stalkMap z⟩
 
 section Finite
 
@@ -142,8 +146,8 @@ private theorem exists_pow_le_map_of_injective {φ : A →ₐ[K] B}
 
 /-- For a locally closed immersion `φ : A → B` and a classical point `x` of `Sp A`, every
 `b ∈ B` is congruent to some `φ a` modulo `𝔪ₓ B`. -/
-private theorem IsLocallyClosedImmersion.exists_sub_mem_map {φ : A →ₐ[K] B}
-    (h : IsLocallyClosedImmersion φ) (x : MaximalSpectrum A) (b : B) :
+private theorem IsAffinoidLocallyClosedImmersion.exists_sub_mem_map {φ : A →ₐ[K] B}
+    (h : IsAffinoidLocallyClosedImmersion φ) (x : MaximalSpectrum A) (b : B) :
     ∃ a : A, b - φ a ∈ x.asIdeal.map φ := by
   by_cases htop : x.asIdeal.map φ = ⊤
   · exact ⟨0, htop ▸ Submodule.mem_top⟩
@@ -157,8 +161,8 @@ private theorem IsLocallyClosedImmersion.exists_sub_mem_map {φ : A →ₐ[K] B}
 
 /-- **Finite locally closed immersions are closed immersions.** If `φ : A → B` is finite and
 `Sp B → Sp A` is a locally closed immersion, then `φ` is surjective. -/
-theorem IsLocallyClosedImmersion.surjective_of_finite {φ : A →ₐ[K] B}
-    (h : IsLocallyClosedImmersion φ) (hf : φ.Finite) : Function.Surjective φ := by
+theorem IsAffinoidLocallyClosedImmersion.surjective_of_finite {φ : A →ₐ[K] B}
+    (h : IsAffinoidLocallyClosedImmersion φ) (hf : φ.Finite) : Function.Surjective φ := by
   let := φ.toRingHom.toAlgebra
   have : Module.Finite A B := hf
   -- By Nakayama's lemma, it suffices that `B = φ(A) + 𝔪ₓ B` for every maximal ideal `𝔪ₓ`.
