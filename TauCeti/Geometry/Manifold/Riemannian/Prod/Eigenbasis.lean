@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Prod.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Prod.Volume
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenbasis
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # The eigenfunction expansion of the Laplacian of a closed product
@@ -145,10 +146,8 @@ theorem toLp_ofSmooth_prod_mul (f : C^∞⟮I, M; ℝ⟯) (g : C^∞⟮J, N; ℝ
   rw [Filter.EventuallyEq, hae]
   filter_upwards [hprod] with q hq
   rw [coeFn_castLpₗᵢ, hq]
-  simp only [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.comp_apply]
-  -- `ContMDiffMap.fst` and `ContMDiffMap.snd` have no apply lemmas; they are bundled `Prod.fst`
-  -- and `Prod.snd`, so they agree with the projections definitionally.
-  rfl
+  simp only [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.comp_apply,
+    ContMDiffMap.fst_apply, ContMDiffMap.snd_apply]
 
 /-- **The product eigenbasis.** If the classes of smooth functions `uᵢ` form a Hilbert basis of
 `L²(M)` and those of `vⱼ` a Hilbert basis of `L²(N)`, then the classes of the products
