@@ -137,69 +137,39 @@ private theorem regularMap_tmul (S : FiniteRegular (k := k) B)
     ρ.regularMap S T (s ⊗ₜ[k] t) =
       ρ.coefficient (regularObj S) (regularObj T)
         ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S.val))
-        ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T.val)) s t := rfl
+        ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T.val)) s t := by
+  let := ρ.comodule (regularObj S) (regularObj T)
+  exact Comodule.matrixCoefficientLinear_apply _ _
 
-private noncomputable def regularInclusion {A : Type*}
-    [AddCommGroup A] [Module k A] [Coalgebra k A]
-    (S S' : FiniteRegular (k := k) A) (h : S.val ≤ S'.val) :
-    Comodule.Hom k A (regularObj S) (regularObj S') :=
-  (Subcomodule.subtype S.val).codRestrict S'.val (fun s => by simpa using h s.property)
-
-private theorem regularInclusion_toLinearMap {A : Type*}
-    [AddCommGroup A] [Module k A] [Coalgebra k A]
-    (S S' : FiniteRegular (k := k) A) (h : S.val ≤ S'.val) :
-    (regularInclusion S S' h).toLinearMap = Submodule.inclusion h := by
-  apply LinearMap.ext
-  intro s
-  apply Subtype.ext
-  have hval := Comodule.Hom.codRestrict_apply (Subcomodule.subtype S.val) S'.val
-    (fun s => by simpa using h s.property) s
-  rw [Subcomodule.subtype_apply] at hval
-  exact hval.trans (Submodule.coe_inclusion h s).symm
-
-private theorem regularInclusion_apply {A : Type*}
-    [AddCommGroup A] [Module k A] [Coalgebra k A]
-    (S S' : FiniteRegular (k := k) A) (h : S.val ≤ S'.val) (s : S.val) :
-    regularInclusion S S' h s = Submodule.inclusion h s :=
-  DFunLike.congr_fun (regularInclusion_toLinearMap S S' h) s
-
-private theorem subtype_comp_regularInclusion {A : Type*}
-    [AddCommGroup A] [Module k A] [Coalgebra k A]
-    (S S' : FiniteRegular (k := k) A) (h : S.val ≤ S'.val) :
-    (SMulMemClass.subtype S'.val).comp (regularInclusion S S' h).toLinearMap =
-      SMulMemClass.subtype S.val := by
-  rw [regularInclusion_toLinearMap]
-  exact Submodule.subtype_comp_inclusion S.val.toSubmodule S'.val.toSubmodule h
+private theorem regularMap_inclusion (S S' : FiniteRegular (k := k) B)
+    (T T' : FiniteRegular (k := k) C) (hS : S.val ≤ S'.val) (hT : T.val ≤ T'.val)
+    (s : S.val) (t : T.val) :
+    ρ.regularMap S' T' (Submodule.inclusion hS s ⊗ₜ[k] Submodule.inclusion hT t) =
+      ρ.regularMap S T (s ⊗ₜ[k] t) := by
+  rw [regularMap_tmul, regularMap_tmul]
+  have hc := ρ.coefficient_naturality (M := regularObj S) (M' := regularObj S')
+    (N := regularObj T) (N' := regularObj T') (Subcomodule.inclusion hS)
+    (Subcomodule.inclusion hT)
+    ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S'.val))
+    ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T'.val)) s t
+  rw [LinearMap.comp_assoc, Subcomodule.subtype_comp_inclusion,
+    LinearMap.comp_assoc, Subcomodule.subtype_comp_inclusion] at hc
+  rw [Subcomodule.inclusion_apply hS s, Subcomodule.inclusion_apply hT t] at hc
+  exact hc
 
 private theorem regularMap_left (S S' : FiniteRegular (k := k) B)
     (h : S.val ≤ S'.val) (T : FiniteRegular (k := k) C) (s : S.val) (t : T.val) :
     ρ.regularMap S' T (Submodule.inclusion h s ⊗ₜ[k] t) =
       ρ.regularMap S T (s ⊗ₜ[k] t) := by
-  rw [regularMap_tmul, regularMap_tmul]
-  have hc := ρ.coefficient_naturality (M := regularObj S) (M' := regularObj S')
-    (N := regularObj T) (N' := regularObj T) (regularInclusion S S' h)
-    (Comodule.Hom.id k C T.val)
-    ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S'.val))
-    ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T.val)) s t
-  simp only [Comodule.Hom.id_toLinearMap, LinearMap.comp_id] at hc
-  rw [LinearMap.comp_assoc, subtype_comp_regularInclusion] at hc
-  simpa only [regularInclusion_apply, Comodule.Hom.id_apply,
-    Comodule.Hom.id_toLinearMap, LinearMap.comp_id] using hc
+  simpa only [Submodule.inclusion_apply, Subtype.coe_eta] using
+    ρ.regularMap_inclusion S S' T T h le_rfl s t
 
 private theorem regularMap_right (S : FiniteRegular (k := k) B)
     (T T' : FiniteRegular (k := k) C) (h : T.val ≤ T'.val) (s : S.val) (t : T.val) :
     ρ.regularMap S T' (s ⊗ₜ[k] Submodule.inclusion h t) =
       ρ.regularMap S T (s ⊗ₜ[k] t) := by
-  rw [regularMap_tmul, regularMap_tmul]
-  have hc := ρ.coefficient_naturality (M := regularObj S) (M' := regularObj S)
-    (N := regularObj T) (N' := regularObj T') (Comodule.Hom.id k B S.val)
-    (regularInclusion T T' h)
-    ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S.val))
-    ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T'.val)) s t
-  simp only [Comodule.Hom.id_toLinearMap, LinearMap.comp_id] at hc
-  rw [LinearMap.comp_assoc, subtype_comp_regularInclusion] at hc
-  simpa only [regularInclusion_apply, Comodule.Hom.id_apply,
-    Comodule.Hom.id_toLinearMap, LinearMap.comp_id] using hc
+  simpa only [Submodule.inclusion_apply, Subtype.coe_eta] using
+    ρ.regularMap_inclusion S S T T' le_rfl h s t
 
 private noncomputable def regularLeft (S : FiniteRegular (k := k) B) :
     S.val →ₗ[k] C →ₗ[k] D :=
