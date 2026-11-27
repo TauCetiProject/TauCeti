@@ -422,6 +422,33 @@ theorem HasLaplace.integrableOn_of_re_le {E : Type*} [NormedAddCommGroup E] [Nor
   integrable_cexp_neg_mul_smul_of_re_le hf.1
     ((ae_restrict_mem measurableSet_Ioi).mono fun _ ht ↦ ht.le) hs
 
+/-- Pointwise domination of `exp (-w * t) • (-(t : ℂ) • v)` by `δ⁻¹ * ‖exp (-s₀ * t) • v‖`
+whenever `0 < t`, `0 < δ`, and `s₀.re + δ ≤ w.re`. -/
+private theorem norm_cexp_neg_mul_smul_neg_smul_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (v : E) {s₀ w : ℂ} {δ t : ℝ} (hδ : 0 < δ) (ht : 0 < t) (hw : s₀.re + δ ≤ w.re) :
+    ‖Complex.exp (-w * t) • (-(t : ℂ) • v)‖ ≤ δ⁻¹ * ‖Complex.exp (-s₀ * t) • v‖ := by
+  simp only [norm_smul, norm_neg, Complex.norm_exp, Complex.norm_real,
+    Real.norm_of_nonneg ht.le, Complex.re_mul_ofReal, Complex.neg_re]
+  have hexp : -(w.re - (s₀.re + δ)) * t + -(δ * t) + -s₀.re * t = -w.re * t := by ring
+  have hsplit : Real.exp (-w.re * t) * (t * ‖v‖) =
+      δ⁻¹ * (Real.exp (-(w.re - (s₀.re + δ)) * t) * (δ * t * Real.exp (-(δ * t))) *
+        (Real.exp (-s₀.re * t) * ‖v‖)) := by
+    calc Real.exp (-w.re * t) * (t * ‖v‖)
+        = (Real.exp (-(w.re - (s₀.re + δ)) * t) * Real.exp (-(δ * t)) *
+            Real.exp (-s₀.re * t)) * (δ⁻¹ * (δ * t)) * ‖v‖ := by
+          rw [← Real.exp_add, ← Real.exp_add, hexp, inv_mul_cancel_left₀ hδ.ne', mul_assoc]
+      _ = _ := by ring
+  rw [hsplit]
+  have hexp1 : Real.exp (-(w.re - (s₀.re + δ)) * t) ≤ 1 :=
+    Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (by linarith) ht.le)
+  have hdt : δ * t * Real.exp (-(δ * t)) ≤ 1 :=
+    (Real.mul_exp_neg_le_exp_neg_one (δ * t)).trans (Real.exp_le_one_iff.mpr (by norm_num))
+  calc δ⁻¹ * (Real.exp (-(w.re - (s₀.re + δ)) * t) * (δ * t * Real.exp (-(δ * t))) *
+          (Real.exp (-s₀.re * t) * ‖v‖))
+      ≤ δ⁻¹ * (1 * 1 * (Real.exp (-s₀.re * t) * ‖v‖)) := by gcongr
+    _ = δ⁻¹ * (Real.exp (-s₀.re * t) * ‖v‖) := by ring
+
 /-- **Differentiating a Laplace transform with respect to its parameter.** If `F w` is the
 one-sided Laplace transform of `f` for all `w` in a neighborhood of `s`, then
 `t ↦ -(t : ℂ) • f t` has a convergent Laplace transform at `s` and `F` has complex derivative equal
@@ -465,14 +492,7 @@ theorem exists_hasLaplace_neg_smul_and_hasDerivAt {E : Type*}
   have hbound : ∀ᵐ (t : ℝ) ∂μ, ∀ w ∈ Metric.ball s δ,
       ‖F' w t‖ ≤ δ⁻¹ * ‖Complex.exp (-s₀ * t) • f t‖ := by
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t) w hw
-    have hw_re := hball_re w hw
-    have h1 := norm_cexp_neg_mul_ofReal_pow_smul_le (f t) (by linarith : s₀.re < w.re) ht.le 1
-    simp only [pow_one, Nat.factorial_one, Nat.cast_one, one_div] at h1
-    have h2 : (w.re - s₀.re)⁻¹ ≤ δ⁻¹ := by gcongr; linarith
-    calc ‖F' w t‖ = ‖Complex.exp (-w * t) • ((t : ℂ) • f t)‖ := by
-          simp only [F', neg_smul, smul_neg, norm_neg]
-      _ ≤ (w.re - s₀.re)⁻¹ * ‖Complex.exp (-s₀ * t) • f t‖ := h1
-      _ ≤ δ⁻¹ * ‖Complex.exp (-s₀ * t) • f t‖ := by gcongr
+    exact norm_cexp_neg_mul_smul_neg_smul_le (f t) hδ ht (hball_re w hw).le
   have hderiv : ∀ᵐ (t : ℝ) ∂μ, ∀ w ∈ Metric.ball s δ,
       HasDerivAt (fun z : ℂ ↦ Complex.exp (-z * t) • f t) (F' w t) w := by
     refine .of_forall fun t w _ ↦ ?_
