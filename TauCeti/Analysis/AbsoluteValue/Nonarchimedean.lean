@@ -67,6 +67,32 @@ theorem LiesOver.apply_algebraMap {K L S : Type*} [CommSemiring K] [Semiring L] 
     (v : AbsoluteValue K S) [w.LiesOver v] (x : K) : w (algebraMap K L x) = v x := by
   rw [← LiesOver.under_eq w v, under_def, comp_apply]
 
+section LiesOver
+
+variable {K L S : Type*} [CommSemiring K] [Semiring L] [Algebra K L] [FaithfulSMul K L]
+  [Semiring S] [PartialOrder S] {v : AbsoluteValue K S}
+
+/-- An absolute value in the subtype of absolute values over `v` lies over `v`. -/
+instance instLiesOverSubtype (w : {w : AbsoluteValue L S // w.LiesOver v}) :
+    w.val.LiesOver v := w.property
+
+/-- An absolute value lying over a nontrivial one takes a value other than `1` at a nonzero
+element from the base. -/
+theorem IsNontrivial.exists_apply_algebraMap_ne_one (hv : v.IsNontrivial)
+    (w : AbsoluteValue L S) [w.LiesOver v] :
+    ∃ x : K, algebraMap K L x ≠ 0 ∧ w (algebraMap K L x) ≠ 1 := by
+  obtain ⟨x, hx, h⟩ := hv
+  exact ⟨x, by simpa only [map_zero] using (FaithfulSMul.algebraMap_injective K L).ne hx,
+    by rwa [LiesOver.apply_algebraMap v]⟩
+
+/-- An absolute value lying over a nontrivial absolute value is nontrivial. -/
+theorem IsNontrivial.of_liesOver (hv : v.IsNontrivial) (w : AbsoluteValue L S) [w.LiesOver v] :
+    w.IsNontrivial := by
+  obtain ⟨x, hx, h⟩ := hv.exists_apply_algebraMap_ne_one w
+  exact ⟨algebraMap K L x, hx, h⟩
+
+end LiesOver
+
 /-- An absolute value underneath a nonarchimedean absolute value is nonarchimedean. -/
 theorem isNonarchimedean_under_of_liesOver {K L S : Type*} [CommSemiring K] [Semiring L]
     [Algebra K L] [FaithfulSMul K L] [LinearOrder S] [Semiring S]

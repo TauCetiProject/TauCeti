@@ -175,70 +175,101 @@ theorem ofCompletionFactor_completionMaximalIdeal (hv : v.IsNontrivial)
     ← TauCeti.norm_eq_spectralNorm v.Completion (Algebra.IsAlgebraic.isAlgebraic _),
     Completion.norm_algebraMap]
 
-/-- The completion of the absolute value belonging to a factor recovers its maximal ideal. -/
-@[simp]
-theorem completionMaximalIdeal_ofCompletionFactor (hv : v.IsNontrivial)
+/-- Extend the map from `L` to the residue field by continuity at its induced absolute value. -/
+private noncomputable def completionToFactor (hv : v.IsNontrivial)
     (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
-    completionMaximalIdeal hv (ofCompletionFactor hna m) = m := by
+    (ofCompletionFactor hna m).Completion →+* A ⧸ m.asIdeal := by
   let := Completion.nontriviallyNormedField v hv
   let := Completion.isUltrametricDist v hna
   let F := A ⧸ m.asIdeal
   let : NormedField F := TauCeti.spectralNormedField v.Completion F
-  let := TauCeti.spectralNormedAlgebra v.Completion F
-  let : CompleteSpace F := FiniteDimensional.completeSpace v.Completion F
+  let : CompleteSpace F := spectralNorm.completeSpace v.Completion F
   let w := ofCompletionFactor hna m
   let f : WithAbs w →+* F := (toFactor v m).comp (WithAbs.equiv w).toRingHom
   have hf : Isometry f := AddMonoidHomClass.isometry_of_norm _ fun y ↦ by
     simp only [f, w, F, WithAbs.norm_eq_apply_ofAbs, ofCompletionFactor_apply,
       TauCeti.norm_spectralNormedField, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
       RingEquiv.coe_toRingHom, WithAbs.equiv_apply, toFactor_apply]
-  let G := (UniformSpace.Completion.extensionHom f hf.continuous).comp
+  exact (UniformSpace.Completion.extensionHom f hf.continuous).comp
     (Completion.toCompletion (v := w))
-  have hG : Continuous G :=
-    UniformSpace.Completion.continuous_extension.comp (continuous_toCompletion w)
-  have hGcoe (x : L) : G (algebraMap L w.Completion x) = toFactor v m x := by
-    rw [Completion.algebraMap_apply_eq_coe,
-      RingHom.comp_apply, toCompletion_coe, UniformSpace.Completion.extensionHom_coe]
-    simp [f]
-  have hscalar : (G : w.Completion →+* F).comp (map v w) = algebraMap v.Completion F := by
-    refine DFunLike.ext' (Completion.ext (hG.comp (continuous_map v w))
+
+private theorem completionToFactor_algebraMap (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) (x : L) :
+    completionToFactor hv hna m (algebraMap L (ofCompletionFactor hna m).Completion x) =
+      toFactor v m x := by
+  rw [completionToFactor, Completion.algebraMap_apply_eq_coe,
+    RingHom.comp_apply, toCompletion_coe, @UniformSpace.Completion.extensionHom_coe]
+  simp
+
+private theorem continuous_completionToFactor (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    letI := Completion.isUltrametricDist v hna
+    letI := TauCeti.spectralNormedField v.Completion (A ⧸ m.asIdeal)
+    Continuous (completionToFactor hv hna m) := by
+  let := Completion.nontriviallyNormedField v hv
+  let := Completion.isUltrametricDist v hna
+  let := TauCeti.spectralNormedField v.Completion (A ⧸ m.asIdeal)
+  let : CompleteSpace (A ⧸ m.asIdeal) := spectralNorm.completeSpace v.Completion (A ⧸ m.asIdeal)
+  dsimp only [completionToFactor, RingHom.coe_comp]
+  exact UniformSpace.Completion.continuous_extension.comp
+    (continuous_toCompletion (ofCompletionFactor hna m))
+
+private theorem completionToFactor_comp_tensorToCompletion (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    (completionToFactor hv hna m).comp (tensorToCompletion (ofCompletionFactor hna m)).toRingHom =
+      Ideal.Quotient.mk m.asIdeal := by
+  let := Completion.isUltrametricDist v hna
+  let F := A ⧸ m.asIdeal
+  let : NormedField F := TauCeti.spectralNormedField v.Completion F
+  let := TauCeti.spectralNormedAlgebra v.Completion F
+  let w := ofCompletionFactor hna m
+  have hscalar : (completionToFactor hv hna m).comp (map v w) = algebraMap v.Completion F := by
+    refine DFunLike.ext' (Completion.ext ((continuous_completionToFactor hv hna m).comp
+      (continuous_map v w))
       (continuous_algebraMap _ _) fun x ↦ ?_)
     have hx : algebraMap L w.Completion (algebraMap K L x.ofAbs) =
         (WithAbs.map v w (algebraMap K L) x : w.Completion) := by
       rw [Completion.algebraMap_apply_eq_coe, WithAbs.map_apply]
-    rw [RingHom.comp_apply, map_coe, ← hx, hGcoe]
+    rw [RingHom.comp_apply, map_coe, ← hx, completionToFactor_algebraMap]
     -- The scalar and the element of L represent the same tensor over K.
     rw [toFactor_apply, ← Algebra.TensorProduct.algebraMap_apply',
       IsScalarTower.algebraMap_apply K v.Completion A, Ideal.Quotient.mk_algebraMap,
       Completion.algebraMap_apply_eq_coe, WithAbs.toAbs_ofAbs]
-  have hcomp : G.comp (tensorToCompletion w (v := v)).toRingHom = Ideal.Quotient.mk m.asIdeal := by
-    apply Algebra.TensorProduct.ringHom_ext
-    · ext a
-      have ha : Ideal.Quotient.mk m.asIdeal (a ⊗ₜ[K] (1 : L)) =
-          algebraMap v.Completion F a := by
-        rw [← Ideal.Quotient.mk_algebraMap (R₁ := v.Completion),
-          Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
-      simpa [tensorToCompletion_tmul, algebraMap_apply_of_liesOver, ha] using
-        DFunLike.congr_fun hscalar a
-    · ext x
-      simpa [tensorToCompletion_tmul] using hGcoe x
+  apply Algebra.TensorProduct.ringHom_ext
+  · ext a
+    -- On the left tensor factor both maps agree with the `K_v`-algebra map.
+    have ha : Ideal.Quotient.mk m.asIdeal (a ⊗ₜ[K] (1 : L)) =
+        algebraMap v.Completion F a := by
+      rw [← Ideal.Quotient.mk_algebraMap (R₁ := v.Completion),
+        Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
+    simpa only [RingHom.comp_apply, includeLeftRingHom_apply, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe, tensorToCompletion_tmul, map_one, mul_one, algebraMap_apply_of_liesOver,
+      ha] using DFunLike.congr_fun hscalar a
+  · ext x
+    -- On the right tensor factor both maps restrict to the original map from `L`.
+    simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, includeRight_apply,
+      tensorToCompletion_tmul, map_one, one_mul, toFactor_apply] using
+      completionToFactor_algebraMap hv hna m x
+
+/-- The completion of the absolute value belonging to a factor recovers its maximal ideal. -/
+@[simp]
+theorem completionMaximalIdeal_ofCompletionFactor (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    completionMaximalIdeal hv (ofCompletionFactor hna m) = m := by
   apply MaximalSpectrum.ext
-  refine (completionMaximalIdeal hv w).isMaximal.eq_of_le m.isMaximal.ne_top fun x hx ↦ ?_
-  rw [← Ideal.Quotient.eq_zero_iff_mem, ← hcomp, RingHom.comp_apply]
-  exact (congrArg G (RingHom.mem_ker.mp hx)).trans (map_zero G)
+  refine (completionMaximalIdeal hv (ofCompletionFactor hna m)).isMaximal.eq_of_le
+    m.isMaximal.ne_top fun x hx ↦ ?_
+  rw [← Ideal.Quotient.eq_zero_iff_mem, ← completionToFactor_comp_tensorToCompletion hv hna m,
+    RingHom.comp_apply, RingHom.mem_ker.mp hx, map_zero]
 
 /-- Maximal ideals of the completed scalar extension classify the absolute values on `L`
 restricting to the given nontrivial nonarchimedean absolute value on `K`. -/
 noncomputable def maximalSpectrumEquivLiesOver (hv : v.IsNontrivial)
     (hna : IsNonarchimedean v) : MaximalSpectrum A ≃ {w : AbsoluteValue L ℝ // w.LiesOver v} where
   toFun m := ⟨ofCompletionFactor hna m, inferInstance⟩
-  invFun w := by
-    letI := w.property
-    exact completionMaximalIdeal hv w.val
+  invFun w := completionMaximalIdeal hv w.val
   left_inv m := completionMaximalIdeal_ofCompletionFactor hv hna m
-  right_inv w := by
-    have := w.property
-    exact Subtype.ext (ofCompletionFactor_completionMaximalIdeal hv hna _)
+  right_inv w := Subtype.ext (ofCompletionFactor_completionMaximalIdeal hv hna w.val)
 
 /-- The forward correspondence takes the spectral norm of the residue field. -/
 @[simp]
@@ -407,10 +438,7 @@ power before normalizing again. This gives the direct normalization from the bot
 theorem degreeNormalized_trans (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
     letI := LiesOver.trans v w u
     letI := FiniteDimensional.trans K L M
-    let hw : w.IsNontrivial := by
-      obtain ⟨x, hx₀, hx⟩ := hv
-      exact ⟨algebraMap K L x, by simpa only [map_zero] using (algebraMap K L).injective.ne hx₀,
-        by rwa [LiesOver.apply_algebraMap v]⟩
+    let hw := hv.of_liesOver w
     let hwa : IsNonarchimedean w := isNonarchimedean_of_liesOver hna
     let ht : (0 : ℝ) < w.degree K := Nat.cast_pos.mpr (degree_pos_of_liesOver w hv)
     let u' := u.nonarchRpow (isNonarchimedean_of_liesOver hwa) ht

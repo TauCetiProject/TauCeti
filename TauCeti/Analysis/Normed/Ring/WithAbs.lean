@@ -31,17 +31,6 @@ nonzero elements all have norm `1`.
 
 public section
 
-namespace AbsoluteValue
-
-variable {K L S : Type*} [CommSemiring K] [Semiring L] [Algebra K L] [FaithfulSMul K L]
-  [Semiring S] [PartialOrder S] {v : AbsoluteValue K S}
-
-/-- An absolute value in the subtype of absolute values over `v` lies over `v`. -/
-instance instLiesOverSubtype (w : {w : AbsoluteValue L S // w.LiesOver v}) :
-    w.val.LiesOver v := w.property
-
-end AbsoluteValue
-
 namespace WithAbs
 
 section SMul
