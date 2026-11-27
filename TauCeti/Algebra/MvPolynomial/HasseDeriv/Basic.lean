@@ -55,7 +55,8 @@ Roth's theorem.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
-* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`; so evaluating
+* `MvPolynomial.factorial_smul_hasseDeriv_single`, `MvPolynomial.hasseDeriv_single_one`:
+  `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P` (in particular `∂^(eᵢ) P = ∂P/∂Xᵢ`); so evaluating
   `(∂/∂Xᵢ)^k P` multiplies `(∂^(k eᵢ) P)(x)` by `k!`
   (`MvPolynomial.eval_iterate_pderiv_eq_factorial_mul`), and when `k!` is a unit (for instance
   `k < p` in characteristic `p`), an ordinary jet vanishes exactly when the corresponding Hasse jet
@@ -264,6 +265,13 @@ theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ
   | succ k ih =>
     rw [Function.iterate_succ_apply', ← ih, map_nsmul, pderiv_hasseDeriv_single, smul_smul,
       Nat.factorial_succ, mul_comm]
+
+/-- The first Hasse derivative in `Xᵢ` is the partial derivative in `Xᵢ`. -/
+@[simp]
+theorem hasseDeriv_single_one (i : σ) (P : MvPolynomial σ R) :
+    hasseDeriv (single i 1) P = pderiv i P := by
+  have h := factorial_smul_hasseDeriv_single i 1 P
+  rwa [Nat.factorial_one, one_smul, Function.iterate_one] at h
 
 /-- Evaluating `(∂/∂Xᵢ)^k P` at a tuple `x` in an `R`-algebra `S` gives `k!` times the evaluated
 Hasse derivative `∂^(k eᵢ) P`. -/

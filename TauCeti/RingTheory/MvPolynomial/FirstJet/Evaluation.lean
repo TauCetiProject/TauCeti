@@ -115,8 +115,7 @@ theorem firstJetMap_apply_none (f : restrictTotalDegree σ R d) (i : ι) :
 @[simp]
 theorem firstJetMap_apply_some (f : restrictTotalDegree σ R d) (i : ι) (j : σ) :
     firstJetMap P d f i (some j) = eval (P i) (pderiv j (f : MvPolynomial σ R)) := by
-  simpa [firstJetMap] using
-    congrArg (eval (P i)) (factorial_smul_hasseDeriv_single j 1 (f : MvPolynomial σ R))
+  simp [firstJetMap]
 
 /-- A bounded polynomial lies in `LinearMap.ker (firstJetMap P d)` if and only if its value and
 all first partial derivatives vanish at every point `P i`. -/
@@ -275,12 +274,7 @@ theorem toMatrix_firstJetMap [Finite (ι × Option σ)] {d : ℕ}
         jetEval {s : σ →₀ ℕ | s.degree ≤ d} (fun z ↦ P z.1)
           (fun z ↦ z.2.elim 0 (Finsupp.single · 1)) := by
     ext f ⟨i, z⟩
-    cases z with
-    | none => simp
-    | some j =>
-      simp [show pderiv j (f : MvPolynomial σ R) =
-          hasseDeriv (Finsupp.single j 1) (f : MvPolynomial σ R) from by
-        simpa using (factorial_smul_hasseDeriv_single j 1 (f : MvPolynomial σ R)).symm]
+    cases z <;> simp
   rw [basisRestrictTotalDegree_def, LinearMap.toMatrix_map_left, hcur, firstJetMatrix]
   exact toMatrix_jetEval _ _ _
 
