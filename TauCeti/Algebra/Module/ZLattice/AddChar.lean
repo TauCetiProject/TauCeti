@@ -48,4 +48,8 @@ theorem AddChar.exists_continuousLinearMap_forall_apply_eq_circleExp {E : Type*}
       have h : B.constr ℝ θ (b i) = θ i := by
         rw [← Basis.ofZLatticeBasis_apply ℝ L b i, Basis.constr_basis]
       simp [h, hθ]
-  exact congr(Additive.toMul ($key γ))
+  -- Evaluate both sides at `γ` and unfold the wrappers through their `simp` API.
+  simpa only [AddMonoidHom.coe_toIntLinearMap, AddChar.toAddMonoidHom_apply,
+    AddMonoidHom.coe_comp, Function.comp_apply, Circle.expHom_apply, LinearMap.toAddMonoidHom_coe,
+    Submodule.subtype_apply, toMul_ofMul, LinearMap.coe_toContinuousLinearMap'] using
+    congr(Additive.toMul ($key γ))
