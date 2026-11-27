@@ -31,7 +31,7 @@ coefficient slices and convergence of their weighted Gauss norms are both requir
 requiring each slice to be restricted would not characterize multivariate restricted series.
 For two arbitrary families of variables, the analogous comparison into multivariate series is
 `TauCeti.MvPowerSeries.restrictedSumEquiv`. The comparison `MvPowerSeries.restrictedSplitEquiv`
-first reindexes by an equivalence `e : ι ≃ Option σ`, so that the chosen variable
+first reindexes radii `a = c ∘ e` by an equivalence `e : ι ≃ Option σ`, so that the chosen variable
 `e.symm none` is separated. In particular, `finSuccEquiv n` separates variable `0` in
 `Fin (n + 1)`.
 
@@ -374,38 +374,39 @@ theorem restrictedMap_restrictedOptionEquiv_symm_polynomialToRestricted {S : Typ
 
 section Split
 
-variable {ι : Type*} (e : ι ≃ Option σ)
+variable {ι : Type*} (e : ι ≃ Option σ) {a : ι → ℝ} (ha : c ∘ e = a)
 
 /-- Separate a specified variable after reindexing. The variable `e.symm none` becomes the
 univariate variable; the others, labelled by `σ`, become variables in the coefficient algebra.
-The source polyradii are `c ∘ e`, so this comparison applies at arbitrary positive radii. -/
+The source polyradii `a` agree with `c ∘ e`. -/
 noncomputable def restrictedSplitEquiv :
-    IsRestricted.subring (R := R) (c ∘ e) ≃ₐ[R] Iter :=
-  (IsRestricted.renameAlgEquiv e c).trans restrictedOptionEquiv
+    IsRestricted.subring (R := R) a ≃ₐ[R] Iter :=
+  (IsRestricted.renameAlgEquivOfEq e c ha).trans restrictedOptionEquiv
 
 /-- Splitting after reindexing agrees with renaming followed by the native option comparison. -/
-theorem restrictedSplitEquiv_apply (f : IsRestricted.subring (R := R) (c ∘ e)) :
-    restrictedSplitEquiv e f = restrictedOptionEquiv (IsRestricted.renameAlgEquiv e c f) :=
-  (rfl)
+theorem restrictedSplitEquiv_apply (f : IsRestricted.subring (R := R) a) :
+    restrictedSplitEquiv e ha f =
+      restrictedOptionEquiv (IsRestricted.renameAlgEquivOfEq e c ha f) :=
+  AlgEquiv.trans_apply _ _ _
 
 /-- On ambient formal series, splitting is Mathlib's option comparison after renaming. -/
 @[simp]
-theorem map_subtype_restrictedSplitEquiv (f : IsRestricted.subring (R := R) (c ∘ e)) :
-    PowerSeries.map (Inner).subtype (restrictedSplitEquiv e f : PowerSeries Inner) =
+theorem map_subtype_restrictedSplitEquiv (f : IsRestricted.subring (R := R) a) :
+    PowerSeries.map (Inner).subtype (restrictedSplitEquiv e ha f : PowerSeries Inner) =
       optionEquivLeft σ R (renameEquiv R e (f : MvPowerSeries ι R)) := by
   rw [restrictedSplitEquiv_apply, map_subtype_restrictedOptionEquiv,
-    IsRestricted.coe_renameAlgEquiv]
+    IsRestricted.coe_renameAlgEquivOfEq]
 
 /-- The coefficients of a split series are the original coefficients with their exponents
 transported back along the chosen variable labelling. -/
 @[simp]
-theorem coeff_coeff_restrictedSplitEquiv (f : IsRestricted.subring (R := R) (c ∘ e))
+theorem coeff_coeff_restrictedSplitEquiv (f : IsRestricted.subring (R := R) a)
     (n : ℕ) (t : σ →₀ ℕ) :
-    coeff t (PowerSeries.coeff (R := Inner) n (restrictedSplitEquiv e f : PowerSeries Inner) :
+    coeff t (PowerSeries.coeff (R := Inner) n (restrictedSplitEquiv e ha f : PowerSeries Inner) :
       MvPowerSeries σ R) =
       coeff ((t.optionElim n).equivMapDomain e.symm) (f : MvPowerSeries ι R) := by
   have h := congrArg (fun F ↦ coeff t (PowerSeries.coeff n F))
-    (map_subtype_restrictedSplitEquiv e f)
+    (map_subtype_restrictedSplitEquiv e ha f)
   simp only [PowerSeries.coeff_map, Subring.subtype_apply, coeff_coeff_optionEquivLeft] at h
   rw [h]
   have hc := coeff_embDomain_rename e.toEmbedding (f : MvPowerSeries ι R)
@@ -417,11 +418,11 @@ theorem coeff_coeff_restrictedSplitEquiv (f : IsRestricted.subring (R := R) (c �
 and at the exponents of the remaining variables. -/
 @[simp]
 theorem coeff_restrictedSplitEquiv_symm (F : Iter) (t : ι →₀ ℕ) :
-    coeff t ((restrictedSplitEquiv e).symm F : MvPowerSeries ι R) =
+    coeff t ((restrictedSplitEquiv e ha).symm F : MvPowerSeries ι R) =
       coeff (t.equivMapDomain e).some
         (PowerSeries.coeff (R := Inner) (t (e.symm none)) (F : PowerSeries Inner) :
           MvPowerSeries σ R) := by
-  have h := coeff_coeff_restrictedSplitEquiv e ((restrictedSplitEquiv e).symm F)
+  have h := coeff_coeff_restrictedSplitEquiv e ha ((restrictedSplitEquiv e ha).symm F)
     (t (e.symm none)) (t.equivMapDomain e).some
   have ht : (t.equivMapDomain e).some.optionElim (t (e.symm none)) =
       t.equivMapDomain e := Finsupp.optionElim_some _
@@ -431,15 +432,15 @@ theorem coeff_restrictedSplitEquiv_symm (F : Iter) (t : ι →₀ ℕ) :
 /-- Vanishing in all univariate degrees at least `s` means that the original series has degree
 less than `s` in the chosen variable `e.symm none`. -/
 theorem forall_coeff_restrictedSplitEquiv_eq_zero_iff
-    (f : IsRestricted.subring (R := R) (c ∘ e)) (s : ℕ) :
-    (∀ n, s ≤ n → PowerSeries.coeff n (restrictedSplitEquiv e f : PowerSeries Inner) = 0) ↔
+    (f : IsRestricted.subring (R := R) a) (s : ℕ) :
+    (∀ n, s ≤ n → PowerSeries.coeff n (restrictedSplitEquiv e ha f : PowerSeries Inner) = 0) ↔
       ∀ t : ι →₀ ℕ, s ≤ t (e.symm none) → coeff t (f : MvPowerSeries ι R) = 0 := by
   rw [restrictedSplitEquiv_apply, forall_coeff_restrictedOptionEquiv_eq_zero_iff]
   have hc (t : ι →₀ ℕ) :
       coeff (t.equivMapDomain e)
-        (IsRestricted.renameAlgEquiv e c f : MvPowerSeries (Option σ) R) =
+        (IsRestricted.renameAlgEquivOfEq e c ha f : MvPowerSeries (Option σ) R) =
       coeff t (f : MvPowerSeries ι R) := by
-    simpa [IsRestricted.coe_renameAlgEquiv, Finsupp.embDomain_eq_mapDomain,
+    simpa [IsRestricted.coe_renameAlgEquivOfEq, Finsupp.embDomain_eq_mapDomain,
       Equiv.coe_toEmbedding, Finsupp.equivMapDomain_eq_mapDomain] using
       coeff_embDomain_rename e.toEmbedding (f : MvPowerSeries ι R) t
   constructor
@@ -454,30 +455,32 @@ theorem forall_coeff_restrictedSplitEquiv_eq_zero_iff
 /-- Splitting sends the selected variable to the univariate variable. -/
 @[simp]
 theorem coe_restrictedSplitEquiv_X_none :
-    (restrictedSplitEquiv e (⟨X (e.symm none), isRestricted_X _ _⟩ :
-      IsRestricted.subring (R := R) (c ∘ e)) : PowerSeries Inner) = PowerSeries.X := by
+    (restrictedSplitEquiv e ha (⟨X (e.symm none), isRestricted_X _ _⟩ :
+      IsRestricted.subring (R := R) a) : PowerSeries Inner) = PowerSeries.X := by
   apply PowerSeries.map_injective (Inner).subtype Subtype.val_injective
   simp [map_subtype_restrictedSplitEquiv, renameEquiv]
 
 /-- Splitting sends the other variables to constants with values in the coefficient algebra. -/
 @[simp]
 theorem coe_restrictedSplitEquiv_X_some (i : σ) :
-    (restrictedSplitEquiv e (⟨X (e.symm (some i)), isRestricted_X _ _⟩ :
-      IsRestricted.subring (R := R) (c ∘ e)) : PowerSeries Inner) =
+    (restrictedSplitEquiv e ha (⟨X (e.symm (some i)), isRestricted_X _ _⟩ :
+      IsRestricted.subring (R := R) a) : PowerSeries Inner) =
       PowerSeries.C ⟨X i, isRestricted_X _ _⟩ := by
   apply PowerSeries.map_injective (Inner).subtype Subtype.val_injective
   simp [map_subtype_restrictedSplitEquiv, renameEquiv]
 
+variable [∀ i, Fact (0 < a i)]
+
 /-- Splitting in any specified variable preserves the Gauss norms. -/
 @[simp]
-theorem norm_restrictedSplitEquiv (f : IsRestricted.subring (R := R) (c ∘ e)) :
-    ‖restrictedSplitEquiv e f‖ = ‖f‖ := by
-  rw [restrictedSplitEquiv_apply, norm_restrictedOptionEquiv, IsRestricted.norm_renameAlgEquiv]
+theorem norm_restrictedSplitEquiv (f : IsRestricted.subring (R := R) a) :
+    ‖restrictedSplitEquiv e ha f‖ = ‖f‖ := by
+  rw [restrictedSplitEquiv_apply, norm_restrictedOptionEquiv, IsRestricted.norm_renameAlgEquivOfEq]
 
 /-- The comparison for a specified variable is an isometry. -/
 theorem isometry_restrictedSplitEquiv :
-    Isometry (restrictedSplitEquiv (R := R) (c := c) e) :=
-  AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_restrictedSplitEquiv e)
+    Isometry (restrictedSplitEquiv (R := R) e ha) :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_restrictedSplitEquiv e ha)
 
 end Split
 
