@@ -15,7 +15,7 @@ import Mathlib.Algebra.Module.Shrink
 
 A finitely generated projective `R`-module `P` that is a module-theoretic generator
 (`TauCeti.Module.IsGenerator R P`) is a categorical progenerator (`TauCeti.IsProgenerator P`) of
-`FGModuleCat.{v} R` (`FGModuleCat.isProgenerator_of_projective_of_isGenerator`). When `R` is
+`FGModuleCat.{v} R` (`FGModuleCat.isProgenerator_of_moduleProjective_of_isGenerator`). When `R` is
 `v`-small (automatic for `FGModuleCat.{u} R`), the converse also holds: an object `P` of
 `FGModuleCat.{v} R` is a categorical progenerator if and only if it is projective
 (`Module.Projective R P`) and a module-theoretic generator (`FGModuleCat.isProgenerator_iff`).
@@ -29,8 +29,8 @@ In particular, over any ring `R`, the regular module `R`, any positive finite fr
 
 ## Main results
 
-* `FGModuleCat.isProgenerator_of_projective_of_isGenerator`: every finitely generated projective
-  generator is a progenerator of `FGModuleCat R`.
+* `FGModuleCat.isProgenerator_of_moduleProjective_of_isGenerator`: every finitely generated
+  projective generator is a progenerator of `FGModuleCat R`.
 * `FGModuleCat.isProgenerator_iff`: the equivalence between `TauCeti.IsProgenerator P` in
   `FGModuleCat R` and `Module.Projective R P ∧ TauCeti.Module.IsGenerator R P` (when `R` is
   `v`-small, which is automatic for `FGModuleCat.{u} R`).
@@ -56,7 +56,7 @@ variable {R : Type u} [Ring R]
 
 /-- A finitely generated projective `R`-module that is a generator is a progenerator of
 `FGModuleCat R`. -/
-theorem isProgenerator_of_projective_of_isGenerator (P : FGModuleCat.{v} R)
+theorem isProgenerator_of_moduleProjective_of_isGenerator (P : FGModuleCat.{v} R)
     [Module.Projective R P] [TauCeti.Module.IsGenerator R P] : IsProgenerator P :=
   have := (ModuleCat.isFG.{v} R).projective_of_moduleProjective P
   (ModuleCat.isFG.{v} R).isProgenerator_of_projective_of_isGenerator le_rfl P
@@ -75,7 +75,7 @@ variable (R)
 
 /-- The regular module `R` is a progenerator of `FGModuleCat R`. -/
 theorem isProgenerator_self : IsProgenerator (FGModuleCat.of R R) :=
-  isProgenerator_of_projective_of_isGenerator (FGModuleCat.of R R)
+  isProgenerator_of_moduleProjective_of_isGenerator (FGModuleCat.of R R)
 
 /-- Any positive finite free module `Fin n → R` (`n ≠ 0`) is a progenerator of `FGModuleCat R`. -/
 theorem isProgenerator_pi (n : ℕ) [NeZero n] :
