@@ -14,6 +14,8 @@ import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.ZMod.Pow
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.RingTheory.RootsOfUnity.PPower
+import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.Topology.Algebra.Module.AutomaticContinuity
 
 /-!
 # The `p`-adic Tate twist
@@ -59,6 +61,8 @@ When all the `ℓ`-power roots of unity exist, each factor is noncanonically `�
 
 * `TauCeti.PadicTateTwist.levelAddEquivRootsOfUnity`: the `n`-th level is `μ_{p^n}`.
 * `TauCeti.PadicTateTwist.instCompactSpace`: for nonzero `p`, `ℤ_p(1)` is compact over a domain.
+* `TauCeti.PadicTateTwist.subsingleton_of_expChar`: over a reduced ring of exponential
+  characteristic `p`, `ℤ_p(1) = 0`.
 * `TauCeti.PadicTateTwist.nonempty_linearEquiv`: when `K` has enough `p`-power roots of unity,
   `ℤ_p(1)` is noncanonically linearly equivalent to `ℤ_p`.
 * `TauCeti.PadicTateTwist.nonempty_continuousAddEquiv`: in that case `ℤ_p(1)` is also
@@ -192,6 +196,13 @@ theorem subsingleton_of_not_exists_isPrimitiveRoot {N : ℕ}
 
 end Subsingleton
 
+/-- **In exponential characteristic `p`, `PadicTateTwist p K = 0`** for a reduced ring `K`: such a
+ring has no nontrivial `p ^ n`-th root of unity (`TauCeti.subsingleton_rootsOfUnity_prime_pow`). -/
+theorem subsingleton_of_expChar (p : ℕ) (K : Type*) [CommRing K] [IsReduced K] [ExpChar K p] :
+    Subsingleton (PadicTateTwist p K) :=
+  ⟨fun _ _ ↦ ext fun n ↦ Additive.toMul.injective <|
+    (subsingleton_rootsOfUnity_prime_pow (R := K) p n).elim _ _⟩
+
 section RankOne
 
 variable {p : ℕ} {K : Type*} [CommMonoid K]
@@ -233,15 +244,9 @@ variable (p K) in
 `ℤ_p` as a topological group. -/
 theorem nonempty_continuousAddEquiv : Nonempty (PadicTateTwist p K ≃ₜ+ ℤ_[p]) := by
   obtain ⟨e⟩ := nonempty_linearEquiv p K
-  -- The inverse of a `ℤ_p`-linear equivalence is `a ↦ a • e.symm 1`, which is continuous; it is a
-  -- continuous bijection from the compact `ℤ_p` to the Hausdorff `ℤ_p(1)`, hence a homeomorphism.
-  have hc : Continuous e.symm := by
-    have h : ⇑e.symm = fun a : ℤ_[p] ↦ a • e.symm 1 :=
-      funext fun a ↦ by rw [← map_smul, smul_eq_mul, mul_one]
-    rw [h]
-    exact continuous_id.smul continuous_const
-  exact ⟨(ContinuousAddEquiv.mk' (hc.homeoOfEquivCompactToT2 (f := e.symm.toEquiv))
-    fun x y ↦ map_add e.symm x y).symm⟩
+  exact ⟨{ e.toAddEquiv with
+    continuous_toFun := e.toLinearMap.continuous_of_finite_of_compactSpace
+    continuous_invFun := IsModuleTopology.continuous_of_linearMap e.symm.toLinearMap }⟩
 
 end RankOne
 

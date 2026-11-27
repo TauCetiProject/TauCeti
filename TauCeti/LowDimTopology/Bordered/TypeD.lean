@@ -85,6 +85,8 @@ one and so does not apply to an ungraded differential algebra.
 
 * `TauCeti.TypeDStructure`: a type `D` structure, given by its generators, their idempotents and
   its coefficient matrix.
+* `TauCeti.TypeDStructure.ofIdem`: the type `D` structure with given idempotents and vanishing
+  structure map.
 * `TauCeti.TypeDStructure.morphisms`, `TauCeti.TypeDStructure.morphismDifferential`,
   `TauCeti.TypeDStructure.idMorphism`: morphisms of type `D` structures, their differential and the
   identity morphism.
@@ -160,7 +162,29 @@ structure TypeDStructure where
 
 namespace TypeDStructure
 
+/-- The type `D` structure on the generators `X` with idempotents `idem` and vanishing structure
+map, `δ¹ = 0`. Its induced module `A ⊗_I ⟨X⟩` (`TauCeti.TypeDStructure.inducedModule`) depends
+only on the idempotents, and when `d` makes `A` a differential algebra and the `ι s` are
+idempotent cycles, every square-zero Leibniz differential on it is the box tensor differential of a
+type `D` structure (`TauCeti.TypeDStructure.ofInducedDifferential`). -/
+def ofIdem {X : Type*} [Fintype X] (idem : X → S) : TypeDStructure d ι X where
+  idem := idem
+  coeff := 0
+  idem_mul_coeff _ _ := mul_zero _
+  coeff_mul_idem _ _ := zero_mul _
+  map_coeff_add_coeff_mul_coeff := by
+    ext x y
+    simp
+
 variable {d ι X} {X' X'' : Type*} [Fintype X'] [Fintype X'']
+
+@[simp]
+theorem ofIdem_idem (idem : X → S) : (ofIdem d ι idem).idem = idem :=
+  (rfl)
+
+@[simp]
+theorem ofIdem_coeff (idem : X → S) : (ofIdem d ι idem).coeff = 0 :=
+  (rfl)
 
 /-! ### Morphisms -/
 

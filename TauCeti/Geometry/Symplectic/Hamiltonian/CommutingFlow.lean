@@ -783,14 +783,11 @@ theorem coe_hamiltonianFlowAction_mpullback_subtype_val_apply {V : TopologicalSp
   -- the inclusion of `V` carries Hamiltonian vector fields of restrictions to those on `M`.
   have hγ : IsMIntegralCurve (fun t : ℝ ↦ (((hσ.mpullback_subtype_val V).hamiltonianFlowAction
       hF' hcomm' hc' (t • v)).toMul y : M)) (σ.hamiltonianVectorField fun z ↦ v ⬝ᵥ F z) :=
+    -- The combination `v ⬝ᵥ (F ∘ val)` is the restriction of `v ⬝ᵥ F` to `V`.
     isMIntegralCurve_iff_isMIntegralCurveOn.2 <|
       (((hσ.mpullback_subtype_val V).isMIntegralCurve_hamiltonianFlowAction_smul hF' hcomm' hc' v
-        y).isMIntegralCurveOn Set.univ).map_of_mfderiv_eq
-        (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) fun _ _ ↦ by
-          -- The combination `v ⬝ᵥ (F ∘ val)` is the restriction of `v ⬝ᵥ F` to `V`.
-          rw [Manifold.mfderiv_subtype_val_apply, show (fun y : V ↦ v ⬝ᵥ (F ∘ Subtype.val) y) =
-            (fun z ↦ v ⬝ᵥ F z) ∘ Subtype.val from rfl, hamiltonianVectorField_comp_subtype_val,
-            Manifold.tangentSpaceOpenEquiv_symm_apply]
+        y).isMIntegralCurveOn Set.univ).coe_of_hamiltonianVectorField_mpullback_subtype_val
+          (f := fun z ↦ v ⬝ᵥ F z)
   have hX : ContMDiff I I.tangent 1
       (fun z ↦ (⟨z, σ.hamiltonianVectorField (fun z ↦ v ⬝ᵥ F z) z⟩ : TangentBundle I M)) :=
     hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (by simp)

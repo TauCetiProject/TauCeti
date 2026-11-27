@@ -37,7 +37,12 @@ nondegeneracy of `σ`. When `T_ξ = G`, the critical set of `μ^ξ` is exactly t
 starting point of the Morse–Bott theory of moment maps of torus actions: the critical manifolds
 of a generic component are the components of the fixed-point set.
 
-Neither closedness of `σ` nor equivariance of `μ` is used, and `M` need not be compact.
+Neither closedness of `σ` nor equivariance of `μ` is used for these, and `M` need not be compact.
+
+On a compact connected manifold without boundary, every component `μ^Z` attains a maximum, which
+is a critical point. For a closed `σ` the cocycle `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` of `μ` is constant,
+so when `𝔤` is abelian, evaluating it at such a maximum shows that it vanishes
+(`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq_zero_of_isLieAbelian`).
 
 ## Main results
 
@@ -57,6 +62,9 @@ Neither closedness of `σ` nor equivariance of `μ` is used, and `M` need not be
   critical set of `μ^ξ` is `M^G`.
 * `TauCeti.SmoothTwoForm.IsMomentMap.dense_setOf_criticalPoints_eq_fixedPoints`: for a torus, the
   `ξ` whose component `μ^ξ` has critical set `M^G` are dense in the Lie algebra.
+* `TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq_zero_of_isLieAbelian`: a moment map of an
+  abelian Lie algebra action on a compact connected manifold, for a closed form, is
+  infinitesimally equivariant.
 
 ## References
 
@@ -208,5 +216,33 @@ theorem dense_setOf_criticalPoints_eq_fixedPoints [IsMulCommutative G] [CompactS
     h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ
 
 end Group
+
+section Abelian
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [BoundarylessManifold I M] [CompactSpace M] [PreconnectedSpace M]
+  {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [IsLieAbelian 𝔤]
+  {σ : SmoothTwoForm I M} {a : InfinitesimalAction 𝔤 I M} {μ : M → Module.Dual ℝ 𝔤}
+
+/-- **Moment maps of abelian actions on compact manifolds are infinitesimally equivariant.** For a
+closed form on a compact connected manifold without boundary, the cocycle
+`σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` of a moment map of an abelian Lie algebra vanishes. -/
+theorem momentCocycle_eq_zero_of_isLieAbelian (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed)
+    (x : M) : σ.momentCocycle a μ x = 0 := by
+  -- The cocycle is constant, and at a maximum `p` of `μ_Z` it is
+  -- `σ_p(Z_M, Z'_M) = dμ_Z(Z'_M) = 0`.
+  have : Nonempty M := ⟨x⟩
+  refine momentCocycle_eq_zero_iff.2 fun Z Z' ↦ ?_
+  obtain ⟨p, -, hp⟩ :=
+    isCompact_univ.exists_isMaxOn Set.univ_nonempty (h.contMDiff Z).continuous.continuousOn
+  have hcrit : mvfderiv I (fun y ↦ μ y Z) p = 0 :=
+    mem_criticalPoints.1 (hp.mem_criticalPoints BoundarylessManifold.isInteriorPoint)
+  have hc := congr($(h.momentCocycle_eq hσ x p) Z Z')
+  simp only [momentCocycle_apply, EmbeddingLike.apply_eq_iff_eq, trivial_lie_zero, map_zero,
+    sub_zero] at hc
+  rw [hc, h.eval₂_apply, hcrit, trivial_lie_zero, map_zero, zero_apply]
+
+end Abelian
 
 end TauCeti.SmoothTwoForm.IsMomentMap

@@ -105,8 +105,13 @@ consists of the pairs `(J w, g)` with `D(w, v) = ⟪g, J v⟫_{L²}` for every `
 def negLaplacian : Lp ℝ 2 (riemannianVolume I M) →ₗ.[ℝ] Lp ℝ 2 (riemannianVolume I M) :=
   isCoercive_innerSL.formOperator toLp 1
 
+/-- The Laplacian is the operator of the Dirichlet form along the value map
+`J : H¹(M) → L²(M)`, shifted by `1`. -/
+theorem negLaplacian_def : negLaplacian I M = isCoercive_innerSL.formOperator toLp 1 :=
+  (rfl)
+
 /-- The `H¹` inner product is the Dirichlet form shifted by the `L²` inner product. -/
-private theorem inner_eq_dirichletForm_add (w v : SobolevH1 I M) :
+theorem inner_eq_dirichletForm_add (w v : SobolevH1 I M) :
     innerSL ℝ w v = dirichletForm w v + 1 * ⟪toLp w, toLp v⟫_ℝ := by
   rw [dirichletForm_apply, innerSL_apply_apply]
   ring
