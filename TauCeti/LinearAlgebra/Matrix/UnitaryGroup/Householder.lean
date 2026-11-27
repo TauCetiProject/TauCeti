@@ -77,13 +77,28 @@ variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι] {i j : ι
 
 /-- The axis `ω eᵢ + y` of the Householder reflection that sends `-ω eᵢ` to `y`, for the phase
 `ω = yᵢ / |yᵢ|` of the coordinate `yᵢ`. -/
-@[expose] noncomputable def householderSpecialUnitaryAxis (i : ι) (y : ι → 𝕜) : ι → 𝕜 :=
+noncomputable def householderSpecialUnitaryAxis (i : ι) (y : ι → 𝕜) : ι → 𝕜 :=
   (‖y i‖⁻¹ • y i) • Pi.single i 1 + y
 
 /-- The diagonal entries `-ω` at `i`, `conj ω` at `j` and `1` elsewhere, for the phase
 `ω = yᵢ / |yᵢ|` of the coordinate `yᵢ`. -/
-@[expose] noncomputable def householderSpecialUnitaryDiag (i j : ι) (y : ι → 𝕜) : ι → 𝕜 :=
+noncomputable def householderSpecialUnitaryDiag (i j : ι) (y : ι → 𝕜) : ι → 𝕜 :=
   Function.update (Function.update 1 j (star (‖y i‖⁻¹ • y i))) i (-(‖y i‖⁻¹ • y i))
+
+omit [Fintype ι] in
+/-- The `k`-th coordinate of the axis `ω eᵢ + y`. -/
+@[simp]
+theorem householderSpecialUnitaryAxis_apply (i : ι) (y : ι → 𝕜) (k : ι) :
+    householderSpecialUnitaryAxis i y k =
+      (‖y i‖⁻¹ • y i) * (Pi.single i (1 : 𝕜) : ι → 𝕜) k + y k := by
+  simp [householderSpecialUnitaryAxis]
+
+omit [Fintype ι] in
+/-- The diagonal entries are `-ω` at `i`, `conj ω` at `j ≠ i` and `1` elsewhere. -/
+theorem householderSpecialUnitaryDiag_apply (i j : ι) (y : ι → 𝕜) (k : ι) :
+    householderSpecialUnitaryDiag i j y k =
+      if k = i then -(‖y i‖⁻¹ • y i) else if k = j then star (‖y i‖⁻¹ • y i) else 1 := by
+  simp [householderSpecialUnitaryDiag, Function.update_apply]
 
 /-- **A special unitary matrix with prescribed `i`-th column `y`.** The diagonal matrix
 `diag(-ω, conj ω, 1, …, 1)` (entries at `i` and `j`) followed by the Householder reflection in the

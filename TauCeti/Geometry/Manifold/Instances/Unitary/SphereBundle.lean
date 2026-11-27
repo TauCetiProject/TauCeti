@@ -9,10 +9,11 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Geometry.Manifold.FiberBundle.MapFiber
 public import TauCeti.Geometry.Manifold.Instances.Unitary.Special
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Householder
 public import TauCeti.Topology.Grassmannian.SphereBundle.SpecialUnitary
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Matrix.EuclideanLin
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Householder
+import TauCeti.Analysis.Matrix.UnitaryGroup.Householder
 import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
@@ -34,8 +35,9 @@ and it has determinant `-1`. The diagonal matrix `D = diag(-ω, conj ω, 1, …,
 `-ω e₀` and also has determinant `-1`. So `R D` is a special unitary matrix with first column `y`
 (`Matrix.householderSpecialUnitary`).
 Its coefficients involve `ω` and `(1 + |y₀|)⁻¹` only, so it depends smoothly on `y` on the open set
-`y₀ ≠ 0`, which contains `e₀`. Translating by `g ∈ SU(1 + n)` gives the section
-`p ↦ g R(gᴴ p) D(gᴴ p)` over the open set `⟪g e₀, p⟫ ≠ 0` of the sphere. The chart of such a
+`y₀ ≠ 0`, which contains `e₀` (`Matrix.contDiffOn_householderSpecialUnitary`). Translating by
+`g ∈ SU(1 + n)` gives the section `p ↦ g R(gᴴ p) D(gᴴ p)` over the open set `⟪g e₀, p⟫ ≠ 0` of the
+sphere (`TauCeti.specialUnitarySphereLocalSection`). The chart of such a
 section `s` sends `A` to `(A e₀, s(A e₀)⁻¹ A)`, read in `SU(n)` through its lower right block
 (`Subgroup.localSectionTrivializationOfCosetFibers`), and its inverse sends `(p, B)` to
 `s(p) diag(1, B)`. Both are smooth, because the group operations of `SU(1 + n)` are.
@@ -46,6 +48,8 @@ points.
 
 ## Main definitions
 
+* `TauCeti.specialUnitarySphereLocalSection g`: the smooth local section of `A ↦ A e₀` over
+  `⟪g e₀, p⟫ ≠ 0`.
 * `TauCeti.specialUnitarySphereTrivialization g`: the smooth chart over `⟪g e₀, p⟫ ≠ 0`, with fibre
   `SU(n)`.
 * `TauCeti.specialUnitarySphereAtlas n`: an atlas of these charts, one around each point of the
@@ -54,6 +58,12 @@ points.
 ## Main results
 
 * `TauCeti.contMDiff_specialUnitarySphereMap`: `A ↦ A e₀` is smooth.
+* `TauCeti.specialUnitarySphereMap_specialUnitarySphereLocalSection`,
+  `TauCeti.contMDiffOn_specialUnitarySphereLocalSection`: the local sections are smooth sections.
+* `TauCeti.specialUnitarySphereTrivialization_symm_apply`,
+  `TauCeti.coe_specialUnitarySphereTrivialization_apply_snd`: the inverse chart is
+  `(p, B) ↦ s(p) diag(1, B)`, and the fibre coordinate of `A` is the lower right block of
+  `s(A e₀)⁻¹ A`.
 * `TauCeti.contMDiffOn_specialUnitarySphereTrivialization`,
   `TauCeti.contMDiffOn_specialUnitarySphereTrivialization_symm`: the charts are diffeomorphisms
   between their source and target.
@@ -87,67 +97,9 @@ open finiteOrthonormalFrame
 
 variable {n : ℕ}
 
-/-! ### A special unitary matrix with prescribed first column -/
-
-/-- The special unitary matrix `Matrix.householderSpecialUnitary` with first column `y`, built from
-the Householder reflection in `ω e₀ + y` and the diagonal matrix `diag(-ω, conj ω, 1, …, 1)`, for
-the phase `ω` of `y₀`. -/
-private def sphereSectionMatrix [NeZero n] (y : EuclideanSpace ℂ (Fin (1 + n))) :
-    Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ :=
-  householderSpecialUnitary 0 (Fin.natAdd 1 0) (WithLp.ofLp y)
-
-variable {y : EuclideanSpace ℂ (Fin (1 + n))}
-
 private theorem natAdd_one_zero_ne_zero [NeZero n] :
     (Fin.natAdd 1 (0 : Fin n) : Fin (1 + n)) ≠ 0 :=
   fun h ↦ by simpa using congrArg Fin.val h
-
-private theorem sphereSectionMatrix_mem_specialUnitaryGroup [NeZero n] (hy : ‖y‖ = 1)
-    (h0 : y 0 ≠ 0) : sphereSectionMatrix y ∈ specialUnitaryGroup (Fin (1 + n)) ℂ := by
-  have hyy : star (WithLp.ofLp y) ⬝ᵥ WithLp.ofLp y = 1 := by
-    rw [dotProduct_comm, ← EuclideanSpace.inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K,
-      hy]
-    simp
-  exact householderSpecialUnitary_mem_specialUnitaryGroup hyy h0 natAdd_one_zero_ne_zero
-
-/-- The first column of the section matrix of `y` is `y`. -/
-private theorem sphereSectionMatrix_mulVec_single_zero [NeZero n] (h0 : y 0 ≠ 0) :
-    sphereSectionMatrix y *ᵥ Pi.single 0 1 = WithLp.ofLp y :=
-  householderSpecialUnitary_mulVec_single h0
-
-/-- The section matrix depends smoothly on `y` where `y₀ ≠ 0`: its entries are built from the
-coordinates of `y`, their conjugates, the phase `y₀ / |y₀|` and `(1 + |y₀|)⁻¹`. -/
-private theorem contDiffOn_sphereSectionMatrix [NeZero n] :
-    ContDiffOn ℝ ∞ (sphereSectionMatrix (n := n)) {y | y 0 ≠ 0} := by
-  set s : Set (EuclideanSpace ℂ (Fin (1 + n))) := {y | y 0 ≠ 0}
-  have hcoord (i : Fin (1 + n)) : ContDiff ℝ ∞ fun y : EuclideanSpace ℂ (Fin (1 + n)) ↦ y i :=
-    contDiff_piLp_apply (𝕜 := ℝ) 2
-  have hnorm : ContDiffOn ℝ ∞ (fun y : EuclideanSpace ℂ (Fin (1 + n)) ↦ ‖y 0‖) s :=
-    fun y hy ↦ ((contDiffAt_norm ℝ hy).comp y (hcoord 0).contDiffAt).contDiffWithinAt
-  have hphase : ContDiffOn ℝ ∞ (fun y : EuclideanSpace ℂ (Fin (1 + n)) ↦ ‖y 0‖⁻¹ • y 0) s :=
-    (hnorm.inv fun _ hy ↦ norm_ne_zero_iff.2 hy).smul (hcoord 0).contDiffOn
-  have hc : ContDiffOn ℝ ∞ (fun y : EuclideanSpace ℂ (Fin (1 + n)) ↦ (1 + ‖y 0‖)⁻¹) s :=
-    (contDiffOn_const.add hnorm).inv fun _ _ ↦ by positivity
-  have hstar {f : EuclideanSpace ℂ (Fin (1 + n)) → ℂ} (hf : ContDiffOn ℝ ∞ f s) :
-      ContDiffOn ℝ ∞ (fun y ↦ star (f y)) s :=
-    Complex.conjCLE.contDiff.comp_contDiffOn hf
-  have haxis (i : Fin (1 + n)) :
-      ContDiffOn ℝ ∞ (fun y ↦ householderSpecialUnitaryAxis 0 (WithLp.ofLp y) i) s := by
-    simp only [householderSpecialUnitaryAxis, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    exact (hphase.mul contDiffOn_const).add (hcoord i).contDiffOn
-  have hdiag (k : Fin (1 + n)) : ContDiffOn ℝ ∞
-      (fun y ↦ householderSpecialUnitaryDiag 0 (Fin.natAdd 1 0) (WithLp.ofLp y) k) s := by
-    simp only [householderSpecialUnitaryDiag, Function.update_apply, Pi.one_apply]
-    split_ifs
-    · exact hphase.neg
-    · exact hstar hphase
-    · exact contDiffOn_const
-  have hentries : ContDiffOn ℝ ∞ (fun y i k ↦ sphereSectionMatrix (n := n) y i k) s := by
-    refine contDiffOn_pi.2 fun i ↦ contDiffOn_pi.2 fun k ↦ ?_
-    simp only [sphereSectionMatrix, householderSpecialUnitary_apply]
-    exact (contDiffOn_const.sub (hc.smul ((haxis i).mul (hstar (haxis k))))).mul (hdiag k)
-  exact ((ofLinearEquiv ℝ : (Fin (1 + n) → Fin (1 + n) → ℂ) ≃ₗ[ℝ] _).toLinearMap
-    |>.toContinuousLinearMap).contDiff.comp_contDiffOn hentries
 
 /-! ### Smoothness of `A ↦ A e₀` -/
 
@@ -215,50 +167,96 @@ private theorem sphereRotate_apply_zero_ne_zero {g : specialUnitaryGroup (Fin (1
     sphereRotate g p 0 ≠ 0 := by
   rwa [sphereRotate_apply_zero]
 
+/-- On the sphere, `gᴴ p` is a unit vector. -/
+private theorem star_ofLp_sphereRotate_dotProduct (g : specialUnitaryGroup (Fin (1 + n)) ℂ)
+    (p : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1) :
+    star (WithLp.ofLp (sphereRotate g p)) ⬝ᵥ WithLp.ofLp (sphereRotate g p) = 1 := by
+  rw [dotProduct_comm, ← EuclideanSpace.inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K,
+    norm_sphereRotate, norm_eq_of_mem_sphere]
+  simp
+
+private theorem ofLp_sphereRotate (g : specialUnitaryGroup (Fin (1 + n)) ℂ)
+    (x : EuclideanSpace ℂ (Fin (1 + n))) :
+    WithLp.ofLp (sphereRotate g x) =
+      star (g : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ) *ᵥ WithLp.ofLp x := by
+  rw [sphereRotate, UnitaryGroup.toLinearIsometryEquiv_apply, WithLp.ofLp_toLp]
+
 variable [NeZero n]
 
 open Classical in
-/-- The local section `p ↦ g R(gᴴ p) D(gᴴ p)` of `A ↦ A e₀` over `⟪g e₀, p⟫ ≠ 0`, extended
-by `1`. -/
-private def sphereLocalSection (g : specialUnitaryGroup (Fin (1 + n)) ℂ)
+/-- **A smooth local section of `A ↦ A e₀`** over the open set `⟪g e₀, p⟫ ≠ 0` of the sphere, for
+`g ∈ SU(1 + n)`. It sends `p` to `g R D`, where `R D = Matrix.householderSpecialUnitary` is the
+special unitary matrix with first column `gᴴ p` built from a Householder reflection `R` and a
+diagonal phase correction `D`. Outside this set it is `1`. -/
+def specialUnitarySphereLocalSection (g : specialUnitaryGroup (Fin (1 + n)) ℂ)
     (p : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1) : specialUnitaryGroup (Fin (1 + n)) ℂ :=
   if hp : p ∈ sphereSectionDomain g then
-    g * ⟨sphereSectionMatrix (sphereRotate g p), sphereSectionMatrix_mem_specialUnitaryGroup
-      (by rw [norm_sphereRotate, norm_eq_of_mem_sphere]) (sphereRotate_apply_zero_ne_zero hp)⟩
+    g * ⟨householderSpecialUnitary 0 (Fin.natAdd 1 0) (WithLp.ofLp (sphereRotate g p)),
+      householderSpecialUnitary_mem_specialUnitaryGroup (star_ofLp_sphereRotate_dotProduct g p)
+        (sphereRotate_apply_zero_ne_zero hp) natAdd_one_zero_ne_zero⟩
   else 1
 
-private theorem coe_sphereLocalSection {g : specialUnitaryGroup (Fin (1 + n)) ℂ}
-    {p : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1} (hp : p ∈ sphereSectionDomain g) :
-    (sphereLocalSection g p : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ) =
-      g * sphereSectionMatrix (sphereRotate g p) := by
-  simp [sphereLocalSection, hp]
-
-private theorem specialUnitarySphereMap_sphereLocalSection
+private theorem coe_specialUnitarySphereLocalSection_of_mem
     {g : specialUnitaryGroup (Fin (1 + n)) ℂ} {p : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1}
-    (hp : p ∈ sphereSectionDomain g) : specialUnitarySphereMap n (sphereLocalSection g p) = p := by
-  -- The section matrix sends `e₀` to `gᴴ p`.
-  have hcol : sphereSectionMatrix (sphereRotate g p) *ᵥ Pi.single 0 1 =
-      star (g : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ) *ᵥ
+    (hp : p ∈ sphereSectionDomain g) :
+    (specialUnitarySphereLocalSection g p : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ) =
+      g * householderSpecialUnitary 0 (Fin.natAdd 1 0) (WithLp.ofLp (sphereRotate g p)) := by
+  simp [specialUnitarySphereLocalSection, hp]
+
+/-- Over `⟪g e₀, p⟫ ≠ 0`, the local section through `g` is `g R D`, for the special unitary matrix
+`R D = Matrix.householderSpecialUnitary` with first column `gᴴ p`. -/
+theorem coe_specialUnitarySphereLocalSection {g : specialUnitaryGroup (Fin (1 + n)) ℂ}
+    {p : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1}
+    (hp : ⟪(specialUnitarySphereMap n g : EuclideanSpace ℂ (Fin (1 + n))), p⟫_ℂ ≠ 0) :
+    (specialUnitarySphereLocalSection g p : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ) =
+      g * householderSpecialUnitary 0 (Fin.natAdd 1 0)
+        (star (g : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ) *ᵥ
+          WithLp.ofLp (p : EuclideanSpace ℂ (Fin (1 + n)))) := by
+  rw [coe_specialUnitarySphereLocalSection_of_mem hp, ofLp_sphereRotate]
+
+/-- Over `⟪g e₀, p⟫ ≠ 0`, the local section through `g` is a section of `A ↦ A e₀`. -/
+theorem specialUnitarySphereMap_specialUnitarySphereLocalSection
+    {g : specialUnitaryGroup (Fin (1 + n)) ℂ} {p : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1}
+    (hp : ⟪(specialUnitarySphereMap n g : EuclideanSpace ℂ (Fin (1 + n))), p⟫_ℂ ≠ 0) :
+    specialUnitarySphereMap n (specialUnitarySphereLocalSection g p) = p := by
+  -- The Householder factor sends `e₀` to `gᴴ p`.
+  have hcol : householderSpecialUnitary 0 (Fin.natAdd 1 0) (WithLp.ofLp (sphereRotate g p)) *ᵥ
+      Pi.single 0 1 = star (g : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ) *ᵥ
         WithLp.ofLp (p : EuclideanSpace ℂ (Fin (1 + n))) := by
-    rw [sphereSectionMatrix_mulVec_single_zero (sphereRotate_apply_zero_ne_zero hp), sphereRotate,
-      UnitaryGroup.toLinearIsometryEquiv_apply, WithLp.ofLp_toLp]
+    rw [householderSpecialUnitary_mulVec_single (sphereRotate_apply_zero_ne_zero hp),
+      ofLp_sphereRotate]
   -- So the section sends `e₀` to `g gᴴ p = p`.
   ext1
-  rw [coe_specialUnitarySphereMap, coe_sphereLocalSection hp, ← mulVec_single_one,
-    ← mulVec_mulVec, hcol]
+  rw [coe_specialUnitarySphereMap, coe_specialUnitarySphereLocalSection_of_mem hp,
+    ← mulVec_single_one, ← mulVec_mulVec, hcol]
   simp [mulVec_mulVec, Unitary.mul_star_self_of_mem g.property.1]
 
-private theorem contMDiffOn_sphereLocalSection (g : specialUnitaryGroup (Fin (1 + n)) ℂ) :
+private theorem contMDiffOn_specialUnitarySphereLocalSection_sphereSectionDomain
+    (g : specialUnitaryGroup (Fin (1 + n)) ℂ) :
     ContMDiffOn (𝓡 (2 * n + 1)) (specialUnitaryGroup.model (Fin (1 + n)) ℂ) ∞
-      (sphereLocalSection g) (sphereSectionDomain g) := by
+      (specialUnitarySphereLocalSection g) (sphereSectionDomain g) := by
   rw [specialUnitaryGroup.contMDiffOn_iff]
-  have h : ContDiffOn ℝ ∞ (fun y ↦ (g : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ) *
-      sphereSectionMatrix (sphereRotate g y)) {y | sphereRotate g y 0 ≠ 0} :=
-    contDiffOn_const.mul (contDiffOn_sphereSectionMatrix.comp (contDiff_sphereRotate g).contDiffOn
-      fun _ hy ↦ hy)
-  refine (h.contMDiffOn.comp contMDiff_coe_sphere.contMDiffOn fun p hp ↦ ?_).congr
-    fun p hp ↦ coe_sphereLocalSection hp
+  set s : Set (EuclideanSpace ℂ (Fin (1 + n))) := {y | sphereRotate g y 0 ≠ 0}
+  -- The Householder factor is smooth entrywise, hence for the operator norm on matrices.
+  have hE : ContDiffOn ℝ ∞ (fun y k l ↦
+      householderSpecialUnitary 0 (Fin.natAdd 1 0) (WithLp.ofLp (sphereRotate g y)) k l) s :=
+    contDiffOn_pi.2 fun k ↦ contDiffOn_pi.2 fun l ↦
+      (contDiffOn_householderSpecialUnitary_apply 0 _ k l).comp
+        (PiLp.contDiff_ofLp.comp (contDiff_sphereRotate g)).contDiffOn fun _ hy ↦ hy
+  have hH : ContDiffOn ℝ ∞ (fun y ↦
+      householderSpecialUnitary 0 (Fin.natAdd 1 0) (WithLp.ofLp (sphereRotate g y))) s :=
+    ((ofLinearEquiv ℝ : (Fin (1 + n) → Fin (1 + n) → ℂ) ≃ₗ[ℝ] _).toLinearMap
+      |>.toContinuousLinearMap).contDiff.comp_contDiffOn hE
+  refine ((contDiffOn_const.mul hH).contMDiffOn.comp contMDiff_coe_sphere.contMDiffOn
+    fun p hp ↦ ?_).congr fun p hp ↦ coe_specialUnitarySphereLocalSection_of_mem hp
   exact sphereRotate_apply_zero_ne_zero hp
+
+/-- The local section through `g` is smooth on `⟪g e₀, p⟫ ≠ 0`. -/
+theorem contMDiffOn_specialUnitarySphereLocalSection (g : specialUnitaryGroup (Fin (1 + n)) ℂ) :
+    ContMDiffOn (𝓡 (2 * n + 1)) (specialUnitaryGroup.model (Fin (1 + n)) ℂ) ∞
+      (specialUnitarySphereLocalSection g)
+      {p | ⟪(specialUnitarySphereMap n g : EuclideanSpace ℂ (Fin (1 + n))), p⟫_ℂ ≠ 0} :=
+  contMDiffOn_specialUnitarySphereLocalSection_sphereSectionDomain g
 
 /-! ### The smooth charts -/
 
@@ -271,9 +269,9 @@ def specialUnitarySphereTrivialization (g : specialUnitaryGroup (Fin (1 + n)) �
   (Subgroup.localSectionTrivializationOfCosetFibers
     (specialUnitaryStabilizer ℂ (Nat.le_add_right 1 n)) (continuous_specialUnitarySphereMap ℂ n)
     (fun _ _ ↦ specialUnitarySphereMap_eq_specialUnitarySphereMap_iff) (sphereSectionDomain g)
-    (isOpen_sphereSectionDomain g) (sphereLocalSection g)
-    (contMDiffOn_sphereLocalSection g).continuousOn
-    fun _ hp ↦ specialUnitarySphereMap_sphereLocalSection hp).transFiberHomeomorph
+    (isOpen_sphereSectionDomain g) (specialUnitarySphereLocalSection g)
+    (contMDiffOn_specialUnitarySphereLocalSection_sphereSectionDomain g).continuousOn
+    fun _ hp ↦ specialUnitarySphereMap_specialUnitarySphereLocalSection hp).transFiberHomeomorph
     (specialUnitaryStabilizerHomeomorph ℂ 1 n).symm
 
 /-- The chart through `g` lives over the points `p` of the sphere with `⟪g e₀, p⟫ ≠ 0`. -/
@@ -290,12 +288,13 @@ theorem mem_specialUnitarySphereTrivialization_baseSet (g : specialUnitaryGroup 
   rw [specialUnitarySphereTrivialization_baseSet]
   exact mem_sphereSectionDomain g
 
-/-- The inverse of the chart through `g` sends `(p, B)` to `s(p) diag(1, B)`. -/
-private theorem specialUnitarySphereTrivialization_symm_apply
+/-- The inverse of the chart through `g` sends `(p, B)` to `s(p) diag(1, B)`, for the local section
+`s = TauCeti.specialUnitarySphereLocalSection g`. -/
+theorem specialUnitarySphereTrivialization_symm_apply
     (g : specialUnitaryGroup (Fin (1 + n)) ℂ)
     (x : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1 × specialUnitaryGroup (Fin n) ℂ) :
     (specialUnitarySphereTrivialization g).toOpenPartialHomeomorph.symm x =
-      sphereLocalSection g x.1 * specialUnitaryGroup.fromBlocksOne ℂ 1 n x.2 := by
+      specialUnitarySphereLocalSection g x.1 * specialUnitaryGroup.fromBlocksOne ℂ 1 n x.2 := by
   rw [specialUnitarySphereTrivialization, Bundle.Trivialization.transFiberHomeomorph_symm_apply,
     Homeomorph.symm_symm, Subgroup.localSectionTrivializationOfCosetFibers_symm_apply,
     coe_specialUnitaryStabilizerHomeomorph_apply]
@@ -311,6 +310,22 @@ theorem specialUnitarySphereTrivialization_symm_apply_mul
         specialUnitaryGroup.fromBlocksOne ℂ 1 n C := by
   rw [specialUnitarySphereTrivialization_symm_apply, specialUnitarySphereTrivialization_symm_apply,
     map_mul, mul_assoc]
+
+/-- On its source, the chart through `g` sends `A` to `(A e₀, B)`, where `B` is the lower right
+block of `s(A e₀)⁻¹ A`, for the local section `s = TauCeti.specialUnitarySphereLocalSection g`. -/
+theorem coe_specialUnitarySphereTrivialization_apply_snd {g : specialUnitaryGroup (Fin (1 + n)) ℂ}
+    {A : specialUnitaryGroup (Fin (1 + n)) ℂ}
+    (hA : A ∈ (specialUnitarySphereTrivialization g).source) :
+    (((specialUnitarySphereTrivialization g A).2 : specialUnitaryGroup (Fin n) ℂ) :
+      Matrix (Fin n) (Fin n) ℂ) =
+      (((specialUnitarySphereLocalSection g (specialUnitarySphereMap n A))⁻¹ * A :
+        specialUnitaryGroup (Fin (1 + n)) ℂ) : Matrix (Fin (1 + n)) (Fin (1 + n)) ℂ).submatrix
+        (Fin.natAdd 1) (Fin.natAdd 1) := by
+  rw [Bundle.Trivialization.mem_source, specialUnitarySphereTrivialization_baseSet] at hA
+  simp only [specialUnitarySphereTrivialization, Bundle.Trivialization.transFiberHomeomorph_apply,
+    coe_specialUnitaryStabilizerHomeomorph_symm_apply]
+  rw [Subgroup.localSectionTrivializationOfCosetFibers_fiberCoordinate
+    (π := specialUnitarySphereMap (𝕜 := ℂ) n) (U := sphereSectionDomain g) (g := A) hA]
 
 /-- The chart `A ↦ (A e₀, B)`, with `diag(1, B) = s(A e₀)⁻¹ A`, is smooth on its source. -/
 theorem contMDiffOn_specialUnitarySphereTrivialization (g : specialUnitaryGroup (Fin (1 + n)) ℂ) :
@@ -330,21 +345,17 @@ theorem contMDiffOn_specialUnitarySphereTrivialization (g : specialUnitaryGroup 
       map_smul' _ _ := rfl }
   have hs : ContMDiffOn (specialUnitaryGroup.model (Fin (1 + n)) ℂ)
       (specialUnitaryGroup.model (Fin (1 + n)) ℂ) ∞
-      (fun A ↦ (sphereLocalSection g (specialUnitarySphereMap n A))⁻¹ * A) e.source := by
+      (fun A ↦ (specialUnitarySphereLocalSection g (specialUnitarySphereMap n A))⁻¹ * A)
+      e.source := by
     rw [hsrc]
-    exact ((contMDiffOn_sphereLocalSection g).comp contMDiff_specialUnitarySphereMap.contMDiffOn
-      fun _ hA ↦ hA).inv.mul contMDiffOn_id
+    exact ((contMDiffOn_specialUnitarySphereLocalSection g).comp
+      contMDiff_specialUnitarySphereMap.contMDiffOn fun _ hA ↦ hA).inv.mul contMDiffOn_id
   have h₂ : ContMDiffOn (specialUnitaryGroup.model (Fin (1 + n)) ℂ)
       (specialUnitaryGroup.model (Fin n) ℂ) ∞ (fun A ↦ (e A).2) e.source := by
     rw [specialUnitaryGroup.contMDiffOn_iff]
     refine (S.toContinuousLinearMap.contDiff.contMDiff.comp_contMDiffOn
       (specialUnitaryGroup.contMDiff_val.comp_contMDiffOn hs)).congr fun A hA ↦ ?_
-    rw [hsrc] at hA
-    simp only [e, specialUnitarySphereTrivialization,
-      Bundle.Trivialization.transFiberHomeomorph_apply,
-      coe_specialUnitaryStabilizerHomeomorph_symm_apply, Function.comp_apply]
-    rw [Subgroup.localSectionTrivializationOfCosetFibers_fiberCoordinate
-      (π := specialUnitarySphereMap (𝕜 := ℂ) n) (U := sphereSectionDomain g) (g := A) hA]
+    rw [coe_specialUnitarySphereTrivialization_apply_snd hA]
     -- The right side is `S` applied to the same matrix; `S` is the structure literal above, whose
     -- application `simp [S]` and `LinearMap.coe_mk` do not reduce, so close by its definition.
     rfl
@@ -359,8 +370,8 @@ theorem contMDiffOn_specialUnitarySphereTrivialization_symm
       (specialUnitarySphereTrivialization g).target := by
   rw [(specialUnitarySphereTrivialization g).target_eq]
   -- The inverse chart is `(p, B) ↦ s(p) * diag(1, B)`.
-  refine (((contMDiffOn_sphereLocalSection g).comp contMDiffOn_fst
-    fun _ hp ↦ by simpa [sphereSectionDomain] using (mem_prod.1 hp).1).mul
+  refine (((contMDiffOn_specialUnitarySphereLocalSection_sphereSectionDomain g).comp
+    contMDiffOn_fst fun _ hp ↦ by simpa [sphereSectionDomain] using (mem_prod.1 hp).1).mul
     ((specialUnitaryGroup.contMDiff_fromBlocksOne 1 n).comp contMDiff_snd).contMDiffOn).congr
     fun x _ ↦ specialUnitarySphereTrivialization_symm_apply g x
 
