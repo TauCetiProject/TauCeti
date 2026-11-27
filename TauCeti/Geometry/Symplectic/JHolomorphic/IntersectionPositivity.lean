@@ -17,9 +17,11 @@ Let `J : V → (V →L[ℝ] V)` be an almost complex structure on a real normed 
 dimension four, written in coordinates, and let `u₀ : ℂ → V` be a `J`-holomorphic disc,
 `∂ₛu₀ + J(u₀) ∂ₜu₀ = 0`, immersed at a point `a₀`. The structure `J` need not be integrable. This
 file proves that `J`-holomorphic discs meet `u₀` near `u₀ a₀` positively: for a `C¹`
-`J`-holomorphic disc with values in the target of a chart adapted to `u₀`, whose preimage of `u₀`
-is compact, the zero charge (`ContinuousMap.zeroCharge`) of the disc, counting its intersections
-with `u₀` with their topological multiplicities, is positive as soon as the disc meets `u₀`.
+`J`-holomorphic disc with values in the target of a chart `e` adapted to `u₀`, write
+`u₀ {a | (a, 0) ∈ e.source}` for the piece of `u₀` flattened by `e`. If the preimage of this piece
+under the disc is compact, the zero charge (`ContinuousMap.zeroCharge`) of the disc, counting its
+intersections with this piece with their topological multiplicities, is positive as soon as the
+disc meets this piece.
 
 * **Adapted coordinates with a complex normal coordinate.** In dimension four the normal space of
   `u₀` is a complex line, so the coordinates adapted to `u₀` of
@@ -27,16 +29,17 @@ with `u₀` with their topological multiplicities, is positive as soon as the di
   `ℂ × ℂ`, and shrunk so that the structure read in them differs from `i` by at most a constant
   times the normal coordinate on their whole source
   (`TauCeti.exists_holomorphicAdaptedChart_complex_norm_pullbackEnd_sub_le`). In such a chart `e`,
-  the disc `u₀` is the zero section, and a point `x` of the target of `e` lies on `u₀` exactly
-  when its normal coordinate `(e.symm x).2` vanishes
-  (`OpenPartialHomeomorph.isImage_of_coe_eq_normalExtension`).
+  the disc `u₀` is the zero section: a point `x` of the target of `e` lies on the piece
+  `u₀ {a | (a, 0) ∈ e.source}` of `u₀` flattened by `e` exactly when its normal coordinate
+  `(e.symm x).2` vanishes (`OpenPartialHomeomorph.isImage_of_coe_eq_normalExtension`). Other parts
+  of `u₀` passing through the target of `e` need not have vanishing normal coordinate.
 * **Positivity.** For a `C¹` `J`-holomorphic disc `u` in the target of such a chart, the normal
   coordinate `b = (e.symm ∘ u).2` satisfies the Cauchy–Riemann inequality
   `‖∂ₛb + i ∂ₜb‖ ≤ C ‖∂ₜ(e.symm ∘ u)‖ ‖b‖` (`TauCeti.norm_fderiv_snd_add_I_smul_le`). By the
   similarity principle `b` is, near each of its zeros, a nonvanishing continuous function times a
-  holomorphic function, so each intersection of `u` with `u₀` that is isolated has positive local
-  index, and the intersections of a disc whose preimage of `u₀` is compact are isolated. So the
-  zero charge of such a disc for the normal coordinate is positive when the disc meets `u₀`
+  holomorphic function, so each zero of `b` that is isolated has positive local index, and the
+  zeros of `b` are isolated when they form a compact set. So the zero charge of such a disc for
+  the normal coordinate is positive when the normal coordinate vanishes somewhere
   (`TauCeti.zeroCharge_pos_of_cauchyRiemann`, from
   `ContinuousMap.zeroCharge_pos_of_norm_le`).
 
@@ -140,7 +143,8 @@ a `J`-holomorphic map of class `C¹` on the unit disc with values in the target 
 be a continuous disc in a space `Y` and `f : Y → ℂ` continuous with `f ∘ σ` the normal coordinate
 `(e.symm ∘ u).2` of `u`. If `σ⁻¹(f⁻¹(0))` is compact and nonempty, the zero charge of `σ` is
 positive. When `e` is adapted to a disc `u₀`, the zeros of `f ∘ σ` are the intersections of `u`
-with `u₀`, and the charge counts them with multiplicity. -/
+with the piece `u₀ {a | (a, 0) ∈ e.source}` of `u₀` flattened by `e`, and the charge counts them
+with multiplicity. -/
 theorem zeroCharge_pos_of_cauchyRiemann {e : OpenPartialHomeomorph (ℂ × ℂ) V} {C : ℝ}
     (he : ContDiffOn ℝ 1 e e.source) (hes : ContDiffOn ℝ 1 e.symm e.target)
     (hC : ∀ p ∈ e.source,
