@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Binomial
-public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.Data.List.OfFn
 public import Mathlib.Algebra.Algebra.Operations
 
 /-!
@@ -42,56 +40,6 @@ open scoped Pointwise
 
 variable {R : Type*} [Ring R] [BinomialRing R]
 
-/-- Multiplication in the bounded one-variable integral binomial spans adds degree bounds. -/
-theorem mul_mem_span_ringChoose_Iic (x : R) {u v : R} {m n : ℕ}
-    (hu : u ∈ span ℤ (Ring.choose x '' Set.Iic m))
-    (hv : v ∈ span ℤ (Ring.choose x '' Set.Iic n)) :
-    u * v ∈ span ℤ (Ring.choose x '' Set.Iic (m + n)) := by
-  have hmul : span ℤ (Ring.choose x '' Set.Iic m) *
-      span ℤ (Ring.choose x '' Set.Iic n) ≤
-      span ℤ (Ring.choose x '' Set.Iic (m + n)) := by
-    rw [span_mul_span, span_le]
-    rintro _ ⟨_, ⟨i, hi, rfl⟩, _, ⟨j, hj, rfl⟩, rfl⟩
-    dsimp only
-    rw [ringChoose_mul_ringChoose]
-    refine sum_mem fun ab hab => ?_
-    apply nsmul_mem
-    apply subset_span
-    refine ⟨i + ab.1, ?_, rfl⟩
-    apply Set.mem_Iic.mpr
-    simp only [Set.mem_Iic] at hi hj
-    have := mem_antidiagonal.mp hab
-    omega
-  exact hmul (mul_mem_mul hu hv)
-
-/-- An integer multiple of an argument has its degree-`n` binomial coefficient in the integral
-span of the original coefficients through degree `n`. -/
-theorem ringChoose_zsmul_mem_span_ringChoose_Iic (x : R) (z : ℤ) (n : ℕ) :
-    Ring.choose (z • x) n ∈ span ℤ (Ring.choose x '' Set.Iic n) := by
-  have hnat (m : ℕ) : ∀ k, Ring.choose (m • x) k ∈
-      span ℤ (Ring.choose x '' Set.Iic k) := by
-    induction m with
-    | zero =>
-      intro k
-      cases k with
-      | zero => simpa using (subset_span ⟨0, Set.mem_Iic.mpr le_rfl, rfl⟩ :
-          Ring.choose x 0 ∈ span ℤ (Ring.choose x '' Set.Iic 0))
-      | succ k => simp [Ring.choose_zero_succ]
-    | succ m ih =>
-      intro k
-      rw [succ_nsmul, Ring.add_choose_eq k ((Commute.refl x).smul_left m)]
-      refine sum_mem fun ab hab => ?_
-      rw [← mem_antidiagonal.mp hab]
-      exact mul_mem_span_ringChoose_Iic x (ih ab.1)
-        (subset_span ⟨ab.2, Set.mem_Iic.mpr le_rfl, rfl⟩)
-  cases z with
-  | ofNat m => simpa only [Int.ofNat_eq_natCast, natCast_zsmul] using hnat m n
-  | negSucc m =>
-    rw [negSucc_zsmul]
-    apply Ring.choose_neg_mem (A := (span ℤ (Ring.choose x '' Set.Iic n)).toAddSubgroup)
-    intro k hk
-    exact span_mono (Set.image_mono (Set.Iic_subset_Iic.mpr hk)) (hnat (m + 1) k)
-
 /-- The integral span of ordered binomial products with total degree at most `n`. No
 commutativity or independence of the family is required to define the span. -/
 def ringChooseFilteredSpan {r : ℕ} (h : Fin r → R) (n : ℕ) : Submodule ℤ R :=
@@ -103,6 +51,15 @@ theorem ringChooseFilteredSpan_def {r : ℕ} (h : Fin r → R) (n : ℕ) :
     ringChooseFilteredSpan h n =
       span ℤ ((fun a : Fin r → ℕ => (List.ofFn fun i => Ring.choose (h i) (a i)).prod) ''
         {a | ∑ i, a i ≤ n}) := (rfl)
+
+/-- Membership in a stage is equivalent to a finite integral expansion indexed by
+multi-indices of total degree at most the stage bound. -/
+theorem mem_ringChooseFilteredSpan_iff {r : ℕ} (h : Fin r → R) (n : ℕ) (x : R) :
+    x ∈ ringChooseFilteredSpan h n ↔
+      ∃ c : {a : Fin r → ℕ // ∑ i, a i ≤ n} →₀ ℤ,
+        c.sum (fun a z => z • (List.ofFn fun i => Ring.choose (h i) (a.val i)).prod) = x := by
+  rw [ringChooseFilteredSpan_def, Set.image_eq_range]
+  exact Finsupp.mem_span_range_iff_exists_finsupp
 
 /-- Every ordered binomial product belongs to the stage given by its total degree. -/
 theorem prod_ofFn_ringChoose_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
@@ -129,17 +86,13 @@ theorem toAddSubgroup_iSup_ringChooseFilteredSpan_eq_closure {r : ℕ} (h : Fin 
     (⨆ n, ringChooseFilteredSpan h n).toAddSubgroup =
       AddSubgroup.closure
         (Set.range fun a : Fin r → ℕ => (List.ofFn fun i => Ring.choose (h i) (a i)).prod) := by
-  rw [← span_int_eq_addSubgroupClosure]
-  apply congrArg Submodule.toAddSubgroup
-  apply le_antisymm
-  · refine iSup_le fun n => ?_
-    rw [ringChooseFilteredSpan_le_iff]
-    intro a _
-    exact subset_span ⟨a, rfl⟩
-  · rw [span_le]
-    rintro _ ⟨a, rfl⟩
-    exact mem_iSup_of_mem (∑ i, a i)
-      (prod_ofFn_ringChoose_mem_ringChooseFilteredSpan h a le_rfl)
+  simp_rw [ringChooseFilteredSpan_def]
+  rw [iSup_span, ← Set.image_iUnion]
+  have hcuts : (⋃ n : ℕ, {a : Fin r → ℕ | ∑ i, a i ≤ n}) = Set.univ := by
+    ext a
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+    exact ⟨∑ i, a i, le_rfl⟩
+  rw [hcuts, Set.image_univ, span_int_eq_addSubgroupClosure]
 
 /-- Every stage contains one, the product with all exponents zero. -/
 @[simp]
@@ -157,6 +110,21 @@ theorem ringChooseFilteredSpan_fin_zero (h : Fin 0 → R) (n : ℕ) :
     intro a _
     simp
   · exact span_le.mpr (Set.singleton_subset_iff.mpr (one_mem_ringChooseFilteredSpan h n))
+
+/-- For a singleton family, a stage is the integral span of its coefficients through the
+specified degree. -/
+@[simp]
+theorem ringChooseFilteredSpan_fin_one (h : Fin 1 → R) (n : ℕ) :
+    ringChooseFilteredSpan h n = span ℤ (Ring.choose (h 0) '' Set.Iic n) := by
+  apply le_antisymm
+  · rw [ringChooseFilteredSpan_le_iff]
+    intro a ha
+    simpa using (subset_span ⟨a 0, Set.mem_Iic.mpr (by simpa using ha), rfl⟩ :
+      Ring.choose (h 0) (a 0) ∈ span ℤ (Ring.choose (h 0) '' Set.Iic n))
+  · rw [span_le]
+    rintro _ ⟨k, hk, rfl⟩
+    simpa using prod_ofFn_ringChoose_mem_ringChooseFilteredSpan h (fun _ => k)
+      (n := n) (by simpa using hk)
 
 /-- The degree-zero stage consists of the integral multiples of one. -/
 @[simp]
@@ -224,7 +192,8 @@ theorem mul_le_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
     simpa only [List.ofFn_succ, List.prod_cons, hswap.mul_mul_mul_comm,
       ← Fin.tail_def, Fin.cons_self_tail] using hmem
 
-/-- Products of elements in two stages lie in the stage with the sum of their bounds. -/
+/-- For a commuting family, products of elements in two stages lie in the stage with the sum
+of their bounds. -/
 theorem mul_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
     (hcomm : ∀ i j, Commute (h i) (h j)) {u v : R} {m n : ℕ}
     (hu : u ∈ ringChooseFilteredSpan h m) (hv : v ∈ ringChooseFilteredSpan h n) :
@@ -258,7 +227,7 @@ theorem ringChoose_sum_zsmul_add_intCast_mem_ringChooseFilteredSpan {r : ℕ} (h
     (hcomm : ∀ i j, Commute (h i) (h j)) (z : Fin r → ℤ) (c : ℤ) (n : ℕ) :
     Ring.choose ((∑ i, z i • h i) + (c : R)) n ∈ ringChooseFilteredSpan h n := by
   apply Ring.choose_add_intCast_mem
-    (A := (ringChooseFilteredSpan h n).toAddSubgroup) (z := c)
+    (A := ringChooseFilteredSpan h n) (z := c)
   intro k hk
   exact ringChooseFilteredSpan_mono h hk
     (ringChoose_sum_zsmul_mem_ringChooseFilteredSpan h hcomm z k)

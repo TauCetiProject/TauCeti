@@ -49,7 +49,7 @@ example {x y : R} (hxy : Commute x y) :
   simp only [hchoose, nsmul_eq_mul, Nat.cast_ofNat]
   noncomm_ring [hxy.eq]
 
--- The quadratic expression above has value one at x = 0, y = 2, not zero.
+-- The quadratic expression above has value one at x = 0, y = 2.
 example : Ring.choose (2 * (0 : R) - 2 + 1) 2 = 1 := by
   have harg : 2 * (0 : R) - 2 + 1 = -1 := by
     rw [mul_zero, zero_sub, ← one_add_one_eq_two]
