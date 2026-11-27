@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.PathCategory.Basic
+public import Mathlib.CategoryTheory.Category.Quiv
 
 /-!
 # The path category of an explicit quiver, on the original objects
@@ -76,13 +76,10 @@ theorem map_eq_mapPath {O₁ : Type u₁} [Q₁ : Quiver.{h₁} O₁]
     {a b : O₁} (p : @Quiver.Path O₁ Q₁ a b) :
     F.map p = @Prefunctor.mapPath O₁ Q₁ O₂ Q₂ ⟨F.obj, map⟩ a b p := by
   let φ : @Prefunctor O₁ Q₁ O₂ Q₂ := ⟨F.obj, map⟩
-  let G : Paths O₁ ⥤ Paths O₂ :=
-    { obj := φ.obj
-      map := φ.mapPath
-      map_id := fun _ ↦ rfl
-      map_comp := fun p q ↦ φ.mapPath_comp p q }
-  have h : F = G := Paths.ext_functor rfl (fun a b f ↦ by
-    simpa [G, φ] using hmap f)
+  have h : F = Cat.freeMap φ := by
+    apply Paths.ext_functor (F := F) (G := Cat.freeMap φ) rfl
+    intro a b f
+    convert! hmap f using 1
   exact eq_of_heq (Functor.hcongr_hom h p)
 
 end CategoryTheory.Functor
