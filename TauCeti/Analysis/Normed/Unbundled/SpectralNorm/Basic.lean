@@ -54,7 +54,9 @@ Mathlib's `NormedAlgebra.norm_eq_spectralNorm`), giving `‖x‖ ^ d = ‖a₀�
 * `Polynomial.spectralValue_map_iterateFrobenius_le`: mapping a polynomial over a reduced
   seminormed commutative ring by `iterateFrobenius R p n` bounds its `spectralValue` by
   `spectralValue P ^ p ^ n`.
-* `AlgHom.spectralNorm_map`: `K`-algebra homomorphisms of fields preserve `spectralNorm K`.
+* `AlgHom.spectralNorm_map` and `AlgHom.spectralValue_minpoly_map_le`: `K`-algebra maps
+  of fields preserve `spectralNorm K`, and general `K`-algebra maps do not increase
+  `spectralValue (minpoly K ·)` on integral elements.
 * `RingEquiv.spectralNorm_eq_of_norm_eq`: compatible ring isomorphisms whose base map preserves
   norms preserve `spectralNorm`.
 * `Module.Dual.exists_bound_spectralNorm_of_tower`: in a field tower `K → L → N`, spectral
@@ -326,6 +328,16 @@ theorem spectralNorm_map {K : Type*} [NormedField K] {E L : Type*} [Field E]
   -- `spectralNorm K L y` is by definition `spectralValue (minpoly K y)`, and the injective map `ψ`
   -- preserves minimal polynomials.
   rw [spectralNorm, spectralNorm, minpoly.algHom_eq ψ ψ.injective]
+
+/-- Any `K`-algebra homomorphism over an ultrametric normed field does not increase
+`spectralValue (minpoly K ·)` at integral elements. -/
+theorem spectralValue_minpoly_map_le {K : Type*} [NormedField K] [IsUltrametricDist K]
+    {A B : Type*} [Ring A] [Ring B] [Algebra K A] [Algebra K B]
+    (φ : A →ₐ[K] B) {x : A} (hx : IsIntegral K x) :
+    spectralValue (minpoly K (φ x)) ≤ spectralValue (minpoly K x) := by
+  have hφx : IsIntegral K (φ x) := hx.map φ
+  refine (minpoly.monic hφx).spectralValue_le_of_dvd (minpoly.monic hx) (minpoly.dvd K (φ x) ?_)
+  rw [aeval_algHom_apply, minpoly.aeval, map_zero]
 
 end AlgHom
 

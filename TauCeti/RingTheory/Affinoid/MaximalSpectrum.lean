@@ -10,8 +10,8 @@ public import TauCeti.RingTheory.Affinoid.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Jacobson
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
 
+public import TauCeti.RingTheory.Spectrum.Maximal.Integral
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-import TauCeti.RingTheory.Spectrum.Maximal.Integral
 import TauCeti.RingTheory.Spectrum.Maximal.Topology
 
 /-!
@@ -82,6 +82,15 @@ theorem maximalSpectrumComap_asIdeal (hB : IsAffinoidAlgebra K B) (f : A →ₐ[
     (x : MaximalSpectrum B) :
     (hB.maximalSpectrumComap f x).asIdeal = x.asIdeal.comap f := (rfl)
 
+/-- For an integral algebra map into an affinoid algebra, `maximalSpectrumComap` agrees
+pointwise with `MaximalSpectrum.comapOfIsIntegral`. -/
+theorem maximalSpectrumComap_eq_comapOfIsIntegral (hB : IsAffinoidAlgebra K B)
+    (f : A →ₐ[K] B) (hf : f.toRingHom.IsIntegral) (x : MaximalSpectrum B) :
+    hB.maximalSpectrumComap f x = MaximalSpectrum.comapOfIsIntegral f.toRingHom hf x :=
+  MaximalSpectrum.ext
+    ((maximalSpectrumComap_asIdeal hB f x).trans
+      (MaximalSpectrum.comapOfIsIntegral_asIdeal f.toRingHom hf x).symm)
+
 @[simp]
 theorem maximalSpectrumComap_id (hA : IsAffinoidAlgebra K A) :
     hA.maximalSpectrumComap (AlgHom.id K A) = id := by
@@ -116,9 +125,7 @@ theorem maximalSpectrumComap_surjective (hB : IsAffinoidAlgebra K B) (f : A →�
   intro x
   obtain ⟨y, hy⟩ := MaximalSpectrum.comapOfIsIntegral_surjective_of_ker_le_jacobson f.toRingHom hf
     (((RingHom.injective_iff_ker_eq_bot _).mp hfi).trans_le bot_le) x
-  exact ⟨y, MaximalSpectrum.ext <| by
-    rw [hB.maximalSpectrumComap_asIdeal, ← hy,
-      MaximalSpectrum.comapOfIsIntegral_asIdeal_algHom]⟩
+  exact ⟨y, (hB.maximalSpectrumComap_eq_comapOfIsIntegral f hf y).trans hy⟩
 
 /-- The residue field of a maximal ideal of `A` is finite over the ground field when `A` maps
 integrally and injectively into an affinoid algebra, since the ideal lies under a maximal ideal

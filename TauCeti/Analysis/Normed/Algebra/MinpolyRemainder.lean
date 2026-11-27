@@ -41,6 +41,10 @@ open Polynomial
 
 namespace TauCeti
 
+private theorem degreeLTEquiv_apply {R : Type*} [Semiring R] (n : ℕ) (p : degreeLT R n)
+    (i : Fin n) : degreeLTEquiv R n p i = (p : R[X]).coeff i :=
+  (rfl)
+
 /-- For an element `a` of a Banach `K`-algebra `A` that is finite and torsion-free over a Noetherian
 integrally closed ultrametric Banach domain `B` (with continuous structure map `B → A`, where `K` is
 a nontrivially normed field), there is a constant `C > 0` such that every coefficient of
@@ -84,9 +88,11 @@ theorem exists_pos_norm_coeff_modByMonic_le_mul_norm_aeval (K : Type*) [Nontrivi
   by_cases hi : i < d
   · let c : Fin d → B := degreeLTEquiv B d ⟨r, hr_lt⟩
     have hΦ_c : Φ c = aeval a q := by
-      simp [Φ, ev, c, r, p]
+      change ev ((degreeLTEquiv B d).symm (degreeLTEquiv B d ⟨r, hr_lt⟩)) = aeval a q
+      rw [LinearEquiv.symm_apply_apply]
+      exact _root_.minpoly.aeval_modByMonic_minpoly q a
     calc
-      ‖r.coeff i‖ = ‖c ⟨i, hi⟩‖ := (rfl)
+      ‖r.coeff i‖ = ‖c ⟨i, hi⟩‖ := by dsimp only [c]; rw [degreeLTEquiv_apply]
       _ ≤ ‖c‖ := norm_le_pi_norm c ⟨i, hi⟩
       _ ≤ (C : ℝ) * ‖Φ c‖ := hC.le_mul_norm (map_zero Φ) c
       _ ≤ ((C : ℝ) + 1) * ‖aeval a q‖ := by

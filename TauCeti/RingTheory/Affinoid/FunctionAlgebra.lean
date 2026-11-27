@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Algebra.TransferInstance
 public import TauCeti.Analysis.Normed.Algebra.FunctionAlgebra
 public import TauCeti.RingTheory.Affinoid.QuotientNorm
-public import TauCeti.RingTheory.Affinoid.SpectralRadius
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 public import TauCeti.RingTheory.Huber.Uniform
 
@@ -44,6 +43,10 @@ In particular:
   `A` the identity is a bi-Lipschitz topological `K`-algebra isomorphism
   (`TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`), so `A` is uniform as a Huber ring
   (`TauCeti.IsAffinoidAlgebra.isUniform`).
+* Passing to `A ⧸ nilradical A` identifies `supSeminorm K` with `gelfandRadius` for any complete
+  `K`-algebra norm on an arbitrary affinoid algebra
+  (`TauCeti.IsAffinoidAlgebra.supSeminorm_eq_gelfandRadius`), without reducedness or
+  ultrametricity.
 * Combining the equivalence with `AlgHom.supSeminorm_apply_le_gelfandRadius`, every `K`-algebra
   homomorphism `φ : B →ₐ[K] A` from an arbitrary normed `K`-algebra `B` with summable geometric
   series (not assumed complete, commutative, ultrametric, Noetherian, or unital-norm-normalized)
@@ -61,7 +64,7 @@ In particular:
   algebra, its induced `1`-Lipschitz continuous algebra homomorphisms, and isometry criteria.
 * `TauCeti.IsAffinoidAlgebra.exists_norm_le_mul_supSeminorm`: [BGR, §6.2.4, Theorem 1].
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_gelfandRadius`: equality of `supSeminorm K` and
-  `gelfandRadius` for any complete `K`-algebra norm on a reduced affinoid algebra.
+  `gelfandRadius` for any complete `K`-algebra norm on an affinoid algebra (not assumed reduced).
 * `TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv` and `TauCeti.IsAffinoidAlgebra.isUniform`:
   topological `K`-algebra isomorphism with `SupNormModel` and Huber uniformity for reduced
   completely normed affinoid algebras.
@@ -335,6 +338,12 @@ elements. -/
     dist x y = supSeminorm K (x.ofSupNorm - y.ofSupNorm) := by
   rw [dist_eq_norm, norm_def, ofSupNorm_sub]
 
+/-- Two elements of `hA.SupNormModel` have distance zero if and only if their difference lies in
+the nilradical of `A`. -/
+theorem dist_eq_zero_iff (x y : hA.SupNormModel) :
+    dist x y = 0 ↔ x.ofSupNorm - y.ofSupNorm ∈ nilradical A := by
+  rw [dist_def, hA.supSeminorm_eq_zero_iff, mem_nilradical]
+
 noncomputable instance : NormedAlgebra K hA.SupNormModel where
   norm_smul_le c x := by
     rw [norm_def, norm_def, ofSupNorm_smul]
@@ -375,15 +384,21 @@ section Map
 variable {A B : Type*} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
   {hA : IsAffinoidAlgebra K A} {hB : IsAffinoidAlgebra K B}
 
+private def mapAlgHom (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
+    (φ : A →ₐ[K] B) : hA.SupNormModel →ₐ[K] hB.SupNormModel :=
+  (algEquiv hB).toAlgHom.comp (φ.comp (algEquiv hA).symm.toAlgHom)
+
+private theorem lipschitzWith_mapAlgHom (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
+    (φ : A →ₐ[K] B) : LipschitzWith 1 (mapAlgHom hA hB φ) :=
+  AddMonoidHomClass.lipschitz_of_bound_nnNorm (mapAlgHom hA hB φ) 1 fun x ↦ by
+    rw [← NNReal.coe_le_coe]
+    simpa [mapAlgHom] using hA.supSeminorm_map_le hB φ x.ofSupNorm
+
 /-- The `1`-Lipschitz continuous `K`-algebra homomorphism `hA.SupNormModel →A[K] hB.SupNormModel`
 induced by a `K`-algebra homomorphism `φ : A →ₐ[K] B` between affinoid algebras. -/
 noncomputable def map (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
     (φ : A →ₐ[K] B) : hA.SupNormModel →A[K] hB.SupNormModel :=
-  let f : hA.SupNormModel →ₐ[K] hB.SupNormModel :=
-    (algEquiv hB).toAlgHom.comp (φ.comp (algEquiv hA).symm.toAlgHom)
-  { f with
-    cont := AddMonoidHomClass.continuous_of_bound f 1 fun x ↦ by
-      simpa [f] using hA.supSeminorm_map_le hB φ x.ofSupNorm }
+  { mapAlgHom hA hB φ with cont := (lipschitzWith_mapAlgHom hA hB φ).continuous }
 
 /-- The underlying `K`-algebra homomorphism of `SupNormModel.map hA hB φ`. -/
 @[simp]
@@ -416,9 +431,7 @@ theorem map_comp {C : Type*} [CommRing C] [Algebra K C] {hC : IsAffinoidAlgebra 
 `1`-Lipschitz. -/
 theorem lipschitzWith_map (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
     (φ : A →ₐ[K] B) : LipschitzWith 1 (map hA hB φ) :=
-  AddMonoidHomClass.lipschitz_of_bound_nnNorm (map hA hB φ) 1 fun x ↦ by
-    rw [← NNReal.coe_le_coe]
-    simpa using hA.supSeminorm_map_le hB φ x.ofSupNorm
+  lipschitzWith_mapAlgHom hA hB φ
 
 /-- An induced homomorphism `SupNormModel.map hA hB φ` is an isometry whenever `φ` preserves
 the supremum seminorm. -/
@@ -451,15 +464,13 @@ private theorem completeSpace_of_isReduced [IsReduced A] : CompleteSpace hA.SupN
   have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
   have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
   obtain ⟨C, _, hbound⟩ := hA.exists_norm_le_mul_supSeminorm_of_isUltrametricDist
-  have hlip₂ : LipschitzWith (Real.toNNReal C) (ofSupNorm : hA.SupNormModel → A) :=
+  have hlip₂ : LipschitzWith (Real.toNNReal C) (equiv hA : hA.SupNormModel → A) :=
     AddMonoidHomClass.lipschitz_of_bound (algEquiv hA).symm C fun x ↦ by
-      simpa using hbound x.ofSupNorm
+      simpa only [coe_algEquiv_symm, norm_def] using hbound x.ofSupNorm
   let e : A ≃ᵤ hA.SupNormModel :=
-    { toEquiv := (algEquiv hA).toEquiv
-      uniformContinuous_toFun := by
-        simpa [Equiv.toFun_as_coe] using (lipschitzWith_toSupNorm (hA := hA)).uniformContinuous
-      uniformContinuous_invFun := by
-        simpa [Equiv.invFun_as_coe] using hlip₂.uniformContinuous }
+    { toEquiv := (equiv hA).symm
+      uniformContinuous_toFun := (lipschitzWith_toSupNorm (hA := hA)).uniformContinuous
+      uniformContinuous_invFun := hlip₂.uniformContinuous }
   exact e.completeSpace_iff.mp inferInstance
 
 /-- **Completeness of the supremum seminorm on an affinoid algebra**
@@ -493,12 +504,14 @@ theorem exists_pos_lipschitzWith_ofSupNorm [CompleteSpace A] [IsReduced A] :
     ∃ C : NNReal, 0 < C ∧ LipschitzWith C (ofSupNorm : hA.SupNormModel → A) := by
   let e : A ≃L[K] hA.SupNormModel :=
     (algEquiv hA).toLinearEquiv.toContinuousLinearEquivOfContinuous (by
-      simpa using (lipschitzWith_toSupNorm (hA := hA)).continuous)
+      rw [AlgEquiv.coe_toLinearEquiv, coe_algEquiv]
+      exact (lipschitzWith_toSupNorm (hA := hA)).continuous)
   let f : hA.SupNormModel →L[K] A := e.symm
   refine ⟨max ‖f‖₊ 1, zero_lt_one.trans_le (le_max_right _ _), ?_⟩
   have hcoe : ⇑f = ofSupNorm := by
     ext x
-    simp [f, e]
+    change ((algEquiv hA).symm x) = x.ofSupNorm
+    rw [coe_algEquiv_symm]
   rw [← hcoe]
   exact f.lipschitzWith.weaken (le_max_left _ _)
 
@@ -517,13 +530,21 @@ theorem exists_norm_le_mul_supSeminorm {A : Type*} [NormedCommRing A] [NormedAlg
     ∃ C : ℝ, 0 < C ∧ ∀ f : A, ‖f‖ ≤ C * supSeminorm K f := by
   obtain ⟨C, hC, hlip⟩ := SupNormModel.exists_pos_lipschitzWith_ofSupNorm (hA := hA)
   refine ⟨C, hC, fun f ↦ ?_⟩
-  simpa only [dist_zero_right, SupNormModel.ofSupNorm_toSupNorm, SupNormModel.ofSupNorm_zero,
-    SupNormModel.norm_def, sub_zero] using hlip.dist_le_mul (SupNormModel.toSupNorm f) 0
+  simpa only [SupNormModel.ofSupNorm_toSupNorm, SupNormModel.norm_def] using
+    hlip.norm_le_mul SupNormModel.ofSupNorm_zero (SupNormModel.toSupNorm f)
 
-/-- For any reduced affinoid `K`-algebra `A` carrying any complete `K`-algebra norm (not assumed
-ultrametric), `supSeminorm K f` coincides with the Gelfand spectral radius `gelfandRadius f`. -/
-theorem supSeminorm_eq_gelfandRadius {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
-    [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) (f : A) :
+private theorem gelfandRadius_eq_zero_of_isNilpotent {A : Type*} [NormedRing A] {z : A}
+    (hz : IsNilpotent z) : gelfandRadius z = 0 := by
+  obtain ⟨m, hm⟩ := hz
+  refine tendsto_nhds_unique (tendsto_gelfandRadius z)
+    (tendsto_const_nhds.congr' ?_)
+  filter_upwards [Filter.eventually_ge_atTop (max m 1)] with n hn
+  have hzn : z ^ n = 0 := pow_eq_zero_of_le ((le_max_left m 1).trans hn) hm
+  have hn1 : 1 ≤ n := (le_max_right m 1).trans hn
+  rw [hzn, norm_zero, Real.zero_rpow (inv_ne_zero (Nat.cast_ne_zero.mpr (by omega)))]
+
+private theorem supSeminorm_eq_gelfandRadius_of_isReduced {A : Type*} [NormedCommRing A]
+    [NormedAlgebra K A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) (f : A) :
     supSeminorm K f = gelfandRadius f := by
   obtain ⟨C, _, hbound⟩ := hA.exists_norm_le_mul_supSeminorm
   refine le_antisymm ((AlgHom.id K A).supSeminorm_apply_le_gelfandRadius f)
@@ -534,18 +555,76 @@ theorem supSeminorm_eq_gelfandRadius {A : Type*} [NormedCommRing A] [NormedAlgeb
       (hbound (f ^ n)).trans
         (mul_le_mul_of_nonneg_right (le_max_left _ _) (supSeminorm_nonneg (f ^ n)))
 
+/-- For any affinoid `K`-algebra `A` carrying any complete `K`-algebra norm (not assumed ultrametric
+or reduced), `supSeminorm K f` coincides with the Gelfand spectral radius `gelfandRadius f`. -/
+theorem supSeminorm_eq_gelfandRadius {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
+    [CompleteSpace A] (hA : IsAffinoidAlgebra K A) (f : A) :
+    supSeminorm K f = gelfandRadius f := by
+  have hcont : Continuous (supSeminorm K : A → ℝ) := by
+    have h : (supSeminorm K : A → ℝ) = fun a ↦ ‖SupNormModel.toSupNorm (_hA := hA) a‖ := by
+      ext a
+      simp
+    rw [h]
+    exact continuous_norm.comp SupNormModel.lipschitzWith_toSupNorm.continuous
+  have hclosed : IsClosed (nilradical A : Set A) := by
+    have hset : (nilradical A : Set A) = (supSeminorm K) ⁻¹' {0} := by
+      ext a
+      simp [mem_nilradical, hA.supSeminorm_eq_zero_iff]
+    rw [hset]
+    exact isClosed_singleton.preimage hcont
+  let : NormedCommRing (A ⧸ nilradical A) := Ideal.Quotient.normedCommRing (nilradical A)
+  let : NormedAlgebra K (A ⧸ nilradical A) := Ideal.Quotient.normedAlgebra (nilradical A) K
+  have : CompleteSpace (A ⧸ nilradical A) := Submodule.Quotient.completeSpace (nilradical A)
+  have hred : supSeminorm K f = gelfandRadius (Ideal.Quotient.mk (nilradical A) f) := by
+    rw [← supSeminorm_mk_nilradical (K := K) f]
+    exact supSeminorm_eq_gelfandRadius_of_isReduced (A := A ⧸ nilradical A)
+      (hA.quotient (nilradical A)) _
+  refine le_antisymm ((AlgHom.id K A).supSeminorm_apply_le_gelfandRadius f) ?_
+  rw [hred]
+  refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
+  have hr0 : 0 < r := (gelfandRadius_nonneg _).trans_lt hr
+  have hev : ∀ᶠ n : ℕ in Filter.atTop,
+      ‖Ideal.Quotient.mk (nilradical A) f ^ n‖ ^ (n : ℝ)⁻¹ < r :=
+    (tendsto_order.1 (tendsto_gelfandRadius (Ideal.Quotient.mk (nilradical A) f))).2 r hr
+  obtain ⟨k, hk_lt, hk1⟩ := (hev.and (Filter.eventually_ge_atTop 1)).exists
+  have hk0 : 0 < (k : ℝ) := Nat.cast_pos.mpr hk1
+  have hk_pow : ‖Ideal.Quotient.mk (nilradical A) (f ^ k)‖ < r ^ k := by
+    rw [map_pow]
+    have hlt := pow_lt_pow_left₀ hk_lt (by positivity) (by omega : k ≠ 0)
+    rwa [← Real.rpow_natCast _ k, ← Real.rpow_mul (norm_nonneg _),
+      inv_mul_cancel₀ hk0.ne', Real.rpow_one] at hlt
+  obtain ⟨y, hy, hy_norm⟩ :=
+    Ideal.Quotient.exists_norm_mk_lt (Ideal.Quotient.mk (nilradical A) (f ^ k))
+      (sub_pos.mpr hk_pow)
+  have hy_lt : ‖y‖ < r ^ k := by linarith
+  have hz_nil : IsNilpotent (f ^ k - y) := by
+    rw [← mem_nilradical, ← Ideal.Quotient.eq_zero_iff_mem, map_sub, hy, sub_self]
+  have hpow : gelfandRadius f ^ k < r ^ k := by
+    calc gelfandRadius f ^ k = gelfandRadius (f ^ k) :=
+          (gelfandRadius_pow_of_ne_zero f (by omega)).symm
+      _ = gelfandRadius (y + (f ^ k - y)) := by rw [add_sub_cancel]
+      _ ≤ gelfandRadius y + gelfandRadius (f ^ k - y) := (Commute.all y _).gelfandRadius_add_le
+      _ = gelfandRadius y := by rw [gelfandRadius_eq_zero_of_isNilpotent hz_nil, add_zero]
+      _ ≤ ‖y‖ := gelfandRadius_le_norm y
+      _ < r ^ k := hy_lt
+  exact ((pow_lt_pow_iff_left₀ (gelfandRadius_nonneg f) hr0.le (by omega)).mp hpow).le
+
 /-- For any reduced affinoid `K`-algebra `A` over a complete nontrivially normed ultrametric field
 `K` carrying a complete `K`-algebra norm, the identity map to `hA.SupNormModel` is a topological
 `K`-algebra isomorphism: `supSeminorm K` defines the canonical Banach topology on `A`. -/
 noncomputable def supNormContinuousAlgEquiv {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) :
-    A ≃A[K] hA.SupNormModel :=
-  { SupNormModel.algEquiv hA with
-    continuous_toFun := by
-      simpa [Equiv.toFun_as_coe] using SupNormModel.lipschitzWith_toSupNorm.continuous
-    continuous_invFun := by
-      obtain ⟨_, _, hlip⟩ := SupNormModel.exists_pos_lipschitzWith_ofSupNorm (hA := hA)
-      simpa [Equiv.invFun_as_coe] using hlip.continuous }
+    A ≃A[K] hA.SupNormModel where
+  toAlgEquiv := SupNormModel.algEquiv hA
+  continuous_toFun := by
+    change Continuous (SupNormModel.algEquiv hA)
+    rw [SupNormModel.coe_algEquiv]
+    exact SupNormModel.lipschitzWith_toSupNorm.continuous
+  continuous_invFun := by
+    obtain ⟨_, _, hlip⟩ := SupNormModel.exists_pos_lipschitzWith_ofSupNorm (hA := hA)
+    change Continuous (SupNormModel.algEquiv hA).symm
+    rw [SupNormModel.coe_algEquiv_symm]
+    exact hlip.continuous
 
 /-- `supNormContinuousAlgEquiv` has `SupNormModel.toSupNorm` as its underlying function. -/
 @[simp]

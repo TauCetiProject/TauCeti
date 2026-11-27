@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Algebra.GelfandRadius
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 
-import Mathlib.Analysis.Normed.Field.Ultra
+import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.FieldTheory.Minpoly.Finite
 import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
@@ -82,9 +82,9 @@ private theorem spectralNorm_apply_le_natDegree_mul_norm (φ : B →ₐ[K] L) {x
   have ha0_ne : p.coeff 0 ≠ 0 := minpoly.coeff_zero_ne_zero hx hφx
   let z : B := -∑ j ∈ Finset.range d, ((p.coeff 0)⁻¹ * p.coeff (j + 1)) • x ^ (j + 1)
   have hz_eq : (p.coeff 0)⁻¹ • aeval x p = 1 - z := by
-    rw [aeval_eq_sum_range' (Nat.lt_succ_self d), Finset.sum_range_succ', pow_zero, smul_add,
-      Finset.smul_sum, smul_smul, inv_mul_cancel₀ ha0_ne, one_smul]
-    simp only [z, smul_smul, sub_neg_eq_add, add_comm]
+    rw [aeval_eq_sum_range' (Nat.lt_succ_self d), Finset.sum_range_succ']
+    simp [z, smul_smul, ha0_ne, Finset.smul_sum]
+    abel
   have hnot_unit : ¬ IsUnit (1 - z) := by
     intro hu
     have h1z : φ (1 - z) = 0 := by
@@ -159,10 +159,7 @@ theorem spectralNorm_apply_le_norm (φ : B →ₐ[K] L) (b : B) :
 theorem norm_apply_le_gelfandRadius_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
     (φ : B →ₐ[K] M) (b : B) (hb : IsAlgebraic K (φ b)) :
     ‖φ b‖ ≤ gelfandRadius b := by
-  have : IsUltrametricDist M :=
-    IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
-      rw [← map_natCast (algebraMap K M), norm_algebraMap']
-      simpa using IsUltrametricDist.norm_nsmul_le (1 : K) n
+  have : IsUltrametricDist M := IsUltrametricDist.of_normedAlgebra K
   have hle : ‖φ b‖ ≤ spectralNorm K M (φ b) := by
     rw [← NormedAlgebra.toMulAlgebraNorm_apply K M (φ b), ← MulAlgebraNorm.coe_AlgebraNorm]
     exact norm_le_spectralNorm (MulRingNorm.isPowMul _) IsUltrametricDist.isNonarchimedean_norm hb

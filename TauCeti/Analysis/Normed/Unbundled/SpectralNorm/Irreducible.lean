@@ -64,6 +64,38 @@ theorem Monic.norm_coeff_le_spectralValue_pow {R : Type*} [SeminormedRing R] [No
   · simp [hp.coeff_natDegree]
   · simpa [coeff_eq_zero_of_natDegree_lt hi] using pow_nonneg (spectralValue_nonneg p) _
 
+/-- A monic irreducible polynomial over a domain with vanishing constant term is `X`. -/
+theorem Monic.eq_X_of_irreducible_of_coeff_zero_eq_zero {R : Type*} [CommRing R] [IsDomain R]
+    {p : R[X]} (hm : p.Monic) (hp : Irreducible p) (ha0 : p.coeff 0 = 0) : p = X := by
+  obtain ⟨q, hq⟩ := X_dvd_iff.mpr ha0
+  have hqu : IsUnit q := (hp.isUnit_or_isUnit hq).resolve_left irreducible_X.not_isUnit
+  have hqm : q.Monic := monic_X.of_mul_monic_left (hq ▸ hm)
+  have hq1 : q = 1 := hqm.natDegree_eq_zero.mp (natDegree_eq_zero_of_isUnit hqu)
+  rw [hq, hq1, mul_one]
+
+private theorem spectralValue_eq_norm_coeff_zero_rpow_of_irreducible_of_norm_le_one {K : Type*}
+    [NormedField K] (hK : ∀ c : K, c ≠ 0 → ‖c‖ = 1) {p : K[X]} (hm : p.Monic)
+    (hp : Irreducible p) :
+    spectralValue p = ‖p.coeff 0‖ ^ (1 / p.natDegree : ℝ) := by
+  by_cases ha0 : p.coeff 0 = 0
+  · have hpX : p = X := hm.eq_X_of_irreducible_of_coeff_zero_eq_zero hp ha0
+    have hspecX : spectralValue (X : K[X]) = 0 := by simpa using spectralValue_X_pow (R := K) 1
+    rw [hpX, hspecX, coeff_X_zero, norm_zero, natDegree_X, Nat.cast_one, div_one, Real.rpow_one]
+  · rw [hK _ ha0, Real.one_rpow]
+    refine le_antisymm (ciSup_le fun i ↦ ?_) ?_
+    · by_cases hi : i < p.natDegree
+      · rw [spectralValueTerms_of_lt_natDegree p hi]
+        have hle : ‖p.coeff i‖ ≤ 1 := by
+          by_cases hci : p.coeff i = 0
+          · simp [hci]
+          · exact (hK _ hci).le
+        exact Real.rpow_le_one (norm_nonneg _) hle
+          (one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hi.le)))
+      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hi)]
+        exact zero_le_one
+    · refine le_ciSup_of_le (spectralValueTerms_bddAbove p) 0 ?_
+      rw [spectralValueTerms_of_lt_natDegree p hp.natDegree_pos, hK _ ha0, Real.one_rpow]
+
 variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-- Over a complete ultrametric normed field (possibly trivially normed), the spectral value of a
@@ -80,29 +112,7 @@ theorem spectralValue_eq_norm_coeff_zero_rpow_of_irreducible {p : K[X]} (hm : p.
     unfold spectralNorm at h
     rwa [hmin] at h
   · push Not at hK
-    by_cases ha0 : p.coeff 0 = 0
-    · -- A monic irreducible polynomial divisible by `X` is equal to `X`.
-      obtain ⟨q, hq⟩ := X_dvd_iff.mpr ha0
-      have hqu : IsUnit q := (hp.isUnit_or_isUnit hq).resolve_left irreducible_X.not_isUnit
-      have hqm : q.Monic := monic_X.of_mul_monic_left (hq ▸ hm)
-      have hq1 : q = 1 := hqm.natDegree_eq_zero.mp (natDegree_eq_zero_of_isUnit hqu)
-      have hpX : p = X := by rw [hq, hq1, mul_one]
-      have hspecX : spectralValue (X : K[X]) = 0 := by simpa using spectralValue_X_pow (R := K) 1
-      rw [hpX, hspecX, coeff_X_zero, norm_zero, natDegree_X, Nat.cast_one, div_one, Real.rpow_one]
-    · rw [hK _ ha0, Real.one_rpow]
-      refine le_antisymm (ciSup_le fun i ↦ ?_) ?_
-      · by_cases hi : i < p.natDegree
-        · rw [spectralValueTerms_of_lt_natDegree p hi]
-          have hle : ‖p.coeff i‖ ≤ 1 := by
-            by_cases hci : p.coeff i = 0
-            · simp [hci]
-            · exact (hK _ hci).le
-          exact Real.rpow_le_one (norm_nonneg _) hle
-            (one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hi.le)))
-        · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hi)]
-          exact zero_le_one
-      · refine le_ciSup_of_le (spectralValueTerms_bddAbove p) 0 ?_
-        rw [spectralValueTerms_of_lt_natDegree p hp.natDegree_pos, hK _ ha0, Real.one_rpow]
+    exact spectralValue_eq_norm_coeff_zero_rpow_of_irreducible_of_norm_le_one hK hm hp
 
 /-- Over a complete ultrametric normed field (possibly trivially normed), let `f` be irreducible of
 degree `d` and let `ρ` balance its leading and constant terms, `‖a_d‖ ρ ^ d = ‖a₀‖`. Then
