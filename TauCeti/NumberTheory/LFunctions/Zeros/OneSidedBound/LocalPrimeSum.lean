@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.NumberTheory.PrimeCounting
+import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import TauCeti.NumberTheory.SumPrimePow
 
@@ -104,6 +105,31 @@ theorem localPrimeSum_nonneg {p : ℕ} {f : ℕ → ℝ} (hf : ∀ e : ℕ, 0 < 
   split_ifs with h
   · exact hf e h.1
   · exact le_rfl
+
+/-- At an inert prime the local sum of positive parts dominates its first term, with
+nonnegative partner weights at all prime powers. -/
+theorem max_div_sub_le_localPrimeSum {p : ℕ} (hinert : legendreSym d p = -1)
+    (y : ℝ) {w : ℕ → ℝ} (hw : ∀ n, 0 ≤ w n) :
+    max (y / p - w p) 0 ≤ localPrimeSum d p (fun n ↦ max (y / n - w n) 0) := by
+  rw [localPrimeSum_eq_tsum_of_legendreSym_eq_neg_one hinert]
+  let f (e : ℕ) : ℝ := if Odd e then max (y / (p ^ e : ℕ) - w (p ^ e)) 0 else 0
+  have hp : 1 < p := by
+    by_contra! h
+    interval_cases p <;> simp [legendreSym.at_zero, legendreSym.at_one] at hinert
+  have hp₁ : (1 : ℝ) < p := by exact_mod_cast hp
+  have hs : Summable fun e : ℕ ↦ max y 0 * ((p : ℝ)⁻¹) ^ e :=
+    (summable_geometric_of_lt_one (by positivity) (inv_lt_one_of_one_lt₀ hp₁)).mul_left _
+  have hf₀ (e : ℕ) : 0 ≤ f e := by
+    simp only [f]; split <;> positivity
+  have hf : Summable f := hs.of_nonneg_of_le hf₀ fun e ↦ by
+    rw [inv_pow, ← div_eq_mul_inv]
+    simp only [f, Nat.cast_pow]
+    split_ifs
+    · refine max_le ?_ (by positivity)
+      exact (sub_le_self _ (hw _)).trans
+        (div_le_div_of_nonneg_right (le_max_left ..) (by positivity))
+    · positivity
+  simpa [f] using hf.le_tsum 1 (fun e _ ↦ hf₀ e)
 
 /-- A cutoff on the kernel gives an explicit finite range of exponents for the local sum. -/
 theorem localPrimeSum_eq_sum_Icc_log {p N : ℕ} (hp : p.Prime) {f : ℕ → ℝ}
