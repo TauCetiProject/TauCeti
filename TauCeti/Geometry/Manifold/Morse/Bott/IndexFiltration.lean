@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Bott.Filtration
+public import TauCeti.Geometry.Manifold.Morse.Bott.FirstDifferential
 
 /-!
 # The index filtration of the Bott complex
@@ -25,12 +25,19 @@ filtered complex this is `E¹_(λ, m) = ⊕_(λ_C = λ) H_m(C)`, in total degree
 bands differ in rank by one, so the correspondences between them preserve the chain degree
 (`TauCeti.bottDegreeShift_eq_zero_of_eq_add_one`), and by
 `TauCeti.BottChainData.spectralSequence_first_page_d_homologyπ` the first differential is induced
-by these correspondences `F_CD` with `λ_C - λ_D = 1`.
+by these correspondences `F_CD` with `λ_C - λ_D = 1`
+(`TauCeti.BottChainData.indexSpectralSequence_first_page_d_homologyπ`).
 
 ## Main definitions
 
 * `TauCeti.BottChainData.indexSpectralSequence`: the spectral sequence of the index filtration.
 * `TauCeti.BottChainData.indexSpectralSequenceFirstPageXIso`: its first page.
+
+## Main results
+
+* `TauCeti.BottChainData.indexSpectralSequence_first_page_d_homologyπ`: the first differential
+  sends the class of a cycle on the components of rank `q + 2` to the class of its correspondences
+  to the components of rank `q + 1`.
 
 ## References
 
@@ -118,6 +125,51 @@ theorem indexSpectralSequenceFirstPageXIso_def [DecidableEq ι] (pq : ℤ × ℤ
             lia)
           fun _ ↦ Iso.refl _ :=
   (rfl)
+
+/-- **The first differential of the index spectral sequence.** The differential of the first page
+from `(p, q + 1)` to `(p + 2, q)`, where `p + q + 1 = -(k + 1)`, sends the class of a cycle `x` on
+the components of rank `q + 2`, in total degree `k + 1`, to the class of the part of its Bott
+differential on the components of rank `q + 1`, that is of the chain `∑_C F_CD (x C)` over the
+components `C` with `λ_C = q + 2` and `D` with `λ_D = q + 1`. The bands are those of the integer cut
+values, `Ioc q (q + 1)` and `Ioc (q + 1) (q + 2)`, and the first page is identified with their
+homology by `TauCeti.BottChainData.spectralSequenceFirstPageXIso`. This is
+`TauCeti.BottChainData.spectralSequence_first_page_d_homologyπ` for the index filtration. -/
+theorem indexSpectralSequence_first_page_d_homologyπ (p q k : ℤ) (hn : p + (q + 1) = -(k + 1))
+    (z : (B.complexOn (fun C ↦ (B.rank C : ℝ)) (B.pushforward_eq_zero_of_natCast_rank_le hrank)
+      hboundary hpushforward (Ioc ((q + 1 : ℤ) : ℝ) ((q + 1 + 1 : ℤ) : ℝ))).cycles (k + 1))
+    (z' : (B.complexOn (fun C ↦ (B.rank C : ℝ)) (B.pushforward_eq_zero_of_natCast_rank_le hrank)
+      hboundary hpushforward (Ioc (q : ℝ) ((q + 1 : ℤ) : ℝ))).cycles k)
+    (hz' : (((B.complexOn (fun C ↦ (B.rank C : ℝ)) (B.pushforward_eq_zero_of_natCast_rank_le hrank)
+        hboundary hpushforward (Ioc (q : ℝ) ((q + 1 : ℤ) : ℝ))).iCycles k).hom z' :
+        (B.restrict (fun C ↦ (B.rank C : ℝ) ∈ Ioc (q : ℝ) ((q + 1 : ℤ) : ℝ))
+          (B.pushforward_comp_pushforward_eq_zero_of_ordConnected (fun C ↦ (B.rank C : ℝ))
+            (B.pushforward_eq_zero_of_natCast_rank_le hrank) _)).totalDegree
+            (restrictGrading (fun C ↦ (B.rank C : ℝ) ∈ Ioc (q : ℝ) ((q + 1 : ℤ) : ℝ)) S) k).val =
+      restrictProj R (fun C ↦ (B.rank C : ℝ) ∈ Ioc (q : ℝ) ((q + 1 : ℤ) : ℝ)) (B.differential
+        (((B.complexOn (fun C ↦ (B.rank C : ℝ)) (B.pushforward_eq_zero_of_natCast_rank_le hrank)
+          hboundary hpushforward (Ioc ((q + 1 : ℤ) : ℝ) ((q + 1 + 1 : ℤ) : ℝ))).iCycles
+            (k + 1)).hom z :
+            (B.restrict (fun C ↦ (B.rank C : ℝ) ∈ Ioc ((q + 1 : ℤ) : ℝ) ((q + 1 + 1 : ℤ) : ℝ))
+              (B.pushforward_comp_pushforward_eq_zero_of_ordConnected (fun C ↦ (B.rank C : ℝ))
+                (B.pushforward_eq_zero_of_natCast_rank_le hrank) _)).totalDegree
+                (restrictGrading
+                  (fun C ↦ (B.rank C : ℝ) ∈ Ioc ((q + 1 : ℤ) : ℝ) ((q + 1 + 1 : ℤ) : ℝ)) S)
+                (k + 1)).val)) :
+    (B.spectralSequenceFirstPageXIso (fun C ↦ (B.rank C : ℝ))
+        (B.pushforward_eq_zero_of_natCast_rank_le hrank) hboundary hpushforward Int.cast_mono
+        (p + 2, q) k (by dsimp; lia)).hom.hom
+      ((((B.indexSpectralSequence hboundary hpushforward hrank).page 2).d (p, q + 1)
+        (p + 2, q)).hom
+        ((B.spectralSequenceFirstPageXIso (fun C ↦ (B.rank C : ℝ))
+          (B.pushforward_eq_zero_of_natCast_rank_le hrank) hboundary hpushforward Int.cast_mono
+          (p, q + 1) (k + 1) hn).inv.hom
+          (((B.complexOn (fun C ↦ (B.rank C : ℝ)) (B.pushforward_eq_zero_of_natCast_rank_le hrank)
+            hboundary hpushforward (Ioc ((q + 1 : ℤ) : ℝ) ((q + 1 + 1 : ℤ) : ℝ))).homologyπ
+              (k + 1)).hom z))) =
+      ((B.complexOn (fun C ↦ (B.rank C : ℝ)) (B.pushforward_eq_zero_of_natCast_rank_le hrank)
+        hboundary hpushforward (Ioc (q : ℝ) ((q + 1 : ℤ) : ℝ))).homologyπ k).hom z' :=
+  B.spectralSequence_first_page_d_homologyπ _ _ hboundary hpushforward Int.cast_mono p q k hn z z'
+    hz'
 
 end BottChainData
 
