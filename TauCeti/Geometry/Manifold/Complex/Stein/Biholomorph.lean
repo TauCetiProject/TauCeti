@@ -18,9 +18,10 @@ with the inverse. The same composition transports global coordinates; the differ
 of the biholomorphism identifies the two model spaces when they differ.
 
 `Diffeomorph.isSteinManifold_iff` expresses the resulting invariance of Steinness.
-A biholomorphism is represented by a complex `C¹` diffeomorphism: this supplies precisely
-the holomorphic maps in both directions needed here. Neither compactness nor
-finite-dimensionality of the model spaces is needed for the transport statements.
+A biholomorphism is represented by a complex `C^n` diffeomorphism with `n ≠ 0`: this supplies
+the holomorphic maps in both directions needed here, including at smooth and analytic orders.
+Neither compactness nor finite-dimensionality of the model spaces is needed for the transport
+statements.
 -/
 
 public section
@@ -46,42 +47,45 @@ theorem MDifferentiable.mapsTo_mholomorphicHull {f : M → N}
 
 namespace Diffeomorph
 
+variable {n : WithTop ℕ∞}
+
 /-- Biholomorphisms transport holomorphic hulls exactly, for arbitrary sets. -/
 @[simp]
-theorem image_mholomorphicHull (e : M ≃ₘ^1⟮I, J⟯ N) (K : Set M) :
+theorem image_mholomorphicHull (e : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (K : Set M) :
     e '' TauCeti.mholomorphicHull I K = TauCeti.mholomorphicHull J (e '' K) := by
-  refine subset_antisymm ((e.mdifferentiable one_ne_zero).mapsTo_mholomorphicHull K).image_subset
+  refine subset_antisymm ((e.mdifferentiable hn).mapsTo_mholomorphicHull K).image_subset
     (fun y hy ↦ ?_)
   refine ⟨e.symm y, ?_, e.apply_symm_apply y⟩
-  have h := (e.symm.mdifferentiable one_ne_zero).mapsTo_mholomorphicHull (e '' K) hy
+  have h := (e.symm.mdifferentiable hn).mapsTo_mholomorphicHull (e '' K) hy
   simpa only [e.symm_image_image] using h
 
 /-- A manifold biholomorphic to a Stein manifold is Stein, even when the model spaces differ. -/
-theorem isSteinManifold (e : M ≃ₘ^1⟮I, J⟯ N) [TauCeti.IsSteinManifold I M] :
+theorem isSteinManifold (e : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) [TauCeti.IsSteinManifold I M] :
     TauCeti.IsSteinManifold J N where
   isCompact_mholomorphicHull {K} hK := by
     have h := TauCeti.IsSteinManifold.isCompact_mholomorphicHull (I := I)
       (hK.image e.symm.continuous)
     have himage := h.image e.continuous
-    simpa only [e.image_mholomorphicHull, e.image_symm_image] using himage
+    simpa only [e.image_mholomorphicHull hn, e.image_symm_image] using himage
   exists_mdifferentiable_apply_ne {x y} hxy := by
     obtain ⟨f, hf, hne⟩ := TauCeti.IsSteinManifold.exists_mdifferentiable_apply_ne
       (I := I) (e.symm.injective.ne hxy)
-    exact ⟨f ∘ e.symm, hf.comp (e.symm.mdifferentiable one_ne_zero), hne⟩
+    exact ⟨f ∘ e.symm, hf.comp (e.symm.mdifferentiable hn), hne⟩
   exists_mdifferentiable_injective_mfderiv y := by
     obtain ⟨f, hf, hinj⟩ := TauCeti.IsSteinManifold.exists_mdifferentiable_injective_mfderiv
       (I := I) (e.symm y)
     -- Tangent spaces are the model spaces as normed spaces. At this fixed point, the
     -- differential therefore gives the continuous linear identification of the two models.
-    let A : E ≃L[ℂ] F := e.mfderivToContinuousLinearEquiv one_ne_zero (e.symm y)
+    let A : E ≃L[ℂ] F := e.mfderivToContinuousLinearEquiv hn (e.symm y)
     refine ⟨A ∘ f ∘ e.symm, A.mdifferentiable.comp (hf.comp
-      (e.symm.mdifferentiable one_ne_zero)), ?_⟩
+      (e.symm.mdifferentiable hn)), ?_⟩
+    rw [← A.coe_toDiffeomorph]
     apply (A.toDiffeomorph.mfderiv_diffeomorph_comp_injective_iff (by simp)).2
-    exact (e.symm.mfderiv_comp_diffeomorph_injective_iff one_ne_zero).2 hinj
+    exact (e.symm.mfderiv_comp_diffeomorph_injective_iff hn).2 hinj
 
 /-- Steinness is invariant under biholomorphisms. -/
-theorem isSteinManifold_iff (e : M ≃ₘ^1⟮I, J⟯ N) :
+theorem isSteinManifold_iff (e : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) :
     TauCeti.IsSteinManifold I M ↔ TauCeti.IsSteinManifold J N :=
-  ⟨fun _ ↦ e.isSteinManifold, fun _ ↦ e.symm.isSteinManifold⟩
+  ⟨fun _ ↦ e.isSteinManifold hn, fun _ ↦ e.symm.isSteinManifold hn⟩
 
 end Diffeomorph
