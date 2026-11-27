@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.PhragmenLindelof
 import Mathlib.Analysis.Calculus.Deriv.Star
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import TauCeti.Analysis.Complex.BranchLogRoot
+import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Convex.Midpoint
 
 /-!
@@ -16,7 +16,8 @@ import TauCeti.Analysis.Convex.Midpoint
 
 Let `f` be holomorphic on the open vertical strip `a < re s < b`, continuous on its closure and of
 growth at most `exp (B exp (c |im s|))` with `c < π / (b - a)`. Suppose that on the two boundary
-lines `f` is bounded by products of real powers of nonvanishing holomorphic functions `G i`,
+lines `f` is bounded by products of real powers of functions `G i` that are holomorphic on the open
+strip and continuous and nowhere zero on the closed strip,
 
 `‖f (a + it)‖ ≤ ∏ i, ‖G i (a + it)‖ ^ α i`   and   `‖f (b + it)‖ ≤ ∏ i, ‖G i (b + it)‖ ^ β i`.
 
@@ -41,12 +42,13 @@ at `σ = 1 / 2` the interpolated bound is `exp (-1 / 4) < 1`.
 The proof first treats the midpoint `σ = (a + b) / 2`. There the function
 `F (s) = f s * conj (f (a + b - conj s))` is holomorphic, has the same modulus
 `‖f (a + it)‖ ‖f (b + it)‖` on both boundary lines and equals `‖f‖ ^ 2` on the middle line.
-Divide it by the exponential of a holomorphic logarithm of
-`∏ i (G i s * conj (G i (a + b - conj s))) ^ ((α i + β i) / 2)`. The monotonicity hypothesis makes
-the quotient at most `1` on both boundary lines, and Mathlib's `PhragmenLindelof.vertical_strip`
-bounds it inside. Applied to substrips, the midpoint case shows that the set of `σ ∈ [a, b]` for
-which the bound holds contains the midpoint of any two of its points; it is closed by continuity in
-`σ`, so it is all of `[a, b]`.
+Choose holomorphic logarithms `L i` of the `G i` on the closed strip and divide `F` by the
+exponential of the weighted sum `∑ i ((α i + β i) / 2) (L i s + conj (L i (a + b - conj s)))`,
+whose modulus is `∏ i (‖G i s‖ ‖G i (a + b - conj s)‖) ^ ((α i + β i) / 2)`. The monotonicity
+hypothesis makes the modulus of the quotient at most `1` on both boundary lines, and Mathlib's
+`PhragmenLindelof.vertical_strip` bounds it by `1` inside. Applied to substrips, the midpoint case
+shows that the set of `σ ∈ [a, b]` for which the bound holds contains the midpoint of any two of
+its points; it is closed by continuity in `σ`, so it is all of `[a, b]`.
 
 ## Main results
 
@@ -65,6 +67,7 @@ public section
 
 open Complex Filter Set
 open scoped Real ComplexConjugate
+open TauCeti.Complex.HadamardThreeLines (closure_verticalStrip)
 
 namespace TauCeti.PhragmenLindelof
 
@@ -77,6 +80,11 @@ exponent `0 ≤ c < π / (b - a)` below the Phragmén–Lindelöf threshold. -/
 private def StripGrowth (a b : ℝ) (u : ℂ → ℝ) : Prop :=
   ∃ c B : ℝ, 0 ≤ c ∧ c < π / (b - a) ∧ 0 ≤ B ∧
     ∀ z ∈ re ⁻¹' Ioo a b, u z ≤ Real.exp (B * Real.exp (c * |z.im|))
+
+/-- An admissible exponent `0 ≤ c < π / (b - a)` exists only for a nondegenerate strip. -/
+private theorem StripGrowth.lt {u : ℂ → ℝ} (h : StripGrowth a b u) : a < b := by
+  obtain ⟨c, -, hc, hcπ, -⟩ := h
+  exact sub_pos.1 ((div_pos_iff_of_pos_left Real.pi_pos).1 (hc.trans_lt hcπ))
 
 private theorem StripGrowth.of_le {u v : ℂ → ℝ} (h : StripGrowth a b u)
     (hvu : ∀ z ∈ re ⁻¹' Ioo a b, v z ≤ u z) : StripGrowth a b v := by
@@ -150,6 +158,12 @@ private theorem reflect_re (z : ℂ) : (reflect a b z).re = a + b - z.re := by s
 
 private theorem reflect_im (z : ℂ) : (reflect a b z).im = z.im := by simp [reflect]
 
+private theorem reflect_reflect (z : ℂ) : reflect a b (reflect a b z) = z := by simp [reflect]
+
+private theorem reflect_ofReal_add_mul_I (σ t : ℝ) :
+    reflect a b (σ + t * I) = ((a + b - σ : ℝ) : ℂ) + t * I := by
+  apply Complex.ext <;> simp [reflect_re, reflect_im]
+
 private theorem reflect_mem_Ioo {z : ℂ} (hz : z ∈ re ⁻¹' Ioo a b) :
     reflect a b z ∈ re ⁻¹' Ioo a b := by
   simp only [mem_preimage, reflect_re, mem_Ioo] at hz ⊢
@@ -198,9 +212,6 @@ private theorem stripGrowth_norm_rpow_neg (hab : a < b) {g : ℂ → ℂ} {γ : 
 
 /-! ### Holomorphic ingredients -/
 
-private theorem closure_strip (hab : a < b) : closure (re ⁻¹' Ioo a b) = re ⁻¹' Icc a b := by
-  rw [closure_preimage_re, closure_Ioo hab.ne]
-
 /-- Mathlib's growth hypothesis of `PhragmenLindelof.vertical_strip`, asymptotic as `|im z| → ∞`,
 gives a bound on the whole strip for a function continuous on the closed strip. -/
 private theorem stripGrowth_of_isBigO (hab : a < b) {g : ℂ → ℂ}
@@ -214,7 +225,7 @@ private theorem stripGrowth_of_isBigO (hab : a < b) {g : ℂ → ℂ}
   obtain ⟨T, hT⟩ := hC
   -- Below the height `T` the function is bounded, by compactness.
   obtain ⟨K, hK⟩ := (isCompact_Icc.reProdIm (isCompact_Icc (a := -T) (b := T)))
-    |>.exists_bound_of_continuousOn (hg.mono inter_subset_left)
+    |>.exists_bound_of_continuousOn (hg.mono fun z hz ↦ (mem_reProdIm.1 hz).1)
   refine stripGrowth_of_le_mul_exp (B := |B|) (C := |K| + |C|) hab hc fun z hz ↦ ?_
   have hE : 1 ≤ Real.exp (|B| * Real.exp (c * |z.im|)) := Real.one_le_exp (by positivity)
   rcases le_or_gt T |z.im| with hzT | hzT
@@ -225,7 +236,8 @@ private theorem stripGrowth_of_isBigO (hab : a < b) {g : ℂ → ℂ}
         · exact le_abs_self C
         · exact le_abs_self B
       _ ≤ (|K| + |C|) * Real.exp (|B| * Real.exp (c * |z.im|)) := by gcongr; simp
-  · have hzK : z ∈ Icc a b ×ℂ Icc (-T) T := ⟨Ioo_subset_Icc_self hz, abs_le.1 hzT.le⟩
+  · have hzK : z ∈ Icc a b ×ℂ Icc (-T) T :=
+      mem_reProdIm.2 ⟨Ioo_subset_Icc_self hz, abs_le.1 hzT.le⟩
     calc ‖g z‖ ≤ K := hK z hzK
       _ ≤ |K| + |C| := (le_abs_self K).trans (le_add_of_nonneg_right (abs_nonneg C))
       _ ≤ (|K| + |C|) * Real.exp (|B| * Real.exp (c * |z.im|)) :=
@@ -233,19 +245,24 @@ private theorem stripGrowth_of_isBigO (hab : a < b) {g : ℂ → ℂ}
 
 /-- A function holomorphic on the open strip, continuous and nowhere zero on the closed strip, has
 a logarithm with the same regularity. -/
-private theorem exists_log_strip (hab : a < b) {g : ℂ → ℂ} (hg : DiffContOnCl ℂ g (re ⁻¹' Ioo a b))
+private theorem exists_log_strip {g : ℂ → ℂ} (hg : DiffContOnCl ℂ g (re ⁻¹' Ioo a b))
     (hg₀ : ∀ z ∈ re ⁻¹' Icc a b, g z ≠ 0) :
     ∃ L : ℂ → ℂ, DiffContOnCl ℂ L (re ⁻¹' Ioo a b) ∧ ∀ z ∈ re ⁻¹' Icc a b, exp (L z) = g z := by
+  rcases le_or_gt b a with hba | hab
+  · -- The open strip is empty, so a pointwise logarithm will do.
+    refine ⟨fun z ↦ log (g z), ?_, fun z hz ↦ exp_log (hg₀ z hz)⟩
+    rw [Ioo_eq_empty hba.not_gt, preimage_empty]
+    exact ⟨differentiableOn_empty, by rw [closure_empty]; exact continuousOn_empty _⟩
   have hint : interior (re ⁻¹' Icc a b) = re ⁻¹' Ioo a b := by
     rw [interior_preimage_re, interior_Icc]
   have hconv : Convex ℝ (re ⁻¹' Icc a b) := (convex_Icc a b).linear_preimage reLm
   obtain ⟨L, hLc, hLd, hL⟩ := hconv.exists_continuousOn_differentiableOn_eqOn_exp_comp
-    (closure_strip hab ▸ hg.continuousOn) (hint ▸ hg.differentiableOn)
+    (hg.continuousOn_verticalClosedStrip hab) (hint ▸ hg.differentiableOn)
     (by rintro ⟨z, hz, hz₀⟩; exact hg₀ z hz hz₀)
-  exact ⟨L, ⟨hint ▸ hLd, (closure_strip hab).symm ▸ hLc⟩, fun z hz ↦ hL hz⟩
+  exact ⟨L, ⟨hint ▸ hLd, (closure_verticalStrip hab).symm ▸ hLc⟩, fun z hz ↦ hL hz⟩
 
 /-- `z ↦ conj (g (a + b - conj z))` is holomorphic on the strip when `g` is. -/
-private theorem diffContOnCl_conj_comp_reflect {g : ℂ → ℂ} (hab : a < b)
+private theorem diffContOnCl_conj_comp_reflect {g : ℂ → ℂ}
     (hg : DiffContOnCl ℂ g (re ⁻¹' Ioo a b)) :
     DiffContOnCl ℂ (fun z ↦ conj (g (reflect a b z))) (re ⁻¹' Ioo a b) := by
   refine ⟨fun z hz ↦ ?_, ?_⟩
@@ -256,26 +273,40 @@ private theorem diffContOnCl_conj_comp_reflect {g : ℂ → ℂ} (hab : a < b)
     have hd' := hd.conj_conj
     rw [conj_conj] at hd'
     exact hd'.differentiableWithinAt
-  · rw [closure_strip hab]
-    exact continuous_conj.comp_continuousOn ((closure_strip hab ▸ hg.continuousOn).comp
-      continuous_reflect.continuousOn fun z hz ↦ reflect_mem_Icc hz)
+  · exact continuous_conj.comp_continuousOn (hg.continuousOn.comp continuous_reflect.continuousOn
+      (MapsTo.closure (fun _ ↦ reflect_mem_Ioo) continuous_reflect))
 
 /-! ### The midpoint case -/
 
-/-- The scalar heart of the boundary estimate: with `x ^ p ≤ y ^ p` for `p = (α - β) / 2`, the edge
-bounds `x ^ α` and `y ^ β` divided by the interpolating weight `(x y) ^ ((α + β) / 2)` give at
-most `1`. -/
-private theorem rpow_mul_rpow_mul_rpow_neg_le_one {x y α β : ℝ} (hx : 0 < x) (hy : 0 < y)
-    (h : x ^ ((α - β) / 2) ≤ y ^ ((α - β) / 2)) :
-    x ^ α * y ^ β * (x ^ (-((α + β) / 2)) * y ^ (-((α + β) / 2))) ≤ 1 := by
-  have e₁ : x ^ α * x ^ (-((α + β) / 2)) = x ^ ((α - β) / 2) := by
-    rw [← Real.rpow_add hx]; ring_nf
-  have e₂ : y ^ β * y ^ (-((α + β) / 2)) = (y ^ ((α - β) / 2))⁻¹ := by
-    rw [← Real.rpow_add hy, ← Real.rpow_neg hy.le]; ring_nf
-  calc x ^ α * y ^ β * (x ^ (-((α + β) / 2)) * y ^ (-((α + β) / 2)))
-      = x ^ ((α - β) / 2) * (y ^ ((α - β) / 2))⁻¹ := by rw [← e₁, ← e₂]; ring
-    _ ≤ y ^ ((α - β) / 2) * (y ^ ((α - β) / 2))⁻¹ := by gcongr
-    _ = 1 := mul_inv_cancel₀ (Real.rpow_pos_of_pos hy _).ne'
+/-- The scalar heart of the boundary estimate: with `‖x‖ ^ p ≤ ‖y‖ ^ p` for `p = (α - β) / 2`, the
+edge bounds `‖x‖ ^ α` and `‖y‖ ^ β` divided by the interpolating weight `(‖x‖ ‖y‖) ^ ((α + β) / 2)`
+give at most `1`. -/
+private theorem rpow_mul_rpow_mul_rpow_neg_le_one {x y : ℂ} {α β : ℝ}
+    (h : ‖x‖ ^ ((α - β) / 2) ≤ ‖y‖ ^ ((α - β) / 2)) :
+    ‖x‖ ^ α * ‖y‖ ^ β * (‖x‖ ^ (-((α + β) / 2)) * ‖y‖ ^ (-((α + β) / 2))) ≤ 1 := by
+  -- If `x = 0` or `y = 0`, a factor `0 ^ e` with `e ≠ 0` vanishes unless `α = β = 0`.
+  rcases eq_or_ne x 0 with rfl | hx
+  · rcases eq_or_ne α 0 with rfl | hα
+    · rcases eq_or_ne β 0 with rfl | hβ
+      · simp
+      · simp [Real.zero_rpow (neg_ne_zero.2 (div_ne_zero hβ two_ne_zero))]
+    · simp [Real.zero_rpow hα]
+  rcases eq_or_ne y 0 with rfl | hy
+  · rcases eq_or_ne β 0 with rfl | hβ
+    · rcases eq_or_ne α 0 with rfl | hα
+      · simp
+      · simp [Real.zero_rpow (neg_ne_zero.2 (div_ne_zero hα two_ne_zero))]
+    · simp [Real.zero_rpow hβ]
+  have hx' := norm_pos_iff.2 hx
+  have hy' := norm_pos_iff.2 hy
+  have e₁ : ‖x‖ ^ α * ‖x‖ ^ (-((α + β) / 2)) = ‖x‖ ^ ((α - β) / 2) := by
+    rw [← Real.rpow_add hx']; ring_nf
+  have e₂ : ‖y‖ ^ β * ‖y‖ ^ (-((α + β) / 2)) = (‖y‖ ^ ((α - β) / 2))⁻¹ := by
+    rw [← Real.rpow_add hy', ← Real.rpow_neg hy'.le]; ring_nf
+  calc ‖x‖ ^ α * ‖y‖ ^ β * (‖x‖ ^ (-((α + β) / 2)) * ‖y‖ ^ (-((α + β) / 2)))
+      = ‖x‖ ^ ((α - β) / 2) * (‖y‖ ^ ((α - β) / 2))⁻¹ := by rw [← e₁, ← e₂]; ring
+    _ ≤ ‖y‖ ^ ((α - β) / 2) * (‖y‖ ^ ((α - β) / 2))⁻¹ := by gcongr
+    _ = 1 := mul_inv_cancel₀ (Real.rpow_pos_of_pos hy' _).ne'
 
 /-- The holomorphic weight `∑ i, γ i (L i z + conj (L i (a + b - conj z)))` whose exponential has
 modulus `∏ i, (‖G i z‖ ‖G i (a + b - conj z)‖) ^ γ i` when `L i` is a logarithm of `G i`. -/
@@ -283,42 +314,36 @@ private def weight (s : Finset ι) (a b : ℝ) (γ : ι → ℝ) (L : ι → ℂ
   ∑ i ∈ s, (γ i : ℂ) * (L i z + conj (L i (reflect a b z)))
 
 private theorem norm_exp_neg_weight {s : Finset ι} {γ : ι → ℝ} {G L : ι → ℂ → ℂ}
-    (hLG : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, exp (L i z) = G i z)
-    (hG₀ : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, G i z ≠ 0) {z : ℂ} (hz : z ∈ re ⁻¹' Icc a b) :
+    (hLG : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, exp (L i z) = G i z) {z : ℂ}
+    (hz : z ∈ re ⁻¹' Icc a b) :
     ‖exp (-weight s a b γ L z)‖ =
       ∏ i ∈ s, ‖G i z‖ ^ (-γ i) * ‖G i (reflect a b z)‖ ^ (-γ i) := by
-  have hz' : reflect a b z ∈ re ⁻¹' Icc a b := reflect_mem_Icc hz
-  -- The real part of a logarithm is the logarithm of the modulus.
-  have hre : ∀ i ∈ s, ∀ w ∈ re ⁻¹' Icc a b, (L i w).re = Real.log ‖G i w‖ := fun i hi w hw ↦ by
-    rw [← hLG i hi w hw, norm_exp, Real.log_exp]
-  rw [norm_exp, weight, neg_re, re_sum, ← Finset.sum_neg_distrib, Real.exp_sum]
+  rw [weight, ← Finset.sum_neg_distrib, exp_sum, norm_prod]
   refine Finset.prod_congr rfl fun i hi ↦ ?_
-  rw [re_ofReal_mul, add_re, conj_re, hre i hi z hz, hre i hi _ hz',
-    Real.rpow_def_of_pos (norm_pos_iff.2 (hG₀ i hi z hz)),
-    Real.rpow_def_of_pos (norm_pos_iff.2 (hG₀ i hi _ hz')), ← Real.exp_add]
-  ring_nf
+  rw [← hLG i hi z hz, ← hLG i hi _ (reflect_mem_Icc hz)]
+  simp only [norm_exp, ← Real.exp_mul, ← Real.exp_add]
+  simp
+  ring
 
-private theorem diffContOnCl_weight {s : Finset ι} (hab : a < b) {γ : ι → ℝ} {L : ι → ℂ → ℂ}
+private theorem diffContOnCl_weight {s : Finset ι} {γ : ι → ℝ} {L : ι → ℂ → ℂ}
     (hL : ∀ i ∈ s, DiffContOnCl ℂ (L i) (re ⁻¹' Ioo a b)) :
     DiffContOnCl ℂ (weight s a b γ L) (re ⁻¹' Ioo a b) := by
   have hi : ∀ i ∈ s, DiffContOnCl ℂ
       (fun z ↦ (γ i : ℂ) * (L i z + conj (L i (reflect a b z)))) (re ⁻¹' Ioo a b) :=
-    fun i hi ↦ ((hL i hi).add (diffContOnCl_conj_comp_reflect hab (hL i hi))).const_smul (γ i : ℂ)
+    fun i hi ↦ ((hL i hi).add (diffContOnCl_conj_comp_reflect (hL i hi))).const_smul (γ i : ℂ)
   exact ⟨DifferentiableOn.fun_sum fun i h ↦ (hi i h).differentiableOn,
     continuousOn_finsetSum _ fun i h ↦ (hi i h).continuousOn⟩
 
 /-- The boundary estimate of the midpoint case: the product of the edge values of `f` divided by
 the interpolating weight is at most `1`. -/
-private theorem norm_mul_norm_mul_prod_rpow_neg_le_one {s : Finset ι} (hab : a < b) {f : ℂ → ℂ}
-    {G : ι → ℂ → ℂ} {α β : ι → ℝ} (hG₀ : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, G i z ≠ 0)
+private theorem norm_mul_norm_mul_prod_rpow_neg_le_one {s : Finset ι} {f : ℂ → ℂ}
+    {G : ι → ℂ → ℂ} {α β : ι → ℝ}
     (hcmp : ∀ i ∈ s, ∀ t : ℝ,
       ‖G i (a + t * I)‖ ^ ((α i - β i) / 2) ≤ ‖G i (b + t * I)‖ ^ ((α i - β i) / 2))
     (ha : ∀ t : ℝ, ‖f (a + t * I)‖ ≤ ∏ i ∈ s, ‖G i (a + t * I)‖ ^ α i)
     (hb : ∀ t : ℝ, ‖f (b + t * I)‖ ≤ ∏ i ∈ s, ‖G i (b + t * I)‖ ^ β i) (t : ℝ) :
     ‖f (a + t * I)‖ * ‖f (b + t * I)‖ * ∏ i ∈ s, ‖G i (a + t * I)‖ ^ (-((α i + β i) / 2)) *
       ‖G i (b + t * I)‖ ^ (-((α i + β i) / 2)) ≤ 1 := by
-  have hmem : ∀ x ∈ ({a, b} : Set ℝ), (x : ℂ) + t * I ∈ re ⁻¹' Icc a b := by
-    rintro x (rfl | rfl) <;> simp [hab.le]
   calc _ ≤ (∏ i ∈ s, ‖G i (a + t * I)‖ ^ α i) * (∏ i ∈ s, ‖G i (b + t * I)‖ ^ β i) *
         ∏ i ∈ s, ‖G i (a + t * I)‖ ^ (-((α i + β i) / 2)) *
           ‖G i (b + t * I)‖ ^ (-((α i + β i) / 2)) := by
@@ -328,12 +353,11 @@ private theorem norm_mul_norm_mul_prod_rpow_neg_le_one {s : Finset ι} (hab : a 
         (‖G i (a + t * I)‖ ^ (-((α i + β i) / 2)) * ‖G i (b + t * I)‖ ^ (-((α i + β i) / 2))) := by
         rw [← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
     _ ≤ 1 := Finset.prod_le_one₀ (fun i _ ↦ by positivity) fun i hi ↦
-        rpow_mul_rpow_mul_rpow_neg_le_one (norm_pos_iff.2 (hG₀ i hi _ (hmem a (by simp))))
-          (norm_pos_iff.2 (hG₀ i hi _ (hmem b (by simp)))) (hcmp i hi t)
+        rpow_mul_rpow_mul_rpow_neg_le_one (hcmp i hi t)
 
-/-- From `x ^ 2 ∏ (y i ^ γ i) ^ (-2) ≤ 1` to `x ≤ ∏ y i ^ γ i`, for `x ≥ 0` and `y i > 0`. -/
+/-- From `x ^ 2 ∏ (y i ^ γ i) ^ (-2) ≤ 1` to `x ≤ ∏ y i ^ γ i`, for `y i > 0`. -/
 private theorem le_prod_rpow_of_mul_self_mul_prod_le_one {s : Finset ι} {x : ℝ} {y γ : ι → ℝ}
-    (hx : 0 ≤ x) (hy : ∀ i ∈ s, 0 < y i)
+    (hy : ∀ i ∈ s, 0 < y i)
     (h : x * x * ∏ i ∈ s, y i ^ (-γ i) * y i ^ (-γ i) ≤ 1) : x ≤ ∏ i ∈ s, y i ^ γ i := by
   have hM : 0 < ∏ i ∈ s, y i ^ γ i := Finset.prod_pos fun i hi ↦ Real.rpow_pos_of_pos (hy i hi) _
   have hprod : ∏ i ∈ s, y i ^ (-γ i) * y i ^ (-γ i) =
@@ -341,17 +365,16 @@ private theorem le_prod_rpow_of_mul_self_mul_prod_le_one {s : Finset ι} {x : �
     rw [← Finset.prod_inv_distrib, ← Finset.prod_mul_distrib]
     exact Finset.prod_congr rfl fun i hi ↦ by rw [Real.rpow_neg (hy i hi).le]
   rw [hprod, ← mul_inv, mul_inv_le_iff₀ (by positivity), one_mul] at h
-  exact (mul_self_le_mul_self_iff hx hM.le).2 h
+  nlinarith
 
 /-- **The midpoint case.** Under the hypotheses of the main theorem, with the monotonicity replaced
 by the comparison of the two edges that it implies, the bound holds on the middle line with the
 average exponents `(α i + β i) / 2`. -/
-private theorem norm_le_prod_rpow_midpoint {s : Finset ι} (hab : a < b) {f : ℂ → ℂ}
+private theorem norm_le_prod_rpow_midpoint {s : Finset ι} {f : ℂ → ℂ}
     {G L : ι → ℂ → ℂ} {α β : ι → ℝ}
     (hf : DiffContOnCl ℂ f (re ⁻¹' Ioo a b)) (hfB : StripGrowth a b fun z ↦ ‖f z‖)
     (hL : ∀ i ∈ s, DiffContOnCl ℂ (L i) (re ⁻¹' Ioo a b))
     (hLG : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, exp (L i z) = G i z)
-    (hG₀ : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, G i z ≠ 0)
     (hGB : ∀ i ∈ s, StripGrowth a b fun z ↦ ‖G i z‖ ^ (-((α i + β i) / 2)))
     (hcmp : ∀ i ∈ s, ∀ t : ℝ,
       ‖G i (a + t * I)‖ ^ ((α i - β i) / 2) ≤ ‖G i (b + t * I)‖ ^ ((α i - β i) / 2))
@@ -359,52 +382,52 @@ private theorem norm_le_prod_rpow_midpoint {s : Finset ι} (hab : a < b) {f : �
     (hb : ∀ t : ℝ, ‖f (b + t * I)‖ ≤ ∏ i ∈ s, ‖G i (b + t * I)‖ ^ β i) (t : ℝ) :
     ‖f (((a + b) / 2 : ℝ) + t * I)‖ ≤
       ∏ i ∈ s, ‖G i (((a + b) / 2 : ℝ) + t * I)‖ ^ ((α i + β i) / 2) := by
+  have hab := hfB.lt
   set γ : ι → ℝ := fun i ↦ (α i + β i) / 2
   -- `Q z = f z * conj (f (a + b - conj z)) * exp (-weight z)` is holomorphic on the strip.
   set Q : ℂ → ℂ := fun z ↦ f z * conj (f (reflect a b z)) * exp (-weight s a b γ L z)
   have hQd : DiffContOnCl ℂ Q (re ⁻¹' Ioo a b) := by
-    have hw := diffContOnCl_weight (γ := γ) hab hL
-    have hF := diffContOnCl_conj_comp_reflect hab hf
+    have hw := diffContOnCl_weight (γ := γ) hL
+    have hF := diffContOnCl_conj_comp_reflect hf
     exact ⟨(hf.differentiableOn.mul hF.differentiableOn).mul hw.differentiableOn.neg.cexp,
       (hf.continuousOn.mul hF.continuousOn).mul hw.continuousOn.neg.cexp⟩
   have hnorm : ∀ z ∈ re ⁻¹' Icc a b, ‖Q z‖ = ‖f z‖ * ‖f (reflect a b z)‖ *
       ∏ i ∈ s, ‖G i z‖ ^ (-γ i) * ‖G i (reflect a b z)‖ ^ (-γ i) := fun z hz ↦ by
-    rw [norm_mul, norm_mul, RCLike.norm_conj, norm_exp_neg_weight hLG hG₀ hz]
+    rw [norm_mul, norm_mul, RCLike.norm_conj, norm_exp_neg_weight hLG hz]
   -- Its growth is admissible.
   have hQB : StripGrowth a b fun z ↦ ‖Q z‖ := by
     refine (((hfB.mul hfB.comp_reflect fun _ ↦ norm_nonneg _).mul
       (StripGrowth.prod hab (fun i hi ↦ (hGB i hi).mul (hGB i hi).comp_reflect
         fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _) fun i _ z ↦ by positivity)
       fun z ↦ by positivity)).of_le fun z hz ↦ (hnorm z (Ioo_subset_Icc_self hz)).le
-  -- On both boundary lines `‖Q‖ ≤ 1`, by the edge bounds and the comparison of the edges.
-  have hcore := norm_mul_norm_mul_prod_rpow_neg_le_one hab hG₀ hcmp ha hb
+  -- `‖Q‖` is symmetric under the reflection, and at most `1` on the line `re z = a` by the edge
+  -- bounds and the comparison of the edges; so it is at most `1` on both boundary lines.
+  have hmem : ∀ σ ∈ Icc a b, ∀ t : ℝ, (σ : ℂ) + t * I ∈ re ⁻¹' Icc a b := fun σ hσ t ↦ by
+    simpa using hσ
+  have hsymm : ∀ z ∈ re ⁻¹' Icc a b, ‖Q (reflect a b z)‖ = ‖Q z‖ := fun z hz ↦ by
+    rw [hnorm _ (reflect_mem_Icc hz), hnorm z hz, reflect_reflect, mul_comm ‖f (reflect a b z)‖]
+    exact congrArg _ (Finset.prod_congr rfl fun i _ ↦ mul_comm _ _)
+  have hedge_a : ∀ t : ℝ, ‖Q (a + t * I)‖ ≤ 1 := fun t ↦ by
+    rw [hnorm _ (hmem a (left_mem_Icc.2 hab.le) t), reflect_ofReal_add_mul_I, add_sub_cancel_left]
+    exact norm_mul_norm_mul_prod_rpow_neg_le_one hcmp ha hb t
   have hedge : ∀ z : ℂ, z.re = a ∨ z.re = b → ‖Q z‖ ≤ 1 := by
-    rintro z (h | h)
-    · obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = (a : ℂ) + t * I := ⟨z.im, by apply Complex.ext <;> simp [h]⟩
-      have hR : reflect a b ((a : ℂ) + t * I) = (b : ℂ) + t * I := by
-        apply Complex.ext <;> simp [reflect_re, reflect_im]
-      rw [hnorm _ (by simp [hab.le]), hR]
-      exact hcore t
-    · obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = (b : ℂ) + t * I := ⟨z.im, by apply Complex.ext <;> simp [h]⟩
-      have hR : reflect a b ((b : ℂ) + t * I) = (a : ℂ) + t * I := by
-        apply Complex.ext <;> simp [reflect_re, reflect_im]
-      rw [hnorm _ (by simp [hab.le]), hR, mul_comm ‖f (b + t * I)‖]
-      convert hcore t using 2
-      exact Finset.prod_congr rfl fun i _ ↦ mul_comm _ _
+    rintro z (h | h) <;> rw [← re_add_im z, h]
+    · exact hedge_a z.im
+    · rw [← hsymm _ (hmem b (right_mem_Icc.2 hab.le) _), reflect_ofReal_add_mul_I,
+        add_sub_cancel_right]
+      exact hedge_a z.im
   -- The Phragmén–Lindelöf principle bounds `Q` on the middle line, where it is `‖f‖ ^ 2` divided
   -- by the square of the interpolating product.
-  set z₀ : ℂ := (((a + b) / 2 : ℝ) : ℂ) + t * I
-  have hre : z₀.re = (a + b) / 2 := by simp [z₀]
-  have hz₀ : z₀ ∈ re ⁻¹' Icc a b := ⟨by rw [hre]; linarith, by rw [hre]; linarith⟩
-  have hRz₀ : reflect a b z₀ = z₀ := by
-    apply Complex.ext
-    · rw [reflect_re, hre]; ring
-    · rw [reflect_im]
-  have hQz₀ : ‖Q z₀‖ ≤ 1 := PhragmenLindelof.vertical_strip hQd hQB.isBigO
-    (fun z hz ↦ hedge z (Or.inl hz)) (fun z hz ↦ hedge z (Or.inr hz)) hz₀.1 hz₀.2
-  rw [hnorm z₀ hz₀, hRz₀] at hQz₀
-  exact le_prod_rpow_of_mul_self_mul_prod_le_one (norm_nonneg _)
-    (fun i hi ↦ norm_pos_iff.2 (hG₀ i hi _ hz₀)) hQz₀
+  have hz₀ := hmem ((a + b) / 2) ⟨by linarith, by linarith⟩ t
+  have hRz₀ : reflect a b (((a + b) / 2 : ℝ) + t * I) = ((a + b) / 2 : ℝ) + t * I := by
+    rw [reflect_ofReal_add_mul_I]
+    congr 3
+    ring
+  have hQz₀ : ‖Q (((a + b) / 2 : ℝ) + t * I)‖ ≤ 1 := PhragmenLindelof.vertical_strip hQd
+    hQB.isBigO (fun z hz ↦ hedge z (Or.inl hz)) (fun z hz ↦ hedge z (Or.inr hz)) hz₀.1 hz₀.2
+  rw [hnorm _ hz₀, hRz₀] at hQz₀
+  exact le_prod_rpow_of_mul_self_mul_prod_le_one
+    (fun i hi ↦ by rw [← hLG i hi _ hz₀]; exact norm_pos_iff.2 (exp_ne_zero _)) hQz₀
 
 /-! ### The interpolation bound -/
 
@@ -416,11 +439,10 @@ private theorem interp_mid (α β u v : ℝ) :
 
 /-- One bisection step: the bound on two lines `re z = u` and `re z = v` of the strip gives it on
 the line `re z = (u + v) / 2`, by the midpoint case on the strip `u ≤ re z ≤ v`. -/
-private theorem midpoint_step {s : Finset ι} (hab : a < b) {f : ℂ → ℂ} {G L : ι → ℂ → ℂ}
+private theorem norm_le_prod_rpow_interp_midpoint {s : Finset ι} {f : ℂ → ℂ} {G L : ι → ℂ → ℂ}
     {α β : ι → ℝ} (hf : DiffContOnCl ℂ f (re ⁻¹' Ioo a b)) (hfB : StripGrowth a b fun z ↦ ‖f z‖)
     (hL : ∀ i ∈ s, DiffContOnCl ℂ (L i) (re ⁻¹' Ioo a b))
     (hLG : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, exp (L i z) = G i z)
-    (hG₀ : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, G i z ≠ 0)
     (hGlow : ∀ i ∈ s, 0 < α i ∨ 0 < β i → StripGrowth a b fun z ↦ ‖G i z‖⁻¹)
     (hGup : ∀ i ∈ s, α i < 0 ∨ β i < 0 → StripGrowth a b fun z ↦ ‖G i z‖)
     (hmono : ∀ i ∈ s, β i < α i → ∀ t : ℝ, MonotoneOn (fun σ : ℝ ↦ ‖G i (σ + t * I)‖) (Icc a b))
@@ -432,6 +454,7 @@ private theorem midpoint_step {s : Finset ι} (hab : a < b) {f : ℂ → ℂ} {G
       ∏ i ∈ s, ‖G i (v + t * I)‖ ^ ((α i * (b - v) + β i * (v - a)) / (b - a))) (t : ℝ) :
     ‖f (((u + v) / 2 : ℝ) + t * I)‖ ≤ ∏ i ∈ s, ‖G i (((u + v) / 2 : ℝ) + t * I)‖ ^
       ((α i * (b - (u + v) / 2) + β i * ((u + v) / 2 - a)) / (b - a)) := by
+  have hab := hfB.lt
   set e : ι → ℝ → ℝ := fun i σ ↦ (α i * (b - σ) + β i * (σ - a)) / (b - a)
   have hba : 0 < b - a := sub_pos.2 hab
   have hsub : re ⁻¹' Ioo u v ⊆ re ⁻¹' Ioo a b := preimage_mono (Ioo_subset_Ioo hau hvb)
@@ -439,10 +462,9 @@ private theorem midpoint_step {s : Finset ι} (hab : a < b) {f : ℂ → ℂ} {G
   have hmem : ∀ σ ∈ Icc u v, ∀ t : ℝ, (σ : ℂ) + t * I ∈ re ⁻¹' Icc a b := fun σ hσ t ↦ by
     simpa using Icc_subset_Icc hau hvb hσ
   simp only [interp_mid]
-  refine norm_le_prod_rpow_midpoint (α := fun i ↦ e i u) (β := fun i ↦ e i v) huv
+  refine norm_le_prod_rpow_midpoint (α := fun i ↦ e i u) (β := fun i ↦ e i v)
     (hf.mono hsub) (hfB.mono hau huv hvb) (fun i hi ↦ (hL i hi).mono hsub)
-    (fun i hi z hz ↦ hLG i hi z (hsubc hz)) (fun i hi z hz ↦ hG₀ i hi z (hsubc hz))
-    (fun i hi ↦ ?_) (fun i hi t ↦ ?_) hu hv t
+    (fun i hi z hz ↦ hLG i hi z (hsubc hz)) (fun i hi ↦ ?_) (fun i hi t ↦ ?_) hu hv t
   · -- The growth of the weight: its exponent is positive only if `α i` or `β i` is.
     refine (stripGrowth_norm_rpow_neg hab (fun h ↦ hGlow i hi ?_) (fun h ↦ hGup i hi ?_)).mono
       hau huv hvb
@@ -460,24 +482,28 @@ private theorem midpoint_step {s : Finset ι} (hab : a < b) {f : ℂ → ℂ} {G
     have hd : (e i u - e i v) / 2 = (α i - β i) * ((v - u) / (2 * (b - a))) := by
       simp only [e]; field_simp; ring
     have hpos : 0 < (v - u) / (2 * (b - a)) := by positivity
-    have hu₀ : 0 < ‖G i (u + t * I)‖ := norm_pos_iff.2 (hG₀ i hi _ (hmem u ⟨le_rfl, huv.le⟩ t))
-    have hv₀ : 0 < ‖G i (v + t * I)‖ := norm_pos_iff.2 (hG₀ i hi _ (hmem v ⟨huv.le, le_rfl⟩ t))
+    have hv₀ : 0 < ‖G i (v + t * I)‖ := by
+      rw [← hLG i hi _ (hmem v ⟨huv.le, le_rfl⟩ t)]; exact norm_pos_iff.2 (exp_ne_zero _)
     rw [hd]
     rcases lt_trichotomy (β i) (α i) with h | h | h
-    · exact Real.rpow_le_rpow hu₀.le (hmono i hi h t ⟨hau, huv.le.trans hvb⟩ ⟨hau.trans huv.le, hvb⟩
-        huv.le) (mul_nonneg (by linarith) hpos.le)
+    · exact Real.rpow_le_rpow (norm_nonneg _) (hmono i hi h t ⟨hau, huv.le.trans hvb⟩
+        ⟨hau.trans huv.le, hvb⟩ huv.le) (mul_nonneg (by linarith) hpos.le)
     · simp [h]
     · exact Real.rpow_le_rpow_of_nonpos hv₀ (hanti i hi h t ⟨hau, huv.le.trans hvb⟩
         ⟨hau.trans huv.le, hvb⟩ huv.le) (mul_nonpos_of_nonpos_of_nonneg (by linarith) hpos.le)
 
 /-- The lines `re z = σ`, `σ ∈ [a, b]`, on which the interpolation bound holds form a closed set,
 by continuity in `σ`. -/
-private theorem isClosed_setOf_norm_le_prod_rpow {s : Finset ι} (hab : a < b) {f : ℂ → ℂ}
+private theorem isClosed_setOf_norm_le_prod_rpow {s : Finset ι} {f : ℂ → ℂ}
     {G : ι → ℂ → ℂ} {α β : ι → ℝ} (hf : DiffContOnCl ℂ f (re ⁻¹' Ioo a b))
     (hG : ∀ i ∈ s, DiffContOnCl ℂ (G i) (re ⁻¹' Ioo a b))
     (hG₀ : ∀ i ∈ s, ∀ z ∈ re ⁻¹' Icc a b, G i z ≠ 0) :
     IsClosed {σ | σ ∈ Icc a b ∧ ∀ t : ℝ, ‖f (σ + t * I)‖ ≤
       ∏ i ∈ s, ‖G i (σ + t * I)‖ ^ ((α i * (b - σ) + β i * (σ - a)) / (b - a))} := by
+  rcases le_or_gt b a with hba | hab
+  · -- A subset of the degenerate interval `[a, b]` has at most one point.
+    refine Subsingleton.isClosed ((subsingleton_Icc_of_ge hba).anti ?_)
+    exact fun _ hσ ↦ hσ.1
   have hcont : ∀ t : ℝ, ContinuousOn (fun σ : ℝ ↦ (σ : ℂ) + t * I) (Icc a b) := fun t ↦ by
     fun_prop
   have hmaps : ∀ t : ℝ, MapsTo (fun σ : ℝ ↦ (σ : ℂ) + t * I) (Icc a b) (re ⁻¹' Icc a b) :=
@@ -490,9 +516,9 @@ private theorem isClosed_setOf_norm_le_prod_rpow {s : Finset ι} (hab : a < b) {
     simp only [mem_ofPred_eq, mem_iInter, forall_and, forall_const]
   rw [this]
   refine isClosed_iInter fun t ↦ isClosed_Icc.isClosed_le
-    (((closure_strip hab ▸ hf.continuousOn).comp (hcont t) (hmaps t)).norm)
+    (((hf.continuousOn_verticalClosedStrip hab).comp (hcont t) (hmaps t)).norm)
     (continuousOn_finsetProd _ fun i hi ↦ ContinuousOn.rpow
-      ((closure_strip hab ▸ (hG i hi).continuousOn).comp (hcont t) (hmaps t)).norm
+      (((hG i hi).continuousOn_verticalClosedStrip hab).comp (hcont t) (hmaps t)).norm
       (by fun_prop) fun σ hσ ↦ Or.inl (norm_ne_zero_iff.2 (hG₀ i hi _ (hmaps t hσ))))
 
 /-- **The Phragmén–Lindelöf principle with products of powers on the edges** (Fiori). Let `f` be
@@ -525,17 +551,19 @@ theorem norm_le_prod_rpow_interp {s : Finset ι} (hab : a < b) {f : ℂ → ℂ}
     ‖f z‖ ≤ ∏ i ∈ s, ‖G i z‖ ^ ((α i * (b - z.re) + β i * (z.re - a)) / (b - a)) := by
   classical
   -- Normalize the growth hypotheses and choose logarithms of the factors.
-  have hfB' := stripGrowth_of_isBigO hab (closure_strip hab ▸ hf.continuousOn) hfB
+  have hfc := hf.continuousOn_verticalClosedStrip hab
+  have hGc : ∀ i ∈ s, ContinuousOn (G i) (re ⁻¹' Icc a b) := fun i hi ↦
+    (hG i hi).continuousOn_verticalClosedStrip hab
+  have hfB' := stripGrowth_of_isBigO hab hfc hfB
   have hGlow' : ∀ i ∈ s, 0 < α i ∨ 0 < β i → StripGrowth a b fun z ↦ ‖G i z‖⁻¹ :=
-    fun i hi h ↦ (stripGrowth_of_isBigO hab ((closure_strip hab ▸ (hG i hi).continuousOn).inv₀
-      (hG₀ i hi)) (hGlow i hi h)).of_le fun z _ ↦ (norm_inv _).ge
+    fun i hi h ↦ (stripGrowth_of_isBigO hab ((hGc i hi).inv₀ (hG₀ i hi)) (hGlow i hi h)).of_le
+      fun z _ ↦ (norm_inv _).ge
   have hGup' : ∀ i ∈ s, α i < 0 ∨ β i < 0 → StripGrowth a b fun z ↦ ‖G i z‖ :=
-    fun i hi h ↦ stripGrowth_of_isBigO hab (closure_strip hab ▸ (hG i hi).continuousOn)
-      (hGup i hi h)
+    fun i hi h ↦ stripGrowth_of_isBigO hab (hGc i hi) (hGup i hi h)
   have hlog : ∀ i, ∃ L : ℂ → ℂ, i ∈ s → DiffContOnCl ℂ L (re ⁻¹' Ioo a b) ∧
       ∀ z ∈ re ⁻¹' Icc a b, exp (L z) = G i z := fun i ↦ by
     by_cases hi : i ∈ s
-    · obtain ⟨L, hL⟩ := exists_log_strip hab (hG i hi) (hG₀ i hi)
+    · obtain ⟨L, hL⟩ := exists_log_strip (hG i hi) (hG₀ i hi)
       exact ⟨L, fun _ ↦ hL⟩
     · exact ⟨0, fun h ↦ (hi h).elim⟩
   choose L hL using hlog
@@ -543,24 +571,22 @@ theorem norm_le_prod_rpow_interp {s : Finset ι} (hab : a < b) {f : ℂ → ℂ}
   -- boundary lines and is closed under midpoints, so it is all of `[a, b]`.
   set P : ℝ → Prop := fun σ ↦ ∀ t : ℝ, ‖f (σ + t * I)‖ ≤
     ∏ i ∈ s, ‖G i (σ + t * I)‖ ^ ((α i * (b - σ) + β i * (σ - a)) / (b - a))
-  have hclosed : IsClosed {σ | σ ∈ Icc a b ∧ P σ} := isClosed_setOf_norm_le_prod_rpow hab hf hG hG₀
-  have hend : ∀ σ ∈ ({a, b} : Set ℝ), σ ∈ {σ | σ ∈ Icc a b ∧ P σ} := by
-    rintro σ (rfl | rfl)
-    · refine ⟨left_mem_Icc.2 hab.le, fun t ↦ ?_⟩
-      convert ha t using 3 with i
-      field_simp
-      ring
-    · refine ⟨right_mem_Icc.2 hab.le, fun t ↦ ?_⟩
-      convert hb t using 3 with i
-      field_simp
-      ring
-  have hall := Icc_subset_of_isClosed_of_midpoint_mem hclosed
-    (fun u hu v hv huv ↦ by
-      rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv, ← div_eq_inv_mul]
-      exact ⟨⟨by linarith [hu.1.1], by linarith [hv.1.2]⟩, midpoint_step hab hf hfB'
-        (fun i hi ↦ (hL i hi).1) (fun i hi ↦ (hL i hi).2) hG₀ hGlow' hGup' hmono hanti
-        hu.1.1 huv hv.1.2 hu.2 hv.2⟩)
-    (hend a (by simp)) (hend b (by simp))
+  have hclosed : IsClosed {σ | σ ∈ Icc a b ∧ P σ} := isClosed_setOf_norm_le_prod_rpow hf hG hG₀
+  -- At the two ends the interpolated exponents are `α i` and `β i`.
+  have hba : b - a ≠ 0 := (sub_pos.2 hab).ne'
+  have hea : ∀ i, (α i * (b - a) + β i * (a - a)) / (b - a) = α i := fun i ↦ by
+    field_simp; ring
+  have heb : ∀ i, (α i * (b - b) + β i * (b - a)) / (b - a) = β i := fun i ↦ by
+    field_simp; ring
+  have hend_a : a ∈ {σ | σ ∈ Icc a b ∧ P σ} :=
+    ⟨left_mem_Icc.2 hab.le, fun t ↦ by simpa only [hea] using ha t⟩
+  have hend_b : b ∈ {σ | σ ∈ Icc a b ∧ P σ} :=
+    ⟨right_mem_Icc.2 hab.le, fun t ↦ by simpa only [heb] using hb t⟩
+  have hall := hclosed.Icc_subset_of_midpoint_mem
+    (fun u hu v hv huv ↦ ⟨⟨by linarith [hu.1.1], by linarith [hv.1.2]⟩,
+      norm_le_prod_rpow_interp_midpoint hf hfB' (fun i hi ↦ (hL i hi).1) (fun i hi ↦ (hL i hi).2)
+        hGlow' hGup' hmono hanti hu.1.1 huv hv.1.2 hu.2 hv.2⟩)
+    hend_a hend_b
   simpa only [re_add_im] using (hall ⟨hza, hzb⟩).2 z.im
 
 end TauCeti.PhragmenLindelof

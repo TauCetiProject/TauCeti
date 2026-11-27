@@ -27,8 +27,8 @@ curvature in metric geometry.
   function lies below the chord joining its values at `0` and `1`.
 * `TauCeti.convexOn_of_midpoint` — on a convex subset of a real topological vector space, an
   upper semicontinuous midpoint-convex function is convex.
-* `TauCeti.Icc_subset_of_isClosed_of_midpoint_mem` — the set version on the line: a closed set of
-  reals that contains the midpoint of any two of its points contains the interval between them.
+* `IsClosed.Icc_subset_of_midpoint_mem` — the set version on the line: a closed set of reals that
+  contains the midpoint of any two of its points contains the interval between them.
 
 ## References
 
@@ -101,12 +101,12 @@ theorem convexOn_of_midpoint {E : Type*} [AddCommGroup E] [Module ℝ E] [Topolo
   simpa only [smul_eq_mul] using key
 
 /-- **A closed midpoint-convex set of reals is order-connected.** If a closed set `S ⊆ ℝ`
-contains the midpoint of any two of its points `x < y`, then it contains `[a, b]` whenever it
-contains `a` and `b`. This is how a property is propagated from the two ends of an interval to all
-of it when it is preserved under passing to midpoints and under limits, as in the bisection form of
-convexity arguments. -/
-theorem Icc_subset_of_isClosed_of_midpoint_mem {S : Set ℝ} (hS : IsClosed S)
-    (hmid : ∀ x ∈ S, ∀ y ∈ S, x < y → midpoint ℝ x y ∈ S) {a b : ℝ} (ha : a ∈ S) (hb : b ∈ S) :
+contains the midpoint `(x + y) / 2` of any two of its points `x < y`, then it contains `[a, b]`
+whenever it contains `a` and `b`. This is how a property is propagated from the two ends of an
+interval to all of it when it is preserved under passing to midpoints and under limits, as in the
+bisection form of convexity arguments. -/
+theorem _root_.IsClosed.Icc_subset_of_midpoint_mem {S : Set ℝ} (hS : IsClosed S)
+    (hmid : ∀ x ∈ S, ∀ y ∈ S, x < y → (x + y) / 2 ∈ S) {a b : ℝ} (ha : a ∈ S) (hb : b ∈ S) :
     Icc a b ⊆ S := by
   -- If `σ ∈ [a, b]` were missing, the closest points `u < σ < v` of `S` on either side of it
   -- would have their midpoint in `S`, strictly between `u` and `v`, contradicting their choice.
@@ -123,8 +123,7 @@ theorem Icc_subset_of_isClosed_of_midpoint_mem {S : Set ℝ} (hS : IsClosed S)
   have huσ : u < σ := hu.2.2.lt_of_ne fun h ↦ hσS (h ▸ hu.1)
   have hσv : σ < v := hv.2.1.lt_of_ne' fun h ↦ hσS (h ▸ hv.1)
   have hm := hmid u hu.1 v hv.1 (huσ.trans hσv)
-  rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv] at hm
-  rcases le_total (2⁻¹ * (u + v)) σ with h | h
+  rcases le_total ((u + v) / 2) σ with h | h
   · linarith [le_csSup hbdd₁ ⟨hm, by linarith [hu.2.1], h⟩]
   · linarith [csInf_le hbdd₂ ⟨hm, h, by linarith [hv.2.2]⟩]
 

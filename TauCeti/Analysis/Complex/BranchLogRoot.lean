@@ -195,7 +195,6 @@ theorem _root_.Convex.exists_continuousOn_differentiableOn_eqOn_exp_comp {S : Se
     (hgd : DifferentiableOn ℂ g (interior S)) (hS₀ : 0 ∉ g '' S) :
     ∃ f : ℂ → ℂ, ContinuousOn f S ∧ DifferentiableOn ℂ f (interior S) ∧
       EqOn (Complex.exp ∘ f) g S := by
-  classical
   rcases S.eq_empty_or_nonempty with rfl | hne
   · exact ⟨0, continuousOn_empty _, by simp, by simp⟩
   -- The continuous branch comes from Mathlib's lifting theorem on the space `S` itself, which is
@@ -209,14 +208,14 @@ theorem _root_.Convex.exists_continuousOn_differentiableOn_eqOn_exp_comp {S : Se
   obtain ⟨L, hLc, hLeq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hsc isOpen_univ
     (g := g ∘ Subtype.val) (hgc.comp_continuous continuous_subtypeVal Subtype.prop).continuousOn
     (by rintro ⟨x, -, hx⟩; exact hS₀ ⟨x, x.property, hx⟩)
-  let f : ℂ → ℂ := fun z ↦ if hz : z ∈ S then L ⟨z, hz⟩ else 0
+  -- Extend the branch on `S` by `0` outside it.
+  set f : ℂ → ℂ := Function.extend Subtype.val L fun _ ↦ 0
   have hfc : ContinuousOn f S := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    convert continuousOn_univ.1 hLc using 1
-    ext ⟨z, hz⟩
-    simp [f, hz]
+    rw [continuousOn_iff_continuous_domRestrict, domRestrict_eq,
+      Function.extend_comp Subtype.val_injective]
+    exact continuousOn_univ.1 hLc
   have hfeq : EqOn (Complex.exp ∘ f) g S := fun z hz ↦ by
-    simpa [f, hz] using hLeq (mem_univ ⟨z, hz⟩)
+    simpa [f, Function.extend_val_apply hz] using hLeq (mem_univ ⟨z, hz⟩)
   exact ⟨f, hfc, fun z hz ↦ (differentiableAt_of_continuousOn_exp_comp isOpen_interior
     (hfc.mono interior_subset) (hfeq.mono interior_subset) hgd hz).differentiableWithinAt, hfeq⟩
 
