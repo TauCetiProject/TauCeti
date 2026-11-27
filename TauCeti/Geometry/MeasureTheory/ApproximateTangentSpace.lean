@@ -47,6 +47,8 @@ countably `k`-rectifiable set `Γ`, that is, the weight of a rectifiable `k`-var
   density, `μ (B_r(x)) / (ω_k r ^ k) → θ`, for closed and for open balls.
 * `MeasureTheory.Measure.HasApproxTangentSpace.unique`: the approximate tangent space and its
   multiplicity are unique.
+* `MeasureTheory.Measure.hasApproxTangentSpace_congr_restrict`: locality, approximate tangent
+  spaces at `x` depend only on the restriction of the measure to a neighbourhood of `x`.
 
 ## Implementation notes
 
@@ -394,7 +396,44 @@ theorem unique (h₁ : μ.HasApproxTangentSpace x T₁ θ₁) (h₂ : μ.HasAppr
   have hν := Measure.ext_of_integral_eq_on_compactlySupported hint
   exact ⟨Submodule.eq_of_euclideanHausdorffMeasure_restrict_eq hν hk rfl, rfl⟩
 
+omit [FiniteDimensional ℝ E] [IsLocallyFiniteMeasure μ] in
+/-- **Locality.** Approximate tangent spaces depend only on the restriction of the measure to a
+neighbourhood of the point: if `μ` and `ν` agree on a neighbourhood `U` of `x`, then every
+approximate tangent space of `μ` at `x` is one of `ν`, with the same multiplicity. At small
+scales the blow-ups only see `U`. -/
+theorem congr_restrict {ν : Measure E} {U : Set E} (hU : U ∈ 𝓝 x)
+    (hμν : μ.restrict U = ν.restrict U) (h : μ.HasApproxTangentSpace x T θ) :
+    ν.HasApproxTangentSpace x T θ := by
+  refine ⟨h.ne_zero, fun f ↦ (h.tendsto_integral f).congr' ?_⟩
+  obtain ⟨δ, hδ, hδU⟩ := Metric.mem_nhds_iff.mp hU
+  obtain ⟨R, hR⟩ := f.hasCompactSupport.isCompact.isBounded.subset_closedBall 0
+  have hR' : ∀ y, f y ≠ 0 → ‖y‖ ≤ max R 1 := fun y hy ↦
+    (mem_closedBall_zero_iff.mp (hR (subset_tsupport _ hy))).trans (le_max_left _ _)
+  have hpos : 0 < δ / max R 1 := div_pos hδ (lt_max_of_lt_right one_pos)
+  filter_upwards [Ioo_mem_nhdsGT hpos] with r ⟨hr, hrδ⟩
+  -- the dilated integrand vanishes outside `ball x δ ⊆ U`
+  have hsupp : ∀ y ∉ U, f (r⁻¹ • (y - x)) = 0 := by
+    intro y hyU
+    by_contra hy
+    refine hyU (hδU (mem_ball_iff_norm.mpr ?_))
+    have h1 := hR' _ hy
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hr.le), inv_mul_le_iff₀ hr] at h1
+    calc ‖y - x‖ ≤ r * max R 1 := h1
+      _ < δ / max R 1 * max R 1 := by gcongr
+      _ = δ := div_mul_cancel₀ _ (lt_max_of_lt_right one_pos).ne'
+  rw [integral_blowUp hr, integral_blowUp hr,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (μ := μ) hsupp,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (μ := ν) hsupp, hμν]
+
 end HasApproxTangentSpace
+
+omit [FiniteDimensional ℝ E] in
+/-- **Locality.** Measures that agree on a neighbourhood of `x` have the same approximate tangent
+spaces at `x`, with the same multiplicities. -/
+theorem hasApproxTangentSpace_congr_restrict {ν : Measure E} {U : Set E} (hU : U ∈ 𝓝 x)
+    (hμν : μ.restrict U = ν.restrict U) :
+    μ.HasApproxTangentSpace x T θ ↔ ν.HasApproxTangentSpace x T θ :=
+  ⟨HasApproxTangentSpace.congr_restrict hU hμν, HasApproxTangentSpace.congr_restrict hU hμν.symm⟩
 
 end ApproxTangentSpace
 
