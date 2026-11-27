@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Commutant
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Calderón–Zygmund operators
@@ -446,33 +447,6 @@ theorem hasStandardKernel_id (C : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
 
 /-! ### The kernel determines the operator up to a multiplication operator -/
 
-/-- A function continuous on `closedBall y₀ r` whose integrals over the balls `closedBall y₀ ρₖ`
-vanish, for radii `0 < ρₖ ≤ r` tending to `0`, vanishes at `y₀`. -/
-private theorem eq_zero_of_forall_setIntegral_closedBall_eq_zero {g : V → ℂ} {y₀ : V} {r : ℝ}
-    (hg : ContinuousOn g (closedBall y₀ r)) {ρ : ℕ → ℝ} (hρ : ∀ k, 0 < ρ k) (hρr : ∀ k, ρ k ≤ r)
-    (hρ₀ : Tendsto ρ atTop (𝓝 0)) (hint : ∀ k, ∫ y in closedBall y₀ (ρ k), g y = 0) :
-    g y₀ = 0 := by
-  by_contra hne
-  have hpos : 0 < ‖g y₀‖ := norm_pos_iff.2 hne
-  -- near `y₀`, `g` stays within `‖g y₀‖ / 2` of `g y₀`, so its integral over a small ball cannot
-  -- vanish
-  obtain ⟨η, hη, hgη⟩ := Metric.continuousWithinAt_iff.1
-    (hg y₀ (mem_closedBall_self ((hρ 0).le.trans (hρr 0)))) (‖g y₀‖ / 2) (half_pos hpos)
-  obtain ⟨k, hk⟩ := (hρ₀.eventually (gt_mem_nhds hη)).exists
-  have hBr : closedBall y₀ (ρ k) ⊆ closedBall y₀ r := closedBall_subset_closedBall (hρr k)
-  have hμB : volume (closedBall y₀ (ρ k)) < ∞ := measure_closedBall_lt_top
-  have hμB₀ : 0 < volume.real (closedBall y₀ (ρ k)) :=
-    ENNReal.toReal_pos (measure_closedBall_pos volume y₀ (hρ k)).ne' hμB.ne
-  have hle : ‖∫ y in closedBall y₀ (ρ k), (g y - g y₀)‖ ≤
-      ‖g y₀‖ / 2 * volume.real (closedBall y₀ (ρ k)) := by
-    refine norm_setIntegral_le_of_norm_le_const hμB fun y hy ↦ ?_
-    rw [← dist_eq_norm]
-    exact (hgη (hBr hy) ((mem_closedBall.1 hy).trans_lt hk)).le
-  rw [integral_sub ((hg.mono hBr).integrableOn_compact (isCompact_closedBall _ _))
-    (integrableOn_const (μ := volume) hμB.ne), hint k, setIntegral_const, zero_sub, norm_neg,
-    norm_smul, Real.norm_of_nonneg measureReal_nonneg] at hle
-  nlinarith
-
 namespace HasStandardKernel
 
 variable {T : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V)} {K K' : V → V → ℂ}
@@ -538,8 +512,8 @@ theorem unique [CompleteSpace F] [Nontrivial F] (h : HasStandardKernel T K C δ)
     have hK' : ContinuousOn (fun y ↦ K' x y) (closedBall y₀ r) :=
       h'.continuousOn_uncurry.comp (Continuous.prodMk_right x).continuousOn
         fun y hy ↦ hsep x hxb y hy
-    refine eq_zero_of_forall_setIntegral_closedBall_eq_zero (g := fun y ↦ K x y - K' x y)
-      (hK.sub hK') hρ hρr hρ₀ fun k ↦ ?_
+    refine ContinuousOn.eq_zero_of_forall_setIntegral_closedBall_eq_zero (μ := volume)
+      (g := fun y ↦ K x y - K' x y) (hK.sub hK') hρ hρr hρ₀ fun k ↦ ?_
     have hBr := closedBall_subset_closedBall (x := y₀) (hρr k)
     rw [integral_sub ((hK.mono hBr).integrableOn_compact (isCompact_closedBall _ _))
       ((hK'.mono hBr).integrableOn_compact (isCompact_closedBall _ _)),

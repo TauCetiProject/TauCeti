@@ -29,7 +29,8 @@ and vanishing off it, the integral of `Φ x (f₀ x)` for an almost everywhere z
 extension `f₀` of `f` from `s` and an integrand `Φ` vanishing at `0`, the pairing
 `∫ h φ = ∫_B (φ - c) h` of a function `h` of integral zero vanishing off `B`, and that a
 continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
-measure positive on nonempty open sets.
+measure positive on nonempty open sets, and that a continuous function whose integrals over
+arbitrarily small balls about a point vanish vanishes there.
 It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
 that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, that a pointwise
 bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` integrates to the same bound for the integrals, and turns a bound
@@ -75,6 +76,8 @@ integral.
   with Bochner integral at most `E`.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
+* `ContinuousOn.eq_zero_of_forall_setIntegral_closedBall_eq_zero`: a function continuous near `y₀`
+  whose integrals over arbitrarily small closed balls about `y₀` vanish vanishes at `y₀`.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
 * `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
@@ -321,7 +324,8 @@ theorem integral_mul_eq_setIntegral_sub_mul {α : Type*} [MeasurableSpace α]
 end TauCeti
 
 /-- A continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
-measure positive on nonempty open sets. -/
+measure positive on nonempty open sets, and that a continuous function whose integrals over
+arbitrarily small balls about a point vanish vanishes there. -/
 theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [TopologicalSpace X]
     [MeasurableSpace X] [RCLike 𝕜] {μ : Measure X}
     [μ.IsOpenPosMeasure] {h : X → 𝕜} (hc : Continuous h) (hL : MemLp h 2 μ)
@@ -334,6 +338,39 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0
   exact hpos.ne' h0
+
+open Metric Filter Topology in
+/-- **A continuous function is determined at a point by its integrals over small balls.** Let `μ`
+be positive on nonempty open sets and finite on compact sets. A function continuous on
+`closedBall y₀ r` whose integrals over the balls `closedBall y₀ ρₖ` vanish, for radii
+`0 < ρₖ ≤ r` tending to `0`, vanishes at `y₀`. -/
+theorem ContinuousOn.eq_zero_of_forall_setIntegral_closedBall_eq_zero {X E : Type*}
+    [PseudoMetricSpace X] [ProperSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    {μ : Measure X} [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {g : X → E} {y₀ : X} {r : ℝ}
+    (hg : ContinuousOn g (closedBall y₀ r)) {ρ : ℕ → ℝ} (hρ : ∀ k, 0 < ρ k) (hρr : ∀ k, ρ k ≤ r)
+    (hρ₀ : Tendsto ρ atTop (𝓝 0)) (hint : ∀ k, ∫ y in closedBall y₀ (ρ k), g y ∂μ = 0) :
+    g y₀ = 0 := by
+  by_contra hne
+  have hpos : 0 < ‖g y₀‖ := norm_pos_iff.2 hne
+  -- near `y₀`, `g` stays within `‖g y₀‖ / 2` of `g y₀`, so its integral over a small ball cannot
+  -- vanish
+  obtain ⟨η, hη, hgη⟩ := Metric.continuousWithinAt_iff.1
+    (hg y₀ (mem_closedBall_self ((hρ 0).le.trans (hρr 0)))) (‖g y₀‖ / 2) (half_pos hpos)
+  obtain ⟨k, hk⟩ := (hρ₀.eventually (gt_mem_nhds hη)).exists
+  have hBr : closedBall y₀ (ρ k) ⊆ closedBall y₀ r := closedBall_subset_closedBall (hρr k)
+  have hμB : μ (closedBall y₀ (ρ k)) < ∞ := measure_closedBall_lt_top
+  have hμB₀ : 0 < μ.real (closedBall y₀ (ρ k)) :=
+    ENNReal.toReal_pos (measure_closedBall_pos μ y₀ (hρ k)).ne' hμB.ne
+  have hle : ‖∫ y in closedBall y₀ (ρ k), (g y - g y₀) ∂μ‖ ≤
+      ‖g y₀‖ / 2 * μ.real (closedBall y₀ (ρ k)) := by
+    refine norm_setIntegral_le_of_norm_le_const hμB fun y hy ↦ ?_
+    rw [← dist_eq_norm]
+    exact (hgη (hBr hy) ((mem_closedBall.1 hy).trans_lt hk)).le
+  rw [integral_sub ((hg.mono hBr).integrableOn_compact' (isCompact_closedBall _ _)
+    measurableSet_closedBall) (integrableOn_const hμB.ne), hint k, setIntegral_const, zero_sub,
+    norm_neg, norm_smul, Real.norm_of_nonneg measureReal_nonneg] at hle
+  nlinarith
 
 namespace MeasureTheory
 
