@@ -335,16 +335,19 @@ def totallyRealConjWirtingerDerivKerEquiv (hα0 : 0 < α) (hα1 : α < 1) :
   LinearEquiv.ofBijective (LinearMap.snd ℝ _ Λ ∘ₗ
       (hΛ.totallyRealBoundaryEvalEquiv hα0 hα1).toLinearEquiv.toLinearMap ∘ₗ
         (totallyRealConjWirtingerDerivL Λ α).ker.subtype)
-    ⟨fun u v huv ↦ Subtype.ext <| (hΛ.totallyRealBoundaryEvalEquiv hα0 hα1).injective <| by
-      -- Both elements have vanishing Cauchy–Riemann derivative and the same value at `1`.
-      refine Prod.ext ?_ huv
-      rw [totallyRealBoundaryEvalEquiv_apply_fst, totallyRealBoundaryEvalEquiv_apply_fst,
-        mem_ker_totallyRealConjWirtingerDerivL_iff.1 u.property,
-        mem_ker_totallyRealConjWirtingerDerivL_iff.1 v.property],
-    fun w ↦ ⟨⟨(hΛ.totallyRealBoundaryEvalEquiv hα0 hα1).symm (0, w),
-      mem_ker_totallyRealConjWirtingerDerivL_iff.2 (by
-        rw [← totallyRealBoundaryEvalEquiv_apply_fst hΛ hα0 hα1,
-          ContinuousLinearEquiv.apply_symm_apply])⟩, by simp⟩⟩
+    -- The ascription keeps the type `Function.Bijective` (rather than `∧`) on the proof, so that
+    -- `LinearEquiv.ofBijective_apply` applies to this definition.
+    (show Function.Bijective _ from
+      ⟨fun u v huv ↦ Subtype.ext <| (hΛ.totallyRealBoundaryEvalEquiv hα0 hα1).injective <| by
+        -- Both elements have vanishing Cauchy–Riemann derivative and the same value at `1`.
+        refine Prod.ext ?_ huv
+        rw [totallyRealBoundaryEvalEquiv_apply_fst, totallyRealBoundaryEvalEquiv_apply_fst,
+          mem_ker_totallyRealConjWirtingerDerivL_iff.1 u.property,
+          mem_ker_totallyRealConjWirtingerDerivL_iff.1 v.property],
+      fun w ↦ ⟨⟨(hΛ.totallyRealBoundaryEvalEquiv hα0 hα1).symm (0, w),
+        mem_ker_totallyRealConjWirtingerDerivL_iff.2 (by
+          rw [← totallyRealBoundaryEvalEquiv_apply_fst hΛ hα0 hα1,
+            ContinuousLinearEquiv.apply_symm_apply])⟩, by simp⟩⟩)
 
 /-- The isomorphism `TauCeti.IsMaximalTotallyReal.totallyRealConjWirtingerDerivKerEquiv` is
 evaluation at the boundary point `1`. -/
@@ -353,8 +356,8 @@ theorem coe_totallyRealConjWirtingerDerivKerEquiv_apply (hα0 : 0 < α) (hα1 : 
     (u : (totallyRealConjWirtingerDerivL Λ α).ker) :
     (hΛ.totallyRealConjWirtingerDerivKerEquiv hα0 hα1 u : E) =
       ((u : totallyRealBoundarySubspace Λ α) :
-        CkHolderSpaceOn 1 α (unitBallOpens ℂ) E).closureExtend 1 :=
-  coe_totallyRealBoundaryEvalEquiv_apply_snd hΛ hα0 hα1 (u : totallyRealBoundarySubspace Λ α)
+        CkHolderSpaceOn 1 α (unitBallOpens ℂ) E).closureExtend 1 := by
+  simp [totallyRealConjWirtingerDerivKerEquiv]
 
 include hΛ in
 /-- The kernel of the Cauchy–Riemann operator on `X_Λ` has real dimension `n = dim_ℂ E`. -/
