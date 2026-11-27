@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.Calculus.Gradient.Basic
@@ -38,6 +39,8 @@ test function on `Ω` whose gradient obeys the product rule.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`, `TestFunction.coe_lineDerivOp_eq_fderiv`:
   `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.exists_lineDerivOp_apply_ne_zero`: a nonzero test function has a nonzero
+  derivative in every nonzero direction.
 * `TestFunction.norm_iteratedFDeriv_lineDerivOp_le`: the derivatives of order at most `r` of
   `∂_{v} φ` are bounded by `‖v‖` times a bound on those of order at most `r + 1` of `φ`.
 * `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
@@ -113,6 +116,15 @@ theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
     tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   rw [coe_lineDerivOp_eq_fderiv]
   exact tsupport_fderiv_apply_subset ℝ v
+
+/-- A nonzero test function has a nonzero derivative in every nonzero direction `v`: a compactly
+supported function whose derivative along `v` vanishes identically is zero. -/
+theorem exists_lineDerivOp_apply_ne_zero {φ : 𝓓(Ω, F)} (hφ : φ ≠ 0) {v : E} (hv : v ≠ 0) :
+    ∃ x, ∂_{v} φ x ≠ 0 := by
+  by_contra! h0
+  exact hφ (ext fun x ↦ φ.hasCompactSupport.eq_zero_of_fderiv_apply_eq_zero (𝕂 := ℝ)
+    (φ.contDiff.differentiable (by simp)) hv
+    (fun w ↦ by rw [← lineDerivOp_apply_eq_fderiv, h0]) x)
 
 /-- The derivatives of order at most `r` of `∂_v φ` are bounded by `‖v‖` times a bound on the
 derivatives of order at most `r + 1` of `φ`. -/

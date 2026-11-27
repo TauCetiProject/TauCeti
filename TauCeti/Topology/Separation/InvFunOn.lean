@@ -37,6 +37,13 @@ a set `U` containing the fibre. Then the lift is continuous and injective on `K`
 `K ∩ U`, and fixes every point of `K` at whose image `k` is the identity
 (`ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image`). This is the shrinking step in
 M. Brown's proof that the only inverse set of a map of a cell is cellular.
+
+The compactness argument also applies to a map `f` continuous and injective on a closed set `s`
+which tends to a point `p ∉ f '' s` along `s` outside compact sets: the inverse `invFunOn f s` is
+continuous on `f '' s` (`ContinuousOn.continuousOn_invFunOn_image_of_tendsto_cocompact`), and it
+tends to the cocompact filter at `p` (`ContinuousOn.tendsto_invFunOn_cocompact`). This is the
+case of a conformal map of the closed upper half-plane onto the closure of a Jordan domain with one
+frontier point removed.
 -/
 
 public section
@@ -160,5 +167,55 @@ theorem ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image [T2Space �
   · by_cases hxy : f x = y
     · exact hgy x hx hxy
     · exact hinj (hgP x hx hxy) ⟨hx, hxy⟩ ((hfg x hx).trans hkx)
+
+/-- **Inverses of injections out of closed sets.** Let `f` be continuous and injective on a closed
+set `s`, with values in a Hausdorff space, and let `f` tend to a point `p` outside `f '' s` along
+`s` outside compact sets. Then the inverse `invFunOn f s` is continuous on `f '' s`. This is the
+situation of a conformal map of the closed upper half-plane onto the closure of a Jordan domain
+with one frontier point removed. -/
+theorem ContinuousOn.continuousOn_invFunOn_image_of_tendsto_cocompact {X Y : Type*}
+    [TopologicalSpace X] [Nonempty X] [TopologicalSpace Y] [T2Space Y] {f : X → Y} {s : Set X}
+    {p : Y} (hf : ContinuousOn f s) (hs : IsClosed s) (hinj : InjOn f s)
+    (hp : Tendsto f (cocompact X ⊓ 𝓟 s) (𝓝 p)) (hps : p ∉ f '' s) :
+    ContinuousOn (invFunOn f s) (f '' s) := by
+  rintro _ ⟨x₀, hx₀, rfl⟩
+  obtain ⟨V, W, hV, hW, hxV, hpW, hVW⟩ := t2_separation fun h : f x₀ = p => hps ⟨x₀, hx₀, h⟩
+  -- outside a compact set `K`, the points of `s` are mapped into `W`
+  obtain ⟨K, hK, hKW⟩ := (hasBasis_cocompact.inf_principal s).mem_iff.mp (hp (hW.mem_nhds hpW))
+  have hL : IsCompact (s ∩ K) := hK.inter_left hs
+  have hcont : ContinuousOn (invFunOn f (s ∩ K)) (f '' (s ∩ K)) :=
+    (hf.mono inter_subset_left).continuousOn_invFunOn_image_of_isCompact hL subset_rfl
+      (hinj.mono inter_subset_left) (by rw [sdiff_self, image_empty]; exact Set.empty_disjoint _)
+  -- near `f x₀`, every point of `f '' s` is the image of a point of `s ∩ K`
+  have hmem (x : X) (hx : x ∈ s) (hxV : f x ∈ V) : x ∈ s ∩ K :=
+    ⟨hx, of_not_not fun hxK => disjoint_left.mp hVW hxV (hKW ⟨hxK, hx⟩)⟩
+  have hsub : f '' s ∩ V ⊆ f '' (s ∩ K) := by
+    rintro _ ⟨⟨x, hx, rfl⟩, hxV⟩
+    exact ⟨x, hmem x hx hxV, rfl⟩
+  have heq : EqOn (invFunOn f s) (invFunOn f (s ∩ K)) (f '' (s ∩ K)) := by
+    rintro _ ⟨x, hx, rfl⟩
+    rw [hinj.leftInvOn_invFunOn hx.1, (hinj.mono inter_subset_left).leftInvOn_invFunOn hx]
+  have hx₀K := hmem x₀ hx₀ hxV
+  have hw : ContinuousWithinAt (invFunOn f s) (f '' s ∩ V) (f x₀) :=
+    ((hcont _ ⟨x₀, hx₀K, rfl⟩).mono hsub).congr (fun y hy => heq (hsub hy))
+      (heq ⟨x₀, hx₀K, rfl⟩)
+  exact (continuousWithinAt_inter (hV.mem_nhds hxV)).mp hw
+
+/-- Let `f` be continuous on a closed set `s`, with values in a Hausdorff space, and let `p` be a
+point outside `f '' s`. Then the inverse `invFunOn f s` tends to infinity, in the sense of the
+cocompact filter, at `p` within `f '' s`: the image of each compact part of `s` is closed and
+misses `p`. -/
+theorem ContinuousOn.tendsto_invFunOn_cocompact {X Y : Type*} [TopologicalSpace X] [Nonempty X]
+    [TopologicalSpace Y] [T2Space Y] {f : X → Y} {s : Set X} {p : Y} (hf : ContinuousOn f s)
+    (hs : IsClosed s) (hps : p ∉ f '' s) :
+    Tendsto (invFunOn f s) (𝓝[f '' s] p) (cocompact X) := by
+  refine hasBasis_cocompact.tendsto_right_iff.mpr fun K hK => ?_
+  have hKc : IsCompact (f '' (s ∩ K)) :=
+    (hK.inter_left hs).image_of_continuousOn (hf.mono inter_subset_left)
+  have hpK : p ∉ f '' (s ∩ K) := fun h => hps (image_mono inter_subset_left h)
+  filter_upwards [mem_nhdsWithin_of_mem_nhds (hKc.isClosed.isOpen_compl.mem_nhds hpK),
+    self_mem_nhdsWithin] with y hyK hys hyR
+  obtain ⟨hmem, hfy⟩ := invFunOn_pos hys
+  exact hyK ⟨_, ⟨hmem, hyR⟩, hfy⟩
 
 end
