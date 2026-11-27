@@ -140,7 +140,7 @@ private theorem IsAmenable.exists_ker_mul'_eq_commutator
       simp only [LinearMap.mem_ker, coe_coe] at hx ⊢
       rw [mul'_mulRight_apply, hx, zero_mul])
     D₀
-    (derivation_inner
+    (flip_sub_flip_mul_apply
       (dualAction_mul_apply_of_right
         (dualAction_mul_apply_of_left (mulLeft_mul_apply (𝕜 := 𝕜) (A := A))))
       (dualAction_mul_apply_of_left

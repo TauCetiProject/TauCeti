@@ -60,6 +60,85 @@ open Filter Topology Submodule ContinuousLinearMap
 
 namespace TauCeti
 
+section EssentialInclusion
+
+variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup A] [NormedSpace 𝕜 A]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {L R : A →L[𝕜] E →L[𝕜] E}
+
+/-- The canonical continuous linear inclusion of the right-essential submodule of
+`L.essentialSubmodule` into `essentialBimoduleSubmodule L R`. -/
+private def restrictActionEssentialToEssentialBimodule
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) :
+    (R.restrictAction L.essentialSubmodule fun a _ hx ↦
+        apply_mem_essentialSubmodule_of_comm hLR a hx).essentialSubmodule →L[𝕜]
+      essentialBimoduleSubmodule L R :=
+  (L.essentialSubmodule.subtypeL.comp
+      (R.restrictAction L.essentialSubmodule fun a _ hx ↦
+        apply_mem_essentialSubmodule_of_comm hLR a hx).essentialSubmodule.subtypeL).codRestrict
+    (essentialBimoduleSubmodule L R)
+    fun x ↦
+      (essentialSubmodule_le_iff
+          (M := R.restrictAction L.essentialSubmodule fun a _ hx ↦
+            apply_mem_essentialSubmodule_of_comm hLR a hx)
+          (p := (essentialBimoduleSubmodule L R).comap L.essentialSubmodule.subtype)
+          ((isClosed_essentialBimoduleSubmodule L R).preimage continuous_subtypeVal)).2
+        (fun a y ↦ by
+          simpa [coe_restrictAction_apply] using
+            apply_right_mem_essentialBimoduleSubmodule_of_mem_left hLR a y.property)
+        x.property
+
+/-- Coercing `restrictActionEssentialToEssentialBimodule hLR x` to `E` agrees with coercing `x`
+through `L.essentialSubmodule` to `E`. -/
+private theorem coe_restrictActionEssentialToEssentialBimodule_apply
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x))
+    (x : (R.restrictAction L.essentialSubmodule fun a _ hx ↦
+      apply_mem_essentialSubmodule_of_comm hLR a hx).essentialSubmodule) :
+    (restrictActionEssentialToEssentialBimodule hLR x : E) = ((x : L.essentialSubmodule) : E) := by
+  unfold restrictActionEssentialToEssentialBimodule
+  rfl
+
+/-- `restrictActionEssentialToEssentialBimodule hLR` intertwines the restricted right actions. -/
+private theorem restrictActionEssentialToEssentialBimodule_restrictAction_right [Mul A]
+    (hR : ∀ a b x, R (a * b) x = R b (R a x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (a : A)
+    (x : (R.restrictAction L.essentialSubmodule fun a _ hx ↦
+      apply_mem_essentialSubmodule_of_comm hLR a hx).essentialSubmodule) :
+    restrictActionEssentialToEssentialBimodule hLR
+      ((R.restrictAction L.essentialSubmodule fun a _ hx ↦
+          apply_mem_essentialSubmodule_of_comm hLR a hx).restrictAction _
+        (fun a y _ ↦ apply_mem_essentialSubmodule _ a y) a x) =
+      R.restrictAction (essentialBimoduleSubmodule L R)
+        (fun a _ hx ↦ apply_right_mem_essentialBimoduleSubmodule hR hLR a hx) a
+        (restrictActionEssentialToEssentialBimodule hLR x) :=
+  restrictAction_intertwine L.essentialSubmodule.subtype
+    (coe_restrictActionEssentialToEssentialBimodule_apply hLR)
+    (fun y ↦ coe_restrictAction_apply R L.essentialSubmodule _ a y) x
+
+/-- `restrictActionEssentialToEssentialBimodule hLR` intertwines the restricted left actions. -/
+private theorem restrictActionEssentialToEssentialBimodule_restrictAction_left [Mul A]
+    (hL : ∀ a b x, L (a * b) x = L a (L b x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (a : A)
+    (x : (R.restrictAction L.essentialSubmodule fun a _ hx ↦
+      apply_mem_essentialSubmodule_of_comm hLR a hx).essentialSubmodule) :
+    restrictActionEssentialToEssentialBimodule hLR
+      ((L.restrictAction L.essentialSubmodule fun a x _ ↦
+          apply_mem_essentialSubmodule L a x).restrictAction _
+        (fun a _ hy ↦ apply_mem_essentialSubmodule_of_comm
+          (fun b c y ↦ (restrictAction_apply_comm hLR L.essentialSubmodule
+            (fun a x _ ↦ apply_mem_essentialSubmodule L a x)
+            (fun a _ hx ↦ apply_mem_essentialSubmodule_of_comm hLR a hx)
+            c b y).symm) a hy) a x) =
+      L.restrictAction (essentialBimoduleSubmodule L R)
+        (fun a _ hx ↦ apply_left_mem_essentialBimoduleSubmodule hL a hx) a
+        (restrictActionEssentialToEssentialBimodule hLR x) :=
+  restrictAction_intertwine L.essentialSubmodule.subtype
+    (coe_restrictActionEssentialToEssentialBimodule_apply hLR)
+    (fun y ↦ coe_restrictAction_apply L L.essentialSubmodule _ a y) x
+
+end EssentialInclusion
+
 section Reduction
 
 variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
@@ -213,7 +292,7 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
     restrictAction_apply_comm hLR EL hLL_inv hRL_inv
   -- Step 1: reduce `E` to `EL`.
   let DL : A →L[𝕜] StrongDual 𝕜 EL := (precomp 𝕜 EL.subtypeL) ∘L D
-  have hDL := Submodule.precomp_subtypeL_comp_derivation EL hLL_inv hRL_inv hD
+  have hDL := Submodule.precomp_subtypeL_comp_mul_apply EL hLL_inv hRL_inv hD
   suffices ∃ ψL : StrongDual 𝕜 EL, ∀ a, DL a = dualAction RL a ψL - dualAction LL a ψL by
     obtain ⟨ψL, hψL⟩ := this
     exact exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential hL hR hLR hC
