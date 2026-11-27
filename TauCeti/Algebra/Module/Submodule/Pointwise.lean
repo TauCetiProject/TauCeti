@@ -360,6 +360,11 @@ end Semiring
 
 end TauCeti
 
+/-- The images of successive powers of a scalar form a descending filtration. -/
+theorem Submodule.antitone_pow_smul_top {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] (a : R) : Antitone fun i : ℕ ↦ a ^ i • (⊤ : Submodule R M) :=
+  fun _ _ hij ↦ Submodule.smul_top_le_smul_top_of_dvd (pow_dvd_pow a hij)
+
 namespace LinearMap
 
 open Function Set
@@ -373,6 +378,11 @@ theorem mapsTo_smul_top_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a)
   change MapsTo f (a • (univ : Set V)) (a • univ)
   rw [Set.mapsTo_iff_image_subset, image_smul_setₛₗ (σ := τ), ha]
   exact smul_set_mono (subset_univ _)
+
+/-- The power filtration of a fixed scalar is stable under a semilinear endomorphism. -/
+theorem mapsTo_pow_smul_top_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) (i : ℕ) :
+    MapsTo f (a ^ i • (⊤ : Submodule A V)) (a ^ i • (⊤ : Submodule A V)) :=
+  f.mapsTo_smul_top_of_fixed (by rw [map_pow, ha])
 
 /-- A surjective semilinear endomorphism is surjective on the image of multiplication
 by a fixed scalar. -/

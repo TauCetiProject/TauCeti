@@ -400,11 +400,8 @@ theorem LinearMap.mapsTo_torsionBy_of_fixed {R M : Type*} [CommSemiring R] [AddC
     [Module R M] {σ : R →+* R} (f : M →ₛₗ[σ] M) {a : R} (ha : σ a = a) :
     Set.MapsTo f (Submodule.torsionBy R M a) (Submodule.torsionBy R M a) := by
   intro x hx
-  have hx' : x ∈ Submodule.torsionBy R M a := hx
-  -- Make submodule membership explicit before rewriting it as an annihilation equation.
-  change f x ∈ Submodule.torsionBy R M a
-  rw [Submodule.mem_torsionBy_iff] at hx' ⊢
-  rw [← ha, ← map_smulₛₗ, hx', map_zero]
+  exact (Submodule.mem_torsionBy_iff a (f x)).mpr (by
+    rw [← ha, ← map_smulₛₗ, (Submodule.mem_torsionBy_iff a x).mp hx, map_zero])
 
 namespace Submodule
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Torsion.Basic
-public import TauCeti.LinearAlgebra.Quotient.ScalarMap
+public import TauCeti.LinearAlgebra.Semilinear.Graded
 import TauCeti.Algebra.Module.LinearMap.Iterate
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 
@@ -98,6 +98,12 @@ private theorem iterate_residual (x : M) {n : ℕ} (a : Fin n → R) (j : ℕ) :
       F^[j + n] x - ∑ i, σ^[j] (a i) • F^[j + i.val] x := by
   simp only [iterate_map_sub, F.iterate_map_sum_smulₛₗ, ← Function.iterate_add_apply]
 
+private theorem map_iterate_sub_sum_smul {N : Type*} [AddCommGroup N] [Module R N]
+    {G : N →ₛₗ[σ] N} (g : M →ₗ[R] N) (hg : Semiconj g F G) (x : M)
+    {n : ℕ} (a : Fin n → R) :
+    g (F^[n] x - ∑ i, a i • F^[i.val] x) = G^[n] (g x) - ∑ i, a i • G^[i.val] (g x) := by
+  simp only [map_sub, map_sum, map_smul, (hg.iterate_right _).eq]
+
 /-- A monic relation for the residual of another monic expression gives a monic relation for
 the original vector. -/
 theorem HasMonicRelation.of_residual {x : M} {n : ℕ} (a : Fin n → R)
@@ -132,7 +138,7 @@ theorem isAlgebraic_iff_restrict_and_mapQ (P : Submodule R M) (hP : MapsTo F P P
   obtain ⟨n, a, ha⟩ := hasMonicRelation_iff_exists_sum.mp (h₂ (P.mkQ x))
   have hr : F^[n] x - ∑ i, a i • F^[i.val] x ∈ P := by
     rw [← Submodule.ker_mkQ P, LinearMap.mem_ker]
-    simp only [map_sub, map_sum, map_smul, (hq.iterate_right _).eq, ha, sub_self]
+    rw [map_iterate_sub_sum_smul P.mkQ hq x a, ha, sub_self]
   exact HasMonicRelation.of_residual a ((h₁ ⟨_, hr⟩).map P.subtype hi)
 
 /-- An algebraic endomorphism induces an algebraic endomorphism on each stable subquotient. -/
@@ -147,21 +153,11 @@ then the restriction to its initial submodule is algebraic. -/
 theorem isAlgebraic_restrict_of_filtration (P : ℕ → Submodule R M)
     (hP : ∀ i, MapsTo F (P i) (P i)) (hdesc : Antitone P) {n : ℕ} (hbot : P n = ⊥)
     (halg : ∀ i < n, (F.subquotientMap (P i) (P (i + 1)) (hP i) (hP (i + 1))).IsAlgebraic) :
-    (F.restrict (hP 0)).IsAlgebraic := by
-  let Fᵢ (i : ℕ) := F.restrict (hP i)
-  have hbase : (Fᵢ n).IsAlgebraic := by
-    have : Subsingleton (P n) := hbot ▸ inferInstance
-    exact isAlgebraic_of_subsingleton _
-  refine Nat.decreasingInduction (motive := fun i _ ↦ (Fᵢ i).IsAlgebraic)
-    (fun i hi ih ↦ ?_) hbase (Nat.zero_le n)
-  let Q := (P (i + 1)).comap (P i).subtype
-  have hQ := mapsTo_restrict_comap_subtype (hP i) (hP (i + 1))
-  let hle := hdesc (Nat.le_succ i)
-  let e := Submodule.comapSubtypeEquivOfLe hle
-  have he := semiconj_comapSubtypeEquivOfLe_restrict hle (hP i) (hP (i + 1))
-  exact (isAlgebraic_iff_restrict_and_mapQ Q hQ).mpr
-    ⟨ih.of_injective e.toLinearMap he e.injective,
-      by simpa only [subquotientMap_eq_mapQ] using halg i hi⟩
+    (F.restrict (hP 0)).IsAlgebraic :=
+  F.restrict_of_filtration (fun g ↦ g.IsAlgebraic) (fun g ↦ isAlgebraic_of_subsingleton g)
+    (fun e he hg ↦ hg.of_injective e.toLinearMap he e.injective)
+    (fun Q hQ h₁ h₂ ↦ (isAlgebraic_iff_restrict_and_mapQ Q hQ).mpr ⟨h₁, h₂⟩)
+    P hP hdesc hbot halg
 
 end Ring
 
@@ -183,11 +179,9 @@ theorem isAlgebraic_iff_smulPowGraded (f : V →ₛₗ[τ] V) {a : A} (ha : τ a
     (hbot : a ^ n • (⊤ : Submodule A V) = ⊥) :
     f.IsAlgebraic ↔ ∀ i < n, (f.smulPowGraded ha i).IsAlgebraic := by
   let P (i : ℕ) := a ^ i • (⊤ : Submodule A V)
-  have hP (i : ℕ) : MapsTo f (P i) (P i) :=
-    f.mapsTo_smul_top_of_fixed (a := a ^ i) (by simp [ha])
   refine ⟨fun h i _ ↦ h.smulPowGraded ha i, fun h ↦ ?_⟩
-  have hdesc : Antitone P := fun _ _ hij ↦ Submodule.smul_top_le_smul_top_of_dvd (pow_dvd_pow a hij)
-  have h₀ := isAlgebraic_restrict_of_filtration P hP hdesc hbot
+  have h₀ := isAlgebraic_restrict_of_filtration P (f.mapsTo_pow_smul_top_of_fixed ha)
+    (Submodule.antitone_pow_smul_top a) hbot
     (fun i hi ↦ by simpa only [smulPowGraded_eq_subquotientMap] using h i hi)
   exact h₀.of_surjective (P 0).subtype (fun _ ↦ rfl) fun x ↦ ⟨⟨x, by simp [P]⟩, rfl⟩
 
@@ -213,8 +207,9 @@ theorem isAlgebraic_iff_restrict_torsionBy (f : V →ₛₗ[τ] V)
   have hKi : Semiconj K.subtype fK f := fun _ ↦ rfl
   refine ⟨fun h ↦ h.of_injective K.subtype hKi K.subtype_injective, ?_⟩
   intro h
-  have hc : Function.Commute (a • · : V → V) f := fun x ↦ by
-    simpa only [ha] using (f.map_smulₛₗ a x).symm
+  let g := DistribSMul.toLinearMap A V a
+  have hc : Semiconj g f f := fun x ↦ by
+    simpa only [g, DistribSMul.toLinearMap_apply, ha] using (f.map_smulₛₗ a x).symm
   -- Apply a relation for `a • x` to `x`. Its residual is killed by `a`.
   have hpow (k : ℕ) (x : V) (hx : a ^ k • x = 0) : f.HasMonicRelation x := by
     induction k generalizing x with
@@ -226,15 +221,9 @@ theorem isAlgebraic_iff_restrict_torsionBy (f : V →ₛₗ[τ] V)
       obtain ⟨d, c, he⟩ := hasMonicRelation_iff_exists_sum.mp (ih _ hax)
       let r := f^[d] x - ∑ j, c j • f^[j.val] x
       have hr : r ∈ K := by
-        rw [Submodule.mem_torsionBy_iff]
-        calc
-          a • r = f^[d] (a • x) - ∑ j, c j • f^[j.val] (a • x) := by
-            dsimp only [r]
-            rw [smul_sub, Finset.smul_sum, (hc.iterate_right d).eq]
-            congr 1
-            refine Finset.sum_congr rfl fun j _ ↦ ?_
-            rw [smul_comm a, (hc.iterate_right j.val).eq]
-          _ = 0 := sub_eq_zero.mpr he
+        apply (Submodule.mem_torsionBy_iff a r).mpr
+        rw [← DistribSMul.toLinearMap_apply A V a r, map_iterate_sub_sum_smul g hc x c]
+        simpa only [g, DistribSMul.toLinearMap_apply] using sub_eq_zero.mpr he
       exact HasMonicRelation.of_residual c ((h ⟨r, hr⟩).map K.subtype hKi)
   intro x
   obtain ⟨k, hk⟩ := hnil x

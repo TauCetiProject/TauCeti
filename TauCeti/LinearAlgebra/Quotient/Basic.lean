@@ -61,7 +61,9 @@ namespace LinearMap
 
 open Function Set
 
-variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {σ : R →+* R}
+universe u
+
+variable {R : Type*} {M : Type u} [Ring R] [AddCommGroup M] [Module R M] {σ : R →+* R}
   {F : M →ₛₗ[σ] M}
 
 /-- Restricting to a stable submodule preserves stability of the pulled-back submodule. -/
@@ -141,24 +143,45 @@ theorem bijective_of_restrict_of_mapQ (P : Submodule R M) (hP : MapsTo F P P)
     (fun x ↦ by simp [eq_comm]) he (fun x ↦ by simp [P.mkQ_surjective.range_eq])
     (bijective_of_subsingleton _).2 h₁ h₂ (injective_of_subsingleton _)
 
+/-- A property of semilinear endomorphisms that holds on zero modules, is invariant under
+linear conjugacy, and is closed under extensions can be checked on the successive quotients
+of a finite descending stable filtration. -/
+theorem restrict_of_filtration (F : M →ₛₗ[σ] M)
+    (Φ : ∀ {N : Type u} [AddCommGroup N] [Module R N], (N →ₛₗ[σ] N) → Prop)
+    (hzero : ∀ {N : Type u} [AddCommGroup N] [Module R N] [Subsingleton N]
+      (g : N →ₛₗ[σ] N), Φ g)
+    (hconj : ∀ {N N' : Type u} [AddCommGroup N] [Module R N] [AddCommGroup N'] [Module R N']
+      {g : N →ₛₗ[σ] N} {g' : N' →ₛₗ[σ] N'} (e : N ≃ₗ[R] N'), Semiconj e g g' → Φ g' → Φ g)
+    (hext : ∀ {N : Type u} [AddCommGroup N] [Module R N] {g : N →ₛₗ[σ] N}
+      (Q : Submodule R N) (hQ : MapsTo g Q Q),
+      Φ (g.restrict hQ) → Φ (Q.mapQ Q g hQ) → Φ g)
+    (P : ℕ → Submodule R M)
+    (hP : ∀ i, MapsTo F (P i) (P i)) (hdesc : Antitone P) {n : ℕ} (hbot : P n = ⊥)
+    (hgraded : ∀ i < n, Φ (F.subquotientMap (P i) (P (i + 1)) (hP i) (hP (i + 1)))) :
+    Φ (F.restrict (hP 0)) := by
+  have hbase : Φ (F.restrict (hP n)) := by
+    have : Subsingleton (P n) := hbot ▸ inferInstance
+    exact hzero _
+  refine Nat.decreasingInduction (motive := fun i _ ↦ Φ (F.restrict (hP i)))
+    (fun i hi ih ↦ ?_) hbase (Nat.zero_le n)
+  let Q := (P (i + 1)).comap (P i).subtype
+  have hQ := mapsTo_restrict_comap_subtype (hP i) (hP (i + 1))
+  let hle := hdesc (Nat.le_succ i)
+  exact hext Q hQ
+    (hconj (Submodule.comapSubtypeEquivOfLe hle)
+      (semiconj_comapSubtypeEquivOfLe_restrict hle (hP i) (hP (i + 1))) ih)
+    (by simpa only [subquotientMap_eq_mapQ] using hgraded i hi)
+
 /-- Bijectivity on the successive quotients of a finite descending stable filtration
 implies bijectivity on its initial submodule. -/
 theorem bijective_restrict_of_filtration (P : ℕ → Submodule R M)
     (hP : ∀ i, MapsTo F (P i) (P i)) (hdesc : Antitone P) {n : ℕ} (hbot : P n = ⊥)
     (hbij : ∀ i < n, Bijective (F.subquotientMap (P i) (P (i + 1)) (hP i) (hP (i + 1)))) :
     Bijective (F.restrict (hP 0)) := by
-  have hbase : Bijective (F.restrict (hP n)) := by
-    have : Subsingleton (P n) := hbot ▸ inferInstance
-    exact bijective_of_subsingleton _
-  refine Nat.decreasingInduction (motive := fun i _ ↦ Bijective (F.restrict (hP i)))
-    (fun i hi ih ↦ ?_) hbase (Nat.zero_le n)
-  let Q := (P (i + 1)).comap (P i).subtype
-  have hQ := mapsTo_restrict_comap_subtype (hP i) (hP (i + 1))
-  let hle := hdesc (Nat.le_succ i)
-  let e := Submodule.comapSubtypeEquivOfLe hle
-  have he := semiconj_comapSubtypeEquivOfLe_restrict hle (hP i) (hP (i + 1))
-  apply bijective_of_restrict_of_mapQ Q hQ _ (hbij i hi)
+  refine F.restrict_of_filtration (fun g ↦ Bijective g) (fun g ↦ bijective_of_subsingleton g)
+    ?_ (fun Q hQ ↦ bijective_of_restrict_of_mapQ Q hQ) P hP hdesc hbot hbij
+  intro N N' _ _ _ _ g g' e he hg'
   rw [← Function.Bijective.of_comp_iff' e.bijective, he.comp_eq]
-  exact ih.comp e.bijective
+  exact hg'.comp e.bijective
 
 end LinearMap

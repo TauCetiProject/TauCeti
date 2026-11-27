@@ -8,8 +8,6 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import TauCeti.Algebra.Module.LinearMap.EndQuotient
-public import TauCeti.Algebra.Module.Submodule.Pointwise
-public import TauCeti.LinearAlgebra.Quotient.Basic
 public import TauCeti.RingTheory.Ideal.Colon
 public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.Ideal.Operations
@@ -28,10 +26,6 @@ r : M ⧸ I M → M ⧸ J M.
 These maps are the morphisms of Mazur and Rubin's category of quotients of `M`: they compose by
 multiplying the scalars, the scalar `1` gives the identity, and they commute with the reduction of
 every endomorphism of `M`, in particular with a Galois action on `M` by `R`-linear maps.
-
-Multiplication by `a^i` also gives a surjection from `M / aM` onto the graded piece
-`a^i M / a^{i+1} M`. This map intertwines the actions induced by any semilinear endomorphism
-whose scalar endomorphism fixes `a`.
 
 For a free module `M ≠ 0` such a map is injective exactly when `(J : r) = I`: the kernel of
 `r : R ⧸ I → R ⧸ J` is `(J : r) ⧸ I`, and `M ⧸ I M` is a direct sum of copies of `R ⧸ I`. Over a
@@ -161,123 +155,3 @@ theorem smulMapQ_injective_pow [IsLocalRing R] [Module.Free R M] {ϖ : R}
     (TauCeti.IsLocalRing.maximalIdeal_pow_colon_pow hϖ hij hj).le
 
 end Ideal
-
-namespace TauCeti
-
-open scoped Pointwise
-
-variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
-
-private def smulPowToSubmodule (a : A) (i : ℕ) :
-    M →ₗ[A] (a ^ i • (⊤ : Submodule A M) : Submodule A M) :=
-  let f := DistribSMul.toLinearMap A M (a ^ i)
-  (LinearEquiv.ofEq f.range _ (by rw [Submodule.pointwise_smul_def, Submodule.map_top])).toLinearMap
-    ∘ₗ f.rangeRestrict
-
-/-- Multiplication by `a^i` induces a map from `M / aM` to `a^i M / a^{i+1} M`. -/
-noncomputable def smulPowQuotientMap (a : A) (i : ℕ) :
-    M ⧸ (a • (⊤ : Submodule A M)) →ₗ[A]
-      ((a ^ i • (⊤ : Submodule A M) : Submodule A M) ⧸
-        (a ^ (i + 1) • (⊤ : Submodule A M)).comap (a ^ i • (⊤ : Submodule A M)).subtype) := by
-  refine (a • (⊤ : Submodule A M)).mapQ _ (smulPowToSubmodule a i) ?_
-  intro x hx
-  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  simp only [Submodule.mem_comap, Submodule.subtype_apply, smulPowToSubmodule, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply, LinearMap.rangeRestrict,
-    LinearMap.codRestrict_apply, DistribSMul.toLinearMap_apply, ← mul_smul, ← pow_succ]
-  exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
-
-/-- On a quotient class, `smulPowQuotientMap` multiplies its representative by `a^i`. -/
-@[simp]
-theorem smulPowQuotientMap_mk (a : A) (i : ℕ) (x : M) :
-    smulPowQuotientMap a i (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk
-        (⟨a ^ i • x, Submodule.smul_mem_pointwise_smul x _ _ Submodule.mem_top⟩ :
-          (a ^ i • ⊤ : Submodule A M)) :=
-  (rfl)
-
-/-- Every class in `a^i M / a^{i+1} M` comes from multiplication by `a^i` on `M / aM`. -/
-theorem smulPowQuotientMap_surjective (a : A) (i : ℕ) :
-    Function.Surjective (smulPowQuotientMap (M := M) a i) := by
-  unfold smulPowQuotientMap
-  apply Submodule.mapQ_surjective
-  unfold smulPowToSubmodule
-  let f := DistribSMul.toLinearMap A M (a ^ i)
-  have hr : f.range = a ^ i • (⊤ : Submodule A M) := by
-    rw [Submodule.pointwise_smul_def, Submodule.map_top]
-  exact (LinearEquiv.ofEq _ _ hr).surjective.comp f.surjective_rangeRestrict
-
-end TauCeti
-
-namespace LinearMap
-
-open Function TauCeti
-open scoped Pointwise
-
-variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M] {σ : A →+* A}
-  {f : M →ₛₗ[σ] M} {a : A}
-
-local notation "P" => (fun i : ℕ ↦ a ^ i • (⊤ : Submodule A M))
-local notation "Q" => (a • (⊤ : Submodule A M))
-
-/-- The map induced by a semilinear endomorphism on `a^i M / a^{i+1} M` for a fixed scalar `a`. -/
-def smulPowGraded (f : M →ₛₗ[σ] M) (ha : σ a = a) (i : ℕ) :
-    (P i ⧸ (P (i + 1)).comap (P i).subtype) →ₛₗ[σ] (P i ⧸ (P (i + 1)).comap (P i).subtype) :=
-  f.subquotientMap (P i) (P (i + 1)) (f.mapsTo_smul_top_of_fixed (by simp [ha]))
-    (f.mapsTo_smul_top_of_fixed (by simp [ha]))
-
-/-- The graded map is the subquotient map of two successive scalar powers. -/
-theorem smulPowGraded_eq_subquotientMap (f : M →ₛₗ[σ] M) (ha : σ a = a) (i : ℕ) :
-    f.smulPowGraded ha i =
-      f.subquotientMap (P i) (P (i + 1)) (f.mapsTo_smul_top_of_fixed (by simp [ha]))
-        (f.mapsTo_smul_top_of_fixed (by simp [ha])) :=
-  (rfl)
-
-/-- The map on a graded piece sends the class of a vector to the class of its image. -/
-@[simp]
-theorem smulPowGraded_mk (f : M →ₛₗ[σ] M) (ha : σ a = a) (i : ℕ) (x : P i) :
-    f.smulPowGraded ha i (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (f.restrict (p := P i) (q := P i)
-        (f.mapsTo_smul_top_of_fixed (a := a ^ i) (by simp [ha])) x) :=
-  subquotientMap_mk (P i) (P (i + 1)) _ _ x
-
-/-- Multiplication by `a^i` intertwines the induced maps on `M / aM` and `a^i M / a^{i+1} M`. -/
-theorem smulPowQuotientMap_semiconj (f : M →ₛₗ[σ] M) (ha : σ a = a) (i : ℕ) :
-    Semiconj (smulPowQuotientMap a i) (Submodule.mapQ Q Q f (f.mapsTo_smul_top_of_fixed ha))
-      (f.smulPowGraded ha i) := by
-  intro z
-  obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective Q z
-  calc
-    _ = smulPowQuotientMap a i (Submodule.Quotient.mk (f x)) :=
-      congrArg (smulPowQuotientMap a i) (Submodule.mapQ_apply Q Q f x)
-    _ = _ := by
-      rw [Submodule.mkQ_apply, smulPowQuotientMap_mk, smulPowQuotientMap_mk, smulPowGraded_mk]
-      apply congrArg Submodule.Quotient.mk
-      apply Subtype.ext
-      calc
-        _ = f (a ^ i • x) := by simp only [map_smulₛₗ, map_pow, ha]
-        _ = _ := (coe_restrict_apply (f := f) (p := P i) (q := P i)
-          (f.mapsTo_smul_top_of_fixed (a := a ^ i) (by simp [ha]))
-          ⟨a ^ i • x, Submodule.smul_mem_pointwise_smul x _ _ Submodule.mem_top⟩).symm
-
-/-- A bijective endomorphism is bijective on each graded piece for a fixed scalar. -/
-theorem bijective_smulPowGraded (hf : Bijective f) (ha : σ a = a) (i : ℕ) :
-    Bijective (f.smulPowGraded ha i) := by
-  rw [smulPowGraded]
-  apply bijective_subquotientMap _ _ _ _ (f.surjOn_smul_top_of_fixed hf.2 (by simp [ha]))
-  intro x _ hx
-  obtain ⟨y, hy, hyf⟩ := f.surjOn_smul_top_of_fixed hf.2 (a := a ^ (i + 1)) (by simp [ha]) hx
-  exact hf.1 hyf ▸ hy
-
-/-- Bijectivity on all graded pieces of a finite fixed-scalar filtration implies bijectivity
-on the module. -/
-theorem bijective_of_smulPowGraded (ha : σ a = a) {n : ℕ} (hbot : P n = ⊥)
-    (h : ∀ i < n, Bijective (f.smulPowGraded ha i)) : Bijective f := by
-  have hP (i : ℕ) : Set.MapsTo f (P i) (P i) := f.mapsTo_smul_top_of_fixed (by simp [ha])
-  have hdesc : Antitone P := fun _ _ hij ↦ Submodule.smul_top_le_smul_top_of_dvd (pow_dvd_pow a hij)
-  have h₀ := bijective_restrict_of_filtration P hP hdesc hbot h
-  have hs : Surjective (P 0).subtype := fun x ↦ ⟨⟨x, by simp⟩, rfl⟩
-  have he : Bijective (P 0).subtype := ⟨(P 0).subtype_injective, hs⟩
-  exact (Bijective.of_comp_iff f he).mp (he.comp h₀)
-
-end LinearMap
