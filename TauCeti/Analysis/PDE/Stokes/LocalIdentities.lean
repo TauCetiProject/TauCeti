@@ -174,9 +174,8 @@ are differentiable. -/
 theorem stress_sub (μ : ℝ) {u v : (ι → ℝ) → ι → ℝ} (p q : (ι → ℝ) → ℝ) {x : ι → ℝ}
     (hu : DifferentiableAt ℝ u x) (hv : DifferentiableAt ℝ v x) :
     stress μ (u - v) (p - q) x = stress μ u p x - stress μ v q x := by
-  rw [stress_def, stress_def, stress_def, velocityGradient_sub hu hv, Pi.sub_apply]
-  simp only [newtonianStress_def, transpose_sub]
-  module
+  rw [stress_def, stress_def, stress_def, velocityGradient_sub hu hv, Pi.sub_apply,
+    newtonianStress_sub]
 
 /-- The stress commutes with scaling the pair `(u, p)`. -/
 theorem stress_const_smul (μ c : ℝ) (u : (ι → ℝ) → ι → ℝ) (p : (ι → ℝ) → ℝ) (x : ι → ℝ) :
@@ -296,9 +295,8 @@ theorem contDiffAt_stress_mulVec (μ : ℝ) {k : WithTop ℕ∞} {u v : (ι → 
 differentiable and the pressure `p` and the velocity `v` are differentiable at `x`. -/
 theorem differentiableAt_stress_mulVec (μ : ℝ) {u v : (ι → ℝ) → ι → ℝ} {p : (ι → ℝ) → ℝ}
     {x : ι → ℝ} (hu : DifferentiableAt ℝ (fderiv ℝ u) x) (hp : DifferentiableAt ℝ p x)
-    (hv : DifferentiableAt ℝ v x) : DifferentiableAt ℝ (fun y => stress μ u p y *ᵥ v y) x := by
-  simpa only [mulVecCLM_apply] using
-    (differentiableAt_mulVecCLM (differentiableAt_stress_apply μ hu hp)).clm_apply hv
+    (hv : DifferentiableAt ℝ v x) : DifferentiableAt ℝ (fun y => stress μ u p y *ᵥ v y) x :=
+  differentiableAt_mulVec (differentiableAt_stress_apply μ hu hp) hv
 
 /-! ### The product rule for the divergence of a matrix times a vector -/
 
@@ -310,8 +308,7 @@ theorem trace_velocityGradient_mulVec {A : (ι → ℝ) → Matrix ι ι ℝ} {v
     (velocityGradient (fun y => A y *ᵥ v y) x).trace =
       (A x * velocityGradient v x).trace + v x ⬝ᵥ stressDivergence (fun y => (A y)ᵀ) x := by
   have hv' : ∀ j, DifferentiableAt ℝ (fun y => v y j) x := differentiableAt_pi.1 hv
-  have hAv : DifferentiableAt ℝ (fun y => A y *ᵥ v y) x := by
-    simpa only [mulVecCLM_apply] using (differentiableAt_mulVecCLM hA).clm_apply hv
+  have hAv : DifferentiableAt ℝ (fun y => A y *ᵥ v y) x := differentiableAt_mulVec hA hv
   have hDv : Matrix.of (fun j i => fderiv ℝ (fun y => v y j) x (Pi.single i 1)) =
       velocityGradient v x := by
     ext j i
