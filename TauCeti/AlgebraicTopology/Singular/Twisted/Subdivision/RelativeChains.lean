@@ -15,7 +15,9 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision.Basic
 `TopPair.twistedSubdivisionChainMap` and `TopPair.twistedSubdivisionHomotopy` descend the
 ambient subdivision and prism of `LocalCoefficientSystem` using `TopPair.twistedChainComplexDesc`
 and `Homotopy.descCokernel`.
-They are natural in pairs and local coefficients, and subdivision induces the identity on
+In positive degrees, `TopPair.twistedPrismX_boundary_add_boundary_twistedPrismX` gives
+the relative prism identity `∂T + T∂ = id - Sd` from `Homotopy.comm`.
+Both operators are natural in pairs and local coefficients, and subdivision induces the identity on
 relative homology compatibly with the pair sequence (Hatcher, *Algebraic Topology*, §2.1,
 proof of Proposition 2.21, and §3.H).
 -/
@@ -115,6 +117,16 @@ lemma twistedPrismX_apply {n : ℕ} (c : L.twistedChainComplex.X n) :
     P.twistedPrismX L n ((P.twistedChainComplexπ L).f n c) =
       (P.twistedChainComplexπ L).f (n + 1) (L.twistedPrismX n c) :=
   ConcreteCategory.congr_hom (P.twistedChainComplexπ_f_comp_twistedPrismX L n) c
+
+/-- In positive degrees, the relative twisted prism satisfies `∂T + T∂ = id - Sd`. -/
+lemma twistedPrismX_boundary_add_boundary_twistedPrismX (n : ℕ) :
+    (P.twistedChainComplex L).d (n + 1) n ≫ P.twistedPrismX L n +
+        P.twistedPrismX L (n + 1) ≫ (P.twistedChainComplex L).d (n + 2) (n + 1) =
+      𝟙 _ - (P.twistedSubdivisionChainMap L).f (n + 1) := by
+  rw [eq_sub_iff_add_eq]
+  simpa only [← twistedSubdivisionHomotopy_hom, Homotopy.dNext_succ_chainComplex,
+    Homotopy.prevD_chainComplex, HomologicalComplex.id_f] using
+      ((P.twistedSubdivisionHomotopy L).comm (n + 1)).symm
 
 /-- Barycentric subdivision induces the identity on relative homology with local coefficients. -/
 @[simp]

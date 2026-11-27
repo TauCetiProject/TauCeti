@@ -151,7 +151,7 @@ lemma twistedChainComplexπ_comp_twistedChainComplexMap :
   P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
 
 /-- The quotient maps on twisted chains commute with the pair map in each degree. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma twistedChainComplexπ_f_comp_twistedChainComplexMap_f (n : ℕ) :
     (P.twistedChainComplexπ ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)).f n ≫
         (twistedChainComplexMap f L).f n =

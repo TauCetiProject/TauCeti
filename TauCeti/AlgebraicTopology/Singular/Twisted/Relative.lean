@@ -338,7 +338,7 @@ lemma twistedChainComplexπ_comp_twistedChainComplexCoefficientMap (η : L ⟶ K
   P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
 
 /-- The quotient maps on twisted chains commute with the coefficient map in each degree. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma twistedChainComplexπ_f_comp_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (n : ℕ) :
     (P.twistedChainComplexπ L).f n ≫ (P.twistedChainComplexCoefficientMap η).f n =
       (LocalCoefficientSystem.twistedChainComplexCoefficientMap η).f n ≫
