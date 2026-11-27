@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.Algebra.Ring.Idempotent.Basic
@@ -36,9 +37,13 @@ differences of the remaining columns.
 
 * `Matrix.det_updateRow_updateRow_swap`: exchanging the vectors in two prescribed rows reverses
   the determinant.
+* `Matrix.det_updateRow_one`: replacing row `k` of the identity matrix by `v` produces determinant
+  `v k`.
 * `Matrix.det_eq_add_of_row_eq_add`: additivity of the determinant in one row, for matrices that
   agree in every other row.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
+* `Matrix.det_transpose_of_cons_cons`: the determinant of the `2 × 2` matrix with columns `u` and
+  `v` is `u₀ v₁ - u₁ v₀`.
 * `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
 * `Matrix.det_eq_det_of_col_zero_eq_one`: a square matrix whose first column is constant `1` has
@@ -91,6 +96,12 @@ end Matrix
 namespace Matrix
 
 variable {R : Type*} [CommRing R] {n : ℕ}
+
+/-- The determinant of the `2 × 2` matrix with columns `u` and `v` is `u₀ v₁ - u₁ v₀`. -/
+theorem det_transpose_of_cons_cons (u v : Fin 2 → R) :
+    (of ![u, v])ᵀ.det = u 0 * v 1 - u 1 * v 0 := by
+  rw [det_transpose, det_fin_two]
+  simp only [of_apply, cons_val_zero, cons_val_one]
 
 /-- **The alternating sum of the maximal minors of a matrix whose rows sum to one vanishes.** If
 every row of a matrix `B` with `n + 2` rows and `n + 1` columns sums to `1`, then deleting the row
@@ -222,6 +233,13 @@ theorem isUnit_det_one_add_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommR
   rw [det_one_add_smul, add_assoc, add_sub_cancel_left]
   exact (Ring.jacobson R).add_mem (Ideal.mul_mem_left _ _ hr)
     (Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ hr 2 two_pos))
+
+/-- Replacing row `k` of the identity matrix by `v` produces determinant `v k`. -/
+@[simp]
+theorem det_updateRow_one {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (k : n) (v : n → R) :
+    ((1 : Matrix n n R).updateRow k v).det = v k := by
+  rw [← Matrix.cramer_transpose_apply, Matrix.transpose_one, Matrix.cramer_one, one_apply_eq_self]
 
 end Matrix
 

@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Ext.QuotSMulTop
+public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 import TauCeti.AlgebraicTopology.Cohomology.Cup.SquareModTwo
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # The singular cohomology of real projective space
@@ -27,6 +30,16 @@ so it is projective. The universal coefficient theorem with projective homology
   and that of the sphere `Sᴺ` for odd `N`.
 
 In every case the cohomology of `RPᴺ` vanishes above degree `N`.
+
+Over a hereditary commutative ring `k` in which `2` is not a zero divisor, such as `ℤ`, the
+homology is no longer projective: `Hₙ(RPᴺ; k) ≅ k ⧸ 2k` for odd `n < N`, and `Hₙ₊₁(RPᴺ; k) = 0`.
+The universal coefficient sequence `0 → Ext¹(Hₙ, M) → Hⁿ⁺¹(RPᴺ; k, M) → Hom(Hₙ₊₁, M) → 0` then
+identifies `Hⁿ⁺¹(RPᴺ; k, M)` with `Ext¹(k ⧸ 2k, M) ≅ M ⧸ 2M`, computed from the free resolution
+`0 → k → k → k ⧸ 2k → 0` (`ModuleCat.extOneQuotSMulTopEquiv`). With integer coefficients,
+`Hᵈ(RPᴺ; ℤ) ≅ ℤ/2` for every even `d` with `0 < d ≤ N`. In particular, for even `N ≥ 2`, the top
+integral cohomology `H^N(RPᴺ; ℤ)` of the `N`-manifold `RPᴺ` is not torsion-free, although
+`H_N(RPᴺ; ℤ) = 0`: the torsion comes from the `Ext` term of the universal coefficient sequence, not
+from the homology in the same degree.
 
 Over `𝔽₂` the cup square of a degree-one class is nonzero when `N ≥ 2`: it is the Bockstein of the
 class for `0 ⟶ ℤ/2 ⟶ ℤ/4 ⟶ ℤ/2 ⟶ 0`, and `H₁(RPᴺ; ℤ) = ℤ/2` is killed by `2`
@@ -51,6 +64,12 @@ Lusternik–Schnirelmann category.
   vanishes above degree `N`.
 * `TauCeti.RealProjectiveSpace.singularCup_self_eq_zero_iff`: for `N ≥ 2`, the cup square on
   `H¹(RPᴺ; 𝔽₂)` vanishes only at `0`.
+* `TauCeti.RealProjectiveSpace.singularCohomologySuccLinearEquivOfOdd`: over a hereditary ring in
+  which `2` is not a zero divisor, `Hⁿ⁺¹(RPᴺ; k, M) ≅ M ⧸ 2M` for odd `n < N`.
+* `TauCeti.RealProjectiveSpace.singularCohomologySuccIntLinearEquivOfOdd`: `Hⁿ⁺¹(RPᴺ; ℤ) ≅ ℤ/2`
+  for odd `n < N`.
+* `TauCeti.RealProjectiveSpace.not_isAddTorsionFree_singularCohomology_succ_int`: these integral
+  cohomology groups are not torsion-free.
 
 ## References
 
@@ -129,23 +148,17 @@ private lemma finrank_singularCohomology_eq_one [Nontrivial k]
     finrank k ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k
       (ModuleCat.of k k) d) = 1 := by
   have := projective_singularHomology (N := N) h2
-  rw [((TopCat.of (RealProjectiveSpace N)).singularKroneckerEquivOfProjectiveHomology
-    (ModuleCat.of k k) (ModuleCat.of k k) d ≪≫ₗ ModuleCat.homLinearEquiv ≪≫ₗ
-    e.arrowCongr (LinearEquiv.refl k k) ≪≫ₗ LinearMap.ringLmapEquivSelf k k k).finrank_eq,
-    finrank_self]
+  rw [((TopCat.of (RealProjectiveSpace N)).singularKroneckerLinearEquivOfProjectiveHomology
+    (ModuleCat.of k k) (ModuleCat.of k k) d ≪≫ₗ e.arrowCongr (LinearEquiv.refl k k) ≪≫ₗ
+    LinearMap.ringLmapEquivSelf k k k).finrank_eq, finrank_self]
 
-/-- If `2 = 0` or `2` is a unit in `k` and `H_d(RPᴺ; k) = 0`, then `Hᵈ(RPᴺ; k, M) = 0`. -/
-private lemma subsingleton_singularCohomology_of_isZero (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
-    (M : ModuleCat.{0} k) {d : ℕ}
-    (h : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) d).obj
-      (ModuleCat.of k k)).obj (TopCat.of (RealProjectiveSpace N)))) :
+/-- If `2 = 0` or `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes above degree `N`. -/
+theorem subsingleton_singularCohomology_of_lt (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
+    (M : ModuleCat.{0} k) {d : ℕ} (hd : N < d) :
     Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
-      d) := by
-  have := projective_singularHomology (N := N) h2
-  have : Subsingleton (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) d).obj
-      (ModuleCat.of k k)).obj (TopCat.of (RealProjectiveSpace N)) ⟶ M) := ⟨h.eq_of_src⟩
-  exact ((TopCat.of (RealProjectiveSpace N)).singularKroneckerEquivOfProjectiveHomology
-    (ModuleCat.of k k) M d).toEquiv.subsingleton
+      d) :=
+  ModuleCat.subsingleton_of_isZero <| TopCat.isZero_singularCohomology_of_projective_homology_lt _ M
+    (fun j _ ↦ projective_singularHomology h2 j) (isZero_singularHomology_of_lt k hd)
 
 /-- **Cohomology of real projective space in characteristic two.** If `2 = 0` in the nontrivial
 commutative ring `k`, then `finrank k Hᵈ(RPᴺ; k)` is `1` for `d ≤ N` and `0` for `d > N`. -/
@@ -155,16 +168,9 @@ theorem finrank_singularCohomology_of_two_eq_zero [Nontrivial k] (h2 : (2 : k) =
   split_ifs with hd
   · exact finrank_singularCohomology_eq_one (.inl h2)
       (nonempty_singularHomology_linearEquiv_of_two_eq_zero h2 hd).some
-  · have := subsingleton_singularCohomology_of_isZero (.inl h2) (ModuleCat.of k k)
-      (isZero_singularHomology_of_lt (N := N) k (Nat.lt_of_not_le hd))
+  · have := subsingleton_singularCohomology_of_lt (N := N) (.inl h2) (ModuleCat.of k k)
+      (Nat.lt_of_not_le hd)
     exact finrank_zero_of_subsingleton
-
-/-- If `2 = 0` or `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes above degree `N`. -/
-theorem subsingleton_singularCohomology_of_lt (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
-    (M : ModuleCat.{0} k) {d : ℕ} (hd : N < d) :
-    Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
-      d) :=
-  subsingleton_singularCohomology_of_isZero h2 M (isZero_singularHomology_of_lt k hd)
 
 /-- If `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes in every positive degree `d`, except in
 degree `N` when `N` is odd. -/
@@ -172,7 +178,8 @@ theorem subsingleton_singularCohomology_of_isUnit_two (h2 : IsUnit (2 : k)) (M :
     {d : ℕ} (hd : d ≠ 0) (hdN : d = N → Even N) :
     Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
       d) :=
-  subsingleton_singularCohomology_of_isZero (.inr h2) M
+  ModuleCat.subsingleton_of_isZero <| TopCat.isZero_singularCohomology_of_projective_homology_lt _ M
+    (fun j _ ↦ projective_singularHomology (.inr h2) j)
     (isZero_singularHomology_of_isUnit_two h2 hd hdN)
 
 /-- **Cohomology of real projective space away from characteristic two.** If `2` is a unit in the
@@ -199,5 +206,52 @@ theorem singularCup_self_eq_zero_iff (hN : 2 ≤ N)
   TopCat.singularCup_self_eq_zero_iff_of_two_smul_eq_zero _ fun c ↦
     (singularHomologyIntLinearEquivOfOdd odd_one hN).injective <| by
       rw [map_zsmul, map_zero, two_zsmul, CharTwo.add_self_eq_zero]
+
+/-! ### Cohomology when `2` is not a zero divisor -/
+
+section Regular
+
+variable {k : Type} [CommRing k] [∀ V : ModuleCat.{0} k, HasProjectiveDimensionLE V 1] {n : ℕ}
+
+/-- **Even-degree cohomology of real projective space when `2` is not a zero divisor.** Over a
+hereditary commutative ring `k` in which `2` is regular, for instance `ℤ`, and for odd `n < N`,
+`Hⁿ⁺¹(RPᴺ; k, M) ≅ M ⧸ 2M` for every `k`-module `M`. The universal coefficient theorem identifies
+the cohomology with `Ext¹(Hₙ(RPᴺ; k), M) = Ext¹(k ⧸ 2k, M)`, since `Hₙ₊₁(RPᴺ; k) = 0`. -/
+def singularCohomologySuccLinearEquivOfOdd (h2 : IsRegular (2 : k)) (M : ModuleCat.{0} k)
+    (hn : Odd n) (hnN : n < N) :
+    (TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M (n + 1) ≃ₗ[k]
+      QuotSMulTop (2 : k) M :=
+  (LinearEquiv.ofBijective ((TopCat.of (RealProjectiveSpace N)).singularExtToCohomology _ M n)
+    ⟨TopCat.singularExtToCohomology_injective _ _ _ n, fun x ↦
+      (TopCat.exact_singularExtToCohomology_singularKronecker _ _ _ n x).1
+        ((isZero_singularHomology_of_even k h2.right hn.add_one n.succ_ne_zero).eq_of_src _
+          _)⟩).symm ≪≫ₗ
+    extLinearEquivOfIso k (singularHomologyLinearEquivOfOdd k hn hnN ≪≫ₗ
+      (QuotSMulTop.equivQuotSpanSingleton 2).symm).toModuleIso (Iso.refl M) 1 ≪≫ₗ
+    ModuleCat.extOneQuotSMulTopEquiv h2.left M
+
+end Regular
+
+/-- **Even-degree integral cohomology of real projective space.** For odd `n < N`,
+`Hⁿ⁺¹(RPᴺ; ℤ) ≅ ℤ/2`. -/
+def singularCohomologySuccIntLinearEquivOfOdd {n : ℕ} (hn : Odd n) (hnN : n < N) :
+    (TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of ℤ ℤ) ℤ
+      (ModuleCat.of ℤ ℤ) (n + 1) ≃ₗ[ℤ] ZMod 2 :=
+  singularCohomologySuccLinearEquivOfOdd (isRegular_iff_ne_zero.2 two_ne_zero) _ hn hnN ≪≫ₗ
+    QuotSMulTop.equivQuotSpanSingleton 2 ≪≫ₗ
+      Submodule.quotEquivOfEq _ _ (by rw [Nat.cast_ofNat]) ≪≫ₗ
+    (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv
+
+/-- **Integral cohomology of real projective space has torsion.** For odd `n < N`, the group
+`Hⁿ⁺¹(RPᴺ; ℤ) ≅ ℤ/2` is not torsion-free. For even `N ≥ 2` this is the top degree `N`: the top
+integral cohomology of a closed manifold need not be torsion-free. -/
+theorem not_isAddTorsionFree_singularCohomology_succ_int {n : ℕ} (hn : Odd n) (hnN : n < N) :
+    ¬ IsAddTorsionFree ((TopCat.of (RealProjectiveSpace N)).singularCohomology
+      (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ ℤ) (n + 1)) := by
+  intro h
+  let e := (singularCohomologySuccIntLinearEquivOfOdd hn hnN).symm
+  have h2 : 2 • e 1 = 0 := by
+    rw [← map_nsmul, two_nsmul, CharTwo.add_self_eq_zero, map_zero]
+  exact one_ne_zero (e.map_eq_zero_iff.1 ((nsmul_eq_zero_iff_right two_ne_zero).1 h2))
 
 end TauCeti.RealProjectiveSpace

@@ -47,6 +47,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
   on a Riemann surface with its canonical orientation, every frame `(e, i e)` is positive.
 * `TauCeti.SmoothAlmostComplexStructure.inTangentCoordinates_ofComplexManifold`: it is
   multiplication by `i` in the tangent coordinates of any chart.
+* `TauCeti.SmoothAlmostComplexStructure.continuousLinearMapAt_trivializationAt_ofComplexManifold`:
+  the tangent trivialization at a chart centre reads the almost complex structure as `i`.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: on a complex normed
   space, its chart expression is constantly multiplication by `i`.
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_self_eq_constSmooth`: on a
@@ -57,6 +59,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
   `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
   pseudoholomorphic.
+* `TauCeti.isPseudoholomorphic_equivRealProdCLM`: the identification of `ℂ` with the standard
+  complex line `ℝ × ℝ` is pseudoholomorphic.
 * `TauCeti.mfderiv_symm_apply_I_of_mem_maximalAtlas`: for a holomorphic chart of a complex curve,
   the coordinate vector `∂ₜ` is `j ∂ₛ`.
 * `MDifferentiableAt.mfderiv_ofComplexManifold_apply`: the real differential of a holomorphic map
@@ -171,6 +175,23 @@ theorem inTangentCoordinates_ofComplexManifold {x₀ x : M} (hx : x ∈ (chartAt
         (fun x ↦ (ofComplexManifold E M).toEndomorphism x) x₀ x =
       Complex.I • ContinuousLinearMap.id ℝ E :=
   inTangentCoordinates_ofTangentCoordChangeISMul tangentCoordChange_I_smul hx
+
+/-- On the source of the chart at `c`, the tangent trivialization at `c` turns the almost complex
+structure of a complex manifold into multiplication by `i`. -/
+theorem continuousLinearMapAt_trivializationAt_ofComplexManifold {c x : M}
+    (hx : x ∈ (chartAt E c).source) (w : TangentSpace 𝓘(ℝ, E) x) :
+    (trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c).continuousLinearMapAt ℝ x
+        (ofComplexManifold E M x w) =
+      Complex.I • (trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c).continuousLinearMapAt
+        ℝ x w := by
+  set T := trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c
+  have hb : x ∈ T.baseSet := by rwa [TangentBundle.trivializationAt_baseSet]
+  have h := DFunLike.congr_fun (inTangentCoordinates_ofComplexManifold (M := M) hx)
+    (T.continuousLinearMapAt ℝ x w)
+  rw [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id, id,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    T.symmL_continuousLinearMapAt hb] at h
+  simpa using h
 
 /-- On a complex normed space `E` viewed as a manifold over itself, `ofComplexManifold E E` is the
 constant smooth almost complex structure given by multiplication by `i`. -/
@@ -301,6 +322,28 @@ theorem _root_.MDifferentiableAt.mfderiv_ofComplexManifold_apply
   (isPseudoholomorphicAt_ofComplexManifold_iff.2 hf).mfderiv_apply_commute v
 
 end Pseudoholomorphic
+
+/-- The identification `Complex.equivRealProdCLM` of `ℂ` with `ℝ × ℝ` is pseudoholomorphic from
+the complex structure of `ℂ` to the standard structure `(a, b) ↦ (-b, a)` of `ℝ × ℝ`
+(`SmoothAlmostComplexStructure.product ℝ`). -/
+theorem isPseudoholomorphic_equivRealProdCLM :
+    IsPseudoholomorphic (ofComplexManifold ℂ ℂ) (SmoothAlmostComplexStructure.product ℝ)
+      Complex.equivRealProdCLM := isPseudoholomorphic_iff.2 fun z ↦
+  isPseudoholomorphicAt_of_hasMFDerivAt
+    (Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ).hasMFDerivAt fun v ↦ by
+      -- The tangent spaces are the model spaces `ℂ` and `ℝ × ℝ`, on which the structures are
+      -- multiplication by `i` and `(a, b) ↦ (-b, a)`. `simp` does not see through `TangentSpace`,
+      -- so the coordinate identity `h₃` is stated on `ℂ` and applied to `v`.
+      have h₁ := SmoothAlmostComplexStructure.ofComplexManifold_apply (E := ℂ) (M := ℂ) z v
+      have h₂ := SmoothAlmostComplexStructure.product_apply (V := ℝ) (Complex.equivRealProdCLM z)
+        (Complex.equivRealProdCLM v)
+      beta_reduce at h₁ h₂ ⊢
+      rw [h₁]
+      refine Eq.trans ?_ h₂.symm
+      have h₃ (w : ℂ) : Complex.equivRealProdCLM (Complex.I • w) =
+          (-(Complex.equivRealProdCLM w).2, (Complex.equivRealProdCLM w).1) := by
+        ext <;> simp
+      exact h₃ v
 
 /-- **Coordinate vectors of a holomorphic chart.** For a holomorphic chart `φ` of a complex curve
 `X` and a point `z` of its target, the coordinate vector `∂ₜ = dφ⁻¹ i` is `j ∂ₛ`, where

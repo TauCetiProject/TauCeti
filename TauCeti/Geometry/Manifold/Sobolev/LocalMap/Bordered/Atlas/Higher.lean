@@ -41,7 +41,8 @@ chain rule as hypotheses.
   up to the boundary at every order, testing families of charts covering `s` and `u '' s`;
   `TauCeti.memWkpLocMapOnBordered_iff_atlas_of_two_lt` and
   `TauCeti.memWkpLocMapOnBordered_iff_chartAt_of_two_lt` for the atlases and the preferred
-  charts, and the versions for `TauCeti.MemWkpLocMapBordered`.
+  charts, and the versions for `TauCeti.MemWkpLocMapBordered`;
+  `TauCeti.memWkpLocMapOnBordered_of_memWkpLoc_chart` tests a single pair of charts.
 * `TauCeti.MemWkpLocMapOnBordered.contMDiffOn_comp_of_two_lt`,
   `ContMDiff.comp_memWkpLocMapBordered_of_two_lt`: composition with `C^ℓ` maps, `ℓ ≥ k`, into any
   manifold modelled on a finite-dimensional real normed space.
@@ -154,6 +155,27 @@ theorem memWkpLocMapBordered_iff_of_subset_maximalAtlas_of_two_lt (hp : 2 < p) (
   rw [← h, memWkpLocMapOnBordered_iff_of_subset_maximalAtlas_of_two_lt hp hp' isOpen_univ hA
     (fun x _ ↦ hAs x) hB (fun x _ ↦ hBs x)]
   simp only [continuousOn_univ, univ_inter]
+
+/-- **Testing one pair of charts.** For `2 < p < ∞`, a map continuous on an open set `t` inside
+the source of a bordered holomorphic chart `φ`, mapping `t` into the source of a smooth chart `χ`
+of `M`, is a local Sobolev map up to the boundary of order `k` on `t` as soon as its coordinate
+expression in `φ` and `χ` is in the planar class of order `k` over `t`. -/
+theorem memWkpLocMapOnBordered_of_memWkpLoc_chart (hp : 2 < p) (hp' : p ≠ ⊤) {t : Set X}
+    (ht : IsOpen t) {φ : OpenPartialHomeomorph X ClosedUpperHalfPlane}
+    (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas X) (htφ : t ⊆ φ.source)
+    {χ : OpenPartialHomeomorph M H} (hχ : χ ∈ IsManifold.maximalAtlas I ∞ M)
+    (htχ : MapsTo u t χ.source) (hu : ContinuousOn u t)
+    (h : MemWkpLoc p ((φ.extend closedUpperHalfPlaneModel).target ∩
+      (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' t) k
+        (χ.extend I ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm)) :
+    MemWkpLocMapOnBordered I p k u t := by
+  refine (memWkpLocMapOnBordered_iff_of_subset_maximalAtlas_of_two_lt hp hp' ht (A := {φ})
+    (singleton_subset_iff.2 hφ) (fun x hx ↦ ⟨φ, mem_singleton φ, htφ hx⟩) (B := {χ})
+    (singleton_subset_iff.2 hχ) fun x hx ↦ ⟨χ, mem_singleton χ, htχ hx⟩).2 ⟨hu, ?_⟩
+  intro φ' hφ' χ' hχ'
+  rw [mem_singleton_iff] at hφ' hχ'
+  subst hφ' hχ'
+  rwa [inter_eq_left.2 (mapsTo_iff_subset_preimage.1 htχ)]
 
 variable [HasGroupoid X borderedHolomorphicGroupoid] [IsManifold I ∞ M]
 

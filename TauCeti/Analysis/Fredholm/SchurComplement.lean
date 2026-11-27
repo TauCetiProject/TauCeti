@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Prod
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.SchurComplement
 
 /-!
@@ -20,6 +21,17 @@ then the two indices agree (`ContinuousLinearEquiv.index_coprod_prod_coprod`).
 
 This is how the Fredholm theory of an operator with an invertible *fast* block is reduced to that
 of its *slow* Schur complement.
+
+**The Lyapunov–Schmidt form.** An operator `[L B] : E × G → F`, `(x, σ) ↦ L x + B σ`, whose fast
+block `L` is injective with a complement `ker P` of its range, for some `P : F →L[K] Y` with
+`P ∘ L` invertible, becomes such a block operator once its target is split as `F ≃ Y × ker P`
+by `y ↦ (P y, Π y)`, with `Π` the projection onto `ker P` along the range of `L`. This is
+`ContinuousLinearEquiv.equivOfRightInverse` for `P` and its right inverse `L ∘ (P ∘ L)⁻¹`
+(`ContinuousLinearMap.snd_equivOfRightInverse_eq_projectionOntoL`). The blocks are then
+`P ∘ L`, `P ∘ B`, `0` and `Π ∘ B`, and the Schur complement is the reduced operator `Π ∘ B`.
+Hence `[L B]` is Fredholm exactly when the reduced operator is
+(`ContinuousLinearMap.isFredholm_coprod_iff_of_isInvertible_comp`). The two have the same index
+whether or not they are Fredholm (`ContinuousLinearMap.index_coprod_of_isInvertible_comp`).
 -/
 
 public section
@@ -59,3 +71,39 @@ theorem index_coprod_prod_coprod (hS : (A.schurComplement B C D).IsFredholm) :
     A.index_eq_zero, zero_add]
 
 end ContinuousLinearEquiv
+
+namespace ContinuousLinearMap
+
+variable {K E F G Y : Type*} [NontriviallyNormedField K]
+  [TopologicalSpace E] [AddCommGroup E] [Module K E] [IsTopologicalAddGroup E]
+  [TopologicalSpace F] [AddCommGroup F] [Module K F] [IsTopologicalAddGroup F]
+  [TopologicalSpace G] [AddCommGroup G] [Module K G] [IsTopologicalAddGroup G]
+  [TopologicalSpace Y] [AddCommGroup Y] [Module K Y] [IsTopologicalAddGroup Y]
+  {L : E →L[K] F} {P : F →L[K] Y}
+
+/-- **Fredholmness under the Lyapunov–Schmidt reduction.** If `P ∘ L` is invertible, the operator
+`(x, σ) ↦ L x + B σ` is Fredholm exactly when the reduced operator `Π ∘ B` is, for the projection
+`Π` onto `ker P` along the range of `L`. Their indices agree by
+`ContinuousLinearMap.index_coprod_of_isInvertible_comp`. -/
+theorem isFredholm_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible)
+    {B : G →L[K] F} :
+    (L.coprod B).IsFredholm ↔
+      (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
+        B).IsFredholm := by
+  obtain ⟨A, hA⟩ := id h
+  have hr := rightInverse_comp_inverse_of_isInvertible_comp h
+  have hblock : (ContinuousLinearEquiv.equivOfRightInverse P _ hr).toContinuousLinearMap ∘L
+      L.coprod B =
+      ((A : E →L[K] Y).coprod (P ∘L B)).prod ((0 : E →L[K] P.ker).coprod
+        (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
+          B)) := by
+    ext x <;> simp [hA, snd_equivOfRightInverse_eq_projectionOntoL h]
+  have hschur : A.schurComplement (P ∘L B) 0
+      (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B) =
+      P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B := by
+    simp [ContinuousLinearEquiv.schurComplement_def]
+  rw [isFredholm_iff_of_comp_eq (.refl K (E × G)) (.equivOfRightInverse P _ hr)
+    (hblock.trans (comp_id _).symm), ContinuousLinearEquiv.isFredholm_coprod_prod_coprod_iff,
+    hschur]
+
+end ContinuousLinearMap

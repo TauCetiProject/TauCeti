@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Sobolev.W1p.Localization
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
@@ -13,6 +14,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Sobolev functions vanishing on a part of the boundary
@@ -54,6 +56,8 @@ functions are only Lipschitz.
 * `TauCeti.W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule` and
   `TauCeti.w1pVanishingOnSubmodule_subset_of_isClosed`: the generators lie in it, and a closed set
   containing them contains all of it.
+* `TauCeti.W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`: every trace operator, a
+  continuous linear map sending each generator to its boundary values, vanishes on `Γ` on it.
 * `TauCeti.mem_w1pVanishingOnSubmodule_iff_exists_seq_tendsto`: its elements are the limits of
   sequences of generators.
 * `TauCeti.w1pVanishingOnSubmodule_antitone` and `TauCeti.w1pVanishingOnSubmodule_closure`: it is
@@ -64,10 +68,15 @@ functions are only Lipschitz.
   `Ω`, and more generally `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`: restriction from a
   larger open set `U` maps `W^{1,p}_0(U)` into it when `Γ` misses `U`.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_mem_w1pVanishingOnSubmodule` and
+  `TauCeti.W1p.localizeL_mem_w1pVanishingOnSubmodule`: restriction to a smaller open set preserves
+  it, and so does localization by a cutoff `ψ` to a larger one (`TauCeti.W1p.localizeL`), where only
+  the part of `Γ` on `tsupport ψ` matters.
 * `TauCeti.W1pVanishingOn.valueL`: its value map into `Lᵖ(Ω)`, injective
   (`TauCeti.W1pVanishingOn.valueL_injective`), with dense range for `p = 2` when
-  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`) and compact when the value map
-  of `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`).
+  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`), nonzero on a nonempty `Ω` when
+  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.valueL_ne_zero`), and compact when the value map of
+  `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`).
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients, and
   `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_union`: a cutoff whose support misses
@@ -77,7 +86,9 @@ functions are only Lipschitz.
 * `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact` and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz`: for finite `p` it contains the
   restrictions of the Sobolev, in particular of the locally Lipschitz, functions on the whole space
-  vanishing outside a compact set disjoint from `closure Γ`.
+  vanishing outside a compact set disjoint from `closure Γ`; in particular
+  `TauCeti.W1p.const_mem_w1pVanishingOnSubmodule_empty`: on a bounded `Ω` it contains the
+  constants for `Γ = ∅`.
 * `TauCeti.W1pVanishingOn.instNormedAddCommGroup` and
   `TauCeti.W1pVanishingOn.instInnerProductSpace`: shortcut instances, registered locally by files
   applying abstract Hilbert space results to `W^{1,2}_Γ(Ω)`.
@@ -95,10 +106,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Filter MeasureTheory Set TopologicalSpace
 open scoped Distributions ENNReal Topology Gradient ContDiff
+
+namespace TauCeti
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -160,6 +171,30 @@ theorem w1pVanishingOnSubmodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (h
     (w1pVanishingOnSubmodule mu Omega p Γ : Set (W1p mu Omega p)) ⊆ s := by
   rw [coe_w1pVanishingOnSubmodule]
   exact closure_minimal (by rintro _ ⟨φ, hφ, rfl⟩; exact h φ hφ) hs
+
+/-- **Functions vanishing on `Γ` have zero boundary values on `Γ`, for any trace operator.** Let
+`T : W^{1,p}(Ω) → Lᵖ(σ)` be a continuous linear map that sends the restriction to `Ω` of every test
+function `φ` on the whole space to `φ` itself, `σ`-almost everywhere. Then `T u` vanishes
+`σ`-almost everywhere on `Γ` for every `u ∈ W^{1,p}_Γ(Ω)`. No regularity of `Ω` or of `Γ` is
+assumed; the traces on a Lipschitz domain are the main examples. -/
+theorem W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule {σ : Measure E}
+    {T : W1p mu Omega p →L[ℝ] Lp ℝ p σ}
+    (hT : ∀ φ : 𝓓((⊤ : Opens E), ℝ),
+      T (W1p.restrictL (le_top : Omega ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ)) =ᵐ[σ] φ)
+    {u : W1p mu Omega p} (hu : u ∈ w1pVanishingOnSubmodule mu Omega p Γ) :
+    T u =ᵐ[σ.restrict Γ] 0 := by
+  -- Vanishing on `Γ` is the kernel of a continuous linear map, hence a closed condition.
+  let R := (LpToLpRestrictCLM E ℝ ℝ σ p Γ).comp T
+  have hclosed : IsClosed {v : W1p mu Omega p | R v = 0} := isClosed_eq R.continuous
+    continuous_const
+  have h := w1pVanishingOnSubmodule_subset_of_isClosed hclosed (fun φ hφ => ?_) hu
+  · exact (LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) Γ _).1 h
+  -- The boundary values of a generator are the generator itself, which is zero on `closure Γ`.
+  rw [mem_ofPred, ContinuousLinearMap.comp_apply, LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ)]
+  filter_upwards [ae_restrict_of_ae (hT φ), ae_restrict_of_ae_restrict_of_subset subset_closure
+      (ae_restrict_mem (μ := σ) isClosed_closure.measurableSet)] with x hx hxΓ
+  rw [hx, Pi.zero_apply]
+  exact image_eq_zero_of_notMem_tsupport (hφ.notMem_of_mem_right hxΓ)
 
 /-- **The Sobolev space `W^{1,p}_Γ(Ω)`** as a type: the subspace `w1pVanishingOnSubmodule`, with
 the normed structure inherited from `W^{1,p}(Ω)`. For `p = 2` it is a Hilbert space, the test
@@ -289,6 +324,63 @@ theorem w1pVanishingOnSubmodule_frontier :
     rw [hψ, indicator_of_mem hx]]
   exact W1p.ofTestFunctionₗ_mem_w1p0Submodule ψ
 
+/-! ### Restriction and localization -/
+
+/-- **Restriction preserves vanishing on `Γ`**: for open sets `U ≤ Ω`, the restriction to `U` of an
+element of `W^{1,p}_Γ(Ω)` lies in `W^{1,p}_Γ(U)`. -/
+theorem W1p.restrictL_mem_w1pVanishingOnSubmodule_of_mem_w1pVanishingOnSubmodule {U : Opens E}
+    (hU : U ≤ Omega) {u : W1p mu Omega p} (hu : u ∈ w1pVanishingOnSubmodule mu Omega p Γ) :
+    W1p.restrictL hU u ∈ w1pVanishingOnSubmodule mu U p Γ := by
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    ((w1pVanishingOnSubmodule mu U p Γ).isClosed.preimage (W1p.restrictL hU).continuous)
+    (fun φ hφ => ?_) hu
+  rw [mem_preimage, W1p.restrictL_restrictL]
+  exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule hφ
+
+/-- **Localization by a cutoff moves vanishing on `Γ'` to vanishing on `Γ`.** For open sets
+`U ≤ Ω` and a smooth `ψ` with `Ω ∩ tsupport ψ ⊆ U`, the cutoff product `ψ u` of
+`u ∈ W^{1,p}_{Γ'}(U)`, extended by zero to `Ω` (`TauCeti.W1p.localizeL`), lies in `W^{1,p}_Γ(Ω)`
+as soon as `closure Γ` and `closure Γ'` agree on `tsupport ψ` in the sense
+`closure Γ ∩ tsupport ψ ⊆ closure Γ'`. Only the part of `Γ` where `ψ` may be nonzero matters; for
+`Γ = Γ'` the condition holds trivially. -/
+theorem W1p.localizeL_mem_w1pVanishingOnSubmodule {U : Opens E} (hU : U ≤ Omega) {psi : E → ℝ}
+    {M : ℝ} (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M) (hpsiM : ∀ x ∈ U, |psi x| ≤ M)
+    (hgradM : ∀ x ∈ U, ‖∇ psi x‖ ≤ M) (hs : (Omega : Set E) ∩ tsupport psi ⊆ U) {Γ' : Set E}
+    (hΓ : closure Γ ∩ tsupport psi ⊆ closure Γ') {u : W1p mu U p}
+    (hu : u ∈ w1pVanishingOnSubmodule mu U p Γ') :
+    W1p.localizeL hU psi hpsi hM hpsiM hgradM hs u ∈ w1pVanishingOnSubmodule mu Omega p Γ := by
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    ((w1pVanishingOnSubmodule mu Omega p Γ).isClosed.preimage
+      (W1p.localizeL hU psi hpsi hM hpsiM hgradM hs).continuous) (fun φ hφ => ?_) hu
+  -- The product `ψ φ` is a test function on the whole space with support inside those of `ψ`
+  -- and `φ`.
+  obtain ⟨Φ, hΦφ⟩ : ∃ Φ : 𝓓((⊤ : Opens E), ℝ), ⇑Φ = fun x => psi x * φ x :=
+    ⟨⟨fun x => psi x * φ x, hpsi.mul φ.contDiff, φ.hasCompactSupport.mul_left, subset_univ _⟩,
+      rfl⟩
+  -- Localizing the generator `φ` gives the generator `ψ φ`: off `U`, `ψ` vanishes on `Ω`.
+  have hΦ : W1p.localizeL hU psi hpsi hM hpsiM hgradM hs
+      (W1p.restrictL (le_top : U ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ)) =
+      W1p.restrictL (le_top : Omega ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p Φ) := by
+    refine W1p.ext_value (Lp.ext ?_)
+    have hφU := (ae_restrict_iff' U.isOpen.measurableSet).1
+      (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : U ≤ ⊤) φ)
+    filter_upwards [W1p.value_localizeL_ae hU hpsi hM hpsiM hgradM hs
+        (W1p.restrictL (le_top : U ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ)),
+      ae_restrict_of_ae hφU,
+      W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : Omega ≤ ⊤) Φ,
+      ae_restrict_mem Omega.isOpen.measurableSet] with x hx hφx hΦx hxΩ
+    rw [hx, hΦx, hΦφ]
+    by_cases hxU : x ∈ (U : Set E)
+    · rw [indicator_of_mem hxU, hφx hxU, smul_eq_mul]
+    · simp [indicator_of_notMem hxU,
+        image_eq_zero_of_notMem_tsupport (fun hxs => hxU (hs ⟨hxΩ, hxs⟩))]
+  rw [mem_preimage, hΦ]
+  refine W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
+    (disjoint_left.2 fun x hxΦ hxΓ => ?_)
+  rw [hΦφ] at hxΦ
+  exact disjoint_left.1 hφ (tsupport_mul_subset_right hxΦ)
+    (hΓ ⟨hxΓ, tsupport_mul_subset_left hxΦ⟩)
+
 /-! ### The value map -/
 
 /-- **The value map of `W^{1,p}_Γ(Ω)`**, the value component of the Sobolev jet, as a continuous
@@ -316,6 +408,16 @@ theorem W1pVanishingOn.denseRange_valueL_two (hΓ : Disjoint Γ Omega) :
     rintro _ ⟨w, rfl⟩
     exact ⟨⟨w, w1p0Submodule_le_w1pVanishingOnSubmodule hΓ w.property⟩, by
       simp only [W1pVanishingOn.valueL_apply, W1p0.valueL_apply]⟩
+
+/-- The value map of `W^{1,p}_Γ(Ω)` is nonzero on a nonempty open set `Ω` when `Γ` misses `Ω`,
+since `W^{1,p}_Γ(Ω)` then contains `W^{1,p}_0(Ω)`. -/
+theorem W1pVanishingOn.valueL_ne_zero (hΓ : Disjoint Γ Omega) (hOmega : (Omega : Set E).Nonempty) :
+    W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := p) (Γ := Γ) ≠ 0 := by
+  obtain ⟨w, hw⟩ := W1p0.exists_value_ne_zero (mu := mu) (p := p) hOmega
+  intro h
+  apply hw
+  simpa only [W1pVanishingOn.valueL_apply, zero_apply] using DFunLike.congr_fun h
+    ⟨(w : W1p mu Omega p), w1p0Submodule_le_w1pVanishingOnSubmodule hΓ w.property⟩
 
 /-- The value map `W^{1,p}_Γ(Ω) → Lᵖ(Ω)` is compact when the value map of `W^{1,p}(Ω)` is, as
 for a bounded Lipschitz domain by Rellich--Kondrachov. -/
@@ -471,6 +573,22 @@ theorem W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz (hp : p ≠ (∞ : �
       rw [hx]
       exact image_eq_zero_of_notMem_tsupport hxK)
   rwa [W1p.restrictL_eq_of_value_ae_eq le_top ((hw.filter_mono ae_restrict_le).trans hu.symm)] at h
+
+/-- **Constants lie in `W^{1,p}_∅(Ω)` on a bounded set.** For `1 ≤ p < ∞` and a bounded open
+set `Ω`, every constant function lies in `W^{1,p}_∅(Ω)`. -/
+theorem W1p.const_mem_w1pVanishingOnSubmodule_empty (hp : p ≠ (∞ : ℝ≥0∞))
+    (hb : Bornology.IsBounded (Omega : Set E)) [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+    (c : ℝ) : (W1p.const c : W1p mu Omega p) ∈ w1pVanishingOnSubmodule mu Omega p ∅ := by
+  -- A multiple of a smooth bump equal to `1` on a ball containing `Ω` agrees with `c` on `Ω`.
+  obtain ⟨R, hR⟩ := hb.subset_closedBall 0
+  let φ : ContDiffBump (0 : E) := ⟨max R 1, max R 1 + 1, by positivity, by linarith⟩
+  refine W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz (G := fun x => c * φ x) hp
+    (contDiff_const.mul (φ.contDiff (n := 1))).locallyLipschitz φ.hasCompactSupport.mul_left
+    (by simp) ?_
+  filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c,
+    ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+  rw [hx, φ.one_of_mem_closedBall (Metric.closedBall_subset_closedBall (le_max_left R 1)
+    (hR hxΩ)), mul_one]
 
 /-! ### Shortcut instances for the Hilbert space `W^{1,2}_Γ(Ω)`
 

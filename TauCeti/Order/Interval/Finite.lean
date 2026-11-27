@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Data.Finset.Sort
+import Mathlib.Data.Set.Finite.Lemmas
 
 /-!
 # Intervals avoiding a finite set of points
 
 A finite family of points of a nonempty preorder without a maximal element misses a nonempty open
-interval.
+interval. In a linear order, a set meeting an open interval `(a, b)` in a finite set has no points
+accumulating at `a` from the right: its points above `a` are bounded below by some `c > a`
+(`TauCeti.exists_lt_forall_le_of_finite_inter_Ioo`).
 
 A finite set of points cuts every closed interval of a linear order into finitely many closed
 pieces whose interiors avoid it. `TauCeti.Icc_induction_of_disjoint_Ioo` proves a two-endpoint
@@ -50,6 +53,20 @@ theorem exists_Ioo_disjoint_range_of_finite {α ι : Type*} [Preorder α] [Nonem
   obtain ⟨n, hn⟩ := (Set.finite_iUnion hfin).exists_notMem
   simp only [Set.mem_iUnion, not_exists] at hn
   exact ⟨f n, f (n + 2), f (n + 1), hn, hf (Nat.lt_succ_self n), hf (Nat.lt_succ_self (n + 1))⟩
+
+/-- If a set `S` in a linear order meets some nonempty open interval `(a, b)` in a finite set,
+then the points of `S` above `a` are bounded below by some `c > a`: take for `c` the least
+element of `(S ∩ (a, b)) ∪ {b}`. -/
+theorem exists_lt_forall_le_of_finite_inter_Ioo {α : Type*} [LinearOrder α] {S : Set α}
+    {a b : α} (hab : a < b) (hS : (S ∩ Ioo a b).Finite) :
+    ∃ c, a < c ∧ ∀ x ∈ S, a < x → c ≤ x := by
+  obtain ⟨c, hc, hmin⟩ := Set.exists_min_image _ id (hS.insert b) (Set.insert_nonempty _ _)
+  refine ⟨c, ?_, fun x hx hax ↦ ?_⟩
+  · rcases hc with rfl | hc
+    exacts [hab, hc.2.1]
+  · rcases lt_or_ge x b with hxb | hbx
+    · exact hmin x (Or.inr ⟨hx, hax, hxb⟩)
+    · exact (hmin b (Or.inl rfl)).trans hbx
 
 /-- **Induction over closed intervals cut by a finite set.** Let `Q c d` be a property of the
 endpoints of closed intervals `[c, d]` contained in `s`. If `Q` holds on every such interval

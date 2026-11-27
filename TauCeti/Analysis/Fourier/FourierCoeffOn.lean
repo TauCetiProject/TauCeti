@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.Analysis.Fourier.AddCircle
-import TauCeti.Analysis.Fourier.SineSeries
+import TauCeti.Analysis.Fourier.SineCosineSeries
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Integral.Circle.Haar
 

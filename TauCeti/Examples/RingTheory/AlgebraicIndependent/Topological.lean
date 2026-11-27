@@ -10,13 +10,19 @@ import Mathlib.NumberTheory.Padics.Complex
 import Mathlib.Topology.UniformSpace.CompleteSeparated
 
 /-!
-# Checks for the topological transcendence degree
+# Checks for the topological transcendence degree and topological independence
 
 The invariant `TauCeti.topologicalTrdeg` sees the topology of the extension field. It vanishes
 for the trivial extension and for `ℂ_p` over `ℚ_p`, although `ℂ_p` has infinite transcendence
 degree over `ℚ_p`; it equals the transcendence degree for the discrete topology, including the
 infinite case; and over a complete algebraically closed field embedded isometrically it vanishes
 only for the trivial extension.
+
+Temkin's topological algebraic independence `TauCeti.IsTopAlgIndependent` is algebraic
+independence for the discrete topology, and a singleton is independent exactly when it avoids
+the closure of the algebraic elements. The topological independence degree vanishes for the
+trivial extension and for `ℂ_p` over `ℚ_p`, and for the discrete topology it is the transcendence
+degree, so it is one for transcendence degree one.
 -/
 
 open Cardinal
@@ -57,5 +63,34 @@ example {K L : Type*} [NormedField K] [CompleteSpace K] [IsAlgClosed K] [NormedF
     [Algebra K L] (h : Isometry (algebraMap K L)) :
     topologicalTrdeg K L = 0 ↔ Function.Surjective (algebraMap K L) :=
   topologicalTrdeg_eq_zero_iff_surjective h.isUniformInducing.isComplete_range.isClosed
+
+-- For the discrete topology, a set is topologically algebraically independent exactly when it is
+-- algebraically independent.
+example {K L : Type*} [Field K] [Field L] [Algebra K L] [TopologicalSpace L] [DiscreteTopology L]
+    (s : Set L) : IsTopAlgIndependent K s ↔ AlgebraicIndependent K ((↑) : s → L) :=
+  isTopAlgIndependent_iff_algebraicIndependent
+
+-- A singleton `{x}` is topologically algebraically independent exactly when `x` avoids the closure
+-- of the elements algebraic over `K`.
+example {K L : Type*} [Field K] [Field L] [Algebra K L] [TopologicalSpace L] (x : L) :
+    IsTopAlgIndependent K {x} ↔ x ∉ closure {y : L | IsAlgebraic K y} :=
+  isTopAlgIndependent_singleton_iff
+
+-- The identity extension has topological independence degree zero: every element is algebraic.
+example (K : Type*) [Field K] [TopologicalSpace K] : topologicalIndependenceDegree K K = 0 :=
+  topologicalIndependenceDegree_self K
+
+-- `ℂ_p` has topological independence degree zero over `ℚ_p`, because the algebraic closure of
+-- `ℚ_p` is dense, although `ℂ_p` has infinite transcendence degree over `ℚ_p`.
+example (p : ℕ) [Fact p.Prime] : topologicalIndependenceDegree ℚ_[p] ℂ_[p] = 0 :=
+  topologicalIndependenceDegree_eq_zero_iff_topologicalTrdeg_eq_zero.mpr <|
+    topologicalTrdeg_eq_zero_of_denseRange (IsScalarTower.toAlgHom ℚ_[p] (PadicAlgCl p) ℂ_[p])
+      UniformSpace.Completion.denseRange_coe
+
+-- For the discrete topology and transcendence degree one, the independence degree is one, so a
+-- definition that always returns zero fails.
+example {K L : Type*} [Field K] [Field L] [Algebra K L] [TopologicalSpace L] [DiscreteTopology L]
+    (h : Algebra.trdeg K L = 1) : topologicalIndependenceDegree K L = 1 := by
+  simp [h]
 
 end TauCeti.Examples
