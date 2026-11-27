@@ -9,9 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ConnectedLevel
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Free
 import TauCeti.Geometry.Lie.FundamentalVectorField.Isotropy
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Hessian
-import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Slice.MomentMap
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Semidefinite
-import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
@@ -34,9 +32,11 @@ nonzero `ξ ∈ 𝔥` (`TauCeti.SmoothTwoForm.IsMomentMap.exists_ne_zero_isMinOn
 * **The linearized isotropy action.** Every `ξ ∈ 𝔥` acts on `T_x M` by the generator `A_ξ` of
   `t ↦ d(exp (t ξ))_x` (`TauCeti.isotropyLinearization`). These operators are skew-adjoint for
   `σ_x`, complex linear for the value at `x` of a `G`-invariant compatible almost complex
-  structure, and pairwise commuting, since `G` is commutative. They vanish on the orbit tangent
-  space `W = 𝔤 · x`, which is fixed by the stabilizer, and `W` is isotropic with
-  `dim W = dim G - dim 𝔥`, so `dim T_x M = 2 (dim W + dim 𝔥)`.
+  structure (`exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap` in the
+  namespace `TauCeti.SmoothTwoForm.IsNondegenerate`), and pairwise commuting, since `G` is
+  commutative. They vanish on the orbit tangent space `W = 𝔤 · x`, which is fixed by the
+  stabilizer, and `W` is isotropic with `dim W = dim G - dim 𝔥`, so
+  `dim T_x M = 2 (dim W + dim 𝔥)`.
 * **A semidefinite Hessian.** The linear algebra of
   `TauCeti.SymplecticForm.exists_ne_zero_forall_apply_apply_nonneg` gives `ξ ≠ 0` in `𝔥` with
   `σ_x(A_ξ v, v) ≥ 0`. This is the Hessian of `μ^ξ` at its critical point `x`
@@ -119,21 +119,10 @@ theorem exists_ne_zero_forall_criticalHessian_nonneg
   have hAv (ξ : a.isotropy x) (v : TangentSpace 𝓘(ℝ, E') x) :
       A ξ v = isotropyLinearization 𝓘(ℝ, E') x ξ v :=
     rfl
-  have hskew (ξ : a.isotropy x) :
-      A ξ ∈ skewAdjointLieSubalgebra (hσ.isNondegenerate.symplecticFormAt x).toBilinForm := by
-    refine (LinearMap.mem_skewAdjointSubmodule _).2 fun u v ↦ ?_
-    rw [Pi.neg_apply, map_neg, hAv, hAv]
-    exact hσ.isNondegenerate.symplecticFormAt_isotropyLinearization_apply (fun g _ ↦ hG g) ξ u v
-  obtain ⟨J, hJ, hJG⟩ :=
-    hσ.isNondegenerate.exists_compatible_mfderiv_smul_apply_of_compactSpace (IG := I) hσG
-  have hAJ (ξ : a.isotropy x) : IsComplexLinearMap (J.almostComplexStructureAt x)
-      (J.almostComplexStructureAt x) (A ξ) :=
-    (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ by
-      rw [J.almostComplexStructureAt_apply, J.almostComplexStructureAt_apply, hAv, hAv]
-      refine isotropyLinearization_apply_apply_eq_of_forall_mem_stabilizer ξ
-        (J.toEndomorphism x) (fun g hg u ↦ ?_) v
-      have := hJG g x u
-      rwa [hg] at this
+  -- They lie in `sp(T_x M, σ_x)` and are complex linear for a compatible complex structure `J`.
+  obtain ⟨J, hJ, hA⟩ :=
+    hσ.isNondegenerate.exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap
+      (I := I) hσG x
   have hcomm (ξ η : a.isotropy x) : Commute (A ξ) (A η) :=
     (commute_isotropyLinearization ξ η).map ContinuousLinearMap.toLinearMapRingHom
   have hAW (ξ : a.isotropy x) (w : TangentSpace 𝓘(ℝ, E') x) (hw : w ∈ a.orbitTangent x) :
@@ -152,8 +141,8 @@ theorem exists_ne_zero_forall_criticalHessian_nonneg
     omega
   have : Nontrivial (a.isotropy x) :=
     Submodule.nontrivial_iff_ne_bot.2 fun h0 ↦ hx ((LieSubalgebra.toSubmodule_eq_bot _).1 h0)
-  obtain ⟨ξ, hξ0, hξ⟩ := SymplecticForm.exists_ne_zero_forall_apply_apply_nonneg
-    (hJ.compatibleAt x) A hcomm hskew hAJ hW hAW hdim'
+  obtain ⟨ξ, hξ0, hξ⟩ := SymplecticForm.exists_ne_zero_forall_apply_apply_nonneg hJ A hcomm
+    (fun ξ ↦ (hA ξ).1) (fun ξ ↦ (hA ξ).2) hW hAW hdim'
   -- The Hessian of `μ^ξ` at `x` is `σ_x(A_ξ v, w)`.
   refine ⟨ξ, ξ.property, fun h' ↦ hξ0 (Subtype.ext h'), fun v ↦ ?_⟩
   rw [h.criticalHessian_apply_eq_eval₂_isotropyLinearization hσ.isNondegenerate]

@@ -887,20 +887,17 @@ theorem isPreconnected_preimage_singleton_of_isConvexChart (hf : IsProperMap f)
 
 /-- **Local minima of locally convex functions are global.** A proper function `g` from a connected
 Hausdorff space to `ℝ`, every point of which lies in a convexity chart, attains its minimum at each
-of its local minima.
-
-Write `c = g x`. The points near which `g ≥ c` form an open set `O`. If a convexity chart `U` of `g`
-meets `O` at a point `y` of the level `c`, then `g ≥ c` on `U`: otherwise the interval `g '' U`
-contains values below `c`, and a neighbourhood of `y` on which `g ≥ c` would not be mapped onto a
-relative neighbourhood of `c`. Hence the preconnected level `g ⁻¹' {c}` lies in `O`, and `{c ≤ g}`
-is open and closed. -/
+of its local minima. -/
 theorem isMinOn_of_isLocalMin_of_isConvexChart {g : X → ℝ} (hg : IsProperMap g)
     (hloc : ∀ x, ∃ U, x ∈ U ∧ IsConvexChart g U) {x : X} (hx : IsLocalMin g x) :
     IsMinOn g univ x := by
+  -- Write `c = g x`. The points near which `g ≥ c` form an open set `O`.
   set c := g x
   set O : Set X := {y | ∀ᶠ z in 𝓝 y, c ≤ g z}
   have hO : IsOpen O := isOpen_setOfPred_eventually_nhds
-  -- A convexity chart meeting `O` at a point of the level `c` lies in `{c ≤ g}`.
+  -- A convexity chart `U` meeting `O` at a point `y` of the level `c` lies in `{c ≤ g}`: otherwise
+  -- the interval `g '' U` contains values below `c`, and a neighbourhood of `y` on which `g ≥ c`
+  -- would not be mapped onto a relative neighbourhood of `c`.
   have key {U : Set X} (hU : IsConvexChart g U) {y : X} (hyU : y ∈ U) (hyO : y ∈ O)
       (hyc : g y = c) {z : X} (hzU : z ∈ U) : c ≤ g z := by
     by_contra! hlt
@@ -919,7 +916,7 @@ theorem isMinOn_of_isLocalMin_of_isConvexChart {g : X → ℝ} (hg : IsProperMap
     have hcw : c ≤ g w := (hNsub hwN).2
     rw [hw] at hcw
     exact hcw.not_gt htc
-  -- The level `g ⁻¹' {c}` lies in `O`.
+  -- Hence the preconnected level `g ⁻¹' {c}` lies in `O`.
   set V : Set X := {y | ∃ U, IsConvexChart g U ∧ y ∈ U ∧ ∃ z ∈ U, g z < c}
   have hV : IsOpen V := isOpen_iff_forall_mem_open.2 fun y ⟨U, hU, hyU, hz⟩ ↦
     ⟨U, fun y' hy' ↦ ⟨U, hU, hy', hz⟩, hU.isOpen, hyU⟩

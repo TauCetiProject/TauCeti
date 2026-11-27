@@ -15,10 +15,11 @@ Let `(V, ω)` be a finite-dimensional real symplectic vector space with a compat
 structure `J`, and let `A : 𝔥 → sp(V, ω)` be a linear map from a nonzero finite-dimensional real
 space `𝔥` whose values pairwise commute and are `J`-complex linear: the infinitesimal action of a
 torus on `V` by linear symplectomorphisms. In a common Darboux basis
-(`exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic` in the namespace
-`TauCeti.SymplecticForm`) every `A ξ` rotates the plane `span(qₖ, pₖ)` with angular frequency
-`αₖ(ξ)`, for linear weights `αₖ ∈ 𝔥*`, and its quadratic Hamiltonian is
-`v ↦ ½ ω(A ξ v, v) = ∑ₖ αₖ(ξ) Iₖ`.
+(`exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_apply_smul_elliptic` in the
+namespace `TauCeti.SymplecticForm`) every `A ξ` rotates the plane `span(qₖ, pₖ)` with angular
+frequency `αₖ(ξ)`, for linear weights `αₖ ∈ 𝔥*`, and its quadratic Hamiltonian is
+`v ↦ ½ ω(A ξ v, v) = ∑ₖ αₖ(ξ) Iₖ`, which is positive semidefinite when every `αₖ(ξ)` is nonnegative
+(`TauCeti.SymplecticForm.apply_apply_nonneg_of_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic`).
 
 This file proves that if the action fixes an isotropic subspace `W` pointwise and
 `dim V ≤ 2 (dim W + dim 𝔥)`, then some nonzero `ξ ∈ 𝔥` has a positive semidefinite quadratic
@@ -61,32 +62,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 section Weights
 
 variable {𝔥 : Type*} [AddCommGroup 𝔥] [Module ℝ 𝔥] {A : 𝔥 →ₗ[ℝ] Module.End ℝ V}
-
-/-- A commuting family `A` of `J`-complex linear elements of `sp(V, ω)`, linear in `ξ ∈ 𝔥`, rotates
-the planes of a common Darboux basis with angular frequencies `αₖ(ξ)` given by linear weights
-`αₖ ∈ 𝔥*`. -/
-private theorem exists_isDarbouxBasis_weights (hJ : ω.Compatible J)
-    (hcomm : ∀ ξ η, Commute (A ξ) (A η))
-    (hskew : ∀ ξ, A ξ ∈ skewAdjointLieSubalgebra ω.toBilinForm)
-    (hAJ : ∀ ξ, IsComplexLinearMap J J (A ξ)) :
-    ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (α : Fin n → Module.Dual ℝ 𝔥), ω.IsDarbouxBasis b ∧
-      ∀ ξ k, A ξ (b (k, 0)) = -α k ξ • b (k, 1) ∧ A ξ (b (k, 1)) = α k ξ • b (k, 0) := by
-  obtain ⟨n, b, ν, hb, -, hν, -⟩ :=
-    exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic hJ
-      (fun ξ ↦ (⟨A ξ, hskew ξ⟩ : skewAdjointLieSubalgebra ω.toBilinForm))
-      (fun ξ η _ ↦ hcomm ξ η) hAJ
-  -- The frequency `ν ξ k = ω(A ξ pₖ, pₖ)` is linear in `ξ`.
-  let α (k : Fin n) : Module.Dual ℝ 𝔥 :=
-    { toFun ξ := ω (A ξ (b (k, 1))) (b (k, 1))
-      map_add' ξ η := by simp
-      map_smul' c ξ := by simp }
-  have hα (ξ : 𝔥) (k : Fin n) : α k ξ = ν ξ k := by
-    have h : α k ξ = ω (A ξ (b (k, 1))) (b (k, 1)) := rfl
-    rw [h, (hν ξ k).2]
-    simp [hb.apply_fst_snd]
-  exact ⟨n, b, α, hb, fun ξ k ↦ by rw [hα]; exact hν ξ k⟩
-
-variable {n : ℕ} {b : Basis (Fin n × Fin 2) ℝ V} {α : Fin n → Module.Dual ℝ 𝔥}
+  {n : ℕ} {b : Basis (Fin n × Fin 2) ℝ V} {α : Fin n → Module.Dual ℝ 𝔥}
 
 omit [FiniteDimensional ℝ V] in
 /-- A vector killed by every `A ξ` has no component in a plane of nonzero weight: if
@@ -164,23 +140,6 @@ private theorem nat_card_add_finrank_le (hb : ω.IsDarbouxBasis b)
     rw [finrank_eq_card_basis b, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin]
   omega
 
-/-- If every weight is nonnegative at `ξ`, the quadratic Hamiltonian of `A ξ`, which is
-`∑ₖ αₖ(ξ) Iₖ`, is positive semidefinite. -/
-private theorem apply_apply_nonneg_of_forall_nonneg (hb : ω.IsDarbouxBasis b)
-    (hα : ∀ ξ k, A ξ (b (k, 0)) = -α k ξ • b (k, 1) ∧ A ξ (b (k, 1)) = α k ξ • b (k, 0))
-    {ξ : 𝔥} (hξ : ∀ k, 0 ≤ α k ξ) (v : V) : 0 ≤ ω (A ξ v) v := by
-  have hAξ : A ξ = ω.hamiltonianEnd (∑ k, α k ξ • elliptic b k) := b.ext fun ⟨k, a⟩ ↦ by
-    obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
-    · rw [(hα ξ k).1, hb.hamiltonianEnd_sum_smul_elliptic_apply_fst]
-    · rw [(hα ξ k).2, hb.hamiltonianEnd_sum_smul_elliptic_apply_snd]
-  rw [hAξ, apply_hamiltonianEnd, QuadraticMap.polar_self, nsmul_eq_mul]
-  refine mul_nonneg zero_le_two ?_
-  have hsum : (∑ k, α k ξ • elliptic b k) v = ∑ k, α k ξ * elliptic b k v := by simp
-  rw [hsum]
-  refine Finset.sum_nonneg fun k _ ↦ mul_nonneg (hξ k) ?_
-  rw [elliptic_apply]
-  positivity
-
 end Weights
 
 /-- **A torus of compact elements of `sp(V, ω)` fixing a large isotropic subspace has a
@@ -204,7 +163,9 @@ theorem exists_ne_zero_forall_apply_apply_nonneg (hJ : ω.Compatible J)
     push Not at hA
     obtain ⟨ξ, hAξ, hξ0⟩ := hA
     exact ⟨ξ, hξ0, fun v ↦ by simp [hAξ]⟩
-  obtain ⟨n, b, α, hb, hα⟩ := exists_isDarbouxBasis_weights hJ hcomm hskew hAJ
+  obtain ⟨n, b, α, hb, -, hα, hQ⟩ :=
+    exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_apply_smul_elliptic hJ A hcomm
+      hskew hAJ
   have hcard := nat_card_add_finrank_le hb hα hskew hW hAW
   have h₃ : finrank ℝ V = n * 2 := by
     rw [finrank_eq_card_basis b, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin]
@@ -218,11 +179,8 @@ theorem exists_ne_zero_forall_apply_apply_nonneg (hJ : ω.Compatible J)
       by_cases hk : α k = 0
       · rw [hk, LinearMap.zero_apply]
       · exact congrFun hξ ⟨k, hk⟩
-    refine b.ext fun ⟨k, a⟩ ↦ ?_
-    rw [map_zero, LinearMap.zero_apply]
-    obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
-    · rw [(hα ξ k).1, hαξ, neg_zero, zero_smul]
-    · rw [(hα ξ k).2, hαξ, zero_smul]
+    have h0 : ω.hamiltonianEndEquiv.symm ⟨A ξ, hskew ξ⟩ = 0 := by simp [hQ, hαξ]
+    simpa using congrArg Subtype.val (ω.hamiltonianEndEquiv.symm.map_eq_zero_iff.1 h0)
   have hle := LinearMap.finrank_le_finrank_of_injective hΦ
   rw [Module.finrank_fintype_fun_eq_card] at hle
   obtain ⟨ξ, hξ⟩ := ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by
@@ -240,6 +198,6 @@ theorem exists_ne_zero_forall_apply_apply_nonneg (hJ : ω.Compatible J)
     have := congrFun hξ k
     rw [h, map_zero] at this
     exact zero_ne_one this
-  · exact apply_apply_nonneg_of_forall_nonneg hb hα hξα v
+  · exact apply_apply_nonneg_of_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic (hQ ξ) hξα v
 
 end TauCeti.SymplecticForm
