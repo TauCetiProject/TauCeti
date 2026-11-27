@@ -572,12 +572,13 @@ theorem waveDuhamelSolution_indicator_Icc (f g : Lp F 2 (volume : Measure E)) {a
     Set.indicator_of_mem (Set.uIcc_subset_Icc ⟨ha, hb⟩ ht hs) G
 
 /-- On `[a, b] ∋ 0`, for forcing integrable on `[a, b]`, the solution is continuous on `[a, b]` with
-values in `L²`: there it agrees with the solution with the integrable forcing `H = 1_{[a, b]} G`,
-which near each time is a uniform limit of solutions with continuous forcings approximating `H` in
-`L¹`. -/
+values in `L²`. -/
 theorem continuousOn_waveDuhamelSolution_of_integrableOn (f g : Lp F 2 (volume : Measure E))
     {a b : ℝ} (ha : a ≤ 0) (hb : 0 ≤ b) (hG : IntegrableOn G (Set.Icc a b)) :
     ContinuousOn (waveDuhamelSolution F f g G) (Set.Icc a b) := by
+  -- On `[a, b]` the solution agrees with the one with the integrable forcing `H = 1_{[a, b]} G`,
+  -- which near each time is a uniform limit of solutions with continuous forcings approximating
+  -- `H` in `L¹`.
   set H := (Set.Icc a b).indicator G
   have hH : Integrable H := hG.integrable_indicator measurableSet_Icc
   refine ContinuousOn.congr (f := waveDuhamelSolution F f g H) (Continuous.continuousOn ?_)
@@ -603,10 +604,11 @@ theorem continuousOn_waveDuhamelSolution_of_integrableOn (f g : Lp F 2 (volume :
     _ < (|x| + 2) * (ε / (|x| + 2)) := mul_lt_mul_of_pos_right hy (div_pos hε hx)
     _ = ε := by field_simp
 
-/-- For locally integrable forcing, the solution is continuous in time with values in `L²`: near
-each time `x` it is continuous on `[-(|x| + 1), |x| + 1]`, where the forcing is integrable. -/
+/-- For locally integrable forcing, the solution is continuous in time with values in `L²`. -/
 theorem continuous_waveDuhamelSolution_of_locallyIntegrable (f g : Lp F 2 (volume : Measure E))
     (hG : LocallyIntegrable G) : Continuous (waveDuhamelSolution F f g G) := by
+  -- Near each time `x` the solution is continuous on `[-(|x| + 1), |x| + 1]`, where the forcing
+  -- is integrable.
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   have hx : 0 ≤ |x| + 1 := by positivity
   refine (continuousOn_waveDuhamelSolution_of_integrableOn f g (neg_nonpos.2 hx) hx
