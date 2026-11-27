@@ -165,18 +165,12 @@ theorem exists_mem_nhdsSet_cohomologyMap_subtypeVal_apply_eq_zero (hS : IsCompac
     rw [← cochainClass_eq_zero_iff (R := R), ← cochainComplex_d_cochainClass, hφ,
       HomologicalComplex.moduleCat_d_iCycles_apply]
   -- Restricting the class of `z` to a subspace `A` gives the class of the restriction of `φ`.
-  have hres (A : Set X) :
-      (cohomologyMap R M (ContinuousMap.subtypeVal A) n).hom
-          (((cochainComplex R X M).homologyπ n).hom z) =
-        ((cochainComplex R A M).homologyπ n).hom
-          (HomologicalComplex.cyclesMap (restriction R M A) n z) :=
-    HomologicalComplex.moduleCat_homologyMap_homologyπ _ n z
   have hresi (A : Set X) : ((cochainComplex R A M).iCycles n).hom
       (HomologicalComplex.cyclesMap (restriction R M A) n z) =
-        cochainClass R A M n fun y ↦ φ (Subtype.val ∘ y) := by
-    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, ← hφ, restriction_f_cochainClass]
-  rw [hres] at hc
-  simp_rw [hres]
+        cochainClass R A M n fun y ↦ φ (Subtype.val ∘ y) :=
+    iCycles_cyclesMap_apply_of_eq_cochainClass _ hφ.symm
+  rw [HomologicalComplex.moduleCat_homologyMap_homologyπ] at hc
+  simp_rw [HomologicalComplex.moduleCat_homologyMap_homologyπ]
   cases n with
   | zero =>
     -- In degree zero there are no coboundaries: the restriction of `φ` to `S` is locally zero.

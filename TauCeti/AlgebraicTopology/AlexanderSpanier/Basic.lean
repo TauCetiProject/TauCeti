@@ -365,6 +365,18 @@ theorem cohomologyMap_subtypeVal_apply_eq_zero_of_subset {N U : Set X} (hNU : N 
   rw [← ContinuousMap.subtypeVal_comp_inclusion hNU, cohomologyMap_comp,
     ConcreteCategory.comp_apply, hc, map_zero]
 
+variable {R M} in
+/-- If the cocycle `z` is represented by `φ`, then its pullback along `f` is represented by
+`y ↦ φ (f ∘ y)`. -/
+lemma iCycles_cyclesMap_apply_of_eq_cochainClass (f : C(Y, X)) {n : ℕ}
+    {z : (cochainComplex R X M).cycles n} {φ : (Fin (n + 1) → X) → M}
+    (hz : ((cochainComplex R X M).iCycles n).hom z = cochainClass R X M n φ) :
+    ((cochainComplex R Y M).iCycles n).hom
+        ((HomologicalComplex.cyclesMap (cochainComplexMap R M f) n).hom z) =
+      cochainClass R Y M n fun y ↦ φ (f ∘ y) := by
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
+    hz, cochainComplexMap_f_cochainClass]
+
 /-- The **Alexander–Spanier cochain complex** as a contravariant functor on topological
 spaces. -/
 @[expose, simps]
