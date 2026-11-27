@@ -41,7 +41,8 @@ with the one a competing convention would give.
   (`exists_smul_smul_vacuumField_eq_and_apply_zero_eq_one_iff`); the based quotient would carry
   a free action of that circle. For `m = 1` the moduli space is homeomorphic to `ℂ`, and the
   vortex with zero divisor `{z₀}` is the translate by `z₀` of the vortex centred at `0`
-  (`framedVortexModuliHomeomorphOne`, `exists_framedGaugeGroup_smul_translateFramedVortex_eq`).
+  (`framedVortexModuliHomeomorphOne`, `
+  `exists_framedGaugeGroup_smul_translateFramedVortex_eq_iff_framedVortexDivisor_eq_oneEquiv`).
 * **Zero divisors record oriented order.** The section `w ↦ conj w` has no zero divisor at
   all (`not_isZeroMultiplicity_conj`), although `|conj w| = |w|`: a definition of the order of
   vanishing by the growth of `|α|` would give it order `1`.
@@ -77,8 +78,9 @@ local notation "μ⊤" =>
 
 /-- The section of the vacuum has empty zero divisor. -/
 theorem isZeroMultiplicity_sectionValue_vacuumField :
-    IsZeroMultiplicity (sectionValue vacuumField) 0 := isZeroMultiplicity_iff.2 fun _ ↦
-  ⟨fun _ ↦ 1, continuousAt_const, one_ne_zero, Eventually.of_forall fun _ ↦ by simp⟩
+    IsZeroMultiplicity (sectionValue vacuumField) 0 := by
+  rw [show sectionValue vacuumField = 1 from funext sectionValue_vacuumField]
+  exact isZeroMultiplicity_zero_iff.2 ⟨continuous_const, fun _ ↦ one_ne_zero⟩
 
 /-! ### The flux -/
 
@@ -219,8 +221,8 @@ theorem framedVortexModuliHomeomorphOne_mk (x : framedVortices 1 1) :
 /-- **A degree-`1` vortex is a translate of the centred one.** If `y` is a framed degree-`1`
 vortex with zero divisor `{0}`, then a framed degree-`1` vortex `x` has zero divisor `{z₀}`
 exactly when it is the translate of `y` by `z₀`, `z ↦ y (z - z₀)`, up to framed gauge. -/
-theorem exists_framedGaugeGroup_smul_translateFramedVortex_eq {x y : framedVortexSubMulAction 1 1}
-    (hy : framedVortexDivisor y = Sym.oneEquiv 0) (z₀ : ℂ) :
+theorem exists_framedGaugeGroup_smul_translateFramedVortex_eq_iff_framedVortexDivisor_eq_oneEquiv
+    {x y : framedVortexSubMulAction 1 1} (hy : framedVortexDivisor y = Sym.oneEquiv 0) (z₀ : ℂ) :
     (∃ g : framedGaugeGroup, g • translateFramedVortex (-z₀) y = x) ↔
       framedVortexDivisor x = Sym.oneEquiv z₀ := by
   rw [exists_framedGaugeGroup_smul_translateFramedVortex_eq_iff, hy]
@@ -229,60 +231,50 @@ theorem exists_framedGaugeGroup_smul_translateFramedVortex_eq {x y : framedVorte
 
 /-! ### Zero divisors record the oriented order of vanishing -/
 
-/-- **The section `w ↦ conj w` has no zero divisor.** At the origin no factorization
-`conj w = wⁿ v(w)` with `v` continuous and nonzero at `0` exists: for `n = 0` it would force
-`v(0) = 0`; for `n = 1`, `v` would be `1` on the real axis and `-1` on the imaginary axis; for
-`n ≥ 2`, `w^(n-1) v(w) = 1` on the real axis would tend to `0`. -/
+/-- **The section `w ↦ conj w` has no zero divisor.** Since `conj 0 = 0`, its order at the
+origin would be some `n ≥ 1`. For `n = 1`, the factorization `conj w = w v(w)` with `v` continuous
+at `0` would make `v` equal to `1` on the real axis and `-1` on the imaginary axis. For `n ≥ 2`,
+`|w| = |conj w| ≤ C |w|²` near `0` fails for small `w ≠ 0`. -/
 theorem not_isZeroMultiplicity_conj (n : ℂ → ℕ) : ¬IsZeroMultiplicity (starRingEnd ℂ) n := by
   intro h
-  obtain ⟨v, hv, hv0, hev⟩ := isZeroMultiplicity_iff.1 h 0
-  simp only [sub_zero] at hev
-  -- Restrictions of `v` to the punctured real and imaginary axes near `0`.
-  have hline (u : ℂ) :
-      ∀ᶠ t : ℝ in 𝓝[≠] 0, starRingEnd ℂ (t * u) = (t * u) ^ n 0 * v (t * u) ∧ (t : ℂ) ≠ 0 :=
-    (((continuous_ofReal.mul continuous_const).tendsto' 0 0 (by simp)).eventually hev).filter_mono
-      nhdsWithin_le_nhds |>.and (eventually_mem_nhdsWithin.mono fun t ht ↦ ofReal_ne_zero.2 ht)
-  have hlim (u : ℂ) : Tendsto (fun t : ℝ ↦ v (t * u)) (𝓝[≠] 0) (𝓝 (v 0)) :=
-    (hv.tendsto.comp ((continuous_ofReal.mul continuous_const).tendsto' 0 0 (by simp))).mono_left
-      nhdsWithin_le_nhds
+  have hpos : 0 < n 0 := h.pos_iff.2 (map_zero _)
   rcases Nat.lt_or_ge (n 0) 2 with hn | hn
-  · interval_cases hn0 : n 0
-    · -- `n = 0`: the factorization at `0` itself gives `v 0 = 0`.
-      exact hv0 (by simpa [hn0] using hev.self_of_nhds.symm)
-    · -- `n = 1`: `v = 1` on the real axis and `v = -1` on the imaginary axis.
-      have h₁ : Tendsto (fun t : ℝ ↦ v (t * 1)) (𝓝[≠] 0) (𝓝 1) :=
-        tendsto_const_nhds.congr' <| (hline 1).mono fun t ⟨ht, ht0⟩ ↦ by
-          simp only [pow_one, mul_one, conj_ofReal] at ht ⊢
-          exact ((mul_eq_left₀ ht0).1 ht.symm).symm
-      have h₂ : Tendsto (fun t : ℝ ↦ v (t * I)) (𝓝[≠] 0) (𝓝 (-1)) :=
-        tendsto_const_nhds.congr' <| (hline I).mono fun t ⟨ht, ht0⟩ ↦ by
-          rw [pow_one, map_mul, conj_ofReal, conj_I] at ht
-          beta_reduce
-          refine mul_left_cancel₀ (mul_ne_zero ht0 I_ne_zero) ?_
-          rw [← ht]
-          ring
-      have e₁ := tendsto_nhds_unique (hlim 1) h₁
-      have e₂ := tendsto_nhds_unique (hlim I) h₂
-      rw [e₁] at e₂
-      norm_num at e₂
-  · -- `n ≥ 2`: `t^(n-1) v(t) = 1` for real `t ≠ 0`, while its limit at `0` is `0`.
-    have h₁ : Tendsto (fun t : ℝ ↦ (t : ℂ) ^ (n 0 - 1) * v (t * 1)) (𝓝[≠] 0) (𝓝 1) :=
+  · -- `n = 1`: `v = 1` on the real axis and `v = -1` on the imaginary axis.
+    obtain ⟨v, hv, -, hev⟩ := isZeroMultiplicity_iff.1 h 0
+    simp only [sub_zero, show n 0 = 1 by omega, pow_one] at hev
+    -- Restrictions of `v` to the punctured real and imaginary axes near `0`.
+    have hline (u : ℂ) :
+        ∀ᶠ t : ℝ in 𝓝[≠] 0, starRingEnd ℂ (t * u) = t * u * v (t * u) ∧ (t : ℂ) ≠ 0 :=
+      (((continuous_ofReal.mul continuous_const).tendsto' 0 0 (by simp)).eventually hev).filter_mono
+        nhdsWithin_le_nhds |>.and (eventually_mem_nhdsWithin.mono fun t ht ↦ ofReal_ne_zero.2 ht)
+    have hlim (u : ℂ) : Tendsto (fun t : ℝ ↦ v (t * u)) (𝓝[≠] 0) (𝓝 (v 0)) :=
+      (hv.tendsto.comp ((continuous_ofReal.mul continuous_const).tendsto' 0 0 (by simp))).mono_left
+        nhdsWithin_le_nhds
+    have h₁ : Tendsto (fun t : ℝ ↦ v (t * 1)) (𝓝[≠] 0) (𝓝 1) :=
       tendsto_const_nhds.congr' <| (hline 1).mono fun t ⟨ht, ht0⟩ ↦ by
-        rw [mul_one, conj_ofReal] at ht
-        beta_reduce
-        rw [mul_one]
-        have hpow : (t : ℂ) ^ n 0 = t * t ^ (n 0 - 1) := by
-          rw [← pow_succ', Nat.sub_add_cancel (by omega)]
-        rw [hpow, mul_assoc] at ht
+        simp only [mul_one, conj_ofReal] at ht ⊢
         exact ((mul_eq_left₀ ht0).1 ht.symm).symm
-    have h₀ : Tendsto (fun t : ℝ ↦ (t : ℂ) ^ (n 0 - 1) * v (t * 1)) (𝓝[≠] 0) (𝓝 0) := by
-      have hp : Tendsto (fun t : ℝ ↦ (t : ℂ) ^ (n 0 - 1)) (𝓝[≠] 0) (𝓝 0) := by
-        have : Tendsto (fun t : ℝ ↦ (t : ℂ) ^ (n 0 - 1)) (𝓝 0) (𝓝 ((0 : ℝ) ^ (n 0 - 1) : ℂ)) :=
-          (continuous_ofReal.pow _).tendsto 0
-        rw [ofReal_zero, zero_pow (by omega)] at this
-        exact this.mono_left nhdsWithin_le_nhds
-      simpa using hp.mul (hlim 1)
-    exact one_ne_zero (tendsto_nhds_unique h₁ h₀)
+    have h₂ : Tendsto (fun t : ℝ ↦ v (t * I)) (𝓝[≠] 0) (𝓝 (-1)) :=
+      tendsto_const_nhds.congr' <| (hline I).mono fun t ⟨ht, ht0⟩ ↦ by
+        rw [map_mul, conj_ofReal, conj_I] at ht
+        beta_reduce
+        refine mul_left_cancel₀ (mul_ne_zero ht0 I_ne_zero) ?_
+        rw [← ht]
+        ring
+    have e₁ := tendsto_nhds_unique (hlim 1) h₁
+    have e₂ := tendsto_nhds_unique (hlim I) h₂
+    rw [e₁] at e₂
+    norm_num at e₂
+  · -- `n ≥ 2`: `|t| = |conj t| ≤ C t²` for real `t` near `0`, false once `0 < C t < 1`.
+    obtain ⟨C, hC⟩ := h.exists_eventually_norm_le_mul_pow (k := 2) hn
+    have hreal := ((continuous_ofReal.tendsto' 0 0 ofReal_zero).eventually hC).filter_mono
+      (nhdsWithin_le_nhds (s := Set.Ioi 0))
+    have hsmall : ∀ᶠ t : ℝ in 𝓝[>] 0, C * t < 1 :=
+      (((continuous_const.mul continuous_id).tendsto' 0 0 (by simp)).eventually
+        (gt_mem_nhds one_pos)).filter_mono nhdsWithin_le_nhds
+    obtain ⟨t, ht, hCt, ht0⟩ := (hreal.and (hsmall.and self_mem_nhdsWithin)).exists
+    simp only [conj_ofReal, sub_zero, norm_real, Real.norm_eq_abs, abs_of_pos ht0] at ht
+    nlinarith
 
 /-! ### The flat scaling -/
 
