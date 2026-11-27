@@ -103,6 +103,11 @@ theorem unitaryTransvection_mulVec (a : R) (x : n → R) :
   rw [unitaryTransvection_def, add_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec,
     op_smul_eq_smul, ← dotProduct_mulVec, smul_smul]
 
+/-- A transvection fixes vectors orthogonal to its direction for the sesquilinear form. -/
+theorem unitaryTransvection_mulVec_of_dotProduct_eq_zero (a : R) {x : n → R}
+    (hx : (σ ∘ v) ⬝ᵥ Q *ᵥ x = 0) : Q.unitaryTransvection σ v a *ᵥ x = x := by
+  simp [unitaryTransvection_mulVec, hx]
+
 /-- As a linear map, the unitary transvection `τ_{v,a}` is Mathlib's transvection
 `x ↦ x + f x • v` for the linear form `f = a B(v, ·)`. -/
 theorem toLin'_unitaryTransvection (a : R) :
@@ -116,9 +121,18 @@ theorem toLin'_unitaryTransvection (a : R) :
 theorem unitaryTransvection_mul_unitaryTransvection_eq (a b : R) :
     Q.unitaryTransvection σ v a * Q.unitaryTransvection σ v b =
       Q.unitaryTransvection σ v (a + b + a * b * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))) := by
-  simp only [unitaryTransvection_def, Matrix.add_mul, Matrix.mul_add, Matrix.one_mul,
-    Matrix.mul_one, smul_mul_smul_comm, vecMulVec_mul_vecMulVec, ← dotProduct_mulVec,
-    vecMulVec_smul, smul_smul, add_smul, add_assoc]
+  apply toLin'.injective
+  rw [toLin'_mul, toLin'_unitaryTransvection, toLin'_unitaryTransvection,
+    toLin'_unitaryTransvection]
+  have h (r : R) : LinearMap.transvection (r • toBilin' Q (σ ∘ v)) v =
+      LinearMap.transvection (toBilin' Q (σ ∘ v)) (r • v) := by
+    ext x
+    simp [LinearMap.transvection.apply, mul_smul, mul_comm, mul_assoc]
+  simp_rw [h]
+  rw [LinearMap.transvection.comp_smul_smul]
+  congr 2
+  simp only [toBilin'_apply']
+  ring
 
 /-- **The parameter of a transvection along an isotropic vector is additive.** If `B(v, v) = 0`,
 then `τ_{v,a} τ_{v,b} = τ_{v,a+b}`, so `a ↦ τ_{v,a}` turns addition into multiplication. Over a
@@ -184,6 +198,12 @@ theorem transpose_map_unitaryTransvection_mul_mul_self (hσ : Function.Involutiv
 section CommRing
 
 variable {R : Type*} [CommRing R] {Q : Matrix n n R} {σ : R →+* R} {v : n → R}
+
+/-- A transvection along `x - y` sends `y` to `x` when its action coefficient is one. -/
+theorem unitaryTransvection_sub_mulVec_eq {x y : n → R} {a : R}
+    (hxy : a * ((σ ∘ (x - y)) ⬝ᵥ Q *ᵥ y) = 1) :
+    Q.unitaryTransvection σ (x - y) a *ᵥ y = x := by
+  simp only [unitaryTransvection_mulVec, hxy, one_smul, add_sub_cancel]
 
 /-- **Determinant of a unitary transvection or quasi-reflection**:
 `det(τ_{v,a}) = 1 + a B(v, v)`. -/

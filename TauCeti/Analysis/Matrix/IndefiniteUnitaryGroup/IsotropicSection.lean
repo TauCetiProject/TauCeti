@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.UnitaryTransvection
 import Mathlib.Topology.Instances.Matrix
+import Mathlib.Topology.Instances.RealVectorSpace
 import TauCeti.Algebra.Star.Pi
 import TauCeti.Analysis.Calculus.ContDiff.Star
-import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -28,7 +28,8 @@ whose matrix entries are smooth functions of the real coordinates of the target 
   `g` from `𝕜ⁿ` to `U(J)`, whose matrix entries are real-analytic on `N`, with `g x *ᵥ y₀ = x` for
   every isotropic `x ∈ N` (`Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq`).
 * If `J` is moreover invertible and `x₀ ≠ 0`, the same holds with `g x *ᵥ x₀ = x`
-  (`Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_self_eq`). This has content only for isotropic
+  (`Matrix.unitaryGroupOf.exists_contDiffOn_isotropicOrbitSection_at_source`).
+  This has content only for isotropic
   `x₀`.
 
 Neither statement assumes that `x₀` is isotropic: if it is not, a neighbourhood of `x₀` contains no
@@ -36,16 +37,17 @@ isotropic vector and the constant map `1` is a section.
 
 The section is explicit: for isotropic `x₀`, `g x` is the quasi-reflection
 `Matrix.unitaryGroupOf.orbitSection`, the unitary transvection along `x - y₀` with parameter
-`(⟨x, y₀⟩ - ⟨x, x⟩ / 2)⁻¹`. It lies in `U(J)` for every `x`, its entries are rational functions of
-the coordinates of `x` and their conjugates, with denominator `⟨x, y₀⟩ - ⟨x, x⟩ / 2`, and it sends
+`(⟨x, y₀⟩ - ⟨x, x⟩ / 2)⁻¹`. It lies in `U(J)` for every `x`. Where the denominator
+`⟨x, y₀⟩ - ⟨x, x⟩ / 2` is nonzero, its entries are rational functions of the coordinates of `x`
+and their conjugates; at a zero denominator the section is the identity. It sends
 `y₀` to every isotropic `x` at which that denominator does not vanish. For the second statement, an
 isotropic partner `y₀` of `x₀` with `⟨y₀, x₀⟩ = 1`
 (`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one`) gives a section `g` carrying `y₀`, and
 `x ↦ g x * (g x₀)⁻¹` carries `x₀`.
 
-Smoothness is stated for the matrix entries, so that it does not depend on a choice of norm on
-matrices; over the finite index type it is equivalent to smoothness for any such norm
-(`contDiffOn_pi`).
+Smoothness uses the entrywise matrix norm (`Matrix.Norms.Elementwise`); entrywise regularity is
+also available for the explicit section. The results hold more generally over a normed field
+with a normed real algebra structure and a continuous, real-linear involution.
 
 ## Main results
 
@@ -54,7 +56,8 @@ matrices; over the finite index type it is equivalent to smoothness for any such
 * `Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq`: smooth local sections of the map
   `g ↦ g y₀`, for isotropic `y₀`, over the isotropic vectors near a vector `x₀` with
   `⟨y₀, x₀⟩ ≠ 0`.
-* `Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_self_eq`: for invertible `J`, smooth local
+* `Matrix.unitaryGroupOf.exists_contDiffOn_isotropicOrbitSection_at_source`: for invertible `J`,
+  smooth local
   sections of the map `g ↦ g x₀` over the isotropic vectors near a nonzero vector `x₀`.
 
 ## Attribution
@@ -75,16 +78,22 @@ target vector, is used over `ℝ` or `ℂ`.
 
 public section
 
-open scoped ContDiff
+open scoped ContDiff Matrix.Norms.Elementwise
 
 namespace Matrix.unitaryGroupOf
 
-variable {𝕜 : Type*} [RCLike 𝕜] {n : Type*} [Fintype n] [DecidableEq n] {J : Matrix n n 𝕜}
+variable {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [StarRing 𝕜]
+  [ContinuousStar 𝕜] {n : Type*} [Fintype n] [DecidableEq n] {J : Matrix n n 𝕜}
+
+local instance : CharZero 𝕜 := Algebra.charZero_of_charZero ℝ 𝕜
+
+local instance : StarModule ℝ 𝕜 where
+  star_smul r x := map_real_smul (starAddEquiv : 𝕜 ≃+ 𝕜) continuous_star r x
 
 omit [DecidableEq n] in
 /-- The denominator `x ↦ ⟨x, y⟩ - ⟨x, x⟩ / 2` of the orbit section is a real-analytic function of
 `x`. -/
-theorem contDiff_dotProduct_sub_half_dotProduct (y : n → 𝕜) :
+private theorem contDiff_dotProduct_sub_half_dotProduct (y : n → 𝕜) :
     ContDiff ℝ ω fun x : n → 𝕜 => star x ⬝ᵥ J *ᵥ y - star x ⬝ᵥ J *ᵥ x / 2 := by
   simp only [dotProduct, mulVec, Pi.star_apply]
   fun_prop
@@ -103,23 +112,24 @@ theorem contDiffOn_orbitSection_apply (hJ : J.IsHermitian) {y₀ : n → 𝕜}
   simp only [vecMul, dotProduct, Pi.star_apply, Pi.sub_apply]
   fun_prop
 
-omit [DecidableEq n] in
-/-- The open set `{x | ⟨x, y⟩ - ⟨x, x⟩ / 2 ≠ 0}` on which the orbit section is real-analytic. -/
-theorem isOpen_setOf_dotProduct_sub_half_dotProduct_ne_zero (y : n → 𝕜) :
-    IsOpen {x : n → 𝕜 | star x ⬝ᵥ J *ᵥ y - star x ⬝ᵥ J *ᵥ x / 2 ≠ 0} :=
-  isOpen_ne_fun (contDiff_dotProduct_sub_half_dotProduct y).continuous continuous_const
+/-- The orbit section is real-analytic as a matrix-valued function on its nonvanishing locus. -/
+theorem contDiffOn_orbitSection (hJ : J.IsHermitian) {y₀ : n → 𝕜}
+    (hy₀ : star y₀ ⬝ᵥ J *ᵥ y₀ = 0) :
+    ContDiffOn ℝ ω (fun x => ((orbitSection hJ hy₀ x : GL n 𝕜) : Matrix n n 𝕜))
+      {x | star x ⬝ᵥ J *ᵥ y₀ - star x ⬝ᵥ J *ᵥ x / 2 ≠ 0} :=
+  contDiffOn_pi.mpr fun i => contDiffOn_pi.mpr fun j => contDiffOn_orbitSection_apply hJ hy₀ i j
 
 /-- Near a non-isotropic vector there are no isotropic vectors, so the constant map `1` satisfies
 the section property over the isotropic vectors there, for any vector `y`, vacuously. -/
 private theorem exists_contDiffOn_mulVec_eq_of_ne_zero {x₀ : n → 𝕜}
     (hx₀ : star x₀ ⬝ᵥ J *ᵥ x₀ ≠ 0) (y : n → 𝕜) :
     ∃ N, IsOpen N ∧ x₀ ∈ N ∧ ∃ g : (n → 𝕜) → unitaryGroupOf J,
-      (∀ i j, ContDiffOn ℝ ω (fun x => ((g x : GL n 𝕜) : Matrix n n 𝕜) i j) N) ∧
+      ContDiffOn ℝ ω (fun x => ((g x : GL n 𝕜) : Matrix n n 𝕜)) N ∧
       ∀ x ∈ N, star x ⬝ᵥ J *ᵥ x = 0 → ((g x : GL n 𝕜) : Matrix n n 𝕜) *ᵥ y = x :=
   ⟨{x | star x ⬝ᵥ J *ᵥ x ≠ 0},
     isOpen_ne_fun (continuous_star.dotProduct (continuous_const.matrix_mulVec continuous_id))
       continuous_const, hx₀,
-    fun _ => 1, fun _ _ => contDiffOn_const, fun _ hx hx' => absurd hx' hx⟩
+    fun _ => 1, contDiffOn_const, fun _ hx hx' => absurd hx' hx⟩
 
 /-- **Smooth local sections of the isotropic orbit.** Let `J` be Hermitian and `y₀` isotropic, and
 let `x₀` be a vector with `⟨y₀, x₀⟩ ≠ 0`. Then there are an open neighbourhood `N` of `x₀` and a map
@@ -128,7 +138,7 @@ functions of the real coordinates on `N`, with `g x *ᵥ y₀ = x` for every iso
 theorem exists_contDiffOn_mulVec_eq (hJ : J.IsHermitian) {x₀ y₀ : n → 𝕜}
     (hy₀ : star y₀ ⬝ᵥ J *ᵥ y₀ = 0) (hxy : star y₀ ⬝ᵥ J *ᵥ x₀ ≠ 0) :
     ∃ N, IsOpen N ∧ x₀ ∈ N ∧ ∃ g : (n → 𝕜) → unitaryGroupOf J,
-      (∀ i j, ContDiffOn ℝ ω (fun x => ((g x : GL n 𝕜) : Matrix n n 𝕜) i j) N) ∧
+      ContDiffOn ℝ ω (fun x => ((g x : GL n 𝕜) : Matrix n n 𝕜)) N ∧
       ∀ x ∈ N, star x ⬝ᵥ J *ᵥ x = 0 → ((g x : GL n 𝕜) : Matrix n n 𝕜) *ᵥ y₀ = x := by
   by_cases hx₀ : star x₀ ⬝ᵥ J *ᵥ x₀ = 0
   swap
@@ -136,9 +146,9 @@ theorem exists_contDiffOn_mulVec_eq (hJ : J.IsHermitian) {x₀ y₀ : n → 𝕜
   -- On isotropic vectors the denominator of the orbit section is `⟨x, y₀⟩`.
   have hden (x : n → 𝕜) (hx : star x ⬝ᵥ J *ᵥ x = 0) :
       star x ⬝ᵥ J *ᵥ y₀ - star x ⬝ᵥ J *ᵥ x / 2 = star x ⬝ᵥ J *ᵥ y₀ := by
-    rw [hx, zero_div, sub_zero]
-  refine ⟨_, isOpen_setOf_dotProduct_sub_half_dotProduct_ne_zero y₀, ?_, orbitSection hJ hy₀,
-    contDiffOn_orbitSection_apply hJ hy₀, fun x hx hxx => ?_⟩
+    simp [hx]
+  refine ⟨_, isOpen_ne_fun (contDiff_dotProduct_sub_half_dotProduct y₀).continuous continuous_const,
+    ?_, orbitSection hJ hy₀, contDiffOn_orbitSection hJ hy₀, fun x hx hxx => ?_⟩
   · rw [Set.mem_ofPred_eq, hden x₀ hx₀, ← hJ.star_dotProduct_mulVec_comm]
     exact star_ne_zero.mpr hxy
   · exact orbitSection_mulVec hJ hy₀ hxx (by rwa [← hden x hxx])
@@ -149,10 +159,11 @@ and a map `g` to the unitary group of `J`, whose matrix entries are real-analyti
 smooth) functions of the real coordinates on `N`, with `g x *ᵥ x₀ = x` for every isotropic
 `x ∈ N`. This has content only when `x₀` is isotropic: otherwise `N` can be chosen to contain no
 isotropic vector. -/
-theorem exists_contDiffOn_mulVec_self_eq (hJ : J.IsHermitian) (hJ' : IsUnit J) {x₀ : n → 𝕜}
+theorem exists_contDiffOn_isotropicOrbitSection_at_source (hJ : J.IsHermitian)
+    (hJ' : IsUnit J) {x₀ : n → 𝕜}
     (hx₀ : x₀ ≠ 0) :
     ∃ N, IsOpen N ∧ x₀ ∈ N ∧ ∃ g : (n → 𝕜) → unitaryGroupOf J,
-      (∀ i j, ContDiffOn ℝ ω (fun x => ((g x : GL n 𝕜) : Matrix n n 𝕜) i j) N) ∧
+      ContDiffOn ℝ ω (fun x => ((g x : GL n 𝕜) : Matrix n n 𝕜)) N ∧
       ∀ x ∈ N, star x ⬝ᵥ J *ᵥ x = 0 → ((g x : GL n 𝕜) : Matrix n n 𝕜) *ᵥ x₀ = x := by
   by_cases hiso : star x₀ ⬝ᵥ J *ᵥ x₀ = 0
   swap
@@ -162,8 +173,8 @@ theorem exists_contDiffOn_mulVec_self_eq (hJ : J.IsHermitian) (hJ' : IsUnit J) {
     (starRingEnd_self_apply (R := 𝕜)) (by rw [one_smul, transpose_map_starRingEnd, hJ.eq])
     ((isUnit_iff_isUnit_det J).mp hJ').ne_zero
     (fun s hs => ⟨s / 2, by
-      rw [one_mul] at hs
-      rw [one_mul, map_div₀, hs, map_ofNat, add_halves]⟩) hx₀
+      simp only [one_mul] at hs
+      simp [hs, map_ofNat]⟩) hx₀
     (by rwa [TauCeti.starRingEnd_comp_eq_star])
   rw [TauCeti.starRingEnd_comp_eq_star] at hy₀ hyx
   obtain ⟨N, hN, hx₀N, g, hg, hgy⟩ :=
@@ -174,9 +185,11 @@ theorem exists_contDiffOn_mulVec_self_eq (hJ : J.IsHermitian) (hJ' : IsUnit J) {
           ((g x₀ : GL n 𝕜) : Matrix n n 𝕜)) *ᵥ y₀ := by
       rw [← mulVec_mulVec, hgy x₀ hx₀N hiso, Subgroup.coe_inv]
     _ = y₀ := by rw [Units.inv_mul, one_mulVec]
-  refine ⟨N, hN, hx₀N, fun x => g x * (g x₀)⁻¹, fun i j => ?_, fun x hx hxx => ?_⟩
-  · simp only [Subgroup.coe_mul, Units.val_mul, Matrix.mul_apply]
-    exact ContDiffOn.sum fun l _ => (hg i l).mul contDiffOn_const
+  refine ⟨N, hN, hx₀N, fun x => g x * (g x₀)⁻¹, ?_, fun x hx hxx => ?_⟩
+  · refine contDiffOn_pi.mpr fun i => contDiffOn_pi.mpr fun j => ?_
+    simp only [Subgroup.coe_mul, Units.val_mul, Matrix.mul_apply]
+    exact ContDiffOn.sum fun l _ =>
+      ((contDiffOn_pi.mp (contDiffOn_pi.mp hg i)) l).mul contDiffOn_const
   · rw [Subgroup.coe_mul, Units.val_mul, ← mulVec_mulVec, hinv, hgy x hx hxx]
 
 end Matrix.unitaryGroupOf
