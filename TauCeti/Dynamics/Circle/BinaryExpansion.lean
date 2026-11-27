@@ -64,13 +64,15 @@ theorem uniformContinuous_binaryExpansion {u : UniformSpace (Fin 2)} [DiscreteUn
   refine CompactSpace.uniformContinuous_of_continuous ?_
   -- The topology of the discrete uniformity on `Fin 2` is Mathlib's discrete topology on `Fin 2`,
   -- so `continuous_binaryExpansion` applies to the product of these topologies.
-  have hFin : u.toTopologicalSpace = instTopologicalSpaceFin := by
-    rw [DiscreteUniformity.eq_bot (X := Fin 2)]
-    exact UniformSpace.toTopologicalSpace_bot
+  have hFin : u.toTopologicalSpace = (inferInstance : TopologicalSpace (Fin 2)) := by
+    rw [DiscreteUniformity.eq_bot (X := Fin 2), UniformSpace.toTopologicalSpace_bot]
+    exact DiscreteTopology.eq_bot.symm
   have h : @Continuous _ _ (Pi.topologicalSpace (t₂ := fun _ ↦ u.toTopologicalSpace)) _
       binaryExpansion := by
     rw [hFin]
     exact continuous_binaryExpansion
+  -- `Pi.uniformSpace` is built by `UniformSpace.ofCoreEq` with topology `Pi.topologicalSpace`, so
+  -- the topology of the product uniformity is the product topology by definition.
   exact h
 
 /-- Every point of the circle has a binary expansion. -/
