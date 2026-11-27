@@ -61,6 +61,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   of the unstable manifold.
 * `map_orientationAt_eq_of_mem_linearForwardTimes`: the same along the forward flow from a point
   of the stable manifold.
+* `map_unstableFrameOrientation_eq`, `map_stableNormalOrientation_eq`: read in the chart after
+  flowing into the part of the Morse chart where the flow is linear, the frame orientation at a
+  point is the frame orientation at the critical point read in the Morse chart. No orientation of
+  `M` is involved.
 * `reindex_unstableFrameOrientation_eq_orientationAt_iff`: along the unstable manifold, the frame
   orientation agrees with `o` everywhere or nowhere.
 * `reindex_stableNormalOrientation_eq_orientationAt_iff`: the same along the stable manifold.
@@ -164,22 +168,14 @@ theorem map_orientationAt_eq_of_tendsto (o : Manifold.Orientation 𝓘(ℝ, E) M
     (hPz.comp (hX.isOrientationPreservingAt_flow o τ y))).trans
     (Manifold.Orientation.orientationAt_model _ _ _)
 
-omit [CompactSpace M] [T2Space M] in
-/-- The common step of the comparisons along the unstable and the stable manifold. Read the
-tangent spaces at `y` and at `x` in the model space through `eDy` and `eDx`, which carry the
-orientations of `o` at `y` and at `x` to the same orientation, as in
-`map_orientationAt_eq_of_tendsto`. If these readings carry `fy` to a positive multiple of `fx`,
-and `gx` after them is a positive multiple of `gy`, then the orientation induced on the short exact
-sequence `fy, gy` is the orientation of `o` at `y` exactly when the one induced on `fx, gx` is the
-orientation of `o` at `x`. -/
-private theorem reindex_ofExact_eq_orientationAt_iff_of_map_eq
-    (o : Manifold.Orientation 𝓘(ℝ, E) M ι) {y : M}
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- Read in the model space through `eDy` and `eDx`, two short exact sequences
+`0 → A → T_y M → C → 0` and `0 → A → T_x M → C → 0` induce the same orientation when `eDx⁻¹ ∘ eDy`
+rescales the first sequence positively into the second. -/
+private theorem map_ofExact_eq_of_map_eq_smul {y : M}
     (eDy : TangentSpace 𝓘(ℝ, E) y ≃L[ℝ] E) (eDx : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] E)
-    (hmap : Orientation.map ι (eDy.toLinearEquiv : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E)
-        (o.orientationAt y) =
-      Orientation.map ι (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E) (o.orientationAt x))
     {A C : Type*} [AddCommGroup A] [Module ℝ A] [AddCommGroup C] [Module ℝ C]
-    [FiniteDimensional ℝ A] [FiniteDimensional ℝ C] {m n : ℕ} (e : Fin (m + n) ≃ ι)
+    [FiniteDimensional ℝ A] [FiniteDimensional ℝ C] {m n : ℕ}
     {fy : A →ₗ[ℝ] TangentSpace 𝓘(ℝ, E) y} {gy : TangentSpace 𝓘(ℝ, E) y →ₗ[ℝ] C}
     {fx : A →ₗ[ℝ] TangentSpace 𝓘(ℝ, E) x} {gx : TangentSpace 𝓘(ℝ, E) x →ₗ[ℝ] C}
     (hfy : Injective fy) (hfgy : Exact fy gy) (hgy : Surjective gy)
@@ -187,18 +183,15 @@ private theorem reindex_ofExact_eq_orientationAt_iff_of_map_eq
     (oA : Orientation ℝ A (Fin m)) (oC : Orientation ℝ C (Fin n)) (hm : Module.finrank ℝ A = m)
     (hn : Module.finrank ℝ C = n) {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
     (hfe : ∀ c, eDy (fy c) = a • eDx (fx c)) (hge : ∀ w, gx (eDx.symm (eDy w)) = b • gy w) :
-    Orientation.reindex ℝ _ e (Orientation.ofExact hfy hfgy hgy oA oC hm hn) =
-        o.orientationAt y ↔
-      Orientation.reindex ℝ _ e (Orientation.ofExact hfx hfgx hgx oA oC hm hn) =
-        o.orientationAt x := by
-  -- In the model space `E`, `o` gives the same orientation at `y` and at `x`.
+    Orientation.map _ (eDy.toLinearEquiv : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E)
+        (Orientation.ofExact hfy hfgy hgy oA oC hm hn) =
+      Orientation.map _ (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E)
+        (Orientation.ofExact hfx hfgx hgx oA oC hm hn) := by
   let Ly : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E := eDy.toLinearEquiv
   let Lx : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E := eDx.toLinearEquiv
-  refine Orientation.eq_iff_eq_of_map_eq Ly Lx ?_ hmap
-  rw [Orientation.map_reindex, Orientation.map_reindex]
-  congr 1
-  -- So do the frame orientations, since `Lx⁻¹ ∘ Ly` rescales the two sequences positively.
   have hL : (Ly.trans Lx.symm).trans Lx = Ly := LinearEquiv.ext fun v ↦ by simp
+  -- The statement coerces `eDy` and `eDx` to linear equivalences into `E`; name them to rewrite.
+  change Orientation.map _ Ly _ = Orientation.map _ Lx _
   rw [← hL, Orientation.map_trans]
   congr 1
   refine Orientation.map_ofExact_of_pos _ _ _ _ _ _ _ ha hb (fun c ↦ Lx.injective ?_)
@@ -341,6 +334,88 @@ theorem stableNormalOrientation_self (hf : IsMorse 𝓘(ℝ, E) f)
   exact Orientation.ofExact_comm _ _ _ _ _ _ (stableNormal_unstableFrame_self hφ)
     (stableNormal_unstableFrame_self (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)) _ _ _ _
 
+/-! ### Frame orientations read in a chart -/
+
+/-- **The frame orientation along the unstable manifold, read in a chart.** Let `y` be a point of
+`W^u(x)` and `T` a time of linear backward flow from `y`. The derivative of `φ ∘ Φ_{-T}` at `y`
+carries the frame orientation at `y` to the orientation of the model space to which the
+derivative of `φ` at `x` carries the frame orientation at `x`. -/
+theorem map_unstableFrameOrientation_eq (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
+    (hxu : x ∈ hX.flow.unstableSet x) {y : M} (hy : y ∈ hX.flow.unstableSet x) {T : ℝ}
+    (hT : T ∈ hX.linearBackwardTimes φ y)
+    (eDy : TangentSpace 𝓘(ℝ, E) y ≃L[ℝ] TangentSpace 𝓘(ℝ, E) ((φ.toChart ∘ hX.flow (-T)) y))
+    (heDy : (eDy : TangentSpace 𝓘(ℝ, E) y →L[ℝ] _) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow (-T)) y)
+    (eDx : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] TangentSpace 𝓘(ℝ, E) (φ.toChart x))
+    (heDx : (eDx : TangentSpace 𝓘(ℝ, E) x →L[ℝ] _) = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x) :
+    Orientation.map _ (eDy.toLinearEquiv : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E)
+        (unstableFrameOrientation hφ hf hx op op' hy) =
+      Orientation.map _ (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E)
+        (unstableFrameOrientation hφ hf hx op op' hxu) := by
+  have hx0 := mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints
+  rw [unstableFrameOrientation_def, unstableFrameOrientation_def]
+  -- Read in the model space, the frame and the normal coordinates at `y` are positive multiples
+  -- of those at `x`.
+  refine map_ofExact_eq_of_map_eq_smul eDy eDx _ _ _ _ _ _ _ _ _ _ (Real.exp_pos (-T))
+    (Real.exp_pos T) (fun c ↦ ?_) (fun w ↦ ?_)
+  · have h := mfderiv_unstableFrame_eq_exp_smul_self hφ hx0 hT c
+    rw [← heDy, ← heDx, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
+    exact h
+  · have hT' : T ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) y := by
+      rwa [neg_linearForwardTimes (hX := hX) (φ := φ) hf hx]
+    have h0' : (0 : ℝ) ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) x := by
+      rw [neg_linearForwardTimes (hX := hX) (φ := φ) hf hx]
+      exact mem_linearBackwardTimes_self hx0 0
+    simp only [ContinuousLinearMap.coe_coe]
+    rw [stableNormal_apply (φ.coord_mfderiv_neg hφ hx) hT',
+      stableNormal_apply (φ.coord_mfderiv_neg hφ hx) h0',
+      neg_toChart_comp_neg_flow (hX := hX) hf hx, neg_toChart_comp_neg_flow (hX := hX) hf hx,
+      neg_zero, Flow.map_zero, comp_id, ← heDy, ← heDx]
+    simp only [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
+    exact congrArg _ (eDx.apply_symm_apply (eDy w))
+
+/-- **The frame orientation along the stable manifold, read in a chart.** Let `y` be a point of
+`W^s(x)` and `T` a time of linear forward flow from `y`. The derivative of `φ ∘ Φ_T` at `y`
+carries the frame orientation at `y` to the orientation of the model space to which the
+derivative of `φ` at `x` carries the frame orientation at `x`. -/
+theorem map_stableNormalOrientation_eq (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    (hxs : x ∈ hX.flow.stableSet x) {y : M} (hy : y ∈ hX.flow.stableSet x) {T : ℝ}
+    (hT : T ∈ hX.linearForwardTimes φ y)
+    (eDy : TangentSpace 𝓘(ℝ, E) y ≃L[ℝ] TangentSpace 𝓘(ℝ, E) ((φ.toChart ∘ hX.flow T) y))
+    (heDy : (eDy : TangentSpace 𝓘(ℝ, E) y →L[ℝ] _) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y)
+    (eDx : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] TangentSpace 𝓘(ℝ, E) (φ.toChart x))
+    (heDx : (eDx : TangentSpace 𝓘(ℝ, E) x →L[ℝ] _) = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x) :
+    Orientation.map _ (eDy.toLinearEquiv : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E)
+        (stableNormalOrientation hφ hf hx op' op hy) =
+      Orientation.map _ (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E)
+        (stableNormalOrientation hφ hf hx op' op hxs) := by
+  have h0 : (0 : ℝ) ∈ hX.linearForwardTimes φ x :=
+    mem_linearForwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints) 0
+  rw [stableNormalOrientation_def, stableNormalOrientation_def]
+  refine map_ofExact_eq_of_map_eq_smul eDy eDx _ _ _ _ _ _ _ _ _ _ (Real.exp_pos (-T))
+    (Real.exp_pos T) (fun c ↦ ?_) (fun w ↦ ?_)
+  · have hT' : T ∈ (hX.neg hf).linearBackwardTimes (φ.neg hx) y := by
+      rwa [neg_linearBackwardTimes (hX := hX) (φ := φ) hf hx]
+    have h := mfderiv_unstableFrame_eq_exp_smul_self (φ.coord_mfderiv_neg hφ hx)
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.neg.mem_criticalPoints) hT' c
+    rw [neg_toChart_comp_neg_flow (hX := hX) hf hx, neg_neg, MorseChart.neg_toChart, ← heDy,
+      ← heDx, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
+    exact h
+  · simp only [ContinuousLinearMap.coe_coe]
+    rw [stableNormal_apply hφ hT, stableNormal_apply hφ h0, Flow.map_zero, comp_id, ← heDy,
+      ← heDx]
+    simp only [smul_smul, ← Real.exp_add, add_neg_cancel, neg_zero, Real.exp_zero, one_smul]
+    exact congrArg _ (eDx.apply_symm_apply (eDy w))
+
 /-- The comparison of the frame orientation along the unstable manifold with `o`, at a point of
 `W^u(x)` and at `x`. -/
 private theorem reindex_unstableFrameOrientation_eq_orientationAt_iff_self
@@ -354,34 +429,18 @@ private theorem reindex_unstableFrameOrientation_eq_orientationAt_iff_self
     Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hy) = o.orientationAt y ↔
       Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hxu) =
         o.orientationAt x := by
-  rw [unstableFrameOrientation_def, unstableFrameOrientation_def]
-  have hx0 := mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints
-  have h0 : (0 : ℝ) ∈ hX.linearBackwardTimes φ x := mem_linearBackwardTimes_self hx0 0
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
     ((hX.mem_linearBackwardTimes φ).1 hT).1
   obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
-  -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_{-T}` and `φ`. There the
-  -- frame and the normal coordinates at `y` are positive multiples of those at `x`.
-  refine reindex_ofExact_eq_orientationAt_iff_of_map_eq o eDy eDx
+  -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_{-T}` and `φ`, where `o` and
+  -- the frame orientations at `y` and at `x` agree.
+  refine Orientation.eq_iff_eq_of_map_eq (eDy.toLinearEquiv : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E)
+    (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E) ?_
     (map_orientationAt_eq_of_mem_linearBackwardTimes hφ o hy hT eDy heDy eDx heDx)
-    e _ _ _ _ _ _ op op' _ _ (Real.exp_pos (-T)) (Real.exp_pos T)
-    (fun c ↦ ?_) (fun w ↦ ?_)
-  · have h := mfderiv_unstableFrame_eq_exp_smul_self hφ hx0 hT c
-    rw [← heDy, ← heDx, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
-    simp only [ContinuousLinearMap.coe_coe]
-    exact h
-  · have hT' : T ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) y := by
-      rwa [neg_linearForwardTimes (hX := hX) (φ := φ) hf hx]
-    have h0' : (0 : ℝ) ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) x := by
-      rwa [neg_linearForwardTimes (hX := hX) (φ := φ) hf hx]
-    simp only [ContinuousLinearMap.coe_coe]
-    rw [stableNormal_apply (φ.coord_mfderiv_neg hφ hx) hT',
-      stableNormal_apply (φ.coord_mfderiv_neg hφ hx) h0',
-      neg_toChart_comp_neg_flow (hX := hX) hf hx, neg_toChart_comp_neg_flow (hX := hX) hf hx,
-      neg_zero, Flow.map_zero, comp_id, ← heDy, ← heDx]
-    simp only [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
-    exact congrArg _ (eDx.apply_symm_apply (eDy w))
+  exact (Orientation.map_reindex _ _ _).trans ((congrArg (Orientation.reindex ℝ E e)
+    (map_unstableFrameOrientation_eq hφ hf hx op op' hxu hy hT eDy heDy eDx heDx)).trans
+      (Orientation.map_reindex _ _ _).symm)
 
 /-- The comparison of the frame orientation along the stable manifold with `o`, at a point of
 `W^s(x)` and at `x`. -/
@@ -396,32 +455,18 @@ private theorem reindex_stableNormalOrientation_eq_orientationAt_iff_self
     Orientation.reindex ℝ _ e (stableNormalOrientation hφ hf hx op' op hy) = o.orientationAt y ↔
       Orientation.reindex ℝ _ e (stableNormalOrientation hφ hf hx op' op hxs) =
         o.orientationAt x := by
-  rw [stableNormalOrientation_def, stableNormalOrientation_def]
-  have h0 : (0 : ℝ) ∈ hX.linearForwardTimes φ x :=
-    mem_linearForwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints) 0
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearForwardTimes hφ hy).exists
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
     ((hX.mem_linearForwardTimes φ).1 hT).1
   obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
-  -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_T` and `φ`. There the frame
-  -- and the normal coordinates at `y` are positive multiples of those at `x`.
-  refine reindex_ofExact_eq_orientationAt_iff_of_map_eq o eDy eDx
+  -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_T` and `φ`, where `o` and the
+  -- frame orientations at `y` and at `x` agree.
+  refine Orientation.eq_iff_eq_of_map_eq (eDy.toLinearEquiv : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E)
+    (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E) ?_
     (map_orientationAt_eq_of_mem_linearForwardTimes hφ o hy hT eDy heDy eDx heDx)
-    e _ _ _ _ _ _ op' op _ _ (Real.exp_pos (-T)) (Real.exp_pos T)
-    (fun c ↦ ?_) (fun w ↦ ?_)
-  · have hT' : T ∈ (hX.neg hf).linearBackwardTimes (φ.neg hx) y := by
-      rwa [neg_linearBackwardTimes (hX := hX) (φ := φ) hf hx]
-    have h := mfderiv_unstableFrame_eq_exp_smul_self (φ.coord_mfderiv_neg hφ hx)
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.neg.mem_criticalPoints) hT' c
-    rw [neg_toChart_comp_neg_flow (hX := hX) hf hx, neg_neg, MorseChart.neg_toChart, ← heDy,
-      ← heDx, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
-    simp only [ContinuousLinearMap.coe_coe]
-    exact h
-  · simp only [ContinuousLinearMap.coe_coe]
-    rw [stableNormal_apply hφ hT, stableNormal_apply hφ h0, Flow.map_zero, comp_id, ← heDy,
-      ← heDx]
-    simp only [smul_smul, ← Real.exp_add, add_neg_cancel, neg_zero, Real.exp_zero, one_smul]
-    exact congrArg _ (eDx.apply_symm_apply (eDy w))
+  exact (Orientation.map_reindex _ _ _).trans ((congrArg (Orientation.reindex ℝ E e)
+    (map_stableNormalOrientation_eq hφ hf hx op' op hxs hy hT eDy heDy eDx heDx)).trans
+      (Orientation.map_reindex _ _ _).symm)
 
 /-- **The frame orientations along the unstable manifold.** Let `o` be an orientation of `M`, and
 orient the coordinates of negative weight of a Morse chart `φ` at `x`, in which `X` is linear, by
