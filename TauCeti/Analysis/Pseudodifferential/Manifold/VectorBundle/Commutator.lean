@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Commutator
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Composition
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
-# Commutators of pseudodifferential operators between bundles with multiplication operators
+# Commutators of pseudodifferential operators between bundles
 
 Let `P : Γ(E) → Γ(F)` be a classical pseudodifferential operator of order `m` between smooth
 complex vector bundles over a manifold modelled on `ℝⁿ`
@@ -36,6 +37,31 @@ operator between bundles symmetrically over a square partition of unity changes 
 `m - 2`, and the commutators `[P, ψ]` with the cutoffs of a patching construction have order
 `m - 1`.
 
+For two classical pseudodifferential operators `P` and `Q` of orders `m'` and `m` on the sections
+of one bundle `E`, the commutator `⁅P, Q⁆ = P ∘ Q - Q ∘ P` has order `m' + m`
+(`TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators`), and its principal symbol is the
+commutator of the principal symbols (`TauCeti.sectionClassicalPrincipalSymbol_lie`),
+
+`σ_{m'+m}(⁅P, Q⁆)(x, ξ) = ⁅σ_{m'}(P)(x, ξ), σ_m(Q)(x, ξ)⁆`,
+
+since the principal symbol of a composition is the composition of the principal symbols
+(`TauCeti.sectionClassicalPrincipalSymbol_comp`). The principal symbols are endomorphisms of the
+fibre `E_x`, so unlike for scalar operators they need not commute: `⁅P, Q⁆` has order
+`m' + m - 1` exactly when `σ_{m'}(P)(x, ξ)` and `σ_m(Q)(x, ξ)` commute at every covector
+(`TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_iff`). This holds in
+particular when the principal symbol of `Q` is a scalar multiple of the identity of each fibre, as
+for an operator of Laplace type
+(`TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_of_forall_exists_smul_id`).
+
+The condition cannot be dropped. Over a manifold of positive dimension, a smooth bundle map
+`Γ(E) → Γ(F)`, an operator linear over the smooth functions, has order `-1` only when it is zero
+(`TauCeti.mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`), because its
+principal symbol of order `0` at a nonzero covector is its fibre map. So the commutator of two
+bundle maps `A`, `B : Γ(E) → Γ(E)` has order `-1` exactly when `A` and `B` commute
+(`TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`). For
+instance the matrix units `e₁₂` and `e₂₁`, acting on the sections of a trivial bundle of rank `2`,
+do not commute, so their commutator `diag(1, -1)` has order `0` and not less.
+
 ## Main results
 
 * `TauCeti.sectionEntry_smulCommutator`: the entries of `[P, g]` are the commutators of the
@@ -44,6 +70,17 @@ operator between bundles symmetrically over a square partition of unity changes 
   `m - 1`.
 * `TauCeti.sum_smul_comp_smul_sub_mem_sectionClassicalPseudodifferentialOperators`: square
   partitions of unity reproduce `P` up to order `m - 2`.
+* `TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators`,
+  `TauCeti.sectionClassicalPrincipalSymbol_lie`: the commutator of two operators on the sections of
+  a bundle and its principal symbol.
+* `TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_iff`: the commutator loses
+  an order exactly when the principal symbols commute.
+* `TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_of_forall_exists_smul_id`:
+  commutators with an operator of scalar principal symbol lose an order.
+* `TauCeti.mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`,
+  `TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`: in
+  positive dimension, a bundle map of order `-1` is zero, and the commutator of two bundle maps has
+  order `-1` exactly when they commute.
 
 ## References
 
@@ -135,5 +172,117 @@ theorem sum_smul_comp_smul_sub_mem_sectionClassicalPseudodifferentialOperators
     simp only [Algebra.lsmul_eq_smul_one, Module.End.one_eq_id]
   rw [hcomp, ← neg_mem_iff, neg_sub, sub_sum_smul_comp_lsmul_eq hg]
   exact Submodule.smul_mem _ _ hmem
+
+/-! ### Commutators of two operators -/
+
+section Lie
+
+variable [FiniteDimensional ℂ V] {m' : ℝ}
+  {P Q : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯}
+
+/-- **Commutators.** The commutator `⁅P, Q⁆ = P ∘ Q - Q ∘ P` of classical pseudodifferential
+operators of orders `m'` and `m` on the sections of a bundle has order `m' + m`. Unlike the
+commutator of scalar operators (`TauCeti.lie_mem_classicalPseudodifferentialOperators`), it need
+not have order `m' + m - 1`
+(`TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_iff`). -/
+theorem lie_mem_sectionClassicalPseudodifferentialOperators
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m')
+    (hQ : Q ∈ sectionClassicalPseudodifferentialOperators m) :
+    ⁅P, Q⁆ ∈ sectionClassicalPseudodifferentialOperators (m' + m) := by
+  rw [Ring.lie_def, Module.End.mul_eq_comp, Module.End.mul_eq_comp]
+  refine sub_mem (comp_mem_sectionClassicalPseudodifferentialOperators hP hQ) ?_
+  rw [add_comm]
+  exact comp_mem_sectionClassicalPseudodifferentialOperators hQ hP
+
+/-- **The principal symbol of a commutator** is the commutator of the principal symbols:
+`σ_{m'+m}(⁅P, Q⁆)(x, ξ) = ⁅σ_{m'}(P)(x, ξ), σ_m(Q)(x, ξ)⁆` for classical pseudodifferential
+operators `P` and `Q` of orders `m'` and `m` on the sections of a bundle `E`. The principal
+symbols are endomorphisms of the fibre `E_x`, which need not commute, so in contrast with scalar
+operators the commutator need not lose an order. -/
+theorem sectionClassicalPrincipalSymbol_lie
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m')
+    (hQ : Q ∈ sectionClassicalPseudodifferentialOperators m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    sectionClassicalPrincipalSymbol (m' + m) ⁅P, Q⁆ x ξ =
+      ⁅sectionClassicalPrincipalSymbol m' P x ξ, sectionClassicalPrincipalSymbol m Q x ξ⁆ := by
+  have hQP := comp_mem_sectionClassicalPseudodifferentialOperators hQ hP
+  rw [add_comm] at hQP
+  have hσQP : sectionClassicalPrincipalSymbol (m' + m) (Q ∘ₗ P) x ξ =
+      sectionClassicalPrincipalSymbol m Q x ξ ∘ₗ sectionClassicalPrincipalSymbol m' P x ξ := by
+    rw [add_comm]
+    exact sectionClassicalPrincipalSymbol_comp hQ hP x ξ
+  rw [Ring.lie_def, Ring.lie_def, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
+    Module.End.mul_eq_comp, Module.End.mul_eq_comp,
+    sectionClassicalPrincipalSymbol_sub (comp_mem_sectionClassicalPseudodifferentialOperators hP hQ)
+      hQP, sectionClassicalPrincipalSymbol_comp hP hQ, hσQP]
+
+/-- **A commutator loses an order exactly when the principal symbols commute.** For classical
+pseudodifferential operators `P` and `Q` of orders `m'` and `m` on the sections of a bundle, the
+commutator `⁅P, Q⁆` has order `m' + m - 1` if and only if `σ_{m'}(P)(x, ξ)` and `σ_m(Q)(x, ξ)`
+commute at every covector `ξ ∈ T*ₓM`. -/
+theorem lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_iff
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m')
+    (hQ : Q ∈ sectionClassicalPseudodifferentialOperators m) :
+    ⁅P, Q⁆ ∈ sectionClassicalPseudodifferentialOperators (m' + m - 1) ↔
+      ∀ x ξ, Commute (sectionClassicalPrincipalSymbol m' P x ξ)
+        (sectionClassicalPrincipalSymbol m Q x ξ) := by
+  rw [← sectionClassicalPrincipalSymbol_eq_zero_iff
+    (lie_mem_sectionClassicalPseudodifferentialOperators hP hQ)]
+  simp only [sectionClassicalPrincipalSymbol_lie hP hQ, commute_iff_lie_eq]
+
+/-- **Commutators with operators of scalar principal symbol lose an order.** If the principal
+symbol of `Q` is a scalar multiple of the identity of each fibre, as for an operator of Laplace
+type, then `⁅P, Q⁆` has order `m' + m - 1` for every classical pseudodifferential operator `P` of
+order `m'` on the sections of the same bundle. -/
+theorem lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_of_forall_exists_smul_id
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m')
+    (hQ : Q ∈ sectionClassicalPseudodifferentialOperators m)
+    (hσ : ∀ x ξ, ∃ c : ℂ, sectionClassicalPrincipalSymbol m Q x ξ = c • LinearMap.id) :
+    ⁅P, Q⁆ ∈ sectionClassicalPseudodifferentialOperators (m' + m - 1) :=
+  (lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_iff hP hQ).2 fun x ξ ↦ by
+    obtain ⟨c, hc⟩ := hσ x ξ
+    rw [hc, ← Module.End.one_eq_id]
+    exact (Commute.one_right _).smul_right c
+
+end Lie
+
+/-! ### Bundle maps -/
+
+section BundleMap
+
+variable [Nontrivial (CoordinateSpace n)]
+
+/-- **Bundle maps of order `-1` vanish.** Over a manifold of positive dimension, an operator
+`P : Γ(E) → Γ(F)` which is linear over the smooth functions, that is a smooth bundle map, is a
+classical pseudodifferential operator of order `-1` only when it is zero: its principal symbol of
+order `0` at a nonzero covector is its fibre map. -/
+theorem mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul
+    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W]
+    (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) :
+    P ∈ sectionClassicalPseudodifferentialOperators (-1) ↔ P = 0 := by
+  refine ⟨fun hP₁ ↦ ?_, fun h ↦ h ▸ zero_mem _⟩
+  ext s x
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
+  rw [← sectionClassicalPrincipalSymbol_apply_of_map_smul hP hξ s,
+    sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one (m := 0) (by rwa [zero_sub]) x ξ]
+  simp
+
+/-- **Commutators of bundle maps.** Over a manifold of positive dimension, the commutator of two
+smooth bundle maps `A`, `B : Γ(E) → Γ(E)`, operators linear over the smooth functions, has order
+`-1` only when it vanishes, that is when `A` and `B` commute. So noncommuting fibre maps, such as
+the matrix units `e₁₂` and `e₂₁` on a trivial bundle of rank `2`, have a commutator of order `0`
+and not less: the one-order drop of commutators of scalar operators needs commuting principal
+symbols. -/
+theorem lie_mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul
+    [FiniteDimensional ℂ V]
+    {A B : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯}
+    (hA : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, A (f • s) = f • A s)
+    (hB : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, B (f • s) = f • B s) :
+    ⁅A, B⁆ ∈ sectionClassicalPseudodifferentialOperators (-1) ↔ Commute A B := by
+  rw [commute_iff_lie_eq]
+  refine mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul fun f s ↦ ?_
+  simp [Ring.lie_def, hA, hB, smul_sub]
+
+end BundleMap
 
 end TauCeti
