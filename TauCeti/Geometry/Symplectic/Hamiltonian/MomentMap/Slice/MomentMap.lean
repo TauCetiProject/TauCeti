@@ -193,6 +193,13 @@ theorem coe_isotropySkewAdjoint_apply
       isotropyLinearization I' p ξ u :=
   LinearMap.congr_fun (LinearMap.codRestrict_apply _ _ ξ) u
 
+/-- The endomorphism of `T_p M` by which `ξ` acts is the linearized isotropy action `A_ξ`. -/
+theorem coe_isotropySkewAdjoint
+    (ξ : (InfinitesimalAction.fundamental I G I' M).isotropy p) :
+    (isotropySkewAdjoint hσ hσG ξ : Module.End ℝ (TangentSpace I' p)) =
+      ((isotropyLinearization I' p ξ : E' →ₗ[ℝ] E') : Module.End ℝ (TangentSpace I' p)) :=
+  LinearMap.ext (coe_isotropySkewAdjoint_apply hσ hσG ξ)
+
 /-! ### The isotropy algebra on the symplectic slice -/
 
 /-- **The isotropy algebra acts on the symplectic slice.** If the stabilizer of `p` preserves a

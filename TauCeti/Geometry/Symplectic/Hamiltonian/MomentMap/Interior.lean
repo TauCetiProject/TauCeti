@@ -129,7 +129,7 @@ theorem exists_ne_zero_forall_criticalHessian_nonneg
   have hAeq (ξ : a.isotropy x) :
       A ξ = ((isotropyLinearization 𝓘(ℝ, E') x ξ : E' →ₗ[ℝ] E') :
         Module.End ℝ (TangentSpace 𝓘(ℝ, E') x)) :=
-    LinearMap.ext (hAv ξ)
+    hσ.isNondegenerate.coe_isotropySkewAdjoint hσx ξ
   -- They lie in `sp(T_x M, σ_x)` and are complex linear for a compatible complex structure `J`.
   obtain ⟨J, hJ, hA⟩ :=
     hσ.isNondegenerate.exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap
