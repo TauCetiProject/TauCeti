@@ -39,8 +39,8 @@ The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
 * `TauCeti.CStarTensorProduct.includeLeft`, `TauCeti.CStarTensorProduct.includeRight`: the unital
   star homomorphisms `a ↦ a ⊗ 1` and `b ↦ 1 ⊗ b`, isometric for nonzero factors
   (`TauCeti.CStarTensorProduct.norm_includeLeft`, `TauCeti.CStarTensorProduct.norm_includeRight`;
-  in simp normal form `TauCeti.CStarTensorNorm.apply_tmul_one`,
-  `TauCeti.CStarTensorNorm.apply_one_tmul`).
+  in simp normal form `TauCeti.CStarTensorNorm.map_tmul_one`,
+  `TauCeti.CStarTensorNorm.map_one_tmul`).
 
 ## References
 
@@ -177,7 +177,7 @@ variable (N) in
 `TauCeti.CStarTensorProduct.norm_includeLeft`, as `simp` rewrites `‖includeLeft N a‖` to
 `N (a ⊗ₜ 1)`. -/
 @[simp]
-theorem _root_.TauCeti.CStarTensorNorm.apply_tmul_one [Nontrivial B] (a : A) :
+theorem _root_.TauCeti.CStarTensorNorm.map_tmul_one [Nontrivial B] (a : A) :
     N (a ⊗ₜ (1 : B)) = ‖a‖ := by
   rw [← norm_of, ← includeLeft_apply, norm_includeLeft]
 
@@ -186,7 +186,7 @@ variable (N) in
 `TauCeti.CStarTensorProduct.norm_includeRight`, as `simp` rewrites `‖includeRight N b‖` to
 `N (1 ⊗ₜ b)`. -/
 @[simp]
-theorem _root_.TauCeti.CStarTensorNorm.apply_one_tmul [Nontrivial A] (b : B) :
+theorem _root_.TauCeti.CStarTensorNorm.map_one_tmul [Nontrivial A] (b : B) :
     N ((1 : A) ⊗ₜ b) = ‖b‖ := by
   rw [← norm_of, ← includeRight_apply, norm_includeRight]
 
