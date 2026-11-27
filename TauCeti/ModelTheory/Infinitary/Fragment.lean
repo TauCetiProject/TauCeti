@@ -354,18 +354,16 @@ theorem generated_coe (A : Fragment L) :
     generated (A : Set (Σ n, L.BoundedFormulaω Empty n)) = A :=
   le_antisymm (generated_le_iff.2 le_rfl) (subset_generated _)
 
-/-- An atomic formula has no components, so it generates the fragment consisting of itself
-alone. -/
-theorem coe_generated_singleton_of_isAtomic {n : ℕ} {φ : L.BoundedFormulaω Empty n}
-    (hφ : φ.IsAtomic) :
-    ((generated {⟨n, φ⟩} : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)) = {⟨n, φ⟩} := by
+/-- Atomic formulas have no components, so a set of atomic formulas generates the fragment
+consisting of exactly those formulas. -/
+theorem coe_generated_of_forall_isAtomic {S : Set (Σ n, L.BoundedFormulaω Empty n)}
+    (hS : ∀ p ∈ S, p.2.IsAtomic) :
+    ((generated S : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)) = S := by
   refine Set.Subset.antisymm (fun p hp => ?_) (subset_generated _)
   induction hp with
   | base h => exact h
   | imp_left _ ih | imp_right _ ih | all_body _ ih | iInf_comp _ _ ih | iSup_comp _ _ ih =>
-    obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 ih
-    cases eq_of_heq h
-    cases hφ
+    cases hS _ ih
 
 /-! ### Countability -/
 

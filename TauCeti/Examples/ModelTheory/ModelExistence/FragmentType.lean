@@ -165,7 +165,7 @@ def ltFragment : Fragment lang :=
 /-- The fragment of `x₀ < x₁` is that formula alone: an atomic formula has no components. -/
 theorem coe_ltFragment :
     (ltFragment : Set (Σ n, lang.BoundedFormulaω Empty n)) = {⟨2, ltAt 0 1⟩} :=
-  Fragment.coe_generated_singleton_of_isAtomic (isAtomic_ltAt 0 1)
+  Fragment.coe_generated_of_forall_isAtomic fun _ hp => hp ▸ isAtomic_ltAt 0 1
 
 /-- At arity `2`, the fragment of `x₀ < x₁` is `{x₀ < x₁}`. -/
 theorem slice_ltFragment_two : ltFragment.slice 2 = {ltAt 0 1} := by
