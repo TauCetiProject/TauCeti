@@ -595,7 +595,7 @@ theorem norm_fderiv_branchDelay (a : ℕ × Fin d) {x : Fin d → ℝ} (hq : 0 <
       (Pi.single a.2 (1 : ℝ))
     simpa [h1, Real.norm_of_nonneg hc] using hle
 
-/-- The logarithmic derivative of a delay is bounded on the simplex:
+/-- The derivative of a delay is bounded on the simplex:
 `‖D τ_a‖ = (A + 1) / q_a ≤ 2 (A + 1) / (A + 3)`. -/
 theorem norm_fderiv_branchDelay_le (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x a.2 ≤ 1 / 2) :
     ‖fderiv ℝ (branchDelay a) x‖ ≤
@@ -606,7 +606,7 @@ theorem norm_fderiv_branchDelay_le (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : 
   rw [norm_fderiv_branchDelay a hq, div_le_div_iff₀ hq (by positivity)]
   nlinarith [hA]
 
-/-- The logarithmic derivative of a delay has norm less than `2` on the simplex, uniformly in the
+/-- The derivative of a delay has norm less than `2` on the simplex, uniformly in the
 letter. -/
 theorem norm_fderiv_branchDelay_lt_two (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hx : x a.2 ≤ 1 / 2) : ‖fderiv ℝ (branchDelay a) x‖ < 2 := by

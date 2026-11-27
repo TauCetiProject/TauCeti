@@ -88,7 +88,9 @@ linear maps.
 * `TauCeti.finite_setOf_wordDelay_le`: only finitely many words have delay at most `r`.
 * `TauCeti.wordCount_mono`, `TauCeti.continuousWithinAt_wordCount_Ici`,
   `TauCeti.measurable_wordCount`, `TauCeti.wordCount_eq_zero_of_neg`, `TauCeti.wordCount_eq_one`,
-  `TauCeti.wordCount_eq_sum_indicator`: properties of `N (w, ·)`.
+  `TauCeti.wordCount_eq_sum_indicator`: `N (w, ·)` is nondecreasing, right-continuous and
+  measurable, vanishes on `r < 0`, equals `1` on `0 ≤ r < log (3 / 2)`, and below a cutoff is a
+  finite sum of indicators of `[T_u (w), ∞)`.
 * `TauCeti.mem_support_wordCount_branchMap_iff`, `TauCeti.finite_support_wordCount_branchMap`,
   `TauCeti.wordCount_eq_add_finsum`, `TauCeti.wordCount_eq_add_tsum`: the renewal equation, a
   finite sum at each `r`.

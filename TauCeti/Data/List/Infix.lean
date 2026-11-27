@@ -15,9 +15,11 @@ public import Mathlib.Logic.Equiv.Defs
 Concatenating fewer copies of a list gives a prefix of concatenating more copies, and the factor of
 length `|l|` of `m` concatenated copies of `l` starting at position `d` is the rotation of `l` by
 `d`. A list which, followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself
-begins with these `k` copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an
-infix of `l₂`. An injective map preserves and reflects infixes. A bijection of lists preserving
-and reflecting prefixes preserves the parent `l ↦ l.dropLast`.
+begins with these `k` copies. When neither `v₁` nor `v₂` starts with `x`, an equality
+`replicate m x ++ v₁ = replicate n x ++ v₂` forces `m = n` and `v₁ = v₂`
+(`List.replicate_append_eq_replicate_append_iff`). A list with no entry in `l₁` that is an infix of
+`l₁ ++ l₂` is an infix of `l₂`. An injective map preserves and reflects infixes. A bijection of
+lists preserving and reflecting prefixes preserves the parent `l ↦ l.dropLast`.
 -/
 
 public section

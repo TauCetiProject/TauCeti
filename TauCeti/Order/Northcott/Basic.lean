@@ -22,7 +22,10 @@ function, together with generic summatory functions over that carrier. The carri
 on the integer part of the cutoff, and for a nonnegative cutoff it agrees with the one selected by
 its natural floor. It also provides the `Northcott` instance for the identity on any locally finite
 order bounded below, identifying `summatory (fun n : ℕ ↦ n)` for zero-vanishing weights with the
-partial sum over `Finset.Icc 1 ⌊x⌋₊`.
+partial sum over `Finset.Icc 1 ⌊x⌋₊`. In addition, shifted natural cutoffs `(N i : ℝ) + c ≤ x`
+select finitely many indices (`finite_setOf_natCast_add_le`), and for any Northcott function `f`
+into a linearly ordered topological space with the order topology, the sublevel sets
+`{i | f i ≤ t}` are eventually constant as `t → r⁺` (`Northcott.eventuallyEq_setOf_le_nhdsGE`).
 -/
 
 public section
