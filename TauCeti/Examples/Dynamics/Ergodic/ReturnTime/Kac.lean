@@ -83,8 +83,7 @@ theorem integral_positiveReturnTime_id_bool :
     ∫ x in {false}, ((positiveReturnTime id ({false} : Set Bool) x).toNat : ℝ) ∂fairBit =
       1 / 2 ∧ ¬ Ergodic id fairBit := by
   refine ⟨?_, fun h ↦ not_ergodic_id_count ?_⟩
-  · rw [integral_singleton, ReturnTime.positiveReturnTime_id rfl, measureReal_def,
-      fairBit_singleton]
+  · rw [integral_singleton, ReturnTime.positiveReturnTime_id rfl, fairBit_real_singleton]
     simp
   · simpa [fairBit, smul_smul, ENNReal.mul_inv_cancel] using h.smul_measure (2 : ℝ≥0∞)
 
