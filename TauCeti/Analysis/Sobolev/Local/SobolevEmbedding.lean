@@ -14,6 +14,7 @@ import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -69,6 +70,8 @@ estimates follow in a basis of `F`.
 * `TauCeti.MemWkpLoc.continuousOn_preciseRepresentative_of_two_lt_mul` and
   `TauCeti.MemWkpLoc.exists_continuousOn_ae_eq_of_two_lt_mul`: continuous representatives for
   `kp > 2`.
+* `TauCeti.MemWkpLoc.exists_continuousOn_ae_eq_of_eLpNorm_top_sub_le`: a continuous
+  representative with image control for a small Sobolev perturbation.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul`: the local `L^∞` bound for
   `kp > 2`.
 * `TauCeti.MemWkpLoc.memLpLoc_top_of_two_lt_mul`: local boundedness of `W^{k,p}_loc` for `kp > 2`.
@@ -410,6 +413,25 @@ theorem MemWkpLoc.exists_continuousOn_ae_eq_of_two_lt_mul {p : ℝ≥0∞} (hp :
     ∃ g : ℂ → F, ContinuousOn g Ω ∧ u =ᵐ[volume.restrict Ω] g :=
   ⟨_, hu.continuousOn_preciseRepresentative_of_two_lt_mul hp hkp,
     hu.memLpLoc.ae_eq_preciseRepresentative hp⟩
+
+/-- If the supercritical Sobolev difference `v - u` has essential supremum at most `δ`
+and `u` is continuous on `Ω`, then `v` has a continuous representative on `Ω` with values
+in the closed `δ`-thickening of the image of `u`. -/
+theorem MemWkpLoc.exists_continuousOn_ae_eq_of_eLpNorm_top_sub_le {p : ℝ≥0∞} {v : ℂ → F}
+    (hd : MemWkpLoc p Ω k (v - u)) (hp : 1 ≤ p) (hkp : 2 < (k : ℝ≥0∞) * p)
+    (hu : ContinuousOn u Ω) {δ : ℝ}
+    (hδ : eLpNorm (v - u) ∞ (volume.restrict Ω) ≤ ENNReal.ofReal δ) :
+    ∃ w : ℂ → F, ContinuousOn w Ω ∧ v =ᵐ[volume.restrict Ω] w ∧
+      MapsTo w Ω (Metric.cthickening δ (u '' (Ω : Set ℂ))) := by
+  obtain ⟨d, hdc, he⟩ := hd.exists_continuousOn_ae_eq_of_two_lt_mul hp hkp
+  have hb : ∀ z ∈ Ω, ‖d z‖ₑ ≤ ENNReal.ofReal δ := by
+    refine ContinuousOn.le_of_ae_le (μ := volume) Ω.isOpen hdc.eNorm continuousOn_const ?_
+    filter_upwards [he, eNorm_ae_le_eLpNormEssSup (v - u) (volume.restrict Ω)] with z hz hzle
+    exact hz ▸ hzle.trans (eLpNormEssSup_le_eLpNorm_top.trans hδ)
+  refine ⟨d + u, hdc.add hu, ?_, fun z hz ↦ Metric.mem_cthickening_of_edist_le _ (u z) _ _
+    (mem_image_of_mem _ hz) (by simpa [eDist_eq_eNorm_sub] using hb z hz)⟩
+  filter_upwards [he] with z hz
+  simpa only [Pi.sub_apply, Pi.add_apply, sub_eq_iff_eq_add] using hz
 
 /-- **Morrey for `kp > 2`: the local bound.** Let `1 ≤ p ≤ ∞` with `2 < k p`, and let `V` have
 compact closure inside the open set `W ⊆ ℂ`. There is a constant `C` such that every `u : ℂ → F`

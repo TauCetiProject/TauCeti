@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.RealFactor
+import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Archimedean
 
 /-!
 # The Gaussian Mellin factor on vertical strips

@@ -110,26 +110,20 @@ theorem eventually_forall_mvfderiv_apply_lt_mul_snd :
     mem_nhdsLT_iff_exists_Ioo_subset.1 (hF₁.and hV.eventually_fst_eq_right)
   set δ := min u (1 - l)
   have hδ : 0 < δ := lt_min hu0 (by linarith)
-  -- Where `F` is `f ∘ Prod.fst` near `(x, t)`, its derivative is that of `f` on the space part.
-  have hfst {f : M → ℝ} {s : Set ℝ} (hs : IsOpen s) (hFs : ∀ t ∈ s, ∀ x, F (x, t) = f x) {x : M}
-      {t : ℝ} (ht : t ∈ s) :
-      mvfderiv (𝓘(ℝ, E).prod 𝓘(ℝ)) F (x, t) (V (x, t)) =
-        mvfderiv 𝓘(ℝ, E) f x (V (x, t) : E × ℝ).1 := by
-    have hev : F =ᶠ[𝓝 (x, t)] f ∘ Prod.fst := by
-      filter_upwards [(hs.preimage continuous_snd).mem_nhds ht] with z hz
-      exact hFs z.2 hz z.1
-    rw [hev.mvfderiv_eq, mvfderiv_comp_fst_apply]
-  -- So the derivative along `V` is nonpositive outside the inner slab `M × [δ, 1 - δ]`.
+  -- Where `F` is `f ∘ Prod.fst` near `(x, t)`, its derivative is that of `f` on the space part. So
+  -- the derivative along `V` is nonpositive outside the inner slab `M × [δ, 1 - δ]`.
   have hend : ∀ x ∈ (univ : Set M), ∀ t ∈ Ioo (0 : ℝ) 1, t ∉ Icc δ (1 - δ) →
       mvfderiv (𝓘(ℝ, E).prod 𝓘(ℝ)) F (x, t) (V (x, t)) ≤ 0 := by
     intro x _ t ht htδ
     rcases not_and_or.1 htδ with h | h
     · have ht' : t ∈ Ioo 0 u := ⟨ht.1, (not_le.1 h).trans_le (min_le_left _ _)⟩
-      rw [hfst isOpen_Ioo (fun t ht ↦ (hu ht).1) ht', (hu ht').2 x]
+      rw [mvfderiv_apply_eq_of_eventually_forall_eq
+        (eventually_of_mem (isOpen_Ioo.mem_nhds ht') fun t ht ↦ (hu ht).1), (hu ht').2 x]
       exact hX₀ x
     · have ht' : t ∈ Ioo l 1 :=
         ⟨by linarith [min_le_right u (1 - l), not_le.1 h], ht.2⟩
-      rw [hfst isOpen_Ioo (fun t ht ↦ (hl ht).1) ht', (hl ht').2 x]
+      rw [mvfderiv_apply_eq_of_eventually_forall_eq
+        (eventually_of_mem (isOpen_Ioo.mem_nhds ht') fun t ht ↦ (hl ht).1), (hl ht').2 x]
       exact hX₁ x
   -- On the compact inner slab the derivative along `V` is continuous, hence bounded.
   have hcont : Continuous fun z : M × ℝ ↦ mvfderiv (𝓘(ℝ, E).prod 𝓘(ℝ)) F z (V z) :=

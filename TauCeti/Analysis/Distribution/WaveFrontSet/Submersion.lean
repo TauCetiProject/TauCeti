@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Submersion
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Cone
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
@@ -388,9 +389,9 @@ covectors of `WF(f^* T)` are exactly the `(x, Df(x)ᵀ η)` with `x ∈ Ω` and 
 No condition on `WF(T)` is needed, since `Df(x)ᵀ η ≠ 0` for every `η ≠ 0`. -/
 theorem waveFrontSet_compCLMOfSubmersion (T : 𝓓'(Ω', ℂ)) :
     (compCLMOfSubmersion μ ν f hf hfΩ hsurj T).waveFrontSet =
-      {p | p.1 ∈ Ω ∧ ∃ η, (f p.1, η) ∈ T.waveFrontSet ∧ ((fderiv ℝ f p.1)†) η = p.2} := by
+      TauCeti.covectorPullback f Ω T.waveFrontSet := by
   ext ⟨x, ξ⟩
-  simp only [mem_waveFrontSet_iff, mem_ofPred_eq]
+  simp only [mem_waveFrontSet_iff, TauCeti.mem_covectorPullback]
   constructor
   · rintro ⟨hx, hξ, hT⟩
     rw [isMicrolocallySmoothAt_compCLMOfSubmersion_iff μ ν hf hfΩ hsurj T hx hξ] at hT

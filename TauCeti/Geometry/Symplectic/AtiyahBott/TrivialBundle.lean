@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.GaugeCurvature
+public import TauCeti.Geometry.Manifold.DifferentialForm.Gauge.Curvature
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
@@ -32,7 +32,7 @@ compact Lie algebra and an `Ad`-invariant inner product satisfy all of them. Wed
 `B(a ∧ b)`.
 
 * **Covariant derivatives and curvature.** These are developed in
-  `TauCeti.Geometry.Manifold.DifferentialForm.GaugeCurvature`: the covariant derivatives
+  `TauCeti.Geometry.Manifold.DifferentialForm.Gauge.Curvature`: the covariant derivatives
   `d_A ξ = dξ + [A, ξ]` (`TauCeti.gaugeCovariantDeriv`) and `d_A b = db + [A ∧ b]`
   (`TauCeti.gaugeCovariantExtDeriv`), the curvature `F_A = dA + ½ [A ∧ A]`
   (`TauCeti.gaugeCurvature`), its expansion `F_(A + t b) = F_A + t d_A b + (t² / 2) [b ∧ b]`
@@ -47,7 +47,8 @@ compact Lie algebra and an `Ad`-invariant inner product satisfy all of them. Wed
   circle bundle.
 * **The moment map.** The infinitesimal generator of `ξ ∈ C^∞(M, 𝔨)` at the connection `A` is
   `ξ_A = -d_A ξ = [ξ, A] - dξ`: for a matrix group `K` this is the velocity at `t = 0` of the gauge
-  transformations `g · A = g A g⁻¹ - (dg) g⁻¹` along `g = exp (t ξ)`. The curvature pairing
+  transformations `g · A = g A g⁻¹ - (dg) g⁻¹` along `g = exp (t ξ)`
+  (`TauCeti.hasDerivAt_mgaugeAction_gaugeExp_smul_apply`). The curvature pairing
   `⟨μ(A), ξ⟩ = ∫_M B(F_A, ξ)` (`TauCeti.atiyahBottMomentWith`) is a moment map for these
   generators. By Stokes' theorem on the closed surface and the invariance of `B`,
   `∫_M B(d_A b, ξ) = Ω(ξ_A, b)`
@@ -66,8 +67,10 @@ compact Lie algebra and an `Ad`-invariant inner product satisfy all of them. Wed
   (`TauCeti.atiyahBottMomentWith_eq_zero_iff`): the zero level is the space of flat connections.
 
 Everything is stated in directional form on the affine space `Ω¹(M; 𝔨)`, with no manifold
-structure on the space of connections; the gauge group itself, the action of its elements and
-nontrivial principal bundles are not treated here.
+structure on the space of connections. The action of the elements of the gauge group, for `𝔨` a
+normed algebra with its commutator, and the group-level invariance and equivariance statements are
+in `TauCeti.Geometry.Symplectic.AtiyahBott.GaugeGroup`; nontrivial principal bundles are not
+treated here.
 
 ## Main definitions
 
