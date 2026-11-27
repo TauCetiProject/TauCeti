@@ -16,8 +16,8 @@ Let `K` be a CM field with maximal real subfield `K⁺`, so that `K / K⁺` is G
 `𝓞 K` unramified over `K⁺`, the decomposition group of `P` has order the inertia degree of `P`
 over `K⁺` (`Ideal.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg`). So the place of `K⁺` below
 `P` is inert in `K`, that is `P` has inertia degree `2 = [K : K⁺]`, exactly when the decomposition
-group is all of `{1, c}` (`Ideal.inertiaDeg_eq_natCard_iff_forall_smul_eq`), that is when `c`
-fixes `P`.
+group is all of `{1, c}` (`Ideal.ramificationIdx_mul_inertiaDeg_eq_natCard_iff_forall_smul_eq`),
+that is when `c` fixes `P`.
 
 By multiplicativity of inertia degrees in the tower `ℤ ⊆ 𝓞 K⁺ ⊆ 𝓞 K`, for `P` unramified over `ℚ`
 the condition `f(P | ℤ) = 2 f(w | ℤ)` on the place `w` of `K⁺` below `P`, which is the form of
@@ -58,7 +58,10 @@ theorem inertiaDeg_eq_two_iff_complexConj_smul_eq (P : Ideal (𝓞 K)) [P.IsPrim
   have hcard : Nat.card (K ≃ₐ[maximalRealSubfield K] K) = 2 :=
     (Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield K) K) ▸
       IsGalois.card_aut_eq_finrank (maximalRealSubfield K) K
-  rw [← hcard, Ideal.inertiaDeg_eq_natCard_iff_forall_smul_eq P he]
+  have hG := Ideal.ramificationIdx_mul_inertiaDeg_eq_natCard_iff_forall_smul_eq
+    (R := 𝓞 (maximalRealSubfield K)) (G := K ≃ₐ[maximalRealSubfield K] K) P
+  rw [he, one_mul] at hG
+  rw [← hcard, hG]
   refine ⟨fun h ↦ h _, fun h g ↦ ?_⟩
   -- `c` generates the Galois group, so it fixes `P` only if every element does
   have hg : g ∈ Subgroup.zpowers (complexConj K) := by
