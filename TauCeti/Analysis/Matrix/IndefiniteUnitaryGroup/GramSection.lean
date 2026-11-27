@@ -116,8 +116,13 @@ theorem conjTranspose_mul_mul_fderiv_add (hσ : IsGramSection A V σ)
     (selfAdjoint.submodule ℝ (Matrix n n ℂ)).subtypeL.hasFDerivAt.congr_of_eventuallyEq
       (Filter.eventually_of_mem (hσ.isOpen.mem_nhds hT) fun T' hT' ↦
         hσ.conjTranspose_mul_mul hT')
-  have h := congrArg (· X) (hd.unique hid)
-  exact h
+  -- Applied to `X`, the product-rule derivative
+  -- `(star (σ T) * A) • dσ + op (σ T) • op A • (starL' ∘ dσ)` is by definition
+  -- `(σ T)ᴴ * A * dσ X + (dσ X)ᴴ * A * σ T`, with `star = ᴴ` on matrices. The apply lemmas
+  -- (`add_apply`, `smul_apply`, `comp_apply`) do not rewrite it: `fderiv ℝ σ T` carries the
+  -- Frobenius topology on matrices and the combinators the product topology, which agree only up
+  -- to definitional unfolding. So the goal, which displays the shape, is closed by `exact`.
+  exact congrArg (· X) (hd.unique hid)
 
 end IsGramSection
 
@@ -191,12 +196,17 @@ private theorem hasFDerivAt_gramOnSlice_zero (hA : A.IsHermitian) (hA' : IsUnit 
     simp [gramSliceDeriv]
   have hsum : star (gramSlice A 0) * A * gramSliceDeriv A X +
       star (gramSliceDeriv A X) * A * gramSlice A 0 = (X : Matrix n n ℂ) := by
-    rw [h1, hD, star_one, one_mul, mul_one, star_smul, star_mul, hX, hinv, Matrix.mul_smul,
-      Matrix.smul_mul, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv A hdet, Matrix.mul_assoc,
-      Matrix.nonsing_inv_mul A hdet, Matrix.one_mul, Matrix.mul_one, star_inv₀, star_ofNat,
-      ← add_smul]
+    -- Both terms are `X / 2`, using `A * A⁻¹ = 1 = A⁻¹ * A` and that `A⁻¹` and `X` are Hermitian.
+    simp only [h1, hD, star_one, one_mul, mul_one, star_smul, star_mul, hX, hinv, Matrix.mul_smul,
+      Matrix.smul_mul, Matrix.mul_assoc, Matrix.mul_nonsing_inv_cancel_left A _ hdet,
+      Matrix.nonsing_inv_mul A hdet, star_inv₀, star_ofNat, ← add_smul]
     norm_num
   apply Subtype.ext
+  -- The composite derivative applied to `X` is by definition the Hermitian part of the
+  -- product-rule derivative of `hd` at `X`. As in `conjTranspose_mul_mul_fderiv_add`, the apply
+  -- lemmas do not rewrite it (the derivative and the combinators carry definitionally equal but
+  -- syntactically different topologies, and `selfAdjointPartL` is read with codomain the
+  -- Hermitian submodule), so `change` states the unfolded form.
   change (selfAdjointPart ℝ (star (gramSlice A 0) * A * gramSliceDeriv A X +
     star (gramSliceDeriv A X) * A * gramSlice A 0) : Matrix n n ℂ) = X
   rw [hsum, X.property.coe_selfAdjointPart_apply ℝ]

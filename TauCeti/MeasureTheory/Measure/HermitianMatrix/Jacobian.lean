@@ -18,25 +18,26 @@ import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 /-!
 # Lebesgue Jacobians on complex and Hermitian matrices
 
-This file computes three Jacobians for Lebesgue measure on complex matrices and on complex
-Hermitian matrices, the bookkeeping behind the polar formula for the Gram map `Y ↦ Yᴴ J Y`.
-Complex matrices carry the product Lebesgue measure `dY` of the real and imaginary parts of
-their entries, and the Hermitian matrices of size `p` carry `TauCeti.hermitianLebesgue p`, the
-product of the Lebesgue measures of the entries on and above the diagonal.
+This file computes two Jacobians for Lebesgue measure on complex Hermitian matrices, part of the
+bookkeeping behind the polar formula for the Gram map `Y ↦ Yᴴ J Y`; the third, for two-sided
+multiplication `Y ↦ P * Y * Q` of complex matrices, is
+`MeasureTheory.lintegral_eq_enorm_det_pow_mul_enorm_det_pow_mul_lintegral_comp_matrix_mul_mul`
+in `TauCeti.MeasureTheory.Measure.Haar.Matrix.Complex`. Complex matrices carry the product
+Lebesgue measure `dZ` of the real and imaginary parts of their entries, and the Hermitian
+matrices of size `p` carry `TauCeti.hermitianLebesgue p`, the product of the Lebesgue measures of
+the entries on and above the diagonal.
 
-* `MeasureTheory.lintegral_eq_det_mul_lintegral_comp_matrix_mul_mul`: for invertible `P` and
-  `Q`, the substitution `Y ↦ P * Y * Q` on `r × m` complex matrices has Jacobian
-  `|det P| ^ (2 m) * |det Q| ^ (2 r)`.
 * `MeasureTheory.lintegral_comp_selfAdjointConjugate`: for invertible `C`, the congruence
   `T ↦ C * T * Cᴴ` of Hermitian `n × n` matrices has Jacobian `|det C| ^ (2 n)`, for every
-  additive Haar measure.
+  additive Haar measure, and
+  `MeasureTheory.lintegral_eq_enorm_det_pow_mul_lintegral_comp_selfAdjointConjugate_conjTranspose`
+  states it in the form `∫⁻ T, g T = ‖C.det‖ₑ ^ (2 n) * ∫⁻ T, g (Cᴴ * T * C)`.
 * `TauCeti.lintegral_eq_lintegral_hermitianLebesgue_I_smul_add`: writing a square complex matrix
   of size `p` as `Z = i S + T / 2`, with `S` and `T` Hermitian, so that `i S` is its
   skew-Hermitian and `T / 2` its Hermitian part, Lebesgue measure is `dZ = 2 ^ (-p) dS dT`.
 
-The first two are linear changes of variables, the first through
-`MeasureTheory.lintegral_comp_matrix_mul_mul` on arrays of entries and the second with the
-determinant `Matrix.det_selfAdjointConjugate_complex`. For the third, the real trace form
+The first is a linear change of variables with the determinant
+`Matrix.det_selfAdjointConjugate_complex`. For the second, the real trace form
 `Re tr(Xᴴ Y)` is the dot product of the real coordinates of the entries, and for Hermitian `S`,
 `S'`, `T`, `T'` it gives `⟪i S + T, i S' + T'⟫ = ⟪S, S'⟫ + ⟪T, T'⟫`, since `tr(S T')` is real.
 So `(S, T) ↦ i S + T` carries a product of orthonormal bases of the Hermitian matrices to a
@@ -46,12 +47,12 @@ the trace-form volume with `hermitianLebesgue p` and the dilation `T ↦ T / 2` 
 
 ## Provenance
 
-The three statements are adapted from `New.lintegral_eq_det_mul_comp_mul_mul`,
-`New.lintegral_eq_det_mul_comp_congruence` and `New.lintegral_eq_skewOfReal_add_hermOfReal` in
+The two statements are adapted from `New.lintegral_eq_det_mul_comp_congruence` and
+`New.lintegral_eq_skewOfReal_add_hermOfReal` in
 `src/Lib/DiscreteSeries/Haar/GramCoordinates.lean` of grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). There they are
 stated in real coordinates `hermOfReal`, `skewOfReal` of their own; here they use the Hermitian
-submodule with `TauCeti.hermitianLebesgue`, and the third is proved through orthonormal bases
+submodule with `TauCeti.hermitianLebesgue`, and the second is proved through orthonormal bases
 rather than through the explicit scaling of entries used there.
 -/
 
@@ -63,29 +64,6 @@ open MeasureTheory Module Complex
 open scoped Matrix ComplexConjugate ENNReal RealInnerProductSpace
 
 namespace MeasureTheory
-
-variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
-
-/-- **Change of variables for two-sided multiplication** on `Matrix ι κ ℂ` with its product
-Lebesgue measure: for invertible `P` and `Q`,
-`∫⁻ Y, g Y = |det P| ^ (2 |κ|) * |det Q| ^ (2 |ι|) * ∫⁻ Y, g (P * Y * Q)`. -/
-theorem lintegral_eq_det_mul_lintegral_comp_matrix_mul_mul {P : Matrix ι ι ℂ} {Q : Matrix κ κ ℂ}
-    (hP : P.det ≠ 0) (hQ : Q.det ≠ 0) (g : Matrix ι κ ℂ → ℝ≥0∞) :
-    ∫⁻ Y : Matrix ι κ ℂ, g Y =
-      ‖P.det‖ₑ ^ (2 * Fintype.card κ) * ‖Q.det‖ₑ ^ (2 * Fintype.card ι) *
-        ∫⁻ Y : Matrix ι κ ℂ, g (P * Y * Q) := by
-  have hmp := Matrix.volume_preserving_ofMeasurableEquiv ι κ ℂ
-  have hc : 0 < ‖P.det‖ ^ (2 * Fintype.card κ) * ‖Q.det‖ ^ (2 * Fintype.card ι) := by
-    have := norm_pos_iff.2 hP
-    have := norm_pos_iff.2 hQ
-    positivity
-  rw [← hmp.lintegral_comp_emb (Matrix.ofMeasurableEquiv ι κ ℂ).measurableEmbedding,
-    ← hmp.lintegral_comp_emb (Matrix.ofMeasurableEquiv ι κ ℂ).measurableEmbedding]
-  have h := lintegral_comp_matrix_mul_mul hP hQ (fun A ↦ g (Matrix.of A))
-  simp only [Matrix.ofMeasurableEquiv_apply, Equiv.apply_symm_apply] at h ⊢
-  rw [h, ← mul_assoc, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_pow
-    (norm_nonneg _), ← ENNReal.ofReal_pow (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity),
-    ← ENNReal.ofReal_mul hc.le, mul_inv_cancel₀ hc.ne', ENNReal.ofReal_one, one_mul]
 
 /-- **Change of variables for the congruence of Hermitian matrices**: for an invertible complex
 matrix `C` and an additive Haar measure `μ` on the Hermitian matrices of size `p`, the
@@ -106,17 +84,18 @@ theorem lintegral_comp_selfAdjointConjugate {p : ℕ}
 /-- **Change of variables for the congruence of Hermitian matrices**, in the form
 `∫⁻ T, G T = |det C| ^ (2 p) * ∫⁻ T, G (Cᴴ * T * C)` for an invertible complex matrix `C` and
 an additive Haar measure on the Hermitian matrices of size `p`. -/
-theorem lintegral_eq_det_mul_lintegral_comp_conjTranspose_mul_mul {p : ℕ}
+theorem lintegral_eq_enorm_det_pow_mul_lintegral_comp_selfAdjointConjugate_conjTranspose {p : ℕ}
     (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) [μ.IsAddHaarMeasure]
     {C : Matrix (Fin p) (Fin p) ℂ} (hC : C.det ≠ 0)
     (g : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) → ℝ≥0∞) :
     ∫⁻ T, g T ∂μ = ‖C.det‖ₑ ^ (2 * p) *
       ∫⁻ T, g (Matrix.selfAdjointConjugate ℝ Cᴴ T) ∂μ := by
   have hC' : Cᴴ.det ≠ 0 := by rwa [Matrix.det_conjTranspose, star_ne_zero]
-  have h_pos : 0 < ‖C.det‖ ^ (2 * p) := pow_pos (norm_pos_iff.2 hC) _
+  -- The Jacobian cancels against the inverse factor of `lintegral_comp_selfAdjointConjugate`.
   rw [lintegral_comp_selfAdjointConjugate μ hC', Matrix.det_conjTranspose, norm_star, ← mul_assoc,
-    ← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _), ← ENNReal.ofReal_mul h_pos.le,
-    mul_inv_cancel₀ h_pos.ne', ENNReal.ofReal_one, one_mul]
+    ENNReal.ofReal_inv_of_pos (pow_pos (norm_pos_iff.2 hC) _),
+    ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm,
+    ENNReal.mul_inv_cancel (by simp [hC]) (by simp), one_mul]
 
 end MeasureTheory
 
@@ -148,37 +127,7 @@ private theorem sum_entryBasis_repr_mul (X Y : Fin p → Fin p → ℂ) :
 /-- The product Lebesgue measure on `Fin p → Fin p → ℂ` is the Haar measure of `entryBasis`. -/
 private theorem entryBasis_addHaar :
     (entryBasis p).addHaar = (volume : Measure (Fin p → Fin p → ℂ)) := by
-  have : (volume : Measure (Fin p → ℂ)).IsAddHaarMeasure := ⟨⟩
-  have : (volume : Measure (Fin p → Fin p → ℂ)).IsAddHaarMeasure := ⟨⟩
-  have h_box : volume (parallelepiped Complex.basisOneI) = 1 := by
-    rw [← Complex.addHaar_basisOneI]
-    exact Complex.basisOneI.addHaar_self
-  rw [Module.Basis.addHaar_eq_iff, Module.Basis.coe_parallelepiped, parallelepiped_basis_eq]
-  have h_set : {x : Fin p → Fin p → ℂ | ∀ σ, (entryBasis p).repr x σ ∈ Set.Icc 0 1} =
-      Set.univ.pi fun _ ↦ Set.univ.pi fun _ ↦ parallelepiped Complex.basisOneI := by
-    ext x
-    simp only [parallelepiped_basis_eq, Set.mem_ofPred_eq, Set.mem_pi, Set.mem_univ, true_implies,
-      Sigma.forall, entryBasis_repr, Fin.forall_fin_two, Complex.coe_basisOneI_repr,
-      Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [h_set, volume_pi, Measure.pi_pi]
-  simp_rw [volume_pi, Measure.pi_pi, h_box, Finset.prod_const_one]
-
-/-- For a Hermitian `S`, `∑ i j, conj (S i j) * T i j` is the trace of `S * T`. -/
-private theorem sum_conj_mul_eq_trace (S : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))
-    (T : Matrix (Fin p) (Fin p) ℂ) :
-    ∑ i, ∑ j, conj ((S : Matrix (Fin p) (Fin p) ℂ) i j) * T i j =
-      ((S : Matrix (Fin p) (Fin p) ℂ) * T).trace := by
-  simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ by
-    rw [selfAdjoint.conj_coe_apply S j i]
-
-/-- The trace of a product of two Hermitian matrices is real. -/
-private theorem im_trace_mul (S T : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
-    ((S : Matrix (Fin p) (Fin p) ℂ) * T).trace.im = 0 := by
-  refine Complex.conj_eq_iff_im.1 ?_
-  rw [← Complex.star_def, ← Matrix.trace_conjTranspose, Matrix.conjTranspose_mul,
-    selfAdjoint.conjTranspose_coe, selfAdjoint.conjTranspose_coe, Matrix.trace_mul_comm]
+  simp only [entryBasis, Module.Basis.addHaar_pi, Complex.addHaar_basisOneI, volume_pi]
 
 /-- The real trace form of `i S + T` and `i S' + T'`, for Hermitian `S`, `T`, `S'`, `T'`, is
 `⟪S, S'⟫ + ⟪T, T'⟫`: the cross terms vanish because the trace of a product of Hermitian matrices
@@ -198,7 +147,8 @@ private theorem sum_re_conj_mul_I_smul_add
       Complex.neg_im, Complex.I_re, Complex.I_im, Complex.conj_re, Complex.conj_im]
     ring
   simp only [h, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Complex.re_sum,
-    ← Complex.im_sum, sum_conj_mul_eq_trace, im_trace_mul, sub_zero, add_zero,
+    ← Complex.im_sum, selfAdjoint.sum_conj_mul_eq_trace, selfAdjoint.im_trace_mul, sub_zero,
+    add_zero,
     selfAdjoint.inner_eq_re_trace_mul]
   rw [Matrix.trace_mul_comm (S : Matrix (Fin p) (Fin p) ℂ),
     Matrix.trace_mul_comm (T : Matrix (Fin p) (Fin p) ℂ)]
@@ -235,8 +185,8 @@ private theorem sum_entryBasis_repr_iSMulAdd
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
     ∑ σ, (entryBasis p).repr (iSMulAdd p x) σ * (entryBasis p).repr (iSMulAdd p y) σ =
       ⟪x.1, y.1⟫ + ⟪x.2, y.2⟫ := by
-  rw [sum_entryBasis_repr_mul, ← sum_re_conj_mul_I_smul_add]
-  rfl
+  simp only [sum_entryBasis_repr_mul, iSMulAdd_apply, Matrix.of_symm_apply,
+    sum_re_conj_mul_I_smul_add]
 
 private theorem injective_iSMulAdd : Function.Injective (iSMulAdd p) := by
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
@@ -263,6 +213,12 @@ private def iSMulAddEquiv :
   ((iSMulAdd p).linearEquivOfInjective injective_iSMulAdd
     finrank_prod_hermitianMatrix_eq).toContinuousLinearEquiv
 
+private theorem iSMulAddEquiv_apply
+    (x : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) ×
+      selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
+    iSMulAddEquiv p x = iSMulAdd p x := by
+  simp [iSMulAddEquiv, LinearMap.linearEquivOfInjective_apply]
+
 variable (p) in
 /-- The product of two copies of the orthonormal basis `hermitianOrthonormalBasis p`. -/
 private def prodBasis :
@@ -281,8 +237,6 @@ private theorem inner_prodBasis (a b : (Fin p × Fin p) ⊕ (Fin p × Fin p)) :
 /-- The image of `prodBasis p` under `(S, T) ↦ i S + T` spans a parallelepiped of volume one. -/
 private theorem volume_parallelepiped_iSMulAdd :
     volume (parallelepiped fun a ↦ iSMulAdd p (prodBasis p a)) = 1 := by
-  have : (volume : Measure (Fin p → ℂ)).IsAddHaarMeasure := ⟨⟩
-  have : (volume : Measure (Fin p → Fin p → ℂ)).IsAddHaarMeasure := ⟨⟩
   obtain ⟨ε⟩ : Nonempty ((Σ _ : Fin p, Σ _ : Fin p, Fin 2) ≃
       (Fin p × Fin p) ⊕ (Fin p × Fin p)) := by
     refine Fintype.card_eq.1 ?_
@@ -311,8 +265,6 @@ private theorem map_iSMulAddEquiv_volume :
     Measure.map (iSMulAddEquiv p) (volume : Measure (selfAdjoint.submodule ℝ
       (Matrix (Fin p) (Fin p) ℂ) × selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) =
       volume := by
-  have : (volume : Measure (Fin p → ℂ)).IsAddHaarMeasure := ⟨⟩
-  have : (volume : Measure (Fin p → Fin p → ℂ)).IsAddHaarMeasure := ⟨⟩
   have hb : (prodBasis p).addHaar = (volume : Measure (selfAdjoint.submodule ℝ
       (Matrix (Fin p) (Fin p) ℂ) × selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) := by
     rw [prodBasis, Module.Basis.prod_addHaar, OrthonormalBasis.addHaar_eq_volume,
@@ -328,22 +280,16 @@ private theorem decomposition_const :
       (ENNReal.ofReal ((2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 2)) *
         (ENNReal.ofReal |(2 : ℝ) ^ finrank ℝ (selfAdjoint.submodule ℝ
           (Matrix (Fin p) (Fin p) ℂ))|)⁻¹) = (2 ^ p)⁻¹ := by
-  set a := ENNReal.ofReal ((2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 2))
-  have ha : a * a * 2 ^ p = ENNReal.ofReal |(2 : ℝ) ^ finrank ℝ (selfAdjoint.submodule ℝ
-      (Matrix (Fin p) (Fin p) ℂ))| := by
-    rw [finrank_hermitianMatrix, abs_of_pos (by positivity), ← ENNReal.ofReal_mul (by positivity),
-      ← Real.rpow_add two_pos, ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_pow zero_le_two,
-      ← ENNReal.ofReal_mul (by positivity), ← Real.rpow_natCast, ← Real.rpow_natCast,
-      ← Real.rpow_add two_pos]
-    congr 2
-    push_cast
-    ring
-  have ha₀ : a ≠ 0 := (ENNReal.ofReal_pos.2 (by positivity)).ne'
-  have ha_top : a ≠ ⊤ := ENNReal.ofReal_ne_top
-  rw [← ha, ← mul_assoc, ENNReal.mul_inv (by simp [ha₀]) (by simp),
-    ENNReal.mul_inv (by simp [ha₀]) (by simp [ha_top]), ← mul_assoc, ← mul_assoc,
-    mul_assoc a a a⁻¹, ENNReal.mul_inv_cancel ha₀ ha_top, mul_one,
-    ENNReal.mul_inv_cancel ha₀ ha_top, one_mul]
+  -- Move everything into `ENNReal.ofReal` of a real power of `2` and compare exponents.
+  rw [finrank_hermitianMatrix, abs_of_pos (by positivity), ← ENNReal.ofReal_inv_of_pos
+    (by positivity), ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity),
+    ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_pow zero_le_two,
+    ← ENNReal.ofReal_inv_of_pos (by positivity)]
+  congr 1
+  simp only [← Real.rpow_natCast, ← Real.rpow_neg zero_le_two, ← Real.rpow_add two_pos]
+  congr 1
+  push_cast
+  ring
 
 /-- **Lebesgue measure on square matrices in skew-Hermitian and Hermitian coordinates.** Writing a
 complex matrix of size `p` as `Z = i S + T / 2`, with `S` and `T` Hermitian, so that `i S` is its
@@ -363,9 +309,11 @@ theorem lintegral_eq_lintegral_hermitianLebesgue_I_smul_add {g : Matrix (Fin p) 
       (x.2 : Matrix (Fin p) (Fin p) ℂ)) := by
     rw [← (Matrix.volume_preserving_ofMeasurableEquiv _ _ ℂ).lintegral_comp_emb
       (MeasurableEquiv.measurableEmbedding _), ← map_iSMulAddEquiv_volume]
-    exact (lintegral_map (f := fun a ↦ g (Matrix.ofMeasurableEquiv _ _ ℂ a))
+    rw [lintegral_map (f := fun a ↦ g (Matrix.ofMeasurableEquiv _ _ ℂ a))
       (hg.comp (Matrix.ofMeasurableEquiv _ _ ℂ).measurable)
-      (iSMulAddEquiv p).continuous.measurable).trans rfl
+      (iSMulAddEquiv p).continuous.measurable]
+    simp only [iSMulAddEquiv_apply, iSMulAdd_apply, Matrix.ofMeasurableEquiv_apply,
+      Equiv.apply_symm_apply]
   rw [h_arrays, Measure.volume_eq_prod, lintegral_prod_symm _ hg'.aemeasurable]
   simp_rw [volume_hermitianMatrix_eq_smul_hermitianLebesgue, lintegral_smul_measure, smul_eq_mul]
   rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← decomposition_const, mul_assoc,

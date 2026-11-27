@@ -29,6 +29,8 @@ carries the normalized Haar measure of the first to that of the second.
   of the standard bases of `ℝ` and `ℝ × ℝ` are `volume`.
 * `Complex.addHaar_basisOneI` — the additive Haar measure of the basis `(1, i)` of `ℂ` is
   `volume`.
+* `Module.Basis.addHaar_pi` — the additive Haar measure of a product basis `Pi.basis b` is the
+  product of the additive Haar measures of the factors.
 * `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
   is the Dirac mass at `0`.
 * `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
@@ -82,6 +84,22 @@ theorem addHaar_finTwoProd : (Basis.finTwoProd ℝ).addHaar = volume := by
       finSumFinEquiv = Basis.finTwoProd ℝ :=
     Basis.eq_of_apply_eq (Fin.forall_fin_two.2 ⟨rfl, rfl⟩)
   rw [← h, addHaar_reindex, prod_addHaar, addHaar_singleton, Measure.volume_eq_prod]
+
+/-- The additive Haar measure attached to the product basis `Pi.basis b` of `∀ i, Es i` is the
+product of the additive Haar measures of the bases `b i`, because the parallelepiped of
+`Pi.basis b` is the product of the parallelepipeds of the `b i`. -/
+theorem addHaar_pi {η : Type*} [Fintype η] {ιs : η → Type*} [∀ i, Fintype (ιs i)]
+    {Es : η → Type*} [∀ i, NormedAddCommGroup (Es i)] [∀ i, NormedSpace ℝ (Es i)]
+    [∀ i, MeasurableSpace (Es i)] [∀ i, BorelSpace (Es i)] [∀ i, FiniteDimensional ℝ (Es i)]
+    (b : ∀ i, Basis (ιs i) ℝ (Es i)) :
+    (Pi.basis b).addHaar = Measure.pi fun i ↦ (b i).addHaar := by
+  rw [addHaar_eq_iff, coe_parallelepiped, parallelepiped_basis_eq]
+  have h : {x : ∀ i, Es i | ∀ σ, (Pi.basis b).repr x σ ∈ Set.Icc 0 1} =
+      Set.univ.pi fun i ↦ parallelepiped (b i) := by
+    ext x
+    simp [parallelepiped_basis_eq, Sigma.forall, Pi.basis_repr]
+  rw [h, Measure.pi_pi]
+  simp [addHaar_self]
 
 /-- The normalized Haar measure of a basis indexed by an empty type is the Dirac mass at the
 origin of the (zero) space. -/
