@@ -12,7 +12,8 @@ import Mathlib.Algebra.Algebra.Tower
 # Transport of ideals along ring homomorphisms
 
 Taking radicals before extending an ideal does not change the radical of its extension. Extension
-commutes with finite products of ideals. Powers of ideals commute with pullback along a ring
+commutes with finite products of ideals. Pulling back along a ring homomorphism with an inverse is
+pushing forward along the inverse, products and powers of ideals commute with pullback along a ring
 equivalence, a homomorphism of possibly noncommutative rings carrying `I` into `J` carries each
 power of `I` into the same power of `J`, the powers of the image of an ideal along a surjective
 homomorphism of possibly noncommutative rings lie in the image of its powers, and extension along a
@@ -46,6 +47,18 @@ theorem radical_map_radical {R S F : Type*} [CommSemiring R] [CommSemiring S]
     (I.radical.map f).radical = (I.map f).radical :=
   le_antisymm (radical_le_radical_iff.mpr (map_radical_le f))
     (radical_mono (map_mono le_radical))
+
+/-- Pulling back an ideal along a ring homomorphism `σ` with inverse `σ'` is pushing it forward
+along `σ'`; compare `Ideal.comap_symm`. -/
+theorem comap_eq_map_of_ringHomInvPair {R S : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
+    {σ' : S →+* R} [RingHomInvPair σ σ'] (I : Ideal S) : I.comap σ = I.map σ' :=
+  comap_symm (RingHomInvPair.toRingEquiv σ σ').symm
+
+/-- Pullback along a ring equivalence commutes with products of ideals. -/
+@[simp]
+theorem comap_mul_of_ringEquiv {R S : Type*} [CommSemiring R] [CommSemiring S]
+    (I J : Ideal R) (e : S ≃+* R) : (I * J).comap e = I.comap e * J.comap e := by
+  rw [← map_symm, ← map_symm, ← map_symm, Ideal.map_mul]
 
 /-- Pullback along a ring equivalence commutes with powers of ideals. -/
 @[simp]
