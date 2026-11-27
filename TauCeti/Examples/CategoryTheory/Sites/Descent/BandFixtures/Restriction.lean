@@ -91,8 +91,11 @@ theorem chain_generator_comp :
 
 /-- Restriction along `U₁ ⟶ U₀` kills the section of the coefficient `2` of `C₄`. -/
 theorem chain_two_killed : restrict f₀₁ (groupSection chainPresheaf U₀ (c₄ 2)) = 1 := by
-  rw [restrict_groupSection, chainPresheaf_map_f₀₁]
-  exact map_one _
+  -- Reduction mod 2 sends `2` to `0`, and `c₂ 0` unfolds (`c₂` is an abbreviation) to
+  -- `Multiplicative.ofAdd 0 = 1`.
+  have h₂ : ZMod.castHom (show 2 ∣ 4 by decide) (ZMod 2) 2 = 0 := by decide
+  have h₀ : c₂ 0 = 1 := ofAdd_zero (α := ZMod 2)
+  rw [restrict_groupSection, chainPresheaf_map_f₀₁, h₂, h₀, map_one]
 
 /-- The section of the coefficient `2` of `C₄` is not the unit section. -/
 theorem groupSection_two_ne_one : groupSection chainPresheaf U₀ (c₄ 2) ≠ 1 := by
