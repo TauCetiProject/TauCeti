@@ -682,15 +682,27 @@ theorem extendByZeroCLM_cutoffRestrictCLM (hχ : tsupport χ ⊆ U) :
         smulLeftCLM χ s) :=
   extendByZeroCLM_relocalizeCLM _ _ _
 
-/-- A bundle test whose closed support lies in `U` is the extension by zero of a test on `U`. -/
-theorem exists_extendByZeroCLM_eq_of_tsupport_subset {s : TauCeti.BundleTest I F V}
-    (hs : closure {x | s x ≠ 0} ⊆ U) :
-    ∃ t, extendByZeroCLM (I := I) (F := F) (V := V) (U := U) t = s := by
-  obtain ⟨s, rfl⟩ := (ofCompactlySupported I F V).surjective s
-  have hs' : s.val.tsupport ⊆ U := by
-    simpa only [coe_ofCompactlySupported, ← ContMDiffSection.tsupport_def] using hs
-  obtain ⟨t, ht⟩ := (mem_range_extendByZeroLinearMap_iff s).2 hs'
-  exact ⟨ofCompactlySupported I F _ t, by rw [extendByZeroCLM_ofCompactlySupported, ht]⟩
+/-- The image of extension by zero consists exactly of the bundle tests whose closed support
+lies in `U`. -/
+theorem mem_range_extendByZeroCLM_iff (s : TauCeti.BundleTest I F V) :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    s ∈ LinearMap.range ((extendByZeroCLM (I := I) (F := F) (V := V) (U := U) :
+        TauCeti.BundleTest I F (c *ᵖ V) →L[ℝ] TauCeti.BundleTest I F V) :
+        TauCeti.BundleTest I F (c *ᵖ V) →ₗ[ℝ] TauCeti.BundleTest I F V) ↔
+      closure {x | s x ≠ 0} ⊆ U := by
+  intro _
+  constructor
+  · rintro ⟨t, rfl⟩
+    rw [ContinuousLinearMap.coe_coe, tsupport_extendByZeroCLM]
+    rintro _ ⟨x, _, rfl⟩
+    exact x.property
+  · intro hs
+    obtain ⟨s, rfl⟩ := (ofCompactlySupported I F V).surjective s
+    have hs' : s.val.tsupport ⊆ U := by
+      simpa only [coe_ofCompactlySupported, ← ContMDiffSection.tsupport_def] using hs
+    obtain ⟨t, ht⟩ := (mem_range_extendByZeroLinearMap_iff s).2 hs'
+    exact ⟨ofCompactlySupported I F _ t, by
+      rw [ContinuousLinearMap.coe_coe, extendByZeroCLM_ofCompactlySupported, ht]⟩
 
 end Cutoff
 

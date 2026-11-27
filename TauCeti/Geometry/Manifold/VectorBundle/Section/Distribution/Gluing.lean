@@ -51,7 +51,7 @@ the test topology is the final locally convex topology of these stages
 (`TauCeti.BundleTest.continuous_iff_continuous_comp`). Uniqueness is the localization principle
 (`TauCeti.BundleTest.dsupport_eq_empty_iff`): a functional whose restrictions to the `U i` vanish
 has empty support, since every test supported in `U i` extends a test on `U i`
-(`TauCeti.BundleTest.exists_extendByZeroCLM_eq_of_tsupport_subset`).
+(`TauCeti.BundleTest.mem_range_extendByZeroCLM_iff`).
 
 This adapts the proof of the Euclidean gluing theorem `Distribution.existsUnique_gluing`
 (`TauCeti/Analysis/Distribution/Gluing.lean`) from test functions on open sets of a normed space
@@ -187,10 +187,10 @@ theorem eq_of_forall_restrictDualCLM_eq (hU : ⨆ i, U i = ⊤)
     (eq_empty_of_forall_notMem fun x ↦ ?_)) s
   obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (hU ▸ Opens.mem_top x : x ∈ ⨆ i, U i)
   refine notMem_dsupport_iff.2 ⟨U i, (U i).isOpen, hi, isVanishingOn_iff.2 fun t ht ↦ ?_⟩
-  obtain ⟨t, rfl⟩ := exists_extendByZeroCLM_eq_of_tsupport_subset ht
+  obtain ⟨t, rfl⟩ := (mem_range_extendByZeroCLM_iff _).2 ht
   have h' := DFunLike.congr_fun (h i) t
   rw [restrictDualCLM_apply, restrictDualCLM_apply] at h'
-  rw [_root_.sub_apply, h', sub_self]
+  rw [ContinuousLinearMap.coe_coe, _root_.sub_apply, h', sub_self]
 
 /-- **Gluing.** Let the open sets `U i` cover `M`. Continuous linear functionals `T i` on the
 bundle tests of `V|_{U i}` that agree on tests of `U i` and of `U j` extending by zero to the same
