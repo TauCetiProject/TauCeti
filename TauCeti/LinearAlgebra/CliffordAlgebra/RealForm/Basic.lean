@@ -358,10 +358,7 @@ end CliffordAlgebra
 
 private def realCliffordSplitIndexEquiv (p₁ p₂ q₁ q₂ : ℕ) :
     Fin ((p₁ + p₂) + (q₁ + q₂)) ≃ Fin (p₁ + q₁) ⊕ Fin (p₂ + q₂) :=
-  finSumFinEquiv.symm |>.trans
-    (Equiv.sumCongr finSumFinEquiv.symm finSumFinEquiv.symm) |>.trans
-    (Equiv.sumSumSumComm (Fin p₁) (Fin p₂) (Fin q₁) (Fin q₂)) |>.trans
-    (Equiv.sumCongr finSumFinEquiv finSumFinEquiv)
+  (finSumFinSumFinComm p₁ p₂ q₁ q₂).trans finSumFinEquiv.symm
 
 private def realCliffordSplitLinearEquiv (p₁ p₂ q₁ q₂ : ℕ) :
     (Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) ≃ₗ[ℝ]
@@ -470,6 +467,13 @@ theorem realCliffordFormCongr_apply {p q p' q' : ℕ} (hp : p = p') (hq : q = q'
     realCliffordFormCongr hp hq x i = x (i.cast (by rw [hp, hq])) := by
   subst hp hq
   rfl
+
+/-- `realCliffordFormCongr` along self-equalities is the identity isometry. -/
+@[simp]
+theorem realCliffordFormCongr_rfl {p q : ℕ} (hp : p = p) (hq : q = q) :
+    realCliffordFormCongr hp hq = QuadraticMap.IsometryEquiv.refl (realCliffordForm p q) :=
+  DFunLike.ext _ _ fun _ ↦ funext fun _ ↦ by
+    rw [realCliffordFormCongr_apply, QuadraticMap.IsometryEquiv.refl_apply, Fin.cast_eq_self]
 
 /-- The coordinate isometry which splits a real signature form into its positive-definite block,
 the first `p` coordinates, and its negative-definite block, the last `q` coordinates. -/
@@ -675,12 +679,6 @@ def realCliffordBlockSwapIsometry (p q : ℕ) :
     (realCliffordForm (p + q) 0).IsometryEquiv (realCliffordForm (q + p) 0) :=
   realCliffordFormZeroReindex (finAddFlip : Fin (q + p) ≃ Fin (p + q))
 
-/-- `realCliffordBlockSwapIsometry` equals `realCliffordFormZeroReindex` along `finAddFlip`. -/
-theorem realCliffordBlockSwapIsometry_eq_reindex (p q : ℕ) :
-    realCliffordBlockSwapIsometry p q =
-      realCliffordFormZeroReindex (finAddFlip : Fin (q + p) ≃ Fin (p + q)) :=
-  (rfl)
-
 /-- `realCliffordBlockSwapIsometry` reads each coordinate through `finAddFlip`. -/
 @[simp]
 theorem realCliffordBlockSwapIsometry_apply (p q : ℕ)
@@ -717,14 +715,6 @@ def realCliffordNestedSplitIsometry (a b c d : ℕ) :
   (realCliffordSplitIsometry (a + b) (c + d) 0 0).trans
     ((realCliffordSplitIsometry a b 0 0).prod (realCliffordSplitIsometry c d 0 0))
 
-/-- `realCliffordNestedSplitIsometry` factors as splitting the outer pair of blocks followed by
-splitting both inner pairs. -/
-theorem realCliffordNestedSplitIsometry_eq (a b c d : ℕ) :
-    realCliffordNestedSplitIsometry a b c d =
-      (realCliffordSplitIsometry (a + b) (c + d) 0 0).trans
-        ((realCliffordSplitIsometry a b 0 0).prod (realCliffordSplitIsometry c d 0 0)) :=
-  (rfl)
-
 /-- The inverse join isometry `(realCliffordNestedSplitIsometry a b c d).symm` factors as joining
 both inner pairs followed by joining the outer pair. -/
 theorem realCliffordNestedSplitIsometry_symm_eq (a b c d : ℕ) :
@@ -733,7 +723,7 @@ theorem realCliffordNestedSplitIsometry_symm_eq (a b c d : ℕ) :
         (realCliffordSplitIsometry c d 0 0).symm).trans
         (realCliffordSplitIsometry (a + b) (c + d) 0 0).symm :=
   DFunLike.ext _ _ fun ⟨x, y⟩ ↦ by
-    rw [QuadraticMap.IsometryEquiv.symm_apply_eq, realCliffordNestedSplitIsometry_eq,
+    rw [QuadraticMap.IsometryEquiv.symm_apply_eq, realCliffordNestedSplitIsometry,
       QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.trans_apply]
     simp only [IsometryEquiv.prod_apply, QuadraticMap.IsometryEquiv.apply_symm_apply]
 
@@ -827,16 +817,6 @@ def realCliffordMiddleSwapIsometry (p q : ℕ) :
       (realCliffordForm p 0) (realCliffordForm q 0)).trans
       (realCliffordNestedSplitIsometry p p q q).symm
 
-/-- `realCliffordMiddleSwapIsometry` factors as the nested split, `prodProdProdComm`, and the
-nested join. -/
-theorem realCliffordMiddleSwapIsometry_eq (p q : ℕ) :
-    realCliffordMiddleSwapIsometry p q =
-      (realCliffordNestedSplitIsometry p q p q).trans
-        ((IsometryEquiv.prodProdProdComm (realCliffordForm p 0) (realCliffordForm q 0)
-          (realCliffordForm p 0) (realCliffordForm q 0)).trans
-          (realCliffordNestedSplitIsometry p p q q).symm) :=
-  (rfl)
-
 /-- `realCliffordMiddleSwapIsometry` exchanges the middle two blocks of a four-block
 concatenation. -/
 @[simp]
@@ -856,6 +836,8 @@ theorem realCliffordMiddleSwapIsometry_append (p q : ℕ)
 theorem realCliffordMiddleSwapIsometry_eq_reindex (p q : ℕ) :
     realCliffordMiddleSwapIsometry p q =
       realCliffordFormZeroReindex (finSumFinSumFinComm p p q q) := by
+  -- `realCliffordForm ((p + p) + (q + q)) 0` lives on `Fin (((p + p) + (q + q)) + 0) → ℝ`,
+  -- which is `Fin ((p + p) + (q + q)) → ℝ` by definition.
   refine DFunLike.ext _ _ fun x ↦ funext fun (i : Fin ((p + p) + (q + q))) ↦ ?_
   rw [realCliffordMiddleSwapIsometry, QuadraticMap.IsometryEquiv.trans_apply,
     QuadraticMap.IsometryEquiv.trans_apply, IsometryEquiv.prodProdProdComm_toFun,

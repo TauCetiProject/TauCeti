@@ -235,14 +235,9 @@ theorem coe_symm_spinToSpecialOrthogonal_matrixSpecialOrthogonalSpinDiagonalLift
   have hsum (a b : Fin k → ℝ) :
       Sum.elim a b ∘ finSumFinEquiv.symm = (Fin.append a b : Fin (k + k) → ℝ) := by
     rw [← happend a b, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
-  rw [← Fin.append_castAdd_natAdd (m := k) (n := k) (f := x), LinearEquiv.coe_coe,
-    realCliffordSpecialOrthogonalBlockSum_apply_append,
-    matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
-    matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
-    _root_.Matrix.toLin'_apply, _root_.Matrix.toLin'_apply, _root_.Matrix.toLin'_apply,
-    _root_.Matrix.reindex_apply, _root_.Matrix.submatrix_mulVec_equiv, Equiv.symm_symm, happend,
-    _root_.Matrix.fromBlocks_mulVec]
-  simp [hsum]
+  rw [← Fin.append_castAdd_natAdd (m := k) (n := k) (f := x), LinearEquiv.coe_coe]
+  simp [realCliffordSpecialOrthogonalBlockSum_apply_append, LinearMap.funLeft,
+    _root_.Matrix.fromBlocks_mulVec, happend, hsum]
 
 /-! ### Uniqueness of continuous lifts -/
 

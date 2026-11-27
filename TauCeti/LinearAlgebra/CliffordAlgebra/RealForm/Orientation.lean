@@ -81,7 +81,10 @@ theorem det_realCliffordBlockSwapIsometry (p q : ℕ) :
       (-1 : ℝ) ^ (p * q) := by
   have hflip : (finAddFlip : Fin (q + p) ≃ Fin (p + q)).symm = finAddFlip := by
     ext i; simp [finAddFlip]
-  rw [realCliffordBlockSwapIsometry_eq_reindex, det_realCliffordFormZeroReindex_trans_congr,
+  have hswap : realCliffordBlockSwapIsometry p q =
+      realCliffordFormZeroReindex (finAddFlip : Fin (q + p) ≃ Fin (p + q)) :=
+    DFunLike.ext _ _ fun _ ↦ funext fun _ ↦ by simp
+  rw [hswap, det_realCliffordFormZeroReindex_trans_congr,
     hflip, sign_finAddFlip_trans_finCongr]
   simp
 
@@ -90,7 +93,9 @@ theorem det_realCliffordBlockSwapIsometry_self (k : ℕ) :
     LinearMap.det (realCliffordBlockSwapIsometry k k).toLinearMap = (-1 : ℝ) ^ k := by
   have h : (realCliffordBlockSwapIsometry k k).trans
       (realCliffordFormCongr (add_comm k k) rfl) = realCliffordBlockSwapIsometry k k :=
-    DFunLike.ext _ _ fun _ ↦ funext fun _ ↦ by simp
+    DFunLike.ext _ _ fun _ ↦ by
+      rw [realCliffordFormCongr_rfl, QuadraticMap.IsometryEquiv.trans_apply,
+        QuadraticMap.IsometryEquiv.refl_apply]
   rw [← h, det_realCliffordBlockSwapIsometry]
   rcases Nat.even_or_odd k with hk | hk
   · rw [(hk.mul_left k).neg_one_pow, hk.neg_one_pow]

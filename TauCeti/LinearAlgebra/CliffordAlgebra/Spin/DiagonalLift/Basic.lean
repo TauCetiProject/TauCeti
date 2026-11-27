@@ -145,15 +145,7 @@ theorem diagSpinLift_specialOrthogonalGroupProd {M₁ M₂ : Type*} [AddCommGrou
   obtain ⟨x₂, rfl⟩ := hsurj₂ A₂
   rw [← spinToSpecialOrthogonal_spinGroupProd Q₁ Q₂ (x₁, x₂), diagSpinLift_spinToSpecialOrthogonal,
     diagSpinLift_spinToSpecialOrthogonal, diagSpinLift_spinToSpecialOrthogonal]
-  have hc := commute_spinGroupMap_inl_spinGroupMap_inr (Q₁.prod Q₂) (Q₁.prod Q₂)
-    ((Isometry.inr Q₁ Q₂).spinGroupMap x₂) ((Isometry.inl Q₁ Q₂).spinGroupMap x₁)
-  simp only [Isometry.spinGroupMap_spinGroupMap] at hc
-  simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
-    Isometry.spinGroupMap_spinGroupMap, IsometryEquiv.prodProdProdComm_comp_inl_comp_inl,
-    IsometryEquiv.prodProdProdComm_comp_inl_comp_inr,
-    IsometryEquiv.prodProdProdComm_comp_inr_comp_inl,
-    IsometryEquiv.prodProdProdComm_comp_inr_comp_inr]
-  exact hc.mul_mul_mul_comm _ _
+  exact (spinGroupEquiv_prodProdProdComm_spinGroupProd Q₁ Q₁ Q₂ Q₂ x₁ x₁ x₂ x₂).symm
 
 /-- Evaluating `diagSpinLift` on the projection of `x ∈ Spin(Q)` multiplies the images of `x`
 under the two orthogonal summand inclusions. -/

@@ -120,7 +120,8 @@ theorem isCoveringMap_spinToSpecialOrthogonal_realCliffordForm
     (n : ℕ) :
     IsCoveringMap (spinToSpecialOrthogonal (realCliffordForm n 0)) := by
   obtain rfl | hn := n.eq_zero_or_pos
-  · have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
+  · -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition.
+    have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
     exact .of_discreteTopology _
   · have : NeZero n := ⟨hn.ne'⟩
     have h := isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n

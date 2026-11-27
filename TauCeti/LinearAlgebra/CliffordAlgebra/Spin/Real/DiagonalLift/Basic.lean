@@ -182,12 +182,7 @@ theorem realCliffordSpinDiagonalLift_congr {k₁ k₂ : ℕ} (hk : k₁ = k₂)
       realCliffordSpinDiagonalLift k₂
         ((realCliffordFormCongr hk rfl).specialOrthogonalGroupCongr g) := by
   subst hk
-  have hcongr (m : ℕ) : realCliffordFormCongr (rfl : m = m) (rfl : (0 : ℕ) = 0) =
-      QuadraticMap.IsometryEquiv.refl (realCliffordForm m 0) :=
-    DFunLike.ext _ _ fun _ ↦ funext fun _ ↦ by
-      rw [realCliffordFormCongr_apply, QuadraticMap.IsometryEquiv.refl_apply]
-      rfl
-  rw [hcongr k₁, hcongr (k₁ + k₁), IsometryEquiv.spinGroupEquiv_refl,
+  rw [realCliffordFormCongr_rfl, realCliffordFormCongr_rfl, IsometryEquiv.spinGroupEquiv_refl,
     IsometryEquiv.specialOrthogonalGroupCongr_refl, MulEquiv.refl_apply, MulEquiv.refl_apply]
 
 -- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.

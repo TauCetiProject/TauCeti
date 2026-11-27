@@ -768,8 +768,8 @@ theorem spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum (
         (realCliffordNestedSplitIsometry p p q q).symm :=
     DFunLike.ext _ _ fun x ↦ by
       rw [QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.trans_apply,
-        realCliffordMiddleSwapIsometry_eq, QuadraticMap.IsometryEquiv.trans_apply,
-        QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.apply_symm_apply]
+        realCliffordNestedSplitIsometry_symm_apply, realCliffordMiddleSwapIsometry_append,
+        IsometryEquiv.prodProdProdComm_toFun, realCliffordNestedSplitIsometry_symm_apply]
   rw [← realCliffordNestedSplitIsometry_symm_spinGroupEquiv p q p q, ← MulEquiv.trans_apply,
     ← IsometryEquiv.spinGroupEquiv_trans, he, IsometryEquiv.spinGroupEquiv_trans,
     MulEquiv.trans_apply, spinGroupEquiv_prodProdProdComm_spinGroupProd,
