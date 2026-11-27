@@ -73,13 +73,15 @@ It is reducible so that instance search sees the componentwise group law of
 @[expose, reducible] def prod (A B : AbelianScheme S) : AbelianScheme S where
   toOver := A.toOver ⊗ B.toOver
   grpObj := inferInstance
-  isProper := MorphismProperty.comp_mem @IsProper _ _
-    (inferInstanceAs (IsProper (pullback.fst A.toOver.hom B.toOver.hom))) A.isProper
-  smooth := MorphismProperty.comp_mem @Smooth _ _
-    (inferInstanceAs (Smooth (pullback.fst A.toOver.hom B.toOver.hom))) A.smooth
-  geometricallyConnected :=
-    have : GeometricallyConnected (pullback.fst A.toOver.hom B.toOver.hom) := inferInstance
-    GeometricallyConnected.comp (pullback.fst A.toOver.hom B.toOver.hom) A.toOver.hom
+  isProper := by
+    rw [Over.tensorObj_hom]
+    exact MorphismProperty.comp_mem @IsProper _ _ inferInstance A.isProper
+  smooth := by
+    rw [Over.tensorObj_hom]
+    exact MorphismProperty.comp_mem @Smooth _ _ inferInstance A.smooth
+  geometricallyConnected := by
+    rw [Over.tensorObj_hom]
+    exact GeometricallyConnected.comp _ _
 
 @[simp]
 lemma prod_toOver (A B : AbelianScheme S) : (A.prod B).toOver = A.toOver ⊗ B.toOver :=
@@ -96,9 +98,8 @@ of relative dimension `m + n`. -/
 instance smoothOfRelativeDimension_prod (A B : AbelianScheme S) (m n : ℕ)
     [SmoothOfRelativeDimension m A.toOver.hom] [SmoothOfRelativeDimension n B.toOver.hom] :
     SmoothOfRelativeDimension (m + n) (A.prod B).toOver.hom := by
-  rw [add_comm]
-  exact inferInstanceAs
-    (SmoothOfRelativeDimension (n + m) (pullback.fst A.toOver.hom B.toOver.hom ≫ A.toOver.hom))
+  rw [prod_toOver, Over.tensorObj_hom, add_comm]
+  infer_instance
 
 namespace prod
 
