@@ -320,18 +320,18 @@ private theorem neg_one_pow_mul_boundary_eq (q q' : criticalPoints 𝓘(ℝ, E) 
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one h]
     simp
 
-/-- The same comparison with the factor `(-1) ^ n` on the other side: when the coefficient of `q`
-in the Morse boundary of `q'` is nonzero, `(-1) ^ (ind q * n) * (-1) ^ n` is
-`(-1) ^ (ind q' * n)`. -/
+/-- The same comparison with the factor `(-1) ^ n` on the other side, and the index as the right
+factor of the exponent: when the coefficient of `q` in the Morse boundary of `q'` is nonzero,
+`(-1) ^ (n * ind q) * (-1) ^ n` is `(-1) ^ (n * ind q')`. -/
 private theorem neg_one_pow_mul_neg_one_pow_mul_boundary_eq (q q' : criticalPoints 𝓘(ℝ, E) f₁)
     (n : ℕ) (t : R) :
-    (-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f₁ q * n) *
+    (-1) ^ (n * manifoldMorseIndex 𝓘(ℝ, E) f₁ q) *
         ((-1) ^ n * (t * hX₁.signedMorseBoundary 𝔬₁ hf₁ R (Finsupp.single q' 1) q)) =
-      (-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f₁ q' * n) *
+      (-1) ^ (n * manifoldMorseIndex 𝓘(ℝ, E) f₁ q') *
         (t * hX₁.signedMorseBoundary 𝔬₁ hf₁ R (Finsupp.single q' 1) q) := by
   rw [signedMorseBoundary_single_apply, one_mul]
   by_cases h : manifoldMorseIndex 𝓘(ℝ, E) f₁ q' = manifoldMorseIndex 𝓘(ℝ, E) f₁ q + 1
-  · rw [h, add_mul, one_mul, pow_add]
+  · rw [h, mul_add, mul_one, pow_add]
     ring
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one h]
     simp
@@ -372,8 +372,7 @@ private theorem signedMorseDiagonalMap_swap_comp_signedMorseBoundary_eq
   rw [add_comm]
   congr 1
   · refine Finset.sum_congr rfl fun r' _ ↦ ?_
-    rw [mul_comm (manifoldMorseIndex 𝓘(ℝ, E) f₁ q), mul_comm (manifoldMorseIndex 𝓘(ℝ, E) f₁ q),
-      neg_one_pow_mul_neg_one_pow_mul_boundary_eq r r']
+    rw [neg_one_pow_mul_neg_one_pow_mul_boundary_eq r r']
     ring
   · refine Finset.sum_congr rfl fun q' _ ↦ ?_
     rw [neg_one_pow_mul_boundary_eq q q']
