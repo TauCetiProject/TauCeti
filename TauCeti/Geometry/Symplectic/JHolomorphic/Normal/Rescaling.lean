@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.FDeriv.NormalSegment
 import TauCeti.Analysis.Calculus.IteratedFDeriv.SliceLimit
+import TauCeti.Analysis.Calculus.MeanValue.Quadratic
 import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
@@ -69,6 +70,17 @@ tubular map defined on a disk bundle. This file proves:
   linear map such as a block projection through the average), so that it also serves the normal
   dilations of maps. The convergence theorems take `N` complete, so that the average in
   Hadamard's lemma is a Bochner integral;
+* **the rate `O(a)`**: if moreover `J` is `C²`, then `‖δ_a^* J(p) - J_N(p)‖ ≤ C |a|` for `p` in a
+  compact set `K` as above and all small `a ≠ 0`
+  (`TauCeti.exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen`,
+  `TauCeti.exists_forall_norm_normalDilation_sub_normalLinearization_le`). At each point the
+  constant is explicit:
+  `‖δ_a^* J(z, W) - J_N(z, W)‖ ≤ |a| (‖J(z, a W)‖ + M₁ ‖W‖ + (M₂ / 2) ‖W‖²)` for a bound `M₁`
+  on the derivative of `J` on the normal segment from `(z, 0)` to `(z, a W)` and a Lipschitz
+  constant `M₂` of that derivative relative to `(z, 0)`, such as a bound on the second derivative
+  (`TauCeti.norm_normalDilation_sub_normalLinearization_le`). The constant `M₂` enters through the
+  block `E → N`, where `a⁻¹ J_NE(z, a W)` differs from `∂_W J_NE(z, 0)[W]` by a Taylor remainder
+  divided by `a`;
 * the base block of `δ_a^* J` at `(z, W)` is that of `J` at `(z, a W)`
   (`TauCeti.fst_comp_normalDilation_comp_inl`), so it converges to the base block of `J` on the
   zero section uniformly on compact sets as `a → 0` when `J` is only continuous along the zero
@@ -411,6 +423,166 @@ theorem contDiffOn_normalLinearization {J : E × N → E × N →L[ℝ] E × N} 
 theorem contDiff_normalLinearization {J : E × N → E × N →L[ℝ] E × N} {m n : WithTop ℕ∞}
     (hJ : ContDiff ℝ n J) (hmn : m + 1 ≤ n) : ContDiff ℝ m (normalLinearization J) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_normalLinearization hJ.contDiffAt hmn
+
+/-! ### The rate of convergence of the normal dilations -/
+
+/-- The difference of the normal dilation and the normal linearization in blocks: with
+`A = J(z, a W)`, `A₀ = J(z, 0)` and `D = DJ(z, 0)`, its base component is
+`(A - A₀)(v, 0) + a A(0, n)` and its normal component is
+`a⁻¹ (A - A₀ - D(0, a W))(v, 0) + (A - A₀)(0, n)`, read through the projections. -/
+private theorem normalDilation_sub_normalLinearization_apply {J : E × N → E × N →L[ℝ] E × N}
+    {a : ℝ} (ha : a ≠ 0) {z : E} {W : N} (hJ₀ : ∀ v, (J (z, 0) (v, 0)).2 = 0) (v : E × N) :
+    (normalDilation J a (z, W) - normalLinearization J (z, W)) v =
+      (((J (z, a • W) - J (z, 0)) (v.1, 0)).1 + a • (J (z, a • W) (0, v.2)).1,
+        a⁻¹ • ((J (z, a • W) - J (z, 0) - fderiv ℝ J (z, 0) ((0 : E), a • W)) (v.1, 0)).2 +
+          ((J (z, a • W) - J (z, 0)) (0, v.2)).2) := by
+  have hD : fderiv ℝ J (z, 0) ((0 : E), a • W) = a • fderiv ℝ J (z, 0) ((0 : E), W) := by
+    rw [show ((0 : E), a • W) = a • ((0 : E), W) by simp, map_smul]
+  have hv : (v.1, a • v.2) = (v.1, 0) + a • ((0 : E), v.2) := by simp
+  have h₀ := hJ₀ v.1
+  simp only [sub_apply, smul_apply, normalDilation_apply, normalLinearization_apply, hv, map_add,
+    map_smul, hD]
+  refine Prod.ext ?_ ?_
+  · simp only [Prod.fst_sub, Prod.fst_add, Prod.smul_fst]
+    abel
+  · simp only [Prod.snd_sub, Prod.snd_add, Prod.smul_snd, smul_add, smul_sub, inv_smul_smul₀ ha,
+      h₀, sub_zero]
+    abel
+
+/-- The rate of convergence of the normal dilations from bounds on the increment
+`A - A₀ = J(z, a W) - J(z, 0)` and on the Taylor remainder `A - A₀ - DJ(z, 0)(0, a W)`. -/
+private theorem norm_normalDilation_sub_normalLinearization_le_of_norm_sub_le
+    {J : E × N → E × N →L[ℝ] E × N} {a M₁ M₂ : ℝ} (ha : a ≠ 0) {z : E} {W : N}
+    (hJ₀ : ∀ v, (J (z, 0) (v, 0)).2 = 0) (hM₁ : 0 ≤ M₁) (hM₂ : 0 ≤ M₂)
+    (h₁ : ‖J (z, a • W) - J (z, 0)‖ ≤ |a| * M₁ * ‖W‖)
+    (h₂ : ‖J (z, a • W) - J (z, 0) - fderiv ℝ J (z, 0) ((0 : E), a • W)‖ ≤
+      |a| * (|a| * (M₂ / 2 * ‖W‖ ^ 2))) :
+    ‖normalDilation J a (z, W) - normalLinearization J (z, W)‖ ≤
+      |a| * (‖J (z, a • W)‖ + M₁ * ‖W‖ + M₂ / 2 * ‖W‖ ^ 2) := by
+  set A := J (z, a • W)
+  set R := A - J (z, 0) - fderiv ℝ J (z, 0) ((0 : E), a • W)
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  have hv₁ : ‖((v.1, 0) : E × N)‖ ≤ ‖v‖ := by simpa using norm_fst_le v
+  have hv₂ : ‖((0, v.2) : E × N)‖ ≤ ‖v‖ := by simpa using norm_snd_le v
+  have hAv : ‖A (0, v.2)‖ ≤ ‖A‖ * ‖v‖ := (A.le_opNorm _).trans (by gcongr)
+  have h₁v {w : E × N} (hw : ‖w‖ ≤ ‖v‖) : ‖(A - J (z, 0)) w‖ ≤ |a| * M₁ * ‖W‖ * ‖v‖ :=
+    ((A - J (z, 0)).le_opNorm _).trans (mul_le_mul h₁ hw (norm_nonneg _) (by positivity))
+  -- The Taylor remainder is of order `a²`, so its quotient by `a` is of order `a`.
+  have h₂v : ‖a⁻¹ • (R (v.1, 0)).2‖ ≤ |a| * (M₂ / 2 * ‖W‖ ^ 2) * ‖v‖ := by
+    simp only [norm_smul, norm_inv, Real.norm_eq_abs]
+    calc |a|⁻¹ * ‖(R (v.1, 0)).2‖ ≤ |a|⁻¹ * (|a| * (|a| * (M₂ / 2 * ‖W‖ ^ 2)) * ‖v‖) := by
+          gcongr
+          exact (norm_snd_le _).trans
+            ((R.le_opNorm _).trans (mul_le_mul h₂ hv₁ (norm_nonneg _) (by positivity)))
+      _ = |a| * (M₂ / 2 * ‖W‖ ^ 2) * ‖v‖ := by field_simp
+  have hfst : ‖((A - J (z, 0)) (v.1, 0)).1 + a • (A (0, v.2)).1‖ ≤
+      |a| * M₁ * ‖W‖ * ‖v‖ + |a| * (‖A‖ * ‖v‖) := by
+    refine (norm_add_le _ _).trans (add_le_add ((norm_fst_le _).trans (h₁v hv₁)) ?_)
+    rw [norm_smul, Real.norm_eq_abs]
+    gcongr
+    exact (norm_fst_le _).trans hAv
+  have hsnd : ‖a⁻¹ • (R (v.1, 0)).2 + ((A - J (z, 0)) (0, v.2)).2‖ ≤
+      |a| * (M₂ / 2 * ‖W‖ ^ 2) * ‖v‖ + |a| * M₁ * ‖W‖ * ‖v‖ :=
+    (norm_add_le _ _).trans (add_le_add h₂v ((norm_snd_le _).trans (h₁v hv₂)))
+  rw [normalDilation_sub_normalLinearization_apply ha hJ₀, Prod.norm_mk]
+  have h₃ : 0 ≤ |a| * (M₂ / 2 * ‖W‖ ^ 2) * ‖v‖ := by positivity
+  have h₄ : 0 ≤ |a| * ‖A‖ * ‖v‖ := by positivity
+  exact max_le (hfst.trans (by nlinarith)) (hsnd.trans (by nlinarith))
+
+/-- **The normal dilations converge to the normal linearization at rate `O(a)`.** Let `J` be
+differentiable on the normal segment from `(z, 0)` to `(z, a W)`, with derivative of norm at most
+`M₁` there and moving by at most `M₂ ≥ 0` times the distance to `(z, 0)` (as when `M₂` bounds the
+second derivative), and let `J(z, 0)` preserve `E × {0}`. Then for `a ≠ 0`,
+
+`‖δ_a^* J(z, W) - J_N(z, W)‖ ≤ |a| (‖J(z, a W)‖ + M₁ ‖W‖ + (M₂ / 2) ‖W‖²)`.
+
+The block `E → N` of `δ_a^* J` is `a⁻¹ J_NE(z, a W)`, and its distance to `∂_W J_NE(z, 0)[W]` is
+the Taylor remainder of `J_NE` divided by `a`, which is where `M₂` enters. -/
+theorem norm_normalDilation_sub_normalLinearization_le {J : E × N → E × N →L[ℝ] E × N}
+    {a M₁ M₂ : ℝ} {p : E × N} (ha : a ≠ 0)
+    (hJ : ∀ x ∈ segment ℝ (p.1, 0) (p.1, a • p.2), DifferentiableAt ℝ J x)
+    (hM₁ : ∀ x ∈ segment ℝ (p.1, 0) (p.1, a • p.2), ‖fderiv ℝ J x‖ ≤ M₁)
+    (hM₂ : ∀ x ∈ segment ℝ (p.1, 0) (p.1, a • p.2),
+      ‖fderiv ℝ J x - fderiv ℝ J (p.1, 0)‖ ≤ M₂ * ‖x - (p.1, 0)‖) (hM₂₀ : 0 ≤ M₂)
+    (hJ₀ : ∀ v, (J (p.1, 0) (v, 0)).2 = 0) :
+    ‖normalDilation J a p - normalLinearization J p‖ ≤
+      |a| * (‖J (p.1, a • p.2)‖ + M₁ * ‖p.2‖ + M₂ / 2 * ‖p.2‖ ^ 2) := by
+  obtain ⟨z, W⟩ := p
+  have hs : Convex ℝ (segment ℝ ((z, 0) : E × N) (z, a • W)) := convex_segment _ _
+  have h0 := left_mem_segment ℝ ((z, 0) : E × N) (z, a • W)
+  have h1 := right_mem_segment ℝ ((z, 0) : E × N) (z, a • W)
+  have hd : ((z, a • W) : E × N) - (z, 0) = ((0 : E), a • W) := by simp
+  -- `simp` turns `max ‖0‖ ‖a • W‖ = |a| * ‖W‖` into the side condition `0 ≤ |a| * ‖W‖`.
+  have haW : ‖((0 : E), a • W)‖ = |a| * ‖W‖ := by
+    simpa [norm_smul] using (by positivity : 0 ≤ |a| * ‖W‖)
+  refine norm_normalDilation_sub_normalLinearization_le_of_norm_sub_le ha hJ₀
+    ((norm_nonneg (fderiv ℝ J (z, 0))).trans (hM₁ _ h0)) hM₂₀ ?_ ?_
+  · -- The increment of `J` along the segment, by the mean value inequality.
+    have h := hs.norm_image_sub_le_of_norm_fderiv_le hJ hM₁ h0 h1
+    rw [hd, haW] at h
+    linarith
+  · -- The Taylor remainder, by the quadratic mean value inequality.
+    have h := hs.norm_image_sub_sub_le_of_norm_fderiv_sub_le hJ hM₂ h0 h1
+    simp only [hd, haW, sub_self, norm_zero, zero_add] at h
+    linarith [show M₂ / 2 * (|a| * ‖W‖) * (|a| * ‖W‖) = |a| * (|a| * (M₂ / 2 * ‖W‖ ^ 2)) by ring]
+
+/-- **The normal dilations converge to the normal linearization at rate `O(a)`, uniformly on
+compact sets.** If `J` is `C²` on an open set `Ω` and the zero section is `J`-holomorphic where it
+meets `Ω`, then for every compact set `K` with `(z, 0) ∈ Ω` for `(z, W) ∈ K` there is a constant
+`C` with `‖δ_a^* J(p) - J_N(p)‖ ≤ C |a|` for all `p ∈ K` and all small `a ≠ 0`. -/
+theorem exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen
+    {J : E × N → E × N →L[ℝ] E × N} {Ω K : Set (E × N)} (hΩ : IsOpen Ω)
+    (hJ : ContDiffOn ℝ 2 J Ω) (hJ₀ : ∀ z, (z, 0) ∈ Ω → ∀ v, (J (z, 0) (v, 0)).2 = 0)
+    (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
+    ∃ C, ∀ᶠ a in 𝓝[≠] (0 : ℝ), ∀ p ∈ K,
+      ‖normalDilation J a p - normalLinearization J p‖ ≤ C * |a| := by
+  obtain ⟨S, hSΩ, hS, hseg⟩ := exists_isCompact_forall_normalSegment_subset hΩ hK hKΩ
+  -- `J` and its first two derivatives are bounded on `S`, and the normal coordinate on `K`.
+  have hJ₁ : ContDiffOn ℝ 1 (fderiv ℝ J) Ω := hJ.fderiv_of_isOpen hΩ (by norm_num)
+  have hJ₂ : ContinuousOn (iteratedFDeriv ℝ 2 J) Ω :=
+    (hJ.continuousOn_iteratedFDerivWithin le_rfl hΩ.uniqueDiffOn).congr fun _ hx ↦
+      (iteratedFDerivWithin_of_isOpen 2 hΩ hx).symm
+  obtain ⟨M₀, hM₀⟩ := hS.exists_bound_of_continuousOn (f := J) (hJ.continuousOn.mono hSΩ)
+  obtain ⟨M₁, hM₁⟩ := hS.exists_bound_of_continuousOn (f := fderiv ℝ J)
+    (hJ₁.continuousOn.mono hSΩ)
+  obtain ⟨M₂, hM₂⟩ := hS.exists_bound_of_continuousOn (f := iteratedFDeriv ℝ 2 J) (hJ₂.mono hSΩ)
+  obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn (f := fun p : E × N ↦ p.2)
+    continuous_snd.continuousOn
+  refine ⟨M₀ + max M₁ 0 * max R 0 + max M₂ 0 / 2 * max R 0 ^ 2, ?_⟩
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds hseg] with a ha haS p hp
+  have hx {x : E × N} (hx : x ∈ segment ℝ (p.1, 0) (p.1, a • p.2)) : x ∈ Ω := hSΩ (haS p hp hx)
+  -- On the segment, the derivative of `J` moves by at most `max M₂ 0` times the distance to
+  -- `(z, 0)`, by the mean value inequality for `fderiv ℝ J`. The second derivative is bounded
+  -- through `iteratedFDeriv ℝ 2 J`, because Lean does not synthesize the norm instance on the
+  -- triply nested operator space of `fderiv ℝ (fderiv ℝ J)`.
+  have hLip (x : E × N) (hx' : x ∈ segment ℝ (p.1, 0) (p.1, a • p.2)) :
+      ‖fderiv ℝ J x - fderiv ℝ J (p.1, 0)‖ ≤ max M₂ 0 * ‖x - (p.1, 0)‖ :=
+    (convex_segment _ _).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ) (f := fderiv ℝ J)
+      (fun y hy ↦ (hJ₁.contDiffAt (hΩ.mem_nhds (hx hy))).differentiableAt (by norm_num))
+      (fun y hy ↦ by
+        rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+        exact (hM₂ y (haS p hp hy)).trans (le_max_left _ _))
+      (left_mem_segment ℝ _ _) hx'
+  have h := norm_normalDilation_sub_normalLinearization_le (M₁ := max M₁ 0) ha
+    (fun x hx' ↦ (hJ.contDiffAt (hΩ.mem_nhds (hx hx'))).differentiableAt (by norm_num))
+    (fun x hx' ↦ (hM₁ x (haS p hp hx')).trans (le_max_left _ _)) hLip (le_max_right _ _)
+    (hJ₀ p.1 (hKΩ p hp))
+  have hJa : ‖J (p.1, a • p.2)‖ ≤ M₀ := hM₀ _ (haS p hp (right_mem_segment ℝ _ _))
+  have hW : ‖p.2‖ ≤ max R 0 := (hR p hp).trans (le_max_left _ _)
+  refine h.trans ?_
+  rw [mul_comm _ |a|]
+  gcongr
+
+/-- **The normal dilations converge to the normal linearization at rate `O(a)`.** If `J` is `C²`
+and the zero section `E × {0}` is `J`-holomorphic, then for every compact set `K` there is a
+constant `C` with `‖δ_a^* J(p) - J_N(p)‖ ≤ C |a|` for all `p ∈ K` and all small `a ≠ 0`. -/
+theorem exists_forall_norm_normalDilation_sub_normalLinearization_le
+    {J : E × N → E × N →L[ℝ] E × N} (hJ : ContDiff ℝ 2 J) (hJ₀ : ∀ z v, (J (z, 0) (v, 0)).2 = 0)
+    {K : Set (E × N)} (hK : IsCompact K) :
+    ∃ C, ∀ᶠ a in 𝓝[≠] (0 : ℝ), ∀ p ∈ K,
+      ‖normalDilation J a p - normalLinearization J p‖ ≤ C * |a| :=
+  exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen isOpen_univ
+    hJ.contDiffOn (fun z _ ↦ hJ₀ z) hK fun _ _ ↦ mem_univ _
 
 /-! ### The normal dilation through Hadamard's lemma -/
 

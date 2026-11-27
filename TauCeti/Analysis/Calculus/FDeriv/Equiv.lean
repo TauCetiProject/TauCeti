@@ -81,6 +81,10 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_eqOn_comp_id`, `TauCeti.det_fderiv_ne_zero_of_eqOn_comp_id`:
   `Dg(f y) ∘ Df(y) = id` for a left inverse `g` of `f` on a set within which derivatives are
   unique, so `Df(y)` has nonzero determinant.
+* `HasFDerivWithinAt.isInvertible_of_invOn`: maps between sets with unique derivatives, inverse to
+  each other and differentiable within those sets, have invertible derivatives.
+* `TauCeti.differentiableAt_of_det_fderiv_ne_zero`: in finite dimension, a map of a space to itself
+  is differentiable wherever its totalized derivative has nonzero determinant.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
   `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`, so `det Dφ⁻¹(y) ≠ 0` (`Equiv.det_fderiv_symm_ne_zero`).
@@ -402,6 +406,35 @@ theorem det_fderiv_ne_zero_of_eqOn_comp_id {f g : E → E} {S : Set E} {y : E}
   refine right_ne_zero_of_mul_eq_one (a := (fderiv 𝕜 g (f y)).det) ?_
   rw [← ContinuousLinearMap.det_comp,
     fderiv_comp_fderiv_eq_id_of_eqOn_comp_id hS hf hg hid hy, ContinuousLinearMap.det_id]
+
+/-- **Mutually inverse maps on sets with unique derivatives.** Let `f` map `s` into `t` and `g` map
+`t` into `s`, mutually inverse there. If `f` has derivative `A` within `s` at `y ∈ s`, `g` has
+derivative `B` within `t` at `f y`, and derivatives within `s` at `y` and within `t` at `f y` are
+unique, then `A` is invertible. Neither set need be open: closed strips and half-spaces are
+allowed. -/
+theorem _root_.HasFDerivWithinAt.isInvertible_of_invOn {f : E → F} {g : F → E}
+    {A : E →L[𝕜] F} {B : F →L[𝕜] E} {s : Set E} {t : Set F} {y : E}
+    (hA : HasFDerivWithinAt f A s y) (hB : HasFDerivWithinAt g B t (f y)) (hfs : MapsTo f s t)
+    (hgt : MapsTo g t s) (hinv : InvOn g f s t) (hs : UniqueDiffWithinAt 𝕜 s y)
+    (ht : UniqueDiffWithinAt 𝕜 t (f y)) (hy : y ∈ s) : A.IsInvertible := by
+  -- Differentiate `g ∘ f = id` at `y` within `s` and `f ∘ g = id` at `f y` within `t`.
+  have h₁ : B ∘L A = .id 𝕜 E := hs.eq (hB.comp y hA hfs)
+    ((hasFDerivWithinAt_id y s).congr (fun _ hz ↦ hinv.1 hz) (hinv.1 hy))
+  have hA' : HasFDerivWithinAt f A s (g (f y)) := by rwa [hinv.1 hy]
+  have h₂ : A ∘L B = .id 𝕜 F := ht.eq (hA'.comp (f y) hB hgt)
+    ((hasFDerivWithinAt_id (f y) t).congr (fun _ hz ↦ hinv.2 hz) (hinv.2 (hfs hy)))
+  exact .of_inverse h₂ h₁
+
+/-- A map of a finite-dimensional space to itself is differentiable wherever the determinant of
+its totalized derivative does not vanish: where the map is not differentiable its derivative is
+`0`, whose determinant is `0` in positive dimension. -/
+theorem differentiableAt_of_det_fderiv_ne_zero [FiniteDimensional 𝕜 E] {f : E → E} {y : E}
+    (h : (fderiv 𝕜 f y).det ≠ 0) : DifferentiableAt 𝕜 f y := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact Subsingleton.elim (fun _ ↦ f y) f ▸ differentiableAt_const (f y)
+  by_contra hnd
+  rw [fderiv_zero_of_not_differentiableAt hnd] at h
+  simp [ContinuousLinearMap.det, LinearMap.det_zero, Module.finrank_pos.ne'] at h
 
 end TauCeti
 
