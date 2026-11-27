@@ -36,7 +36,7 @@ zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`
 
 Conversely to the invariance under maps with bijective differential, a pulled-back form can only
 be contact where the differential of the map is injective
-(`TauCeti.SmoothForm.injective_mfderiv_of_isContactFormAt_mpullback`): a vector killed by the
+(`TauCeti.injective_mfderiv_of_isContactFormAt_mpullback`): a vector killed by the
 differential lies in the kernel of the pullback and in the kernel of its exterior derivative.
 
 The pointwise theorem applies to rough one-forms of class `C¹` at the image point and to
@@ -110,6 +110,26 @@ theorem isContactFormAt_mpullback_iff {f : M → N} {x : M} {α : RoughForm J N 
     obtain ⟨u, rfl⟩ := hdf.2 w
     rw [← hd]
     exact hvw u ((hker u).mpr hw)
+
+/-- If the pullback of a one-form `α` along a map `f` is contact at `x`, then the differential of
+`f` at `x` is injective. A vector killed by the differential lies in the kernel of `f^* α` and
+pairs to zero with every vector under `d(f^* α) = f^* dα`, so it is zero by nondegeneracy. In
+particular a form pulled back along a map with nontrivial fibre directions, such as a projection
+`M × P → M` with `P` of positive dimension, is contact nowhere. Only `C²` regularity of the map
+and `C¹` regularity of the one-form at the image are needed. -/
+theorem injective_mfderiv_of_isContactFormAt_mpullback {f : M → N} {x : M}
+    {α : RoughForm J N ℝ 1} (hf : ContMDiffAt I J 2 f x)
+    (hα : ContMDiffAt J (J.prod 𝓘(ℝ, F [⋀^Fin 1]→L[ℝ] ℝ)) 1
+      (fun y ↦ Bundle.TotalSpace.mk' (F [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) (f x))
+    (h : IsContactFormAt (mpullback I J f α) x) :
+    Function.Injective (mfderiv I J f x) := by
+  rw [injective_iff_map_eq_zero]
+  intro w hw
+  refine h.nondegenerate w (RoughForm.mem_ker.2 ?_) fun w' _ ↦ ?_
+  · rw [mpullback_apply_one, hw]
+    exact (α (f x)).map_coord_zero 0 rfl
+  · rw [← mpullback_mextDeriv_at hf hα, mpullback_apply_pair, hw]
+    exact (mextDeriv α (f x)).map_coord_zero 0 rfl
 
 namespace SmoothForm
 
@@ -191,29 +211,15 @@ theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N
   SmoothForm.isContactForm_mpullback_iff e.contMDiff
     (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) e.surjective α
 
-/-- If the pullback of a one-form `α` along a smooth map `f` is contact at `x`, then the
-differential of `f` at `x` is injective. A vector killed by the differential lies in the kernel of
-`f^* α` and pairs to zero with every vector under `d(f^* α) = f^* dα`, so it is zero by
-nondegeneracy. In particular a form pulled back along a map with nontrivial fibre directions, such
-as a projection `M × P → M` with `P` of positive dimension, is contact nowhere. -/
-theorem injective_mfderiv_of_isContactFormAt_mpullback {α : SmoothForm J N ℝ 1} {f : M → N}
-    (hf : ContMDiff I J ∞ f) {x : M} (hα : IsContactFormAt (mpullback f hf α).val x) :
-    Function.Injective (mfderiv I J f x) := by
-  rw [injective_iff_map_eq_zero]
-  intro w hw
-  refine hα.nondegenerate w (RoughForm.mem_ker.2 ?_) fun w' _ ↦ ?_
-  · rw [mpullback_apply_one, hw, ← degreeOneEquiv_coe_apply, map_zero]
-  · rw [mextDeriv_mpullback_apply_two, hw]
-    exact (mextDeriv α.val (f x)).map_coord_zero 0 rfl
-
 /-- If the pullback of a one-form along a smooth map `f : M → N` is a contact form and `M` is
 nonempty, then the model space of `M` is finite-dimensional whenever that of `N` is. -/
 theorem finiteDimensional_of_isContactForm_mpullback [FiniteDimensional ℝ F]
     {α : SmoothForm J N ℝ 1} {f : M → N} (hf : ContMDiff I J ∞ f)
     (hα : (mpullback f hf α).IsContactForm) (x : M) : FiniteDimensional ℝ E :=
   Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] F).toLinearMap
-    (injective_mfderiv_of_isContactFormAt_mpullback hf
-      (isContactForm_iff_forall_isContactFormAt.1 hα x))
+    (injective_mfderiv_of_isContactFormAt_mpullback ((hf x).of_le (by simp))
+      ((α.contMDiff (f x)).of_le (by simp))
+      (coe_mpullback f hf α ▸ isContactForm_iff_forall_isContactFormAt.1 hα x))
 
 /-- The differential of a smooth map with bijective differentials carries the Reeb field of
 the pulled-back contact form to the original Reeb field. -/

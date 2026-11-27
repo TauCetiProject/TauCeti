@@ -37,17 +37,18 @@ fails.
   `dz ∧ dy ∧ dx = -dx ∧ dy ∧ dz` (`mpullback_wedgeFamily_innerProductContactCoordForm`). So the
   general formula and this coordinate change agree on the sign of the volume form of `ℝ³`.
 * **`ℝ⁵`.** On `ℝ⁵ = ℝ³ × ℝ²`, with coordinates `(x, y, z, u, v)`, the same expression
-  `α = dz - x dy` (`fiveForm`), pulled back along the projection to `ℝ³`, vanishes nowhere
-  (`fiveForm_apply_ne_zero`), and so does `dα = -dx ∧ dy` (`mextDeriv_fiveForm_ne_zero`); `dα`
-  is even nonzero on the kernel of `α` at every point
-  (`exists_mextDeriv_fiveForm_apply_ne_zero`). But `∂_u` and `∂_v` lie in the kernel of `α` and
-  in the kernel of `dα` (`fiveForm_apply_of_fst_eq_zero`,
-  `mextDeriv_fiveForm_apply_of_fst_eq_zero`), so `α` is contact at no point
-  (`not_isContactFormAt_fiveForm`), and `α ∧ (dα)² = 0`
-  (`wedge_fiveForm_wedgePow_mextDerivₗ`). A criterion asking only that `α` and `dα|ker α` be
-  nonzero would accept this form; the criterion needs the top power `(dα)ⁿ`. The general reason is
-  `TauCeti.SmoothForm.injective_mfderiv_of_isContactFormAt_mpullback`: a form pulled back along a
-  map is contact only where the differential of the map is injective.
+  `α = dz - x dy` (`fstPullbackStandardContactForm`), pulled back along the projection to `ℝ³`,
+  vanishes nowhere (`fstPullbackStandardContactForm_apply_ne_zero`), and so does `dα = -dx ∧ dy`
+  (`mextDeriv_fstPullbackStandardContactForm_ne_zero`); `dα` is even nonzero on the kernel of `α`
+  at every point (`exists_mextDeriv_fstPullbackStandardContactForm_apply_ne_zero`). But `∂_u` and
+  `∂_v` lie in the kernel of `α` and in the kernel of `dα`
+  (`fstPullbackStandardContactForm_apply_of_fst_eq_zero`,
+  `mextDeriv_fstPullbackStandardContactForm_apply_of_fst_eq_zero`), so `α` is contact at no point
+  (`not_isContactFormAt_fstPullbackStandardContactForm`), and `α ∧ (dα)² = 0`
+  (`wedge_fstPullbackStandardContactForm_wedgePow_mextDerivₗ`). A criterion asking only that `α`
+  and `dα|ker α` be nonzero would accept this form; the criterion needs the top power `(dα)ⁿ`. The
+  general reason is `TauCeti.injective_mfderiv_of_isContactFormAt_mpullback`: a form pulled back
+  along a map is contact only where the differential of the map is injective.
 * **Contact elements.** On `ℝ² × ℝ`, with coordinates `((x, y), τ)`, the form
   `α = cos τ dx + sin τ dy` (`TauCeti.contactElementForm`), whose kernel descends to the
   non-coorientable contact structure of the space of contact elements `ℝ² × ℝP¹`, satisfies
@@ -119,30 +120,32 @@ private theorem realBasis_apply (i : Fin 1) : realBasis i = 1 :=
 the standard model back to `dz, dy, dx`. -/
 private theorem mpullback_innerProductContactCoordForm_real (r : Fin (1 + 2 * 1)) :
     SmoothForm.mpullback swapCoord contMDiff_swapCoord
-        (innerProductContactCoordForm realBasis r) = coordForm (Equiv.swap 0 2 r) := by
+        (innerProductContactCoordForm realBasis r) = (coordForm ∘ Equiv.swap 0 2) r := by
   refine Subtype.ext (funext fun p ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
   -- A one-form only sees the single entry `v 0` of `v`.
   have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
-  rw [hv, SmoothForm.mpullback_apply_one, swapCoord.mfderiv_eq, coordForm_apply]
+  rw [hv, SmoothForm.mpullback_apply_one, swapCoord.mfderiv_eq, Function.comp_apply,
+    coordForm_apply]
   -- The three coordinate one-forms of the model are `dz`, `dq` and `dp`, at the indices `0`, `1`
   -- and `2`.
   fin_cases r
   · exact innerProductContactCoordForm_castAdd_apply realBasis _ _
-  -- In the last two cases the remaining goals `(swapCoord w).1 = w.2.1` and
-  -- `(swapCoord w).2.1 = w.1` hold by definition of `swapCoord`.
   · exact (innerProductContactCoordForm_natAdd_zero_apply realBasis 0 _ _).trans
-      (by simp [realBasis_apply]; rfl)
+      (by
+        rw [realBasis_apply, Real.inner_apply, one_mul]
+        exact congrArg (·.1) (swapCoord_apply (v 0)))
   · exact (innerProductContactCoordForm_natAdd_one_apply realBasis 0 _ _).trans
-      (by simp [realBasis_apply]; rfl)
+      (by
+        rw [realBasis_apply, Real.inner_apply, one_mul]
+        exact congrArg (·.2.1) (swapCoord_apply (v 0)))
 
 /-- The coordinate change `(q, p, z) = (y, x, z)` pulls `dz ∧ dq ∧ dp` back to `-dx ∧ dy ∧ dz`. -/
 private theorem mpullback_swapCoord_wedgeFamily :
     SmoothForm.mpullback swapCoord contMDiff_swapCoord
         (SmoothForm.wedgeFamily (innerProductContactCoordForm realBasis)) =
       -SmoothForm.wedgeFamily coordForm := by
-  rw [SmoothForm.mpullback_wedgeFamily, funext mpullback_innerProductContactCoordForm_real]
-  -- `coordForm ∘ swap 0 2` is the family `dz, dy, dx`.
-  rw [show (fun r ↦ coordForm (Equiv.swap 0 2 r)) = coordForm ∘ Equiv.swap (0 : Fin 3) 2 from rfl,
+  -- The pulled-back family `coordForm ∘ swap 0 2` is `dz, dy, dx`.
+  rw [SmoothForm.mpullback_wedgeFamily, funext mpullback_innerProductContactCoordForm_real,
     SmoothForm.wedgeFamily_comp_perm, Equiv.Perm.sign_swap (by decide)]
   simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one]
   exact neg_one_smul ℝ (SmoothForm.wedgeFamily coordForm)
@@ -195,7 +198,8 @@ private theorem contMDiff_fst_five :
 
 /-- The one-form `dz - x dy` on `ℝ⁵ = ℝ³ × ℝ²`, with coordinates `((x, y, z), (u, v))`: the pullback
 of the standard contact form of `ℝ³` along the projection. -/
-def fiveForm : SmoothForm 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) ((ℝ × ℝ × ℝ) × (ℝ × ℝ)) ℝ 1 :=
+def fstPullbackStandardContactForm :
+    SmoothForm 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) ((ℝ × ℝ × ℝ) × (ℝ × ℝ)) ℝ 1 :=
   SmoothForm.mpullback Prod.fst contMDiff_fst_five standardContactForm
 
 /-- The differential of the projection `ℝ⁵ = ℝ³ × ℝ² → ℝ³` is the projection. -/
@@ -206,80 +210,89 @@ private theorem mfderiv_fst_five (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
   -- `ContinuousLinearMap.fst` applied to `v` is `v.1` by definition.
   rfl
 
-/-- The form `fiveForm` evaluates a tangent vector `((a, b, c), w)` at `((x, y, z), (u, v))` as
+/-- The form `fstPullbackStandardContactForm` evaluates a tangent vector `((a, b, c), w)` at
+`((x, y, z), (u, v))` as
 `c - x b`. -/
 @[simp]
-theorem fiveForm_apply (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
+theorem fstPullbackStandardContactForm_apply (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
     (v : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p) :
-    fiveForm.val p ![v] = v.1.2.2 - p.1.1 * v.1.2.1 := by
-  rw [fiveForm, SmoothForm.mpullback_apply_one, mfderiv_fst_five]
+    fstPullbackStandardContactForm.val p ![v] = v.1.2.2 - p.1.1 * v.1.2.1 := by
+  rw [fstPullbackStandardContactForm, SmoothForm.mpullback_apply_one, mfderiv_fst_five]
   exact standardContactForm_apply p.1 v.1
 
-/-- The exterior derivative of `fiveForm` is `-dx ∧ dy`. -/
-theorem mextDeriv_fiveForm_apply (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
+/-- The exterior derivative of `fstPullbackStandardContactForm` is `-dx ∧ dy`. -/
+theorem mextDeriv_fstPullbackStandardContactForm_apply (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
     (v w : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p) :
-    mextDeriv fiveForm.val p ![v, w] = w.1.1 * v.1.2.1 - v.1.1 * w.1.2.1 := by
-  rw [fiveForm, SmoothForm.mextDeriv_mpullback_apply_two, mfderiv_fst_five, mfderiv_fst_five]
+    mextDeriv fstPullbackStandardContactForm.val p ![v, w] =
+      w.1.1 * v.1.2.1 - v.1.1 * w.1.2.1 := by
+  rw [fstPullbackStandardContactForm, SmoothForm.mextDeriv_mpullback_apply_two, mfderiv_fst_five,
+    mfderiv_fst_five]
   exact mextDeriv_standardContactForm_apply p.1 v.1 w.1
 
 /-- The form `dz - x dy` on `ℝ⁵` vanishes nowhere: it takes the value `1` on `∂_z`. -/
-theorem fiveForm_apply_ne_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) : fiveForm.val p ≠ 0 := by
+theorem fstPullbackStandardContactForm_apply_ne_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) :
+    fstPullbackStandardContactForm.val p ≠ 0 := by
   intro h
-  have h₁ := fiveForm_apply p (((0, 0, 1), 0) : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
+  have h₁ := fstPullbackStandardContactForm_apply p (((0, 0, 1), 0) : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
   rw [h] at h₁
   simp at h₁
 
 /-- The exterior derivative `-dx ∧ dy` of `dz - x dy` on `ℝ⁵` vanishes nowhere: it takes the value
 `-1` on `(∂_x, ∂_y)`. -/
-theorem mextDeriv_fiveForm_ne_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) : mextDeriv fiveForm.val p ≠ 0 := by
+theorem mextDeriv_fstPullbackStandardContactForm_ne_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) :
+    mextDeriv fstPullbackStandardContactForm.val p ≠ 0 := by
   intro h
-  have h₁ := mextDeriv_fiveForm_apply p (((1, 0, 0), 0) : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
+  have h₁ := mextDeriv_fstPullbackStandardContactForm_apply p
+    (((1, 0, 0), 0) : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
     (((0, 1, 0), 0) : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
   rw [h] at h₁
   simp at h₁
 
 /-- The exterior derivative of `dz - x dy` on `ℝ⁵` is nonzero even on the kernel of the form: the
 kernel vectors `∂_x` and `∂_y + x ∂_z` pair to `-1`. -/
-theorem exists_mextDeriv_fiveForm_apply_ne_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) :
+theorem exists_mextDeriv_fstPullbackStandardContactForm_apply_ne_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) :
     ∃ v w : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p,
-      fiveForm.val p ![v] = 0 ∧ fiveForm.val p ![w] = 0 ∧
-        mextDeriv fiveForm.val p ![v, w] ≠ 0 := by
+      fstPullbackStandardContactForm.val p ![v] = 0 ∧
+        fstPullbackStandardContactForm.val p ![w] = 0 ∧
+        mextDeriv fstPullbackStandardContactForm.val p ![v, w] ≠ 0 := by
   -- Name the tangent vectors, so that they keep their tangent-space type.
   obtain ⟨v, hv⟩ : ∃ v : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p, v = ((1, 0, 0), 0) :=
     ⟨_, rfl⟩
   obtain ⟨w, hw⟩ : ∃ w : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p, w = ((0, 1, p.1.1), 0) :=
     ⟨_, rfl⟩
   refine ⟨v, w, ?_, ?_, ?_⟩
-  · rw [fiveForm_apply, hv]
+  · rw [fstPullbackStandardContactForm_apply, hv]
     simp
-  · rw [fiveForm_apply, hw]
+  · rw [fstPullbackStandardContactForm_apply, hw]
     simp
-  · rw [mextDeriv_fiveForm_apply, hv, hw]
+  · rw [mextDeriv_fstPullbackStandardContactForm_apply, hv, hw]
     simp
 
 /-- The tangent vectors of the `ℝ²` factor, spanned by `∂_u` and `∂_v`, lie in the kernel of
 `dz - x dy` on `ℝ⁵`. -/
-theorem fiveForm_apply_of_fst_eq_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
+theorem fstPullbackStandardContactForm_apply_of_fst_eq_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
     {v : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p} (hv : v.1 = 0) :
-    fiveForm.val p ![v] = 0 := by
-  rw [fiveForm_apply, hv]
+    fstPullbackStandardContactForm.val p ![v] = 0 := by
+  rw [fstPullbackStandardContactForm_apply, hv]
   simp
 
 /-- The tangent vectors of the `ℝ²` factor, spanned by `∂_u` and `∂_v`, lie in the kernel of the
 exterior derivative `-dx ∧ dy` of `dz - x dy` on `ℝ⁵`. -/
-theorem mextDeriv_fiveForm_apply_of_fst_eq_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
+theorem mextDeriv_fstPullbackStandardContactForm_apply_of_fst_eq_zero (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ))
     {v : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p} (hv : v.1 = 0)
     (w : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p) :
-    mextDeriv fiveForm.val p ![v, w] = 0 := by
-  rw [mextDeriv_fiveForm_apply, hv]
+    mextDeriv fstPullbackStandardContactForm.val p ![v, w] = 0 := by
+  rw [mextDeriv_fstPullbackStandardContactForm_apply, hv]
   simp
 
 /-- **The form `dz - x dy` on `ℝ⁵` is contact nowhere**, although it and its exterior derivative
 vanish nowhere: the differential of the projection to `ℝ³` kills `∂_u`. -/
-theorem not_isContactFormAt_fiveForm (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) :
-    ¬IsContactFormAt fiveForm.val p := by
+theorem not_isContactFormAt_fstPullbackStandardContactForm (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) :
+    ¬IsContactFormAt fstPullbackStandardContactForm.val p := by
   intro h
-  have hinj := SmoothForm.injective_mfderiv_of_isContactFormAt_mpullback contMDiff_fst_five h
+  rw [fstPullbackStandardContactForm, SmoothForm.coe_mpullback] at h
+  have hinj := injective_mfderiv_of_isContactFormAt_mpullback ((contMDiff_fst_five p).of_le
+    (by simp)) ((standardContactForm.contMDiff p.1).of_le (by simp)) h
   -- The vector `∂_u`, named so that it keeps its tangent-space type, is killed by the
   -- differential of the projection.
   obtain ⟨e, he⟩ : ∃ e : TangentSpace 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) p, e = ((0, 0, 0), (1, 0)) :=
@@ -291,15 +304,17 @@ theorem not_isContactFormAt_fiveForm (p : (ℝ × ℝ × ℝ) × (ℝ × ℝ)) :
   exact one_ne_zero h₁
 
 /-- **The volume form of `dz - x dy` on `ℝ⁵` vanishes identically**: `α ∧ (dα)² = 0`. -/
-theorem wedge_fiveForm_wedgePow_mextDerivₗ :
-    SmoothForm.wedge fiveForm
-      ((mextDerivₗ 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) 1 fiveForm).wedgePow 2) = 0 := by
+theorem wedge_fstPullbackStandardContactForm_wedgePow_mextDerivₗ :
+    SmoothForm.wedge fstPullbackStandardContactForm
+      ((mextDerivₗ 𝓘(ℝ, (ℝ × ℝ × ℝ) × (ℝ × ℝ)) 1 fstPullbackStandardContactForm).wedgePow 2) =
+        0 := by
   have hrank : Module.finrank ℝ ((ℝ × ℝ × ℝ) × (ℝ × ℝ)) = 2 * 2 + 1 := by
     simp [Module.finrank_prod]
   refine Subtype.ext (funext fun p ↦ ?_)
   by_contra h
-  exact not_isContactFormAt_fiveForm p
-    ((SmoothForm.isContactFormAt_iff_wedge_wedgePow_apply_ne_zero hrank fiveForm p).2 h)
+  exact not_isContactFormAt_fstPullbackStandardContactForm p
+    ((SmoothForm.isContactFormAt_iff_wedge_wedgePow_apply_ne_zero hrank
+      fstPullbackStandardContactForm p).2 h)
 
 /-! ### The space of contact elements of the plane -/
 
@@ -375,6 +390,9 @@ private theorem wedge_contactElementForm_apply_elementFrame (p : (ℝ × ℝ) ×
     ContinuousAlternatingMap.wedgePow_one_apply, he, mextDeriv_contactElementForm_apply,
     contactElementForm_apply]
   simp [elementFrame, elementVectors]
+  -- The remaining goal is `-X² = -1` with `X = cos² τ + sin² τ`, written as
+  -- `X (-cos² τ - sin² τ) = -1`. Since `-X² + 1 = -(X + 1) (X - 1)`, it is `-(X + 1)` times the
+  -- identity `X = 1`.
   linear_combination (-(cos p.2 ^ 2 + sin p.2 ^ 2 + 1)) * cos_sq_add_sin_sq p.2
 
 /-- The form `-dx ∧ dy ∧ dτ` takes the value `-1` on the frame `(R, e, ∂_τ)`. -/
