@@ -9,10 +9,8 @@ public import TauCeti.Algebra.Homology.GorensteinProjective.Frobenius
 public import TauCeti.Algebra.Homology.GorensteinProjective.Hypersurface
 public import TauCeti.CategoryTheory.Exact.Stable.Functor.Equivalence
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Resolution
-public import TauCeti.RingTheory.CohenMacaulay.Maximal.AuslanderBuchsbaum
 public import TauCeti.RingTheory.CohenMacaulay.Maximal.Exact
 public import TauCeti.RingTheory.RegularLocalRing.AuslanderBuchsbaum
-import TauCeti.RingTheory.CohenMacaulay.Maximal.Hypersurface
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!

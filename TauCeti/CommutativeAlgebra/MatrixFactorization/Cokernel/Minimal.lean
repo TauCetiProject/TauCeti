@@ -41,6 +41,7 @@ noncomputable section
 universe u
 
 open CategoryTheory Limits IsLocalRing
+open scoped ChangeOfRings
 
 namespace TauCeti.MatrixFactorization
 
@@ -150,6 +151,34 @@ private theorem isZero_projective_retract_of_range_d₁_le (hw : w ∈ nonZeroDi
   · obtain ⟨retR⟩ := ret.nonempty_retract_ring_of_projective
     exact False.elim (not_nonempty_retract_self_of_range_d₁_le hw hd₁ retR)
 
+omit [IsLocalRing S] [IsLocalRing (S ⧸ Ideal.span {w})] in
+private theorem cokernelDesc_comp_adj_symm_quotientCokernelπ
+    {X : MatrixFactorization S w} {R_mod : ModuleCat.{u} (S ⧸ Ideal.span {w})}
+    (g : X.obj.X₀.obj ⟶ (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj
+      R_mod)
+    (y : X.obj.X₁) :
+    ((cokernelDesc (Ideal.Quotient.mk_singleton_self w)
+        ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).hom ≫
+      ((ModuleCat.extendRestrictScalarsAdj.{u} (Ideal.Quotient.mk (Ideal.span {w}))).homEquiv
+        X.obj.X₀.obj R_mod).symm g) (quotientCokernelπ X y) = g (X.obj.d₁.hom y) := by
+  let q := Ideal.Quotient.mk (Ideal.span {w})
+  let X' := (baseChangeFunctor q).obj X
+  let g' : (ModuleCat.extendScalars q).obj X.obj.X₀.obj ⟶ R_mod :=
+    ((ModuleCat.extendRestrictScalarsAdj.{u} q).homEquiv X.obj.X₀.obj R_mod).symm g
+  rw [quotientCokernelπ_apply]
+  have hdesc : (cokernelDesc (Ideal.Quotient.mk_singleton_self w) X').hom
+      (cokernelπ X' ((1 : S ⧸ Ideal.span {w}) ⊗ₜ[S, q] y)) =
+      (1 : S ⧸ Ideal.span {w}) ⊗ₜ[S, q] X.obj.d₁.hom y :=
+    (ConcreteCategory.congr_hom
+      (cokernelπ_cokernelDesc_hom (Ideal.Quotient.mk_singleton_self w) X')
+      ((1 : S ⧸ Ideal.span {w}) ⊗ₜ[S, q] y)).trans (by
+        simp only [X', baseChangeFunctor_obj_d₁, FGModuleCat.forget₂_map]
+        exact ModuleCat.ExtendScalars.map_tmul q X.obj.d₁.hom 1 y)
+  refine (congrArg g'.hom hdesc).trans ?_
+  refine (ModuleCat.extendRestrictScalarsAdj_homEquiv_apply (M := X.obj.X₀.obj) g'
+    (X.obj.d₁.hom y)).symm.trans ?_
+  simp [g']
+
 omit [IsLocalRing (S ⧸ Ideal.span {w})] in
 private theorem nonempty_retract_self_of_not_range_d₁_le
     {X : MatrixFactorization S w} (hnot : ¬ LinearMap.range X.obj.d₁.hom.hom ≤ maximalIdeal S • ⊤) :
@@ -160,32 +189,23 @@ private theorem nonempty_retract_self_of_not_range_d₁_le
   let X' := (baseChangeFunctor q).obj X
   obtain ⟨_, ⟨y, rfl⟩, hy⟩ := Set.not_subset.1 hnot
   have : Module.Projective S X.obj.X₀ := X.property.1
-  obtain ⟨α, hαy⟩ := TauCeti.IsLocalRing.exists_linearMap_eq_one_of_notMem_maximalIdeal_smul hy
+  obtain ⟨α, hαy⟩ := Module.isUnimodular_iff.mp
+    (Module.isUnimodular_iff_notMem_jacobson_smul_top.mpr
+      ((ringJacobson_eq_maximalIdeal (R := S)).symm ▸ hy))
   let R_mod := ModuleCat.of (S ⧸ Ideal.span {w}) (S ⧸ Ideal.span {w})
-  let g_lin : X.obj.X₀.obj →ₗ[S] (ModuleCat.restrictScalars q).obj R_mod :=
-    { toFun := fun x ↦ q (α x)
-      map_add' := fun _ _ ↦ map_add (q.toAddMonoidHom.comp α.toAddMonoidHom) _ _
-      map_smul' := fun s x ↦ by
-        rw [map_smul, smul_eq_mul, map_mul, RingHom.id_apply]
-        exact (ModuleCat.restrictScalars.smul_def (M := R_mod) q s (q (α x))).symm }
-  let g : X.obj.X₀.obj ⟶ (ModuleCat.restrictScalars q).obj R_mod := ModuleCat.ofHom g_lin
+  let g : X.obj.X₀.obj ⟶ (ModuleCat.restrictScalars q).obj R_mod :=
+    ModuleCat.ofHom ((Ideal.Quotient.mkₐ S (Ideal.span {w})).toLinearMap ∘ₗ α) ≫
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := S) (S := S ⧸ Ideal.span {w})
+        (S ⧸ Ideal.span {w})).inv
   let r_hom : (cokernelFunctor.obj X').obj ⟶ R_mod :=
     (cokernelDesc (Ideal.Quotient.mk_singleton_self w) X').hom ≫
-      ((ModuleCat.extendRestrictScalarsAdj.{u} q).homEquiv _ _).symm g
+      ((ModuleCat.extendRestrictScalarsAdj.{u} q).homEquiv X.obj.X₀.obj R_mod).symm g
   let m₀ : (cokernelFunctor.obj X').obj := quotientCokernelπ X y
-  have hr_apply : r_hom.hom m₀ = 1 := by
-    have hcomp : cokernelπ X' ≫ r_hom =
-        ((ModuleCat.extendRestrictScalarsAdj.{u} q).homEquiv _ _).symm (X.obj.d₁.hom ≫ g) :=
-      (cokernelπ_cokernelDesc_hom_assoc (Ideal.Quotient.mk_singleton_self w) X' _).trans
-        (Adjunction.homEquiv_naturality_left_symm
-          (ModuleCat.extendRestrictScalarsAdj.{u} q) X.obj.d₁.hom g).symm
-    refine (congrArg r_hom.hom (quotientCokernelπ_apply X y)).trans
-      ((ConcreteCategory.congr_hom hcomp _).trans ?_)
-    refine (ModuleCat.extendRestrictScalarsAdj_homEquiv_apply (M := X.obj.X₁.obj) _ y).symm.trans ?_
-    rw [Equiv.apply_symm_apply]
-    refine (CategoryTheory.comp_apply X.obj.d₁.hom g y).trans ?_
-    refine (ModuleCat.ofHom_apply g_lin _).trans ?_
-    exact (congrArg q hαy).trans (map_one q)
+  have hr_apply : r_hom m₀ = 1 :=
+    (cokernelDesc_comp_adj_symm_quotientCokernelπ g y).trans (by
+      simp only [g, ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+        AlgHom.toLinearMap_apply, hαy, map_one]
+      exact ModuleCat.restrictScalarsAlgebraMapIso_inv_apply (R := S) (S ⧸ Ideal.span {w}) 1)
   exact ⟨{ i := ModuleCat.ofHom (LinearMap.toSpanSingleton _ _ m₀), r := r_hom,
            retract := ModuleCat.hom_ext <| LinearMap.ext fun r ↦ by simp [hr_apply] }⟩
 

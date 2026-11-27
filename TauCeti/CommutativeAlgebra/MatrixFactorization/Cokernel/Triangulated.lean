@@ -9,6 +9,7 @@ public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Gorenstein
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Triangulated
 public import TauCeti.CategoryTheory.Exact.Stable.Functor.Triangulated
 public import Mathlib.CategoryTheory.Triangulated.Adjunction
+import TauCeti.CategoryTheory.Shift.CommShift
 
 /-!
 # The Gorenstein-projective stable cokernel functor is a triangle functor
@@ -59,7 +60,9 @@ In the namespace `TauCeti.MatrixFactorization.HomotopyCategory`:
   Gorenstein-projective cokernel functor preserves conflations and projective-injectives.
 * `HomotopyCategory.stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel`, in the
   same namespace: the descended cokernel functor agrees with the induced functor on stable
-  categories.
+  categories, and
+  `eqToIso_stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel_commShift` gives its
+  shift compatibility.
 * `HomotopyCategory.quotientGorensteinProjectiveStableCokernel_isTriangulated`, in the same
   namespace: the cokernel functor `HMF(S,w) ⥤ stable(Gproj-S/(w))` is a triangle functor.
 
@@ -205,6 +208,38 @@ theorem stableToHomotopyInverseCompStableFunctorIso_commShift (hw : w ∈ nonZer
   let := (stableConflationExact_quotientGorensteinProjectiveCokernel hw).stableFunctorCommShift
     (splitExact_isFrobenius S w) GorensteinProjectiveModuleCat.exactStructure_isFrobenius
   exact Functor.CommShift.ofIso_compatibility _ ℤ
+
+/-- The functor equality `stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel`
+commutes with integral shifts. -/
+theorem eqToIso_stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel_commShift
+    (hw : w ∈ nonZeroDivisors S) :
+    letI := (splitExact_isFrobenius S w).stableHasShift
+    letI := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+      (A := S ⧸ Ideal.span {w})).stableHasShift
+    letI := stableToHomotopyCommShift S w
+    letI : (stableToHomotopy S w).asEquivalence.functor.CommShift ℤ := stableToHomotopyCommShift S w
+    letI := (stableToHomotopy S w).asEquivalence.commShiftInverse ℤ
+    letI := (stableToHomotopy S w).asEquivalence.commShift_of_functor ℤ
+    letI := (stableConflationExact_quotientGorensteinProjectiveCokernel hw).stableFunctorCommShift
+      (splitExact_isFrobenius S w) GorensteinProjectiveModuleCat.exactStructure_isFrobenius
+    letI := quotientGorensteinProjectiveStableCokernelCommShift hw
+    NatTrans.CommShift
+      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel hw)).hom ℤ := by
+  let := (splitExact_isFrobenius S w).stableHasShift
+  let := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+    (A := S ⧸ Ideal.span {w})).stableHasShift
+  let e := (stableToHomotopy S w).asEquivalence
+  let : (stableToHomotopy S w).CommShift ℤ := stableToHomotopyCommShift S w
+  let : e.functor.CommShift ℤ := stableToHomotopyCommShift S w
+  let := e.commShiftInverse ℤ; let := e.commShift_of_functor ℤ
+  let := (stableConflationExact_quotientGorensteinProjectiveCokernel hw).stableFunctorCommShift
+    (splitExact_isFrobenius S w) GorensteinProjectiveModuleCat.exactStructure_isFrobenius
+  let := quotientGorensteinProjectiveStableCokernelCommShift hw
+  exact TauCeti.natTrans_commShift_eqToIso_of_inverseCompIso e
+    (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel hw)
+    (by
+      rw [← congrArg Iso.hom (stableToHomotopyInverseCompStableFunctorIso_def hw)]
+      exact stableToHomotopyInverseCompStableFunctorIso_commShift hw)
 
 /-- **The cokernel functor of matrix factorizations is a triangle functor.** For a
 non-zero-divisor `w` of a commutative ring `S`, the functor `HMF(S,w) ⥤ stable(Gproj-S/(w))`

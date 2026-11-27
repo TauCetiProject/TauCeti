@@ -16,9 +16,9 @@ import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.CategoryTheory.Abelian.Projective.Resolution
 import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Buchweitz
 import TauCeti.RingTheory.CohenMacaulay.Maximal.Exact
-import TauCeti.RingTheory.CohenMacaulay.Maximal.Hypersurface
 import TauCeti.RingTheory.LocalRing.Module
 import TauCeti.RingTheory.LocalRing.Quotient
+import TauCeti.RingTheory.RegularLocalRing.AuslanderBuchsbaum
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
@@ -36,7 +36,7 @@ For a nonzero `w` in the maximal ideal of a regular local ring `S` with local hy
 * **Theorem 6.1(i)**: if `ringKrullDim R ≤ depth M + n`, minimal resolutions have
   `HasPeriodicTail 2 (n + 1)`
   (`exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_of_ringKrullDim_le_depth_add`
-  and `P.hasPeriodicTail_two_of_isMinimal_of_ringKrullDim_le_depth_add` in
+  and `P.hasPeriodicTail_two_of_isMinimal_of_ringKrullDim_le_depth_add in
   `CategoryTheory.ProjectiveResolution`), giving the uniform bound `(𝔪_S).spanFinrank`
   (`exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_spanFinrank` and
   `CategoryTheory.ProjectiveResolution.hasPeriodicTail_two_spanFinrank_of_isMinimal`).
@@ -62,6 +62,25 @@ section Hypersurface
 variable {S : Type u} [CommRing S] [_root_.IsRegularLocalRing S] {w : S}
   [IsLocalRing (S ⧸ Ideal.span {w})]
 
+private theorem isMaximalCohenMacaulay_of_free_quotient (hw : w ≠ 0)
+    (F : ModuleCat.{u} (S ⧸ Ideal.span {w})) [Module.Finite (S ⧸ Ideal.span {w}) F]
+    [Module.Free (S ⧸ Ideal.span {w}) F] :
+    Module.IsMaximalCohenMacaulay (S ⧸ Ideal.span {w}) F :=
+  (TauCeti.IsRegularLocalRing.isCohenMacaulay_quotient_span_singleton
+    hw).isMaximalCohenMacaulay_of_free F
+
+private theorem isMaximalCohenMacaulay_syzygy_of_free (hw : w ≠ 0)
+    {M F K : ModuleCat.{u} (S ⧸ Ideal.span {w})}
+    [Module.Finite (S ⧸ Ideal.span {w}) F] [Module.Free (S ⧸ Ideal.span {w}) F]
+    [Module.Finite (S ⧸ Ideal.span {w}) K]
+    {i : K ⟶ F} {p : F ⟶ M} (hi : Function.Injective i.hom) (hip : Function.Exact i.hom p.hom)
+    (hp : Function.Surjective p.hom)
+    (hM : Module.IsMaximalCohenMacaulay (S ⧸ Ideal.span {w}) M) :
+    Module.IsMaximalCohenMacaulay (S ⧸ Ideal.span {w}) K :=
+  Module.IsMaximalCohenMacaulay.of_exact_left hip hi hp
+    (isMaximalCohenMacaulay_of_free_quotient hw F)
+    (hM.ringKrullDim_le_depth.trans (le_add_of_nonneg_right zero_le_one))
+
 private theorem isZero_projective_retract_minimal_syzygy_of_isMaximalCohenMacaulay
     (hw : w ≠ 0) {M F K : ModuleCat.{u} (S ⧸ Ideal.span {w})}
     [Module.Finite (S ⧸ Ideal.span {w}) M] [Module.Finite (S ⧸ Ideal.span {w}) F]
@@ -73,10 +92,8 @@ private theorem isZero_projective_retract_minimal_syzygy_of_isMaximalCohenMacaul
     (P : ModuleCat.{u} (S ⧸ Ideal.span {w})) [Projective P] (ret : Retract P K) :
     IsZero P := by
   let R := S ⧸ Ideal.span {w}
-  have hF := (TauCeti.IsRegularLocalRing.isCohenMacaulay_quotient_span_singleton
-    hw).isMaximalCohenMacaulay_of_free F
-  have hK := Module.IsMaximalCohenMacaulay.of_exact_left hip hi hp hF
-    (hM.ringKrullDim_le_depth.trans (le_add_of_nonneg_right zero_le_one))
+  have hF := isMaximalCohenMacaulay_of_free_quotient hw F
+  have hK := isMaximalCohenMacaulay_syzygy_of_free hw hi hip hp hM
   have hK_fin : IsFiniteMaximalCohenMacaulay.{u} R K := (isFiniteMaximalCohenMacaulay_iff R K).2
     ⟨‹_›, hK⟩
   have hP_mcm := hK_fin.of_retract ret
@@ -214,8 +231,7 @@ private theorem ringKrullDim_le_depth_syzygy_add (hw : w ≠ 0) {n : ℕ}
       (IsLocalRing.depth M : WithBot ℕ∞) + ((n + 1 : ℕ) : WithBot ℕ∞)) :
     ringKrullDim (S ⧸ Ideal.span {w}) ≤ (IsLocalRing.depth K : WithBot ℕ∞) + n := by
   let R := S ⧸ Ideal.span {w}
-  have hF := (TauCeti.IsRegularLocalRing.isCohenMacaulay_quotient_span_singleton
-    hw).isMaximalCohenMacaulay_of_free F
+  have hF := isMaximalCohenMacaulay_of_free_quotient hw F
   have hmin₀ := IsLocalRing.depth_min_snd_trd_add_one_le_fst_of_exact i.hom p.hom hip hi hp
   rcases le_total (IsLocalRing.depth F) (IsLocalRing.depth M + 1) with hle | hle
   · have : (IsLocalRing.depth F : WithBot ℕ∞) ≤ IsLocalRing.depth K :=
@@ -251,10 +267,7 @@ theorem
     rw [Nat.cast_zero, add_zero] at hn
     have hM := Module.isMaximalCohenMacaulay_iff_ringKrullDim_le_depth.2 hn
     obtain ⟨F, K, i, p, _, _, _, hi, hip, hp, hi_min⟩ := ModuleCat.exists_minimal_syzygy M
-    have hF := (TauCeti.IsRegularLocalRing.isCohenMacaulay_quotient_span_singleton
-      hw).isMaximalCohenMacaulay_of_free F
-    have hK := Module.IsMaximalCohenMacaulay.of_exact_left hip hi hp hF
-      (hM.ringKrullDim_le_depth.trans (le_add_of_nonneg_right zero_le_one))
+    have hK := isMaximalCohenMacaulay_syzygy_of_free hw hi hip hp hM
     obtain ⟨Q, X, hQ_ff, hQ_min, hX_min, hQ_eq⟩ :=
       exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_of_isMaximalCohenMacaulay
         hw K hK fun P₀ _ ⟨r⟩ ↦

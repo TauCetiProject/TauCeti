@@ -19,7 +19,8 @@ gives compatibility with negative integers.
 For an equivalence commuting with shifts, shift compatibility of a natural transformation is
 reflected by left whiskering (`TauCeti.natTrans_commShift_of_whiskerLeft`), and shift
 compatibility of `Iso.inverseCompIso i` transfers back to `i`
-(`TauCeti.natTrans_commShift_of_inverseCompIso`).
+(`TauCeti.natTrans_commShift_of_inverseCompIso`, and for `eqToIso`
+`TauCeti.natTrans_commShift_eqToIso_of_inverseCompIso`).
 
 In a preadditive category with an additive shift by `ℤ`, each shift functor `⟦n⟧` commutes with
 the shifts through the isomorphisms `X⟦a⟧⟦n⟧ ≅ X⟦n⟧⟦a⟧` of `shiftFunctorComm` multiplied by the
@@ -101,6 +102,18 @@ lemma natTrans_commShift_of_inverseCompIso (e : C ≌ D) [e.functor.CommShift B]
       CategoryTheory.Functor.map_id, Category.comp_id]
   rw [h]
   infer_instance
+
+/-- If `Iso.inverseCompIso (eqToIso h.symm) : e.inverse ⋙ F ≅ G` commutes with shifts for a
+shift-compatible equivalence `e : C ≌ D`, where `h : e.functor ⋙ G = F`, then `(eqToIso h).hom`
+already commutes with shifts. -/
+lemma natTrans_commShift_eqToIso_of_inverseCompIso (e : C ≌ D) [e.functor.CommShift B]
+    {F : C ⥤ K} {G : D ⥤ K} [F.CommShift B] [G.CommShift B] (h : e.functor ⋙ G = F)
+    (hi : letI := e.commShiftInverse B
+      NatTrans.CommShift (Iso.inverseCompIso (eqToIso h.symm)).hom B) :
+    NatTrans.CommShift (eqToIso h).hom B := by
+  let := e.commShiftInverse B
+  have := natTrans_commShift_of_inverseCompIso e (eqToIso h.symm) hi
+  exact inferInstanceAs (NatTrans.CommShift (eqToIso h.symm).inv B)
 
 /-- Left whiskering by a shift-compatible equivalence reflects `NatTrans.CommShift`. -/
 lemma natTrans_commShift_of_whiskerLeft (e : C ≌ D) [e.functor.CommShift B]

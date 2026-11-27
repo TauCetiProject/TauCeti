@@ -155,15 +155,11 @@ theorem exists_minimal_cons {R : Type u} [CommRing R]
   · rw [ChainComplex.isMinimal_iff_range_d_succ_le]
     rw [ChainComplex.isMinimal_iff_range_d_succ_le] at hQ_min
     rintro (_ | k)
-    · rw [show (Q.cons hS).complex.d 1 0 =
-          eqToHom (Q.cons_complex_X_succ hS 0) ≫ (Q.augZero ≫ i) ≫
-            eqToHom (Q.cons_complex_X_zero hS).symm by simp]
+    · rw [Q.cons_complex_d_one_zero hS, ← Category.assoc Q.augZero i]
       exact range_eqToHom_comp_le _ _ _ (by
         rw [ModuleCat.hom_comp]
         exact (LinearMap.range_comp_le_range _ i.hom).trans hi_min)
-    · rw [show (Q.cons hS).complex.d (k + 2) (k + 1) =
-          eqToHom (Q.cons_complex_X_succ hS (k + 1)) ≫ Q.complex.d (k + 1) k ≫
-            eqToHom (Q.cons_complex_X_succ hS k).symm by simp]
+    · rw [Q.cons_complex_d_succ_succ hS (k + 1) k]
       exact range_eqToHom_comp_le _ _ _ (hQ_min k)
 
 end CategoryTheory.ProjectiveResolution

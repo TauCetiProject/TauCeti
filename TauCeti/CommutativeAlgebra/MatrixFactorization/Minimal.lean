@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Biproduct
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
-import Mathlib.RingTheory.Nakayama
+import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 /-!
 # Minimal matrix factorizations
@@ -83,9 +83,8 @@ theorem isMinimal_iff_of_iso {X Y : MatrixFactorization S w} (e : X ≅ Y) :
 @[simp]
 theorem isMinimal_parityShift_iff (X : MatrixFactorization S w) :
     (parityShift.obj X).IsMinimal ↔ X.IsMinimal := by
-  have hd₀ : (-X.obj.d₁).hom.hom = -X.obj.d₁.hom.hom := rfl
-  have hd₁ : (-X.obj.d₀).hom.hom = -X.obj.d₀.hom.hom := rfl
-  rw [isMinimal_iff, isMinimal_iff, parityShift_obj_d₀, parityShift_obj_d₁, hd₀, hd₁,
+  rw [isMinimal_iff, isMinimal_iff, parityShift_obj_d₀, parityShift_obj_d₁,
+    ObjectProperty.neg_hom, ObjectProperty.neg_hom, ModuleCat.hom_neg, ModuleCat.hom_neg,
     LinearMap.range_neg, LinearMap.range_neg, and_comm]
 
 /-- The zero matrix factorization is minimal. -/

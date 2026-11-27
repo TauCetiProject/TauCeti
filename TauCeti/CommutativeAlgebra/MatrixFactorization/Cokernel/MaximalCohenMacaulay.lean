@@ -264,60 +264,9 @@ private theorem eqToIso_stableToHomotopy_comp_mcm_commShift (hw : w ≠ 0) :
   let := (stableConflationExact_quotientMaximalCohenMacaulayCokernel hw).stableFunctorCommShift
     (splitExact_isFrobenius S w) (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw)
   let := quotientMaximalCohenMacaulayStableCokernelCommShift hw
-  have : NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm).hom
-      ℤ :=
-    TauCeti.natTrans_commShift_of_inverseCompIso e
-      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm)
-      (stableToHomotopyInverseCompMaximalCohenMacaulayStableFunctorIso_commShift hw)
-  exact inferInstanceAs (NatTrans.CommShift
-    (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm).inv ℤ)
-
-omit [IsLocalRing (S ⧸ Ideal.span {w})] in
-private theorem eqToIso_stableToHomotopy_comp_gp_commShift (hw : w ≠ 0) :
-    letI := (splitExact_isFrobenius S w).stableHasShift
-    letI := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
-      (A := S ⧸ Ideal.span {w})).stableHasShift
-    letI := stableToHomotopyCommShift S w
-    letI : (stableToHomotopy S w).asEquivalence.functor.CommShift ℤ := stableToHomotopyCommShift S w
-    letI := (stableToHomotopy S w).asEquivalence.commShiftInverse ℤ
-    letI := (stableToHomotopy S w).asEquivalence.commShift_of_functor ℤ
-    letI := (stableConflationExact_quotientGorensteinProjectiveCokernel
-      (have := TauCeti.IsRegularLocalRing.isDomain (R := S);
-        mem_nonZeroDivisors_of_ne_zero hw)).stableFunctorCommShift
-      (splitExact_isFrobenius S w) GorensteinProjectiveModuleCat.exactStructure_isFrobenius
-    letI := quotientGorensteinProjectiveStableCokernelCommShift
-      (have := TauCeti.IsRegularLocalRing.isDomain (R := S); mem_nonZeroDivisors_of_ne_zero hw)
-    NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-        (have := TauCeti.IsRegularLocalRing.isDomain (R := S);
-          mem_nonZeroDivisors_of_ne_zero hw))).hom ℤ := by
-  have := TauCeti.IsRegularLocalRing.isDomain (R := S)
-  let := (splitExact_isFrobenius S w).stableHasShift
-  let := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
-    (A := S ⧸ Ideal.span {w})).stableHasShift
-  let e := (stableToHomotopy S w).asEquivalence
-  let : (stableToHomotopy S w).CommShift ℤ := stableToHomotopyCommShift S w
-  let : e.functor.CommShift ℤ := stableToHomotopyCommShift S w
-  let := e.commShiftInverse ℤ; let := e.commShift_of_functor ℤ
-  let := (stableConflationExact_quotientGorensteinProjectiveCokernel
-    (mem_nonZeroDivisors_of_ne_zero hw)).stableFunctorCommShift
-    (splitExact_isFrobenius S w) GorensteinProjectiveModuleCat.exactStructure_isFrobenius
-  let := quotientGorensteinProjectiveStableCokernelCommShift (mem_nonZeroDivisors_of_ne_zero hw)
-  have : NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-        (mem_nonZeroDivisors_of_ne_zero hw)).symm).hom ℤ :=
-    TauCeti.natTrans_commShift_of_inverseCompIso e
-      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-        (mem_nonZeroDivisors_of_ne_zero hw)).symm)
-      (by
-        rw [← congrArg Iso.hom
-          (stableToHomotopyInverseCompStableFunctorIso_def (mem_nonZeroDivisors_of_ne_zero hw))]
-        exact stableToHomotopyInverseCompStableFunctorIso_commShift
-          (mem_nonZeroDivisors_of_ne_zero hw))
-  exact inferInstanceAs (NatTrans.CommShift
-    (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-      (mem_nonZeroDivisors_of_ne_zero hw)).symm).inv ℤ)
+  exact TauCeti.natTrans_commShift_eqToIso_of_inverseCompIso e
+    (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)
+    (stableToHomotopyInverseCompMaximalCohenMacaulayStableFunctorIso_commShift hw)
 
 private theorem stableNatTrans_mcmCompGP_app (hw : w ≠ 0) (X : MatrixFactorization S w) :
     have := TauCeti.IsRegularLocalRing.isDomain (R := S)
@@ -453,7 +402,8 @@ theorem quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStable
   let := MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalenceFunctorCommShift hw
   let := quotientGorensteinProjectiveStableCokernelCommShift (mem_nonZeroDivisors_of_ne_zero hw)
   have := eqToIso_stableToHomotopy_comp_mcm_commShift hw
-  have := eqToIso_stableToHomotopy_comp_gp_commShift hw
+  have := eqToIso_stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel_commShift
+    (mem_nonZeroDivisors_of_ne_zero hw)
   have := MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalence_functor_commShift hw
   have := StableConflationExact.eqToIso_stableFunctor_comp_commShift h₁ h₂ hE hE' hE''
   have := StableConflationExact.stableNatTrans_commShift (h₁.comp h₂) h₃ hE hE''
