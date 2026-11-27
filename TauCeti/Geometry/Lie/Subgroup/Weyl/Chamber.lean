@@ -49,7 +49,8 @@ whose hypotheses hold for the Weyl group:
   (`TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_reflection`);
 * only the identity of `W` fixes a regular `X`, because the adjoint stabilizer of a regular element
   of `𝔱` in the connected group `G` is `T` itself
-  (`TauCeti.IsRootPlaneDecomposition.stabilizer_continuousAdjointRepresentation_eq_iff`).
+  (`TauCeti.IsRootPlaneDecomposition.stabilizer_continuousAdjointRepresentation_eq_iff`,
+  `TauCeti.Lie.IsMaximalTorus.eq_one_of_weylAdjointRepresentation_apply_eq_self`).
 
 No root system structure on the real roots is needed: the argument does not use that `W` permutes
 the roots, nor a base or a positive system.
@@ -58,6 +59,10 @@ the roots, nor a base or a positive system.
 
 * `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_closedChamber_orbitRel_weylAdjointRepresentation`:
   every Weyl orbit in `𝔱` meets the closed chamber of a regular element exactly once.
+* `TauCeti.Lie.IsMaximalTorus.eq_one_of_weylAdjointRepresentation_apply_eq_self`: the Weyl group
+  acts freely on the regular elements of `𝔱`.
+* `TauCeti.Lie.IsMaximalTorus.weylClosedChamberHomeomorph`: the closed chamber is homeomorphic to
+  the Weyl orbit space `𝔱 / W`.
 * `TauCeti.Lie.IsMaximalTorus.closedChamberHomeomorph`: the closed chamber is homeomorphic to the
   adjoint orbit space.
 * `TauCeti.Lie.IsMaximalTorus.closedChamberCoadjointHomeomorph`,
@@ -120,8 +125,11 @@ private theorem exists_weylAdjointRepresentation_eq_reflection_of_decomposition
     hT.exists_weylAdjointRepresentation_eq_reflection hBs hBp hB (hD.isRootPlane i) (hα i) (hV i)
   exact ⟨c, hc, hcB, n, hn⟩
 
-/-- Only the identity of the Weyl group fixes a regular element of `𝔱`. -/
-private theorem eq_one_of_weylAdjointRepresentation_apply_eq_self (hT : IsMaximalTorus T)
+/-- **The Weyl group acts freely on the regular elements of `𝔱`.** Let `T` be a maximal torus of
+a compact connected Lie group, let `B` be an invariant inner product on `𝔤`, and let
+`𝔤 = 𝔱 + Σ E_i` be a root-plane decomposition with nonzero planes and nonzero roots `α_i`. Only the
+identity of the Weyl group `N(T) / T` fixes an element `X ∈ 𝔱` at which no root vanishes. -/
+theorem IsMaximalTorus.eq_one_of_weylAdjointRepresentation_apply_eq_self (hT : IsMaximalTorus T)
     (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant (LeftInvariantDerivation I G))
     (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
     (hα : ∀ i, α i ≠ 0) (hV : ∀ i, V i ≠ ⊥) (w : T.normalizerQuotient)
@@ -158,7 +166,37 @@ theorem IsMaximalTorus.existsUnique_mem_closedChamber_orbitRel_weylAdjointRepres
     (restrict_apply_self_pos hBp)
     (exists_weylAdjointRepresentation_eq_reflection_of_decomposition hT hBs hBp hB hD hα
       hV)
-    (eq_one_of_weylAdjointRepresentation_apply_eq_self hT hBp hB hD hα hV) hX₀ X
+    (hT.eq_one_of_weylAdjointRepresentation_apply_eq_self hBp hB hD hα hV) hX₀ X
+
+/-- **The closed Weyl chamber parametrizes the Weyl orbits in `𝔱`.** Under the hypotheses of
+`TauCeti.Lie.IsMaximalTorus.existsUnique_mem_closedChamber_orbitRel_weylAdjointRepresentation`,
+sending a point of the closed chamber of `X₀` to its Weyl orbit is a homeomorphism from the closed
+chamber onto the orbit space `𝔱 / W`. -/
+noncomputable def IsMaximalTorus.weylClosedChamberHomeomorph (hT : IsMaximalTorus T)
+    (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef)
+    (hB : B.lieInvariant (LeftInvariantDerivation I G))
+    (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
+    (hα : ∀ i, α i ≠ 0) (hV : ∀ i, V i ≠ ⊥) (hX₀ : ∀ i, α i X₀ ≠ 0) :
+    closedChamber α X₀ ≃ₜ Quotient (T.weylAdjointRepresentation (I := I)).orbitRel :=
+  have := hT.finite_normalizerQuotient I
+  (T.weylAdjointRepresentation (I := I)).closedChamberHomeomorph (restrict_apply_self_pos hBp)
+    (exists_weylAdjointRepresentation_eq_reflection_of_decomposition hT hBs hBp hB hD hα hV)
+    (hT.eq_one_of_weylAdjointRepresentation_apply_eq_self hBp hB hD hα hV) hX₀
+    (fun _ ↦ LinearMap.continuous_of_finiteDimensional _)
+    (fun _ ↦ LinearMap.continuous_of_finiteDimensional _)
+
+/-- The homeomorphism `TauCeti.Lie.IsMaximalTorus.weylClosedChamberHomeomorph` sends a point of
+the closed chamber to its Weyl orbit. -/
+@[simp]
+theorem IsMaximalTorus.weylClosedChamberHomeomorph_apply (hT : IsMaximalTorus T)
+    (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef)
+    (hB : B.lieInvariant (LeftInvariantDerivation I G))
+    (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
+    (hα : ∀ i, α i ≠ 0) (hV : ∀ i, V i ≠ ⊥) (hX₀ : ∀ i, α i X₀ ≠ 0) (X : closedChamber α X₀) :
+    hT.weylClosedChamberHomeomorph hBs hBp hB hD hα hV hX₀ X =
+      Quotient.mk (T.weylAdjointRepresentation (I := I)).orbitRel
+        (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) := by
+  simp [weylClosedChamberHomeomorph]
 
 /-- **The closed Weyl chamber parametrizes the adjoint orbits.** Under the hypotheses of
 `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_closedChamber_orbitRel_weylAdjointRepresentation`,
@@ -170,13 +208,7 @@ noncomputable def IsMaximalTorus.closedChamberHomeomorph (hT : IsMaximalTorus T)
     (hα : ∀ i, α i ≠ 0) (hV : ∀ i, V i ≠ ⊥) (hX₀ : ∀ i, α i X₀ ≠ 0) :
     closedChamber α X₀ ≃ₜ
       Quotient (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel :=
-  have := hT.finite_normalizerQuotient I
-  ((T.weylAdjointRepresentation (I := I)).closedChamberHomeomorph (restrict_apply_self_pos hBp)
-    (exists_weylAdjointRepresentation_eq_reflection_of_decomposition hT hBs hBp hB hD hα
-      hV)
-    (eq_one_of_weylAdjointRepresentation_apply_eq_self hT hBp hB hD hα hV) hX₀
-    (fun _ ↦ LinearMap.continuous_of_finiteDimensional _)
-    (fun _ ↦ LinearMap.continuous_of_finiteDimensional _)).trans hT.weylOrbitHomeomorph
+  (hT.weylClosedChamberHomeomorph hBs hBp hB hD hα hV hX₀).trans hT.weylOrbitHomeomorph
 
 /-- The homeomorphism `TauCeti.Lie.IsMaximalTorus.closedChamberHomeomorph` sends a point of the
 closed chamber to its adjoint orbit. -/
@@ -246,13 +278,7 @@ noncomputable def IsMaximalTorus.closedChamberCoadjointHomeomorph (hT : IsMaxima
     (hB' : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B')
     (hB's : LinearMap.SeparatingLeft B') :
     closedChamber α X₀ ≃ₜ Quotient (coadjointRepresentation ℝ I G).orbitRel :=
-  have := hT.finite_normalizerQuotient I
-  ((T.weylAdjointRepresentation (I := I)).closedChamberHomeomorph (restrict_apply_self_pos hBp)
-    (exists_weylAdjointRepresentation_eq_reflection_of_decomposition hT hBs hBp hB hD hα
-      hV)
-    (eq_one_of_weylAdjointRepresentation_apply_eq_self hT hBp hB hD hα hV) hX₀
-    (fun _ ↦ LinearMap.continuous_of_finiteDimensional _)
-    (fun _ ↦ LinearMap.continuous_of_finiteDimensional _)).trans
+  (hT.weylClosedChamberHomeomorph hBs hBp hB hD hα hV hX₀).trans
     (hT.weylCoadjointOrbitHomeomorph hB' hB's)
 
 /-- The homeomorphism `TauCeti.Lie.IsMaximalTorus.closedChamberCoadjointHomeomorph` sends a point

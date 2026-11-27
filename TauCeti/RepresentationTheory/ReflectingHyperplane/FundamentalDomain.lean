@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.OrbitSpace
 public import Mathlib.Topology.Homeomorph.Defs
 import Mathlib.Order.Filter.Finite
 import Mathlib.RepresentationTheory.Stabilizer
+import TauCeti.LinearAlgebra.Reflection
 
 /-!
 # Closed chambers as strict fundamental domains
@@ -101,6 +102,10 @@ theorem openChamber_subset_closedChamber : openChamber α x₀ ⊆ closedChamber
 theorem apply_ne_zero_of_mem_openChamber (hx : x ∈ openChamber α x₀) (i : ι) : α i x ≠ 0 :=
   fun h ↦ by simpa [h] using hx i
 
+/-- A nonempty open chamber has a base point lying on no hyperplane. -/
+theorem apply_ne_zero_of_mem_openChamber_base (hx : x ∈ openChamber α x₀) (i : ι) : α i x₀ ≠ 0 :=
+  fun h ↦ by simpa [h] using hx i
+
 /-- A point lies in its own open chamber exactly when it lies on no hyperplane. -/
 theorem self_mem_openChamber_iff : x₀ ∈ openChamber α x₀ ↔ ∀ i, α i x₀ ≠ 0 :=
   forall_congr' fun _ ↦ mul_self_pos
@@ -125,6 +130,12 @@ theorem convex_openChamber : Convex ℝ (openChamber α x₀) := by
   · rw [zero_add] at hab
     simpa [hab] using hy i
 
+/-- The closed chamber is convex. -/
+theorem convex_closedChamber : Convex ℝ (closedChamber α x₀) := by
+  intro x hx y hy a b ha hb _ i
+  rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, add_mul, mul_assoc, mul_assoc]
+  exact add_nonneg (mul_nonneg ha (hx i)) (mul_nonneg hb (hy i))
+
 /-- Moving a point of the closed chamber towards `x₀` enters the open chamber. -/
 theorem add_smul_mem_openChamber (hx : x ∈ closedChamber α x₀) (hx₀ : ∀ i, α i x₀ ≠ 0) {t : ℝ}
     (ht : 0 < t) : x + t • x₀ ∈ openChamber α x₀ := fun i ↦ by
@@ -136,6 +147,26 @@ theorem isClosed_closedChamber [TopologicalSpace V] (hα : ∀ i, Continuous (α
     IsClosed (closedChamber α x₀) := by
   simp only [closedChamber, Set.ofPred_forall]
   exact isClosed_iInter fun i ↦ isClosed_le continuous_const ((hα i).mul continuous_const)
+
+/-- The open chamber is open when there are finitely many forms and they are continuous. -/
+theorem isOpen_openChamber [Finite ι] [TopologicalSpace V] (hα : ∀ i, Continuous (α i)) :
+    IsOpen (openChamber α x₀) := by
+  simp only [openChamber, Set.ofPred_forall]
+  exact isOpen_iInter_of_finite fun i ↦ isOpen_lt continuous_const ((hα i).mul continuous_const)
+
+/-- The closure of the open chamber of a regular point is its closed chamber, for continuous
+forms on a topological vector space. -/
+theorem closure_openChamber [TopologicalSpace V] [ContinuousAdd V] [ContinuousSMul ℝ V]
+    (hα : ∀ i, Continuous (α i)) (hx₀ : ∀ i, α i x₀ ≠ 0) :
+    closure (openChamber α x₀) = closedChamber α x₀ := by
+  refine (closure_minimal openChamber_subset_closedChamber (isClosed_closedChamber hα)).antisymm
+    fun x hx ↦ ?_
+  -- The points `x + t • x₀`, `t > 0`, of the open chamber tend to `x`.
+  have h : Tendsto (fun t : ℝ ↦ x + t • x₀) (𝓝[>] 0) (𝓝 x) := by
+    have hc : Continuous fun t : ℝ ↦ x + t • x₀ := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  exact mem_closure_of_tendsto h (eventually_nhdsWithin_of_forall fun t ht ↦
+    add_smul_mem_openChamber hx hx₀ ht)
 
 /-- A point `y` of the closed chamber of a regular `x₀` moves into the closed chamber in every
 direction `v` lying on the side of `x₀` of the walls through `y`, for small positive times. -/
@@ -171,16 +202,6 @@ variable {ι G V : Type*} [Group G] [AddCommGroup V] [Module ℝ V] (ρ : Repres
 
 /-! ### Existence of a representative in the closed chamber -/
 
-/-- A reflection along a `B`-orthogonal coroot changes the height `B (x₀, ·)` by
-`-α x * α x₀ * B (c, c) / 2`. -/
-private theorem apply_reflection_eq {a : Module.Dual ℝ V} {c : V} (hc : a c = 2)
-    (horth : ∀ x, a x = 0 → B x c = 0) (x₀ x : V) :
-    B x₀ (Module.reflection hc x) = B x₀ x - a x * a x₀ * B c c / 2 := by
-  have h := horth (x₀ - (a x₀ / 2) • c) (by simp [hc])
-  rw [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, sub_eq_zero] at h
-  rw [Module.reflection_apply, map_sub, map_smul, smul_eq_mul, h]
-  ring
-
 /-- **Existence inside a subgroup.** If a subgroup `H` of a finite group contains the
 `B`-orthogonal reflections in the walls `ker α i` for `i ∈ S`, then every `H`-orbit has a point on
 the side of `x₀` of each of these walls. -/
@@ -197,7 +218,8 @@ private theorem exists_mem_forall_mem_le_mul [Finite G] (hB : ∀ v, v ≠ 0 →
   have hcc : 0 < B c c := hB c fun h0 ↦ by simp [h0] at hc
   -- Reflecting `ρ h x` in `ker α i` would raise the height.
   have hle := hmax (g * h) (H.mul_mem hgH hH)
-  rw [map_mul, mul_apply_eq_comp, hg, LinearEquiv.coe_coe, apply_reflection_eq hc horth] at hle
+  rw [map_mul, mul_apply_eq_comp, hg, LinearEquiv.coe_coe,
+    Module.bilinForm_apply_reflection_right hc horth] at hle
   nlinarith [mul_pos (neg_pos.2 hneg) hcc]
 
 /-- **Every orbit meets the closed chamber.** Let `ρ` be a representation of a finite group
@@ -226,9 +248,7 @@ theorem apply_ne_zero_of_forall_apply_ne_zero
   obtain ⟨c, hc, s, hs⟩ := hrefl i
   -- The reflection `s` fixes `ρ g x`, so its conjugate `g⁻¹ s g` fixes the regular point `x`.
   have hfix : ρ (g⁻¹ * s * g) x = x := by
-    rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, hs, LinearEquiv.coe_coe,
-      Module.reflection_apply, h0, zero_smul, sub_zero, ← mul_apply_eq_comp, ← map_mul,
-      inv_mul_cancel, map_one, one_apply_eq_self]
+    simp [hs, Module.reflection_apply, h0]
   have hs1 : s = 1 := by
     have := hfree _ x hx hfix
     rwa [mul_assoc, inv_mul_eq_one, eq_comm, mul_eq_right] at this
@@ -253,7 +273,7 @@ private theorem apply_mem_openChamber_of_apply_mem_openChamber (f : V →ₗ[ℝ
   have ha : 0 < a := hfz i
   have hb : b < 0 := hle.lt_of_ne fun h ↦ (mul_ne_zero
     (hf y (fun _ ↦ apply_ne_zero_of_mem_openChamber hy _) i)
-    (fun h0 ↦ by simpa [h0] using hz i)) h
+    (apply_ne_zero_of_mem_openChamber_base hz i)) h
   -- The point `p = (1 - s) z + s y` of the open chamber, `s = a / (a - b)`, has `α i (f p) = 0`.
   have hab : 0 < a - b := by linarith
   set s := a / (a - b)
@@ -269,7 +289,7 @@ private theorem apply_mem_openChamber_of_apply_mem_openChamber (f : V →ₗ[ℝ
     field_simp
     ring
   rw [hzero] at hval
-  exact (mul_eq_zero.1 hval).resolve_right fun h0 ↦ by simpa [h0] using hz i
+  exact (mul_eq_zero.1 hval).resolve_right (apply_ne_zero_of_mem_openChamber_base hz i)
 
 /-- **Only the identity moves a point of an open chamber into that open chamber.** Let `ρ` be a
 representation of a finite group containing the reflection in every hyperplane `ker α i`, such
@@ -298,11 +318,13 @@ theorem eq_one_of_apply_mem_openChamber [Finite G]
   have hp : p ∈ openChamber α x₀ := by
     obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
     simpa only [p, hm] using hsum m
+  -- Applying `ρ g` shifts the index of the sum by one. The term `ρ (g ^ n) z` gained equals the
+  -- term `ρ (g ^ 0) z` lost, because `g ^ n = 1 = g ^ 0`.
   have hfix : ρ g p = p := by
-    have h := Finset.sum_range_succ' (fun k ↦ ρ (g ^ k) z) n
-    rw [Finset.sum_range_succ, pow_orderOf_eq_one, ← pow_zero g, add_left_inj] at h
-    simp only [p, map_sum, ← mul_apply_eq_comp, ← map_mul, ← pow_succ']
-    exact h.symm
+    have h := (Finset.sum_range_succ' (fun k ↦ ρ (g ^ k) z) n).symm.trans
+      (Finset.sum_range_succ _ n)
+    rw [pow_orderOf_eq_one, pow_zero, add_left_inj] at h
+    simpa only [p, map_sum, ← mul_apply_eq_comp, ← map_mul, ← pow_succ'] using h
   exact hfree g p (fun _ ↦ apply_ne_zero_of_mem_openChamber hp _) hfix
 
 /-! ### Uniqueness of the representative in the closed chamber -/

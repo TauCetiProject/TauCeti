@@ -44,6 +44,11 @@ The iterates of `r₁ r₂` are Mathlib's `Module.reflection_mul_reflection_pow_
 `Module.reflection_mul_reflection_pow_apply_self`, in terms of the Chebyshev polynomials
 `Polynomial.Chebyshev.S`, evaluated here at `c - 2 = -1, 0, 1`. The braid relations of a root
 pairing in `TauCeti.LinearAlgebra.RootSystem.BraidRelation` are derived from these.
+
+Over a field, a reflection along a vector `c` that is orthogonal to the hyperplane `ker f` for a
+bilinear form `B` changes `B (x₀, ·)` by `-f x * f x₀ * B (c, c) / 2`
+(`Module.bilinForm_apply_reflection_right`). This is the height computation behind closed chambers
+of finite reflection groups.
 -/
 
 public section
@@ -319,5 +324,21 @@ theorem orderOf_reflection_mul_reflection_eq_zero [CharZero R]
   linarith [(Nat.cast_nonneg m : (0 : ℤ) ≤ m)]
 
 end Pair
+
+section BilinForm
+
+variable {K : Type u} {M : Type v} [Field K] [NeZero (2 : K)] [AddCommGroup M] [Module K M]
+  {a : Dual K M} {c : M} {B : LinearMap.BilinForm K M}
+
+/-- A reflection `x ↦ x - a x • c` along a vector `c` that is `B`-orthogonal to the hyperplane
+`ker a` changes `B (x₀, ·)` by `-a x * a x₀ * B (c, c) / 2`. -/
+theorem bilinForm_apply_reflection_right (hc : a c = 2) (horth : ∀ x, a x = 0 → B x c = 0)
+    (x₀ x : M) : B x₀ (reflection hc x) = B x₀ x - a x * a x₀ * B c c / 2 := by
+  have h := horth (x₀ - (a x₀ / 2) • c) (by simp [hc, div_mul_cancel₀ _ (two_ne_zero' K)])
+  rw [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, sub_eq_zero] at h
+  rw [reflection_apply, map_sub, map_smul, smul_eq_mul, h]
+  ring
+
+end BilinForm
 
 end Module
