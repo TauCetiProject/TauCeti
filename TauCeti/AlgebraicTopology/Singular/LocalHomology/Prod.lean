@@ -346,6 +346,8 @@ private theorem preimage_fst_compl_union_preimage_snd_compl {Z₁ Z₂ : TopCat.
     (z₂ : Z₂) :
     CartesianMonoidalCategory.fst Z₁ Z₂ ⁻¹' ({z₁}ᶜ : Set Z₁) ∪
       CartesianMonoidalCategory.snd Z₁ Z₂ ⁻¹' ({z₂}ᶜ : Set Z₂) = {(z₁, z₂)}ᶜ := by
+  -- The cartesian projections of `TopCat` are `Prod.fst` and `Prod.snd` by definition, and Mathlib
+  -- has no lemma rewriting them as such.
   change Prod.fst ⁻¹' {z₁}ᶜ ∪ Prod.snd ⁻¹' {z₂}ᶜ = ({(z₁, z₂)}ᶜ : Set (Z₁ × Z₂))
   rw [← singleton_prod_singleton, compl_prod_eq_union, prod_univ, univ_prod]
 
@@ -372,10 +374,7 @@ private theorem singularHomologyMap_tensorHom_eq_smul (φ : OpenPartialHomeomorp
   obtain ⟨z, hz⟩ := exists_span_singularHomology_complSingleton_eq_top (k := k) φ hx rfl
   obtain ⟨z', hz'⟩ := exists_span_singularHomology_complSingleton_eq_top (k := k) ψ hy rfl
   have : Projective (localHomology (ModuleCat.of k k) ({x} : Set X) (finrank ℝ E)) :=
-    have : Projective (ModuleCat.of k k) :=
-      @ModuleCat.projective_of_categoryTheory_projective _ _ _
-        (inferInstanceAs (Module.Projective k k))
-    Projective.of_iso (singularHomologyComplSingletonFinrankIso _ φ hx).symm this
+    Projective.of_iso (singularHomologyComplSingletonFinrankIso _ φ hx).symm inferInstance
   have hspan := span_singularHomologyKunnethPair_tmul_eq_top
     (fun p hp ↦ isZero_singularHomology_complSingleton_of_ne _ φ hx rfl hp) hz hz'
   -- By naturality of the Künneth map, `f × g` multiplies that generator by `a * b`.

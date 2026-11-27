@@ -93,9 +93,7 @@ theorem bijective_homologyCross_tmul_singularChainComplex_complSingleton
   have (p : ℕ) : Module.Projective k
       (((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularChainComplex
         (𝟙_ (ModuleCat.{w} k))).X p) :=
-    have : Projective (𝟙_ (ModuleCat.{w} k)) :=
-      @ModuleCat.projective_of_categoryTheory_projective _ _ _
-        (inferInstanceAs (Module.Projective k k))
+    have : Projective (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Projective (ModuleCat.of k k))
     have := SSetPair.projective_chainComplex_X (𝟙_ (ModuleCat.{w} k))
       (TopPair.toSSetPair.obj (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)))) p
     ModuleCat.projective_of_module_projective _
