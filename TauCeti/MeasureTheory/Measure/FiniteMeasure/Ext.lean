@@ -310,24 +310,19 @@ theorem ext_of_forall_integral_eq_of_lipschitzWith {μ ν : Measure X} [IsFinite
     have hδ1 : ∀ n, δ n ≤ 1 := fun n ↦ div_le_one_of_le₀ (by simp) (by positivity)
     let g : ℕ → X →ᵇ ℝ≥0 := fun n ↦ thickenedIndicator (hδ n) F
     -- `δ n * g n` is `1`-Lipschitz and bounded by `δ n ≤ 1`, so it is a test function.
-    have hg (n : ℕ) : ∫⁻ x, g n x ∂μ = ∫⁻ x, g n x ∂ν := by
+    have hg (n : ℕ) : ∫ x, (g n x : ℝ) ∂μ = ∫ x, (g n x : ℝ) ∂ν := by
       have hint := h _ (TauCeti.lipschitzWith_one_mul_thickenedIndicator (hδ n) F)
         (fun x ↦ (TauCeti.norm_mul_thickenedIndicator_le (hδ n) F x).trans (hδ1 n))
       rw [integral_const_mul, integral_const_mul] at hint
-      refine (ENNReal.toReal_eq_toReal_iff' ((g n).lintegral_lt_top_of_nnreal μ).ne
-        ((g n).lintegral_lt_top_of_nnreal ν).ne).1 ?_
-      rw [BoundedContinuousFunction.toReal_lintegral_coe_eq_integral,
-        BoundedContinuousFunction.toReal_lintegral_coe_eq_integral]
       exact mul_left_cancel₀ (hδ n).ne' hint
-    have hlim : Tendsto (fun n x ↦ g n x) atTop (𝓝 (F.indicator fun _ ↦ (1 : ℝ≥0))) := by
-      simpa [hF.closure_eq] using thickenedIndicator_tendsto_indicator_closure hδ
-        tendsto_one_div_add_atTop_nhds_zero_nat F
-    have hμ := measure_of_cont_bdd_of_tendsto_indicator μ hF.measurableSet g
-      (fun n x ↦ thickenedIndicator_le_one (hδ n) F x) hlim
-    have hν := measure_of_cont_bdd_of_tendsto_indicator ν hF.measurableSet g
-      (fun n x ↦ thickenedIndicator_le_one (hδ n) F x) hlim
-    simp_rw [hg] at hμ
-    exact tendsto_nhds_unique hμ hν
+    simp only [g] at hg
+    exact (measureReal_eq_measureReal_iff).1 <| tendsto_nhds_unique
+      (by
+        simpa only [hg] using
+          tendsto_integral_thickenedIndicator_of_isClosed μ hF hδ
+            tendsto_one_div_add_atTop_nhds_zero_nat)
+      (tendsto_integral_thickenedIndicator_of_isClosed ν hF hδ
+        tendsto_one_div_add_atTop_nhds_zero_nat)
   exact ext_of_generate_finite _ (BorelSpace.measurable_eq.trans borel_eq_generateFrom_isClosed)
     isPiSystem_isClosed (fun _ ↦ key) (key isClosed_univ)
 
