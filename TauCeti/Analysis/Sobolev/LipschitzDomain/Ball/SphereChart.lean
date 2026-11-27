@@ -121,34 +121,37 @@ theorem unitSphereGraph_of_norm_le {v : K} (hv : ‖v‖ ≤ 1 / 4) :
   rw [unitSphereGraph,
     (unitSphereBump (K := K)).one_of_mem_closedBall (by simpa [unitSphereBump] using hv), one_mul]
 
+/-- On `closedBall 0 (r/4)` the rescaled sphere graph `r g(v / r)` is `r - √(r² - ‖v‖²)`. -/
+private theorem mul_unitSphereGraph_inv_smul_of_norm_le {r : ℝ} (hr : 0 < r) {v : K}
+    (hv : ‖v‖ ≤ r / 4) : r * unitSphereGraph (r⁻¹ • v) = r - √(r ^ 2 - ‖v‖ ^ 2) := by
+  have hnorm : ‖r⁻¹ • v‖ = r⁻¹ * ‖v‖ := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hr)]
+  have hv' : ‖r⁻¹ • v‖ ≤ 1 / 4 := by
+    rw [hnorm, inv_mul_le_iff₀ hr]
+    linarith
+  have hsq : r ^ 2 - ‖v‖ ^ 2 = r ^ 2 * (1 - ‖r⁻¹ • v‖ ^ 2) := by
+    rw [hnorm]
+    field_simp
+  rw [unitSphereGraph_of_norm_le hv', hsq, Real.sqrt_mul (sq_nonneg r), Real.sqrt_sq hr.le]
+  ring
+
 /-- Near the centre of the chart, `ν`-coordinate `r - s` and tangential coordinate `v` describe a
 point of the open ball of radius `r` exactly when `s` lies strictly above the sphere graph
-`r (1 - √(1 - ‖v / r‖²))`, and a point of the closed ball exactly when `s` lies above it. -/
-theorem sq_add_sq_lt_iff {r s : ℝ} (hr : 0 < r) {v : K}
+`r (1 - √(1 - ‖v / r‖²))`. -/
+theorem sub_sq_add_norm_sq_lt_sq_iff_mul_unitSphereGraph_lt {r s : ℝ} (hr : 0 < r) {v : K}
     (hs : s < r) (hv : ‖v‖ ≤ r / 4) :
-    ((r - s) ^ 2 + ‖v‖ ^ 2 < r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) < s) ∧
-      ((r - s) ^ 2 + ‖v‖ ^ 2 ≤ r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) ≤ s) := by
-  have hv' : ‖r⁻¹ • v‖ ≤ 1 / 4 := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hr), inv_mul_le_iff₀ hr]
-    linarith
-  have hvr : ‖r⁻¹ • v‖ ^ 2 = ‖v‖ ^ 2 / r ^ 2 := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hr)]
-    field_simp
-  have hq : 0 ≤ 1 - ‖r⁻¹ • v‖ ^ 2 := by nlinarith [norm_nonneg (r⁻¹ • v)]
-  rw [unitSphereGraph_of_norm_le hv']
-  set q := √(1 - ‖r⁻¹ • v‖ ^ 2)
-  have hq2 : q ^ 2 = 1 - ‖v‖ ^ 2 / r ^ 2 := by rw [Real.sq_sqrt hq, hvr]
-  have hrq : (r * q) ^ 2 = r ^ 2 - ‖v‖ ^ 2 := by
-    rw [mul_pow, hq2]
-    field_simp
-  have hlt : r * (1 - q) < s ↔ (r - s) ^ 2 < (r * q) ^ 2 := by
-    rw [sq_lt_sq₀ (by linarith) (by positivity)]
-    constructor <;> intro h <;> linarith
-  have hle : r * (1 - q) ≤ s ↔ (r - s) ^ 2 ≤ (r * q) ^ 2 := by
-    rw [sq_le_sq₀ (by linarith) (by positivity)]
-    constructor <;> intro h <;> linarith
-  rw [hlt, hle, hrq]
-  exact ⟨by constructor <;> intro h <;> linarith, by constructor <;> intro h <;> linarith⟩
+    (r - s) ^ 2 + ‖v‖ ^ 2 < r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) < s := by
+  rw [mul_unitSphereGraph_inv_smul_of_norm_le hr hv, sub_lt_comm,
+    Real.lt_sqrt (by linarith), lt_sub_iff_add_lt]
+
+/-- Near the centre of the chart, `ν`-coordinate `r - s` and tangential coordinate `v` describe a
+point of the closed ball of radius `r` exactly when `s` lies above the sphere graph
+`r (1 - √(1 - ‖v / r‖²))`. -/
+theorem sub_sq_add_norm_sq_le_sq_iff_mul_unitSphereGraph_le {r s : ℝ} (hr : 0 < r) {v : K}
+    (hs : s < r) (hv : ‖v‖ ≤ r / 4) :
+    (r - s) ^ 2 + ‖v‖ ^ 2 ≤ r ^ 2 ↔ r * unitSphereGraph (r⁻¹ • v) ≤ s := by
+  rw [mul_unitSphereGraph_inv_smul_of_norm_le hr hv, sub_le_comm,
+    Real.le_sqrt' (by linarith), le_sub_iff_add_le]
 
 end Graph
 
@@ -209,7 +212,8 @@ theorem unitSphereChart_symm_mem_ball_iff (ν : E) (hν : ‖ν‖ = 1)
     (unitSphereChart ν hν).symm z ∈ ball 0 1 ↔ unitSphereGraph z.snd < z.fst := by
   rw [mem_normalCylinder] at hz
   obtain ⟨-, ht2, hv⟩ := hz
-  have h := (sq_add_sq_lt_iff one_pos (s := z.fst) (by linarith) (v := z.snd) (by linarith)).1
+  have h := sub_sq_add_norm_sq_lt_sq_iff_mul_unitSphereGraph_lt one_pos (s := z.fst) (by linarith)
+    (v := z.snd) (by linarith)
   rwa [inv_one, one_smul, one_mul, one_pow, ← norm_unitSphereChart_symm_sq ν hν,
     sq_lt_one_iff₀ (norm_nonneg _), ← mem_ball_zero_iff] at h
 
@@ -320,9 +324,10 @@ private theorem sphereChart_symm_mem_iff {r : ℝ} (hr : 0 < r) (ν : E) (hν : 
     rw [LinearIsometryEquiv.symm_neg, LinearIsometryEquiv.coe_neg]
   constructor
   · rw [mem_ball_zero_iff, ← sq_lt_sq₀ (norm_nonneg _) hr.le, norm_sphereChart_symm_sq, hrefl]
-    exact (sq_add_sq_lt_iff hr (by linarith) hv.le).1
+    exact sub_sq_add_norm_sq_lt_sq_iff_mul_unitSphereGraph_lt hr (by linarith) hv.le
   · rw [mem_compl_iff, mem_closedBall_zero_iff, ← sq_le_sq₀ (norm_nonneg _) hr.le,
-      norm_sphereChart_symm_sq, hneg, (sq_add_sq_lt_iff hr (by linarith) hv.le).2, not_le,
+      norm_sphereChart_symm_sq, hneg,
+      sub_sq_add_norm_sq_le_sq_iff_mul_unitSphereGraph_le hr (by linarith) hv.le, not_le,
       neg_one_mul]
     constructor <;> intro h <;> linarith
 

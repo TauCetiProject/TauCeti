@@ -69,13 +69,15 @@ private theorem norm_sub_lt_iff_of_norm_sub_lt {c z ν x : E} {R : ℝ}
   have hPx : ‖P (x - c)‖ ≤ R / 4 := by
     have hPν : P ν = 0 := Submodule.starProjection_orthogonalComplement_singleton_eq_zero ν
     simpa [hxc, hPν] using (Submodule.norm_starProjection_apply_le _ (x - z)).trans hx.le
-  -- In the coordinates `r = R`, `s = ⟪x, ν⟫ - ⟪z, ν⟫`, `v = P (x - c)` of `sq_add_sq_lt_iff`,
+  -- In the coordinates `r = R`, `s = ⟪x, ν⟫ - ⟪z, ν⟫`, `v = P (x - c)` of
+  -- `sub_sq_add_norm_sq_lt_sq_iff_mul_unitSphereGraph_lt`,
   -- `r - s = -⟪ν, x - c⟫`.
   have hxz : ⟪ν, x - z⟫_ℝ = ⟪x, ν⟫_ℝ - ⟪z, ν⟫_ℝ := by simp [inner_sub_right, real_inner_comm]
   have ht : ⟪ν, x - c⟫_ℝ = ⟪ν, x - z⟫_ℝ - R := by
     simp [hxc, inner_add_right, inner_smul_right, hν, sub_eq_add_neg]
   have hνxz : ⟪ν, x - z⟫_ℝ ≤ ‖x - z‖ := by simpa [hν] using real_inner_le_norm ν (x - z)
-  have key := (sq_add_sq_lt_iff hR (s := ⟪x, ν⟫_ℝ - ⟪z, ν⟫_ℝ) (by linarith) hPx).1
+  have key := sub_sq_add_norm_sq_lt_sq_iff_mul_unitSphereGraph_lt hR
+    (s := ⟪x, ν⟫_ℝ - ⟪z, ν⟫_ℝ) (by linarith) hPx
   rw [show R - (⟪x, ν⟫_ℝ - ⟪z, ν⟫_ℝ) = -⟪ν, x - c⟫_ℝ by linarith, neg_sq,
     lt_sub_iff_add_lt'] at key
   rw [smul_apply, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hR.le two_ne_zero, hPsq, key]
