@@ -154,8 +154,8 @@ theorem normalDilation_map_inrL2_toLp
       WithLp.toLp 2 (s, V.normalDilation t y) := by
   have hdec : WithLp.toLp 2 (s, y) =
       WithLp.toLp 2 (s, Vᗮ.starProjection y) + WithLp.toLp 2 (0, V.starProjection y) := by
-    rw [← WithLp.toLp_add, Prod.mk_add_mk, add_zero, add_comm,
-      starProjection_add_starProjection_orthogonal]
+    apply WithLp.ofLp_injective 2
+    ext <;> simp [add_comm]
   have hp :
       WithLp.toLp 2 (s, Vᗮ.starProjection y) ∈ (V.map (WithLp.inrL2 ℝ ℝ E).toLinearMap)ᗮ := by
     rw [mem_orthogonal]
@@ -165,8 +165,9 @@ theorem normalDilation_map_inrL2_toLp
     exact inner_right_of_mem_orthogonal hq (Vᗮ.starProjection_apply_mem y)
   have hq : WithLp.toLp 2 (0, V.starProjection y) ∈ V.map (WithLp.inrL2 ℝ ℝ E).toLinearMap :=
     ⟨_, V.starProjection_apply_mem y, (WithLp.inrL2_apply ℝ ℝ E _)⟩
-  rw [hdec, normalDilation_add_of_mem_orthogonal _ hp hq, ← WithLp.toLp_smul, ← WithLp.toLp_add,
-    Prod.smul_mk, smul_zero, Prod.mk_add_mk, add_zero, normalDilation_apply]
+  rw [hdec, normalDilation_add_of_mem_orthogonal _ hp hq]
+  apply WithLp.ofLp_injective 2
+  ext <;> simp [normalDilation_apply]
 
 /-- **A normal coordinate.** Along the subspace of vectors `(s, v)`, `v ∈ V`, of `ℝ × E`, the
 normal dilation by `t` multiplies the first coordinate by `t` and acts on the second as the
@@ -177,16 +178,18 @@ theorem normalDilation_comap_sndₗ_toLp [(V.comap (WithLp.sndₗ 2 ℝ ℝ E)).
       WithLp.toLp 2 (t * s, V.normalDilation t y) := by
   have hdec : WithLp.toLp 2 (s, y) =
       WithLp.toLp 2 (0, Vᗮ.starProjection y) + WithLp.toLp 2 (s, V.starProjection y) := by
-    rw [← WithLp.toLp_add, Prod.mk_add_mk, zero_add, add_comm,
-      starProjection_add_starProjection_orthogonal]
+    apply WithLp.ofLp_injective 2
+    ext <;> simp [add_comm]
   have hp : WithLp.toLp 2 (0, Vᗮ.starProjection y) ∈ (V.comap (WithLp.sndₗ 2 ℝ ℝ E))ᗮ := by
     rw [mem_orthogonal]
     intro w hw
+    rw [mem_comap, WithLp.sndₗ_apply] at hw
     simp only [WithLp.prod_inner_apply, inner_zero_right, zero_add]
     exact inner_right_of_mem_orthogonal hw (Vᗮ.starProjection_apply_mem y)
   have hq : WithLp.toLp 2 (s, V.starProjection y) ∈ V.comap (WithLp.sndₗ 2 ℝ ℝ E) :=
-    V.starProjection_apply_mem y
-  rw [hdec, normalDilation_add_of_mem_orthogonal _ hp hq, ← WithLp.toLp_smul, ← WithLp.toLp_add,
-    Prod.smul_mk, Prod.mk_add_mk, zero_add, smul_eq_mul, normalDilation_apply]
+    mem_comap.2 (by simp [V.starProjection_apply_mem y])
+  rw [hdec, normalDilation_add_of_mem_orthogonal _ hp hq]
+  apply WithLp.ofLp_injective 2
+  ext <;> simp [normalDilation_apply]
 
 end Submodule

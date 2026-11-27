@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Semiclassical.UniformlyLocal
 public import TauCeti.Analysis.Sobolev.Trace.IteratedFDeriv
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.BumpFunction.Translates
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
@@ -228,16 +229,17 @@ private theorem mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation_eq
     hv.comp (WithLp.contDiff_toLp.comp (contDiff_const.prodMk contDiff_id))
   have hrc : HasCompactSupport fun y : E ↦ v (WithLp.toLp 2 (b, y)) :=
     hvc.comp_isClosedEmbedding he
-  have hrm : ∀ n ≤ k, MemLp (iteratedFDeriv ℝ n fun y : E ↦ v (WithLp.toLp 2 (b, y))) 2 :=
-    fun n hn ↦ (hr.continuous_iteratedFDeriv (by norm_cast; omega)).memLp_of_hasCompactSupport
-      (hrc.iteratedFDeriv n)
+  have hrm : ∀ n ≤ k, MemLp (iteratedFDeriv ℝ n (g ∘ V.normalDilation h)) 2 := fun n hn ↦
+    hg ▸ hr.memLp_iteratedFDeriv_of_hasCompactSupport (by norm_cast; omega) hrc
   have hum : ∀ n ≤ k + 1, ∀ a ≤ n, MemLp (W.mixedIteratedFDeriv n a u) 2 := fun n hn a _ ↦
-    W.memLp_mixedIteratedFDeriv ((hu.continuous_iteratedFDeriv (by exact_mod_cast hn)
-      ).memLp_of_hasCompactSupport (hsupp.iteratedFDeriv n)) a
-  rw [V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation k g hh, hg]
-  calc V.mixedSemiclassicalSobolevNorm k 1 (fun y ↦ v (WithLp.toLp 2 (b, y)))
-      ≤ (k + 1) * TauCeti.semiclassicalSobolevNorm k 1 (fun y ↦ v (WithLp.toLp 2 (b, y))) :=
-        V.mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one hrm
+    W.memLp_mixedIteratedFDeriv
+      (hu.memLp_iteratedFDeriv_of_hasCompactSupport (by exact_mod_cast hn) hsupp) a
+  calc V.mixedSemiclassicalSobolevNorm k h g
+      ≤ (k + 1) * TauCeti.semiclassicalSobolevNorm k 1 (g ∘ V.normalDilation h) :=
+        (V.memLp_mixedIteratedFDeriv_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation
+          hh hrm).2
+    _ = (k + 1) * TauCeti.semiclassicalSobolevNorm k 1 (fun y ↦ v (WithLp.toLp 2 (b, y))) := by
+        rw [hg]
     _ ≤ (k + 1) * (2 * TauCeti.semiclassicalSobolevNorm (k + 1) 1 v) :=
         mul_le_mul_of_nonneg_left
           (TauCeti.semiclassicalSobolevNorm_hyperplane_le hv hvc one_pos b) (by positivity)
