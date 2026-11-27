@@ -21,7 +21,8 @@ Pullback along a map with a local analytic inverse, such as a chart, is an equiv
 It is in particular bijective (`stalkPullback_bijective`), as is pullback along a continuous
 linear equivalence (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`). For a boundaryless
 model, `OpenPartialHomeomorph.holomorphicStalkEquivModelSpace` identifies a manifold stalk with a
-stalk on a continuously linearly equivalent model space using any analytic chart;
+stalk on a continuously linearly equivalent model space using any analytic chart, and
+`OpenPartialHomeomorph.holomorphicStalkEquivFin` specializes this to `Fin d → ℂ` for a `C¹` chart;
 `stalkEquivModelSpace` specializes this ring equivalence to the preferred chart, which identifies
 a stalk of a finite-dimensional manifold with a stalk of a model space in `Type`
 (`exists_ringEquiv_stalk_modelSpace`). Together with isolated-point evaluation in dimension zero,
@@ -353,6 +354,34 @@ theorem toFilterGerm_holomorphicStalkEquivModelSpace
     toFilterGerm_stalkPullbackEquiv_symm (f := e ∘ c.extend I)
       (g := (c.extend I).symm ∘ e.symm)]
 
+section FiniteDimensional
+
+variable [FiniteDimensional ℂ E]
+
+/-- For a boundaryless model of finite dimension, a `C¹` chart identifies a holomorphic stalk with
+a stalk on `Fin (Module.finrank ℂ E) → ℂ`. -/
+def holomorphicStalkEquivFin (c : OpenPartialHomeomorph X H)
+    (hc : c ∈ IsManifold.maximalAtlas I 1 X) {x : X} (hx : x ∈ c.source) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+*
+      (holomorphicStructureSheaf 𝓘(ℂ, Fin (Module.finrank ℂ E) → ℂ)
+        (Fin (Module.finrank ℂ E) → ℂ)).presheaf.stalk
+        ((ContinuousLinearEquiv.ofFinrankEq (by simp) :
+          E ≃L[ℂ] Fin (Module.finrank ℂ E) → ℂ) (c.extend I x)) :=
+  c.holomorphicStalkEquivModelSpace (V := Fin (Module.finrank ℂ E) → ℂ)
+    (IsManifold.mem_maximalAtlas_of_ne_zero one_ne_zero hc) x hx
+    (ContinuousLinearEquiv.ofFinrankEq (by simp))
+
+/-- `holomorphicStalkEquivFin` is `holomorphicStalkEquivModelSpace` specialized to
+`ContinuousLinearEquiv.ofFinrankEq`. -/
+theorem holomorphicStalkEquivFin_eq (c : OpenPartialHomeomorph X H)
+    (hc : c ∈ IsManifold.maximalAtlas I 1 X) {x : X} (hx : x ∈ c.source) :
+    c.holomorphicStalkEquivFin hc hx =
+      c.holomorphicStalkEquivModelSpace (IsManifold.mem_maximalAtlas_of_ne_zero one_ne_zero hc)
+        x hx (ContinuousLinearEquiv.ofFinrankEq (by simp)) := by
+  rfl
+
+end FiniteDimensional
+
 end OpenPartialHomeomorph
 
 namespace TauCeti.holomorphicStructureSheaf
@@ -457,13 +486,12 @@ theorem exists_ringEquiv_stalk_modelSpace [FiniteDimensional ℂ E] [IsManifold 
     ∃ (V : Type) (_ : NormedAddCommGroup V) (_ : NormedSpace ℂ V) (_ : FiniteDimensional ℂ V)
       (v : V), Module.finrank ℂ V = Module.finrank ℂ E ∧
         Nonempty ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk v ≃+*
-          (holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+          (holomorphicStructureSheaf I X).presheaf.stalk x) :=
   -- The model `E` may live in any universe, while the stalks of model spaces are compared in
   -- `Type`: compose the chart at `x` with a linear isomorphism onto a space in `Type`.
-  let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  exact ⟨Fin (Module.finrank ℂ E) → ℂ, inferInstance, inferInstance, inferInstance,
-    e (extChartAt I x x), by simp, ⟨(stalkEquivModelSpace x e).symm⟩⟩
+  ⟨Fin (Module.finrank ℂ E) → ℂ, inferInstance, inferInstance, inferInstance,
+    _, by simp, ⟨((chartAt H x).holomorphicStalkEquivFin
+      (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)).symm⟩⟩
 
 end TauCeti.holomorphicStructureSheaf
 
@@ -532,9 +560,8 @@ theorem stalk_induction (P : ∀ (R : Type) [CommRing R], Prop)
           (holomorphicStructureSheaf 𝓘(ℂ, (Fin n → ℂ) × ℂ) ((Fin n → ℂ) × ℂ)).presheaf.stalk p)
           hfy.symm).trans (RingEquiv.ofBijective _ hbij))
         (hprod n ih)
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  let e : E ≃L[ℂ] Fin (Module.finrank ℂ E) → ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  exact hequiv (stalkEquivModelSpace x e).symm
-    (hmodel (Module.finrank ℂ E) (e (extChartAt I x x)))
+  exact hequiv ((chartAt H x).holomorphicStalkEquivFin
+    (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)).symm
+    (hmodel (Module.finrank ℂ E) _)
 
 end TauCeti.holomorphicStructureSheaf

@@ -13,10 +13,12 @@ import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Fintype.List
 
 /-!
-# Finitely many words of bounded degree
+# Finite lists over finite types
 
 A positive integer weight bounds a word's length by its total weight. If the
 letters of weight at most the cutoff are finite, the words are finite as well.
+This file also shows that any duplicate-free list over a finite type can be extended
+to a duplicate-free list covering every element.
 
 ## Main results
 
@@ -25,9 +27,10 @@ letters of weight at most the cutoff are finite, the words are finite as well.
 * `TauCeti.finite_setOf_sum_map_le_nat`: the finite-cutoff theorem for positive natural weights.
 * `List.finite_setOf_sum_map_snd_add_one_le`: words in pairs of a finite label and a
   natural number have finite cutoffs when each weight is the second entry plus one.
+* `List.Nodup.exists_append_forall_mem`: completes a duplicate-free list over a finite type to a
+  duplicate-free list containing every element.
 * `Set.Finite.nodup_blocks`: a finite set of lists admits finitely many records
   formed by placing one duplicate-free label block in each gap.
-
 -/
 
 public section
@@ -92,6 +95,17 @@ theorem finite_setOf_sum_map_snd_add_one_le (α : Type*) [Finite α] (K : ℕ) :
     exact ⟨(a, ⟨n, by omega⟩), rfl⟩
   exact (TauCeti.finite_setOf_sum_map_le_nat w K
     (fun p _ => Nat.succ_pos p.2) hcut).subset fun _ hl => ⟨fun _ _ => Set.mem_univ _, hl⟩
+
+/-- Completes a duplicate-free list over a finite type to a duplicate-free list covering every
+element. -/
+theorem Nodup.exists_append_forall_mem {ι : Type*} [Finite ι] {l : List ι} (hl : l.Nodup) :
+    ∃ l' : List ι, (l ++ l').Nodup ∧ ∀ i : ι, i ∈ l ++ l' := by
+  classical
+  obtain ⟨all, hall, hmem⟩ := Finite.exists_univ_list ι
+  have hperm : List.Perm (l ++ all.diff l) all :=
+    List.subperm_append_diff_self_of_count_le (List.subperm_ext_iff.mp
+      (hl.subperm fun i _ ↦ hmem i))
+  exact ⟨all.diff l, hperm.nodup_iff.2 hall, fun i ↦ hperm.mem_iff.2 (hmem i)⟩
 
 end List
 

@@ -36,6 +36,8 @@ manifold consequences of that fact, for a model without boundary.
 * `IsManifold.of_ne_zero`: a complex `C^m` manifold, `m ≠ 0`, is a complex `C^n` manifold for
   every `n`.
 * `IsManifold.maximalAtlas_eq_of_ne_zero`: its maximal atlases for all orders `n ≠ 0` agree.
+* `IsManifold.mem_maximalAtlas_of_ne_zero`: every `C^m` chart (`m ≠ 0`) belongs to the `C^n`
+  maximal atlas for every `n`, in particular `n = ω`.
 * `IsManifold.restrictScalars_of_ne_zero`: a complex manifold modelled on `𝓘(ℂ, E)` is a real
   `C^n` manifold modelled on `𝓘(ℝ, E)` for every `n`, in particular a real-analytic one.
 * `IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero`: its holomorphic charts belong to the
@@ -101,6 +103,14 @@ space, agree for all nonzero orders of smoothness. -/
 theorem _root_.IsManifold.maximalAtlas_eq_of_ne_zero (hm : m ≠ 0) (hn : n ≠ 0) :
     IsManifold.maximalAtlas I m M = IsManifold.maximalAtlas I n M := by
   rw [IsManifold.maximalAtlas, IsManifold.maximalAtlas, contDiffGroupoid_eq_of_ne_zero hm hn]
+
+/-- Every `C^m` chart (`m ≠ 0`) of a complex manifold, modelled without boundary on a
+finite-dimensional space, belongs to the `C^n` maximal atlas for every `n`, and in particular to
+the analytic maximal atlas (`n = ω`). -/
+theorem _root_.IsManifold.mem_maximalAtlas_of_ne_zero (hm : m ≠ 0)
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I m M) :
+    e ∈ IsManifold.maximalAtlas I n M :=
+  StructureGroupoid.maximalAtlas_mono (contDiffGroupoid_le_of_ne_zero hm) he
 
 /-! ### The underlying real-analytic manifold -/
 
