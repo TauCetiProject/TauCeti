@@ -29,6 +29,7 @@ orbit-space topology for that action with hypotheses on `ρ` itself.
 
 * When every `ρ g` is continuous, the quotient map `V → V / G` is open
   (`Representation.isOpenQuotientMap_orbitRel_mk`), by `MulAction.isOpenQuotientMap_quotientMk`.
+  If moreover `G` is finite, it is also closed (`Representation.isClosedMap_orbitRel_mk_of_finite`).
 * When `G` is a compact space and the action `(g, v) ↦ ρ g v` is jointly continuous, the quotient
   map is also closed and proper (`Representation.isClosedMap_orbitRel_mk`,
   `Representation.isProperMap_orbitRel_mk`), by `MulAction.isClosedMap_quotientMk_of_compactSpace`
@@ -95,6 +96,21 @@ theorem isOpenQuotientMap_orbitRel_mk (hρ : ∀ g : G, Continuous (ρ g)) :
   letI := MulAction.compHom V ρ
   haveI : ContinuousConstSMul G V := ⟨hρ⟩
   MulAction.isOpenQuotientMap_quotientMk
+
+/-- **The orbit map of a finite group is closed.** For a representation of a finite group by
+continuous operators, the quotient map `V → V / G` is closed: the saturation of a closed set `F`
+is the finite union of the closed sets `(ρ g)⁻¹ F`. -/
+theorem isClosedMap_orbitRel_mk_of_finite [Finite G] (hρ : ∀ g : G, Continuous (ρ g)) :
+    IsClosedMap (Quotient.mk ρ.orbitRel) := by
+  intro F hF
+  have : Quotient.mk ρ.orbitRel ⁻¹' (Quotient.mk ρ.orbitRel '' F) = ⋃ g, ρ g ⁻¹' F := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_image, ρ.orbitRel_mk_eq_mk_iff, Set.mem_iUnion]
+    exact ⟨fun ⟨_, hy, g, hg⟩ ↦ ⟨g, hg ▸ hy⟩, fun ⟨g, hg⟩ ↦ ⟨_, hg, g, rfl⟩⟩
+  have hsat : IsClosed (Quotient.mk ρ.orbitRel ⁻¹' (Quotient.mk ρ.orbitRel '' F)) := by
+    rw [this]
+    exact isClosed_iUnion_of_finite fun g ↦ hF.preimage (hρ g)
+  exact isQuotientMap_quotient_mk'.isClosed_preimage.1 hsat
 
 variable [TopologicalSpace G] [CompactSpace G]
 
