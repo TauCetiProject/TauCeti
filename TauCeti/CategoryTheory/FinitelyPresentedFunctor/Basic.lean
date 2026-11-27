@@ -182,21 +182,32 @@ theorem isFinitelyPresentedFunctor_le_additiveFunctor :
 /-! ### Finite sums of representable functors -/
 
 /-- A functor is isomorphic to a finite sum of representable functors. -/
-private def IsFiniteSum (A : Cᵒᵖ ⥤ AddCommGrpCat.{v}) : Prop :=
+def IsFiniteSumOfRepresentables (A : Cᵒᵖ ⥤ AddCommGrpCat.{v}) : Prop :=
   ∃ (n : ℕ) (Y : Fin n → C), Nonempty (A ≅ ∐ fun i ↦ preadditiveYoneda.obj (Y i))
 
-private theorem IsFiniteSum.of_iso {A B : Cᵒᵖ ⥤ AddCommGrpCat.{v}} (hA : IsFiniteSum A)
-    (e : A ≅ B) : IsFiniteSum B := by
+/-- A finite sum of representables admits a presentation by a coproduct indexed by some
+`Fin n`. -/
+theorem isFiniteSumOfRepresentables_def {A : Cᵒᵖ ⥤ AddCommGrpCat.{v}} :
+    IsFiniteSumOfRepresentables A ↔
+      ∃ (n : ℕ) (Y : Fin n → C), Nonempty (A ≅ ∐ fun i ↦ preadditiveYoneda.obj (Y i)) :=
+  Iff.rfl
+
+/-- Being a finite sum of representable functors is invariant under isomorphism. -/
+theorem IsFiniteSumOfRepresentables.of_iso {A B : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    (hA : IsFiniteSumOfRepresentables A) (e : A ≅ B) : IsFiniteSumOfRepresentables B := by
   obtain ⟨n, Y, ⟨e'⟩⟩ := hA
   exact ⟨n, Y, ⟨e.symm ≪≫ e'⟩⟩
 
-private theorem isFiniteSum_sigma {J : Type} [Finite J] (Y : J → C) :
-    IsFiniteSum (∐ fun j ↦ preadditiveYoneda.obj (Y j)) := by
+/-- A coproduct of representable functors indexed by a finite type is a finite sum of
+representables. -/
+theorem isFiniteSumOfRepresentables_sigma {J : Type} [Finite J] (Y : J → C) :
+    IsFiniteSumOfRepresentables (∐ fun j ↦ preadditiveYoneda.obj (Y j)) := by
   obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin J
   exact ⟨n, Y ∘ e.symm, ⟨(Sigma.reindex e.symm (fun j ↦ preadditiveYoneda.obj (Y j))).symm⟩⟩
 
-private theorem isFiniteSum_preadditiveYoneda_obj (Y : C) :
-    IsFiniteSum (preadditiveYoneda.obj Y) :=
+/-- A representable functor is a finite sum of representables. -/
+theorem isFiniteSumOfRepresentables_preadditiveYoneda_obj (Y : C) :
+    IsFiniteSumOfRepresentables (preadditiveYoneda.obj Y) :=
   ⟨1, fun _ ↦ Y, ⟨(coproductUniqueIso fun _ : Fin 1 ↦ preadditiveYoneda.obj Y).symm⟩⟩
 
 /-- The binary biproduct of two finite sums of representable functors is the finite sum indexed
@@ -210,18 +221,20 @@ private noncomputable def biprodSigmaIso {J K : Type} (X : J → C) (Y : K → C
       (coproductIsCoproduct fun j ↦ preadditiveYoneda.obj (X j))
       (coproductIsCoproduct fun k ↦ preadditiveYoneda.obj (Y k)))
 
-private theorem IsFiniteSum.biprod {A B : Cᵒᵖ ⥤ AddCommGrpCat.{v}} (hA : IsFiniteSum A)
-    (hB : IsFiniteSum B) : IsFiniteSum (A ⊞ B) := by
+private theorem IsFiniteSumOfRepresentables.biprod {A B : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    (hA : IsFiniteSumOfRepresentables A) (hB : IsFiniteSumOfRepresentables B) :
+    IsFiniteSumOfRepresentables (A ⊞ B) := by
   obtain ⟨m, X, ⟨eA⟩⟩ := hA
   obtain ⟨n, Y, ⟨eB⟩⟩ := hB
-  exact (isFiniteSum_sigma (Sum.elim X Y)).of_iso
+  exact (isFiniteSumOfRepresentables_sigma (Sum.elim X Y)).of_iso
     ((biprodSigmaIso X Y).symm ≪≫ biprod.mapIso eA.symm eB.symm)
 
 /-- A functor presented, up to isomorphism, by a morphism between finite sums of representable
 functors is finitely presented. -/
 private theorem isFinitelyPresentedFunctor_of_isFiniteSum {A B : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     (f : A ⟶ B) (p : B ⟶ F) (h : f ≫ p = 0) (hc : IsColimit (CokernelCofork.ofπ p h))
-    (hA : IsFiniteSum A) (hB : IsFiniteSum B) : IsFinitelyPresentedFunctor F := by
+    (hA : IsFiniteSumOfRepresentables A) (hB : IsFiniteSumOfRepresentables B) :
+    IsFinitelyPresentedFunctor F := by
   obtain ⟨m, X, ⟨eA⟩⟩ := hA
   obtain ⟨n, Y, ⟨eB⟩⟩ := hB
   have : Epi p := Cofork.IsColimit.epi hc
@@ -247,7 +260,8 @@ theorem isFinitelyPresentedFunctor_preadditiveYoneda_obj (Y : C) :
     IsFinitelyPresentedFunctor (preadditiveYoneda.obj Y) :=
   isFinitelyPresentedFunctor_of_isFiniteSum (preadditiveYoneda.map (0 : Y ⟶ Y)) (𝟙 _) (by simp)
     (CokernelCofork.IsColimit.ofId _ (Functor.map_zero _ _ _))
-    (isFiniteSum_preadditiveYoneda_obj Y) (isFiniteSum_preadditiveYoneda_obj Y)
+    (isFiniteSumOfRepresentables_preadditiveYoneda_obj Y)
+    (isFiniteSumOfRepresentables_preadditiveYoneda_obj Y)
 
 /-- A representable functor `(-, Y)` is finitely generated. -/
 theorem isFinitelyGeneratedFunctor_preadditiveYoneda_obj (Y : C) :
@@ -311,7 +325,8 @@ theorem isFinitelyPresentedFunctor_iff_exists_single [HasFiniteBiproducts C]
     exact ShortComplex.isoMk eX eY (Iso.refl _) (by simp [hg]) (by simp)
   · rintro ⟨X, Y, f, p, h, hp, hS⟩
     exact isFinitelyPresentedFunctor_of_isFiniteSum _ p h hS.gIsCokernel
-      (isFiniteSum_preadditiveYoneda_obj X) (isFiniteSum_preadditiveYoneda_obj Y)
+      (isFiniteSumOfRepresentables_preadditiveYoneda_obj X)
+      (isFiniteSumOfRepresentables_preadditiveYoneda_obj Y)
 
 /-- With finite biproducts, every object of `mod C` is a quotient of a representable functor. -/
 theorem exists_epi_modYoneda_obj [HasFiniteBiproducts C]
@@ -339,7 +354,8 @@ theorem IsFinitelyPresentedFunctor.of_isColimit_cokernelCofork {φ : F ⟶ G}
     · simp [reassoc_of% hℓ]
   refine isFinitelyPresentedFunctor_of_isFiniteSum _ _ hgc
     (CokernelCofork.IsColimit.ofπ' _ _ fun t ht ↦ ?_)
-    ((isFiniteSum_sigma X).biprod (isFiniteSum_sigma Z)) (isFiniteSum_sigma Y)
+    ((isFiniteSumOfRepresentables_sigma X).biprod (isFiniteSumOfRepresentables_sigma Z))
+    (isFiniteSumOfRepresentables_sigma Y)
   -- A morphism `t` killing `[g, ℓ]` factors through `q` as `t'`, and `t'` kills `φ`.
   obtain ⟨t', ht'⟩ := CokernelCofork.IsColimit.desc' hS.gIsCokernel t
     (by simpa using biprod.inl ≫= ht)
@@ -363,8 +379,8 @@ theorem IsFinitelyPresentedFunctor.biprod (hF : IsFinitelyPresentedFunctor F)
   obtain ⟨_, _, X₂, Y₂, f₂, p₂, h₂, _, hS₂⟩ := hG
   exact isFinitelyPresentedFunctor_of_isFiniteSum (biprod.map f₁ f₂) (biprod.map p₁ p₂) _
     (CokernelCofork.isColimitBiprod hS₁.gIsCokernel hS₂.gIsCokernel)
-    ((isFiniteSum_sigma X₁).biprod (isFiniteSum_sigma X₂))
-    ((isFiniteSum_sigma Y₁).biprod (isFiniteSum_sigma Y₂))
+    ((isFiniteSumOfRepresentables_sigma X₁).biprod (isFiniteSumOfRepresentables_sigma X₂))
+    ((isFiniteSumOfRepresentables_sigma Y₁).biprod (isFiniteSumOfRepresentables_sigma Y₂))
 
 instance : (isFinitelyPresentedFunctor C).IsClosedUnderCokernels where
   cokernels_le := by
