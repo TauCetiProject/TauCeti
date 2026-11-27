@@ -45,6 +45,11 @@ quasi-coherent algebras: for `T` a disjoint union of countably many copies of `S
 
 * `TauCeti.AlgebraicGeometry.nonempty_adjunction_relativeSpecQcqs`: relative Spec is a right
   adjoint on quasi-compact quasi-separated schemes over `X`.
+* `TauCeti.AlgebraicGeometry.relativeSpecQcqsAdjunction_homEquiv_apply_left`,
+  `TauCeti.AlgebraicGeometry.relativeSpecQcqsAdjunction_homEquiv_symm_apply_unop_hom`,
+  `TauCeti.AlgebraicGeometry.relativeSpecQcqsAdjunction_unit_app_left` and
+  `TauCeti.AlgebraicGeometry.relativeSpecQcqsAdjunction_counit_app_unop_hom`: the hom-set
+  bijection, unit and counit in terms of `relativeSpecHomIso`.
 * `TauCeti.AlgebraicGeometry.isIso_unit_app_iff_isAffineHom`: the unit of any such adjunction at
   `T` is an isomorphism exactly when `T ⟶ X` is affine.
 
@@ -74,10 +79,6 @@ instance (T : QcqsOver X) : QuasiCompact T.hom := T.prop.1
 
 instance (T : QcqsOver X) : QuasiSeparated T.hom := T.prop.2
 
-/-- The function algebra of a quasi-compact quasi-separated scheme over `X` is quasi-coherent. -/
-instance (T : QcqsOver X) : T.hom.pushforwardStructureAlgebra.X.IsQuasicoherent :=
-  inferInstanceAs ((Scheme.Modules.pushforward T.hom).obj (𝟙_ _)).IsQuasicoherent
-
 variable (X) in
 /-- The function-algebra functor `q ↦ q_* 𝒪_T` on quasi-compact quasi-separated schemes over `X`,
 landing in quasi-coherent algebras by `Scheme.Modules.isQuasicoherent_pushforward`: the
@@ -101,6 +102,22 @@ def relativeSpecQcqs : (QuasicoherentAlgebra X)ᵒᵖ ⥤ QcqsOver X :=
     (fun _ _ _ (_ : IsAffineHom _) ↦ ⟨inferInstance, inferInstance⟩) le_rfl le_rfl
 
 @[simp]
+lemma qcqsFunctions_map_hom {T T' : (QcqsOver X)ᵒᵖ} (g : T ⟶ T') :
+    ((qcqsFunctions X).map g).hom =
+      Scheme.Hom.pushforwardStructureAlgebraMap g.unop.left (MorphismProperty.Over.w g.unop) :=
+  (rfl)
+
+@[simp]
+lemma relativeSpecQcqs_obj_left (A : (QuasicoherentAlgebra X)ᵒᵖ) :
+    ((relativeSpecQcqs X).obj A).left = A.unop.obj.relativeSpec :=
+  (rfl)
+
+@[simp]
+lemma relativeSpecQcqs_map_left {A B : (QuasicoherentAlgebra X)ᵒᵖ} (f : A ⟶ B) :
+    ((relativeSpecQcqs X).map f).left = CommMon.relativeSpecMap f.unop.hom :=
+  (rfl)
+
+@[simp]
 lemma relativeSpecQcqs_obj_hom (A : (QuasicoherentAlgebra X)ᵒᵖ) :
     ((relativeSpecQcqs X).obj A).hom = A.unop.obj.relativeSpecToBase :=
   (rfl)
@@ -116,27 +133,45 @@ instance : (relativeSpecQcqs X).Full := (relativeSpecQcqsFullyFaithful X).full
 
 instance : (relativeSpecQcqs X).Faithful := (relativeSpecQcqsFullyFaithful X).faithful
 
-/-- The bijection of the adjunction `(qcqsFunctions X).rightOp ⊣ relativeSpecQcqs X`: the
-components of `relativeSpecHomIso`, read in `QcqsOver X`. -/
-private def relativeSpecQcqsHomEquiv (T : QcqsOver X) (A : (QuasicoherentAlgebra X)ᵒᵖ) :
-    ((qcqsFunctions X).rightOp.obj T ⟶ A) ≃ (T ⟶ (relativeSpecQcqs X).obj A) where
-  toFun φ := (MorphismProperty.Over.forget _ ⊤ X).preimage
+/-- The morphism `T ⟶ Spec_X A` over `X` of an algebra map `A ⟶ q_* 𝒪_T`, given by the inverse
+components of `relativeSpecHomIso`. The ascription identifies the target of that component,
+`Spec_X A` read in `Over X` through affine schemes, with `Spec_X A` read through `QcqsOver X`;
+the two objects agree definitionally. -/
+private def relativeSpecQcqsLift (T : QcqsOver X) (A : (QuasicoherentAlgebra X)ᵒᵖ)
+    (φ : (qcqsFunctions X).rightOp.obj T ⟶ A) : T ⟶ (relativeSpecQcqs X).obj A :=
+  (MorphismProperty.Over.forget _ ⊤ X).preimage
     (show (MorphismProperty.Over.forget _ ⊤ X).obj T ⟶
         (MorphismProperty.Over.forget _ ⊤ X).obj ((relativeSpecQcqs X).obj A) from
       ((relativeSpecHomIso X).inv.app A).app (op ((MorphismProperty.Over.forget _ _ X).obj T))
         φ.unop.hom)
+
+/-- The morphism of `relativeSpecQcqsLift`, read in `Over X`, is the inverse component of
+`relativeSpecHomIso`. This is the one place where `Functor.map_preimage` meets the ascription in
+`relativeSpecQcqsLift`, hence the `erw`. -/
+private lemma forget_map_relativeSpecQcqsLift (T : QcqsOver X) (A : (QuasicoherentAlgebra X)ᵒᵖ)
+    (φ : (qcqsFunctions X).rightOp.obj T ⟶ A) :
+    (MorphismProperty.Over.forget _ ⊤ X).map (relativeSpecQcqsLift T A φ) =
+      ((relativeSpecHomIso X).inv.app A).app (op ((MorphismProperty.Over.forget _ _ X).obj T))
+        φ.unop.hom := by
+  unfold relativeSpecQcqsLift
+  erw [Functor.map_preimage]
+
+/-- The bijection of the adjunction `(qcqsFunctions X).rightOp ⊣ relativeSpecQcqs X`: the
+components of `relativeSpecHomIso`, read in `QcqsOver X`. -/
+private def relativeSpecQcqsHomEquiv (T : QcqsOver X) (A : (QuasicoherentAlgebra X)ᵒᵖ) :
+    ((qcqsFunctions X).rightOp.obj T ⟶ A) ≃ (T ⟶ (relativeSpecQcqs X).obj A) where
+  toFun := relativeSpecQcqsLift T A
   invFun t := Quiver.Hom.op ⟨((relativeSpecHomIso X).hom.app A).app
     (op ((MorphismProperty.Over.forget _ _ X).obj T)) ((MorphismProperty.Over.forget _ ⊤ X).map t)⟩
   left_inv φ := by
     apply Quiver.Hom.unop_inj
     apply InducedCategory.hom_ext
-    simp only [Quiver.Hom.unop_op]
-    erw [Functor.map_preimage]
+    simp only [Quiver.Hom.unop_op, forget_map_relativeSpecQcqsLift]
     exact types_congr_hom (NatTrans.congr_app (NatTrans.congr_app
       (relativeSpecHomIso X).inv_hom_id A) _) φ.unop.hom
   right_inv t := by
     apply (MorphismProperty.Over.forget _ ⊤ X).map_injective
-    erw [Functor.map_preimage]
+    rw [forget_map_relativeSpecQcqsLift]
     exact types_congr_hom (NatTrans.congr_app (NatTrans.congr_app
       (relativeSpecHomIso X).hom_inv_id A) _)
       ((MorphismProperty.Over.forget (@QuasiCompact ⊓ @QuasiSeparated) ⊤ X).map t)
@@ -157,25 +192,53 @@ def relativeSpecQcqsAdjunction : (qcqsFunctions X).rightOp ⊣ relativeSpecQcqs 
       homEquiv_naturality_right := by
         intro T A A' φ a
         apply (MorphismProperty.Over.forget _ ⊤ X).map_injective
-        simp only [relativeSpecQcqsHomEquiv, Equiv.coe_fn_mk, Functor.map_comp]
-        erw [Functor.map_preimage, Functor.map_preimage]
+        simp only [relativeSpecQcqsHomEquiv, Equiv.coe_fn_mk, Functor.map_comp,
+          forget_map_relativeSpecQcqsLift]
         exact types_congr_hom (NatTrans.congr_app ((relativeSpecHomIso X).inv.naturality a)
           (op ((MorphismProperty.Over.forget _ ⊤ X).obj T))) φ.unop.hom }
 
+/-- The hom-set bijection of `relativeSpecQcqsAdjunction X` sends an algebra map
+`φ : A ⟶ q_* 𝒪_T` to the lift `T ⟶ Spec_X A` (Stacks Project, Tag 01LW). Not a `simp` lemma: the
+type of `homEquiv T A` contains `(qcqsFunctions X).rightOp.obj T`, which `simp` rewrites by
+`Functor.rightOp_obj`, so no left-hand side is in simp normal form. -/
+lemma relativeSpecQcqsAdjunction_homEquiv_apply_left (T : QcqsOver X)
+    (A : (QuasicoherentAlgebra X)ᵒᵖ) (φ : (qcqsFunctions X).rightOp.obj T ⟶ A) :
+    ((relativeSpecQcqsAdjunction X).homEquiv T A φ).left = CommMon.relativeSpecLift φ.unop.hom := by
+  rw [relativeSpecQcqsAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  exact (congrArg CommaMorphism.left (forget_map_relativeSpecQcqsLift T A φ)).trans
+    (congrArg CommaMorphism.left (relativeSpecHomIso_inv_app_app A _ φ.unop.hom))
+
+/-- The inverse of the hom-set bijection sends a morphism `t : T ⟶ Spec_X A` over `X` to its
+pullback of regular functions `A ⟶ q_* 𝒪_T`, the component of `relativeSpecHomIso`. Not a `simp`
+lemma, for the reason given at `relativeSpecQcqsAdjunction_homEquiv_apply_left`. -/
+lemma relativeSpecQcqsAdjunction_homEquiv_symm_apply_unop_hom (T : QcqsOver X)
+    (A : (QuasicoherentAlgebra X)ᵒᵖ) (t : T ⟶ (relativeSpecQcqs X).obj A) :
+    (((relativeSpecQcqsAdjunction X).homEquiv T A).symm t).unop.hom =
+      A.unop.obj.relativeSpecHomEquiv T.hom ⟨t.left, MorphismProperty.Over.w t⟩ := by
+  rw [relativeSpecQcqsAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  exact relativeSpecHomIso_hom_app_app A _
+    ((MorphismProperty.Over.forget (@QuasiCompact ⊓ @QuasiSeparated) ⊤ X).map t)
+
+/-- The counit of `relativeSpecQcqsAdjunction X` at `A` is the pullback of regular functions along
+the identity of `Spec_X A`, the canonical map from `A` to the function algebra of `Spec_X A`
+(Stacks Project, Tag 01LX). -/
+lemma relativeSpecQcqsAdjunction_counit_app_unop_hom (A : (QuasicoherentAlgebra X)ᵒᵖ) :
+    ((relativeSpecQcqsAdjunction X).counit.app A).unop.hom =
+      A.unop.obj.relativeSpecHomEquiv A.unop.obj.relativeSpecToBase ⟨𝟙 _, Category.id_comp _⟩ := by
+  rw [← Adjunction.homEquiv_symm_id]
+  exact relativeSpecQcqsAdjunction_homEquiv_symm_apply_unop_hom _ A (𝟙 _)
+
 /-- The unit of `relativeSpecQcqsAdjunction X` at `q : T ⟶ X` is the canonical morphism
 `T ⟶ Spec_X(q_* 𝒪_T)`, the lift of the identity of `q_* 𝒪_T` (Stacks Project, Tag 01LY). -/
+@[simp]
 lemma relativeSpecQcqsAdjunction_unit_app_left (T : QcqsOver X) :
     ((relativeSpecQcqsAdjunction X).unit.app T).left =
       CommMon.relativeSpecLift (𝟙 T.hom.pushforwardStructureAlgebra) := by
-  have := congrArg CommaMorphism.left (relativeSpecHomIso_inv_app_app
-    (op ((qcqsFunctions X).obj (op T))) (op ((MorphismProperty.Over.forget _ ⊤ X).obj T))
-    (𝟙 T.hom.pushforwardStructureAlgebra))
-  have hunit : (relativeSpecQcqsAdjunction X).unit.app T =
-      relativeSpecQcqsHomEquiv T _ (𝟙 _) := rfl
-  refine Eq.trans ?_ this
-  rw [hunit]
-  exact congrArg CommaMorphism.left
-    (Functor.map_preimage (MorphismProperty.Over.forget (@QuasiCompact ⊓ @QuasiSeparated) ⊤ X) _)
+  rw [← Adjunction.homEquiv_id]
+  -- `(qcqsFunctions X).rightOp.obj T` is `op ((qcqsFunctions X).obj (op T))`, whose object is
+  -- `q_* 𝒪_T` by the `(rfl)` lemmas `Functor.rightOp_obj` and `qcqsFunctions_obj_obj`; the
+  -- identity sits in a dependent position, where those lemmas cannot be rewritten with.
+  exact relativeSpecQcqsAdjunction_homEquiv_apply_left T _ (𝟙 _)
 
 variable (X) in
 /-- **Relative Spec is a right adjoint** on quasi-compact quasi-separated schemes over `X`
@@ -190,12 +253,8 @@ lemma relativeSpecQcqs_essImage_iff (T : QcqsOver X) :
     (relativeSpecQcqs X).essImage T ↔ IsAffineHom T.hom := by
   constructor
   · rintro ⟨A, ⟨e⟩⟩
-    have : IsIso e.inv.left := ⟨e.hom.left,
-      by rw [← MorphismProperty.Comma.comp_left, e.inv_hom_id]; rfl,
-      by rw [← MorphismProperty.Comma.comp_left, e.hom_inv_id]; rfl⟩
+    have : IsAffineHom ((relativeSpecQcqs X).obj A).hom := ((relativeSpec X).obj A).prop
     rw [← MorphismProperty.Over.w e.inv]
-    have h1 : IsAffineHom e.inv.left := inferInstance
-    have h2 : IsAffineHom ((relativeSpecQcqs X).obj A).hom := ((relativeSpec X).obj A).prop
     infer_instance
   · intro hT
     obtain ⟨A, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage (F := relativeSpec X)

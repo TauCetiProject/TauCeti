@@ -51,9 +51,11 @@ noncomputable section
 
 variable {X V : Scheme.{u}}
 
-/-- The function algebra `p_* 𝒪_V` of an affine morphism `p : V ⟶ X` is quasi-coherent. -/
+/-- The function algebra `p_* 𝒪_V` of a quasi-compact quasi-separated morphism `p : V ⟶ X`,
+for instance an affine one, is quasi-coherent (Stacks Project, Tag 01LC). -/
 instance _root_.AlgebraicGeometry.Scheme.Hom.isQuasicoherent_pushforwardStructureAlgebra
-    (p : V ⟶ X) [IsAffineHom p] : p.pushforwardStructureAlgebra.X.IsQuasicoherent :=
+    (p : V ⟶ X) [QuasiCompact p] [QuasiSeparated p] :
+    p.pushforwardStructureAlgebra.X.IsQuasicoherent :=
   inferInstanceAs ((Scheme.Modules.pushforward p).obj (𝟙_ V.Modules)).IsQuasicoherent
 
 namespace AlgebraicGeometry
