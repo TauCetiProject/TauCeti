@@ -80,31 +80,15 @@ theorem isClosedEssential_comap_iff_of_isHomeomorph {B E : Type*} [NonUnitalNonA
     [TopologicalSpace B] [EquivLike E A B] [NonUnitalRingHomClass E A B] (e : E)
     (he : IsHomeomorph e) {I : TwoSidedIdeal B} :
     (I.comap e).IsClosedEssential ↔ I.IsClosedEssential := by
-  let e' : A ≃+* B := { EquivLike.toEquiv e with map_mul' := map_mul e, map_add' := map_add e }
-  let φ := e'.mapTwoSidedIdeal.symm
-  have hcomap : I.comap e = φ I := by
-    ext a
-    exact (mem_comap e).trans (mem_comap e').symm
-  rw [hcomap, isClosedEssential_iff, isClosedEssential_iff]
-  refine ⟨fun h J hJ hIJ => ?_, fun h K hK hIK => ?_⟩
-  · have hJ' : IsClosed ((φ J : TwoSidedIdeal A) : Set A) := by
-      have hset : ((φ J : TwoSidedIdeal A) : Set A) = e ⁻¹' (J : Set B) :=
-        Set.ext fun _ => mem_comap e'
-      rw [hset]
-      exact hJ.preimage he.continuous
-    exact (_root_.map_eq_bot_iff φ).mp (h (φ J) hJ' (by rw [← φ.map_inf, hIJ, OrderIso.map_bot]))
-  · have hK' : IsClosed ((φ.symm K : TwoSidedIdeal B) : Set B) := by
-      have hset : ((φ.symm K : TwoSidedIdeal B) : Set B) = e '' (K : Set A) := by
-        ext b
-        refine ⟨fun hb => ⟨e'.symm b, (mem_comap e'.symm).mp hb, e'.apply_symm_apply b⟩,
-          fun ⟨a, ha, hab⟩ => (mem_comap e'.symm).mpr (by
-            have hba : e'.symm b = a := e'.symm_apply_eq.mpr hab.symm
-            rwa [hba])⟩
-      rw [hset]
-      exact he.isClosedMap _ hK
-    rw [← φ.apply_symm_apply K] at hIK ⊢
-    rw [← φ.map_inf, _root_.map_eq_bot_iff] at hIK
-    rw [h (φ.symm K) hK' hIK, OrderIso.map_bot]
+  rw [isClosedEssential_iff, isClosedEssential_iff]
+  refine forall_inf_eq_bot_comap_iff e (fun _ hJ => isClosed_comap he.continuous hJ)
+    fun K hK J hJK => ?_
+  have hset : (J : Set B) = e '' (K : Set A) := by
+    have hpre : e ⁻¹' (J : Set B) = (K : Set A) := by
+      rw [← hJK]
+      exact Set.ext fun _ => (mem_comap e).symm
+    rw [← hpre, Set.image_preimage_eq _ (EquivLike.surjective e)]
+  exact hset ▸ he.isClosedMap _ hK
 
 end ClosedEssential
 

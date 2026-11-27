@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 public import TauCeti.Analysis.Normed.Group.Star
+public import TauCeti.RingTheory.TwoSidedIdeal.Basic
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
@@ -77,19 +78,16 @@ theorem smul_mem_of_isClosed (c : ℂ) {a : A} (ha : a ∈ I) : c • a ∈ I :=
     (CStarAlgebra.increasingApproximateUnit A).toIsApproximateUnit c ha
 
 /-- A closed two-sided ideal of a C⋆-algebra bundled as a complex submodule. -/
-@[expose] def toSubmodule : Submodule ℂ A where
-  carrier := I
-  add_mem' := I.add_mem
-  zero_mem' := I.zero_mem
-  smul_mem' c _ ha := I.smul_mem_of_isClosed c ha
+@[expose] def toSubmodule : Submodule ℂ A :=
+  I.toSubmoduleOfSMulMem I.smul_mem_of_isClosed
 
 @[simp]
 theorem coe_toSubmodule : (I.toSubmodule : Set A) = I :=
-  (rfl)
+  I.coe_toSubmoduleOfSMulMem I.smul_mem_of_isClosed
 
 @[simp, grind =]
 theorem mem_toSubmodule {a : A} : a ∈ I.toSubmodule ↔ a ∈ I :=
-  Iff.rfl
+  mem_toSubmoduleOfSMulMem
 
 instance isClosed_toSubmodule : IsClosed (I.toSubmodule : Set A) :=
   hI

@@ -361,19 +361,11 @@ theorem disjoint_annihilator (hI : ∀ x ∈ I, star x ∈ I) : Disjoint I I.ann
 theorem inf_annihilator (hI : ∀ x ∈ I, star x ∈ I) : I ⊓ I.annihilator = ⊥ :=
   disjoint_iff.1 (disjoint_annihilator hI)
 
-theorem annihilator_inf_of_star_mem (hI : ∀ x ∈ I, star x ∈ I) : I.annihilator ⊓ I = ⊥ := by
-  rw [inf_comm]
-  exact inf_annihilator hI
-
 /-- The annihilator of a self-adjoint ideal `I` is the largest two-sided ideal disjoint from
 `I`. -/
 theorem le_annihilator_iff_disjoint (hI : ∀ x ∈ I, star x ∈ I) :
     J ≤ I.annihilator ↔ Disjoint J I :=
   ⟨fun h ↦ (disjoint_annihilator hI).symm.mono_left h, le_annihilator_of_disjoint⟩
-
-theorem le_annihilator_iff_inf_eq_bot_of_star_mem (hI : ∀ x ∈ I, star x ∈ I) :
-    J ≤ I.annihilator ↔ I ⊓ J = ⊥ := by
-  rw [le_annihilator_iff_disjoint hI, disjoint_comm, disjoint_iff]
 
 theorem le_annihilator_annihilator (hI : ∀ x ∈ I, star x ∈ I) :
     I ≤ I.annihilator.annihilator :=

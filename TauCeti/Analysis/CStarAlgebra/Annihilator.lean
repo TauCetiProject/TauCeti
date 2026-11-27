@@ -64,13 +64,6 @@ theorem inf_rightAnnihilator_eq_bot (I : TwoSidedIdeal A) : I ⊓ I.rightAnnihil
 theorem rightAnnihilator_inf_eq_bot (I : TwoSidedIdeal A) : I.rightAnnihilator ⊓ I = ⊥ := by
   rw [inf_comm, I.inf_rightAnnihilator_eq_bot]
 
-theorem coe_inter_annihilator_eq_singleton_zero (I : TwoSidedIdeal A) :
-    (I : Set A) ∩ (I.annihilator : Set A) = {0} := by
-  calc (I : Set A) ∩ (I.annihilator : Set A)
-      = ((I ⊓ I.annihilator : TwoSidedIdeal A) : Set A) := rfl
-    _ = ((⊥ : TwoSidedIdeal A) : Set A) := by rw [I.inf_annihilator_eq_bot]
-    _ = {0} := coe_bot A
-
 /-- The topological closure of `I` is contained in its double annihilator. -/
 theorem topologicalClosure_le_annihilator_annihilator (I : TwoSidedIdeal A) :
     I.topologicalClosure ≤ I.annihilator.annihilator := by
@@ -78,16 +71,11 @@ theorem topologicalClosure_le_annihilator_annihilator (I : TwoSidedIdeal A) :
   simpa only [I.annihilator_topologicalClosure] using
     le_annihilator_annihilator fun _ => I.topologicalClosure.star_mem_of_isClosed
 
-theorem le_annihilator_annihilator_of_cstar (I : TwoSidedIdeal A) :
-    I ≤ I.annihilator.annihilator :=
-  I.le_topologicalClosure.trans I.topologicalClosure_le_annihilator_annihilator
-
 @[simp]
 theorem annihilator_annihilator_annihilator_of_cstar (I : TwoSidedIdeal A) :
     I.annihilator.annihilator.annihilator = I.annihilator :=
-  le_antisymm
-    (annihilator_le_annihilator I.le_annihilator_annihilator_of_cstar)
-    I.annihilator.le_annihilator_annihilator_of_cstar
+  (congrArg annihilator I.annihilator.annihilator_eq_rightAnnihilator).trans
+    I.annihilator_rightAnnihilator_annihilator
 
 /-- In a C⋆-algebra, a two-sided ideal `J` annihilates `I` if and only if `I ⊓ J = ⊥`. -/
 theorem le_annihilator_iff_inf_eq_bot {I J : TwoSidedIdeal A} :

@@ -75,22 +75,38 @@ theorem not_isEssential_bot [Nontrivial A] : ¬ (⊥ : TwoSidedIdeal A).IsEssent
 theorem IsEssential.ne_bot [Nontrivial A] (hI : I.IsEssential) : I ≠ ⊥ :=
   fun h => not_isEssential_bot (h ▸ hI)
 
+/-- Shared equivalence for essentiality-style conditions along a bijective nonunital ring
+homomorphism `e` when predicates `PA` and `PB` are preserved by `comap e` and inverse pullback. -/
+theorem forall_inf_eq_bot_comap_iff {B E : Type*} [NonUnitalNonAssocRing B]
+    [EquivLike E A B] [NonUnitalRingHomClass E A B] (e : E)
+    {PA : TwoSidedIdeal A → Prop} {PB : TwoSidedIdeal B → Prop}
+    (hAB : ∀ J : TwoSidedIdeal B, PB J → PA (J.comap e))
+    (hBA : ∀ K : TwoSidedIdeal A, PA K → ∀ J : TwoSidedIdeal B, J.comap e = K → PB J)
+    {I : TwoSidedIdeal B} :
+    (∀ K : TwoSidedIdeal A, PA K → I.comap e ⊓ K = ⊥ → K = ⊥) ↔
+      (∀ J : TwoSidedIdeal B, PB J → I ⊓ J = ⊥ → J = ⊥) := by
+  let e' : A ≃+* B := { EquivLike.toEquiv e with map_mul' := map_mul e, map_add' := map_add e }
+  let φ := e'.mapTwoSidedIdeal.symm
+  have hcomap (J : TwoSidedIdeal B) : J.comap e = φ J := by
+    ext a
+    exact (mem_comap e).trans (mem_comap e').symm
+  simp only [hcomap]
+  refine ⟨fun h J hJ hIJ => (map_eq_bot_iff φ).mp (h (φ J) (hcomap J ▸ hAB J hJ)
+      (by rw [← map_inf, hIJ, map_bot])),
+    fun h K hK hIK => ?_⟩
+  rw [← φ.apply_symm_apply K] at hIK ⊢
+  rw [← map_inf, map_eq_bot_iff] at hIK
+  rw [h (φ.symm K) (hBA K hK (φ.symm K) ((hcomap (φ.symm K)).trans (φ.apply_symm_apply K))) hIK,
+    map_bot]
+
 /-- Pulling back along a ring equivalence preserves and reflects essentiality. -/
 @[simp]
 theorem isEssential_comap_iff {B E : Type*} [NonUnitalNonAssocRing B]
     [EquivLike E A B] [NonUnitalRingHomClass E A B] (e : E) {I : TwoSidedIdeal B} :
     (I.comap e).IsEssential ↔ I.IsEssential := by
-  let e' : A ≃+* B := { EquivLike.toEquiv e with map_mul' := map_mul e, map_add' := map_add e }
-  let φ := e'.mapTwoSidedIdeal.symm
-  have hcomap : I.comap e = φ I := by
-    ext a
-    exact (mem_comap e).trans (mem_comap e').symm
-  rw [hcomap, isEssential_iff_inf_eq_bot, isEssential_iff_inf_eq_bot]
-  refine ⟨fun h J hIJ => (map_eq_bot_iff φ).mp (h (φ J) (by rw [← map_inf, hIJ, map_bot])),
-    fun h K hIK => ?_⟩
-  rw [← φ.apply_symm_apply K] at hIK ⊢
-  rw [← map_inf, map_eq_bot_iff] at hIK
-  rw [h (φ.symm K) hIK, map_bot]
+  rw [isEssential_iff_inf_eq_bot, isEssential_iff_inf_eq_bot]
+  simpa using forall_inf_eq_bot_comap_iff e (PA := fun _ => True) (PB := fun _ => True)
+    (fun _ _ => trivial) (fun _ _ _ _ => trivial)
 
 section Ring
 
