@@ -79,6 +79,9 @@ are no nonzero covectors, every operator is elliptic and the ranks are unconstra
   `P` in arbitrary frames are read off from `σ_m(P)`.
 * `TauCeti.sectionClassicalPrincipalSymbol_eq_iff`: conversely, `σ_m(P)(x, ξ)` is the linear map
   whose readings in one pair of frames are the principal symbols of these entries.
+* `TauCeti.classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton`: more generally,
+  reading `P` along any smooth section `s` gives an operator with principal symbol
+  `χ(x) ℓ(t'ₓ (σ_m(P)(x, ξ) s(x)))`.
 * `TauCeti.sectionClassicalPrincipalSymbol_add`, `TauCeti.sectionClassicalPrincipalSymbol_smul`,
   `TauCeti.sectionClassicalPrincipalSymbol_zero`, `TauCeti.sectionClassicalPrincipalSymbol_neg`,
   `TauCeti.sectionClassicalPrincipalSymbol_sub`, `TauCeti.sectionClassicalPrincipalSymbol_sum`:
@@ -274,9 +277,68 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_output
     (trivializationAt W F x).symmL_apply (R := ℂ) hx]
 
 omit [FiniteDimensional ℂ W] in
-/-- **Changing the input frame.** The principal symbol of an entry of `P` with input frame
-`(t, ψ, v)` is a combination of the principal symbols of the entries with the preferred input frame
-at `x` and the same output, with the coefficients `ψ(x) bᵢ*(t₀ₓ t⁻¹ₓ v)`. -/
+/-- **Changing the input frame.** The principal symbol of `f ↦ χ ℓ(t' (P (f s)))`, reading `P`
+along a smooth section `s`, is a combination of the principal symbols of the entries with the
+preferred input frame at `x` and the same output, with the coefficients `bᵢ*(t₀ₓ s(x))` of `s(x)`
+in that frame. -/
+private theorem classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton_eq_sum
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯)
+    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
+    (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet) (ℓ : W →L[ℂ] ℂ)
+    (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+        (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ _ s).restrictScalars
+          ℂ) x ξ =
+      ∑ i, (finBasis ℂ V).coord i ((trivializationAt V E x).continuousLinearMapAt ℂ x (s x)) *
+        classicalPrincipalSymbol m (sectionEntry (trivializationAt V E x)
+          (frameCutoff (V := V) (W := W) n E F x)
+          (tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x) (finBasis ℂ V i)
+          t' χ hχ ℓ P) x ξ := by
+  have hρ := tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x
+  have hx := FiberBundle.mem_baseSet_trivializationAt V E x
+  -- The coefficients `k i = ρ bᵢ*(t₀ s)` of `s` in the preferred frame `t₀`, and a cutoff `θ`
+  -- equal to `1` near `x`, supported where `ρ = 1` inside the base set of `t₀`.
+  set k : Fin (finrank ℂ V) → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := fun i ↦
+    (trivializationAt V E x).cutoffFrameCoeff _ hρ ((finBasis ℂ V).coord i).toContinuousLinearMap s
+  obtain ⟨θ, hθU, hθ⟩ :=
+    ContMDiffMap.exists_tsupport_subset_eventually_eq_one (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
+      (inter_mem (frameCutoff_eventually_eq_one (V := V) (W := W) n E F x)
+        ((trivializationAt V E x).open_baseSet.mem_nhds hx))
+  set θc := ContMDiffMap.ofReal θ
+  set A := t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+    (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ _ s).restrictScalars ℂ
+  -- Near `x` the section `s` is `∑ᵢ kᵢ ρ t₀⁻¹ bᵢ`; the rest is cut off by `1 - θ`.
+  have hop : A = ∑ i, sectionEntry _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ P ∘ₗ
+      LinearMap.mulLeft ℂ (θc * k i) + A ∘ₗ LinearMap.mulLeft ℂ (1 - θc) := by
+    refine LinearMap.ext fun f ↦ ?_
+    simp only [A, LinearMap.add_apply, LinearMap.sum_apply, LinearMap.comp_apply,
+      LinearMap.mulLeft_apply, LinearMap.restrictScalars_apply, LinearMap.toSpanSingleton_apply,
+      sectionEntry_apply_eq_cutoffFrameCoeff]
+    rw [(trivializationAt V E x).smul_eq_sum_smul_cutoffFrameSection_add _ hρ (finBasis ℂ V) θ
+      hθU s f, map_add, map_sum, map_add, map_sum]
+  have hE (i : Fin (finrank ℂ V)) :=
+    (mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ
+  have hA := cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators
+    t' χ hχ ℓ hP s
+  have hθx : θ x = 1 := hθ.self_of_nhds
+  rw [hop, classicalPrincipalSymbol_add
+      (Submodule.sum_mem _ fun i _ ↦
+        comp_mulLeft_mem_classicalPseudodifferentialOperators (hE i) _)
+      (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _),
+    classicalPrincipalSymbol_sum _
+      fun i _ ↦ comp_mulLeft_mem_classicalPseudodifferentialOperators (hE i) _,
+    classicalPrincipalSymbol_comp_mulLeft hA]
+  simp only [ContMDiffMap.coe_sub, ContMDiffMap.coe_one, Pi.sub_apply, Pi.one_apply, θc,
+    ContMDiffMap.ofReal_apply, hθx, Complex.ofReal_one, sub_self, mul_zero, add_zero]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [classicalPrincipalSymbol_comp_mulLeft (hE i)]
+  simp [k, ContMDiffMap.ofReal_apply, hθx, frameCutoff_self (V := V) (W := W) n E F x, mul_comm]
+
+omit [FiniteDimensional ℂ W] in
+/-- **Changing the input frame of an entry.** The principal symbol of an entry of `P` with input
+frame `(t, ψ, v)` is a combination of the principal symbols of the entries with the preferred input
+frame at `x` and the same output, with the coefficients `ψ(x) bᵢ*(t₀ₓ t⁻¹ₓ v)`. -/
 private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_input
     (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
     (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
@@ -291,47 +353,11 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_input
           (frameCutoff (V := V) (W := W) n E F x)
           (tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x) (finBasis ℂ V i)
           t' χ hχ ℓ P) x ξ := by
-  have hρ := tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x
-  have hx := FiberBundle.mem_baseSet_trivializationAt V E x
-  have hmem := (mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2
-  -- The coefficients `k i = ρ bᵢ*(t₀ ψ t⁻¹ v)` of the input section in the preferred frame `t₀`,
-  -- and a cutoff `θ` equal to `1` near `x`, supported where `ρ = 1` inside the base set of `t₀`.
-  set k : Fin (finrank ℂ V) → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := fun i ↦
-    (trivializationAt V E x).cutoffFrameCoeff _ hρ ((finBasis ℂ V).coord i).toContinuousLinearMap
-      (t.cutoffFrameSection ψ hψ v)
-  obtain ⟨θ, hθU, hθ⟩ :=
-    ContMDiffMap.exists_tsupport_subset_eventually_eq_one (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
-      (inter_mem (frameCutoff_eventually_eq_one (V := V) (W := W) n E F x)
-        ((trivializationAt V E x).open_baseSet.mem_nhds hx))
-  set θc := ContMDiffMap.ofReal θ
-  -- Near `x` the input section is `∑ᵢ kᵢ ρ t₀⁻¹ bᵢ`; the rest is cut off by `1 - θ`.
-  have hs := (trivializationAt V E x).smul_eq_sum_smul_cutoffFrameSection_add _ hρ
-    (finBasis ℂ V) θ hθU (t.cutoffFrameSection ψ hψ v)
-  have hop : sectionEntry t ψ hψ v t' χ hχ ℓ P =
-      ∑ i, sectionEntry _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ P ∘ₗ LinearMap.mulLeft ℂ (θc * k i) +
-        sectionEntry t ψ hψ v t' χ hχ ℓ P ∘ₗ LinearMap.mulLeft ℂ (1 - θc) := by
-    refine LinearMap.ext fun f ↦ ?_
-    simp only [LinearMap.add_apply, LinearMap.sum_apply, LinearMap.comp_apply,
-      LinearMap.mulLeft_apply, sectionEntry_apply_eq_cutoffFrameCoeff]
-    rw [hs f, map_add, map_sum, map_add, map_sum]
-  have hE (i : Fin (finrank ℂ V)) := hmem _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ
-  have hE₀ := hmem t ψ hψ v t' χ hχ ℓ
-  conv_lhs => rw [hop]
-  rw [classicalPrincipalSymbol_add
-      (Submodule.sum_mem _ fun i _ ↦
-        comp_mulLeft_mem_classicalPseudodifferentialOperators (hE i) _)
-      (comp_mulLeft_mem_classicalPseudodifferentialOperators hE₀ _),
-    classicalPrincipalSymbol_sum _
-      fun i _ ↦ comp_mulLeft_mem_classicalPseudodifferentialOperators (hE i) _,
-    classicalPrincipalSymbol_comp_mulLeft hE₀]
-  have hθx : θ x = 1 := hθ.self_of_nhds
-  simp only [ContMDiffMap.coe_sub, ContMDiffMap.coe_one, Pi.sub_apply, Pi.one_apply, θc,
-    ContMDiffMap.ofReal_apply, hθx, Complex.ofReal_one, sub_self, mul_zero, add_zero]
+  rw [sectionEntry_eq_comp,
+    classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton_eq_sum hP]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [classicalPrincipalSymbol_comp_mulLeft (hE i)]
-  simp [k, ContMDiffMap.ofReal_apply, hθx, frameCutoff_self (V := V) (W := W) n E F x,
-    ← Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
-  ring
+  simp [← Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ,
+    map_smul, Complex.real_smul]
 
 /-! ### The transformation law -/
 
@@ -385,6 +411,33 @@ theorem sectionClassicalPrincipalSymbol_eq_iff
   have hc : ((χ x * ψ x : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (mul_ne_zero hχx hψx)
   exact mul_left_cancel₀ hc
     ((classicalPrincipalSymbol_sectionEntry hP t ψ hψ v t' χ hχ ℓ x ξ).symm.trans (h v ℓ))
+
+/-- **Reading an operator along a section.** For a smooth section `s` of `E`, a trivialization
+`t'` of `F` in its atlas, a cutoff `χ` supported in its base set and a complex-linear functional
+`ℓ`, the principal symbol at `ξ ∈ T*ₓM` of the classical pseudodifferential operator
+`f ↦ χ ℓ(t' (P (f s)))` is `χ(x) ℓ(t'ₓ (σ_m(P)(x, ξ) s(x)))`. That this operator is classical is
+`cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators`. The
+transformation law `TauCeti.classicalPrincipalSymbol_sectionEntry` is the case of the cut-off
+frame sections `s = ψ t⁻¹ v`. -/
+theorem classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯)
+    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
+    (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet) (ℓ : W →L[ℂ] ℂ)
+    (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+        (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) x ξ =
+      (χ x : ℂ) * ℓ (t'.continuousLinearMapAt ℂ x
+        (sectionClassicalPrincipalSymbol m P x ξ (s x))) := by
+  rw [classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton_eq_sum hP]
+  conv_rhs => rw [← (trivializationAt V E x).sum_repr_smul_symmL (finBasis ℂ V)
+    (FiberBundle.mem_baseSet_trivializationAt V E x) (s x)]
+  simp only [map_sum, map_smul, smul_eq_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [classicalPrincipalSymbol_sectionEntry hP, frameCutoff_self (V := V) (W := W) n E F x,
+    (trivializationAt V E x).symmL_apply (R := ℂ) (FiberBundle.mem_baseSet_trivializationAt V E x)]
+  simp only [mul_one, Basis.coord_apply]
+  ring
 
 omit [T2Space M] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [∀ x, Module ℝ (E x)]
   [VectorBundle ℝ V E] [∀ x, Module ℝ (F x)] [VectorBundle ℝ W F] in
