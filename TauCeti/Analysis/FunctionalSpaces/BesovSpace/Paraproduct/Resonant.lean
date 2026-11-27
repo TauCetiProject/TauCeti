@@ -33,7 +33,7 @@ for `0 < α + β` yields Bahouri–Chemin–Danchin, Theorem 2.85:
 * Single-block (`toDistr_resonantCLM_of_block_eq_zero`) and constant-`1`
   (`toDistr_resonantCLM_one_left`, `toDistr_resonantCLM_one_right`) identities; companion
   paraproduct estimates live in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate`,
-  and the Bony products (`smulL` and `smulLOfPos`) live in
+  and the Bony product (`TauCeti.BesovSpace.smulL`) lives in
   `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Product`.
 
 ## References
@@ -357,7 +357,13 @@ theorem toDistr_resonantCLM_comm (N : ℕ) (hαβ : 0 < α + β)
   simp_rw [Lp.smul_sum, Finset.sum_filter]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-  split_ifs <;> first | exact Lp.lpSMul_comm (v.block k) (u.block j) | rfl | omega
+  -- After `Finset.sum_comm`, the two filter conditions `k ≤ j + N ∧ j ≤ k + N` and
+  -- `j ≤ k + N ∧ k ≤ j + N` coincide.
+  split_ifs with h₁ h₂ h₃
+  · exact Lp.lpSMul_comm (v.block k) (u.block j)
+  · exact absurd ⟨h₁.2, h₁.1⟩ h₂
+  · exact absurd ⟨h₃.2, h₃.1⟩ h₁
+  · rfl
 
 end Resonant
 

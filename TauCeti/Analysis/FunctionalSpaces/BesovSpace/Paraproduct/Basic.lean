@@ -60,6 +60,9 @@ estimates live in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Reso
 * `TauCeti.BesovSpace.isVanishingOn_fourier_block_smul_sum_block`: the terms of the resonant part
   have spectra in dyadic balls.
 * `TauCeti.BesovSpace.lowPass_smul_lowPass`: Bony's decomposition of `S_M u · S_M v`.
+* `TauCeti.BesovSpace.lowPass_smul_block_eq_zero` and
+  `TauCeti.BesovSpace.block_smul_lowPass_eq_zero`: termwise vanishing of paraproduct terms under
+  separated frequency support.
 
 ## References
 
@@ -189,6 +192,28 @@ theorem lowPass_smul_lowPass (N M : ℕ) (u : BesovSpace ℂ φ s p₁ q) (v : B
   rw [lowPass_eq_sum, lowPass_eq_sum, Lp.sum_smul,
     Finset.sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _, Finset.sum_range_sum_range_split_gap N]
   simp only [lowPass_eq_sum, Lp.sum_smul, Lp.smul_sum]
+
+/-- **Termwise vanishing of `T_u v` under separated frequency support.** If every `k` with
+`k + N < j` has either `Δₖ u = 0` or `Δⱼ v = 0`, then `S_{j-N} u · Δⱼ v = 0`. -/
+theorem lowPass_smul_block_eq_zero (N : ℕ) {u : BesovSpace ℂ φ s p₁ q}
+    {v : BesovSpace F φ s' p₂ q'} (j : ℕ)
+    (h : ∀ k, k + N < j → u.block k = 0 ∨ v.block j = 0) :
+    (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) = 0 := by
+  by_cases hv : v.block j = 0
+  · simp [hv]
+  · rw [lowPass_eq_sum, Finset.sum_eq_zero fun k hk ↦
+      (h k (by rw [Finset.mem_range] at hk; omega)).resolve_right hv, Lp.zero_smul]
+
+/-- **Termwise vanishing of `T_v u` under separated frequency support.** If every `k` with
+`k + N < j` has either `Δⱼ u = 0` or `Δₖ v = 0`, then `Δⱼ u · S_{j-N} v = 0`. -/
+theorem block_smul_lowPass_eq_zero (N : ℕ) {u : BesovSpace ℂ φ s p₁ q}
+    {v : BesovSpace F φ s' p₂ q'} (j : ℕ)
+    (h : ∀ k, k + N < j → u.block j = 0 ∨ v.block k = 0) :
+    (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) = 0 := by
+  by_cases hu : u.block j = 0
+  · simp [hu]
+  · rw [lowPass_eq_sum, Finset.sum_eq_zero fun k hk ↦
+      (h k (by rw [Finset.mem_range] at hk; omega)).resolve_left hu, Lp.smul_zero]
 
 end Decomposition
 

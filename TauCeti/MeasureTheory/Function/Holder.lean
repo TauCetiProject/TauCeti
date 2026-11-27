@@ -250,6 +250,9 @@ theorem lpSMulₗ_apply_apply (𝕜' : Type*) [NormedCommRing 𝕜'] [Module �
 /-- The heterogeneous `Lp` scalar multiplication `Lᵖ × L^q → Lʳ` is jointly continuous. -/
 theorem continuous_lpSMul [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] :
     Continuous fun x : Lp 𝕜 p μ × Lp E q μ ↦ (x.1 • x.2 : Lp E r μ) :=
+  -- `𝕜` is only assumed to be a `[NormedRing 𝕜]` without a commutative scalar field `𝕜'` in
+  -- scope, so we invoke `IsBoundedBilinearMap.continuous` with `𝕜 := ℕ` via
+  -- `AddMonoidHom.map_nsmul`.
   IsBoundedBilinearMap.continuous (𝕜 := ℕ)
     { add_left := Lp.smul_add
       smul_left := fun c f g ↦ map_nsmul

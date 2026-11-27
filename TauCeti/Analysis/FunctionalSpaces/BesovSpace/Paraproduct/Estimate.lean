@@ -24,10 +24,7 @@ Theorem 2.82:
 
 * **Boundedness from `L^{p₁}`:** `TauCeti.BesovSpace.paraproductLpCLM : L^{p₁} × B^β_{p₂,q} →`
   `B^β_{r,q}` and `TauCeti.BesovSpace.paraproductRightLpCLM : B^α_{p₁,q} × L^{p₂} → B^α_{r,q}` for
-  every `α, β ∈ ℝ` and `1/r = 1/p₁ + 1/p₂`, with operator norms independent of `p₁, p₂, r, q`, built
-  from the existential series estimates
-  `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq` and
-  `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq`.
+  every `α, β ∈ ℝ` and `1/r = 1/p₁ + 1/p₂`, with operator norms independent of `p₁, p₂, r, q`.
 * **Negative regularity:** `TauCeti.BesovSpace.paraproductNegCLM` (`α < 0`) and
   `TauCeti.BesovSpace.paraproductRightNegCLM` (`β < 0`) mapping
   `B^α_{p₁,q₁} × B^β_{p₂,q₂} → B^{α + β}_{r,q}` (`1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`),
@@ -147,7 +144,7 @@ the following property for all exponents `1 ≤ p₁, p₂, r, q ≤ ∞` with `
 tempered distribution of `u` is an `L^{p₁}` function `f` and `v ∈ B^β_{p₂,q}`, then the paraproduct
 `T_u v = ∑ⱼ S_{j-N} u · Δⱼ v` converges in the tempered distributions to an element of
 `B^β_{r,q}` of norm at most `C ‖f‖_{p₁} ‖v‖`. -/
-theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (β : ℝ) {N : ℕ}
+private theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (β : ℝ) {N : ℕ}
     (hN : φ.rOut < 2 ^ N * φ.rIn) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
       [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r] {α : ℝ} {q₁ : ℝ≥0∞} (u : BesovSpace ℂ φ α p₁ q₁)
@@ -180,7 +177,7 @@ on `φ`, `N` and `α`, with the following property for all exponents `1 ≤ p₁
 `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q}` and the tempered distribution of `v` is an `L^{p₂}`
 function `g`, then `T_v u` converges in the tempered distributions to an element of `B^α_{r,q}` of
 norm at most `C ‖u‖ ‖g‖_{p₂}`. -/
-theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (α : ℝ) {N : ℕ}
+private theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (α : ℝ) {N : ℕ}
     (hN : φ.rOut < 2 ^ N * φ.rIn) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
       [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q) {β : ℝ} {q₂ : ℝ≥0∞}
