@@ -35,7 +35,7 @@ From the characterization:
 * multiplying `S ⊠ T` by `(x, y) ↦ f x * g y` multiplies `S` by `f` and `T` by `g`
   (`TauCeti.BundleTest.smulLeftDualCLM_mulProd_tensorProduct`);
 * the tensor product of point masses is the point mass at the pair of points,
-  `δ_x a ⊠ δ_y b = δ_(x, y) (a * b)` (`TauCeti.BundleTest.tensorProduct_delta`);
+  `δ_x ℓ ⊠ δ_y ℓ' = δ_(x, y) (ℓ 1 * ℓ' 1)` (`TauCeti.BundleTest.tensorProduct_delta`);
 * the support of `S ⊠ T` lies in `supp S × supp T`
   (`TauCeti.BundleTest.dsupport_tensorProduct_subset`), with equality when `A` has no zero
   divisors (`TauCeti.BundleTest.dsupport_tensorProduct`);
@@ -149,20 +149,24 @@ theorem tensorProduct_zero : tensorProduct S (0 : BundleTest J ℝ (Trivial N �
   (eq_tensorProduct_iff.2 fun φ ψ ↦ by simp).symm
 
 /-- The tensor product is additive in its first factor. -/
+@[simp]
 theorem add_tensorProduct : tensorProduct (S + S') T = tensorProduct S T + tensorProduct S' T :=
   (eq_tensorProduct_iff.2 fun φ ψ ↦ by simp [add_mul]).symm
 
 /-- The tensor product is additive in its second factor. -/
+@[simp]
 theorem tensorProduct_add : tensorProduct S (T + T') = tensorProduct S T + tensorProduct S T' :=
   (eq_tensorProduct_iff.2 fun φ ψ ↦ by simp [mul_add]).symm
 
 variable {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 A] [SMulCommClass ℝ 𝕜 A] (c : 𝕜)
 
 /-- The tensor product is homogeneous in its first factor. -/
+@[simp]
 theorem smul_tensorProduct : tensorProduct (c • S) T = c • tensorProduct S T :=
   (eq_tensorProduct_iff.2 fun φ ψ ↦ by simp).symm
 
 /-- The tensor product is homogeneous in its second factor. -/
+@[simp]
 theorem tensorProduct_smul : tensorProduct S (c • T) = c • tensorProduct S T :=
   (eq_tensorProduct_iff.2 fun φ ψ ↦ by simp).symm
 
@@ -189,24 +193,11 @@ theorem tensorProduct_delta (x : M) (y : N) (ℓ ℓ' : ℝ →L[ℝ] A) :
       delta (I := I.prod J) (F := ℝ) (V := Trivial (M × N) ℝ) (x, y)
         (ContinuousLinearMap.toSpanSingleton ℝ (ℓ 1 * ℓ' 1)) := by
   refine (eq_tensorProduct_iff.2 fun φ ψ ↦ ?_).symm
-  have hℓ (ℓ : ℝ →L[ℝ] A) (t : ℝ) : ℓ t = t • ℓ 1 := by
-    rw [← map_smul, smul_eq_mul, mul_one]
-  simp only [delta_apply, tensor_apply, ContinuousLinearMap.toSpanSingleton_apply]
-  rw [hℓ ℓ (φ x), hℓ ℓ' (ψ y), smul_mul_smul_comm]
+  conv_rhs => rw [← ℓ.toSpanSingleton_apply_map_one, ← ℓ'.toSpanSingleton_apply_map_one]
+  simp only [delta_apply, tensor_apply, ContinuousLinearMap.toSpanSingleton_apply,
+    smul_mul_smul_comm]
 
 /-! ### Supports -/
-
-omit [I.Boundaryless] [CompleteSpace A] in
-/-- A smooth function equal to one near a compact set `L` off the support of `S`, whose product
-with `S` vanishes. -/
-private theorem exists_eventually_eq_one_smulLeftDualCLM_eq_zero {P : Type*} [TopologicalSpace P]
-    [ChartedSpace H P] [IsManifold I ∞ P] [T2Space P] (S : BundleTest I ℝ (Trivial P ℝ) →L_c[ℝ] A)
-    {L : Set P} (hL : IsCompact L) (hLS : L ⊆ (dsupport S)ᶜ) :
-    ∃ ρ : C^∞⟮I, P; ℝ⟯, (∀ᶠ x in 𝓝ˢ L, ρ x = 1) ∧ smulLeftDualCLM ρ S = 0 := by
-  obtain ⟨ρ, hρ, hρ1, -, hρS, -⟩ :=
-    hL.exists_contMDiff_one_nhds_tsupport_subset I (isClosed_dsupport S).isOpen_compl hLS
-  refine ⟨⟨ρ, hρ⟩, hρ1, DFunLike.coe_injective <| (dsupport_eq_empty_iff _).1 ?_⟩
-  exact subset_empty_iff.1 ((dsupport_smulLeftDualCLM_subset _ S).trans fun x hx ↦ hρS hx.2 hx.1)
 
 /-- `S ⊠ T` agrees with `ρ S ⊠ σ T` on the tests on whose support `ρ x * σ y = 1`. -/
 private theorem tensorProduct_apply_eq_of_eqOn (S : BundleTest I ℝ (Trivial M ℝ) →L_c[ℝ] A)
