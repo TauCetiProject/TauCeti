@@ -28,7 +28,8 @@ the two ways of moving such a group to another one.
 
 * `Matrix.star_inv_mul_mul_inv_eq`: if `star x * A * x = B` then `star x⁻¹ * B * x⁻¹ = A`.
 * `Matrix.unitaryGroupOf.conjEquiv`: the isomorphism `unitaryGroupOf A ≃* unitaryGroupOf B`, with
-  `Matrix.unitaryGroupOf.conjEquiv_trans` for two successive changes of frame.
+  `Matrix.unitaryGroupOf.conjEquiv_trans` for two successive changes of frame and
+  `Matrix.unitaryGroupOf.conjEquiv_symm` for its inverse.
 * `Matrix.unitaryGroupOf.mapHom`: the change of coefficients along a `star`-compatible ring
   homomorphism (`Matrix.unitaryGroupOf.coe_mapHom`: it is `GeneralLinearGroup.map f` on elements),
   injective for injective `f` (`Matrix.unitaryGroupOf.mapHom_injective`).
@@ -78,11 +79,17 @@ theorem coe_conjEquiv_apply (x : GL n R) (hx : star (x : Matrix n n R) * A * x =
     (g : unitaryGroupOf A) : (conjEquiv x hx g : GL n R) = x⁻¹ * g * x :=
   (rfl)
 
-/-- The inverse of a change of frame `x` is conjugation `h ↦ x * h * x⁻¹`. -/
-@[simp]
+/-- The inverse of a change of frame `x` is conjugation `h ↦ x * h * x⁻¹`. Not `@[simp]`: simp
+proves it from `conjEquiv_symm` and `coe_conjEquiv_apply`. -/
 theorem coe_conjEquiv_symm_apply (x : GL n R) (hx : star (x : Matrix n n R) * A * x = B)
     (h : unitaryGroupOf B) : ((conjEquiv x hx).symm h : GL n R) = x * h * x⁻¹ :=
   (rfl)
+
+/-- The inverse of the change of frame `x` is the change of frame `x⁻¹`. -/
+@[simp]
+theorem conjEquiv_symm (x : GL n R) (hx : star (x : Matrix n n R) * A * x = B) :
+    (conjEquiv x hx).symm = conjEquiv x⁻¹ (star_inv_mul_mul_inv_eq hx) :=
+  MulEquiv.ext fun h => Subtype.ext <| by simp [coe_conjEquiv_symm_apply]
 
 /-- The change of frame by the identity is the identity. -/
 @[simp]
