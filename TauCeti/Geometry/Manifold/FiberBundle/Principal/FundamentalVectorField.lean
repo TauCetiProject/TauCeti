@@ -34,6 +34,9 @@ This file connects the general right-action theory of
   the map `ξ ↦ ξ♯ x` is injective (`TauCeti.PrincipalBundle.rightFundamentalVectorField_injective`),
   and its corestriction `TauCeti.PrincipalBundle.verticalLinearEquiv` is a linear equivalence
   between `GroupLieAlgebra IG G` and the vertical tangent space `(mfderiv proj x).ker`.
+* **Fibre coordinates**: over the base set of a trivialization, the fibre coordinate carries `ξ♯`
+  to the left-invariant vector field of `ξ`
+  (`TauCeti.PrincipalBundle.mfderiv_fiberCoord_rightFundamentalVectorField`).
 * **Naturality under bundle maps and trivial-bundle formula**: equivariant principal-bundle
   diffeomorphisms (`diffeomorphOfEquivariant`) and canonical pullback lifts (`Pullback.lift`)
   intertwine fundamental vector fields, and under the product diffeomorphism
@@ -131,6 +134,23 @@ theorem mfderiv_op_smul_rightFundamentalVectorField [LieGroup IG 1 G]
     ((contMDiff_const_smul (I := IB.prod IG) (n := 1) (op g) x).mdifferentiableAt one_ne_zero)
     (mdifferentiableAt_orbit (n := 1) one_ne_zero x 1)
     (mdifferentiableAt_orbit (n := 1) one_ne_zero (op g • x) 1) ξ
+
+open TauCeti.ManifoldTotalSpace (fiberCoord contMDiffAt_fiberCoord) in
+/-- Over the base set of its trivialization, the fibre coordinate
+`TauCeti.ManifoldTotalSpace.fiberCoord` carries the fundamental vector field of `ξ` to the
+left-invariant vector field of `ξ`. -/
+theorem mfderiv_fiberCoord_rightFundamentalVectorField [ContMDiffMul IG 1 G]
+    [ContMDiffFiberBundle 1 G P IB IG] {b₀ : B} {x : ManifoldTotalSpace G P}
+    (hx : ((ManifoldTotalSpace.homeomorph G P).symm x).proj ∈ (trivializationAt G P b₀).baseSet)
+    (ξ : GroupLieAlgebra IG G) :
+    mfderiv (IB.prod IG) IG (fiberCoord G P b₀) x (rightFundamentalVectorField (IB.prod IG) ξ x) =
+      mulInvariantVectorField ξ (fiberCoord G P b₀ x) := by
+  have hfun : fiberCoord G P b₀ ∘ (fun g : G ↦ op g • x) = (fiberCoord G P b₀ x * ·) :=
+    funext fun g ↦ fiberCoord_op_smul hx g
+  rw [rightFundamentalVectorField_apply, ← mfderiv_comp_apply_of_eq (1 : G)
+    ((contMDiffAt_fiberCoord hx).mdifferentiableAt one_ne_zero)
+    (mdifferentiableAt_orbit one_ne_zero x 1) (by simp), hfun,
+    GroupLieAlgebra.mulInvariantVectorField_apply]
 
 /-- **Lie bracket homomorphism on a principal bundle.** On a `C²` principal `G`-bundle with a `C³`
 Lie group `G`, `[ξ♯, η♯] = ⁅ξ, η⁆♯`. -/
