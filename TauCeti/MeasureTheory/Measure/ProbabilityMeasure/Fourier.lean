@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Topology.MetricSpace.UniformConvergence
+import TauCeti.MeasureTheory.Measure.AddCircle
 
 /-!
 # Fourier criteria for weak convergence on the circle
@@ -91,12 +92,8 @@ integer Fourier moment tends to zero. -/
 theorem tendsto_haarAddCircle_iff :
     Tendsto μs L (𝓝 AddCircle.haarAddCircle.toProbabilityMeasure) ↔ ∀ n : ℤ, n ≠ 0 →
       Tendsto (fun i ↦ ∫ x, fourier n x ∂(μs i : Measure (AddCircle T))) L (𝓝 0) := by
-  have hhaar (n : ℤ) : ∫ x, fourier n x ∂(AddCircle.haarAddCircle (T := T)) =
-      if n = 0 then 1 else 0 := by
-    simpa [fourierCoeff, fourier_zero, Pi.single_apply, eq_comm] using
-      congrFun (fourierCoeff_fourier (T := T) n) 0
   rw [tendsto_iff_forall_integral_fourier_tendsto]
-  simp only [Measure.coe_toProbabilityMeasure, hhaar]
+  simp only [Measure.coe_toProbabilityMeasure, AddCircle.integral_fourier_haarAddCircle]
   constructor
   · intro h n hn
     simpa [hn] using h n
