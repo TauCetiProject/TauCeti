@@ -181,20 +181,10 @@ theorem exists_intervalTraceL_eq_zero_and_setIntegral_one_add_sq_mul_gradient_su
     refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
     rw [Real.dist_eq, Real.dist_eq, coe_nnNorm, Real.norm_eq_abs, ← abs_mul]
     exact le_of_eq (congrArg abs (by ring))
-  -- A Lipschitz function represents a class in `H¹(0, 1)` with its derivative as weak gradient.
-  have hclass {f : ℝ → ℝ} {K : ℝ≥0} (hf : LipschitzWith K f) :
-      ∃ u : W1p volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ 2,
-        (∀ t : Icc (0 : ℝ) 1, W1p.intervalRepresentativeL zero_lt_one u t = f t) ∧
-        W1p.gradient u =ᵐ[volume.restrict (Ioo 0 1)] deriv f := by
-    obtain ⟨u, hu, -, hg⟩ := W1p.exists_intervalRepresentativeL_eq_and_value_gradient_ae_eq
-      (p := 2) zero_lt_one hf.lipschitzOnWith.absolutelyContinuousOnInterval
-      (MemLp.of_bound (measurable_deriv f).aestronglyMeasurable K
-        (ae_of_all _ fun _ ↦ norm_deriv_le_of_lipschitz hf))
-    exact ⟨u, hu, hg⟩
-  obtain ⟨u, hu, hgu⟩ := hclass (f := oneAddSqWitnessFst)
-    (((haff 3 0).max (haff 15 (-4))).min (haff (-18) 18))
-  obtain ⟨v, hv, hgv⟩ := hclass (f := oneAddSqWitnessSnd)
-    (((haff (-6) 0).max (haff 21 (-9))).min (haff (-15) 15))
+  obtain ⟨u, hu, -, hgu⟩ := W1p.exists_intervalRepresentativeL_eq_of_lipschitzWith (p := 2)
+    zero_lt_one (f := oneAddSqWitnessFst) (((haff 3 0).max (haff 15 (-4))).min (haff (-18) 18))
+  obtain ⟨v, hv, -, hgv⟩ := W1p.exists_intervalRepresentativeL_eq_of_lipschitzWith (p := 2)
+    zero_lt_one (f := oneAddSqWitnessSnd) (((haff (-6) 0).max (haff 21 (-9))).min (haff (-15) 15))
   refine ⟨u, v, ?_, ?_, ?_⟩
   · rw [W1p.intervalTraceL_apply, hu, hu]
     norm_num [oneAddSqWitnessFst]
