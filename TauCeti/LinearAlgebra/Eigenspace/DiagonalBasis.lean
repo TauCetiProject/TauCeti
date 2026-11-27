@@ -10,7 +10,11 @@ public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.Basis.Diagonal
+public import Mathlib.LinearAlgebra.Charpoly.Basic
+import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import TauCeti.LinearAlgebra.End.Aeval
+import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Invariant subspaces of an endomorphism diagonal in a basis
@@ -58,6 +62,9 @@ algebraic closedness, and the answer names the basis vectors involved.
 * `Module.Basis.eigenspace_eq_span_image` and `Module.Basis.finrank_eigenspace_eq_card`: with
   repeated eigenvalues allowed, the `μ`-eigenspace is spanned by the basis vectors of eigenvalue
   `μ`, and its dimension is their number.
+* `LinearMap.charpoly_eq_prod_of_apply_eq_smul`, `LinearMap.roots_charpoly_of_apply_eq_smul`: the
+  characteristic polynomial of an endomorphism diagonal in a basis is `∏ i, (X - a i)`, with roots
+  the eigenvalues `a i` counted with multiplicity.
 -/
 
 public section
@@ -311,3 +318,26 @@ theorem _root_.Module.Basis.finrank_eigenspace_eq_card [Nontrivial K] (b : Modul
 end Eigenspace
 
 end TauCeti
+
+namespace LinearMap
+
+open Polynomial
+
+variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
+  [Module.Finite R M] [Fintype ι]
+
+/-- The characteristic polynomial of an endomorphism diagonal in a basis `b`, with
+`f (b i) = d i • b i`, is `∏ i, (X - d i)`. -/
+theorem charpoly_eq_prod_of_apply_eq_smul {f : M →ₗ[R] M} (b : Module.Basis ι R M) {d : ι → R}
+    (hf : ∀ i, f (b i) = d i • b i) : f.charpoly = ∏ i, (X - C (d i)) := by
+  classical
+  rw [← f.charpoly_toMatrix b, (b.toMatrix_eq_diagonal_iff b f d).2 hf, Matrix.charpoly_diagonal]
+
+/-- The roots of the characteristic polynomial of an endomorphism diagonal in a basis `b`, with
+`f (b i) = d i • b i`, are the `d i`, counted with multiplicity. -/
+theorem roots_charpoly_of_apply_eq_smul [IsDomain R] {f : M →ₗ[R] M} (b : Module.Basis ι R M)
+    {d : ι → R} (hf : ∀ i, f (b i) = d i • b i) :
+    f.charpoly.roots = Finset.univ.val.map d := by
+  rw [charpoly_eq_prod_of_apply_eq_smul b hf, roots_prod_X_sub_C_map]
+
+end LinearMap

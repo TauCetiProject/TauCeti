@@ -10,8 +10,10 @@ public import TauCeti.Algebra.Lie.Sl2.CompleteReducibility
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.Algebra.Lie.BaseChange
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import Mathlib.Order.Int.LeastGreatest
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import TauCeti.LinearAlgebra.Eigenspace.BaseChange
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # The spectrum of the Cartan element of an `sl₂` triple
@@ -68,6 +70,12 @@ itself need not generate the ambient `L`.
 * `TauCeti.iSup_eigenspace_toEnd_intCast_eq_top` and
   `TauCeti.isInternal_eigenspace_toEnd_intCast`: the two halves combined — such a module is the
   internal direct sum of the eigenspaces at the *integers*.
+* `IsSl2Triple.exists_pos_weight_of_span_eq_top`: if a module over a characteristic-zero domain is
+  spanned by `h`-eigenvectors whose nonzero vectors have integral weights bounded below and `h`
+  acts nontrivially, then some nonzero generator has strictly positive weight.
+* `IsSl2Triple.exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top`: if the integral
+  weights of those nonzero generators are also bounded above, then a maximal-weight nonzero
+  generator has strictly positive weight and is primitive for the triple.
 
 ## References
 
@@ -391,6 +399,8 @@ namespace IsSl2Triple
 
 open LieModule
 
+section Field
+
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 
 /-- **The weights take integer values at a neutral element.** If the neutral element `h` of an
@@ -423,5 +433,109 @@ theorem toEnd_apply_eq_smul_of_mem_maxGenEigenspace {H : LieSubalgebra K L} {M :
   rw [hss.maxGenEigenspace_eq_eigenspace c, Module.End.mem_eigenspace_iff] at hmem
   have h2 := congrArg (fun w : 𝒲 ↦ (w : M)) hmem
   exact h2
+
+end Field
+
+section SpanningWeights
+
+variable {K L M : Type*} [CommRing K] [IsDomain K] [CharZero K]
+  [LieRing L] [LieAlgebra K L] [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  [Module.IsTorsionFree K M] {h e f : L}
+
+private theorem eq_zero_of_lie_h_eq_intCast_smul
+    {η : Type*} {v : η → M} (hspan : Submodule.span K (Set.range v) = ⊤)
+    {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
+    {u : M} {z : ℤ} (hu : ⁅h, u⁆ = (z : K) • u) (hz : ∀ r, v r ≠ 0 → wt r ≠ z) :
+    u = 0 :=
+  (toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspan hwt hu
+    fun r hr ↦ mod_cast hz r hr
+
+private theorem lie_e_eq_zero_of_wt_add_two_ne (t : IsSl2Triple h e f)
+    {η : Type*} {v : η → M} (hspan : Submodule.span K (Set.range v) = ⊤)
+    {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
+    {j : η} (hno : ∀ r, v r ≠ 0 → wt r ≠ wt j + 2) :
+    ⁅e, v j⁆ = 0 :=
+  eq_zero_of_lie_h_eq_intCast_smul hspan hwt (by
+    simpa [Module.End.mem_eigenspace_iff] using
+      TauCeti.lie_mem_eigenspace_add_two (K := K) t
+        (Module.End.mem_eigenspace_iff.mpr (hwt j))) hno
+
+private theorem lie_f_eq_zero_of_wt_sub_two_ne (t : IsSl2Triple h e f)
+    {η : Type*} {v : η → M} (hspan : Submodule.span K (Set.range v) = ⊤)
+    {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
+    {j : η} (hno : ∀ r, v r ≠ 0 → wt r ≠ wt j - 2) :
+    ⁅f, v j⁆ = 0 :=
+  lie_e_eq_zero_of_wt_add_two_ne t.symm hspan (wt := fun r ↦ -wt r)
+    (fun r ↦ by rw [neg_lie, hwt r, Int.cast_neg, neg_smul])
+    (fun r hr ↦ by have := hno r hr; omega)
+
+/-- If a spanning family `v : η → M` of `h`-eigenvectors with integral weights `wt` has weights
+on its nonzero vectors bounded below and `h` acts nontrivially on `M`, then some nonzero
+generator has strictly positive weight. No finiteness on `η` or field hypothesis on `K` is
+required. -/
+theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v : η → M}
+    (hspan : Submodule.span K (Set.range v) = ⊤) (hh : toEnd K L M h ≠ 0)
+    {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
+    (hbdd : BddBelow (Set.range fun r : {r // v r ≠ 0} ↦ wt r)) :
+    ∃ r : η, 0 < wt r ∧ v r ≠ 0 := by
+  by_contra! hnonpos
+  have hle0 : ∀ r : η, v r ≠ 0 → wt r ≤ 0 := fun r hr ↦ not_lt.mp fun hpos ↦ hr (hnonpos r hpos)
+  obtain ⟨r₀, hr₀ne, hr₀wt⟩ : ∃ r : η, v r ≠ 0 ∧ wt r ≠ 0 := by
+    by_contra! hall
+    refine hh (LinearMap.ext_on_range hspan fun r ↦ ?_)
+    by_cases hr : v r = 0
+    · simp [toEnd_apply_apply, hr]
+    · simp [toEnd_apply_apply, hwt r, hall r hr]
+  obtain ⟨b, hb⟩ := hbdd
+  obtain ⟨_, ⟨j₀, hj₀ne, rfl⟩, hj₀min⟩ := Int.exists_least_of_bdd
+    (P := fun z ↦ ∃ r : η, v r ≠ 0 ∧ wt r = z)
+    ⟨b, by rintro z ⟨r, hr, rfl⟩; exact hb ⟨⟨r, hr⟩, rfl⟩⟩ ⟨wt r₀, r₀, hr₀ne, rfl⟩
+  have hj₀neg : wt j₀ < 0 := lt_of_le_of_lt (hj₀min _ ⟨r₀, hr₀ne, rfl⟩)
+    (lt_of_le_of_ne (hle0 r₀ hr₀ne) hr₀wt)
+  have hfj₀ : ⁅f, v j₀⁆ = 0 :=
+    t.lie_f_eq_zero_of_wt_sub_two_ne hspan hwt fun r hr ↦ by
+      have := hj₀min (wt r) ⟨r, hr, rfl⟩
+      omega
+  let n : ℕ := (-wt j₀).toNat
+  have hn : (n : ℤ) = -wt j₀ := Int.toNat_of_nonneg (by omega)
+  have hP : t.symm.HasPrimitiveVectorWith (v j₀) (n : K) :=
+    { ne_zero := hj₀ne
+      lie_h := by rw [neg_lie, hwt j₀, ← neg_smul, ← Int.cast_neg, ← hn, Int.cast_natCast]
+      lie_e := hfj₀ }
+  have hne : (toEnd K L M e ^ n) (v j₀) ≠ 0 := hP.pow_toEnd_f_ne_zero_of_eq_nat rfl le_rfl
+  have heig : ⁅h, (toEnd K L M e ^ n) (v j₀)⁆ =
+      ((n : ℤ) : K) • (toEnd K L M e ^ n) (v j₀) := by
+    rw [t.lie_h_pow_toEnd_e (hwt j₀) n]
+    congr 1
+    exact_mod_cast (by omega : wt j₀ + 2 * (n : ℤ) = n)
+  exact hne (eq_zero_of_lie_h_eq_intCast_smul hspan hwt heig fun r hr ↦ by
+    have := hle0 r hr
+    omega)
+
+/-- If a spanning family `v : η → M` of `h`-eigenvectors with integral weights `wt` has weights
+on its nonzero vectors bounded both below and above and `h` acts nontrivially on `M`, then a
+maximal-weight nonzero generator has strictly positive weight and is primitive for the triple `t`
+(in particular, it is nonzero and killed by the raising operator `e`). -/
+theorem exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top (t : IsSl2Triple h e f)
+    {η : Type*} {v : η → M} (hspan : Submodule.span K (Set.range v) = ⊤)
+    (hh : toEnd K L M h ≠ 0) {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
+    (hbdd_below : BddBelow (Set.range fun r : {r // v r ≠ 0} ↦ wt r))
+    (hbdd_above : BddAbove (Set.range fun r : {r // v r ≠ 0} ↦ wt r)) :
+    ∃ j : η, 0 < wt j ∧ t.HasPrimitiveVectorWith (v j) (wt j : K) ∧
+      ∀ r, v r ≠ 0 → wt r ≤ wt j := by
+  obtain ⟨r₁, hr₁pos, hr₁ne⟩ := t.exists_pos_weight_of_span_eq_top hspan hh hwt hbdd_below
+  obtain ⟨b, hb⟩ := hbdd_above
+  obtain ⟨_, ⟨j, hjne, rfl⟩, hjmax⟩ := Int.exists_greatest_of_bdd
+    (P := fun z ↦ ∃ r : η, v r ≠ 0 ∧ wt r = z)
+    ⟨b, by rintro z ⟨r, hr, rfl⟩; exact hb ⟨⟨r, hr⟩, rfl⟩⟩ ⟨wt r₁, r₁, hr₁ne, rfl⟩
+  refine ⟨j, lt_of_lt_of_le hr₁pos (hjmax (wt r₁) ⟨r₁, hr₁ne, rfl⟩),
+    { ne_zero := hjne
+      lie_h := hwt j
+      lie_e := t.lie_e_eq_zero_of_wt_add_two_ne hspan hwt fun r hr ↦ by
+        have := hjmax (wt r) ⟨r, hr, rfl⟩
+        omega },
+    fun r hr ↦ hjmax (wt r) ⟨r, hr, rfl⟩⟩
+
+end SpanningWeights
 
 end IsSl2Triple
