@@ -296,9 +296,12 @@ For an irreducible representation over an algebraically closed field whose chara
 divide `|G|`, it is the Wedderburn projector onto the block of `ρ`: it acts as the identity on `ρ`
 and as zero on every irreducible representation not isomorphic to `ρ`, by
 `TauCeti.Representation.asAlgebraHom_primitiveCentralIdempotent`, and it is idempotent by
-`TauCeti.Representation.isIdempotentElem_primitiveCentralIdempotent`. Those hypotheses are carried
-by the theorems rather than by the definition, which is the bare formula: it is idempotent only
-under them, and when `|G|` is zero in `k` the inverse `(|G| : k)⁻¹` is `0`, so the element is `0`.
+`TauCeti.Representation.isIdempotentElem_primitiveCentralIdempotent`. More generally, when `|G|`
+is invertible in `k` and `ρ` stays irreducible over an algebraically closed extension of `k`, it is
+idempotent by `Representation.isIdempotentElem_primitiveCentralIdempotent_of_baseChange`. Such
+hypotheses are carried by the theorems rather than by the definition, which is the bare formula and
+need not be idempotent: the element attached to `ρ ⊕ ρ` is `4 e_ρ`, since its character is `2 χ`.
+When `|G|` is zero in `k` the inverse `(|G| : k)⁻¹` is `0`, so the element is `0`.
 Use `TauCeti.Representation.characterSum` for the unnormalized element `∑_g χ(g⁻¹) g`. -/
 noncomputable def primitiveCentralIdempotent : k[G] :=
   ((Nat.card G : k)⁻¹ * ρ.character 1) • characterSum ρ

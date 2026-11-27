@@ -119,30 +119,31 @@ variable {ι : Type*} [Fintype ι] {V : ι → Type w} [∀ i, AddCommGroup (V i
   (ρ : ∀ i, Representation k G (V i)) [∀ i, ((ρ i).baseChange K).IsIrreducible]
 
 include K in
-/-- **Completeness.** Let `ρ i` be representations over `k`, with `|G|` invertible in `k`, whose
-base changes to an algebraically closed extension `K` are irreducible, pairwise non-isomorphic and
-as many as the conjugacy classes of `G`: a complete list of the irreducible representations over
-`K`, all defined over `k`. Then the elements attached to them sum to `1`. -/
-theorem sum_primitiveCentralIdempotent_of_baseChange
-    (hind : Pairwise fun i j ↦ IsEmpty (((ρ i).baseChange K).Equiv ((ρ j).baseChange K)))
-    (hcard : Nat.card ι = Nat.card (ConjClasses G)) :
-    ∑ i, primitiveCentralIdempotent (ρ i) = 1 := by
-  let := IsScalarTower.invertibleAlgebraCoeNat (R := k) (A := K) (Nat.card G)
-  refine MonoidAlgebra.mapRingHom_injective (algebraMap k K).injective ?_
-  simp only [map_sum, map_one, _root_.Representation.mapRingHom_primitiveCentralIdempotent]
-  exact sum_primitiveCentralIdempotent (fun i ↦ (ρ i).baseChange K) hind hcard
-
-include K in
 /-- **The elements attached to a complete list of absolutely irreducible representations form a
-complete family of orthogonal idempotents.** -/
+complete family of orthogonal idempotents.** Let `ρ i` be representations over `k`, with `|G|`
+invertible in `k`, whose base changes to an algebraically closed extension `K` are irreducible,
+pairwise non-isomorphic and as many as the conjugacy classes of `G`: a complete list of the
+irreducible representations over `K`, all defined over `k`. -/
 theorem completeOrthogonalIdempotents_primitiveCentralIdempotent_of_baseChange
     (hind : Pairwise fun i j ↦ IsEmpty (((ρ i).baseChange K).Equiv ((ρ j).baseChange K)))
     (hcard : Nat.card ι = Nat.card (ConjClasses G)) :
-    CompleteOrthogonalIdempotents fun i ↦ primitiveCentralIdempotent (ρ i) where
-  idem i := (ρ i).isIdempotentElem_primitiveCentralIdempotent_of_baseChange K
-  ortho i j hij :=
-    (ρ i).primitiveCentralIdempotent_mul_primitiveCentralIdempotent_of_baseChange K (ρ j) (hind hij)
-  complete := sum_primitiveCentralIdempotent_of_baseChange K ρ hind hcard
+    CompleteOrthogonalIdempotents fun i ↦ primitiveCentralIdempotent (ρ i) := by
+  let := IsScalarTower.invertibleAlgebraCoeNat (R := k) (A := K) (Nat.card G)
+  refine (CompleteOrthogonalIdempotents.map_injective_iff
+    (MonoidAlgebra.mapRingHom G (algebraMap k K))
+    (MonoidAlgebra.mapRingHom_injective (algebraMap k K).injective)).1 ?_
+  simpa [Function.comp_def] using
+    completeOrthogonalIdempotents_primitiveCentralIdempotent (fun i ↦ (ρ i).baseChange K) hind hcard
+
+include K in
+/-- **Completeness.** The elements attached to a complete list of absolutely irreducible
+representations, as in `completeOrthogonalIdempotents_primitiveCentralIdempotent_of_baseChange`,
+sum to `1`. -/
+theorem sum_primitiveCentralIdempotent_of_baseChange
+    (hind : Pairwise fun i j ↦ IsEmpty (((ρ i).baseChange K).Equiv ((ρ j).baseChange K)))
+    (hcard : Nat.card ι = Nat.card (ConjClasses G)) :
+    ∑ i, primitiveCentralIdempotent (ρ i) = 1 :=
+  (completeOrthogonalIdempotents_primitiveCentralIdempotent_of_baseChange K ρ hind hcard).complete
 
 end Representation
 
