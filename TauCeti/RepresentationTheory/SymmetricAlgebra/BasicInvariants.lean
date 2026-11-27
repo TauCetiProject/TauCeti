@@ -56,11 +56,16 @@ theorem IsBasicInvariants.aevalEquiv_toAlgHom (h : ρ.IsBasicInvariants f d) :
     h.aevalEquiv.toAlgHom = aeval f :=
   AlgEquiv.toAlgHom_ofBijective _ _
 
-/-- The polynomial presentation sends each variable to the corresponding basic invariant. -/
+/-- On a polynomial, the presentation is evaluation at the given basic invariants. -/
 @[simp]
+theorem IsBasicInvariants.aevalEquiv_apply (h : ρ.IsBasicInvariants f d) (p : MvPolynomial ι R) :
+    h.aevalEquiv p = aeval f p :=
+  AlgEquiv.ofBijective_apply _ _ _
+
+/-- The polynomial presentation sends each variable to the corresponding basic invariant. -/
 theorem IsBasicInvariants.aevalEquiv_X (h : ρ.IsBasicInvariants f d) (i : ι) :
     h.aevalEquiv (X i) = f i := by
-  rw [← AlgEquiv.coe_toAlgHom, h.aevalEquiv_toAlgHom, aeval_X]
+  rw [h.aevalEquiv_apply, aeval_X]
 
 end CommSemiring
 
