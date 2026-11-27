@@ -854,6 +854,29 @@ private lemma lt_apply_last {j : Fin (n + m + 2)} (hjn : n < (j : ℕ)) (hjx : j
   exact hjn.trans_le (Fin.le_def.1 h)
 
 variable (x) in
+/-- The lower-block boundary test used in `mem_horn_natAdd_iff`: the left part of the split
+simplex lies in the boundary exactly when the original simplex misses a lower-block vertex. -/
+private lemma left_boundary_iff :
+    (∀ (k : SimplexCategoryᵒᵖ) (y : Δ[d].obj k)
+      (hy : y ∈ (joinFiber ((splitData n m).precomp (yonedaEquiv.symm x)).p 0).obj k),
+      ((splitData n m).precomp (yonedaEquiv.symm x)).left.app k ⟨y, hy⟩ ∈ ∂Δ[n].obj k) ↔
+      ∃ j : Fin (n + m + 2), (j : ℕ) ≤ n ∧ j ∉ Set.range x := by
+  constructor
+  · intro h
+    by_contra hx
+    have hx' (j : Fin (n + m + 2)) (hj : (j : ℕ) ≤ n) : j ∈ Set.range x := by
+      by_contra hjx
+      exact hx ⟨j, hj, hjx⟩
+    have h₀ := apply_zero_le (j := 0) (by simp) (hx' 0 (by simp))
+    obtain ⟨l, hl⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (lowerSection_mem x h₀))
+    obtain ⟨t, ht⟩ := hx' (Fin.castLE (by omega) l) (by rw [Fin.val_castLE]; omega)
+    exact hl (mem_range_left h₀ (by rw [ht, Fin.val_castLE]))
+  · rintro ⟨j, hjn, hjx⟩ k y hy
+    induction k using Opposite.rec with | op k
+    induction k using SimplexCategory.rec with | _ a
+    exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_left hjn hjx y hy⟩
+
+variable (x) in
 /-- A simplex `x` of `Δ[n + m + 1]` lies in the horn `Λ[n + m + 1, i]`, for `i ≤ n` and `n ≠ 0`,
 exactly when its image in `Δ[n] ⋆ Δ[m]` has its part in `Δ[n]` in `Λ[n, i]` or its part in `Δ[m]`
 in `∂Δ[m]`. -/
@@ -902,10 +925,7 @@ private lemma mem_horn_natAdd_iff (hm : m ≠ 0) (j : Fin (m + 1)) :
   constructor
   · rintro ⟨l, hlj, hlx⟩
     by_cases hln : (l : ℕ) ≤ n
-    · refine Or.inl fun k y hy ↦ ?_
-      induction k using Opposite.rec with | op k
-      induction k using SimplexCategory.rec with | _ a
-      exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_left hln hlx y hy⟩
+    · exact Or.inl ((left_boundary_iff x).2 ⟨l, hln, hlx⟩)
     · refine Or.inr fun k y hy ↦ ?_
       induction k using Opposite.rec with | op k
       induction k using SimplexCategory.rec with | _ a
@@ -918,10 +938,8 @@ private lemma mem_horn_natAdd_iff (hm : m ≠ 0) (j : Fin (m + 1)) :
       by_contra hlx
       exact hx ⟨l, fun h ↦ hl (by rw [h, Fin.val_cast, Fin.val_natAdd]), hlx⟩
     rcases h with h | h
-    · have h₀ := apply_zero_le (j := 0) (by simp) (hx' 0 (by simp; omega))
-      obtain ⟨l, hl⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (lowerSection_mem x h₀))
-      obtain ⟨t, ht⟩ := hx' (Fin.castLE (by omega) l) (by simp only [Fin.val_castLE]; omega)
-      exact hl (mem_range_left h₀ (by rw [ht, Fin.val_castLE]))
+    · obtain ⟨l, hln, hlx⟩ := (left_boundary_iff x).1 h
+      exact hlx (hx' l (by omega))
     · -- The last vertex of `x` is above `n`, since `x` hits a vertex `n + 1` or `n + 2` other than
       -- `n + 1 + j`.
       obtain ⟨a, ham, haj⟩ : ∃ a : ℕ, a ≤ m ∧ a ≠ j :=
@@ -942,10 +960,7 @@ private lemma mem_boundary_iff :
   constructor
   · rintro ⟨j, hjx⟩
     by_cases hjn : (j : ℕ) ≤ n
-    · refine Or.inl fun k y hy ↦ ?_
-      induction k using Opposite.rec with | op k
-      induction k using SimplexCategory.rec with | _ a
-      exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_left hjn hjx y hy⟩
+    · exact Or.inl ((left_boundary_iff x).2 ⟨j, hjn, hjx⟩)
     · refine Or.inr fun k y hy ↦ ?_
       induction k using Opposite.rec with | op k
       induction k using SimplexCategory.rec with | _ a
@@ -956,10 +971,8 @@ private lemma mem_boundary_iff :
       by_contra hjx
       exact hx ⟨j, hjx⟩
     rcases h with h | h
-    · have h₀ := apply_zero_le (j := 0) (by simp) (hx' 0)
-      obtain ⟨l, hl⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (lowerSection_mem x h₀))
-      obtain ⟨t, ht⟩ := hx' (Fin.castLE (by omega) l)
-      exact hl (mem_range_left h₀ (by rw [ht, Fin.val_castLE]))
+    · obtain ⟨l, _, hlx⟩ := (left_boundary_iff x).1 h
+      exact hlx (hx' l)
     · have hlast := lt_apply_last (j := Fin.last _) (by simp) (hx' _)
       obtain ⟨l, hl⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (upperSection_mem x hlast))
       obtain ⟨t, ht⟩ := hx' ⟨n + 1 + l, by omega⟩
@@ -967,32 +980,15 @@ private lemma mem_boundary_iff :
 
 variable (x) in
 /-- A simplex `x` of `Δ[n + 0 + 1]` lies in the horn `Λ[n + 0 + 1, n + 1]` opposite to the last
-vertex exactly when the part in `Δ[n]` of its image in `Δ[n] ⋆ Δ[0]` lies in `∂Δ[n]`. -/
+vertex exactly when the part in `Δ[n]` of its image in `Δ[n] ⋆ Δ[0]` lies in `∂Δ[n]`.
+This uses the lower-block argument of `mem_horn_natAdd_iff`, shared in `left_boundary_iff`. -/
 private lemma mem_horn_last_iff (x : Δ[n + 0 + 1] _⦋d⦌) :
     x ∈ Λ[n + 0 + 1, Fin.last _].obj _ ↔
       (stdSimplexIso n 0).inv.app _ x ∈ (Subcomplex.range (map ∂Δ[n].ι (𝟙 Δ[0]))).obj _ := by
-  rw [mem_range_map_ι_id_iff, objEquiv_stdSimplexIso_inv_app, mem_horn_iff_notMem_range]
-  constructor
-  · rintro ⟨j, hj, hjx⟩ k y hy
-    induction k using Opposite.rec with | op k
-    induction k using SimplexCategory.rec with | _ a
-    have hjn : (j : ℕ) ≤ n := by
-      have h₁ := j.isLt
-      have h₂ : (j : ℕ) ≠ n + 0 + 1 := fun h ↦ hj (Fin.ext h)
-      omega
-    exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_left (m := 0) hjn hjx y hy⟩
-  · intro h
-    by_contra hx
-    -- Otherwise `x` hits every vertex other than the last one, so its first vertex is at most `n`
-    -- and the part in `Δ[n]` of one of its faces hits every vertex of `Δ[n]`.
-    have hx' (j : Fin (n + 0 + 1 + 1)) (hj : (j : ℕ) ≤ n) : j ∈ Set.range x := by
-      by_contra hjx
-      exact hx ⟨j, fun h ↦ by rw [h, Fin.val_last] at hj; omega, hjx⟩
-    have h₀ := apply_zero_le (m := 0) (j := 0) (by simp) (hx' 0 (by simp))
-    obtain ⟨l, hl⟩ :=
-      (mem_boundary_iff_notMem_range _).1 (h _ _ (lowerSection_mem (n := n) (m := 0) x h₀))
-    obtain ⟨t, ht⟩ := hx' (Fin.castLE (by omega) l) (by rw [Fin.val_castLE]; omega)
-    exact hl (mem_range_left (n := n) (m := 0) h₀ (by rw [ht, Fin.val_castLE]))
+  rw [mem_range_map_ι_id_iff, objEquiv_stdSimplexIso_inv_app, left_boundary_iff,
+    mem_horn_iff_notMem_range]
+  simp only [exists_prop, Ne, Fin.ext_iff, Fin.val_last]
+  exact exists_congr fun j ↦ and_congr_left fun _ ↦ by omega
 
 end horn
 
@@ -1063,6 +1059,32 @@ theorem innerAnodyneExtensions_unionJoin_boundary_horn {j : Fin (m + 1)} (hj : j
   exact innerAnodyneExtensions.horn_ι
     (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_zero]; omega))
     (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_last]; omega))
+
+/-- Under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 0 + 1]`, the last vertex of the face opposite to `0` is the vertex
+`Δ[0]`. -/
+private lemma const_last_comp_δ_zero (n : ℕ) :
+    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ stdSimplex.δ 0 =
+      join.inr Δ[n] Δ[0] ≫ (stdSimplexIso.{u} n 0).hom := by
+  apply yonedaEquiv.injective
+  refine stdSimplex.ext _ _ fun i ↦ ?_
+  rw [yonedaEquiv_inr_comp_stdSimplexIso_hom.{u} (n := n) (m := 0) i,
+    stdSimplex.yonedaEquiv_comp_apply]
+  ext
+  simp [CosimplicialObject.δ, SimplexCategory.δ]
+
+/-- Under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, the vertex `Δ[0]` of `(∂Δ[n] ⋆ Δ[0]) ∪ (Δ[n] ⋆ ∂Δ[0])` is the
+last vertex of the face opposite to `0` of `∂Δ[n + 1]`. -/
+lemma const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv (n : ℕ) :
+    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ boundary.ι 0 ≫
+      (Subcomplex.isoOfPreimageEq (stdSimplexIso.{u} n 0)
+        (preimage_unionJoin_boundary_boundary n 0 : _ = ∂Δ[n + 1])).inv =
+        join.inr _ _ ≫ Subcomplex.unionJoin.ι₁ ∂Δ[n] ∂Δ[0] := by
+  rw [← cancel_mono (Subcomplex.unionJoin ∂Δ[n] ∂Δ[0]).ι,
+    ← cancel_mono (stdSimplexIso.{u} n 0).hom]
+  simp only [Category.assoc, Subcomplex.isoOfPreimageEq_inv_ι, boundary.ι_ι_assoc,
+    Iso.inv_hom_id, Category.comp_id, Subcomplex.unionJoin.ι₁_ι_assoc, join.inr_map_assoc,
+    Category.id_comp]
+  exact const_last_comp_δ_zero n
 
 end join
 

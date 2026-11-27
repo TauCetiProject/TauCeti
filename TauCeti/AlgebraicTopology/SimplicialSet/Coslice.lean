@@ -262,16 +262,24 @@ identification of `C_{p/}` with `(Cᵒᵖ_{/pᵒᵖ})ᵒᵖ` (`SSet.coslice.opSl
 lemma opSliceIso_inv_comp_π :
     (opSliceIso p).inv ≫ π p =
       opFunctor.map (slice.π (opFunctor.map p)) ≫ opFunctorCompOpFunctorIso.hom.app C := by
-  apply opFunctor.map_injective
   have h : opFunctor.map (π p) = opHomEquiv (𝟙 _) ≫ slice.π (opFunctor.map p) := by
     rw [slice.comp_π, ← opIso_inv_comp_opFunctor_map_homEquiv_coe, π, Functor.map_comp,
       ← join.opFunctor_map_inr_comp_opIso_hom_assoc, Iso.hom_inv_id_assoc]
-  rw [Functor.map_comp, h]
-  -- The two sides agree on simplices by definition: `SSet.coslice.opSliceIso` is `Iso.refl`, and
-  -- `opFunctorCompOpFunctorIso`, the counit through which `opHomEquiv` is defined, acts on
-  -- simplices by `SSet.opObjEquiv` twice, which is `Equiv.refl`.
-  ext n σ
-  rfl
+  let adj : opFunctor.{u} ⊣ opFunctor := opEquivalence.toAdjunction
+  have hi : (adj.homEquiv (coslice p) (slice (opFunctor.map p)))
+      (opHomEquiv (𝟙 _)) = (opSliceIso p).hom :=
+    (adj.homEquiv _ _).apply_symm_apply _
+  have h' := congrArg (adj.homEquiv (coslice p) C.op) h
+  rw [adj.homEquiv_naturality_right, hi, Adjunction.homEquiv_unit] at h'
+  have hu : adj.unit = opFunctorCompOpFunctorIso.inv := opEquivalence.toAdjunction_unit
+  rw [hu] at h'
+  have h'' := congrArg (· ≫ opFunctorCompOpFunctorIso.hom.app C) h'
+  simp only [Category.assoc] at h''
+  rw [← Functor.comp_map, opFunctorCompOpFunctorIso.hom.naturality (π p), Functor.id_map,
+    ← Category.assoc, ← NatTrans.comp_app, Iso.inv_hom_id, NatTrans.id_app] at h''
+  have hπ : π p = (opSliceIso p).hom ≫ opFunctor.map (slice.π (opFunctor.map p)) ≫
+      opFunctorCompOpFunctorIso.hom.app C := (Category.id_comp (π p)).symm.trans h''
+  exact (Iso.inv_comp_eq _).2 hπ
 
 variable (p) in
 /-- The coslice under the empty diagram is the whole simplicial set: when `K` is empty, the

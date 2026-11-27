@@ -327,9 +327,7 @@ theorem exists_homotopy_postcomp [X.Quasicategory] (g : Edge y z)
     (hs : s ≫ postcompSpace.src x g = 𝟙 _) :
     Nonempty (Homotopy (s ≫ postcompSpace.tgt x g) (postcomp x g)) := by
   have := isSplitEpi_of_rlp_monomorphisms (postcompSpace.rlp_src x g)
-  obtain ⟨H, -⟩ := exists_homotopy_of_rlp_monomorphisms (postcompSpace.rlp_src x g) s
-    (section_ (postcompSpace.src x g)) (by rw [hs, IsSplitEpi.id])
-  exact ⟨H.postcomp _⟩
+  exact nonempty_homotopy_comp_section_comp (postcompSpace.rlp_src x g) _ s hs
 
 end rightMappingSpace
 

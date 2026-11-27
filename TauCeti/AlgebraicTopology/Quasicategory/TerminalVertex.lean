@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.CategoryTheory.Limits.Preorder
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
@@ -132,31 +131,34 @@ lemma isTerminalVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
   refine ⟨fun h ↦ ?_, fun h ↦ h.map_iso e⟩
   simpa using h.map_iso e.symm
 
-/-- Under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 0 + 1]`, the last vertex of the face opposite to `0` is the vertex
-`Δ[0]`. -/
-private lemma const_last_comp_δ_zero (n : ℕ) :
-    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ stdSimplex.δ 0 =
-      join.inr Δ[n] Δ[0] ≫ (join.stdSimplexIso.{u} n 0).hom := by
-  apply yonedaEquiv.injective
-  refine stdSimplex.ext _ _ fun i ↦ ?_
-  rw [join.yonedaEquiv_inr_comp_stdSimplexIso_hom.{u} (n := n) (m := 0) i,
-    stdSimplex.yonedaEquiv_comp_apply]
-  ext
-  simp [CosimplicialObject.δ, SimplexCategory.δ]
-
-/-- Under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, the vertex `Δ[0]` of `(∂Δ[n] ⋆ Δ[0]) ∪ (Δ[n] ⋆ ∂Δ[0])` is the
-last vertex of the face opposite to `0` of `∂Δ[n + 1]`. -/
-private lemma const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv (n : ℕ) :
-    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ boundary.ι 0 ≫
-      (Subcomplex.isoOfPreimageEq (join.stdSimplexIso.{u} n 0)
-        (join.preimage_unionJoin_boundary_boundary n 0 : _ = ∂Δ[n + 1])).inv =
-        join.inr _ _ ≫ Subcomplex.unionJoin.ι₁ ∂Δ[n] ∂Δ[0] := by
-  rw [← cancel_mono (Subcomplex.unionJoin ∂Δ[n] ∂Δ[0]).ι,
-    ← cancel_mono (join.stdSimplexIso.{u} n 0).hom]
-  simp only [Category.assoc, Subcomplex.isoOfPreimageEq_inv_ι, boundary.ι_ι_assoc,
-    Iso.inv_hom_id, Category.comp_id, Subcomplex.unionJoin.ι₁_ι_assoc, join.inr_map_assoc,
-    Category.id_comp]
-  exact const_last_comp_δ_zero n
+/-- A lift of a boundary square for the slice projection is precisely an extension of the
+glued map from the union-join. The two restriction equations identify its cone and base parts. -/
+private lemma hasLift_iff_extension_unionJoin {x : X _⦋0⦌} (n : ℕ)
+    (g : (Subcomplex.unionJoin ∂Δ[n] ∂Δ[0] : SSet.{u}) ⟶ X)
+    (a : (∂Δ[n] : SSet.{u}) ⟶ slice (yonedaEquiv.symm x)) (b : Δ[n] ⟶ X)
+    (hg₁ : Subcomplex.unionJoin.ι₁ _ _ ≫ g = (slice.homEquiv a).val)
+    (hg₂ : join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ _ _ ≫ g = b)
+    (sq : CommSq a ∂Δ[n].ι (slice.π (yonedaEquiv.symm x)) b) :
+    sq.HasLift ↔ ∃ f : join Δ[n] Δ[0] ⟶ X, (Subcomplex.unionJoin ∂Δ[n] ∂Δ[0]).ι ≫ f = g := by
+  have := join.isIso_inl (K := Δ[n]) not_nonempty_boundary_zero
+  constructor
+  · rintro ⟨⟨l, hl, hr⟩⟩
+    refine ⟨(slice.homEquiv l).val, (Subcomplex.unionJoin.isPushout _ _).hom_ext ?_ ?_⟩
+    · rw [Subcomplex.unionJoin.ι₁_ι_assoc, hg₁, ← slice.homEquiv_comp_coe, hl]
+    · rw [Subcomplex.unionJoin.ι₂_ι_assoc, ← cancel_epi (join.inl Δ[n] ∂Δ[0]),
+        join.inl_map_assoc, Category.id_comp, hg₂, ← slice.comp_π, hr]
+  · rintro ⟨f, hf⟩
+    have hinr : join.inr _ _ ≫ f = yonedaEquiv.symm x := by
+      rw [← Category.id_comp (join.inr Δ[n] Δ[0]), ← join.inr_map ∂Δ[n].ι, Category.assoc,
+        ← Subcomplex.unionJoin.ι₁_ι, Category.assoc, hf, hg₁]
+      exact (slice.homEquiv a).property
+    let l := slice.homEquiv.symm ⟨f, hinr⟩
+    have hl : (slice.homEquiv l).val = f := by rw [Equiv.apply_symm_apply]
+    refine ⟨⟨⟨l, slice.hom_ext ?_, ?_⟩⟩⟩
+    · rw [slice.homEquiv_comp_coe, hl, ← Subcomplex.unionJoin.ι₁_ι, Category.assoc, hf, hg₁]
+    · rw [slice.comp_π, hl, ← Category.id_comp (join.inl Δ[n] Δ[0]),
+        ← join.inl_map (𝟙 _) (boundary.{u} 0).ι, Category.assoc, ← Subcomplex.unionJoin.ι₂_ι,
+        Category.assoc, hf, hg₂]
 
 /-- If `x` is terminal, the projection `X_{/x} ⟶ X` lifts against `∂Δ[n] ⟶ Δ[n]`: a lifting
 problem glues, on `(∂Δ[n] ⋆ Δ[0]) ∪ (Δ[n] ⋆ ∂Δ[0]) ≅ ∂Δ[n + 1]`, to a map with last vertex `x`. -/
@@ -184,21 +186,12 @@ private lemma hasLiftingProperty_π_of_isTerminalVertex {x : X _⦋0⦌} (hx : X
   -- Extend the glued map, whose last vertex is `x`, to `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`.
   obtain ⟨σ, hσ⟩ := hx (i.inv ≫ g) (by
     rw [yonedaEquiv_naturality,
-      reassoc_of% const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv n, hg₁,
+      reassoc_of% join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv n, hg₁,
       (slice.homEquiv a).property, Equiv.apply_symm_apply])
   have hσU : U.ι ≫ e.hom ≫ σ = g := by
     rw [← Subcomplex.isoOfPreimageEq_hom_ι_assoc e key, ← hσ, i.hom_inv_id_assoc]
-  have hinr : join.inr Δ[n] Δ[0] ≫ e.hom ≫ σ = yonedaEquiv.symm x := by
-    rw [← Category.id_comp (join.inr Δ[n] Δ[0]), ← join.inr_map ∂Δ[n].ι, Category.assoc,
-      ← Subcomplex.unionJoin.ι₁_ι, Category.assoc, hσU, hg₁]
-    exact (slice.homEquiv a).property
-  let l := slice.homEquiv.symm ⟨e.hom ≫ σ, hinr⟩
-  have hl : (slice.homEquiv l).val = e.hom ≫ σ := by rw [Equiv.apply_symm_apply]
-  refine ⟨⟨⟨l, slice.hom_ext ?_, ?_⟩⟩⟩
-  · rw [slice.homEquiv_comp_coe, hl, ← Subcomplex.unionJoin.ι₁_ι, Category.assoc, hσU, hg₁]
-  · rw [slice.comp_π, hl, ← Category.id_comp (join.inl Δ[n] Δ[0]),
-      ← join.inl_map (𝟙 _) (boundary.{u} 0).ι, Category.assoc, ← Subcomplex.unionJoin.ι₂_ι,
-      Category.assoc, hσU, hg₂, IsIso.hom_inv_id_assoc]
+  exact (hasLift_iff_extension_unionJoin n g a b hg₁
+    (by rw [hg₂, IsIso.hom_inv_id_assoc]) sq).2 ⟨e.hom ≫ σ, hσU⟩
 
 /-- If the projection `X_{/x} ⟶ X` lifts against all boundary inclusions, then `x` is terminal: a
 map `∂Δ[n + 1] ≅ (∂Δ[n] ⋆ Δ[0]) ∪ (Δ[n] ⋆ ∂Δ[0]) ⟶ X` with last vertex `x` is a lifting problem
@@ -207,7 +200,6 @@ private lemma isTerminalVertex_of_hasLiftingProperty_π {x : X _⦋0⦌}
     (h : ∀ n : ℕ, HasLiftingProperty ∂Δ[n].ι (slice.π (yonedaEquiv.symm x))) :
     X.IsTerminalVertex x := by
   intro n σ₀ hσ₀
-  have := join.isIso_inl (K := Δ[n]) not_nonempty_boundary_zero
   let U := Subcomplex.unionJoin ∂Δ[n] ∂Δ[0]
   let e := join.stdSimplexIso.{u} n 0
   have key : U.preimage e.inv = ∂Δ[n + 1] := join.preimage_unionJoin_boundary_boundary n 0
@@ -215,7 +207,7 @@ private lemma isTerminalVertex_of_hasLiftingProperty_π {x : X _⦋0⦌}
   let g : (U : SSet.{u}) ⟶ X := i.hom ≫ σ₀
   -- The map `g` on `U` is a cone `a` over `x` on `∂Δ[n]` and a simplex `b` on `Δ[n]`.
   have ha : join.inr _ _ ≫ Subcomplex.unionJoin.ι₁ _ _ ≫ g = yonedaEquiv.symm x := by
-    rw [← reassoc_of% const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv n,
+    rw [← reassoc_of% join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv n,
       i.inv_hom_id_assoc, ← hσ₀]
     apply yonedaEquiv.injective
     rw [Equiv.apply_symm_apply, yonedaEquiv_naturality]
@@ -224,24 +216,21 @@ private lemma isTerminalVertex_of_hasLiftingProperty_π {x : X _⦋0⦌}
   have sq : CommSq a ∂Δ[n].ι (slice.π (yonedaEquiv.symm x)) b := ⟨by
     rw [slice.comp_π, Equiv.apply_symm_apply, ← join.inl_map_assoc ∂Δ[n].ι (𝟙 _),
       ← (Subcomplex.unionJoin.isPushout _ _).w_assoc, join.inl_map_assoc, Category.id_comp]⟩
-  have hl₁ := congrArg (fun F ↦ (slice.homEquiv F).val) sq.fac_left
-  simp only [slice.homEquiv_comp_coe, a, Equiv.apply_symm_apply] at hl₁
-  have hl₂ := sq.fac_right
-  rw [slice.comp_π] at hl₂
-  -- The lift is a map `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1] ⟶ X` agreeing with `g` on both parts of `U`.
-  refine ⟨e.inv ≫ (slice.homEquiv sq.lift).val, ?_⟩
-  have hU : U.ι ≫ (slice.homEquiv sq.lift).val = g := by
-    refine (Subcomplex.unionJoin.isPushout _ _).hom_ext ?_ ?_
-    · rw [Subcomplex.unionJoin.ι₁_ι_assoc, hl₁]
-    · rw [Subcomplex.unionJoin.ι₂_ι_assoc, ← cancel_epi (join.inl Δ[n] ∂Δ[0]),
-        join.inl_map_assoc, Category.id_comp, hl₂]
-  rw [← cancel_epi i.hom, Subcomplex.isoOfPreimageEq_hom_ι_assoc e key, Iso.hom_inv_id_assoc, hU]
+  have hg₁ : Subcomplex.unionJoin.ι₁ _ _ ≫ g = (slice.homEquiv a).val := by
+    rw [Equiv.apply_symm_apply]
+  have hg₂ : join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ _ _ ≫ g = b := rfl
+  obtain ⟨f, hf⟩ := (hasLift_iff_extension_unionJoin n g a b hg₁ hg₂ sq).1 inferInstance
+  refine ⟨e.inv ≫ f, ?_⟩
+  rw [← cancel_epi i.hom, Subcomplex.isoOfPreimageEq_hom_ι_assoc e key,
+    Iso.hom_inv_id_assoc, hf]
 
 /-- **A vertex `x` is terminal exactly when the projection `X_{/x} ⟶ X` from the slice over `x` is
 a trivial fibration**: it has the right lifting property with respect to all monomorphisms. Under
 `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, the boundary `∂Δ[n + 1]` is the union of `∂Δ[n] ⋆ Δ[0]` and
 `Δ[n] ≅ Δ[n] ⋆ ∂Δ[0]`, so that a map `∂Δ[n + 1] ⟶ X` with last vertex `x` is a lifting problem of
-`∂Δ[n] ⟶ Δ[n]` against the projection. -/
+`∂Δ[n] ⟶ Δ[n]` against the projection.
+The forward boundary-gluing proof and last-vertex calculation follow
+`SSet.IsTerminalVertex.rlp_monomorphisms_pullback_const`. -/
 theorem isTerminalVertex_iff_rlp_monomorphisms_π (x : X _⦋0⦌) :
     X.IsTerminalVertex x ↔
       (MorphismProperty.monomorphisms SSet.{u}).rlp (slice.π (yonedaEquiv.symm x)) := by

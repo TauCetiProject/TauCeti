@@ -144,4 +144,18 @@ theorem rlp_monomorphisms_iff_fibration_and_isWeaklyContractible_fiber {p : X �
   exact ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
     (Subcomplex.isTerminalOfSimplex y) _).1 this).2
 
+section
+
+/-- The fibres of the restriction `A.fromPreimage q` of `q` over a subcomplex `A` are weakly
+contractible exactly when the corresponding fibres of `q` are, since they are isomorphic
+(`SSet.fiber.fromPreimageIso`). -/
+lemma isWeaklyContractible_fiber_fromPreimage_iff {X Y : SSet.{u}} (q : X ⟶ Y)
+    (A : Y.Subcomplex) (y : (A : SSet.{u}) _⦋0⦌) :
+    IsWeaklyContractible (fiber (A.fromPreimage q) y : SSet.{u}) ↔
+      IsWeaklyContractible (fiber q y.val : SSet.{u}) :=
+  ⟨fun _ ↦ .of_iso (fiber.fromPreimageIso q A y),
+    fun _ ↦ .of_iso (fiber.fromPreimageIso q A y).symm⟩
+
+end
+
 end SSet

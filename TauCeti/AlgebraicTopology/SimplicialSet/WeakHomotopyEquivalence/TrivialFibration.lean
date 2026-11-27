@@ -131,4 +131,26 @@ theorem anodyneExtensions_iff_isWeakHomotopyEquivalence {A B : SSet.{u}} (i : A 
   exact MorphismProperty.of_retract (P := (fibrations SSet.{u}).llp)
     (RetractArrow.ofLeftLiftingProperty h.fac) h.hi
 
+section
+
+variable {A B D : SSet.{u}} {s : A ⟶ B} (hs : (monomorphisms SSet.{u}).rlp s)
+  (t : A ⟶ D)
+include hs
+
+/-- For a trivial fibration `s : A ⟶ B` and a Kan fibration `t : A ⟶ D` to a Kan
+complex, the composite `σ ≫ t` for any section `σ` of `s` is a weak homotopy equivalence exactly
+when `t` is a trivial fibration, since the section of `s` is a weak homotopy equivalence. -/
+lemma isWeakHomotopyEquivalence_section_comp_iff [Fibration t] [KanComplex D]
+    (σ : B ⟶ A) (hσ : σ ≫ s = 𝟙 B) :
+    IsWeakHomotopyEquivalence (σ ≫ t) ↔ (monomorphisms SSet.{u}).rlp t := by
+  have := isWeakHomotopyEquivalence_of_rlp_monomorphisms hs
+  have : IsWeakHomotopyEquivalence (σ ≫ s) := by
+    rw [hσ]
+    infer_instance
+  have := IsWeakHomotopyEquivalence.of_postcomp σ s
+  rw [rlp_monomorphisms_iff_isWeakHomotopyEquivalence]
+  exact ⟨fun _ ↦ IsWeakHomotopyEquivalence.of_precomp σ t, fun _ ↦ inferInstance⟩
+
+end
+
 end SSet
