@@ -40,11 +40,9 @@ presheaves of morphisms; the coherence conditions are the images of those of `F`
 The comparison functors `toFiber` form a strong transformation `toPrestackification` from `F`,
 whose naturality isomorphisms are identities. For a prestack `F` it is an equivalence of
 pseudofunctors (`toPrestackificationEquivalence`). The Hom-sheafification takes values in the
-universes of `F`, so no universe lift is needed; this covers the big site `Over S` of
-`S : Scheme.{u}` with `F` valued in `Cat.{u, u + 1}`, given `HasSheafify` and
-`WEqualsLocallyBijective` on the slice sites for the presheaves of morphisms. Both hypotheses on
-the slice sites hold automatically when the morphisms of `F` lie in `Type (max u v)` for
-`C : Type u` with `Category.{v} C`.
+universes of `F`, so no universe lift is needed. The hypotheses `HasSheafify` and
+`WEqualsLocallyBijective` on the slice sites hold automatically when the morphisms of `F` lie in
+`Type (max u v)` for `C : Type u` with `Category.{v} C`.
 
 ## Main declarations
 
@@ -300,7 +298,7 @@ lemma toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp (M N : F.obj (.
   have key : (Functor.whiskerLeft (Over.map p.left).op (F.overMapCompPresheafHomIso M N T.hom).hom ≫
       (F.overMapCompPresheafHomIso ((F.map T.hom.op.toLoc).toFunctor.obj M)
         ((F.map T.hom.op.toLoc).toFunctor.obj N) p.left).hom) ≫
-      presheafHomPostcomp ((F.mapComp' T.hom.op.toLoc p.left.op.toLoc T'.hom.op.toLoc
+      F.presheafHomPostcomp _ ((F.mapComp' T.hom.op.toLoc p.left.op.toLoc T'.hom.op.toLoc
         (by rw [← Over.w p]; rfl)).inv.toNatTrans.app N) ≫
       presheafHomPrecomp ((F.mapComp' T.hom.op.toLoc p.left.op.toLoc T'.hom.op.toLoc
         (by rw [← Over.w p]; rfl)).hom.toNatTrans.app M) =
@@ -347,7 +345,7 @@ lemma sheafifyPresheafHomEquiv_mkId (M N : F.obj (.mk (op U)))
           (toFiber J F U).map ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N) := by
   have key : (F.overMapCompPresheafHomIso M N (𝟙 U)).hom =
       Functor.whiskerRight (NatTrans.op (Over.mapId U).inv) (F.presheafHom M N) ≫
-        presheafHomPostcomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N) ≫
+        F.presheafHomPostcomp _ ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N) ≫
           presheafHomPrecomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M) := by
     refine NatTrans.ext (funext fun Z ↦ ConcreteCategory.hom_ext _ _ fun w ↦ ?_)
     have h := mapComp'_conj_eq_mapId'_conj_pullHom Z.unop.hom _ rfl
@@ -367,7 +365,7 @@ lemma sheafifyPresheafHomEquiv_mkId (M N : F.obj (.mk (op U)))
   refine Eq.trans ?_ (congrArg (fun z ↦ (J.sheafifySections U).map
     (presheafHomPrecomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M))
       ((J.sheafifySections U).map
-        (presheafHomPostcomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N)) z))
+        (F.presheafHomPostcomp _ ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N)) z))
           (Equiv.apply_symm_apply (Fiber.homEquiv (Fiber.mk M) (Fiber.mk N)) s).symm)
   conv_rhs => rw [← GrothendieckTopology.restrictSectionsOver_mkId J _ s]
   -- The goal contains `F.overMapCompPresheafHomIso M N (Over.mk (𝟙 U)).hom`, which is `key`'s
@@ -483,8 +481,9 @@ variable [∀ U : C, HasSheafify (J.over U) (Type v')]
 
 /-- The Hom-sheafification of a pseudofunctor `F` for a Grothendieck topology `J`: its fibre over
 `U` is `Fiber J F U`, whose morphisms are the sections over the terminal object of the
-sheafifications of the presheaves of morphisms of `F`, and its pullback functors, unit and
-composition isomorphisms are those of `F` (`Fiber.pullback`, `Fiber.pullbackId`,
+sheafifications of the presheaves of morphisms of `F`. Its pullback functors are those of `F`
+on objects and restrict sheafified sections on morphisms (`Fiber.pullback`). The unit and
+composition isomorphisms are the images under `toFiber` of those of `F` (`Fiber.pullbackId`,
 `Fiber.pullbackComp`). It is a prestack (`isPrestack_prestackification`), and its presheaves of
 morphisms are the sheafifications of those of `F` (`prestackificationPresheafHomIso`). -/
 -- The body is exposed so that the fibres and pullback functors are definitionally `Fiber J F U`

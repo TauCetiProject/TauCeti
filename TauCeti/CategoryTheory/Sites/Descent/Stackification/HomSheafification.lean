@@ -227,7 +227,8 @@ postcomposition of local morphisms with the pullbacks of `ψ`. -/
 lemma Fiber.homEquiv_comp_toFiber_map {M : Fiber J F U} {N P : F.obj (.mk (op U))}
     (x : M ⟶ Fiber.mk N) (ψ : N ⟶ P) :
     Fiber.homEquiv M (Fiber.mk P) (x ≫ (toFiber J F U).map ψ) =
-      (J.sheafifySections U).map (presheafHomPostcomp ψ) (Fiber.homEquiv M (Fiber.mk N) x) := by
+      (J.sheafifySections U).map (F.presheafHomPostcomp M.obj ψ)
+        (Fiber.homEquiv M (Fiber.mk N) x) := by
   rw [presheafHomPostcomp_eq_lift_comp_presheafHomComp, Functor.map_comp,
     ← Functor.Monoidal.lift_μ_assoc]
   refine (Fiber.homEquiv_comp x ((toFiber J F U).map ψ)).trans ?_

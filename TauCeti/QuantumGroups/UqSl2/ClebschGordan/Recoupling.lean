@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.UqSl2.ClebschGordan.Projection
+public import TauCeti.RepresentationTheory.SU2.ClebschGordan.Triad
 public import TauCeti.Algebra.Bialgebra.Module.Pi
 public import TauCeti.LinearAlgebra.Pi
 
@@ -551,17 +552,17 @@ theorem recouplingCoeff_eq_zero_of_not_channel_right (hq : IsGenericQuantumParam
     {i : Fin (min m n + 1)} {j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)} {r : Fin (min n p + 1)}
     {s : Fin (min m (n + p - 2 * (r : ℕ)) + 1)} {k : ℕ}
     (hk : m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) = k)
-    (hnot : ¬ IsClebschGordanChannel m (n + p - 2 * (r : ℕ)) k) :
+    (hnot : ¬ SU2.IsTriad m (n + p - 2 * (r : ℕ)) k) :
     recouplingCoeff hq ε δ ζ i j r s = 0 :=
   recouplingCoeff_eq_zero_of_ne hq ε δ ζ fun heq =>
-    hnot (isClebschGordanChannel_def.mpr ⟨s, heq.symm.trans hk⟩)
+    hnot (SU2.isTriad_def.mpr ⟨s, heq.symm.trans hk⟩)
 
 /-- `recouplingCoeff` vanishes off the unique right outer index `hmv.index` for total weight `k`. -/
 theorem recouplingCoeff_eq_zero_of_ne_index_right (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
     {i : Fin (min m n + 1)} {j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)} {r : Fin (min n p + 1)}
     {s : Fin (min m (n + p - 2 * (r : ℕ)) + 1)} {k : ℕ}
     (hk : m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) = k)
-    (hmv : IsClebschGordanChannel m (n + p - 2 * (r : ℕ)) k) (hs : s ≠ hmv.index) :
+    (hmv : SU2.IsTriad m (n + p - 2 * (r : ℕ)) k) (hs : s ≠ hmv.index) :
     recouplingCoeff hq ε δ ζ i j r s = 0 :=
   recouplingCoeff_eq_zero_of_ne hq ε δ ζ fun heq =>
     hs (hmv.index_eq_of_eq (heq.symm.trans hk)).symm
@@ -571,17 +572,17 @@ theorem recouplingCoeff_eq_zero_of_not_channel_left (hq : IsGenericQuantumParame
     {i : Fin (min m n + 1)} {j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)} {r : Fin (min n p + 1)}
     {s : Fin (min m (n + p - 2 * (r : ℕ)) + 1)} {k : ℕ}
     (hk : m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) = k)
-    (hnot : ¬ IsClebschGordanChannel (m + n - 2 * (i : ℕ)) p k) :
+    (hnot : ¬ SU2.IsTriad (m + n - 2 * (i : ℕ)) p k) :
     recouplingCoeff hq ε δ ζ i j r s = 0 :=
   recouplingCoeff_eq_zero_of_ne hq ε δ ζ fun heq =>
-    hnot (isClebschGordanChannel_def.mpr ⟨j, heq.trans hk⟩)
+    hnot (SU2.isTriad_def.mpr ⟨j, heq.trans hk⟩)
 
 /-- `recouplingCoeff` vanishes off the unique left outer index `hup.index` for total weight `k`. -/
 theorem recouplingCoeff_eq_zero_of_ne_index_left (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
     {i : Fin (min m n + 1)} {j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)} {r : Fin (min n p + 1)}
     {s : Fin (min m (n + p - 2 * (r : ℕ)) + 1)} {k : ℕ}
     (hk : m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) = k)
-    (hup : IsClebschGordanChannel (m + n - 2 * (i : ℕ)) p k) (hj : j ≠ hup.index) :
+    (hup : SU2.IsTriad (m + n - 2 * (i : ℕ)) p k) (hj : j ≠ hup.index) :
     recouplingCoeff hq ε δ ζ i j r s = 0 :=
   recouplingCoeff_eq_zero_of_ne hq ε δ ζ fun heq =>
     hj (hup.index_eq_of_eq (heq.trans hk)).symm
@@ -591,17 +592,17 @@ theorem invRecouplingCoeff_eq_zero_of_not_channel_left (hq : IsGenericQuantumPar
     (ε δ ζ : ℤˣ) {r : Fin (min n p + 1)} {s : Fin (min m (n + p - 2 * (r : ℕ)) + 1)}
     {i : Fin (min m n + 1)} {j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)} {k : ℕ}
     (hk : m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) = k)
-    (hnot : ¬ IsClebschGordanChannel (m + n - 2 * (i : ℕ)) p k) :
+    (hnot : ¬ SU2.IsTriad (m + n - 2 * (i : ℕ)) p k) :
     invRecouplingCoeff hq ε δ ζ r s i j = 0 :=
   invRecouplingCoeff_eq_zero_of_ne hq ε δ ζ fun heq =>
-    hnot (isClebschGordanChannel_def.mpr ⟨j, heq.symm.trans hk⟩)
+    hnot (SU2.isTriad_def.mpr ⟨j, heq.symm.trans hk⟩)
 
 /-- `invRecouplingCoeff` vanishes off the unique left outer index `hup.index` for weight `k`. -/
 theorem invRecouplingCoeff_eq_zero_of_ne_index_left (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
     {r : Fin (min n p + 1)} {s : Fin (min m (n + p - 2 * (r : ℕ)) + 1)} {i : Fin (min m n + 1)}
     {j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)} {k : ℕ}
     (hk : m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) = k)
-    (hup : IsClebschGordanChannel (m + n - 2 * (i : ℕ)) p k) (hj : j ≠ hup.index) :
+    (hup : SU2.IsTriad (m + n - 2 * (i : ℕ)) p k) (hj : j ≠ hup.index) :
     invRecouplingCoeff hq ε δ ζ r s i j = 0 :=
   invRecouplingCoeff_eq_zero_of_ne hq ε δ ζ fun heq =>
     hj (hup.index_eq_of_eq (heq.symm.trans hk)).symm

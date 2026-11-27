@@ -63,6 +63,11 @@ rotation near its centre.
   `trace A = 2 cos (2π j / k)` for an integer `j`.
 * `Matrix.exists_det_one_sub_pow_eq_zero_iff_fin_two`: some positive power of `A` has eigenvalue
   `1` exactly when `trace A = 2 cos (2π q)` for a rational `q`.
+* `Matrix.SpecialLinearGroup.det_one_sub_rotation_pow`,
+  `Matrix.SpecialLinearGroup.det_one_add_rotation`: `det (1 - R(θ) ^ k) = 2 - 2 cos (k θ)` and
+  `det (1 + R(θ)) = 2 + 2 cos θ` for the rotation `R(θ)`.
+* `Matrix.SpecialLinearGroup.det_one_sub_rotation_pow_pos`: for `θ ∉ 2πℚ`, every positive iterate
+  of `R(θ)` has `0 < det (1 - R(θ) ^ k)`.
 * `Matrix.SpecialLinearGroup.dense_setOf_forall_det_one_sub_pow_rotation_mul_ne_zero`: the
   rotation angles making every positive iterate of `R(θ) A` nondegenerate are dense.
 * `Matrix.SpecialLinearGroup.dense_setOf_forall_det_one_sub_pow_ne_zero` and
@@ -142,6 +147,34 @@ theorem exists_det_one_sub_pow_eq_zero_iff_fin_two (hdet : A.det = 1) :
     rw [hq, Rat.cast_def, mul_div_assoc]
 
 namespace SpecialLinearGroup
+
+/-- `det (1 - R(θ) ^ k) = 2 - 2 cos (k θ)` for the rotation `R(θ) = rotation θ`. -/
+theorem det_one_sub_rotation_pow (θ : ℝ) (k : ℕ) :
+    (1 - (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) ^ k).det = 2 - 2 * cos (k * θ) :=
+  det_one_sub_pow_eq_two_sub_two_mul_cos_fin_two (rotation θ).det_coe
+    (by rw [coe_rotation, trace_fin_two_of]; ring) k
+
+/-- `det (1 + R(θ)) = 2 + 2 cos θ` for the rotation `R(θ) = rotation θ`. -/
+theorem det_one_add_rotation (θ : ℝ) :
+    (1 + (rotation θ : Matrix (Fin 2) (Fin 2) ℝ)).det = 2 + 2 * cos θ := by
+  rw [det_one_add_eq_two_add_trace_of_det_eq_one (rotation θ).det_coe, coe_rotation,
+    trace_fin_two_of]
+  ring
+
+/-- For an angle `θ ∉ 2πℚ`, every positive iterate of the rotation `R(θ)` is nondegenerate, with
+`det (1 - R(θ) ^ k) = 2 - 2 cos (k θ) > 0`. -/
+theorem det_one_sub_rotation_pow_pos {θ : ℝ} (hθ : ∀ q : ℚ, θ ≠ 2 * π * q) {k : ℕ}
+    (hk : k ≠ 0) : 0 < (1 - (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) ^ k).det := by
+  rw [det_one_sub_rotation_pow]
+  have hcos : cos (k * θ) ≠ 1 := by
+    intro h
+    obtain ⟨n, hn⟩ := (cos_eq_one_iff _).1 h
+    refine hθ (n / k) ?_
+    have hk' : (k : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hk
+    push_cast
+    field_simp
+    linarith
+  linarith [(cos_le_one (k * θ)).lt_of_ne hcos]
 
 /-- For a real `2 × 2` matrix `A` of determinant one and a countable set `T` of reals, only
 countably many angles `θ` give `trace (R(θ) A) ∈ T`. -/

@@ -52,7 +52,11 @@ that computation. For `n ≥ 1` and `f` of degree `m ≠ 0` these spaces are the
 * `TauCeti.sphereMappingConeTopCellMap f`: the characteristic map of the `(n + 1)`-cell.
 * `TauCeti.sphereMappingConeCWComplex h f`: the CW structure, which is finite
   (`TauCeti.finite_sphereMappingConeCWComplex`) with cells in dimensions `0`, `n` and `n + 1`
-  (`TauCeti.nat_card_cell_sphereMappingConeCWComplex`).
+  (`TauCeti.nat_card_cell_sphereMappingConeCWComplex`,
+  `TauCeti.isEmpty_cell_sphereMappingConeCWComplex`), each unique for `n ≠ 0`
+  (`TauCeti.uniqueCellZeroSphereMappingConeCWComplex`,
+  `TauCeti.uniqueCellSphereMappingConeCWComplex`,
+  `TauCeti.uniqueTopCellSphereMappingConeCWComplex`).
 * `TauCeti.sphereMappingConeSkeletonHomeomorph h f`: the identification of the `n`-skeleton with
   `Sⁿ`, by `a ↦ (a, 0)`.
 
@@ -538,6 +542,50 @@ theorem exists_sphereMappingConeSphereCell_eq {m : ℕ} (hm : m ≠ n + 1)
   rcases j with i | ⟨⟨⟨hm'⟩⟩⟩
   · exact ⟨i, rfl⟩
   · exact absurd hm' hm
+
+/-- The CW structure on `Sⁿ ∪_f Dⁿ⁺¹` has no cells outside the dimensions `0`, `n` and `n + 1`. -/
+theorem isEmpty_cell_sphereMappingConeCWComplex {m : ℕ} (h0 : m ≠ 0) (hn : m ≠ n)
+    (hn1 : m ≠ n + 1) :
+    letI := sphereMappingConeCWComplex h f
+    IsEmpty (cell (sphereMappingCone f) m) := by
+  let _ := sphereMappingConeCWComplex h f
+  have := finite_sphereMappingConeCWComplex h f
+  have : Finite (cell (sphereMappingCone f) m) := RelCWComplex.FiniteType.finite_cell m
+  rw [← Finite.card_eq_zero_iff, nat_card_cell_sphereMappingConeCWComplex h f m]
+  simp [h0, hn, hn1]
+
+/-- For `n ≠ 0`, `Sⁿ ∪_f Dⁿ⁺¹` has a unique `0`-cell, the pole of `Sⁿ`. -/
+@[instance_reducible]
+def uniqueCellZeroSphereMappingConeCWComplex (hn : n ≠ 0) :
+    letI := sphereMappingConeCWComplex h f
+    Unique (cell (sphereMappingCone f) 0) :=
+  letI := sphereCWComplex h
+  letI := uniqueCellZeroSphereCWComplex h hn
+  { default := sphereMappingConeSphereCell h f default
+    uniq j := by
+      obtain ⟨i, rfl⟩ := exists_sphereMappingConeSphereCell_eq h f (by omega) j
+      rw [Subsingleton.elim i default] }
+
+/-- For `n ≠ 0`, `Sⁿ ∪_f Dⁿ⁺¹` has a unique `n`-cell, the `n`-cell of `Sⁿ`. -/
+@[instance_reducible]
+def uniqueCellSphereMappingConeCWComplex (hn : n ≠ 0) :
+    letI := sphereMappingConeCWComplex h f
+    Unique (cell (sphereMappingCone f) n) :=
+  letI := sphereCWComplex h
+  letI := uniqueCellSphereCWComplex h hn
+  { default := sphereMappingConeSphereCell h f default
+    uniq j := by
+      obtain ⟨i, rfl⟩ := exists_sphereMappingConeSphereCell_eq h f (by omega) j
+      rw [Subsingleton.elim i default] }
+
+/-- `Sⁿ ∪_f Dⁿ⁺¹` has a unique `(n + 1)`-cell, `TauCeti.sphereMappingConeTopCell`. -/
+@[instance_reducible]
+def uniqueTopCellSphereMappingConeCWComplex :
+    letI := sphereMappingConeCWComplex h f
+    Unique (cell (sphereMappingCone f) (n + 1)) :=
+  letI := sphereMappingConeCWComplex h f
+  { default := sphereMappingConeTopCell h f
+    uniq := eq_sphereMappingConeTopCell h f }
 
 /-- The characteristic map of a cell of `Sⁿ`, viewed in `Sⁿ ∪_f Dⁿ⁺¹`, is that of `Sⁿ` followed by
 `a ↦ (a, 0)`. -/
