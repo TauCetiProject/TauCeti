@@ -149,11 +149,8 @@ noncomputable def subgroupEquiv [NeZero n] :
 @[simp]
 theorem coe_subgroupEquiv_apply [NeZero n] (c : MarkedIsoClass n) :
     (subgroupEquiv c).val = c.subgroup := by
-  rw [subgroupEquiv, Equiv.trans_apply]
-  obtain ⟨d, hd⟩ := ConnectedPointedCoverClass.mk_surjective
-    (ConnectedPointedCoverClass.markedClassEquiv.symm c)
-  rw [← hd, ConnectedPointedCoverClass.subgroupEquiv_mk, ← ConnectedPointedCoverClass.subgroup_mk,
-    ← ConnectedPointedCoverClass.subgroup_markedClass, hd,
+  rw [subgroupEquiv, Equiv.trans_apply, ConnectedPointedCoverClass.subgroupEquiv_apply,
+    ← ConnectedPointedCoverClass.subgroup_markedClass,
     ConnectedPointedCoverClass.markedClass_markedClassEquiv_symm]
 
 /-- The marked class assigned to an index-`n` subgroup recovers that subgroup. -/
