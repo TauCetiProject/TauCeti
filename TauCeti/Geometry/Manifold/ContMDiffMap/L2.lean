@@ -5,21 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Smooth functions are dense in `L²` of a compact manifold
 
 Let `M` be a compact Hausdorff manifold modelled on a finite-dimensional real space and `μ` a
-finite Borel measure on `M`. A smooth function on `M` is continuous, hence square-integrable, so
-it has a class in `L²(M, μ)` (`ContMDiffMap.toL2`). This file proves that these classes are dense
-(`ContMDiffMap.denseRange_toL2`): a function in `L²(M, μ)` orthogonal to every smooth function
-has zero integral against every smooth function, and therefore vanishes almost everywhere by the
-fundamental lemma of the calculus of variations on manifolds
-(`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
+finite Borel measure on `M`. A smooth function on `M` with values in `𝕜 = ℝ` or `ℂ` is continuous,
+hence square-integrable, so it has a class in `L²(M, μ)`; for `𝕜 = ℂ` this is the complex-linear
+map `ContMDiffMap.toL2`. This file proves that these classes are dense
+(`ContMDiffMap.denseRange_toLp`, and `ContMDiffMap.denseRange_toL2` for `ℂ`): they form a
+`𝕜`-subspace, and a function in `L²(M, μ)` orthogonal to it has zero integral against every
+real-valued smooth function, and therefore vanishes almost everywhere by the fundamental lemma of
+the calculus of variations on manifolds (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
 
 No regularity of `μ` is assumed: the argument only uses that `μ` is finite, so that continuous
 functions are square-integrable.
@@ -57,26 +59,41 @@ theorem toL2_apply (u : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
   (rfl)
 
 /-- **Smooth functions are dense in `L²`.** On a compact Hausdorff manifold modelled on a
-finite-dimensional real space, the classes in `L²(M, μ)` of the complex-valued smooth functions
-are dense, for every finite Borel measure `μ`. -/
-theorem denseRange_toL2 : DenseRange (toL2 (I := I) μ) := by
+finite-dimensional real space, the classes in `L²(M, μ)` of the `𝕜`-valued smooth functions are
+dense, for every finite Borel measure `μ` and `𝕜 = ℝ` or `ℂ`. -/
+theorem denseRange_toLp (𝕜 : Type*) [RCLike 𝕜] :
+    DenseRange fun u : C^∞⟮I, M; 𝓘(ℝ, 𝕜), 𝕜⟯ ↦ ContinuousMap.toLp 2 μ 𝕜 (u : C(M, 𝕜)) := by
+  -- The classes of smooth functions form a `𝕜`-subspace of `L²`.
+  let S : Submodule 𝕜 (Lp 𝕜 2 μ) :=
+    { carrier := Set.range fun u : C^∞⟮I, M; 𝓘(ℝ, 𝕜), 𝕜⟯ ↦ ContinuousMap.toLp 2 μ 𝕜 (u : C(M, 𝕜))
+      add_mem' := by
+        rintro _ _ ⟨u, rfl⟩ ⟨v, rfl⟩
+        exact ⟨u + v, (map_add (ContinuousMap.toLp 2 μ 𝕜) (u : C(M, 𝕜)) v :)⟩
+      zero_mem' := ⟨0, map_zero (ContinuousMap.toLp 2 μ 𝕜)⟩
+      smul_mem' := by
+        rintro c _ ⟨u, rfl⟩
+        exact ⟨⟨fun x ↦ c * u x, (ContinuousLinearMap.mul ℝ 𝕜 c).contMDiff.comp u.contMDiff⟩,
+          (map_smul (ContinuousMap.toLp 2 μ 𝕜) c (u : C(M, 𝕜)) :)⟩ }
   -- A function orthogonal to the smooth functions vanishes almost everywhere.
-  have hK : (LinearMap.range (toL2 (I := I) μ))ᗮ = ⊥ := by
+  have hK : Sᗮ = ⊥ := by
     refine (Submodule.eq_bot_iff _).2 fun f hf ↦ Lp.eq_zero_iff_ae_eq_zero.2 ?_
     refine ae_eq_zero_of_integral_contMDiff_smul_eq_zero I
-      ((Lp.memLp f).integrable one_le_two).locallyIntegrable fun g hg _ ↦ ?_
-    let g' : C^∞⟮I, M; ℝ⟯ := ⟨g, hg⟩
-    have h := Submodule.inner_right_of_mem_orthogonal
-      (LinearMap.mem_range_self (toL2 μ) (ofReal g')) hf
-    rw [toL2_apply, L2.inner_def] at h
-    rw [← h]
-    refine integral_congr_ae ?_
-    filter_upwards [ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) μ (ofReal g' : C(M, ℂ))] with x hx
-    rw [hx, ContinuousMap.coe_ofClass, ofReal_apply, RCLike.inner_apply, Complex.conj_ofReal,
-      Complex.real_smul]
-    exact mul_comm _ _
-  have hd := Submodule.dense_iff_topologicalClosure_eq_top.2
+      ((Lp.memLp f).locallyIntegrable one_le_two) fun g hg _ ↦ ?_
+    let g' : C^∞⟮I, M; 𝓘(ℝ, 𝕜), 𝕜⟯ :=
+      ⟨fun x ↦ (g x : 𝕜), (RCLike.ofRealCLM (K := 𝕜)).contMDiff.comp hg⟩
+    have h := Submodule.inner_left_of_mem_orthogonal (K := S) ⟨g', rfl⟩ hf
+    rw [L2.inner_toLp_continuousMap] at h
+    have hg' (x : M) : (g' : C(M, 𝕜)) x = g x := rfl
+    have h' := congrArg (starRingEnd 𝕜) h
+    rw [← integral_conj, map_zero] at h'
+    simpa [hg', RCLike.real_smul_eq_coe_mul] using h'
+  exact Submodule.dense_iff_topologicalClosure_eq_top.2
     (Submodule.topologicalClosure_eq_top_iff.2 hK)
-  rwa [LinearMap.coe_range] at hd
+
+/-- **Smooth functions are dense in `L²`.** On a compact Hausdorff manifold modelled on a
+finite-dimensional real space, the classes in `L²(M, μ)` of the complex-valued smooth functions
+are dense, for every finite Borel measure `μ`. -/
+theorem denseRange_toL2 : DenseRange (toL2 (I := I) μ) :=
+  denseRange_toLp μ ℂ
 
 end ContMDiffMap

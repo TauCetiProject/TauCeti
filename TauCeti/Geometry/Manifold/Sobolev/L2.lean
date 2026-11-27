@@ -79,77 +79,14 @@ variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
 
 include he
 
-/-- On the support `K` of a cutoff `ψ` in the chart `e`, Lebesgue measure and the reading
-`ρ(y) dy` of `μ` in the chart dominate each other up to finite constants, because the density `ρ`
-is continuous and positive on the compact set `K`. -/
-private theorem exists_measure_le_smul [IsFiniteMeasureOnCompacts μ]
-    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ) :
-    ∃ c D : ℝ≥0∞, c ≠ ⊤ ∧ D ≠ ⊤ ∧
-      volume.restrict (tsupport ψ) ≤ c • (μ.restrict e.source).map e ∧
-      ((μ.restrict e.source).map e).restrict (tsupport ψ) ≤ D • volume := by
-  obtain ⟨ρ, hρ, hρ0, hmap⟩ := hμ.exists_map_restrict_source_eq_withDensity he
-  set K := tsupport ψ
-  have hKt : K ⊆ e.target := ψ.tsupport_subset
-  have hKm : MeasurableSet K := (isClosed_tsupport _).measurableSet
-  have hρK : ContinuousOn ρ K := hρ.continuousOn.mono hKt
-  -- `ρ` lies between two positive constants on the compact set `K`.
-  obtain ⟨c, hc0, hc⟩ : ∃ c > 0, ∀ y ∈ K, c ≤ ρ y := by
-    rcases K.eq_empty_or_nonempty with hK | hK
-    · exact ⟨1, one_pos, by simp [hK]⟩
-    obtain ⟨y₀, hy₀, hmin⟩ := ψ.hasCompactSupport.isCompact.exists_isMinOn hK hρK
-    exact ⟨ρ y₀, hρ0 y₀ (hKt hy₀), fun y hy ↦ hmin hy⟩
-  obtain ⟨D, hD⟩ := ψ.hasCompactSupport.isCompact.exists_bound_of_continuousOn hρK
-  have hres : ((volume.restrict e.target).withDensity fun y ↦ ENNReal.ofReal (ρ y)).restrict K =
-      (volume.restrict K).withDensity fun y ↦ ENNReal.ofReal (ρ y) := by
-    rw [restrict_withDensity hKm, Measure.restrict_restrict hKm, inter_eq_left.2 hKt]
-  refine ⟨(ENNReal.ofReal c)⁻¹, ENNReal.ofReal D, by simpa using hc0, ENNReal.ofReal_ne_top,
-    ?_, ?_⟩ <;> rw [hmap]
-  · have hc' : ENNReal.ofReal c ≠ 0 := by simpa using hc0
-    calc volume.restrict K
-        = (ENNReal.ofReal c)⁻¹ • (ENNReal.ofReal c • volume.restrict K) := by
-          rw [smul_smul, ENNReal.inv_mul_cancel hc' ENNReal.ofReal_ne_top, one_smul]
-      _ ≤ (ENNReal.ofReal c)⁻¹ •
-            ((volume.restrict K).withDensity fun y ↦ ENNReal.ofReal (ρ y)) := by
-          gcongr
-          rw [← withDensity_const]
-          exact withDensity_mono (ae_restrict_of_forall_mem hKm fun y hy ↦
-            ENNReal.ofReal_le_ofReal (hc y hy))
-      _ ≤ _ := by
-          rw [← hres]
-          gcongr
-          exact Measure.restrict_le_self
-  · rw [hres]
-    calc (volume.restrict K).withDensity (fun y ↦ ENNReal.ofReal (ρ y))
-        ≤ (volume.restrict K).withDensity fun _ ↦ ENNReal.ofReal D :=
-          withDensity_mono (ae_restrict_of_forall_mem hKm fun y hy ↦
-            ENNReal.ofReal_le_ofReal ((Real.le_norm_self _).trans (hD y hy)))
-      _ = ENNReal.ofReal D • volume.restrict K := withDensity_const _
-      _ ≤ ENNReal.ofReal D • volume := by
-          gcongr
-          exact Measure.restrict_le_self
-
-omit [MeasurableSpace M] [BorelSpace M] in
-/-- On the chart source, the reading `ψ · (u ∘ e⁻¹)` composed with the chart is `(ψ ∘ e) u`. -/
-private theorem cutoffPushforwardSchwartz_apply_eq_of_mem
-    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∈ e.source) :
-    e.cutoffPushforwardSchwartz he ψ u (e x) = (e.cutoffPullback he ψ 1 x : ℂ) * u x := by
-  rw [cutoffPushforwardSchwartz_apply, e.left_inv hx, cutoffPullback_one_apply_of_mem he _ hx,
-    Complex.real_smul]
-
-omit [T2Space M] [MeasurableSpace M] [BorelSpace M] in
-/-- The reading `ψ · (u ∘ e⁻¹)` is supported in the support of `ψ`. -/
-private theorem support_cutoffPushforwardSchwartz_subset
-    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    Function.support (e.cutoffPushforwardSchwartz he ψ u) ⊆ tsupport ψ := fun y hy ↦
-  subset_tsupport _ fun h ↦ hy (by rw [cutoffPushforwardSchwartz_apply, h, zero_smul])
-
 /-- **Upper bound in a chart.** The `L²` norm of the reading `ψ · (u ∘ e⁻¹)` is at most a constant
 times the `L²(μ)` norm of `u`. -/
 private theorem exists_eLpNorm_cutoffPushforwardSchwartz_le [IsFiniteMeasureOnCompacts μ]
     (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ) :
     ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       eLpNorm (e.cutoffPushforwardSchwartz he ψ u) 2 volume ≤ C * eLpNorm u 2 μ := by
-  obtain ⟨c, -, hc, -, hcμ, -⟩ := exists_measure_le_smul he ψ hμ
+  obtain ⟨c, -, hc, -, hcμ, -⟩ :=
+    hμ.exists_measure_le_smul he ψ.hasCompactSupport.isCompact ψ.tsupport_subset
   obtain ⟨B, hB⟩ := ψ.continuous.bounded_above_of_compact_support ψ.hasCompactSupport
   refine ⟨c ^ (1 / (2 : ℝ≥0∞)).toReal * ENNReal.ofReal B, by finiteness, fun u ↦ ?_⟩
   set w := e.cutoffPushforwardSchwartz he ψ u
@@ -186,7 +123,8 @@ private theorem exists_eLpNorm_cutoffPullback_mul_le [IsFiniteMeasureOnCompacts 
     ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       eLpNorm (fun x ↦ (e.cutoffPullback he ψ 1 x : ℂ) * u x) 2 μ ≤
         C * eLpNorm (e.cutoffPushforwardSchwartz he ψ u) 2 volume := by
-  obtain ⟨-, D, -, hD, -, hDμ⟩ := exists_measure_le_smul he ψ hμ
+  obtain ⟨-, D, -, hD, -, hDμ⟩ :=
+    hμ.exists_measure_le_smul he ψ.hasCompactSupport.isCompact ψ.tsupport_subset
   refine ⟨D ^ (1 / (2 : ℝ≥0∞)).toReal, by finiteness, fun u ↦ ?_⟩
   set w := e.cutoffPushforwardSchwartz he ψ u
   have he' : AEMeasurable e (μ.restrict e.source) :=
