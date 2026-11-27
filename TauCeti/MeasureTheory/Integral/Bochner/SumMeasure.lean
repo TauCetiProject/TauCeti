@@ -19,7 +19,9 @@ only on countable spaces with measurable singletons (`MeasureTheory.integral_cou
 This file provides `MeasureTheory.hasSum_integral_count` and `MeasureTheory.integral_count_eq_tsum`
 for any `Measure.count`-integrable Banach-space-valued function on an arbitrary measurable space,
 with no countability or `MeasurableSingletonClass` assumption (used for counting-measure `L²`
-Parseval identities and uncountable discrete group von Neumann algebras).
+Parseval identities and uncountable discrete group von Neumann algebras). A function vanishing off
+a point integrates to its value there (`MeasureTheory.integral_count_eq_single`), as needed for
+convolution by point masses on uncountable discrete groups.
 
 For a function `(x, z) ↦ k z x` integrable for `m × count`, the inner integral over `z` is the sum
 `∑' z, k z x` for almost every `x` (`MeasureTheory.integral_count_ae_eq_tsum_of_integrable_prod`),
@@ -53,6 +55,13 @@ countability or `MeasurableSingletonClass` assumption on `α`. -/
 theorem integral_count_eq_tsum (hf : Integrable f (Measure.count : Measure α)) :
     ∫ a, f a ∂(Measure.count : Measure α) = ∑' a, f a :=
   (hasSum_integral_count hf).tsum_eq.symm
+
+/-- An integral against counting measure of a function vanishing off a point `a` is its value at
+`a`, as for `tsum_eq_single`. No integrability or countability assumption is needed. -/
+theorem integral_count_eq_single [MeasurableSingletonClass α] (a : α)
+    (hf : ∀ b, b ≠ a → f b = 0) : ∫ b, f b ∂(Measure.count : Measure α) = f a := by
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := {a}) hf, integral_singleton]
+  simp
 
 section Prod
 
