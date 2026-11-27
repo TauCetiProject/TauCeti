@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Loop
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Multiplicity
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Projective
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Transverse
 
 /-!
@@ -94,16 +95,6 @@ open TauCeti
 
 namespace UnitaryGroup
 
-/-- The scalar unitary matrix `i`. -/
-private def iUnitary : unitaryGroup n ℂ :=
-  ⟨Complex.I • 1, by
-    rw [mem_unitaryGroup_iff, star_smul, star_one, Matrix.smul_mul, Matrix.mul_smul,
-      Matrix.one_mul, smul_smul, Complex.star_def, Complex.conj_I, mul_neg, Complex.I_mul_I,
-      neg_neg, one_smul]⟩
-
-private theorem coe_iUnitary : ((iUnitary : unitaryGroup n ℂ) : Matrix n n ℂ) = Complex.I • 1 :=
-  (rfl)
-
 /-- **Frames of a path of chart subspaces.** A continuous path `t ↦ S t` of symmetric real
 matrices has a continuous path of unitary frames of the chart subspaces `{S t y + i y}`. The
 frames are `i` times the frames of the graphs `{x - i S t x}` of `-S t`, since
@@ -114,13 +105,14 @@ theorem exists_path_realImage_eq_lagrangianChart {S : I → Matrix n n ℝ} (hSc
       (δ t : Matrix n n ℂ).realImage = (S t).lagrangianChart := by
   obtain ⟨U, V, δ, hδ⟩ := exists_path_realImage_eq_and_souriau_eq_cayley (A := fun t ↦ -S t)
     hSc.neg fun t ↦ (isHermitian_iff_isSymm.2 (hS t)).neg
-  refine ⟨iUnitary * U, iUnitary * V, δ.map (continuous_const_mul iUnitary), fun t ↦ ?_⟩
-  have hframe : ((iUnitary : unitaryGroup n ℂ) : Matrix n n ℂ) *
-      (1 + Complex.I • (-S t).map ((↑) : ℝ → ℂ)) = (S t).lagrangianChartFrame := by
-    rw [coe_iUnitary, Matrix.mul_add, Matrix.mul_one, Matrix.mul_smul, Matrix.smul_mul,
-      Matrix.one_mul, smul_smul, Complex.I_mul_I, lagrangianChartFrame_def]
+  -- The scalar unitary matrix `i`.
+  let u : unitaryGroup n ℂ := scalarHom n ℂ ⟨Complex.I, by simp [Unitary.mem_iff]⟩
+  refine ⟨u * U, u * V, δ.map (continuous_const_mul u), fun t ↦ ?_⟩
+  have hframe : (u : Matrix n n ℂ) * (1 + Complex.I • (-S t).map ((↑) : ℝ → ℂ)) =
+      (S t).lagrangianChartFrame := by
+    rw [coe_scalarHom, lagrangianChartFrame_def]
     ext i j
-    simp [add_comm]
+    simp [diagonal_mul, mul_add, ← mul_assoc, add_comm]
   rw [Path.map_coe, Function.comp_apply, Submonoid.coe_mul, realImage_mul, (hδ t).1,
     ← realImage_mul, hframe, lagrangianChart_def]
 
