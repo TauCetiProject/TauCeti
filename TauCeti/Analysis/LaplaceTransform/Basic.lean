@@ -32,10 +32,10 @@ the integral to `z`.
 * `TauCeti.HasLaplace`: `HasLaplace f s z μ` asserts that `t ↦ exp (-s * t) • f t` is integrable
   with respect to `μ` and has integral `z`.
 * Congruence, uniqueness, and linearity: `HasLaplace.unique`, `HasLaplace.congr_ae`,
-  `hasLaplace_congr_Ioi`, `hasLaplace_restrict_Ici_iff`, `hasLaplace_zero`, `HasLaplace.add`,
-  `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`, `HasLaplace.const_smul`,
-  `ContinuousLinearMap.hasLaplace`, `HasLaplace.conj` (complex conjugation), and
-  `HasLaplace.ofReal_re_of_conj` (real-part averaging).
+  `hasLaplace_congr_Ioi`, `hasLaplace_restrict_Ici_iff`, `hasLaplace_zero`, `hasLaplace_zero_iff`,
+  `hasLaplace_fun_zero_iff`, `HasLaplace.add`, `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`,
+  `HasLaplace.const_smul`, `ContinuousLinearMap.hasLaplace`, `HasLaplace.conj`
+  (complex conjugation), and `HasLaplace.ofReal_re_of_conj` (real-part averaging).
 * Scaling, shifts, and half-plane convergence: `hasLaplace_cexp_mul_smul_iff` (frequency shift),
   `HasLaplace.comp_mul_left` and `hasLaplace_comp_mul_left_iff` (positive time dilation),
   `HasLaplace.indicator_Ici_comp_sub_right` (right-shift on `[a, ∞)` for `0 ≤ a`),
@@ -184,18 +184,35 @@ end Basic
 section Algebra
 
 /-- The zero function has Laplace transform `0` at every complex parameter and for every measure. -/
-@[simp, grind .]
+@[grind .]
 theorem hasLaplace_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
     HasLaplace (0 : ℝ → E) s 0 μ := by
   simp [HasLaplace]
 
 /-- Functional form of `hasLaplace_zero`: the constant zero function has Laplace transform `0`. -/
-@[simp, grind .]
+@[grind .]
 theorem hasLaplace_fun_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
-    HasLaplace (fun _ : ℝ ↦ (0 : E)) s 0 μ :=
-  hasLaplace_zero s μ
+    HasLaplace (fun _ : ℝ ↦ (0 : E)) s 0 μ := by
+  rw [← Pi.zero_def]
+  exact hasLaplace_zero s μ
+
+/-- The zero function has Laplace transform `z` if and only if `z = 0`. -/
+@[simp, grind =]
+theorem hasLaplace_zero_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [SMulZeroClass ℂ E] {s : ℂ} {z : E} {μ : Measure ℝ} :
+    HasLaplace (0 : ℝ → E) s z μ ↔ z = 0 :=
+  ⟨fun h ↦ h.unique (hasLaplace_zero s μ), fun hz ↦ hz ▸ hasLaplace_zero s μ⟩
+
+/-- Functional form of `hasLaplace_zero_iff`: the constant zero function has Laplace transform `z`
+if and only if `z = 0`. -/
+@[simp, grind =]
+theorem hasLaplace_fun_zero_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [SMulZeroClass ℂ E] {s : ℂ} {z : E} {μ : Measure ℝ} :
+    HasLaplace (fun _ : ℝ ↦ (0 : E)) s z μ ↔ z = 0 := by
+  rw [← Pi.zero_def]
+  exact hasLaplace_zero_iff
 
 section DistribSMul
 

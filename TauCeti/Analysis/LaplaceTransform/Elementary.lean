@@ -14,18 +14,22 @@ import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 This file evaluates the one-sided Laplace transform `TauCeti.HasLaplace` on elementary functions
 (constants, step functions, exponentials, monomials, and exponentially damped monomials) and
-records non-convergence of constant functions on the closed left half-plane `Re s ≤ 0`.
+records non-convergence of exponential functions on `Re s ≤ Re c`.
 
 ## Main results
 
-* `TauCeti.hasLaplace_const` and `TauCeti.hasLaplace_one`: constants have Laplace transform
-  `s⁻¹ • v` (resp. `s⁻¹`) for `0 < s.re`.
-* `TauCeti.not_hasLaplace_const_of_re_nonpos` and `TauCeti.not_hasLaplace_one_of_re_nonpos`:
-  nonzero constants have no convergent one-sided Laplace transform for `s.re ≤ 0`.
+* `TauCeti.hasLaplace_const`, `TauCeti.hasLaplace_const_iff`, and `TauCeti.hasLaplace_one`:
+  constants have Laplace transform `s⁻¹ • v` (resp. `s⁻¹`) for `0 < s.re`, and
+  `hasLaplace_const_iff` characterizes `HasLaplace (fun _ ↦ a) s z` as
+  `(a = 0 ∨ 0 < s.re) ∧ z = s⁻¹ • a`.
 * `TauCeti.hasLaplace_indicator_Ici_one`: the Heaviside step function on `[a, ∞)` (`0 ≤ a`) has
   Laplace transform `exp (-s * a) / s` for `0 < s.re`.
-* `TauCeti.hasLaplace_cexp_mul`: `t ↦ exp (w * t)` has Laplace transform `(s - w)⁻¹` for
-  `w.re < s.re`.
+* `TauCeti.hasLaplace_cexp_mul`, `TauCeti.hasLaplace_cexp_mul_iff`,
+  `TauCeti.hasLaplace_cexp_mul_smul_const_iff`, and
+  `TauCeti.not_hasLaplace_cexp_mul_smul_const_of_re_le`:
+  `t ↦ exp (w * t)` has Laplace transform `(s - w)⁻¹` if and only if `w.re < s.re`, and
+  `t ↦ exp (w * t) • a` has Laplace transform `z` if and only if
+  `(a = 0 ∨ w.re < s.re) ∧ z = (s - w)⁻¹ • a`.
 * `TauCeti.hasLaplace_pow`, `TauCeti.hasLaplace_cexp_mul_pow`, and `TauCeti.hasLaplace_exp_mul_pow`:
   monomials and damped monomials have Laplace transform `k! / (s - w) ^ (k + 1)`.
 
@@ -56,25 +60,6 @@ theorem hasLaplace_one {s : ℂ} (hs : 0 < s.re) :
     HasLaplace (fun _ : ℝ ↦ (1 : ℂ)) s s⁻¹ := by
   simpa using hasLaplace_const (1 : ℂ) hs
 
-/-- For `s.re ≤ 0` and any nonzero vector `v`, the constant function `v` has no convergent
-one-sided Laplace transform, even though the totalized Bochner integral at `s = 0` equals `0`. -/
-theorem not_hasLaplace_const_of_re_nonpos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {v : E} (hv : v ≠ 0) {s : ℂ} (hs : s.re ≤ 0) (z : E) :
-    ¬ HasLaplace (fun _ : ℝ ↦ v) s z := by
-  intro h
-  have hexp : IntegrableOn (fun t : ℝ ↦ Complex.exp (-s * t)) (Ioi 0) :=
-    (integrable_smul_const hv).mp h.integrableOn
-  have hnorm : IntegrableOn (fun t : ℝ ↦ Real.exp (-s.re * t)) (Ioi 0) :=
-    hexp.norm.congr (.of_forall fun t ↦ by simp [Complex.norm_exp, neg_mul])
-  have hlt : -s.re < 0 := integrableOn_exp_mul_Ioi_iff.mp hnorm
-  linarith
-
-/-- For `s.re ≤ 0`, the constant function `1 : ℝ → ℂ` has no convergent one-sided Laplace
-transform, even though the totalized Bochner integral at `s = 0` equals `0`. -/
-theorem not_hasLaplace_one_of_re_nonpos {s : ℂ} (hs : s.re ≤ 0) (z : ℂ) :
-    ¬ HasLaplace (fun _ : ℝ ↦ (1 : ℂ)) s z :=
-  not_hasLaplace_const_of_re_nonpos one_ne_zero hs z
-
 /-- For `0 ≤ a` and `0 < s.re`, the indicator of `[a, ∞)` has Laplace transform
 `exp (-s * a) / s`. -/
 theorem hasLaplace_indicator_Ici_one {a : ℝ} (ha : 0 ≤ a) {s : ℂ} (hs : 0 < s.re) :
@@ -88,6 +73,54 @@ theorem hasLaplace_cexp_mul {w s : ℂ} (hws : w.re < s.re) :
     rw [Complex.sub_re]
     linarith
   simpa using (hasLaplace_one hs).cexp_mul_smul
+
+/-- For `s.re ≤ c.re` and any nonzero vector `a`, `t ↦ exp (c * t) • a` has no convergent
+one-sided Laplace transform at `s`. -/
+theorem not_hasLaplace_cexp_mul_smul_const_of_re_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MulAction ℂ E] [NormSMulClass ℂ E] {a : E} (ha : a ≠ 0) {c s : ℂ}
+    (hs : s.re ≤ c.re) (z : E) :
+    ¬ HasLaplace (fun t : ℝ ↦ Complex.exp (c * t) • a) s z := by
+  intro h
+  have h0 : IntegrableOn (fun t : ℝ ↦ Complex.exp (-(s - c) * t) • a) (Ioi 0) :=
+    (hasLaplace_cexp_mul_smul_iff.mp h).integrableOn
+  have hnorm : IntegrableOn (fun t : ℝ ↦ Real.exp ((c.re - s.re) * t)) (Ioi 0) := by
+    have hmul := h0.norm
+    simp only [norm_smul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.sub_re, neg_sub] at hmul
+    exact (integrable_mul_const_iff (IsUnit.mk0 _ (norm_ne_zero_iff.mpr ha)) _).mp hmul
+  have hlt : c.re - s.re < 0 := integrableOn_exp_mul_Ioi_iff.mp hnorm
+  linarith
+
+/-- Exact characterization of the Laplace transform of a constant function on `(0, ∞)`. -/
+@[simp]
+theorem hasLaplace_const_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {a : E} {s : ℂ} {z : E} :
+    HasLaplace (fun _ : ℝ ↦ a) s z ↔ (a = 0 ∨ 0 < s.re) ∧ z = s⁻¹ • a := by
+  by_cases ha : a = 0
+  · subst ha
+    simp
+  · simp only [ha, false_or]
+    refine ⟨fun h ↦ ?_, fun ⟨hs, hz⟩ ↦ hz ▸ hasLaplace_const a hs⟩
+    have hs : 0 < s.re := by
+      by_contra hle
+      exact not_hasLaplace_cexp_mul_smul_const_of_re_le ha (c := 0)
+        (by simpa using not_lt.mp hle) z (by simpa using h)
+    exact ⟨hs, h.unique (hasLaplace_const a hs)⟩
+
+/-- Exact characterization of the Laplace transform of `t ↦ exp (c * t) • a` in a complex Banach
+space. -/
+@[simp]
+theorem hasLaplace_cexp_mul_smul_const_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {a : E} {c s : ℂ} {z : E} :
+    HasLaplace (fun t : ℝ ↦ Complex.exp (c * t) • a) s z ↔
+      (a = 0 ∨ c.re < s.re) ∧ z = (s - c)⁻¹ • a := by
+  rw [hasLaplace_cexp_mul_smul_iff, hasLaplace_const_iff, Complex.sub_re, sub_pos]
+
+/-- Exact characterization of the Laplace transform of `t ↦ exp (c * t)` on `(0, ∞)`. -/
+@[simp]
+theorem hasLaplace_cexp_mul_iff {c s z : ℂ} :
+    HasLaplace (fun t : ℝ ↦ Complex.exp (c * t)) s z ↔ c.re < s.re ∧ z = (s - c)⁻¹ := by
+  simpa only [smul_eq_mul, mul_one, one_ne_zero, false_or] using
+    hasLaplace_cexp_mul_smul_const_iff (a := (1 : ℂ)) (c := c) (s := s) (z := z)
 
 /-- For `0 < s.re` and `k : ℕ`, `t ↦ (t : ℂ) ^ k` has Laplace transform `k! / s ^ (k + 1)`. -/
 theorem hasLaplace_pow (k : ℕ) {s : ℂ} (hs : 0 < s.re) :
