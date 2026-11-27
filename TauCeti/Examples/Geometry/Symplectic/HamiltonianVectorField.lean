@@ -42,10 +42,10 @@ that the hypotheses of its general statements cannot be dropped.
   (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`).
 * **Transport needs invertible differentials.** The inclusion `φ(q₁, p₁) = (q₁, p₁, 0, 0)` of the
   plane into `(ℝ⁴, dq₁ ∧ dp₁ + dq₂ ∧ dp₂)` is a symplectic map
-  (`isSymplecticMap_inclusion`) whose differential is not invertible
-  (`not_isInvertible_mfderiv_inclusion`). For `h = q₂` the function
+  (`isSymplecticMap_inl`) whose differential is not invertible
+  (`not_isInvertible_mfderiv_inl`). For `h = q₂` the function
   `h ∘ φ = 0` has Hamiltonian vector field `0`, while `X_h = -∂_{p₂} ≠ 0`
-  (`mfderiv_inclusion_hamiltonianVectorField_ne`): the invertibility hypothesis of
+  (`mfderiv_inl_hamiltonianVectorField_ne`): the invertibility hypothesis of
   `TauCeti.SmoothTwoForm.IsSymplecticMap.mfderiv_hamiltonianVectorField_comp` cannot be dropped.
 * **The variational equation.** For the oscillator `H = (q² + p²) / 2`, with
   `X_H = p ∂_q - q ∂_p`, the flow `φ_t(q, p) = (q cos t + p sin t, -q sin t + p cos t)` is linear,
@@ -186,19 +186,18 @@ coordinates `((q₁, p₁), (q₂, p₂))`. -/
 abbrev prodStdSymplecticForm : SmoothTwoForm 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) ((ℝ × ℝ) × (ℝ × ℝ)) :=
   ((stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ))).constSmooth
 
-/-- The inclusion `(q₁, p₁) ↦ ((q₁, p₁), (0, 0))` of the plane into `ℝ⁴`. -/
-abbrev inclusion : (ℝ × ℝ) →L[ℝ] (ℝ × ℝ) × (ℝ × ℝ) :=
-  ContinuousLinearMap.inl ℝ (ℝ × ℝ) (ℝ × ℝ)
-
-/-- The inclusion of the plane into `ℝ⁴` is a symplectic map. -/
-theorem isSymplecticMap_inclusion :
-    (stdSymplecticForm (V := ℝ)).constSmooth.IsSymplecticMap prodStdSymplecticForm inclusion := by
+/-- The inclusion `inl : (q₁, p₁) ↦ ((q₁, p₁), (0, 0))` of the plane into `ℝ⁴` is a symplectic
+map. -/
+theorem isSymplecticMap_inl :
+    (stdSymplecticForm (V := ℝ)).constSmooth.IsSymplecticMap prodStdSymplecticForm
+      (inl ℝ (ℝ × ℝ) (ℝ × ℝ)) := by
   have key : ∀ a b : ℝ × ℝ,
-      (stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ)) (inclusion a) (inclusion b) =
-        stdSymplecticForm a b := fun a b ↦ by
-    simp [inclusion]
+      (stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ)) (inl ℝ (ℝ × ℝ) (ℝ × ℝ) a)
+        (inl ℝ (ℝ × ℝ) (ℝ × ℝ) b) = stdSymplecticForm a b := fun a b ↦ by
+    simp
   exact SmoothTwoForm.isSymplecticMap_iff.2 fun x v w ↦
-    (SymplecticForm.eval₂_constSmooth_mfderiv_continuousLinearMap _ inclusion x v w).trans
+    (SymplecticForm.eval₂_constSmooth_mfderiv_continuousLinearMap _ (inl ℝ (ℝ × ℝ) (ℝ × ℝ)) x v
+      w).trans
       ((key v w).trans (SymplecticForm.constSmooth_apply _ x v w).symm)
 
 /-- The Hamiltonian vector field of `h = q₂` on `ℝ⁴` is `-∂_{p₂}`. -/
@@ -217,14 +216,15 @@ theorem hamiltonianVectorField_prodStdSymplecticForm_fst_comp_snd :
   simp
 
 /-- **Transport needs invertible differentials.** For `h = q₂` on `ℝ⁴`, the differential of the
-inclusion `φ` of the plane does not carry the Hamiltonian vector field of `h ∘ φ = 0` to that of
-`h`, which is `-∂_{p₂} ≠ 0`. -/
-theorem mfderiv_inclusion_hamiltonianVectorField_ne (x : ℝ × ℝ) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) inclusion x
+inclusion `φ = inl` of the plane does not carry the Hamiltonian vector field of `h ∘ φ = 0` to that
+of `h`, which is `-∂_{p₂} ≠ 0`. -/
+theorem mfderiv_inl_hamiltonianVectorField_ne (x : ℝ × ℝ) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) (inl ℝ (ℝ × ℝ) (ℝ × ℝ)) x
         ((stdSymplecticForm (V := ℝ)).constSmooth.hamiltonianVectorField
-          ((fun y : (ℝ × ℝ) × (ℝ × ℝ) ↦ y.2.1) ∘ inclusion) x) ≠
-      prodStdSymplecticForm.hamiltonianVectorField (fun y ↦ y.2.1) (inclusion x) := by
-  have hcomp : (fun y : (ℝ × ℝ) × (ℝ × ℝ) ↦ y.2.1) ∘ inclusion = fun _ ↦ (0 : ℝ) := by
+          ((fun y : (ℝ × ℝ) × (ℝ × ℝ) ↦ y.2.1) ∘ inl ℝ (ℝ × ℝ) (ℝ × ℝ)) x) ≠
+      prodStdSymplecticForm.hamiltonianVectorField (fun y ↦ y.2.1) (inl ℝ (ℝ × ℝ) (ℝ × ℝ) x) := by
+  have hcomp : (fun y : (ℝ × ℝ) × (ℝ × ℝ) ↦ y.2.1) ∘ inl ℝ (ℝ × ℝ) (ℝ × ℝ) =
+      fun _ ↦ (0 : ℝ) := by
     funext _
     simp
   rw [hcomp, SmoothTwoForm.hamiltonianVectorField_const,
@@ -232,19 +232,19 @@ theorem mfderiv_inclusion_hamiltonianVectorField_ne (x : ℝ × ℝ) :
   intro h
   have h2 := congrArg (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.2.2) h
   -- The zero tangent vector is the zero of the model space `ℝ⁴`.
-  have h0 : (0 : TangentSpace 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) (inclusion x)).2.2 = 0 := rfl
+  have h0 : (0 : TangentSpace 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) (inl ℝ (ℝ × ℝ) (ℝ × ℝ) x)).2.2 = 0 := rfl
   rw [Pi.zero_apply, map_zero, h0] at h2
   norm_num at h2
 
-/-- The differential of the inclusion of the plane into `ℝ⁴` is not invertible. -/
-theorem not_isInvertible_mfderiv_inclusion (x : ℝ × ℝ) :
-    ¬ (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) inclusion x).IsInvertible := by
+/-- The differential of the inclusion `inl` of the plane into `ℝ⁴` is not invertible. -/
+theorem not_isInvertible_mfderiv_inl (x : ℝ × ℝ) :
+    ¬ (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) (inl ℝ (ℝ × ℝ) (ℝ × ℝ)) x).IsInvertible := by
   rintro ⟨e, he⟩
   -- The vector `∂_{q₂}` is not in the range of the differential `v ↦ (v, 0)`.
   obtain ⟨v, hv⟩ := e.surjective (((0 : ℝ), (0 : ℝ)), ((1 : ℝ), (0 : ℝ)))
   have hv' := congrArg (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.2.1) hv
-  rw [← ContinuousLinearEquiv.coe_coe, he, inclusion.mfderiv_eq] at hv'
-  -- The second component of `inclusion v = (v, 0)` is `0`, so `hv'` reads `0 = 1`.
+  rw [← ContinuousLinearEquiv.coe_coe, he, (inl ℝ (ℝ × ℝ) (ℝ × ℝ)).mfderiv_eq] at hv'
+  -- The second component of `inl v = (v, 0)` is `0`, so `hv'` reads `0 = 1`.
   rw [inl_apply] at hv'
   exact zero_ne_one hv'
 
@@ -292,9 +292,7 @@ theorem eval₂_mfderiv_dilationFst (t : ℝ) (x : ℝ × ℝ) (v w : TangentSpa
       Real.exp t * (stdSymplecticForm (V := ℝ)).constSmooth.eval₂ x v w := by
   have key : ∀ a b : ℝ × ℝ, stdSymplecticForm (dilationFst t a) (dilationFst t b) =
       Real.exp t * stdSymplecticForm a b := fun a b ↦ by
-    simp only [ContinuousLinearMap.prod_apply, smul_apply, coe_fst', smul_eq_mul, coe_snd',
-      stdSymplecticForm_apply, RCLike.inner_apply, conj_trivial]
-    ring
+    simp [stdSymplecticForm_apply, mul_sub, mul_left_comm, mul_assoc]
   exact (SymplecticForm.eval₂_constSmooth_mfderiv_continuousLinearMap _ (dilationFst t) x v w).trans
     ((key v w).trans (congrArg (Real.exp t * ·) (SymplecticForm.constSmooth_apply _ x v w)).symm)
 
@@ -325,6 +323,22 @@ private theorem differentiableAt_of_isHamiltonianVectorField_dilationField {f : 
   simp only [zero_apply, mul_one] at this
   exact hx this.symm
 
+/-- If the derivative of `f` in the direction `e` is the constant `c` along the segment
+`s ↦ x + s • e`, `s ∈ [a, b]`, then `f` grows by `c (b - a)` along it. -/
+private theorem sub_eq_mul_of_fderiv_apply_eq {f : ℝ × ℝ → ℝ} (x e : ℝ × ℝ) {a b c : ℝ}
+    (hab : a < b)
+    (hf : ∀ s ∈ Icc a b, DifferentiableAt ℝ f (x + s • e) ∧ fderiv ℝ f (x + s • e) e = c) :
+    f (x + b • e) - f (x + a • e) = c * (b - a) := by
+  have hd : ∀ s ∈ Icc a b, HasDerivAt (fun s ↦ f (x + s • e)) c s := fun s hs ↦ by
+    refine ((hf s hs).1.hasFDerivAt.comp_hasDerivAt s
+      (((hasDerivAt_id s).smul_const e).const_add x)).congr_deriv ?_
+    simp [(hf s hs).2]
+  obtain ⟨d, -, hd'⟩ := exists_hasDerivAt_eq_slope (fun s ↦ f (x + s • e)) (fun _ ↦ c) hab
+    (fun s hs ↦ (hd s hs).continuousAt.continuousWithinAt)
+    (fun s hs ↦ hd s (Ioo_subset_Icc_self hs))
+  rw [eq_div_iff (sub_ne_zero.2 hab.ne')] at hd'
+  exact hd'.symm
+
 /-- The field `q ∂_q` is the Hamiltonian vector field of no function `f : ℝ² → ℝ`, differentiable
 or not, on `(ℝ², dq ∧ dp)`. -/
 theorem not_isHamiltonianVectorField_dilationField (f : ℝ × ℝ → ℝ) :
@@ -335,29 +349,20 @@ theorem not_isHamiltonianVectorField_dilationField (f : ℝ × ℝ → ℝ) :
   have hF := fun x hx ↦ differentiableAt_of_isHamiltonianVectorField_dilationField hf (x := x) hx
   -- Along `q ↦ (q, p)` for `q ∈ [1, 2]`, the derivative of `f` vanishes.
   have hq : ∀ p : ℝ, f (2, p) = f (1, p) := fun p ↦ by
-    have hd : ∀ q ∈ Icc (1 : ℝ) 2, HasDerivAt (fun q ↦ f (q, p)) 0 q := fun q hq ↦ by
-      have hq0 : q ≠ 0 := (by linarith [hq.1] : (0 : ℝ) < q).ne'
-      refine ((hF (q, p) hq0).1.hasFDerivAt.comp_hasDerivAt q
-        ((hasDerivAt_id' q).prodMk (hasDerivAt_const q p))).congr_deriv ?_
-      rw [(hF (q, p) hq0).2]
-      simp
-    obtain ⟨c, -, hc⟩ := exists_hasDerivAt_eq_slope (fun q ↦ f (q, p)) (fun _ ↦ 0)
-      (by norm_num : (1 : ℝ) < 2) (fun q hq ↦ (hd q hq).continuousAt.continuousWithinAt)
-      (fun q hq ↦ hd q (Ioo_subset_Icc_self hq))
-    linarith [hc]
+    have h := sub_eq_mul_of_fderiv_apply_eq ((0 : ℝ), p) ((1 : ℝ), (0 : ℝ)) (c := 0)
+      (by norm_num : (1 : ℝ) < 2) fun s hs ↦ by
+        have h := hF (((0 : ℝ), p) + s • ((1 : ℝ), (0 : ℝ)))
+          (by simpa using (by linarith [hs.1] : (0 : ℝ) < s).ne')
+        exact ⟨h.1, by rw [h.2]; simp⟩
+    simpa [sub_eq_zero] using h
   -- Along `p ↦ (q, p)` for `p ∈ [0, 1]` and `q ≥ 1`, the derivative of `f` is `q`.
   have hp : ∀ q : ℝ, 1 ≤ q → f (q, 1) - f (q, 0) = q := fun q hq ↦ by
-    have hd : ∀ p ∈ Icc (0 : ℝ) 1, HasDerivAt (fun p ↦ f (q, p)) q p := fun p _ ↦ by
-      have hq0 : q ≠ 0 := (by linarith : (0 : ℝ) < q).ne'
-      refine ((hF (q, p) hq0).1.hasFDerivAt.comp_hasDerivAt p
-        ((hasDerivAt_const p q).prodMk (hasDerivAt_id' p))).congr_deriv ?_
-      rw [(hF (q, p) hq0).2]
-      simp
-    obtain ⟨c, -, hc⟩ := exists_hasDerivAt_eq_slope (fun p ↦ f (q, p)) (fun _ ↦ q)
-      (by norm_num : (0 : ℝ) < 1) (fun p hp ↦ (hd p hp).continuousAt.continuousWithinAt)
-      (fun p hp ↦ hd p (Ioo_subset_Icc_self hp))
-    simp only [sub_zero, div_one] at hc
-    linarith [hc]
+    have h := sub_eq_mul_of_fderiv_apply_eq (q, (0 : ℝ)) ((0 : ℝ), (1 : ℝ)) (c := q)
+      (by norm_num : (0 : ℝ) < 1) fun s _ ↦ by
+        have h := hF ((q, (0 : ℝ)) + s • ((0 : ℝ), (1 : ℝ)))
+          (by simpa using (by linarith : (0 : ℝ) < q).ne')
+        exact ⟨h.1, by rw [h.2]; simp⟩
+    simpa using h
   have h2 := hp 2 (by norm_num)
   rw [hq 1, hq 0, hp 1 le_rfl] at h2
   norm_num at h2
@@ -385,13 +390,9 @@ theorem translationFlow_self (s : ℝ) (x : ℝ × ℝ) : translationFlow s s x 
 /-- The flow of `H_t = t q` moves along `X_{H_t} = -t ∂_p`. -/
 theorem hasDerivAt_translationFlow (s t : ℝ) (x : ℝ × ℝ) :
     HasDerivAt (fun u ↦ translationFlow s u x) ((0 : ℝ), -t) t := by
-  have h := (hasDerivAt_const t x).add ((hasDerivAt_const t (0 : ℝ)).prodMk
-    ((((hasDerivAt_pow 2 t).sub_const (s ^ 2)).neg).div_const 2))
-  convert h using 1
-  ext
-  · simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, zero_add]
-  · simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, zero_add]
-    ring
+  have h : HasDerivAt (fun u : ℝ ↦ -(u ^ 2 - s ^ 2) / 2) (-t) t :=
+    ((((hasDerivAt_pow 2 t).sub_const (s ^ 2)).neg).div_const 2).congr_deriv (by ring)
+  exact ((hasDerivAt_const t (0 : ℝ)).prodMk h).const_add x
 
 /-- **The flow of `H_t = t q` is symplectic**: it is a translation, hence a symplectic map at all
 times. -/

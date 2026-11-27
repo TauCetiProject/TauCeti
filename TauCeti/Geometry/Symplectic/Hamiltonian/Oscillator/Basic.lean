@@ -89,12 +89,7 @@ theorem hasDerivAt_oscillatorEvolution (t : ℝ) (x : ℝ × ℝ) :
 theorem oscillatorEvolution_eq_cos_smul_add_sin_smul (t : ℝ) :
     oscillatorEvolution t = Real.cos t • ContinuousLinearMap.id ℝ (ℝ × ℝ) +
       Real.sin t • (snd ℝ ℝ ℝ).prod (-fst ℝ ℝ ℝ) := by
-  refine ContinuousLinearMap.ext fun x ↦ Prod.ext ?_ ?_
-  · simp only [oscillatorEvolution_apply, add_apply, smul_apply, id_apply,
-      ContinuousLinearMap.prod_apply, coe_snd', Prod.fst_add, Prod.smul_fst, smul_eq_mul]
-  · simp only [oscillatorEvolution_apply, add_apply, smul_apply, id_apply,
-      ContinuousLinearMap.prod_apply, coe_fst', neg_apply, Prod.snd_add, Prod.smul_snd, smul_eq_mul]
-    ring
+  ext <;> simp [oscillatorEvolution_apply, add_comm]
 
 /-- **The variational equation of the oscillator.** As a family of linear maps, the evolution
 `R(t)` solves `R' = A R` for its generator `A = [[0, 1], [-1, 0]]`. -/
