@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Homology.PrincipalIdealRing
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.Cross
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 import TauCeti.CategoryTheory.GradedObject.Monoidal
 import TauCeti.Geometry.Manifold.Instances.TopCatSphere
@@ -57,6 +58,21 @@ coefficients are `k ⊗ k`; read with coefficients `k` through `k ⊗ k ≅ k` i
 class (`TauCeti.isFundamentalClass_singularHomologyFunctor_map_app_iff`). For a closed connected
 oriented three-manifold `Y`, this is the fundamental class `[S¹] × [Y]` of the four-manifold
 `S¹ × Y`, on which its intersection form is evaluated.
+
+## Product maps on local homology
+
+The same Künneth class computes how a product map acts on the local homology of `X × Y`. Let
+`x ∈ X` and `y ∈ Y` be points with charts to real normed spaces of finite dimensions `m` and `n`,
+and let `f : X → X` and `g : Y → Y` be continuous maps for which `x` and `y` are the only preimages
+of themselves. If `f` acts on `Hₘ(X, X ∖ {x}; k)` as multiplication by `a` and `g` acts on
+`Hₙ(Y, Y ∖ {y}; k)` as multiplication by `b`, then `f × g` acts on the local homology
+`Hₘ₊ₙ(X × Y, X × Y ∖ {(x, y)}; k)` as multiplication by `a * b`
+(`TauCeti.localHomologyMap_prodMap_eq_smul`). By naturality of the Künneth map
+(`TauCeti.singularHomologyKunnethPair_naturality`), `f × g` sends the Künneth class of generators
+`z ⊗ z'` to the Künneth class of `a z ⊗ b z'`, and that class generates. For homeomorphisms fixing
+`x` and `y` the scalars are signs, and this is the multiplicativity of local orientation signs
+under products. With integral coefficients it may be read with coefficients `ULift ℤ`, the
+coefficients of local orientations (`TauCeti.localHomologyMap_uliftInt_prodMap_eq_smul`).
 
 ## Manifolds with boundary
 
@@ -114,6 +130,10 @@ The generator is not compared here with the local orientation of the product ori
   fundamental class of `Sᵈ⁺¹ × N`.
 * `TauCeti.span_singularHomologyKunnethPair_tmul_eq_top`: the Künneth class of local generators
   generates the local homology of a product.
+* `TauCeti.localHomologyMap_prodMap_eq_smul`: a product of maps acting on the local homology of
+  the factors by scalars acts on the local homology of the product by their product.
+* `TauCeti.localHomologyMap_uliftInt_prodMap_eq_smul`: the product rule with coefficients
+  `ULift ℤ`.
 * `TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`: the cubical cross product of
   classes restricting to local generators restricts to a local generator of the product.
 * `TauCeti.span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top`: the cross
@@ -321,6 +341,104 @@ theorem span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (hx : x ∈ S) (
   rw [localHomologyRestriction_def] at hγ hγ'
   exact span_singularHomologyKunnethPair_tmul_eq_top hX hγ hγ'
 
+section ProdMap
+
+variable {E F : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {x : X} {y : Y}
+
+/-- The product rule `TauCeti.localHomologyMap_prodMap_eq_smul`, on the relative homology of
+`(X × Y, {x}ᶜ × Y ∪ X × {y}ᶜ)`, where the Künneth map of the product of pairs lands. -/
+private theorem singularHomologyMap_tensorHom_eq_smul (φ : OpenPartialHomeomorph X E)
+    (hx : x ∈ φ.source) (ψ : OpenPartialHomeomorph Y F) (hy : y ∈ ψ.source) {m n : ℕ}
+    (hm : finrank ℝ E = m) (hn : finrank ℝ F = n) {f : C(X, X)} {g : C(Y, Y)}
+    (hf : MapsTo f {x}ᶜ {x}ᶜ) (hg : MapsTo g {y}ᶜ {y}ᶜ) {a b : k}
+    (ha : TopPair.singularHomologyMap (ofSubsetMap (X := TopCat.of X) (TopCat.ofHom f) hf)
+      (ModuleCat.of k k) m = a • 𝟙 _)
+    (hb : TopPair.singularHomologyMap (ofSubsetMap (X := TopCat.of Y) (TopCat.ofHom g) hg)
+      (ModuleCat.of k k) n = b • 𝟙 _) :
+    TopPair.singularHomologyMap (ofSubsetMap (TopCat.ofHom f ⊗ₘ TopCat.ofHom g)
+      (TopCat.mapsTo_tensorHom_preimage_union _ _ hf hg)) (ModuleCat.of k k) (m + n) =
+      (a * b) • 𝟙 _ := by
+  subst hm hn
+  -- Generators of the two local homology groups, and the generator of the product they give.
+  obtain ⟨z, hz⟩ := exists_span_singularHomology_complSingleton_eq_top (k := k) φ hx rfl
+  obtain ⟨z', hz'⟩ := exists_span_singularHomology_complSingleton_eq_top (k := k) ψ hy rfl
+  have : Projective (localHomology (ModuleCat.of k k) ({x} : Set X) (finrank ℝ E)) :=
+    Projective.of_iso (singularHomologyComplSingletonFinrankIso _ φ hx).symm inferInstance
+  have hspan := span_singularHomologyKunnethPair_tmul_eq_top
+    (fun p hp ↦ isZero_singularHomology_complSingleton_of_ne _ φ hx rfl hp) hz hz'
+  -- By naturality of the Künneth map, `f × g` multiplies that generator by `a * b`.
+  have hnat := GradedObject.Monoidal.ιTensorObj
+      (fun p ↦ (ofSubset ({x}ᶜ : Set (TopCat.of X))).singularHomology (ModuleCat.of k k) p)
+      (fun q ↦ (ofSubset ({y}ᶜ : Set (TopCat.of Y))).singularHomology (ModuleCat.of k k) q)
+      (finrank ℝ E) (finrank ℝ F) _ rfl ≫=
+    singularHomologyKunnethPair_naturality k _ _ (TopCat.ofHom f) (TopCat.ofHom g) hf hg
+      (finrank ℝ E + finrank ℝ F)
+  replace hnat := congrArg (fun φ ↦ ModuleCat.Hom.hom φ (z ⊗ₜ z')) hnat
+  simp only [GradedObject.Monoidal.ι_tensorHom_assoc, ha, hb, ModuleCat.hom_comp,
+    LinearMap.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.hom_smul,
+    ModuleCat.hom_id, LinearMap.smul_apply, LinearMap.id_apply, TensorProduct.smul_tmul_smul,
+    map_smul] at hnat
+  ext1
+  refine LinearMap.ext_on hspan fun v hv ↦ ?_
+  rw [mem_singleton_iff] at hv
+  subst hv
+  simp only [ModuleCat.hom_smul, ModuleCat.hom_id, LinearMap.smul_apply, LinearMap.id_apply,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
+  exact hnat.symm
+
+/-- **Product maps act on local homology by the product of the scalars.** Let `x ∈ X` and
+`y ∈ Y` be points with charts to real normed spaces of finite dimensions `m` and `n`, and let
+`f : X → X` and `g : Y → Y` be continuous maps for which `x` and `y` are the only preimages of
+themselves. If `f` acts on the local homology `Hₘ(X, X ∖ {x}; k)` as multiplication by `a` and `g`
+acts on `Hₙ(Y, Y ∖ {y}; k)` as multiplication by `b`, then `f × g` acts on the local homology
+`Hₘ₊ₙ(X × Y, X × Y ∖ {(x, y)}; k)` as multiplication by `a * b`. -/
+theorem localHomologyMap_prodMap_eq_smul (φ : OpenPartialHomeomorph X E) (hx : x ∈ φ.source)
+    (ψ : OpenPartialHomeomorph Y F) (hy : y ∈ ψ.source) {m n : ℕ} (hm : finrank ℝ E = m)
+    (hn : finrank ℝ F = n) {f : C(X, X)} {g : C(Y, Y)} (hf : f ⁻¹' {x} ⊆ {x})
+    (hg : g ⁻¹' {y} ⊆ {y}) (hfg : f.prodMap g ⁻¹' {(x, y)} ⊆ {(x, y)}) {a b : k}
+    (ha : localHomologyMap (ModuleCat.of k k) f hf m = a • 𝟙 _)
+    (hb : localHomologyMap (ModuleCat.of k k) g hg n = b • 𝟙 _) :
+    localHomologyMap (ModuleCat.of k k) (f.prodMap g) hfg (m + n) = (a * b) • 𝟙 _ := by
+  rw [localHomologyMap_def] at ha hb ⊢
+  have key := singularHomologyMap_tensorHom_eq_smul φ hx ψ hy hm hn _ _ ha hb
+  -- With the subspace written as the complement of the point, the map of pairs `f ⊗ g` of
+  -- `TopCat.of X ⊗ TopCat.of Y` is the map `f × g` inducing the local homology map of `X × Y`.
+  have aux : ∀ (S : Set (TopCat.of X ⊗ TopCat.of Y))
+      (_ : CartesianMonoidalCategory.fst (TopCat.of X) (TopCat.of Y) ⁻¹' ({x}ᶜ : Set X) ∪
+        CartesianMonoidalCategory.snd (TopCat.of X) (TopCat.of Y) ⁻¹' ({y}ᶜ : Set Y) = S)
+      (h : MapsTo (TopCat.ofHom f ⊗ₘ TopCat.ofHom g) S S),
+      TopPair.singularHomologyMap (ofSubsetMap _ h) (ModuleCat.of k k) (m + n) = (a * b) • 𝟙 _ := by
+    rintro S rfl _
+    exact key
+  exact aux _ (TopCat.preimage_fst_compl_union_preimage_snd_compl (X := TopCat.of X)
+    (Y := TopCat.of Y) x y) _
+
+end ProdMap
+
+/-- **Product maps on integral local homology.** The product rule
+`TauCeti.localHomologyMap_prodMap_eq_smul` for local homology with coefficients `ULift ℤ`, the
+coefficients of local orientations: if `f` acts on `Hₘ(X, X ∖ {x}; ULift ℤ)` as multiplication by
+an integer `a` and `g` acts on `Hₙ(Y, Y ∖ {y}; ULift ℤ)` as multiplication by `b`, then `f × g`
+acts on `Hₘ₊ₙ(X × Y, X × Y ∖ {(x, y)}; ULift ℤ)` as multiplication by `a * b`. -/
+theorem localHomologyMap_uliftInt_prodMap_eq_smul {X Y E F : Type} [TopologicalSpace X]
+    [TopologicalSpace Y] [T1Space X] [T1Space Y] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {x : X} {y : Y} (φ : OpenPartialHomeomorph X E) (hx : x ∈ φ.source)
+    (ψ : OpenPartialHomeomorph Y F) (hy : y ∈ ψ.source) {m n : ℕ} (hm : finrank ℝ E = m)
+    (hn : finrank ℝ F = n) {f : C(X, X)} {g : C(Y, Y)} (hf : f ⁻¹' {x} ⊆ {x})
+    (hg : g ⁻¹' {y} ⊆ {y}) (hfg : f.prodMap g ⁻¹' {(x, y)} ⊆ {(x, y)}) {a b : ℤ}
+    (ha : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f hf m = a • 𝟙 _)
+    (hb : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) g hg n = b • 𝟙 _) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (f.prodMap g) hfg (m + n) = (a * b) • 𝟙 _ := by
+  rw [localHomologyMap_uliftInt_eq_smul_iff] at ha hb ⊢
+  -- The product rule over the ring `ℤ` lets integers act on local homology through its module
+  -- structure as an object of `ModuleCat ℤ`, the statement through the canonical `ℤ`-module
+  -- structure of an abelian group. The two actions agree (`int_smul_eq_zsmul`).
+  convert localHomologyMap_prodMap_eq_smul (k := ℤ) φ hx ψ hy hm hn hf hg hfg (ha.trans ?_)
+    (hb.trans ?_) using 1
+  all_goals exact ModuleCat.hom_ext (LinearMap.ext fun v ↦ (int_smul_eq_zsmul _ _ v).symm)
+
 end ProdPair
 
 section FaceMap
@@ -363,14 +481,7 @@ private theorem isIso_singularHomologyMap_ofSubsetMap_preimage_union [T1Space X�
       CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({j₂ r.2}ᶜ : Set X₂)) {f (j₁ r.1, j₂ r.2)}ᶜ)
     (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (ofSubsetMap f h) (ModuleCat.of k k) n) := by
-  -- The complement of `{j₁ r.1}ᶜ × X₂ ∪ X₁ × {j₂ r.2}ᶜ` is the point `(j₁ r.1, j₂ r.2)`.
-  have hS : (CartesianMonoidalCategory.fst X₁ X₂ ⁻¹' ({j₁ r.1}ᶜ : Set X₁) ∪
-      CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({j₂ r.2}ᶜ : Set X₂)) = {(j₁ r.1, j₂ r.2)}ᶜ := by
-    ext z
-    exact ⟨fun hz hzr ↦ hz.elim (fun h ↦ h (congrArg Prod.fst hzr : z.1 = j₁ r.1))
-        (fun h ↦ h (congrArg Prod.snd hzr : z.2 = j₂ r.2)),
-      fun hz ↦ by_contra fun hc ↦ hz (Prod.ext (not_not.1 fun h₁ ↦ hc (Or.inl h₁))
-        (not_not.1 fun h₂ ↦ hc (Or.inr h₂)))⟩
+  have hS := TopCat.preimage_fst_compl_union_preimage_snd_compl (j₁ r.1) (j₂ r.2)
   have hf' : f.hom ⁻¹' {f.hom (j₁ r.1, j₂ r.2)} ⊆ {(j₁ r.1, j₂ r.2)} := fun z hz ↦
     not_not.1 fun hzr ↦ h (hS.symm ▸ hzr) hz
   have hloc : IsIso (localHomologyMap (ModuleCat.of k k) f.hom hf' n) :=

@@ -37,6 +37,8 @@ import TauCeti.Data.Nat.Periodic.Basic
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
   power `(n + 1) / 2` inverts squaring on elements killed by `n`.
 * `TauCeti.directed_dvd_pow`: the powers of an element form a directed family for divisibility.
+* `Function.Surjective.surjective_pow`: a surjective multiplicative map preserves surjectivity of
+  the `n`-th power map.
 -/
 
 public section
@@ -159,3 +161,14 @@ theorem eq_one_of_pow_pow_eq_one {p k : ℕ} {m : M}
     exact hk
 
 end TauCeti
+
+/-- A surjective multiplicative map preserves surjectivity of the `n`-th power map. For instance,
+if every element of a ring is an `n`-th power, then so is every element of each of its quotients;
+no ideal or characteristic hypothesis is needed. -/
+theorem Function.Surjective.surjective_pow {F M N : Type*} [Monoid M] [Monoid N] [FunLike F M N]
+    [MonoidHomClass F M N] {f : F} (hf : Function.Surjective f) {n : ℕ}
+    (h : Function.Surjective fun x : M ↦ x ^ n) : Function.Surjective fun y : N ↦ y ^ n := by
+  intro y
+  obtain ⟨x, rfl⟩ := hf y
+  obtain ⟨z, rfl⟩ := h x
+  exact ⟨f z, (map_pow f z n).symm⟩

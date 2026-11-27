@@ -52,8 +52,10 @@ are the energy-decay step in the removal of boundary punctures of finite-energy 
 with Lagrangian boundary conditions, in the flat model of a constant taming form and a linear
 boundary subspace. The resulting pointwise decay of the derivative is
 `TauCeti.SymplecticForm.exists_pos_norm_fderivWithin_le_rpow`, and the continuous extension over
-the puncture is `TauCeti.SymplecticForm.exists_continuousOn_update_inter_of_finite_energy`. Smooth
-extension and the reduction of curved boundary conditions to this model are further steps.
+the puncture is `TauCeti.SymplecticForm.exists_continuousOn_update_inter_of_finite_energy`. The
+smooth extension, when `J` also maps `Lᗮ` into `L` along `L`, is
+`TauCeti.SymplecticForm.exists_contDiffOn_update_inter_of_finite_energy`; the reduction of curved
+boundary conditions to this model is a further step.
 
 ## References
 
