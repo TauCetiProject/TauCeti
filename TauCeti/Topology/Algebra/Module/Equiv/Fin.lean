@@ -58,6 +58,13 @@ theorem splitCoords_star [Star M] (x : Fin (n + m) → M) :
     splitCoords (𝕜 := 𝕜) n m (star x) = star (splitCoords (𝕜 := 𝕜) n m x) := by
   simp only [splitCoords_apply, Prod.star_def, Pi.star_def]
 
+/-- Rejoining two coordinate blocks commutes with coordinatewise `star`. -/
+theorem splitCoords_symm_star [Star M] (x : (Fin n → M) × (Fin m → M)) :
+    (splitCoords (𝕜 := 𝕜) n m).symm (star x) = star ((splitCoords (𝕜 := 𝕜) n m).symm x) :=
+  (splitCoords (𝕜 := 𝕜) n m).injective <| by
+    rw [splitCoords_star, ContinuousLinearEquiv.apply_symm_apply,
+      ContinuousLinearEquiv.apply_symm_apply]
+
 /-- Rejoining two coordinate blocks appends them. -/
 @[simp]
 theorem splitCoords_symm_apply (x : (Fin n → M) × (Fin m → M)) :
