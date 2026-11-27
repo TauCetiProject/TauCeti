@@ -14,9 +14,9 @@ import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 
 A skew-Hermitian matrix `A`, `Aᴴ = -A`, acts on `ℂⁱ` by a skew-adjoint operator, so the
 quadratic form `⟪y, A y⟫` has zero real part
-(`Matrix.re_inner_toEuclideanCLM_self_of_conjTranspose_eq_neg`). The real inner product of `ℂⁱ`
-is the real part of the complex one, so `A y` is real orthogonal to `y`: it is a tangent vector of
-the unit sphere at `y`
+(`Matrix.re_inner_toEuclideanCLM_self_eq_zero_of_conjTranspose_eq_neg`). The real inner product
+of `ℂⁱ` is the real part of the complex one, so `A y` is real orthogonal to `y`: it is a tangent
+vector of the unit sphere at `y`
 (`Matrix.exists_mvfderiv_coe_sphere_eq_toEuclideanCLM_of_conjTranspose_eq_neg`).
 -/
 
@@ -40,6 +40,6 @@ theorem exists_mvfderiv_coe_sphere_eq_toEuclideanCLM_of_conjTranspose_eq_neg
         toEuclideanCLM (𝕜 := ℂ) A y := by
   refine TauCeti.exists_mvfderiv_coe_sphere_eq y ?_
   rw [EuclideanSpace.real_inner_eq_re_inner]
-  exact re_inner_toEuclideanCLM_self_of_conjTranspose_eq_neg hA _
+  exact re_inner_toEuclideanCLM_self_eq_zero_of_conjTranspose_eq_neg hA _
 
 end Matrix
