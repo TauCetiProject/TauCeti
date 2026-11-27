@@ -71,15 +71,8 @@ section Padic
 variable {p : ℕ} [Fact p.Prime]
 
 -- A non-Tate source can have an adic inclusion into a Tate field.
-example : IsAdicHom (PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]) := by
-  apply IsAdicHom.of_continuous_isOpen_map
-  · exact continuous_subtypeVal
-  · intro I hI
-    have hI0 : I ≠ ⊥ := IsDiscreteValuationRing.isOpen_iff.mp hI
-    have hmap : I.map PadicInt.Coe.ringHom ≠ ⊥ :=
-      (Ideal.map_eq_bot_iff_of_injective Subtype.coe_injective).not.mpr hI0
-    rw [(Ideal.eq_bot_or_top (I.map PadicInt.Coe.ringHom)).resolve_left hmap]
-    exact isOpen_univ
+example : IsAdicHom (PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]) :=
+  Padic.isAdicHom_algebraMap
 
 -- The source is discrete, so continuity imposes no p-adic condition on its target.
 example : Continuous (Int.castRingHom ℤ_[p]) := continuous_of_discreteTopology

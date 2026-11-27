@@ -66,28 +66,17 @@ section Padic
 variable (p : ℕ) [Fact p.Prime]
 
 /-- `𝔽_p` as a `ℤ_[p]`-algebra through the reduction `ℤ_[p] → 𝔽_p`. -/
-noncomputable abbrev algebraZMod : Algebra ℤ_[p] (ZMod p) := PadicInt.toZMod.toAlgebra
+private noncomputable abbrev algebraZMod : Algebra ℤ_[p] (ZMod p) := PadicInt.toZMod.toAlgebra
 
 attribute [local instance] algebraZMod
 
 /-- The reduction `ℤ_[p] → 𝔽_p` is adic: every ideal of the discrete ring `𝔽_p` is open. -/
-instance isAdicHom_algebraMap_zmod : IsAdicHom (algebraMap ℤ_[p] (ZMod p)) :=
+private local instance isAdicHom_algebraMap_zmod : IsAdicHom (algebraMap ℤ_[p] (ZMod p)) :=
   IsAdicHom.of_continuous_isOpen_map PadicInt.continuous_toZMod fun _ _ ↦ isOpen_discrete _
-
-/-- The inclusion `ℤ_[p] → ℚ_[p]` is adic. -/
-instance isAdicHom_algebraMap_padic : IsAdicHom (algebraMap ℤ_[p] ℚ_[p]) := by
-  apply IsAdicHom.of_continuous_isOpen_map
-  · exact continuous_subtypeVal
-  · intro I hI
-    have hI0 : I ≠ ⊥ := IsDiscreteValuationRing.isOpen_iff.mp hI
-    have hmap : I.map (algebraMap ℤ_[p] ℚ_[p]) ≠ ⊥ :=
-      (Ideal.map_eq_bot_iff_of_injective Subtype.coe_injective).not.mpr hI0
-    rw [(Ideal.eq_bot_or_top (I.map (algebraMap ℤ_[p] ℚ_[p]))).resolve_left hmap]
-    exact isOpen_univ
 
 /-- The algebraic tensor product of the generic and special fibres is zero: `p` is a unit in
 `ℚ_[p]` and zero in `𝔽_p`. -/
-theorem subsingleton_tensor : Subsingleton (ℚ_[p] ⊗[ℤ_[p]] ZMod p) := by
+private theorem subsingleton_tensor : Subsingleton (ℚ_[p] ⊗[ℤ_[p]] ZMod p) := by
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   have hpZ : (p : ℤ_[p]) • (1 : ZMod p) = 0 := by
     rw [Algebra.smul_def, mul_one, map_natCast, ZMod.natCast_self]
@@ -98,15 +87,13 @@ theorem subsingleton_tensor : Subsingleton (ℚ_[p] ⊗[ℤ_[p]] ZMod p) := by
     TensorProduct.tmul_zero]
 
 /-- The zero completed tensor product of the two fibres. -/
-theorem subsingleton_completedTensor : Subsingleton (CompletedTensor ℤ_[p] ℚ_[p] (ZMod p)) :=
+private theorem subsingleton_completedTensor :
+    Subsingleton (CompletedTensor ℤ_[p] ℚ_[p] (ZMod p)) :=
   have := subsingleton_tensor p
   (CompletedTensor.toCompletion ℤ_[p] ℚ_[p] (ZMod p)).codomain_trivial
 
-/-- The Huber pair `(ℤ_[p], ℤ_[p])`. -/
-noncomputable abbrev zp : Pair ℤ_[p] := Pair.powerBounded ℤ_[p]
-
 /-- The generic fibre `(ℤ_[p], ℤ_[p]) → (ℚ_[p], ℤ_[p])`. -/
-noncomputable def generic : Pair.Hom (zp p) (Pair.powerBounded ℚ_[p]) where
+noncomputable def generic : Pair.Hom (Pair.powerBounded ℤ_[p]) (Pair.powerBounded ℚ_[p]) where
   toRingHom := algebraMap ℤ_[p] ℚ_[p]
   continuous_toRingHom := continuous_subtypeVal
   map_mem_plus a _ := by
@@ -114,7 +101,8 @@ noncomputable def generic : Pair.Hom (zp p) (Pair.powerBounded ℚ_[p]) where
     exact mem_powerBoundedSubring.mpr (IsPowerBounded.of_norm_le_one a.property)
 
 /-- The special fibre `(ℤ_[p], ℤ_[p]) → (𝔽_p, 𝔽_p)`. -/
-noncomputable def special : Pair.Hom (zp p) (Pair.discrete (ZMod p)) where
+private noncomputable def special :
+    Pair.Hom (Pair.powerBounded ℤ_[p]) (Pair.discrete (ZMod p)) where
   toRingHom := algebraMap ℤ_[p] (ZMod p)
   continuous_toRingHom := PadicInt.continuous_toZMod
   map_mem_plus _ _ := by simp
