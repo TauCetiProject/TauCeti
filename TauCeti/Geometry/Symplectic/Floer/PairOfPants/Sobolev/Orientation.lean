@@ -108,7 +108,10 @@ private theorem contDiffAt_path {J₀ : AlmostComplexStructure V} {ω : Symplect
       pathHamiltonian Ks₁ Ks₂ (r.1.1, (r.1.2, r.2))) ((p, z), y) ∧
     ContDiffAt ℝ 2 (uncurry fun r : (ℝ × ℝ) × (ℝ × ℝ) ↦
       pathHamiltonian Kt₁ Kt₂ (r.1.1, (r.1.2, r.2))) ((p, z), y) := by
-  -- Each is the corresponding path, a function of `((σ, (μ, z)), y)`, after reassociation.
+  -- Each is the corresponding path, a function of `((σ, (μ, z)), y)`, after reassociation. The
+  -- empty ascriptions `(e :)` elaborate each composite `F ∘ g`, with `g` the map of `hg`, on its
+  -- own first; the result then matches the stated reassociated map because `Function.comp`
+  -- unfolds definitionally.
   have hg : ContDiffAt ℝ ⊤ (fun r : ((ℝ × ℝ) × (ℝ × ℝ)) × V ↦
       ((r.1.1.1, (r.1.1.2, r.1.2)), r.2)) ((p, z), y) :=
     ((contDiff_fst.fst.fst.prodMk (contDiff_fst.fst.snd.prodMk contDiff_fst.snd)).prodMk
@@ -329,6 +332,10 @@ theorem detLineOrientationTransport_floerConformalSobolevOperator_pairOfPants_eq
     simp only
   have hg : ContDiff ℝ ⊤ fun p : (ℝ × (ℝ × ℝ)) × V ↦ ((a, p.1.2), p.2) :=
     (contDiff_const.prodMk contDiff_fst.snd).prodMk contDiff_snd
+  -- The constant path's data at `(μ, z)` are the data at `(a, z)` composed with the map `g` of
+  -- `hg`. The empty ascriptions `(e :)` elaborate each composite `F ∘ g` on its own first; the
+  -- result then matches the required map `((μ, z), y) ↦ F ((a, z), y)` because `Function.comp`
+  -- unfolds definitionally.
   have key := detLineOrientationTransport_floerConformalSobolevOperator_pairOfPants_congr ω hH
     hHs hX hx hnd hJe hJex (J₂ := fun p ↦ J (a, p.2)) (Ks₂ := fun p ↦ Ks (a, p.2))
     (Kt₂ := fun p ↦ Kt (a, p.2)) hJeq (fun _ _ ↦ hJeq a ha) hK (fun _ _ ↦ hK a ha) hJ
