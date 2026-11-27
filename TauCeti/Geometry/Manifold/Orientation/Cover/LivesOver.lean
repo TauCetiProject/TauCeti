@@ -24,10 +24,10 @@ is nonzero
 More generally, for any map `p : M → N` and any `b` in its range, the localization
 `Hₙ₊₁(M; o(TM)) → Hₙ₊₁(M, M ∖ p⁻¹(b); o(TM))` of `[M]_or` is nonzero
 (`TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_twistedFundamentalClass`).
-These are instances of the notion
-`TauCeti.LocalCoefficientSystem.LivesOverFundamentalClass`, which is stated with coefficients
-twisted by the orientation system precisely so that it applies over a base with no integral
-fundamental class, such as `ℝP²`, where `Hₙ₊₁(M; ℤ) = 0`
+These are instances of `TauCeti.LocalCoefficientSystem.LivesOverFundamentalClass`, which is
+stated for an arbitrary local system `K`. Here `K` is `o(TM)`, so the statement makes sense even
+when `M` has no integral fundamental class: for a compact connected `M` with no homological
+orientation, such as `ℝP²`, the integral top homology `Hₙ₊₁(M; ℤ)` vanishes
 (`TauCeti.subsingleton_singularHomology_of_isEmpty_homologicalOrientation`).
 
 The proof reads `[M]_or` on the cover. Reading functions on the fibres of `π` as formal sums of
