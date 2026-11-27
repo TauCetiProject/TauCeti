@@ -86,9 +86,8 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
   classical
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have hF' := hF.of_constantCompositum_eq_top h
-  have hn : finrank F F' = finrank k k' := by
-    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
-    rwa [h, IntermediateField.finrank_top'] at hdeg
+  have hn : finrank F F' = finrank k k' :=
+    finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime F k' F' hex h (hk' ▸ hp)
   set P := P'.restrict k F
   let αS : P'.integers := ⟨algebraMap k' F' α, P'.algebraMap_mem_integers α⟩
   let ψ := w.constr P.integers fun i : Fin n ↦ αS ^ (i : ℕ)
@@ -99,7 +98,7 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
   have hbk (i : Fin n) : bk i = α ^ (i : ℕ) := by simp [bk, pbk]
   let cF : Basis (Fin n) F F' := constantBasisOfFinrankEq h hn bk
   have hcF (i : Fin n) : cF i = (ψ (w i) : F') := by
-    rw [constantBasisOfFinrankEq_apply, hbk, map_pow, w.constr_basis]; rfl
+    rw [constantBasisOfFinrankEq_apply, hbk, map_pow, w.constr_basis, SubmonoidClass.coe_pow]
   let ιP : P'.integers →ₛₗ[algebraMap P.integers F] F' :=
     { toFun := Subtype.val, map_add' := fun _ _ ↦ rfl, map_smul' := fun r x ↦ by
         rw [Algebra.smul_def, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers,
@@ -138,7 +137,7 @@ private theorem Place.two_mul_ramificationIdx_mul_toNat_ord_eq {p : ℕ}
   have h := Place.ramificationIdx_mul_toNat_ord_eq_of_algebraMap_eq_pow k F P'
     x.property d.property (congrArg Subtype.val hxd)
   have h2 : 2 * (p * (p - 1) / 2) = p * (p - 1) :=
-    Nat.mul_div_cancel' (Nat.even_mul_pred_self p).two_dvd
+    Nat.two_mul_div_two_of_even (Nat.even_mul_pred_self p)
   nlinarith
 
 /-- **Local Tate–Schröer formula**: for a purely inseparable constant field extension `F' = F · k'`
@@ -162,9 +161,9 @@ theorem Place.two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {p : ℕ
     TauCeti.IsPurelyInseparable.charP_of_prime_dvd_finrank (K := k) (M := k') hp (by rw [hk'])
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have : IsPurelyInseparable F F' := isPurelyInseparable_of_constantCompositum_eq_top (k := k) h
-  have hFF' : finrank F F' = p := by
-    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
-    rwa [h, IntermediateField.finrank_top', hk'] at hdeg
+  have hFF' : finrank F F' = p :=
+    (finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime F k' F' hex h
+      (hk' ▸ hp)).trans hk'
   have hdim : pb.dim = p := by
     rw [← PowerBasis.finrank,
       ← IsFractionRing.finrank_eq (P'.restrict k F).integers F P'.integers F', hFF']
@@ -213,9 +212,9 @@ theorem Place.exists_two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {
   have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ hp.pos)
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have : IsPurelyInseparable F F' := isPurelyInseparable_of_constantCompositum_eq_top (k := k) h
-  have hFF' : finrank F F' = p := by
-    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
-    rwa [h, IntermediateField.finrank_top', hk'] at hdeg
+  have hFF' : finrank F F' = p :=
+    (finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime F k' F' hex h
+      (hk' ▸ hp)).trans hk'
   obtain ⟨pb, -⟩ :=
     P'.exists_powerBasis_integers_of_finrank_eq_prime hF (hF.of_constantCompositum_eq_top h) hFF'
   obtain ⟨α, hα⟩ := Field.exists_adjoin_simple_eq_top_of_finrank_prime (hk' ▸ hp)
@@ -245,10 +244,9 @@ theorem Place.sub_one_div_two_dvd_singularityDegree_of_finrank_eq_prime {p : ℕ
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (P : Place k F) :
     ((p - 1) / 2) ∣ P.singularityDegree k' F' := by
-  have h2 : 2 * ((p - 1) / 2) = p - 1 :=
-    Nat.mul_div_cancel' (((Fact.out : p.Prime).odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
   refine (Nat.mul_dvd_mul_iff_left two_pos).1 ?_
-  rw [h2]; exact P.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime hk' hF hex h
+  rw [Nat.two_mul_div_two_of_even ((Fact.out : p.Prime).even_sub_one hp2)]
+  exact P.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime hk' hF hex h
 
 end LocalFormula
 

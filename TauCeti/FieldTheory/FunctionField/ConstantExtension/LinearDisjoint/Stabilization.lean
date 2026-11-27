@@ -100,15 +100,13 @@ private theorem exists_finiteDimensional_linearDisjoint_aux (n : ℕ) :
     let EL := constantCompositum E L F'
     let := constantCompositumAlgebra E L F'
     have := isScalarTower_constantCompositum E L F'
-    have hbot : EL = ⊥ := constantCompositum_bot
     let eK := (IntermediateField.botEquiv K k').symm
-    let eE := (IntermediateField.botEquiv E F').symm.trans (IntermediateField.equivOfEq hbot.symm)
+    let eE := constantCompositumBotEquiv E k' F' (k := K)
     have hσ (c : K) : algebraMap L F' (eK.toRingEquiv c) = algebraMap K F' c := by
-      have hc : eK c = algebraMap K L c := by simpa using eK.commutes c
-      rw [AlgEquiv.coe_toRingEquiv, hc, ← IsScalarTower.algebraMap_apply K L F']
+      rw [AlgEquiv.coe_toRingEquiv, IntermediateField.botEquiv_symm,
+        ← IsScalarTower.algebraMap_apply K L F']
     have hτ (y : E) : algebraMap EL F' (eE.toRingEquiv y) = algebraMap E F' y := by
-      have hy : eE y = algebraMap E EL y := by simpa using eE.commutes y
-      rw [AlgEquiv.coe_toRingEquiv, hy, ← IsScalarTower.algebraMap_apply E EL F']
+      simp [eE, IntermediateField.algebraMap_apply]
     exact ⟨L, inferInstance,
       linearDisjoint_fieldRange_of_ringEquiv eK.toRingEquiv eE.toRingEquiv hσ hτ H⟩
   push Not at hdisj

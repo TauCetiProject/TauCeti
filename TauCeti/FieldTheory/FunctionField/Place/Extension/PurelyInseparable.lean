@@ -266,8 +266,7 @@ theorem exists_adjoin_integers_eq_top_of_finrank_eq_prime {p : ℕ} (hp : p.Prim
       exact (P'.irreducible_of_isUniformizer hπ₀_unif).maximalIdeal_eq.symm
     refine ⟨β, TauCeti.IsLocalRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal (g := C π₀) ?_ hspan⟩
     rw [hβ, ← adjoin_simple_toSubalgebra_of_isAlgebraic (Algebra.IsAlgebraic.isAlgebraic bar_b),
-      hbar]
-    rfl
+      hbar, IntermediateField.top_toSubalgebra]
 
 /-- **Local monogenicity at a prime purely inseparable step**: for a purely inseparable extension
 `F' / F` of prime degree `p` over an algebraic function field `F / k`, at any place `P'` of

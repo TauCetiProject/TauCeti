@@ -522,7 +522,7 @@ theorem linearDisjoint_fieldRange_of_ringEquiv {k' F' K₁ K₂ E₁ E₂ : Type
     rw [← hg]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [Algebra.smul_def, Algebra.smul_def, ← hτ (τ.symm (g j)), τ.apply_symm_apply]
-    rfl
+    simp only [u, Function.comp_apply, IntermediateField.coe_val]
   have := linearIndependent_iff'.1 hu' s (τ.symm ∘ g) hg' i hi
   exact τ.symm.injective (by simpa using this)
 

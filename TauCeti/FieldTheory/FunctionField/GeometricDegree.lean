@@ -53,6 +53,8 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   `TauCeti.isScalarTower_base_constantCompositum`.
 * `TauCeti.restrictScalarsConstantCompositumEquiv`: the `F`-algebra equivalence
   `(F · L) · N ≃ₐ[F] F · (N.restrictScalars k)`.
+* `TauCeti.constantCompositumBotEquiv`: the `F`-algebra equivalence
+  `F ≃ₐ[F] constantCompositum F (⊥ : IntermediateField k k') F'`.
 
 ## Main results
 
@@ -62,7 +64,10 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   gives `K(t)` as a subfield of the ambient field.
 * `TauCeti.constantCompositum_eq_top_iff`: an intermediate field into which `k'` maps is generated
   over `F` by the image of `k'` exactly when it is the compositum `F · k'`.
-* `TauCeti.constantCompositum_bot`: adjoining the bottom intermediate field `⊥` over `k` gives `⊥`.
+* `TauCeti.constantCompositum_bot`, `TauCeti.coe_constantCompositumBotEquiv_apply`, and
+  `TauCeti.constantCompositumBotEquiv_algebraMap`: adjoining the bottom intermediate field `⊥`
+  over `k` gives `⊥`, together with the coercion and `algebraMap` compatibility of
+  `TauCeti.constantCompositumBotEquiv`.
 * `TauCeti.constantCompositum_eq_top_iff_of_range_eq`: the compositum `F · k'` depends only on
   the image of `F` in `F'`.
 * `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
@@ -99,10 +104,12 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   compositum `F · k'`.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
   separable constant field extension over an exact constant field.
-* `TauCeti.finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top` and
-  `TauCeti.finrank_constantCompositum_eq_finrank_of_finrank_prime`: the degree equality
+* `TauCeti.finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top`,
+  `TauCeti.finrank_constantCompositum_eq_finrank_of_finrank_prime`, and
+  `TauCeti.finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime`: the degree equality
   `[F · k' : F] = [k' : k]` holds over an exact constant field `k ⊆ F` for every simple algebraic
-  extension `k' = k(α)`, and in particular for every prime-degree extension `k' / k`.
+  extension `k' = k(α)`, and in particular `[F' : F] = [k' : k]` when `F' = F · k'` and
+  `[k' : k]` is prime.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
   `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: the stronger
   linear-disjointness and persistence-of-linear-independence statements from which that degree
@@ -386,6 +393,45 @@ theorem constantCompositum_bot [Field k] [Field k'] [Algebra k k'] [Algebra k F]
     IntermediateField.algebraMap_apply, ← ha, ← IsScalarTower.algebraMap_apply k k' F',
     IsScalarTower.algebraMap_apply k F F']
   exact IntermediateField.algebraMap_mem _ _
+
+/-- The `F`-algebra equivalence identifying `F` with
+`constantCompositum F (⊥ : IntermediateField k k') F'`. -/
+noncomputable def constantCompositumBotEquiv (F k' F' : Type*) [Field k] [Field F] [Field k']
+    [Field F'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] :
+    F ≃ₐ[F] constantCompositum F (⊥ : IntermediateField k k') F' :=
+  (IntermediateField.botEquiv F F').symm.trans
+    (IntermediateField.equivOfEq (constantCompositum_bot (k := k)).symm)
+
+/-- Coercion of `constantCompositumBotEquiv` to `F'` is `algebraMap F F'`. -/
+@[simp]
+theorem coe_constantCompositumBotEquiv_apply (F k' F' : Type*) [Field k] [Field F] [Field k']
+    [Field F'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] (x : F) :
+    (constantCompositumBotEquiv F k' F' (k := k) x : F') = algebraMap F F' x := by
+  simp [constantCompositumBotEquiv]
+
+/-- Compatibility of `constantCompositumBotEquiv` with the base constant-field embeddings
+`k → F` and `⊥ → constantCompositum F ⊥ F'`. -/
+@[simp]
+theorem constantCompositumBotEquiv_algebraMap (F k' F' : Type*) [Field k] [Field F] [Field k']
+    [Field F'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] (c : k) :
+    letI := constantCompositumAlgebra F (⊥ : IntermediateField k k') F'
+    constantCompositumBotEquiv F k' F' (k := k) (algebraMap k F c) =
+      algebraMap (⊥ : IntermediateField k k')
+        (constantCompositum F (⊥ : IntermediateField k k') F')
+        ((IntermediateField.botEquiv k k').symm c) := by
+  let := constantCompositumAlgebra F (⊥ : IntermediateField k k') F'
+  have := isScalarTower_constantCompositum F (⊥ : IntermediateField k k') F'
+  apply Subtype.ext
+  rw [coe_constantCompositumBotEquiv_apply, ← IsScalarTower.algebraMap_apply k F F',
+    ← IntermediateField.algebraMap_apply
+      (S := constantCompositum F (⊥ : IntermediateField k k') F'),
+    ← IsScalarTower.algebraMap_apply (⊥ : IntermediateField k k') _ F',
+    IsScalarTower.algebraMap_apply (⊥ : IntermediateField k k') k' F',
+    IntermediateField.algebraMap_apply, IntermediateField.botEquiv_symm,
+    IntermediateField.coe_algebraMap_apply, IsScalarTower.algebraMap_apply k k' F']
 
 /-! ### The compositum of an intermediate field with the constants -/
 
@@ -750,6 +796,15 @@ theorem finrank_constantCompositum_eq_finrank_of_finrank_prime
   obtain ⟨α, hα⟩ := Field.exists_adjoin_simple_eq_top_of_finrank_prime hp
   exact finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top F k' F' hex
     (Algebra.IsIntegral.isIntegral α) hα
+
+/-- **Prime-degree compositum degree**: if `k` is relatively algebraically closed in `F`,
+`[k' : k]` is prime, and `F' = F · k'`, then `[F' : F] = [k' : k]`. -/
+theorem finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
+    (hp : (Module.finrank k k').Prime) :
+    Module.finrank F F' = Module.finrank k k' := by
+  have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex hp
+  rwa [h, IntermediateField.finrank_top'] at hdeg
 
 end LinearDisjoint
 

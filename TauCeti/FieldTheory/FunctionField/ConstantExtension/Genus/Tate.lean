@@ -84,10 +84,8 @@ private theorem sub_one_dvd_two_mul_genus_sub_genus_of_finrank_eq_prime {k : Typ
     genus k'' F' ≤ genus k F ∧ (p - 1) ∣ 2 * (genus k F - genus k'' F') := by
   have hp : p.Prime := Fact.out
   have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ hp.pos)
-  have hFF' : finrank F F' = p := by
-    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
-    rwa [h, IntermediateField.finrank_top', hk'] at hdeg
-  have hn : finrank F F' = finrank k k' := hFF'.trans hk'.symm
+  have hn : finrank F F' = finrank k k' :=
+    finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime F k' F' hex h (hk' ▸ hp)
   have : FiniteDimensional k' k'' :=
     (hF.of_constantCompositum_eq_top h).finiteDimensional_of_isAlgebraic k''
   have : IsPurelyInseparable F F' := isPurelyInseparable_of_constantCompositum_eq_top (k := k) h
@@ -237,10 +235,9 @@ private theorem genus_le_and_sub_one_dvd_two_mul_genus_sub_genus {p : ℕ} [Fact
     [Algebra k'' F'] [IsScalarTower k' k'' F'] [Algebra.IsAlgebraic k' k'']
     (hex'' : IsIntegrallyClosedIn k'' F') :
     genus k'' F' ≤ genus k F ∧ (p - 1) ∣ 2 * (genus k F - genus k'' F') := by
-  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
-    simp [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply _ _ F']
+  let _ := compAlgebra k k' k''
+  have := isScalarTower_compAlgebra_left k k' k''
+  have := isScalarTower_compAlgebra_right k k' k'' F'
   have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
   have htop : constantCompositum F k'' F' = ⊤ := constantCompositum_eq_top_of_isScalarTower h
   exact ⟨genus_le_genus_of_constantCompositum_eq_top hF htop,
@@ -280,10 +277,8 @@ theorem sub_one_div_two_dvd_genus_sub_genus_of_constantCompositum_eq_top {p : �
     {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F') :
     ((p - 1) / 2) ∣ genus k F - genus k'' F' := by
-  have h2 : 2 * ((p - 1) / 2) = p - 1 :=
-    Nat.mul_div_cancel' (((Fact.out : p.Prime).odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
   refine (Nat.mul_dvd_mul_iff_left two_pos).1 ?_
-  rw [h2]
+  rw [Nat.two_mul_div_two_of_even ((Fact.out : p.Prime).even_sub_one hp2)]
   exact sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top hF hex h hex''
 
 /-- **Genus conservation in small genus**: for a function field `F / k` in prime characteristic `p`
@@ -310,8 +305,7 @@ theorem genus_eq_genus_of_genus_lt_sub_one_div_two {p : ℕ} [Fact p.Prime] [Cha
     {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F') :
     genus k'' F' = genus k F := by
-  have h2 : 2 * ((p - 1) / 2) = p - 1 :=
-    Nat.mul_div_cancel' (((Fact.out : p.Prime).odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
+  have h2 := Nat.two_mul_div_two_of_even ((Fact.out : p.Prime).even_sub_one hp2)
   exact genus_eq_genus_of_two_mul_genus_lt_sub_one hF hex h (by omega) hex''
 
 /-- **Exactness of constants in small positive genus**: for a function field `F / k` in prime

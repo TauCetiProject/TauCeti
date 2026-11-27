@@ -494,14 +494,14 @@ theorem finrank_le_finsum_singularityDegree_add_one (hn : finrank F F' = finrank
         finrank k' (algebraicClosure k' F') := by
     rw [← Divisor.dim_def, map_zero, Divisor.dim_zero hF']
   have := hF'.finiteDimensional_algebraicClosure
-  let f : k'' →ₐ[k'] algebraicClosure k' F' :=
-    { toFun := fun c ↦ ⟨algebraMap k'' F' c, mem_algebraicClosure_iff'.2
-        ((Algebra.IsIntegral.isIntegral c).map (IsScalarTower.toAlgHom k' k'' F'))⟩
-      map_one' := Subtype.ext (map_one _), map_mul' := fun _ _ ↦ Subtype.ext (map_mul _ _ _)
-      map_zero' := Subtype.ext (map_zero _), map_add' := fun _ _ ↦ Subtype.ext (map_add _ _ _)
-      commutes' := fun r ↦ Subtype.ext (IsScalarTower.algebraMap_apply k' k'' F' r).symm }
-  have hk''_le : finrank k' k'' ≤ finrank k' (algebraicClosure k' F') :=
-    LinearMap.finrank_le_finrank_of_injective (f := f.toLinearMap) f.injective
+  let g := IsScalarTower.toAlgHom k' k'' F'
+  have : Algebra.IsAlgebraic k' g.fieldRange := g.equivFieldRange.isAlgebraic
+  have hk''_le : finrank k' k'' ≤ finrank k' (algebraicClosure k' F') := by
+    rw [g.equivFieldRange.toLinearEquiv.finrank_eq]
+    have hle := le_algebraicClosure k' F' g.fieldRange
+    exact LinearMap.finrank_le_finrank_of_injective
+      (f := (IntermediateField.inclusion hle).toLinearMap)
+      (IntermediateField.inclusion_injective hle)
   rw [finsum_eq_sum_of_support_subset _ (s := S) (by simp [S, Function.support])]
   omega
 
@@ -618,11 +618,9 @@ private theorem exists_intermediate_exact_genus_eq {K E : Type*} {k'' : Type w} 
   have := isScalarTower_base_constantCompositum K E M F'
   have hEM : constantCompositum E M EM = ⊤ := (constantCompositum_eq_top_iff E M F' EM).2 rfl
   have hFEM : IsFunctionField M EM := hE.of_constantCompositum_eq_top hEM
-  let _ : Algebra M k'' :=
-    { algebraMap := (algebraMap k' k'').comp (algebraMap M k'), commutes' := fun _ _ ↦ mul_comm _ _
-      smul_def' := fun m x ↦ Algebra.smul_def (m : k') x }
-  have : IsScalarTower M k' k'' := ⟨fun m x y ↦ smul_assoc (m : k') x y⟩
-  have : IsScalarTower M k'' F' := ⟨fun m x y ↦ smul_assoc (m : k') x y⟩
+  let _ := compAlgebra M k' k''
+  have := isScalarTower_compAlgebra_left M k' k''
+  have := isScalarTower_compAlgebra_right M k' k'' F'
   have : Algebra.IsAlgebraic M k' := .tower_top (K := K) M
   have : Algebra.IsAlgebraic M k'' := Algebra.IsAlgebraic.trans M k' k''
   obtain ⟨M₁, _, hstM, _, hexM₁⟩ :=
@@ -709,24 +707,17 @@ private theorem finite_exact_and_finrank_eq_of_one_le_genus [FiniteDimensional k
   have := isScalarTower_constantCompositum F L₀ F'
   have := isScalarTower_base_constantCompositum k F L₀ F'
   have hE₀ : constantCompositum F L₀ E₀ = ⊤ := (constantCompositum_eq_top_iff F L₀ F' E₀).2 rfl
-  have hbot : E₀ = ⊥ := constantCompositum_bot
   let eK := (IntermediateField.botEquiv k k').symm
-  let eF := (IntermediateField.botEquiv F F').symm.trans (IntermediateField.equivOfEq hbot.symm)
-  have hστ (c : k) : eF.toRingEquiv (algebraMap k F c) = algebraMap L₀ E₀ (eK.toRingEquiv c) := by
-    apply Subtype.ext
-    have h1 : eF (algebraMap k F c) = algebraMap F E₀ (algebraMap k F c) := by
-      simpa using eF.commutes (algebraMap k F c)
-    have h2 : eK c = algebraMap k L₀ c := by simpa using eK.commutes c
-    rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv, h1, h2,
-      ← IntermediateField.algebraMap_apply, ← IsScalarTower.algebraMap_apply F E₀ F',
-      ← IsScalarTower.algebraMap_apply k F F', ← IntermediateField.algebraMap_apply,
-      ← IsScalarTower.algebraMap_apply L₀ E₀ F', ← IsScalarTower.algebraMap_apply k L₀ F']
+  let eF := constantCompositumBotEquiv F k' F' (k := k)
+  have hστ (c : k) : eF.toRingEquiv (algebraMap k F c) = algebraMap L₀ E₀ (eK.toRingEquiv c) :=
+    constantCompositumBotEquiv_algebraMap F k' F' (k := k) c
   have hg₀ : genus L₀ E₀ = genus k F := genus_eq_of_ringEquiv eK.toRingEquiv eF.toRingEquiv hστ
   have : FiniteDimensional L₀ k' := FiniteDimensional.right k L₀ k'
   obtain ⟨hex', hdeg⟩ := finite_exact_and_finrank_eq_of_one_le_genus_aux hex'' _ L₀ E₀ rfl
     (hF.of_constantCompositum_eq_top hE₀) (hex.of_ringEquiv eK.toRingEquiv eF.toRingEquiv hστ)
     (hg₀.symm ▸ hg1) (constantCompositum_eq_top_of_eq_top F k' F' E₀ h) (hg.trans hg₀.symm)
-  have hE₀_fin : finrank F E₀ = 1 := by rw [hbot]; exact IntermediateField.finrank_bot
+  have hE₀_fin : finrank F E₀ = 1 := by
+    rw [show E₀ = ⊥ from constantCompositum_bot]; exact IntermediateField.finrank_bot
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) hE₀
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have : FiniteDimensional E₀ F' := FiniteDimensional.right F E₀ F'
