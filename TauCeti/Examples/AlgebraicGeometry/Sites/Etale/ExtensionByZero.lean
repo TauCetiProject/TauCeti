@@ -15,7 +15,8 @@ Let `k` be a field and `j : 𝔾_m ⟶ 𝔸¹` the inclusion, `Spec k[X, X⁻¹]
 (`TauCeti.Examples.ExtensionByZeroAffineLine.constructibleSheaf_extensionByZero`), its stalks at
 geometric points over the origin vanish (`isZero_etaleStalk_extensionByZero_of_origin`) and its
 stalks at geometric points of `𝔾_m` are `Λ` (`etaleStalkExtensionByZeroIso`). For `Λ ≠ 0` it is
-not finite lisse (`not_isFiniteLisse_extensionByZero`): the origin lies in the closure of `𝔾_m`.
+not locally constant, whatever the allowed values (`not_isLocallyConstantIn_extensionByZero`): the
+origin lies in the closure of `𝔾_m`.
 -/
 
 public section
@@ -67,8 +68,8 @@ theorem constructibleSheaf_extensionByZero :
 theorem isZero_etaleStalk_extensionByZero_of_origin {Ω : Type u} [Field Ω] [IsSepClosed Ω]
     (s : Spec (.of Ω) ⟶ Spec (.of k[X])) (hs : ∀ z, s z = origin k) :
     IsZero ((etaleStalk Λ s).obj (extensionByZero k Λ)) :=
-  (j k).isZero_sheafFiber_smallEtaleExtensionByZero_obj _ (fun s' h ↦ origin_notMem_range_j k
-    ⟨s' default, by rw [← Scheme.Hom.comp_apply, h, hs]⟩) _
+  (j k).isZero_sheafFiber_smallEtaleExtensionByZero_obj_of_notMem_range _
+    ((hs default).symm ▸ origin_notMem_range_j k) _
 
 /-- The stalk of `j_! Λ` at a geometric point of `𝔾_m` is `Λ`. -/
 noncomputable def etaleStalkExtensionByZeroIso {Ω : Type u} [Field Ω] [IsSepClosed Ω]
@@ -77,11 +78,11 @@ noncomputable def etaleStalkExtensionByZeroIso {Ω : Type u} [Field Ω] [IsSepCl
   ((j k).smallEtaleExtensionByZeroCompSheafFiberIso (ModuleCat.{u} Λ) t).app _ ≪≫
     (pointSmallEtale t).sheafFiberConstantSheafIso _
 
-/-- For `Λ ≠ 0`, `j_! Λ` is not finite lisse. -/
-theorem not_isFiniteLisse_extensionByZero [Nontrivial Λ] :
-    ¬ (extensionByZero k Λ).IsFiniteLisse :=
+/-- For `Λ ≠ 0`, `j_! Λ` is not locally constant, with values in any property `P` of modules. -/
+theorem not_isLocallyConstantIn_extensionByZero [Nontrivial Λ] (P : ObjectProperty (ModuleCat Λ)) :
+    ¬ (extensionByZero k Λ).IsLocallyConstantIn (smallEtaleTopology _) P :=
   haveI : Nontrivial (ModuleCat.of Λ Λ) := ‹Nontrivial Λ›
-  not_isFiniteLisse_smallEtaleExtensionByZero_constantSheaf (j k) (origin_mem_closure_range_j k)
-    (origin_notMem_range_j k) _
+  not_isLocallyConstantIn_smallEtaleExtensionByZero_constantSheaf (j k)
+    (origin_mem_closure_range_j k) (origin_notMem_range_j k) _ P
 
 end TauCeti.Examples.ExtensionByZeroAffineLine
