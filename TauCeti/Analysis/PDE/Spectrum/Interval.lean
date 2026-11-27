@@ -22,6 +22,7 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
@@ -611,20 +612,6 @@ private theorem inner_gradient_eq_of_mem_w1pVanishingOnSubmodule (hab : a ≤ b)
   rw [mem_ofPred_eq, inner_gradient_restrictL_ofTestFunctionₗ_eq hab hg hg' hu φ, hbd φ hφ,
     sub_self, zero_add]
 
-/-- `t ↦ cos (c (t - a))` has derivative `-c sin (c (t - a))`. -/
-private theorem hasDerivAt_cos_mul_sub (c t : ℝ) :
-    HasDerivAt (fun s => Real.cos (c * (s - a))) (-c * Real.sin (c * (t - a))) t := by
-  have := (((hasDerivAt_id' t).sub_const a).const_mul c).cos
-  convert this using 1
-  ring
-
-/-- `t ↦ sin (c (t - a))` has derivative `c cos (c (t - a))`. -/
-private theorem hasDerivAt_sin_mul_sub (c t : ℝ) :
-    HasDerivAt (fun s => Real.sin (c * (s - a))) (c * Real.cos (c * (t - a))) t := by
-  have := (((hasDerivAt_id' t).sub_const a).const_mul c).sin
-  convert this using 1
-  ring
-
 /-- **The cosine modes are weak Neumann eigenfunctions of `-Δ` on an interval.** For every
 `k : ℕ`, the function `x ↦ cos (k π (x - a) / (b - a))` is the value of some `u ∈ H¹_∅(a, b)`,
 the closure in `H¹(a, b)` of the restrictions of test functions on the line, with
@@ -663,9 +650,9 @@ theorem exists_value_ae_eq_cos_and_inner_gradient_eq (hab : a < b) (k : ℕ) :
         rw [TestFunction.coe_mk, hχ x hx, mul_one]))
   refine ⟨⟨_, W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule (φ := φ) (by simp)⟩,
     hval.trans (Filter.EventuallyEq.of_eq (funext fun x => (hmode (x 0)).symm)), fun v => ?_⟩
-  refine inner_gradient_eq_of_mem_w1pVanishingOnSubmodule hab.le (hasDerivAt_cos_mul_sub c)
+  refine inner_gradient_eq_of_mem_w1pVanishingOnSubmodule hab.le (hasDerivAt_cos_mul_sub c a)
     (fun t => by
-      convert (hasDerivAt_sin_mul_sub (a := a) c t).const_mul (-c) using 1
+      convert (hasDerivAt_sin_mul_sub c a t).const_mul (-c) using 1
       ring) hval
     (fun ψ _ => ?_) v.property
   -- `g'` vanishes at both endpoints, since `c (b - a) = k π`.
@@ -715,9 +702,9 @@ theorem exists_value_ae_eq_sin_two_mul_add_one_and_inner_gradient_eq (hab : a < 
     ring
   refine ⟨⟨_, W1p.restrictL_mem_w1pVanishingOnSubmodule hle hΓ s.property⟩,
     hval.trans (Filter.EventuallyEq.of_eq (funext fun x => by rw [hc]; ring_nf)), fun v => ?_⟩
-  refine inner_gradient_eq_of_mem_w1pVanishingOnSubmodule hab.le (hasDerivAt_sin_mul_sub c)
+  refine inner_gradient_eq_of_mem_w1pVanishingOnSubmodule hab.le (hasDerivAt_sin_mul_sub c a)
     (fun t => by
-      convert (hasDerivAt_cos_mul_sub (a := a) c t).const_mul c using 1
+      convert (hasDerivAt_cos_mul_sub c a t).const_mul c using 1
       ring) hval (fun ψ hψ => ?_) v.property
   -- `g'` vanishes at `b`, since `c (b - a) = k π + π / 2`, and `ψ` vanishes at `a`.
   have hψa : ψ (lineEquiv a) = 0 := image_eq_zero_of_notMem_tsupport fun h =>

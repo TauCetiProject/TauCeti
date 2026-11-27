@@ -70,6 +70,8 @@ Borel measurable structure on the scalar field.
   scalars acting on `𝕜`.
 * `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
   product `WithLp 2 (𝕜 × 𝕜)`.
+* `EuclideanSpace.toLp_one_zero` and `EuclideanSpace.toLp_zero_one`: the coordinate vectors
+  `(1, 0)` and `(0, 1)` of the plane are the standard basis vectors.
 * `EuclideanSpace.nonempty_linearIsometry_iff_finrank_le`: a finite-dimensional inner product
   space embeds isometrically into `EuclideanSpace 𝕜 ι` exactly when its dimension is at most the
   cardinality of `ι`.
@@ -91,6 +93,8 @@ Borel measurable structure on the scalar field.
   `OrthonormalBasis.singleton` evaluates at `default`.
 * `EuclideanSpace.finrank_subtype_val_lt` and `EuclideanSpace.finrank_subtype_not_val_lt`: the two
   factors of the splitting of `𝕜ⁿ` along `j < m` have dimensions `m` and `n - m`.
+* `TauCeti.euclideanPlaneCLEquivProd`: the coordinates `(y₀, y₁)` of the real Euclidean plane, as a
+  continuous linear equivalence onto `ℝ × ℝ`.
 * `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
   linear automorphism of `ι → 𝕜`.
 * `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
@@ -440,6 +444,20 @@ theorem finTwoEquivProd_symm_apply (p : WithLp 2 (𝕜 × 𝕜)) :
     (finTwoEquivProd 𝕜).symm p = WithLp.toLp 2 ![p.fst, p.snd] :=
   (rfl)
 
+/-- The first basis vector `(1, 0)` of the Euclidean plane, written in coordinates. -/
+@[simp]
+theorem toLp_one_zero :
+    (WithLp.toLp 2 ![(1 : 𝕜), 0] : EuclideanSpace 𝕜 (Fin 2)) = EuclideanSpace.single 0 1 := by
+  ext i
+  fin_cases i <;> simp
+
+/-- The second basis vector `(0, 1)` of the Euclidean plane, written in coordinates. -/
+@[simp]
+theorem toLp_zero_one :
+    (WithLp.toLp 2 ![(0 : 𝕜), 1] : EuclideanSpace 𝕜 (Fin 2)) = EuclideanSpace.single 1 1 := by
+  ext i
+  fin_cases i <;> simp
+
 /-- A finite-dimensional inner product space admits a linear isometry into `EuclideanSpace 𝕜 ι`
 if and only if its dimension is at most the cardinality of `ι`. -/
 theorem nonempty_linearIsometry_iff_finrank_le {E : Type*} [NormedAddCommGroup E]
@@ -766,6 +784,22 @@ theorem hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc {ι α : Type*}
     simp only [Set.mem_preimage, Set.mem_univ_pi, not_forall] at hx
     obtain ⟨i, hi⟩ := hx
     exact hf x i hi
+
+/-- The coordinates `(y₀, y₁)` of a point of the Euclidean plane, as a continuous linear
+equivalence onto `ℝ × ℝ`. Its underlying map is the measurable equivalence
+`TauCeti.euclideanPlaneEquivProd` (`TauCeti.coe_euclideanPlaneCLEquivProd`). -/
+noncomputable def euclideanPlaneCLEquivProd : EuclideanSpace ℝ (Fin 2) ≃L[ℝ] ℝ × ℝ :=
+  (EuclideanSpace.equiv (Fin 2) ℝ).trans (ContinuousLinearEquiv.finTwoArrow ℝ ℝ)
+
+@[simp]
+theorem euclideanPlaneCLEquivProd_apply (y : EuclideanSpace ℝ (Fin 2)) :
+    euclideanPlaneCLEquivProd y = (y 0, y 1) :=
+  (rfl)
+
+@[simp]
+theorem euclideanPlaneCLEquivProd_symm_apply (z : ℝ × ℝ) :
+    euclideanPlaneCLEquivProd.symm z = WithLp.toLp 2 ![z.1, z.2] :=
+  (rfl)
 
 variable {𝕜 : Type*} [RCLike 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
