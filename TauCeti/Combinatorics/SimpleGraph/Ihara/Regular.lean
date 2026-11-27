@@ -74,12 +74,7 @@ theorem charpolyRev_hashimotoMatrix_of_isRegularOfDegree (hG : G.IsRegularOfDegr
     ext i j
     by_cases hij : i = j
     · subst hij
-      simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_right, RingHom.mapMatrix_apply,
-        coe_evalRingHom, map_apply, Matrix.add_apply, Matrix.sub_apply, one_apply_eq,
-        Matrix.smul_apply, adjMatrix_apply, SimpleGraph.irrefl, ↓reduceIte, smul_eq_mul, mul_zero,
-        sub_zero, Matrix.natCast_apply, eval_add, eval_one, eval_mul, eval_pow, eval_X,
-        eval_natCast, scalar_apply, diagonal_apply_eq, add_right_inj]
-      ring
+      simp [Matrix.natCast_apply, mul_comm]
     · simp [one_apply_ne hij, Matrix.natCast_apply, hij, apply_ite (eval t)]
   -- `c - t A = c (1 - (t / c) A)` for the unit `c = 1 + q t²`, and `1 - s A` is diagonalised by
   -- the spectral theorem.
