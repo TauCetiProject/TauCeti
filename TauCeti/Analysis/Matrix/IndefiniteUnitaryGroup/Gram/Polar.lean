@@ -120,6 +120,10 @@ private def skewCoord : Matrix n n ℂ →ₗ[ℝ] skewAdjoint.submodule ℝ (Ma
 private theorem polarCoordEquiv_symm_apply
     (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     polarCoordEquiv.symm x = (x.2 : Matrix n n ℂ) + (2⁻¹ : ℝ) • (x.1 : Matrix n n ℂ) := by
+  -- Mathlib's `decomposeProdAdjoint` lands in `selfAdjoint A × skewAdjoint A`, whose carriers are
+  -- the submodules' only up to unfolding, so its apply lemmas do not match the composite and
+  -- `rw`/`simp` fail. Unfold `trans`, `prodCongr`, `smulOfNeZero.symm` and
+  -- `decomposeProdAdjoint.symm` (the sum of the two components) by hand instead.
   change (2⁻¹ : ℝ) • (x.1 : Matrix n n ℂ) + x.2 = _
   exact add_comm _ _
 
@@ -131,6 +135,9 @@ private theorem snd_polarCoordEquiv (Z : Matrix n n ℂ) : (polarCoordEquiv Z).2
 
 private theorem coe_hermCoord (Z : Matrix n n ℂ) :
     (hermCoord Z : Matrix n n ℂ) = Z + star Z := by
+  -- As in `polarCoordEquiv_symm_apply`, Mathlib's apply lemmas for `decomposeProdAdjoint` do not
+  -- match through the submodule carriers. Unfold `hermCoord`, `LinearMap.fst`, `smulOfNeZero` and
+  -- `decomposeProdAdjoint` by hand to twice the self-adjoint part, which `simp` then computes.
   change (2 : ℝ) • (selfAdjointPart ℝ Z : Matrix n n ℂ) = _
   simp [smul_smul]
 
@@ -374,8 +381,7 @@ private theorem gramHerm_polarMap (hA : A.IsHermitian) (hσ : IsGramSection A V 
   rw [polarMap, gramHerm_mul hA (star_cayleyChart_mul_mul_cayleyChart hA
     (mem_cayleyChartSource.1 hZ.1))]
   apply Subtype.ext
-  rw [coe_gramHerm hA, ← hσ.conjTranspose_mul_mul hZ.2]
-  rfl
+  rw [coe_gramHerm hA, ← hσ.conjTranspose_mul_mul hZ.2, star_eq_conjTranspose]
 
 /-- The polar map is injective on its domain. -/
 private theorem injOn_polarMap (hA : A.IsHermitian) (hA' : IsUnit A)
