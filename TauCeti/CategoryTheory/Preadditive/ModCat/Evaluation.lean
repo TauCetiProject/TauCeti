@@ -41,6 +41,7 @@ theorem forgetEval_map_apply (X : C) {M N : ModCat.{w} C}
 /-- Evaluation into types preserves filtered colimits of shapes small in the value universe. -/
 instance (X : C) {J : Type*} [Category* J] [IsFiltered J] [Small.{w} J] [LocallySmall.{w} J] :
     PreservesColimitsOfShape J (forgetEval.{w} X) := by
+  -- `ShrinkHoms J` is definitionally `J` as a type, so it inherits smallness of objects.
   have : Small.{w} (ShrinkHoms J) := ‹Small.{w} J›
   let e := ((ShrinkHoms.equivalence.{w} J).trans (Shrink.equivalence.{w} _)).symm
   have := IsFiltered.of_equivalence e.symm
