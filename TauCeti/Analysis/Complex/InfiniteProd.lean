@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Calculus.LogDerivUniformlyOn
 public import TauCeti.Analysis.Meromorphic.Divisor
 public import TauCeti.Analysis.Normed.Module.MultipliableUniformlyOn
-import TauCeti.Analysis.Normed.Ring.InfiniteProd
+import TauCeti.Analysis.Normed.Ring.InfiniteProd.Basic
 
 /-!
 # Holomorphic infinite products on plane domains

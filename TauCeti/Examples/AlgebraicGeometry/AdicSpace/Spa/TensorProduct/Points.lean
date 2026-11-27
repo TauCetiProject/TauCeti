@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Points
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
-import TauCeti.RingTheory.Huber.Padic.Field
-import TauCeti.RingTheory.Huber.Prod
+public import TauCeti.RingTheory.Huber.Padic.Field
+public import TauCeti.RingTheory.Huber.Prod
 
 /-!
 # Checks for point lifting to completed tensors
@@ -60,7 +60,8 @@ private theorem compatible : comap (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) fir
   simp only [firstPoint, secondPoint, comap_comap]
   congr 1
 
-private instance : IsAdicHom (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) :=
+/-- The diagonal structure map of the split two-adic ring is adic. -/
+instance instIsAdicHomAlgebraMapPadicProd : IsAdicHom (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) :=
   IsAdicHom.of_isTateRing (by fun_prop)
 
 private theorem firstPoint_vle : firstPoint.toValuativeRel.vle (0, 1) 0 := by
@@ -93,10 +94,6 @@ example : ∃ z : spa ((Pair.powerBounded (ℚ_[2] × ℚ_[2])).completedTensor 
 example : ¬ ∃ z : Spv (ℚ_[2] × ℚ_[2]), z = firstPoint ∧ z = secondPoint := by
   rintro ⟨z, rfl, h⟩
   exact secondPoint_not_vle (h ▸ firstPoint_vle)
-
-local instance {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-    [IsHuberRing A] : IsAdicHom (algebraMap A A) := by
-  simpa using IsAdicHom.id (A := A)
 
 /-- Identity tensors lift every point, without replacing a higher-rank point by a coarsening. -/
 example {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]

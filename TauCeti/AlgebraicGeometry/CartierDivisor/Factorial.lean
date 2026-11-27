@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Factorial
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effectivity
 public import TauCeti.AlgebraicGeometry.LineBundle.Affine.Picard
-public import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk
+public import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk.Basic
 
 /-!
 # Divisors on normal and locally factorial schemes

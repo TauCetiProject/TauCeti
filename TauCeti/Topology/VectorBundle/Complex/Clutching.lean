@@ -95,6 +95,8 @@ case for any two almost complex structures tamed by a common symplectic form.
 
 ## Main results
 
+* `TauCeti.clutchingFunction_eq_of_mk_eq`: frames with the same points of the total space have
+  the same clutching function.
 * `TauCeti.clutchingNumber_eq_squareBoundaryDegree`: the clutching number may be computed from any
   frame and any trivialization near `x`.
 * `TauCeti.clutchingNumber_eq_of_homotopic`: homotopy invariance.
@@ -197,6 +199,26 @@ theorem clutchingFunction_eq_mul_coordChangeL {y : B} (hy : f y ∈ e.baseSet)
     simp [e.coordChangeL_apply e' ⟨hy, hy'⟩, e.symm_apply_apply_mk hy]
   rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hy', h,
     ContinuousLinearEquiv.normalizedDet_trans, mul_inv]
+
+omit [TopologicalSpace B] in
+/-- Two frames that agree as families of points of the total space have the same clutching
+function. -/
+theorem clutchingFunction_eq_of_mk_eq {B' : Type*} {g : B' → X} {ψ : ∀ y, F ≃L[ℂ] E (g y)}
+    (e : Trivialization F (π F E)) [e.IsLinear ℂ] {y : B} {z : B'}
+    (h : ∀ v, TotalSpace.mk' F (f y) (φ y v) = TotalSpace.mk' F (g z) (ψ z v)) :
+    clutchingFunction f φ e y = clutchingFunction g ψ e z := by
+  have hfg : f y = g z := congrArg TotalSpace.proj (h 0)
+  by_cases hy : f y ∈ e.baseSet
+  · have hz : g z ∈ e.baseSet := hfg ▸ hy
+    rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hz]
+    refine congrArg (fun A : F ≃L[ℂ] F ↦ A.normalizedDet⁻¹) (ContinuousLinearEquiv.ext ?_)
+    funext v
+    -- The trivialization at a point reads the second coordinate of `e` on the total space.
+    rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
+      e.continuousLinearEquivAt_apply' ⟨f y, φ y v⟩ (e.mem_source.2 hy),
+      e.continuousLinearEquivAt_apply' ⟨g z, ψ z v⟩ (e.mem_source.2 hz)]
+    exact congrArg (fun q ↦ (e q).2) (h v)
+  · rw [clutchingFunction_of_notMem hy, clutchingFunction_of_notMem (hfg ▸ hy)]
 
 variable [FiniteDimensional ℂ F]
 

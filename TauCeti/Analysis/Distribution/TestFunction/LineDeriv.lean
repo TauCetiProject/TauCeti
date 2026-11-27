@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.Calculus.Gradient.Basic
@@ -36,6 +39,8 @@ test function on `Ω` whose gradient obeys the product rule.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`, `TestFunction.coe_lineDerivOp_eq_fderiv`:
   `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.exists_lineDerivOp_apply_ne_zero`: a nonzero test function has a nonzero
+  derivative in every nonzero direction.
 * `TestFunction.norm_iteratedFDeriv_lineDerivOp_le`: the derivatives of order at most `r` of
   `∂_{v} φ` are bounded by `‖v‖` times a bound on those of order at most `r + 1` of `φ`.
 * `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
@@ -51,6 +56,9 @@ test function on `Ω` whose gradient obeys the product rule.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
 * `TestFunction.iteratedLineDerivOp_postcompCLM`: so do iterated directional derivatives.
+* `TestFunction.lineDerivCLM_lineDerivCLM_apply`: `∂_{v} (∂_{w} φ) x = D²φ(x) v w`.
+* `TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv`: an iterated directional derivative
+  is the iterated Fréchet derivative evaluated on the directions.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -81,6 +89,17 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem lineDerivOp_apply (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = lineDeriv ℝ φ x v :=
   lineDerivCLM_apply_of_le le_top
 
+/-- The derivative of the restriction `t ↦ ψ (y + t • e)` of a test function to a line is the
+directional derivative of `ψ` along the line. This holds at every smoothness `n` and for every
+codomain, with both sides `0` when the restriction `s ↦ ψ (y + s • e)` is not differentiable at
+`t`. -/
+@[simp]
+theorem deriv_lineTestFunction {n : ℕ∞} (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) (t : ℝ) :
+    deriv (ψ.lineTestFunction y e he) t = lineDeriv ℝ ψ (y + t • e) e := by
+  rw [show ⇑(ψ.lineTestFunction y e he) = fun s : ℝ => ψ (y + s • e) from
+    funext (lineTestFunction_apply ψ y e he)]
+  exact TauCeti.deriv_comp_add_smul_eq_lineDeriv (ψ : E → F) y e t
+
 /-- The directional derivative of a test function is its Fréchet derivative applied to the
 direction. -/
 theorem lineDerivOp_apply_eq_fderiv (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = fderiv ℝ φ x v := by
@@ -97,6 +116,15 @@ theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
     tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   rw [coe_lineDerivOp_eq_fderiv]
   exact tsupport_fderiv_apply_subset ℝ v
+
+/-- A nonzero test function has a nonzero derivative in every nonzero direction `v`: a compactly
+supported function whose derivative along `v` vanishes identically is zero. -/
+theorem exists_lineDerivOp_apply_ne_zero {φ : 𝓓(Ω, F)} (hφ : φ ≠ 0) {v : E} (hv : v ≠ 0) :
+    ∃ x, ∂_{v} φ x ≠ 0 := by
+  by_contra! h0
+  exact hφ (ext fun x ↦ φ.hasCompactSupport.eq_zero_of_fderiv_apply_eq_zero (𝕂 := ℝ)
+    (φ.contDiff.differentiable (by simp)) hv
+    (fun w ↦ by rw [← lineDerivOp_apply_eq_fderiv, h0]) x)
 
 /-- The derivatives of order at most `r` of `∂_v φ` are bounded by `‖v‖` times a bound on the
 derivatives of order at most `r + 1` of `φ`. -/
@@ -195,6 +223,19 @@ theorem iteratedLineDerivOp_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 
     rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, ih,
       lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivCLM_postcompCLM]
 
+/-- An iterated directional derivative of a test function is its iterated Fréchet derivative
+evaluated on the directions. This is the test-function counterpart of Mathlib's
+`SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv`, with the same proof. -/
+theorem iteratedLineDerivOp_apply_eq_iteratedFDeriv (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (x : E) : ∂^{m} φ x = iteratedFDeriv ℝ k φ x m := by
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, lineDerivOp_apply_eq_fderiv, iteratedFDeriv_succ_apply_left,
+      ← fderiv_continuousMultilinear_apply_const_apply
+        ((φ.contDiff.differentiable_iteratedFDeriv (mod_cast ENat.natCast_lt_top k)) x)]
+    simp only [funext (ih (Fin.tail m))]
+
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/
 theorem lineDeriv_lineDeriv_eq_fderiv_fderiv (φ : 𝓓(Ω, F)) (v w x : E) :
@@ -205,6 +246,18 @@ theorem lineDeriv_lineDeriv_eq_fderiv_fderiv (φ : 𝓓(Ω, F)) (v w x : E) :
   simp_rw [hφ]
   exact (((φ.contDiff.fderiv_right (by simp)).clm_apply contDiff_const).differentiable
     one_ne_zero x).lineDeriv_eq_fderiv
+
+/-- Two directional derivatives of a test function evaluate to its second Fréchet derivative:
+`∂_{v} (∂_{w} φ) x = D²φ(x) v w`. -/
+theorem lineDerivCLM_lineDerivCLM_apply (φ : 𝓓(Ω, F)) (v w x : E) :
+    (lineDerivCLM ℝ v (lineDerivCLM ℝ w φ : 𝓓(Ω, F)) : 𝓓(Ω, F)) x =
+      fderiv ℝ (fderiv ℝ (φ : E → F)) x v w := by
+  have hd : DifferentiableAt ℝ (fderiv ℝ (φ : E → F)) x :=
+    (φ.contDiff.fderiv_right (m := 1) (by simp)).differentiable one_ne_zero x
+  rw [coe_lineDerivCLM, coe_lineDerivCLM]
+  dsimp only
+  rw [lineDeriv_lineDeriv_eq_fderiv_fderiv]
+  simp [fderiv_clm_apply hd (differentiableAt_const _)]
 
 /-- **Directional derivatives of test functions commute.** -/
 theorem lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w : E) : ∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ) := by

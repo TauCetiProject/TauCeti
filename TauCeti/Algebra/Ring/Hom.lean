@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Commute
 public import Mathlib.Algebra.Ring.Equiv
+import Mathlib.Data.Int.Cast.Lemmas
 import Mathlib.Data.Nat.Cast.Basic
 import Mathlib.Tactic.Abel
 
@@ -16,6 +17,8 @@ import Mathlib.Tactic.Abel
 The element `-1` squares to `1`. A multiplicative map into a ring without zero divisors
 therefore sends it to `1` or `-1`. This applies to ordinary ring-valued maps as well as to
 unit-valued characters after composing with the coercion homomorphism.
+Similarly, a ring homomorphism sends a square root of an integer `D` to a square root of `D`, and
+a square root of `-1` to a square root of `-1`.
 
 Any multiplicative map `f` from a unital magma into a (possibly non-associative) ring sends `1` to
 an idempotent `f 1`, and the complementary idempotent `1 - f 1` annihilates every image `f a` on
@@ -38,6 +41,10 @@ along field and completion isomorphisms.
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
+* `TauCeti.sq_map_of_sq_eq_intCast`: the image of a square root of an integer `D` is a square
+  root of `D`.
+* `TauCeti.mul_self_map_of_mul_self_eq_neg_one`: the image of a square root of `-1` is a square
+  root of `-1`.
 * `TauCeti.one_sub_map_one_mul_apply` and `TauCeti.apply_mul_one_sub_map_one`: `1 - f 1`
   annihilates `f a` on the left and right for any multiplicative map `f`.
 * `MulHom.unitize`: the unitization `a ↦ f a + (1 - f 1)` of a multiplicative map from a monoid
@@ -60,6 +67,16 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
     [NonAssocRing R] [NoZeroDivisors R] [FunLike F M R] [MonoidHomClass F M R] (f : F) :
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
+
+/-- A ring homomorphism sends a square root of an integer `D` to a square root of `D`. -/
+theorem sq_map_of_sq_eq_intCast {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) {D : ℤ} {δ : R} (hδ : δ ^ 2 = (D : R)) : f δ ^ 2 = (D : S) := by
+  rw [← map_pow, hδ, map_intCast]
+
+/-- A ring homomorphism sends a square root of `-1` to a square root of `-1`. -/
+theorem mul_self_map_of_mul_self_eq_neg_one {R S F : Type*} [NonAssocRing R] [NonAssocRing S]
+    [FunLike F R S] [RingHomClass F R S] (f : F) {i : R} (hi : i * i = -1) : f i * f i = -1 := by
+  rw [← map_mul, hi, map_neg, map_one]
 
 /-- For any multiplicative map `f` from a unital magma into a (possibly non-associative) ring,
 the complementary idempotent `1 - f 1` annihilates `f a` on the left. -/

@@ -28,6 +28,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Topology.Connected.MetricSpace
 import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.ContinuousMap.Ascoli
@@ -90,13 +91,16 @@ the loops are `1`-periodic (`TauCeti.norm_fderiv_le_of_periodic`) — the loops 
 continuously on `s` in the uniform distance and form a compact family by the Arzelà–Ascoli theorem.
 For every `ε > 0` and every late `s` some loop at a time in `[s, s + ε]` has squared defect
 integral below `ε` (`TauCeti.eventually_exists_mem_Icc_integral_norm_sq_sliceDefect_lt`), so every
-cluster point of the loops in the topology of uniform convergence is a `1`-periodic solution
-(`TauCeti.periodic_and_hasDerivAt_of_mapClusterPt`). These cluster points form the ω-limit set of a
-continuous curve in a compact set, which is preconnected. If the `1`-periodic solutions in `K` are
-isolated from each other in the uniform distance, it is therefore a single solution `x`, and the
-loops converge uniformly to `x` as `s → ∞`
-(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`). This is how nondegeneracy of the
-periodic orbits turns the accumulation along a sequence into convergence along the whole end.
+cluster point of the loops in the topology of uniform convergence is approached by loops at
+`σ_n → ∞` with defect tending to zero (`TauCeti.exists_tendstoUniformly_of_mapClusterPt`) and is a
+`1`-periodic solution (`TauCeti.periodic_and_hasDerivAt_of_mapClusterPt`). These cluster points form
+the ω-limit set of a continuous curve in a compact set, which is preconnected. If the `1`-periodic
+solutions in `K` that arise as uniform cluster points of the loops are isolated from each other in
+the uniform distance, it is therefore a single solution `x`, and the loops converge uniformly to
+`x` as `s → ∞` (`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_mapClusterPt` and
+`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`). This is how nondegeneracy of the
+periodic orbits in the end's homotopy sector turns the accumulation along a sequence into
+convergence along the whole end.
 
 The defect does not see the direction of `s`, so reflecting `(s, t) ↦ (-s, t)` gives the same
 statements on a half-cylinder `s < a` at the negative end `s → -∞`
@@ -122,8 +126,10 @@ and the defect tends uniformly to zero, the slice velocity `∂_t u` converges u
 are bounded on the strip when this holds at both ends
 (`TauCeti.exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect`). Both conditions pass
 from two `C¹` maps to every point `u + μ (u' - u)` of the segment between them
-(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`). These are the asymptotics along which
-the linearized Floer operator is deformed.
+(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`), and the defect condition passes to
+every continuous vector field that agrees with `X` along `x`
+(`TauCeti.tendstoUniformlyOn_sliceDefect_of_apply_eq`). These are the asymptotics along which the
+linearized Floer operator is deformed.
 
 ## References
 
@@ -160,17 +166,32 @@ theorem sliceDefect_def (X : ℝ → V → V) (u : ℝ × ℝ → V) (z : ℝ ×
     sliceDefect X u z = fderiv ℝ u z (0, 1) - X z.2 (u z) :=
   (rfl)
 
+/-- A map which agrees near `z` with the map `(s, t) ↦ x(t)` constant in `s`, where `x` solves
+`x' = X(t, x)` at `t = z.2`, has vanishing defect at `z`. -/
+theorem sliceDefect_eq_zero_of_eventuallyEq {x : ℝ → V} {z : ℝ × ℝ}
+    (hx : HasDerivAt x (X z.2 (x z.2)) z.2) (hu : u =ᶠ[𝓝 z] fun w ↦ x w.2) :
+    sliceDefect X u z = 0 := by
+  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2) _ z :=
+    hx.hasFDerivAt.comp z (hasFDerivAt_snd (p := z))
+  simp [sliceDefect_def, hu.fderiv_eq, hu.eq_of_nhds, h.fderiv]
+
 /-- The map `(s, t) ↦ x(t)` constant in `s` along a solution of `x' = X(t, x)` has vanishing
 defect. -/
 theorem sliceDefect_comp_snd_eq_zero {x : ℝ → V} (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
-    sliceDefect X (fun w : ℝ × ℝ ↦ x w.2) = 0 := by
-  funext z
-  obtain ⟨s, t⟩ := z
-  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2)
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (X t (x t))).comp
-        (ContinuousLinearMap.snd ℝ ℝ ℝ)) (s, t) :=
-    (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
-  simp [sliceDefect_def, h.fderiv]
+    sliceDefect X (fun w : ℝ × ℝ ↦ x w.2) = 0 :=
+  funext fun z ↦ sliceDefect_eq_zero_of_eventuallyEq (hx z.2) EventuallyEq.rfl
+
+/-- A map which, eventually along a filter `l` in `s`, agrees near every point `(s, t)` with the
+map `(s, t) ↦ x(t)` constant in `s`, along a solution of `x' = X(t, x)`, has loops converging
+uniformly to `x` along `l`, with slice defects tending uniformly to zero. -/
+theorem tendstoUniformly_and_sliceDefect_of_eventuallyEq {l : Filter ℝ} {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (X t (x t)) t) (hu : ∀ᶠ s in l, ∀ t, u =ᶠ[𝓝 (s, t)] fun w ↦ x w.2) :
+    TendstoUniformly (fun s t ↦ u (s, t)) x l ∧
+      TendstoUniformly (fun s t ↦ sliceDefect X u (s, t)) 0 l :=
+  ⟨tendstoUniformlyOn_univ.1 <| (tendstoUniformlyOn_const x l univ).congr
+      (hu.mono fun _ hs t _ ↦ (hs t).eq_of_nhds.symm),
+    tendstoUniformlyOn_univ.1 <| (tendstoUniformlyOn_const 0 l univ).congr
+      (hu.mono fun _ hs t _ ↦ (sliceDefect_eq_zero_of_eventuallyEq (hx t) (hs t)).symm)⟩
 
 /-- The defect of a map that is `C¹` on an open set `U` is continuous on `U`, for a continuous
 vector field. -/
@@ -245,18 +266,6 @@ section Reflection
 
 open LinearIsometryEquiv (negFst)
 
-/-- The derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is the derivative of `u` at
-`(-z.1, z.2)` precomposed with the reflection. -/
-theorem fderiv_comp_neg_fst {z : ℝ × ℝ} :
-    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z =
-      (fderiv ℝ u (-z.1, z.2)).comp
-        ((negFst ℝ ℝ ℝ).toContinuousLinearEquiv : ℝ × ℝ →L[ℝ] ℝ × ℝ) := by
-  have h : (fun w ↦ u (-w.1, w.2)) = u ∘ (negFst ℝ ℝ ℝ).toContinuousLinearEquiv := by
-    funext w
-    simp
-  rw [h, ContinuousLinearEquiv.comp_right_fderiv]
-  simp
-
 /-- A map `C^n` on the half-cylinder `(-∞, a) × T` reflects to a map `C^n` on
 `(-a, ∞) × T`. -/
 theorem contDiffOn_comp_neg_fst {n : WithTop ℕ∞} {T : Set ℝ} (hu : ContDiffOn ℝ n u (Iio a ×ˢ T)) :
@@ -281,16 +290,13 @@ theorem setLIntegral_norm_sq_sliceDefect_comp_neg_fst :
       ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) := by
   -- The reflection preserves Lebesgue measure and carries `(-a, ∞) × [0, 1]` onto
   -- `(-∞, a) × [0, 1]`.
-  have hmp : MeasurePreserving (negFst ℝ ℝ ℝ) := by
-    rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
-    exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
-      (MeasurePreserving.id (volume : Measure ℝ))
   have hpre : negFst ℝ ℝ ℝ ⁻¹' (Iio a ×ˢ Icc 0 1) = Ioi (-a) ×ˢ Icc 0 1 := by
     ext z
     simp [neg_lt]
   simp_rw [sliceDefect_comp_neg_fst, ← LinearIsometryEquiv.negFst_apply ℝ]
   rw [← hpre]
-  exact hmp.setLIntegral_comp_preimage_emb (negFst ℝ ℝ ℝ).toHomeomorph.measurableEmbedding
+  exact LinearIsometryEquiv.measurePreserving_negFst.setLIntegral_comp_preimage_emb
+    (negFst ℝ ℝ ℝ).toHomeomorph.measurableEmbedding
     (fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)) _
 
 end Reflection
@@ -747,14 +753,14 @@ theorem eventually_exists_mem_Icc_integral_norm_sq_sliceDefect_lt
     (by rwa [add_sub_cancel_left])
 
 /-- Near a cluster point `y` of the loops in the topology of uniform convergence there are loops
-with arbitrarily small defect: some loops converge uniformly to `y` while their squared defect
-integrals tend to `0`. -/
-private theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
+with arbitrarily small defect: some loops at `σ_n → ∞`, with `σ_n > a`, converge uniformly to `y`
+while their squared defect integrals tend to `0`. -/
+theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
     (hX : Continuous (uncurry X))
     (hfin : ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) ≠ ⊤)
     (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C) {y : ℝ →ᵤ V}
     (hy : MapClusterPt y atTop fun s ↦ UniformFun.ofFun fun t ↦ u (s, t)) :
-    ∃ σ : ℕ → ℝ, (∀ n, a < σ n) ∧
+    ∃ σ : ℕ → ℝ, (∀ n, a < σ n) ∧ Tendsto σ atTop atTop ∧
       Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (σ n, t)‖ ^ 2) atTop (𝓝 0) ∧
       TendstoUniformly (fun n t ↦ u (σ n, t)) (UniformFun.toFun y) atTop := by
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC (a + 1, 0) ⟨lt_add_one a, trivial⟩)
@@ -770,7 +776,7 @@ private theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u
       hL.comp (LipschitzWith.prodMk_right t).lipschitzOnWith fun s hs ↦ ⟨hs, trivial⟩
   -- For each `n`, a late loop uniformly `1 / (n + 1)`-close to `y`, and a loop with small defect
   -- at most `1 / (n + 1)` later.
-  have hsel : ∀ n : ℕ, ∃ s σ : ℝ, a < s ∧ σ ∈ Icc s (s + 1 / (n + 1)) ∧
+  have hsel : ∀ n : ℕ, ∃ s σ : ℝ, a < s ∧ (n : ℝ) ≤ s ∧ σ ∈ Icc s (s + 1 / (n + 1)) ∧
       (∀ t, dist (u (s, t)) (UniformFun.toFun y t) < 1 / (n + 1)) ∧
       ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (σ, t)‖ ^ 2 < 1 / (n + 1) := by
     intro n
@@ -778,15 +784,18 @@ private theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u
     obtain ⟨S, hS⟩ := eventually_atTop.1
       (eventually_exists_mem_Icc_integral_norm_sq_sliceDefect_lt hu hX hfin hε)
     obtain ⟨s, hs, hsy⟩ := frequently_atTop.1 (mapClusterPt_iff_frequently.1 hy _
-      (Metric.eball_mem_nhds y (ENNReal.ofReal_pos.2 hε))) (max S (a + 1))
-    obtain ⟨σ, hσ, hσd⟩ := hS s ((le_max_left _ _).trans hs)
-    refine ⟨s, σ, (lt_add_one a).trans_le ((le_max_right _ _).trans hs), hσ, fun t ↦ ?_, hσd⟩
+      (Metric.eball_mem_nhds y (ENNReal.ofReal_pos.2 hε))) (max (max S (a + 1)) n)
+    have hsSa : max S (a + 1) ≤ s := (le_max_left _ _).trans hs
+    obtain ⟨σ, hσ, hσd⟩ := hS s ((le_max_left _ _).trans hsSa)
+    refine ⟨s, σ, (lt_add_one a).trans_le ((le_max_right _ _).trans hsSa),
+      (le_max_right _ _).trans hs, hσ, fun t ↦ ?_, hσd⟩
     rw [Metric.mem_eball] at hsy
     exact edist_lt_ofReal.1 ((UniformFun.edist_le.1 le_rfl t).trans_lt hsy)
-  choose s σ has hσ hsy hσd using hsel
+  choose s σ has hns hσ hsy hσd using hsel
   have hσa : ∀ n, a < σ n := fun n ↦ (has n).trans_le (hσ n).1
-  refine ⟨σ, hσa, squeeze_zero (fun n ↦ intervalIntegral.integral_nonneg zero_le_one
-    fun t _ ↦ sq_nonneg _) (fun n ↦ (hσd n).le) tendsto_one_div_add_atTop_nhds_zero_nat, ?_⟩
+  refine ⟨σ, hσa, tendsto_atTop_mono (fun n ↦ (hns n).trans (hσ n).1) tendsto_natCast_atTop_atTop,
+    squeeze_zero (fun n ↦ intervalIntegral.integral_nonneg zero_le_one
+      fun t _ ↦ sq_nonneg _) (fun n ↦ (hσd n).le) tendsto_one_div_add_atTop_nhds_zero_nat, ?_⟩
   -- The loops at `σ n` are within `(C + 1) / (n + 1)` of `y`.
   refine Metric.tendstoUniformly_iff.2 fun δ hδ ↦ ?_
   have hlim : Tendsto (fun n : ℕ ↦ (C + 1) * (1 / ((n : ℝ) + 1))) atTop (𝓝 0) := by
@@ -820,7 +829,7 @@ theorem periodic_and_hasDerivAt_of_mapClusterPt (hu : ContDiffOn ℝ 1 u (Ioi a 
     (hy : MapClusterPt y atTop fun s ↦ UniformFun.ofFun fun t ↦ u (s, t)) :
     Periodic (UniformFun.toFun y) 1 ∧
       ∀ t, HasDerivAt (UniformFun.toFun y) (X t (UniformFun.toFun y t)) t := by
-  obtain ⟨σ, hσa, hdef, hσy⟩ := exists_tendstoUniformly_of_mapClusterPt hu hX hfin hC hy
+  obtain ⟨σ, hσa, -, hdef, hσy⟩ := exists_tendstoUniformly_of_mapClusterPt hu hX hfin hC hy
   -- A subsequence converges uniformly to a periodic solution, which is then `y`.
   obtain ⟨ψ, hψ, x, hxper, hx, hux⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral (fun _ ↦ hu) hX hXper hσa
@@ -843,22 +852,26 @@ theorem norm_fderiv_le_of_periodic (hper : ∀ s, a < s → Periodic (fun t ↦ 
   refine hC _ ⟨by simpa only [Prod.fst_add, add_zero] using hz.1, ?_, ?_⟩ <;>
     simp only [Prod.snd_add] <;> linarith [Int.floor_le z.2, Int.lt_floor_add_one z.2]
 
-/-- **Convergence of the loops to an isolated periodic solution.** Let `X` be a continuous,
-`1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with
-derivative bounded by `C` and with `1`-periodic loops `t ↦ u(s, t)` in a compact set `K`. Suppose
-that the squared norm of the defect `∂_t u - X(t, u)` has finite integral over `(a, ∞) × [0, 1]`,
-and that the `1`-periodic solutions of `x' = X(t, x)` in `K` are isolated: each has a uniform
-neighbourhood containing no other. Then the loops converge uniformly, as `s → ∞`, to a single
-`1`-periodic solution `x`. -/
-theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (hK : IsCompact K)
-    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X))
+/-- **Convergence of the loops when uniform cluster-point orbits are isolated.** Let `X` be a
+continuous, `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder
+`s > a`, with derivative bounded by `C` and with `1`-periodic loops `t ↦ u(s, t)` in a compact set
+`K`. Suppose that the squared norm of the defect `∂_t u - X(t, u)` has finite integral over
+`(a, ∞) × [0, 1]`, and that the `1`-periodic solutions of `x' = X(t, x)` in `K` that are uniform
+cluster points of the loops as `s → ∞` are isolated from each other: each has a uniform
+neighbourhood containing no other such cluster point. Then the loops converge uniformly, as
+`s → ∞`, to a single `1`-periodic solution `x`. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_mapClusterPt
+    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (hK : IsCompact K) (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X))
     (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
     (hfin : ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) ≠ ⊤)
     (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
     (hiso : ∀ x : ℝ → V, Periodic x 1 → (∀ t, HasDerivAt x (X t (x t)) t) → (∀ t, x t ∈ K) →
+      MapClusterPt (UniformFun.ofFun x) atTop (fun s ↦ UniformFun.ofFun fun t ↦ u (s, t)) →
       ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 → (∀ t, HasDerivAt y (X t (y t)) t) →
-        (∀ t, y t ∈ K) → (∀ t, dist (y t) (x t) < ε) → y = x) :
+        (∀ t, y t ∈ K) →
+        MapClusterPt (UniformFun.ofFun y) atTop (fun s ↦ UniformFun.ofFun fun t ↦ u (s, t)) →
+        (∀ t, dist (y t) (x t) < ε) → y = x) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
       TendstoUniformly (fun s t ↦ u (s, t)) x atTop := by
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC (a + 1, 0) ⟨lt_add_one a, trivial⟩)
@@ -889,11 +902,11 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
       simpa [Function.comp_def] using
         hL.comp (LipschitzWith.prodMk_right t).lipschitzOnWith fun s hs ↦ ⟨hs, trivial⟩
     exact hLs ((lt_add_one a).trans_le hs) ((lt_add_one a).trans_le hs')
-  -- Its ω-limit points are periodic solutions in `K`, and these are isolated.
-  set O : Set (ℝ →ᵤ V) := {f | Periodic (UniformFun.toFun f) 1 ∧
-    (∀ t, HasDerivAt (UniformFun.toFun f) (X t (UniformFun.toFun f t)) t) ∧
-    ∀ t, UniformFun.toFun f t ∈ K}
-  have hsub : {f | MapClusterPt f atTop ℓ} ⊆ O := by
+  -- Its ω-limit points are periodic solutions in `K`, and these are isolated from each other.
+  set O : Set (ℝ →ᵤ V) := {f | MapClusterPt f atTop ℓ}
+  have hO : ∀ f ∈ O, Periodic (UniformFun.toFun f) 1 ∧
+      (∀ t, HasDerivAt (UniformFun.toFun f) (X t (UniformFun.toFun f t)) t) ∧
+      ∀ t, UniformFun.toFun f t ∈ K := by
     intro f hf
     have hfS : f ∈ S := by
       have h := (setOf_mapClusterPt_atTop_eq_iInter ℓ (a + 1)).subset hf
@@ -904,16 +917,41 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
     exact ⟨hfper, hf', hfS.2.1⟩
   have hdisc : IsDiscrete O := by
     refine isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_
-    obtain ⟨ε, hε, hxε⟩ := hiso _ hx.1 hx.2.1 hx.2.2
+    obtain ⟨hxper, hx', hxK⟩ := hO x hx
+    obtain ⟨ε, hε, hxε⟩ := hiso _ hxper hx' hxK hx
     refine ⟨Metric.eball x (ENNReal.ofReal ε), Metric.isOpen_eball, ?_⟩
     refine Subset.antisymm (fun y ⟨hyx, hy⟩ ↦ ?_) ?_
-    · exact hxε _ hy.1 hy.2.1 hy.2.2 fun t ↦
+    · obtain ⟨hyper, hy', hyK⟩ := hO y hy
+      exact hxε _ hyper hy' hyK hy fun t ↦
         edist_lt_ofReal.1 ((UniformFun.edist_le.1 le_rfl t).trans_lt hyx)
     · rintro y rfl
       exact ⟨Metric.mem_eball_self (ENNReal.ofReal_pos.2 hε), hx⟩
   obtain ⟨x, hxO, hx⟩ := exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected
-    hScpt hcont hmaps hdisc.isTotallyDisconnected hsub
-  exact ⟨UniformFun.toFun x, hxO.1, hxO.2.1, UniformFun.tendsto_iff_tendstoUniformly.1 hx⟩
+    hScpt hcont hmaps hdisc.isTotallyDisconnected Subset.rfl
+  obtain ⟨hxper, hx', _⟩ := hO x hxO
+  exact ⟨UniformFun.toFun x, hxper, hx', UniformFun.tendsto_iff_tendstoUniformly.1 hx⟩
+
+/-- **Convergence of the loops to an isolated periodic solution.** Let `X` be a continuous,
+`1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with
+derivative bounded by `C` and with `1`-periodic loops `t ↦ u(s, t)` in a compact set `K`. Suppose
+that the squared norm of the defect `∂_t u - X(t, u)` has finite integral over `(a, ∞) × [0, 1]`,
+and that the `1`-periodic solutions of `x' = X(t, x)` in `K` are isolated: each has a uniform
+neighbourhood containing no other. Then the loops converge uniformly, as `s → ∞`, to a single
+`1`-periodic solution `x`. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (hK : IsCompact K)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X))
+    (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
+    (hfin : ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) ≠ ⊤)
+    (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
+    (hiso : ∀ x : ℝ → V, Periodic x 1 → (∀ t, HasDerivAt x (X t (x t)) t) → (∀ t, x t ∈ K) →
+      ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 → (∀ t, HasDerivAt y (X t (y t)) t) →
+        (∀ t, y t ∈ K) → (∀ t, dist (y t) (x t) < ε) → y = x) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
+      TendstoUniformly (fun s t ↦ u (s, t)) x atTop :=
+  exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_mapClusterPt hu hper hK huK hX hXper hfin
+    hC fun x hxper hx hxK _ ↦ (hiso x hxper hx hxK).imp fun _ ⟨hε, h⟩ ↦
+      ⟨hε, fun y hyper hy hyK _ ↦ h y hyper hy hyK⟩
 
 end Convergence
 
@@ -1187,6 +1225,21 @@ theorem tendstoUniformlyOn_fderiv_apply_of_sliceDefect [ProperSpace V] (hX : Con
     hx.continuousOn hux)).congr (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
   · simp only [sliceDefect_def, uncurry_apply_pair, sub_add_cancel]
   · simp only [Pi.zero_apply, uncurry_apply_pair, zero_add]
+
+/-- If the loops of `u` converge uniformly to a continuous loop `x` and the slice defect
+`∂t u - X_t(u)` tends uniformly to zero, then so does the slice defect `∂t u - Y_t(u)` for every
+continuous time-dependent vector field `Y` that agrees with `X` along `x`. -/
+theorem tendstoUniformlyOn_sliceDefect_of_apply_eq [ProperSpace V] {Y : ℝ → V → V}
+    (hX : Continuous (uncurry X)) (hY : Continuous (uncurry Y)) (hx : Continuous x)
+    (hXY : ∀ t, Y t (x t) = X t (x t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 l (Icc 0 1)) :
+    TendstoUniformlyOn (fun s t ↦ sliceDefect Y u (s, t)) 0 l (Icc 0 1) := by
+  refine ((tendstoUniformlyOn_fderiv_apply_of_sliceDefect hX hx hux hδ).fun_sub
+    (isCompact_Icc.tendstoUniformlyOn_comp_prodMk_of_continuous hY hx.continuousOn hux)).congr
+      (.of_forall fun s t _ ↦ ?_) |>.congr_right fun t _ ↦ ?_
+  · simp only [sliceDefect_def, uncurry_apply_pair]
+  · simp only [Pi.zero_apply, uncurry_apply_pair, hXY, sub_self]
 
 /-- A `C¹` map of the cylinder and its derivative in `t` are bounded on the strip `ℝ × [0, 1]`
 when its loops converge uniformly to continuous loops at both ends and its slice defects for

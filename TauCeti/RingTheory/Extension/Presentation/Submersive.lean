@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Extension.Presentation.Submersive
 public import TauCeti.RingTheory.Extension.Presentation.Basic
+public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 
 /-!
 # The Jacobian minor at points of a submersive presentation
@@ -27,7 +28,9 @@ local equations of B. Conrad, *Weil and Grothendieck approaches to adelic points
 * `Algebra.PreSubmersivePresentation.det_jacobiMatrix_points_coordinates`: the evaluated Jacobian
   minor at a point is the value of the Jacobian.
 * `Algebra.SubmersivePresentation.isUnit_det_jacobiMatrix_solution`: the evaluated Jacobian minor
-  of a submersive presentation is invertible at every solution.
+  of a submersive presentation is invertible at every solution, and
+  `Algebra.SubmersivePresentation.isUnit_det_jacobiMatrixAt_submatrix`: over the base ring, the
+  minor of `TauCeti.jacobiMatrixAt` at the generator values of a point is.
 -/
 
 public section
@@ -70,5 +73,27 @@ theorem isUnit_det_jacobiMatrix_solution
     (k := k) (E := E)) z.val).mpr z.property
   rw [← hx, P.det_jacobiMatrix_points_coordinates]
   exact P.jacobian_isUnit.map x
+
+section BaseRing
+
+variable {R S ι σ : Type*} [CommRing R] [CommRing S] [Algebra R S] [Fintype σ] [DecidableEq σ]
+  (P : SubmersivePresentation R S ι σ)
+
+/-- At every point `x : S →ₐ[R] R` of a submersive presentation over the base ring, the minor on
+the columns `P.map` of the Jacobian matrix of the relations at the generator values of `x` is
+invertible. -/
+theorem isUnit_det_jacobiMatrixAt_submatrix (x : S →ₐ[R] R) :
+    IsUnit ((TauCeti.jacobiMatrixAt P.relation fun i ↦ x (P.val i)).submatrix
+      _root_.id P.map).det := by
+  have h := P.isUnit_det_jacobiMatrix_solution (k := R) (E := R)
+    ⟨(x.comp (IsScalarTower.toAlgHom R R S), fun i ↦ x (P.val i)), fun j ↦ by
+      rw [P.aevalTower_comp_toAlgHom_val, P.aeval_val_relation, map_zero]⟩
+  convert h using 1
+  rw [← Matrix.det_transpose]
+  congr 1
+  ext i j
+  simp [PreSubmersivePresentation.jacobiMatrix_apply, P.aevalTower_comp_eq_eval]
+
+end BaseRing
 
 end Algebra.SubmersivePresentation

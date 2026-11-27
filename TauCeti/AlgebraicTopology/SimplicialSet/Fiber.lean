@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
+public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexOp
+public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Basic
 
 /-!
 # Fibers of maps of simplicial sets
 
 For a map of simplicial sets `q : X ⟶ Y` and a subcomplex `A` of `Y`, the restriction
 `A.fromPreimage q : A.preimage q ⟶ A` of `q` over `A` is a base change of `q`, so it inherits every
-right lifting property of `q`. In particular it is an inner fibration, or a Kan fibration, when `q`
+right lifting property of `q`. In particular it is an inner, left, right or Kan fibration when `q`
 is.
 
 The fiber `SSet.fiber q y` of `q` over a vertex `y` of `Y` is the preimage of the subcomplex
@@ -24,6 +26,9 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 
 * `SSet.fiber q y`: the fiber of `q : X ⟶ Y` over the vertex `y`, as a subcomplex of `X`.
 * `SSet.fiber.map g hg y`: the map of fibers over `y` induced by a map `g` over `Y`.
+* `SSet.fiber.lift`: a morphism to `X` whose composite with `q` is constant at `y`, as a morphism
+  to the fiber.
+* `SSet.fiber.basePoint`: a vertex of `X` over `y`, as a vertex of the fiber.
 
 ## Main results
 
@@ -35,6 +40,7 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 * `SSet.fiber.isTerminalOfIsIso`: the fibers of an isomorphism are terminal.
 * `SSet.fiber.quasicategory`, `SSet.fiber.kanComplex`: the fibers of inner fibrations are
   quasicategories, and those of Kan fibrations are Kan complexes.
+* `SSet.fiber_opFunctor_map`: the fibers of the opposite of a map are the opposites of its fibers.
 
 ## References
 
@@ -74,6 +80,20 @@ instance hasLiftingProperty_fromPreimage {P Q : SSet.{u}} (i : P ⟶ Q) (q : X �
 instance innerFibration_fromPreimage (q : X ⟶ Y) [InnerFibration q] (A : Y.Subcomplex) :
     InnerFibration (A.fromPreimage q) :=
   ⟨fun _ _ i hi ↦ have := InnerFibration.mem (q := q) i hi; inferInstance⟩
+
+/-- The restriction of a left fibration over a subcomplex is a left fibration. -/
+instance leftFibration_fromPreimage (q : X ⟶ Y) [LeftFibration q] (A : Y.Subcomplex) :
+    LeftFibration (A.fromPreimage q) :=
+  (leftFibration_iff_hasLiftingProperty _).2 fun _ i hi ↦
+    have := (leftFibration_iff_hasLiftingProperty q).1 inferInstance i hi
+    inferInstance
+
+/-- The restriction of a right fibration over a subcomplex is a right fibration. -/
+instance rightFibration_fromPreimage (q : X ⟶ Y) [RightFibration q] (A : Y.Subcomplex) :
+    RightFibration (A.fromPreimage q) :=
+  (rightFibration_iff_hasLiftingProperty _).2 fun _ i h0 ↦
+    have := (rightFibration_iff_hasLiftingProperty q).1 inferInstance i h0
+    inferInstance
 
 /-- The restriction of a Kan fibration over a subcomplex is a Kan fibration. -/
 instance fibration_fromPreimage (q : X ⟶ Y) [Fibration q] (A : Y.Subcomplex) :
@@ -170,6 +190,30 @@ noncomputable def fiber.isTerminalOfIsIso (q : X ⟶ Y) [IsIso q] (y : Y _⦋0�
       rw [← cancel_mono (fiber q y).ι, ← cancel_mono q]
       simp
 
+/-- A morphism `g` with `g ≫ q` constant at `y`, as a morphism to the fiber of `q` over `y`. -/
+def fiber.lift {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) (hg : g ≫ q = const y) :
+    Z ⟶ (fiber q y : SSet) :=
+  Subcomplex.lift g ((range_le_fiber_iff g q y).2 hg)
+
+@[reassoc (attr := simp)]
+lemma fiber.lift_ι {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) (hg : g ≫ q = const y) :
+    fiber.lift g q y hg ≫ (fiber q y).ι = g :=
+  Subcomplex.lift_ι _ _
+
+/-- A vertex `x` of `X` over `y`, as a vertex of the fiber of `q` over `y`. -/
+def fiber.basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber q y : SSet) _⦋0⦌ :=
+  ⟨x, by simp [hx, SimplexCategory.const_eq_id]⟩
+
+@[simp]
+lemma fiber.coe_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber.basePoint q hx).val = x :=
+  (rfl)
+
+lemma fiber.ι_app_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber q y).ι.app _ (fiber.basePoint q hx) = x :=
+  (rfl)
+
 /-- A terminal simplicial set is a quasicategory. -/
 lemma quasicategory_of_isTerminal (h : IsTerminal X) : Quasicategory X :=
   ⟨fun _ _ _ _ _ ↦ ⟨h.from _, h.hom_ext _ _⟩⟩
@@ -192,5 +236,15 @@ instance fiber.kanComplex (q : X ⟶ Y) [Fibration q] (y : Y _⦋0⦌) : KanComp
   -- `fiber q y` is by definition the source of the restriction of `q` over `ofSimplex y`.
   isFibrant_of_fibration (X := ((Subcomplex.ofSimplex y).preimage q : SSet))
     ((Subcomplex.ofSimplex y).fromPreimage q)
+
+/-- The fibre of the opposite `qᵒᵖ` of a map over a vertex `y` is the opposite of the fibre of `q`
+over `y`. -/
+lemma fiber_opFunctor_map (q : X ⟶ Y) (y : Y _⦋0⦌) :
+    fiber (opFunctor.map q) (opObjEquiv.symm y) = (fiber q y).op := by
+  ext n x
+  rw [mem_fiber_iff, Subcomplex.mem_op_obj_iff, mem_fiber_iff, opFunctor_map, op_map,
+    Equiv.apply_symm_apply, opObjEquiv.symm.injective.eq_iff]
+  -- Both sides compare with a degeneracy of `y`, along the unique map `n ⟶ ⦋0⦌`.
+  congr!
 
 end SSet

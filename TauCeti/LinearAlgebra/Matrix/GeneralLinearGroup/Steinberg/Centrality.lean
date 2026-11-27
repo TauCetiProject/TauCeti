@@ -26,6 +26,8 @@ centralizes the `n`-th row root subgroup `⟨x_{nj}(b) | j < n⟩`, and therefor
 
 * `TauCeti.SteinbergGroup.ker_toStableGL_le_center`: `ker (toStableGL R)` lies in the center of
   `St(R)`.
+* `TauCeti.SteinbergGroup.ker_toStableGL_eq_center`: `ker (toStableGL R)` is the center of
+  `St(R)`.
 
 ## References
 
@@ -147,6 +149,20 @@ theorem ker_toStableGL_le_center :
   refine Subgroup.mem_center_iff.mpr fun w ↦ ?_
   have hw : w ∈ Subgroup.centralizer {ofFin R m u} := htop ▸ Subgroup.mem_top w
   exact (Subgroup.mem_centralizer_iff.mp hw (ofFin R m u) rfl).symm
+
+variable (R) in
+/-- **`ker (St(R) →* GL_∞(R))` is the center of the Steinberg group `St(R)`.** The kernel is
+central by `TauCeti.SteinbergGroup.ker_toStableGL_le_center`; conversely a central element of
+`St(R)` maps to an element of `GL_∞(R)` commuting with the image `E_∞(R)`, whose centralizer is
+trivial. -/
+theorem ker_toStableGL_eq_center :
+    (toStableGL R).ker = Subgroup.center (SteinbergGroup R) := by
+  refine le_antisymm ker_toStableGL_le_center fun z hz ↦ ?_
+  rw [MonoidHom.mem_ker, ← Subgroup.mem_bot,
+    ← StableGeneralLinearGroup.centralizer_elementarySubgroup, ← range_toStableGL,
+    Subgroup.mem_centralizer_iff]
+  rintro _ ⟨w, rfl⟩
+  rw [← map_mul, ← map_mul, Subgroup.mem_center_iff.1 hz w]
 
 end Center
 
