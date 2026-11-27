@@ -382,13 +382,21 @@ theorem character_trivial :
   ext g
   simp
 
-/-- The character of the one-dimensional Artin representation of a linear character `χ` is `χ`.
-This is not a `simp` lemma: `simp` already unfolds the character to a trace with
-`ContRepresentation.character_apply`. -/
-theorem character_ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ)
+/-- The character of the one-dimensional Artin representation of a linear character `χ` is `χ`,
+viewed as a continuous complex-valued function through the coercion `ℂˣ → ℂ`. -/
+@[simp]
+theorem character_ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ) :
+    (ofLinearCharacter χ).character =
+      (⟨Units.val, Units.continuous_val⟩ : C(ℂˣ, ℂ)).comp (χ : C(_, ℂˣ)) :=
+  ContinuousMap.ext fun g ↦ by
+    simp only [ContRepresentation.coe_character, toRepresentation_ofLinearCharacter,
+      Representation.char_ofLinearCharacter, MonoidHom.coe_ofClass, ContinuousMap.comp_apply,
+      ContinuousMap.coe_mk]
+
+/-- The value of the character of `ofLinearCharacter χ` at `g` is `χ g`. -/
+theorem character_ofLinearCharacter_apply (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ)
     (g : Field.absoluteGaloisGroup F) : (ofLinearCharacter χ).character g = χ g := by
-  simp only [ContRepresentation.coe_character, toRepresentation_ofLinearCharacter,
-    Representation.char_ofLinearCharacter, MonoidHom.coe_ofClass]
+  simp
 
 /-- Isomorphic Artin representations have the same character. The underlying continuous
 equivalence is `ContRepresentation.equivOfEquiv`. -/
