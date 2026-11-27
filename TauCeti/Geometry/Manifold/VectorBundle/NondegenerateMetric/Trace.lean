@@ -36,6 +36,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
+omit [IsManifold I ∞ M] in
+/-- Reading a fixed endomorphism on the model or on a tangent fibre gives the same
+trace: both sides are the algebraic trace of the same underlying linear map. -/
+theorem _root_.ContinuousLinearMap.traceCLM_model_eq_tangentSpace
+    (A : E →L[ℝ] E) (x : M) :
+    traceCLM ℝ E A = traceCLM ℝ (TangentSpace I x) A :=
+  (rfl)
+
 /-- Differentiating the contraction of a bilinear form with the inverse metric gives the
 trace of its derivative minus the contribution from the moving inverse metric. -/
 theorem ContMDiffNondegenerateMetric.hasDerivAt_trace_inverse_comp

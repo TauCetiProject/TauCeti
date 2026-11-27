@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 import TauCeti.Topology.Algebra.Module.BilinearForm
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Family
+import TauCeti.Geometry.RicciFlow.ConnectionVariation
 
 /-!
 # Scalar curvature evolution under Ricci flow
@@ -90,20 +91,17 @@ private theorem laplaceBeltrami_metricTrace_neg_two_ricciTensor (x : M) :
 
 /-- The first metric variation is `-2 Ric` when the metric evaluations satisfy Ricci flow at the
 time under consideration. -/
-private theorem variation_eq_neg_two_ricciTensor
+private theorem variation_eq_neg_two_ricciTensor_leviCivitaConnection
     (hcov : (g.metric t).IsLeviCivitaConnection (cov t))
     (hg : ∀ y (u v : TangentSpace I y), g (t, y) u v = inner ℝ u v)
     (hflow : ∀ (y : M) (u v : TangentSpace I y),
       HasDerivAt (fun s ↦ g (s, y) u v) (-2 * (cov t).ricciTensor y u v) t) :
     g.variation t 1 = (-2 : ℝ) • fun y ↦
       ((leviCivitaConnection I M).ricciTensor y).toContinuousBilinearMap := by
-  funext y
-  ext u v
-  have hn := (g.hasDerivAt_apply_apply_comp (c := id) (t := t) mdifferentiableAt_id y u v).unique
-    (hflow y u v)
-  rw [hcov.ricciTensor_eq_ricciTensor_leviCivitaConnection
-    (g.metric_apply_eq_inner_of_apply_eq_inner hg) y] at hn
-  simpa using hn
+  have hRic : (cov t).ricciTensor = (leviCivitaConnection I M).ricciTensor :=
+    funext (hcov.ricciTensor_eq_ricciTensor_leviCivitaConnection
+      (g.metric_apply_eq_inner_of_apply_eq_inner hg))
+  rw [g.variation_eq_neg_two_ricciTensor hflow, hRic]
 
 /-- **Scalar curvature evolution under Ricci flow.** For a smooth family of native metrics
 with metric velocity `-2 Ric` at `t`, the existing scalar curvature has derivative
@@ -123,7 +121,7 @@ theorem hasDerivAt_scalarCurvature_of_ricciFlow
           ((g.metric t x).inverse ∘L ((cov t).ricciTensor x).toContinuousBilinearMap))) t := by
   have hd := g.hasDerivAt_scalarCurvature (c := id) (t := t) contMDiffAt_id (.of_forall hr) hg x
   simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq,
-    g.variation_eq_neg_two_ricciTensor (hcov t) hg hflow] at hd
+    g.variation_eq_neg_two_ricciTensor_leviCivitaConnection (hcov t) hg hflow] at hd
   rw [divergence_rieszDual_divergenceBilinearTensor_neg_two_ricciTensor,
     laplaceBeltrami_metricTrace_neg_two_ricciTensor] at hd
   have hscal : (r t).scalarCurvature = (leviCivitaConnection I M).scalarCurvature :=
