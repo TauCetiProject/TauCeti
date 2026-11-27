@@ -15,6 +15,7 @@ public import TauCeti.Topology.Algebra.PointTopology.Presentation
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Calculus.ImplicitFunction.Data
 import TauCeti.LinearAlgebra.Matrix.MaximalMinor
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Local charts on the points of smooth algebras
@@ -245,8 +246,8 @@ theorem IsStandardSmooth.exists_openPartialHomeomorph_points [IsStandardSmooth K
   let c := Fintype.equivFin ↥(Set.range P.map)ᶜ
   let q := ContinuousLinearEquiv.piCongrLeft K (fun _ : Fin _ ↦ K) c
   refine ⟨_, e.transHomeomorph q.toHomeomorph, fun i ↦ P.val (c.symm i), hx, fun y i ↦ ?_, ?_⟩
-  · obtain ⟨i, rfl⟩ := c.surjective i
-    simp [OpenPartialHomeomorph.transHomeomorph_apply, q, ContinuousLinearEquiv.piCongrLeft,
+  · simp only [OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
+      ContinuousLinearEquiv.coe_toHomeomorph, q, ContinuousLinearEquiv.piCongrLeft_const_apply,
       he, SubmersivePresentation.pointCoords_apply]
   · intro b z hz
     have hz' : q.symm z ∈ e.target := by
