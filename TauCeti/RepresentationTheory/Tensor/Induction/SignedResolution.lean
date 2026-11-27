@@ -17,6 +17,10 @@ differential squares to zero over any commutative ring, and a diagonal tensor of
 cocycle is again a cocycle. In characteristic two it is the underlying linear map of
 the usual tensor-induced differential.
 
+`TopRep.gradedResolutionInternalGrading` packages the existing homogeneous pieces for
+`PiTensorProduct.signedDifferential`, which supplies the pure-tensor formula for
+`Subgroup.smoothTensorInducedGradedResolutionSignedDifferential`.
+
 This is the underlying differential for the tensor resolution in Evens' construction
 (*A generalization of the transfer map in the cohomology of groups*, Trans. Amer. Math. Soc.
 **108** (1963), §§2–5).
@@ -26,11 +30,31 @@ public section
 
 open scoped TensorProduct
 
-namespace Subgroup
-
 open TauCeti
 
 universe u v w
+
+namespace TopRep
+
+variable {R : Type u} [Ring R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (X : TopRep.{max v w} R G)
+
+/-- The internal grading of the total coinduced resolution by its integer homogeneous pieces. -/
+noncomputable def gradedResolutionInternalGrading :
+    InternalGrading R X.gradedResolutionModule ℤ where
+  piece := X.gradedResolutionPiece
+  isInternal := X.isInternal_gradedResolutionPiece
+
+/-- The bundled grading has the same degree-`p` piece as the total resolution. -/
+@[simp]
+theorem gradedResolutionInternalGrading_piece (p : ℤ) :
+    X.gradedResolutionInternalGrading.piece p = X.gradedResolutionPiece p :=
+  (rfl)
+
+end TopRep
+
+namespace Subgroup
 
 variable {R : Type u} [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -43,20 +67,18 @@ resolution, using the chosen ordering of the cosets. -/
 noncomputable def smoothTensorInducedGradedResolutionSignedDifferential :
     Module.End R ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V :=
   PiTensorProduct.signedDifferential
-    (fun _ : G ⧸ U ↦
-      (⟨A.obj.gradedResolutionPiece, A.obj.isInternal_gradedResolutionPiece⟩ :
-        InternalGrading R A.obj.gradedResolutionModule ℤ))
+    (fun _ : G ⧸ U ↦ A.obj.gradedResolutionInternalGrading)
     (fun _ ↦ A.obj.gradedResolutionDifferential)
 
 /-- On a pure tensor, the resolution differential sums over cosets, applying the Koszul twist
 in the slots preceding the differentiated slot. -/
+@[simp]
 theorem smoothTensorInducedGradedResolutionSignedDifferential_tprod
     (x : G ⧸ U → A.obj.gradedResolutionModule) :
     smoothTensorInducedGradedResolutionSignedDifferential U hU s A
       (PiTensorProduct.tprod R x) = ∑ i, PiTensorProduct.tprod R
         (Function.update (fun j ↦ if j < i then
-          (⟨A.obj.gradedResolutionPiece, A.obj.isInternal_gradedResolutionPiece⟩ :
-            InternalGrading R A.obj.gradedResolutionModule ℤ).koszulTwist 1 (x j) else x j) i
+          A.obj.gradedResolutionInternalGrading.koszulTwist 1 (x j) else x j) i
           (A.obj.gradedResolutionDifferential (x i))) :=
   PiTensorProduct.signedDifferential_tprod _ _ x
 
