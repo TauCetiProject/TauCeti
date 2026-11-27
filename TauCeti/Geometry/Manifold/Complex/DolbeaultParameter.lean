@@ -127,18 +127,6 @@ private theorem exists_chart_dbar_solution {EP HP P E F : Type*}
     simpa only [v, fi, e.left_inv hxE] using hw_dbar (e x.1, x.2) (hmem hxU hxS) z hz
   · exact hw_q (e x.1, x.2) (hmem hxU hxS) z hz
 
-/-- The conjugate Wirtinger derivative of a finite linear combination `∑ i ∈ s, c i • g i`
-with constant complex coefficients is `∑ i ∈ s, c i • \bar∂(g i)`. -/
-private theorem conjWirtingerDeriv_sum_smul {ι V W : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
-    (s : Finset ι) (c : ι → ℂ) (g : ι → V → W) {x : V}
-    (hg : ∀ i ∈ s, DifferentiableAt ℝ (g i) x) :
-    conjWirtingerDeriv (fun y ↦ ∑ i ∈ s, c i • g i y) x =
-      ∑ i ∈ s, c i • conjWirtingerDeriv (g i) x :=
-  conjWirtingerDeriv_eq_sum_smul <| by
-    rw [fderiv_fun_sum (A := fun i y ↦ c i • g i y) fun i hi ↦ (hg i hi).const_smul (c i)]
-    exact Finset.sum_congr rfl fun i hi ↦ fderiv_const_smul (hg i hi) (c i)
-
 /-- **Global mixed-parameter `bar∂` solver on a smooth manifold.** Let `P` be a smooth
 boundaryless Hausdorff σ-compact manifold modelled on a finite-dimensional real normed space `EP`,
 let `E` be a proper complex normed space, let `U ⊆ P × E` and `Ω ⊆ ℂ` be open sets, and let `F` be
@@ -190,7 +178,7 @@ theorem exists_contMDiffOn_conjWirtingerDeriv_apply_one_eq_with_holomorphic_para
       have hmd : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, F) ∞ (fun w ↦ v i (x, w)) z :=
         (hmdAt hxU (hsrc hi) hz).comp z (contMDiffAt_const.prodMk contMDiffAt_id)
       exact (contMDiffAt_iff_contDiffAt.1 hmd).differentiableAt (by simp)
-    rw [hfun, conjWirtingerDeriv_sum_smul _ _ _ fun _ hi ↦ hdiff hi, sum_apply]
+    rw [hfun, conjWirtingerDeriv_sum_smul fun _ hi ↦ hdiff hi, sum_apply]
     simp_rw [smul_apply, Complex.coe_smul]
     exact ρ.sum_finsupport_smul_eq_of_forall_eq (mem_univ x.1)
       fun i hi ↦ hv_dbar i x hxU (hsrc hi) z hz

@@ -79,8 +79,9 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   the Wirtinger derivatives of the imaginary part are `∂ Im = -i/2` and `\bar∂ Im = i/2`.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
-* `TauCeti.conjWirtingerDeriv_fun_sub`, `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a
-  pointwise difference and of a finite sum of real-differentiable functions.
+* `TauCeti.conjWirtingerDeriv_fun_sub`, `TauCeti.conjWirtingerDeriv_fun_sum`,
+  `TauCeti.conjWirtingerDeriv_sum_smul`: `\bar∂` of a pointwise difference, a finite sum, and a
+  finite complex-linear combination of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_comp`: the chain rule `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g` after a
   holomorphic map `φ`, and `TauCeti.conjWirtingerDeriv_comp_eq_comp_fderiv`, the chain rule
   `\bar∂(φ ∘ g) = \bar∂φ(g x) ∘ Dg(x)` before a holomorphic map `g`; in one variable
@@ -523,6 +524,16 @@ theorem conjWirtingerDeriv_fun_sum {ι : Type*} {s : Finset ι} {g : ι → V �
     conjWirtingerDeriv (fun y ↦ ∑ i ∈ s, g i y) x = ∑ i ∈ s, conjWirtingerDeriv (g i) x := by
   simpa using conjWirtingerDeriv_eq_sum_smul (c := fun _ ↦ (1 : ℂ)) (g := g)
     ((fderiv_fun_sum h).trans (by simp))
+
+/-- The conjugate Wirtinger derivative of a finite linear combination `∑ i ∈ s, c i • g i`
+with constant complex coefficients is `∑ i ∈ s, c i • \bar∂(g i)`. -/
+theorem conjWirtingerDeriv_sum_smul {ι : Type*} {s : Finset ι} {c : ι → ℂ} {g : ι → V → W}
+    {x : V} (h : ∀ i ∈ s, DifferentiableAt ℝ (g i) x) :
+    conjWirtingerDeriv (fun y ↦ ∑ i ∈ s, c i • g i y) x =
+      ∑ i ∈ s, c i • conjWirtingerDeriv (g i) x :=
+  conjWirtingerDeriv_eq_sum_smul <| by
+    rw [fderiv_fun_sum (A := fun i y ↦ c i • g i y) fun i hi ↦ (h i hi).const_smul (c i)]
+    exact Finset.sum_congr rfl fun i hi ↦ fderiv_const_smul (h i hi) (c i)
 
 /-- **The chain rule for the conjugate Wirtinger derivative** after a holomorphic map: if `φ` is
 complex differentiable at `g x`, then `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g`. -/
