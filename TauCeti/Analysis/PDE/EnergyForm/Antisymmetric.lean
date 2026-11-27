@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
@@ -14,6 +15,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.PDE.EnergyForm.Drift
+import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 
 /-!
@@ -37,7 +39,11 @@ principal coefficient `a` is the same as adding `g` to the drift
 `H¹(Ω) × H¹₀(Ω)` (`TauCeti.PDE.energyFormH1_add_const_eq_of_transpose_eq_neg`); without
 lower-order terms this is `TauCeti.PDE.energyFormH1_const_coefficientSymmetricPart`. The test
 functions must vanish on the boundary: on `H¹(Ω) × H¹(Ω)` the antisymmetric part contributes
-boundary terms.
+boundary terms. These are absent when `K` vanishes near `∂Ω`: for `K` with compact support inside
+`Ω` the identity holds for all `u, v ∈ H¹(Ω)`
+(`TauCeti.PDE.energyFormH1_eq_of_transpose_eq_neg_of_hasCompactSupport`), and adding `K` to the
+principal coefficient is adding `g` to the drift on all of `H¹(Ω) × H¹(Ω)`
+(`TauCeti.PDE.energyFormH1_add_eq_of_transpose_eq_neg_of_hasCompactSupport`).
 
 In the plane, with `J = !![0, -1; 1, 0]`, the constant coefficient `1 + k J` has the energy form
 of the Laplacian (`TauCeti.PDE.energyFormH1_one_add_const_smul_skew`), so `div ((1 + k J) ∇u) = 0`
@@ -60,7 +66,9 @@ symmetric and `K` is antisymmetric
 reason (`TauCeti.sum_fderiv_sum_fderiv_apply_eq_zero_of_transpose_eq_neg`). Pairing the weak
 gradient of `u` with `W` (`TauCeti.HasWeakFDerivOn.integral_divergenceCLM_smul_eq_neg_integral`)
 gives `∫ ⟪∇u, W⟫ = 0`, which is the identity. Test functions are dense in `H¹₀(Ω)`, and both sides
-are continuous in `v` when `K` and `g` are bounded.
+are continuous in `v` when `K` and `g` are bounded. For `K` with compact support inside `Ω`, a
+cutoff `χ` equal to `1` near the support of `K` gives `χ v ∈ H¹₀(Ω)` with the same jet as `v` where
+`K` and `g` do not vanish, so the identity for `χ v` is the identity for `v`.
 
 ## Main declarations
 
@@ -73,6 +81,9 @@ All in the `TauCeti.PDE` namespace.
   principal coefficient adds its row divergence to the drift.
 * `energyFormH1_add_const_eq_of_transpose_eq_neg`: adding a constant antisymmetric matrix to the
   principal coefficient does not change the energy form on `H¹(Ω) × H¹₀(Ω)`.
+* `energyFormH1_eq_of_transpose_eq_neg_of_hasCompactSupport` and
+  `energyFormH1_add_eq_of_transpose_eq_neg_of_hasCompactSupport`: the same two statements on all of
+  `H¹(Ω) × H¹(Ω)`, for `K` with compact support inside `Ω`.
 * `energyFormH1_one_add_const_smul_skew` and `energyFormH1_one_add_coord_smul_skew`: the planar
   witnesses `1 + k J` and `1 + x₀ J`.
 * `exists_energyFormH1_one_add_coord_smul_skew_ne`: the energy form of `1 + x₀ J` is not
@@ -259,6 +270,25 @@ theorem energyFormH1_eq_of_transpose_eq_neg
       energyFormH1_ofTestFunctionₗ_eq_of_transpose_eq_neg hK hKt hg u ψ) v.property
   simpa only [Set.mem_ofPred_eq, energyFormH1L_apply] using hmem
 
+/-- Adding `K` to the principal coefficient of a bounded coefficient triple `(a, b, c)` has the same
+effect on `a(u, v)` as adding `g` to the drift, as soon as `∫_Ω ⟨K ∇u, ∇v⟩ = ∫_Ω ⟪g, ∇u⟫ v` for this
+pair `u, v`. -/
+private theorem energyFormH1_add_eq_add_drift_of_eq {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Ω))
+    (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω)
+    (hg : ∀ x ∈ Ω, ∀ i, g x i = ∑ j, fderiv ℝ (fun y ↦ K y i j) x (EuclideanSpace.single j 1))
+    {Λ β : ℝ} (hKb : ∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) (hgb : ∀ x ∈ Ω, ‖g x‖ ≤ β)
+    {u v : W1p mu Ω 2} (h : energyFormH1 K 0 0 u v = energyFormH1 0 g 0 u v) :
+    energyFormH1 (a + K) b c u v = energyFormH1 a (b + g) c u v := by
+  have hcK := memLp_energyIntegrand_of_contDiffOn_apply (mu := mu) hK hKb
+  have hcg := memLp_energyIntegrand_drift_of_eq_sum_fderiv (mu := mu) hK hg hgb
+  calc energyFormH1 (a + K) b c u v = energyFormH1 (a + K) (b + 0) (c + 0) u v := by simp
+    _ = energyFormH1 a b c u v + energyFormH1 K 0 0 u v := energyFormH1_add hcoeff hcK u v
+    _ = energyFormH1 a b c u v + energyFormH1 0 g 0 u v := by rw [h]
+    _ = energyFormH1 (a + 0) (b + g) (c + 0) u v := (energyFormH1_add hcoeff hcg u v).symm
+    _ = energyFormH1 a (b + g) c u v := by simp
+
 /-- **Moving the antisymmetric part of the principal coefficient into the drift.** Adding to the
 principal coefficient of a bounded coefficient triple `(a, b, c)` a bounded matrix field `K` with
 smooth entries and antisymmetric values, whose row divergence `g` is bounded, has the same effect
@@ -270,15 +300,9 @@ theorem energyFormH1_add_eq_of_transpose_eq_neg {a : EuclideanSpace ℝ ι → M
     (hg : ∀ x ∈ Ω, ∀ i, g x i = ∑ j, fderiv ℝ (fun y ↦ K y i j) x (EuclideanSpace.single j 1))
     {Λ β : ℝ} (hKb : ∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) (hgb : ∀ x ∈ Ω, ‖g x‖ ≤ β)
     (u : W1p mu Ω 2) (v : W1p0 mu Ω 2) :
-    energyFormH1 (a + K) b c u v = energyFormH1 a (b + g) c u v := by
-  have hcK := memLp_energyIntegrand_of_contDiffOn_apply (mu := mu) hK hKb
-  have hcg := memLp_energyIntegrand_drift_of_eq_sum_fderiv (mu := mu) hK hg hgb
-  calc energyFormH1 (a + K) b c u v = energyFormH1 (a + K) (b + 0) (c + 0) u v := by simp
-    _ = energyFormH1 a b c u v + energyFormH1 K 0 0 u v := energyFormH1_add hcoeff hcK u v
-    _ = energyFormH1 a b c u v + energyFormH1 0 g 0 u v := by
-      rw [energyFormH1_eq_of_transpose_eq_neg hK hKt hg hKb hgb u v]
-    _ = energyFormH1 (a + 0) (b + g) (c + 0) u v := (energyFormH1_add hcoeff hcg u v).symm
-    _ = energyFormH1 a (b + g) c u v := by simp
+    energyFormH1 (a + K) b c u v = energyFormH1 a (b + g) c u v :=
+  energyFormH1_add_eq_add_drift_of_eq hcoeff hK hg hKb hgb
+    (energyFormH1_eq_of_transpose_eq_neg hK hKt hg hKb hgb u v)
 
 omit [DecidableEq ι] in
 /-- Adding a constant antisymmetric matrix `A` to the principal coefficient of a bounded coefficient
@@ -293,6 +317,96 @@ theorem energyFormH1_add_const_eq_of_transpose_eq_neg {a : EuclideanSpace ℝ ι
     (fun _ _ ↦ contDiffOn_const) (fun _ _ ↦ hA) (fun _ _ _ ↦ by simp) (fun _ _ ↦ le_rfl)
     (fun _ _ ↦ (norm_zero (E := EuclideanSpace ℝ ι)).le) u v
   rwa [add_zero] at h
+
+/-! ### Compactly supported antisymmetric parts -/
+
+/-- The row divergence of a matrix field vanishes at the points of `Ω` outside the support of the
+field. -/
+private theorem eq_zero_of_notMem_tsupport_of_eq_sum_fderiv
+    (hg : ∀ x ∈ Ω, ∀ i, g x i = ∑ j, fderiv ℝ (fun y ↦ K y i j) x (EuclideanSpace.single j 1))
+    {x : EuclideanSpace ℝ ι} (hxΩ : x ∈ Ω) (hx : x ∉ tsupport K) : g x = 0 := by
+  have hK0 : K =ᶠ[𝓝 x] 0 := notMem_tsupport_iff_eventuallyEq.1 hx
+  ext i
+  rw [hg x hxΩ i, PiLp.zero_apply]
+  refine Finset.sum_eq_zero fun j _ ↦ ?_
+  have hKij : (fun y ↦ K y i j) =ᶠ[𝓝 x] fun _ ↦ 0 := hK0.mono fun y hy ↦ by simp [hy]
+  rw [hKij.fderiv_eq]
+  simp
+
+/-- A matrix field with entries smooth on `Ω` and compact topological support inside `Ω` is bounded
+on `Ω`, and so is its row divergence. -/
+private theorem exists_bounds_of_hasCompactSupport
+    (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω)
+    (hg : ∀ x ∈ Ω, ∀ i, g x i = ∑ j, fderiv ℝ (fun y ↦ K y i j) x (EuclideanSpace.single j 1))
+    (hKc : HasCompactSupport K) (hKΩ : tsupport K ⊆ Ω) :
+    ∃ Λ β : ℝ, (∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) ∧ ∀ x ∈ Ω, ‖g x‖ ≤ β := by
+  obtain ⟨Λ, hΛ⟩ := hKc.isCompact.exists_bound_of_continuousOn
+    (f := fun x ↦ ∑ i, ∑ j, |K x i j|) (continuousOn_finsetSum _ fun i _ ↦
+      continuousOn_finsetSum _ fun j _ ↦ ((hK i j).continuousOn.mono hKΩ).abs)
+  obtain ⟨β, hβ⟩ := hKc.isCompact.exists_bound_of_continuousOn
+    ((contDiffOn_of_eq_sum_fderiv hK hg).continuousOn.mono hKΩ)
+  refine ⟨max Λ 0, max β 0, fun x _ ↦ ?_, fun x hx ↦ ?_⟩
+  · by_cases hxK : x ∈ tsupport K
+    · refine (norm_matrixBilinearForm_le_sum_abs _).trans ((le_abs_self _).trans ?_)
+      exact (Real.norm_eq_abs _ ▸ hΛ x hxK).trans (le_max_left _ _)
+    · rw [image_eq_zero_of_notMem_tsupport hxK]
+      exact (norm_matrixBilinearForm_le_sum_abs _).trans (by simp)
+  · by_cases hxK : x ∈ tsupport K
+    · exact (hβ x hxK).trans (le_max_left _ _)
+    · rw [eq_zero_of_notMem_tsupport_of_eq_sum_fderiv hg hx hxK, norm_zero]
+      exact le_max_right _ _
+
+/-- **A compactly supported antisymmetric part of the principal coefficient is a drift**, on all of
+`H¹(Ω)`. Let `K` be a matrix field with entries smooth on `Ω`, antisymmetric values and compact
+topological support inside `Ω`, and let `g` be its row divergence, `gᵢ = ∑ⱼ ∂ⱼ Kᵢⱼ` on `Ω`. Then
+`∫_Ω ⟨K ∇u, ∇v⟩ = ∫_Ω ⟪g, ∇u⟫ v` for all `u, v ∈ H¹(Ω)`, with no boundary term, since `K` vanishes
+near `∂Ω`. -/
+theorem energyFormH1_eq_of_transpose_eq_neg_of_hasCompactSupport
+    (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω) (hKt : ∀ x ∈ Ω, (K x)ᵀ = -K x)
+    (hg : ∀ x ∈ Ω, ∀ i, g x i = ∑ j, fderiv ℝ (fun y ↦ K y i j) x (EuclideanSpace.single j 1))
+    (hKc : HasCompactSupport K) (hKΩ : tsupport K ⊆ Ω) (u v : W1p mu Ω 2) :
+    energyFormH1 K 0 0 u v = energyFormH1 0 g 0 u v := by
+  obtain ⟨Λ, β, hKb, hgb⟩ := exists_bounds_of_hasCompactSupport hK hg hKc hKΩ
+  -- A cutoff equal to `1` near the support of `K` moves `v` into `H¹₀(Ω)` without changing its jet
+  -- where the coefficients live.
+  obtain ⟨χ, M, hχ, -, hχ1, hχc, hχΩ, hM, hχM, hgradM⟩ :=
+    hKc.isCompact.exists_contDiff_cutoff_with_bounds Ω.isOpen hKΩ
+  set w := W1p.contDiffSMul χ hχ hM (fun x _ ↦ hχM x) (fun x _ ↦ hgradM x) v
+  have hw : w ∈ w1p0Submodule mu Ω 2 :=
+    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hχ hM _ _ hχc hχΩ v
+  have hjet : ∀ᵐ x ∂mu.restrict Ω, x ∈ tsupport K → jetField v x = jetField w x := by
+    filter_upwards [W1p.value_contDiffSMul_ae hχ hM (fun x _ ↦ hχM x) (fun x _ ↦ hgradM x) v,
+      W1p.gradient_contDiffSMul_ae hχ hM (fun x _ ↦ hχM x) (fun x _ ↦ hgradM x) v]
+      with x hv hgr hx
+    have h1 : χ =ᶠ[𝓝 x] fun _ ↦ 1 :=
+      Filter.eventually_of_mem (isOpen_interior.mem_nhds (hχ1 hx)) fun y hy ↦ interior_subset hy
+    have hgr0 : ∇ χ x = 0 := by
+      rw [gradient, h1.fderiv_eq]
+      simp
+    rw [jetField_apply, jetField_apply, hv, hgr, h1.eq_of_nhds, hgr0]
+    simp
+  rw [energyFormH1_eq_of_ae_jetField_eq (a := K) (b := 0) (c := 0)
+      (fun x _ hx ↦ ⟨image_eq_zero_of_notMem_tsupport hx, rfl, rfl⟩) hjet,
+    energyFormH1_eq_of_ae_jetField_eq (a := 0) (b := g) (c := 0)
+      (fun x hxΩ hx ↦ ⟨rfl, eq_zero_of_notMem_tsupport_of_eq_sum_fderiv hg hxΩ hx, rfl⟩) hjet]
+  exact energyFormH1_eq_of_transpose_eq_neg hK hKt hg hKb hgb u ⟨w, hw⟩
+
+/-- **Moving a compactly supported antisymmetric part of the principal coefficient into the
+drift**, on all of `H¹(Ω)`. Adding to the principal coefficient of a bounded coefficient triple
+`(a, b, c)` a matrix field `K` with entries smooth on `Ω`, antisymmetric values and compact
+topological support inside `Ω` has the same effect on the energy form on `H¹(Ω) × H¹(Ω)` as adding
+its row divergence `g` to the drift. -/
+theorem energyFormH1_add_eq_of_transpose_eq_neg_of_hasCompactSupport
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ}
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Ω))
+    (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω) (hKt : ∀ x ∈ Ω, (K x)ᵀ = -K x)
+    (hg : ∀ x ∈ Ω, ∀ i, g x i = ∑ j, fderiv ℝ (fun y ↦ K y i j) x (EuclideanSpace.single j 1))
+    (hKc : HasCompactSupport K) (hKΩ : tsupport K ⊆ Ω) (u v : W1p mu Ω 2) :
+    energyFormH1 (a + K) b c u v = energyFormH1 a (b + g) c u v := by
+  obtain ⟨Λ, β, hKb, hgb⟩ := exists_bounds_of_hasCompactSupport hK hg hKc hKΩ
+  exact energyFormH1_add_eq_add_drift_of_eq hcoeff hK hg hKb hgb
+    (energyFormH1_eq_of_transpose_eq_neg_of_hasCompactSupport hK hKt hg hKc hKΩ u v)
 
 /-! ### Witnesses in the plane -/
 
