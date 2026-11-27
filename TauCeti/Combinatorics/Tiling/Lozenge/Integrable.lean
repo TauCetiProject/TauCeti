@@ -25,7 +25,9 @@ is integrable near `0` in the plane. This file proves:
 * `TauCeti.IsLiquidWeights.integrableOn_lozengeKernel_integrand`: so is the integrand
   `e^{i(d₁θ + d₂φ)} / P_w(θ, φ)` of the kernel `G_w(d)`, which is therefore a genuine Lebesgue
   integral; for any weights, the integrand is integrable on the torus whenever `1 / P_w` is
-  (`TauCeti.integrableOn_lozengeKernel_integrand_of_integrableOn`).
+  (`TauCeti.integrableOn_lozengeKernel_integrand_of_integrableOn`);
+* `TauCeti.lozengeKernel_eq_integral_integral`, `TauCeti.lozengeKernel_eq_integral_integral_swap`:
+  by Fubini, `G_w(d)` is then an iterated integral in either order.
 
 ## References
 
@@ -83,5 +85,32 @@ theorem IsLiquidWeights.integrableOn_lozengeKernel_integrand (hw : IsLiquidWeigh
         exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2)
       (Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi)) :=
   integrableOn_lozengeKernel_integrand_of_integrableOn hw.integrableOn_inv_lozengeCharFun d
+
+/-- **`G_w(d)` as an iterated integral, `φ` inside**, whenever `1 / P_w` is integrable on the
+torus. -/
+theorem lozengeKernel_eq_integral_integral
+    (hP : IntegrableOn (fun p : ℝ × ℝ => (lozengeCharFun w₁ w₂ w₃ p.1 p.2)⁻¹)
+      (Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi))) (d : ℤ × ℤ) :
+    lozengeKernel w₁ w₂ w₃ d = ((4 * Real.pi ^ 2)⁻¹ : ℝ) • ∫ θ in Ioc 0 (2 * Real.pi),
+      ∫ φ in Ioc 0 (2 * Real.pi),
+        exp ((d.1 * θ + d.2 * φ : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ θ φ := by
+  have hi := integrableOn_lozengeKernel_integrand_of_integrableOn hP d
+  rw [Measure.volume_eq_prod] at hi
+  rw [lozengeKernel_def, Measure.volume_eq_prod, setIntegral_prod _ hi]
+
+/-- **`G_w(d)` as an iterated integral, `θ` inside**, whenever `1 / P_w` is integrable on the
+torus. -/
+theorem lozengeKernel_eq_integral_integral_swap
+    (hP : IntegrableOn (fun p : ℝ × ℝ => (lozengeCharFun w₁ w₂ w₃ p.1 p.2)⁻¹)
+      (Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi))) (d : ℤ × ℤ) :
+    lozengeKernel w₁ w₂ w₃ d = ((4 * Real.pi ^ 2)⁻¹ : ℝ) • ∫ φ in Ioc 0 (2 * Real.pi),
+      ∫ θ in Ioc 0 (2 * Real.pi),
+        exp ((d.1 * θ + d.2 * φ : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ θ φ := by
+  have hi := integrableOn_lozengeKernel_integrand_of_integrableOn hP d
+  rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict] at hi
+  have hi' := hi.swap
+  rw [Measure.prod_restrict, ← IntegrableOn] at hi'
+  rw [lozengeKernel_def, Measure.volume_eq_prod, ← setIntegral_prod_swap]
+  exact congrArg _ (setIntegral_prod _ hi')
 
 end TauCeti

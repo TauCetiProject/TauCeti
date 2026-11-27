@@ -14,12 +14,16 @@ public import TauCeti.RepresentationTheory.GL2.CompactWeight.Admissible
 The discrete series `D_k(μ)` is a `(𝔤𝔩₂(ℂ), O(2))`-submodule of the module of all compact weights,
 whose `O(2)`-action has finite multiplicities
 (`TauCeti.CompactWeightModule.hasFiniteMultiplicities_orthogonalRep`). Hence `D_k(μ)` is an
-admissible `(𝔤𝔩₂(ℂ), O(2))`-module.
+admissible `(𝔤𝔩₂(ℂ), O(2))`-module. For `k ≥ 1` it is moreover irreducible
+(`TauCeti.isIrreducible_discreteSeriesGKModule`), hence finitely generated over `𝔤𝔩₂(ℂ)`, so it is
+a Harish-Chandra module.
 
 ## Main results
 
 * `TauCeti.hasFiniteMultiplicities_discreteSeriesGKModule`: `D_k(μ)` is an admissible
   `(𝔤𝔩₂(ℂ), O(2))`-module.
+* `TauCeti.isHarishChandraModule_discreteSeriesGKModule`: for `k ≥ 1`, `D_k(μ)` is a
+  Harish-Chandra module: admissible and finitely generated over `𝔤𝔩₂(ℂ)`.
 
 ## References
 
@@ -47,5 +51,12 @@ theorem hasFiniteMultiplicities_discreteSeriesGKModule (k : ℕ) (μ : ℂ) :
       discreteSeriesGKModule_ρ_apply_coe k μ g v⟩
   exact CompactWeightModule.hasFiniteMultiplicities_orthogonalRep.of_injective ι
     Subtype.val_injective
+
+/-- **`D_k(μ)` is a Harish-Chandra module** for `k ≥ 1`: it is admissible and, being irreducible,
+finitely generated over `𝔤𝔩₂(ℂ)`. -/
+theorem isHarishChandraModule_discreteSeriesGKModule {k : ℕ} (hk : 1 ≤ k) (μ : ℂ) :
+    (discreteSeriesGKModule k μ).IsHarishChandraModule :=
+  (isIrreducible_discreteSeriesGKModule hk μ).isHarishChandraModule_iff.2
+    (hasFiniteMultiplicities_discreteSeriesGKModule k μ)
 
 end TauCeti
