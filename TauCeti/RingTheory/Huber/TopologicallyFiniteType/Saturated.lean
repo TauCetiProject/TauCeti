@@ -136,7 +136,7 @@ private theorem exists_normedIntegerEquiv
   have hcomp : CompleteSpace OK :=
     hOK ▸ (inferInstance : CompleteSpace (Valued.v : Valuation (ValuedFractionField O) _).integer)
   let e₀ : O ≃+* OK :=
-    (IsCompleteRankOneBase.equivIntegerWithVal O (FractionRing O)).trans
+    (ValuationRing.equivIntegerWithVal O (FractionRing O)).trans
       (RingEquiv.subringCongr hOK)
   exact ⟨e₀, (Continuous.subtype_mk continuous_subtypeVal _).comp
       (IsCompleteRankOneBase.continuous_equivIntegerWithVal ϖ _),

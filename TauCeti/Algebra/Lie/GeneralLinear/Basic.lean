@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Character
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Semisimple.Basic
 public import TauCeti.Algebra.Lie.Matrix.Single
@@ -36,6 +37,8 @@ sits *inside* the derived ideal and the two are not complementary.
 * `TauCeti.slIdeal R n`: the trace-zero matrices, as a `LieIdeal R (Matrix n n R)`. Mathlib's
   `LieAlgebra.SpecialLinear.sl n R` is the same subspace packaged only as a Lie subalgebra, and
   `TauCeti.slIdeal_toLieSubalgebra_eq_sl` identifies the two.
+* `TauCeti.traceLieCharacter R n`: the trace `gl n R → R`, as a Lie algebra homomorphism; its
+  kernel is `TauCeti.slIdeal R n` (`TauCeti.ker_traceLieCharacter`).
 
 ## Main results
 
@@ -233,6 +236,23 @@ theorem _root_.LieAlgebra.SpecialLinear.mem_sl_iff {A : Matrix n n R} :
     A ∈ LieAlgebra.SpecialLinear.sl n R ↔ A.trace = 0 := by
   rw [← slIdeal_toLieSubalgebra_eq_sl R n]
   exact mem_slIdeal_iff
+
+variable (R n) in
+/-- The trace `gl n R → R`, a Lie algebra homomorphism since the trace of a commutator vanishes.
+Its kernel is the special linear ideal `TauCeti.slIdeal R n`. -/
+def traceLieCharacter : LieAlgebra.LieCharacter R (Matrix n n R) where
+  toLinearMap := Matrix.traceLinearMap n R R
+  map_lie' {X Y} := by simpa [Ring.lie_def, mul_comm] using matrix_trace_commutator_zero n R X Y
+
+@[simp]
+theorem traceLieCharacter_apply (X : Matrix n n R) : traceLieCharacter R n X = X.trace :=
+  (rfl)
+
+variable (R n) in
+/-- The kernel of the trace character of `gl n R` is the special linear ideal. -/
+theorem ker_traceLieCharacter : (traceLieCharacter R n).ker = slIdeal R n := by
+  ext A
+  rw [LieHom.mem_ker, traceLieCharacter_apply, mem_slIdeal_iff]
 
 /-! ### The derived ideal of `gl n R` -/
 

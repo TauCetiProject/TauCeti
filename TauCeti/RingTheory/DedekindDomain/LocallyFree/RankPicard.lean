@@ -9,7 +9,10 @@ public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Ring
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.K0
 public import TauCeti.RingTheory.PicardGroup.ClassGroup
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
+import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Invertible
 import TauCeti.LinearAlgebra.Dimension.Pi
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # The ring structure of projective `K₀` of a Dedekind domain
@@ -34,6 +37,13 @@ identity `I ⊕ J ≃ A ⊕ IJ` (`TauCeti.FiniteProjectiveModules.classOf_mul`).
 part of `K₀(A)` squares to zero. As a consequence the Steinitz class of a tensor product is
 `st(M ⊗ N) = st(M) ^ rank N * st(N) ^ rank M` (`Module.steinitzClass_tensorProduct`).
 
+The Picard coordinates are natural for every ring homomorphism `f : A →+* B` of Dedekind domains,
+not only for injective ones: extension of scalars is `(n, L) ↦ (n, f* L)`, with
+`f* L = CommRing.Pic.mapRingHom f L` the extended line. Indeed `(n, L)` is the class
+`(n - 1) [A] + [L]`, and extension of scalars sends `[A]` to `[B]` and `[L]` to `[f* L]`; this
+description of the extended class holds for any commutative ring `B`. For instance, along the
+map to a residue field, every Picard class dies and only the rank survives.
+
 The ring structure of `TrivSqZeroExt ℤ M` uses a right action of `ℤ` on `M`, which Mathlib does
 not provide for an arbitrary abelian group `M` (for `M = ℤ` it would compete with the action by
 right multiplication). The ring isomorphisms below therefore take this action as an instance
@@ -57,6 +67,12 @@ carries only one module structure over `ℤᵐᵒᵖ`, as over `ℤ`; `Module.co
 * `TauCeti.FiniteProjectiveModules.rankPicRingEquiv_of_fin` and
   `TauCeti.FiniteProjectiveModules.rankPicRingEquiv_of_pic`: the normalizations `[Aⁿ] ↦ (n, 1)` and
   `[L] ↦ (1, L)`.
+* `TauCeti.FiniteProjectiveModules.rankPicRingEquiv_map_extendScalars`: naturality of the
+  rank–Picard isomorphism along any ring homomorphism of Dedekind domains.
+* `TauCeti.FiniteProjectiveModules.map_extendScalars_rankPicRingEquiv_symm`: extension of scalars
+  to any commutative ring sends the class with coordinates `(n, L)` to `(n - 1) [B] + [f* L]`.
+* `TauCeti.FiniteProjectiveModules.map_extendScalars_eq_rankSteinitz_fst`: extension of scalars
+  to a commutative ring with trivial Picard group only remembers the rank.
 * `Module.steinitzClass_tensorProduct`: the Steinitz class of a tensor product.
 
 ## References
@@ -97,9 +113,8 @@ theorem classOf_mul_classOf {K : Type u} [Field K] [Algebra A K] [IsFractionRing
       SplitK0.of.{u} (of A (J : FractionalIdeal A⁰ K)) =
       SplitK0.of.{u} (of A ((I * J : (FractionalIdeal A⁰ K)ˣ) : FractionalIdeal A⁰ K)) := by
     rw [← splitK0_of_tensorProduct]
-    exact SplitK0.of_congr (ObjectProperty.isoMk _ ((Submodule.tensorEquivMul
-      (FractionalIdeal.unitsMulEquivSubmodule I) (FractionalIdeal.unitsMulEquivSubmodule J)).trans
-      (LinearEquiv.ofEq _ _ (by simp [FractionalIdeal.unitsMulEquivSubmodule]))).toModuleIso)
+    exact SplitK0.of_congr
+      (ObjectProperty.isoMk _ (FractionalIdeal.tensorEquivMul I J).toModuleIso)
   -- `[IJ] - [A] = ([I] - [A]) + ([J] - [A])`.
   have h := classOf_mul I J
   simp only [classOf_def, one_smul, splitK0_of_self] at h ⊢
@@ -260,9 +275,67 @@ theorem rankPicRingEquiv_of_pic (L : Pic A) :
   · simp [hL]
   · simp [ClassGroup.equivPic_steinitzClass, -ClassGroup.equivPic_apply]
 
+/-- The reduced class `[L] - [A]` of an invertible module `L` has rank zero and Picard class
+`L`. -/
+theorem rankPicRingEquiv_of_pic_sub_one (L : Pic A) :
+    rankPicRingEquiv A (SplitK0.of.{u} (of A L) - 1) = TrivSqZeroExt.inr (Additive.ofMul L) := by
+  rw [map_sub, rankPicRingEquiv_of_pic, map_one, ← TrivSqZeroExt.inl_one, add_sub_cancel_left]
+
+/-- **Extension of scalars of rank–Picard coordinates.** Along a ring homomorphism `f : A →+* B`
+from a Dedekind domain to any commutative ring, the class with rank–Picard coordinates `(n, L)`
+goes to `(n - 1) [B] + [f* L]`, where `f* L = CommRing.Pic.mapRingHom f L` is the extended line. -/
+theorem map_extendScalars_rankPicRingEquiv_symm {B : Type u} [CommRing B] (f : A →+* B)
+    (y : TrivSqZeroExt ℤ (Additive (Pic A))) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars ((rankPicRingEquiv A).symm y) =
+      (y.fst - 1 : ℤ) + SplitK0.of.{u} (of B (Pic.mapRingHom f y.snd.toMul)) := by
+  -- `(n, L)` is the class `(n - 1) [A] + [L]`.
+  have hy : (rankPicRingEquiv A).symm y =
+      (y.fst - 1 : ℤ) • 1 + SplitK0.of.{u} (of A y.snd.toMul) := by
+    rw [RingEquiv.symm_apply_eq, map_add, map_zsmul, map_one, rankPicRingEquiv_of_pic,
+      ofMul_toMul, zsmul_one]
+    ext <;> simp
+  rw [hy, map_add, map_zsmul, SplitK0.map_extendScalars_one, map_extendScalars_of_pic, zsmul_one]
+
 end Pic
 
 end RingEquiv
+
+section ExtendScalars
+
+variable {A} {B : Type u} [CommRing B]
+
+/-- **Naturality of the rank–Picard isomorphism.** Along any ring homomorphism `f : A →+* B` of
+Dedekind domains, injective or not, extension of scalars is `(n, L) ↦ (n, f* L)` in rank–Picard
+coordinates, where `f* L = CommRing.Pic.mapRingHom f L`. -/
+@[simp]
+theorem rankPicRingEquiv_map_extendScalars [IsDedekindDomain B]
+    [Module ℤᵐᵒᵖ (Additive (Pic A))] [IsCentralScalar ℤ (Additive (Pic A))]
+    [Module ℤᵐᵒᵖ (Additive (Pic B))] [IsCentralScalar ℤ (Additive (Pic B))] (f : A →+* B)
+    (x : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) :
+    rankPicRingEquiv B (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
+      TrivSqZeroExt.map (Pic.mapRingHom f).toAdditive.toIntLinearMap (rankPicRingEquiv A x) := by
+  conv_lhs => rw [← (rankPicRingEquiv A).symm_apply_apply x]
+  rw [map_extendScalars_rankPicRingEquiv_symm, map_add, map_intCast, rankPicRingEquiv_of_pic]
+  ext <;> simp
+
+/-- **Extension of scalars to a ring with trivial Picard group**, such as a residue field of `A`
+or a local ring: every Picard class of the Dedekind domain `A` dies, and a class `x` of projective
+`K₀(A)` goes to the integer `rank x`, its first rank–Steinitz coordinate. -/
+theorem map_extendScalars_eq_rankSteinitz_fst [Subsingleton (Pic B)] (f : A →+* B)
+    (x : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x = (rankSteinitz A x).1 := by
+  -- Any central right action of `ℤ` serves to form the square-zero extension.
+  let : Module ℤᵐᵒᵖ (Additive (Pic A)) := Module.compHom _ ((RingHom.id ℤ).fromOpposite mul_comm)
+  have : IsCentralScalar ℤ (Additive (Pic A)) := ⟨fun _ _ ↦ rfl⟩
+  -- The line `f* L` of `B` is trivial.
+  have hL : SplitK0.of.{u} (of B (Pic.mapRingHom f ((rankPicRingEquiv A x).snd.toMul))) = 1 := by
+    rw [Subsingleton.elim (Pic.mapRingHom f _) 1, splitK0_of_pic_one]
+  conv_lhs => rw [← (rankPicRingEquiv A).symm_apply_apply x]
+  rw [map_extendScalars_rankPicRingEquiv_symm, hL, fst_rankPicRingEquiv]
+  push_cast
+  ring
+
+end ExtendScalars
 
 end FiniteProjectiveModules
 

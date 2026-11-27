@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
+public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.NormDet
@@ -20,10 +21,13 @@ dimensions `n` and `m`. Every nonempty fibre `L ⁻¹' {y}` is a translate of `k
 surjective it has dimension `n - m`. Slicing Lebesgue measure on `E` by these fibres gives the
 linear coarea formula
 `∫⁻ y, ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[n - m] = J L * ∫⁻ x, g x`,
-whose Jacobian `J L = (L.adjoint).normDet` is the norm determinant of the adjoint.
+whose Jacobian `J L = (L.adjoint).normDet` is the norm determinant of the adjoint, together with
+its Bochner-integral counterpart `∫ y, ∫ x in L ⁻¹' {y}, g x ∂μHE[n - m] = J L • ∫ x, g x` for
+Banach-space-valued integrands.
 The fibres carry the normalized Hausdorff measure `μHE[n - m]` of the ambient space.
-The formula holds for every linear map and every a.e.-measurable weight. When `L` is not
-surjective, both sides vanish: the Jacobian is zero and almost every fibre is empty.
+The formula holds for every linear map and every a.e.-measurable weight (or Bochner-integrable
+function). When `L` is not surjective, both sides vanish: the Jacobian is zero and almost every
+fibre is empty.
 
 For the orthogonal projection onto a subspace the Jacobian is one. Its fibres are the affine
 subspaces orthogonal to the subspace, so integrals over `E` slice along those subspaces.
@@ -31,12 +35,18 @@ Mathlib's `AffineSubspace.euclideanHausdorffMeasure_eq_lintegral` is the corresp
 for measurable sets, indexed by an affine subspace rather than by the projection.
 
 The proof decomposes `E` orthogonally as `ker L × (ker L)ᗮ`. Mathlib's
-`Submodule.measurePreserving_measurableEquivProd` then reduces the formula to Tonelli's theorem.
-The restriction of `L` to `(ker L)ᗮ` is an isomorphism onto `F`, whose Jacobian is computed by
-`LinearMap.euclideanHausdorffMeasure_image_eq_normDet_mul_volume`.
+`Submodule.measurePreserving_measurableEquivProd` then reduces the formula to Tonelli's and
+Fubini's theorems. The restriction of `L` to `(ker L)ᗮ` is an isomorphism onto `F`, whose Jacobian
+is computed by `LinearMap.euclideanHausdorffMeasure_image_eq_normDet_mul_volume`.
 
 ## Main statements
 
+* `LinearMap.restrict_preimage_singleton_eq_map_ker`,
+  `LinearMap.setLIntegral_preimage_singleton_eq_lintegral_ker`,
+  `LinearMap.integrableOn_preimage_singleton_iff_integrable_ker`,
+  `LinearMap.setIntegral_preimage_singleton_eq_integral_ker`: restricted Hausdorff measure and
+  Lebesgue and Bochner integrals on an affine fibre `L ⁻¹' {L w}` as translations of Lebesgue
+  measure on `ker L`.
 * `LinearMap.lintegral_setLIntegral_preimage_singleton`: the linear coarea formula.
 * `LinearMap.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton`: its form for
   measurable sets.
@@ -50,8 +60,15 @@ The restriction of `L` to `(ker L)ᗮ` is an isomorphism onto `F`, whose Jacobia
   weights have a.e.-measurable fibre integrals.
 * `LinearMap.ae_nullMeasurableSet_restrict_preimage_singleton`: Lebesgue-measurable sets are
   Hausdorff measurable on almost every fibre.
-* `Submodule.lintegral_setLIntegral_preimage_orthogonalProjectionOnto`: slicing by orthogonal
-  projections.
+* `LinearMap.ae_integrableOn_preimage_singleton`,
+  `LinearMap.integrable_setIntegral_preimage_singleton`,
+  `LinearMap.integral_setIntegral_preimage_singleton`: fibre integrability, integrability of fibre
+  integrals, and the Bochner coarea formula for linear maps.
+* `Submodule.lintegral_setLIntegral_preimage_orthogonalProjectionOnto`,
+  `Submodule.ae_integrableOn_preimage_orthogonalProjectionOnto`,
+  `Submodule.integrable_setIntegral_preimage_orthogonalProjectionOnto`,
+  `Submodule.integral_setIntegral_preimage_orthogonalProjectionOnto`: Lebesgue and Bochner slicing
+  by orthogonal projections.
 
 ## References
 
@@ -73,22 +90,56 @@ section Module
 
 variable [AddCommGroup F] [Module ℝ F]
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Translation of `ker L` by `w` into `E` is an isometry. -/
+private theorem isometry_add_ker (L : E →ₗ[ℝ] F) (w : E) :
+    Isometry fun a : ker L ↦ w + (a : E) :=
+  (isometry_add_left w).comp isometry_subtypeVal
+
+/-- The normalized Hausdorff measure of dimension `dim (ker L)` restricted to the affine fibre
+`L ⁻¹' {L w}` is the pushforward of Lebesgue measure on `ker L` by translation by `w`. -/
+theorem restrict_preimage_singleton_eq_map_ker (L : E →ₗ[ℝ] F)
+    [FiniteDimensional ℝ (ker L)] (w : E) :
+    μHE[finrank ℝ (ker L)].restrict (L ⁻¹' {L w}) =
+      (volume : Measure (ker L)).map (fun a : ker L ↦ w + a) := by
+  have hrange : Set.range (fun a : ker L ↦ w + (a : E)) = L ⁻¹' {L w} := by
+    ext x
+    refine ⟨?_, fun hx ↦ ⟨⟨x - w, by simp_all⟩, by simp⟩⟩
+    rintro ⟨a, rfl⟩
+    simp
+  rw [← hrange, ← (L.isometry_add_ker w).map_euclideanHausdorffMeasure,
+    InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+
 /-- The integral of `g` over the fibre `L ⁻¹' {L w}`, with Hausdorff measure of the dimension of
 `ker L`, equals the Lebesgue integral over `ker L` of `a ↦ g (w + a)`. Only the kernel needs to
 be finite-dimensional; the codomain is an arbitrary real module. -/
 theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) (g : E → ℝ≥0∞) :
     ∫⁻ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫⁻ a : ker L, g (w + a) := by
-  let φ : ker L → E := fun a ↦ w + a
-  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtypeVal
-  have hrange : Set.range φ = L ⁻¹' {L w} := by
-    ext x
-    refine ⟨?_, fun hx ↦ ⟨⟨x - w, by simp_all⟩, by simp [φ]⟩⟩
-    rintro ⟨a, rfl⟩
-    simp [φ]
-  rw [← hrange, ← hφ.map_euclideanHausdorffMeasure,
-    hφ.isClosedEmbedding.measurableEmbedding.lintegral_map,
-    InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+  rw [L.restrict_preimage_singleton_eq_map_ker w,
+    (L.isometry_add_ker w).isClosedEmbedding.measurableEmbedding.lintegral_map]
+
+/-- A function `g` is integrable on the affine fibre `L ⁻¹' {L w}` with respect to Hausdorff
+measure of dimension `dim (ker L)` if and only if `a ↦ g (w + a)` is Lebesgue integrable on
+`ker L`. Only the kernel needs to be finite-dimensional; the codomain is an arbitrary real
+module. -/
+theorem integrableOn_preimage_singleton_iff_integrable_ker (L : E →ₗ[ℝ] F)
+    [FiniteDimensional ℝ (ker L)] (w : E) {V : Type*} [NormedAddCommGroup V] (g : E → V) :
+    IntegrableOn g (L ⁻¹' {L w}) μHE[finrank ℝ (ker L)] ↔
+      Integrable fun a : ker L ↦ g (w + a) := by
+  rw [IntegrableOn, L.restrict_preimage_singleton_eq_map_ker w,
+    (L.isometry_add_ker w).isClosedEmbedding.measurableEmbedding.integrable_map_iff,
+    Function.comp_def]
+
+/-- The Bochner integral of `g` over the affine fibre `L ⁻¹' {L w}`, with Hausdorff measure of
+dimension `dim (ker L)`, equals the Lebesgue Bochner integral over `ker L` of `a ↦ g (w + a)`.
+Only the kernel needs to be finite-dimensional; the codomain is an arbitrary real module. -/
+theorem setIntegral_preimage_singleton_eq_integral_ker (L : E →ₗ[ℝ] F)
+    [FiniteDimensional ℝ (ker L)] (w : E) {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (g : E → V) :
+    ∫ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫ a : ker L, g (w + a) := by
+  rw [L.restrict_preimage_singleton_eq_map_ker w,
+    (L.isometry_add_ker w).isClosedEmbedding.integral_map]
 
 end Module
 
@@ -97,13 +148,13 @@ variable [FiniteDimensional ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ
 
 /-- A surjective linear map restricts to an isomorphism `e` from the orthogonal complement of its
 kernel onto its codomain. The isomorphism scales Lebesgue measure by the Jacobian of the adjoint,
-and each fibre integral is an integral over the kernel translated by `e.symm y`. -/
+and `e.symm` is a continuous linear right inverse of `L`. -/
 private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function.Surjective L) :
     ∃ e : (ker L)ᗮ ≃L[ℝ] F,
       (volume : Measure F) = ENNReal.ofReal L.adjoint.normDet •
         (volume : Measure (ker L)ᗮ).map e.toHomeomorph.toMeasurableEquiv ∧
-      ∀ (g : E → ℝ≥0∞) (y : F), ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
-        ∫⁻ a : ker L, g (e.symm y + a) := by
+      (∀ y : F, L (e.symm y : E) = y) ∧
+      finrank ℝ E - finrank ℝ F = finrank ℝ (ker L) := by
   have hdim := L.finrank_orthogonal_ker_of_surjective hL
   have h₁ := (ker L).finrank_add_finrank_orthogonal
   set W := (ker L)ᗮ
@@ -117,28 +168,33 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
   let e : W ≃L[ℝ] F := (LinearEquiv.ofBijective M hMbij).toContinuousLinearEquiv
   have he (w : W) : e w = L w := by
     simp [e, M, LinearEquiv.ofBijective_apply]
-  refine ⟨e, ?_, fun g y ↦ ?_⟩
-  · -- Lebesgue measure on `F` is the image of Lebesgue measure on `W`, scaled by the Jacobian.
-    ext t _
-    rw [_root_.smul_apply, MeasurableEquiv.map_apply, smul_eq_mul,
-      normDet_adjoint_eq_normDet_comp_subtype L hL,
-      ← M.euclideanHausdorffMeasure_image_eq_normDet_mul_volume, hdim,
-      InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
-    congr 1
-    ext y
-    exact ⟨fun hy ↦ ⟨e.symm y, by simpa [M, ← he] using hy, e.apply_symm_apply y⟩,
-      by rintro ⟨w, hw, rfl⟩; simpa [M, ← he] using hw⟩
-  · have hy : L (e.symm y : E) = y := by rw [← he, e.apply_symm_apply]
-    rw [← L.setLIntegral_preimage_singleton_eq_lintegral_ker (e.symm y), hy,
-      show finrank ℝ E - finrank ℝ F = finrank ℝ (ker L) by omega]
+  refine ⟨e, ?_, fun y ↦ by rw [← he, e.apply_symm_apply], by omega⟩
+  -- Lebesgue measure on `F` is the image of Lebesgue measure on `W`, scaled by the Jacobian.
+  ext t _
+  rw [_root_.smul_apply, MeasurableEquiv.map_apply, smul_eq_mul,
+    normDet_adjoint_eq_normDet_comp_subtype L hL,
+    ← M.euclideanHausdorffMeasure_image_eq_normDet_mul_volume, hdim,
+    InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+  congr 1
+  ext y
+  exact ⟨fun hy ↦ ⟨e.symm y, by simpa [M, ← he] using hy, e.apply_symm_apply y⟩,
+    by rintro ⟨w, hw, rfl⟩; simpa [M, ← he] using hw⟩
+
+omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
+private theorem setLIntegral_preimage_singleton_eq_lintegral_ker_of_section (L : E →ₗ[ℝ] F)
+    {e : (ker L)ᗮ ≃L[ℝ] F} (hsec : ∀ y : F, L (e.symm y : E) = y)
+    (hdim : finrank ℝ E - finrank ℝ F = finrank ℝ (ker L)) (g : E → ℝ≥0∞) (y : F) :
+    ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
+      ∫⁻ a : ker L, g ((e.symm y : E) + a) := by
+  rw [← L.setLIntegral_preimage_singleton_eq_lintegral_ker (e.symm y), hsec y, hdim]
 
 /-- The fibre integrals of a measurable function along a surjective linear map depend measurably
 on the fibre. -/
 theorem measurable_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) (hL : Function.Surjective L)
     {g : E → ℝ≥0∞} (hg : Measurable g) :
     Measurable fun y ↦ ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-  obtain ⟨e, -, hfib⟩ := L.exists_orthogonal_ker_equiv hL
-  simp_rw [hfib]
+  obtain ⟨e, -, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
+  simp_rw [L.setLIntegral_preimage_singleton_eq_lintegral_ker_of_section hsec hdim g]
   exact (Measurable.lintegral_prod_right' (f := fun q : (ker L)ᗮ × ker L ↦ g (q.1 + q.2))
     (hg.comp (measurable_fst.subtypeVal.add measurable_snd.subtypeVal))).comp
     e.symm.continuous.measurable
@@ -151,8 +207,8 @@ theorem lintegral_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {g : E �
     ∫⁻ y, ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
       ENNReal.ofReal L.adjoint.normDet * ∫⁻ x, g x := by
   by_cases hL : Function.Surjective L
-  · obtain ⟨e, hvol, hfib⟩ := L.exists_orthogonal_ker_equiv hL
-    simp_rw [hfib]
+  · obtain ⟨e, hvol, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
+    simp_rw [L.setLIntegral_preimage_singleton_eq_lintegral_ker_of_section hsec hdim g]
     rw [hvol, lintegral_smul_measure, lintegral_map_equiv, smul_eq_mul,
       (ker L).lintegral_eq_lintegral_lintegral_add hg]
     simp
@@ -304,4 +360,109 @@ theorem ae_nullMeasurableSet_restrict_preimage_singleton (L : E →ₗ[ℝ] F)
   exact (measurableSet_toMeasurable volume s).nullMeasurableSet.congr
     (hy.mono fun _ h ↦ Iff.of_eq h)
 
+/-- Every Bochner-integrable function `g : E → V` is `μHE[dim E - dim F]`-integrable on almost
+every fibre `L ⁻¹' {y}` of any linear map `L : E →ₗ[ℝ] F`. -/
+theorem ae_integrableOn_preimage_singleton (L : E →ₗ[ℝ] F) {V : Type*} [NormedAddCommGroup V]
+    {g : E → V} (hg : Integrable g) :
+    ∀ᵐ y : F, IntegrableOn g (L ⁻¹' {y}) μHE[finrank ℝ E - finrank ℝ F] := by
+  by_cases hL : Surjective L
+  · obtain ⟨e, hvol, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
+    have hmap : ∀ᵐ y : F ∂(volume : Measure (ker L)ᗮ).map e.toHomeomorph.toMeasurableEquiv,
+        IntegrableOn g (L ⁻¹' {y}) μHE[finrank ℝ E - finrank ℝ F] := by
+      rw [e.toHomeomorph.toMeasurableEquiv.measurableEmbedding.ae_map_iff]
+      filter_upwards [((ker L).integrable_comp_orthogonal_prod hg).prod_left_ae] with w hw
+      rw [hdim, ← hsec (e.toHomeomorph.toMeasurableEquiv w),
+        L.integrableOn_preimage_singleton_iff_integrable_ker]
+      simpa only [ContinuousLinearEquiv.coe_toHomeomorph, Homeomorph.toMeasurableEquiv_coe,
+        ContinuousLinearEquiv.symm_apply_apply] using hw
+    simpa only [← hvol] using ae_smul_measure hmap (ENNReal.ofReal L.adjoint.normDet)
+  · filter_upwards [L.ae_preimage_singleton_eq_empty volume hL] with y hy
+    simp [hy]
+
+omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
+private theorem setIntegral_preimage_singleton_eq_integral_ker_of_section (L : E →ₗ[ℝ] F)
+    {e : (ker L)ᗮ ≃L[ℝ] F} (hsec : ∀ y : F, L (e.symm y : E) = y)
+    (hdim : finrank ℝ E - finrank ℝ F = finrank ℝ (ker L)) {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (g : E → V) (y : F) :
+    ∫ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
+      ∫ a : ker L, g ((e.symm y : E) + a) := by
+  rw [← L.setIntegral_preimage_singleton_eq_integral_ker (e.symm y), hsec y, hdim]
+
+/-- For any linear map `L : E →ₗ[ℝ] F` and Bochner-integrable `g : E → V`, the fibre integral
+`y ↦ ∫ x in L ⁻¹' {y}, g x ∂μHE[dim E - dim F]` is Bochner integrable on `F`. -/
+theorem integrable_setIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {g : E → V} (hg : Integrable g) :
+    Integrable (fun y : F ↦ ∫ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) volume := by
+  by_cases hL : Surjective L
+  · obtain ⟨e, hvol, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
+    simp_rw [L.setIntegral_preimage_singleton_eq_integral_ker_of_section hsec hdim g]
+    rw [hvol]
+    refine Integrable.smul_measure ?_ ENNReal.ofReal_ne_top
+    rw [integrable_map_equiv]
+    simpa only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
+      Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.symm_apply_apply] using
+      ((ker L).integrable_comp_orthogonal_prod hg).integral_prod_right
+  · refine (integrable_zero _ _ _).congr ?_
+    filter_upwards [L.ae_preimage_singleton_eq_empty volume hL] with y hy
+    simp [hy]
+
+/-- **Bochner coarea formula for linear maps.** Integrating a Bochner-integrable `V`-valued
+function over the affine fibres `L ⁻¹' {y}` gives `L.adjoint.normDet • ∫ x, g x`. Both sides vanish
+when `L` is not surjective. -/
+theorem integral_setIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {g : E → V} (hg : Integrable g) :
+    ∫ y : F, ∫ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
+      L.adjoint.normDet • ∫ x, g x := by
+  by_cases hL : Surjective L
+  · obtain ⟨e, hvol, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
+    have hcalc : ∫ y : F, (∫ a : ker L, g ((e.symm y : E) + a))
+          ∂(ENNReal.ofReal L.adjoint.normDet •
+            (volume : Measure (ker L)ᗮ).map e.toHomeomorph.toMeasurableEquiv) =
+        L.adjoint.normDet • ∫ x, g x := by
+      rw [integral_smul_measure, integral_map_equiv,
+        ENNReal.toReal_ofReal L.adjoint.normDet_nonneg,
+        (ker L).integral_eq_integral_integral_add hg]
+      simp
+    simpa only [← hvol,
+      L.setIntegral_preimage_singleton_eq_integral_ker_of_section hsec hdim g] using hcalc
+  · rw [L.normDet_adjoint_eq_zero_iff.2 hL, zero_smul]
+    refine integral_eq_zero_of_ae ?_
+    filter_upwards [L.ae_preimage_singleton_eq_empty volume hL] with y hy
+    simp [hy]
+
 end LinearMap
+
+namespace Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- Every Bochner-integrable function `g : E → V` is `μHE[dim E - dim K]`-integrable on almost
+every affine fibre `K.orthogonalProjectionOnto ⁻¹' {y}` parallel to `Kᗮ`. -/
+theorem ae_integrableOn_preimage_orthogonalProjectionOnto (K : Submodule ℝ E) {V : Type*}
+    [NormedAddCommGroup V] {g : E → V} (hg : Integrable g) :
+    ∀ᵐ y : K, IntegrableOn g (K.orthogonalProjectionOnto ⁻¹' {y})
+      μHE[finrank ℝ E - finrank ℝ K] :=
+  (K.orthogonalProjectionOnto : E →ₗ[ℝ] K).ae_integrableOn_preimage_singleton hg
+
+/-- For a subspace `K ≤ E` and Bochner-integrable `g : E → V`, the affine-slice integral
+`y ↦ ∫ x in K.orthogonalProjectionOnto ⁻¹' {y}, g x ∂μHE[dim E - dim K]` is Bochner integrable on
+`K`. -/
+theorem integrable_setIntegral_preimage_orthogonalProjectionOnto (K : Submodule ℝ E) {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {g : E → V} (hg : Integrable g) :
+    Integrable (fun y : K ↦ ∫ x in K.orthogonalProjectionOnto ⁻¹' {y}, g x
+      ∂μHE[finrank ℝ E - finrank ℝ K]) volume :=
+  (K.orthogonalProjectionOnto : E →ₗ[ℝ] K).integrable_setIntegral_preimage_singleton hg
+
+/-- **Bochner slicing by orthogonal projections.** Integrating a Bochner-integrable `V`-valued
+function over the affine subspaces `K.orthogonalProjectionOnto ⁻¹' {y}` parallel to `Kᗮ` recovers
+its Lebesgue Bochner integral over `E`. -/
+theorem integral_setIntegral_preimage_orthogonalProjectionOnto (K : Submodule ℝ E) {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {g : E → V} (hg : Integrable g) :
+    ∫ y : K, ∫ x in K.orthogonalProjectionOnto ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ K] =
+      ∫ x, g x := by
+  have h := (K.orthogonalProjectionOnto : E →ₗ[ℝ] K).integral_setIntegral_preimage_singleton hg
+  rw [ContinuousLinearMap.adjoint_toLinearMap, K.adjoint_orthogonalProjectionOnto] at h
+  simpa using h
+
+end Submodule

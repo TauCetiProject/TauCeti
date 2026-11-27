@@ -24,6 +24,8 @@ define the descended function. For maps into a complex manifold,
 `Subgroup.mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk` checks holomorphy at
 an orbit, elliptic or not, from holomorphy of the pullback near one of its points, by reading the
 map in a chart of the target.
+In particular, for properly discontinuous `Δ ≤ Γ` the map `Δ \ ℍ → Γ \ ℍ` of coarse quotients is
+holomorphic (`Subgroup.mdifferentiable_orbitRel_map_of_le`).
 
 The elliptic descent argument uses `TauCeti.differentiableOn_descendPow` and follows
 Farkas–Kra, *Riemann Surfaces*, Chapter I §§4–5, and Miranda, *Algebraic Curves and
@@ -132,6 +134,20 @@ theorem mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk {E' : 
     mdifferentiableWithinAt_iff_source_of_mem_maximalAtlas he hze]
   simp only [mfld_simps, mdifferentiableWithinAt_univ, mdifferentiableAt_iff_differentiableAt]
   exact hd.differentiableAt (e.open_target.mem_nhds (e.map_source hze))
+
+variable {Γ} in
+/-- **The map of coarse quotients for an inclusion of Fuchsian groups is holomorphic.** For
+`Δ ≤ Γ` acting properly discontinuously on `ℍ`, the map `Δ \ ℍ → Γ \ ℍ` sending the orbit of `z`
+to the orbit of `z` pulls back along the orbit projection to the holomorphic orbit projection of
+`Γ`. -/
+theorem mdifferentiable_orbitRel_map_of_le {Δ : Subgroup PSL(2, ℝ)}
+    [ProperlyDiscontinuousSMul Δ ℍ] (h : Δ ≤ Γ) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (Setoid.map_of_le
+      (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) :
+        orbitRel.Quotient Δ ℍ → orbitRel.Quotient Γ ℍ) := fun p ↦ by
+  induction p using Quotient.inductionOn' with | h z => ?_
+  exact mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk
+    (.of_forall fun w ↦ mdifferentiable_quotientMk Γ w)
 
 /-- Every invariant holomorphic function on the upper half-plane descends uniquely to a
 holomorphic function on the coarse quotient, with no freeness assumption. -/

@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 import Mathlib.Algebra.FiveLemma
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.Algebra.Exact.Pi
 
 /-!
@@ -29,12 +30,38 @@ cannot be weakened to finite generation in general; this is why Chase's theorem,
 products of flat modules are flat, holds over coherent rings, where finitely generated ideals are
 finitely presented.
 
+For an `R`-algebra `N` and a finite index type, the identification
+`TensorProduct.piScalarRight : N ⊗[R] (ι → R) ≃ (ι → N)` sends `1 ⊗ x` to the coordinatewise image
+`algebraMap R N ∘ x` (`TensorProduct.piScalarRight_one_tmul`). Transporting the base change of a
+linear equivalence `(ι → R) ≃ (κ → R)` along it gives its scalar extension `(ι → A) ≃ (κ → A)`
+(`LinearEquiv.extendScalarsPi`), which acts on vectors with coordinates in `R` as the original
+equivalence and is compatible with identities, composition and inverses.
+
+## Main definitions
+
+* `LinearEquiv.extendScalarsPi`: the scalar extension of a linear equivalence between coordinate
+  spaces.
+* `Module.Basis.tensorPiEquiv`: for a basis `e` of an `A`-module `W`, the identification
+  `A ⊗[R] (ι → R) ≃ W` of the base change of the coordinate space with `W`.
+
 ## Main results
 
 * `TensorProduct.piRightHom_comp_rTensor`: naturality of `TensorProduct.piRightHom` in the
   left factor.
 * `TensorProduct.piRightHom_bijective_of_finitePresentation`: tensoring with a finitely presented
   module commutes with arbitrary products.
+* `TensorProduct.piScalarRight_one_tmul`: `1 ⊗ x` corresponds to `algebraMap R N ∘ x`.
+* `LinearEquiv.extendScalarsPi_apply_algebraMap_comp`: the scalar extension of `e` carries
+  `algebraMap R A ∘ v` to `algebraMap R A ∘ e v`.
+* `LinearEquiv.extendScalarsPi_refl`, `LinearEquiv.extendScalarsPi_trans`,
+  `LinearEquiv.extendScalarsPi_symm`: functoriality of the scalar extension.
+* `TensorProduct.piScalarRight_tmul_eq_smul`: for a commutative `R`-algebra `A`, the
+  identification `A ⊗[R] (ι → R) ≃ (ι → A)` sends `a ⊗ v` to `a • (algebraMap R A ∘ v)`.
+* `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
+  corresponds to the pure tensor `1 ⊗ v`.
+* `TensorProduct.piScalarRight_rTensor`: `piScalarRight` is natural in the module.
+* `TensorProduct.one_tmul_single_ne_zero`: the basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is
+  nonzero over a nontrivial `A`.
 
 ## References
 
@@ -46,6 +73,20 @@ public section
 open scoped TensorProduct
 
 namespace TensorProduct
+
+section ScalarExtension
+
+variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] (ι : Type*) [Fintype ι]
+  [DecidableEq ι] {N : Type*} [Semiring N] [Algebra R N] [Module S N] [IsScalarTower R S N]
+
+/-- The identification `N ⊗[R] (ι → R) ≃ (ι → N)` sends `1 ⊗ x` to `x` read in `ι → N`. This is
+the forward direction of Mathlib's `TensorProduct.piScalarRight_symm_algebraMap`. -/
+theorem piScalarRight_one_tmul (x : ι → R) :
+    piScalarRight R S N ι (1 ⊗ₜ x) = algebraMap R N ∘ x := by
+  ext i
+  simp [piScalarRight_apply, piScalarRightHom_tmul, Algebra.algebraMap_eq_smul_one]
+
+end ScalarExtension
 
 variable {R : Type*} {ι : Type*} {M : ι → Type*}
 
@@ -61,6 +102,46 @@ theorem piRightHom_comp_rTensor (f : N →ₗ[R] N') :
   TensorProduct.ext' fun _ _ ↦ rfl
 
 end CommSemiring
+
+section PiScalarRight
+
+variable {A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [Fintype ι] [DecidableEq ι]
+
+/-- Read on `ι → A`, the pure tensor `a ⊗ v` is `a` times the vector `v` with coordinates mapped
+into `A`. -/
+theorem piScalarRight_tmul_eq_smul (a : A) (v : ι → R) :
+    piScalarRight R A A ι (a ⊗ₜ v) = a • (algebraMap R A ∘ v) := by
+  ext i
+  simp [_root_.Algebra.smul_def, mul_comm]
+
+/-- A vector with coordinates mapped from `R` corresponds to the pure tensor `1 ⊗ v`. This is
+Mathlib's `TensorProduct.piScalarRight_symm_algebraMap` with the vector written as a composite,
+the form in which it can be rewritten with. -/
+theorem piScalarRight_symm_algebraMap_comp {S N : Type*} [CommSemiring S] [Algebra R S]
+    [Semiring N] [Algebra R N] [Module S N] [IsScalarTower R S N] (v : ι → R) :
+    (piScalarRight R S N ι).symm (algebraMap R N ∘ v) = 1 ⊗ₜ v :=
+  piScalarRight_symm_algebraMap R S ι v
+
+/-- `TensorProduct.piScalarRight` is natural in the module: a linear map `φ : N → N'` acting on
+the left factor of `N ⊗ (ι → R)` acts coordinatewise on `ι → N`. The scalar ring `S` of the
+right-hand side does not occur on the left, so it is explicit. -/
+theorem piScalarRight_rTensor (S : Type*) {S' N N' : Type*} [CommSemiring S] [Algebra R S]
+    [CommSemiring S'] [Algebra R S'] [AddCommMonoid N] [Module R N] [Module S N]
+    [IsScalarTower R S N] [AddCommMonoid N'] [Module R N'] [Module S' N'] [IsScalarTower R S' N']
+    (φ : N →ₗ[R] N') (x : N ⊗[R] (ι → R)) :
+    piScalarRight R S' N' ι (LinearMap.rTensor (ι → R) φ x) = φ ∘ piScalarRight R S N ι x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a f => ext i; simp
+  | add x y hx hy => ext i; simp only [map_add, hx, hy, Pi.add_apply, Function.comp_apply]
+
+omit [Fintype ι] in
+/-- The basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is nonzero over a nontrivial `A`. -/
+theorem one_tmul_single_ne_zero [Nontrivial A] (i : ι) :
+    (1 : A) ⊗ₜ[R] (Pi.single i 1 : ι → R) ≠ 0 := by
+  intro h
+  simpa using congr_arg (fun w ↦ piScalarRightHom R A A ι w i) h
+
+end PiScalarRight
 
 section CommRing
 
@@ -118,3 +199,72 @@ theorem piRightHom_bijective_of_finitePresentation (S : Type*) [CommSemiring S] 
 end CommRing
 
 end TensorProduct
+
+namespace LinearEquiv
+
+open TensorProduct
+
+variable {R : Type*} (A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable {ι κ μ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+  [Fintype μ] [DecidableEq μ]
+
+/-- The scalar extension of a linear equivalence `e : (ι → R) ≃ (κ → R)` to an `R`-algebra `A`:
+the base change `A ⊗[R] (ι → R) ≃ A ⊗[R] (κ → R)` of `e`, transported to coordinates along
+`TensorProduct.piScalarRight`. It carries `algebraMap R A ∘ v` to `algebraMap R A ∘ e v`
+(`LinearEquiv.extendScalarsPi_apply_algebraMap_comp`). -/
+noncomputable def extendScalarsPi (e : (ι → R) ≃ₗ[R] (κ → R)) : (ι → A) ≃ₗ[A] (κ → A) :=
+  (piScalarRight R A A ι).symm ≪≫ₗ e.baseChange R A _ _ ≪≫ₗ piScalarRight R A A κ
+
+/-- The scalar extension of `e` acts on vectors with coordinates in `R` as `e`. -/
+@[simp]
+theorem extendScalarsPi_apply_algebraMap_comp (e : (ι → R) ≃ₗ[R] (κ → R)) (v : ι → R) :
+    e.extendScalarsPi A (algebraMap R A ∘ v) = algebraMap R A ∘ e v := by
+  rw [extendScalarsPi, trans_apply, trans_apply, ← piScalarRight_one_tmul R A ι,
+    symm_apply_apply, baseChange_tmul, piScalarRight_one_tmul]
+
+/-- The scalar extension of the identity is the identity. -/
+@[simp]
+theorem extendScalarsPi_refl : (refl R (ι → R)).extendScalarsPi A = refl A (ι → A) := by
+  ext x : 1
+  simp only [extendScalarsPi, trans_apply, refl_apply]
+  rw [← one_eq_refl, baseChange_one, one_eq_refl, refl_apply, apply_symm_apply]
+
+/-- The scalar extension of a composite is the composite of the scalar extensions. -/
+theorem extendScalarsPi_trans (e : (ι → R) ≃ₗ[R] (κ → R)) (f : (κ → R) ≃ₗ[R] (μ → R)) :
+    (e.trans f).extendScalarsPi A = (e.extendScalarsPi A).trans (f.extendScalarsPi A) := by
+  ext x : 1
+  simp only [extendScalarsPi, baseChange_trans, trans_apply, symm_apply_apply]
+
+/-- The scalar extension of the inverse is the inverse of the scalar extension. -/
+theorem extendScalarsPi_symm (e : (ι → R) ≃ₗ[R] (κ → R)) :
+    e.symm.extendScalarsPi A = (e.extendScalarsPi A).symm := by
+  ext x : 1
+  simp only [extendScalarsPi, baseChange_symm, trans_apply, symm_trans_apply, symm_symm]
+
+end LinearEquiv
+
+namespace Module.Basis
+
+variable (R : Type*) {A W ι : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid W] [Module A W] [Fintype ι] [DecidableEq ι]
+
+/-- For a basis `e` of an `A`-module `W` and an `R`-algebra `A`, the identification
+`A ⊗[R] (ι → R) ≃ W` of the base change of `ι → R` with `W`, sending `a ⊗ x` to
+`a • ∑ i, algebraMap R A (x i) • e i`. -/
+noncomputable def tensorPiEquiv (e : Basis ι A W) : A ⊗[R] (ι → R) ≃ₗ[A] W :=
+  (TensorProduct.piScalarRight R A A ι).trans e.equivFun.symm
+
+/-- The pure tensor `a ⊗ x` corresponds to `a • ∑ i, algebraMap R A (x i) • e i`. -/
+@[simp]
+theorem tensorPiEquiv_tmul (e : Basis ι A W) (a : A) (x : ι → R) :
+    e.tensorPiEquiv R (a ⊗ₜ x) = a • ∑ i, algebraMap R A (x i) • e i := by
+  simp [tensorPiEquiv, Finset.smul_sum, smul_smul, Algebra.smul_def, mul_comm]
+
+/-- The inverse of `e.tensorPiEquiv R` takes a vector to its coordinates in `e`, read in
+`A ⊗[R] (ι → R)`. -/
+@[simp]
+theorem tensorPiEquiv_symm_apply (e : Basis ι A W) (v : W) :
+    (e.tensorPiEquiv R).symm v = (TensorProduct.piScalarRight R A A ι).symm (e.repr v) := by
+  simp [tensorPiEquiv]
+
+end Module.Basis

@@ -40,10 +40,11 @@ This is the algebraic model of how a based complex changes when a pair of genera
 invertible coefficient is born or dies, as at a birth–death point of a generic one-parameter family
 of Morse functions, whose two critical points of adjacent index are joined by a single trajectory.
 Only the coefficients of `d` enter: if `d` lowers a degree on the generators by a fixed amount, so
-does `d'` (`LinearMap.eq_add_of_gaussianElimination_single_apply_ne_zero`). Unlike the based
-two-periodic cancellation `HomologicalComplex.toMatrix_d_eq_of_cancel` over a field, which compares
-bases and torsions, the construction here works over any ring, needs no grading, and produces the
-contraction itself.
+does `d'` (`LinearMap.eq_add_of_gaussianElimination_single_apply_ne_zero`). This construction
+produces the contraction over any ring without a grading. For a based homological complex over a
+commutative ring, `HomologicalComplex.toMatrix_d_eq_of_cancel_of_invertible` computes the
+reduced differential as a Schur complement. The two-periodic torsion identities are in
+`TauCeti.Algebra.Homology.ReidemeisterTorsion.Cancellation`.
 
 ## Main definitions
 

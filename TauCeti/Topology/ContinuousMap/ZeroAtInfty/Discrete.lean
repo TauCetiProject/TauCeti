@@ -35,6 +35,8 @@ This file develops the coordinate structure of `C₀(I, E)`:
   distinct coordinates has the maximum of their norms
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`), so any family supported on a finite set has norm
   equal to its maximum on that set (`ZeroAtInftyContinuousMap.norm_eq_sup_of_forall_eq_zero`);
+* `ZeroAtInftyContinuousMap.not_exists_identity`: on an infinite index, `C₀(I, β)` has no
+  multiplicative identity;
 * `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous linear
   map;
 * `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite` and
@@ -254,6 +256,18 @@ theorem sum_single_apply [AddCommMonoid β] [ContinuousAdd β] (b : I → β) (s
   simp [Pi.single_apply]
 
 end Algebra
+
+/-- On an infinite discrete index, `C₀(I, β)` has no unit: no element is a two-sided
+multiplicative identity. -/
+theorem not_exists_identity [Infinite I] [TopologicalSpace β] [T2Space β] [MulZeroOneClass β]
+    [Nontrivial β] [ContinuousMul β] :
+    ¬∃ e : C₀(I, β), ∀ a : C₀(I, β), e * a = a ∧ a * e = a := by
+  classical
+  rintro ⟨e, he⟩
+  have h1 (i : I) : e i = 1 := by
+    simpa using congrArg (· i) (he (single i 1)).1
+  exact one_ne_zero <|
+    tendsto_nhds_unique (tendsto_const_nhds.congr fun i ↦ (h1 i).symm) e.tendsto_cofinite
 
 section Single
 

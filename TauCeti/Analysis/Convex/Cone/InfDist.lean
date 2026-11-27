@@ -19,7 +19,9 @@ homogeneous:
 
 * `AddSubmonoidClass.infDist_add_le`: `dist(x + y, C) ≤ dist(x, C) + dist(y, C)`, for every
   additive submonoid `C`;
-* `PointedCone.infDist_smul`: `dist(c x, C) = c dist(x, C)` for `c ≥ 0`.
+* `Metric.infDist_smul_of_smul_mem`: `dist(c x, C) = c dist(x, C)` for `c > 0` and any set `C`
+  closed under multiplication by positive scalars, such as a closed cone of frequencies;
+* `PointedCone.infDist_smul`: the same for `c ≥ 0` and a pointed cone `C`.
 
 Consequently the distance from a nonnegative combination `∑ cᵢ xᵢ` to `C` is at most
 `∑ cᵢ dist(xᵢ, C)`. This is how an estimate on the distance of a sum of two-forms to a cone of
@@ -50,6 +52,31 @@ theorem AddSubmonoidClass.infDist_add_le {T : Type*} [SetLike T E] [AddSubmonoid
   have h₂ : dist (x + y) (z + w) ≤ dist x z + dist y w := dist_add_add_le x y z w
   linarith
 
+namespace Metric
+
+variable [Module ℝ E] [NormSMulClass ℝ E]
+
+/-- **The distance to a cone is positively homogeneous**: for a set `V` closed under
+multiplication by positive scalars and `t > 0`, `dist(t x, V) = t dist(x, V)`. -/
+theorem infDist_smul_of_smul_mem {V : Set E}
+    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {t : ℝ} (ht : 0 < t) (x : E) :
+    infDist (t • x) V = t * infDist x V := by
+  rcases V.eq_empty_or_nonempty with rfl | hV
+  · simp
+  have hle (s : ℝ) (hs : 0 < s) (y : E) : infDist (s • y) V ≤ s * infDist y V := by
+    have hsub : s • V ⊆ V := by
+      rintro _ ⟨ξ, hξ, rfl⟩
+      exact hVcone s hs ξ hξ
+    have h := infDist_le_infDist_of_subset hsub (hV.smul_set (a := s)) (x := s • y)
+    rwa [infDist_smul₀, Real.norm_of_nonneg hs.le] at h
+  refine le_antisymm (hle t ht x) ?_
+  have h := hle t⁻¹ (inv_pos.2 ht) (t • x)
+  rw [inv_smul_smul₀ ht.ne'] at h
+  calc t * infDist x V ≤ t * (t⁻¹ * infDist (t • x) V) := by gcongr
+    _ = infDist (t • x) V := by rw [mul_inv_cancel_left₀ ht.ne']
+
+end Metric
+
 namespace PointedCone
 
 variable [Module ℝ E] [NormSMulClass ℝ E] (C : PointedCone ℝ E)
@@ -60,12 +87,6 @@ theorem infDist_smul {c : ℝ} (hc : 0 ≤ c) (x : E) :
     infDist (c • x) (C : Set E) = c * infDist x (C : Set E) := by
   rcases hc.eq_or_lt with rfl | hc
   · rw [zero_smul, zero_mul, infDist_zero_of_mem C.zero_mem]
-  -- A positive multiple of `C` is `C` itself.
-  have hcC : c • (C : Set E) = C := Set.ext fun z ↦ by
-    rw [Set.mem_smul_set_iff_inv_smul_mem₀ hc.ne']
-    exact ⟨fun h ↦ by simpa [smul_inv_smul₀ hc.ne'] using C.smul_mem hc.le h,
-      C.smul_mem (inv_nonneg.2 hc.le)⟩
-  have h := infDist_smul₀ c (C : Set E) x
-  rwa [hcC, Real.norm_of_nonneg hc.le] at h
+  exact infDist_smul_of_smul_mem (fun t ht ξ hξ ↦ C.smul_mem ht.le hξ) hc x
 
 end PointedCone

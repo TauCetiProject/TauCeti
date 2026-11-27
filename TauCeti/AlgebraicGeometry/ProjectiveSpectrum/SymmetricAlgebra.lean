@@ -33,7 +33,8 @@ lines in a finite locally free representation `V`, use `M = V∨`.
 quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
 also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
 standard affine charts, and the standard opens of a spanning family of linear forms cover
-the projective spectrum. Its source is Jacobson whenever `Spec R` is Jacobson. The morphism
+the projective spectrum; for `M` free of rank one the standard open of the coordinate is
+already everything. Its source is Jacobson whenever `Spec R` is Jacobson. The morphism
 `Proj(Sym M) ⟶ Proj(Sym N)` induced by a graded lift `Sym N → Sym M` lies over `Spec R`.
 
 For a nonzero free module `M` over a domain, `Proj(Sym M)` is integral. Over a field `k` it is
@@ -113,6 +114,12 @@ theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
   | algebraMap r => exact Subalgebra.algebraMap_mem _ (algebraMap R (homogeneousSubmodule R M 0) r)
   | add x y _ _ hx hy => exact add_mem hx hy
   | mul x y _ _ hx hy => exact mul_mem hx hy
+
+/-- If a single element `x` spans `M` (for instance the coordinate of projective space of
+dimension zero), the standard open `D₊(x)` is the whole of `Proj (Sym M)`. -/
+theorem basicOpen_ι_eq_top {x : M} (hx : Submodule.span R {x} = ⊤) :
+    Proj.basicOpen (homogeneousSubmodule R M) (_root_.SymmetricAlgebra.ι R M x) = ⊤ := by
+  simpa using iSup_basicOpen_ι_eq_top R M (fun _ : Unit ↦ x) (by simpa using hx)
 
 /-- The projective spectrum of a finite module is proper over the coefficient ring.
 Freeness and projectivity are not required. -/

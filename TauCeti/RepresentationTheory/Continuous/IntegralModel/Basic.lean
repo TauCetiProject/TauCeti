@@ -117,6 +117,15 @@ theorem coe_toContinuousRep_apply (Λ : IntegralModel O ρ) (g : Γ) (x : Λ.lat
     (Λ.toContinuousRep g x : V) = ρ g x :=
   (rfl)
 
+/-- On an integral model of the line of a character `χ`, an element `g` acts by any scalar `c`
+of the coefficient ring with `algebraMap O E c = χ g`. -/
+theorem toContinuousRep_ofCharacter_apply [TopologicalSpace E] [ContinuousMul E]
+    {χ : Γ →ₜ* Eˣ} (Λ : IntegralModel O (ContinuousRep.ofCharacter χ)) {g : Γ} {c : O}
+    (hc : algebraMap O E c = χ g) (x : Λ.lattice) : Λ.toContinuousRep g x = c • x :=
+  Subtype.ext <| by
+    rw [coe_toContinuousRep_apply, ContinuousRep.ofCharacter_apply, ← hc, Submodule.coe_smul,
+      Algebra.smul_def]
+
 /-! ### Homotheties -/
 
 /-- The units of `E` act on integral models by homothety, `c • Λ`. -/

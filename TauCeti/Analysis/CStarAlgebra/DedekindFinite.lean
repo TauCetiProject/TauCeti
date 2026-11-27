@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.Classes
+import TauCeti.Algebra.Algebra.Unitization
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 import Mathlib.Analysis.CStarAlgebra.Unitization
 import Mathlib.Tactic.NoncommRing
@@ -95,9 +96,8 @@ theorem IsIdempotentElem.exists_isStarProjection_mul_eq {A : Type*} [NonUnitalCS
   obtain ⟨q', hq', hqp, hpq⟩ :=
     exists_isStarProjection_mul_eq_unital (Unitization.IsIdempotentElem.inr ℂ hp)
   have hq'coe : ((q'.snd : A) : Unitization ℂ A) = q' :=
-    Unitization.ext
-      (by rw [Unitization.fst_inr, ← hpq, Unitization.fst_mul, Unitization.fst_inr, zero_mul])
-      (Unitization.snd_inr ℂ q'.snd)
+    Unitization.inr_snd_of_fst_eq_zero
+      (by rw [← hpq, Unitization.fst_mul, Unitization.fst_inr, zero_mul])
   refine ⟨q'.snd, Unitization.isStarProjection_inr_iff.1 (hq'coe.symm ▸ hq'), ?_, ?_⟩
   · exact Unitization.inr_injective (R := ℂ) (by rw [Unitization.inr_mul, hq'coe, hqp])
   · exact Unitization.inr_injective (R := ℂ) (by rw [Unitization.inr_mul, hq'coe, hpq])

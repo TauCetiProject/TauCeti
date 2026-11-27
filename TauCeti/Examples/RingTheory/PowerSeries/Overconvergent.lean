@@ -8,6 +8,7 @@ module
 import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.Dagger.OneVariable.Basic
+import TauCeti.RingTheory.PowerSeries.Exp.Padic.Basic
 
 /-!
 # Examples separating entire, overconvergent, restricted, and open-disc power series
@@ -197,35 +198,8 @@ example :
   have hR₀_pos : 0 < R₀ := Real.rpow_pos_of_pos hp_pos _
   have hR₀_lt : R₀ < 1 := Real.rpow_lt_one_of_one_lt_of_neg hp1
     (neg_neg_of_pos (one_div_pos.mpr hp_sub))
-  have hnot : ¬(PowerSeries.exp ℚ_[p]).IsRestricted R₀ := by
-    intro hf
-    have hsub := ((isRestricted_iff' R₀ _).mp hf).comp
-      (tendsto_pow_atTop_atTop_of_one_lt hp.out.one_lt)
-    have hterm (k : ℕ) : ‖coeff (p ^ k) (PowerSeries.exp ℚ_[p])‖ * R₀ ^ (p ^ k) = R₀ := by
-      have hleg : ((p - 1 : ℕ) : ℝ) * (padicValNat p (p ^ k).factorial : ℝ) =
-          ((p ^ k - 1 : ℕ) : ℝ) := by
-        exact_mod_cast TauCeti.sub_one_mul_padicValNat_factorial_pow p k
-      have hpk1 : 1 ≤ p ^ k := Nat.one_le_pow k p hp.out.pos
-      rw [Nat.cast_sub hp.out.one_le, Nat.cast_sub hpk1, Nat.cast_pow, Nat.cast_one] at hleg
-      have hval : (padicValNat p (p ^ k).factorial : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) :=
-        (eq_div_iff hp_sub.ne').mpr (by linarith)
-      have hnorm : ‖coeff (p ^ k) (PowerSeries.exp ℚ_[p])‖ =
-          (p : ℝ) ^ (((p : ℝ) ^ k - 1) / ((p : ℝ) - 1)) := by
-        rw [PowerSeries.coeff_exp, one_div, map_inv₀, map_natCast, norm_inv,
-          Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _), ← Real.rpow_intCast,
-          ← Real.rpow_neg hp_pos.le]
-        simp [hval]
-      have hpow : R₀ ^ (p ^ k) = (p : ℝ) ^ (-((p : ℝ) ^ k / ((p : ℝ) - 1))) := by
-        rw [← Real.rpow_natCast R₀, ← Real.rpow_mul hp_pos.le, Nat.cast_pow]
-        congr 1
-        ring
-      rw [hnorm, hpow, ← Real.rpow_add hp_pos]
-      congr 1
-      field_simp
-      ring
-    have hconst : Tendsto (fun _ : ℕ ↦ R₀) atTop (𝓝 0) := by
-      simpa only [Function.comp_def, hterm] using hsub
-    exact hR₀_pos.ne' (tendsto_nhds_unique tendsto_const_nhds hconst)
+  have hnot : ¬(PowerSeries.exp ℚ_[p]).IsRestricted R₀ := fun hf ↦
+    ((PowerSeries.isRestricted_exp_iff (p := p) hR₀_pos.le).mp hf).ne (by simp only [R₀, one_div])
   have hnot_open : ¬(PowerSeries.exp ℚ_[p]).OnOpenDisc 1 := fun h ↦
     hnot ((onOpenDisc_iff.mp h) R₀ hR₀_pos hR₀_lt)
   exact ⟨hnot, hnot_open,

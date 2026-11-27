@@ -9,7 +9,6 @@ public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
-import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 
 /-!
@@ -19,7 +18,8 @@ A basis determines a real top-degree coefficient and normalized Haar measure, an
 integral of the absolute value of a coefficient does not depend on the basis
 (`Module.Basis.addHaar_withDensity_ofReal_abs_apply_eq`). Over a product of measurable sets, such
 an integral whose integrand factors in a product basis is therefore the product of the factor
-integrals, since the Haar measure of a product basis is the product of the Haar measures.
+integrals, since the Haar measure of a product basis is the product of the Haar measures
+(`Module.Basis.setLIntegral_prod_of_addHaar_withDensity_eq`).
 
 ## Main results
 
@@ -51,13 +51,8 @@ theorem setLIntegral_ofReal_abs_apply_prod [MeasurableSpace F] [BorelSpace F]
     (hf : AEMeasurable f (b₁.addHaar.restrict A₁)) (hg : AEMeasurable g (b₂.addHaar.restrict A₂))
     (hψ : ∀ z ∈ A₁ ×ˢ A₂, ENNReal.ofReal |ψ z ((b₁.prod b₂).reindex e)| = f z.1 * g z.2) :
     ∫⁻ z in A₁ ×ˢ A₂, ENNReal.ofReal |ψ z b₀| ∂b₀.addHaar =
-      (∫⁻ y in A₁, f y ∂b₁.addHaar) * ∫⁻ z in A₂, g z ∂b₂.addHaar := by
-  have : FiniteDimensional ℝ F := b₂.finiteDimensional_of_finite
-  obtain rfl : mEF = Prod.instMeasurableSpace :=
-    BorelSpace.measurable_eq.trans (Prod.borelSpace (α := E) (β := F)).measurable_eq.symm
-  rw [← withDensity_apply _ (hA₁.prod hA₂),
-    addHaar_withDensity_ofReal_abs_apply_eq ((b₁.prod b₂).reindex e) b₀ ψ,
-    withDensity_apply _ (hA₁.prod hA₂), setLIntegral_congr_fun (hA₁.prod hA₂) hψ,
-    addHaar_reindex, prod_addHaar, ← Measure.prod_restrict, lintegral_prod_mul hf hg]
+      (∫⁻ y in A₁, f y ∂b₁.addHaar) * ∫⁻ z in A₂, g z ∂b₂.addHaar :=
+  setLIntegral_prod_of_addHaar_withDensity_eq (mEF := mEF) e b₀ b₁ b₂ hA₁ hA₂
+    (addHaar_withDensity_ofReal_abs_apply_eq ((b₁.prod b₂).reindex e) b₀ ψ) hf hg hψ
 
 end Module.Basis

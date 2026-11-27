@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.LocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 import TauCeti.Analysis.Distribution.ChangeOfVariables.Tempered
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
@@ -15,6 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.BesselPotential.Conjugation
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 
@@ -31,6 +33,16 @@ cut-off distribution `φ T` with `φ` a test function supported in `U` lies in `
 
 For `p = 2` the notion agrees with the Fourier description `Distribution.IsLocallySobolevAt` used
 for the `H^s` wave front set (`Distribution.isLocallyMemSobolevAt_two_iff`).
+
+It can be tested with a single cutoff: for `1 < p < ∞`, `T` is `H^{s,p}` near `x` exactly when
+`φ T ∈ H^{s,p}` for some test function `φ` with `φ x ≠ 0`
+(`Distribution.isLocallyMemSobolevAt_iff_exists_memSobolev_cutoffTempered`), since test functions
+multiply `H^{s,p}` into itself (`TemperedDistribution.MemSobolev.smulLeftCLM_testFunction`).
+Conversely, if `T` is `H^{s,p}` near every point of the support of `χ`, then `χ T ∈ H^{s,p}`
+(`Distribution.memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt`). A tempered
+distribution in `H^{s,p}`, and its real part, are `H^{s,p}` near every point of `Ω`
+(`TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_toDistribution`,
+`TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_re_toDistribution`).
 
 Smooth multiples preserve the notion (`Distribution.IsLocallyMemSobolevAt.smulLeftCLM`), and for
 `1 < p < ∞` each derivative costs one order (`Distribution.IsLocallyMemSobolevAt.lineDerivOp`,
@@ -283,6 +295,61 @@ theorem isLocallyMemSobolevAt_two_iff :
     exact ⟨U ∩ Ω, inter_mem hU (Ω.isOpen.mem_nhds h.mem), inter_subset_right,
       fun φ hφ ↦ hT φ (hφ.trans inter_subset_left)⟩
 
+/-! ### Testing with cutoffs -/
+
+/-- Let `1 < p < ∞`. Multiplying a tempered distribution in `H^{s,p}` by a test function keeps it
+in `H^{s,p}`. -/
+theorem _root_.TemperedDistribution.MemSobolev.smulLeftCLM_testFunction {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] (hp : 1 < p)
+    (hp_top : p ≠ ∞) {u : 𝓢'(E, F)} (hu : TemperedDistribution.MemSobolev s p u) (ψ : 𝓓(Ω, ℂ)) :
+    TemperedDistribution.MemSobolev s p (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) u) := by
+  simpa using hu.smulLeftCLM_schwartzMap hp hp_top (TestFunction.toSchwartzMapCLM ℂ ψ)
+
+/-- **Testing with one cutoff.** Let `1 < p < ∞`. A distribution is `H^{s,p}` near `x` exactly
+when `φ T ∈ H^{s,p}` for some test function `φ` with `φ x ≠ 0`. Indeed `φ` does not vanish near
+`x`, so for a cutoff `χ` equal to one near `x` and supported there, `χ T = (χ / φ) (φ T)`. -/
+theorem isLocallyMemSobolevAt_iff_exists_memSobolev_cutoffTempered (hp : 1 < p) (hp_top : p ≠ ∞) :
+    T.IsLocallyMemSobolevAt s p x ↔
+      ∃ φ : 𝓓(Ω, ℂ), φ x ≠ 0 ∧ TemperedDistribution.MemSobolev s p (T.cutoffTempered φ) := by
+  refine ⟨fun ⟨U, hU, hUΩ, hT⟩ ↦ ?_, fun ⟨φ, hφx, hT⟩ ↦ ?_⟩
+  · obtain ⟨φ, hφU, hφx⟩ := TestFunction.exists_tsupport_subset_apply_eq (n := ⊤) hU hUΩ (1 : ℂ)
+    exact ⟨φ, by simp [hφx], hT φ hφU⟩
+  -- A cutoff `χ` equal to one near `x`, supported where `φ ≠ 0`.
+  have hWΩ : Function.support φ ⊆ Ω := (subset_tsupport φ).trans φ.tsupport_subset
+  obtain ⟨χ, hχ1, hχW⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    isCompact_singleton (isOpen_ne_fun φ.continuous continuous_const)
+    (singleton_subset_iff.2 hφx) hWΩ
+  rw [nhdsSet_singleton] at hχ1
+  have hχ0 {y : E} (hy : φ y = 0) : y ∉ tsupport χ := fun h ↦ hχW h hy
+  -- The quotient `χ / φ` is a test function.
+  let g : 𝓓(Ω, ℂ) := ⟨fun y ↦ χ y * (φ y)⁻¹,
+    χ.contDiff.mul_inv_of_forall_notMem_tsupport φ.contDiff fun _ ↦ hχ0,
+    χ.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans χ.tsupport_subset⟩
+  have hgφ (y : E) : g y * φ y = χ y := by
+    by_cases hy : φ y = 0
+    · simp [hy, image_eq_zero_of_notMem_tsupport (hχ0 hy)]
+    · simp [g, hy]
+  have hχT : TemperedDistribution.MemSobolev s p (T.cutoffTempered χ) := by
+    rw [← smulLeftCLM_cutoffTempered_of_mul_eq T (g := g) (g.hasCompactSupport.hasTemperateGrowth
+      g.contDiff) hgφ]
+    exact hT.smulLeftCLM_testFunction hp hp_top g
+  -- On the set where `χ = 1`, every cut-off distribution `ψ T` is the smooth multiple `ψ (χ T)`.
+  have hxΩ : x ∈ Ω := hWΩ hφx
+  refine ⟨{y | χ y = 1} ∩ Ω, inter_mem hχ1 (Ω.isOpen.mem_nhds hxΩ), inter_subset_right,
+    fun ψ hψ ↦ ?_⟩
+  rw [← smulLeftCLM_cutoffTempered T fun y hy ↦ (hψ hy).1]
+  exact hχT.smulLeftCLM_testFunction hp hp_top ψ
+
+/-- **From local to global regularity.** If `T` is `H^{s,p}` near every point of the support of a
+test function `χ`, then `χ T ∈ H^{s,p}`. -/
+theorem memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt {χ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport χ, T.IsLocallyMemSobolevAt s p x) :
+    TemperedDistribution.MemSobolev s p (T.cutoffTempered χ) :=
+  cutoffTempered_induction _ (TemperedDistribution.memSobolev_fun_zero E ℂ s p)
+    (fun _ _ ↦ TemperedDistribution.MemSobolev.add)
+    fun x hx ↦ (h x hx).imp fun _ hU ↦ ⟨hU.1, hU.2.2⟩
+
 /-- If `χ = 1` on the support of `φ` and `χ T ∈ H^r` with `n < 2 (r + 2k)`, then
 `φ T = φ (χ T) ∈ H^{-2k,p}`. -/
 private theorem memSobolev_cutoffTempered_of_memSobolev_two (hp : 1 < p) (hp_top : p ≠ ∞)
@@ -358,10 +425,17 @@ theorem _root_.TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_toDistribut
     (TemperedDistribution.toDistribution Ω u).IsLocallyMemSobolevAt s p x :=
   ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun φ _ ↦ by
     rw [cutoffTempered_toDistribution]
-    exact hu.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top fun n _ ↦
-      ⟨_, fun y ↦ by
-        simpa [coe_toSchwartzMapCLM] using
-          (toSchwartzMapCLM ℝ φ).norm_iteratedFDeriv_le_seminorm ℝ n y⟩⟩
+    exact hu.smulLeftCLM_testFunction hp hp_top φ⟩
+
+/-- Let `1 < p < ∞`. The real part of a tempered distribution in `H^{s,p}`, restricted to `Ω`, is
+`H^{s,p}` near every point of `Ω`. -/
+theorem _root_.TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_re_toDistribution
+    (hp : 1 < p) (hp_top : p ≠ ∞) {u : 𝓢'(E, ℂ)} (hu : TemperedDistribution.MemSobolev s p u)
+    (hx : x ∈ Ω) :
+    (mapCLM (Complex.ofRealCLM ∘L Complex.reCLM)
+      (TemperedDistribution.toDistribution Ω u)).IsLocallyMemSobolevAt s p x := by
+  rw [TemperedDistribution.mapCLM_re_toDistribution]
+  exact ((hu.add (hu.conjPostcompCLM _)).smul _).isLocallyMemSobolevAt_toDistribution hp hp_top hx
 
 variable {e : OpenPartialHomeomorph E E} {U : Opens E}
   {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}
