@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
+public import TauCeti.RingTheory.IntegralClosure.FixedField
+public import TauCeti.RingTheory.LocalRing.FixedPoints
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 
 /-!
@@ -43,7 +44,7 @@ theorem _root_.AlgEquiv.ramificationGroup_integralClosure_eq_comap_autCongr {A K
     (e := (e.restrictScalars A).mapIntegralClosure.toRingEquiv)
     (fun _ _ ↦ Subtype.ext <| by simp [AlgEquiv.smul_def, AlgEquiv.autCongr_apply]) i
 
-open IntermediateField in
+open _root_.IntermediateField in
 /-- `IsGalois.normalAutEquivQuotient H` pulls back lower ramification groups from
 `integralClosure A (fixedField H)` to `FixedPoints.subalgebra A (integralClosure A L) H`. -/
 theorem ramificationGroup_fixedPoints_integralClosure_eq_comap (A : Type*) {K L : Type*}

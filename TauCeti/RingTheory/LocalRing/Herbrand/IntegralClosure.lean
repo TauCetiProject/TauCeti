@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LocalRing.Herbrand.Basic
+public import TauCeti.RingTheory.LocalRing.Herbrand.Jump
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.IntegralClosure
 
 /-!

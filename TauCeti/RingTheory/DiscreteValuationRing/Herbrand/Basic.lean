@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
-public import TauCeti.RingTheory.LocalRing.Herbrand.Basic
+public import TauCeti.RingTheory.LocalRing.Herbrand.Jump
 import TauCeti.RingTheory.DiscreteValuationRing.Inertia
 
 /-!

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Basic
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 import TauCeti.RingTheory.LocalRing.FixedPoints
 
 /-!
@@ -35,6 +36,9 @@ element.
 * `TauCeti.FixedPoints.isDiscreteValuationRing_subalgebra` and
   `TauCeti.instIsDiscreteValuationRingFixedPointsSubring`: the invariants `B^G` of a finite group
   form a discrete valuation ring.
+* `TauCeti.FixedPoints.moduleFinite_subalgebra` and
+  `TauCeti.FixedPoints.moduleFinite_subalgebra_of_le`: `B` and `B^H` are finite `B^G`-modules
+  for a faithful finite group action on a DVR `B`.
 * `TauCeti.FixedPoints.exists_adjoin_eq_top`: for a finite local homomorphism `A → B` from a
   Noetherian local ring with separable residue extension, `B^G` is generated over `A` by a single
   element.
@@ -119,6 +123,29 @@ instance isDiscreteValuationRing_subalgebra :
   have : Algebra.IsIntegral (FixedPoints.subalgebra A B G) B :=
     Algebra.IsInvariant.isIntegral (FixedPoints.subalgebra A B G) B G
   isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral
+
+/-- For a finite group `G` acting faithfully on a DVR `B` by `A`-algebra automorphisms, `B` is a
+finite `B^G`-module. -/
+theorem moduleFinite_subalgebra (A B G : Type*) [CommRing A] [CommRing B] [IsDomain B]
+    [_root_.IsDiscreteValuationRing B] [Algebra A B] [Group G] [Finite G]
+    [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B] :
+    Module.Finite (FixedPoints.subalgebra A B G) B :=
+  let _ := FixedPoints.isGaloisGroup_subalgebra A B G
+  IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G (FixedPoints.subalgebra A B G) B
+
+/-- For a finite group `G` acting faithfully on a DVR `B` by `A`-algebra automorphisms and a
+submonoid-like subobject `H` of `G`, `B^H` is a finite `B^G`-module. -/
+theorem moduleFinite_subalgebra_of_le (A B : Type*) {G S : Type*} [CommRing A] [CommRing B]
+    [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B] [Group G] [Finite G]
+    [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B]
+    [SetLike S G] [SubmonoidClass S G] (H : S) :
+    letI := fixedPointsSubalgebraAlgebra A B H
+    Module.Finite (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) :=
+  let _ := fixedPointsSubalgebraAlgebra A B H
+  let _ := isScalarTower_fixedPointsSubalgebra A B H
+  let _ := moduleFinite_subalgebra A B G
+  Module.Finite.of_injective (IsScalarTower.toAlgHom (FixedPoints.subalgebra A B G)
+    (FixedPoints.subalgebra A B H) B).toLinearMap Subtype.val_injective
 
 variable [IsLocalRing A] [IsNoetherianRing A] [Module.Finite A B] [IsLocalHom (algebraMap A B)]
   [Algebra.IsSeparable (ResidueField A) (ResidueField B)]

@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
+import TauCeti.RingTheory.LocalRing.FixedPoints
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
@@ -68,10 +69,8 @@ theorem natCard_ramificationGroup_zero_fixedPoints
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
     Nat.card (ramificationGroup G B 0) =
       (maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B G) :=
-  let _ : IsGaloisGroup G (FixedPoints.subalgebra A B G) B :=
-    ⟨inferInstance, inferInstance, inferInstance⟩
-  have _ : Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B) :=
-    Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) _ (ResidueField B)
+  let _ := FixedPoints.isGaloisGroup_subalgebra A B G
+  have _ := isSeparable_residueField_fixedPointsSubalgebra A B G
   natCard_ramificationGroup_zero
 
 end IsLocalRing

@@ -8,19 +8,21 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 
 /-!
-# The Galois theory of quadratic extensions
+# Basic Galois theory extensions and quadratic extensions
 
-Material complementing `Mathlib/FieldTheory/Galois/Basic.lean` for a quadratic extension `L/K`:
-it has at most two automorphisms, so the identity and any one nontrivial automorphism exhaust
-`Gal(L/K)` and every automorphism is an involution. A nontrivial automorphism makes `L/K` Galois,
-so an element it fixes lies in the base field. Only the existence of a nontrivial automorphism
-(equivalently, `Gal(L/K)` having exactly two elements) assumes separability.
-`Algebra.IsQuadraticExtension.quadraticCharacter` records the resulting `Gal(L/K) →* ℤˣ` — the
-identity to `1`, a nontrivial automorphism to `-1`. It is there so that a quantity alternating
-with the Galois action can be described uniformly in `σ` rather than by cases;
-`WeierstrassCurve.quadraticTwistPointEquiv_map_eq_quadraticCharacter_smul_map` is the intended
-consumer. Mathlib's `quadraticChar` is a different object — the Legendre symbol of a
-finite field, not a character of a Galois group.
+This file collects extensions to `Mathlib/FieldTheory/Galois/Basic.lean`:
+* `IsGalois.tower_bot_of_normal`: in a tower `K ⊆ L ⊆ M` with `M / K` Galois and `L / K` normal,
+  `L / K` is Galois.
+* Material for a quadratic extension `L / K`: it has at most two automorphisms, so the identity and
+  any one nontrivial automorphism exhaust `Gal(L/K)` and every automorphism is an involution. A
+  nontrivial automorphism makes `L/K` Galois, so an element it fixes lies in the base field. Only
+  the existence of a nontrivial automorphism (equivalently, `Gal(L/K)` having exactly two elements)
+  assumes separability. `Algebra.IsQuadraticExtension.quadraticCharacter` records the resulting
+  `Gal(L/K) →* ℤˣ` — the identity to `1`, a nontrivial automorphism to `-1`. It is there so that
+  a quantity alternating with the Galois action can be described uniformly in `σ` rather than by
+  cases; `WeierstrassCurve.quadraticTwistPointEquiv_map_eq_quadraticCharacter_smul_map` is the
+  intended consumer. Mathlib's `quadraticChar` is a different object — the Legendre symbol of a
+  finite field, not a character of a Galois group.
 
 Mathlib already supplies the surrounding structure: `Algebra.IsQuadraticExtension` makes `L/K`
 finite and normal (`Algebra.IsQuadraticExtension.normal`), hence Galois with separability
@@ -40,6 +42,19 @@ than in the copyright header. Only the results consumed downstream are adapted h
 -/
 
 public section
+
+section Tower
+
+/-- In a tower `K ⊆ L ⊆ M` with `M / K` Galois and `L / K` normal, `L / K` is Galois. -/
+theorem IsGalois.tower_bot_of_normal (K L M : Type*) [Field K] [Field L] [Field M]
+    [Algebra K L] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
+    [IsGalois K M] [Normal K L] : IsGalois K L :=
+  have := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+  ⟨⟩
+
+end Tower
+
+section Quadratic
 
 variable (K L : Type*) [Field K] [Field L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 
@@ -134,5 +149,7 @@ theorem quadraticCharacter_eq_neg_one_iff {σ : L ≃ₐ[K] L} :
   simp [quadraticCharacter]
 
 end Algebra.IsQuadraticExtension
+
+end Quadratic
 
 end

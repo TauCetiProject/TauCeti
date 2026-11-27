@@ -55,7 +55,6 @@ restriction, and conjugation transport properties.
   `TauCeti.embeddingSubgroup_normal`, `TauCeti.algEquivEquivEmbeddingSubgroup`,
   `TauCeti.equivFixedFieldEmbeddingSubgroup`, `TauCeti.coe_equivFixedFieldEmbeddingSubgroup_apply`,
   `TauCeti.autCongr_equivFixedFieldEmbeddingSubgroup_comp_restrictNormalHom`,
-  `IsGalois.tower_bot_of_normal`,
   `TauCeti.embeddingSubgroup_intermediateField`, `TauCeti.fixedField_embeddingSubgroup`,
   `TauCeti.natCard_embeddingSubgroup`, `TauCeti.index_embeddingSubgroup`,
   `TauCeti.comap_restrictNormalHom_embeddingSubgroup`, and
@@ -400,11 +399,6 @@ theorem autCongr_equivFixedFieldEmbeddingSubgroup_comp_restrictNormalHom
     algebraMap_equivFixedFieldEmbeddingSubgroup_symm_apply, QuotientGroup.coe_mk',
     IsGalois.normalAutEquivQuotient_apply]
   exact (σ.restrictNormal_commutes (IntermediateField.fixedField (embeddingSubgroup K L M)) y).symm
-
-/-- In a tower `K ⊆ L ⊆ M` with `M / K` Galois and `L / K` normal, `L / K` is Galois. -/
-theorem _root_.IsGalois.tower_bot_of_normal [IsGalois K M] [Normal K L] : IsGalois K L :=
-  have := Algebra.isSeparable_tower_bot_of_isSeparable K L M
-  ⟨⟩
 
 end EmbeddingSubgroup
 
