@@ -99,14 +99,17 @@ theorem partitionEntropyRate_le_of_generator [IsProbabilityMeasure μ]
   set b : ℕ → X → κ := fun k ↦ g k ∘ iteratedPartitionLabel T ξ (N k)
   have hζ (k : ℕ) := measurable_iteratedPartitionLabel hT.measurable hξ (N k)
   have hb (k : ℕ) : Measurable (b k) := (measurable_of_countable _).comp (hζ k)
+  -- The mismatch measures tend to zero in `ℝ≥0∞`; transfer this to `μ.real` once.
   have hsmall : Tendsto (fun k ↦ μ.real {x | η x ≠ b k x}) atTop (𝓝 0) := by
-    refine squeeze_zero (fun _ ↦ measureReal_nonneg) (fun k ↦ ?_)
-      ((tendsto_const_div_atTop_nhds_zero_nat (Fintype.card κ : ℝ)).comp
-        (tendsto_add_atTop_nat 1))
-    have := ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.natCast_ne_top _)
-      (ENNReal.inv_ne_top.2 (by positivity))) (hg k)
-    rwa [ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast, ENNReal.toReal_natCast,
-      ← div_eq_mul_inv, ← measureReal_def] at this
+    have hbound : Tendsto (fun k : ℕ ↦ (Fintype.card κ : ℝ≥0∞) * ((k + 1 : ℕ) : ℝ≥0∞)⁻¹)
+        atTop (𝓝 0) := by
+      simpa only [mul_zero, Function.comp_def] using ENNReal.Tendsto.const_mul
+        (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
+        (Or.inr (ENNReal.natCast_ne_top _))
+    have h : Tendsto (fun k ↦ μ {x | η x ≠ b k x}) atTop (𝓝 0) :=
+      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound (fun _ ↦ zero_le) hg
+    simpa only [measureReal_def, ENNReal.toReal_zero, Function.comp_def] using
+      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h
   have hkey (k : ℕ) : partitionEntropyRate μ T η ≤
       partitionEntropyRate μ T ξ + countablePartitionEntropy μ (mismatchLabel η (b k)) :=
     calc partitionEntropyRate μ T η
