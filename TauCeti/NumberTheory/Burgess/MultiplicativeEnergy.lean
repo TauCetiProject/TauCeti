@@ -40,12 +40,16 @@ determine `n₁`, so there are at most `N g / a₂ + 1` solutions. For `a₁ = a
 
 ## Main results
 
+* `TauCeti.sum_card_filter_eq_card_mul_card`: `V₁ = ∑_x v(x) = #𝒜 #I`.
 * `TauCeti.sum_card_filter_sq_eq_sum_sum_card`: `V₂` is the sum over `(a₁, a₂) ∈ 𝒜 × 𝒜` of the
   number of `(n₁, n₂) ∈ I × I` with `a₂ n₁ ≡ a₁ n₂ (mod p)`.
 * `TauCeti.card_filter_mul_eq_mul_le`: if `(a₁ + a₂) N ≤ p`, there are at most
-  `N gcd(a₁, a₂) / a₂ + 1` such pairs `(n₁, n₂)`.
+  `N gcd(a₁, a₂) / a₂ + 1` such pairs `(n₁, n₂)`; `TauCeti.card_filter_mul_eq_mul_le_max` is the
+  same bound with `max(a₁, a₂)` in place of `a₂`.
 * `TauCeti.sum_card_filter_sq_le`: if `2 A N ≤ p`, then
   `V₂ ≤ #𝒜 N + ∑_{a₁ ≠ a₂} (N gcd(a₁, a₂) / max(a₁, a₂) + 1)`.
+* `TauCeti.sum_sum_filter_ne_max_eq`: the sum of `g(max(a₁, a₂))` over the ordered pairs of
+  distinct elements of `𝒜` is `2 ∑_{a ∈ 𝒜} #{b ∈ 𝒜 | b < a} g(a)`.
 * `TauCeti.sum_card_filter_primesLE_sq_le`: McGown's bound for the primes up to `A`.
 
 ## References
@@ -63,6 +67,16 @@ open Finset
 namespace TauCeti
 
 variable {p : ℕ}
+
+/-- **The first moment.** If every `a ∈ 𝒜` is nonzero modulo `p`, each pair `(a, n) ∈ 𝒜 × I`
+has exactly one `x = n / a` with `n ≡ a x (mod p)`, so `∑_x v(x) = #𝒜 #I`. -/
+theorem sum_card_filter_eq_card_mul_card [Fact p.Prime] (𝒜 : Finset ℕ) (I : Finset ℤ)
+    (h𝒜 : ∀ a ∈ 𝒜, (a : ZMod p) ≠ 0) :
+    ∑ x : ZMod p, #{y ∈ 𝒜 ×ˢ I | (y.2 : ZMod p) = y.1 * x} = #𝒜 * #I := by
+  rw [← card_product, card_eq_sum_card_fiberwise (s := 𝒜 ×ˢ I)
+    (f := fun y : ℕ × ℤ ↦ (y.2 : ZMod p) / y.1) (t := univ) fun _ _ ↦ mem_coe.mpr (mem_univ _)]
+  refine sum_congr rfl fun x _ ↦ congr_arg card (filter_congr fun y hy ↦ ?_)
+  rw [div_eq_iff (h𝒜 y.1 (mem_product.mp hy).1), mul_comm]
 
 /-- **The energy as a count of quadruples.** If every `a ∈ 𝒜` is nonzero modulo `p`, then
 `∑_x v(x)²` is the sum over `(a₁, a₂) ∈ 𝒜 × 𝒜` of the number of `(n₁, n₂) ∈ I × I` with
