@@ -20,7 +20,8 @@ pointwise convergence (`isEmbedding_coe`, which is moreover a closed embedding
 compact `M` and discrete `E` it is discrete (`instDiscreteTopology`). We provide contravariant
 (`ContinuousLinearMap.pontryaginDualMap`, `ContinuousLinearEquiv.pontryaginDualCongr`) and covariant
 (`ContinuousLinearMap.pontryaginDualMapCodomain`,
-`ContinuousLinearEquiv.pontryaginDualCongrCodomain`) functoriality and evaluation (`eval`,
+`ContinuousLinearEquiv.pontryaginDualCongrCodomain`), transport along linear equivalences with
+continuous realizations (`LinearEquiv.pontryaginDualEquiv`), and evaluation (`eval`,
 continuous when `M` is discrete via `continuous_eval_of_discrete` or when `M` is compact and `E`
 is discrete via `continuous_eval_of_compact`).
 
@@ -388,5 +389,81 @@ def pontryaginDualCongrCodomain (e : E ≃L[R] F) :
         (e'.pontryaginDualCongrCodomain (M := M)) := by ext; rfl
 
 end ContinuousLinearEquiv
+
+namespace LinearEquiv
+
+/-- Transport a linear equivalence between linear maps to a continuous linear equivalence on
+`ModulePontryaginDual`, given continuous realizations of both directions on `C(M, E)`. -/
+def pontryaginDualEquiv {R₁ R₂ S E₁ E₂ M : Type*}
+    [Semiring R₁] [Semiring R₂] [Semiring S]
+    [AddCommGroup E₁] [Module R₁ E₁] [Module S E₁] [SMulCommClass R₁ S E₁]
+    [TopologicalSpace E₁] [IsTopologicalAddGroup E₁] [ContinuousConstSMul S E₁]
+    [AddCommGroup E₂] [Module R₂ E₂] [Module S E₂] [SMulCommClass R₂ S E₂]
+    [TopologicalSpace E₂] [IsTopologicalAddGroup E₂] [ContinuousConstSMul S E₂]
+    [AddCommGroup M] [Module R₁ M] [Module R₂ M] [TopologicalSpace M]
+    (e : (M →ₗ[R₁] E₁) ≃ₗ[S] (M →ₗ[R₂] E₂))
+    (F : C(M, E₁) → C(M, E₂)) (hF : Continuous F)
+    (heF : ∀ (φ : ModulePontryaginDual R₁ E₁ M) (m : M),
+      e φ.toContinuousLinearMap.toLinearMap m = F φ.toContinuousMap m)
+    (G : C(M, E₂) → C(M, E₁)) (hG : Continuous G)
+    (heG : ∀ (ψ : ModulePontryaginDual R₂ E₂ M) (m : M),
+      e.symm ψ.toContinuousLinearMap.toLinearMap m = G ψ.toContinuousMap m) :
+    ModulePontryaginDual R₁ E₁ M ≃L[S] ModulePontryaginDual R₂ E₂ M where
+  toFun φ :=
+    ⟨⟨e φ.toContinuousLinearMap.toLinearMap,
+      (F φ.toContinuousMap).continuous.congr fun m ↦ (heF φ m).symm⟩⟩
+  invFun ψ :=
+    ⟨⟨e.symm ψ.toContinuousLinearMap.toLinearMap,
+      (G ψ.toContinuousMap).continuous.congr fun m ↦ (heG ψ m).symm⟩⟩
+  left_inv _ := ModulePontryaginDual.ext fun m ↦ LinearMap.congr_fun (e.symm_apply_apply _) m
+  right_inv _ := ModulePontryaginDual.ext fun m ↦ LinearMap.congr_fun (e.apply_symm_apply _) m
+  map_add' _ _ := ModulePontryaginDual.ext fun m ↦ LinearMap.congr_fun (e.map_add _ _) m
+  map_smul' a _ := ModulePontryaginDual.ext fun m ↦ LinearMap.congr_fun (e.map_smul a _) m
+  continuous_toFun := isInducing_toContinuousMap.continuous_iff.mpr <|
+    (hF.comp continuous_toContinuousMap).congr fun φ ↦
+      ContinuousMap.ext fun m ↦ (heF φ m).symm
+  continuous_invFun := isInducing_toContinuousMap.continuous_iff.mpr <|
+    (hG.comp continuous_toContinuousMap).congr fun ψ ↦
+      ContinuousMap.ext fun m ↦ (heG ψ m).symm
+
+@[simp] theorem pontryaginDualEquiv_apply {R₁ R₂ S E₁ E₂ M : Type*}
+    [Semiring R₁] [Semiring R₂] [Semiring S]
+    [AddCommGroup E₁] [Module R₁ E₁] [Module S E₁] [SMulCommClass R₁ S E₁]
+    [TopologicalSpace E₁] [IsTopologicalAddGroup E₁] [ContinuousConstSMul S E₁]
+    [AddCommGroup E₂] [Module R₂ E₂] [Module S E₂] [SMulCommClass R₂ S E₂]
+    [TopologicalSpace E₂] [IsTopologicalAddGroup E₂] [ContinuousConstSMul S E₂]
+    [AddCommGroup M] [Module R₁ M] [Module R₂ M] [TopologicalSpace M]
+    (e : (M →ₗ[R₁] E₁) ≃ₗ[S] (M →ₗ[R₂] E₂))
+    (F : C(M, E₁) → C(M, E₂)) (hF : Continuous F)
+    (heF : ∀ (φ : ModulePontryaginDual R₁ E₁ M) (m : M),
+      e φ.toContinuousLinearMap.toLinearMap m = F φ.toContinuousMap m)
+    (G : C(M, E₂) → C(M, E₁)) (hG : Continuous G)
+    (heG : ∀ (ψ : ModulePontryaginDual R₂ E₂ M) (m : M),
+      e.symm ψ.toContinuousLinearMap.toLinearMap m = G ψ.toContinuousMap m)
+    (φ : ModulePontryaginDual R₁ E₁ M) (m : M) :
+    e.pontryaginDualEquiv F hF heF G hG heG φ m =
+      e φ.toContinuousLinearMap.toLinearMap m := by
+  simp [pontryaginDualEquiv]
+
+@[simp] theorem pontryaginDualEquiv_symm_apply {R₁ R₂ S E₁ E₂ M : Type*}
+    [Semiring R₁] [Semiring R₂] [Semiring S]
+    [AddCommGroup E₁] [Module R₁ E₁] [Module S E₁] [SMulCommClass R₁ S E₁]
+    [TopologicalSpace E₁] [IsTopologicalAddGroup E₁] [ContinuousConstSMul S E₁]
+    [AddCommGroup E₂] [Module R₂ E₂] [Module S E₂] [SMulCommClass R₂ S E₂]
+    [TopologicalSpace E₂] [IsTopologicalAddGroup E₂] [ContinuousConstSMul S E₂]
+    [AddCommGroup M] [Module R₁ M] [Module R₂ M] [TopologicalSpace M]
+    (e : (M →ₗ[R₁] E₁) ≃ₗ[S] (M →ₗ[R₂] E₂))
+    (F : C(M, E₁) → C(M, E₂)) (hF : Continuous F)
+    (heF : ∀ (φ : ModulePontryaginDual R₁ E₁ M) (m : M),
+      e φ.toContinuousLinearMap.toLinearMap m = F φ.toContinuousMap m)
+    (G : C(M, E₂) → C(M, E₁)) (hG : Continuous G)
+    (heG : ∀ (ψ : ModulePontryaginDual R₂ E₂ M) (m : M),
+      e.symm ψ.toContinuousLinearMap.toLinearMap m = G ψ.toContinuousMap m)
+    (ψ : ModulePontryaginDual R₂ E₂ M) (m : M) :
+    (e.pontryaginDualEquiv F hF heF G hG heG).symm ψ m =
+      e.symm ψ.toContinuousLinearMap.toLinearMap m := by
+  simp [pontryaginDualEquiv]; rfl
+
+end LinearEquiv
 
 end Functoriality

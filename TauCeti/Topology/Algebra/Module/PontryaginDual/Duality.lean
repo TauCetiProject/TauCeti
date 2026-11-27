@@ -9,11 +9,11 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Topology.Algebra.Module.Compact
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.Basic
-import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import Mathlib.Topology.Compactness.Compact
-import Mathlib.Topology.Maps.Strict.Module
+import TauCeti.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.Topology.Algebra.Module.Submodule
 import TauCeti.Topology.Algebra.Ring.Compact
+import TauCeti.Topology.Maps.Strict.Module
 
 /-!
 # Compact–discrete Pontryagin duality for modules over a compact local ring
@@ -159,8 +159,8 @@ variable {R : Type u} {E : Type v}
   [CommRing R] [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
   [ContinuousConstSMul R E]
 
-/-- **Colimit compatibility over open quotients**: when `E` is discrete, every element of `N^∨`
-lies in the image of `(N ⧸ U)^∨` for some open submodule `U` of `N`. -/
+/-- **Colimit compatibility over open quotients**: when `E` is discrete, the images of
+`(N ⧸ U)^∨ → N^∨` over open submodules `U` span `N^∨`. -/
 theorem iSup_range_pontryaginDualMap_mkQL_eq_top [DiscreteTopology E] {N : Type w}
     [AddCommGroup N] [Module R N] [TopologicalSpace N] :
     ⨆ U : {U : Submodule R N // IsOpen (U : Set N)},
@@ -596,21 +596,6 @@ def Submodule.quotKerPontryaginDualMapSubtypeEquiv {R : Type u} {E : Type v} {M 
   ((ContinuousLinearEquiv.quotKerEquivRange hf).trans
     (ContinuousLinearEquiv.ofEq _ _ hrange)).trans Submodule.topContEquiv
 
-private theorem topContEquiv_apply {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [TopologicalSpace M] (x : (⊤ : Submodule R M)) :
-    Submodule.topContEquiv x = (x : M) := (rfl)
-
-private theorem coe_ofEq_apply {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [TopologicalSpace M] {p q : Submodule R M} (h : p = q) (x : p) :
-    ((ContinuousLinearEquiv.ofEq p q h x : q) : M) = (x : M) := (rfl)
-
-private theorem coe_quotKerEquivRange_mk {R M N : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
-    {f : M →ₗ[R] N} (hf : Topology.IsStrictMap f) (x : M) :
-    ((ContinuousLinearEquiv.quotKerEquivRange hf (Submodule.Quotient.mk x) :
-      LinearMap.range f) : N) = f x := by
-  simp [ContinuousLinearEquiv.quotKerEquivRange, LinearMap.quotKerEquivRange_apply_mk]
-
 @[simp] theorem Submodule.quotKerPontryaginDualMapSubtypeEquiv_mk {R : Type u} {E : Type v}
     {M : Type w} [CommRing R] [IsLocalRing R] [TopologicalSpace R] [IsTopologicalRing R]
     [CompactSpace R] [TotallyDisconnectedSpace R]
@@ -622,7 +607,6 @@ private theorem coe_quotKerEquivRange_mk {R M N : Type*} [Ring R] [AddCommGroup 
     (φ : ModulePontryaginDual R E M) :
     M₀.quotKerPontryaginDualMapSubtypeEquiv hE (Submodule.Quotient.mk φ) =
       M₀.subtypeL.pontryaginDualMap (E := E) φ := by
-  simp [Submodule.quotKerPontryaginDualMapSubtypeEquiv, topContEquiv_apply, coe_ofEq_apply,
-    coe_quotKerEquivRange_mk]
+  simp [Submodule.quotKerPontryaginDualMapSubtypeEquiv]
 
 end SubmoduleQuotientEquiv

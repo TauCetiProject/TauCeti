@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
-import TauCeti.Algebra.Module.LinearMap.Precomp
+import TauCeti.RingTheory.MatlisDuality.Basic
 
 /-!
 # Trace-dual quotient comparison for linear maps
@@ -71,8 +71,6 @@ def mulByTraceDualQuotientMap (y : L) (hy : y ∈ Submodule.traceDual A K (1 : S
 end TraceDualQuotient
 
 section TraceDualEquiv
-
-open TauCeti.Algebra
 
 variable (A K B L : Type*) [CommRing A] [Field K] [CommRing B] [Field L]
   [Algebra A K] [Algebra B L] [Algebra A B] [Algebra K L] [Algebra A L]
@@ -144,36 +142,37 @@ private theorem traceDualQuotientMap_smul_mulByTraceDualQuotientMap
   _ = a • k := by rw [← ha, mul_comm, ← Algebra.smul_def]
 
 omit [IsDomain A] [IsFractionRing A K] in
-/-- The `B`-linear trace-dual comparison map `L ⧸ Bᵛ →ₗ[B] PrecompLinearMap A B (K ⧸ A)`. -/
-private def traceDualToPrecomp :
+/-- The `B`-linear trace-dual comparison map
+`L ⧸ Bᵛ →ₗ[B] MatlisDual A (K ⧸ A) B`. -/
+private def traceDualToMatlisDual :
     (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) →ₗ[B]
-      PrecompLinearMap A B (K ⧸ (1 : Submodule A K)) where
-  toFun q := PrecompLinearMap.ofLinearMap
+      MatlisDual A (K ⧸ (1 : Submodule A K)) B where
+  toFun q := (MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B).symm
     { toFun := fun b ↦ traceDualQuotientMap A K B L (b • q)
       map_add' := fun _ _ ↦ by rw [add_smul, map_add]
       map_smul' := fun a b ↦ by rw [RingHom.id_apply, smul_assoc, map_smul] }
-  map_add' _ _ := PrecompLinearMap.ext fun b ↦ by
-    simp [PrecompLinearMap.add_apply, PrecompLinearMap.ofLinearMap_apply, smul_add]
-  map_smul' b₁ q := PrecompLinearMap.ext fun b₂ ↦ by
-    simp [PrecompLinearMap.smul_apply, PrecompLinearMap.ofLinearMap_apply, smul_eq_mul,
-      ← mul_smul, mul_comm b₂ b₁]
+  map_add' _ _ := MatlisDual.ext fun b ↦ by simp [smul_add]
+  map_smul' b₁ q := MatlisDual.ext fun b₂ ↦ by
+    simp [MatlisDual.smul_apply, ← mul_smul, mul_comm b₂ b₁]
 
 omit [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
   [IsIntegralClosure B A L] in
-@[simp] private theorem traceDualToPrecomp_apply
+@[simp] private theorem traceDualToMatlisDual_apply
     (q : L ⧸ Submodule.traceDual A K (1 : Submodule B L)) (b : B) :
-    traceDualToPrecomp A K B L q b = traceDualQuotientMap A K B L (b • q) := by
-  simp [traceDualToPrecomp]
+    MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B
+      (traceDualToMatlisDual A K B L q) b = traceDualQuotientMap A K B L (b • q) := by
+  simp [traceDualToMatlisDual]
 
 omit [IsDomain A] [IsFractionRing A K] in
-/-- `traceDualToPrecomp` is invertible via any finite trace-dual family `(b, y)`. -/
-private theorem traceDualToPrecomp_sum_mulBy {n : ℕ} (b : Fin n → B) (y : Fin n → L)
+/-- `traceDualToMatlisDual` is invertible via any finite trace-dual family `(b, y)`. -/
+private theorem traceDualToMatlisDual_sum_mulBy {n : ℕ} (b : Fin n → B) (y : Fin n → L)
     (hy : ∀ i, y i ∈ Submodule.traceDual A K (1 : Submodule B L))
     (hsum : ∀ x : L, ∑ i, Algebra.trace K L (x * algebraMap B L (b i)) • y i = x)
-    (f : PrecompLinearMap A B (K ⧸ (1 : Submodule A K))) :
-    traceDualToPrecomp A K B L
-        (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f (b i))) = f := by
-  apply PrecompLinearMap.ext
+    (f : MatlisDual A (K ⧸ (1 : Submodule A K)) B) :
+    traceDualToMatlisDual A K B L
+        (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i)
+          (MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B f (b i))) = f := by
+  apply MatlisDual.ext
   intro c
   have hmem (i : Fin n) :
       ∃ a : A, algebraMap A K a = Algebra.trace K L (y i * algebraMap B L c) := by
@@ -181,37 +180,42 @@ private theorem traceDualToPrecomp_sum_mulBy {n : ℕ} (b : Fin n → B) (y : Fi
       Submodule.mem_traceDual.mp (hy i) (algebraMap B L c) (Submodule.mem_one.mpr ⟨c, rfl⟩)
   choose a ha using hmem
   have ha_sum : ∑ i, a i • b i = c := sum_smul_eq_of_dualFamily A K B L b y hsum c a ha
-  calc traceDualToPrecomp A K B L
-        (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f (b i))) c
+  calc MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B
+        (traceDualToMatlisDual A K B L
+          (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i)
+            (MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B f (b i)))) c
     = ∑ i, traceDualQuotientMap A K B L
-        (c • mulByTraceDualQuotientMap A K B L (y i) (hy i) (f (b i))) := by
-        rw [traceDualToPrecomp_apply, Finset.smul_sum, map_sum]
-  _ = ∑ i, a i • f (b i) :=
+        (c • mulByTraceDualQuotientMap A K B L (y i) (hy i)
+          (MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B f (b i))) := by
+        rw [traceDualToMatlisDual_apply, Finset.smul_sum, map_sum]
+  _ = ∑ i, a i • MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B f (b i) :=
         Finset.sum_congr rfl fun i _ ↦
           traceDualQuotientMap_smul_mulByTraceDualQuotientMap A K B L
             (y i) (hy i) c (a i) (ha i) _
-  _ = f.linearMap (∑ i, a i • b i) := by simp only [map_sum, map_smul]
-  _ = f c := by rw [ha_sum]
+  _ = MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B f (∑ i, a i • b i) := by
+        simp only [map_sum, map_smul]
+  _ = MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B f c := by rw [ha_sum]
 
 section FiniteProjective
 
 variable [Module.Finite A B] [Module.Projective A B]
 
-/-- Trace-specific `B`-linear equivalence `L ⧸ Bᵛ ≃ₗ[B] PrecompLinearMap A B (K ⧸ A)`. -/
+/-- Trace-specific `B`-linear equivalence `L ⧸ Bᵛ ≃ₗ[B] MatlisDual A (K ⧸ A) B`. -/
 private def traceDualQuotientEquiv :
     (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) ≃ₗ[B]
-      PrecompLinearMap A B (K ⧸ (1 : Submodule A K)) :=
-  LinearEquiv.ofBijective (traceDualToPrecomp A K B L) <| by
+      MatlisDual A (K ⧸ (1 : Submodule A K)) B :=
+  LinearEquiv.ofBijective (traceDualToMatlisDual A K B L) <| by
     obtain ⟨n, b, y, hy, hsum⟩ := exists_sum_trace_mul_smul_eq A K (B := B) (L := L)
     refine Function.bijective_iff_has_inverse.mpr
-      ⟨fun f ↦ ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f (b i)),
-        fun q ↦ ?_, traceDualToPrecomp_sum_mulBy A K B L b y hy hsum⟩
+      ⟨fun f ↦ ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i)
+          (MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B f (b i)),
+        fun q ↦ ?_, traceDualToMatlisDual_sum_mulBy A K B L b y hy hsum⟩
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
     have hbi (i : Fin n) :
         traceDualQuotientMap A K B L (b i • Submodule.Quotient.mk x) =
           Submodule.Quotient.mk (Algebra.trace K L (x * algebraMap B L (b i))) := by
       rw [← Submodule.Quotient.mk_smul, traceDualQuotientMap_mk, Algebra.smul_def, mul_comm]
-    simp only [traceDualToPrecomp_apply, hbi, mulByTraceDualQuotientMap_mk]
+    simp only [traceDualToMatlisDual_apply, hbi, mulByTraceDualQuotientMap_mk]
     simp_rw [← Submodule.mkQ_apply]
     rw [← map_sum, hsum x]
 
@@ -226,12 +230,13 @@ def traceDualLinearMapEquiv (M : Type*) [AddCommGroup M] [Module B M] [Module A 
   let e := traceDualQuotientEquiv A K B L
   let congrR :
       (M →ₗ[B] (L ⧸ Submodule.traceDual A K (1 : Submodule B L))) ≃ₗ[A]
-        (M →ₗ[B] PrecompLinearMap A B (K ⧸ (1 : Submodule A K))) :=
+        (M →ₗ[B] MatlisDual A (K ⧸ (1 : Submodule A K)) B) :=
     LinearEquiv.ofLinearMap
       (LinearMap.compRight A e.toLinearMap) (LinearMap.compRight A e.symm.toLinearMap)
       (LinearMap.ext fun φ ↦ LinearMap.ext fun m ↦ e.apply_symm_apply (φ m))
       (LinearMap.ext fun φ ↦ LinearMap.ext fun m ↦ e.symm_apply_apply (φ m))
-  congrR.trans (PrecompLinearMap.coextendHomEquiv A B (K ⧸ (1 : Submodule A K)) M)
+  congrR.trans ((MatlisDual.equivLinearMapDualRegular (R := A) (A := B) (N := M)).symm.trans
+    (MatlisDual.equivLinearMap A _ M))
 
 @[simp] theorem traceDualLinearMapEquiv_apply {M : Type*} [AddCommGroup M] [Module B M]
     [Module A M] [IsScalarTower A B M]
@@ -254,12 +259,17 @@ theorem traceDualLinearMapEquiv_symm_apply_of_dualFamily {M : Type*} [AddCommGro
     (ψ : M →ₗ[A] (K ⧸ (1 : Submodule A K))) (m : M) :
     (traceDualLinearMapEquiv A K B L M).symm ψ m =
       ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m)) := by
-  let f : PrecompLinearMap A B (K ⧸ (1 : Submodule A K)) :=
-    (PrecompLinearMap.coextendHomEquiv A B (K ⧸ (1 : Submodule A K)) M).symm ψ m
+  let f : MatlisDual A (K ⧸ (1 : Submodule A K)) B :=
+    MatlisDual.equivLinearMapDualRegular (R := A) (A := B) (N := M)
+      ((MatlisDual.equivLinearMap A _ M).symm ψ) m
+  have hf_apply (i : Fin n) :
+      MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B f (b i) = ψ (b i • m) :=
+    (MatlisDual.equivLinearMapDualRegular_apply_apply _ m (b i)).trans (by simp)
   have hf :
       traceDualQuotientEquiv A K B L
           (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m))) = f := by
-    simpa [f, traceDualQuotientEquiv] using traceDualToPrecomp_sum_mulBy A K B L b y hy hsum f
+    simpa [traceDualQuotientEquiv, hf_apply] using
+      traceDualToMatlisDual_sum_mulBy A K B L b y hy hsum f
   have hsymm :
       (traceDualQuotientEquiv A K B L).symm f =
         ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m)) :=

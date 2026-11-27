@@ -15,9 +15,7 @@ public import Mathlib.Algebra.Module.TransferInstance
 `TauCeti.Algebra.PrecompLinearMap R B M` is `Hom_R(B,M)` with scalars acting on the domain.
 It uses Mathlib's `DomMulAct` action, restricted along `S → B → Bᵈᵐᵃ`.
 The wrapper keeps this action distinct from the usual action on the codomain, including when
-`M` itself is a `B`-module. Evaluation and conversion to ordinary linear maps are `R`-linear, and
-`PrecompLinearMap.coextendHomEquiv` gives the universe-polymorphic adjunction equivalence
-`(M →ₗ[B] PrecompLinearMap R B N) ≃ₗ[R] (M →ₗ[R] N)`.
+`M` itself is a `B`-module. Evaluation and conversion to ordinary linear maps are `R`-linear.
 -/
 
 public section
@@ -31,8 +29,6 @@ structure PrecompLinearMap (R B M : Type*) [CommSemiring R] [CommSemiring B] [Al
   linearMap : B →ₗ[R] M
 
 namespace PrecompLinearMap
-
-section Basic
 
 variable {R B M : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
   [AddCommMonoid M] [Module R M]
@@ -123,51 +119,6 @@ lemma equivLinearMap_apply (φ : PrecompLinearMap R B M) :
 @[simp]
 lemma equivLinearMap_symm_apply (φ : B →ₗ[R] M) :
     equivLinearMap.symm φ = ofLinearMap φ := (rfl)
-
-end Basic
-
-section Coextend
-
-variable (R B N M : Type*) [CommSemiring R] [CommSemiring B] [Algebra R B]
-  [AddCommMonoid N] [Module R N] [AddCommMonoid M] [Module B M] [Module R M]
-  [IsScalarTower R B M]
-
-/-- Adjunction `R`-linear equivalence `(M →ₗ[B] PrecompLinearMap R B N) ≃ₗ[R] (M →ₗ[R] N)` for
-universe-polymorphic `R`, `B`, `N`, `M`. -/
-def coextendHomEquiv :
-    (M →ₗ[B] PrecompLinearMap R B N) ≃ₗ[R] (M →ₗ[R] N) where
-  toFun φ :=
-    { toFun := fun m ↦ φ m 1
-      map_add' := fun m₁ m₂ ↦ by rw [map_add, add_apply]
-      map_smul' := fun r m ↦ by
-        rw [RingHom.id_apply, ← algebraMap_smul B r m, map_smul, smul_apply, algebraMap_smul]
-        exact (φ m).linearMap.map_smul r 1 }
-  invFun ψ :=
-    { toFun := fun m ↦ ofLinearMap
-        { toFun := fun b ↦ ψ (b • m)
-          map_add' := fun b₁ b₂ ↦ by rw [add_smul, map_add]
-          map_smul' := fun r b ↦ by rw [RingHom.id_apply, smul_assoc, map_smul] }
-      map_add' := fun m₁ m₂ ↦ ext fun b ↦ by simp [smul_add, map_add]
-      map_smul' := fun b m ↦ ext fun b' ↦ by
-        simp [smul_apply, smul_eq_mul, ← mul_smul, mul_comm b' b] }
-  left_inv φ := LinearMap.ext fun m ↦ ext fun b ↦ by
-    simp [smul_apply, smul_eq_mul, mul_one]
-  right_inv ψ := LinearMap.ext fun m ↦ by simp [one_smul]
-  map_add' _ _ := LinearMap.ext fun m ↦ add_apply _ _ 1
-  map_smul' r φ := LinearMap.ext fun m ↦ by
-    dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
-    rw [LinearMap.smul_apply, smul_apply, RingHom.id_apply, LinearMap.smul_apply]
-    exact (φ m).linearMap.map_smul r 1
-
-@[simp]
-lemma coextendHomEquiv_apply (φ : M →ₗ[B] PrecompLinearMap R B N) (m : M) :
-    coextendHomEquiv R B N M φ m = φ m 1 := (rfl)
-
-@[simp]
-lemma coextendHomEquiv_symm_apply (ψ : M →ₗ[R] N) (m : M) (b : B) :
-    (coextendHomEquiv R B N M).symm ψ m b = ψ (b • m) := (rfl)
-
-end Coextend
 
 end PrecompLinearMap
 end TauCeti.Algebra
