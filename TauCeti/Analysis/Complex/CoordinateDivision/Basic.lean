@@ -60,54 +60,6 @@ section Multivariate
 
 variable {ι : Type*} [LinearOrder ι]
 
-/-- Subtraction preserves a coordinate-`j` polynomial degree bound `< d`. -/
-private theorem exists_degree_lt_sub {f g : (ι → ℂ) → ℂ} {j : ι} {d : WithBot ℕ}
-    (hf : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update z j w) = Q.eval w)
-    (hg : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, g (update z j w) = Q.eval w) (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, (f - g) (update z j w) = Q.eval w := by
-  obtain ⟨Qf, hQf, hfe⟩ := hf z
-  obtain ⟨Qg, hQg, hge⟩ := hg z
-  exact ⟨Qf - Qg, (degree_sub_le Qf Qg).trans_lt (max_lt hQf hQg),
-    fun w ↦ by simp [hfe w, hge w]⟩
-
-/-- Adding finite sums `∑ a ∈ t, g a z * (P a).eval (z a)` preserves a coordinate-`j`
-polynomial degree bound `< d` when `j ∉ t`. -/
-private theorem exists_degree_lt_add_sum_mul_eval {f₀ : (ι → ℂ) → ℂ} {g : ι → (ι → ℂ) → ℂ}
-    {P : ι → ℂ[X]} {j : ι} {d : WithBot ℕ} {t : Finset ι} (hjt : j ∉ t)
-    (hf₀ : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f₀ (update z j w) = Q.eval w)
-    (hg : ∀ a ∈ t, ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, g a (update z j w) = Q.eval w)
-    (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.degree < d ∧
-      ∀ w, f₀ (update z j w) + ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a) =
-        Q.eval w := by
-  cases d with
-  | bot => exact absurd (hf₀ z).choose_spec.1 not_lt_bot
-  | coe n =>
-    simp only [← Nat.cast_withBot] at hf₀ hg ⊢
-    have heq : (fun w ↦ f₀ (update z j w) +
-        ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a)) =
-        (fun w ↦ f₀ (update z j w)) +
-          ∑ a ∈ t, (P a).eval (z a) • fun w ↦ g a (update z j w) := by
-      ext w
-      simp only [Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-      refine congrArg (f₀ (update z j w) + ·) (Finset.sum_congr rfl fun a ha ↦ ?_)
-      rw [update_of_ne (fun (h : a = j) ↦ hjt (h ▸ ha)), mul_comm]
-    rw [← mem_evalDegreeLT, heq]
-    exact (evalDegreeLT ℂ n).add_mem (mem_evalDegreeLT.mpr (hf₀ z))
-      ((evalDegreeLT ℂ n).sum_mem fun a ha ↦
-        (evalDegreeLT ℂ n).smul_mem ((P a).eval (z a)) (mem_evalDegreeLT.mpr (hg a ha z)))
-
-/-- Adding a single term `gᵢ w * Pᵢ.eval (w i)` with `i ≠ j` preserves a coordinate-`j`
-polynomial degree bound `< d`. -/
-private theorem exists_degree_lt_add_mul_eval {f₀ gᵢ : (ι → ℂ) → ℂ} {Pᵢ : ℂ[X]} (i j : ι)
-    (hij : i ≠ j) {d : WithBot ℕ}
-    (hf₀ : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f₀ (update z j w) = Q.eval w)
-    (hgᵢ : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, gᵢ (update z j w) = Q.eval w) (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.degree < d ∧
-      ∀ w, (fun w' ↦ f₀ w' + gᵢ w' * Pᵢ.eval (w' i)) (update z j w) = Q.eval w := by
-  simpa only [sum_singleton] using exists_degree_lt_add_sum_mul_eval (g := fun _ ↦ gᵢ)
-    (P := fun _ ↦ Pᵢ) (t := {i}) (Finset.notMem_singleton.mpr hij.symm) hf₀ (fun _ _ ↦ hgᵢ) z
-
 /-- Homogeneous uniqueness of multivariate coordinate division over any finite subset `s` of
 coordinates under triangular degree bounds and continuous quotients. -/
 private theorem eq_zero_of_add_sum_mul_eval_eq_zero
@@ -133,7 +85,7 @@ private theorem eq_zero_of_add_sum_mul_eval_eq_zero
       linear_combination h
     have hF_deg (z : ι → ℂ) :
         ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ w, F (update z j w) = Q.eval w :=
-      exists_degree_lt_add_sum_mul_eval hjs (hdeg₀ j (mem_insert_self j s))
+      exists_degree_lt_and_add_sum_mul_eval_eq_eval hjs (hdeg₀ j (mem_insert_self j s))
         (fun a ha ↦ hdeg_g a (mem_insert_of_mem ha) j (mem_insert_self j s) (hj a ha)) z
     have hcont (z : ι → ℂ) : Continuous fun w ↦ g j (update z j w) :=
       (hg j).comp (continuous_const.update j continuous_id)
@@ -178,8 +130,8 @@ theorem eq_of_eq_add_sum_mul_eval [Fintype ι]
     rw [hsum, Pi.sub_apply]
     linear_combination hdiv' z - hdiv z
   obtain ⟨hf₀0, hg0⟩ := eq_zero_of_add_sum_mul_eval_eq_zero (fun i ↦ (hg i).sub (hg' i)) univ hsub
-    (fun j _ ↦ exists_degree_lt_sub (hdeg₀ j) (hdeg₀' j))
-    (fun i _ j _ hij ↦ exists_degree_lt_sub (hdeg_g i j hij) (hdeg_g' i j hij))
+    (fun j _ ↦ exists_degree_lt_and_sub_eq_eval (hdeg₀ j) (hdeg₀' j))
+    (fun i _ j _ hij ↦ exists_degree_lt_and_sub_eq_eval (hdeg_g i j hij) (hdeg_g' i j hij))
   exact ⟨sub_eq_zero.mp hf₀0, funext fun i ↦ sub_eq_zero.mp (hg0 i (mem_univ i))⟩
 
 /-- Multivariate coordinate division along a strictly increasing list `l : List ι`: produces entire
@@ -314,7 +266,8 @@ private theorem norm_le_of_eq_add_sum_mul_eval_of_list [Fintype ι]
       linear_combination h
     have hdeg_r' (j : ι) (hjl' : j ∈ l') :
         ∀ w, ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ u, r' (update w j u) = Q.eval u :=
-      exists_degree_lt_add_mul_eval i j (hilt j hjl').ne (hdeg₀ j (List.mem_cons_of_mem i hjl'))
+      exists_degree_lt_and_add_mul_eval_eq_eval i j (hilt j hjl').ne
+        (hdeg₀ j (List.mem_cons_of_mem i hjl'))
         (hdeg_g i List.mem_cons_self j (List.mem_cons_of_mem i hjl') (hilt j hjl'))
     have hnorm' := fun w hw ↦ ih hsort' hr' (fun m hm ↦ hg m (List.mem_cons_of_mem i hm))
       hdiv' hdeg_r' (fun a ha b hb ↦ hdeg_g a (List.mem_cons_of_mem i ha) b

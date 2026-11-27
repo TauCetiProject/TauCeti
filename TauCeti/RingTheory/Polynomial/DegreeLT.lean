@@ -39,6 +39,11 @@ evaluating polynomials of degree `< n`.
 * `Polynomial.evalDegreeLT`, `Polynomial.evalDegreeLT_def`, `Polynomial.mem_evalDegreeLT`,
   `Polynomial.mem_evalDegreeLT_natDegree_iff`: the `R`-submodule of functions `R → R` represented
   by polynomials of degree `< n`.
+* `TauCeti.exists_degree_lt_and_sub_eq_eval`,
+  `TauCeti.exists_degree_lt_and_add_sum_mul_eval_eq_eval`,
+  `TauCeti.exists_degree_lt_and_add_mul_eval_eq_eval`: closure of coordinate-line polynomial
+  degree bounds under subtraction and adding polynomial-weighted combinations from other
+  coordinates.
 * `Polynomial.mem_degreeLT_succ_iff_natDegree_le`: membership in `R[X]_(n + 1)` is
   `natDegree ≤ n`.
 * `Polynomial.modByMonic_mem_degreeLT`, `Polynomial.divByMonic_mem_degreeLT`: where `%ₘ` and `/ₘ`
@@ -239,3 +244,66 @@ theorem _root_.IsCoprime.eq_zero_of_mul_add_mul_eq_zero {g h a b : R[X]} (hgh : 
   simpa using (hg.mul_add_mul_eq_iff huv ha).mp hab
 
 end Polynomial
+
+section CoordinateSlice
+
+open Function
+open scoped Polynomial
+
+namespace TauCeti
+
+variable {ι R : Type*} [DecidableEq ι]
+
+/-- Subtraction preserves a coordinate-`j` polynomial degree bound `< d`. -/
+theorem exists_degree_lt_and_sub_eq_eval [Ring R] {f g : (ι → R) → R} {j : ι} {d : WithBot ℕ}
+    (hf : ∀ z, ∃ Q : R[X], Q.degree < d ∧ ∀ w, f (update z j w) = Q.eval w)
+    (hg : ∀ z, ∃ Q : R[X], Q.degree < d ∧ ∀ w, g (update z j w) = Q.eval w) (z : ι → R) :
+    ∃ Q : R[X], Q.degree < d ∧ ∀ w, (f - g) (update z j w) = Q.eval w := by
+  obtain ⟨Qf, hQf, hfe⟩ := hf z
+  obtain ⟨Qg, hQg, hge⟩ := hg z
+  exact ⟨Qf - Qg, (Polynomial.degree_sub_le Qf Qg).trans_lt (max_lt hQf hQg),
+    fun w ↦ by simp [hfe w, hge w]⟩
+
+/-- Adding finite sums `∑ a ∈ t, g a z * (P a).eval (z a)` preserves a coordinate-`j`
+polynomial degree bound `< d` when `j ∉ t`. -/
+theorem exists_degree_lt_and_add_sum_mul_eval_eq_eval [CommSemiring R] {f₀ : (ι → R) → R}
+    {g : ι → (ι → R) → R} {P : ι → R[X]} {j : ι} {d : WithBot ℕ} {t : Finset ι} (hjt : j ∉ t)
+    (hf₀ : ∀ z, ∃ Q : R[X], Q.degree < d ∧ ∀ w, f₀ (update z j w) = Q.eval w)
+    (hg : ∀ a ∈ t, ∀ z, ∃ Q : R[X], Q.degree < d ∧ ∀ w, g a (update z j w) = Q.eval w)
+    (z : ι → R) :
+    ∃ Q : R[X], Q.degree < d ∧
+      ∀ w, f₀ (update z j w) + ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a) =
+        Q.eval w := by
+  cases d with
+  | bot => exact absurd (hf₀ z).choose_spec.1 not_lt_bot
+  | coe n =>
+    simp only [← Nat.cast_withBot] at hf₀ hg ⊢
+    have heq : (fun w ↦ f₀ (update z j w) +
+        ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a)) =
+        (fun w ↦ f₀ (update z j w)) +
+          ∑ a ∈ t, (P a).eval (z a) • fun w ↦ g a (update z j w) := by
+      ext w
+      simp only [Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+      refine congrArg (f₀ (update z j w) + ·) (Finset.sum_congr rfl fun a ha ↦ ?_)
+      rw [update_of_ne (fun (h : a = j) ↦ hjt (h ▸ ha)), mul_comm]
+    rw [← Polynomial.mem_evalDegreeLT, heq]
+    exact (Polynomial.evalDegreeLT R n).add_mem (Polynomial.mem_evalDegreeLT.mpr (hf₀ z))
+      ((Polynomial.evalDegreeLT R n).sum_mem fun a ha ↦
+        (Polynomial.evalDegreeLT R n).smul_mem ((P a).eval (z a))
+          (Polynomial.mem_evalDegreeLT.mpr (hg a ha z)))
+
+/-- Adding a single term `gᵢ w * Pᵢ.eval (w i)` with `i ≠ j` preserves a coordinate-`j`
+polynomial degree bound `< d`. -/
+theorem exists_degree_lt_and_add_mul_eval_eq_eval [CommSemiring R] {f₀ gᵢ : (ι → R) → R}
+    {Pᵢ : R[X]} (i j : ι) (hij : i ≠ j) {d : WithBot ℕ}
+    (hf₀ : ∀ z, ∃ Q : R[X], Q.degree < d ∧ ∀ w, f₀ (update z j w) = Q.eval w)
+    (hgᵢ : ∀ z, ∃ Q : R[X], Q.degree < d ∧ ∀ w, gᵢ (update z j w) = Q.eval w) (z : ι → R) :
+    ∃ Q : R[X], Q.degree < d ∧
+      ∀ w, f₀ (update z j w) + gᵢ (update z j w) * Pᵢ.eval (update z j w i) = Q.eval w := by
+  simpa only [Finset.sum_singleton] using exists_degree_lt_and_add_sum_mul_eval_eq_eval
+    (g := fun _ ↦ gᵢ) (P := fun _ ↦ Pᵢ) (t := {i}) (Finset.notMem_singleton.mpr hij.symm) hf₀
+    (fun _ _ ↦ hgᵢ) z
+
+end TauCeti
+
+end CoordinateSlice
