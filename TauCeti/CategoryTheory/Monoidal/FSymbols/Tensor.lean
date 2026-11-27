@@ -47,7 +47,48 @@ pairs of basis vectors and fusion indices. -/
 def tensorObj (X Y : Model P) : Model P :=
   ⟨fun c ↦ Σ ab : ι × ι, (X.basis ab.1 × Y.basis ab.2) × Fin (N.N ab.1 ab.2 c)⟩
 
+/-- The basis in an output grade is indexed by the input grades, basis vectors and
+fusion channel. -/
+@[simp]
+theorem tensorObj_basis (X Y : Model P) (c : ι) :
+    (tensorObj X Y).basis c = Σ ab : ι × ι, (X.basis ab.1 × Y.basis ab.2) × Fin (N.N ab.1 ab.2 c) :=
+  (rfl)
+
 variable {X X' X'' Y Y' Y'' : Model P}
+
+/-- A tensor product basis vector with the given input grades, basis vectors and
+fusion channel. -/
+abbrev tensorBasisMk {c : ι} (ab : ι × ι) (x : X.basis ab.1) (y : Y.basis ab.2)
+    (i : Fin (N.N ab.1 ab.2 c)) : (tensorObj X Y).basis c :=
+  ⟨ab, (x, y), i⟩
+
+private theorem tensorBasisMk_exists {c : ι} (p : (tensorObj X Y).basis c) :
+    ∃ ab x y i, p = tensorBasisMk ab x y i := by
+  obtain ⟨ab, ⟨x, y⟩, i⟩ := p
+  exact ⟨ab, x, y, i, rfl⟩
+
+/-- In fixed input grades, two tensor basis vectors agree exactly when their basis
+vectors and fusion channels agree. -/
+@[simp]
+theorem tensorBasisMk_inj {c : ι} {ab : ι × ι} {x x' : X.basis ab.1} {y y' : Y.basis ab.2}
+    {i j : Fin (N.N ab.1 ab.2 c)} :
+    tensorBasisMk ab x y i = tensorBasisMk (X := X) (Y := Y) ab x' y' j ↔
+      x = x' ∧ y = y' ∧ i = j := by
+  constructor
+  · intro h
+    have hdata : ((x, y), i) = ((x', y'), j) :=
+      sigma_mk_injective (β := fun ab : ι × ι ↦
+        (X.basis ab.1 × Y.basis ab.2) × Fin (N.N ab.1 ab.2 c)) h
+    obtain ⟨hxy, hij⟩ := Prod.mk.inj hdata
+    exact ⟨(Prod.mk.inj hxy).1, (Prod.mk.inj hxy).2, hij⟩
+  · rintro ⟨rfl, rfl, rfl⟩
+    rfl
+
+private theorem tensorBasisMk_ne_of_ne {c : ι} {ab ab' : ι × ι}
+    {x : X.basis ab.1} {x' : X.basis ab'.1} {y : Y.basis ab.2} {y' : Y.basis ab'.2}
+    {i : Fin (N.N ab.1 ab.2 c)} {j : Fin (N.N ab'.1 ab'.2 c)} (h : ab ≠ ab') :
+    tensorBasisMk ab x y i ≠ tensorBasisMk (X := X) (Y := Y) ab' x' y' j :=
+  fun he ↦ h (congrArg Sigma.fst he)
 
 /-- The tensor product of two maps is block diagonal in the pair of input grades. Each block is
 the Kronecker product of the two maps and the identity on the fusion indices. -/
@@ -60,7 +101,7 @@ by the identity on the fusion indices. -/
 theorem tensorHom_apply (f : X ⟶ X') (g : Y ⟶ Y') (a b c : ι)
     (x : X.basis a) (x' : X'.basis a) (y : Y.basis b) (y' : Y'.basis b)
     (i j : Fin (N.N a b c)) :
-    tensorHom f g c ⟨(a, b), (x, y), i⟩ ⟨(a, b), (x', y'), j⟩ =
+    tensorHom f g c (tensorBasisMk (a, b) x y i) (tensorBasisMk (a, b) x' y' j) =
       f a x x' * g b y y' * (1 : Matrix (Fin (N.N a b c)) _ R) i j :=
   blockDiagonal'_apply_eq _ _ _ _
 
@@ -69,7 +110,7 @@ theorem tensorHom_apply_of_ne (f : X ⟶ X') (g : Y ⟶ Y') {ab ab' : ι × ι}
     (h : ab ≠ ab') (c : ι) (x : X.basis ab.1) (y : Y.basis ab.2)
     (x' : X'.basis ab'.1) (y' : Y'.basis ab'.2)
     (i : Fin (N.N ab.1 ab.2 c)) (j : Fin (N.N ab'.1 ab'.2 c)) :
-    tensorHom f g c ⟨ab, (x, y), i⟩ ⟨ab', (x', y'), j⟩ = 0 :=
+    tensorHom f g c (tensorBasisMk ab x y i) (tensorBasisMk ab' x' y' j) = 0 :=
   blockDiagonal'_apply_ne _ _ _ h
 
 /-- Tensoring two identity maps gives the identity of the tensor product. -/
@@ -97,7 +138,7 @@ variable {K : Type v} [CommRing K] {Q : FSymbols K N}
 
 /-- Tensoring is additive in its first map. -/
 @[simp]
-theorem tensorHom_add_left (f f' : A ⟶ A') (g : B ⟶ B') :
+theorem add_tensorHom (f f' : A ⟶ A') (g : B ⟶ B') :
     tensorHom (f + f') g = tensorHom f g + tensorHom f' g := by
   ext1 c
   simp only [tensorHom, add_apply, add_kronecker]
@@ -105,7 +146,7 @@ theorem tensorHom_add_left (f f' : A ⟶ A') (g : B ⟶ B') :
 
 /-- Tensoring is additive in its second map. -/
 @[simp]
-theorem tensorHom_add_right (f : A ⟶ A') (g g' : B ⟶ B') :
+theorem tensorHom_add (f : A ⟶ A') (g g' : B ⟶ B') :
     tensorHom f (g + g') = tensorHom f g + tensorHom f g' := by
   ext1 c
   simp only [tensorHom, add_apply, kronecker_add, add_kronecker]
@@ -113,7 +154,7 @@ theorem tensorHom_add_right (f : A ⟶ A') (g g' : B ⟶ B') :
 
 /-- Tensoring is homogeneous in its first map. -/
 @[simp]
-theorem tensorHom_smul_left (r : K) (f : A ⟶ A') (g : B ⟶ B') :
+theorem smul_tensorHom (r : K) (f : A ⟶ A') (g : B ⟶ B') :
     tensorHom (r • f) g = r • tensorHom f g := by
   ext1 c
   simp only [tensorHom, smul_apply, smul_kronecker]
@@ -121,7 +162,7 @@ theorem tensorHom_smul_left (r : K) (f : A ⟶ A') (g : B ⟶ B') :
 
 /-- Tensoring is homogeneous in its second map. -/
 @[simp]
-theorem tensorHom_smul_right (r : K) (f : A ⟶ A') (g : B ⟶ B') :
+theorem tensorHom_smul (r : K) (f : A ⟶ A') (g : B ⟶ B') :
     tensorHom f (r • g) = r • tensorHom f g := by
   ext1 c
   simp only [tensorHom, smul_apply, kronecker_smul, smul_kronecker]
@@ -139,7 +180,25 @@ def tensorBasisCongr (e : ∀ a, X.basis a ≃ X'.basis a) (e' : ∀ b, Y.basis 
 theorem tensorBasisCongr_apply (e : ∀ a, X.basis a ≃ X'.basis a)
     (e' : ∀ b, Y.basis b ≃ Y'.basis b) (a b c : ι) (x : X.basis a) (y : Y.basis b)
     (i : Fin (N.N a b c)) :
-    tensorBasisCongr e e' c ⟨(a, b), (x, y), i⟩ = ⟨(a, b), (e a x, e' b y), i⟩ :=
+    tensorBasisCongr e e' c (tensorBasisMk (a, b) x y i) =
+      tensorBasisMk (a, b) (e a x) (e' b y) i :=
+  (rfl)
+
+/-- Inverting the tensor basis bijection inverts each factor's bijection. -/
+@[simp]
+theorem tensorBasisCongr_symm (e : ∀ a, X.basis a ≃ X'.basis a)
+    (e' : ∀ b, Y.basis b ≃ Y'.basis b) (c : ι) :
+    (tensorBasisCongr e e' c).symm =
+      tensorBasisCongr (fun a ↦ (e a).symm) (fun b ↦ (e' b).symm) c :=
+  (rfl)
+
+/-- Composing tensor basis bijections composes the bijections in each factor. -/
+@[simp]
+theorem tensorBasisCongr_trans (e : ∀ a, X.basis a ≃ X'.basis a)
+    (e' : ∀ b, Y.basis b ≃ Y'.basis b) (f : ∀ a, X'.basis a ≃ X''.basis a)
+    (f' : ∀ b, Y'.basis b ≃ Y''.basis b) (c : ι) :
+    (tensorBasisCongr e e' c).trans (tensorBasisCongr f f' c) =
+      tensorBasisCongr (fun a ↦ (e a).trans (f a)) (fun b ↦ (e' b).trans (f' b)) c :=
   (rfl)
 
 /-- Tensoring permutation matrices gives the permutation matrix of the tensor basis bijection. -/
@@ -148,32 +207,36 @@ theorem tensorHom_isoOfEquiv_hom (e : ∀ a, X.basis a ≃ X'.basis a)
     tensorHom (isoOfEquiv e).hom (isoOfEquiv e').hom =
       (isoOfEquiv (tensorBasisCongr e e')).hom := by
   ext1 c
-  ext ⟨⟨a, b⟩, ⟨x, y⟩, i⟩ ⟨⟨a', b'⟩, ⟨x', y'⟩, j⟩
-  -- Destructuring the indices exposes their sigma type, while the entry lemma uses `basis`.
-  erw [isoOfEquiv_hom_entry, tensorBasisCongr_apply]
+  apply Matrix.ext
+  intro p q
+  obtain ⟨⟨a, b⟩, x, y, i, rfl⟩ := tensorBasisMk_exists p
+  obtain ⟨⟨a', b'⟩, x', y', j, rfl⟩ := tensorBasisMk_exists q
+  rw [isoOfEquiv_hom_entry, tensorBasisCongr_apply]
   by_cases hab : (a, b) = (a', b')
   · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hab
     rw [tensorHom_apply, isoOfEquiv_hom_entry, isoOfEquiv_hom_entry]
-    simp only [Matrix.one_apply]
-    split_ifs <;> simp only [mul_zero, mul_one] <;> grind
-  · rw [tensorHom_apply_of_ne _ _ hab]
-    split_ifs with h
-    · exact (hab (congrArg Sigma.fst h).symm).elim
-    · rfl
+    simp only [tensorBasisMk_inj, Matrix.one_apply, eq_comm (a := i) (b := j), ite_and,
+      ite_mul, zero_mul, one_mul]
+  · rw [tensorHom_apply_of_ne _ _ hab, ite_eq_right (tensorBasisMk_ne_of_ne (Ne.symm hab))]
+
+omit [Fintype ι] [DecidableEq ι] in
+private theorem eq_of_fusion_index {a b c k : ι} (i : Fin (N.N a b c))
+    (h : k ≠ c → N.N a b c = 0) : k = c := by
+  classical
+  by_contra hk
+  simpa [h hk] using i.isLt
 
 /-- The left unitor on graded bases. Its inverse inserts the unique unit vector and fusion
 index. -/
 def leftUnitorBasis (X : Model P) (c : ι) :
     (tensorObj (simple P N.unit) X).basis c ≃ X.basis c :=
-  (Equiv.ofBijective (fun x ↦ ⟨(N.unit, c), (default, x), N.unitLeft c⟩) (by
+  (Equiv.ofBijective (fun x ↦ tensorBasisMk (N.unit, c) default x (N.unitLeft c)) (by
     constructor
     · intro x y h
-      exact congrArg (fun z ↦ z.1.2) (Sigma.mk.inj_iff.mp h).2.eq
+      exact (tensorBasisMk_inj.mp h).2.1
     · rintro ⟨⟨a, b⟩, ⟨i, x⟩, j⟩
       obtain rfl := eq_of_simple_basis i
-      have hb : b = c := by
-        by_contra h
-        simpa [N.N_unit_left_of_ne b c h] using j.isLt
+      have hb := eq_of_fusion_index j (N.N_unit_left_of_ne b c)
       subst b
       exact ⟨x, by rw [Subsingleton.elim i default, Subsingleton.elim j (N.unitLeft c)]⟩)).symm
 
@@ -181,29 +244,43 @@ def leftUnitorBasis (X : Model P) (c : ι) :
 index. -/
 def rightUnitorBasis (X : Model P) (c : ι) :
     (tensorObj X (simple P N.unit)).basis c ≃ X.basis c :=
-  (Equiv.ofBijective (fun x ↦ ⟨(c, N.unit), (x, default), N.unitRight c⟩) (by
+  (Equiv.ofBijective (fun x ↦ tensorBasisMk (c, N.unit) x default (N.unitRight c)) (by
     constructor
     · intro x y h
-      exact congrArg (fun z ↦ z.1.1) (Sigma.mk.inj_iff.mp h).2.eq
+      exact (tensorBasisMk_inj.mp h).1
     · rintro ⟨⟨a, b⟩, ⟨x, i⟩, j⟩
       obtain rfl := eq_of_simple_basis i
-      have ha : a = c := by
-        by_contra h
-        simpa [N.N_unit_right_of_ne a c h] using j.isLt
+      have ha := eq_of_fusion_index j (N.N_unit_right_of_ne a c)
       subst a
       exact ⟨x, by rw [Subsingleton.elim i default, Subsingleton.elim j (N.unitRight c)]⟩)).symm
 
 /-- The inverse left unitor on a basis vector. -/
 @[simp]
 theorem leftUnitorBasis_symm_apply (X : Model P) (c : ι) (x : X.basis c) :
-    (leftUnitorBasis X c).symm x = ⟨(N.unit, c), (default, x), N.unitLeft c⟩ :=
+    (leftUnitorBasis X c).symm x = tensorBasisMk (N.unit, c) default x (N.unitLeft c) :=
   (rfl)
 
 /-- The inverse right unitor on a basis vector. -/
 @[simp]
 theorem rightUnitorBasis_symm_apply (X : Model P) (c : ι) (x : X.basis c) :
-    (rightUnitorBasis X c).symm x = ⟨(c, N.unit), (x, default), N.unitRight c⟩ :=
+    (rightUnitorBasis X c).symm x = tensorBasisMk (c, N.unit) x default (N.unitRight c) :=
   (rfl)
+
+/-- The left unitor removes the unit vector and fusion index from a tensor basis vector. -/
+@[simp]
+theorem leftUnitorBasis_apply (X : Model P) (c : ι) (x : X.basis c)
+    (i : (simple P N.unit).basis N.unit) (j : Fin (N.N N.unit c c)) :
+    leftUnitorBasis X c (tensorBasisMk (N.unit, c) i x j) = x := by
+  rw [Subsingleton.elim i default, Subsingleton.elim j (N.unitLeft c),
+    ← leftUnitorBasis_symm_apply, Equiv.apply_symm_apply]
+
+/-- The right unitor removes the unit vector and fusion index from a tensor basis vector. -/
+@[simp]
+theorem rightUnitorBasis_apply (X : Model P) (c : ι) (x : X.basis c)
+    (i : (simple P N.unit).basis N.unit) (j : Fin (N.N c N.unit c)) :
+    rightUnitorBasis X c (tensorBasisMk (c, N.unit) x i j) = x := by
+  rw [Subsingleton.elim i default, Subsingleton.elim j (N.unitRight c),
+    ← rightUnitorBasis_symm_apply, Equiv.apply_symm_apply]
 
 /-- Left tensoring with the simple object at the unit grade is isomorphic to the original
 object, by the corresponding bijections of graded bases. -/
@@ -300,19 +377,23 @@ def rightAssocBasisEquiv (X Y Z : Model P) (d : ι) :
 /-- In the left-associated tensor product, the two fusion indices form the left index of
 an F-matrix. -/
 @[simp]
-theorem leftAssocBasisEquiv_symm_apply (X Y Z : Model P) (a b c d : ι)
-    (xyz : X.basis a × Y.basis b × Z.basis c) (l : N.Left a b c d) :
-    (leftAssocBasisEquiv X Y Z d).symm ⟨(a, b, c), xyz, l⟩ =
-      ⟨(l.1, c), (⟨(a, b), (xyz.1, xyz.2.1), l.2.1⟩, xyz.2.2), l.2.2⟩ :=
+theorem leftAssocBasisEquiv_symm_apply (X Y Z : Model P) (d : ι)
+    (p : Σ abc : ι × ι × ι, (X.basis abc.1 × Y.basis abc.2.1 × Z.basis abc.2.2) ×
+      N.Left abc.1 abc.2.1 abc.2.2 d) :
+    (leftAssocBasisEquiv X Y Z d).symm p =
+      tensorBasisMk (p.2.2.1, p.1.2.2)
+        (tensorBasisMk (p.1.1, p.1.2.1) p.2.1.1 p.2.1.2.1 p.2.2.2.1) p.2.1.2.2 p.2.2.2.2 :=
   (rfl)
 
 /-- In the right-associated tensor product, the two fusion indices form the right index of
 an F-matrix. -/
 @[simp]
-theorem rightAssocBasisEquiv_symm_apply (X Y Z : Model P) (a b c d : ι)
-    (xyz : X.basis a × Y.basis b × Z.basis c) (r : N.Right a b c d) :
-    (rightAssocBasisEquiv X Y Z d).symm ⟨(a, b, c), xyz, r⟩ =
-      ⟨(a, r.1), (xyz.1, ⟨(b, c), xyz.2, r.2.1⟩), r.2.2⟩ :=
+theorem rightAssocBasisEquiv_symm_apply (X Y Z : Model P) (d : ι)
+    (p : Σ abc : ι × ι × ι, (X.basis abc.1 × Y.basis abc.2.1 × Z.basis abc.2.2) ×
+      N.Right abc.1 abc.2.1 abc.2.2 d) :
+    (rightAssocBasisEquiv X Y Z d).symm p =
+      tensorBasisMk (p.1.1, p.2.2.1) p.2.1.1
+        (tensorBasisMk (p.1.2.1, p.1.2.2) p.2.1.2.1 p.2.1.2.2 p.2.2.2.1) p.2.2.2.2 :=
   (rfl)
 
 private abbrev assocHomBlock (X Y Z : Model P) (d : ι) (abc : ι × ι × ι) :=
@@ -368,7 +449,7 @@ theorem associator_hom_submatrix (X Y Z : Model P) (d : ι) :
       (X.basis abc.1 × Y.basis abc.2.1 × Z.basis abc.2.2) R) ⊗ₖ
         (P.Finv abc.1 abc.2.1 abc.2.2 d)ᵀ) := by
   ext i j
-  simp [associator, Matrix.submatrix]
+  simp only [associator, Matrix.submatrix_apply, Equiv.apply_symm_apply]
 
 /-- In grouped coordinates the inverse associator is block diagonal in the three input grades,
 with the transpose of the F-matrix acting on the fusion indices in each block. -/
@@ -380,7 +461,7 @@ theorem associator_inv_submatrix (X Y Z : Model P) (d : ι) :
       (X.basis abc.1 × Y.basis abc.2.1 × Z.basis abc.2.2) R) ⊗ₖ
         (P.F abc.1 abc.2.1 abc.2.2 d)ᵀ) := by
   ext i j
-  simp [associator, Matrix.submatrix]
+  simp only [associator, Matrix.submatrix_apply, Equiv.apply_symm_apply]
 
 private abbrev tripleTensorBlock (f : X ⟶ X') (g : Y ⟶ Y') (h : Z ⟶ Z') (abc : ι × ι × ι) :=
   f abc.1 ⊗ₖ (g abc.2.1 ⊗ₖ h abc.2.2)
@@ -395,23 +476,39 @@ private theorem tensorHom_assoc_submatrices
         (rightAssocBasisEquiv X' Y' Z' d).symm =
       blockDiagonal' (fun (abc : ι × ι × ι) ↦
         tripleTensorBlock f g h abc ⊗ₖ (1 : Matrix (N.Right abc.1 abc.2.1 abc.2.2 d) _ R))) := by
-  constructor <;>
-    ext ⟨⟨a, b, c⟩, ⟨x, y, z⟩, ⟨e, i, j⟩⟩ ⟨⟨a', b', c'⟩, ⟨x', y', z'⟩, ⟨e', i', j'⟩⟩
+  constructor <;> apply Matrix.ext <;>
+    rintro ⟨⟨a, b, c⟩, ⟨x, y, z⟩, ⟨e, i, j⟩⟩ ⟨⟨a', b', c'⟩, ⟨x', y', z'⟩, ⟨e', i', j'⟩⟩
   all_goals
-    -- The explicit sigma indices of the grouped bases unfold the corresponding `basis` types.
-    erw [Matrix.submatrix_apply]
-    first
-    | erw [leftAssocBasisEquiv_symm_apply, leftAssocBasisEquiv_symm_apply]
-    | erw [rightAssocBasisEquiv_symm_apply, rightAssocBasisEquiv_symm_apply]
-    unfold tensorHom
-    by_cases a = a' <;> by_cases b = b' <;> by_cases c = c' <;> by_cases e = e' <;> subst_vars <;>
-      simp_all only [blockDiagonal'_apply', tripleTensorBlock, kroneckerMap_apply, Matrix.one_apply,
-        Prod.mk.injEq, and_true, and_false, dite_true, dite_false, cast_eq]
-  all_goals
-    -- The inner Kronecker factor still has indices in a tensor product basis.
-    try erw [kroneckerMap_apply]
-    simp_all [blockDiagonal'_apply', Matrix.one_apply]
-  all_goals split_ifs <;> simp_all [mul_assoc]
+    simp only [Matrix.submatrix_apply, leftAssocBasisEquiv_symm_apply,
+      rightAssocBasisEquiv_symm_apply]
+    by_cases habc : (a, b, c) = (a', b', c')
+    · obtain ⟨rfl, hbc⟩ := Prod.mk.inj habc
+      obtain ⟨rfl, rfl⟩ := Prod.mk.inj hbc
+      rw [blockDiagonal'_apply_eq, kronecker_apply]
+      -- In this block only the two fusion indices can make the identity factor vanish.
+      by_cases he : e = e'
+      · subst e'
+        rw [tensorHom_apply, tensorHom_apply]
+        simp only [tripleTensorBlock, kronecker_apply, Matrix.one_apply]
+        by_cases hi : i = i' <;> by_cases hj : j = j' <;>
+          simp [hi, hj, mul_assoc]
+      · rw [tensorHom_apply_of_ne _ _ (by simp [he]), Matrix.one_apply]
+        split_ifs with hEq
+        · exact (he (congrArg Sigma.fst hEq)).elim
+        · rw [mul_zero]
+    · rw [blockDiagonal'_apply_ne _ _ _ habc]
+      -- If the outer input grades agree, the inner pair of input grades must differ.
+      first
+      | by_cases hec : (e, c) = (e', c')
+        · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hec
+          have hab : (a, b) ≠ (a', b') := by simpa using habc
+          rw [tensorHom_apply, tensorHom_apply_of_ne _ _ hab, zero_mul, zero_mul]
+        · exact tensorHom_apply_of_ne _ _ hec _ _ _ _ _ _ _
+      | by_cases hae : (a, e) = (a', e')
+        · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hae
+          have hbc : (b, c) ≠ (b', c') := by simpa using habc
+          rw [tensorHom_apply, tensorHom_apply_of_ne _ _ hbc, mul_zero, zero_mul]
+        · exact tensorHom_apply_of_ne _ _ hae _ _ _ _ _ _ _
 
 /-- The associator commutes with tensoring a triple of maps. -/
 @[reassoc]
@@ -448,71 +545,49 @@ private def triangleBasis (c : ι) :
 
 private theorem triangleBasis_apply (a b d : ι) (x : X.basis a) (y : Y.basis b)
     (j : Fin (N.N a b d)) :
-    triangleBasis X Y d ⟨(a, b), (x, (leftUnitorBasis Y b).symm y), j⟩ =
-      ⟨(a, b), ((rightUnitorBasis X a).symm x, y), j⟩ := by
-  -- The input is written as a sigma constructor in the basis of the nested tensor product.
-  erw [triangleBasis, Equiv.trans_apply, tensorBasisCongr_apply]
-  dsimp only [Equiv.refl_apply]
-  rw [Equiv.apply_symm_apply]
+    triangleBasis X Y d (tensorBasisMk (a, b) x ((leftUnitorBasis Y b).symm y) j) =
+      tensorBasisMk (a, b) ((rightUnitorBasis X a).symm x) y j := by
+  simp only [triangleBasis, Equiv.trans_apply, tensorBasisCongr_apply, Equiv.refl_apply,
+    Equiv.apply_symm_apply]
 
 private theorem associator_unit_inv :
     (associator X (simple P N.unit) Y).inv = (isoOfEquiv (triangleBasis X Y)).hom := by
   ext1 d
   apply Matrix.submatrix_injective
-    (tensorBasisCongr (fun _ ↦ Equiv.refl _) (fun a ↦ (leftUnitorBasis Y a).symm) d).surjective
+    (tensorBasisCongr (fun _ ↦ Equiv.refl _) (leftUnitorBasis Y) d).symm.surjective
     (tensorBasisCongr (fun a ↦ (rightUnitorBasis X a).symm) (fun _ ↦ Equiv.refl _) d).surjective
   dsimp only
-  ext ⟨⟨a, b⟩, ⟨x, y⟩, j⟩ ⟨⟨a', b'⟩, ⟨x', y'⟩, i⟩
-  -- Destructuring the indices exposes the sigma type of the unitor-reindexed bases.
-  erw [Matrix.submatrix_apply, Matrix.submatrix_apply, tensorBasisCongr_apply,
-    tensorBasisCongr_apply, isoOfEquiv_hom_entry]
-  rw [Equiv.refl_apply, Equiv.refl_apply, triangleBasis_apply]
+  apply Matrix.ext
+  intro p q
+  obtain ⟨⟨a, b⟩, x, y, j, rfl⟩ := tensorBasisMk_exists p
+  obtain ⟨⟨a', b'⟩, x', y', i, rfl⟩ := tensorBasisMk_exists q
+  rw [Matrix.submatrix_apply, Matrix.submatrix_apply, tensorBasisCongr_symm]
+  simp only [Equiv.refl_symm, tensorBasisCongr_apply, Equiv.refl_apply, isoOfEquiv_hom_entry,
+    triangleBasis_apply]
   simp only [leftUnitorBasis_symm_apply, rightUnitorBasis_symm_apply]
   have hAssoc := congrFun (congrFun (associator_inv_submatrix X (simple P N.unit) Y d)
     ⟨(a, N.unit, b), (x, default, y), ⟨b, N.unitLeft b, j⟩⟩)
     ⟨(a', N.unit, b'), (x', default, y'), ⟨a', N.unitRight a', i⟩⟩
-  -- The grouped bases are expressed as sigma types in `associator_inv_submatrix`.
-  erw [Matrix.submatrix_apply, rightAssocBasisEquiv_symm_apply,
+  simp only [Matrix.submatrix_apply, rightAssocBasisEquiv_symm_apply,
     leftAssocBasisEquiv_symm_apply] at hAssoc
-  erw [hAssoc]
+  rw [hAssoc]
   by_cases hab : (a, b) = (a', b')
   · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hab
     rw [blockDiagonal'_apply_eq]
-    simp only [kronecker_apply, transpose_apply, P.triangle, Matrix.one_apply]
-    have hcoords :
-        (⟨(a, b), ((rightUnitorBasis X a).symm x', y'), i⟩ =
-          (⟨(a, b), ((rightUnitorBasis X a).symm x, y), j⟩ :
-            (tensorObj (tensorObj X (simple P N.unit)) Y).basis d)) ↔
-          x' = x ∧ y' = y ∧ i = j := by
-      constructor
-      · intro hh
-        have hdata := (Sigma.mk.inj_iff.mp hh).2.eq
-        exact ⟨(rightUnitorBasis X a).symm.injective (congrArg (fun p ↦ p.1.1) hdata),
-          congrArg (fun p ↦ p.1.2) hdata, congrArg Prod.snd hdata⟩
-      · rintro ⟨rfl, rfl, rfl⟩
-        rfl
-    -- The permutation entry tests equality in the dependent tensor basis.
-    erw [if_congr hcoords (rfl : (1 : R) = 1) (rfl : (0 : R) = 0)]
-    split_ifs <;> simp only [mul_zero, mul_one] <;> grind
+    simp only [kronecker_apply, transpose_apply, P.triangle, Matrix.one_apply, tensorBasisMk_inj,
+      Prod.mk.injEq, and_true, true_and, eq_comm (a := x) (b := x'), eq_comm (a := y) (b := y'),
+      ite_and, ite_mul, zero_mul, one_mul]
   · have hab' : (a, N.unit, b) ≠ (a', N.unit, b') := by simpa using hab
-    rw [blockDiagonal'_apply_ne _ _ _ hab']
-    split_ifs with hc
-    · exact (hab (congrArg Sigma.fst hc).symm).elim
-    · rfl
+    rw [blockDiagonal'_apply_ne _ _ _ hab', ite_eq_right (tensorBasisMk_ne_of_ne (Ne.symm hab))]
 
 private theorem triangle_inv :
     tensorHom (𝟙 X) (leftUnitor Y).inv ≫ (associator X (simple P N.unit) Y).inv =
       tensorHom (rightUnitor X).inv (𝟙 Y) := by
   rw [associator_unit_inv, leftUnitor, rightUnitor, ← Iso.symm_hom, ← Iso.symm_hom,
     isoOfEquiv_symm, isoOfEquiv_symm, ← isoOfEquiv_refl_hom X, ← isoOfEquiv_refl_hom Y,
-    tensorHom_isoOfEquiv_hom, tensorHom_isoOfEquiv_hom]
-  ext1 d
-  simp only [comp_apply, isoOfEquiv_hom_apply, ← PEquiv.toMatrix_trans, ← Equiv.toPEquiv_trans]
-  congr 2
-  let e := tensorBasisCongr (fun a ↦ Equiv.refl (X.basis a)) (leftUnitorBasis Y) d
-  let e' := tensorBasisCongr (fun a ↦ (rightUnitorBasis X a).symm)
-    (fun a ↦ Equiv.refl (Y.basis a)) d
-  exact Equiv.ext fun p ↦ congrArg e' (e.apply_symm_apply p)
+    tensorHom_isoOfEquiv_hom, tensorHom_isoOfEquiv_hom, ← Iso.trans_hom, isoOfEquiv_trans]
+  simp only [triangleBasis, tensorBasisCongr_trans, Equiv.refl_trans, Equiv.trans_refl,
+    Equiv.symm_trans_self]
 
 /-- The associator and the unitors satisfy the monoidal triangle. -/
 theorem triangle :

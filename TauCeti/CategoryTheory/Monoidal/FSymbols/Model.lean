@@ -167,6 +167,16 @@ theorem isoOfEquiv_symm (e : ∀ a, X.basis a ≃ Y.basis a) :
   ext1 a
   simp
 
+/-- The composite of the isomorphisms induced by basis bijections is induced by
+their grade-wise composite. -/
+@[simp]
+theorem isoOfEquiv_trans (e : ∀ a, X.basis a ≃ Y.basis a)
+    (e' : ∀ a, Y.basis a ≃ Z.basis a) :
+    isoOfEquiv e ≪≫ isoOfEquiv e' = isoOfEquiv (fun a ↦ (e a).trans (e' a)) := by
+  ext1
+  ext1 a
+  simp [← PEquiv.toMatrix_trans, ← Equiv.toPEquiv_trans]
+
 /-- A square with basis bijections commutes if the two maps have the same entries in
 the corresponding bases. -/
 theorem isoOfEquiv_hom_naturality {X' Y' : Model P}
