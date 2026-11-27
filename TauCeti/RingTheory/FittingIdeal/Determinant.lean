@@ -145,12 +145,10 @@ theorem minorsIdeal_finrank_le_colon [Module.Free R F] [Module.Finite R F] (N : 
   refine mem_colon.2 fun x _ ↦ ?_
   -- `b.det v` is the determinant of the endomorphism sending `b i` to `v i`, whose range is the
   -- span of the `v i`.
-  have hdet : b.det v = LinearMap.det (b.constr ℕ v) := by
-    rw [Basis.det_apply, Basis.toMatrix_eq_toMatrix_constr, LinearMap.det_toMatrix]
-  have hrange : LinearMap.range (b.constr ℕ v) ≤ N := by
+  have hrange : LinearMap.range (b.constr R v) ≤ N := by
     rw [Basis.constr_range]
     exact span_le.2 (Set.range_subset_iff.2 hv)
-  exact hdet ▸ hrange ((b.constr ℕ v).det_smul_mem_range x)
+  exact b.det_constr v ▸ hrange ((b.constr R v).det_smul_mem_range x)
 
 end Submodule
 

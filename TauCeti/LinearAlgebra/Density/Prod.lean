@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Density.Basic
 public import TauCeti.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Densities on a product of vector spaces

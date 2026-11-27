@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.Basic.Real.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Densities on real vector spaces
@@ -33,19 +34,6 @@ The construction adapts Li Xuanji’s implementation in Tau Ceti PR #22145.
 -/
 
 public section
-
-namespace Module.Basis
-
-variable {ι R M : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- The determinant of the endomorphism sending the basis `b` to `v` is the determinant of `v`
-in the basis `b`. -/
-theorem det_constr (b : Basis ι R M) (v : ι → M) : LinearMap.det (b.constr R v) = b.det v := by
-  rw [det_apply, toMatrix_eq_toMatrix_constr, LinearMap.det_toMatrix]
-  -- `toMatrix_eq_toMatrix_constr` uses `constr ℕ`; both are the linear map sending `b` to `v`.
-  exact congrArg LinearMap.det (b.ext fun i ↦ by simp)
-
-end Module.Basis
 
 namespace TauCeti
 
