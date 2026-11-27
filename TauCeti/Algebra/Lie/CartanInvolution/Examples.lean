@@ -14,10 +14,9 @@ import TauCeti.Algebra.Lie.SpecialLinear.Killing
 /-!
 # Classical examples of Cartan and reductive Cartan involutions
 
-Certifies negative transpose as a Cartan involution on `sl n K`
-(`LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution`), shows the identity on `sl n K` is
-not Cartan for nontrivial `n` (`LieAlgebra.SpecialLinear.not_isCartanInvolution_refl`), and shows
-negative transpose on `gl n K` is a reductive Cartan involution
+Shows the identity on `sl n K` is not Cartan for nontrivial `n`
+(`LieAlgebra.SpecialLinear.not_isCartanInvolution_refl`), and shows negative transpose on
+`gl n K` is a reductive Cartan involution
 (`TauCeti.isReductiveCartanInvolution_negTransposeLieEquiv`) but not a Cartan involution for
 nonempty `n` (`TauCeti.not_isCartanInvolution_negTransposeLieEquiv`).
 -/
@@ -33,15 +32,6 @@ section OrderedField
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
 namespace LieAlgebra.SpecialLinear
-
-/-- Negative transpose `X ↦ -Xᵀ` is a Cartan involution of the special linear Lie algebra `sl n K`
-over any ordered field `K`. -/
-@[simp]
-theorem isCartanInvolution_cartanInvolution {n : Type*} [Fintype n] [DecidableEq n] :
-    (cartanInvolution n K).IsCartanInvolution := by
-  rw [LieEquiv.isCartanInvolution_iff]
-  exact ⟨cartanInvolution_cartanInvolution,
-    fun _ hX ↦ killingForm_cartanInvolution_self_neg hX⟩
 
 /-- For nontrivial `n`, the identity is not a Cartan involution of `sl n K` over any ordered field
 `K` (the Killing form is positive on the diagonal matrix `Eᵢᵢ - Eⱼⱼ`). -/
@@ -78,10 +68,13 @@ theorem isReductiveCartanInvolution_negTransposeLieEquiv {n : Type*} [Fintype n]
     rw [LieEquiv.isReductiveCartanInvolution_iff]
     refine ⟨LieSubmodule.isCompl_toSubmodule.mp
         (isCompl_center_derivedSeries_one_matrix (R := K) (n := n)), fun _ ↦ by simp, ?_⟩
-    let e := LieEquiv.ofSubalgebraEqIdeal (SpecialLinear.sl n K)
-      (derivedSeries K (Matrix n n K) 1) (derivedSeries_one_toLieSubalgebra_eq_sl (R := K) (n := n))
+    have h : ((SpecialLinear.sl n K : LieSubalgebra K (Matrix n n K)) : Set (Matrix n n K)) =
+        (derivedSeries K (Matrix n n K) 1).toLieSubalgebra :=
+      congrArg SetLike.coe (derivedSeries_one_toLieSubalgebra_eq_sl (R := K) (n := n)).symm
+    let e : SpecialLinear.sl n K ≃ₗ⁅K⁆ derivedSeries K (Matrix n n K) 1 := LieEquiv.ofEq _ _ h
+    have he (Y : SpecialLinear.sl n K) : (e Y : Matrix n n K) = Y := LieEquiv.ofEq_apply _ _ h Y
     exact (SpecialLinear.isCartanInvolution_cartanInvolution (K := K)).of_intertwines e fun X ↦
-      Subtype.ext (by simp [e])
+      Subtype.ext (by simp [he])
   · have : IsEmpty n := not_nonempty_iff.mp hn
     have : IsLieAbelian (Matrix n n K) := ⟨fun _ _ ↦ Subsingleton.elim _ _⟩
     exact LieEquiv.isReductiveCartanInvolution_iff_involutive_of_isLieAbelian.mpr fun _ ↦ by simp

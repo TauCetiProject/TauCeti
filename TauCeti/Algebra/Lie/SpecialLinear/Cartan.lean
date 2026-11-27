@@ -26,17 +26,19 @@ Restricting `TauCeti.negTransposeLieEquiv` to `LieAlgebra.SpecialLinear.sl n R` 
 and `κ(X, θ X) < 0` for nonzero `X` over an ordered principal ideal domain
 (`LieAlgebra.SpecialLinear.killingForm_cartanInvolution_self_neg`).
 
-Over `ℝ`, `𝔰𝔩_{r+1}(ℝ)` is closed under transpose (which is conjugate transpose over `ℝ`) and has
-trivial radical, so `LieSubalgebra.isCartanInvolution_restrictNegConjTranspose` directly makes
-`TauCeti.specialLinearNegTranspose` a Cartan involution of `𝔰𝔩_{r+1}(ℝ)` acting by `-1` on the
+Over an ordered field `K`, `LieAlgebra.SpecialLinear.cartanInvolution n K` is a Cartan
+involution (`LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution`). Specializing to
+`n = Fin (r + 1)` and `K = ℝ` gives `TauCeti.specialLinearNegTranspose`, acting by `-1` on the
 trace-zero diagonal matrices.
 
 ## Main results
 
 * `LieAlgebra.SpecialLinear.cartanInvolution`,
   `LieAlgebra.SpecialLinear.killingForm_cartanInvolution_apply`,
-  `LieAlgebra.SpecialLinear.killingForm_cartanInvolution_self_neg`: the involution `X ↦ -Xᵀ` of
-  `sl n R` and its twisted Killing form over an ordered PID.
+  `LieAlgebra.SpecialLinear.killingForm_cartanInvolution_self_neg`,
+  `LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution`: the involution `X ↦ -Xᵀ` of
+  `sl n R`, its twisted Killing form over an ordered PID, and its Cartan involution certificate
+  over an ordered field.
 * `TauCeti.specialLinearNegTranspose`, `TauCeti.isCartanInvolution_specialLinearNegTranspose`,
   `TauCeti.specialLinearNegTranspose_apply_of_mem_specialLinearDiagonal`: the Cartan involution
   `X ↦ -Xᵀ` of `𝔰𝔩_{r+1}(ℝ)` and its action on `specialLinearDiagonal r ℝ`.
@@ -134,6 +136,22 @@ theorem killingForm_cartanInvolution_self_neg {X : sl n R} (hX : X ≠ 0) :
 
 end OrderedPID
 
+section OrderedField
+
+variable {n : Type*} [Fintype n] [DecidableEq n] {K : Type*} [Field K] [LinearOrder K]
+  [IsStrictOrderedRing K]
+
+/-- Negative transpose `X ↦ -Xᵀ` is a Cartan involution of the special linear Lie algebra `sl n K`
+over any ordered field `K`. -/
+@[simp]
+theorem isCartanInvolution_cartanInvolution :
+    (cartanInvolution n K).IsCartanInvolution := by
+  rw [LieEquiv.isCartanInvolution_iff]
+  exact ⟨cartanInvolution_cartanInvolution,
+    fun _ hX ↦ killingForm_cartanInvolution_self_neg hX⟩
+
+end OrderedField
+
 end LieAlgebra.SpecialLinear
 
 namespace TauCeti
@@ -145,8 +163,8 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable (r : ℕ)
 
 /-- The Cartan involution `X ↦ -Xᵀ` of `𝔰𝔩_{r+1}(ℝ)`. -/
-noncomputable def specialLinearNegTranspose : sl (Fin (r + 1)) ℝ ≃ₗ⁅ℝ⁆ sl (Fin (r + 1)) ℝ :=
-  (sl (Fin (r + 1)) ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_sl
+def specialLinearNegTranspose : sl (Fin (r + 1)) ℝ ≃ₗ⁅ℝ⁆ sl (Fin (r + 1)) ℝ :=
+  cartanInvolution (Fin (r + 1)) ℝ
 
 variable {r}
 
@@ -154,15 +172,14 @@ variable {r}
 @[simp]
 theorem coe_specialLinearNegTranspose_apply (X : sl (Fin (r + 1)) ℝ) :
     ((specialLinearNegTranspose r X : sl (Fin (r + 1)) ℝ) : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ) =
-      -(X : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ)ᵀ := by
-  rw [specialLinearNegTranspose, LieSubalgebra.coe_restrictNegConjTranspose_apply,
-    conjTranspose_eq_transpose_of_trivial]
+      -(X : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ)ᵀ :=
+  coe_cartanInvolution X
 
 variable (r) in
 /-- `X ↦ -Xᵀ` is a Cartan involution of `𝔰𝔩_{r+1}(ℝ)`. -/
 theorem isCartanInvolution_specialLinearNegTranspose :
     (specialLinearNegTranspose r).IsCartanInvolution :=
-  LieSubalgebra.isCartanInvolution_restrictNegConjTranspose _ _
+  isCartanInvolution_cartanInvolution
 
 /-- The Cartan involution acts on the trace-zero diagonal matrices by `-1`. -/
 theorem specialLinearNegTranspose_apply_of_mem_specialLinearDiagonal {X : sl (Fin (r + 1)) ℝ}

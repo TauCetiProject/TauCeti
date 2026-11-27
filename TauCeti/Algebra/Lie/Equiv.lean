@@ -8,20 +8,16 @@ module
 public import Mathlib.Algebra.Lie.Abelian
 
 /-!
-# Lie algebra equivalences on centres and subalgebra–ideal identifications
+# Lie algebra equivalences on centres
 
 Every Lie algebra equivalence `e : L ≃ₗ⁅R⁆ M` carries `Z(L)` onto `Z(M)`
 (`LieEquiv.map_center_toLieSubalgebra`), inducing
-`LieEquiv.restrictCenter : center R L ≃ₗ⁅R⁆ center R M`. We also package the canonical
-equivalence `LieEquiv.ofSubalgebraEqIdeal` between a Lie subalgebra `S` and a Lie ideal `I` with
-`I.toLieSubalgebra = S`.
+`LieEquiv.restrictCenter : center R L ≃ₗ⁅R⁆ center R M`.
 
 ## Main definitions and results
 
 * `LieEquiv.map_center_toLieSubalgebra`, `LieEquiv.restrictCenter`, `LieEquiv.restrictCenter_refl`,
   `LieEquiv.restrictCenter_symm`, `LieEquiv.restrictCenter_trans`.
-* `LieEquiv.ofSubalgebraEqIdeal`, `LieEquiv.coe_ofSubalgebraEqIdeal`,
-  `LieEquiv.coe_ofSubalgebraEqIdeal_symm`.
 -/
 
 public section
@@ -74,25 +70,5 @@ theorem restrictCenter_trans {N : Type*} [LieRing N] [LieAlgebra R N]
     (e₁ : L ≃ₗ⁅R⁆ M) (e₂ : M ≃ₗ⁅R⁆ N) :
     (e₁.trans e₂).restrictCenter = e₁.restrictCenter.trans e₂.restrictCenter := by
   ext z; simp
-
-/-- A Lie subalgebra `S` and a Lie ideal `I` with `I.toLieSubalgebra = S` are equivalent as Lie
-algebras. -/
-def ofSubalgebraEqIdeal (S : LieSubalgebra R L) (I : LieIdeal R L)
-    (h : I.toLieSubalgebra = S) : S ≃ₗ⁅R⁆ I :=
-  ofEq S I.toLieSubalgebra (congrArg SetLike.coe h.symm)
-
-/-- Coercing `LieEquiv.ofSubalgebraEqIdeal S I h x` to `L` returns `(x : L)`. -/
-@[simp, grind =]
-theorem coe_ofSubalgebraEqIdeal (S : LieSubalgebra R L) (I : LieIdeal R L)
-    (h : I.toLieSubalgebra = S) (x : S) :
-    (ofSubalgebraEqIdeal S I h x : L) = x :=
-  ofEq_apply S I.toLieSubalgebra _ x
-
-/-- Coercing `(LieEquiv.ofSubalgebraEqIdeal S I h).symm y` to `L` returns `(y : L)`. -/
-@[simp, grind =]
-theorem coe_ofSubalgebraEqIdeal_symm (S : LieSubalgebra R L) (I : LieIdeal R L)
-    (h : I.toLieSubalgebra = S) (y : I) :
-    ((ofSubalgebraEqIdeal S I h).symm y : L) = y := by
-  rw [← coe_ofSubalgebraEqIdeal S I h, (ofSubalgebraEqIdeal S I h).apply_symm_apply]
 
 end LieEquiv

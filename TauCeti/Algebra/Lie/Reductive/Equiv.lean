@@ -14,15 +14,15 @@ import TauCeti.Algebra.Lie.Prod
 /-!
 # Centre/derived assembly of Lie algebra equivalences
 
-When `IsCompl (center R L) (derivedSeries R L 1)`, addition yields `Z(L) × [L, L] ≃ₗ⁅R⁆ L`
-(`LieEquiv.prodCenterDerivedEquiv`), and automorphisms of `Z(L)` and `[L, L]` assemble into
-`LieEquiv.ofCenterDerived`, reconstructing any automorphism
-(`LieEquiv.ofCenterDerived_restrictCenter_restrictDerivedSeries`) and giving uniqueness from the two
-restrictions (`LieEquiv.eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq`).
+When `IsCompl (center R L) (derivedSeries R L 1)`, automorphisms of `Z(L)` and `[L, L]`
+assemble via `LieIdeal.prodEquivOfIsCompl` into `LieEquiv.ofCenterDerived`, reconstructing any
+automorphism (`LieEquiv.ofCenterDerived_restrictCenter_restrictDerivedSeries`) and giving
+uniqueness from the two restrictions
+(`LieEquiv.eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq`).
 
 ## Main definitions and results
 
-* `LieEquiv.prodCenterDerivedEquiv`, `LieEquiv.ofCenterDerived`,
+* `LieEquiv.ofCenterDerived`,
   `LieEquiv.eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq`,
   `LieEquiv.ofCenterDerived_restrictCenter_restrictDerivedSeries`.
 -/
@@ -36,35 +36,6 @@ namespace LieEquiv
 variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing M] [LieAlgebra R M]
   (hcompl : IsCompl (center R L) (derivedSeries R L 1))
 
-/-- When the centre and derived ideal of `L` are complementary, addition gives a Lie algebra
-equivalence `Z(L) × [L, L] ≃ₗ⁅R⁆ L`. -/
-noncomputable def prodCenterDerivedEquiv :
-    (center R L × derivedSeries R L 1) ≃ₗ⁅R⁆ L where
-  __ := Submodule.prodEquivOfIsCompl (center R L).toSubmodule (derivedSeries R L 1).toSubmodule
-    (LieSubmodule.isCompl_toSubmodule.mpr hcompl)
-  map_lie' {p q} := by
-    have hz (z : center R L) (y : L) : ⁅y, (z : L)⁆ = 0 :=
-      (LieModule.mem_maxTrivSubmodule R L L z).mp z.property y
-    have hzl (z : center R L) (y : L) : ⁅(z : L), y⁆ = 0 := by
-      rw [← lie_skew, hz z y, neg_zero]
-    simp only [LinearEquiv.toFun_eq_coe, Submodule.coe_prodEquivOfIsCompl',
-      LieAlgebra.Prod.bracket_apply, LieIdeal.coe_bracket_of_module, LieSubmodule.coe_bracket,
-      lie_add, add_lie, hz, hzl, zero_add]
-
-@[simp, grind =]
-theorem prodCenterDerivedEquiv_apply (p : center R L × derivedSeries R L 1) :
-    prodCenterDerivedEquiv hcompl p = (p.1 : L) + p.2 := (rfl)
-
-@[simp]
-theorem prodCenterDerivedEquiv_symm_center (z : center R L) :
-    (prodCenterDerivedEquiv hcompl).symm (z : L) = (z, 0) :=
-  (prodCenterDerivedEquiv hcompl).injective (by simp)
-
-@[simp]
-theorem prodCenterDerivedEquiv_symm_derivedSeries (d : derivedSeries R L 1) :
-    (prodCenterDerivedEquiv hcompl).symm (d : L) = (0, d) :=
-  (prodCenterDerivedEquiv hcompl).injective (by simp)
-
 section Assembly
 
 variable (θZ : center R L ≃ₗ⁅R⁆ center R L)
@@ -73,8 +44,8 @@ variable (θZ : center R L ≃ₗ⁅R⁆ center R L)
 /-- Assemble automorphisms of `Z(L)` and `[L, L]` into an automorphism of `L` when the centre and
 derived ideal are complementary. -/
 noncomputable def ofCenterDerived : L ≃ₗ⁅R⁆ L :=
-  (prodCenterDerivedEquiv hcompl).symm.trans
-    ((LieEquiv.prodCongr θZ θD).trans (prodCenterDerivedEquiv hcompl))
+  (LieIdeal.prodEquivOfIsCompl _ _ hcompl).symm.trans
+    ((LieEquiv.prodCongr θZ θD).trans (LieIdeal.prodEquivOfIsCompl _ _ hcompl))
 
 @[simp]
 theorem ofCenterDerived_apply_center (z : center R L) :
@@ -101,7 +72,7 @@ theorem eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq
     (hZ : e₁.restrictCenter = e₂.restrictCenter)
     (hD : e₁.restrictDerivedSeries 1 = e₂.restrictDerivedSeries 1) : e₁ = e₂ := by
   ext x
-  obtain ⟨⟨z, d⟩, rfl⟩ := (prodCenterDerivedEquiv hcompl).surjective x
+  obtain ⟨⟨z, d⟩, rfl⟩ := (LieIdeal.prodEquivOfIsCompl _ _ hcompl).surjective x
   have hz : e₁ z = e₂ z := by
     simpa [coe_restrictCenter] using congrArg (fun f : center R L ≃ₗ⁅R⁆ center R M ↦ (f z : M)) hZ
   have hd : e₁ d = e₂ d := by

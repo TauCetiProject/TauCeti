@@ -47,8 +47,7 @@ of its centre and its derived algebra, the latter semisimple with negative defin
   `LieEquiv.IsCartanInvolution.derivedSeries_one_eq_top`: a Lie algebra with a Cartan involution
   has nondegenerate Killing form, hence is finite-dimensional
   (`LieEquiv.IsCartanInvolution.finiteDimensional`), semisimple, and perfect; a nontrivial abelian
-  Lie algebra has none (`LieEquiv.IsCartanInvolution.not_isLieAbelian`,
-  `LieEquiv.not_isCartanInvolution_of_isLieAbelian`).
+  Lie algebra has none (`LieEquiv.IsCartanInvolution.not_isLieAbelian`).
 * `LieEquiv.IsCartanInvolution.isSymm_twistedKillingForm`,
   `LieEquiv.IsCartanInvolution.nondegenerate_twistedKillingForm`: `B_θ` is symmetric and
   nondegenerate.
@@ -149,6 +148,16 @@ theorem conj {M : Type*} [LieRing M] [LieAlgebra K M] (hθ : θ.IsCartanInvoluti
     ← killingForm_of_equiv_apply e (e.symm y) (θ (e.symm y)), e.apply_symm_apply] using
     hθ.twistedKillingForm_self_pos he
 
+/-- A nontrivial abelian Lie algebra has no Cartan involution, because a Lie algebra admitting
+a Cartan involution has trivial centre. -/
+theorem not_isLieAbelian [Nontrivial L] (hθ : θ.IsCartanInvolution) : ¬ IsLieAbelian L := by
+  intro _
+  obtain ⟨x, hx⟩ := exists_ne (0 : L)
+  have hx0 : x ∈ center K L :=
+    (LieModule.mem_maxTrivSubmodule K L L x).mpr fun y ↦ trivial_lie_zero L L y x
+  rw [hθ.center_eq_bot] at hx0
+  exact hx ((LieSubmodule.mem_bot x).mp hx0)
+
 end IsCartanInvolution
 
 /-- Conjugation by a Lie algebra equivalence preserves the Cartan involution property. -/
@@ -166,17 +175,6 @@ theorem IsCartanInvolution.of_intertwines {M : Type*} [LieRing M] [LieAlgebra K 
   have hconj : θ' = e.conj θ :=
     LieEquiv.ext fun y ↦ by obtain ⟨x, rfl⟩ := e.surjective y; simp [h x]
   rwa [hconj, isCartanInvolution_conj_iff]
-
-/-- A nontrivial abelian Lie algebra admits no Cartan involution, because a Lie algebra admitting
-a Cartan involution has trivial centre. -/
-theorem not_isCartanInvolution_of_isLieAbelian [Nontrivial L] [IsLieAbelian L] (θ : L ≃ₗ⁅K⁆ L) :
-    ¬ θ.IsCartanInvolution := by
-  intro hθ
-  obtain ⟨x, hx⟩ := exists_ne (0 : L)
-  have hx0 : x ∈ center K L :=
-    (LieModule.mem_maxTrivSubmodule K L L x).mpr fun y ↦ trivial_lie_zero L L y x
-  rw [hθ.center_eq_bot] at hx0
-  exact hx ((LieSubmodule.mem_bot x).mp hx0)
 
 variable [IsStrictOrderedRing K]
 
@@ -280,12 +278,6 @@ theorem derivedSeries_one_eq_top (hθ : θ.IsCartanInvolution) : derivedSeries K
   have := hθ.isKilling
   have := hθ.finiteDimensional
   TauCeti.derivedSeries_one_eq_top_of_isKilling K L
-
-/-- A nontrivial abelian Lie algebra has no Cartan involution: its Killing form vanishes. -/
-theorem not_isLieAbelian [Nontrivial L] (hθ : θ.IsCartanInvolution) : ¬ IsLieAbelian L :=
-  fun _ ↦
-  have := hθ.isSemisimple
-  not_subsingleton L (LieAlgebra.subsingleton_of_hasTrivialRadical_lie_abelian K L)
 
 /-- The `-1`-eigenspace `𝔭` of a Cartan involution is the Killing-orthogonal complement of its
 fixed subalgebra `𝔨`. -/

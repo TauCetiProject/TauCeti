@@ -330,13 +330,13 @@ theorem twistedKillingForm_apply (x y : L) :
     θ.twistedKillingForm x y = -killingForm R L x (θ y) := by
   simp [twistedKillingForm]
 
-/-- Pulling back the twisted Killing form of a conjugate automorphism `e.symm.trans (θ.trans e)`
-along `e` recovers `θ.twistedKillingForm`. -/
+/-- Pulling back the twisted Killing form of a conjugate automorphism `e.conj θ` along `e`
+recovers `θ.twistedKillingForm`. -/
 theorem twistedKillingForm_conj {M : Type*} [LieRing M] [LieAlgebra R M]
     (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ M) (x y : M) :
-    (e.symm.trans (θ.trans e)).twistedKillingForm x y =
+    (e.conj θ).twistedKillingForm x y =
       θ.twistedKillingForm (e.symm x) (e.symm y) := by
-  simp only [twistedKillingForm_apply, trans_apply]
+  simp only [twistedKillingForm_apply, conj_apply]
   rw [← killingForm_of_equiv_apply e (e.symm x) (θ (e.symm y)), e.apply_symm_apply]
 
 /-- On the second argument in `𝔨`, the twisted Killing form is `-B`. -/

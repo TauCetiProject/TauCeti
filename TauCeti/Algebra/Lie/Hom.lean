@@ -15,9 +15,9 @@ Basic constructors, simp, eigenvector, and intertwining lemmas for `LieHom`, `Li
 eigenvalue multiplication under brackets (`LieHom.map_lie_of_apply_eq_smul`), composition and
 cancellation of intertwining homomorphisms and equivalences (`LieHom.comp_intertwines`,
 `LieEquiv.symm_intertwines`, `LieEquiv.trans_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`),
-the transport `e ∘ θ ∘ e⁻¹` of an automorphism along an isomorphism (`LieEquiv.conj`,
-`LieEquiv.trans_conj_symm`), and the restriction of a Lie homomorphism to Lie subalgebras or Lie
-ideals it maps into each other (`LieHom.restrict`, `LieHom.restrictIdeal`).
+the transport `e ∘ θ ∘ e⁻¹` of an automorphism along an isomorphism (`LieEquiv.conj`), and the
+restriction of a Lie homomorphism to Lie subalgebras or Lie ideals it maps into each other
+(`LieHom.restrict`, `LieHom.restrictIdeal`).
 -/
 
 public section
@@ -98,12 +98,6 @@ theorem symm_conj_conj (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) : e.symm
 theorem involutive_conj {e : L ≃ₗ⁅R⁆ M} {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) :
     Function.Involutive (e.conj θ) :=
   fun x ↦ by simp [hθ (e.symm x)]
-
-/-- Conjugating an automorphism by `e` and then by `e.symm` recovers the original automorphism. -/
-@[simp]
-theorem trans_conj_symm (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) :
-    e.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ := by
-  ext x; simp
 
 end LieEquiv
 
