@@ -42,9 +42,10 @@ and `t` it is bounded by `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t -
 integral `∫_{s < t} D⁻¹ sin ((t - s)D) G(s) ds` of the forcing restricted to `[0, T]`
 (`TauCeti.waveDuhamelSolution_eq_setIntegral_Iio`), the form treated by the retarded Strichartz
 estimates. For continuous forcing it is continuous in time
-(`TauCeti.continuous_waveDuhamelSolution`). So it is for integrable forcing
-(`TauCeti.continuous_waveDuhamelSolution_of_integrable`), and on `[a, b] ∋ 0` for forcing
-integrable on `[a, b]` (`TauCeti.continuousOn_waveDuhamelSolution_of_integrableOn`). For
+(`TauCeti.continuous_waveDuhamelSolution`). So it is for locally integrable forcing
+(`TauCeti.continuous_waveDuhamelSolution_of_locallyIntegrable`), and on `[a, b] ∋ 0` for forcing
+integrable on `[a, b]` (`TauCeti.continuousOn_waveDuhamelSolution_of_integrableOn`), where it
+depends only on the forcing on `[a, b]` (`TauCeti.waveDuhamelSolution_indicator_Icc`). For
 continuous forcing and every `φ ∈ L²` whose distributional Laplacian `ψ = Δφ` lies in `L²`, the
 scalar function `t ↦ ⟪φ, u(t)⟫` is twice differentiable, with
 
@@ -107,10 +108,12 @@ they are differentiated by `TauCeti.hasDerivAt_waveSinPropagator_apply`,
 ## Main declarations
 
 * `TauCeti.waveDuhamelSolution`: the solution formula, with
-  `TauCeti.continuous_waveDuhamelSolution`, `TauCeti.continuous_waveDuhamelSolution_of_integrable`,
+  `TauCeti.continuous_waveDuhamelSolution`,
+  `TauCeti.continuous_waveDuhamelSolution_of_locallyIntegrable`,
   `TauCeti.continuousOn_waveDuhamelSolution_of_integrableOn`, `TauCeti.waveDuhamelSolution_add`,
   `TauCeti.waveDuhamelSolution_sum`, `TauCeti.waveDuhamelSolution_smul`,
-  `TauCeti.waveDuhamelSolution_congr` and `TauCeti.waveDuhamelSolution_eq_setIntegral_Iio`;
+  `TauCeti.waveDuhamelSolution_congr`, `TauCeti.waveDuhamelSolution_indicator_Icc` and
+  `TauCeti.waveDuhamelSolution_eq_setIntegral_Iio`;
 * `TauCeti.norm_waveDuhamelSolution_le` and `TauCeti.norm_waveDuhamelSolution_le_mul_setIntegral`:
   a priori bounds;
 * `TauCeti.hasDerivAt_inner_waveDuhamelSolution`,
@@ -560,41 +563,56 @@ theorem norm_waveDuhamelSolution_sub_waveDuhamelSolution_le (f g : Lp F 2 (volum
   simpa using norm_waveDuhamelSolution_le_mul_setIntegral (F := F) (G := G₁ - G₂) 0 0
     (hG₁.sub hG₂)
 
-/-- For forcing integrable on `ℝ`, the solution is continuous in time with values in `L²`: near
-each time it is a uniform limit of solutions with continuous forcings approximating `G` in
+/-- On `[a, b] ∋ 0`, the solution depends only on the forcing on `[a, b]`: it agrees with the
+solution with the forcing `1_{[a, b]} G`. -/
+theorem waveDuhamelSolution_indicator_Icc (f g : Lp F 2 (volume : Measure E)) {a b t : ℝ}
+    (ha : a ≤ 0) (hb : 0 ≤ b) (ht : t ∈ Set.Icc a b) :
+    waveDuhamelSolution F f g ((Set.Icc a b).indicator G) t = waveDuhamelSolution F f g G t :=
+  waveDuhamelSolution_congr f g fun _ hs ↦
+    Set.indicator_of_mem (Set.uIcc_subset_Icc ⟨ha, hb⟩ ht hs) G
+
+/-- On `[a, b] ∋ 0`, for forcing integrable on `[a, b]`, the solution is continuous on `[a, b]` with
+values in `L²`: there it agrees with the solution with the integrable forcing `H = 1_{[a, b]} G`,
+which near each time is a uniform limit of solutions with continuous forcings approximating `H` in
 `L¹`. -/
-theorem continuous_waveDuhamelSolution_of_integrable (f g : Lp F 2 (volume : Measure E))
-    (hG : Integrable G) : Continuous (waveDuhamelSolution F f g G) := by
+theorem continuousOn_waveDuhamelSolution_of_integrableOn (f g : Lp F 2 (volume : Measure E))
+    {a b : ℝ} (ha : a ≤ 0) (hb : 0 ≤ b) (hG : IntegrableOn G (Set.Icc a b)) :
+    ContinuousOn (waveDuhamelSolution F f g G) (Set.Icc a b) := by
+  set H := (Set.Icc a b).indicator G
+  have hH : Integrable H := hG.integrable_indicator measurableSet_Icc
+  refine ContinuousOn.congr (f := waveDuhamelSolution F f g H) (Continuous.continuousOn ?_)
+    fun _ ht ↦ (waveDuhamelSolution_indicator_Icc f g ha hb ht).symm
   refine continuous_of_locally_uniform_approx_of_continuousAt fun x u hu ↦ ?_
   obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.1 hu
   have hx : 0 < |x| + 2 := by positivity
-  obtain ⟨K, -, hGK, hKc, hK⟩ := hG.exists_hasCompactSupport_integral_sub_le (div_pos hε hx)
+  obtain ⟨K, -, hHK, hKc, hK⟩ := hH.exists_hasCompactSupport_integral_sub_le (div_pos hε hx)
   refine ⟨Set.Ioo (x - 1) (x + 1), Ioo_mem_nhds (by linarith) (by linarith),
     waveDuhamelSolution F f g K, (continuous_waveDuhamelSolution f g hKc).continuousAt,
     fun y hy ↦ hεu ?_⟩
   have hy : |y| < |x| + 2 :=
     abs_lt.2 ⟨by linarith [neg_abs_le x, hy.1], by linarith [le_abs_self x, hy.2]⟩
   rw [dist_eq_norm]
-  calc ‖waveDuhamelSolution F f g G y - waveDuhamelSolution F f g K y‖
-      ≤ |y| * ∫ s in Ι 0 y, ‖G s - K s‖ :=
-        norm_waveDuhamelSolution_sub_waveDuhamelSolution_le f g hG.intervalIntegrable
+  calc ‖waveDuhamelSolution F f g H y - waveDuhamelSolution F f g K y‖
+      ≤ |y| * ∫ s in Ι 0 y, ‖H s - K s‖ :=
+        norm_waveDuhamelSolution_sub_waveDuhamelSolution_le f g hH.intervalIntegrable
           hK.intervalIntegrable
     _ ≤ |y| * (ε / (|x| + 2)) := by
         gcongr
-        exact (setIntegral_le_integral (hG.sub hK).norm
-          (Eventually.of_forall fun _ ↦ norm_nonneg _)).trans hGK
+        exact (setIntegral_le_integral (hH.sub hK).norm
+          (Eventually.of_forall fun _ ↦ norm_nonneg _)).trans hHK
     _ < (|x| + 2) * (ε / (|x| + 2)) := mul_lt_mul_of_pos_right hy (div_pos hε hx)
     _ = ε := by field_simp
 
-/-- On `[a, b] ∋ 0`, for forcing integrable on `[a, b]`, the solution is continuous on `[a, b]` with
-values in `L²`: there it agrees with the solution with the forcing `1_{[a, b]} G`. -/
-theorem continuousOn_waveDuhamelSolution_of_integrableOn (f g : Lp F 2 (volume : Measure E))
-    {a b : ℝ} (ha : a ≤ 0) (hb : 0 ≤ b) (hG : IntegrableOn G (Set.Icc a b)) :
-    ContinuousOn (waveDuhamelSolution F f g G) (Set.Icc a b) :=
-  (continuous_waveDuhamelSolution_of_integrable f g
-    (hG.integrable_indicator measurableSet_Icc)).continuousOn.congr fun _ ht ↦
-      waveDuhamelSolution_congr f g fun _ hs ↦
-        (Set.indicator_of_mem (Set.uIcc_subset_Icc ⟨ha, hb⟩ ht hs) G).symm
+/-- For locally integrable forcing, the solution is continuous in time with values in `L²`: near
+each time `x` it is continuous on `[-(|x| + 1), |x| + 1]`, where the forcing is integrable. -/
+theorem continuous_waveDuhamelSolution_of_locallyIntegrable (f g : Lp F 2 (volume : Measure E))
+    (hG : LocallyIntegrable G) : Continuous (waveDuhamelSolution F f g G) := by
+  refine continuous_iff_continuousAt.2 fun x ↦ ?_
+  have hx : 0 ≤ |x| + 1 := by positivity
+  refine (continuousOn_waveDuhamelSolution_of_integrableOn f g (neg_nonpos.2 hx) hx
+    (hG.integrableOn_isCompact isCompact_Icc)).continuousAt (Icc_mem_nhds ?_ ?_)
+  · linarith [neg_abs_le x]
+  · linarith [le_abs_self x]
 
 /-- If continuous forcings `Kₙ` converge to an integrable forcing `G` in `L¹`, the solutions
 tested against `w(t) χ` converge, for every continuous compactly supported `w`. -/
@@ -685,6 +703,14 @@ private theorem integral_deriv_deriv_mul_inner_waveDuhamelSolution_of_integrable
     ((tendsto_integral_mul_inner_waveDuhamelSolution_of_tendsto f g ψ hKc hK hG hKG'
       hθ.continuous hθc).add hforce)
 
+/-- A function of time with support in `s` vanishes outside `s`, and so does its second
+derivative. -/
+private theorem eq_zero_and_deriv_deriv_eq_zero_of_tsupport_subset {θ : ℝ → ℂ} {s : Set ℝ}
+    (hθs : tsupport θ ⊆ s) : (∀ t ∉ s, θ t = 0) ∧ ∀ t ∉ s, deriv (deriv θ) t = 0 :=
+  ⟨fun _ ht ↦ image_eq_zero_of_notMem_tsupport fun h ↦ ht (hθs h),
+    fun _ ht ↦ image_eq_zero_of_notMem_tsupport fun h ↦
+      ht (hθs (tsupport_deriv_subset (tsupport_deriv_subset h)))⟩
+
 /-- **The wave equation tested in space and time, for integrable forcing.** Let `a ≤ 0 ≤ b`, let
 the forcing `G` be integrable on `[a, b]`, and let `θ` be a `C²` function of time vanishing
 outside `[a, b]`. For a test function `φ ∈ L²` with `Δφ = ψ ∈ L²`, the solution
@@ -704,13 +730,8 @@ theorem integral_deriv_deriv_mul_inner_waveDuhamelSolution_of_integrableOn
   set H := (Set.Icc a b).indicator G
   have huH {t : ℝ} (ht : t ∈ Set.Icc a b) :
       waveDuhamelSolution F f g G t = waveDuhamelSolution F f g H t :=
-    waveDuhamelSolution_congr f g fun s hs ↦
-      (Set.indicator_of_mem (Set.uIcc_subset_Icc ⟨ha, hb⟩ ht hs) G).symm
-  have hθ0 (t : ℝ) (ht : t ∉ Set.Icc a b) : θ t = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ ht (hθab h)
-  have hθ''0 (t : ℝ) (ht : t ∉ Set.Icc a b) : deriv (deriv θ) t = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦
-      ht (hθab (tsupport_deriv_subset (tsupport_deriv_subset h)))
+    (waveDuhamelSolution_indicator_Icc f g ha hb ht).symm
+  obtain ⟨hθ0, hθ''0⟩ := eq_zero_and_deriv_deriv_eq_zero_of_tsupport_subset hθab
   have key {w X Y : ℝ → ℂ} (hw : ∀ t ∉ Set.Icc a b, w t = 0)
       (hXY : ∀ t ∈ Set.Icc a b, X t = Y t) : ∫ t, w t * X t = ∫ t, w t * Y t := by
     refine integral_congr_ae (Eventually.of_forall fun t ↦ ?_)
@@ -824,11 +845,7 @@ theorem tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution {ι : Type*} {
       (𝓝 ((∫ t, deriv (deriv θ) t * ∫ x, ⟪φ x, U t x⟫) - ∫ t, θ t * ∫ x, ⟪(Δ φ) x, U t x⟫)) := by
   have hθc : HasCompactSupport θ := isCompact_Icc.of_isClosed_subset (isClosed_tsupport θ) hθab
   have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
-  have hθ0 (t : ℝ) (ht : t ∉ Set.Icc a b) : θ t = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ ht (hθab h)
-  have hθ''0 (t : ℝ) (ht : t ∉ Set.Icc a b) : deriv (deriv θ) t = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦
-      ht (hθab (tsupport_deriv_subset (tsupport_deriv_subset h)))
+  obtain ⟨hθ0, hθ''0⟩ := eq_zero_and_deriv_deriv_eq_zero_of_tsupport_subset hθab
   -- Each solution satisfies the equation with its own forcing.
   have hφ : Δ ((φ.toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) =
       (((Δ φ).toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
