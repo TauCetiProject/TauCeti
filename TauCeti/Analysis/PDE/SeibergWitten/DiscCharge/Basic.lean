@@ -152,6 +152,14 @@ theorem ne_zero_of_cutoff_eq_one (hχ₀ : χ =ᶠ[𝓝 0] 0) {w : ℂ} (h : χ 
   rw [normSq_zero, hχ₀.eq_of_nhds, Pi.zero_apply] at h
   exact zero_ne_one h
 
+/-- A cutoff vanishing near `0` and equal to `1` on `(c, ∞)` has `c ≥ 0`. -/
+theorem nonneg_of_cutoff_eventuallyEq_zero_of_eqOn_one {c : ℝ} (hχ₀ : χ =ᶠ[𝓝 0] 0)
+    (hχc : EqOn χ 1 (Ioi c)) : 0 ≤ c := by
+  by_contra h
+  have h₁ := hχc (show (0 : ℝ) ∈ Ioi c from not_le.1 h)
+  rw [hχ₀.eq_of_nhds] at h₁
+  exact zero_ne_one h₁
+
 /-- **Integrality of the disc charge in the plane.** For fields on the plane such that
 `χ(|α|²) = 1` on the boundary circle of a closed disc, the integral of the cutoff current over the
 disc is `2π n`, where the integer `n` is the winding number of `α` around the boundary circle. -/
