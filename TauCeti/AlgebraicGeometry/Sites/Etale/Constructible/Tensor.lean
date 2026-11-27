@@ -16,7 +16,7 @@ of `Λ`-modules on `X` are closed under tensor products and contain the unit, th
 `Λ`. A common refinement of the two stratifications reduces the statement to finite lisse sheaves
 on each stratum (`CategoryTheory.Sheaf.IsFiniteLisse.tensor`), since the inverse image along a
 stratum commutes with tensor products
-(`AlgebraicGeometry.Scheme.Hom.smallEtalePullbackTensorIso`).
+(`AlgebraicGeometry.Scheme.Hom.isIso_smallEtalePullback_δ`).
 
 ## Main declarations
 
@@ -55,7 +55,7 @@ theorem IsConstructibleOn.tensor (hF : F.IsConstructibleOn U) (hG : G.IsConstruc
   refine isConstructibleOn_iff.mpr ⟨S.inf T, fun p ↦ ?_⟩
   exact (((S.inf_refines_left T).isFiniteLisse hS p).tensor
     ((S.inf_refines_right T).isFiniteLisse hT p)).of_iso
-      (((S.inf T).f p).smallEtalePullbackTensorIso Λ F G).symm
+      (asIso (Functor.OplaxMonoidal.δ (((S.inf T).f p).smallEtalePullback _) F G)).symm
 
 end CategoryTheory.Sheaf
 

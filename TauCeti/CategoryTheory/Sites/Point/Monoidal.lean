@@ -52,7 +52,7 @@ variable {C : Type*} [Category* C] {J : GrothendieckTopology C} (Φ : Point.{w} 
 sheafification is inverted by the fibre functor of a point. -/
 instance isIso_presheafFiber_map_toTensorObj (F G : Sheaf J A) :
     IsIso (Φ.presheafFiber.map (Sheaf.toTensorObj F G)) := by
-  rw [Sheaf.toTensorObj, Functor.map_comp]
+  rw [Sheaf.toTensorObj_def, Functor.map_comp]
   infer_instance
 
 end Fiber
@@ -69,10 +69,15 @@ on presheaves and on sheaves. -/
 lemma μ_comp_presheafFiber_map_toTensorObj (F G : Sheaf J A) :
     μ Φ.presheafFiber F.obj G.obj ≫ Φ.presheafFiber.map (Sheaf.toTensorObj F G) =
       μ Φ.sheafFiber F G := by
-  -- `μ Φ.sheafFiber` is by definition a component of `curriedTensorPreIsoPost`.
+  -- `μ Φ.sheafFiber` is by definition a component of `curriedTensorPreIsoPost`. Mathlib
+  -- characterises it only by `curriedTensorPreIsoPost_hom_app_app'`, whose statement is
+  -- type-correct only after unfolding `Point.sheafFiber` (the plain definition
+  -- `sheafToPresheaf J A ⋙ Φ.presheafFiber`) and the `Localization.Lifting` instance
+  -- (`presheafToSheafCompSheafFiberIso`); the `simp` call unfolds exactly these.
   refine ((Localization.Monoidal.curriedTensorPreIsoPost_hom_app_app' (presheafToSheaf J A) J.W
     Φ.sheafFiber Φ.presheafFiber (sheafificationIso F) (sheafificationIso G)).trans ?_).symm
-  simp [presheafToSheafCompSheafFiberIso, Localization.Lifting.iso, Sheaf.toTensorObj, sheafFiber]
+  simp [presheafToSheafCompSheafFiberIso, Localization.Lifting.iso, Sheaf.toTensorObj_def,
+    sheafFiber]
 
 /-- The stalk of `Sheaf.toTensorObj F G` followed by the tensor comparison of the fibre functor on
 sheaves is the tensor comparison of the fibre functor on presheaves. -/

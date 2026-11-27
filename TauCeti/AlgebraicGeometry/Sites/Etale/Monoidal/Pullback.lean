@@ -12,58 +12,37 @@ public import TauCeti.CategoryTheory.Sites.Point.Comap.Monoidal
 # Inverse image of étale sheaves of modules commutes with tensor products
 
 Let `f : X ⟶ Y` be a morphism of schemes and `Λ` a commutative ring. The inverse image
-`f^* = f.smallEtalePullback (ModuleCat Λ)` of étale sheaves of `Λ`-modules commutes with tensor
-products: the canonical comparison `f^* (F ⊗ G) ⟶ f^* F ⊗ f^* G`
-(`CategoryTheory.Functor.sheafPullbackTensorHom`) is an isomorphism. It is checked on stalks at
-geometric points `s` of `X`: there the stalks of `f^* F` and `f^* G` are the stalks of `F` and `G`
-at `s ≫ f`, and the comparison is an isomorphism on every such stalk.
+`f^* = f.smallEtalePullback (ModuleCat Λ)` of étale sheaves of `Λ`-modules is oplax monoidal, as
+the left adjoint of the lax monoidal pushforward
+(`CategoryTheory.Functor.sheafPullbackOplaxMonoidal`), and it commutes with tensor products: its
+tensor comparison
+`OplaxMonoidal.δ f^* F G : f^* (F ⊗ G) ⟶ f^* F ⊗ f^* G` is an isomorphism. It is checked on stalks
+at geometric points `s` of `X`: there the stalks of `f^* F` and `f^* G` are the stalks of `F` and
+`G` at `s ≫ f`, and the comparison is an isomorphism on every such stalk.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.isIso_smallEtalePullbackTensorHom`: the comparison is an
-  isomorphism.
-* `AlgebraicGeometry.Scheme.Hom.smallEtalePullbackTensorIso`: the isomorphism
-  `f^* (F ⊗ G) ≅ f^* F ⊗ f^* G`.
-
+* `AlgebraicGeometry.Scheme.Hom.isIso_smallEtalePullback_δ`: the tensor comparison of `f^*` is
+  an isomorphism.
 -/
 
 public section
 
 universe u
 
-open CategoryTheory Limits MonoidalCategory TauCeti.AlgebraicGeometry.Scheme
+open CategoryTheory Limits MonoidalCategory Functor.OplaxMonoidal TauCeti.AlgebraicGeometry.Scheme
 
 namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) (Λ : Type u) [CommRing Λ]
 
 /-- **Inverse image commutes with tensor products.** For a morphism of schemes `f : X ⟶ Y`, the
-comparison `f^* (F ⊗ G) ⟶ f^* F ⊗ f^* G` of étale sheaves of `Λ`-modules is an isomorphism. -/
-theorem isIso_smallEtalePullbackTensorHom
-    (F G : Sheaf (smallEtaleTopology Y) (ModuleCat.{u} Λ)) :
-    IsIso (f.smallEtaleBaseChange.sheafPullbackTensorHom (ModuleCat.{u} Λ)
-      (smallEtaleTopology Y) (smallEtaleTopology X) F G) :=
+tensor comparison `f^* (F ⊗ G) ⟶ f^* F ⊗ f^* G` of étale sheaves of `Λ`-modules is an
+isomorphism. -/
+instance isIso_smallEtalePullback_δ (F G : Sheaf (smallEtaleTopology Y) (ModuleCat.{u} Λ)) :
+    IsIso (δ (f.smallEtalePullback (ModuleCat.{u} Λ)) F G) :=
   isIso_of_forall_isIso_etaleStalk _ fun _ _ _ s ↦
-    (pointSmallEtale s).isIso_sheafFiber_map_sheafPullbackTensorHom f.smallEtaleBaseChange
+    (pointSmallEtale s).isIso_sheafFiber_map_sheafPullback_δ f.smallEtaleBaseChange
       (f.pointSmallEtaleFiberCompIso s) _ F G
-
-/-- **Inverse image commutes with tensor products.** For a morphism of schemes `f : X ⟶ Y` and
-étale sheaves of `Λ`-modules `F` and `G` on `Y`, `f^* (F ⊗ G) ≅ f^* F ⊗ f^* G`. -/
-noncomputable def smallEtalePullbackTensorIso
-    (F G : Sheaf (smallEtaleTopology Y) (ModuleCat.{u} Λ)) :
-    (f.smallEtalePullback (ModuleCat.{u} Λ)).obj (F ⊗ G) ≅
-      (f.smallEtalePullback (ModuleCat.{u} Λ)).obj F ⊗
-        (f.smallEtalePullback (ModuleCat.{u} Λ)).obj G :=
-  haveI := f.isIso_smallEtalePullbackTensorHom Λ F G
-  asIso (f.smallEtaleBaseChange.sheafPullbackTensorHom (ModuleCat.{u} Λ)
-    (smallEtaleTopology Y) (smallEtaleTopology X) F G)
-
-/-- The isomorphism `f^* (F ⊗ G) ≅ f^* F ⊗ f^* G` is the tensor comparison of `f^*`. -/
-@[simp]
-lemma smallEtalePullbackTensorIso_hom (F G : Sheaf (smallEtaleTopology Y) (ModuleCat.{u} Λ)) :
-    (f.smallEtalePullbackTensorIso Λ F G).hom =
-      f.smallEtaleBaseChange.sheafPullbackTensorHom (ModuleCat.{u} Λ)
-        (smallEtaleTopology Y) (smallEtaleTopology X) F G := by
-  simp [smallEtalePullbackTensorIso]
 
 end AlgebraicGeometry.Scheme.Hom
