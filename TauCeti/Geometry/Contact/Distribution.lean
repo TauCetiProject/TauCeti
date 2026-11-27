@@ -71,6 +71,8 @@ has no integral hypersurfaces.
   of a nowhere vanishing `C^n` one-form, which is a contact form at each point of its domain.
 * `TauCeti.IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt`: on a Hausdorff manifold,
   a smooth contact structure is defined near each point by a smooth one-form on the whole manifold.
+* `TauCeti.IsContactDistribution.exists_smoothForm_eventually_kerDistribution_eq`: on a Hausdorff
+  manifold, a smooth contact structure is near each point the kernel of a smooth one-form.
 * `TauCeti.isContactDistribution_iff_forall_exists_isContactFormAt`: a `C^n` hyperplane field is a
   contact structure exactly when it is locally the kernel of one-forms that are contact.
 * `TauCeti.IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq`: a smooth
@@ -223,7 +225,7 @@ theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
     (hV.mem_nhds hxV) (α.mdifferentiableAt x)
     (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
     ⟨?_, hD.bijective_distributionLeviForm x⟩
-  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
+  rw [Ne, ← SmoothForm.kerDistribution_eq_top_iff, hαD.self_of_nhds]
   exact hD.ne_top x
 
 /-- **A contact structure is defined near each point by a global contact form there.** Every point
@@ -239,6 +241,15 @@ theorem IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt [IsManifo
   exact hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp)
     (eventually_of_mem (hW.mem_nhds hy) fun z hz ↦
       (SmoothForm.kerDistribution_eq_ker _ z).trans (hαD z hz).2)
+
+/-- **A contact structure is the kernel near each point of a smooth one-form on the whole
+manifold.** -/
+theorem IsContactDistribution.exists_smoothForm_eventually_kerDistribution_eq [IsManifold I ∞ M]
+    [T2Space M] (hD : IsContactDistribution I ∞ D) (x : M) :
+    ∃ α : SmoothForm I M ℝ 1, ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y := by
+  obtain ⟨W, hW, hxW, α, hα⟩ := hD.exists_smoothForm_ker_eq_isContactFormAt x
+  exact ⟨α, eventually_of_mem (hW.mem_nhds hxW) fun y hy ↦
+    (SmoothForm.kerDistribution_eq_ker α y).trans (hα y hy).1⟩
 
 /-- **Contact structures are the hyperplane fields locally defined by contact forms.** A `C^n`
 distribution `D` of rank `dim E - 1`, with `1 ≤ n`, is a contact structure exactly when near every
