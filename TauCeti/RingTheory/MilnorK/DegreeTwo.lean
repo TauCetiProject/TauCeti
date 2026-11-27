@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.MatsumotoGroup.Basic
-public import TauCeti.FieldTheory.MatsumotoGroup.OrderedField
 public import TauCeti.RingTheory.MilnorK.Homogeneous
-public import TauCeti.RingTheory.MilnorK.Sign
 import TauCeti.LinearAlgebra.TensorPower.Basic
 
 /-!
@@ -17,10 +15,8 @@ import TauCeti.LinearAlgebra.TensorPower.Basic
 Using the homogeneous presentation `TauCeti.MilnorK.degreeEquiv` from
 `TauCeti.RingTheory.MilnorK.Homogeneous`, this file identifies the degree-two Milnor K-group
 `K₂ᴹ(R)` of any commutative ring `R` with `TauCeti.MatsumotoGroup R`
-(`TauCeti.MilnorK.degreeTwoEquiv`), establishes `TauCeti.MilnorK.isSteinbergPairing_ofUnit_mul`,
-proves naturality of `degreeTwoEquiv` with respect to `TauCeti.MilnorK.mapDegree`, and identifies
-`TauCeti.MilnorK.sign R 2` with `TauCeti.MatsumotoGroup.sign R`
-(`TauCeti.MilnorK.sign_two_eq_matsumotoGroup_sign`).
+(`TauCeti.MilnorK.degreeTwoEquiv`) and proves naturality of `degreeTwoEquiv` with respect to
+`TauCeti.MilnorK.mapDegree`.
 
 ## Main definitions
 
@@ -29,14 +25,10 @@ proves naturality of `degreeTwoEquiv` with respect to `TauCeti.MilnorK.mapDegree
 
 ## Main results
 
-* `TauCeti.MilnorK.isSteinbergPairing_ofUnit_mul`: `(a, b) ↦ ofUnit a * ofUnit b` is a Steinberg
-  pairing.
 * `TauCeti.MilnorK.degreeTwo_linearMap_ext`: extensionality for `ℤ`-linear maps out of
   `degree R 2`.
 * `TauCeti.MilnorK.degreeTwoEquiv_mapDegree`: naturality of `degreeTwoEquiv` with respect to
   `MatsumotoGroup.map`.
-* `TauCeti.MilnorK.sign_two_eq_matsumotoGroup_sign`: agreement of `MilnorK.sign R 2` and
-  `MatsumotoGroup.sign R` under `degreeTwoEquiv`.
 
 ## References
 
@@ -58,13 +50,6 @@ universe u
 section CommRing
 
 variable {R : Type u} [CommRing R]
-
-/-- The degree-two product `(a, b) ↦ ofUnit a * ofUnit b` is a Steinberg pairing. -/
-theorem isSteinbergPairing_ofUnit_mul :
-    IsSteinbergPairing (fun a b : Rˣ => (ofUnit a * ofUnit b : MilnorK R)) where
-  map_mul_left _ _ _ := by rw [ofUnit_mul, add_mul]
-  map_mul_right _ _ _ := by rw [ofUnit_mul, mul_add]
-  steinberg _ _ h := ofUnit_mul_ofUnit_of_add_eq_one h
 
 /-- In `MilnorK.degree R 2`, the symbol `{a, b}` equals `ofUnit a * ofUnit b`. -/
 theorem degreeTwo_symbol_eq_ofUnit_mul (a b : Rˣ) :
@@ -189,24 +174,5 @@ theorem degreeTwoEquiv_mapDegree (f : R →+* S) (x : degree R 2) :
         MatsumotoGroup.map_symbol]) x
 
 end Map
-
-section OrderedCommRing
-
-variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
-
-/-- In degree `2`, `MilnorK.sign` agrees with `MatsumotoGroup.sign` under `degreeTwoEquiv`. -/
-theorem sign_two_eq_matsumotoGroup_sign (x : degree R 2) :
-    sign R 2 x = MatsumotoGroup.sign R (degreeTwoEquiv R x) :=
-  LinearMap.congr_fun
-    (f := (sign R 2).toIntLinearMap.comp (degree R 2).subtype)
-    (g := (MatsumotoGroup.sign R).toIntLinearMap.comp (degreeTwoEquiv R).toLinearMap)
-    (degreeTwo_linearMap_ext fun a b => by
-      rw [← degreeTwo_symbol_eq_ofUnit_mul]
-      simp only [LinearMap.comp_apply, Submodule.coe_subtype, AddMonoidHom.coe_toIntLinearMap,
-        LinearEquiv.coe_coe, degreeTwoEquiv_symbol, MatsumotoGroup.sign_symbol, sign_symbol,
-        List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, List.forall_mem_cons,
-        List.not_mem_nil, false_implies, implies_true, and_true, true_and]) x
-
-end OrderedCommRing
 
 end TauCeti.MilnorK

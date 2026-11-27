@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MilnorK.DegreeTwo
+public import TauCeti.RingTheory.MilnorK.Basic
 
 /-!
 # Vanishing of Milnor K-theory of finite fields

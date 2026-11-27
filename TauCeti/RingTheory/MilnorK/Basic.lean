@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
 public import Mathlib.RingTheory.Congruence.Basic
 public import Mathlib.RingTheory.Congruence.Hom
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
+public import TauCeti.FieldTheory.MatsumotoGroup.SteinbergPairing
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Ring.Parity
@@ -58,8 +59,9 @@ the Milnor ring is not an exterior algebra. The grade involution `σ`, which is 
 ## Main results
 
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_of_add_eq_one`: the Steinberg relation `{a} {b} = 0` for
-  `a + b = 1`, and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring
-  entries of any symbol.
+  `a + b = 1`, `TauCeti.MilnorK.isSteinbergPairing_ofUnit_mul`, and
+  `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring entries of any
+  symbol.
 * `TauCeti.MilnorK.symbol_append_cons_mul`, `TauCeti.MilnorK.symbol_append_cons_pow`: symbols
   are additive in every entry.
 * `TauCeti.MilnorK.ringHom_ext`: ring homomorphisms out of `MilnorK R` agreeing on degree-one
@@ -231,6 +233,13 @@ theorem neg_ofUnit_mul_ofUnit_neg_one (a : Rˣ) :
 theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
   rw [ofUnit, ofUnit, ← map_mul, mk_ι_mul_ι_of_add_eq_one h]
+
+/-- The degree-two product `(a, b) ↦ ofUnit a * ofUnit b` is a Steinberg pairing. -/
+theorem isSteinbergPairing_ofUnit_mul :
+    IsSteinbergPairing (fun a b : Rˣ => (ofUnit a * ofUnit b : MilnorK R)) where
+  map_mul_left _ _ _ := by rw [ofUnit_mul, add_mul]
+  map_mul_right _ _ _ := by rw [ofUnit_mul, mul_add]
+  steinberg _ _ h := ofUnit_mul_ofUnit_of_add_eq_one h
 
 /-- The **Milnor symbol** `{a₁, …, aₙ}` of a list of units: the ordered product of their
 degree-one classes. The empty symbol is `1`. -/
@@ -792,40 +801,17 @@ variable {F : Type*} [Field F]
 
 /-- Over a field, `{a, -a} = 0` for every unit `a`. -/
 @[simp]
-theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 := by
-  by_cases ha : a = 1
-  · simp [ha]
-  have ha' : (a : F) ≠ 1 := fun h ↦ ha (Units.ext h)
-  have h₁ : (1 : F) - a ≠ 0 := sub_ne_zero.2 ha'.symm
-  have h₂ : (1 : F) - (a : F)⁻¹ ≠ 0 :=
-    sub_ne_zero.2 fun h ↦ ha' (by simpa using congrArg Inv.inv h.symm)
-  have hneg : -a = Units.mk0 _ h₁ / Units.mk0 _ h₂ := by
-    ext
-    simp only [Units.val_neg, Units.val_div_eq_div_val, Units.val_mk0]
-    rw [eq_div_iff h₂]
-    field_simp
-    ring
-  have hv : ofUnit a⁻¹ * ofUnit (Units.mk0 _ h₂) = 0 :=
-    ofUnit_mul_ofUnit_of_add_eq_one (by simp)
-  rw [hneg, ofUnit_div, mul_sub, ofUnit_mul_ofUnit_of_add_eq_one (by simp), zero_sub, neg_eq_zero]
-  rwa [ofUnit_inv, neg_mul, neg_eq_zero] at hv
+theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
+  isSteinbergPairing_ofUnit_mul.map_neg_self a
 
 /-- Over a field, the degree-one classes anticommute: `{a, b} = -{b, a}`. -/
-theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) := by
-  have h₁ : ofUnit a * ofUnit (-(a * b)) = ofUnit a * ofUnit b := by
-    rw [← neg_mul, ofUnit_mul, mul_add, ofUnit_mul_ofUnit_neg_self, zero_add]
-  have h₂ : ofUnit b * ofUnit (-(a * b)) = ofUnit b * ofUnit a := by
-    rw [← mul_neg, ofUnit_mul, mul_add, ofUnit_mul_ofUnit_neg_self, add_zero]
-  have h := ofUnit_mul_ofUnit_neg_self (a * b)
-  rw [ofUnit_mul, add_mul, h₁, h₂] at h
-  exact eq_neg_of_add_eq_zero_left h
+theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
+  isSteinbergPairing_ofUnit_mul.map_swap a b
 
 /-- Over a field, `{a, a} = {a, -1}`. Unlike in an exterior algebra, this class need not vanish:
 `{-1, -1} ≠ 0` over `ℝ` (Weibel, Example III.7.2(c)). -/
-theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) := by
-  have h := ofUnit_mul_ofUnit_neg_self a
-  rw [← neg_one_mul a, ofUnit_mul, mul_add] at h
-  rw [eq_neg_of_add_eq_zero_right h, neg_ofUnit_mul_ofUnit_neg_one]
+theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) :=
+  isSteinbergPairing_ofUnit_mul.map_self a
 
 /-- Over a field, for units `a, b` with difference `h = a - b`,
 `{a, b} = {h, b} - {h, a} + {a, -1}`. Applied to two distinct monic polynomials of the same degree
