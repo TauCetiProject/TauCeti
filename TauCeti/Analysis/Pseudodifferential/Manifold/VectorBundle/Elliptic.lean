@@ -8,9 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.AsymptoticSum
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.SymbolQuantization
-import TauCeti.Analysis.Normed.Operator.Banach
-import TauCeti.Geometry.Manifold.BumpFunction
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # Parametrices of elliptic operators between vector bundles
@@ -28,15 +25,10 @@ of the elliptic estimates and of the Fredholm theory of `P` between Sobolev spac
 **The inverse principal symbol is a symbol.** The fibrewise inverses `σ_m(P)(x, ξ)⁻¹ : F_x → E_x`
 form a smooth positively homogeneous `Hom(F, E)`-valued symbol of degree `-m`
 (`TauCeti.IsSectionClassicalElliptic.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id`), in
-the sense of `TauCeti.sectionHomogeneousCotangentSymbols`: all its readings
-`(x, ξ) ↦ χ(x) ψ(x) ℓ(t'ₓ (σ_m(P)(x, ξ)⁻¹ (tₓ⁻¹ w)))` in trivializations `t` of `F` and `t'` of `E`
-are smooth homogeneous functions on the cotangent bundle. Homogeneity is inherited from that of
-`σ_m(P)`. For smoothness near a point `x` of the support of `χ ψ`, take a cutoff `φ` equal to `1`
-near `x` and supported in the common base set of `t` and `t'`. The readings of `σ_m(P)` through `φ`
-in bases of `V` and `W` are smooth, and near `x` they are the entries of the matrix
-`A(x, ξ) = tₓ ∘ σ_m(P)(x, ξ) ∘ t'ₓ⁻¹ : V → W`. The reading of the inverse is then read off from
-`A(x, ξ)⁻¹`, and inversion is smooth on the invertible maps `V → W`
-(`ContinuousLinearMap.IsInvertible.contDiffAt_map_inverse`). The scalar statement is
+the sense of `TauCeti.sectionHomogeneousCotangentSymbols`. This is the general fact that the
+fibrewise inverse of a smooth homogeneous symbol bijective at nonzero covectors is again one
+(`TauCeti.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id`), applied to `σ_m(P)`. The
+scalar statement is
 `TauCeti.IsClassicalElliptic.inv_classicalPrincipalSymbol_mem_homogeneousCotangentSymbols`.
 
 **Parametrices.** On a compact manifold every smooth homogeneous `Hom(F, E)`-valued symbol is a
@@ -102,209 +94,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
 
 /-! ### The inverse principal symbol -/
 
-variable (m P) in
-/-- The fibrewise inverse `σ_m(P)(x, ξ)⁻¹ : F_x → E_x` of the principal symbol, where it is
-bijective, and `0` elsewhere. -/
-private def inversePrincipalSymbol (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
-    F x →ₗ[ℂ] E x :=
-  open Classical in
-  if h : Function.Bijective (sectionClassicalPrincipalSymbol m P x ξ) then
-    (LinearEquiv.ofBijective _ h).symm.toLinearMap
-  else 0
-
-private theorem sectionClassicalPrincipalSymbol_inversePrincipalSymbol_apply {x : M}
-    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ}
-    (h : Function.Bijective (sectionClassicalPrincipalSymbol m P x ξ)) (y : F x) :
-    sectionClassicalPrincipalSymbol m P x ξ (inversePrincipalSymbol m P x ξ y) = y := by
-  simp only [inversePrincipalSymbol, h, ↓reduceDIte, LinearEquiv.coe_coe,
-    LinearEquiv.apply_ofBijective_symm_apply]
-
-private theorem inversePrincipalSymbol_sectionClassicalPrincipalSymbol_apply {x : M}
-    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ}
-    (h : Function.Bijective (sectionClassicalPrincipalSymbol m P x ξ)) (u : E x) :
-    inversePrincipalSymbol m P x ξ (sectionClassicalPrincipalSymbol m P x ξ u) = u := by
-  simp only [inversePrincipalSymbol, h, ↓reduceDIte, LinearEquiv.coe_coe,
-    LinearEquiv.ofBijective_symm_apply_apply]
-
-private theorem inversePrincipalSymbol_zero_covector (x : M) :
-    inversePrincipalSymbol m P x 0 = 0 := by
-  by_cases h : Function.Bijective (sectionClassicalPrincipalSymbol m P x 0)
-  · -- The zero map is bijective, so `E_x` is trivial.
-    refine LinearMap.ext fun y ↦ h.1 ?_
-    simp
-  · simp only [inversePrincipalSymbol, h, ↓reduceDIte]
-
-private theorem inversePrincipalSymbol_smul_covector (x : M)
-    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) {c : ℝ} (hc : 0 < c) :
-    inversePrincipalSymbol m P x (c • ξ) =
-      (((c ^ m : ℝ) : ℂ))⁻¹ • inversePrincipalSymbol m P x ξ := by
-  have hcm : ((c ^ m : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos hc m).ne'
-  have hσ := sectionClassicalPrincipalSymbol_smul_covector (m := m) (P := P) x ξ hc
-  by_cases h : Function.Bijective (sectionClassicalPrincipalSymbol m P x ξ)
-  · have h' : Function.Bijective (sectionClassicalPrincipalSymbol m P x (c • ξ)) := by
-      rw [hσ, LinearMap.coe_smul]
-      exact (MulAction.bijective (Units.mk0 _ hcm)).comp h
-    refine LinearMap.ext fun y ↦ h'.1 ?_
-    rw [sectionClassicalPrincipalSymbol_inversePrincipalSymbol_apply h', LinearMap.smul_apply,
-      map_smul, hσ, LinearMap.smul_apply,
-      sectionClassicalPrincipalSymbol_inversePrincipalSymbol_apply h, smul_smul,
-      inv_mul_cancel₀ hcm, one_smul]
-  · have h' : ¬ Function.Bijective (sectionClassicalPrincipalSymbol m P x (c • ξ)) := by
-      rw [hσ, LinearMap.coe_smul]
-      exact fun h' ↦ h ((MulAction.bijective (Units.mk0 _ hcm)).of_comp_iff' _ |>.1 h')
-    simp only [inversePrincipalSymbol, h, h', ↓reduceDIte, smul_zero]
-
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [∀ x, Module ℝ (E x)]
-  [VectorBundle ℝ V E] [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)] [∀ x, Module ℝ (F x)]
-  [VectorBundle ℝ W F] [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] in
-/-- **Inverting a frame reading.** Over a point `x` of the base sets of trivializations `t'` of `E`
-and `t` of `F`, let a continuous linear map `A : V → W` read a bijective map `S : E_x → F_x` in
-these frames, `A v = tₓ (S (t'ₓ⁻¹ v))`. Then `A` is invertible, and its inverse reads the inverse
-`S'` of `S`. -/
-private theorem isInvertible_and_inverse_apply_eq {x : M}
-    {t' : Trivialization V (π V E)} [MemTrivializationAtlas t'] (hx' : x ∈ t'.baseSet)
-    {t : Trivialization W (π W F)} [MemTrivializationAtlas t] (hx : x ∈ t.baseSet)
-    {S : E x →ₗ[ℂ] F x} (hS : Function.Bijective S) {S' : F x →ₗ[ℂ] E x} (hSS' : ∀ y, S (S' y) = y)
-    {A : V →L[ℂ] W} (hA : ∀ v, A v = t.continuousLinearMapAt ℂ x (S (t'.symm x v))) :
-    A.IsInvertible ∧ ∀ w, A.inverse w = t'.continuousLinearMapAt ℂ x (S' (t.symm x w)) := by
-  -- In these frames `A` is `S` conjugated by the trivializations at `x`.
-  have hAeq : ⇑A = ⇑(t.continuousLinearEquivAt ℂ x hx) ∘ S ∘
-      ⇑(t'.continuousLinearEquivAt ℂ x hx').symm := by
-    ext v
-    rw [hA, Function.comp_apply, Function.comp_apply,
-      Trivialization.continuousLinearEquivAt_symm_apply,
-      t.coe_continuousLinearEquivAt_eq (R := ℂ) hx]
-  have hAi : A.IsInvertible := ContinuousLinearMap.isInvertible_iff_bijective.2 <| by
-    rw [hAeq]
-    exact (t.continuousLinearEquivAt ℂ x hx).bijective.comp
-      (hS.comp (t'.continuousLinearEquivAt ℂ x hx').symm.bijective)
-  refine ⟨hAi, fun w ↦ ?_⟩
-  have hw : A (t'.continuousLinearMapAt ℂ x (S' (t.symm x w))) = w := by
-    rw [hA, ← t'.symmL_apply (R := ℂ) hx', t'.symmL_continuousLinearMapAt hx', hSS',
-      ← t.symmL_apply (R := ℂ) hx, t.continuousLinearMapAt_symmL hx]
-  conv_lhs => rw [← hw]
-  exact hAi.inverse_apply_self _
-
-/-- **The matrix of the principal symbol in a pair of frames.** In a chart `e` of the maximal atlas,
-let `φ` be a smooth function supported in the common base set of trivializations `t'` of `E` and
-`t` of `F`. There is a smooth family `A(y, η) : V → W` over `e.target × {η ≠ 0}` which, wherever
-`φ(x) = 1` with `x = e⁻¹ y` and `ξ = ⟪η, ·⟫ ∘ de_x`, reads `σ_m(P)(x, ξ)` in these frames. If `P`
-is elliptic, `A(y, η)` is invertible there and its inverse reads `σ_m(P)(x, ξ)⁻¹`.
-
-Its entries are the readings of `σ_m(P)` through `φ`, which are smooth since `σ_m(P)` is a smooth
-homogeneous symbol. -/
-private theorem exists_contDiffOn_frameMatrix (hPe : IsSectionClassicalElliptic m P)
-    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    {t' : Trivialization V (π V E)} [MemTrivializationAtlas t']
-    {t : Trivialization W (π W F)} [MemTrivializationAtlas t]
-    {φ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯} (hφU : tsupport φ ⊆ t'.baseSet ∩ t.baseSet) :
-    ∃ A : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W,
-      ContDiffOn ℝ ∞ A (e.target ×ˢ {η | η ≠ 0}) ∧
-      ∀ q ∈ e.target ×ˢ {η | η ≠ 0}, φ (e.symm q.1) = 1 → (A q).IsInvertible ∧ ∀ w,
-        (A q).inverse w = t'.continuousLinearMapAt ℂ (e.symm q.1)
-          (inversePrincipalSymbol m P (e.symm q.1) ((innerSL ℝ q.2).comp
-            (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1))) (t.symm (e.symm q.1) w)) := by
-  set b := finBasis ℂ V
-  set c := finBasis ℂ W
-  set G := fun (j : Fin (finrank ℂ W)) (k : Fin (finrank ℂ V))
-      (q : CoordinateSpace n × CoordinateSpace n) ↦
-    ((φ (e.symm q.1) * φ (e.symm q.1) : ℝ) : ℂ) * (c.coord j).toContinuousLinearMap
-      (t.continuousLinearMapAt ℂ (e.symm q.1) (sectionClassicalPrincipalSymbol m P (e.symm q.1)
-        ((innerSL ℝ q.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1)))
-        (t'.symm (e.symm q.1) (b k))))
-  refine ⟨fun q ↦ ∑ j, ∑ k, G j k q • (b.coord k).toContinuousLinearMap.smulRight (c j),
-    ContDiffOn.sum fun j _ ↦ ContDiffOn.sum fun k _ ↦ ContDiffOn.smul
-      ((mem_homogeneousCotangentSymbols_iff.1 (mem_sectionHomogeneousCotangentSymbols_iff.1
-          (sectionClassicalPrincipalSymbol_mem_sectionHomogeneousCotangentSymbols (m := m) (P := P))
-          t' φ (hφU.trans inter_subset_left) (b k) t φ (hφU.trans inter_subset_right)
-          (c.coord j).toContinuousLinearMap)).2.2 e he) contDiffOn_const,
-    fun q hq hφq ↦ ?_⟩
-  have hqU : e.symm q.1 ∈ t'.baseSet ∩ t.baseSet :=
-    hφU (subset_tsupport _ (by simp [hφq]))
-  have hξ := (innerSL_comp_mvfderiv_eq_zero_iff
-    (IsManifold.maximalAtlas_subset_of_le (by simp) he) (e.map_target hq.1)).not.2 hq.2
-  have hb := isSectionClassicalEllipticAt_iff.1 (isSectionClassicalElliptic_iff.1 hPe _) _ hξ
-  refine isInvertible_and_inverse_apply_eq hqU.1 hqU.2 hb
-    (sectionClassicalPrincipalSymbol_inversePrincipalSymbol_apply hb) fun v ↦ ?_
-  -- Where `φ = 1`, the matrix entries are those of `σ_m(P)` read in the frames.
-  rw [← t'.symmL_apply (R := ℂ) hqU.1]
-  set L : V →ₗ[ℂ] W := (t.continuousLinearMapAt ℂ (e.symm q.1)).toLinearMap ∘ₗ
-    sectionClassicalPrincipalSymbol m P (e.symm q.1) ((innerSL ℝ q.2).comp
-      (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1))) ∘ₗ
-    (t'.symmL ℂ (e.symm q.1)).toLinearMap
-  have hL : ((∑ j, ∑ k, G j k q • (b.coord k).toContinuousLinearMap.smulRight (c j) :
-      V →L[ℂ] W) : V →ₗ[ℂ] W) = L := b.ext fun k ↦ by
-    simp [G, hφq, L, t'.symmL_apply hqU.1, Finsupp.single_apply, c.sum_repr]
-  exact congr($hL v)
-
-/-- **Smoothness of the inverse reading at a point of the support.** In a chart `e` of the maximal
-atlas, let `g` be a smooth function supported in the common base set of trivializations `t'` of
-`E` and `t` of `F`. If `P` is elliptic, the reading
-`(y, η) ↦ g(x) ℓ(t'ₓ (σ_m(P)(x, ξ)⁻¹ (tₓ⁻¹ w)))`, with `x = e⁻¹ y` and `ξ = ⟪η, ·⟫ ∘ de_x`, is
-smooth near every point of `e.target × {η ≠ 0}` over the support of `g`: near such a point it is
-read from the inverse of the matrix of `σ_m(P)`, and inversion is smooth on the invertible maps
-`V → W`. -/
-private theorem contDiffWithinAt_inversePrincipalSymbol_reading
-    (hPe : IsSectionClassicalElliptic m P) {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    {t' : Trivialization V (π V E)} [MemTrivializationAtlas t']
-    {t : Trivialization W (π W F)} [MemTrivializationAtlas t]
-    {g : M → ℝ} (hg : ContMDiff 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ) ∞ g)
-    (hgt : tsupport g ⊆ t'.baseSet ∩ t.baseSet) (w : W) (ℓ : V →L[ℂ] ℂ)
-    {p : CoordinateSpace n × CoordinateSpace n} (hp : p ∈ e.target ×ˢ {η | η ≠ 0})
-    (hpg : e.symm p.1 ∈ tsupport g) :
-    ContDiffWithinAt ℝ ∞ (fun q : CoordinateSpace n × CoordinateSpace n ↦
-      (g (e.symm q.1) : ℂ) * ℓ (t'.continuousLinearMapAt ℂ (e.symm q.1)
-        (inversePrincipalSymbol m P (e.symm q.1) ((innerSL ℝ q.2).comp
-          (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1))) (t.symm (e.symm q.1) w))))
-      (e.target ×ˢ {η | η ≠ 0}) p := by
-  -- A cutoff `φ` equal to `1` near `e⁻¹ p.1`, and the matrix `A` of `σ_m(P)` read through it.
-  obtain ⟨φ, hφU, hφ1⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
-    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
-    ((t'.open_baseSet.inter t.open_baseSet).mem_nhds (hgt hpg))
-  obtain ⟨A, hA, hAinv⟩ := exists_contDiffOn_frameMatrix (m := m) (P := P) hPe he hφU
-  have hev : ∀ᶠ q in 𝓝 p, φ (e.symm q.1) = 1 :=
-    Filter.Tendsto.eventually ((e.continuousAt_symm hp.1).comp continuousAt_fst) hφ1
-  -- So the reading agrees near `p` with `g(x) ℓ(A⁻¹ w)`, which is smooth at `p`.
-  have hge : ContDiffOn ℝ ∞ (g ∘ e.symm) e.target :=
-    contMDiffOn_iff_contDiffOn.1 (hg.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas he))
-  have hinv := ((hAinv p hp hev.self_of_nhds).1.contDiffAt_map_inverse (n := ∞)).restrict_scalars
-    ℝ |>.comp_contDiffWithinAt p (hA p hp)
-  refine ((Complex.ofRealCLM.contDiff.contDiffAt.comp_contDiffWithinAt p
-      ((hge.comp contDiffOn_fst mapsTo_fst_prod) p hp)).mul
-    (((ℓ.comp (ContinuousLinearMap.apply ℂ V w)).restrictScalars ℝ).contDiff.contDiffAt
-      |>.comp_contDiffWithinAt p hinv)).congr_of_eventuallyEq ?_ ?_
-  · filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds hev]
-      with q hq hqφ
-    simp [(hAinv q hq hqφ).2 w]
-  · simp [(hAinv p hp hev.self_of_nhds).2 w]
-
-/-- **The inverse principal symbol is a smooth homogeneous symbol.** -/
-private theorem inversePrincipalSymbol_mem_sectionHomogeneousCotangentSymbols
-    (hPe : IsSectionClassicalElliptic m P) :
-    inversePrincipalSymbol m P ∈ sectionHomogeneousCotangentSymbols n W F V E (-m) := by
-  refine mem_sectionHomogeneousCotangentSymbols_iff.2 fun t _ ψ hψ w t' _ χ hχ ℓ ↦ ?_
-  refine mem_homogeneousCotangentSymbols_iff.2 ⟨fun x ↦ ?_, fun x ξ c hc ↦ ?_, fun e he p hp ↦ ?_⟩
-  · simp [inversePrincipalSymbol_zero_covector]
-  · rw [inversePrincipalSymbol_smul_covector x ξ hc, LinearMap.smul_apply, map_smul, map_smul,
-      smul_eq_mul, Real.rpow_neg hc.le, Complex.ofReal_inv]
-    ring
-  have hgt : tsupport (fun y ↦ χ y * ψ y) ⊆ t'.baseSet ∩ t.baseSet := fun y hy ↦
-    ⟨hχ (tsupport_mul_subset_left hy), hψ (tsupport_mul_subset_right hy)⟩
-  by_cases hpg : e.symm p.1 ∈ tsupport (fun y ↦ χ y * ψ y)
-  · exact contDiffWithinAt_inversePrincipalSymbol_reading hPe he (χ.contMDiff.mul ψ.contMDiff)
-      hgt w ℓ hp hpg
-  · -- Off the support of `χ ψ`, the reading vanishes near `p`.
-    have hc : ∀ᶠ q in 𝓝 p, χ (e.symm (q : CoordinateSpace n × CoordinateSpace n).1) *
-        ψ (e.symm q.1) = 0 := by
-      filter_upwards [((e.continuousAt_symm hp.1).comp continuousAt_fst).preimage_mem_nhds
-        ((isClosed_tsupport _).isOpen_compl.mem_nhds hpg)] with q hq
-      exact image_eq_zero_of_notMem_tsupport (f := fun y ↦ χ y * ψ y) hq
-    exact (contDiffWithinAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
-      (eventually_nhdsWithin_of_eventually_nhds (hc.mono fun q hq ↦ by simp [hq]))
-      (by simp [image_eq_zero_of_notMem_tsupport hpg])
-
 /-- **The inverse principal symbol.** If `P : Γ(E) → Γ(F)` is elliptic of order `m`, the fibrewise
 inverses `σ_m(P)(x, ξ)⁻¹ : F_x → E_x` at nonzero covectors form a smooth positively homogeneous
 `Hom(F, E)`-valued symbol of degree `-m`: there is `s` in
@@ -314,12 +103,10 @@ theorem IsSectionClassicalElliptic.exists_mem_sectionHomogeneousCotangentSymbols
     (hPe : IsSectionClassicalElliptic m P) :
     ∃ s ∈ sectionHomogeneousCotangentSymbols n W F V E (-m), ∀ x ξ, ξ ≠ 0 →
       s x ξ ∘ₗ sectionClassicalPrincipalSymbol m P x ξ = LinearMap.id ∧
-        sectionClassicalPrincipalSymbol m P x ξ ∘ₗ s x ξ = LinearMap.id := by
-  refine ⟨inversePrincipalSymbol m P,
-    inversePrincipalSymbol_mem_sectionHomogeneousCotangentSymbols hPe, fun x ξ hξ ↦ ?_⟩
-  have hb := isSectionClassicalEllipticAt_iff.1 (isSectionClassicalElliptic_iff.1 hPe x) ξ hξ
-  exact ⟨LinearMap.ext (inversePrincipalSymbol_sectionClassicalPrincipalSymbol_apply hb),
-    LinearMap.ext (sectionClassicalPrincipalSymbol_inversePrincipalSymbol_apply hb)⟩
+        sectionClassicalPrincipalSymbol m P x ξ ∘ₗ s x ξ = LinearMap.id :=
+  TauCeti.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id
+    sectionClassicalPrincipalSymbol_mem_sectionHomogeneousCotangentSymbols fun x ξ hξ ↦
+      isSectionClassicalEllipticAt_iff.1 (isSectionClassicalElliptic_iff.1 hPe x) ξ hξ
 
 /-- **Quantizing the inverse principal symbol.** On a compact manifold, an elliptic operator
 `P : Γ(E) → Γ(F)` of order `m` has an operator `Q : Γ(F) → Γ(E)` of order `-m` whose principal
