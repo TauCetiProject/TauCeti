@@ -42,7 +42,8 @@ sphere to `L²`, and it has finite-dimensional kernel
 (`finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison`) and closed range
 (`isClosed_range_floerConformalSobolevOperator_cappedComparison`), all in the namespace
 `TauCeti.SymplecticForm`. The finiteness of the cokernel is proved in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped.Fredholm`; the index is not treated here.
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped.Fredholm`, together with the invariance of
+the index along the family.
 
 ## References
 
