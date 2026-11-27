@@ -91,6 +91,16 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
   in `[0, 1]` are the least one and `1`, using `TauCeti.Probability.pgf_lt_self_of_add_lt_one` and
   `TauCeti.Probability.eq_one_of_pgf_eq_self_of_add_eq_one` for the two cases that
   `MeasureTheory.Measure.measure_singleton_add_measure_singleton_le` leaves.
+
+## References
+
+The fixed-point section follows the classical analysis of the extinction probability of a
+Galton–Watson process:
+
+* R. Lyons and Y. Peres, *Probability on Trees and Networks*, Cambridge University Press (2016),
+  Section 5.1, Proposition 5.4 and Corollary 5.3.
+* R. Durrett, *Probability: Theory and Examples*, fifth edition, Cambridge University Press
+  (2019), Section 4.3.4, Theorems 4.3.10 to 4.3.12.
 -/
 
 public section
