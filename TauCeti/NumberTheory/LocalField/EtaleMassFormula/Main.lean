@@ -35,15 +35,17 @@ classes of étale `K`-algebras.
   with splitting symbol `σ` have mass `1 / (#Aut(σ) · q ^ splittingSymbolExponent σ)`.
 * `TauCeti.etaleMass_ramificationPartition` ([Bhargava 2007, Prop. 2.2]): for a partition `π` of
   `k` into at most `n - k` parts, the Galois sets of size `n` whose splitting symbol has
-  ramification partition `π` have mass `q ^ (-k)`.
+  ramification partition `π` have mass `q ^ (-k)`. With more than `n - k` parts the mass is `0`
+  (`TauCeti.etaleMass_ramificationPartition_eq_zero`), and for `π = ∅` it is the unramified mass
+  `1` (`TauCeti.etaleMass_unramified`, [Bhargava 2007, (2.4)]).
 * `TauCeti.etaleMass_eq` ([Bhargava 2007, Thm. 1.1 and Prop. 2.3]):
   `M_n(K) = ∑_{k ≤ n} q(k, n - k) · q ^ (-k)`, where `q(k, m)` is the number of partitions of
   `k` into at most `m` parts.
 * `TauCeti.tsum_etaleDiscriminantExponent_eq`: the same formula written directly over a family of
   representatives of the `K`-isomorphism classes of étale `K`-algebras of degree `n`.
-* `TauCeti.etaleMass_two` and `TauCeti.etaleMass_three`: `M_2(K) = 1 + q⁻¹` and
-  `M_3(K) = 1 + q⁻¹ + q⁻²`, even in equal characteristic where there are infinitely many
-  isomorphism classes of extensions.
+* `TauCeti.etaleMass_two`, `TauCeti.etaleMass_three` and `TauCeti.etaleMass_four`:
+  `M_2(K) = 1 + q⁻¹`, `M_3(K) = 1 + q⁻¹ + q⁻²` and `M_4(K) = 1 + q⁻¹ + 2 q⁻² + q⁻³`, even in
+  equal characteristic where there are infinitely many isomorphism classes of extensions.
 
 ## References
 
@@ -528,6 +530,46 @@ theorem etaleMass_ramificationPartition (n k : ℕ) (π : k.Partition)
   dsimp only [Sym]
   rw [tsum_one_div_splittingSymbolAut_ramificationPartition n k π hπ, one_mul]
 
+/-- The ramification partition of a Galois set of size `n` is a partition of some `k` into at most
+`n - k` parts: its sum and its number of parts add up to at most `n`. -/
+theorem GaloisSet.sum_add_card_ramificationPartition_splittingSymbol_le {n : ℕ}
+    (ρ : GaloisSet K n) :
+    (ramificationPartition ρ.splittingSymbol).sum +
+        Multiset.card (ramificationPartition ρ.splittingSymbol) ≤ n :=
+  (sum_add_card_ramificationPartition_le _).trans_eq ρ.sum_map_mul_splittingSymbol
+
+/-- **The bound on the number of parts in `etaleMass_ramificationPartition` is necessary**: for a
+partition `π` of `k` into more than `n - k` parts, no Galois set of size `n` has ramification
+partition `π`, so their mass is `0`. -/
+theorem etaleMass_ramificationPartition_eq_zero (n k : ℕ) (π : k.Partition)
+    (hπ : n - k < Multiset.card π.parts) :
+    (n ! : ℝ≥0∞)⁻¹ *
+        ∑' ρ : {ρ : GaloisSet K n // ramificationPartition ρ.splittingSymbol = π.parts},
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent = 0 := by
+  have : IsEmpty {ρ : GaloisSet K n // ramificationPartition ρ.splittingSymbol = π.parts} :=
+    ⟨fun ρ ↦ by
+      have h := ρ.val.sum_add_card_ramificationPartition_splittingSymbol_le
+      rw [ρ.property, π.parts_sum] at h
+      omega⟩
+  rw [tsum_empty, mul_zero]
+
+/-- **The unramified mass** ([Bhargava 2007, (2.4)]): the Galois sets of size `n` all of whose
+orbits are unramified, with ramification index `e = 1`, have mass `1`. -/
+theorem etaleMass_unramified (n : ℕ) :
+    (n ! : ℝ≥0∞)⁻¹ *
+        ∑' ρ : {ρ : GaloisSet K n // ∀ x ∈ ρ.splittingSymbol, x.2 = 1},
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent = 1 := by
+  have key : ∀ ρ : GaloisSet K n,
+      ramificationPartition ρ.splittingSymbol = (default : (0 : ℕ).Partition).parts ↔
+        ∀ x ∈ ρ.splittingSymbol, x.2 = 1 := fun ρ ↦ by
+    rw [Nat.Partition.partition_zero_parts, ramificationPartition_eq_zero_iff]
+    refine forall₂_congr fun x hx ↦ ?_
+    have := GaloisSet.pos_of_mem_splittingSymbol hx
+    constructor <;> intro h <;> omega
+  rw [← (Equiv.subtypeEquivRight key).tsum_eq
+    (fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent)]
+  simpa using etaleMass_ramificationPartition (K := K) n 0 default (by simp)
+
 private theorem partIdx_ext {n : ℕ}
     {p₁ p₂ : Σ k : Finset.range (n + 1),
       {π : k.val.Partition // Multiset.card π.parts ≤ n - k.val}}
@@ -558,9 +600,7 @@ theorem etaleMass_eq (n : ℕ) :
   let PartIdx := Σ k : Finset.range (n + 1),
     {π : k.val.Partition // Multiset.card π.parts ≤ n - k.val}
   let partOf : GaloisSet K n → PartIdx := fun ρ ↦
-    have hdeg := sum_map_mul_eq_sum_ramificationPartition_add ρ.splittingSymbol
-      fun x hx ↦ (GaloisSet.pos_of_mem_splittingSymbol hx).2
-    have := ρ.sum_map_mul_splittingSymbol
+    have := ρ.sum_add_card_ramificationPartition_splittingSymbol_le
     have hk_le : (ramificationPartition ρ.splittingSymbol).sum ≤ n := by omega
     have hcard_le : Multiset.card (ramificationPartition ρ.splittingSymbol) ≤
         n - (ramificationPartition ρ.splittingSymbol).sum := by omega
@@ -641,6 +681,35 @@ theorem etaleMass_three :
   classical
   rw [etaleMass_eq, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
     Finset.sum_range_one]
+  simp [Finset.univ_unique, Finset.filter_eq']
+
+variable (K) in
+/-- In degree `4`, `M_4(K) = 1 + q⁻¹ + 2 q⁻² + q⁻³`: the term `q⁻²` counts the two partitions `(2)`
+and `(1, 1)` of `2`. -/
+theorem etaleMass_four :
+    etaleMass K 4 =
+      1 + 1 / (Nat.card 𝓀[K] : ℝ≥0∞) + 2 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ 2 +
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ 3 := by
+  classical
+  -- The partitions of `2` are `(2)` and `(1, 1)`, both into at most `4 - 2` parts.
+  have hcases (μ : (2 : ℕ).Partition) :
+      μ = _root_.Nat.Partition.indiscrete 2 ∨ μ = Nat.Partition.ones 2 := by
+    rcases le_or_gt (Multiset.card μ.parts) 1 with h | h
+    · exact Or.inl ((Nat.Partition.card_parts_le_one_iff μ).1 h)
+    refine Or.inr (_root_.Nat.Partition.ext ?_)
+    obtain ⟨a, b, hab⟩ := Multiset.card_eq_two.1 (le_antisymm μ.card_parts_le h)
+    have ha := μ.parts_pos (i := a) (by simp [hab])
+    have hb := μ.parts_pos (i := b) (by simp [hab])
+    have hsum : a + b = 2 := by simpa [hab] using μ.parts_sum
+    rw [hab, Nat.Partition.ones_parts, show a = 1 by omega, show b = 1 by omega]
+    simp [Multiset.replicate_succ]
+  have h2 : ((Finset.univ : Finset (2 : ℕ).Partition).filter fun π ↦
+      Multiset.card π.parts ≤ 4 - 2).card = 2 := by
+    rw [Finset.filter_true_of_mem fun μ _ ↦ μ.card_parts_le, Finset.card_eq_two]
+    refine ⟨_, _, fun h ↦ ?_, (Finset.eq_univ_of_forall fun μ ↦ by simpa using hcases μ).symm⟩
+    simpa using congrArg _root_.Nat.Partition.parts h
+  rw [etaleMass_eq, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+    Finset.sum_range_succ, Finset.sum_range_one, h2]
   simp [Finset.univ_unique, Finset.filter_eq']
 
 end TauCeti
