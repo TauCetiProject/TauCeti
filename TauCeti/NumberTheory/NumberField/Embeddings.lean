@@ -15,12 +15,15 @@ import Mathlib.FieldTheory.PrimitiveElement
 Let `F` be a field of characteristic zero receiving all `[K : ℚ]` embeddings of a number field
 `K`. Composing with `F → AlgebraicClosure F` then matches the embeddings `K →+* F` with the
 `ℚ`-algebra maps `K →ₐ[ℚ] AlgebraicClosure F`, the indexing used by Mathlib's embeddings
-matrices.
+matrices. For an algebraic extension of `ℚ`, composing with an embedding of the algebraic
+closure of `ℚ` into `ℂ` likewise identifies the embeddings into that closure with the complex
+embeddings.
 
 ## Main declarations
 
 * `TauCeti.NumberField.ringHomEquivAlgHomAlgebraicClosure`: the equivalence
   `(K →+* F) ≃ (K →ₐ[ℚ] AlgebraicClosure F)`.
+* `RingHom.complexEmbeddingsEquiv`: the equivalence `(K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ)`.
 -/
 
 public section
@@ -50,3 +53,26 @@ theorem ringHomEquivAlgHomAlgebraicClosure_apply
   (rfl)
 
 end TauCeti.NumberField
+
+namespace RingHom
+
+variable {K : Type*} [Field K] [CharZero K] [Algebra.IsAlgebraic ℚ K]
+
+/-- Composing with an embedding of the algebraic closure of `ℚ` into `ℂ` gives all complex
+embeddings of an algebraic extension of `ℚ`, each exactly once. -/
+noncomputable def complexEmbeddingsEquiv (ι : AlgebraicClosure ℚ →+* ℂ) :
+    (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := by
+  let := ι.toAlgebra
+  let : IsScalarTower ℚ (AlgebraicClosure ℚ) ℂ := .of_algebraMap_eq fun _ ↦ by simp
+  exact (RingHom.equivRatAlgHom K _).trans <|
+    (Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits ℂ (AlgebraicClosure ℚ)
+      (fun _ : K ↦ IsAlgClosed.splits _)).trans (RingHom.equivRatAlgHom K ℂ).symm
+
+/-- The equivalence on complex embeddings acts by postcomposition. -/
+@[simp]
+theorem complexEmbeddingsEquiv_apply (ι : AlgebraicClosure ℚ →+* ℂ)
+    (σ : K →+* AlgebraicClosure ℚ) :
+    ι.complexEmbeddingsEquiv σ = ι.comp σ :=
+  (rfl)
+
+end RingHom

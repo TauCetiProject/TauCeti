@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Norm
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealOrCMSubfield
 public import TauCeti.NumberTheory.NumberField.Global.InfinityType.BaseChange
 
 import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
-import TauCeti.NumberTheory.NumberField.ComplexEmbedding.Extension
-import TauCeti.NumberTheory.NumberField.TotallyPositive
+import TauCeti.NumberTheory.NumberField.Embeddings
 
 /-!
 # Weil's classification of algebraic infinity types on units
@@ -38,23 +36,6 @@ open scoped NumberField
 namespace TauCeti.GlobalNumberFields.AlgebraicInfinityType
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- The embedding monomial restricted to the units of the ring of integers. -/
-def unitCharacter (n : AlgebraicInfinityType K) : (𝓞 K)ˣ →* ℂˣ :=
-  n.embeddingCharacter.comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)
-
-/-- The unit character is obtained by restricting the embedding character along the inclusion
-of the integer units into the field units. -/
-theorem unitCharacter_def (n : AlgebraicInfinityType K) :
-    n.unitCharacter =
-      n.embeddingCharacter.comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom) :=
-  (rfl)
-
-/-- Evaluate the unit character as the product of the individual embedding powers. -/
-@[simp]
-theorem coe_unitCharacter_apply (n : AlgebraicInfinityType K) (u : (𝓞 K)ˣ) :
-    (n.unitCharacter u : ℂ) = ∏ σ : K →+* ℂ, σ (u : K) ^ n σ := by
-  simp [unitCharacter_def, coe_embeddingCharacter_apply]
 
 section Weight
 
@@ -133,19 +114,6 @@ theorem exists_weight_of_finiteIndex_ker_unitCharacter (n : AlgebraicInfinityTyp
 
 end Weight
 
-private def complexEmbeddingsEquiv (ι : AlgebraicClosure ℚ →+* ℂ) :
-    (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := by
-  let := ι.toAlgebra
-  let : IsScalarTower ℚ (AlgebraicClosure ℚ) ℂ := .of_algebraMap_eq fun _ ↦ by simp
-  exact (RingHom.equivRatAlgHom K _).trans <|
-    (Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits ℂ (AlgebraicClosure ℚ)
-      (fun _ : K ↦ IsAlgClosed.splits _)).trans (RingHom.equivRatAlgHom K ℂ).symm
-
-private theorem complexEmbeddingsEquiv_apply (ι : AlgebraicClosure ℚ →+* ℂ)
-    (σ : K →+* AlgebraicClosure ℚ) :
-    complexEmbeddingsEquiv ι σ = ι.comp σ :=
-  (rfl)
-
 private theorem card_mul_weight (n : AlgebraicInfinityType K) {w : ℤ}
     (h : ∀ σ, n σ + n (conjugate σ) = w) :
     (Fintype.card (K →+* ℂ) : ℤ) * w = 2 * ∑ σ, n σ := by
@@ -160,12 +128,13 @@ private theorem exists_weight_for_complexConjugations [IsTotallyComplex K]
     (h : n.unitCharacter.ker.FiniteIndex) (ι₀ : AlgebraicClosure ℚ →+* ℂ) :
     ∃ w : ℤ, ∀ c ∈ TauCeti.NumberField.complexConjugations (AlgebraicClosure ℚ),
       ∀ σ : K →+* AlgebraicClosure ℚ,
-        n (ι₀.comp ((c : _ →+* _).comp σ)) + n (ι₀.comp σ) = w := by
+        n (ι₀.complexEmbeddingsEquiv ((c : _ →+* _).comp σ)) +
+          n (ι₀.complexEmbeddingsEquiv σ) = w := by
   obtain ⟨w₀, hw₀⟩ := n.exists_weight_of_finiteIndex_ker_unitCharacter h
   refine ⟨w₀, fun c hc σ ↦ ?_⟩
   obtain ⟨ι, hι⟩ := TauCeti.NumberField.mem_complexConjugations_iff.mp hc
-  let e₀ : (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := complexEmbeddingsEquiv ι₀
-  let e : (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := complexEmbeddingsEquiv ι
+  let e₀ : (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := ι₀.complexEmbeddingsEquiv
+  let e : (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := ι.complexEmbeddingsEquiv
   let n' : AlgebraicInfinityType K := n ∘ e₀ ∘ e.symm
   -- Both evaluations are images of the same algebraic monomial.
   have hker : n.unitCharacter.ker ≤ n'.unitCharacter.ker := by
@@ -178,13 +147,13 @@ private theorem exists_weight_for_complexConjugations [IsTotallyComplex K]
     have hz : z = 1 := ι₀.injective <| calc
       ι₀ z = (n.unitCharacter u : ℂ) := by
         rw [heval, coe_unitCharacter_apply]
-        exact Fintype.prod_equiv e₀ _ _ fun _ ↦ rfl
+        exact Fintype.prod_equiv e₀ _ _ fun τ ↦ by simp [e₀]
       _ = ι₀ 1 := by simp [hu]
     apply Units.ext
     rw [coe_unitCharacter_apply, Units.val_one, ← map_one ι, ← hz, heval]
     exact (Fintype.prod_equiv e _ _ fun τ ↦ by
       simp only [n', Function.comp_apply, Equiv.symm_apply_apply]
-      rfl).symm
+      simp only [e, RingHom.complexEmbeddingsEquiv_apply]).symm
   let := h
   obtain ⟨w, hw⟩ := n'.exists_weight_of_finiteIndex_ker_unitCharacter
     (Subgroup.finiteIndex_of_le hker)
@@ -196,10 +165,11 @@ private theorem exists_weight_for_complexConjugations [IsTotallyComplex K]
     exact mul_left_cancel₀ hcard ((card_mul_weight n' hw).trans
       (hsum ▸ (card_mul_weight n hw₀).symm))
   have hcomp : conjugate (e σ) = e ((c : _ →+* _).comp σ) := by
+    simp only [e, RingHom.complexEmbeddingsEquiv_apply]
     exact RingHom.ext fun x ↦ (hι.eq (σ x)).symm
   have hwσ := hw (e σ)
   rw [hcomp, hweight] at hwσ
-  simpa [n', e₀, complexEmbeddingsEquiv_apply, add_comm] using hwσ
+  simpa [n', e₀, add_comm] using hwσ
 
 open TauCeti.NumberField in
 /-- A finite-index kernel forces an algebraic infinity type to descend to the maximal CM
@@ -211,7 +181,10 @@ private theorem exists_baseChange_or_constant_of_finiteIndex_ker_unitCharacter [
         n₀.baseChange K = n ∧ ∃ w : ℤ, ∀ τ, n₀ τ + n₀ (conjugate τ) = w) ∨
     (¬ IsCMField (maximalRealOrCMSubfield K) ∧ ∃ a : ℤ, ∀ σ, n σ = a) := by
   let ι : AlgebraicClosure ℚ →+* ℂ := (IsAlgClosed.lift (R := ℚ)).toRingHom
-  let e : (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := complexEmbeddingsEquiv ι
+  let e : (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := ι.complexEmbeddingsEquiv
+  have he (ρ : K →+* ℂ) (x : K) : ι (e.symm ρ x) = ρ x := by
+    rw [← RingHom.comp_apply, ← RingHom.complexEmbeddingsEquiv_apply]
+    exact DFunLike.congr_fun (e.apply_symm_apply ρ) x
   obtain ⟨w, hw⟩ := exists_weight_for_complexConjugations n h ι
   let E := maximalRealOrCMSubfield K
   by_cases hE : IsCMField E
@@ -227,10 +200,10 @@ private theorem exists_baseChange_or_constant_of_finiteIndex_ker_unitCharacter [
           apply ι.injective
           have hx' : algebraMap E K (⟨x, hx⟩ : E) = x := rfl
           calc
-            ι (e.symm τ x) = τ x := DFunLike.congr_fun (e.apply_symm_apply τ) x
+            ι (e.symm τ x) = τ x := he τ x
             _ = σ x := by simpa only [RingHom.comp_apply, hx'] using
               RingHom.congr_fun hτ (⟨x, hx⟩ : E)
-            _ = ι (e.symm σ x) := DFunLike.congr_fun (e.apply_symm_apply σ).symm x)
+            _ = ι (e.symm σ x) := (he σ x).symm)
       simpa only [Equiv.apply_symm_apply] using hval
     obtain ⟨m, hm⟩ := n.exists_weight_of_finiteIndex_ker_unitCharacter h
     refine ⟨n₀, ?_, m, fun τ ↦ ?_⟩
@@ -253,58 +226,6 @@ private theorem exists_baseChange_or_constant_of_finiteIndex_ker_unitCharacter [
     have h₂ := hhalf σ₀
     simp only [two_nsmul] at h₁ h₂
     omega
-
-section Norm
-
-variable {F : Type*} [Field F] [NumberField F] [Algebra F K]
-
-/-- The embedding monomial of a norm-pulled infinity type at an integer unit is the original
-monomial at the relative norm of the unit. -/
-@[simp]
-theorem unitCharacter_baseChange (n : AlgebraicInfinityType F) (u : (𝓞 K)ˣ) :
-    (n.baseChange K).unitCharacter u =
-      n.unitCharacter (Units.map (NumberField.RingOfIntegers.norm F) u) := by
-  classical
-  apply Units.ext
-  simp only [coe_unitCharacter_apply, baseChange_apply, Units.coe_map]
-  have hcoe : algebraMap (𝓞 F) F (NumberField.RingOfIntegers.norm F (u : 𝓞 K)) =
-      Algebra.norm F (u : K) := NumberField.RingOfIntegers.coe_norm F _
-  rw [hcoe]
-  rw [← Finset.prod_fiberwise Finset.univ (fun σ : K →+* ℂ ↦ σ.comp (algebraMap F K))]
-  refine Finset.prod_congr rfl fun τ _ ↦ ?_
-  have : FiniteDimensional F K := Module.Finite.of_restrictScalars_finite ℚ F K
-  have : IsAlgClosed (Codomain τ) := Complex.isAlgClosed
-  have hnorm : (∏ σ : ComplexEmbedding.Extension K τ, σ.val (u : K)) =
-      τ (Algebra.norm F (u : K)) := by
-    rw [← Fintype.prod_equiv (ComplexEmbedding.Extension.equivAlgHom K τ).symm
-        (fun σ ↦ Codomain.equiv τ (σ (u : K))) _
-        (fun σ ↦ (ComplexEmbedding.Extension.equivAlgHom_symm_apply σ _).symm),
-      ← map_prod, ← Algebra.norm_eq_prod_embeddings, Codomain.equiv_algebraMap]
-  calc
-    _ = (∏ σ : K →+* ℂ with σ.comp (algebraMap F K) = τ, σ (u : K)) ^ n τ := by
-      rw [← Finset.prod_zpow]
-      exact Finset.prod_congr rfl fun σ hσ ↦ by rw [(Finset.mem_filter.mp hσ).2]
-    _ = _ := by
-      rw [← hnorm]
-      congr 1
-      refine Finset.prod_subtype _ (fun σ ↦ ?_) _
-      simp [ComplexEmbedding.liesOver_iff]
-
-end Norm
-
-/-- Constant algebraic infinity types are trivial on the integer units of a totally imaginary
-field. -/
-theorem unitCharacter_eq_one_of_constant [IsTotallyComplex K] (n : AlgebraicInfinityType K)
-    {a : ℤ} (hn : ∀ σ, n σ = a) : n.unitCharacter = 1 := by
-  ext u
-  have hpos := norm_pos_of_isTotallyPositive (NumberField.Units.coe_ne_zero u) (by simp)
-  have hnorm := (abs_of_pos hpos).symm.trans (NumberField.Units.norm K u)
-  simp only [coe_unitCharacter_apply, hn, MonoidHom.one_apply, Units.val_one]
-  have hprod : (∏ σ : K →+* ℂ, σ (u : K)) = 1 := calc
-    _ = ∏ σ : K →ₐ[ℚ] ℂ, σ (u : K) :=
-      Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) _ _ (fun _ ↦ rfl)
-    _ = 1 := by rw [← Algebra.norm_eq_prod_embeddings, hnorm, map_one]
-  rw [Finset.prod_zpow, hprod, one_zpow]
 
 private theorem unitCharacter_mul_unitsComplexConj [IsCMField K] (n : AlgebraicInfinityType K)
     {w : ℤ} (hn : ∀ σ, n σ + n (conjugate σ) = w) (u : (𝓞 K)ˣ) :

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
+public import Mathlib.NumberTheory.NumberField.Norm
 public import TauCeti.NumberTheory.NumberField.Global.InfinityType.IdentityComponent
+public import TauCeti.NumberTheory.NumberField.Global.InfinityType.UnitCharacter
 
+import TauCeti.NumberTheory.NumberField.ComplexEmbedding.Extension
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
@@ -46,6 +48,8 @@ parameters. Hence base change preserves algebraicity on the identity component.
   commutes with the passage to continuous parameters.
 * `TauCeti.GlobalNumberFields.ContinuousInfinityType.IsAlgebraicOnIdentityComponent.baseChange`:
   base change preserves algebraicity on the identity component.
+* `TauCeti.GlobalNumberFields.AlgebraicInfinityType.unitCharacter_baseChange`: the unit character
+  of a base-changed type is the pullback along the relative norm on integer units.
 
 ## References
 
@@ -56,6 +60,7 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace NumberField.ComplexEmbedding
+open scoped NumberField
 
 namespace TauCeti.GlobalNumberFields
 
@@ -205,6 +210,39 @@ theorem toContinuous_baseChange (n : AlgebraicInfinityType K) :
           toContinuous_complexAngularFrequency, h₁, h₂]
       · rw [ContinuousInfinityType.baseChange_complexAngularFrequency_of_conjugate_comp_eq _ _ hv'
           h₂, toContinuous_complexAngularFrequency, h₁, h₂, neg_sub]
+
+/-- The embedding monomial of a norm-pulled infinity type at an integer unit is the original
+monomial at the relative norm of the unit. -/
+@[simp]
+theorem unitCharacter_baseChange [NumberField K] [NumberField L]
+    (n : AlgebraicInfinityType K) (u : (𝓞 L)ˣ) :
+    (n.baseChange L).unitCharacter u =
+      n.unitCharacter (Units.map (NumberField.RingOfIntegers.norm K) u) := by
+  classical
+  apply Units.ext
+  simp only [coe_unitCharacter_apply, baseChange_apply, Units.coe_map]
+  have hcoe : algebraMap (𝓞 K) K (NumberField.RingOfIntegers.norm K (u : 𝓞 L)) =
+      Algebra.norm K (u : L) := NumberField.RingOfIntegers.coe_norm K _
+  rw [hcoe]
+  rw [← Finset.prod_fiberwise Finset.univ (fun σ : L →+* ℂ ↦ σ.comp (algebraMap K L))]
+  refine Finset.prod_congr rfl fun τ _ ↦ ?_
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ K L
+  have : IsAlgClosed (Codomain τ) := Complex.isAlgClosed
+  have hnorm : (∏ σ : ComplexEmbedding.Extension L τ, σ.val (u : L)) =
+      τ (Algebra.norm K (u : L)) := by
+    rw [← Fintype.prod_equiv (ComplexEmbedding.Extension.equivAlgHom L τ).symm
+        (fun σ ↦ Codomain.equiv τ (σ (u : L))) _
+        (fun σ ↦ (ComplexEmbedding.Extension.equivAlgHom_symm_apply σ _).symm),
+      ← map_prod, ← Algebra.norm_eq_prod_embeddings, Codomain.equiv_algebraMap]
+  calc
+    _ = (∏ σ : L →+* ℂ with σ.comp (algebraMap K L) = τ, σ (u : L)) ^ n τ := by
+      rw [← Finset.prod_zpow]
+      exact Finset.prod_congr rfl fun σ hσ ↦ by rw [(Finset.mem_filter.mp hσ).2]
+    _ = _ := by
+      rw [← hnorm]
+      congr 1
+      refine Finset.prod_subtype _ (fun σ ↦ ?_) _
+      simp [ComplexEmbedding.liesOver_iff]
 
 end AlgebraicInfinityType
 
