@@ -101,6 +101,16 @@ theorem piRightHom_comp_rTensor (f : N →ₗ[R] N') :
       LinearMap.piMap (fun i ↦ f.rTensor (M i)) ∘ₗ piRightHom R R N M :=
   TensorProduct.ext' fun _ _ ↦ rfl
 
+/-- Tensoring a map into a product and then comparing with the product of tensor products
+tensors each of its coordinate maps. -/
+@[simp]
+theorem piRightHom_lTensor_pi (S : Type*) [CommSemiring S] [Algebra R S] [Module S N]
+    [IsScalarTower R S N] (f : ∀ i, N' →ₗ[R] M i) (x : N ⊗[R] N') :
+    piRightHom R S N M ((LinearMap.pi f).lTensor N x) = fun i ↦ (f i).lTensor N x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => rfl
+  | add x y hx hy => simp [hx, hy, Pi.add_def]
+
 end CommSemiring
 
 section PiScalarRight
