@@ -26,7 +26,8 @@ order three and the Frobenius lift `Frob₂` to an involution with `Frob₂ σ F
 is a representation of `DihedralGroup 3`, with `σ ↦ r 1` and `Frob₂ ↦ sr 0`.
 
 Its two stable lattices used by Dieulefait and Pacetti are written down here over an arbitrary
-commutative ring `R` containing an element `ζ` with `ζ² + ζ + 1 = 0`:
+commutative ring `R` containing an element `ζ` with `ζ² + ζ + 1 = 0`; the standard lattice only
+needs `ζ³ = 1`:
 
 * the *standard lattice* `L₀`, on which `σ ↦ diag(ζ, ζ²)` and `Frob₂ ↦ (0, 1; 1, 0)`
   (`TauCeti.OrderThreeType.standardRep`);
@@ -43,9 +44,9 @@ inertia acts trivially on `L₀/πL₀`, while on `L₁/πL₁` it acts by the n
 dimension two and one. Conversely, over a field of characteristic three, let `S` be a unipotent
 matrix and `F` an invertible matrix with `F S F⁻¹ = S²`, the images of `σ` and `Frob₂` under a
 residual representation of the tame quotient at `2`. If `S = 1` and `F` has eigenvalues `±γ`,
-then `F` is conjugate to `γ` times the reduced Frobenius of `L₀`. If `S ≠ 1`, then `(S, F)` is
-simultaneously conjugate to the reduction of `L₁` with `Frob₂` multiplied by a unit scalar. This
-is the choice of lattice in the proof of Lemma 2.3.
+then `F` is conjugate to `γ` times the reduced Frobenius of `L₀` (this step only needs `2 ≠ 0`).
+If `S ≠ 1`, then `(S, F)` is simultaneously conjugate to the reduction of `L₁` with `Frob₂`
+multiplied by a unit scalar. This is the choice of lattice in the proof of Lemma 2.3.
 
 ## Main definitions
 
@@ -59,7 +60,9 @@ is the choice of lattice in the proof of Lemma 2.3.
 * `TauCeti.OrderThreeType.adaptedRep_eq_inv_mul_mul`: when `ζ - 1` is a unit the two
   representations are conjugate.
 * `TauCeti.OrderThreeType.map_comp_standardRep`, `TauCeti.OrderThreeType.map_comp_adaptedRep`:
-  compatibility with change of coefficients, in particular with reduction modulo `π`.
+  compatibility with change of coefficients, in particular with reduction modulo `π`; the
+  pointwise forms are `TauCeti.OrderThreeType.map_standardRep` and
+  `TauCeti.OrderThreeType.map_adaptedRep`.
 * `TauCeti.OrderThreeType.trace_standardRep_sr`, `TauCeti.OrderThreeType.trace_adaptedRep_sr`:
   every Frobenius lift has trace zero on both lattices.
 * `TauCeti.OrderThreeType.finrank_ker_standardRep_r_one_sub_one`,
@@ -85,8 +88,12 @@ section Lattices
 
 variable {R : Type*} [CommRing R] {ζ : R}
 
+/-- A root of `X² + X + 1` is a cube root of unity, since `X³ - 1 = (X - 1)(X² + X + 1)`. -/
+theorem pow_three_eq_one_of_sq_add_self_add_one (hζ : ζ ^ 2 + ζ + 1 = 0) : ζ ^ 3 = 1 := by
+  linear_combination (ζ - 1) * hζ
+
 /-- The inertia matrix `diag(ζ, ζ²)` of the standard lattice, with inverse `diag(ζ², ζ)`. -/
-private def stdInertia (hζ : ζ ^ 2 + ζ + 1 = 0) : GL (Fin 2) R where
+private def stdInertia (hζ : ζ ^ 3 = 1) : GL (Fin 2) R where
   val := !![ζ, 0; 0, ζ ^ 2]
   inv := !![ζ ^ 2, 0; 0, ζ]
   val_inv := by
@@ -120,18 +127,17 @@ private def adaptedFrob (ζ : R) : GL (Fin 2) R where
 private lemma stdFrob_mul_self : (stdFrob : GL (Fin 2) R) * stdFrob = 1 :=
   Units.ext <| by ext i j; fin_cases i <;> fin_cases j <;> simp [stdFrob]
 
-private lemma stdInertia_pow_three (hζ : ζ ^ 2 + ζ + 1 = 0) : stdInertia hζ ^ 3 = 1 :=
+private lemma stdInertia_pow_three (hζ : ζ ^ 3 = 1) : stdInertia hζ ^ 3 = 1 :=
   Units.ext <| by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [stdInertia, pow_succ] <;>
       grind
 
-private lemma stdFrob_mul_stdInertia_mul_stdFrob (hζ : ζ ^ 2 + ζ + 1 = 0) :
-    stdFrob * stdInertia hζ * stdFrob = stdInertia hζ ^ 2 :=
+private lemma stdFrob_mul_stdInertia_mul_stdFrob (hζ : ζ ^ 3 = 1) :
+    stdFrob * stdInertia hζ * stdFrob = (stdInertia hζ)⁻¹ :=
   Units.ext <| by
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [stdFrob, stdInertia, pow_succ]
-    grind
+    fin_cases i <;> fin_cases j <;> simp [stdFrob, stdInertia]
 
 private lemma adaptedFrob_mul_self : adaptedFrob ζ * adaptedFrob ζ = 1 :=
   Units.ext <| by ext i j; fin_cases i <;> fin_cases j <;> simp [adaptedFrob]
@@ -152,9 +158,9 @@ private lemma adaptedFrob_mul_adaptedInertia_mul_adaptedFrob (hζ : ζ ^ 2 + ζ 
 /-- The **standard lattice** `L₀ = 𝒪e₁ ⊕ 𝒪e₂` of the order-three type at `2`, as a
 representation of `DihedralGroup 3`: the rotation `r 1` (a tame inertia generator) acts by
 `diag(ζ, ζ²)` and the reflection `sr 0` (a Frobenius lift) by `(0, 1; 1, 0)`. -/
-def standardRep (hζ : ζ ^ 2 + ζ + 1 = 0) : DihedralGroup 3 →* GL (Fin 2) R :=
+def standardRep (hζ : ζ ^ 3 = 1) : DihedralGroup 3 →* GL (Fin 2) R :=
   dihedralHom (s := stdFrob) (t := stdFrob * stdInertia hζ) stdFrob_mul_self
-    (by rw [← mul_assoc, stdFrob_mul_stdInertia_mul_stdFrob, ← pow_succ, stdInertia_pow_three])
+    (by rw [← mul_assoc, stdFrob_mul_stdInertia_mul_stdFrob, inv_mul_cancel])
     (by rw [← mul_assoc, stdFrob_mul_self, one_mul, stdInertia_pow_three])
 
 /-- The **adapted lattice** `L₁ = 𝒪(e₁ + e₂) ⊕ 𝒪πe₂`, `π = ζ - 1`, of the order-three type at
@@ -167,11 +173,11 @@ def adaptedRep (hζ : ζ ^ 2 + ζ + 1 = 0) : DihedralGroup 3 →* GL (Fin 2) R :
         adaptedInertia_pow_three])
     (by rw [← mul_assoc, adaptedFrob_mul_self, one_mul, adaptedInertia_pow_three])
 
-private lemma standardRep_r (hζ : ζ ^ 2 + ζ + 1 = 0) (i : ZMod 3) :
+private lemma standardRep_r (hζ : ζ ^ 3 = 1) (i : ZMod 3) :
     standardRep hζ (r i) = stdInertia hζ ^ (ZMod.cast i : ℤ) := by
   rw [standardRep, dihedralHom_r, ← mul_assoc, stdFrob_mul_self, one_mul]
 
-private lemma standardRep_sr (hζ : ζ ^ 2 + ζ + 1 = 0) (i : ZMod 3) :
+private lemma standardRep_sr (hζ : ζ ^ 3 = 1) (i : ZMod 3) :
     standardRep hζ (sr i) = stdFrob * stdInertia hζ ^ (ZMod.cast i : ℤ) := by
   rw [standardRep, dihedralHom_sr, ← mul_assoc, stdFrob_mul_self, one_mul]
 
@@ -185,14 +191,14 @@ private lemma adaptedRep_sr (hζ : ζ ^ 2 + ζ + 1 = 0) (i : ZMod 3) :
 
 /-- A tame inertia generator acts on the standard lattice by `diag(ζ, ζ²)`. -/
 @[simp]
-theorem standardRep_r_one (hζ : ζ ^ 2 + ζ + 1 = 0) :
+theorem standardRep_r_one (hζ : ζ ^ 3 = 1) :
     (standardRep hζ (r 1) : Matrix (Fin 2) (Fin 2) R) = !![ζ, 0; 0, ζ ^ 2] := by
-  rw [standardRep_r, ZMod.cast_eq_val, ZMod.val_one, Nat.cast_one, zpow_one]
+  rw [standardRep_r, show (ZMod.cast (1 : ZMod 3) : ℤ) = 1 from rfl]
   simp [stdInertia]
 
 /-- A Frobenius lift acts on the standard lattice by `(0, 1; 1, 0)`. -/
 @[simp]
-theorem standardRep_sr_zero (hζ : ζ ^ 2 + ζ + 1 = 0) :
+theorem standardRep_sr_zero (hζ : ζ ^ 3 = 1) :
     (standardRep hζ (sr 0) : Matrix (Fin 2) (Fin 2) R) = !![0, 1; 1, 0] := by
   rw [standardRep_sr]
   simp [stdFrob]
@@ -201,7 +207,7 @@ theorem standardRep_sr_zero (hζ : ζ ^ 2 + ζ + 1 = 0) :
 @[simp]
 theorem adaptedRep_r_one (hζ : ζ ^ 2 + ζ + 1 = 0) :
     (adaptedRep hζ (r 1) : Matrix (Fin 2) (Fin 2) R) = !![ζ, 0; ζ, ζ ^ 2] := by
-  rw [adaptedRep_r, ZMod.cast_eq_val, ZMod.val_one, Nat.cast_one, zpow_one]
+  rw [adaptedRep_r, show (ZMod.cast (1 : ZMod 3) : ℤ) = 1 from rfl]
   simp [adaptedInertia]
 
 /-- A Frobenius lift acts on the adapted lattice by `(1, ζ - 1; 0, -1)`. -/
@@ -214,7 +220,7 @@ theorem adaptedRep_sr_zero (hζ : ζ ^ 2 + ζ + 1 = 0) :
 /-- Every Frobenius lift `sr i` is conjugate to `sr 0` by the rotation `r i`: in
 `DihedralGroup 3`, `r i * sr 0 * (r i)⁻¹ = sr (-2 * i) = sr i`. -/
 private lemma r_mul_sr_zero_mul_inv (i : ZMod 3) : r i * sr 0 * (r i)⁻¹ = sr i := by
-  rw [r_mul_sr, inv_r, sr_mul_r]
+  rw [dihedralR_mul_sr_mul_inv]
   congr 1
   revert i
   decide
@@ -224,6 +230,10 @@ lattice `L₀`: its columns are the coordinates of `e₁ + e₂` and `πe₂` in
 def latticeInclusion (ζ : R) : Matrix (Fin 2) (Fin 2) R :=
   !![1, 0; 1, ζ - 1]
 
+/-- The entries of `latticeInclusion ζ`. -/
+theorem latticeInclusion_def (ζ : R) : latticeInclusion ζ = !![1, 0; 1, ζ - 1] := by
+  rw [latticeInclusion]
+
 /-- The index of `L₁` in `L₀` is generated by `π = ζ - 1`. -/
 @[simp]
 theorem det_latticeInclusion (ζ : R) : (latticeInclusion ζ).det = ζ - 1 := by
@@ -231,9 +241,9 @@ theorem det_latticeInclusion (ζ : R) : (latticeInclusion ζ).det = ζ - 1 := by
 
 private lemma semiconjBy_latticeInclusion (hζ : ζ ^ 2 + ζ + 1 = 0) (g : DihedralGroup 3) :
     SemiconjBy (latticeInclusion ζ) (adaptedRep hζ g : Matrix (Fin 2) (Fin 2) R)
-      (standardRep hζ g) := by
+      (standardRep (pow_three_eq_one_of_sq_add_self_add_one hζ) g) := by
   have hD : SemiconjBy (latticeInclusion ζ) (adaptedInertia hζ : Matrix (Fin 2) (Fin 2) R)
-      (stdInertia hζ) := by
+      (stdInertia (pow_three_eq_one_of_sq_add_self_add_one hζ)) := by
     unfold SemiconjBy
     ext i j
     fin_cases i <;> fin_cases j <;>
@@ -253,7 +263,8 @@ private lemma semiconjBy_latticeInclusion (hζ : ζ ^ 2 + ζ + 1 = 0) (g : Dihed
 /-- **The inclusion `L₁ ⊆ L₀` is equivariant**: `latticeInclusion ζ` intertwines the adapted and
 the standard lattice. -/
 theorem standardRep_mul_latticeInclusion (hζ : ζ ^ 2 + ζ + 1 = 0) (g : DihedralGroup 3) :
-    (standardRep hζ g : Matrix (Fin 2) (Fin 2) R) * latticeInclusion ζ =
+    (standardRep (pow_three_eq_one_of_sq_add_self_add_one hζ) g : Matrix (Fin 2) (Fin 2) R) *
+        latticeInclusion ζ =
       latticeInclusion ζ * adaptedRep hζ g :=
   (semiconjBy_latticeInclusion hζ g).eq.symm
 
@@ -263,23 +274,26 @@ the fraction field of `ℤ₃[ζ]`, the adapted representation is the standard o
 theorem adaptedRep_eq_inv_mul_mul (hζ : ζ ^ 2 + ζ + 1 = 0) (hπ : IsUnit (ζ - 1))
     (g : DihedralGroup 3) :
     (adaptedRep hζ g : Matrix (Fin 2) (Fin 2) R) =
-      (latticeInclusion ζ)⁻¹ * standardRep hζ g * latticeInclusion ζ := by
+      (latticeInclusion ζ)⁻¹ * standardRep (pow_three_eq_one_of_sq_add_self_add_one hζ) g *
+        latticeInclusion ζ := by
   have h : IsUnit (latticeInclusion ζ).det := by rwa [det_latticeInclusion]
   rw [mul_assoc, standardRep_mul_latticeInclusion, ← mul_assoc, nonsing_inv_mul _ h, one_mul]
 
 /-- Every Frobenius lift acts on the standard lattice with trace zero. -/
 @[simp]
-theorem trace_standardRep_sr (hζ : ζ ^ 2 + ζ + 1 = 0) (i : ZMod 3) :
+theorem trace_standardRep_sr (hζ : ζ ^ 3 = 1) (i : ZMod 3) :
     (standardRep hζ (sr i) : Matrix (Fin 2) (Fin 2) R).trace = 0 := by
   rw [← r_mul_sr_zero_mul_inv, map_mul, map_mul, map_inv, Units.val_mul, Units.val_mul,
-    trace_units_conj, standardRep_sr_zero, trace_fin_two_of, add_zero]
+    trace_units_conj]
+  simp [trace_fin_two_of]
 
 /-- Every Frobenius lift acts on the adapted lattice with trace zero. -/
 @[simp]
 theorem trace_adaptedRep_sr (hζ : ζ ^ 2 + ζ + 1 = 0) (i : ZMod 3) :
     (adaptedRep hζ (sr i) : Matrix (Fin 2) (Fin 2) R).trace = 0 := by
   rw [← r_mul_sr_zero_mul_inv, map_mul, map_mul, map_inv, Units.val_mul, Units.val_mul,
-    trace_units_conj, adaptedRep_sr_zero, trace_fin_two_of, add_neg_cancel]
+    trace_units_conj]
+  simp [trace_fin_two_of]
 
 end Lattices
 
@@ -287,8 +301,7 @@ section BaseChange
 
 variable {R S : Type*} [CommRing R] [CommRing S] {ζ : R} {ξ : S}
 
-private lemma map_stdInertia (f : R →+* S) (hf : f ζ = ξ) (hζ : ζ ^ 2 + ζ + 1 = 0)
-    (hξ : ξ ^ 2 + ξ + 1 = 0) :
+private lemma map_stdInertia (f : R →+* S) (hf : f ζ = ξ) (hζ : ζ ^ 3 = 1) (hξ : ξ ^ 3 = 1) :
     Matrix.GeneralLinearGroup.map f (stdInertia hζ) = stdInertia hξ := by
   subst hf
   ext i j
@@ -314,8 +327,7 @@ private lemma map_adaptedFrob (f : R →+* S) (hf : f ζ = ξ) :
 
 /-- The standard lattice commutes with change of coefficients along any ring homomorphism `f`;
 for `f ζ = 1` this is its reduction modulo `π`. -/
-theorem map_comp_standardRep (f : R →+* S) (hf : f ζ = ξ) (hζ : ζ ^ 2 + ζ + 1 = 0)
-    (hξ : ξ ^ 2 + ξ + 1 = 0) :
+theorem map_comp_standardRep (f : R →+* S) (hf : f ζ = ξ) (hζ : ζ ^ 3 = 1) (hξ : ξ ^ 3 = 1) :
     (Matrix.GeneralLinearGroup.map f).comp (standardRep hζ) = standardRep hξ := by
   ext1 g
   rcases g with i | i
@@ -336,14 +348,29 @@ theorem map_comp_adaptedRep (f : R →+* S) (hf : f ζ = ξ) (hζ : ζ ^ 2 + ζ 
   · rw [MonoidHom.comp_apply, adaptedRep_sr, adaptedRep_sr, map_mul, map_zpow,
       map_adaptedFrob f hf, map_adaptedInertia f hf hζ hξ]
 
+/-- The standard lattice commutes with change of coefficients, evaluated at a group element. -/
+@[simp]
+theorem map_standardRep (f : R →+* S) (hζ : ζ ^ 3 = 1) (g : DihedralGroup 3) :
+    Matrix.GeneralLinearGroup.map f (standardRep hζ g) =
+      standardRep (ζ := f ζ) (by rw [← map_pow, hζ, map_one]) g :=
+  DFunLike.congr_fun (map_comp_standardRep f rfl hζ _) g
+
+/-- The adapted lattice commutes with change of coefficients, evaluated at a group element. -/
+@[simp]
+theorem map_adaptedRep (f : R →+* S) (hζ : ζ ^ 2 + ζ + 1 = 0) (g : DihedralGroup 3) :
+    Matrix.GeneralLinearGroup.map f (adaptedRep hζ g) =
+      adaptedRep (ζ := f ζ) (by rw [← map_pow, ← map_add, ← map_one f, ← map_add, hζ, map_zero])
+        g :=
+  DFunLike.congr_fun (map_comp_adaptedRep f rfl hζ _) g
+
 end BaseChange
 
 /-! ### The reductions modulo `π`
 
-Where `ζ` becomes `1`, so that `3 = 0`, the two lattices are the representations at `ζ = 1`
-(`TauCeti.OrderThreeType.map_comp_standardRep`, `TauCeti.OrderThreeType.map_comp_adaptedRep`).
-Inertia acts trivially on the reduction of `L₀` and by the nontrivial unipotent `(1, 0; 1, 1)`
-on that of `L₁`. -/
+Where `ζ` becomes `1`, which for the adapted lattice forces `3 = 0`, the two lattices are the
+representations at `ζ = 1` (`TauCeti.OrderThreeType.map_comp_standardRep`,
+`TauCeti.OrderThreeType.map_comp_adaptedRep`). Inertia acts trivially on the reduction of `L₀`
+and by the nontrivial unipotent `(1, 0; 1, 1)` on that of `L₁`. -/
 
 section Reduction
 
@@ -351,9 +378,9 @@ variable {R : Type*} [CommRing R]
 
 /-- **Inertia acts trivially on `L₀/πL₀`.** -/
 @[simp]
-theorem standardRep_r_eq_one (h : (1 : R) ^ 2 + 1 + 1 = 0) (i : ZMod 3) :
-    standardRep h (r i) = 1 := by
-  have h1 : stdInertia h = 1 := by
+theorem standardRep_r_eq_one (i : ZMod 3) :
+    standardRep (one_pow 3 : (1 : R) ^ 3 = 1) (r i) = 1 := by
+  have h1 : stdInertia (one_pow 3 : (1 : R) ^ 3 = 1) = 1 := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [stdInertia]
   rw [standardRep_r, h1, one_zpow]
@@ -362,11 +389,12 @@ variable {k : Type*} [Field k]
 
 /-- Over a field in which `ζ = 1`, the inertia invariants of the reduction of the standard
 lattice are two-dimensional. -/
-theorem finrank_ker_standardRep_r_one_sub_one (h : (1 : k) ^ 2 + 1 + 1 = 0) :
-    Module.finrank k
-      (LinearMap.ker (toLin' ((standardRep h (r 1) : Matrix (Fin 2) (Fin 2) k) - 1))) = 2 := by
-  rw [standardRep_r_eq_one, Units.val_one, sub_self, map_zero, LinearMap.ker_zero, finrank_top,
-    Module.finrank_fin_fun]
+theorem finrank_ker_standardRep_r_one_sub_one :
+    Module.finrank k (LinearMap.ker
+      (toLin' ((standardRep (one_pow 3 : (1 : k) ^ 3 = 1) (r 1) : Matrix (Fin 2) (Fin 2) k) - 1)))
+      = 2 := by
+  rw [standardRep_r_eq_one, Units.val_one, sub_self, map_zero, LinearMap.ker_zero]
+  simp
 
 /-- Over a field in which `ζ = 1`, the inertia invariants of the reduction of the adapted
 lattice are one-dimensional, spanned by the second basis vector `πe₂`. -/
@@ -388,22 +416,24 @@ theorem finrank_ker_adaptedRep_r_one_sub_one (h : (1 : k) ^ 2 + 1 + 1 = 0) :
       fin_cases j <;> simp [mulVec, dotProduct, Fin.sum_univ_two]
   rw [hker, finrank_span_singleton (by simp)]
 
-/-- **Selecting `L₀`.** Over a field in which `ζ = 1`, a Frobenius `F` with eigenvalues `γ` and
-`-γ` (trace `0`, determinant `-γ²`) is conjugate to the reduction of the standard lattice's
-Frobenius twisted by `γ`. Together with the trivial inertia action on `L₀/πL₀`
+/-- **Selecting `L₀`.** Over a field of characteristic other than two (such as a residue field of
+characteristic three, where `ζ = 1`), a Frobenius `F` with eigenvalues `γ` and `-γ` (trace `0`,
+determinant `-γ²`) is conjugate to the reduction of the standard lattice's Frobenius twisted by
+`γ`. Together with the trivial inertia action on `L₀/πL₀`
 (`TauCeti.OrderThreeType.standardRep_r_eq_one`), the reduction of `L₀` twisted by the unramified
 character `Frob₂ ↦ γ` realises every residual representation of the tame quotient at `2` on which
 inertia acts trivially and `Frob₂` has eigenvalues `±γ`. -/
-theorem exists_conj_standardRep (h : (1 : k) ^ 2 + 1 + 1 = 0) (F : GL (Fin 2) k) (γ : kˣ)
+theorem exists_conj_standardRep (h2 : (2 : k) ≠ 0) (F : GL (Fin 2) k) (γ : kˣ)
     (htr : (F : Matrix (Fin 2) (Fin 2) k).trace = 0)
     (hdet : (F : Matrix (Fin 2) (Fin 2) k).det = -(γ : k) ^ 2) :
     ∃ B : GL (Fin 2) k,
-      B * F * B⁻¹ = Matrix.GeneralLinearGroup.scalar (Fin 2) γ * standardRep h (sr 0) := by
+      B * F * B⁻¹ = Matrix.GeneralLinearGroup.scalar (Fin 2) γ *
+        standardRep (one_pow 3 : (1 : k) ^ 3 = 1) (sr 0) := by
   suffices ∃ Q : GL (Fin 2) k,
-      F * Q = Q * (Matrix.GeneralLinearGroup.scalar (Fin 2) γ * standardRep h (sr 0)) by
+      F * Q = Q * (Matrix.GeneralLinearGroup.scalar (Fin 2) γ *
+        standardRep (one_pow 3 : (1 : k) ^ 3 = 1) (sr 0)) by
     obtain ⟨Q, hQ⟩ := this
     exact ⟨Q⁻¹, by rw [inv_inv, mul_assoc, hQ, ← mul_assoc, inv_mul_cancel, one_mul]⟩
-  have h2 : (2 : k) ≠ 0 := fun h2 => one_ne_zero (by linear_combination h - h2)
   have hγ : (γ : k) ≠ 0 := γ.ne_zero
   obtain ⟨a, b, c, d, hF⟩ : ∃ a b c d : k, (F : Matrix (Fin 2) (Fin 2) k) = !![a, b; c, d] :=
     ⟨_, _, _, _, eta_fin_two _⟩
@@ -412,7 +442,8 @@ theorem exists_conj_standardRep (h : (1 : k) ^ 2 + 1 + 1 = 0) (F : GL (Fin 2) k)
   -- The columns `v` and `F v / γ` form the required basis whenever `v` is not an eigenvector.
   have key (x y : k) (hxy : x * (c * x + d * y) - y * (a * x + b * y) ≠ 0) :
       ∃ Q : GL (Fin 2) k,
-        F * Q = Q * (Matrix.GeneralLinearGroup.scalar (Fin 2) γ * standardRep h (sr 0)) := by
+        F * Q = Q * (Matrix.GeneralLinearGroup.scalar (Fin 2) γ *
+          standardRep (one_pow 3 : (1 : k) ^ 3 = 1) (sr 0)) := by
     refine ⟨Matrix.GeneralLinearGroup.mkOfDetNeZero
       !![x, (a * x + b * y) / γ; y, (c * x + d * y) / γ] ?_, ?_⟩
     · rw [det_fin_two_of]
@@ -420,9 +451,8 @@ theorem exists_conj_standardRep (h : (1 : k) ^ 2 + 1 + 1 = 0) (F : GL (Fin 2) k)
       field_simp at hxy
       linear_combination hxy
     · ext i j
-      fin_cases i <;> fin_cases j <;> simp [hF, ← smul_eq_diagonal_mul] <;> field_simp
-      · linear_combination (-x) * hdet + (a * x + b * y) * htr
-      · linear_combination (-y) * hdet + (c * x + d * y) * htr
+      fin_cases i <;> fin_cases j <;> simp [hF, ← smul_eq_diagonal_mul] <;> field_simp <;>
+        grind
   by_cases hc : c = 0
   · by_cases hb : b = 0
     · subst hb hc
@@ -466,9 +496,7 @@ private lemma exists_mul_eq_mul_adaptedRep_r_one (h : (1 : k) ^ 2 + 1 + 1 = 0)
     fin_cases i <;> fin_cases j <;> simp [hSm]
   · refine ⟨Matrix.GeneralLinearGroup.mkOfDetNeZero !![1, a; 0, c] (by simpa using hc), ?_⟩
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [hSm]
-    · linear_combination h00
-    · linear_combination h10
+    fin_cases i <;> fin_cases j <;> simp [hSm] <;> grind
 
 /-- A Frobenius `F` satisfying the tame relation `F D F⁻¹ = D²` with the reduced inertia
 `D = (1, 0; 1, 1)` of `L₁` is, after a conjugation commuting with `D`, a scalar multiple of the
@@ -483,8 +511,7 @@ private lemma exists_commute_adaptedRep_r_one (h : (1 : k) ^ 2 + 1 + 1 = 0) {F :
   simp only [Units.val_mul, adaptedRep_r_one, hFm, sq] at hF'
   have hq : q = 0 := by simpa using congrFun (congrFun hF' 0) 0
   have ht : t = 2 * p := by
-    have e := congrFun (congrFun hF' 1) 0
-    simp at e
+    have e : x + t = (1 + 1) * p + x := by simpa using congrFun (congrFun hF' 1) 0
     linear_combination e
   subst hq ht
   have hp : p ≠ 0 := by
@@ -493,12 +520,9 @@ private lemma exists_commute_adaptedRep_r_one (h : (1 : k) ^ 2 + 1 + 1 = 0) {F :
   refine ⟨Units.mk0 p hp,
     Matrix.GeneralLinearGroup.mkOfDetNeZero !![1, 0; -x / p, 1] (by simp), ?_, ?_⟩
   · ext i j
-    fin_cases i <;> fin_cases j <;> simp
-    ring
+    fin_cases i <;> fin_cases j <;> simp [add_comm]
   · ext i j
-    fin_cases i <;> fin_cases j <;> simp [hFm, ← smul_eq_diagonal_mul] <;> field_simp
-    · ring
-    · linear_combination h
+    fin_cases i <;> fin_cases j <;> simp [hFm, ← smul_eq_diagonal_mul] <;> field_simp <;> grind
 
 /-- **Selecting `L₁`.** Over a field in which `ζ = 1`, let `S` be a nontrivial unipotent
 (`(S - 1)² = 0`, `S ≠ 1`) and `F` an invertible matrix with `F S F⁻¹ = S²`, the image of a tame
