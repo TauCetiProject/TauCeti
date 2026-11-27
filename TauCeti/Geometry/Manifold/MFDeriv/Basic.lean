@@ -39,6 +39,8 @@ manifold-derivative API and the derivatives of extended charts.
   whose differential is injective at some point has a finite-dimensional source model.
 * `TauCeti.injective_mfderiv_of_injective_mfderiv_comp`: if `d(g ∘ f)_x` is injective and `f`, `g`
   are differentiable at `x`, `f x`, then `df_x` is injective.
+* `TauCeti.injective_mfderiv_comp`: if `df_x` and `dg_(f x)` are injective, and `f`, `g` are
+  differentiable at `x`, `f x`, then `d(g ∘ f)_x` is injective.
 * `TauCeti.mfderiv_ne_zero_of_injective`: an injective differential out of a manifold with a
   nontrivial model space is nonzero.
 * `TauCeti.injective_mfderiv_of_eventuallyEq_comp_extChartAt`: a map agreeing near `x` with
@@ -222,6 +224,21 @@ theorem injective_mfderiv_of_injective_mfderiv_comp {f : M → N} {g : N → P}
     Function.Injective (mfderiv I J f x) := by
   rw [mfderiv_comp x hg hf, ContinuousLinearMap.coe_comp] at hinj
   exact hinj.of_comp
+
+variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
+  {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] in
+/-- If `f` has injective differential at `x` and `g` has injective differential at `f x`, where
+`f` is differentiable at `x` and `g` at `f x`, then `g ∘ f` has injective differential at `x`: by
+the chain rule, `d(g ∘ f)_x = dg_(f x) ∘ df_x`. -/
+theorem injective_mfderiv_comp {f : M → N} {g : N → P}
+    (hg : MDifferentiableAt J K g (f x)) (hf : MDifferentiableAt I J f x)
+    (hginj : Function.Injective (mfderiv J K g (f x)))
+    (hfinj : Function.Injective (mfderiv I J f x)) :
+    Function.Injective (mfderiv I K (g ∘ f) x) := by
+  rw [mfderiv_comp x hg hf, ContinuousLinearMap.coe_comp]
+  exact hginj.comp hfinj
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
   {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
