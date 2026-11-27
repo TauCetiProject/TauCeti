@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.Dual
 public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 
 /-!
@@ -29,7 +29,8 @@ of `(V, J)` (`TauCeti.AlmostComplexStructure.zeroOneFlat_apply_apply_eq_conj_inn
 `(J v)♭ = i v♭` (`TauCeti.AlmostComplexStructure.zeroOneFlat_apply_left`), and its real part is
 the metric dual of `v`. So `v ↦ v♭` is a complex linear isomorphism from `V`, with the complex
 structure `J`, onto its `(0,1)`-covectors, when `V` is complete
-(`TauCeti.AlmostComplexStructure.zeroOneFlatEquiv`).
+(`TauCeti.AlmostComplexStructure.zeroOneFlatEquiv`); the preimage of a covector is the vector
+metrically dual to its real part (`ContinuousLinearMap.reGradient`).
 
 **`∂bar` in the metric.** If `g₁` and `p` represent the real and imaginary parts of `L`, then
 `2 ∂bar L = (g₁ + J p)♭` (`TauCeti.AlmostComplexStructure.zeroOneFlat_add_apply_apply`,
@@ -47,9 +48,11 @@ covectors is twice the Hermitian form of `(V, J)`,
 
 Through Clifford multiplication on the canonical spinor these identify the negative half-spinors
 of the canonical `Spinᶜ` structure of an almost Hermitian four-manifold with `Λ^(0,1)`
-(`TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorZeroOneEquiv`), and the Dirac symbol
-on the canonical line with `2 ∂bar`
-(`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`).
+(`TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorZeroOneEquiv`). In the pointwise model,
+for a real-linear `L : V → ℂ` on the canonical line, the Dirac symbol `∑ᵢ L(bᵢ) c(bᵢ) u₀` is
+`c(v) u₀` with `v♭ = 2 ∂bar L`
+(`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`); carrying this to
+the bundle identification and to `∂bar_a α` is not formalised here.
 
 ## Main definitions
 
@@ -182,11 +185,8 @@ theorem zeroOneFlat_mem_zeroOneCovectors (v : V) : zeroOneFlat J v ∈ zeroOneCo
 its real part. -/
 theorem exists_zeroOneFlat_eq [CompleteSpace V] {D : V →L[ℝ] ℂ} (hD : D ∈ zeroOneCovectors J) :
     ∃ v, zeroOneFlat J v = D := by
-  refine ⟨(InnerProductSpace.toDual ℝ V).symm (reCLM.comp D), ?_⟩
-  set v := (InnerProductSpace.toDual ℝ V).symm (reCLM.comp D)
-  have hv (w : V) : ⟪v, w⟫ = (D w).re := by
-    rw [InnerProductSpace.toDual_symm_apply]
-    simp
+  refine ⟨D.reGradient, ?_⟩
+  have hv := D.inner_reGradient
   ext w
   apply Complex.ext
   · rw [re_zeroOneFlat_apply_apply, hv]
@@ -266,20 +266,11 @@ theorem sum_conj_zeroOneFlat_mul_zeroOneFlat {ι : Type*} [Fintype ι] (b : Orth
     simpa only [real_inner_comm (b _) y] using b.sum_inner_mul_inner x y
   have h : ⟪v, J w⟫ = -⟪J v, w⟫ := by
     rw [real_inner_comm, inner_apply_left_eq_neg_swap hJ]
+  -- Both parts reduce to sums of products of real inner products with the basis.
   apply Complex.ext
-  · simp only [re_sum, mul_re, conj_re, conj_im, re_zeroOneFlat_apply_apply,
-      im_zeroOneFlat_apply_apply]
-    simp only [mul_neg, neg_neg, sub_neg_eq_add]
-    rw [Finset.sum_add_distrib, hsum, hsum, hJ]
-    simp only [re_ofNat, sub_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one,
-      sub_self, sub_zero, im_ofNat, sub_im, mul_im, add_zero, zero_sub, mul_neg, zero_mul, neg_zero]
+  · simp [mul_re, Finset.sum_add_distrib, hsum, hJ]
     ring
-  · simp only [im_sum, mul_im, conj_re, conj_im, re_zeroOneFlat_apply_apply,
-      im_zeroOneFlat_apply_apply]
-    simp only [mul_neg, neg_neg, Finset.sum_add_distrib, Finset.sum_neg_distrib, hsum]
-    simp only [h, neg_neg, re_ofNat, ofReal_neg, neg_mul, sub_neg_eq_add, add_im, ofReal_im,
-      mul_im, ofReal_re, I_im, mul_one, I_re, mul_zero, add_zero, zero_add, im_ofNat, add_re,
-      mul_re, sub_self, zero_mul]
+  · simp [mul_im, Finset.sum_add_distrib, hsum, h]
     ring
 
 /-- **The Hilbert–Schmidt norm of `v♭`** is `√2 ‖v‖`: in every orthonormal basis,

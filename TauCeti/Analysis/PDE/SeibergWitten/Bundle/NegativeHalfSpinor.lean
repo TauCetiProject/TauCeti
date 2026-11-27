@@ -56,10 +56,12 @@ inverse of this isomorphism identifies `W⁻_x` with `Λ^(0,1)_x`, sending `c(v)
 the factor `‖u‖² / 2`: in every orthonormal basis `f` of `E x`,
 `2 ⟪c(v) u₀, c(w) u₀⟫ = (∑ᵢ conj (v♭ fᵢ) w♭ fᵢ) ‖u‖²`
 (`TauCeti.OrthonormalFrameBundle.two_mul_inner_cliffordMul_canonicalSpinor`), so for a unit `u` it
-is `√2` times an isometry for the Hilbert–Schmidt norm of covectors. Under this identification
-the Dirac symbol on `α u₀` is `2 ∂bar_a α`
-(`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`), which is Taubes's
-`√2 ∂bar_a α` for the isometric normalization.
+is `√2` times an isometry for the Hilbert–Schmidt norm of covectors. On the model space, for a
+real-linear `L` and a spinor `u₀` on the canonical line, the pointwise symbol `∑ᵢ L(bᵢ) c(bᵢ) u₀`
+is `c(v) u₀` with `v♭ = 2 ∂bar L`
+(`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`); `2 ∂bar` becomes
+Taubes's `√2 ∂bar` for the isometric normalization. Carrying this to the bundle identification
+above, and to `∂bar_a α` for a connection, is not formalised here.
 
 ## Main definitions
 

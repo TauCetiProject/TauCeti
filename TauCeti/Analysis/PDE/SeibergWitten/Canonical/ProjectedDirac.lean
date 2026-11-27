@@ -47,10 +47,11 @@ Hilbert–Schmidt norm `|∂bar L|² = ∑ᵢ |∂bar L (bᵢ)|² = 2 ‖∂bar 
 **The symbol as a `(0,1)`-covector.** The vector `g₁ + J p` is the one whose `(0,1)`-dual
 `v♭ = ⟪v, ·⟫ - i ⟪J v, ·⟫` (`TauCeti.AlmostComplexStructure.zeroOneFlat`) is `2 ∂bar L`. So for
 every `v` with `v♭ = 2 ∂bar L`, `∑ᵢ L(bᵢ) c(bᵢ) u₀ = c(v) u₀`
-(`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`): under the
-identification `W⁻ = Λ^(0,1)`, `c(v) u₀ ↦ v♭`, of
-`TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorZeroOneEquiv`, the Dirac symbol on
-`α u₀` is `2 ∂bar_a α`.
+(`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`). This is a pointwise
+statement on the model space. It is the model of reading the Dirac symbol on `α u₀` as `2 ∂bar_a α`
+through the identification `W⁻ = Λ^(0,1)`, `c(v) u₀ ↦ v♭`, of
+`TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorZeroOneEquiv`; that bundle-level
+comparison is not formalised here.
 
 **The Dirac equation.** If `∑ᵢ c(bᵢ) (L(bᵢ) u₀ + wᵢ) = 0`, then
 `2 ‖∂bar L‖ ‖u₀‖ = ‖∑ᵢ c(bᵢ) wᵢ‖`
@@ -164,20 +165,14 @@ theorem sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq {ψ : positiveHalf
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (L : V →L[ℝ] ℂ) {v : V}
     (hv : ∀ w, J.zeroOneFlat v w = L w + Complex.I * L (J w)) :
     ∑ i, L (b i) • ρ (ι Q (b i)) ψ = ρ (ι Q v) ψ := by
-  -- The vectors `g₁` and `p` metrically dual to the real and imaginary parts of `L`.
-  set g₁ := (InnerProductSpace.toDual ℝ V).symm (Complex.reCLM.comp L)
-  set p := (InnerProductSpace.toDual ℝ V).symm (Complex.imCLM.comp L)
-  have h₁ (w : V) : ⟪g₁, w⟫ = (L w).re := by
-    rw [InnerProductSpace.toDual_symm_apply]
-    simp
-  have h₂ (w : V) : ⟪p, w⟫ = (L w).im := by
-    rw [InnerProductSpace.toDual_symm_apply]
-    simp
-  have hv' : v = g₁ + J p := AlmostComplexStructure.zeroOneFlat_injective <| by
+  -- `v` is `g₁ + J p` for the vectors `g₁` and `p` dual to the real and imaginary parts of `L`.
+  have hv' : v = L.reGradient + J L.imGradient := AlmostComplexStructure.zeroOneFlat_injective <| by
     ext w
-    rw [hv, AlmostComplexStructure.zeroOneFlat_add_apply_apply hJ h₁ h₂]
+    rw [hv, AlmostComplexStructure.zeroOneFlat_add_apply_apply hJ L.inner_reGradient
+      L.inner_imGradient]
   rw [hv']
-  exact sum_smul_ι_apply_eq_ι_add_apply_of_cliffordProjection_apply_eq_self hQ hJ b h₁ h₂ hψ
+  exact sum_smul_ι_apply_eq_ι_add_apply_of_cliffordProjection_apply_eq_self hQ hJ b
+    L.inner_reGradient L.inner_imGradient hψ
 
 end Orthogonal
 
