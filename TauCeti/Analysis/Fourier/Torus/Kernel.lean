@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Fourier.Torus.Smooth
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
@@ -186,7 +185,7 @@ private theorem norm_apply_mFourierSmooth_le {C : ℝ} {N : ℕ}
       DerivBound N M₁ (f : UnitAddTorus a → ℂ) → DerivBound N M₂ (g : UnitAddTorus b → ℂ) →
         ‖B f g‖ ≤ C * M₁ * M₂) (n : a ⊕ b → ℤ) :
     ‖B (mFourierSmooth fun i ↦ n (.inl i)) (mFourierSmooth fun i ↦ n (.inr i))‖ ≤
-      C * (1 + 2 * π * Fintype.card (a ⊕ b) * ‖n‖) ^ (2 * N) := by
+      C * (1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) * (1 + ‖n‖) ^ (2 * N) := by
   have hl : ‖fun i ↦ n (.inl i)‖ ≤ ‖n‖ :=
     (pi_norm_le_iff_of_nonneg (norm_nonneg n)).2 fun i ↦ norm_le_pi_norm n (.inl i)
   have hr : ‖fun i ↦ n (.inr i)‖ ≤ ‖n‖ :=
@@ -205,21 +204,23 @@ private theorem norm_apply_mFourierSmooth_le {C : ℝ} {N : ℕ}
       ((mFourierSmooth fun i ↦ n (.inr i) : smoothFunctions b) : UnitAddTorus b → ℂ) := by
     rw [coe_mFourierSmooth]
     exact (derivBound_mFourier _ N).mono (by gcongr)
-  exact (hCN _ _ _ _ h1 h2).trans_eq (by ring)
+  have hpow : (1 + 2 * π * Fintype.card (a ⊕ b) * ‖n‖) ^ (2 * N) ≤
+      (1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) * (1 + ‖n‖) ^ (2 * N) := by
+    rw [← mul_pow]
+    gcongr
+    nlinarith [norm_nonneg n, (by positivity : (0 : ℝ) ≤ 2 * π * Fintype.card (a ⊕ b))]
+  calc _ ≤ C * (1 + 2 * π * Fintype.card (a ⊕ b) * ‖n‖) ^ (2 * N) :=
+        (hCN _ _ _ _ h1 h2).trans_eq (by ring)
+    _ ≤ C * ((1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) * (1 + ‖n‖) ^ (2 * N)) :=
+        mul_le_mul_of_nonneg_left hpow (nonneg_of_bound B hCN)
+    _ = _ := by ring
 
 include hB in
 private theorem summable_schwartzKernel (h : smoothFunctions (a ⊕ b)) :
     Summable fun n ↦ mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n •
       B (mFourierSmooth fun i ↦ n (.inl i)) (mFourierSmooth fun i ↦ n (.inr i)) := by
   obtain ⟨C, N, hCN⟩ := hB
-  refine Summable.of_norm_bounded ((summable_norm_mFourierCoeff_mul_pow h.property
-    (R := 2 * π * Fintype.card (a ⊕ b)) (by positivity) (2 * N)).mul_left C) fun n ↦ ?_
-  rw [norm_smul]
-  calc _ ≤ ‖mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n‖ *
-        (C * (1 + 2 * π * Fintype.card (a ⊕ b) * ‖n‖) ^ (2 * N)) := by
-        gcongr
-        exact norm_apply_mFourierSmooth_le B hCN n
-    _ = _ := by ring
+  exact summable_mFourierCoeff_smul_of_norm_le h.property (norm_apply_mFourierSmooth_le B hCN)
 
 /-- The kernel of a bilinear map `B` on smooth functions on two tori which is continuous for the
 `C^N` norms: the linear map on smooth functions on the product torus given by the double Fourier
@@ -247,40 +248,12 @@ theorem schwartzKernel_apply (h : smoothFunctions (a ⊕ b)) :
 theorem exists_norm_schwartzKernel_le : ∃ (C' : ℝ) (N' : ℕ), ∀ (h : smoothFunctions (a ⊕ b)) M,
     DerivBound N' M (h : UnitAddTorus (a ⊕ b) → ℂ) → ‖schwartzKernel B hB h‖ ≤ C' * M := by
   have ⟨C, N, hCN⟩ := hB
-  have hC := nonneg_of_bound B hCN
   refine ⟨C * (1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) *
-    (2 ^ (2 * N + Fintype.card (a ⊕ b) + 2) *
-      ∑' n : a ⊕ b → ℤ, ((1 + ‖n‖) ^ (Fintype.card (a ⊕ b) + 1))⁻¹),
+    2 ^ (2 * N + Fintype.card (a ⊕ b) + 2) *
+      ∑' n : a ⊕ b → ℤ, ((1 + ‖n‖) ^ (Fintype.card (a ⊕ b) + 1))⁻¹,
     2 * N + Fintype.card (a ⊕ b) + 1, fun h M hM ↦ ?_⟩
-  -- The `n`-th term is bounded by a constant times `M` times a summable weight.
-  have key (n : a ⊕ b → ℤ) : ‖mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n •
-      B (mFourierSmooth fun i ↦ n (.inl i)) (mFourierSmooth fun i ↦ n (.inr i))‖ ≤
-      C * (1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) *
-        (2 ^ (2 * N + Fintype.card (a ⊕ b) + 2) * M *
-          ((1 + ‖n‖) ^ (Fintype.card (a ⊕ b) + 1))⁻¹) := by
-    have hpow : (1 + 2 * π * Fintype.card (a ⊕ b) * ‖n‖) ^ (2 * N) ≤
-        (1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) * (1 + ‖n‖) ^ (2 * N) := by
-      rw [← mul_pow]
-      gcongr
-      nlinarith [norm_nonneg n, (by positivity : (0 : ℝ) ≤ 2 * π * Fintype.card (a ⊕ b))]
-    have hcd : ContDiff ℝ (2 * N + Fintype.card (a ⊕ b) + 1)
-        fun x : a ⊕ b → ℝ ↦ (h : UnitAddTorus (a ⊕ b) → ℂ) fun i ↦ (x i : UnitAddCircle) :=
-      (mem_smoothFunctions.1 h.property).of_le (WithTop.coe_le_coe.2 le_top)
-    have hdecay := one_add_norm_pow_mul_norm_mFourierCoeff_le_mul_inv (N := 2 * N) hcd hM n
-    rw [norm_smul]
-    calc _ ≤ ‖mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n‖ *
-          (C * ((1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) * (1 + ‖n‖) ^ (2 * N))) := by
-          gcongr
-          exact (norm_apply_mFourierSmooth_le B hCN n).trans (by gcongr)
-      _ = C * (1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) *
-          ((1 + ‖n‖) ^ (2 * N) * ‖mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n‖) := by ring
-      _ ≤ _ := by gcongr
   rw [schwartzKernel_apply]
-  refine (tsum_of_norm_bounded
-    (((TauCeti.summable_pi_int_one_add_norm_pow_inv (lt_add_one _)).mul_left _).mul_left _).hasSum
-      key).trans_eq ?_
-  rw [tsum_mul_left, tsum_mul_left]
-  ring
+  exact norm_tsum_mFourierCoeff_smul_le h.property (norm_apply_mFourierSmooth_le B hCN) hM
 
 /-- **The kernel theorem.** The kernel of `B` represents `B` on tensor products:
 `K (f ⊗ g) = B f g`. -/

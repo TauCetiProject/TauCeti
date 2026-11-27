@@ -18,8 +18,9 @@ measure zero, the pointwise hypotheses supply the almost-everywhere hypotheses o
 convergence theorem. It also records the convergence of integrals against cutoffs
 which equal one on a closed ball and are supported in shrinking larger balls, and against cutoffs
 which equal one on balls exhausting a normed space, the vanishing of the integral of an
-integrable function outside growing balls, as well as convergence after removing a shrinking
-neighbourhood of zero from an integrable function vanishing at zero, and the convergence
+integrable function outside growing balls or over growing superlevel sets, as well as
+convergence after removing a shrinking neighbourhood of zero from an integrable function
+vanishing at zero, and the convergence
 of interval integrals `∫ Φ(t, y_i(t)) dt` of a continuous function along maps `y_i` which converge
 pointwise, with `Φ` bounded along them or with values in a compact set, or along continuous paths
 which converge uniformly, and of `∫ Φ_i(t, y_i(t)) dt` for uniformly converging `Φ_i` along maps
@@ -41,6 +42,8 @@ integrated norms are summable is integrable.
   to one on `ball 0 (R i)` with `R i → ∞` tend to the integral over the whole space.
 * `TauCeti.tendsto_setIntegral_compl_ball`: the integral of an integrable function outside
   `ball x R` tends to zero as `R → ∞`.
+* `TauCeti.tendsto_setIntegral_setOf_le`: the integral of an integrable function over the
+  superlevel set `{R ≤ ν}` of a measurable function `ν` tends to zero as `R → ∞`.
 * `TauCeti.tendsto_integral_abs_gt`: removing a shrinking neighbourhood of zero recovers the
   integral of an integrable function vanishing at zero.
 * `TauCeti.tendsto_intervalIntegral_comp_of_tendsto_of_norm_le`,
@@ -242,19 +245,30 @@ theorem tendsto_integral_smul_of_eq_one_ball {E F : Type*} [NormedAddCommGroup E
     filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
     rw [hχ1 i x hi, one_smul]
 
+/-- **Tails of an integral over superlevel sets vanish.** For integrable `g` and measurable
+`ν : X → ℝ`, the integral of `g` over `{y | R ≤ ν y}` tends to `0` as `R → ∞`. -/
+theorem tendsto_setIntegral_setOf_le {X F : Type*} [MeasurableSpace X] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {μ : Measure X} {g : X → F} (hg : Integrable g μ) {ν : X → ℝ}
+    (hν : Measurable ν) :
+    Tendsto (fun R : ℝ ↦ ∫ y in {y | R ≤ ν y}, g y ∂μ) atTop (𝓝 0) := by
+  have h := tendsto_setIntegral_of_antitone (μ := μ) (f := g) (s := fun R : ℝ ↦ {y | R ≤ ν y})
+    (fun _ ↦ measurableSet_le measurable_const hν) (fun _ _ hRS _ hy ↦ hRS.trans hy)
+    ⟨0, hg.integrableOn⟩
+  have hempty : ⋂ R : ℝ, {y | R ≤ ν y} = ∅ :=
+    eq_empty_of_forall_notMem fun y hy ↦ (lt_add_one (ν y)).not_ge (mem_iInter.1 hy (ν y + 1))
+  rwa [hempty, Measure.restrict_empty, integral_zero_measure] at h
+
 /-- **Tails of an integral vanish.** For integrable `g`, the integral of `g` outside `ball x R`
 tends to `0` as `R → ∞`. -/
 theorem tendsto_setIntegral_compl_ball {X F : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
     [OpensMeasurableSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure X}
     {g : X → F} (hg : Integrable g μ) (x : X) :
     Tendsto (fun R : ℝ ↦ ∫ y in (ball x R)ᶜ, g y ∂μ) atTop (𝓝 0) := by
-  have h := tendsto_setIntegral_of_antitone (μ := μ) (f := g) (s := fun R : ℝ ↦ (ball x R)ᶜ)
-    (fun _ ↦ measurableSet_ball.compl) (fun _ _ hRS ↦ compl_subset_compl.2 (ball_subset_ball hRS))
-    ⟨0, hg.integrableOn⟩
-  have hempty : ⋂ R : ℝ, (ball x R)ᶜ = ∅ :=
-    eq_empty_of_forall_notMem fun y hy ↦ (mem_compl_iff _ _).1 (mem_iInter.1 hy (dist y x + 1))
-      (mem_ball.2 (lt_add_one _))
-  rwa [hempty, Measure.restrict_empty, integral_zero_measure] at h
+  have hset (R : ℝ) : {y | R ≤ dist y x} = (ball x R)ᶜ := by
+    ext y
+    simp
+  simpa only [hset] using tendsto_setIntegral_setOf_le (ν := fun y ↦ dist y x) hg
+    (continuous_id.dist continuous_const).measurable
 
 /-- **Dominated convergence for bounded continuous functions of converging maps.** Let
 `Φ : ℝ × V → E` be continuous, and let the maps `y i : ℝ → V` be eventually continuous on

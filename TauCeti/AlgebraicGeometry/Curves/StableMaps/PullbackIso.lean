@@ -16,7 +16,8 @@ soon as the projections `C ×_S T ⟶ C` of total spaces of source curves are ep
 (`TauCeti.AlgebraicGeometry.PrestableMap.pullbackMap_injective_of_epi`), in particular when `g` is
 flat and surjective. When `g` is an isomorphism, every morphism of base changes is the base change
 of the morphism of prestable maps given on source curves by
-`TauCeti.AlgebraicGeometry.PointedPrestableFamily.unpullbackMap`, so base change is also full.
+`TauCeti.AlgebraicGeometry.PointedPrestableFamily.unpullbackMap`, so base change is also full and
+identifies the automorphism groups of a prestable map and of its base change.
 
 ## Main results
 
@@ -24,6 +25,8 @@ of the morphism of prestable maps given on source curves by
   `(PrestableMap.pullbackFunctor g).Full` for an isomorphism `g`.
 * `TauCeti.AlgebraicGeometry.PrestableMap.unpullbackMap`: the preimage of a morphism of base
   changes along an isomorphism, with `pullbackMap_unpullbackMap` and `unpullbackMap_pullbackMap`.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAutMulEquiv`: the automorphisms of a prestable
+  map are those of its base change along an isomorphism.
 -/
 
 public section
@@ -90,6 +93,34 @@ theorem unpullbackMap_pullbackMap (f : F ⟶ G) : unpullbackMap g (pullbackMap g
 /-- Base change of prestable maps along an isomorphism is full. -/
 instance full_pullbackFunctor : (pullbackFunctor (q := q) (n := n) g).Full where
   map_surjective φ := ⟨unpullbackMap g φ, pullbackMap_unpullbackMap g φ⟩
+
+/-- For an isomorphism of bases `g`, base change identifies the automorphisms of a prestable map
+`F` with those of `F.pullback g`: the homomorphism `pullbackAut F g` is bijective, since base
+change along `g` is fully faithful. -/
+def pullbackAutMulEquiv (F : PrestableMap q n) : Aut F ≃* Aut (F.pullback g) :=
+  (Functor.FullyFaithful.ofFullyFaithful
+    (pullbackFunctor (q := q) (n := n) g)).autMulEquivOfFullyFaithful F
+
+@[simp]
+theorem pullbackAutMulEquiv_apply (F : PrestableMap q n) (e : Aut F) :
+    F.pullbackAutMulEquiv g e = F.pullbackAut g e :=
+  -- By construction (`Aut.isoEquiv` and `FullyFaithful.isoEquiv` applied to the fully faithful
+  -- `pullbackFunctor g`), the image of `e` has underlying morphism `(pullbackFunctor g).map e.hom`,
+  -- which is the morphism `pullbackAut_apply_asIso_hom` identifies with `pullbackAut F g e`.
+  Aut.ext (Iso.ext (pullbackAut_apply_asIso_hom F g e).symm)
+
+@[simp]
+theorem coe_pullbackAutMulEquiv (F : PrestableMap q n) :
+    (F.pullbackAutMulEquiv g : Aut F →* Aut (F.pullback g)) = F.pullbackAut g :=
+  MonoidHom.ext (pullbackAutMulEquiv_apply g F)
+
+/-- The inverse of `pullbackAutMulEquiv` is given by `unpullbackMap`. -/
+@[simp]
+theorem pullbackAutMulEquiv_symm_apply_asIso_hom (F : PrestableMap q n)
+    (e : Aut (F.pullback g)) :
+    ((F.pullbackAutMulEquiv g).symm e).asIso.hom = unpullbackMap g e.asIso.hom := by
+  rw [← unpullbackMap_pullbackMap g ((F.pullbackAutMulEquiv g).symm e).asIso.hom,
+    ← pullbackAut_apply_asIso_hom, ← pullbackAutMulEquiv_apply, MulEquiv.apply_symm_apply]
 
 end PrestableMap
 

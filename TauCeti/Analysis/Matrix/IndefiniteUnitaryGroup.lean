@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Analysis.Matrix.DotProduct
@@ -34,6 +35,10 @@ that use the topology or the order of `ℝ` and `ℂ`.
   subset of the matrices, with the subspace topology, since its inverse `A⁻¹ * star g * A` is a
   continuous function of `g`; over `ℝ` or `ℂ` this makes `U(p, q)` locally compact and second
   countable.
+* For a unitary Gram matrix `A` over `ℝ` or `ℂ`, such as `diag(1, …, 1, -1, …, -1)`, the inverse
+  `A⁻¹ * star g * A` of `g ∈ unitaryGroupOf A` has the operator norm of `g`, since multiplying by
+  a unitary matrix and taking adjoints preserve the operator norm. As `1 ≤ ‖g‖ * ‖g⁻¹‖`, every such
+  `g` has operator norm at least `1` when the size is positive.
 * The block-diagonal embedding of `U(p) × U(q)` in `U(p, q)` is continuous, so over `ℝ` or `ℂ`
   its image is compact, being the continuous image of a product of compact unitary groups.
 
@@ -43,6 +48,9 @@ that use the topology or the order of `ℝ` and `ℂ`.
   `unitaryGroupOf A`, for Hermitian `A`, as the preservation of the values `⟨z, z⟩`.
 * `LieAlgebra.Orthogonal.star_dotProduct_indefiniteDiagonal_mulVec_self`: the values of the
   indefinite Hermitian form.
+* `Matrix.norm_val_inv_of_mem_unitaryGroupOf`: for unitary `A`, `‖g⁻¹‖ = ‖g‖` in the operator
+  norm.
+* `Matrix.one_le_norm_val_of_mem_unitaryGroupOf`: for unitary `A`, `1 ≤ ‖g‖` in the operator norm.
 * `Matrix.isClosed_unitaryGroupOf`: `unitaryGroupOf A` is closed in `GL n R`.
 * `Matrix.unitaryGroupOf.isClosedEmbedding_val`: for invertible `A`, the coercion of
   `unitaryGroupOf A` to the matrices is a closed embedding.
@@ -53,6 +61,15 @@ that use the topology or the order of `ℝ` and `ℂ`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.instLocallyCompactSpace` and
   `TauCeti.Matrix.indefiniteUnitaryGroup.instSecondCountableTopology`: over `ℝ` or `ℂ`, `U(p, q)`
   is locally compact and second countable.
+
+## Provenance
+
+`Matrix.norm_val_inv_of_mem_unitaryGroupOf` and `Matrix.one_le_norm_val_of_mem_unitaryGroupOf` are
+adapted from `New.U.norm_inv` and `New.U.one_le_norm` (file
+`src/Lib/General/LinearAlgebra/HermitianMatrices.lean`) in grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC); the source
+treats complex Hermitian involutions `J`, and the generalisation to unitary Gram matrices over `ℝ`
+or `ℂ` is new here.
 -/
 
 public section
@@ -119,6 +136,35 @@ theorem mem_unitaryGroupOf_iff_forall_dotProduct_self {𝕜 : Type*} [RCLike �
   intro z
   rw [sub_mulVec, dotProduct_sub, sub_eq_zero, ← h z, star_eq_conjTranspose,
     star_dotProduct_conjTranspose_mul_mul_mulVec]
+
+section OperatorNorm
+
+open scoped Matrix.Norms.L2Operator
+
+variable {𝕜 : Type*} [RCLike 𝕜] {A : Matrix n n 𝕜}
+
+/-- For a unitary Gram matrix `A`, an element `g` of `unitaryGroupOf A` and its inverse
+`A⁻¹ * star g * A` have the same operator norm. -/
+theorem norm_val_inv_of_mem_unitaryGroupOf (hA : A ∈ unitary (Matrix n n 𝕜)) {g : GL n 𝕜}
+    (hg : g ∈ unitaryGroupOf A) :
+    ‖((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜)‖ = ‖(g : Matrix n n 𝕜)‖ := by
+  rw [val_inv_of_mem_unitaryGroupOf (Unitary.isUnit_coe (U := ⟨A, hA⟩)) hg,
+    inv_eq_left_inv (Unitary.star_mul_self_of_mem hA), CStarRing.norm_mul_mem_unitary _ hA,
+    CStarRing.norm_mem_unitary_mul _ (Unitary.star_mem hA), norm_star]
+
+/-- For a unitary Gram matrix `A` of positive size, every element of `unitaryGroupOf A` has
+operator norm at least `1`: `1 = ‖g * g⁻¹‖ ≤ ‖g‖ * ‖g⁻¹‖ = ‖g‖ ^ 2`. -/
+theorem one_le_norm_val_of_mem_unitaryGroupOf [Nonempty n] (hA : A ∈ unitary (Matrix n n 𝕜))
+    {g : GL n 𝕜} (hg : g ∈ unitaryGroupOf A) : 1 ≤ ‖(g : Matrix n n 𝕜)‖ := by
+  have h : (1 : ℝ) ≤ ‖(g : Matrix n n 𝕜)‖ ^ 2 :=
+    calc (1 : ℝ) = ‖((g * g⁻¹ : GL n 𝕜) : Matrix n n 𝕜)‖ := by simp
+      _ ≤ ‖(g : Matrix n n 𝕜)‖ * ‖((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜)‖ := by
+        rw [Units.val_mul]
+        exact norm_mul_le _ _
+      _ = ‖(g : Matrix n n 𝕜)‖ ^ 2 := by rw [norm_val_inv_of_mem_unitaryGroupOf hA hg, sq]
+  exact (one_le_sq_iff₀ (norm_nonneg _)).1 h
+
+end OperatorNorm
 
 end Matrix
 

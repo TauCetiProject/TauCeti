@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Lie.Exponential.Commute
 public import TauCeti.Geometry.Lie.Integration
 public import TauCeti.Geometry.Lie.ModelTransport
 public import TauCeti.RepresentationTheory.SU2.LieGroup
+import TauCeti.Analysis.Complex.Circle.Torsion
 
 /-!
 # The torus criterion for compact Lie groups
@@ -30,7 +31,7 @@ Since `SU(2)` is simply connected, the inclusion `𝔰𝔲(2) → 𝔤` integrat
 invariant form of `𝔤` to the tangent space at the identity. Its Cartan three-form
 `B(·, ⁅·, ·⁆)` pulls back along `dφ` to a nonzero form on the three-dimensional `𝔰𝔲(2)`: on
 `y, z` with `⁅y, z⁆ = x ≠ 0` it takes the value `B(dφ x, dφ x) > 0`. So `φ` is not null-homotopic
-(`ContMDiffMonoidMorphism.not_nullhomotopic_of_lie_eq_of_apply_ne_zero`,
+(`ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap`,
 `TauCeti.Lie.exists_not_nullhomotopic_of_not_isLieAbelian`).
 
 Since `SU(2)` is the three-sphere (`TauCeti.SU2.homeomorphSphere`), `φ` is a map `S³ → G` that is
@@ -41,6 +42,12 @@ torus (`TauCeti.nonempty_continuousMulEquiv_pi_circle`).
 
 This route detects a copy of `SU(2)` inside `G` directly. It does not pass through the finite
 covering `T × K → G` by a torus and a simply connected semisimple group.
+
+The Lie group structure is needed. The product `ℕ → S¹` of countably many circles is a compact
+connected commutative topological group, and it is aspherical, but it is not a torus: it has
+infinitely many elements of order two, while `(S¹)ʳ` has only finitely many
+(`Circle.not_exists_continuousMulEquiv_pi_fin`). So the criterion fails for it
+(`TauCeti.Lie.not_forall_isAspherical_iff_exists_continuousMulEquiv_torus`).
 
 The integration of Lie-algebra homomorphisms (`LieHom.integrate`) is available for Lie groups
 modelled without boundary on a finite-dimensional space in the lowest universe, so the statement
@@ -62,6 +69,8 @@ matrices.
 * `TauCeti.Lie.isMulCommutative_of_isAspherical`: an aspherical compact connected Lie group is
   commutative.
 * `TauCeti.Lie.isAspherical_iff_exists_continuousMulEquiv_torus`: **the torus criterion**.
+* `TauCeti.Lie.not_forall_isAspherical_iff_exists_continuousMulEquiv_torus`: the criterion fails
+  for the compact connected group `ℕ → S¹`, which is not a Lie group.
 
 ## References
 
@@ -114,41 +123,10 @@ theorem exists_not_nullhomotopic_of_not_isLieAbelian {H : Type} [TopologicalSpac
   let ψ := f.comp (suTwoLieEquivSoThree.toLieHom.comp SU2.nativeLieEquiv.toLieHom)
   have hψ : Function.Injective ψ :=
     hf.comp (suTwoLieEquivSoThree.injective.comp SU2.nativeLieEquiv.injective)
-  refine ⟨ψ.integrate, ?_⟩
-  obtain ⟨B, hinv, -, hpos, -⟩ :=
-    exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace (I := I) (G := G)
-  -- The Lie algebras as tangent spaces at the identity, where the Cartan three-form lives.
-  let eG := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-    (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)
-  let eK := leftInvariantDerivationLieEquivGroupLieAlgebra
-    (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (G := GLSpecialUnitary (Fin 2) ℂ)
-    (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)
-  let B' : LinearMap.BilinForm ℝ (GroupLieAlgebra I G) :=
-    B.compl₁₂ eG.symm.toLinearEquiv.toLinearMap eG.symm.toLinearEquiv.toLinearMap
-  -- Two elements of `𝔰𝔲(2)` with nonzero bracket: `-iσ₂/2` and `-iσ₃/2`, whose bracket is `-iσ₁/2`.
-  let Y := SU2.nativeLieEquiv.symm (suTwoEquiv (Pi.single 1 1))
-  let Z := SU2.nativeLieEquiv.symm (suTwoEquiv (Pi.single 2 1))
-  have hYZ : ⁅Y, Z⁆ ≠ 0 := by
-    rw [← LieEquiv.map_lie, lie_suTwoEquiv]
-    refine (map_ne_zero_iff _ SU2.nativeLieEquiv.symm.injective).mpr
-      ((map_ne_zero_iff _ suTwoEquiv.injective).mpr fun h ↦ ?_)
-    have h0 := congrFun h 0
-    simp [cross_apply] at h0
-  refine ψ.integrate.not_nullhomotopic_of_lie_eq_of_apply_ne_zero SU2.finrank_lieAlgebra B'
-    (fun x y z ↦ ?_) (x := eK ⁅Y, Z⁆) (y := eK Y) (z := eK Z) (LieEquiv.map_lie _ _ _).symm ?_
-  · simp only [B', LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
-      LieEquiv.map_lie]
-    exact hinv _ _ _
-  · -- The differential of `ψ.integrate` is `ψ`, read in the tangent spaces at the identity.
-    have hmap : ψ.integrate.toMonoidHom.groupLieAlgebraMap _ I (eK ⁅Y, Z⁆) = eG (ψ ⁅Y, Z⁆) := by
-      have h := leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap ψ.integrate ⁅Y, Z⁆
-      rw [LieHom.lieMap_integrate] at h
-      rw [MonoidHom.groupLieAlgebraMap_apply]
-      exact h.symm
-    rw [hmap]
-    simp only [B', LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
-      LieEquiv.symm_apply_apply]
-    exact (hpos _ ((map_ne_zero_iff ψ hψ).mpr hYZ)).ne'
+  refine ⟨ψ.integrate, ψ.integrate.not_nullhomotopic_of_injective_lieMap SU2.finrank_lieAlgebra
+    SU2.not_isLieAbelian_leftInvariantDerivation ?_⟩
+  rw [LieHom.lieMap_integrate]
+  exact hψ
 
 variable {H : Type*} [TopologicalSpace H] [ChartedSpace H G]
 
@@ -210,6 +188,18 @@ theorem isAspherical_iff_exists_continuousMulEquiv_torus [ConnectedSpace G] {g :
   · have := isMulCommutative_of_isAspherical I hG
     exact ⟨_, nonempty_continuousMulEquiv_pi_circle (I := I)⟩
   · exact (Circle.isAspherical_pi 1).of_homotopyEquiv e.toHomeomorph.symm.toHomotopyEquiv g
+
+/-- **The torus criterion needs the Lie group hypothesis.** The product `ℕ → S¹` of countably many
+circles is a compact connected commutative topological group which is aspherical
+(`Circle.isAspherical_pi`) but not isomorphic to any torus `(S¹)ʳ`
+(`Circle.not_exists_continuousMulEquiv_pi_fin`). So the equivalence of
+`TauCeti.Lie.isAspherical_iff_exists_continuousMulEquiv_torus` fails for compact connected
+commutative topological groups in general. -/
+theorem not_forall_isAspherical_iff_exists_continuousMulEquiv_torus :
+    ¬∀ (G : Type) [TopologicalSpace G] [CommGroup G] [IsTopologicalGroup G] [CompactSpace G]
+      [ConnectedSpace G] (g : G), IsAspherical G g ↔ ∃ r : ℕ, Nonempty (G ≃ₜ* (Fin r → Circle)) :=
+  fun h ↦ Circle.not_exists_continuousMulEquiv_pi_fin
+    ((h (ℕ → Circle) 1).1 (Circle.isAspherical_pi 1))
 
 end Lie
 
