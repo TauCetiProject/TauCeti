@@ -261,17 +261,11 @@ theorem heightChange_le : n₂ * (heightChange n₁ n₂ M).1 + n₁ * (heightCh
     n₁ * n₂ := by
   have h₁ := h.tilingHeight_add_mul_sub_fst 0 n₂
   have h₂ := h.tilingHeight_add_mul_sub_snd ((n₂ : ℤ) * n₁, 0) n₁
-  have h₃ := h.isTiling.tilingHeight_sub_le_max 0 ((n₁ : ℤ) * n₂) ((n₁ : ℤ) * n₂)
-  rw [Prod.mk_add_mk, add_zero, zero_add] at h₂
-  rw [zero_add, max_eq_left (show (0 : ℤ) ≤ n₁ * n₂ by positivity), max_self,
-    tilingHeight_zero] at h₃
-  rw [zero_add, tilingHeight_zero] at h₁
-  rw [mul_comm (n₂ : ℤ) n₁] at h₁ h₂
-  have : ((n₂ * (heightChange n₁ n₂ M).1 + n₁ * (heightChange n₁ n₂ M).2 : ℕ) : ℤ) ≤
-      ((n₁ * n₂ : ℕ) : ℤ) := by
-    push_cast
-    linarith
-  exact_mod_cast this
+  have h₃ := (h.isTiling.tilingHeight_sub_le_max 0 ((n₂ : ℤ) * n₁) ((n₁ : ℤ) * n₂)).trans
+    (max_le (mul_comm _ _).le (max_le le_rfl (by positivity)))
+  simp only [zero_add, Prod.mk_add_mk, add_zero, tilingHeight_zero, sub_zero] at h₁ h₂ h₃
+  zify
+  linarith
 
 end IsTorusTiling
 
@@ -293,22 +287,14 @@ variable {a b : ℕ}
 theorem isHeightFunction_floorHeight (hab : n₂ * a + n₁ * b ≤ n₁ * n₂) :
     IsHeightFunction (floorHeight n₁ n₂ a b) := by
   rw [isHeightFunction_def]
-  rintro ⟨⟨x, y⟩, k⟩
+  rintro ⟨v, k⟩
   have hN : ((n₂ * a : ℕ) : ℤ) + ((n₁ * b : ℕ) : ℤ) ≤ ((n₁ * n₂ : ℕ) : ℤ) := by exact_mod_cast hab
   have ha : (0 : ℤ) ≤ ((n₂ * a : ℕ) : ℤ) := by positivity
   have hb : (0 : ℤ) ≤ ((n₁ * b : ℕ) : ℤ) := by positivity
-  fin_cases k <;> simp only [TriEdge.target_mk, floorHeight_def, latticeDir_zero,
-    latticeDir_one, latticeDir_two, Prod.mk_add_mk, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
-  · rw [show ((n₂ * a : ℕ) : ℤ) * (x + 1) + ((n₁ * b : ℕ) : ℤ) * (y + 0) =
-      ((n₂ * a : ℕ) : ℤ) * x + ((n₁ * b : ℕ) : ℤ) * y + ((n₂ * a : ℕ) : ℤ) by ring]
-    exact Int.ediv_add_sub_ediv ha (by linarith)
-  · rw [show ((n₂ * a : ℕ) : ℤ) * (x + 0) + ((n₁ * b : ℕ) : ℤ) * (y + 1) =
-      ((n₂ * a : ℕ) : ℤ) * x + ((n₁ * b : ℕ) : ℤ) * y + ((n₁ * b : ℕ) : ℤ) by ring]
-    exact Int.ediv_add_sub_ediv hb (by linarith)
-  · rw [show ((n₂ * a : ℕ) : ℤ) * (x + 1) + ((n₁ * b : ℕ) : ℤ) * (y + 1) =
-      ((n₂ * a : ℕ) : ℤ) * x + ((n₁ * b : ℕ) : ℤ) * y +
-        (((n₂ * a : ℕ) : ℤ) + ((n₁ * b : ℕ) : ℤ)) by ring]
-    exact Int.ediv_add_sub_ediv (by linarith) hN
+  rw [TriEdge.target_mk, floorHeight_def, floorHeight_def, Prod.fst_add, Prod.snd_add, mul_add,
+    mul_add, add_add_add_comm]
+  generalize ((n₂ * a : ℕ) : ℤ) = A, ((n₁ * b : ℕ) : ℤ) = B, ((n₁ * n₂ : ℕ) : ℤ) = N at *
+  refine Int.ediv_add_sub_ediv ?_ ?_ <;> fin_cases k <;> simp <;> linarith
 
 @[simp] theorem floorHeight_zero : floorHeight n₁ n₂ a b 0 = 0 := by
   simp [floorHeight_def]
@@ -345,13 +331,11 @@ theorem isTorusTiling_tilingOfHeight_floorHeight (hn₁ : 0 < n₁) (hn₂ : 0 <
     vadd_tilingOfHeight_of_forall (floorHeight_add_snd hn₁ hn₂)⟩, ?_⟩
   have h₁ := hM.heightChange_fst_eq n₁ n₂
   have h₂ := hM.heightChange_snd_eq n₁ n₂
-  rw [hH.tilingHeight_tilingOfHeight floorHeight_zero] at h₁ h₂
   have e₁ := floorHeight_add_fst (a := a) (b := b) hn₁ hn₂ 0
   have e₂ := floorHeight_add_snd (a := a) (b := b) hn₁ hn₂ 0
-  rw [zero_add, floorHeight_zero, zero_add] at e₁ e₂
-  rw [e₁] at h₁
-  rw [e₂] at h₂
-  exact Prod.ext (by exact_mod_cast h₁) (by exact_mod_cast h₂)
+  simp only [hH.tilingHeight_tilingOfHeight floorHeight_zero, zero_add,
+    floorHeight_zero] at h₁ h₂ e₁ e₂
+  exact Prod.ext (by omega) (by omega)
 
 /-- **Attainable height changes.** For `n₁, n₂ ≥ 1`, `(a, b)` is the height change of a torus
 tiling iff `n₂ a + n₁ b ≤ n₁ n₂`; each is realised by the floor tiling (Kenyon, *Lectures on
