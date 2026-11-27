@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Normed
+public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.Analysis.Sobolev.W1p.Morrey
 
 import TauCeti.Analysis.Holder.Lp
@@ -19,6 +20,16 @@ linear map from `W^{1,p}(ℝⁿ)` to the global Hölder space of exponent `1 - n
 a Hölder representative differs from its unit-ball average by at most its Hölder constant, while
 Hölder's inequality controls the average by its `Lᵖ` norm.
 
+On an arbitrary open set `Ω`, extension by zero (`TauCeti.W1p0.extendByZeroL`) carries
+`W^{1,p}_0(Ω)` into `W^{1,p}(ℝⁿ)`, so the same embedding applies to functions with zero boundary
+values without any regularity of `∂Ω`. The resulting Hölder function vanishes at every point off
+`Ω`, not only almost everywhere: it is the uniform limit of the test functions on `Ω` that
+approximate `u`, by the supremum part of the Hölder norm, and each of them vanishes off `Ω`. So a
+function of `W^{1,p}_0(Ω)`, `p > n`, attains the boundary value `0` at every frontier point of `Ω`,
+including the points of a slit, and its Hölder constant on the whole space is controlled by
+`‖∇u‖_{Lᵖ(Ω)}` alone. This is the zero-boundary form of Morrey's embedding, in which classical
+boundary values of weak solutions of the Dirichlet problem are read off.
+
 ## Main declarations
 
 * `TauCeti.W1p.morreyEmbedding`: Morrey's embedding as a continuous linear map into
@@ -26,11 +37,20 @@ Hölder's inequality controls the average by its `Lᵖ` norm.
 * `TauCeti.W1p.norm_morreyRepresentative_le_norm_morreyEmbedding`,
   `TauCeti.W1p.memLp_top_morreyRepresentative`: the canonical continuous representative is
   bounded by the norm of its Morrey embedding, hence essentially bounded.
+* `TauCeti.W1p0.morreyEmbedding`: Morrey's embedding of `W^{1,p}_0(Ω)`, through the extension by
+  zero, with `TauCeti.W1p0.value_ae_eq_morreyEmbedding` (it represents `u` on `Ω`) and
+  `TauCeti.W1p0.morreyEmbedding_injective`.
+* `TauCeti.W1p0.morreyEmbedding_apply_of_notMem`: it vanishes at every point outside `Ω`.
+* `TauCeti.W1p0.exists_holderWith_morreyEmbedding` and
+  `TauCeti.W1p0.exists_norm_morreyEmbedding_apply_le`: its Hölder constant is a multiple of
+  `‖∇u‖_{Lᵖ(Ω)}`, and `|u(x)| ≤ C ‖∇u‖_{Lᵖ(Ω)} |x - z| ^ (1 - n / p)` for every `z ∉ Ω`.
+* `TauCeti.W1p0.tendsto_nhdsWithin_zero_of_ae_eq`: a continuous representative of `u` on `Ω ∩ U`
+  tends to `0` at every point of `U` outside `Ω`.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Theorem 7.17.
+  Theorem 7.17, and Theorem 7.10 for `W^{1,p}_0(Ω)`, `p > n`.
 * L. C. Evans, *Partial Differential Equations*, §5.6.2, Theorem 4.
 -/
 
@@ -226,5 +246,151 @@ theorem W1p.memLp_top_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p)
   filter_upwards with x
   rw [HolderSpace.toBoundedContinuousFunction_apply,
     W1p.morreyEmbedding_apply_apply]
+
+/-! ### Zero boundary values -/
+
+section Zero
+
+variable {Omega : Opens E}
+
+/-- **Morrey's embedding for `W^{1,p}_0(Ω)`.** For an arbitrary open set `Ω` and `n < p < ∞`, this
+continuous linear map sends `u ∈ W^{1,p}_0(Ω)` to the continuous representative of its extension
+by zero to the whole space, an element of the global Hölder space of exponent `1 - n / p`. It
+represents `u` on `Ω` (`TauCeti.W1p0.value_ae_eq_morreyEmbedding`) and vanishes at every point
+off `Ω` (`TauCeti.W1p0.morreyEmbedding_apply_of_notMem`). -/
+def W1p0.morreyEmbedding (hp : (finrank ℝ E : ℝ≥0) < p) :
+    W1p0 mu Omega (p : ℝ≥0∞) →L[ℝ] HolderSpace (1 - finrank ℝ E / p) E ℝ :=
+  (W1p.morreyEmbedding hp).comp
+    ((w1p0Submodule mu ⊤ (p : ℝ≥0∞)).toSubmodule.subtypeL.comp (W1p0.extendByZeroL le_top))
+
+/-- Morrey's embedding of `u ∈ W^{1,p}_0(Ω)` is the whole-space Morrey embedding of its extension
+by zero. -/
+theorem W1p0.morreyEmbedding_apply (hp : (finrank ℝ E : ℝ≥0) < p)
+    (u : W1p0 mu Omega (p : ℝ≥0∞)) :
+    W1p0.morreyEmbedding hp u =
+      W1p.morreyEmbedding hp (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞)) :=
+  (rfl)
+
+/-- The Hölder function produced by Morrey's embedding represents `u ∈ W^{1,p}_0(Ω)` on `Ω`. -/
+theorem W1p0.value_ae_eq_morreyEmbedding (hp : (finrank ℝ E : ℝ≥0) < p)
+    (u : W1p0 mu Omega (p : ℝ≥0∞)) :
+    W1p.value (u : W1p mu Omega (p : ℝ≥0∞)) =ᵐ[mu.restrict Omega] W1p0.morreyEmbedding hp u := by
+  rw [W1p0.morreyEmbedding_apply]
+  filter_upwards [ae_restrict_of_ae (W1p.value_ae_eq_morreyEmbedding hp
+      (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞))),
+    ae_restrict_of_ae (W1p0.value_extendByZeroL_top_ae u),
+    ae_restrict_mem Omega.isOpen.measurableSet] with x h₁ h₂ hx
+  rw [← h₁, h₂, indicator_of_mem hx]
+
+/-- Morrey's embedding of a test function on `Ω` is the test function itself. -/
+@[simp]
+theorem W1p0.morreyEmbedding_ofTestFunctionₗ_apply (hp : (finrank ℝ E : ℝ≥0) < p)
+    (phi : 𝓓(Omega, ℝ)) (x : E) :
+    W1p0.morreyEmbedding hp ⟨W1p.ofTestFunctionₗ mu Omega (p : ℝ≥0∞) phi,
+      W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩ x = phi x := by
+  have hext : (W1p0.extendByZeroL le_top ⟨W1p.ofTestFunctionₗ mu Omega (p : ℝ≥0∞) phi,
+      W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩ : W1p mu ⊤ (p : ℝ≥0∞)) =
+        W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) (TestFunction.monoCLM ℝ phi) :=
+    Subtype.ext (by
+      rw [W1p0.coe_extendByZeroL]
+      exact Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ le_top phi)
+  rw [W1p0.morreyEmbedding_apply, hext, W1p.morreyEmbedding_apply_apply,
+    W1p.morreyRepresentative_ofTestFunctionₗ, TestFunction.coe_monoCLM_of_le le_rfl le_top]
+
+/-- **Functions of `W^{1,p}_0(Ω)` vanish off `Ω`.** For `n < p < ∞`, Morrey's embedding of
+`u ∈ W^{1,p}_0(Ω)` vanishes at every point outside `Ω`, for an arbitrary open set `Ω`. This
+includes frontier points that are not limits of exterior points, such as the points of a slit. -/
+theorem W1p0.morreyEmbedding_apply_of_notMem (hp : (finrank ℝ E : ℝ≥0) < p)
+    (u : W1p0 mu Omega (p : ℝ≥0∞)) {x : E} (hx : x ∉ (Omega : Set E)) :
+    W1p0.morreyEmbedding hp u x = 0 := by
+  obtain ⟨phi, hphi⟩ := mem_w1p0Submodule_iff_exists_seq_tendsto.1 u.property
+  -- The test functions converge to `u` in `W^{1,p}_0(Ω)`, and evaluation at `x` after Morrey's
+  -- embedding is continuous.
+  let s : ℕ → W1p0 mu Omega (p : ℝ≥0∞) := fun k =>
+    ⟨W1p.ofTestFunctionₗ mu Omega (p : ℝ≥0∞) (phi k),
+      W1p.ofTestFunctionₗ_mem_w1p0Submodule (phi k)⟩
+  have hlim : Tendsto s atTop (𝓝 u) := tendsto_subtype_rng.2 hphi
+  have hcont : Tendsto (fun k => W1p0.morreyEmbedding hp (s k) x) atTop
+      (𝓝 (W1p0.morreyEmbedding hp u x)) := by
+    simpa only [Function.comp_def, ContinuousLinearMap.comp_apply, HolderSpace.evalCLM_apply]
+      using (((HolderSpace.evalCLM x).comp (W1p0.morreyEmbedding hp)).continuous.tendsto
+        u).comp hlim
+  have hs : ∀ k, W1p0.morreyEmbedding hp (s k) x = 0 := fun k => by
+    rw [W1p0.morreyEmbedding_ofTestFunctionₗ_apply, (phi k).zero_on_compl hx, Pi.zero_apply]
+  refine tendsto_nhds_unique hcont ?_
+  simp only [hs]
+  exact tendsto_const_nhds
+
+/-- **Morrey's estimate for `W^{1,p}_0(Ω)`.** For `n < p < ∞` there is a constant `C`, depending
+only on `n`, `p` and `mu`, such that Morrey's embedding of every `u ∈ W^{1,p}_0(Ω)` is Hölder of
+exponent `1 - n / p` on the whole space with constant `C ‖∇u‖_{Lᵖ(Ω)}`. No regularity of `Ω` is
+needed, and only the gradient of `u` enters. -/
+theorem W1p0.exists_holderWith_morreyEmbedding (hp : (finrank ℝ E : ℝ≥0) < p) :
+    ∃ C : ℝ≥0, ∀ u : W1p0 mu Omega (p : ℝ≥0∞),
+      HolderWith (C * ‖W1p.gradient (u : W1p mu Omega (p : ℝ≥0∞))‖₊) (1 - finrank ℝ E / p)
+        (W1p0.morreyEmbedding hp u) := by
+  refine ⟨Real.toNNReal (2 ^ (finrank ℝ E + 1) / (finrank ℝ E * mu.real (ball 0 1)) *
+    (finrank ℝ E * mu.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^ (1 - 1 / (p : ℝ)) *
+      2 ^ (1 - finrank ℝ E / (p : ℝ))), fun u => ?_⟩
+  have hgrad : ‖W1p.gradient (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞))‖₊ =
+      ‖W1p.gradient (u : W1p mu Omega (p : ℝ≥0∞))‖₊ :=
+    NNReal.eq (W1p0.norm_gradient_extendByZeroL le_top u)
+  have h := W1p.holderWith_morreyRepresentative
+    (W1p0.extendByZeroL le_top u : W1p mu ⊤ (p : ℝ≥0∞)) hp
+  rw [hgrad] at h
+  convert h using 1
+  ext x
+  rw [W1p0.morreyEmbedding_apply, W1p.morreyEmbedding_apply_apply]
+
+/-- **Decay towards the complement.** For `n < p < ∞` there is a constant `C`, depending only on
+`n`, `p` and `mu`, such that for every `u ∈ W^{1,p}_0(Ω)` and every point `z` outside `Ω`, Morrey's
+embedding of `u` satisfies `|u(x)| ≤ C ‖∇u‖_{Lᵖ(Ω)} |x - z| ^ (1 - n / p)` at every point `x`. -/
+theorem W1p0.exists_norm_morreyEmbedding_apply_le (hp : (finrank ℝ E : ℝ≥0) < p) :
+    ∃ C : ℝ≥0, ∀ (u : W1p0 mu Omega (p : ℝ≥0∞)) (x z : E), z ∉ (Omega : Set E) →
+      ‖W1p0.morreyEmbedding hp u x‖ ≤
+        C * ‖W1p.gradient (u : W1p mu Omega (p : ℝ≥0∞))‖ *
+          dist x z ^ ((1 - finrank ℝ E / p : ℝ≥0) : ℝ) := by
+  obtain ⟨C, hC⟩ := W1p0.exists_holderWith_morreyEmbedding (mu := mu) (Omega := Omega) hp
+  refine ⟨C, fun u x z hz => ?_⟩
+  have h := (hC u).dist_le x z
+  rwa [W1p0.morreyEmbedding_apply_of_notMem hp u hz, dist_zero_right, NNReal.coe_mul,
+    coe_nnNorm] at h
+
+/-- Morrey's embedding of `W^{1,p}_0(Ω)` is injective: the continuous representative determines
+the Sobolev class. -/
+theorem W1p0.morreyEmbedding_injective (hp : (finrank ℝ E : ℝ≥0) < p) :
+    Function.Injective (W1p0.morreyEmbedding (mu := mu) (Omega := Omega) hp) := by
+  intro u v huv
+  have hext : W1p0.extendByZeroL le_top u = W1p0.extendByZeroL le_top v :=
+    Subtype.ext (W1p.morreyEmbedding_injective hp huv)
+  have hnorm : ‖u - v‖ = 0 := by
+    rw [← W1p0.norm_extendByZeroL le_top (u - v), map_sub, hext, sub_self, norm_zero]
+  exact sub_eq_zero.1 (norm_eq_zero.1 hnorm)
+
+/-- **Zero boundary values are attained pointwise.** Let `n < p < ∞`, `u ∈ W^{1,p}_0(Ω)` and let
+`g` be a continuous representative of `u` on `Ω ∩ U` for an open set `U`. Then `g` tends to `0`
+at every point `z ∉ Ω`, in particular at every frontier point of `Ω` in `U`: on `Ω ∩ U` it is
+Morrey's embedding of `u`, which is continuous on the whole space and vanishes at `z`. -/
+theorem W1p0.tendsto_nhdsWithin_zero_of_ae_eq (hp : (finrank ℝ E : ℝ≥0) < p)
+    (u : W1p0 mu Omega (p : ℝ≥0∞)) {U : Set E} (hU : IsOpen U) {g : E → ℝ}
+    (hg : ContinuousOn g ((Omega : Set E) ∩ U))
+    (hug : W1p.value (u : W1p mu Omega (p : ℝ≥0∞)) =ᵐ[mu.restrict ((Omega : Set E) ∩ U)] g)
+    {z : E} (hz : z ∉ (Omega : Set E)) :
+    Tendsto g (𝓝[(Omega : Set E) ∩ U] z) (𝓝 0) := by
+  have hcont := (W1p0.morreyEmbedding hp u).continuous
+  have h₁ : W1p.value (u : W1p mu Omega (p : ℝ≥0∞)) =ᵐ[mu.restrict ((Omega : Set E) ∩ U)]
+      W1p0.morreyEmbedding hp u :=
+    ae_restrict_of_ae_restrict_of_subset inter_subset_left
+      (W1p0.value_ae_eq_morreyEmbedding hp u)
+  have heq : EqOn (W1p0.morreyEmbedding hp u) g ((Omega : Set E) ∩ U) :=
+    Measure.eqOn_open_of_ae_eq (μ := mu) (h₁.symm.trans hug) (Omega.isOpen.inter hU)
+      hcont.continuousOn hg
+  have h0 : Tendsto (W1p0.morreyEmbedding hp u) (𝓝[(Omega : Set E) ∩ U] z) (𝓝 0) := by
+    have h := (hcont.continuousAt (x := z)).tendsto.mono_left
+      (nhdsWithin_le_nhds (s := (Omega : Set E) ∩ U))
+    rwa [W1p0.morreyEmbedding_apply_of_notMem hp u hz] at h
+  exact h0.congr' (eventually_nhdsWithin_of_forall heq)
+
+end Zero
 
 end TauCeti
