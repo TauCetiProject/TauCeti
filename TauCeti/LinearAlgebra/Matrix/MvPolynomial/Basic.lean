@@ -26,7 +26,8 @@ the values at `Z` of the corresponding minors of the generic matrix `Matrix.mvPo
 
 The generic determinant of an `n × n` matrix is homogeneous of degree `n`: every term of its
 Leibniz expansion is, up to sign, a product of `n` variables. Over a nontrivial ring it is nonzero,
-so its total degree is exactly `n`, and so is that of `det - 1` for `n ≠ 0`.
+so its total degree is exactly `n`, and so is that of `det - 1` for `n ≠ 0`, which is therefore
+nonzero.
 
 The generic determinant is a non-zero-divisor over every commutative ring.
 Translating the generic matrix by the identity and embedding into power series
@@ -51,6 +52,8 @@ bases of determinantal and flag-minor algebras. For finite index types such as `
   `Matrix.totalDegree_det_mvPolynomialX_sub_one`: the generic determinant is homogeneous of
   degree `Fintype.card n`, and over a nontrivial ring both it and, for `n` nonempty, `det - 1`
   have total degree `Fintype.card n`.
+* `Matrix.det_mvPolynomialX_sub_one_ne_zero`: over a nontrivial ring, `det - 1` of the generic
+  matrix is nonzero for `n` nonempty.
 * `Matrix.aeval_det_submatrix_mvPolynomialX` and `Matrix.aeval_det_submatrix_pow_mvPolynomialX`:
   the minors of a matrix `Z`, and of `Z ^ j`, are evaluations of minors of the generic matrix.
 * `Matrix.det_mvPolynomialX_mem_nonZeroDivisors`: the generic determinant is regular.
@@ -117,6 +120,12 @@ theorem totalDegree_det_mvPolynomialX_sub_one [Nontrivial R] (hn : Fintype.card 
     ((mvPolynomialX n n R).det - 1).totalDegree = Fintype.card n := by
   rw [sub_eq_add_neg, ← C_1, ← map_neg C, totalDegree_add_eq_left_of_totalDegree_lt
     (by rw [totalDegree_C, totalDegree_det_mvPolynomialX]; omega), totalDegree_det_mvPolynomialX]
+
+/-- Over a nontrivial ring, for a nonempty index type `n`, the polynomial `det - 1` of the generic
+`n × n` matrix is nonzero. -/
+theorem det_mvPolynomialX_sub_one_ne_zero [Nontrivial R] (hn : Fintype.card n ≠ 0) :
+    (mvPolynomialX n n R).det - 1 ≠ 0 := fun h ↦
+  hn <| by rw [← totalDegree_det_mvPolynomialX_sub_one (R := R) hn, h, totalDegree_zero]
 
 /-- The generic determinant is a non-zero-divisor over every commutative ring,
 including the zero ring and matrices of size zero. -/
