@@ -141,7 +141,7 @@ theorem mk_toPath_morseLoopEvaluation_eq_trajectoryPathClass
         θ).cast (hθ x).symm (hθ y).symm := by
   rw [trajectoryPathClass_def]
   exact hX.mk_toPath_morseLoopEvaluation hf hdense' hθ
-    (fun hxy ↦ by rw [Subtype.coe_injective hxy] at hind; omega)
+    (ne_of_manifoldMorseIndex_eq_add_one hind)
     (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _) w)
     (hX.morseTrajectorySlice_subset x y
       (h.morseBrokenTrajectorySpaceEquivSlice hf (hdense' x y) hind w).property)

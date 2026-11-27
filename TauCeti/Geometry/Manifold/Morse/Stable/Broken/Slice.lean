@@ -38,8 +38,6 @@ with the paths they trace (`Flow.connectingPath`). This file compares the two.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `morseLevelPoint_eq_of_orbit`: the point of the record of a trajectory on the level of one of
-  its points is that point.
 * `homotopic_toPath_morseLevelPath`: the Moore path of the record of a trajectory is homotopic to
   the path traced by the trajectory.
 * `IsMorseSmale.exists_flow_morseBrokenTrajectorySpaceEquivSlice`: a record of index difference
@@ -61,23 +59,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable {hX : IsAdaptedPseudoGradient f X} {p r y : M} {c : ι → ℝ} {w : ι → M}
-
-/-- On the record `w` of the trajectory through `y` from `p` to `r`, the point on the level of a
-point `m` of that trajectory, or of one of its ends, is `m`: the case of one component of
-`TauCeti.IsAdaptedPseudoGradient.morseLevelPoint_eq`. -/
-theorem morseLevelPoint_eq_of_orbit (hf : IsMorse 𝓘(ℝ, E) f)
-    (hdense : Ioo (f r) (f p) ⊆ closure (range c)) (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) (hpr : p ≠ r)
-    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r)
-    (hw : ∀ i, f (w i) = c i ∧ ∃ t, hX.flow t y = w i) {m : M}
-    (hm : m = p ∨ m = r ∨ ∃ t, hX.flow t y = m) : hX.morseLevelPoint p r c w (f m) = m := by
-  refine hX.morseLevelPoint_eq (k := 1) (x := ![p, r]) (z := ![y]) hf hdense rfl rfl
-    (fun j ↦ by fin_cases j; exacts [hp, hr]) (fun j ↦ by fin_cases j; exact hpr)
-    (fun j ↦ by fin_cases j; exact hy) (fun i ↦ ⟨(hw i).1, 0, (hw i).2⟩) ?_
-  rcases hm with rfl | rfl | ⟨t, rfl⟩
-  · exact Or.inl ⟨0, rfl⟩
-  · exact Or.inl ⟨1, rfl⟩
-  · exact Or.inr ⟨0, t, rfl⟩
 
 /-- **The Moore path of the record of a trajectory traces the trajectory.** Let `w` record, on
 levels dense between `f r` and `f p`, the trajectory through `y` from the critical point `p` to the
@@ -132,13 +113,6 @@ theorem homotopic_toPath_morseLevelPath (hf : IsMorse 𝓘(ℝ, E) f)
 
 /-! ### Trajectory spaces of index difference one and the middle-level slice -/
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-private theorem ne_of_morseIndex_eq_add_one {x y : criticalPoints 𝓘(ℝ, E) f}
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 1) :
-    (x : M) ≠ y := fun hxy ↦ by
-  rw [Subtype.coe_injective hxy] at hind
-  omega
-
 namespace IsMorseSmale
 
 variable (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {x y : criticalPoints 𝓘(ℝ, E) f}
@@ -184,13 +158,14 @@ noncomputable def morseBrokenTrajectorySpaceEquivSlice :
     hX.morseBrokenTrajectorySpace c x y ≃ hX.morseTrajectorySlice x y where
   toFun w := ⟨_, (morseLevelPoint_mid_spec h hf hdense hind w).1⟩
   invFun z := ⟨fun i ↦ hX.levelPoint ((c ⁻¹' Ioo (f y) (f x)).domRestrict c i) z,
-    hX.mem_morseBrokenTrajectorySpace.2 ⟨ne_of_morseIndex_eq_add_one hind,
+    hX.mem_morseBrokenTrajectorySpace.2 ⟨ne_of_manifoldMorseIndex_eq_add_one hind,
       hX.morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords
         (mem_criticalPoints_iff_mfderiv_eq_zero.1 x.property)
-        (mem_criticalPoints_iff_mfderiv_eq_zero.1 y.property) (ne_of_morseIndex_eq_add_one hind) _
+        (mem_criticalPoints_iff_mfderiv_eq_zero.1 y.property)
+        (ne_of_manifoldMorseIndex_eq_add_one hind) _
         (hX.mem_morseTrajectoryRecords.2
           ⟨z, hX.morseTrajectorySlice_subset x y z.property, fun i ↦
-            ⟨(hX.mapsTo_levelPoint (ne_of_morseIndex_eq_add_one hind) i.property.1
+            ⟨(hX.mapsTo_levelPoint (ne_of_manifoldMorseIndex_eq_add_one hind) i.property.1
               i.property.2 (hX.morseTrajectorySlice_subset x y z.property)).2, _,
               (hX.levelPoint_def _ _).symm⟩⟩)⟩⟩
   left_inv w := by
@@ -200,10 +175,10 @@ noncomputable def morseBrokenTrajectorySpaceEquivSlice :
     refine Subtype.ext (funext fun i ↦ ?_)
     -- Both points lie on the orbit of the middle point, on the level `c i`.
     obtain ⟨t, ht⟩ := hwm i
-    exact (hX.levelPoint_eq (ne_of_morseIndex_eq_add_one hind)
+    exact (hX.levelPoint_eq (ne_of_manifoldMorseIndex_eq_add_one hind)
       (hX.morseTrajectorySlice_subset x y hm) (by rw [ht]; exact (hrec i).1)).trans ht
   right_inv z := by
-    have hxy := ne_of_morseIndex_eq_add_one hind
+    have hxy := ne_of_manifoldMorseIndex_eq_add_one hind
     have hz := hX.morseTrajectorySlice_subset x y z.property
     refine Subtype.ext ?_
     simp only
@@ -220,6 +195,14 @@ noncomputable def morseBrokenTrajectorySpaceEquivSlice :
 theorem coe_morseBrokenTrajectorySpaceEquivSlice_apply (w : hX.morseBrokenTrajectorySpace c x y) :
     (h.morseBrokenTrajectorySpaceEquivSlice hf hdense hind w : M) =
       hX.morseLevelPoint x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c) w ((f x + f y) / 2) :=
+  (rfl)
+
+/-- The record of a trajectory of index difference one through a point of the middle-level slice
+consists of the level points of that point. -/
+@[simp]
+theorem coe_morseBrokenTrajectorySpaceEquivSlice_symm_apply (z : hX.morseTrajectorySlice x y) :
+    ((h.morseBrokenTrajectorySpaceEquivSlice hf hdense hind).symm z : c ⁻¹' Ioo (f y) (f x) → M) =
+      fun i ↦ hX.levelPoint ((c ⁻¹' Ioo (f y) (f x)).domRestrict c i) z :=
   (rfl)
 
 /-- A trajectory record of index difference one records the trajectory through its point on the
