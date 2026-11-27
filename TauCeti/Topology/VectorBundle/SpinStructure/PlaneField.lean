@@ -11,7 +11,6 @@ public import TauCeti.Topology.VectorBundle.Orientation.OrientedFrame
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction.Lift
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.UnitSection
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
 # The `Spinᶜ` structure of an oriented plane field
@@ -30,8 +29,10 @@ plane field. An orthogonal transformation carries such a frame to another exactl
 (`TauCeti.OrthonormalFrameBundle.isLocallyTrivialReduction_planeFieldFrames`): the frames adapted
 to `R` are locally trivial with fibre the stabilizer `O(2)` of `e₀`
 (`TauCeti.OrthonormalFrameBundle.exists_trivialization_sectionFrames`), and the reflection in the
-plane orthogonal to `e₁`, which fixes `e₀` and reverses orientation, corrects a local section into
-the positively oriented frames
+plane orthogonal to `e₁`, which fixes `e₀`
+(`TauCeti.reflection_orthogonal_singleton_mem_stabilizer`) and reverses orientation
+(`TauCeti.reflection_orthogonal_singleton_notMem_specialOrthogonalGroup`), corrects a local section
+into the positively oriented frames
 (`TauCeti.OrthonormalFrameBundle.isLocallyTrivialReduction_inter_orientedFrames`). So they reduce
 the structure group of the oriented frame bundle from `SO(3)` to `SO(2)`
 (`TauCeti.OrthonormalFrameBundle.planeFieldFrameLift`).
@@ -98,31 +99,6 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
 
 namespace OrthonormalFrameBundle
 
-/-- The reflection of `ℝ³` in the plane orthogonal to `e₁` fixes `e₀` and reverses orientation. -/
-private theorem exists_mem_stabilizer_notMem_specialOrthogonalGroup :
-    ∃ r ∈ MulAction.stabilizer (unitary (ℝ³ →L[ℝ] ℝ³)) (EuclideanSpace.single (0 : Fin 3) (1 : ℝ)),
-      r ∉ specialOrthogonalGroup ℝ³ := by
-  set K : Submodule ℝ ℝ³ := (ℝ ∙ EuclideanSpace.single (1 : Fin 3) (1 : ℝ))ᗮ
-  refine ⟨Unitary.linearIsometryEquiv.symm K.reflection, ?_, ?_⟩
-  · rw [MulAction.mem_stabilizer_iff, Submonoid.smul_def, ContinuousLinearMap.smul_def,
-      Unitary.coe_symm_linearIsometryEquiv_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    refine K.reflection_mem_subspace_eq_self ?_
-    rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
-    simp
-  · rw [mem_specialOrthogonalGroup_iff, Unitary.coe_symm_linearIsometryEquiv_apply,
-      ContinuousLinearMap.det]
-    have hK : finrank ℝ Kᗮ = 1 := by
-      rw [Submodule.orthogonal_orthogonal, finrank_span_singleton]
-      simp
-    have hdet := K.det_reflection
-    rw [hK, pow_one] at hdet
-    intro h
-    -- The coercion of `K.reflection` to a linear map is `toLinearMap` by definition.
-    have h' : LinearMap.det K.reflection.toLinearMap = 1 := h
-    rw [hdet] at h'
-    norm_num at h'
-
 variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : X → Type} [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
@@ -153,9 +129,12 @@ theorem isLocallyTrivialReduction_planeFieldFrames
       obtain ⟨t, hxt, ht⟩ := exists_trivialization_sectionFrames (v₀ := EuclideanSpace.single 0 1)
         hR hR₁ (by simp) hF x
       exact ⟨t, hxt, fun g p hgp hp ↦ SMulMemIff.smul_eq_mk g p hgp ▸ ht g p hp⟩
-  obtain ⟨r, hrH, hr⟩ := exists_mem_stabilizer_notMem_specialOrthogonalGroup
   rw [axisRotationGroup_def]
-  exact isLocallyTrivialReduction_inter_orientedFrames s o hS hrH hr
+  -- The reflection in the plane orthogonal to `e₁` fixes `e₀` and reverses orientation.
+  exact isLocallyTrivialReduction_inter_orientedFrames s o hS
+    (reflection_orthogonal_singleton_mem_stabilizer (v := EuclideanSpace.single (1 : Fin 3) 1)
+      (by simp))
+    (reflection_orthogonal_singleton_notMem_specialOrthogonalGroup (by simp))
 
 variable (hR : Continuous fun x ↦ (⟨x, R x⟩ : TotalSpace F E)) (hR₁ : ∀ x, ‖R x‖ = 1)
   (hF : finrank ℝ F = 3)
@@ -186,6 +165,7 @@ theorem planeFieldFrameLift_toFrame
   (rfl)
 
 /-- An adapted frame sends `e₀` to `R`. -/
+@[simp]
 theorem planeFieldFrameLift_frame_apply_single_zero {x : X}
     (p : (planeFieldFrameLift s o hR hR₁ hF).P x) :
     p.val.frame (EuclideanSpace.single 0 1) = R x := by
@@ -205,13 +185,30 @@ vectors of an oriented rank-three bundle, the `Spinᶜ` structure induced from t
 the plane field `R^⊥` (`TauCeti.OrthonormalFrameBundle.planeFieldFrameLift`) by the lift
 `TauCeti.axisSpinCLift : SO(2) → Spinᶜ(3)`. Its principal bundle is `P ×_{SO(2)} Spinᶜ(3)` for the
 adapted frames `P`, and the frame of `[p, 1]` is `p`. -/
-noncomputable def planeFieldSpinCStructure : SpinCStructure F E 3 :=
+@[expose] noncomputable def planeFieldSpinCStructure : SpinCStructure F E 3 :=
   (planeFieldFrameLift s o hR hR₁ hF).extendSpinC axisSpinCLift continuous_axisSpinCLift
     toSpecialOrthogonal_comp_axisSpinCLift
 
+/-- The `Spinᶜ` structure of a plane field is the `Spinᶜ` structure induced from the adapted frames
+by the lift `TauCeti.axisSpinCLift`. -/
+theorem planeFieldSpinCStructure_eq :
+    planeFieldSpinCStructure s o hR hR₁ hF =
+      (planeFieldFrameLift s o hR hR₁ hF).extendSpinC axisSpinCLift continuous_axisSpinCLift
+        toSpecialOrthogonal_comp_axisSpinCLift :=
+  (rfl)
+
+/-- The principal bundle of the `Spinᶜ` structure of a plane field is `P ×_{SO(2)} Spinᶜ(3)` for
+the adapted frames `P`. -/
+@[simp]
+theorem planeFieldSpinCStructure_P :
+    (planeFieldSpinCStructure s o hR hR₁ hF).P =
+      PrincipalBundle.Extend (planeFieldFrameLift s o hR hR₁ hF).P axisSpinCLift
+        continuous_axisSpinCLift :=
+  (rfl)
+
 /-- The point `[p, 1]` of the principal bundle of the `Spinᶜ` structure of a plane field over the
 adapted frame `p`. -/
-noncomputable def planeFieldSpinCStructureInl {x : X}
+@[expose] noncomputable def planeFieldSpinCStructureInl {x : X}
     (p : (planeFieldFrameLift s o hR hR₁ hF).P x) :
     (planeFieldSpinCStructure s o hR hR₁ hF).P x :=
   PrincipalBundle.Extend.inl axisSpinCLift continuous_axisSpinCLift p
@@ -243,7 +240,7 @@ theorem frameAt_planeFieldSpinCStructureInl_apply_single_zero {x : X}
     (p : (planeFieldFrameLift s o hR hR₁ hF).P x) :
     (planeFieldSpinCStructure s o hR hR₁ hF).frameAt
       (planeFieldSpinCStructureInl s o hR hR₁ hF p) (EuclideanSpace.single 0 1) = R x := by
-  rw [frameAt_planeFieldSpinCStructureInl, planeFieldFrameLift_frame_apply_single_zero]
+  simp
 
 /-- The map `p ↦ [p, 1]` from the total space of the adapted frame bundle to that of the principal
 bundle of the `Spinᶜ` structure of the plane field is continuous. -/

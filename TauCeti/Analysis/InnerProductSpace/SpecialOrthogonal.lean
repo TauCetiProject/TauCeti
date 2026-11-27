@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import TauCeti.Analysis.InnerProductSpace.Reflection
@@ -28,7 +29,10 @@ determinant is continuous in the operator-norm topology, the special orthogonal 
 closed, and hence clopen in the orthogonal group (`TauCeti.isOpen_specialOrthogonalGroup`,
 `TauCeti.isClosed_specialOrthogonalGroup`, `TauCeti.isClopen_specialOrthogonalGroup`). In positive
 dimension the reflection in a hyperplane is an orthogonal transformation of determinant `-1`
-(`Unitary.exists_det_eq_neg_one`).
+(`Unitary.exists_det_eq_neg_one`). The reflection in the hyperplane orthogonal to a nonzero vector
+`v` is not special orthogonal
+(`TauCeti.reflection_orthogonal_singleton_notMem_specialOrthogonalGroup`), and it fixes every
+vector orthogonal to `v` (`TauCeti.reflection_orthogonal_singleton_mem_stabilizer`).
 -/
 
 public section
@@ -120,5 +124,26 @@ theorem isClosed_specialOrthogonalGroup :
 theorem isClopen_specialOrthogonalGroup :
     IsClopen (specialOrthogonalGroup V : Set (unitary (V →L[ℝ] V))) :=
   ⟨isClosed_specialOrthogonalGroup, isOpen_specialOrthogonalGroup⟩
+
+/-- The reflection in the hyperplane orthogonal to a nonzero vector, as an orthogonal
+transformation, is not special orthogonal: its determinant is `-1`. -/
+theorem reflection_orthogonal_singleton_notMem_specialOrthogonalGroup [FiniteDimensional ℝ V]
+    {v : V} (hv : v ≠ 0) :
+    Unitary.linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection ∉ specialOrthogonalGroup V := by
+  rw [mem_specialOrthogonalGroup_iff, Unitary.coe_symm_linearIsometryEquiv_apply,
+    ContinuousLinearMap.det]
+  intro h
+  have hdet := linearEquiv_det_reflection_orthogonal_singleton hv
+  rw [LinearEquiv.coe_det] at hdet
+  -- The coercion of the reflection to a linear map is `toLinearMap` by definition.
+  have h₁ : (1 : ℝ) = -1 := h.symm.trans hdet
+  norm_num at h₁
+
+/-- The reflection in the hyperplane orthogonal to `v`, as an orthogonal transformation, fixes
+every vector `w` orthogonal to `v`. -/
+theorem reflection_orthogonal_singleton_mem_stabilizer {v w : V} (h : inner ℝ v w = 0) :
+    Unitary.linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection ∈
+      MulAction.stabilizer (unitary (V →L[ℝ] V)) w :=
+  MulAction.mem_stabilizer_iff.2 (reflection_orthogonal_singleton_eq_self_of_inner_eq_zero h)
 
 end TauCeti
