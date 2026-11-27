@@ -46,6 +46,7 @@ A compact set meets only finitely many left cosets of an open subgroup
   compact they form a coinitial family in `OpenSubgroup G`.
 * `IsCompact.finite_image_mk`: a compact set meets only finitely many left cosets of an open
   subgroup.
+* `Subgroup.isOpen_conjAct_smul_subgroupOf`: for `K` open, `H ∩ aKa⁻¹` is open in `H`.
 -/
 
 public section
@@ -195,3 +196,15 @@ theorem IsCompact.finite_image_mk {G : Type*} [Group G] [TopologicalSpace G]
     (((↑) : G → G ⧸ (W : Subgroup G)) '' K).Finite := by
   have := QuotientGroup.discreteTopology W.isOpen
   exact (hK.image continuous_quotient_mk').finite_of_discrete
+
+namespace Subgroup
+
+open scoped Pointwise
+
+/-- For `K` open, `H ∩ aKa⁻¹`, as a subgroup of `H`, is open in `H`. -/
+theorem isOpen_conjAct_smul_subgroupOf {G : Type*} [Group G] [TopologicalSpace G]
+    [SeparatelyContinuousMul G] (H : Subgroup G) {K : Subgroup G} (hK : IsOpen (K : Set G))
+    (a : G) : IsOpen ((ConjAct.toConjAct a • K).subgroupOf H : Set H) :=
+  H.subgroupOf_isOpen _ (by rw [coe_pointwise_smul]; exact hK.smul _)
+
+end Subgroup
