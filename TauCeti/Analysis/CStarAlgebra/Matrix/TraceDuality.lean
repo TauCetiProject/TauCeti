@@ -11,11 +11,10 @@ import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.LinearAlgebra.Matrix.Trace.Duality
 
 /-!
-# Trace linear map and trace duality on `CStarMatrix`
+# Trace duality on `CStarMatrix`
 
-This file exposes the matrix trace on `CStarMatrix n n A` as a linear map
-(`CStarMatrix.traceLinearMap`), proves linear trace duality
-(`CStarMatrix.existsUnique_trace_mul_eq` and `CStarMatrix.existsUnique_sum_trace_mul_eq`), and
+This file proves linear trace duality on `CStarMatrix`
+(`CStarMatrix.existsUnique_trace_mul_eq` and `CStarMatrix.existsUnique_sum_trace_mul_eq`) and
 records adjoint invariance of the trace pairing (`CStarMatrix.trace_star_mul_star` and
 `CStarMatrix.norm_sum_trace_star_mul_star`).
 -/
@@ -25,15 +24,6 @@ public section
 namespace CStarMatrix
 
 section TraceDuality
-
-/-- The matrix trace of a C⋆-matrix bundled as a linear map. -/
-def traceLinearMap (n R A : Type*) [Fintype n] [AddCommMonoid A] [Semiring R] [Module R A] :
-    CStarMatrix n n A →ₗ[R] A :=
-  (Matrix.traceLinearMap n R A).comp (ofMatrixₗ (R := R)).symm.toLinearMap
-
-@[simp] theorem traceLinearMap_apply {n R A : Type*} [Fintype n] [AddCommMonoid A] [Semiring R]
-    [Module R A] (M : CStarMatrix n n A) :
-    traceLinearMap n R A M = Matrix.trace (ofMatrix.symm M) := (rfl)
 
 /-- **Trace duality on `CStarMatrix`.** Every linear functional on `CStarMatrix n n R` is
 `M ↦ tr(ρ * M)` for a unique `ρ : CStarMatrix n n R`. -/
