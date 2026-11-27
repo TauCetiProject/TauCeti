@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.MvPolynomial.Zariski.Basic
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Dual.Defs
-public import Mathlib.LinearAlgebra.FreeModule.Basic
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Algebra.MvPolynomial.Rename
 import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -54,10 +54,14 @@ embedding and every nonempty affine subspace is homeomorphic to its direction.
 
 ## Main results
 
-* `TauCeti.isOpen_modulePolynomialTopology_eval_ne_zero` and
-  `TauCeti.isTopologicalBasis_modulePolynomialTopology`: polynomial nonvanishing loci for arbitrary
-  families of dual functionals are open, and form a topological basis over a nontrivial semiring
-  without zero divisors.
+* `TauCeti.isOpen_modulePolynomialTopology_eval_ne_zero`,
+  `TauCeti.modulePolynomialTopology_eq_induced_eval`,
+  `TauCeti.isTopologicalBasis_modulePolynomialTopology`,
+  `TauCeti.isOpen_modulePolynomialTopology_iff`, and
+  `TauCeti.isClosed_modulePolynomialTopology_iff`: polynomial nonvanishing loci are open, the
+  topology is induced from `TauCeti.polynomialTopology (Module.Dual R M) R` along evaluation, and
+  over a nontrivial semiring without zero divisors basic opens form a basis and closed sets are
+  common zero loci.
 * `TauCeti.continuous_modulePolynomialTopology_eval`,
   `LinearMap.continuous_modulePolynomialTopology`,
   `AffineMap.continuous_modulePolynomialTopology`,
@@ -152,6 +156,32 @@ theorem continuous_modulePolynomialTopology_eval {ι : Type*} (φ : ι → Modul
   rw [polynomialTopology_eq_generateFrom ι R, continuous_generateFrom_iff]
   rintro _ ⟨p, rfl⟩
   exact isOpen_modulePolynomialTopology_eval_ne_zero φ p
+
+private theorem preimage_eval_polynomialTopology_eq :
+    ((fun (x : M) (φ : Module.Dual R M) ↦ φ x) ⁻¹' ·) ''
+        {U | ∃ p : MvPolynomial (Module.Dual R M) R, U = {y | MvPolynomial.eval y p ≠ 0}} =
+      {U | ∃ (n : ℕ) (φ : Fin n → Module.Dual R M) (p : MvPolynomial (Fin n) R),
+        U = {x : M | MvPolynomial.eval (fun i ↦ φ i x) p ≠ 0}} := by
+  ext U
+  constructor
+  · rintro ⟨_, ⟨p, rfl⟩, rfl⟩
+    obtain ⟨n, f, _, q, rfl⟩ := p.exists_fin_rename
+    refine ⟨n, f, q, ?_⟩
+    ext x
+    simp [MvPolynomial.eval_rename, Function.comp_def]
+  · rintro ⟨n, φ, q, rfl⟩
+    refine ⟨_, ⟨MvPolynomial.rename φ q, rfl⟩, ?_⟩
+    ext x
+    simp [MvPolynomial.eval_rename, Function.comp_def]
+
+/-- The intrinsic polynomial Zariski topology on `M` is induced from
+`TauCeti.polynomialTopology (Module.Dual R M) R` along the evaluation map `x ↦ fun φ ↦ φ x`. -/
+theorem modulePolynomialTopology_eq_induced_eval :
+    modulePolynomialTopology R M =
+      TopologicalSpace.induced (fun (x : M) (φ : Module.Dual R M) ↦ φ x)
+        (polynomialTopology (Module.Dual R M) R) := by
+  rw [polynomialTopology_eq_generateFrom, induced_generateFrom_eq,
+    preimage_eval_polynomialTopology_eq, modulePolynomialTopology_eq_generateFrom]
 
 end TauCeti
 
@@ -334,30 +364,9 @@ theorem isTopologicalBasis_modulePolynomialTopology :
     @TopologicalSpace.IsTopologicalBasis M (modulePolynomialTopology R M)
       {U | ∃ (n : ℕ) (φ : Fin n → Module.Dual R M) (p : MvPolynomial (Fin n) R),
         U = {x : M | MvPolynomial.eval (fun i ↦ φ i x) p ≠ 0}} := by
-  let ev : M → (Module.Dual R M → R) := fun x φ ↦ φ x
-  have hgen :
-      (ev ⁻¹' ·) '' {U | ∃ p : MvPolynomial (Module.Dual R M) R,
-          U = {y | MvPolynomial.eval y p ≠ 0}} =
-        {U | ∃ (n : ℕ) (φ : Fin n → Module.Dual R M) (p : MvPolynomial (Fin n) R),
-          U = {x : M | MvPolynomial.eval (fun i ↦ φ i x) p ≠ 0}} := by
-    ext U
-    constructor
-    · rintro ⟨_, ⟨p, rfl⟩, rfl⟩
-      obtain ⟨n, f, _, q, rfl⟩ := p.exists_fin_rename
-      refine ⟨n, f, q, ?_⟩
-      ext x
-      simp [ev, MvPolynomial.eval_rename, Function.comp_def]
-    · rintro ⟨n, φ, q, rfl⟩
-      refine ⟨_, ⟨MvPolynomial.rename φ q, rfl⟩, ?_⟩
-      ext x
-      simp [ev, MvPolynomial.eval_rename, Function.comp_def]
-  have hind : modulePolynomialTopology R M =
-      TopologicalSpace.induced ev (polynomialTopology (Module.Dual R M) R) := by
-    rw [polynomialTopology_eq_generateFrom, induced_generateFrom_eq, hgen,
-      modulePolynomialTopology_eq_generateFrom]
-  rw [hind, ← hgen]
+  rw [modulePolynomialTopology_eq_induced_eval, ← preimage_eval_polynomialTopology_eq]
   let := polynomialTopology (Module.Dual R M) R
-  exact (isTopologicalBasis_polynomialTopology (σ := Module.Dual R M) (R := R)).induced ev
+  exact (isTopologicalBasis_polynomialTopology (σ := Module.Dual R M) (R := R)).induced _
 
 /-- Over a nontrivial commutative semiring without zero divisors, a set is open in the polynomial
 Zariski topology on `M` exactly when each of its points lies in a basic polynomial nonvanishing
@@ -376,6 +385,23 @@ theorem isOpen_modulePolynomialTopology_iff {U : Set M} :
   · intro h x hx
     obtain ⟨n, φ, p, hxp, hpU⟩ := h x hx
     exact ⟨{y : M | MvPolynomial.eval (fun i ↦ φ i y) p ≠ 0}, ⟨n, φ, p, rfl⟩, hxp, hpU⟩
+
+/-- Over a nontrivial commutative semiring without zero divisors, a set is closed in the polynomial
+Zariski topology on `M` exactly when it is the common zero locus of a set of polynomials in the
+dual functionals `Module.Dual R M`. -/
+theorem isClosed_modulePolynomialTopology_iff {F : Set M} :
+    IsClosed[modulePolynomialTopology R M] F ↔
+      ∃ S : Set (MvPolynomial (Module.Dual R M) R),
+        F = {x : M | ∀ p ∈ S, MvPolynomial.eval (fun φ ↦ φ x) p = 0} := by
+  rw [modulePolynomialTopology_eq_induced_eval]
+  let := polynomialTopology (Module.Dual R M) R
+  rw [isClosed_induced_iff]
+  simp_rw [isClosed_polynomialTopology_iff]
+  constructor
+  · rintro ⟨_, ⟨S, rfl⟩, rfl⟩
+    exact ⟨S, rfl⟩
+  · rintro ⟨S, rfl⟩
+    exact ⟨_, ⟨S, rfl⟩, rfl⟩
 
 end TauCeti
 
@@ -412,14 +438,14 @@ theorem t1Space_modulePolynomialTopology_of_dual_separating {M : Type*} [AddComm
   exact isClosed_iInter fun φ ↦
     isClosed_modulePolynomialTopology_eval_eq_zero (fun _ : Fin 1 ↦ φ) _
 
-/-- On any free module over a commutative ring, points are closed in the polynomial Zariski
+/-- On any projective module over a commutative ring, points are closed in the polynomial Zariski
 topology. -/
 theorem t1Space_modulePolynomialTopology {M : Type*} [AddCommMonoid M] [Module R M]
-    [Module.Free R M] :
+    [Module.Projective R M] :
     @T1Space M (modulePolynomialTopology R M) := by
   refine t1Space_modulePolynomialTopology_of_dual_separating fun x y hxy ↦ ?_
   by_contra! h
-  exact hxy ((Module.Free.chooseBasis R M).eval_injective (LinearMap.ext h))
+  exact hxy (Module.eval_apply_injective R (LinearMap.ext h))
 
 end TauCeti
 
@@ -466,25 +492,31 @@ end AffineEquiv
 
 namespace TauCeti
 
+private theorem induced_cofinite {α β : Type*} {f : α → β} (hf : Function.Injective f) :
+    TopologicalSpace.induced f TopologicalSpace.cofinite = TopologicalSpace.cofinite := by
+  ext U
+  let : TopologicalSpace β := TopologicalSpace.cofinite
+  rw [isOpen_induced_iff]
+  simp only [isOpen_mk]
+  constructor
+  · rintro ⟨V, hV, rfl⟩ ⟨x, hx⟩
+    rw [← preimage_compl]
+    exact (hV ⟨f x, hx⟩).preimage hf.injOn
+  · intro hU
+    by_cases hne : U.Nonempty
+    · refine ⟨(f '' Uᶜ)ᶜ, fun _ ↦ ?_, ?_⟩
+      · simpa only [compl_compl] using (hU hne).image f
+      · rw [preimage_compl, hf.preimage_image, compl_compl]
+    · rw [not_nonempty_iff_eq_empty.mp hne]
+      exact ⟨∅, by simp, preimage_empty⟩
+
 /-- On a commutative ring `R` without zero divisors viewed as a module over itself, the polynomial
 Zariski topology coincides with the cofinite topology. -/
 theorem modulePolynomialTopology_self_eq_cofinite [NoZeroDivisors R] :
     modulePolynomialTopology R R = TopologicalSpace.cofinite := by
   let e : R ≃ₗ[R] (Unit → R) := (LinearEquiv.funUnique Unit R R).symm
   rw [← e.induced_modulePolynomialTopology, modulePolynomialTopology_pi Unit,
-    polynomialTopology_eq_cofinite]
-  ext U
-  let : TopologicalSpace (Unit → R) := TopologicalSpace.cofinite
-  rw [isOpen_induced_iff]
-  simp only [isOpen_mk]
-  constructor
-  · rintro ⟨V, hV, rfl⟩ ⟨x, hx⟩
-    rw [← preimage_compl]
-    exact (hV ⟨e x, hx⟩).preimage e.injective.injOn
-  · intro hU
-    refine ⟨e '' U, fun hne ↦ ?_, e.injective.preimage_image U⟩
-    rw [← Set.image_compl_eq e.bijective]
-    exact (hU (image_nonempty.mp hne)).image e
+    polynomialTopology_eq_cofinite, induced_cofinite e.injective]
 
 /-- For any `x, y : M`, the affine line `t ↦ (1 - t) • x + t • y` is continuous for the polynomial
 Zariski topologies. -/

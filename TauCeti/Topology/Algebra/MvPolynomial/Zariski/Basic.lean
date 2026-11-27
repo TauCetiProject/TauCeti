@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Bases
+public import Mathlib.Topology.Closure
 public import Mathlib.Topology.Homeomorph.Defs
 public import Mathlib.Topology.Irreducible
 public import Mathlib.Topology.NoetherianSpace
+public import TauCeti.RingTheory.MvPolynomial.ZariskiClosure
 import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Algebra.Polynomial.Roots
@@ -28,12 +30,12 @@ an explicit `TopologicalSpace` value rather than a global instance so that it ne
 product or analytic topologies on spaces such as `Fin n → ℂ`.
 
 When `R` is nontrivial with no zero divisors, these basic nonvanishing loci form a topological
-basis, the closed sets are exactly the common zero loci of sets of polynomials, and the topology
-is induced from the Zariski topology on `PrimeSpectrum (MvPolynomial σ R)` along evaluation
-kernels. Polynomial maps between coordinate spaces — and in particular coordinate reindexings and
-linear maps from finite-dimensional coordinate spaces — are continuous, so invertible coordinate
-reindexings are homeomorphisms. Over a Noetherian commutative ring `R`, Hilbert's basis theorem
-therefore makes it Noetherian whenever `σ` is finite.
+basis, the closed sets are exactly the common zero loci of sets of polynomials (agreeing with
+`MvPolynomial.zariskiClosure` over a field), and the topology is induced from the Zariski topology
+on `PrimeSpectrum (MvPolynomial σ R)` along evaluation kernels. Polynomial maps between coordinate
+spaces — and in particular coordinate reindexings and linear maps from finite-dimensional coordinate
+spaces — are continuous, so invertible coordinate reindexings are homeomorphisms. Over a Noetherian
+commutative ring `R`, Hilbert's basis theorem therefore makes it Noetherian whenever `σ` is finite.
 
 Over an infinite integral domain `R`, `MvPolynomial.funext` shows that two nonempty basic opens
 always meet, making `σ → R` an irreducible space for every `σ` (including empty `σ`, where the
@@ -52,6 +54,9 @@ infinite complement is open.
 * `TauCeti.isTopologicalBasis_polynomialTopology`, `TauCeti.isOpen_polynomialTopology_iff`, and
   `TauCeti.isClosed_polynomialTopology_iff`: basic opens form a basis and closed sets are common
   zero loci over a nontrivial semiring without zero divisors.
+* `MvPolynomial.zariskiClosure_eq_closureOperator`: over a field `K`,
+  `MvPolynomial.zariskiClosure K` coincides with the topological closure operator of
+  `TauCeti.polynomialTopology σ K`.
 * `TauCeti.continuous_polynomialTopology_of_polynomial`,
   `Equiv.isHomeomorph_polynomialTopology_comp`, and
   `LinearMap.continuous_polynomialTopology`: continuity of polynomial and linear maps and
@@ -325,6 +330,34 @@ theorem isClosed_polynomialTopology_iff {F : Set (σ → R)} :
 end TauCeti
 
 end Basis
+
+section ZariskiClosure
+
+namespace MvPolynomial
+
+open TauCeti
+
+/-- Over a field `K`, the Zariski closure operator `MvPolynomial.zariskiClosure K` coincides with
+the topological closure operator of `TauCeti.polynomialTopology σ K`. -/
+theorem zariskiClosure_eq_closureOperator {σ K : Type*} [Field K] :
+    zariskiClosure K = @Topology.closureOperator (σ → K) (polynomialTopology σ K) := by
+  let := polynomialTopology σ K
+  refine ClosureOperator.ext_isClosed _ _ fun S ↦ ?_
+  rw [Topology.isClosed_closureOperator, isClosed_polynomialTopology_iff,
+    zariskiClosure_isClosed_iff]
+  constructor
+  · rintro ⟨I, rfl⟩
+    refine ⟨(I : Set (MvPolynomial σ K)), ?_⟩
+    rw [← Ideal.span_eq I, zeroLocus_span]
+    simp [aeval_def]
+  · rintro ⟨T, rfl⟩
+    refine ⟨Ideal.span T, ?_⟩
+    rw [zeroLocus_span]
+    simp [aeval_def]
+
+end MvPolynomial
+
+end ZariskiClosure
 
 section CommRing
 
