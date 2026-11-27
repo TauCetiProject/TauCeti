@@ -55,8 +55,9 @@ act on a lattice glued from copies of `D₄`.
   `orderOf_typeD4TrialityLabelPerm`; `glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv`,
   `glueAlphabetIsometryOfIsometry_typeD4Triality_pow_glueLabelEquiv`).
 * `TauCeti.DynkinType.discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry`: on the `D₄` glue
-  alphabet, read in `F₄`, it is multiplication by `ω²`; its powers give every nonzero scaling
-  (`discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry`). In the Conway--Sloane
+  alphabet, read in `F₄`, it is multiplication by `ω²`
+  (`typeD4GlueAlphabetQuaternaryIsometry_typeD4GlueAlphabetTriality`); its powers give every nonzero
+  scaling (`discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry`). In the Conway--Sloane
   labels it cycles `[1] ↦ [2] ↦ [3] ↦ [1]` (`discriminantGroupEquiv_typeD4Triality_glueLabelEquiv`).
 * `TauCeti.DynkinType.typeD4ScalarIsometry`: the power of triality realizing a given unit of
   `F₄` on the glue alphabet (`typeD4ScalarIsometry_eq_pow`), compatible with
@@ -485,6 +486,21 @@ theorem discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry
     discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminantQuadraticIsometry
       hF hω _).trans ?_))
   rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
+
+/-- **In the quaternary `F₄` coordinates, `typeD4GlueAlphabetTriality` acts as multiplication by
+`ω²`.** -/
+@[simp]
+theorem typeD4GlueAlphabetQuaternaryIsometry_typeD4GlueAlphabetTriality
+    (x : (D 4).glueAlphabet ht) :
+    typeD4GlueAlphabetQuaternaryIsometry hF hω (typeD4GlueAlphabetTriality ht x) =
+      ω ^ 2 * typeD4GlueAlphabetQuaternaryIsometry hF hω x := by
+  have hv' : (D 4).Valid := valid_D.mpr le_rfl
+  apply EquivLike.injective (typeD4GlueAlphabetQuaternaryIsometry hF hω).symm
+  apply EquivLike.injective ((D 4).glueAlphabetIsometry hv' ht)
+  rw [QuadraticMap.IsometryEquiv.symm_apply_apply, typeD4GlueAlphabetTriality,
+    glueAlphabetIsometry_glueAlphabetIsometryOfIsometry]
+  exact (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
+    (discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry ht hv' hF hω x)
 
 /-- **The powers of triality act on the `D₄` glue alphabet as multiplication by the powers of
 `ω²`**, read through `typeD4GlueAlphabetQuaternaryIsometry`. Every nonzero element of `F₄` is a

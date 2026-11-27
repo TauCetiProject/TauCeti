@@ -59,9 +59,11 @@ the induced map on glue words reads a digit word `[a b c d e]` as `[a d b c τ(e
   triality on glue words, preserving the glue subgroup
   (`a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff`).
 * `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry`: the induced self-isometry of the glued
-  lattice, with coordinate formulas `a5FourthD4TrialityIsometry_apply_d4Index` and
-  `a5FourthD4TrialityIsometry_apply_of_ne`, whose cube is the identity
-  (`a5FourthD4TrialityIsometry_pow_three`) and whose order is exactly three
+  lattice, with coordinate formulas `a5FourthD4TrialityIsometry_apply_d4Index`,
+  `a5FourthD4TrialityIsometry_apply_of_ne`, and `a5FourthD4TrialityIsometry_apply_zero`,
+  `a5FourthD4TrialityIsometry_apply_one`, `a5FourthD4TrialityIsometry_apply_two`,
+  `a5FourthD4TrialityIsometry_apply_three`, `a5FourthD4TrialityIsometry_apply_four`, whose cube is
+  the identity (`a5FourthD4TrialityIsometry_pow_three`) and whose order is exactly three
   (`orderOf_a5FourthD4TrialityIsometry`).
 
 ## References
@@ -394,9 +396,13 @@ private theorem val_glueLabelEquiv_symm_componentTrialityLabel_d4Index
     have h2 : ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm
           (componentTrialityLabel a5FourthD4D4Index x) =
         typeD4TrialityLabelPerm (((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm x) := by
+      -- `a5FourthD4.componentType a5FourthD4D4Index` reduces definitionally to `D 4`
+      -- (`componentType_a5FourthD4D4Index`).
       rw [← glueLabelEquiv_symm_typeD4GlueAlphabetTriality (isSimplyLaced_D 4) x]
       exact congrArg (fun f : FiniteQuadraticModule.Isometry ((D 4).glueAlphabet _) _ ↦
         ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm (f x)) componentTrialityLabel_d4Index
+    -- `h1` and `h2` identify `a5FourthD4.componentType a5FourthD4D4Index` with `D 4`
+    -- definitionally (`componentType_a5FourthD4D4Index`).
     exact congrArg Fin.val h2
   have hget : ∀ i : Fin 4, (typeD4TrialityLabelPerm i).val = [0, 2, 3, 1].getD i.val 0 :=
     fun i ↦ by fin_cases i <;> simp
@@ -549,6 +555,58 @@ theorem a5FourthD4TrialityIsometry_apply_of_ne
       x (a5FourthD4BlockRotation.symm k)
         (Fin.cast (congrArg rank (componentType_a5FourthD4BlockRotation_symm k)).symm j) := by
   rw [a5FourthD4TrialityIsometry_apply, componentTriality_of_ne hk, Isometry.one_apply]
+
+private theorem a5FourthD4TrialityIsometry_apply_of_eq
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ)
+    {k b : Fin a5FourthD4.components.length}
+    (hk : k ≠ a5FourthD4D4Index) (hkb : a5FourthD4BlockRotation.symm k = b)
+    (hb : (a5FourthD4.componentType k).rank = (a5FourthD4.componentType b).rank := by rfl) :
+    a5FourthD4TrialityIsometry x k = fun j ↦ x b (Fin.cast hb j) := by
+  funext j
+  exact (a5FourthD4TrialityIsometry_apply_of_ne x hk j).trans
+    (Fin.apply_cast_eq_apply_cast x hkb _ hb j)
+
+/-- On position `0`, `a5FourthD4TrialityIsometry` reads position `0`. -/
+@[simp]
+theorem a5FourthD4TrialityIsometry_apply_zero
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
+    a5FourthD4TrialityIsometry x (0 : Fin 5) = x (0 : Fin 5) :=
+  a5FourthD4TrialityIsometry_apply_of_eq x (k := ⟨0, by decide⟩) (b := ⟨0, by decide⟩)
+    (by decide) (by rw [Fin.mk_zero', a5FourthD4BlockRotation_symm_apply_zero])
+
+/-- On position `1`, `a5FourthD4TrialityIsometry` reads position `3`. -/
+@[simp]
+theorem a5FourthD4TrialityIsometry_apply_one
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
+    a5FourthD4TrialityIsometry x (1 : Fin 5) = x (3 : Fin 5) :=
+  a5FourthD4TrialityIsometry_apply_of_eq x (k := ⟨1, by decide⟩) (b := ⟨3, by decide⟩)
+    (by decide) (a5FourthD4BlockRotation_symm_apply_mk_one (by decide))
+
+/-- On position `2`, `a5FourthD4TrialityIsometry` reads position `1`. -/
+@[simp]
+theorem a5FourthD4TrialityIsometry_apply_two
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
+    a5FourthD4TrialityIsometry x (2 : Fin 5) = x (1 : Fin 5) :=
+  a5FourthD4TrialityIsometry_apply_of_eq x (k := ⟨2, by decide⟩) (b := ⟨1, by decide⟩)
+    (by decide) (a5FourthD4BlockRotation_symm_apply_mk_two (by decide))
+
+/-- On position `3`, `a5FourthD4TrialityIsometry` reads position `2`. -/
+@[simp]
+theorem a5FourthD4TrialityIsometry_apply_three
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
+    a5FourthD4TrialityIsometry x (3 : Fin 5) = x (2 : Fin 5) :=
+  a5FourthD4TrialityIsometry_apply_of_eq x (k := ⟨3, by decide⟩) (b := ⟨2, by decide⟩)
+    (by decide) (a5FourthD4BlockRotation_symm_apply_mk_three (by decide))
+
+/-- On the `D₄` component in position `4`, `a5FourthD4TrialityIsometry` applies `D₄` triality. -/
+@[simp]
+theorem a5FourthD4TrialityIsometry_apply_four
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
+    a5FourthD4TrialityIsometry x (4 : Fin 5) =
+      typeD4Triality (isSimplyLaced_D 4) (x (4 : Fin 5)) :=
+  -- Unfolding `a5FourthD4D4Index`, the numeral `(4 : Fin 5)`, and `a5FourthD4.components`
+  -- identifies both indices with `⟨4, _⟩`; the bound proofs agree by proof irrelevance.
+  a5FourthD4TrialityIsometry_apply_d4Index x
 
 /-- **The rotation combined with triality has order dividing three**, like the rotation and
 triality themselves. -/

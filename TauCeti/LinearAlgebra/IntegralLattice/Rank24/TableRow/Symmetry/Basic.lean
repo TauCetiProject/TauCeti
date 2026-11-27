@@ -39,7 +39,7 @@ four components of `D₆⁴`.  In the row `A₅⁴ D₄` the rotation of the thr
 in `[2(024)0]` does not preserve the glue subgroup: it carries `[33001]` to `[30301]`, whose
 difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.  That row's rotation
 acts on its lattice only when combined with triality on the `D₄` component; see
-`TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4`.  To lift such a block
+`TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4.Basic`.  To lift such a block
 permutation in general one couples it with componentwise root-lattice self-isometries acting
 nontrivially on the glue alphabets (`coupledLatticeIsometry`,
 `apply_piGlueAlphabetCongr_mem_glueSubgroup_iff_of_glueWords`).

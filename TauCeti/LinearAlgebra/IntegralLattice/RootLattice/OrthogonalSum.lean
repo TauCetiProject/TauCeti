@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Pi
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.StdBasis
-import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
 
 /-!
 # Orthogonal sums of root lattices and their glue words
@@ -56,9 +55,8 @@ Isotropic and Lagrangian subgroups of glue words correspond to those of the disc
   `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr'_glueWordIsometry`: naturality of
   the glue-word isometry under componentwise isometries, permutations of the components, and their
   composites.
-* `TauCeti.DynkinType.glueAlphabetIsometry_unitsSMul`,
-  `TauCeti.DynkinType.discriminantQuadraticIsometry_signedPerm_glueWordIsometry`: naturality of
-  glue labels and glue words under signed permutations of identical components.
+* `TauCeti.DynkinType.discriminantQuadraticIsometry_signedPerm_glueWordIsometry`: naturality of
+  glue words under signed permutations of identical components.
 * `TauCeti.DynkinType.piGlueAlphabetCongr`: quadratic isometry of glue words induced by
   equalities of component types along a reindexing, with `_refl` and `_trans` lemmas.
 * `TauCeti.DynkinType.isNondegenerate_pi_glueAlphabet`,
@@ -327,17 +325,6 @@ theorem discriminantQuadraticIsometry_piCongr'_glueWordIsometry (hv : ∀ i, (t 
 section SignedPermutation
 
 variable {T : DynkinType} {hT : T.IsSimplyLaced} (hvT : T.Valid)
-
-/-- **Naturality of glue labels under unit scalar multiplication on one component.**  Scaling the
-root lattice of a valid simply-laced Dynkin type `T` by a unit `u : ℤˣ` acts on its discriminant
-quadratic module compatibly with scaling the glue alphabet by `u`. -/
-theorem glueAlphabetIsometry_unitsSMul (u : ℤˣ) (x : T.glueAlphabet hT) :
-    T.glueAlphabetIsometry hvT hT (u • x) =
-      (Isometry.unitsSMul u (T.rootLattice hT)).discriminantQuadraticIsometry
-        (T.isEven_rootLattice hT) (T.glueAlphabetIsometry hvT hT x) :=
-  (map_zsmul (T.glueAlphabetIsometry hvT hT) (u : ℤ) x).trans
-    ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-      (Isometry.discriminantGroupEquiv_unitsSMul_apply u _ _)).symm
 
 /-- **Naturality of glue words under signed permutations of identical components.**  Let all
 components have the same type `T`.  Multiplying component `i` of the orthogonal sum of root
