@@ -16,7 +16,8 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 The Witt-vector Frobenius `φ` of `𝕎 R` commutes with `WittVector.map f` for every ring homomorphism
 `f`, since the coordinates of `φ x` are given by universal integer polynomials in those of `x`.
-For any commutative ring `R`, it induces Frobenius on `W(R)/p^n`.
+For any commutative ring `R`, it induces Frobenius on `W(R)/p^n`, and `φⁿ ∘ Vⁿ` is multiplication
+by `pⁿ`.
 
 Let `R` be a ring of characteristic `p`. The Witt-vector Frobenius `φ` of `𝕎 R` raises every
 Witt coordinate to its `p`-th power, so its fixed points are the Witt vectors whose coordinates are
@@ -37,6 +38,8 @@ inverse of `V`, a frame in the sense of displays.
 * `WittVector.semiconj_map_frobeniusEquiv`, `WittVector.semiconj_map_frobeniusEquiv_symm`,
   `WittVector.map_frobeniusEquiv`, `WittVector.map_frobeniusEquiv_symm` : for perfect rings of
   characteristic `p`, `W(f)` commutes with `φ` and `φ⁻¹`.
+* `WittVector.iterate_frobenius_iterate_verschiebung` : `φⁿ (Vⁿ x) = pⁿ x` for every commutative
+  ring.
 * `WittVector.frobenius_teichmuller` : `φ [r] = [r] ^ p` in characteristic `p`.
 * `WittVector.frobenius_eq_self_iff_forall_coeff` : `φ x = x` iff every coordinate of `x` is fixed
   by the `p`-power map, in characteristic `p`.
@@ -113,6 +116,18 @@ theorem map_frobeniusEquiv_symm (f : R →+* S) (x : WittVector p R) :
 end Perfect
 
 end Map
+
+/-- `Fⁿ (Vⁿ x) = pⁿ x` for Witt vectors over any commutative ring; compare
+`WittVector.iterate_verschiebung_iterate_frobenius`, its reverse in characteristic `p`. -/
+theorem iterate_frobenius_iterate_verschiebung {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R]
+    (x : WittVector p R) (n : ℕ) :
+    frobenius^[n] (verschiebung^[n] x) = x * (p : WittVector p R) ^ n := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', Function.iterate_succ_apply, ih, map_mul,
+      frobenius_verschiebung, map_pow, map_natCast]
+    ring
 
 variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [CharP R p]
 
