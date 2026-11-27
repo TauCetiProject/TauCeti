@@ -8,7 +8,6 @@ module
 public import TauCeti.Data.Finsupp.SymmetrizeInv
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.FiniteSum
 public import TauCeti.NumberTheory.LFunctions.Hecke.RieszMellin
-import TauCeti.Analysis.Contour.Residue.Germ
 
 /-!
 # Pole data for the Riesz Mellin expression of a Hecke family
@@ -19,7 +18,10 @@ nonnegative weights prevent cancellation: the residues are nonnegative multiples
 same complex factor. At real points strictly between zero and one this factor is positive.
 
 The inverse-paired normalization and its use in Landau's theorem follow L. Alpöge's
-`Deduction.Gm` and `Deduction.poleData` for Dirichlet characters.
+`Deduction.Gm` (`DedekindLFunctions/CharFamily.lean`) and `Deduction.poleData`
+(`DedekindLFunctions/LandauTheorems/poleData.lean`) for Dirichlet characters, in
+`src/Development/AutomorphicArithmetic/` of his
+[Lean formalization](https://github.com/leanprover-community/riemann-hypothesis).
 -/
 
 public section
@@ -69,8 +71,7 @@ theorem heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv
 theorem meromorphic_heckeFamilyRieszRemainderMellin (w : PrimitiveRayClassCharacter K →₀ ℝ) :
     Meromorphic (heckeFamilyRieszRemainderMellin w) := by
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv]
-  exact Meromorphic.sum fun ψ _ ↦
-    (meromorphicOn_univ.mp (meromorphicNFOn_rieszRemainderMellin _).meromorphicOn).const_smul _
+  exact meromorphic_sum_rieszRemainderMellin _
 
 /-- The Mellin normalization removes the singularity at one before summing. -/
 theorem analyticAt_heckeFamilyRieszRemainderMellin_one (w : PrimitiveRayClassCharacter K →₀ ℝ) :
@@ -78,8 +79,7 @@ theorem analyticAt_heckeFamilyRieszRemainderMellin_one (w : PrimitiveRayClassCha
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv]
   apply Finset.analyticAt_sum
   intro ψ _
-  have hL := meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn
-  exact hL.analyticAt_rieszRemainderMellin_one.const_smul
+  exact (meromorphic_heckeLFunctionC ψ.character).analyticAt_rieszRemainderMellin_one.const_smul
 
 /-- Inverse pairing makes the family Mellin expression invariant under conjugate reflection. -/
 @[simp] theorem heckeFamilyRieszRemainderMellin_apply_conj
@@ -95,9 +95,8 @@ theorem neg_one_le_meromorphicOrderAt_heckeFamilyRieszRemainderMellin
     (w : PrimitiveRayClassCharacter K →₀ ℝ) {z : ℂ} (hz : z ≠ 0) :
     -1 ≤ meromorphicOrderAt (heckeFamilyRieszRemainderMellin w) z := by
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv]
-  simpa only [← Complex.coe_smul] using neg_one_le_meromorphicOrderAt_sum_rieszRemainderMellin _
-    (fun ψ _ ↦ meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn)
-    hz
+  exact neg_one_le_meromorphicOrderAt_sum_rieszRemainderMellin _
+    (fun ψ _ ↦ meromorphic_heckeLFunctionC ψ.character) hz
 
 /-- The residue of the family expression is the weighted sum of the individual orders, using
 the symmetrized weights, divided by `z * (1 - z)`. An infinite order contributes zero. -/
@@ -109,8 +108,7 @@ theorem residue_heckeFamilyRieszRemainderMellin
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv, Finsupp.sum]
   simp only [← Complex.coe_smul, ofReal_sum, ofReal_mul, ofReal_intCast]
   exact residue_sum_rieszRemainderMellin _
-    (fun (ψ : PrimitiveRayClassCharacter K) _ ↦
-      meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn) hz
+    (fun (ψ : PrimitiveRayClassCharacter K) _ ↦ meromorphic_heckeLFunctionC ψ.character) hz
 
 /-- Away from zero and one, for nonnegative weights, if the L-functions in the symmetrized
 support have no pole, the family expression has a pole exactly when a supported L-function
@@ -125,8 +123,7 @@ theorem meromorphicOrderAt_heckeFamilyRieszRemainderMellin_neg_iff
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv,
     meromorphicOrderAt_sum_rieszRemainderMellin_neg_iff_of_nonneg
       (fun ψ _ ↦ Finsupp.le_def.mp (Finsupp.symmetrizeInv_nonneg hw) ψ)
-      (fun ψ _ ↦ meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn)
-      h₀ hz h₁]
+      (fun ψ _ ↦ meromorphic_heckeLFunctionC ψ.character) h₀ hz h₁]
   have hinv (ψ : PrimitiveRayClassCharacter K) :
       meromorphicOrderAt (heckeLFunctionC ψ⁻¹.character) z =
         meromorphicOrderAt (heckeLFunctionC ψ.character) (conj z) := by
@@ -147,7 +144,7 @@ theorem meromorphicOrderAt_heckeFamilyRieszRemainderMellin_neg_iff
 
 /-- At a real pole strictly between zero and one, if no L-function in the symmetrized
 support has a pole there, the residue of a nonnegatively weighted family is positive real. -/
-theorem residue_heckeFamilyRieszRemainderMellin_pos
+theorem exists_pos_residue_heckeFamilyRieszRemainderMellin_of_nonneg
     {w : PrimitiveRayClassCharacter K →₀ ℝ} (hw : 0 ≤ w) {r : ℝ} (hr : 0 < r) (hr₁ : r < 1)
     (h₀ : ∀ ψ ∈ w.symmetrizeInv.support,
       0 ≤ meromorphicOrderAt (heckeLFunctionC ψ.character) (r : ℂ))
@@ -156,7 +153,6 @@ theorem residue_heckeFamilyRieszRemainderMellin_pos
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv] at hp ⊢
   exact exists_pos_residue_sum_rieszRemainderMellin_of_nonneg
     (fun ψ _ ↦ Finsupp.le_def.mp (Finsupp.symmetrizeInv_nonneg hw) ψ)
-    (fun ψ _ ↦ meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn)
-    hr hr₁ h₀ hp
+    (fun ψ _ ↦ meromorphic_heckeLFunctionC ψ.character) hr hr₁ h₀ hp
 
 end TauCeti.LFunctions
