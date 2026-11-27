@@ -76,6 +76,8 @@ noncomputable def diagSumSMul [NonUnitalCommCStarAlgebra B] [PartialOrder B] [St
 theorem diagSumSMul_apply [NonUnitalCommCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
     (b : ι → B) (hb : ∀ k, 0 ≤ b k) (M : CStarMatrix ι ι ℂ) :
     diagSumSMul b hb M = ∑ k, M k k • b k :=
+  -- `PositiveLinearMap.mk₀` keeps the underlying linear map, so after forgetting complete
+  -- positivity the map is `M ↦ Σ_k M_kk • b_k` by definition.
   congrFun (PositiveLinearMap.coe_toCompletelyPositiveMapOfCommCodomain _) M
 
 /-- If the positive `b_k` sum to `1`, the map `M ↦ Σ_k M_kk • b_k` is unital, hence
@@ -137,8 +139,10 @@ instance isNuclear_continuousMap : IsNuclear C(X, ℂ) := by
         (convex_closedBall _ _)
       rw [Metric.mem_closedBall, dist_eq_norm, norm_sub_rev]
       exact (Set.mem_iInter₂.1 (hρ k (subset_tsupport _ hk)) f hf).le
-    rw [Metric.mem_closedBall, dist_eq_norm, finsum_eq_sum_of_fintype] at hy
-    simpa [β, he, hg, Complex.real_smul, mul_comm] using hy
+    have hβα : β (α f) y = ∑ k, ρ k y • f k := by
+      simp [β, he, hg, Complex.real_smul, mul_comm]
+    rw [Metric.mem_closedBall, dist_eq_norm, finsum_eq_sum_of_fintype, ← hβα] at hy
+    simpa using hy
 
 /-- **Commutative unital C⋆-algebras are nuclear**, through the Gelfand transform
 `A ≃⋆ₐ C(X, ℂ)` onto the continuous functions on the character space. -/
