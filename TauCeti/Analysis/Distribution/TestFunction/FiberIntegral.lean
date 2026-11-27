@@ -514,19 +514,18 @@ theorem TestFunction.fiberIntegralCLM_prodMap_prodSMulCLM
     (hk₁s : ∀ x ∈ Ω₀, Surjective (fderiv ℝ k₁ x))
     (hk₂ : ContDiffOn ℝ ∞ k₂ O₀) (hk₂O : MapsTo k₂ O₀ O)
     (hk₂s : ∀ x ∈ O₀, Surjective (fderiv ℝ k₂ x))
-    (hV₀ : (V₀ : Set (E₀ × D₀)) = (Ω₀ : Set E₀) ×ˢ (O₀ : Set D₀))
-    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+    (hV₀ : (Ω₀ : Set E₀) ×ˢ (O₀ : Set D₀) ⊆ V₀) (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V)
     {hk : ContDiffOn ℝ ∞ (Prod.map k₁ k₂) V₀} {hkV : MapsTo (Prod.map k₁ k₂) V₀ V}
     {hks : ∀ p ∈ V₀, Surjective (fderiv ℝ (Prod.map k₁ k₂) p)}
     (φ : 𝓓(Ω₀, ℝ)) (ψ : 𝓓(O₀, ℝ)) :
     fiberIntegralCLM (μ₁.prod μ₂) (ν₁.prod ν₂) (Prod.map k₁ k₂) hk hkV hks
-        (prodSMulCLM ψ hV₀.symm.subset φ) =
-      prodSMulCLM (fiberIntegralCLM μ₂ ν₂ k₂ hk₂ hk₂O hk₂s ψ) hV.symm.subset
+        (prodSMulCLM ψ hV₀ φ) =
+      prodSMulCLM (fiberIntegralCLM μ₂ ν₂ k₂ hk₂ hk₂O hk₂s ψ) hV
         (fiberIntegralCLM μ₁ ν₁ k₁ hk₁ hk₁Ω hk₁s φ) := by
   set φ' := fiberIntegralCLM μ₁ ν₁ k₁ hk₁ hk₁Ω hk₁s φ
   set ψ' := fiberIntegralCLM μ₂ ν₂ k₂ hk₂ hk₂O hk₂s ψ
-  set Θ := prodSMulCLM ψ' hV.symm.subset φ'
-  set Θ₀ := prodSMulCLM ψ hV₀.symm.subset φ
+  set Θ := prodSMulCLM ψ' hV φ'
+  set Θ₀ := prodSMulCLM ψ hV₀ φ
   symm
   refine (eq_fiberIntegralCLM_iff _ _ _ _ _).2 fun g hg hgc _ ↦ ?_
   -- The partial integral `h y₁ = ∫ ψ'(y₂) g(y₁, y₂) dy₂` is continuous in `y₁`.
@@ -542,7 +541,8 @@ theorem TestFunction.fiberIntegralCLM_prodMap_prodSMulCLM
     refine Continuous.integrable_of_hasCompactSupport (continuous_of_tsupport fun q hq ↦ ?_)
       Θ₀.hasCompactSupport.smul_right
     have hq' : q ∈ (Ω₀ : Set E₀) ×ˢ (O₀ : Set D₀) :=
-      hV₀ ▸ Θ₀.tsupport_subset (tsupport_smul_subset_left _ _ hq)
+      prod_mono φ.tsupport_subset ψ.tsupport_subset
+        (tsupport_prodSMulCLM_subset φ (tsupport_smul_subset_left _ _ hq))
     have hKq : ContinuousAt (Prod.map k₁ k₂) q :=
       ((hk₁.continuousOn.prodMap hk₂.continuousOn) q hq').continuousAt
         ((Ω₀.isOpen.prod O₀.isOpen).mem_nhds hq')

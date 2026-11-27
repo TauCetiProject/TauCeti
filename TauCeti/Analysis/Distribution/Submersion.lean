@@ -293,7 +293,8 @@ theorem compCLMOfSubmersion_prodMap_tensorProduct
         (compCLMOfSubmersion μ₂ ν₂ k₂ hk₂ hk₂O hk₂s T) hV₀.subset := by
   refine (tensorProduct_eq _ _ hV₀ fun φ ψ ↦ ?_).symm
   rw [compCLMOfSubmersion_apply, compCLMOfSubmersion_apply, compCLMOfSubmersion_apply,
-    fiberIntegralCLM_prodMap_prodSMulCLM μ₁ μ₂ ν₁ ν₂ hk₁ hk₁Ω hk₁s hk₂ hk₂O hk₂s hV₀ hV,
+    fiberIntegralCLM_prodMap_prodSMulCLM μ₁ μ₂ ν₁ ν₂ hk₁ hk₁Ω hk₁s hk₂ hk₂O hk₂s hV₀.symm.subset
+      hV.symm.subset,
     tensorProduct_prodSMulCLM]
 
 end Prod
