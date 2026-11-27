@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Decomposition
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.LinearAlgebra.LinearIndependent.Basic
 
 /-!
 # The all-divisor newform basis and direct-sum decomposition of cusp forms
@@ -23,26 +24,29 @@ S_k(Γ₁(N)) = ⨁_{d * M ∣ N} V_d(S_k(Γ₁(M))ⁿᵉʷ),
 S_k(N, χ)  = ⨁_{d * M ∣ N, cond(χ) ∣ M} V_d(S_k(M, χ_M)ⁿᵉʷ).
 ```
 
-*Linear independence.* Each `V_d g` is a joint eigenvector of the diamond operators `⟨u⟩` for
-`u ∈ (ZMod N)ˣ` and the good Hecke operators `T_q` for primes `q ∤ N`, with joint eigenvalue system
-determined by `(M, g)`. Strong multiplicity one across divisor levels
-(`HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq`) shows that distinct pairs `(M, g)`
-carry distinct joint eigenvalue systems, so their spans lie in supremum-independent joint
-eigenspaces (`TauCeti.iSupIndep_iInf_eigenspace`). Within the span attached to a single `(M, g)`,
-the forms `V_d g` at distinct positive `d` are linearly independent by `q`-expansion
-(`CuspForm.linearIndependent_levelRaise`).
+*Linear independence.* Within a single `(M, g)` fiber, the forms `V_d g` at distinct positive `d`
+are linearly independent by `q`-expansion (`CuspForm.linearIndependent_levelRaise`). At a fixed
+nebentypus `χ` modulo `N`, strong multiplicity one across divisor levels makes the good-prime Hecke
+eigenvalue systems injective (`HeckeRing.GL2.Newform.eigenvalue_injective_of_comp_unitsMap_eq`), so
+gluing along the independent joint eigenspaces (`TauCeti.iSupIndep_iInf_eigenspace`) via
+`TauCeti.linearIndependent_sigma_of_iSupIndep` proves fixed-character linear independence
+(`HeckeRing.GL2.Newform.linearIndependent_levelRaise_of_comp_unitsMap_eq`). Gluing once more across
+the independent nebentypus spaces (`TauCeti.iSupIndep_cuspFormCharSpace`) gives full linear
+independence (`HeckeRing.GL2.Newform.linearIndependent_levelRaise`).
 
 ## Main definitions
 
 * `HeckeRing.GL2.Newform.levelRaiseBasis N k`: the basis of `S_k(Γ₁(N))` indexed by
-  `Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.1.1 k`, sending `⟨(M, d), g⟩` to `V_d g`.
+  `Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k`, sending `⟨(M, d), g⟩` to `V_d g`.
 * `HeckeRing.GL2.Newform.levelRaiseBasisCharSpace N k χ`: the basis of `S_k(N, χ)` formed by the
   level-raised newforms `V_d g` whose nebentypus `g.χ` pulls back to `χ` modulo `N`.
 
 ## Main results
 
-* `HeckeRing.GL2.Newform.linearIndependent_levelRaise`: all level-raised newforms `V_d g` with
-  `d * M ∣ N` are `ℂ`-linearly independent in `S_k(Γ₁(N))`.
+* `HeckeRing.GL2.Newform.linearIndependent_levelRaise_of_comp_unitsMap_eq`,
+  `HeckeRing.GL2.Newform.linearIndependent_levelRaise`: the level-raised newforms `V_d g` with
+  `d * M ∣ N` are `ℂ`-linearly independent at a fixed nebentypus `χ` and across all nebentypes in
+  `S_k(Γ₁(N))`.
 * `TauCeti.iSup_map_levelRaiseₗ_cuspFormsNew_eq_top`,
   `TauCeti.iSupIndep_map_levelRaiseₗ_cuspFormsNew`,
   `TauCeti.isInternal_map_levelRaiseₗ_cuspFormsNew`: `S_k(Γ₁(N))` is the internal direct sum of
@@ -76,68 +80,46 @@ namespace Newform
 
 /-! ### Linear independence and basis of level-raised newforms -/
 
-/-- The joint eigenvalue system of `V_d g` on `(ZMod N)ˣ ⊕ {q : ℕ // q.Prime ∧ q.Coprime N}`,
-depending only on the divisor level `M ∣ N` and the newform `g : Newform M k`. -/
-private noncomputable def levelRaiseEigenvalues (N : ℕ) (k : ℤ)
-    (j : Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, Newform M.val k) :
-    (ZMod N)ˣ ⊕ {q : ℕ // q.Prime ∧ Nat.Coprime q N} → ℂ :=
-  Sum.elim (fun u ↦ (j.2.χ (ZMod.unitsMap j.1.property u) : ℂ))
-    (fun q ↦ j.2.eigenvalue ⟨q.val, q.property.1.pos⟩ (q.property.2.coprime_dvd_right j.1.property))
-
-/-- Strong multiplicity one across divisor levels makes `levelRaiseEigenvalues` injective. -/
-private theorem levelRaiseEigenvalues_injective [NeZero N] (k : ℤ) :
-    Function.Injective (levelRaiseEigenvalues N k) := by
-  rintro ⟨⟨M₁, hM₁⟩, g₁⟩ ⟨⟨M₂, hM₂⟩, g₂⟩ heq
-  have hχ : g₁.χ.comp (ZMod.unitsMap hM₁) = g₂.χ.comp (ZMod.unitsMap hM₂) :=
-    MonoidHom.ext fun u ↦ Units.ext (congrFun heq (Sum.inl u))
-  obtain ⟨hM, hcoe⟩ := level_eq_and_coe_eq_of_comp_unitsMap_eq g₁ g₂ hM₁ hM₂ rfl hχ.symm
-    (S := ∅) fun p hp hpN _ ↦ congrFun heq (Sum.inr ⟨p, hp, hpN⟩)
-  obtain rfl : M₁ = M₂ := PNat.eq hM
-  exact Sigma.ext (Subtype.ext rfl) (heq_of_eq (Newform.ext (DFunLike.coe_injective hcoe)))
-
-/-- The endomorphism family of diamond operators and good Hecke operators on `S_k(Γ₁(N))`. -/
-private noncomputable def levelRaiseEndFamily (N : ℕ) [NeZero N] (k : ℤ) :
-    (ZMod N)ˣ ⊕ {q : ℕ // q.Prime ∧ Nat.Coprime q N} →
-      Module.End ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
-  Sum.elim (diamondOpCuspHom k) (fun q ↦ heckeTCuspNat k q.val (_hn := ⟨q.property.1.ne_zero⟩))
-
-/-- The fiber `d ↦ V_d g` in `S_k(Γ₁(N))` attached to `j = ⟨M, g⟩`. -/
-private noncomputable def levelRaiseFiber (N : ℕ) (k : ℤ)
-    (j : Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, Newform M.val k)
-    (d : {d : ℕ+ // (d : ℕ) * j.1.val ∣ N}) :
-    CuspForm ((Gamma1 N).map (mapGL ℝ)) k :=
-  CuspForm.levelRaise d.val (Gamma1_map_le_conjAct_scaleGL_of_dvd d.property) j.2.toCuspForm
-
-private theorem span_range_levelRaiseFiber_le_iInf_eigenspace [NeZero N] (k : ℤ)
-    (j : Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, Newform M.val k) :
-    Submodule.span ℂ (Set.range (levelRaiseFiber N k j)) ≤
-      ⨅ i, (levelRaiseEndFamily N k i).eigenspace (levelRaiseEigenvalues N k j i) := by
-  rw [Submodule.span_le, Set.range_subset_iff]
-  intro d
-  refine (Submodule.mem_iInf _).mpr ?_
-  rintro (u | q)
-  · have hχ := (mem_cuspFormCharSpace_iff k _ _).mp
-      (CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd d.property j.2.χ j.2.mem_charSpace) u
-    rw [Module.End.mem_eigenspace_iff]
-    exact hχ
-  · rw [Module.End.mem_eigenspace_iff]
-    exact j.2.heckeTCuspNat_levelRaise_eq_eigenvalue_smul d.property q.property.1 q.property.2
-
-private theorem linearIndependent_levelRaiseFiber_sigma (N : ℕ) [NeZero N] (k : ℤ) :
+/-- **Linear independence of the level-raised newforms at a fixed nebentypus** (Diamond–Shurman,
+Theorem 5.8.3). For a character `χ` modulo `N`, the level-raises `V_d g` over pairs `p = (M, d)` of
+positive integers with `d * M ∣ N` and newforms `g` of level `M` whose nebentypus pulls back to `χ`
+are `ℂ`-linearly independent in `S_k(Γ₁(N))`. -/
+theorem linearIndependent_levelRaise_of_comp_unitsMap_eq (N : ℕ) [NeZero N] (k : ℤ)
+    (χ : (ZMod N)ˣ →* ℂˣ) :
     LinearIndependent ℂ
-      (fun ji : Σ j : (Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, Newform M.val k),
-        {d : ℕ+ // (d : ℕ) * j.1.val ∣ N} ↦ levelRaiseFiber N k ji.1 ji.2) := by
-  have hfib (j : Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, Newform M.val k) :
-      LinearIndependent ℂ (levelRaiseFiber N k j) :=
-    _root_.CuspForm.linearIndependent_levelRaise (one_mem_strictPeriods_Gamma1_map _)
-      (d := fun d : {d : ℕ+ // (d : ℕ) * j.1.val ∣ N} ↦ (d.val : ℕ))
+      (fun x : {x : Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k //
+          x.2.χ.comp (ZMod.unitsMap (dvd_of_mul_left_dvd x.1.property)) = χ} ↦
+        CuspForm.levelRaise x.val.1.val.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd x.val.1.property)
+          x.val.2.toCuspForm) := by
+  let P := {q : ℕ // q.Prime ∧ Nat.Coprime q N}
+  let T : P → Module.End ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := fun q ↦
+    heckeTCuspNat k q.val (_hn := ⟨q.property.1.ne_zero⟩)
+  let η := Σ M : {M : ℕ+ // (M : ℕ) ∣ N},
+    {g : Newform M.val k // g.χ.comp (ZMod.unitsMap M.property) = χ}
+  let fam : ∀ mg : η, {d : ℕ+ // (d : ℕ) * mg.1.val ∣ N} →
+      CuspForm ((Gamma1 N).map (mapGL ℝ)) k := fun mg d ↦
+    CuspForm.levelRaise d.val (Gamma1_map_le_conjAct_scaleGL_of_dvd d.property) mg.2.val.toCuspForm
+  have hli_sigma := TauCeti.linearIndependent_sigma_of_iSupIndep (f := fam)
+    (fun mg ↦ _root_.CuspForm.linearIndependent_levelRaise (one_mem_strictPeriods_Gamma1_map _)
+      (d := fun d : {d : ℕ+ // (d : ℕ) * mg.1.val ∣ N} ↦ (d.val : ℕ))
       (fun _ _ h ↦ Subtype.ext (PNat.eq h))
-      (fun d ↦ Gamma1_map_le_conjAct_scaleGL_of_dvd d.property) j.2.ne_zero
-  have hindep : iSupIndep fun j ↦ Submodule.span ℂ (Set.range (levelRaiseFiber N k j)) :=
-    ((iSupIndep_iInf_eigenspace (levelRaiseEndFamily N k)).comp
-      (levelRaiseEigenvalues_injective k)).mono
-      (span_range_levelRaiseFiber_le_iInf_eigenspace k)
-  exact linearIndependent_iUnion_finite hfib fun _ _ _ hjt ↦ hindep.disjoint_biSup hjt
+      (fun d ↦ Gamma1_map_le_conjAct_scaleGL_of_dvd d.property) mg.2.val.ne_zero)
+    ((iSupIndep_iInf_eigenspace T).comp (eigenvalue_injective_of_comp_unitsMap_eq N k χ))
+    fun mg d ↦ by
+      rw [Function.comp_apply, Submodule.mem_iInf]
+      exact fun q ↦ Module.End.mem_eigenspace_iff.mpr
+        (mg.2.val.heckeTCuspNat_levelRaise_eq_eigenvalue_smul d.property q.property.1 q.property.2)
+  let reindex :
+      {x : Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k //
+        x.2.χ.comp (ZMod.unitsMap (dvd_of_mul_left_dvd x.1.property)) = χ} ≃
+      Σ mg : η, {d : ℕ+ // (d : ℕ) * mg.1.val ∣ N} :=
+    { toFun := fun x ↦
+        ⟨⟨⟨x.val.1.val.1, dvd_of_mul_left_dvd x.val.1.property⟩, ⟨x.val.2, x.property⟩⟩,
+          ⟨x.val.1.val.2, x.val.1.property⟩⟩
+      invFun := fun y ↦ ⟨⟨⟨(y.1.1.val, y.2.val), y.2.property⟩, y.1.2.val⟩, y.1.2.property⟩
+      left_inv := fun ⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩ ↦ rfl
+      right_inv := fun ⟨⟨⟨_, _⟩, ⟨_, _⟩⟩, ⟨_, _⟩⟩ ↦ rfl }
+  exact hli_sigma.comp reindex reindex.injective
 
 /-- **The level-raised newforms are linearly independent** (Diamond–Shurman, Theorem 5.8.3):
 as `p = (M, d)` ranges over pairs of positive integers with `d * M ∣ N` and `g` over `Newform M k`,
@@ -147,15 +129,24 @@ theorem linearIndependent_levelRaise (N : ℕ) [NeZero N] (k : ℤ) :
       (fun x : Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k ↦
         CuspForm.levelRaise x.1.val.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd x.1.property)
           x.2.toCuspForm) := by
-  exact (linearIndependent_levelRaiseFiber_sigma N k).comp
-    (fun x : Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k ↦
-      ⟨⟨⟨x.1.val.1, dvd_of_mul_left_dvd x.1.property⟩, x.2⟩, ⟨x.1.val.2, x.1.property⟩⟩)
-    fun ⟨⟨⟨M₁, d₁⟩, h₁⟩, g₁⟩ ⟨⟨⟨M₂, d₂⟩, h₂⟩, g₂⟩ h ↦ by
-      simp only [Sigma.mk.inj_iff, Subtype.mk.injEq] at h
-      obtain ⟨⟨rfl, hg⟩, hd⟩ := h
-      obtain rfl : d₁ = d₂ := Subtype.ext_iff.mp (eq_of_heq hd)
-      obtain rfl : g₁ = g₂ := eq_of_heq hg
-      rfl
+  let v : (Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k) →
+      CuspForm ((Gamma1 N).map (mapGL ℝ)) k := fun x ↦
+    CuspForm.levelRaise x.1.val.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd x.1.property) x.2.toCuspForm
+  let w : (Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k) → ((ZMod N)ˣ →* ℂˣ) :=
+    fun x ↦ x.2.χ.comp (ZMod.unitsMap (dvd_of_mul_left_dvd x.1.property))
+  have hli_sigma := TauCeti.linearIndependent_sigma_of_iSupIndep
+    (W := cuspFormCharSpace (N := N) k)
+    (fun χ ↦ linearIndependent_levelRaise_of_comp_unitsMap_eq N k χ)
+    (iSupIndep_cuspFormCharSpace k)
+    fun χ x ↦ by
+      have hmem := CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd x.val.1.property x.val.2.χ
+        x.val.2.mem_charSpace
+      rwa [x.property] at hmem
+  let reindex := (Equiv.sigmaFiberEquiv w).symm
+  have h := hli_sigma.comp reindex reindex.injective
+  have hcomp : (fun jk : Σ χ, {x // w x = χ} ↦ v jk.2.val) ∘ reindex = v :=
+    funext fun x ↦ congrArg v (Equiv.sigmaFiberEquiv_symm_apply_snd_coe w x)
+  rwa [hcomp] at h
 
 private theorem top_le_span_range_levelRaise (N : ℕ) [NeZero N] (k : ℤ) :
     ⊤ ≤ Submodule.span ℂ (Set.range
@@ -199,10 +190,7 @@ private noncomputable def toLevelRaiseCharSpace (χ : (ZMod N)ˣ →* ℂˣ)
 private theorem linearIndependent_toLevelRaiseCharSpace [NeZero N] (χ : (ZMod N)ˣ →* ℂˣ) :
     LinearIndependent ℂ (toLevelRaiseCharSpace (N := N) (k := k) χ) :=
   LinearIndependent.of_comp (cuspFormCharSpace k χ).subtype
-    ((linearIndependent_levelRaise N k).comp
-      (fun x : {x : Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k //
-        x.2.χ.comp (ZMod.unitsMap (dvd_of_mul_left_dvd x.1.property)) = χ} ↦ x.val)
-      Subtype.val_injective)
+    (linearIndependent_levelRaise_of_comp_unitsMap_eq N k χ)
 
 private theorem top_le_span_range_toLevelRaiseCharSpace [NeZero N] (χ : (ZMod N)ˣ →* ℂˣ) :
     ⊤ ≤ Submodule.span ℂ (Set.range (toLevelRaiseCharSpace (N := N) (k := k) χ)) := by

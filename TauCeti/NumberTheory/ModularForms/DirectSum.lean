@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Basic
 
 import Mathlib.Algebra.Polynomial.Laurent.Roots
+import TauCeti.Algebra.Module.FunLike
 
 /-!
 # Pointwise evaluation and linear independence across weights
@@ -143,19 +144,6 @@ end SlashInvariantForm
 
 namespace ModularForm
 
-/-- Coercion of a modular form of weight `k` to a function `ℍ → ℂ`, as a `ℂ`-linear map when
-`[Γ.HasDetOne]`. -/
-def coeLinearMap (Γ : Subgroup (GL (Fin 2) ℝ)) [Γ.HasDetOne] (k : ℤ) :
-    ModularForm Γ k →ₗ[ℂ] (ℍ → ℂ) where
-  toFun f := ⇑f
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp]
-theorem coeLinearMap_apply [Γ.HasDetOne] (k : ℤ) (f : ModularForm Γ k) :
-    coeLinearMap Γ k f = ⇑f :=
-  (rfl)
-
 /-- Pointwise evaluation of the graded ring `⨁ k : ℤ, ModularForm Γ k` as a ring homomorphism into
 `ℍ → ℂ`. -/
 def evalDirectSum [Γ.HasDetPlusMinusOne] :
@@ -172,18 +160,29 @@ theorem evalDirectSum_of [Γ.HasDetPlusMinusOne] (k : ℤ) (f : ModularForm Γ k
 homomorphism into `ℍ → ℂ`. -/
 def evalDirectSumAlgHom [Γ.HasDetOne] :
     (⨁ k : ℤ, ModularForm Γ k) →ₐ[ℂ] (ℍ → ℂ) :=
-  DirectSum.toAlgebra ℂ _ (coeLinearMap Γ) rfl (fun _ _ ↦ rfl)
+  -- Mathlib provides no equation lemmas unfolding `GradedMonoid.GOne.one` (`:= 1`) or
+  -- `GradedMonoid.GMul.mul` (`:= ModularForm.mul`) on `ModularForm Γ`, whose coercions reduce
+  -- definitionally to `1` and pointwise `*` (cf. the docstring of `DirectSum.toAlgebra`).
+  DirectSum.toAlgebra ℂ _ (fun k ↦ FunLike.coeLinearMap ℂ (ModularForm Γ k) ℍ ℂ)
+    (by simp only [FunLike.coeLinearMap_apply]; rfl)
+    (fun _ _ ↦ by simp only [FunLike.coeLinearMap_apply]; rfl)
 
+-- Mathlib has no `DirectSum.toAlgebra_of`; tactic `rw`/`simp` after `DirectSum.toAlgebra_apply`
+-- rejects `DirectSum.toSemiring` at `implicit` transparency because `FunLike.coeLinearMap` is not
+-- `@[expose]`, so the three equation lemmas are composed in term mode via `.trans`.
 @[simp]
 theorem evalDirectSumAlgHom_of [Γ.HasDetOne] (k : ℤ) (f : ModularForm Γ k) :
     evalDirectSumAlgHom (DirectSum.of _ k f) = ⇑f :=
-  DirectSum.toSemiring_of (fun k ↦ (coeLinearMap Γ k).toAddMonoidHom) rfl (fun _ _ ↦ rfl) k f
+  (DirectSum.toAlgebra_apply _ _ _ _ _ _).trans <|
+    (DirectSum.toSemiring_of _ _ _ k f).trans (FunLike.coeLinearMap_apply f)
 
 @[simp]
 theorem evalDirectSumAlgHom_toRingHom [Γ.HasDetOne] :
     (evalDirectSumAlgHom (Γ := Γ) : (⨁ k : ℤ, ModularForm Γ k) →+* (ℍ → ℂ)) =
-      evalDirectSum :=
-  (rfl)
+      evalDirectSum := by
+  apply RingHom.toAddMonoidHom_injective
+  ext k f : 2
+  simp
 
 private def toSlashInvariantFormAddMonoidHom (Γ : Subgroup (GL (Fin 2) ℝ)) (k : ℤ) :
     ModularForm Γ k →+ SlashInvariantForm Γ k where
@@ -211,8 +210,9 @@ theorem evalDirectSum_apply [Γ.HasDetPlusMinusOne]
 
 theorem evalDirectSumAlgHom_apply [Γ.HasDetOne]
     (x : ⨁ k : ℤ, ModularForm Γ k) (z : ℍ) :
-    evalDirectSumAlgHom x z = ∑ᶠ k : ℤ, x k z :=
-  evalDirectSum_apply x z
+    evalDirectSumAlgHom x z = ∑ᶠ k : ℤ, x k z := by
+  rw [← AlgHom.coe_toRingHom, evalDirectSumAlgHom_toRingHom]
+  exact evalDirectSum_apply x z
 
 /-- **Linear independence of modular forms across weights.** When `Γ` has finite-index intersection
 with `SL₂(ℤ)`, `ModularForm.evalDirectSum` is injective. -/
@@ -234,8 +234,9 @@ theorem evalDirectSum_inj [Γ.HasDetPlusMinusOne] [Subgroup.IsFiniteRelIndex Γ 
 
 /-- **Linear independence of modular forms across weights, as a `ℂ`-algebra map.** -/
 theorem evalDirectSumAlgHom_injective [Γ.HasDetOne] [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
-    Function.Injective (evalDirectSumAlgHom (Γ := Γ)) :=
-  evalDirectSum_injective
+    Function.Injective (evalDirectSumAlgHom (Γ := Γ)) := by
+  rw [← AlgHom.coe_toRingHom, evalDirectSumAlgHom_toRingHom]
+  exact evalDirectSum_injective
 
 @[simp]
 theorem evalDirectSumAlgHom_inj [Γ.HasDetOne] [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]

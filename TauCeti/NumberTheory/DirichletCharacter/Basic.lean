@@ -43,12 +43,14 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `χ` factors through `N / p` exactly when `v_p(cond χ) < v_p(N)`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
-* `DirichletCharacter.changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap`,
+* `DirichletCharacter.primitiveCharacter_toUnitHom_comp_unitsMap`,
+  `DirichletCharacter.changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap`,
   `DirichletCharacter.eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq`,
+  `DirichletCharacter.conductor_ofUnitHom_dvd_of_comp_unitsMap_eq`,
   `DirichletCharacter.conductor_dvd_and_eq_changeLevel_primitiveCharacter_toUnitHom`:
-  a unit homomorphism modulo `M ∣ N` pulling back to `χ` modulo `N` is uniquely the raise of the
-  primitive character of `χ` to level `M`, together with the trivial-character specialisations
-  `DirichletCharacter.conductor_ofUnitHom_one` and
+  a unit homomorphism modulo `M ∣ N` pulling back to `χ` modulo `N` has `cond χ ∣ M` and is
+  uniquely the raise of the primitive character of `χ` to level `M`, together with the
+  trivial-character specialisations `DirichletCharacter.conductor_ofUnitHom_one` and
   `DirichletCharacter.changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom`.
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
@@ -329,6 +331,16 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
   rw [changeLevel_toUnitHom] at h
   simpa using h
 
+/-- **Pulling back the primitive character recovers the unit homomorphism.** Pulling back the unit
+homomorphism of `primitiveCharacter (MulChar.ofUnitHom χ)` from the conductor level to `(ZMod N)ˣ`
+along `ZMod.unitsMap` recovers `χ`. -/
+theorem primitiveCharacter_toUnitHom_comp_unitsMap {R : Type*} [CommMonoidWithZero R] {N : ℕ}
+    (χ : (ZMod N)ˣ →* Rˣ) :
+    (primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
+      (ZMod.unitsMap (conductor_dvd_level (MulChar.ofUnitHom χ))) = χ := by
+  rw [← changeLevel_toUnitHom, changeLevel_primitiveCharacter,
+    MulChar.toUnitHom_eq, MulChar.ofUnitHom_eq, Equiv.apply_symm_apply]
+
 /-- Raising the primitive character of `MulChar.ofUnitHom χ` to an intermediate divisor `M ∣ N`
 divisible by its conductor and pulling back along `ZMod.unitsMap` recovers `χ`. -/
 theorem changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap {R : Type*}
@@ -336,8 +348,8 @@ theorem changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap {R : Type*}
     (hc : conductor (MulChar.ofUnitHom χ) ∣ M) :
     ((changeLevel hc (primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom).comp
         (ZMod.unitsMap hMN) = χ := by
-  rw [← changeLevel_toUnitHom, ← changeLevel_trans, changeLevel_primitiveCharacter,
-    MulChar.toUnitHom_eq, MulChar.ofUnitHom_eq, Equiv.apply_symm_apply]
+  rw [changeLevel_toUnitHom, MonoidHom.comp_assoc, ZMod.unitsMap_comp,
+    primitiveCharacter_toUnitHom_comp_unitsMap]
 
 /-- At an intermediate divisor `M ∣ N` of a nonzero level `N`, a unit homomorphism `ψ` modulo `M`
 that pulls back to `χ` modulo `N` equals the raise of the primitive character of `χ` to level
@@ -346,9 +358,21 @@ theorem eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq {R : Typ
     [CommMonoidWithZero R] {N M : ℕ} [NeZero N] (hMN : M ∣ N) {χ : (ZMod N)ˣ →* Rˣ}
     {ψ : (ZMod M)ˣ →* Rˣ} (hψ : ψ.comp (ZMod.unitsMap hMN) = χ)
     (hc : conductor (MulChar.ofUnitHom χ) ∣ M) :
-    ψ = (changeLevel hc (primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom :=
-  (MonoidHom.cancel_right (ZMod.unitsMap_surjective hMN)).mp <| by
-    rw [hψ, changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap hMN hc]
+    ψ = (changeLevel hc (primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom := by
+  rw [changeLevel_toUnitHom,
+    ← ZMod.comp_unitsMap_eq_iff hc hMN (conductor_dvd_level (MulChar.ofUnitHom χ)),
+    primitiveCharacter_toUnitHom_comp_unitsMap, hψ]
+
+/-- **Conductor bound from a unit-homomorphism pullback.** If `χ : (ZMod N)ˣ →* Rˣ` (`N ≠ 0`) pulls
+back from a unit homomorphism `ψ` modulo `d ∣ N` along `ZMod.unitsMap`, then the conductor of
+`MulChar.ofUnitHom χ` divides `d`. -/
+theorem conductor_ofUnitHom_dvd_of_comp_unitsMap_eq {R : Type*} [CommMonoidWithZero R]
+    {N d : ℕ} [NeZero N] (hdN : d ∣ N) {χ : (ZMod N)ˣ →* Rˣ} {ψ : (ZMod d)ˣ →* Rˣ}
+    (hψ : ψ.comp (ZMod.unitsMap hdN) = χ) :
+    conductor (MulChar.ofUnitHom χ) ∣ d := by
+  refine conductor_dvd_of_mem_conductorSet _ ?_
+  simpa only [mem_conductorSet_iff, changeLevel_def, MulChar.toUnitHom_eq, MulChar.ofUnitHom_eq,
+    Equiv.apply_symm_apply, hψ] using changeLevel_factorsThrough (MulChar.ofUnitHom ψ) hdN
 
 /-- If a unit homomorphism `ψ` modulo `M ∣ N` (`N ≠ 0`) pulls back to `χ` modulo `N`, then the
 conductor of `MulChar.ofUnitHom χ` divides `M` and `ψ` is the raise of the primitive character of
@@ -357,13 +381,9 @@ theorem conductor_dvd_and_eq_changeLevel_primitiveCharacter_toUnitHom
     {R : Type*} [CommMonoidWithZero R] {N M : ℕ} [NeZero N] (hMN : M ∣ N)
     {χ : (ZMod N)ˣ →* Rˣ} {ψ : (ZMod M)ˣ →* Rˣ} (hψ : ψ.comp (ZMod.unitsMap hMN) = χ) :
     ∃ hc : conductor (MulChar.ofUnitHom χ) ∣ M,
-      ψ = (changeLevel hc (primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom := by
-  have hc : conductor (MulChar.ofUnitHom χ) ∣ M :=
-    conductor_dvd_of_mem_conductorSet _ <| by
-      simpa only [mem_conductorSet_iff, changeLevel_def, MulChar.toUnitHom_eq,
-        MulChar.ofUnitHom_eq, Equiv.apply_symm_apply, ← hψ] using
-        changeLevel_factorsThrough (MulChar.ofUnitHom ψ) hMN
-  exact ⟨hc, eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq hMN hψ hc⟩
+      ψ = (changeLevel hc (primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom :=
+  ⟨conductor_ofUnitHom_dvd_of_comp_unitsMap_eq hMN hψ,
+    eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq hMN hψ _⟩
 
 /-- The Dirichlet character attached to the trivial unit homomorphism `1` has conductor `1`. -/
 theorem conductor_ofUnitHom_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N] :

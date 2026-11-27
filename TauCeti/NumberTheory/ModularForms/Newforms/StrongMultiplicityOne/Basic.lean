@@ -67,6 +67,9 @@ levels the fixed-level theorem then makes them the same function
   dividing `N`, with nebentypes inducing the same character modulo `N` and eigenvalues agreeing
   at all but finitely many primes `p ∤ N`, have the same level and are the same function
   (Miyake, Corollary 4.6.20; Diamond–Shurman, Theorem 5.8.3).
+* `HeckeRing.GL2.Newform.eigenvalue_injective_of_comp_unitsMap_eq`: distinct pairs `(M, g)` of a
+  divisor level `M ∣ N` and a newform `g` whose nebentypus induces `χ` modulo `N` have distinct
+  eigenvalue systems at the primes `p ∤ N`.
 
 ## Provenance
 
@@ -460,5 +463,24 @@ theorem Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq {M M' : ℕ} [NeZero M] 
     (S := S ∪ N.primeFactors) fun p hp _ _ hpS ↦ ?_
   simp only [Finset.mem_union, Nat.mem_primeFactors, not_or, not_and] at hpS
   exact h p hp (hp.coprime_iff_not_dvd.mpr fun hpN ↦ hpS.2 hp hpN (NeZero.ne N)) hpS.1
+
+variable (N k) in
+/-- **Cross-level injectivity of good-prime Hecke eigenvalues at a fixed nebentypus.** Distinct
+pairs `(M, g)` of a positive divisor `M ∣ N` and a newform `g` of level `M` whose nebentypus pulls
+back to `χ` have distinct eigenvalue systems at the primes `p ∤ N`. -/
+theorem Newform.eigenvalue_injective_of_comp_unitsMap_eq (χ : (ZMod N)ˣ →* ℂˣ) :
+    Function.Injective
+      (fun (mg : Σ M : {M : ℕ+ // (M : ℕ) ∣ N},
+          {g : Newform M.val k // g.χ.comp (ZMod.unitsMap M.property) = χ})
+        (p : {p : ℕ // p.Prime ∧ Nat.Coprime p N}) ↦
+        mg.2.val.eigenvalue ⟨p.val, p.property.1.pos⟩
+          (p.property.2.coprime_dvd_right mg.1.property)) := by
+  rintro ⟨⟨M₁, hM₁⟩, g₁, hg₁⟩ ⟨⟨M₂, hM₂⟩, g₂, hg₂⟩ h
+  obtain ⟨hM, hcoe⟩ := Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq g₁ g₂ hM₁ hM₂ hg₁ hg₂
+    (S := ∅) fun p hp hpN _ ↦ congr_fun h ⟨p, hp, hpN⟩
+  obtain rfl : M₁ = M₂ := PNat.eq hM
+  have hg : g₁ = g₂ := Newform.ext (DFunLike.coe_injective hcoe)
+  subst hg
+  rfl
 
 end HeckeRing.GL2

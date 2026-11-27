@@ -28,6 +28,9 @@ finite field with `q` elements, the iterates of `expand q` are the `q ^ j`-th po
 ## Main declarations
 
 * `PowerSeries.expand_injective`: expansion `f ↦ f (X ^ p)` is injective.
+* `PowerSeries.linearIndependent_expand`: over a commutative ring without zero divisors, the
+  substitutions `P.expand (d i)` of a series `P` with a nonzero positive-degree coefficient along
+  pairwise distinct positive integers `d i` are linearly independent.
 * `PowerSeries.rescale_expand`: rescaling `f (X ^ p)` by `a` rescales `f` by `a ^ p`.
 * `PowerSeries.subst_expand`: substituting into `f(X ^ p)` substitutes the `p`-th power.
 * `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
@@ -231,6 +234,16 @@ theorem linearIndependent_expand_of_exists_coeff_ne_zero [NoZeroDivisors R] {f :
       rw [hmin, mul_zero]
     · rw [mul_zero]
   · exact fun h ↦ absurd hd₀ h
+
+/-- **Distinct positive dilations of a nonconstant power series are linearly independent.** Over a
+commutative ring without zero divisors, if `P` has a nonzero coefficient of positive degree, then
+the family `i ↦ P.expand (d i)` for pairwise distinct positive integers `d i` is `R`-linearly
+independent. -/
+theorem linearIndependent_expand [NoZeroDivisors R] {P : R⟦X⟧}
+    (hP : ∃ n ≠ 0, coeff n P ≠ 0) {ι : Type*} {d : ι → ℕ} (hd0 : ∀ i, d i ≠ 0)
+    (hd : Function.Injective d) : LinearIndependent R (fun i ↦ expand (d i) (hd0 i) P) :=
+  (linearIndependent_expand_of_exists_coeff_ne_zero hP).comp
+    (fun i ↦ (⟨d i, Nat.pos_of_ne_zero (hd0 i)⟩ : ℕ+)) fun _ _ h ↦ hd (congrArg Subtype.val h)
 
 /-- Over an integral domain, the expanded series `f (X ^ d)` for `d : ℕ+` are `R`-linearly
 independent if and only if `f` has a nonzero coefficient of positive degree. -/
