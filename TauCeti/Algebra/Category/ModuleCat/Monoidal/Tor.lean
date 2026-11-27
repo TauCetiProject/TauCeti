@@ -145,8 +145,8 @@ theorem flat_of_isZero_Tor'_one (M : ModuleCat.{u} A)
   rw [Module.Flat.iff_rTensor_injective']
   intro I
   let P := projectiveResolution (ModuleCat.of A I)
-  let p : P.complex.X 0 ⟶ ModuleCat.of A I :=
-    P.π.f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom
+  -- `((ChainComplex.single₀ _).obj (ModuleCat.of A I)).X 0` is definitionally `ModuleCat.of A I`.
+  let p : P.complex.X 0 ⟶ ModuleCat.of A I := P.π.f 0
   let Q := I.quotientProjectiveResolution
   let F := tensorRight M
   have hzero : IsZero (((F.mapHomologicalComplex _).obj Q.complex).homology 1) :=
@@ -163,9 +163,9 @@ theorem flat_of_isZero_Tor'_one (M : ModuleCat.{u} A)
     ∃ z : (P.complex.X 1) ⊗[A] M,
       ((P.complex.d 1 0).hom.rTensor M) z = y at hex
   have hp : Function.Surjective (p.hom.rTensor M) :=
-    LinearMap.rTensor_surjective M ((ModuleCat.epi_iff_surjective p).1 inferInstance)
-  have hdp' : P.complex.d 1 0 ≫ p = 0 := by
-    simp only [p, ← Category.assoc, P.complex_d_comp_π_f_zero, zero_comp]
+    LinearMap.rTensor_surjective M
+      ((ModuleCat.epi_iff_surjective p).1 (inferInstance : Epi (P.π.f 0)))
+  have hdp' : P.complex.d 1 0 ≫ p = 0 := P.complex_d_comp_π_f_zero
   have hdp : p.hom.comp (P.complex.d 1 0).hom = 0 :=
     congrArg ModuleCat.Hom.hom hdp'
   apply LinearMap.ker_eq_bot.1

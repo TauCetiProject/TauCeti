@@ -155,7 +155,7 @@ theorem exists_minimal_cons {R : Type u} [CommRing R]
   · rw [ChainComplex.isMinimal_iff_range_d_succ_le]
     rw [ChainComplex.isMinimal_iff_range_d_succ_le] at hQ_min
     rintro (_ | k)
-    · rw [Q.cons_complex_d_one_zero hS, ← Category.assoc Q.augZero i]
+    · rw [Q.cons_complex_d_one_zero hS, ← Category.assoc (Q.π.f 0) i]
       exact range_eqToHom_comp_le _ _ _ (by
         rw [ModuleCat.hom_comp]
         exact (LinearMap.range_comp_le_range _ i.hom).trans hi_min)

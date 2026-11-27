@@ -72,8 +72,9 @@ end TauCeti.ExactStructure.FiniteResolution
 itself finitely generated. -/
 theorem CategoryTheory.ProjectiveResolution.finite {R : Type u} [Ring R] {M : ModuleCat.{v} R}
     (P : ProjectiveResolution M) [Module.Finite R (P.complex.X 0)] : Module.Finite R M :=
-  Module.Finite.of_surjective P.augZero.hom
-    ((ModuleCat.epi_iff_surjective P.augZero).1 inferInstance)
+  -- `((ChainComplex.single₀ _).obj M).X 0` is definitionally `M`.
+  Module.Finite.of_surjective (P.π.f 0 : P.complex.X 0 ⟶ M).hom
+    ((ModuleCat.epi_iff_surjective _).1 (inferInstance : Epi (P.π.f 0)))
 
 namespace ModuleCat
 

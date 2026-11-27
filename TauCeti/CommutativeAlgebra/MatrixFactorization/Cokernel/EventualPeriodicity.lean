@@ -28,7 +28,8 @@ For a nonzero `w` in the maximal ideal of a regular local ring `S` with local hy
 `R = S ⧸ (w)`, this file proves **Eisenbud's Theorem 6.1** (1980) for finite `R`-modules `M`:
 
 * **Theorem 6.1(ii)** (`exists_isMinimal_quotientCokernel_iso_iff`,
-  `CategoryTheory.ProjectiveResolution.hasPeriodicTail_two_zero_iff`, and
+  `hasPeriodicTail_two_zero_iff_isMaximalCohenMacaulay_and_forall_projective_retract_isZero` in
+  `CategoryTheory.ProjectiveResolution`, and
   `exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_of_isMaximalCohenMacaulay`):
   `M` is maximal Cohen–Macaulay without nonzero projective `R`-retracts iff `M` is the reduced
   cokernel of a minimal matrix factorization of `w`, iff every minimal finite-term resolution of `M`
@@ -36,7 +37,7 @@ For a nonzero `w` in the maximal ideal of a regular local ring `S` with local hy
 * **Theorem 6.1(i)**: if `ringKrullDim R ≤ depth M + n`, minimal resolutions have
   `HasPeriodicTail 2 (n + 1)`
   (`exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_of_ringKrullDim_le_depth_add`
-  and `P.hasPeriodicTail_two_of_isMinimal_of_ringKrullDim_le_depth_add in
+  and `P.hasPeriodicTail_two_of_isMinimal_of_ringKrullDim_le_depth_add` in
   `CategoryTheory.ProjectiveResolution`), giving the uniform bound `(𝔪_S).spanFinrank`
   (`exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_spanFinrank` and
   `CategoryTheory.ProjectiveResolution.hasPeriodicTail_two_spanFinrank_of_isMinimal`).
@@ -457,7 +458,7 @@ theorem hasPeriodicTail_two_spanFinrank_of_isMinimal
 /-- **Eisenbud's Theorem 6.1(ii).** For a minimal finite-term projective resolution `P` of an
 `S ⧸ (w)`-module `M` (`w ≠ 0`), `P.complex.HasPeriodicTail 2 0` iff `M` is maximal Cohen–Macaulay
 over `S ⧸ (w)` and has no nonzero projective `S ⧸ (w)`-retract. -/
-theorem hasPeriodicTail_two_zero_iff
+theorem hasPeriodicTail_two_zero_iff_isMaximalCohenMacaulay_and_forall_projective_retract_isZero
     {M : ModuleCat.{u} (S ⧸ Ideal.span {w})} (P : ProjectiveResolution M)
     [∀ i, Module.Finite (S ⧸ Ideal.span {w}) (P.complex.X i)] (hP : P.complex.IsMinimal)
     (hw : w ≠ 0) :

@@ -22,8 +22,9 @@ exact functor `quotientMaximalCohenMacaulayCokernel` into `MaximalCohenMacaulayM
 triangulated equivalence `HMF(S, w) ≌ stable(MCM-R)`
 (`quotientMaximalCohenMacaulayStableCokernelEquivalence_isTriangulated`).
 
-This combines `TauCeti.MatrixFactorization.Cokernel.Equivalence` with Buchweitz's hypersurface
-comparison `TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Buchweitz`.
+This combines `TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Equivalence` with
+Buchweitz's hypersurface comparison
+`TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Buchweitz`.
 
 ## References
 
