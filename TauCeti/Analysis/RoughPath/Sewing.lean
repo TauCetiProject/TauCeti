@@ -38,7 +38,9 @@ additive.
   pieces; `TauCeti.dyadicSum_succ` splits it at the midpoint.
 * `TauCeti.sewing`: the limit of the dyadic sums.
 * `TauCeti.HasPartitionLimit`: Riemann sums along partitions converge as the mesh tends to zero;
-  `TauCeti.HasPartitionLimit.unique`: the limit is unique.
+  for `s ≤ t`, `TauCeti.HasPartitionLimit.tendsto_dyadicSum` and
+  `TauCeti.HasPartitionLimit.sewing_eq`: a partition limit is the limit of the dyadic sums, so it is
+  `sewing Ξ s t`, and `TauCeti.HasPartitionLimit.unique`: it is unique.
 * `TauCeti.tendsto_dyadicSum_sewing`: the dyadic sums converge to `sewing Ξ s t`.
 * `TauCeti.norm_sewing_sub_le`: `‖sewing Ξ s t - Ξ s t‖ ≤ C / (1 - 2 ^ (1 - γ)) * (t - s) ^ γ`.
 * `TauCeti.hasPartitionLimit_sewing`: Riemann sums along partitions of vanishing mesh converge to
@@ -72,8 +74,14 @@ section Dyadic
 variable {E : Type*} [AddCommMonoid E]
 
 /-- The dyadic Riemann sum of a two-parameter map `Ξ` over `[s, t]` with `2 ^ n` pieces. -/
-@[expose] def dyadicSum (Ξ : ℝ → ℝ → E) (s t : ℝ) (n : ℕ) : E :=
+def dyadicSum (Ξ : ℝ → ℝ → E) (s t : ℝ) (n : ℕ) : E :=
   ∑ k ∈ range (2 ^ n), Ξ (s + k * (t - s) / 2 ^ n) (s + (k + 1) * (t - s) / 2 ^ n)
+
+/-- `dyadicSum Ξ s t n` is the sum of `Ξ` over the `2 ^ n` consecutive dyadic pieces of `[s, t]`. -/
+theorem dyadicSum_def (Ξ : ℝ → ℝ → E) (s t : ℝ) (n : ℕ) :
+    dyadicSum Ξ s t n =
+      ∑ k ∈ range (2 ^ n), Ξ (s + k * (t - s) / 2 ^ n) (s + (k + 1) * (t - s) / 2 ^ n) := by
+  rw [dyadicSum]
 
 /-- The dyadic sum at level `0` is the germ itself. -/
 @[simp]
@@ -103,11 +111,20 @@ end Dyadic
 variable {E : Type*} [NormedAddCommGroup E]
 
 /-- Riemann sums of `Ξ` along partitions `s = u 0 ≤ ⋯ ≤ u n = t` of `[s, t]` tend to `I` as the
-mesh tends to zero. -/
-@[expose] def HasPartitionLimit (Ξ : ℝ → ℝ → E) (s t : ℝ) (I : E) : Prop :=
+mesh tends to zero. When `t < s` there are no partitions and every `I` is a limit. -/
+def HasPartitionLimit (Ξ : ℝ → ℝ → E) (s t : ℝ) (I : E) : Prop :=
   ∀ ε > 0, ∃ δ > 0, ∀ (n : ℕ) (u : Fin (n + 1) → ℝ), Monotone u → u 0 = s →
     u (Fin.last n) = t → (∀ i : Fin n, u i.succ - u i.castSucc < δ) →
       ‖(∑ i : Fin n, Ξ (u i.castSucc) (u i.succ)) - I‖ < ε
+
+/-- `HasPartitionLimit Ξ s t I` unfolded: for every `ε > 0` there is a mesh `δ > 0` below which
+every Riemann sum of `Ξ` along a partition of `[s, t]` is within `ε` of `I`. -/
+theorem hasPartitionLimit_iff {Ξ : ℝ → ℝ → E} {s t : ℝ} {I : E} :
+    HasPartitionLimit Ξ s t I ↔
+      ∀ ε > 0, ∃ δ > 0, ∀ (n : ℕ) (u : Fin (n + 1) → ℝ), Monotone u → u 0 = s →
+        u (Fin.last n) = t → (∀ i : Fin n, u i.succ - u i.castSucc < δ) →
+          ‖(∑ i : Fin n, Ξ (u i.castSucc) (u i.succ)) - I‖ < ε := by
+  rw [HasPartitionLimit]
 
 /-! ### Riemann sums along list partitions
 
@@ -175,6 +192,14 @@ private theorem IsPart.le {l : List ℝ} {s t : ℝ} (hl : IsPart l s t) : s ≤
   obtain ⟨l', hl'⟩ := List.getLast?_eq_some_iff.1 hl.2.2
   exact (hl.mem_Icc (z := t) (by simp [hl'])).1
 
+private theorem IsPart.singleton_iff {x s t : ℝ} : IsPart [x] s t ↔ x = s ∧ x = t := by
+  simp [IsPart]
+
+/-- Dropping the first point of a partition of `[s, t]`, which is `s`. -/
+private theorem IsPart.cons_cons {x y s t : ℝ} {l : List ℝ} (h : IsPart (x :: y :: l) s t) :
+    x = s ∧ IsPart (y :: l) y t :=
+  ⟨by simpa using h.2.1, h.1.of_cons, by simp, by simpa using h.2.2⟩
+
 private theorem isPart_of_mem {l : List ℝ} {s t : ℝ} (hp : l.Pairwise (· ≤ ·)) (hs : s ∈ l)
     (ht : t ∈ l) (h : ∀ z ∈ l, s ≤ z ∧ z ≤ t) : IsPart l s t := by
   refine ⟨hp, ?_, ?_⟩
@@ -237,10 +262,20 @@ private theorem dyadic_last (s t : ℝ) (n : ℕ) :
   field_simp
   ring
 
+private theorem dyadic_zero (s t : ℝ) (n : ℕ) :
+    s + (((0 : Fin (2 ^ n + 1)) : ℕ) : ℝ) * (t - s) / 2 ^ n = s := by
+  simp
+
+/-- Consecutive dyadic points of `[s, t]` at level `n` are `(t - s) / 2 ^ n` apart. -/
+private theorem dyadic_gap (s t : ℝ) (n k : ℕ) :
+    (s + ((k + 1 : ℕ) : ℝ) * (t - s) / 2 ^ n) - (s + (k : ℝ) * (t - s) / 2 ^ n) =
+      (t - s) / 2 ^ n := by
+  push_cast
+  ring
+
 private theorem isPart_dyadicPart {s t : ℝ} (hst : s ≤ t) (n : ℕ) :
     IsPart (dyadicPart s t n) s t := by
-  have h0 : s + ((0 : Fin (2 ^ n + 1)) : ℕ) * (t - s) / 2 ^ n = s := by simp
-  simpa only [dyadicPart, h0, dyadic_last] using isPart_ofFn (monotone_dyadic hst n)
+  simpa only [dyadicPart, dyadic_zero, dyadic_last] using isPart_ofFn (monotone_dyadic hst n)
 
 private theorem rsum_dyadicPart {F : Type*} [AddCommMonoid F] (Ξ : ℝ → ℝ → F) (s t : ℝ)
     (n : ℕ) : rsum Ξ (dyadicPart s t n) = dyadicSum Ξ s t n := by
@@ -251,9 +286,8 @@ private theorem rsum_dyadicPart {F : Type*} [AddCommMonoid F] (Ξ : ℝ → ℝ 
 
 private theorem isChain_dyadicPart (s t : ℝ) (n : ℕ) :
     (dyadicPart s t n).IsChain fun x y ↦ y - x ≤ (t - s) / 2 ^ n := by
-  refine List.isChain_ofFn.2 fun i hi ↦ le_of_eq ?_
-  push_cast
-  ring
+  refine List.isChain_ofFn.2 fun i hi ↦ ?_
+  simpa only [Fin.val_mk] using (dyadic_gap s t n i).le
 
 /-! ### Young's point-removal bound -/
 
@@ -351,10 +385,8 @@ private theorem norm_rsum_sub_le_aux (hγ : 0 < γ) (hC : 0 ≤ C)
   induction n with
   | zero =>
     rintro (_ | ⟨x, _ | ⟨y, _ | ⟨z, l⟩⟩⟩) s t hlen hl ha hb <;> simp at hlen
-    obtain ⟨-, hs, ht⟩ := hl
-    simp only [List.head?_cons, Option.some.injEq, List.getLast?_cons_cons,
-      List.getLast?_singleton] at hs ht
-    subst hs ht
+    obtain ⟨rfl, hy⟩ := hl.cons_cons
+    obtain ⟨-, rfl⟩ := IsPart.singleton_iff.1 hy
     simp
   | succ n ih =>
     rintro (_ | ⟨p₀, _ | ⟨y₀, _ | ⟨q₀, l₀⟩⟩⟩) s t hlen hl ha hb
@@ -364,7 +396,7 @@ private theorem norm_rsum_sub_le_aux (hγ : 0 < γ) (hC : 0 ≤ C)
     replace hlen : l₀.length = n := by simpa using hlen
     obtain ⟨A, p, y, q, B, hl', hg⟩ := exists_gap_le p₀ y₀ q₀ l₀
     have hgap := gapSum_le hl.1 (hl.2.2)
-    have hs : p₀ = s := by simpa using hl.2.1
+    have hs : p₀ = s := hl.cons_cons.1
     have hy₀ : s ≤ y₀ := (hl.mem_Icc (z := y₀) (by simp)).1
     rw [hlen] at hg
     rw [hl'] at hl ⊢
@@ -409,9 +441,7 @@ private theorem norm_rsum_sub_le (hγ : 1 < γ) (hC : 0 ≤ C)
     ‖rsum Ξ l - Ξ s t‖ ≤ youngConst C γ * (t - s) ^ γ := by
   obtain _ | ⟨x, _ | ⟨y, l⟩⟩ := l
   · simp [IsPart] at hl
-  · obtain ⟨-, hs, ht⟩ := hl
-    simp only [List.head?_cons, Option.some.injEq, List.getLast?_singleton] at hs ht
-    subst hs ht
+  · obtain ⟨rfl, rfl⟩ := IsPart.singleton_iff.1 hl
     rw [rsum_singleton, eq_zero_of_defect (by linarith) hδ ha hb]
     simp only [sub_self, norm_zero]
     exact mul_nonneg (youngConst_nonneg hC) (Real.rpow_nonneg le_rfl _)
@@ -432,15 +462,12 @@ private theorem norm_rsum_sub_rsum_le (hγ : 1 < γ) (hC : 0 ≤ C)
   | cons x P ih =>
     intro Q s t hP hQ hPQ ha hb
     obtain _ | ⟨y, P⟩ := P
-    · obtain ⟨-, hs, ht⟩ := hP
-      simp only [List.head?_cons, Option.some.injEq, List.getLast?_singleton] at hs ht
-      subst hs ht
+    · obtain ⟨rfl, rfl⟩ := IsPart.singleton_iff.1 hP
       have := norm_rsum_sub_le hγ hC hδ hQ ha hb
       rw [eq_zero_of_defect (by linarith) hδ ha hb, sub_self,
         Real.zero_rpow (by linarith), mul_zero] at this
       simpa using this
-    · have hxs : x = s := by simpa using hP.2.1
-      subst hxs
+    · obtain ⟨rfl, hyP⟩ := hP.cons_cons
       obtain ⟨Q', rfl⟩ := List.head?_eq_some_iff.1 hQ.2.1
       obtain ⟨r₁, r₂, rfl, hy, hP'⟩ := List.cons_sublist_iff.1 (List.cons_sublist_cons.1 hPQ)
       obtain ⟨Q₁, Q₂, rfl⟩ := List.append_of_mem hy
@@ -454,7 +481,6 @@ private theorem norm_rsum_sub_rsum_le (hγ : 1 < γ) (hC : 0 ≤ C)
       have hB : IsPart (y :: (Q₂ ++ r₂)) y t := by
         refine ⟨hQ.1.sublist (List.sublist_append_right _ _), by simp, ?_⟩
         rw [← hQ.2.2, List.getLast?_append, List.getLast?_cons, Option.some_or]
-      have hyP : IsPart (y :: P) y t := ⟨hP.1.of_cons, by simp, by simpa using hP.2.2⟩
       have hxy := hA.le
       have h₁ := norm_rsum_sub_le hγ hC hδ hA ha (hyP.le.trans hb)
       have h₂ := ih hyP hB hP₂ (ha.trans hxy) hb
@@ -477,13 +503,9 @@ private theorem rsum_rpow_le {δ : ℝ} (hγ : 1 ≤ γ) {l : List ℝ} :
   | cons x l ih =>
     intro s t hl hc
     obtain _ | ⟨y, l⟩ := l
-    · obtain ⟨-, hs, ht⟩ := hl
-      simp only [List.head?_cons, Option.some.injEq, List.getLast?_singleton] at hs ht
-      subst hs ht
+    · obtain ⟨rfl, rfl⟩ := IsPart.singleton_iff.1 hl
       simp
-    · have hxs : x = s := by simpa using hl.2.1
-      subst hxs
-      have hyl : IsPart (y :: l) y t := ⟨hl.1.of_cons, by simp, by simpa using hl.2.2⟩
+    · obtain ⟨rfl, hyl⟩ := hl.cons_cons
       have hxy : x ≤ y := List.rel_of_pairwise_cons hl.1 (List.mem_cons_self ..)
       have hgap : y - x ≤ δ := (List.isChain_cons_cons.1 hc).1
       have h := ih hyl (List.isChain_cons_cons.1 hc).2
@@ -544,12 +566,17 @@ private theorem defect_le_max
   fun s u t hs hsu hut ht ↦ (hδ s u t hs hsu hut ht).trans
     (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.rpow_nonneg (by linarith) _))
 
+private theorem two_rpow_one_sub_lt_one (hγ : 1 < γ) : (2 : ℝ) ^ (1 - γ) < 1 :=
+  Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+
+private theorem tendsto_div_two_pow (c : ℝ) : Tendsto (fun n : ℕ ↦ c / 2 ^ n) atTop (𝓝 0) :=
+  tendsto_const_nhds.div_atTop (tendsto_pow_atTop_atTop_of_one_lt one_lt_two)
+
 private theorem tendsto_rpow_div_pow (hγ : 1 < γ) (c : ℝ) :
     Tendsto (fun n : ℕ ↦ (c / 2 ^ n) ^ (γ - 1)) atTop (𝓝 0) := by
-  have h : Tendsto (fun n : ℕ ↦ c / 2 ^ n) atTop (𝓝 0) :=
-    tendsto_const_nhds.div_atTop (tendsto_pow_atTop_atTop_of_one_lt one_lt_two)
   simpa [Function.comp_def, Real.zero_rpow (by linarith : γ - 1 ≠ 0)] using
-    (Real.continuousAt_rpow_const 0 (γ - 1) (Or.inr (by linarith))).tendsto.comp h
+    (Real.continuousAt_rpow_const 0 (γ - 1) (Or.inr (by linarith))).tendsto.comp
+      (tendsto_div_two_pow c)
 
 /-- If the defect of `Ξ` is bounded by `C (t - s) ^ γ` with `γ > 1`, the dyadic sums of `Ξ`
 converge to `sewing Ξ s t`. -/
@@ -557,7 +584,7 @@ theorem tendsto_dyadicSum_sewing [CompleteSpace E] (hγ : 1 < γ)
     (hδ : ∀ s u t, a ≤ s → s ≤ u → u ≤ t → t ≤ b → ‖Ξ s t - Ξ s u - Ξ u t‖ ≤ C * (t - s) ^ γ)
     {s t : ℝ} (hs : a ≤ s) (hst : s ≤ t) (ht : t ≤ b) :
     Tendsto (dyadicSum Ξ s t) atTop (𝓝 (sewing Ξ s t)) := by
-  have hr : (2 : ℝ) ^ (1 - γ) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  have hr := two_rpow_one_sub_lt_one hγ
   have : CauchySeq (dyadicSum Ξ s t) :=
     cauchySeq_of_le_geometric _ (C * (t - s) ^ γ) hr fun n ↦ by
       rw [dist_comm, dist_eq_norm]
@@ -571,7 +598,7 @@ theorem norm_sewing_sub_le [CompleteSpace E] (hγ : 1 < γ)
     (hδ : ∀ s u t, a ≤ s → s ≤ u → u ≤ t → t ≤ b → ‖Ξ s t - Ξ s u - Ξ u t‖ ≤ C * (t - s) ^ γ)
     {s t : ℝ} (hs : a ≤ s) (hst : s ≤ t) (ht : t ≤ b) :
     ‖sewing Ξ s t - Ξ s t‖ ≤ C / (1 - 2 ^ (1 - γ)) * (t - s) ^ γ := by
-  have hr : (2 : ℝ) ^ (1 - γ) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  have hr := two_rpow_one_sub_lt_one hγ
   have h := dist_le_of_le_geometric_of_tendsto₀ _ (C * (t - s) ^ γ) hr (fun n ↦ by
       rw [dist_comm, dist_eq_norm]
       exact norm_dyadicSum_succ_sub_le hδ n hs hst ht)
@@ -655,7 +682,10 @@ theorem hasPartitionLimit_sewing [CompleteSpace E] (hγ : 1 < γ)
   have hl := isPart_ofFn hu
   rw [hu0, hun] at hl
   have hc : (List.ofFn u).IsChain fun x y ↦ y - x ≤ δ :=
-    List.isChain_ofFn.2 fun i hi ↦ (hmesh ⟨i, by omega⟩).le
+    List.isChain_ofFn.2 fun i hi ↦ by
+      have h := hmesh ⟨i, by omega⟩
+      rw [Fin.succ_mk, Fin.castSucc_mk] at h
+      exact h.le
   rw [← rsum_ofFn]
   exact (norm_rsum_sub_sewing_le hγ (le_max_right _ _) (defect_le_max hδ) hl hc hs ht).trans_lt
     hδε
@@ -706,7 +736,7 @@ theorem eq_sewing {I : ℝ → ℝ → E} {K : ℝ} (hγ : 1 < γ)
     (by simpa using hIΞ) (fun n s t hs hst ht ↦ by
       rw [hI s ((s + t) / 2) t hs (by linarith) (by linarith) ht, dyadicSum_succ]
       abel) n hs hst ht
-  have hr : (2 : ℝ) ^ (1 - γ) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  have hr := two_rpow_one_sub_lt_one hγ
   have hlim : Tendsto (dyadicSum Ξ s t) atTop (𝓝 (I s t)) := by
     rw [tendsto_iff_norm_sub_tendsto_zero]
     refine squeeze_zero (g := fun n ↦ K * (t - s) ^ γ * (2 ^ (1 - γ)) ^ n)
@@ -716,30 +746,28 @@ theorem eq_sewing {I : ℝ → ℝ → E} {K : ℝ} (hγ : 1 < γ)
   rw [sewing_def]
   exact tendsto_nhds_unique hlim (tendsto_nhds_limUnder ⟨_, hlim⟩)
 
-/-- Partition limits are unique. -/
-theorem HasPartitionLimit.unique {Ξ : ℝ → ℝ → E} {s t : ℝ} {I J : E} (hst : s ≤ t)
-    (hI : HasPartitionLimit Ξ s t I) (hJ : HasPartitionLimit Ξ s t J) : I = J := by
-  refine eq_of_forall_dist_le fun ε hε ↦ ?_
-  obtain ⟨δ₁, hδ₁, h₁⟩ := hI (ε / 2) (by positivity)
-  obtain ⟨δ₂, hδ₂, h₂⟩ := hJ (ε / 2) (by positivity)
-  have hmesh : Tendsto (fun n : ℕ ↦ (t - s) / 2 ^ n) atTop (𝓝 0) :=
-    tendsto_const_nhds.div_atTop (tendsto_pow_atTop_atTop_of_one_lt one_lt_two)
-  obtain ⟨n, hn⟩ := (hmesh.eventually (gt_mem_nhds (lt_min hδ₁ hδ₂))).exists
-  have hgap : ∀ i : Fin (2 ^ n), (s + ((i.succ : ℕ) : ℝ) * (t - s) / 2 ^ n) -
-      (s + ((i.castSucc : ℕ) : ℝ) * (t - s) / 2 ^ n) = (t - s) / 2 ^ n := fun i ↦ by
-    simp only [Fin.val_succ, Fin.val_castSucc]
-    push_cast
-    ring
-  have h0 : s + (((0 : Fin (2 ^ n + 1)) : ℕ) : ℝ) * (t - s) / 2 ^ n = s := by simp
-  have k₁ := h₁ (2 ^ n) _ (monotone_dyadic hst n) h0 (dyadic_last s t n) fun i ↦ by
-    rw [hgap]; exact hn.trans_le (min_le_left _ _)
-  have k₂ := h₂ (2 ^ n) _ (monotone_dyadic hst n) h0 (dyadic_last s t n) fun i ↦ by
-    rw [hgap]; exact hn.trans_le (min_le_right _ _)
-  have key : ∀ S : E, ‖S - I‖ < ε / 2 → ‖S - J‖ < ε / 2 → dist I J ≤ ε := fun S h₁ h₂ ↦ by
-    rw [dist_eq_norm]
-    calc ‖I - J‖ = ‖(S - J) - (S - I)‖ := by congr 1; abel
-      _ ≤ ‖S - J‖ + ‖S - I‖ := norm_sub_le _ _
-      _ ≤ ε := by linarith
-  exact key _ k₁ k₂
+/-- For `s ≤ t`, a partition limit `I` of `Ξ` over `[s, t]` is the limit of the dyadic sums of
+`Ξ`, since dyadic partitions have vanishing mesh. -/
+theorem HasPartitionLimit.tendsto_dyadicSum {s t : ℝ} {I : E} (hst : s ≤ t)
+    (h : HasPartitionLimit Ξ s t I) : Tendsto (dyadicSum Ξ s t) atTop (𝓝 I) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨δ, hδ, hI⟩ := h ε hε
+  filter_upwards [(tendsto_div_two_pow (t - s)).eventually (gt_mem_nhds hδ)] with n hn
+  rw [dist_eq_norm, ← rsum_dyadicPart, dyadicPart, rsum_ofFn]
+  refine hI _ _ (monotone_dyadic hst n) (dyadic_zero s t n) (dyadic_last s t n) fun i ↦ ?_
+  rw [Fin.val_succ, Fin.val_castSucc, dyadic_gap]
+  exact hn
+
+/-- For `s ≤ t`, a partition limit of `Ξ` over `[s, t]` is `sewing Ξ s t`. -/
+theorem HasPartitionLimit.sewing_eq {s t : ℝ} {I : E} (hst : s ≤ t)
+    (h : HasPartitionLimit Ξ s t I) : sewing Ξ s t = I := by
+  rw [sewing_def]
+  exact (h.tendsto_dyadicSum hst).limUnder_eq
+
+/-- For `s ≤ t`, partition limits are unique. -/
+theorem HasPartitionLimit.unique {s t : ℝ} {I J : E} (hst : s ≤ t)
+    (hI : HasPartitionLimit Ξ s t I) (hJ : HasPartitionLimit Ξ s t J) : I = J :=
+  tendsto_nhds_unique (hI.tendsto_dyadicSum hst) (hJ.tendsto_dyadicSum hst)
 
 end TauCeti
