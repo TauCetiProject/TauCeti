@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.Algebra.Module.Basic
 import Mathlib.Tactic.Field
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.BigOperators.Finset.SquaredDeviation
 
 /-!
 # The mean of a finite family of vectors
@@ -99,15 +100,13 @@ theorem sum_sub_finiteMean (z : ι → E) : ∑ i, (z i - finiteMean R z) = 0 :=
 
 /-- **König–Huygens for a scalar family.** The sum of the squared deviations of a finite family
 from its mean is the sum of its squared deviations from any point `c`, less the size of the family
-times the squared deviation of the mean from `c`. -/
+times the squared deviation of the mean from `c`. This is `Finset.sum_sq_sub_mean` for the mean
+`TauCeti.finiteMean`. -/
 theorem sum_sub_finiteMean_sq (z : ι → R) (c : R) :
     ∑ i, (z i - finiteMean R z) ^ 2 =
       ∑ i, (z i - c) ^ 2 - Fintype.card ι * (finiteMean R z - c) ^ 2 := by
-  -- Expand `zᵢ - c = (zᵢ - m) + (m - c)`; the cross terms sum to zero by `sum_sub_finiteMean`.
-  have h (i : ι) : (z i - c) ^ 2 = (z i - finiteMean R z) ^ 2 +
-      2 * (finiteMean R z - c) * (z i - finiteMean R z) + (finiteMean R z - c) ^ 2 := by ring
-  simp only [h, sum_add_distrib, ← mul_sum, sum_sub_finiteMean, sum_const, card_univ,
-    nsmul_eq_mul]
+  rw [Finset.sum_sq_sub_mean univ z c, finiteMean_eq_inv_smul_sum, smul_eq_mul, inv_mul_eq_div,
+    card_univ]
   ring
 
 /-- Subtracting a constant from every member of a nonempty family subtracts it from the mean. -/

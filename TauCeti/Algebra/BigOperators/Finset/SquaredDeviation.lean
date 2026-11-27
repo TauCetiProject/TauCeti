@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
@@ -13,48 +13,34 @@ import Mathlib.Tactic.Ring
 /-!
 # Squared deviations from a finite mean
 
-The sum of squared deviations splits into the sum at the mean and the squared excess.
+The sum of squared deviations splits into the sum at the mean and the squared excess, over any
+field of characteristic zero. Over `ℝ` the mean therefore minimizes the sum of squared deviations,
+and on a nonempty set only the mean does.
 -/
 
 public section
 
 namespace Finset
 
-/-- The sum of squared deviations from `c` equals the sum at the mean plus the excess.
-This also holds for the empty set, where the mean is defined as zero. -/
-theorem sum_sq_sub_mean {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) :
+/-- The sum of squared deviations from `c` equals the sum at the mean plus the excess, over any
+field of characteristic zero. This also holds for the empty set, where the mean is defined as
+zero. -/
+theorem sum_sq_sub_mean {ι R : Type*} [Field R] [CharZero R] (s : Finset ι) (t : ι → R) (c : R) :
     (∑ i ∈ s, (t i - c) ^ 2) =
       (∑ i ∈ s, (t i - (∑ j ∈ s, t j) / s.card) ^ 2) +
         s.card * (c - (∑ j ∈ s, t j) / s.card) ^ 2 := by
-  by_cases hs : s.Nonempty
-  · let w : ℝ := 1 / s.card
-    have hcard : (s.card : ℝ) ≠ 0 := by
-      exact_mod_cast (card_ne_zero.mpr hs)
-    have hw : ∑ _ ∈ s, w = 1 := by
-      simp only [sum_const, nsmul_eq_mul]
-      dsimp [w]
-      field_simp
-    have h := sum_mul_sub_sq_eq s (w := fun _ => w) hw c t
-    simp only [← mul_sum] at h
-    have hmean : w * ∑ i ∈ s, t i = (∑ i ∈ s, t i) / s.card := by
-      dsimp [w]
-      ring
-    rw [hmean] at h
-    have hreverse (a : ℝ) : (∑ i ∈ s, (a - t i) ^ 2) =
-        ∑ i ∈ s, (t i - a) ^ 2 := by
-      apply sum_congr rfl
-      intro i _
-      ring
-    rw [hreverse c, hreverse ((∑ i ∈ s, t i) / s.card)] at h
-    have hscale : (s.card : ℝ) * w = 1 := by
-      dsimp [w]
-      field_simp
-    have hscaled := congrArg (fun x : ℝ => (s.card : ℝ) * x) h
-    simp only [mul_add, ← mul_assoc, hscale, one_mul] at hscaled
-    simpa only [add_comm] using hscaled
-  · have hempty : s = ∅ := not_nonempty_iff_eq_empty.mp hs
-    subst s
-    simp
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  have hcard : (s.card : R) ≠ 0 := Nat.cast_ne_zero.2 (card_ne_zero.2 hs)
+  set m := (∑ j ∈ s, t j) / s.card with hm
+  -- Expand `tᵢ - c = (tᵢ - m) + (m - c)`: the cross terms cancel since `∑ tᵢ = card s * m`.
+  have hsum : ∑ i ∈ s, t i = s.card * m := by
+    rw [hm]
+    field_simp
+  have h (i : ι) : (t i - c) ^ 2 =
+      (t i - m) ^ 2 + 2 * (m - c) * t i - 2 * (m - c) * m + (c - m) ^ 2 := by ring
+  simp only [h, sum_add_distrib, sum_sub_distrib, ← mul_sum, hsum, sum_const, nsmul_eq_mul]
+  ring
 
 /-- The mean minimizes the sum of squared deviations, even for an empty set. -/
 theorem sum_sq_sub_mean_le {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) :

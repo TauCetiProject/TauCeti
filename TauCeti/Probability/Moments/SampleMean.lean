@@ -9,7 +9,6 @@ public import Mathlib.Probability.Independence.Integration
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.FiniteMean
 public import Mathlib.Probability.Moments.Variance
-import Mathlib.MeasureTheory.Integral.Pi
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -36,7 +35,9 @@ For real variables, the sum of squared deviations from the sample mean then has 
 `(1 - r⁻¹) ∑ₖ ∫ (Xₖ - m)² dP`, by the König–Huygens identity `TauCeti.sum_sub_finiteMean_sq`.
 For a sample `z` of size `r` drawn independently from one law `ν`, that is under
 `Measure.pi fun _ ↦ ν`, the sample mean of `f (z i)` has expectation `∫ f dν` and variance
-`r⁻¹ Var_ν(f)`, and the sample variance with divisor `r - 1` is unbiased for `Var_ν(f)`.
+`r⁻¹ Var_ν(f)`. For `r ≥ 1` the sum of the squared deviations from the sample mean has
+expectation `(r - 1) Var_ν(f)`, so for `r ≥ 2` the sample variance with divisor `r - 1` is
+unbiased for `Var_ν(f)`.
 
 ## Main statements
 
@@ -51,7 +52,8 @@ For a sample `z` of size `r` drawn independently from one law `ν`, that is unde
 * `MeasureTheory.MemLp.finiteMean_pi`, `TauCeti.integral_finiteMean_pi` and
   `TauCeti.variance_finiteMean_pi`: integrability, mean and variance of the sample mean of an
   independent sample from one law.
-* `TauCeti.integral_sum_sub_finiteMean_sq_pi`: unbiasedness of the sample variance.
+* `TauCeti.integral_sum_sub_finiteMean_sq_pi`: the expected sum of squared deviations of a
+  nonempty sample, `(r - 1) Var_ν(f)`; for `r ≥ 2` the sample variance is unbiased.
 
 ## References
 
@@ -219,10 +221,10 @@ theorem _root_.MeasureTheory.MemLp.finiteMean_pi [NormedSpace ℝ E] {p : ℝ≥
   exact (memLp_finsetSum univ fun i _ ↦
     hf.comp_measurePreserving (measurePreserving_eval _ i)).const_smul (Fintype.card ι : ℝ)⁻¹
 
-omit [CompleteSpace E] [MeasurableSpace E] [BorelSpace E] in
+omit [InnerProductSpace ℝ E] [CompleteSpace E] [MeasurableSpace E] [BorelSpace E] in
 /-- The sample mean of an integrable `f` over a sample drawn independently from `ν` has
 expectation `∫ f dν`. -/
-theorem integral_finiteMean_pi {f : M → E} (hf : Integrable f ν) :
+theorem integral_finiteMean_pi [NormedSpace ℝ E] {f : M → E} (hf : Integrable f ν) :
     ∫ z, finiteMean ℝ (fun i ↦ f (z i)) ∂(Measure.pi fun _ : ι ↦ ν) = ∫ x, f x ∂ν := by
   have hr : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
   have heval (i : ι) : ∫ z, f (z i) ∂(Measure.pi fun _ : ι ↦ ν) = ∫ x, f x ∂ν :=
@@ -238,29 +240,20 @@ from `ν` has variance `r⁻¹ Var_ν(f)`. For `r = 0` both sides are `0`. -/
 theorem variance_finiteMean_pi {f : M → ℝ} (hf : MemLp f 2 ν) :
     variance (fun z ↦ finiteMean ℝ (fun i ↦ f (z i))) (Measure.pi fun _ : ι ↦ ν) =
       (Fintype.card ι : ℝ)⁻¹ * variance f ν := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · simp only [finiteMean_of_isEmpty, Fintype.card_eq_zero, Nat.cast_zero, inv_zero, zero_mul]
-    exact variance_zero _ -- `fun z ↦ 0` is the zero function `0`
-  have hr : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-  have hfm := hf.aestronglyMeasurable
-  have hZ (i : ι) : MemLp (fun z : ι → M ↦ f (z i)) 2 (Measure.pi fun _ : ι ↦ ν) :=
-    hf.comp_measurePreserving (measurePreserving_eval _ i)
-  have hindep : Pairwise fun i j ↦ (fun z : ι → M ↦ f (z i)) ⟂ᵢ[Measure.pi fun _ : ι ↦ ν]
-      fun z ↦ f (z j) := fun _ _ hij ↦ (iIndepFun_pi fun _ ↦ hfm.aemeasurable).indepFun hij
-  have hsq (i : ι) :
-      ∫ z, (f (z i) - ∫ x, f x ∂ν) ^ 2 ∂(Measure.pi fun _ : ι ↦ ν) = variance f ν := by
-    rw [variance_eq_integral hfm.aemeasurable]
-    exact integral_comp_eval (μ := fun _ : ι ↦ ν) (f := fun x ↦ (f x - ∫ x, f x ∂ν) ^ 2)
-      (by fun_prop)
-  rw [variance_eq_integral hf.finiteMean_pi.aestronglyMeasurable.aemeasurable,
-    integral_finiteMean_pi (hf.integrable one_le_two)]
-  refine (integral_finiteMean_sub_sq hZ (fun _ ↦ integral_comp_eval hfm) hindep).trans ?_
-  simp only [hsq, sum_const, card_univ, nsmul_eq_mul]
-  field_simp
+  -- The sample mean is `r⁻¹` times a sum of `r` independent copies of `f`: Mathlib's
+  -- `variance_sum_pi` gives the variance `r Var_ν(f)` of the sum.
+  have hsum : Var[fun z : ι → M ↦ ∑ i, f (z i); Measure.pi fun _ ↦ ν] = ∑ _ : ι, Var[f; ν] := by
+    simpa only [Finset.sum_fn] using variance_sum_pi (μ := fun _ : ι ↦ ν) fun _ ↦ hf
+  simp only [finiteMean_eq_inv_smul_sum, smul_eq_mul, variance_const_mul, hsum, sum_const,
+    card_univ, nsmul_eq_mul]
+  rcases eq_or_ne (Fintype.card ι : ℝ) 0 with hr | hr
+  · simp [hr]
+  · field_simp
 
 /-- **Unbiasedness of the sample variance.** For a square-integrable real `f` and a sample of
-size `r` drawn independently from `ν`, the sum of the squared deviations of the `f (z i)` from
-their sample mean has expectation `(r - 1) Var_ν(f)`. -/
+size `r ≥ 1` drawn independently from `ν`, the sum of the squared deviations of the `f (z i)` from
+their sample mean has expectation `(r - 1) Var_ν(f)`. Hence for `r ≥ 2` the sample variance with
+divisor `r - 1` is unbiased for `Var_ν(f)`; for `r = 1` both sides are `0`. -/
 theorem integral_sum_sub_finiteMean_sq_pi {f : M → ℝ} (hf : MemLp f 2 ν) :
     ∫ z, ∑ i, (f (z i) - finiteMean ℝ (fun i ↦ f (z i))) ^ 2 ∂(Measure.pi fun _ : ι ↦ ν) =
       ((Fintype.card ι : ℝ) - 1) * variance f ν := by

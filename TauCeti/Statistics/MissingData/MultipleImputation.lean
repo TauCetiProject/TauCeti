@@ -8,7 +8,6 @@ module
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Analysis.Convex.FiniteMean
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Probability.Moments.Mixture
 import TauCeti.Probability.Moments.SampleMean
 
@@ -293,37 +292,25 @@ theorem integral_sub_miMean_sq [IsMarkovKernel κ]
     ∫ p, (p.1 - miMean κ p.2) ^ 2 ∂((κ ∘ₘ ν).prod (Measure.pi fun _ : Fin D ↦ ν)) =
       variance id (κ ∘ₘ ν) + (D : ℝ)⁻¹ * variance (fun z ↦ ∫ x, x ∂κ z) ν := by
   set P := Measure.pi fun _ : Fin D ↦ ν
-  set c := ∫ x, x ∂(κ ∘ₘ ν)
   have hX : MemLp (fun x : ℝ ↦ x) 2 (κ ∘ₘ ν) :=
     (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2 h2
   have hm : MemLp (fun z ↦ ∫ x, x ∂κ z) 2 ν :=
     Measure.memLp_integral_bind one_le_two (c := 1) κ.aemeasurable (ae_of_all _ fun _ ↦ by simp)
       hX
   have hbar : MemLp (miMean κ) 2 P := memLp_miMean ν κ hm
-  have hθ : MemLp (fun x : ℝ ↦ x - c) 2 (κ ∘ₘ ν) := hX.sub (memLp_const c)
-  have hθ' : MemLp (fun z ↦ miMean κ z - c) 2 P := hbar.sub (memLp_const c)
-  -- Expand `(θ - θ_MI)² = (θ - c)² + (θ_MI - c)² - 2 (θ - c) (θ_MI - c)`.
-  -- The cross term has expectation `0` by independence under the product law.
-  have hexp (p : ℝ × (Fin D → M)) : (p.1 - miMean κ p.2) ^ 2 = (p.1 - c) ^ 2 +
-      (miMean κ p.2 - c) ^ 2 - 2 * ((p.1 - c) * (miMean κ p.2 - c)) := by ring
-  have hcross : ∫ p, (p.1 - c) * (miMean κ p.2 - c) ∂((κ ∘ₘ ν).prod P) = 0 := by
-    rw [integral_prod_mul (fun x ↦ x - c) (fun z ↦ miMean κ z - c),
-      integral_sub (hX.integrable one_le_two) (integrable_const c)]
-    simp [c]
-  have hI₁ : Integrable (fun p : ℝ × (Fin D → M) ↦ (p.1 - c) ^ 2 + (miMean κ p.2 - c) ^ 2)
-      ((κ ∘ₘ ν).prod P) :=
-    (hθ.integrable_sq.comp_fst P).add (hθ'.integrable_sq.comp_snd _)
-  have hI₂ : Integrable (fun p : ℝ × (Fin D → M) ↦ 2 * ((p.1 - c) * (miMean κ p.2 - c)))
-      ((κ ∘ₘ ν).prod P) :=
-    ((hθ.integrable one_le_two).mul_prod (hθ'.integrable one_le_two)).const_mul 2
-  simp only [hexp]
-  rw [integral_sub hI₁ hI₂,
-    integral_add (hθ.integrable_sq.comp_fst P) (hθ'.integrable_sq.comp_snd _),
-    integral_const_mul, hcross, integral_fun_fst (fun x ↦ (x - c) ^ 2),
-    integral_fun_snd (fun z ↦ (miMean κ z - c) ^ 2), ← variance_miMean ν κ hm,
-    variance_eq_integral hbar.aestronglyMeasurable.aemeasurable,
-    variance_eq_integral aemeasurable_id, integral_miMean ν κ (hX.integrable one_le_two) hD]
-  simp [c]
+  -- `θ - θ_MI` has mean `0`, so its second moment is its variance, which splits over the
+  -- product law as `Var θ + Var θ_MI`.
+  have hmean : ∫ p, (p.1 - miMean κ p.2) ∂((κ ∘ₘ ν).prod P) = 0 := by
+    rw [integral_sub ((hX.integrable one_le_two).comp_fst P)
+      ((hbar.integrable one_le_two).comp_snd _), integral_fun_fst (fun x : ℝ ↦ x),
+      integral_fun_snd (miMean κ), integral_miMean ν κ (hX.integrable one_le_two) hD]
+    simp
+  have hvar := variance_add_prod hX hbar.neg
+  simp only [Pi.neg_apply, ← sub_eq_add_neg, variance_neg] at hvar
+  rw [← variance_of_integral_eq_zero (X := fun p : ℝ × (Fin D → M) ↦ p.1 - miMean κ p.2)
+    ((hX.comp_fst P).sub (hbar.comp_snd _)).aestronglyMeasurable.aemeasurable hmean, hvar,
+    variance_miMean ν κ hm]
+  rfl
 
 /-- **Rubin's combining rules, exact form.** Given the observed data, let the `D ≥ 2` imputations
 be drawn independently from the posterior predictive law `ν`, and let `θ` be drawn from the
