@@ -12,7 +12,8 @@ public import Mathlib.NumberTheory.LegendreSymbol.Basic
 
 A natural number `n` with `(n / p) = -1` is neither `p`, since `(p / p) = 0`
 (`ne_of_legendreSym_eq_neg_one`), nor `0` or `1`, since `(0 / p) = 0` and `(1 / p) = 1`
-(`two_le_of_legendreSym_eq_neg_one`).
+(`two_le_of_legendreSym_eq_neg_one`). Conversely, a prime `n ≠ p` with `(n / p) ≠ 1` has
+`(n / p) = -1` (`legendreSym_eq_neg_one_of_ne_one`).
 -/
 
 public section
@@ -34,5 +35,13 @@ theorem two_le_of_legendreSym_eq_neg_one (h : legendreSym p n = -1) : 2 ≤ n :=
   interval_cases n
   · rw [Nat.cast_zero, legendreSym.at_zero] at h; exact absurd h (by decide)
   · rw [Nat.cast_one, legendreSym.at_one] at h; exact absurd h (by decide)
+
+/-- A prime `n ≠ p` with `(n / p) ≠ 1` has `(n / p) = -1`, since `p ∤ n`. -/
+theorem legendreSym_eq_neg_one_of_ne_one (hn : n.Prime) (hnp : n ≠ p)
+    (h : legendreSym p n ≠ 1) : legendreSym p n = -1 := by
+  refine (legendreSym.eq_one_or_neg_one p ?_).resolve_left h
+  rw [Int.cast_natCast, ne_eq, ZMod.natCast_eq_zero_iff,
+    Nat.prime_dvd_prime_iff_eq (Fact.out : p.Prime) hn]
+  exact Ne.symm hnp
 
 end TauCeti

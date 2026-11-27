@@ -12,13 +12,13 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Splitting
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.QuadraticOrder.ComplexEmbedding
-import Mathlib.NumberTheory.RamificationInertia.Galois
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Data.Nat.GCD
 import TauCeti.NumberTheory.LegendreSymbol.NegOne
 import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Basic
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
+import TauCeti.NumberTheory.RamificationInertia.Inert
 
 /-!
 # The numbers attached to a prime in `ℚ(√-d)`
@@ -350,11 +350,7 @@ theorem piPrime_mul_conj (hp : p.Prime) (h : legendreSym d p ≠ 1) :
     push_cast
     exact neg_neg _
   · -- `p ≠ d` is prime, so `(p / d) = ±1`, and it is not `1`
-    have h₂ : legendreSym d p = -1 := by
-      refine (legendreSym.eq_one_or_neg_one d ?_).resolve_left h
-      rw [Int.cast_natCast, ne_eq, ZMod.natCast_eq_zero_iff,
-        Nat.prime_dvd_prime_iff_eq (Fact.out : d.Prime) hp]
-      exact Ne.symm h₁
+    have h₂ : legendreSym d p = -1 := legendreSym_eq_neg_one_of_ne_one hp h₁ h
     rw [piPrime_of_ne h₁, conj_natCast, primeNorm_of_legendreSym_eq_neg_one h₂]
     push_cast
     ring
@@ -514,11 +510,7 @@ theorem absNorm_eq_primeNorm (hmin : minpoly ℤ θ = Polynomial.X ^ 2 - Polynom
       Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank 𝔭
         ((ncard_primesOver_eq_finrank_iff_legendreSym_eq_one hmin hgen hd).mpr h₂)]
   · -- `p` is inert: a single unramified prime lies above `p`, so its inertia degree is `2`
-    have h₃ : legendreSym d p = -1 := by
-      refine (legendreSym.eq_one_or_neg_one d ?_).resolve_left h₂
-      rw [Int.cast_natCast, ne_eq, ZMod.natCast_eq_zero_iff,
-        Nat.prime_dvd_prime_iff_eq (Fact.out : d.Prime) Fact.out]
-      exact Ne.symm h₁
+    have h₃ : legendreSym d p = -1 := legendreSym_eq_neg_one_of_ne_one Fact.out h₁ h₂
     have hg : (Ideal.primesOver (Ideal.span {(p : ℤ)}) (𝓞 K)).ncard = 1 :=
       (NumberField.ncard_primesOver_eq_one_or_eq_two hK p).resolve_right fun h ↦
         h₂ ((ncard_primesOver_eq_finrank_iff_legendreSym_eq_one hmin hgen hd).mp (h.trans hK.symm))
@@ -529,14 +521,9 @@ theorem absNorm_eq_primeNorm (hmin : minpoly ℤ θ = Polynomial.X ^ 2 - Polynom
       exact h₁ hram
     have he : 𝔭.ramificationIdx ℤ = 1 :=
       Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hunr ‹_›
-    let _ : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
-    have h := Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
-      (Ideal.span {(p : ℤ)}) (𝓞 K) (K ≃ₐ[ℚ] K)
-    rw [IsGalois.card_aut_eq_finrank, hK, hg, Ideal.ramificationIdxIn_eq_ramificationIdx _ 𝔭
-      (K ≃ₐ[ℚ] K), Ideal.inertiaDegIn_eq_inertiaDeg _ 𝔭 (K ≃ₐ[ℚ] K), he] at h
-    rw [primeNorm_of_legendreSym_eq_neg_one h₃, ← Ideal.pow_inertiaDeg p 𝔭]
-    congr 1
-    omega
+    rw [primeNorm_of_legendreSym_eq_neg_one h₃, ← Ideal.pow_inertiaDeg p 𝔭,
+      RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one _ 𝔭 hg he,
+      NumberField.RingOfIntegers.rank, hK]
 
 end Splitting
 
