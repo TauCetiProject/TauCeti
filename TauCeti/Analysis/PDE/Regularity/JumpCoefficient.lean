@@ -9,11 +9,15 @@ public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
+import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
 import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 
 /-!
@@ -58,6 +62,13 @@ interior `H²` regularity theorem for Lipschitz coefficients
 extend to bounded measurable ones. In dimension one this is the coefficient `1 + 1_{x ≤ 0}` on an
 interval around `0`.
 
+Cutting the explicit solution off by a smooth `χ`, equal to `1` near a compact `K ⊆ Ω` and
+compactly supported in `Ω`, gives `u₀ = χ u ∈ H¹₀(Ω)` with flux `κ ∇u₀ = ∇(x₀ χ)`. So `u₀` is a
+weak solution of `-div(κ ∇u₀) = f` with `f = -Δ(x₀ χ) ∈ L²(Ω)`, and it equals `u` on `K`
+(`TauCeti.PDE.exists_w1p0_forall_energyFormH1_jumpCoefficient_eq_inner_and_value_eq_jumpSolution`).
+As a stationary solution it shows that parabolic interior `H²` regularity fails for the same
+coefficient (`TauCeti.PDE.not_forall_exists_memLp_lowerOrder_eq_restrictL_jumpCoefficient`).
+
 The proof that `u` is not in `W^{2,p}` uses no explicit second derivative. If it were, `∂₀u` would
 be a `W^{1,p}` function on a ball centred on the hyperplane taking only the values `1` and `1 / 2`.
 The weak gradient of a Sobolev function vanishes almost everywhere on each level set
@@ -76,8 +87,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory Metric Set TopologicalSpace TauCeti.MeasureTheory
-open scoped NNReal ENNReal Topology Gradient InnerProductSpace
+open MeasureTheory Metric Set TopologicalSpace TauCeti.MeasureTheory InnerProductSpace Laplacian
+open scoped NNReal ENNReal ContDiff Topology Gradient InnerProductSpace Distributions
 
 namespace TauCeti
 
@@ -95,6 +106,11 @@ def jumpCoefficient (n : ℕ) (x : EuclideanSpace ℝ (Fin (n + 1))) :
 theorem jumpCoefficient_apply (x : EuclideanSpace ℝ (Fin (n + 1))) :
     jumpCoefficient n x = (if 0 < x 0 then 1 else 2 : ℝ) • 1 :=
   (rfl)
+
+/-- The factor `κ(x)` of the jump coefficient is nonzero. -/
+private theorem ite_one_two_ne_zero (x : EuclideanSpace ℝ (Fin (n + 1))) :
+    (if 0 < x 0 then 1 else 2 : ℝ) ≠ 0 := by
+  split_ifs <;> norm_num
 
 /-- The jump coefficient is uniformly elliptic with constants `1` and `2` on every set. -/
 theorem uniformlyEllipticOn_jumpCoefficient (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) :
@@ -292,9 +308,8 @@ private theorem matrixBilinearForm_jumpCoefficient_smul_single
     matrixBilinearForm (jumpCoefficient n x) η
       ((if 0 < x 0 then 1 else 2 : ℝ)⁻¹ • EuclideanSpace.single 0 1) =
       ⟪η, EuclideanSpace.single 0 1⟫_ℝ := by
-  have hc0 : (if 0 < x 0 then 1 else 2 : ℝ) ≠ 0 := by split_ifs <;> norm_num
   rw [matrixBilinearForm_jumpCoefficient_apply, real_inner_smul_right, ← mul_assoc,
-    mul_inv_cancel₀ hc0, one_mul]
+    mul_inv_cancel₀ (ite_one_two_ne_zero x), one_mul]
 
 /-- **The explicit solution is a weak solution.** On a bounded open set `Ω`, every `u ∈ H¹(Ω)`
 equal to `TauCeti.PDE.jumpSolution` almost everywhere solves `-div(κ ∇u) = 0` weakly:
@@ -315,6 +330,106 @@ theorem energyFormH1_jumpCoefficient_eq_zero {Omega : Opens (EuclideanSpace ℝ 
   refine integral_congr_ae ?_
   filter_upwards [hwg] with x hx
   rw [hx, matrixBilinearForm_jumpCoefficient_smul_single]
+
+/-- The cutoff `χ u` of the jump solution `u = x₀ / κ` is a weak solution of
+`-div(κ ∇(χ u)) = -Δ(x₀ χ)`: its flux `κ (χ ∇u + u ∇χ) = χ e₀ + x₀ ∇χ` is the gradient of the test
+function `x₀ χ`. -/
+private theorem energyFormH1_jumpCoefficient_contDiffSMul_eq
+    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {χ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχΩ : tsupport χ ⊆ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) {N : ℝ} (hN : 0 ≤ N)
+    (hχN : ∀ x ∈ Omega, |χ x| ≤ N) (hgradN : ∀ x ∈ Omega, ‖∇ χ x‖ ≤ N)
+    {u : W1p volume Omega 2}
+    (huv : W1p.value u =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
+      jumpSolution n)
+    (hug : W1p.gradient u =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
+      fun x => (if 0 < x 0 then 1 else 2 : ℝ)⁻¹ • EuclideanSpace.single 0 1)
+    (v : W1p0 volume Omega 2) :
+    energyFormH1 (jumpCoefficient n) 0 0 (W1p.contDiffSMul χ hχ hN hχN hgradN u)
+      (v : W1p volume Omega 2) =
+      ∫ x in Omega, -Δ (fun y : EuclideanSpace ℝ (Fin (n + 1)) => y 0 * χ y) x *
+        W1p.value (v : W1p volume Omega 2) x := by
+  -- The test function `φ = x₀ χ`.
+  let φ : 𝓓(Omega, ℝ) := ⟨fun y => y 0 * χ y,
+    (EuclideanSpace.proj (0 : Fin (n + 1)) : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).contDiff.mul
+      hχ, hχc.mul_left (f := fun y => y 0),
+    (tsupport_mul_subset_right (f := fun y => y 0)).trans hχΩ⟩
+  have hφ : (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) = fun y => y 0 * χ y := TestFunction.coe_mk
+  -- The flux of `χ u` is `∇φ`.
+  have hflux : ∀ᵐ x ∂volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+      matrixBilinearForm (jumpCoefficient n x) (W1p.gradient (v : W1p volume Omega 2) x)
+        (W1p.gradient (W1p.contDiffSMul χ hχ hN hχN hgradN u) x) =
+      ⟪∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x,
+        W1p.gradient (v : W1p volume Omega 2) x⟫_ℝ := by
+    filter_upwards [W1p.gradient_contDiffSMul_ae hχ hN hχN hgradN u, huv, hug] with x h1 h2 h3
+    rw [matrixBilinearForm_jumpCoefficient_apply, h1, h2, h3, hφ,
+      gradient_fun_mul (f := fun y : EuclideanSpace ℝ (Fin (n + 1)) => y 0) (by fun_prop)
+        ((hχ.differentiable (by simp)) x),
+      gradient_euclideanSpace_apply, real_inner_comm, jumpSolution_apply, ← real_inner_smul_left]
+    simp only [conj_trivial]
+    congr 1
+    match_scalars <;> field_simp [ite_one_two_ne_zero x]
+  -- Off `Ω`, both `Δφ` and `∇φ` vanish, so the whole-space integrals are integrals over `Ω`.
+  have hout : ∀ x ∉ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+      x ∉ tsupport (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) :=
+    fun x hx hxφ => hx (φ.tsupport_subset hxφ)
+  rw [energyFormH1_zero_zero_eq_setIntegral, integral_congr_ae hflux,
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+      rw [gradient_of_notMem_tsupport (hout x hx), inner_zero_left],
+    ← neg_neg (∫ x, ⟪_, _⟫_ℝ),
+    ← (W1p.hasWeakFDerivOn
+      (v : W1p volume Omega 2)).integral_laplacian_smul_eq_neg_integral_inner φ,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+      rw [laplacian_of_notMem_tsupport (hout x hx), zero_smul], ← integral_neg, hφ]
+  simp only [smul_eq_mul, neg_mul]
+
+/-- **A zero-boundary weak solution that agrees with the jump solution on a compact set.** Let
+`Ω ⊆ ℝⁿ⁺¹` be bounded and open, and let `K ⊆ Ω` be compact. Some `u₀ ∈ H¹₀(Ω)` is a weak solution
+of `-div(κ ∇u₀) = f` in `Ω` for the jump coefficient `κ I = TauCeti.PDE.jumpCoefficient n` and some
+`f ∈ L²(Ω)`, that is `∫_Ω κ ∇u₀ · ∇v = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, and `u₀` equals the
+explicit solution `TauCeti.PDE.jumpSolution` almost everywhere on `K`.
+
+One may take `u₀ = χ x₀ / κ` for a smooth cutoff `χ` equal to `1` near `K` and compactly supported
+in `Ω`, and `f = -Δ(x₀ χ)`. -/
+theorem exists_w1p0_forall_energyFormH1_jumpCoefficient_eq_inner_and_value_eq_jumpSolution
+    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+    {K : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hK : IsCompact K)
+    (hKΩ : K ⊆ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
+    ∃ u₀ : W1p0 volume Omega 2,
+      ∃ f : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))),
+        (∀ v : W1p0 volume Omega 2,
+          energyFormH1 (jumpCoefficient n) 0 0 (u₀ : W1p volume Omega 2)
+            (v : W1p volume Omega 2) = ⟪f, W1p0.valueL v⟫_ℝ) ∧
+        ∀ᵐ x ∂volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+          x ∈ K → W1p.value (u₀ : W1p volume Omega 2) x = jumpSolution n x := by
+  -- A smooth cutoff `χ`, equal to one near `K` and compactly supported in `Ω`.
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχΩ⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one Omega.isOpen hKΩ
+  obtain ⟨N, hN, hχN, hgradN⟩ := (hχ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hχc
+  -- The jump solution `u = x₀ / κ` and its cutoff `u₀ = χ u ∈ H¹₀(Ω)`.
+  obtain ⟨u, huv, hug⟩ := exists_w1p_value_gradient_ae_eq_jumpSolution (n := n) (p := 2)
+    ENNReal.ofNat_ne_top hb
+  have hmem := W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (p := 2) (by norm_num) hχ
+    hN (fun x _ => hχN x) (fun x _ => hgradN x) hχc hχΩ u
+  -- The forcing `f = -Δ(x₀ χ) ∈ L²(Ω)`.
+  have hφ : ContDiff ℝ 2 fun y : EuclideanSpace ℝ (Fin (n + 1)) => y 0 * χ y :=
+    (EuclideanSpace.proj (0 : Fin (n + 1)) : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).contDiff.mul
+      (hχ.of_le (by simp))
+  have hc : HasCompactSupport fun y : EuclideanSpace ℝ (Fin (n + 1)) => y 0 * χ y :=
+    hχc.mul_left
+  have hf : MemLp (fun x => -Δ (fun y : EuclideanSpace ℝ (Fin (n + 1)) => y 0 * χ y) x) 2
+      (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    (hφ.continuous_laplacian.neg.memLp_of_hasCompactSupport hc.laplacian.neg).restrict _
+  refine ⟨⟨_, hmem⟩, hf.toLp _, fun v => ?_, ?_⟩
+  · rw [W1p0.valueL_apply, ← dirichletForcing_apply, dirichletForcing_apply_eq_setIntegral]
+    refine (energyFormH1_jumpCoefficient_contDiffSMul_eq hχ hχc hχΩ hN (fun x _ => hχN x)
+      (fun x _ => hgradN x) huv hug v).trans (setIntegral_congr_ae Omega.isOpen.measurableSet ?_)
+    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hf.coeFn_toLp] with x hx hxΩ
+    rw [hx hxΩ]
+  · -- On `K`, the cutoff is one.
+    filter_upwards [W1p.value_contDiffSMul_ae hχ hN (fun x _ => hχN x) (fun x _ => hgradN x) u,
+      huv] with x h1 h2 hxK
+    rw [h1, h2, (hχ1 x hxK).self_of_nhds, one_smul]
 
 /-- On a bounded open set, the weak derivative of `TauCeti.PDE.jumpSolution` along `e₀` is
 `κ(x)⁻¹`. -/
