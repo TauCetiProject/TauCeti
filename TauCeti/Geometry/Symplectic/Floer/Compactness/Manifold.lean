@@ -13,7 +13,6 @@ import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
-import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -235,30 +234,6 @@ theorem floerEnergyDensity_eq_inChartAt (ω : SmoothTwoForm I M)
   rw [ω.floerEnergyDensity_eq_inChartAt_sub hu hus,
     (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub hu
       hus).1 h]
-
-omit [FiniteDimensional ℝ E] in
-/-- **Slice continuity of the Floer energy density for a parametrized Hamiltonian family.** On any
-subset `S ⊆ Ω` of an open set `Ω` mapped into the open domain `W` of jointly continuous Hamiltonian
-vector fields `X_{K_s}, X_{K_t}`, a `C¹` map `u` has continuous Floer energy density. -/
-theorem continuousOn_floerEnergyDensity_of_isOpen_prod {P : Type*} [TopologicalSpace P]
-    (ω : SmoothTwoForm I M) {Ks Kt : P → ℝ × ℝ → M → ℝ}
-    {W : Set (P × ((ℝ × ℝ) × M))} (hW : IsOpen W)
-    (hXs : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
-      (⟨q.2.2, ω.hamiltonianVectorField (Ks q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W)
-    (hXt : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
-      (⟨q.2.2, ω.hamiltonianVectorField (Kt q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W)
-    {Ω S : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) (hSΩ : S ⊆ Ω)
-    {p : P} {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u Ω)
-    (huW : ∀ z ∈ S, (p, (z, u z)) ∈ W) :
-    ContinuousOn (ω.floerEnergyDensity (Ks p) (Kt p) u) S := by
-  intro z hz
-  have hqW : (p, (z, u z)) ∈ W := huW z hz
-  have hslice : ContinuousAt (fun q : (ℝ × ℝ) × M ↦ (p, q)) (z, u z) :=
-    continuousAt_const.prodMk continuousAt_id
-  exact (ω.continuousAt_floerEnergyDensity
-    (hu.contMDiffAt (hΩ.mem_nhds (hSΩ hz)))
-    ((hXs.continuousAt (hW.mem_nhds hqW)).comp hslice)
-    ((hXt.continuousAt (hW.mem_nhds hqW)).comp hslice)).continuousWithinAt
 
 omit [FiniteDimensional ℝ E] in
 /-- **The Floer energy density is nonnegative where `J` is tamed in a chart.** Let `J(z, x)` be

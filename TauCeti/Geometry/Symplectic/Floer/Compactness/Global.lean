@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Geometry.Manifold.ExtChartAt.CompactCover
 import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence.Manifold
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold.Family
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Topology.ContinuousMap.Ascoli
@@ -74,15 +75,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 section Compactness
 
 variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
-
-/-- From `‖d‖ ^ 2 ≤ A * ρ + B` and `ρ ≤ M`, deduces `‖d‖ ≤ √(A * max M 0 + B)`. -/
-private theorem norm_le_sqrt_of_sq_le_add {F : Type*} [NormedAddCommGroup F] {d : F}
-    {A B ρ M : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (hd : ‖d‖ ^ 2 ≤ A * ρ + B) (hρ : ρ ≤ M) :
-    ‖d‖ ≤ √(A * max M 0 + B) := by
-  have hM : ρ ≤ max M 0 := hρ.trans (le_max_left _ _)
-  have hsq : ‖d‖ ^ 2 ≤ (√(A * max M 0 + B)) ^ 2 := by
-    rw [Real.sq_sqrt (by positivity)]; nlinarith
-  nlinarith [norm_nonneg d, Real.sqrt_nonneg (A * max M 0 + B)]
 
 /-- Eventual uniform derivative bound in a chart `extChartAt I α` on a compact `C' ⊆ U₀` mapped by
 `v` into `(extChartAt I α).source`, from compact-open convergence in `C(U₀, M)` and energy-density
@@ -165,8 +157,9 @@ private theorem chart_eventually_norm_fderiv_le [I.Boundaryless] [T2Space M]
     ((hu n).mdifferentiableOn (by norm_num)).mdifferentiableAt (hΩ.mem_nhds hyΩ)
   have hmemKα' : e (u n y) ∈ Kα' :=
     ⟨hUα_Sα _ (hn hy), by rw [mem_preimage, e.left_inv (hn hy).1]; exact huK n hyΩ⟩
-  exact norm_le_sqrt_of_sq_le_add hAα.le hBα
-    (hcbd (hpC n) (hΩD hyΩ) (hn hy).1 hmemKα' hdiff (hfl n y hyΩ)).1 (hMe n y hy)
+  exact (Real.le_sqrt (norm_nonneg _) (by positivity)).2
+    ((hcbd (hpC n) (hΩD hyΩ) (hn hy).1 hmemKα' hdiff (hfl n y hyΩ)).1.trans
+      (by gcongr; exact (hMe n y hy).trans (le_max_left _ _)))
 
 /-- **Global Gromov–Floer compactness on a manifold over a compact parameter window.** Let `ω` be
 a nondegenerate two-form on a Hausdorff boundaryless manifold `M` modelled on a finite-dimensional
@@ -279,12 +272,12 @@ theorem exists_pos_forall_tendsto_subseq_off_finset_of_isCompact
     refine equicontinuousOn_of_forall_isCompact_norm_fderiv_le hU₀ heM_diff fun C' hC' hC'U₀ ↦ ?_
     obtain ⟨M₀, hM₀⟩ := he_bd C' hC' hC'U₀
     refine ⟨√(A_e * max M₀ 0 + B_e), fun n y hy ↦ ?_⟩
-    exact norm_le_sqrt_of_sq_le_add hAe.le hBe
-      (hbd_e (hpC (ψ₁ n)) (hΩD (hC'U₀ hy).1) (huK (ψ₁ n) (hC'U₀ hy).1)
+    exact (Real.le_sqrt (norm_nonneg _) (by positivity)).2
+      ((hbd_e (hpC (ψ₁ n)) (hΩD (hC'U₀ hy).1) (huK (ψ₁ n) (hC'U₀ hy).1)
         (((hu (ψ₁ n)).mdifferentiableOn (by norm_num)).mdifferentiableAt
           (hΩ.mem_nhds (hC'U₀ hy).1))
-        (hfl (ψ₁ n) y (hC'U₀ hy).1))
-      (hM₀ (χ₁ n) y hy)
+        (hfl (ψ₁ n) y (hC'U₀ hy).1)).trans
+        (by gcongr; exact (hM₀ (χ₁ n) y hy).trans (le_max_left _ _)))
   have he_cont_K : ContinuousOn eM K := heM_cmd.continuousOn.mono hKW
   obtain ⟨χ₂, hχ₂, G, hGc, hconvG⟩ :=
     TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hU₀ hequi

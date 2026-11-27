@@ -71,7 +71,11 @@ section.
   trivialization's base set is open.
 * `TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`: the expression of a `C^n`
   section in a chart of the maximal atlas and an atlas trivialization is `C^n`.
-* `TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod`: the coordinates, in the
+* `TauCeti.Manifold.continuousOn_trivializationAt_extChartAt_symm_of_continuousOn`: the
+  coordinates, in the trivialization at `α` and along the chart at `α`, of a continuous section on
+  `W` depending jointly on a topological parameter are continuous on the chart lift of `W`.
+* `TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm_of_contMDiffOn` and
+  `TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod`: the coordinates, in the
   trivialization at `α` and along the chart at `α`, of a section depending jointly on a parameter
   in a normed space are `C^n` in the parameter and the chart coordinate.
 * `TauCeti.continuousAt_comp_symmL_of_contMDiffOn`: covectors `ℓ y` on the fibres along a
@@ -469,6 +473,40 @@ end TauCeti
 
 namespace TauCeti.Manifold
 
+/-- **The chart coordinates of a parametrized continuous section are continuous.** The
+coordinates, in the trivialization at `α`, of a section `(q, x) ↦ σ q x` of a fibre bundle `V`
+over `M` depending on a topological parameter `q : Q`, read along the chart at `α`, are continuous
+on the chart lift of `W` when the section is jointly continuous on `W` and the chart target lies
+over the base set of the trivialization. -/
+theorem continuousOn_trivializationAt_extChartAt_symm_of_continuousOn {Q F : Type*}
+    [TopologicalSpace Q] [TopologicalSpace F]
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+    [FiberBundle F V] {W : Set (Q × M)} {σ : Q → (x : M) → V x} {α : M}
+    (hbase : ∀ w ∈ (extChartAt I α).target,
+      (extChartAt I α).symm w ∈ (trivializationAt F V α).baseSet)
+    (hσ : ContinuousOn (fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2)) W) :
+    ContinuousOn (fun p : Q × E ↦ (trivializationAt F V α
+        ⟨(extChartAt I α).symm p.2, σ p.1 ((extChartAt I α).symm p.2)⟩).2)
+      {p : Q × E | p.2 ∈ (extChartAt I α).target ∧ (p.1, (extChartAt I α).symm p.2) ∈ W} := by
+  let e := trivializationAt F V α
+  have hG : ContinuousOn (fun p : Q × M ↦ (e ⟨p.2, σ p.1 p.2⟩).2)
+      (W ∩ {p | p.2 ∈ e.baseSet}) :=
+    continuous_snd.comp_continuousOn (e.continuousOn_toFun.comp (hσ.mono Set.inter_subset_left)
+      fun _ hp ↦ e.mem_source.2 hp.2)
+  have hψ : ContinuousOn (fun p : Q × E ↦ (p.1, (extChartAt I α).symm p.2))
+      {p : Q × E | p.2 ∈ (extChartAt I α).target} :=
+    continuousOn_fst.prodMk ((continuousOn_extChartAt_symm α).comp continuousOn_snd
+      fun _ hp ↦ hp)
+  refine hG.comp (hψ.mono ?_) ?_
+  · exact fun _ hp ↦ hp.1
+  · exact fun _ hp ↦ ⟨hp.2, hbase _ hp.1⟩
+
+section
+
 variable {𝕜 Q F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup Q] [NormedSpace 𝕜 Q]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
@@ -476,6 +514,37 @@ variable {𝕜 Q F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup Q
   [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [VectorBundle 𝕜 F V] {n : WithTop ℕ∞} [IsManifold I n M]
   [ContMDiffVectorBundle n F V I]
+
+/-- **The chart coordinates of a parametrized `C^n` section are `C^n`.** The coordinates, in the
+trivialization at `α`, of a section `(q, x) ↦ σ q x` of a vector bundle `V` over `M` depending on a
+point `q` of a normed space `Q`, read along the chart at `α`, are `C^n` on the chart lift of `W`
+when the section is jointly `C^n` on `W` and the chart target lies over the base set of the
+trivialization. -/
+theorem contDiffOn_trivializationAt_extChartAt_symm_of_contMDiffOn {W : Set (Q × M)}
+    {σ : Q → (x : M) → V x} {α : M}
+    (hbase : ∀ w ∈ (extChartAt I α).target,
+      (extChartAt I α).symm w ∈ (trivializationAt F V α).baseSet)
+    (hσ : ContMDiffOn (𝓘(𝕜, Q).prod I) (I.prod 𝓘(𝕜, F)) n
+      (fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2)) W) :
+    ContDiffOn 𝕜 n (fun p : Q × E ↦ (trivializationAt F V α
+        ⟨(extChartAt I α).symm p.2, σ p.1 ((extChartAt I α).symm p.2)⟩).2)
+      {p : Q × E | p.2 ∈ (extChartAt I α).target ∧ (p.1, (extChartAt I α).symm p.2) ∈ W} := by
+  let e := trivializationAt F V α
+  have hG : ContMDiffOn (𝓘(𝕜, Q).prod I) 𝓘(𝕜, F) n (fun p : Q × M ↦ (e ⟨p.2, σ p.1 p.2⟩).2)
+      (W ∩ {p | p.2 ∈ e.baseSet}) :=
+    ((e.contMDiffOn_iff (IM := 𝓘(𝕜, Q).prod I) (n := n)
+      (f := fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2))
+      (s := W ∩ {p | p.2 ∈ e.baseSet}) (fun _ hp ↦ e.mem_source.2 hp.2)).1
+      (hσ.mono Set.inter_subset_left)).2
+  have hψ : ContMDiffOn 𝓘(𝕜, Q × E) (𝓘(𝕜, Q).prod I) n
+      (fun p : Q × E ↦ (p.1, (extChartAt I α).symm p.2))
+      {p : Q × E | p.2 ∈ (extChartAt I α).target} :=
+    contDiff_fst.contMDiff.contMDiffOn.prodMk
+      ((contMDiffOn_extChartAt_symm (I := I) (n := n) α).comp
+        contDiff_snd.contMDiff.contMDiffOn fun _ hp ↦ hp)
+  refine contMDiffOn_iff_contDiffOn.1 (hG.comp (hψ.mono ?_) ?_)
+  · exact fun _ hp ↦ hp.1
+  · exact fun _ hp ↦ ⟨hp.2, hbase _ hp.1⟩
 
 /-- **The chart coordinates of a parametrized `C^n` section are `C^n`.** The coordinates, in the
 trivialization at `α`, of a section `(q, x) ↦ σ q x` of a vector bundle `V` over `M` depending on a
@@ -492,21 +561,12 @@ theorem contDiffOn_trivializationAt_extChartAt_symm_prod {U : Set Q} {σ : Q →
       (fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2)) (q, x)) :
     ContDiffOn 𝕜 n (fun p : Q × E ↦ (trivializationAt F V α
         ⟨(extChartAt I α).symm p.2, σ p.1 ((extChartAt I α).symm p.2)⟩).2)
-      (U ×ˢ (extChartAt I α).target) := by
-  rintro ⟨q, y⟩ ⟨hq, hy⟩
-  -- The coordinates of the section in the trivialization at `α` are `C^n` at `(q, x)`, for the
-  -- point `x` with chart coordinate `y`.
-  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := trivializationAt F V α)
-    (f := fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2))
-    ((trivializationAt F V α).mem_source.2 (hbase y hy))).1
-    (hσ q hq ((extChartAt I α).symm y))).2
-  -- The map `(q, y) ↦ (q, x)` into `Q × M` is `C^n` over the chart target.
-  have hψ : ContMDiffWithinAt 𝓘(𝕜, Q × E) (𝓘(𝕜, Q).prod I) n
-      (fun p : Q × E ↦ (p.1, (extChartAt I α).symm p.2)) (U ×ˢ (extChartAt I α).target) (q, y) :=
-    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
-      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (q, y)
-        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
-  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (q, y) hψ) :)
+      (U ×ˢ (extChartAt I α).target) :=
+  (contDiffOn_trivializationAt_extChartAt_symm_of_contMDiffOn (W := U ×ˢ Set.univ) hbase
+    fun p hp ↦ (hσ p.1 hp.1 p.2).contMDiffWithinAt).mono
+    fun _ hp ↦ ⟨hp.2, hp.1, Set.mem_univ _⟩
+
+end
 
 end TauCeti.Manifold
 

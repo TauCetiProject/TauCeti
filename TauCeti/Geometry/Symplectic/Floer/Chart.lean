@@ -319,19 +319,18 @@ theorem continuousOn_almostComplexInChartAt {P : Type*} [TopologicalSpace P] (α
       (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
       (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W) :
     ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦ almostComplexInChartAt I α (J q.1) q.2)
-      {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} := by
-  let e := trivializationAt E (TangentSpace I) α
-  let eh := trivializationAt (E →L[ℝ] E)
-    (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) α
-  have hG : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
-      inCoordinates E (TangentSpace I) E (TangentSpace I) α q.2.2 α q.2.2
-        (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap)
-      (W ∩ {q | q.2.2 ∈ e.baseSet}) :=
-    continuous_snd.comp_continuousOn (eh.continuousOn_toFun.comp (hJ.mono inter_subset_left)
-      fun _ hq ↦ eh.mem_source.2 ⟨hq.2, hq.2⟩)
-  refine hG.comp ((continuousOn_prod_extChartAt_symm (I := I) α).mono ?_) ?_
-  · exact fun _ hq ↦ hq.1
-  · exact fun _ hq ↦ ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
+      {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} :=
+  ((Manifold.continuousOn_trivializationAt_extChartAt_symm_of_continuousOn (I := I) (F := E →L[ℝ] E)
+    (V := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+    (σ := fun q : P × (ℝ × ℝ) ↦ fun x ↦ (J q.1 q.2 x).toLinearMap.toContinuousLinearMap)
+    (W := {q : (P × (ℝ × ℝ)) × M | (q.1.1, (q.1.2, q.2)) ∈ W}) (α := α)
+    (fun _ hw ↦ by simpa using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
+    (hJ.comp ((continuous_fst.comp continuous_fst).prodMk
+      ((continuous_snd.comp continuous_fst).prodMk continuous_snd)).continuousOn
+      fun _ h ↦ h)).comp
+    ((continuous_fst.prodMk (continuous_fst.comp continuous_snd)).prodMk
+      (continuous_snd.comp continuous_snd)).continuousOn fun _ h ↦ h).congr
+    fun _ _ ↦ by rw [Function.comp_apply, almostComplexInChartAt, hom_trivializationAt_apply]; rfl
 
 /-- **Chart regularity of a parametrized family of almost complex structures.** If `J` is jointly
 `Cⁿ` on a set `W ⊆ P × ((ℝ × ℝ) × M)` as a map into the tangent endomorphism bundle, then its
@@ -348,27 +347,27 @@ theorem contDiffOn_almostComplexInChartAt_of_contMDiffOn {P : Type*}
         (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W) :
     ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × E) ↦ almostComplexInChartAt I α (J q.1) q.2)
       {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} := by
+  have : IsManifold I n M := IsManifold.of_le (n := (⊤ : ℕ∞)) hn
   have : ContMDiffVectorBundle n (E →L[ℝ] E)
       (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) I :=
     ContMDiffVectorBundle.of_le (B := M) (n := (⊤ : ℕ∞)) hn
-  let e := trivializationAt E (TangentSpace I) α
-  let eh := trivializationAt (E →L[ℝ] E)
-    (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) α
-  have hG : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, E →L[ℝ] E) n
-      (fun q : P × ((ℝ × ℝ) × M) ↦
-        inCoordinates E (TangentSpace I) E (TangentSpace I) α q.2.2 α q.2.2
-          (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap)
-      (W ∩ {q | q.2.2 ∈ e.baseSet}) := by
-    have h := (eh.contMDiffOn_iff (IM := 𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (n := n)
-      (f := fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
-        (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap)
-      (s := W ∩ {q | q.2.2 ∈ e.baseSet})
-      (fun q hq ↦ eh.mem_source.2 ⟨hq.2, hq.2⟩)).1 (hJ.mono inter_subset_left)
-    exact h.2
-  refine contMDiffOn_iff_contDiffOn.1 (hG.comp ((contMDiffOn_prod_extChartAt_symm hn α).mono ?_) ?_)
-  · exact fun _ hq ↦ hq.1
-  · exact fun _ hq ↦ ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
+  have hJ' : ContMDiffOn (𝓘(ℝ, P × (ℝ × ℝ)).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun q : (P × (ℝ × ℝ)) × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        (J q.1.1 q.1.2 q.2).toLinearMap.toContinuousLinearMap)
+      {q | (q.1.1, (q.1.2, q.2)) ∈ W} :=
+    hJ.comp ((contDiff_fst.contMDiff.comp_contMDiffOn contMDiffOn_fst).prodMk
+      ((contDiff_snd.contMDiff.comp_contMDiffOn contMDiffOn_fst).prodMk contMDiffOn_snd))
+      fun _ h ↦ h
+  exact ((Manifold.contDiffOn_trivializationAt_extChartAt_symm_of_contMDiffOn (I := I)
+    (F := E →L[ℝ] E) (V := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (n := n)
+    (σ := fun q : P × (ℝ × ℝ) ↦ fun x ↦ (J q.1 q.2 x).toLinearMap.toContinuousLinearMap)
+    (α := α)
+    (fun _ hw ↦ by simpa using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
+    hJ').comp
+    ((contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)).prodMk
+      (contDiff_snd.comp contDiff_snd)).contDiffOn fun _ h ↦ h).congr
+    fun _ _ ↦ by rw [Function.comp_apply, almostComplexInChartAt, hom_trivializationAt_apply]; rfl
 
 end Floer
 
@@ -642,18 +641,21 @@ theorem continuousOn_hamiltonianVectorFieldInChartAt {P : Type*} [TopologicalSpa
     (hX : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
       (⟨q.2.2, ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W) :
     ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦ ω.hamiltonianVectorFieldInChartAt α (K q.1) q.2)
-      {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} := by
-  let e := trivializationAt E (TangentSpace I) α
-  have hG : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
-      e.continuousLinearMapAt ℝ q.2.2 (ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2))
-      (W ∩ {q | q.2.2 ∈ e.baseSet}) :=
-    (continuous_snd.comp_continuousOn (e.continuousOn_toFun.comp (hX.mono inter_subset_left)
-      fun _ hq ↦ e.mem_source.2 hq.2)).congr fun _ hq ↦
-        e.continuousLinearMapAt_apply_of_mem (R := ℝ) hq.2 _
-  refine hG.comp
-    ((continuousOn_prod_extChartAt_symm (I := I) (P := P) (Q := ℝ × ℝ) α).mono ?_) ?_
-  · exact fun _ hq ↦ hq.1
-  · exact fun _ hq ↦ ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
+      {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} :=
+  ((Manifold.continuousOn_trivializationAt_extChartAt_symm_of_continuousOn (I := I)
+    (V := TangentSpace I) (σ := fun q : P × (ℝ × ℝ) ↦ ω.hamiltonianVectorField (K q.1 q.2))
+    (W := {q : (P × (ℝ × ℝ)) × M | (q.1.1, (q.1.2, q.2)) ∈ W}) (α := α)
+    (fun _ hw ↦ TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
+    (hX.comp ((continuous_fst.comp continuous_fst).prodMk
+      ((continuous_snd.comp continuous_fst).prodMk continuous_snd)).continuousOn
+      fun _ h ↦ h)).comp
+    ((continuous_fst.prodMk (continuous_fst.comp continuous_snd)).prodMk
+      (continuous_snd.comp continuous_snd)).continuousOn fun _ h ↦ h).congr
+    fun _ hq ↦ by
+      rw [Function.comp_apply, hamiltonianVectorFieldInChartAt_apply]
+      dsimp only
+      exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _
+        (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1) _
 
 omit [FiniteDimensional ℝ E] in
 /-- **Chart regularity of a parametrized family of Hamiltonian vector fields.** If the Hamiltonian
@@ -668,23 +670,27 @@ theorem contDiffOn_hamiltonianVectorFieldInChartAt {P : Type*} [NormedAddCommGro
         (⟨q.2.2, ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W) :
     ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × E) ↦ ω.hamiltonianVectorFieldInChartAt α (K q.1) q.2)
       {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} := by
+  have : IsManifold I n M := IsManifold.of_le (n := (⊤ : ℕ∞)) hn
   have : ContMDiffVectorBundle n E (TangentSpace I) I :=
     ContMDiffVectorBundle.of_le (B := M) (n := (⊤ : ℕ∞)) hn
-  let e := trivializationAt E (TangentSpace I) α
-  have hG : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, E) n
-      (fun q : P × ((ℝ × ℝ) × M) ↦
-        e.continuousLinearMapAt ℝ q.2.2 (ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2))
-      (W ∩ {q | q.2.2 ∈ e.baseSet}) := by
-    have h := (e.contMDiffOn_iff (IM := 𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (n := n)
-      (f := fun q : P × ((ℝ × ℝ) × M) ↦
-        (⟨q.2.2, ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2⟩ : TangentBundle I M))
-      (s := W ∩ {q | q.2.2 ∈ e.baseSet})
-      (fun q hq ↦ e.mem_source.2 hq.2)).1 (hX.mono inter_subset_left)
-    exact h.2.congr fun q hq ↦ e.continuousLinearMapAt_apply_of_mem (R := ℝ) hq.2 _
-  refine contMDiffOn_iff_contDiffOn.1 (hG.comp
-    ((contMDiffOn_prod_extChartAt_symm (I := I) (P := P) (Q := ℝ × ℝ) hn α).mono ?_) ?_)
-  · exact fun _ hq ↦ hq.1
-  · exact fun _ hq ↦ ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
+  have hX' : ContMDiffOn (𝓘(ℝ, P × (ℝ × ℝ)).prod I) I.tangent n
+      (fun q : (P × (ℝ × ℝ)) × M ↦
+        (⟨q.2, ω.hamiltonianVectorField (K q.1.1 q.1.2) q.2⟩ : TangentBundle I M))
+      {q | (q.1.1, (q.1.2, q.2)) ∈ W} :=
+    hX.comp ((contDiff_fst.contMDiff.comp_contMDiffOn contMDiffOn_fst).prodMk
+      ((contDiff_snd.contMDiff.comp_contMDiffOn contMDiffOn_fst).prodMk contMDiffOn_snd))
+      fun _ h ↦ h
+  exact ((Manifold.contDiffOn_trivializationAt_extChartAt_symm_of_contMDiffOn (I := I)
+    (V := TangentSpace I) (n := n)
+    (σ := fun q : P × (ℝ × ℝ) ↦ ω.hamiltonianVectorField (K q.1 q.2)) (α := α)
+    (fun _ hw ↦ TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw) hX').comp
+    ((contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)).prodMk
+      (contDiff_snd.comp contDiff_snd)).contDiffOn fun _ h ↦ h).congr
+    fun _ hq ↦ by
+      rw [Function.comp_apply, hamiltonianVectorFieldInChartAt_apply]
+      dsimp only
+      exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _
+        (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1) _
 
 omit [FiniteDimensional ℝ E] in
 /-- **The perturbed derivative in a chart.** In the tangent coordinates of the chart at `α`, the
@@ -861,6 +867,7 @@ def transportedAlmostComplexInChartAt (I : ModelWithCorners ℝ E H) [IsManifold
       (Complex.equivRealProdCLM q'.1, L.symm q'.2)).comp L.symm.toContinuousLinearMap)
 
 /-- Evaluating `transportedAlmostComplexInChartAt` conjugates `almostComplexInChartAt` by `L`. -/
+@[simp]
 theorem transportedAlmostComplexInChartAt_apply (α : M) (LP : P ≃L[ℝ] P') (L : E ≃L[ℝ] E')
     (J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x))
     (p' : P') (q' : ℂ × E') (v : E') :
