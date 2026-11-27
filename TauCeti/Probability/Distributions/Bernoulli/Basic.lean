@@ -105,6 +105,7 @@ theorem hasLaw_cast_eval_bernoulliMeasure {ι : Type*} [Fintype ι]
 
 /-- Under independent Boolean Bernoulli trials with success probabilities `q`, the
 coordinate at `a` is `true` with probability `q a`. -/
+@[simp]
 theorem measureReal_pi_bernoulliMeasure_eval_eq_true {α : Type*} [Fintype α]
     (q : α → unitInterval) (a : α) :
     (Measure.pi fun a ↦ bernoulliMeasure true false (q a)).real {x | x a = true} = q a := by
