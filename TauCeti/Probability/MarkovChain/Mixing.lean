@@ -92,12 +92,12 @@ section RowBounds
 variable [Finite α] (κ)
 
 /-- Each point start is bounded by the worst-case distance to the reference measure. -/
-theorem tvDist_pow_apply_le_tvToStationary (x : α) :
+theorem tvDist_pow_apply_div_two_le_tvToStationary (x : α) :
     tvDist ((κ ^ t) x) π / 2 ≤ κ.tvToStationary π t :=
   le_ciSup (f := fun z ↦ tvDist ((κ ^ t) z) π / 2) (Set.finite_range _).bddAbove x
 
 /-- Each pair of point starts is bounded by the worst-case distance between starts. -/
-theorem tvDist_pow_apply_le_tvBetweenStarts (x y : α) :
+theorem tvDist_pow_apply_div_two_le_tvBetweenStarts (x y : α) :
     tvDist ((κ ^ t) x) ((κ ^ t) y) / 2 ≤ κ.tvBetweenStarts t :=
   le_ciSup (f := fun z : α × α ↦ tvDist ((κ ^ t) z.1) ((κ ^ t) z.2) / 2)
     (Set.finite_range _).bddAbove (x, y)
@@ -126,8 +126,8 @@ theorem tvBetweenStarts_le_two_mul_tvToStationary [Finite α] [IsFiniteMeasure �
   refine Real.iSup_le (fun ⟨x, y⟩ ↦ ?_) (mul_nonneg (by norm_num) tvToStationary_nonneg)
   have h := tvDist_triangle ((κ ^ t) x) π ((κ ^ t) y)
   rw [tvDist_comm π] at h
-  linarith [κ.tvDist_pow_apply_le_tvToStationary (π := π) (t := t) x,
-    κ.tvDist_pow_apply_le_tvToStationary (π := π) (t := t) y]
+  linarith [κ.tvDist_pow_apply_div_two_le_tvToStationary (π := π) (t := t) x,
+    κ.tvDist_pow_apply_div_two_le_tvToStationary (π := π) (t := t) y]
 
 section ProbabilityBounds
 
@@ -171,7 +171,7 @@ variable [MeasurableSingletonClass α]
   obtain ⟨x, y, hxy⟩ := exists_pair_ne α
   have h : 1 ≤ κ.tvBetweenStarts 0 := by
     simpa [Measure.dirac_real_apply, hxy.symm] using
-      κ.tvDist_pow_apply_le_tvBetweenStarts (t := 0) x y
+      κ.tvDist_pow_apply_div_two_le_tvBetweenStarts (t := 0) x y
   refine le_antisymm ?_ h
   rw [tvBetweenStarts_def]
   refine Real.iSup_le (fun ⟨a, b⟩ ↦ ?_) zero_le_one
@@ -184,7 +184,7 @@ variable [Finite α] [MeasurableSingletonClass α] (κ)
 
 /-- The distance after `t` steps from any initial distribution to a fixed measure is bounded
 by the worst-case distance from point starts. -/
-theorem tvDist_pow_comp_le_tvToStationary [IsFiniteKernel κ] (μ : Measure α)
+theorem tvDist_pow_comp_div_two_le_tvToStationary [IsFiniteKernel κ] (μ : Measure α)
     [IsProbabilityMeasure μ] :
     tvDist ((κ ^ t : Kernel α α) ∘ₘ μ) π / 2 ≤ κ.tvToStationary π t := by
   by_cases hπ : IsFiniteMeasure π
@@ -196,7 +196,7 @@ theorem tvDist_pow_comp_le_tvToStationary [IsFiniteKernel κ] (μ : Measure α)
       _ ≤ ∑ x, μ.real {x} * tvDist ((κ ^ t) x) π := h
       _ ≤ ∑ x, μ.real {x} * (κ.tvToStationary π t * 2) :=
         Finset.sum_le_sum fun x _ ↦ mul_le_mul_of_nonneg_left
-          ((div_le_iff₀ (by norm_num)).mp (κ.tvDist_pow_apply_le_tvToStationary x))
+          ((div_le_iff₀ (by norm_num)).mp (κ.tvDist_pow_apply_div_two_le_tvToStationary x))
           measureReal_nonneg
       _ = κ.tvToStationary π t * 2 := by
         rw [← Finset.sum_mul, sum_measureReal_singleton, Finset.coe_univ]
@@ -212,12 +212,12 @@ theorem tvDist_pow_comp_le_mul_tvBetweenStarts [IsFiniteKernel κ] (μ ν : Meas
       tvDist μ ν / 2 * κ.tvBetweenStarts t := by
   have h := μ.tvDist_comp_le_mul (κ ^ t) (ν := ν) (by simp)
     (c := κ.tvBetweenStarts t) fun x y ↦ by
-      linarith [κ.tvDist_pow_apply_le_tvBetweenStarts (t := t) x y]
+      linarith [κ.tvDist_pow_apply_div_two_le_tvBetweenStarts (t := t) x y]
   linarith
 
 /-- After `t` steps, any two initial distributions have distance at most the worst-case
 distance between point starts. -/
-theorem tvDist_pow_comp_le_tvBetweenStarts [IsFiniteKernel κ] (μ ν : Measure α)
+theorem tvDist_pow_comp_div_two_le_tvBetweenStarts [IsFiniteKernel κ] (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     tvDist ((κ ^ t : Kernel α α) ∘ₘ μ) ((κ ^ t : Kernel α α) ∘ₘ ν) / 2 ≤ κ.tvBetweenStarts t := by
   refine (κ.tvDist_pow_comp_le_mul_tvBetweenStarts μ ν).trans ?_
@@ -235,7 +235,7 @@ theorem isGreatest_tvToStationary [Nonempty α] [IsFiniteKernel κ] :
     simpa only [ProbabilityMeasure.coe_mk, Measure.dirac_bind (κ ^ t).measurable,
       tvToStationary_def] using hx
   · rintro _ ⟨μ, rfl⟩
-    exact κ.tvDist_pow_comp_le_tvToStationary (μ : Measure α)
+    exact κ.tvDist_pow_comp_div_two_le_tvToStationary (μ : Measure α)
 
 /-- The worst-case distance between starts is attained over all pairs of initial
 probability laws, including pairs of point masses. -/
@@ -251,7 +251,7 @@ theorem isGreatest_tvBetweenStarts [Nonempty α] [IsFiniteKernel κ] :
     simpa only [ProbabilityMeasure.coe_mk, Measure.dirac_bind (κ ^ t).measurable,
       tvBetweenStarts_def] using hxy
   · rintro _ ⟨⟨μ, ν⟩, rfl⟩
-    exact κ.tvDist_pow_comp_le_tvBetweenStarts (μ : Measure α) (ν : Measure α)
+    exact κ.tvDist_pow_comp_div_two_le_tvBetweenStarts (μ : Measure α) (ν : Measure α)
 
 /-- For an invariant probability measure, the distance to stationarity is at most the
 worst-case distance between starts. -/
@@ -261,7 +261,7 @@ theorem tvToStationary_le_tvBetweenStarts [IsFiniteKernel κ] [IsProbabilityMeas
   have : Nonempty α := nonempty_of_isProbabilityMeasure π
   refine tvToStationary_le_iff.mpr fun x ↦ ?_
   simpa only [Measure.dirac_bind (κ ^ t).measurable, hπ.pow_comp] using
-    κ.tvDist_pow_comp_le_tvBetweenStarts (t := t) (Measure.dirac x) π
+    κ.tvDist_pow_comp_div_two_le_tvBetweenStarts (t := t) (Measure.dirac x) π
 
 variable {κ} [IsMarkovKernel κ]
 
@@ -273,7 +273,7 @@ theorem tvBetweenStarts_add_le :
   rw [Nat.add_comm, Kernel.pow_add, Kernel.comp_apply, Kernel.comp_apply]
   exact (κ.tvDist_pow_comp_le_mul_tvBetweenStarts (t := t)
     ((κ ^ s) x) ((κ ^ s) y)).trans
-    (mul_le_mul_of_nonneg_right (κ.tvDist_pow_apply_le_tvBetweenStarts x y)
+    (mul_le_mul_of_nonneg_right (κ.tvDist_pow_apply_div_two_le_tvBetweenStarts x y)
       tvBetweenStarts_nonneg)
 
 /-- For an invariant probability measure, the worst-case distance after `s + t` steps is at
@@ -285,7 +285,7 @@ theorem tvToStationary_add_le [IsProbabilityMeasure π] (hπ : κ.Invariant π) 
   rw [Nat.add_comm, Kernel.pow_add, Kernel.comp_apply]
   have h := κ.tvDist_pow_comp_le_mul_tvBetweenStarts (t := t) ((κ ^ s) x) π
   rw [hπ.pow_comp] at h
-  exact h.trans (mul_le_mul_of_nonneg_right (κ.tvDist_pow_apply_le_tvToStationary x)
+  exact h.trans (mul_le_mul_of_nonneg_right (κ.tvDist_pow_apply_div_two_le_tvToStationary x)
     tvBetweenStarts_nonneg)
 
 /-- The worst-case distance to any fixed measure is nonincreasing in time. -/
@@ -295,7 +295,7 @@ theorem tvToStationary_antitone : Antitone (κ.tvToStationary π) := by
   rw [tvToStationary_def]
   refine Real.iSup_le (fun x ↦ ?_) tvToStationary_nonneg
   rw [Kernel.pow_add, Kernel.comp_apply]
-  exact κ.tvDist_pow_comp_le_tvToStationary ((κ ^ u) x)
+  exact κ.tvDist_pow_comp_div_two_le_tvToStationary ((κ ^ u) x)
 
 /-- The worst-case distance between starts is nonincreasing in time. -/
 theorem tvBetweenStarts_antitone : Antitone κ.tvBetweenStarts := by
