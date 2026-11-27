@@ -77,9 +77,9 @@ theorem Model.exists_isInteger_mul_eval (M : Model P (Spec.algebraMap R K) A)
       _ = M.genericι.appLE ⊤ ⊤ htop.le a := congr($(happ.symm) a)
       _ = (Y.baseRingToStructurePresheaf K).app (op ⊤) (algebraMap R K d) * b := hd.symm
       _ = _ := by
+        have hY : (Y ↘ Spec (.of K)) = A.hom := rfl
         rw [Scheme.baseRingToStructurePresheaf_app_top, CommRingCat.ofHom_apply,
-          Scheme.Modules.baseRingToGlobalSections_apply]
-        rfl
+          Scheme.Modules.baseRingToGlobalSections_apply, hY]
   -- Evaluate the integral numerator on the section extending the given point.
   refine ⟨d, fun x ↦ ?_⟩
   obtain ⟨s, hs⟩ := (M.existsUnique_section hP x).exists

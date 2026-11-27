@@ -189,12 +189,21 @@ theorem existsUnique_section (hP : P (𝟙 S)) (x : Over.mk (𝟙 η) ⟶ A) :
   let q : (Over.pullback j).obj T ⟶ Over.mk (𝟙 η) :=
     Over.homMk (pullback.snd (𝟙 S) j) (by simp [T])
   let s := M.extend T hP (q ≫ x)
-  have hs := M.map_extend_eq_comp_inv hP (q ≫ x)
-  -- Identify the base change of the identity test scheme with the marked base.
-  have h := congrArg (fun f ↦ pullback.lift j (𝟙 η) (by simp : j ≫ 𝟙 S = 𝟙 η ≫ j) ≫
-    f.left ≫ pullback.fst M.model.hom j) hs
-  have hs' : j ≫ s.left = x.left ≫ M.genericι := by
-    simpa [s, genericι, T, q, Over.pullback_map_left] using h
+  have hs : (Over.pullback j).map s = (q ≫ x) ≫ M.genericIso.inv :=
+    M.map_extend_eq_comp_inv hP (q ≫ x)
+  -- The inverse to the base-changed identity's projection to η has components j and 𝟙 η.
+  let i : η ⟶ ((Over.pullback j).obj T).left :=
+    pullback.lift j (𝟙 η) (by simp : j ≫ 𝟙 S = 𝟙 η ≫ j)
+  have hi : i ≫ q.left = 𝟙 η := pullback.lift_snd _ _ _
+  have hi_fst : i ≫ pullback.fst T.hom j = j := pullback.lift_fst _ _ _
+  have hs' : j ≫ s.left = x.left ≫ M.genericι := calc
+    j ≫ s.left = i ≫ ((Over.pullback j).map s).left ≫ pullback.fst M.model.hom j := by
+      simpa only [Over.pullback_map_left, pullback.lift_fst, Category.assoc] using
+        (congrArg (· ≫ s.left) hi_fst).symm
+    _ = (i ≫ q.left) ≫ x.left ≫ M.genericι := by
+      rw [hs]
+      simp only [Over.comp_left, Category.assoc, genericι]
+    _ = _ := by rw [hi, Category.id_comp]
   refine ⟨s, hs', fun s' h' ↦ ?_⟩
   apply M.mappingProperty.hom_ext hP
   apply Over.OverMorphism.ext
