@@ -16,7 +16,7 @@ For a Markov decision process with finitely many actions, a discount `γ` and a 
 value `g`, the iterates `T^N g` of the Bellman optimality operator `T = M.bellman γ` solve the
 `N`-step problem: no history-dependent randomized policy has an `N`-step return
 `M.finiteReturn γ N g π s` above `T^N g s`, and a deterministic Markov policy that at each time
-`n < N` is greedy for `T^(N - n - 1) g` attains `T^N g s` from every state. Since every function
+`n < N` is greedy for `T^(N - (n + 1)) g` attains `T^N g s` from every state. Since every function
 on the states has a greedy action, such a policy exists, and `T^N g s` is the largest `N`-step
 return. The discount factor is arbitrary: `γ ≥ 1` is allowed.
 
@@ -36,7 +36,7 @@ For `v n = T^(N - n) g` every residual is nonpositive, and it vanishes at greedy
 * `MDP.finiteReturn_le_bellman_iterate`: every history-dependent policy has `N`-step return at
   most `T^N g s`.
 * `MDP.finiteReturn_ofMarkov_ofDet_eq_bellman_iterate`: a deterministic Markov policy greedy for
-  `T^(N - n - 1) g` at each time `n < N` attains `T^N g s`.
+  `T^(N - (n + 1)) g` at each time `n < N` attains `T^N g s`.
 * `MDP.isGreatest_finiteReturn`, `MDP.iSup_finiteReturn`: `T^N g s` is the largest `N`-step
   return.
 
@@ -145,9 +145,7 @@ theorem finiteReturn_eq_add_sum_integral (γ : ℝ≥0) (N : ℕ) (v : ℕ → B
       (M.reward (ω n).1 (ω n).2 + γ * v (n + 1) (ω (n + 1)).1 - v n (ω n).1)) μ :=
     (((hr n).add ((hv (n + 1) (n + 1)).const_mul _)).sub (hv n n)).const_mul _
   have h0 : ∫ ω, v 0 (ω 0).1 ∂μ = v 0 s := by
-    rw [integral_congr_ae ((π.trajLaw_ae_state_zero M.transKernel s).mono fun ω hω ↦
-      congrArg (v 0) hω)]
-    simp
+    simpa [finiteReturn_def] using M.finiteReturn_zero π s γ (v 0)
   rw [finiteReturn_def]
   simp_rw [M.finitePathReturn_eq_add_sum γ N (fun n ↦ v n)]
   rw [integral_add (hv 0 0) (integrable_finsetSum _ fun n _ ↦ hres n), h0,
@@ -160,14 +158,11 @@ variable [Finite A] [Nonempty A]
 
 omit [MeasurableSpace A] [Countable S] [MeasurableSingletonClass S]
   [MeasurableSingletonClass A] in
-/-- The value functions `T^(N - n) g` of backward induction have nonpositive Bellman residuals at
-every time `n < N` and every state-action pair. -/
-private theorem reward_add_expect_bellman_iterate_le (γ : ℝ≥0) {N n : ℕ} (hn : n < N)
-    (g : BoundedFn S) (s : S) (a : A) :
-    M.reward s a + γ * M.expect ((M.bellman γ)^[N - (n + 1)] g) s a ≤
-      (M.bellman γ)^[N - n] g s := by
-  rw [show N - n = N - (n + 1) + 1 by omega, Function.iterate_succ_apply']
-  exact M.le_bellman γ _ s a
+/-- At every time `n < N`, the value function `T^(N - n) g` of backward induction is `T` applied
+to the next value function `T^(N - (n + 1)) g`. -/
+private theorem bellman_iterate_sub_eq (γ : ℝ≥0) {N n : ℕ} (hn : n < N) (g : BoundedFn S) :
+    (M.bellman γ)^[N - n] g = M.bellman γ ((M.bellman γ)^[N - (n + 1)] g) := by
+  rw [← Function.iterate_succ_apply' (M.bellman γ), show (N - (n + 1)).succ = N - n by omega]
 
 /-- **Backward induction, upper bound.** For every discount `γ` (also `γ ≥ 1`), every bounded
 terminal value `g` and every history-dependent randomized policy `π`, the `N`-step return is at
@@ -180,13 +175,14 @@ theorem finiteReturn_le_bellman_iterate (γ : ℝ≥0) (N : ℕ) (g : BoundedFn 
   rw [h, add_le_iff_nonpos_right]
   refine sum_nonpos fun n hn ↦ mul_nonpos_of_nonneg_of_nonpos (by positivity) ?_
   refine integral_nonpos fun ω ↦ sub_nonpos.2 ?_
-  exact M.reward_add_expect_bellman_iterate_le γ (mem_range.1 hn) g _ _
+  rw [M.bellman_iterate_sub_eq γ (mem_range.1 hn) g]
+  exact M.le_bellman γ _ _ _
 
 /-- **Backward induction, attainment.** If the deterministic Markov policy `d` is greedy for
-`T^(N - n - 1) g` at every time `n < N`, where `T = M.bellman γ`, then
+`T^(N - (n + 1)) g` at every time `n < N`, where `T = M.bellman γ`, then
 `ofMarkov (fun n ↦ ofDet (d n))` has `N`-step return `T^N g s` from every state `s`. -/
 theorem finiteReturn_ofMarkov_ofDet_eq_bellman_iterate {γ : ℝ≥0} {N : ℕ} {g : BoundedFn S}
-    {d : ℕ → S → A} (hd : ∀ n < N, M.IsGreedy γ ((M.bellman γ)^[N - n - 1] g) (d n)) (s : S) :
+    {d : ℕ → S → A} (hd : ∀ n < N, M.IsGreedy γ ((M.bellman γ)^[N - (n + 1)] g) (d n)) (s : S) :
     M.finiteReturn γ N g (HistoryPolicy.ofMarkov fun n ↦ ofDet (d n)) s =
       (M.bellman γ)^[N] g s := by
   have h := M.finiteReturn_eq_add_sum_integral γ N (fun n ↦ (M.bellman γ)^[N - n] g)
@@ -200,10 +196,8 @@ theorem finiteReturn_ofMarkov_ofDet_eq_bellman_iterate {γ : ℝ≥0} {N : ℕ} 
     ((HistoryPolicy.trajLaw_ofMarkov_ae_action_eq M.transKernel s
       fun n s ↦ ofDet_apply (d n) s).mono fun ω hω ↦ ?_))
   have hg := (M.isGreedy_iff_eq_bellman γ _ (d n)).1 (hd n hn) (ω n).1
-  rw [Nat.sub_sub, ← Function.iterate_succ_apply' (M.bellman γ),
-    show (N - (n + 1)).succ = N - n by omega] at hg
   dsimp only
-  rw [Pi.zero_apply, hω n, sub_eq_zero, hg]
+  rw [Pi.zero_apply, hω n, sub_eq_zero, hg, M.bellman_iterate_sub_eq γ hn g]
 
 /-- For every discount `γ`, horizon `N` and bounded terminal value `g`, some deterministic Markov
 policy attains the `N`-step return `T^N g s` from every state `s`, where `T = M.bellman γ`. -/
@@ -211,7 +205,7 @@ theorem exists_finiteReturn_ofMarkov_ofDet_eq_bellman_iterate (γ : ℝ≥0) (N 
     (g : BoundedFn S) : ∃ d : ℕ → S → A, ∀ s,
       M.finiteReturn γ N g (HistoryPolicy.ofMarkov fun n ↦ ofDet (d n)) s =
         (M.bellman γ)^[N] g s := by
-  choose d hd using fun n ↦ M.exists_isGreedy γ ((M.bellman γ)^[N - n - 1] g)
+  choose d hd using fun n ↦ M.exists_isGreedy γ ((M.bellman γ)^[N - (n + 1)] g)
   exact ⟨d, M.finiteReturn_ofMarkov_ofDet_eq_bellman_iterate fun n _ ↦ hd n⟩
 
 /-- **Backward induction.** For every discount `γ`, horizon `N`, bounded terminal value `g` and
