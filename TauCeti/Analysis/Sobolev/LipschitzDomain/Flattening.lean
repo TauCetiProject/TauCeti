@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
+import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 
 /-!
 # Flattening a `Cᵏ` boundary graph by a change of variables
@@ -23,6 +24,11 @@ the rigid coordinates, are changes of variables of order `k` in the sense of
 determinant one. For `1 ≤ p < ∞`, precomposition with them is therefore bounded between the
 Sobolev spaces `W^{k,p}` of the curved boundary portion and of the flat one
 (`TauCeti.Wkp.IsChangeOfVariables.compL`).
+
+A boundary of class `C^{1,1}`, as in Gilbarg–Trudinger's `W^{2,p}` theory, has height functions
+whose derivative is only Lipschitz. Their flattening charts are changes of variables of order one
+whose derivatives are Lipschitz, which is what precomposition on `W^{2,p}` needs
+(`TauCeti.Wkp.compOfLipschitzFDerivL`).
 
 This is how boundary regularity is transferred from a half-space to a domain with a `Cᵏ`
 boundary: a statement proved near a flat boundary, such as `H²` regularity of weak solutions
@@ -46,6 +52,9 @@ compactness, which bounds those of the shear.
   the flattening chart `e⁻¹ ∘ G⁻¹` maps the normal half-space `{0 < x.fst}`, in standard position,
   onto the domain near the boundary point, which is the form the half-space estimates are stated
   in.
+* `TauCeti.exists_isChangeOfVariables_normalHalfSpace_of_locallyLipschitz_fderiv`: for a `C^{1,1}`
+  boundary graph, whose height has a locally Lipschitz derivative, the same chart is a change of
+  variables of order one whose derivative and that of its inverse are Lipschitz.
 * `TauCeti.exists_isChangeOfVariables_halfSpace_of_contDiff_graph`: the flattening chart fixes the
   boundary point, which lies in the closure of the flat half-space, and maps the part of a
   neighbourhood in that half-space onto the domain near the boundary point.
@@ -58,7 +67,8 @@ compactness, which bounds those of the shear.
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., Appendix C.1 (`Cᵏ` boundaries) and
   §6.3.2 (boundary regularity by flattening the boundary).
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  §6.2 (boundary straightening maps).
+  §6.2 (boundary straightening maps), and Theorems 9.13 and 9.15 (`C^{1,1}` boundaries in the
+  `W^{2,p}` theory).
 -/
 
 public section
@@ -68,6 +78,7 @@ noncomputable section
 namespace TauCeti
 
 open Metric Set TopologicalSpace
+open scoped NNReal
 open scoped InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -123,16 +134,19 @@ graph of a `Cᵏ` function `γ` with `γ 0 = 0`. Let `G` be graph flattening by 
 open convex neighbourhood `W` of `0`, an open set `W₁` and a constant `L` such that `G⁻¹` is a
 change of variables of order `k` from `W` into `W₁` and `G` one from `W₁` into `W`, both with
 Jacobian determinant one, and `G⁻¹` maps the part of `W` in the half-space `{0 < x.fst}` onto
-`Ω ∩ W₁`. Both flattening theorems below transport this along rigid coordinates. -/
+`Ω ∩ W₁`. The tangential coordinates of the points of `W` and `W₁` stay in a ball of `E` about `0`.
+The flattening theorems below transport this along rigid coordinates. -/
 private theorem exists_isChangeOfVariables_graphFlattening_of_contDiff
     {Omega : Set (WithLp 2 (ℝ × E))} {γ : E → ℝ} {k : ℕ} {a b : ℝ} (hk : 1 ≤ k) (ha : 0 < a)
     (hb : 0 < b) (hγ0 : γ 0 = 0) (hγ : ContDiff ℝ k γ)
     (hgraph : ∀ z ∈ normalCylinder a b, (z ∈ Omega ↔ γ z.snd < z.fst)) :
-    ∃ (W W₁ : Opens (WithLp 2 (ℝ × E))) (L : ℝ), 0 ∈ W ∧
+    ∃ (W W₁ : Opens (WithLp 2 (ℝ × E))) (L ρ : ℝ), 0 ∈ W ∧
       Convex ℝ (W : Set (WithLp 2 (ℝ × E))) ∧
       Wkp.IsChangeOfVariables k W W₁ (graphFlattening γ hγ.continuous).symm L 1 ∧
       Wkp.IsChangeOfVariables k W₁ W (graphFlattening γ hγ.continuous) L 1 ∧
-      (graphFlattening γ hγ.continuous).symm '' ({x | 0 < x.fst} ∩ W) = Omega ∩ W₁ := by
+      (graphFlattening γ hγ.continuous).symm '' ({x | 0 < x.fst} ∩ W) = Omega ∩ W₁ ∧
+      (∀ x ∈ (W : Set (WithLp 2 (ℝ × E))), x.snd ∈ ball (0 : E) ρ) ∧
+      ∀ x ∈ (W₁ : Set (WithLp 2 (ℝ × E))), x.snd ∈ ball (0 : E) ρ := by
   set G := graphFlattening γ hγ.continuous
   -- A tangential radius `b' ≤ b` on which the graph stays within `a / 2` of zero.
   obtain ⟨δ, hδ, hγδ⟩ :=
@@ -171,7 +185,8 @@ private theorem exists_isChangeOfVariables_graphFlattening_of_contDiff
   have hΨG : Wkp.IsChangeOfVariables k W₁ W G (1 + M) 1 :=
     Wkp.isChangeOfVariables_graphFlattening hk hγ (fun _ hx ↦ hx)
       fun i _ hik x hx ↦ by simpa [G] using hMb i hik _ (hWsnd _ hx)
-  refine ⟨W, W₁, 1 + M, (hW 0).2 ?_, convex_normalCylinder _ _, hΦG, hΨG, ?_⟩
+  refine ⟨W, W₁, 1 + M, b', (hW 0).2 ?_, convex_normalCylinder _ _, hΦG, hΨG, ?_, hWsnd,
+    fun x hx ↦ by simpa [G] using hWsnd _ hx⟩
   · simp [ha, hb']
   · ext y
     constructor
@@ -203,7 +218,7 @@ theorem exists_isChangeOfVariables_of_contDiff {Omega : Set F}
       (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) ''
         ({x | 0 < (e x).fst} ∩ U') = Omega ∩ U := by
   set G := graphFlattening γ hγ.continuous
-  obtain ⟨W, W₁, L, hW0, hWc, hΦG, hΨG, himage⟩ :=
+  obtain ⟨W, W₁, L, -, hW0, hWc, hΦG, hΨG, himage, -⟩ :=
     exists_isChangeOfVariables_graphFlattening_of_contDiff (Omega := e.symm ⁻¹' Omega) hk ha hb
       hγ0 hγ hgraph
   -- Pull everything back to `F` along the rigid coordinates.
@@ -226,6 +241,46 @@ theorem exists_isChangeOfVariables_of_contDiff {Omega : Set F}
       image_eq_preimage_of_inverse e.apply_symm_apply e.symm_apply_apply]
     rfl
 
+/-- The flattening chart of `TauCeti.exists_isChangeOfVariables_normalHalfSpace_of_contDiff`,
+together with a ball of `E` about `0` containing the tangential coordinates of the points of `U'`
+and of the images under `e` of the points of `U`. On that ball the derivatives of `γ` control those
+of the chart. -/
+private theorem exists_isChangeOfVariables_normalHalfSpace_of_contDiff_of_mem_ball
+    {Omega : Set (WithLp 2 (ℝ × E))} {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ}
+    {k : ℕ} {a b : ℝ} (hk : 1 ≤ k) (ha : 0 < a) (hb : 0 < b) (hγ0 : γ 0 = 0)
+    (hγ : ContDiff ℝ k γ)
+    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ (U' U : Opens (WithLp 2 (ℝ × E))) (L ρ : ℝ), 0 ∈ U' ∧
+      Convex ℝ (U' : Set (WithLp 2 (ℝ × E))) ∧
+      Wkp.IsChangeOfVariables k U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm) L 1 ∧
+      Wkp.IsChangeOfVariables k U U' (graphFlattening γ hγ.continuous ∘ e) L 1 ∧
+      (e.symm ∘ (graphFlattening γ hγ.continuous).symm) ''
+        ((normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) ∩ U') = Omega ∩ U ∧
+      (∀ x ∈ (U' : Set (WithLp 2 (ℝ × E))), x.snd ∈ ball (0 : E) ρ) ∧
+      ∀ x ∈ (U : Set (WithLp 2 (ℝ × E))), (e x).snd ∈ ball (0 : E) ρ := by
+  set G := graphFlattening γ hγ.continuous
+  obtain ⟨W, W₁, L, ρ, hW0, hWc, hΦG, hΨG, himage, hWρ, hW₁ρ⟩ :=
+    exists_isChangeOfVariables_graphFlattening_of_contDiff (Omega := e.symm ⁻¹' Omega) hk ha hb
+      hγ0 hγ hgraph
+  -- The curved side is `U = e⁻¹(W₁)`; `W` stays in standard position.
+  let U : Opens (WithLp 2 (ℝ × E)) := ⟨e ⁻¹' W₁, W₁.isOpen.preimage e.continuous⟩
+  let W' : Opens (WithLp 2 (ℝ × E)) := ⟨e ⁻¹' W, W.isOpen.preimage e.continuous⟩
+  have hUe : MapsTo e.symm (W₁ : Set _) (U : Set _) := fun x hx ↦ by
+    simpa only [U, SetLike.mem_coe, Opens.mem_mk, mem_preimage, e.apply_symm_apply] using hx
+  have hW'e : MapsTo e.symm (W : Set _) (W' : Set _) := fun x hx ↦ by
+    simpa only [W', SetLike.mem_coe, Opens.mem_mk, mem_preimage, e.apply_symm_apply] using hx
+  -- `G ∘ e = e ∘ (e⁻¹ ∘ G ∘ e)`, the conjugate of `G` followed by `e`.
+  have hΨe : e ∘ (e.symm ∘ G ∘ e) = G ∘ e := by
+    funext x
+    simp
+  refine ⟨W, U, L, ρ, hW0, hWc, hΦG.affineIsometryEquiv_comp e.symm hUe,
+    hΨe ▸ (hΨG.conj e (fun _ hx ↦ hx) hW'e).affineIsometryEquiv_comp e fun _ hx ↦ hx, ?_, hWρ,
+    fun x hx ↦ hW₁ρ (e x) hx⟩
+  -- `G⁻¹` maps the half-space part of `W` onto `e⁻¹' Ω ∩ W₁`, which `e⁻¹` carries to `Ω ∩ U`.
+  rw [coe_normalHalfSpace, image_comp, himage, image_preimage_inter,
+    image_eq_preimage_of_inverse e.apply_symm_apply e.symm_apply_apply]
+  rfl
+
 /-- **Flattening a `Cᵏ` boundary graph onto the normal half-space.** Let `k ≥ 1`, and suppose that
 inside the normal cylinder of radius `b` and half-height `a`, in rigid coordinates `e` of `ℝ × E`
 centred at a boundary point `e.symm 0`, the set `Ω` is the region above the graph of a `Cᵏ`
@@ -246,27 +301,59 @@ theorem exists_isChangeOfVariables_normalHalfSpace_of_contDiff
       Wkp.IsChangeOfVariables k U U' (graphFlattening γ hγ.continuous ∘ e) L 1 ∧
       (e.symm ∘ (graphFlattening γ hγ.continuous).symm) ''
         ((normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) ∩ U') = Omega ∩ U := by
+  obtain ⟨U', U, L, -, h0, hconv, hΦ, hΨ, himage, -⟩ :=
+    exists_isChangeOfVariables_normalHalfSpace_of_contDiff_of_mem_ball hk ha hb hγ0 hγ hgraph
+  exact ⟨U', U, L, h0, hconv, hΦ, hΨ, himage⟩
+
+/-- **Flattening a `C^{1,1}` boundary graph onto the normal half-space.** Let `a, b > 0`, and
+suppose that inside the normal cylinder of radius `b` and half-height `a`, in rigid coordinates `e`
+of `ℝ × E` centred at a boundary point `e.symm 0`, the set `Ω` is the region above the graph of a
+differentiable function `γ` with `γ 0 = 0` whose derivative is locally Lipschitz. Let `G` be graph
+flattening by `γ`. Then there are an open convex neighbourhood `U'` of `0`, an open set `U` and
+constants `L` and `M` such that `e⁻¹ ∘ G⁻¹` is a change of variables of order one from `U'` into
+`U` and its inverse `G ∘ e` one from `U` into `U'`, both with Jacobian determinant one, their
+derivatives are `M`-Lipschitz on `U'` and on `U` respectively, and `e⁻¹ ∘ G⁻¹` maps the part of
+`U'` in the normal half-space `{0 < x.fst}` onto `Ω ∩ U`.
+
+A `C^{1,1}` height need not have a second derivative, so these charts need not be changes of
+variables of order two. Their Lipschitz derivatives are what precomposition on `W^{2,p}` asks for
+(`TauCeti.Wkp.compOfLipschitzFDerivL`). -/
+theorem exists_isChangeOfVariables_normalHalfSpace_of_locallyLipschitz_fderiv
+    {Omega : Set (WithLp 2 (ℝ × E))} {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ}
+    {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (hγ0 : γ 0 = 0) (hγ : Differentiable ℝ γ)
+    (hDγ : LocallyLipschitz (fderiv ℝ γ))
+    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ (U' U : Opens (WithLp 2 (ℝ × E))) (L : ℝ) (M : ℝ≥0), 0 ∈ U' ∧
+      Convex ℝ (U' : Set (WithLp 2 (ℝ × E))) ∧
+      Wkp.IsChangeOfVariables 1 U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm) L 1 ∧
+      Wkp.IsChangeOfVariables 1 U U' (graphFlattening γ hγ.continuous ∘ e) L 1 ∧
+      LipschitzOnWith M (fderiv ℝ (e.symm ∘ (graphFlattening γ hγ.continuous).symm)) U' ∧
+      LipschitzOnWith M (fderiv ℝ (graphFlattening γ hγ.continuous ∘ e)) U ∧
+      (e.symm ∘ (graphFlattening γ hγ.continuous).symm) ''
+        ((normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) ∩ U') = Omega ∩ U := by
+  have hγ1 : ContDiff ℝ 1 γ := contDiff_one_iff_fderiv.2 ⟨hγ, hDγ.continuous⟩
+  obtain ⟨U', U, L, ρ, h0, hconv, hΦ, hΨ, himage, hU'ρ, hUρ⟩ :=
+    exists_isChangeOfVariables_normalHalfSpace_of_contDiff_of_mem_ball le_rfl ha hb hγ0 hγ1 hgraph
   set G := graphFlattening γ hγ.continuous
-  obtain ⟨W, W₁, L, hW0, hWc, hΦG, hΨG, himage⟩ :=
-    exists_isChangeOfVariables_graphFlattening_of_contDiff (Omega := e.symm ⁻¹' Omega) hk ha hb
-      hγ0 hγ hgraph
-  -- The curved side is `U = e⁻¹(W₁)`; `W` stays in standard position.
-  let U : Opens (WithLp 2 (ℝ × E)) := ⟨e ⁻¹' W₁, W₁.isOpen.preimage e.continuous⟩
-  let W' : Opens (WithLp 2 (ℝ × E)) := ⟨e ⁻¹' W, W.isOpen.preimage e.continuous⟩
-  have hUe : MapsTo e.symm (W₁ : Set _) (U : Set _) := fun x hx ↦ by
-    simpa only [U, SetLike.mem_coe, Opens.mem_mk, mem_preimage, e.apply_symm_apply] using hx
-  have hW'e : MapsTo e.symm (W : Set _) (W' : Set _) := fun x hx ↦ by
-    simpa only [W', SetLike.mem_coe, Opens.mem_mk, mem_preimage, e.apply_symm_apply] using hx
-  -- `G ∘ e = e ∘ (e⁻¹ ∘ G ∘ e)`, the conjugate of `G` followed by `e`.
-  have hΨe : e ∘ (e.symm ∘ G ∘ e) = G ∘ e := by
-    funext x
-    simp
-  refine ⟨W, U, L, hW0, hWc, hΦG.affineIsometryEquiv_comp e.symm hUe,
-    hΨe ▸ (hΨG.conj e (fun _ hx ↦ hx) hW'e).affineIsometryEquiv_comp e fun _ hx ↦ hx, ?_⟩
-  -- `G⁻¹` maps the half-space part of `W` onto `e⁻¹' Ω ∩ W₁`, which `e⁻¹` carries to `Ω ∩ U`.
-  rw [coe_normalHalfSpace, image_comp, himage, image_preimage_inter,
-    image_eq_preimage_of_inverse e.apply_symm_apply e.symm_apply_apply]
-  rfl
+  -- `Dγ` is Lipschitz on the compact ball `closedBall 0 ρ`, hence so are `DG` and `DG⁻¹` above it.
+  obtain ⟨M, hM⟩ := hDγ.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
+    (isCompact_closedBall (0 : E) ρ)
+  have hMρ := holderOnWith_one.2 (hM.mono ball_subset_closedBall)
+  have hG := holderOnWith_fderiv_graphFlattening hγ.continuous (fun y _ ↦ hγ y) hMρ
+  have hGs := holderOnWith_fderiv_graphFlattening_symm hγ.continuous (fun y _ ↦ hγ y) hMρ
+  -- The rigid coordinates `e` do not change the Lipschitz constants.
+  have hΦM := AffineIsometry.holderOnWith_fderiv_comp_comp (s := (U' : Set _))
+    (t := {x | x.snd ∈ ball (0 : E) ρ}) AffineIsometry.id e.symm.toAffineIsometry
+    (fun x hx ↦ hU'ρ x hx)
+    (fun y _ ↦ ((contDiff_graphFlattening_symm hγ1).differentiable one_ne_zero y)) hGs
+  have hΨM := AffineIsometry.holderOnWith_fderiv_comp_comp (s := (U : Set _))
+    (t := {x | x.snd ∈ ball (0 : E) ρ}) e.toAffineIsometry AffineIsometry.id
+    (fun x hx ↦ hUρ x hx) (fun y _ ↦ ((contDiff_graphFlattening hγ1).differentiable one_ne_zero y))
+    hG
+  rw [AffineIsometry.coe_id, AffineIsometryEquiv.coe_toAffineIsometry, Function.comp_id]
+    at hΦM
+  rw [AffineIsometry.coe_id, AffineIsometryEquiv.coe_toAffineIsometry, Function.id_comp] at hΨM
+  exact ⟨U', U, L, M, h0, hconv, hΦ, hΨ, holderOnWith_one.1 hΦM, holderOnWith_one.1 hΨM, himage⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **Flattening a boundary graph.** Let `F` be finite-dimensional, and suppose that in rigid

@@ -56,6 +56,8 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
   and its horizontal-strip specialization converting a centre lower bound `b ≤ ‖f z₀‖` and sphere
   bound `‖f w‖ ≤ c * K` (`1 < K₀ ≤ K`) into an upper bound `A * log K` for the retained-zero sum,
   with `A` depending only on `(R, b, c, K₀)`.
+* `TauCeti.exists_norm_logDeriv_sub_finsum_divisor_le`: the nested-radii lemma with a constant
+  depending only on the radii, uniformly for `‖z - z₀‖ ≤ r`.
 * `TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul`: local-to-global single-zero extension
   combining a local retained-zero bound with a half-plane bound.
 * `AnalyticOnNhd.exists_logDeriv_sub_finsum_divisor_extension`: after subtracting the
@@ -521,6 +523,28 @@ theorem neg_re_logDeriv_add_sub_inv_le {σ₀ σ B : ℝ} {ρ : ℂ}
 end AnalyticOnNhd
 
 namespace TauCeti
+
+/-- **Uniform form of Landau's local lemma for nested radii.** For radii `r < r' < R` there is a
+constant `A`, depending only on `r, r', R`, with the following property. Let `f` be analytic on
+`closedBall z₀ R` with `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`. Then at every `z` with
+`‖z - z₀‖ ≤ r` and `f z ≠ 0`, `logDeriv f z` differs from the divisor sum over
+`closedBall z₀ r'` by at most `A log M`. -/
+theorem exists_norm_logDeriv_sub_finsum_divisor_le {r r' R : ℝ} (hrr' : r < r') (hr'R : r' < R) :
+    ∃ A : ℝ, ∀ {f : ℂ → ℂ} {z₀ z : ℂ} {M : ℝ}, AnalyticOnNhd ℂ f (closedBall z₀ R) →
+      (∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) → f z₀ ≠ 0 → ‖z - z₀‖ ≤ r → f z ≠ 0 →
+        ‖logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r') ρ : ℂ) / (z - ρ)‖ ≤
+          A * Real.log M := by
+  refine ⟨4 * (r' + r) / (r' - r) ^ 2 + r' / ((R ^ 2 - r' * r) * Real.log (R / r')),
+    fun {f z₀ z M} hf hM hz₀ hz hfz ↦ ?_⟩
+  have hd := norm_nonneg (z - z₀)
+  have hlog : 0 < Real.log (R / r') := Real.log_pos ((one_lt_div (by linarith)).mpr hr'R)
+  have hR : 0 < R ^ 2 - r' * r := by nlinarith
+  have hM1 : 1 ≤ M :=
+    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
+      (by linarith) hz₀ hM
+  refine (hf.norm_logDeriv_sub_finsum_divisor_le hr'R hM (hz.trans_lt hrr') hfz).trans
+    (mul_le_mul_of_nonneg_right ?_ (Real.log_nonneg hM1))
+  gcongr <;> nlinarith
 
 /-- **Uniform disc form of Landau's retained-zero inequality.** Fix a nonzero radius `R ≠ 0`, a
 centre lower bound `b > 0`, a growth factor `c`, and a base `K₀ > 1`. There is a constant `A > 0`
