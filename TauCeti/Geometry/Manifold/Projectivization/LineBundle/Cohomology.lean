@@ -51,8 +51,8 @@ summands `𝒪(k l)` (`Projectivization.twistSumSectionBiconeIsBilimit`), with t
 and the inclusions of the summands. Čech cohomology is an additive functor of the sheaf, so
 `Hⁱ(ℂℙⁿ, ⨁ₗ 𝒪(k l))` vanishes when every `Hⁱ(ℂℙⁿ, 𝒪(k l))` does. On `ℂℙ¹` this gives
 `H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`. Applied to the splitting
-`ℓ* TℂPᵐ⁺¹ ≅ 𝒪(2) ⊕ 𝒪(1)ᵐ` along the coordinate line `ℓ`, this gives `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`
-(`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`, in
+`ℓ'* TℂPᵐ⁺¹ ≅ 𝒪(2) ⊕ 𝒪(1)ᵐ` along a line `ℓ'`, this gives `H¹(ℂℙ¹, ℓ'* TℂPᵐ⁺¹) = 0`
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_pullback_map_tangentSpace`, in
 `TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent.Cohomology`).
 
 ## Main declarations
