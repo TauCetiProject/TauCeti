@@ -162,10 +162,11 @@ theorem _root_.Matrix.IsSymm.posDef_of_card_le_two {R : Type*} [Ring R] [LinearO
         sq_pos_of_ne_zero (mul_ne_zero (hdiag i).ne' hxi)
     · exact add_pos_of_nonneg_of_pos (sq_nonneg _)
         (mul_pos (hminor i j hij) (sq_pos_of_ne_zero hxj))
-  · let : Unique n := ⟨⟨i⟩, fun j ↦ not_not.mp fun hji ↦ hpair ⟨j, hji⟩⟩
-    have hdefault : (default : n) = i := rfl
-    simpa only [dotProduct, _root_.Matrix.mulVec, Pi.star_apply, star_trivial, Fintype.sum_unique,
-      hdefault, mul_left_comm] using mul_pos (hdiag i) (mul_self_pos.mpr hxi)
+  · have hi (j : n) : j = i := not_not.mp fun hji ↦ hpair ⟨j, hji⟩
+    let : Subsingleton n := ⟨fun j k ↦ (hi j).trans (hi k).symm⟩
+    simpa only [dotProduct, _root_.Matrix.mulVec, Pi.star_apply, star_trivial,
+      Fintype.sum_subsingleton _ i, mul_left_comm] using
+      mul_pos (hdiag i) (mul_self_pos.mpr hxi)
 
 /-- The finite case of `TauCeti.Matrix.posDef_map_intCast`, where positive definiteness can be
 tested against ordinary vectors. -/
