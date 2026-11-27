@@ -27,7 +27,7 @@ needs no assumption on the topology of `A`: both `x χ` and `x (S χ)` are evalu
 ## Main declarations
 
 * `GroupLike.characterValue`: the value `x ↦ x χ` of a character as a homomorphism to `Aˣ`.
-* `GroupLike.val_characterValue`, `GroupLike.val_characterValue_inv`: its value and the value
+* `GroupLike.val_characterValue`, `GroupLike.val_inv_characterValue`: its value and the value
   of its inverse.
 * `GroupLike.characterValue_one`, `GroupLike.characterValue_mul`,
   `GroupLike.characterValue_inv`: the value is multiplicative in the character.
@@ -68,7 +68,7 @@ theorem val_characterValue (χ : GroupLike k H) (x : WithConv (H →ₐ[k] A)) :
 
 /-- The inverse of the value of a character `χ` at a point `x` is `x (S χ)`. -/
 @[simp]
-theorem val_characterValue_inv (χ : GroupLike k H) (x : WithConv (H →ₐ[k] A)) :
+theorem val_inv_characterValue (χ : GroupLike k H) (x : WithConv (H →ₐ[k] A)) :
     ((χ.characterValue A x)⁻¹ : Aˣ) = x.ofConv (antipode k (χ : H)) :=
   (rfl)
 

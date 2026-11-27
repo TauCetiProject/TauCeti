@@ -50,18 +50,19 @@ theorem normOne_specialLinear (K : Type*) [Field K] [NumberField K] (n : ℕ) :
       (SpecialLinear.groupLike_eq_one K n ψ).symm⟩
   normOne_eq_top _ _
 
-/-- The rational point `2` of `𝔾ₘ` over `ℚ`. -/
-noncomputable abbrev two : WithConv (ℚ[T;T⁻¹] →ₐ[ℚ] ℚ) :=
-  MultiplicativeGroup.pointsMulEquiv.symm (Units.mk0 2 two_ne_zero)
-
-/-- The principal idele `2` of `ℚ` lies in the norm-one subgroup of `𝔾ₘ(𝔸_ℚ)`. -/
-theorem diagonal_two_mem_normOne : diagonal (𝓞 ℚ) ℚ ℚ[T;T⁻¹] two ∈ normOne ℚ ℚ[T;T⁻¹] :=
-  diagonal_mem_normOne two
+/-- The principal idele `2` of `ℚ`, the image of the rational point `2` of `𝔾ₘ`, lies in the
+norm-one subgroup of `𝔾ₘ(𝔸_ℚ)`. -/
+theorem diagonal_two_mem_normOne :
+    diagonal (𝓞 ℚ) ℚ ℚ[T;T⁻¹] (MultiplicativeGroup.pointsMulEquiv.symm (Units.mk0 2 two_ne_zero)) ∈
+      normOne ℚ ℚ[T;T⁻¹] :=
+  diagonal_mem_normOne _
 
 /-- The principal idele `2` of `ℚ` has archimedean component of absolute value `2`, although it
 has idele norm one. -/
 theorem norm_diagonal_two_infinite (w : InfinitePlace ℚ) :
-    ‖(diagonal (𝓞 ℚ) ℚ ℚ[T;T⁻¹] two).ofConv (LaurentPolynomial.T 1) |>.1 w‖ = 2 := by
+    ‖(diagonal (𝓞 ℚ) ℚ ℚ[T;T⁻¹]
+      (MultiplicativeGroup.pointsMulEquiv.symm (Units.mk0 2 two_ne_zero))).ofConv
+      (LaurentPolynomial.T 1) |>.1 w‖ = 2 := by
   -- The archimedean component of the diagonal `2` is `2 ∈ ℚ_w`, of absolute value `w 2`.
   simp only [diagonal_apply_apply, MultiplicativeGroup.pointsMulEquiv_symm_apply,
     laurentEval_T_one, Units.val_mk0, AdeleRing.algebraMap_fst_apply,
