@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Extend
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
@@ -34,7 +35,7 @@ one before, in which the `n`-th approximant already has the final values on `(-�
 * `TauCeti.hasDerivAt_dickman`: `ρ'(u) = -ρ(u - 1) / u` for `u ≠ 0, 1`; the content is `u > 1`.
 * `TauCeti.not_differentiableAt_dickman_one`: `ρ` is not differentiable at `1`.
 * `TauCeti.eqOn_dickman`, `TauCeti.eq_dickman`, `TauCeti.existsUnique_dickman`: the values on
-  `[0, 1]`, continuity on `[0, ∞)` and the delay differential equation determine `ρ` on `[0, ∞)`.
+  `[0, 1]` and the delay differential equation for `u > 1` determine `ρ` on `[0, ∞)`.
 * `TauCeti.mul_dickman_eq_integral`: `u ρ(u) = ∫_{u-1}^u ρ(v) dv` for every real `u`.
 * `TauCeti.dickman_pos`: `ρ(u) > 0` for `u ≥ 0`.
 * `TauCeti.antitoneOn_dickman`, `TauCeti.strictAntiOn_dickman`: `ρ` is nonincreasing on `[0, ∞)`
@@ -49,7 +50,8 @@ one before, in which the `n`-th approximant already has the final values on `(-�
 
 public section
 
-open Set MeasureTheory intervalIntegral
+open Set Filter MeasureTheory intervalIntegral
+open scoped Topology
 
 namespace TauCeti
 
@@ -267,12 +269,82 @@ private theorem eqOn_dickman_of_integral_eq {f : ℝ → ℝ} (h₁ : ∀ u ∈ 
         exact ⟨sub_nonneg.2 ht.1, by linarith [ht.2]⟩
       simp only [ih hmem]
 
+
+/-- A function that is `1` on `[0, 1]` and satisfies the delay differential equation for `1 < u`
+is `1 - log u` on `(1, 2)`. On `(1, 2)` it is `C - log u` for a constant `C`, and comparing the
+derivative at `2` with the limit of the derivative from the right gives `C = 1`. -/
+private theorem eq_one_sub_log_of_delay {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc (0 : ℝ) 1, f u = 1)
+    (hd : ∀ u, 1 < u → HasDerivAt f (-f (u - 1) / u) u) {u : ℝ} (hu : u ∈ Ioo (1 : ℝ) 2) :
+    f u = 1 - Real.log u := by
+  have hg : ∀ v ∈ Ioo (1 : ℝ) 2, HasDerivAt (fun v ↦ f v + Real.log v) 0 v := by
+    intro v hv
+    have hv0 : v ≠ 0 := (zero_lt_one.trans hv.1).ne'
+    have h := (hd v hv.1).add (Real.hasDerivAt_log hv0)
+    rw [h₁ (v - 1) ⟨by linarith [hv.1], by linarith [hv.2]⟩] at h
+    convert h using 1
+    field_simp
+    ring
+  have hconst : ∀ v ∈ Ioo (1 : ℝ) 2, f v + Real.log v = f (3 / 2) + Real.log (3 / 2) :=
+    fun v hv ↦ isOpen_Ioo.is_const_of_deriv_eq_zero isPreconnected_Ioo
+      (fun w hw ↦ (hg w hw).differentiableAt.differentiableWithinAt)
+      (fun w hw ↦ (hg w hw).deriv) hv (by norm_num)
+  set C := f (3 / 2) + Real.log (3 / 2)
+  have hderiv : ∀ v ∈ Ioo (2 : ℝ) 3, deriv f v = -(C - Real.log (v - 1)) / v := fun v hv ↦ by
+    rw [(hd v (by linarith [hv.1])).deriv,
+      ← hconst (v - 1) ⟨by linarith [hv.1], by linarith [hv.2]⟩, add_sub_cancel_right]
+  have htend : Tendsto (fun v ↦ deriv f v) (𝓝[>] (2 : ℝ)) (𝓝 (-C / 2)) := by
+    have hcts : ContinuousAt (fun v : ℝ ↦ -(C - Real.log (v - 1)) / v) 2 :=
+      ((continuousAt_const.sub ((Real.continuousAt_log (by norm_num)).comp
+        (f := fun v : ℝ ↦ v - 1) (by fun_prop))).neg).div continuousAt_id two_ne_zero
+    have h := hcts.tendsto.mono_left (nhdsWithin_le_nhds (s := Ioi 2))
+    simp only [show (2 : ℝ) - 1 = 1 by norm_num, Real.log_one, sub_zero] at h
+    refine h.congr' ?_
+    filter_upwards [Ioo_mem_nhdsGT (show (2 : ℝ) < 3 by norm_num)] with v hv
+      using (hderiv v hv).symm
+  have hr : HasDerivWithinAt f (-C / 2) (Ici 2) 2 :=
+    hasDerivWithinAt_Ici_of_tendsto_deriv (s := Ioi 1)
+      (fun v hv ↦ (hd v hv).differentiableAt.differentiableWithinAt)
+      (hd 2 one_lt_two).continuousAt.continuousWithinAt
+      (mem_nhdsWithin_of_mem_nhds (Ioi_mem_nhds one_lt_two)) htend
+  have h2 := (uniqueDiffWithinAt_Ici (2 : ℝ)).eq_deriv _ hr (hd 2 one_lt_two).hasDerivWithinAt
+  rw [show (2 : ℝ) - 1 = 1 by norm_num, h₁ 1 ⟨zero_le_one, le_rfl⟩] at h2
+  have hC : C = 1 := by linarith
+  have := hconst u hu
+  rw [hC] at this
+  linarith
+
+/-- A function that is `1` on `[0, 1]` and satisfies the delay differential equation for `1 < u`
+is continuous on `[0, ∞)`. Only continuity from the right at `1` needs an argument. -/
+private theorem continuousOn_of_delay {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc (0 : ℝ) 1, f u = 1)
+    (hd : ∀ u, 1 < u → HasDerivAt f (-f (u - 1) / u) u) : ContinuousOn f (Ici 0) := by
+  have hone : f 1 = 1 := h₁ 1 ⟨zero_le_one, le_rfl⟩
+  intro v hv
+  rcases lt_trichotomy v 1 with hv1 | rfl | hv1
+  · refine (continuousWithinAt_const : ContinuousWithinAt (fun _ : ℝ ↦ (1 : ℝ)) (Ici 0) v)
+      |>.congr_of_eventuallyEq ?_ (h₁ v ⟨hv, hv1.le⟩)
+    filter_upwards [inter_mem_nhdsWithin (Ici 0) (Iio_mem_nhds hv1)] with w hw
+      using h₁ w ⟨hw.1, le_of_lt hw.2⟩
+  · have hl : ContinuousWithinAt f (Icc 0 1) 1 :=
+      (continuousWithinAt_const : ContinuousWithinAt (fun _ : ℝ ↦ (1 : ℝ)) (Icc 0 1) 1).congr
+        (fun w hw ↦ h₁ w hw) hone
+    have hr : ContinuousWithinAt f (Ici 1) 1 := by
+      have hlog : ContinuousWithinAt (fun w : ℝ ↦ 1 - Real.log w) (Ici 1) 1 :=
+        (continuousAt_const.sub (Real.continuousAt_log one_ne_zero)).continuousWithinAt
+      refine hlog.congr_of_eventuallyEq ?_ (by rw [hone, Real.log_one, sub_zero])
+      filter_upwards [Icc_mem_nhdsGE (show (1 : ℝ) < 3 / 2 by norm_num)] with w hw
+      rcases hw.1.eq_or_lt with rfl | h
+      · rw [hone, Real.log_one, sub_zero]
+      · exact eq_one_sub_log_of_delay h₁ hd ⟨h, by linarith [hw.2]⟩
+    exact (hl.union hr).mono fun w hw ↦ (le_total w 1).elim (fun h ↦ Or.inl ⟨hw, h⟩) Or.inr
+  · exact (hd v hv1).continuousAt.continuousWithinAt
+
 /-- The Dickman function is determined on `[0, ∞)` by its values on `[0, 1]` and the delay
-differential equation: a function that is `1` on `[0, 1]`, continuous on `[0, ∞)` and satisfies
-`u f'(u) = -f(u - 1)` for `1 < u` agrees with it there. -/
+differential equation: a function that is `1` on `[0, 1]` and satisfies `u f'(u) = -f(u - 1)` for
+`1 < u` agrees with it there. Continuity on `[0, ∞)` is not assumed: differentiability at `2`
+forces continuity from the right at `1`. -/
 theorem eqOn_dickman {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc (0 : ℝ) 1, f u = 1)
-    (hc : ContinuousOn f (Ici 0)) (hd : ∀ u, 1 < u → HasDerivAt f (-f (u - 1) / u) u) :
-    EqOn f dickman (Ici 0) := by
+    (hd : ∀ u, 1 < u → HasDerivAt f (-f (u - 1) / u) u) : EqOn f dickman (Ici 0) := by
+  have hc := continuousOn_of_delay h₁ hd
   have hk : ContinuousOn (fun t : ℝ ↦ -f (t - 1) / t) (Ici 1) :=
     ((hc.comp (by fun_prop) fun t ht ↦ sub_nonneg.2 ht).neg).div continuousOn_id
       fun t ht ↦ (zero_lt_one.trans_le ht).ne'
@@ -288,15 +360,13 @@ theorem eqOn_dickman {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc (0 : ℝ) 1, f u = 
   exact eqOn_dickman_of_integral_eq h₁ hf ⌊u⌋₊ ⟨hu, (Nat.lt_floor_add_one u).le⟩
 
 /-- The Dickman function is the unique function on the real line that vanishes on the negative
-reals, is `1` on `[0, 1]`, is continuous on `[0, ∞)` and satisfies `u f'(u) = -f(u - 1)` for
-`1 < u`. -/
+reals, is `1` on `[0, 1]` and satisfies `u f'(u) = -f(u - 1)` for `1 < u`. -/
 theorem eq_dickman {f : ℝ → ℝ} (h₀ : ∀ u < 0, f u = 0) (h₁ : ∀ u ∈ Icc (0 : ℝ) 1, f u = 1)
-    (hc : ContinuousOn f (Ici 0)) (hd : ∀ u, 1 < u → HasDerivAt f (-f (u - 1) / u) u) :
-    f = dickman := by
+    (hd : ∀ u, 1 < u → HasDerivAt f (-f (u - 1) / u) u) : f = dickman := by
   funext u
   rcases lt_or_ge u 0 with hu | hu
   · rw [h₀ u hu, dickman_of_neg hu]
-  · exact eqOn_dickman h₁ hc hd hu
+  · exact eqOn_dickman h₁ hd hu
 
 /-- There is exactly one function on the real line that vanishes on the negative reals, is `1` on
 `[0, 1]`, is continuous on `[0, ∞)` and satisfies `u f'(u) = -f(u - 1)` for `1 < u`: the Dickman
@@ -306,7 +376,7 @@ theorem existsUnique_dickman :
       ContinuousOn f (Ici 0) ∧ ∀ u, 1 < u → HasDerivAt f (-f (u - 1) / u) u :=
   ⟨dickman, ⟨fun _ hu ↦ dickman_of_neg hu, fun _ hu ↦ dickman_of_le_one hu.1 hu.2,
     continuousOn_dickman, fun _ hu ↦ hasDerivAt_dickman (zero_lt_one.trans hu).ne' hu.ne'⟩,
-    fun _ hf ↦ eq_dickman hf.1 hf.2.1 hf.2.2.1 hf.2.2.2⟩
+    fun _ hf ↦ eq_dickman hf.1 hf.2.1 hf.2.2.2⟩
 
 /-! ### The integral identity -/
 
