@@ -111,7 +111,8 @@ identification.
 * `TauCeti.SpinCStructure.inverseDeterminantLineEquiv_mk`,
   `TauCeti.SpinCStructure.chargeConjTwistLineEquiv_inl`: the formulas `[p, w] ↦ [[p, 1], conj w]`
   and `[[([p, 1], [e, 1]), 1], w] ↦ [p, conj w] ⊗ [e, 1]`, with inverses
-  `TauCeti.SpinCStructure.inverseDeterminantLineEquiv_symm_mk` and
+  `TauCeti.SpinCStructure.inverseDeterminantLineEquiv_symm_mk` (at `[p, 1]`,
+  `TauCeti.SpinCStructure.inverseDeterminantLineEquiv_symm_inl`) and
   `TauCeti.SpinCStructure.chargeConjTwistLineEquiv_symm_tmul`.
 * `TauCeti.SpinCStructure.continuous_inverseDeterminantLineEquiv`,
   `TauCeti.SpinCStructure.continuous_chargeConjTwistLineEquiv` and their `_symm` versions:
@@ -304,6 +305,14 @@ theorem inverseDeterminantLineEquiv_symm_mk {x : X} (p : s.P x) (h : Circle) (w 
   refine (ContinuousLinearEquiv.symm_apply_eq _).2 ?_
   rw [determinantModelConj_apply, LinearIsometryEquiv.apply_symm_apply, Circle.smul_def,
     smul_eq_mul, starRingEnd_self_apply]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle ℝ F V] in
+/-- **The inverse identification at `[p, 1]`**: `[[p, 1], w] ↦ [p, conj w]`. -/
+@[simp]
+theorem inverseDeterminantLineEquiv_symm_inl {x : X} (p : s.P x) (w : ℂ) :
+    (s.inverseDeterminantLineEquiv x).symm (AssociatedBundle.mk Circle (Extend.inl δ hδ p) w) =
+      AssociatedBundle.mk SpinC p (DeterminantModel.toComplex.symm (starRingEnd ℂ w)) := by
+  simp [Extend.inl_def]
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle ℝ F V] in
 /-- **The line of the inverse determinant bundle is identified continuously** on total spaces. -/
@@ -780,18 +789,10 @@ def chargeConjTwistLineEquiv (s : SpinCStructure F V n) (x : X) :
     AssociatedBundle Circle (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)) ℂ x
       ≃L⋆[ℂ] s.determinantLine x ⊗[ℂ] AssociatedBundle Circle E ℂ x where
   __ := s.chargeConjTwistLineLinearEquiv E x
-  -- Followed by the conjugate-linear identity into the conjugate, the identification and its
-  -- inverse are complex-linear, so continuous for the module topologies.
-  continuous_toFun := (Conjugate.toConjL.symm.continuous.comp
-    (IsModuleTopology.continuous_of_linearMap
-      ((s.chargeConjTwistLineLinearEquiv E x).trans
-        Conjugate.toConjL.toLinearEquiv).toLinearMap)).congr
-    fun _ ↦ Conjugate.toConjL.symm_apply_apply _
-  continuous_invFun := (Conjugate.toConjL.symm.continuous.comp
-    (IsModuleTopology.continuous_of_linearMap
-      ((s.chargeConjTwistLineLinearEquiv E x).symm.trans
-        Conjugate.toConjL.toLinearEquiv).toLinearMap)).congr
-    fun _ ↦ Conjugate.toConjL.symm_apply_apply _
+  continuous_toFun := IsModuleTopology.continuous_of_linearMapₛₗ Complex.continuous_conj
+    (s.chargeConjTwistLineLinearEquiv E x).toLinearMap
+  continuous_invFun := IsModuleTopology.continuous_of_linearMapₛₗ Complex.continuous_conj
+    (s.chargeConjTwistLineLinearEquiv E x).symm.toLinearMap
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle ℝ F V] in
 /-- **The twisting line of the charge conjugate of a twist in a frame**: it sends
@@ -878,21 +879,9 @@ theorem continuous_chargeConjTwistLineEquiv_symm (s : SpinCStructure F V n) :
         (fun x ↦ s.determinantLine x ⊗[ℂ] AssociatedBundle Circle E ℂ x) ↦
       TotalSpace.mk' ℂ (E := AssociatedBundle Circle
           (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)) ℂ)
-        v.proj ((s.chargeConjTwistLineEquiv E v.proj).symm v.snd) := by
-  -- Read in the conjugate bundle of `L ⊗ E`, the identification is complex-linear, so it is a
-  -- homeomorphism of total spaces by finite rank.
-  let ϕ (x : X) :
-      AssociatedBundle Circle (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)) ℂ x
-        →L[ℂ] ConjugateBundle (fun x ↦ s.determinantLine x ⊗[ℂ] AssociatedBundle Circle E ℂ x) x :=
-    ((s.chargeConjTwistLineEquiv E x).trans Conjugate.toConjL).toContinuousLinearMap
-  obtain ⟨h, hh⟩ := exists_bundleHomeomorph_of_bijective ϕ
-    (((ConjugateBundle.toConjHomeomorph _ _).continuous.comp
-      (s.continuous_chargeConjTwistLineEquiv E)).congr fun v ↦ by simp [ϕ])
-    fun x ↦ ((s.chargeConjTwistLineEquiv E x).trans Conjugate.toConjL).bijective
-  refine (h.symm.continuous.comp (ConjugateBundle.toConjHomeomorph _ _).continuous).congr
-    fun v ↦ ?_
-  rw [Function.comp_apply, Homeomorph.symm_apply_eq, hh]
-  simp [ϕ]
+        v.proj ((s.chargeConjTwistLineEquiv E v.proj).symm v.snd) :=
+  continuous_bundle_symm_of_conjLinear (s.chargeConjTwistLineEquiv E)
+    (s.continuous_chargeConjTwistLineEquiv E)
 
 end TensorTwist
 

@@ -47,7 +47,8 @@ these operations are recognised.
 ## Main results
 
 * `TauCeti.PrincipalBundle.inverseLineEquiv_mk`, `TauCeti.PrincipalBundle.inverseLineEquiv_symm_mk`:
-  the formulas `[p, w] ↦ [[p, 1], conj w]` and `[[p, h], w] ↦ [p, conj (h w)]`.
+  the formulas `[p, w] ↦ [[p, 1], conj w]` and `[[p, h], w] ↦ [p, conj (h w)]`, with
+  `TauCeti.PrincipalBundle.inverseLineEquiv_symm_inl` the inverse at `[p, 1]`.
 * `TauCeti.PrincipalBundle.tensorLineEquiv_mk`, `TauCeti.PrincipalBundle.tensorLineEquiv_symm_tmul`:
   the formulas `[[(p, q), h], w] ↦ [p, h w] ⊗ [q, 1]` and `[p, a] ⊗ [q, c] ↦ [[(p, q), 1], a c]`.
 * `TauCeti.PrincipalBundle.continuous_inverseLineEquiv`,
@@ -116,6 +117,13 @@ theorem inverseLineEquiv_symm_mk {b : B} (p : P b) (h : Circle) (w : ℂ) :
       AssociatedBundle.mk Circle p (starRingEnd ℂ (h * w)) :=
   (Extend.associatedEquivOfEquivariant_symm_mk ν hν (starL ℂ) Circle.starRingEnd_smul p h w).trans
     (by simp [Circle.smul_def])
+
+/-- **The inverse identification at `[p, 1]`**: `[[p, 1], w] ↦ [p, conj w]`. -/
+@[simp]
+theorem inverseLineEquiv_symm_inl {b : B} (p : P b) (w : ℂ) :
+    (inverseLineEquiv P b).symm (AssociatedBundle.mk Circle (Extend.inl ν hν p) w) =
+      AssociatedBundle.mk Circle p (starRingEnd ℂ w) := by
+  simp [Extend.inl_def]
 
 variable (P) in
 /-- **The line of the inverse is identified continuously** on total spaces. -/
