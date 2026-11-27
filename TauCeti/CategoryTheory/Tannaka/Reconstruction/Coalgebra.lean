@@ -160,9 +160,17 @@ variable [PreservesFiniteLimits ω] [ω.PreservesEpimorphisms]
 /-- The transition map of the coalgebra of `ω` from the stage `s` to a larger stage `t`: the
 dual of the restriction map `hullAlgebra X_t → hullAlgebra X_s` between the algebras of the
 direct sums `X_s` and `X_t`. -/
-@[expose] noncomputable def reconstructionTransition (s t : Finset (SmallModel.{u} C))
+noncomputable def reconstructionTransition (s t : Finset (SmallModel.{u} C))
     (h : s ≤ t) : ω.ReconstructionStage s →ₗc[K] ω.ReconstructionStage t :=
   ConvolutionDual.coalgMap K (ω.hullRestrict (subquotientHull_smallModelBiproduct_of_le h))
+
+/-- A transition map evaluates a stage functional by precomposing with hull restriction. -/
+@[simp]
+theorem reconstructionTransition_apply_apply (s t : Finset (SmallModel.{u} C)) (h : s ≤ t)
+    (φ : ω.ReconstructionStage s) (x : ω.hullAlgebra (smallModelBiproduct C t)) :
+    (ω.reconstructionTransition s t h φ).ofConv x =
+      φ.ofConv (ω.hullRestrict (subquotientHull_smallModelBiproduct_of_le h) x) :=
+  ConvolutionDual.coalgMap_apply_apply K _ φ x
 
 /-- The transition map from a stage to itself is the identity. -/
 @[simp]
@@ -374,7 +382,8 @@ theorem map_comp_reconstructionComodule_coact {Y Y' : C} (g : Y ⟶ Y') :
       TensorProduct.map (ω.map g).hom LinearMap.id =
         TensorProduct.map (ω.map g).hom LinearMap.id ∘ₗ
           (ω.toReconstructionCoalgebra s).toLinearMap.lTensor (ω.obj Y) :=
-    TensorProduct.ext' fun _ _ ↦ rfl
+    (LinearMap.lTensor_comp_rTensor _ _ _).trans
+      (LinearMap.rTensor_comp_lTensor _ _ _).symm
   rw [ω.reconstructionComodule_coact h, ω.reconstructionComodule_coact h',
     ← LinearMap.comp_assoc, ← hcomm, LinearMap.comp_assoc,
     ω.map_comp_reconstructionStageComodule_coact h h' g, LinearMap.comp_assoc]
@@ -393,15 +402,17 @@ the coaction `reconstructionComodule` of the coalgebra of `ω`, and a morphism `
       { toLinearMap := (ω.map g).hom
         map_coact := ω.map_comp_reconstructionComodule_coact g }
   -- Identities and composites of comodule morphisms act as identities and composites of
-  -- functions (`TauCeti.ComoduleCat.id_apply`, `TauCeti.ComoduleCat.comp_apply`).
+  -- functions (`TauCeti.ComoduleCat.id_apply`, `TauCeti.ComoduleCat.ofHom_comp`).
   map_id Y := by
     ext y
-    simp
-    rfl
+    simp only [FGComoduleCat.of_obj, map_id, ModuleCat.hom_id, ObjectProperty.homMk_hom,
+      ComoduleCat.hom_ofHom, Comodule.Hom.coe_mk, LinearMap.id_coe, id_eq,
+      ObjectProperty.FullSubcategory.id_hom]
+    exact (ComoduleCat.id_apply K ω.reconstructionCoalgebra _ y).symm
   map_comp g g' := by
     ext y
     simp
-    rfl
+    simp [← ComoduleCat.ofHom_comp]
 
 /-- The comodule attached to `Y` has the coaction `reconstructionComodule`. -/
 theorem coact_toReconstructionComodule_obj (Y : C) :

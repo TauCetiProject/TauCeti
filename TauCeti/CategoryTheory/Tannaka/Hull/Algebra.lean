@@ -374,8 +374,7 @@ element of `hullAlgebra X`. -/
 theorem coe_hullRestrict_apply (h : subquotientHull X Y) (f : ω.hullAlgebra X) :
     (ω.hullRestrict h f : Module.End R (ω.obj Y)) =
       (((ω.hullEndAlgEquiv X).symm f).asHom.app ⟨Y, h⟩).hom := by
-  rw [hullRestrict, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, coe_hullEndAlgEquiv_apply,
-    AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, hullEvalAlgHom_restrictEndAlgHom]
+  simp [hullRestrict, ObjectProperty.ιOfLE]
 
 /-- The transition map from the hull of `X` to itself is the identity. -/
 @[simp]
@@ -387,11 +386,7 @@ theorem hullRestrict_comp (h : subquotientHull X Y) (h' : subquotientHull Y Z) :
     (ω.hullRestrict h').comp (ω.hullRestrict h) =
       ω.hullRestrict (subquotientHull_le_of_mem h _ h') :=
   AlgHom.ext fun f ↦ Subtype.ext <| by
-    rw [AlgHom.comp_apply, coe_hullRestrict_apply, coe_hullRestrict_apply, hullRestrict,
-      AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, AlgEquiv.symm_apply_apply,
-      AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, ObjectProperty.restrictEndAlgHom_asHom_app]
-    -- `(ιOfLE _).obj ⟨Z, h'⟩` is `⟨Z, _⟩` by definition of `ObjectProperty.ιOfLE`.
-    rfl
+    simp [hullRestrict, ObjectProperty.ιOfLE]
 
 /-- The action of `hullAlgebra X` on the fibre of a member `Y` of the hull of `X`: an element
 `f` acts by the component at `Y` of the natural endomorphism it defines. Every `ω g`, for a

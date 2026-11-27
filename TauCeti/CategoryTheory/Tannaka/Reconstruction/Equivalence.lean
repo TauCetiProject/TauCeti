@@ -168,7 +168,8 @@ instance : ω.toReconstructionComodule.EssSurj where
         TensorProduct.map ℓ.toLinearMap LinearMap.id =
           TensorProduct.map ℓ.toLinearMap LinearMap.id ∘ₗ
             (ω.toReconstructionCoalgebra s).toLinearMap.lTensor (ω.obj Y.obj) :=
-      TensorProduct.ext' fun _ _ ↦ rfl
+      (LinearMap.lTensor_comp_rTensor _ _ _).trans
+        (LinearMap.rTensor_comp_lTensor _ _ _).symm
     rw [coact_toReconstructionComodule_obj, ω.reconstructionComodule_coact Y.property, ← hσ]
     refine LinearMap.ext fun y ↦ ?_
     have h₁ := LinearMap.congr_fun hcomm ((ω.reconstructionStageComodule Y.property).coact y)
