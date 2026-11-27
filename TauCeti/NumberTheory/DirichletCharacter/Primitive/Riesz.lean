@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.RayClass
+public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.NumberTheory.LSeries.Injectivity
 import Mathlib.NumberTheory.MulChar.Lemmas
@@ -34,10 +35,10 @@ meromorphic Riesz expression, so estimates for the prime sum can be related to p
 expression.
 
 Under `PrimitiveDirichletCharacter.toPrimitiveRayClassCharacter`, the ideal von Mangoldt
-coefficients grouped by norm become `χ(n) Λ(n)`. This identifies the inputs to first Riesz
-smoothing on the two sides. Their meromorphic Mellin expressions also agree, including at
-conductor one: the expression is normalized from punctured germs, so it does not depend on
-which value the input L-function takes at its pole.
+coefficients grouped by norm become `χ(n) Λ(n)`. The main-term corrections also agree, so the
+rational ray class and Dirichlet remainders coincide. Their meromorphic Mellin expressions
+agree as well: normalization from punctured germs does not depend on which value the input
+L-function takes at its pole.
 
 The normalization, conjugation and transform identities are those of Levent Alpöge's
 `Deduction.Gchi`, `Deduction.Gchi_conj`, `Deduction.mellin_Gchi_modOne` and
@@ -161,6 +162,28 @@ theorem exists_re_rieszRemainder_le_rpow_two (χ : PrimitiveDirichletCharacter) 
     refine add_le_add (hsum y hy) ((re_le_norm ((y : ℂ) * d)).trans ?_)
     rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_nonneg (zero_le_one.trans hy), mul_comm y]
     exact mul_le_mul_of_nonneg_left (hy₂ hy) (norm_nonneg _)
+
+/-- The ray class remainder of the rational character corresponding to a primitive
+Dirichlet character is its Dirichlet remainder, including at conductor one. -/
+@[simp] theorem rieszRemainder_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter)
+    (y : ℝ) : (toPrimitiveRayClassCharacter ψ).rieszRemainder y = ψ.rieszRemainder y := by
+  have hcoeff : (toPrimitiveRayClassCharacter ψ).rieszCoeff = fun n : ℕ ↦ ψ.character n * Λ n := by
+    rw [PrimitiveRayClassCharacter.rieszCoeff_def]
+    exact funext (normCoeff_vonMangoldtTransform_toPrimitiveRayClassCharacter ψ)
+  by_cases hψ : ψ = 1
+  · subst ψ
+    simp only [toPrimitiveRayClassCharacter_one, PrimitiveRayClassCharacter.rieszCoeff_one,
+      character_one_apply, one_mul] at hcoeff
+    rw [toPrimitiveRayClassCharacter_one, PrimitiveRayClassCharacter.rieszRemainder_one,
+      hcoeff, rieszRemainder_one, NumberField.eulerKroneckerConstant_rat]
+    simp only [Complex.ofReal_sub, Complex.ofReal_mul, Complex.ofReal_add, Complex.ofReal_one]
+  · have hη : toPrimitiveRayClassCharacter ψ ≠ 1 :=
+      (toPrimitiveRayClassCharacter.injective.eq_iff' toPrimitiveRayClassCharacter_one).not.mpr hψ
+    have hχ : ψ.character ≠ 1 := (character_eq_one_iff ψ).not.mpr hψ
+    have hL : heckeLFunctionC (toPrimitiveRayClassCharacter ψ).character = ψ.character.LFunction :=
+      funext fun _ ↦ ψ.heckeLFunctionC_toPrimitiveRayClassCharacter_apply (.inr hχ)
+    rw [PrimitiveRayClassCharacter.rieszRemainder_of_ne_one _ hη, hcoeff, hL,
+      rieszRemainder_of_ne_one hψ]
 
 /-- The first Riesz remainder is continuous, including at the lower Mellin endpoint `1`. -/
 theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
