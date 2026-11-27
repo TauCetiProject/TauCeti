@@ -81,11 +81,8 @@ noncomputable def coneOrderIsoOrbitRelQuotient :
       (MulAction.orbitRel.Quotient (ComplexTorus N) (Φ.analyticRealization hΦ)))ᵒᵈ where
   toEquiv := (Φ.coneEquivOrbitRelQuotient hΦ).trans (Specialization.toEquiv.trans OrderDual.toDual)
   map_rel_iff' {σ τ} := by
-    rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.trans_apply, Equiv.trans_apply,
-      OrderDual.toDual_le_toDual, Specialization.toEquiv_le_toEquiv,
-      specializes_iff_orbit_subset_closure_orbit, orbit_coneEquivOrbitRelQuotient,
-      orbit_coneEquivOrbitRelQuotient]
-    exact Φ.analyticConeOrbit_subset_closure_iff hΦ τ σ
+    simp [specializes_iff_orbit_subset_closure_orbit, ← analyticConeOrbit_eq_orbit,
+      Φ.analyticConeOrbit_subset_closure_iff hΦ]
 
 /-- The order isomorphism sends a cone to the orbit of its distinguished point. -/
 @[simp]
