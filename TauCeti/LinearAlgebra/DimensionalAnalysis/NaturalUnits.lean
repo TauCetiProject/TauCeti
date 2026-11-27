@@ -43,6 +43,12 @@ def action : Fin 3 → R := ![1, 2, -1]
 /-- The mass, length, and time exponents of mass. -/
 def mass : Fin 3 → R := ![1, 0, 0]
 
+/-- The mass, length, and time exponents of length. -/
+def length (R : Type*) [Zero R] [One R] : Fin 3 → R := ![0, 1, 0]
+
+/-- The mass, length, and time exponents of time. -/
+def time (R : Type*) [Zero R] [One R] : Fin 3 → R := ![0, 0, 1]
+
 /-- The coordinates of the speed exponent vector. -/
 theorem speed_def : speed R = ![0, 1, -1] := (rfl)
 
@@ -51,6 +57,12 @@ theorem action_def : action R = ![1, 2, -1] := (rfl)
 
 /-- The coordinates of the mass exponent vector. -/
 theorem mass_def : mass R = ![1, 0, 0] := (rfl)
+
+/-- The coordinates of the length exponent vector. -/
+theorem length_def (R : Type*) [Zero R] [One R] : length R = ![0, 1, 0] := (rfl)
+
+/-- The coordinates of the time exponent vector. -/
+theorem time_def (R : Type*) [Zero R] [One R] : time R = ![0, 0, 1] := (rfl)
 
 /-- The basis of exponent vectors ordered as speed, action, and mass. -/
 noncomputable def unitBasis : Basis (Fin 3) R (Fin 3 → R) :=
@@ -84,7 +96,7 @@ variable {R}
     AddHom.coe_mk]
 
 /-- The exponents of speed, action, and mass representing an exponent vector `x`. -/
-theorem unitBasis_equivFun (x : Fin 3 → R) :
+theorem unitBasis_equivFun_apply (x : Fin 3 → R) :
     (unitBasis R).equivFun x = ![-x 1 - 2 * x 2, x 1 + x 2, x 0 - x 1 - x 2] := by
   simp
 
@@ -92,21 +104,21 @@ theorem unitBasis_equivFun (x : Fin 3 → R) :
 @[simp] theorem unitBasis_zero : unitBasis R 0 = speed R := by
   apply (unitBasis R).equivFun.injective
   ext i
-  simp only [Basis.equivFun_self, unitBasis_equivFun]
+  simp only [Basis.equivFun_self, unitBasis_equivFun_apply]
   fin_cases i <;> norm_num [speed]
 
 /-- The second basis vector is the dimension of action. -/
 @[simp] theorem unitBasis_one : unitBasis R 1 = action R := by
   apply (unitBasis R).equivFun.injective
   ext i
-  simp only [Basis.equivFun_self, unitBasis_equivFun]
+  simp only [Basis.equivFun_self, unitBasis_equivFun_apply]
   fin_cases i <;> norm_num [action]
 
 /-- The third basis vector is the dimension of mass. -/
 @[simp] theorem unitBasis_two : unitBasis R 2 = mass R := by
   apply (unitBasis R).equivFun.injective
   ext i
-  simp only [Basis.equivFun_self, unitBasis_equivFun]
+  simp only [Basis.equivFun_self, unitBasis_equivFun_apply]
   fin_cases i <;> simp [mass]
 
 /-- The ordered speed, action, and mass rows have determinant one. -/
@@ -116,17 +128,17 @@ theorem det_unitBasis : (Matrix.of (unitBasis R : Fin 3 → Fin 3 → R)).det = 
 
 /-- The unique exponents of speed, action, and mass that give a length dimension. -/
 theorem sum_smul_unitBasis_eq_length_iff (u : Fin 3 → ℤ) :
-    (∑ i, u i • unitBasis ℤ i) = ![0, 1, 0] ↔ u = ![-1, 1, -1] := by
-  have h : (unitBasis ℤ).equivFun ![0, 1, 0] = ![-1, 1, -1] := by
-    rw [unitBasis_equivFun]
+    (∑ i, u i • unitBasis ℤ i) = length ℤ ↔ u = ![-1, 1, -1] := by
+  have h : (unitBasis ℤ).equivFun (length ℤ) = ![-1, 1, -1] := by
+    rw [unitBasis_equivFun_apply, length_def]
     decide
   rw [← Basis.equivFun_symm_apply, LinearEquiv.symm_apply_eq, h]
 
 /-- A monomial in the reduced Planck constant `ℏ`, mass `m`, and speed `c` with length
 dimension is the reduced Compton wavelength `ℏ / (m * c)`. -/
-theorem zpow_eq_comptonWavelength_of_dimension {G : Type*} [DivisionCommMonoid G]
+theorem zpow_mul_zpow_mul_zpow_eq_div_of_eq_length {G : Type*} [DivisionCommMonoid G]
     {ℏ m c : G} {a b d : ℤ}
-    (h : d • speed ℤ + a • action ℤ + b • mass ℤ = ![0, 1, 0]) :
+    (h : d • speed ℤ + a • action ℤ + b • mass ℤ = length ℤ) :
     ℏ ^ a * m ^ b * c ^ d = ℏ / (m * c) := by
   have hu := (sum_smul_unitBasis_eq_length_iff ![d, a, b]).mp (by
     simpa [Fin.sum_univ_three] using h)
@@ -151,6 +163,14 @@ variable {R}
 /-- The mass vector has mass dimension one. -/
 @[simp high] theorem massDimension_mass : massDimension R (mass R) = 1 := by
   simp [mass]
+
+/-- The length vector has mass dimension minus one. -/
+@[simp high] theorem massDimension_length : massDimension R (length R) = -1 := by
+  simp [length_def]
+
+/-- The time vector has mass dimension minus one. -/
+@[simp high] theorem massDimension_time : massDimension R (time R) = -1 := by
+  simp [time_def]
 
 /-- The speed vector has mass dimension zero. -/
 @[simp high] theorem massDimension_speed : massDimension R (speed R) = 0 := by
