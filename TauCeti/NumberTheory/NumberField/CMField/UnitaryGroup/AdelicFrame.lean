@@ -5,345 +5,360 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.ChangeOfFrame
-public import TauCeti.NumberTheory.NumberField.CMField.AdelicLattice
-public import TauCeti.NumberTheory.NumberField.CMType.Basic
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
+public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.NumberTheory.NumberField.CMField.Basic
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
-# Hermitian spaces with an adelic frame and their unitary groups
+# Hermitian spaces with an adelic frame over a CM field
 
-Let `E` be a CM field with complex conjugation `x ↦ conj x`, `Φ` a CM type of `E` (one complex
-embedding for each infinite place), `𝔸_f` the finite adeles of `E` with the involution induced by
-conjugation, `Ô` the integral finite adeles and `n` a natural number. Matrices are conjugate
-transposed by `g* = star g`, and `U(J)(R) = {g ∈ GL_n(R) : g* J g = J}` is
-`Matrix.unitaryGroupOf J`. Through `Φ`, the adeles of `E` are `ℂ^Φ × 𝔸_f`, so an element of
-`GL_n` of the adeles is a family of matrices in `GL_n(ℂ)`, one for each `φ ∈ Φ`, together with a
-matrix in `GL_n(𝔸_f)`. This file sets up the adelic unitary groups and the spaces on which the
-automorphic forms of unitary groups over `E` live.
+Let `E` be a CM field with complex conjugation `x ↦ conj x`, `E_∞ = ∏_w E_w` its infinite adeles and
+`𝔸_f` its finite adeles, with the conjugation transported to both
+(`NumberField.IsCMField.infiniteAdeleConj`, `NumberField.IsCMField.finiteAdeleConj`). On `E_∞` it
+acts within each completion `E_w`, every infinite place of a CM field being its own conjugate. On
+`𝔸_f` it carries the completion at a finite place `w` to the completion at the conjugate place
+`conj w` (`IsDedekindDomain.FiniteAdeleRing.star_apply_conjPlace`), and these are two different
+completions when `conj w ≠ w`, that is when the place of `E⁺` below `w` splits in `E`. An adelic
+matrix is written by its archimedean and finite components, so `GL_n(𝔸)` is
+`GL_n(E_∞) × GL_n(𝔸_f)` (Mathlib's `Matrix.GeneralLinearGroup.prodEquiv` identifies the two).
+For a finite index set `ι` of size `n` and a sign vector `s ∈ {±1}^ι`, used at every infinite
+place, `G(s) = G_∞(s) × G_f` is the adelic unitary group (`TauCeti.adelicUnitaryGroup`), where
+`G_∞(s) = U(diag s)(E_∞)` and `G_f = U(1_n)(𝔸_f)`. This file defines:
 
-* `G_f = U(1_n)(𝔸_f)`, the unitary group of the standard form over the finite adeles
-  (`TauCeti.finiteAdelicUnitaryGroup`), with its subgroup `K₀ = G_f ∩ GL_n(Ô)`
-  (`TauCeti.integralFiniteAdelicUnitaryGroup`), which is open. A *level* is an open subgroup of
-  `G_f` contained in `K₀` (`TauCeti.IsUnitaryLevel`).
-* For a sign vector `s ∈ {±1}^n`, the same at every infinite place,
-  `G_∞(s) = ∏_{φ ∈ Φ} U(diag s)(ℂ)` (`TauCeti.InfiniteUnitaryGroup`), each factor isomorphic to
-  `U(p, n - p)` for `p = #{i : s_i = 1}`, and `G(s) = G_∞(s) × G_f` (`TauCeti.AdelicUnitaryGroup`).
-* A *hermitian space with an adelic frame of signs `s`* (`TauCeti.AdelicHermitianSpace`) is a
-  matrix `J ∈ M_n(E)` together with a frame `x` in `GL_n` of the adeles such that `x* J x = diag(s)`
-  at every `φ ∈ Φ` (with `J` read through `φ`) and `x* J x = 1_n` over `𝔸_f`. So the hermitian form
-  `h_J(u, v) = ū^T J v` on `E^n` has signature `(p, n - p)` at every infinite place and is isometric
-  to the standard form at every finite place; `J` is hermitian
-  (`TauCeti.AdelicHermitianSpace.isHermitian_gram`).
-* Its *rational points*: `γ ↦ x⁻¹ γ x` embeds the unitary group `U(J)(E⁺)` of `h_J`, the group of
-  `γ ∈ GL_n(E)` with `γ* J γ = J`, into `G(s)` (`TauCeti.AdelicHermitianSpace.ratEmbedding`,
-  injective by `TauCeti.AdelicHermitianSpace.ratEmbedding_injective`). Its image is `Γ_V`
-  (`TauCeti.AdelicHermitianSpace.ratPoints`) and the image of `Γ_V` in `G_f` is `Γ_{V,f}`
-  (`TauCeti.AdelicHermitianSpace.finiteRatPoints`).
-* The *moved space* `V·g = (J, x g)` for `g ∈ G(s)` (`TauCeti.AdelicHermitianSpace.move`), a right
-  action of `G(s)` (`TauCeti.AdelicHermitianSpace.move_one`,
-  `TauCeti.AdelicHermitianSpace.move_move`) for which `Γ_{V·g} = g⁻¹ Γ_V g`
-  (`TauCeti.AdelicHermitianSpace.mem_ratPoints_move_iff`), and the *standard space*
-  `I_n = (1_n, 1)` of signs `(1, …, 1)` (`TauCeti.AdelicHermitianSpace.standard`).
+* a **hermitian space with an adelic frame of signs `s`**, a pair `V = (J, x)` of a matrix
+  `J ∈ M_n(E)` and `x ∈ GL_n(𝔸)` with `x* J x = diag(s)` at the infinite places and
+  `x* J x = 1_n` at the finite places: the frame `x` pulls the form of `J` back to `diag(s)` and
+  to `1_n`, sending the model coordinates to the space with Gram matrix `J`. Thus the hermitian
+  form `h_J(u, v) = (conj u)ᵀ J v` on `E^n` has signature `(p, n - p)` at every infinite place and
+  is isometric to the standard form `⟨1, …, 1⟩` at every finite place of `E⁺` (see below for the
+  places of `E⁺` that split in `E`);
+* its **rational points**: `γ ↦ x⁻¹ γ x` embeds `U(J)(E⁺) = {γ ∈ GL_n(E) : γ* J γ = J}` in
+  `G(s)`, with image `Γ_V`, and `Γ_{V,f}` is the image of `Γ_V` in `G_f`;
+* its **lattice** `Λ_V = {y ∈ E^n : (x⁻¹ y)_f ∈ Ô^n}`, an `𝓞_E`-submodule of `E^n`;
+* the **moved space** `V · g = (J, x g)` for `g ∈ G(s)`, a right action of `G(s)` on the spaces
+  of signs `s`, which conjugates the rational points;
+* the **standard space** `I_n = (1_n, 1)`, of signs `(1, …, 1)`, whose lattice is `𝓞_E^n`.
+
+The matrix `J` of a space is hermitian and invertible.
+
+No CM type enters the definitions: at an infinite place `w` the conjugation of `E` extends to the
+completion `E_w`, and read in `ℂ` through either embedding inducing `w` it is complex conjugation
+(`NumberField.InfiniteAdeleRing.extensionEmbedding_star_apply`), so the condition
+`x* J x = diag(s)` at `w` is the same for both identifications of `E_w` with `ℂ`.
+
+At the finite places the frame equation `x* J x = 1_n` is not a condition on each component of `x`
+separately: its component at a finite place `w` reads `σ(x_{conj w})ᵀ J x_w = 1_n`, where
+`σ : E_{conj w} ≃ E_w` extends the conjugation of `E`. When `conj w = w`, that is when the place of
+`E⁺` below `w` does not split in `E`, this says that `x_w` is an isometry from the standard form to
+the form of `J` over `E_w`. When `conj w ≠ w`, that is when the place of `E⁺` below `w` splits in
+`E`, the equation couples the two components `x_w` and `x_{conj w}`: it determines `x_{conj w}`
+from `x_w`, the equation at `conj w` being equivalent to that at `w`.
+
+## Main definitions
+
+* `TauCeti.FramedHermitianSpace E s`: the hermitian spaces with an adelic frame of signs `s`.
+* `TauCeti.FramedHermitianSpace.rationalEmbedding`, `rationalPoints`, `finiteRationalPoints`:
+  the embedding `γ ↦ x⁻¹ γ x` and the groups `Γ_V` and `Γ_{V,f}`.
+* `TauCeti.FramedHermitianSpace.lattice`: the lattice `Λ_V`.
+* The right action `V · g` of `G(s)`, as a `MulAction` of `G(s)ᵐᵒᵖ`.
+* `TauCeti.FramedHermitianSpace.standard E ι`: the standard space `I_n`.
+
+## Main results
+
+* `TauCeti.FramedHermitianSpace.mem_finiteRationalPoints_iff`: `Γ_{V,f}` consists of the
+  `x_f⁻¹ γ x_f`, and `TauCeti.FramedHermitianSpace.finiteRationalPoints_eq_map`: it is the image of
+  `Γ_V` in `G_f`.
+* `TauCeti.FramedHermitianSpace.isHermitian_gram`, `TauCeti.FramedHermitianSpace.isUnit_gram`: the
+  matrix `J` of a space is hermitian and invertible.
+* `TauCeti.FramedHermitianSpace.rationalEmbedding_injective`: `γ ↦ x⁻¹ γ x` is injective.
+* `TauCeti.FramedHermitianSpace.rationalPoints_smul`: `Γ_{V·g} = g⁻¹ Γ_V g`, and
+  `TauCeti.FramedHermitianSpace.finiteRationalPoints_smul`: `Γ_{V·g, f} = g_f⁻¹ Γ_{V,f} g_f`.
+* `TauCeti.FramedHermitianSpace.mem_lattice_standard_iff`: the lattice of `I_n` is `𝓞_E^n`.
 
 ## References
 
-* M. Harris, S. S. Kudla and W. J. Sweet, *Theta dichotomy for unitary groups*,
-  J. Amer. Math. Soc. 9 (1996), §1, for hermitian spaces over a quadratic extension of number
-  fields and their unitary groups.
-* B. H. Gross, *Algebraic modular forms*, Israel J. Math. 113 (1999), §§1–4, for levels and the
-  definite case.
+* B. H. Gross, *Algebraic modular forms*, Israel J. Math. 113 (1999), 61–93, §§2, 4.
 
 ## Attribution
 
-The declarations correspond to those of `src/Lib/Adelic/Unitary/Defs.lean` (`New.Gf`, `New.G`,
-`New.GInf`, `New.stdLevel`, `New.IsLevel`, `New.Space`, `New.Space.ratEmbed`, `New.Space.Γ`,
-`New.Space.Γf`, `New.stdSpace`) and `src/Lib/Adelic/Unitary/ComponentsAndBlockSums.lean`
-(`New.Space.move`) of grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026
-Anthropic, PBC). There `E` also contains a primitive root of unity of order `5040`; nothing here
-needs it.
+The objects defined here follow `New.Space`, `New.Space.ratEmbed`, `New.Space.Γ`,
+`New.Space.Γf`, `New.Space.baseLattice`, `New.stdSpace` and `New.Space.move`, and the statements on
+the Gram matrix follow `New.Space.isUnit_J` and `New.Space.isHermitian_J`, in the files
+`src/Lib/Adelic/Unitary/Defs.lean`, `src/Lib/Adelic/Unitary/ComponentsAndBlockSums.lean` and
+`src/Lib/Adelic/Unitary/GramMatrix.lean` of grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic, PBC); the formalization here is independent of that code.
 -/
 
 public section
 noncomputable section
 
-open Matrix IsDedekindDomain IsDedekindDomain.FiniteAdeleRing NumberField NumberField.IsCMField
+open IsDedekindDomain Matrix NumberField NumberField.IsCMField
 open scoped NumberField.AdeleRing
 
 namespace TauCeti
 
-variable (E : Type*) [Field E] [NumberField E] [IsCMField E] (n : ℕ)
-
-/-! ### The finite adelic unitary group and levels -/
-
-/-- The **finite adelic unitary group** `G_f = U(1_n)(𝔸_f)` of a CM field `E`: the matrices
-`g ∈ GL_n(𝔸_f)` with `g* g = 1`, for the conjugate transpose `g* = star g` of complex conjugation
-on the finite adeles. -/
-abbrev finiteAdelicUnitaryGroup : Subgroup (GL (Fin n) 𝔸ᶠ[E]) :=
-  unitaryGroupOf 1
-
-variable {E n} in
-/-- Membership in `G_f` is the equation `g* g = 1`. -/
-theorem mem_finiteAdelicUnitaryGroup_iff {g : GL (Fin n) 𝔸ᶠ[E]} :
-    g ∈ finiteAdelicUnitaryGroup E n ↔ star (g : Matrix (Fin n) (Fin n) 𝔸ᶠ[E]) * g = 1 := by
-  rw [mem_unitaryGroupOf_iff, Matrix.mul_one]
-
-/-- The **integral finite adelic unitary group** `K₀ = G_f ∩ GL_n(Ô)`, as a subgroup of `G_f`. -/
-def integralFiniteAdelicUnitaryGroup : Subgroup (finiteAdelicUnitaryGroup E n) :=
-  (integralGL (R := 𝓞 E) E n).range.comap (finiteAdelicUnitaryGroup E n).subtype
-
-variable {E n}
-
-/-- An element of `G_f` lies in `K₀` exactly when it lies in `GL_n(Ô)`. -/
-@[simp]
-theorem mem_integralFiniteAdelicUnitaryGroup_iff {g : finiteAdelicUnitaryGroup E n} :
-    g ∈ integralFiniteAdelicUnitaryGroup E n ↔
-      (g : GL (Fin n) 𝔸ᶠ[E]) ∈ (integralGL (R := 𝓞 E) E n).range :=
-  Iff.rfl
-
-/-- An element of `G_f` lies in `K₀` exactly when its entries and the entries of its inverse are
-integral. -/
-theorem mem_integralFiniteAdelicUnitaryGroup_iff_forall {g : finiteAdelicUnitaryGroup E n} :
-    g ∈ integralFiniteAdelicUnitaryGroup E n ↔
-      (∀ i j, ((g : GL (Fin n) 𝔸ᶠ[E]) : Matrix (Fin n) (Fin n) 𝔸ᶠ[E]) i j ∈
-        integralAdeles (𝓞 E) E) ∧
-      ∀ i j, (↑(g : GL (Fin n) 𝔸ᶠ[E])⁻¹ : Matrix (Fin n) (Fin n) 𝔸ᶠ[E]) i j ∈
-        integralAdeles (𝓞 E) E := by
-  rw [mem_integralFiniteAdelicUnitaryGroup_iff, mem_range_integralGL_iff]
-
-variable (E n) in
-/-- `K₀` is open in `G_f`, since `GL_n(Ô)` is open in `GL_n(𝔸_f)`. -/
-theorem isOpen_integralFiniteAdelicUnitaryGroup :
-    IsOpen (integralFiniteAdelicUnitaryGroup E n : Set (finiteAdelicUnitaryGroup E n)) :=
-  (isOpenEmbedding_integralGL (R := 𝓞 E) E n).isOpen_range.preimage continuous_subtypeVal
-
-/-- A **level** of the finite adelic unitary group: an open subgroup `K` of `G_f` contained in
-`K₀ = G_f ∩ GL_n(Ô)`. -/
-def IsUnitaryLevel (K : Subgroup (finiteAdelicUnitaryGroup E n)) : Prop :=
-  IsOpen (K : Set (finiteAdelicUnitaryGroup E n)) ∧ K ≤ integralFiniteAdelicUnitaryGroup E n
-
-theorem isUnitaryLevel_iff {K : Subgroup (finiteAdelicUnitaryGroup E n)} :
-    IsUnitaryLevel K ↔
-      IsOpen (K : Set (finiteAdelicUnitaryGroup E n)) ∧ K ≤ integralFiniteAdelicUnitaryGroup E n :=
-  Iff.rfl
-
-variable (E n) in
-/-- `K₀` itself is a level. -/
-theorem isUnitaryLevel_integralFiniteAdelicUnitaryGroup :
-    IsUnitaryLevel (integralFiniteAdelicUnitaryGroup E n) :=
-  ⟨isOpen_integralFiniteAdelicUnitaryGroup E n, le_rfl⟩
-
-/-- The intersection of two levels is a level. -/
-theorem IsUnitaryLevel.inf {K L : Subgroup (finiteAdelicUnitaryGroup E n)} (hK : IsUnitaryLevel K)
-    (hL : IsUnitaryLevel L) : IsUnitaryLevel (K ⊓ L) :=
-  ⟨hK.1.inter hL.1, inf_le_left.trans hK.2⟩
-
-/-- An open subgroup of a level is a level. -/
-theorem IsUnitaryLevel.of_le {K L : Subgroup (finiteAdelicUnitaryGroup E n)} (hL : IsUnitaryLevel L)
-    (hK : IsOpen (K : Set (finiteAdelicUnitaryGroup E n))) (hKL : K ≤ L) : IsUnitaryLevel K :=
-  ⟨hK, hKL.trans hL.2⟩
-
-/-! ### The archimedean and the adelic unitary groups -/
-
-variable (n) in
-/-- The **archimedean unitary group** `G_∞(s) = ∏_{φ ∈ Φ} U(diag s)(ℂ)` of signs `s ∈ {±1}^n`
-(the same at every infinite place), indexed by the embeddings of a CM type `Φ`, that is by the
-infinite places of `E`. Each factor is isomorphic to `U(p, n - p)` for `p = #{i : s_i = 1}`. -/
-abbrev InfiniteUnitaryGroup (Φ : CMType E) (s : Fin n → ℤˣ) : Type _ :=
-  Φ → unitaryGroupOf (diagonal fun i ↦ ((s i : ℤ) : ℂ))
-
-variable (n) in
-/-- The **adelic unitary group** `G(s) = G_∞(s) × G_f` of signs `s`, read through the CM type
-`Φ`. -/
-abbrev AdelicUnitaryGroup (Φ : CMType E) (s : Fin n → ℤˣ) : Type _ :=
-  InfiniteUnitaryGroup n Φ s × finiteAdelicUnitaryGroup E n
+variable (E : Type*) [Field E] [NumberField E] [IsCMField E] {ι : Type*} [Fintype ι]
+  [DecidableEq ι]
 
 /-! ### Hermitian spaces with an adelic frame -/
 
-/-- A **hermitian space with an adelic frame of signs `s`** over a CM field `E` with CM type `Φ`:
-a Gram matrix `J ∈ M_n(E)` with a frame `x = ((x_φ)_{φ ∈ Φ}, x_f)` in `GL_n(ℂ)^Φ × GL_n(𝔸_f)`
-such that `x_φ* J x_φ = diag(s)` for every `φ ∈ Φ`, with `J` read through `φ`, and
-`x_f* J x_f = 1_n`. The hermitian form `h_J(u, v) = ū^T J v` on `E^n` then has signature
-`(p, n - p)`, `p = #{i : s_i = 1}`, at every infinite place, and is standard at every finite
-place. -/
+/-- A **hermitian space with an adelic frame of signs `s`** over a CM field `E`: a matrix
+`J ∈ M_n(E)`, the Gram matrix of the hermitian form `h_J(u, v) = (conj u)ᵀ J v` on `E^n`,
+together with an adelic matrix `x ∈ GL_n(𝔸)`, given by its components in `GL_n(E_∞)` and
+`GL_n(𝔸_f)`, such that `x* J x = diag(s)` at the infinite places and `x* J x = 1_n` at the finite
+places. The matrix `J` is then hermitian and invertible (`isHermitian_gram`, `isUnit_gram`). -/
 @[ext]
-structure AdelicHermitianSpace (Φ : CMType E) (s : Fin n → ℤˣ) where
+structure FramedHermitianSpace (s : ι → ℤˣ) where
   /-- The Gram matrix `J` of the hermitian form. -/
-  gram : Matrix (Fin n) (Fin n) E
-  /-- The components `x_φ ∈ GL_n(ℂ)` of the frame at the infinite places. -/
-  frameInf : Φ → GL (Fin n) ℂ
-  /-- The component `x_f ∈ GL_n(𝔸_f)` of the frame at the finite places. -/
-  frameFin : GL (Fin n) 𝔸ᶠ[E]
-  /-- At every `φ ∈ Φ` the frame carries `J` to `diag(s)`. -/
-  star_frameInf_mul_mul (φ : Φ) :
-    star (frameInf φ : Matrix (Fin n) (Fin n) ℂ) * gram.map (φ : E →+* ℂ) * frameInf φ =
-      diagonal fun i ↦ ((s i : ℤ) : ℂ)
-  /-- Over the finite adeles the frame carries `J` to `1_n`. -/
-  star_frameFin_mul_mul :
-    star (frameFin : Matrix (Fin n) (Fin n) 𝔸ᶠ[E]) * gram.map (algebraMap E 𝔸ᶠ[E]) * frameFin = 1
+  gram : Matrix ι ι E
+  /-- The adelic frame `x`, by its archimedean and finite components. -/
+  frame : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]
+  /-- At the infinite places the frame pulls the form of `J` back to that of `diag(s)`: it sends
+  the model coordinates into the space with Gram matrix `J`, preserving the forms. -/
+  star_mul_gram_mul_fst : star (frame.1 : Matrix ι ι (InfiniteAdeleRing E)) *
+      gram.map (algebraMap E (InfiniteAdeleRing E)) * frame.1 =
+    diagonal fun i ↦ ((s i : ℤ) : InfiniteAdeleRing E)
+  /-- At the finite places the frame pulls the form of `J` back to the standard form `1_n`: it
+  sends the model coordinates into the space with Gram matrix `J`, preserving the forms. -/
+  star_mul_gram_mul_snd :
+    star (frame.2 : Matrix ι ι 𝔸ᶠ[E]) * gram.map (algebraMap E 𝔸ᶠ[E]) * frame.2 = 1
 
-namespace AdelicHermitianSpace
+namespace FramedHermitianSpace
 
-variable {Φ : CMType E} {s : Fin n → ℤˣ} (V : AdelicHermitianSpace Φ s)
+variable {E} {s : ι → ℤˣ} (V : FramedHermitianSpace E s)
 
-/-- The Gram matrix of a space with an adelic frame is hermitian: over the finite adeles it is
-`(x_f⁻¹)* x_f⁻¹`. -/
+/-- **The Gram matrix of a space with an adelic frame is hermitian**: by the finite frame equation
+`x* J x = 1_n`, its image over the finite adeles is self-adjoint. -/
 theorem isHermitian_gram : V.gram.IsHermitian := by
-  have h := star_inv_mul_mul_inv_eq V.star_frameFin_mul_mul
-  rw [Matrix.mul_one] at h
-  refine Matrix.map_injective (algebraMap_injective E (RingOfIntegers.not_isField E)) ?_
-  dsimp only
-  rw [conjTranspose_map _ fun x ↦ (star_algebraMap x).symm, ← h, ← star_eq_conjTranspose,
-    star_mul, star_star]
+  have h : IsSelfAdjoint
+      (star (V.frame.2 : Matrix ι ι 𝔸ᶠ[E]) * V.gram.map (algebraMap E 𝔸ᶠ[E]) * V.frame.2) := by
+    rw [V.star_mul_gram_mul_snd]
+    exact .one _
+  exact (isHermitian_map_iff (fun x ↦ algebraMap_star_comm x)
+    (FiniteAdeleRing.algebraMap_injective E (RingOfIntegers.not_isField E))).1
+    (V.frame.2.isUnit.isSelfAdjoint_conjugate_iff'.1 h)
 
-/-! #### Rational points -/
+/-- **The Gram matrix of a space with an adelic frame is invertible**: the frame pulls its image
+over the finite adeles back to `1_n`. -/
+theorem isUnit_gram : IsUnit V.gram := by
+  have h : IsUnit
+      (star (V.frame.2 : Matrix ι ι 𝔸ᶠ[E]) * V.gram.map (algebraMap E 𝔸ᶠ[E]) * V.frame.2) := by
+    rw [V.star_mul_gram_mul_snd]
+    exact isUnit_one
+  -- `𝔸_f` is nontrivial, so `algebraMap E 𝔸_f` is a local homomorphism.
+  have := (FiniteAdeleRing.algebraMap_injective E (RingOfIntegers.not_isField E)).nontrivial
+  exact (Matrix.isUnit_map_iff (algebraMap E 𝔸ᶠ[E]) V.gram).1
+    (IsUnit.mul_iff.1 (IsUnit.mul_iff.1 h).1).2
 
-/-- The **embedding of the rational points**: `γ ↦ x⁻¹ γ x` from the unitary group
-`U(J)(E⁺) = {γ ∈ GL_n(E) : γ* J γ = J}` of the hermitian form into `G(s)`, with `γ` read through
-each `φ ∈ Φ` at the infinite places and in `𝔸_f` at the finite places. -/
-def ratEmbedding : unitaryGroupOf V.gram →* AdelicUnitaryGroup n Φ s :=
-  (MonoidHom.pi fun φ : Φ ↦
-    (unitaryGroupOf.conjEquiv (V.frameInf φ) (V.star_frameInf_mul_mul φ)).toMonoidHom.comp
-      (unitaryGroupOf.mapHom V.gram (φ : E →+* ℂ) fun x ↦ complexEmbedding_star _ x)).prod
-  ((unitaryGroupOf.conjEquiv V.frameFin V.star_frameFin_mul_mul).toMonoidHom.comp
-    (unitaryGroupOf.mapHom V.gram (algebraMap E 𝔸ᶠ[E]) fun x ↦ (star_algebraMap x).symm))
+/-! ### Rational points -/
 
-/-- The component at `φ ∈ Φ` of the image of a rational point `γ` is `x_φ⁻¹ φ(γ) x_φ`. -/
+/-- The pair `γ ↦ (x_∞⁻¹ γ x_∞, x_f⁻¹ γ x_f)` of the conjugations of `U(J)(E⁺)`, read diagonally in
+`GL_n(E_∞)` and in `GL_n(𝔸_f)`, by the two components of the frame. -/
+private def rationalEmbeddingGL :
+    unitaryGroupOf V.gram →* GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E] :=
+  ((MulAut.conj V.frame.1)⁻¹.toMonoidHom.comp
+      ((GeneralLinearGroup.map (algebraMap E (InfiniteAdeleRing E))).comp
+        (unitaryGroupOf V.gram).subtype)).prod
+    ((MulAut.conj V.frame.2)⁻¹.toMonoidHom.comp
+      ((GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E])).comp (unitaryGroupOf V.gram).subtype))
+
+private theorem rationalEmbeddingGL_apply (γ : unitaryGroupOf V.gram) :
+    V.rationalEmbeddingGL γ =
+      (V.frame.1⁻¹ * GeneralLinearGroup.map (algebraMap E (InfiniteAdeleRing E)) γ * V.frame.1,
+        V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2) := by
+  simp only [rationalEmbeddingGL, MonoidHom.prod_apply, MonoidHom.coe_comp,
+    MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype, Function.comp_apply, MulAut.conj_inv_apply]
+
+/-- The **rational embedding** `γ ↦ x⁻¹ γ x` of the group `U(J)(E⁺) = {γ ∈ GL_n(E) : γ* J γ = J}`
+of rational points of the unitary group of the Gram matrix in the adelic unitary group `G(s)`,
+`γ` being read diagonally in `GL_n(𝔸)`: the pair of the conjugations by the two components of the
+frame, which carry `U(J)` into `G_∞(s)` and into `G_f` as the frame pulls `J` back to `diag(s)`
+and to `1_n`. -/
+def rationalEmbedding : unitaryGroupOf V.gram →* adelicUnitaryGroup E s :=
+  V.rationalEmbeddingGL.codRestrict _ fun γ ↦ by
+    rw [rationalEmbeddingGL_apply]
+    exact ⟨inv_mul_mul_mem_unitaryGroupOf V.star_mul_gram_mul_fst
+        (map_mem_unitaryGroupOf (fun x ↦ algebraMap_star_comm x) γ.property),
+      unitaryGroupOf_one.le (inv_mul_mul_mem_unitaryGroupOf V.star_mul_gram_mul_snd
+        (map_mem_unitaryGroupOf (fun x ↦ algebraMap_star_comm x) γ.property))⟩
+
+/-- The rational embedding is `γ ↦ x⁻¹ γ x`. -/
 @[simp]
-theorem coe_ratEmbedding_fst_apply (γ : unitaryGroupOf V.gram) (φ : Φ) :
-    ((V.ratEmbedding γ).1 φ : GL (Fin n) ℂ) =
-      (V.frameInf φ)⁻¹ * GeneralLinearGroup.map (φ : E →+* ℂ) (γ : GL (Fin n) E) *
-        V.frameInf φ := by
-  rw [ratEmbedding, MonoidHom.prod_apply]
-  simp
+theorem coe_rationalEmbedding (γ : unitaryGroupOf V.gram) :
+    (V.rationalEmbedding γ : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]) =
+      (V.frame.1⁻¹ * GeneralLinearGroup.map (algebraMap E (InfiniteAdeleRing E)) γ * V.frame.1,
+        V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2) :=
+  V.rationalEmbeddingGL_apply γ
 
-/-- The finite component of the image of a rational point `γ` is `x_f⁻¹ γ x_f`. -/
-@[simp]
-theorem coe_ratEmbedding_snd (γ : unitaryGroupOf V.gram) :
-    ((V.ratEmbedding γ).2 : GL (Fin n) 𝔸ᶠ[E]) =
-      V.frameFin⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) (γ : GL (Fin n) E) *
-        V.frameFin := by
-  simp [ratEmbedding]
+/-- The rational embedding is injective. -/
+theorem rationalEmbedding_injective : Function.Injective V.rationalEmbedding := by
+  intro γ δ h
+  have h₂ := congrArg (fun g ↦ (adelicUnitaryGroup.finitePart E s g : GL ι 𝔸ᶠ[E])) h
+  simp only [adelicUnitaryGroup.coe_finitePart, coe_rationalEmbedding, mul_left_inj,
+    mul_right_inj] at h₂
+  exact Subtype.ext (GeneralLinearGroup.map_injective
+    (FiniteAdeleRing.algebraMap_injective E (RingOfIntegers.not_isField E)) h₂)
 
-/-- The embedding of the rational points is injective. -/
-theorem ratEmbedding_injective : Function.Injective V.ratEmbedding := fun γ δ h ↦ by
-  have h' := congrArg (fun g : AdelicUnitaryGroup n Φ s ↦ (g.2 : GL (Fin n) 𝔸ᶠ[E])) h
-  simp only [coe_ratEmbedding_snd, mul_left_inj, mul_right_inj] at h'
-  exact Subtype.ext
-    (GeneralLinearGroup.map_injective (algebraMap_injective E (RingOfIntegers.not_isField E)) h')
+/-- The **rational points** `Γ_V` of a space with an adelic frame: the image of `U(J)(E⁺)` in the
+adelic unitary group `G(s)` under the rational embedding `γ ↦ x⁻¹ γ x`. -/
+def rationalPoints : Subgroup (adelicUnitaryGroup E s) :=
+  V.rationalEmbedding.range
 
-/-- The group `Γ_V ⊆ G(s)` of **rational points** of a space with an adelic frame: the image of
-the unitary group of its hermitian form under `γ ↦ x⁻¹ γ x`. -/
-def ratPoints : Subgroup (AdelicUnitaryGroup n Φ s) :=
-  V.ratEmbedding.range
-
-@[simp]
-theorem mem_ratPoints_iff {g : AdelicUnitaryGroup n Φ s} :
-    g ∈ V.ratPoints ↔ ∃ γ, V.ratEmbedding γ = g :=
-  MonoidHom.mem_range
-
-/-- The group `Γ_{V,f} ⊆ G_f` of **finite rational points**: the image of `Γ_V` in `G_f`. -/
-def finiteRatPoints : Subgroup (finiteAdelicUnitaryGroup E n) :=
-  V.ratPoints.map (MonoidHom.snd _ _)
-
-@[simp]
-theorem mem_finiteRatPoints_iff {g : finiteAdelicUnitaryGroup E n} :
-    g ∈ V.finiteRatPoints ↔ ∃ γ, (V.ratEmbedding γ).2 = g := by
-  rw [finiteRatPoints, Subgroup.mem_map]
-  exact ⟨fun ⟨_, ⟨γ, hγ⟩, hx⟩ ↦ ⟨γ, hγ ▸ hx⟩, fun ⟨γ, hγ⟩ ↦ ⟨_, ⟨γ, rfl⟩, hγ⟩⟩
-
-/-! #### Moving a space -/
-
-/-- The **moved space** `V·g = (J, x g)` of a space `V = (J, x)` with an adelic frame of signs `s`,
-for `g ∈ G(s)`. The body is exposed so that the Gram matrix of `V·g` is definitionally that of
-`V`, which lets the rational points `unitaryGroupOf V.gram` of `V` serve as those of `V·g` (as in
-`TauCeti.AdelicHermitianSpace.ratEmbedding_move`). -/
-@[expose] def move (g : AdelicUnitaryGroup n Φ s) : AdelicHermitianSpace Φ s where
-  gram := V.gram
-  frameInf φ := V.frameInf φ * (g.1 φ : GL (Fin n) ℂ)
-  frameFin := V.frameFin * (g.2 : GL (Fin n) 𝔸ᶠ[E])
-  star_frameInf_mul_mul φ :=
-    unitaryGroupOf.star_mul_mul_mul_eq (V.star_frameInf_mul_mul φ)
-      (mem_unitaryGroupOf_iff.mp (g.1 φ).property)
-  star_frameFin_mul_mul :=
-    unitaryGroupOf.star_mul_mul_mul_eq V.star_frameFin_mul_mul
-      (mem_unitaryGroupOf_iff.mp g.2.property)
-
-@[simp]
-theorem gram_move (g : AdelicUnitaryGroup n Φ s) : (V.move g).gram = V.gram :=
+/-- The rational points `Γ_V` are the range of the rational embedding; with
+`MonoidHom.mem_range`, this describes membership in `Γ_V`. -/
+theorem rationalPoints_def : V.rationalPoints = V.rationalEmbedding.range :=
   (rfl)
 
-@[simp]
-theorem frameInf_move (g : AdelicUnitaryGroup n Φ s) (φ : Φ) :
-    (V.move g).frameInf φ = V.frameInf φ * (g.1 φ : GL (Fin n) ℂ) :=
+/-- The **finite rational points** `Γ_{V,f}` of a space with an adelic frame: the image in the
+finite adelic unitary group `G_f` of `U(J)(E⁺)` under the rational embedding followed by the
+finite component, that is the image of the rational points `Γ_V` in `G_f`
+(`finiteRationalPoints_eq_map`). -/
+def finiteRationalPoints : Subgroup (finiteAdelicUnitaryGroup E ι) :=
+  ((adelicUnitaryGroup.finitePart E s).comp V.rationalEmbedding).range
+
+/-- The finite rational points `Γ_{V,f}` are the range of the rational embedding followed by the
+finite component. -/
+theorem finiteRationalPoints_def :
+    V.finiteRationalPoints = ((adelicUnitaryGroup.finitePart E s).comp V.rationalEmbedding).range :=
   (rfl)
 
+/-- `Γ_{V,f}` is the image of the rational points `Γ_V` in `G_f`. -/
+theorem finiteRationalPoints_eq_map :
+    V.finiteRationalPoints = V.rationalPoints.map (adelicUnitaryGroup.finitePart E s) := by
+  rw [finiteRationalPoints_def, rationalPoints_def, MonoidHom.range_comp]
+
+/-- `Γ_{V,f}` consists of the conjugates `x_f⁻¹ γ x_f` of the elements `γ ∈ U(J)(E⁺)` by the
+finite component `x_f` of the frame. -/
+theorem mem_finiteRationalPoints_iff {g : finiteAdelicUnitaryGroup E ι} :
+    g ∈ V.finiteRationalPoints ↔ ∃ γ : unitaryGroupOf V.gram,
+      V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2 =
+        (g : GL ι 𝔸ᶠ[E]) := by
+  simp only [finiteRationalPoints_def, MonoidHom.mem_range, MonoidHom.comp_apply, Subtype.ext_iff,
+    adelicUnitaryGroup.coe_finitePart, coe_rationalEmbedding]
+
+/-! ### The lattice -/
+
+/-- The **lattice** `Λ_V = {y ∈ E^n : (x⁻¹ y)_f ∈ Ô^n}` of a space with an adelic frame: the vectors
+of `E^n`, read diagonally in `𝔸_f^n`, that the inverse of the finite component of the frame
+carries to integral vectors. It is the preimage of the `𝓞_E`-submodule `Ô^n` of `𝔸_f^n` under the
+`𝓞_E`-linear map `y ↦ x_f⁻¹ y`, so an `𝓞_E`-submodule of `E^n`. -/
+def lattice : Submodule (𝓞 E) (ι → E) :=
+  (Submodule.pi Set.univ fun _ : ι ↦ (FiniteAdeleRing.integralAdeles (𝓞 E) E).toSubmodule).comap
+    ((mulVecLin (↑V.frame.2⁻¹ : Matrix ι ι 𝔸ᶠ[E])).restrictScalars (𝓞 E) ∘ₗ
+      ((Algebra.linearMap E 𝔸ᶠ[E]).compLeft ι).restrictScalars (𝓞 E))
+
+/-- `y ∈ Λ_V` exactly when `(x⁻¹ y)_f` is integral. -/
+theorem mem_lattice_iff {y : ι → E} :
+    y ∈ V.lattice ↔ ∀ i, ((↑V.frame.2⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ (algebraMap E 𝔸ᶠ[E] ∘ y)) i ∈
+      FiniteAdeleRing.integralAdeles (𝓞 E) E := by
+  rw [lattice, Submodule.mem_comap]
+  refine Submodule.mem_pi.trans (forall_congr' fun i ↦ ?_)
+  simp only [Set.mem_univ, true_implies, LinearMap.coe_comp, Function.comp_apply,
+    LinearMap.restrictScalars_apply, Matrix.mulVecLin_apply]
+  -- What remains is `(Algebra.linearMap E 𝔸_f).compLeft ι y = algebraMap E 𝔸_f ∘ y` and
+  -- `Subalgebra.mem_toSubmodule`, true by definition. Neither `rw` nor `simp` applies them: `Ô` is
+  -- a submodule for the `𝓞 E`-module structure `FiniteAdeleRing.instAlgebra_1` of `𝔸_f`, while
+  -- instance synthesis gives the linear map the structure `RingOfIntegers.instAlgebra E` through
+  -- `E`, which agrees with it only up to unfolding.
+  exact Iff.rfl
+
+/-! ### The moved space -/
+
+/-- The right action of the adelic unitary group `G(s)` on the spaces with an adelic frame of
+signs `s`: the **moved space** `V · g = (J, x g)`. -/
+instance : MulAction (adelicUnitaryGroup E s)ᵐᵒᵖ (FramedHermitianSpace E s) where
+  smul g V :=
+    { gram := V.gram
+      frame := V.frame * g.unop
+      -- `x g` pulls `J` back to the forms of `x`, as `g` preserves them.
+      star_mul_gram_mul_fst := by
+        rw [Prod.fst_mul, Units.val_mul]
+        exact star_mul_mul_mul_eq_of_mem_unitaryGroupOf V.star_mul_gram_mul_fst g.unop.property.1
+      star_mul_gram_mul_snd := by
+        rw [Prod.snd_mul, Units.val_mul]
+        exact star_mul_mul_mul_eq_of_mem_unitaryGroupOf V.star_mul_gram_mul_snd
+          (unitaryGroupOf_one.ge g.unop.property.2) }
+  -- Elaborated as tactic blocks, after the proofs in `smul`, so that the frames reduce.
+  one_smul V := by exact FramedHermitianSpace.ext rfl (mul_one V.frame)
+  mul_smul _ _ _ := by exact FramedHermitianSpace.ext rfl (mul_assoc _ _ _).symm
+
+/-- Moving a space does not change its Gram matrix. -/
 @[simp]
-theorem frameFin_move (g : AdelicUnitaryGroup n Φ s) :
-    (V.move g).frameFin = V.frameFin * (g.2 : GL (Fin n) 𝔸ᶠ[E]) :=
+theorem gram_smul (g : (adelicUnitaryGroup E s)ᵐᵒᵖ) : (g • V).gram = V.gram :=
   (rfl)
 
-/-- Moving by `1` does not change a space. -/
+/-- The frame of the moved space `V · g` is `x g`. -/
 @[simp]
-theorem move_one : V.move 1 = V := by
-  ext <;> simp
+theorem frame_smul (g : (adelicUnitaryGroup E s)ᵐᵒᵖ) :
+    (g • V).frame = V.frame * (g.unop : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]) :=
+  (rfl)
 
-/-- Moving is a right action of `G(s)`: `(V·g)·h = V·(g h)`. -/
-@[simp]
-theorem move_move (g h : AdelicUnitaryGroup n Φ s) : (V.move g).move h = V.move (g * h) := by
-  ext <;> simp [mul_assoc]
+/-- The rational embedding of the moved space `V · g` is that of `V` followed by conjugation by
+`g⁻¹`: `(x g)⁻¹ γ (x g) = g⁻¹ (x⁻¹ γ x) g`. -/
+theorem rationalEmbedding_smul (g : (adelicUnitaryGroup E s)ᵐᵒᵖ) (γ : unitaryGroupOf V.gram) :
+    (g • V).rationalEmbedding γ = MulAut.conj g.unop⁻¹ (V.rationalEmbedding γ) := by
+  refine Subtype.ext (Prod.ext ?_ ?_) <;>
+  simp only [coe_rationalEmbedding, frame_smul, MulAut.conj_apply, inv_inv, Subgroup.coe_mul,
+    Subgroup.coe_inv, Prod.fst_mul, Prod.snd_mul, Prod.fst_inv, Prod.snd_inv, _root_.mul_inv_rev,
+    mul_assoc]
 
-/-- The rational points of the moved space `V·g` are those of `V` conjugated by `g`. -/
-theorem ratEmbedding_move (g : AdelicUnitaryGroup n Φ s) (γ : unitaryGroupOf V.gram) :
-    (V.move g).ratEmbedding γ = g⁻¹ * V.ratEmbedding γ * g := by
-  refine Prod.ext (funext fun φ ↦ Subtype.ext ?_) (Subtype.ext ?_)
-  · rw [(V.move g).coe_ratEmbedding_fst_apply γ φ]
-    simp only [coe_ratEmbedding_fst_apply, frameInf_move, Prod.fst_mul, Prod.fst_inv,
-      Pi.mul_apply, Pi.inv_apply, Subgroup.coe_mul, Subgroup.coe_inv, _root_.mul_inv_rev]
-    group
-  · rw [(V.move g).coe_ratEmbedding_snd γ]
-    simp only [coe_ratEmbedding_snd, frameFin_move, Prod.snd_mul, Prod.snd_inv,
-      Subgroup.coe_mul, Subgroup.coe_inv, _root_.mul_inv_rev]
-    group
+/-- **Rational points of a moved space**: `Γ_{V·g} = g⁻¹ Γ_V g`. -/
+theorem rationalPoints_smul (g : (adelicUnitaryGroup E s)ᵐᵒᵖ) :
+    (g • V).rationalPoints = V.rationalPoints.map (MulAut.conj g.unop⁻¹).toMonoidHom := by
+  rw [rationalPoints_def, rationalPoints_def, MonoidHom.map_range]
+  exact congrArg MonoidHom.range (MonoidHom.ext (V.rationalEmbedding_smul g))
 
-/-- `Γ_{V·g} = g⁻¹ Γ_V g`. -/
-theorem mem_ratPoints_move_iff (g x : AdelicUnitaryGroup n Φ s) :
-    x ∈ (V.move g).ratPoints ↔ g * x * g⁻¹ ∈ V.ratPoints := by
-  simp only [mem_ratPoints_iff]
-  refine exists_congr fun γ ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← h, V.ratEmbedding_move g γ]
-    group
-  · rw [V.ratEmbedding_move g γ, h]
-    group
+/-- **Finite rational points of a moved space**: `Γ_{V·g, f} = g_f⁻¹ Γ_{V,f} g_f`, for `g_f` the
+finite component of `g`. -/
+theorem finiteRationalPoints_smul (g : (adelicUnitaryGroup E s)ᵐᵒᵖ) :
+    (g • V).finiteRationalPoints = V.finiteRationalPoints.map
+      (MulAut.conj (adelicUnitaryGroup.finitePart E s g.unop)⁻¹).toMonoidHom := by
+  rw [finiteRationalPoints_eq_map, finiteRationalPoints_eq_map, rationalPoints_smul,
+    Subgroup.map_map, Subgroup.map_map]
+  -- the finite component of `g⁻¹ h g` is `g_f⁻¹ h_f g_f`
+  exact congrArg V.rationalPoints.map (MonoidHom.ext fun h ↦ by simp)
 
-/-! #### The standard space -/
+/-- Moving a space by an element of `G(s)` whose finite component lies in
+`K₀ = G_f ∩ GL_n(Ô)` does not change its lattice. -/
+theorem lattice_smul_of_mem_integralAdelicUnitaryGroup (g : (adelicUnitaryGroup E s)ᵐᵒᵖ)
+    (hg : adelicUnitaryGroup.finitePart E s g.unop ∈ integralAdelicUnitaryGroup E ι) :
+    (g • V).lattice = V.lattice := by
+  -- `(x g)_f⁻¹ y = g_f⁻¹ (x_f⁻¹ y)`, and `g_f⁻¹ ∈ GL_n(Ô)` preserves the integral vectors.
+  have hg' : (g.unop : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]).2⁻¹ ∈
+      (FiniteAdeleRing.integralGL E ι).range := by
+    simpa only [InvMemClass.coe_inv, adelicUnitaryGroup.coe_finitePart] using
+      mem_integralAdelicUnitaryGroup_iff_mem_range_integralGL.1 (inv_mem hg)
+  ext y
+  rw [mem_lattice_iff, mem_lattice_iff, frame_smul, Prod.snd_mul, _root_.mul_inv_rev,
+    Units.val_mul, ← mulVec_mulVec]
+  exact FiniteAdeleRing.forall_mulVec_mem_integralAdeles_iff hg'
 
-variable (Φ n) in
-/-- The **standard space** `I_n = (1_n, 1)` of signs `(1, …, 1)`: the standard definite hermitian
-form `h(u, v) = ū^T v` with the identity frame. -/
-def standard : AdelicHermitianSpace Φ (fun _ : Fin n ↦ 1) where
+/-! ### The standard space -/
+
+variable (E ι) in
+/-- The **standard space** `I_n = (1_n, 1)`: the standard hermitian form `⟨1, …, 1⟩` on `E^n`
+with the trivial adelic frame, of signs `(1, …, 1)`. -/
+def standard : FramedHermitianSpace E (1 : ι → ℤˣ) where
   gram := 1
-  frameInf _ := 1
-  frameFin := 1
-  star_frameInf_mul_mul _ := by simp
-  star_frameFin_mul_mul := by simp
+  frame := 1
+  star_mul_gram_mul_fst := by simp
+  star_mul_gram_mul_snd := by simp
 
-variable (Φ n)
-
+/-- The Gram matrix of the standard space is `1_n`. -/
 @[simp]
-theorem gram_standard : (standard n Φ).gram = 1 :=
+theorem gram_standard : (standard E ι).gram = 1 :=
   (rfl)
 
+/-- The frame of the standard space is `1`. -/
 @[simp]
-theorem frameInf_standard (φ : Φ) : (standard n Φ).frameInf φ = 1 :=
+theorem frame_standard : (standard E ι).frame = 1 :=
   (rfl)
 
-@[simp]
-theorem frameFin_standard : (standard n Φ).frameFin = 1 :=
-  (rfl)
+/-- **The lattice of the standard space is `𝓞_E^n`.** -/
+theorem mem_lattice_standard_iff {y : ι → E} :
+    y ∈ (standard E ι).lattice ↔ ∀ i, y i ∈ (algebraMap (𝓞 E) E).range := by
+  simp [mem_lattice_iff, FiniteAdeleRing.algebraMap_mem_integralAdeles_iff]
 
-end AdelicHermitianSpace
+end FramedHermitianSpace
 
 end TauCeti
