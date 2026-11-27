@@ -156,6 +156,26 @@ theorem finiteCharacterK_apply (χ : Grossencharacter K 𝔪) (x : primeToSubgro
       χ.archimedeanValue x :=
   (rfl)
 
+/-- The finite character at a fraction prime to `𝔪`, through the ideal character of the presented
+Hecke character at the principal ideal it generates. -/
+private theorem exists_finiteCharacterK_eq_idealCharacter (χ : Grossencharacter K 𝔪)
+    (x : primeToSubgroup 𝔪) :
+    ∃ hx : toPrincipalIdeal (𝓞 K) K (x : Kˣ) ∈
+        idealsPrimeTo ⟨χ.toHeckeCharacter.finiteConductor,
+          χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩,
+      χ.finiteCharacterK x = χ.toHeckeCharacter.idealCharacter ⟨_, hx⟩ *
+        ∏ w : InfinitePlace K, χ.toHeckeCharacter.infiniteComponent w
+          (Units.map (algebraMap K w.Completion).toMonoidHom x) := by
+  have hx : toPrincipalIdeal (𝓞 K) K (x : Kˣ) ∈ idealsPrimeTo
+      ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :=
+    NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mpr
+      (primeToSubgroup_le_of_dvd χ.finiteConductor_dvd_finitePart x.property)
+  refine ⟨hx, ?_⟩
+  rw [finiteCharacterK_apply,
+    NumberFieldArithmetic.idealsAwayInclusion_principalIdealAway
+      (Modulus.support_mono χ.mk_finiteConductor_dvd) x hx,
+    archimedeanValue_apply]
+
 /-- **The finite character is the inverse of the product of the components at the ramified
 primes**: at `x` prime to `𝔪`, `χ_f(x) = ∏_{v ∣ 𝔣} χ_v(x)⁻¹`, the product running over the primes
 dividing the finite conductor `𝔣` of the presented Hecke character. This is the triviality of
@@ -168,38 +188,9 @@ theorem finiteCharacterK_eq_prod_finiteComponent_inv (χ : Grossencharacter K �
           ∅⟩ : Modulus K).support,
         χ.toHeckeCharacter.finiteComponent v
           (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ)))⁻¹ := by
-  set I := NumberFieldArithmetic.idealsAwayInclusion K
-    (Modulus.support_mono χ.mk_finiteConductor_dvd)
-    (NumberFieldArithmetic.principalIdealAway K 𝔪.support x) with hIdef
-  have hI : (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) = toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
-    rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
-      NumberFieldArithmetic.coe_principalIdealAway]
-  have hmem : toPrincipalIdeal (𝓞 K) K (x : Kˣ) ∈ idealsPrimeTo
-      ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :=
-    hI ▸ I.property
-  rw [finiteCharacterK_apply, ← hIdef, show I = ⟨_, hmem⟩ from Subtype.ext hI,
-    HeckeCharacter.idealCharacter_apply_toPrincipalIdeal_eq_prod_inv_mul_prod_inv,
-    archimedeanValue_apply, mul_right_comm, inv_mul_cancel, one_mul]
-
-/-- The finite character at a fraction prime to `𝔪`, through the ideal character of the presented
-Hecke character at the principal ideal it generates. -/
-private theorem exists_finiteCharacterK_eq_idealCharacter (χ : Grossencharacter K 𝔪)
-    (x : primeToSubgroup 𝔪) :
-    ∃ hx : toPrincipalIdeal (𝓞 K) K (x : Kˣ) ∈
-        idealsPrimeTo ⟨χ.toHeckeCharacter.finiteConductor,
-          χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩,
-      χ.finiteCharacterK x = χ.toHeckeCharacter.idealCharacter ⟨_, hx⟩ *
-        ∏ w : InfinitePlace K, χ.toHeckeCharacter.infiniteComponent w
-          (Units.map (algebraMap K w.Completion).toMonoidHom x) := by
-  set z := NumberFieldArithmetic.idealsAwayInclusion K
-    (Modulus.support_mono χ.mk_finiteConductor_dvd)
-    (NumberFieldArithmetic.principalIdealAway K 𝔪.support x)
-  have hz : (z : (FractionalIdeal (𝓞 K)⁰ K)ˣ) = toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
-    rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
-      NumberFieldArithmetic.coe_principalIdealAway]
-  refine ⟨hz ▸ z.property, ?_⟩
-  rw [finiteCharacterK_apply, archimedeanValue_apply]
-  exact congrArg (· * _) (congrArg _ (Subtype.ext hz))
+  obtain ⟨hx, h⟩ := χ.exists_finiteCharacterK_eq_idealCharacter x
+  rw [h, HeckeCharacter.idealCharacter_apply_toPrincipalIdeal_eq_prod_inv_mul_prod_inv,
+    mul_right_comm, inv_mul_cancel, one_mul]
 
 /-- **The finite character depends only on the Hecke character**: two presentations of the same
 Hecke character agree at every fraction prime to both moduli. -/
