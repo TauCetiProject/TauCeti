@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Comodule
 public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.RestrictScalars
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 
 /-!

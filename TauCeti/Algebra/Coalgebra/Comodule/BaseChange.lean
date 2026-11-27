@@ -36,8 +36,6 @@ needed to compare geometric unipotence before and after a field extension.
 * `TauCeti.Comodule.baseChange`: the induced comodule structure over the base-changed
   coefficient coalgebra, selected explicitly as a local instance.
 * `TauCeti.Comodule.baseChangeCoact_tmul`: the coaction formula on pure tensors.
-* `TauCeti.Comodule.distribBaseChange_baseChange_mk_flip`: base change of `m ↦ m ⊗ h`, so in
-  particular of the trivial coaction `m ↦ m ⊗ 1`.
 * `TauCeti.Comodule.baseChange_self`: base change of the regular comodule agrees with the
   regular comodule of the base-changed coalgebra.
 * `TauCeti.Comodule.Hom.baseChange`: base change of a comodule morphism.
@@ -86,17 +84,6 @@ theorem baseChangeCoact_apply (x : A ⊗[R] M) :
     baseChangeCoact (R := R) (H := H) A x =
       TensorProduct.AlgebraTensorModule.distribBaseChange R A M H
         ((coact (R := R) (C := H) (M := M)).baseChange A x) := (rfl)
-
-omit [Coalgebra R H] [Comodule R H M] in
-/-- Scalar extension of `m ↦ m ⊗ h`, followed by the distributivity equivalence, is
-`v ↦ v ⊗ (1 ⊗ h)`. For `h = 1` in a bialgebra this says that base change carries the trivial
-coaction to the trivial coaction. -/
-theorem distribBaseChange_baseChange_mk_flip (h : H) (v : A ⊗[R] M) :
-    TensorProduct.AlgebraTensorModule.distribBaseChange R A M H
-        (((TensorProduct.mk R M H).flip h).baseChange A v) = v ⊗ₜ[A] ((1 : A) ⊗ₜ[R] h) := by
-  induction v using TensorProduct.inductionOn with
-  | tmul a m => simp
-  | add v w hv hw => rw [map_add, map_add, hv, hw, TensorProduct.add_tmul]
 
 /-- Collapse a threefold tensor product of scalar extensions to the scalar extension of the
 original threefold tensor product. -/
