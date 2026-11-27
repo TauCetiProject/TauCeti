@@ -13,7 +13,10 @@ import Mathlib.Algebra.CharZero.Infinite
 import TauCeti.Algebra.Lie.Killing.Regular
 import TauCeti.Algebra.Lie.Presentation.Serre.Killing
 import TauCeti.Algebra.Lie.Sl2.Centralizer
+import TauCeti.Algebra.Lie.Sl2.Spectrum
 import TauCeti.Algebra.Lie.Submodule.Finrank
+import TauCeti.Algebra.Lie.Weights.Eigenvector
+import TauCeti.Algebra.Lie.Weights.Killing
 import TauCeti.Algebra.Lie.Weights.Rank
 
 /-!
@@ -67,11 +70,22 @@ at `h`, its root space would make `L(0) ⊔ L(1)` larger than `H`. So `e` is reg
 every simple root takes the value `2` at `h`, that is, when `h = 2ρ^∨`
 (`IsSl2Triple.isCentralizerRegular_e_iff`): the regular nilpotent elements are the principal ones.
 
+**The positive nilradical.** The principal grading puts the root space of a positive root `α` in
+degree `2 ht(α) > 0`, so the positive nilradical `n⁺` lies in positive degree
+(`TauCeti.positiveNilradical_le_iSup_eigenspace_ad_twoWeylVector_flip`). On every
+finite-dimensional module `2ρ^∨` acts with integer eigenvalues as the neutral element of an `sl₂`
+triple, and an element of positive degree raises the degree, so every element of `n⁺` acts
+nilpotently (`TauCeti.isNilpotent_toEnd_of_mem_positiveNilradical`). A sum of nonzero simple root
+vectors lies in `n⁺` and is principal, so `n⁺` contains a regular element
+(`TauCeti.exists_mem_positiveNilradical_isCentralizerRegular`).
+
 ## Main results
 
 * `TauCeti.root_apply_twoWeylVector_flip`: every simple root takes the value `2` at `2ρ^∨`.
 * `TauCeti.root_apply_twoWeylVector_flip_eq_two_mul_height`: a root takes the value twice its
   height at `2ρ^∨`.
+* `TauCeti.positiveNilradical_le_iSup_eigenspace_ad_twoWeylVector_flip`: the positive nilradical
+  `n⁺` lies in positive degree for the principal grading by the eigenvalues of `ad (2ρ^∨)`.
 * `TauCeti.root_apply_twoWeylVector_flip_ne_zero` and
   `TauCeti.eigenspace_ad_twoWeylVector_flip_eq_bot`: no root vanishes at `2ρ^∨`, and the
   eigenvalues of `ad (2ρ^∨)` are even integers.
@@ -91,6 +105,9 @@ every simple root takes the value `2` at `h`, that is, when `h = 2ρ^∨`
 * `IsSl2Triple.isCentralizerRegular_e` and `IsSl2Triple.isCentralizerRegular_e_iff`: the
   nilpositive element of a triple with dominant neutral element `h` is regular exactly when
   `h = 2ρ^∨`.
+* `TauCeti.isNilpotent_toEnd_of_mem_positiveNilradical`: every element of `n⁺` acts nilpotently on
+  every finite-dimensional module.
+* `TauCeti.exists_mem_positiveNilradical_isCentralizerRegular`: `n⁺` contains a regular element.
 
 ## References
 
@@ -129,6 +146,23 @@ theorem root_apply_twoWeylVector_flip_eq_two_mul_height (i : H.root) :
     rootSystem_root_apply, rootSystem_toLinearMap_apply, Weight.toLinear_apply,
     RootPairing.flip_flip] at h
   exact h
+
+/-- **The positive nilradical has positive principal degree.** Every element of `n⁺` is a sum of
+eigenvectors of `ad (2ρ^∨)` with positive integer eigenvalues: a positive root `α` takes the value
+`2 ht(α)` at `2ρ^∨`. -/
+theorem positiveNilradical_le_iSup_eigenspace_ad_twoWeylVector_flip :
+    (positiveNilradical H b).toSubmodule ≤ ⨆ (j : ℤ) (_ : 0 < j),
+      (ad K L ((twoWeylVector (rootSystem H).flip b.flip : H) : L)).eigenspace (j : K) := by
+  intro x hx
+  rw [LieSubalgebra.mem_toSubmodule, mem_positiveNilradical, rootSpaceSpan_eq_iSup] at hx
+  refine LieSubmodule.iSup_induction _ (motive := (· ∈ _)) hx (fun α y hy ↦ ?_) (zero_mem _)
+    fun _ _ ↦ add_mem
+  have hα : 0 < b.height (α : H.root) :=
+    b.isPos_iff.mp ((mem_posRoots _ b _).mp α.property)
+  refine Submodule.mem_iSup_of_mem (2 * b.height (α : H.root))
+    (Submodule.mem_iSup_of_mem (by omega) ?_)
+  have h := lie_eq_smul_of_mem_rootSpace hy (twoWeylVector (rootSystem H).flip b.flip)
+  simpa [Module.End.mem_eigenspace_iff, root_apply_twoWeylVector_flip_eq_two_mul_height] using h
 
 /-- **No root vanishes at `2ρ^∨`.** -/
 theorem root_apply_twoWeylVector_flip_ne_zero (i : H.root) :
@@ -377,3 +411,40 @@ theorem isCentralizerRegular_e_iff {h : H} (t : IsSl2Triple (h : L) e f)
   · simpa using hi
 
 end IsSl2Triple
+
+namespace TauCeti
+
+/-! ### The positive nilradical -/
+
+variable {b : (rootSystem H).Base}
+
+/-- **The positive nilradical acts nilpotently.** Every element of the positive nilradical `n⁺` of
+a splitting Cartan subalgebra acts nilpotently on every finite-dimensional module; in particular
+its elements are `ad`-nilpotent. -/
+theorem isNilpotent_toEnd_of_mem_positiveNilradical {M : Type*} [AddCommGroup M] [Module K M]
+    [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M] {x : L}
+    (hx : x ∈ positiveNilradical H b) : IsNilpotent (toEnd K L M x) := by
+  rcases isEmpty_or_nonempty H.root with hroot | hroot
+  · have := subsingleton_of_isEmpty_root (H := H)
+    rw [Subsingleton.elim x 0, map_zero]
+    exact IsNilpotent.zero
+  · -- `2ρ^∨` is the neutral element of a triple, so it acts with integer eigenvalues on `M`
+    obtain ⟨e, f, t⟩ := exists_isSl2Triple_twoWeylVector_flip b
+    exact isNilpotent_toEnd_of_mem_iSup_eigenspace_ad (iSup_eigenspace_toEnd_intCast_eq_top t)
+      (positiveNilradical_le_iSup_eigenspace_ad_twoWeylVector_flip b hx)
+
+variable (b) in
+/-- **The positive nilradical contains a regular element.** A sum of nonzero simple root vectors is
+a principal nilpotent element, whose centralizer has the least possible dimension. When there are
+no roots, `L` is trivial and `0` is regular. -/
+theorem exists_mem_positiveNilradical_isCentralizerRegular :
+    ∃ e ∈ positiveNilradical H b, IsCentralizerRegular K e := by
+  rcases isEmpty_or_nonempty H.root with hroot | hroot
+  · have := subsingleton_of_isEmpty_root (H := H)
+    exact ⟨0, zero_mem _, isCentralizerRegular_of_isLieAbelian 0⟩
+  · choose e he he0 using fun i : b.support ↦ ((i : H.root) : Weight K H L).exists_ne_zero
+    obtain ⟨f, -, t⟩ := exists_mem_negativeNilradical_isSl2Triple_twoWeylVector_flip b he he0
+    exact ⟨_, sum_mem fun i _ ↦ mem_positiveNilradical_of_mem_rootSpace H b
+      (support_subset_posRoots _ b i.property) (he i), t.isCentralizerRegular_e⟩
+
+end TauCeti
