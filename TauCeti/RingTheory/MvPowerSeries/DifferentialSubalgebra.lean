@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Partial differentiation of substitution subalgebras
@@ -19,7 +20,7 @@ In particular, if `Y' = G(Y)` with `G` over the base ring, then the series in th
 parameters `Y(L_j)` with coefficients in that ring are stable under partial
 differentiation whenever the linear forms `L_j` have coefficients in the base
 ring (`MvPowerSeries.mapsTo_pderiv_range_substAlgHom_of_derivative_eq_subst`).
-This uses `MvPowerSeries.pderiv_subst` and `PowerSeries.pderiv_subst`.
+This uses `MvPowerSeries.pderiv_substAlgHom` and `PowerSeries.pderiv_subst`.
 
 The application to integral series in the formal parameter of a CM elliptic curve
 follows `New.CMLattice.pderiv_mem_multiSeriesRing` in
@@ -34,27 +35,10 @@ namespace MvPowerSeries
 
 variable {σ τ : Type*}
 
-/-- Partial differentiation commutes with a change of coefficients. -/
-@[simp]
-theorem pderiv_map {R S : Type*} [CommSemiring R] [CommSemiring S]
-    (φ : R →+* S) (i : σ) (f : MvPowerSeries σ R) :
-    pderiv i (f.map φ) = (pderiv i f).map φ := by
-  ext n
-  simp only [coeff_pderiv, coeff_map, map_mul, map_add, map_natCast, map_one]
-
 section
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-variable {a : σ → MvPowerSeries τ S} (ha : HasSubst a)
-
-/-- The chain rule for a substitution into series over a coefficient algebra. -/
-theorem pderiv_substAlgHom [Fintype σ] (f : MvPowerSeries σ R) (i : τ) :
-    pderiv i (substAlgHom ha f) = ∑ j, substAlgHom ha (pderiv j f) * pderiv i (a j) := by
-  have hsubst (F : MvPowerSeries σ R) :
-      substAlgHom ha F = subst a (F.map (algebraMap R S)) := by
-    rw [map_algebraMap_eq_subst_X, subst_comp_subst_apply HasSubst.X ha]
-    simp only [subst_X ha, substAlgHom_apply]
-  simp only [hsubst, pderiv_subst ha, pderiv_map]
+variable {a : σ → MvPowerSeries τ S}
 
 /-- The substitution image is stable under a partial derivative exactly when it
 contains the derivatives of the substituted series. -/
@@ -98,11 +82,9 @@ theorem mapsTo_pderiv_range_substAlgHom_of_derivative_eq_subst [Finite σ]
       simp only [a, PowerSeries.coe_substAlgHom]
     rw [hj, PowerSeries.pderiv_subst (hb j), hyg,
       PowerSeries.subst_comp_subst_apply hy (hb j), hc j]
-  have hseries : PowerSeries.subst (a j) g =
-      substAlgHom ha (PowerSeries.subst (X (R := R) j) g) := by
-    simp only [substAlgHom_apply, PowerSeries.subst_def,
-      subst_comp_subst_apply (PowerSeries.HasSubst.X (S := R) j).const ha, subst_X ha]
-  rw [hderiv, hseries]
+  rw [hderiv, ← subst_X (R := R) ha j,
+    ← subst_powerSeriesSubst ha (PowerSeries.HasSubst.X (S := R) j) g,
+    ← substAlgHom_apply (R := R) ha]
   exact Subalgebra.mul_mem _ ((substAlgHom ha).mem_range_self _)
     ((substAlgHom ha).range.algebraMap_mem (c j))
 
