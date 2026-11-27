@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
-import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 import TauCeti.RingTheory.ClassGroup.Basic
 
@@ -45,9 +44,6 @@ Mathlib's `idealSet K J` for a nonzero integral ideal `J`:
 * `NumberField.mixedEmbedding.fundamentalCone.natCard_unitSMul_eq_torsionOrder`: a point of
   nonzero norm is `u • a`, with `a` a point of the cone and `u` a unit, for exactly `w` pairs
   `(a, u)`.
-* `NumberField.mixedEmbedding.fundamentalCone.coneOrbitEquiv`: choosing coset representatives
-  identifies `(fundamentalCone K ∩ idealLattice K I) × ((𝓞 K)ˣ ⧸ torsion K)` bijectively with the
-  nonzero points of `idealLattice K I`.
 * `NumberField.mixedEmbedding.fundamentalCone.mem_iff_norm_ne_zero_of_rank_eq_zero`: in unit
   rank `0`, as for `ℚ` and the imaginary quadratic fields, the cone is the set of points of nonzero
   norm.
@@ -282,43 +278,6 @@ theorem natCard_unitSMul_eq_torsionOrder {x : mixedSpace K} (hx : mixedEmbedding
       exact a.property
     refine ⟨⟨_, hζ⟩, Subtype.ext (Prod.ext (Subtype.ext ?_) ?_)⟩ <;>
       simp only [inv_mul_cancel_right, ← hp, inv_smul_smul, inv_inv]
-
-/-- Choosing coset representatives `Quotient.out g` identifies
-`(fundamentalCone K ∩ idealLattice K I) × ((𝓞 K)ˣ ⧸ Units.torsion K)` bijectively with the nonzero
-points of `idealLattice K I`. -/
-noncomputable def coneOrbitEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)) × ((𝓞 K)ˣ ⧸ Units.torsion K) ≃
-      {x : idealLattice K I // x ≠ 0} :=
-  let eCone :
-      (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)) ≃
-        {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} :=
-    (Equiv.subtypeEquivRight
-      (p := fun x : mixedSpace K ↦ x ∈ (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)))
-      fun x ↦ (Set.mem_inter_iff x _ _).trans and_comm).trans
-      (Equiv.subtypeSubtypeEquivSubtypeInter
-        (fun x : mixedSpace K ↦ x ∈ idealLattice K I)
-        (fun x : mixedSpace K ↦ x ∈ fundamentalCone K)).symm
-  ((Equiv.prodCongr (eCone.trans (idealLatticeFundamentalConeEquiv I).symm) (Equiv.refl _)).trans
-    ((Equiv.prodAssoc _ _ _).trans
-      (Equiv.prodCongr (Equiv.refl _)
-        ((Equiv.prodComm _ _).trans Subgroup.groupEquivQuotientProdSubgroup.symm)))).trans
-    (idealLatticeNeZeroEquiv I)
-
-/-- Underlying mixed-space point of `coneOrbitEquiv`. -/
-@[simp]
-theorem coneOrbitEquiv_apply_coe (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
-    (a : (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)))
-    (g : (𝓞 K)ˣ ⧸ Units.torsion K) :
-    ((coneOrbitEquiv I (a, g) : {x : idealLattice K I // x ≠ 0}) : mixedSpace K) =
-      (Quotient.out g : (𝓞 K)ˣ) • (a : mixedSpace K) := by
-  simp only [coneOrbitEquiv, Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map_apply,
-    Equiv.coe_refl, id_eq, Equiv.prodAssoc_apply, Equiv.prodComm_apply,
-    Prod.swap_prod_mk, Subgroup.groupEquivQuotientProdSubgroup_symm_apply,
-    coe_idealLatticeNeZeroEquiv]
-  rw [mul_smul, ← coe_idealLatticeFundamentalConeEquiv, Equiv.apply_symm_apply]
-  simp only [Equiv.subtypeSubtypeEquivSubtypeInter, Equiv.subtypeEquivRight,
-    Equiv.subtypeSubtypeEquivSubtypeExists, Equiv.subtypeEquiv, Equiv.symm_trans_apply,
-    Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk, Equiv.refl_symm, Equiv.coe_refl, id_eq]
 
 /-- **The cone in unit rank `0`.** When the unit rank is `0`, as for `ℚ` and the imaginary
 quadratic fields, there is no logarithmic condition to impose, and the fundamental cone is the set

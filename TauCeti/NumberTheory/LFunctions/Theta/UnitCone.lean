@@ -67,7 +67,6 @@ theorem torsionOrder_mul_lintegral_archHaar_eq_tsum_unitCone {D : Set (realSpace
     (Units.torsionOrder K : ℝ≥0∞) * ∫⁻ y, f y ∂archHaar K =
       ∑' u : (𝓞 K)ˣ, ∫⁻ y in unitCone D, f (unitScale u y) ∂archHaar K := by
   classical
-  have := Fintype.ofFinite (Units.torsion K)
   rw [← (Subgroup.groupEquivQuotientProdSubgroup (s := Units.torsion K)).symm.tsum_eq,
     tsum_prod']
   have hterm (g : (𝓞 K)ˣ ⧸ Units.torsion K) (ζ : Units.torsion K) :
@@ -82,8 +81,7 @@ theorem torsionOrder_mul_lintegral_archHaar_eq_tsum_unitCone {D : Set (realSpace
   have hinner (g : (𝓞 K)ˣ ⧸ Units.torsion K) :
       (∑' _ : Units.torsion K, ∫⁻ y in unitCone D, f (g • y) ∂archHaar K) =
         (Units.torsionOrder K : ℝ≥0∞) * ∫⁻ y in unitCone D, f (g • y) ∂archHaar K := by
-    rw [tsum_fintype, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card,
-      ← Units.torsionOrder, nsmul_eq_mul]
+    rw [ENNReal.tsum_const, ENat.card_eq_coe_natCard, ENat.toENNReal_coe, ← Units.torsionOrder]
   simp_rw [hterm, hinner]
   rw [ENNReal.tsum_mul_left, (isFundamentalDomain_unitCone hD).lintegral_eq_tsum'' f]
 

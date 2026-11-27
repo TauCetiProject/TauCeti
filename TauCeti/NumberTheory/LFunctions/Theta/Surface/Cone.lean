@@ -170,12 +170,6 @@ theorem mk_smul_realSpace (u : (𝓞 K)ˣ) (y : realSpace K) :
     (QuotientGroup.mk u : (𝓞 K)ˣ ⧸ torsion K) • y = unitScale u y :=
   (rfl)
 
-/-- The scoped `(𝓞 K)ˣ ⧸ torsion K` action on `realSpace K` preserves `archNorm`. -/
-@[simp]
-theorem archNorm_quotientTorsion_smul (g : (𝓞 K)ˣ ⧸ torsion K) (y : realSpace K) :
-    archNorm (g • y) = archNorm y :=
-  Quotient.inductionOn' g fun u ↦ archNorm_unitScale u y
-
 /-- Each element of `(𝓞 K)ˣ ⧸ torsion K` acts continuously on `realSpace K`. -/
 scoped instance instContinuousConstSMulQuotientTorsionRealSpace :
     ContinuousConstSMul ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) :=
