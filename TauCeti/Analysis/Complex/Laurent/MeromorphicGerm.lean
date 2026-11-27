@@ -21,7 +21,8 @@ analytic one, computed by contour integration.
 The representative `f` is any function whose germ on the punctured neighbourhood of `a` is `φ`;
 its value at `a` plays no role. The radius bound is uniform in `n`: a single eventual statement in
 `ρ → 0⁺` gives the equality for all integer orders at once, so one small circle computes every
-Laurent coefficient of `φ`.
+Laurent coefficient of `φ`. On each such circle, vanishing of all coefficients below an integer
+characterizes that integer as a lower bound on the meromorphic order.
 
 ## References
 
@@ -79,3 +80,16 @@ theorem eventually_coeff_laurentSeries_eq_circleLaurentCoeff {φ : meromorphicGe
       omega
 
 end TauCeti.meromorphicGerms
+
+open TauCeti TauCeti.meromorphicGerms
+
+/-- On every sufficiently small circle about a meromorphic point, an integer bounds the order
+from below exactly when all Laurent coefficients below that integer vanish. The same circles
+work for every bound, even when the germ vanishes. -/
+theorem MeromorphicAt.eventually_le_meromorphicOrderAt_iff_circleLaurentCoeff_eq_zero
+    {a : ℂ} {f : ℂ → ℂ} (hf : MeromorphicAt f a) :
+    ∀ᶠ ρ in 𝓝[>] (0 : ℝ), ∀ m : ℤ, (m : WithTop ℤ) ≤ meromorphicOrderAt f a ↔
+      ∀ n < m, circleLaurentCoeff f a ρ n = 0 := by
+  filter_upwards [eventually_coeff_laurentSeries_eq_circleLaurentCoeff (coe_mk f hf)] with ρ hρ m
+  simp only [← hρ, ← order_mk f hf, ← orderTop_laurentSeries, le_orderTop_iff_forall,
+    WithTop.coe_lt_coe]

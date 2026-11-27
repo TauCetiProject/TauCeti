@@ -7,7 +7,10 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.Analysis.Analytic.TaylorSeries
+public import TauCeti.Analysis.Meromorphic.OrderFiltration
 public import TauCeti.Analysis.Meromorphic.PrincipalPart
+import TauCeti.RingTheory.LaurentSeries.Basic
+import TauCeti.RingTheory.LaurentSeries.Multiplication
 
 /-!
 # The Laurent expansion of a meromorphic germ
@@ -32,6 +35,9 @@ nonnegative coefficients are the Taylor coefficients of the regular part.
 * `TauCeti.meromorphicGerms.laurentSeries`: the Laurent expansion, as an algebra homomorphism.
 * `TauCeti.meromorphicGerms.laurentSeries_eq`: its value through any representation
   `(z - a)⁻ᴺ h z` with `h` analytic at `a`.
+* `TauCeti.meromorphicGerms.orderTop_laurentSeries`: the first nonzero exponent is the germ order.
+* `TauCeti.meromorphicGerms.coeff_principalPart_mul`: the negative coefficients of a product
+  are finite convolutions with limits determined by the orders of the germs.
 * `TauCeti.meromorphicGerms.laurentSeries_injective`: a meromorphic germ is determined by its
   Laurent expansion.
 * `TauCeti.meromorphicGerms.laurentSeries_evalInvSub`: the expansion of a polynomial in
@@ -208,6 +214,30 @@ expansion. -/
 theorem laurentSeries_injective : Injective (laurentSeries (𝕜 := 𝕜) a) :=
   (laurentSeries a).toRingHom.injective
 
+/-- The order of the formal Laurent expansion is the meromorphic order of the germ.
+The zero germ has order `⊤` on both sides. -/
+@[simp]
+theorem orderTop_laurentSeries (φ : meromorphicGerms 𝕜 a) :
+    (laurentSeries a φ).orderTop = order φ := by
+  cases ho : order φ with
+  | top => simp [(order_eq_top_iff φ).mp ho]
+  | coe m =>
+    obtain ⟨f, hf, rfl⟩ := exists_mk φ
+    rw [order_mk] at ho
+    obtain ⟨u, hu, hua, hfu⟩ := (meromorphicOrderAt_eq_int_iff hf).mp ho
+    -- Separate the coordinate power from the analytic unit before expanding the product.
+    have hφ : mk f hf = coordinate a ^ m * mk u hu.meromorphicAt := by
+      apply Subtype.ext
+      rw [Subring.coe_mul, coe_zpow, coe_coordinate, coe_mk, coe_mk, ← Germ.coe_pow,
+        ← Germ.coe_mul, Germ.coe_eq]
+      exact hfu
+    have hu₀ : (taylorSeries u a).order = 0 :=
+      PowerSeries.order_zero_of_isUnit <|
+        PowerSeries.isUnit_iff_constantCoeff.mpr (by simpa using hua)
+    rw [hφ, map_mul, map_zpow₀, laurentSeries_coordinate, ← RatFunc.single_zpow,
+      laurentSeries_mk_of_analyticAt hu]
+    simp [orderTop_mul, orderTop_single, hu₀]
+
 /-- The Laurent expansion of the polynomial `P` in `(z - a)⁻¹` is `P` evaluated at `X⁻¹`. -/
 theorem laurentSeries_evalInvSub (P : 𝕜[X]) :
     laurentSeries a (evalInvSub a P) = P.eval₂ HahnSeries.C (single (-1) 1) := by
@@ -275,6 +305,17 @@ theorem coeff_laurentSeries_neg (φ : meromorphicGerms 𝕜 a) {k : ℕ} (hk : k
   rintro ⟨m, hm⟩
   simp only [Nat.castOrderEmbedding_apply] at hm
   omega
+
+/-- The coefficient of degree `k + 1` in the principal part of a product is a finite convolution.
+The summation limits use the first nonzero exponents of the two germs, with default exponent
+zero for a zero germ. -/
+theorem coeff_principalPart_mul (φ ψ : meromorphicGerms 𝕜 a) (k : ℕ) :
+    (principalPart (φ * ψ)).coeff (k + 1) =
+      ∑ i ∈ Finset.Icc (order φ).untop₀ (-(↑(k + 1) : ℤ) - (order ψ).untop₀),
+        (laurentSeries a φ).coeff i * (laurentSeries a ψ).coeff (-(↑(k + 1) : ℤ) - i) := by
+  rw [← coeff_laurentSeries_neg _ (Nat.succ_ne_zero k), map_mul]
+  apply _root_.LaurentSeries.coeff_mul_eq_sum <;> rw [orderTop_laurentSeries] <;>
+    exact WithTop.coe_untopD_le _ 0
 
 /-- **Nonnegative Laurent coefficients.** If `g` is analytic at `a` and represents the regular
 part `φ - P((z - a)⁻¹)` of a meromorphic germ `φ` with principal part `P`, then the coefficient of
