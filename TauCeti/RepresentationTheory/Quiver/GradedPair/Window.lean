@@ -206,6 +206,7 @@ theorem nonempty_iso_iff (P Q : InWindow w d) :
       exact (e.symm.mem_grade_iff' a x).1 hx
 
 /-- Outside the window every graded piece vanishes. -/
+@[simp]
 theorem grade_eq_bot (P : InWindow w d) {a : ℤ} (ha : a ∉ w) : P.space.grade a = ⊥ :=
   (P.space.grade_eq_bot_iff a).2 fun i hi ↦ ha (hi ▸ P.degree_mem i)
 
@@ -789,12 +790,14 @@ theorem enlargeFunctor_map_toLinearMap (h : w ≤ W) (f : P ⟶ Q) :
   (rfl)
 
 /-- The new vertices of an enlarged window have zero space. -/
+@[simp]
 theorem enlargeFunctor_grade_eq_bot (h : w ≤ W) (P : InWindow w d) (j : WindowVertex W)
     (hj : d.windowDegree W j ∉ w) :
     ((enlargeFunctor d h).obj P).space.grade (d.windowDegree W j) = ⊥ :=
   P.grade_eq_bot hj
 
 /-- An arrow incident to a newly added vertex is a zero map. -/
+@[simp]
 theorem enlargeFunctor_arrowMap_eq_zero (h : w ≤ W) (P : InWindow w d) {i j : WindowVertex W}
     (e : i ⟶ j) (he : d.windowDegree W i ∉ w ∨ d.windowDegree W j ∉ w) :
     ((enlargeFunctor d h).obj P).arrowMap e = 0 := by
