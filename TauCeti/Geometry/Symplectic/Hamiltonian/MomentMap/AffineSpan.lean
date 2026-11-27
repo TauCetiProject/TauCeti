@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Critical
+import TauCeti.Topology.Algebra.GroupAction.Effective
 
 /-!
 # The affine span of the image of a moment map
@@ -30,9 +31,11 @@ has dimension `dim 𝔤 - dim 𝔨`, it is all of `𝔤*` exactly when the infin
 injective, and `μ` is constant exactly when the action is trivial.
 
 For a smooth action of a Lie group `G`, an element `ξ` of the Lie algebra lies in `𝔨` exactly when
-every `exp (t ξ)` acts trivially on `M`, so `𝔨` is the Lie algebra of the kernel `⋂ₓ G_x` of the
-action. If the action is effective (`FaithfulSMul G M`), then `𝔨 = 0`, so **the image of the moment
-map has full affine dimension `dim G`**: its affine span is all of `𝔤*`
+every `exp (t ξ)` acts trivially on `M`, so `𝔨` is the Lie algebra of the kernel `K = ⋂ₓ G_x` of
+the action, and the affine span of `μ(M)` has dimension `dim G - dim K`
+(`IsMomentMap.finrank_vectorSpan_range_add_finrank_lieSubalgebraOfSubgroup_ker`, in the namespace
+`TauCeti.SmoothTwoForm`). If the action is effective (`FaithfulSMul G M`), then `𝔨 = 0`, so
+**the image of the moment map has full affine dimension `dim G`**: its affine span is all of `𝔤*`
 (`TauCeti.SmoothTwoForm.IsMomentMap.affineSpan_range_eq_top_of_faithfulSMul`). For a torus acting
 on a compact connected symplectic manifold, `μ(M)` is a convex polytope by the convexity theorem
 of Atiyah and Guillemin–Sternberg, and a convex set with full affine span has nonempty interior.
@@ -58,6 +61,9 @@ Neither closedness of `σ` nor equivariance of `μ` is used, and `M` need not be
 * `TauCeti.SmoothTwoForm.IsMomentMap.mem_dualCoannihilator_vectorSpan_range_iff`: for a group
   action, `ξ` annihilates the direction of the affine span of `μ(M)` exactly when every
   `exp (t ξ)` acts trivially.
+* `IsMomentMap.finrank_vectorSpan_range_add_finrank_lieSubalgebraOfSubgroup_ker`, in the namespace
+  `TauCeti.SmoothTwoForm`: for a group action, the affine span of `μ(M)` has dimension
+  `dim G - dim K`, where `K` is the kernel of the action.
 * `TauCeti.SmoothTwoForm.IsMomentMap.affineSpan_range_eq_top_of_faithfulSMul`,
   `TauCeti.SmoothTwoForm.IsMomentMap.finrank_vectorSpan_range_of_faithfulSMul`: for an effective
   group action, the image of the moment map has full affine dimension `dim G`.
@@ -216,6 +222,38 @@ theorem mem_dualCoannihilator_vectorSpan_range_iff
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   rw [h.dualCoannihilator_vectorSpan_range hσ,
     InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff]
+
+/-- **The dimension of the affine support of a group moment map.** For a moment map of a smooth
+action of a Lie group `G` on a preconnected manifold with a nondegenerate form, the affine span of
+the image of the moment map has dimension `dim G - dim K`, where `K` is the kernel `⋂ₓ G_x` of the
+action: the Lie algebra of `K` is the kernel of the infinitesimal action. -/
+theorem finrank_vectorSpan_range_add_finrank_lieSubalgebraOfSubgroup_ker
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate) :
+    Module.finrank ℝ (vectorSpan ℝ (range μ)) +
+      Module.finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I) (MulAction.toPermHom G M).ker) =
+        Module.finrank ℝ (GroupLieAlgebra I G) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have hK : IsClosed ((MulAction.toPermHom G M).ker : Set G) := isClosed_ker_toPermHom G M fun x ↦
+    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := ∞) x).continuous
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  -- Under `e`, the Lie algebra of `K` is the kernel of the infinitesimal action.
+  have hker : (Lie.lieSubalgebraOfSubgroup (I := I) (MulAction.toPermHom G M).ker).toSubmodule =
+      (LinearMap.ker (InfinitesimalAction.fundamental I G I' M).toLinearMap).comap
+        (e : LeftInvariantDerivation I G ≃ₗ[ℝ] GroupLieAlgebra I G).toLinearMap := by
+    ext X
+    simp only [LieSubalgebra.mem_toSubmodule, Lie.mem_lieSubalgebraOfSubgroup hK,
+      Submodule.mem_comap, InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff,
+      MonoidHom.mem_ker, Equiv.Perm.ext_iff, MulAction.toPermHom_apply, MulAction.toPerm_apply,
+      Equiv.Perm.coe_one, id_eq, lieExp_eq_mulInvariantExp, map_smul,
+      LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv, e,
+      leftInvariantDerivationLieEquivGroupLieAlgebra_apply]
+  have hfin : Module.finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I)
+      (MulAction.toPermHom G M).ker) =
+      Module.finrank ℝ (LinearMap.ker (InfinitesimalAction.fundamental I G I' M).toLinearMap) :=
+    (e.toLinearEquiv.ofSubmodules _ _ (by
+      rw [hker, Submodule.map_comap_eq_of_surjective e.toLinearEquiv.surjective])).finrank_eq
+  rw [hfin, h.finrank_vectorSpan_range_add_finrank_ker hσ]
 
 variable [FaithfulSMul G M]
 

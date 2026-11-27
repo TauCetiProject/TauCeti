@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.NormalQuotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Torus
-public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.AffineSpan
-import TauCeti.Topology.Algebra.GroupAction.Effective
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.AffineSpan
 
 /-!
 # Hamiltonian torus actions on the effective quotient
@@ -34,16 +33,17 @@ Let a commutative Lie group `G`, such as a torus, act smoothly on a manifold `M`
   submersion, so the descent applies: the effective quotient carries Hamiltonian torus data,
   with moment map `ν` determined by `ν x ∘ dπ = μ x - μ x₀`
   (`TauCeti.SmoothTwoForm.HamiltonianTorusData.existsUnique_quotientKerToPermHom`).
-* **The dimension of the moment image.** For a nondegenerate `σ` on a nonempty preconnected
-  manifold, the image of `ν` affinely spans `Lie(G ⧸ K)*`, since `G ⧸ K` acts effectively
-  (`TauCeti.SmoothTwoForm.IsMomentMap.affineSpan_range_eq_top_of_faithfulSMul`). As
-  `μ = μ x₀ + dπ^* ν` with `dπ^*` injective, the affine span of `μ(M)` has dimension
-  `dim (G ⧸ K) = dim G - dim K`
-  (`HamiltonianTorusData.finrank_vectorSpan_range_add_finrank_lieSubalgebraOfSubgroup_ker`). For a
-  compact connected `M` the image `μ(M)` is the moment polytope of the convexity theorem of Atiyah
-  and Guillemin–Sternberg, and this identifies it, through the injective affine map
-  `ν' ↦ μ x₀ + dπ^* ν'`, with the full-dimensional moment polytope `ν(M)` of the effective quotient.
-  For instance a trivial action has kernel the whole group, and its moment image is a point.
+* **The dimension of the moment image.** For a nondegenerate `σ` on a preconnected Hausdorff
+  boundaryless manifold, the affine span of `μ(M)` has dimension `dim G - dim K = dim (G ⧸ K)`
+  (`IsMomentMap.finrank_vectorSpan_range_add_finrank_lieSubalgebraOfSubgroup_ker`, in the namespace
+  `TauCeti.SmoothTwoForm`, for any Lie group). The descent matches this with the effective
+  quotient: the image of `ν` affinely spans `Lie(G ⧸ K)*`, as `G ⧸ K` acts effectively
+  (`TauCeti.SmoothTwoForm.IsMomentMap.affineSpan_range_eq_top_of_faithfulSMul`), and
+  `μ = μ x₀ + dπ^* ν` with `dπ^*` injective. For a compact connected `M` the image `μ(M)` is the
+  moment polytope of the convexity theorem of Atiyah and Guillemin–Sternberg, and the descent
+  identifies it, through the injective affine map `ν' ↦ μ x₀ + dπ^* ν'`, with the full-dimensional
+  moment polytope `ν(M)` of the effective quotient. For instance a trivial action has kernel the
+  whole group, and its moment image is a point.
 
 ## Main results
 
@@ -51,9 +51,6 @@ Let a commutative Lie group `G`, such as a torus, act smoothly on a manifold `M`
   descend along a surjective homomorphism with surjective differential.
 * `TauCeti.SmoothTwoForm.HamiltonianTorusData.existsUnique_quotientKerToPermHom`: Hamiltonian
   torus data descend to the effective quotient.
-* `HamiltonianTorusData.finrank_vectorSpan_range_add_finrank_lieSubalgebraOfSubgroup_ker`, in the
-  namespace `TauCeti.SmoothTwoForm`: the affine span of the moment image has dimension
-  `dim G - dim K`.
 
 ## References
 
@@ -96,15 +93,13 @@ private theorem sub_mem_range_dualMap [PreconnectedSpace M] (h : σ.HamiltonianT
     (π : G →* Q) (hπ : MDifferentiableAt I J π 1) (hsmul : ∀ (g : G) (x : M), g • x = π g • x)
     (hdπ : Surjective (π.groupLieAlgebraMap I J)) (x₀ x : M) :
     μ x - μ x₀ ∈ LinearMap.range (π.groupLieAlgebraMap I J).toLinearMap.dualMap := by
-  rw [LinearMap.range_dualMap_eq_dualAnnihilator_ker_of_surjective _ hdπ,
-    Submodule.mem_dualAnnihilator]
-  intro ξ hξ
-  have h0 : InfinitesimalAction.fundamental I G I' M ξ = 0 := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hξ
-    rw [InfinitesimalAction.fundamental_apply,
-      ← π.fundamentalVectorField_groupLieAlgebraMap hπ hsmul, hξ,
-      ← InfinitesimalAction.fundamental_apply, map_zero]
-  rw [LinearMap.sub_apply, h.toIsMomentMap.apply_eq_apply_of_eq_zero h0 x x₀, sub_self]
+  rw [LinearMap.range_dualMap_eq_dualAnnihilator_ker_of_surjective _ hdπ, ← vsub_eq_sub]
+  refine Submodule.dualAnnihilator_anti (fun ξ hξ ↦ ?_) (h.toIsMomentMap.vectorSpan_range_le
+    (vsub_mem_vectorSpan ℝ (mem_range_self x) (mem_range_self x₀)))
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hξ
+  rw [LinearMap.mem_ker, InfinitesimalAction.coe_toLinearMap, InfinitesimalAction.fundamental_apply,
+    ← π.fundamentalVectorField_groupLieAlgebraMap hπ hsmul, hξ,
+    ← InfinitesimalAction.fundamental_apply, map_zero]
 
 /-- **Descent of Hamiltonian torus data along a surjective homomorphism.** Let a commutative Lie
 group `G` act on a preconnected manifold `(M, σ)` through a surjective homomorphism `π : G →* Q`
@@ -169,48 +164,6 @@ theorem existsUnique_quotientKerToPermHom [PreconnectedSpace M] (h : σ.Hamilton
     ((Subgroup.contMDiff_quotientMk (I := I) hK).mdifferentiableAt (by simp))
     (fun g x ↦ (quotientKerToPermHom_mk_smul G M g x).symm) (QuotientGroup.mk'_surjective _)
     (Subgroup.surjective_groupLieAlgebraMap_mk' hK) x₀
-
-/-- **The dimension of the moment image of a Hamiltonian torus action.** For Hamiltonian torus data
-of a commutative Lie group `G` on a nonempty preconnected Hausdorff boundaryless manifold with a
-nondegenerate form, the affine span of the image of the moment map has dimension
-`dim G - dim K`, where `K` is the kernel of the action: the dimension of the effective quotient
-`G ⧸ K`. -/
-theorem finrank_vectorSpan_range_add_finrank_lieSubalgebraOfSubgroup_ker [T2Space M]
-    [BoundarylessManifold I' M] [Nonempty M] [PreconnectedSpace M] (h : σ.HamiltonianTorusData μ)
-    (hσ : σ.IsNondegenerate) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    Module.finrank ℝ (vectorSpan ℝ (range μ)) +
-      Module.finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I) (toPermHom G M).ker).toSubmodule =
-        Module.finrank ℝ E := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  have hK : IsClosed ((toPermHom G M).ker : Set G) := isClosed_ker_toPermHom G M fun x ↦
-    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := ∞) x).continuous
-  let _ := Subgroup.quotientChartedSpaceOfIsClosed I hK
-  have := Subgroup.lieGroup_quotientOfIsClosed (I := I) hK
-  have := Subgroup.contMDiffSMul_quotientKerToPermHom (I := I) (I' := I') (M := M) hK
-  let _ : T2Space (G ⧸ (toPermHom G M).ker) :=
-    𝓘(ℝ, Subgroup.QuotientModelSpace I (toPermHom G M).ker).t2Space_of_lieGroup ∞
-  obtain ⟨x₀⟩ := ‹Nonempty M›
-  obtain ⟨ν, hν, hνμ⟩ := (h.existsUnique_quotientKerToPermHom hK x₀).exists
-  set dπ := ((QuotientGroup.mk' (toPermHom G M).ker).groupLieAlgebraMap I
-    𝓘(ℝ, Subgroup.QuotientModelSpace I (toPermHom G M).ker)).toLinearMap
-  -- The image of `μ` is the image of `ν` under the affine map `f : ν' ↦ dπ^* ν' + μ x₀`, whose
-  -- linear part `dπ^*` is injective, and the image of `ν` affinely spans `Lie(G ⧸ K)*`, as
-  -- `G ⧸ K` acts effectively.
-  let f := dπ.dualMap.toAffineMap + AffineMap.const ℝ _ (μ x₀)
-  have hrange : range μ = f '' range ν := by
-    rw [← range_comp]
-    refine congrArg range (funext fun x ↦ ?_)
-    simp [f, LinearMap.dualMap_apply', dπ, hνμ]
-  have htop : vectorSpan ℝ (range ν) = ⊤ := by
-    rw [← direction_affineSpan, hν.toIsMomentMap.affineSpan_range_eq_top_of_faithfulSMul hσ,
-      AffineSubspace.direction_top]
-  have hinj : Injective dπ.dualMap :=
-    LinearMap.dualMap_injective_of_surjective (Subgroup.surjective_groupLieAlgebraMap_mk' hK)
-  rw [hrange, ← AffineMap.map_vectorSpan, htop, Submodule.map_top]
-  have hf : f.linear = dπ.dualMap := by simp [f]
-  rw [hf, LinearMap.finrank_range_of_inj hinj, Subspace.dual_finrank_eq]
-  exact Subgroup.finrank_quotientModelSpace_add_finrank_lieSubalgebraOfSubgroup I _ hK
 
 end EffectiveQuotient
 
