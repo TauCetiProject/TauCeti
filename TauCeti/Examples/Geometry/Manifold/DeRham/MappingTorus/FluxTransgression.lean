@@ -83,9 +83,8 @@ private theorem fluxTransgression_horizontalLoop {θ : SmoothForm (𝓘(ℝ).pro
           (addCircleProdFundamentalClass 1 1)) =
       pathIntegral θ.val (fun s : ℝ ↦ (((0 : ℝ) : UnitAddCircle), (s : UnitAddCircle))) 0 1 :=
   MappingTorus.fluxTransgression_singularHomologyMap_sectionFamily _
-    (θ.isSmoothForm.of_le (by simp)) ((SmoothForm.isClosed_def θ).1 hθ) horizontalLoop
-    (u := fun z ↦ ((z.2 : UnitAddCircle), (z.1 : UnitAddCircle)))
-    (fun t ↦ contMDiff_verticalCircle t) (fun _ _ ↦ rfl) 0
+    (θ.isSmoothForm.of_le (by simp)) ((SmoothForm.isClosed_def θ).1 hθ) horizontalLoop 0
+    (contMDiff_verticalCircle 0) fun _ ↦ rfl
 
 /-- **The flux of `dy` along the horizontal loop is one.** For the identity of `T²` and the closed
 one-form `dy = ι_{∂_x} (dx ∧ dy)`, the loop of seamed paths `γ_s(t) = ([t], [s])` has flux
