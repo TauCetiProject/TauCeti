@@ -8,21 +8,29 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.CriticalHessian
 import TauCeti.Geometry.Manifold.MFDeriv.Inner
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Calculus
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.ChainRule
 
 /-!
-# Hessians of squared norms at zeros
+# Hessians of squared norms
 
 At an interior zero of a twice differentiable map from a finite-dimensional Riemannian manifold
 into a real inner product space, the Hessian of its squared norm is twice the pullback inner
 product.
 This identifies the Hessian of squared Riemannian distance at the centre of a normal chart and
 requires only a continuously differentiable metric on the source manifold.
+
+On a finite-dimensional real inner product space with its flat metric, the Hessian of the squared
+norm is twice the inner product at every point (`TauCeti.Manifold.hessian_norm_sq_model_space`),
+and that of the negated squared norm is `-2` times it
+(`TauCeti.Manifold.hessian_neg_norm_sq_model_space`).
 -/
 
 public section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold RealInnerProductSpace Gradient
 
 namespace TauCeti.Manifold
 
@@ -56,5 +64,29 @@ theorem hessian_norm_sq_comp_of_eq_zero
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp]
   exact h
+
+/-- On a finite-dimensional real inner product space with its flat metric, the Hessian of the
+squared norm is twice the inner product: `Hess ‖·‖² = 2g`. -/
+@[simp]
+theorem hessian_norm_sq_model_space {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] (x : F) (v w : TangentSpace 𝓘(ℝ, F) x) :
+    hessian 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x v w = 2 * ⟪(v : F), (w : F)⟫ := by
+  have hgrad : DifferentiableAt ℝ (∇ fun y : F ↦ ‖y‖ ^ 2) x :=
+    ((contDiff_norm_sq ℝ (n := 2)).gradient_right (m := 1) (by norm_num)).differentiable
+      one_ne_zero x
+  rw [hessian_eq_iteratedFDeriv_model_space hgrad, iteratedFDeriv_two_apply]
+  simp only [Matrix.cons_val, NormedSpace.fromTangentSpace_apply]
+  exact fderiv_fderiv_norm_sq_apply x v w
+
+/-- On a finite-dimensional real inner product space with its flat metric, the Hessian of the
+negated squared norm is `-2` times the inner product: `Hess (-‖·‖²) = -2g`. -/
+@[simp]
+theorem hessian_neg_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) (v w : TangentSpace 𝓘(ℝ, F) x) :
+    hessian 𝓘(ℝ, F) (fun y : F ↦ -‖y‖ ^ 2) x v w = -(2 * ⟪(v : F), (w : F)⟫) := by
+  have h := hessian_const_sub 0
+    ((contDiff_norm_sq ℝ).contMDiff.contMDiffAt (I := 𝓘(ℝ, F)) (n := 2) (x := x)) v w
+  simp only [zero_sub] at h
+  rw [h, hessian_norm_sq_model_space]
 
 end TauCeti.Manifold
